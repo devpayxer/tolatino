@@ -545,7 +545,9 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
    la máquina cargada. No usa el rótulo: un rótulo que cambia al escribir volvería a montar el campo en cada tecla. Guardián bloquesConLlave. */
 export function llavesDeBloques(bloques: Bloque[]): string[] {
   const n = new Map<string, number>();
-  return bloques.map((b) => { const i = n.get(b.type) ?? 0; n.set(b.type, i + 1); return `${b.type}#${i}`; });
+  // 20 nov · Un paso (− valor +) no guarda nada adentro y su rótulo no se escribe: su llave es el rótulo. Con «step#n», al quitarse un paso de
+  // arriba el nodo que era «Mensualidad +» pasaba a ser «Cuota de inscripción +» bajo el dedo (dep4c lo vio: el toque caía en otro control).
+  return bloques.map((b) => { const k = b.type === "step" ? `step:${b.t}` : b.type; const i = n.get(k) ?? 0; n.set(k, i + 1); return `${k}#${i}`; });
 }
 export function PanelBloques({ bloques, h1 }: { bloques: (Bloque | null | false | undefined)[]; h1?: number }) {
   const bs = bloques.filter((b): b is Bloque => !!b), ks = llavesDeBloques(bs);

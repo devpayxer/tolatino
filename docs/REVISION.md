@@ -5828,3 +5828,11 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Lo que decide Claude (capa 2) cuesta dinero por foto dudosa:** va con tope mensual, apagada hasta que haya llave; sin llave o sin presupuesto,
   las dudosas quedan retenidas con «Pedir revisión». Es el único servicio de fuera, y es el mismo que ya usa El Compa (no es uno nuevo).
 - **Elegí lo más seguro:** ante la duda la foto se retiene, no se publica. Si ves que retiene demasiado, se sube el umbral de duda.
+
+## Fotos a la medida (decisión AI) — ya está en el sandbox (20 nov, commit 2963479)
+- **Qué mirar y en qué condiciones:** desde tu teléfono, en el sandbox, entra al panel de un negocio › Fotos y portada y sube **2 o 3 fotos tomadas con
+  la cámara** (de las de 3 a 8 MB, no capturas de pantalla). Deben verse igual de nítidas que siempre en la ficha y en la tarjeta de la lista.
+- **Para qué:** con fotos reales mido cuánto pesa cada tamaño (320 / 640 / 1080 / 1600) y cuánto baja una tarjeta, una ficha y una galería; hasta
+  ahora los pesos son estimados. Avísame cuando las subas y te doy los números.
+- **Lo que no vas a notar (y está bien):** la foto se sirve en WebP al tamaño de cada caja; si un navegador viejo no acepta WebP recibe el JPEG.
+

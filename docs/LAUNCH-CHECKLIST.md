@@ -1997,6 +1997,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no
       pierda toques; revisar las demás pruebas que tocan «+» seguido. (20 nov)
+      **20 nov · hecha la mitad:** la llave de un paso ya es su rótulo (`llavesDeBloques`, guardián `bloquesConLlave` + al revés): al quitarse
+      un paso de arriba, el «+» de otro ya no queda bajo el dedo. **Falta:** el doble toque rápido en el mismo «+» cuando ese paso guarda en
+      el servidor en cada toque (el segundo toque sale del valor viejo): revisar los ~120 pasos del panel, cuáles guardan en cada toque, y que
+      sumen sobre el último valor.
 - [ ] **→ 9t** · **`dlv2f4` en el iPad horizontal (WebKit): no pudo tocar «Aceptar» en el detalle del pedido, dos veces seguidas** (corrida
       programada 44778631725, ancho iPad 4/4; ya había pasado el 19 nov). El botón queda abajo, dentro de la hoja que se desplaza (y=967 de
       834); en Chromium con las mismas medidas, agente y toque del iPad el clic llega (probado el 20 nov), así que es de WebKit o de un momento.

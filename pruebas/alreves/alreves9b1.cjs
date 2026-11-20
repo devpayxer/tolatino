@@ -23,6 +23,7 @@ const casos = [
   ['listaPuertaCoherente', 'apps/web/lib/noche-reservas.ts', "case when o.status = 'done' then o.party_size else coalesce((o.details->>'in_n')::int, 0) end as entraron", "coalesce((o.details->>'in_n')::int, 0) as entraron"],
   // bloquesConLlave: los bloques del panel vuelven a la posición como llave (un bloque nuevo arriba desmonta el campo que se está escribiendo)
   ['bloquesConLlave', 'packages/ui/src/panel/Bloques.tsx', '<PanelBloque key={ks[i]} b={b} h1={h1} />', '<PanelBloque key={i} b={b} h1={h1} />'],
+  ['bloquesConLlave', 'packages/ui/src/panel/Bloques.tsx', 'const k = b.type === "step" ? `step:${b.t}` : b.type;', 'const k = b.type;'],
   // pruebaQueComprueba: la corrida vuelve a contar en verde una prueba sin ninguna ✓, o una prueba que solo imprime
   ['pruebaQueComprueba', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada && !mudo,', 'ok: codigo === 0 && !mudo,'], // 9b-3 · la línea de hoy (alrevesQueFalla sumó !mudo)
 ];

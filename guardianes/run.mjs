@@ -7738,8 +7738,10 @@ const guardianes = {
     const G = "bloquesConLlave", F = "packages/ui/src/panel/Bloques.tsx";
     if (!existsSync(F)) return falla(G, F, 0, "falta Bloques.tsx");
     const t = sinComent(F);
-    if (!/<PanelBloque key=\{ks\[i\]\}/.test(t) || !/n\.get\(b\.type\)/.test(t)) falla(G, F, 0, "PanelBloques tiene que usar llavesDeBloques (tipo + cuántos del mismo tipo antes), no la posición: un bloque nuevo arriba desmonta los campos de abajo mientras se escribe");
+    if (!/<PanelBloque key=\{ks\[i\]\}/.test(t) || !/n\.get\(k\)/.test(t)) falla(G, F, 0, "PanelBloques tiene que usar llavesDeBloques (tipo + cuántos del mismo tipo antes), no la posición: un bloque nuevo arriba desmonta los campos de abajo mientras se escribe");
     if (/<PanelBloque key=\{i\}/.test(t)) falla(G, F, 0, "PanelBloque con la posición como llave");
+    // 20 nov · Un paso (− valor +) lleva su rótulo en la llave: con «step#n», al quitarse un paso de arriba el «+» de otro quedaba bajo el dedo.
+    if (!/const k = b\.type === "step" \? `step:\$\{b\.t\}` : b\.type;/.test(t)) falla(G, F, 0, "la llave de un paso (step) es su rótulo, no cuántos pasos van antes: al quitarse uno de arriba, el «+» de otro queda bajo el dedo");
   },
 
   /* 9b-1 · La lista de la noche en la Puerta no ofrece lo que el servidor va a rechazar: trae reservas «confirmed» y «done», y marcarLlegada solo
