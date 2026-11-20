@@ -11978,6 +11978,28 @@ const guardianes = {
     if (!/^const FOTO = \{/m.test(t) || !/"core\/Placeholder\.js": \[/.test(t) || !/t = fotos\(t, rel\);/.test(t)) falla(G, T, 0, "el parche de fotos a la medida ya no está en el script que porta el sistema (se perdería en el próximo port)");
     if ((b.match(/\bfoto(Css|Fondo)\(/g) ?? []).length < 8) falla(G, B, 0, "Bloques.tsx pinta fotos sin pasarlas por fotoCss / fotoFondo");
   },
+
+  /* 20 nov · alrevesConSuTexto: cada caso al revés dice «en este archivo, cambia ESTE texto y el guardián tiene que fallar». Si ese renglón del código
+     cambia (aunque sea para bien), el caso ya no encuentra su texto y la prueba al revés cae con «no encontré el texto a cambiar»… pero eso solo se veía
+     en el CI, 40 min después (correr las ~100 pruebas al revés aquí son horas). Pasó dos veces el mismo día: alreves9k tras llevar la auditoría de las
+     devoluciones a su transacción (CI 44800496337) y alreves9b2 tras tocar el entorno del CI. pruebas/alreves/textos.cjs corre TODAS sin los guardianes
+     y sin escribir nada (pruebas/lib/alreves-sin-guardian.cjs), en segundos, y lista los casos cuyo archivo o texto ya no está. En el carril «al revés» del CI no se
+     repite al final de cada prueba (GUARDIANES_SIN_TEXTOS=1: ya corrió en «tipos · build · guardianes»). Al revés (alreves9b2): una prueba al
+     revés nueva con un caso sin su texto. */
+  alrevesConSuTexto() {
+    const G = "alrevesConSuTexto", T = "pruebas/alreves/textos.cjs", P = "pruebas/lib/alreves-sin-guardian.cjs";
+    if (!existsSync(T) || !existsSync(P)) return falla(G, T, 0, "falta la comprobación de los textos de las pruebas al revés (textos.cjs + pruebas/lib/alreves-sin-guardian.cjs)");
+    const p = readFileSync(P, "utf8");
+    if (!/cp\.execSync = function/.test(p) || !/fs\[f\] = \(\) => undefined/.test(p)) falla(G, P, 0, "la precarga no corre los guardianes ni escribe en el árbol (si no, la pasada tarda horas o toca archivos mientras se edita)");
+    if (!solo && process.env.GUARDIANES_SIN_TEXTOS === "1") return;
+    try { execSync(`node ${T}`, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); }
+    catch (e) {
+      const out = String(e.stdout ?? "") + String(e.stderr ?? "");
+      const L = out.split("\n").filter((l) => l.startsWith("✗ ") && !/textos de las pruebas al revés/.test(l));
+      for (const l of L.slice(0, 20)) { const [f, ...resto] = l.slice(2).split(" · "); falla(G, `pruebas/alreves/${f}`, 0, `el caso ya no encuentra su texto: ${resto.join(" · ")}`); }
+      if (!L.length) falla(G, T, 0, `la comprobación de textos cayó sin decir por qué: ${out.slice(-200)}`);
+    }
+  },
 };
 
 

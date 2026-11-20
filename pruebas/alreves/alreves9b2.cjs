@@ -57,7 +57,10 @@ const casos = [
 ];
 // borrar: la captura aprobada de una pantalla en un dispositivo (el CI la tomaría como «nueva» y el guardián la echa en falta)
 const borrar = [['tuberiaVisual', 'pruebas/visual/ficha/ipad.png']];
-const crear = [];
+const crear = [
+  // alrevesConSuTexto: una prueba al revés nueva con un caso que ya no encuentra su texto
+  ['alrevesConSuTexto', 'pruebas/alreves/alrevesZrota.cjs', "const fs = require('fs'); const f = 'package.json'; if (!fs.readFileSync(f, 'utf8').includes('UN-TEXTO-QUE-NO-ESTA')) console.log('  ✗ ejemplo: no encontré el texto a cambiar en ' + f + ': UN-TEXTO-QUE-NO-ESTA');\n"],
+];
 let bien = 0, total = 0;
 const correr = (g, env = {}) => {
   try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe', env: { ...process.env, ...env } }); return [false, '']; }

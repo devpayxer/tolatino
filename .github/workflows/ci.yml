@@ -233,6 +233,9 @@ jobs:
     if: ${{ (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
+    # 20 nov · Los textos de las pruebas al revés ya se comprobaron en «tipos · build · guardianes» (alrevesConSuTexto): aquí no se repiten al
+    # final de cada una de las ~100 pruebas al revés (serían 8 s más por prueba).
+    env: { GUARDIANES_SIN_TEXTOS: "1" }
     # 20 nov · Cada carril se reparte en `partes` trabajos (por posición, el mismo reparto en cada corrida), cada uno con su base
     # nueva. Exige que cada prueba prepare sus propios datos (precondicionPropia). Por defecto 4 (también en push y programado); 1 = un solo trabajo.
     strategy:
