@@ -40,16 +40,18 @@ const tocados = (p) => p.evaluate(() => { const L = [...document.querySelectorAl
       await p.waitForTimeout(600);
       ok((await tocados(p)).n === 0, `${nom} · llegó la ficha: nada queda marcado`);
       ok(await p.locator('[data-esqueleto]').count() === 0 && await p.locator('[data-ficha], [data-screen-label^="Ficha"]').count() > 0, `${nom} · el esqueleto se fue y está la ficha`);
-      // Un enlace del marco (se queda en pantalla mientras llega la página): atenuado mientras espera, suelto al llegar.
-      const enlace = p.locator('a[href="/eventos"]:visible').first();
+      // Un control del marco (se queda en pantalla mientras llega la página): atenuado mientras espera, suelto al llegar. En el teléfono es la
+      // pestaña de abajo (un botón con router.push); en el escritorio, el menú de arriba.
+      await p.goto(B + '/negocios', { waitUntil: 'networkidle' });
+      const enlace = p.getByRole('button', { name: /^eventos$/i }).or(p.getByRole('link', { name: /^eventos$/i })).or(p.getByRole('tab', { name: /^eventos$/i })).locator('visible=true').first();
       await enlace.click({ noWaitAfter: true });
       await p.waitForTimeout(400);
       const e3 = await tocados(p);
-      ok(e3.n === 1 && Math.abs(e3.op - 0.55) < 0.06, `${nom} · el enlace «Eventos» del marco se queda atenuado mientras llega la página (opacidad ${e3.op})`);
+      ok(e3.n === 1 && Math.abs(e3.op - 0.55) < 0.06, `${nom} · «Eventos» del marco se queda atenuado mientras llega la página (${e3.n} marcado, opacidad ${e3.op}, «${e3.que}»)`);
       if (nom === '390') await p.screenshot({ path: OUT + 'nav9t-tocado-390.png' });
       await p.waitForURL((u) => u.pathname === '/eventos', { timeout: 15000 });
       await p.waitForTimeout(400);
-      ok((await tocados(p)).n === 0, `${nom} · llegó Eventos: el enlace se soltó`);
+      ok((await tocados(p)).n === 0, `${nom} · llegó Eventos: se soltó`);
       await c.close();
     }
     // Sin flujo en dos partes: lo que manda el servidor no trae esqueleto (sale solo en el navegador al navegar) ni una copia escondida.

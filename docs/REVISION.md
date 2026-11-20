@@ -5811,3 +5811,10 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   - El resto era de las pruebas (dependían de datos de otra prueba, o tocaban un botón antes de que la pantalla terminara de cambiar).
 - **CI más rápido (20 nov):** la confirmación completa se reparte en 4 máquinas por carril (`partes=4`) y ya no repite una pasada; la primera
   medida real se anota en PROGRESS. Decisión AE (vía urgente) anotada; lo que la hace funcionar está en LAUNCH › 9o.
+- **Sin la línea azul de carga (20 nov, decisión 9t-toque):** al tocar algo ya no sale la línea azul arriba. Ahora responde lo que tocaste: se
+  atenúa mientras lo aprietas y, si abre otra pantalla, se queda atenuado hasta que llega (el esqueleto gris de la pantalla que viene sigue
+  igual). Qué mirar en el teléfono: toca una pestaña de abajo (Eventos, Negocios), una tarjeta de negocio y un botón cualquiera. Si prefieres
+  otro efecto (un fondo de color, que se encoja un poco, más o menos atenuado), dímelo: es un cambio chico. Nota: una pestaña de abajo que ya
+  es gris se ve bastante clara mientras carga.
+- **Las estrellas de «¿Cómo estuvo?» (20 nov):** en teléfonos angostos (320 px) cada estrella mide ahora 44 o más. Qué mirar: después de un
+  pedido o una cita de hoy, la ficha del negocio en un teléfono chico.
