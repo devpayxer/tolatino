@@ -10,7 +10,7 @@ export async function reducir(file: File): Promise<Blob> {
   } catch { return file; } finally { URL.revokeObjectURL(url); }
 }
 
-export type Subida = { ok: boolean; id?: string; url?: string; mensaje?: { es: string; en: string } };
+export type Subida = { ok: boolean; id?: string; url?: string; mensaje?: { es: string; en: string }; estado?: "revision" | "rechazada" };
 /* 20 nov · El tope de las rutas de fotos (12 MB, el mismo del servidor). Si la foto, ya reducida, pasa del tope (no se pudo achicar), se avisa
    aquí sin subirla: el servidor también la rechaza (413), pero así el aviso no depende de cómo el navegador manda el archivo. */
 export const TOPE_FOTO = 12 * 1024 * 1024;
@@ -30,7 +30,23 @@ async function mandar(url: string, file: File, extra: Record<string, string> = {
   };
   let x = await una(f);
   if (x.st === 0 || x.st === 400) x = await una(file.size > 0 && file.size <= TOPE_FOTO ? file : f);
-  return x.j ?? { ok: false };
+  return x.j ? avisoDeEstado(x.j) : { ok: false };
+}
+/* AJ (revisión automática de las fotos públicas) · UN solo lugar para lo que no es un fallo: el servidor contesta ok: false con estado «revision»
+   (la foto quedó en revisión: es un ESTADO) o «rechazada» (con su motivo). Aquí, para TODAS las pantallas que suben con subirFoto, se avisa a
+   app/AvisoFoto.tsx (la hoja con el estado, el motivo y «Pedir revisión») y a la pantalla le queda `mensaje` en una línea corta, para su aviso
+   de siempre. La frase completa viaja en la hoja. Sin dirección: la foto no se publicó. */
+export const EVENTO_FOTO = "tl:foto-estado";
+export type AvisoFotoDetalle = { estado: "revision" | "rechazada"; id: string | null; mensaje: { es: string; en: string } };
+const CORTO: Record<"revision" | "rechazada", { es: string; en: string }> = {
+  revision: { es: "Tu foto está en revisión.", en: "Your photo is under review." },
+  rechazada: { es: "Esta foto no se pudo publicar.", en: "This photo could not be published." },
+};
+function avisoDeEstado(j: Resp): Resp {
+  if ((j.estado !== "revision" && j.estado !== "rechazada") || typeof window === "undefined") return j;
+  const detalle: AvisoFotoDetalle = { estado: j.estado, id: typeof j.id === "string" ? j.id : null, mensaje: j.mensaje ?? CORTO[j.estado] };
+  window.dispatchEvent(new CustomEvent<AvisoFotoDetalle>(EVENTO_FOTO, { detail: detalle }));
+  return { ok: false, estado: j.estado, id: j.id, mensaje: CORTO[j.estado] };
 }
 /* Fotos privadas (ayuda de Salud y Pro): nunca públicas; se ven por /api/ayuda/foto/{id} con permiso. */
 export const subirFotoPrivada = (file: File): Promise<Subida> => mandar("/api/ayuda/foto", file);

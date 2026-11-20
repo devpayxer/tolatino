@@ -168,7 +168,7 @@ export async function decidirApel(id: string, accion: "lifted" | "upheld", motiv
     await auditar(c, { actor: s.id, action: accion === "lifted" ? "apelacion.levantar" : "apelacion.mantener", targetKind: "appeal", targetId: d.a.numero, city: d.a.ciudad,
       before: { apelacion: "abierta", que: d.a.k }, after: { apelacion: accion === "lifted" ? "levantada" : "se mantiene", ref: { [d.a.k]: d.a.tid } }, reason: m });
     return d.a;
-  }).catch((e) => { if (/otra persona|propia apelación/.test(String(e?.message))) return "Tú ocultaste o sancionaste esto: la apelación la decide otra persona del equipo."; throw e; });
+  }).catch((e) => { if (/otra persona|propia apelación/.test(String(e?.message))) return "Tú ocultaste o sancionaste esto: la apelación la decide otra persona del equipo."; if (/almacenamiento|revisión:|ECONN|timeout/i.test(String(e?.message))) return "No se pudo mover la foto en el almacén de fotos. No cambió nada: prueba otra vez en un momento."; throw e; });
   if (typeof r === "string") return no(r);
   await avisarDecision(r, accion, m);
   listo();

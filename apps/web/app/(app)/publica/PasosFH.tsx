@@ -3,7 +3,7 @@
    Las fotos son reales: se toman o se eligen del teléfono, se reducen aquí y el servidor las limpia y las guarda
    (/api/medios). «Elegir de tus fotos» abre las fotos del teléfono (el prototipo mostraba un carrete de ejemplo). */
 import { compartir as compartirNativo } from "@/lib/nativo/compartir";
-import { reducir } from "@/lib/subir-foto";
+import { subirFoto } from "@/lib/subir-foto";
 import * as UI from "@tolatino/ui";
 import { useRef, useState, type ComponentType } from "react";
 import { probarPromo } from "./acciones";
@@ -59,8 +59,8 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
     const lista = Array.from(files).slice(0, Math.max(0, 13 - todas.length));
     setSubiendo(lista.length);
     for (const f of lista) {
-      const fd = new FormData(); fd.append("foto", await reducir(f), "foto.jpg");
-      const r = await fetch("/api/medios", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null) as { ok: boolean; id?: string; mensaje?: { es: string; en: string } } | null;
+      // AJ · Por subirFoto (lib/subir-foto.ts): una foto «en revisión» o «rechazada» se ve como lo que es en la hoja de app/AvisoFoto.tsx.
+      const r = await subirFoto(f).catch(() => null);
       setSubiendo((n) => n - 1);
       if (!r?.ok || !r.id) { toast(r?.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto. Prueba otra vez.", "Couldn’t upload the photo. Try again.")); continue; }
       const id = r.id;

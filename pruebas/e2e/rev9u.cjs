@@ -96,10 +96,10 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
     ok((await delAlmacen(`/privado/rev/${F2}.jpg`)).s === 200, 'el archivo existe solo en la llave privada');
     ok(await espera(() => sql(`select count(*) from notifications where user_id = '${A}' and tpl = 'foto_rechazada' and ref_id = '${F2}'`) !== '0'), 'aviso «No publicamos tu foto»');
     ok((await p.goto(B + `/api/medios/revision/${F2}`)).status() === 200, 'quien la subió la puede ver (por la ruta privada, sin dirección pública)');
-    await p.goto(B + `/cuenta/moderacion?k=media&id=${F2}`); await p.getByText('Quitamos tu foto').first().waitFor();
-    await p.getByLabel('POR QUÉ ES UN ERROR').fill('Es la foto del mostrador de mi negocio, no tiene nada malo.');
-    await clic(p.getByRole('button', { name: 'Enviar apelación' }));
-    ok(await contiene(p, 'Recibimos tu apelación'), 'Pedir revisión: «Recibimos tu apelación»');
+    await p.goto(B + `/cuenta/moderacion?k=media&id=${F2}`); await p.getByText('No publicamos tu foto').first().waitFor();
+    await p.getByLabel('POR QUÉ ESTÁ BIEN').fill('Es la foto del mostrador de mi negocio, no tiene nada malo.');
+    await clic(p.getByRole('button', { name: 'Pedir revisión' }));
+    ok(await contiene(p, 'va a mirar tu foto'), 'Pedir revisión: «Una persona de To\'Latino va a mirar tu foto»');
     const AP = sql(`select id from appeals where user_id = '${A}' and target_kind = 'media' and target_id = '${F2}'`);
     const QA = sql(`select id from queue_items where queue = 'apel' and subject_id = '${AP}' and status = 'open'`);
     ok(!!AP && !!QA, 'la apelación está en la cola «apel»');

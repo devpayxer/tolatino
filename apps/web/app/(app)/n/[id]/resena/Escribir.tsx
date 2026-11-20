@@ -242,7 +242,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
     for (const f of Array.from(fl).slice(0, 6 - fotos.length)) {
       const r = await subirFoto(f).catch(() => null);
       if (r?.ok && r.id && r.url) setFotos((x) => (x.length < 6 ? [...x, { id: r.id!, url: r.url! }] : x));
-      else { setError(r?.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo.")); break; }
+      else { if (r?.estado !== "revision") setError(r?.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo.")); break; }
     }
     setSubiendo(false);
     if (file.current) file.current.value = "";

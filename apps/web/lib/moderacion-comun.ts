@@ -40,7 +40,7 @@ export const PARAMS: Partial<Record<ReglaKey, [string, string, number, number][]
   autohide: [["reportes", "Reportes", 2, 50], ["horas", "En cuántas horas", 1, 168], ["edad_h", "Cuentas de más de (h)", 0, 720]],
   // AJ · Enteros (los umbrales en por ciento): reglaParams redondea todo lo que no es «umbral».
   foto1: [["duda_pct", "Desde qué % es dudosa", 30, 95], ["rechazo_pct", "Desde qué % se rechaza", 50, 99]],
-  foto2: [["tope_cents", "Tope al mes (centavos)", 0, 100000], ["espera_s", "Tiempo límite (s)", 3, 20], ["intentos", "Reintentos del barrido", 1, 10]],
+  foto2: [["tope_cents", "Tope al mes (en centavos: 1000 = $10)", 0, 100000], ["espera_s", "Tiempo límite (s)", 3, 20], ["intentos", "Reintentos del barrido", 1, 10]],
   foto3: [["reportes", "Reportes de cuentas distintas", 2, 50], ["edad_h", "Cuentas de más de (h)", 0, 720]],
   foto4: [["fotos", "Fotos visibles del negocio", 1, 100], ["dias", "Sin fotos quitadas en (días)", 7, 365], ["nueva_dias", "Cuenta nueva: menos de (días)", 0, 60], ["nueva_hora", "Cuenta nueva: fotos por hora", 1, 60]],
 };

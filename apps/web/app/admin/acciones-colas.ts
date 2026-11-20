@@ -247,27 +247,49 @@ export async function decidirMedios(id: string, accion: "mantener" | "quitar", m
   if (!s) return no("Tu rol solo puede ver esta cola.");
   const m = accion === "mantener" ? "Falso positivo" : motivoOk(motivo);
   if (!m) return no("Escribe el motivo.");
-  let reportaron: string[] = [], negocioFoto: string | null = null;
+  let reportaron: string[] = [], negocioFoto: string | null = null, deRevision: { media: string; quien: string | null; publicada: boolean; capa: string | null } | null = null;
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
     if (q.queue !== "medios") return "Ese caso no es de esta cola.";
     if (q.subject_kind === "business_video") return "Este caso es un video: apruébalo o no lo apruebes.";
-    if (accion === "quitar") {
+    // R3 · Una foto que la revisión automática ocultó (capa 3: reportes) ya no está en lo público (su archivo vive en la llave privada). Decidirla es lo
+    // mismo que decidir su apelación: «Está bien» la publica y «Quitar foto» la deja rechazada (decisión de una persona, en el libro de veredictos).
+    // Sin esto el caso se cerraba pero la foto seguía oculta, y el barrido podía publicarla después contra lo que decidió la persona.
+    const rev = (await c.query<{ subio: string | null; capa: string | null }>(`select uploaded_by::text as subio, rev_capa as capa from media where id = $1::uuid and rev_llave is not null and purged_at is null and status in ('review', 'removed') for update`, [q.subject_id])).rows[0];
+    let deLaRevision: string[] = [];
+    if (rev) {
+      // Quienes reportaron, antes de que la decisión cierre sus reportes: a ellos también se les avisa el resultado.
+      deLaRevision = (await c.query<{ u: string }>(`select reporter_user_id::text as u from photo_reports where media_id = $1::uuid and status = 'open'`, [q.subject_id])).rows.map((x) => x.u);
+      const { decidirFotoPorPersona } = await import("@/lib/fotos-revision");
+      if (!(await decidirFotoPorPersona(c, q.subject_id, s.id, accion === "mantener" ? "lifted" : "upheld", m))) return "Esa foto ya no está en revisión.";
+      deRevision = { media: q.subject_id, quien: rev.subio, publicada: accion === "mantener", capa: rev.capa };
+    } else if (accion === "quitar") {
       const n = (await c.query<{ n: number }>(`select count(*)::int as n from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [q.business_id])).rows[0]!.n;
       if (n <= 1) return "Es la única foto visible: para quitarla, pide al dueño que suba otra.";
       await c.query(`update media set status = 'removed', removed_reason = 'admin', removed_note = $2, removed_by = $3, removed_at = now() where id = $1::uuid and status = 'visible'`, [q.subject_id, m, s.id]);
       await c.query(`update business_stats_cache set photo_count = (select count(*) from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'), updated_at = now() where business_id = $1`, [q.business_id]);
     }
-    reportaron = (await c.query<{ u: string }>(`update photo_reports set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where media_id = $1::uuid and status = 'open' returning reporter_user_id::text as u`,
-      [q.subject_id, accion === "quitar" ? "removed" : "kept", s.id, m])).rows.map((x) => x.u);
+    reportaron = [...deLaRevision, ...(await c.query<{ u: string }>(`update photo_reports set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where media_id = $1::uuid and status = 'open' returning reporter_user_id::text as u`,
+      [q.subject_id, accion === "quitar" ? "removed" : "kept", s.id, m])).rows.map((x) => x.u)];
     negocioFoto = q.business_id;
     await cerrar(c, q, s, accion, m);
     await auditar(c, { actor: s.id, action: accion === "quitar" ? "negocio.foto.quitar" : "foto.reporte.mantener", targetKind: "media", targetId: q.subject_id, city: q.city_id, before: { foto: "marcada" }, after: { foto: accion === "quitar" ? "quitada" : "aprobada", negocio: q.business_id }, reason: m });
     return "ok";
+  }).catch((e) => {
+    // R3 · Publicar una foto de la revisión la devuelve al almacén público: si el almacén no responde, la transacción se deshace entera (nada cambia) y se dice.
+    if (/almacenamiento|revisión:|ECONN|timeout/i.test(String((e as Error)?.message ?? e))) return "No se pudo mover la foto en el almacén de fotos. No cambió nada: prueba otra vez en un momento.";
+    throw e;
   });
   if (r !== "ok") return no(r);
   listo();
+  // R3 · Una foto de la revisión automática: si se publicó, sus variantes, la copia privada fuera y el aviso de que vuelve; si quedó rechazada, el aviso con el motivo.
+  const dr = deRevision as { media: string; quien: string | null; publicada: boolean; capa: string | null } | null;
+  if (dr) {
+    const href = `/cuenta/moderacion?k=media&id=${dr.media}`;
+    if (dr.publicada) await (await import("@/lib/fotos-revision")).despuesDePersona(dr.media).catch(() => undefined);
+    if (dr.quien) await avisar(dr.quien, dr.publicada ? (dr.capa === "c3" ? "foto_vuelve" : "foto_aprobada") : "foto_rechazada", dr.publicada ? {} : { motivo: m.slice(0, 160) }, { href, ref: ["media", dr.media], sinSms: true }).catch(() => undefined);
+  }
   // 9l · El resultado a quien reportó la foto (L350: la pantalla dice «Te avisamos el resultado»). Después del commit; una vez por reporte.
   const nf = negocioFoto ? (await db().query<{ n: string }>(`select name as n from businesses where id = $1`, [negocioFoto]).catch(() => ({ rows: [] }))).rows[0]?.n ?? "" : "";
   for (const u of [...new Set(reportaron)]) await avisar(u, accion === "quitar" ? "foto_rep_quitada" : "foto_rep_queda", { negocio: nf }, { href: negocioFoto ? `/n/${negocioFoto}` : undefined, ref: ["media", id] }).catch(() => undefined);

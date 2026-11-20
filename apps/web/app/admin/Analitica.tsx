@@ -2,7 +2,7 @@
 /* ADM-ANALIT · Analítica (Super Admin.dc.html secAnalit) con lo que existe en la Fase 1: Resumen (embudo del directorio),
    Gente y negocios, Soporte y confianza, Búsquedas sin oferta y Exportar. Período 7 / 30 / 90 días en la URL. */
 import * as UI from "@tolatino/ui";
-import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
+import { fotoFondo, PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition, type ComponentType, type ReactNode } from "react";
 import { exportar, programar, reporteAhora } from "./acciones-analitica";
@@ -501,6 +501,16 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
               s: E(`${x.cifras.negocios?.nuevos ?? 0} negocios nuevos · ${x.cifras.operaciones?.enviadas ?? 0} operaciones · ${(x.destinos ?? []).map((z) => `${z.n} ${z.canal === "push" ? "push" : "correos"}`).join(" · ")}`,
                 `${x.cifras.negocios?.nuevos ?? 0} new businesses · ${x.cifras.operaciones?.enviadas ?? 0} transactions · ${(x.destinos ?? []).map((z) => `${z.n} ${z.canal === "push" ? "push" : "emails"}`).join(" · ")}`) })
           : [{ key: "0", icon: "bell", t: E("Todavía no ha salido ninguno", "None has gone out yet"), s: E("Sale cada día a las 7:30 AM de Hazleton a los Admins.", "It goes out every day at 7:30 AM Hazleton time to the Admins.") }] });
+      // R3 · El bloque «Fotos» del último reporte (revisión automática de las fotos públicas): lo de ayer y cinco publicadas por los modelos, al azar, para mirar.
+      const fr = hoy?.cifras.fotos;
+      if (fr) {
+        const tt = fr.totales, capaN: Record<string, [string, string]> = { c1: ["Capa 1 · modelo propio", "Layer 1 · own model"], c2: ["Capa 2 · segunda opinión", "Layer 2 · second opinion"], c3: ["Capa 3 · reportes", "Layer 3 · reports"], c4: ["Capa 4 · confianza", "Layer 4 · trust"], memoria: ["Memoria de contenido", "Content memory"], persona: ["Una persona del equipo", "A team member"] };
+        filas.push({ type: "group", k: E(`FOTOS · REVISIÓN AUTOMÁTICA · ${hoy!.cifras.ayer}`, `PHOTOS · AUTOMATIC REVIEW · ${hoy!.cifras.ayer}`) },
+          { type: "kpis", cols: "repeat(auto-fit,minmax(110px,1fr))", items: [{ k: E("PUBLICADAS", "PUBLISHED"), v: String(tt.publicadas) }, { k: E("RETENIDAS", "HELD"), v: String(tt.retenidas) }, { k: E("RECHAZADAS", "REJECTED"), v: String(tt.rechazadas) }, { k: E("OCULTAS", "HIDDEN"), v: String(tt.ocultadas) }] },
+          { type: "rows", items: [...fr.porCapa.map((x) => ({ key: `c${x.capa}`, icon: "image", t: E(...(capaN[x.capa] ?? [x.capa, x.capa])), s: E(`${x.publicadas} publicadas · ${x.retenidas} retenidas · ${x.rechazadas} rechazadas · ${x.ocultadas} ocultas`, `${x.publicadas} published · ${x.retenidas} held · ${x.rechazadas} rejected · ${x.ocultadas} hidden`) })),
+            { key: "gasto", icon: "dollar", t: E("Segunda opinión · gasto del mes", "Second opinion · spend this month"), s: fr.topeUsd > 0 ? E(`$${fr.gastoUsd.toFixed(2)} de $${fr.topeUsd.toFixed(2)} de tope`, `$${fr.gastoUsd.toFixed(2)} of a $${fr.topeUsd.toFixed(2)} cap`) : E("Apagada: el tope está en $0.00", "Off: the cap is $0.00"), chev: true, onClick: () => router.push("/admin/contenido?tab=auto") }] },
+          ...(fr.muestra.length ? [{ type: "photos" as const, k: E("PARA MIRAR · CINCO AL AZAR", "TO LOOK AT · FIVE AT RANDOM"), cols: 5, items: fr.muestra.map((x) => ({ key: x.mediaId, bg: fotoFondo(x.url, 240), onClick: () => window.open(x.url, "_blank", "noopener") })) }] : []));
+      }
       if (hoy) filas.push({ type: "rows", k: E("LO QUE NECESITA DE TI", "WHAT NEEDS YOU"), items: (hoy.cifras.pendientes ?? []).length ? hoy.cifras.pendientes.map((p, i) => ({ key: `p${i}`, icon: "brief", t: E(p.es, p.en), s: `${E("Paquete", "Package")} ${p.paquete}`, onClick: () => router.push("/admin/sistema/apps?v=toca") }))
         : [{ key: "0", icon: "check", t: E("Nada por ahora", "Nothing for now") }] });
     }
