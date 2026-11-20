@@ -1997,6 +1997,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 
 
 ## Fotos a la medida — F1 (decisión AI, 20 nov) — lo que quedó anotado
+- [ ] **→ 9p** · **Una foto borrada sigue en el borde de Cloudflare:** al borrar una cuenta (o al purgar una foto) se saca del almacén la maestra y
+      sus variantes, pero Cloudflare las guarda hasta un año (caché inmutable de `/medios/n/`) y nadie le pide que las suelte. Con la zona y el
+      token (Paquete 8-0): pedir a Cloudflare que purgue esas direcciones (maestra + variantes) en el mismo paso, con reintento desde el barrido,
+      y su guardián. Hasta entonces, lo borrado puede seguir saliendo a quien tenga la dirección. (revisión de F1, 20 nov)
 - [ ] **→ 9u** · **fot9u (punta a punta con Garage) no corrió fuera del CI:** la sesión de F1 no tenía almacén ni docker; corrieron tipos, guardianes,
       alreves9ufotos, fotos9uvariantes (variantesDe y el barrido con dobles) y medios-nginx.test.sh con nginx 1.24 de verdad. Correrla en el CI
       dirigido y en el sandbox con una foto de cámara real (peso de cada variante, antes/después de una tarjeta, una ficha y una galería). (20 nov)
