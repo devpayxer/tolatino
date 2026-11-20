@@ -67,6 +67,18 @@ todo (salvo El Patio).
     búsqueda, paginación por cursor, sin N+1, derivados cacheados nunca editables,
     auditoría solo inserción, nada se borra (estados).
 13. **Datos de ejemplo solo en pruebas.** La semilla nunca corre contra producción.
+14. **Orquestar, no hacerlo todo con el modelo más caro (decisión AH, 20 nov).** El fundador y Fable son los orquestadores. Ante cada pedido,
+    Fable primero arma el plan profesional (qué hay que construir, cómo, en qué pasos y con qué estructura) y reparte cada tarea al modelo y al
+    esfuerzo que alcanzan para hacerla bien; Fable ejecuta solo lo que de verdad lo necesita. Tabla de reparto:
+    - **Haiku:** lo mecánico (buscar, leer registros, renombrar, actualizar listas y documentos siguiendo un formato).
+    - **Sonnet:** pantallas, funciones y pruebas que siguen un patrón que ya existe en el repo.
+    - **Opus:** RLS, pagos y dinero, migraciones, seguridad, concurrencia, y cualquier fallo que ya falló una vez con Sonnet.
+    - **Fable:** el plan, la arquitectura, decidir entre reglas que chocan, la revisión final de lo delegado, y lo que falló con Opus.
+    Cómo se delega: cada encargo lleva escrito qué se pide, qué archivos toca (y cuáles no), y cómo se comprueba que está hecho. Lo que vuelve
+    **no se da por bueno**: Fable lo revisa y corre él mismo guardianes, tipos y pruebas antes de subirlo (regla 10). Lo sensible (dinero,
+    permisos, datos personales, migraciones) lo revisa un modelo distinto del que lo escribió. Si un modelo falla dos veces en una tarea, se
+    sube un nivel en vez de insistir. Lo que cuesta más explicar que hacer (una edición de dos líneas) lo hace quien orquesta. Un solo dueño a
+    la vez del servidor local y de cada archivo. En cada reporte al fundador se dice qué hizo cada modelo.
 
 ## Flujo de cada cambio
 commit → CI (tipos, pruebas, punta a punta en 9 dispositivos, visual, seguridad,
@@ -105,9 +117,8 @@ confirmación completa justo después y vuelta atrás automática si caza algo. 
 ## Auditorías y modelo
 - Auditar por **clases** («¿dónde más puede pasar X?»), no por pantallas; los bugs
   vienen en familias; cada clase cazada deja un guardián; verificar sobre lo servido.
-- Sonnet/medium para pantallas y features; Opus/high para RLS, pagos, migraciones,
-  seguridad o un bug que falló dos veces. Claude avisa cuándo cambiar y vuelve a
-  Sonnet después. `max` no compra cobertura.
+- Qué modelo hace qué: regla 14 (Fable orquesta y reparte; ya no hace falta que el fundador cambie de modelo a mano). `max` no compra
+  cobertura.
 
 ## Archivos vivos
 `docs/PROGRESS.md` (retomar) · `docs/DECISIONES.md` (decisiones) ·
