@@ -44,6 +44,10 @@ const casos = [
   ['precondicionPropia', 'pruebas/e2e/pedidos2c.cjs', "pickup=true, delivery=false, pay_cash_pickup=true, pay_cash_delivery=false, pay_card=false, who='team', external_app=null, auto_accept=false, prep_min=20", "auto_accept=false, prep_min=20"],
   ['precondicionPropia', 'pruebas/e2e/pagos2d.cjs', "pickup=true, delivery=false, pay_cash_delivery=false, auto_accept=false", "auto_accept=false"],
   ['precondicionPropia', 'pruebas/e2e/dlv2f3.cjs', "pay_cash_pickup=true, pay_card=false, who='team'", "who='team'"],
+  // toqueEsperaLaPantalla (20 nov, «dos veces seguidas» parte 2/4): pq4e vuelve a contar los negocios en cuanto cambia la URL, sin esperar la pantalla
+  // de presupuestos (con el esqueleto todavía puesto la cuenta da 0); primero como estaba, luego la cuenta en una sola orden
+  ['toqueEsperaLaPantalla', 'pruebas/e2e/pq4e.cjs', "const pq = m.locator('[data-screen-label=\"APP-NEG-HOGAR-PRESUPUESTOS\"]'); await pq.waitFor();\n  const cands = pq.getByRole('checkbox'); const nC = await cands.count();", "const cands = m.getByRole('checkbox'); const nC = await cands.count();"],
+  ['toqueEsperaLaPantalla', 'pruebas/e2e/pq4e.cjs', "const pq = m.locator('[data-screen-label=\"APP-NEG-HOGAR-PRESUPUESTOS\"]'); await pq.waitFor();\n  const cands = pq.getByRole('checkbox'); const nC = await cands.count();", "const nC = await m.getByRole('checkbox').count(); const cands = m.getByRole('checkbox');"],
   // silencioPropio: compa7h deja de poner las horas de silencio de Marisol de fábrica y espera «silencio» igual
   ['silencioPropio', 'pruebas/e2e/compa7h.cjs', "const silencioDeFabrica = () => sql(`update users set notif_prefs = coalesce(notif_prefs, '{}'::jsonb) - 'quiet' where id = '${MU}'`);", "const silencioDeFabrica = () => {};"],
   // cupoPropio: edu4a vuelve a fijar los cupos sin fijar los reservados (da por hecho que nadie se inscribió en el grupo)

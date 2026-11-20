@@ -18,6 +18,7 @@ const casos = [
   [G, 'apps/web/app/Pendiente.tsx', 'window.addEventListener("tl:pendiente", alEmpezar);', ''],
   [G, 'apps/web/app/Pendiente.tsx', 'tics.current.push(window.setTimeout(() => setTipo(tipoDe(destino)), 120));', 'setTipo(tipoDe(destino));'],
   [G, BN, 'window.dispatchEvent(new CustomEvent("tl:pendiente", { detail: { url } }));', ''],
+  [G, 'apps/web/app/Pendiente.tsx', 'if (!tipo || origen.current !== ruta) return <>{children}</>;', 'if (!tipo) return <>{children}</>;'],
   [G, 'apps/web/app/(app)/AppShell.tsx', '<Pendiente>{children}</Pendiente>', '{children}'],
   [G, 'apps/web/app/admin/layout.tsx', '<Pendiente>{children}</Pendiente>', '{children}'],
   [G, 'packages/ui/src/esqueleto.css', 'background: var(--tl-photo-bg);', 'background: #e4e1da;'],

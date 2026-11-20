@@ -30,7 +30,10 @@ const limpiar = () => { sql(`update service_requests set status = 'cancelled' wh
   const hoja = m.locator('[data-screen-label="Servicio · opciones"]'); await hoja.waitFor();
   ok(!!(await vis(hoja.getByText('¿Quieres comparar?'))), 'hoja de «presupuesto»: ¿Quieres comparar?');
   await clic(hoja.getByRole('button', { name: 'Pedir a hasta 3' })); await m.waitForURL(/\/presupuestos\?/);
-  const cands = m.getByRole('checkbox'); const nC = await cands.count();
+  // 9t · La dirección cambia antes que la pantalla: si la navegación tarda más de 120 ms, el esqueleto (app/Pendiente.tsx) sigue puesto un instante
+  // con la URL nueva y contar ahí daba «0 negocios» (CI, segunda vuelta de la parte 2/4). Se espera la pantalla de presupuestos y se cuenta en ella.
+  const pq = m.locator('[data-screen-label="APP-NEG-HOGAR-PRESUPUESTOS"]'); await pq.waitFor();
+  const cands = pq.getByRole('checkbox'); const nC = await cands.count();
   ok(nC >= 2, `${nC} negocios con presupuesto que hacen ese trabajo`);
   ok((await cands.first().getAttribute('aria-checked')) === 'true' && /Plomería Rodríguez/.test(await cands.first().textContent()), 'el de la ficha va primero y elegido');
   const otro = (await cands.nth(1).textContent()).split(/Visita|No llega/)[0].trim();

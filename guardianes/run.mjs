@@ -9741,6 +9741,8 @@ const guardianes = {
     if (!existsSync(P) || !/window\.addEventListener\("tl:pendiente"/.test(sinComent(P))) falla(G, P, 0, "el esqueleto sale con el aviso de la barra («tl:pendiente»)");
     else if (!/window\.setTimeout\(\(\) => setTipo\(tipoDe\(destino\)\), 120\)/.test(sinComent(P))) falla(G, P, 0, "el esqueleto se pone con un temporizador (fuera de la transición de Next) y a los 120 ms (sin parpadeo)");
     if (!/window\.dispatchEvent\(new CustomEvent\("tl:pendiente"/.test(b)) falla(G, BN, 0, "el toque avisa al esqueleto («tl:pendiente»)");
+    // 20 nov · Con la dirección nueva ya no se pinta el esqueleto ni un instante (pq4e contó 0 casillas en ese hueco): se decide en el render.
+    if (existsSync(P) && !/if \(!tipo \|\| origen\.current !== ruta\) return <>\{children\}<\/>;/.test(sinComent(P))) falla(G, P, 0, "al cambiar la dirección se pinta la página nueva en el mismo render (no el esqueleto hasta el efecto)");
     if (!/<Pendiente>\{children\}<\/Pendiente>/.test(sinComent("apps/web/app/(app)/AppShell.tsx"))) falla(G, "apps/web/app/(app)/AppShell.tsx", 0, "el marco de la app envuelve la pantalla con <Pendiente>");
     if (!/<Pendiente>\{children\}<\/Pendiente>/.test(sinComent("apps/web/app/admin/layout.tsx"))) falla(G, "apps/web/app/admin/layout.tsx", 0, "el marco del Super Admin envuelve la pantalla con <Pendiente>");
     for (const f of archivos) if (/^apps\/web\/app\/(\(app\)|admin)\/.*loading\.tsx$/.test(f) && existsSync(f)) falla(G, f, 0, "sin loading.tsx en la app ni en el Super Admin: el esqueleto lo pone Pendiente (un loading.tsx deja una copia escondida del contenido)");
@@ -11747,13 +11749,20 @@ const guardianes = {
      prueba, dos toques de paso (botón «… +» / «… −») seguidos sin esperar nada entre ellos, o un toque de paso con una pausa fija detrás
      (espera(() => false, …), waitForTimeout) en vez de esperar la pantalla; (2) en dep4c, tocar un paso sin toque() (que espera el valor nuevo
      en SU fila), un toque() que ya no mire la pantalla, o tocar la mensualidad sin esperar a que la pantalla quite «Cancelar antes de tiempo
-     cuesta». Al revés: alreves9tcarrera. */
+     cuesta». Al revés: alreves9tcarrera.
+     (3) 20 nov, CI «dos veces seguidas» parte 2/4, pq4e: «0 negocios con presupuesto». No era un dato: la dirección cambia ANTES que la pantalla.
+     Si la navegación tarda más de 120 ms sale el esqueleto (app/Pendiente.tsx) y se quita en un efecto, después de que la URL ya cambió; contar
+     ahí (waitForURL y enseguida «const n = await ….count()») da 0 (medido: 0 casillas al cambiar la URL, 4 unos 30 ms después). En cualquier
+     prueba: después de waitForURL no se cuenta sin esperar la pantalla nueva (su data-screen-label). Al revés: alreves9b3. */
   toqueEsperaLaPantalla() {
     const G = "toqueEsperaLaPantalla", F = "pruebas/e2e/dep4c.cjs";
     const PASO = String.raw`await clic\(\w+\.getByRole\('button', \{ name: (?:'[^'\n]* [+−]'|` + "`[^`\\n]* [+−]`" + String.raw`)(?:, exact: true)? \}\)(?:\.\w+\(\))?\);`;
+    const PAR = String.raw`\((?:[^()\n]|\((?:[^()\n]|\([^()\n]*\))*\))*\)`;
+    const CUENTA_TRAS_URL = new RegExp(String.raw`await \w+\.waitForURL` + PAR + String.raw`;(?:\s|//[^\n]*\n)*(?:const \w+ = \w+\.(?:getBy\w+|locator)` + PAR + String.raw`;\s*)?const \w+ = await [^;\n]*?\.count\(\)`, "g");
     for (const f of archivos) {
       if (!/^pruebas\/e2e\/.*\.cjs$/.test(f) || !existsSync(f)) continue;
       const t = readFileSync(f, "utf8"), linea = (i) => t.slice(0, i).split("\n").length;
+      for (const m of t.matchAll(CUENTA_TRAS_URL)) falla(G, f, linea(m.index + m[0].length), "cuenta lo que hay justo después de waitForURL, sin esperar la pantalla nueva: si la navegación tarda más de 120 ms el esqueleto (app/Pendiente.tsx) sigue puesto un instante con la URL nueva y la cuenta da 0 (esperar el data-screen-label de la pantalla y contar dentro de ella)");
       for (const m of t.matchAll(new RegExp(PASO + String.raw`\s*` + PASO, "g"))) falla(G, f, linea(m.index), "dos toques de paso seguidos sin esperar la pantalla entre ellos: el segundo puede caer mientras se vuelve a pintar (esperar el valor nuevo en la fila)");
       for (const m of t.matchAll(new RegExp(PASO + String.raw`[ \t]*(?:\}[ \t]*)?await (?:espera\(\(\) => false|\w+\.waitForTimeout\()`, "g"))) falla(G, f, linea(m.index), "un toque de paso con una pausa fija detrás: esperar a que la pantalla diga el valor nuevo, no un tiempo");
     }
