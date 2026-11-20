@@ -208,7 +208,9 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     // De madrugada no se usó ningún día: los 7 de 7 (el total) es lo justo (18 nov).
     // 19 nov · Los días comprados son los de ESTE patrocinio (hasta el evento: de madrugada faltan 6, no 7; la base devolvió 6 de 6 = el total y
     // la prueba esperaba «de 7»). La misma cuenta que patrocinio_devolucion: días redondeados, y todos los días = el precio entero.
-    const [PR, TOT] = sql(`select price_cents || '|' || greatest(1, ceil((extract(epoch from ends_at - starts_at) - extended_secs) / 86400.0 - 1 / 24.0))::int from event_sponsorships where id = ${SA}`).split('|').map(Number);
+    // 20 nov · Desde 0194 los días comprados se cuentan por el calendario de la ciudad (patrocinio_dias_comprados): la cuenta por duración
+    // daba un día de menos según la hora a la que corría la prueba.
+    const [PR, TOT] = sql(`select s.price_cents || '|' || patrocinio_dias_comprados(s.starts_at, s.ends_at, s.extended_secs, ci.timezone) from event_sponsorships s join cities ci on ci.id = s.city_id where s.id = ${SA}`).split('|').map(Number);
     ok(DA[0] > 0 && DA[0] <= PR && DA[1] >= 1 && DA[1] <= TOT && DA[0] === (DA[1] >= TOT ? PR : Math.floor(PR * DA[1] / TOT)), `la base decide devolver ${DA[1]} de ${TOT} días ($${(DA[0] / 100).toFixed(2)} de $${(PR / 100).toFixed(2)})`);
     ok(await espera(async () => sql(`select amount_cents || '|' || refund_motive from sponsorship_payments where kind = 'evento' and ref_id = ${SA} and reason = 'devolucion'`) === `${DA[0]}|admin`), 'el libro: su devolución (kind evento)');
     ok(await espera(async () => sql(`select count(*) from notifications where tpl = 'biz_patevt_devuelto' and user_id = '${D0}' and created_at > now() - interval '2 minutes'`) !== '0'), 'aviso: «Te devolvimos lo que no se usó»');
@@ -225,7 +227,10 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
       sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, capture_method) values ('${pi}', ${cents}, 0, 'tolatino', 'succeeded', ${cents}, '${PM}', 'automatic')`);
       sql(`insert into sponsorship_payments (kind, ref_id, business_id, city_id, payer_user_id, amount_cents, pi, idem_key, card_brand, card_last4, reason) values ('evento', ${sid}, '${NEG}', 'hzl', '${D0}', ${cents}, '${pi}', 'p3-${pi}', 'visa', '4242', 'compra')`);
       return pi; };
-    const SC = ins(C, 'now()', "now() + interval '7 days'", false), SP = ins(PAS, 'now()', "now() + interval '7 days'", false);
+    // Como lo crea el producto: «1 semana desde hoy» empieza ahora y termina a la medianoche (de la ciudad) del día 7 (20 nov; antes era
+    // ahora + 7 días, un período que el producto no crea y que por calendario toca 8 días).
+    const MEDIANOCHE7 = "((now() at time zone 'America/New_York')::date + 7)::timestamp at time zone 'America/New_York'";
+    const SC = ins(C, 'now()', MEDIANOCHE7, false), SP = ins(PAS, 'now()', "now() + interval '7 days'", false);
     const PIC = cobro(SC, 1500);
     const SF = ins(F, "now() - interval '7 days'", "now() - interval '1 minute'", true);
     await pc.goto(B + '/eventos');
@@ -237,8 +242,12 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     await barrer();
     ok(sql(`select status || '|' || end_kind from event_sponsorships where id = ${SC}`) === 'terminado|evento_cancelado', 'evento cancelado: su patrocinio termina solo');
     ok(sql(`select count(*) from notifications where tpl = 'biz_patevt_cancelado' and user_id = '${D0}' and created_at > now() - interval '3 minutes' and body like '%devolvemos%'`) !== '0', '… y avisa al organizador (que se le devuelve lo que no se usó)');
-    ok(sql(`select refund_cents || '|' || refund_days || '|' || refund_motive from event_sponsorships where id = ${SC}`) === '1500|7|evento_cancelado', 'evento cancelado: la base decide devolver los días que no se usaron (7 de 7: $15.00)');
-    ok(sql(`select amount_cents || '|' || (refund_id like 're_sim_%') from sponsorship_payments where kind = 'evento' and ref_id = ${SC} and reason = 'devolucion'`) === '1500|true' && sql(`select refunded_cents from sim_intents where id = '${PIC}'`) === '1500', '… y la pasarela lo devuelve (una fila en el libro)');
+    // Los 7 días comprados son hoy + 6; el día empezado cuenta como usado: se devuelven 6 de 7 ($12.85). En la primera hora después de la
+    // medianoche (el margen del cambio de horario) todavía no se cuenta usado: 7 de 7, el precio entero.
+    const HORA = Number(sql(`select extract(hour from ended_at at time zone 'America/New_York')::int from event_sponsorships where id = ${SC}`));
+    const [DC, DD] = HORA === 0 ? [1500, 7] : [Math.floor(1500 * 6 / 7), 6];
+    ok(sql(`select refund_cents || '|' || refund_days || '|' || refund_motive from event_sponsorships where id = ${SC}`) === `${DC}|${DD}|evento_cancelado`, `evento cancelado: la base decide devolver los días que no se usaron (${DD} de 7: $${(DC / 100).toFixed(2)})`);
+    ok(sql(`select amount_cents || '|' || (refund_id like 're_sim_%') from sponsorship_payments where kind = 'evento' and ref_id = ${SC} and reason = 'devolucion'`) === `${DC}|true` && sql(`select refunded_cents from sim_intents where id = '${PIC}'`) === String(DC), '… y la pasarela lo devuelve (una fila en el libro)');
     ok(sql(`select count(*) from audit_entries where action = 'patrocinio_evento.devolver' and target_id = '${C}' and after->>'patrocinio' = '${SC}'`) === '1', '… auditado');
     ok(sql(`select count(*) from notifications where tpl = 'biz_patevt_devuelto' and user_id = '${D0}' and created_at > now() - interval '3 minutes'`) !== '0', '… y avisado («Te devolvimos lo que no se usó»)');
     ok(sql(`select status || '|' || end_kind from event_sponsorships where id = ${SP}`) === 'terminado|evento_paso', 'evento que ya pasó: su patrocinio termina solo');

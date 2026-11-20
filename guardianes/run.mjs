@@ -11609,6 +11609,11 @@ const guardianes = {
       }
       s.split("\n").forEach((l, i) => { if (/ceil\(\(?extract\(epoch from [a-z.]*ends_at - [a-z.]*starts_at\)[^\n]*1 \/ 24\.0/.test(l)) falla(G, f, i + 1, "los días comprados de un patrocinio salen de la duración: usar patrocinio_dias_comprados"); });
     }
+    // 20 nov (confirmación 44685003383, pat003): las pruebas también esperaban los días por la duración y fallaban según la hora del día.
+    for (const f of archivos) {
+      if (!/^pruebas\/e2e\/.*\.cjs$/.test(f) || !existsSync(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/ceil\(\(?extract\(epoch from [a-z.]*ends_at - [a-z.]*starts_at\)[^\n]*1 \/ 24\.0/.test(l)) falla(G, f, i + 1, "la prueba cuenta los días comprados de un patrocinio por la duración: usar patrocinio_dias_comprados (como la base)"); });
+    }
   },
   /* 9t · botonTextoConAlto (20 nov, LAUNCH «Objetivos de 24 px en el escritorio y 44 en el resto de pantallas»): un <button> que se ve como
      enlace (text-action o subrayado) medía lo que su texto (17–22 px): «Ver 6», «Escribir reseña», «Más fechas», «Cambiar»… en 36 pantallas.

@@ -12,6 +12,7 @@ const casos = [
   [P, "patrocinio_dias_comprados(s.starts_at, s.ends_at, ${ev ? \"s.extended_secs\" : \"0\"}, (select ci.timezone from cities ci where ci.id = s.city_id)) as total,", "greatest(1, ceil((extract(epoch from s.ends_at - s.starts_at) - ${ev ? \"s.extended_secs\" : \"0\"}) / 86400.0 - 1 / 24.0))::int as total,"],
   [M, "b - ((date_trunc('day', a at time zone tz)) at time zone tz)", "b - a"],
   [M, "with x as (select patrocinio_dias_comprados(a, b, ext, tz) as total,", "with x as (select greatest(1, ceil((extract(epoch from b - a) - ext) / 86400.0 - 1 / 24.0))::int as total,"],
+  ['pruebas/e2e/pat003.cjs', "patrocinio_dias_comprados(s.starts_at, s.ends_at, s.extended_secs, ci.timezone) from", "greatest(1, ceil((extract(epoch from s.ends_at - s.starts_at) - s.extended_secs) / 86400.0 - 1 / 24.0))::int from"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {
