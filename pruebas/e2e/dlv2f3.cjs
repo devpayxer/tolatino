@@ -9,7 +9,9 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
 const ds = (c) => sql(`select ${c} from delivery_settings where business_id='${BIZ}'`);
 const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) return v; await new Promise((r) => setTimeout(r, 250)); } return f(); };
 (async () => {
-  sql(`update delivery_settings set delivery=false, pickup=true, pay_cash_delivery=false, who='team', external_app=null, zone_mi=3, fee_cents=300, free_over_cents=0, min_order_cents=0 where business_id='${BIZ}'`);
+  // 20 nov · También cómo se paga el pickup y la tarjeta (efectivo en el local, sin tarjeta): la prueba espera «Falta cómo te pagan en delivery» y
+  // guarda Pedidos en línea, y las dos cosas dependen de esas dos columnas, que otra prueba pudo dejar distintas.
+  sql(`update delivery_settings set delivery=false, pickup=true, pay_cash_delivery=false, pay_cash_pickup=true, pay_card=false, who='team', external_app=null, zone_mi=3, fee_cents=300, free_over_cents=0, min_order_cents=0 where business_id='${BIZ}'`);
   sql(`update businesses set modules_off = modules_off - 'delivery' where id='${BIZ}'`);
   const b = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };

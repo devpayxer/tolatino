@@ -16,29 +16,28 @@ export type Subida = { ok: boolean; id?: string; url?: string; mensaje?: { es: s
 export const TOPE_FOTO = 12 * 1024 * 1024;
 const PESADA: Subida = { ok: false, mensaje: { es: "La foto pesa demasiado (máximo 12 MB).", en: "The photo is too large (12 MB max)." } };
 async function lista(file: File): Promise<Blob | null> { const b = await reducir(file); return b.size > TOPE_FOTO ? null : b; }
+/* 20 nov · Una foto que no llega se reintenta UNA vez, con el archivo original (confirmación 44734711575, iPhone SE: el servidor contestó
+   «No llegó la foto» a una foto normal recién elegida; en WebKit la foto ya reducida a veces llega vacía o cortada). Solo si no hubo respuesta
+   o el servidor dijo 400: lo demás (413, 415, 429, 403…) es una respuesta de verdad y se muestra. Una subida que falló no deja nada guardado. */
+type Resp = Subida & { revision?: boolean };
+async function mandar(url: string, file: File, extra: Record<string, string> = {}): Promise<Resp> {
+  const f = await lista(file); if (!f) return PESADA;
+  const una = async (b: Blob): Promise<{ st: number; j: Resp | null }> => {
+    const fd = new FormData(); fd.append("foto", b, "foto.jpg");
+    for (const [k, v] of Object.entries(extra)) fd.append(k, v);
+    const r = await fetch(url, { method: "POST", body: fd }).catch(() => null);
+    return { st: r?.status ?? 0, j: r ? ((await r.json().catch(() => null)) as Resp | null) : null };
+  };
+  let x = await una(f);
+  if (x.st === 0 || x.st === 400) x = await una(file.size > 0 && file.size <= TOPE_FOTO ? file : f);
+  return x.j ?? { ok: false };
+}
 /* Fotos privadas (ayuda de Salud y Pro): nunca públicas; se ven por /api/ayuda/foto/{id} con permiso. */
-export async function subirFotoPrivada(file: File): Promise<Subida> {
-  const f = await lista(file); if (!f) return PESADA;
-  const fd = new FormData(); fd.append("foto", f, "foto.jpg");
-  return ((await fetch("/api/ayuda/foto", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };
-}
+export const subirFotoPrivada = (file: File): Promise<Subida> => mandar("/api/ayuda/foto", file);
 /* 9n · La foto de la entrega (privada; solo el repartidor asignado a un delivery activo): /api/repartidor/foto?numero=… devuelve el id. */
-export async function subirFotoEntrega(numero: string, file: File): Promise<Subida> {
-  const f = await lista(file); if (!f) return PESADA;
-  const fd = new FormData(); fd.append("foto", f, "foto.jpg");
-  return ((await fetch(`/api/repartidor/foto?numero=${encodeURIComponent(numero)}`, { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };
-}
-export async function subirFoto(file: File): Promise<Subida> {
-  const f = await lista(file); if (!f) return PESADA;
-  const fd = new FormData(); fd.append("foto", f, "foto.jpg");
-  return ((await fetch("/api/medios", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };
-}
+export const subirFotoEntrega = (numero: string, file: File): Promise<Subida> => mandar(`/api/repartidor/foto?numero=${encodeURIComponent(numero)}`, file);
+export const subirFoto = (file: File): Promise<Subida> => mandar("/api/medios", file);
 /* 9t · La foto de un mensaje (Mensajes cliente ↔ negocio; privada, la revisa el modelo propio al subirla): /api/mensajes/foto devuelve el id que
    se manda con el mensaje y la dirección privada para verla antes de enviarla. revision = el modelo la marcó o no respondió (la otra parte la ve
    cuando una persona de To'Latino la revise). para "dm" = Mensajes entre vecinos (Comunidad): la misma ruta, la guarda como foto de esa conversación. */
-export async function subirFotoMensaje(file: File, para: "chat" | "dm" = "chat"): Promise<Subida & { revision?: boolean }> {
-  const f = await lista(file); if (!f) return PESADA;
-  const fd = new FormData(); fd.append("foto", f, "foto.jpg");
-  if (para === "dm") fd.append("para", "dm");
-  return ((await fetch("/api/mensajes/foto", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as (Subida & { revision?: boolean }) | null) ?? { ok: false };
-}
+export const subirFotoMensaje = (file: File, para: "chat" | "dm" = "chat"): Promise<Resp> => mandar("/api/mensajes/foto", file, para === "dm" ? { para: "dm" } : {});

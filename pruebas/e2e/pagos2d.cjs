@@ -16,7 +16,9 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   sql(`update items set sold_out = false, stock_left = greatest(stock_left, stock_par), stock_day = null where business_id='${BIZ}'`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);
-  sql(`update delivery_settings set auto_accept=false, pay_card=false, pay_cash_pickup=true where business_id='${BIZ}'`);
+  // 20 nov · Cómo se entrega también lo fija esta prueba (pickup, sin delivery): «Guardar» de Pedidos en línea depende de que cada forma de entrega
+  // encendida tenga cómo pagarse, y otra prueba (neg9n, barajada) pudo dejar delivery encendido sin efectivo al entregar.
+  sql(`update delivery_settings set pickup=true, delivery=false, pay_cash_delivery=false, auto_accept=false, pay_card=false, pay_cash_pickup=true where business_id='${BIZ}'`);
   // 9a · Ya no borra datos compartidos (antes: TODOS los pagos, devoluciones, disputas, tarjetas y cuentas de cobro de la base). Solo deja
   // como al empezar lo que esta prueba necesita: Sabor Dominicano sin cuenta de cobro (la prueba la vuelve a conectar) y Marisol sin tarjetas
   // activas (quitadas, no borradas). Los avisos se cuentan desde que empieza la prueba.

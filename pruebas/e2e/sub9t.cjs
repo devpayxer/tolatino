@@ -9,20 +9,10 @@ const { chromium } = require('playwright');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B;
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
-const LIMITE = 'X'.repeat(24);
-const multipart = (bytes, nombre, tipo) => Buffer.concat([
-  Buffer.from(`--${LIMITE}\r\nContent-Disposition: form-data; name="foto"; filename="${nombre}"\r\nContent-Type: ${tipo}\r\n\r\n`), bytes, Buffer.from(`\r\n--${LIMITE}--\r\n`)]);
-// Cada subida por una conexión nueva (agent: false): un 413 que no leyó el cuerpo deja la conexión sucia y Node la reusaría para la siguiente.
-// Por partes: «Transfer-Encoding: chunked», sin content-length (como Safari).
-const http = require('http');
-const enviar = (url, cab, buf, conLargo) => new Promise((res, rej) => {
-  // Si el servidor contesta antes de recibirlo todo (el 413 de content-length), deja de enviar y vale su respuesta: escribir sobre la conexión
-  // que cerró da EPIPE / ECONNRESET, y un navegador lee la respuesta igual.
-  let st = null;
-  const q = http.request(url, { method: 'POST', agent: false, headers: { ...cab, ...(conLargo ? { 'content-length': String(buf.length) } : { 'transfer-encoding': 'chunked' }) } }, (r) => { st = r.statusCode; r.resume(); r.on('end', () => res(st)); r.on('error', () => res(st)); });
-  q.on('error', (e) => (st != null ? res(st) : rej(e)));
-  (async () => { for (let i = 0; i < buf.length && st == null && !q.destroyed; i += 262144) { if (!q.write(buf.subarray(i, i + 262144))) await new Promise((x) => { q.once('drain', x); q.once('close', x); }); } if (!q.destroyed) q.end(); })().catch(() => undefined);
-});
+// La subida cruda (cuerpo armado aquí, por partes o con su tamaño, cada una por una conexión nueva; si el servidor contesta y cierra antes de
+// recibirlo todo y la escritura falla sin respuesta, lo intenta otra vez): pruebas/lib/subida-cruda.cjs.
+const { enviar, multipart: partes, LIMITE } = require('../lib/subida-cruda.cjs');
+const multipart = (bytes, nombre, tipo) => partes(bytes, nombre, tipo);
 (async () => {
   const b = await chromium.launch();
   try {

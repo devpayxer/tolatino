@@ -8041,6 +8041,15 @@ const guardianes = {
       const t = readFileSync(f, "utf8");
       for (const m of t.matchAll(/insert into (\w+)[^`]*?not exists \(select 1 from \1 where user_id = [^ ]+ and removed_at is null\)/g))
         falla(G, f, t.slice(0, m.index).split("\n").length, `prepara ${m[1]} solo si la persona no tiene ninguna: otra prueba pudo dejarle otra; pregunta por la fila de esta prueba y hazla la de por omisión`);
+      // 20 nov (confirmación barajada, semilla 331738974) · Lo mismo con los ajustes del negocio: «Guardar» de Pedidos en línea solo se enciende si cada
+      // forma de entrega encendida tiene cómo pagarse (panel/Pedidos.tsx: faltaP / faltaD). pedidos2c solo fijaba auto_accept y prep_min; neg9n corrió
+      // antes, dejó delivery encendido sin efectivo al entregar ni tarjeta y «Guardar» quedó apagado. Una prueba que guarda en /vendes/pedidos fija ella,
+      // en una sola orden y antes de ir, las cuatro columnas de las que depende: delivery, pay_cash_delivery, pay_cash_pickup y pay_card.
+      const vp = t.indexOf("/vendes/pedidos");
+      if (vp >= 0 && /'Guardar'/.test(t.slice(vp))) {
+        const fija = [...t.slice(0, vp).matchAll(/update delivery_settings set ([^`]*?)\bwhere\b/g)].some((m) => ["delivery", "pay_cash_delivery", "pay_cash_pickup", "pay_card"].every((c) => new RegExp(`(?<![a-z_])${c} ?= ?(true|false)\\b`).test(m[1])));
+        if (!fija) falla(G, f, t.slice(0, vp).split("\n").length, "guarda Pedidos en línea sin fijar cómo se entrega y cómo se paga (update delivery_settings set delivery, pay_cash_delivery, pay_cash_pickup y pay_card, en una sola orden y antes de ir): otra prueba pudo dejar delivery encendido sin forma de pago y «Guardar» queda apagado");
+      }
     }
   },
 
@@ -8155,6 +8164,10 @@ const guardianes = {
       // Un viaje reservado en la app también se retiene en la tarjeta: sin ella «Reservar» queda apagado (cho4y en la barajada).
       const v = t.split("\n").findIndex((x) => /\/viaje\?s=/.test(x));
       if (v >= 0 && /name: 'Reservar', exact: true/.test(t)) falla(G, f, v + 1, "Marisol reserva un viaje sin guardarle su tarjeta: el viaje se retiene en la tarjeta y sin ella «Reservar» queda apagado; usa tarjeta('5705550122') de pruebas/lib/negocio-nuevo.cjs");
+      // 20 nov (confirmación barajada, semilla 331738974) · Apartar una renta también: se cobra al recoger con la tarjeta guardada y sin ella
+      // «Apartar · $… al recoger» queda apagado (n/[id]/rentar/Rentar.tsx: «TE FALTA · Elige la tarjeta»). veh4y corrió la tercera en una base nueva.
+      const rn = t.split("\n").findIndex((x) => /\/rentar\\?\?a=|Apartar · \\?\$/.test(x));
+      if (rn >= 0) falla(G, f, rn + 1, "Marisol aparta una renta sin guardarle su tarjeta: se cobra al recoger con la tarjeta guardada y sin ella «Apartar» queda apagado; usa tarjeta('5705550122') de pruebas/lib/negocio-nuevo.cjs");
     }
   },
 
@@ -11626,6 +11639,21 @@ const guardianes = {
       falla(G, F, 0, "elegirFoto no elige como una persona (tocar el botón, selector, setFiles) o no dice por qué no se subió");
     t.split("\n").forEach((l, i) => { if (/input\[type=file\]'\)\.setInputFiles\(/.test(l)) falla(G, P, i + 1, "la foto del chat se pone en el input escondido: usar elegirFoto (pruebas/lib/elegir-foto.cjs)"); });
     if (t && (t.match(/await elegirFoto\(m, FOTO2?\)/g) ?? []).length < 3) falla(G, P, 0, "msg9t no elige sus fotos con elegirFoto");
+  },
+  /* 9t · subidaReintenta (20 nov, confirmación 44734711575, msg9t en el iPhone SE): una foto normal recién elegida llegó al servidor sin
+     archivo («No llegó la foto», 400). La app la reintenta UNA vez con el archivo original (lib/subir-foto.ts, mandar) y el servidor deja dicho
+     qué llegó (lib/subida.ts: bytes, tipo y tamaño de cada parte). La prueba no lo calla: si hubo reintento escribe «INESTABLE». Lo que se
+     teme: un ayudante de subida que mande por su cuenta (sin reintento), un reintento ante cualquier respuesta (413, 429…), o que la prueba
+     vuelva a dar por buena la subida sin mirar la respuesta. Al revés: alreves9tsubida. */
+  subidaReintenta() {
+    const G = "subidaReintenta", F = "apps/web/lib/subir-foto.ts", S = "apps/web/lib/subida.ts", E = "pruebas/lib/elegir-foto.cjs", C = "pruebas/lib/subida-cruda.cjs";
+    const s = existsSync(F) ? readFileSync(F, "utf8") : "", sv = existsSync(S) ? readFileSync(S, "utf8") : "", e = existsSync(E) ? readFileSync(E, "utf8") : "", c = existsSync(C) ? readFileSync(C, "utf8") : "";
+    if (!/if \(x\.st === 0 \|\| x\.st === 400\) x = await una\(file\.size > 0 && file\.size <= TOPE_FOTO \? file : f\);/.test(s)) falla(G, F, 0, "la foto que no llega no se reintenta una vez con el archivo original (solo sin respuesta o con 400)");
+    if ((s.match(/\bfetch\(/g) ?? []).length !== 1) falla(G, F, 0, "un ayudante de subida manda por su cuenta: todos pasan por mandar() (un solo fetch)");
+    for (const n of ["subirFotoPrivada", "subirFotoEntrega", "subirFoto", "subirFotoMensaje"]) if (!new RegExp(`export const ${n} = \\(.*=> mandar\\(`).test(s)) falla(G, F, 0, `${n} no pasa por mandar()`);
+    if (!/console\.warn\(`\[subida\] sin archivo: \$\{n\} bytes recibidos/.test(sv)) falla(G, S, 0, "el servidor no deja dicho qué llegó cuando el formulario viene sin archivo");
+    if (!/INESTABLE la primera subida de la foto no llegó/.test(e) || !/if \(r\.status\(\) !== 200\) throw new Error\(`la foto elegida no se subió/.test(e)) falla(G, E, 0, "elegirFoto calla el reintento o da por buena una subida que no terminó en 200");
+    if (!/for \(let i = 0; i < 3; i\+\+\) \{ try \{ return await enviarUna\(/.test(c)) falla(G, C, 0, "la subida cruda no vuelve a intentar cuando la conexión se cortó sin respuesta");
   },
   /* 9t · topeFotoSinNavegador (20 nov, confirmación 44685003383, msg9t en el iPad): el tope de 12 MB de las fotos se probaba con un fetch de
      13 MB armado dentro del WebKit del CI, que a veces no llega entero (400 en vez de 413). El tope del servidor se prueba desde Node con la

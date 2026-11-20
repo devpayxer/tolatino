@@ -16,6 +16,9 @@ const R = (n, col) => sql(`select ${col} from rentals r join operations o on o.i
 (async () => {
   sql(`update rentals set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and status in ('held', 'out')`);
   sql(`update items set stock_left = stock_par where business_id = '${D}' and module = 'renta'`);
+  // 20 nov · Apartar una renta pide una tarjeta guardada (se cobra al recoger) y la de Marisol la pone esta prueba: en una base nueva y barajada
+  // (semilla 331738974, la tercera en correr) no tenía ninguna y «Apartar · $178 al recoger» quedaba apagado («TE FALTA · Elige la tarjeta»).
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   const h = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(h, '5705550355');

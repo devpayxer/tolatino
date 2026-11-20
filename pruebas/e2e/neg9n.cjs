@@ -45,7 +45,9 @@ const ck = (i) => `c0e1c6b0-9a9a-4000-8000-${ID}${String(i).padStart(6, '0')}`;
   // El horario de esta corrida: abierto todo el día (el estado abierto/cerrado no depende de la hora a la que corre); se devuelve al terminar.
   const horas = sql(`select coalesce(json_agg(json_build_object('w', weekday, 'o', open, 'r', ranges)), '[]') from business_hours where business_id = '${BIZ}' and module = ''`);
   sql(`update business_hours set ranges = '[["00:00","00:00"]]'::jsonb, open = true where business_id = '${BIZ}' and module = ''`);
-  const antes = sql(`select coalesce(proof::text, 'f') || '|' || coalesce(pickup_code::text, 'f') from delivery_settings where business_id = '${BIZ}'`);
+  // 20 nov · También se devuelve el delivery (y quién lo lleva): quedaba encendido sin efectivo al entregar ni tarjeta y, barajada, pedidos2c no podía
+  // guardar Pedidos en línea después («Para guardar falta: cómo te pagan en delivery»).
+  const antes = sql(`select coalesce(proof::text, 'f') || '|' || coalesce(pickup_code::text, 'f') || '|' || coalesce(delivery::text, 'f') || '|' || coalesce(who, 'team') from delivery_settings where business_id = '${BIZ}'`);
   sql(`update delivery_settings set delivery = true, who = 'team', proof = true, pickup_code = true where business_id = '${BIZ}';
        delete from business_notif_prefs where business_id = '${BIZ}';
        update delivery_offers set status = 'cancelled' where business_id = '${BIZ}' and status = 'open';
@@ -214,8 +216,8 @@ const ck = (i) => `c0e1c6b0-9a9a-4000-8000-${ID}${String(i).padStart(6, '0')}`;
     ok(!err.length, `sin errores en la página${err.length ? ': ' + err.join(' · ') : ''}`);
   } finally {
     try {
-      const [pr, pc] = (antes || 'f|f').split('|');
-      sql(`update delivery_settings set proof = ${pr === 'true' ? 'true' : 'false'}, pickup_code = ${pc === 'true' ? 'true' : 'false'} where business_id = '${BIZ}';
+      const [pr, pc, dl, qn] = (antes || 'f|f|f|team').split('|');
+      sql(`update delivery_settings set proof = ${pr === 'true' ? 'true' : 'false'}, pickup_code = ${pc === 'true' ? 'true' : 'false'}, delivery = ${dl === 'true' ? 'true' : 'false'}, who = '${qn === 'external' ? 'external' : 'team'}' where business_id = '${BIZ}';
            delete from business_notif_prefs where business_id = '${BIZ}';
            update special_hours set status = 'removed', removed_at = now() where business_id = '${BIZ}' and status = 'active' and kind = 'vacation' and created_at > now() - interval '1 hour';
            update delivery_offers set status = 'cancelled' where status = 'open' and business_id = '${BIZ}';

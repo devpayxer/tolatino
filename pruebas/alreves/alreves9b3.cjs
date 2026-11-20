@@ -39,6 +39,11 @@ const casos = [
   ['fotoSinReloj', 'pruebas/lib/sin-reloj.cjs', ".replace(HORA, 'HORA')", ''],
   // precondicionPropia: pre4e vuelve a crear su casa solo si Marisol no tiene ninguna
   ['precondicionPropia', 'pruebas/e2e/pre4e.cjs', 'not exists (select 1 from user_homes h where h.user_id = ${MARISOL} and h.address_id = user_addresses.id and h.removed_at is null)', 'not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null)'],
+  // … (20 nov, barajada 331738974) pedidos2c vuelve a fijar solo auto_accept y prep_min antes de guardar Pedidos en línea (neg9n le dejaba delivery sin forma de pago
+  // y «Guardar» quedaba apagado); pagos2d deja de fijar cómo se entrega; dlv2f3 deja de fijar cómo se paga el pickup y la tarjeta
+  ['precondicionPropia', 'pruebas/e2e/pedidos2c.cjs', "pickup=true, delivery=false, pay_cash_pickup=true, pay_cash_delivery=false, pay_card=false, who='team', external_app=null, auto_accept=false, prep_min=20", "auto_accept=false, prep_min=20"],
+  ['precondicionPropia', 'pruebas/e2e/pagos2d.cjs', "pickup=true, delivery=false, pay_cash_delivery=false, auto_accept=false", "auto_accept=false"],
+  ['precondicionPropia', 'pruebas/e2e/dlv2f3.cjs', "pay_cash_pickup=true, pay_card=false, who='team'", "who='team'"],
   // silencioPropio: compa7h deja de poner las horas de silencio de Marisol de fábrica y espera «silencio» igual
   ['silencioPropio', 'pruebas/e2e/compa7h.cjs', "const silencioDeFabrica = () => sql(`update users set notif_prefs = coalesce(notif_prefs, '{}'::jsonb) - 'quiet' where id = '${MU}'`);", "const silencioDeFabrica = () => {};"],
   // cupoPropio: edu4a vuelve a fijar los cupos sin fijar los reservados (da por hecho que nadie se inscribió en el grupo)
@@ -60,6 +65,8 @@ const casos = [
   ['veinticuatroHoras', 'pruebas/e2e/pedidos2c.cjs', '[["00:00","00:00"]]', '[["00:00","23:59"]]'],
   // tarjetaPropia: Marisol reserva un viaje sin guardarle su tarjeta («Reservar» queda apagado en una base nueva)
   ['tarjetaPropia', 'pruebas/e2e/cho4y.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
+  // … (20 nov, barajada 331738974) Marisol aparta una renta sin guardarle su tarjeta («Apartar · $178 al recoger» queda apagado en una base nueva)
+  ['tarjetaPropia', 'pruebas/e2e/veh4y.cjs', "  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');\n", ''],
   // bloquePorNombre: la página de una versión vuelve a tomar el aviso de producción por su lugar en la cabecera
   ['bloquePorNombre', 'apps/web/app/admin/TextosPaginas.tsx', 'tabs, nota]', 'tabs, cab[4]!]'],
   // etiquetaDelPaso: a11y9c vuelve a bajar a los hijos del paso 2 por el prefijo (que también es el marco, con su «Volver»)

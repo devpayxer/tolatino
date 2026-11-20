@@ -8,7 +8,11 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from
 const shot = async (p, n, full = false) => { await p.waitForTimeout(500); await p.screenshot({ path: OUT + n, fullPage: full }); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const MARISOL = "(select id from users where phone='+15705550122')";
-const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update delivery_settings set auto_accept=false, prep_min=20 where business_id='${BIZ}'`); } catch {} };
+// 20 nov · Cómo se pide en Sabor Dominicano lo fija esta prueba entera (como la semilla: pickup con pago en el local, sin delivery ni tarjeta). «Guardar»
+// de Pedidos en línea solo se enciende si cada forma de entrega encendida tiene cómo pagarse (panel/Pedidos.tsx faltaP / faltaD): barajada (semilla
+// 331738974), neg9n dejaba delivery encendido sin efectivo al entregar ni tarjeta y «Guardar» quedaba apagado («Para guardar falta: cómo te pagan en delivery»).
+const deFabrica = () => sql(`update delivery_settings set pickup=true, delivery=false, pay_cash_pickup=true, pay_cash_delivery=false, pay_card=false, who='team', external_app=null, auto_accept=false, prep_min=20 where business_id='${BIZ}'`);
+const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); deFabrica(); } catch {} };
 const st = (n) => sql(`select status||'|'||coalesce(stage,'-') from operations where number='${n}'`);
 
 (async () => {
@@ -16,7 +20,7 @@ const st = (n) => sql(`select status||'|'||coalesce(stage,'-') from operations w
   sql(`update items set sold_out = (id = 3), stock_day = null where business_id='${BIZ}'`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);
-  sql(`update delivery_settings set auto_accept=false, prep_min=20 where business_id='${BIZ}'`);
+  deFabrica();
   const b = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'cliente');

@@ -25,5 +25,9 @@ export async function leerFormulario(req: Request, tope: number): Promise<Leido>
     partes.push(value);
   }
   const fd = await new Response(Buffer.concat(partes), { headers: { "content-type": req.headers.get("content-type") ?? "" } }).formData().catch(() => null);
+  // 20 nov · Un formulario que llega sin archivo (o ilegible) deja dicho QUÉ llegó: bytes, tipo del cuerpo y el tamaño de cada parte (nada de
+  // la persona). «No llegó la foto» en el iPhone SE del CI (confirmación 44734711575) no decía si llegó vacía, cortada o sin la parte.
+  if (!fd || ![...fd.values()].some((v) => typeof v !== "string" && v.size > 0))
+    console.warn(`[subida] sin archivo: ${n} bytes recibidos · ${(req.headers.get("content-type") ?? "sin tipo").slice(0, 80)} · ${fd ? [...fd.entries()].map(([k, v]) => `${k.slice(0, 20)}:${typeof v === "string" ? "texto" : v.size}`).join(",") || "sin partes" : "ilegible"}`);
   return fd ? { ok: true, fd } : { ok: false, grande: false };
 }

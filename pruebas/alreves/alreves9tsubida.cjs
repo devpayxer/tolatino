@@ -13,7 +13,14 @@ const casos = [
   // 20 nov (confirmación 44685003383): topeFotoSinNavegador (la app avisa antes de subir; las pruebas suben MB desde Node) y gotoDevuelveRespuesta.
   ['topeFotoSinNavegador', 'apps/web/lib/subir-foto.ts', "return b.size > TOPE_FOTO ? null : b;", "return b;"],
   ['topeFotoSinNavegador', 'apps/web/lib/subir-foto.ts', "export const TOPE_FOTO = 12 * 1024 * 1024;", "export const TOPE_FOTO = Infinity;"],
-  ['topeFotoSinNavegador', 'apps/web/lib/subir-foto.ts', 'const f = await lista(file); if (!f) return PESADA;\n  const fd = new FormData(); fd.append("foto", f, "foto.jpg");', 'const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg");'],
+  ['topeFotoSinNavegador', 'apps/web/lib/subir-foto.ts', 'const f = await lista(file); if (!f) return PESADA;\n  const una = async', 'const f = await reducir(file); { const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg"); }\n  const una = async'],
+  // 20 nov (confirmación 44734711575): subidaReintenta.
+  ['subidaReintenta', 'apps/web/lib/subir-foto.ts', "if (x.st === 0 || x.st === 400) x = await una(file.size > 0 && file.size <= TOPE_FOTO ? file : f);", ""],
+  ['subidaReintenta', 'apps/web/lib/subir-foto.ts', "if (x.st === 0 || x.st === 400) x = await una(", "if (x.st !== 200) x = await una("],
+  ['subidaReintenta', 'apps/web/lib/subir-foto.ts', 'export const subirFoto = (file: File): Promise<Subida> => mandar("/api/medios", file);', 'export const subirFoto = async (file: File): Promise<Subida> => { const fd = new FormData(); fd.append("foto", file); return (await fetch("/api/medios", { method: "POST", body: fd })).json(); };'],
+  ['subidaReintenta', 'apps/web/lib/subida.ts', "console.warn(`[subida] sin archivo:", "void (`[subida] sin archivo:"],
+  ['subidaReintenta', 'pruebas/lib/elegir-foto.cjs', "console.log(`  · INESTABLE la primera subida de la foto no llegó", "void (`  · la primera subida"],
+  ['subidaReintenta', 'pruebas/lib/subida-cruda.cjs', "for (let i = 0; i < 3; i++) { try { return await enviarUna(", "for (let i = 0; i < 1; i++) { try { return await enviarUna("],
   ['topeFotoSinNavegador', 'pruebas/e2e/msg9t.cjs', "const st = await subirCrudoNode(m, B, '/api/mensajes/foto', Buffer.alloc(13 * 1024 * 1024, 7), 'image/jpeg');", "const st = [await subirCrudo(m, 'image/jpeg', 13 * 1024 * 1024)];"],
   ['topeFotoSinNavegador', 'pruebas/e2e/dm9t.cjs', "const st = await subirCrudoNode(a, B, '/api/mensajes/foto', Buffer.alloc(13 * 1024 * 1024, 7), 'image/jpeg', { para: 'dm' });", "const st = [await subirCrudo(a, 'image/jpeg', 13 * 1024 * 1024)];"],
   ['gotoDevuelveRespuesta', 'pruebas/lib/dispositivo-precarga.cjs', "if (soloRuido) return docResp && docResp.url().split('#')[0] === page.url().split('#')[0] ? docResp : null;", "if (soloRuido) return null;"],
@@ -21,7 +28,7 @@ const casos = [
   // 20 nov (CI dirigido 44707074106): fotoComoPersona.
   ['fotoComoPersona', 'pruebas/e2e/msg9t.cjs', "await m.goto(B + `/cuenta/mensajes/${BIZ}`); await elegirFoto(m, FOTO2);", "await m.goto(B + `/cuenta/mensajes/${BIZ}`); await m.locator('input[type=file]').setInputFiles(FOTO2);"],
   ['fotoComoPersona', 'pruebas/lib/elegir-foto.cjs', "await fc.setFiles(archivo);", "await p.locator('input[type=file]').setInputFiles(archivo);"],
-  ['fotoComoPersona', 'pruebas/lib/elegir-foto.cjs', "if (!r) throw new Error('la foto elegida no se subió: no hubo POST a la ruta de fotos');", ""],
+  ['fotoComoPersona', 'pruebas/lib/elegir-foto.cjs', "if (!resps.length) throw new Error('la foto elegida no se subió: no hubo POST a la ruta de fotos');", ""],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {
