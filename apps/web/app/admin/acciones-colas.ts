@@ -519,11 +519,14 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
   if (cents > 0) {
     if (!s.puede("tx", "aprobar")) return no("Tu rol no devuelve dinero.");
     if (!/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return no("Prueba de nuevo.");
-    const p = (await (await import("@/lib/db")).db().query<{ pid: string; hid: string }>(
-      `select p.id::text as pid, h.id::text as hid from queue_items q join help_requests h on h.id = q.subject_id::bigint join payments p on p.operation_id = h.operation_id
+    const p = (await (await import("@/lib/db")).db().query<{ pid: string; hid: string; op: string; num: string; city: string | null }>(
+      `select p.id::text as pid, h.id::text as hid, p.operation_id::text as op, h.number as num, q.city_id as city from queue_items q join help_requests h on h.id = q.subject_id::bigint join payments p on p.operation_id = h.operation_id
         where q.id = $1::bigint and q.queue in ('sop', 'cuidado', 'salir') and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[])) and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [id, s.cities])).rows[0];
     if (!p) return no("Ahí no hay nada pagado en la app para devolver (o el caso ya se decidió).");
-    const d = await (await import("@/lib/cobros")).devolverPago({ paymentId: p.pid, centavos: cents, por: "admin", actorId: s.id, motivo: m, idem: `sop-${clave}` });
+    // 20 nov · El dinero que sale queda auditado en la MISMA transacción que lo anota (devolverPago, alGuardar): antes solo lo decía «soporte.resolver»,
+    // escrito después y aparte (si el proceso moría en el hueco, o el caso ya se había decidido, la devolución quedaba sin auditoría).
+    const d = await (await import("@/lib/cobros")).devolverPago({ paymentId: p.pid, centavos: cents, por: "admin", actorId: s.id, motivo: m, idem: `sop-${clave}` },
+      (c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "operation", targetId: p.op, city: p.city, after: { solicitud: p.num, monto: `$${(x.centavos / 100).toFixed(2)}`, cobro: `pago ${x.pago}`, desde: "Colas › Ayuda" }, reason: m }));
     if (!d.ok) return no(d.msg.es);
     devuelto = cents;
   }
@@ -692,14 +695,16 @@ export async function decidirDisputa(id: string, accion: "responder" | "aceptar"
   if (typeof q === "string") return no(q);
   if (q.queue !== "disputa") return no("Ese caso no es de esta cola.");
   const D = await import("@/lib/disputas");
-  const r = accion === "responder" ? await D.responderDisputa(q.subject_id, s.id, m) : await D.aceptarDisputa(q.subject_id);
+  // 20 nov · La auditoría entra con el cambio de la disputa, en su transacción (alGuardar): antes se escribía aparte, al cerrar el caso, y se saltaba
+  // en silencio si el caso ya no estaba abierto (dinero aceptado para el cliente sin renglón). Cerrar el caso de la cola sigue después.
+  const audita = (c: PoolClient) => auditar(c, { actor: s.id, action: accion === "responder" ? "disputa.responder" : "disputa.aceptar", targetKind: "dispute", targetId: q.subject_id, city: q.city_id,
+    before: { disputa: "abierta" }, after: { disputa: accion === "responder" ? "respondida con evidencia" : "aceptada · devuelto al cliente" }, reason: m });
+  const r = accion === "responder" ? await D.responderDisputa(q.subject_id, s.id, m, audita) : await D.aceptarDisputa(q.subject_id, audita);
   if (!r.ok) return no(r.msg);
   await tx(async (c) => {
     const q2 = await abrir(c, s, id);
     if (typeof q2 === "string") return;
     await cerrar(c, q2, s, accion, m);
-    await auditar(c, { actor: s.id, action: accion === "responder" ? "disputa.responder" : "disputa.aceptar", targetKind: "dispute", targetId: q.subject_id, city: q.city_id,
-      before: { disputa: "abierta" }, after: { disputa: accion === "responder" ? "respondida con evidencia" : "aceptada · devuelto al cliente" }, reason: m });
   });
   listo();
   return { ok: true, mensaje: accion === "responder" ? "Respondida. El banco decide; te avisamos el resultado y al negocio también." : "Aceptada: el dinero vuelve al cliente." };

@@ -138,6 +138,9 @@ const RUN = Date.now().toString(36);
     await a.getByText(/tiene \d+ diferencias? \(\d+ sin dueño\)/).first().waitFor({ timeout: 30000 });
     const RUNID = sql(`select id from recon_runs where day = '${DIA}' order by finished_at desc, id desc limit 1`);
     ok(sql(`select status || '|' || por from recon_runs where id = ${RUNID}`) === 'diferencias|equipo', 'la corrida: diferencias, la pidió el equipo');
+    // 20 nov · La auditoría entra con la corrida (misma transacción): se mira sin esperar y se dice cuántos hay (guardián auditoriaDelAdminConElCambio).
+    const audC = sql(`select count(*) from audit_entries where action = 'conciliacion.correr' and after->>'corrida' = '${RUNID}'`);
+    ok(audC === '1', `en la auditoría: un renglón «conciliacion.correr» escrito con la corrida (hay ${audC})`);
     ok(sql(`select count(*) from recon_diffs where run_id = ${RUNID} and diff_key in ('hold_orphan:falta_en_libro:${PH}', 'payment_intent:falta_en_stripe:${PL}')`) === '2', 'sus dos filas: la retención suelta y el cobro que Stripe no tiene');
     ok(sql(`select count(*) from money_alerts where kind = 'recon_diff' and subject_id = '${DIA}'`) === '1', 'la alerta «el dinero no cuadra» (una por día)');
     if (alertaNueva) ok(await espera(() => Number(sql(`select count(*) from notifications where tpl = 'din_alerta' and user_id = '${uid(ADM)}'`)) > avisosAntes, true) === true, 'le llega al equipo de dinero (Admin)');

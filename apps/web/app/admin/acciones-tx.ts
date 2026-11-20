@@ -34,10 +34,13 @@ export async function devolverTx(numero: string, monto: string, motivo: string, 
   const KINDS: Record<string, string[]> = { order: ["full"], trip: ["full"], appointment: ["deposit", "estimate", "extra", "visit"], party: ["deposit"], night: ["deposit"], enrollment: ["deposit"], private_event: ["deposit"], plan: ["plan"], rental: ["rental"] };
   const hay = o ? (await db().query(`select 1 from payments where operation_id = $1::bigint and kind = any($2::text[]) and status in ('captured', 'partially_refunded')`, [o.id, KINDS[o.kind] ?? []])).rowCount : 0;
   if (!o || !hay) return { ok: false, mensaje: "Ese pedido no se pagó con tarjeta (o no es de tus ciudades)." };
-  const r = await devolverOperacion({ opId: o.id, centavos: cents, kinds: KINDS[o.kind]!, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` });
+  // 20 nov · La auditoría entra con CADA parte devuelta, en la transacción que la anota (devolverOperacion → devolverPago, alGuardar): antes se
+  // escribía aparte, después de todas las partes; si el proceso moría en ese hueco quedaba dinero devuelto sin auditoría. Guardián auditoriaDelAdminConElCambio.
+  const tipo = String(numero).startsWith("EP-") ? "evento_privado" : o.kind === "plan" ? "plan" : o.kind === "rental" ? "renta" : ({ C: "cita", F: "fiesta", V: "viaje", N: "noche", I: "inscripcion" } as Record<string, string>)[String(numero)[0]!] ?? "pedido";
+  const ref = /^([A-Z]+)-/.test(String(numero)) ? String(numero) : `#${numero}`, usd = (n: number) => `$${(n / 100).toFixed(2)}`;
+  const r = await devolverOperacion({ opId: o.id, centavos: cents, kinds: KINDS[o.kind]!, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` },
+    (c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "operation", targetId: o.id, city: o.city, after: { [tipo]: ref, monto: usd(x.centavos), ...(x.centavos !== cents ? { de: usd(cents) } : {}), cobro: `${x.parte} · pago ${x.pago}` }, reason: String(motivo ?? "").trim() }));
   if (!r.ok) return { ok: false, mensaje: r.msg.es };
-  const p = { id: o.id, city: o.city };
-  await tx((c) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "operation", targetId: p.id, city: p.city, after: { [String(numero).startsWith("EP-") ? "evento_privado" : o.kind === "plan" ? "plan" : o.kind === "rental" ? "renta" : ({ C: "cita", F: "fiesta", V: "viaje", N: "noche", I: "inscripcion" } as Record<string, string>)[String(numero)[0]!] ?? "pedido"]: /^([A-Z]+)-/.test(String(numero)) ? String(numero) : `#${numero}`, monto: `$${(cents / 100).toFixed(2)}`, cobros: String(r.partes) }, reason: String(motivo ?? "").trim() }));
   return { ok: true, mensaje: `Devueltos $${(cents / 100).toFixed(2)}. El cliente ya lo sabe.` };
 }
 

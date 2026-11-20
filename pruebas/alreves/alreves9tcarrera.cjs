@@ -1,11 +1,14 @@
 // Prueba al revés de los guardianes toqueEsperaLaPantalla y auditoriaDelAdminConElCambio (20 nov, CI en el ancho 1024: dep4c «$25 al mes ·
 // inscripción $10» y evt6e «ASSERT en la auditoría»). Dos carreras: (1) la prueba tocaba un paso del panel con la pantalla todavía vieja (la base
 // ya tenía el guardado, la pantalla no) y el toque caía en el paso de al lado; (2) el Super Admin escribía su renglón de auditoría en otra
-// transacción, después de devolver. Se inyecta cada defecto, el guardián debe fallar con SU mensaje ([nombre]); se restaura.
+// transacción, después de devolver (y, por clase, Transacciones › Devolver, «Conciliar otra vez», Planes, Colas › Ayuda con monto y Disputas).
+// Se inyecta cada defecto, el guardián debe fallar con SU mensaje ([nombre]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const D = 'pruebas/e2e/dep4c.cjs', E = 'pruebas/e2e/evt6e.cjs', A = 'apps/web/app/admin/acciones-eventos.ts', L = 'apps/web/lib/evt-cambios.ts';
+const TX = 'apps/web/app/admin/acciones-tx.ts', CO = 'apps/web/app/admin/acciones-conciliacion.ts', PL = 'apps/web/app/admin/acciones-planes.ts', CL = 'apps/web/app/admin/acciones-colas.ts';
+const CB = 'apps/web/lib/cobros.ts', CN = 'apps/web/lib/conciliacion.ts', SU = 'apps/web/lib/suscripcion.ts', DI = 'apps/web/lib/disputas.ts', D9 = 'pruebas/e2e/din9k.cjs';
 const T = 'toqueEsperaLaPantalla', U = 'auditoriaDelAdminConElCambio';
 const casos = [
   // El defecto original: la mensualidad y la inscripción se tocan seguidas, sin esperar la pantalla.
@@ -28,6 +31,32 @@ const casos = [
   // La prueba afloja: espera el renglón, o deja de decir cuántos hay.
   [U, E, "    const audX = sql(`select count(*) from audit_entries where action = 'evento.cancelar' and target_id = '${E.id}'`);\n    ok(audX === '1', ", "    const audX = '1'; ok(await espera(() => sql(`select count(*) from audit_entries where action = 'evento.cancelar' and target_id = '${E.id}'`) === '1'), "],
   [U, E, "ok(audX === '1', `en la auditoría: un renglón «evento.cancelar» escrito con la cancelación (hay ${audX})`);", "ok(audX !== '0', 'en la auditoría');"],
+  // 20 nov · La misma clase en el dinero y los planes del Super Admin (auditoría por clase). Cada acción vuelve a auditar aparte, después (como estaba).
+  [U, TX, 'idem: `adm-${clave}` },\n    (c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver"', 'idem: `adm-${clave}` });\n  await tx((c) => auditar(c, { actor: s.id, action: "transacciones.devolver"'],
+  [U, CO, '{ por: "equipo", staffId: s.id },\n    (c, g) => auditar(', '{ por: "equipo", staffId: s.id });\n  await tx((c) => auditar('],
+  [U, PL, 'const r = await hacer(s, (c) => auditar(c, { actor: s.id, action: verbo, targetKind: "business", targetId: String(negocio), city, after, reason: m }));\n  if (!r.ok) return { ok: false, mensaje: r.msg.es };\n',
+    'const r = await hacer(s, async () => undefined);\n  if (!r.ok) return { ok: false, mensaje: r.msg.es };\n  await tx((c) => auditar(c, { actor: s.id, action: verbo, targetKind: "business", targetId: String(negocio), city, after, reason: m }));\n'],
+  // Una acción de Planes deja de pasarle la auditoría a su función de lib.
+  [U, PL, '(s, al) => reintentarCobro(String(negocio), s.id, al)', '(s) => reintentarCobro(String(negocio), s.id)'],
+  // Colas › Ayuda con monto: la devolución sin su auditoría (solo «soporte.resolver», después).
+  [U, CL, 'idem: `sop-${clave}` },\n      (c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver"', 'idem: `sop-${clave}` });\n    void ((c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver"'],
+  // Colas › Disputas: la auditoría vuelve al cierre del caso (aparte y salteable).
+  [U, CL, 'D.responderDisputa(q.subject_id, s.id, m, audita) : await D.aceptarDisputa(q.subject_id, audita)', 'D.responderDisputa(q.subject_id, s.id, m) : await D.aceptarDisputa(q.subject_id)'],
+  [U, CL, '    await cerrar(c, q2, s, accion, m);\n  });', '    await cerrar(c, q2, s, accion, m);\n    await auditar(c, { actor: s.id, action: "disputa.aceptar", targetKind: "dispute", targetId: q.subject_id });\n  });'],
+  // Las funciones de lib dejan de escribirla en la transacción del cambio.
+  [U, CB, '    await alGuardar?.(c, { pago: p.id, centavos: n });\n', ''],
+  [U, CB, ',\n      alGuardar ? (c, h) => alGuardar(c, { ...h, parte }) : undefined);', ');'],
+  [U, CN, '    await alGuardar?.(c, { estado, diferencias: unicas.length, corrida: run });\n  });', '  });\n  if (alGuardar) await tx((c) => alGuardar(c, { estado, diferencias: unicas.length, corrida: null }));'],
+  [U, SU, '    await adminEvento(c, negocio, "trial_extended", actor, { dias: n, motivo });\n    await alGuardar?.(c);\n', '    await adminEvento(c, negocio, "trial_extended", actor, { dias: n, motivo });\n'],
+  [U, SU, '    await alGuardar?.(c);\n    return true;\n  });\n  if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");\n  await procesar(negocio);\n',
+    '    return true;\n  });\n  if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");\n  await procesar(negocio);\n  await tx(async (c) => { await alGuardar?.(c); });\n'],
+  [U, SU, 'await tx(async (c) => { await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });\n    await aFree', 'await tx((c) => adminEvento(c, negocio, "canceled_admin", actor, { motivo }));\n    await aFree'],
+  [U, DI, "    await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);\n    await alGuardar?.(c);\n",
+    "    await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);\n"],
+  [U, DI, "evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);\n    await alGuardar?.(c);\n", "evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);\n"],
+  // La prueba de la conciliación afloja: espera el renglón, o deja de decir cuántos hay.
+  [U, D9, "    const audC = sql(`select count(*) from audit_entries where action = 'conciliacion.correr' and after->>'corrida' = '${RUNID}'`);\n    ok(audC === '1', ", "    const audC = '1'; ok(await espera(() => sql(`select count(*) from audit_entries where action = 'conciliacion.correr' and after->>'corrida' = '${RUNID}'`) === '1'), "],
+  [U, D9, "ok(audC === '1', `en la auditoría: un renglón «conciliacion.correr» escrito con la corrida (hay ${audC})`);", "ok(audC !== '0', 'en la auditoría');"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

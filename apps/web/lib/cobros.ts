@@ -122,8 +122,10 @@ export async function repararPagos(negocio: string) {
 }
 
 /* Devolver dinero de un cobro (total o parcial). Lo hace el negocio (desde su pedido) o To'Latino (Soporte o
-   Transacciones). Idempotente por `idem`. La comisión baja en proporción. */
-export async function devolverPago(x: { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: { es: string; en: string } }> {
+   Transacciones). Idempotente por `idem`. La comisión baja en proporción.
+   alGuardar: la auditoría de quien decide, en la MISMA transacción que anota la devolución (refunds + payments), con el cobro y lo devuelto.
+   La llamada a la pasarela va antes y fuera (no cabe en una transacción de la base): la auditoría queda atada al cambio en la base. */
+export async function devolverPago(x: { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }, alGuardar?: AlGuardar<{ pago: string; centavos: number }>): Promise<{ ok: true } | { ok: false; msg: { es: string; en: string } }> {
   const p = (await db().query<{ id: string; pi: string; amount: number; refunded: number; status: string; uid: string; num: string; brand: string | null; l4: string | null; op: string; kind: string; plataforma: boolean }>(
     `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.refunded_cents + coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'pending'), 0)::int as refunded,
             p.status, p.user_id::text as uid, o.number as num, o.kind, p.card_brand as brand, p.card_last4 as l4, p.operation_id::text as op, p.transfer_group is not null as plataforma
@@ -146,7 +148,7 @@ export async function devolverPago(x: { paymentId: string; centavos: number; por
         where id = $1 returning status`, [p.id, n])).rows[0]!;
     await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [p.op, u.status]);
     await evento(c, p.op, "refunded", { es: `Devolución de ${money(n)}`, en: `Refund of ${money(n)}` });
-    await alGuardar?.(c);
+    await alGuardar?.(c, { pago: p.id, centavos: n });
   });
   const tarjeta = p.brand && p.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[p.brand] ?? p.brand} ·· ${p.l4}` : "tarjeta";
   const R = refDe(p.kind, p.num);
@@ -157,8 +159,10 @@ export async function devolverPago(x: { paymentId: string; centavos: number; por
 /* 9k · Devolver de una operación con varios cobros (L448: estimado + «algo más» + visita; L455: planes y rentas, un cobro por período). Se reparte entre
    los cobros con saldo, del de más saldo al de menos, y cada parte va por devolverPago con su propia llave (`<idem>-p<cobro>`): reintentar con la misma
    llave no devuelve dos veces lo que ya salió (las partes hechas se saltan y cuentan). El tope es lo que queda por devolver en esos cobros: lo decide el
-   servidor. Si una parte falla, lo hecho queda hecho y el mensaje lo dice; el mismo toque otra vez sigue donde quedó. */
-export async function devolverOperacion(x: { opId: string; centavos: number; kinds: string[]; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }): Promise<{ ok: true; partes: number } | { ok: false; msg: { es: string; en: string } }> {
+   servidor. Si una parte falla, lo hecho queda hecho y el mensaje lo dice; el mismo toque otra vez sigue donde quedó.
+   20 nov · alGuardar: la auditoría de quien decide entra con CADA parte, en la transacción que la anota (devolverPago): cada dinero que sale tiene
+   su renglón en la misma transacción; una parte ya hecha (el reintento la salta) no se vuelve a auditar porque no se vuelve a mover. */
+export async function devolverOperacion(x: { opId: string; centavos: number; kinds: string[]; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }, alGuardar?: AlGuardar<{ pago: string; centavos: number; parte: number }>): Promise<{ ok: true; partes: number } | { ok: false; msg: { es: string; en: string } }> {
   const P = (await db().query<{ id: string; resto: number }>(
     // También los ya devueltos del todo: una parte hecha con esta llave cuenta aunque su cobro ya no tenga saldo (el reintento no la repite).
     `select p.id::text, case when p.status in ('captured', 'partially_refunded')
@@ -179,7 +183,9 @@ export async function devolverOperacion(x: { opId: string; centavos: number; kin
     if (falta <= 0) break;
     if (conLlave.has(`${x.idem}-p${p.id}`) || p.resto <= 0) continue;
     const q = Math.min(falta, p.resto);
-    const d = await devolverPago({ paymentId: p.id, centavos: q, por: x.por, actorId: x.actorId, motivo: x.motivo, idem: `${x.idem}-p${p.id}` });
+    const parte = partes + 1;
+    const d = await devolverPago({ paymentId: p.id, centavos: q, por: x.por, actorId: x.actorId, motivo: x.motivo, idem: `${x.idem}-p${p.id}` },
+      alGuardar ? (c, h) => alGuardar(c, { ...h, parte }) : undefined);
     if (!d.ok) return { ok: false, msg: partes ? { es: `Se devolvieron ${money(n - falta)} de ${money(n)}; Stripe no pudo con el resto. Toca otra vez para seguir.`, en: `${money(n - falta)} of ${money(n)} refunded; Stripe could not do the rest. Tap again to continue.` } : d.msg };
     falta -= q; partes++;
   }
