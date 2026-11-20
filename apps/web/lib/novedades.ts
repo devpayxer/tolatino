@@ -389,7 +389,7 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string,
     if (fotos.length) {
       const ok = await c.query(
         `update media set owner_kind = 'post', owner_id = $1, sort = array_position($3::uuid[], id)
-          where id = any($3::uuid[]) and status = 'visible' and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'post' and owner_id = $1))`, [id, actorId, fotos]);
+          where id = any($3::uuid[]) and status = 'visible' and not rev_sin_c2 and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'post' and owner_id = $1))`, [id, actorId, fotos]);
       if (ok.rowCount !== fotos.length) throw Object.assign(new Error("foto ajena"), { fotoAjena: true });
     }
     await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'post' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [id, fotos]);

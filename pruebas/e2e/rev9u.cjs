@@ -14,7 +14,8 @@
 //     la segunda opinión la aprueba → vuelve (archivo, variantes, cuenta de fotos, reportes «se mantiene»)
 //   9 una foto privada (Mensajes) jamás llega a la segunda opinión, y a la segunda opinión no le llega nada de quién subió la foto; una dudosa
 //     con destino «privado» (va solo a un negocio: una solicitud, una cita…) queda retenida sin pasar por la segunda opinión, ni al subir ni en
-//     el barrido; una limpia con ese destino entra igual y una clara se rechaza igual
+//     el barrido; una limpia con ese destino entra igual y una clara se rechaza igual; con el modelo propio caído, la privada ENTRA (y queda en
+//     el libro como c1 · sin_servicio) y la pública sigue retenida
 // Necesita el almacén de fotos (el CI lo tiene): sin él /api/medios contesta 503 y la prueba FALLA, salvo con REV9U_SIN_ALMACEN=1 (local).
 // Deja todo como estaba: las reglas foto1…foto4 y el servicio propio de imágenes (si estaba encendido, lo vuelve a encender como com5d).
 // Guardianes fotosRevisionAntesDePublicar, fotosRevisionPrivacidad, fotosRevisionFalloCerrado, fotosRevisionAuditada, fotosRevisionSinReintento.
@@ -212,6 +213,16 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
     ok((await fotosVistas()).length === antes9 && fila(r9b.json.id).st === 'review', 'dudosa con destino privado → retenida y la segunda opinión no recibió nada');
     const r9c = await subir(cA, await foto(401, 300, 92), '/api/medios', { destino: 'privado' }), r9d = await subir(cA, await foto(403, 300, 93), '/api/medios', { destino: 'privado' });
     ok(r9c.status === 200 && r9d.status === 422, 'con destino privado, una limpia entra igual y una clara se rechaza igual');
+    const antes9e = (await fotosVistas()).length;
+    const r9e = await subir(cA, await foto(404, 301, 94), '/api/medios', { destino: 'privado' });
+    ok(r9e.status === 200 && fila(r9e.json.id).st === 'visible' && sql(`select capa || ':' || decision || ':' || motivo from photo_reviews where media_id = '${r9e.json.id}'`) === 'c1:publicar:sin_servicio' && (await fotosVistas()).length === antes9e,
+      'privada con el modelo propio sin respuesta → entra (como antes de AJ), queda en el libro como c1 · publicar · sin_servicio y no va a la segunda opinión');
+    corteAbajo();
+    const r9f = await subir(cA, await foto(404, 303, 95));
+    ok(r9f.status === 202 && fila(r9f.json.id).st === 'review', 'la PÚBLICA con el modelo propio sin respuesta sigue en fallo cerrado (la segunda opinión no está segura → retenida)');
+    corteAbajo();
+    const ids9 = sql(`select id from media where id = '${r9e.json.id}'`);
+    ok(ids9 === r9e.json.id && sql(`select rev_sin_c2 from media where id = '${r9e.json.id}'`) === 't', 'la que entró sin mirar queda marcada como privada (no se puede adjuntar a algo público)');
     const todo = JSON.stringify(vistas);
     ok(vistas.length > 0 && !todo.includes('Yolotzin') && !todo.includes('Quetzal') && !todo.includes(TA) && !todo.includes(NEG) && !todo.includes('hzl') && vistas.every((x) => x.imagen.ancho <= 640 && x.imagen.alto <= 640),
       `a la segunda opinión solo llega la imagen reducida y la pauta (${vistas.length} fotos, nada de quién, negocio ni ciudad)`);

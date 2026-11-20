@@ -7,7 +7,11 @@
    - Fallo cerrado: un modelo que no responde, una capa apagada, sin presupuesto o una respuesta que no encaja NUNCA publica: retiene.
    - Lo claro (≥ rechazo) se rechaza aunque la cuenta tenga confianza. La confianza solo publica una DUDOSA de verdad (con puntaje entre los dos
      umbrales), nunca una foto que el modelo propio no pudo mirar.
-   - Bordes: puntaje = duda → dudosa; puntaje = rechazo → clara. Si alguien deja rechazo por debajo de duda, manda la duda (rechazo = duda). */
+   - Bordes: puntaje = duda → dudosa; puntaje = rechazo → clara. Si alguien deja rechazo por debajo de duda, manda la duda (rechazo = duda).
+   - Destino «privado» (la foto va solo a un negocio o al equipo: una solicitud, una cita, la balanza, el daño de una renta…; decisión del 20 nov
+     después del CI): nunca va a la segunda opinión. Limpia entra, clara se rechaza, dudosa queda retenida («privada»); y si el modelo propio no
+     responde o está apagado, ENTRA (como antes de AJ: esas operaciones no pueden esperar) y queda en el libro como c1 · publicar · sin_servicio
+     (o apagada). El fallo cerrado de las PÚBLICAS no cambia: sin servicio, una pública nunca se publica sin un «publicar» de un modelo. */
 
 type Bi = { es: string; en: string };
 
@@ -51,10 +55,12 @@ export type EntradaDecision = {
   c1: { on: boolean; puntaje: number | null };   // puntaje null = el modelo propio no respondió
   umbrales: Umbrales;
   confianza: boolean;                             // capa 4 encendida y la cuenta la ganó
+  privada?: boolean;                              // destino «privado»: nunca la capa 2 (ver arriba)
   c2?: Segunda;                                   // sin dar = todavía no se preguntó
 };
 export type Decision =
   | { estado: "visible"; capa: "c1" | "c2" | "c4" | "memoria"; motivo: null; puntaje: number | null }
+  | { estado: "visible"; capa: "c1"; motivo: "sin_servicio" | "apagada"; puntaje: null }   // solo destino «privado» sin modelo propio
   | { estado: "rechazada"; capa: "c1" | "c2" | "memoria"; motivo: MotivoRechazo; puntaje: number | null }
   | { estado: "retenida"; capa: "c1" | "c2"; motivo: MotivoRetencion; puntaje: number | null }
   | { estado: "pedir_c2"; puntaje: number | null; porque: "dudosa" | "sin_servicio" | "apagada" };
@@ -86,6 +92,11 @@ export function decidir(e: EntradaDecision): Decision {
     porque = "dudosa";
     // Capa 4: la confianza ganada publica una dudosa de verdad sin la segunda opinión (queda auditado como «c4»).
     if (e.confianza) return { estado: "visible", capa: "c4", motivo: null, puntaje: p };
+  }
+  // Destino «privado»: nunca la segunda opinión. Su dudosa queda retenida; sin modelo propio entra (y queda en el libro con su porqué).
+  if (e.privada === true) {
+    if (porque === "dudosa") return { estado: "retenida", capa: "c1", motivo: "privada", puntaje: p };
+    return { estado: "visible", capa: "c1", motivo: porque, puntaje: null };
   }
   const c2 = e.c2;
   if (!c2) return { estado: "pedir_c2", puntaje: p, porque };

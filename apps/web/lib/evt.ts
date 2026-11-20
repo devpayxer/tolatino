@@ -179,7 +179,7 @@ async function lineupYFotos(c: PoolClient, id: string, d: BorradorEvt, userId: s
   }
   const ids = d.fotos.map((f) => f.id);
   await c.query(`update media set owner_kind = 'event', owner_id = $1, sort = array_position($3::uuid[], id)
-                  where id = any($3::uuid[]) and status = 'visible' and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'event' and owner_id = $1))`, [id, userId, ids]);
+                  where id = any($3::uuid[]) and status = 'visible' and not rev_sin_c2 and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'event' and owner_id = $1))`, [id, userId, ids]);
   await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'event' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [id, ids]);
 }
 

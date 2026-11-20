@@ -50,7 +50,7 @@ export async function fotoPerfil(userId: string, mediaId: string | null): Promis
     return { ok: true };
   }
   if (!/^[0-9a-f-]{36}$/.test(mediaId)) return no("Esa foto no existe.", "That photo does not exist.");
-  const m = (await db().query<{ url: string }>(`select url from media where id = $1::uuid and uploaded_by = $2 and owner_kind = 'user' and owner_id = $2::text and status = 'visible'`, [mediaId, userId])).rows[0];
+  const m = (await db().query<{ url: string }>(`select url from media where id = $1::uuid and uploaded_by = $2 and owner_kind = 'user' and owner_id = $2::text and status = 'visible' and not rev_sin_c2`, [mediaId, userId])).rows[0];
   if (!m) return no("Esa foto no existe.", "That photo does not exist.");
   await tx(async (c) => {
     await c.query(`update users set photo_url = $2, photo_removed_reason = null where id = $1`, [userId, m.url]);

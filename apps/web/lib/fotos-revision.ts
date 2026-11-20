@@ -92,7 +92,7 @@ export async function revisarSubida(x: { id: string; datos: Buffer; sha: string;
   let puntaje: number | null = null;
   if (!mem && R.c1.on) puntaje = (await revisarImagen(x.datos, R.c1.umbrales.duda)).desnudez;
   const dudosa = puntaje !== null && puntaje >= R.c1.umbrales.duda && puntaje < R.c1.umbrales.rechazo;
-  const e: EntradaDecision = { memoria: mem, c1: { on: R.c1.on, puntaje }, umbrales: R.c1.umbrales, confianza: dudosa ? await confianza(x.userId, R) : false };
+  const e: EntradaDecision = { memoria: mem, c1: { on: R.c1.on, puntaje }, umbrales: R.c1.umbrales, confianza: dudosa ? await confianza(x.userId, R) : false, privada: x.sinC2 };
   const d0 = decidir(e);
   if (d0.estado !== "pedir_c2") return { id: x.id, d: d0, c2: null, modeloC1: R.c1.on && !mem ? "nudenet" : null };
   // Destino «privado» (va solo a un negocio o al equipo): la segunda opinión no se consulta nunca; la dudosa queda retenida («privada»).
@@ -231,7 +231,7 @@ export async function revisarRetenida(id: string, R?: ReglasFotos): Promise<"pub
   if (!reportada && !mem && RR.c1.on) puntaje = (await revisarImagen(datos, RR.c1.umbrales.duda)).desnudez;
   const dudosa = puntaje !== null && puntaje >= RR.c1.umbrales.duda && puntaje < RR.c1.umbrales.rechazo;
   const e: EntradaDecision = { memoria: mem, c1: { on: reportada ? false : RR.c1.on, puntaje }, umbrales: RR.c1.umbrales,
-    confianza: dudosa && f.uploaded_by ? await confianza(f.uploaded_by, RR) : false };
+    confianza: dudosa && f.uploaded_by ? await confianza(f.uploaded_by, RR) : false, privada: f.rev_sin_c2 };
   let d = decidir(e), c2: ResultadoSegunda | null = null;
   if (d.estado === "pedir_c2") {
     // Una foto de destino «privado» nunca va a la segunda opinión (tampoco desde el barrido ni la capa 3): queda retenida («privada»).
@@ -246,7 +246,7 @@ export async function revisarRetenida(id: string, R?: ReglasFotos): Promise<"pub
       if (!g || g.rev_llave !== f.rev_llave) return false;
       for (const v of vs.slice(0, -1)) await anotarVeredicto(c, v);
       const fin = vs[vs.length - 1]!;
-      await aVisible(c, g, { capa: fin.capa, decision: "publicar", puntaje: fin.puntaje, motivo: null, modelo: fin.modelo, costo: fin.costo, tokens: fin.tokens, ms: fin.ms });
+      await aVisible(c, g, { capa: fin.capa, decision: "publicar", puntaje: fin.puntaje, motivo: fin.motivo ?? null, modelo: fin.modelo, costo: fin.costo, tokens: fin.tokens, ms: fin.ms });
       return true;
     });
     if (ok) await despuesDePublicar(f);
