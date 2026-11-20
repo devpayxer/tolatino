@@ -9801,6 +9801,80 @@ const guardianes = {
     if (!/5b · La foto que se sube y nunca se manda/.test(readFileSync("pruebas/e2e/msg9t.cjs", "utf8"))) falla(G, "pruebas/e2e/msg9t.cjs", 0, "msg9t no prueba la purga (§5b)");
   },
 
+  /* Fotos a la medida (decisión AI, 20 nov; docs/diseno/plan/fotos-a-la-medida.md, F1) · fotosConVariantes: cada foto pública (n/<uuid>.jpg) tiene
+     sus variantes WebP de nombre fijo (n/<uuid>.w<ancho>.webp) y nunca se ve una foto rota. Se teme: (1) una ruta que guarda una foto pública sin
+     generar sus variantes; (2) variantes agrandadas, sin la calidad fija o con metadatos (EXIF, GPS) o un fallo de las variantes que tumba la
+     subida; (3) una copia de media (Repetir evento, la galería en una novedad) sin lo anotado; (4) nginx del sandbox o de producción sin el
+     respaldo a la maestra, con caché de un año en el respaldo o sin esconder la del almacén; Cloudflare fijando un año en /medios/n/; (5) el
+     barrido sin la tarea o con una consulta que no es la del índice parcial (0195); (6) la purga de una cuenta que deja sus variantes; (7) las
+     pruebas que lo prueban (fot9u, fotos9uvariantes, medios-nginx.test.sh, el respaldo del proxy de las pruebas) que se quitan o se apagan.
+     Al revés: alreves9ufotos. */
+  fotosConVariantes() {
+    const G = "fotosConVariantes", V = "apps/web/lib/fotos-variantes.ts", R = "apps/web/app/api/medios/route.ts", BR = "apps/web/lib/barrido.ts",
+      M = "packages/db/migrations/0195_fotos_a_la_medida.sql", PU = "apps/web/lib/datos/purgar.ts", NN = "pruebas/lib/negocio-nuevo.cjs";
+    if (!existsSync(V)) return falla(G, V, 0, "falta lib/fotos-variantes.ts (el generador de variantes)");
+    const v = readFileSync(V, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    // (1) Quien guarda una foto pública genera sus variantes: la subida, en el mismo pedido y después de guardar la maestra; cualquier otro
+    // archivo que guarde una llave n/<…> también.
+    const r = existsSync(R) ? readFileSync(R, "utf8") : "";
+    if (!/await guardarObjeto\(clave, img\.data, "image\/jpeg"\);[\s\S]*?await guardarVariantes\(id, img\.data, img\.info\.width\);\s*return NextResponse\.json\(\{ ok: true/.test(r))
+      falla(G, R, 0, "la subida de fotos públicas no genera las variantes (guardarVariantes(id, img.data, img.info.width) después de guardar la maestra y antes de contestar)");
+    if (!/insert into media \([^)]*\bbytes\)/.test(r)) falla(G, R, 0, "la subida anota el peso de la maestra (media.bytes)");
+    for (const f of archivos.filter((x) => /^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x) && x !== V)) {
+      const t = readFileSync(f, "utf8");
+      if (/guardarObjeto\(/.test(t) && /[`"']n\/\$\{/.test(t) && !/guardarVariantes\(/.test(t)) falla(G, f, 0, "guarda una foto pública (n/…) sin generar sus variantes WebP (guardarVariantes de lib/fotos-variantes.ts)");
+      // (3) Una copia de una fila de media es la misma imagen: lleva lo anotado de sus variantes.
+      for (const m of t.matchAll(/insert into media \(([^)]*)\)\s*select/g)) if (!["bytes", "var_widths", "var_bytes", "var_at"].every((c) => new RegExp(`\\b${c}\\b`).test(m[1])))
+        falla(G, f, t.slice(0, m.index).split("\n").length, "copia una foto (insert into media … select) sin lo anotado de sus variantes (bytes, var_widths, var_bytes, var_at): el barrido la volvería a convertir y las cifras mentirían");
+    }
+    // (2) Los anchos, la calidad, nunca agrandar, sin metadatos, y un fallo que no tumba la subida.
+    if (!/export const ANCHOS = \[320, 640, 1080, 1600\] as const;/.test(v) || !/const MAX = 1600;/.test(v)) falla(G, V, 0, "los anchos son 320, 640, 1080 y 1600 (el contrato con quien pinta las fotos) y 1600 el máximo");
+    if (!/const out: number\[\] = ANCHOS\.filter\(\(a\) => a <= w\);\s*if \(w < MAX && !out\.includes\(w\)\) out\.push\(w\);/.test(v)) falla(G, V, 0, "anchosDe: solo los anchos que caben en la maestra (nunca agrandar) y uno del ancho de la maestra si es más angosta");
+    if (!/export const CALIDAD_WEBP = 80;/.test(v) || !/\.resize\(\{ width, withoutEnlargement: true \}\)\.webp\(\{ quality: CALIDAD_WEBP, effort: 4 \}\)\.toBuffer\(\)/.test(v)) falla(G, V, 0, "variantesDe: WebP con pérdida, calidad 80, esfuerzo 4, sin agrandar (resize withoutEnlargement)");
+    if (/\b(withMetadata|keepMetadata|keepExif|withExif|withExifMerge|keepIccProfile|withIccProfile|keepXmp|withXmp)\b/.test(v)) falla(G, V, 0, "las variantes salen SIN metadatos (EXIF, GPS, perfiles): sharp no los copia salvo que se le pida, y aquí no se pide");
+    const gv = cuerpoFn(v, "guardarVariantes");
+    if (!/\} catch \{ return "ilegible"; \}/.test(gv) || !/\} catch \{ return "fallo"; \}\s*\}$/.test(gv.trim()) || !/if \(!\(await existeObjeto\(`n\/\$\{uuid\}\.jpg`\)\)\)/.test(gv))
+      falla(G, V, 0, "guardarVariantes nunca lanza (la subida vale aunque fallen las variantes) y confirma que la maestra sigue antes de anotar");
+    // (5) El barrido y su índice.
+    if (!/\["fotosVariantes", async \(\) => \(await import\("\.\/fotos-variantes"\)\)\.barrerVariantes\(\)\]/.test(sinComent(BR))) falla(G, BR, 0, "el barrido central no corre barrerVariantes (las fotos de antes nunca se convierten)");
+    const PRED = "where var_at is null and status = 'visible' and purged_at is null and url like '/medios/n/%.jpg'";
+    if (!v.includes(`${PRED} and created_at < now() - interval '2 minutes'\n      order by created_at limit \${TANDA}`) || !/export const TANDA = ([1-9]|[1-4]\d|50);/.test(v))
+      falla(G, V, 0, "la tanda del barrido sale por el índice parcial de 0195 (el mismo predicado), la más vieja primero, de a 50 como mucho");
+    if (!existsSync(M) || !readFileSync(M, "utf8").includes(`create index if not exists media_variantes_pendientes_idx on media (created_at)\n  ${PRED};`)) falla(G, M, 0, "falta el índice parcial de las fotos sin variantes (el barrido recorrería todas las fotos)");
+    // (6) La purga de una cuenta saca también las variantes, después de la maestra.
+    if (!/await borrarObjeto\(clave\);\s*for \(const v of clavesVariantes\(clave, f\.w, f\.var_widths\)\) await borrarObjeto\(v\);/.test(existsSync(PU) ? readFileSync(PU, "utf8") : ""))
+      falla(G, PU, 0, "la purga de una cuenta saca la maestra y DESPUÉS sus variantes (clavesVariantes): si no, la foto de una cuenta borrada sigue en /medios/n/<uuid>.w<ancho>.webp");
+    // (4) nginx: la variante real un año; la que falta o sin WebP, la maestra con 60 s; la caché del almacén escondida.
+    const bloque = (t, cab) => { const i = t.indexOf(cab); return i < 0 ? "" : t.slice(i, t.indexOf("\n    }", i)); };
+    for (const N of ["infra/pruebas/nginx-pruebas.conf", "infra/produccion/nginx-produccion.conf"]) {
+      const t = existsSync(N) ? readFileSync(N, "utf8").replace(/#.*$/gm, "") : "";
+      if (!/^\s*location \^~ \/medios\/privado\/ \{ return 404; \}/m.test(t)) falla(G, N, 0, "falta el bloqueo de /medios/privado/");
+      const vb = bloque(t, "location ~ ^/medios/n/[0-9a-f-]+\\.w[0-9]+\\.webp$ {");
+      const que = [["error_page 404 = @tl_maestra;", "si la variante no existe, la maestra"], ["error_page 418 = @tl_maestra_sin_webp;", "sin WebP, la maestra"], ["proxy_intercept_errors on;", "el 404 del almacén va al respaldo"],
+        ["proxy_hide_header Cache-Control;", "la caché del almacén se esconde"], ['add_header Cache-Control "public, max-age=31536000, immutable";', "la variante real, un año"], ["add_header Vary Accept;", "Vary: Accept"],
+        ['if ($http_accept !~* "image/webp") { return 418; }', "un navegador sin WebP recibe la maestra"]];
+      if (!vb) falla(G, N, 0, "falta la ubicación de las variantes /medios/n/<uuid>.w<ancho>.webp");
+      else for (const [x, por] of que) if (!vb.includes(x)) falla(G, N, 0, `la ubicación de las variantes perdió «${x}» (${por})`);
+      for (const [nom, cc] of [["@tl_maestra", "public, max-age=60"], ["@tl_maestra_sin_webp", "private, max-age=60"]]) {
+        const b = bloque(t, `location ${nom} {`);
+        if (!b.includes("rewrite ^(?:/medios)?/n/([0-9a-f-]+)\\.w[0-9]+\\.webp$ /n/$1.jpg break;") || !b.includes("proxy_hide_header Cache-Control;") || !b.includes(`add_header Cache-Control "${cc}" always;`) || /max-age=31536000/.test(b))
+          falla(G, N, 0, `el respaldo ${nom} entrega la maestra (/n/<uuid>.jpg) con «${cc}», nunca con la caché de un año`);
+      }
+    }
+    const cf = JSON.parse(readFileSync("infra/produccion/cloudflare/reglas.json", "utf8")).cache?.find((c) => /\/medios\/n\//.test(c.expresion));
+    if (!cf || cf.edge_ttl !== "origen") falla(G, "infra/produccion/cloudflare/reglas.json", 0, "Cloudflare respeta la caché de nginx en /medios/n/ (edge_ttl «origen»): un año fijo guardaría un año el respaldo de una variante que falta");
+    if (!/ttl = lambda c: \(\{"edge_ttl": \{"mode": "respect_origin"\}, "browser_ttl": \{"mode": "respect_origin"\}\} if c\["edge_ttl"\] == "origen"/.test(readFileSync("scripts/produccion/cloudflare.sh", "utf8")))
+      falla(G, "scripts/produccion/cloudflare.sh", 0, "«origen» se aplica como respect_origin en Cloudflare y en el navegador");
+    // (7) Las pruebas.
+    if (!/seccion "fotos a la medida[^"]*"; bash pruebas\/infra\/medios-nginx\.test\.sh \|\| mal=1/.test(readFileSync("pruebas/infra/correr.sh", "utf8")) || !existsSync("pruebas/infra/medios-nginx.test.sh")) falla(G, "pruebas/infra/correr.sh", 0, "las pruebas de infra no corren el respaldo de nginx (medios-nginx.test.sh)");
+    const nn = existsSync(NN) ? readFileSync(NN, "utf8") : "";
+    if (!/if \(!\/image\\\/webp\/i\.test\(accept \|\| ''\)\) return maestra\('private, max-age=60'\);/.test(nn) || !/return r\.s === 404 \? maestra\('public, max-age=60'\) : \{ \.\.\.r, tipo: 'image\/webp', cc: anio \};/.test(nn) || !/const x = await servirMedio\(u\.pathname, accept\);/.test(nn))
+      falla(G, NN, 0, "el proxy de /medios de las pruebas no aplica el respaldo de nginx (servirMedio): las pruebas no verían lo que ve producción");
+    const e = existsSync("pruebas/e2e/fot9u.cjs") ? readFileSync("pruebas/e2e/fot9u.cjs", "utf8") : "";
+    for (const x of ["una variante que no se generó (w640 de la de 500) → la maestra JPEG", "el barrido la convirtió", "la de 500 px: solo 320 y 500", "existe en el almacén, WebP de"]) if (!e.includes(x)) falla(G, "pruebas/e2e/fot9u.cjs", 0, `fot9u ya no prueba «${x}»`);
+    if (!existsSync("pruebas/alreves/fotos9uvariantes.cjs")) falla(G, "pruebas/alreves/fotos9uvariantes.cjs", 0, "falta la prueba de variantesDe");
+  },
+
   /* 9t (19 nov) · subidaConTope: las rutas de subida leían el formulario entero (req.formData()) antes de mirar el tamaño. Safari manda el cuerpo
      sin content-length: un archivo de 13 MB se leía completo en memoria y salía «No llegó la foto» (400) en vez de 413 (msg9t en el iPad y el SE,
      confirmación 44573806469). Toda ruta lee el formulario con lib/subida.ts leerFormulario (tope por partes; pasado el tope no guarda nada) y

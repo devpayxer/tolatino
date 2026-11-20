@@ -26,7 +26,12 @@ export async function leerObjeto(clave: string): Promise<Buffer> {
 export async function borrarObjeto(clave: string) {
   await pedir("DELETE", clave);
 }
-async function pedir(metodo: "PUT" | "GET" | "DELETE", clave: string, cuerpo?: Buffer, tipo?: string): Promise<Buffer | void> {
+/* HEAD de un objeto: ¿sigue ahí? (Fotos a la medida: después de guardar las variantes se confirma que la maestra no se borró mientras tanto
+   —la purga de una cuenta—; si se borró, las variantes recién guardadas también salen). 404 → false; otro error, se lanza. */
+export async function existeObjeto(clave: string): Promise<boolean> {
+  return (await pedir("HEAD", clave)) === true;
+}
+async function pedir(metodo: "PUT" | "GET" | "DELETE" | "HEAD", clave: string, cuerpo?: Buffer, tipo?: string): Promise<Buffer | boolean | void> {
   const c = C();
   if (!mediosListos()) throw new Error("almacenamiento sin configurar");
   if (!/^[a-z0-9][a-z0-9/._-]{2,120}$/.test(clave)) throw new Error("clave inválida");
@@ -44,6 +49,7 @@ async function pedir(metodo: "PUT" | "GET" | "DELETE", clave: string, cuerpo?: B
   const kFirma = hmac(hmac(hmac(hmac(`AWS4${c.secret}`, dia), c.region), "s3"), "aws4_request");
   const firma = createHmac("sha256", kFirma).update(aFirmar).digest("hex");
   const r = await fetch(u, { method: metodo, body: metodo === "PUT" ? new Uint8Array(cuerpo!) : undefined, headers: { ...cab, authorization: `AWS4-HMAC-SHA256 Credential=${c.key}/${alcance}, SignedHeaders=${nombres.join(";")}, Signature=${firma}` } });
+  if (metodo === "HEAD" && (r.ok || r.status === 404)) return r.ok;
   if (!r.ok && !(metodo === "DELETE" && r.status === 404)) throw new Error(`almacenamiento ${r.status}: ${(await r.text()).slice(0, 200)}`);
   if (metodo === "GET") return Buffer.from(await r.arrayBuffer());
 }

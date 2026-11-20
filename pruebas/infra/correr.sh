@@ -4,7 +4,8 @@
 #   2. los compose y las configuraciones YAML: se leen, cada servicio tiene imagen, cada variable ${X} está en la lista cerrada (secretos.json), cada red y
 #      volumen nombrado existe (pruebas/infra/compose.py); en el CI, además, «docker compose config» de verdad
 #   3. la página de mantenimiento es la que sale del sistema de diseño
-#   4. azul/verde y vuelta atrás (azulverde.test.sh), sobre sellado y recuperación (sellado.test.sh)
+#   4. azul/verde y vuelta atrás (azulverde.test.sh), sobre sellado y recuperación (sellado.test.sh), el respaldo de las fotos a la medida en nginx
+#      (medios-nginx.test.sh: la variante real un año; la que falta o sin WebP, la maestra con 60 s)
 #   5. con root: la traza del sandbox igual a la de antes (traza-sandbox.sh), tolatino-sync de producción solo avanza (sync.test.sh); con Postgres 16 +
 #      pgBackRest: el PITR de verdad (pitr-local.sh)
 # Uso: bash pruebas/infra/correr.sh   → sale con 1 si algo falla. INFRA_SIN_ROOT=1 salta lo que necesita root.
@@ -32,6 +33,7 @@ seccion "página de mantenimiento"
 node scripts/produccion/mantenimiento.mjs --revisar || mal=1
 seccion "azul/verde"; bash pruebas/infra/azulverde.test.sh || mal=1
 seccion "sobre sellado y recuperación"; bash pruebas/infra/sellado.test.sh || mal=1
+seccion "fotos a la medida: el respaldo de las variantes en nginx (sandbox y producción)"; bash pruebas/infra/medios-nginx.test.sh || mal=1
 if [ "$(id -u)" = 0 ] && [ "${INFRA_SIN_ROOT:-0}" != 1 ]; then
   seccion "el sandbox no cambia (traza)"; bash pruebas/infra/traza-sandbox.sh || mal=1
   seccion "producción solo avanza (tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1

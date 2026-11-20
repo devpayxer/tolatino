@@ -1994,3 +1994,15 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       índices que se pisan en `media` (`media_chat_subidas_idx` y `media_msj_subidas_idx`). (20 nov)
 - [ ] **→ 9t** · **Las rutas de fotos y video cargan el archivo entero en memoria** (12 MB por foto, 120 MB por video) y las privadas se
       entregan sin `Range` ni `ETag`. Medir con carga y, si pesa, pasar a flujo. (20 nov)
+
+
+## Fotos a la medida — F1 (decisión AI, 20 nov) — lo que quedó anotado
+- [ ] **→ 9u** · **fot9u (punta a punta con Garage) no corrió fuera del CI:** la sesión de F1 no tenía almacén ni docker; corrieron tipos, guardianes,
+      alreves9ufotos, fotos9uvariantes (variantesDe y el barrido con dobles) y medios-nginx.test.sh con nginx 1.24 de verdad. Correrla en el CI
+      dirigido y en el sandbox con una foto de cámara real (peso de cada variante, antes/después de una tarjeta, una ficha y una galería). (20 nov)
+- [ ] **→ 9u** · **WebP y el caché de Cloudflare:** Cloudflare (plan gratis) no separa la caché por Accept. Una variante real guardada en el borde se
+      le da también a un navegador sin WebP (Safari 13 o anterior, < 1 %); la maestra que se le da a un navegador sin WebP va «private» y nunca queda
+      en el borde. Safari 14–15 no dice image/webp en Accept aunque lo lee: recibe la maestra (se ve bien, pesa más). Si pesa en las cifras: que F2
+      pinte con `<picture type="image/webp">` o mirar «Vary for images» de Cloudflare. (20 nov)
+- [ ] **→ 9u** · **F2–F4:** pintar con `fotoSrc`/`fotoFondo`/`Foto` (F2), las fotos privadas con `?w=` (F3), el bloque del Super Admin con
+      `cifrasFotos()` de lib/fotos-variantes.ts y su ayuda de equipo (F4). Hasta F2 las variantes existen pero ninguna pantalla las pide. (20 nov)
