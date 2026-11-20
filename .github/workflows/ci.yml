@@ -259,6 +259,9 @@ jobs:
         run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de ${{ matrix.nombre }} en base nueva
         run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+      - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
+        if: always()
+        run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
       - name: Lo último que dijo el servidor (solo si algo cayó)
         if: failure()
         run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
@@ -298,6 +301,9 @@ jobs:
       - name: Segunda pasada, en la MISMA base
         if: ${{ matrix.nombre == 'dos veces seguidas' }}
         run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+      - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
+        if: always()
+        run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
       - name: Lo último que dijo el servidor (solo si algo cayó)
         if: failure()
         run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
@@ -383,6 +389,9 @@ jobs:
         run: sudo apt-get install -y -q age >/dev/null
       - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
         run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}
+      - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
+        if: always()
+        run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
       - name: Lo último que dijo el servidor (solo si algo cayó)
         if: failure()
         run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
