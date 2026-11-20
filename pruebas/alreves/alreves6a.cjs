@@ -34,7 +34,8 @@ const casos = [
   ['ocultarAvisaYApela', ER, '{ href: RUTA_AVISO("event", id), ref: ["event", id] }).catch(() => undefined);\n}\nexport async function avisarOrgBloqueado', '{ href: `/panel/${negocio}/eventos`, ref: ["event", id] }).catch(() => undefined);\n}\nexport async function avisarOrgBloqueado'],
   ['ocultarAvisaYApela', MC, '| "sanction" | "event" | "evt_org";', '| "sanction" | "event";'],
   ['ocultarAvisaYApela', AP, '    } else if (a.k === "evt_org") {', '    } else if (a.k === ("evt" + "_org")) {'],
-  ['ocultarAvisaYApela', M6, "  elsif new.target_kind = 'evt_org' then", "  elsif new.target_kind = 'otro_org' then"],
+  // La última definición de appeals_antes manda (ultimaFn): desde AJ (0196, «Pedir revisión» de una foto) vive en 0196, no en 0106.
+  ['ocultarAvisaYApela', 'packages/db/migrations/0196_fotos_revision.sql', "  elsif new.target_kind = 'evt_org' then", "  elsif new.target_kind = 'otro_org' then"],
   // configDesdeUnLugar (lee el catálogo de 0106)
   ['configDesdeUnLugar', CF, '| "evt_fotos_max" ', ''],
   ['configConLimites', M6, "('evt_revision_h', 1, 168, 24,", "('evt_revision_h', 1, 168, 240,"],

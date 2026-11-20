@@ -65,6 +65,12 @@ const FILAS = (filtro: string) => `
     from media m join com_posts p on m.owner_kind = 'com_post' and p.id::text = m.owner_id
    where m.uploaded_by = $1 and m.status = 'removed' and m.removed_reason = 'admin' and m.removed_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'media'").replace(/\$X/g, "m.id::text")}
   union all
+  -- AJ · La foto que la revisión automática retuvo, rechazó u ocultó por reportes («Pedir revisión»): sin dirección pública (está en la llave privada).
+  select 'media', m.id::text, m.rev_nota, m.rev_at, '', null, m.rev_capa = 'c3', null, null, null
+    from media m
+   where m.uploaded_by = $1 and m.rev_llave is not null and m.rev_at is not null and m.purged_at is null and (m.status = 'review' or (m.status = 'removed' and m.removed_reason = 'revision'))
+     and m.rev_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'media'").replace(/\$X/g, "m.id::text")}
+  union all
   select 'event', e.id::text, coalesce(e.hidden_reason, e.review_note), coalesce(e.hidden_at, e.reviewed_at), e.title->>'es', null, false, '/panel/' || e.business_id || '/eventos?det=evt:' || e.id, null, null
     from events e join business_members bm on bm.business_id = e.business_id and bm.kind = 'owner' and bm.status = 'active' and bm.user_id = $1
    where (e.hidden_at is not null or e.status = 'rejected') and coalesce(e.hidden_at, e.reviewed_at) > now() - interval '90 days' ${filtro.replace(/\$K/g, "'event'").replace(/\$X/g, "e.id::text")}
@@ -160,7 +166,10 @@ export async function apelacionDeCaso(appealId: string) {
   let contenido: { texto: string; foto: string | null; href: string | null } = { texto: "", foto: null, href: null };
   if (a.k === "com_post") contenido = (await db().query<{ texto: string; href: string }>(`select body as texto, '/comunidad/p/' || id as href, null as foto from com_posts where id = $1::bigint`, [a.tid])).rows[0] as typeof contenido ?? contenido;
   if (a.k === "com_comment") contenido = (await db().query<{ texto: string; href: string }>(`select body as texto, '/comunidad/p/' || post_id as href, null as foto from com_comments where id = $1::bigint`, [a.tid])).rows[0] as typeof contenido ?? contenido;
-  if (a.k === "media") contenido = (await db().query<{ texto: string; foto: string; href: string }>(`select '' as texto, url as foto, '/comunidad/p/' || owner_id as href from media where id = $1::uuid`, [a.tid])).rows[0] ?? contenido;
+  // AJ · Una foto de la revisión automática no tiene dirección pública: el equipo la ve por /api/medios/revision/{id} (con la apelación abierta).
+  if (a.k === "media") contenido = (await db().query<{ texto: string; foto: string; href: string | null }>(
+    `select '' as texto, case when rev_llave is not null then '/api/medios/revision/' || id::text else url end as foto, case when owner_kind = 'com_post' then '/comunidad/p/' || owner_id end as href
+       from media where id = $1::uuid`, [a.tid])).rows[0] ?? contenido;
   if (a.k === "dm_message" && a.estado === "open") contenido = { texto: (await (await import("./admin-dm")).dmApelado(a.tid)) ?? "", foto: null, href: null };
   if (a.k === "sanction" && a.sancion) contenido = { texto: `${SANCIONES[a.sancion].es} · ${SANCIONES[a.sancion].com.es}`, foto: null, href: null };
   if (a.k === "event") contenido = (await db().query<{ texto: string; href: string; foto: string | null }>(
@@ -195,7 +204,9 @@ export async function decidirApelacion(c: PoolClient, staffId: string, appealId:
     } else if (a.k === "dm_message") {
       await (await import("./admin-dm")).restaurarDmApelado(c, a.tid);
     } else if (a.k === "media") {
-      await c.query(`update media set status = 'visible', removed_reason = null, removed_note = null, removed_by = null, removed_at = null where id = $1::uuid and status = 'removed' and removed_reason = 'admin'`, [a.tid]);
+      // AJ · Una foto de la revisión automática: se publica (vuelve a lo público, memoria de contenido) en esta misma transacción.
+      if (!(await (await import("./fotos-revision")).decidirFotoPorPersona(c, a.tid, staffId, "lifted", motivo)))
+        await c.query(`update media set status = 'visible', removed_reason = null, removed_note = null, removed_by = null, removed_at = null where id = $1::uuid and status = 'removed' and removed_reason = 'admin'`, [a.tid]);
     } else if (a.k === "event") {
       // 6a · Tenía razón: el evento vuelve a verse; si no se había aprobado, queda aprobado por quien decide la apelación.
       await c.query(`update events set hidden_at = null, hidden_by = null, hidden_reason = null where id = $1::bigint and hidden_at is not null`, [a.tid]);
@@ -211,6 +222,9 @@ export async function decidirApelacion(c: PoolClient, staffId: string, appealId:
     }
     // 5f · Puntos: al volver a verse, la base devuelve lo que se restó al ocultar (trigger → pts_restaurar_objetivo: asiento inverso del
     // inverso); el rango se recalcula después de guardar (avisarDecision).
+  } else if (a.k === "media") {
+    // AJ · Se mantiene: una foto retenida u oculta de la revisión automática queda rechazada (la memoria de contenido la rechaza para cualquiera).
+    await (await import("./fotos-revision")).decidirFotoPorPersona(c, a.tid, staffId, "upheld", motivo);
   }
   await c.query(`update appeals set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where id = $1::bigint`, [a.id, accion, staffId, motivo]);
   return { err: null, a };
@@ -218,6 +232,8 @@ export async function decidirApelacion(c: PoolClient, staffId: string, appealId:
 /* Después de guardar la decisión: el aviso a quien apeló, con el motivo. */
 export async function avisarDecision(a: { numero: string; k: Apelable; tid: string; uid: string }, accion: "upheld" | "lifted", motivo: string) {
   if (accion === "lifted") await (await import("./puntos")).recalcularRango(a.uid).catch(() => undefined);
+  // AJ · Una foto de la revisión que se publicó: sus variantes y la copia privada fuera (después de guardar; nunca lanza).
+  if (accion === "lifted" && a.k === "media") await (await import("./fotos-revision")).despuesDePersona(a.tid).catch(() => undefined);
   const en = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [a.uid])).rows[0]?.lang === "en";
   const que = a.k === "sanction" ? (en ? "the sanction was lifted" : "levantamos la sanción") : a.k === "evt_org" ? (en ? "you can publish events again" : "puedes publicar eventos otra vez")
     : en ? `your ${APELABLE[a.k].en} is visible again` : `tu ${APELABLE[a.k].es} se ve otra vez`;

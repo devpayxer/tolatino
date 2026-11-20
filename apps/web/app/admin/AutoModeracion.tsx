@@ -7,7 +7,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { AutoMod } from "@/lib/admin-confianza";
-import { LIMITES, PARAMS, REGLAS, TIPOS_TERMINO, textoRegla, type ReglaKey } from "@/lib/moderacion-comun";
+import { conDolares, LIMITES, PARAMS, REGLAS, TIPOS_TERMINO, textoRegla, type ReglaKey } from "@/lib/moderacion-comun";
 import { limiteCambiar, reglaCambiar, reglaParams, terminoAgregar, terminoApagar, traduccionTope } from "./acciones-confianza";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -22,13 +22,20 @@ const REGLAS_EN: Record<ReglaKey, { t: string; s: string; fija?: string }> = {
   rev5: { t: "Review bursts", s: "{n} reviews without a transaction in {min} min → User reports queue." },
   img: { t: "Photos: nudity", s: "Our own model (NudeNet, ONNX) before posting → Flagged media queue. If it doesn’t respond, the photo waits for manual review." },
   autohide: { t: "Auto-hide by reports", s: "{reportes} reports from different people and devices in {horas} h (accounts older than {edad_h} h) → hidden for review, with notice and appeal." },
+  foto1: { t: "Public photos · layer 1: own model", s: "On upload: under {duda_pct} % nudity → published; {rechazo_pct} % or more → rejected with a notice and “Ask for a review”; in between → layer 2. Off (or not responding): everything goes to layer 2." },
+  foto2: { t: "Public photos · layer 2: second opinion (AI)", s: "The reduced photo and a fixed guideline, in the same request ({espera_s} s at most): publishes, rejects with a reason or holds it. Cap of ${tope_dolares} a month; {intentos} retries by the sweep. Off or at the cap: doubtful photos are held." },
+  foto3: { t: "Public photos · layer 3: reports", s: "{reportes} reports from different accounts (older than {edad_h} h; one device counts once) → the photo is hidden on its own, its file leaves public storage and goes to layer 2." },
+  foto4: { t: "Public photos · layer 4: trust", s: "A verified business with {fotos} visible photos and none removed in {dias} days: its doubtful photos are published without layer 2 (clear ones are still rejected). Accounts younger than {nueva_dias} days: {nueva_hora} photos an hour." },
 };
 const PARAMS_EN: Partial<Record<ReglaKey, Record<string, string>>> = {
   spam: { n: "How many similar", horas: "Within how many hours" }, rev5: { n: "How many reviews", min: "Within how many minutes" },
   img: { umbral: "Model threshold (0–1)" }, autohide: { reportes: "Reports", horas: "Within how many hours", edad_h: "Accounts older than (h)" },
+  foto1: { duda_pct: "Doubtful from %", rechazo_pct: "Rejected from %" }, foto2: { tope_cents: "Monthly cap (cents)", espera_s: "Time limit (s)", intentos: "Sweep retries" },
+  foto3: { reportes: "Reports from different accounts", edad_h: "Accounts older than (h)" },
+  foto4: { fotos: "Visible business photos", dias: "No removed photos in (days)", nueva_dias: "New account: under (days)", nueva_hora: "New account: photos an hour" },
 };
 const TIPOS_EN: Record<string, string> = { odio: "Hate", estafa: "Scam", migra: "Immigration", autolesion: "Self-harm" };
-const textoReglaEn = (k: ReglaKey, p: Record<string, number>) => REGLAS_EN[k].s.replace(/\{(\w+)\}/g, (_, x) => String(p[x] ?? ""));
+const textoReglaEn = (k: ReglaKey, p: Record<string, number>) => REGLAS_EN[k].s.replace(/\{(\w+)\}/g, (_, x) => String(conDolares(p)[x] ?? ""));
 
 export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolean; arriba: Bloque[] }) {
   const router = useRouter(), desk = useAncho() >= 1024, E = useE(), en = E("", "x") === "x";
@@ -58,11 +65,11 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
         : E("No responde: «Ver traducción» dice «La traducción no está disponible ahora.» y todo lo demás sigue igual. El texto nunca va a un tercero.", "Not responding: “See translation” says “Translation isn’t available right now.” and everything else stays the same. The text never goes to a third party.");
   const lnom = TIPOS_TERMINO.find((x) => x[0] === lista);
   const B: Bloque[] = [...arriba,
-    { type: "note", tone: "ink", icon: "shield", t: E("Las reglas marcan; una persona decide. Nada se oculta solo salvo los teléfonos (se frenan antes de publicarse) y el auto-ocultar por reportes de personas distintas (con aviso y apelación).", "Rules flag; a person decides. Nothing is hidden automatically except phone numbers (stopped before posting) and auto-hide from reports by different people (with notice and appeal).") },
+    { type: "note", tone: "ink", icon: "shield", t: E("Las reglas marcan; una persona decide. Nada se oculta solo salvo los teléfonos (se frenan antes de publicarse), el auto-ocultar por reportes de personas distintas y las fotos públicas, que se revisan solas en cuatro capas (siempre con aviso y apelación).", "Rules flag; a person decides. Nothing is hidden automatically except phone numbers (stopped before posting), auto-hide from reports by different people and public photos, which are reviewed automatically in four layers (always with notice and appeal).") },
     { type: "group", k: E("REGLAS", "RULES") },
     { type: "rows", items: d.reglas.map((r) => {
       const R = REGLAS[r.k], fija = !!R.fija, Rt = en ? REGLAS_EN[r.k].t : R.t, Rf = en ? REGLAS_EN[r.k].fija ?? R.fija : R.fija;
-      return { key: r.k, icon: r.k === "img" ? "image" : r.k === "autohide" ? "ban" : "bolt", t: Rt,
+      return { key: r.k, icon: r.k === "img" || r.k.startsWith("foto") ? "image" : r.k === "autohide" ? "ban" : "bolt", t: Rt,
         s: `${en ? textoReglaEn(r.k, r.params) : textoRegla(r.k, r.params)}${fija ? ` ${Rf}` : ""}${r.k === "img" ? ` · ${estadoImg}` : ""}${r.quien ? ` · ${E("Último cambio", "Last change")}: ${r.quien}` : ""}`,
         m: E(`${r.n30} EN 30 DÍAS`, `${r.n30} IN 30 DAYS`), tag: r.k === "img" && ri.on ? (img.ok ? E("RESPONDE", "RESPONDING") : E("NO RESPONDE", "NOT RESPONDING")) : undefined, tone: img.ok ? "signal" : "danger",
         tgOn: r.on, onTg: fija ? () => setToast(Rf!) : !edita ? sinPermiso : () => setConf({ titulo: "", sub: E(`${r.on ? "Apagar" : "Encender"} «${R.t}». Queda en la auditoría.`, `Turn ${r.on ? "off" : "on"} “${Rt}”. It stays in the audit log.`), peligro: r.on, cta: r.on ? E("Apagar", "Turn off") : E("Encender", "Turn on"),

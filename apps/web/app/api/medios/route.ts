@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import sharp, { type OutputInfo } from "sharp";
 import { mismoOrigen, yo } from "@/lib/cuenta";
-import { db } from "@/lib/db";
+import { tx } from "@/lib/db";
+import { HTTP_RECHAZADA, HTTP_RETENIDA, mensajeSubida } from "@/lib/fotos-decision";
+import { anotarVeredicto, guardarNoPublicada, huella, reglasFotos, revisarSubida, topeSubidas, veredictosDe } from "@/lib/fotos-revision";
 import { guardarVariantes } from "@/lib/fotos-variantes";
 import { guardarObjeto, mediosListos, urlPublica } from "@/lib/medios";
 import { leerFormulario } from "@/lib/subida";
@@ -10,6 +12,14 @@ import { leerFormulario } from "@/lib/subida";
 /* Subir una foto (Publica tu negocio · portada y galería; luego el panel). Con cuenta y del mismo sitio. El servidor
    decide: abre la imagen (si no es una foto, no entra), la endereza, la reduce a 1600 px y la vuelve a codificar en
    JPEG SIN metadatos (fuera EXIF y la ubicación GPS de la cámara). Queda a nombre de la persona hasta publicar.
+   Revisión automática (decisión AJ): ANTES de guardar nada en lo público, la foto pasa por las capas (lib/fotos-revision.ts revisarSubida; la
+   decisión pura en lib/fotos-decision.ts): memoria por contenido, modelo propio, confianza y, si hace falta, la segunda opinión en este mismo
+   pedido (con tiempo límite corto). Solo una foto «visible» llega a n/<uuid>.jpg; una retenida o rechazada se guarda SOLO en la llave privada,
+   no devuelve ninguna dirección y contesta ok: false con su estado y el mensaje ES/EN (202 retenida, 422 rechazada: el cliente no los
+   reintenta; guardián fotosRevisionAntesDePublicar). Cuenta nueva: tope de fotos por hora más bajo (capa 4).
+   Destino: el formulario puede traer destino=privado (la foto va solo a un negocio o al equipo: una solicitud, una cita, un estimado, un viaje…).
+   Es una pista del cliente que solo RESTRINGE: con «privado» la segunda opinión (Claude) no se consulta nunca para esta foto (la fila queda con
+   rev_sin_c2); una limpia entra igual y una clara se rechaza igual; la dudosa queda retenida («privada»). Cualquier otro valor = público.
    Fotos a la medida (decisión AI): guardada la maestra, en el mismo pedido salen sus variantes WebP (320/640/1080/1600, nunca más anchas que la
    maestra; lib/fotos-variantes.ts). Si algo falla ahí, la subida vale igual (la maestra ya está) y el barrido las completa. */
 export const dynamic = "force-dynamic";
@@ -22,8 +32,11 @@ export async function POST(req: NextRequest) {
   if (!me) return err(401, "Entra para subir fotos.", "Sign in to upload photos.");
   if (!mediosListos()) return err(503, "Las fotos no están disponibles en este momento.", "Photos are not available right now.");
   if (Number(req.headers.get("content-length") ?? 0) > MAX + 4096) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
-  const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where uploaded_by = $1 and created_at > now() - interval '1 hour'`, [me.id])).rows[0]?.n ?? 0;
-  if (n >= 60) return err(429, "Subiste muchas fotos seguidas. Prueba en un rato.", "Too many photos in a row. Try again later.");
+  const R = await reglasFotos();
+  const t = await topeSubidas(me.id, R);
+  if (t.n >= t.tope) return t.nueva
+    ? err(429, `Las cuentas nuevas suben hasta ${t.tope} fotos por hora. Prueba en un rato.`, `New accounts can upload up to ${t.tope} photos an hour. Try again later.`)
+    : err(429, "Subiste muchas fotos seguidas. Prueba en un rato.", "Too many photos in a row. Try again later.");
   const lf = await leerFormulario(req, MAX + 4096);
   if (!lf.ok && lf.grande) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
   const form = lf.ok ? lf.fd : null;
@@ -38,11 +51,23 @@ export async function POST(req: NextRequest) {
   } catch {
     return err(415, "Eso no parece una foto. Prueba con otra.", "That doesn’t look like a photo. Try another one.");
   }
-  const id = randomUUID(), clave = `n/${id}.jpg`;
+  // La decisión, antes de guardar nada en lo público.
+  const sinC2 = form?.get("destino") === "privado";
+  const sha = huella(img.data);
+  const v = await revisarSubida({ id: randomUUID(), datos: img.data, sha, userId: me.id, sinC2 }, R);
+  if (v.d.estado !== "visible") {
+    await guardarNoPublicada({ r: v, datos: img.data, ancho: img.info.width, alto: img.info.height, sha, userId: me.id, sinC2 });
+    return NextResponse.json({ ok: false, estado: v.d.estado === "rechazada" ? "rechazada" : "revision", id: v.id, mensaje: mensajeSubida(v.d) },
+      { status: v.d.estado === "rechazada" ? HTTP_RECHAZADA : HTTP_RETENIDA });
+  }
+  const id = v.id, clave = `n/${id}.jpg`;
   await guardarObjeto(clave, img.data, "image/jpeg");
-  await db().query(
-    `insert into media (id, owner_kind, owner_id, url, w, h, uploaded_by, status, bytes) values ($1, 'user', $2, $3, $4, $5, $6, 'visible', $7)`,
-    [id, me.id, urlPublica(clave), img.info.width, img.info.height, me.id, img.data.length]);
+  await tx(async (c) => {
+    await c.query(
+      `insert into media (id, owner_kind, owner_id, url, w, h, uploaded_by, status, sha256, rev_at, rev_capa, rev_sin_c2, bytes) values ($1, 'user', $2, $3, $4, $5, $6, 'visible', $7, now(), $8, $10, $9)`,
+      [id, me.id, urlPublica(clave), img.info.width, img.info.height, me.id, sha, v.d.capa, img.data.length, sinC2]);
+    for (const x of veredictosDe(v, { mediaId: id, sha, uploader: me.id })) await anotarVeredicto(c, x);
+  });
   await guardarVariantes(id, img.data, img.info.width);
   return NextResponse.json({ ok: true, id, url: urlPublica(clave) });
 }

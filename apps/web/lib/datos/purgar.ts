@@ -44,9 +44,9 @@ export async function purgarVencidas(max = 5): Promise<ResPurga[]> {
 /* Las fotos de la persona fuera del almacenamiento ANTES de la transacción (el archivo; la fila la vacía el mapa). Las del negocio no: el negocio
    sigue (sin reclamar) con sus fotos. */
 async function fotosFuera(cuenta: string, donde: string | null): Promise<number> {
-  const F = (await db().query<{ url: string; w: number | null; var_widths: number[] | null }>(
+  const F = (await db().query<{ url: string; w: number | null; var_widths: number[] | null; rev_llave: string | null }>(
     // nosemgrep: tolatino-sql-con-texto-interpolado — fragmentos de data_map: solo los escribe la semilla, validados por scripts/datos/mapa.mjs y mapa(); nombres por ident()
-    `select x.url, x.w, x.var_widths from media x
+    `select x.url, x.w, x.var_widths, x.rev_llave from media x
       where x.purged_at is null and x.url not in ('borrada', 'privado/borrada') and x.url !~ '^https?://'
         and ((x.uploaded_by = $1::uuid and (${donde ?? "true"}))
           or (x.owner_kind = 'com_post' and x.owner_id in (select p.id::text from com_posts p where p.author_user_id = $1::uuid))
@@ -62,6 +62,8 @@ async function fotosFuera(cuenta: string, donde: string | null): Promise<number>
     const clave = f.url.replace(/^\/medios\//, "");
     await borrarObjeto(clave);
     for (const v of clavesVariantes(clave, f.w, f.var_widths)) await borrarObjeto(v);
+    // Revisión automática (decisión AJ): una foto retenida, rechazada u oculta vive en la llave privada (privado/rev/<uuid>.jpg): sale también.
+    if (f.rev_llave) await borrarObjeto(f.rev_llave);
   }
   return F.length;
 }
@@ -135,7 +137,7 @@ export async function purgarCuenta(cuenta: string): Promise<ResPurga> {
     items.push({ tabla: "ugc_translations", columna: "target_id", accion: "borrar", filas: tr.rowCount ?? 0 });
     // Las fotos de sus publicaciones y de su perfil (las que subió van por el mapa).
     const fx = await c.query(
-      `update media set status = 'removed', removed_reason = coalesce(removed_reason, 'Borrada con la cuenta (30 días)'), url = case when private then 'privado/borrada' else 'borrada' end, purged_at = now()
+      `update media set status = 'removed', removed_reason = coalesce(removed_reason, 'Borrada con la cuenta (30 días)'), url = case when private then 'privado/borrada' else 'borrada' end, rev_llave = null, purged_at = now()
         where purged_at is null and ((owner_kind = 'com_post' and owner_id in (select p.id::text from com_posts p where p.author_user_id = $1::uuid)) or (owner_kind = 'user' and owner_id = $1::text))`, [cuenta]);
     // Los avisos que esperan salir por push a sus teléfonos: sin el texto (cifrado) y sin salir.
     const po = await c.query(

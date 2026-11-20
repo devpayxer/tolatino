@@ -36,7 +36,10 @@ async function mandar(url: string, file: File, extra: Record<string, string> = {
 export const subirFotoPrivada = (file: File): Promise<Subida> => mandar("/api/ayuda/foto", file);
 /* 9n · La foto de la entrega (privada; solo el repartidor asignado a un delivery activo): /api/repartidor/foto?numero=… devuelve el id. */
 export const subirFotoEntrega = (numero: string, file: File): Promise<Subida> => mandar(`/api/repartidor/foto?numero=${encodeURIComponent(numero)}`, file);
-export const subirFoto = (file: File): Promise<Subida> => mandar("/api/medios", file);
+/* AJ · destino «privado»: la foto va solo a un negocio o al equipo (solicitud, cita, estimado, viaje, la balanza o el daño de una renta…), no a una
+   página pública. El servidor nunca la manda a la segunda opinión (Claude); solo restringe. Ante la duda, privado (guardián fotosRevisionPrivacidad). */
+export type DestinoFoto = "publico" | "privado";
+export const subirFoto = (file: File, destino: DestinoFoto = "publico"): Promise<Subida> => mandar("/api/medios", file, destino === "privado" ? { destino: "privado" } : {});
 /* 9t · La foto de un mensaje (Mensajes cliente ↔ negocio; privada, la revisa el modelo propio al subirla): /api/mensajes/foto devuelve el id que
    se manda con el mensaje y la dirección privada para verla antes de enviarla. revision = el modelo la marcó o no respondió (la otra parte la ve
    cuando una persona de To'Latino la revise). para "dm" = Mensajes entre vecinos (Comunidad): la misma ruta, la guarda como foto de esa conversación. */

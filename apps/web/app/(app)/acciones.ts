@@ -113,7 +113,21 @@ export async function reportarFoto(mediaId: string, motivo: string, nota: string
     [mediaId, u.id, motivo, n],
   );
   await evento("reportar_foto", { ref: mediaId, userId: u.id, props: { motivo, caso: !!rep.rowCount } });
+  // AJ · Capa 3: con N reportes de cuentas distintas la foto se oculta sola y pasa a la segunda opinión (lib/fotos-revision.ts). Nunca rompe el reporte.
+  await (await import("@/lib/fotos-revision")).revisarReportes(mediaId).catch(() => undefined);
   return { ok: true, on: true };
+}
+
+/* AJ · «Pedir revisión» de una foto que la revisión automática retuvo, rechazó u ocultó: una apelación por el camino de siempre (lib/apelaciones.ts
+   apelar: una vez por foto, en com_apelar_dias, 20–500 letras, cola «apel»; la base comprueba que la foto es de quien la pide y que no se publicó).
+   Una persona del equipo la decide (decidirApel → decidirFotoPorPersona). Los botones los pone R3. */
+export async function pedirRevisionFoto(mediaId: string, texto: string): Promise<{ ok: true; numero: string } | { ok: false; entrar?: true; msg?: { es: string; en: string } }> {
+  if (!(await mismoOrigen())) return { ok: false };
+  if (typeof mediaId !== "string" || !UUID.test(mediaId)) return { ok: false };
+  const u = await yo();
+  if (!u) return { ok: false, entrar: true };
+  const r = await (await import("@/lib/apelaciones")).apelar(u.id, "media", mediaId, String(texto ?? ""));
+  return r.ok ? r : { ok: false, msg: r.msg };
 }
 
 /* «Avísame cuando haya» desde Buscar: guarda la búsqueda tal como se escribió (y la categoría, si había). */

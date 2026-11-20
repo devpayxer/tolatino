@@ -102,7 +102,7 @@ export function mercadoDetalle(c: Ctx): Sec {
     if (l.peso) {
       out.push({ type: "field", k: `${E2("PESO REAL · LB", "REAL WEIGHT · LB")} · ${nm(l.name).toUpperCase()}`, val: w.lb, im: "decimal", ph: String(l.lb), onChange: (v) => c.setUi({ [k]: { ...w, lb: v.replace(/[^0-9.]/g, "").slice(0, 6) } }) });
       out.push({ type: "photos", k: `${E2("FOTO DE LA BALANZA · OBLIGATORIA", "SCALE PHOTO · REQUIRED")} · ${nm(l.name).toUpperCase()}`, cols: 3, items: w.foto ? [{ key: w.foto.id, bg: `url("${w.foto.url}")` }] : (l.foto ? [{ key: l.foto, bg: `url("${l.foto}")`, tag: E2("GUARDADA", "SAVED") }] : []),
-        addL: `${E2("Foto de", "Photo of")} ${nm(l.name)}`, onAdd: () => c.pickFiles(false, async (fs) => { const r = await subirFoto(fs[0]!); if (r.ok && r.id && r.url) c.setUi({ [k]: { ...w, foto: { id: r.id, url: r.url } } }); else c.toast(r.mensaje ? r.mensaje[es ? "es" : "en"] : E2("No se pudo subir la foto.", "Couldn’t upload the photo.")); }) });
+        addL: `${E2("Foto de", "Photo of")} ${nm(l.name)}`, onAdd: () => c.pickFiles(false, async (fs) => { const r = await subirFoto(fs[0]!, "privado"); if (r.ok && r.id && r.url) c.setUi({ [k]: { ...w, foto: { id: r.id, url: r.url } } }); else c.toast(r.mensaje ? r.mensaje[es ? "es" : "en"] : E2("No se pudo subir la foto.", "Couldn’t upload the photo.")); }) });
     }
     const elegir = ui.mNoHay === l.id;
     out.push({ type: "acts", items: [

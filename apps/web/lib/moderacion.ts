@@ -39,7 +39,7 @@ export async function reglasMod(c: Q = db()): Promise<Reglas> {
   if (cacheR && Date.now() - cacheR.at < 15_000) return cacheR.r;
   const r = (await c.query<{ key: ReglaKey; enabled: boolean; params: Record<string, number> }>(`select key, enabled, params from mod_rules`)).rows;
   const out = Object.fromEntries(r.map((x) => [x.key, { on: x.enabled, p: x.params ?? {} }])) as Reglas;
-  for (const k of ["phone", "pii", "spam", "hate", "rev5", "img", "autohide"] as ReglaKey[]) out[k] ??= { on: true, p: {} };
+  for (const k of ["phone", "pii", "spam", "hate", "rev5", "img", "autohide", "foto1", "foto2", "foto3", "foto4"] as ReglaKey[]) out[k] ??= { on: true, p: {} };
   cacheR = { at: Date.now(), r: out };
   return out;
 }
@@ -176,16 +176,19 @@ export async function revisarTextoSuelto(c: Q, x: { texto: string; autor: string
     en: "Your notice was not sent: it has something To'Latino's rules do not allow (offensive language, a scam, someone's immigration status or personal data). Rewrite it; if you think it was a mistake, write to Support." } };
 }
 
-/* ── Fotos de una publicación (regla img): las nuevas pasan por el modelo propio; si las marca o no responde, esperan revisión ── */
+/* ── Fotos de una publicación (regla img): las nuevas pasan por el modelo propio; si las marca o no responde, esperan revisión ──
+   AJ · Una foto que ya tiene veredicto de la revisión automática al subirla (rev_at, sin llave privada: se publicó) no se revisa dos veces: el
+   veredicto guardado manda y se ve. Solo una foto sin veredicto (de antes de AJ) pasa por aquí como siempre. Las retenidas al subir no llegan
+   a la publicación (no se pueden adjuntar) y las resuelve la capa 2 (lib/fotos-revision.ts barrerRevision). */
 export async function revisarFotosCom(postId: string): Promise<{ revision: number }> {
   const R = await reglasMod();
-  const F = (await db().query<{ id: string; url: string; autor: string | null; ciudad: string }>(
-    `select m.id::text, m.url, m.uploaded_by::text as autor, p.city_id as ciudad from media m join com_posts p on p.id::text = m.owner_id
+  const F = (await db().query<{ id: string; url: string; autor: string | null; ciudad: string; veredicto: boolean }>(
+    `select m.id::text, m.url, m.uploaded_by::text as autor, p.city_id as ciudad, (m.rev_at is not null and m.rev_llave is null) as veredicto from media m join com_posts p on p.id::text = m.owner_id
       where m.owner_kind = 'com_post' and m.owner_id = $1 and m.status = 'review'
         and not exists (select 1 from mod_flags f where f.target_kind = 'media' and f.target_id = m.id::text)`, [postId])).rows;
   let revision = 0;
   await Promise.all(F.map(async (f) => {
-    if (!R.img.on) { await db().query(`update media set status = 'visible' where id = $1::uuid and status = 'review'`, [f.id]); return; }
+    if (f.veredicto || !R.img.on) { await db().query(`update media set status = 'visible' where id = $1::uuid and status = 'review'`, [f.id]); return; }
     const datos = await leerObjeto(f.url.replace(/^\/medios\//, "")).catch(() => null);
     const r = datos ? await revisarImagen(datos, R.img.p.umbral ?? 0.6) : { estado: "sin_servicio" as const, desnudez: null, ms: null };
     if (r.estado === "ok") { await db().query(`update media set status = 'visible' where id = $1::uuid and status = 'review'`, [f.id]); return; }
