@@ -30,7 +30,10 @@ const M = '5705550622', V = '5705550633', W = ['5705550641', '5705550642', '5705
 const sinScroll = (p) => sinDesborde(p, p.url());
 const dlg = (p) => p.getByRole('dialog');
 const IMG = ENT.rec('fotos') + '/portada.jpg';
-let svc = null;
+let svc = null, dejarComoEstaba = () => { try { sql(`update mod_rules set enabled = true`); } catch { /* sin base */ } };
+const sharp = require(ENT.RAIZ + '/apps/web/node_modules/sharp');
+// AJ · Cada foto de la prueba es un contenido nuevo (la memoria por contenido haría entrar directo una que ya se aprobó en una corrida anterior).
+const fotoUnica = async () => ({ name: 'foto.jpg', mimeType: 'image/jpeg', buffer: await sharp(IMG).modulate({ brightness: 0.85 + Math.random() * 0.3 }).jpeg({ quality: 90 }).toBuffer() });
 const servicioImg = (on) => {
   if (!on) { try { execSync("pkill -f 'services/moderacion-img/app.py'"); } catch { /* ya estaba */ } return; }
   svc = spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: '8790' }, detached: true, stdio: 'ignore' }); svc.unref();
@@ -73,6 +76,20 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
   const vp = await tel(); const RV = await preparar(vp, V, 'Valeria');
   const wp = await tel(); const WID = []; for (let i = 0; i < W.length; i++) WID.push(await preparar(wp, W[i], `Red${i + 1}`));
   const TODOS = [RA, RB, RM, RV, ...rp.map((x) => x.id), ...SPID, ...WID], LISTA = TODOS.map((x) => `'${x}'`).join(', ');
+  // AJ (20 nov) · Repetible sobre la misma base: lo que la prueba deja (sanciones, bloqueos, casos, reportes, reglas apagadas, el servicio de fotos)
+  // se deshace al terminar Y si falla a medias (el reintento del CI corre sobre la misma base).
+  dejarComoEstaba = () => {
+    sql(`update sanctions set lifted_at = now(), lift_reason = 'prueba' where target_kind = 'user' and target_id in (${TODOS.map((x) => `'${x}'`).join(', ')}) and lifted_at is null`);
+    sql(`update users set status = 'active', status_until = null, status_reason = null where id in (${LISTA})`);
+    sql(`update user_blocks set removed_at = now() where removed_at is null and (user_id in (${LISTA}) or target_user_id in (${LISTA}))`);
+    sql(`update queue_items set status = 'decided', decision = 'prueba', reason = 'prueba', decided_at = now() where status = 'open' and ((queue in ('rep') and subject_kind in ('com_post', 'com_comment') and subject_id in (select id::text from com_posts where body like '%${TAG}%' union all select id::text from com_comments where body like '%${TAG}%')) or (queue = 'repUsr' and subject_id in (${TODOS.map((x) => `'${x}'`).join(', ')})) or (queue = 'apel' and subject_id in (select id::text from appeals where user_id in (${LISTA}))) or (queue = 'medios' and business_id is null))`);
+    sql(`update content_reports set status = 'dismissed', created_at = created_at - interval '2 days' where reporter_user_id in (${LISTA}) and created_at > now() - interval '2 days'`);
+    sql(`update reviews set status = 'removed', hidden_reason = 'prueba' where user_id = '${RV}' and status <> 'removed'`);
+    sql(`update com_comments set status = 'deleted', deleted_at = coalesce(deleted_at, now()), created_at = created_at - interval '2 days' where body like '%${TAG}%' and status <> 'deleted'`);
+    sql(`update com_posts set status = 'deleted', deleted_at = coalesce(deleted_at, now()), created_at = created_at - interval '2 days', publish_at = publish_at - interval '2 days' where body like '%${TAG}%' or (author_user_id in (${LISTA}) and created_at > now() - interval '1 day')`);
+    sql(`update mod_rules set enabled = true`); sql(`update platform_config set value = '10' where key = 'com_lim_publicaciones'`);
+    if (!saludImg()) servicioImg(true);
+  };
   sql(`update content_reports set status = 'dismissed', created_at = created_at - interval '2 days' where reporter_user_id in (${LISTA}) and created_at > now() - interval '2 days'`);
   sql(`update content_reports set status = 'dismissed' where target_kind = 'user' and target_id in (${TODOS.map((x) => `'${x}'`).join(', ')}) and status = 'open'`);
   sql(`update queue_items set status = 'decided', decision = 'prueba', reason = 'prueba', decided_at = now() where status = 'open' and ((queue = 'repUsr' and subject_id in (${TODOS.map((x) => `'${x}'`).join(', ')})) or (queue = 'apel' and subject_id in (select id::text from appeals where user_id in (${LISTA}))) or (queue = 'medios' and business_id is null))`);
@@ -268,7 +285,7 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
   const r2 = rp[1].p;
   const conFoto = async (p, t) => {
     await p.goto(B + '/comunidad/nuevo?k=publicacion'); await p.locator('textarea').first().fill(`${t} ${TAG}`);
-    await p.locator('input[type=file]').first().setInputFiles(IMG); await espera(async () => (await p.locator('[aria-label^="Quitar foto 1"]').count()) > 0, 20000);
+    await p.locator('input[type=file]').first().setInputFiles(await fotoUnica()); await espera(async () => (await p.locator('[aria-label^="Quitar foto 1"]').count()) > 0, 20000);
     await clic(p.getByRole('button', { name: 'Publicar', exact: true })); await p.waitForURL(/\/comunidad\/p\/\d+/); return p.url().match(/\/p\/(\d+)/)[1];
   };
   const F1 = await conFoto(r2, 'Así quedó el parque después de la limpieza');
@@ -283,7 +300,7 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
     'servicio caído: la segunda opinión la revisó al subirla (c2) y se ve; la publicación no la revisa dos veces');
   sql(`update mod_rules set enabled = false where key = 'foto2'`);
   await r2.goto(B + '/comunidad/nuevo?k=publicacion'); await r2.locator('textarea').first().fill(`Una más del parque ${TAG}`);
-  await r2.locator('input[type=file]').first().setInputFiles(IMG);
+  await r2.locator('input[type=file]').first().setInputFiles(await fotoUnica());
   ok(await contiene(r2, 'Tu foto está en revisión antes de publicarse.') && (await r2.locator('[aria-label^="Quitar foto 1"]').count()) === 0, 'sin modelo propio ni segunda opinión: la foto queda retenida al subirla y no se adjunta (lo dice el compositor)');
   await r2.screenshot({ path: OUT + 'c5d-foto-revision-m.png', fullPage: true });
   sql(`update mod_rules set enabled = true where key = 'foto2'`);
@@ -321,15 +338,7 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
   ok(await sinScroll(adm) && await sinScroll(ap) && await sinScroll(r1), 'sin scroll horizontal');
 
   // ── Deja todo como estaba ──
-  sql(`update sanctions set lifted_at = now(), lift_reason = 'prueba' where target_kind = 'user' and target_id in (${TODOS.map((x) => `'${x}'`).join(', ')}) and lifted_at is null`);
-  sql(`update users set status = 'active', status_until = null, status_reason = null where id in (${LISTA})`);
-  sql(`update user_blocks set removed_at = now() where removed_at is null and (user_id in (${LISTA}) or target_user_id in (${LISTA}))`);
-  sql(`update queue_items set status = 'decided', decision = 'prueba', reason = 'prueba', decided_at = now() where status = 'open' and ((queue in ('rep') and subject_kind in ('com_post', 'com_comment') and subject_id in (select id::text from com_posts where body like '%${TAG}%' union all select id::text from com_comments where body like '%${TAG}%')) or (queue = 'repUsr' and subject_id in (${TODOS.map((x) => `'${x}'`).join(', ')})) or (queue = 'apel' and subject_id in (select id::text from appeals where user_id in (${LISTA}))) or (queue = 'medios' and business_id is null))`);
-  sql(`update content_reports set status = 'dismissed', created_at = created_at - interval '2 days' where reporter_user_id in (${LISTA}) and created_at > now() - interval '2 days'`);
-  sql(`update reviews set status = 'removed', hidden_reason = 'prueba' where user_id = '${RV}' and status <> 'removed'`);
-  sql(`update com_comments set status = 'deleted', deleted_at = coalesce(deleted_at, now()), created_at = created_at - interval '2 days' where body like '%${TAG}%' and status <> 'deleted'`);
-  sql(`update com_posts set status = 'deleted', deleted_at = coalesce(deleted_at, now()), created_at = created_at - interval '2 days', publish_at = publish_at - interval '2 days' where body like '%${TAG}%' or (author_user_id in (${LISTA}) and created_at > now() - interval '1 day')`);
-  sql(`update mod_rules set enabled = true`); sql(`update platform_config set value = '10' where key = 'com_lim_publicaciones'`);
+  dejarComoEstaba();
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   await b.close(); console.log('OK com5d');
-})().catch((e) => { console.error(e); process.exit(1); });
+})().catch((e) => { console.error(e); try { dejarComoEstaba(); } catch (x) { console.error('no se pudo dejar todo como estaba:', x.message); } process.exit(1); });

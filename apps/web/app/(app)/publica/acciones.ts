@@ -138,7 +138,7 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   // Fotos: tienen que ser de esta persona, subidas por ella y visibles.
   const fotos = [d.cover, ...(d.gallery || [])].filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x)).slice(0, 13);
   if (!fotos.length || fotos[0] !== d.cover) return no("Falta tu foto.", "Your photo is missing.", "F1");
-  const mias = (await db().query<{ id: string }>(`select id::text from media where id = any($1::uuid[]) and owner_kind = 'user' and owner_id = $2 and status = 'visible'`, [fotos, me.id])).rows.map((r) => r.id);
+  const mias = (await db().query<{ id: string }>(`select id::text from media where id = any($1::uuid[]) and owner_kind = 'user' and owner_id = $2 and status = 'visible' and not rev_sin_c2`, [fotos, me.id])).rows.map((r) => r.id);
   if (!mias.includes(d.cover!)) return no("Vuelve a subir tu foto.", "Upload your photo again.", "F1");
   const subs = (await db().query<{ id: string; es: string }>(`select id, name->>'es' as es from subcategorias_vivas where category_id = $1`, [d.cat])).rows;
   const subIds = d.subs.map((s) => subs.find((x) => NN(x.es) === NN(s))?.id).filter((x): x is string => !!x);

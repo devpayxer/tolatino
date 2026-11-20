@@ -25,6 +25,9 @@ async function servirMedio(pathname, accept) {
 }
 const medios = (ctx) => ctx.route('**/medios/**', async (r) => {
   const u = new URL(r.request().url());
+  // Solo /medios/… (lo que sirve nginx desde el almacén). Una ruta de la app que lleva «medios» en el camino (p. ej. /api/medios/revision/<id>,
+  // la foto privada de la revisión automática) va al servidor de verdad: antes el patrón la tomaba y la pedía al almacén (404; rev9u, CI 44816865838).
+  if (!u.pathname.startsWith('/medios/')) return r.continue();
   const accept = (await r.request().allHeaders().catch(() => ({}))).accept;
   const x = await servirMedio(u.pathname, accept);
   return r.fulfill({ status: x.s, body: x.b, contentType: x.tipo, ...(x.cc ? { headers: { 'cache-control': x.cc, vary: 'Accept' } } : {}) });

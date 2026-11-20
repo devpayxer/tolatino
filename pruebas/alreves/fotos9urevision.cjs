@@ -43,9 +43,18 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
   const dud = (c2, o = {}) => D.decidir(base({ c1: { on: true, puntaje: 0.7 }, c2, ...o }));
   ok(es(dud({ estado: 'apagada' }), 'retenida', 'c2', 'apagada'), 'capa 2 apagada → retenida');
   ok(es(dud({ estado: 'sin_presupuesto' }), 'retenida', 'c2', 'sin_presupuesto'), 'capa 2 sin presupuesto → retenida');
-  ok(es(dud({ estado: 'privada' }), 'retenida', 'c2', 'privada'), 'destino privado: la dudosa → retenida («privada»), sin la segunda opinión');
-  ok(es(D.decidir(base({ c1: { on: true, puntaje: null }, c2: { estado: 'privada' } })), 'retenida', 'c2', 'sin_servicio'), 'destino privado con el modelo propio caído → retenida (sin_servicio: el barrido la vuelve a mirar con la capa 1)');
-  ok(es(D.decidir(base({ c1: { on: true, puntaje: 0.1 }, c2: { estado: 'privada' } })), 'visible', 'c1') && es(D.decidir(base({ c1: { on: true, puntaje: 0.9 }, c2: { estado: 'privada' } })), 'rechazada', 'c1'), 'destino privado: la limpia entra igual y la clara se rechaza igual');
+  console.log('decidir · destino privado (va solo a un negocio o al equipo)');
+  const priv = (o) => D.decidir(base({ privada: true, ...o }));
+  ok(es(priv({ c1: { on: true, puntaje: 0.7 } }), 'retenida', 'c1', 'privada'), 'privada dudosa → retenida («privada»), sin pedir la segunda opinión');
+  ok(es(priv({ c1: { on: true, puntaje: null } }), 'visible', 'c1', 'sin_servicio') && priv({ c1: { on: true, puntaje: null } }).puntaje === null, 'privada con el modelo propio sin respuesta → ENTRA (c1 · sin_servicio, como antes de AJ)');
+  ok(es(priv({ c1: { on: false, puntaje: null } }), 'visible', 'c1', 'apagada'), 'privada con la capa 1 apagada → entra (c1 · apagada)');
+  ok(es(priv({ c1: { on: true, puntaje: 0.1 } }), 'visible', 'c1', null) && es(priv({ c1: { on: true, puntaje: 0.9 } }), 'rechazada', 'c1', 'desnudez'), 'privada: la limpia entra igual y la clara se rechaza igual');
+  ok(es(priv({ c1: { on: true, puntaje: 0.85 } }), 'rechazada', 'c1') && es(priv({ c1: { on: true, puntaje: 0.6 } }), 'retenida', 'c1', 'privada'), 'privada en los bordes: = rechazo se rechaza; = duda queda retenida');
+  ok(es(priv({ memoria: { estado: 'rechazada', motivo: 'documento' }, c1: { on: true, puntaje: null } }), 'rechazada', 'memoria'), 'privada con contenido ya rechazado → rechazada (aunque el modelo esté caído)');
+  ok([undefined, { estado: 'respuesta', json: { veredicto: 'publicar', motivo: '' } }].every((c2) => priv({ c1: { on: true, puntaje: 0.7 }, c2 }).estado === 'retenida'), 'privada dudosa: aunque alguien le pase una respuesta de la capa 2, no la usa');
+  ok(es(D.decidir(base({ privada: false, c1: { on: true, puntaje: null }, c2: { estado: 'sin_respuesta' } })), 'retenida', 'c2', 'sin_servicio') && D.decidir(base({ privada: false, c1: { on: true, puntaje: null } })).estado === 'pedir_c2',
+    'la PÚBLICA sin servicio sigue en fallo cerrado: pide la capa 2 y, sin respuesta, queda retenida');
+  ok(es(dud({ estado: 'privada' }), 'retenida', 'c2', 'privada'), 'la capa 2 marcada «privada» (defensa) → retenida');
   ok(es(dud({ estado: 'sin_respuesta' }), 'retenida', 'c2', 'no_segura'), 'capa 2 no responde (dudosa) → retenida');
   ok(es(D.decidir(base({ c1: { on: true, puntaje: null }, c2: { estado: 'sin_respuesta' } })), 'retenida', 'c2', 'sin_servicio'), 'los dos modelos caídos → retenida (sin_servicio), nunca publicada');
   ok(es(dud({ estado: 'respuesta', json: { veredicto: 'publicar', motivo: '' } }), 'visible', 'c2'), 'capa 2 publicar → visible');
@@ -69,7 +78,7 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
   let publicaMal = 0, combos = 0;
   const c2s = [undefined, { estado: 'apagada' }, { estado: 'privada' }, { estado: 'sin_presupuesto' }, { estado: 'sin_respuesta' }, { estado: 'respuesta', json: { veredicto: 'no_segura', motivo: '' } }, { estado: 'respuesta', json: 'x' }];
   for (const on of [true, false]) for (const p of [null, 0.6, 0.7, 0.85, 0.95]) for (const conf of [true, false]) for (const c2 of c2s) {
-    combos++; const d = D.decidir(base({ c1: { on, puntaje: p }, confianza: conf, c2 }));
+    combos++; const d = D.decidir(base({ c1: { on, puntaje: p }, confianza: conf, c2, privada: false }));
     const genuinaDudosa = on && p !== null && p >= 0.6 && p < 0.85;
     if (d.estado === 'visible' && !(conf && genuinaDudosa)) publicaMal++;
   }

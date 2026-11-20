@@ -20,6 +20,11 @@ cuatro capas; al fundador solo le llegan las apelaciones y un resumen en su repo
 - **Quien sube siempre sabe qué pasó:** al subir («se publica», «está en revisión», «no podemos publicarla: motivo»), y por aviso cuando cambia.
 - **Toda decisión queda en la auditoría** (solo inserción): qué capa, puntaje, motivo, modelo y versión. El servidor decide; el cliente muestra.
 - **Si el modelo propio o Claude no responden:** la foto queda retenida y el barrido reintenta; nunca se publica «por si acaso» y nunca se pierde.
+- **Fotos que van solo a un negocio o al equipo** (solicitud, cita, estimado, viaje, la balanza del mercado, el daño de una renta: la subida
+  las marca con destino «privado»): nunca van a Claude. Limpia entra, clara se rechaza, dudosa queda retenida con «Pedir revisión»; y si el
+  modelo propio no responde o está apagado, **entran** (como antes de AJ: esas operaciones no pueden esperar) y quedan en el libro como
+  «capa 1 · sin servicio» para contarlas. Una foto subida como privada no se puede adjuntar a algo público. El fallo cerrado de arriba sigue
+  siendo regla dura para las públicas. (20 nov, después del CI)
 - **Interruptores y topes en Configuración** (como El Compa): cada capa se enciende y apaga, umbrales con límites, tope mensual de gasto de la
   capa 2. Con la capa 2 apagada o sin presupuesto, las dudosas quedan retenidas con «Pedir revisión».
 - **Apelación:** «Pedir revisión» crea un caso en la cola «Medios marcados» (la de siempre). Es lo único que llega a una persona.

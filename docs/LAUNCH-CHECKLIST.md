@@ -2067,6 +2067,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       revisión de R2 las pantallas que suben esas fotos mandan `destino=privado` (lista en el guardián fotosRevisionPrivacidad): nunca van a la
       segunda opinión y su dudosa queda retenida («privada») hasta que una persona la revise. Queda: su archivo sigue en `n/` (dirección pública
       que nadie lista); decidir si deberían subirse por una ruta privada, como las de ayuda. (R2, 20 nov)
+- [ ] **→ 9u** · **El atajo de la foto «privada» en los catálogos:** desde el 20 nov una foto subida con destino «privado» entra aunque el modelo
+      propio esté caído (decisión de después del CI). Las acciones que adjuntan una foto de `media` a algo público ya la rechazan
+      (`not rev_sin_c2`: Publica tu negocio, galería, logo, foto del equipo, menú, perfil, Comunidad, novedades, eventos, reseñas; guardián
+      fotosRevisionPrivacidad). Los catálogos que guardan la DIRECCIÓN como texto sin mirar `media` (oficios, servicios, autos, inmuebles y renta de
+      artículos: `items.photos` por expresión regular) no la validan: quien mienta «privado» con el modelo caído puede pegar esa dirección ahí.
+      Arreglo de fondo (F3 de Fotos a la medida): las fotos privadas a una llave privada servida con permiso; mientras, o validar esas direcciones contra `media`. (20 nov)
 - [ ] **→ 9u** · **rev9u (punta a punta con Garage) no corrió fuera del CI:** esta sesión no tenía almacén (/api/medios da 503) ni el servidor
       de pruebas. Corrieron tipos, todos los guardianes, alreves9urevision 31/31, la prueba pura fotos9urevision y la migración 0196 dos veces
       sobre todas las anteriores (con el SQL de cada camino probado contra la base). Correr rev9u y com5d (su paso 13 cambió) en el CI dirigido.

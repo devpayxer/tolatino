@@ -12076,6 +12076,8 @@ const guardianes = {
     if (!/segundaOpinion\(\{ mediaId: null, llave: `n\/\$\{x\.id\}\.jpg`, privada: false, dueno: "user", sinC2: x\.sinC2 \}/.test(f) || !/RR\.c2\.on && !f\.rev_sin_c2 \? await segundaOpinion\(\{ mediaId: f\.id, llave: f\.rev_llave, privada: false, dueno: f\.owner_kind, sinC2: f\.rev_sin_c2 \}/.test(f))
       falla(G, F, 0, "la revisión pasa a la segunda opinión solo la subida pública (sin fila) o una retenida con su fila y su llave privada, y nunca una de destino «privado»");
     const rs = cuerpoFn(f, "revisarSubida");
+    if (!/confianza: dudosa \? await confianza\(x\.userId, R\) : false, privada: x\.sinC2 \};/.test(rs) || !/confianza: dudosa && f\.uploaded_by \? await confianza\(f\.uploaded_by, RR\) : false, privada: f\.rev_sin_c2 \};/.test(f))
+      falla(G, F, 0, "la decisión recibe el destino «privado» (privada: sinC2 / rev_sin_c2): nunca la segunda opinión");
     if (rs.indexOf('if (x.sinC2) return {') < 0 || rs.indexOf('if (x.sinC2) return {') > rs.indexOf("segundaOpinion(") || !/decidir\(\{ \.\.\.e, c2: \{ estado: "privada" \} \}\)/.test(rs))
       falla(G, F, 0, "una subida de destino «privado» decide sin la segunda opinión (antes de llamarla): la dudosa queda retenida («privada»)");
     if (!/and \(not rev_sin_c2 or rev_motivo = 'sin_servicio'\)/.test(cuerpoFn(f, "barrerRevision"))) falla(G, F, 0, "el barrido no vuelve a mandar una foto de destino «privado» (solo la mira si el modelo propio no pudo)");
@@ -12102,6 +12104,23 @@ const guardianes = {
       if (PRIV_FOTO.includes(x) && (directo || llamadas.some((m) => !/,\s*"privado"\s*$/.test(m[1])))) falla(G, x, 0, "una pantalla de fotos que solo ve un negocio o el equipo sube con subirFoto(…, \"privado\") (nunca va a la segunda opinión)");
     }
     for (const x of PRIV_FOTO) if (!existsSync(x)) falla(G, x, 0, "la lista de pantallas privadas nombra un archivo que ya no existe: actualizarla");
+    // El atajo: una foto subida como «privado» (entra sin modelo propio) no se puede adjuntar a algo PÚBLICO. Cada acción del servidor que adjunta
+    // una foto de media a un destino público lo exige en su consulta (not rev_sin_c2). Los catálogos que guardan la dirección como texto (oficios,
+    // servicios, autos, inmuebles, renta de artículos) no validan contra media: van a LAUNCH (→ F3, la llave privada servida con permiso).
+    const ATAJO = [
+      ["apps/web/app/(app)/publica/acciones.ts", /and owner_kind = 'user' and owner_id = \$2 and status = 'visible' and not rev_sin_c2`/, "Publica tu negocio (portada y galería)"],
+      ["apps/web/app/panel/acciones.ts", /where id = \$3::uuid and owner_kind = 'user' and owner_id = \$4 and status = 'visible' and not rev_sin_c2`/, "la galería del panel"],
+      ["apps/web/app/panel/acciones.ts", /owner_kind = 'logo'[^`]*status = 'visible' and not rev_sin_c2 returning url`/, "el logo"],
+      ["apps/web/app/panel/acciones-equipo.ts", /owner_kind = 'member'[^`]*status = 'visible' and not rev_sin_c2 returning url`/, "la foto del equipo (panel)"],
+      ["apps/web/lib/equipo-invitacion.ts", /owner_kind = 'member'[^`]*status = 'visible' and not rev_sin_c2 returning url`/, "la foto del equipo (invitación)"],
+      ["apps/web/app/panel/acciones-menu.ts", /select url from media where url = any\(\$1::text\[\]\) and status = 'visible' and not rev_sin_c2/, "el menú"],
+      ["apps/web/lib/perfil.ts", /owner_id = \$2::text and status = 'visible' and not rev_sin_c2`/, "la foto de perfil"],
+      ["apps/web/lib/comunidad.ts", /\(owner_kind = 'user' and uploaded_by = \$2 and status = 'visible' and not rev_sin_c2\)/, "la Comunidad"],
+      ["apps/web/lib/novedades.ts", /status = 'visible' and not rev_sin_c2 and \(\(owner_kind = 'user' and uploaded_by = \$2\) or \(owner_kind = 'post'/, "las novedades"],
+      ["apps/web/lib/evt.ts", /status = 'visible' and not rev_sin_c2 and \(\(owner_kind = 'user' and uploaded_by = \$2\) or \(owner_kind = 'event'/, "los eventos"],
+      ["apps/web/lib/resenas.ts", /status = 'visible' and not rev_sin_c2 and \(owner_kind = 'user' or \(owner_kind = 'review'/, "las reseñas"],
+    ];
+    for (const [x, re, que] of ATAJO) if (!existsSync(x) || !re.test(sinComent(x))) falla(G, x, 0, `${que}: una foto subida como «privado» no se adjunta a algo público (not rev_sin_c2 en la consulta que la valida)`);
     // La imagen solo la manda el proveedor y la anota el simulador (para que la prueba vea que una privada nunca llega).
     if (!/\.\.\.\(e\.imagen \? \[\{ type: "image", source: \{ type: "base64", media_type: e\.imagen\.tipo, data: e\.imagen\.base64 \} \}\] : \[\]\)/.test(readFileSync(MC, "utf8"))) falla(G, MC, 0, "modelo-claude manda la imagen como un bloque image (solo la de la segunda opinión)");
     if (!/imagen: \{ sha256: createHash\("sha256"\)\.update\(img\)\.digest\("hex"\)/.test(readFileSync(SIM, "utf8"))) falla(G, SIM, 0, "el simulador anota la huella de cada imagen que recibe (la prueba lo revisa)");
@@ -12118,8 +12137,15 @@ const guardianes = {
     const G = "fotosRevisionFalloCerrado", D = "apps/web/lib/fotos-decision.ts", F = "apps/web/lib/fotos-revision.ts", P = "pruebas/alreves/fotos9urevision.cjs";
     if (!existsSync(D)) return falla(G, D, 0, "falta la decisión pura (lib/fotos-decision.ts)");
     const d = sinComent(D), de = cuerpoFn(d, "decidir"), ls = cuerpoFn(d, "leerSegunda");
-    const vis = [...de.matchAll(/return \{ estado: "visible", capa: "(\w+)"/g)].map((m) => m[1]).sort().join(",");
-    if (vis !== "c1,c2,c4,memoria") falla(G, D, 0, `decidir publica solo por memoria, capa 1 limpia, confianza o un «publicar» de la capa 2 (hoy: ${vis})`);
+    // El destino «privado» (va solo a un negocio o al equipo; decisión del 20 nov) es la ÚNICA excepción: sin modelo propio entra (como antes de AJ)
+    // y su dudosa queda retenida, todo en un bloque que solo corre con e.privada === true. Fuera de ese bloque, las públicas: fallo cerrado.
+    const iPriv = de.indexOf("  if (e.privada === true) {\n"), bloquePriv = iPriv < 0 ? "" : de.slice(iPriv, de.indexOf("\n  }\n", iPriv) + 4);
+    if (!bloquePriv || !/if \(porque === "dudosa"\) return \{ estado: "retenida", capa: "c1", motivo: "privada", puntaje: p \};\s*return \{ estado: "visible", capa: "c1", motivo: porque, puntaje: null \};\s*\}$/.test(bloquePriv.trim()))
+      falla(G, D, 0, "el destino «privado» va en su bloque (if (e.privada === true)): dudosa retenida; sin modelo propio, entra con su porqué");
+    const publica = bloquePriv ? de.replace(bloquePriv, "") : de;
+    const vis = [...publica.matchAll(/return \{ estado: "visible", capa: "(\w+)"/g)].map((m) => m[1]).sort().join(",");
+    if (vis !== "c1,c2,c4,memoria") falla(G, D, 0, `una PÚBLICA se publica solo por memoria, capa 1 limpia, confianza o un «publicar» de la capa 2: sin servicio nunca (hoy: ${vis})`);
+    if (/motivo: "(sin_servicio|apagada)", puntaje: null \}/.test(publica.replace(/estado: "retenida"[^}]*\}/g, ""))) falla(G, D, 0, "una pública sin modelo propio nunca entra");
     if (!/else if \(p < duda\) return \{ estado: "visible", capa: "c1"/.test(de) || !/else if \(p >= rechazo\) return \{ estado: "rechazada", capa: "c1", motivo: "desnudez"/.test(de)) falla(G, D, 0, "capa 1: limpia < duda, clara ≥ rechazo (los bordes)");
     if (!/porque = "dudosa";\s*if \(e\.confianza\) return \{ estado: "visible", capa: "c4"/.test(de) || (de.match(/e\.confianza/g) ?? []).length !== 1) falla(G, D, 0, "la confianza publica solo una dudosa de verdad (con puntaje entre los umbrales), nunca una sin respuesta");
     if (!/if \(v\.v === "publicar"\) return \{ estado: "visible", capa: "c2"/.test(de) || !/return \{ estado: "retenida", capa: "c2", motivo: "no_segura", puntaje: p \};\s*\}$/.test(de.trim()))

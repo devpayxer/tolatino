@@ -37,6 +37,11 @@ const casos = [
   [P, 'apps/web/app/panel/Rentas.tsx', 'await subirFoto(fs[0]!, "privado");', 'await subirFoto(fs[0]!);'],
   [P, 'apps/web/lib/subir-foto.ts', 'destino === "privado" ? { destino: "privado" } : {}', '{}'],
   [P, 'pruebas/e2e/rev9u.cjs', "'dudosa con destino privado → retenida y la segunda opinión no recibió nada'", "'dudosa con destino privado'"],
+  // El atajo: una foto subida como «privado» que se adjunta a algo público; la decisión que no recibe el destino.
+  [P, 'apps/web/lib/resenas.ts', "status = 'visible' and not rev_sin_c2 and (owner_kind = 'user' or (owner_kind = 'review'", "status = 'visible' and (owner_kind = 'user' or (owner_kind = 'review'"],
+  [P, 'apps/web/app/panel/acciones.ts', "owner_id = $3 and status = 'visible' and not rev_sin_c2 returning url`", "owner_id = $3 and status = 'visible' returning url`"],
+  [P, 'apps/web/lib/comunidad.ts', "uploaded_by = $2 and status = 'visible' and not rev_sin_c2)", "uploaded_by = $2 and status = 'visible')"],
+  [P, F, ', privada: x.sinC2 };', ' };'],
   // (c) Un camino que publica sin un «publicar»: la capa 2 que no responde, la confianza sin puntaje, leer la respuesta sin rigor, un error que
   //     no retiene, o el final de la decisión que publica.
   [C, D, '  if (c2.estado === "sin_respuesta") return { estado: "retenida", capa: "c2", motivo: porque === "sin_servicio" ? "sin_servicio" : "no_segura", puntaje: p };', '  if (c2.estado === "sin_respuesta") return { estado: "visible", capa: "c2", motivo: null, puntaje: p };'],
@@ -46,6 +51,10 @@ const casos = [
   [C, F, '{ esperaMs: R.c2.esperaMs }).catch(() => SIN_RESPUESTA)', '{ esperaMs: R.c2.esperaMs })'],
   [C, F, '  const d = decidir({ ...e, c2: c2 ?? { estado: "apagada" } });', '  const d = decidir({ ...e, c2: c2 ?? { estado: "respuesta", json: { veredicto: "publicar", motivo: "" } } });'],
   [C, D, '  if (c2.estado === "privada") return { estado: "retenida",', '  if (c2.estado === "privada") return { estado: "visible", capa: "c2", motivo: null, puntaje: p }; if (false) return { estado: "retenida",'],
+  // Destino «privado» (20 nov): su excepción fuera de su bloque, o una PÚBLICA que entra sin modelo propio.
+  [C, D, '  if (e.privada === true) {\n', '  if (e.privada === true || e.confianza) {\n'],
+  [C, D, '  else if (p === null) porque = "sin_servicio";', '  else if (p === null) return { estado: "visible", capa: "c1", motivo: "sin_servicio", puntaje: null };'],
+  [P, F, 'if (x.sinC2) return { id: x.id, d: decidir({ ...e, c2: { estado: "privada" } })', 'if (x.sinC2) return { id: x.id, d: decidir({ ...e, privada: false, c2: { estado: "respuesta", json: { veredicto: "publicar", motivo: "" } } })'],
   [C, 'pruebas/alreves/fotos9urevision.cjs', "console.log('nada que falle publica (todas las combinaciones)');", "console.log('combinaciones');"],
   // (d) El veredicto fuera de la transacción del cambio, un cambio de estado sin veredicto, el libro que se puede cambiar o borrar.
   [U, RUTA, '    for (const x of veredictosDe(v, { mediaId: id, sha, uploader: me.id })) await anotarVeredicto(c, x);\n', ''],

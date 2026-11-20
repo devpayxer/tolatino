@@ -264,7 +264,7 @@ async function ponerFotos(c: PoolClient, userId: string, post: string, fotos: st
   if (ids.length) {
     const r = await c.query(
       `update media set sort = array_position($3::uuid[], id) - 1, status = case when owner_kind = 'user' then 'review' else status end, owner_kind = 'com_post', owner_id = $1
-        where id = any($3::uuid[]) and ((owner_kind = 'user' and uploaded_by = $2 and status = 'visible') or (owner_kind = 'com_post' and owner_id = $1 and status in ('visible', 'review')))`, [post, userId, ids]);
+        where id = any($3::uuid[]) and ((owner_kind = 'user' and uploaded_by = $2 and status = 'visible' and not rev_sin_c2) or (owner_kind = 'com_post' and owner_id = $1 and status in ('visible', 'review')))`, [post, userId, ids]);
     if (r.rowCount !== ids.length) return false;
   }
   await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'com_post' and owner_id = $1 and status in ('visible', 'review') and not (id = any($2::uuid[]))`, [post, ids]);
