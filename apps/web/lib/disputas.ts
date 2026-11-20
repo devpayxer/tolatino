@@ -1,6 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { pasarela } from "./pagos/pasarela";
 
 /* Disputas con el banco (contracargos) · bloque 2r. Llegan por el webhook de Stripe (charge.dispute.created / updated /
@@ -188,7 +188,7 @@ export async function evidenciaArchivos(disputa: string) {
 
 /* Responder con evidencia (texto del equipo + lo que tenemos + los archivos) o aceptar la devolución. Lo llama la cola (con permiso). Los archivos se suben
    por la API de archivos de Stripe (en el sandbox, al simulador) y van en el mismo envío (submit); si una subida falla, no se envía nada. */
-export async function responderDisputa(disputa: string, staffId: string, texto: string): Promise<{ ok: true } | { ok: false; msg: string }> {
+export async function responderDisputa(disputa: string, staffId: string, texto: string, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: string }> {
   const d = (await db().query<{ sid: string; st: string; sim: boolean }>(`select stripe_dispute_id as sid, status as st, simulated as sim from disputes where id = $1::bigint`, [disputa])).rows[0];
   if (!d) return { ok: false, msg: "Esa disputa no existe." };
   if (d.st !== "needs_response") return { ok: false, msg: "Esta disputa ya se respondió o se cerró." };
@@ -209,17 +209,25 @@ export async function responderDisputa(disputa: string, staffId: string, texto: 
   const ok = await pasarela.disputaResponder(d.sid, { texto: `${texto.trim()}\n\n${e.resumen}`, producto: e.producto, cliente: e.cliente, fecha: e.fecha, envio: e.envio,
     archivos: { recibo: archivos.recibo, conversacion: archivos.conversacion, entrega: archivos.entrega, otro: archivos.foto_entrega } });
   if (!ok) return { ok: false, msg: "Stripe no aceptó la respuesta. No cambió nada; inténtalo otra vez." };
-  await db().query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);
-  await db().query(`update disputes set status = 'under_review', response_text = $2, responded_by = $3, responded_at = now(), evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);
+  // 20 nov · Lo que anota la respuesta y la auditoría de quien decide (alGuardar) van juntos en una transacción (antes: dos escrituras sueltas y la
+  // auditoría aparte, después, en la cola). La llamada a Stripe va antes y fuera.
+  await tx(async (c) => {
+    await c.query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);
+    await c.query(`update disputes set status = 'under_review', response_text = $2, responded_by = $3, responded_at = now(), evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);
+    await alGuardar?.(c);
+  });
   return { ok: true };
 }
-export async function aceptarDisputa(disputa: string): Promise<{ ok: true } | { ok: false; msg: string }> {
+export async function aceptarDisputa(disputa: string, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: string }> {
   const d = (await db().query<{ sid: string; st: string }>(`select stripe_dispute_id as sid, status as st from disputes where id = $1::bigint`, [disputa])).rows[0];
   if (!d) return { ok: false, msg: "Esa disputa no existe." };
   if (!["needs_response", "under_review"].includes(d.st)) return { ok: false, msg: "Esta disputa ya se cerró." };
   if (!(await pasarela.disputaAceptar(d.sid))) return { ok: false, msg: "Stripe no la cerró. No cambió nada; inténtalo otra vez." };
-  await db().query(`update disputes set status = 'accepted', closed_at = now(), updated_at = now() where id = $1::bigint`, [disputa]);
-  await db().query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);
+  await tx(async (c) => {
+    await c.query(`update disputes set status = 'accepted', closed_at = now(), updated_at = now() where id = $1::bigint`, [disputa]);
+    await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);
+    await alGuardar?.(c);
+  });
   return { ok: true };
 }
 

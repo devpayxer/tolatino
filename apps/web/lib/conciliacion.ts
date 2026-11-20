@@ -1,6 +1,6 @@
 import "server-only";
 import type { Staff } from "./admin";
-import { db, tx } from "./db";
+import { db, tx, type AlGuardar } from "./db";
 import { pasarela, type LadoStripe } from "./pagos/pasarela";
 
 /* 9k · El guardián del dinero (HERRAMIENTAS #20; fase9-apertura.md §4 9k): la conciliación diaria Stripe ↔ libro propio.
@@ -157,11 +157,18 @@ export function comparar(st: LadoStripe, L: Awaited<ReturnType<typeof libro>>, e
 
 const DIA = 86_400_000;
 /* Concilia un día (AAAA-MM-DD, UTC). `por`: el barrido o una persona del equipo (Planes › Ingresos «Conciliar otra vez», con permiso). Escribe la corrida
-   y sus diferencias en una transacción; si Stripe no responde, queda una corrida «fallo» con el error (y la alerta). Devuelve la del día. */
-export async function conciliarDia(dia: string, quien: { por: "barrido" } | { por: "equipo"; staffId: string } = { por: "barrido" }): Promise<DelDia> {
+   y sus diferencias en una transacción; si Stripe no responde, queda una corrida «fallo» con el error (y la alerta). Devuelve la del día.
+   20 nov · alGuardar: la auditoría de quien la pide («Conciliar otra vez») entra en la MISMA transacción que la corrida y sus diferencias (antes se
+   escribía aparte, después; si el proceso moría en ese hueco la corrida quedaba sin auditoría). La lectura de Stripe va antes y fuera. */
+export async function conciliarDia(dia: string, quien: { por: "barrido" } | { por: "equipo"; staffId: string } = { por: "barrido" }, alGuardar?: AlGuardar<{ estado: DelDia["estado"]; diferencias: number; corrida: string | null }>): Promise<DelDia> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) throw new Error("dia: AAAA-MM-DD");
   const modo = pasarela.modo();
-  if (modo === "apagado") return conciliacionDelDia(dia);
+  if (modo === "apagado") {
+    // Sin pasarela no corre nada (no hay corrida que escribir): queda solo que alguien lo pidió, con lo que ya había.
+    const r = await conciliacionDelDia(dia);
+    if (alGuardar) await tx((c) => alGuardar(c, { estado: r.estado, diferencias: r.diferencias, corrida: null }));
+    return r;
+  }
   const ini = new Date(`${dia}T00:00:00Z`), fin = new Date(ini.getTime() + DIA), started = new Date().toISOString();
   const actor = quien.por === "equipo" ? quien.staffId : null;
   let diffs: Diferencia[] = [], error: string | null = null, sN = 0, lN = 0, sC = 0, lC = 0;
@@ -206,6 +213,7 @@ export async function conciliarDia(dia: string, quien: { por: "barrido" } | { po
          values ($1::bigint, $2::date, $3::text, $4::text, $5::text, $6::text, $7::text,
                  (select id from businesses where id = $8::text), (select id from cities where id = $9::text), $10::bigint, $11::bigint, $12::bigint, $13::text, $14::text)`,
         [run, dia, d.kind, d.problem, llave(d), d.stripeId, d.ledgerRef, d.negocio, d.ciudad, d.stripeCents, d.ledgerCents, delta(d), d.stripeStatus, d.ledgerStatus]);
+    await alGuardar?.(c, { estado, diferencias: unicas.length, corrida: run });
   });
   const r = await conciliacionDelDia(dia);
   // El guardián del dinero avisa al instante: diferencias sin dueño o la corrida que falló (una alerta por día y tipo).

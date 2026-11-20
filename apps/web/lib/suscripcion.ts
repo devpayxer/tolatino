@@ -284,18 +284,19 @@ async function adminEvento(c: { query: (q: string, v: unknown[]) => Promise<unkn
   await c.query(`insert into subscription_events (business_id, kind, actor_id, note) values ($1, $2, $3, $4::jsonb)`, [negocio, kind, actor, JSON.stringify(note)]);
 }
 /* Extender la prueba N días (solo en prueba). */
-export async function extenderPrueba(negocio: string, dias: number, actor: string, motivo: string): Promise<ResS> {
+export async function extenderPrueba(negocio: string, dias: number, actor: string, motivo: string, alGuardar?: AlGuardar): Promise<ResS> {
   const n = Math.round(dias);
   if (!(n >= 1 && n <= 60)) return no("Entre 1 y 60 días.", "Between 1 and 60 days.");
   return tx(async (c) => {
     const r = await c.query(`update subscriptions set trial_ends_at = trial_ends_at + make_interval(days => $2), updated_at = now() where business_id = $1 and status = 'trial'`, [negocio, n]);
     if (!r.rowCount) return no("Solo se extiende una prueba activa.", "Only an active trial can be extended.");
     await adminEvento(c, negocio, "trial_extended", actor, { dias: n, motivo });
+    await alGuardar?.(c);
     return { ok: true } as const;
   });
 }
 /* Cortesía: Pro sin cobro hasta una fecha (después, Free; el contenido se guarda). */
-export async function darCortesia(negocio: string, dias: number, actor: string, motivo: string): Promise<ResS> {
+export async function darCortesia(negocio: string, dias: number, actor: string, motivo: string, alGuardar?: AlGuardar): Promise<ResS> {
   const n = Math.round(dias);
   if (!(n >= 1 && n <= 365)) return no("Entre 1 y 365 días.", "Between 1 and 365 days.");
   return tx(async (c) => {
@@ -303,41 +304,52 @@ export async function darCortesia(negocio: string, dias: number, actor: string, 
                    on conflict (business_id) do update set status = 'courtesy', courtesy_until = now() + make_interval(days => $2), courtesy_reason = $3, failed_attempts = 0, next_attempt_at = null, updated_at = now()`, [negocio, n, motivo.slice(0, 200)]);
     await plan(c, negocio, "pro");
     await adminEvento(c, negocio, "courtesy", actor, { dias: n, motivo });
+    await alGuardar?.(c);
     return { ok: true } as const;
   });
 }
-export async function quitarCortesia(negocio: string, actor: string, motivo: string): Promise<ResS> {
+export async function quitarCortesia(negocio: string, actor: string, motivo: string, alGuardar?: AlGuardar): Promise<ResS> {
   return tx(async (c) => {
     const r = await c.query(`update subscriptions set status = 'ended', ended_at = now(), courtesy_until = null, updated_at = now() where business_id = $1 and status = 'courtesy'`, [negocio]);
     if (!r.rowCount) return no("Ese negocio no tiene cortesía.", "That business has no courtesy.");
     await plan(c, negocio, "free");
     await adminEvento(c, negocio, "courtesy_removed", actor, { motivo });
+    await alGuardar?.(c);
     return { ok: true } as const;
   });
 }
-/* Reintentar ya un cobro fallido. */
-export async function reintentarCobro(negocio: string, actor: string): Promise<ResS> {
-  const r = await db().query(`update subscriptions set next_attempt_at = now() where business_id = $1 and status = 'past_due' returning 1`, [negocio]);
-  if (!r.rowCount) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");
-  await evento(negocio, "retry_admin", { actor });
+/* Reintentar ya un cobro fallido. 20 nov · La decisión (adelantar el intento + «retry_admin») y la auditoría de quien la toma van en UNA transacción
+   (antes: tres escrituras sueltas, y la auditoría solo si el banco aceptaba, aparte y después). El cobro va fuera (procesar → la pasarela, con su
+   llave idempotente y su candado por negocio); lo que el banco diga queda en subscription_events. */
+export async function reintentarCobro(negocio: string, actor: string, alGuardar?: AlGuardar): Promise<ResS> {
+  const pedido = await tx(async (c) => {
+    const r = await c.query(`update subscriptions set next_attempt_at = now() where business_id = $1 and status = 'past_due' returning 1`, [negocio]);
+    if (!r.rowCount) return false;
+    await evento(negocio, "retry_admin", { actor }, c);
+    await alGuardar?.(c);
+    return true;
+  });
+  if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");
   await procesar(negocio);
   const s = (await db().query<{ status: string }>(`select status from subscriptions where business_id = $1`, [negocio])).rows[0];
   return s?.status === "active" ? { ok: true } : no("Se intentó y el banco volvió a rechazarla.", "We tried and the bank declined again.");
 }
 /* Anular la suscripción (Super Admin, prototipo subX): Pro pagado sigue hasta el fin del período y luego Free; en prueba,
-   el día 30 pasa a Free; con cobro fallido, Free hoy (ese período no se pagó). No se devuelve lo cobrado; nada se borra. */
-export async function anularSuscripcion(negocio: string, actor: string, motivo: string): Promise<ResS> {
+   el día 30 pasa a Free; con cobro fallido, Free hoy (ese período no se pagó). No se devuelve lo cobrado; nada se borra.
+   alGuardar (20 nov): la auditoría de quien decide entra con «canceled_admin», en su transacción. Con cobro fallido, el paso a Free (aFree) va
+   después y aparte porque primero mira la pasarela (una verificación del banco que ya pasó completa el período en vez de bajar a Free). */
+export async function anularSuscripcion(negocio: string, actor: string, motivo: string, alGuardar?: AlGuardar): Promise<ResS> {
   const s = (await db().query<Fila>(`select * from subscriptions where business_id = $1`, [negocio])).rows[0];
   if (s?.status === "active") {
-    await tx(async (c) => { await c.query(`update subscriptions set status = 'canceling', updated_at = now() where business_id = $1 and status = 'active'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); });
+    await tx(async (c) => { await c.query(`update subscriptions set status = 'canceling', updated_at = now() where business_id = $1 and status = 'active'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });
     return { ok: true };
   }
   if (s?.status === "trial") {
-    await tx(async (c) => { await c.query(`update subscriptions set trial_choice = 'no_continue', updated_at = now() where business_id = $1 and status = 'trial'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); });
+    await tx(async (c) => { await c.query(`update subscriptions set trial_choice = 'no_continue', updated_at = now() where business_id = $1 and status = 'trial'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });
     return { ok: true };
   }
   if (s?.status === "past_due") {
-    await tx((c) => adminEvento(c, negocio, "canceled_admin", actor, { motivo }));
+    await tx(async (c) => { await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });
     await aFree(negocio, "admin");
     return { ok: true };
   }

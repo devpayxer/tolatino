@@ -11818,6 +11818,43 @@ const guardianes = {
     if ((cg.split("pasesPronto();")[0].match(/await alGuardar\?\.\(c\);/g) ?? []).length !== 2) falla(G, L, 0, "congelarVenta no escribe la auditoría de quien llama dentro de la transacción del cambio");
     if (!/const audX = sql\(`select count\(\*\) from audit_entries where action = 'evento\.cancelar' and target_id = '\$\{E\.id\}'`\);\s*ok\(audX === '1', `[^`\n]*\$\{audX\}/.test(p)) falla(G, P, 0, "evt6e no exige exactamente un renglón «evento.cancelar» diciendo cuántos hay");
     p.split("\n").forEach((x, i) => { if (/action = 'evento\.(cancelar|venta\.congelar)'/.test(x) && /\bespera\(/.test(x)) falla(G, P, i + 1, "la auditoría del admin entra con el cambio: se mira sin esperar (una espera tapa que vuelva a escribirse aparte)"); });
+    /* 20 nov (auditoría por clase) · La misma clase en el dinero y los planes del Super Admin: Transacciones › Devolver, «Conciliar otra vez», las
+       acciones de Planes (extender, cortesía, quitar cortesía, reintentar el cobro, anular) y en Colas, Ayuda con monto y Disputas. Escribían su
+       renglón aparte, después del cambio (si el proceso moría en el hueco: dinero o plan movido sin auditoría). Ahora cada acción le pasa su
+       auditoría a la función de lib y ésta la escribe en la transacción que anota el cambio en la base; la llamada a la pasarela va antes y fuera. */
+    const lee = (f) => (existsSync(f) ? readFileSync(f, "utf8") : "");
+    const fn = (t, n) => new RegExp(`\\n(?:export )?async function ${n}\\([\\s\\S]*?\\n\\}\\n`).exec(t)?.[0] ?? "";
+    const TX = "apps/web/app/admin/acciones-tx.ts", CO = "apps/web/app/admin/acciones-conciliacion.ts", PL = "apps/web/app/admin/acciones-planes.ts", CL = "apps/web/app/admin/acciones-colas.ts";
+    const CB = "apps/web/lib/cobros.ts", CN = "apps/web/lib/conciliacion.ts", SU = "apps/web/lib/suscripcion.ts", DI = "apps/web/lib/disputas.ts", D9 = "pruebas/e2e/din9k.cjs";
+    const [tA, coA, plA, clA, cb, cn, su, di, d9] = [TX, CO, PL, CL, CB, CN, SU, DI, D9].map(lee);
+    // Las acciones: le pasan su auditoría a la función de lib y no abren otra transacción para auditar.
+    const dv = fn(tA, "devolverTx");
+    if (!/devolverOperacion\(\{[^\n]*\},\s*\(c, x\) => auditar\(c, \{ actor: s\.id, action: "transacciones\.devolver"/.test(dv) || /\btx\(/.test(dv)) falla(G, TX, 0, "devolverTx no le pasa su auditoría a devolverOperacion (entra con cada parte devuelta, no aparte después)");
+    const cc = fn(coA, "conciliarOtraVez");
+    if (!/\.conciliarDia\(d, \{ por: "equipo", staffId: s\.id \},\s*\(c, g\) => auditar\(c, \{ actor: s\.id, action: "conciliacion\.correr"/.test(cc) || /\btx\(/.test(cc)) falla(G, CO, 0, "conciliarOtraVez no le pasa su auditoría a conciliarDia (entra con la corrida, no aparte después)");
+    const hc = fn(plA, "hacer");
+    if (!/const r = await hacer\(s, \(c\) => auditar\(c, \{ actor: s\.id, action: verbo/.test(hc) || /\btx\(/.test(hc)) falla(G, PL, 0, "Planes (hacer) no le pasa su auditoría al cambio del plan (entra en su transacción, no aparte después)");
+    for (const [a, l] of [["planExtender", "extenderPrueba"], ["planCortesia", "darCortesia"], ["planQuitarCortesia", "quitarCortesia"], ["planReintentar", "reintentarCobro"], ["planAnular", "anularSuscripcion"]])
+      if (!new RegExp(`\\(s, al\\) => ${l}\\([^\\n]*, al\\)`).test(fn(plA, a))) falla(G, PL, 0, `${a} no le pasa la auditoría (al) a ${l}`);
+    const sp = fn(clA, "decidirSop");
+    if (!/devolverPago\(\{[^\n]*\},\s*\(c, x\) => auditar\(c, \{ actor: s\.id, action: "transacciones\.devolver"/.test(sp)) falla(G, CL, 0, "decidirSop no le pasa a devolverPago la auditoría del dinero que sale (entra con la devolución, no solo en «soporte.resolver» después)");
+    const dd = fn(clA, "decidirDisputa");
+    if (!/D\.responderDisputa\(q\.subject_id, s\.id, m, audita\) : await D\.aceptarDisputa\(q\.subject_id, audita\)/.test(dd) || /auditar\(/.test(dd.split("if (!r.ok) return no(r.msg);")[1] ?? "auditar(")) falla(G, CL, 0, "decidirDisputa no le pasa su auditoría a responderDisputa/aceptarDisputa (entra con el cambio de la disputa, no al cerrar el caso)");
+    // Las funciones de lib: la escriben dentro de la transacción que anota el cambio.
+    if (!/insert into refunds [^\n]*\n[\s\S]*?await alGuardar\?\.\(c, \{ pago: p\.id, centavos: n \}\);\n  \}\);/.test(fn(cb, "devolverPago"))) falla(G, CB, 0, "devolverPago no escribe la auditoría de quien llama en la transacción que anota la devolución");
+    const dop = fn(cb, "devolverOperacion");
+    if (!/^\nexport async function devolverOperacion\([^\n]*\balGuardar\?: AlGuardar</.test(dop) || !/devolverPago\(\{[^\n]*\},\s*alGuardar \? \(c, h\) => alGuardar\(c, \{ \.\.\.h, parte \}\) : undefined\)/.test(dop)) falla(G, CB, 0, "devolverOperacion no le pasa a cada devolverPago la auditoría de quien llama");
+    if (!/insert into recon_runs [\s\S]*?insert into recon_diffs [\s\S]*?\n    await alGuardar\?\.\(c, \{ estado, diferencias: unicas\.length, corrida: run \}\);\n  \}\);/.test(fn(cn, "conciliarDia"))) falla(G, CN, 0, "conciliarDia no escribe la auditoría de quien la pide en la transacción de la corrida");
+    for (const [n, k] of [["extenderPrueba", 1], ["darCortesia", 1], ["quitarCortesia", 1], ["reintentarCobro", 1], ["anularSuscripcion", 3]]) {
+      const b = fn(su, n);
+      if (!new RegExp(`^\\nexport async function ${n}\\([^\\n]*\\balGuardar\\?: AlGuardar\\)`).test(b) || (b.match(/await alGuardar\?\.\(c\);/g) ?? []).length !== k) falla(G, SU, 0, `${n} no escribe la auditoría de quien llama en la transacción del cambio del plan`);
+    }
+    if (!/const pedido = await tx\(async \(c\) => \{[\s\S]*?update subscriptions set next_attempt_at = now\(\)[\s\S]*?await alGuardar\?\.\(c\);\n    return true;\n  \}\);\n  if \(!pedido\)[^\n]*\n  await procesar\(negocio\);/.test(fn(su, "reintentarCobro"))) falla(G, SU, 0, "reintentarCobro: la decisión y su auditoría van en una transacción ANTES de cobrar (procesar), no después ni solo si el banco acepta");
+    if (!/disputaResponder\([\s\S]*?await tx\(async \(c\) => \{[^\n]*\n[^\n]*\n    await c\.query\(`update disputes set status = 'under_review'[^\n]*\n    await alGuardar\?\.\(c\);\n  \}\);/.test(fn(di, "responderDisputa"))) falla(G, DI, 0, "responderDisputa no escribe la auditoría de quien decide en la transacción que anota la respuesta");
+    if (!/disputaAceptar\([\s\S]*?await tx\(async \(c\) => \{\n    await c\.query\(`update disputes set status = 'accepted'[^\n]*\n[^\n]*\n    await alGuardar\?\.\(c\);\n  \}\);/.test(fn(di, "aceptarDisputa"))) falla(G, DI, 0, "aceptarDisputa no escribe la auditoría de quien decide en la transacción que anota la aceptación");
+    // La prueba: el renglón de la corrida se mira sin esperar y se dice cuántos hay.
+    if (!/const audC = sql\(`select count\(\*\) from audit_entries where action = 'conciliacion\.correr' and after->>'corrida' = '\$\{RUNID\}'`\);\s*ok\(audC === '1', `[^`\n]*\$\{audC\}/.test(d9)) falla(G, D9, 0, "din9k no exige exactamente un renglón «conciliacion.correr» de la corrida diciendo cuántos hay");
+    d9.split("\n").forEach((x, i) => { if (/conciliacion\.correr/.test(x) && /\bespera\(/.test(x)) falla(G, D9, i + 1, "la auditoría de la corrida entra con ella: se mira sin esperar"); });
   },
 };
 

@@ -1968,9 +1968,31 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       llegó la foto» (400). Mitigado (la app reintenta una vez con la original, `subidaReintenta`) y el servidor registra qué recibió
       (`[subida] sin archivo: …`). Falta la causa: leer ese registro en la próxima corrida que lo repita y la prueba del fundador desde un
       iPhone de verdad en el sandbox (REVISION). Si es solo del WebKit de pruebas, se anota y se cierra. (20 nov)
-- [ ] **→ 9t** · **Auditoría en otra transacción (misma clase que `evtCancelarAdmin`, ya arreglada):** `devolverTx`, `conciliarOtraVez` y
+- [x] **→ 9t** · **Auditoría en otra transacción (misma clase que `evtCancelarAdmin`, ya arreglada):** `devolverTx`, `conciliarOtraVez` y
       `app/admin/acciones-planes.ts` escriben su renglón de auditoría aparte, después del cambio. Pasarlos a la transacción del cambio y
       extender `auditoriaDelAdminConElCambio`. (20 nov)
+      **Hecho (20 nov):** cada acción le pasa su auditoría (`alGuardar`) a la función de lib, que la escribe en la transacción que anota el
+      cambio en la base; la pasarela va antes y fuera. `devolverTx` → `devolverOperacion` → `devolverPago`: un renglón por cada cobro devuelto,
+      con el insert de `refunds` (un reintento no re-audita lo ya devuelto). `conciliarOtraVez` → `conciliarDia`: con la corrida
+      (`after.corrida`). Planes: `extenderPrueba`, `darCortesia`, `quitarCortesia`, `anularSuscripcion` (con `canceled_admin`) y
+      `reintentarCobro` (la decisión y su auditoría en UNA transacción antes de cobrar: ahora queda auditado aunque el banco rechace). Por clase,
+      también Colas › Ayuda con monto (`decidirSop`: el dinero que sale queda como `transacciones.devolver` con la devolución) y Colas ›
+      Disputas (`responderDisputa`/`aceptarDisputa`: sus dos escrituras sueltas pasan a una transacción con la auditoría; antes se saltaba en
+      silencio si el caso ya no estaba abierto). Guardián `auditoriaDelAdminConElCambio` extendido; 18 casos nuevos en `alreves9tcarrera`;
+      `din9k` exige un renglón «conciliacion.correr» de la corrida sin esperar.
+- [ ] **→ 9t** · **Devolución: la pasarela antes que cualquier renglón en la base** (`lib/cobros.ts › devolverPago`): si el proceso muere entre
+      el «sí» de Stripe y la transacción, el dinero salió sin `refunds` ni auditoría hasta que alguien repita con la MISMA llave (la pantalla
+      puede generar otra) o la conciliación lo marque (devolución que falta en el libro). Arreglo de verdad: dos pasos como los boletos (6d),
+      `refunds` «pending» con la auditoría en la base ANTES de llamar a Stripe y cerrar en otra transacción; toca a todos los que llaman a
+      `devolverPago`. (20 nov)
+- [ ] **→ 9t** · **Colas › Ayuda con monto (`decidirSop`): devolución y cierre del caso en dos transacciones.** Si el caso ya se decidió en
+      otra pestaña, el dinero sale (ya auditado) pero `help_requests.refunded_cents` no lo suma y la acción dice «Este caso ya se decidió».
+      Pasarlo al patrón de `support_refunds` (intención con su llave antes de Stripe, cierre después). (20 nov)
+- [ ] **→ 9t** · **Planes › Anular con cobro fallido:** la auditoría entra con `canceled_admin`, pero el paso a Free (`aFree`) va aparte y
+      puede no ocurrir (una verificación del banco que ya pasó completa el período: sigue Pro con «anuló» en la auditoría). Y las ramas
+      activa/prueba no miran `rowCount` (en una carrera queda `canceled_admin` sin cambio). Decidir y avisar en la misma acción. (20 nov)
+- [ ] **→ 9t** · **Disputas: `responderDisputa`/`aceptarDisputa` actualizan `disputes` sin mirar su estado** (`where id = $1`): un webhook que
+      cerró la disputa entre la lectura y la escritura queda pisado. Añadir el estado esperado al `where` y decir «ya cambió». (20 nov)
 - [ ] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no

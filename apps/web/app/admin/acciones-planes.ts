@@ -2,7 +2,7 @@
 /* ADM-PLAN · acciones: extender la prueba, cortesía, quitar cortesía, reintentar un cobro y programar una comisión.
    Permiso plan:editar (o plan:aprobar para cortesía), solo negocios de tus ciudades; todo con motivo y en la auditoría. */
 import { auditar, staff, type Staff } from "@/lib/admin";
-import { db, tx } from "@/lib/db";
+import { db, tx, type AlGuardar } from "@/lib/db";
 import { anularSuscripcion, darCortesia, extenderPrueba, quitarCortesia, reintentarCobro } from "@/lib/suscripcion";
 import type { ResAdm } from "./acciones-colas";
 import { hoyEn } from "../../lib/fecha-local";
@@ -11,35 +11,36 @@ async function negocioMio(s: Staff, negocio: string) {
   const r = (await db().query<{ city: string }>(`select city_id as city from businesses where id = $1 and (cardinality($2::text[]) = 0 or city_id = any($2::text[]))`, [String(negocio ?? ""), s.cities])).rows[0];
   return r?.city ?? null;
 }
-async function hacer(accion: "editar" | "aprobar", negocio: string, motivo: string, hacer: (s: Staff) => Promise<{ ok: true } | { ok: false; msg: { es: string } }>, verbo: string, after: unknown, ok: string): Promise<ResAdm> {
+async function hacer(accion: "editar" | "aprobar", negocio: string, motivo: string, hacer: (s: Staff, alGuardar: AlGuardar) => Promise<{ ok: true } | { ok: false; msg: { es: string } }>, verbo: string, after: unknown, ok: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("plan", accion)) return { ok: false, mensaje: "Tu rol no cambia planes." };
   const m = String(motivo ?? "").trim();
   if (m.length < 3) return { ok: false, mensaje: "Escribe el motivo: queda en la auditoría." };
   const city = await negocioMio(s, negocio);
   if (!city) return { ok: false, mensaje: "Ese negocio no es de tus ciudades." };
-  const r = await hacer(s);
+  // 20 nov · La auditoría entra con el cambio del plan, en su transacción (alGuardar): antes se escribía aparte, después (y el reintento de un cobro
+  // solo quedaba si el banco aceptaba). Guardián auditoriaDelAdminConElCambio.
+  const r = await hacer(s, (c) => auditar(c, { actor: s.id, action: verbo, targetKind: "business", targetId: String(negocio), city, after, reason: m }));
   if (!r.ok) return { ok: false, mensaje: r.msg.es };
-  await tx((c) => auditar(c, { actor: s.id, action: verbo, targetKind: "business", targetId: String(negocio), city, after, reason: m }));
   return { ok: true, mensaje: ok };
 }
 export async function planExtender(negocio: string, dias: string, motivo: string): Promise<ResAdm> {
   const n = Math.round(Number(String(dias ?? "").replace(/\D/g, "")) || 0);
-  return hacer("editar", negocio, motivo, (s) => extenderPrueba(String(negocio), n, s.id, String(motivo ?? "").trim()), "plan.extender_prueba", { dias: n }, `Prueba extendida ${n} días. El dueño lo ve en Tu plan.`);
+  return hacer("editar", negocio, motivo, (s, al) => extenderPrueba(String(negocio), n, s.id, String(motivo ?? "").trim(), al), "plan.extender_prueba", { dias: n }, `Prueba extendida ${n} días. El dueño lo ve en Tu plan.`);
 }
 export async function planCortesia(negocio: string, dias: string, motivo: string): Promise<ResAdm> {
   const n = Math.round(Number(String(dias ?? "").replace(/\D/g, "")) || 0);
-  return hacer("aprobar", negocio, motivo, (s) => darCortesia(String(negocio), n, s.id, String(motivo ?? "").trim()), "plan.cortesia", { dias: n }, `Pro de cortesía por ${n} días.`);
+  return hacer("aprobar", negocio, motivo, (s, al) => darCortesia(String(negocio), n, s.id, String(motivo ?? "").trim(), al), "plan.cortesia", { dias: n }, `Pro de cortesía por ${n} días.`);
 }
 export async function planQuitarCortesia(negocio: string, motivo: string): Promise<ResAdm> {
-  return hacer("aprobar", negocio, motivo, (s) => quitarCortesia(String(negocio), s.id, String(motivo ?? "").trim()), "plan.quitar_cortesia", null, "Cortesía quitada: pasa a Free (nada se borra).");
+  return hacer("aprobar", negocio, motivo, (s, al) => quitarCortesia(String(negocio), s.id, String(motivo ?? "").trim(), al), "plan.quitar_cortesia", null, "Cortesía quitada: pasa a Free (nada se borra).");
 }
 export async function planReintentar(negocio: string, motivo: string): Promise<ResAdm> {
-  return hacer("editar", negocio, motivo, (s) => reintentarCobro(String(negocio), s.id), "plan.reintentar_cobro", null, "Cobrado: sigue con Pro.");
+  return hacer("editar", negocio, motivo, (s, al) => reintentarCobro(String(negocio), s.id, al), "plan.reintentar_cobro", null, "Cobrado: sigue con Pro.");
 }
 
 export async function planAnular(negocio: string, motivo: string): Promise<ResAdm> {
-  return hacer("aprobar", negocio, motivo, (s) => anularSuscripcion(String(negocio), s.id, String(motivo ?? "").trim()), "plan.anular", null, "Suscripción anulada: pasa a Free al final del período (nada se borra).");
+  return hacer("aprobar", negocio, motivo, (s, al) => anularSuscripcion(String(negocio), s.id, String(motivo ?? "").trim(), al), "plan.anular", null, "Suscripción anulada: pasa a Free al final del período (nada se borra).");
 }
 
 /* Comisiones: un cambio se programa con 30 días (los negocios reciben el aviso); lo ya vendido no cambia. */

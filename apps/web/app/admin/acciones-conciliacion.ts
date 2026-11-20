@@ -22,10 +22,10 @@ export async function conciliarOtraVez(dia: string, motivo: string): Promise<Res
   const hoyUtc = (await db().query<{ d: string }>(`select to_char((now() at time zone 'UTC')::date, 'YYYY-MM-DD') as d`)).rows[0]!.d;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d >= hoyUtc) return { ok: false, mensaje: "Elige un día que ya terminó." };
   if (String(motivo ?? "").trim().length < 4) return { ok: false, mensaje: "Escribe el motivo: queda en la auditoría." };
-  const r = await (await import("@/lib/conciliacion")).conciliarDia(d, { por: "equipo", staffId: s.id });
+  // 20 nov · La auditoría entra con la corrida, en su transacción (alGuardar): antes se escribía aparte, después. Guardián auditoriaDelAdminConElCambio.
   const { auditar } = await import("@/lib/admin");
-  const { tx } = await import("@/lib/db");
-  await tx((c) => auditar(c, { actor: s.id, action: "conciliacion.correr", targetKind: "recon_day", targetId: d, after: { dia: d, resultado: r.estado === "cuadra" ? "cuadra" : r.estado === "fallo" ? "falló" : `${r.diferencias} diferencias` }, reason: String(motivo).trim().slice(0, 300) }));
+  const r = await (await import("@/lib/conciliacion")).conciliarDia(d, { por: "equipo", staffId: s.id },
+    (c, g) => auditar(c, { actor: s.id, action: "conciliacion.correr", targetKind: "recon_day", targetId: d, after: { dia: d, resultado: g.estado === "cuadra" ? "cuadra" : g.estado === "fallo" ? "falló" : `${g.diferencias} diferencias`, ...(g.corrida ? { corrida: g.corrida } : {}) }, reason: String(motivo).trim().slice(0, 300) }));
   return { ok: true, mensaje: r.estado === "cuadra" ? `El ${d} cuadra.` : r.estado === "fallo" ? "La conciliación falló: Stripe no respondió. Prueba en un momento." : `El ${d} tiene ${r.diferencias} diferencia${r.diferencias === 1 ? "" : "s"} (${r.sinDueno} sin dueño).` };
 }
 
