@@ -11596,6 +11596,8 @@ const guardianes = {
     const s = existsSync(F) ? readFileSync(F, "utf8") : "";
     if (/if \(soloRuido\) return null;/.test(s) || !/if \(soloRuido\) return docResp &&/.test(s) || !/r\.request\(\)\.isNavigationRequest\(\) && r\.frame\(\) === page\.mainFrame\(\)\) docResp = r;/.test(s))
       falla(G, F, 0, "el goto de WebKit que sigue sin «load» no devuelve la respuesta del documento (la prueba que mira su status cae)");
+    if (!/LP\.setInputFiles = async function \(f, o\) \{\n\s+if \(this\.page\(\)\.__tlFiltro\) await this\.evaluate\(\(el\) => new Promise[^\n]*__reactProps/.test(s))
+      falla(G, F, 0, "WebKit: setInputFiles no espera las props de React del input (el archivo elegido no llega al onChange)");
   },
   /* 9t · topeFotoSinNavegador (20 nov, confirmación 44685003383, msg9t en el iPad): el tope de 12 MB de las fotos se probaba con un fetch de
      13 MB armado dentro del WebKit del CI, que a veces no llega entero (400 en vez de 413). El tope del servidor se prueba desde Node con la

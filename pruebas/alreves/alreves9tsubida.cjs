@@ -18,6 +18,7 @@ const casos = [
   ['topeFotoSinNavegador', 'pruebas/e2e/dm9t.cjs', "const st = await subirCrudoNode(a, B, '/api/mensajes/foto', Buffer.alloc(13 * 1024 * 1024, 7), 'image/jpeg', { para: 'dm' });", "const st = [await subirCrudo(a, 'image/jpeg', 13 * 1024 * 1024)];"],
   ['gotoDevuelveRespuesta', 'pruebas/lib/dispositivo-precarga.cjs', "if (soloRuido) return docResp && docResp.url().split('#')[0] === page.url().split('#')[0] ? docResp : null;", "if (soloRuido) return null;"],
   ['gotoDevuelveRespuesta', 'pruebas/lib/dispositivo-precarga.cjs', "if (r.request().isNavigationRequest() && r.frame() === page.mainFrame()) docResp = r;", "if (false) docResp = r;"],
+  ['gotoDevuelveRespuesta', 'pruebas/lib/dispositivo-precarga.cjs', "LP.setInputFiles = async function (f, o) {", "LP.setInputFilesX = async function (f, o) {"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

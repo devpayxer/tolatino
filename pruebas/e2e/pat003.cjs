@@ -259,7 +259,8 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
 
     console.log('8 · Evento oculto / Eventos apagado: el patrocinio se pausa y, al volver, sigue alargado');
     const G = evento('Noche que se oculta', 8);
-    const SG = ins(G, "now() - interval '5 days'", "now() + interval '2 days'", false); cobro(SG, 1500);
+    // Como lo crea el producto: «1 semana desde hoy» comprada hace 5 días termina a la medianoche (de la ciudad) del día 7 = pasado mañana (20 nov).
+    const SG = ins(G, "now() - interval '5 days'", "((now() at time zone 'America/New_York')::date + 2)::timestamp at time zone 'America/New_York'", false); cobro(SG, 1500);
     const finG = () => sql(`select extract(epoch from ends_at)::bigint from event_sponsorships where id = ${SG}`);
     const fin0 = Number(finG());
     await pc.goto(B + '/eventos');
@@ -295,8 +296,11 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     sql(`update events set status = 'cancelled', cancelled_at = now(), cancelled_by = 'business', cancel_reason = 'prueba ${TAG}' where id = ${G}`);
     sql(`update businesses set modules_on = array(select distinct x from unnest(modules_on || array['eventos']) x) where id = '${NEG}'`);
     await barrer();
-    // Comprado 7 días; corrió 2 (5 desde que empezó, menos 3 en pausa): se devuelven 5 de 7.
-    ok(sql(`select status || '|' || end_kind || '|' || refund_days || '|' || refund_cents from event_sponsorships where id = ${SG}`) === `terminado|evento_cancelado|5|${Math.floor(1500 * 5 / 7)}`, 'cancelado después de una pausa: la pausa no cuenta como usada (5 de 7 días: $10.71)');
+    // Comprado 7 días (del día de la compra al 6.º después). Van 6 días empezados (hace 5 + hoy, que cuenta como usado) menos 3 en pausa = 3 usados:
+    // se devuelven 4 de 7. En la primera hora después de la medianoche (el margen del cambio de horario) hoy todavía no cuenta: 5 de 7.
+    const HG = Number(sql(`select extract(hour from ended_at at time zone 'America/New_York')::int from event_sponsorships where id = ${SG}`));
+    const DG = HG === 0 ? 5 : 4;
+    ok(sql(`select status || '|' || end_kind || '|' || refund_days || '|' || refund_cents from event_sponsorships where id = ${SG}`) === `terminado|evento_cancelado|${DG}|${Math.floor(1500 * DG / 7)}`, `cancelado después de una pausa: la pausa no cuenta como usada (${DG} de 7 días: $${(Math.floor(1500 * DG / 7) / 100).toFixed(2)})`);
     ok(sql(`select count(*) from event_sponsorships where status = 'activo' and paused_at is not null and business_id = '${NEG}'`) === '0', 'con Eventos encendido otra vez, nada queda en pausa');
     ok(sql(`select cents || '|' || dias from patrocinio_devolucion('pausa', 1500, now() - interval '7 days', now(), 0, 2 * 86400 + 60, null, now())`) === '428|2', 'una pausa que no se pudo alargar (2 días de 7): se devuelven $4.28 (la base)');
 

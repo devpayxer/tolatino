@@ -100,6 +100,13 @@ if (id) {
         if (this.page().__tlFiltro) await this.evaluate((el) => new Promise((r) => { const t0 = Date.now(); const k = () => (Object.keys(el).some((x) => x.startsWith('__reactProps')) || Date.now() - t0 > 10000 ? r() : setTimeout(k, 100)); k(); }), null, { timeout: 15000 }).catch(() => {});
         return fill.call(this, v, o);
       };
+      // Lo mismo al elegir un archivo (msg9t en el SE, confirmación dirigida 44704998727): sin las props de React, el cambio del input no
+      // llega a su onChange y la miniatura nunca sale.
+      const archivos = LP.setInputFiles;
+      LP.setInputFiles = async function (f, o) {
+        if (this.page().__tlFiltro) await this.evaluate((el) => new Promise((r) => { const t0 = Date.now(); const k = () => (Object.keys(el).some((x) => x.startsWith('__reactProps')) || Date.now() - t0 > 10000 ? r() : setTimeout(k, 100)); k(); }), null, { timeout: 15000 }).catch(() => {});
+        return archivos.call(this, f, o);
+      };
       LP.__tlFill = true;
     }
     const shot = page.screenshot.bind(page);
