@@ -54,7 +54,7 @@ function OwnerCard({
       marginLeft: -6,
       borderRadius: 99,
       border: '2px solid var(--tl-white)',
-      background: 'center 25%/cover url(' + p + ')',
+      background: 'center 25%/cover ' + __ds_scope.__fondo(p, desktop ? 34 : 30),
       backgroundColor: 'var(--tl-photo-bg)'
     }
   }))), /*#__PURE__*/React.createElement("span", {
@@ -132,7 +132,7 @@ function OwnerCard({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: 250,
-      background: 'center 25%/cover url(' + photo + ')',
+      background: 'center 25%/cover ' + __ds_scope.__fondo(photo, 220),
       backgroundColor: 'var(--tl-photo-bg)'
     }
   }), /*#__PURE__*/React.createElement("div", {
@@ -158,7 +158,7 @@ function OwnerCard({
       height: 64,
       borderRadius: 99,
       flex: 'none',
-      background: 'center 25%/cover url(' + photo + ')',
+      background: 'center 25%/cover ' + __ds_scope.__fondo(photo, 64),
       backgroundColor: 'var(--tl-photo-bg)'
     }
   }), Who), Quote, Team) : about ? /*#__PURE__*/React.createElement("div", {

@@ -17,6 +17,7 @@ import { dinero } from "@/lib/evt-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { TarjetaNegocio } from "../TarjetaNegocio";
 import { useVoz } from "./voz";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Tag" | "Button" | "SearchPanel" | "SearchResultRow" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,7 +100,7 @@ export function Desplegable({ lang, ancla, ciudad, lugar, ph, phTodo, cat, onClo
       {pv?.k === "biz" && sug?.tarjetas?.[pv.i] ? <div className="grid" onClickCapture={onClose}><TarjetaNegocio es={es} b={sug.tarjetas[pv.i]!} origen="buscar" textos={sug.textos ?? { hoy: E2("HOY", "TODAY"), llamar: E2("Llamar", "Call") }} /></div>
         : pv?.k === "item" ? (
           <button type="button" onClick={() => pvFila && ir(pvFila.href)} className="overflow-hidden rounded-[20px] border border-ink/[.08] bg-white text-left">
-            <span className="block h-40 bg-photo-bg bg-cover bg-center" style={pv.img ? { backgroundImage: `url("${pv.img}")` } : undefined} />
+            <span className="block h-40 bg-photo-bg bg-cover bg-center" style={pv.img ? { backgroundImage: fotoFondo(pv.img, 540) } : undefined} />
             <span className="flex flex-col gap-1.5 p-3.5">
               {pv.eb && <span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{pv.eb}</span>}
               <span className="font-display text-[17px] font-extrabold leading-[1.25] tracking-[-0.03em]">{pv.t}</span>
@@ -110,7 +111,7 @@ export function Desplegable({ lang, ancla, ciudad, lugar, ph, phTodo, cat, onClo
           </button>
         ) : pv?.k === "sub" ? (
           <button type="button" onClick={() => pvFila && ir(pvFila.href)} className="overflow-hidden rounded-[20px] border border-ink/[.08] bg-white text-left">
-            <span className="block h-[140px] bg-photo-bg bg-cover bg-center" style={pv.img ? { backgroundImage: `url("${pv.img}")` } : undefined} />
+            <span className="block h-[140px] bg-photo-bg bg-cover bg-center" style={pv.img ? { backgroundImage: fotoFondo(pv.img, 540) } : undefined} />
             <span className="flex flex-col gap-2 p-3.5">
               <span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{pv.eb}</span>
               <span className="font-display text-[18px] font-extrabold leading-[1.2] tracking-[-0.03em]">{pv.t}</span>

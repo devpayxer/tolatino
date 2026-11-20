@@ -15,6 +15,7 @@ import { useAhora } from "@/lib/ahora";
 import { casoAbrir, casoCalificar, casoEscribir, casoResuelto } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const C = UI as unknown as Record<"Button" | "IconButton" | "Icon" | "Tag" | "RequestCard" | "Chip", ComponentType<any>>;
@@ -223,7 +224,7 @@ function Nuevo({ es, desk, conSesion, negocio, temas, ops, pre, toHome, onCreado
         <textarea name="mensaje" value={msg} onChange={(e) => { setMsg(e.target.value.slice(0, 800)); setErr(""); }} rows={5} placeholder={E2("Qué pasó, cuándo y qué necesitas que hagamos…", "What happened, when and what you need us to do…")}
           className="w-full resize-none rounded-[14px] border-[1.5px] border-ink/[.14] bg-white px-3.5 py-3 text-[14px] font-medium leading-normal text-ink outline-none focus:border-ink" />
         <div className="flex items-center gap-3">
-          {foto ? <span className="size-14 flex-none rounded-[12px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${foto.url}")` }} /> : null}
+          {foto ? <span className="size-14 flex-none rounded-[12px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: fotoFondo(foto.url, 56) }} /> : null}
           <span role="button" tabIndex={0} onClick={() => file.current?.click()} onKeyDown={(e) => { if (e.key === "Enter") file.current?.click(); }} className="flex min-h-11 cursor-pointer items-center gap-2 text-[13px] font-bold text-action">
             <C.Icon name="image" size={16} color="var(--tl-action)" />{subiendo ? E2("Subiendo…", "Uploading…") : foto ? E2("Cambiar foto", "Change photo") : E2("Agregar una foto", "Add a photo")}</span>
           {foto ? <span role="button" tabIndex={0} onClick={() => setFoto(null)} className="cursor-pointer text-[13px] font-bold text-ink/60">{E2("Quitar", "Remove")}</span> : null}
@@ -314,7 +315,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
               {nombre ? <span className="text-ink/60" style={{ font: `700 10px ${MONO}`, letterSpacing: ".08em" }}>{nombre}</span> : null}
               <div className="flex max-w-[82%] flex-col gap-2 px-[13px] py-2.5 text-[14px] font-medium leading-[1.45] [text-wrap:pretty]"
                 style={{ borderRadius: yo ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: yo ? "var(--tl-ink)" : "var(--tl-white)", color: yo ? "var(--tl-white)" : "var(--tl-ink)", border: yo ? "none" : "1px solid rgba(11,14,18,.08)" }}>
-                {m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" className="block h-[140px] w-[180px] max-w-full rounded-[10px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${m.foto}")` }} aria-label={E2("Foto", "Photo")} /> : null}
+                {m.foto ? <a href={m.foto} target="_blank" rel="noopener noreferrer" className="block h-[140px] w-[180px] max-w-full rounded-[10px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: fotoFondo(m.foto, 180) }} aria-label={E2("Foto", "Photo")} /> : null}
                 {m.oculto ? <span className="italic opacity-70">{E2("Mensaje oculto por el equipo.", "Message hidden by the team.")}</span> : m.body ? <span className="whitespace-pre-wrap">{m.body}</span> : null}
               </div>
               <span className="text-ink/60" style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em" }}>{ago(m.at)}</span>
@@ -343,7 +344,7 @@ function Caso({ es, desk, caso, negocio, toHome, ago, toNew, hor }: {
       {err ? <span role="alert" className="text-[12.5px] font-semibold leading-[1.45] text-danger">{err}</span> : null}
       {abierto ? (
         <div className="sticky bottom-0 z-[5] -mx-1 flex flex-col gap-2 bg-paper/95 px-1 pb-[18px] pt-2.5 backdrop-blur-[14px]" data-screen-label="Soporte · escribir">
-          {foto ? <div className="flex items-center gap-2.5"><span className="size-12 rounded-[10px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: `url("${foto.url}")` }} />
+          {foto ? <div className="flex items-center gap-2.5"><span className="size-12 rounded-[10px] bg-photo-bg bg-cover bg-center" style={{ backgroundImage: fotoFondo(foto.url, 48) }} />
             <span role="button" tabIndex={0} onClick={() => setFoto(null)} className="cursor-pointer text-[12.5px] font-bold text-ink/60">{E2("Quitar foto", "Remove photo")}</span></div> : null}
           <div className="flex items-center gap-2">
             <C.IconButton icon="image" size={44} onClick={() => file.current?.click()} label={E2("Agregar una foto", "Add a photo")} />

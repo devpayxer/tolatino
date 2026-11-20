@@ -12,6 +12,7 @@ import type { Tr } from "../Traducir";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, PostCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -37,7 +38,7 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
   return (
     <PostCard screenLabel={full ? "APP-COM-POST · publicación" : "Comunidad · publicación"}
       pin={p.fijada ? (p.kind === "pregunta" ? E2("PREGUNTA DE LA SEMANA · FIJADA", "QUESTION OF THE WEEK · PINNED") : E2("FIJADA", "PINNED")) : undefined}
-      avatar={a.foto ? `url("${a.foto}") center/cover` : undefined} avatarColor={a.oficial ? "var(--tl-ink)" : "var(--tl-desk)"}
+      avatar={a.foto ? `${fotoFondo(a.foto, 40)} center/cover` : undefined} avatarColor={a.oficial ? "var(--tl-ink)" : "var(--tl-desk)"}
       initials={a.foto ? undefined : <span style={{ color: a.oficial ? "var(--tl-white)" : "var(--tl-ink)" }}>{a.ini}</span>} onAuthor={onAuthor}
       name={p.mia ? `${a.nombre}${E2(" · tú", " · you")}` : a.nombre} rank={rk} time={hace(p.at, es)} place={lugar} placeColor={p.invitado ? "var(--tl-pro-ink)" : undefined}
       solved={p.kind === "pregunta" && p.resuelta ? E2("Resuelta", "Solved") : undefined} edited={p.editada && !p.resuelta ? E2("Editada", "Edited") : undefined}
@@ -62,7 +63,7 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
         <div data-screen-label="Publicación · fotos" style={{ position: "relative", marginTop: 12, borderRadius: 16, overflow: "hidden", background: "var(--tl-ink)" }}>
           <div className="hs" onScroll={(e) => { const t = e.currentTarget; setIx(Math.round(t.scrollLeft / Math.max(1, t.clientWidth))); }} style={{ display: "flex", overflowX: "auto", scrollSnapType: "x mandatory" }}>
             {p.fotos.map((f, i) => (
-              <div key={i} onClick={onOpen} style={{ flex: "none", width: "100%", scrollSnapAlign: "start", aspectRatio: full ? "4 / 3" : "4 / 5", maxHeight: 520, background: `url("${f}") center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: onOpen ? "pointer" : "default" }} role="button" {...tec(onOpen)} aria-label={E2(`Foto ${i + 1} de ${p.fotos.length}`, `Photo ${i + 1} of ${p.fotos.length}`)} />
+              <div key={i} onClick={onOpen} style={{ flex: "none", width: "100%", scrollSnapAlign: "start", aspectRatio: full ? "4 / 3" : "4 / 5", maxHeight: 520, background: `${fotoFondo(f, 540)} center/cover`, backgroundColor: "var(--tl-photo-bg)", cursor: onOpen ? "pointer" : "default" }} role="button" {...tec(onOpen)} aria-label={E2(`Foto ${i + 1} de ${p.fotos.length}`, `Photo ${i + 1} of ${p.fotos.length}`)} />
             ))}
           </div>
           {p.fotos.length > 1 && <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 9px", borderRadius: 99, background: "rgba(11,14,18,.6)", color: "var(--tl-white)", font: `700 10px ${MONO}` }}>{`${ix + 1}/${p.fotos.length}`}</span>}
@@ -70,7 +71,7 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
       )}
       {p.negocio && (
         <div data-screen-label="Publicación · negocio" role="link" onClick={() => onBiz(p.negocio!.id)} {...tec(() => onBiz(p.negocio!.id))} style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, padding: "10px 14px 10px 10px", borderRadius: 16, background: "var(--tl-paper)", cursor: "pointer" }}>
-          <span style={{ width: 52, height: 52, borderRadius: 12, background: p.negocio.foto ? `url("${p.negocio.foto}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
+          <span style={{ width: 52, height: 52, borderRadius: 12, background: p.negocio.foto ? `${fotoFondo(p.negocio.foto, 52)} center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none" }} />
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
             <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}>{E2("RECOMIENDA", "RECOMMENDS") + (p.negocio.para[0] ? ` · ${E2("PARA ", "FOR ")}${p.negocio.para[0].toUpperCase()}` : "")}</span>
             <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}><span style={{ minWidth: 0, font: "700 15px/1.25 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.negocio.nombre}</span>{p.negocio.verificado && <span style={{ display: "grid", flex: "none" }}><Icon name="verified" size={15} color="var(--tl-action)" /></span>}</div>

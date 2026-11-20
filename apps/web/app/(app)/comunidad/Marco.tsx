@@ -16,6 +16,7 @@ import { nombreMes } from "@/lib/puntos-comun";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "Chip" | "Tabs";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tabs } = UI as unknown as Record<N, ComponentType<any>>;
@@ -57,7 +58,7 @@ export type ComUi = ReturnType<typeof useComUi>;
 
 export function Avatar({ foto, ini, size = 40, oficial }: { foto: string | null; ini: string; size?: number; oficial?: boolean }) {
   return (
-    <span style={{ width: size, height: size, borderRadius: 99, background: foto ? `url("${foto}") center/cover` : undefined, backgroundColor: oficial ? "var(--tl-ink)" : "var(--tl-desk)",
+    <span style={{ width: size, height: size, borderRadius: 99, background: foto ? `${fotoFondo(foto, size)} center/cover` : undefined, backgroundColor: oficial ? "var(--tl-ink)" : "var(--tl-desk)",
       display: "grid", placeItems: "center", font: `800 ${Math.round(size / 3.1)}px Sora,sans-serif`, color: oficial ? "var(--tl-white)" : "var(--tl-ink)", flex: "none" }}>{foto ? "" : ini}</span>
   );
 }

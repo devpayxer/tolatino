@@ -14,6 +14,7 @@ import { diaL } from "../../n/[id]/Reservar";
 import { esperaAccion, reservaAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,7 +180,7 @@ export function Estado({ r, otras, espera = { st: "no" }, otros = [], telefono, 
       <div className={K}>{E2("OTROS RESTAURANTES CON MESA", "OTHER RESTAURANTS WITH TABLES")}</div>
       <div className="mt-1.5">{otros.map((o) => (
         <button key={o.id} type="button" onClick={() => router.push(`/n/${o.id}?tab=rsv&p=${r.p}&d=${o.i}&h=${o.h}`)} className="flex w-full items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
-          <span aria-hidden="true" className="size-[46px] flex-none rounded-[12px] bg-ink/[.08] bg-cover bg-center" style={o.foto ? { backgroundImage: `url("${o.foto}")` } : undefined} />
+          <span aria-hidden="true" className="size-[46px] flex-none rounded-[12px] bg-ink/[.08] bg-cover bg-center" style={o.foto ? { backgroundImage: fotoFondo(o.foto, 46) } : undefined} />
           <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{o.nombre}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{metaOtro(o)}</div></div>
           <Chip variant="slot">{hora(o.h)}</Chip>
         </button>

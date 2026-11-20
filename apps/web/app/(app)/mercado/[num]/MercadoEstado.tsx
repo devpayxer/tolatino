@@ -16,6 +16,7 @@ import { useVerificacion } from "../../pago/Verificacion";
 import { MapaVivo } from "@/app/_ruta/MapaVivo";
 import type { ModoTarjeta } from "../../pago/MetodoPago";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,7 +119,7 @@ export function MercadoEstado({ v, es, pago = null, ruta = false }: { v: Mercado
             <div className="text-right text-[13.5px] font-bold">{l.st === "out" ? "$0.00" : money(pesado ? l.final : l.est)}</div>
           </div>
           {l.foto && <button type="button" onClick={() => setFoto(foto === l.foto ? null : l.foto)} className="mt-2 flex min-h-11 items-center gap-2 text-[12px] font-bold text-action"><Icon name="image" size={14} color="var(--tl-action)" />{E2("Foto de la balanza", "Scale photo")}</button>}
-          {foto && foto === l.foto && <span className="mt-2 block h-[200px] w-full rounded-[14px] bg-photo-bg" style={{ backgroundImage: `url(${l.foto})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
+          {foto && foto === l.foto && <span className="mt-2 block h-[200px] w-full rounded-[14px] bg-photo-bg" style={{ backgroundImage: fotoFondo(l.foto, 540), backgroundSize: "cover", backgroundPosition: "center" }} />}
         </div>))}</div>
     </div>);
   const filas: [string, string][] = [[E2("Estimado", "Estimate"), money(t.est)], ...(pesado ? [[E2("Peso real", "Real total"), money(t.real)] as [string, string]] : []), ...(t.envio ? [[E2("Incluye envío", "Includes delivery"), money(t.envio)] as [string, string]] : []),

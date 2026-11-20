@@ -19,6 +19,7 @@ import { useVecinoAcciones } from "../../vecinoAcciones";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "IconButton" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tag } = UI as unknown as Record<N, ComponentType<any>>;
@@ -85,7 +86,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
       <div style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 12 }}>
         <div data-screen-label="APP-COM-VECINO · perfil" style={{ ...CARD, margin: margen, padding: 18 }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <span style={{ width: 76, height: 76, boxSizing: "border-box", borderRadius: 99, border: v.fundador ? "2.5px solid var(--tl-signal)" : "none", backgroundColor: "var(--tl-desk)", backgroundImage: v.foto ? `url("${v.foto}")` : undefined, backgroundSize: "cover", backgroundPosition: "center", display: "grid", placeItems: "center", font: "800 22px Sora,sans-serif", flex: "none" }}>{v.foto ? "" : v.ini}</span>
+            <span style={{ width: 76, height: 76, boxSizing: "border-box", borderRadius: 99, border: v.fundador ? "2.5px solid var(--tl-signal)" : "none", backgroundColor: "var(--tl-desk)", backgroundImage: v.foto ? fotoFondo(v.foto, 76) : undefined, backgroundSize: "cover", backgroundPosition: "center", display: "grid", placeItems: "center", font: "800 22px Sora,sans-serif", flex: "none" }}>{v.foto ? "" : v.ini}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 style={{ margin: 0, font: "800 22px/1.15 Sora,sans-serif", letterSpacing: "-.03em" }}>{v.nombre}</h2>
               {v.apodo && <div style={{ marginTop: 3, font: "600 13px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Le dicen «${v.apodo}»`, `Goes by «${v.apodo}»`)}</div>}

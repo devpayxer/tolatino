@@ -11891,7 +11891,46 @@ const guardianes = {
     const cg = /export async function congelarVenta\([^\n]*\balGuardar\?: AlGuardar\): Promise<Res> \{[\s\S]*?\n\}\n/.exec(l)?.[0] ?? "";
     if ((cg.split("pasesPronto();")[0].match(/await alGuardar\?\.\(c\);/g) ?? []).length !== 2) falla(G, L, 0, "congelarVenta no escribe la auditoría de quien llama dentro de la transacción del cambio");
     if (!/const audX = sql\(`select count\(\*\) from audit_entries where action = 'evento\.cancelar' and target_id = '\$\{E\.id\}'`\);\s*ok\(audX === '1', `[^`\n]*\$\{audX\}/.test(p)) falla(G, P, 0, "evt6e no exige exactamente un renglón «evento.cancelar» diciendo cuántos hay");
-    p.split("\n").forEach((x, i) => { if (/action = 'evento\.(cancelar|venta\.congelar)'/.test(x) && /\bespera\(/.test(x)) falla(G, P, i + 1, "la auditoría del admin entra con el cambio: se mira sin esperar (una espera tapa que vuelva a escribirse aparte)"); });
+    p.split("\n").forEach((x, i) => { if (/action = 'evento\.(cancelar|venta\.congelar)'/.test(x) && /\bespera\(/.test(x)) falla(G, P, i + 1, "la auditoría del admin entra con el cambio: se mira sinesperar (una espera tapa que vuelva a escribirse aparte)"); });
+  },
+
+  /* Fotos a la medida (F2a, 20 nov): toda foto de datos que se pinta pide la variante que le toca a su caja (packages/ui/src/foto.ts: fotoSrc / fotoFondo /
+     fotoCss / <Foto>), no el JPEG original de 1 a 5 MB. Lo que se teme: una pantalla o una pieza del sistema que pinta una foto con un `url(${…})` suelto,
+     un <img src={…}> o, en el sistema portado, un `'url(' + x + ')'` sin pasar por __fondo / __fondoCss; o que un bloque del panel (Bloques.tsx) vuelva a
+     pintar su `bg` / `img` / `ph` tal cual. Los `bg:` / `img:` / `ph:` de las pantallas del panel y del admin son texto que Bloques.tsx ya normaliza (por eso
+     se vigila ahí). Permitidos, cada uno con su razón: las teselas del mapa (no son fotos nuestras), el documento privado del reclamo (/api/admin, nunca una
+     variante), los logos y la bandera estáticos del sistema (assets/). Al revés: alreves9ufotopieza. */
+  fotoPorLaPieza() {
+    const G = "fotoPorLaPieza";
+    const PERMITIDO = [
+      ["apps/web/app/(app)/mapa/Mapa.tsx", /t\.src/],                 // teselas del mapa: imágenes de mosaico, no fotos
+      ["apps/web/app/admin/Colas.tsx", /\/api\/admin\/reclamo\//],    // documento privado de un reclamo: va por la API, sin variantes
+      ["packages/ui/src/ds/compa/CompaFrame.js", /logo/],                     // el logo estático de El Compa (assets/)
+    ];
+    const permitido = (f, l) => PERMITIDO.some(([a, re]) => a === f && re.test(l));
+    const url = /url\(\s*["'`]?\s*(\$\{|['"`]\s*\+)|'url\('\s*\+|`url\(\$\{/;   // url(${…}) · url(" + … · 'url(' + …
+    const pasa = /\bfoto(Fondo|Css|Src|SrcSet)\(|__fondo(Css)?\(|<Foto\b/;
+    for (const f of codigo) {
+      const web = /^apps\/web\/app\/.*\.tsx?$/.test(f) && !/^apps\/web\/app\/api\//.test(f), ds = /^packages\/ui\/src\/ds\/.*\.js$/.test(f) && !/\/scope\.js$/.test(f), blq = f === "packages/ui/src/panel/Bloques.tsx";
+      if (!(web || ds || blq)) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        if (permitido(f, l)) return;
+        // el panel y el admin arman `bg:` / `img:` / `ph:` con url(…) para Bloques.tsx, que los pasa por fotoCss; el resto no
+        if (web && /\b(bg|img|ph):\s*[^,]*\burl\(/.test(l) && !/\b(backgroundImage|background)\s*:/.test(l)) return;
+        if (url.test(l) && !pasa.test(l)) falla(G, f, i + 1, "una foto de datos se pinta con url(${…}) suelto: usar fotoFondo(url, ancho de la caja) o el __fondo del sistema (packages/ui/src/foto.ts)");
+        if ((web || blq) && /<img\b/.test(l) && !/<Foto\b/.test(l) && !/\bsrc="\/?assets\//.test(l)) falla(G, f, i + 1, "<img> de una foto de datos: usar <Foto src alt ancho /> (packages/ui/src/core/Foto.tsx)");
+        if ((web || blq) && /\bbackgroundImage:\s*[a-z.]+\.(ph|img|bg)\b/.test(l)) falla(G, f, i + 1, "el bloque o el avatar pinta su foto tal cual: pasarla por fotoCss(valor, ancho de la caja)");
+      });
+      // el <img> del sistema portado: solo logos y teselas (src con assets/, assetBase, base + o t.src)
+      if (ds) { const t = sinComent(f); for (const m of t.matchAll(/createElement\("img", \{\s*(?:key: [^\n]*\n\s*)?src: ([^\n]*)/g)) if (!/assets\/|assetBase|\bbase \+|\bt\.src/.test(m[1])) falla(G, f, t.slice(0, m.index).split("\n").length, "<img> del sistema con una foto de datos: pasar por __fondo / __fondoCss"); }
+    }
+    // las piezas del sistema que reparten la foto (Placeholder y la tabla del script) tienen que existir
+    const S = "packages/ui/src/ds/scope.js", P = "packages/ui/src/ds/core/Placeholder.js", T = "scripts/portar-sistema.mjs", B = "packages/ui/src/panel/Bloques.tsx";
+    const s = existsSync(S) ? readFileSync(S, "utf8") : "", p = existsSync(P) ? readFileSync(P, "utf8") : "", t = existsSync(T) ? readFileSync(T, "utf8") : "", b = existsSync(B) ? readFileSync(B, "utf8") : "";
+    if (!/__ds_scope\.__fondo = fotoFondo;/.test(s) || !/__ds_scope\.__fondoCss = fotoCss;/.test(s)) falla(G, S, 0, "el sistema no registra __fondo / __fondoCss (fotoFondo / fotoCss de packages/ui/src/foto.ts)");
+    if (!/__ds_scope\.__fondo\(image,/.test(p)) falla(G, P, 0, "el Placeholder (la caja de foto del sistema) no pide la variante a su ancho");
+    if (!/^const FOTO = \{/m.test(t) || !/"core\/Placeholder\.js": \[/.test(t) || !/t = fotos\(t, rel\);/.test(t)) falla(G, T, 0, "el parche de fotos a la medida ya no está en el script que porta el sistema (se perdería en el próximo port)");
+    if ((b.match(/\bfoto(Css|Fondo)\(/g) ?? []).length < 8) falla(G, B, 0, "Bloques.tsx pinta fotos sin pasarlas por fotoCss / fotoFondo");
   },
 };
 

@@ -17,6 +17,7 @@ import { useVerificacion } from "../../../pago/Verificacion";
 import { reservarViajeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes" | "QtyStepper";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,7 +98,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const bloqueViaje = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>
       <div className="flex items-center gap-[13px]">
-        <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+        <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: fotoFondo(s.foto, 54), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
         <div className="min-w-0 flex-1"><div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
           <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{(esCaja ? `${dinero(s.cents)} ${E2("POR CAJA", "PER BOX")}` : cot ? `${E2("DESDE ", "FROM ")}${dinero(s.cents)} · ${E2("PRECIO CERRADO CON FOTOS", "FIXED PRICE FROM PHOTOS")}` : asiento ? `${dinero(s.cents)} ${E2("POR PERSONA", "PER PERSON")}${s.child ? E2(` · NIÑO ${dinero(s.child)}`, ` · CHILD ${dinero(s.child)}`) : ""}` : `${dinero(s.cents)}${s.pax ? E2(` · HASTA ${s.pax} PERSONAS`, ` · UP TO ${s.pax} PEOPLE`) : ""}`).toUpperCase()}</div></div>
         <button type="button" onClick={volver} className="inline-flex min-h-11 flex-none items-center text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
@@ -123,7 +124,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
             <div className="flex items-baseline justify-between gap-2.5"><span className={K}>{E2("FOTOS", "PHOTOS")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 6</span></div>
             <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Cuartos, muebles grandes y escaleras. Con fotos el precio es cerrado.", "Rooms, large furniture and stairs. With photos the price is fixed.")}</div>
             <div className="flex flex-wrap gap-2.5">
-              {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
+              {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: fotoFondo(f.url, 76), backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
               {fotos.length < 6 && <button type="button" disabled={subiendo} onClick={() => (yo ? fileRef.current?.click() : entrar())} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/60"><Icon name="image" size={18} color="rgba(11,14,18,.6)" /><span className="text-[10.5px] font-bold">{subiendo ? E2("Subiendo…", "Uploading…") : E2("Foto", "Photo")}</span></button>}
               <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label={E2("Subir foto", "Upload photo")} onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
             </div>

@@ -16,6 +16,7 @@ import { precioAccion, viajeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,7 +136,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU VIAJE", "YOUR TRIP")}</span></div>
           <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}</div>
         </div>
-        {cotK && x.fotos.length > 0 && <div data-screen-label="Mudanza · fotos" className="flex flex-wrap gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">{x.fotos.map((u) => <span key={u} className="h-[64px] w-[64px] rounded-[12px] bg-photo-bg" style={{ backgroundImage: `url("${u}")`, backgroundSize: "cover", backgroundPosition: "center" }} />)}</div>}
+        {cotK && x.fotos.length > 0 && <div data-screen-label="Mudanza · fotos" className="flex flex-wrap gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">{x.fotos.map((u) => <span key={u} className="h-[64px] w-[64px] rounded-[12px] bg-photo-bg" style={{ backgroundImage: fotoFondo(u, 64), backgroundSize: "cover", backgroundPosition: "center" }} />)}</div>}
         <div data-screen-label="Viaje · tu dinero" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU DINERO", "YOUR MONEY")}</span></div>
           <div className="px-[15px] py-0.5">

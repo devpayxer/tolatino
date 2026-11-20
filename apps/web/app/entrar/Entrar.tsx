@@ -13,6 +13,7 @@ import { bvDatos, bvPaso } from "./acciones";
 import { HojaLlave } from "./HojaLlave";
 import { MAX_APELACION, MIN_APELACION } from "@/lib/moderacion-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { OnbTopBar, OnbActionBar, Icon, Tag, Chip, Button } = UI as unknown as Record<"OnbTopBar" | "OnbActionBar" | "Icon" | "Tag" | "Chip" | "Button", ComponentType<any>>;
@@ -447,7 +448,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
                 <Clave>{E2("VECINOS QUE MÁS AYUDAN · OPCIONAL", "NEIGHBORS WHO HELP MOST · OPTIONAL")}</Clave>
                 {d.sugeridos.map((v) => (
                   <div key={v.id} className="flex items-center gap-[11px]">
-                    <span className="grid size-10 flex-none place-items-center rounded-full font-display text-[13px] font-extrabold" style={{ backgroundColor: "var(--tl-desk)", backgroundImage: v.foto ? `url("${v.foto}")` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>{v.foto ? "" : v.ini}</span>
+                    <span className="grid size-10 flex-none place-items-center rounded-full font-display text-[13px] font-extrabold" style={{ backgroundColor: "var(--tl-desk)", backgroundImage: v.foto ? fotoFondo(v.foto, 40) : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>{v.foto ? "" : v.ini}</span>
                     <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{v.nombre}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-text-3">{v.lugar.toUpperCase()}</div></div>
                     <Button variant={sigo.includes(v.id) ? "secondary" : "primary"} size="sm" onClick={() => setSigo(tg(sigo, v.id))}>{sigo.includes(v.id) ? E2("Siguiendo", "Following") : E2("Seguir", "Follow")}</Button>
                   </div>
@@ -480,7 +481,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
         {paso === 6 && (
           <div data-pantalla="ONB-USR · bienvenida" className="flex flex-col">
             <div className="mt-14 flex flex-col items-start gap-3">
-              <span className="grid size-[76px] place-items-center rounded-full border-[2.5px] border-signal bg-ink font-display text-[24px] font-extrabold text-white" style={d?.foto ? { backgroundImage: `url("${d.foto}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>{d?.foto ? "" : d?.ini}</span>
+              <span className="grid size-[76px] place-items-center rounded-full border-[2.5px] border-signal bg-ink font-display text-[24px] font-extrabold text-white" style={d?.foto ? { backgroundImage: fotoFondo(d.foto, 76), backgroundSize: "cover", backgroundPosition: "center" } : undefined}>{d?.foto ? "" : d?.ini}</span>
               <span className="rounded-[8px] bg-ink px-2.5 py-1.5 font-mono text-[9.5px] font-bold tracking-[0.14em] text-signal">
                 {`${fin?.fundador ? E2("FUNDADORES · #", "FOUNDERS · #") : E2("N.º ", "NO. ")}${(fin?.numero ?? 1).toLocaleString("en-US")}${E2(" · RECLUTA", " · RECRUIT")}`}
               </span>

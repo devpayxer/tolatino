@@ -18,6 +18,7 @@ import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import type { T } from "@/lib/textos";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "Tabs" | "SearchResultRow" | "UnderstoodBar" | "NotYetCard" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,7 +126,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const fichaVecino = (x: FilaVecino, lineas: number) => (
     <button key={x.id} type="button" onClick={() => router.push(`/comunidad/p/${x.id}`)} className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-3.5 text-left">
       <span className="flex items-center gap-[9px]">
-        <span className="grid size-7 flex-none place-items-center rounded-full bg-desk bg-cover bg-center text-[10px] font-extrabold" style={x.foto ? { backgroundImage: `url("${x.foto}")` } : undefined}>{x.foto ? "" : x.ini}</span>
+        <span className="grid size-7 flex-none place-items-center rounded-full bg-desk bg-cover bg-center text-[10px] font-extrabold" style={x.foto ? { backgroundImage: fotoFondo(x.foto, 28) } : undefined}>{x.foto ? "" : x.ini}</span>
         <span className="text-[13px] font-bold">{x.who}{x.oficial ? <span className="ml-1.5 font-mono text-[9.5px] font-bold tracking-[0.08em] text-action">{E2("CUENTA OFICIAL", "OFFICIAL")}</span> : null}</span>
         <span className="font-mono text-[10px] font-semibold text-ink/60">{x.when}</span>
       </span>
@@ -177,7 +178,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
         <span className="truncate font-mono text-[10.5px] font-semibold tracking-[0.04em]" style={{ color: x.abierto ? "var(--tl-open-text)" : "rgba(11,14,18,.6)" }}>{x.meta}</span>
         <span className="mt-0.5 font-display text-[15px] font-extrabold tracking-[-0.02em]">{x.precio}</span>
       </span>
-      <span className="size-[84px] flex-none rounded-[14px] bg-photo-bg bg-cover bg-center" style={x.img ? { backgroundImage: `url("${x.img}")` } : undefined} />
+      <span className="size-[84px] flex-none rounded-[14px] bg-photo-bg bg-cover bg-center" style={x.img ? { backgroundImage: fotoFondo(x.img, 84) } : undefined} />
     </button>
   );
   const seccionPlatos = PL && PL.items.length > 0 && (
@@ -207,7 +208,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       <div className="flex flex-col overflow-hidden rounded-[18px] border border-ink/[.08] bg-white">
         {VA.items.map((x, i) => (
           <button key={x.id} type="button" data-vacante={x.id} onClick={() => router.push(`/n/${x.biz}/empleo/${x.id}`)} className={`flex items-center gap-3 px-4 py-3 text-left ${i ? "border-t border-ink/[.07]" : ""}`}>
-            <span className="grid size-[42px] flex-none place-items-center rounded-[12px] bg-photo-bg font-display text-[13px] font-extrabold" style={x.logo ? { background: `url("${x.logo}") center/cover` } : undefined}>{x.logo ? "" : x.negocio.slice(0, 1)}</span>
+            <span className="grid size-[42px] flex-none place-items-center rounded-[12px] bg-photo-bg font-display text-[13px] font-extrabold" style={x.logo ? { background: `${fotoFondo(x.logo, 42)} center/cover` } : undefined}>{x.logo ? "" : x.negocio.slice(0, 1)}</span>
             <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold">{x.puesto}</span><span className="mt-1 block truncate font-mono text-[9.5px] font-semibold tracking-[0.05em] text-ink/60">{`${x.negocio}${x.pago ? ` · ${x.pago}` : ""}`.toUpperCase()}</span></span>
             <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />
           </button>
@@ -403,7 +404,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               <div className="flex flex-col gap-[26px] px-5 pb-12 pt-[18px] lg:px-0">
                 {R.notYet?.primero && <div className="grid"><NotYetCard layout="stack" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)} /></div>}
                 {R.top && (
-                  <button type="button" onClick={() => router.push(R.top!.href)} className="relative h-32 overflow-hidden rounded-[20px] bg-ink bg-cover bg-center text-left" style={R.top.img ? { backgroundImage: `url(${R.top.img})` } : undefined}>
+                  <button type="button" onClick={() => router.push(R.top!.href)} className="relative h-32 overflow-hidden rounded-[20px] bg-ink bg-cover bg-center text-left" style={R.top.img ? { backgroundImage: fotoFondo(R.top.img, 540) } : undefined}>
                     <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,14,18,.82),rgba(11,14,18,.25))]" />
                     <span className="absolute bottom-3.5 left-4 right-[60px] flex flex-col gap-1 text-white">
                       <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-white/75">{R.top.eb}</span>

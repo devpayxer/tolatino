@@ -1,5 +1,11 @@
 /* Registro común de los componentes portados: cada módulo se agrega aquí y busca a los demás aquí. */
+import { fotoCss, fotoFondo } from "../foto";
 export const __ds_scope = {};
+
+/* Fotos a la medida (F2a, scripts/portar-sistema.mjs, tabla FOTO): `__fondo(url, caja)` = el url("…") de la variante que le toca a una caja de ese
+   ancho en px; `__fondoCss(valor, caja)` = lo mismo para un fondo que ya trae sus url(…) (o un color o degradado, que quedan igual). */
+__ds_scope.__fondo = fotoFondo;
+__ds_scope.__fondoCss = fotoCss;
 
 /* 9c · Accesibilidad de lo que era un <div>/<span> con onClick (scripts/portar-sistema.mjs, tabla A11Y). `__btn(clic, nombre, extra, dentro)` devuelve
    role="button", tabIndex 0, Enter/Espacio (solo con el foco en el propio elemento, para no robarle la tecla a un campo de dentro) y el nombre

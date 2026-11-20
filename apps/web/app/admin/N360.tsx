@@ -29,6 +29,7 @@ import { useAhora } from "@/lib/ahora";
 import { useE } from "./idioma-admin";
 
 import { tec } from "@/lib/tec";
+import { fotoFondo } from "@tolatino/ui";
 /* 6a · Contenido › Eventos: los eventos del negocio (no los borradores) y su estado de organizador. 6j: liquidaciones y cancelaciones. */
 const LIQ_N: Record<string, [string, string]> = { pending: ["PENDIENTES", "PENDING"], held: ["RETENIDAS", "HELD"], paid: ["PAGADAS", "PAID"], reversed: ["AJUSTADAS", "ADJUSTED"], paying: ["EN CAMINO", "ON THE WAY"] };
 export type Evts360 = { filas: { id: string; t: Bi; st: string; hidden: boolean; pending: string | null; dia: string; h0: number; entrada: string }[]; org: { verificado: boolean; bloqueado: string | null }; puede: { aprobar: boolean; retirar: boolean }; liq: { st: string; n: number; neto: number }[]; cx: { evento: Bi; scope: string; reason: string; by: string; ordenes: number; devuelto: number; at: string }[] };
@@ -158,7 +159,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
     cuerpo = (
       <>
         <A.AdminNote tone="info" icon="store">{E("Así lo ve el cliente y así lo edita el negocio. Si editas en su nombre, queda en el historial y el dueño lo ve en su panel.", "This is how the customer sees it and how the business edits it. If you edit on their behalf, it stays in the history and the owner sees it in their dashboard.")}</A.AdminNote>
-        {vis[0] ? <div style={{ height: 220, borderRadius: 18, backgroundImage: `url("${vis[0].url}")`, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} /> : null}
+        {vis[0] ? <div style={{ height: 220, borderRadius: 18, backgroundImage: fotoFondo(vis[0].url, 540), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} /> : null}
         <A.AdminList label={E(`FOTOS DEL NEGOCIO · ${vis.length}${quit.length ? ` · ${quit.length} QUITADAS` : ""}`, `BUSINESS PHOTOS · ${vis.length}${quit.length ? ` · ${quit.length} REMOVED` : ""}`)} rows={n.fotos.map((f, i) => ({
           image: f.url, imageSize: 52, title: f.status === "visible" ? (i === 0 ? E("Portada", "Cover") : E(`Foto ${i + 1}`, `Photo ${i + 1}`)) : E("Foto", "Photo"), sub: f.status === "visible" ? E("La sube el negocio", "Uploaded by the business") : E(`Quitada: ${f.removed_note ?? ""}`, `Removed: ${f.removed_note ?? ""}`),
           tag: f.status !== "visible" ? E("QUITADA", "REMOVED") : undefined, tone: "danger",

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type ComponentType, type CSSProperties } f
 import { createPortal } from "react-dom";
 import { HOY_T, finHoy, type Historia } from "@/lib/hoy-comun";
 import { useAhora } from "@/lib/ahora";
+import { fotoFondo } from "@tolatino/ui";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button, Icon } = UI as unknown as Record<"Button" | "Icon", ComponentType<any>>;
@@ -180,12 +181,12 @@ export function VisorHoy({ h, es, onClose }: { h: Historia; es: boolean; onClose
       onClick={(e) => e.stopPropagation()}
       style={{ position: desk ? "absolute" : "fixed", ...(desk ? { left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 400, height: "min(680px, calc(100dvh - 60px))", borderRadius: 26, boxShadow: "0 30px 60px -20px rgba(11,14,18,.6)" } : { inset: 0 }),
         zIndex: 95, overflow: "hidden", background: "var(--tl-ink)", color: "var(--tl-white)", display: "flex", flexDirection: "column", outline: "none" }}>
-      <div style={{ position: "absolute", inset: 0, backgroundColor: "var(--tl-ink)", backgroundImage: a.foto ? `url("${a.foto}")` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
+      <div style={{ position: "absolute", inset: 0, backgroundColor: "var(--tl-ink)", backgroundImage: a.foto ? fotoFondo(a.foto, 540) : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(11,14,18,.65) 0,rgba(11,14,18,0) 26%,rgba(11,14,18,0) 52%,rgba(11,14,18,.88) 100%)" }} />
       <div style={{ position: "relative", padding: "14px 14px 0", display: "flex", flexDirection: "column", gap: 12 }}>
         {n > 1 ? <div style={{ display: "flex", gap: 4 }}>{h.avisos.map((x, j) => <div key={x.id} style={{ flex: 1, height: 3, borderRadius: 99, background: j <= i ? "var(--tl-white)" : "rgba(255,255,255,.35)" }} />)}</div> : null}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ width: 38, height: 38, boxSizing: "border-box", borderRadius: 99, border: "2px solid var(--tl-white)", backgroundColor: "var(--tl-photo-bg)", backgroundImage: h.logo ? `url("${h.logo}")` : undefined, backgroundSize: "cover", backgroundPosition: "center", flex: "none" }} />
+          <span style={{ width: 38, height: 38, boxSizing: "border-box", borderRadius: 99, border: "2px solid var(--tl-white)", backgroundColor: "var(--tl-photo-bg)", backgroundImage: h.logo ? fotoFondo(h.logo, 38) : undefined, backgroundSize: "cover", backgroundPosition: "center", flex: "none" }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: "800 15px/1.2 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.nombre}</div>
             <div style={{ marginTop: 3, font: `700 9px ${MONO}`, letterSpacing: ".08em", color: "rgba(255,255,255,.75)" }}>{tipo} · {hace}</div>

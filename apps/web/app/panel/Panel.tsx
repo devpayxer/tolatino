@@ -80,6 +80,7 @@ import { DireccionPanel } from "./DireccionPanel";
 import { AvisoSoloLectura } from "./AvisoSoloLectura";
 import { RefrescoVivo } from "@/app/_vivo/RefrescoVivo";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoCss } from "@tolatino/ui";
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
@@ -243,7 +244,7 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const mtabs = new Set(mnav.map((n) => n.k));
   // 7e · El Compa (DASH-COMPA) en TU NEGOCIO, para todo miembro: solo explica y lleva a lo que esa persona puede abrir.
   const cpaIt = navIt(sec === "cpa", "help", "El Compa", () => go("cpa"));
-  const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: bz.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
+  const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: fotoCss(bz.ph, n), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
   const estadoL = (sz: number, ls: string) => <span style={{ display: "flex", alignItems: "center", gap: 5, font: `700 ${sz}px ${MONO}`, letterSpacing: ls, color: stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: stDot }} />{bz.stL}</span>;
 
   const bizBlocks: Bloque[] = [

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, 
 import type { MenuPublico, PItem } from "@/lib/pedir";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { CorazonGuardar, useGuardados } from "./Corazon";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Tag" | "Chip" | "MenuItemRow" | "MenuTile" | "OptionGroup" | "QtyStepper" | "CartLine" | "OrderBar";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 // 9m · Lo que el panel marca en «Lleva o es» (Menú › Para el cliente; las mismas claves que app/panel/Menu.tsx MTAGS).
 const LLEVA: [string, string, string][] = [["pica", "Picante", "Spicy"], ["veg", "Vegetariano", "Vegetarian"], ["sg", "Sin gluten", "Gluten-free"], ["mar", "Pescado o mariscos", "Fish or shellfish"], ["lac", "Lácteos", "Dairy"], ["hue", "Huevo", "Egg"], ["nuez", "Maní o nueces", "Peanuts or nuts"]];
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const foto = (u: string | null): CSSProperties => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const foto = (u: string | null, w: number): CSSProperties => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: { stopPropagation?: () => void }) => e?.stopPropagation?.();
 
 /* ── Carrito en el teléfono (por negocio, 24 h) ── */
@@ -513,7 +514,7 @@ function Plato({ mn }: { mn: Mn }) {
   const E2 = (a: string, b: string) => dosIdiomas(mn.es, a, b);
   const cuerpo = (
     <>
-      <div className="relative bg-photo-bg" style={{ height: sh.desk ? 230 : 210, ...foto(sh.img) }}>
+      <div className="relative bg-photo-bg" style={{ height: sh.desk ? 230 : 210, ...foto(sh.img, 540) }}>
         {!sh.desk && <div className="absolute left-1/2 top-2.5 -ml-[19px] h-1 w-[38px] rounded-[9px] bg-white/85" />}
         <button type="button" aria-label={mn.lbl.close} onClick={sh.onClose} className="absolute right-3.5 top-3.5 grid size-11 place-items-center rounded-xl bg-white/95"><Icon name="close" size={15} strokeWidth={2.4} /></button>
       </div>
@@ -581,7 +582,7 @@ function Pregunta({ mn }: { mn: Mn }) {
   if (!a) return null;
   const cab = (
     <div className={`flex items-center gap-3 ${a.desk ? "px-[22px] pt-5" : "px-5 pt-3"}`}>
-      <span className="size-[52px] flex-none rounded-[14px] bg-photo-bg" style={foto(a.img)} />
+      <span className="size-[52px] flex-none rounded-[14px] bg-photo-bg" style={foto(a.img, 52)} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[18px] font-extrabold leading-[1.15] tracking-[-0.025em]">{a.title}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{a.meta}</div>

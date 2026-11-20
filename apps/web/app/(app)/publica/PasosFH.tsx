@@ -12,6 +12,7 @@ import { K } from "./PasosBC";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "Chip" | "Tag" | "BusinessPreview";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, BusinessPreview } = UI as unknown as Record<N, ComponentType<any>>;
@@ -73,7 +74,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
     <div data-screen-label="ONB-NEG-F1 · tu foto y tu página" style={{ display: "flex", flexDirection: "column", gap: 14, animation: "oFade .2s ease-out" }}>
       <input ref={cam} type="file" accept="image/*" capture="environment" onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
       <input ref={rollo} type="file" accept="image/*" multiple onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
-      <div style={{ position: "relative", aspectRatio: "16 / 10", borderRadius: 20, overflow: "hidden", background: d.cover ? `url("${foto(d.cover, 600)}") center/cover, var(--tl-photo-bg)` : "repeating-linear-gradient(135deg,var(--tl-ds-e7e5e0, var(--tl-photo-bg)) 0 10px,var(--tl-desk) 10px 20px)", display: "grid", placeItems: "center" }}>
+      <div style={{ position: "relative", aspectRatio: "16 / 10", borderRadius: 20, overflow: "hidden", background: d.cover ? `${fotoFondo(foto(d.cover, 600), 540)} center/cover, var(--tl-photo-bg)` : "repeating-linear-gradient(135deg,var(--tl-ds-e7e5e0, var(--tl-photo-bg)) 0 10px,var(--tl-desk) 10px 20px)", display: "grid", placeItems: "center" }}>
         {!d.cover ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}><Icon name="image" size={26} color="rgba(11,14,18,.6)" /><span style={K}>{subiendo ? E2("SUBIENDO…", "UPLOADING…") : E2("TU PORTADA", "YOUR COVER")}</span></div>
           : <div style={{ position: "absolute", left: 12, bottom: 12, display: "flex" }}><Tag tone="ink">{E2("PORTADA", "COVER")}{(d.gallery || []).length ? ` · +${(d.gallery || []).length}` : ""}</Tag></div>}
       </div>
@@ -86,7 +87,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
           <span style={K}>{E2("TUS FOTOS · LA PRIMERA ES LA PORTADA", "YOUR PHOTOS · THE FIRST ONE IS THE COVER")}</span>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6 }}>
             {todas.map((id, i) => (
-              <div key={id} style={{ position: "relative", aspectRatio: "1", borderRadius: 12, background: `url("${foto(id, 240)}") center/cover`, backgroundColor: "var(--tl-photo-bg)", boxShadow: i ? "none" : "0 0 0 2.5px var(--tl-ink)" }}>
+              <div key={id} style={{ position: "relative", aspectRatio: "1", borderRadius: 12, background: `${fotoFondo(foto(id, 240), 120)} center/cover`, backgroundColor: "var(--tl-photo-bg)", boxShadow: i ? "none" : "0 0 0 2.5px var(--tl-ink)" }}>
                 {i ? <button type="button" aria-label={E2("Usar de portada", "Use as cover")} onClick={() => portada(id)} style={{ position: "absolute", inset: 0, border: 0, borderRadius: 12, background: "transparent", cursor: "pointer" }} /> : null}
                 <span style={{ position: "absolute", top: 6, left: 6, pointerEvents: "none", minWidth: 22, height: 22, padding: "0 7px", boxSizing: "border-box", borderRadius: 99, background: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".06em" }}>{i ? String(i + 1) : E2("PORTADA", "COVER")}</span>
                 <button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => quitar(id)} style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, padding: 0, border: 0, borderRadius: 99, background: "rgba(255,255,255,.92)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="close" size={12} strokeWidth={2.2} /></button>

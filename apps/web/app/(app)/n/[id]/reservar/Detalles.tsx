@@ -8,6 +8,7 @@ import type { RsvHold } from "@/lib/reservas";
 import { diaL } from "../Reservar";
 import { enviarMesa } from "../acciones-reserva";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,7 +104,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
   );
   const mesa = (desk: boolean) => (
     <div className={`${caja} flex items-center gap-[13px]`}>
-      <span className={`flex-none rounded-[14px] bg-[var(--tl-photo-bg)] bg-cover bg-center ${desk ? "size-16" : "size-[54px]"}`} style={h.negocio.foto ? { backgroundImage: `url(${h.negocio.foto})` } : undefined} />
+      <span className={`flex-none rounded-[14px] bg-[var(--tl-photo-bg)] bg-cover bg-center ${desk ? "size-16" : "size-[54px]"}`} style={h.negocio.foto ? { backgroundImage: fotoFondo(h.negocio.foto, 64) } : undefined} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nombre}</div>
         <div className="mt-[5px] text-[13.5px] font-bold leading-[1.35]">{diaL(h.ymd, h.dia, es, true)} · {hora(h.h)}</div>

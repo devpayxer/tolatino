@@ -6,6 +6,7 @@ import type { InvitacionVista } from "@/lib/equipo-invitacion";
 import { subirFoto } from "@/lib/subir-foto";
 import { equipoAceptarCodigo } from "./acciones";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 const LANG: Record<string, string> = { es: "Español", en: "English", pt: "Português" };
 
@@ -29,7 +30,7 @@ export function AceptarEquipo({ es, codigo, tel, nombre, v, error }: { es: boole
     const rol = (es ? v.rol : v.rolEn || v.rol) || (v.renta ? E2("Renta su espacio", "Rents a space") : "");
     B.push({ type: "head", eye: E2("INVITACIÓN AL EQUIPO", "TEAM INVITE"), t: E2(`${v.dueno ? v.dueno.split(" ")[0] : v.negocio.nombre} te invitó a ${v.negocio.nombre}`, `${v.dueno ? v.dueno.split(" ")[0] : v.negocio.nombre} invited you to ${v.negocio.nombre}`), s: rol ? E2(`Entras como ${rol}.`, `You join as ${rol}.`) : E2("Pon tu foto, tus palabras y tus idiomas, y acepta.", "Add your photo, words and languages, then accept.") });
     B.push({ type: "group", k: E2("TU PERFIL · LO VE EL CLIENTE", "YOUR PROFILE · CLIENTS SEE IT") });
-    B.push({ type: "photos", k: E2("TU FOTO", "YOUR PHOTO"), count: `${foto ? 1 : 0}/1`, cols: 3, items: foto ? [{ bg: `url("${foto.url}")`, onClick: () => setFoto(null) }] : [], addL: subiendo ? E2("Subiendo…", "Uploading…") : E2("Subir foto", "Upload photo"),
+    B.push({ type: "photos", k: E2("TU FOTO", "YOUR PHOTO"), count: `${foto ? 1 : 0}/1`, cols: 3, items: foto ? [{ bg: fotoFondo(foto.url, 240), onClick: () => setFoto(null) }] : [], addL: subiendo ? E2("Subiendo…", "Uploading…") : E2("Subir foto", "Upload photo"),
       onAdd: foto || subiendo ? undefined : () => {
         const i = document.createElement("input"); i.type = "file"; i.accept = "image/*";
         i.onchange = async () => { const f = i.files?.[0]; if (!f) return; setSubiendo(true); const r = await subirFoto(f); setSubiendo(false); if (r.ok && r.id && r.url) setFoto({ id: r.id, url: r.url }); else setErr(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo.")); };

@@ -14,6 +14,7 @@ import { LINEA_MONEDAS, NOTA_CANJE, REGLAS_MONEDAS, SIN_VALOR, type CuponVecino,
 import { monCanjear, monCupones, monMisCupones, monMovimientos } from "../acciones";
 import { LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Tag" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,7 +169,7 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
               const falta = c.costo - saldo, l = c.mio ? E2("Ver mi código", "See my code") : c.agotado ? E2("Agotado este mes", "Gone this month") : falta > 0 ? E2(`Te faltan ${falta}`, `Need ${falta}`) : E2("Canjear", "Redeem");
               return (
                 <div key={c.id} data-screen-label="Monedas · cupón" data-cupon={c.id} style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                  <div style={{ height: 92, background: c.negocio.foto ? `url("${c.negocio.foto}") center/cover` : undefined, backgroundColor: "var(--tl-desk)", position: "relative" }}>
+                  <div style={{ height: 92, background: c.negocio.foto ? `${fotoFondo(c.negocio.foto, 240)} center/cover` : undefined, backgroundColor: "var(--tl-desk)", position: "relative" }}>
                     <span style={{ position: "absolute", left: 10, bottom: 10, padding: "4px 8px", borderRadius: 8, background: "var(--tl-ink)", color: "var(--tl-pro)", font: `700 9.5px ${MONO}`, letterSpacing: ".08em" }}>{E2(`${c.costo} MONEDAS`, `${c.costo} COINS`)}</span>
                     {c.mio && <span style={{ position: "absolute", right: 10, top: 10 }}><Tag tone={c.mio.estado === "used" ? "neutral" : "action"}>{c.mio.estado === "used" ? E2("USADO", "USED") : E2("CANJEADO", "REDEEMED")}</Tag></span>}
                   </div>

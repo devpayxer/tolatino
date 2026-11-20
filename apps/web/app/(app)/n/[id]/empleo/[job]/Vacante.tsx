@@ -12,6 +12,7 @@ import { vacGuardar } from "../../acciones-jobs";
 import { TAG_APP } from "../../Jobs";
 import { ReportarContenido } from "../../ReportarContenido";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,7 +47,7 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
   const principal = (
     <div className={caja}>
       <div className="flex items-center gap-[11px]">
-        <span className="size-[42px] flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={v.logo ? { backgroundImage: `url(${v.logo})` } : {}} />
+        <span className="size-[42px] flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={v.logo ? { backgroundImage: fotoFondo(v.logo, 42) } : {}} />
         <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold">{v.bname}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{[v.subs, v.ciudad].filter(Boolean).join(" · ").toUpperCase()}</div></div>
       </div>
       <div className="mt-3.5 font-display text-[22px] font-extrabold leading-[1.15] tracking-[-0.03em]">{title}</div>
@@ -85,7 +86,7 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
       <div className="mt-1.5">
         {v.sim.map((x) => (
           <button key={x.id} type="button" onClick={() => router.push(`/n/${x.biz}/empleo/${x.id}`)} className="flex w-full items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
-            <span className="size-11 flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={x.logo ? { backgroundImage: `url(${x.logo})` } : {}} />
+            <span className="size-11 flex-none rounded-xl bg-photo-bg bg-cover bg-center" style={x.logo ? { backgroundImage: fotoFondo(x.logo, 44) } : {}} />
             <div className="min-w-0 flex-1"><div className="text-[13.5px] font-bold leading-[1.3]">{bi(x.title, es)}</div><div className="mt-[3px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{`${x.bname} · ${tipoL(x.kind, es)}`.toUpperCase()}</div></div>
             <span className="flex-none font-display text-[13px] font-extrabold">{pagoL(x.payFrom, x.payTo, es)}</span>
           </button>

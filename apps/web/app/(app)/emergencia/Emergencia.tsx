@@ -11,6 +11,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { pedirEmergencia } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,7 +95,7 @@ export function Emergencia({ opciones, casa: casa0, es, yo, desde, ek0, linea911
           <div className="flex items-baseline justify-between gap-2.5"><span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("Fotos · opcional", "Photos · optional")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{fotos.length} / 3</span></div>
           <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Si puedes, una foto ayuda a que traigan lo que hace falta.", "If you can, a photo helps them bring what is needed.")}</div>
           <div className="flex flex-wrap gap-2.5">
-            {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: `url(${f.url})`, backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
+            {fotos.map((f) => <span key={f.id} className="relative h-[76px] w-[76px] rounded-[13px] bg-photo-bg" style={{ backgroundImage: fotoFondo(f.url, 76), backgroundSize: "cover" }}><button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button></span>)}
             {fotos.length < 3 && <button type="button" disabled={subiendo} onClick={() => (yo ? fileRef.current?.click() : entrar())} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[13px] border-[1.5px] border-dashed border-ink/[.22] text-ink/60"><Icon name="image" size={18} color="rgba(11,14,18,.6)" /><span className="text-[10.5px] font-bold">{subiendo ? E2("Subiendo…", "Uploading…") : E2("Foto", "Photo")}</span></button>}
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
           </div>

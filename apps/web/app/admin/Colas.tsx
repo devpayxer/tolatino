@@ -29,6 +29,7 @@ import { useAhora } from "@/lib/ahora";
 import { horasTxt } from "@/lib/plazo-txt";
 
 import { tec } from "@/lib/tec";
+import { fotoFondo } from "@tolatino/ui";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button" | "Pager", ComponentType<any>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -300,7 +301,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     }
     if (k.queue === "medios" && "foto" in k && n) {
       extra = k.foto ? (
-        <div style={{ position: "relative", height: 220, borderRadius: 18, backgroundImage: `url("${k.foto.url}")`, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }}>
+        <div style={{ position: "relative", height: 220, borderRadius: 18, backgroundImage: fotoFondo(k.foto.url, 540), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }}>
           <span style={{ position: "absolute", left: 10, bottom: 10, padding: "4px 8px", borderRadius: 7, background: "rgba(11,14,18,.75)", color: "var(--tl-white)", font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".1em" }}>{E("REPORTADA POR UN VECINO", "REPORTED BY A NEIGHBOR")}</span>
         </div>) : null;
       const MOT: Record<string, string> = en ? { no_es: "Not from this business", inapropiado: "Inappropriate content", datos: "Shows personal data", spam: "It's advertising or spam", otro: "Other reason" } : { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" };

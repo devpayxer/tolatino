@@ -48,7 +48,7 @@ const Avatar = ({
     boxSizing: 'border-box',
     borderRadius: avatarRadius,
     border: avatarBorder,
-    background: avatar || avatarColor,
+    background: __ds_scope.__fondoCss(avatar || avatarColor, size),
     backgroundColor: avatarColor,
     display: 'grid',
     placeItems: 'center',
@@ -288,7 +288,7 @@ function TopAnswer({
       width: 54,
       height: 54,
       borderRadius: 14,
-      background: business.image ? business.image + ' center/cover' : 'var(--tl-photo-bg)',
+      background: business.image ? __ds_scope.__fondoCss(business.image, 54) + ' center/cover' : 'var(--tl-photo-bg)',
       backgroundColor: 'var(--tl-photo-bg)',
       flex: 'none'
     }
@@ -507,7 +507,7 @@ function ReplyThread({
       borderRadius: 99,
       border: '2px solid var(--tl-white)',
       marginLeft: f.ml != null ? f.ml : i ? -7 : 0,
-      background: f.image || 'var(--tl-photo-bg-2)',
+      background: __ds_scope.__fondoCss(f.image, 22) || 'var(--tl-photo-bg-2)',
       backgroundColor: 'var(--tl-photo-bg-2)',
       display: 'grid',
       placeItems: 'center',
@@ -688,7 +688,7 @@ function AlsoRecommended({
       width: 36,
       height: 36,
       borderRadius: 10,
-      background: b.image ? b.image + ' center/cover' : 'var(--tl-photo-bg)',
+      background: b.image ? __ds_scope.__fondoCss(b.image, 36) + ' center/cover' : 'var(--tl-photo-bg)',
       backgroundColor: 'var(--tl-photo-bg)',
       flex: 'none',
       cursor: 'pointer'

@@ -11,6 +11,7 @@ import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago
 import { rentaAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,7 +87,7 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
         {r.dmgSt === "asked" && (
           <div data-screen-label="Renta · daño" className="rounded-[18px] border-[1.5px] border-pro bg-white p-4">
             <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-pro-ink">{E2("EL DAÑO · CON FOTO", "THE DAMAGE · WITH PHOTO")}</div>
-            {r.dmgFoto && <div className="mt-2.5 aspect-[4/3] w-full rounded-[14px] bg-photo-bg" style={{ backgroundImage: `url(${r.dmgFoto})`, backgroundSize: "cover", backgroundPosition: "center" }} role="img" aria-label={E2("Foto del daño", "Damage photo")} />}
+            {r.dmgFoto && <div className="mt-2.5 aspect-[4/3] w-full rounded-[14px] bg-photo-bg" style={{ backgroundImage: fotoFondo(r.dmgFoto, 540), backgroundSize: "cover", backgroundPosition: "center" }} role="img" aria-label={E2("Foto del daño", "Damage photo")} />}
             <div className="mt-3 flex items-baseline justify-between gap-3"><span className="text-pretty text-[13.5px] font-bold leading-[1.4]">{r.dmgNota ? `«${r.dmgNota}»` : ""}</span><span className="flex-none font-display text-[18px] font-extrabold tracking-[-0.03em]">{dinero(r.dmgC ?? 0)}</span></div>
             <div className="mt-1 text-[12px] font-medium leading-[1.45] text-ink/60">{E2(`Sale del depósito de ${dinero(r.dep)}; lo demás vuelve a ${card}.`, `Comes out of the ${dinero(r.dep)} deposit; the rest returns to ${card}.`)}{r.dmgEsperaH != null ? E2(` Si no respondes en ${r.dmgEsperaH} h, lo revisa To'Latino.`, ` If you do not answer in ${r.dmgEsperaH} h, To'Latino reviews it.`) : ""}</div>
             <div className="mt-3.5 grid grid-cols-2 gap-2">
@@ -98,7 +99,7 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
         <div className="grid"><OrderTracker steps={steps} /></div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
           <div className="flex items-center gap-3 border-b border-ink/[.07] px-[15px] py-3">
-            {r.foto && <span className="h-11 w-11 flex-none rounded-xl bg-photo-bg" style={{ backgroundImage: `url(${r.foto})`, backgroundSize: "cover", backgroundPosition: "center" }} />}
+            {r.foto && <span className="h-11 w-11 flex-none rounded-xl bg-photo-bg" style={{ backgroundImage: fotoFondo(r.foto, 44), backgroundSize: "cover", backgroundPosition: "center" }} />}
             <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU RENTA", "YOUR RENTAL")}</span></div>
           <div className="px-[15px] py-0.5">{rows.map(([k, v], n) => (
             <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>))}</div>

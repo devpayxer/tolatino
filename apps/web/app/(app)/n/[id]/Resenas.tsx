@@ -9,6 +9,7 @@ import type { ResumenResenas, Tarjeta } from "@/lib/resenas";
 import { masResenas, reportarRes, utilResena } from "./acciones-resena";
 import { LineaTr, useTraducir, type Tr } from "../../Traducir";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -149,7 +150,7 @@ export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summ
       c.pts ? E2(`+${c.pts} PUNTOS`, `+${c.pts} POINTS`) : null].filter(Boolean).join(" · "),
     starsOn: "★★★★★".slice(0, c.stars), starsOff: "★★★★★".slice(c.stars), when: revWhen(c.d, o.es) + (c.editada ? E2(" · EDITADA", " · EDITED") : ""),
     source: { label: o.es ? src[0] : src[1], tone: src[2] }, facts: hechos(c, o.es), body: tb.body, translate: tb.translate,
-    photos: c.fotos.map((u, i) => ({ image: `url(${u})`, onClick: o.onPhoto ? () => o.onPhoto!(i) : undefined })),
+    photos: c.fotos.map((u, i) => ({ image: fotoFondo(u, 76), onClick: o.onPhoto ? () => o.onPhoto!(i) : undefined })),
     recommend: !S && c.rec.length ? { label: E2("Recomienda:", "Recommends:"), text: c.rec.map((x) => (o.es ? x.es : x.en || x.es)).join(" · ") } : null,
     reply: c.reply ? { kicker: `${c.reply.offer ? E2("QUIERE ARREGLARLO · ", "WANTS TO MAKE IT RIGHT · ") : E2("RESPUESTA DE ", "REPLY FROM ")}${o.negocio} · ${revWhen(c.reply.d, o.es)}${c.reply.ed ? E2(" · EDITADA", " · EDITED") : ""}`.toUpperCase(), text: tp?.translate ? <>{tp.body}<LineaTr t={tp.translate} /></> : c.reply.text } : null,
     helpful: foot ? (!c.mine ? { label: E2("Útil", "Helpful") + (hN ? ` · ${hN}` : ""), bg: hOn ? "var(--tl-action-tint)" : "var(--tl-white)", border: hOn ? "rgba(75,55,245,.35)" : "rgba(11,14,18,.14)", color: hOn ? "var(--tl-action)" : "var(--tl-ink)", onClick: o.onHelp }
@@ -506,7 +507,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
       <div className={desk ? "mt-2.5 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3" : "hs -mx-5 mt-2.5 flex gap-2.5 overflow-x-auto px-5"}>
         {r.top.map((d) => (
           <button key={d.id} type="button" onClick={onMenu} className={desk ? "min-w-0 text-left" : "w-[132px] flex-none text-left"}>
-            <div className={`${desk ? "h-24" : "h-[86px]"} rounded-[14px] bg-photo-bg`} style={d.ph ? { backgroundImage: `url(${d.ph})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+            <div className={`${desk ? "h-24" : "h-[86px]"} rounded-[14px] bg-photo-bg`} style={d.ph ? { backgroundImage: fotoFondo(d.ph, 240), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
             <div className={`mt-[7px] font-bold leading-[1.25] ${desk ? "text-[13px]" : "text-[12.5px]"}`}>{es ? d.name.es : d.name.en || d.name.es}</div>
             <div className="mt-1 flex items-center gap-[5px] font-mono text-[9.5px] font-semibold text-ink/60"><Icon name="like" size={12} color="var(--tl-action)" />{d.n}{E2(" la recomiendan", " recommend it")}</div>
           </button>
@@ -651,7 +652,7 @@ export function ResCapas({ v }: { v: CtlResenas }) {
             </div>
             <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => setPv(null)} className="grid size-[38px] place-items-center rounded-[13px] bg-white/[.12]"><Icon name="close" size={16} color="var(--tl-white)" strokeWidth={2.2} /></button>
           </div>
-          <div className="flex-1 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url(${pv.c.fotos[i]})` }} />
+          <div className="flex-1 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: fotoFondo(pv.c.fotos[i], 540) }} />
           <div className="flex min-h-[46px] items-center justify-between px-4 pb-7 pt-4">
             {n > 1 && (
               <>

@@ -11,6 +11,7 @@ import { horasTxt } from "@/lib/plazo-txt";
 import { EstimadoCliente, type PagoEst } from "./EstimadoCliente";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes
 const DS = { es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
 const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 
 export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: string; es: boolean; cambio?: boolean; pago?: PagoEst }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
@@ -270,13 +271,13 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
         <div className="grid"><OrderTracker steps={steps} /></div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
           <div className="flex items-center gap-3 border-b border-ink/[.07] px-[15px] py-3.5">
-            <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/60" style={fondo(foto)}>{foto ? null : who1.charAt(0)}</span>
+            <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/60" style={fondo(foto, 48)}>{foto ? null : who1.charAt(0)}</span>
             <div className="min-w-0 flex-1"><div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("TU CITA", "YOUR BOOKING")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{withL}</div>
               <div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{(c.negocio.direccion ?? c.negocio.nombre).toUpperCase()}</div></div>
           </div>
           <div className="px-[15px] py-0.5">
             {rows.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v}</span></div>)}
-            {c.fotos.length > 0 && <div className="flex gap-2 border-t border-ink/[.06] py-[11px]">{c.fotos.map((u) => <span key={u} className="h-14 w-14 rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
+            {c.fotos.length > 0 && <div className="flex gap-2 border-t border-ink/[.06] py-[11px]">{c.fotos.map((u) => <span key={u} className="h-14 w-14 rounded-xl bg-photo-bg" style={fondo(u, 56)} />)}</div>}
           </div>
         </div>
         {!(c.est && (c.est.estimado || c.est.extras.length) && (ok || done)) && <div className="rounded-[18px] border border-ink/[.07] bg-white p-[15px]">

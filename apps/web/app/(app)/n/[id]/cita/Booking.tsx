@@ -15,6 +15,7 @@ import { avisameEstado, avisameHora, horasDeCita, pedirCita, proximasHoras } fro
 import { aprC, aprL, diaS, dinero, durL, horaL, precio } from "../Servicios";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "StaffPicker" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots, StaffPicker, Payme
 
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
 const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
 const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
@@ -213,7 +214,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   // ── Bloques (los comparten teléfono y escritorio) ──
   const tarjetaSvc = (
     <div className={`flex items-center gap-[13px] px-[15px] py-3.5 ${caja}`}>
-      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={fondo(s.foto ?? cp.negocio.foto)} />
+      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={fondo(s.foto ?? cp.negocio.foto, 54)} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         {(optL || addL || nm(s.desc)) && <div className="mt-[3px] text-[12px] font-medium leading-[1.4] text-ink/60">{optL || addL || nm(s.desc)}</div>}
@@ -225,7 +226,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const bloqueHora = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>
       <div className="flex items-center gap-3">
-        <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/60" style={fondo(pFoto)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
+        <span className="grid h-[46px] w-[46px] flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[16px] font-extrabold text-ink/60" style={fondo(pFoto, 46)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
         <div className="min-w-0 flex-1"><div className="text-[14px] font-bold">{whoCard.name}</div>{whoCard.line && <div className="mt-1 font-mono text-[9.5px] font-semibold leading-[1.4] tracking-[0.04em] text-ink/60">{whoCard.line}</div>}</div>
         <span className={`flex-none rounded-[7px] px-2 py-1 font-mono text-[8.5px] font-bold tracking-[0.1em] ${whoCard.aprC}`}>{whoCard.apr}</span>
       </div>
@@ -289,7 +290,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
         <div className={`mt-3 ${K}`}>{E2("FOTO DE REFERENCIA · OPCIONAL", "REFERENCE PHOTO · OPTIONAL")}</div>
         <div className="mt-[9px] flex flex-wrap gap-2.5">
           {fotos.map((f) => (
-            <span key={f.id} className="relative h-[68px] w-[68px] rounded-[13px] bg-photo-bg" style={fondo(f.url)}>
+            <span key={f.id} className="relative h-[68px] w-[68px] rounded-[13px] bg-photo-bg" style={fondo(f.url, 68)}>
               <button type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="absolute -right-1.5 -top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink"><Icon name="close" size={10} color="var(--tl-white)" strokeWidth={2.6} /></button>
             </span>
           ))}
@@ -311,7 +312,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="flex items-center gap-3 border-b border-ink/[.07] px-[15px] py-3.5">
-        <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/60" style={fondo(pFoto)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
+        <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[15px] font-extrabold text-ink/60" style={fondo(pFoto, 46)}>{pFoto ? null : whoCard.name.charAt(0)}</span>
         <div className="min-w-0 flex-1"><div className={K}>{E2("TU CITA", "YOUR BOOKING")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{whoCard.name}</div>{whoCard.line && <div className="mt-[3px] font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{whoCard.line}</div>}</div>
       </div>
       <div className="px-[15px] py-0.5">

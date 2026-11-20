@@ -6,6 +6,7 @@
    en la portada (teléfono), UNA fila de pestañas (cada fila de exploración + Antojos; se ve una a la vez), la vitrina «Patrocinados», filtros y la
    lista. La tarjeta Pro: una línea de datos y un botón; la oferta solo si hay algo de hoy. */
 import * as UI from "@tolatino/ui";
+import { fotoFondo } from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import { avisame, registrarToqueSemilla } from "../../acciones";
@@ -32,7 +33,7 @@ export type Vista = {
   patrocinados: Patrocinada[]; sponTitulo: string;
 };
 
-const fondo = (url: string | null) => (url ? { backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (url: string | null, w: number) => (url ? { backgroundImage: fotoFondo(url, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 
 export function Categoria({ v }: { v: Vista }) {
   const router = useRouter();
@@ -83,7 +84,7 @@ export function Categoria({ v }: { v: Vista }) {
   return (
     <div data-pantalla="APP-NEG-CAT" className={`mx-auto w-full max-w-[1440px] pb-[150px] lg:pb-10 ${pendiente ? "opacity-70 transition-opacity" : ""}`}>
       {/* ── Portada baja: 150 en el teléfono (con volver y el radio), 210 en la computadora ── */}
-      <div className="relative h-[150px] bg-photo-bg-2 lg:h-[210px]" style={fondo(v.hero)}>
+      <div className="relative h-[150px] bg-photo-bg-2 lg:h-[210px]" style={fondo(v.hero, 540)}>
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,14,18,.3)_0%,rgba(11,14,18,.8)_100%)]" />
         <button type="button" aria-label={T.volver} onClick={() => router.push("/negocios")}
           className="absolute left-4 top-3.5 grid size-[38px] place-items-center rounded-[13px] bg-white/95 lg:hidden">
@@ -152,10 +153,10 @@ export function Categoria({ v }: { v: Vista }) {
                     className="flex w-[90px] flex-none snap-start flex-col items-center gap-2 lg:w-[104px] lg:gap-[9px]">
                     <span className="relative size-[66px] flex-none lg:size-[84px]">
                       <span className="block size-full rounded-full bg-photo-bg outline-offset-2"
-                        style={{ ...fondo(c.photo), outline: (v.sub ?? "") === c.key ? "2px solid var(--tl-ink)" : "none" }} />
+                        style={{ ...fondo(c.photo, 112), outline: (v.sub ?? "") === c.key ? "2px solid var(--tl-ink)" : "none" }} />
                       {c.flag && (
                         <span aria-hidden className="absolute -right-0.5 bottom-[3px] h-[15px] w-[22px] rounded-[4px] shadow-[0_0_0_2px_var(--tl-white)] lg:h-[17px] lg:w-[26px]"
-                          style={fondo(`/assets/flags/${c.flag}.png`)} />
+                          style={fondo(`/assets/flags/${c.flag}.png`, 26)} />
                       )}
                     </span>
                     <span className={`text-center text-[11px] leading-[1.2] lg:text-[12.5px] ${(v.sub ?? "") === c.key ? "font-extrabold" : "font-bold"}`}>{c.label}</span>
@@ -191,7 +192,7 @@ export function Categoria({ v }: { v: Vista }) {
                       {g.items.map((c) => (
                         <button key={c.key} type="button" onClick={() => elegirSub(c.key)} className="flex w-[84px] flex-none snap-start flex-col gap-[7px] text-left lg:w-[112px] lg:gap-2">
                           <span className="block h-[62px] rounded-[13px] bg-photo-bg outline-offset-2 lg:h-20 lg:rounded-[14px]"
-                            style={{ ...fondo(c.photo), outline: v.sub === c.key ? "2px solid var(--tl-ink)" : "none" }} />
+                            style={{ ...fondo(c.photo, 112), outline: v.sub === c.key ? "2px solid var(--tl-ink)" : "none" }} />
                           <span className={`line-clamp-2 text-[11.5px] leading-[1.2] lg:text-[12.5px] ${v.sub === c.key ? "font-extrabold" : "font-bold"}`}>{c.label}</span>
                         </button>
                       ))}

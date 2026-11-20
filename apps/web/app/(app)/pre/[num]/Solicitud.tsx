@@ -11,12 +11,13 @@ import { useEffect, useState, type ComponentType } from "react";
 import type { SolicitudVista } from "@/lib/solicitudes";
 import { solicitudAccion } from "./acciones";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
-const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const LIGHTS: Record<string, [string, string]> = { ce: ["Check engine", "Check engine"], bat: ["Batería", "Battery"], temp: ["Temperatura", "Temperature"], abs: ["Frenos o ABS", "Brakes or ABS"], oil: ["Aceite", "Oil"], tpms: ["Presión de gomas", "Tire pressure"] };
 const AREAS: Record<string, [string, string]> = { techo: ["Techo", "Roof"], cocina: ["Cocina", "Kitchen"], bano: ["Baño", "Bathroom"], sotano: ["Sótano", "Basement"], cuarto: ["Cuarto", "Bedroom"], sala: ["Sala", "Living room"], afuera: ["Afuera", "Outside"], toda: ["Toda la casa", "Whole house"] };
 
@@ -111,7 +112,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
           <div data-screen-label="Emergencia · a quién" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{stE === "exp" ? E2("LLAMA DIRECTO", "CALL DIRECTLY") : E2("SE LO MANDAMOS A", "SENT TO")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{s.destinos.map((x) => <a key={x.negocio.id} href={x.negocio.telefono ? `tel:${x.negocio.telefono}` : `/n/${x.negocio.id}`} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5">
-              <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto)} />
+              <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto, 40)} />
               <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{x.negocio.nombre}</span>
                 <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/60">{`${stE === "sent" ? E2("ESPERANDO · ", "WAITING · ") : ""}${E2("SALIDA ", "CALL-OUT ")}${dinero(x.precio ?? 0)}${x.eta ? E2(` · LLEGA EN ~${x.eta} MIN`, ` · ~${x.eta} MIN`) : ""}`}</span></span>
               <Icon name={x.negocio.telefono ? "phone" : "chevronRight"} size={15} color="rgba(11,14,18,.35)" /></a>)}</div>
@@ -124,7 +125,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
               const meta = x.st === "sent" ? E2("ESPERANDO RESPUESTA", "WAITING FOR REPLY") : x.st === "no" ? E2("NO HACE ESTE TRABAJO", "DOES NOT DO THIS JOB") : x.st === "expired" ? E2("NO RESPONDIÓ", "DID NOT REPLY") : x.st === "closed" ? E2("CERRADO", "CLOSED")
                 : `${r.lo ? `${dinero(r.lo)}–${dinero(r.hi ?? r.lo)}` : ""}${x.st === "see" ? E2(" · HAY QUE VERLO", " · NEEDS A VISIT") : ""}${E2(" · VISITA ", " · VISIT ")}${vis ? dinero(vis) : E2("GRATIS", "FREE")}${r.dias ? ` · ${r.dias}` : ""}${x.st === "used" ? E2(" · ELEGIDO", " · CHOSEN") : ""}`;
               return <button key={x.negocio.id} type="button" disabled={!puede} onClick={() => reservar(x.item ?? "", x.negocio.id)} className={`flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-left ${x.st === "used" ? "border-[1.5px] border-ink" : "border border-ink/[.08]"} ${["no", "expired", "closed"].includes(x.st) ? "opacity-55" : ""}`}>
-                <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto)} />
+                <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto, 40)} />
                 <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{x.negocio.nombre}{best && x === best && got.length > 1 ? E2(" · el más bajo", " · lowest") : ""}</span>
                   <span className="mt-0.5 block font-mono text-[9.5px] font-semibold leading-[1.5] text-ink/60">{meta.toUpperCase()}</span>
                   {r.nota && <span className="mt-1 block text-pretty text-[12px] font-medium leading-[1.45] text-ink/70">{r.nota}</span>}</span>
@@ -133,7 +134,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
         )}
         {!pq && !em && (st === "rng" || st === "see") && (
           <div data-screen-label="Pre-estimado · respuesta" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
-            <div className="flex items-center gap-2.5"><span className="h-9 w-9 flex-none rounded-full bg-photo-bg" style={fondo(d.negocio.foto)} />
+            <div className="flex items-center gap-2.5"><span className="h-9 w-9 flex-none rounded-full bg-photo-bg" style={fondo(d.negocio.foto, 36)} />
               <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{`${E2("RESPUESTA DE ", "REPLY FROM ")}${who}`.toUpperCase()}</div><div className="mt-0.5 font-mono text-[9.5px] font-semibold text-ink/60">{d.at}</div></div></div>
             {r.nota && <p className="m-0 mt-3 text-pretty text-[13.5px] font-medium leading-[1.55]">{r.nota}</p>}
             {st === "rng" && (r.inc ?? []).length > 0 && <div className="mt-3.5"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{E2("LO QUE INCLUYE EL RANGO", "WHAT THE RANGE COVERS")}</div>
@@ -149,14 +150,14 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
           <div className="border-b border-ink/[.07] px-[15px] py-3 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("LO QUE MANDASTE", "WHAT YOU SENT")}</div>
           <div className="px-[15px] py-0.5">
             {filas.map(([k, v], n) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/60">{k}</span><span className="text-pretty text-right text-[13px] font-semibold leading-[1.45]">{v}</span></div>)}
-            {s.fotos.length > 0 && <div className="flex flex-wrap gap-2 border-t border-ink/[.06] py-[11px]">{s.fotos.map((u) => <span key={u} className="h-14 w-14 rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
+            {s.fotos.length > 0 && <div className="flex flex-wrap gap-2 border-t border-ink/[.06] py-[11px]">{s.fotos.map((u) => <span key={u} className="h-14 w-14 rounded-xl bg-photo-bg" style={fondo(u, 56)} />)}</div>}
           </div>
         </div>
         {!pq && !em && s.otros.length > 0 && (
           <div className="rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60">{E2("LO HACEN EN TU CIUDAD", "BUSINESSES IN YOUR CITY THAT DO IT")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{s.otros.map((o) => <button key={o.id} type="button" onClick={() => router.push(`/n/${o.id}?tab=svc`)} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5 text-left">
-              <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(o.foto)} /><span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{o.nombre}</span><span className="mt-0.5 block truncate font-mono text-[9.5px] font-semibold text-ink/60">{o.meta.toUpperCase()}</span></span>
+              <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(o.foto, 40)} /><span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{o.nombre}</span><span className="mt-0.5 block truncate font-mono text-[9.5px] font-semibold text-ink/60">{o.meta.toUpperCase()}</span></span>
               <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></button>)}</div>
           </div>
         )}

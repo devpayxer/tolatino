@@ -18,6 +18,7 @@ import { useVerificacion } from "../../../pago/Verificacion";
 import { esperaAccion, inscribirmeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,7 +93,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
   const lineaNota = <div className="flex items-start gap-2.5 rounded-[14px] bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="check" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-bold leading-[1.45] text-action-hover">{linea}</span></div>;
   const tarjetaSvc = (
     <div className={`flex items-center gap-[13px] px-[15px] py-3.5 ${caja}`}>
-      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: `url(${s.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+      <span className="h-[54px] w-[54px] flex-none rounded-[15px] bg-photo-bg" style={s.foto ? { backgroundImage: fotoFondo(s.foto, 54), backgroundSize: "cover", backgroundPosition: "center" } : {}} />
       <div className="min-w-0 flex-1">
         <div className="font-display text-[16px] font-extrabold leading-[1.2] tracking-[-0.02em]">{nm(s.name)}</div>
         <div className="mt-[5px] font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/60">{[precioL, curso && s.mat ? `${nm(V.mat)} ${usdI(s.mat)}` : "", s.sem ? E2(`${s.sem} semanas`, `${s.sem} weeks`) : ""].filter(Boolean).join(" · ").toUpperCase()}</div>

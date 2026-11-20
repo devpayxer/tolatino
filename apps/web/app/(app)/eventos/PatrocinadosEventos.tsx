@@ -10,6 +10,7 @@ import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
 import { entroPatrocinado } from "../acciones-patrocinio";
 import { MONO } from "./comun";
+import { Foto } from "@tolatino/ui";
 
 export type PatEvt = TarjetaEvt & { sid: string };
 const ctaDe = (k: TarjetaEvt, es: boolean) => (k.free ? (es ? "Ver evento" : "See event") : es ? "Boletos" : "Tickets");
@@ -21,7 +22,7 @@ export function TarjetaPatEvt({ k, es, onOpen, chica = false, sid }: { k: Tarjet
   return (
     <div role={onOpen ? "link" : undefined} tabIndex={onOpen ? 0 : undefined} aria-label={k.title} onClick={onOpen} onKeyDown={onOpen ? (e) => { if (e.key === "Enter") onOpen(); } : undefined}
       data-patrocinado-evt={sid} className={`relative overflow-hidden rounded-[22px] bg-ink text-white ${chica ? "h-[260px] w-[200px]" : "h-[300px]"} ${onOpen ? "cursor-pointer" : ""}`}>
-      {k.img ? <img src={k.img} alt="" className="absolute inset-0 block h-full w-full object-cover opacity-[.62]" /> : null}
+      {k.img ? <Foto src={k.img} alt="" ancho={chica ? 200 : 540} className="absolute inset-0 block h-full w-full object-cover opacity-[.62]" /> : null}
       <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3.5 pt-[60px]" style={{ background: "linear-gradient(180deg,rgba(11,14,18,0),rgba(11,14,18,.92))" }}>
         <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "var(--tl-mod-events)" }}>{k.cuando}</div>
         <div className="mt-1.5 line-clamp-2 font-display text-[18px] font-extrabold leading-[1.15] tracking-[-0.03em]">{k.title}</div>
@@ -54,7 +55,7 @@ export function PatrocinadosEventos({ items, es, movil, conMios }: { items: PatE
         {items.map((p) => (
           <div key={p.sid} role="link" tabIndex={0} aria-label={p.title} data-patrocinado-evt={p.sid} onClick={abrir(p)} onKeyDown={(e) => { if (e.key === "Enter") abrir(p)(); }}
             className="relative h-[400px] w-full flex-none cursor-pointer snap-start overflow-hidden bg-ink text-white">
-            {p.img ? <img src={p.img} alt="" className="absolute inset-0 block h-full w-full object-cover opacity-60" /> : null}
+            {p.img ? <Foto src={p.img} alt="" ancho={540} className="absolute inset-0 block h-full w-full object-cover opacity-60" /> : null}
             <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(11,14,18,.1) 30%,rgba(11,14,18,.92))" }} />
             <div className="absolute inset-x-5 bottom-5">
               <div style={{ font: `700 10px ${MONO}`, letterSpacing: ".18em", color: "var(--tl-mod-events)" }}>{p.cuando}</div>

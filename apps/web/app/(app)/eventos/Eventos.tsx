@@ -18,6 +18,7 @@ import { PatrocinadosEventos, type PatEvt } from "./PatrocinadosEventos";
 
 import { tec } from "@/lib/tec";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { Foto } from "@tolatino/ui";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = UI.Button as ComponentType<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +97,7 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
         <div key={s.fecha} role="link" tabIndex={0} aria-label={s.title} data-historia={s.id} onClick={abrirHistoria(s, i)} {...tec(abrirHistoria(s, i))}
           className={`flex flex-none cursor-pointer flex-col items-center ${desk ? "w-[82px] gap-2" : "w-[74px] gap-[7px]"}`}>
           <span className={`box-border grid rounded-full bg-action p-[3px] ${desk ? "size-[78px]" : "size-[70px]"}`}>
-            <span className={`grid overflow-hidden rounded-full bg-paper ${desk ? "p-[3px]" : "p-[2.5px]"}`}>{s.img ? <img src={s.img} alt="" className="block h-full w-full rounded-full object-cover" /> : <span className="block h-full w-full rounded-full bg-photo-bg" />}</span>
+            <span className={`grid overflow-hidden rounded-full bg-paper ${desk ? "p-[3px]" : "p-[2.5px]"}`}>{s.img ? <Foto src={s.img} alt="" ancho={78} className="block h-full w-full rounded-full object-cover" /> : <span className="block h-full w-full rounded-full bg-photo-bg" />}</span>
           </span>
           <span className={`truncate text-center font-bold leading-[1.2] text-ink/75 ${desk ? "max-w-[82px] text-[11px]" : "max-w-[74px] text-[10px]"}`}>{s.venue}</span>
         </div>

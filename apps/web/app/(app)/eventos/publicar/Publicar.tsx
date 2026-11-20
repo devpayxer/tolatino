@@ -13,6 +13,7 @@ import { bi, diaCorto, hora, sumarDias, type Bi, type FormatoEvt } from "@/lib/e
 import { publicarEvento } from "./acciones";
 import { hoyEn } from "@/lib/fecha-local";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,7 +43,7 @@ function Opcion({ on, t, s, img, onClick }: { on: boolean; t: string; s: string;
   const r = radio(on);
   return (
     <button type="button" onClick={onClick} aria-pressed={on} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 15, border: r.border, background: "var(--tl-white)", cursor: "pointer", textAlign: "left", font: "inherit", color: "inherit", width: "100%" }}>
-      {img !== undefined ? <span style={{ width: 40, height: 40, borderRadius: 12, background: img ? `url("${img}") center/cover` : "var(--tl-photo-bg)", flex: "none" }} /> : null}
+      {img !== undefined ? <span style={{ width: 40, height: 40, borderRadius: 12, background: img ? `${fotoFondo(img, 40)} center/cover` : "var(--tl-photo-bg)", flex: "none" }} /> : null}
       <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px Manrope,sans-serif" }}>{t}</span><span style={{ display: "block", marginTop: 2, font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{s}</span></span>
       <span style={{ width: 20, height: 20, borderRadius: 99, boxSizing: "border-box", border: r.ring, flex: "none" }} />
     </button>);
@@ -144,7 +145,7 @@ export function Publicar({ v }: { v: VistaPub }) {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{(Fs.length ? Fs : []).map((x) => <Chip key={x.key} variant={f.fmt === x.key ? "selected" : "filter"} onClick={() => up({ fmt: x.key, h0: x.f.h0, h1: x.f.h0 + x.f.len, puertas: x.f.dr, edad: x.ages.includes(f.edad) ? f.edad : x.f.age0, entrada: f.entrada ?? x.f.entry })}>{bi(x.label, es)}</Chip>)}
                   {!Fs.length ? <span style={{ font: "500 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2("Elige primero el negocio: cada uno publica sus tipos.", "Pick the business first: each one publishes its own types.")}</span> : null}</div></div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><span style={{ font: "700 13px Manrope,sans-serif" }}>{E2("Cartel", "Poster")}</span>
-                <label style={{ position: "relative", aspectRatio: "4 / 3", maxWidth: 260, borderRadius: 13, background: f.foto ? `url("${f.foto.url}") center/cover` : "var(--tl-paper)", border: f.foto ? "0" : "1.5px dashed rgba(11,14,18,.2)", display: "grid", placeItems: "center", cursor: "pointer" }}>
+                <label style={{ position: "relative", aspectRatio: "4 / 3", maxWidth: 260, borderRadius: 13, background: f.foto ? `${fotoFondo(f.foto.url, 260)} center/cover` : "var(--tl-paper)", border: f.foto ? "0" : "1.5px dashed rgba(11,14,18,.2)", display: "grid", placeItems: "center", cursor: "pointer" }}>
                   <input type="file" accept="image/*" aria-label={E2("Subir cartel", "Upload poster")} onChange={(e) => subir(e.target.files?.[0])} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
                   {!f.foto ? <span style={{ display: "flex", alignItems: "center", gap: 6, font: "700 13px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}><Icon name="image" size={16} />{subiendo ? E2("Subiendo…", "Uploading…") : E2("Subir cartel", "Upload poster")}</span> : null}
                 </label></div>

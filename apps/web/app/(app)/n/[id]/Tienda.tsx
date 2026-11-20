@@ -13,6 +13,7 @@ import { cuotas, type ReglaPlan } from "@/lib/layaway-comun";
 import { PrecioAntes } from "./PrecioAntes";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { CorazonGuardar, useGuardados } from "./Corazon";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Button" | "Tag" | "Chip" | "Icon" | "OptionGroup" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +65,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
     const pocos = x.quedan <= 3, agotado = x.quedan < 1;
     return (
       <div key={x.id} className="flex min-w-0 flex-col gap-2">
-        <div className="aspect-square rounded-[14px] bg-photo-bg" style={x.foto ? { backgroundImage: `url(${x.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} role="img" aria-label={nm(x.n)} />
+        <div className="aspect-square rounded-[14px] bg-photo-bg" style={x.foto ? { backgroundImage: fotoFondo(x.foto, 240), backgroundSize: "cover", backgroundPosition: "center" } : undefined} role="img" aria-label={nm(x.n)} />
         <div className="min-w-0">
           {tag && <div className="mb-[5px] flex"><Tag tone={tag.tone}>{tag.t}</Tag></div>}
           <div className="text-[13.5px] font-bold leading-[1.3]">{nm(x.n)}</div>
@@ -153,7 +154,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas,
             <div onClick={() => setHoja(null)} className="absolute inset-0 bg-ink/50" />
             <div role="dialog" aria-modal="true" aria-label={nm(hoja.n)} className="absolute inset-x-0 bottom-0 top-[60px] flex flex-col overflow-hidden rounded-t-[26px] bg-white lg:inset-auto lg:left-1/2 lg:top-1/2 lg:max-h-[86vh] lg:w-[560px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-[26px]">
               <div className="flex-1 overflow-y-auto">
-                <div className="relative h-[220px] flex-none bg-photo-bg" style={hoja.foto ? { backgroundImage: `url(${hoja.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+                <div className="relative h-[220px] flex-none bg-photo-bg" style={hoja.foto ? { backgroundImage: fotoFondo(hoja.foto, 540), backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
                   <div className="absolute left-1/2 top-2.5 -ml-[19px] h-1 w-[38px] rounded-[9px] bg-white/85 lg:hidden" />
                   <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => setHoja(null)} className="absolute right-3.5 top-3.5 grid h-9 w-9 place-items-center rounded-xl bg-white/[.94]"><Icon name="close" size={15} strokeWidth={2.4} /></button>
                 </div>

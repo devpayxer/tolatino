@@ -71,7 +71,7 @@ function NeighborCard({
       borderRadius: 99,
       boxSizing: 'border-box',
       border: '2px solid var(--tl-signal)',
-      background: photo ? `url(${photo}) center/cover` : 'var(--tl-dark-2)',
+      background: photo ? __ds_scope.__fondo(photo, 66) + ' center/cover' : 'var(--tl-dark-2)',
       display: 'grid',
       placeItems: 'center',
       font: '800 21px Sora, sans-serif',

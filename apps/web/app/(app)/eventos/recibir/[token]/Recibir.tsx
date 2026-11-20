@@ -10,6 +10,7 @@ import { diaCorto, hora } from "@/lib/evt-comun";
 import { bolRecibir } from "../../acciones-despues";
 import { fechaHora } from "../../Despues";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "TicketQR";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,7 +51,7 @@ export function Recibir({ x, token, es }: { x: R; token: string; es: boolean }) 
     <div data-pantalla="APP-EVT-RECIBIR" data-estado={x.estado} className="min-h-[100dvh] bg-paper">
       <div className="mx-auto flex max-w-[460px] flex-col gap-4 px-4 pb-12 pt-5 lg:pt-10">
         <div className="flex items-center gap-3">
-          <span className="size-[56px] flex-none rounded-[14px] bg-ink bg-cover bg-center" style={ev.img ? { backgroundImage: `url(${ev.img})` } : undefined} />
+          <span className="size-[56px] flex-none rounded-[14px] bg-ink bg-cover bg-center" style={ev.img ? { backgroundImage: fotoFondo(ev.img, 56) } : undefined} />
           <div className="min-w-0">
             <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/60">{comp ? E2(`CORTESÍA DE ${x.de.toUpperCase()}`, `COMP FROM ${x.de.toUpperCase()}`) : E2(`TE LO MANDA ${x.de.toUpperCase()}`, `SENT BY ${x.de.toUpperCase()}`)}</div>
             <h1 className="m-0 mt-1 font-display text-[22px] font-extrabold leading-[1.1] tracking-[-0.035em]">{ev.title}</h1>
