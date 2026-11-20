@@ -5820,6 +5820,9 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   pedido o una cita de hoy, la ficha del negocio en un teléfono chico.
 
 ## Revisión automática de fotos (decisión AJ, 20 nov) — valores que elegí y puedes cambiar
+- **En el sandbox desde el 20 nov por la noche (commit acecb47, migración 0196 aplicada; visto desde fuera):** las cuatro capas y la corrección de
+  las fotos privadas. Las pantallas (aviso al subir, «Pedir revisión», Auto-moderación completa, reporte diario, ayuda) entran con el siguiente
+  despliegue; hasta entonces una foto retenida o rechazada muestra el mensaje del servidor como aviso, sin el botón.
 - **Qué mirar cuando esté en el sandbox:** subir una foto normal (se publica al instante), y ver en Super Admin › Contenido › Auto-moderación las
   cuatro capas con sus interruptores.
 - **Valores por defecto** (todos se cambian en Configuración): duda desde 0.60 · rechazo solo desde 0.85 · una foto se oculta sola con 3 reportes

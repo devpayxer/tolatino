@@ -23,6 +23,10 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
 - **20 nov (tarde) · dónde quedó cada cosa, para retomar:**
   - **Fotos a la medida (decisión AI):** F1+F2 en `main`, `pruebas` y el sandbox (commit 2963479, migración 0195 aplicada; visto desde fuera con
     `estado-sandbox`). Falta la medida con fotos de cámara reales del fundador (REVISION), F3 (privadas con `?w=`) y F4 (bloque del Super Admin).
+  - **20 nov (noche) · al día:** R1+R2 de la revisión de fotos + la corrección de privadas (`fotos-r1b`) + la caché de paquetes del CI están en
+    `main`, `pruebas` y el sandbox (acecb47, CI 44831568174 verde, migración 0196 aplicada). R3 (pantallas, Sonnet, rama `fotos-r3`) fusionada
+    en la rama de trabajo (3d87e69) y esperando su CI 44835545111. La auditoría del dinero y el panel entraron antes (764ef85). El Inicio está
+    en PAUSA: el fundador descartó dos rondas (código real A/B/C y maquetas Reel/Muro/Conversación) y traerá referencias.
   - **Revisión automática de fotos (decisión AJ, plan `docs/diseno/plan/fotos-revision-automatica.md`):** R1+R2 hechas por Opus en la rama local
     `fotos-r1` (migración 0196, `lib/fotos-decision.ts` pura, `lib/fotos-revision.ts`, `lib/fotos-segunda-opinion.ts`, visor `/api/medios/revision/[id]`).
     Revisada por Fable y DEVUELTA con tres correcciones antes de fusionar: (1) `destino=privado` en la subida para que una foto que va solo a un
