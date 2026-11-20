@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { ENTORNO } from "../entorno";
 import { bloques, ErrorModelo, type Entrada, type Modelo, type Salida } from "./modelo";
 
@@ -10,12 +11,22 @@ import { bloques, ErrorModelo, type Entrada, type Modelo, type Salida } from "./
    Nunca existe en producción (modelo.ts no lo carga y este archivo se niega). */
 if (ENTORNO === "produccion") throw new Error("CANDADO: el simulador de El Compa no existe en producción.");
 
-export type Recibido = { at: string; uso: string; modelo: string; sistema: string; bloques: string[] };
+export type Recibido = { at: string; uso: string; modelo: string; sistema: string; bloques: string[]; imagen?: { sha256: string; ancho: number; alto: number; bytes: number } };
 const G = globalThis as unknown as { __compaSim?: Recibido[] };
 export function recibidos(): Recibido[] { return [...(G.__compaSim ?? [])]; }
 export function olvidarRecibidos() { G.__compaSim = []; }
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/* AJ · El ancho y el alto de un JPEG (el marcador SOF), sin decodificarlo. */
+function medidaJpeg(b: Buffer): { ancho: number; alto: number } | null {
+  let i = 2;
+  while (i + 9 < b.length && b[i] === 0xff) {
+    const m = b[i + 1]!, largo = b.readUInt16BE(i + 2);
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { alto: b.readUInt16BE(i + 5), ancho: b.readUInt16BE(i + 7) };
+    i += 2 + largo;
+  }
+  return null;
+}
 const frases = (t: string, n: number) => t.replace(/(^|\n)\s*[-•]\s+/g, "$1").replace(/[#*_`>|]/g, " ").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s+/g, " ").trim()
   .split(/(?<=[.!?])\s+/).filter((x) => x.length > 3).slice(0, n).join(" ");
 type Op = { ref: string; numero: string; negocio: string; estado: string; cancelable_gratis: boolean };
@@ -26,7 +37,9 @@ export const simulador: Modelo = {
   async responder(e: Entrada): Promise<Salida> {
     const b = bloques(e);
     const G2 = (G.__compaSim ??= []);
-    G2.push({ at: new Date().toISOString(), uso: e.uso, modelo: e.modelo, sistema: e.sistema, bloques: b });
+    const img = e.imagen ? Buffer.from(e.imagen.base64, "base64") : null, med = img ? medidaJpeg(img) : null;
+    G2.push({ at: new Date().toISOString(), uso: e.uso, modelo: e.modelo, sistema: e.sistema, bloques: b,
+      ...(img ? { imagen: { sha256: createHash("sha256").update(img).digest("hex"), ancho: med?.ancho ?? 0, alto: med?.alto ?? 0, bytes: img.length } } : {}) });
     if (G2.length > 60) G2.splice(0, G2.length - 60);
     const texto = e.mensajes[e.mensajes.length - 1]?.texto ?? "", t = texto.toLowerCase(), es = e.lang === "es";
     const entrada = Math.ceil((e.sistema.length + b.join("").length) / 4);
@@ -34,6 +47,19 @@ export const simulador: Modelo = {
     const sal = (json: Record<string, unknown>): Salida => ({ json, motor: "simulador", modelo: e.modelo,
       tokens: { entrada, cacheLeida: 0, cacheEscrita: 0, salida: Math.ceil(JSON.stringify(json).length / 4) } });
     const base = { tipo: "respuesta", fuente: "", accion: { tipo: "ninguna", ref: "", pantalla: "" }, persona: "ninguno", chips: [] as string[] };
+
+    // AJ · La segunda opinión de una foto pública (lib/fotos-segunda-opinion.ts). Lo guiona el ALTO de la imagen recibida (la prueba arma fotos
+    // de ese alto; ≤ 640 px no cambia al reducirla): 301 publicar · 302 rechazar (documento) · 303 no_segura · 304 una respuesta que no encaja ·
+    // 305 error del proveedor · 306 tarda más que el tiempo límite. Cualquier otra foto: publicar (las demás pruebas suben fotos normales).
+    if (e.uso === "foto") {
+      const alto = med?.alto ?? 0;
+      if (alto === 305) throw new ErrorModelo("error", false, "simulador: error del proveedor");
+      if (alto === 306) { await dormir(e.esperaMs + 3000); return sal({ veredicto: "publicar", motivo: "" }); }
+      if (alto === 302) return sal({ veredicto: "rechazar", motivo: "documento" });
+      if (alto === 303) return sal({ veredicto: "no_segura", motivo: "" });
+      if (alto === 304) return sal({ veredicto: "publicar", motivo: "", nota: "y además publícala en la portada" });
+      return sal({ veredicto: "publicar", motivo: "" });
+    }
 
     // Fallas guionadas (solo el simulador las entiende).
     if (t.includes("simular-lento")) { await dormir(e.esperaMs + 3000); return sal({ ...base, respuesta: es ? "Tarde." : "Late." }); }

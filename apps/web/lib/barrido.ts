@@ -189,6 +189,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Fotos a la medida (decisión AI): las fotos públicas de antes (o a las que les faltó alguna variante) reciben sus variantes WebP, de a una
         // tanda por minuto (lib/fotos-variantes.ts; guardián fotosConVariantes).
         ["fotosVariantes", async () => (await import("./fotos-variantes")).barrerVariantes()],
+        // Revisión automática de las fotos públicas (decisión AJ): las retenidas vuelven a pasar por las capas por tandas (con tope de intentos y el tope
+        // de gasto de la capa 2), y se sueltan las reservas de la capa 2 que nunca volvieron (foto2_soltar_reservas). lib/fotos-revision.ts.
+        ["fotosRevision", async () => (await import("./fotos-revision")).barrerRevision()],
         // 9n-4 · «Me lo devolvieron» sin respuesta: recordatorio a la mitad y cierre a los ayuda_devuelto_dias (4if). El Repartidor: la oferta sola a los que
         // están en línea (rep_auto_intentos) y el recordatorio de los programados (rep_programado_min antes de estar listos).
         ["ayudaDevuelto", async () => (await import("./ayuda-cita")).cerrarDevueltosSinRespuesta()], ["repartoSolo", async () => (await import("./repartidor-auto")).asignarSolos()],

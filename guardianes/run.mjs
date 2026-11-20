@@ -5093,7 +5093,10 @@ const guardianes = {
   compaSinRutaCritica() {
     const G = "compaSinRutaCritica";
     // 7e · Y las acciones del asistente del panel (app/panel/acciones-compa.ts: solo las llama la sección El Compa) y Negocios 360° (Super Admin).
-    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|acciones-copiloto\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$|usuarios\/\[id\]\/page\.tsx$|sistema\/configuracion\/page\.tsx$|acciones-config\.ts$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
+    // AJ · Y la segunda opinión de las fotos públicas (lib/fotos-segunda-opinion.ts): usa el MISMO modelo y la misma forma de tope, con tiempo
+    // límite corto y fallo cerrado (si no contesta, la foto queda retenida; nada más de la subida espera). Quién la importa lo cuida
+    // fotosRevisionPrivacidad.
+    const PERMITIDO = /^apps\/web\/(lib\/compa\/|lib\/fotos-segunda-opinion\.ts$|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|acciones-copiloto\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$|usuarios\/\[id\]\/page\.tsx$|sistema\/configuracion\/page\.tsx$|acciones-config\.ts$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || PERMITIDO.test(x)) continue;
       const t = sinComent(x);
@@ -11931,6 +11934,144 @@ const guardianes = {
     if (!/__ds_scope\.__fondo\(image,/.test(p)) falla(G, P, 0, "el Placeholder (la caja de foto del sistema) no pide la variante a su ancho");
     if (!/^const FOTO = \{/m.test(t) || !/"core\/Placeholder\.js": \[/.test(t) || !/t = fotos\(t, rel\);/.test(t)) falla(G, T, 0, "el parche de fotos a la medida ya no está en el script que porta el sistema (se perdería en el próximo port)");
     if ((b.match(/\bfoto(Css|Fondo)\(/g) ?? []).length < 8) falla(G, B, 0, "Bloques.tsx pinta fotos sin pasarlas por fotoCss / fotoFondo");
+  },
+
+  /* ── Revisión automática de las fotos públicas (decisión AJ, 20 nov; docs/diseno/plan/fotos-revision-automatica.md) ──
+     fotosRevisionAntesDePublicar: la decisión se toma ANTES de guardar en lo público. En /api/medios la foto pasa por revisarSubida y solo una
+     «visible» llega a n/<uuid>.jpg; una retenida o rechazada se guarda SOLO en la llave privada (privado/rev/) y contesta sin dirección. Nadie más
+     escribe una llave n/ (salvo las variantes y la revisión al publicar lo que se aprobó: aVisible, solo después de un veredicto «visible» o de una
+     persona que levanta la apelación). Lo que se teme: guardar primero y mirar después, otra ruta que publique sin pasar por la decisión, devolver la
+     dirección de una foto no publicada o publicar desde otro lugar. Al revés: alreves9urevision. */
+  fotosRevisionAntesDePublicar() {
+    const G = "fotosRevisionAntesDePublicar", R = "apps/web/app/api/medios/route.ts", F = "apps/web/lib/fotos-revision.ts", V = "apps/web/lib/fotos-variantes.ts";
+    if (!existsSync(R) || !existsSync(F)) return falla(G, F, 0, "falta la revisión automática (lib/fotos-revision.ts) o la subida pública");
+    const r = sinComent(R), f = sinComent(F);
+    const iRev = r.indexOf("const v = await revisarSubida("), iNo = r.indexOf('if (v.d.estado !== "visible") {'), iGuardar = r.indexOf("await guardarObjeto(clave, img.data"), iPrimero = r.indexOf("guardarObjeto(");
+    if (iRev < 0 || iNo < iRev || iGuardar < iNo || iPrimero !== iGuardar + "await ".length) falla(G, R, 0, "la subida guarda la foto en lo público sin decidir antes (revisarSubida → si no es «visible», nada en n/)");
+    const noPub = r.slice(iNo, r.indexOf("\n  }\n", iNo));
+    if (!/await guardarNoPublicada\(/.test(noPub) || !/return NextResponse\.json\(\{ ok: false, estado:/.test(noPub) || /\burl\b|urlPublica|n\/\$\{/.test(noPub)) falla(G, R, 0, "una foto retenida o rechazada se guarda solo en la llave privada y contesta ok: false con su estado, SIN dirección");
+    if (!/const id = v\.id, clave = `n\/\$\{id\}\.jpg`;/.test(r)) falla(G, R, 0, "la llave pública sale del id de la foto que se revisó");
+    // La llave privada y las únicas escrituras en n/ de la revisión.
+    if (!/export const llaveRevision = \(uuid: string\) => `privado\/rev\/\$\{uuid\}\.jpg`;/.test(f)) falla(G, F, 0, "la llave de una foto no publicada es privado/rev/<uuid>.jpg (nginx nunca sirve /medios/privado/)");
+    const gnp = cuerpoFn(f, "guardarNoPublicada");
+    if (!/const \{ r \} = x, llave = llaveRevision\(r\.id\)/.test(gnp) || !/await guardarObjeto\(llave, x\.datos, "image\/jpeg"\);/.test(gnp) || (gnp.match(/guardarObjeto\(/g) ?? []).length !== 1) falla(G, F, 0, "guardarNoPublicada guarda SOLO en la llave privada");
+    const nN = (f.match(/guardarObjeto\(`n\//g) ?? []).length, enAVisible = (cuerpoFn(f, "aVisible").match(/guardarObjeto\(`n\//g) ?? []).length;
+    if (nN !== 1 || enAVisible !== 1) falla(G, F, 0, "en la revisión solo aVisible() escribe en n/ (después de un veredicto «visible» o de una persona)");
+    const rr = cuerpoFn(f, "revisarRetenida"), dp = cuerpoFn(f, "decidirFotoPorPersona");
+    if ((rr.match(/await aVisible\(/g) ?? []).length !== 1 || rr.indexOf('if (r.d.estado === "visible") {') < 0 || rr.indexOf("await aVisible(") < rr.indexOf('if (r.d.estado === "visible") {') || rr.indexOf("await aVisible(") > rr.indexOf('if (r.d.estado === "rechazada") {'))
+      falla(G, F, 0, "revisarRetenida publica solo dentro de «if (r.d.estado === \"visible\")»");
+    if (!/if \(accion === "lifted"\) await aVisible\(c, f, \{ capa: "persona"/.test(dp)) falla(G, F, 0, "una persona publica solo al levantar la apelación (lifted)");
+    if ((f.match(/await aVisible\(/g) ?? []).length !== 2) falla(G, F, 0, "aVisible se llama solo desde revisarRetenida (veredicto visible) y decidirFotoPorPersona (lifted)");
+    // Nadie más escribe una llave pública n/.
+    for (const x of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x) || [R, F, V].includes(x)) continue;
+      const t = sinComent(x);
+      if (/guardarObjeto\(/.test(t) && /[`"']n\/\$\{|[`"']n\/["'`]\s*\+/.test(t)) falla(G, x, 0, "guarda una foto en lo público (n/…) sin pasar por la revisión automática (lib/fotos-revision.ts)");
+    }
+  },
+
+  /* fotosRevisionPrivacidad: a la segunda opinión (Claude con visión) solo van fotos destinadas a lo público. lib/fotos-segunda-opinion.ts lo
+     comprueba adentro (nunca private, nunca Mensajes/ayuda/entrega/reclamo, solo las llaves n/ y privado/rev/, y con fila se vuelve a leer de la
+     base) ANTES de leer la imagen o reservar; solo lo importa lib/fotos-revision.ts, y a esta solo la subida pública, el barrido, la capa 3 (el
+     reporte) y la apelación; ninguna ruta de fotos privadas la toca. A Claude va solo la imagen reducida (≤ 640 px, JPEG) y la pauta fija: sin
+     datos, sin ayuda, nada de quién la subió. Al revés: alreves9urevision. */
+  fotosRevisionPrivacidad() {
+    const G = "fotosRevisionPrivacidad", S = "apps/web/lib/fotos-segunda-opinion.ts", F = "apps/web/lib/fotos-revision.ts", SIM = "apps/web/lib/compa/modelo-simulador.ts", MC = "apps/web/lib/compa/modelo-claude.ts";
+    if (!existsSync(S)) return falla(G, S, 0, "falta lib/fotos-segunda-opinion.ts");
+    const s = sinComent(S);
+    const IMPORTA_S = new Set([F]), IMPORTA_F = new Set(["apps/web/app/api/medios/route.ts", "apps/web/lib/barrido.ts", "apps/web/app/(app)/acciones.ts", "apps/web/lib/apelaciones.ts"]);
+    const PRIVADAS = /^apps\/web\/app\/api\/(mensajes|ayuda|entrega|repartidor|reclamo|soporte|admin)\//;
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (/["'](?:@\/lib\/|\.\.?\/(?:\.\.\/)*)fotos-segunda-opinion["']/.test(t) && !IMPORTA_S.has(x)) falla(G, x, 0, "la segunda opinión (Claude con visión) solo la usa lib/fotos-revision.ts (subida pública, barrido y capa 3)");
+      if (/["'](?:@\/lib\/|\.\.?\/(?:\.\.\/)*)fotos-revision["']/.test(t) && !IMPORTA_F.has(x)) falla(G, x, 0, "la revisión automática solo la llaman la subida pública, el barrido, el reporte de una foto y la apelación");
+      if (PRIVADAS.test(x) && /fotos-revision|fotos-segunda-opinion/.test(t)) falla(G, x, 0, "una ruta de fotos privadas nunca pasa por la segunda opinión");
+    }
+    const so = cuerpoFn(s, "segundaOpinion"), ep = cuerpoFn(s, "esPublica");
+    const iChk = so.indexOf("if (!(await esPublica(f))) throw"), iMot = so.indexOf("motorActivo()"), iRed = so.indexOf("reducida(datos)"), iGas = so.indexOf("await gastar(");
+    if (iChk < 0 || iMot < iChk || iRed < iChk || iGas < iChk) falla(G, S, 0, "segundaOpinion comprueba que la foto es pública ANTES de leerla, elegir el modelo o reservar");
+    if (!/if \(f\.privada \|\| \(DUENOS_PRIVADOS as readonly string\[\]\)\.includes\(f\.dueno\) \|\| !LLAVE_PUBLICA\.test\(f\.llave\)\) return false;/.test(ep) || !/select private, owner_kind, url, rev_llave from media where id = \$1::uuid/.test(ep) || !/if \(!r \|\| r\.private \|\|/.test(ep))
+      falla(G, S, 0, "esPublica: nunca private ni un dueño privado, solo las llaves n/ y privado/rev/, y con fila se vuelve a leer de la base");
+    if (!/const LLAVE_PUBLICA = \/\^\(n\\\/\|privado\\\/rev\\\/\)/.test(s)) falla(G, S, 0, "las únicas llaves que pueden ir a la segunda opinión son n/ y privado/rev/");
+    for (const k of ["chat", "dm", "help", "support", "claim"]) if (!new RegExp(`DUENOS_PRIVADOS = \\[[^\\]]*"${k}"`).test(s)) falla(G, S, 0, `falta «${k}» en los dueños privados (nunca van a la segunda opinión)`);
+    if (!/\.resize\(\{ width: 640, height: 640, fit: "inside", withoutEnlargement: true \}\)\.jpeg\(\{ quality: 80 \}\)/.test(cuerpoFn(s, "reducida")) || /withMetadata|keepMetadata|keepExif|withExif/.test(s)) falla(G, S, 0, "a Claude va la imagen reducida (≤ 640 px), JPEG, sin metadatos");
+    if (!/m\.responder\(\{ uso: "foto", modelo: id, lang: "es", sistema: PAUTA, datos: \{\}, trozos: \[\], mensajes: \[\{ de: "persona", texto: "Revisa la foto con la pauta\." \}\],/.test(so) || !/imagen: \{ tipo: "image\/jpeg", base64: img\.toString\("base64"\) \}/.test(so))
+      falla(G, S, 0, "a Claude va solo la pauta fija y la imagen reducida: sin datos, sin ayuda, nada de quién la subió");
+    // Las llamadas desde la revisión: la subida (sin fila, de la persona) y la retenida (con su fila y su llave privada).
+    const f = existsSync(F) ? sinComent(F) : "";
+    if (!/segundaOpinion\(\{ mediaId: null, llave: `n\/\$\{x\.id\}\.jpg`, privada: false, dueno: "user" \}/.test(f) || !/segundaOpinion\(\{ mediaId: f\.id, llave: f\.rev_llave, privada: false, dueno: f\.owner_kind \}/.test(f))
+      falla(G, F, 0, "la revisión pasa a la segunda opinión solo la subida pública (sin fila) o una retenida con su fila y su llave privada");
+    // La imagen solo la manda el proveedor y la anota el simulador (para que la prueba vea que una privada nunca llega).
+    if (!/\.\.\.\(e\.imagen \? \[\{ type: "image", source: \{ type: "base64", media_type: e\.imagen\.tipo, data: e\.imagen\.base64 \} \}\] : \[\]\)/.test(readFileSync(MC, "utf8"))) falla(G, MC, 0, "modelo-claude manda la imagen como un bloque image (solo la de la segunda opinión)");
+    if (!/imagen: \{ sha256: createHash\("sha256"\)\.update\(img\)\.digest\("hex"\)/.test(readFileSync(SIM, "utf8"))) falla(G, SIM, 0, "el simulador anota la huella de cada imagen que recibe (la prueba lo revisa)");
+    const e = existsSync("pruebas/e2e/rev9u.cjs") ? readFileSync("pruebas/e2e/rev9u.cjs", "utf8") : "";
+    if (!/'una foto privada \(Mensajes\) jamás llega a la segunda opinión'/.test(e)) falla(G, "pruebas/e2e/rev9u.cjs", 0, "la prueba de punta a punta no revisa que una foto privada nunca llega al simulador");
+  },
+
+  /* fotosRevisionFalloCerrado: si un modelo no responde, la capa está apagada, no hay presupuesto o la respuesta no encaja, la foto queda RETENIDA:
+     nunca se publica «por si acaso». La decisión es pura (lib/fotos-decision.ts) y su prueba recorre todas las ramas (fotos9urevision). Lo que se
+     teme: un camino que publique sin un «publicar» de un modelo, la confianza que publique lo que el modelo propio no miró, leer la segunda opinión
+     sin rigor, o un error de la segunda opinión que tumbe la subida en vez de retener. Al revés: alreves9urevision. */
+  fotosRevisionFalloCerrado() {
+    const G = "fotosRevisionFalloCerrado", D = "apps/web/lib/fotos-decision.ts", F = "apps/web/lib/fotos-revision.ts", P = "pruebas/alreves/fotos9urevision.cjs";
+    if (!existsSync(D)) return falla(G, D, 0, "falta la decisión pura (lib/fotos-decision.ts)");
+    const d = sinComent(D), de = cuerpoFn(d, "decidir"), ls = cuerpoFn(d, "leerSegunda");
+    const vis = [...de.matchAll(/return \{ estado: "visible", capa: "(\w+)"/g)].map((m) => m[1]).sort().join(",");
+    if (vis !== "c1,c2,c4,memoria") falla(G, D, 0, `decidir publica solo por memoria, capa 1 limpia, confianza o un «publicar» de la capa 2 (hoy: ${vis})`);
+    if (!/else if \(p < duda\) return \{ estado: "visible", capa: "c1"/.test(de) || !/else if \(p >= rechazo\) return \{ estado: "rechazada", capa: "c1", motivo: "desnudez"/.test(de)) falla(G, D, 0, "capa 1: limpia < duda, clara ≥ rechazo (los bordes)");
+    if (!/porque = "dudosa";\s*if \(e\.confianza\) return \{ estado: "visible", capa: "c4"/.test(de) || (de.match(/e\.confianza/g) ?? []).length !== 1) falla(G, D, 0, "la confianza publica solo una dudosa de verdad (con puntaje entre los umbrales), nunca una sin respuesta");
+    if (!/if \(v\.v === "publicar"\) return \{ estado: "visible", capa: "c2"/.test(de) || !/return \{ estado: "retenida", capa: "c2", motivo: "no_segura", puntaje: p \};\s*\}$/.test(de.trim()))
+      falla(G, D, 0, "la capa 2 publica solo con un «publicar» que pasa leerSegunda; todo lo demás termina retenido");
+    for (const x of ["apagada", "sin_presupuesto"]) if (!new RegExp(`if \\(c2\\.estado === "${x}"\\) return \\{ estado: "retenida"`).test(de)) falla(G, D, 0, `capa 2 ${x} → retenida`);
+    if (!/if \(k\.length !== 2 \|\| !k\.includes\("veredicto"\) \|\| !k\.includes\("motivo"\)/.test(ls) || !/return \{ v: "no_segura" \};\s*\}$/.test(ls.trim())) falla(G, D, 0, "leerSegunda es estricta: exactamente veredicto y motivo; lo que no encaja es no_segura");
+    const f = existsSync(F) ? sinComent(F) : "";
+    if ((f.match(/\{ esperaMs: R{1,2}\.c2\.esperaMs \}\)\.catch\(\(\) => SIN_RESPUESTA\)/g) ?? []).length !== 2) falla(G, F, 0, "un error de la segunda opinión (base, almacén, privacidad) retiene la foto (.catch(() => SIN_RESPUESTA)); nunca tumba ni publica");
+    if ((f.match(/c2: c2 \?\? \{ estado: "apagada" \}/g) ?? []).length !== 2) falla(G, F, 0, "con la capa 2 apagada la decisión recibe «apagada» (retiene)");
+    const p = existsSync(P) ? readFileSync(P, "utf8") : "";
+    if (!/console\.log\('nada que falle publica \(todas las combinaciones\)'\);/.test(p) || !/'los dos modelos caídos → retenida \(sin_servicio\), nunca publicada'/.test(p)) falla(G, P, 0, "la prueba pura no recorre el fallo cerrado");
+  },
+
+  /* fotosRevisionAuditada: cada veredicto queda en photo_reviews (solo inserción, trigger) en la MISMA transacción que el cambio de estado de la
+     foto: toda función de la revisión que cambia el estado de media lo hace con el cliente de su transacción y anota con ese cliente; nadie
+     cambia ni borra el libro. Al revés: alreves9urevision. */
+  fotosRevisionAuditada() {
+    const G = "fotosRevisionAuditada", M = "packages/db/migrations/0196_fotos_revision.sql", F = "apps/web/lib/fotos-revision.ts", R = "apps/web/app/api/medios/route.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración del libro de veredictos");
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger photo_reviews_no_cambia before update or delete on photo_reviews/.test(m) || !/raise exception 'photo_reviews es solo de inserción'/.test(m)) falla(G, M, 0, "photo_reviews es de solo inserción (trigger)");
+    if (!/check \(\(capa = 'persona'\) = \(staff_id is not null\)\)/.test(m)) falla(G, M, 0, "el veredicto de una persona dice quién (y solo el de una persona)");
+    const f = existsSync(F) ? sinComent(F) : "";
+    if (!/export async function anotarVeredicto\(c: Q, v: Veredicto\) \{\s*await c\.query\(\s*`insert into photo_reviews/.test(f)) falla(G, F, 0, "anotarVeredicto escribe con el cliente que le pasan (el de la transacción del cambio)");
+    // Cada función que cambia el estado de una foto: con c (la transacción), y anota con ese mismo c.
+    for (const mm of f.matchAll(/\n(?:export )?async function (\w+)\(/g)) {
+      const b = cuerpoFn(f, mm[1]);
+      if (!/(update media set status|insert into media \()/.test(b)) continue;
+      if (/db\(\)\.query(?:<[^>]*>)?\(\s*`\s*(update media set status|insert into media)/.test(b)) falla(G, F, 0, `«${mm[1]}» cambia el estado de una foto fuera de una transacción`);
+      if (!/anotarVeredicto\(c, /.test(b)) falla(G, F, 0, `«${mm[1]}» cambia el estado de una foto sin anotar su veredicto en la misma transacción`);
+    }
+    const r = existsSync(R) ? sinComent(R) : "", txr = r.slice(r.indexOf("await tx(async (c) => {"), r.indexOf("});", r.indexOf("await tx(async (c) => {")));
+    if (!/insert into media \(/.test(txr) || !/await anotarVeredicto\(c, x\)/.test(txr)) falla(G, R, 0, "la subida publicada guarda la fila y su veredicto en la misma transacción");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && /\b(update|delete from) photo_reviews\b|anotarVeredicto\(db\(\)/.test(sinComent(x))) falla(G, x, 0, "el libro de veredictos no se cambia ni se borra, y se escribe con el cliente de la transacción");
+  },
+
+  /* fotosRevisionSinReintento: la app reintenta una subida solo sin respuesta o con 400 (lib/subir-foto.ts). Una foto retenida (202) o rechazada
+     (422) es una respuesta de verdad: no se reintenta y quien la sube ve el mensaje del servidor. Lo que se teme: contestar 400 a una foto que no
+     se publicó (el cliente la mandaría dos veces y la persona vería «No llegó»), o una pantalla que suba con subirFoto y calle el mensaje.
+     Al revés: alreves9urevision. */
+  fotosRevisionSinReintento() {
+    const G = "fotosRevisionSinReintento", D = "apps/web/lib/fotos-decision.ts", R = "apps/web/app/api/medios/route.ts", S = "apps/web/lib/subir-foto.ts";
+    const d = existsSync(D) ? sinComent(D) : "", r = existsSync(R) ? sinComent(R) : "", s = existsSync(S) ? sinComent(S) : "";
+    const cod = /export const HTTP_RECHAZADA = (\d+), HTTP_RETENIDA = (\d+);/.exec(d);
+    if (!cod || [cod[1], cod[2]].some((x) => x === "0" || x === "400" || !/^[24]\d\d$/.test(x)) || cod[1] === cod[2]) falla(G, D, 0, "rechazada y retenida contestan códigos distintos que el cliente no reintenta (nunca 0 ni 400)");
+    if (!/\{ status: v\.d\.estado === "rechazada" \? HTTP_RECHAZADA : HTTP_RETENIDA \}/.test(r)) falla(G, R, 0, "la subida contesta 422/202 (HTTP_RECHAZADA / HTTP_RETENIDA) a una foto que no se publicó");
+    if (!/if \(x\.st === 0 \|\| x\.st === 400\) x = await una\(/.test(s)) falla(G, S, 0, "el cliente reintenta solo sin respuesta o con 400");
+    for (const x of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue;
+      const t = sinComent(x);
+      for (const mm of t.matchAll(/await subirFoto\(/g)) if (!/\.mensaje\b/.test(t.slice(mm.index, mm.index + 700))) falla(G, x, t.slice(0, mm.index).split("\n").length, "sube con subirFoto y no muestra el mensaje del servidor (retenida o rechazada)");
+      if ((t.match(/fetch\("\/api\/medios"/g) ?? []).length > 1 || (/fetch\("\/api\/medios"/.test(t) && !/r\?\.mensaje/.test(t))) falla(G, x, 0, "sube a /api/medios por su cuenta: una sola vez y mostrando el mensaje del servidor");
+    }
   },
 };
 

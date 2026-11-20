@@ -19,10 +19,14 @@ export type Motor = "claude" | "simulador" | "reglas";
 export type TrozoModelo = { fuente: string; titulo: string; seccion: string; texto: string };
 export type MensajeModelo = { de: "persona" | "compa"; texto: string };
 export type Entrada = {
-  uso: Uso; modelo: string; lang: Lang; sistema: string;
+  /* AJ · «foto»: la segunda opinión de las fotos públicas (lib/fotos-segunda-opinion.ts), por esta misma interfaz, con su propio tope. */
+  uso: Uso | "foto"; modelo: string; lang: Lang; sistema: string;
   datos: Record<string, unknown>; trozos: TrozoModelo[]; mensajes: MensajeModelo[];
   maxTokens: number; esperaMs: number;
   esquema?: Record<string, unknown>;   // 7g · el esquema de salida del uso (sin él, ESQUEMA: vecino, panel y respuestas automáticas)
+  /* AJ · Una imagen (solo la segunda opinión de una foto PÚBLICA, ya reducida a 640 px en JPEG; nunca una foto privada: lo revisa
+     lib/fotos-segunda-opinion.ts y el guardián fotosRevisionPrivacidad). Va antes de los bloques de datos. */
+  imagen?: { tipo: "image/jpeg"; base64: string };
 };
 export type UsoTokens = { entrada: number; cacheLeida: number; cacheEscrita: number; salida: number };
 export type Salida = { json: unknown; tokens: UsoTokens; motor: Motor; modelo: string };

@@ -32,7 +32,11 @@ export const claude: Modelo = {
       model: e.modelo,
       max_tokens: e.maxTokens,
       system: [{ type: "text", text: e.sistema, cache_control: { type: "ephemeral" } }],
-      messages: [{ role: "user", content: bloques(e).map((text) => ({ type: "text", text })) }],
+      messages: [{ role: "user", content: [
+        // AJ · La foto pública de la segunda opinión (reducida, JPEG), antes de los bloques de datos.
+        ...(e.imagen ? [{ type: "image", source: { type: "base64", media_type: e.imagen.tipo, data: e.imagen.base64 } }] : []),
+        ...bloques(e).map((text) => ({ type: "text", text })),
+      ] }],
       output_config: { format: { type: "json_schema", schema: e.esquema ?? ESQUEMA }, effort: "low" },
       inference_geo: "us",
     };
