@@ -257,7 +257,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
     setSubiendo(true); setError("");
     // Salud, Pro y Niños (4ef): la foto del recibo es privada (solo el lugar y To'Latino).
     // 4if · Iglesias, Bienes Raíces y Autos: el recibo o el contrato llevan nombres y direcciones: privada también.
-    const x = sd ? await subirFotoPrivada(file) : sp || rub === "ninos" ? await subirFotoPrivada(file) : await subirFoto(file);
+    const x = sd ? await subirFotoPrivada(file) : sp || rub === "ninos" ? await subirFotoPrivada(file) : await subirFoto(file, "privado");
     setSubiendo(false);
     if (x.ok && x.id && x.url) setFotos((L) => [...L, { id: x.id!, url: x.url! }]);
     else setError(x.mensaje ? (es ? x.mensaje.es : x.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));

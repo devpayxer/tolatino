@@ -87,7 +87,7 @@ const SIN_RESPUESTA: ResultadoSegunda = { estado: "sin_respuesta", modelo: null,
 
 /* ── La revisión de una foto que alguien quiere publicar (en el mismo pedido de la subida). Nada se guarda aquí: decide. ── */
 export type Revision = { id: string; d: Exclude<Decision, { estado: "pedir_c2" }>; c2: ResultadoSegunda | null; modeloC1: string | null };
-export async function revisarSubida(x: { id: string; datos: Buffer; sha: string; userId: string }, R: ReglasFotos): Promise<Revision> {
+export async function revisarSubida(x: { id: string; datos: Buffer; sha: string; userId: string; sinC2: boolean }, R: ReglasFotos): Promise<Revision> {
   const mem = await memoria(x.sha, x.userId);
   let puntaje: number | null = null;
   if (!mem && R.c1.on) puntaje = (await revisarImagen(x.datos, R.c1.umbrales.duda)).desnudez;
@@ -95,7 +95,9 @@ export async function revisarSubida(x: { id: string; datos: Buffer; sha: string;
   const e: EntradaDecision = { memoria: mem, c1: { on: R.c1.on, puntaje }, umbrales: R.c1.umbrales, confianza: dudosa ? await confianza(x.userId, R) : false };
   const d0 = decidir(e);
   if (d0.estado !== "pedir_c2") return { id: x.id, d: d0, c2: null, modeloC1: R.c1.on && !mem ? "nudenet" : null };
-  const c2 = R.c2.on ? await segundaOpinion({ mediaId: null, llave: `n/${x.id}.jpg`, privada: false, dueno: "user" }, x.datos, { esperaMs: R.c2.esperaMs }).catch(() => SIN_RESPUESTA) : null;
+  // Destino «privado» (va solo a un negocio o al equipo): la segunda opinión no se consulta nunca; la dudosa queda retenida («privada»).
+  if (x.sinC2) return { id: x.id, d: decidir({ ...e, c2: { estado: "privada" } }) as Revision["d"], c2: null, modeloC1: R.c1.on ? "nudenet" : null };
+  const c2 = R.c2.on ? await segundaOpinion({ mediaId: null, llave: `n/${x.id}.jpg`, privada: false, dueno: "user", sinC2: x.sinC2 }, x.datos, { esperaMs: R.c2.esperaMs }).catch(() => SIN_RESPUESTA) : null;
   const d = decidir({ ...e, c2: c2 ?? { estado: "apagada" } });
   return { id: x.id, d: d as Revision["d"], c2, modeloC1: R.c1.on ? "nudenet" : null };
 }
@@ -137,16 +139,16 @@ export function veredictosDe(r: Revision, base: { mediaId: string; sha: string; 
 }
 
 /* ── Una subida que NO se publica: la maestra solo en la llave privada, la fila retenida o rechazada, el veredicto y el aviso ── */
-export async function guardarNoPublicada(x: { r: Revision; datos: Buffer; ancho: number; alto: number; sha: string; userId: string }): Promise<void> {
+export async function guardarNoPublicada(x: { r: Revision; datos: Buffer; ancho: number; alto: number; sha: string; userId: string; sinC2: boolean }): Promise<void> {
   const { r } = x, llave = llaveRevision(r.id), rechazada = r.d.estado === "rechazada";
   await guardarObjeto(llave, x.datos, "image/jpeg");
   await tx(async (c) => {
     await c.query(
       `insert into media (id, owner_kind, owner_id, url, w, h, uploaded_by, status, bytes, sha256, rev_at, rev_capa, rev_motivo, rev_nota, rev_llave, rev_intentos, rev_siguiente,
-                          removed_reason, removed_note, removed_at)
+                          removed_reason, removed_note, removed_at, rev_sin_c2)
        values ($1, 'user', $2, $3, $4, $5, $13::uuid, $6, $7, $8, now(), $9, $10, $11, $12, 0, case when $6 = 'review' then now() + interval '2 minutes' end,
-               case when $6 = 'removed' then 'revision' end, case when $6 = 'removed' then $11 end, case when $6 = 'removed' then now() end)`,
-      [r.id, x.userId, `/medios/n/${r.id}.jpg`, x.ancho, x.alto, rechazada ? "removed" : "review", x.datos.length, x.sha, r.d.capa, r.d.motivo, notaDe(r.d), llave, x.userId]);
+               case when $6 = 'removed' then 'revision' end, case when $6 = 'removed' then $11 end, case when $6 = 'removed' then now() end, $14)`,
+      [r.id, x.userId, `/medios/n/${r.id}.jpg`, x.ancho, x.alto, rechazada ? "removed" : "review", x.datos.length, x.sha, r.d.capa, r.d.motivo, notaDe(r.d), llave, x.userId, x.sinC2]);
     for (const v of veredictosDe(r, { mediaId: r.id, sha: x.sha, uploader: x.userId })) await anotarVeredicto(c, v);
   });
   await avisarFoto(x.userId, rechazada ? "foto_rechazada" : "foto_revision", r.id, r.d.motivo);
@@ -161,10 +163,10 @@ async function avisarFoto(userId: string, tpl: "foto_rechazada" | "foto_revision
 
 /* ── Publicar lo que estaba retenido u oculto (barrido, capa 2 después de la capa 3, o una persona). La maestra vuelve a n/ ANTES de que la fila
    sea visible (una fila visible nunca apunta a un archivo que no está); las filas que comparten el archivo (copias) vuelven con ella. ── */
-type Fila = { id: string; url: string; uploaded_by: string | null; rev_llave: string; rev_capa: string | null; rev_motivo: string | null; sha256: string | null; owner_kind: string; owner_id: string; w: number | null };
+type Fila = { id: string; url: string; uploaded_by: string | null; rev_llave: string; rev_capa: string | null; rev_motivo: string | null; sha256: string | null; owner_kind: string; owner_id: string; w: number | null; rev_sin_c2: boolean };
 async function filaRev(c: Q, id: string, bloquear = false): Promise<Fila | null> {
   if (!UUID.test(id)) return null;
-  return (await c.query<Fila>(`select id::text, url, uploaded_by::text, rev_llave, rev_capa, rev_motivo, sha256, owner_kind, owner_id, w from media
+  return (await c.query<Fila>(`select id::text, url, uploaded_by::text, rev_llave, rev_capa, rev_motivo, sha256, owner_kind, owner_id, w, rev_sin_c2 from media
                                where id = $1::uuid and rev_llave is not null and purged_at is null and status in ('review', 'removed')${bloquear ? " for update" : ""}`, [id])).rows[0] ?? null;
 }
 const recontar = (c: Q, negocios: string[]) => negocios.length ? c.query(
@@ -232,8 +234,9 @@ export async function revisarRetenida(id: string, R?: ReglasFotos): Promise<"pub
     confianza: dudosa && f.uploaded_by ? await confianza(f.uploaded_by, RR) : false };
   let d = decidir(e), c2: ResultadoSegunda | null = null;
   if (d.estado === "pedir_c2") {
-    c2 = RR.c2.on ? await segundaOpinion({ mediaId: f.id, llave: f.rev_llave, privada: false, dueno: f.owner_kind }, datos, { esperaMs: RR.c2.esperaMs }).catch(() => SIN_RESPUESTA) : null;
-    d = decidir({ ...e, c2: c2 ?? { estado: "apagada" } });
+    // Una foto de destino «privado» nunca va a la segunda opinión (tampoco desde el barrido ni la capa 3): queda retenida («privada»).
+    c2 = RR.c2.on && !f.rev_sin_c2 ? await segundaOpinion({ mediaId: f.id, llave: f.rev_llave, privada: false, dueno: f.owner_kind, sinC2: f.rev_sin_c2 }, datos, { esperaMs: RR.c2.esperaMs }).catch(() => SIN_RESPUESTA) : null;
+    d = decidir({ ...e, c2: f.rev_sin_c2 ? { estado: "privada" } : c2 ?? { estado: "apagada" } });
   }
   const r: Revision = { id: f.id, d: d as Revision["d"], c2, modeloC1: RR.c1.on && !reportada ? "nudenet" : null };
   const vs = veredictosDe(r, { mediaId: f.id, sha: f.sha256 ?? "", uploader: f.uploaded_by ?? "" }).map((v) => ({ ...v, sha: f.sha256, uploader: f.uploaded_by }));
@@ -287,6 +290,8 @@ export async function barrerRevision(): Promise<{ publicadas: number; rechazadas
   const F = (await db().query<{ id: string }>(
     `select id::text from media where status = 'review' and rev_llave is not null and purged_at is null and (rev_siguiente is null or rev_siguiente <= now())
         and rev_intentos < $1 and ($2 or rev_motivo = 'sin_servicio')
+        -- Una de destino «privado» solo vuelve a mirarse si el modelo propio no la pudo mirar (su dudosa espera a una persona).
+        and (not rev_sin_c2 or rev_motivo = 'sin_servicio')
         -- De una foto oculta por reportes se revisa la fila reportada; sus copias (mismo archivo) vuelven o salen con ella.
         and (rev_capa is distinct from 'c3' or exists (select 1 from photo_reports pr where pr.media_id = media.id))
       order by rev_siguiente nulls first limit ${TANDA_REVISION}`, [R.c2.intentos, R.c2.on])).rows;
@@ -323,7 +328,7 @@ export async function revisarReportes(mediaId: string): Promise<"oculta" | "nada
   const personas = new Set(F.map((_, i) => raiz(i))).size;
   if (personas < R.c3.reportes) return "nada";
   const f = (await db().query<Fila & { var_widths: number[] | null; status: string }>(
-    `select id::text, url, uploaded_by::text, rev_llave, rev_capa, rev_motivo, sha256, owner_kind, owner_id, w, var_widths, status from media where id = $1::uuid and purged_at is null`, [mediaId])).rows[0];
+    `select id::text, url, uploaded_by::text, rev_llave, rev_capa, rev_motivo, sha256, owner_kind, owner_id, w, var_widths, status, rev_sin_c2 from media where id = $1::uuid and purged_at is null`, [mediaId])).rows[0];
   const u = f ? DE_URL.exec(f.url) : null;
   if (!f || f.status !== "visible" || !u) return "nada";
   const llave = llaveRevision(u[1]!);

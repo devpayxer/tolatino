@@ -8,6 +8,8 @@
 -- Fallo cerrado: un modelo caído, una capa apagada o sin presupuesto RETIENEN; el barrido reintenta por tandas. Nada se borra: estados.
 -- · media: sha256 (de la maestra normalizada: memoria por contenido), rev_* (el último veredicto, su capa y motivo, la llave privada mientras no es
 --   pública y los reintentos del barrido). Una foto visible nunca tiene llave privada (check).
+--   rev_sin_c2: la foto va solo a un negocio o al equipo (la subida la marcó con destino «privado»): nunca va a la segunda opinión; su dudosa
+--   queda retenida (motivo «privada») con «Pedir revisión».
 -- · photo_reviews (SOLO INSERCIÓN): cada veredicto (capa, decisión, puntaje, motivo, modelo y versión, quién si fue una persona, lo que costó la
 --   capa 2). Lo escribe la app en la misma transacción que el cambio de estado. Es también el libro del gasto de la capa 2 (sin texto).
 -- · photo_review_spend / photo_review_reservations + foto2_reservar / foto2_anotar / foto2_soltar_reservas: el tope mensual de la capa 2, contado
@@ -29,11 +31,12 @@ alter table media add column if not exists rev_nota text;
 alter table media add column if not exists rev_llave text;
 alter table media add column if not exists rev_intentos smallint not null default 0;
 alter table media add column if not exists rev_siguiente timestamptz;
+alter table media add column if not exists rev_sin_c2 boolean not null default false;
 alter table media drop constraint if exists media_revision_coherente;
 alter table media add constraint media_revision_coherente check (
   (sha256 is null or sha256 ~ '^[0-9a-f]{64}$')
   and (rev_capa is null or rev_capa in ('c1', 'c2', 'c3', 'c4', 'memoria', 'persona'))
-  and (rev_motivo is null or rev_motivo in ('desnudez', 'violencia', 'documento', 'captura', 'menores', 'reglas', 'no_segura', 'sin_servicio', 'sin_presupuesto', 'apagada', 'reportes'))
+  and (rev_motivo is null or rev_motivo in ('desnudez', 'violencia', 'documento', 'captura', 'menores', 'reglas', 'no_segura', 'sin_servicio', 'sin_presupuesto', 'apagada', 'privada', 'reportes'))
   and (rev_nota is null or char_length(rev_nota) <= 300)
   and (rev_llave is null or rev_llave ~ '^privado/rev/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$')
   and (status <> 'visible' or rev_llave is null)
@@ -53,7 +56,7 @@ create table if not exists photo_reviews (
   capa           text not null check (capa in ('c1', 'c2', 'c3', 'c4', 'memoria', 'persona')),
   decision       text not null check (decision in ('publicar', 'retener', 'rechazar', 'ocultar')),
   puntaje        real check (puntaje is null or (puntaje >= 0 and puntaje <= 1)),
-  motivo         text check (motivo is null or motivo in ('desnudez', 'violencia', 'documento', 'captura', 'menores', 'reglas', 'no_segura', 'sin_servicio', 'sin_presupuesto', 'apagada', 'reportes')),
+  motivo         text check (motivo is null or motivo in ('desnudez', 'violencia', 'documento', 'captura', 'menores', 'reglas', 'no_segura', 'sin_servicio', 'sin_presupuesto', 'apagada', 'privada', 'reportes')),
   modelo         text check (modelo is null or modelo ~ '^[a-z0-9]+([-.][a-z0-9]+)*$'),
   version        text check (version is null or char_length(version) <= 40),
   staff_id       uuid references users (id),

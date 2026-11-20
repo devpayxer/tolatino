@@ -12,7 +12,9 @@
 //   7 cuenta nueva: 10 fotos por hora (la 11 → 429 con el porqué)
 //   8 capa 3: 3 reportes de cuentas distintas (la de una cuenta nueva no cuenta) → la foto y su copia se ocultan, el archivo sale de n/, aviso;
 //     la segunda opinión la aprueba → vuelve (archivo, variantes, cuenta de fotos, reportes «se mantiene»)
-//   9 una foto privada (Mensajes) jamás llega a la segunda opinión, y a la segunda opinión no le llega nada de quién subió la foto
+//   9 una foto privada (Mensajes) jamás llega a la segunda opinión, y a la segunda opinión no le llega nada de quién subió la foto; una dudosa
+//     con destino «privado» (va solo a un negocio: una solicitud, una cita…) queda retenida sin pasar por la segunda opinión, ni al subir ni en
+//     el barrido; una limpia con ese destino entra igual y una clara se rechaza igual
 // Necesita el almacén de fotos (el CI lo tiene): sin él /api/medios contesta 503 y la prueba FALLA, salvo con REV9U_SIN_ALMACEN=1 (local).
 // Deja todo como estaba: las reglas foto1…foto4 y el servicio propio de imágenes (si estaba encendido, lo vuelve a encender como com5d).
 // Guardianes fotosRevisionAntesDePublicar, fotosRevisionPrivacidad, fotosRevisionFalloCerrado, fotosRevisionAuditada, fotosRevisionSinReintento.
@@ -38,8 +40,8 @@ const foto = (w, h, semilla) => {
   for (let i = 0; i < b.length; i++) { x = (x * 1103515245 + 12345) & 0x7fffffff; b[i] = 60 + ((x >> 16) % 140); }
   return sharp(b, { raw: { width: w, height: h, channels: 3 } }).jpeg({ quality: 90 }).toBuffer();
 };
-const subir = (cookie, bytes, ruta = '/api/medios') => new Promise((res, rej) => {
-  const cuerpo = multipart(bytes, 'foto.jpg', 'image/jpeg');
+const subir = (cookie, bytes, ruta = '/api/medios', extra = {}) => new Promise((res, rej) => {
+  const cuerpo = multipart(bytes, 'foto.jpg', 'image/jpeg', extra);
   const q = http.request(B + ruta, { method: 'POST', headers: { cookie, origin: B, 'content-type': `multipart/form-data; boundary=${LIMITE}`, 'content-length': String(cuerpo.length) } }, (r) => {
     const c = []; r.on('data', (x) => c.push(x)); r.on('end', () => { let json = null; try { json = JSON.parse(Buffer.concat(c).toString()); } catch { /* sin json */ } res({ status: r.statusCode, json }); });
   });
@@ -204,6 +206,12 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
     await barrer();
     const vistas = await fotosVistas();
     ok(vistas.length === antes9 && !vistas.some((x) => x.imagen?.alto === 377), 'una foto privada (Mensajes) jamás llega a la segunda opinión');
+    const r9b = await subir(cA, await foto(402, 301, 91), '/api/medios', { destino: 'privado' });
+    ok(r9b.status === 202 && r9b.json?.estado === 'revision' && fila(r9b.json.id).mot === 'privada' && sql(`select rev_sin_c2 from media where id = '${r9b.json.id}'`) === 't', 'una dudosa con destino privado queda retenida («privada»), aunque la segunda opinión la habría publicado');
+    sql(`update media set rev_siguiente = now() - interval '1 minute' where id = '${r9b.json.id}'`); await barrer();
+    ok((await fotosVistas()).length === antes9 && fila(r9b.json.id).st === 'review', 'dudosa con destino privado → retenida y la segunda opinión no recibió nada');
+    const r9c = await subir(cA, await foto(401, 300, 92), '/api/medios', { destino: 'privado' }), r9d = await subir(cA, await foto(403, 300, 93), '/api/medios', { destino: 'privado' });
+    ok(r9c.status === 200 && r9d.status === 422, 'con destino privado, una limpia entra igual y una clara se rechaza igual');
     const todo = JSON.stringify(vistas);
     ok(vistas.length > 0 && !todo.includes('Yolotzin') && !todo.includes('Quetzal') && !todo.includes(TA) && !todo.includes(NEG) && !todo.includes('hzl') && vistas.every((x) => x.imagen.ancho <= 640 && x.imagen.alto <= 640),
       `a la segunda opinión solo llega la imagen reducida y la pauta (${vistas.length} fotos, nada de quién, negocio ni ciudad)`);

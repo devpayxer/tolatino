@@ -12,6 +12,8 @@ import { ESQUEMA_FOTO, PAUTA, type Segunda } from "./fotos-decision";
    Privacidad (lo que no se rompe):
    - Solo fotos DESTINADAS A LO PÚBLICO: aquí mismo se rechaza una foto marcada privada, de Mensajes, de ayuda, de la entrega o de un reclamo, o
      cuya llave no es la pública (n/) o la de revisión (privado/rev/). Con una fila, se vuelve a leer de la base (no se confía en quien llama).
+   - Ni una foto que va solo a un negocio o al equipo (destino «privado» al subirla: sinC2 sin fila, media.rev_sin_c2 con fila), aunque su
+     dirección sea de n/: solicitudes, citas, estimados, viajes, la balanza o el daño de una renta.
    - A Claude va solo la imagen reducida (≤ 640 px, JPEG, sin metadatos) y la pauta fija. Nada de quién la subió, ni negocio, ni ciudad.
    Tope y gasto, como El Compa: gastar() reserva en la base el máximo ANTES de llamar (foto2_reservar, contra el tope de la regla foto2);
    anotarUso() liquida DESPUÉS con los tokens que devolvió el proveedor (foto2_anotar), en el camino del error y en el de la respuesta. El costo
@@ -20,16 +22,16 @@ import { ESQUEMA_FOTO, PAUTA, type Segunda } from "./fotos-decision";
 /* Lo que nunca sale de casa: dueños de fotos privadas (Mensajes, ayuda, entrega, reclamo, soporte) y las llaves privadas que no son la de revisión. */
 export const DUENOS_PRIVADOS = ["chat", "dm", "help", "support", "claim", "delivery", "appointment", "estimate_line", "request", "line", "trip"] as const;
 const LLAVE_PUBLICA = /^(n\/|privado\/rev\/)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/;
-export type FotoPublica = { mediaId: string | null; llave: string; privada: boolean; dueno: string };
+export type FotoPublica = { mediaId: string | null; llave: string; privada: boolean; dueno: string; sinC2: boolean };
 export type ResultadoSegunda = Segunda & { modelo: string | null; costo: number; tokens: { entrada: number; salida: number }; ms: number };
 
 /* La foto es pública por destino (lo comprueba aquí; con fila, desde la base). */
 export async function esPublica(f: FotoPublica): Promise<boolean> {
-  if (f.privada || (DUENOS_PRIVADOS as readonly string[]).includes(f.dueno) || !LLAVE_PUBLICA.test(f.llave)) return false;
+  if (f.privada || f.sinC2 || (DUENOS_PRIVADOS as readonly string[]).includes(f.dueno) || !LLAVE_PUBLICA.test(f.llave)) return false;
   if (!f.mediaId) return f.dueno === "user";   // una subida pública que todavía no tiene fila: es de quien la sube
-  const r = (await db().query<{ private: boolean; owner_kind: string; url: string; rev_llave: string | null }>(
-    `select private, owner_kind, url, rev_llave from media where id = $1::uuid`, [f.mediaId])).rows[0];
-  if (!r || r.private || (DUENOS_PRIVADOS as readonly string[]).includes(r.owner_kind)) return false;
+  const r = (await db().query<{ private: boolean; owner_kind: string; url: string; rev_llave: string | null; rev_sin_c2: boolean }>(
+    `select private, owner_kind, url, rev_llave, rev_sin_c2 from media where id = $1::uuid`, [f.mediaId])).rows[0];
+  if (!r || r.private || r.rev_sin_c2 || (DUENOS_PRIVADOS as readonly string[]).includes(r.owner_kind)) return false;
   return r.rev_llave === f.llave || r.url === `/medios/${f.llave}`;
 }
 

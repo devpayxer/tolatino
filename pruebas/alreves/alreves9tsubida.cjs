@@ -17,7 +17,7 @@ const casos = [
   // 20 nov (confirmación 44734711575): subidaReintenta.
   ['subidaReintenta', 'apps/web/lib/subir-foto.ts', "if (x.st === 0 || x.st === 400) x = await una(file.size > 0 && file.size <= TOPE_FOTO ? file : f);", ""],
   ['subidaReintenta', 'apps/web/lib/subir-foto.ts', "if (x.st === 0 || x.st === 400) x = await una(", "if (x.st !== 200) x = await una("],
-  ['subidaReintenta', 'apps/web/lib/subir-foto.ts', 'export const subirFoto = (file: File): Promise<Subida> => mandar("/api/medios", file);', 'export const subirFoto = async (file: File): Promise<Subida> => { const fd = new FormData(); fd.append("foto", file); return (await fetch("/api/medios", { method: "POST", body: fd })).json(); };'],
+  ['subidaReintenta', 'apps/web/lib/subir-foto.ts', 'export const subirFoto = (file: File, destino: DestinoFoto = "publico"): Promise<Subida> => mandar("/api/medios", file, destino === "privado" ? { destino: "privado" } : {});', 'export const subirFoto = async (file: File, destino: DestinoFoto = "publico"): Promise<Subida> => { const fd = new FormData(); fd.append("foto", file); return (await fetch("/api/medios", { method: "POST", body: fd })).json(); };'],
   ['subidaReintenta', 'apps/web/lib/subida.ts', "console.warn(`[subida] sin archivo:", "void (`[subida] sin archivo:"],
   ['subidaReintenta', 'pruebas/lib/elegir-foto.cjs', "console.log(`  · INESTABLE la primera subida de la foto no llegó", "void (`  · la primera subida"],
   ['subidaReintenta', 'pruebas/lib/subida-cruda.cjs', "for (let i = 0; i < 3; i++) { try { return await enviarUna(", "for (let i = 0; i < 1; i++) { try { return await enviarUna("],

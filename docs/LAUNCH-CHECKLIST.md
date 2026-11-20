@@ -2031,10 +2031,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       foto» aunque esté retenida: decir «En revisión»), Contenido › Auto-moderación (las cuatro capas ya salen con el patrón de siempre; falta el
       gasto de la capa 2), el bloque del reporte diario con `cifrasRevisionFotos()` y la ayuda en `docs/ayuda/` (quien sube y el equipo). La
       acción `pedirRevisionFoto` está hecha y sin botón. (R1, 20 nov)
-- [ ] **→ 9u** · **/api/medios también recibe fotos que van solo a un negocio** (las de una solicitud, una cita, un viaje, un estimado: se
-      guardan en `n/` y se adjuntan con `owner_kind` request, appointment, trip, estimate_line). Ahora pasan por las capas como toda foto
-      pública, y una dudosa va a la segunda opinión (Claude). Decidir si esas fotos deberían subirse por una ruta privada (como ayuda) y no por la
-      pública. (R2, 20 nov)
+- [ ] **→ 9u** · **/api/medios también recibe fotos que van solo a un negocio** (las de una solicitud, una cita, un viaje, un estimado, la
+      balanza o el daño de una renta: se guardan en `n/` y se adjuntan con `owner_kind` request, appointment, trip, estimate_line…). Desde la
+      revisión de R2 las pantallas que suben esas fotos mandan `destino=privado` (lista en el guardián fotosRevisionPrivacidad): nunca van a la
+      segunda opinión y su dudosa queda retenida («privada») hasta que una persona la revise. Queda: su archivo sigue en `n/` (dirección pública
+      que nadie lista); decidir si deberían subirse por una ruta privada, como las de ayuda. (R2, 20 nov)
 - [ ] **→ 9u** · **rev9u (punta a punta con Garage) no corrió fuera del CI:** esta sesión no tenía almacén (/api/medios da 503) ni el servidor
       de pruebas. Corrieron tipos, todos los guardianes, alreves9urevision 31/31, la prueba pura fotos9urevision y la migración 0196 dos veces
       sobre todas las anteriores (con el SQL de cada camino probado contra la base). Correr rev9u y com5d (su paso 13 cambió) en el CI dirigido.

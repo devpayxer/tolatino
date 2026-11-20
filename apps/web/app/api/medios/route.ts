@@ -17,6 +17,9 @@ import { leerFormulario } from "@/lib/subida";
    pedido (con tiempo límite corto). Solo una foto «visible» llega a n/<uuid>.jpg; una retenida o rechazada se guarda SOLO en la llave privada,
    no devuelve ninguna dirección y contesta ok: false con su estado y el mensaje ES/EN (202 retenida, 422 rechazada: el cliente no los
    reintenta; guardián fotosRevisionAntesDePublicar). Cuenta nueva: tope de fotos por hora más bajo (capa 4).
+   Destino: el formulario puede traer destino=privado (la foto va solo a un negocio o al equipo: una solicitud, una cita, un estimado, un viaje…).
+   Es una pista del cliente que solo RESTRINGE: con «privado» la segunda opinión (Claude) no se consulta nunca para esta foto (la fila queda con
+   rev_sin_c2); una limpia entra igual y una clara se rechaza igual; la dudosa queda retenida («privada»). Cualquier otro valor = público.
    Fotos a la medida (decisión AI): guardada la maestra, en el mismo pedido salen sus variantes WebP (320/640/1080/1600, nunca más anchas que la
    maestra; lib/fotos-variantes.ts). Si algo falla ahí, la subida vale igual (la maestra ya está) y el barrido las completa. */
 export const dynamic = "force-dynamic";
@@ -49,10 +52,11 @@ export async function POST(req: NextRequest) {
     return err(415, "Eso no parece una foto. Prueba con otra.", "That doesn’t look like a photo. Try another one.");
   }
   // La decisión, antes de guardar nada en lo público.
+  const sinC2 = form?.get("destino") === "privado";
   const sha = huella(img.data);
-  const v = await revisarSubida({ id: randomUUID(), datos: img.data, sha, userId: me.id }, R);
+  const v = await revisarSubida({ id: randomUUID(), datos: img.data, sha, userId: me.id, sinC2 }, R);
   if (v.d.estado !== "visible") {
-    await guardarNoPublicada({ r: v, datos: img.data, ancho: img.info.width, alto: img.info.height, sha, userId: me.id });
+    await guardarNoPublicada({ r: v, datos: img.data, ancho: img.info.width, alto: img.info.height, sha, userId: me.id, sinC2 });
     return NextResponse.json({ ok: false, estado: v.d.estado === "rechazada" ? "rechazada" : "revision", id: v.id, mensaje: mensajeSubida(v.d) },
       { status: v.d.estado === "rechazada" ? HTTP_RECHAZADA : HTTP_RETENIDA });
   }
@@ -60,8 +64,8 @@ export async function POST(req: NextRequest) {
   await guardarObjeto(clave, img.data, "image/jpeg");
   await tx(async (c) => {
     await c.query(
-      `insert into media (id, owner_kind, owner_id, url, w, h, uploaded_by, status, sha256, rev_at, rev_capa, bytes) values ($1, 'user', $2, $3, $4, $5, $6, 'visible', $7, now(), $8, $9)`,
-      [id, me.id, urlPublica(clave), img.info.width, img.info.height, me.id, sha, v.d.capa, img.data.length]);
+      `insert into media (id, owner_kind, owner_id, url, w, h, uploaded_by, status, sha256, rev_at, rev_capa, rev_sin_c2, bytes) values ($1, 'user', $2, $3, $4, $5, $6, 'visible', $7, now(), $8, $10, $9)`,
+      [id, me.id, urlPublica(clave), img.info.width, img.info.height, me.id, sha, v.d.capa, img.data.length, sinC2]);
     for (const x of veredictosDe(v, { mediaId: id, sha, uploader: me.id })) await anotarVeredicto(c, x);
   });
   await guardarVariantes(id, img.data, img.info.width);

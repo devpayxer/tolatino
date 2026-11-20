@@ -43,6 +43,9 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
   const dud = (c2, o = {}) => D.decidir(base({ c1: { on: true, puntaje: 0.7 }, c2, ...o }));
   ok(es(dud({ estado: 'apagada' }), 'retenida', 'c2', 'apagada'), 'capa 2 apagada → retenida');
   ok(es(dud({ estado: 'sin_presupuesto' }), 'retenida', 'c2', 'sin_presupuesto'), 'capa 2 sin presupuesto → retenida');
+  ok(es(dud({ estado: 'privada' }), 'retenida', 'c2', 'privada'), 'destino privado: la dudosa → retenida («privada»), sin la segunda opinión');
+  ok(es(D.decidir(base({ c1: { on: true, puntaje: null }, c2: { estado: 'privada' } })), 'retenida', 'c2', 'sin_servicio'), 'destino privado con el modelo propio caído → retenida (sin_servicio: el barrido la vuelve a mirar con la capa 1)');
+  ok(es(D.decidir(base({ c1: { on: true, puntaje: 0.1 }, c2: { estado: 'privada' } })), 'visible', 'c1') && es(D.decidir(base({ c1: { on: true, puntaje: 0.9 }, c2: { estado: 'privada' } })), 'rechazada', 'c1'), 'destino privado: la limpia entra igual y la clara se rechaza igual');
   ok(es(dud({ estado: 'sin_respuesta' }), 'retenida', 'c2', 'no_segura'), 'capa 2 no responde (dudosa) → retenida');
   ok(es(D.decidir(base({ c1: { on: true, puntaje: null }, c2: { estado: 'sin_respuesta' } })), 'retenida', 'c2', 'sin_servicio'), 'los dos modelos caídos → retenida (sin_servicio), nunca publicada');
   ok(es(dud({ estado: 'respuesta', json: { veredicto: 'publicar', motivo: '' } }), 'visible', 'c2'), 'capa 2 publicar → visible');
@@ -64,7 +67,7 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
 
   console.log('nada que falle publica (todas las combinaciones)');
   let publicaMal = 0, combos = 0;
-  const c2s = [undefined, { estado: 'apagada' }, { estado: 'sin_presupuesto' }, { estado: 'sin_respuesta' }, { estado: 'respuesta', json: { veredicto: 'no_segura', motivo: '' } }, { estado: 'respuesta', json: 'x' }];
+  const c2s = [undefined, { estado: 'apagada' }, { estado: 'privada' }, { estado: 'sin_presupuesto' }, { estado: 'sin_respuesta' }, { estado: 'respuesta', json: { veredicto: 'no_segura', motivo: '' } }, { estado: 'respuesta', json: 'x' }];
   for (const on of [true, false]) for (const p of [null, 0.6, 0.7, 0.85, 0.95]) for (const conf of [true, false]) for (const c2 of c2s) {
     combos++; const d = D.decidir(base({ c1: { on, puntaje: p }, confianza: conf, c2 }));
     const genuinaDudosa = on && p !== null && p >= 0.6 && p < 0.85;
@@ -98,7 +101,10 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
   ok(/en revisión/.test(mt.es) && /under review/.test(mt.en) && /avisamos/.test(mt.es), 'retenida: que está en revisión y se le avisa (ES/EN)');
   ok(D.HTTP_RECHAZADA === 422 && D.HTTP_RETENIDA === 202, 'rechazada 422 y retenida 202 (el cliente reintenta solo con 0 o 400)');
   ok(Object.keys(D.MOTIVO_TEXTO).every((k) => D.MOTIVO_TEXTO[k].es && D.MOTIVO_TEXTO[k].en), 'cada motivo en español e inglés');
-  ok(!/\b(negocio|ciudad|nombre|tel[eé]fono|uploader)\b/i.test(D.PAUTA.replace(/guía de negocios|otro negocio/g, '')), 'la pauta no lleva nada de quién la subió, ni negocio, ni ciudad');
+  ok(!/\b(negocio|ciudad|nombre|tel[eé]fono|uploader)\b/i.test(D.PAUTA.replace(/guía de negocios|volante de un negocio/g, '')), 'la pauta no lleva nada de quién la subió, ni negocio, ni ciudad');
+  ok(/captura: una captura de pantalla de otra aplicación o página web \(un cartel o volante de un negocio o de un evento NO es motivo de rechazo\)/.test(D.PAUTA) && !/anuncio/.test(D.PAUTA) && !/anuncio|\bad\b/.test(D.MOTIVO_TEXTO.captura.es + D.MOTIVO_TEXTO.captura.en), 'captura: solo una captura de pantalla; un cartel o volante no es motivo (la pauta y el motivo ES/EN)');
+  const mp = D.mensajeSubida({ estado: 'retenida', capa: 'c2', motivo: 'privada', puntaje: null });
+  ok(/revise una persona/.test(mp.es) && /ask a person/.test(mp.en), 'retenida por destino privado: pide revisión a una persona (ES/EN)');
 
   console.log('segunda opinión · privacidad, tope y libro');
   const llamadas = [], Q = [];
@@ -121,7 +127,9 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
   const grande = await jpg(1600, 1200);
   const U1 = '11111111-1111-4111-8111-111111111111';
   const privadas = [
-    [{ mediaId: null, llave: `n/${U1}.jpg`, privada: true, dueno: 'user' }, 'marcada privada'],
+    [{ mediaId: null, llave: `n/${U1}.jpg`, privada: true, dueno: 'user', sinC2: false }, 'marcada privada'],
+    [{ mediaId: null, llave: `n/${U1}.jpg`, privada: false, dueno: 'user', sinC2: true }, 'subida con destino privado (sin fila)'],
+    [{ mediaId: '55555555-5555-4555-8555-555555555555', llave: `privado/rev/55555555-5555-4555-8555-555555555555.jpg`, privada: false, dueno: 'user', sinC2: false }, 'una fila con destino privado en la base (rev_sin_c2) aunque quien llama diga que no'],
     [{ mediaId: null, llave: `privado/m/${U1}.jpg`, privada: false, dueno: 'user' }, 'llave de Mensajes (privado/m/)'],
     [{ mediaId: null, llave: `privado/a/${U1}.jpg`, privada: false, dueno: 'user' }, 'llave de ayuda (privado/a/)'],
     [{ mediaId: null, llave: `privado/e/${U1}.jpg`, privada: false, dueno: 'user' }, 'llave de la entrega (privado/e/)'],
@@ -133,6 +141,7 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
     [{ mediaId: '33333333-3333-4333-8333-333333333333', llave: `privado/rev/44444444-4444-4444-8444-444444444444.jpg`, privada: false, dueno: 'business' }, 'una llave que no es la de esa fila'],
   ];
   filas.set(U1, { private: true, owner_kind: 'business', url: `/medios/n/${U1}.jpg`, rev_llave: null });
+  filas.set('55555555-5555-4555-8555-555555555555', { private: false, owner_kind: 'user', url: '/medios/n/55555555-5555-4555-8555-555555555555.jpg', rev_llave: 'privado/rev/55555555-5555-4555-8555-555555555555.jpg', rev_sin_c2: true });
   filas.set('22222222-2222-4222-8222-222222222222', { private: false, owner_kind: 'chat', url: 'privado/m/x.jpg', rev_llave: 'privado/rev/22222222-2222-4222-8222-222222222222.jpg' });
   filas.set('33333333-3333-4333-8333-333333333333', { private: false, owner_kind: 'business', url: '/medios/n/33333333-3333-4333-8333-333333333333.jpg', rev_llave: 'privado/rev/33333333-3333-4333-8333-333333333333.jpg' });
   for (const [f, que] of privadas) {
@@ -140,7 +149,7 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
     let lanzo = false; try { await S.segundaOpinion(f, grande, { esperaMs: 8000 }); } catch { lanzo = true; }
     ok(lanzo && llamadas.length === antes && Q.filter((x) => /foto2_reservar/.test(x)).length === qa, `privada (${que}) → se niega: no llega al modelo ni reserva`);
   }
-  const pub = { mediaId: null, llave: `n/${U1}.jpg`, privada: false, dueno: 'user' };
+  const pub = { mediaId: null, llave: `n/${U1}.jpg`, privada: false, dueno: 'user', sinC2: false };
   const r1 = await S.segundaOpinion(pub, grande, { esperaMs: 8000 });
   const e1 = llamadas[llamadas.length - 1];
   const m1 = await sharp(Buffer.from(e1.imagen.base64, 'base64')).metadata();

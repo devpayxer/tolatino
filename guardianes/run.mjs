@@ -11991,8 +11991,8 @@ const guardianes = {
     const so = cuerpoFn(s, "segundaOpinion"), ep = cuerpoFn(s, "esPublica");
     const iChk = so.indexOf("if (!(await esPublica(f))) throw"), iMot = so.indexOf("motorActivo()"), iRed = so.indexOf("reducida(datos)"), iGas = so.indexOf("await gastar(");
     if (iChk < 0 || iMot < iChk || iRed < iChk || iGas < iChk) falla(G, S, 0, "segundaOpinion comprueba que la foto es pública ANTES de leerla, elegir el modelo o reservar");
-    if (!/if \(f\.privada \|\| \(DUENOS_PRIVADOS as readonly string\[\]\)\.includes\(f\.dueno\) \|\| !LLAVE_PUBLICA\.test\(f\.llave\)\) return false;/.test(ep) || !/select private, owner_kind, url, rev_llave from media where id = \$1::uuid/.test(ep) || !/if \(!r \|\| r\.private \|\|/.test(ep))
-      falla(G, S, 0, "esPublica: nunca private ni un dueño privado, solo las llaves n/ y privado/rev/, y con fila se vuelve a leer de la base");
+    if (!/if \(f\.privada \|\| f\.sinC2 \|\| \(DUENOS_PRIVADOS as readonly string\[\]\)\.includes\(f\.dueno\) \|\| !LLAVE_PUBLICA\.test\(f\.llave\)\) return false;/.test(ep) || !/select private, owner_kind, url, rev_llave, rev_sin_c2 from media where id = \$1::uuid/.test(ep) || !/if \(!r \|\| r\.private \|\| r\.rev_sin_c2 \|\|/.test(ep))
+      falla(G, S, 0, "esPublica: nunca private, ni destino «privado» (sinC2 / media.rev_sin_c2), ni un dueño privado; solo las llaves n/ y privado/rev/, y con fila se vuelve a leer de la base");
     if (!/const LLAVE_PUBLICA = \/\^\(n\\\/\|privado\\\/rev\\\/\)/.test(s)) falla(G, S, 0, "las únicas llaves que pueden ir a la segunda opinión son n/ y privado/rev/");
     for (const k of ["chat", "dm", "help", "support", "claim"]) if (!new RegExp(`DUENOS_PRIVADOS = \\[[^\\]]*"${k}"`).test(s)) falla(G, S, 0, `falta «${k}» en los dueños privados (nunca van a la segunda opinión)`);
     if (!/\.resize\(\{ width: 640, height: 640, fit: "inside", withoutEnlargement: true \}\)\.jpeg\(\{ quality: 80 \}\)/.test(cuerpoFn(s, "reducida")) || /withMetadata|keepMetadata|keepExif|withExif/.test(s)) falla(G, S, 0, "a Claude va la imagen reducida (≤ 640 px), JPEG, sin metadatos");
@@ -12000,13 +12000,41 @@ const guardianes = {
       falla(G, S, 0, "a Claude va solo la pauta fija y la imagen reducida: sin datos, sin ayuda, nada de quién la subió");
     // Las llamadas desde la revisión: la subida (sin fila, de la persona) y la retenida (con su fila y su llave privada).
     const f = existsSync(F) ? sinComent(F) : "";
-    if (!/segundaOpinion\(\{ mediaId: null, llave: `n\/\$\{x\.id\}\.jpg`, privada: false, dueno: "user" \}/.test(f) || !/segundaOpinion\(\{ mediaId: f\.id, llave: f\.rev_llave, privada: false, dueno: f\.owner_kind \}/.test(f))
-      falla(G, F, 0, "la revisión pasa a la segunda opinión solo la subida pública (sin fila) o una retenida con su fila y su llave privada");
+    if (!/segundaOpinion\(\{ mediaId: null, llave: `n\/\$\{x\.id\}\.jpg`, privada: false, dueno: "user", sinC2: x\.sinC2 \}/.test(f) || !/RR\.c2\.on && !f\.rev_sin_c2 \? await segundaOpinion\(\{ mediaId: f\.id, llave: f\.rev_llave, privada: false, dueno: f\.owner_kind, sinC2: f\.rev_sin_c2 \}/.test(f))
+      falla(G, F, 0, "la revisión pasa a la segunda opinión solo la subida pública (sin fila) o una retenida con su fila y su llave privada, y nunca una de destino «privado»");
+    const rs = cuerpoFn(f, "revisarSubida");
+    if (rs.indexOf('if (x.sinC2) return {') < 0 || rs.indexOf('if (x.sinC2) return {') > rs.indexOf("segundaOpinion(") || !/decidir\(\{ \.\.\.e, c2: \{ estado: "privada" \} \}\)/.test(rs))
+      falla(G, F, 0, "una subida de destino «privado» decide sin la segunda opinión (antes de llamarla): la dudosa queda retenida («privada»)");
+    if (!/and \(not rev_sin_c2 or rev_motivo = 'sin_servicio'\)/.test(cuerpoFn(f, "barrerRevision"))) falla(G, F, 0, "el barrido no vuelve a mandar una foto de destino «privado» (solo la mira si el modelo propio no pudo)");
+    // El destino: la ruta lo lee (solo restringe) y lo guarda en la fila; el cliente lo manda desde cada pantalla privada.
+    const RT = "apps/web/app/api/medios/route.ts", rt = existsSync(RT) ? sinComent(RT) : "";
+    if (!/const sinC2 = form\?\.get\("destino"\) === "privado";/.test(rt) || !/revisarSubida\(\{ id: randomUUID\(\), datos: img\.data, sha, userId: me\.id, sinC2 \}/.test(rt) || !/userId: me\.id, sinC2 \}\);/.test(rt) || !/rev_sin_c2, bytes\) values/.test(rt))
+      falla(G, RT, 0, "la subida lee destino=privado (solo restringe), lo pasa a la revisión y lo guarda en la fila (rev_sin_c2)");
+    const SF = "apps/web/lib/subir-foto.ts";
+    if (!/export const subirFoto = \(file: File, destino: DestinoFoto = "publico"\): Promise<Subida> => mandar\("\/api\/medios", file, destino === "privado" \? \{ destino: "privado" \} : \{\}\);/.test(existsSync(SF) ? readFileSync(SF, "utf8") : ""))
+      falla(G, SF, 0, "subirFoto manda el destino «privado» cuando la pantalla lo pide");
+    // Cada pantalla que sube con subirFoto está clasificada: lo que solo ve un negocio o el equipo, «privado» (ante la duda, privado).
+    const PRIV_FOTO = ["apps/web/app/(app)/cita/[num]/ayuda/AyudaCita.tsx", "apps/web/app/(app)/emergencia/Emergencia.tsx", "apps/web/app/(app)/n/[id]/cita/Booking.tsx",
+      "apps/web/app/(app)/n/[id]/viaje/ViajeBooking.tsx", "apps/web/app/(app)/n/[id]/presupuestos/Presupuestos.tsx", "apps/web/app/(app)/n/[id]/preestimado/PreEstimado.tsx",
+      "apps/web/app/(app)/n/[id]/visita/Visita.tsx", "apps/web/app/panel/MercadoPanel.tsx", "apps/web/app/panel/Rentas.tsx", "apps/web/app/panel/Estimado.tsx"];
+    const PUB_FOTO = ["apps/web/app/e/[code]/AceptarEquipo.tsx", "apps/web/app/(app)/cuenta/perfil/Perfil.tsx", "apps/web/app/(app)/eventos/publicar/Publicar.tsx",
+      "apps/web/app/(app)/comunidad/nuevo/Nuevo.tsx", "apps/web/app/(app)/n/[id]/resena/Escribir.tsx", "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/EventosPanel.tsx",
+      "apps/web/app/panel/Autos.tsx", "apps/web/app/panel/Servicios.tsx", "apps/web/app/panel/Oficios.tsx", "apps/web/app/panel/Menu.tsx", "apps/web/app/panel/NovedadesPanel.tsx",
+      "apps/web/app/panel/RentaArticulo.tsx", "apps/web/app/panel/Inmuebles.tsx", "apps/web/app/panel/Panel.tsx", "apps/web/app/(app)/publica/PasosFH.tsx"];
+    for (const x of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue;
+      const t = sinComent(x), llamadas = [...t.matchAll(/\bsubirFoto\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g)], directo = /fetch\("\/api\/medios"/.test(t);
+      if (!llamadas.length && !directo) continue;
+      if (!PRIV_FOTO.includes(x) && !PUB_FOTO.includes(x)) { falla(G, x, 0, "sube una foto por /api/medios sin estar clasificada: si va solo a un negocio o al equipo, destino «privado» (lista PRIV_FOTO); si sale en una página pública, PUB_FOTO"); continue; }
+      if (PRIV_FOTO.includes(x) && (directo || llamadas.some((m) => !/,\s*"privado"\s*$/.test(m[1])))) falla(G, x, 0, "una pantalla de fotos que solo ve un negocio o el equipo sube con subirFoto(…, \"privado\") (nunca va a la segunda opinión)");
+    }
+    for (const x of PRIV_FOTO) if (!existsSync(x)) falla(G, x, 0, "la lista de pantallas privadas nombra un archivo que ya no existe: actualizarla");
     // La imagen solo la manda el proveedor y la anota el simulador (para que la prueba vea que una privada nunca llega).
     if (!/\.\.\.\(e\.imagen \? \[\{ type: "image", source: \{ type: "base64", media_type: e\.imagen\.tipo, data: e\.imagen\.base64 \} \}\] : \[\]\)/.test(readFileSync(MC, "utf8"))) falla(G, MC, 0, "modelo-claude manda la imagen como un bloque image (solo la de la segunda opinión)");
     if (!/imagen: \{ sha256: createHash\("sha256"\)\.update\(img\)\.digest\("hex"\)/.test(readFileSync(SIM, "utf8"))) falla(G, SIM, 0, "el simulador anota la huella de cada imagen que recibe (la prueba lo revisa)");
     const e = existsSync("pruebas/e2e/rev9u.cjs") ? readFileSync("pruebas/e2e/rev9u.cjs", "utf8") : "";
     if (!/'una foto privada \(Mensajes\) jamás llega a la segunda opinión'/.test(e)) falla(G, "pruebas/e2e/rev9u.cjs", 0, "la prueba de punta a punta no revisa que una foto privada nunca llega al simulador");
+    if (!/'dudosa con destino privado → retenida y la segunda opinión no recibió nada'/.test(e)) falla(G, "pruebas/e2e/rev9u.cjs", 0, "la prueba de punta a punta no revisa la dudosa de destino «privado»");
   },
 
   /* fotosRevisionFalloCerrado: si un modelo no responde, la capa está apagada, no hay presupuesto o la respuesta no encaja, la foto queda RETENIDA:
@@ -12023,11 +12051,11 @@ const guardianes = {
     if (!/porque = "dudosa";\s*if \(e\.confianza\) return \{ estado: "visible", capa: "c4"/.test(de) || (de.match(/e\.confianza/g) ?? []).length !== 1) falla(G, D, 0, "la confianza publica solo una dudosa de verdad (con puntaje entre los umbrales), nunca una sin respuesta");
     if (!/if \(v\.v === "publicar"\) return \{ estado: "visible", capa: "c2"/.test(de) || !/return \{ estado: "retenida", capa: "c2", motivo: "no_segura", puntaje: p \};\s*\}$/.test(de.trim()))
       falla(G, D, 0, "la capa 2 publica solo con un «publicar» que pasa leerSegunda; todo lo demás termina retenido");
-    for (const x of ["apagada", "sin_presupuesto"]) if (!new RegExp(`if \\(c2\\.estado === "${x}"\\) return \\{ estado: "retenida"`).test(de)) falla(G, D, 0, `capa 2 ${x} → retenida`);
+    for (const x of ["apagada", "privada", "sin_presupuesto"]) if (!new RegExp(`if \\(c2\\.estado === "${x}"\\) return \\{ estado: "retenida"`).test(de)) falla(G, D, 0, `capa 2 ${x} → retenida`);
     if (!/if \(k\.length !== 2 \|\| !k\.includes\("veredicto"\) \|\| !k\.includes\("motivo"\)/.test(ls) || !/return \{ v: "no_segura" \};\s*\}$/.test(ls.trim())) falla(G, D, 0, "leerSegunda es estricta: exactamente veredicto y motivo; lo que no encaja es no_segura");
     const f = existsSync(F) ? sinComent(F) : "";
     if ((f.match(/\{ esperaMs: R{1,2}\.c2\.esperaMs \}\)\.catch\(\(\) => SIN_RESPUESTA\)/g) ?? []).length !== 2) falla(G, F, 0, "un error de la segunda opinión (base, almacén, privacidad) retiene la foto (.catch(() => SIN_RESPUESTA)); nunca tumba ni publica");
-    if ((f.match(/c2: c2 \?\? \{ estado: "apagada" \}/g) ?? []).length !== 2) falla(G, F, 0, "con la capa 2 apagada la decisión recibe «apagada» (retiene)");
+    if ((f.match(/c2 \?\? \{ estado: "apagada" \}/g) ?? []).length !== 2) falla(G, F, 0, "con la capa 2 apagada la decisión recibe «apagada» (retiene)");
     const p = existsSync(P) ? readFileSync(P, "utf8") : "";
     if (!/console\.log\('nada que falle publica \(todas las combinaciones\)'\);/.test(p) || !/'los dos modelos caídos → retenida \(sin_servicio\), nunca publicada'/.test(p)) falla(G, P, 0, "la prueba pura no recorre el fallo cerrado");
   },

@@ -24,8 +24,19 @@ const casos = [
   [P, SO, 'const LLAVE_PUBLICA = /^(n\\/|privado\\/rev\\/)', 'const LLAVE_PUBLICA = /^(n\\/|privado\\/)'],
   [P, SO, 'sistema: PAUTA, datos: {}, trozos: []', 'sistema: PAUTA, datos: { foto: f.mediaId }, trozos: []'],
   [P, SO, '.resize({ width: 640, height: 640, fit: "inside", withoutEnlargement: true })', '.resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })'],
-  [P, SO, '  if (!r || r.private || (DUENOS_PRIVADOS', '  if (!r || (DUENOS_PRIVADOS'],
+  [P, SO, '  if (!r || r.private || r.rev_sin_c2 || (DUENOS_PRIVADOS', '  if (!r || r.rev_sin_c2 || (DUENOS_PRIVADOS'],
   [P, 'pruebas/e2e/rev9u.cjs', "'una foto privada (Mensajes) jamás llega a la segunda opinión'", "'una foto de Mensajes'"],
+  // AJ · Destino «privado» (la foto va solo a un negocio o al equipo): la ruta que no lo lee, esPublica que no mira la marca (sin fila o con fila),
+  //     la subida que la manda igual a la segunda opinión, el barrido que la vuelve a mandar, una pantalla privada que sube sin «privado».
+  [P, RUTA, '  const sinC2 = form?.get("destino") === "privado";', '  const sinC2 = false;'],
+  [P, SO, 'if (f.privada || f.sinC2 || (DUENOS_PRIVADOS', 'if (f.privada || (DUENOS_PRIVADOS'],
+  [P, SO, 'if (!r || r.private || r.rev_sin_c2 || (DUENOS_PRIVADOS', 'if (!r || r.private || (DUENOS_PRIVADOS'],
+  [P, F, '  if (x.sinC2) return { id: x.id,', '  if (false) return { id: x.id,'],
+  [P, F, "        and (not rev_sin_c2 or rev_motivo = 'sin_servicio')\n", ''],
+  [P, 'apps/web/app/(app)/n/[id]/cita/Booking.tsx', 'await subirFoto(file, "privado");', 'await subirFoto(file);'],
+  [P, 'apps/web/app/panel/Rentas.tsx', 'await subirFoto(fs[0]!, "privado");', 'await subirFoto(fs[0]!);'],
+  [P, 'apps/web/lib/subir-foto.ts', 'destino === "privado" ? { destino: "privado" } : {}', '{}'],
+  [P, 'pruebas/e2e/rev9u.cjs', "'dudosa con destino privado → retenida y la segunda opinión no recibió nada'", "'dudosa con destino privado'"],
   // (c) Un camino que publica sin un «publicar»: la capa 2 que no responde, la confianza sin puntaje, leer la respuesta sin rigor, un error que
   //     no retiene, o el final de la decisión que publica.
   [C, D, '  if (c2.estado === "sin_respuesta") return { estado: "retenida", capa: "c2", motivo: porque === "sin_servicio" ? "sin_servicio" : "no_segura", puntaje: p };', '  if (c2.estado === "sin_respuesta") return { estado: "visible", capa: "c2", motivo: null, puntaje: p };'],
@@ -33,7 +44,8 @@ const casos = [
   [C, D, 'if (k.length !== 2 || ', 'if (k.length < 2 || '],
   [C, D, '  return { estado: "retenida", capa: "c2", motivo: "no_segura", puntaje: p };\n}\n\n/* La memoria', '  return { estado: "visible", capa: "c2", motivo: null, puntaje: p };\n}\n\n/* La memoria'],
   [C, F, '{ esperaMs: R.c2.esperaMs }).catch(() => SIN_RESPUESTA)', '{ esperaMs: R.c2.esperaMs })'],
-  [C, F, '    d = decidir({ ...e, c2: c2 ?? { estado: "apagada" } });', '    d = decidir({ ...e, c2: c2 ?? { estado: "respuesta", json: { veredicto: "publicar", motivo: "" } } });'],
+  [C, F, '  const d = decidir({ ...e, c2: c2 ?? { estado: "apagada" } });', '  const d = decidir({ ...e, c2: c2 ?? { estado: "respuesta", json: { veredicto: "publicar", motivo: "" } } });'],
+  [C, D, '  if (c2.estado === "privada") return { estado: "retenida",', '  if (c2.estado === "privada") return { estado: "visible", capa: "c2", motivo: null, puntaje: p }; if (false) return { estado: "retenida",'],
   [C, 'pruebas/alreves/fotos9urevision.cjs', "console.log('nada que falle publica (todas las combinaciones)');", "console.log('combinaciones');"],
   // (d) El veredicto fuera de la transacción del cambio, un cambio de estado sin veredicto, el libro que se puede cambiar o borrar.
   [U, RUTA, '    for (const x of veredictosDe(v, { mediaId: id, sha, uploader: me.id })) await anotarVeredicto(c, x);\n', ''],

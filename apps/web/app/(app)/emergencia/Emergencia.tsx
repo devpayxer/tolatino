@@ -37,7 +37,7 @@ export function Emergencia({ opciones, casa: casa0, es, yo, desde, ek0, linea911
   const subir = async (file: File | undefined) => {
     if (!file || fotos.length >= 3) return;
     if (!yo) return entrar();
-    setSubiendo(true); const r = await subirFoto(file); setSubiendo(false);
+    setSubiendo(true); const r = await subirFoto(file, "privado"); setSubiendo(false);
     if (r.ok && r.id && r.url) setFotos((L) => [...L, { id: r.id!, url: r.url! }]); else setError(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));
   };
   const enviar = async () => {
