@@ -115,7 +115,7 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
         </div>
       </div>
       <div data-screen-label="APP-NEG-JOB · desktop" className="mx-auto hidden max-w-[1080px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{v.bname}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{v.bname}</button>
         <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{meta}</div>
         <h1 className="mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{title}</h1>
         <div className="mt-[18px] grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
@@ -124,7 +124,7 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
             {solicitud}{seguro}
             <div className="flex items-center gap-2.5">{corazon}<div className="flex min-w-0 flex-1">{boton}</div></div>
             {!vivo && <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/60">{E2("SIN CV · TOMA 1 MINUTO", "NO RESUME · TAKES 1 MINUTE")}</div>}
-            <button type="button" onClick={compartir} className="inline-flex items-center justify-center gap-1.5 text-[13px] font-bold text-action"><Icon name="share" size={15} />{E2("Compartir", "Share")}</button>
+            <button type="button" onClick={compartir} className="inline-flex min-h-11 items-center justify-center gap-1.5 text-[13px] font-bold text-action"><Icon name="share" size={15} />{E2("Compartir", "Share")}</button>
             {/* 9m · Reportar esta vacante (L309) → Super Admin › Contenido. */}
             <ReportarContenido kind="job" id={v.id} es={es} conSesion={sesion} volver={`/n/${negocio}/empleo/${v.id}`} />
           </div>

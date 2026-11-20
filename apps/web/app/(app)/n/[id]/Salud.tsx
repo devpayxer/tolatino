@@ -239,7 +239,7 @@ export function SaSeguro({ v }: { v: Sa }) {
             </div>
             <div className="flex"><Button variant="secondary" icon="plus" onClick={() => setModo("form")}>{E2("Agregar otro seguro", "Add another insurance")}</Button></div>
           </>) : (<>
-            {v.segs.length > 0 && <button type="button" onClick={() => setModo("list")} className="inline-flex items-center gap-1.5 self-start text-[12.5px] font-bold text-action"><Icon name="chevronLeft" size={14} />{E2("Tus seguros", "Your insurance")}</button>}
+            {v.segs.length > 0 && <button type="button" onClick={() => setModo("list")} className="inline-flex min-h-11 items-center gap-1.5 self-start text-[12.5px] font-bold text-action"><Icon name="chevronLeft" size={14} />{E2("Tus seguros", "Your insurance")}</button>}
             <div><div className={K}>{E2("TU SEGURO", "YOUR INSURANCE")}</div><div className="mt-2 flex flex-wrap gap-2">{TIPOS.map(([k, a, b]) => <Chip key={k} variant={f.kind === k ? "selected" : "filter"} onClick={() => setF({ ...f, kind: f.kind === k ? "" : k, plan: "" })}>{es ? a : b}</Chip>)}</div>
               {f.kind === "none" && <div className="mt-2 rounded-[12px] bg-pro/[.14] px-3 py-2.5 text-[12px] font-semibold leading-[1.5] text-pro-ink">{E2("Cada consultorio dice su precio sin seguro. Algunos cobran según tus ingresos o no piden papeles.", "Each clinic shows its uninsured price. Some charge by income or ask for no papers.")}</div>}</div>
             {f.kind && f.kind !== "none" && planes.length > 0 && <div><div className={K}>{f.kind === "priv" ? E2("COMPAÑÍA", "COMPANY") : E2("PLAN", "PLAN")}</div><div className="mt-2 flex flex-wrap gap-2">{planes.map((p) => <Chip key={p.key} variant={f.plan === p.key ? "selected" : "filter"} onClick={() => setF({ ...f, plan: f.plan === p.key ? "" : p.key })}>{p.l}</Chip>)}</div></div>}
@@ -262,7 +262,7 @@ export function SaResumen({ v, desk, onAll }: { v: Sa; desk: boolean; onAll?: ()
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <div className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{E2("Servicios", "Services")}</div>
-        {onAll && <button type="button" onClick={onAll} className="text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
+        {onAll && <button type="button" onClick={onAll} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
       </div>
       {v.sp.espera && (
         <div data-screen-label="Resumen · sin cita ahora" className="mt-3 flex items-center gap-3 rounded-[16px] bg-signal/[.12] px-3.5 py-3">

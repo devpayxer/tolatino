@@ -228,9 +228,16 @@ function parchesAccesibilidad(t, rel) {
    - los NOMBRES que son botón (plato, negocio, autor) crecen hacia arriba y hacia abajo con relleno y margen negativo DENTRO de su propia
      fila o tarjeta, que al tocarla hace lo mismo: el diseño no se mueve y la caja no pisa a ningún otro control (a11y9c lo mide: «pisan»).
    Lo mide y lo exige pruebas/e2e/a11y9c.cjs (pruebas/lib/tactil.cjs) a 390 y a 320 con letra grande; guardián objetivosTactiles. */
-const T44 = 44;
+const T44 = 44, T24 = 24; // T24: el mínimo de WCAG 2.2 AA 2.5.8 en el escritorio (con el ratón)
 const TACTIL = {
   // 20 nov (confirmación 44637101290): «Volver» y «Salir» de la bienvenida (Entrar › Comunidad) medían 36 × 36.
+  // 20 nov · Reseñas: «Útil» (32 de alto), «Editar» y «Reportar» (texto de 12 px: 17 de alto) a 44 — se tocan en el teléfono (la pestaña Reseñas)
+  // y en el escritorio no bajan de 24 (AA 2.5.8).
+  "listing/ReviewCard.js": [
+    ["      gap: 6,\n      height: 32,\n      boxSizing: 'border-box',\n      padding: '0 12px',\n      borderRadius: 999,", `      gap: 6,\n      height: ${T44},\n      boxSizing: 'border-box',\n      padding: '0 14px',\n      borderRadius: 999,`],
+    ["    ...__ds_scope.__btn(edit.onClick, undefined, undefined),\n    style: {\n", `    ...__ds_scope.__btn(edit.onClick, undefined, undefined),\n    style: {\n      display: 'inline-flex',\n      alignItems: 'center',\n      minHeight: ${T44},\n`],
+    ["    ...__ds_scope.__btn(report.onClick, undefined, undefined),\n    style: {\n", `    ...__ds_scope.__btn(report.onClick, undefined, undefined),\n    style: {\n      display: 'inline-flex',\n      alignItems: 'center',\n      minHeight: ${T44},\n`],
+  ],
   "onboarding/OnbTopBar.js": [
     ["  const btn = {\n    width: 36,\n    height: 36,", `  const btn = {\n    width: ${T44},\n    height: ${T44},`],
     // 20 nov (confirmación 44658035571): con los botones a 44, el texto del progreso sin cortar hacía que la barra pidiera 405 px dentro de una
@@ -274,6 +281,9 @@ const TACTIL = {
     ["      marginTop: 12,\n      display: 'flex',\n      alignItems: 'center',\n      gap: 10,\n      padding: '12px 14px',", "      marginTop: 12,\n      display: 'flex',\n      alignItems: 'center',\n      gap: 10,\n      padding: '0 14px',"],
     ["      font: '500 14px Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)',\n      whiteSpace: 'nowrap',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, /*#__PURE__*/React.createElement(\"span\", {\n    ...(onCity ? __ds_scope.__btn(onSearch) : {})\n  }, searchPlaceholder || 'Buscar en ' + cityShort)",
       `      font: '500 14px Manrope,sans-serif',\n      lineHeight: '${T44}px',\n      color: 'rgba(11,14,18,.6)',\n      whiteSpace: 'nowrap',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    ...(onCity ? __ds_scope.__btn(onSearch) : {}),\n    style: {\n      display: 'block',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, searchPlaceholder || 'Buscar en ' + cityShort)`],
+    // 20 nov · AA 2.5.8 en el escritorio: el texto del buscador (el botón del teclado) medía 19 de alto; toma 24 (el relleno de 12 se queda:
+    // AppShell lo usa para ubicar el desplegable).
+    [`  }), /*#__PURE__*/React.createElement("span", {\n    style: {\n      flex: 1,\n      minWidth: 0,\n      font: '500 14px Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)',\n      whiteSpace: 'nowrap',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    ...(onCity ? __ds_scope.__btn(onSearch) : {})\n  }, searchPlaceholder || 'Buscar negocios, eventos y más en '`, `  }), /*#__PURE__*/React.createElement("span", {\n    style: {\n      flex: 1,\n      minWidth: 0,\n      font: '500 14px Manrope,sans-serif',\n      lineHeight: '${T24}px',\n      color: 'rgba(11,14,18,.6)',\n      whiteSpace: 'nowrap',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    ...(onCity ? __ds_scope.__btn(onSearch) : {}),\n    style: {\n      display: 'block',\n      overflow: 'hidden',\n      textOverflow: 'ellipsis'\n    }\n  }, searchPlaceholder || 'Buscar negocios, eventos y más en '`],
     // La ciudad («5 MI»): caja de 44 de alto; la pastilla se dibuja igual dentro.
     ["    onClick: stop(onCity),\n    ...__ds_scope.__btn(stop(onCity), undefined, undefined),\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 4,\n      padding: '6px 9px',",
       `    onClick: stop(onCity),\n    ...__ds_scope.__btn(stop(onCity), undefined, undefined),\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      alignSelf: 'stretch',\n      minHeight: ${T44},\n      minWidth: ${T44},\n      flex: 'none',\n      cursor: 'pointer'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 4,\n      padding: '6px 9px',`, 1, "radius.toUpperCase())));\n  return", "radius.toUpperCase()))));\n  return"],

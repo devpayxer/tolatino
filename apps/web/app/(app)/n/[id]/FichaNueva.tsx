@@ -611,7 +611,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
                 ))}
               </div>
             )) : null}
-            {rs ? seccion("rev", E2("Reseñas", "Reviews"), <ResTab v={rs} desk onMenu={() => ir("cat")} />, <button type="button" onClick={rs.escribir} className="text-[13.5px] font-bold text-action">{rs.r.tengo ? E2("Ver tu reseña", "See your review") : E2("Escribir reseña", "Write a review")}</button>) : null}
+            {rs ? seccion("rev", E2("Reseñas", "Reviews"), <ResTab v={rs} desk onMenu={() => ir("cat")} />, <button type="button" onClick={rs.escribir} className="inline-flex min-h-11 items-center text-[13.5px] font-bold text-action">{rs.r.tengo ? E2("Ver tu reseña", "See your review") : E2("Escribir reseña", "Write a review")}</button>) : null}
             {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={(id) => { ir("cat"); if (id && me) setTimeout(() => me.abrir(id), 60); }} /></div>) : null}
             {tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? seccion("shop", E2("Tienda", "Shop"), <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} guardados={tienda.g} sesion={sesion} abrirInicial={productoInicial} />) : null}
             {rv ? seccion("rsv", E2("Reservar mesa", "Reserve a table"), <div className="max-w-[620px]"><RsvTab v={rv} desk /></div>) : null}
@@ -794,7 +794,7 @@ function TarjetaCita({ v, cfg, es, dsk, setDsk, pulso, staffBook, grupos, onVer 
       <div className="px-5 pt-5"><div className="font-display text-[22px] font-extrabold leading-[1.1] tracking-[-0.035em]">{L(cfg.cta)}</div>{v.desde ? <div className="mt-[5px] text-[13px] font-semibold text-ink/60">{E2("Desde", "From")} {dinero(v.desde)}</div> : null}</div>
       <div className="flex flex-col gap-2.5 px-5 pt-[18px]">
         <Elegir v={v} b={dsk} up={up} cfg={cfg} es={es} staffBook={staffBook} corto />
-        {nItems > 3 ? <button type="button" onClick={onVer} className="self-start text-[12.5px] font-bold text-action">{E2("Ver", "See")} {nItems}</button> : null}
+        {nItems > 3 ? <button type="button" onClick={onVer} className="inline-flex min-h-11 items-center self-start text-[12.5px] font-bold text-action">{E2("Ver", "See")} {nItems}</button> : null}
       </div>
       {s && listo && !conExtras ? <div className="flex flex-col gap-2.5 px-5 pt-[18px]"><DiaHora v={v} b={dsk} up={up} H={H} cargando={cargando} es={es} /><div className="grid"><DepositNote>{depositoTexto(v, own, es)}</DepositNote></div></div> : null}
       <div className="sticky bottom-0 mt-[18px] flex flex-col gap-3 border-t border-ink/[.08] bg-white px-5 pb-5 pt-4">

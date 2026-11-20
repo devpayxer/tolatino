@@ -114,7 +114,7 @@ export function Ayuda({ p, puede, delivery, lineas, plazoH, es }: { p: PedidoVis
         {boton && <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-5 pt-3 backdrop-blur-[14px]"><div className="flex">{boton}</div></div>}
       </div>
       <div data-screen-label="APP-NEG-PEDIDO-AYUDA · desktop" className="mx-auto hidden max-w-[720px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{step === "home" ? E2("Volver al pedido", "Back to order") : E2("Ayuda con el pedido", "Order help")}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{step === "home" ? E2("Volver al pedido", "Back to order") : E2("Ayuda con el pedido", "Order help")}</button>
         <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{meta}</div>
         <h1 className="mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{titulo}</h1>
         <div className="mt-[18px] flex flex-col gap-3.5">{error && <div role="alert" className="rounded-[14px] bg-[rgba(192,57,43,.07)] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}{cuerpo}{boton && <div className="flex max-w-[320px]">{boton}</div>}</div>

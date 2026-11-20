@@ -231,7 +231,7 @@ export function Categoria({ v }: { v: Vista }) {
       <div className="flex flex-col gap-3 px-5 pt-3.5 lg:gap-[30px] lg:px-[30px] lg:pb-10 lg:pt-[26px]">
         <div className="flex items-center justify-between lg:hidden">
           <span className="font-display text-[16px] font-extrabold tracking-[-0.03em]">{T.resultados}</span>
-          <button type="button" onClick={ciclarOrden} className="flex items-center gap-[5px] text-[12px] font-bold text-action">
+          <button type="button" onClick={ciclarOrden} className="flex min-h-11 items-center gap-[5px] text-[12px] font-bold text-action">
             {T.orden}<Icon name="chevronDown" size={14} color="var(--tl-action)" strokeWidth={2} />
           </button>
         </div>

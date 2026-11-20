@@ -417,7 +417,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
         </div>
       </div>
       <div data-screen-label="APP-NEG-RESENA · desktop" className="mx-auto hidden max-w-[1080px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver", "Back")}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver", "Back")}</button>
         <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{meta}</div>
         <h1 className="mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{title}</h1>
         <div className="mt-[18px] grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">

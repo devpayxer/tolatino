@@ -119,7 +119,7 @@ export function Aplicar({ v, negocio, nombre, tel, es }: { v: VacanteDet; negoci
         </div>
       </div>
       <div data-screen-label="APP-NEG-JOB-APLICAR · desktop" className="mx-auto hidden max-w-[1080px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{title}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{title}</button>
         <h1 className="mt-3.5 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Aplicar", "Apply")}</h1>
         <div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div>
         <div className="mt-6 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">

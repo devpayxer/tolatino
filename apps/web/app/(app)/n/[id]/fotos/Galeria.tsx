@@ -77,7 +77,7 @@ export function Galeria({ g, inicial, conSesion, t, motivos }: {
       {/* ── Escritorio ── */}
       <div className="hidden px-[30px] pb-16 pt-[22px] lg:block">
         <div className="mx-auto flex max-w-[1180px] flex-col gap-[18px]">
-          <button type="button" onClick={volver} className="flex items-center gap-1.5 self-start text-[13px] font-bold text-action">
+          <button type="button" onClick={volver} className="flex min-h-11 items-center gap-1.5 self-start text-[13px] font-bold text-action">
             <Icon name="chevronLeft" size={15} color="var(--tl-action)" strokeWidth={2} />{t.volver}
           </button>
           <div className="min-w-0">

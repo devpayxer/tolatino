@@ -142,7 +142,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{titulo}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/60">{sub}</div></div>
       </div>
       <div className="hidden lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{v.a ? E2("Volver a la cita", "Back to the appointment") : E2("Volver", "Back")}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{v.a ? E2("Volver a la cita", "Back to the appointment") : E2("Volver", "Back")}</button>
         <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{sub}</div>
         <h1 className="m-0 mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{titulo}</h1>
       </div>

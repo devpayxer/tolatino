@@ -151,7 +151,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
       {b.fecha ? <>
         <div className={K}>{E2("FECHA QUE TE GUSTARÍA", "DATE YOU WOULD LIKE")}</div>
         <div role="radiogroup" aria-label={E2("Fecha", "Date")} className="flex flex-wrap gap-2">{b.fechas.slice(0, masFechas ? 59 : 14).map((d) => <Chip key={d} variant={fecha === d ? "selected" : "filter"} role="radio" aria-checked={fecha === d} onClick={() => setFecha(d)}>{diaVis(d, es)}</Chip>)}</div>
-        {!masFechas && <button type="button" onClick={() => setMasFechas(true)} className="self-start text-[12.5px] font-bold text-action">{E2("Más fechas", "More dates")}</button>}
+        {!masFechas && <button type="button" onClick={() => setMasFechas(true)} className="inline-flex min-h-11 items-center self-start text-[12.5px] font-bold text-action">{E2("Más fechas", "More dates")}</button>}
         <div className={K}>{E2("FRANJA", "TIME OF DAY")}</div>
         <div role="radiogroup" aria-label={E2("Franja", "Time of day")} className="flex flex-wrap gap-2">{FRANJAS.map(([k, a, z]) => <Chip key={k} variant={franja === k ? "selected" : "filter"} role="radio" aria-checked={franja === k} onClick={() => setFranja(k)}>{es ? a : z}</Chip>)}</div>
         <div className="text-[12px] font-medium leading-[1.5] text-ink/60">{E2("La oficina te confirma el día y la hora, o te propone otra fecha.", "The office confirms the day and time, or proposes another date.")}</div>
@@ -265,7 +265,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
         </div>
       </div>
       <div data-screen-label="APP-NEG-EDU-INSCRIPCION · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{b.negocio.nombre}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{b.negocio.nombre}</button>
         <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{fe ? (b.fecha ? E2("Pedir fecha", "Ask for a date") : E2("Inscribirme", "Sign up")) : nm(V.inscribir)}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${b.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">

@@ -135,7 +135,7 @@ export function Tuya({ m, es, nombre, flash }: { m: MiResena; es: boolean; nombr
         <div className="flex flex-col gap-3 px-4 pt-4">{aviso}{principal(false)}{asi}{estado}{editarB}{ver}</div>
       </div>
       <div data-screen-label="APP-NEG-RESENA-ESTADO · desktop" className="mx-auto hidden max-w-[1080px] lg:block">
-        <button type="button" onClick={ficha} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2(`Volver a ${b.name}`, `Back to ${b.name}`)}</button>
+        <button type="button" onClick={ficha} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2(`Volver a ${b.name}`, `Back to ${b.name}`)}</button>
         <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{num}</div>
         <div className="mt-3.5 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{aviso}{principal(true)}{asi}</div>

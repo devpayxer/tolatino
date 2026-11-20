@@ -21,6 +21,8 @@ const casos = [
   [A, "const TACTIL = require('../lib/tactil.cjs');", "const TACTIL = require('../lib/caben.cjs');"],
   ['packages/ui/src/ds/onboarding/OnbTopBar.js', "      padding: '10px 16px 12px',\n      minWidth: 0,\n", "      padding: '10px 16px 12px',\n"],
   ['pruebas/e2e/vec9m.cjs', "ok(ancho[0] === 390 && ancho[1] === 390,", "console.log(ancho[0] === 390 && ancho[1] === 390,"],
+  [A, "const mi = await minimos(d); ok(mi.length === 0, `1440 ${ruta}: AA 2.5.8", "const mi = await minimos(d); console.log(mi.length === 0, `1440 ${ruta}: AA 2.5.8"],
+  [A, "const mi = await minimos(a); ok(mi.length === 0, `el Super Admin a 1440: AA 2.5.8", "const mi = await minimos(a); console.log(mi.length === 0, `el Super Admin a 1440: AA 2.5.8"],
   // la lista de permitidos crece o no dice por qué
   [L, "  { regla: 'oculto', por:", "  { regla: 'nombre', por: 'Un nombre que repite el toque de su tarjeta: se toca la tarjeta.' },\n  { regla: 'chip', por: 'Las etiquetas pequeñas de los filtros del escritorio no se tocan con el dedo.' },\n  { regla: 'oculto', por:"],
   [L, "por: 'Fuera de la vista (solo para lectores de pantalla, 1 px o menos): nadie lo puede tocar.' }", "por: 'oculto' }"],

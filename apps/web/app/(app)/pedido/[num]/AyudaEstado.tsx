@@ -38,7 +38,7 @@ export function AyudaEstado({ numero, negocio, a, puede, es }: { numero: string;
           {s && <div className="mt-1.5 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{s}</div>}
         </div>
       </div>
-      {a.status === "answered" && <button type="button" disabled={busy} onClick={revisar} className="self-start text-[12.5px] font-bold text-action">{E2("¿No se arregló? Pedir que To’Latino lo revise", "Not solved? Ask To’Latino to review it")}</button>}
+      {a.status === "answered" && <button type="button" disabled={busy} onClick={revisar} className="inline-flex min-h-11 items-center self-start text-[12.5px] font-bold text-action">{E2("¿No se arregló? Pedir que To’Latino lo revise", "Not solved? Ask To’Latino to review it")}</button>}
       {err && <div role="alert" className="text-[12px] font-semibold text-danger">{err}</div>}
     </div>
   );

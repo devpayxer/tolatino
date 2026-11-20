@@ -5786,3 +5786,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   - **Crear tu cuenta en el teléfono:** con los botones de 44, la barra de arriba (Volver · Paso 4 de 5 · Salir) ensanchaba la página y
     «Continuar» quedaba fuera de la vista. Corregido en el sistema de diseño. Qué mirar: crea una cuenta nueva en tu teléfono y pasa los 5
     pasos: «Continuar» siempre se ve abajo y nada se mueve de lado.
+- **9t · Botones de texto a 44 (20 nov):** los enlaces que son botones («Ver 6», «Escribir reseña», «Más fechas», «Cambiar», «Ver todos»…) ahora
+  tienen una caja de 44 de alto (se ven igual; ocupan un poco más de alto), y en las reseñas «Útil» es una pastilla de 44 y «Reportar» se toca
+  mejor. En el escritorio, el buscador de arriba es 5 px más alto. Qué mirar: la ficha de una barbería y de Sabor Dominicano (Reseñas y la
+  columna de reserva) en el teléfono y en la computadora.

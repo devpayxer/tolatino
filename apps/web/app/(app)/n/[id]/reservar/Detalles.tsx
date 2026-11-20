@@ -85,14 +85,14 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
       <div className="min-w-0 flex-1">
         <div className="text-[13.5px] font-bold leading-[1.4]">{E2("Se liberó la mesa", "The table was released")}</div>
         <div className="mt-[3px] text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/65">{E2(`Pasaron ${h.min} minutos. Elige la hora otra vez: puede que siga libre.`, `${h.min} minutes passed. Pick the time again: it may still be free.`)}</div>
-        <button type="button" onClick={volver} className="mt-[9px] text-[12.5px] font-bold text-action">{E2("Elegir la hora otra vez", "Pick the time again")}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center mt-[9px] text-[12.5px] font-bold text-action">{E2("Elegir la hora otra vez", "Pick the time again")}</button>
       </div>
     </div>
   );
   const fallo = error && (
     <div role="alert" className="flex items-start gap-[11px] rounded-2xl border border-danger/25 bg-danger/[.08] px-[15px] py-3.5">
       <span className="grid flex-none pt-px"><Icon name="warning" size={17} color="var(--tl-danger)" /></span>
-      <div className="min-w-0"><div className="text-[13.5px] font-bold leading-[1.4] text-danger">{error}</div><button type="button" onClick={volver} className="mt-2 text-[12.5px] font-bold text-action">{E2("Elegir la hora otra vez", "Pick the time again")}</button></div>
+      <div className="min-w-0"><div className="text-[13.5px] font-bold leading-[1.4] text-danger">{error}</div><button type="button" onClick={volver} className="inline-flex min-h-11 items-center mt-2 text-[12.5px] font-bold text-action">{E2("Elegir la hora otra vez", "Pick the time again")}</button></div>
     </div>
   );
   const editando = ed && (
@@ -168,7 +168,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
       </div>
       {/* Escritorio */}
       <div data-screen-label="APP-NEG-RESERVA · desktop" className="mx-auto hidden max-w-[1380px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{nombre}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{nombre}</button>
         <div className="mt-3.5"><h1 className="font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{title}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{meta}</div></div>
         <div className="mt-6 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
           <div className="flex min-w-0 flex-col gap-3.5">{fallo}{editando}{mesa(true)}{nombreCaja}{ocasion}{necesitan}{notaCaja}</div>

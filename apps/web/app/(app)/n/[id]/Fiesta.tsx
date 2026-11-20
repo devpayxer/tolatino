@@ -251,7 +251,7 @@ export function FiResumen({ v, desk, onAll }: { v: Fi; desk: boolean; onAll?: ()
         <div data-screen-label="Resumen · la línea" className="rounded-[18px] bg-ink px-4 py-4 text-white"><div className="font-display text-[16px] font-extrabold leading-[1.25] tracking-[-0.02em]">{v.linea}</div><div className="mt-1.5 text-pretty text-[12.5px] font-medium leading-[1.55] text-white/70">{E2("Aquí ves el calendario real, el precio del paquete y lo que incluye. El depósito se libera si no te confirman.", "Here you see the real calendar, the package price and what it includes. The deposit is released if they do not confirm.")}</div></div></div>}
       <div className="flex items-baseline justify-between gap-3">
         <div className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{E2("Servicios", "Services")}</div>
-        {onAll && <button type="button" onClick={onAll} className="text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
+        {onAll && <button type="button" onClick={onAll} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
       </div>
       <div data-screen-label={desk ? "Resumen desktop · servicios" : "Resumen · servicios"} className={desk ? "mt-4 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1.5"}>
         {v.top.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} />)}

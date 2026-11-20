@@ -175,7 +175,7 @@ export function PrResumen({ v, desk, onAll }: { v: Pr; desk: boolean; onAll?: ()
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <div className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{E2("Servicios", "Services")}</div>
-        {onAll && <button type="button" onClick={onAll} className="text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
+        {onAll && <button type="button" onClick={onAll} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
       </div>
       <div data-screen-label={desk ? "Resumen desktop · servicios" : "Resumen · servicios"} className={desk ? "mt-4 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1.5"}>
         {v.top.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} />)}

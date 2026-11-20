@@ -139,7 +139,7 @@ export function Solicitud({ a, es, enviada }: { a: MiSolicitud; es: boolean; env
         <div className="flex flex-col gap-3 px-4 pt-4">{cuerpo(false)}</div>
       </div>
       <div data-screen-label="APP-NEG-JOB-ESTADO · desktop" className="hidden lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver a la vacante", "Back to the job")}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver a la vacante", "Back to the job")}</button>
         <div className="mx-auto mt-4 flex max-w-[720px] flex-col gap-3.5">
           <div className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60">{num}</div>
           {cuerpo(true)}

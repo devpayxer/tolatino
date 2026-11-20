@@ -158,7 +158,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
         </div>
       </div>
       <div data-screen-label="APP-EVT-BOLETOS · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{p.evento.title}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{p.evento.title}</button>
         <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">{E2("Elige tus boletos", "Pick your tickets")}</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${cuando} · ${p.evento.venue}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12">
           <div className="flex min-w-0 flex-col gap-3">{tipos}{mesas}{extrasB}{codigoB}</div>

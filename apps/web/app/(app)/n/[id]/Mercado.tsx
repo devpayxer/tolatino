@@ -264,7 +264,7 @@ export function MeResumen({ v, desk, onAll }: { v: Me; desk: boolean; onAll?: ()
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <div className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{E2("Productos", "Products")}</div>
-        {onAll && <button type="button" onClick={onAll} className="text-[12.5px] font-bold text-action">{E2("Ver productos", "See products")}</button>}
+        {onAll && <button type="button" onClick={onAll} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{E2("Ver productos", "See products")}</button>}
       </div>
       <div className="mt-3"><MeTuPedido v={v} /></div>
       <div data-screen-label={desk ? "Resumen desktop · productos" : "Resumen · productos"} className={desk ? "mt-4 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1.5"}>

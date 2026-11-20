@@ -187,7 +187,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
         </div>
       </div>
       <div className="mx-auto hidden max-w-[1180px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver a ", "Back to ")}{p.negocio.nombre}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Volver a ", "Back to ")}{p.negocio.nombre}</button>
         <div className="mt-2.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{E2("PEDIDO #", "ORDER #")}{p.numero}</div>
       </div>
       <div className="mx-auto flex max-w-[1180px] flex-col gap-3 px-4 pt-4 lg:mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_372px] lg:items-start lg:gap-x-12 lg:gap-y-4 lg:px-0 lg:pt-0">

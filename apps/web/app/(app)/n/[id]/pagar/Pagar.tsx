@@ -187,7 +187,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
       </div>
       {/* Escritorio: volver y título */}
       <div className="mx-auto hidden max-w-[1380px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{m.negocio.nombre}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{m.negocio.nombre}</button>
         <div className="mt-3.5 flex items-center gap-3"><h1 className="font-display text-[32px] font-extrabold leading-none tracking-[-0.045em]">{E2("Finalizar pedido", "Checkout")}</h1><Icon name="shield" size={22} color="var(--tl-open)" /></div>
         <div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{countCaps}</div>
       </div>

@@ -328,13 +328,19 @@ function SiteHeader({
       flex: 1,
       minWidth: 0,
       font: '500 14px Manrope,sans-serif',
+      lineHeight: '24px',
       color: 'rgba(11,14,18,.6)',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis'
     }
   }, /*#__PURE__*/React.createElement("span", {
-    ...(onCity ? __ds_scope.__btn(onSearch) : {})
+    ...(onCity ? __ds_scope.__btn(onSearch) : {}),
+    style: {
+      display: 'block',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
   }, searchPlaceholder || 'Buscar negocios, eventos y más en ' + cityShort)), /*#__PURE__*/React.createElement("span", {
     onClick: stop(onCity),
     ...__ds_scope.__btn(stop(onCity), undefined, undefined),

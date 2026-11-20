@@ -247,9 +247,9 @@ function ReviewCard({
       display: 'inline-flex',
       alignItems: 'center',
       gap: 6,
-      height: 32,
+      height: 44,
       boxSizing: 'border-box',
-      padding: '0 12px',
+      padding: '0 14px',
       borderRadius: 999,
       border: '1px solid ' + (helpful.border || 'rgba(11,14,18,.14)'),
       background: helpful.bg || 'var(--tl-white)',
@@ -274,6 +274,9 @@ function ReviewCard({
     onClick: edit.onClick,
     ...__ds_scope.__btn(edit.onClick, undefined, undefined),
     style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      minHeight: 44,
       font: '700 12px Manrope,sans-serif',
       color: 'var(--tl-action)',
       cursor: 'pointer'
@@ -282,6 +285,9 @@ function ReviewCard({
     onClick: report.onClick,
     ...__ds_scope.__btn(report.onClick, undefined, undefined),
     style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      minHeight: 44,
       font: '600 12px Manrope,sans-serif',
       color: report.color || 'rgba(11,14,18,.6)',
       cursor: 'pointer'

@@ -323,9 +323,17 @@ const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/s
       await tactil44(q, `${w} /admin (Super Admin en el teléfono)`); await q.context().close();
     }
 
-    // ═══ Informe (no falla): el Super Admin en el escritorio, con el ratón ═══
+    // ═══ 7 · 20 nov · WCAG 2.2 AA 2.5.8 en el escritorio (con el ratón): ningún control de menos de 24 px, EXIGIDO en las pantallas clave y
+    // en el Super Admin (antes solo se informaba: el texto del buscador 19, «Reportar» 17, «Escribir reseña» 22, «Ver 6» 20). ═══
+    { const d = await nuevo({ viewport: { width: 1440, height: 900 } }); watch(d, 'escritorio24'); await entrar(d, MARISOL);
+      for (const ruta of CLAVE) {
+        await d.goto(B + ruta); await d.waitForLoadState('networkidle').catch(() => {}); await dormir(500);
+        ok(new URL(d.url()).pathname === new URL(B + ruta).pathname, `1440 ${ruta}: es la pantalla pedida`);
+        const mi = await minimos(d); ok(mi.length === 0, `1440 ${ruta}: AA 2.5.8, ningún control mide menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''}`);
+      }
+      await d.context().close(); }
     const ch = await chicos(a); console.log(`  (informe: en el escritorio (ratón), ${ch} controles del Super Admin miden menos de 44 px; en el teléfono se exige arriba)`);
-    { const mi = await minimos(a); console.log(`  (informe AA 2.5.8: ${mi.length} controles del Super Admin miden menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''})`); }
+    { const mi = await minimos(a); ok(mi.length === 0, `el Super Admin a 1440: AA 2.5.8, ningún control mide menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''}`); }
     console.log('  controles operados con el teclado (' + nombres.length + '): ' + [...new Set(nombres)].slice(0, 40).join(' · '));
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ').slice(0, 400) : ''));
     console.log(`\n${n} ✓ · a11y9c`);

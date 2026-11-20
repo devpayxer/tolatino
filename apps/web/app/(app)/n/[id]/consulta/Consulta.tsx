@@ -190,7 +190,7 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
         </div>
       </div>
       <div data-screen-label="APP-NEG-SALUD-BOOKING · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
-        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{sa.negocio.nombre}</button>
+        <button type="button" onClick={volver} className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{sa.negocio.nombre}</button>
         <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{`${sa.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">

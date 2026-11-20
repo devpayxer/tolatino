@@ -345,7 +345,7 @@ export function HojaVehiculo({ v }: { v: Of }) {
         <div role="radiogroup" aria-label={E2("Tus vehículos", "Your vehicles")} className="flex flex-col gap-2">{v.vehs.map((x) => <Radio key={x.id} on={v.veh?.id === x.id} t={vehName(x, es)} s={vehMeta(x, es)} tag={E2("EN TU CUENTA", "IN YOUR ACCOUNT")} onClick={() => void elegir(x.id)} />)}</div>
         <div className="flex"><Button variant="secondary" icon="plus" onClick={() => setModo("form")}>{E2("Agregar otro vehículo", "Add another vehicle")}</Button></div>
       </>) : (<>
-        {v.vehs.length > 0 && <button type="button" onClick={() => setModo("list")} className="inline-flex items-center gap-1.5 self-start text-[12.5px] font-bold text-action"><Icon name="chevronLeft" size={14} />{E2("Tus vehículos", "Your vehicles")}</button>}
+        {v.vehs.length > 0 && <button type="button" onClick={() => setModo("list")} className="inline-flex min-h-11 items-center gap-1.5 self-start text-[12.5px] font-bold text-action"><Icon name="chevronLeft" size={14} />{E2("Tus vehículos", "Your vehicles")}</button>}
         <Chips k={E2("MARCA", "MAKE")} items={[...TOPV.map((k) => ({ l: mkName(k, es), on: f.mk === k, onClick: () => setF({ ...f, mk: k, model: "", other: "", tire: "", mkOpen: false }) })),
           { l: f.mk && !TOPV.includes(f.mk) ? `${mkName(f.mk, es)} ▾` : E2("Otra marca ▾", "Other make ▾"), on: !!f.mk && !TOPV.includes(f.mk), onClick: () => setF({ ...f, mkOpen: !f.mkOpen }) }]} />
         {f.mkOpen && <select aria-label={E2("Marca", "Make")} value={f.mk} onChange={(e) => setF({ ...f, mk: e.target.value, model: "", other: "", tire: "", mkOpen: false })} className="h-11 rounded-[13px] border border-ink/[.12] bg-white px-3 text-[13.5px] font-semibold">
@@ -383,7 +383,7 @@ export function HojaCasa({ v }: { v: Of }) {
         <div role="radiogroup" aria-label={E2("Tus casas", "Your homes")} className="flex flex-col gap-2">{v.casas.map((x) => <Radio key={x.id} on={v.casa?.id === x.id} t={x.dir} s={casaMeta(x, es)} tag={E2("EN TU CUENTA", "IN YOUR ACCOUNT")} onClick={() => void elegir(x.id)} />)}</div>
         <div className="flex"><Button variant="secondary" icon="plus" onClick={() => setModo("form")}>{E2("Agregar otra casa", "Add another home")}</Button></div>
       </>) : (<>
-        {v.casas.length > 0 && <button type="button" onClick={() => setModo("list")} className="inline-flex items-center gap-1.5 self-start text-[12.5px] font-bold text-action"><Icon name="chevronLeft" size={14} />{E2("Tus casas", "Your homes")}</button>}
+        {v.casas.length > 0 && <button type="button" onClick={() => setModo("list")} className="inline-flex min-h-11 items-center gap-1.5 self-start text-[12.5px] font-bold text-action"><Icon name="chevronLeft" size={14} />{E2("Tus casas", "Your homes")}</button>}
         <div><div className={K}>{E2("DIRECCIÓN", "ADDRESS")}</div>
           {v.op.dirs.length ? <select aria-label={E2("Dirección", "Address")} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} className="mt-2 h-11 w-full rounded-[13px] border border-ink/[.12] bg-white px-3 text-[13.5px] font-semibold">{v.op.dirs.map((d) => <option key={d.id} value={d.id}>{d.t}</option>)}</select> : null}
           <a href={`/cuenta/direcciones/nueva?volver=${volver}`} className="mt-2 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-action"><Icon name="plus" size={14} />{v.op.dirs.length ? E2("Otra dirección", "Another address") : E2("Agrega tu dirección", "Add your address")}</a></div>
@@ -411,7 +411,7 @@ export function OfResumen({ v, desk, onAll }: { v: Of; desk: boolean; onAll?: ()
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <div className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{E2("Servicios", "Services")}</div>
-        {onAll && <button type="button" onClick={onAll} className="text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
+        {onAll && <button type="button" onClick={onAll} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
       </div>
       <div data-screen-label={desk ? "Resumen desktop · servicios" : "Resumen · servicios"} className={desk ? "mt-4 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1.5"}>
         {v.top.map((it) => <Fila key={it.id} v={v} it={it} tarjeta={desk} />)}

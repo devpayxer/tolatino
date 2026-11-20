@@ -9874,6 +9874,9 @@ const guardianes = {
     // Confirmación 44658035571: /comunidad redirigía a la bienvenida de /entrar (Marisol sin Comunidad en una base nueva) y se medía esa pantalla.
     if (!/for \(const ruta of CLAVE\)[\s\S]{0,400}ok\(new URL\(q\.url\(\)\)\.pathname === new URL\(B \+ ruta\)\.pathname/.test(a)) falla(G, A, 0, "cada pantalla clave medida es la pedida (no una redirección)");
     if (!/update community_profiles set rules_version = 1, rules_ok_at = coalesce\(rules_ok_at, now\(\)\), adult = true[\s\S]{0,300}for \(const \[w, h, grande\] of/.test(a)) falla(G, A, 0, "precondición propia: Marisol está en Comunidad antes de medir /comunidad");
+    // 20 nov · AA 2.5.8 en el escritorio: exigido (no informe) en las pantallas clave a 1440 y en el Super Admin.
+    if (!/for \(const ruta of CLAVE\)[\s\S]{0,500}const mi = await minimos\(d\); ok\(mi\.length === 0, `1440 \$\{ruta\}: AA 2\.5\.8/.test(a)) falla(G, A, 0, "las pantallas clave a 1440 no exigen 24 px (AA 2.5.8)");
+    if (!/const mi = await minimos\(a\); ok\(mi\.length === 0, `el Super Admin a 1440: AA 2\.5\.8/.test(a)) falla(G, A, 0, "el Super Admin a 1440 no exige 24 px (AA 2.5.8): volvió a ser solo un informe");
     { const ob = existsSync("packages/ui/src/ds/onboarding/OnbTopBar.js") ? readFileSync("packages/ui/src/ds/onboarding/OnbTopBar.js", "utf8") : "";
       if (!/padding: '10px 16px 12px',\n      minWidth: 0,\n      boxSizing: 'border-box',/.test(ob)) falla(G, "packages/ui/src/ds/onboarding/OnbTopBar.js", 0, "la barra de arriba del alta pide más que su sitio (sin minWidth: 0): con los botones de 44 ensanchaba la página a 405 px y «Continuar» quedaba fuera");
       const v = existsSync("pruebas/e2e/vec9m.cjs") ? readFileSync("pruebas/e2e/vec9m.cjs", "utf8") : "";
@@ -9891,7 +9894,7 @@ const guardianes = {
       if (ent.length !== (per[1].match(/\{/g) || []).length) falla(G, L, 0, "cada permitido es { regla, por } (y nada más)");
       for (const [, r, por] of ent) { if (por.length < 40) falla(G, L, 0, `el permitido «${r}» no dice por qué (≥ 40 letras)`); if (!new RegExp(`\\b${r}: "`).test(l)) falla(G, L, 0, `la regla «${r}» no está en REGLAS`); }
     }
-    if (!/const T44 = 44;/.test(p) || !/t = tactiles\(t, rel\);/.test(p)) falla(G, P, 0, "el sistema portado no pasa por la tabla TACTIL (T44 = 44, tactiles(t, rel))");
+    if (!/const T44 = 44[;,]/.test(p) || !/t = tactiles\(t, rel\);/.test(p)) falla(G, P, 0, "el sistema portado no pasa por la tabla TACTIL (T44 = 44, tactiles(t, rel))");
     for (const [x, que] of [["\"core/Button.js\": [\n    [\"  md: {\\n    height: 40,\", `  md: {\\n    height: ${T44},`]", "Button md a 44"], ["`  sm: {\\n    height: ${T44},`", "Button sm a 44"],
       ["Math.max(size, ${T44})", "IconButton a 44 como mínimo"], ["...(onClick ? {\\n        minHeight: ${T44},\\n        minWidth: ${T44},", "Chip con clic a 44"],
       ["        minHeight: ${T44},\\n        boxSizing: 'border-box',\\n        cursor: 'pointer',", "pestañas a 44"], ["'data-toque': 'nombre'", "el nombre del plato / negocio / autor con su caja de 44"]])
@@ -11605,6 +11608,22 @@ const guardianes = {
         if (!/timezone/.test(s.slice(ult, k - 1))) falla(G, f, s.slice(0, x.index).split("\n").length, "patrocinio_devolucion sin la zona horaria de la ciudad (la versión vieja cuenta los días por la duración)");
       }
       s.split("\n").forEach((l, i) => { if (/ceil\(\(?extract\(epoch from [a-z.]*ends_at - [a-z.]*starts_at\)[^\n]*1 \/ 24\.0/.test(l)) falla(G, f, i + 1, "los días comprados de un patrocinio salen de la duración: usar patrocinio_dias_comprados"); });
+    }
+  },
+  /* 9t · botonTextoConAlto (20 nov, LAUNCH «Objetivos de 24 px en el escritorio y 44 en el resto de pantallas»): un <button> que se ve como
+     enlace (text-action o subrayado) medía lo que su texto (17–22 px): «Ver 6», «Escribir reseña», «Más fechas», «Cambiar»… en 36 pantallas.
+     Ahora cada uno tiene su caja de 44 (min-h-11). Lo que se teme: uno nuevo sin alto. Se mira cada <button> de apps/web con text-action o
+     underline en su className: tiene que llevar un alto (min-h-, h-, size-, py- o p-). Al revés: alreves9tbotones. */
+  botonTextoConAlto() {
+    const G = "botonTextoConAlto", alto = /(^|\s)(min-h-|h-\d|h-\[|size-|py-|p-\d|p-\[)/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|components)\/.*\.tsx$/.test(f) || !existsSync(f)) continue;
+      const s = readFileSync(f, "utf8");
+      for (const m of s.matchAll(/<button\b[^>]*?className="([^"]*)"[^>]*>/g)) {
+        const c = m[1];
+        if (!/text-action|underline/.test(c) || alto.test(c)) continue;
+        falla(G, f, s.slice(0, m.index).split("\n").length, `un botón con forma de enlace sin alto (mide lo que su texto, menos de 24): agregar min-h-11 · «${c.slice(0, 60)}»`);
+      }
     }
   },
 };

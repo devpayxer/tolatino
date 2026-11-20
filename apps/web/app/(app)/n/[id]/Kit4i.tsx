@@ -87,7 +87,7 @@ export function Resumen({ titulo, primeros, desk, can, abrir, onAll, verTodo, to
       {primeros.length > 0 && <>
         <div className="flex items-baseline justify-between gap-3">
           <div className="font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]">{titulo}</div>
-          {onAll && <button type="button" onClick={onAll} className="text-[12.5px] font-bold text-action">{verTodo}</button>}
+          {onAll && <button type="button" onClick={onAll} className="inline-flex min-h-11 items-center text-[12.5px] font-bold text-action">{verTodo}</button>}
         </div>
         <div data-screen-label={desk ? "Resumen desktop · lista" : "Resumen · lista"} className={desk ? "mt-4 grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5" : "mt-1.5"}>
           {primeros.map((it) => <Fila key={it.id} it={it} can={can} abrir={abrir} tarjeta={desk} />)}
