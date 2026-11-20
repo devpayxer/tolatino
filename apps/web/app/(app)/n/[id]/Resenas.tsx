@@ -342,7 +342,9 @@ function Prompt({ v }: { v: CtlResenas }) {
         {mesa ? (es ? `Reservación ${r.prompt.numero} · toca las estrellas y sale como reseña verificada.` : `Booking ${r.prompt.numero} · tap the stars and it posts as a verified review.`)
           : es ? `Pedido #${r.prompt.numero} · toca las estrellas y sale como reseña verificada.` : `Order #${r.prompt.numero} · tap the stars and it posts as a verified review.`}
       </div>
-      <div className="mt-3 grid grid-cols-5 gap-1.5">
+      {/* 20 nov · A 320 px las cinco estrellas quedaban en 42 de ancho (confirmación 44755954339, segunda pasada: a11y9c): en pantallas
+          angostas el espacio entre ellas baja a 2 px y cada una mide 44 o más. */}
+      <div className="mt-3 grid grid-cols-5 gap-1.5 max-[359px]:gap-0.5">
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} type="button" aria-label={`${n} ★`} onClick={() => v.porEstrellas(n)} className="grid h-11 place-items-center rounded-[13px] bg-[rgba(255,176,32,.12)]">
             <Icon name="star" size={22} color="var(--tl-pro)" strokeWidth={2} />

@@ -9900,6 +9900,8 @@ const guardianes = {
     // 20 nov (confirmación barajada 44734711575) · Lo que solo sale con datos también se mide: /eventos el día que hay tarjetas de evento. El
     // corazón del cartel medía 32 en el teléfono y solo se vio el día que /eventos tenía un evento.
     if (!/const ruta = await diaConEventos\(q\);[\s\S]{0,260}ok\(\(await q\.locator\('\[data-evento\]'\)\.count\(\)\) > 0,[\s\S]{0,160}await tactil44\(q,/.test(a)) falla(G, A, 0, "a11y9c no mide /eventos un día con tarjetas de evento (el cartel y su corazón)");
+    { const F = "apps/web/app/(app)/n/[id]/Resenas.tsx", rs = existsSync(F) ? readFileSync(F, "utf8") : "";
+      if (!/<div className="mt-3 grid grid-cols-5 gap-1\.5 max-\[359px\]:gap-0\.5">\n\s+\{\[1, 2, 3, 4, 5\]\.map/.test(rs)) falla(G, F, 0, "las cinco estrellas de «¿Cómo estuvo?» no caben a 44 en 320 px (el espacio entre ellas no se estrecha en pantallas angostas)"); }
     { const F = "apps/web/app/(app)/eventos/comun.tsx", cm = existsSync(F) ? readFileSync(F, "utf8") : "";
       if (!/aria-pressed=\{saved\} onClick=\{onLike\}\n\s+className=[^\n]*style=\{\{ width: desk \? 34 : 44, height: desk \? 34 : 44,/.test(cm)) falla(G, F, 0, "el corazón del cartel de eventos no mide 44 × 44 en el teléfono"); }
     // Confirmación 44658035571: /comunidad redirigía a la bienvenida de /entrar (Marisol sin Comunidad en una base nueva) y se medía esa pantalla.
