@@ -100,6 +100,8 @@ function OnbTopBar({
       background: 'var(--tl-white)',
       borderBottom: '1px solid rgba(11,14,18,.07)',
       padding: '10px 16px 12px',
+      minWidth: 0,
+      boxSizing: 'border-box',
       display: 'flex',
       alignItems: 'center',
       gap: 12

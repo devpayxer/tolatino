@@ -299,16 +299,23 @@ const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/s
     const cm2 = await clicMudo(a); if (cm2.length) console.log('  (aviso: el Super Admin: clics con mano sin teclado: ' + cm2.slice(0, 5).join(' · ') + ')'); else ok(true, 'el Super Admin: ningún clic de ratón sin teclado');
 
     // ═══ 6 · 9t · Objetivos táctiles de 44 px en las pantallas clave: a 390 y a 320 con letra grande (y el Super Admin a 390 y 320) ═══
+    // Precondición propia: Marisol está en Comunidad (adulta, bienvenida y reglas). En una base nueva no lo está y /comunidad la manda a la
+    // bienvenida de /entrar: se medía otra pantalla (confirmación 44658035571). Y cada ruta tiene que ser la que se pidió, no una redirección.
+    sql(`insert into community_profiles (user_id) values ((select id from users where phone = '+1${MARISOL}')) on conflict do nothing`);
+    sql(`update community_profiles set rules_version = 1, rules_ok_at = coalesce(rules_ok_at, now()), adult = true, adult_ok_at = coalesce(adult_ok_at, now()), welcome_at = coalesce(welcome_at, now()) where user_id = (select id from users where phone = '+1${MARISOL}')`);
     for (const [w, h, grande] of [[390, 844, false], [320, 568, true]]) {
       sql(`update users set big_text = ${grande} where phone = '+1${MARISOL}'`);
       const q = await nuevo(w === 390 ? { ...devices['iPhone 13'] } : { viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); watch(q, `tactil${w}`);
-      await entrar(q, MARISOL);
-      for (const ruta of CLAVE) {
-        await q.goto(B + ruta); await q.waitForLoadState('networkidle').catch(() => {}); await dormir(500);
-        if (grande) ok((await q.locator('[data-letra="grande"]').count()) > 0, `${w} ${ruta}: con letra grande`);
-        await tactil44(q, `${w}${grande ? ' (letra grande)' : ''} ${ruta}`);
-      }
-      sql(`update users set big_text = false where phone = '+1${MARISOL}'`); await q.context().close();
+      try { // la letra grande de Marisol vuelve a la normal pase lo que pase: si no, la prueba siguiente la hereda (confirmación 44658035571: apt4f)
+        await entrar(q, MARISOL);
+        for (const ruta of CLAVE) {
+          await q.goto(B + ruta); await q.waitForLoadState('networkidle').catch(() => {}); await dormir(500);
+          ok(new URL(q.url()).pathname === new URL(B + ruta).pathname, `${w} ${ruta}: es la pantalla pedida (no una redirección: ${new URL(q.url()).pathname})`);
+          if (grande) { const con = (await q.locator('[data-letra="grande"]').count()) > 0;
+            ok(con, `${w} ${ruta}: con letra grande` + (con ? '' : ` · ${q.url()} · la página dice: ${(await q.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400)}`)); }
+          await tactil44(q, `${w}${grande ? ' (letra grande)' : ''} ${ruta}`);
+        }
+      } finally { sql(`update users set big_text = false where phone = '+1${MARISOL}'`); await q.context().close(); }
     }
     for (const w of [390, 320]) {
       const q = await nuevo(w === 390 ? { ...devices['iPhone 13'] } : { viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }); watch(q, `tactilAdmin${w}`);

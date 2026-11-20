@@ -432,7 +432,7 @@ export async function patrociniosEventosAdmin(ciudades: string[], ciudad: string
             to_char(s.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as desde, to_char(s.ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta,
             s.price_cents as precio, coalesce(pg.n, 0)::int as pagado, coalesce(pg.dev, 0)::int as devuelto, s.auto_renew as renovar, s.end_kind as "finKind", s.end_reason as "finMotivo",
             coalesce(st.views, 0)::int as vistas, coalesce(st.entries, 0)::int as entraron, coalesce(st.orders, 0)::int as pedidos,
-            case when s.status in ('activo', 'reservado') then (select d.cents from patrocinio_devolucion('sin_usar', s.price_cents, s.starts_at, s.ends_at, s.extended_secs, s.paused_secs, s.paused_at, now()) d) else 0 end as "aDevolver",
+            case when s.status in ('activo', 'reservado') then (select d.cents from patrocinio_devolucion('sin_usar', s.price_cents, s.starts_at, s.ends_at, s.extended_secs, s.paused_secs, s.paused_at, now(), ci.timezone) d) else 0 end as "aDevolver",
             s.paused_at is not null as pausado
        from event_sponsorships s join events e on e.id = s.event_id join businesses b on b.id = s.business_id join cities ci on ci.id = s.city_id
        left join sponsorship_stats st on st.kind = 'evento' and st.ref_id = s.id

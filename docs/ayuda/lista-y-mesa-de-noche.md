@@ -10,7 +10,9 @@ es consumo, no un cargo aparte. To'Latino **nunca cobra el cover, los tragos ni 
 
 ## Cómo se usa
 1. En la página del local, toca la lista o la mesa › **¿Cuántos van?**, ocasión (opcional) y nota.
-2. **Noche y hora:** hoy y las 6 noches que siguen (las cerradas o sin mesas no se eligen) y a qué hora llegan.
+2. **Noche y hora:** hoy y las 6 noches que siguen (las cerradas o sin mesas no se eligen) y a qué hora llegan. Esta noche solo salen
+   las horas que todavía se pueden pedir: la lista, desde 15 minutos después de ahora; la mesa, desde 20 minutos (el local necesita tiempo
+   para contestar).
 3. **Revisa y envía:** lo que pagas en la puerta, la edad (con identificación) y, si la mesa pide depósito, tu tarjeta.
 
 ## Qué pasa en cada caso
@@ -47,6 +49,8 @@ charge. To'Latino **never charges the cover, drinks or the minimum**: those are 
 ### How to use it
 1. On the venue's page, tap the list or the table › **How many are going?**, occasion (optional) and a note.
 2. **Night and time:** tonight and the next 6 nights (closed nights or nights without tables cannot be picked) and when you arrive.
+   Tonight only shows times you can still request: the list, from 15 minutes from now; a table, from 20 minutes (the venue needs time to
+   answer).
 3. **Review and send:** what you pay at the door, the age (with ID) and, if the table asks for a deposit, your card.
 
 ### What happens in each case

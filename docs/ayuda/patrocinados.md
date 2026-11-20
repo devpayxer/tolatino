@@ -28,7 +28,7 @@ panel._
 - El precio lo pone To'Latino (Configuración); lo que ya pagaste no cambia si el precio cambia después.
 - **Devolver lo que no se usó:** si cancelas una **reserva** que todavía no empieza, te devolvemos **todo**. Si To'Latino termina tu
   patrocinio (o se cancela tu evento), te devolvemos los **días enteros que no se usaron**, en proporción a los días que compraste (el día
-  que ya empezó cuenta como usado). La devolución va a la misma tarjeta, sale en tus **recibos** («Devolución») y te llega el aviso «Te
+  que ya empezó cuenta como usado; si empiezas «hoy», hoy es uno de los días que compraste aunque lo compres a última hora). La devolución va a la misma tarjeta, sale en tus **recibos** («Devolución») y te llega el aviso «Te
   devolvimos lo que no se usó». Tu banco la muestra en 5 a 10 días hábiles. **Terminar antes** uno que ya está activo no devuelve.
 - **Si tu banco pide confirmar** (3-D Secure) al pagar, se abre ahí mismo la ventana de tu banco: confirmas y sigue; no se cobra nada
   hasta que confirmas, y se cobra una sola vez.
@@ -137,7 +137,7 @@ panel._
 - To'Latino sets the price (Settings); what you already paid does not change if the price changes later.
 - **Refunding what was not used:** if you cancel a **booking** that has not started, we refund **all of it**. If To'Latino ends your
   sponsorship (or your event is cancelled), we refund the **whole days that were not used**, in proportion to the days you bought (the day
-  that already started counts as used). The refund goes to the same card, shows in your **receipts** («Refund») and you get the notice «We
+  that already started counts as used; if you start «today», today is one of the days you bought even if you buy it late at night). The refund goes to the same card, shows in your **receipts** («Refund») and you get the notice «We
   refunded what was not used». Your bank shows it in 5 to 10 business days. **End early** on an active one does not refund.
 - **If your bank asks to confirm** (3-D Secure) when you pay, your bank's window opens right there: you confirm and it continues; nothing
   is charged until you confirm, and it is charged only once.

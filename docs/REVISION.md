@@ -5776,3 +5776,13 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **9t · Hoja del plato con el corazón y los 44 px juntos:** el corazón pasó de 50 a 44 px (la medida del objetivo táctil) y, cuando faltan dos o
   más opciones obligatorias, el botón dice «Elige 2 opciones» / «Choose 2 options» en vez de nombrarlas todas (con una sola sigue diciendo cuál:
   «Elige: relleno»). Así la barra cabe a 390 px. Las opciones que faltan siguen marcadas en la hoja.
+- **9t · Lo que cazó la confirmación del 20 nov (44658035571):**
+  - **Patrocinio comprado a última hora (dinero):** uno que empieza «hoy» comprado entre las 11 y las 12 de la noche contaba 6 días comprados
+    en vez de 7; si To'Latino lo terminaba, se devolvía el precio entero aunque ya se había usado un día. Ahora los días se cuentan por el
+    calendario de la ciudad (0194): se devuelven 6 de 7 ($14.57 de $17). Qué mirar: nada en pantalla; está en la ayuda de Patrocinados.
+  - **Noche · «¿A qué hora llegan?»:** esta noche, la mesa solo ofrece horas desde 20 minutos después de ahora (antes, una hora a 15–19
+    minutos se podía elegir y luego decía «Esa hora ya está muy cerca»). La lista sigue desde 15 minutos. Qué mirar: de noche, pide una mesa
+    para hoy en La Terraza: las horas que salen se pueden enviar.
+  - **Crear tu cuenta en el teléfono:** con los botones de 44, la barra de arriba (Volver · Paso 4 de 5 · Salir) ensanchaba la página y
+    «Continuar» quedaba fuera de la vista. Corregido en el sistema de diseño. Qué mirar: crea una cuenta nueva en tu teléfono y pasa los 5
+    pasos: «Continuar» siempre se ve abajo y nada se mueve de lado.

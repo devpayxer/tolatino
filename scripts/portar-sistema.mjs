@@ -233,6 +233,9 @@ const TACTIL = {
   // 20 nov (confirmación 44637101290): «Volver» y «Salir» de la bienvenida (Entrar › Comunidad) medían 36 × 36.
   "onboarding/OnbTopBar.js": [
     ["  const btn = {\n    width: 36,\n    height: 36,", `  const btn = {\n    width: ${T44},\n    height: ${T44},`],
+    // 20 nov (confirmación 44658035571): con los botones a 44, el texto del progreso sin cortar hacía que la barra pidiera 405 px dentro de una
+    // celda de grid (Entrar): la página se ensanchaba y «Continuar» (fija abajo) quedaba fuera de la vista. La barra nunca pide más que su sitio.
+    ["      borderBottom: '1px solid rgba(11,14,18,.07)',\n      padding: '10px 16px 12px',\n      display: 'flex',", "      borderBottom: '1px solid rgba(11,14,18,.07)',\n      padding: '10px 16px 12px',\n      minWidth: 0,\n      boxSizing: 'border-box',\n      display: 'flex',"],
   ],
   "core/Button.js": [
     ["  md: {\n    height: 40,", `  md: {\n    height: ${T44},`],

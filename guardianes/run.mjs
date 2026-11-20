@@ -9870,7 +9870,15 @@ const guardianes = {
       if (!/TACTIL\.desbordan\(p\)/.test(c) || !/botonesQueNoCaben\(p\)/.test(c) || !/ok\(fu\.length === 0/.test(c)) falla(G, A, 0, "tactil44 no exige que nada se salga de su caja (desbordan y botonesQueNoCaben)");
     }
     if (!/for \(const \[w, h, grande\] of \[\[390, 844, false\], \[320, 568, true\]\]\)/.test(a)) falla(G, A, 0, "las pantallas clave se miden a 390 y a 320 con letra grande");
-    if (!/for \(const ruta of CLAVE\)[\s\S]{0,400}tactil44\(q,/.test(a)) falla(G, A, 0, "cada pantalla clave pasa por tactil44");
+    if (!/for \(const ruta of CLAVE\)[\s\S]{0,1200}tactil44\(q,/.test(a)) falla(G, A, 0, "cada pantalla clave pasa por tactil44");
+    // Confirmación 44658035571: /comunidad redirigía a la bienvenida de /entrar (Marisol sin Comunidad en una base nueva) y se medía esa pantalla.
+    if (!/for \(const ruta of CLAVE\)[\s\S]{0,400}ok\(new URL\(q\.url\(\)\)\.pathname === new URL\(B \+ ruta\)\.pathname/.test(a)) falla(G, A, 0, "cada pantalla clave medida es la pedida (no una redirección)");
+    if (!/update community_profiles set rules_version = 1, rules_ok_at = coalesce\(rules_ok_at, now\(\)\), adult = true[\s\S]{0,300}for \(const \[w, h, grande\] of/.test(a)) falla(G, A, 0, "precondición propia: Marisol está en Comunidad antes de medir /comunidad");
+    { const ob = existsSync("packages/ui/src/ds/onboarding/OnbTopBar.js") ? readFileSync("packages/ui/src/ds/onboarding/OnbTopBar.js", "utf8") : "";
+      if (!/padding: '10px 16px 12px',\n      minWidth: 0,\n      boxSizing: 'border-box',/.test(ob)) falla(G, "packages/ui/src/ds/onboarding/OnbTopBar.js", 0, "la barra de arriba del alta pide más que su sitio (sin minWidth: 0): con los botones de 44 ensanchaba la página a 405 px y «Continuar» quedaba fuera");
+      const v = existsSync("pruebas/e2e/vec9m.cjs") ? readFileSync("pruebas/e2e/vec9m.cjs", "utf8") : "";
+      if (!/ok\(ancho\[0\] === 390 && ancho\[1\] === 390,/.test(v)) falla(G, "pruebas/e2e/vec9m.cjs", 0, "el alta a 390 no comprueba que la página no se ensancha"); }
+    if (!/\} finally \{ sql\(`update users set big_text = false where phone = '\+1\$\{MARISOL\}'`\)/.test(a)) falla(G, A, 0, "la letra grande de Marisol vuelve a la normal en un finally (si no, la hereda la prueba siguiente)");
     const clave = (a.match(/const CLAVE = \[([^\]]*)\]/) || [])[1] || "";
     for (const r of ["'/'", "'/negocios'", "'/n/sabor-dominicano?tab=menu'", "'/comunidad'", "'/eventos'", "'/cuenta'"]) if (!clave.includes(r)) falla(G, A, 0, `falta la pantalla clave ${r}`);
     if (!/tactil44\(q, `\$\{w\} \/admin/.test(a)) falla(G, A, 0, "el Super Admin en el teléfono también se mide");
@@ -11559,6 +11567,45 @@ const guardianes = {
     if (!r || r.col !== "user_id" || r.accion !== "borrar" || !r.exporta) falla(G, MJ, 0, "item_saves en el mapa de datos: se exporta (platos_guardados) y sale con la purga");
     if (!existsSync(E)) falla(G, E, 0, "falta la prueba de punta a punta de los platos guardados");
     else if (!/supermercado-la-cosecha/.test(readFileSync(E, "utf8")) || !/boutique-yaritza/.test(readFileSync(E, "utf8"))) falla(G, E, 0, "la prueba de punta a punta no cubre un mercado y una tienda");
+  },
+  /* 9t · nocheHorasQueSeEnvian (confirmación 44658035571, noc4c): la hoja «¿A qué hora llegan?» de Noche ofrecía, esta noche, una hora que enviar()
+     rechazaba («Esa hora ya está muy cerca…»): el selector pedía > ahora + 15 y el servidor, para la mesa, que «respond_by» (la hora − K) quede a más
+     de N minutos → hora > ahora + K + N. Lo que se teme: que el selector y el servidor vuelvan a separarse. Se lee de lo servido por el código: K del
+     make_interval del insert, N del interval del rechazo, y MESA_CERCA_MIN; tiene que ser > K + N. Al revés: alreves9tnoche. */
+  nocheHorasQueSeEnvian() {
+    const G = "nocheHorasQueSeEnvian", F = "apps/web/lib/noche-reservas.ts";
+    if (!existsSync(F)) return falla(G, F, 0, "falta lib/noche-reservas.ts");
+    const s = readFileSync(F, "utf8");
+    const k = s.match(/make_interval\(mins => \$7::int - (\d+)\)\) at time zone \$8, now\(\) \+ make_interval|least\(now\(\) \+ make_interval\(mins => \$15::int\), \(\$6::date \+ time '12:00' \+ make_interval\(mins => \$7::int - (\d+)\)\)/);
+    const n = s.match(/select respond_by > now\(\) \+ interval '(\d+) minutes' as ok/);
+    const c = s.match(/MESA_CERCA_MIN = (\d+)/), l = s.match(/LISTA_CERCA_MIN = (\d+)/);
+    if (!k || !n || !c || !l) return falla(G, F, 0, "no se encuentran: el margen de respond_by (hora − K), el rechazo (> ahora + N min), MESA_CERCA_MIN o LISTA_CERCA_MIN");
+    const K = Number(k[1] ?? k[2]), N = Number(n[1]), C = Number(c[1]);
+    if (!(C > K + N)) falla(G, F, 0, `la mesa se ofrece desde ahora + ${C} min pero enviar() la rechaza hasta ahora + ${K + N}: el selector ofrece horas que no se pueden enviar`);
+    if (!/if \(i > 0 \|\| m > x\.ahoraN \+ cerca\) slots\.push\(m\)/.test(s) || !/const cerca = s\.k === "lista" \? LISTA_CERCA_MIN : MESA_CERCA_MIN;/.test(s))
+      falla(G, F, 0, "las horas de esta noche no se filtran con LISTA_CERCA_MIN / MESA_CERCA_MIN (el mismo margen que pide enviar())");
+  },
+  /* 9t · patrocinioDiasPorCalendario (confirmación 44658035571, pat002): los días comprados de un patrocinio se deducían de la duración; una compra
+     «hoy» en la última hora del día daba 6 días y, al terminarla, se devolvía el precio entero con un día ya usado. Desde 0194 se cuentan por el
+     calendario de la ciudad (patrocinio_dias_comprados, patrocinio_devolucion con tz). Lo que se teme: volver a la versión sin zona horaria o
+     a contar los días con la duración. Al revés: alreves9tpatrocinio. */
+  patrocinioDiasPorCalendario() {
+    const G = "patrocinioDiasPorCalendario", M = "packages/db/migrations/0194_patrocinio_dias_por_calendario.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta 0194 (los días comprados por el calendario de la ciudad)");
+    const m = readFileSync(M, "utf8");
+    if (!/b - \(\(date_trunc\('day', a at time zone tz\)\) at time zone tz\)/.test(m) || !/with x as \(select patrocinio_dias_comprados\(a, b, ext, tz\) as total,/.test(m))
+      falla(G, M, 0, "los días comprados no se miden desde la medianoche local del día en que empieza");
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f) || !existsSync(f)) continue;
+      const s = readFileSync(f, "utf8");
+      for (const x of s.matchAll(/patrocinio_devolucion\(/g)) {
+        // el último argumento es la zona horaria de la ciudad (ci.timezone / la de cities)
+        let k = x.index + x[0].length, n = 1, llaves = 0, ult = k;
+        for (; k < s.length && n > 0; k++) { const ch = s[k]; if (ch === "{") llaves++; else if (ch === "}") llaves--; else if (llaves) continue; else if (ch === "(") n++; else if (ch === ")") n--; else if (ch === "," && n === 1) ult = k + 1; }
+        if (!/timezone/.test(s.slice(ult, k - 1))) falla(G, f, s.slice(0, x.index).split("\n").length, "patrocinio_devolucion sin la zona horaria de la ciudad (la versión vieja cuenta los días por la duración)");
+      }
+      s.split("\n").forEach((l, i) => { if (/ceil\(\(?extract\(epoch from [a-z.]*ends_at - [a-z.]*starts_at\)[^\n]*1 \/ 24\.0/.test(l)) falla(G, f, i + 1, "los días comprados de un patrocinio salen de la duración: usar patrocinio_dias_comprados"); });
+    }
   },
 };
 

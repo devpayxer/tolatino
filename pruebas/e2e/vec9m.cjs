@@ -239,7 +239,11 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     ok(/PASO 3 DE 5/.test(await texto(po)) && /¿Por dónde vives\?/.test(await texto(po)), 'después de «Tú» sigue a «Tu zona» (paso 3 de 5), no a Mi cuenta mínima');
     await shot(po, 'onb-zona-390');
     await po.getByText('North End', { exact: true }).click(); await po.getByRole('button', { name: 'Continuar' }).click();
-    await po.locator('[data-pantalla="ONB-USR-4"]').waitFor(); await po.getByRole('button', { name: 'Continuar' }).click();
+    await po.locator('[data-pantalla="ONB-USR-4"]').waitFor();
+    // Confirmación 44658035571: la barra de arriba (botones de 44) pedía 405 px, la página se ensanchaba y «Continuar» quedaba fuera de la vista.
+    const ancho = await po.evaluate(() => [document.documentElement.scrollWidth, innerWidth, visualViewport.width]);
+    ok(ancho[0] === 390 && ancho[1] === 390, `pasos 2 a 4 a 390: la página no se ensancha (${ancho.join(' / ')} px) y «Continuar» se ve`);
+    await po.getByRole('button', { name: 'Continuar' }).click();
     await po.locator('[data-pantalla="ONB-USR-5"]').waitFor();
     await po.getByRole('checkbox', { name: 'Acepto las reglas del barrio' }).click(); await po.getByRole('checkbox', { name: 'Tengo 18 años o más' }).click();
     await po.getByRole('button', { name: "Entrar a To'Latino" }).click();

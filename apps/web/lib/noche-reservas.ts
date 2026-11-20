@@ -61,6 +61,8 @@ const hm = (s: string) => { const [h, m] = s.split(":").map(Number) as [number, 
 export type NocheOpcion = { fecha: string; dow: number; abre: boolean; slots: number[]; cupo: number | null; cover: number; after: { min: number; cents: number } | null; llena: boolean; cierra: number | null };
 /* Las noches (hoy y 6 más) con las horas de llegada: cada 30 min desde que abre hasta la hora de la lista (lista) o 2 h antes del
    cierre (mesa); hoy, solo las que faltan (15 min de margen). El cupo de mesas sale de las reservas vivas, nunca al azar. */
+/* Lo más cerca que se puede pedir una hora de esta noche (min). La mesa: 15 de «respond_by» antes de la hora + 4 que pide enviar() = 19 → 20. */
+const LISTA_CERCA_MIN = 15, MESA_CERCA_MIN = 20;
 async function noches(c: Q, x: Ctx, s: Svc): Promise<NocheOpcion[]> {
   const h = await herramientaNoche(x.id, c);
   if (!h) return [];
@@ -76,7 +78,11 @@ async function noches(c: Q, x: Ctx, s: Svc): Promise<NocheOpcion[]> {
     const abre = Math.max(0, hm(rg[0]![0]) - 720), ult = rg[rg.length - 1]!, cierra = hm(ult[1]) <= hm(ult[0]) ? hm(ult[1]) + 720 : hm(ult[1]) - 720;
     const hasta = s.k === "lista" ? (h.listaHasta ?? 660) - 30 : cierra - 120;
     const slots: number[] = [];
-    for (let m = Math.ceil(abre / 30) * 30; m <= hasta; m += 30) if (i > 0 || m > x.ahoraN + 15) slots.push(m);
+    // Esta noche: solo las horas que se pueden enviar. La mesa (no la lista) pide que el local tenga tiempo de contestar: enviar() rechaza si
+    // «respond_by» (la hora − 15 min) queda a 4 min o menos → la hora tiene que ser > ahora + 19. Antes se ofrecía > ahora + 15 y, en esa
+    // ventana de 4 minutos, se elegía una hora que el servidor rechazaba (confirmación 44658035571, noc4c). Guardián nocheHorasQueSeEnvian.
+    const cerca = s.k === "lista" ? LISTA_CERCA_MIN : MESA_CERCA_MIN;
+    for (let m = Math.ceil(abre / 30) * 30; m <= hasta; m += 30) if (i > 0 || m > x.ahoraN + cerca) slots.push(m);
     const u = usados.find((z) => z.d === n.fecha);
     const cupo = s.k === "lista" ? null : Math.max(0, s.tables - (u?.n ?? 0));
     const llena = s.k === "lista" && x.listCap != null && (u?.p ?? 0) >= x.listCap;

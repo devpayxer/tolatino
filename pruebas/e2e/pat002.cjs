@@ -201,6 +201,8 @@ let OP = null;
     ok(await espera(async () => sql(`select status || '|' || end_kind || '|' || end_reason from sponsorships where id = ${SID}`) === 'terminado|admin|El negocio pidió terminarlo.'), 'queda TERMINADO por To’Latino, con su motivo');
     const DV = sql(`select coalesce(refund_cents, 0) || '|' || coalesce(refund_days, 0) from sponsorships where id = ${SID}`).split('|').map(Number);
     // De madrugada (antes de que empiece su primer día) no se usó ninguno: devolver los 7 de 7 es lo justo (18 nov).
+    // 0194 · Comprada «hoy» en la última hora del día (23:30): 7 días comprados por el calendario; 6 sin usar → $14.57, no el precio entero.
+    ok(sql(`select d.cents || '|' || d.dias from patrocinio_devolucion('sin_usar', 1700, '2026-11-19 23:30 America/New_York', '2026-11-26 00:00 America/New_York', 0, 0, null, '2026-11-19 23:35 America/New_York', 'America/New_York') d`) === '1457|6', 'comprada a las 11:30 PM: se devuelven 6 de 7 días ($14.57), no el precio entero');
     ok(DV[0] > 0 && DV[0] <= 1700 && DV[1] >= 1 && DV[1] <= 7 && DV[0] === Math.floor(1700 * DV[1] / 7), `«Devolver» encendido de entrada: la base decide ${DV[1]} de 7 días ($${(DV[0] / 100).toFixed(2)}), en proporción`);
     ok(await espera(async () => sql(`select amount_cents || '|' || refund_motive from sponsorship_payments where kind = 'negocio' and ref_id = ${SID} and reason = 'devolucion'`) === `${DV[0]}|admin`), 'el libro: la devolución de esa parte (una fila)');
     ok(await espera(async () => sql(`select count(*) from notifications where tpl = 'biz_patrocinio_devuelto' and user_id = '${D0}' and created_at > now() - interval '2 minutes'`) !== '0'), 'aviso al dueño: «Te devolvimos lo que no se usó»');

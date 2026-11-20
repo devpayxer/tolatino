@@ -28,7 +28,8 @@ async function reservar(p, svc, { pax = 2, card = true, horasMin = 1 } = {}) {
     if (!/^[A-ZÁÉÍÓÚ]{3} \d+$/.test(lab)) continue;
     await clic(p.getByRole('radio', { name: lab, exact: true }));
     const horas = await p.locator('[role="radio"][aria-label$=" PM"]:not([aria-disabled="true"]), [role="radio"][aria-label$=" AM"]:not([aria-disabled="true"])').evaluateAll((L) => L.map((e) => e.getAttribute('aria-label')));
-    if (horas.length >= horasMin) { await clic(p.getByRole('radio', { name: horas[0], exact: true })); elegido = true; break; }
+    // Cada hora sale dos veces en la página (el teléfono y el escritorio pintan su tira): se cuentan las distintas (confirmación 44658035571).
+    if (new Set(horas).size >= horasMin) { await clic(p.getByRole('radio', { name: horas[0], exact: true })); elegido = true; break; }
   }
   void dias; if (!elegido) throw new Error('sin noche con horas');
   await clic(p.getByRole('button', { name: 'Continuar' }));
@@ -99,7 +100,7 @@ async function reservar(p, svc, { pax = 2, card = true, horasMin = 1 } = {}) {
   await neg.goto(`${B}/panel/${NEG}/hoy?det=noche:${M4}`); await neg.getByText('SI CONFIRMAS, QUEDAN').first().waitFor();
   await clic(neg.getByRole('button', { name: 'Otra hora' }));
   await neg.getByText('¿A QUÉ HORA SÍ TIENES MESA?').first().waitFor();
-  await clic(neg.getByText(/^\d{1,2}(:\d{2})? (PM|AM)$/).last());
+  await clic(neg.getByRole('button', { name: /^\d{1,2}(:\d{2})? (PM|AM)$/, disabled: false }).last()); // una que se pueda tocar (de noche hay horas apagadas)
   ok(await espera(() => st(M4) === 'change_proposed'), 'otra hora propuesta');
   await cli.goto(`${B}/noche/${M4}`); await cli.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   await clic(cli.getByRole('button', { name: 'Aceptar esta hora' }));

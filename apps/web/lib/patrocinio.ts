@@ -117,14 +117,15 @@ export function errorDePuestos(e: unknown): ResPat | null {
   return null;
 }
 
-/* ── Devolver lo que no se usó (0175) ── */
+/* ── Devolver lo que no se usó (0175; 0194: los días comprados por el calendario de la ciudad) ── */
 /* Lo que se devuelve lo decide la base al terminar (patrocinio_devolucion), en el MISMO update que termina el patrocinio, y queda escrito una vez
    (refund_cents; el trigger no deja cambiarlo). `modo` y `motivo` son expresiones SQL fijas del código (nunca de la pantalla): 'todo' (una reserva
    que no empezó), 'sin_usar' (los días enteros que faltaban), 'pausa' (lo que estuvo en pausa y no se pudo devolver alargando) o 'nada'. */
 export type ModoDev = "'todo'" | "'sin_usar'" | "'pausa'" | "'nada'" | `case ${string} end`;
 export const DEVOLUCION = (modo: ModoDev, motivo: string, pausa: boolean, t = "") =>
   `(refund_cents, refund_days, refund_motive) = (select nullif(d.cents, 0), case when d.cents > 0 then d.dias end, case when d.cents > 0 then ${motivo} end
-     from patrocinio_devolucion(${modo}, ${t}price_cents, ${t}starts_at, ${t}ends_at, ${pausa ? `${t}extended_secs, ${t}paused_secs, ${t}paused_at` : "0, 0, null"}, now()) d)`;
+     from patrocinio_devolucion(${modo}, ${t}price_cents, ${t}starts_at, ${t}ends_at, ${pausa ? `${t}extended_secs, ${t}paused_secs, ${t}paused_at` : "0, 0, null"}, now(),
+                                (select ci.timezone from cities ci where ci.id = ${t}city_id)) d)`;
 
 /* La devolución en la pasarela de lo que el patrocinio decidió al terminar: una por patrocinio (la llave de Stripe y el índice único del libro),
    nunca más que lo cobrado (y la base lo vuelve a revisar al insertar). Deja UNA fila 'devolucion' en el libro (solo inserción), la auditoría y
@@ -134,7 +135,7 @@ export async function devolverPatrocinio(kind: "negocio" | "evento", id: string)
   const T = kind === "negocio" ? "sponsorships" : "event_sponsorships", ev = kind === "evento";
   const s = (await db().query<{ cents: number; dias: number; motivo: string; negocio: string; ciudad: string; evento: string | null; total: number; pago: string; pi: string; marca: string | null; l4: string | null; payer: string; cobrado: number; ya: boolean }>(
     `select s.refund_cents as cents, s.refund_days as dias, s.refund_motive as motivo, s.business_id as negocio, s.city_id as ciudad, ${ev ? "s.event_id::text" : "null::text"} as evento,
-            greatest(1, ceil((extract(epoch from s.ends_at - s.starts_at) - ${ev ? "s.extended_secs" : "0"}) / 86400.0 - 1 / 24.0))::int as total,
+            patrocinio_dias_comprados(s.starts_at, s.ends_at, ${ev ? "s.extended_secs" : "0"}, (select ci.timezone from cities ci where ci.id = s.city_id)) as total,
             p.id::text as pago, p.pi, p.card_brand as marca, p.card_last4 as l4, p.payer_user_id::text as payer, p.amount_cents as cobrado,
             exists (select 1 from sponsorship_payments r where r.kind = $1 and r.ref_id = s.id and r.reason = 'devolucion') as ya
        from ${T} s join sponsorship_payments p on p.kind = $1 and p.ref_id = s.id and p.reason <> 'devolucion'
@@ -520,7 +521,7 @@ export async function patrociniosAdmin(ciudades: string[], ciudad: string | null
             to_char(s.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as desde, to_char(s.ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as hasta,
             s.price_cents as precio, coalesce(pg.n, 0)::int as pagado, coalesce(pg.dev, 0)::int as devuelto, s.auto_renew as renovar,
             s.end_kind as "finKind", s.end_reason as "finMotivo", coalesce(st.views, 0)::int as vistas, coalesce(st.entries, 0)::int as entraron, coalesce(st.orders, 0)::int as pedidos,
-            case when s.status in ('activo', 'reservado') then (select d.cents from patrocinio_devolucion('sin_usar', s.price_cents, s.starts_at, s.ends_at, 0, 0, null, now()) d) else 0 end as "aDevolver", false as pausado
+            case when s.status in ('activo', 'reservado') then (select d.cents from patrocinio_devolucion('sin_usar', s.price_cents, s.starts_at, s.ends_at, 0, 0, null, now(), ci.timezone) d) else 0 end as "aDevolver", false as pausado
        from sponsorships s join businesses b on b.id = s.business_id join categories c on c.id = s.category_id join cities ci on ci.id = s.city_id
        left join sponsorship_stats st on st.kind = 'negocio' and st.ref_id = s.id
        left join lateral (select sum(p.amount_cents) filter (where p.reason <> 'devolucion') as n, sum(p.amount_cents) filter (where p.reason = 'devolucion') as dev
