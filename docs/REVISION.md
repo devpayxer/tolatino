@@ -5836,6 +5836,11 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   - *Una foto retenida no se adjunta a nada:* quien la sube ve «está en revisión» y, cuando se aprueba, recibe el aviso y al volver a subirla
     entra directo (se recuerda por su contenido). La alternativa (que se adjunte sola al aprobarse) pide saber a dónde iba cada foto.
   - *Fotos que van solo a un negocio* (solicitudes, citas, estimados, viajes): nunca van a la segunda opinión; si salen dudosas quedan retenidas.
+    **Corrección del 20 nov (la cazó el CI 44816865838):** si el modelo propio no responde, una foto de estas ENTRA igual, como antes de
+    esta función, y queda contada en el libro de veredictos. Retenerla rompía operaciones que no pueden esperar (adjuntar la foto a una
+    cita o a un estimado, pesar con foto en el mercado). Las fotos PÚBLICAS siguen igual: sin modelo no se publican. El riesgo que queda
+    (alguien que marque como privada una foto para saltarse la revisión mientras el modelo está caído) se cierra del todo cuando las
+    fotos privadas pasen a una dirección privada (fase F3 de fotos).
   - *En el sandbox la segunda opinión es simulada* (como El Compa sin llave): aprueba lo dudoso. En producción sin llave no hay segunda opinión.
 
 ## Fotos a la medida (decisión AI) — ya está en el sandbox (20 nov, commit 2963479)
