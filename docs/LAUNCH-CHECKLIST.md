@@ -1977,3 +1977,20 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       pierda toques; revisar las demás pruebas que tocan «+» seguido. (20 nov)
 - [ ] **→ 9b** · **`evt9t`: /eventos tardó más de 30 s en cargar una vez** (CI repartido 44743122204, parte 3/4, Chromium). Sin causa todavía;
       el CI ahora imprime lo último del servidor cuando algo cae. Mirarlo si se repite. (20 nov)
+
+
+## Fotos a la medida (decisión AI, 20 nov) — lo que quedó fuera y lo que vio el inventario
+- [ ] **→ 9t** · **Las fotos públicas no pasan por revisión de contenido al subir:** `/api/medios` (portada y galería del negocio, menú, reseñas,
+      eventos, novedades, foto de perfil) guarda la foto ya visible; solo las de Mensajes y las de Comunidad pasan por el modelo propio
+      (`revisarImagen`). Decidir con el fundador si las públicas también pasan (y qué se hace mientras se revisan) y construirlo. (20 nov)
+- [ ] **→ 9t** · **La limpieza de las fotos de ayuda a los 90 días no corre:** `purgarFotosAyuda()` (`lib/ayuda-cita.ts`) existe pero nadie la
+      llama (el barrido no la tiene) y la ruta promete borrarlas 90 días después de cerrar. Registrarla en el barrido, con su guardián. (20 nov)
+- [ ] **→ 9t** · **Fotos a la medida · privadas (F3):** variantes de las fotos de Mensajes, ayuda, entrega y reclamo bajo `privado/…`,
+      entregadas por su misma ruta con permiso (`?w=`). Hoy una miniatura del chat baja la foto entera. (20 nov)
+- [ ] **→ 9t** · **Fotos a la medida · después:** AVIF para los anchos grandes; el color dominante mientras carga (hoy, el fondo neutro del
+      sistema); variantes del póster del video del negocio (`/medios/v/…jpg`, que además no está en la regla de caché de Cloudflare). (20 nov)
+- [ ] **→ 9t** · **Fotos guardadas como texto fuera de `media`:** `menu_items.photos text[]`, `users.photo_url`, `subcategories.photo_url`,
+      `business_members.photo_url`, y `businesses.logo_url` (sin lector: el logo vive en `media`). Unificar o retirar lo que no se usa. Dos
+      índices que se pisan en `media` (`media_chat_subidas_idx` y `media_msj_subidas_idx`). (20 nov)
+- [ ] **→ 9t** · **Las rutas de fotos y video cargan el archivo entero en memoria** (12 MB por foto, 120 MB por video) y las privadas se
+      entregan sin `Range` ni `ETag`. Medir con carga y, si pesa, pasar a flujo. (20 nov)
