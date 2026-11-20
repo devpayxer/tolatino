@@ -51,7 +51,7 @@ on:
         description: "En cuántos trabajos paralelos se reparte cada carril largo (cada parte en su base nueva; cada prueba prepara sus datos)"
         type: choice
         options: ["1", "4"]
-        default: "1"
+        default: "4"
 
 permissions:
   contents: read
@@ -228,20 +228,20 @@ jobs:
   # las fases, UNA a la vez. No se reparte por grupos: las pruebas se heredan datos (las de la fase 4 dependen de las de la 2, com5g del plan que deja
   # free2b…); repartidas en trabajos con base propia fallaron 30 de 199 en la primera corrida (13 nov) por eso, no por la app.
   regresion:
-    name: punta a punta · ${{ matrix.nombre }}${{ (inputs.partes || '1') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes) || '' }}
+    name: punta a punta · ${{ matrix.nombre }}${{ (inputs.partes || '4') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '4') || '' }}
     needs: web
     if: ${{ (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
     # 20 nov · Cada carril se reparte en `partes` trabajos (por posición, el mismo reparto en cada corrida), cada uno con su base
-    # nueva. Exige que cada prueba prepare sus propios datos (precondicionPropia). Con 1 parte es lo de siempre.
+    # nueva. Exige que cada prueba prepare sus propios datos (precondicionPropia). Por defecto 4 (también en push y programado); 1 = un solo trabajo.
     strategy:
       fail-fast: false
       matrix:
         # Con confirmar=si (y sin «solo»), «todas las fases» sería repetir la primera pasada de «confirmación · dos veces seguidas» (el mismo
         # comando en base nueva): corre una sola vez, allá. Sin confirmar, corre aquí como siempre.
         nombre: ${{ fromJSON((inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]') }}
-        parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}
+        parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}
     steps:
       # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>».
       - uses: actions/checkout@v4
@@ -258,7 +258,7 @@ jobs:
         if: ${{ matrix.nombre == 'al revés' || contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de ${{ matrix.nombre }} en base nueva
-        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
+        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -277,7 +277,7 @@ jobs:
   # La confirmación de 9b-1 (solo a mano, confirmar=si): toda la punta a punta DOS veces seguidas sobre la misma base (lo que una corrida no limpia) y,
   # en otra base, una vez barajada (lo que depende del orden). Cada una en su trabajo: juntas pasarían de las 6 horas que da GitHub.
   confirmacion:
-    name: confirmación · ${{ matrix.nombre }}${{ (inputs.partes || '1') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes) || '' }}
+    name: confirmación · ${{ matrix.nombre }}${{ (inputs.partes || '4') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '4') || '' }}
     needs: web
     if: ${{ inputs.confirmar == 'si' && (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
@@ -286,7 +286,7 @@ jobs:
       fail-fast: false
       matrix:
         nombre: ["dos veces seguidas", "barajada"]
-        parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}
+        parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -297,10 +297,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
       - name: Primera pasada
-        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.nombre == 'barajada' && format('--barajar {0}', inputs.semilla) || '' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.nombre == 'barajada' && format('--barajar {0}', inputs.semilla) || '' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
       - name: Segunda pasada, en la MISMA base
         if: ${{ matrix.nombre == 'dos veces seguidas' }}
-        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -365,7 +365,7 @@ jobs:
   # 375), la tableta (iPad, 820) y el escritorio más angosto (1024); los anchos de en medio los cubren la regresión de siempre (390 y 1360) y
   # disp9b + capturas + axe en los 9. El repo es público: el CI no cuesta minutos. A mano: anchos=si.
   anchos:
-    name: punta a punta · ancho ${{ matrix.id }}${{ (inputs.partes || '1') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes) || '' }}
+    name: punta a punta · ancho ${{ matrix.id }}${{ (inputs.partes || '4') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '4') || '' }}
     needs: web
     if: ${{ github.event_name == 'schedule' || inputs.anchos == 'si' }}
     runs-on: ubuntu-latest
@@ -374,7 +374,7 @@ jobs:
       fail-fast: false
       matrix:
         id: [iphone-se, ipad, escritorio-1024]
-        parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}
+        parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -388,7 +388,7 @@ jobs:
         if: ${{ contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
       - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
-        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar
+        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true

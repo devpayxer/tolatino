@@ -7922,7 +7922,7 @@ const guardianes = {
     // (--parte i/n). Se permite porque cada prueba prepara sus datos (precondicionPropia); lo que se teme es un reparto a medias: una parte que no
     // corre (la matriz sin la parte o un --parte fijo) o un carril que se reparte y otro no.
     const cf = /\n  confirmacion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", an0 = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
-    const PM = "parte: ${{ fromJSON((inputs.partes || '1') == '4' && '[1,2,3,4]' || '[1]') }}", PA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '1' }}";
+    const PM = "parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}", PA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}";
     for (const [k, t, n] of [["regresion", rg, 1], ["confirmacion", cf, 2], ["anchos", an0, 1]]) {
       if (!t.includes(PM)) falla(G, Y, 0, `«${k}» no reparte su matriz en las partes pedidas (${PM})`);
       if (t.split(PA).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${PA} (ni fija ni olvidada)`);
@@ -11652,7 +11652,7 @@ const guardianes = {
     if ((c.match(/await correrUna\(t\)/g) ?? []).length !== 2) falla(G, C, 0, "una prueba se corre una vez y, si falla, UNA vez más (ni más ni un bucle)");
     if (!/else r = \{ \.\.\.r2, error: `\$\{r2\.error\} · dos veces seguidas/.test(c)) falla(G, C, 0, "la que falla dos veces es roja");
     if (!/console\.log\(`INESTABLES \(\$\{inestables\.length\}\)/.test(c) || !/GITHUB_STEP_SUMMARY/.test(c) || !/inestables\.json/.test(c)) falla(G, C, 0, "las inestables se dicen: al final de la corrida, en inestables.json y en el resumen del trabajo");
-    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '1' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
+    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
   },
   /* 9t · subidaReintenta (20 nov, confirmación 44734711575, msg9t en el iPhone SE): una foto normal recién elegida llegó al servidor sin
      archivo («No llegó la foto», 400). La app la reintenta UNA vez con el archivo original (lib/subir-foto.ts, mandar) y el servidor deja dicho
