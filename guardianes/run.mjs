@@ -9722,19 +9722,25 @@ const guardianes = {
      aviso (no loading.tsx: copia escondida del contenido). Prueba nav9t. Al revés (alreves9tnav). */
   respondeAlToque() {
     const G = "respondeAlToque", BN = "apps/web/app/BarraNavegacion.tsx", IC = "apps/web/instrumentation-client.ts", L = "apps/web/app/layout.tsx";
-    if (!existsSync(IC) || !/export function onRouterTransitionStart\(/.test(sinComent(IC)) || !/dispatchEvent\(new CustomEvent\("tl:navega"/.test(sinComent(IC))) falla(G, IC, 0, "el aviso de Next de cada navegación (onRouterTransitionStart → «tl:navega»): sin él, un router.push de un botón no enciende la barra");
+    if (!existsSync(IC) || !/export function onRouterTransitionStart\(/.test(sinComent(IC)) || !/dispatchEvent\(new CustomEvent\("tl:navega"/.test(sinComent(IC))) falla(G, IC, 0, "el aviso de Next de cada navegación (onRouterTransitionStart → «tl:navega»): sin él, un router.push de un botón no responde en el toque");
     if (!existsSync(BN)) return falla(G, BN, 0, "falta la barra de navegación");
     const b = sinComent(BN);
-    if (!/window\.addEventListener\("tl:navega"/.test(b)) falla(G, BN, 0, "la barra escucha «tl:navega» (las navegaciones de botones, atrás y adelante)");
-    if (/\buseState\b/.test(b)) falla(G, BN, 0, "la barra no usa estado de React: un setState dentro de la transición de Next espera a la página nueva (se queda quieta)");
-    if (!/b\.dataset\.estado = estado/.test(b)) falla(G, BN, 0, "la barra se mueve tocando el DOM directo (dataset.estado)");
-    if (!/<BarraNavegacion \/>/.test(sinComent(L))) falla(G, L, 0, "la barra va montada en el layout raíz");
+    if (!/window\.addEventListener\("tl:navega"/.test(b)) falla(G, BN, 0, "se escucha «tl:navega» (las navegaciones de botones, atrás y adelante)");
+    if (/\buseState\b/.test(b)) falla(G, BN, 0, "sin estado de React: un setState dentro de la transición de Next espera a la página nueva (no respondería en el toque)");
+    // 20 nov · Decisión del fundador: sin la línea azul; responde el elemento tocado (se atenúa hasta que llega la página) y el apretado.
+    if (!/el\.setAttribute\("data-tl-tocado", ""\)/.test(b) || !/removeAttribute\("data-tl-tocado"\)/.test(b)) falla(G, BN, 0, "el elemento tocado se marca (data-tl-tocado) tocando el DOM directo y se suelta al llegar");
+    if (!/document\.addEventListener\("pointerdown", alApretar, true\)/.test(b) || !/empezar\(u\.href, a\)/.test(b)) falla(G, BN, 0, "se marca el enlace tocado y, en las navegaciones de botones, lo último que se apretó");
+    if (!/tics\.current\.push\(window\.setTimeout\(soltar, 12000\)\)/.test(b)) falla(G, BN, 0, "si la navegación no llega, el elemento se suelta solo a los 12 s");
+    { const cs = readFileSync("packages/ui/src/esqueleto.css", "utf8");
+      if (/tl-barra-nav/.test(cs) || /tl-barra-nav/.test(b)) falla(G, "packages/ui/src/esqueleto.css", 0, "volvió la línea de arriba (.tl-barra-nav): el fundador la quitó el 20 nov");
+      if (!/\[data-tl-tocado\] \{ opacity: \.55;/.test(cs) || !/:active:not\(:disabled\):not\(\[aria-disabled="true"\]\):not\(:has\(:active\)\) \{ opacity: \.7; \}/.test(cs)) falla(G, "packages/ui/src/esqueleto.css", 0, "falta el estilo del elemento tocado o del apretado (solo el de más adentro, nunca uno apagado)"); }
+    if (!/<BarraNavegacion \/>/.test(sinComent(L))) falla(G, L, 0, "la respuesta al toque va montada en el layout raíz");
     // El esqueleto lo pone Pendiente en el navegador, en el marco de la app y del Super Admin; NUNCA un loading.tsx (el flujo en dos partes
     // deja por un instante una copia escondida del contenido: fic005 y a11y9c lo cazaron con «strict mode»).
     const P = "apps/web/app/Pendiente.tsx";
     if (!existsSync(P) || !/window\.addEventListener\("tl:pendiente"/.test(sinComent(P))) falla(G, P, 0, "el esqueleto sale con el aviso de la barra («tl:pendiente»)");
     else if (!/window\.setTimeout\(\(\) => setTipo\(tipoDe\(destino\)\), 120\)/.test(sinComent(P))) falla(G, P, 0, "el esqueleto se pone con un temporizador (fuera de la transición de Next) y a los 120 ms (sin parpadeo)");
-    if (!/window\.dispatchEvent\(new CustomEvent\("tl:pendiente"/.test(b)) falla(G, BN, 0, "la barra avisa al esqueleto («tl:pendiente»)");
+    if (!/window\.dispatchEvent\(new CustomEvent\("tl:pendiente"/.test(b)) falla(G, BN, 0, "el toque avisa al esqueleto («tl:pendiente»)");
     if (!/<Pendiente>\{children\}<\/Pendiente>/.test(sinComent("apps/web/app/(app)/AppShell.tsx"))) falla(G, "apps/web/app/(app)/AppShell.tsx", 0, "el marco de la app envuelve la pantalla con <Pendiente>");
     if (!/<Pendiente>\{children\}<\/Pendiente>/.test(sinComent("apps/web/app/admin/layout.tsx"))) falla(G, "apps/web/app/admin/layout.tsx", 0, "el marco del Super Admin envuelve la pantalla con <Pendiente>");
     for (const f of archivos) if (/^apps\/web\/app\/(\(app\)|admin)\/.*loading\.tsx$/.test(f) && existsSync(f)) falla(G, f, 0, "sin loading.tsx en la app ni en el Super Admin: el esqueleto lo pone Pendiente (un loading.tsx deja una copia escondida del contenido)");

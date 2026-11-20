@@ -1,40 +1,48 @@
 "use client";
-/* 9t · La barra de navegación (pedido del fundador, 19 nov: «el sitio se queda como enganchado cuando das un click a un enlace»). Al tocar un
-   enlace interno sale al instante una barra fina arriba (--tl-action, esqueleto.css) que avanza mientras llega la página y se completa al
-   cambiar la dirección. Junto con los loading.tsx (esqueletos), la pantalla responde en el mismo toque.
-   Solo enlaces de este sitio a OTRA dirección, sin teclas de abrir aparte (Ctrl/⌘/Shift/Alt), sin target ni download, botón principal.
-   Además, el aviso de Next de cada navegación (router.push de un botón, atrás y adelante: instrumentation-client.ts → «tl:navega»).
-   Si la navegación no llega (sin señal, error), se apaga sola a los 12 s. No pinta nada mientras no hay navegación (pointer-events: none). */
+/* 9t · La pantalla responde en el mismo toque (pedido del fundador, 19 nov: «el sitio se queda como enganchado cuando das un click a un enlace»).
+   20 nov · Decisión del fundador: SIN la línea azul de arriba («no me gusta; prefiero algún tipo de hover al dar click a algún elemento»). Ahora
+   responde el elemento que se tocó: se atenúa al instante (data-tl-tocado; el estilo está en esqueleto.css, junto al de «apretado») y se queda
+   así hasta que llega la página nueva. El esqueleto de la pantalla que viene (app/Pendiente.tsx) sigue saliendo con el mismo aviso.
+   (El archivo conserva el nombre de cuando pintaba una barra: lo nombran el layout, el guardián respondeAlToque y sus pruebas.)
+   - Enlaces de este sitio a OTRA dirección, sin teclas de abrir aparte (Ctrl/⌘/Shift/Alt), sin target ni download, botón principal.
+   - Lo que no es un enlace (router.push de un botón o de una tarjeta, atrás y adelante): el aviso de Next de cada navegación
+     (instrumentation-client.ts → «tl:navega»); el elemento es el último que se apretó (hace menos de 1,5 s), si sigue en la página.
+   - Si la navegación no llega (sin señal, error), se suelta sola a los 12 s. No pinta nada propio. */
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-/* La barra se mueve tocando el DOM directo (no con estado de React): Next navega dentro de una transición de React y cualquier setState de ese
+const TOCABLE = 'a[href],button,[role="button"],[role="link"],[role="tab"],[role="menuitem"]';
+
+/* Todo se hace tocando el DOM directo (no con estado de React): Next navega dentro de una transición de React y cualquier setState de ese
    momento esperaría a que la página nueva llegue, que es justo lo que no queremos (19 nov: así se quedaba quieta con router.push). */
 export function BarraNavegacion() {
   const ruta = usePathname(), q = useSearchParams()?.toString() ?? "";
-  const barra = useRef<HTMLDivElement>(null);
   const tics = useRef<number[]>([]);
   const aqui = useRef(`${ruta}?${q}`);
-  const va = useRef(false);
+  const tocado = useRef<Element | null>(null);
+  const apretado = useRef<{ el: Element; t: number } | null>(null);
 
   const limpiar = () => { for (const t of tics.current) window.clearTimeout(t); tics.current = []; };
-  const poner = (estado: "quieta" | "va" | "fin", avance?: number) => {
-    const b = barra.current;
-    if (!b) return;
-    b.dataset.estado = estado;
-    b.style.transform = estado === "va" && avance !== undefined ? `scaleX(${avance})` : estado === "fin" ? "scaleX(1)" : "";
+  const soltar = () => { tocado.current?.removeAttribute("data-tl-tocado"); tocado.current = null; };
+  const marcar = (el: Element | null) => {
+    soltar();
+    if (!el || !el.isConnected) return;
+    el.setAttribute("data-tl-tocado", "");
+    tocado.current = el;
   };
 
   useEffect(() => {
-    // Empezar: sale al instante al 18 % y avanza rápido al principio y cada vez más lento (nunca llega sola al final): 45 → 65 → 80 → 88 %.
-    const empezar = (url: string) => {
+    const empezar = (url: string, el: Element | null) => {
       // El esqueleto de la pantalla que viene (app/Pendiente.tsx) sale con el mismo aviso.
       window.dispatchEvent(new CustomEvent("tl:pendiente", { detail: { url } }));
-      limpiar(); va.current = true;
-      poner("va", 0.18);
-      const pasos: [number, number][] = [[160, 0.45], [600, 0.65], [1500, 0.8], [3500, 0.88]];
-      for (const [ms, v] of pasos) tics.current.push(window.setTimeout(() => poner("va", v), ms));
-      tics.current.push(window.setTimeout(() => { va.current = false; poner("quieta"); }, 12000));
+      limpiar();
+      marcar(el);
+      tics.current.push(window.setTimeout(soltar, 12000));
+    };
+    // Lo último que se apretó (para las navegaciones que no vienen de un enlace).
+    const alApretar = (e: PointerEvent) => {
+      const el = (e.target as Element | null)?.closest?.(TOCABLE) ?? null;
+      apretado.current = el ? { el, t: Date.now() } : null;
     };
     // Un enlace de este sitio a OTRA dirección (fase de captura: antes que cualquier otro manejador).
     const alTocar = (e: MouseEvent) => {
@@ -45,18 +53,20 @@ export function BarraNavegacion() {
       try { u = new URL(a.href, location.href); } catch { return; }
       if (u.origin !== location.origin) return;
       if (u.pathname === location.pathname && u.search === location.search) return; // mismo lugar (o solo #ancla)
-      empezar(u.href);
+      empezar(u.href, a);
     };
     // Lo que no es un enlace (router.push de un botón, replace, atrás y adelante): el aviso de Next (instrumentation-client.ts).
     const alNavegar = (e: Event) => {
       const url = (e as CustomEvent<{ url: string }>).detail?.url;
       if (!url) return;
       try { const u = new URL(url, location.href); if (u.pathname === location.pathname && u.search === location.search) return; } catch { return; }
-      empezar(url);
+      const ap = apretado.current;
+      empezar(url, tocado.current ?? (ap && Date.now() - ap.t < 1500 ? ap.el : null));
     };
+    document.addEventListener("pointerdown", alApretar, true);
     document.addEventListener("click", alTocar, true);
     window.addEventListener("tl:navega", alNavegar);
-    return () => { document.removeEventListener("click", alTocar, true); window.removeEventListener("tl:navega", alNavegar); limpiar(); };
+    return () => { document.removeEventListener("pointerdown", alApretar, true); document.removeEventListener("click", alTocar, true); window.removeEventListener("tl:navega", alNavegar); limpiar(); soltar(); };
   }, []);
 
   // Terminar: cambió la dirección (la página nueva ya está).
@@ -65,11 +75,8 @@ export function BarraNavegacion() {
     if (ahora === aqui.current) return;
     aqui.current = ahora;
     limpiar();
-    if (!va.current) return;
-    va.current = false;
-    poner("fin");
-    tics.current.push(window.setTimeout(() => poner("quieta"), 450));
+    soltar();
   }, [ruta, q]);
 
-  return <div ref={barra} aria-hidden="true" className="tl-barra-nav" data-estado="quieta" />;
+  return null;
 }

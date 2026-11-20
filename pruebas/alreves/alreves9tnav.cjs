@@ -8,7 +8,12 @@ const casos = [
   [G, IC, 'window.dispatchEvent(new CustomEvent("tl:navega"', 'void (new CustomEvent("tl:navega"'],
   [G, BN, 'window.addEventListener("tl:navega", alNavegar);', ''],
   [G, BN, 'import { useEffect, useRef } from "react";', 'import { useEffect, useRef, useState } from "react";\nconst _x = useState;'],
-  [G, BN, 'b.dataset.estado = estado;', 'b.setAttribute("data-x", estado);'],
+  // 20 nov · sin la línea azul: responde el elemento tocado
+  [G, BN, 'el.setAttribute("data-tl-tocado", "");', 'el.setAttribute("data-x", "");'],
+  [G, BN, 'document.addEventListener("pointerdown", alApretar, true);', ''],
+  [G, BN, 'tics.current.push(window.setTimeout(soltar, 12000));', ''],
+  [G, 'packages/ui/src/esqueleto.css', '[data-tl-tocado] { opacity: .55; transition: opacity .1s ease-out; }', '.tl-barra-nav { position: fixed; top: 0; height: 3px; background: var(--tl-action); }'],
+  [G, 'packages/ui/src/esqueleto.css', ':not(:has(:active)) { opacity: .7; }', ' { opacity: .7; }'],
   [G, 'apps/web/app/layout.tsx', '<BarraNavegacion />', ''],
   [G, 'apps/web/app/Pendiente.tsx', 'window.addEventListener("tl:pendiente", alEmpezar);', ''],
   [G, 'apps/web/app/Pendiente.tsx', 'tics.current.push(window.setTimeout(() => setTipo(tipoDe(destino)), 120));', 'setTipo(tipoDe(destino));'],

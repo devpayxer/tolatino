@@ -48,7 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       {/* 8a · Dentro de una de las cuatro cáscaras: splash, botón «atrás» y registro técnico (en la web no hace nada). */}
       {/* 9b-1 · El «ahora» de los tiempos relativos («hace 5 min»): el mismo en el servidor y en la hidratación (lib/ahora.tsx). */}
       {/* 9f-3 · Lo editado de los textos de las pantallas, antes que cualquier componente de cliente (app/_cms/EdicionesE2.tsx). */}
-      {/* 9t · La barra de navegación: responde en el mismo toque de un enlace (app/BarraNavegacion.tsx; app/Pendiente.tsx pone el esqueleto). */}
+      {/* 9t · La pantalla responde en el mismo toque: el elemento tocado se atenúa (app/BarraNavegacion.tsx, sin barra desde el 20 nov) y app/Pendiente.tsx pone el esqueleto. */}
       <body><EdicionesE2 v={ed.v} l={ed.l}><AhoraProvider t={Date.now()}>{children}<Suspense fallback={null}><BarraNavegacion /></Suspense><Arranque /><FocoHojas /><Vitales /></AhoraProvider></EdicionesE2></body>
     </html>
   );

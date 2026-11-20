@@ -1,18 +1,17 @@
-/* 9t · Respuesta inmediata al tocar un enlace (pedido del fundador, 19 nov): la barra de navegación arriba y los esqueletos de carga.
-   Colores del sistema: el esqueleto es el «fondo de foto mientras carga» (--tl-photo-bg) y la barra es lo interactivo (--tl-action).
-   Movimiento suave; con «reducir movimiento» del teléfono, quieto. Lo pinta packages/ui/src/core/Esqueleto.tsx y app/BarraNavegacion.tsx. */
+/* 9t · Respuesta inmediata al tocar (pedido del fundador, 19 nov): los esqueletos de carga y, desde el 20 nov, el elemento tocado que se
+   atenúa (la línea de arriba se quitó). Color del sistema: el esqueleto es el «fondo de foto mientras carga» (--tl-photo-bg).
+   Movimiento suave; con «reducir movimiento» del teléfono, quieto. Lo pinta packages/ui/src/core/Esqueleto.tsx; el toque, app/BarraNavegacion.tsx. */
 @keyframes tl-esq-pulso { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
 .tl-esq { background: var(--tl-photo-bg); border-radius: var(--radius-9, 9px); animation: tl-esq-pulso 1.4s ease-in-out infinite; }
 .tl-esq-suave { background: var(--tl-paper-2); }
-.tl-barra-nav {
-  position: fixed; top: 0; left: 0; z-index: 2147483000; height: 3px; width: 100%; pointer-events: none;
-  background: var(--tl-action); transform-origin: 0 50%; transform: scaleX(0); opacity: 0;
-  transition: transform .2s ease-out, opacity .25s ease-out;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--tl-action) 45%, transparent);
-}
-.tl-barra-nav[data-estado="va"] { opacity: 1; }
-.tl-barra-nav[data-estado="fin"] { opacity: 0; transform: scaleX(1); transition: transform .15s ease-out, opacity .3s ease-out .12s; }
+/* 20 nov · El toque responde en el elemento (decisión del fundador: sin la línea azul de arriba, «prefiero algún tipo de hover al dar click»).
+   - Apretado: mientras el dedo (o el ratón) está sobre un control, se atenúa. Solo el control de más adentro (un corazón dentro de una tarjeta
+     no atenúa la tarjeta entera) y nunca uno apagado.
+   - Tocado (data-tl-tocado, lo pone app/BarraNavegacion.tsx): el control que empezó una navegación se queda atenuado hasta que llega la
+     página nueva. */
+:is(a[href], button, [role="button"], [role="link"], [role="tab"], [role="menuitem"]):active:not(:disabled):not([aria-disabled="true"]):not(:has(:active)) { opacity: .7; }
+[data-tl-tocado] { opacity: .55; transition: opacity .1s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   .tl-esq { animation: none; }
-  .tl-barra-nav { transition: opacity .2s linear; }
+  [data-tl-tocado] { transition: none; }
 }
