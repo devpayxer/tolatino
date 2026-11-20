@@ -39,6 +39,8 @@ const casos = [
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'timeout -k 15 "$t" "$@" && return 0;', 'timeout "$t" "$@" && return 0;'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'Acquire::ForceIPv4 "true";', 'Acquire::ForceIPv4 "false";'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'if [ "$t" -ge 900 ]; then', 'if false; then'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'path: ~/apt-archivos/*.deb', 'path: ~/otra-carpeta'],
+  ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'Dir::Cache::Archives "%s/";', 'Dir::Etc::Nada "%s/";'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'sudo dpkg --configure -a > "$L" 2>&1 || true', 'sudo pkill -9 -x apt-get 2> /dev/null || true'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', '> "$RUNNER_TEMP/playwright.log") || {', '> /dev/null) || {'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'wait $! || { echo "--- apt falló; lo último que dijo:" >&2; tail -n 25 "$L" >&2; exit 1; }', 'wait $!'],

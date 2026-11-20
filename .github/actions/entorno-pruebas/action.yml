@@ -52,6 +52,13 @@ runs:
           sleep 5; t=$((t + 5))
           if [ "$t" -ge 900 ]; then echo "::warning::el apt del sistema sigue ocupado tras 15 min: se sigue igual"; break; fi
         done
+        # 20 nov (CI 44814175223, por fin con lo que dijo apt) · La causa de verdad: el espejo de paquetes de la máquina
+        # (azure.archive.ubuntu.com) a veces va lentísimo. Cuatro trabajos se quedaron bajando el MISMO archivo de 13 MB (libflite1) hasta
+        # agotar el tope; el reintento lo terminó, pero el paso tardó 23 min. La espera de arriba no era la causa (nadie más ocupaba apt):
+        # se queda como red de seguridad. Ahora los paquetes ya bajados se guardan entre corridas (el paso de caché de abajo): apt los toma
+        # de esta carpeta y solo baja lo que cambió.
+        mkdir -p "$HOME/apt-archivos/partial"
+        printf 'Dir::Cache::Archives "%s/";\nAPT::Keep-Downloaded-Packages "true";\nBinary::apt::APT::Keep-Downloaded-Packages "true";\nAPT::Sandbox::User "root";\n' "$HOME/apt-archivos" | sudo tee /etc/apt/apt.conf.d/99-archivos-guardados > /dev/null
         cat > "$RUNNER_TEMP/instala.sh" <<'FIN'
         #!/bin/bash
         L="$RUNNER_TEMP/apt.log"
@@ -62,6 +69,19 @@ runs:
         FIN
         . "$RUNNER_TEMP/reintenta.sh"
         reintenta 180 python3 -m pip install -q pillow
+    - name: La semana (llave de los paquetes guardados)
+      id: semana
+      shell: bash
+      run: echo "s=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+    # Solo los .deb (el candado y la carpeta partial de apt son de root y no se pueden leer al guardar). La llave cambia cada semana para
+    # que no se quede con paquetes viejos; entre semanas se parte de la anterior.
+    - name: Paquetes del sistema ya bajados (el espejo de Ubuntu a veces va lentísimo)
+      uses: actions/cache@v4
+      with:
+        path: ~/apt-archivos/*.deb
+        key: apt-${{ runner.os }}-${{ inputs.navegadores }}-${{ steps.semana.outputs.s }}
+        restore-keys: |
+          apt-${{ runner.os }}-${{ inputs.navegadores }}-
     - name: Herramientas de las pruebas (versiones exactas) y navegadores
       shell: bash
       run: |
@@ -70,6 +90,7 @@ runs:
         reintenta 420 bash "$RUNNER_TEMP/instala.sh" psmisc ffmpeg > /dev/null  # C-001: ffmpeg para el servicio de video propio (vid001 lo levanta en :8791)
         reintenta 300 npm ci --ignore-scripts --prefix pruebas/herramientas > /dev/null
         (cd pruebas/herramientas && reintenta 600 npx playwright install --with-deps ${{ inputs.navegadores }} > "$RUNNER_TEMP/playwright.log") || { echo "--- Playwright no terminó de instalar; lo último que dijo:"; tail -n 30 "$RUNNER_TEMP/playwright.log"; exit 1; }
+        sudo chmod -R a+rX "$HOME/apt-archivos" 2> /dev/null || true   # que la caché pueda leer lo que apt bajó como root
         echo "NODE_PATH=$GITHUB_WORKSPACE/pruebas/herramientas/node_modules" >> "$GITHUB_ENV"
         echo "PRUEBAS_SALIDA=$RUNNER_TEMP/salida" >> "$GITHUB_ENV"
     - name: Una segunda dirección de esta máquina (llave8d prueba una página que NO es localhost, sin contexto seguro)
