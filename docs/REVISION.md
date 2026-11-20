@@ -5818,3 +5818,13 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   es gris se ve bastante clara mientras carga.
 - **Las estrellas de «¿Cómo estuvo?» (20 nov):** en teléfonos angostos (320 px) cada estrella mide ahora 44 o más. Qué mirar: después de un
   pedido o una cita de hoy, la ficha del negocio en un teléfono chico.
+
+## Revisión automática de fotos (decisión AJ, 20 nov) — valores que elegí y puedes cambiar
+- **Qué mirar cuando esté en el sandbox:** subir una foto normal (se publica al instante), y ver en Super Admin › Contenido › Auto-moderación las
+  cuatro capas con sus interruptores.
+- **Valores por defecto** (todos se cambian en Configuración): duda desde 0.60 · rechazo solo desde 0.85 · una foto se oculta sola con 3 reportes
+  de cuentas distintas · confianza ganada = negocio verificado + 10 fotos visibles + ninguna quitada en 90 días · cuenta nueva (menos de 7 días):
+  10 fotos por hora.
+- **Lo que decide Claude (capa 2) cuesta dinero por foto dudosa:** va con tope mensual, apagada hasta que haya llave; sin llave o sin presupuesto,
+  las dudosas quedan retenidas con «Pedir revisión». Es el único servicio de fuera, y es el mismo que ya usa El Compa (no es uno nuevo).
+- **Elegí lo más seguro:** ante la duda la foto se retiene, no se publica. Si ves que retiene demasiado, se sube el umbral de duda.
