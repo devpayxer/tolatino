@@ -81,6 +81,9 @@ probado contra simuladores. Sin resúmenes a mitad de camino: una línea de avan
 **Desde el 14 nov (decisión AD):** en el sandbox cada bloque pasa tipos, build, guardianes, al revés y sus pruebas de punta a punta
 (CI dirigido) y sube; la confirmación completa de CI corre solo en hitos (cierre de 9b-3, después de 9k, al terminar 9o). Producción: siempre
 confirmación completa + OK.
+**Desde el 20 nov (decisión AE):** un bug con la app abierta se contiene primero (interruptor o versión anterior) y se arregla por el camino
+normal. Solo lo grave (seguridad, cobro mal hecho, app caída) va por la vía urgente: revisión rápida + prueba corta en producción, con la
+confirmación completa justo después y vuelta atrás automática si caza algo. Siempre con el OK del fundador.
 
 ## Ramas
 `main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que

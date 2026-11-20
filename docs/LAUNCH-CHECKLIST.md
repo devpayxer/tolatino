@@ -1790,6 +1790,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9t** · **El SMS crítico cuando la app está caída:** Alertmanager manda el correo directo (sale aunque la app esté caída) y avisa por la app (push y SMS al equipo) cuando la app contesta; un SMS que no dependa de la app (Telnyx desde la réplica) no se construyó. (9o, 14 nov)
 - [ ] **→ 9t** · **Reconstruir la base o la réplica en máquinas:** el ensayo pierde y reconstruye la app; base y réplica tienen el mismo camino (`maquinas.sh reconstruir`, su disco aparte se vuelve a montar o PITR desde el almacén, estado provisional por la red privada) pero no se ensayaron. Se ensayan sobre producción en acceso anticipado antes de OK-3. (9o, 14 nov)
 
+- [ ] **→ 9o** · **Vía urgente (DECISIONES AE, 20 nov):** un arreglo marcado «urgente» (seguridad, cobro mal hecho, app caída; con su motivo en la
+      auditoría) sale a producción con la revisión rápida + una prueba corta contra producción ya desplegada (entrar, buscar, pedir, pagar en el
+      simulador, Super Admin); la confirmación completa corre justo después sobre ese mismo paquete y, si cae, producción vuelve sola a la versión
+      anterior. Guardián: un despliegue urgente sin motivo, sin la prueba corta o sin la confirmación de después. (20 nov)
+
+
 ## Fase 9 · 9l — avisos, correo y canales listos (14 nov)
 - [x] **Cerradas con su evidencia** (marcadas «✓ 9l» arriba): recomendar, «Avísame cuando haya», invitación al equipo y «Reenviar», prueba de Pro, sello y foto
       reportada, quedan pocos, seguimiento y «llegó», reseña nueva, SMS de empleos, verificar el correo y recibos, «cambiaste tu número», Soporte por WhatsApp y
