@@ -20,6 +20,14 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (tarde, después) · `main` y `pruebas` = c704b47, sandbox comprobado desde fuera** (estado-sandbox 44905950003: salud con commit
+  c704b47b, **0203 aplicada, 202 migraciones**, servicio de video reiniciado, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia:
+  revisión completa **44902103048 VERDE, 0 rojas y 1 inestable** (`app8a`, arreglada después en la rama de trabajo: esperaba poco). Subió:
+  **dinero 9t5** (el servidor le pregunta a Stripe), **medios en flujo** (video sin 120 MB en memoria, fotos privadas en flujo) y el arreglo de
+  la foto privada que colgaba el pedido. **En curso:** dinero 9t6 (lo que quedó de 9t5: retenciones con «sin respuesta», cerrar `gateway_review`,
+  devoluciones atascadas) lo escribe Opus en su worktree; al volver lo revisa Fable (tipos, guardianes, al revés, `din9t6` y las de dinero contra
+  el servidor local) antes del CI. **Sigue pendiente para producción:** una confirmación completa (dos veces + barajada + anchos) con 3 inestables
+  o menos; la causa del toque en el detalle del panel en iPad (`dlv2f4`, la sonda sigue puesta).
 - **21 nov (tarde) · la revisión completa 44892361124 (9t5 + medios en flujo, b7e4273) salió ROJA por dos pruebas: `dm9t` (25 min, se detiene) y
   `rev9u2` (30 s esperando la página).** Causa real, del producto: una foto privada que no está en el almacén dejaba el pedido colgado (el fetch
   de Next parte el cuerpo de un GET sin `signal`; `abrirObjeto` esperaba un cancel que no termina). Arreglado y con guardián (LAUNCH, «Una foto

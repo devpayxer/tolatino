@@ -5945,7 +5945,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   dice la salida («Bórralo para enviar sin cupón» / «Bórralo para seguir sin código»).
   *Decidí yo (reversible):* en el pago del pedido pido el segundo toque en vez de cobrar de una vez con el descuento. Si prefieres un solo toque, dilo.
 
-## Dinero, quinta tanda: el servidor le pregunta a Stripe (21 nov · migración 0203) — en la rama de trabajo, falta el CI — cinco cosas para ti
+## Dinero, quinta tanda: el servidor le pregunta a Stripe (21 nov · migración 0203) — YA en el sandbox (commit c704b47, 0203 aplicada) — cinco cosas para ti
 - **Qué cambió (Opus lo escribió; Fable leyó la migración y el módulo que decide, lo fusionó y corrió tipos, guardianes y el «al revés» de dinero,
   126/126):** un cobro (Pro, plan del Hogar, renta, patrocinio) o una transferencia a un organizador que lleva 23 h «sin respuesta» ya no se queda
   frenado para siempre. El servidor **le pregunta a Stripe** qué pasó, por una marca propia que manda al crear cada cobro, y cierra con esa verdad:
@@ -5966,7 +5966,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   5. *Lo que quedó sin hacer:* renovar lo retenido en la tarjeta (depósito de una renta, lo retenido de un estimado) todavía trata «Stripe no
      contestó» como «el banco ya no deja» y avisa en falso al negocio. No cobra dos veces. Va en la siguiente tanda.
 
-## Subir un video ya no carga 120 MB en la memoria de la app (21 nov) — en la rama de trabajo, falta el CI — dos cosas para ti
+## Subir un video ya no carga 120 MB en la memoria de la app (21 nov) — YA en el sandbox (commit c704b47) — dos cosas para ti
 - **Qué pasaba:** al subir el video de presentación, la app tenía el archivo entero en memoria varias veces (medido: +612 MB por un video de
   120 MB). Tres o cuatro negocios subiendo a la vez podían tumbar la app entera.
 - **Ahora (Opus lo escribió; Fable lo fusionó y corrió tipos, guardianes, la prueba con dobles —41 comprobaciones— y el «al revés», 15/15):** el
