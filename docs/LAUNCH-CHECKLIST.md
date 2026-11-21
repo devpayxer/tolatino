@@ -423,6 +423,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (3) ~~el barrido que purga las fotos subidas y **nunca enviadas** (`media.owner_kind = 'chat'`, `owner_id = 'pendiente'`, más de 24 h: hoy quedan
   privadas y sin dueño visible, solo para quien las subió)~~ **✓ 19 nov:** `lib/mensajes-purga.ts` en el barrido (fotosSinEnviar), mismas 24 h que tomarFoto, fila con purged_at; msg9t §5b, guardián fotosSinEnviarSePurgan, alreves9tpurga 6/6; ~~(4) la foto que el equipo **aprueba** llega en vivo al panel (RefrescoVivo) y a Mi cuenta
   (vuelve a traer desde la foto en revisión), pero la notificación al otro lado no se repite: si no tiene la conversación abierta, la ve al abrirla.~~ **✓ 19 nov:** al aprobarla (`decidirFotoCom`, solo lo que estaba en revisión) la otra parte recibe el aviso de siempre con «Foto · Photo» una vez: `avisarFotoAprobada` (biz_msg al equipo que lleva Mensajes / msg_user al cliente; nada con la conversación bloqueada) y `avisarFotoDmAprobada` (dm_message; nada con la conversación cerrada, bloqueo o silencio). Guardián **fotoAprobadaAvisa**, alreves9tfotoaviso 9/9, msg9t y dm9t («recibe el aviso de la foto (una vez)»; dm9t verde en local).
+  **21 nov:** (1) hecho: `msg9t` (56 ✓) corre en verde en el CI (confirmación completa 44856657972, 21 nov, todo dos veces sobre la misma base).
 
 - [ ] **→ 9q** · **Correo (2q) · para encender en producción:** cuenta de Amazon SES fuera del «sandbox» de SES, dominio verificado con
   DKIM y SPF (+ DMARC) en Cloudflare, y en los secretos del entorno `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`,
@@ -2086,6 +2087,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       servidor local (el puerto era de otro dueño): la corre el CI y, si falla, se mira antes de subir. Y «Desde» y «Hasta» (Ninos › Edades)
       guardan el par `edad` completo cada uno: dos toques rápidos, uno en cada paso, todavía pueden pisarse (cada paso suma bien sobre sí
       mismo, no sobre el otro). Lo mismo cualquier par de pasos que guarde el mismo registro entero. (21 nov)
+      **21 nov:** `toque9t` (13 ✓) corrió en verde en el CI, las dos vueltas. Queda la pareja Desde/Hasta.
 - [ ] **→ 9t** · **`dlv2f4` en el iPad horizontal (WebKit): no pudo tocar «Aceptar» en el detalle del pedido, dos veces seguidas** (corrida
       programada 44778631725, ancho iPad 4/4; ya había pasado el 19 nov). El botón queda abajo, dentro de la hoja que se desplaza (y=967 de
       834); en Chromium con las mismas medidas, agente y toque del iPad el clic llega (probado el 20 nov), así que es de WebKit o de un momento.
@@ -2143,6 +2145,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **fot9u (punta a punta con Garage) no corrió fuera del CI:** la sesión de F1 no tenía almacén ni docker; corrieron tipos, guardianes,
       alreves9ufotos, fotos9uvariantes (variantesDe y el barrido con dobles) y medios-nginx.test.sh con nginx 1.24 de verdad. Correrla en el CI
       dirigido y en el sandbox con una foto de cámara real (peso de cada variante, antes/después de una tarjeta, una ficha y una galería). (20 nov)
+      **21 nov:** `fot9u` (27 ✓) ya corre en verde en el CI. Queda la medida en el sandbox con fotos de cámara reales (las sube el fundador: REVISION).
 - [ ] **→ 9u** · **WebP y el caché de Cloudflare:** Cloudflare (plan gratis) no separa la caché por Accept. Una variante real guardada en el borde se
       le da también a un navegador sin WebP (Safari 13 o anterior, < 1 %); la maestra que se le da a un navegador sin WebP va «private» y nunca queda
       en el borde. Safari 14–15 no dice image/webp en Accept aunque lo lee: recibe la maestra (se ve bien, pesa más). Si pesa en las cifras: que F2
@@ -2185,10 +2188,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Arreglo de fondo (F3 de Fotos a la medida): las fotos privadas a una llave privada servida con permiso; mientras, o validar esas direcciones contra `media`. (20 nov) — **✓ (21 nov, F3):** cerrado de fondo
       (una foto de destino privado no tiene dirección pública que pegar) y en cada catálogo: `fotosDeCatalogoOk` (visible, sin purgar, no
       privada, sin `rev_sin_c2`, del negocio o de quien guarda; por el id de la dirección). Guardián `fotosPrivadasConPermiso` (+ al revés).
-- [ ] **→ 9u** · **rev9u (punta a punta con Garage) no corrió fuera del CI:** esta sesión no tenía almacén (/api/medios da 503) ni el servidor
+- [x] **→ 9u** · **rev9u (punta a punta con Garage) no corrió fuera del CI:** esta sesión no tenía almacén (/api/medios da 503) ni el servidor
       de pruebas. Corrieron tipos, todos los guardianes, alreves9urevision 31/31, la prueba pura fotos9urevision y la migración 0196 dos veces
       sobre todas las anteriores (con el SQL de cada camino probado contra la base). Correr rev9u y com5d (su paso 13 cambió) en el CI dirigido.
       (R1+R2, 20 nov)
+      **Hecho:** `rev9u` (66 ✓), `rev9u2` (46 ✓) y `com5d` corrieron en verde en el CI (confirmación completa 44856657972, 21 nov, todo dos veces sobre la misma base). `rev9u` salió INESTABLE una vez en la segunda
+      vuelta (capa 4): anotado aparte.
 - [ ] **→ 9u** · **El modelo de la segunda opinión es el «cotidiano» de El Compa** (Configuración › El Compa › modelo de cada papel; hoy Claude
       Haiku 5.5): cambiar ese modelo cambia también el de las fotos. Si hace falta separarlos, un papel nuevo en `compa_models`. (R2, 20 nov)
 - [ ] **→ 9u** · **La segunda opinión en la subida contra el guardián compaSinRutaCritica:** El Compa nunca está en la ruta crítica, y la segunda
@@ -2202,11 +2207,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `/api/medios/privada/<uuid>` y agreguen `?w=<ancho>` (cambio del sistema de diseño; esta entrega no tocó `packages/ui`). (21 nov)
       **Hecho (21 nov):** `fotoSrc`, `fotoFondo`, `fotoCss` y `fotoSrcSet` reconocen `/api/medios/privada/<uuid>` y piden `?w=<ancho>`
       (prueba pura en `pruebas/alreves/alreves9ufoto.cjs`). Falta verlo servido con una foto real: lo corre el CI (aquí no hay almacén).
-- [ ] **→ 9u** · **fot9uprivadas y rev9u (F3) corren en el CI:** aquí corrió `fot9uprivadas` contra una base propia con todas las migraciones y la
+- [x] **→ 9u** · **fot9uprivadas y rev9u (F3) corren en el CI:** aquí corrió `fot9uprivadas` contra una base propia con todas las migraciones y la
       semilla (41/41) y nginx de verdad (`medios-nginx.test.sh`); NO corrieron la subida real ni la ruta servida (sin almacén: `/api/medios` da
       503). Correr en el CI dirigido `rev9u` (sus pasos F3: la fila privada, nada bajo n/, la ruta 200 para quien subió y 404 sin sesión u otra
       persona), `fot9uprivadas` y las 10 pruebas de esos flujos (`est4d`, `pq4e`, `pre4e`, `merc4p`, `merc9n`, `cit3e`, `renta4f`, `tra4y2`,
       `ayu4f`, `ayu4z`). (21 nov)
+      **Hecho:** `fot9uprivadas` (47 ✓), `rev9u` y la regresión entera (con los 10 flujos) en verde en el CI (confirmación completa 44856657972, 21 nov, todo dos veces sobre la misma base).
 - [ ] **→ 9u** · **Las fotos de antes bajo n/ que el barrido mueve:** 0197 marca como de destino privado las de una solicitud, cita, viaje,
       balanza, estimado, ayuda no privada y daño de renta, y `barrerPrivadas` las pasa a `privado/o/` de a 20 por minuto. Cómo saber que terminó:
       `select count(*) from media where rev_sin_c2 and not private and purged_at is null` → 0. Mientras tanto, la que falta se sigue viendo por su
