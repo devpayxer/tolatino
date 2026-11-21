@@ -2,7 +2,7 @@
 
 _Pantallas: `/admin/planes?tab=ing` (CONCILIACIÓN DIARIA y ALERTAS DEL DINERO), el Inicio del Super Admin («EL DINERO NO CUADRA») y Sistema ›
 Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (me hago cargo, resuelta, reabrir, conciliar otra vez, resolver a mano) con
-«Transacciones: aprobar». Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
+«Transacciones: aprobar». Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **La conciliación diaria** (el guardián del dinero): cada mañana, a la hora de Configuración › Dinero (6 AM del Este de fábrica), el sistema cuadra el
@@ -17,9 +17,14 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
   siguen conservan a su dueño.
 - **Alertas del dinero** (lo que Stripe nunca avisa): **devolución atascada** (Stripe la rechazó más veces que el número de Configuración: tarjeta cerrada,
   cuenta con disputa), **transferencia sin saldo para revertir** (el organizador no tiene saldo), **disputa por vencer** (sin responder a 3 días del plazo
-  del banco), **pago al banco que falló** y **la conciliación no corrió**. Cada una llega una sola vez.
-- **Resolver a mano** (solo devoluciones y reversiones atascadas): cuando el dinero se movió fuera de Stripe (un cheque, una transferencia), escribes cómo;
-  desde ahí el sistema **nunca** la vuelve a pedir a Stripe (sería pagar dos veces) y sigue contando como devuelta.
+  del banco), **pago al banco que falló**, **la conciliación no corrió**, **devolución que Stripe dio por fallida** (Stripe la había hecho y días después
+  dijo que no llegó a la tarjeta: queda fallida, su saldo vuelve al cobro y, si todavía se debe, se devuelve otra vez) y **cobro de Pro sin aplicar** (se
+  cobró Pro mientras el plan cambiaba, por ejemplo una cortesía puesta en ese momento: el cambio se respeta y tú decides si se devuelve). Una devolución
+  (de un cobro, de boletos o de un patrocinio) que lleva **23 horas** sin respuesta de Stripe ya no se le vuelve a pedir con la misma llave (Stripe la
+  olvida a las 24 h y podría devolver dos veces): llega como devolución atascada para mirarla en Stripe. Cada una llega una sola vez.
+- **Resolver a mano** (solo devoluciones y reversiones atascadas que **siguen pendientes** y que Stripe ya intentó): cuando el dinero se movió fuera de
+  Stripe (un cheque, una transferencia), escribes cómo; desde ahí el sistema **nunca** la vuelve a pedir a Stripe (sería pagar dos veces) y sigue contando
+  como devuelta. Si la devolución ya quedó hecha o fallida, la alerta es solo informativa: no ofrece «Resolver a mano».
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -30,6 +35,9 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
 | La misma diferencia sale en otra corrida | Conserva a su dueño (misma llave). |
 | Quieres conciliar hoy | No deja: solo días que ya terminaron (días UTC, los de Stripe). |
 | Resolver a mano algo que Stripe ya hizo | No deja: «Ya no está pendiente». |
+| La devolución de la alerta ya quedó fallida o hecha | La alerta se ve sin «Resolver a mano» (informativa): «Me hago cargo» y «Resuelta» siguen. |
+| Una devolución lleva 23 h sin respuesta de Stripe | No se vuelve a pedir; llega «devolución atascada» una vez: mira en Stripe si salió y resuélvela. |
+| Stripe da por fallida días después una devolución hecha | La devolución queda fallida, el cobro vuelve a tener ese saldo (y la solicitud o el caso restan lo que habían sumado) y llega la alerta. |
 | Rol sin «Transacciones: aprobar» | Ves todo, sin botones. |
 | Diferencias de otra ciudad | No aparecen (las de To'Latino sin ciudad, solo a quien ve todas). |
 
@@ -56,9 +64,14 @@ dueño que la mire.
   remain keep their owner.
 - **Money alerts** (what Stripe never warns about): **stuck refund** (Stripe rejected it more times than the number in Configuration: closed card, account
   with a dispute), **transfer with no balance to reverse** (the organizer has no balance), **dispute about to expire** (unanswered 3 days before the bank's
-  deadline), **failed payout to the bank** and **reconciliation didn’t run**. Each one arrives only once.
-- **Resolve by hand** (only stuck refunds and reversals): when the money moved outside Stripe (a check, a transfer), you write how; from then on the system
-  **never** asks Stripe for it again (that would pay twice) and it keeps counting as refunded.
+  deadline), **failed payout to the bank**, **reconciliation didn’t run**, **refund Stripe marked as failed** (Stripe had made it and days later said it did
+  not reach the card: it is marked failed, its balance goes back to the charge and, if it is still owed, it is refunded again) and **unapplied Pro charge**
+  (Pro was charged while the plan was changing, for example a courtesy given at that moment: the change is kept and you decide whether to refund it). A
+  refund (of a charge, of tickets or of a sponsorship) with **23 hours** and no answer from Stripe is no longer requested again with the same key (Stripe
+  forgets it after 24 h and could refund twice): it arrives as a stuck refund to check in Stripe. Each one arrives only once.
+- **Resolve by hand** (only stuck refunds and reversals that are **still pending** and that Stripe already tried): when the money moved outside Stripe (a
+  check, a transfer), you write how; from then on the system **never** asks Stripe for it again (that would pay twice) and it keeps counting as refunded. If
+  the refund is already done or failed, the alert is informational only: it does not offer «Resolve by hand».
 
 ### What happens in each case
 | Case | What happens |
@@ -69,6 +82,9 @@ dueño que la mire.
 | The same difference shows up in another run | It keeps its owner (same key). |
 | You want to reconcile today | It will not let you: only days that have already ended (UTC days, the ones Stripe uses). |
 | Resolving by hand something Stripe already did | It will not let you: «It is no longer pending». |
+| The alert's refund is already failed or done | The alert shows without «Resolve by hand» (informational): «I’ll take it» and «Resolved» remain. |
+| A refund has 23 h with no answer from Stripe | It is not requested again; «stuck refund» arrives once: check in Stripe whether it went out and resolve it. |
+| Stripe marks a refund that was made as failed days later | The refund is marked failed, the charge has that balance again (and the request or case subtracts what it had added) and the alert arrives. |
 | Role without «Transactions: approve» | You see everything, without buttons. |
 | Differences from another city | They do not show (To'Latino's own, with no city, only to whoever sees all cities). |
 

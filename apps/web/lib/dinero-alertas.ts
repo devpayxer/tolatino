@@ -11,12 +11,15 @@ import { db, tx } from "./db";
    Una alerta por tipo y objeto (money_alerts, solo inserción: dos barridos no avisan dos veces) y el aviso al equipo de dinero (Admin y Finanzas). Quién se
    hizo cargo y cómo se resolvió va en money_alert_notes (solo inserción). El camino manual: una devolución o una reversión atascada se resuelve fuera de
    Stripe con su nota (refunds / event_settlement_reversals.manual_*: el barrido deja de reintentarla y sigue contando como hecha; la base lo impone). */
-export type TipoAlerta = "refund_stuck" | "transfer_reversal_stuck" | "dispute_due" | "recon_diff" | "recon_no_corrio" | "payout_failed";
+/* 9t2 (0198) · refund_failed: una devolución hecha que Stripe dio por fallida después (webhook charge.refund.updated); charge_unapplied: un cobro
+   de Pro que salió mientras el plan cambiaba (no se pisó el cambio: el equipo de dinero decide si se devuelve). */
+export type TipoAlerta = "refund_stuck" | "transfer_reversal_stuck" | "dispute_due" | "recon_diff" | "recon_no_corrio" | "payout_failed" | "refund_failed" | "charge_unapplied";
 type Bi = { es: string; en: string };
 const QUE: Record<TipoAlerta, Bi> = {
   refund_stuck: { es: "una devolución atascada", en: "a stuck refund" }, transfer_reversal_stuck: { es: "una transferencia sin saldo para revertir", en: "a transfer that cannot be reversed" },
   dispute_due: { es: "una disputa por vencer", en: "a dispute about to expire" }, recon_diff: { es: "el dinero no cuadra", en: "money does not match" },
   recon_no_corrio: { es: "la conciliación no corrió", en: "reconciliation did not run" }, payout_failed: { es: "un pago al banco falló", en: "a bank payout failed" },
+  refund_failed: { es: "una devolución que Stripe dio por fallida", en: "a refund Stripe marked as failed" }, charge_unapplied: { es: "un cobro de Pro sin aplicar", en: "an unapplied Pro charge" },
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
@@ -67,8 +70,15 @@ export type FilaAlerta = { id: string; kind: TipoAlerta; sujeto: string; negocio
   estado: "abierta" | "con_dueno" | "resuelta"; nota: { accion: string; quien: string; nota: string; at: string } | null; aMano: boolean };
 const CIUD = "(cardinality($1::text[]) = 0 or a.city_id = any($1::text[]))";
 export async function alertasDinero(s: Staff, abiertas: boolean, antes: string | null = null, n = 30): Promise<{ filas: FilaAlerta[]; sigue: string | null }> {
-  const r = await db().query<Omit<FilaAlerta, "estado" | "aMano"> & { monto: string; ult: string | null }>(
-    `select a.id::text, a.kind, a.subject_id as sujeto, a.business_id as negocio, b.name as nombre, a.city_id as ciudad, coalesce(a.amount_cents, 0)::text as monto, a.detail as detalle,
+  // 9t2 · «Resolver a mano» solo cuando la devolución (o la reversión) SIGUE pendiente y la base lo deja (Stripe ya la intentó): una que quedó
+  // fallida o hecha muestra la alerta como informativa (antes ofrecía el botón y contestaba «Ya no está pendiente»). Lo decide el servidor.
+  const r = await db().query<Omit<FilaAlerta, "estado" | "aMano"> & { monto: string; ult: string | null; mano: boolean }>(
+    `select a.id::text, a.kind, a.subject_id as sujeto, case
+              when a.kind = 'refund_stuck' then exists (select 1 from refunds r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
+                                                          and r.status = 'pending' and r.manual_at is null and r.attempts >= 1)
+              when a.kind = 'transfer_reversal_stuck' then exists (select 1 from event_settlement_reversals r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
+                                                          and r.status = 'pending' and r.manual_at is null and r.attempts >= 1)
+              else false end as mano, a.business_id as negocio, b.name as nombre, a.city_id as ciudad, coalesce(a.amount_cents, 0)::text as monto, a.detail as detalle,
             to_char(a.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, x.action as ult,
             case when x.action is null then null else json_build_object('accion', x.action, 'quien', x.quien, 'nota', x.note, 'at', to_char(x.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) end as nota
        from money_alerts a left join businesses b on b.id = a.business_id
@@ -76,8 +86,8 @@ export async function alertasDinero(s: Staff, abiertas: boolean, antes: string |
                             from money_alert_notes n left join users u on u.id = n.staff_id where n.alert_id = a.id order by n.at desc, n.id desc limit 1) x on true
       where ${CIUD} and ($2::boolean is false or coalesce(x.action, 'reabierta') not in ('resuelta', 'resuelta_a_mano')) and ($3::bigint is null or a.id < $3::bigint)
       order by a.id desc limit $4::int`, [s.cities, abiertas, antes, n + 1]);
-  const filas = r.rows.slice(0, n).map(({ ult, ...x }) => ({ ...x, monto: Number(x.monto), estado: (ult === "resuelta" || ult === "resuelta_a_mano" ? "resuelta" : ult === "me_hago_cargo" ? "con_dueno" : "abierta") as FilaAlerta["estado"],
-    aMano: (x.kind === "refund_stuck" || x.kind === "transfer_reversal_stuck") && ult !== "resuelta_a_mano" }));
+  const filas = r.rows.slice(0, n).map(({ ult, mano, ...x }) => ({ ...x, monto: Number(x.monto), estado: (ult === "resuelta" || ult === "resuelta_a_mano" ? "resuelta" : ult === "me_hago_cargo" ? "con_dueno" : "abierta") as FilaAlerta["estado"],
+    aMano: mano && ult !== "resuelta_a_mano" }));
   return { filas, sigue: r.rows.length > n ? filas[filas.length - 1]!.id : null };
 }
 export async function cuantasAlertasAbiertas(s: Staff): Promise<number> {
@@ -94,7 +104,7 @@ export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" |
   if (!/^\d{1,18}$/.test(id)) return { ok: false, msg: "Esa alerta no existe." };
   const a = (await db().query<{ kind: TipoAlerta; sujeto: string; city: string | null }>(`select a.kind, a.subject_id as sujeto, a.city_id as city from money_alerts a where a.id = $2::bigint and ${CIUD}`, [s.cities, id])).rows[0];
   if (!a) return { ok: false, msg: "Esa alerta no existe (o no es de tus ciudades)." };
-  if (accion === "resuelta_a_mano" && a.kind !== "refund_stuck" && a.kind !== "transfer_reversal_stuck") return { ok: false, msg: "Esta alerta no tiene camino manual." };
+  if (accion === "resuelta_a_mano" && ((a.kind !== "refund_stuck" && a.kind !== "transfer_reversal_stuck") || !/^\d{1,18}$/.test(a.sujeto))) return { ok: false, msg: "Esta alerta no tiene camino manual." };
   const { auditar } = await import("./admin");
   const r = await tx(async (c) => {
     if (accion === "resuelta_a_mano") {

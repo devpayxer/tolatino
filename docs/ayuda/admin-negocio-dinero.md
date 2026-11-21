@@ -30,7 +30,7 @@ Solo negocios de tus ciudades. Todo pide motivo y queda en el Historial.
 |---|---|
 | Pausar pagos | La cuenta queda «En pausa por To’Latino» con quién, cuándo y el motivo. El dueño recibe «Pagos al banco en pausa» y lo ve en Cobros. Se sigue cobrando. |
 | Reanudar | Lo pendiente sale el próximo martes. El dueño recibe «Pagos al banco reanudados». |
-| Stripe no responde al pausar | No cambia nada y lo dice; se intenta otra vez. |
+| Stripe no responde al pausar (o reanudar) | La decisión ya quedó anotada (con su auditoría y el aviso al dueño) y To'Latino ya la respeta; dice «Stripe no respondió: se le vuelve a pedir solo en unos minutos» y el sistema se lo pide a Stripe hasta que quede igual. Tocar otra vez solo vuelve a pedírselo. |
 | Tocar dos veces | Si ya estaba así, no se repite el aviso ni la auditoría. |
 | Anular con Pro pagado | Sigue en Pro hasta el final del período y luego Free. No se devuelve lo cobrado. |
 | Anular en prueba | El último día de la prueba pasa a Free. |
@@ -79,7 +79,7 @@ Only businesses in your cities. Everything asks for a reason and goes into the H
 |---|---|
 | Pause payouts | The account shows «Paused by To'Latino» with who, when and the reason. The owner gets «Bank payouts paused» and sees it in Payouts. Charging continues. |
 | Resume | What is pending goes out next Tuesday. The owner gets «Bank payouts resumed». |
-| Stripe does not respond when pausing | Nothing changes and it says so; it is tried again. |
+| Stripe does not respond when pausing (or resuming) | The decision is already recorded (with its audit entry and the owner's notice) and To'Latino already follows it; it says «Stripe did not answer: it is asked again by itself in a few minutes» (in Spanish on screen) and the system asks Stripe until both match. Tapping again only asks it again. |
 | Tapping twice | If it was already that way, the notice and the audit entry are not repeated. |
 | Cancel with paid Pro | It stays Pro until the end of the period and then Free. What was charged is not refunded. |
 | Cancel during a trial | On the last day of the trial it goes to Free. |

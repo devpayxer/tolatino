@@ -54,3 +54,23 @@ export async function pagosAlBancoDe(negocio: string): Promise<{ id: string; mon
        from payouts where business_id = $1::text order by created_at desc, id desc limit 8`, [negocio])).rows;
 }
 export const ESTADO_PAYOUT: Record<string, Bi> = { pending: { es: "Programado", en: "Scheduled" }, in_transit: { es: "En camino", en: "In transit" }, paid: { es: "Llegó al banco", en: "Arrived" }, failed: { es: "Falló", en: "Failed" }, canceled: { es: "Cancelado", en: "Canceled" } };
+
+/* 9t2 · Pausar o reanudar los pagos al banco (Negocio 360° › Dinero, acciones-dinero.ts): la base ya tiene la decisión (payouts_paused) y
+   payouts_sync_at dice que Stripe todavía no la confirmó. Aquí se le pide a Stripe ese estado (fijar el calendario: repetirlo no mueve dinero) y,
+   si contesta, se limpia la marca solo si nadie cambió la decisión mientras tanto (el estado y la marca en el where). Lo llaman la acción y el
+   barrido (sincronizarPausas), así que si el proceso muere entre la base y Stripe, el siguiente barrido deja los dos iguales. */
+export async function aplicarPausaEnStripe(negocio: string): Promise<boolean> {
+  const a = (await db().query<{ acct: string | null; paused: boolean; marca: string | null }>(
+    `select stripe_account_id as acct, payouts_paused as paused, payouts_sync_at::text as marca from stripe_accounts where business_id = $1`, [negocio])).rows[0];
+  if (!a || !a.marca) return true;
+  if (a.acct && !(await pasarela.cuentaPagos(a.acct, a.paused).catch(() => false))) return false;
+  await db().query(`update stripe_accounts set payouts_sync_at = null where business_id = $1 and payouts_sync_at = $2::timestamptz and payouts_paused = $3`, [negocio, a.marca, a.paused]);
+  return true;
+}
+export async function sincronizarPausas(): Promise<number> {
+  const L = (await db().query<{ b: string }>(
+    `select business_id as b from stripe_accounts where payouts_sync_at is not null and payouts_sync_at < now() - interval '1 minute' order by payouts_sync_at limit 50`)).rows;
+  let n = 0;
+  for (const x of L) if (await aplicarPausaEnStripe(x.b)) n++;
+  return n;
+}

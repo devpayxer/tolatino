@@ -3822,7 +3822,8 @@ const guardianes = {
     const d = sinComent(D);
     if (!/'pending', \$6, 'platform'/.test(cuerpoFn(d, "anotarDevolucion")) || !/update tickets set status = 'refunded' where id = any\(\$1::bigint\[\]\) and status = 'valid'/.test(cuerpoFn(d, "anotarDevolucion"))) falla(G, D, 0, "paso 1: los boletos devueltos y la devolución pendiente en la misma transacción");
     const ej = cuerpoFn(d, "ejecutarDevolucion");
-    if (!/set status = 'done'[^`]*where id = \$1::bigint and status = 'pending'`/.test(ej) || !/if \(!u\.rowCount\) return;/.test(ej) || ej.indexOf("status = 'done'") > ej.indexOf("update payments set refunded_cents")) falla(G, D, 0, "paso 2: 'done' una sola vez (where status = 'pending') antes de sumar a lo devuelto");
+    // 9t2 · Lo devuelto del cobro sale del libro (devueltoDelLibro, la suma de lo hecho), después del 'done' de esta devolución.
+    if (!/set status = 'done'[^`]*where id = \$1::bigint and status = 'pending'`/.test(ej) || !/if \(!u\.rowCount\) return;/.test(ej) || ej.indexOf("devueltoDelLibro(c, r.pid)") < 0 || ej.indexOf("status = 'done'") > ej.indexOf("devueltoDelLibro(c, r.pid)")) falla(G, D, 0, "paso 2: 'done' una sola vez (where status = 'pending') antes de poner al día lo devuelto (del libro)");
     if (!/pasarela\.devolver\(r\.pi, r\.amt, r\.idem/.test(ej)) falla(G, D, 0, "paso 2: Stripe con la llave guardada de la devolución (la misma en cada reintento)");
     const ca = cuerpoFn(d, "calcular");
     if (!/b\.precio - b\.cargo/.test(ca) || /monto\s*[:=]\s*x\./.test(ca)) falla(G, D, 0, "lo que vuelve se calcula de lo guardado (precio − cargo), nunca de lo que manda la pantalla");
@@ -4694,9 +4695,10 @@ const guardianes = {
     if (!/p\.operation_id <> c\.operation_id or p\.user_id <> c\.user_id/.test(antes)) falla(G, M, 0, "solo se devuelve el cobro de la operación de ese caso y de esa persona");
     if (!/idem_key\s+text not null unique check \(idem_key ~ '\^tk-/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "support_refunds.idem_key único (tk-…)");
     const f = cuerpoFn(sinComent(E), "resolverYDevolver");
-    const iIns = f.indexOf("insert into support_refunds"), iDev = f.indexOf("devolverPago(");
-    if (iIns < 0 || iDev < 0 || iIns > iDev) falla(G, E, 0, "resolverYDevolver inserta la fila pendiente (tope de la base) ANTES de llamar a devolverPago");
-    if (!/idem = `tk-\$\{clave\}`/.test(f) || !/devolverPago\(\{ paymentId: fila\.pid, centavos: fila\.amount,[^}]*idem \}\)/.test(f)) falla(G, E, 0, "devolverPago con la llave del intento y el monto de la fila (no el del teléfono)");
+    // 9t2 · La fila (tope de la base) y la devolución pendiente con la misma llave y el monto de la fila, en la misma transacción; la pasarela después.
+    const iIns = f.indexOf("insert into support_refunds"), iDev = f.indexOf("anotarDevolucionPago("), iEj = f.indexOf("ejecutarDevolucionPago(");
+    if (iIns < 0 || iDev < 0 || iIns > iDev || iEj < iDev) falla(G, E, 0, "resolverYDevolver inserta la fila pendiente (tope de la base) ANTES de anotar la devolución, y la pasarela va después");
+    if (!/idem = `tk-\$\{clave\}`/.test(f) || !/anotarDevolucionPago\(c, \{ paymentId: fx\.pid, centavos: fx\.amount,[^}]*idem \}/.test(f) || !/returning id::text, amount_cents as amount`/.test(f)) falla(G, E, 0, "la devolución con la llave del intento y el monto de la fila (no el del teléfono)");
     if (/\b5000\b|\$50\b/.test(sinComent(E).replace(/money\([^)]*\)/g, ""))) falla(G, E, 0, "el tope de Soporte no se escribe en la app: sale de Configuración por la base");
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== E && /`tk-\$\{/.test(sinComent(x))) falla(G, x, 0, "solo resolverYDevolver usa llaves tk- (devoluciones de un caso)");
   },
@@ -12017,7 +12019,13 @@ const guardianes = {
     const bloque = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n  \}/.exec(ej)?.[0] ?? "";
     if (!bloque || /'failed'/.test(bloque) || !/enCamino: true/.test(bloque)) falla(G, CB, 0, "ejecutarDevolucionPago: sin respuesta, queda pendiente y dice «en camino» (nunca 'failed')");
     if (!/where id = \$1::bigint and status = 'pending' and manual_at is null returning/.test(ce)) falla(G, CB, 0, "el cierre de una devolución es una vez (where status = 'pending') y nunca la resuelta a mano");
-    if (/refunded_cents \+/.test(ce) || !/greatest\(p\.refunded_cents, x\.hecho\)/.test(ce)) falla(G, CB, 0, "el cierre toma lo devuelto del libro (greatest con la suma de lo hecho), no suma otra vez: el webhook charge.refunded pudo contarla");
+    // 9t2 · Lo devuelto sale del libro en UN lugar (devueltoDelLibro), y lo usan el cierre de aquí y el de los boletos; nadie más suma a payments.refunded_cents.
+    const dl = cuerpoFn(cb, "devueltoDelLibro");
+    if (/refunded_cents \+/.test(ce) || !/set refunded_cents = least\(p\.amount_cents, greatest\(p\.refunded_cents, x\.hecho\)\),/.test(dl) || !/from refunds where payment_id = \$1::bigint and status = 'done'/.test(dl) || !/devueltoDelLibro\(c, u\.pid\)/.test(ce)) falla(G, CB, 0, "el cierre toma lo devuelto del libro (devueltoDelLibro: greatest con la suma de lo hecho), no suma otra vez: el webhook charge.refunded pudo contarla");
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f) || f.startsWith("apps/web/lib/pagos/")) continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) if (/update payments\b[^`]*refunded_cents = (p\.)?refunded_cents \+/.test(q)) falla(G, f, 0, "suma a payments.refunded_cents en vez de tomarlo del libro (devueltoDelLibro de lib/cobros): el webhook charge.refunded pudo contarla antes");
+    }
     const h = Number(/const HORAS_LLAVE = (\d+);/.exec(cb)?.[1] ?? 99);
     if (!(h < 24) || !/make_interval\(hours => \$1::int\)/.test(ba) || !/ejecutarDevolucionPago\(r\.id, \{ barrido: true \}\)/.test(ba) || !/not exists \(select 1 from ticket_refund_lines/.test(ba)) falla(G, CB, 0, "barrerDevolucionesPago pregunta con la misma llave solo mientras Stripe la recuerda (< 24 h) y deja las de boletos a su barrido");
     if (!existsSync(BA) || !/\["devolucionesPago", \(\) => cobros\.barrerDevolucionesPago\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "las devoluciones que quedaron a medias se terminan en el barrido central (barrerDevolucionesPago)");
@@ -12037,8 +12045,8 @@ const guardianes = {
     if (!/idem = `sop-q\$\{id\}`/.test(sp)) falla(G, CL, 0, "decidirSop: la llave de la devolución es el caso (sop-q<caso>), no el toque: otra pestaña llega a la misma devolución");
     if (!/select amount_cents as amt from refunds where id = \$1::bigint and \(status = 'done' or manual_at is not null\)/.test(sp) || !/refunded_cents = refunded_cents \+ \$4/.test(sp)) falla(G, CL, 0, "decidirSop cierra el caso con lo que de verdad salió (la devolución del caso, hecha), sumado por quien cierra el caso");
     if (sp.indexOf("anotarDevolucionPago(") < 0 || sp.indexOf("anotarDevolucionPago(") > sp.indexOf("ejecutarDevolucionPago(")) falla(G, CL, 0, "decidirSop anota la devolución con el caso bloqueado ANTES de llamar a la pasarela");
-    for (const [f, re, msg] of [["apps/web/lib/soporte-equipo.ts", /if \(d\.enCamino\) return no\(d\.msg\.es\);\n\s*await db\(\)\.query\(`update support_refunds set status = 'failed'/, "Soporte no da por fallida una devolución en camino"],
-      ["apps/web/lib/ayuda-cita.ts", /if \(!d\.ok && d\.enCamino\) \{[^\n]*return \{ ok: false, msg: d\.msg \}; \}\n\s*if \(!d\.ok\) \{\n\s*await db\(\)\.query\(`update help_requests set status = 'open'/, "la ayuda de la cita no vuelve a abrir una solicitud con la devolución en camino (se respondería otra vez con otra llave)"]])
+    for (const [f, re, msg] of [["apps/web/lib/soporte-equipo.ts", /if \(!d\.ok\) \{\n\s*if \(!d\.enCamino\) \{\n[^\n]*\n\s*await db\(\)\.query\(`update support_refunds set status = 'failed'/, "Soporte no da por fallida una devolución en camino"],
+      ["apps/web/lib/ayuda-cita.ts", /if \(!d\.ok && d\.enCamino\) return \{ ok: false, msg: d\.msg \};\n\s*if \(!d\.ok\) \{\n[^\n]*\n\s*await db\(\)\.query\(`update help_requests set status = 'open'/, "la ayuda de la cita no vuelve a abrir una solicitud con la devolución en camino (se respondería otra vez mientras el dinero sale)"]])
       if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, msg);
   },
 
@@ -12068,6 +12076,12 @@ const guardianes = {
     const iV = an.indexOf("soltarVerificaciones(negocio)"), iE = an.indexOf("status = 'ended'");
     if (iV < 0 || iE < 0 || iV > iE || !/ya había cobrado este período/.test(an)) falla(G, SU, 0, "Anular con cobro fallido mira primero la pasarela: si una verificación del banco ya pasó, lo dice y no anula");
     if (!/update subscriptions set status = 'ended'[^\n]*\n\s*await plan\(c, negocio, "free"\);\n\s*await adminEvento\(c, negocio, "canceled_admin"[^\n]*\n\s*await evento\(negocio, "ended"[^\n]*, c\);\n\s*await alGuardar\?\.\(c\);/.test(an)) falla(G, SU, 0, "con cobro fallido: Free, «canceled_admin», «ended» y la auditoría en UNA transacción");
+    // 9t2 (LAUNCH «Dinero por clase» (6)) · El cobro de un período, el paso a Free y el «cobro fallido» del barrido, con el estado que se leyó en el where
+    // (una cortesía o Anular puestos en ese segundo van sin el candado del plan); si cambió, nada se pisa y un cobro que ya salió alerta al equipo.
+    const rp = cuerpoFn(s, "registrarPeriodo"), af = cuerpoFn(s, "aFree"), fa = cuerpoFn(s, "fallo");
+    if (!/update subscriptions set status = 'active'[^`]*where business_id = \$1 and status = \$3`/.test(rp) || !/if \(!u\.rowCount\) return false;/.test(rp) || !/alertar\("charge_unapplied", idem/.test(rp)) falla(G, SU, 0, "registrarPeriodo pone Pro con el estado leído en el where (rowCount) y, si cambió, el cobro alerta en vez de pisar el plan");
+    if (!/update subscriptions set status = 'ended'[^`]*where business_id = \$1 and status = \$2`, \[negocio, esperado\]/.test(af)) falla(G, SU, 0, "aFree pasa a Free con el estado que leyó el barrido en el where");
+    if (!/update subscriptions set status = 'past_due'[^`]*where business_id = \$1 and status = \$4`/.test(fa) || !/\)\)\.rowCount\) return;/.test(fa)) falla(G, SU, 0, "fallo (cobro fallido) con el estado leído en el where y mirando rowCount");
     const pr = cuerpoFn(s, "procesar");
     if (!/conCandado\(x\.business_id, async \(k\) =>/.test(pr) || !/k\.query<Fila>\(`select \* from subscriptions where business_id = \$1 and \$\{VENCIDA\}`/.test(pr)) falla(G, SU, 0, "procesar toma el candado del plan y relee la fila con él (lo que cambió entre la lista y el candado no se pisa)");
   },
@@ -12083,6 +12097,90 @@ const guardianes = {
         if (/pg_(try_)?advisory_(lock|unlock)\(/.test(l) && /\bdb\(\)\.query\(/.test(l)) falla(G, f, i + 1, "candado de sesión por el pool (db().query): tómalo y suéltalo con UNA conexión (db().connect()) o usa pg_advisory_xact_lock en la transacción");
       });
     }
+  },
+
+  /* 9t2 (21 nov) · llaveSoloUnDia (LAUNCH «Dinero por clase, 21 nov» (2)): Stripe recuerda una llave de idempotencia 24 h; preguntar otra vez con
+     la misma llave después podría devolver dos veces. Toda función que llama a pasarela.devolver mira antes si la devolución (o el patrocinio que la
+     decidió) pasó HORAS_LLAVE (< 24) y, si pasó, no llama; los barridos solo reintentan dentro de ese tiempo y desde ahí alertan al equipo de dinero
+     (una vez). Al revés: alreves9tdinero. */
+  llaveSoloUnDia() {
+    const G = "llaveSoloUnDia", CB = "apps/web/lib/cobros.ts", BO = "apps/web/lib/boletos-despues.ts", PA = "apps/web/lib/patrocinio.ts";
+    if (!existsSync(CB) || !existsSync(BO) || !existsSync(PA)) return falla(G, CB, 0, "faltan cobros, boletos-despues o patrocinio");
+    const cb = sinComent(CB), bo = sinComent(BO), pa = sinComent(PA);
+    if (!(Number(/const HORAS_LLAVE = (\d+);/.exec(cb)?.[1] ?? 99) < 24) || !/export const HORAS_LLAVE_STRIPE = HORAS_LLAVE;/.test(cb)) falla(G, CB, 0, "HORAS_LLAVE (< 24) es una sola y la usan todas las devoluciones");
+    const antes = (t, guard, llamada) => t.indexOf(guard) >= 0 && t.indexOf(llamada) >= 0 && t.indexOf(guard) < t.indexOf(llamada);
+    const ej = cuerpoFn(cb, "ejecutarDevolucionPago"), eb = cuerpoFn(bo, "ejecutarDevolucion"), dp = cuerpoFn(pa, "devolverPatrocinio");
+    if (!/r\.created_at <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(ej) || !antes(ej, "if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };", "pasarela.devolver(")) falla(G, CB, 0, "ejecutarDevolucionPago no llama a la pasarela con una llave de más de HORAS_LLAVE (otro toque o el barrido devolverían dos veces)");
+    if (!/r\.created_at <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(eb) || !antes(eb, "if (r.vieja) return false;", "pasarela.devolver(")) falla(G, BO, 0, "ejecutarDevolucion (boletos) no llama a la pasarela con una llave de más de HORAS_LLAVE");
+    if (!/s\.ended_at <= now\(\) - make_interval\(hours => \$3::int\) as vieja/.test(dp) || !antes(dp, "if (!s || s.ya || s.vieja) return 0;", "pasarela.devolver(")) falla(G, PA, 0, "devolverPatrocinio no llama a la pasarela pasadas HORAS_LLAVE desde que terminó");
+    const bb = cuerpoFn(bo, "barrerDevolucionesBoletos"), bp = cuerpoFn(pa, "devolverPendientes");
+    if (!/r\.created_at > now\(\) - make_interval\(hours => \$1::int\)/.test(bb) || !/alertaVieja\(r\)/.test(bb)) falla(G, BO, 0, "barrerDevolucionesBoletos reintenta solo dentro de HORAS_LLAVE y después alerta (refund_stuck), nunca otra devolución");
+    if (!/s\.ended_at > now\(\) - make_interval\(hours => \$2::int\)/.test(bp) || !/alertar\("refund_stuck", `pat-dev-\$\{kind\}-\$\{x\.id\}`/.test(bp)) falla(G, PA, 0, "devolverPendientes (patrocinios) reintenta solo dentro de HORAS_LLAVE y después alerta, no 30 días con la misma llave");
+  },
+
+  /* 9t2 (21 nov) · casoSeCierraConSuDevolucion (LAUNCH «Dinero por clase» (3)(4)): lo que una devolución deja hecho en su caso se escribe en la
+     transacción que la marca 'done' (cerrarDevolucionPago → cerrarDelCaso, por su llave), la cierre quien la pidió o el barrido, una vez. La ayuda de
+     la cita anota con la llave DEL CASO (ayb-h<solicitud>), con la auditoría en la transacción que anota, y nadie más suma a help_requests.refunded_cents;
+     Soporte anota la fila y la devolución juntas y el cierre de la devolución cierra la fila y el caso. Al revés: alreves9tdinero. */
+  casoSeCierraConSuDevolucion() {
+    const G = "casoSeCierraConSuDevolucion", CB = "apps/web/lib/cobros.ts", AY = "apps/web/lib/ayuda-cita.ts", SE = "apps/web/lib/soporte-equipo.ts";
+    if (!existsSync(CB) || !existsSync(AY) || !existsSync(SE)) return falla(G, CB, 0, "faltan cobros, ayuda-cita o soporte-equipo");
+    const cb = sinComent(CB), ce = cuerpoFn(cb, "cerrarDevolucionPago"), cc = cuerpoFn(cb, "cerrarDelCaso");
+    const iDone = ce.indexOf("set status = 'done'"), iCaso = ce.indexOf("await cerrarDelCaso(c, "), iLibro = ce.indexOf("devueltoDelLibro(c, ");
+    if (iDone < 0 || iCaso < iDone || iLibro < iCaso || !/const h = await tx\(async \(c\) => \{/.test(ce)) falla(G, CB, 0, "cerrarDevolucionPago cierra lo del caso (cerrarDelCaso) en la transacción del 'done', antes del cobro (el orden de candados de anotar)");
+    if (!cc.includes("/^(?:ayb-h|ayc-)(\\d{1,18})-p\\d{1,18}$/") || !/update help_requests set refunded_cents = refunded_cents \+ \$2/.test(cc) || !/cerrarCasoDevuelto\(c, r\.idem, r\.amt, conRespuesta\)/.test(cc)) falla(G, CB, 0, "cerrarDelCaso: la ayuda de la cita suma lo devuelto por su llave y Soporte cierra su caso (cerrarCasoDevuelto)");
+    const ay = sinComent(AY), ra = cuerpoFn(ay, "responderAyudaCita");
+    if (!/idem: `ayb-h\$\{h\.id\}`/.test(ra) || ra.indexOf("anotarDevolucionOperacion(c, ") < 0 || ra.indexOf("anotarDevolucionOperacion(c, ") > ra.indexOf("await alGuardar?.(c);") || ra.indexOf("ejecutarDevolucionPago(") < ra.indexOf("await alGuardar?.(c);") || /devolverOperacion\(/.test(ra)) falla(G, AY, 0, "responderAyudaCita: la devolución con la llave del caso (ayb-h<solicitud>), anotada con la respuesta y la auditoría en UNA transacción, y la pasarela después");
+    for (const q of ay.match(/`[^`]*`/g) ?? []) if (/update help_requests set[^`]*refunded_cents = refunded_cents \+/.test(q)) falla(G, AY, 0, "help_requests.refunded_cents lo suma el cierre de la devolución (cerrarDelCaso), una vez: aquí no (contaría lo pedido aunque quedara en camino)");
+    const se = sinComent(SE), cd = cuerpoFn(se, "cerrarCasoDevuelto"), rd = cuerpoFn(se, "resolverYDevolver");
+    if (!/update support_refunds set status = 'done', done_at = now\(\) where idem_key = \$1 and status = 'pending'/.test(cd) || !/'devuelto'/.test(cd) || !/status not in \('resolved', 'merged'\)/.test(cd) || !/insert into audit_entries/.test(cd)) falla(G, SE, 0, "cerrarCasoDevuelto: la fila hecha una vez (where status = 'pending'), «Te devolvimos», el caso resuelto y su auditoría");
+    if (/update support_refunds set status = 'done'/.test(rd) || !/ejecutarDevolucionPago\(f\.rf!, \{ alCerrar: /.test(rd)) falla(G, SE, 0, "resolverYDevolver no cierra la fila por su cuenta: la cierra el cierre de la devolución (también si la termina el barrido)");
+    if (!/update support_refunds set status = 'failed'[^`]*where idem_key = \$1 and status = 'pending'/.test(cuerpoFn(cb, "ejecutarDevolucionPago"))) falla(G, CB, 0, "un «no» de Stripe deja la fila de Soporte fallida en la misma transacción que la devolución");
+  },
+
+  /* 9t2 (21 nov) · intencionAntesDeStripe (LAUNCH «Dinero por clase» (5)): pausar o reanudar los pagos al banco anota la decisión (con el estado
+     anterior en el where), la marca «Stripe no lo confirmó» (payouts_sync_at) y la auditoría ANTES de llamar a Stripe; el barrido se lo vuelve a pedir
+     hasta que quede igual. Nadie en app/ llama a pasarela.cuentaPagos directo. Al revés: alreves9tdinero. */
+  intencionAntesDeStripe() {
+    const G = "intencionAntesDeStripe", AD = "apps/web/app/admin/acciones-dinero.ts", PB = "apps/web/lib/pagos-banco.ts", BA = "apps/web/lib/barrido.ts";
+    if (!existsSync(AD) || !existsSync(PB)) return falla(G, AD, 0, "faltan acciones-dinero o pagos-banco");
+    const pp = cuerpoFn(sinComent(AD), "pagosPausar"), ap = cuerpoFn(sinComent(PB), "aplicarPausaEnStripe");
+    const iTx = pp.indexOf("payouts_sync_at = now()"), iSt = pp.indexOf("aplicarPausaEnStripe(id)");
+    if (iTx < 0 || iSt < 0 || iTx > iSt || /pasarela\./.test(pp) || !/where business_id = \$1 and payouts_paused <> \$2/.test(pp)) falla(G, AD, 0, "pagosPausar: la decisión (con el estado anterior en el where) y su marca ANTES de Stripe, y Stripe por aplicarPausaEnStripe");
+    if (!/pasarela\.cuentaPagos\(a\.acct, a\.paused\)/.test(ap) || !/set payouts_sync_at = null where business_id = \$1 and payouts_sync_at = \$2::timestamptz and payouts_paused = \$3/.test(ap)) falla(G, PB, 0, "aplicarPausaEnStripe pide a Stripe lo que dice la base y limpia la marca solo si nadie la cambió");
+    if (!existsSync(BA) || !/\["pausasStripe", async \(\) => \(await import\("\.\/pagos-banco"\)\)\.sincronizarPausas\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "el barrido central vuelve a pedir a Stripe lo que no confirmó (sincronizarPausas)");
+    for (const f of codigo) if (/^apps\/web\/app\/.+\.tsx?$/.test(f) && /pasarela\.cuentaPagos\(/.test(sinComent(f))) falla(G, f, 0, "pasarela.cuentaPagos directo desde una acción: anota primero y usa aplicarPausaEnStripe");
+  },
+
+  /* 9t2 (21 nov) · alertaSoloConCaminoReal (LAUNCH «Dinero por clase» (7)): «Resolver a mano» se ofrece solo si la devolución o la reversión SIGUE
+     pendiente (y Stripe ya la intentó: la base lo exige). Lo decide el servidor con el estado de hoy, no el tipo de alerta. Al revés: alreves9tdinero. */
+  alertaSoloConCaminoReal() {
+    const G = "alertaSoloConCaminoReal", DA = "apps/web/lib/dinero-alertas.ts";
+    if (!existsSync(DA)) return falla(G, DA, 0, "falta lib/dinero-alertas.ts");
+    const ad = cuerpoFn(sinComent(DA), "alertasDinero");
+    if (!/when a\.kind = 'refund_stuck' then exists \(select 1 from refunds r where r\.id = case when a\.subject_id ~ '\^\[0-9\]\{1,18\}\$' then a\.subject_id::bigint end\s+and r\.status = 'pending' and r\.manual_at is null and r\.attempts >= 1\)/.test(ad)
+      || !/aMano: mano && ult !== "resuelta_a_mano"/.test(ad)) falla(G, DA, 0, "alertasDinero: aMano solo con la devolución (o la reversión) todavía pendiente, del estado de hoy");
+  },
+
+  /* 9t2 (21 nov) · webhookDevolucionFallida (LAUNCH «Dinero por clase» (8)): el webhook escucha charge.refund.updated; una devolución hecha que Stripe da
+     por fallida queda 'failed' (una vez: where status = 'done'), el saldo vuelve al cobro desde el libro y el equipo de dinero recibe la alerta. */
+  webhookDevolucionFallida() {
+    const G = "webhookDevolucionFallida", R = "apps/web/app/api/stripe/webhook/route.ts", CB = "apps/web/lib/cobros.ts";
+    if (!existsSync(R) || !existsSync(CB)) return falla(G, R, 0, "faltan el webhook o lib/cobros.ts");
+    const r = sinComent(R);
+    if (!/case "charge\.refund\.updated": \{\n\s*if \(String\(o\.status \?\? ""\) !== "failed"[^\n]*\n\s*await \(await import\("@\/lib\/cobros"\)\)\.devolucionFallidaEnStripe\(/.test(r) || r.indexOf("firmaValida(") < 0 || r.indexOf("firmaValida(") > r.indexOf("await aplicar(ev)")) falla(G, R, 0, "el webhook (con su firma verificada) pasa charge.refund.updated fallida a devolucionFallidaEnStripe");
+    const f = cuerpoFn(sinComent(CB), "devolucionFallidaEnStripe");
+    if (!/where r\.stripe_refund_id = \$1 and r\.status = 'done'/.test(f) || !/greatest\(x\.hecho, p\.refunded_cents - \$2::int\)/.test(f) || !/alertar\("refund_failed", h\.id/.test(f) || !/const h = await tx\(/.test(f)) falla(G, CB, 0, "devolucionFallidaEnStripe: 'failed' una vez, lo devuelto desde el libro en la misma transacción y la alerta refund_failed");
+  },
+
+  /* 9t2 (21 nov) · disputaCierraSuCaso (LAUNCH «Dinero por clase» (9)): cuando el banco cierra una disputa (webhook), su caso abierto en Colas se cierra
+     en la MISMA transacción, una vez (status = 'open'), con su auditoría de solo inserción (actor 'system', quién: «sistema»). */
+  disputaCierraSuCaso() {
+    const G = "disputaCierraSuCaso", DI = "apps/web/lib/disputas.ts";
+    if (!existsSync(DI)) return falla(G, DI, 0, "falta lib/disputas.ts");
+    const f = cuerpoFn(sinComent(DI), "cerrarDisputa");
+    const iTx = f.indexOf("await tx(async (c) =>"), iD = f.indexOf("update disputes d set status"), iQ = f.indexOf("update queue_items set status = 'decided'");
+    if (iTx < 0 || iD < iTx || iQ < iD || !/where queue = 'disputa' and subject_kind = 'dispute' and subject_id = \$1 and status = 'open' returning/.test(f) || !/values \('system', null, 'disputa\.cerrada_banco'/.test(f) || !/quien: "sistema"/.test(f)) falla(G, DI, 0, "cerrarDisputa cierra el caso de la cola en su transacción, una vez, con auditoría del sistema");
   },
 
   /* Fotos a la medida (F2a, 20 nov): toda foto de datos que se pinta pide la variante que le toca a su caja (packages/ui/src/foto.ts: fotoSrc / fotoFondo /

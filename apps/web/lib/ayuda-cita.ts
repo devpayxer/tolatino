@@ -284,7 +284,9 @@ export async function citaAyudaCliente(userId: string, numero: string, accion: A
       if (!d.ok) return { ok: false, msg: d.msg };
       devuelto = n;
     }
-    const r = await db().query(`update help_requests set status = 'resolved', closed_by = 'user', refunded_cents = refunded_cents + $2, resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id, devuelto]);
+    // 9t2 · Lo devuelto lo suma el cierre de la devolución (lib/cobros: cerrarDelCaso, llave «ayc-<solicitud>-p<cobro>»), una vez, también si la
+    // termina el barrido: aquí ya no se suma (antes se sumaba lo pedido, aunque la devolución hubiera quedado en camino).
+    const r = await db().query(`update help_requests set status = 'resolved', closed_by = 'user', resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);
     return r.rowCount ? { ok: true, mensaje: devuelto ? { es: `Te devolvemos ${money(devuelto)} a tu tarjeta.`, en: `Refunding ${money(devuelto)} to your card.` } : undefined } : cambio();
   }
   if (h.decision !== "alt" && h.decision !== "no") return cambio();
@@ -343,30 +345,42 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
     if (devolver <= 0) return no("Escribe cuánto le devuelves.", "Write how much you refund.");
     offer = devolver;
   } else if (dec === "ok" && h.wants === "devolver") offer = pedido ?? h.amount ?? null;
-  // Primero se marca respondida (nadie más responde a la vez); luego, si toca, la devolución (idempotente por clave).
+  // 21 nov (9t2) · Como Colas › Ayuda (decidirSop), en tres pasos y con la llave DEL CASO (`ayb-h<solicitud>`, no la del toque):
+  // (1) en UNA transacción: la solicitud pasa a respondida (con su estado en el where: nadie más responde a la vez), la devolución queda 'pending'
+  //     con su llave (anotarDevolucionOperacion) y la auditoría del negocio; si algo no cabe, nada de eso queda;
+  // (2) la pasarela, fuera de la base, con esa llave; sin respuesta, queda en camino y el barrido la termina;
+  // (3) lo devuelto lo suma a help_requests.refunded_cents el cierre de CADA devolución (lib/cobros: cerrarDelCaso), una vez, la cierre quien la
+  //     cierre (esta acción o el barrido). Si el proceso muere entre (1) y (2), el barrido la manda con la misma llave.
   const fuera = sinDinero && dec === "ok" && h.wants === "devolver" ? "pending" : null;
   const devuelve = devolver > 0 && !!p;
-  const u = await tx(async (c) => {
+  const cobros = await import("./cobros");
+  class NoCabe extends Error { constructor(readonly m: Bi) { super("no_cabe"); } }
+  const u = await tx(async (c): Promise<{ ids: string[] } | null> => {
     const u = await c.query(
       `update help_requests set status = 'answered', decision = $3, offer_cents = $4, reply = $5, reply_at = now(), reply_by = $6, outside_refund = $7, updated_at = now()
         where id = $1::bigint and business_id = $2 and status = 'open'`, [h.id, negocio, dec, offer, t, actorId, fuera]);
-    if (u.rowCount && !devuelve) await alGuardar?.(c);
-    return u;
-  });
-  if (!u.rowCount) return no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
-  if (devuelve) {
-    const d = await devolverOperacion({ opId: h.op, centavos: devolver, kinds: KINDS_AYUDA, por: "business", actorId, motivo: `Ayuda con la cita: ${t.slice(0, 200)}`, idem: `ayb-${x.clave}` });
+    if (!u.rowCount) return null;
+    let ids: string[] = [];
+    if (devuelve) {
+      const a = await cobros.anotarDevolucionOperacion(c, { opId: h.op, centavos: devolver, kinds: KINDS_AYUDA, por: "business", actorId, motivo: `Ayuda con la cita: ${t.slice(0, 200)}`, idem: `ayb-h${h.id}` });
+      if (!a.ok) throw new NoCabe(a.msg);
+      ids = a.ids;
+    }
+    await alGuardar?.(c);
+    return { ids };
+  }).catch((e) => { if (e instanceof NoCabe) return e.m; throw e; });
+  if (!u) return no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
+  if (!("ids" in u)) return { ok: false, msg: u };
+  for (const id of u.ids) {
+    const d = await cobros.ejecutarDevolucionPago(id);
     // 9t · Sin respuesta de Stripe la devolución sigue en camino (el barrido la termina con su llave): la respuesta se queda; volver a abrir la
-    // solicitud dejaría responder otra vez con otra llave (devolver dos veces).
-    if (!d.ok && d.enCamino) { await tx(async (c) => { await alGuardar?.(c); }); return { ok: false, msg: d.msg }; }
+    // solicitud dejaría responder otra vez mientras el dinero va saliendo.
+    if (!d.ok && d.enCamino) return { ok: false, msg: d.msg };
     if (!d.ok) {
+      // Un «no» de Stripe: la solicitud vuelve a quedar abierta para responder otra vez (la misma llave del caso: lo que ya salió cuenta y no sale dos veces).
       await db().query(`update help_requests set status = 'open', decision = null, offer_cents = null, reply = null, reply_at = null, reply_by = null, updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);
       return { ok: false, msg: d.msg };
     }
-    await tx(async (c) => {
-      await c.query(`update help_requests set refunded_cents = refunded_cents + $2 where id = $1::bigint`, [h.id, devolver]);
-      await alGuardar?.(c);
-    });
   }
   await avisarAyudaCita(numero, "help_reply");
   if (fuera) return { ok: true, mensaje: { es: "Respondida. Devuélvele lo cobrado directamente (no pasó por la app); cuando lo tenga, lo confirma.", en: "Replied. Refund the charge directly (it did not go through the app); once they have it, they confirm." } };

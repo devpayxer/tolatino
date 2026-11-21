@@ -5,7 +5,7 @@ import { firmaValida } from "@/lib/pagos/stripe";
 
 /* Webhook de Stripe. Solo acepta eventos firmados con STRIPE_WEBHOOK_SECRET (y frescos); cada evento se guarda una vez
    (idempotente) y se aplica al libro propio: la cuenta del negocio, cobros cancelados o capturados fuera de la app,
-   devoluciones y disputas. El dinero lo decide nuestro libro; Stripe solo confirma. */
+   devoluciones (también la que Stripe da por fallida después: charge.refund.updated) y disputas. El dinero lo decide nuestro libro; Stripe solo confirma. */
 export const dynamic = "force-dynamic";
 type Ev = { id: string; type: string; account?: string; data: { object: Record<string, unknown> } };
 
@@ -69,6 +69,13 @@ async function aplicar(ev: Ev) {
             where stripe_payment_intent = $1 and status in ('captured', 'partially_refunded') returning operation_id::text as op, status as st`, [pi, dev])).rows[0];
         if (p) await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [p.op, p.st]);
       });
+      return;
+    }
+    // 9t2 · Una devolución que Stripe da por fallida días después (la tarjeta se cerró, el banco la rechazó): la fila 'failed', el saldo vuelve al
+    // cobro (lo devuelto sale del libro) y alerta al equipo de dinero (lib/cobros: devolucionFallidaEnStripe). Lo demás de una devolución no cambia nada.
+    case "charge.refund.updated": {
+      if (String(o.status ?? "") !== "failed" || typeof o.id !== "string") return;
+      await (await import("@/lib/cobros")).devolucionFallidaEnStripe(o.id, String(o.failure_reason ?? "failed"), Number(o.amount ?? 0));
       return;
     }
     case "charge.dispute.created":
