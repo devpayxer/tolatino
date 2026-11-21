@@ -2158,7 +2158,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `alreves9tpaso`, 9/9); prueba `toque9t` (5 toques seguidos en Deporte › Pase de un día y Mercados › precio por libra, y mira la base).
       Un toque en un tope sin cambio (p. ej. «−» en el mínimo) ya no guarda lo mismo otra vez. El catálogo `cms-cadenas-e2.json` se regeneró
       (solo cuentas de llamadas).
-- [ ] **→ 9t** · **Panel: `toque9t` sin correr (la pareja Desde/Hasta de Ninos, HECHA 21 nov):** `toque9t` (5 toques seguidos, y ahora también la
+- [x] **→ 9t** · **Panel: `toque9t` sin correr (la pareja Desde/Hasta de Ninos, HECHA 21 nov) — ✓ corrió en el CI completo 44872463837 (19 ✓, 21 nov):** `toque9t` (5 toques seguidos, y ahora también la
       pareja) se escribió el 21 nov sin servidor local (el puerto era de otro dueño): la corre el CI y, si falla, se mira antes de subir.
       La pareja «Desde» y «Hasta» (Ninos › Edades, el par `edad` entero) quedó resuelta (21 nov): `pasoSrv` acepta `grupo: { id, campo }`; los
       pasos de un grupo comparten una sola cola de guardado y cada `save`/`sig` recibe `pedido` (el último valor pedido de cada paso del grupo).
