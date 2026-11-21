@@ -1,7 +1,7 @@
 # Super Admin: Colas · Super Admin: Queues
 
 _Pantallas: ADM-COLAS (`/admin/colas`, `/admin/colas?ajustes=1`), Sistema › Configuración › Colas. Teléfono y escritorio. Para el equipo de
-To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
+To'Latino. Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - Todo lo que espera una decisión de una persona, la más vieja contra su plazo primero. Cada cola tiene su **plazo** (Configuración › Colas) y
@@ -32,6 +32,8 @@ To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | Cambias un plazo | La lista, los vencidos y la Analítica lo usan desde ese momento. |
 | Feriado del equipo | El plazo de los casos de Soporte que se abren no cuenta ese día. |
 | Hay más de 200 casos abiertos | Las cuentas son las de verdad y la lista pasa de 50 en 50 (1–50 · total). «Míos», «Sin asignar» y «Vencidos» filtran en la base. |
+| Ayuda con pedidos y citas: dos personas resuelven con monto el mismo caso a la vez | Sale **una sola devolución** (es la del caso, no la del toque): la otra persona ve «Este caso ya se decidió». El caso suma lo que de verdad volvió a la tarjeta. |
+| Ayuda con monto: Stripe no contesta | La devolución queda en camino y el caso sigue abierto: resuélvelo cuando termine (con ese monto o sin monto). Otro monto no se acepta: «En este caso ya hay una devolución de $X…»; si hace falta más, Transacciones. |
 
 ## Preguntas frecuentes
 **¿El Admin puede quitarse una cola?** No: el Admin ve todas.
@@ -70,6 +72,8 @@ To'Latino. Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
 | You change a deadline | The list, overdue cases and Analytics use it from then on. |
 | Team holiday | Support cases opened do not count that day. |
 | More than 200 open cases | The counts are the real ones and the list goes 50 at a time (1–50 · total). «Mine», «Unassigned» and «Overdue» filter in the database. |
+| Help with orders and appointments: two people resolve the same case with an amount at the same time | **Only one refund** goes out (it belongs to the case, not to the tap): the other person sees «This case was already decided». The case adds what really went back to the card. |
+| Help with an amount: Stripe does not answer | The refund stays on its way and the case stays open: resolve it when it finishes (with that amount or no amount). A different amount is not accepted: «This case already has a $X refund…»; if more is needed, use Transactions. |
 
 ### FAQ
 **Can the Admin remove a queue from themselves?** No: the Admin sees all of them.

@@ -1,7 +1,7 @@
 # Super Admin › Transacciones › Disputas con el banco · Bank disputes
 
 _Pantallas: `/admin/transacciones/disputas` (la cola de 120 h) y el caso en Colas › Disputas con el banco. Permiso: ver con «Transacciones»; responder y
-aceptar con «Transacciones: aprobar» (Finanzas y Admin). Versión: 14 nov 2026. Audiencia: equipo. Tema: equipo._
+aceptar con «Transacciones: aprobar» (Finanzas y Admin). Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - Cuando un cliente reclama un cobro con su banco, Stripe nos avisa y la disputa entra a la cola **de 120 horas** con su **plazo del banco**. El negocio
@@ -19,6 +19,8 @@ aceptar con «Transacciones: aprobar» (Finanzas y Admin). Versión: 14 nov 2026
 |---|---|
 | Responder dos veces | No deja: «Esta disputa ya se respondió o se cerró». |
 | Stripe no acepta la respuesta | No cambia nada; inténtalo otra vez. |
+| La disputa cambió mientras respondías o aceptabas (el banco la cerró u otra persona la respondió) | Lo que llegó del banco no se pisa: «La disputa cambió mientras tanto (ahora: …)». Lo que mandaste a Stripe queda en la auditoría con el estado que encontró. Actualiza y mira el caso. |
+| Stripe la pasa a «en revisión» por tu misma respuesta antes de anotarla | Se anota tu respuesta; el estado ya era el correcto. |
 | El pedido no tiene foto de entrega | Va la constancia con la línea de tiempo (la foto llega con el Repartidor). |
 | El banco decide | Llega por Stripe: ganada (el dinero se queda) o perdida; el negocio recibe el resultado. |
 | Sandbox | La disputa y el resultado se simulan desde Transacciones; el «banco» del simulador recibe los mismos archivos. |
@@ -47,6 +49,8 @@ Los archivos se guardan en el almacén privado (nunca públicos) y quedan anotad
 |---|---|
 | Responding twice | Not allowed: "This dispute was already answered or closed." |
 | Stripe does not accept the response | Nothing changes; try again. |
+| The dispute changed while you were responding or accepting (the bank closed it or someone else answered) | What came from the bank is not overwritten: «The dispute changed meanwhile (now: …)» (in Spanish on screen). What you sent to Stripe is in the audit with the status it found. Refresh and check the case. |
+| Stripe moves it to «under review» because of your own response before it is recorded | Your response is recorded; the status was already right. |
 | The order has no delivery photo | The delivery record goes with the timeline (the photo will come with the Repartidor app). |
 | The bank decides | It arrives through Stripe: won (the money stays) or lost; the business receives the result. |
 | Sandbox | The dispute and the result are simulated from Transactions; the simulator's "bank" receives the same files. |

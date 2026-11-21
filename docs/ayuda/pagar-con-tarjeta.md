@@ -1,7 +1,7 @@
 # Pagar con tarjeta · Paying by card
 
 _Pantallas: Finalizar pedido (APP-NEG-CHECKOUT · PAGO y la hoja «Método de pago»), la página del pedido, Panel › Cobros (DASH-COBROS), Panel › Lo que
-vendes › Pedidos (Tarjeta en la app), el detalle del pedido en el panel («Devolver dinero») y Super Admin › Transacciones, la hoja «Tu banco pide confirmar» (3-D Secure) y Mi cuenta › Ajustes › Pagos. Versión: 14 nov 2026.
+vendes › Pedidos (Tarjeta en la app), el detalle del pedido en el panel («Devolver dinero») y Super Admin › Transacciones, la hoja «Tu banco pide confirmar» (3-D Secure) y Mi cuenta › Ajustes › Pagos. Versión: 21 nov 2026.
 Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
@@ -37,6 +37,8 @@ Audiencia: vecino. Tema: pedidos._
 | Stripe pide un dato más al negocio | Cobros dice «Stripe necesita un dato más» con «Completar en Stripe». |
 | To'Latino retiene los pagos al negocio | Cobros lo dice con el motivo; no se pierde nada. |
 | Devolución mayor a lo que queda | No deja: «Puedes devolver hasta $X». |
+| Stripe no contesta al devolver | La devolución queda **en camino** y se termina sola en unos minutos con la misma llave (nunca sale dos veces): «Stripe no contestó… no la repitas». Si Stripe dice que no, queda fallida y se puede intentar otra vez. |
+| Otra devolución de ese cobro va en camino | Espera a que termine: «Hay una devolución de $X en camino para este cobro». |
 | Sandbox (pruebas) | Todo corre contra el simulador de To'Latino: 4242 4242 4242 4242 aprueba, 4000 0000 0000 0002 rechaza, 4000 0000 0000 9995 sin fondos, 4000 0027 6000 3184 pide confirmar (el «banco» de pruebas contesta en la hoja). Nada real se cobra. |
 
 ## Preguntas frecuentes
@@ -82,6 +84,8 @@ devoluciones siguen llegando a esa tarjeta. La que paga el Pro de tu negocio se 
 | Stripe asks the business for one more piece of information | Payouts says «Stripe needs one more piece of information» with «Complete in Stripe». |
 | To'Latino holds payouts to the business | Payouts says so with the reason; nothing is lost. |
 | Refund larger than what remains | It doesn't allow it: «You can refund up to $X». |
+| Stripe does not answer a refund | The refund stays **on its way** and finishes by itself in a few minutes with the same key (it never goes out twice): «Stripe did not answer… do not repeat it». If Stripe says no, it is marked failed and can be tried again. |
+| Another refund of that charge is on its way | Wait for it to finish: «A $X refund is on its way for this charge». |
 | Sandbox (testing) | Everything runs against To'Latino's simulator: 4242 4242 4242 4242 approves, 4000 0000 0000 0002 declines, 4000 0000 0000 9995 insufficient funds, 4000 0027 6000 3184 asks to confirm (the test «bank» answers in the sheet). Nothing real is charged. |
 
 ### FAQ
