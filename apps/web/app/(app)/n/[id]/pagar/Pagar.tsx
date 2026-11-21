@@ -107,11 +107,13 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
 
   /* 21 nov · codigoEscritoManda: un cupón ESCRITO y sin «Aplicar» no se ignora callado (antes el pedido salía a precio completo sin decir nada).
      «Aplicar» y el botón de enviar pasan por aquí: el servidor dice si vale. */
-  const aplicarCupon = async (): Promise<boolean> => {
+  const aplicarCupon = async (desdeEnviar = false): Promise<boolean> => {
     if (!cupIn || cupBusy) return false;
     setCupBusy(true); setCupErr("");
     let bien = false;
-    try { const r = await cuponPago(biz, cupIn, C.sub); if (r.ok) { setCup({ code: r.code, off: r.off }); setCupIn(""); bien = true; } else if (r.entrar) router.push(`/entrar?volver=${aqui}`); else setCupErr(es ? r.msg.es : r.msg.en); }
+    try { const r = await cuponPago(biz, cupIn, C.sub); if (r.ok) { setCup({ code: r.code, off: r.off }); setCupIn(""); bien = true; } else if (r.entrar) router.push(`/entrar?volver=${aqui}`);
+      // Cuando lo revisó «Enviar pedido», se dice también la salida: sin eso la persona no sabe que borrándolo el pedido sale sin cupón.
+      else setCupErr((es ? r.msg.es : r.msg.en) + (desdeEnviar ? E2(" Bórralo para enviar sin cupón.", " Clear it to send without a coupon.") : "")); }
     catch { setCupErr(E2("No se pudo revisar el cupón. Prueba de nuevo.", "Could not check the coupon. Try again.")); }
     setCupBusy(false);
     return bien;
@@ -120,7 +122,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
     if (!lines.length || enviando || sinPedidos) return;
     // Hay un cupón escrito sin aplicar: se revisa AHORA y este toque no envía. Si vale, el total cambia a la vista y el siguiente toque envía con
     // el precio que la persona ya vio; si no vale, se dice junto al campo. Nunca se cobra un total que no estuvo en pantalla.
-    if (cupIn && !cup) { await aplicarCupon(); document.querySelector("[data-cupon]")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+    if (cupIn && !cup) { await aplicarCupon(true); document.querySelector("[data-cupon]")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
     if (sinDir) { router.push(`/cuenta/direcciones/nueva?volver=${aqui}`); return; }
     if (bloqueo) { setError({ msg: bloqueo, menu: !!ENT.blk && !ENT.blk.includes(" mi ") }); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
     if (conTarjeta && !tarjeta) { setHoja(true); return; }

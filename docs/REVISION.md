@@ -5932,12 +5932,15 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Qué pasaba:** si alguien escribía su código y tocaba «Publicar» sin tocar «Aplicar» (o antes de que «Aplicar» contestara), el negocio se
   publicaba **sin el código y sin avisar**: el promotor perdía su negocio traído y el dueño sus 60 días. Lo cazó una prueba que fallaba una vez
   de muchas (`cre9h`); no era la prueba, era la app.
-- **Ahora (Fable):** lo escrito lo revisa el servidor al publicar, aplicado o no. Si el código vale, se publica con él. Si no vale, **no se
-  publica** y el campo queda en rojo con «Ese código no existe o ya venció»: se corrige o se borra. Guardián `codigoEscritoManda` + al revés (9/9).
+- **Ahora (Fable lo escribió; Opus lo revisó aparte y de su revisión salieron 8 ajustes, ya hechos):** el primer toque de «Publicar» revisa lo
+  escrito, el botón pasa a decir los días del código y todavía no publica; el segundo toque publica. Si no vale, **no se publica** y el campo
+  queda en rojo con «Ese código no existe o ya venció»: se corrige o se borra. El servidor además valida lo escrito al publicar, aplicado o no.
+  Guardián `codigoEscritoManda` + al revés (18/18).
 - **Qué mirar (teléfono, sandbox):** Publica tu negocio → último paso → «¿Tienes un código de promotor?» → escribe `HZL30` y toca «Publicar»
-  directo: la pantalla final debe decir Pro gratis por 60 días. Y con un código inventado: no publica y lo dice.
+  directo: el botón debe pasar a «Publicar · 60 días de Pro gratis» sin publicar; al tocarlo otra vez, publica. Con un código inventado: no publica y lo dice.
 - **Lo mismo donde hay dinero (misma clase, buscada en toda la app):** en el **pago de un pedido** un cupón escrito sin «Aplicar» salía a precio
   completo sin decir nada; ahora «Enviar pedido» lo revisa, muestra el total con el descuento y **ese toque no envía** (nunca se cobra un total que
   no estuvo en pantalla); el segundo toque envía. En **boletos**, un código escrito sin «Aplicar» apartaba a precio completo; ahora «Continuar» lo
-  revisa y aparta con él (la pantalla de pago muestra el descuento antes de cobrar). En los dos, si el código no vale: no sigue y lo dice.
+  revisa y aparta con él (la pantalla de pago muestra el descuento antes de cobrar). En los dos, si el código no vale: no sigue, lo dice y
+  dice la salida («Bórralo para enviar sin cupón» / «Bórralo para seguir sin código»).
   *Decidí yo (reversible):* en el pago del pedido pido el segundo toque en vez de cobrar de una vez con el descuento. Si prefieres un solo toque, dilo.

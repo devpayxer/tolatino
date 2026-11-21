@@ -16,12 +16,16 @@ const casos = [
   // La pantalla: lo escrito deja de ir al borrador, o el campo muestra una copia aparte
   [F, 'up({ promo: v, promoOk: false, promoDias: 0 }); }}', '}}'],
   [F, '<input value={escrito}', '<input value={promo.err ?? ""}'],
-  [P, 'if (r.campo === "promo") { up({ promoOk: false, promoDias: 0 }); setPromoMal(true); }', ''],
+  [P, 'if (r.campo === "promo") { up({ promoOk: false, promoDias: 0 }); setPromoMal(true);', 'if (r.campo === "promo") {'],
+  [P, 'if (d.promo && !d.promoOk) {', 'if (false) {'],
+  [P, '        verPromo(); return;\n      }\n      setPublicando(true);', '        verPromo();\n      }\n      setPublicando(true);'],
   // Las pruebas: la carrera de antes (esperar un botón que ya existe) o dejar de probar lo escrito sin aplicar
-  [N, "if (aplicar) { await p.getByText('Aplicar', { exact: true }).click(); await p.getByText(new RegExp(`^Con ${promo} tienes", "if (aplicar) { await p.getByText('Aplicar', { exact: true }).click(); await p.getByText(new RegExp(`^Publicar · "],
+  [N, "await p.getByText(new RegExp(`^Con ${promo} tienes", "await p.getByText(new RegExp(`^Publicar · "],
   [E, "publicarBarberia(b, { promo: PC, aplicar: false, promoAntes: 'NOEXISTE9'", "publicarBarberia(b, { promo: PC"],
   // La misma clase con dinero: el pago del pedido vuelve a ignorar el cupón escrito, o lo aplica y cobra en el mismo toque
-  [PG, 'if (cupIn && !cup) { await aplicarCupon();', 'if (false) { await aplicarCupon();'],
+  [PG, 'if (cupIn && !cup) { await aplicarCupon(true);', 'if (false) { await aplicarCupon(true);'],
+  // …o lo revisa DESPUÉS de otra salida (el orden importa: va lo primero de «enviar»)
+  [PG, '    if (cupIn && !cup) { await aplicarCupon(true);', '    if (sinDir) return;\n    if (cupIn && !cup) { await aplicarCupon(true);'],
   [PG, 'document.querySelector("[data-cupon]")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }', 'document.querySelector("[data-cupon]")?.scrollIntoView({ block: "center", behavior: "smooth" }); }'],
   // Los boletos vuelven a apartar con lo «aplicado» y no con lo escrito, o apartan aunque el código no valga
   [BO, 'extras, codigo: cod }', 'extras, codigo: aplicado?.codigo ?? null }'],

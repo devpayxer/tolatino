@@ -6,7 +6,7 @@
    de los precios del servidor; lo que se cobra lo decide el servidor al apartar (y lo muestra la pantalla de pago). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useState, type ComponentType, useRef } from "react";
 import type { PantallaBoletos } from "@/lib/boletos";
 import { diaCorto, dinero, hora } from "@/lib/evt-comun";
 import { evtApartar, evtCodigo } from "../../acciones-boletos";
@@ -37,15 +37,25 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
   const falta = !elegido ? E2("Elige al menos un boleto o una mesa", "Pick at least one ticket or a table") : admits > libres ? E2(`Hasta ${libres} entradas más para esta fecha`, `Up to ${libres} more entries for this date`) : "";
   const lista = new URLSearchParams({ fecha: p.fecha, t: Object.entries(q).filter(([, n]) => n > 0).map(([id, n]) => `${id}:${n}`).join(","), ...(mesa ? { m: mesa } : {}), ...(extras.length ? { a: extras.join(",") } : {}) });
   const entrar = () => router.push(`/entrar?volver=${encodeURIComponent(`/eventos/${p.evento.slug}/boletos?${lista}`)}`);
-  const cambiar = (id: string, d: number) => { setAplicado(null); setError(null); setQ((x) => ({ ...x, [id]: Math.max(0, Math.min((x[id] ?? 0) + d, p.tipos.find((t) => t.id === id)?.quedan ?? 0)) })); };
-  const elegirMesa = (id: string) => { setError(null); setMesa(mesa === id ? null : id); if (mesa === id) setExtras((L) => L.filter((a) => !p.extras.find((x) => x.id === a)?.mesa)); };
-  const aplicar = async (): Promise<{ codigo: string; descuento: number } | null> => {
+  const cambiar = (id: string, d: number) => { rechazado.current = null; setAplicado(null); setError(null); setQ((x) => ({ ...x, [id]: Math.max(0, Math.min((x[id] ?? 0) + d, p.tipos.find((t) => t.id === id)?.quedan ?? 0)) })); };
+  const elegirMesa = (id: string) => { rechazado.current = null; setError(null); setMesa(mesa === id ? null : id); if (mesa === id) setExtras((L) => L.filter((a) => !p.extras.find((x) => x.id === a)?.mesa)); };
+  // El último código que el servidor rechazó con SU motivo (para lo mismo elegido): «Continuar» no lo vuelve a mandar (un código que no existe
+  // cuenta como intento y a los varios intentos se bloquea 15 minutos). Cambiar boletos o mesa lo olvida.
+  const rechazado = useRef<{ c: string; m: string } | null>(null);
+  const BORRALO = E2(" Bórralo para seguir sin código.", " Clear it to continue without a code.");
+  const verCodigo = () => Array.from(document.querySelectorAll<HTMLElement>('[data-screen-label="Boletos · código"]')).find((e) => e.offsetParent)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  const aplicar = async (desdeSeguir = false): Promise<{ codigo: string; descuento: number } | null> => {
     if (!yo) { entrar(); return null; }
     if (!codigo.trim()) return null;
     setCodErr(null);
     const r = await evtCodigo(p.fecha, Object.entries(q).filter(([, n]) => n > 0).map(([id, n]) => ({ id, q: n })), codigo).catch(() => null);
     if (r && !r.ok && r.entrar) { entrar(); return null; }
-    if (!r?.ok) { setAplicado(null); setCodErr(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); return null; }
+    if (!r?.ok) {
+      const m = r?.msg ? (es ? r.msg.es : r.msg.en) : null;
+      if (m) rechazado.current = { c: codigo, m };
+      setAplicado(null); setCodErr(m ? m + (desdeSeguir ? BORRALO : "") : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); return null;
+    }
+    rechazado.current = null;
     const a = { codigo: r.codigo, descuento: r.descuento };
     setAplicado(a);
     return a;
@@ -57,9 +67,10 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
     // 21 nov · codigoEscritoManda: un código ESCRITO y sin «Aplicar» no se ignora callado (antes se apartaba a precio completo). Se revisa ahora: si
     // vale, se aparta con él (la pantalla de pago muestra el descuento antes de cobrar); si no vale, no se aparta y se dice junto al campo.
     let cod = aplicado?.codigo ?? null;
-    if (!aplicado && codigo.trim() && nTk > 0) {
-      const a = await aplicar();
-      if (!a) { setOcupado(false); document.querySelector('[data-screen-label="Boletos · código"]')?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+    if (!aplicado && codigo.trim()) {
+      if (rechazado.current?.c === codigo) { setCodErr(rechazado.current.m + BORRALO); setOcupado(false); verCodigo(); return; }
+      const a = await aplicar(true);
+      if (!a) { setOcupado(false); verCodigo(); return; }
       cod = a.codigo;
     }
     const r = await evtApartar({ fecha: p.fecha, boletos: Object.entries(q).filter(([, n]) => n > 0).map(([id, n]) => ({ id, q: n })), mesa, extras, codigo: cod }).catch(() => null);

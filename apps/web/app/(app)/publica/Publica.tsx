@@ -6,7 +6,7 @@
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import { empezarDeNuevo, guardarBorrador, leerBorrador, negocioIgual, publicar, publicarOtro } from "./acciones";
+import { empezarDeNuevo, guardarBorrador, leerBorrador, negocioIgual, probarPromo, publicar, publicarOtro } from "./acciones";
 import { cap, catalogoVivo, plantillasVivas, D0, dig, F, Fl, fmtPh, items, ok, opOf, own, SEQ, subL, X, zoneOf, type Borrador, type CatalogoPublica, type Paso, type SubsVivas } from "./logica";
 import { K, PasoB1, PasoC1, type UiB } from "./PasosBC";
 import { PasoD1, PasoE1 } from "./PasosDE";
@@ -207,6 +207,7 @@ export function Publica({ v }: { v: VistaPublica }) {
   // F1 (tu foto y tu página) y H1 (publicada): textos del diseño; publicar lo hace el servidor.
   const [publicando, setPublicando] = useState(false), [promoMal, setPromoMal] = useState(false);
   const fechas = fechasPrueba(len, es);
+  const verPromo = () => Array.from(document.querySelectorAll<HTMLElement>("[data-acepta-publica]")).find((e) => e.offsetParent)?.scrollIntoView({ block: "center", behavior: "smooth" });
   if (st === "F1") {
     H.t = E2("Una foto y listo", "One photo and done"); H.s = E2("Es la portada de tu página: tu local, tu fachada o tu trabajo. Tómala ahora.", "It’s your page cover: your place, your storefront or your work. Take it now.");
     goB.label = E2(`Publicar · ${len} días de Pro gratis`, `Publish · ${len} days of Pro free`);
@@ -214,11 +215,22 @@ export function Publica({ v }: { v: VistaPublica }) {
     goB.disabled = !d.cover || publicando;
     goB.onClick = async () => {
       if (!d.cover || publicando) return;
+      // Hay un código escrito sin aplicar: este toque lo revisa y todavía no publica. Si vale, el botón y las fechas pasan a sus días (la pantalla
+      // no promete 30 cuando el servidor va a dar 60) y el siguiente toque publica; si no vale, se dice junto al campo.
+      if (d.promo && !d.promoOk) {
+        setPublicando(true);
+        const v0 = d.promo, k = await probarPromo(v0).catch(() => null);
+        setPublicando(false);
+        if (!k) toast(E2("No se pudo revisar el código. Prueba de nuevo.", "Could not check the code. Try again."));
+        else if (k.ok) { setPromoMal(false); up((z) => (z.promoOk || z.promo !== v0 ? {} : { promoOk: true, promoDias: k.dias })); }
+        else setPromoMal(true);
+        verPromo(); return;
+      }
       setPublicando(true);
       const r = await publicar(d);
       setPublicando(false);
       // El código escrito no vale (lo dice el servidor): el campo queda abierto, en rojo, con lo escrito; nada se publicó.
-      if (!r.ok) { if (r.campo === "promo") { up({ promoOk: false, promoDias: 0 }); setPromoMal(true); } toast(r.mensaje[v.lang]); if (r.paso) go(r.paso as Paso); return; }
+      if (!r.ok) { if (r.campo === "promo") { up({ promoOk: false, promoDias: 0 }); setPromoMal(true); toast(r.mensaje[v.lang]); verPromo(); return; } toast(r.mensaje[v.lang]); if (r.paso) go(r.paso as Paso); return; }
       try { localStorage.removeItem(KEY); } catch { /* */ }
       setPublicado(r.negocio); router.push(`${ruta}?paso=H1`);
     };

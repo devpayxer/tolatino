@@ -91,7 +91,11 @@ async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Ma
     await p.getByLabel('Código de promotor').fill(promo);
     // 21 nov · Se espera a que el código esté APLICADO («Con X tienes N días…»). Antes se esperaba el botón «Publicar · N días de Pro gratis», que ya
     // decía «30 días» sin código: la prueba tocaba «Publicar» antes de que «Aplicar» contestara y el negocio salía sin código (cre9h, CI 44856657972).
-    if (aplicar) { await p.getByText('Aplicar', { exact: true }).click(); await p.getByText(new RegExp(`^Con ${promo} tienes \\d+ días de Pro gratis\\.$`)).waitFor({ timeout: 8000 }); }
+    // Con «Aplicar», o con el primer toque de «Publicar»: ese toque revisa el código, cambia el botón a sus días y todavía NO publica.
+    await (aplicar ? p.getByText('Aplicar', { exact: true }) : p.locator('text=/^Publicar · /').last()).click();
+    await p.getByText(new RegExp(`^Con ${promo} tienes \\d+ días de Pro gratis\\.$`)).waitFor({ timeout: 8000 });
+    if (!aplicar) { await p.locator('text=/^Publicar · 60 días de Pro gratis$/').last().waitFor({ timeout: 8000 }); await p.waitForTimeout(1200);
+      if (sql(`select count(*) from businesses b join users u on u.id = b.owner_user_id where u.phone = '+1${tel}'`) !== '0') throw new Error('publicarBarberia: el toque que revisa el código ya publicó (con el botón diciendo 30 días)'); }
   }
   await p.locator('text=/^Publicar · /').last().click();
   await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });

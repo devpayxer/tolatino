@@ -144,6 +144,6 @@ businesses; the person turns it off in My account › Notices › «What’s in 
 
 ### Follower coupon
 Some businesses post a **coupon for their followers**: a discount on their online orders from a minimum order. You only see the code if you follow the
-business (if not, the update says «Followers only» and you can follow it right there). You type it at checkout, in «Coupon code», and tap «Apply». If you type it and tap «Send order» without tapping «Apply», it is not lost: that tap
+business (if not, the update says «Followers only» and you can follow it right there). You type it at checkout, in «Coupon code», and tap «Apply». If you type it and tap «Place order» without tapping «Apply», it is not lost: that tap
 checks it, shows you the total with the discount (or why it is not valid) and does not send yet; the second tap sends with the price you already saw. You use
 it once; if your order does not go through (the business does not accept it or it is cancelled), you can use it again.
