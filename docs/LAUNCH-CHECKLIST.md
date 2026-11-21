@@ -2011,7 +2011,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 
 
 ## Fotos a la medida (decisión AI, 20 nov) — lo que quedó fuera y lo que vio el inventario
-- [ ] **→ 9t** · **Las fotos públicas no pasan por revisión de contenido al subir:** `/api/medios` (portada y galería del negocio, menú, reseñas,
+- [x] **→ 9t** · _Hecho el 20 nov (decisión AJ: cuatro capas, en el sandbox desde be601ea; plan `docs/diseno/plan/fotos-revision-automatica.md`)._ **Las fotos públicas no pasan por revisión de contenido al subir:** `/api/medios` (portada y galería del negocio, menú, reseñas,
       eventos, novedades, foto de perfil) guarda la foto ya visible; solo las de Mensajes y las de Comunidad pasan por el modelo propio
       (`revisarImagen`). Decidir con el fundador si las públicas también pasan (y qué se hace mientras se revisan) y construirlo. (20 nov)
 - [ ] **→ 9t** · **La limpieza de las fotos de ayuda a los 90 días no corre:** `purgarFotosAyuda()` (`lib/ayuda-cita.ts`) existe pero nadie la
