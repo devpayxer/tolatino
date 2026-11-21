@@ -644,7 +644,7 @@ export type Hallado = { id: string; estado: "hecho" | "fallido" | "en_curso"; ce
 const creadoDe = (s?: number) => (typeof s === "number" && Number.isFinite(s) && s > 0 ? new Date(s * 1000).toISOString().slice(0, 19) + "Z" : null);
 export type Consulta = { ok: false } | { ok: true; hallado: Hallado | null } | { ok: true; varios: Hallado[] };
 const REF_OK = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals):\d{1,18}$/;
-const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals):\d{1,18}$/;
+const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals|sponsorship_refunds):\d{1,18}$/;
 function estadoCobro(st: string): Hallado["estado"] {
   if (st === "succeeded") return "hecho";
   if (st === "canceled" || st === "failed" || st === "requires_payment_method") return "fallido";

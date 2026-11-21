@@ -9,7 +9,8 @@ const casos = [
   [P, ", now(),\n                                (select ci.timezone from cities ci where ci.id = ${t}city_id)) d)`;", ", now()) d)`;"],
   [P, "0, 0, null, now(), ci.timezone) d)", "0, 0, null, now()) d)"],
   [E, "s.paused_at, now(), ci.timezone) d)", "s.paused_at, now()) d)"],
-  [P, "patrocinio_dias_comprados(s.starts_at, s.ends_at, ${ev ? \"s.extended_secs\" : \"0\"}, (select ci.timezone from cities ci where ci.id = s.city_id)) as total,", "greatest(1, ceil((extract(epoch from s.ends_at - s.starts_at) - ${ev ? \"s.extended_secs\" : \"0\"}) / 86400.0 - 1 / 24.0))::int as total,"],
+  // 9t8 · Los días de la devolución de un patrocinio, al cerrarla (cerrarDevolucionPat).
+  [P, "patrocinio_dias_comprados(s.starts_at, s.ends_at, s.extended_secs, (select ci.timezone from cities ci where ci.id = s.city_id)) as total", "greatest(1, ceil((extract(epoch from s.ends_at - s.starts_at) - s.extended_secs) / 86400.0 - 1 / 24.0))::int as total"],
   [M, "b - ((date_trunc('day', a at time zone tz)) at time zone tz)", "b - a"],
   [M, "with x as (select patrocinio_dias_comprados(a, b, ext, tz) as total,", "with x as (select greatest(1, ceil((extract(epoch from b - a) - ext) / 86400.0 - 1 / 24.0))::int as total,"],
   ['pruebas/e2e/pat003.cjs', "patrocinio_dias_comprados(s.starts_at, s.ends_at, s.extended_secs, ci.timezone) from", "greatest(1, ceil((extract(epoch from s.ends_at - s.starts_at) - s.extended_secs) / 86400.0 - 1 / 24.0))::int from"],

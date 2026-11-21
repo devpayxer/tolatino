@@ -96,14 +96,16 @@ export type FilaAlerta = { id: string; kind: TipoAlerta; sujeto: string; negocio
   revisar: Revisar | null };
 const CIUD = "(cardinality($1::text[]) = 0 or a.city_id = any($1::text[]))";
 /* 9t5 · La intención de una alerta «sin respuesta» (para la consulta a la pasarela): su tabla, su id y si sigue en camino.
-   9t6 · También la renovación de una retención (hold_stuck) y la devolución de lo que sobró (extra_refund_stuck), por su id. */
+   9t6 · También la renovación de una retención (hold_stuck) y la devolución de lo que sobró (extra_refund_stuck), por su id.
+   9t8 · Y la devolución de lo no usado de un patrocinio (refund_stuck con sujeto 'sponsorship_refunds:<id>'). */
 const INTENCION_DE_LA_ALERTA = `select 'subscription_charges'::text as sk, z.id as sid, z.status = 'pending' as vivo from subscription_charges z where a.kind = 'charge_stuck' and z.idem_key = a.subject_id
                           union all select 'offsession_charges', z.id, z.status = 'pending' from offsession_charges z where a.kind = 'offsession_stuck' and z.idem_key = a.subject_id
                           union all select 'event_settlements', z.id, z.status = 'paying' from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                           union all select 'hold_renewals', z.id, z.status = 'pending' from hold_renewals z where a.kind = 'hold_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                           union all select 'gateway_refunds', z.id, z.status = 'pending' and z.manual_at is null from gateway_refunds z where a.kind = 'extra_refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                           union all select 'refunds', z.id, z.status = 'pending' and z.manual_at is null from refunds z where a.kind = 'refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
-                          union all select 'event_settlement_reversals', z.id, z.status = 'pending' and z.manual_at is null from event_settlement_reversals z where a.kind = 'transfer_reversal_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint`;
+                          union all select 'event_settlement_reversals', z.id, z.status = 'pending' and z.manual_at is null from event_settlement_reversals z where a.kind = 'transfer_reversal_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                          union all select 'sponsorship_refunds', z.id, z.status = 'pending' and z.manual_at is null from sponsorship_refunds z where a.kind = 'refund_stuck' and a.subject_id ~ '^sponsorship_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint`;
 export async function alertasDinero(s: Staff, abiertas: boolean, antes: string | null = null, n = 30): Promise<{ filas: FilaAlerta[]; sigue: string | null }> {
   // 9t2 · «Resolver a mano» solo cuando la devolución (o la reversión) SIGUE pendiente y la base lo deja (Stripe ya la intentó): una que quedó
   // fallida o hecha muestra la alerta como informativa (antes ofrecía el botón y contestaba «Ya no está pendiente»). Lo decide el servidor.
@@ -111,6 +113,9 @@ export async function alertasDinero(s: Staff, abiertas: boolean, antes: string |
   // 9t5 · La intención de una alerta «sin respuesta» (su tabla, su id y si sigue en camino) y lo último que dijo la consulta a la pasarela.
   const r = await db().query<Omit<FilaAlerta, "estado" | "aMano" | "preguntar" | "revisar"> & { monto: string; ult: string | null; mano: boolean; vivo: boolean | null }>(
     `select a.id::text, a.kind, a.subject_id as sujeto, case
+              -- 9t8 · La devolución de lo no usado de un patrocinio: en camino (con la regla de la base: sponsorship_refunds_reglas) o rechazada por Stripe; nunca hecha.
+              when a.kind = 'refund_stuck' and a.subject_id ~ '^sponsorship_refunds:[0-9]{1,18}$' then exists (select 1 from sponsorship_refunds z where z.id = split_part(a.subject_id, ':', 2)::bigint and z.manual_at is null
+                                                          and (z.status = 'failed' or (z.status = 'pending' and (z.attempts >= 1 or coalesce(z.sent_at, z.created_at) <= now() - interval '23 hours'))))
               when a.kind = 'refund_stuck' then exists (select 1 from refunds r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
                                                           and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))
               when a.kind = 'transfer_reversal_stuck' then exists (select 1 from event_settlement_reversals r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
@@ -166,6 +171,8 @@ export async function preguntarPorAlerta(s: Staff, id: string, nota: string): Pr
     : a.sk === "gateway_refunds" ? await (await import("./revision-pasarela")).resolverDevolucionSobra(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.st === "done" ? "devolucion_hecha" : x.st === "failed" ? "devolucion_fallida" : "sigue" }))
     // 9t7 · Una devolución de un cobro (o de boletos) y una reversión al organizador: la misma función del barrido.
     : a.sk === "refunds" ? await (await import("./devolucion-consulta")).resolverDevolucion(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.quedo === "hecha" ? "devolucion_hecha" : x.quedo === "fallida" ? "devolucion_no" : x.quedo === "reabierta" ? "devolucion_otra_llave" : x.quedo === "no_llego" ? "devolucion_no_llego" : x.quedo }))
+    // 9t8 · La devolución de lo no usado de un patrocinio: la misma función del barrido.
+    : a.sk === "sponsorship_refunds" ? await (await import("./patrocinio")).resolverDevolucionPat(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.quedo === "hecha" ? "devolucion_hecha" : x.quedo === "fallida" ? "devolucion_pat_no" : x.quedo === "reabierta" ? "devolucion_otra_llave" : x.quedo }))
     : a.sk === "event_settlement_reversals" ? await (await import("./evt-liquidacion")).resolverReversion(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.quedo === "hecha" ? "reversion_hecha" : x.quedo === "reabierta" ? "reversion_otra_llave" : x.quedo }))
     : await (await import("./evt-liquidacion")).resolverTransferencia(a.sid, o);
   if (!r.resultado) return { ok: false, msg: "Todavía no pasa la ventana de la llave (o ya no está en camino): no se le pregunta a Stripe." };
@@ -175,7 +182,7 @@ export async function preguntarPorAlerta(s: Staff, id: string, nota: string): Pr
     reversion_hecha: "la reversión quedó hecha y la alerta se cerró", reversion_otra_llave: "nunca llegó a Stripe: se mandó otra vez con otra llave y sigue en camino",
     reabierta: "nunca llegó a Stripe: se manda otra vez con la misma llave", sigue: "sigue en camino; la alerta sigue abierta", ya_no_estaba: "ya no estaba en camino",
     devuelto: "el equipo decidió que ninguno vale: quedó fallida y se devuelve lo cobrado", soltada: "la retención nueva ya no hacía falta: se soltó",
-    devolucion_hecha: "la devolución quedó hecha y la alerta se cerró", devolucion_fallida: "Stripe dijo que no: quedó fallida (hazla desde Stripe o por fuera)" };
+    devolucion_hecha: "la devolución quedó hecha y la alerta se cerró", devolucion_pat_no: "Stripe la tiene como fallida: quedó fallida (hazla desde Stripe o por fuera y resuélvela a mano)", devolucion_fallida: "Stripe dijo que no: quedó fallida (hazla desde Stripe o por fuera)" };
   return { ok: true, msg: `Stripe dijo que ${K.RESULTADO[r.resultado].es}: ${QUEDO[r.quedo] ?? r.quedo}. Quedó en la auditoría.` };
 }
 
@@ -187,7 +194,9 @@ export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" |
   if (!/^\d{1,18}$/.test(id)) return { ok: false, msg: "Esa alerta no existe." };
   const a = (await db().query<{ kind: TipoAlerta; sujeto: string; city: string | null }>(`select a.kind, a.subject_id as sujeto, a.city_id as city from money_alerts a where a.id = $2::bigint and ${CIUD}`, [s.cities, id])).rows[0];
   if (!a) return { ok: false, msg: "Esa alerta no existe (o no es de tus ciudades)." };
-  if (accion === "resuelta_a_mano" && ((a.kind !== "refund_stuck" && a.kind !== "transfer_reversal_stuck" && a.kind !== "extra_refund_stuck") || !/^\d{1,18}$/.test(a.sujeto))) return { ok: false, msg: "Esta alerta no tiene camino manual." };
+  // 9t8 · La devolución de lo no usado de un patrocinio: refund_stuck con sujeto 'sponsorship_refunds:<id>'.
+  const pat = a.kind === "refund_stuck" ? /^sponsorship_refunds:(\d{1,18})$/.exec(a.sujeto) : null, sid = pat ? pat[1]! : a.sujeto;
+  if (accion === "resuelta_a_mano" && ((a.kind !== "refund_stuck" && a.kind !== "transfer_reversal_stuck" && a.kind !== "extra_refund_stuck") || !/^\d{1,18}$/.test(sid))) return { ok: false, msg: "Esta alerta no tiene camino manual." };
   // 9t7 · «Resolver a mano» le pregunta ANTES a la pasarela (fuera de la transacción, anotada con quien la pidió): si Stripe dice que salió, se cierra como
   // hecha y no se marca a mano; si no contesta (o la tiene en curso, o tiene varias), no cambia nada. Lo decide el servidor, nunca la pantalla.
   if (accion === "resuelta_a_mano") {
@@ -201,9 +210,10 @@ export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" |
   const r = await tx(async (c) => {
     if (accion === "resuelta_a_mano") {
       // La tabla sale de una lista cerrada escrita aquí (Semgrep). La devolución de lo que sobró también se resuelve a mano rechazada por Stripe (9t7).
-      const t = a.kind === "refund_stuck" ? "refunds" : a.kind === "transfer_reversal_stuck" ? "event_settlement_reversals" : "gateway_refunds";
-      const est = t === "gateway_refunds" ? "status in ('pending', 'failed')" : "status = 'pending'";
-      const u = await c.query(`update ${t} set manual_at = now(), manual_by = $2::uuid, manual_note = $3::text where id = $1::bigint and ${est} and manual_at is null`, [a.sujeto, s.id, n]);
+      // 9t8 · La de un patrocinio también rechazada por Stripe (como la de lo que sobró).
+      const t = pat ? "sponsorship_refunds" : a.kind === "refund_stuck" ? "refunds" : a.kind === "transfer_reversal_stuck" ? "event_settlement_reversals" : "gateway_refunds";
+      const est = t === "gateway_refunds" || t === "sponsorship_refunds" ? "status in ('pending', 'failed')" : "status = 'pending'";
+      const u = await c.query(`update ${t} set manual_at = now(), manual_by = $2::uuid, manual_note = $3::text where id = $1::bigint and ${est} and manual_at is null`, [sid, s.id, n]);
       if (!u.rowCount) return "Ya no está pendiente: Stripe la hizo o ya se resolvió a mano.";
     }
     await c.query(`insert into money_alert_notes (alert_id, action, staff_id, note) values ($1::bigint, $2::text, $3::uuid, $4::text)`, [id, accion, s.id, n]);
@@ -255,7 +265,10 @@ export async function cerrarAlertasResueltas(): Promise<number> {
                      union all select case when z.status = 'done' then 'reversal_done' else 'pending' end from event_settlement_reversals z where a.kind = 'transfer_reversal_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                      union all select case when z.manual_at is not null then 'manual' else z.status end from refunds z where a.kind = 'gateway_review' and a.subject_id ~ '^refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select case when z.manual_at is not null then 'manual' else z.status end from event_settlement_reversals z where a.kind = 'gateway_review' and a.subject_id ~ '^event_settlement_reversals:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
-                     union all select case when z.manual_at is not null then 'manual' else z.status end from gateway_refunds z where a.kind = 'gateway_review' and a.subject_id ~ '^gateway_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint) o on true
+                     union all select case when z.manual_at is not null then 'manual' else z.status end from gateway_refunds z where a.kind = 'gateway_review' and a.subject_id ~ '^gateway_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     -- 9t8 · La devolución de lo no usado de un patrocinio: su refund_stuck solo cuando quedó hecha (una fallida sigue abierta); su gateway_review como las demás.
+                     union all select case when z.status = 'done' then 'refund_done' else 'pending' end from sponsorship_refunds z where a.kind = 'refund_stuck' and a.subject_id ~ '^sponsorship_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     union all select case when z.manual_at is not null then 'manual' else z.status end from sponsorship_refunds z where a.kind = 'gateway_review' and a.subject_id ~ '^sponsorship_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint) o on true
       where a.kind in ('charge_stuck', 'offsession_stuck', 'transfer_stuck', 'hold_stuck', 'extra_refund_stuck', 'gateway_review', 'refund_stuck', 'transfer_reversal_stuck') and o.st not in ('pending', 'paying')
         and coalesce((select n.action from money_alert_notes n where n.alert_id = a.id order by n.at desc, n.id desc limit 1), '') not in ('resuelta_sola', 'resuelta', 'resuelta_a_mano')
       order by a.id limit 100`)).rows;
@@ -280,10 +293,11 @@ const CERRADA: Record<string, Bi> = {
 /* 9t7 · También las intenciones que DEVUELVEN dinero: una devolución de un cobro (refunds), una reversión al organizador (event_settlement_reversals) y la
    devolución de lo que sobró (gateway_refunds). Con varias en Stripe se elige cuál vale (solo «vale»: lo que salió de más no se deshace con otra devolución);
    con otro monto no se elige (se mira en Stripe y se resuelve a mano en su alerta; el servidor vuelve a preguntar antes). */
-export type T4 = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "refunds" | "event_settlement_reversals" | "gateway_refunds";
-const REF_REV = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals|refunds|event_settlement_reversals|gateway_refunds):(\d{1,18})$/;
+/* 9t8 · Y la devolución de lo no usado de un patrocinio (sponsorship_refunds). */
+export type T4 = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "refunds" | "event_settlement_reversals" | "gateway_refunds" | "sponsorship_refunds";
+const REF_REV = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals|refunds|event_settlement_reversals|gateway_refunds|sponsorship_refunds):(\d{1,18})$/;
 const STRIPE_ID = /^(pi|tr|re|trr|pyr)_[A-Za-z0-9_]{3,200}$/;
-const DEVUELVE = (t: T4) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds";
+const DEVUELVE = (t: T4) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds" || t === "sponsorship_refunds";
 /* Lo que se puede elegir con lo que contestó la pasarela: vale solo lo hallado, hecho y con el monto de la intención; nada en curso; y solo si Stripe sigue
    diciendo lo que pide revisión (varios, otro monto, o un cobro de Pro hecho de un período que ya estaba cobrado). */
 export function elegibles(x: { t: T4; monto: number; periodoCobrado: boolean }, resultado: string, H: { id: string; estado: string; centavos: number }[]): { vale: string[]; ninguno: boolean; enCurso: boolean } {
@@ -335,6 +349,7 @@ export async function opcionesDeAlertas(L: { id: string; sujeto: string }[]): Pr
          union all select y.status = 'pending' and y.manual_at is null, y.amount_cents, false from refunds y where s.t = 'refunds' and y.id = s.id
          union all select y.status = 'pending' and y.manual_at is null, y.amount_cents, false from event_settlement_reversals y where s.t = 'event_settlement_reversals' and y.id = s.id
          union all select y.status = 'pending' and y.manual_at is null, y.amount_cents, false from gateway_refunds y where s.t = 'gateway_refunds' and y.id = s.id
+         union all select y.status = 'pending' and y.manual_at is null, y.amount_cents, false from sponsorship_refunds y where s.t = 'sponsorship_refunds' and y.id = s.id
        ) z on true
        -- La última consulta que CONTESTÓ (una que no contestó no cambia lo que hay que decidir).
        left join lateral (select x.result, x.stripe_id, x.amount_cents, x.found, x.found_n from gateway_checks x where x.subject_kind = s.t and x.subject_id = s.id and x.result <> 'sin_respuesta' order by x.at desc, x.id desc limit 1) g on true`,

@@ -5,12 +5,13 @@
    «No estoy de acuerdo» (compuesto como «algo más» del estimado, 4d). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useRef, useState, type ComponentType } from "react";
 import type { RentaVista } from "@/lib/rentas";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { rentaAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { uuid } from "@/lib/uuid";
 import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
@@ -27,10 +28,14 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [hoja, setHoja] = useState(false), [confirmar, setConfirmar] = useState(false);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []);
+  // 9t8 · La clave del toque de «Un día más»: la misma mientras no llegue una respuesta del servidor (si la red se corta, repetir no cobra otro día); otra después.
+  const clave = useRef(uuid());
   const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL.es[d.getUTCDay()]} ${d.getUTCDate()} de ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const hacer = async (que: "cancelar" | "dia" | "tarjeta" | "dano_ok" | "dano_no", ok: string, pm?: string) => {
     if (ocupado) return; setOcupado(true); setError(null);
-    const x = await rentaAccion(r.numero, que, pm).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
+    let red = false;
+    const x = await rentaAccion(r.numero, que, pm, que === "dia" ? clave.current : undefined).catch(() => { red = true; return { ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }; });
+    if (que === "dia" && !red) clave.current = uuid();
     setOcupado(false); setConfirmar(false);
     if (x.ok) { setFlash(ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? x.msg.es : x.msg.en);
   };

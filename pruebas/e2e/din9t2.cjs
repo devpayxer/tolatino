@@ -24,6 +24,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const D = cargar('apps/web/lib/db.ts');
 const avisados = [];
 const avisos = { avisar: async () => undefined, avisarMuchos: async () => undefined, avisarNegocio: async (b, t) => { avisados.push([b, t]); } };
+let PATSUJ = null;
 const K = {}, DC = {}, BOS = {}; // 9t7 · se llenan abajo (consulta a la pasarela y lo de más de 23 h)
 const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './devolucion-consulta': DC, './admin': { auditar: async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after) values ('staff', $1, $2, $3, $4, $5)`, [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null)]) } });
 // La pasarela de mentira (la de din9t): devuelve una vez por llave y lleva la cuenta de lo que salió de verdad.
@@ -141,18 +142,30 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
     ok((await q1(`select status from refunds where id = $1::bigint`, [rf2])).status === 'done' && P.vecesSalio(k2) === 1, 'boletos: dentro de las 23 h el barrido la termina con la misma llave');
   }
   {
-    const PAT = cargar('apps/web/lib/patrocinio.ts', { './config': { valores: async () => ({}) }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos });
+    // 9t8 (0207) · La devolución de un patrocinio es una intención (sponsorship_refunds): la que quedó en camino hace más de 23 h se le pregunta a la pasarela
+    // (con su dato) o, sin él (como la de esta prueba: anotada antes de 0207), solo alerta; nunca vuelve a Stripe con la llave vieja. Lo demás lo prueba din9t8.
+    const PAT = cargar('apps/web/lib/patrocinio.ts', { './config': { valores: async () => ({}) }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos,
+      './cobro-fuera': { SIN_RESPUESTA: new Set(['red', 'api_error', 'error']) }, './consulta-pasarela': K });
     const cat = (await q1(`select id from categories limit 1`))?.id ?? 'NEG-FOOD';
     const s = (await q1(`insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, refund_cents, refund_days, refund_motive, ended_at)
                           values ($1, $2, 'hzl', now() - interval '3 days', now() - interval '2 days', 'week', 'terminado', 5000, $3, 2000, 2, 'pausa', now() - interval '2 days') returning id::text`, [X.b, cat, X.u]).catch((e) => ({ err: e.message })));
     if (s?.err) ok(false, `patrocinio de prueba: ${s.err}`);
     else {
       await db.query(`insert into sponsorship_payments (kind, ref_id, business_id, city_id, payer_user_id, amount_cents, pi, idem_key, reason) values ('negocio', $1::bigint, $2, 'hzl', $3, 5000, $4, $5, 'compra')`, [s.id, X.b, X.u, `pi_fake_pat_${s.id}`, `pat-${RUN}-${s.id}`]);
+      // La intención como la dejó 0207 para lo de antes: en camino, dada por mandada sin el dato, con la fecha del fin.
+      const k = await db.connect();
+      try {
+        await k.query('set session_replication_role = replica');
+        await k.query(`insert into sponsorship_refunds (kind, ref_id, payment_id, business_id, city_id, pi, amount_cents, idem_key, status, sent_at, created_at)
+                       select 'negocio', $1::bigint, p.id, $2, 'hzl', p.pi, 2000, 'pat-dev-negocio-' || $1, 'pending', now() - interval '2 days', now() - interval '2 days' from sponsorship_payments p where p.idem_key = $3`, [s.id, X.b, `pat-${RUN}-${s.id}`]);
+      } finally { await k.query('set session_replication_role = default').catch(() => undefined); k.release(); }
       const antes = P.llamadas;
       const d = await PAT.devolverPatrocinio('negocio', s.id);
       await PAT.devolverPendientes('negocio'); await PAT.devolverPendientes('negocio');
       ok(d === 0 && P.llamadas === antes, 'patrocinio: terminado hace más de 23 h, la devolución no vuelve a la pasarela con la misma llave');
-      ok(await alertasDe('refund_stuck', `pat-dev-negocio-${s.id}`) === 1, 'patrocinio: el equipo de dinero recibe UNA alerta (y no ofrece «Resolver a mano»: no es una fila de refunds)');
+      const sr = (await q1(`select id::text from sponsorship_refunds where kind = 'negocio' and ref_id = $1::bigint`, [s.id])).id;
+      PATSUJ = `sponsorship_refunds:${sr}`;
+      ok(await alertasDe('refund_stuck', PATSUJ) === 1, 'patrocinio: el equipo de dinero recibe UNA alerta (la de su intención, sponsorship_refunds:<id>)');
     }
   }
 
@@ -311,8 +324,9 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
     const fall = L.find((a) => a.kind === 'refund_stuck' && a.sujeto === f.id), pend = L.find((a) => a.kind === 'refund_stuck' && a.sujeto === f2.id);
     ok(fall && fall.aMano === false, 'la alerta de una devolución que ya quedó fallida no ofrece «Resolver a mano» (informativa)');
     ok(pend && pend.aMano === true, 'la de una devolución que sigue pendiente (Stripe ya la intentó) sí lo ofrece');
-    const pat = L.find((a) => a.kind === 'refund_stuck' && a.sujeto.startsWith('pat-dev-'));
-    ok(!pat || pat.aMano === false, 'la de un patrocinio (sin fila de devolución) no lo ofrece');
+    // 9t8 · La de un patrocinio ya es una intención (sponsorship_refunds): en camino hace más de 23 h, la ofrece (antes de marcar, el servidor pregunta).
+    const pat = L.find((a) => a.kind === 'refund_stuck' && a.sujeto === PATSUJ);
+    ok(!PATSUJ || (pat && pat.aMano === true), 'la de un patrocinio (su intención, en camino hace más de 23 h) también lo ofrece');
     const n = await alertas.notaAlerta({ id: staffU, cities: [] }, (await q1(`select id::text from money_alerts where kind = 'refund_stuck' and subject_id = $1`, [f.id])).id, 'resuelta_a_mano', 'Cheque al cliente');
     ok(!n.ok, `y si alguien lo intenta igual, el servidor lo rechaza («${n.ok ? '' : n.msg}»)`);
   }

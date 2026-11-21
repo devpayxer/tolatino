@@ -20,7 +20,7 @@ const casos = [
   [LQ, "sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];\n  if (!m) return false;\n  const { llaveDe }",
     "sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' returning gateway_ref as gref`, [id])).rows[0];\n  if (!m) return false;\n  const { llaveDe }", 'ejecutarReversion: anota que se manda'],
   [CB, "export async function pagoDe(opId: string): Promise<PagoVista | null> {\n", "export async function pagoDe(opId: string): Promise<PagoVista | null> {\n  await pasarela.devolver(\"pi_x\", 1, \"x\");\n", 'pasarela.devolver en pagoDe sin su intención anotada antes'],
-  [PS, 'const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals):\\d{1,18}$/;', 'const REF_DEV = /^(gateway_refunds):\\d{1,18}$/;', 'buscarDevolucion busca también'],
+  [PS, 'const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals|sponsorship_refunds):\\d{1,18}$/;', 'const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals):\\d{1,18}$/;', 'buscarDevolucion busca también'],
   // (2)
   [DC, 'if (!r || r.st !== "pending" || r.mano || !r.enviada || !r.vieja) return { resultado: null, quedo: "ya_no_estaba" };', 'if (!r || r.st !== "pending" || r.mano) return { resultado: null, quedo: "ya_no_estaba" };', 'resolverDevolucion: solo pasada la llave'],
   [DC, '    if (!r.igual) return (r.boletos ?', '    if (false) return (r.boletos ?', 'cerrarConVeredicto: hecha por el mismo cierre'],

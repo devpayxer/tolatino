@@ -105,14 +105,23 @@ export async function preguntarViejas(boletos: boolean): Promise<number> {
    pidió. Lo que contesta Stripe manda: hecha → se cierra como hecha por el cierre de su flujo, una vez, y NO se marca a mano; en curso o varias → no se marca
    (esperar, o «Elegir cuál vale»); no contestó → no cambia nada; no la tiene, la tiene fallida o con otro monto → se puede marcar a mano (con la nota). */
 export type AMano = { sigue: true } | { sigue: false; ok: boolean; msg: string };
+/* 9t8 · También la devolución de lo no usado de un patrocinio (refund_stuck con sujeto 'sponsorship_refunds:<id>'; lib/patrocinio.ts), en camino o
+   rechazada por Stripe; con la misma regla. */
 export async function antesDeAMano(s: Staff, alerta: string, kind: string, sujeto: string, nota: string): Promise<AMano> {
-  if (!/^\d{1,18}$/.test(sujeto)) return { sigue: false, ok: false, msg: "Esta alerta no tiene camino manual." };
+  const pat = kind === "refund_stuck" ? /^sponsorship_refunds:(\d{1,18})$/.exec(sujeto) : null;
+  if (!pat && !/^\d{1,18}$/.test(sujeto)) return { sigue: false, ok: false, msg: "Esta alerta no tiene camino manual." };
   const K = await import("./consulta-pasarela");
   const { auditar } = await import("./admin");
   const o: import("./consulta-pasarela").Origen = { origen: "equipo", staff: s.id, alGuardar: (c) => auditar(c, { actor: s.id, action: "dinero.alerta.preguntar", targetKind: "money_alert", targetId: alerta,
     after: { antes_de: "resolver a mano", intencion: `${kind}:${sujeto}` }, reason: nota.trim().slice(0, 500) }) };
   let resultado: import("./consulta-pasarela").Resultado, cerrar: (stripe: string) => Promise<boolean>;
-  if (kind === "refund_stuck") {
+  if (pat) {
+    const PD = await import("./patrocinio");
+    const r = await PD.patParaConsulta(pat[1]!);
+    if (!r) return { sigue: false, ok: false, msg: "Ya está hecha o ya se resolvió a mano." };
+    resultado = await K.consultar({ tabla: "sponsorship_refunds", id: r.id, monto: r.amt, ciudad: r.city, negocio: r.biz, medio: "refund", objeto: r.pi }, o);
+    cerrar = async (x) => r.st === "pending" && (await PD.cerrarPatPorConsulta(r.id, x));
+  } else if (kind === "refund_stuck") {
     const r = await leer(sujeto);
     if (!r || r.st !== "pending" || r.mano) return { sigue: false, ok: false, msg: "Ya no está pendiente: Stripe la hizo o ya se resolvió a mano." };
     resultado = await K.consultar({ tabla: "refunds", id: r.id, monto: r.amt, ciudad: r.city, negocio: r.biz, medio: "refund", objeto: r.pi }, o);
@@ -134,7 +143,7 @@ export async function antesDeAMano(s: Staff, alerta: string, kind: string, sujet
   if (resultado === "en_curso") return { sigue: false, ok: false, msg: "Stripe la tiene en curso: espera a que termine (se cierra sola) y vuelve a intentarlo." };
   if (resultado === "varios") return { sigue: false, ok: false, msg: "Stripe tiene más de una para esta intención: decide en su alerta «Lo que dijo Stripe no se cierra solo» (Elegir cuál vale)." };
   if (resultado === "hecho") {
-    const v = await K.veredicto(kind === "refund_stuck" ? "refunds" : kind === "transfer_reversal_stuck" ? "event_settlement_reversals" : "gateway_refunds", sujeto);
+    const v = pat ? await K.veredicto("sponsorship_refunds", pat[1]!) : await K.veredicto(kind === "refund_stuck" ? "refunds" : kind === "transfer_reversal_stuck" ? "event_settlement_reversals" : "gateway_refunds", sujeto);
     const hecha = !!v?.stripe && (await cerrar(v.stripe));
     // La alerta se cierra en el acto, como con «Preguntar a Stripe ahora» (antes seguía abierta hasta el siguiente barrido: quien acababa de leer «se
     // cerró como hecha» la seguía viendo como atascada, con sus botones).

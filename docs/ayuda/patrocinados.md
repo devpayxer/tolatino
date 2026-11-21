@@ -51,7 +51,8 @@ panel._
 | El banco pide confirmar el cobro al pagar | Se abre «Tu banco pide confirmar»: **Confirmar con mi banco** y queda pagado (un solo cobro). Si cierras o tu banco no lo confirma, no se cobra nada. |
 | El banco pide confirmar la **renovación sola** | No se puede confirmar sin ti: termina y te llega «Tu patrocinio no se renovó» con el enlace a tu panel para comprar otro (y confirmarlo ahí). |
 | Stripe no contesta en la **renovación sola** (una falla de la red) | No termina ni te llega nada: el cobro queda en camino y la renovación se termina sola en unos minutos, con un solo cobro. |
-| La devolución no pasó al momento (falla de la red o del banco) | Se vuelve a intentar sola, una vez por minuto, y nunca se devuelve dos veces. |
+| La devolución no pasó al momento (Stripe no contestó) | Se vuelve a intentar sola, una vez por minuto, con la misma llave, y nunca se devuelve dos veces. Pasado un día, To'Latino le pregunta a Stripe qué pasó: si salió, aparece en tus recibos; si nunca llegó, se manda otra vez (una sola). |
+| El banco o Stripe no aceptan la devolución | No se reintenta sola (contestaría lo mismo): el equipo de dinero de To'Latino recibe el aviso y te la hace por otro medio. No ves «Devolución» en tus recibos hasta que salga por Stripe. |
 | Estás en la app To'Latino Negocios | Ves si tienes un patrocinio y sus cifras. Comprar, renovar y encender la renovación no se hace en la app. |
 | No manejas los cobros del negocio | No puedes comprar: lo hace el dueño o quien tenga «Cobros» en el equipo. |
 | Pagar dos veces por error (doble toque, se cortó la red) | Se cobra una sola vez. |
@@ -161,7 +162,8 @@ panel._
 | The bank asks to confirm the charge when you pay | «Your bank asks you to confirm» opens: **Confirm with my bank** and it is paid (one charge). If you close it or your bank does not confirm, nothing is charged. |
 | The bank asks to confirm the **auto-renewal** | It cannot be confirmed without you: it ends and you get «Your sponsorship did not renew» with the link to your dashboard to buy another (and confirm it there). |
 | Stripe does not answer on the **auto-renewal** (a network failure) | Nothing ends and you get no notice: the charge is on its way and the renewal finishes by itself in a few minutes with a single charge. |
-| The refund did not go through right away (network or bank failure) | It is retried on its own, once a minute, and never refunded twice. |
+| The refund did not go through right away (Stripe did not answer) | It is retried on its own, once a minute, with the same key, and never refunded twice. After a day, To'Latino asks Stripe what happened: if it went through, it shows in your receipts; if it never arrived, it is sent again (only once). |
+| The bank or Stripe does not accept the refund | It is not retried on its own (it would get the same answer): To'Latino's money team gets the alert and refunds you another way. You do not see «Refund» in your receipts until it goes through Stripe. |
 | You are in the To'Latino Business app | You see whether you have a sponsorship and its numbers. Buying, renewing and turning on auto-renew are not done in the app. |
 | You do not manage the business payments | You cannot buy: the owner or whoever has «Payouts» on the team does it. |
 | Paying twice by mistake (double tap, the connection dropped) | It is charged only once. |

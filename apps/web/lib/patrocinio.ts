@@ -2,7 +2,8 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { valores } from "./config";
 import { db, tx } from "./db";
-import { HORAS_LLAVE_STRIPE } from "./cobros";
+import { HORAS_LLAVE_STRIPE, llaveDe } from "./cobros";
+import { SIN_RESPUESTA } from "./cobro-fuera";
 import { pasarela, type Verificar } from "./pagos/pasarela";
 import { COLUMNAS, CTE, DESDE, FOTO, condiciones, conFoto, type Regla, type Resultado } from "./categoria";
 import type { Punto } from "./punto";
@@ -148,63 +149,211 @@ export const DEVOLUCION = (modo: ModoDev, motivo: string, pausa: boolean, t = ""
      from patrocinio_devolucion(${modo}, ${t}price_cents, ${t}starts_at, ${t}ends_at, ${pausa ? `${t}extended_secs, ${t}paused_secs, ${t}paused_at` : "0, 0, null"}, now(),
                                 (select ci.timezone from cities ci where ci.id = ${t}city_id)) d)`;
 
-/* La devolución en la pasarela de lo que el patrocinio decidió al terminar: una por patrocinio (la llave de Stripe y el índice único del libro),
-   nunca más que lo cobrado (y la base lo vuelve a revisar al insertar). Deja UNA fila 'devolucion' en el libro (solo inserción), la auditoría y
-   el aviso. Si la pasarela no responde, devuelve 0 y el barrido la reintenta con la misma llave (devolverPendientes). */
+/* La devolución en la pasarela de lo que el patrocinio decidió al terminar: una por patrocinio, nunca más que lo cobrado (y la base lo vuelve a revisar al
+   insertar en el libro). 9t8 (0207) · Es una intención como las demás devoluciones (más abajo): la anota la base en la transacción que
+   termina el patrocinio; aquí se manda con su llave y su dato buscable y, con el «sí», se cierra una vez (la fila 'devolucion' del libro, la auditoría y el
+   aviso). Devuelve lo devuelto (0 si sigue en camino o Stripe dijo que no: lo dice devolucionEstado). */
 export async function devolverPatrocinio(kind: "negocio" | "evento", id: string): Promise<number> {
   if (!/^\d{1,18}$/.test(String(id))) return 0;
-  const T = kind === "negocio" ? "sponsorships" : "event_sponsorships", ev = kind === "evento";
-  const s = (await db().query<{ cents: number; dias: number; motivo: string; negocio: string; ciudad: string; evento: string | null; total: number; pago: string; pi: string; marca: string | null; l4: string | null; payer: string; cobrado: number; ya: boolean; vieja: boolean }>(
-    `select s.refund_cents as cents, s.refund_days as dias, s.refund_motive as motivo, s.business_id as negocio, s.city_id as ciudad, ${ev ? "s.event_id::text" : "null::text"} as evento,
-            patrocinio_dias_comprados(s.starts_at, s.ends_at, ${ev ? "s.extended_secs" : "0"}, (select ci.timezone from cities ci where ci.id = s.city_id)) as total,
-            p.id::text as pago, p.pi, p.card_brand as marca, p.card_last4 as l4, p.payer_user_id::text as payer, p.amount_cents as cobrado,
-            exists (select 1 from sponsorship_payments r where r.kind = $1 and r.ref_id = s.id and r.reason = 'devolucion') as ya,
-            s.ended_at <= now() - make_interval(hours => $3::int) as vieja
-       from ${T} s join sponsorship_payments p on p.kind = $1 and p.ref_id = s.id and p.reason <> 'devolucion'
-      where s.id = $2::bigint and s.refund_cents is not null`, [kind, id, HORAS_LLAVE_STRIPE])).rows[0];
-  // 9t2 · Pasadas HORAS_LLAVE desde que terminó (cuando se decidió y se pidió por primera vez), Stripe ya no recuerda la llave: no se pide otra vez
-  // (podría devolver dos veces); el barrido alerta al equipo de dinero.
-  if (!s || s.ya || s.vieja) return 0;
-  const cents = Math.min(s.cents, s.cobrado), idem = `pat-dev-${kind}-${id}`;
-  const r = await pasarela.devolver(s.pi, cents, idem, { plataforma: true });
-  if (!r.ok || !r.id) { console.error("[patrocinio] devolver", kind, id, r.codigo ?? "sin id"); return 0; }
-  const nuevo = await tx(async (c) => {
-    const n = await c.query(
+  const r = await intencionDelPatrocinio(kind, id);
+  if (!r) return 0;
+  const st = await ejecutarDevolucionPat(r.id).catch((e) => { console.error("[patrocinio] devolver", kind, id, e instanceof Error ? e.message : e); return "pending" as const; });
+  return st === "done" ? r.amt : 0;
+}
+/* 9t8 · En qué quedó la devolución de un patrocinio (para el mensaje de quien lo terminó): en camino o fallida (Stripe dijo que no: alerta al equipo). */
+export async function devolucionEstado(kind: "negocio" | "evento", id: string): Promise<"done" | "pending" | "failed" | null> {
+  const r = await intencionDelPatrocinio(kind, id);
+  return r?.st ?? null;
+}
+/* El barrido: la misma llave mientras Stripe la recuerda (HORAS_LLAVE); pasado eso, la pregunta a la pasarela (9t8, barrerDevolucionesPat). */
+export async function devolverPendientes(kind: "negocio" | "evento"): Promise<number> {
+  return barrerDevolucionesPat(kind);
+}
+
+/* 9t8 (21 nov, 0207) · La intención de la devolución de lo que no se usó de un patrocinio (negocios y eventos), como las demás devoluciones (9t7, lib/devolucion-consulta.ts).
+   Antes era la única que no tenía intención propia: se mandaba sin dato buscable, el libro se escribía después del «sí» y, pasadas 23 h, solo quedaba una
+   alerta informativa; un «no» de Stripe se reintentaba con la misma llave hasta las 23 h (Stripe guarda la respuesta: nunca cambiaba). Ahora:
+   - la intención (sponsorship_refunds, una por patrocinio) la anota la BASE en la misma transacción que decide cuánto se devuelve (refund_cents);
+   - ejecutarDevolucionPat anota que se manda y su dato buscable (sent_at y gateway_ref = metadata tl_intencion) en UNA sentencia antes de la pasarela, solo la
+     primera vez; el «sí» cierra UNA vez: la intención hecha, la fila 'devolucion' del libro y la auditoría en una transacción, y el aviso al negocio después;
+   - sin respuesta (SIN_RESPUESTA): sigue en camino y el barrido la termina con la misma llave mientras Stripe la recuerda (HORAS_LLAVE_STRIPE);
+   - «fallida» (decisión 9t8, REVISION «Dinero, octava tanda»): un «no» de Stripe al mandarla, o la consulta que la halla fallida. No se reintenta sola (Stripe
+     contesta lo mismo con la misma llave): queda fallida y alerta refund_stuck al equipo de dinero, que la hace por fuera y la resuelve a mano;
+   - pasada la llave se le PREGUNTA a la pasarela (las devoluciones de ESE cobro, por su dato) y se cierra con su veredicto: hecha → el mismo cierre; fallida →
+     lo de un «no»; nunca llegó (con el dato y pasado el margen) → la MISMA intención vuelve a valer con OTRA llave (llaveDe) y se manda: lo debido no cambia
+     (la base fija el monto una vez y nada más devuelve un patrocinio); varias → gateway_review («Elegir cuál vale», solo vale); otro monto → a mano;
+   - una anotada antes de 0207 (sin el dato) nunca se da por «no llegó»: no se pregunta en el barrido; su alerta dice que se mire en Stripe y se resuelva a mano;
+   - la alerta es refund_stuck con sujeto 'sponsorship_refunds:<id>' (con «Preguntar a Stripe ahora» y «Resolver a mano», que también pregunta antes). */
+type KindPat = "negocio" | "evento";
+export type Pd = { id: string; kind: KindPat; ref: string; st: "pending" | "done" | "failed"; mano: boolean; amt: number; idem: string; kn: number; pi: string; pago: string; enviada: boolean;
+  vieja: boolean; n: number; err: string | null; biz: string; city: string; gref: string | null };
+export const SUJETO = /^sponsorship_refunds:(\d{1,18})$/;
+export const sujetoDe = (id: string) => `sponsorship_refunds:${id}`;
+const SEL = `select z.id::text, z.kind, z.ref_id::text as ref, z.status as st, z.manual_at is not null as mano, z.amount_cents as amt, z.idem_key as idem, z.key_n as kn, z.pi,
+                    z.payment_id::text as pago, z.sent_at is not null as enviada, coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int) as vieja,
+                    z.attempts as n, z.last_error as err, z.business_id as biz, z.city_id as city, z.gateway_ref as gref
+               from sponsorship_refunds z`;
+export const leerPd = async (id: string) => (/^\d{1,18}$/.test(id) ? (await db().query<Pd>(`${SEL} where z.id = $1::bigint`, [id, HORAS_LLAVE_STRIPE])).rows[0] : undefined);
+export const intencionDelPatrocinio = async (kind: KindPat, ref: string) => (await db().query<Pd>(`${SEL} where z.kind = $1 and z.ref_id = $3::bigint`, [kind, HORAS_LLAVE_STRIPE, ref])).rows[0];
+
+/* A la pasarela con su llave (solo mientras Stripe la recuerda). done: salió (ahora o antes); pending: en camino (sin respuesta, o pasada la llave: la pregunta
+   el barrido); failed: Stripe dijo que no (alerta al equipo). Una resuelta a mano nunca se vuelve a mandar. */
+export async function ejecutarDevolucionPat(id: string): Promise<"done" | "pending" | "failed"> {
+  const r = await leerPd(id);
+  if (!r) return "failed";
+  if (r.st !== "pending") return r.st;
+  if (r.mano || r.vieja) return "pending";
+  // Que se manda (sent_at) y con qué dato buscable (gateway_ref), ANTES de la llamada y en una sentencia; el dato, solo la primera vez (un reintento de una que
+  // salió sin él va sin él: la misma llave con otros parámetros, Stripe la rechaza).
+  const m = (await db().query<{ gref: string | null }>(`update sponsorship_refunds set gateway_ref = case when sent_at is null then 'sponsorship_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
+  if (!m) return ((await leerPd(r.id))?.st ?? "failed");
+  // Un cobro de la plataforma (el patrocinio se cobra a To'Latino): sin transferencia ni comisión que revertir.
+  const g = await pasarela.devolver(r.pi, r.amt, llaveDe(r.idem, r.kn), { plataforma: true, ...(m.gref ? { meta: { tl_intencion: m.gref } } : {}) }).catch(() => ({ ok: false as const, id: undefined, codigo: "error" }));
+  if (g.ok && g.id) return (await cerrarDevolucionPat(r, g.id, false)) ? "done" : ((await leerPd(r.id))?.st ?? "pending");
+  const codigo = String(g.codigo ?? "error").slice(0, 60);
+  if (SIN_RESPUESTA.has(codigo) || g.ok) {
+    await db().query(`update sponsorship_refunds set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending' and manual_at is null`, [r.id, codigo]);
+    return "pending";
+  }
+  return (await fallarDevolucionPat(r, codigo, false)) ? "failed" : ((await leerPd(r.id))?.st ?? "pending");
+}
+
+/* El «sí» (al mandarla, o lo que dijo la consulta pasada la llave): UNA vez, en una transacción, la intención hecha, la fila 'devolucion' del libro (solo
+   inserción; la base vuelve a revisar que es de ese cobro y nunca más de lo decidido) y la auditoría. El aviso al negocio, después. */
+export async function cerrarDevolucionPat(r: Pd, stripeRefund: string, porConsulta: boolean): Promise<boolean> {
+  const ev = r.kind === "evento";
+  const h = await tx(async (c) => {
+    const u = (await c.query<{ id: string }>(`update sponsorship_refunds set status = 'done', stripe_refund_id = $2, done_at = now(), last_error = null
+                                               where id = $1::bigint and status = 'pending' and manual_at is null returning id::text`, [r.id, stripeRefund])).rows[0];
+    if (!u) return null;
+    // Lo que el patrocinio decidió al terminar (días y motivo), de su tabla (dos consultas fijas, nunca el nombre en el texto).
+    const s = (await c.query<{ dias: number; motivo: string; evento: string | null; total: number }>(ev
+      ? `select s.refund_days as dias, s.refund_motive as motivo, s.event_id::text as evento,
+                patrocinio_dias_comprados(s.starts_at, s.ends_at, s.extended_secs, (select ci.timezone from cities ci where ci.id = s.city_id)) as total
+           from event_sponsorships s where s.id = $1::bigint`
+      : `select s.refund_days as dias, s.refund_motive as motivo, null::text as evento,
+                patrocinio_dias_comprados(s.starts_at, s.ends_at, 0, (select ci.timezone from cities ci where ci.id = s.city_id)) as total
+           from sponsorships s where s.id = $1::bigint`, [r.ref])).rows[0]!;
+    const p = (await c.query<{ payer: string; marca: string | null; l4: string | null }>(`select payer_user_id::text as payer, card_brand as marca, card_last4 as l4 from sponsorship_payments where id = $1::bigint`, [r.pago])).rows[0]!;
+    await c.query(
       `insert into sponsorship_payments (kind, ref_id, business_id, city_id, payer_user_id, amount_cents, pi, idem_key, card_brand, card_last4, reason, refund_id, refund_of, refund_days, refund_motive)
-       values ($1, $2::bigint, $3, $4, $5::uuid, $6, $7, $8, $9, $10, 'devolucion', $11, $12::bigint, $13, $14) on conflict do nothing`,
-      [kind, id, s.negocio, s.ciudad, s.payer, cents, s.pi, idem, s.marca, s.l4, r.id, s.pago, s.dias, s.motivo]);
-    if (!n.rowCount) return false;
+       values ($1, $2::bigint, $3, $4, $5::uuid, $6, $7, $8, $9, $10, 'devolucion', $11, $12::bigint, $13, $14)`,
+      [r.kind, r.ref, r.biz, r.city, p.payer, r.amt, r.pi, r.idem, p.marca, p.l4, stripeRefund, r.pago, s.dias, s.motivo]);
     await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system', null, $1, $2, $3, $4, null, $5::jsonb, null)`,
-      [ev ? "patrocinio_evento.devolver" : "patrocinio.devolver", ev ? "event" : "business", ev ? s.evento : s.negocio, s.ciudad,
-        JSON.stringify({ patrocinio: id, monto: money(cents), dias: s.dias, de: s.total, motivo: s.motivo, refund: r.id, pi: s.pi })]);
+      [ev ? "patrocinio_evento.devolver" : "patrocinio.devolver", ev ? "event" : "business", ev ? s.evento : r.biz, r.city,
+        JSON.stringify({ patrocinio: r.ref, monto: money(r.amt), dias: s.dias, de: s.total, motivo: s.motivo, refund: stripeRefund, pi: r.pi, intencion: sujetoDe(r.id) })]);
+    if (porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "sponsorship_refunds", r.id, r.city, { estado: "hecha", devolucion: stripeRefund, monto: money(r.amt) });
+    return { ...s, ...p };
+  });
+  if (!h) return false;
+  const v = { monto: money(r.amt), tarjeta: h.marca && h.l4 ? `${h.marca.toUpperCase()} ·· ${h.l4}` : "", n: String(h.dias), total: String(h.total) };
+  if (ev && h.evento) await (await import("./patrocinio-evento")).avisoEvt(h.evento, "biz_patevt_devuelto", v).catch(() => undefined);
+  else await avisoNeg(r.biz, "biz_patrocinio_devuelto", v).catch(() => undefined);
+  await (await import("./consulta-pasarela")).cerrarAlertaSola("refund_stuck", sujetoDe(r.id), { es: `Cerrada sola: la devolución quedó hecha (${stripeRefund}).`, en: `Closed by itself: the refund is done (${stripeRefund}).` }).catch(() => false);
+  return true;
+}
+
+/* El «no» (al mandarla, o lo que dijo la consulta): UNA vez, fallida con su auditoría; la alerta al equipo de dinero (la hace por fuera y la resuelve a mano).
+   No se reintenta sola. nunca: no aplica aquí (lo debido no cambia: «nunca llegó» siempre vuelve a valer con otra llave). */
+export async function fallarDevolucionPat(r: Pd, codigo: string, porConsulta: boolean): Promise<boolean> {
+  const f = await tx(async (c) => {
+    const u = await c.query(`update sponsorship_refunds set status = 'failed', attempts = least(10000, attempts + $3::int), last_error = left($2, 120) where id = $1::bigint and status = 'pending' and manual_at is null`,
+      [r.id, codigo, porConsulta ? 0 : 1]);
+    if (!u.rowCount) return false;
+    await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system', null, $1, 'business', $2, $3, null, $4::jsonb, null)`,
+      [r.kind === "evento" ? "patrocinio_evento.devolucion_fallida" : "patrocinio.devolucion_fallida", r.biz, r.city, JSON.stringify({ patrocinio: r.ref, monto: money(r.amt), codigo, intencion: sujetoDe(r.id) })]);
+    if (porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "sponsorship_refunds", r.id, r.city, { estado: "fallida", monto: money(r.amt) });
     return true;
   });
-  if (!nuevo) return 0;
-  const v = { monto: money(cents), tarjeta: s.marca && s.l4 ? `${s.marca.toUpperCase()} ·· ${s.l4}` : "", n: String(s.dias), total: String(s.total) };
-  if (ev && s.evento) await (await import("./patrocinio-evento")).avisoEvt(s.evento, "biz_patevt_devuelto", v).catch(() => undefined);
-  else await avisoNeg(s.negocio, "biz_patrocinio_devuelto", v).catch(() => undefined);
-  return cents;
+  if (f) await alertaPat(r, porConsulta
+    ? { es: `Stripe la tiene como fallida (lo dijo la consulta, pasado un día sin respuesta). Quedó fallida: no se reintenta sola. Devuélvela desde Stripe (o por fuera) y resuélvela a mano con la nota (antes de marcarla, el servidor vuelve a preguntar).`,
+        en: `Stripe has it as failed (the query said so, after a day with no answer). It is now failed: it is not retried by itself. Refund it from Stripe (or outside it) and resolve it manually with the note (the server asks again before marking it).` }
+    : { es: `Stripe dijo que no (${codigo}). Quedó fallida: no se reintenta sola (Stripe contesta lo mismo con la misma llave). Devuélvela desde Stripe (o por fuera) y resuélvela a mano con la nota (antes de marcarla, el servidor vuelve a preguntar).`,
+        en: `Stripe said no (${codigo}). It is now failed: it is not retried by itself (Stripe answers the same with the same key). Refund it from Stripe (or outside it) and resolve it manually with the note (the server asks again before marking it).` });
+  return f;
 }
-/* El barrido: lo que se decidió devolver y todavía no está en el libro (la pasarela no respondió), con la misma llave, mientras Stripe la recuerda
-   (HORAS_LLAVE desde que terminó). 9t2 · Antes reintentaba 30 días con la misma llave: pasado un día, otra llamada podía devolver dos veces. Desde
-   ahí, una alerta al equipo de dinero por patrocinio (una vez): mira en Stripe si salió y resuélvelo a mano. */
-export async function devolverPendientes(kind: "negocio" | "evento"): Promise<number> {
-  const T = kind === "negocio" ? "sponsorships" : "event_sponsorships";
-  const SIN = `s.refund_cents is not null and not exists (select 1 from sponsorship_payments r where r.kind = $1 and r.ref_id = s.id and r.reason = 'devolucion')`;
-  const L = (await db().query<{ id: string }>(
-    `select s.id::text from ${T} s where ${SIN} and s.ended_at > now() - make_interval(hours => $2::int) order by s.ended_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
+
+/* La alerta de la intención (una por devolución): refund_stuck con sujeto 'sponsorship_refunds:<id>'. */
+async function alertaPat(r: Pd, porque: Bi) {
+  await (await import("./dinero-alertas")).alertar("refund_stuck", sujetoDe(r.id), { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: {
+    es: `Devolución de ${money(r.amt)} de lo no usado de un patrocinio ${r.kind === "evento" ? "de evento " : ""}(${r.ref}): ${porque.es}`,
+    en: `Refund of ${money(r.amt)} for the unused part of ${r.kind === "evento" ? "an event " : "a "}sponsorship (${r.ref}): ${porque.en}` } }).catch(() => undefined);
+}
+
+export type QuedoPat = "hecha" | "fallida" | "reabierta" | "sigue" | "ya_no_estaba";
+/* Pasada la llave: la consulta (fuera de transacción, anotada) y el cierre con su veredicto. El barrido, «Preguntar a Stripe ahora» y «Elegir cuál vale». */
+export async function resolverDevolucionPat(id: string, o: import("./consulta-pasarela").Origen): Promise<{ resultado: import("./consulta-pasarela").Resultado | null; quedo: QuedoPat }> {
+  const K = await import("./consulta-pasarela");
+  const r = await leerPd(id);
+  if (!r || r.st !== "pending" || r.mano || !r.enviada || !r.vieja) return { resultado: null, quedo: "ya_no_estaba" };
+  if (o.origen === "barrido" && !(await K.tocaConsultar("sponsorship_refunds", id))) return { resultado: null, quedo: "sigue" };
+  // Ya decidida por el equipo (gateway_review: cuál de las halladas vale): no se vuelve a preguntar; se cierra con la decisión.
+  const resultado = (await K.revisada("sponsorship_refunds", id)) ? (await K.veredicto("sponsorship_refunds", id))!.resultado
+    : await K.consultar({ tabla: "sponsorship_refunds", id, monto: r.amt, ciudad: r.city, negocio: r.biz, medio: "refund", objeto: r.pi }, o);
+  const quedo = await cerrarConVeredictoPat(r);
+  if (quedo === "sigue") await alertaPat(r, r.gref
+    ? { es: `sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): ya no se manda con esa llave. El servidor le pregunta a Stripe y la cierra con lo que diga.`,
+        en: `no answer from Stripe in ${HORAS_LLAVE_STRIPE} h (${r.n} attempts, ${r.err ?? "no reason"}): it is not sent with that key again. The server asks Stripe and closes it with the answer.` }
+    : SIN_DATO);
+  return { resultado, quedo };
+}
+const SIN_DATO: Bi = { es: `sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h: se anotó sin el dato para buscarla en Stripe. Mira en Stripe si salió y resuélvela a mano (antes de marcarla, el servidor vuelve a preguntar).`,
+  en: `no answer from Stripe in ${HORAS_LLAVE_STRIPE} h: it was recorded without the data to find it in Stripe. Check in Stripe whether it went out and resolve it by hand (the server asks again before marking it).` };
+async function cerrarConVeredictoPat(r: Pd): Promise<QuedoPat> {
+  const K = await import("./consulta-pasarela");
+  const v = await K.veredicto("sponsorship_refunds", r.id);
+  if (v?.resultado === "hecho" && v.stripe) return (await cerrarDevolucionPat(r, v.stripe, true)) ? "hecha" : "sigue";
+  if (v?.resultado === "fallido") return (await fallarDevolucionPat(r, "consulta_fallido", true)) ? "fallida" : "sigue";
+  if (v?.noLlego) {
+    // La MISMA devolución vuelve a valer desde ahora con OTRA llave (key_n), una vez (la base pide que la anterior ya haya pasado HORAS_LLAVE_STRIPE), con su auditoría.
+    const u = await tx(async (c) => {
+      const x = await c.query(`update sponsorship_refunds set key_from = now(), key_n = key_n + 1, last_error = 'nunca_llego' where id = $1::bigint and status = 'pending' and manual_at is null
+                                 and coalesce(key_from, created_at) <= now() - make_interval(hours => $2::int)`, [r.id, HORAS_LLAVE_STRIPE]);
+      if (x.rowCount) await K.auditarCierre(c, "sponsorship_refunds", r.id, r.city, { estado: "nunca llegó a Stripe: se manda otra vez con otra llave", monto: money(r.amt) });
+      return !!x.rowCount;
+    });
+    if (!u) return "sigue";
+    const st = await ejecutarDevolucionPat(r.id);
+    return st === "done" ? "hecha" : st === "failed" ? "fallida" : "reabierta";
+  }
+  return "sigue";
+}
+
+/* El barrido (de negocios o de eventos): dentro de la ventana, con su llave; pasada, las mandadas con su dato se preguntan (una vez cada CADA_MIN, las que hace
+   más que no se preguntan primero); las anotadas sin el dato (antes de 0207), la alerta, una vez. */
+async function barrerDevolucionesPat(kind: KindPat): Promise<number> {
+  const K = await import("./consulta-pasarela");
   let n = 0;
-  for (const { id } of L) if (await devolverPatrocinio(kind, id).catch(() => 0)) n++;
-  const V = (await db().query<{ id: string; cents: number; biz: string; city: string }>(
-    `select s.id::text, s.refund_cents as cents, s.business_id as biz, s.city_id as city from ${T} s where ${SIN} and s.ended_at <= now() - make_interval(hours => $2::int)
-        and s.ended_at > now() - interval '30 days' and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = 'pat-dev-' || $1 || '-' || s.id::text)
-      order by s.ended_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
-  const { alertar } = await import("./dinero-alertas");
-  for (const x of V) await alertar("refund_stuck", `pat-dev-${kind}-${x.id}`, { monto: x.cents, negocio: x.biz, ciudad: x.city,
-    detalle: { es: `Devolución de ${money(x.cents)} de un patrocinio ${kind === "evento" ? "de evento " : ""}(${x.id}) sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h: mira en Stripe si salió y resuélvela a mano.`,
-      en: `Refund of ${money(x.cents)} for a ${kind === "evento" ? "event " : ""}sponsorship (${x.id}) with no answer from Stripe in ${HORAS_LLAVE_STRIPE} h: check in Stripe whether it went out and resolve it by hand.` } }).catch(() => undefined);
+  const L = (await db().query<{ id: string }>(
+    `select z.id::text from sponsorship_refunds z where z.kind = $1 and z.status = 'pending' and z.manual_at is null and coalesce(z.key_from, z.created_at) > now() - make_interval(hours => $2::int)
+      order by z.created_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
+  for (const r of L) if ((await ejecutarDevolucionPat(r.id).catch(() => "pending")) === "done") n++;
+  const Q = (await db().query<{ id: string }>(
+    `select z.id::text from sponsorship_refunds z left join lateral (select max(y.at) as ult from gateway_checks y where y.subject_kind = 'sponsorship_refunds' and y.subject_id = z.id) g on true
+      where z.kind = $1 and z.status = 'pending' and z.manual_at is null and z.gateway_ref is not null and coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int)
+        and (g.ult is null or g.ult <= now() - make_interval(mins => $3::int))
+      order by g.ult nulls first, z.created_at limit 20`, [kind, HORAS_LLAVE_STRIPE, K.CADA_MIN])).rows;
+  for (const r of Q) if ((await resolverDevolucionPat(r.id, { origen: "barrido" }).catch(() => ({ quedo: "sigue" }))).quedo === "hecha") n++;
+  const V = (await db().query<{ id: string }>(
+    `select z.id::text from sponsorship_refunds z where z.kind = $1 and z.status = 'pending' and z.manual_at is null and z.gateway_ref is null
+        and coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int)
+        and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = 'sponsorship_refunds:' || z.id::text) order by z.created_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
+  for (const x of V) { const r = await leerPd(x.id); if (r) await alertaPat(r, SIN_DATO); }
   return n;
 }
+
+/* ── «Resolver a mano» (lib/devolucion-consulta.ts › antesDeAMano): la que sigue sin resolver (en camino o rechazada por Stripe; nunca una hecha), lo que se le
+   pregunta a la pasarela y su cierre si Stripe dice que salió (el mismo cierre, una vez, solo si sigue en camino). ── */
+export async function patParaConsulta(id: string): Promise<Pd | null> {
+  const r = await leerPd(id);
+  return r && r.st !== "done" && !r.mano ? r : null;
+}
+export async function cerrarPatPorConsulta(id: string, stripeRefund: string): Promise<boolean> {
+  const r = await leerPd(id);
+  if (!r || r.st !== "pending" || r.mano) return false;
+  return cerrarDevolucionPat(r, stripeRefund, true);
+}
+
 
 /* ── Negocios ── */
 
@@ -449,7 +598,7 @@ export async function patResumen(negocio: string): Promise<{ hasta: string; esta
 }
 
 /* ── Avisos ── */
-async function avisoNeg(negocio: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string; n?: string; total?: string }) {
+export async function avisoNeg(negocio: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string; n?: string; total?: string }) {
   const x = (await db().query<{ negocio: string; donde: string; tz: string }>(
     `select b.name as negocio, (c.name->>'es') || ' · ' || ci.name as donde, ci.timezone as tz from businesses b join categories c on c.id = b.category_id join cities ci on ci.id = b.city_id where b.id = $1`, [negocio])).rows[0];
   if (!x) return;
@@ -635,6 +784,9 @@ export async function terminarPorAdmin(staffId: string, ciudades: string[], id: 
   const quiere = (r as { devolver?: number }).devolver ?? 0, dev = quiere ? await devolverPatrocinio("negocio", id) : 0;
   return { ok: true, devuelto: dev, msg: quiere
     ? (dev ? { es: `Patrocinio terminado. Se devolvieron ${money(dev)} a su tarjeta. Quedó en la auditoría.`, en: `Sponsorship ended. ${money(dev)} was refunded to the card. It is in the audit log.` }
-      : { es: "Patrocinio terminado. La devolución sigue pendiente: el barrido la reintenta. Quedó en la auditoría.", en: "Sponsorship ended. The refund is still pending: the sweep retries it. It is in the audit log." })
+      // 9t8 · Stripe dijo que no: no se reintenta sola (alerta al equipo de dinero); sin respuesta, el barrido la termina con la misma llave.
+      : (await devolucionEstado("negocio", id)) === "failed"
+        ? { es: "Patrocinio terminado. Stripe no aceptó la devolución: el equipo de dinero tiene la alerta para hacerla por fuera. Quedó en la auditoría.", en: "Sponsorship ended. Stripe did not accept the refund: the money team has the alert to make it outside Stripe. It is in the audit log." }
+        : { es: "Patrocinio terminado. La devolución sigue pendiente: el barrido la reintenta. Quedó en la auditoría.", en: "Sponsorship ended. The refund is still pending: the sweep retries it. It is in the audit log." })
     : { es: "Patrocinio terminado sin devolver. Quedó en la auditoría.", en: "Sponsorship ended with no refund. It is in the audit log." } };
 }

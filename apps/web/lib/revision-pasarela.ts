@@ -23,12 +23,13 @@ type Bi = { es: string; en: string };
 export type { T4 };
 type Res = { ok: true; msg: string } | { ok: false; msg: string };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const REF = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals|refunds|event_settlement_reversals|gateway_refunds):(\d{1,18})$/;
+const REF = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals|refunds|event_settlement_reversals|gateway_refunds|sponsorship_refunds):(\d{1,18})$/;
 /* 9t7 · Lo que se elige puede ser una devolución (re_…) o una reversión (trr_…) cuando la intención devuelve dinero. */
 const STRIPE_ID = /^(pi|tr|re|trr|pyr)_[A-Za-z0-9_]{3,200}$/;
 /* 9t7 · Las intenciones que DEVUELVEN dinero (una devolución de un cobro, una reversión al organizador, la devolución de lo que sobró): con varias en Stripe
    solo se elige cuál vale; lo que salió de más no se deshace con otra devolución (queda en la auditoría). La base lo impone (gateway_reviews_devolucion_solo_vale). */
-const DEVUELVE = (t: T4) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds";
+/* 9t8 · Y la devolución de lo no usado de un patrocinio (sponsorship_refunds). */
+const DEVUELVE = (t: T4) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds" || t === "sponsorship_refunds";
 
 /* La intención detrás de la alerta, con lo que hace falta para decidir. Cuatro consultas fijas (nunca el nombre de la tabla en el texto). */
 type Int = { t: T4; id: string; vivo: boolean; vieja: boolean; monto: number; ciudad: string | null; negocio: string | null; grupo?: string; plataforma: boolean; periodoCobrado: boolean;
@@ -47,6 +48,10 @@ async function intencionDe(t: T4, id: string): Promise<Int | null> {
       `select z.status = 'pending' and z.manual_at is null as vivo, coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int) as vieja, z.amount_cents as monto,
               z.city_id as ciudad, z.business_id as negocio, s.transfer_id as tr from event_settlement_reversals z join event_settlements s on s.id = z.settlement_id where z.id = $1::bigint`, [id, HORAS_LLAVE])).rows[0];
     return r ? { t, id, vivo: r.vivo, vieja: r.vieja, monto: r.monto, ciudad: r.ciudad, negocio: r.negocio, plataforma: true, periodoCobrado: false, medio: "reversal", objeto: r.tr } : null;
+  }
+  if (t === "sponsorship_refunds") {
+    const r = await (await import("./patrocinio")).leerPd(id);
+    return r ? { t, id, vivo: r.st === "pending" && !r.mano, vieja: r.enviada && r.vieja, monto: r.amt, ciudad: r.city, negocio: r.biz, plataforma: true, periodoCobrado: false, medio: "refund", objeto: r.pi } : null;
   }
   if (t === "gateway_refunds") {
     const g = (await db().query<Dev>(`select ${SEL_DEV} from gateway_refunds where id = $1::bigint`, [id])).rows[0];
@@ -119,6 +124,7 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
       : t === "refunds" ? (await c.query(`select 1 from refunds where id = $1::bigint and status = 'pending' and manual_at is null for update`, [id])).rowCount
       : t === "event_settlement_reversals" ? (await c.query(`select 1 from event_settlement_reversals where id = $1::bigint and status = 'pending' and manual_at is null for update`, [id])).rowCount
       : t === "gateway_refunds" ? (await c.query(`select 1 from gateway_refunds where id = $1::bigint and status = 'pending' and manual_at is null for update`, [id])).rowCount
+      : t === "sponsorship_refunds" ? (await c.query(`select 1 from sponsorship_refunds where id = $1::bigint and status = 'pending' and manual_at is null for update`, [id])).rowCount
       : (await c.query(`select 1 from hold_renewals where id = $1::bigint and status = 'pending' for update`, [id])).rowCount;
     // (Si la cerró la decisión de otra persona que llegó primero, se dice eso.)
     if (!vivo) return { msg: (await c.query(`select 1 from gateway_reviews where subject_kind = $1 and subject_id = $2::bigint`, [t, id])).rowCount ? "Ya lo decidió otra persona del equipo." : "Ya no está en camino: se cerró." };
@@ -152,6 +158,7 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
     : t === "refunds" ? (await (await import("./devolucion-consulta")).resolverDevolucion(id, o)).quedo
     : t === "event_settlement_reversals" ? (await (await import("./evt-liquidacion")).resolverReversion(id, o)).quedo
     : t === "gateway_refunds" ? ((await resolverDevolucionSobra(id, o)).st === "done" ? "hecha" : "sigue")
+    : t === "sponsorship_refunds" ? (await (await import("./patrocinio")).resolverDevolucionPat(id, o)).quedo
     : (await (await import("./renovar-retencion")).resolverRenovacion(id, o)).quedo;
   if (DEVUELVE(t)) return { ok: true, msg: `Decidido: vale ${elegido}; ${QUEDO_DEV[q] ?? q}.${sobra.length ? ` Salió de más en Stripe: ${sobra.map((h) => `${h.id} ${money(h.centavos)}`).join(", ")} (no se deshace desde aquí; míralo con la persona).` : ""} Quedó en la auditoría.` };
   if (!medio) for (const h of sobra) await pasarela.liberar(h.id).catch(() => undefined);

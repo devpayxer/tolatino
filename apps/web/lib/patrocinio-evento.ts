@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { valores } from "./config";
 import { db, tx } from "./db";
 import { pasarela } from "./pagos/pasarela";
-import { CLAVE, DEVOLUCION, anotarPago, capturarCobro, cobrar, devolverPatrocinio, devolverPendientes, errorDePuestos, fechasPeriodo, money, soltarRetenido, tarjetaDe, type Bi, type Cobro, type PatAdm, type Recibo, type ResPat } from "./patrocinio";
+import { CLAVE, DEVOLUCION, anotarPago, capturarCobro, cobrar, devolucionEstado, devolverPatrocinio, devolverPendientes, errorDePuestos, fechasPeriodo, money, soltarRetenido, tarjetaDe, type Bi, type Cobro, type PatAdm, type Recibo, type ResPat } from "./patrocinio";
 import type { TarjetaEvt } from "./evt-publico";
 
 /* C-003 · Patrocinados de la página de Eventos (canvas tolatino-master+, entrega/cambios.md C-003; migración 0174). Usa la misma caja que el
@@ -511,6 +511,9 @@ export async function terminarPorAdminEvento(staffId: string, ciudades: string[]
   const quiere = (r as { devolver?: number }).devolver ?? 0, dev = quiere ? await devolverPatrocinio("evento", id) : 0;
   return { ok: true, devuelto: dev, msg: quiere
     ? (dev ? { es: `Patrocinio terminado. Se devolvieron ${money(dev)} a su tarjeta. Quedó en la auditoría.`, en: `Sponsorship ended. ${money(dev)} was refunded to the card. It is in the audit log.` }
-      : { es: "Patrocinio terminado. La devolución sigue pendiente: el barrido la reintenta. Quedó en la auditoría.", en: "Sponsorship ended. The refund is still pending: the sweep retries it. It is in the audit log." })
+      // 9t8 · Stripe dijo que no: no se reintenta sola (alerta al equipo de dinero); sin respuesta, el barrido la termina con la misma llave.
+      : (await devolucionEstado("evento", id)) === "failed"
+        ? { es: "Patrocinio terminado. Stripe no aceptó la devolución: el equipo de dinero tiene la alerta para hacerla por fuera. Quedó en la auditoría.", en: "Sponsorship ended. Stripe did not accept the refund: the money team has the alert to make it outside Stripe. It is in the audit log." }
+        : { es: "Patrocinio terminado. La devolución sigue pendiente: el barrido la reintenta. Quedó en la auditoría.", en: "Sponsorship ended. The refund is still pending: the sweep retries it. It is in the audit log." })
     : { es: "Patrocinio terminado sin devolver. Quedó en la auditoría.", en: "Sponsorship ended with no refund. It is in the audit log." } };
 }

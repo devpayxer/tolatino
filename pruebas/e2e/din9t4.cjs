@@ -66,7 +66,7 @@ Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { dias
 // 9t6 · barrerRentas renueva el depósito por lib/renovar-retencion.ts (y pregunta con lib/consulta-pasarela.ts): los módulos reales.
 Object.assign(RR, cargar('apps/web/lib/renovar-retencion.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './consulta-pasarela': K, './dinero-alertas': alertas, './rentas': RE, './estimados': {} }));
 Object.assign(PA, cargar('apps/web/lib/patrocinio.ts', { './config': { valores: async () => ({ patrocinio_semana_cents: 1500, patrocinio_mes_cents: 4500, patrocinio_puestos: 6, patrocinio_dias_adelante: 30 }) },
-  './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos, './cobro-fuera': CF }));
+  './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos, './cobro-fuera': CF, './consulta-pasarela': K }));
 
 const db = D.db();
 const q1 = async (s, v = []) => (await db.query(s, v)).rows[0];
@@ -269,17 +269,17 @@ const rnt = (rid) => q1(`select status as st, days::int as dias, card_failed as 
     // «Un día más»: sin respuesta, la fecha no se mueve y la persona lee «en camino»; dos toques a la vez cobran un día, una vez.
     const T = await renta(R, { st: 'out' });
     P.para = T.pref; P.plan = ['red'];
-    const r1 = await RE.rentaCliente(R.u, T.num, 'dia');
+    const r1 = await RE.rentaCliente(R.u, T.num, 'dia', undefined, crypto.randomUUID());
     let x = await rnt(T.rid);
     ok(!r1.ok && /quedó en camino/.test(r1.msg.es) && !r1.tarjeta && x.dias === 2 && P.cobrosCon(T.pref) === 0, `sin respuesta: «quedó en camino», sin pedir otra tarjeta, la fecha no se mueve (${x.dias} días)`);
-    const r2 = await RE.rentaCliente(R.u, T.num, 'dia');
+    const r2 = await RE.rentaCliente(R.u, T.num, 'dia', undefined, crypto.randomUUID());
     x = await rnt(T.rid);
     const I = await intenciones('renta', T.rid);
     ok(r2.ok && x.dias === 3 && P.cobrosCon(T.pref) === 1 && I.length === 1 && I[0].st === 'done' && await pagosDe(T.op, 'rental') === 1, `tocar otra vez termina ESA intención: un día más, un cobro (${x.dias} días, ${P.cobrosCon(T.pref)} cobro)`);
     // Dos que terminan la MISMA intención a la vez (el toque y el barrido): un cobro y un día, una vez.
     const T2 = await renta(R, { st: 'out' });
     P.para = T2.pref; P.plan = ['red'];
-    await RE.rentaCliente(R.u, T2.num, 'dia');
+    await RE.rentaCliente(R.u, T2.num, 'dia', undefined, crypto.randomUUID());
     const a = await CF.enCamino('renta', T2.rid);
     const [u, v] = await Promise.all([RE.terminarCobroRenta(a), RE.terminarCobroRenta(a, true)]);
     const x2 = await rnt(T2.rid);

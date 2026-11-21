@@ -93,7 +93,7 @@ Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { dias
 // 9t6 · barrerRentas renueva el depósito por lib/renovar-retencion.ts (y pregunta con lib/consulta-pasarela.ts): los módulos reales.
 Object.assign(RR, cargar('apps/web/lib/renovar-retencion.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './consulta-pasarela': K, './dinero-alertas': alertas, './rentas': RE, './estimados': {} }));
 Object.assign(PA, cargar('apps/web/lib/patrocinio.ts', { './config': { valores: async () => ({ patrocinio_semana_cents: 1500, patrocinio_mes_cents: 4500, patrocinio_puestos: 6, patrocinio_dias_adelante: 30 }) },
-  './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos, './cobro-fuera': CF }));
+  './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos, './cobro-fuera': CF, './consulta-pasarela': K }));
 Object.assign(SU, cargar('apps/web/lib/suscripcion.ts', { './db': D, './pagos/pasarela': { pasarela: P, registrarAccion: async () => undefined }, './plan': { PRECIO_PRO: 30 }, './avisos': avisos,
   './correo/recibos': { reciboPro: async () => undefined }, './dinero-alertas': alertas, './consulta-pasarela': K }));
 const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' };
@@ -461,10 +461,10 @@ async function planSinRespuesta(X, paso, min = 25 * 60) {
     const rid = (await q1(`insert into rentals (operation_id, business_id, user_id, city_id, item_id, item_name, price_cents, deposit_cents, days, rent_cents, pick_on, due_on, expires_at, payment_method, status, out_at)
                            values ($1::bigint, $2, $3, 'hzl', $4::bigint, '{"es":"Sierra 9t5","en":"Saw 9t5"}'::jsonb, 2500, 0, 2, 5000, $5::date, $5::date + 2, now() + interval '2 days', $6, 'out', now()) returning id::text`, [op, R.b, R.u, it, h, R.pm])).id;
     P.para = `renta-${rid}-`; P.plan = [];
-    const r1 = await RE.rentaCliente(R.u, num, 'dia');
+    const r1 = await RE.rentaCliente(R.u, num, 'dia', undefined, crypto.randomUUID());
     await db.query(`update rentals set days = 2, due_on = due_on - 1 where id = $1::bigint`, [rid]);
     const [a] = await intenciones('renta', rid);
-    const r2 = await RE.rentaCliente(R.u, num, 'dia');
+    const r2 = await RE.rentaCliente(R.u, num, 'dia', undefined, crypto.randomUUID());
     ok(r1.ok && !r2.ok && /ya se hizo y no se aplicó/.test(r2.msg.es) && P.cobrosCon(`renta-${rid}-`) === 1 && await alertasDe('offsession_unapplied', a.k) === 1,
       `renta: no contesta «listo» ni cobra otra vez; el equipo recibe UNA alerta («${r2.ok ? '' : r2.msg.es}»)`);
   }
