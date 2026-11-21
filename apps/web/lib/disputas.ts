@@ -52,17 +52,32 @@ export async function registrarDisputa(x: { stripeId: string; pi: string; amount
   return r;
 }
 
-/* Resultado del banco (webhook charge.dispute.closed, o el simulador): ganada o perdida. Avisa al dueño. */
+/* Resultado del banco (webhook charge.dispute.closed, o el simulador): ganada o perdida. Avisa al dueño.
+   21 nov (9t2) · Si el banco la cierra (ganada, perdida o devuelta), su caso en Colas «Disputas con el banco» se cierra en la MISMA transacción (una vez:
+   solo el abierto) con su auditoría de solo inserción, quién: «sistema». Antes quedaba abierto hasta que alguien lo decidiera a mano. */
+const CERRADA: Record<string, { decision: string; es: string }> = { won: { decision: "ganada", es: "ganada" }, lost: { decision: "perdida", es: "perdida" }, accepted: { decision: "aceptada", es: "devuelta al cliente" } };
 export async function cerrarDisputa(stripeId: string, status: string) {
   const st = ESTADO_STRIPE[status] ?? status;
   if (!["won", "lost", "accepted", "under_review", "needs_response"].includes(st)) return;
-  const d = (await db().query<{ id: string; biz: string | null; op: string | null; antes: string }>(
-    `update disputes d set status = $2, closed_at = case when $2 in ('won', 'lost', 'accepted') then coalesce(d.closed_at, now()) else d.closed_at end, updated_at = now()
-      from (select id, status as antes from disputes where stripe_dispute_id = $1) x where d.id = x.id and d.status <> $2 and x.antes not in ('won', 'lost', 'accepted')
-      returning d.id::text, d.business_id as biz, d.operation_id::text as op, x.antes`, [stripeId, st])).rows[0];
+  const d = await tx(async (c) => {
+    const d = (await c.query<{ id: string; biz: string | null; op: string | null; antes: string; city: string | null }>(
+      `update disputes d set status = $2, closed_at = case when $2 in ('won', 'lost', 'accepted') then coalesce(d.closed_at, now()) else d.closed_at end, updated_at = now()
+        from (select id, status as antes from disputes where stripe_dispute_id = $1) x where d.id = x.id and d.status <> $2 and x.antes not in ('won', 'lost', 'accepted')
+        returning d.id::text, d.business_id as biz, d.operation_id::text as op, x.antes, d.city_id as city`, [stripeId, st])).rows[0];
+    if (!d) return null;
+    if (st === "lost") await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [d.id]);
+    if (st === "won") await c.query(`update payments set failure_code = 'dispute_won', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [d.id]);
+    const k = CERRADA[st];
+    if (k) {
+      const q = (await c.query<{ id: string }>(
+        `update queue_items set status = 'decided', decision = $2, reason = $3, decided_by = null, decided_at = now() where queue = 'disputa' and subject_kind = 'dispute' and subject_id = $1 and status = 'open' returning id::text`,
+        [d.id, k.decision, `El banco la cerró: ${k.es}.`])).rows[0];
+      if (q) await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('system', null, 'disputa.cerrada_banco', 'dispute', $1, $2, $3::jsonb, $4::jsonb)`,
+        [d.id, d.city, JSON.stringify({ disputa: d.antes, caso: "abierto" }), JSON.stringify({ disputa: st, caso: "cerrado", quien: "sistema", cola: q.id })]);
+    }
+    return d;
+  });
   if (!d) return;
-  if (st === "lost") await db().query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [d.id]);
-  if (st === "won") await db().query(`update payments set failure_code = 'dispute_won', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [d.id]);
   if (["won", "lost"].includes(st) && d.biz && d.op) {
     const num = (await db().query<{ n: string }>(`select number as n from operations where id = $1::bigint`, [d.op])).rows[0]?.n ?? "";
     await (await import("./avisos")).avisarNegocio(d.biz, "biz_dispute_end", { num, resultado: st === "won" ? "el banco nos dio la razón, el dinero se queda" : "el banco le dio la razón al cliente" }, { href: `/panel/${d.biz}/cobros` }).catch(() => undefined);

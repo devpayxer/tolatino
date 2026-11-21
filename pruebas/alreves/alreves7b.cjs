@@ -29,7 +29,8 @@ const casos = [
   ['soporteDevolverConTope', M, "  select role into rol from staff_members where user_id = new.staff_id and status = 'active';", "  rol := new.staff_role;"],
   ['soporteDevolverConTope', M, 'p.operation_id <> c.operation_id or p.user_id <> c.user_id', 'p.operation_id <> c.operation_id'],
   ['soporteDevolverConTope', E, "  const idem = `tk-${clave}`;", "  const idem = `tk-${clave}-${Date.now()}`;"],
-  ['soporteDevolverConTope', E, 'const d = await devolverPago({ paymentId: fila.pid, centavos: fila.amount,', 'const d = await devolverPago({ paymentId: fila.pid, centavos: cents,'],
+  // 9t2 · la devolución se anota con el monto de la FILA (no el que manda el teléfono), en la misma transacción que la fila.
+  ['soporteDevolverConTope', E, 'const a = await cobros.anotarDevolucionPago(c, { paymentId: fx.pid, centavos: fx.amount,', 'const a = await cobros.anotarDevolucionPago(c, { paymentId: fx.pid, centavos: cents,'],
   ['soporteDevolverConTope', E, 'const puedeDevolverRol = (s: Staff) =>', 'const TOPE_SOP = 5000; void TOPE_SOP;\nconst puedeDevolverRol = (s: Staff) =>'],
   // compaTapaSecretos
   ['compaTapaSecretos', T, 't = t.replace(/(?:\\d[ -]?){12,18}\\d/g, (m) => (luhn(m.replace(/\\D/g, "")) ? TAPADO : m));', ''],

@@ -108,15 +108,29 @@ async function cobrarPeriodo(s: Fila, desde: number, enSesion = false): Promise<
   await registrarPeriodo(s, desde, monto, r.id, idem);
   return { ok: true };
 }
-/* El período cobrado: Pro activo hasta la fecha, el evento, el aviso y el recibo. Una vez por llave (subscription_events.idem_key). */
+/* El período cobrado: Pro activo hasta la fecha, el evento, el aviso y el recibo. Una vez por llave (subscription_events.idem_key).
+   21 nov (9t2) · Con el estado que se leyó en el `where` (y mirando rowCount): «Volver a Pro» va fuera del candado del plan, y una cortesía, «Anular»
+   u otro cambio hecho en ese segundo no se pisa. Si cambió, el cobro (que ya salió) queda en el historial con el estado que encontró y el equipo de
+   dinero recibe la alerta para decidir si se devuelve; al dueño no se le dice «cobrado» ni se le manda recibo de un período que no se aplicó. */
 async function registrarPeriodo(s: Fila, desde: number, monto: number, pi: string, idem: string) {
   if (!s.payer_user_id || !s.card_pm) return;
   const hasta = new Date(desde); hasta.setMonth(hasta.getMonth() + (s.cycle === "year" ? 12 : 1));
-  await tx(async (c) => {
-    await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1`,
-      [s.business_id, hasta.toISOString()]);
+  const aplicado = await tx(async (c) => {
+    const u = await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1 and status = $3`,
+      [s.business_id, hasta.toISOString(), s.status]);
+    if (!u.rowCount) return false;
     await plan(c, s.business_id, "pro");
+    return true;
   });
+  if (!aplicado) {
+    const ahora = (await db().query<{ st: string | null }>(`select status as st from subscriptions where business_id = $1`, [s.business_id])).rows[0]?.st ?? "sin plan";
+    await evento(s.business_id, "charged", { monto, note: { pi, hasta: hasta.toISOString(), no_aplicado: ahora, esperaba: s.status }, idem });
+    const ciudad = (await db().query<{ c: string | null }>(`select city_id as c from businesses where id = $1`, [s.business_id])).rows[0]?.c ?? null;
+    await (await import("./dinero-alertas")).alertar("charge_unapplied", idem, { monto, negocio: s.business_id, ciudad, detalle: {
+      es: `Se cobró Pro (${money(monto)}) mientras el plan cambiaba (esperaba «${s.status}», ahora «${ahora}»): no se aplicó el período. Decide si se devuelve.`,
+      en: `Pro was charged (${money(monto)}) while the plan was changing (expected «${s.status}», now «${ahora}»): the period was not applied. Decide whether to refund it.` } }).catch(() => undefined);
+    return;
+  }
   await evento(s.business_id, "charged", { monto, note: { pi, hasta: hasta.toISOString() }, idem });
   const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [s.card_pm])).rows[0];
   await avisarDueño(s.business_id, "pro_charged", { monto: money(monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
@@ -159,12 +173,16 @@ export async function completarRenovacion(negocio: string, pi: string, candado =
   await avisarDueño(negocio, "pro_charged", { monto: money(hecho.monto), negocio: await nombre(negocio), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
   await (await import("./correo/recibos")).reciboPro(negocio, hecho.payer, hecho.monto, hecho.hasta, t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", hecho.idem);
 }
-async function aFree(negocio: string, por: string) {
+/* 9t2 · esperado: el estado que leyó el barrido (con el candado del plan). Una cortesía o «Anular» hechos en ese segundo (van sin ese candado) no se
+   pisan: si el estado cambió, no se toca nada ni se avisa. */
+async function aFree(negocio: string, por: string, esperado: string) {
   if (await soltarVerificaciones(negocio)) return;
-  await tx(async (c) => {
-    await c.query(`update subscriptions set status = 'ended', ended_at = now(), next_attempt_at = null, updated_at = now() where business_id = $1`, [negocio]);
+  const hecho = await tx(async (c) => {
+    if (!(await c.query(`update subscriptions set status = 'ended', ended_at = now(), next_attempt_at = null, updated_at = now() where business_id = $1 and status = $2`, [negocio, esperado])).rowCount) return false;
     await plan(c, negocio, "free");
+    return true;
   });
+  if (!hecho) return;
   await evento(negocio, "ended", { note: { por } });
   await avisarDueño(negocio, "pro_free", { negocio: await nombre(negocio) });
 }
@@ -201,18 +219,19 @@ export async function procesar(negocio?: string) {
       if (s.trial_choice === "card" && s.card_pm) {
         const r = await cobrarPeriodo(s, Date.parse(s.trial_ends_at!));
         if (!r.ok) await fallo(s, "verificar" in r);
-      } else await aFree(s.business_id, s.trial_choice === "no_continue" ? "decidio" : "fin_prueba");
-    } else if (s.status === "canceling") await aFree(s.business_id, "pasar_a_free");
+      } else await aFree(s.business_id, s.trial_choice === "no_continue" ? "decidio" : "fin_prueba", s.status);
+    } else if (s.status === "canceling") await aFree(s.business_id, "pasar_a_free", s.status);
     else if (s.status === "active") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end!)); if (!r.ok) await fallo(s, "verificar" in r); }
     else if (s.status === "past_due") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end ?? s.trial_ends_at!)); if (!r.ok) await fallo(s, "verificar" in r); }
-    else if (s.status === "courtesy") await aFree(s.business_id, "fin_cortesia");
+    else if (s.status === "courtesy") await aFree(s.business_id, "fin_cortesia", s.status);
   });
 }
 async function fallo(s: Fila, verificar = false) {
   const n = s.failed_attempts + 1;
-  if (n >= 3) { await evento(s.business_id, "failed", { note: { intento: n } }); await aFree(s.business_id, "cobro_fallido"); return; }
+  if (n >= 3) { await evento(s.business_id, "failed", { note: { intento: n } }); await aFree(s.business_id, "cobro_fallido", s.status); return; }
   const prox = new Date(Date.now() + (n === 1 ? 3 : 4) * D).toISOString();
-  await db().query(`update subscriptions set status = 'past_due', failed_attempts = $2, next_attempt_at = $3, current_period_end = coalesce(current_period_end, trial_ends_at), updated_at = now() where business_id = $1`, [s.business_id, n, prox]);
+  // 9t2 · Con el estado que se leyó en el where: una cortesía puesta en ese segundo no pasa a «cobro fallido».
+  if (!(await db().query(`update subscriptions set status = 'past_due', failed_attempts = $2, next_attempt_at = $3, current_period_end = coalesce(current_period_end, trial_ends_at), updated_at = now() where business_id = $1 and status = $4`, [s.business_id, n, prox, s.status])).rowCount) return;
   await evento(s.business_id, "failed", { note: { intento: n, ...(verificar ? { verificar: true } : {}) } });
   // 9k · Si el banco pidió verificar, el dueño ya recibió «Tu banco pide confirmar» con su enlace: no se le manda además «cobro fallido».
   if (!verificar) await avisarDueño(s.business_id, "pro_failed", { negocio: await nombre(s.business_id), n: String(n) });

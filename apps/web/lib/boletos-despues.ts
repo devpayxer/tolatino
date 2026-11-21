@@ -321,16 +321,21 @@ async function anotarDevolucion(c: Q, x: { op: string; pid: string; city: string
 }
 
 /* Paso 2: la devolución en Stripe (o el simulador) con su llave; idempotente (la misma llave nunca devuelve dos veces) y la marca 'done'
-   una sola vez (update … where status = 'pending'). Si falla, queda pendiente y el barrido la reintenta. */
+   una sola vez (update … where status = 'pending'). Si falla, queda pendiente y el barrido la reintenta.
+   21 nov (9t2) · Lo devuelto del cobro sale del libro (devueltoDelLibro de lib/cobros, como cerrarDevolucionPago), nunca de sumar otra vez: si el
+   webhook charge.refunded llegó antes que el cierre, no se cuenta dos veces ni choca con el check. Y pasadas HORAS_LLAVE desde que se anotó,
+   Stripe ya no recuerda la llave: no se pregunta más (podría devolver dos veces); el barrido alerta al equipo de dinero. */
 export async function ejecutarDevolucion(refundId: string): Promise<boolean> {
-  const r = (await db().query<{ id: string; amt: number; idem: string; st: string; pi: string; pid: string; op: string; pg: boolean; mano: boolean }>(
+  const { HORAS_LLAVE_STRIPE, devueltoDelLibro } = await import("./cobros");
+  const r = (await db().query<{ id: string; amt: number; idem: string; st: string; pi: string; pid: string; op: string; pg: boolean; mano: boolean; vieja: boolean }>(
     `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.status as st, p.stripe_payment_intent as pi, p.id::text as pid, p.operation_id::text as op, p.transfer_group is not null as pg,
-            r.manual_at is not null as mano
-       from refunds r join payments p on p.id = r.payment_id where r.id = $1::bigint`, [refundId])).rows[0];
+            r.manual_at is not null as mano, r.created_at <= now() - make_interval(hours => $2::int) as vieja
+       from refunds r join payments p on p.id = r.payment_id where r.id = $1::bigint`, [refundId, HORAS_LLAVE_STRIPE])).rows[0];
   if (!r) return false;
   if (r.st !== "pending") return r.st === "done";
   // 9k · Resuelta a mano (el cliente ya recibió su dinero fuera de Stripe): nunca se vuelve a pedir a Stripe (sería pagar dos veces).
   if (r.mano) return false;
+  if (r.vieja) return false;
   const x = await pasarela.devolver(r.pi, r.amt, r.idem, { plataforma: r.pg }).catch(() => ({ ok: false as const, codigo: "error" }));
   if (!x.ok) {
     await db().query(`update refunds set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [r.id, ("codigo" in x && x.codigo) || "error"]);
@@ -339,20 +344,27 @@ export async function ejecutarDevolucion(refundId: string): Promise<boolean> {
   await tx(async (c) => {
     const u = await c.query(`update refunds set status = 'done', stripe_refund_id = coalesce(stripe_refund_id, $2), done_at = now(), last_error = null where id = $1::bigint and status = 'pending'`, [r.id, x.id ?? null]);
     if (!u.rowCount) return;
-    const p = (await c.query<{ status: string }>(
-      `update payments set refunded_cents = refunded_cents + $2, status = case when refunded_cents + $2 >= amount_cents then 'refunded' else 'partially_refunded' end, updated_at = now()
-        where id = $1::bigint returning status`, [r.pid, r.amt])).rows[0]!;
-    await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [r.op, p.status]);
+    const p = await devueltoDelLibro(c, r.pid);
+    await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [r.op, p.st]);
     await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'refunded', 'system', $2::jsonb)`, [r.op, JSON.stringify({ es: `Devolución de ${dinero(r.amt)} a la tarjeta`, en: `${dinero(r.amt)} refunded to the card` })]);
   });
   return true;
 }
-/* Barrido: reintenta las devoluciones de boletos pendientes (con la MISMA llave). */
+/* Barrido: reintenta las devoluciones de boletos pendientes (con la MISMA llave) mientras Stripe la recuerda (HORAS_LLAVE); las que pasaron ese
+   tiempo sin respuesta no se preguntan más: alerta al equipo de dinero, una vez (resolver a mano o mirar en Stripe), nunca una segunda devolución. */
 export async function barrerDevolucionesBoletos(): Promise<number> {
+  const { HORAS_LLAVE_STRIPE, alertaVieja } = await import("./cobros");
   const L = (await db().query<{ id: string }>(
-    `select r.id::text from refunds r where r.status = 'pending' and r.manual_at is null and r.created_at < now() - interval '30 seconds' and exists (select 1 from ticket_refund_lines l where l.refund_id = r.id) order by r.created_at limit 50`)).rows;
+    `select r.id::text from refunds r where r.status = 'pending' and r.manual_at is null and r.created_at < now() - interval '30 seconds' and r.created_at > now() - make_interval(hours => $1::int)
+        and exists (select 1 from ticket_refund_lines l where l.refund_id = r.id) order by r.created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   let n = 0;
   for (const r of L) if (await ejecutarDevolucion(r.id)) n++;
+  const V = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; n: number; err: string | null }>(
+    `select r.id::text, r.amount_cents as amt, p.business_id as biz, p.city_id as city, r.attempts as n, r.last_error as err from refunds r join payments p on p.id = r.payment_id
+      where r.status = 'pending' and r.manual_at is null and r.created_at <= now() - make_interval(hours => $1::int)
+        and exists (select 1 from ticket_refund_lines l where l.refund_id = r.id)
+        and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = r.id::text) order by r.created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
+  for (const r of V) await alertaVieja(r);
   return n;
 }
 

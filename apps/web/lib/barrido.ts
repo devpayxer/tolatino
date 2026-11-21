@@ -174,6 +174,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // nadie abra el panel (L377: el día 30 llega igual).
         ["conciliacion", async () => (await import("./conciliacion")).conciliarAyer()], ["conciliacionVigilar", async () => (await import("./conciliacion")).vigilarConciliacion()],
         ["verificaciones", async () => (await import("./pagos/verificacion")).vencerVerificaciones()], ["pagosAlBanco", async () => (await import("./pagos-banco")).pagarAlBanco()],
+        // 9t2 · Pausar o reanudar los pagos al banco se anota antes de Stripe: lo que Stripe no confirmó se le vuelve a pedir (fijar un estado).
+        ["pausasStripe", async () => (await import("./pagos-banco")).sincronizarPausas()],
         ["alertasDinero", async () => (await import("./dinero-alertas")).barrerAlertasDinero()], ["planPro", async () => (await import("./suscripcion")).procesar()],
         // 9l · Avisos y canales: los reintentos del SMS (el único camino) y su retención, la retención del correo a Soporte, pedido tarde, «ya publicó», «Avísame
         // cuando haya», la prueba de Pro (día 20 y último, 10 AM) y el resumen de la semana (lunes, 9 AM). Cada aviso una vez (notif_once).

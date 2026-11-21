@@ -2,6 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { valores } from "./config";
 import { db, tx } from "./db";
+import { HORAS_LLAVE_STRIPE } from "./cobros";
 import { pasarela, type Verificar } from "./pagos/pasarela";
 import { COLUMNAS, CTE, DESDE, FOTO, condiciones, conFoto, type Regla, type Resultado } from "./categoria";
 import type { Punto } from "./punto";
@@ -133,14 +134,17 @@ export const DEVOLUCION = (modo: ModoDev, motivo: string, pausa: boolean, t = ""
 export async function devolverPatrocinio(kind: "negocio" | "evento", id: string): Promise<number> {
   if (!/^\d{1,18}$/.test(String(id))) return 0;
   const T = kind === "negocio" ? "sponsorships" : "event_sponsorships", ev = kind === "evento";
-  const s = (await db().query<{ cents: number; dias: number; motivo: string; negocio: string; ciudad: string; evento: string | null; total: number; pago: string; pi: string; marca: string | null; l4: string | null; payer: string; cobrado: number; ya: boolean }>(
+  const s = (await db().query<{ cents: number; dias: number; motivo: string; negocio: string; ciudad: string; evento: string | null; total: number; pago: string; pi: string; marca: string | null; l4: string | null; payer: string; cobrado: number; ya: boolean; vieja: boolean }>(
     `select s.refund_cents as cents, s.refund_days as dias, s.refund_motive as motivo, s.business_id as negocio, s.city_id as ciudad, ${ev ? "s.event_id::text" : "null::text"} as evento,
             patrocinio_dias_comprados(s.starts_at, s.ends_at, ${ev ? "s.extended_secs" : "0"}, (select ci.timezone from cities ci where ci.id = s.city_id)) as total,
             p.id::text as pago, p.pi, p.card_brand as marca, p.card_last4 as l4, p.payer_user_id::text as payer, p.amount_cents as cobrado,
-            exists (select 1 from sponsorship_payments r where r.kind = $1 and r.ref_id = s.id and r.reason = 'devolucion') as ya
+            exists (select 1 from sponsorship_payments r where r.kind = $1 and r.ref_id = s.id and r.reason = 'devolucion') as ya,
+            s.ended_at <= now() - make_interval(hours => $3::int) as vieja
        from ${T} s join sponsorship_payments p on p.kind = $1 and p.ref_id = s.id and p.reason <> 'devolucion'
-      where s.id = $2::bigint and s.refund_cents is not null`, [kind, id])).rows[0];
-  if (!s || s.ya) return 0;
+      where s.id = $2::bigint and s.refund_cents is not null`, [kind, id, HORAS_LLAVE_STRIPE])).rows[0];
+  // 9t2 · Pasadas HORAS_LLAVE desde que terminó (cuando se decidió y se pidió por primera vez), Stripe ya no recuerda la llave: no se pide otra vez
+  // (podría devolver dos veces); el barrido alerta al equipo de dinero.
+  if (!s || s.ya || s.vieja) return 0;
   const cents = Math.min(s.cents, s.cobrado), idem = `pat-dev-${kind}-${id}`;
   const r = await pasarela.devolver(s.pi, cents, idem, { plataforma: true });
   if (!r.ok || !r.id) { console.error("[patrocinio] devolver", kind, id, r.codigo ?? "sin id"); return 0; }
@@ -161,14 +165,24 @@ export async function devolverPatrocinio(kind: "negocio" | "evento", id: string)
   else await avisoNeg(s.negocio, "biz_patrocinio_devuelto", v).catch(() => undefined);
   return cents;
 }
-/* El barrido: lo que se decidió devolver y todavía no está en el libro (la pasarela no respondió), con la misma llave. */
+/* El barrido: lo que se decidió devolver y todavía no está en el libro (la pasarela no respondió), con la misma llave, mientras Stripe la recuerda
+   (HORAS_LLAVE desde que terminó). 9t2 · Antes reintentaba 30 días con la misma llave: pasado un día, otra llamada podía devolver dos veces. Desde
+   ahí, una alerta al equipo de dinero por patrocinio (una vez): mira en Stripe si salió y resuélvelo a mano. */
 export async function devolverPendientes(kind: "negocio" | "evento"): Promise<number> {
   const T = kind === "negocio" ? "sponsorships" : "event_sponsorships";
+  const SIN = `s.refund_cents is not null and not exists (select 1 from sponsorship_payments r where r.kind = $1 and r.ref_id = s.id and r.reason = 'devolucion')`;
   const L = (await db().query<{ id: string }>(
-    `select s.id::text from ${T} s where s.refund_cents is not null and s.ended_at > now() - interval '30 days'
-        and not exists (select 1 from sponsorship_payments r where r.kind = $1 and r.ref_id = s.id and r.reason = 'devolucion') order by s.ended_at limit 50`, [kind])).rows;
+    `select s.id::text from ${T} s where ${SIN} and s.ended_at > now() - make_interval(hours => $2::int) order by s.ended_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
   let n = 0;
   for (const { id } of L) if (await devolverPatrocinio(kind, id).catch(() => 0)) n++;
+  const V = (await db().query<{ id: string; cents: number; biz: string; city: string }>(
+    `select s.id::text, s.refund_cents as cents, s.business_id as biz, s.city_id as city from ${T} s where ${SIN} and s.ended_at <= now() - make_interval(hours => $2::int)
+        and s.ended_at > now() - interval '30 days' and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = 'pat-dev-' || $1 || '-' || s.id::text)
+      order by s.ended_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
+  const { alertar } = await import("./dinero-alertas");
+  for (const x of V) await alertar("refund_stuck", `pat-dev-${kind}-${x.id}`, { monto: x.cents, negocio: x.biz, ciudad: x.city,
+    detalle: { es: `Devolución de ${money(x.cents)} de un patrocinio ${kind === "evento" ? "de evento " : ""}(${x.id}) sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h: mira en Stripe si salió y resuélvela a mano.`,
+      en: `Refund of ${money(x.cents)} for a ${kind === "evento" ? "event " : ""}sponsorship (${x.id}) with no answer from Stripe in ${HORAS_LLAVE_STRIPE} h: check in Stripe whether it went out and resolve it by hand.` } }).catch(() => undefined);
   return n;
 }
 

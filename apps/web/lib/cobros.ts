@@ -175,19 +175,26 @@ export async function anotarDevolucionPago(c: PoolClient, x: InDevolver, alGuard
   return { ok: true, id, monto: n, estado: "pending" };
 }
 
-/* Paso 2: la pasarela con la llave de la devolución y su cierre. Lo llama devolverPago (y quien anotó en su propia transacción) y el barrido. */
-export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean } = {}): Promise<ResDevolucion> {
-  const r = (await db().query<{ id: string; amt: number; idem: string; st: string; mano: boolean; pi: string; plataforma: boolean; biz: string | null; city: string | null; por: string }>(
-    `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.status as st, r.manual_at is not null as mano, p.stripe_payment_intent as pi, p.transfer_group is not null as plataforma, r.initiated_by as por,
-            p.business_id as biz, p.city_id as city
-       from refunds r join payments p on p.id = r.payment_id where r.id = $1::bigint`, [id])).rows[0];
+/* Paso 2: la pasarela con la llave de la devolución y su cierre. Lo llama devolverPago (y quien anotó en su propia transacción) y el barrido.
+   21 nov (9t2) · Pasadas HORAS_LLAVE desde que se anotó, Stripe ya no recuerda la llave: preguntar otra vez podría devolver dos veces. Desde ahí
+   nadie la vuelve a mandar (ni el barrido ni un segundo toque de Colas o Soporte): queda en camino y el equipo de dinero la resuelve (alerta).
+   alCerrar: lo que quien la pidió escribe en la MISMA transacción que la cierra (la respuesta de Soporte). */
+export type AlCerrar = (c: PoolClient) => Promise<void>;
+const VIEJA: Msg = { es: "Esta devolución lleva más de un día sin respuesta de Stripe: el equipo de dinero la revisa y la resuelve. No la repitas.",
+  en: "This refund has had no answer from Stripe for over a day: the money team reviews and resolves it. Do not repeat it." };
+export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean; alCerrar?: AlCerrar } = {}): Promise<ResDevolucion> {
+  const r = (await db().query<{ id: string; amt: number; idem: string; st: string; mano: boolean; vieja: boolean; pi: string; plataforma: boolean; biz: string | null; city: string | null; por: string }>(
+    `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.status as st, r.manual_at is not null as mano, r.created_at <= now() - make_interval(hours => $2::int) as vieja,
+            p.stripe_payment_intent as pi, p.transfer_group is not null as plataforma, r.initiated_by as por, p.business_id as biz, p.city_id as city
+       from refunds r join payments p on p.id = r.payment_id where r.id = $1::bigint`, [id, HORAS_LLAVE])).rows[0];
   if (!r) return { ok: false, msg: STRIPE_NO };
   // Resuelta a mano (el cliente recibió su dinero fuera de Stripe): nunca se vuelve a pedir a Stripe (sería pagar dos veces).
   if (r.st === "done" || r.mano) return { ok: true };
   if (r.st !== "pending") return { ok: false, msg: STRIPE_NO };
+  if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };
   // Un cobro de la plataforma (boletos) no tiene transferencia ni comisión de destino que revertir.
   const g = await pasarela.devolver(r.pi, r.amt, r.idem, { plataforma: r.plataforma }).catch(() => ({ ok: false as const, id: undefined, codigo: "error" }));
-  if (g.ok) return cerrarDevolucionPago(r.id, g.id ?? null);
+  if (g.ok) return cerrarDevolucionPago(r.id, g.id ?? null, o.alCerrar);
   const codigo = String(g.codigo ?? "error").slice(0, 60);
   if (SIN_RESPUESTA.has(codigo)) {
     await db().query(`update refunds set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending' and manual_at is null`, [r.id, codigo]);
@@ -199,7 +206,11 @@ export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean 
     const u = (await c.query<{ op: string }>(
       `update refunds r set status = 'failed', attempts = least(10000, r.attempts + 1), last_error = left($2, 120), idem_key = left(r.idem_key, 180) || '~fallida-' || r.id::text
          from payments p where r.id = $1::bigint and r.status = 'pending' and r.manual_at is null and p.id = r.payment_id returning p.operation_id::text as op`, [r.id, codigo])).rows[0];
-    if (u) await evento(c, u.op, "refund_failed", { es: `Stripe no hizo la devolución de ${money(r.amt)}`, en: `Stripe did not make the ${money(r.amt)} refund` });
+    if (u) {
+      await evento(c, u.op, "refund_failed", { es: `Stripe no hizo la devolución de ${money(r.amt)}`, en: `Stripe did not make the ${money(r.amt)} refund` });
+      // 9t2 · La fila del caso de Soporte (la misma llave) queda fallida con ella, en la misma transacción: nadie tiene que volver a tocar.
+      await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where idem_key = $1 and status = 'pending'`, [r.idem, STRIPE_NO.es]);
+    }
     return !!u;
   });
   // Desde el barrido, o en una devolución por política (cancelar a tiempo: la hace el sistema), nadie está mirando la pantalla: el equipo de dinero
@@ -210,23 +221,33 @@ export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean 
   return { ok: false, msg: STRIPE_NO };
 }
 
-/* El «sí» de la pasarela, en su transacción y una sola vez. Lo devuelto del cobro sale del libro (la suma de lo hecho), nunca de sumar otra vez:
-   si el webhook charge.refunded ya lo había contado (greatest), no se cuenta dos veces. Avisa a la persona solo quien la cierra. */
-async function cerrarDevolucionPago(id: string, stripeId: string | null): Promise<ResDevolucion> {
+/* Lo devuelto de un cobro sale del libro (la suma de las devoluciones hechas), nunca de sumar otra vez: si el webhook charge.refunded ya lo había
+   contado (greatest), no se cuenta dos veces. La usan el cierre de aquí y el de los boletos (lib/boletos-despues.ts). */
+export async function devueltoDelLibro(c: Q, pid: string): Promise<{ st: string; op: string }> {
+  return (await c.query<{ st: string; op: string }>(
+    `with x as (select coalesce(sum(amount_cents), 0)::int as hecho from refunds where payment_id = $1::bigint and status = 'done')
+     update payments p set refunded_cents = least(p.amount_cents, greatest(p.refunded_cents, x.hecho)),
+            status = case when least(p.amount_cents, greatest(p.refunded_cents, x.hecho)) >= p.amount_cents then 'refunded' else 'partially_refunded' end, updated_at = now()
+       from x where p.id = $1::bigint returning p.status as st, p.operation_id::text as op`, [pid])).rows[0]!;
+}
+
+/* El «sí» de la pasarela, en su transacción y una sola vez (lo devuelto, de devueltoDelLibro). Avisa a la persona solo quien la cierra.
+   9t2 · En la MISMA transacción se cierra lo que esa devolución deja hecho en su caso (cerrarDelCaso, por su llave), la cierre quien la cierre:
+   quien la pidió o el barrido. Lo del caso va ANTES del cobro (el mismo orden de candados que al anotar: el caso y después el cobro). */
+async function cerrarDevolucionPago(id: string, stripeId: string | null, alCerrar?: AlCerrar): Promise<ResDevolucion> {
   const h = await tx(async (c) => {
-    const u = (await c.query<{ pid: string; amt: number }>(
+    const u = (await c.query<{ pid: string; amt: number; idem: string }>(
       `update refunds set status = 'done', stripe_refund_id = coalesce(stripe_refund_id, $2), done_at = now(), last_error = null
-        where id = $1::bigint and status = 'pending' and manual_at is null returning payment_id::text as pid, amount_cents as amt`, [id, stripeId])).rows[0];
+        where id = $1::bigint and status = 'pending' and manual_at is null returning payment_id::text as pid, amount_cents as amt, idem_key as idem`, [id, stripeId])).rows[0];
     if (!u) return null;
-    const p = (await c.query<{ st: string; op: string; uid: string; num: string; kind: string; brand: string | null; l4: string | null }>(
-      `with x as (select coalesce(sum(amount_cents), 0)::int as hecho from refunds where payment_id = $1::bigint and status = 'done'),
-            n as (update payments p set refunded_cents = least(p.amount_cents, greatest(p.refunded_cents, x.hecho)),
-                         status = case when least(p.amount_cents, greatest(p.refunded_cents, x.hecho)) >= p.amount_cents then 'refunded' else 'partially_refunded' end, updated_at = now()
-                    from x where p.id = $1::bigint returning p.status, p.operation_id, p.user_id, p.card_brand, p.card_last4)
-       select n.status as st, n.operation_id::text as op, n.user_id::text as uid, o.number as num, o.kind, n.card_brand as brand, n.card_last4 as l4 from n join operations o on o.id = n.operation_id`, [u.pid])).rows[0]!;
-    await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [p.op, p.st]);
-    await evento(c, p.op, "refunded", { es: `Devolución de ${money(u.amt)}`, en: `Refund of ${money(u.amt)}` });
-    return { ...p, amt: u.amt };
+    await alCerrar?.(c);
+    const caso = await cerrarDelCaso(c, { idem: u.idem, amt: u.amt }, !!alCerrar);
+    const l = await devueltoDelLibro(c, u.pid);
+    const p = (await c.query<{ uid: string; num: string; kind: string; brand: string | null; l4: string | null }>(
+      `select p.user_id::text as uid, o.number as num, o.kind, p.card_brand as brand, p.card_last4 as l4 from payments p join operations o on o.id = p.operation_id where p.id = $1::bigint`, [u.pid])).rows[0]!;
+    await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [l.op, l.st]);
+    await evento(c, l.op, "refunded", { es: `Devolución de ${money(u.amt)}`, en: `Refund of ${money(u.amt)}` });
+    return { ...p, amt: u.amt, caso };
   });
   if (!h) {
     const st = (await db().query<{ st: string; mano: boolean }>(`select status as st, manual_at is not null as mano from refunds where id = $1::bigint`, [id])).rows[0];
@@ -235,7 +256,21 @@ async function cerrarDevolucionPago(id: string, stripeId: string | null): Promis
   const tarjeta = h.brand && h.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[h.brand] ?? h.brand} ·· ${h.l4}` : "tarjeta";
   const R = refDe(h.kind, h.num);
   await (await import("./avisos")).avisar(h.uid, "pay_refund", { monto: money(h.amt), num: R.num, tarjeta }, { href: R.href, ref: R.ref }).catch(() => undefined);
+  if (h.caso) await (await import("./soporte")).avisarCaso(h.caso, "sop_resuelto").catch(() => undefined);
   return { ok: true };
+}
+
+/* 9t2 · Lo que una devolución hecha cierra en su caso, por su llave, en la transacción que la marca 'done' (una sola vez, la cierre quien la cierre):
+   - Soporte (`tk-<clave>`, resolverYDevolver): la fila de support_refunds pasa a hecha, el caso suma lo devuelto y queda resuelto con «Te devolvimos»
+     (y la respuesta del equipo: la pone quien la pidió con alCerrar o, si la cerró el barrido, la que quedó guardada al ir en camino), y su auditoría.
+   - Ayuda de la cita (`ayb-h<solicitud>-p<cobro>`, el negocio devuelve; `ayc-<solicitud>-p<cobro>`, la persona acepta lo que el negocio propuso):
+     help_requests.refunded_cents suma lo que de verdad salió. Nadie más lo suma. Devuelve el número del caso de Soporte (para avisar después). */
+async function cerrarDelCaso(c: PoolClient, r: { idem: string; amt: number }, conRespuesta: boolean): Promise<string | null> {
+  const ay = /^(?:ayb-h|ayc-)(\d{1,18})-p\d{1,18}$/.exec(r.idem);
+  if (ay) { await c.query(`update help_requests set refunded_cents = refunded_cents + $2, updated_at = now() where id = $1::bigint`, [ay[1], r.amt]); return null; }
+  // Soporte: lo cierra lib/soporte-equipo (la respuesta guardada, tapada, y el caso) en esta misma transacción.
+  if (/^tk-[0-9a-f-]{36}$/.test(r.idem)) return (await import("./soporte-equipo")).cerrarCasoDevuelto(c, r.idem, r.amt, conRespuesta);
+  return null;
 }
 
 export async function devolverPago(x: InDevolver, alGuardar?: AlGuardar<{ pago: string; centavos: number }>): Promise<ResDevolucion> {
@@ -260,10 +295,55 @@ export async function barrerDevolucionesPago(): Promise<number> {
       where r.status = 'pending' and r.manual_at is null and r.created_at <= now() - make_interval(hours => $1::int)
         and not exists (select 1 from ticket_refund_lines l where l.refund_id = r.id)
         and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = r.id::text) order by r.created_at limit 50`, [HORAS_LLAVE])).rows;
-  for (const r of V) await (await import("./dinero-alertas")).alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city,
+  for (const r of V) await alertaVieja(r);
+  return n;
+}
+/* La alerta de una devolución que pasó HORAS_LLAVE sin respuesta (la usan este barrido y el de los boletos): una vez por devolución. */
+export async function alertaVieja(r: { id: string; amt: number; biz: string | null; city: string | null; n: number; err: string | null }) {
+  await (await import("./dinero-alertas")).alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city,
     detalle: { es: `Devolución de ${money(r.amt)} sin respuesta de Stripe en ${HORAS_LLAVE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): mira en Stripe si salió y resuélvela a mano.`,
       en: `Refund of ${money(r.amt)} with no answer from Stripe in ${HORAS_LLAVE} h (${r.n} attempts, ${r.err ?? "no reason"}): check in Stripe whether it went out and resolve it by hand.` } }).catch(() => undefined);
-  return n;
+}
+export const HORAS_LLAVE_STRIPE = HORAS_LLAVE;
+
+/* 9t2 · Webhook charge.refund.updated: Stripe dio por fallida una devolución que ya estaba hecha (días después: la tarjeta se cerró, el banco la
+   rechazó). En UNA transacción: la devolución pasa a 'failed' (su llave queda libre, como un «no»), lo devuelto del cobro vuelve a salir del libro
+   (sin bajar de lo que el libro todavía cuenta como hecho), la operación lo dice y lo que el caso había sumado se resta. Después, la alerta al
+   equipo de dinero (una vez): si todavía se debe, se devuelve otra vez. Una que no está en el libro (hecha desde Stripe) solo alerta. */
+export async function devolucionFallidaEnStripe(stripeRefundId: string, motivo: string, monto: number): Promise<"anotada" | "fuera" | "ya"> {
+  const why = String(motivo || "failed").slice(0, 60);
+  const h = await tx(async (c) => {
+    const r = (await c.query<{ id: string; amt: number; pid: string; idem: string; biz: string | null; city: string | null }>(
+      `update refunds r set status = 'failed', last_error = left($2, 120), idem_key = left(r.idem_key, 180) || '~fallida-' || r.id::text
+         from payments p where r.stripe_refund_id = $1 and r.status = 'done' and p.id = r.payment_id
+       returning r.id::text, r.amount_cents as amt, r.payment_id::text as pid, split_part(r.idem_key, '~fallida-', 1) as idem, p.business_id as biz, p.city_id as city`, [stripeRefundId, `stripe:${why}`])).rows[0];
+    if (!r) return null;
+    const ay = /^(?:ayb-h|ayc-)(\d{1,18})-p\d{1,18}$/.exec(r.idem), sq = /^sop-q(\d{1,18})$/.exec(r.idem);
+    if (ay) await c.query(`update help_requests set refunded_cents = greatest(0, refunded_cents - $2), updated_at = now() where id = $1::bigint`, [ay[1], r.amt]);
+    if (sq) await c.query(`update help_requests set refunded_cents = greatest(0, refunded_cents - $2), updated_at = now() where id = (select q.subject_id::bigint from queue_items q where q.id = $1::bigint and q.subject_kind = 'help_request')`, [sq[1], r.amt]);
+    if (/^tk-/.test(r.idem)) await c.query(`update support_cases set refunded_cents = greatest(0, refunded_cents - $2) where id = (select case_id from support_refunds where idem_key = $1)`, [r.idem, r.amt]);
+    const l = (await c.query<{ st: string; op: string }>(
+      `with x as (select coalesce(sum(amount_cents), 0)::int as hecho from refunds where payment_id = $1::bigint and status = 'done'),
+            y as (select p.id, least(p.amount_cents, greatest(x.hecho, p.refunded_cents - $2::int)) as dev from payments p, x where p.id = $1::bigint)
+       update payments p set refunded_cents = y.dev, status = case when y.dev >= p.amount_cents then 'refunded' when y.dev > 0 then 'partially_refunded' else 'captured' end, updated_at = now()
+         from y where p.id = y.id and p.status in ('captured', 'partially_refunded', 'refunded') returning p.status as st, p.operation_id::text as op`, [r.pid, r.amt])).rows[0];
+    if (l) {
+      await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [l.op, l.st]);
+      await evento(c, l.op, "refund_failed", { es: `Stripe no pudo completar la devolución de ${money(r.amt)}: el dinero no llegó a la tarjeta`, en: `Stripe could not complete the ${money(r.amt)} refund: the money did not reach the card` });
+    }
+    return r;
+  });
+  const { alertar } = await import("./dinero-alertas");
+  if (!h) {
+    const ya = (await db().query(`select 1 from refunds where stripe_refund_id = $1 and status = 'failed'`, [stripeRefundId])).rowCount;
+    if (ya) return "ya";
+    await alertar("refund_failed", stripeRefundId, { monto, detalle: { es: `Stripe dio por fallida la devolución ${stripeRefundId} de ${money(monto)} (${why}), que no está en nuestro libro: mírala en Stripe.`,
+      en: `Stripe marked refund ${stripeRefundId} of ${money(monto)} as failed (${why}); it is not in our ledger: check it in Stripe.` } }).catch(() => undefined);
+    return "fuera";
+  }
+  await alertar("refund_failed", h.id, { monto: h.amt, negocio: h.biz, ciudad: h.city, detalle: { es: `Stripe dio por fallida una devolución de ${money(h.amt)} que ya estaba hecha (${why}): el dinero no llegó a la tarjeta. Quedó fallida y su saldo volvió al cobro: si todavía se debe, devuélvela otra vez.`,
+    en: `Stripe marked an already made ${money(h.amt)} refund as failed (${why}): the money did not reach the card. It is now failed and its balance is back on the charge: if it is still owed, refund it again.` } }).catch(() => undefined);
+  return "anotada";
 }
 
 /* 9k · Devolver de una operación con varios cobros (L448: estimado + «algo más» + visita; L455: planes y rentas, un cobro por período). Se reparte entre
@@ -302,6 +382,41 @@ export async function devolverOperacion(x: { opId: string; centavos: number; kin
     falta -= q; partes++;
   }
   return { ok: true, partes };
+}
+
+/* 9t2 · Lo mismo que devolverOperacion, pero SOLO el paso 1 y dentro de la transacción de quien llama (la que bloquea su caso): cada parte queda
+   'pending' con su llave (`<idem>-p<cobro>`) y su auditoría, todas juntas o ninguna. Devuelve las devoluciones que falta mandar a la pasarela
+   (las nuevas y las de esta llave que siguen en camino); quien llama las manda después con ejecutarDevolucionPago. Las partes ya hechas con esta
+   llave cuentan (repetir no devuelve dos veces). */
+export async function anotarDevolucionOperacion(c: PoolClient, x: { opId: string; centavos: number; kinds: string[]; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string },
+  alGuardar?: AlGuardar<{ pago: string; centavos: number; parte: number }>): Promise<{ ok: true; ids: string[] } | { ok: false; msg: Msg }> {
+  const P = (await c.query<{ id: string; resto: number }>(
+    `select p.id::text, case when p.status in ('captured', 'partially_refunded')
+                             then p.amount_cents - p.refunded_cents - coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'pending'), 0)::int else 0 end as resto
+       from payments p where p.operation_id = $1::bigint and p.kind = any($2::text[]) and p.status in ('captured', 'partially_refunded', 'refunded')
+      order by 2 desc, p.id desc limit 200`, [x.opId, x.kinds])).rows;
+  const llaves = P.map((p) => `${x.idem}-p${p.id}`);
+  const hechas = (await c.query<{ id: string; k: string; n: number; pend: boolean }>(
+    `select id::text, idem_key as k, amount_cents as n, status = 'pending' and manual_at is null as pend from refunds where idem_key = any($1::text[])`, [llaves])).rows;
+  const ya = hechas.reduce((s, r) => s + r.n, 0), conLlave = new Set(hechas.map((r) => r.k)), ids = hechas.filter((r) => r.pend).map((r) => r.id);
+  const n = Math.round(x.centavos);
+  if (!(n > 0)) return { ok: false, msg: { es: "Escribe cuánto se devuelve.", en: "Write how much to refund." } };
+  let falta = n - ya;
+  if (falta <= 0) return { ok: true, ids };
+  const libre = P.filter((p) => !conLlave.has(`${x.idem}-p${p.id}`)).reduce((s, p) => s + Math.max(0, p.resto), 0);
+  if (falta > libre) return { ok: false, msg: { es: `Puedes devolver hasta ${money(libre + ya)}.`, en: `You can refund up to ${money(libre + ya)}.` } };
+  let partes = hechas.length;
+  for (const p of P) {
+    if (falta <= 0) break;
+    if (conLlave.has(`${x.idem}-p${p.id}`) || p.resto <= 0) continue;
+    const q = Math.min(falta, p.resto), parte = ++partes;
+    const a = await anotarDevolucionPago(c, { paymentId: p.id, centavos: q, por: x.por, actorId: x.actorId, motivo: x.motivo, idem: `${x.idem}-p${p.id}` },
+      alGuardar ? (c2, h) => alGuardar(c2, { ...h, parte }) : undefined);
+    if (!a.ok) return a;
+    if (a.estado === "pending") ids.push(a.id);
+    falta -= q;
+  }
+  return { ok: true, ids };
 }
 
 /* El pago de una operación, para mostrarlo (cliente, panel, admin). */

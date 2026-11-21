@@ -4,12 +4,17 @@
 // del plan no miraban su estado; (4) las disputas se escribían sin su estado en el `where` (un webhook quedaba pisado); y, por clase, el candado del
 // plan se tomaba y se soltaba por el pool (el desbloqueo podía caer en otra conexión). Se inyecta cada defecto, el guardián debe fallar con SU
 // mensaje ([nombre]); se restaura. La prueba con la base y la pasarela de mentira es pruebas/e2e/din9t.cjs.
+// 9t2 (21 nov, LAUNCH «Dinero por clase, 21 nov»): llaveSoloUnDia, casoSeCierraConSuDevolucion, intencionAntesDeStripe, alertaSoloConCaminoReal,
+// webhookDevolucionFallida y disputaCierraSuCaso (y lo nuevo de devolucionEnDosPasos y estadoEnElWhere); su prueba con la base es pruebas/e2e/din9t2.cjs.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const CB = 'apps/web/lib/cobros.ts', BA = 'apps/web/lib/barrido.ts', CL = 'apps/web/app/admin/acciones-colas.ts', SE = 'apps/web/lib/soporte-equipo.ts', AY = 'apps/web/lib/ayuda-cita.ts';
 const DI = 'apps/web/lib/disputas.ts', SU = 'apps/web/lib/suscripcion.ts', BO = 'apps/web/lib/boletos-despues.ts';
 const D = 'devolucionEnDosPasos', W = 'estadoEnElWhere', K = 'candadoEnSuConexion';
+// 9t2 (21 nov): los guardianes de «Dinero por clase, 21 nov».
+const L = 'llaveSoloUnDia', C = 'casoSeCierraConSuDevolucion', I = 'intencionAntesDeStripe', A = 'alertaSoloConCaminoReal', H = 'webhookDevolucionFallida', DC = 'disputaCierraSuCaso';
+const PA = 'apps/web/lib/patrocinio.ts', AD = 'apps/web/app/admin/acciones-dinero.ts', PB = 'apps/web/lib/pagos-banco.ts', DA = 'apps/web/lib/dinero-alertas.ts', RT = 'apps/web/app/api/stripe/webhook/route.ts';
 const casos = [
   // (1) Como estaba: la pasarela primero y la devolución nace 'done'.
   [D, CB, "  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n", "  await pasarela.devolver(\"pi\", x.centavos, x.idem);\n  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n"],
@@ -32,8 +37,44 @@ const casos = [
   [D, CL, "  const a = await tx(async (c): Promise<string | { rf: string | null; estado: \"pending\" | \"done\" | \"manual\" | null }> => {\n",
     "  await cobros.ejecutarDevolucionPago(\"0\");\n  const a = await tx(async (c): Promise<string | { rf: string | null; estado: \"pending\" | \"done\" | \"manual\" | null }> => {\n"],
   // Soporte y la ayuda de la cita dan por fallida (o reabren) una devolución en camino.
-  [D, SE, '    if (d.enCamino) return no(d.msg.es);\n', ''],
-  [D, AY, '    if (!d.ok && d.enCamino) { await tx(async (c) => { await alGuardar?.(c); }); return { ok: false, msg: d.msg }; }\n', ''],
+  [D, SE, '    if (!d.enCamino) {\n', '    {\n'],
+  [D, AY, '    if (!d.ok && d.enCamino) return { ok: false, msg: d.msg };\n', ''],
+  // ── 9t2 (21 nov, LAUNCH «Dinero por clase, 21 nov») ──
+  // (1) El cierre de los boletos vuelve a sumar a lo devuelto (el webhook charge.refunded pudo contarla antes).
+  [D, BO, '    const p = await devueltoDelLibro(c, r.pid);\n', '    const p = (await c.query<{ st: string }>(`update payments set refunded_cents = refunded_cents + $2 where id = $1::bigint returning status as st`, [r.pid, r.amt])).rows[0]!;\n'],
+  // (2) Una llave de más de un día vuelve a la pasarela (otro toque, el barrido de boletos o el de patrocinios devolverían dos veces).
+  [L, CB, '  if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };\n', ''],
+  [L, BO, '  if (r.vieja) return false;\n', ''],
+  [L, PA, 'if (!s || s.ya || s.vieja) return 0;', 'if (!s || s.ya) return 0;'],
+  [L, BO, " and r.created_at > now() - make_interval(hours => $1::int)", ''],
+  [L, PA, "s.ended_at > now() - make_interval(hours => $2::int) order by", "s.ended_at > now() - interval '30 days' order by"],
+  // (3) La ayuda de la cita: la llave del toque, la suma de lo pedido y el caso que no se cierra con la devolución.
+  [C, AY, 'idem: `ayb-h${h.id}`', 'idem: `ayb-${x.clave}`'],
+  [C, AY, "closed_by = 'user', resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);", "closed_by = 'user', refunded_cents = refunded_cents + $2, resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id, 0]);"],
+  [C, CB, '    const caso = await cerrarDelCaso(c, { idem: u.idem, amt: u.amt }, !!alCerrar);\n', '    const caso = null as string | null;\n'],
+  // (4) Soporte: la fila no se cierra con la devolución (o la cierra el que tocó), y un «no» no la deja fallida.
+  [C, SE, "where idem_key = $1 and status = 'pending' returning id::text, case_id::text as caso", "where idem_key = $1 returning id::text, case_id::text as caso"],
+  [C, SE, '  const f = fila;\n', "  const f = fila;\n  await db().query(`update support_refunds set status = 'done' where id = $1::bigint`, [fila.id]);\n"],
+  [C, CB, "      await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where idem_key = $1 and status = 'pending'`, [r.idem, STRIPE_NO.es]);\n", ''],
+  // (5) Pausar pagos: Stripe antes de anotar; la marca se limpia aunque la decisión haya cambiado; nadie la vuelve a pedir.
+  [I, AD, '  let hecho = false;\n', '  if (!(await pasarela.cuentaPagos(a.acct, !!pausar))) return { ok: false, mensaje: "Stripe no respondió." };\n  let hecho = false;\n'],
+  [I, PB, 'where business_id = $1 and payouts_sync_at = $2::timestamptz and payouts_paused = $3`', 'where business_id = $1`'],
+  [I, BA, '        ["pausasStripe", async () => (await import("./pagos-banco")).sincronizarPausas()],\n', ''],
+  // (6) Planes: el cobro, Free y «cobro fallido» sin el estado leído en el where (pisan una cortesía puesta en ese segundo).
+  [W, SU, 'where business_id = $1 and status = $3`', 'where business_id = $1`'],
+  [W, SU, 'where business_id = $1 and status = $2`, [negocio, esperado]', 'where business_id = $1`, [negocio]'],
+  [W, SU, 'where business_id = $1 and status = $4`', 'where business_id = $1`'],
+  // (7) «Resolver a mano» por el tipo de alerta, no por el estado de hoy de la devolución.
+  [A, DA, 'aMano: mano && ult !== "resuelta_a_mano"', 'aMano: (x.kind === "refund_stuck" || x.kind === "transfer_reversal_stuck") && ult !== "resuelta_a_mano"'],
+  [A, DA, "and r.status = 'pending' and r.manual_at is null and r.attempts >= 1)", ')'],
+  // (8) El webhook no escucha charge.refund.updated; la fallida sin «una vez» o con lo devuelto restado sin el libro.
+  [H, RT, '    case "charge.refund.updated": {', '    case "charge.refund.updated.x": {'],
+  [H, CB, "where r.stripe_refund_id = $1 and r.status = 'done'", 'where r.stripe_refund_id = $1'],
+  [H, CB, 'greatest(x.hecho, p.refunded_cents - $2::int)', 'p.refunded_cents - $2::int'],
+  // (9) La disputa cerrada por el banco no cierra su caso (o lo cierra sin «una vez» o sin decir que fue el sistema).
+  [DC, DI, "and subject_id = $1 and status = 'open' returning id::text", 'and subject_id = $1 returning id::text'],
+  [DC, DI, 'quien: "sistema"', 'quien: "equipo"'],
+  [DC, DI, "        `update queue_items set status = 'decided', decision = $2", "        `update queue_items_otra set status = 'decided', decision = $2"],
   // (4) Disputas: la escritura sin su estado esperado, o callada si cambió.
   [W, DI, "                              where id = $1::bigint and status = 'needs_response'`, [disputa, texto.trim().slice(0, 2000), staffId]);", "                              where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);"],
   [W, DI, "updated_at = now() where id = $1::bigint and status in ('needs_response', 'under_review')`, [disputa]);", "updated_at = now() where id = $1::bigint`, [disputa]);"],

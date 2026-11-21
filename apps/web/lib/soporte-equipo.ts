@@ -280,9 +280,14 @@ export async function resolver(s: Staff, numero: string, texto: string, borrador
   return r;
 }
 
-/* «Resolver y devolver»: devuelve a la tarjeta lo pagado en la app por la operación del caso, por devolverPago (la misma de siempre) con la
-   llave del intento (tk-{clave}: tocar dos veces = una devolución). La base pone el tope del rol al insertar la fila pendiente; si se pasa,
-   no se llama a Stripe. Solo quien insertó la fila llama a devolverPago; otro toque con la misma llave espera el resultado. */
+/* «Resolver y devolver»: devuelve a la tarjeta lo pagado en la app por la operación del caso, con la llave del intento (tk-{clave}: tocar dos
+   veces = una devolución). La base pone el tope del rol al insertar la fila pendiente; si se pasa, no se llama a Stripe.
+   21 nov (9t2) · En dos pasos, como devolverPago: (1) en UNA transacción, con el caso bloqueado: la fila de support_refunds (tope de la base), la
+   devolución 'pending' con la misma llave (anotarDevolucionPago) y la auditoría de quien decide; (2) la pasarela (ejecutarDevolucionPago). El
+   cierre de la devolución cierra también el caso, una vez y en su transacción (lib/cobros: cerrarDelCaso): la fila hecha, «Te devolvimos», lo
+   devuelto sumado y el caso resuelto, la cierre esta acción (con la respuesta, alCerrar) o el barrido (si quedó en camino: con la respuesta que
+   quedó guardada como nota interna). Un «no» de Stripe deja la fila fallida en la misma transacción que la devolución. */
+class NoDevuelve extends Error { constructor(readonly m: string) { super("no_devuelve"); } }
 export async function resolverYDevolver(s: Staff, numero: string, monto: string, clave: string, texto: string, borrador?: string | null): Promise<ResE> {
   if (!puedeDevolverRol(s)) return no("Tu rol no devuelve dinero.");
   if (!UUID.test(String(clave ?? ""))) return no("Prueba de nuevo.");
@@ -290,68 +295,110 @@ export async function resolverYDevolver(s: Staff, numero: string, monto: string,
   if (crudo.length < 5) return no("Escribe la respuesta para la persona.");
   const cents = Math.round((parseFloat(String(monto ?? "").replace(/[^0-9.]/g, "")) || 0) * 100);
   const idem = `tk-${clave}`;
-  let fila = (await db().query<{ id: string; status: string; amount: number; pid: string; fail: string | null; viejo: boolean }>(
-    `select r.id::text, r.status, r.amount_cents as amount, r.payment_id::text as pid, r.fail_reason as fail, r.created_at < now() - interval '30 seconds' as viejo
+  const cobros = await import("./cobros");
+  let fila = (await db().query<{ id: string; status: string; amount: number; pid: string; fail: string | null; viejo: boolean; rf: string | null }>(
+    `select r.id::text, r.status, r.amount_cents as amount, r.payment_id::text as pid, r.fail_reason as fail, r.created_at < now() - interval '30 seconds' as viejo,
+            (select d.id::text from refunds d where d.idem_key = r.idem_key) as rf
        from support_refunds r join support_cases c on c.id = r.case_id where r.idem_key = $1 and c.number = $2 and r.staff_id = $3`, [idem, numero, s.id])).rows[0];
   if (fila?.status === "done") return { ok: true, mensaje: "Ya se devolvió." };
   if (fila?.status === "failed") return no(fila.fail ?? "No se pudo devolver.");
   if (fila && !fila.viejo) return no("La devolución ya está en camino. Actualiza en un momento.");
-  if (!fila) {
-    if (!(cents > 0)) return no("Escribe el monto en dólares.");
-    const ins = await tx(async (c): Promise<string | { id: string; pid: string; amount: number; nueva: boolean }> => {
+  const nueva = !fila;
+  if (!fila || !fila.rf) {
+    if (!fila && !(cents > 0)) return no("Escribe el monto en dólares.");
+    const previa = fila;
+    const ins = await tx(async (c): Promise<string | { id: string; pid: string; amount: number; rf: string }> => {
       const k = await abrir(c, s, numero);
       if (typeof k === "string") return k;
       if (cerrado(k)) return cerrado(k)!;
-      const p = (await c.query<{ id: string }>(
-        `select p.id::text from payments p where p.operation_id = $1::bigint and p.user_id = $2::uuid and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [k.operation_id, k.user_id])).rows[0];
-      if (!k.operation_id || !p) return "Ahí no hay nada pagado con tarjeta en la app para devolver. Liga el caso a la operación primero.";
-      try {
-        await c.query("savepoint dev");
-        const r = (await c.query<{ id: string }>(
-          `insert into support_refunds (case_id, payment_id, idem_key, amount_cents, staff_id) values ($1, $2, $3, $4, $5) on conflict (idem_key) do nothing returning id::text`, [k.id, p.id, idem, cents, s.id])).rows[0];
-        return r ? { id: r.id, pid: p.id, amount: cents, nueva: true } : "La devolución ya está en camino. Actualiza en un momento.";
-      } catch (e) {
-        await c.query("rollback to savepoint dev");
-        const m = String((e as Error)?.message ?? "");
-        if (/devolucion_sobre_tope/.test(m)) {
-          const t = (await c.query<{ t: number | null }>(`select soporte_tope_devolver($1) as t`, [s.role])).rows[0]?.t ?? 0;
-          const ya = (await c.query<{ n: number }>(`select coalesce(sum(amount_cents), 0)::int as n from support_refunds where case_id = $1 and status in ('pending', 'done')`, [k.id])).rows[0]!.n;
-          return `Tu rol devuelve hasta ${money(t)} por caso${ya ? ` (ya se devolvieron ${money(ya)})` : ""}. Pásalo a Finanzas o a un Admin.`;
+      let r = previa ? { id: previa.id, pid: previa.pid, amount: previa.amount } : null;
+      if (!r) {
+        const p = (await c.query<{ id: string }>(
+          `select p.id::text from payments p where p.operation_id = $1::bigint and p.user_id = $2::uuid and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [k.operation_id, k.user_id])).rows[0];
+        if (!k.operation_id || !p) return "Ahí no hay nada pagado con tarjeta en la app para devolver. Liga el caso a la operación primero.";
+        try {
+          await c.query("savepoint dev");
+          const x = (await c.query<{ id: string; amount: number }>(
+            `insert into support_refunds (case_id, payment_id, idem_key, amount_cents, staff_id) values ($1, $2, $3, $4, $5) on conflict (idem_key) do nothing returning id::text, amount_cents as amount`, [k.id, p.id, idem, cents, s.id])).rows[0];
+          if (!x) return "La devolución ya está en camino. Actualiza en un momento.";
+          r = { id: x.id, pid: p.id, amount: x.amount };
+        } catch (e) {
+          await c.query("rollback to savepoint dev");
+          const m = String((e as Error)?.message ?? "");
+          if (/devolucion_sobre_tope/.test(m)) {
+            const t = (await c.query<{ t: number | null }>(`select soporte_tope_devolver($1) as t`, [s.role])).rows[0]?.t ?? 0;
+            const ya = (await c.query<{ n: number }>(`select coalesce(sum(amount_cents), 0)::int as n from support_refunds where case_id = $1 and status in ('pending', 'done')`, [k.id])).rows[0]!.n;
+            return `Tu rol devuelve hasta ${money(t)} por caso${ya ? ` (ya se devolvieron ${money(ya)})` : ""}. Pásalo a Finanzas o a un Admin.`;
+          }
+          if (/devolucion_sin_rol/.test(m)) return "Tu rol no devuelve dinero.";
+          if (/devolucion_sin_cobro|devolucion_otro_cobro/.test(m)) return "Ahí no hay nada cobrado para devolver.";
+          if (/devolucion_caso_cerrado/.test(m)) return "Este caso ya se cerró.";
+          throw e;
         }
-        if (/devolucion_sin_rol/.test(m)) return "Tu rol no devuelve dinero.";
-        if (/devolucion_sin_cobro|devolucion_otro_cobro/.test(m)) return "Ahí no hay nada cobrado para devolver.";
-        if (/devolucion_caso_cerrado/.test(m)) return "Este caso ya se cerró.";
-        throw e;
       }
-    });
+      // La devolución de esa fila, con la MISMA llave y su monto, y la auditoría de quien decide: en esta transacción (si no cabe, nada queda).
+      const fx = r;
+      const a = await cobros.anotarDevolucionPago(c, { paymentId: fx.pid, centavos: fx.amount, por: "admin", actorId: s.id, motivo: crudo.slice(0, 300), idem },
+        (c2, x) => audit(c2, s, k, "soporte.devolver", { estado: EST[k.status] }, { devolucion: money(x.centavos), cobro: `pago ${x.pago}`, estado: "en camino" }, crudo.slice(0, 300)));
+      if (!a.ok) throw new NoDevuelve(a.msg.es);
+      return { ...fx, rf: a.id };
+    }).catch((e) => { if (e instanceof NoDevuelve) return e.m; throw e; });
     if (typeof ins === "string") return no(ins);
-    fila = { id: ins.id, status: "pending", amount: ins.amount, pid: ins.pid, fail: null, viejo: false };
+    fila = { id: ins.id, status: "pending", amount: ins.amount, pid: ins.pid, fail: null, viejo: false, rf: ins.rf };
   }
-  const { devolverPago } = await import("./cobros");
-  const d = await devolverPago({ paymentId: fila.pid, centavos: fila.amount, por: "admin", actorId: s.id, motivo: crudo.slice(0, 300), idem });
-  if (!d.ok) {
-    // 9t · Stripe no contestó: la devolución sigue en camino (el barrido la termina con la misma llave); la fila del caso queda pendiente y el
-    // mismo toque, después, la cierra. Solo un «no» de Stripe la deja fallida.
-    if (d.enCamino) return no(d.msg.es);
-    await db().query(`update support_refunds set status = 'failed', fail_reason = $2, done_at = now() where id = $1::bigint and status = 'pending'`, [fila.id, d.msg.es.slice(0, 200)]);
-    return no(d.msg.es);
-  }
-  const r = await tx(async (c): Promise<ResE> => {
-    const u = (await c.query(`update support_refunds set status = 'done', done_at = now() where id = $1::bigint and status = 'pending'`, [fila!.id])).rowCount;
-    if (!u) return { ok: true, mensaje: "Ya se devolvió." };
+  const f = fila;
+  // El cierre de la devolución (en su transacción) pone la respuesta de esta persona del equipo, con su borrador, antes de «Te devolvimos».
+  const d = await cobros.ejecutarDevolucionPago(f.rf!, { alCerrar: async (c) => {
     const k = await abrir(c, s, numero);
-    if (typeof k === "string") return no(k);
+    if (typeof k === "string") return;
     const t = tapar(crudo).texto, bd = await borradorDe(c, borrador, k.id, s.id);
     const m = (await c.query<{ id: string }>(`insert into support_messages (case_id, city_id, sender, staff_id, body, from_draft) values ($1, $2, 'staff', $3, $4, $5) returning id::text`, [k.id, k.city_id, s.id, t, !!bd])).rows[0]!;
     await usarBorrador(c, bd, t, m.id);
-    await c.query(`insert into support_messages (case_id, city_id, sender, sys_key, vars) values ($1, $2, 'system', 'devuelto', $3)`, [k.id, k.city_id, JSON.stringify({ monto: money(fila!.amount) })]);
-    await c.query(`update support_cases set refunded_cents = refunded_cents + $2, status = 'resolved', resolved_by = 'staff', resolved_at = now(), first_reply_at = coalesce(first_reply_at, now()),
-                    assigned_staff_id = coalesce(assigned_staff_id, $3) where id = $1 and status not in ('resolved', 'merged')`, [k.id, fila!.amount, s.id]);
-    await audit(c, s, k, "soporte.devolver", { estado: EST[k.status] }, { estado: EST.resolved, devuelto: money(fila!.amount), ...(bd ? { borrador: "de El Compa" } : {}) }, crudo.slice(0, 300));
-    return { ok: true, mensaje: `Resuelto y devueltos ${money(fila!.amount)} a su tarjeta.`, numero: k.number };
-  });
-  if (r.ok && r.numero) await avisarCaso(r.numero, "sop_resuelto");
-  return r;
+  } });
+  if (!d.ok) {
+    if (!d.enCamino) {
+      // Un «no» de Stripe: la fila ya quedó fallida con la devolución (misma transacción); por si la cerró otro camino, aquí también (una vez).
+      await db().query(`update support_refunds set status = 'failed', fail_reason = $2, done_at = now() where id = $1::bigint and status = 'pending'`, [f.id, d.msg.es.slice(0, 200)]);
+      return no(d.msg.es);
+    }
+    // 9t · Stripe no contestó: la devolución sigue en camino (el barrido la termina con la misma llave y cierra el caso solo). La respuesta queda
+    // guardada como nota interna (solo la ve el equipo) y sale a la persona cuando la devolución termine. Una vez por devolución.
+    if (nueva) await tx(async (c) => {
+      const k = await abrir(c, s, numero);
+      if (typeof k === "string") return;
+      await c.query(`insert into support_messages (case_id, city_id, sender, staff_id, body, internal, vars)
+                     select $1, $2, 'staff', $3, $4, true, jsonb_build_object('respuesta_de', $5::text)
+                      where not exists (select 1 from support_messages where case_id = $1 and internal and vars->>'respuesta_de' = $5::text)`, [k.id, k.city_id, s.id, tapar(crudo).texto, f.id]);
+    });
+    return no(`${d.msg.es} Cuando termine, el caso se cierra solo y tu respuesta le llega a la persona.`);
+  }
+  const cerrado2 = (await db().query<{ st: string }>(`select status as st from support_refunds where id = $1::bigint`, [f.id])).rows[0]?.st === "done";
+  return cerrado2 ? { ok: true, mensaje: `Resuelto y devueltos ${money(f.amount)} a su tarjeta.`, numero } : no("La devolución ya está en camino. Actualiza en un momento.");
+}
+
+/* 9t2 · El caso de una devolución de Soporte que acaba de quedar hecha (lib/cobros: cerrarDevolucionPago, por su llave tk-…), en ESA transacción y
+   una sola vez (la fila pending → done): «Te devolvimos», lo devuelto sumado al caso, el caso resuelto y su auditoría (quién: el sistema, que cierra lo
+   que decidió la persona del equipo). La respuesta la pone quien la pidió (conRespuesta) o, si la cerró el barrido, sale la que quedó guardada como
+   nota interna cuando la devolución fue en camino. Devuelve el número del caso si lo resolvió (para avisar después del commit). */
+export async function cerrarCasoDevuelto(c: PoolClient, idem: string, amt: number, conRespuesta: boolean): Promise<string | null> {
+  const f = (await c.query<{ id: string; caso: string }>(
+    `update support_refunds set status = 'done', done_at = now() where idem_key = $1 and status = 'pending' returning id::text, case_id::text as caso`, [idem])).rows[0];
+  if (!f) return null;
+  const k = (await c.query<{ city: string; num: string; staff: string }>(
+    `select c.city_id as city, c.number as num, r.staff_id::text as staff from support_cases c join support_refunds r on r.case_id = c.id where r.id = $1::bigint for update of c`, [f.id])).rows[0];
+  if (!k) return null;
+  if (!conRespuesta) {
+    const n = (await c.query<{ body: string; staff: string }>(
+      `select body, staff_id::text as staff from support_messages where case_id = $1::bigint and sender = 'staff' and internal and vars->>'respuesta_de' = $2 and body is not null order by id desc limit 1`, [f.caso, f.id])).rows[0];
+    if (n) await c.query(`insert into support_messages (case_id, city_id, sender, staff_id, body) values ($1::bigint, $2, 'staff', $3::uuid, $4)`, [f.caso, k.city, n.staff, tapar(n.body).texto]);
+  }
+  await c.query(`insert into support_messages (case_id, city_id, sender, sys_key, vars) values ($1::bigint, $2, 'system', 'devuelto', $3::jsonb)`, [f.caso, k.city, JSON.stringify({ monto: money(amt) })]);
+  await c.query(`update support_cases set refunded_cents = refunded_cents + $2 where id = $1::bigint`, [f.caso, amt]);
+  const res = await c.query(`update support_cases set status = 'resolved', resolved_by = 'staff', resolved_at = now(), first_reply_at = coalesce(first_reply_at, now()), assigned_staff_id = coalesce(assigned_staff_id, $2::uuid)
+                              where id = $1::bigint and status not in ('resolved', 'merged')`, [f.caso, k.staff]);
+  await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('system', null, 'soporte.devolucion_hecha', 'support_case', $1, $2, $3::jsonb, $4::jsonb)`,
+    [k.num, k.city, JSON.stringify({ devolucion: "en camino" }), JSON.stringify({ devolucion: "hecha", devuelto: money(amt), caso: res.rowCount ? EST.resolved : "ya estaba cerrado" })]);
+  return res.rowCount ? k.num : null;
 }
 
 /* Pasar a Finanzas (o a un Admin): sube la prioridad, queda sin asignar y lo ve la pestaña «Escalados». Nota interna con el motivo. */
