@@ -22,7 +22,7 @@ aceptar con «Transacciones: aprobar» (Finanzas y Admin). Versión: 21 nov 2026
 | La disputa cambió mientras respondías o aceptabas (el banco la cerró u otra persona la respondió) | Lo que llegó del banco no se pisa: «La disputa cambió mientras tanto (ahora: …)». Lo que mandaste a Stripe queda en la auditoría con el estado que encontró. Actualiza y mira el caso. |
 | Stripe la pasa a «en revisión» por tu misma respuesta antes de anotarla | Se anota tu respuesta; el estado ya era el correcto. |
 | El pedido no tiene foto de entrega | Va la constancia con la línea de tiempo (la foto llega con el Repartidor). |
-| El banco decide | Llega por Stripe: ganada (el dinero se queda) o perdida; el negocio recibe el resultado. |
+| El banco decide | Llega por Stripe: ganada (el dinero se queda) o perdida; el negocio recibe el resultado. Si su caso seguía abierto en la cola, se cierra solo (una vez), con el resultado y en la auditoría como «sistema». |
 | Sandbox | La disputa y el resultado se simulan desde Transacciones; el «banco» del simulador recibe los mismos archivos. |
 
 Los archivos se guardan en el almacén privado (nunca públicos) y quedan anotados con su huella; nada se borra.
@@ -52,7 +52,7 @@ Los archivos se guardan en el almacén privado (nunca públicos) y quedan anotad
 | The dispute changed while you were responding or accepting (the bank closed it or someone else answered) | What came from the bank is not overwritten: «The dispute changed meanwhile (now: …)» (in Spanish on screen). What you sent to Stripe is in the audit with the status it found. Refresh and check the case. |
 | Stripe moves it to «under review» because of your own response before it is recorded | Your response is recorded; the status was already right. |
 | The order has no delivery photo | The delivery record goes with the timeline (the photo will come with the Repartidor app). |
-| The bank decides | It arrives through Stripe: won (the money stays) or lost; the business receives the result. |
+| The bank decides | It arrives through Stripe: won (the money stays) or lost; the business receives the result. If its case was still open in the queue, it closes by itself (once), with the result and in the audit as «system». |
 | Sandbox | The dispute and the result are simulated from Transactions; the simulator's "bank" receives the same files. |
 
 Files are kept in private storage (never public) and recorded with their fingerprint; nothing is deleted.

@@ -2,7 +2,7 @@
 
 _Pantallas: la cita (`/cita/{n}`, botón **Ayuda con la cita** y aviso de la solicitud), `/cita/{n}/ayuda` (APP-NEG-CITA-AYUDA y su estado), Panel ›
 Hoy («Ayuda con citas · responde en 24 h») y el detalle de la cita, Super Admin › Colas › **Ayuda con pedidos y citas** y Super Admin › Transacciones
-› **Citas**. Versión: 10 nov 2026. Audiencia: vecino. Tema: citas._
+› **Citas**. Versión: 21 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
@@ -37,7 +37,8 @@ Hoy («Ayuda con citas · responde en 24 h») y el detalle de la cita, Super Adm
 | El negocio propone más que el depósito | No deja: «A su tarjeta puedes devolver hasta $X (el depósito)». |
 | Responde alguien del equipo sin permiso de Cobros y hay que devolver | «Solo el dueño puede devolver dinero.» |
 | Pasan 24 h sin respuesta | Pasa a To'Latino (cola Ayuda con pedidos y citas) y la persona lo ve. |
-| Stripe no puede devolver | La respuesta no se guarda; se puede intentar de nuevo. |
+| Stripe no puede devolver | La respuesta no se guarda; se puede intentar de nuevo (lo que ya se devolvió de esa solicitud no sale otra vez). |
+| Stripe no contesta al devolver | La respuesta se queda y la devolución va **en camino**: se termina sola en unos minutos y la solicitud suma lo devuelto una vez. No la repitas. |
 
 ## Preguntas frecuentes
 **¿Me devuelven todo lo que pagué?** A la tarjeta vuelve, como mucho, el depósito que pagaste en la app. Lo que pagaste en
@@ -81,7 +82,8 @@ con la cita.
 | The business proposes more than the deposit | It will not let it: «You can refund up to $X (the deposit) to their card». |
 | Someone on the team without Charges permission replies and a refund is needed | «Only the owner can refund money.» |
 | 24 h pass with no reply | It goes to To'Latino (Order and appointment help queue) and the client sees it. |
-| Stripe cannot refund | The reply is not saved; you can try again. |
+| Stripe cannot refund | The reply is not saved; you can try again (what was already refunded for that request does not go out again). |
+| Stripe does not answer a refund | The reply stays and the refund is **on its way**: it finishes by itself in a few minutes and the request adds what was refunded once. Do not repeat it. |
 
 ### FAQ
 **Do I get back everything I paid?** At most, the deposit you paid in the app goes back to the card. What you paid at the business, the business refunds at

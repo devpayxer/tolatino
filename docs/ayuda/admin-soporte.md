@@ -5,7 +5,7 @@ del caso con `?caso=TK-…`), Colas › «Soporte · casos», Usuarios 360° ›
 Permisos (sección «Soporte»): ver; editar = responder, notas, tomar, resolver, unir, ligar, reabrir, pasar a Finanzas y devolver con tope;
 aprobar = macros y ocultar un mensaje; «Transacciones › aprobar» devuelve sin tope del rol. El copiloto de El Compa («Sugerir respuesta con El
 Compa») sale a quien puede responder (editar) y en Colas › Ayuda con pedidos y citas a quien resuelve (Colas › aprobar). Escritorio y teléfono.
-Versión: 14 nov 2026.
+Versión: 21 nov 2026.
 Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
@@ -44,7 +44,9 @@ Audiencia: equipo. Tema: equipo._
 | Caso | Qué pasa |
 |---|---|
 | Soporte devuelve más de su tope | «Tu rol devuelve hasta $50 por caso…»: no se llama a la pasarela. Pásalo a Finanzas o a un Admin. |
-| Se pide devolver más de lo cobrado | «Puedes devolver hasta $…»: no se mueve nada; el intento queda como fallido con su motivo. |
+| Se pide devolver más de lo cobrado | «Puedes devolver hasta $…»: no se mueve nada ni queda nada anotado. |
+| Resolver y devolver: Stripe no contesta | La devolución queda en camino y el caso sigue abierto. Cuando termina (sola, en unos minutos), el caso se cierra solo: la persona ve tu respuesta y «Te devolvimos», una vez. No la repitas. |
+| Resolver y devolver: Stripe dice que no al terminarla | La devolución y su fila del caso quedan fallidas solas; el caso sigue abierto y el equipo de dinero recibe la alerta. |
 | El caso no tiene operación pagada | Liga primero la operación; si no hay nada pagado en la app, no se devuelve aquí. |
 | Unir casos de personas distintas | No se puede. |
 | Tu rol es de una ciudad | Solo ves y trabajas los casos de tus ciudades. |
@@ -117,7 +119,9 @@ devuelve a su tarjeta hasta lo cobrado (con el permiso de dinero). Una reposici�
 | Case | What happens |
 |---|---|
 | Support refunds more than its cap | "Your role refunds up to $50 per case…": the payment gateway is not called. Pass it to Finance or an Admin. |
-| A refund larger than what was charged is requested | "You can refund up to $…": nothing moves; the attempt is recorded as failed with its reason. |
+| A refund larger than what was charged is requested | "You can refund up to $…": nothing moves and nothing is recorded. |
+| Resolve and refund: Stripe does not answer | The refund stays on its way and the case stays open. When it finishes (by itself, in a few minutes), the case closes by itself: the person sees your reply and «We refunded you», once. Do not repeat it. |
+| Resolve and refund: Stripe says no when finishing it | The refund and its case row are marked failed by themselves; the case stays open and the money team gets the alert. |
 | The case has no paid operation | Link the operation first; if nothing was paid in the app, nothing is refunded here. |
 | Merging cases from different people | Not possible. |
 | Your role is for one city | You only see and work the cases of your cities. |

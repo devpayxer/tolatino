@@ -2017,7 +2017,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       cambió mientras tanto (ahora: …)» y la auditoría entra igual con lo que se mandó a Stripe y el estado que encontró. El webhook de la propia
       acción vale sin pisarlo (responder: ya «en revisión» sin respuesta anotada → se anota la respuesta; aceptar: ya «perdida»). `din9t` § 4.
       **Por clase (21 nov):** lo que no se arregló aquí va en las líneas de abajo («Dinero por clase, 21 nov»).
-- [ ] **→ 9t** · **Dinero por clase, 21 nov (auditoría de la pasarela antes que la base y de estados sin el anterior en el `where`):**
+- [x] **→ 9t** · **Dinero por clase, 21 nov (auditoría de la pasarela antes que la base y de estados sin el anterior en el `where`):**
       (1) `lib/boletos-despues.ts › ejecutarDevolucion` cierra con `refunded_cents = refunded_cents + $2`: si el webhook `charge.refunded` llegó antes
       (lo que pasa cuando el barrido cierra minutos después), el cobro cuenta dos veces lo devuelto (y puede chocar con el `check`). Pasarlo al cierre
       de `cerrarDevolucionPago` (lo devuelto sale del libro). (2) Boletos (`barrerDevolucionesBoletos`, sin tope de tiempo) y patrocinios
@@ -2032,6 +2032,38 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       ese segundo. (7) La alerta `refund_stuck` de una devolución que quedó fallida en el barrido ofrece «Resolver a mano», que contesta «Ya no está
       pendiente» (correcto, pero la pantalla debería no ofrecerlo). (8) El webhook no escucha `charge.refund.updated` (una devolución que Stripe da
       por fallida días después). (9) Una disputa que el banco cerró (webhook) deja su caso abierto en Colas. (21 nov)
+      **Hecho (21 nov, rama dinero-9t2; migración 0198):** (1) el cierre de boletos toma lo devuelto del libro con `devueltoDelLibro` (la misma
+      consulta que `cerrarDevolucionPago`, en lib/cobros): el webhook antes del cierre ya no cuenta dos veces ni choca con el check. (2) `HORAS_LLAVE`
+      (23 h) es una sola para todas las devoluciones: `ejecutarDevolucionPago`, `ejecutarDevolucion` (boletos) y `devolverPatrocinio` no llaman a la
+      pasarela con una llave más vieja (tampoco un segundo toque de Colas o Soporte); los barridos de boletos y patrocinios reintentan solo dentro de
+      ese tiempo y después alertan (`refund_stuck`, una vez). (3) `responderAyudaCita`: la respuesta, la devolución con la llave DEL CASO
+      (`ayb-h<solicitud>-p<cobro>`, `anotarDevolucionOperacion`) y la auditoría del negocio en UNA transacción; la pasarela después;
+      `help_requests.refunded_cents` lo suma el cierre de cada devolución (`cerrarDelCaso`, en la transacción del 'done'), una vez, la cierre la
+      acción o el barrido (también lo aceptado por la persona, `ayc-`). (4) Soporte: la fila de `support_refunds` y la devolución se anotan juntas
+      con la auditoría; el cierre de la devolución cierra la fila y el caso (`cerrarCasoDevuelto`: «Te devolvimos», lo devuelto, resuelto, auditoría
+      del sistema) una vez; con la devolución en camino, la respuesta queda como nota interna y sale al cerrarse; un «no» deja la fila fallida en la
+      misma transacción. (5) `pagosPausar`: la decisión, `payouts_sync_at` y la auditoría antes de Stripe; `aplicarPausaEnStripe` y el barrido
+      `sincronizarPausas` piden a Stripe lo que dice la base hasta que coincidan (limpian la marca solo si la decisión no cambió). (6)
+      `registrarPeriodo` con el estado leído en el `where` y `rowCount`; si cambió (una cortesía en ese segundo), el cobro queda en el historial sin
+      aplicar y alerta `charge_unapplied`; por clase, `aFree` y `fallo` del barrido también con su estado en el `where`. (7) «Resolver a mano» solo
+      si la devolución (o reversión) sigue pendiente y Stripe ya la intentó (lo calcula `alertasDinero` del estado de hoy; sin tocar la pantalla).
+      (8) El webhook (con su firma) escucha `charge.refund.updated`: la devolución hecha que Stripe da por fallida queda 'failed' una vez, el saldo
+      vuelve al cobro desde el libro, la solicitud o el caso restan lo que habían sumado y alerta `refund_failed`. (9) `cerrarDisputa`: con la
+      disputa cerrada por el banco, su caso abierto en Colas se cierra en la misma transacción, una vez, con auditoría `disputa.cerrada_banco`
+      (quién: «sistema»). Guardianes `llaveSoloUnDia`, `casoSeCierraConSuDevolucion`, `intencionAntesDeStripe`, `alertaSoloConCaminoReal`,
+      `webhookDevolucionFallida`, `disputaCierraSuCaso` (y `devolucionEnDosPasos`, `estadoEnElWhere`, `devolucionUnaVez`, `soporteDevolverConTope`
+      al día); al revés `alreves9tdinero`; prueba `din9t2` (base + pasarela de mentira + webhook firmado).
+- [ ] **→ 9t** · **Dinero por clase, 21 nov · lo que quedó (encontrado al cerrar la línea de arriba):** (a) `lib/evt-liquidacion.ts ›
+      repararLiquidaciones` → `pagarUna` (transferencia al organizador) y `ejecutarReversion` reintentan con la MISMA llave sin tope de tiempo: pasadas
+      24 h, Stripe podría transferir o revertir dos veces. Tope de 23 h y alerta, como las devoluciones (falta un tipo de alerta para transferencias en
+      camino). (b) `lib/suscripcion.ts › cobrarPeriodo` cobra antes de anotar (se apoya en la llave del cobro: si el barrido no vuelve a pasar en 24 h,
+      otro intento podría cobrar otra vez); la conciliación lo vería. (c) `refunds_a_mano` (0141) exige `attempts >= 1`: una devolución que murió
+      antes de su primer intento y pasó 23 h alerta, pero no se puede «Resolver a mano» (la alerta queda informativa); decidir si la base lo permite.
+      (d) Una devolución de boletos que Stripe da por fallida después (charge.refund.updated) deja los boletos 'refunded' y
+      `event_cancellations.refunded_cents` sin restar; la alerta lo dice, falta el camino (¿reponer el boleto o devolver otra vez?). (e) Al conectar
+      Stripe de verdad, el endpoint del webhook debe suscribirse también a `charge.refund.updated` (hoy no hay lista escrita de eventos en el repo).
+      (f) `responderAyudaCita` con un «no» de Stripe vuelve a abrir la solicitud aunque otra parte de esa devolución ya haya salido (lo que salió
+      cuenta y no sale dos veces, pero la persona ve la solicitud abierta otra vez). (21 nov)
 - [ ] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no
