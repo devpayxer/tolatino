@@ -12529,6 +12529,41 @@ const guardianes = {
     if (!p.includes("cuenta nueva con el tope público agotado: una privada sigue subiendo") || !p.includes("el tope general de 60 por hora frena también las privadas")) falla(G, P, 0, "la prueba de punta a punta dejó de revisar el tope de cuenta nueva con una privada");
   },
 
+  /* F4 · fotosCifrasEnElAdmin (Fotos a la medida, 21 nov): la clase «una cifra que existe en el servidor y ninguna pantalla enseña». Las cifras de
+     las fotos (cifrasFotos para las públicas, cifrasFotosPrivadas para las de destino privado) se muestran en Super Admin › Contenido ›
+     Auto-moderación › «Fotos a la medida». Se teme: (1) que admin-confianza deje de pedirlas o de pasarlas a la pantalla; (2) que la pantalla deje
+     de mostrar alguna (públicas, con sus tamaños, faltan, sin archivo, peso de las originales, de los tamaños, ahorro a 640, y las privadas);
+     (3) que el bloque tenga acciones (es solo lectura) o se quite su texto en inglés; (4) que la página pierda el permiso de Contenido; (5) otra función
+     cifras* de lib/fotos-*.ts que nadie importa (la misma clase: cifras sin pantalla); (6) que se quiten la prueba de punta a punta y la ayuda.
+     Al revés: alreves9ufotosadmin. */
+  fotosCifrasEnElAdmin() {
+    const G = "fotosCifrasEnElAdmin", AC = "apps/web/lib/admin-confianza.ts", AM = "apps/web/app/admin/AutoModeracion.tsx", PG = "apps/web/app/admin/contenido/page.tsx",
+      FV = "apps/web/lib/fotos-variantes.ts", FP = "apps/web/lib/fotos-privadas.ts", E2 = "pruebas/e2e/fot9uadmin.cjs", AY = "docs/ayuda/admin-fotos-a-la-medida.md";
+    for (const x of [AC, AM, PG, FV, FP]) if (!existsSync(x)) return falla(G, x, 0, "falta una pieza del espejo de las fotos en el Super Admin (F4)");
+    const ac = sinComent(AC), am = sinComent(AM), pg = sinComent(PG);
+    if (!/import \{ cifrasFotos \} from "\.\/fotos-variantes";/.test(ac) || !/import \{ cifrasFotosPrivadas \} from "\.\/fotos-privadas";/.test(ac) || !/await Promise\.all\(\[cifrasFotos\(\), cifrasFotosPrivadas\(\)\]\)/.test(ac) || !/medios: \{ pub: \w+, priv: \w+ \}/.test(ac))
+      falla(G, AC, 0, "autoModeracion pide cifrasFotos y cifrasFotosPrivadas y las pasa a la pantalla (medios: { pub, priv })");
+    const i = am.indexOf("const M = d.medios.pub"), j = am.indexOf("const B: Bloque[]");
+    if (i < 0 || j < i) return falla(G, AM, 0, "la pantalla de Auto-moderación no arma el bloque «Fotos a la medida» (bloquesMedios)");
+    const bm = am.slice(i, j);
+    for (const [frag, que] of [["String(M.publicas)", "las fotos públicas"], ["String(M.convertidas)", "las que ya tienen sus tamaños"], ["String(M.pendientes)", "las que faltan"], ["String(M.sinMaestra)", "las que no tienen archivo"],
+      ["mb(M.bytesMaestras)", "el peso de las originales"], ["mb(M.bytesVariantes)", "el peso de los tamaños"], ["dec(M.vista640.ahorro * 100)", "el ahorro a 640 en %"], ["mb(M.vista640.maestras)", "el ahorro a 640 en MB (originales)"],
+      ["mb(M.vista640.variantes)", "el ahorro a 640 en MB (a 640)"], ["String(MP.privadas)", "las fotos privadas"], ["String(MP.convertidas)", "las privadas con sus tamaños"], ["String(MP.pendientes)", "las privadas que faltan"],
+      ["String(MP.sinMaestra)", "las privadas sin archivo"], ["mb(MP.bytesMaestras)", "el peso de las privadas originales"], ["mb(MP.bytesVariantes)", "el peso de los tamaños de las privadas"]])
+      if (!bm.includes(frag)) falla(G, AM, 0, `el bloque «Fotos a la medida» no muestra ${que} (${frag})`);
+    if (!/const M = d\.medios\.pub, MP = d\.medios\.priv;/.test(bm) || !bm.includes('E("FOTOS A LA MEDIDA", "PHOTOS SIZED TO FIT")') || !/\.\.\.bloquesMedios,/.test(am))
+      falla(G, AM, 0, "el bloque sale de d.medios, con su título en español e inglés, y entra en la pantalla (...bloquesMedios)");
+    if (/onClick|\bacts\b|tgOn|onTg|<button|href/.test(bm)) falla(G, AM, 0, "el bloque «Fotos a la medida» es solo lectura: sin botones, interruptores ni enlaces");
+    if (!/await requerir\("cont", "ver"\)/.test(pg) || !/autoModeracion\(\)/.test(pg)) falla(G, PG, 0, "la pantalla donde vive el bloque pide el permiso de Contenido (requerir(\"cont\", \"ver\")) antes de armar nada");
+    // (5) Toda función cifras* de lib/fotos-*.ts la importa alguien más (una cifra sin pantalla).
+    for (const x of codigo.filter((f) => /^apps\/web\/lib\/fotos-[a-z-]+\.ts$/.test(f))) {
+      for (const m of readFileSync(x, "utf8").matchAll(/export (?:async )?function (cifras\w+)\(/g))
+        if (!codigo.some((y) => y !== x && /^apps\/web\/(app|lib)\//.test(y) && new RegExp(`\\b${m[1]}\\b`).test(sinComent(y)))) falla(G, x, 0, `${m[1]} da cifras que ninguna pantalla ni reporte muestra`);
+    }
+    if (!existsSync(E2) || !readFileSync(E2, "utf8").includes("${etiqueta}: las cifras del bloque coinciden con la base")) falla(G, E2, 0, "falta la prueba de punta a punta que compara el bloque con la base");
+    if (!existsSync(AY)) falla(G, AY, 0, "falta la ayuda del equipo (docs/ayuda/admin-fotos-a-la-medida.md)");
+  },
+
   /* fotosRevisionFalloCerrado: si un modelo no responde, la capa está apagada, no hay presupuesto o la respuesta no encaja, la foto queda RETENIDA:
      nunca se publica «por si acaso». La decisión es pura (lib/fotos-decision.ts) y su prueba recorre todas las ramas (fotos9urevision). Lo que se
      teme: un camino que publique sin un «publicar» de un modelo, la confianza que publique lo que el modelo propio no miró, leer la segunda opinión

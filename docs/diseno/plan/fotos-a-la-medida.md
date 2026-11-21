@@ -38,7 +38,7 @@ públicas al subir (hoy solo se revisan las de Mensajes y Comunidad: hallazgo de
 | F1 | Migración, generador, `/api/medios`, respaldo en nginx/Cloudflare, conversión de lo existente, cifras para el admin, pruebas, guardián | Opus |
 | F2 | `fotoSrc`/`fotoFondo`/`Foto` en el sistema de diseño y cambio pantalla por pantalla, con pruebas y guardián | Sonnet |
 | F3 | Privadas con `?w=` | Opus · **hecho en parte (21 nov):** ver «Estado de F3» |
-| F4 | Bloque del Super Admin y ayuda | Sonnet |
+| F4 | Bloque del Super Admin y ayuda | Sonnet · **hecho (21 nov):** ver «Estado de F4» |
 | Siempre | Plan, revisión de cada entrega, correr guardianes/tipos/pruebas, medir con fotos reales en el sandbox | Fable |
 
 ## Cómo se comprueba
@@ -54,7 +54,16 @@ públicas al subir (hoy solo se revisan las de Mensajes y Comunidad: hallazgo de
   `?w=` con el mismo permiso; sin caché, `nosniff`, 404 a quien no puede. Una retenida de destino privado, al aprobarse, vuelve a `privado/o/`.
 - **Las de antes** (bajo `n/`): migración 0197 las marca y el barrido (`barrerPrivadas`) las mueve y reescribe su copia en `preFotos`.
 - **Los catálogos** que guardan la foto como texto validan contra `media` (`lib/fotos-catalogo.ts`).
-- **Falta:** que las pantallas PIDAN `?w=` (hoy piden la maestra): `fotoSrc`/`fotoFondo` de `packages/ui/src/foto.ts` tienen que reconocer
-  `/api/medios/privada/<uuid>` y agregar `?w=<ancho>` (cambio del sistema de diseño, fuera de esta entrega; anotado en LAUNCH). Las privadas de
-  antes (Mensajes, ayuda de Salud y Pro, entrega, reclamo) siguen sin variantes.
+- **Las pantallas ya PIDEN `?w=`:** `fotoSrc`/`fotoFondo` de `packages/ui/src/foto.ts` reconocen `/api/medios/privada/<uuid>` y agregan
+  `?w=<ancho>`. Las privadas de antes (Mensajes, ayuda de Salud y Pro, entrega, reclamo) siguen sin variantes.
 - Guardián `fotosPrivadasConPermiso`; al revés `alreves9uprivadas`; prueba de la base `fot9uprivadas`; nginx `pruebas/infra/medios-nginx.test.sh`.
+
+## Estado de F4 (21 nov)
+- **El espejo:** Super Admin › Contenido › Auto-moderación › bloque «Fotos a la medida» (lo ve quien ya ve Contenido; solo lectura). Muestra: fotos
+  públicas, con sus tamaños, las que faltan (las convierte el barrido), las que quedaron sin archivo, el peso de las originales y de los tamaños, y el
+  ahorro de servir una foto a 640 (en % y en MB). Las cifras son de `cifrasFotos()` (lib/fotos-variantes.ts); como esa solo cuenta las públicas, las de
+  destino privado salen de su hermana `cifrasFotosPrivadas()` (lib/fotos-privadas.ts: una consulta, solo números). Se arma con las piezas de la
+  pantalla de al lado (grupo, nota, KPIs).
+- **Ayuda del equipo:** `docs/ayuda/admin-fotos-a-la-medida.md` (ES/EN).
+- Guardián `fotosCifrasEnElAdmin` (una cifra del servidor sin pantalla); al revés `alreves9ufotosadmin`; punta a punta `pruebas/e2e/fot9uadmin.cjs`
+  (cifras del bloque contra la base, 390 y 1360, ES y EN, sin errores de consola ni desborde).
