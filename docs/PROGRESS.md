@@ -24,8 +24,13 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
   - **`main` y `pruebas` = dbd3130** (confirmación completa **44856657972 VERDE** sobre 207fef9: dinero 9t, fotos privadas F3 con la migración
     0197, tope de cuenta nueva solo para públicas, doble toque del panel, `?w=` de las privadas, `correo2q`). Cerradas 27 líneas «9 dispositivos»
     de LAUNCH (queda la de 7f, que además pide correr `msg2p` con El Compa apagado). Inestables anotadas en LAUNCH: push8c, rev9u, cre9h, dlv2f4.
-  - **En la rama de trabajo, esperando su revisión rápida 44863184517:** dinero 9t2 (Opus, rama `dinero-9t2`, migración **0198**: los nueve puntos
-    de «Dinero por clase»; revisado por Fable; `din9t2` corre en el CI) y el diagnóstico de `requiere.cjs`. Si sale verde → `main`/`pruebas`.
+  - **En la rama de trabajo (a9f1e80), esperando su revisión rápida 44866551623:** dinero 9t2 (Opus, migración **0198**; su primer CI 44863184517
+    salió ROJO por `sop7b`: el intento de devolver más de lo que cabe ya no quedaba en `support_refunds`; arreglado por Fable con savepoint y
+    guardián `intentoFallidoQueda`), la pareja Desde/Hasta del panel (Sonnet: `grupo` en `pasoSrv`), las copias por texto de una foto quitada
+    (Opus, migración **0200**: trigger `media_fotos_texto` + libro `photo_text_refs`; revisada por Fable; `fot9utexto`) y el arreglo de la
+    inestable `rev9u` (el barrido de la prueba cierra el corte del modelo propio). Si sale verde → `main`/`pruebas` y `estado-sandbox`.
+  - **Agente en curso:** Opus en `dinero-9t3` (lo que quedó de «Dinero por clase»: liquidaciones y cobro de Pro sin tope de reintento, resolver a
+    mano sin intentos, boletos con devolución fallida después, ayuda de la cita; migración **0199**). Al volver: revisar, fusionar, CI.
   - **Sin resolver:** `pro4l2` como requisito no puede tocar «Pasó la consulta» (dejó roja la programada 44851886841 sobre `main` por `ayu4m`);
     causa desconocida, el registro ya dirá el motivo.
 - **21 nov (madrugada) · dónde quedó cada cosa, para retomar:**
