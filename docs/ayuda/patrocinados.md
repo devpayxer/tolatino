@@ -3,7 +3,7 @@
 _Pantallas: la página de cada categoría (`/c/{categoría}`, la fila **Patrocinados** debajo de las pestañas); Panel › Cobros y plan ›
 **Patrocinio** (`/panel/{negocio}/cobros/patrocinio`; también desde Tu página); Super Admin › Crecimiento › **Patrocinios** y Sistema ›
 Configuración › Crecimiento. Eventos: la página de Eventos (`/eventos`, arriba de todo) y Panel › Eventos › el evento › **Patrocinar**
-(`/panel/{negocio}/eventos?det=evt:pat:{evento}`). Teléfono y escritorio. Free y Pro. Versión: 17 nov 2026. Audiencia: negocio. Tema:
+(`/panel/{negocio}/eventos?det=evt:pat:{evento}`). Teléfono y escritorio. Free y Pro. Versión: 21 nov 2026. Audiencia: negocio. Tema:
 panel._
 
 ## Qué hace
@@ -50,6 +50,7 @@ panel._
 | Tu página deja de estar publicada | El patrocinio termina y el puesto queda libre (no se devuelve: si fue un error, escribe a Soporte). |
 | El banco pide confirmar el cobro al pagar | Se abre «Tu banco pide confirmar»: **Confirmar con mi banco** y queda pagado (un solo cobro). Si cierras o tu banco no lo confirma, no se cobra nada. |
 | El banco pide confirmar la **renovación sola** | No se puede confirmar sin ti: termina y te llega «Tu patrocinio no se renovó» con el enlace a tu panel para comprar otro (y confirmarlo ahí). |
+| Stripe no contesta en la **renovación sola** (una falla de la red) | No termina ni te llega nada: el cobro queda en camino y la renovación se termina sola en unos minutos, con un solo cobro. |
 | La devolución no pasó al momento (falla de la red o del banco) | Se vuelve a intentar sola, una vez por minuto, y nunca se devuelve dos veces. |
 | Estás en la app To'Latino Negocios | Ves si tienes un patrocinio y sus cifras. Comprar, renovar y encender la renovación no se hace en la app. |
 | No manejas los cobros del negocio | No puedes comprar: lo hace el dueño o quien tenga «Cobros» en el equipo. |
@@ -159,6 +160,7 @@ panel._
 | Your page stops being live | The sponsorship ends and the slot opens up (no refund: if it was a mistake, contact Support). |
 | The bank asks to confirm the charge when you pay | «Your bank asks you to confirm» opens: **Confirm with my bank** and it is paid (one charge). If you close it or your bank does not confirm, nothing is charged. |
 | The bank asks to confirm the **auto-renewal** | It cannot be confirmed without you: it ends and you get «Your sponsorship did not renew» with the link to your dashboard to buy another (and confirm it there). |
+| Stripe does not answer on the **auto-renewal** (a network failure) | Nothing ends and you get no notice: the charge is on its way and the renewal finishes by itself in a few minutes with a single charge. |
 | The refund did not go through right away (network or bank failure) | It is retried on its own, once a minute, and never refunded twice. |
 | You are in the To'Latino Business app | You see whether you have a sponsorship and its numbers. Buying, renewing and turning on auto-renew are not done in the app. |
 | You do not manage the business payments | You cannot buy: the owner or whoever has «Payouts» on the team does it. |
