@@ -231,6 +231,11 @@ async function liquidacion(biz, net, o = {}) {
     try { await db.query(`insert into subscription_charges (business_id, city_id, period_start, cycle, amount_cents, pm, payer_user_id, idem_key) values ($1, 'hzl', $2, 'month', 3000, $3, $4, $5)`, [b, desde, pm, X.u, `${k}-otra`]);
       await db.query(`update subscription_charges set status = 'done' where idem_key = $1`, [`${k}-otra`]); } catch (e) { dup = e.message; }
     ok(!!dup && /subscription_charges_un_cobro_por_periodo/.test(dup), 'la base no deja dos cobros hechos del mismo período');
+    // Esa otra intención quedó pendiente (de un período ya cobrado, nunca mandada): el barrido no la manda a Stripe, la deja fallida.
+    await atrasarCobro(b, 3);
+    await SU.barrerCobrosPro();
+    const otra = await q1(`select status, last_error from subscription_charges where idem_key = $1`, [`${k}-otra`]);
+    ok(!P.cargos.has(`${k}-otra`) && otra.status === 'failed' && otra.last_error === 'periodo_ya_cobrado', `una intención de un período ya cobrado nunca llega a Stripe (${otra.status}, ${otra.last_error})`);
   }
   {
     // Pasadas 23 h sin respuesta: no se cobra otra vez, alerta una vez, y el plan no se da por fallido.

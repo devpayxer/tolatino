@@ -86,7 +86,9 @@ const casos = [
   [PR, SU, 'if (!r.ok && !r.enCamino) await fallo(', 'if (!r.ok) await fallo('],
   [PR, SU, "where id = $1::bigint and status = 'pending'`, [a.id, pi])).rowCount) return null;", "where id = $1::bigint`, [a.id, pi])).rowCount) return null;"],
   [PR, BA, '        ["cobrosPro", async () => (await import("./suscripcion")).barrerCobrosPro()],\n', ''],
-  [PR, SU, "where business_id = $1 and (status = 'pending' or idem_key = $2)", 'where business_id = $1 and idem_key = $2'],
+  [PR, SU, "where business_id = $1 and (status = 'pending' or idem_key = $2 or (status = 'done' and period_start = $3::timestamptz))", "where business_id = $1 and (status = 'pending' or idem_key = $2)"],
+  // Una intención de un período ya cobrado llega a Stripe (la base la frenaría solo al cerrar, con el dinero ya cobrado).
+  [PR, SU, "y.status = 'done' and y.id <> z.id", "y.status = 'ninguno' and y.id <> z.id"],
   [PR, MG, "create unique index if not exists subscription_charges_una_en_camino on subscription_charges (business_id) where status = 'pending';\n", ''],
   // (c) «Resolver a mano» sin intentos antes de las 23 h (la base), o la pantalla con otras horas que la base.
   [M, MG, "if old.attempts < 1 and old.created_at > now() - interval '23 hours' then", "if old.attempts < 1 and old.created_at > now() - interval '1 hours' then"],

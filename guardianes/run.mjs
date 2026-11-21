@@ -12190,12 +12190,16 @@ const guardianes = {
     const G = "cobroProAnotadoAntes", SU = "apps/web/lib/suscripcion.ts", BA = "apps/web/lib/barrido.ts";
     if (!existsSync(SU)) return falla(G, SU, 0, "falta lib/suscripcion.ts");
     const su = sinComent(SU), an = cuerpoFn(su, "anotarCobro"), cp = cuerpoFn(su, "cobrarPeriodo"), tc = cuerpoFn(su, "terminarCobro"), rp = cuerpoFn(su, "registrarPeriodo"), pr = cuerpoFn(su, "procesar");
+    const antes = (t, guard, llamada) => t.indexOf(guard) >= 0 && t.indexOf(llamada) >= 0 && t.indexOf(guard) < t.indexOf(llamada);
     for (const m of su.matchAll(/pasarela\.cobrarDirecto\(/g)) {
       const fnN = [...su.slice(0, m.index).matchAll(/\n(?:export )?(?:async )?function (\w+)\(/g)].pop()?.[1] ?? "";
       if (fnN !== "terminarCobro") falla(G, SU, su.slice(0, m.index).split("\n").length, `pasarela.cobrarDirecto fuera de terminarCobro (${fnN || "?"}): primero la intención (anotarCobro)`);
     }
     if (!/insert into subscription_charges/.test(an) || /pasarela\./.test(an) || !/return tx\(async \(c\) => \{/.test(an) || an.indexOf("insert into subscription_charges") > an.indexOf("await alGuardar?.(c);")) falla(G, SU, 0, "anotarCobro anota la intención (con su auditoría) en su transacción y no llama a la pasarela");
-    if (!/where business_id = \$1 and \(status = 'pending' or idem_key = \$2\)/.test(an)) falla(G, SU, 0, "anotarCobro termina primero la intención en camino de ese negocio (o la de esa llave): nunca anota otra mientras una va en camino");
+    // 9t3 · Ni una intención nueva ni una pendiente de un período que ya tiene su cobro hecho llegan a Stripe (la base solo lo frenaría al cerrar,
+    // con el dinero ya cobrado).
+    if (!antes(tc, "y.status = 'done' and y.id <> z.id", "pasarela.cobrarDirecto(") || !/status = 'failed', last_error = 'periodo_ya_cobrado'/.test(tc)) falla(G, SU, 0, "terminarCobro no manda a Stripe la intención de un período que ya quedó cobrado");
+    if (!/where business_id = \$1 and \(status = 'pending' or idem_key = \$2 or \(status = 'done' and period_start = \$3::timestamptz\)\)/.test(an)) falla(G, SU, 0, "anotarCobro termina primero la intención en camino de ese negocio (o la de esa llave): nunca anota otra mientras una va en camino");
     if (!/return terminarCobro\(s, await anotarCobro\(s, desde, alGuardar\), enSesion\);/.test(cp) || /pasarela\./.test(cp)) falla(G, SU, 0, "cobrarPeriodo: primero la intención (anotarCobro) y después la pasarela (terminarCobro)");
     const bloque = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n    \}/.exec(tc)?.[0] ?? "";
     if (!bloque || /'failed'/.test(bloque) || !/enCamino: true/.test(bloque)) falla(G, SU, 0, "terminarCobro: sin respuesta de Stripe, la intención sigue en camino (nunca 'failed')");

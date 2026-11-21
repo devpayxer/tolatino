@@ -115,8 +115,9 @@ async function anotarCobro(s: Fila, desde: number, alGuardar?: (c: PoolClient) =
   const monto = precio(s.cycle), idem = `sub-${s.business_id}-${new Date(desde).toISOString()}-${s.card_pm!.slice(-16)}-${s.failed_attempts}`;
   return tx(async (c) => {
     await c.query(`select pg_advisory_xact_lock(hashtext('sub-cobro:' || $1))`, [s.business_id]);
-    const ya = (await c.query<Omit<Intencion, "nueva">>(`select ${SEL_INT} from subscription_charges where business_id = $1 and (status = 'pending' or idem_key = $2)
-                                                         order by (status = 'pending') desc, id desc limit 1`, [s.business_id, idem])).rows[0];
+    // También el cobro ya hecho de ESE período (con otra llave: otra tarjeta, otro intento, la verificación del banco): no se anota otro.
+    const ya = (await c.query<Omit<Intencion, "nueva">>(`select ${SEL_INT} from subscription_charges where business_id = $1 and (status = 'pending' or idem_key = $2 or (status = 'done' and period_start = $3::timestamptz))
+                                                         order by (status = 'pending') desc, id desc limit 1`, [s.business_id, idem, new Date(desde).toISOString()])).rows[0];
     if (ya) return { ...ya, nueva: false };
     const n = (await c.query<Omit<Intencion, "nueva">>(
       `insert into subscription_charges (business_id, city_id, period_start, cycle, amount_cents, pm, payer_user_id, idem_key)
@@ -137,6 +138,14 @@ async function terminarCobro(s: Fila, a: Intencion, enSesion = false): Promise<R
   if (a.st === "failed") return { ok: false, msg: YA_RECHAZADO };
   if (a.st !== "pending") return { ok: false, msg: { es: "Tu banco pide confirmar que eres tú. Confírmalo para seguir.", en: "Your bank asks you to confirm it is you. Confirm it to continue." }, verificar: true };
   if (a.vieja) { await alertaCobroViejo(s.business_id, a); return { ok: false, msg: VIEJO, enCamino: true }; }
+  // Un período que ya tiene su cobro hecho (otra intención, o la verificación del banco que se completó mientras esta esperaba) no va a Stripe:
+  // la que nunca se mandó queda fallida (nada salió); la que ya se mandó y no contestó, alerta (Stripe pudo cobrarla también) y sigue en camino.
+  if ((await db().query(`select 1 from subscription_charges z join subscription_charges y on y.business_id = z.business_id and y.period_start = z.period_start and y.status = 'done' and y.id <> z.id
+                          where z.id = $1::bigint`, [a.id])).rowCount) {
+    if (a.n === 0 && (await db().query(`update subscription_charges set status = 'failed', last_error = 'periodo_ya_cobrado' where id = $1::bigint and status = 'pending' and attempts = 0`, [a.id])).rowCount) return { ok: true };
+    await alertaCobroViejo(s.business_id, a, true);
+    return { ok: false, msg: VIEJO, enCamino: true };
+  }
   const cliente = await pasarela.cliente(a.payer).catch(() => null);
   const r = await pasarela.cobrarDirecto({ centavos: a.monto, pm: a.pm, cliente, idem: a.idem, meta: { business_id: s.business_id, kind: "pro" } })
     .catch(() => ({ ok: false as const, codigo: "error", mensaje: EN_CAMINO, pi: undefined, secreto: undefined }));
@@ -164,9 +173,11 @@ async function terminarCobro(s: Fila, a: Intencion, enSesion = false): Promise<R
   await registrarPeriodo(s, a, r.id);
   return { ok: true };
 }
-async function alertaCobroViejo(negocio: string, a: Intencion) {
+async function alertaCobroViejo(negocio: string, a: Intencion, doble = false) {
   const ciudad = (await db().query<{ c: string | null }>(`select city_id as c from businesses where id = $1`, [negocio])).rows[0]?.c ?? null;
-  await (await import("./dinero-alertas")).alertar("charge_stuck", a.idem, { monto: a.monto, negocio, ciudad, detalle: {
+  await (await import("./dinero-alertas")).alertar("charge_stuck", a.idem, { monto: a.monto, negocio, ciudad, detalle: doble ? {
+    es: `Cobro de Pro de ${money(a.monto)} que Stripe no contestó (${a.n} intentos), de un período que ya quedó cobrado con otro cobro: no se pide otra vez. Mira en Stripe si también se cobró y, si es así, devuélvelo.`,
+    en: `Pro charge of ${money(a.monto)} that Stripe did not answer (${a.n} attempts), for a period already paid by another charge: it is not requested again. Check in Stripe whether it was charged too and, if so, refund it.` } : {
     es: `Cobro de Pro de ${money(a.monto)} sin respuesta de Stripe en ${HORAS_LLAVE} h (${a.n} intentos, ${a.err ?? "sin motivo"}): no se cobra otra vez. Mira en Stripe si se cobró.`,
     en: `Pro charge of ${money(a.monto)} with no answer from Stripe in ${HORAS_LLAVE} h (${a.n} attempts, ${a.err ?? "no reason"}): it is not charged again. Check in Stripe whether it was charged.` } }).catch(() => undefined);
 }
