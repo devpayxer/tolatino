@@ -7762,11 +7762,11 @@ const guardianes = {
     const G = "pasoQueSuma", B = "packages/ui/src/panel/Bloques.tsx", P = "apps/web/app/panel/Panel.tsx", I = "packages/ui/src/index.ts";
     for (const f of [B, P, I]) if (!existsSync(f)) return falla(G, f, 0, "falta (la solución común del paso que guarda en el servidor)");
     const b = sinComent(B), p = sinComent(P), ix = sinComent(I);
-    if (!/base = x\.want \?\? sv\.current\.n, nx = sv\.current\.sig\(base, d\)/.test(b) || !/onClick=\{srv \? \(\) => toca\(-1\) : b\.onM\}/.test(b) || !/onClick=\{srv \? \(\) => toca\(1\) : b\.onP\}/.test(b))
+    if (!/base = x\.want \?\? sv\.current\.n, nx = sv\.current\.sig\(base, d, pedidoDe\(cola\(\)\)\)/.test(b) || !/onClick=\{srv \? \(\) => toca\(-1\) : b\.onM\}/.test(b) || !/onClick=\{srv \? \(\) => toca\(1\) : b\.onP\}/.test(b))
       falla(G, B, 0, "el paso con srv (Paso) calcula cada toque desde el ÚLTIMO valor pedido (want), no desde el que trae la pantalla: dos toques rápidos pierden uno");
-    if (!/if \(x\.want !== null && x\.want !== v\) \{ manda\(\); return; \}/.test(b) || !/if \(x\.busy \|\| x\.want === null/.test(b))
+    if (!/if \(y\.want !== null && y\.want !== \(y\.known \?\? m\.sv\.current\.n\)\) \{ manda\(\); return; \}/.test(b) || !/if \(g\.busy\) return;/.test(b))
       falla(G, B, 0, "el paso con srv manda de uno en uno y, al terminar, lo último pedido (si no, dos guardados a la vez pisan el valor)");
-    if (!/if \(ok === false\) \{ suelta\(\); return; \}/.test(b)) falla(G, B, 0, "si el servidor dice que no, el paso vuelve al valor del servidor (suelta lo pedido)");
+    if (!/if \(ok === false\) \{ for \(const m of \[\.\.\.g\.m\.values\(\)\]\) m\.suelta\(\); return; \}/.test(b)) falla(G, B, 0, "si el servidor dice que no, el paso vuelve al valor del servidor (suelta lo pedido)");
     if (!/export function pasoSrv\(/.test(b) || !/pasoSrv, type PasoSrv/.test(ix)) falla(G, I, 0, "pasoSrv sale de @tolatino/ui para las pantallas del panel");
     if (!/run: \(f: \(\) => Promise<Res>[^;]*=> Promise<boolean>;/.test(p) || !/finally \{ fin\(bien\); \}/.test(p))
       falla(G, P, 0, "c.run devuelve si se guardó (Promise<boolean>): el paso espera a que termine un guardado para mandar el siguiente");
@@ -7787,6 +7787,41 @@ const guardianes = {
         const linea = t.slice(0, m.index).split("\n").length, previas = crudo.split("\n").slice(Math.max(0, linea - 3), linea).join("\n");
         if (/GUARDIAN-OK/.test(seg) || /GUARDIAN-OK/.test(previas) || /GUARDIAN-OK/.test(crudo.split("\n").slice(linea - 1, linea + 3).join("\n"))) continue;
         falla(G, f, linea, "un paso (− valor +) guarda en el servidor en cada toque con onM/onP calculados desde el valor pintado: un segundo toque rápido sale del valor viejo y pierde un incremento. Ármalo con pasoSrv({ n, sig, fmt, save }) de @tolatino/ui");
+      }
+    }
+    // 21 nov · La pareja: dos pasos pasoSrv de una misma pantalla que guardan el MISMO registro (la misma clave en su save, o un save que manda el registro
+    // entero con ...) sin compartir `grupo` se pisan (el segundo guarda con el valor viejo del otro campo). Solo cuentan claves de valor: item/grupo/banda/id
+    // son el selector de la fila, no el valor. Un solo pasoSrv dentro de un for es uno solo (cada fila es otro registro).
+    if (!/grupo\?: PasoGrupo/.test(b) || !/const pedidoDe = /.test(b) || !/if \(g\.busy\) return;/.test(b) || !/cur\.save\(v, desde, pedido\)/.test(b))
+      falla(G, B, 0, "los pasos de un mismo registro comparten una sola cola de guardado (grupo) y cada save recibe el último valor pedido de todos (pedido): si no, dos toques rápidos en pasos distintos del mismo registro se pisan");
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f)) continue;
+      const crudo = readFileSync(f, "utf8"), t = sinComent(f), pasos = [];
+      for (const m of t.matchAll(/\bpasoSrv\(\{/g)) {
+        let n = 0, j = m.index + 8;
+        for (; j < t.length; j++) { if (t[j] === "{") n++; else if (t[j] === "}" && --n === 0) break; }
+        const seg = t.slice(m.index + 8, j + 1), linea = t.slice(0, m.index).split("\n").length;
+        const s = seg.search(/\bsave:\s*\([^)]*\)\s*=>\s*\w+\(\{/);
+        if (s < 0) continue;
+        let k = seg.indexOf("{", s + seg.slice(s).search(/=>/)); const k0 = k; n = 0;
+        for (; k < seg.length; k++) { if (seg[k] === "{") n++; else if (seg[k] === "}" && --n === 0) break; }
+        const cuerpo = seg.slice(k0 + 1, k), claves = [], spread = /(^|,)\s*\.\.\./.test(cuerpo.replace(/\{[^{}]*\}|\[[^\[\]]*\]|\([^()]*\)/g, "()"));
+        let prof = 0, ini = 0; const partes = [];
+        for (let q = 0; q <= cuerpo.length; q++) { const ch = cuerpo[q]; if (ch === "{" || ch === "[" || ch === "(") prof++; else if (ch === "}" || ch === "]" || ch === ")") prof--; else if ((ch === "," && prof === 0) || q === cuerpo.length) { partes.push(cuerpo.slice(ini, q)); ini = q + 1; } }
+        for (const x of partes) { const km = /^\s*(\w+)\s*[:,]|^\s*(\w+)\s*$/.exec(x); const key = km && (km[1] ?? km[2]); if (key && !/^(item|grupo|banda|id)$/.test(key)) claves.push(key); }
+        pasos.push({ linea, claves, spread, grupo: /\bgrupo:\s*\{/.test(seg) });
+      }
+      const ok = (l) => /GUARDIAN-OK/.test(crudo.split("\n").slice(Math.max(0, l - 3), l + 3).join("\n"));
+      for (let a = 0; a < pasos.length; a++) {
+        const A = pasos[a];
+        if (ok(A.linea)) continue;
+        if (A.spread && !A.grupo) falla(G, f, A.linea, "el save de un paso manda el registro entero (con ...): dos pasos de ese registro se pisan. Dale grupo: { id, campo } a todos los pasos del registro y manda los valores pedidos (pedido)");
+        for (let b2 = a + 1; b2 < pasos.length; b2++) {
+          const Bp = pasos[b2];
+          if ((A.grupo && Bp.grupo) || ok(Bp.linea)) continue; // los dos en grupo: comparten cola (la clave de grupo igual la ve el e2e)
+          const com = A.claves.find((x) => Bp.claves.includes(x));
+          if (com) falla(G, f, Bp.linea, `dos pasos (líneas ${A.linea} y ${Bp.linea}) guardan el mismo registro («${com}») sin compartir grupo: dos toques rápidos, uno en cada paso, se pisan (el segundo guarda con el valor viejo del otro). Pasa grupo: { id, campo } a los dos y manda los valores de pedido`);
+        }
       }
     }
   },

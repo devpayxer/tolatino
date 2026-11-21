@@ -16,18 +16,22 @@ type Fn = () => void;
 /* 21 nov · Un paso (− valor +) que guarda en el servidor en cada toque. Los cierres onM/onP de la pantalla calculan desde el valor que tenían al
    pintarse: un segundo toque antes de que vuelva el guardado salía del valor viejo y se perdía un incremento (o se guardaba dos veces el mismo).
    Con srv, el paso (Paso) lleva la cuenta: muestra y calcula desde el ÚLTIMO valor pedido (sig(base, ±1)), manda uno a la vez y, al terminar,
-   lo último que se pidió; si el servidor dice que no (save devuelve false) vuelve al valor que tiene el servidor (n). Guardián pasoQueSuma. */
+   lo último que se pidió; si el servidor dice que no (save devuelve false) vuelve al valor que tiene el servidor (n). Guardián pasoQueSuma.
+   Dos pasos que guardan el MISMO registro entero (Desde y Hasta mandan el par `edad`) comparten un `grupo`: una sola cola de guardado, y cada
+   save/sig recibe `pedido` = el último valor pedido de cada paso del grupo (por su campo), para mandar el registro con todos los valores pedidos. */
+export type PasoGrupo = { id: string; campo: string }; // id: el registro (único por negocio y pantalla); campo: cuál de sus valores es este paso
 export type PasoSrv = {
   n: number; // lo que tiene el servidor (el valor de la pantalla al pintarse)
-  sig: (n: number, d: 1 | -1) => number | undefined; // el valor que sigue de n (undefined: ya no se puede; n: no cambia)
+  sig: (n: number, d: 1 | -1, pedido: Record<string, number>) => number | undefined; // el valor que sigue de n (undefined: ya no se puede; n: no cambia)
   fmt: (n: number) => string; // cómo se dice un valor
-  save: (n: number, desde: number) => Promise<boolean> | void; // guarda n; desde = el valor que se supone que ya tiene el servidor (para quien guarda cambios)
+  save: (n: number, desde: number, pedido: Record<string, number>) => Promise<boolean> | void; // guarda n; desde = el valor que se supone que ya tiene el servidor (para quien guarda cambios)
   tope?: (d: 1 | -1) => void; // el aviso que la pantalla ya daba al tocar más allá del límite
+  grupo?: PasoGrupo; // pasos de un mismo registro: comparten cola y `pedido`
 };
 // v: lo que dice el paso mientras nadie lo toca, si no es fmt(n) (un valor sin poner dice «—» y el primer toque sale de su valor de partida).
 export function pasoSrv(p: { t: string; s?: string; v?: string } & PasoSrv): Extract<Bloque, { type: "step" }> {
   const { t, s, v, ...srv } = p;
-  const va = (d: 1 | -1): Fn => () => { const x = srv.sig(srv.n, d); if (x === undefined) srv.tope?.(d); else if (x !== srv.n) void srv.save(x, srv.n); };
+  const va = (d: 1 | -1): Fn => () => { const x = srv.sig(srv.n, d, {}); if (x === undefined) srv.tope?.(d); else if (x !== srv.n) void srv.save(x, srv.n, {}); };
   return { type: "step", t, ...(s ? { s } : {}), v: v ?? srv.fmt(srv.n), onM: va(-1), onP: va(1), srv };
 }
 // 9c · Enter y Espacio activan lo que es un botón con rol (solo con el foco en el propio elemento, para no robarle la tecla a un campo de dentro).
@@ -121,38 +125,61 @@ const para = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 /* 21 nov · El paso (− valor +). Sin srv es el de siempre. Con srv: `want` es el último valor pedido (lo que se ve y de donde sale el siguiente
    toque); se manda al servidor de uno en uno y, al terminar, lo último pedido; `known` es lo que se supone que ya tiene el servidor. Se suelta
-   `want` cuando la pantalla ya trae el valor del servidor, si el servidor dijo que no, o a los 4 s por si nunca cambia (el servidor lo ajustó). */
+   `want` cuando la pantalla ya trae el valor del servidor, si el servidor dijo que no, o a los 4 s por si nunca cambia (el servidor lo ajustó).
+   La cola (`busy`) es del grupo: un paso sin grupo tiene la suya; los pasos de un mismo registro (srv.grupo) comparten una sola, y lo que se
+   manda lleva el último valor pedido de todos (pedido), así que el segundo toque no guarda con el valor viejo del otro campo. */
+type Miembro = { r: { current: Estado }; sv: { current: PasoSrv }; suelta: () => void };
+type Estado = { want: number | null; known: number | null; settled: boolean; nSettle: number; timer: ReturnType<typeof setTimeout> | null };
+type Cola = { busy: boolean; m: Map<string, Miembro> };
+const COLAS = new Map<string, Cola>(); // las colas de los grupos (un registro con varios pasos): se crean al montar el primero y se quitan al desmontar el último
+const pedidoDe = (g: Cola): Record<string, number> => { const q: Record<string, number> = {}; for (const [k, m] of g.m) if (m.r.current.want !== null) q[k] = m.r.current.want; return q; };
 function Paso({ b }: { b: Extract<Bloque, { type: "step" }> }): ReactNode {
   const srv = b.srv, [want, setWant] = useState<number | null>(null);
   const sv = useRef(srv as PasoSrv); sv.current = srv as PasoSrv; // solo se usa con srv
-  const r = useRef({ want: null as number | null, known: null as number | null, busy: false, settled: false, nSettle: 0, timer: null as ReturnType<typeof setTimeout> | null });
+  const r = useRef<Estado>({ want: null, known: null, settled: false, nSettle: 0, timer: null });
+  const propia = useRef<Cola>({ busy: false, m: new Map() });
+  const gid = srv?.grupo?.id ?? null, campo = srv?.grupo?.campo ?? "_";
+  const cola = (): Cola => { if (gid === null) return propia.current; let g = COLAS.get(gid); if (!g) { g = { busy: false, m: new Map() }; COLAS.set(gid, g); } return g; };
   const suelta = () => { const x = r.current; if (x.timer) clearTimeout(x.timer); x.timer = null; x.want = null; x.known = null; x.settled = false; setWant(null); };
+  const yo = useRef<Miembro>({ r, sv, suelta }); yo.current.suelta = suelta;
+  // Se anota en la cola de su grupo (antes de cualquier toque) y se quita al desmontar.
+  useEffect(() => {
+    const g = cola(), m = yo.current; g.m.set(campo, m);
+    return () => { if (g.m.get(campo) === m) g.m.delete(campo); if (gid !== null && !g.m.size && COLAS.get(gid) === g) COLAS.delete(gid); };
+  }, [gid, campo]); // eslint-disable-line react-hooks/exhaustive-deps
   const manda = (): void => {
-    const x = r.current, cur = sv.current;
-    if (x.busy || x.want === null || x.want === (x.known ?? cur.n)) return;
-    const v = x.want, desde = x.known ?? cur.n;
-    x.busy = true; x.settled = false; if (x.timer) clearTimeout(x.timer);
-    void Promise.resolve().then<boolean | void>(() => cur.save(v, desde)).catch(() => false).then((ok) => {
-      x.busy = false;
-      if (ok === false) { suelta(); return; }
-      x.known = v;
-      if (x.want !== null && x.want !== v) { manda(); return; }
-      if (sv.current.n === v) { suelta(); return; } // la pantalla ya trajo el valor guardado
-      x.settled = true; x.nSettle = sv.current.n;
-      if (x.timer) clearTimeout(x.timer);
-      x.timer = setTimeout(() => { if (!x.busy) suelta(); }, 4000);
+    const g = cola();
+    if (g.busy) return;
+    let pick: Miembro | null = null;
+    for (const m of g.m.values()) { const x = m.r.current; if (x.want !== null && x.want !== (x.known ?? m.sv.current.n)) { pick = m; break; } }
+    if (!pick) return;
+    const x = pick.r.current, cur = pick.sv.current, v = x.want as number, desde = x.known ?? cur.n, pedido = pedidoDe(g);
+    g.busy = true;
+    for (const m of g.m.values()) { m.r.current.settled = false; if (m.r.current.timer) clearTimeout(m.r.current.timer); m.r.current.timer = null; }
+    void Promise.resolve().then<boolean | void>(() => cur.save(v, desde, pedido)).catch(() => false).then((ok) => {
+      g.busy = false;
+      if (ok === false) { for (const m of [...g.m.values()]) m.suelta(); return; }
+      for (const [k, val] of Object.entries(pedido)) { const m = g.m.get(k); if (m) m.r.current.known = val; } // el servidor tiene ya todo lo pedido en este guardado
+      for (const m of g.m.values()) { const y = m.r.current; if (y.want !== null && y.want !== (y.known ?? m.sv.current.n)) { manda(); return; } }
+      for (const m of [...g.m.values()]) {
+        const y = m.r.current; if (y.want === null) continue;
+        if (m.sv.current.n === y.known) { m.suelta(); continue; } // la pantalla ya trajo el valor guardado
+        y.settled = true; y.nSettle = m.sv.current.n;
+        if (y.timer) clearTimeout(y.timer);
+        y.timer = setTimeout(() => { if (!g.busy) m.suelta(); }, 4000);
+      }
     });
   };
   const toca = (d: 1 | -1) => {
     if (!srv) return;
-    const x = r.current, base = x.want ?? sv.current.n, nx = sv.current.sig(base, d);
+    const x = r.current, base = x.want ?? sv.current.n, nx = sv.current.sig(base, d, pedidoDe(cola()));
     if (nx === undefined) { sv.current.tope?.(d); return; }
     if (nx === base) return;
     x.want = nx; x.settled = false; setWant(nx); manda();
   };
   // La pantalla ya trae lo que se pidió (o, ya guardado, otro valor del servidor): se deja de mostrar lo pedido.
   const n = srv?.n;
-  useEffect(() => { const x = r.current; if (!x.busy && x.want !== null && (n === x.want || (x.settled && n !== x.nSettle))) suelta(); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const x = r.current; if (!cola().busy && x.want !== null && (n === x.want || (x.settled && n !== x.nSettle))) suelta(); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => { const t = r.current.timer; if (t) clearTimeout(t); }, []);
   const v = srv && want !== null ? srv.fmt(want) : b.v;
   return (

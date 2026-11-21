@@ -4,7 +4,7 @@ const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos 
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const BL = 'packages/ui/src/panel/Bloques.tsx', PA = 'apps/web/app/panel/Panel.tsx', IX = 'packages/ui/src/index.ts',
-  FI = 'apps/web/app/panel/Fiestas.tsx', DE = 'apps/web/app/panel/Deporte.tsx', RE = 'apps/web/app/panel/Retail.tsx';
+  FI = 'apps/web/app/panel/Fiestas.tsx', NI = 'apps/web/app/panel/Ninos.tsx', DE = 'apps/web/app/panel/Deporte.tsx', RE = 'apps/web/app/panel/Retail.tsx';
 const casos = [
   // un paso de Fiestas vuelve a guardar con onM/onP directos, calculados desde h.perDay (el valor pintado)
   ['pasoQueSuma', FI,
@@ -22,13 +22,20 @@ const casos = [
   ['pasoQueSuma', RE,
     '    // GUARDIAN-OK pasoQueSuma: cada toque es UN movimiento de ±1 que el servidor suma de forma atómica (tallaExistencia: stock_left + delta), no un valor: N toques suman N.\n', ''],
   // el paso con srv calcula desde el valor de la pantalla, no desde el último pedido
-  ['pasoQueSuma', BL, 'base = x.want ?? sv.current.n, nx = sv.current.sig(base, d);', 'base = sv.current.n, nx = sv.current.sig(base, d);'],
+  ['pasoQueSuma', BL, 'base = x.want ?? sv.current.n, nx = sv.current.sig(base, d, pedidoDe(cola()));', 'base = sv.current.n, nx = sv.current.sig(base, d, pedidoDe(cola()));'],
   // … deja de mandar lo último pedido cuando termina el guardado de antes
-  ['pasoQueSuma', BL, 'if (x.want !== null && x.want !== v) { manda(); return; }', ''],
+  ['pasoQueSuma', BL, 'if (y.want !== null && y.want !== (y.known ?? m.sv.current.n)) { manda(); return; }', ''],
   // … o ya no vuelve al valor del servidor cuando este dice que no
-  ['pasoQueSuma', BL, 'if (ok === false) { suelta(); return; }', ''],
+  ['pasoQueSuma', BL, 'if (ok === false) { for (const m of [...g.m.values()]) m.suelta(); return; }', ''],
   // c.run deja de decir si se guardó (el paso no sabe cuándo mandar el siguiente toque)
   ['pasoQueSuma', PA, '      } finally { fin(bien); }', '      } finally { /* sin avisar */ }'],
+  // La pareja (21 nov): Desde y Hasta de Ninos guardan el par `edad` entero; sin compartir grupo se pisan con dos toques rápidos
+  ['pasoQueSuma', NI, 'grupo: { id: `ninos-edad:${c.d.id}`, campo: "hasta" }, ', ''],
+  ['pasoQueSuma', NI, 'grupo: { id: `ninos-edad:${c.d.id}`, campo: "desde" }, ', ''],
+  // … o la cola deja de ser del grupo (cada paso manda por su cuenta y los dos guardados se cruzan)
+  ['pasoQueSuma', BL, 'cur.save(v, desde, pedido)', 'cur.save(v, desde, {})'],
+  // … o el save de un paso vuelve a mandar el registro entero con el valor viejo del otro campo y sin grupo (un save con ...)
+  ['pasoQueSuma', FI, 'save: (n) => save({ perDay: n }) }),', 'save: (n) => save({ ...h, perDay: n }) }),'],
   // pasoSrv deja de salir de @tolatino/ui
   ['pasoQueSuma', IX, 'export { PanelBloque, PanelBloques, pasoSrv, type PasoSrv,', 'export { PanelBloque, PanelBloques, type PasoSrv,'],
 ];
@@ -42,6 +49,19 @@ import { guardarCosa } from "./acciones-cosa";
 export function pasoDeMentira(c: Ctx, h: { n: number }): Bloque {
   const save = (p: { n: number }) => c.run(() => guardarCosa(c.d.id, p));
   return { type: "step", t: "Cosas", v: String(h.n), onM: () => save({ n: h.n - 1 }), onP: () => save({ n: h.n + 1 }) };
+}
+`],
+  // la clase en una pantalla que todavía no existe: dos pasos con el mismo registro (la misma clave) sin grupo
+  ['pasoQueSuma', 'apps/web/app/panel/ParejaDeMentira.tsx',
+    `"use client";
+import { pasoSrv, type PanelBloqueT as Bloque } from "@tolatino/ui";
+import type { Ctx } from "./Panel";
+import { guardarCosa } from "./acciones-cosa";
+export function parejaDeMentira(c: Ctx, h: { r: [number, number] }): Bloque[] {
+  const save = (p: { rango: [number, number] }) => c.run(() => guardarCosa(c.d.id, p));
+  return [
+    pasoSrv({ t: "Desde", n: h.r[0], fmt: String, sig: (n, d) => n + d, save: (n) => save({ rango: [n, h.r[1]] }) }),
+    pasoSrv({ t: "Hasta", n: h.r[1], fmt: String, sig: (n, d) => n + d, save: (n) => save({ rango: [h.r[0], n] }) })];
 }
 `],
 ];

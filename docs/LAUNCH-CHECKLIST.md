@@ -2083,11 +2083,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `alreves9tpaso`, 9/9); prueba `toque9t` (5 toques seguidos en Deporte › Pase de un día y Mercados › precio por libra, y mira la base).
       Un toque en un tope sin cambio (p. ej. «−» en el mínimo) ya no guarda lo mismo otra vez. El catálogo `cms-cadenas-e2.json` se regeneró
       (solo cuentas de llamadas).
-- [ ] **→ 9t** · **Panel: `toque9t` sin correr, y la pareja Desde/Hasta de Ninos:** `toque9t` (5 toques seguidos) se escribió el 21 nov sin
-      servidor local (el puerto era de otro dueño): la corre el CI y, si falla, se mira antes de subir. Y «Desde» y «Hasta» (Ninos › Edades)
-      guardan el par `edad` completo cada uno: dos toques rápidos, uno en cada paso, todavía pueden pisarse (cada paso suma bien sobre sí
-      mismo, no sobre el otro). Lo mismo cualquier par de pasos que guarde el mismo registro entero. (21 nov)
-      **21 nov:** `toque9t` (13 ✓) corrió en verde en el CI, las dos vueltas. Queda la pareja Desde/Hasta.
+- [ ] **→ 9t** · **Panel: `toque9t` sin correr (la pareja Desde/Hasta de Ninos, HECHA 21 nov):** `toque9t` (5 toques seguidos, y ahora también la
+      pareja) se escribió el 21 nov sin servidor local (el puerto era de otro dueño): la corre el CI y, si falla, se mira antes de subir.
+      La pareja «Desde» y «Hasta» (Ninos › Edades, el par `edad` entero) quedó resuelta (21 nov): `pasoSrv` acepta `grupo: { id, campo }`; los
+      pasos de un grupo comparten una sola cola de guardado y cada `save`/`sig` recibe `pedido` (el último valor pedido de cada paso del grupo).
+      De los 55 pasos, solo esa pareja comparte registro; el guardián `pasoQueSuma` falla si dos pasos de una pantalla guardan la misma clave (o
+      un `save` con `...`) sin grupo. Falta solo ver correr `toque9t` en el CI (caso Ninos › Edades, 5|8 y vuelta a 2|5). (21 nov)
+      **21 nov:** los 5 toques seguidos de `toque9t` (13 ✓) ya corrieron en verde en el CI (44856657972); el caso nuevo de la pareja corre en la próxima.
 - [ ] **→ 9t** · **`dlv2f4` en el iPad horizontal (WebKit): no pudo tocar «Aceptar» en el detalle del pedido, dos veces seguidas** (corrida
       programada 44778631725, ancho iPad 4/4; ya había pasado el 19 nov). El botón queda abajo, dentro de la hoja que se desplaza (y=967 de
       834); en Chromium con las mismas medidas, agente y toque del iPad el clic llega (probado el 20 nov), así que es de WebKit o de un momento.
