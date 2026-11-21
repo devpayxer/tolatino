@@ -2345,6 +2345,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       completa (archivo:línea de quien llama a `db().query` / `c.query`) y compararlo con la lista estática de sitios del código; lo que nunca se
       ejecutó sale en una lista (y, donde se pueda, se le pasa un `EXPLAIN` contra la base de pruebas). Lo mismo, del lado de pantallas: las hojas
       de confirmar del Super Admin que ninguna prueba abre. (21 nov)
+      **Hecho en parte (21 nov, Fable, bf3937c):** `pruebas/e2e/sql9u.cjs` pasa por `PREPARE` (analiza y pone tipos, sin ejecutar) las **4857
+      consultas fijas** que se dan a `.query(` contra la base de pruebas; `alreves9usql` 4/4. En su primera pasada cazó otra viva: **«Mi casa»
+      reventaba al guardar otra vez una casa en la misma dirección** (`guardarCasa`: un update con 15 valores que no usaba `$1` ni `$2`),
+      arreglada. **Queda:** (a) las **837 consultas armadas con `${…}`** no entran (hay que prepararlas con sus trozos resueltos, o anotar en el
+      servidor de pruebas las que de verdad se ejecutan y listar las que nunca); (b) una prueba de navegador que edite «Mi casa» en la misma
+      dirección y vea los datos cambiados (hoy solo se comprueba que la consulta prepara); (c) las hojas del Super Admin que ninguna prueba abre.
 - [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
       veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
       `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).
