@@ -2219,6 +2219,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       captura de «Elegir cuál vale» (el servidor de `:3100` es de quien orquesta); Semgrep (no está instalado aquí). El simulador ya ensaya «sin respuesta» en
       la renovación (`···· 0404`/`0408` con `fuera`) y en la devolución de lo que sobró (`TOLATINO_SIM_DEVOLVER=caida`), pero ninguna prueba lo recorre
       todavía (din9t6 usa una pasarela de mentira). (21 nov)
+      **Revisión de quien orquesta (Fable, 21 nov) sobre lo fusionado (66a2be0):** corrió lo de (5): contrato con stripe-mock en local (la misma
+      imagen del CI): OK, con `buscarCobro` de retención, refunds por `payment_intent` y reversals; Semgrep 0 hallazgos; tipos; guardianes;
+      `alreves9tdinero` 155/155; y contra el servidor local con la 0204 aplicada: `din9t6 din9t5 din9t4 din9t3 din9t2 din9t din9k din9n4 renov4d
+      renta4f plan4f pat002 pat003 pro4l avi9l est4d`, 16/16 (844 ✓). Leídos la migración, `renovar-retencion.ts`, `revision-pasarela.ts`, `veredicto`,
+      `elegibles`, la acción del admin y los cambios de `rentas`/`estimados`/`pasarela`. **Anotado para arreglar (no bloquea el sandbox):**
+      (6) una renovación que se cierra por la consulta guarda el pago nuevo sin marca ni últimos 4 de la tarjeta (los de la vieja sirven: misma
+      tarjeta); (7) entre que la tarjeta suelta la retención vieja (168 h) y el «nunca llegó» (24 h después de mandar), si Stripe dice «no hallado»
+      el libro sigue diciendo «retenido» y a nadie se le avisa hasta 20 h después: como ya no se reintenta con esa llave, el «nunca llegó» de una
+      renovación podría darse mucho antes (decisión de plazo: REVISION 9t6); (8) «Elegir cuál vale» y «Preguntar a Stripe ahora» no tenían prueba
+      de navegador: encargada (`din9t6b`).
 - [x] **→ 9t** · **`app8a` inestable en la revisión completa 44902103048 (única inestable de la corrida; «la isla del Repartidor abre»):** la
       prueba leía la pantalla al instante de navegar, antes de que la isla pintara el turno guardado. Ahora espera a que lo pinte (hasta 15 s) y
       comprueba lo mismo. En local: 111 ✓. Si vuelve a salir, ya no es la prueba: mirar el montaje de `/repartidor/sin-conexion`. (21 nov)

@@ -5981,12 +5981,12 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      que el teléfono las guarde para que abran más rápido (quedarían en el disco del aparato, también en uno compartido), dilo.
 - **Quedó anotado en LAUNCH:** las fotos al subir (12 MB) siguen costando ~91 MB cada una; «Descargar mis datos» todavía arma el ZIP en memoria.
 
-## Dinero, sexta tanda: retenciones que se renuevan y «elegir cuál vale» (21 nov · migración 0204) — en la rama de trabajo, falta el CI — cinco cosas para ti
+## Dinero, sexta tanda: retenciones que se renuevan y «elegir cuál vale» (21 nov · migración 0204) — en la rama de trabajo, falta el CI — seis cosas para ti
 - **Qué pasaba:** (1) Cuando la tarjeta iba a soltar el depósito de una renta o lo retenido de un estimado (7 días), el sistema lo volvía a retener; si
   Stripe no contestaba, soltaba el viejo y le decía al negocio (y a la persona) «el banco ya no deja», aunque no fuera cierto y aunque Stripe sí
   hubiera hecho la nueva. (2) Cuando Stripe tenía dos cobros para una sola cosa, uno con otro monto, o Pro cobrado dos veces el mismo mes, se avisaba al
   equipo pero no había cómo cerrarlo desde la app: ese plan, renta o Pro quedaba frenado para siempre.
-- **Ahora (Opus lo escribió; falta la revisión de otro modelo):** (1) la renovación es una intención como los cobros: sin respuesta no se suelta nada ni
+- **Ahora (Opus lo escribió; Fable lo revisó y corrió las pruebas contra el servidor: 16 de 16):** (1) la renovación es una intención como los cobros: sin respuesta no se suelta nada ni
   se avisa a nadie; se reintenta y después se le pregunta a Stripe; el aviso dice el motivo verdadero. (2) En la alerta, **«Elegir cuál vale»**: el
   servidor vuelve a preguntar a Stripe antes de guardar, solo deja elegir lo que Stripe tiene, con el monto correcto, una sola vez; lo que sobra se
   devuelve solo (con su propia llave). Pro cobrado dos veces: se devuelve uno y el mes siguiente se cobra normal.
@@ -6003,5 +6003,8 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   4. *Una devolución de lo que sobró que Stripe rechaza:* queda fallida y llega una alerta para hacerla por otro lado (no se reintenta sola con otra
      llave). Alternativa: reintentar sola una vez.
   5. *Pro cobrado dos veces:* se queda el cobro que ya estaba aplicado y se devuelve el otro (no se ofrece elegir cuál de los dos queda).
+  6. *Cuándo se da por perdida una renovación que Stripe no tiene:* hoy, 24 horas después de mandarla (igual que los cobros). En ese rato la
+     retención vieja ya venció y la app todavía la muestra como retenida, sin avisar a nadie. Alternativa: darla por perdida en cuanto la vieja
+     vence (unas 4 horas), porque ya no se vuelve a mandar con esa llave.
 - **Quedó anotado en LAUNCH:** las devoluciones y reversiones atascadas de antes (`refund_stuck`, `transfer_reversal_stuck`) todavía no se le
   preguntan a Stripe; siguen con «Resolver a mano».
