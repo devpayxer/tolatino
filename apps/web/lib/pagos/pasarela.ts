@@ -97,9 +97,13 @@ export const pasarela = {
       const id = `pi_sim_${idem}`, h = huellaSim(m[1]!, m[2]!);
       const ya = (await db().query<{ id: string; status: string }>(`select id, status from sim_intents where id = $1`, [id])).rows[0];
       if (ya && ya.status !== "requires_action") return ya.status === "failed" ? { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") } : { ok: true, pi: ya.id, estado: "retenido", marca: m[1]!, ultimos4: m[2]!, huella: h };
+      // 9t6 · La renovación fuera de sesión (fuera) ensaya «sin respuesta» como los cobros: ···· 0404 nada sale; ···· 0408 la retención sale y la respuesta
+      // se pierde (el siguiente intento con la misma llave dice «retenido», como Stripe con Idempotency-Key).
+      if (x.fuera && m[2] === SIM_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
       const r = simRechazo(m[2]!), pide = m[2] === SIM_3DS;
-      if (!ya) await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, card) values ($1, $2, $3, $4, $5, $6)`,
-        [id, x.centavos, x.comision, x.destino, r ? "failed" : pide ? "requires_action" : "requires_capture", x.pm]);
+      if (!ya) await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, card, metadata) values ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
+        [id, x.centavos, x.comision, x.destino, r ? "failed" : pide ? "requires_action" : "requires_capture", x.pm, JSON.stringify(x.meta)]);
+      if (x.fuera && m[2] === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
       if (r) return { ok: false, codigo: r, mensaje: traducir(r) };
       if (pide) return { ok: true, pi: id, estado: "accion", secreto: secretoSim(id), marca: m[1]!, ultimos4: m[2]!, huella: h,
         verificar: x.usuario ? await registrarAccion({ pi: id, base: x.idem, idem, quien: x.usuario, kind: "en_sesion", monto: x.centavos, pm: x.pm, secreto: secretoSim(id) }) : undefined };
@@ -198,11 +202,12 @@ export const pasarela = {
     } catch (e) { return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" }; }
   },
   /* 6e · Revertir (parte de) una transferencia: un ajuste después de pagar que no tiene liquidación siguiente donde descontarse. */
-  async revertirTransferencia(transfer: string, centavos: number, idem: string): Promise<{ ok: boolean; id?: string; codigo?: string }> {
+  async revertirTransferencia(transfer: string, centavos: number, idem: string, meta?: Record<string, string>): Promise<{ ok: boolean; id?: string; codigo?: string }> {
     if (transfer.startsWith("tr_sim_")) {
       const id = `trr_sim_${idem}`.slice(0, 200);
+      if (meta?.tl_intencion && process.env.TOLATINO_SIM_DEVOLVER === "caida") return { ok: false, codigo: "red" };
       const r = await tx(async (c) => {
-        const nueva = (await c.query(`insert into sim_transfer_reversals (id, transfer_id, amount_cents) values ($1, $2, $3) on conflict (id) do nothing returning id`, [id, transfer, centavos])).rowCount;
+        const nueva = (await c.query(`insert into sim_transfer_reversals (id, transfer_id, amount_cents, metadata) values ($1, $2, $3, $4::jsonb) on conflict (id) do nothing returning id`, [id, transfer, centavos, JSON.stringify(meta ?? {})])).rowCount;
         if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_transfer_reversals where id = $1`, [id])).rows[0]?.amount_cents === centavos;
         const u = await c.query(`update sim_transfers set reversed_cents = reversed_cents + $2 where id = $1 and reversed_cents + $2 <= amount_cents`, [transfer, centavos]);
         if (!u.rowCount) throw new SinSaldoSim();
@@ -211,7 +216,7 @@ export const pasarela = {
       return r ? { ok: true, id } : { ok: false, codigo: "amount_too_large" };
     }
     try {
-      const r = await stripe<{ id: string }>("POST", `/v1/transfers/${encodeURIComponent(transfer)}/reversals`, { amount: centavos }, { idem });
+      const r = await stripe<{ id: string }>("POST", `/v1/transfers/${encodeURIComponent(transfer)}/reversals`, { amount: centavos, ...(meta ? { metadata: meta } : {}) }, { idem });
       return { ok: true, id: r.id };
     } catch (e) { return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" }; }
   },
@@ -299,12 +304,15 @@ export const pasarela = {
   /* Devolver (total o parcial) lo cobrado. La transferencia al negocio se revierte en proporción y la comisión también. */
   /* 6d · `plataforma`: un cobro que quedó en To'Latino (boletos, transfer_group): no hay transferencia ni comisión de destino que revertir.
      El simulador devuelve una sola vez por llave (sim_refunds), como Stripe con la misma Idempotency-Key: reintentar no devuelve dos veces. */
-  async devolver(pi: string, centavos: number, idem: string, o: { plataforma?: boolean } = {}): Promise<{ ok: boolean; id?: string; codigo?: string }> {
+  /* 9t6 · meta: lo que se manda con la devolución (la de lo que sobró lleva su dato buscable, tl_intencion, para la consulta de buscarDevolucion). */
+  async devolver(pi: string, centavos: number, idem: string, o: { plataforma?: boolean; meta?: Record<string, string> } = {}): Promise<{ ok: boolean; id?: string; codigo?: string }> {
     if (pi.startsWith("pi_sim_")) {
       const id = `re_sim_${idem}`.slice(0, 200);
+      // 9t6 · «Sin respuesta» del sandbox para la devolución de lo que sobró: TOLATINO_SIM_DEVOLVER=caida no devuelve ni contesta.
+      if (o.meta?.tl_intencion && process.env.TOLATINO_SIM_DEVOLVER === "caida") return { ok: false, codigo: "red" };
       // Primero la llave (on conflict: la segunda vez, o dos a la vez, no devuelve otra vez); luego el saldo, con su tope.
       const r = await tx(async (c) => {
-        const nueva = (await c.query(`insert into sim_refunds (id, payment_intent, amount_cents) values ($1, $2, $3) on conflict (id) do nothing returning id`, [id, pi, centavos])).rowCount;
+        const nueva = (await c.query(`insert into sim_refunds (id, payment_intent, amount_cents, metadata) values ($1, $2, $3, $4::jsonb) on conflict (id) do nothing returning id`, [id, pi, centavos, JSON.stringify(o.meta ?? {})])).rowCount;
         if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_refunds where id = $1`, [id])).rows[0]?.amount_cents === centavos;
         const u = await c.query(`update sim_intents set refunded_cents = refunded_cents + $2 where id = $1 and status = 'succeeded' and refunded_cents + $2 <= captured_cents`, [pi, centavos]);
         if (!u.rowCount) throw new SinSaldoSim();
@@ -313,7 +321,8 @@ export const pasarela = {
       return r ? { ok: true, id } : { ok: false, codigo: "amount_too_large" };
     }
     try {
-      const r = await stripe<{ id: string }>("POST", "/v1/refunds", o.plataforma ? { payment_intent: pi, amount: centavos } : { payment_intent: pi, amount: centavos, reverse_transfer: true, refund_application_fee: true }, { idem: `dev-${idem}` });
+      const m = o.meta ? { metadata: o.meta } : {};
+      const r = await stripe<{ id: string }>("POST", "/v1/refunds", o.plataforma ? { payment_intent: pi, amount: centavos, ...m } : { payment_intent: pi, amount: centavos, reverse_transfer: true, refund_application_fee: true, ...m }, { idem: `dev-${idem}` });
       return { ok: true, id: r.id };
     } catch (e) { return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" }; }
   },
@@ -493,14 +502,17 @@ export const pasarela = {
        un incidente de Stripe; el margen para «no llegó» está en lib/consulta-pasarela.ts).
      · Transferencias al organizador: salen del saldo de la plataforma (/v1/transfers) con su transfer_group (evt-<evento>): se listan por ese grupo (no es
        búsqueda eventual) y se filtra por la metadata (tl_intencion, o la que ya llevaban desde 6e: settlement = <liquidación>). ── */
-  async buscarCobro(ref: string): Promise<Consulta> {
+  /* 9t6 · retencion: lo que se busca es una RETENCIÓN (la renovación de un depósito o de lo retenido de un estimado): «requires_capture» es que está hecha
+     (retenida), no «en curso». */
+  async buscarCobro(ref: string, o: { retencion?: boolean } = {}): Promise<Consulta> {
     if (!REF_OK.test(ref)) return { ok: false };
+    const est = o.retencion ? estadoRetencion : estadoCobro;
     if (modoPago() === "simulador") {
       if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
       try {
         const L = (await db().query<{ id: string; status: string; amount_cents: number; card: string }>(
           `select id, status, amount_cents, card from sim_intents where metadata->>'tl_intencion' = $1 order by created_at limit 11`, [ref])).rows;
-        const H = L.map((x): Hallado => { const m = SIM_PM.exec(x.card); return { id: x.id, estado: estadoCobro(x.status), centavos: x.amount_cents, marca: m?.[1] ?? null, ultimos4: m?.[2] ?? null }; });
+        const H = L.map((x): Hallado => { const m = SIM_PM.exec(x.card); return { id: x.id, estado: est(x.status), centavos: x.amount_cents, marca: m?.[1] ?? null, ultimos4: m?.[2] ?? null }; });
         return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
       } catch { return { ok: false }; }
     }
@@ -509,7 +521,7 @@ export const pasarela = {
       const r = await stripe<{ data: { id: string; status: string; amount: number; payment_method?: { card?: { brand?: string; last4?: string } } | string | null }[]; has_more: boolean }>(
         "GET", "/v1/payment_intents/search", { query: `metadata['tl_intencion']:'${ref}'`, limit: 10, expand: ["data.payment_method"] });
       const H = r.data.map((x): Hallado => { const c = typeof x.payment_method === "object" && x.payment_method ? x.payment_method.card : undefined;
-        return { id: x.id, estado: estadoCobro(x.status), centavos: x.amount, marca: c?.brand ?? null, ultimos4: c?.last4 ?? null }; });
+        return { id: x.id, estado: est(x.status), centavos: x.amount, marca: c?.brand ?? null, ultimos4: c?.last4 ?? null }; });
       return H.length > 1 || r.has_more ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
     } catch { return { ok: false }; }
   },
@@ -536,6 +548,40 @@ export const pasarela = {
         if (!p.has_more || !p.data.length) break;
         tras = p.data[p.data.length - 1]!.id;
         if (i === 19) return { ok: false }; // más de 2000 transferencias en un grupo: no se decide con una lista a medias
+      }
+      return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
+    } catch { return { ok: false }; }
+  },
+
+  /* ── 9t6 · La devolución (o la reversión) de lo que sobró, decidida desde una gateway_review (lib/revision-pasarela.ts): pasada la llave se le pregunta a la
+     pasarela por su dato propio (metadata tl_intencion = 'gateway_refunds:<id>'), entre las devoluciones de ESE cobro (/v1/refunds?payment_intent=) o las
+     reversiones de ESA transferencia (/v1/transfers/<tr>/reversals). Listas, no búsqueda eventual. Solo lectura; tres respuestas, nunca un booleano.
+     estado: hecho (succeeded; una reversión que existe) · fallido (failed, canceled) · en_curso (pending, requires_action). ── */
+  async buscarDevolucion(ref: string, medio: "refund" | "reversal", objeto: string): Promise<Consulta> {
+    if (!/^gateway_refunds:\d{1,18}$/.test(ref) || !/^(pi|tr)_[A-Za-z0-9_]{3,200}$/.test(objeto)) return { ok: false };
+    if (modoPago() === "simulador") {
+      if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
+      try {
+        const L = medio === "refund"
+          ? (await db().query<{ id: string; amount_cents: number }>(`select id, amount_cents from sim_refunds where payment_intent = $1 and metadata->>'tl_intencion' = $2 order by created_at limit 11`, [objeto, ref])).rows
+          : (await db().query<{ id: string; amount_cents: number }>(`select id, amount_cents from sim_transfer_reversals where transfer_id = $1 and metadata->>'tl_intencion' = $2 order by created_at limit 11`, [objeto, ref])).rows;
+        const H = L.map((x): Hallado => ({ id: x.id, estado: "hecho", centavos: x.amount_cents }));
+        return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
+      } catch { return { ok: false }; }
+    }
+    if (modoPago() !== "stripe") return { ok: false };
+    try {
+      const H: Hallado[] = [];
+      let tras: string | undefined;
+      for (let i = 0; i < 20; i++) {
+        const p = medio === "refund"
+          ? await stripe<{ data: { id: string; amount: number; status?: string; metadata?: Record<string, string> }[]; has_more: boolean }>("GET", "/v1/refunds", { payment_intent: objeto, limit: 100, ...(tras ? { starting_after: tras } : {}) })
+          : await stripe<{ data: { id: string; amount: number; status?: string; metadata?: Record<string, string> }[]; has_more: boolean }>("GET", `/v1/transfers/${encodeURIComponent(objeto)}/reversals`, { limit: 100, ...(tras ? { starting_after: tras } : {}) });
+        // Una reversión de Stripe existe o no (no tiene estado intermedio): si está, se hizo.
+        for (const x of p.data) if (x.metadata?.tl_intencion === ref) H.push({ id: x.id, estado: medio === "reversal" ? "hecho" : estadoDevolucion(x.status ?? ""), centavos: x.amount });
+        if (!p.has_more || !p.data.length) break;
+        tras = p.data[p.data.length - 1]!.id;
+        if (i === 19) return { ok: false }; // más de 2000: no se decide con una lista a medias
       }
       return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
     } catch { return { ok: false }; }
@@ -592,10 +638,20 @@ export const pasarela = {
    requires_payment_method: el banco dijo que no y nadie la vuelve a confirmar) · en_curso (processing, requires_action: el banco pide verificar, etc.). */
 export type Hallado = { id: string; estado: "hecho" | "fallido" | "en_curso"; centavos: number; marca?: string | null; ultimos4?: string | null };
 export type Consulta = { ok: false } | { ok: true; hallado: Hallado | null } | { ok: true; varios: Hallado[] };
-const REF_OK = /^(subscription_charges|offsession_charges|event_settlements):\d{1,18}$/;
+const REF_OK = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals):\d{1,18}$/;
 function estadoCobro(st: string): Hallado["estado"] {
   if (st === "succeeded") return "hecho";
   if (st === "canceled" || st === "failed" || st === "requires_payment_method") return "fallido";
+  return "en_curso";
+}
+/* 9t6 · Una retención: retenida (requires_capture) es hecha; capturada (succeeded), también (existe y vale); cancelada o rechazada, fallida. */
+function estadoRetencion(st: string): Hallado["estado"] {
+  if (st === "requires_capture" || st === "succeeded") return "hecho";
+  return estadoCobro(st);
+}
+function estadoDevolucion(st: string): Hallado["estado"] {
+  if (st === "succeeded") return "hecho";
+  if (st === "failed" || st === "canceled") return "fallido";
   return "en_curso";
 }
 /* Lo que dice «Stripe» de un día, para la conciliación (lib/conciliacion.ts compara cada objeto con el libro propio). */

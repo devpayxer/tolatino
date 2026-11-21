@@ -19,16 +19,23 @@ import { pasarela, type Consulta, type Hallado } from "./pagos/pasarela";
 export const MARGEN_NO_LLEGO_H = 1;
 /* Cada cuánto el barrido vuelve a preguntar por la misma intención (la acción del Super Admin no espera). */
 export const CADA_MIN = 15;
-export type Tabla = "subscription_charges" | "offsession_charges" | "event_settlements";
+/* 9t6 (0204) · También las renovaciones de una retención (hold_renewals: lo que se busca es una retención, «requires_capture» es hecha) y la devolución de
+   lo que sobró decidida desde una gateway_review (gateway_refunds: entre las devoluciones de ese cobro o las reversiones de esa transferencia). */
+export type Tabla = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "gateway_refunds";
 export type Resultado = "hecho" | "fallido" | "en_curso" | "no_hallado" | "varios" | "monto_distinto" | "sin_respuesta";
 export type Origen = { origen: "barrido" } | { origen: "equipo"; staff: string; alGuardar?: (c: PoolClient) => Promise<unknown> };
-export type Veredicto = { resultado: Resultado; stripe: string | null; centavos: number | null; at: string; noLlego: boolean; marca: string | null; l4: string | null };
+/* 9t6 · revisado: una persona del equipo cerró la gateway_review de esta intención (gateway_reviews, una vez): «vale» (resultado hecho con el que eligió,
+   ya comprobado contra lo que la pasarela dijo al decidir) o «ninguno» (lo hallado se devuelve y la intención falla sin contar como un «no» del banco). */
+export type Veredicto = { resultado: Resultado; stripe: string | null; centavos: number | null; at: string; noLlego: boolean; marca: string | null; l4: string | null; revisado: "vale" | "ninguno" | null };
 type Bi = { es: string; en: string };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 export const refDe = (t: Tabla, id: string) => `${t}:${id}`;
 
-/* Lo que se le pregunta a la pasarela de una intención: su dato buscable, el monto esperado y (transferencias) el grupo. */
-export type Sujeto = { tabla: Tabla; id: string; monto: number; ciudad: string | null; negocio: string | null; grupo?: string };
+/* Lo que se le pregunta a la pasarela de una intención: su dato buscable, el monto esperado y (transferencias) el grupo; (devolución de lo que sobró) el
+   medio y el objeto de Stripe al que se devolvió. */
+export type Sujeto = { tabla: Tabla; id: string; monto: number; ciudad: string | null; negocio: string | null; grupo?: string; medio?: "refund" | "reversal"; objeto?: string };
+/* 9t6 · Lo que la consulta halló (para la decisión del equipo: el servidor la compara con lo que se eligió) y la fila que la anotó. */
+export type Detalle = { hallados: Hallado[]; check: string | null };
 
 /* ¿Toca preguntar? El barrido, una vez cada CADA_MIN por intención (la búsqueda de Stripe tiene su tope); la acción del equipo, siempre. */
 export async function tocaConsultar(t: Tabla, id: string): Promise<boolean> {
@@ -36,25 +43,32 @@ export async function tocaConsultar(t: Tabla, id: string): Promise<boolean> {
 }
 
 /* La consulta: la pasarela primero (sin transacción abierta), después lo que dijo, anotado (con la auditoría de quien la pidió, en la misma transacción). */
-export async function consultar(x: Sujeto, o: Origen): Promise<Resultado> {
+export async function consultar(x: Sujeto, o: Origen, detalle?: Detalle): Promise<Resultado> {
   const ref = refDe(x.tabla, x.id);
-  const r: Consulta = await (x.tabla === "event_settlements" ? pasarela.buscarTransferencia(ref, x.grupo ?? "", x.id) : pasarela.buscarCobro(ref)).catch((): Consulta => ({ ok: false }));
+  const r: Consulta = await (x.tabla === "event_settlements" ? pasarela.buscarTransferencia(ref, x.grupo ?? "", x.id)
+    : x.tabla === "gateway_refunds" ? pasarela.buscarDevolucion(ref, x.medio ?? "refund", x.objeto ?? "")
+    : pasarela.buscarCobro(ref, { retencion: x.tabla === "hold_renewals" })).catch((): Consulta => ({ ok: false }));
   let resultado: Resultado, h: Hallado | null = null, n = 0;
   if (!r.ok) resultado = "sin_respuesta";
   else if ("varios" in r) { resultado = "varios"; n = r.varios.length; }
   else if (!r.hallado) resultado = "no_hallado";
   else { h = r.hallado; n = 1; resultado = h.centavos !== x.monto ? "monto_distinto" : h.estado; }
-  await tx(async (c) => {
-    await c.query(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, staff_id, result, stripe_id, amount_cents, found_n, city_id)
-                   values ($1, $2::bigint, $3, $4, $5::uuid, $6, $7, $8, $9, (select id from cities where id = $10::text))`,
-      [x.tabla, x.id, ref, o.origen, o.origen === "equipo" ? o.staff : null, resultado, h?.id ?? (r.ok && "varios" in r ? r.varios.map((v) => v.id).join(",").slice(0, 200) : null), h?.centavos ?? null, n, x.ciudad]);
+  const check = await tx(async (c) => {
+    const g = (await c.query<{ id: string }>(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, staff_id, result, stripe_id, amount_cents, found_n, city_id)
+                   values ($1, $2::bigint, $3, $4, $5::uuid, $6, $7, $8, $9, (select id from cities where id = $10::text)) returning id::text`,
+      [x.tabla, x.id, ref, o.origen, o.origen === "equipo" ? o.staff : null, resultado, h?.id ?? (r.ok && "varios" in r ? r.varios.map((v) => v.id).join(",").slice(0, 200) : null), h?.centavos ?? null, n, x.ciudad])).rows[0]!;
     if (o.origen === "equipo") await o.alGuardar?.(c);
+    return g.id;
   });
+  if (detalle) { detalle.check = check; detalle.hallados = !r.ok ? [] : "varios" in r ? r.varios : r.hallado ? [r.hallado] : []; }
+  // 9t6 · Lo que no se cierra solo lo cierra una persona del equipo desde la alerta («Elegir cuál vale»: lib/revision-pasarela.ts); el servidor vuelve a
+  // preguntar y devuelve (o suelta, si es una retención; o revierte, si es una transferencia) lo que sobra.
+  const sobra = x.tabla === "hold_renewals" ? { es: "suelta", en: "releases" } : x.tabla === "event_settlements" ? { es: "revierte", en: "reverses" } : { es: "devuelve", en: "refunds" };
   if (resultado === "varios" || resultado === "monto_distinto") await alertaRevisar(x, ref, resultado === "varios"
-    ? { es: `Stripe tiene ${n} objetos para una sola intención (${ref}, ${money(x.monto)}): no se cierra sola. Míralos en Stripe y decide cuál vale; si se cobró de más, devuélvelo.`,
-        en: `Stripe has ${n} objects for a single intent (${ref}, ${money(x.monto)}): it does not close by itself. Check them in Stripe and decide which one counts; if it was overcharged, refund it.` }
-    : { es: `Stripe tiene ${h!.id} por ${money(h!.centavos)} para una intención de ${money(x.monto)} (${ref}): no se cierra sola. Míralo en Stripe.`,
-        en: `Stripe has ${h!.id} for ${money(h!.centavos)} for an intent of ${money(x.monto)} (${ref}): it does not close by itself. Check it in Stripe.` });
+    ? { es: `Stripe tiene ${n} objetos para una sola intención (${ref}, ${money(x.monto)}): no se cierra sola. Elige en la alerta cuál vale; el servidor vuelve a preguntar a Stripe y ${sobra.es} lo que sobra.`,
+        en: `Stripe has ${n} objects for a single intent (${ref}, ${money(x.monto)}): it does not close by itself. Choose in the alert which one counts; the server asks Stripe again and ${sobra.en} the rest.` }
+    : { es: `Stripe tiene ${h!.id} por ${money(h!.centavos)} para una intención de ${money(x.monto)} (${ref}): no se cierra sola. ${x.tabla === "event_settlements" ? "Míralo en Stripe." : `En la alerta, «Ninguno vale» lo ${sobra.es} y la intención queda fallida.`}`,
+        en: `Stripe has ${h!.id} for ${money(h!.centavos)} for an intent of ${money(x.monto)} (${ref}): it does not close by itself. ${x.tabla === "event_settlements" ? "Check it in Stripe." : `In the alert, «None counts» ${sobra.en} it and the intent fails.`}` });
   return resultado;
 }
 export async function alertaRevisar(x: { monto: number; ciudad: string | null; negocio: string | null }, ref: string, detalle: Bi) {
@@ -66,16 +80,25 @@ export async function alertaRevisar(x: { monto: number; ciudad: string | null; n
 export async function veredicto(t: Tabla, id: string, c?: Pick<PoolClient, "query">): Promise<Veredicto | null> {
   // La tabla y el «desde» salen de una lista cerrada escrita aquí, nunca del parámetro tal cual (Semgrep, CI 44889132454: un nombre de tabla que
   // llega de afuera no entra al texto de una consulta, aunque hoy todos los que llaman pasen un valor fijo).
-  const tabla = t === "subscription_charges" ? "subscription_charges" : t === "offsession_charges" ? "offsession_charges" : t === "event_settlements" ? "event_settlements" : null;
+  const tabla = t === "subscription_charges" ? "subscription_charges" : t === "offsession_charges" ? "offsession_charges" : t === "event_settlements" ? "event_settlements" : t === "hold_renewals" ? "hold_renewals" : t === "gateway_refunds" ? "gateway_refunds" : null;
   if (!tabla) throw new Error("veredicto: tabla desconocida");
   const desde = tabla === "event_settlements" ? "greatest(z.sent_at, coalesce(z.key_from, z.paying_at))" : "z.sent_at";
+  // 9t6 · La decisión del equipo (gateway_reviews, una vez) manda sobre la última consulta: ya se comprobó contra lo que la pasarela dijo al decidir.
+  const rv = (await (c ?? db()).query<{ d: "vale" | "ninguno"; stripe: string | null; centavos: number; at: string }>(
+    `select decision as d, stripe_id as stripe, amount_cents as centavos, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from gateway_reviews where subject_kind = $1 and subject_id = $2::bigint`, [tabla, id])).rows[0];
+  // «Ninguno» no es un «no» del banco ni un «no llegó»: un cierre que no lo conoce (revisado) lo deja en camino; los que lo conocen fallan con 'devuelto'.
+  if (rv) return { resultado: rv.d === "vale" ? "hecho" : "no_hallado", stripe: rv.stripe, centavos: rv.centavos, at: rv.at, noLlego: false, marca: null, l4: null, revisado: rv.d };
   const v = (await (c ?? db()).query<Veredicto>(
     `select g.result as resultado, g.stripe_id as stripe, g.amount_cents as centavos, to_char(g.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
             (g.result = 'no_hallado' and z.gateway_ref is not null and z.sent_at is not null and g.at >= ${desde} + make_interval(hours => $3::int)) as "noLlego",
-            null::text as marca, null::text as l4
+            null::text as marca, null::text as l4, null::text as revisado
        from gateway_checks g join ${tabla} z on z.id = g.subject_id
       where g.subject_kind = $1 and g.subject_id = $2::bigint order by g.at desc, g.id desc limit 1`, [tabla, id, HORAS_LLAVE + MARGEN_NO_LLEGO_H])).rows[0];
   return v ?? null;
+}
+/* 9t6 · ¿Una persona del equipo ya decidió esta intención? (Los barridos y «Preguntar a Stripe ahora» no vuelven a preguntar: cierran con la decisión.) */
+export async function revisada(t: "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals", id: string): Promise<boolean> {
+  return !!(await db().query(`select 1 from gateway_reviews where subject_kind = $1 and subject_id = $2::bigint`, [t, id])).rowCount;
 }
 
 /* Cómo lo dice la alerta del Super Admin (y el mensaje de la acción). */
@@ -88,7 +111,7 @@ export const RESULTADO: Record<Resultado, Bi> = {
 };
 
 /* La alerta «sin respuesta» de una intención se cierra sola cuando deja de estar en camino (las alertas las escribe solo lib/dinero-alertas.ts). */
-export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck", sujeto: string, nota: Bi): Promise<boolean> {
+export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck" | "hold_stuck" | "extra_refund_stuck" | "gateway_review", sujeto: string, nota: Bi): Promise<boolean> {
   return (await import("./dinero-alertas")).cerrarAlertaSola(kind, sujeto, nota);
 }
 

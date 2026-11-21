@@ -2178,6 +2178,47 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       de contrato con stripe-mock (`scripts/contrato-stripe/prueba.cjs`) ya llama a `buscarCobro` y `buscarTransferencia`, pero no se corrió aquí (no hay
       stripe-mock en este entorno): la corre el CI; si su versión no trae `/v1/payment_intents/search`, falla ahí. (6) `din9t5` corrió aquí contra una base
       aislada; `plan4f`, `renta4f`, `pat002` y `pat003` no (las corre el CI). (21 nov)
+      **Hecho (1), (2) y (3) (21 nov, rama 9t6; migración 0204):** (1) renovar una retención es una intención (`hold_renewals`, una por retención vieja;
+      `lib/renovar-retencion.ts`, la única forma: `rentas.ts › barrerRentas` paso 4 y `estimados.ts › renovarRetenciones` la llaman). Se anota que se manda y
+      el dato buscable (`hold_renewals:<id>` → `tl_intencion`) en una sentencia antes de la pasarela. Sin respuesta: no se suelta la vieja ni se avisa; la
+      misma llave solo mientras Stripe la recuerda (23 h desde que se mandó) **y** la vieja vive (`old_held_at` + 168 h). Verificado contra el código: se
+      renueva a las 164 h, así que la ventana real es de **~4 h**, no `held_at + 164 + 23` (la vieja muere antes de que Stripe olvide la llave). Pasado
+      eso, `consultar` (`buscarCobro(ref, { retencion: true })`: `requires_capture` es «hecho») y el cierre con su veredicto, una vez: retenida → la nueva
+      anotada y DESPUÉS se suelta la vieja; el banco dijo que no → se suelta y «el banco ya no deja»; nunca llegó (24 h) → se suelta y «no se pudo renovar»
+      (plantilla nueva `hold_no_renovada`, sin «tu banco»); en curso / sin respuesta / no hallado antes del margen → sigue y alerta `hold_stuck` (una vez,
+      con «Preguntar a Stripe ahora»). Si la vieja dejó de estar retenida (la renta volvió), la nueva que haya salido se suelta (`dropped`;
+      `barrerRenovaciones` en el barrido central). (2)(3) «Elegir cuál vale» en `gateway_review` (`lib/revision-pasarela.ts › decidirRevision`, tx:aprobar,
+      con nota): el servidor vuelve a preguntar a la pasarela y decide con ESA respuesta (el elegido entre lo hallado, hecho y con el monto; nada en curso);
+      una vez por intención (`gateway_reviews`, solo inserción) con la auditoría, la nota de la alerta y la devolución de lo que sobra anotadas en la misma
+      transacción; la intención se cierra por el cierre de su flujo, que lee la decisión en `veredicto()` («ninguno» → `devuelto`, sin contar como un «no»
+      del banco; Pro cuenta `devuelto` para la llave siguiente `-r<n>`). Lo que sobra: `gateway_refunds` (refund o reversal; una viva por objeto de Stripe),
+      con su llave y su `tl_intencion`; sin respuesta sigue en camino (barrido `devolucionesSobra`), pasada la llave se pregunta (`buscarDevolucion`: refunds
+      de ese PaymentIntent o reversals de esa transferencia, por su metadata); un «no» alerta `extra_refund_stuck`. Una retención que sobra se suelta. Pro
+      cobrado dos veces: solo «ninguno» (se devuelve; el período sigue pagado con el otro; el siguiente se cobra normal). La conciliación cuenta lo devuelto
+      de más (`gateway_refunds`) en el libro. Guardianes `retencionRenovadaComoIntencion` y `revisionPreguntaOtraVez` (y lo nuevo de `preguntarALaPasarela`,
+      `devolucionEnDosPasos`, `pagoDespuesDelEvento`, `contratoCubreLaPasarela`); al revés `alreves9tdinero` 155/155; prueba `din9t6` (base aislada + pasarela
+      de mentira, 44 comprobaciones; 4 defectos inyectados la ponen roja). (4) y (5) siguen abajo; (6) `din9t5`, `din9t4`, `din9t3`, `din9t2`, `din9t`
+      corrieron aquí contra una base aislada.
+- [ ] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t6 (21 nov):** (1) **`refund_stuck` y `transfer_reversal_stuck` todavía no se le preguntan
+      a Stripe** (punto (4) de arriba): siguen con «Resolver a mano». Lo que falta, con la pieza que ya existe: (a) `refunds` y `event_settlement_reversals`
+      con `sent_at` y `gateway_ref` (`refunds:<id>`, `event_settlement_reversals:<id>`) anotados en una sentencia antes de `pasarela.devolver` /
+      `revertirTransferencia` en `cobros.ts › ejecutarDevolucionPago`, `boletos-despues.ts › ejecutarDevolucion`, `patrocinio.ts › devolverPatrocinio` (su
+      tabla) y `evt-liquidacion.ts › ejecutarReversion`, mandando `meta: { tl_intencion }` (la pasarela ya lo acepta desde 9t6); (b) `gateway_checks.subject_kind`
+      y `REF` de `buscarDevolucion` con esas tablas, y `veredicto` con ellas en su lista cerrada; (c) el barrido de cada una, pasadas 23 h: `consultar` y el
+      cierre por su cierre de siempre (`cerrarDevolucionPago`, el de boletos, el de la reversión) — hecho → hecha una vez; fallido → fallida (lo de un «no»);
+      nunca llegó (24 h, con el dato) → fallida «nunca llegó» y otra con otra llave **solo** si lo debido sigue igual (en boletos y patrocinios la base fija
+      el monto); varios u otro monto → `gateway_review` (y entonces «Elegir cuál vale» también para devoluciones); (d) «Resolver a mano» sigue, pero antes
+      también pregunta a la pasarela (si Stripe dice que salió, no deja). Una devolución anotada antes de 9t6 (sin el dato) nunca se da por «no llegó».
+      (2) **`extra_refund_stuck` con un «no» de Stripe:** solo se marca «Resuelta» con la nota (no hay `manual_at` ni «Resolver a mano» para
+      `gateway_refunds`). (3) **Transferencias en `gateway_review`:** con otro monto no hay acción (la liquidación sigue en 'paying'); «ninguno» no se ofrece
+      (REVISION 9t6 (3)). Tampoco hay decisión para una `gateway_review` de una devolución de lo que sobró (varios para una sola llave). (4) La pantalla de
+      «Elegir cuál vale» muestra los ids de la última consulta que contestó; con «varios» no sabe los montos de cada uno (los comprueba el servidor al
+      guardar). (5) **No corrieron aquí:** la prueba de contrato con stripe-mock (`buscarCobro(…, { retencion })`, `buscarDevolucion` refund y reversal: la
+      corre el CI; si su stripe-mock no trae `GET /v1/refunds?payment_intent=` con metadata o `/v1/transfers/{id}/reversals`, falla ahí); las de punta a punta
+      con el servidor (`renov4d` —la renovación de estimados por el panel, ahora por `renovarRetencion`—, `renta4f`, `plan4f`, `pat002`, `pat003`) y la
+      captura de «Elegir cuál vale» (el servidor de `:3100` es de quien orquesta); Semgrep (no está instalado aquí). El simulador ya ensaya «sin respuesta» en
+      la renovación (`···· 0404`/`0408` con `fuera`) y en la devolución de lo que sobró (`TOLATINO_SIM_DEVOLVER=caida`), pero ninguna prueba lo recorre
+      todavía (din9t6 usa una pasarela de mentira). (21 nov)
 - [x] **→ 9t** · **`app8a` inestable en la revisión completa 44902103048 (única inestable de la corrida; «la isla del Repartidor abre»):** la
       prueba leía la pantalla al instante de navegar, antes de que la isla pintara el turno guardado. Ahora espera a que lo pinte (hasta 15 s) y
       comprueba lo mismo. En local: 111 ✓. Si vuelve a salir, ya no es la prueba: mirar el montaje de `/repartidor/sin-conexion`. (21 nov)

@@ -55,6 +55,10 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   // Stripe-Account) y las transferencias por su transfer_group. Tres respuestas, nunca un booleano.
   const bc = await pasarela.buscarCobro('subscription_charges:1'); ok(bc.ok === true && ('hallado' in bc || 'varios' in bc), 'consulta: payment_intents/search por metadata tl_intencion (con expand de la tarjeta)');
   const bt = await pasarela.buscarTransferencia('event_settlements:1', 'evt-2', '1'); ok(bt.ok === true && ('hallado' in bt || 'varios' in bt), 'consulta: transfers por transfer_group (y su metadata)');
+  // 9t6 · La renovación de una retención (requires_capture es «hecha») y la devolución (o la reversión) de lo que Stripe hizo de más, por su metadata.
+  const br = await pasarela.buscarCobro('hold_renewals:1', { retencion: true }); ok(br.ok === true && ('hallado' in br || 'varios' in br), 'consulta: la retención renovada por su metadata tl_intencion');
+  const bd = await pasarela.buscarDevolucion('gateway_refunds:1', 'refund', 'pi_123'); ok(bd.ok === true && ('hallado' in bd || 'varios' in bd), 'consulta: refunds de un payment_intent (y su metadata)');
+  const bv = await pasarela.buscarDevolucion('gateway_refunds:1', 'reversal', 'tr_123'); ok(bv.ok === true && ('hallado' in bv || 'varios' in bv), 'consulta: reversals de una transferencia (y su metadata)');
   // 9k · La huella de una tarjeta guardada (card.fingerprint): payment_methods/{id}.
   const hu = await pasarela.huella('pm_card_visa_123'); ok(hu === null || typeof hu === 'string', 'huella: payment_methods/{id} (card.fingerprint)');
   // 9k · La conciliación del día: payment_intents, refunds, transfers y disputes con created[gte|lt] y paginación, y payouts de una cuenta conectada.

@@ -83,13 +83,15 @@ const P = {
 const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
   './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined } });
 Object.assign(K, cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas }));
-const PL = {}, RE = {}, PA = {};
+const PL = {}, RE = {}, PA = {}, RR = {};
 Object.assign(CF, cargar('apps/web/lib/cobro-fuera.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas, './planes': PL, './rentas': RE, './patrocinio': PA,
   './patrocinio-evento': {}, './consulta-pasarela': K }));
 Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: () => new Date().toISOString().slice(0, 10) },
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './avisos': avisos }));
 Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { diasEspeciales: async () => [], rangosDia: () => [] }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P },
-  './cobro-fuera': CF, './avisos': avisos }));
+  './cobro-fuera': CF, './avisos': avisos, './renovar-retencion': RR, './consulta-pasarela': K }));
+// 9t6 · barrerRentas renueva el depósito por lib/renovar-retencion.ts (y pregunta con lib/consulta-pasarela.ts): los módulos reales.
+Object.assign(RR, cargar('apps/web/lib/renovar-retencion.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './consulta-pasarela': K, './dinero-alertas': alertas, './rentas': RE, './estimados': {} }));
 Object.assign(PA, cargar('apps/web/lib/patrocinio.ts', { './config': { valores: async () => ({ patrocinio_semana_cents: 1500, patrocinio_mes_cents: 4500, patrocinio_puestos: 6, patrocinio_dias_adelante: 30 }) },
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos, './cobro-fuera': CF }));
 Object.assign(SU, cargar('apps/web/lib/suscripcion.ts', { './db': D, './pagos/pasarela': { pasarela: P, registrarAccion: async () => undefined }, './plan': { PRECIO_PRO: 30 }, './avisos': avisos,

@@ -5980,3 +5980,28 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   2. *Las fotos privadas no se guardan en el teléfono* (cada vez que se abren, se bajan otra vez). Es lo más privado, y lo dejé así. Si prefieres
      que el teléfono las guarde para que abran más rápido (quedarían en el disco del aparato, también en uno compartido), dilo.
 - **Quedó anotado en LAUNCH:** las fotos al subir (12 MB) siguen costando ~91 MB cada una; «Descargar mis datos» todavía arma el ZIP en memoria.
+
+## Dinero, sexta tanda: retenciones que se renuevan y «elegir cuál vale» (21 nov · migración 0204) — en la rama de trabajo, falta el CI — cinco cosas para ti
+- **Qué pasaba:** (1) Cuando la tarjeta iba a soltar el depósito de una renta o lo retenido de un estimado (7 días), el sistema lo volvía a retener; si
+  Stripe no contestaba, soltaba el viejo y le decía al negocio (y a la persona) «el banco ya no deja», aunque no fuera cierto y aunque Stripe sí
+  hubiera hecho la nueva. (2) Cuando Stripe tenía dos cobros para una sola cosa, uno con otro monto, o Pro cobrado dos veces el mismo mes, se avisaba al
+  equipo pero no había cómo cerrarlo desde la app: ese plan, renta o Pro quedaba frenado para siempre.
+- **Ahora (Opus lo escribió; falta la revisión de otro modelo):** (1) la renovación es una intención como los cobros: sin respuesta no se suelta nada ni
+  se avisa a nadie; se reintenta y después se le pregunta a Stripe; el aviso dice el motivo verdadero. (2) En la alerta, **«Elegir cuál vale»**: el
+  servidor vuelve a preguntar a Stripe antes de guardar, solo deja elegir lo que Stripe tiene, con el monto correcto, una sola vez; lo que sobra se
+  devuelve solo (con su propia llave). Pro cobrado dos veces: se devuelve uno y el mes siguiente se cobra normal.
+- **Qué mirar (sandbox, cuando suba):** Super Admin › Planes › Ingresos › Alertas: una alerta «Lo que dijo Stripe no se cierra solo» muestra «Elegir
+  cuál vale» con los cobros de Stripe y «Ninguno». (En el sandbox se fabrica con una prueba; no aparece sola.)
+- **Decide tú (dejé lo más seguro; todo se cambia):**
+  1. *Cuánto se reintenta la renovación con la misma llave:* mientras Stripe la recuerde **y** la retención vieja siga viva. Como se renueva a las
+     164 h y la vieja vive 168 h, son **unas 4 horas**, no 23. Alternativa: renovar antes (p. ej. a las 144 h) para tener más margen.
+  2. *Si la renovación nunca llegó a Stripe:* no se vuelve a intentar con otra llave; se suelta la vieja y se avisa «no se pudo renovar» (el monto se
+     paga en el negocio). Alternativa: intentarlo otra vez con otra llave (la vieja ya murió; sería una retención nueva).
+  3. *«Ninguno vale»:* la intención queda fallida **sin contar como un «no» del banco** y el objeto se vuelve a cobrar con otra llave (el plan el mismo
+     mes, la renta al tocar «La recogió», Pro el período que corresponde). En una **transferencia al organizador** no se ofrece «ninguno» (solo elegir
+     la que vale y revertir las demás). Alternativa: permitir «ninguno» también ahí y mandarla otra vez con otra llave.
+  4. *Una devolución de lo que sobró que Stripe rechaza:* queda fallida y llega una alerta para hacerla por otro lado (no se reintenta sola con otra
+     llave). Alternativa: reintentar sola una vez.
+  5. *Pro cobrado dos veces:* se queda el cobro que ya estaba aplicado y se devuelve el otro (no se ofrece elegir cuál de los dos queda).
+- **Quedó anotado en LAUNCH:** las devoluciones y reversiones atascadas de antes (`refund_stuck`, `transfer_reversal_stuck`) todavía no se le
+  preguntan a Stripe; siguen con «Resolver a mano».

@@ -181,6 +181,10 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["cobrosPro", async () => (await import("./suscripcion")).barrerCobrosPro()],
         // 9t4 · Los demás cobros con tarjeta guardada (planes del Hogar, rentas, renovaciones de patrocinios) que quedaron en camino, igual.
         ["cobrosFuera", async () => (await import("./cobro-fuera")).barrerCobrosFuera()],
+        // 9t6 · Las renovaciones de retenciones cuya vieja ya no está retenida (la renta o la cita se cerraron mientras iban en camino; las demás las recorre
+        // el barrido de su flujo) y las devoluciones de lo que Stripe hizo de más (decididas en una gateway_review): con su llave y, después, preguntando.
+        ["renovaciones", async () => (await import("./renovar-retencion")).barrerRenovaciones()],
+        ["devolucionesSobra", async () => (await import("./revision-pasarela")).barrerDevolucionesSobra()],
         // 9l · Avisos y canales: los reintentos del SMS (el único camino) y su retención, la retención del correo a Soporte, pedido tarde, «ya publicó», «Avísame
         // cuando haya», la prueba de Pro (día 20 y último, 10 AM) y el resumen de la semana (lunes, 9 AM). Cada aviso una vez (notif_once).
         ["canales9l", async () => (await import("./canales/barrido")).barrerCanales9l()],

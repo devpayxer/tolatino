@@ -38,7 +38,7 @@ const casos = [
   ['devolucionUnaVez', D, "`update refunds set status = 'done', stripe_refund_id = coalesce(stripe_refund_id, $2), done_at = now(), last_error = null where id = $1::bigint and status = 'pending'`", "`update refunds set status = 'done', stripe_refund_id = coalesce(stripe_refund_id, $2), done_at = now(), last_error = null where id = $1::bigint`"],
   ['devolucionUnaVez', D, "const x = await pasarela.devolver(r.pi, r.amt, r.idem,", "const x = await pasarela.devolver(r.pi, r.amt, `${r.idem}-${Date.now()}`,"],
   ['devolucionUnaVez', D, "devuelve: Math.max(0, b.precio - b.cargo)", "devuelve: Math.max(0, b.precio)"],
-  ['devolucionUnaVez', PA, "`insert into sim_refunds (id, payment_intent, amount_cents) values ($1, $2, $3) on conflict (id) do nothing returning id`", "`insert into sim_refunds (id, payment_intent, amount_cents) values ($1, $2, $3) returning id`"],
+  ['devolucionUnaVez', PA, "`insert into sim_refunds (id, payment_intent, amount_cents, metadata) values ($1, $2, $3, $4::jsonb) on conflict (id) do nothing returning id`", "`insert into sim_refunds (id, payment_intent, amount_cents, metadata) values ($1, $2, $3, $4::jsonb) returning id`"],
   ['devolucionUnaVez', BA, '["bolDevoluciones", () => desp.barrerDevolucionesBoletos()]', '["bolDevoluciones", async () => 0]'],
   ['devolucionUnaVez', D, "(${EN_PIE}) and d.starts_at - make_interval(hours => ${cfgSql(\"bol_cancelar_h\")}) > now() as abierto, p.id::text as pid", "(${EN_PIE}) and d.starts_at - interval '24 hours' > now() as abierto, p.id::text as pid"],
   // devolverCoincide (ampliado)

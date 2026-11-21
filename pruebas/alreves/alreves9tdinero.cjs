@@ -29,7 +29,51 @@ const PG = 'preguntarALaPasarela', KP = 'apps/web/lib/consulta-pasarela.ts', PSA
 const MG3 = 'packages/db/migrations/0203_preguntar_a_la_pasarela.sql';
 // 9t5 (CI de 9t4, plan4f): yaCobradoNoSeQuedaMudo.
 const YM = 'yaCobradoNoSeQuedaMudo';
+// 9t6 (21 nov): retencionRenovadaComoIntencion y revisionPreguntaOtraVez; su prueba con la base es pruebas/e2e/din9t6.cjs.
+const RT6 = 'retencionRenovadaComoIntencion', RV6 = 'revisionPreguntaOtraVez', RRF = 'apps/web/lib/renovar-retencion.ts', RVF = 'apps/web/lib/revision-pasarela.ts', ESF = 'apps/web/lib/estimados.ts';
+const MG4 = 'packages/db/migrations/0204_retenciones_y_revision.sql';
+const casos6 = [
+  // (1) Como estaba: el estimado vuelve a retener y soltar por su cuenta (sin respuesta = «el banco no dejó»).
+  [RT6, ESF, "    if (x) await RR.renovarRetencion(x).catch(", "    if (x) await pasarela.retener({ centavos: 1, comision: 0, destino: \"a\", pm: \"p\", idem: `renov-${p.id}`, meta: {}, fuera: true });\n    if (x) await RR.renovarRetencion(x).catch("],
+  [RT6, REN, "    if (x) await RR.renovarRetencion(x).catch(", "    if (x) await pasarela.liberar(x.pi);\n    if (x) await RR.renovarRetencion(x).catch("],
+  // (2) Sin el dato buscable, o anotado DESPUÉS de mandar.
+  [RT6, RRF, ", ...(m.gref ? { tl_intencion: m.gref } : {}) }, fuera: true })", " }, fuera: true })"],
+  // (3) Sin respuesta como «no»: suelta la vieja y avisa; o reintenta con la llave vencida o con la vieja ya muerta.
+  [RT6, RRF, "      return \"sigue\";\n    }", "      return cerrarSin(x, f.id, \"banco\", false);\n    }"],
+  [RT6, RRF, "  if (!f.enviada || (f.llave && f.viva)) {", "  if (true) {"],
+  [RT6, RRF, "export const HORAS_VIVE = 168;", "export const HORAS_VIVE = 192;"],
+  // (4) «Nunca llegó» sin la consulta; lo que no cierra no avisa al equipo.
+  [RT6, RRF, "  else if (v?.noLlego) quedo = await cerrarSin(x, id, \"nunca_llego\", true);", "  else if (v?.resultado === \"no_hallado\") quedo = await cerrarSin(x, id, \"nunca_llego\", true);"],
+  [RT6, RRF, "  if (quedo === \"sigue\") await alertaSigue(x, h);\n", ""],
+  // (5) La vieja se suelta en Stripe antes de anotar la nueva.
+  [RT6, RRF, "  const h = await tx(async (c) => {\n    const f = (await c.query<{ ciudad: string | null }>(`select city_id as ciudad from hold_renewals", "  await pasarela.liberar(x.pi);\n  const h = await tx(async (c) => {\n    const f = (await c.query<{ ciudad: string | null }>(`select city_id as ciudad from hold_renewals"],
+  // El aviso dice «tu banco» siempre; la base deja dos renovaciones por retención.
+  [RT6, ESF, 'm === "banco" ? "hold_fallo" : "hold_no_renovada"', '"hold_fallo"'],
+  [RT6, MG4, "  payment_id      bigint not null unique references payments (id),", "  payment_id      bigint not null references payments (id),"],
+  // revisionPreguntaOtraVez · (1) decide con lo que dice la pantalla (sin volver a preguntar), o deja valer uno que no está, de otro monto o en curso.
+  [RV6, RVF, "  const resultado = await K.consultar({ tabla: t, id, monto: x.monto, ciudad: x.ciudad, negocio: x.negocio, grupo: x.grupo }, { origen: \"equipo\", staff: s.id }, det);", "  const resultado = \"varios\" as import(\"./consulta-pasarela\").Resultado; det.hallados = [{ id: eleccion, estado: \"hecho\", centavos: x.monto }];"],
+  [RV6, RVF, "  if (eleccion === \"ninguno\" ? !E.ninguno : !E.vale.includes(eleccion)) {", "  if (eleccion === \"ninguno\" && !E.ninguno) {"],
+  [RV6, DA, "h.estado === \"hecho\" && h.centavos === x.monto", "h.estado === \"hecho\""],
+  [RV6, RVF, "  if (E.enCurso) return { ok: false, msg: \"Stripe todavía tiene uno en curso: espera a que termine y vuelve a intentarlo.\" };\n", ""],
+  // (2) Dos personas a la vez: dos decisiones; lo que se devuelve, a la pasarela dentro de la transacción; sin auditoría.
+  [RV6, RVF, "       on conflict (subject_kind, subject_id) do nothing returning id::text`,", "       returning id::text`,"],
+  [RV6, RVF, "      if (g) devs.push({ id: g.id, stripe: h.id, centavos: h.centavos });", "      if (g) { devs.push({ id: g.id, stripe: h.id, centavos: h.centavos }); await pasarela.devolver(h.id, h.centavos, `gwr-${h.id}`); }"],
+  [RV6, RVF, "    await auditar(c, { actor: s.id, action: \"dinero.alerta.decidir\",", "    void ({ actor: s.id, action: \"dinero.alerta.decidir\","],
+  // (3) «Ninguno» como un «no» del banco; el siguiente cobro de Pro con la misma llave.
+  [RV6, SU, "set status = 'failed', last_error = 'devuelto' where id = $1::bigint and status = 'pending'`, [a.id])).rowCount)\n      return", "set status = 'failed', last_error = 'consulta_fallido' where id = $1::bigint and status = 'pending'`, [a.id])).rowCount)\n      return"],
+  [RV6, SU, "last_error in ('nunca_llego', 'devuelto')", "last_error = 'nunca_llego'"],
+  [RV6, KP, "  if (rv) return {", "  if (rv && false) return {"],
+  // (4) Lo que sobra: sin respuesta como rechazo; pasada la llave, otra vez a Stripe con ella.
+  [RV6, RVF, "    await db().query(`update gateway_refunds set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [id, codigo]);\n    return \"pending\";", "    return fallar(g, codigo, false);"],
+  [RV6, RVF, "  if (g.enviada && g.vieja) return (await resolverDevolucionSobra(id, { origen: \"barrido\" })).st;\n", ""],
+  // (5) Sin el permiso; el botón siempre; «Resuelta» deja la intención en camino; la base deja cambiar la decisión.
+  [RV6, ACO, "  if (!s || !s.puede(\"tx\", \"aprobar\")) return { ok: false, mensaje: \"Tu rol no decide sobre dinero.\" };\n  const r = await (await import(\"@/lib/revision-pasarela\")).decidirRevision(", "  if (!s) return { ok: false, mensaje: \"Entra otra vez.\" };\n  const r = await (await import(\"@/lib/revision-pasarela\")).decidirRevision("],
+  [RV6, PLT, '...(a.revisar ? [{ l: E("Elegir cuál vale", "Choose which counts")', '...(true ? [{ l: E("Elegir cuál vale", "Choose which counts")'],
+  [RV6, DA, "  if (accion === \"resuelta\" && a.kind === \"gateway_review\" && (await opcionesDeAlertas([{ id, sujeto: a.sujeto }])).has(id))", "  if (false)"],
+  [RV6, MG4, "create trigger gateway_reviews_no_cambia before update or delete on gateway_reviews for each row execute function dinero_solo_insercion();\n", ""],
+];
 const casos = [
+  ...casos6,
   // 9t2 · Soporte: el intento que no cabe queda en el libro como fallido (sop7b lo vio rojo cuando se deshacía la transacción entera).
   [IF, SE, "        await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where id = $1::bigint and status = 'pending'`, [fx.id, a.msg.es]);\n        return a.msg.es;", "        return a.msg.es;"],
   [IF, SE, '        await c.query("rollback to savepoint anota");\n', ""],
@@ -193,7 +237,7 @@ const casos = [
   [PG, KP, '  if (!tabla) throw new Error("veredicto: tabla desconocida");\n', ""],
   // (3) La consulta fuera de su lugar (dentro de un cierre), sin anotarse, o «no hallado» cuando Stripe no contestó; varios que se cierran solos.
   [PG, SU, "async function terminarViejo(s: Fila, a: Intencion): Promise<ResCobro> {\n", "async function terminarViejo(s: Fila, a: Intencion): Promise<ResCobro> {\n  await pasarela.buscarCobro(`subscription_charges:${a.id}`);\n"],
-  [PG, KP, "    await c.query(`insert into gateway_checks (", "    await c.query(`insert into gateway_checks_x ("],
+  [PG, KP, "    const g = (await c.query<{ id: string }>(`insert into gateway_checks (", "    const g = (await c.query<{ id: string }>(`insert into gateway_checks_x ("],
   [PG, PSA, "    } catch { return { ok: false }; }\n  },\n  async buscarTransferencia(", "    } catch { return { ok: true, hallado: null }; }\n  },\n  async buscarTransferencia("],
   [PG, KP, 'if (resultado === "varios" || resultado === "monto_distinto") await alertaRevisar(', 'if (false) await alertaRevisar('],
   // (4) Lo que encontró la consulta se cierra por fuera del cierre del flujo (sin el período, sin el libro, sin el aviso).
