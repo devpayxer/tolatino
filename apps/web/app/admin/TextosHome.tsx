@@ -32,7 +32,7 @@ export function TextosHome({ d, ciudad, l, editar }: { d: DatosHome; ciudad: Ciu
 
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · HOME POR CIUDAD", "COPY AND PAGES · CITY HOME"), t: conf.titulo, s: `${ciudad.name}, ${ciudad.state}`, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · HOME POR CIUDAD", "COPY AND PAGES · CITY HOME"), t: E("Textos y páginas", "Copy and pages"), s: `${ciudad.name}, ${ciudad.state}`, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -58,11 +58,11 @@ export function TextosHome({ d, ciudad, l, editar }: { d: DatosHome; ciudad: Ciu
         acts: editar && MOVIBLES.has(b.key) ? [{ l: E("Subir", "Up"), v: "secondary", onClick: () => mover(b.key, -1) }, { l: E("Bajar", "Down"), v: "secondary", onClick: () => mover(b.key, 1) }] : undefined, chev: false })) }]} />
       {editar ? <PanelBloques bloques={[{ type: "acts", items: [{ l: E("Guardar el Inicio de la ciudad", "Save the city Home"), v: "action", off: !cambios, onClick: () => setConf({ titulo: E("Guardar el Inicio de la ciudad", "Save the city Home"), cta: E("Guardar", "Save"),
         sub: E("Lo ve el vecino al momento. Queda en el historial con tu motivo.", "Neighbors see it right away. It goes in the history with your reason."), plantillas: [E("Menos ruido en el Inicio.", "Less noise on the Home."), E("Aviso de la ciudad.", "City notice.")],
-        hacer: (m) => homeGuardar(ciudad.id, est.current.avEs, est.current.avEn, est.current.bl, m) }) }] }]} /> : null}
+        nota: "interna", hacer: (m) => homeGuardar(ciudad.id, est.current.avEs, est.current.avEn, est.current.bl, m) }) }] }]} /> : null}
       <A.AdminList label={`${d.anuncios.length} ${E("ANUNCIOS", "ANNOUNCEMENTS")} · ${d.vivos} ${E("VIVOS", "LIVE")}`} rows={d.anuncios.map((a) => ({ icon: a.estado === "vivo" ? "bell" : "calendar", title: a[l], tag: ESTADO[a.estado], tone: TONO[a.estado],
         sub: `${cuando(a.from_at)} → ${cuando(a.to_at)} · ${a.audience === "todos" ? E("todos", "everyone") : a.audience === "negocios" ? E("negocios (Hoy del panel)", "businesses (dashboard Today)") : E("vecinos con cuenta", "neighbors with an account")}${a.quien ? ` · ${a.quien}` : ""}${a.retired_reason ? ` · ${E("retirado", "retired")}: ${a.retired_reason}` : ""}`,
         actions: editar && (a.estado === "vivo" || a.estado === "proximo") ? [{ label: E("Retirar", "Retire"), variant: "secondary", onClick: () => setConf({ titulo: E("Retirar el anuncio", "Retire the announcement"), cta: E("Retirar", "Retire"), peligro: true,
-          sub: E("Deja de salir en el Inicio. Nada se borra: queda en el historial.", "It stops showing on the Home. Nothing is deleted: it stays in the history."), plantillas: [E("Ya no aplica.", "No longer applies."), E("Tenía un error.", "It had an error.")], hacer: (m) => anuncioRetirar(a.id, m) }) }] : [] }))} />
+          sub: E("Deja de salir en el Inicio. Nada se borra: queda en el historial.", "It stops showing on the Home. Nothing is deleted: it stays in the history."), plantillas: [E("Ya no aplica.", "No longer applies."), E("Tenía un error.", "It had an error.")], nota: "interna", hacer: (m) => anuncioRetirar(a.id, m) }) }] : [] }))} />
       {editar ? <PanelBloques bloques={[
         { type: "group", k: E(`NUEVO ANUNCIO · ${ciudad.name.toUpperCase()}`, `NEW ANNOUNCEMENT · ${ciudad.name.toUpperCase()}`) },
         { type: "field", k: E("TEXTO EN ESPAÑOL", "SPANISH TEXT"), val: anEs, onChange: setAnEs, max: 160, count: `${anEs.length}/160` },
@@ -74,7 +74,7 @@ export function TextosHome({ d, ciudad, l, editar }: { d: DatosHome; ciudad: Ciu
         { type: "field", k: E("HASTA (31 DÍAS COMO MÁXIMO)", "UNTIL (31 DAYS AT MOST)"), val: hasta, onChange: setHasta, ph: "2026-11-21 08:00", max: 16 },
         { type: "acts", items: [{ l: E("Crear el anuncio", "Create the announcement"), v: "action", off: !(anEs.trim() && anEn.trim() && desde.trim() && hasta.trim()), onClick: () => setConf({ titulo: E("Crear el anuncio", "Create the announcement"), cta: E("Crear", "Create"),
           sub: E("Sale en el Inicio de la ciudad dentro de sus fechas. No se edita: se retira y se crea otro.", "It shows on the city Home within its dates. It is not edited: retire it and create another."), plantillas: [E("Evento del barrio.", "Neighborhood event."), E("Aviso del equipo.", "Team notice.")],
-          hacer: (m) => anuncioCrear(ciudad.id, est.current.aud, est.current.anEs, est.current.anEn, est.current.desde, est.current.hasta, m) }) }] },
+          nota: "interna", hacer: (m) => anuncioCrear(ciudad.id, est.current.aud, est.current.anEs, est.current.anEn, est.current.desde, est.current.hasta, m) }) }] },
       ]} /> : null}
       <PanelBloques bloques={[{ type: "note", tone: "info", icon: "info", t: E("Un bloque apagado ni se consulta. Sin cambios, el Inicio sale como siempre. Los anuncios salen arriba del Inicio mientras están dentro de sus fechas; vencen solos y nada se borra.", "A block that is off is not even queried. Without changes, the Home looks as always. Announcements show at the top of the Home while within their dates; they expire on their own and nothing is deleted.") }]} />
       <Toast t={toast} desk={desk} />

@@ -25,7 +25,7 @@ export function SistemaDespliegues({ d, l, editar }: { d: DatosDespliegues; l: L
   const hecho = (m: string) => { setToast(m); setConf(null); router.refresh(); };
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · DESPLIEGUES", "SYSTEM · DEPLOYS"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · DESPLIEGUES", "SYSTEM · DEPLOYS"), t: E("Despliegues", "Deploys"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={(r) => hecho(r.mensaje ?? E("Listo.", "Done."))} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -60,7 +60,7 @@ export function SistemaDespliegues({ d, l, editar }: { d: DatosDespliegues; l: L
     acts: editar && !x.fin ? [{ l: E("Cerrar", "Close"), v: "secondary", onClick: () => setConf({ titulo: E("Cerrar el incidente", "Close the incident"), cta: E("Cerrar", "Close"),
       sub: E("Escribe qué se hizo. El incidente no se borra: queda cerrado con tu nota y en la auditoría.", "Write what was done. The incident is not deleted: it stays closed with your note and in the audit log."),
       plantillas: [E("Volvió atrás sola; se corrigió en un commit nuevo.", "Rolled back on its own; fixed in a new commit."), E("Falsa alarma: los números volvieron solos.", "False alarm: the numbers recovered on their own.")],
-      hacer: async (m) => { const r = await incidenteCerrar(x.id, m); return r.ok ? { ok: true as const, mensaje: E(r.msg.es, r.msg.en) } : { ok: false as const, mensaje: E(r.msg.es, r.msg.en) }; } }) }] : undefined,
+      nota: "interna", hacer: async (m) => { const r = await incidenteCerrar(x.id, m); return r.ok ? { ok: true as const, mensaje: E(r.msg.es, r.msg.en) } : { ok: false as const, mensaje: E(r.msg.es, r.msg.en) }; } }) }] : undefined,
   })) : [{ key: "nada", icon: "check", t: E("Sin incidentes", "No incidents"), s: E("La vuelta atrás, el monitoreo y el equipo los anotan aquí con su caso del manual.", "Rollbacks, monitoring and the team log them here with their runbook case.") }] });
   const u = d.umbrales;
   B.push({ type: "rows", k: E("CUÁNDO VUELVE ATRÁS SOLA", "WHEN IT ROLLS BACK ON ITS OWN"), items: [{ key: "umb", icon: "wrench", t: E(`Vigilancia de ${u.vigilancia} min después de cambiar`, `${u.vigilancia}-minute watch after switching`),

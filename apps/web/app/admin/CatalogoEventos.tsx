@@ -39,12 +39,12 @@ export function CatalogoEventos({ d, puede }: { d: CatalogoEvt; puede: boolean }
       { type: "rows", k: E("LO QUE PUEDES PUBLICAR", "WHAT YOU CAN PUBLISH"), items: [{ key: "p", icon: f.icon, t: (en ? ed.en : ed.es) || "—", s: (en ? ed.subEn : ed.subEs) || "—", dim: !ed.on, acts: [{ l: E("Crear", "Create"), icon: "plus" }] }] },
       { type: "note", tone: f.dark ? "ink" : "info", icon: "ticket", t: f.dark ? E("La ficha del evento sale oscura (fiesta o show).", "The event card shows dark (party or show).") : E("La ficha del evento sale clara.", "The event card shows light.") },
       { type: "acts", items: [{ l: E("Guardar", "Save"), v: "primary", icon: "check", off: !puede, onClick: () => setConf({ titulo: `${E("Guardar", "Save")} · ${(en ? ed.en : ed.es) || ed.es}`, cta: E("Guardar", "Save"), plantillas: [E("Nombre más claro", "Clearer name"), E("Lo pidieron los negocios", "Businesses asked for it"), E("Apagar por ahora", "Turn off for now")],
-        sub: E("Aplica desde ahora en el panel y en Publica tu evento de todas las ciudades. Queda en la auditoría.", "Applies from now on in the dashboard and in Publish your event in every city. It stays in the audit log."), hacer: (m) => evtFormato(f.key, { es: ed.es, en: ed.en, subEs: ed.subEs, subEn: ed.subEn, on: ed.on }, m) }) },
+        sub: E("Aplica desde ahora en el panel y en Publica tu evento de todas las ciudades. Queda en la auditoría.", "Applies from now on in the dashboard and in Publish your event in every city. It stays in the audit log."), nota: "interna", hacer: (m) => evtFormato(f.key, { es: ed.es, en: ed.en, subEs: ed.subEs, subEn: ed.subEn, on: ed.on }, m) }) },
         { l: E("Volver", "Back"), v: "secondary", onClick: () => setEd(null) }] },
       { type: "chips", k: E("QUÉ CATEGORÍAS LO PUBLICAN · TOCA PARA CAMBIAR", "WHICH CATEGORIES PUBLISH IT · TAP TO CHANGE"), items: d.categorias.map((c) => { const on = f.cats.some((x) => x.id === c.id && x.on); return { l: c.name, v: on ? "selected" : "filter",
         onClick: puede ? () => setConf({ titulo: E(`${on ? "Ya no publica" : "Publica"} «${f.label.es}» · ${c.name}`, `${on ? "No longer publishes" : "Publishes"} “${L(f.label)}” · ${c.name}`), cta: on ? E("Quitar", "Remove") : E("Agregar", "Add"), peligro: on,
           sub: on ? E("Esa categoría deja de ofrecerlo al crear. Los eventos que ya existen siguen igual.", "That category stops offering it when creating. Existing events stay the same.") : E("Esa categoría lo ve en «Lo que puedes publicar».", "That category sees it in “What you can publish”."), plantillas: [E("Encaja con lo que hacen", "It fits what they do"), E("No encaja con la categoría", "It doesn’t fit the category")],
-          hacer: (m) => evtFormatoCategoria(f.key, c.id, !on, m) }) : undefined }; }) },
+          nota: "interna", hacer: (m) => evtFormatoCategoria(f.key, c.id, !on, m) }) : undefined }; }) },
     ];
     return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 760 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
   }
@@ -61,13 +61,13 @@ export function CatalogoEventos({ d, puede }: { d: CatalogoEvt; puede: boolean }
         .map((l) => ({ l, v: l === cur ? (ed.on ? "selected" : "filter") : "filter" })) },
       { type: "acts", items: [{ l: g ? E("Guardar", "Save") : E("Agregar", "Add"), v: "primary", icon: "check", off: !puede, onClick: () => setConf({ titulo: g ? `${E("Guardar", "Save")} · ${(en ? ed.en : ed.es) || ed.es}` : E(`Agregar el género «${ed.es}»`, `Add the genre “${ed.en || ed.es}”`), cta: g ? E("Guardar", "Save") : E("Agregar", "Add"),
         plantillas: [E("Lo piden los organizadores", "Organizers ask for it"), E("Nombre más claro", "Clearer name"), E("Apagar por ahora", "Turn off for now")], sub: E("Sale en el editor de eventos y en los filtros de Eventos de todas las ciudades. Queda en la auditoría.", "It shows in the event editor and in the Events filters in every city. It stays in the audit log."),
-        hacer: (m) => evtGenero(g?.key ?? null, { es: ed.es, en: ed.en, on: ed.on }, m) }) }, { l: E("Volver", "Back"), v: "secondary", onClick: () => setEd(null) }] },
+        nota: "interna", hacer: (m) => evtGenero(g?.key ?? null, { es: ed.es, en: ed.en, on: ed.on }, m) }) }, { l: E("Volver", "Back"), v: "secondary", onClick: () => setEd(null) }] },
     ];
     return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 760 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
   }
 
   const mover = (g: GeneroCat, k: -1 | 1) => setConf({ titulo: E(`${k < 0 ? "Subir" : "Bajar"} «${g.label.es}»`, `Move “${L(g.label)}” ${k < 0 ? "up" : "down"}`), cta: E("Mover", "Move"), plantillas: [E("Más buscado", "Searched more"), E("Menos buscado", "Searched less")], sub: E("Cambia el orden en el editor y en los filtros. Queda en la auditoría.", "It changes the order in the editor and in filters. It stays in the audit log."),
-    hacer: (m) => evtGenero(g.key, { es: g.label.es, en: g.label.en, on: g.on, mover: k }, m) });
+    nota: "interna", hacer: (m) => evtGenero(g.key, { es: g.label.es, en: g.label.en, on: g.on, mover: k }, m) });
   const B: Bloque[] = [head,
     { type: "note", tone: "info", icon: "info", t: puede ? E("Toca un formato o un género para cambiarlo. Los campos y las palabras de cada formato (boletos, mesas, line-up…) los fija el diseño.", "Tap a format or a genre to change it. Each format’s fields and wording (tickets, tables, line-up…) are set by the design.") : E("Solo un Admin cambia el catálogo.", "Only an Admin changes the catalog.") },
     { type: "group", k: `${E("FORMATOS", "FORMATS")} · ${d.formatos.length}` },

@@ -41,7 +41,7 @@ export function HoyAdmin({ d, puede, arriba }: { d: DatosHoy; puede: boolean; ar
     sub: si ? E(`Sale de Hoy en el barrio y se queda en la página de ${x.bname}. El negocio recibe el motivo. Queda en la auditoría.`, `It leaves Today in the neighborhood and stays on ${x.bname}’s page. The business gets the reason. It stays in the audit log.`) : E("Vuelve a Hoy en el barrio hasta cumplir sus 24 horas.", "It goes back to Today in the neighborhood until its 24 hours are up."),
     peligro: si, cta: si ? E("Retirar de Hoy", "Remove from Today") : E("Devolver a Hoy", "Put back on Today"),
     plantillas: si ? [E("No es una novedad del negocio", "Not an update from the business"), E("Engañosa o con precio falso", "Misleading or with a false price"), E("Datos personales o de otra persona", "Personal data or someone else’s"), E("Repetida varias veces el mismo día", "Repeated several times the same day"), E("Rompe las reglas del barrio", "Breaks the neighborhood rules")] : [E("Se revisó y no rompe las reglas", "Reviewed and it doesn’t break the rules"), E("Fue un error", "It was a mistake")],
-    hacer: (m) => hoyRetirar(x.id, si, m),
+    nota: si ? "persona" : "interna", hacer: (m) => hoyRetirar(x.id, si, m),
   });
   const B: Bloque[] = [...arriba,
     { type: "note", tone: "info", icon: "news", t: E("Hoy en el barrio sale de Novedades: lo que un negocio Pro publica para todos sale aquí 24 horas, en tarjetas por negocio. Retirarlo de Hoy no lo quita de su página (para eso, «Ocultar» en Novedades).", "Today in the neighborhood comes from Updates: what a Pro business posts for everyone shows here for 24 hours, in cards per business. Removing it from Today doesn’t take it off their page (for that, “Hide” in Updates).") },
@@ -78,7 +78,7 @@ export function OficialAdmin({ d, escribe, arriba }: { d: CuentaOficial; escribe
   });
   const fijar = (x: CuentaOficial["filas"][number], dias: number) => setConf({
     titulo: dias ? E(`Fijar ${dias} días`, `Pin for ${dias} days`) : E("Desfijar", "Unpin"), sub: dias ? E("Sale arriba del muro de su ciudad. Solo una a la vez: la anterior se desfija. No cambia los votos de nadie.", "It shows at the top of its city’s wall. Only one at a time: the previous one is unpinned. Nobody’s votes change.") : E("Deja de salir arriba del muro.", "It stops showing at the top of the wall."),
-    cta: dias ? E("Fijar", "Pin") : E("Desfijar", "Unpin"), plantillas: dias ? [E("Pregunta de la semana", "Question of the week"), E("Encuesta de la semana", "Poll of the week"), E("Aviso importante de la ciudad", "Important city notice")] : [E("Ya pasó", "It’s over"), E("Sale otra fijada", "Another one is pinned")], hacer: (m) => oficialFijar(x.id, dias, m),
+    cta: dias ? E("Fijar", "Pin") : E("Desfijar", "Unpin"), plantillas: dias ? [E("Pregunta de la semana", "Question of the week"), E("Encuesta de la semana", "Poll of the week"), E("Aviso importante de la ciudad", "Important city notice")] : [E("Ya pasó", "It’s over"), E("Sale otra fijada", "Another one is pinned")], nota: "interna", hacer: (m) => oficialFijar(x.id, dias, m),
   });
   const form: Bloque[] = !abierto ? [] : [
     { type: "group", k: E("NUEVA PUBLICACIÓN DE LA CUENTA OFICIAL", "NEW OFFICIAL ACCOUNT POST") },

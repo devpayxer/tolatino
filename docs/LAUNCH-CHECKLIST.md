@@ -2265,7 +2265,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       «Resolver a mano» y «Preguntar a Stripe ahora» en devoluciones no tenían prueba de navegador: encargada (`din9t7b`). Un encargo corrió una
       vez `din9t` contra la base local de quien orquesta por error (se cayó en la primera consulta; pudo dejar un usuario, un negocio y una
       operación de prueba): sin efecto fuera de esa base de pruebas.
-- [ ] **→ 9u** · **Super Admin: el título sale dos veces en la hoja de confirmar** (visto en la captura de teléfono de «Elegir cuál vale»: «Qué vale
+- [x] **→ 9u** · **Super Admin: el título sale dos veces en la hoja de confirmar** (visto en la captura de teléfono de «Elegir cuál vale»: «Qué vale
       de lo que tiene Stripe» arriba y otra vez debajo de «CONFIRMAR»). Pasa en las pantallas que ponen `conf.titulo` en la cabecera Y dejan el
       mismo título en la hoja: `Planes.tsx`, `Ciudades.tsx`, `Colas.tsx` (línea ~651), `Crecimiento.tsx`, `Negocios.tsx`, `Liquidaciones.tsx`. Ya
       hay dos formas buenas en el repo: la cabecera dice dónde estás y la hoja dice la acción (`N360`, `Configuracion`, `Contenido`), o la
@@ -2274,6 +2274,23 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       **Y el texto de ayuda del campo de la nota** dice «Escríbelo como se lo dirías a la persona.» también donde la nota es interna y solo va a
       la auditoría (visto en «Resolver a mano» de una devolución, captura `d9t7b-hoja-m.png`): que cada hoja diga a quién le llega lo que se
       escribe («queda en la auditoría» o «se le manda a la persona»). Mismo arreglo, mismas pantallas. (21 nov)
+      **Hecho (21 nov, Fable ordenó; Sonnet lo escribió):** (1) un solo título en 19 pantallas que ponían `conf.titulo` en la cabecera Y en la hoja:
+      `Planes`, `Ciudades`, `Colas` (ajustes), `Crecimiento`, `Negocios`, `Liquidaciones`, `ElCompaAdmin`, `SistemaDespliegues`, `SistemaEstados`,
+      `SistemaFlags`, `SistemaSalud`, `SoporteAdmin`, `TextosAyuda`, `TextosAyudaEditar`, `TextosCadenas`, `TextosHome`, `TextosPaginas`, `TextosRotulos`,
+      `Transacciones` (esta además decía «Devolver dinero» en la cabecera de «Simular disputa»). Todas con la PRIMERA forma (la cabecera dice dónde estás,
+      la hoja la acción), porque casi todas traen opciones o campos en la hoja; `AutoModeracion`, `Gamificacion` y `HoyAdmin` se dejaron como estaban
+      (segunda forma). (2) `Confirmar.nota` (obligatorio en el tipo): `persona` | `interna` | `banco`, puesto en cada confirmación (347) según lo que hace
+      el SERVIDOR con la nota (aviso con `{motivo}` en la plantilla, columna que ve el dueño/el vecino, o solo auditoría), no por el nombre de la acción;
+      `ConfirmarMotivo` lo dice en el texto de ayuda de la nota y en el texto secundario por omisión (el sistema de diseño no se tocó: `ReasonConfirm`
+      ya recibía `placeholder`). (3) Guardián `notaDiceAQuien` + `pruebas/alreves/alreves9u.cjs` (8/8). Tres textos que decían lo contrario del servidor se
+      corrigieron: «El dueño ve el motivo» al retirar una licencia y «El dueño ve el cambio y el motivo» al editar en nombre del negocio (solo ve que el
+      equipo editó), y «El motivo lo ve el cliente» al devolver dinero desde Transacciones (el aviso lleva monto y número, no el motivo).
+      **Queda (mismo tema, no se tocó porque cambiaría qué hace la acción):** (a) cuatro confirmaciones piden una nota que nadie guarda: «Asignar el caso a…»
+      (Colas) y las tres «Simular disputa / resultado» de Transacciones (el servidor ignora la nota: ni auditoría); hoy dicen «Queda en la auditoría con tu
+      nombre», que ahí es falso: o se guarda o se deja de pedir. (b) En la hoja siguen las DOS flechas de volver (la de la cabecera y la de la hoja) igual que
+      en las pantallas que ya estaban bien (`N360`, `Contenido`, `Configuracion`); quitar la de la cabecera es una línea por pantalla si se decide. (c)
+      Extender prueba / Pro de cortesía (Planes y N360): el motivo solo va a `subscription_events`/auditoría; el texto «El dueño lo ve en Tu plan» habla de
+      la extensión, no del motivo (verificado: nada lo lee en el panel).
 - [x] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho

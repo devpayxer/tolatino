@@ -102,9 +102,9 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
       FB.push({ type: "note", tone: "ink", icon: "shield", t: E("El equipo solo lee lo que el vecino habló con El Compa para revisar la calidad; los chats privados entre vecinos no se leen.", "The team only reads what the neighbor said with El Compa to review quality; private chats between neighbors are never read.") });
       const marcar = () => setConf({ titulo: E("¿Qué contestó mal El Compa?", "What did El Compa get wrong?"), peligro: true, cta: E("Marcar", "Flag"), elegir: { label: E("QUÉ ESTUVO MAL", "WHAT WENT WRONG"), items: Object.entries(MARCA).map(([k, l]) => ({ k, l })) },
         sub: E("Sirve para corregir la ayuda y las reglas. No le llega al vecino. Queda en el historial.", "It helps fix the help content and the rules. The neighbor doesn’t see it. It stays in the history."), plantillas: [E("Dio un dato que no está en la ayuda.", "It gave information that isn’t in the help."), E("Tenía que pasar a una persona.", "It should have gone to a person."), E("Contestó en otro idioma.", "It replied in another language.")],
-        hacer: (m, e) => compaMarcar(f.num, e ?? "", m) });
+        nota: "interna", hacer: (m, e) => compaMarcar(f.num, e ?? "", m) });
       const desmarcar = () => setConf({ titulo: E("Quitar la marca", "Remove the flag"), cta: E("Quitar la marca", "Remove the flag"), sub: E("La conversación deja de contar como marcada. Queda en el historial.", "The conversation stops counting as flagged. It stays in the history."), plantillas: [E("Revisado: la respuesta estaba bien.", "Reviewed: the reply was fine."), E("Ya se corrigió la ayuda.", "The help was already fixed.")],
-        hacer: (m) => compaDesmarcar(f.num, m) });
+        nota: "interna", hacer: (m) => compaDesmarcar(f.num, m) });
       FB.push({ type: "acts", items: [
         ...(f.marca ? [{ l: E("Quitar la marca", "Remove the flag"), v: "secondary", icon: "check", onClick: desmarcar }] : f.purgada ? [] : [{ l: E("Marcar respuesta incorrecta", "Flag wrong answer"), v: "danger", icon: "warning", onClick: marcar }]),
         ...(f.caso ? [{ l: E(`Ver ${f.caso} en Soporte`, `View ${f.caso} in Support`), v: "secondary", onClick: () => router.push(`/admin/soporte?caso=${encodeURIComponent(f.caso!)}`) }] : []),
@@ -121,7 +121,7 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
   }
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: cp ? `EL COMPA · ${cp}` : tab === "res" ? E("EL COMPA · RESUMEN", "EL COMPA · OVERVIEW") : E("EL COMPA · INTERRUPTORES Y TOPE", "EL COMPA · SWITCHES AND CAP"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: cp ? `EL COMPA · ${cp}` : tab === "res" ? E("EL COMPA · RESUMEN", "EL COMPA · OVERVIEW") : E("EL COMPA · INTERRUPTORES Y TOPE", "EL COMPA · SWITCHES AND CAP"), t: E("El Compa · IA", "El Compa · AI"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>
@@ -131,20 +131,20 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
   const sinPermiso = () => setToast(E("Tu rol no cambia interruptores.", "Your role can’t change switches."));
   const tgNivel = (clave: string, on: boolean, l: string) => !cambiar ? sinPermiso() : setConf(on
     ? { titulo: E(`Poner en pausa: ${l}`, `Pause: ${l}`), peligro: true, cta: E("Poner en pausa", "Pause"), sub: E("Mientras esté en pausa, la gente ve el camino de siempre (formularios y Soporte con personas). Queda en el historial.", "While paused, people see the usual path (forms and Support with people). It stays in the history."),
-      plantillas: [E("Respuestas incorrectas: lo revisamos.", "Wrong answers: we’re reviewing it."), E("Gasto fuera de lo normal.", "Unusual spending."), E("Mantenimiento.", "Maintenance.")], hacer: (m) => compaInterruptor(clave, false, m) }
-    : { titulo: E(`Encender: ${l}`, `Turn on: ${l}`), cta: E("Encender", "Turn on"), sub: E("El Compa vuelve a contestar aquí desde el mensaje siguiente.", "El Compa replies here again from the next message."), plantillas: [E("Revisado: ya está bien.", "Reviewed: it’s fine now."), E("Fin del mantenimiento.", "Maintenance done.")], hacer: (m) => compaInterruptor(clave, true, m) });
+      plantillas: [E("Respuestas incorrectas: lo revisamos.", "Wrong answers: we’re reviewing it."), E("Gasto fuera de lo normal.", "Unusual spending."), E("Mantenimiento.", "Maintenance.")], nota: "interna", hacer: (m) => compaInterruptor(clave, false, m) }
+    : { titulo: E(`Encender: ${l}`, `Turn on: ${l}`), cta: E("Encender", "Turn on"), sub: E("El Compa vuelve a contestar aquí desde el mensaje siguiente.", "El Compa replies here again from the next message."), plantillas: [E("Revisado: ya está bien.", "Reviewed: it’s fine now."), E("Fin del mantenimiento.", "Maintenance done.")], nota: "interna", hacer: (m) => compaInterruptor(clave, true, m) });
   const NIV_OPC = { label: E("QUÉ SE PAUSA", "WHAT GETS PAUSED"), items: [{ k: "todo", l: E("Todo El Compa", "All of El Compa") }, ...Object.entries(NIVEL).map(([k, v]) => ({ k, l: v[0] }))] };
   const pausarCiudad = (id: string, nombre: string) => !cambiar ? sinPermiso() : setConf({ titulo: E(`Pausar El Compa en ${nombre}`, `Pause El Compa in ${nombre}`), peligro: true, cta: E("Pausar aquí", "Pause here"), elegir: NIV_OPC,
     sub: E("En esa ciudad la gente ve el camino de siempre. Queda en el historial.", "In that city people see the usual path. It stays in the history."), plantillas: [E("Problema con la ayuda de esta ciudad.", "Problem with this city’s help."), E("Mantenimiento.", "Maintenance.")],
-    hacer: (m, e) => compaPausarEn("city", id, e === "todo" ? "" : e ?? "", m) });
+    nota: "interna", hacer: (m, e) => compaPausarEn("city", id, e === "todo" ? "" : e ?? "", m) });
   const pausarNegocio = () => !cambiar ? sinPermiso() : setConf({ titulo: E("Pausar El Compa en un negocio", "Pause El Compa for a business"), peligro: true, cta: E("Pausar en ese negocio", "Pause for that business"), elegir: NIV_OPC, valor: { k: E("NEGOCIO (ID O NOMBRE EXACTO)", "BUSINESS (ID OR EXACT NAME)"), ini: "", max: 80 },
     sub: E("Por ejemplo las respuestas automáticas de un negocio que reportan. Queda en el historial.", "For example, a reported business’s auto-replies. It stays in the history."), plantillas: [E("Reportaron respuestas incorrectas.", "Wrong answers were reported."), E("Lo pidió el dueño por Soporte.", "The owner asked through Support.")],
-    hacer: (m, e, v) => compaPausarEn("business", v, e === "todo" ? "" : e ?? "", m) });
+    nota: "interna", hacer: (m, e, v) => compaPausarEn("business", v, e === "todo" ? "" : e ?? "", m) });
   const levantar = (id: string, nombre: string) => !cambiar ? sinPermiso() : setConf({ titulo: E(`Levantar la pausa · ${nombre}`, `Lift the pause · ${nombre}`), cta: E("Levantar", "Lift"), sub: E("El Compa vuelve a contestar ahí.", "El Compa replies there again."),
-    plantillas: [E("Revisado: ya está bien.", "Reviewed: it’s fine now."), E("Fin del mantenimiento.", "Maintenance done.")], hacer: (m) => compaLevantar(id, m) });
+    plantillas: [E("Revisado: ya está bien.", "Reviewed: it’s fine now."), E("Fin del mantenimiento.", "Maintenance done.")], nota: "interna", hacer: (m) => compaLevantar(id, m) });
   const tope = () => !cambiar ? sinPermiso() : setConf({ titulo: E("Cambiar el tope del mes", "Change the monthly cap"), cta: E("Guardar el tope", "Save the cap"), valor: { k: E("TOPE AL MES (EN DÓLARES)", "MONTHLY CAP (IN DOLLARS)"), ini: (g.tope / 100).toFixed(0), max: 9 },
     sub: E(`Hoy: ${plata(g.tope)} al mes (gastado ${plata(g.gastado)}). Al tope, El Compa contesta con reglas fijas y ofrece «Con una persona». Entre $0 y $10,000. Queda en la auditoría.`, `Now: ${plata(g.tope)} a month (spent ${plata(g.gastado)}). At the cap, El Compa replies with fixed rules and offers “With a person”. Between $0 and $10,000. It stays in the audit log.`),
-    plantillas: [E("Más vecinos usan El Compa.", "More neighbors use El Compa."), E("Bajar el gasto este mes.", "Lower spending this month.")], hacer: (m, _e, v) => compaTope(v, m) });
+    plantillas: [E("Más vecinos usan El Compa.", "More neighbors use El Compa."), E("Bajar el gasto este mes.", "Lower spending this month.")], nota: "interna", hacer: (m, _e, v) => compaTope(v, m) });
 
   const alTope = !!g.topeEn || g.pct >= 100, aviso = g.pct >= g.alertaPct;
   const porNivel = new Map(g.porNivel.map((x) => [x.uso, x]));
@@ -198,9 +198,9 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
         { k: "whatsapp:whatsapp", l: "WhatsApp · Meta" }, { k: "sms:telnyx", l: "SMS · Telnyx" }, ...(C2.sandbox ? [{ k: "whatsapp:sim", l: E("WhatsApp · de prueba", "WhatsApp · test") }, { k: "sms:sim", l: E("SMS · de prueba", "SMS · test") }] : [])] },
       valor: { k: E("NÚMERO (Y, SI ES DE UN NEGOCIO, SU ID DESPUÉS DE UNA COMA)", "NUMBER (AND, IF IT’S A BUSINESS’S, ITS ID AFTER A COMMA)"), ini: "", max: 120 },
       sub: E("Sin negocio = el número de To'Latino (El Compa de los vecinos). Con negocio = sus respuestas automáticas por ese canal (el dueño las enciende en su panel). WhatsApp de Meta: el phone_number_id. Queda en la auditoría.", "No business = the To'Latino number (El Compa for neighbors). With a business = its auto-replies on that channel (the owner turns them on in their dashboard). Meta WhatsApp: the phone_number_id. It stays in the audit log."),
-      plantillas: [E("Número del sandbox para probar.", "Sandbox number for testing."), E("Lo pidió el dueño por Soporte.", "The owner asked through Support.")], hacer: (m, e, v) => compaNumero(e ?? "", v, m) });
+      plantillas: [E("Número del sandbox para probar.", "Sandbox number for testing."), E("Lo pidió el dueño por Soporte.", "The owner asked through Support.")], nota: "interna", hacer: (m, e, v) => compaNumero(e ?? "", v, m) });
     const retirar = (id: string, t: string) => !cambiar ? sinPermiso() : setConf({ titulo: E(`Retirar ${t}`, `Remove ${t}`), peligro: true, cta: E("Retirar", "Remove"), sub: E("Ese número deja de recibir: lo que llegue ahí no se contesta. Queda en la auditoría.", "That number stops receiving: whatever arrives there isn’t answered. It stays in the audit log."),
-      plantillas: [E("Ya no se usa.", "No longer used."), E("Lo pidió el dueño.", "The owner asked for it.")], hacer: (m) => compaNumeroRetirar(id, m) });
+      plantillas: [E("Ya no se usa.", "No longer used."), E("Lo pidió el dueño.", "The owner asked for it.")], nota: "interna", hacer: (m) => compaNumeroRetirar(id, m) });
     const simular = async () => {
       if (sim.busy || !sim.num || !sim.tel.trim() || !sim.txt.trim()) return;
       setSim({ ...sim, busy: true });
@@ -318,10 +318,10 @@ function Resumen({ R, desk, leer, ns, ir, setConf }: { R: ResumenCompa; desk: bo
   const h = R.horario, hora = (x: number) => (x === 0 || x === 24 ? "12 AM" : x === 12 ? "12 PM" : x < 12 ? `${x} AM` : `${x - 12} PM`);
   const dias = h.dias >= 7 ? E("todos los días", "every day") : h.dias === 6 ? E("lun–sáb", "Mon–Sat") : E("lun–vie", "Mon–Fri");
   const anotar = (id: string) => setConf({ titulo: E("Anotado", "Noted"), cta: E("Anotar", "Note"), sub: E("Queda como pendiente para corregir la ayuda en el repo. Sale de «Abiertas». Queda en el historial de la conversación.", "It stays pending to fix the help in the repo. It leaves “Open”. It stays in the conversation’s history."),
-    plantillas: [E("Falta en la ayuda: se agrega en el próximo despliegue.", "Missing from the help: it’s added in the next deploy."), E("Pide datos de otra persona: El Compa hizo bien en no saber.", "Asks for someone else’s data: El Compa was right not to know."), E("Fuera de tema.", "Off topic.")], hacer: (m) => compaNoSupo(id, "noted", m, "") });
+    plantillas: [E("Falta en la ayuda: se agrega en el próximo despliegue.", "Missing from the help: it’s added in the next deploy."), E("Pide datos de otra persona: El Compa hizo bien en no saber.", "Asks for someone else’s data: El Compa was right not to know."), E("Fuera de tema.", "Off topic.")], nota: "interna", hacer: (m) => compaNoSupo(id, "noted", m, "") });
   const corregido = (id: string) => setConf({ titulo: E("Corregido en un artículo", "Fixed in an article"), cta: E("Guardar", "Save"), elegir: { label: E("ARTÍCULO DEL CENTRO DE AYUDA", "HELP CENTER ARTICLE"), items: R.articulos.map((a) => ({ k: a.slug, l: a.titulo })) },
     sub: E("El artículo ya dice lo que faltaba (se corrigió en el repo y se desplegó). Queda en el historial de la conversación.", "The article now says what was missing (fixed in the repo and deployed). It stays in the conversation’s history."), plantillas: [E("Se agregó a la ayuda.", "It was added to the help."), E("Se corrigió el dato en la ayuda.", "The information was fixed in the help.")],
-    hacer: (m, e) => compaNoSupo(id, "fixed", m, e ?? "") });
+    nota: "interna", hacer: (m, e) => compaNoSupo(id, "fixed", m, e ?? "") });
   const B2: Bloque[] = [
     { type: "kv", cols: desk ? 3 : 1, items: [
       { k: E("COPILOTO EN SOPORTE", "COPILOT IN SUPPORT"), v: `${c.borradores} ${c.borradores === 1 ? E("borrador", "draft") : E("borradores", "drafts")} · 30 d` },

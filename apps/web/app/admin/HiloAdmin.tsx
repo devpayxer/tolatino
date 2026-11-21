@@ -32,7 +32,7 @@ export function HiloAdmin({ h, marcado, puede }: { h: H; marcado: string | null;
   const ocultar = (que: "pub" | "cm", id: string, quien: string, ya: boolean) => setConf({
     titulo: ya ? E("¿Por qué vuelve a verse?", "Why is it visible again?") : que === "pub" ? E(`Ocultar la publicación de ${quien}`, `Hide ${quien}’s post`) : E(`Ocultar el comentario de ${quien}`, `Hide ${quien}’s comment`),
     sub: ya ? E("Vuelve para todos y el autor recibe el aviso.", "It comes back for everyone and the author is notified.") : E("Sale para todos. El autor recibe el motivo y puede apelar; queda en la auditoría.", "It’s removed for everyone. The author gets the reason and can appeal; it’s in the audit log."), peligro: !ya, plantillas: ya ? P.keep : P.hide,
-    hacer: (m) => (que === "pub" ? pubOcultar(id, !ya, m) : cmComOcultar(id, !ya, m)),
+    nota: ya ? "interna" : "persona", hacer: (m) => (que === "pub" ? pubOcultar(id, !ya, m) : cmComOcultar(id, !ya, m)),
   });
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>

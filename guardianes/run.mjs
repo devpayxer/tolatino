@@ -13394,6 +13394,44 @@ const guardianes = {
     if (!/w\.inner === 390 && w\.scroll <= 390 && w\.body <= 390, `la hoja abierta a 390/.test(tel)) falla(G, E2E, 0, "din9t6b no comprueba innerWidth === 390 y scrollWidth <= 390 con la hoja abierta");
     if (!/Decidir/.test(tel) || /force: true|dispatchEvent|\.evaluate\([^)]*\.click\(/.test(tel)) falla(G, E2E, 0, "el recorrido de teléfono de din9t6b se hace con clics de verdad (sin force, dispatchEvent ni click por evaluate) y llega a «Decidir»");
   },
+  /* 9u (21 nov) · notaDiceAQuien: la hoja de confirmar del Super Admin (ConfirmarMotivo → ReasonConfirm) tenía dos defectos vistos en capturas de teléfono.
+     (1) El título salía DOS veces, una encima de la otra: la cabecera de la página con `conf.titulo` y, debajo de «CONFIRMAR», el mismo título en la hoja.
+     Dos formas buenas y una sola dentro de una pantalla: la cabecera dice dónde estás y la hoja dice la acción, o la cabecera dice la acción y la hoja
+     pregunta «¿Por qué?» (`c={{ ...conf, titulo: … }}`). Una pantalla con `t: conf.titulo` en la cabecera y `c={conf}` en la hoja repite el título.
+     (2) El texto de ayuda de la nota decía «Escríbelo como se lo dirías a la persona.» también donde la nota es interna y solo va a la auditoría. Ahora cada
+     Confirmar dice a quién le llega lo que se escribe (`nota: "persona" | "interna" | "banco"`, obligatorio en el tipo) y ConfirmarMotivo lo dice en el
+     texto de ayuda y en el texto secundario por omisión. Aquí: el tipo lo pide; cada confirmación con `hacer:` en app/admin trae su `nota:` justo antes; el
+     valor es uno de los tres; ConfirmarMotivo pasa el texto de ayuda según la nota (y no el de siempre para todos); ninguna cabecera repite el título de la hoja.
+     Al revés: alreves9u. */
+  notaDiceAQuien() {
+    const G = "notaDiceAQuien", DIR = "apps/web/app/admin", CM = `${DIR}/Colas.tsx`;
+    if (!existsSync(CM)) return falla(G, CM, 0, "falta Colas.tsx (ConfirmarMotivo y el tipo Confirmar)");
+    const cm = sinComent(CM);
+    if (!/export type NotaPara = "persona" \| "interna" \| "banco";/.test(cm)) falla(G, CM, 0, "falta el tipo NotaPara (persona, interna o banco): a quién le llega lo que se escribe en la nota");
+    if (!/export type Confirmar = \{[^}]*\bnota: NotaPara\b/.test(cm)) falla(G, CM, 0, "el tipo Confirmar no pide `nota: NotaPara` (obligatorio): una confirmación sin decir a quién le llega la nota compilaría");
+    const iF = cm.indexOf("export function ConfirmarMotivo("), jF = cm.indexOf("export function Toast(", iF), fnCm = iF >= 0 && jF > iF ? cm.slice(iF, jF) : "";
+    if (!/placeholder=\{c\.nota === "persona" \?/.test(fnCm) || !/Queda en la auditoría con tu nombre\./.test(fnCm) || !/Escríbelo como se lo dirías a la persona\./.test(fnCm)) falla(G, CM, 0, "ConfirmarMotivo no pasa el texto de ayuda de la nota según a quién le llega (persona: «Escríbelo como se lo dirías a la persona.»; interna: «Queda en la auditoría con tu nombre.»)");
+    if (/placeholder=\{E\("Escríbelo como se lo dirías a la persona\.", "[^"]*"\)\}/.test(fnCm)) falla(G, CM, 0, "ConfirmarMotivo pone el mismo texto de ayuda a todas las notas");
+    for (const f of readdirSync(DIR).filter((x) => x.endsWith(".tsx"))) {
+      const p = `${DIR}/${f}`, t = sinComent(p);
+      // (a) Cada `hacer:` de una confirmación (no la firma de un tipo) trae su `nota:` justo antes, y el valor es uno de los tres.
+      for (const m of t.matchAll(/\bhacer: /g)) {
+        const resto = t.slice(m.index + 7, m.index + 160);
+        if (/^\((?:\w+: [^)]*)\) => Promise<ResAdm>\s*[,;}]/.test(resto) && !/^\(m: string\) => errorEstado/.test(resto)) continue; // una firma de tipo, no una confirmación
+        const antes = t.slice(Math.max(0, m.index - 220), m.index).trimEnd();
+        if (!/[,{]$/.test(antes)) continue; // «hacer:» dentro de un texto, no una propiedad
+        const v = antes.match(/\bnota: ([^,]+),$/);
+        if (!v) { falla(G, p, t.slice(0, m.index).split("\n").length, "una confirmación sin `nota:` (a quién le llega lo que se escribe: persona, interna o banco)"); continue; }
+        const val = v[1].trim();
+        if (/^"/.test(val) && !/^"(persona|interna|banco)"$/.test(val)) falla(G, p, t.slice(0, m.index).split("\n").length, `nota: ${val} no es persona, interna ni banco`);
+      }
+      // (b) Una cabecera con el título de la hoja (`t: conf.titulo`) y la hoja con el mismo título: el título sale dos veces.
+      if (/\bt: conf\.titulo\b/.test(t)) {
+        const usos = [...t.matchAll(/<ConfirmarMotivo c=\{(\{ \.\.\.conf, titulo: [^}]*\}|conf)\}/g)].map((x) => x[1]);
+        if (usos.some((u) => u === "conf")) falla(G, p, 0, "la cabecera pone `conf.titulo` y la hoja de confirmar lleva el mismo título: sale dos veces (la cabecera dice dónde estás y la hoja la acción, o la cabecera la acción y la hoja «¿Por qué?»)");
+      }
+    }
+  },
 
 };
 

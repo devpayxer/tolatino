@@ -25,7 +25,7 @@ export function TextosRotulos({ filas, l, editar }: { filas: RotuloAdm[]; l: L; 
 
   if (conf) { const m = MAX[conf.campo]; return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }} data-rotulo-confirmar>
-      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · RÓTULOS", "COPY AND PAGES · LABELS"), t: conf.titulo, s: `${conf.cat.id} · ${conf.campo}`, onBack: () => setConf(null), h1: desk ? 26 : 22 },
+      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · RÓTULOS", "COPY AND PAGES · LABELS"), t: E("Textos y páginas", "Copy and pages"), s: `${conf.cat.id} · ${conf.campo}`, onBack: () => setConf(null), h1: desk ? 26 : 22 },
         { type: "field", k: E("ESPAÑOL", "SPANISH"), val: es, onChange: setEs, max: m, count: `${es.length}/${m}`, lock: conf.campo === "short", help: conf.campo === "short" ? E("Es la dirección de la categoría (/c/…): no se cambia aquí.", "It is the category address (/c/…): it is not changed here.") : undefined },
         { type: "field", k: E("INGLÉS", "ENGLISH"), val: en, onChange: setEn, max: m, count: `${en.length}/${m}` }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
@@ -35,7 +35,7 @@ export function TextosRotulos({ filas, l, editar }: { filas: RotuloAdm[]; l: L; 
   const abrir = (c: RotuloAdm, campo: "short" | "name") => { setEs(c[campo].es); setEn(c[campo].en);
     setConf({ campo, cat: c, titulo: campo === "short" ? E("Editar el nombre corto", "Edit the short name") : E("Editar el nombre", "Edit the name"), cta: E("Guardar el rótulo", "Save the label"),
       sub: E("Lo ve el vecino al momento. Queda en el historial con tu motivo.", "Neighbors see it right away. It goes in the history with your reason."), plantillas: [E("Más claro para el vecino.", "Clearer for neighbors."), E("Corrección de traducción.", "Translation fix.")],
-      hacer: (m) => rotuloEditar(c.id, campo, ed.current.es, ed.current.en, m) }); };
+      nota: "interna", hacer: (m) => rotuloEditar(c.id, campo, ed.current.es, ed.current.en, m) }); };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <PanelBloques bloques={[

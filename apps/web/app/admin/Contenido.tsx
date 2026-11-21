@@ -54,25 +54,25 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
       titulo: ocultar ? (x.k === "pub" ? E(`Ocultar la publicación de ${x.who}`, `Hide ${x.who}’s post`) : x.k === "ccm" ? E(`Ocultar el comentario de ${x.who}`, `Hide ${x.who}’s comment`) : E(`Ocultar ${TIPO[x.k][0].toLowerCase()} de ${x.bname}`, `Hide ${TIPO[x.k][0].toLowerCase()} from ${x.bname}`)) : E(`¿Por qué vuelve esta ${TIPO[x.k][0].toLowerCase()}?`, `Why is this ${TIPO[x.k][0].toLowerCase()} coming back?`),
       sub: ocultar ? (x.k === "pub" ? E("Sale del muro y de la publicación para todos. El autor ve el motivo y puede apelar; queda en la auditoría.", "It leaves the wall and the post for everyone. The author sees the reason and can appeal; it stays in the audit log.") : x.k === "ccm" ? E("Sale del hilo para todos. El autor recibe el aviso con el motivo y puede apelar; queda en la auditoría.", "It leaves the thread for everyone. The author gets the notice with the reason and can appeal; it stays in the audit log.") : x.k === "vac" ? E("Sale de su página y nadie nuevo aplica. El dueño ve el motivo en su panel.", "It leaves their page and no one new applies. The owner sees the reason in their dashboard.") : x.k === "rev" ? E("Sale de su página y de las estrellas. El autor ve el motivo.", "It leaves their page and the stars. The author sees the reason.") : E("Sale de su página. Queda en la auditoría.", "It leaves their page. It stays in the audit log.")) : x.k === "pub" ? E("Vuelve al muro y el autor recibe el aviso.", "It goes back to the wall and the author gets the notice.") : x.k === "ccm" ? E("Vuelve al hilo y el autor recibe el aviso.", "It goes back to the thread and the author gets the notice.") : undefined,
       peligro: ocultar, plantillas: ocultar ? (x.k === "vac" ? [E("Pide papeles, SSN o pago para aplicar", "Asks for papers, SSN or payment to apply"), E("Pago por debajo del mínimo", "Pay below minimum"), E("Vacante falsa o engañosa", "Fake or misleading job"), E("Discriminatoria", "Discriminatory")] : PLANT.hide) : PLANT.keep,
-      hacer: async (motivo) => { const r = await m(motivo); ok(r); return r; },
+      nota: ocultar ? "persona" : "interna", hacer: async (motivo) => { const r = await m(motivo); ok(r); return r; },
     }));
   };
   const pubAccion = (x: FilaCont, que: "fijar" | "comentarios"): Promise<ResAdm> => new Promise((ok) => setConf({
     titulo: que === "fijar" ? (x.pin ? E("¿Por qué se desfija?", "Why unpin it?") : E(`Fijar la publicación de ${x.who}`, `Pin ${x.who}’s post`)) : x.lock ? E("¿Por qué se abren los comentarios?", "Why reopen comments?") : E(`Bloquear los comentarios de ${x.who}`, `Lock comments on ${x.who}’s post`),
     sub: que === "fijar" ? (x.pin ? E("Deja de salir arriba del muro.", "It stops showing at the top of the wall.") : E("Sale arriba del muro de su ciudad 7 días, como fijada. Solo una a la vez; no cambia los votos de nadie.", "It shows at the top of its city’s wall for 7 days, pinned. Only one at a time; nobody’s votes change.")) : x.lock ? undefined : E("Nadie más comenta; lo que ya está se queda.", "No one else comments; what’s there stays."),
     peligro: false, plantillas: que === "fijar" ? [E("Aviso importante de la ciudad", "Important city notice"), E("Pregunta de la semana", "Question of the week"), E("Ya pasó", "It’s over")] : [E("Discusión fuera de control", "Discussion out of control"), E("Tema resuelto", "Topic resolved"), E("Revisado", "Reviewed")],
-    hacer: async (motivo) => { const r = await (que === "fijar" ? pubFijar(x.id, !x.pin, motivo) : pubComentarios(x.id, !x.lock, motivo)); ok(r); return r; },
+    nota: "interna", hacer: async (motivo) => { const r = await (que === "fijar" ? pubFijar(x.id, !x.pin, motivo) : pubComentarios(x.id, !x.lock, motivo)); ok(r); return r; },
   }));
   const mover = (x: FilaCont) => setConf({
     titulo: E(`Mover la publicación de ${x.who}`, `Move ${x.who}’s post`), sub: E(`Está en ${x.ciudad}. Sale en el muro de la otra ciudad con sus comentarios; la ubicación la vuelve a poner el sistema (nunca la de la persona). Queda en la auditoría.`, `It’s in ${x.ciudad}. It shows on the other city’s wall with its comments; the system sets the location again (never the person’s). It stays in the audit log.`),
     elegir: { label: E("A QUÉ CIUDAD", "TO WHICH CITY"), items: d.destinos.filter((c) => c.name !== x.ciudad).map((c) => ({ k: c.id, l: c.name })) }, cta: E("Mover", "Move"),
-    plantillas: [E("Habla de otra ciudad", "It’s about another city"), E("La publicó en la ciudad equivocada", "Posted in the wrong city")], hacer: (m, e) => pubMoverCiudad(x.id, e ?? "", m),
+    plantillas: [E("Habla de otra ciudad", "It’s about another city"), E("La publicó en la ciudad equivocada", "Posted in the wrong city")], nota: "interna", hacer: (m, e) => pubMoverCiudad(x.id, e ?? "", m),
   });
   // «Ocultar los N reportados» (MEM 651): el servidor da la lista y decide cada uno; aquí solo se cuenta el progreso y los fallos.
   const enLote = () => setConf({
     titulo: E(`Ocultar ${d.cab.lote} reportados`, `Hide ${d.cab.lote} reported`), sub: E("Publicaciones y comentarios de la Comunidad que se ven y tienen un reporte abierto. Cada autor recibe el motivo y puede apelar; quienes reportaron, el resultado. La cuenta oficial no se oculta en lote.", "Visible Community posts and comments with an open report. Each author gets the reason and can appeal; reporters get the result. The official account is never hidden in bulk."),
     peligro: true, cta: E("Ocultar en lote", "Hide in bulk"), plantillas: PLANT.hide,
-    hacer: async (motivo) => {
+    nota: "persona", hacer: async (motivo) => {
       const L = await loteReportados();
       if (!L.ok) return { ok: false, mensaje: L.mensaje ?? E("No se pudo.", "It didn’t work.") };
       setConf(null); setLote({ total: L.items.length, hechos: 0, fallos: [], fin: false });

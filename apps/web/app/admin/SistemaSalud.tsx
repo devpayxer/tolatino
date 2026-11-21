@@ -23,7 +23,7 @@ export function SistemaSalud({ d, l, editar }: { d: DatosSalud; l: L; editar: bo
   const res = (r: { ok: boolean; msg: { es: string; en: string } }) => (r.ok ? { ok: true as const, mensaje: E(r.msg.es, r.msg.en) } : { ok: false as const, mensaje: E(r.msg.es, r.msg.en) });
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · SALUD", "SYSTEM · HEALTH"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · SALUD", "SYSTEM · HEALTH"), t: E("Salud", "Health"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={(r) => hecho(r.mensaje ?? E("Listo.", "Done."))} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -76,7 +76,7 @@ export function SistemaSalud({ d, l, editar }: { d: DatosSalud; l: L; editar: bo
   if (d.mantenimiento.length) B.push({ type: "rows", k: E("MANTENIMIENTOS", "MAINTENANCE"), items: d.mantenimiento.map((m) => ({ key: m.id, icon: "clock", t: `${cuando(m.desde)} → ${cuando(m.hasta)}`, s: `${E(m.es, m.en)} · ${m.motivo}${m.por ? ` · ${m.por}` : ""}`,
     tag: { programado: E("PROGRAMADO", "SCHEDULED"), en_curso: E("EN CURSO", "IN PROGRESS"), pasado: E("PASÓ", "PAST"), cancelado: E("CANCELADO", "CANCELLED") }[m.estado], tone: m.estado === "programado" || m.estado === "en_curso" ? "action" : "neutral",
     acts: editar && (m.estado === "programado" || m.estado === "en_curso") ? [{ l: E("Cancelar", "Cancel"), v: "secondary", onClick: () => setConf({ titulo: E("Cancelar el mantenimiento", "Cancel the maintenance"), peligro: true, cta: E("Cancelar", "Cancel"),
-      sub: E("No se borra: queda cancelado con tu motivo.", "It is not deleted: it stays cancelled with your reason."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Se cambia de hora.", "Moved to another time.")], hacer: async (mm) => res(await mantenimientoCancelar(m.id, mm)) }) }] : undefined })) });
+      sub: E("No se borra: queda cancelado con tu motivo.", "It is not deleted: it stays cancelled with your reason."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Se cambia de hora.", "Moved to another time.")], nota: "interna", hacer: async (mm) => res(await mantenimientoCancelar(m.id, mm)) }) }] : undefined })) });
   const prog: Bloque[] = editar ? [
     { type: "group", k: E("PROGRAMAR UN MANTENIMIENTO", "SCHEDULE MAINTENANCE") },
     { type: "field", k: E("DESDE (AAAA-MM-DD HH:MM, HORA DE HAZLETON)", "FROM (YYYY-MM-DD HH:MM, HAZLETON TIME)"), val: desde, onChange: setDesde, ph: "2026-11-20 02:00", max: 16 },
@@ -85,7 +85,7 @@ export function SistemaSalud({ d, l, editar }: { d: DatosSalud; l: L; editar: bo
     { type: "field", k: E("AVISO EN INGLÉS", "NOTICE IN ENGLISH"), val: en, onChange: setEn, max: 200, count: `${en.length}/200` },
     { type: "acts", items: [{ l: E("Programar", "Schedule"), v: "action", off: !(desde.trim() && hasta.trim() && es.trim() && en.trim()), onClick: () => setConf({ titulo: E("Programar el mantenimiento", "Schedule the maintenance"), cta: E("Programar", "Schedule"),
       sub: E("Queda en el calendario y en la auditoría. Antes (Configuración › Despliegues) sale un anuncio en el Inicio de cada ciudad; durante la ventana, en producción, el servidor web muestra la página de mantenimiento (el Super Admin y las rutas de la API siguen).", "It goes in the calendar and the audit log. Beforehand (Settings › Deploys) an announcement shows on each city Home; during the window, in production, the web server shows the maintenance page (the Super Admin and API routes keep working)."), plantillas: [E("Cambio de la base.", "Database change."), E("Cambio del servidor.", "Server change.")],
-      hacer: async (m) => { const r = await mantenimientoProgramar(est.current.desde, est.current.hasta, est.current.es, est.current.en, m); if (r.ok) { setDesde(""); setHasta(""); } return res(r); } }) }] },
+      nota: "interna", hacer: async (m) => { const r = await mantenimientoProgramar(est.current.desde, est.current.hasta, est.current.es, est.current.en, m); if (r.ok) { setDesde(""); setHasta(""); } return res(r); } }) }] },
   ] : [];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }} data-salud-entorno={d.entorno}>

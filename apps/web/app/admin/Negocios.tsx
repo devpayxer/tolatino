@@ -60,7 +60,7 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
     onNext: () => ir({ cur: siguiente, ant: [...f.ant, f.cur ?? "_"].join("~") }) };
   const exportar = () => setConf({ titulo: E("Exportar la lista a CSV", "Export the list to CSV"), sub: E("Baja lo que ves con los filtros de ahora (hasta 20,000 filas). Queda en la auditoría con el motivo.", "Downloads what you see with the current filters (up to 20,000 rows). It stays in the audit log with the reason."), cta: E("Exportar", "Export"),
     plantillas: [E("Revisión de la ciudad", "City review"), E("Pedido de finanzas", "Finance request"), E("Reporte del mes", "Monthly report")],
-    hacer: async (m) => {
+    nota: "interna", hacer: async (m) => {
       const r = await exportarNegocios(Object.fromEntries(sp.entries()), m);
       if (r.ok && r.csv) { const url = URL.createObjectURL(new Blob([r.csv], { type: "text/csv;charset=utf-8" })), el = document.createElement("a"); el.href = url; el.download = r.nombre ?? "negocios.csv"; document.body.appendChild(el); el.click(); el.remove(); URL.revokeObjectURL(url); }
       return r; } });
@@ -85,14 +85,14 @@ export function Negocios({ filas, siguiente, total, porCat, cab, f, cats, porPag
         return { icon: "store", title: x.name, sub: `${x.cat} · ${E("Sin dueño en To’Latino", "No owner on To’Latino")}${x.inv ? ` · ${E("invitación enviada", "invite sent")} ${hace(x.inv)}` : ""}`, chevron: true, onClick: () => abrir(x.id),
           actions: puedeEditar && x.phone && !reciente ? [{ label: E("Invitar a reclamar", "Invite to claim"), variant: "secondary", icon: "chat", onClick: () => setConf({ titulo: E(`Invitar a ${x.name} a reclamar su página`, `Invite ${x.name} to claim their page`),
             sub: E("Le llega un SMS al teléfono de su página con el enlace para reclamarla gratis. Una vez cada 30 días; respeta STOP y las horas de silencio.", "A text goes to the phone on their page with the link to claim it for free. Once every 30 days; respects STOP and quiet hours."), cta: E("Enviar el SMS", "Send the text"),
-            plantillas: [E("Lo recomendaron vecinos", "Neighbors recommended it"), E("Semilla de la apertura", "Launch seed"), E("Pidió información", "Asked for information")], hacer: (m) => invitarReclamar(x.id, m) }) }] : undefined };
+            plantillas: [E("Lo recomendaron vecinos", "Neighbors recommended it"), E("Semilla de la apertura", "Launch seed"), E("Pidió información", "Asked for information")], nota: "interna", hacer: (m) => invitarReclamar(x.id, m) }) }] : undefined };
       })} /> : <PanelBloques bloques={[{ type: "note", tone: "ok", icon: "check", t: E("Todos los negocios de tus ciudades tienen dueño.", "Every business in your cities has an owner.") }]} />}
       {otraPag(rec.siguiente)}
     </>
   ) : null;
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("NEGOCIOS", "BUSINESSES"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("NEGOCIOS", "BUSINESSES"), t: E("Negocios", "Businesses"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={(r) => { setConf(null); setToast(r.mensaje ?? E("Listo.", "Done.")); }} />
       <Toast t={toast} desk={desk} />
     </div>);

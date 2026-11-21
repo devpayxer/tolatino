@@ -55,7 +55,7 @@ export function Crecimiento({ d, l }: { d: DatosCrec; l: L }) {
 
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("DINERO Y CRECIMIENTO · CRECIMIENTO", "MONEY & GROWTH · GROWTH"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("DINERO Y CRECIMIENTO · CRECIMIENTO", "MONEY & GROWTH · GROWTH"), t: E("Crecimiento", "Growth"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -117,7 +117,7 @@ function Promotores({ d, E, setConf, nombreCiudad }: { d: DatosCrec; E: EFn; set
     s: `${p.ciudad ? nombreCiudad(p.ciudad) : E("todas las ciudades", "all cities")} · ${p.dias} ${E("días de prueba", "trial days")} · ${p.traidos} ${E("negocios traídos", "businesses brought")} · ${p.calificados} ${E("calificados", "qualified")}${p.rechazados ? ` · ${p.rechazados} ${E("rechazados (auto-referido)", "rejected (self-referral)")}` : ""}${p.pendienteCents ? ` · $${(p.pendienteCents / 100).toFixed(2)} ${E("pendiente de pago (llega con el dinero real, 9k)", "pending payout (comes with real money, 9k)")}` : ""}`,
     tag: p.vivo ? E("VIVO", "LIVE") : E("RETIRADO", "RETIRED"), tone: p.vivo ? "signal" : "neutral", dim: !p.vivo,
     acts: d.puede.editar && p.vivo ? [{ l: E("Retirar", "Retire"), v: "secondary", onClick: () => setConf({ titulo: E(`Retirar el código ${p.code}`, `Retire code ${p.code}`), cta: E("Retirar", "Retire"), peligro: true,
-      sub: E("Ya no da días de prueba. Lo que trajo queda en el historial.", "It no longer gives trial days. What it brought stays in the history."), plantillas: [E("Terminó la campaña.", "Campaign ended."), E("Uso indebido.", "Misuse.")], hacer: (m) => codigoRetirar(p.code, m) }) }] : undefined });
+      sub: E("Ya no da días de prueba. Lo que trajo queda en el historial.", "It no longer gives trial days. What it brought stays in the history."), plantillas: [E("Terminó la campaña.", "Campaign ended."), E("Uso indebido.", "Misuse.")], nota: "interna", hacer: (m) => codigoRetirar(p.code, m) }) }] : undefined });
   return <PanelBloques bloques={[
     { type: "note", tone: "info", icon: "users", t: E("Promotor = vecino que trae negocios. Su negocio traído recibe más días de prueba Pro; cuando llega a los pedidos o citas de Configuración, el promotor califica para su recompensa (el pago a la Wallet llega con el dinero real, 9k). Su propio negocio o uno de su mismo teléfono no cuenta.", "Promoter = neighbor who brings businesses. The business they bring gets more Pro trial days; when it reaches the orders or bookings set in Configuration, the promoter qualifies for the reward (the Wallet payout comes with real money, 9k). Their own business or one from the same phone does not count.") },
     P.length ? { type: "rows", k: `${E("CÓDIGOS", "CODES")} · ${P.length}`, items: P.map(fila) } : { type: "empty", icon: "users", t: E("Sin códigos", "No codes"), s: E("Nombra al primer promotor abajo.", "Name the first promoter below.") },
@@ -127,7 +127,7 @@ function Promotores({ d, E, setConf, nombreCiudad }: { d: DatosCrec; E: EFn; set
       { type: "chips" as const, k: E("CIUDAD", "CITY"), items: d.ciudades.map((c) => ({ l: c.name, v: ciu === c.id ? "selected" : "filter", onClick: () => setCiu(c.id) })) },
       { type: "acts" as const, items: [{ l: E("Nombrar promotor", "Name promoter"), v: "action", icon: "plus", off: tel.length !== 10, onClick: () => setConf({ titulo: E("Nombrar promotor", "Name a promoter"), cta: E("Nombrar", "Name"),
         sub: E("Le creamos su código y le llega un aviso con él. Queda en la auditoría.", "We create their code and they get a notice with it. It goes in the audit trail."), plantillas: [E("Vecino que conoce negocios del barrio.", "Neighbor who knows local businesses."), E("Líder de iglesia.", "Church leader.")],
-        hacer: (m) => promotorNombrar(ref.current.tel, ref.current.ciu, m) }) }] },
+        nota: "interna", hacer: (m) => promotorNombrar(ref.current.tel, ref.current.ciu, m) }) }] },
     ] : []),
   ]} />;
 }
@@ -147,9 +147,9 @@ function Campanas({ d, E, cuando, setConf, ir, nombreCiudad, l }: { d: DatosCrec
   const fila = (x: CampanaAdm): Fila => {
     const st = ESTADO_C[x.estado] ?? [x.estado, x.estado, "neutral"], acts: Fila["acts"] = [];
     if (x.estado === "por_aprobar" && d.puede.aprobar && !x.creadaPorMi) acts.push({ l: E("Aprobar", "Approve"), v: "action", onClick: () => setConf({ titulo: E(`Aprobar «${x.nombre}»`, `Approve “${x.nombre}”`), cta: E("Aprobar", "Approve"),
-      sub: E(`Llega a ${x.personas ?? 0} personas. La aprueba otra persona del equipo; queda en la auditoría.`, `It reaches ${x.personas ?? 0} people. Another team member approves it; it goes in the audit trail.`), plantillas: [E("Revisé el texto y el segmento.", "I checked the text and the segment.")], hacer: (m) => campanaAprobar(x.id, m) }) });
+      sub: E(`Llega a ${x.personas ?? 0} personas. La aprueba otra persona del equipo; queda en la auditoría.`, `It reaches ${x.personas ?? 0} people. Another team member approves it; it goes in the audit trail.`), plantillas: [E("Revisé el texto y el segmento.", "I checked the text and the segment.")], nota: "interna", hacer: (m) => campanaAprobar(x.id, m) }) });
     if (d.puede.editar && ["borrador", "por_aprobar", "programada", "enviando"].includes(x.estado)) acts.push({ l: E("Retirar", "Retire"), v: "secondary", onClick: () => setConf({ titulo: E(`Retirar «${x.nombre}»`, `Retire “${x.nombre}”`), cta: E("Retirar", "Retire"), peligro: true,
-      sub: E("No sale más. Lo que ya salió queda en el historial.", "Nothing more goes out. What already went out stays in the history."), plantillas: [E("Tenía un error.", "It had an error."), E("Ya no aplica.", "No longer applies.")], hacer: (m) => campanaRetirar(x.id, m) }) });
+      sub: E("No sale más. Lo que ya salió queda en el historial.", "Nothing more goes out. What already went out stays in the history."), plantillas: [E("Tenía un error.", "It had an error."), E("Ya no aplica.", "No longer applies.")], nota: "interna", hacer: (m) => campanaRetirar(x.id, m) }) });
     return { key: x.id, icon: x.canal === "sms" ? "phone" : x.canal === "correo" ? "news" : "bell", t: `${x.nombre} · ${nombreCiudad(x.city)}`, tag: E(st[0], st[1]), tone: st[2],
       s: `${E(TIPO_CAMPANA[x.tipo as TipoCampana]?.es ?? x.tipo, TIPO_CAMPANA[x.tipo as TipoCampana]?.en ?? x.tipo)} · ${E(CANAL[x.canal].es, CANAL[x.canal].en)} · ${resumenSeg(x.seg)} · «${l === "es" ? x.titulo.es : x.titulo.en}»`,
       m: `${E("SALE", "GOES OUT")} ${cuando(x.cuando).toUpperCase()} · ${x.personas ?? 0} ${E("PERSONAS", "PEOPLE")} · ${x.enviados} ${E("ENVIADOS", "SENT")} · ${x.tope} ${E("EN TOPE", "AT LIMIT")}${x.canal === "correo" ? ` · ${x.sinCorreo} ${E("SIN CORREO", "NO EMAIL")}` : ""} · ${x.abiertos} ${E("ABIERTOS", "OPENED")}${x.creadaPorMi ? ` · ${E("TUYA", "YOURS")}` : x.quien ? ` · ${x.quien.toUpperCase()}` : ""}${x.aprobo ? ` · ${E("APROBÓ", "APPROVED BY")} ${x.aprobo.toUpperCase()}` : ""}${x.razon ? ` · ${x.razon}` : ""}`,
@@ -184,7 +184,7 @@ function Campanas({ d, E, cuando, setConf, ir, nombreCiudad, l }: { d: DatosCrec
       { type: "field" as const, k: E("CUÁNDO (AAAA-MM-DD HH:MM, HORA DE LA CIUDAD; VACÍO = AHORA)", "WHEN (YYYY-MM-DD HH:MM, CITY TIME; EMPTY = NOW)"), val: f.cuando, onChange: (v: string) => set({ cuando: v }), ph: "2026-11-20 10:00", max: 16 },
       { type: "acts" as const, items: [{ l: E("Programar la campaña", "Schedule the campaign"), v: "action", icon: "bell", off: !listo, onClick: () => setConf({ titulo: E("Programar la campaña", "Schedule the campaign"), cta: E("Programar", "Schedule"),
         sub: E("Sale a su hora (nunca de noche). Queda en la auditoría con tu motivo.", "It goes out on time (never at night). It goes in the audit trail with your reason."), plantillas: [E("Reclutar negocios para la apertura.", "Recruit businesses for the opening."), E("Aviso a los vecinos.", "Notice to neighbors.")],
-        hacer: (m) => { const v = ref.current; return campanaCrear({ nombre: v.nombre, tipo: v.tipo, canal: v.canal, ciudad: v.ciudad, segmento: { rol: v.rol, inactivos: v.inactivos || null, cat: v.cat || null, plan: v.plan || null, items: v.items || null }, tituloEs: v.tituloEs, tituloEn: v.tituloEn, textoEs: v.textoEs, textoEn: v.textoEn, href: v.href, cuando: v.cuando }, m); } }) }] },
+        nota: "interna", hacer: (m) => { const v = ref.current; return campanaCrear({ nombre: v.nombre, tipo: v.tipo, canal: v.canal, ciudad: v.ciudad, segmento: { rol: v.rol, inactivos: v.inactivos || null, cat: v.cat || null, plan: v.plan || null, items: v.items || null }, tituloEs: v.tituloEs, tituloEn: v.tituloEn, textoEs: v.textoEs, textoEn: v.textoEn, href: v.href, cuando: v.cuando }, m); } }) }] },
     ] : []),
   ]} />;
 }
@@ -195,7 +195,7 @@ function Destacados({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (
   useEffect(() => { let vivo = true; if (q.trim().length < 2) { setRes([]); return; } const x = setTimeout(() => { void destacadoBuscar(ciudad, q).then((r) => { if (vivo) setRes(r); }); }, 250); return () => { vivo = false; clearTimeout(x); }; }, [q, ciudad]);
   const accion = (id: string, nombre: string, modo: "fijar" | "quitar") => setConf({ titulo: modo === "fijar" ? E(`Fijar ${nombre}`, `Pin ${nombre}`) : E(`Quitar ${nombre} de la rotación`, `Remove ${nombre} from rotation`), cta: modo === "fijar" ? E("Fijar", "Pin") : E("Quitar", "Remove"),
     sub: E(`Dura ${F.dias} días y vuelve solo a la rotación. Queda en la auditoría.`, `It lasts ${F.dias} days and returns to the rotation on its own. It goes in the audit trail.`), plantillas: modo === "fijar" ? [E("Negocio nuevo de la campaña.", "New business from the campaign."), E("Temporada.", "Season.")] : [E("Queja abierta.", "Open complaint."), E("Pidió no salir.", "Asked not to show.")],
-    hacer: (m) => destacadoFijar(ciudad, id, modo, m) });
+    nota: "interna", hacer: (m) => destacadoFijar(ciudad, id, modo, m) });
   return <>{/* 9t · Dos grupos, como Patrocinios: NEGOCIOS (la vitrina de Negocios) y EVENTOS (arriba de Eventos de la ciudad). */}<PanelBloques bloques={[
     { type: "group", k: E("NEGOCIOS", "BUSINESSES") },
     { type: "note", tone: "info", icon: "star", t: E(`Destacados = los Pro de la portada de Negocios. Rotación diaria automática; aquí fijas o quitas a mano por ${F.dias} días con motivo. Fijados a la vez: ${F.fijados} de ${F.tope}.`, `Featured = the Pro on the Businesses cover. Automatic daily rotation; here you pin or remove manually for ${F.dias} days with a reason. Pinned at once: ${F.fijados} of ${F.tope}.`) },
@@ -206,7 +206,7 @@ function Destacados({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cuando: (
       s: `${x.modo === "fijar" ? E("Fijado", "Pinned") : E("Quitado de la rotación", "Removed from rotation")} · ${E("hasta", "until")} ${cuando(x.hasta)} · ${x.motivo}${x.quien ? ` · ${x.quien}` : ""}${x.razon ? ` · ${E("retirado", "retired")}: ${x.razon}` : ""}`,
       tag: x.vivo ? E("VIVO", "LIVE") : E("TERMINÓ", "ENDED"), tone: x.vivo ? "signal" : "neutral", dim: !x.vivo,
       acts: d.puede.editar && x.vivo ? [{ l: E("Retirar", "Retire"), v: "secondary", onClick: () => setConf({ titulo: E(`Retirar: ${x.nombre}`, `Retire: ${x.nombre}`), cta: E("Retirar", "Retire"), peligro: true,
-        sub: E("Vuelve a la rotación de siempre. Nada se borra.", "It returns to the usual rotation. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed.")], hacer: (m) => destacadoRetirar(x.id, m) }) }] : undefined })) } : { type: "empty", icon: "star", t: E("Nada fijado ni quitado", "Nothing pinned or removed"), s: E("La vitrina rota sola entre los Pro abiertos con foto.", "The showcase rotates on its own among open Pro with a photo.") },
+        sub: E("Vuelve a la rotación de siempre. Nada se borra.", "It returns to the usual rotation. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed.")], nota: "interna", hacer: (m) => destacadoRetirar(x.id, m) }) }] : undefined })) } : { type: "empty", icon: "star", t: E("Nada fijado ni quitado", "Nothing pinned or removed"), s: E("La vitrina rota sola entre los Pro abiertos con foto.", "The showcase rotates on its own among open Pro with a photo.") },
     ...(d.puede.editar ? [
       { type: "group" as const, k: E("FIJAR UN NEGOCIO", "PIN A BUSINESS") },
       { type: "search" as const, val: q, ph: E("Nombre del negocio", "Business name"), onChange: setQ, onClear: () => setQ("") },
@@ -231,7 +231,7 @@ function DestacadosEventos({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cu
     sub: E(`Sale arriba de Eventos de ${nombreCiudad} («Destacados en ${nombreCiudad}») y primero en la lista de su día, del ${ref.current.desde || V.hoyCiudad} al ${ref.current.hasta}. Si el evento se cancela, se oculta o pasa, deja de salir solo. Queda en la auditoría.`,
       `It shows at the top of Events in ${nombreCiudad} («Featured in ${nombreCiudad}») and first in its day’s list, from ${ref.current.desde || V.hoyCiudad} to ${ref.current.hasta}. If the event is cancelled, hidden or over, it stops showing on its own. It goes in the audit trail.`),
     plantillas: [E("Evento de la comunidad.", "Community event."), E("Fiesta patria de la ciudad.", "City heritage celebration."), E("Campaña de la ciudad.", "City campaign.")],
-    hacer: (m) => destacadoEvtFijar(id, ref.current.desde, ref.current.hasta, m) });
+    nota: "interna", hacer: (m) => destacadoEvtFijar(id, ref.current.desde, ref.current.hasta, m) });
   return <PanelBloques bloques={[
     { type: "group", k: E("EVENTOS", "EVENTS") },
     { type: "note", tone: "info", icon: "ticket", t: E(`Destacados de Eventos = los que fija el equipo arriba de Eventos de la ciudad (sin cobro). Patrocinado es lo que paga el organizador (Patrocinios › EVENTOS). Fijados a la vez: ${V.fijados} de ${V.tope}.`,
@@ -244,7 +244,7 @@ function DestacadosEventos({ d, E, cuando, setConf }: { d: DatosCrec; E: EFn; cu
         s: `${x.org} · ${E("del", "from")} ${cuando(x.desde)} ${E("al", "to")} ${cuando(x.hasta)} · ${x.motivo}${x.quien ? ` · ${x.quien}` : ""}${x.estado === "no_sale" ? ` · ${E("el evento ya no se ve (cancelado, oculto o pasado): no sale ni ocupa puesto", "the event no longer shows (cancelled, hidden or over): it does not show or take a slot")}` : ""}${x.razon ? ` · ${E("retirado", "retired")}: ${x.razon}` : ""}`,
         tag: tg, tone: tn, dim: !abierto,
         acts: d.puede.editar && abierto ? [{ l: E("Retirar", "Retire"), v: "secondary", onClick: () => setConf({ titulo: E(`Retirar: ${tit(x.titulo)}`, `Retire: ${tit(x.titulo)}`), cta: E("Retirar", "Retire"), peligro: true,
-          sub: E("Deja de salir en Destacados de Eventos al momento. Nada se borra.", "It stops showing in Featured events right away. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")], hacer: (m) => destacadoRetirar(x.id, m) }) }] : undefined };
+          sub: E("Deja de salir en Destacados de Eventos al momento. Nada se borra.", "It stops showing in Featured events right away. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")], nota: "interna", hacer: (m) => destacadoRetirar(x.id, m) }) }] : undefined };
     }) } : { type: "empty", icon: "ticket", t: E("Ningún evento fijado", "No pinned events"), s: E("Eventos sale por días, como siempre; aquí fijas uno arriba por unas fechas.", "Events shows by day, as always; here you pin one at the top for some dates.") },
     ...(d.puede.editar ? [
       { type: "group" as const, k: E("FIJAR UN EVENTO", "PIN AN EVENT") },
@@ -284,7 +284,7 @@ function Patrocinios({ d, E, setConf, ir, l }: { d: DatosCrec; E: EFn; setConf: 
           { k: "no", l: E("No devolver", "Do not refund") }] },
         plantillas: ev ? [E("El flyer no cumple las reglas.", "The flyer breaks the rules."), E("El organizador pidió terminarlo.", "The organizer asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")]
           : [E("La foto o el video no cumplen las reglas.", "The photo or video breaks the rules."), E("El negocio pidió terminarlo.", "The business asked to end it."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")],
-        hacer: (m, el) => (ev ? patrocinioEventoTerminar(x.id, m, el !== "no") : patrocinioTerminar(x.id, m, el !== "no")) }) }] : undefined };
+        nota: "persona", hacer: (m, el) => (ev ? patrocinioEventoTerminar(x.id, m, el !== "no") : patrocinioTerminar(x.id, m, el !== "no")) }) }] : undefined };
   };
   const filtros: [("vivos" | "terminados" | "todos"), string][] = [["vivos", E("Activos y reservados", "Active and booked")], ["terminados", E("Terminados", "Ended")], ["todos", E("Todos", "All")]];
   const e = X.e === "vivos" ? null : X.e, V = X.ev;
@@ -320,7 +320,7 @@ function Enlaces({ d, E, cuando, setConf, ir, setToast, nombreCiudad, l }: { d: 
       { l: E("PDF carta", "PDF letter"), v: "secondary", onClick: () => window.open(`/admin/crecimiento/volante/${x.code}?f=carta`, "_blank", "noopener") },
       { l: E("PDF media carta", "PDF half letter"), v: "secondary", onClick: () => window.open(`/admin/crecimiento/volante/${x.code}?f=media`, "_blank", "noopener") },
       ...(d.puede.editar ? [{ l: E("Retirar", "Retire"), v: "secondary", onClick: () => setConf({ titulo: E(`Retirar /q/${x.code}`, `Retire /q/${x.code}`), cta: E("Retirar", "Retire"), peligro: true,
-        sub: E("El QR impreso deja de contar y lleva al Inicio. Nada se borra.", "The printed QR stops counting and goes to the Home. Nothing is deleted."), plantillas: [E("Se quitaron los volantes.", "The flyers were removed."), E("Destino equivocado.", "Wrong destination.")], hacer: (m) => enlaceRetirar(x.code, m) }) }] : []),
+        sub: E("El QR impreso deja de contar y lleva al Inicio. Nada se borra.", "The printed QR stops counting and goes to the Home. Nothing is deleted."), plantillas: [E("Se quitaron los volantes.", "The flyers were removed."), E("Destino equivocado.", "Wrong destination.")], nota: "interna", hacer: (m) => enlaceRetirar(x.code, m) }) }] : []),
     ] : undefined });
   const max = det ? Math.max(1, ...det.dias.map((x) => x.n)) : 1;
   const mix = (app: string, ua: string) => det?.mix.find((x) => x.app === app && x.ua === ua)?.n ?? 0;
@@ -344,7 +344,7 @@ function Enlaces({ d, E, cuando, setConf, ir, setToast, nombreCiudad, l }: { d: 
       { type: "field" as const, k: E("O UNA RUTA DE TO'LATINO", "OR A TO'LATINO PATH"), val: f.target, onChange: (v: string) => setF((x) => ({ ...x, target: v.trim() })), ph: "/c/comida", max: 200 },
       { type: "acts" as const, items: [{ l: E("Crear el enlace", "Create the link"), v: "action", icon: "plus", off: f.label.trim().length < 2 || !f.target.startsWith("/"), onClick: () => setConf({ titulo: E("Crear el enlace y su QR", "Create the link and its QR"), cta: E("Crear", "Create"),
         sub: E("Funciona al instante. No se edita: se retira y se crea otro.", "It works right away. It is not edited: retire it and create another."), plantillas: [E("Volantes de la campaña.", "Campaign flyers."), E("Cartel en la iglesia.", "Church poster.")],
-        hacer: (m) => enlaceCrear(ref.current, m) }) }] },
+        nota: "interna", hacer: (m) => enlaceCrear(ref.current, m) }) }] },
     ] : []),
   ]} />;
 }
@@ -372,7 +372,7 @@ function Lista({ d, E, cuando, setConf, ir, l }: { d: DatosCrec; E: EFn; cuando:
         { l: W.fecha.visible ? E("Ocultar la fecha", "Hide the date") : E("Mostrar la fecha", "Show the date"), v: W.fecha.visible ? "secondary" : "action", off: !W.fecha.visible && !/^\d{4}-\d{2}-\d{2}$/.test(fecha), onClick: () => setConf({
           titulo: W.fecha.visible ? E("Ocultar la fecha", "Hide the date") : E("Mostrar la fecha en la landing", "Show the date on the landing"), cta: E("Guardar", "Save"),
           sub: E("Las cinco ciudades abren el mismo día (decisión A). Queda en la auditoría.", "The five cities open the same day (decision A). It goes in the audit trail."), plantillas: [E("Fecha confirmada por el fundador.", "Date confirmed by the founder.")],
-          hacer: (m) => landingFecha(!W.fecha.visible, ref.current, m) }) }] },
+          nota: "interna", hacer: (m) => landingFecha(!W.fecha.visible, ref.current, m) }) }] },
     ] : []),
   ]} />;
 }

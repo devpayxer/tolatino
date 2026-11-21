@@ -37,7 +37,7 @@ export function TextosPaginas({ d, adm, pie, k, j, det, dif, editar, aprobar }: 
 
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · PÁGINAS", "COPY AND PAGES · PAGES"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · PÁGINAS", "COPY AND PAGES · PAGES"), t: E("Textos y páginas", "Copy and pages"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       {conf.revisar ? <PanelBloques bloques={[
         { type: "field", k: E("DESPACHO QUE LA REVISÓ", "FIRM THAT REVIEWED IT"), val: despacho, onChange: setDespacho, ph: E("Nombre del despacho", "Firm name"), max: 200, count: `${despacho.length}/200` },
         { type: "field", k: E("FECHA DE LA REVISIÓN (AAAA-MM-DD)", "REVIEW DATE (YYYY-MM-DD)"), val: fecha, onChange: setFecha, ph: "2026-11-14", max: 10 },
@@ -76,14 +76,14 @@ export function TextosPaginas({ d, adm, pie, k, j, det, dif, editar, aprobar }: 
         ...(base ? [{ label: base === pub ? E("Diferencias con la publicada", "Differences with the published one") : E("Diferencias con la anterior", "Differences with the previous one"), variant: "secondary", onClick: () => ir({ k, j, dif: v.id, con: base.id }) }] : []),
         ...(editar && v.status === "borrador" ? [{ label: E("Marcar revisada", "Mark reviewed"), variant: "secondary", onClick: () => setConf({ titulo: E(`Revisada por el abogado · versión ${v.version}`, `Reviewed by the lawyer · version ${v.version}`), cta: E("Marcar revisada", "Mark reviewed"), revisar: v.id,
           sub: E("Escribe el despacho y la fecha de su revisión. Queda en el historial y en la auditoría; no se puede cambiar después.", "Write the firm and the date of its review. It goes in the history and the audit trail; it cannot be changed later."),
-          plantillas: [E("Revisión del Paquete 9-2.", "Package 9-2 review."), E("El abogado aprobó este texto.", "The lawyer approved this text.")], hacer: (m) => legalRevisada(v.id, rev.current.despacho, rev.current.fecha, m) }) }] : []),
+          plantillas: [E("Revisión del Paquete 9-2.", "Package 9-2 review."), E("El abogado aprobó este texto.", "The lawyer approved this text.")], nota: "interna", hacer: (m) => legalRevisada(v.id, rev.current.despacho, rev.current.fecha, m) }) }] : []),
         ...(aprobar && (v.status === "borrador" || v.status === "revisado") ? [{ label: E("Publicar", "Publish"), variant: "primary", onClick: () => setConf({ titulo: `${E("Publicar", "Publish")} · ${v.title[adm]} · ${E("versión", "version")} ${v.version}`, cta: E("Publicar", "Publish"),
           sub: v.reviewed_by_counsel ? E(`Revisada por ${v.reviewed_by_counsel}. Se publica ahora; queda en el historial con tu motivo.`, `Reviewed by ${v.reviewed_by_counsel}. It is published now; it goes in the history with your reason.`) : E("Sin la revisión del abogado: solo se puede en el sandbox. Queda en el historial con tu motivo.", "Without the lawyer’s review: only possible in the sandbox. It goes in the history with your reason."),
           elegir: ACEPTABLES.has(k) ? { label: E("¿PIDE ACEPTAR OTRA VEZ?", "ASK TO ACCEPT AGAIN?"), items: [{ k: "si", l: E("Sí: quien entre la acepta (la hoja)", "Yes: whoever comes in accepts it (the sheet)") }, { k: "no", l: "No" }] } : undefined,
-          plantillas: [E("Versión revisada por el abogado.", "Version reviewed by the lawyer."), E("Cambio pedido por el abogado.", "Change requested by the lawyer."), E("Prueba en el sandbox.", "Test in the sandbox.")], hacer: (m, e) => legalPublicar(v.id, m, e === "si") }) }] : []),
+          plantillas: [E("Versión revisada por el abogado.", "Version reviewed by the lawyer."), E("Cambio pedido por el abogado.", "Change requested by the lawyer."), E("Prueba en el sandbox.", "Test in the sandbox.")], nota: "interna", hacer: (m, e) => legalPublicar(v.id, m, e === "si") }) }] : []),
         ...(aprobar && v.status !== "retirado" ? [{ label: E("Retirar", "Retire"), variant: "secondary", onClick: () => setConf({ titulo: E(`Retirar · versión ${v.version}`, `Retire · version ${v.version}`), cta: E("Retirar", "Retire"), peligro: true,
           sub: v.status === "publicado" ? E("Deja de verse; vuelve a verse la publicada anterior (o el aviso de «en revisión»). Nada se borra.", "It stops showing; the previous published one shows again (or the “under review” notice). Nothing is deleted.") : E("Deja de estar disponible para publicar. Nada se borra.", "It is no longer available to publish. Nothing is deleted."),
-          plantillas: [E("Tenía un error.", "It had an error."), E("La reemplaza otra versión.", "Another version replaces it."), E("Fin de la prueba en el sandbox.", "End of the sandbox test.")], hacer: (m) => legalRetirar(v.id, m) }) }] : []),
+          plantillas: [E("Tenía un error.", "It had an error."), E("La reemplaza otra versión.", "Another version replaces it."), E("Fin de la prueba en el sandbox.", "End of the sandbox test.")], nota: "interna", hacer: (m) => legalRetirar(v.id, m) }) }] : []),
       ];
     };
     const filas = det.versiones.map((v, i) => ({ icon: v.status === "publicado" ? "check" : v.status === "revisado" ? "shield" : v.status === "retirado" ? "ban" : "edit",
@@ -130,7 +130,7 @@ export function TextosPaginas({ d, adm, pie, k, j, det, dif, editar, aprobar }: 
           s: E("Términos, Privacidad, Ayuda y Soporte al final de cada pantalla pública. Encenderlo cambia las capturas aprobadas de la tubería: antes, tu OK con las capturas nuevas.", "Terms, Privacy, Help and Support at the end of each public screen. Turning it on changes the pipeline’s approved screenshots: get your OK on the new ones first."),
           tag: pie ? E("ENCENDIDO", "ON") : E("APAGADO", "OFF"), tone: pie ? "signal" : "neutral", chev: false,
           acts: aprobar ? [{ l: pie ? E("Apagar el pie", "Turn the footer off") : E("Encender el pie", "Turn the footer on"), v: "secondary", onClick: () => setConf({ titulo: pie ? E("Apagar el pie de la web", "Turn the web footer off") : E("Encender el pie de la web", "Turn the web footer on"), cta: pie ? E("Apagar", "Turn off") : E("Encender", "Turn on"),
-            sub: E("Lo ven todos los que entran. Queda en el historial con tu motivo.", "Everyone who comes in sees it. It goes in the history with your reason."), plantillas: [E("Capturas nuevas aprobadas.", "New screenshots approved."), E("Volver a lo de antes.", "Back to how it was.")], hacer: (m) => pieFijar(!pie, m) }) }] : undefined }] },
+            sub: E("Lo ven todos los que entran. Queda en el historial con tu motivo.", "Everyone who comes in sees it. It goes in the history with your reason."), plantillas: [E("Capturas nuevas aprobadas.", "New screenshots approved."), E("Volver a lo de antes.", "Back to how it was.")], nota: "interna", hacer: (m) => pieFijar(!pie, m) }) }] : undefined }] },
       ]} />
       <Toast t={toast} desk={desk} />
     </div>);

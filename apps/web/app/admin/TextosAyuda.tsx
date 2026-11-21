@@ -28,7 +28,7 @@ export function TextosAyuda({ d, l, aud, est, q, desde, editar }: { d: DatosAyud
   };
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · AYUDA", "COPY AND PAGES · HELP"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · AYUDA", "COPY AND PAGES · HELP"), t: E("Textos y páginas", "Copy and pages"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>
@@ -54,9 +54,9 @@ export function TextosAyuda({ d, l, aud, est, q, desde, editar }: { d: DatosAyud
     ...(x.status !== "retired" ? [{ label: editar ? E("Editar", "Edit") : E("Secciones", "Sections"), variant: "secondary", onClick: () => router.push(`/admin/textos?ed=${encodeURIComponent(x.slug)}`) }] : []),
     ...(editar && x.status === "live" ? [{ label: E("Pausar", "Pause"), variant: "secondary", onClick: () => setConf({ titulo: `${E("Pausar", "Pause")} · ${x.title[l]}`, cta: E("Pausar", "Pause"), peligro: true,
       sub: E("Deja de salir en el Centro de ayuda (y El Compa no lo usará). El texto no cambia: se corrige en el repo. Queda en el historial con tu motivo.", "It stops showing in the Help Center (and El Compa will not use it). The text does not change: it is fixed in the repo. It goes in the history with your reason."),
-      plantillas: [E("Dice algo que ya no es cierto.", "It says something that is no longer true."), E("Le falta un caso importante.", "It is missing an important case."), E("Se está reescribiendo en el repo.", "It is being rewritten in the repo.")], hacer: (m) => ayudaPausar(x.slug, m) }) }] : []),
+      plantillas: [E("Dice algo que ya no es cierto.", "It says something that is no longer true."), E("Le falta un caso importante.", "It is missing an important case."), E("Se está reescribiendo en el repo.", "It is being rewritten in the repo.")], nota: "interna", hacer: (m) => ayudaPausar(x.slug, m) }) }] : []),
     ...(editar && x.status === "paused" ? [{ label: E("Volver a usar", "Use again"), variant: "secondary", onClick: () => setConf({ titulo: `${E("Volver a usar", "Use again")} · ${x.title[l]}`, cta: E("Volver a usar", "Use again"),
-      sub: E("Vuelve a salir en el Centro de ayuda con el texto desplegado.", "It shows again in the Help Center with the deployed text."), plantillas: [E("Ya se corrigió en el repo.", "Already fixed in the repo."), E("Revisado: está bien.", "Reviewed: it is fine.")], hacer: (m) => ayudaVolver(x.slug, m) }) }] : []),
+      sub: E("Vuelve a salir en el Centro de ayuda con el texto desplegado.", "It shows again in the Help Center with the deployed text."), plantillas: [E("Ya se corrigió en el repo.", "Already fixed in the repo."), E("Revisado: está bien.", "Reviewed: it is fine.")], nota: "interna", hacer: (m) => ayudaVolver(x.slug, m) }) }] : []),
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

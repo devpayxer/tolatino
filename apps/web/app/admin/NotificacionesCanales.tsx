@@ -85,11 +85,11 @@ export function NotificacionesCanales({ d, tab, puede, l }: { d: DatosCanalesNot
       const e = WA[p.estado] ?? [p.estado, p.estado, "neutral"], ultimo = p.historial[0];
       const acts: { l: string; icon: string; onClick: () => void }[] = [];
       if (puede && ["borrador", "rechazada"].includes(p.estado)) acts.push({ l: E("Mandar a Meta", "Send to Meta"), icon: "right", onClick: () => setConf({ titulo: E(`Mandar ${p.nombre} (${p.idioma}) a Meta`, `Send ${p.nombre} (${p.idioma}) to Meta`), cta: E("Mandar", "Send"),
-        sub: E("Meta revisa ESTE texto; mientras está en revisión no se cambia. El motivo queda en la auditoría.", "Meta reviews THIS text; while it is in review it does not change. The reason stays in the audit log."), hacer: (m) => waMandar(p.id, m) }) });
+        sub: E("Meta revisa ESTE texto; mientras está en revisión no se cambia. El motivo queda en la auditoría.", "Meta reviews THIS text; while it is in review it does not change. The reason stays in the audit log."), nota: "interna", hacer: (m) => waMandar(p.id, m) }) });
       if (puede && d.wa!.sandbox && !d.wa!.meta && p.estado === "enviada") {
-        acts.push({ l: E("Simular: aprobada", "Simulate: approved"), icon: "check", onClick: () => setConf({ titulo: E(`Simular que Meta aprobó ${p.nombre}`, `Simulate that Meta approved ${p.nombre}`), cta: E("Aprobar", "Approve"), hacer: (m) => waSimular(p.id, true, m) }) });
+        acts.push({ l: E("Simular: aprobada", "Simulate: approved"), icon: "check", onClick: () => setConf({ titulo: E(`Simular que Meta aprobó ${p.nombre}`, `Simulate that Meta approved ${p.nombre}`), cta: E("Aprobar", "Approve"), nota: "interna", hacer: (m) => waSimular(p.id, true, m) }) });
         acts.push({ l: E("Simular: rechazada", "Simulate: rejected"), icon: "close", onClick: () => setConf({ titulo: E(`Simular que Meta rechazó ${p.nombre}`, `Simulate that Meta rejected ${p.nombre}`), cta: E("Rechazar", "Reject"), peligro: true,
-          sub: E("Escribe el motivo como lo diría Meta: queda en la plantilla.", "Write the reason as Meta would: it stays on the template."), hacer: (m) => waSimular(p.id, false, m) }) });
+          sub: E("Escribe el motivo como lo diría Meta: queda en la plantilla.", "Write the reason as Meta would: it stays on the template."), nota: "interna", hacer: (m) => waSimular(p.id, false, m) }) });
       }
       return { key: p.id, icon: "chat", t: `${E(...(USO[p.uso] ?? [p.uso, p.uso]))} · ${p.nombre} · ${p.idioma === "es" ? "ES" : "EN"}`, s: p.cuerpo,
         m: [p.categoria, p.motivo ? `${E("MOTIVO", "REASON")}: ${p.motivo}` : null, ultimo ? `${ultimo.via === "meta" ? "META" : ultimo.via === "simulador" ? E("SIMULADOR", "SIMULATOR") : E("EQUIPO", "TEAM")} · ${cuando(ultimo.at)}` : null].filter(Boolean).join(" · "),

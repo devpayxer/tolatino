@@ -75,7 +75,7 @@ export function Configuracion({ filas, admin, autoOcultar, modelos = null, horar
       sub: E(`Ahora: ${fmt(f, f.v)} · de fábrica: ${fmt(f, f.def)} · de ${fmt(f, f.min)} a ${fmt(f, f.max)}. Aplica desde ahora en todas las ciudades. El motivo queda en la auditoría.`, `Now: ${fmt(f, f.v)} · default: ${fmt(f, f.def)} · from ${fmt(f, f.min)} to ${fmt(f, f.max)}. Applies from now on in every city. The reason stays in the audit log.`),
       valor: { k: E(`VALOR NUEVO (${bi(f.unidad).toUpperCase()})`, `NEW VALUE (${bi(f.unidad).toUpperCase()})`), ini: String(f.v), max: 7 },
       plantillas: [E("Lo pidió el fundador", "The founder asked for it"), E("Ajuste con datos reales", "Adjusted with real data"), E("Volver al de fábrica", "Back to default")],
-      hacer: (m, _e, v) => configCambiar(f.key, v, m),
+      nota: "interna", hacer: (m, _e, v) => configCambiar(f.key, v, m),
     });
   };
   const B: Bloque[] = [
@@ -114,7 +114,7 @@ export function Configuracion({ filas, admin, autoOcultar, modelos = null, horar
         if (!otros.length) return setToast(E("No hay otro modelo encendido en la lista de precios.", "No other model is on in the price list."));
         setConf({ titulo: PAPEL[p.papel]![0], cta: E("Guardar", "Save"), elegir: { label: E("MODELO", "MODEL"), items: otros.map((m) => ({ k: m.id, l: `${m.label} · $${m.entrada.toFixed(2)} / $${m.salida.toFixed(2)} ${E("por millón de tokens", "per million tokens")}` })) },
           sub: E(`Ahora: ${p.label ?? "ninguno"}. Solo los modelos encendidos en la lista de precios; el precio de cada uno no se escribe en el código. Vale desde la próxima llamada y queda en la auditoría.`, `Now: ${p.label ?? "none"}. Only models on in the price list; each one’s price isn’t written in the code. It applies from the next call and stays in the audit log.`),
-          plantillas: [E("Lo pidió el fundador", "The founder asked for it"), E("Mejor calidad al mismo costo", "Better quality at the same cost"), E("Bajar el gasto", "Lower spending")], hacer: (m, e) => configModelo(p.papel, e ?? "", m) });
+          plantillas: [E("Lo pidió el fundador", "The founder asked for it"), E("Mejor calidad al mismo costo", "Better quality at the same cost"), E("Bajar el gasto", "Lower spending")], nota: "interna", hacer: (m, e) => configModelo(p.papel, e ?? "", m) });
       };
       B.push({ type: "rows", k: E("MODELO DE CADA PAPEL", "MODEL FOR EACH ROLE"), cols: desk ? "repeat(auto-fill,minmax(420px,1fr))" : "1fr", items: modelos.papeles.map((p) => ({
         key: `modelo-${p.papel}`, icon: admin ? "edit" : "lock", t: desk ? PAPEL[p.papel]![0] : `${PAPEL[p.papel]![0]} · ${p.label ?? E("ninguno", "none")}`, r: desk ? p.label ?? E("ninguno", "none") : "",

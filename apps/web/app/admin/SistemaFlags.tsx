@@ -23,7 +23,7 @@ export function SistemaFlags({ flags, ciudades, l, editar }: { flags: FlagAdm[];
   const guardar = (f: FlagAdm, c: { enabled: boolean; scope: Alcance; cities: string[]; percent: number }, titulo: string) => setConf({
     titulo, cta: E("Guardar", "Save"), sub: E("Aplica al momento en todos los procesos. Queda en la auditoría con tu motivo.", "Applies right away in every process. It goes in the audit log with your reason."),
     plantillas: [E("Prueba con pocas personas antes de abrirlo a todos.", "Test with a few people before opening it to everyone."), E("Se apaga mientras se arregla un problema.", "Turned off while a problem is fixed.")],
-    hacer: async (m) => { const r = await flagGuardar(f.key, c.enabled, c.scope, c.cities, c.percent, m); return r.ok ? { ok: true, mensaje: E(r.msg.es, r.msg.en) } : { ok: false, mensaje: E(r.msg.es, r.msg.en) }; },
+    nota: "interna", hacer: async (m) => { const r = await flagGuardar(f.key, c.enabled, c.scope, c.cities, c.percent, m); return r.ok ? { ok: true, mensaje: E(r.msg.es, r.msg.en) } : { ok: false, mensaje: E(r.msg.es, r.msg.en) }; },
   });
   const cab: Bloque[] = [
     { type: "head", eye: E("SUPER ADMIN · SISTEMA", "SUPER ADMIN · SYSTEM"), t: E("Flags", "Flags"), h1: desk ? 26 : 22,
@@ -32,7 +32,7 @@ export function SistemaFlags({ flags, ciudades, l, editar }: { flags: FlagAdm[];
   ];
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · FLAGS", "SYSTEM · FLAGS"), t: conf.titulo, s: sel?.key, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · FLAGS", "SYSTEM · FLAGS"), t: sel?.key ?? "Flags", onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={(r) => hecho(r.mensaje ?? E("Listo.", "Done."))} />
       <Toast t={toast} desk={desk} />
     </div>);

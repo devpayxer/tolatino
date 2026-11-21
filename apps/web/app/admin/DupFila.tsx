@@ -28,11 +28,11 @@ export function filasDup(pares: ParDup[], o: { desde?: string; puede: boolean; s
             "Choose which one stays. Reviews, followers and saves from the other move to it; the other closes and its page points to the one that stays. It goes to Sensitive changes and someone else approves it."),
           elegir: { label: E("QUEDA", "KEEP"), items: [{ k: x.a.id, l: E(`${x.a.name} queda`, `Keep ${x.a.name}`) }, { k: x.b.id, l: E(`${x.b.name} queda`, `Keep ${x.b.name}`) }] },
           plantillas: [E("El dueño publicó dos veces", "The owner posted it twice"), E("Lo agregó un vecino y luego el dueño", "A neighbor added it, then the owner"), E("Es el mismo local con otro nombre", "Same place under another name")],
-          hacer: (m, e) => pedirFusion(e ?? "", e === x.a.id ? x.b.id : x.a.id, m) }) },
+          nota: "interna", hacer: (m, e) => pedirFusion(e ?? "", e === x.a.id ? x.b.id : x.a.id, m) }) },
         { label: E("No es duplicado", "Not a duplicate"), variant: "secondary", icon: "check", onClick: () => o.setConf({ titulo: E("¿Por qué no es duplicado?", "Why isn’t it a duplicate?"), cta: E("Guardar", "Save"),
           sub: E("El par sale de «por revisar» para siempre. Queda en la auditoría.", "The pair leaves “to review” for good. It stays in the audit log."),
           plantillas: [E("Son negocios distintos", "They are different businesses"), E("Misma familia, otro negocio", "Same family, different business"), E("Otra dirección y otro dueño", "Different address and owner")],
-          hacer: (m) => noEsDuplicado(x.a.id, x.b.id, m) }) },
+          nota: "interna", hacer: (m) => noEsDuplicado(x.a.id, x.b.id, m) }) },
       ] : undefined,
     };
   });

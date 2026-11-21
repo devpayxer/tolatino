@@ -15,7 +15,7 @@ export function SistemaEstados({ l }: { l: L }) {
   const demo = E("Demostración: no cambia nada.", "Demo: nothing changes.");
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · ESTADOS", "SYSTEM · STATES"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("SISTEMA · ESTADOS", "SYSTEM · STATES"), t: E("Estados", "States"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={(r) => { setToast(r.mensaje ?? demo); setConf(null); }} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -30,7 +30,7 @@ export function SistemaEstados({ l }: { l: L }) {
     g("5", E("SIN PERMISO", "NO PERMISSION")), { type: "note", tone: "warn", icon: "lock", t: E("Tu rol (Soporte) no entra aquí. Pídele acceso a Admin.", "Your role (Support) cannot enter here. Ask Admin for access.") },
     g("6", E("LO ESTÁ VIENDO OTRA PERSONA", "SOMEONE ELSE IS ON IT")), { type: "note", tone: "warn", icon: "users", t: E("Lo está viendo otra persona del equipo desde hace 3 min.", "Another team member has been on it for 3 min."), cta: E("Tomarlo", "Take it"), onCta: () => setToast(demo) },
     g("7", E("ACCIÓN IRREVERSIBLE", "IRREVERSIBLE ACTION")), { type: "acts", items: [{ l: E("Banear (ejemplo)", "Ban (example)"), v: "danger", icon: "ban", onClick: () => setConf({ titulo: E("Ejemplo: banear a un vecino", "Example: ban a neighbor"), peligro: true, cta: E("Confirmar", "Confirm"),
-      sub: E("Motivo obligatorio con plantillas. Esto es una demostración: no cambia nada.", "Required reason with templates. This is a demo: nothing changes."), plantillas: [E("Acoso repetido.", "Repeated harassment."), E("Cuenta falsa.", "Fake account.")], hacer: async () => ({ ok: true, mensaje: demo }) }) }] },
+      sub: E("Motivo obligatorio con plantillas. Esto es una demostración: no cambia nada.", "Required reason with templates. This is a demo: nothing changes."), plantillas: [E("Acoso repetido.", "Repeated harassment."), E("Cuenta falsa.", "Fake account.")], nota: "interna", hacer: async () => ({ ok: true, mensaje: demo }) }) }] },
     g("8", E("ACCIÓN EN LOTE", "BULK ACTION")),
     lote ? { type: "bulk", t: E("8 seleccionados", "8 selected"), onClose: () => setLote(false), acts: [{ l: E("Aprobar", "Approve"), icon: "check", onClick: () => { setLote(false); setToast(E("Demostración: 6 aprobados, 2 ya los había decidido otra persona.", "Demo: 6 approved, 2 someone else had already decided.")); } }] }
       : { type: "acts", items: [{ l: E("Correr lote de ejemplo (8)", "Run sample batch (8)"), icon: "bolt", onClick: () => setLote(true) }] },
