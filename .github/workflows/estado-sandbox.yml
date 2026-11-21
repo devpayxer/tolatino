@@ -64,8 +64,9 @@ jobs:
           fi
           for p in $RUTAS; do
             case "$p" in /*) ;; *) echo "$p: ruta inválida"; continue ;; esac
-            h=$(curl -s -m 60 -b "$J" ${GALLETA:+-b "$GALLETA"} "$B$p")
-            echo "== $p · lo que la página pide:"
+            h=$(curl -s -L -m 60 -b "$J" -c "$J" ${GALLETA:+-b "$GALLETA"} -w '\n%{http_code} %{url_effective} %{size_download}' "$B$p")
+            echo "== $p · $(printf '%s' "$h" | tail -1) bytes · $(printf '%s' "$h" | grep -o '<title>[^<]*' | head -1 | sed 's/<title>//') · menciones de /medios/: $(printf '%s' "$h" | grep -o '/medios/' | wc -l)"
+            echo "   lo que la página pide:"
             printf '%s' "$h" | grep -oE '/medios/n/[0-9a-f-]{36}(\.w[0-9]+\.webp|\.jpg)' | sort | uniq -c | head -40
             for id in $(printf '%s' "$h" | grep -oE '/medios/n/[0-9a-f-]{36}' | sort -u | head -12); do
               echo "-- $id"
