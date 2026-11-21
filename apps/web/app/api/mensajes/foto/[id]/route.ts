@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auditar, staff } from "@/lib/admin";
 import { colasVisibles } from "@/lib/admin-colas";
 import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
-import { leerObjeto } from "@/lib/medios";
+import { entregarPrivado } from "@/lib/entrega-privada";
 import { accesoPanel } from "@/lib/panel";
 import { dmFotoConReporte } from "@/lib/admin-dm";
 import { fotoDmVecino } from "@/lib/mensajes-vecinos";
@@ -23,7 +23,7 @@ import { fotoDmVecino } from "@/lib/mensajes-vecinos";
      dmFotoConReporte) o esta foto en «medios»; cada vez queda en la auditoría («mensajes.foto.ver»). */
 export const dynamic = "force-dynamic";
 const no = () => new NextResponse(null, { status: 404 });
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
   const m = (await db().query<{ url: string; subio: string | null; status: string; msg: string | null; oculto: boolean; hilo: string | null; vecino: string | null; biz: string | null; city: string | null }>(
@@ -31,7 +31,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
             t.id::text as hilo, t.user_id::text as vecino, t.business_id as biz, t.city_id as city
        from media x left join chat_messages cm on cm.media_id = x.id left join chat_threads t on t.id = cm.thread_id
       where x.id = $1::uuid and x.owner_kind = 'chat' and x.private and x.purged_at is null and x.status in ('visible', 'review') and x.url like 'privado/m/%'`, [id])).rows[0];
-  if (!m) return fotoDeVecinos(id);
+  if (!m) return fotoDeVecinos(req, id);
   const me = await yo();
   if (!me) return no();
   let ok = me.id === m.subio;
@@ -55,16 +55,16 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   }
   if (!ok) return no();
-  return servir(m.url);
+  return servir(req, m.url);
 }
-async function servir(url: string) {
-  const img = await leerObjeto(url);
-  return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" } });
+/* 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match; solo después del permiso (lib/entrega-privada.ts). */
+async function servir(req: Request, url: string) {
+  return entregarPrivado(req, [{ clave: url, tipo: "image/jpeg" }], { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" });
 }
 
 /* 9t · La foto de un mensaje entre vecinos. Ninguna consulta de aquí lee los mensajes: eso lo hacen mensajes-vecinos.ts (las dos personas) y
    admin-dm.ts (el equipo, con el reporte abierto). */
-async function fotoDeVecinos(id: string) {
+async function fotoDeVecinos(req: Request, id: string) {
   const d = (await db().query<{ url: string; subio: string | null; status: string }>(
     `select x.url, x.uploaded_by::text as subio, x.status from media x
       where x.id = $1::uuid and x.owner_kind = 'dm' and x.private and x.purged_at is null and x.status in ('visible', 'review') and x.url like 'privado/m/%'`, [id])).rows[0];
@@ -90,5 +90,5 @@ async function fotoDeVecinos(id: string) {
     }
   }
   if (!ok) return no();
-  return servir(d.url);
+  return servir(req, d.url);
 }

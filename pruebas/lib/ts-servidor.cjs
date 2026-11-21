@@ -19,4 +19,38 @@ function cargar(rel, stubs = {}) {
   new Function('module', 'exports', 'require', js)(mod, mod.exports, req);
   return mod.exports;
 }
-module.exports = { cargar, RAIZ };
+/* 9t · Medios en flujo · Cargar una RUTA (o un archivo de lib) con sus importaciones de la app resueltas de verdad: «@/lib/x» y «./x» se cargan
+   del repo (transpilados igual que arriba) salvo los que vengan en `stubs` (la base, la cuenta, el panel…); lo demás (next/server, sharp,
+   node:*) sale de apps/web/node_modules. Con `ref` (un commit) se carga el código de ESE commit (git show), para medir «antes» y «después»
+   con el mismo script (scripts/carga/memoria-medios.mjs). Cada llamada tiene su propio caché de módulos. */
+function cargarApp(rel, stubs = {}, o = {}) {
+  const { execFileSync } = require('child_process');
+  const cache = new Map();
+  const existe = (r) => {
+    if (!o.ref) return fs.existsSync(path.join(RAIZ, r));
+    try { execFileSync('git', ['cat-file', '-e', `${o.ref}:${r}`], { cwd: RAIZ, stdio: 'ignore' }); return true; } catch { return false; }
+  };
+  const leer = (r) => (o.ref ? execFileSync('git', ['show', `${o.ref}:${r}`], { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 << 20 }) : fs.readFileSync(path.join(RAIZ, r), 'utf8'));
+  const resolver = (desde, m) => {
+    const base = m.startsWith('@/') ? path.posix.join('apps/web', m.slice(2)) : path.posix.normalize(path.posix.join(path.posix.dirname(desde), m));
+    for (const x of [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`]) if (/\.tsx?$/.test(x) && existe(x)) return x;
+    throw new Error(`${desde} importa ${m}: no está en el repo${o.ref ? ` (${o.ref})` : ''}`);
+  };
+  const uno = (r) => {
+    if (cache.has(r)) return cache.get(r).exports;
+    const mod = { exports: {} };
+    cache.set(r, mod);
+    const fuente = leer(r).replace(/^import "server-only";\n/m, '');
+    const js = ts.transpileModule(fuente, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+    const req = (m) => {
+      if (m in stubs) return stubs[m];
+      if (m === 'server-only') return {};
+      if (m.startsWith('@/') || m.startsWith('.')) { const x = resolver(r, m); return x in stubs ? stubs[x] : uno(x); }
+      return require(require.resolve(m, { paths: [WEB] }));
+    };
+    new Function('module', 'exports', 'require', js)(mod, mod.exports, req);
+    return mod.exports;
+  };
+  return uno(rel);
+}
+module.exports = { cargar, cargarApp, RAIZ };

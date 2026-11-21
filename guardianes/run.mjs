@@ -7451,7 +7451,8 @@ const guardianes = {
     const r = sinComent(R);
     if (!/if \(plan !== "pro"\) return err\(403/.test(r)) falla(G, R, 0, "subir el video exige que el negocio sea Pro (lo decide el servidor)");
     if (!/procesarVideo\(/.test(r)) falla(G, R, 0, "el video pasa por el servicio propio (procesarVideo) antes de guardarse");
-    for (const m of r.matchAll(/guardarObjeto\(([^,]+),\s*([^,]+),/g)) if (!/^(cv|cp)$/.test(m[1].trim()) || !/^(p\.mp4|portada)$/.test(m[2].trim())) falla(G, R, 0, `se guarda algo que no es el video procesado ni su portada (${m[2].trim()}): el original nunca se guarda`);
+    // 9t · El video procesado va del disco al almacén (guardarArchivo con la salida del servicio, p.mp4.ruta); la portada, en memoria (es chica).
+    for (const m of r.matchAll(/guardar(?:Objeto|Archivo)\(([^,]+),\s*([^,]+),/g)) if (!/^(cv|cp)$/.test(m[1].trim()) || !/^(p\.mp4\.ruta|portada)$/.test(m[2].trim())) falla(G, R, 0, `se guarda algo que no es el video procesado ni su portada (${m[2].trim()}): el original nunca se guarda`);
     const PERMITIDOS = new Set([L, R, "apps/web/app/panel/acciones.ts", "apps/web/app/admin/acciones-colas.ts", "apps/web/lib/admin-colas.ts"]);
     for (const f of codigo) {
       if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
@@ -9995,6 +9996,60 @@ const guardianes = {
       if (/leerFormulario\(/.test(t) && !/lf\.grande/.test(t)) falla(G, f, 0, "con leerFormulario, el archivo grande contesta 413 (lf.grande)");
     }
     if (!/13 MB por partes, sin avisar el tamaño → 413/.test(readFileSync("pruebas/e2e/sub9t.cjs", "utf8"))) falla(G, "pruebas/e2e/sub9t.cjs", 0, "sub9t no prueba la subida sin content-length");
+  },
+
+  /* 9t (21 nov) · mediosEnFlujo: una subida o una entrega que carga el archivo ENTERO en la memoria del proceso de la app. Subir un video de
+     120 MB costaba ~610 MB de memoria (scripts/carga/memoria-medios.mjs: el formulario entero, una copia para el servicio, el MP4 de vuelta
+     en base64 dentro de un JSON); unas pocas a la vez tumbaban la app. Y las fotos privadas se leían enteras del almacén antes de entregarlas.
+     - El video: la ruta nunca lee el cuerpo entero (ni formData, ni arrayBuffer, ni leerFormulario): lo recibe al disco por partes
+       (lib/subida.ts recibirArchivo, que mira el tope ANTES de escribir cada trozo), lo manda y lo guarda desde el disco con node:http
+       (enviarArchivo: el fetch de Node no frena la lectura), con cupo de videos a la vez (turnoVideo: por proceso y compartido, tomarCupo) que
+       se toma antes de leer el cuerpo, contesta 503 con Retry-After, y en un finally borra la carpeta temporal y suelta el turno.
+     - El servicio (services/video/app.py) escribe la entrada a disco por partes y contesta en binario (sin base64).
+     - Entregar un objeto privado: ninguna ruta lee el almacén entero (leerObjeto); van por lib/entrega-privada.ts entregarPrivado (en flujo, ETag,
+       304), siempre DESPUÉS del «return 404» del permiso, con «private» y nunca «public».
+     Prueba con dobles: medios9tflujo (sin servidor ni docker). Al revés (alreves9tflujo). */
+  mediosEnFlujo() {
+    const G = "mediosEnFlujo", R = "apps/web/app/api/negocio/video/route.ts", V = "apps/web/lib/video-negocio.ts", S = "apps/web/lib/subida.ts", M = "apps/web/lib/medios.ts",
+      E = "apps/web/lib/entrega-privada.ts", T = "apps/web/lib/topes.ts", P = "services/video/app.py";
+    for (const f of [R, V, S, M, E, T, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de los medios en flujo");
+    // (1) La ruta del video.
+    const r = sinComent(R);
+    if (/\.(arrayBuffer|formData|blob|text)\(\)|leerFormulario\(|Buffer\.concat\(/.test(r)) falla(G, R, 0, "la ruta del video lee el cuerpo entero en memoria (arrayBuffer/formData/leerFormulario): va al disco por partes con recibirArchivo");
+    const iT = r.indexOf("const turno = await turnoVideo();"), iR = r.indexOf("await recibirArchivo(req, { campo: \"video\", tope: MAX,");
+    if (iT < 0 || iR < 0 || iT > iR || !/if \(!turno\) return ocupado\(\);/.test(r)) falla(G, R, 0, "el cupo de videos a la vez se toma ANTES de leer el cuerpo (turnoVideo) y sin lugar contesta ocupado()");
+    if (!/status: 503, headers: \{ "Retry-After": "\d+" \}/.test(r) || !/Prueba en un momento\./.test(r) || !/Try again in a moment\./.test(r)) falla(G, R, 0, "con el cupo lleno: 503 con Retry-After y «Prueba en un momento.» / «Try again in a moment.»");
+    if (!/\} finally \{\s*if \(dir\) await borrarCarpetaVideo\(dir\);\s*await turno\(\);\s*\}/.test(r)) falla(G, R, 0, "la carpeta temporal se borra y el turno se suelta en un finally (también cuando algo falla)");
+    // (2) recibirArchivo: el tope antes de escribir.
+    const rf = cuerpoFn(sinComent(S), "recibirArchivo");
+    const iTope = rf.indexOf("if (escritos + hasta > o.tope)"), iW = rf.indexOf("await fh.write(");
+    if (!rf || iTope < 0 || iW < 0 || iTope > iW || !/if \(total > topeCuerpo\) \{/.test(rf)) falla(G, S, 0, "recibirArchivo mira el tope ANTES de escribir cada trozo (y el del cuerpo entero), sin confiar en content-length");
+    if (/\.(arrayBuffer|formData)\(\)|partes\.push\(/.test(rf)) falla(G, S, 0, "recibirArchivo junta el archivo en memoria");
+    // (3) Al servicio y al almacén desde el disco, sin fetch (no frena) ni base64.
+    const v = sinComent(V), pv = cuerpoFn(v, "procesarVideo");
+    if (!/enviarArchivo\(/.test(pv) || /fetch\(|Buffer\.from\([^)]*base64|new Uint8Array\(|\.json\(\)|\.arrayBuffer\(\)/.test(pv) || !/accept: "application\/x-tolatino-video"/.test(pv)) falla(G, V, 0, "procesarVideo manda el video desde el disco (enviarArchivo) y recibe el binario por partes: ni fetch, ni base64, ni la respuesta entera en memoria");
+    const tv = cuerpoFn(v, "turnoVideo");
+    if (!/if \(enEsteProceso >= VIDEO_A_LA_VEZ_PROCESO\) return null;/.test(tv) || !/await tomarCupo\("video_cupo", VIDEO_A_LA_VEZ, VIDEO_TURNO_S\)/.test(tv) || !/soltarCupo\("video_cupo", ficha\)/.test(tv)) falla(G, V, 0, "turnoVideo: tope por proceso y cupo compartido (tomarCupo/soltarCupo)");
+    const m = sinComent(M);
+    if (!/pipeline\(createReadStream\(o\.ruta/.test(cuerpoFn(m, "enviarArchivo")) || !/enviarArchivo\(u, \{ metodo: "PUT"/.test(cuerpoFn(m, "guardarArchivo"))) falla(G, M, 0, "enviarArchivo/guardarArchivo: el archivo va del disco por partes (pipeline de node:http)");
+    if (!/pg_advisory_xact_lock/.test(cuerpoFn(sinComent(T), "tomarCupo"))) falla(G, T, 0, "tomarCupo: contar y tomar el turno bajo el candado del cupo (dos procesos nunca toman el último lugar)");
+    const py = readFileSync(P, "utf8");
+    if (/self\.rfile\.read\(n\)/.test(py) || !/def recibir\(rfile, n, ruta\):/.test(py) || !/def binario\(self, r\):/.test(py)) falla(G, P, 0, "el servicio de video escribe la entrada a disco por partes y contesta en binario (sin leerla entera)");
+    // (4) Entregar objetos privados.
+    const e = sinComent(E), ep = cuerpoFn(e, "entregarPrivado");
+    if (!/if \(!\/\^private,\/\.test\(cabeceras\["cache-control"\]/.test(ep) || !/abrirObjeto\(l\.clave, inm\)/.test(ep) || !/status: 304/.test(ep) || /arrayBuffer|leerObjeto|Buffer\.concat/.test(ep)) falla(G, E, 0, "entregarPrivado: en flujo (abrirObjeto con If-None-Match → 304), y solo con caché «private»");
+    if (!/"if-none-match": inm/.test(cuerpoFn(m, "abrirObjeto"))) falla(G, M, 0, "abrirObjeto pasa If-None-Match al almacén (304 sin leer el cuerpo)");
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/api\/.*route\.ts$/.test(x))) {
+      const t = sinComent(f);
+      if (/\bleerObjeto\(/.test(t)) falla(G, f, 0, "una ruta lee un objeto del almacén entero (leerObjeto) para entregarlo: va por entregarPrivado (en flujo, ETag, después del permiso)");
+      for (const x of t.matchAll(/entregarPrivado\(req, [^\n]*/g)) {
+        const antes = t.slice(0, x.index);
+        if (!/(if \(!(?:ok|p\.ok)\) return no\(\);|return new NextResponse\(null, \{ status: 404 \}\);)/.test(antes)) falla(G, f, antes.split("\n").length, "entrega un objeto privado sin antes contestar 404 a quien no tiene permiso");
+        if (!/"cache-control": "private, no-store"/.test(x[0]) && !/const cab = \{ "cache-control": "private, no-store"/.test(antes)) falla(G, f, antes.split("\n").length, "un objeto privado sale con caché «private, no-store» (escrita en la ruta)");
+      }
+      if (/entregarPrivado\(/.test(t) && /["']public\b/.test(t)) falla(G, f, 0, "una ruta que entrega objetos privados con caché «public»");
+    }
+    if (!existsSync("pruebas/alreves/medios9tflujo.cjs")) falla(G, "pruebas/alreves/medios9tflujo.cjs", 0, "falta la prueba con dobles de los medios en flujo");
   },
 
   /* 9t (19 nov) · resumenComunidadUnaPasada: el barrido de la Comunidad con 1 M de vecinos tardaba 9,2 s de 10 (carga 44571463348): «activos por
@@ -12590,7 +12645,7 @@ const guardianes = {
     // (5) La ruta: 404 a quien no puede, sin caché, nosniff, el equipo auditado en su transacción; la variante con el mismo permiso.
     if (!/const no = \(\) => new NextResponse\(null, \{ status: 404 \}\);/.test(rv) || /status: 403/.test(rv) || !/const p = await permisoFotoPrivada\(db\(\), id, \{ userId: me\.id, equipo \}\);\s*if \(!p\.ok\) return no\(\);/.test(rv)
       || !/"cache-control": "private, no-store", "x-content-type-options": "nosniff"/.test(rv) || /public|max-age|s-maxage|immutable/.test(rv.replace(/private, no-store/, ""))
-      || !/if \(p\.por === "equipo"\)\s*await tx\(\(c\) => auditar\(c, \{ actor: p\.staff, action: "fotos\.privada\.ver"/.test(rv) || !/leerObjeto\(llaveVariantePrivada\(id, a\)\)/.test(rv) || !/leerObjeto\(p\.llave\)/.test(rv))
+      || !/if \(p\.por === "equipo"\)\s*await tx\(\(c\) => auditar\(c, \{ actor: p\.staff, action: "fotos\.privada\.ver"/.test(rv) || !/\{ clave: llaveVariantePrivada\(id, a\), tipo: "image\/webp" \}/.test(rv) || !/const maestra = \{ clave: p\.llave, tipo: "image\/jpeg" \};/.test(rv))
       falla(G, RV, 0, "la ruta de una foto privada: el permiso de permisoFotoPrivada (404 a quien no puede, nunca 403), private, no-store, nosniff, el equipo auditado, y la variante con el mismo permiso");
     // (6) Nadie más toca privado/o/ por su cuenta (ni lee ni escribe ni sirve).
     for (const x of codigo) if (/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x) && ![FP, "apps/web/lib/fotos-variantes.ts"].includes(x) && /privado\/o\//.test(sinComent(x)))

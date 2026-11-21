@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auditar, staff } from "@/lib/admin";
 import { colasVisibles } from "@/lib/admin-colas";
 import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
-import { leerObjeto } from "@/lib/medios";
+import { entregarPrivado } from "@/lib/entrega-privada";
 import { accesoPanel } from "@/lib/panel";
 import { ayudaDeSalud, vidrioVigente } from "@/lib/sistema/vidrio";
 
@@ -15,7 +15,7 @@ import { ayudaDeSalud, vidrioVigente } from "@/lib/sistema/vidrio";
    Nunca se cachea. Lo demás: 404 (no se dice si existe). */
 export const dynamic = "force-dynamic";
 const no = () => new NextResponse(null, { status: 404 });
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
   const m = (await db().query<{ url: string; uploaded_by: string | null; owner_kind: string; owner_id: string; biz: string | null; city: string | null; hnum: string | null;
@@ -50,6 +50,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   }
   if (!ok) return no();
-  const img = await leerObjeto(m.url);
-  return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
+  // 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match (lib/entrega-privada.ts).
+  return entregarPrivado(req, [{ clave: m.url, tipo: "image/jpeg" }], { "cache-control": "private, no-store", "x-content-type-options": "nosniff" });
 }

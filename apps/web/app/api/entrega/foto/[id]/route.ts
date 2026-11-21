@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auditar, staff } from "@/lib/admin";
 import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
-import { leerObjeto } from "@/lib/medios";
+import { entregarPrivado } from "@/lib/entrega-privada";
 import { accesoPanel } from "@/lib/panel";
 
 /* 9n · Ver la foto de una entrega (privada, «privado/e/»). La ven: quien la tomó (el repartidor) mientras sea del día; el cliente de ESE
@@ -10,7 +10,7 @@ import { accesoPanel } from "@/lib/panel";
    ciudad (cada vez queda en la auditoría: es la evidencia de una disputa). Lo demás: 404 (no se dice si existe). Nunca se cachea. */
 export const dynamic = "force-dynamic";
 const no = () => new NextResponse(null, { status: 404 });
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
   const m = (await db().query<{ url: string; uploaded_by: string | null; hoy: boolean; cliente: string; biz: string; city: string; numero: string }>(
@@ -29,6 +29,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   }
   if (!ok) return no();
-  const img = await leerObjeto(m.url);
-  return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
+  // 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match (lib/entrega-privada.ts).
+  return entregarPrivado(req, [{ clave: m.url, tipo: "image/jpeg" }], { "cache-control": "private, no-store", "x-content-type-options": "nosniff" });
 }

@@ -1,6 +1,7 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { huella } from "./cifrado";
-import { db } from "./db";
+import { db, tx } from "./db";
 
 /* 9b-3 · Los topes por minuto y los corta-circuitos, COMPARTIDOS entre procesos (rate_counters, 0133). Antes vivían en la memoria de cada
    proceso de la app: con varias réplicas cada una contaba por su cuenta (el tope se multiplicaba) y cada una cortaba por su cuenta.
@@ -50,6 +51,35 @@ export async function corteAbierto(nombre: Corte, corteMs: number): Promise<bool
     `select exists (select 1 from rate_counters where scope = 'corte' and key_hash = $1 and window_start > clock_timestamp() - make_interval(secs => $2::int)) as a`,
     [nombre, Math.ceil(corteMs / 1000)]).catch(() => null);
   return r?.rows[0]?.a ?? false;
+}
+
+/* ── Cupo compartido: cuántos trabajos caros (un video procesándose) puede haber A LA VEZ entre todos los procesos ──
+   Cada turno es una fila de rate_counters (scope del cupo, key_hash = una ficha al azar, window_start = hasta cuándo vale, n = 1). Tomar uno es
+   una transacción con un candado del cupo (pg_advisory_xact_lock): se cuentan los turnos vigentes y, si hay lugar, se agrega uno; dos procesos
+   nunca toman el último lugar a la vez. Quien lo tiene lo renueva mientras trabaja (renovarCupo) y lo suelta al terminar (soltarCupo: vence
+   ahora; el barrido lo purga como cualquier ventana vieja, nada se borra a mano). Si el proceso se cae, su turno vence solo en `plazoS`.
+   Si la base no responde, no hay turno (cerrado: el cupo cuida la máquina). 9t · Medios en flujo (lib/video-negocio.ts turnoVideo). */
+export type Cupo = "video_cupo";
+export async function tomarCupo(scope: Cupo, tope: number, plazoS: number): Promise<string | null> {
+  const ficha = randomUUID().replace(/-/g, "");
+  try {
+    return await tx(async (c) => {
+      await c.query(`select pg_advisory_xact_lock(hashtext('cupo:' || $1))`, [scope]);
+      const n = (await c.query<{ n: number }>(`select count(*)::int as n from rate_counters where scope = $1 and window_start > clock_timestamp()`, [scope])).rows[0]?.n ?? tope;
+      if (n >= tope) return null;
+      await c.query(`insert into rate_counters (scope, key_hash, window_start, n) values ($1, $2, clock_timestamp() + make_interval(secs => $3::int), 1)`, [scope, ficha, plazoS]);
+      return ficha;
+    });
+  } catch {
+    return null;
+  }
+}
+export async function renovarCupo(scope: Cupo, ficha: string, plazoS: number): Promise<boolean> {
+  const r = await db().query(`update rate_counters set window_start = clock_timestamp() + make_interval(secs => $3::int) where scope = $1 and key_hash = $2 and window_start > clock_timestamp()`, [scope, ficha, plazoS]).catch(() => null);
+  return !!r?.rowCount;
+}
+export async function soltarCupo(scope: Cupo, ficha: string): Promise<void> {
+  await db().query(`update rate_counters set window_start = clock_timestamp() - interval '1 second' where scope = $1 and key_hash = $2`, [scope, ficha]).catch(() => undefined);
 }
 
 /* El barrido: las ventanas viejas se purgan (topes_purgar, 0133; los cortes no: los cierra el primer éxito). */

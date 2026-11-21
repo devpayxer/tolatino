@@ -2,7 +2,7 @@
 
 _Pantallas: Panel › Tu página › **Fotos** (`/panel/{negocio}/pagina/fotos`, bloque «VIDEO DE PRESENTACIÓN · PRO» y «HOY EN EL BARRIO · TU
 ANILLO»); la tarjeta del negocio en Negocios, la página de categoría, Buscar e Inicio; la portada de la página del negocio (`/n/{negocio}`);
-Super Admin › Colas › **Medios** (caso «Video de presentación»). Teléfono y escritorio. Solo Pro. Versión: 16 nov 2026.
+Super Admin › Colas › **Medios** (caso «Video de presentación»). Teléfono y escritorio. Solo Pro. Versión: 21 nov 2026.
 Audiencia: negocio. Tema: panel._
 
 ## Qué hace
@@ -33,6 +33,8 @@ Audiencia: negocio. Tema: panel._
 | **Quitar** | La página vuelve a la foto de portada. Nada se borra: el video queda guardado con su estado. |
 | Deja de ser Pro o el negocio se pausa | El video deja de salir; si vuelve a Pro, vuelve a salir sin subirlo otra vez. |
 | Más de 10 videos en un día | «Subiste muchos videos hoy. Prueba mañana.» |
+| Muchos negocios subiendo videos a la vez | To'Latino prepara unos pocos videos a la vez. Si en ese momento no hay lugar, no empieza a subir: «Estamos preparando otros videos en este momento. Prueba en un momento.» Al rato (medio minuto basta casi siempre) se sube normal; no cuenta para los 10 del día. |
+| Se corta la conexión a mitad | No se guarda nada; se sube otra vez desde el principio. |
 | Sin novedades en 24 h | No hay anillo; el logo se ve normal. |
 
 ## Preguntas frecuentes
@@ -41,6 +43,8 @@ Audiencia: negocio. Tema: panel._
   tarjeta más al centro de la pantalla.
 - **¿Puedo elegir la portada?** Todavía no: es el segundo 1 del video.
 - **¿Quién decide si se aprueba?** El equipo de To'Latino, con las reglas de contenido. El motivo te llega en el aviso y en el panel.
+- **¿Por qué me dice «Prueba en un momento»?** Preparar un video lleva trabajo y To'Latino hace unos pocos a la vez para que la app siga
+  rápida para todos. Espera medio minuto y vuelve a tocar **Subir video**.
 
 ## English
 
@@ -72,6 +76,8 @@ Audiencia: negocio. Tema: panel._
 | **Remove** | The page goes back to the cover photo. Nothing is deleted: the video is kept with its status. |
 | No longer Pro or the business is paused | The video stops showing; back on Pro, it shows again without uploading it again. |
 | More than 10 videos in a day | «You uploaded many videos today. Try again tomorrow.» |
+| Many businesses uploading videos at once | To'Latino prepares a few videos at a time. If there is no room at that moment, the upload does not start: «We are processing other videos right now. Try again in a moment.» A little later (half a minute is almost always enough) it uploads normally; it does not count toward the 10 a day. |
+| The connection drops midway | Nothing is saved; upload it again from the start. |
 | No updates in 24 h | No ring; the logo looks normal. |
 
 ### FAQ
@@ -79,3 +85,5 @@ Audiencia: negocio. Tema: panel._
 - **Why isn't it playing?** It is in review, your phone has «Data saver» or «Reduce motion» on, or another card is closer to the center.
 - **Can I choose the cover?** Not yet: it is second 1 of the video.
 - **Who decides if it is approved?** The To'Latino team, with the content rules. The reason reaches you in the notice and in the dashboard.
+- **Why does it say «Try again in a moment»?** Preparing a video takes work and To'Latino does a few at a time so the app stays fast for
+  everyone. Wait half a minute and tap **Upload video** again.

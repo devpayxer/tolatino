@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auditar, staff } from "@/lib/admin";
 import { colasVisibles } from "@/lib/admin-colas";
 import { tx } from "@/lib/db";
-import { leerObjeto } from "@/lib/medios";
+import { entregarPrivado } from "@/lib/entrega-privada";
 
 /* El documento de un reclamo, solo para el equipo que trabaja «Cambios sensibles» (en su ciudad). Cada vez que alguien
    lo ve queda en la auditoría. Nunca se cachea. */
 export const dynamic = "force-dynamic";
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const s = await staff();
   if (!s || !colasVisibles(s).includes("cambio") || !/^CL-\d{1,12}$/.test(id)) return new NextResponse(null, { status: 404 });
@@ -19,6 +19,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     return x;
   });
   if (!r || !r.url.startsWith("privado/")) return new NextResponse(null, { status: 404 });
-  const img = await leerObjeto(r.url);
-  return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
+  // 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match (lib/entrega-privada.ts).
+  return entregarPrivado(req, [{ clave: r.url, tipo: "image/jpeg" }], { "cache-control": "private, no-store", "x-content-type-options": "nosniff" });
 }
