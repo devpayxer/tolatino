@@ -5913,7 +5913,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      reversible y solo quita un riesgo).
 
 
-## Dinero, cuarta tanda: planes del Hogar, rentas y patrocinios (21 nov · migración 0202) — tres cosas para ti
+## Dinero, cuarta tanda: planes del Hogar, rentas y patrocinios (21 nov · migración 0202) — YA en el sandbox (commit ab11fc0) — tres cosas para ti
 - **Qué cambió (Opus lo escribió; Fable lo revisó, lo fusionó y corrió tipos, guardianes y el «al revés» de dinero, 98/98):** el cobro con la
   tarjeta guardada de un **plan del Hogar**, de una **renta** (devolución tarde, «un día más») y de la **renovación de un patrocinio** (de negocio y
   de evento) ahora se anota antes de pedírselo a Stripe, igual que Pro. Si Stripe no contesta, no es un rechazo: queda «en camino», se reintenta
@@ -5928,7 +5928,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      «el banco ya no deja» aunque no sea cierto. No cobra dos veces, pero el aviso es falso. Lo corrijo en la misma tanda si alcanza.
   3. *«Un día más» en una renta:* dos toques seguidos son dos días (como antes). Si quieres que pida confirmar el segundo, dilo.
 
-## Publica tu negocio: el código de promotor escrito ya no se pierde (21 nov) — mirar
+## Publica tu negocio: el código de promotor escrito ya no se pierde (21 nov) — YA en el sandbox (commit ab11fc0) — mirar
 - **Qué pasaba:** si alguien escribía su código y tocaba «Publicar» sin tocar «Aplicar» (o antes de que «Aplicar» contestara), el negocio se
   publicaba **sin el código y sin avisar**: el promotor perdía su negocio traído y el dueño sus 60 días. Lo cazó una prueba que fallaba una vez
   de muchas (`cre9h`); no era la prueba, era la app.

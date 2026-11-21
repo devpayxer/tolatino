@@ -20,7 +20,14 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
-- **21 nov (media mañana) · en vuelo, NADA de esto está en `main` todavía (`main` y `pruebas` siguen en fd1f1ee):**
+- **21 nov (mediodía) · `main` y `pruebas` = ab11fc0, sandbox comprobado desde fuera** (estado-sandbox 44892363540: commit ab11fc04, migración
+  0202 aplicada, 201 migraciones, salud OK, `/`, `/buscar` y `/publica` en 200). Evidencia: revisión completa **44888202039 VERDE, 0 rojas y 0
+  inestables**. Subió: dinero 9t4, «código escrito manda» (Publica, pago del pedido, boletos), `push8c`, teléfonos de prueba 570-555, `plan4f`,
+  la sonda de `dlv2f4`. **Todavía NO en `main` (rama de trabajo = b7e4273):** dinero 9t5 (0203) y «medios en flujo»; su revisión completa es la
+  **44892361124** (la 44889132454 salió roja solo por Semgrep: `veredicto` metía el nombre de la tabla del parámetro en el SQL; cerrado con una
+  lista fija). Si sale verde con 3 inestables o menos: `git push origin b7e4273:main b7e4273:pruebas` (o el HEAD si solo se añadieron
+  documentos) y comprobar en el sandbox que la 0203 quedó aplicada.
+- **21 nov (media mañana) · cómo se llegó (lo de abajo ya subió, salvo 9t5 y medios en flujo):**
   - **Rama de trabajo = ab11fc0.** Lleva, en orden: la fusión de **dinero 9t4** (planes del Hogar, rentas y patrocinios con el cobro anotado;
     migración **0202**; lo escribió Opus) · la **sonda de `dlv2f4`** (12 aperturas del detalle del panel entre 1024 y 1199; ver LAUNCH) ·
     **«código escrito manda»** (Publica, pago del pedido y boletos: un código escrito sin «Aplicar» ya no se pierde ni cobra precio completo
