@@ -15,7 +15,7 @@ const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
   await p.goto(B + '/entrar');
   const api = (u, d) => p.evaluate(async ([u, d]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(d) })).json(), [u, d]);
   const a = await api('/api/cuenta/codigo', { telefono: tel });
-  if (!a.codigoPrueba) { console.log('no se pudo entrar: el sandbox no devolvió el código de pruebas'); process.exit(1); }
+  if (!a.codigoPrueba) { console.log('no se pudo entrar: el sandbox no devolvió el código de pruebas · contestó: ' + JSON.stringify(a).slice(0, 300)); process.exit(1); }
   await api('/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba });
   const vistas = new Map(); // dirección → { estado, tipo, bytes, ruta }
   let rutaActual = '';

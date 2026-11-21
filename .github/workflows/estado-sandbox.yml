@@ -50,7 +50,8 @@ jobs:
           done
       # 21 nov · Fotos a la medida: lo que pesa de verdad una foto subida al sandbox (la original y cada tamaño), y qué tamaño pide la página.
       - name: Fotos de las rutas pedidas
-        if: inputs.fotos != ''
+        # Con «como» las mira el trabajo «fotos» (navegador real): aquí no, para no pedir dos códigos a la vez con el mismo teléfono.
+        if: inputs.fotos != '' && inputs.como == ''
         env: { RUTAS: "${{ inputs.fotos }}", GALLETA: "${{ inputs.cookie }}", COMO: "${{ inputs.como }}" }
         run: |
           B=http://2.31.196.167; J="$RUNNER_TEMP/galletas.txt"; : > "$J"
