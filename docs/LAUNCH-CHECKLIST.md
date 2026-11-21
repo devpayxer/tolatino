@@ -2329,8 +2329,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (2) **Llega al navegador sin mostrarse** (el servidor decide, el cliente solo muestra): `verification_requests.note` va en los datos del Panel
       del dueño aunque solo se pinta en «falta un dato» / «no aprobado» (`lib/panel.ts` `ver.selloNote`), y `claims.reason` va a `Recuperar.tsx` aunque
       solo se pinta si fue rechazado (`lib/reclamos.ts`). Que el servidor lo mande solo cuando se muestra.
-      (3) **Notas que nadie guarda** (la hoja dice «Queda en la auditoría con tu nombre»): «Asignar el caso a…» (`asignarCaso` no recibe el motivo),
-      «Ya existe» de una recomendación (guarda un texto fijo) y las tres de «Simular disputa / resultado». O se guardan en la auditoría o no se piden.
+      (3) **Hecho (21 nov, Fable; ed30bd6):** las notas que nadie guardaba («Asignar el caso a…», «Ya existe» de una recomendación y las tres de
+      «Simular disputa / resultado») quedan en `audit_entries.reason`; `notaDiceAQuien` no deja un `hacer` que descarte la nota; `alreves9u` 14/14;
+      `disp2r` lo comprueba en las dos simulaciones; la prueba de navegador de asignar y de «Ya existe» (`nota9u`) está encargada a Sonnet.
       (4) **Sin determinar:** varios lectores públicos traen `modules_off` entero con su `reason` (`lib/fe-publico.ts`, `autos-publico.ts`,
       `salud-publico.ts` y otros): comprobar que ninguno lo pasa crudo a un componente de cliente. (5) La revisión miró solo por encima Textos,
       Notificaciones, Integraciones, Configuración y Sistema (39 confirmaciones: auditoría o registro que solo lee el admin), y no recorrió una por

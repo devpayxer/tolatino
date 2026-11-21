@@ -6084,5 +6084,6 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      LAUNCH y no se abre al público sin decidirlo.
   2. *Las dos flechas de volver* (la de la cabecera y la de la hoja) siguen en todas las hojas, como en las pantallas que ya estaban bien. Quitar la de
      la cabecera es un cambio pequeño si te molesta en el teléfono.
-  3. *Cinco confirmaciones piden una nota que nadie guarda* (asignar un caso, «Ya existe» en una recomendación y las tres de simular una disputa).
-     Voy a hacer que se guarden en la auditoría, que es lo que la hoja promete; dime si prefieres que no se pida nota ahí.
+  3. *Cinco confirmaciones pedían una nota que nadie guardaba* (asignar un caso, «Ya existe» en una recomendación y las tres de simular una disputa).
+     **Hecho:** ahora quedan en la auditoría, que es lo que la hoja promete (en «Ya existe», a la recomendación sigue yendo el texto fijo «Ya estaba
+     en To'Latino» y tu nota solo a la auditoría). Dime si prefieres que ahí no se pida nota.
