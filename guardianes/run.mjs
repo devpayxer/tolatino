@@ -8012,6 +8012,10 @@ const guardianes = {
     // confirmación 44856657972 salió verde con 4, una por parte): «tuberia» cuenta las de TODA la corrida leyendo los registros de sus trabajos.
     if (!/permissions: \{ contents: read, actions: read \}/.test(j) || !/actions\/runs\/\$CORRIDA\/attempts\/\$INTENTO\/jobs/.test(j) || !/grep -aoE '~ INESTABLE \[A-Za-z0-9_-\]\+'/.test(j) || !/if \[ "\$n" -gt 3 \]; then[^\n]*exit 1; fi/.test(j))
       falla(G, Y, 0, "«tuberia» cuenta las pruebas inestables de toda la corrida (los registros de cada trabajo) y sale roja con más de 3 (decisión AG)");
+    // 21 nov · Un registro que no se pudo leer no es «cero inestables»: la corrida 44947348390 dijo 0 con una (evt6i) porque la lectura falló callada
+    // (`gh api … 2>/dev/null | grep … || true`). Se reintenta y, si no se puede leer, la tubería sale roja diciéndolo.
+    if (/gh api "repos\/\$REPO\/actions\/jobs\/\$id\/logs" 2>\/dev\/null \| grep/.test(j) || !/sin-registro\.txt/.test(j) || !/no se pudo leer el registro de[^\n]*exit 1; fi/.test(j))
+      falla(G, Y, 0, "«tuberia» da por cero las inestables de un trabajo cuyo registro no pudo leer (que reintente y salga roja si no lo consigue)");
     if (!/on:[\s\S]*?push:[\s\S]*?branches: \[main\]/.test(y) || !/\n  pull_request:/.test(y) || !/schedule:/.test(y)) falla(G, Y, 0, "el CI corre en push a main, en pull_request y programado");
     if (!/- cron: "\d+ \d+ \* \* \*"\n\s+- cron: "\d+ \d+ \* \* \*"/.test(y)) falla(G, Y, 0, "el CI se programa a dos horas distintas del día");
     const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";

@@ -441,10 +441,15 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}", CORRIDA: "${{ github.run_id }}", INTENTO: "${{ github.run_attempt }}", REPO: "${{ github.repository }}" }
         run: |
           export LC_ALL=C.UTF-8
-          : > "$RUNNER_TEMP/inestables.txt"
+          : > "$RUNNER_TEMP/inestables.txt"; : > "$RUNNER_TEMP/sin-registro.txt"
           for id in $(gh api "repos/$REPO/actions/runs/$CORRIDA/attempts/$INTENTO/jobs" --paginate -q '.jobs[] | select(.status == "completed") | .id'); do
-            gh api "repos/$REPO/actions/jobs/$id/logs" 2>/dev/null | grep -aoE '~ INESTABLE [A-Za-z0-9_-]+' | sed 's/.*INESTABLE //' >> "$RUNNER_TEMP/inestables.txt" || true
+            # El registro de un trabajo recién terminado puede tardar en estar (404): se pide hasta 6 veces. Sin registro NO se cuenta como cero:
+            # la corrida 44947348390 dijo «inestables de la corrida: 0» con una inestable (evt6i) porque la lectura falló callada.
+            ok=""; for k in 1 2 3 4 5 6; do if gh api "repos/$REPO/actions/jobs/$id/logs" > "$RUNNER_TEMP/registro.txt" 2>/dev/null && [ -s "$RUNNER_TEMP/registro.txt" ]; then ok=1; break; fi; sleep 10; done
+            if [ -z "$ok" ]; then echo "$id" >> "$RUNNER_TEMP/sin-registro.txt"; continue; fi
+            grep -aoE '~ INESTABLE [A-Za-z0-9_-]+' "$RUNNER_TEMP/registro.txt" | sed 's/.*INESTABLE //' >> "$RUNNER_TEMP/inestables.txt" || true
           done
+          if [ -s "$RUNNER_TEMP/sin-registro.txt" ]; then echo "::error::no se pudo leer el registro de $(grep -c . "$RUNNER_TEMP/sin-registro.txt") trabajo(s) ($(paste -sd' ' "$RUNNER_TEMP/sin-registro.txt")): las inestables no se pueden contar y no se dan por cero"; exit 1; fi
           sort -u "$RUNNER_TEMP/inestables.txt" > "$RUNNER_TEMP/inestables-unicas.txt"
           n=$(grep -c . "$RUNNER_TEMP/inestables-unicas.txt" || true)
           echo "inestables de la corrida: $n$( [ "$n" -gt 0 ] && echo " · $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")")"
