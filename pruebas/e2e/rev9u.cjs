@@ -213,6 +213,18 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
     ok((await fotosVistas()).length === antes9 && fila(r9b.json.id).st === 'review', 'dudosa con destino privado → retenida y la segunda opinión no recibió nada');
     const r9c = await subir(cA, await foto(401, 300, 92), '/api/medios', { destino: 'privado' }), r9d = await subir(cA, await foto(403, 300, 93), '/api/medios', { destino: 'privado' });
     ok(r9c.status === 200 && r9d.status === 422, 'con destino privado, una limpia entra igual y una clara se rechaza igual');
+    // F3 · Una foto de destino privado nunca tiene dirección pública: privado/o/, la fila private, la dirección de la ruta con permiso (fot9uprivadas).
+    const P9 = r9c.json?.id;
+    ok(r9c.json?.url === `/api/medios/privada/${P9}` && sql(`select private::text || ':' || url from media where id = '${P9}'`) === `true:/api/medios/privada/${P9}`, 'F3 · con destino privado: la fila es privada y su dirección la de la ruta con permiso (nunca /medios/…)');
+    ok((await delAlmacen(`/n/${P9}.jpg`)).s === 404 && (await servirMedio(`/medios/n/${P9}.jpg`)).s === 404 && (await delAlmacen(`/privado/o/${P9}.jpg`)).s === 200 && (await delAlmacen(`/privado/o/${P9}.w320.webp`)).s === 200,
+      'F3 · su archivo (y sus variantes) solo en privado/o/: nada bajo n/');
+    const v9 = await p.goto(B + `/api/medios/privada/${P9}`);
+    ok(v9.status() === 200 && v9.headers()['cache-control'] === 'private, no-store' && v9.headers()['x-content-type-options'] === 'nosniff', 'F3 · quien la subió la ve por la ruta con permiso (private, no-store, nosniff)');
+    const ctxX = await b.newContext(), pX = await ctxX.newPage();
+    ok((await pX.goto(B + `/api/medios/privada/${P9}`)).status() === 404, 'F3 · sin sesión: 404');
+    await entrarComo(pX, telLibre(), { nombre: 'Otra', apellido: 'Persona' });
+    ok((await pX.goto(B + `/api/medios/privada/${P9}`)).status() === 404 && (await pX.goto(B + `/api/medios/privada/${P9}?w=320`)).status() === 404, 'F3 · otra persona: 404 (también la variante)');
+    await ctxX.close();
     const antes9e = (await fotosVistas()).length;
     const r9e = await subir(cA, await foto(404, 301, 94), '/api/medios', { destino: 'privado' });
     ok(r9e.status === 200 && fila(r9e.json.id).st === 'visible' && sql(`select capa || ':' || decision || ':' || motivo from photo_reviews where media_id = '${r9e.json.id}'`) === 'c1:publicar:sin_servicio' && (await fotosVistas()).length === antes9e,

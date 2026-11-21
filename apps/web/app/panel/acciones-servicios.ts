@@ -12,6 +12,7 @@ import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import type { PoolClient } from "pg";
 import { mismoOrigen } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
+import { fotosDeCatalogoOk } from "@/lib/fotos-catalogo";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import type { Res } from "./acciones";
 
@@ -66,6 +67,8 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
     } else if (cents < 0 || (!extra && cents === 0 && !Object.values(p?.hacen ?? {}).some((v) => (v ?? 0) > 0))) return no("Ponle precio.", "Set a price.");
     const dur = ent(p?.dur, 5, 480, 30), buf = extra ? 0 : [0, 5, 10, 15].includes(Number(p?.buf)) ? Number(p.buf) : 0;
     const foto = typeof p?.foto === "string" && /^(https?:\/\/|\/)[^\s"']{1,500}$/.test(p.foto) ? p.foto : null;
+    // F3 · Una foto nueva: de media, visible, no privada (lib/fotos-catalogo.ts; el mismo criterio que los demás destinos públicos).
+    if (!(await fotosDeCatalogoOk(c, { negocio: a.negocio.id, userId: a.yo.id, itemId: itemId === "new" ? null : itemId, fotos: foto ? [foto] : [] }))) return no("Vuelve a subir la foto.", "Upload the photo again.");
     // Opciones: hasta 3 grupos de 2 a 5 opciones; cada una cambia el precio (−$200 a +$500) y el tiempo (−120 a +240 min).
     const opts = extra ? [] : (Array.isArray(p?.opts) ? p.opts : []).slice(0, 3).map((g) => ({
       t: { es: txt(g?.t, 30), en: txt(g?.tEn, 30) },

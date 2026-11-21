@@ -97,7 +97,7 @@ export async function platoGuardar(negocio: string, itemId: string, p: PlatoIn):
     const nuevas = fot.filter((u) => !(prev?.photos ?? []).includes(u));
     if (nuevas.length) {
       const mias = (await c.query<{ url: string }>(
-        `select url from media where url = any($1::text[]) and status = 'visible' and not rev_sin_c2 and ((owner_kind = 'business' and owner_id = $2) or (owner_kind = 'user' and owner_id = $3))`, [nuevas, b, a.yo.id])).rows.map((x) => x.url);
+        `select url from media where url = any($1::text[]) and status = 'visible' and not rev_sin_c2 and not private and ((owner_kind = 'business' and owner_id = $2) or (owner_kind = 'user' and owner_id = $3))`, [nuevas, b, a.yo.id])).rows.map((x) => x.url);
       if (nuevas.some((u) => !mias.includes(u))) return no("Vuelve a subir la foto.", "Upload the photo again.");
     }
     // Lo que no se pide en la app (21+, servicio, solo en la tienda) no se puede pedir en línea.

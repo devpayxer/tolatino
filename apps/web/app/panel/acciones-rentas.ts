@@ -1,6 +1,7 @@
 "use server";
 import { mismoOrigen } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
+import { fotosDeCatalogoOk } from "@/lib/fotos-catalogo";
 import { accesoPanel } from "@/lib/panel";
 import { rentaNegocio, type QueNegocio } from "@/lib/rentas";
 import type { Res } from "./acciones";
@@ -47,6 +48,8 @@ export async function articuloRentaGuardar(negocio: string, itemId: string, x: A
   const r = await tx(async (c) => {
     const b = (await c.query<{ veh: boolean; renta: boolean }>(`select category_id = 'NEG-TRANS' as veh, 'renta' = any(modules_on) as renta from businesses where id = $1`, [a.negocio.id])).rows[0];
     if (!b?.renta) return noA("Tu página no tiene «Renta» encendida.", "Your page does not have “Rentals” on.");
+    // F3 · Una foto nueva: de media, visible, no privada (lib/fotos-catalogo.ts; el mismo criterio que los demás destinos públicos).
+    if (!(await fotosDeCatalogoOk(c, { negocio: a.negocio.id, userId: a.yo.id, itemId: itemId === "new" ? null : itemId, fotos }))) return noA("Vuelve a subir la foto.", "Upload the photo again.");
     const mpd = b.veh ? entero(x?.mpd, 0, 2000) : null, mi = b.veh ? entero(x?.mi, 0, 500) : null;
     if (b.veh && (mpd == null || mi == null)) return noA("Pon las millas incluidas por día y el precio de la milla de más (0 si no cobras).", "Set the miles included per day and the price per extra mile (0 if you don’t charge).");
     const attrs = b.veh ? { mpd, mi } : {};

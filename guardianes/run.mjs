@@ -758,7 +758,8 @@ const guardianes = {
     const A = "apps/web/app/(app)/cita/[num]/ayuda/AyudaCita.tsx";
     if (existsSync(A) && !/sp( \|\| rub === "ninos")? \? await subirFotoPrivada\(file\)/.test(readFileSync(A, "utf8"))) falla("fotoAyudaPrivada", A, 1, "en Salud y Pro la foto de la ayuda se sube privada (subirFotoPrivada)");
     const L = "apps/web/lib/ayuda-cita.ts";
-    if (existsSync(L) && !/\$4::boolean = false or private/.test(readFileSync(L, "utf8"))) falla("fotoAyudaPrivada", L, 1, "el servidor tiene que rechazar una foto pública en una ayuda de Salud o Pro");
+    // F3 · Y solo la privada de la ayuda (privado/a/): las de destino «privado» de /api/medios también son private, pero no son de esta ruta.
+    if (existsSync(L) && !/\$4::boolean = false or \(private and url like 'privado\/a\/%'\)\)/.test(readFileSync(L, "utf8"))) falla("fotoAyudaPrivada", L, 1, "el servidor tiene que rechazar una foto pública en una ayuda de Salud o Pro (solo la privada de la ayuda, privado/a/)");
     // 4if · Iglesias, Bienes Raíces y Autos: el recibo o el contrato llevan nombres y direcciones → privadas en el servidor y en la pantalla.
     if (existsSync(L)) {
       const pr = readFileSync(L, "utf8").split("\n").find((l) => /export const PRIVADA = \(r: RubroAyuda\) =>/.test(l)) ?? "";
@@ -4753,7 +4754,7 @@ const guardianes = {
     if (!/\(\(\$\{n\}::text is null and c\.business_id is null and c\.user_id = \$\{u\}\)/.test(vis) || !/and bm\.status = 'active' and \(bm\.kind = 'owner' or 'all' = any\(bm\.panel_access\)\)/.test(vis)) falla(G, L, 0, "VISIBLE: los suyos sin negocio, o los del negocio si es su dueño");
     for (const fn of ["misCasos", "casoVecino", "miCaso"]) if (!/\$\{VISIBLE\("\$\d", "\$\d"\)\}/.test(cuerpoFn(l, fn))) falla(G, L, 0, `${fn}() busca el caso con VISIBLE`);
     for (const q of l.match(/`[^`]*`/g) ?? []) if (/\bfrom support_cases c where c\.number = \$1\b/.test(q) && !/VISIBLE/.test(q)) falla(G, L, 0, `un caso por número sin VISIBLE: «${q.slice(0, 60)}»`);
-    for (const q of l.match(/`update media set owner_kind = 'support'[^`]*`/g) ?? ["`sin`"]) if (!/and private`$/.test(q)) falla(G, L, 0, "la foto de un caso tiene que ser privada (and private)");
+    for (const q of l.match(/`update media set owner_kind = 'support'[^`]*`/g) ?? ["`sin`"]) if (!/and private and url like 'privado\/a\/%'`$/.test(q)) falla(G, L, 0, "la foto de un caso tiene que ser privada y de la ruta de Soporte (and private and url like 'privado/a/%')");
     if (existsSync(F) && !/m\.tk[\s\S]*me\.id === m\.tkuser[\s\S]*s\.puede\("sop", "ver"\)[\s\S]*soporte\.foto\.ver/.test(readFileSync(F, "utf8"))) falla(G, F, 0, "la foto de un caso: quien lo abrió, el dueño de su negocio o el equipo con Soporte (auditado)");
   },
 
@@ -12025,7 +12026,8 @@ const guardianes = {
     if (iRev < 0 || iNo < iRev || iGuardar < iNo || iPrimero !== iGuardar + "await ".length) falla(G, R, 0, "la subida guarda la foto en lo público sin decidir antes (revisarSubida → si no es «visible», nada en n/)");
     const noPub = r.slice(iNo, r.indexOf("\n  }\n", iNo));
     if (!/await guardarNoPublicada\(/.test(noPub) || !/return NextResponse\.json\(\{ ok: false, estado:/.test(noPub) || /\burl\b|urlPublica|n\/\$\{/.test(noPub)) falla(G, R, 0, "una foto retenida o rechazada se guarda solo en la llave privada y contesta ok: false con su estado, SIN dirección");
-    if (!/const id = v\.id, clave = `n\/\$\{id\}\.jpg`;/.test(r)) falla(G, R, 0, "la llave pública sale del id de la foto que se revisó");
+    // F3 · Con destino «privado», la llave es la privada (privado/o/<uuid>.jpg) y la dirección la de la ruta con permiso: nunca n/ (guardián fotosPrivadasConPermiso).
+    if (!/const id = v\.id, clave = sinC2 \? llavePrivada\(id\) : `n\/\$\{id\}\.jpg`, url = sinC2 \? urlPrivada\(id\) : urlPublica\(clave\);/.test(r)) falla(G, R, 0, "la llave pública sale del id de la foto que se revisó (y una de destino «privado» va a su llave privada)");
     // La llave privada y las únicas escrituras en n/ de la revisión.
     if (!/export const llaveRevision = \(uuid: string\) => `privado\/rev\/\$\{uuid\}\.jpg`;/.test(f)) falla(G, F, 0, "la llave de una foto no publicada es privado/rev/<uuid>.jpg (nginx nunca sirve /medios/privado/)");
     const gnp = cuerpoFn(f, "guardarNoPublicada");
@@ -12108,7 +12110,7 @@ const guardianes = {
     for (const x of PRIV_FOTO) if (!existsSync(x)) falla(G, x, 0, "la lista de pantallas privadas nombra un archivo que ya no existe: actualizarla");
     // El atajo: una foto subida como «privado» (entra sin modelo propio) no se puede adjuntar a algo PÚBLICO. Cada acción del servidor que adjunta
     // una foto de media a un destino público lo exige en su consulta (not rev_sin_c2). Los catálogos que guardan la dirección como texto (oficios,
-    // servicios, autos, inmuebles, renta de artículos) no validan contra media: van a LAUNCH (→ F3, la llave privada servida con permiso).
+    // servicios, autos, inmuebles, renta de artículos) validan contra media con fotosDeCatalogoOk (F3; guardián fotosPrivadasConPermiso).
     const ATAJO = [
       ["apps/web/app/(app)/publica/acciones.ts", /and owner_kind = 'user' and owner_id = \$2 and status = 'visible' and not rev_sin_c2`/, "Publica tu negocio (portada y galería)"],
       ["apps/web/app/panel/acciones.ts", /where id = \$3::uuid and owner_kind = 'user' and owner_id = \$4 and status = 'visible' and not rev_sin_c2`/, "la galería del panel"],
@@ -12129,6 +12131,98 @@ const guardianes = {
     const e = existsSync("pruebas/e2e/rev9u.cjs") ? readFileSync("pruebas/e2e/rev9u.cjs", "utf8") : "";
     if (!/'una foto privada \(Mensajes\) jamás llega a la segunda opinión'/.test(e)) falla(G, "pruebas/e2e/rev9u.cjs", 0, "la prueba de punta a punta no revisa que una foto privada nunca llega al simulador");
     if (!/'dudosa con destino privado → retenida y la segunda opinión no recibió nada'/.test(e)) falla(G, "pruebas/e2e/rev9u.cjs", 0, "la prueba de punta a punta no revisa la dudosa de destino «privado»");
+  },
+
+  /* F3 · fotosPrivadasConPermiso (Fotos a la medida F3, 21 nov): una foto de destino PRIVADO (cita, visita, viaje/mudanza, presupuesto, pre-estimado,
+     emergencia, «Ayuda con…», la balanza, el daño de una renta, la línea de un estimado) NUNCA tiene dirección pública. Lo que se teme (la clase):
+     - que /api/medios la guarde bajo n/ (una dirección que cualquiera con el enlace abre y Cloudflare cachea) o devuelva /medios/…;
+     - que una retenida de destino privado, al aprobarse, salga a n/;
+     - una ruta que la sirva sin decidir el permiso desde la fila y su operación, con caché, sin nosniff, con 403 (que dice que existe), o al equipo
+       sin un caso abierto o sin auditar;
+     - otro archivo que lea o escriba privado/o/ por su cuenta;
+     - el atajo: un destino PÚBLICO que guarda la dirección como TEXTO (items.photos: Oficios, Servicios, Autos, Bienes Raíces, Renta de artículos y
+       el Menú) sin mirar media (visible, no privada, sin rev_sin_c2, del negocio o de quien guarda);
+     - las fotos de antes bajo n/ que nadie mueve, la purga de una cuenta que no sabe la llave nueva, el daño de una renta con la foto de otro;
+     - purgarFotosAyuda sin correr, borrando de más (otra cosa que la foto privada de una ayuda cerrada hace más de sp_fotos_ayuda_dias), sin
+       almacén marcando borrado lo que sigue, o sin su renglón en la auditoría.
+     Al revés: alrevesf3privadas; la prueba de la base (permiso, catálogo, barrido, purga): fot9uprivadas; nginx: pruebas/infra/medios-nginx.test.sh. */
+  fotosPrivadasConPermiso() {
+    const G = "fotosPrivadasConPermiso", FP = "apps/web/lib/fotos-privadas.ts", RV = "apps/web/app/api/medios/privada/[id]/route.ts", RT = "apps/web/app/api/medios/route.ts",
+      FR = "apps/web/lib/fotos-revision.ts", FC = "apps/web/lib/fotos-catalogo.ts", BR = "apps/web/lib/barrido.ts", AC = "apps/web/lib/ayuda-cita.ts", PU = "apps/web/lib/datos/purgar.ts",
+      RE = "apps/web/lib/rentas.ts", NT = "pruebas/infra/medios-nginx.test.sh", PR = "pruebas/e2e/fot9uprivadas.cjs";
+    for (const x of [FP, RV, FC, PR]) if (!existsSync(x)) return falla(G, x, 0, "falta una pieza de las fotos privadas (F3)");
+    const fp = sinComent(FP), rv = sinComent(RV), rt = existsSync(RT) ? sinComent(RT) : "", fr = existsSync(FR) ? sinComent(FR) : "";
+    // (1) La llave y la dirección.
+    if (!/export const llavePrivada = \(uuid: string\) => `privado\/o\/\$\{uuid\}\.jpg`;/.test(fp) || !/export const urlPrivada = \(uuid: string\) => `\/api\/medios\/privada\/\$\{uuid\}`;/.test(fp))
+      falla(G, FP, 0, "la llave de una foto privada es privado/o/<uuid>.jpg (nginx nunca sirve /medios/privado/) y su dirección la de la ruta con permiso");
+    // (2) La subida: con destino «privado» la llave privada, la dirección con permiso y private = true; sus variantes privadas.
+    if (!/const id = v\.id, clave = sinC2 \? llavePrivada\(id\) : `n\/\$\{id\}\.jpg`, url = sinC2 \? urlPrivada\(id\) : urlPublica\(clave\);/.test(rt)
+      || !/rev_capa, private, rev_sin_c2, bytes\) values \(.*now\(\), \$8, \$10, \$10, \$9\)`/.test(rt) || !/if \(sinC2\) \{ await guardarVariantesPrivadas\(id, img\.data, img\.info\.width\); return NextResponse\.json\(\{ ok: true, id, url \}\); \}/.test(rt) || !/return NextResponse\.json\(\{ ok: true, id, url \}\);/.test(rt))
+      falla(G, RT, 0, "con destino «privado» la subida guarda en privado/o/, la fila private con la dirección con permiso, sus variantes privadas, y contesta esa dirección (nunca /medios/…)");
+    // (3) La revisión: una de destino privado retenida tampoco tiene dirección pública, y al aprobarse vuelve a SU llave privada.
+    const gnp = cuerpoFn(fr, "guardarNoPublicada"), av = cuerpoFn(fr, "aVisible");
+    if (!/x\.sinC2 \? urlPrivada\(r\.id\) : `\/medios\/n\/\$\{r\.id\}\.jpg`/.test(gnp) || !/removed_at, rev_sin_c2, private\)/.test(gnp) || !/, \$14, \$14\)`/.test(gnp))
+      falla(G, FR, 0, "guardarNoPublicada: una retenida o rechazada de destino privado lleva la dirección con permiso y private (nunca /medios/n/)");
+    if (!/const p = f\.private \? DE_URL_PRIVADA\.exec\(f\.url\) : null;/.test(av) || !/if \(!u \|\| \(f\.private && !p\)\) throw/.test(av) || !/if \(p\) await guardarObjeto\(llavePrivada\(p\[1\]!\), await leerObjeto\(f\.rev_llave\), "image\/jpeg"\);\s*else await guardarObjeto\(`n\//.test(av))
+      falla(G, FR, 0, "aVisible: una privada aprobada vuelve a privado/o/ (nunca a n/)");
+    // (4) El permiso: desde la fila (privada, visible, sin purgar, con SU dirección) y su operación; el equipo solo con un caso abierto en su cola y ciudad.
+    const pf = cuerpoFn(fp, "permisoFotoPrivada");
+    if (!/if \(!ES_UUID\.test\(id\) \|\| !quien\.userId\) return \{ ok: false \};/.test(pf)) falla(G, FP, 0, "sin sesión (o con un id que no es uuid) no hay permiso, sin consultar nada");
+    if (!fp.includes("from media x where x.id = $1::uuid and x.private and x.status = 'visible' and x.purged_at is null and x.url = '/api/medios/privada/' || $1::text"))
+      falla(G, FP, 0, "el permiso parte de la fila privada, visible, sin purgar y con su dirección privada");
+    for (const [k, que] of [["m.owner_kind in ('appointment', 'trip') and o.id = m.nid", "cita/visita/viaje"], ["m.owner_kind = 'line' and l.id = m.nid", "la balanza"], ["m.owner_kind = 'estimate_line' and e.id = m.nid", "el estimado"],
+      ["m.owner_kind = 'help' and h.id = m.nid", "la ayuda"], ["m.owner_kind = 'user' and r.damage_photo = m.id", "el daño de una renta"], ["m.owner_kind = 'request' and s.id = m.nid join request_targets t on t.request_id = s.id", "la solicitud"]])
+      if (!fp.includes(k)) falla(G, FP, 0, `el permiso no sabe a qué operación quedó adjunta la foto de ${que}`);
+    if (!/bm\.user_id = \$2::uuid and bm\.status = 'active' and bm\.panel_off_at is null\s+and b\.status <> 'merged' and \(bm\.kind = 'owner' or 'all' = any\(bm\.panel_access\) or 'ord' = any\(bm\.panel_access\)\)/.test(pf))
+      falla(G, FP, 0, "el negocio que la recibe: dueño o equipo activo con «Pedidos», sin acceso quitado (como accesoPanel(…, \"ord\"))");
+    if (!/where q\.status = 'open' and \(/.test(pf) || !/if \(!e\.colas\.includes\(c\.cola\) \|\| \(e\.ciudades\.length && !\(c\.ciudad && e\.ciudades\.includes\(c\.ciudad\)\)\)\) continue;/.test(pf) || !/if \(c\.salud && !\(await e\.vidrio\(c\.ref\)\)\) continue;/.test(pf))
+      falla(G, FP, 0, "el equipo: solo con un caso ABIERTO de esa operación, en una cola que ve, en su ciudad (y el vidrio roto en una ayuda de Salud)");
+    // (5) La ruta: 404 a quien no puede, sin caché, nosniff, el equipo auditado en su transacción; la variante con el mismo permiso.
+    if (!/const no = \(\) => new NextResponse\(null, \{ status: 404 \}\);/.test(rv) || /status: 403/.test(rv) || !/const p = await permisoFotoPrivada\(db\(\), id, \{ userId: me\.id, equipo \}\);\s*if \(!p\.ok\) return no\(\);/.test(rv)
+      || !/"cache-control": "private, no-store", "x-content-type-options": "nosniff"/.test(rv) || /public|max-age|s-maxage|immutable/.test(rv.replace(/private, no-store/, ""))
+      || !/if \(p\.por === "equipo"\)\s*await tx\(\(c\) => auditar\(c, \{ actor: p\.staff, action: "fotos\.privada\.ver"/.test(rv) || !/leerObjeto\(llaveVariantePrivada\(id, a\)\)/.test(rv) || !/leerObjeto\(p\.llave\)/.test(rv))
+      falla(G, RV, 0, "la ruta de una foto privada: el permiso de permisoFotoPrivada (404 a quien no puede, nunca 403), private, no-store, nosniff, el equipo auditado, y la variante con el mismo permiso");
+    // (6) Nadie más toca privado/o/ por su cuenta (ni lee ni escribe ni sirve).
+    for (const x of codigo) if (/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x) && ![FP, "apps/web/lib/fotos-variantes.ts"].includes(x) && /privado\/o\//.test(sinComent(x)))
+      falla(G, x, 0, "toca la llave de las fotos privadas (privado/o/) fuera de lib/fotos-privadas.ts: todo pasa por ahí (y se sirve solo por la ruta con permiso)");
+    // (7) El atajo: cada destino PÚBLICO que guarda la foto como texto en items.photos valida contra media (o es el Menú, con su consulta).
+    const fc = existsSync(FC) ? sinComent(FC) : "";
+    if (!fc.includes("status = 'visible' and purged_at is null and not private and not rev_sin_c2") || !/\(\(owner_kind = 'business' and owner_id = \$3\) or \(owner_kind = 'user' and owner_id = \$4::text\)\)/.test(fc) || !/if \(ids\.some\(\(i\) => !i\)\) return false;/.test(fc))
+      falla(G, FC, 0, "fotosDeCatalogoOk: cada foto nueva es de media, visible, sin purgar, NO privada, sin rev_sin_c2, del negocio o de quien guarda (y solo direcciones de /api/medios)");
+    const VALIDA = /\n\s*if \(!\(await fotosDeCatalogoOk\(c, \{[^\n]*\}\)\)\) return (no|noA|err)\("Vuelve a subir la foto\.", "Upload the photo again\."\);/;
+    const CAT = ["apps/web/app/panel/acciones-oficios.ts", "apps/web/app/panel/acciones-servicios.ts", "apps/web/app/panel/acciones-rentas.ts", "apps/web/lib/autos.ts", "apps/web/lib/inmuebles.ts"];
+    for (const x of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (!/insert into items \([^)]*\bphotos\b|update items set [^`]*\bphotos = \$/.test(t)) continue;
+      if (x === "apps/web/app/panel/acciones-menu.ts") { if (!/and status = 'visible' and not rev_sin_c2 and not private and \(\(owner_kind = 'business'/.test(t)) falla(G, x, 0, "el Menú valida cada foto nueva contra media (visible, sin rev_sin_c2, no privada)"); continue; }
+      if (!VALIDA.test(t)) falla(G, x, 0, "guarda fotos de un artículo público como texto (items.photos) sin validarlas contra media (lib/fotos-catalogo.ts fotosDeCatalogoOk): alguien podría pegar la dirección de una foto privada o ajena");
+    }
+    for (const x of CAT) if (!existsSync(x) || !VALIDA.test(sinComent(x))) falla(G, x, 0, "este catálogo guarda fotos como texto: valídalas con fotosDeCatalogoOk");
+    // (8) El barrido corre lo de F3: mover las de antes y la purga de las fotos de ayuda.
+    const br = existsSync(BR) ? sinComent(BR) : "";
+    if (!/\["fotosPrivadas", async \(\) => \(await import\("\.\/fotos-privadas"\)\)\.barrerPrivadas\(\)\]/.test(br)) falla(G, BR, 0, "el barrido no mueve las fotos privadas de antes (barrerPrivadas)");
+    if (!/\["fotosAyudaPurga", async \(\) => \(await import\("\.\/ayuda-cita"\)\)\.purgarFotosAyuda\(\)\]/.test(br)) falla(G, BR, 0, "el barrido no corre purgarFotosAyuda (las fotos privadas de una ayuda nunca se borrarían)");
+    const bp = cuerpoFn(fp, "barrerPrivadas"), mv = cuerpoFn(fp, "moverAPrivada");
+    if (!bp.includes("where rev_sin_c2 and not private and purged_at is null") || !mv.includes("set url = $2, private = true") || !/o\.details->'preFotos' \? \$2::text/.test(mv) || mv.indexOf("await borrarObjeto(publica);") < mv.indexOf("commit"))
+      falla(G, FP, 0, "barrerPrivadas: las de antes (rev_sin_c2 y no privadas, por el índice de 0197) pasan a la llave privada, reescriben su copia en preFotos, y SOLO DESPUÉS salen de n/");
+    // (9) purgarFotosAyuda: solo la privada de una ayuda cerrada hace más del plazo, nunca sin almacén, con su renglón en la auditoría en la misma transacción.
+    const pa = cuerpoFn(existsSync(AC) ? sinComent(AC) : "", "purgarFotosAyuda");
+    if (!/if \(!mediosListos\(\)\) return 0;/.test(pa) || !pa.includes("m.url like 'privado/a/%'") || !pa.includes("h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql(\"sp_fotos_ayuda_dias\")})")
+      || !/try \{ await borrarObjeto\(m\.url\); \} catch \{ continue; \}\s*await tx\(async \(c\) => \{/.test(pa) || !/'system', null, 'ayuda\.fotos\.purga', 'media'/.test(pa))
+      falla(G, AC, 0, "purgarFotosAyuda: solo las fotos privadas de la ayuda (privado/a/) de una ayuda cerrada hace más de sp_fotos_ayuda_dias, nada sin almacén, el archivo primero y la fila con su renglón de auditoría en la misma transacción");
+    if (!(existsSync(AC) ? readFileSync(AC, "utf8") : "").includes("export const FOTO_AYUDA_SQL = `case when m.private and m.url like 'privado/a/%' then '/api/ayuda/foto/' || m.id::text else m.url end`;"))
+      falla(G, AC, 0, "FOTO_AYUDA_SQL: solo las privadas de la ayuda (privado/a/) van por /api/ayuda/foto; las de destino privado ya traen su dirección con permiso");
+    // (10) La purga de una cuenta conoce la llave nueva; el daño de una renta es una foto de quien lo manda, sin usar.
+    if (!/const clave = llaveDeUrl\(f\.url\);\s*if \(!clave\) continue;/.test(existsSync(PU) ? sinComent(PU) : "")) falla(G, PU, 0, "la purga de una cuenta saca las fotos por su llave (llaveDeUrl: también la de una foto privada, privado/o/)");
+    if (!/m\.uploaded_by = \$2::uuid and m\.owner_kind = 'user' and m\.purged_at is null\s+and not exists \(select 1 from rentals r where r\.damage_photo = m\.id\)/.test(existsSync(RE) ? sinComent(RE) : ""))
+      falla(G, RE, 0, "el daño de una renta va con una foto que subió quien lo manda y que no está en otro daño (el permiso de la foto sale de la renta)");
+    // (11) nginx: lo privado nunca por /medios/ (también privado/o/, y con la dirección disfrazada); la prueba de la base existe y mira lo que importa.
+    const nt = existsSync(NT) ? readFileSync(NT, "utf8") : "";
+    if (!nt.includes('"/medios/privado/o/$ID.jpg"') || !nt.includes("--path-as-is")) falla(G, NT, 0, "la prueba de nginx no revisa que una foto privada (privado/o/) nunca sale por /medios/, ni con la dirección disfrazada");
+    const pr = readFileSync(PR, "utf8");
+    for (const k of ["'otro negocio → no'", "'otro cliente → no'", "'sin sesión → no'", "'el equipo sin un caso abierto → no'", "'un catálogo rechaza la dirección de una foto privada'", "'purgarFotosAyuda no toca una ayuda cerrada hace poco'"])
+      if (!pr.includes(k)) falla(G, PR, 0, `la prueba de la base dejó de revisar ${k}`);
   },
 
   /* fotosRevisionFalloCerrado: si un modelo no responde, la capa está apagada, no hay presupuesto o la respuesta no encaja, la foto queda RETENIDA:

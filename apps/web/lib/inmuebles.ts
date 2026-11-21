@@ -1,6 +1,7 @@
 import "server-only";
 import type { Pool, PoolClient } from "pg";
 import { db } from "./db";
+import { fotosDeCatalogoOk } from "./fotos-catalogo";
 import type { Bi } from "./inscripciones-comun";
 import {
   DIAS_PRECAL, ENGANCHE_MIN, ENGANCHES, KINDS_PROP, PROP, TOPE_PROP_FREE, UTIL, alMes, conCuota, kindInmDe, sinPropiedades, soloZona, usd, visible,
@@ -133,6 +134,8 @@ export async function guardarPropiedad(c: PoolClient, negocio: string, itemId: s
   const name = bi(p.name, 60), desc = bi(p.desc, 300), papers = bi(p.papers, 200), lease = bi(p.lease, 80);
   if (name.es.length < 3) return err("Escribe el nombre, por ejemplo «2 recámaras · Alter St».", "Type the name, e.g. “2 bedrooms · Alter St”.");
   const fotos = (Array.isArray(p.fotos) ? p.fotos : []).filter((u) => typeof u === "string" && FOTO.test(u)).slice(0, 8);
+  // F3 · Una foto nueva: de media, visible, no privada (lib/fotos-catalogo.ts; el mismo criterio que los demás destinos públicos).
+  if (!(await fotosDeCatalogoOk(c, { negocio, userId: actor, itemId: nueva ? null : itemId, fotos }))) return err("Vuelve a subir la foto.", "Upload the photo again.");
   const beds = p.beds == null ? null : entero(p.beds), baths = p.baths == null ? null : Number(p.baths), sqft = p.sqft == null || p.sqft === 0 ? null : entero(p.sqft);
   if (beds != null && !(beds >= 0 && beds <= 12)) return err("Las recámaras van de 0 a 12.", "Bedrooms go from 0 to 12.");
   if (baths != null && !(baths >= 0 && baths <= 12 && Number.isInteger(baths * 2))) return err("Los baños van de medio en medio, hasta 12.", "Baths go in halves, up to 12.");

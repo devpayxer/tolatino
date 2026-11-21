@@ -1,6 +1,7 @@
 import "server-only";
 import type { Pool, PoolClient } from "pg";
 import { db, tx } from "./db";
+import { fotosDeCatalogoOk } from "./fotos-catalogo";
 import { cfgSql } from "./config";
 import { horasPrueba, retirarAnuncio } from "./visitas-inm";
 import type { Bi } from "./inscripciones-comun";
@@ -227,6 +228,8 @@ export async function guardarCarro(c: PoolClient, negocio: string, itemId: strin
   const desc = bi(p.desc, 300);
   if ([desc.es, desc.en].some((t) => PAGO_SUELTO.test(t))) return err("El pago al mes, a la semana y el enganche los calcula To’Latino con la tasa y los meses: quítalos de la descripción.", "Monthly or weekly payments and down payments are calculated by To’Latino with the rate and term: remove them from the description.");
   const fotos = (Array.isArray(p.fotos) ? p.fotos : []).filter((u) => typeof u === "string" && FOTO.test(u)).slice(0, 12);
+  // F3 · Una foto nueva: de media, visible, no privada (lib/fotos-catalogo.ts; el mismo criterio que los demás destinos públicos).
+  if (!(await fotosDeCatalogoOk(c, { negocio, userId: actor, itemId: nuevo ? null : itemId, fotos }))) return err("Vuelve a subir la foto.", "Upload the photo again.");
   if (nuevo) { const t = await topeFree(c, negocio, null); if (t) return t; }
   // El total en la puerta: impuesto de la ciudad, placas y cargo de la herramienta (nunca más que el tope).
   await asegurarFila(c, negocio, actor);

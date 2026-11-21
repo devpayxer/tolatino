@@ -19,6 +19,10 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
   foto queda retenida y el barrido la vuelve a intentar.
 - **Nunca sale de casa una foto privada.** A la capa 2 solo van fotos destinadas a lo público. Mensajes, ayuda, entrega y reclamos usan
   solo el modelo propio; una foto que va solo a un negocio (solicitud, cita, estimado, viaje) que sale dudosa queda retenida y no se manda.
+- **Una foto que va solo a un negocio no tiene dirección pública** (desde el 21 nov): la ven quien la subió, el cliente y el negocio de esa
+  operación, y el equipo **solo con un caso abierto** de esa operación en su cola y su ciudad («Ayuda con…» o el daño de una renta; en una
+  ayuda de Salud, con el motivo de «vidrio roto»). Cada vez que alguien del equipo la abre queda en la auditoría (`fotos.privada.ver`). Esa
+  foto tampoco se puede poner en algo público (menú, catálogos, galería): el servidor la rechaza.
 - **Una foto retenida o rechazada** no se ve en ninguna pantalla y su archivo deja de ser público (vive en una llave privada). Si se
   aprueba, vuelve. Se recuerda por su contenido: lo rechazado se rechaza para cualquiera; lo aprobado por una persona entra directo para
   quien la subió.
@@ -80,6 +84,10 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
   the photo is held and the sweep retries.
 - **A private photo never leaves.** Only photos meant to be public go to layer 2. Messages, help, delivery and claims use only the own
   model; a photo that goes only to a business (request, appointment, estimate, trip) that comes out doubtful is held and not sent.
+- **A photo that goes only to a business has no public address** (since Nov 21): it is seen by whoever uploaded it, the client and the
+  business of that operation, and the team **only with an open case** about that operation in their queue and city (“Help with…” or rental
+  damage; for a Health help, with the “break glass” reason). Each time a team member opens it, it is logged (`fotos.privada.ver`). That photo
+  cannot be put on anything public either (menu, catalogs, gallery): the server rejects it.
 - **A held or rejected photo** shows on no screen and its file stops being public (it lives under a private key). If approved, it comes
   back. It is remembered by its content: what was rejected is rejected for anyone; what a person approved goes straight in for whoever uploaded it.
 

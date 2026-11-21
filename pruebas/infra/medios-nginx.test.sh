@@ -20,8 +20,11 @@ else echo "  · sin nginx ni docker aquí: el respaldo de nginx no se probó (en
 T=$(mktemp -d); chmod 755 "$T"
 PA=$((20000 + RANDOM % 20000)); PN=$((PA + 1))
 ID=0f0e0d0c-0b0a-4908-8706-050403020100; OTRA=1f0e0d0c-0b0a-4908-8706-050403020199
-mkdir -p "$T/almacen/n" "$T/t"
+mkdir -p "$T/almacen/n" "$T/almacen/privado/o" "$T/t"
 printf 'JPEG-MAESTRA-%s' "$ID" > "$T/almacen/n/$ID.jpg"
+# F3 · Una foto de destino privado en el almacén de mentira: si nginx la dejara pasar, contestaría 200 (así la prueba no pasa por casualidad).
+printf 'JPEG-PRIVADA-%s' "$ID" > "$T/almacen/privado/o/$ID.jpg"
+printf 'WEBP-PRIVADA-640-%s' "$ID" > "$T/almacen/privado/o/$ID.w640.webp"
 printf 'WEBP-640-%s' "$ID" > "$T/almacen/n/$ID.w640.webp"
 python3 pruebas/infra/medios-nginx.py almacen "$T/almacen" "$PA" & ALM=$!
 CONT=""
@@ -40,6 +43,8 @@ pedir() {
   local a=(-H "Accept: $2") m=(-X "${3:-GET}"); [ "$2" = "-" ] && a=(-H "Accept:"); [ "${3:-}" = HEAD ] && m=(-I)
   curl -s -m 10 -o "$T/b" -D "$T/h" "${m[@]}" "${a[@]}" "http://127.0.0.1:$PN$1" -w '%{http_code}'
 }
+# crudo RUTA → status, con la dirección tal cual (--path-as-is: curl no resuelve «..» ni «.»; nginx la normaliza antes de elegir la ubicación).
+crudo() { curl -s -m 10 -o "$T/b" -D "$T/h" --path-as-is -H "Accept: image/webp" "http://127.0.0.1:$PN$1" -w '%{http_code}'; }
 cab() { grep -i "^$1:" "$T/h" | tr -d '\r' | sed 's/^[^:]*: //'; }
 cuantas() { grep -ci "^$1:" "$T/h"; }
 WEBP='image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
@@ -85,6 +90,11 @@ for ent in pruebas produccion; do
   [ "$s" = 404 ] && ok "$ent: una foto que no existe → 404 (no hay maestra que dar)" || no "$ent: una foto que no existe → $s"
   s=$(pedir "/medios/privado/m/$ID.jpg" "$WEBP")
   [ "$s" = 404 ] && ok "$ent: lo privado nunca sale por aquí (404)" || no "$ent: lo privado → $s"
+  # F3 · Una foto de destino privado (cita, solicitud, viaje, balanza, daño, estimado…): ni la maestra ni su variante, ni con la dirección disfrazada.
+  bien=1; for r in "/medios/privado/o/$ID.jpg" "/medios/privado/o/$ID.w640.webp" "/medios/n/../privado/o/$ID.jpg" "/medios/./privado/o/$ID.jpg" "/medios//privado/o/$ID.jpg" "/medios/%70rivado/o/$ID.jpg" "/medios/privado%2Fo/$ID.jpg"; do
+    s=$(crudo "$r"); if [ "$s" != 404 ] || grep -q PRIVADA "$T/b" 2>/dev/null; then bien=0; no "$ent: una foto privada salió por $r → $s"; fi
+  done
+  [ "$bien" = 1 ] && ok "$ent: una foto de destino privado (privado/o/) nunca sale por /medios/, tampoco disfrazada (404)"
   s=$(pedir "/medios/n/$ID.w640.webp" "$WEBP" POST); s2=$(pedir "/medios/n/$ID.w640.webp" "$SIN" POST)
   [ "$s" = 403 ] && [ "$s2" = 403 ] && ok "$ent: solo GET y HEAD (POST → 403, también por el respaldo)" || no "$ent: POST → $s / $s2"
   s=$(pedir "/medios/n/$ID.w640.webp" "$WEBP" HEAD)
