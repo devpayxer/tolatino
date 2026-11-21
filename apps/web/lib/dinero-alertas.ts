@@ -22,8 +22,11 @@ import { db, tx } from "./db";
    pasarela y la intención se cierra con lo que dijo (lib/consulta-pasarela.ts); la alerta se cierra sola (nota 'resuelta_sola', sin persona) cuando la
    intención deja de estar en camino, y muestra qué dijo la última consulta y cuándo. gateway_review: la consulta encontró algo que no se cierra solo (varios
    objetos para una intención, otro monto, un cobro de Pro de un período ya cobrado). */
+/* 9t6 (0204) · hold_stuck: la renovación de una retención (depósito de una renta, lo retenido de un estimado) que Stripe no contestó y la consulta no cerró
+   (lib/renovar-retencion.ts): la vieja no se soltó ni se avisó a nadie. extra_refund_stuck: devolver (o revertir) lo que Stripe hizo de más, decidido al
+   cerrar una gateway_review (lib/revision-pasarela.ts), que Stripe rechazó o que no se cierra sola. gateway_review se cierra con «Elegir cuál vale». */
 export type TipoAlerta = "refund_stuck" | "transfer_reversal_stuck" | "dispute_due" | "recon_diff" | "recon_no_corrio" | "payout_failed" | "refund_failed" | "charge_unapplied"
-  | "transfer_stuck" | "charge_stuck" | "offsession_stuck" | "offsession_unapplied" | "gateway_review";
+  | "transfer_stuck" | "charge_stuck" | "offsession_stuck" | "offsession_unapplied" | "gateway_review" | "hold_stuck" | "extra_refund_stuck";
 type Bi = { es: string; en: string };
 const QUE: Record<TipoAlerta, Bi> = {
   refund_stuck: { es: "una devolución atascada", en: "a stuck refund" }, transfer_reversal_stuck: { es: "una transferencia sin saldo para revertir", en: "a transfer that cannot be reversed" },
@@ -34,6 +37,8 @@ const QUE: Record<TipoAlerta, Bi> = {
   offsession_stuck: { es: "un cobro con tarjeta guardada sin respuesta", en: "a saved-card charge with no answer" },
   offsession_unapplied: { es: "un cobro con tarjeta guardada sin aplicar", en: "an unapplied saved-card charge" },
   gateway_review: { es: "lo que dijo Stripe no se cierra solo", en: "what Stripe said does not close by itself" },
+  hold_stuck: { es: "una retención renovada sin respuesta", en: "a renewed hold with no answer" },
+  extra_refund_stuck: { es: "devolver lo que Stripe hizo de más", en: "refunding what Stripe made in excess" },
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
@@ -85,18 +90,24 @@ export async function barrerAlertasDinero(): Promise<number> {
 export type FilaAlerta = { id: string; kind: TipoAlerta; sujeto: string; negocio: string | null; nombre: string | null; ciudad: string | null; monto: number; detalle: Bi; at: string;
   estado: "abierta" | "con_dueno" | "resuelta"; nota: { accion: string; quien: string; nota: string; at: string } | null; aMano: boolean;
   /* 9t5 · Lo que dijo la última consulta a la pasarela de esa intención (y cuándo), y si todavía se le puede preguntar (sigue en camino): lo decide el servidor. */
-  consulta: { resultado: string; at: string; stripe: string | null; origen: string } | null; preguntar: boolean };
+  consulta: { resultado: string; at: string; stripe: string | null; origen: string } | null; preguntar: boolean;
+  /* 9t6 · gateway_review abierta que una persona puede cerrar: qué puede elegir según la última consulta (solo para mostrar: al guardar, el servidor vuelve a
+     preguntar a la pasarela y decide con eso). */
+  revisar: { vale: string[]; ninguno: boolean } | null };
 const CIUD = "(cardinality($1::text[]) = 0 or a.city_id = any($1::text[]))";
-/* 9t5 · La intención de una alerta «sin respuesta» (para la consulta a la pasarela): su tabla, su id y si sigue en camino. */
+/* 9t5 · La intención de una alerta «sin respuesta» (para la consulta a la pasarela): su tabla, su id y si sigue en camino.
+   9t6 · También la renovación de una retención (hold_stuck) y la devolución de lo que sobró (extra_refund_stuck), por su id. */
 const INTENCION_DE_LA_ALERTA = `select 'subscription_charges'::text as sk, z.id as sid, z.status = 'pending' as vivo from subscription_charges z where a.kind = 'charge_stuck' and z.idem_key = a.subject_id
                           union all select 'offsession_charges', z.id, z.status = 'pending' from offsession_charges z where a.kind = 'offsession_stuck' and z.idem_key = a.subject_id
-                          union all select 'event_settlements', z.id, z.status = 'paying' from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint`;
+                          union all select 'event_settlements', z.id, z.status = 'paying' from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                          union all select 'hold_renewals', z.id, z.status = 'pending' from hold_renewals z where a.kind = 'hold_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                          union all select 'gateway_refunds', z.id, z.status = 'pending' from gateway_refunds z where a.kind = 'extra_refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint`;
 export async function alertasDinero(s: Staff, abiertas: boolean, antes: string | null = null, n = 30): Promise<{ filas: FilaAlerta[]; sigue: string | null }> {
   // 9t2 · «Resolver a mano» solo cuando la devolución (o la reversión) SIGUE pendiente y la base lo deja (Stripe ya la intentó): una que quedó
   // fallida o hecha muestra la alerta como informativa (antes ofrecía el botón y contestaba «Ya no está pendiente»). Lo decide el servidor.
   // 9t3 (0199) · La base también lo deja cuando lleva 23 h (HORAS_LLAVE) anotada sin un solo intento (nadie la va a mandar ya): la misma regla aquí.
   // 9t5 · La intención de una alerta «sin respuesta» (su tabla, su id y si sigue en camino) y lo último que dijo la consulta a la pasarela.
-  const r = await db().query<Omit<FilaAlerta, "estado" | "aMano" | "preguntar"> & { monto: string; ult: string | null; mano: boolean; vivo: boolean | null }>(
+  const r = await db().query<Omit<FilaAlerta, "estado" | "aMano" | "preguntar" | "revisar"> & { monto: string; ult: string | null; mano: boolean; vivo: boolean | null }>(
     `select a.id::text, a.kind, a.subject_id as sujeto, case
               when a.kind = 'refund_stuck' then exists (select 1 from refunds r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
                                                           and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))
@@ -113,8 +124,11 @@ export async function alertasDinero(s: Staff, abiertas: boolean, antes: string |
        left join lateral (select y.result, y.at, y.stripe_id, y.origin from gateway_checks y where y.subject_kind = o.sk and y.subject_id = o.sid order by y.at desc, y.id desc limit 1) g on true
       where ${CIUD} and ($2::boolean is false or coalesce(x.action, 'reabierta') not in ('resuelta', 'resuelta_a_mano', 'resuelta_sola')) and ($3::bigint is null or a.id < $3::bigint)
       order by a.id desc limit $4::int`, [s.cities, abiertas, antes, n + 1]);
+  // 9t6 · Las gateway_review abiertas: qué se puede elegir (una consulta para todas; el servidor vuelve a decidir al guardar).
+  const abiertasRev = r.rows.slice(0, n).filter((x) => x.kind === "gateway_review" && !["resuelta", "resuelta_a_mano", "resuelta_sola"].includes(x.ult ?? ""));
+  const rev = abiertasRev.length ? await opcionesDeAlertas(abiertasRev.map((x) => ({ id: x.id, sujeto: x.sujeto }))) : new Map<string, { vale: string[]; ninguno: boolean }>();
   const filas = r.rows.slice(0, n).map(({ ult, mano, vivo, ...x }) => ({ ...x, monto: Number(x.monto), estado: (ult === "resuelta" || ult === "resuelta_a_mano" || ult === "resuelta_sola" ? "resuelta" : ult === "me_hago_cargo" ? "con_dueno" : "abierta") as FilaAlerta["estado"],
-    aMano: mano && ult !== "resuelta_a_mano", preguntar: vivo === true }));
+    aMano: mano && ult !== "resuelta_a_mano", preguntar: vivo === true, revisar: rev.get(x.id) ?? null }));
   return { filas, sigue: r.rows.length > n ? filas[filas.length - 1]!.id : null };
 }
 export async function cuantasAlertasAbiertas(s: Staff): Promise<number> {
@@ -140,12 +154,17 @@ export async function preguntarPorAlerta(s: Staff, id: string, nota: string): Pr
   const K = await import("./consulta-pasarela");
   const o: import("./consulta-pasarela").Origen = { origen: "equipo", staff: s.id, alGuardar: (c) => auditar(c, { actor: s.id, action: "dinero.alerta.preguntar", targetKind: "money_alert", targetId: id, city: a.city,
     after: { alerta: QUE[a.kind].es, intencion: `${a.sk}:${a.sid}` }, reason: n }) };
-  const r = a.sk === "subscription_charges" ? await (await import("./suscripcion")).resolverCobroPro(a.sid, o)
+  // 9t6 · También la renovación de una retención (resolverRenovacion) y la devolución de lo que sobró (resolverDevolucionSobra): la misma función del barrido.
+  const r: { resultado: import("./consulta-pasarela").Resultado | null; quedo: string } = a.sk === "subscription_charges" ? await (await import("./suscripcion")).resolverCobroPro(a.sid, o)
     : a.sk === "offsession_charges" ? await (await import("./cobro-fuera")).resolverCobroFuera(a.sid, o)
+    : a.sk === "hold_renewals" ? await (await import("./renovar-retencion")).resolverRenovacion(a.sid, o)
+    : a.sk === "gateway_refunds" ? await (await import("./revision-pasarela")).resolverDevolucionSobra(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.st === "done" ? "devolucion_hecha" : x.st === "failed" ? "devolucion_fallida" : "sigue" }))
     : await (await import("./evt-liquidacion")).resolverTransferencia(a.sid, o);
-  if (!r.resultado) return { ok: false, msg: "Todavía no pasan 23 h (o ya no está en camino): no se le pregunta a Stripe." };
+  if (!r.resultado) return { ok: false, msg: "Todavía no pasa la ventana de la llave (o ya no está en camino): no se le pregunta a Stripe." };
   const QUEDO: Record<string, string> = { hecha: "quedó hecha, una vez, y la alerta se cerró", fallida: "quedó fallida: no se cobró y sigue el flujo normal", no_llego: "nunca llegó a Stripe: quedó fallida y el siguiente cobro puede salir",
-    reabierta: "nunca llegó a Stripe: se manda otra vez con la misma llave", sigue: "sigue en camino; la alerta sigue abierta", ya_no_estaba: "ya no estaba en camino" };
+    reabierta: "nunca llegó a Stripe: se manda otra vez con la misma llave", sigue: "sigue en camino; la alerta sigue abierta", ya_no_estaba: "ya no estaba en camino",
+    devuelto: "el equipo decidió que ninguno vale: quedó fallida y se devuelve lo cobrado", soltada: "la retención nueva ya no hacía falta: se soltó",
+    devolucion_hecha: "la devolución quedó hecha y la alerta se cerró", devolucion_fallida: "Stripe dijo que no: quedó fallida (hazla desde Stripe o por fuera)" };
   return { ok: true, msg: `Stripe dijo que ${K.RESULTADO[r.resultado].es}: ${QUEDO[r.quedo] ?? r.quedo}. Quedó en la auditoría.` };
 }
 
@@ -158,6 +177,9 @@ export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" |
   const a = (await db().query<{ kind: TipoAlerta; sujeto: string; city: string | null }>(`select a.kind, a.subject_id as sujeto, a.city_id as city from money_alerts a where a.id = $2::bigint and ${CIUD}`, [s.cities, id])).rows[0];
   if (!a) return { ok: false, msg: "Esa alerta no existe (o no es de tus ciudades)." };
   if (accion === "resuelta_a_mano" && ((a.kind !== "refund_stuck" && a.kind !== "transfer_reversal_stuck") || !/^\d{1,18}$/.test(a.sujeto))) return { ok: false, msg: "Esta alerta no tiene camino manual." };
+  // 9t6 · Una gateway_review que todavía se puede decidir no se marca «resuelta» sin decidir: la intención seguiría en camino y bloqueando al objeto.
+  if (accion === "resuelta" && a.kind === "gateway_review" && (await opcionesDeAlertas([{ id, sujeto: a.sujeto }])).has(id))
+    return { ok: false, msg: "Esta alerta se cierra con «Elegir cuál vale»: si solo se marca resuelta, la intención sigue en camino." };
   const { auditar } = await import("./admin");
   const r = await tx(async (c) => {
     if (accion === "resuelta_a_mano") {
@@ -173,9 +195,14 @@ export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" |
   return r === "ok" ? { ok: true } : { ok: false, msg: r };
 }
 
+/* 9t6 · La nota «resuelta» de quien decidió una gateway_review, en la transacción de su decisión (lib/revision-pasarela.ts): la alerta se cierra con ella. */
+export async function notaEnTx(c: Pick<import("pg").PoolClient, "query">, alerta: string, staff: string, nota: string) {
+  await c.query(`insert into money_alert_notes (alert_id, action, staff_id, note) values ($1::bigint, 'resuelta', $2::uuid, $3::text)`, [alerta, staff, nota.slice(0, 500)]);
+}
+
 /* ── 9t5 · Las alertas «sin respuesta» que se cierran solas (lib/consulta-pasarela.ts) ── */
 /* La alerta «sin respuesta» de una intención se cierra sola cuando deja de estar en camino: una nota 'resuelta_sola' (sin persona), una vez. */
-export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck", sujeto: string, nota: Bi): Promise<boolean> {
+export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck" | "hold_stuck" | "extra_refund_stuck" | "gateway_review", sujeto: string, nota: Bi): Promise<boolean> {
   return tx(async (c) => {
     // El candado de la alerta primero; la última nota, después, en otra sentencia (ve lo que otro cerró mientras esperaba): una sola vez.
     const a = (await c.query<{ id: string }>(`select a.id::text from money_alerts a where a.kind = $1 and a.subject_id = $2 for update`, [kind, sujeto])).rows[0];
@@ -187,13 +214,21 @@ export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck"
   });
 }
 /* El barrido: las alertas «sin respuesta» abiertas cuya intención ya no está en camino (la cerró la consulta o el flujo) se cierran solas. */
+/* 9t6 · También: hold_stuck (la renovación dejó de estar en camino), gateway_review (la intención se cerró: por la decisión del equipo o por su flujo) y
+   extra_refund_stuck SOLO cuando la devolución quedó hecha (una que Stripe rechazó sigue abierta: alguien tiene que devolver ese dinero). */
 export async function cerrarAlertasResueltas(): Promise<number> {
-  const L = (await db().query<{ kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck"; sujeto: string; st: string }>(
+  const L = (await db().query<{ kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck" | "hold_stuck" | "extra_refund_stuck" | "gateway_review"; sujeto: string; st: string }>(
     `select a.kind, a.subject_id as sujeto, o.st from money_alerts a
        join lateral (select z.status as st from subscription_charges z where a.kind = 'charge_stuck' and z.idem_key = a.subject_id
                      union all select z.status from offsession_charges z where a.kind = 'offsession_stuck' and z.idem_key = a.subject_id
-                     union all select z.status from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint) o on true
-      where a.kind in ('charge_stuck', 'offsession_stuck', 'transfer_stuck') and o.st not in ('pending', 'paying')
+                     union all select z.status from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                     union all select z.status from hold_renewals z where a.kind = 'hold_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                     union all select case when z.status = 'done' then 'refund_done' else 'pending' end from gateway_refunds z where a.kind = 'extra_refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                     union all select z.status from subscription_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^subscription_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     union all select z.status from offsession_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^offsession_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     union all select z.status from event_settlements z where a.kind = 'gateway_review' and a.subject_id ~ '^event_settlements:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     union all select z.status from hold_renewals z where a.kind = 'gateway_review' and a.subject_id ~ '^hold_renewals:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint) o on true
+      where a.kind in ('charge_stuck', 'offsession_stuck', 'transfer_stuck', 'hold_stuck', 'extra_refund_stuck', 'gateway_review') and o.st not in ('pending', 'paying')
         and coalesce((select n.action from money_alert_notes n where n.alert_id = a.id order by n.at desc, n.id desc limit 1), '') not in ('resuelta_sola', 'resuelta', 'resuelta_a_mano')
       order by a.id limit 100`)).rows;
   let n = 0;
@@ -206,4 +241,55 @@ const CERRADA: Record<string, Bi> = {
   action: { es: "Cerrada sola: el banco pidió confirmar y el cobro siguió por la verificación.", en: "Closed by itself: the bank asked to confirm and the charge went on through verification." },
   paid: { es: "Cerrada sola: la transferencia quedó hecha.", en: "Closed by itself: the transfer is done." },
   reversed: { es: "Cerrada sola: la transferencia quedó hecha (y después se revirtió).", en: "Closed by itself: the transfer is done (and was reversed later)." },
+  dropped: { es: "Cerrada sola: la retención nueva ya no hacía falta y se soltó.", en: "Closed by itself: the new hold was no longer needed and was released." },
+  refund_done: { es: "Cerrada sola: la devolución quedó hecha.", en: "Closed by itself: the refund is done." },
 };
+
+/* ── 9t6 · gateway_review: lo que se puede elegir. lib/revision-pasarela.ts decide con esta regla y con la pasarela OTRA VEZ; la pantalla la usa solo para
+   mostrar, con la última consulta anotada. Vive aquí para que la lista de alertas no dependa de otro módulo. ── */
+export type T4 = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals";
+const REF_REV = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals):(\d{1,18})$/;
+const STRIPE_ID = /^(pi|tr)_[A-Za-z0-9_]{3,200}$/;
+/* Lo que se puede elegir con lo que contestó la pasarela: vale solo lo hallado, hecho y con el monto de la intención; nada en curso; y solo si Stripe sigue
+   diciendo lo que pide revisión (varios, otro monto, o un cobro de Pro hecho de un período que ya estaba cobrado). */
+export function elegibles(x: { t: T4; monto: number; periodoCobrado: boolean }, resultado: string, H: { id: string; estado: string; centavos: number }[]): { vale: string[]; ninguno: boolean; enCurso: boolean } {
+  const enCurso = H.some((h) => h.estado === "en_curso");
+  const pide = resultado === "varios" || resultado === "monto_distinto" || (x.t === "subscription_charges" && resultado === "hecho" && x.periodoCobrado);
+  if (!pide || enCurso) return { vale: [], ninguno: false, enCurso };
+  // Un período de Pro ya cobrado con otro cobro: este no puede valer (sería cobrar dos veces el mismo período); solo se devuelve.
+  const vale = x.t === "subscription_charges" && x.periodoCobrado ? [] : H.filter((h) => h.estado === "hecho" && h.centavos === x.monto).map((h) => h.id);
+  // Una transferencia que sobra se revierte; «ninguna vale» no: la llave de la transferencia ya se usó y el organizador espera su pago.
+  return { vale, ninguno: x.t !== "event_settlements", enCurso };
+}
+/* Para la pantalla (solo mostrar; el servidor decide al guardar): qué se puede elegir en cada alerta gateway_review abierta, según la ÚLTIMA consulta
+   anotada (una consulta solo se hace pasada la ventana de la llave). Una sentencia para todas (sin N+1). */
+export async function opcionesDeAlertas(L: { id: string; sujeto: string }[]): Promise<Map<string, { vale: string[]; ninguno: boolean }>> {
+  const out = new Map<string, { vale: string[]; ninguno: boolean }>();
+  const P = L.map((a) => ({ a: a.id, m: REF_REV.exec(a.sujeto) })).filter((x): x is { a: string; m: RegExpExecArray } => !!x.m);
+  if (!P.length) return out;
+  const R = (await db().query<{ a: string; t: T4; vivo: boolean; monto: number; pc: boolean; res: string | null; ids: string | null; cents: number | null; rev: boolean }>(
+    `with s as (select * from unnest($1::text[], $2::text[], $3::bigint[]) as s(a, t, id))
+     select s.a, s.t, coalesce(z.vivo, false) as vivo, coalesce(z.monto, 0) as monto, coalesce(z.pc, false) as pc, g.result as res, g.stripe_id as ids, g.amount_cents as cents,
+            exists (select 1 from gateway_reviews r where r.subject_kind = s.t and r.subject_id = s.id) as rev
+       from s
+       left join lateral (
+         select y.status = 'pending' as vivo, y.amount_cents as monto,
+                exists (select 1 from subscription_charges w where w.business_id = y.business_id and w.period_start = y.period_start and w.status = 'done' and w.id <> y.id) as pc
+           from subscription_charges y where s.t = 'subscription_charges' and y.id = s.id
+         union all select y.status = 'pending', y.amount_cents, false from offsession_charges y where s.t = 'offsession_charges' and y.id = s.id
+         union all select y.status = 'paying' and y.net_cents > 0, y.net_cents, false from event_settlements y where s.t = 'event_settlements' and y.id = s.id
+         union all select y.status = 'pending', y.amount_cents, false from hold_renewals y where s.t = 'hold_renewals' and y.id = s.id
+       ) z on true
+       -- La última consulta que CONTESTÓ (una que no contestó no cambia lo que hay que decidir).
+       left join lateral (select x.result, x.stripe_id, x.amount_cents from gateway_checks x where x.subject_kind = s.t and x.subject_id = s.id and x.result <> 'sin_respuesta' order by x.at desc, x.id desc limit 1) g on true`,
+    [P.map((x) => x.a), P.map((x) => x.m[1]!), P.map((x) => x.m[2]!)])).rows;
+  for (const r of R) {
+    if (!r.vivo || r.rev || !r.res) continue;
+    // «varios» guarda los ids (sin montos: la pantalla los ofrece y el servidor comprueba el monto al decidir); uno solo, con su monto.
+    const ids = (r.ids ?? "").split(",").filter((x) => STRIPE_ID.test(x));
+    const H = r.res === "varios" ? ids.map((x) => ({ id: x, estado: "hecho", centavos: r.monto })) : ids.map((x) => ({ id: x, estado: r.res === "hecho" || r.res === "monto_distinto" ? "hecho" : "en_curso", centavos: r.cents ?? 0 }));
+    const e = elegibles({ t: r.t, monto: r.monto, periodoCobrado: r.pc }, r.res, H);
+    if (e.vale.length || e.ninguno) out.set(r.a, { vale: e.vale, ninguno: e.ninguno });
+  }
+  return out;
+}

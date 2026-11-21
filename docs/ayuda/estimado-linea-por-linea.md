@@ -40,6 +40,7 @@ negocio revisa y te manda el **estimado** (en Hogar se llama **precio completo**
 | El negocio no cobra con tarjeta en la app | No se retiene nada; el total se paga en el negocio. El panel dice cuánto cobrar. |
 | La pieza salió más barata | El negocio baja lo final; se cobra menos y se libera la diferencia. |
 | El trabajo dura más de 7 días | La retención se renueva sola con la misma tarjeta. Si el banco no deja, ese monto se paga en el negocio y les avisamos a los dos. |
+| Stripe no contesta al renovar la retención | No se suelta lo retenido ni se avisa nada mientras se averigua: se reintenta y después se le pregunta a Stripe. Si la renovación no salió y no fue tu banco, el aviso dice «no se pudo renovar» (no «tu banco no dejó»); ese monto se paga en el negocio. |
 | La cita se cancela con algo retenido | Lo retenido se libera. |
 | Algo salió mal después | **Ayuda con la cita** desde Tu cita. |
 
@@ -91,6 +92,7 @@ At a shop (diagnosis, «from», quoted) or in a home service (visit, estimate, h
 | The business doesn't charge by card in the app | Nothing is held; the total is paid at the business. The dashboard says how much to charge. |
 | The part turned out cheaper | The business lowers the final amount; less is charged and the difference is released. |
 | The job lasts more than 7 days | The hold renews by itself with the same card. If the bank won't allow it, that amount is paid at the business and we notify both. |
+| Stripe does not answer when renewing the hold | What is held is not released and nothing is sent while it is checked: it is retried and then Stripe is asked. If the renewal did not go through and it was not your bank, the notice says «it could not be renewed» (not «your bank did not allow it»); that amount is paid at the business. |
 | The booking is canceled with something held | What is held is released. |
 | Something went wrong afterward | **Appointment help** from Your appointment. |
 

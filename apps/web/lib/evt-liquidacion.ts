@@ -166,7 +166,9 @@ export async function resolverTransferencia(id: string, o: import("./consulta-pa
   const s = (await db().query<{ id: string; net: number; eid: string; biz: string; city: string; vieja: boolean }>(
     `select s.id::text, s.net_cents as net, s.event_id::text as eid, s.business_id as biz, s.city_id as city, ${VIEJA_LLAVE} as vieja from event_settlements s where s.id = $1::bigint and s.status = 'paying'`, [id, HORAS_LLAVE_STRIPE])).rows[0];
   if (!s || !s.vieja || s.net <= 0) return { resultado: null, quedo: "ya_no_estaba" };
-  const resultado = await K.consultar({ tabla: "event_settlements", id: s.id, monto: s.net, ciudad: s.city, negocio: s.biz, grupo: `evt-${s.eid}` }, o);
+  // 9t6 · Ya decidida por el equipo (gateway_review: cuál de las transferencias halladas vale): no se vuelve a preguntar; pagarUna cierra con la decisión.
+  const resultado = (await K.revisada("event_settlements", s.id)) ? (await K.veredicto("event_settlements", s.id))!.resultado
+    : await K.consultar({ tabla: "event_settlements", id: s.id, monto: s.net, ciudad: s.city, negocio: s.biz, grupo: `evt-${s.eid}` }, o);
   await pagarUna(id);
   const f = (await db().query<{ st: string; reabierta: boolean }>(`select s.status as st, not (${VIEJA_LLAVE}) as reabierta from event_settlements s where s.id = $1::bigint`, [id, HORAS_LLAVE_STRIPE])).rows[0];
   const quedo = f?.st === "paid" || f?.st === "reversed" ? "hecha" : f?.reabierta ? "reabierta" : "sigue";

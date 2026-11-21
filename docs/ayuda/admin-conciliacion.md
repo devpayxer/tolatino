@@ -2,7 +2,7 @@
 
 _Pantallas: `/admin/planes?tab=ing` (CONCILIACIÓN DIARIA y ALERTAS DEL DINERO), el Inicio del Super Admin («EL DINERO NO CUADRA») y Sistema ›
 Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (me hago cargo, resuelta, reabrir, conciliar otra vez, resolver a mano,
-preguntar a Stripe ahora) con «Transacciones: aprobar». Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
+preguntar a Stripe ahora, elegir cuál vale) con «Transacciones: aprobar». Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **La conciliación diaria** (el guardián del dinero): cada mañana, a la hora de Configuración › Dinero (6 AM del Este de fábrica), el sistema cuadra el
@@ -48,6 +48,27 @@ preguntar a Stripe ahora) con «Transacciones: aprobar». Versión: 21 nov 2026.
 - **Preguntar a Stripe ahora** (en esas alertas, mientras la intención siga en camino): la misma consulta del sistema, sin esperar su turno. Escribes por
   qué (queda en la auditoría con tu nombre); el servidor pregunta y cierra con la respuesta. No hay botón para decir «sí se cobró» o «no se cobró»: si te
   equivocaras, se cobraría dos veces.
+- **Elegir cuál vale** (en «lo que dijo Stripe no se cierra solo», desde el 21 nov): cuando Stripe tiene **más de un cobro** (o retención, o transferencia)
+  para una sola intención, uno con **otro monto**, o un **cobro de Pro de un período que ya estaba pagado**, eliges cuál vale (o **ninguno**) y escribes por
+  qué. El servidor **no se fía de la pantalla**: antes de guardar **vuelve a preguntar a Stripe** y solo deja elegir uno que Stripe tenga para esa intención,
+  que haya salido y con **el monto de la intención**; si alguno sigue en curso o Stripe no contesta, no cambia nada. Se decide **una sola vez** (si otra
+  persona decidió primero, lo dice). Después, en el mismo momento:
+  - **Vale uno** → la intención queda hecha con ese, por el mismo camino de siempre (el plan avanza, la renta sale, la retención renovada queda anotada…).
+  - **Ninguno** → la intención queda fallida **sin contar como un «no» del banco** (no suma intentos ni pasa a Free) y el objeto se puede volver a cobrar
+    (con otra llave). En un **cobro de Pro de un período ya pagado** solo se puede elegir «ninguno»: se devuelve y el período sigue pagado con el otro; el
+    siguiente período se cobra normal. Una **transferencia** solo se cierra eligiendo la que vale (el organizador espera su pago).
+  - **Lo que sobra** se **devuelve** (un cobro), se **revierte** (una transferencia) o se **suelta** (una retención, que no movió dinero). Cada devolución
+    sale con su llave y su dato propio; si Stripe no contesta, queda **en camino** y se termina sola (no es un «rechazo»); pasadas 23 h se le pregunta a
+    Stripe. Si Stripe dice que no, llega **«devolver lo que Stripe hizo de más»**: hazla desde Stripe (o por fuera) y márcala resuelta con la nota.
+  Mientras se pueda decidir, la alerta no ofrece «Resuelta» (la intención seguiría en camino). Queda todo en la auditoría (la decisión, lo que dijo Stripe
+  al decidir y lo que se devolvió). La conciliación cuenta el cobro de más y su devolución en el libro.
+- **Retenciones que se renuevan** (el **depósito de una renta** y lo retenido de un **estimado** o de **«algo más»**: la tarjeta suelta una retención a
+  los 7 días y a las 164 h se vuelve a retener sola): desde el 21 nov la renovación sale con su dato propio y, si Stripe **no contesta**, **no se suelta la
+  vieja ni se avisa a nadie** (antes se avisaba «el banco ya no deja» aunque no fuera cierto). Se reintenta con la misma llave mientras Stripe la recuerde
+  y la vieja siga viva (unas 4 horas); después **se le pregunta a Stripe**: si la nueva existe, se anota y entonces se suelta la vieja; si el banco dijo que
+  no, se suelta la vieja y se avisa «el banco ya no deja»; si nunca llegó (24 h), se suelta la vieja y se avisa «no se pudo renovar» (sin culpar al banco).
+  Lo que no se cierra así llega como **«retención renovada sin respuesta»**, una vez, con «Preguntar a Stripe ahora». Si la renta volvió o la cita se cerró
+  mientras tanto y la nueva sí salió, la nueva se suelta sola.
 - **Devolución de boletos que Stripe dio por fallida**: la alerta dice la orden, quién pagó y los códigos de los boletos. Los boletos siguen devueltos
   (no entran: no se reponen solos), el cobro vuelve a tener ese saldo y la cancelación del evento deja de contarlo como devuelto. Decide con la persona si
   se le devuelve otra vez o se le repone el boleto (hoy, por fuera de la app: la acción todavía no existe).
@@ -77,8 +98,20 @@ preguntar a Stripe ahora) con «Transacciones: aprobar». Versión: 21 nov 2026.
 | Pasadas 23 h, Stripe dice que sí salió | Se cierra hecho una vez, sin cobrar otra vez; la alerta se cierra sola. |
 | Pasadas 23 h, no está en Stripe (y pasaron 24 h desde que se mandó) | «Nunca llegó»: no se cobró; el siguiente cobro vuelve a poder salir (una renta apartada suelta su depósito y ya se puede cancelar; una transferencia se manda otra vez). |
 | Stripe no contesta la consulta | Nada cambia; se vuelve a preguntar en 15 minutos o con «Preguntar a Stripe ahora». |
-| Stripe tiene dos cobros para una intención, u otro monto | No se cierra solo: llega «lo que dijo Stripe no se cierra solo». |
-| Un cobro de Pro que Stripe sí hizo, de un período que ya estaba pagado con otro cobro | No se cierra solo («lo que dijo Stripe…»): se cobró dos veces; devuelve uno. Mientras tanto, a ese negocio no se le cobra Pro otra vez. |
+| Stripe tiene dos cobros para una intención, u otro monto | No se cierra solo: llega «lo que dijo Stripe no se cierra solo», con «Elegir cuál vale». |
+| Un cobro de Pro que Stripe sí hizo, de un período que ya estaba pagado con otro cobro | No se cierra solo: «Elegir cuál vale» solo ofrece «ninguno»: se devuelve ese cobro, la intención falla sin contar como cobro fallido y el siguiente período se cobra normal. |
+| Eliges uno que Stripe no tiene para esa intención | No deja: «Ese no está entre lo que Stripe tiene para esta intención». |
+| Eliges uno con otro monto, o que no salió | No deja: «Ese no vale». |
+| Al decidir, uno sigue en curso en Stripe, o Stripe no contesta | No cambia nada; vuelve a intentarlo después. |
+| Dos personas deciden a la vez | Vale la primera; la otra lee «Ya lo decidió otra persona del equipo». |
+| La devolución de lo que sobra no tiene respuesta de Stripe | Sigue en camino y se termina sola con la misma llave; pasadas 23 h se le pregunta a Stripe. |
+| Stripe dice que no a esa devolución | Queda fallida y llega «devolver lo que Stripe hizo de más», una vez: hazla por otro lado y márcala resuelta. |
+| La renovación de una retención no tiene respuesta | No se suelta la vieja ni se avisa; se reintenta con la misma llave (unas 4 h) y después se pregunta a Stripe. |
+| …Stripe dice que la nueva existe | Se anota la nueva y se suelta la vieja; nadie recibe un aviso. |
+| …el banco dijo que no | Se suelta la vieja; el negocio (y en un estimado, la persona) lee «el banco no dejó». |
+| …nunca llegó a Stripe (24 h) | Se suelta la vieja; el aviso dice «no se pudo renovar», sin culpar al banco. |
+| …no se cierra (en curso, sin respuesta, no está todavía) | Sigue; llega «retención renovada sin respuesta» una vez, con «Preguntar a Stripe ahora». |
+| …Stripe tiene dos retenciones nuevas, u otro monto | «Elegir cuál vale»: la elegida queda anotada, lo que sobra se suelta; «ninguno» suelta todo. |
 | «Preguntar a Stripe ahora» en algo que ya se cerró | No deja: «Ya no está en camino». |
 | Rol sin «Transacciones: aprobar» | Ves todo, sin botones. |
 | Diferencias de otra ciudad | No aparecen (las de To'Latino sin ciudad, solo a quien ve todas). |
@@ -100,6 +133,8 @@ dueño que la mire.
 **¿Qué hago con una retención suelta?** Se suelta sola en 7 días si nadie la cobra; si el pedido existe, revisa con el negocio y Stripe.
 **¿Por qué no hay un botón «sí se cobró»?** Porque el servidor decide con lo que dice Stripe. «Preguntar a Stripe ahora» hace la misma consulta que el
 sistema; si Stripe no contesta, inténtalo más tarde.
+**¿Puedo cambiar una decisión de «Elegir cuál vale»?** No: se decide una vez y queda en la auditoría (la base no deja cambiarla). Si lo devuelto no
+llegó, sale la alerta de esa devolución.
 **¿Y si la alerta dice «sin dato propio» o la consulta siempre dice «no está»?** Es un cobro que salió antes del 21 nov: no se da por «no llegó» solo.
 Míralo en Stripe por el negocio y la fecha y anótalo con «Me hago cargo».
 
@@ -151,6 +186,27 @@ Míralo en Stripe por el negocio y la fecha y anótalo con «Me hago cargo».
 - **Ask Stripe now** (on those alerts, while the intent is still on its way): the same query the system makes, without waiting for its turn. You write why
   (it stays in the audit log with your name); the server asks and closes with the answer. There is no button to say «it was charged» or «it wasn’t»: a
   mistake would charge twice.
+- **Choose which counts** (on «what Stripe said doesn’t close by itself», since Nov 21): when Stripe has **more than one charge** (or hold, or transfer) for a
+  single intent, one with **another amount**, or a **Pro charge for a period already paid**, you choose which one counts (or **none**) and write why. The
+  server **does not trust the screen**: before saving it **asks Stripe again** and only lets you pick one that Stripe has for that intent, that went
+  through and has **the intent's amount**; if one is still in progress or Stripe does not answer, nothing changes. It is decided **only once** (if someone
+  else decided first, it says so). Then, at once:
+  - **One counts** → the intent is done with it, the usual way (the plan moves on, the rental goes out, the renewed hold is recorded…).
+  - **None** → the intent fails **without counting as a «no» from the bank** (no attempt is added, it does not go to Free) and the object can be charged
+    again (with another key). For a **Pro charge of an already paid period** only «none» can be chosen: it is refunded and the period stays paid by the
+    other one; the next period is charged as usual. A **transfer** only closes by choosing the one that counts (the organizer is waiting for the payment).
+  - **What is left over** is **refunded** (a charge), **reversed** (a transfer) or **released** (a hold, which moved no money). Each refund goes out with
+    its own key and tag; if Stripe does not answer, it stays **on its way** and finishes by itself (it is not a «rejection»); after 23 h Stripe is asked.
+    If Stripe says no, **«refund what Stripe made in excess»** arrives: do it from Stripe (or outside it) and mark it resolved with the note.
+  While it can be decided, the alert does not offer «Resolved» (the intent would stay on its way). Everything stays in the audit log (the decision, what
+  Stripe said when deciding and what was refunded). The reconciliation counts the extra charge and its refund in the ledger.
+- **Holds that renew** (a **rental deposit** and what is held for an **estimate** or an **extra**: the card releases a hold after 7 days and at 164 h it is
+  held again by itself): since Nov 21 the renewal goes out with its own tag and, if Stripe **does not answer**, **the old hold is not released and nobody is
+  notified** (before, «the bank no longer allows it» was sent even when it was not true). It is retried with the same key while Stripe remembers it and the
+  old hold is alive (about 4 hours); after that **Stripe is asked**: if the new one exists, it is recorded and then the old one is released; if the bank
+  said no, the old one is released and «the bank no longer allows it» is sent; if it never arrived (24 h), the old one is released and «it could not be
+  renewed» is sent (without blaming the bank). What does not close this way arrives as **«renewed hold with no answer»**, once, with «Ask Stripe now». If the
+  rental came back or the booking closed in the meantime and the new hold did go through, the new one is released by itself.
 - **Ticket refund Stripe marked as failed**: the alert names the order, who paid and the ticket codes. The tickets stay refunded (no entry: they are not
   reissued by themselves), the charge has that balance again and the event cancellation stops counting it as refunded. Decide with the person whether to
   refund again or reissue the ticket (for now, outside the app: the action does not exist yet).
@@ -180,8 +236,20 @@ Míralo en Stripe por el negocio y la fecha y anótalo con «Me hago cargo».
 | After 23 h, Stripe says it went through | It closes as done once, without charging again; the alert closes by itself. |
 | After 23 h, it is not in Stripe (and 24 h have passed since it was sent) | «Never arrived»: nothing was charged; the next charge can go out again (a held rental releases its deposit and can be cancelled; a transfer is sent again). |
 | Stripe does not answer the query | Nothing changes; it is asked again in 15 minutes or with «Ask Stripe now». |
-| Stripe has two charges for one intent, or another amount | It does not close by itself: «what Stripe said doesn’t close by itself» arrives. |
-| A Pro charge Stripe did make, for a period already paid by another charge | It does not close by itself: it was charged twice; refund one. Meanwhile that business is not charged Pro again. |
+| Stripe has two charges for one intent, or another amount | It does not close by itself: «what Stripe said doesn’t close by itself» arrives, with «Choose which counts». |
+| A Pro charge Stripe did make, for a period already paid by another charge | It does not close by itself: «Choose which counts» only offers «none»: that charge is refunded, the intent fails without counting as a failed charge and the next period is charged as usual. |
+| You choose one Stripe does not have for that intent | It will not let you: «That one is not among what Stripe has for this intent». |
+| You choose one with another amount, or that did not go through | It will not let you: «That one does not count». |
+| When deciding, one is still in progress at Stripe, or Stripe does not answer | Nothing changes; try again later. |
+| Two people decide at the same time | The first one counts; the other reads «Someone else on the team already decided it». |
+| The refund of what is left over gets no answer from Stripe | It stays on its way and finishes by itself with the same key; after 23 h Stripe is asked. |
+| Stripe says no to that refund | It is marked failed and «refund what Stripe made in excess» arrives once: do it another way and mark it resolved. |
+| A hold renewal gets no answer | The old hold is not released and nobody is notified; it is retried with the same key (about 4 h) and then Stripe is asked. |
+| …Stripe says the new one exists | The new one is recorded and the old one released; nobody gets a notice. |
+| …the bank said no | The old one is released; the business (and, for an estimate, the person) reads «the bank did not allow it». |
+| …it never reached Stripe (24 h) | The old one is released; the notice says «it could not be renewed», without blaming the bank. |
+| …it does not close (in progress, no answer, not there yet) | It stays; «renewed hold with no answer» arrives once, with «Ask Stripe now». |
+| …Stripe has two new holds, or another amount | «Choose which counts»: the chosen one is recorded and the rest released; «none» releases everything. |
 | «Ask Stripe now» on something already closed | It will not let you: «It is no longer on its way». |
 | Role without «Transactions: approve» | You see everything, without buttons. |
 | Differences from another city | They do not show (To'Latino's own, with no city, only to whoever sees all cities). |
@@ -203,5 +271,7 @@ look at it.
 **What do I do with an orphan hold?** It releases itself in 7 days if nobody charges it; if the order exists, check with the business and Stripe.
 **Why is there no «it was charged» button?** Because the server decides with what Stripe says. «Ask Stripe now» makes the same query as the system; if
 Stripe does not answer, try again later.
+**Can I change a «Choose which counts» decision?** No: it is decided once and stays in the audit log (the database does not allow changing it). If the
+refund did not arrive, that refund's alert shows up.
 **What if the query always says «not in Stripe» for an old charge?** It is a charge sent before Nov 21, without its own tag: it is not taken as «never
 arrived» by itself. Look it up in Stripe by business and date and note it with «I’ll take it».

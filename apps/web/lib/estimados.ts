@@ -387,33 +387,50 @@ export async function cobrarLiquidacion(opId: string): Promise<void> {
 
 /* ── Retenciones de más de 7 días (la tarjeta suelta una autorización a los 7 días): a los 6 días y 20 horas se libera y se
    vuelve a retener fuera de sesión con la misma tarjeta. Si el banco no deja, ese monto se paga en el local y se avisa. ── */
+/* 9t6 (0204) · Como una intención (lib/renovar-retencion.ts): «sin respuesta» no suelta la vieja ni avisa a nadie; se reintenta con la misma llave mientras
+   Stripe la recuerda y la vieja sigue viva, y después se le pregunta a la pasarela. La vieja sigue retenida en el libro mientras la renovación va en camino
+   (este barrido la vuelve a recorrer); las que ya se preguntaron hace menos de CADA_MIN esperan su turno sin tapar a las demás. */
 export async function renovarRetenciones(negocio: string): Promise<void> {
-  const L = (await db().query<{ id: string; op: string; kind: "estimate" | "extra"; pi: string; held: number; pm: string | null; num: string; uid: string; city: string }>(
-    `select p.id::text, p.operation_id::text as op, p.kind, p.stripe_payment_intent as pi, p.held_cents as held, p.payment_method as pm, o.number as num, o.user_id::text as uid, o.city_id as city
-       from payments p join operations o on o.id = p.operation_id
+  const RR = await import("./renovar-retencion");
+  const L = (await db().query<{ id: string }>(
+    `select p.id::text from payments p join operations o on o.id = p.operation_id
       where p.business_id = $1 and p.status = 'held' and p.kind in ('estimate', 'extra') and p.capture_target_cents is null and o.status = 'confirmed'
-        and p.held_at < now() - interval '164 hours' limit 10`, [negocio])).rows;
+        and p.held_at < now() - make_interval(hours => ${RR.HORAS_RENOVAR})
+        and not exists (select 1 from hold_renewals h join gateway_checks g on g.subject_kind = 'hold_renewals' and g.subject_id = h.id
+                         where h.payment_id = p.id and h.status = 'pending' and g.at > now() - make_interval(mins => ${(await import("./consulta-pasarela")).CADA_MIN}))
+      order by p.held_at limit 10`, [negocio])).rows;
   for (const p of L) {
-    const t = await tarjetaDe(negocio);
-    const seq = Number((await db().query<{ n: number }>(`select coalesce(max(seq), 0)::int + 1 as n from payments where operation_id = $1::bigint and kind = $2`, [p.op, p.kind])).rows[0]!.n);
-    const fee = Math.min(await comision(db(), "cita", p.held), p.held);
-    const r = t.on && t.cuenta && p.pm ? await pasarela.retener({ centavos: p.held, comision: fee, destino: t.cuenta, pm: p.pm, cliente: await pasarela.cliente(p.uid).catch(() => null), idem: `renov-${p.id}`, meta: { appointment: p.num, business_id: negocio, kind: p.kind }, fuera: true }) : null;
-    await pasarela.liberar(p.pi);
-    await tx(async (c) => {
-      const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [p.id]);
-      if (!u.rowCount) return;
-      if (r?.ok && r.estado === "retenido") {
-        await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method, renewed_from)
-                       values ($1::bigint, $2, $3, $4, $5, $6, 'card', $7, $8, $8, $9, 'held', $10, $11, now(), $12, $13, $14::bigint)`,
-          [p.op, p.uid, negocio, p.city, p.kind, seq, r.pi, p.held, fee, r.marca, r.ultimos4, r.pi.startsWith("pi_sim_"), p.pm, p.id]);
-        await ev(c, p.op, "hold_renewed", "system", null, { es: `Se renovó la retención de ${money(p.held)}`, en: `The ${money(p.held)} hold was renewed` });
-      } else {
-        if (r?.ok) await pasarela.liberar(r.pi).catch(() => undefined);
-        await ev(c, p.op, "hold_failed", "system", null, { es: `La retención de ${money(p.held)} no se pudo renovar: se paga en el local`, en: `The ${money(p.held)} hold could not be renewed: paid in person` });
-      }
-    });
-    if (!(r?.ok && r.estado === "retenido")) { await avisarC(p.num, "hold_fallo", { monto: money(p.held) }); await avisarN(p.num, "biz_hold_fallo", { monto: money(p.held) }); }
+    const x = await renovacionRetencion(p.id);
+    if (x) await RR.renovarRetencion(x).catch((e) => console.error("[estimados] renovar", p.id, e instanceof Error ? e.message : e));
   }
+}
+/* 9t6 · La renovación de lo retenido de un estimado o de «algo más», armada desde la base (el barrido, el barrido central de renovaciones, «Preguntar a
+   Stripe ahora» y la decisión del equipo). Lo que ven la persona y el negocio dice el motivo verdadero: su banco no dejó (hold_fallo), o no se pudo
+   renovar (hold_no_renovada: Stripe no la tiene, o se soltó la que salió de más). Mientras va en camino no se le avisa nada a nadie. */
+export async function renovacionRetencion(pago: string): Promise<import("./renovar-retencion").Renovar | null> {
+  if (!/^\d{1,18}$/.test(String(pago))) return null;
+  const p = (await db().query<{ id: string; op: string; kind: "estimate" | "extra"; pi: string; held: number; pm: string | null; num: string; uid: string; city: string; biz: string }>(
+    `select p.id::text, p.operation_id::text as op, p.kind, p.stripe_payment_intent as pi, p.held_cents as held, p.payment_method as pm, o.number as num, o.user_id::text as uid, o.city_id as city, p.business_id as biz
+       from payments p join operations o on o.id = p.operation_id where p.id = $1::bigint and p.kind in ('estimate', 'extra')`, [pago])).rows[0];
+  if (!p) return null;
+  const t = await tarjetaDe(p.biz);
+  const fee = Math.min(await comision(db(), "cita", p.held), p.held);
+  return {
+    kind: "estimado", pago: p.id, pi: p.pi, op: p.op, negocio: p.biz, ciudad: p.city, uid: p.uid, monto: p.held, fee, destino: t.on ? t.cuenta : null, pm: p.pm, idem: `renov-${p.id}`,
+    meta: { appointment: p.num, business_id: p.biz, kind: p.kind },
+    nueva: async (c, r) => {
+      const seq = Number((await c.query<{ n: number }>(`select coalesce(max(seq), 0)::int + 1 as n from payments where operation_id = $1::bigint and kind = $2`, [p.op, p.kind])).rows[0]!.n);
+      const id = (await c.query<{ id: string }>(
+        `insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method, renewed_from)
+         values ($1::bigint, $2, $3, $4, $5, $6, 'card', $7, $8, $8, $9, 'held', $10, $11, now(), $12, $13, $14::bigint) returning id::text`,
+        [p.op, p.uid, p.biz, p.city, p.kind, seq, r.pi, p.held, fee, r.marca, r.l4, r.pi.startsWith("pi_sim_"), p.pm, p.id])).rows[0]!.id;
+      await ev(c, p.op, "hold_renewed", "system", null, { es: `Se renovó la retención de ${money(p.held)}`, en: `The ${money(p.held)} hold was renewed` });
+      return id;
+    },
+    fallo: async (c, m) => { await ev(c, p.op, "hold_failed", "system", null, m === "banco" ? { es: `La retención de ${money(p.held)} no se pudo renovar: el banco no dejó; se paga en el local`, en: `The ${money(p.held)} hold could not be renewed: the bank declined; paid in person` }
+      : { es: `La retención de ${money(p.held)} no se pudo renovar: se paga en el local`, en: `The ${money(p.held)} hold could not be renewed: paid in person` }); },
+    avisar: async (m) => { await avisarC(p.num, m === "banco" ? "hold_fallo" : "hold_no_renovada", { monto: money(p.held) }); await avisarN(p.num, "biz_hold_fallo", { monto: money(p.held) }); },
+  };
 }
 
 /* Reintenta lo que quedó a medias: liquidaciones cuyo cobro falló y retenciones de citas que ya no siguen. */

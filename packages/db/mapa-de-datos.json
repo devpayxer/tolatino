@@ -233,6 +233,7 @@
     "recon_diff_notes": { "equipo": ["staff_id"] },
     "money_alert_notes": { "equipo": ["staff_id"] },
     "gateway_checks": { "equipo": ["staff_id"] },
+    "gateway_reviews": { "equipo": ["staff_id"] },
     "request_targets": { "equipo": ["answered_by"] },
     "reservation_blocks": { "equipo": ["created_by"] },
     "retail_settings": { "equipo": ["updated_by"] },

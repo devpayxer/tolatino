@@ -1,7 +1,8 @@
 "use server";
 /* 9k · Planes › Ingresos · Conciliación y alertas del dinero: «Me hago cargo», «Resuelta», «Reabrir» y «Conciliar otra vez» de un día; en las alertas,
    además, «Resolver a mano» (una devolución o una reversión atascada que se hizo fuera de Stripe). Permiso tx:aprobar, solo tus ciudades, con nota y en la
-   auditoría (lib/conciliacion.ts, lib/dinero-alertas.ts). El servidor decide todo: aquí no entra ningún monto. */
+   auditoría (lib/conciliacion.ts, lib/dinero-alertas.ts). El servidor decide todo: aquí no entra ningún monto (9t6: tampoco «sí se cobró»: lo que se
+   elige en una gateway_review lo comprueba el servidor contra la pasarela). */
 import { staff } from "@/lib/admin";
 import type { ResAdm } from "./acciones-colas";
 
@@ -35,6 +36,16 @@ export async function alertaPreguntar(id: string, nota: string): Promise<ResAdm>
   const s = await staff();
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no decide sobre dinero." };
   const r = await (await import("@/lib/dinero-alertas")).preguntarPorAlerta(s, String(id ?? ""), String(nota ?? ""));
+  return r.ok ? { ok: true, mensaje: r.msg } : { ok: false, mensaje: r.msg };
+}
+
+/* 9t6 · «Elegir cuál vale» en una alerta gateway_review: la persona elige (un id de Stripe o «ninguno») con su nota; el servidor vuelve a preguntar a la
+   pasarela, comprueba que el elegido está entre lo hallado y que el monto cuadra, decide una sola vez y devuelve lo que sobra (lib/revision-pasarela.ts).
+   Mismo permiso que las demás acciones del dinero. */
+export async function alertaDecidir(id: string, eleccion: string, nota: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no decide sobre dinero." };
+  const r = await (await import("@/lib/revision-pasarela")).decidirRevision(s, String(id ?? ""), String(eleccion ?? ""), String(nota ?? ""));
   return r.ok ? { ok: true, mensaje: r.msg } : { ok: false, mensaje: r.msg };
 }
 
