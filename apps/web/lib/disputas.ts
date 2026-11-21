@@ -188,7 +188,7 @@ export async function evidenciaArchivos(disputa: string) {
 
 /* Responder con evidencia (texto del equipo + lo que tenemos + los archivos) o aceptar la devolución. Lo llama la cola (con permiso). Los archivos se suben
    por la API de archivos de Stripe (en el sandbox, al simulador) y van en el mismo envío (submit); si una subida falla, no se envía nada. */
-export async function responderDisputa(disputa: string, staffId: string, texto: string, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: string }> {
+export async function responderDisputa(disputa: string, staffId: string, texto: string, alGuardar?: AlGuardar<{ cambio: string | null }>): Promise<{ ok: true } | { ok: false; msg: string; cambio?: string }> {
   const d = (await db().query<{ sid: string; st: string; sim: boolean }>(`select stripe_dispute_id as sid, status as st, simulated as sim from disputes where id = $1::bigint`, [disputa])).rows[0];
   if (!d) return { ok: false, msg: "Esa disputa no existe." };
   if (d.st !== "needs_response") return { ok: false, msg: "Esta disputa ya se respondió o se cerró." };
@@ -211,24 +211,45 @@ export async function responderDisputa(disputa: string, staffId: string, texto: 
   if (!ok) return { ok: false, msg: "Stripe no aceptó la respuesta. No cambió nada; inténtalo otra vez." };
   // 20 nov · Lo que anota la respuesta y la auditoría de quien decide (alGuardar) van juntos en una transacción (antes: dos escrituras sueltas y la
   // auditoría aparte, después, en la cola). La llamada a Stripe va antes y fuera.
-  await tx(async (c) => {
-    await c.query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);
-    await c.query(`update disputes set status = 'under_review', response_text = $2, responded_by = $3, responded_at = now(), evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);
-    await alGuardar?.(c);
+  // 21 nov (9t) · Con el estado leído en el `where`: un webhook (u otra persona) que la cambió entre la lectura y esta escritura no queda pisado. Si
+  // Stripe ya la pasó a «en revisión» por ESTA respuesta (charge.dispute.updated llegó antes), se anota la respuesta sin tocar el estado. Si cambió a
+  // otra cosa, no se escribe nada de la disputa y se dice; la auditoría entra igual (la respuesta sí llegó a Stripe) con el estado que encontró.
+  return tx(async (c) => {
+    const u = await c.query(`update disputes set status = 'under_review', response_text = $2, responded_by = $3, responded_at = now(), evidence_submitted_at = now(), updated_at = now()
+                              where id = $1::bigint and status = 'needs_response'`, [disputa, texto.trim().slice(0, 2000), staffId]);
+    const v = u.rowCount ? 1 : (await c.query(`update disputes set response_text = $2, responded_by = $3, responded_at = now(), evidence_submitted_at = now(), updated_at = now()
+                                                 where id = $1::bigint and status = 'under_review' and responded_at is null`, [disputa, texto.trim().slice(0, 2000), staffId])).rowCount;
+    if (v) {
+      await c.query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);
+      await alGuardar?.(c, { cambio: null });
+      return { ok: true } as const;
+    }
+    const ahora = (await c.query<{ st: string }>(`select status as st from disputes where id = $1::bigint`, [disputa])).rows[0]?.st ?? "";
+    await alGuardar?.(c, { cambio: ahora });
+    return { ok: false, cambio: ahora, msg: `La disputa cambió mientras tanto (ahora: ${ESTADO_ES[ahora] ?? ahora}). La respuesta llegó a Stripe, pero aquí no se pisó nada: actualiza y mira el caso.` } as const;
   });
-  return { ok: true };
 }
-export async function aceptarDisputa(disputa: string, alGuardar?: AlGuardar): Promise<{ ok: true } | { ok: false; msg: string }> {
+/* Cómo se dice cada estado de la disputa en los mensajes del equipo. */
+const ESTADO_ES: Record<string, string> = { needs_response: "sin responder", under_review: "respondida, en revisión", won: "ganada", lost: "perdida", accepted: "aceptada" };
+export async function aceptarDisputa(disputa: string, alGuardar?: AlGuardar<{ cambio: string | null }>): Promise<{ ok: true } | { ok: false; msg: string; cambio?: string }> {
   const d = (await db().query<{ sid: string; st: string }>(`select stripe_dispute_id as sid, status as st from disputes where id = $1::bigint`, [disputa])).rows[0];
   if (!d) return { ok: false, msg: "Esa disputa no existe." };
   if (!["needs_response", "under_review"].includes(d.st)) return { ok: false, msg: "Esta disputa ya se cerró." };
   if (!(await pasarela.disputaAceptar(d.sid))) return { ok: false, msg: "Stripe no la cerró. No cambió nada; inténtalo otra vez." };
-  await tx(async (c) => {
-    await c.query(`update disputes set status = 'accepted', closed_at = now(), updated_at = now() where id = $1::bigint`, [disputa]);
-    await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);
-    await alGuardar?.(c);
+  // 21 nov (9t) · Con el estado leído en el `where` (ver responderDisputa). Si el webhook ya la cerró como perdida por ESTA aceptación (Stripe la
+  // cierra así: charge.dispute.closed llegó antes), el resultado es el mismo (el dinero vuelve al cliente) y no se pisa. Si cambió a otra cosa, no
+  // se escribe nada de la disputa y se dice; la auditoría entra igual con el estado que encontró.
+  return tx(async (c) => {
+    const u = await c.query(`update disputes set status = 'accepted', closed_at = now(), updated_at = now() where id = $1::bigint and status in ('needs_response', 'under_review')`, [disputa]);
+    const ahora = u.rowCount ? "accepted" : (await c.query<{ st: string }>(`select status as st from disputes where id = $1::bigint`, [disputa])).rows[0]?.st ?? "";
+    if (u.rowCount || ahora === "lost") {
+      await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);
+      await alGuardar?.(c, { cambio: null });
+      return { ok: true } as const;
+    }
+    await alGuardar?.(c, { cambio: ahora });
+    return { ok: false, cambio: ahora, msg: `La disputa cambió mientras tanto (ahora: ${ESTADO_ES[ahora] ?? ahora}). Stripe recibió la aceptación, pero aquí no se pisó nada: actualiza y mira el caso.` } as const;
   });
-  return { ok: true };
 }
 
 /* Simulador (solo sandbox): abrir una disputa sobre un cobro y decidir el resultado del «banco». */

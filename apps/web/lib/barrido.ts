@@ -82,6 +82,10 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Después de comprar (6d): lo que nadie recibió a tiempo vuelve a quien lo mandó (QR nuevo); las ofertas de la lista de espera
         // que vencen pasan a la siguiente y lo libre se ofrece en orden; una devolución de boletos que Stripe no hizo se reintenta con su llave.
         ["bolTransferencias", () => desp.vencerTransferencias()], ["espera", () => espera.barrerEspera()], ["bolDevoluciones", () => desp.barrerDevolucionesBoletos()],
+        // 9t · Las devoluciones de un cobro (devolverPago: negocio, Colas, Transacciones, Soporte y las políticas) en dos pasos: la que quedó pendiente
+        // (el proceso murió antes de la pasarela o entre su «sí» y el cierre, o Stripe no contestó) se pregunta otra vez con la MISMA llave (una sola
+        // devolución), se cierra o queda fallida con su saldo libre; pasadas 23 h, alerta al equipo de dinero.
+        ["devolucionesPago", () => cobros.barrerDevolucionesPago()],
         // Cambios del evento y dinero del organizador (6e): las cancelaciones que quedaron a medias siguen (devolución total por orden, una vez)
         // con sus avisos; la liquidación del martes por fecha (retener o transferir; la base decide los montos); lo que quedó en camino se
         // reintenta con la misma llave; un ajuste sin liquidación siguiente revierte la transferencia.

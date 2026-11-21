@@ -18,6 +18,8 @@ const precio = (cycle: string) => (cycle === "year" ? PRECIO_CENTAVOS * 10 : PRE
 type Bi = { es: string; en: string };
 export type ResS = { ok: true } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResS => ({ ok: false, msg: { es, en } });
+/* 9t · Un cambio del plan con su estado esperado en el `where` que no encontró ese estado: no se escribe nada (tampoco la auditoría). */
+const CAMBIO_PLAN: ResS = { ok: false, msg: { es: "El plan cambió mientras tanto. Actualiza la pantalla y decide otra vez.", en: "The plan changed meanwhile. Refresh and decide again." } };
 
 type Fila = { business_id: string; status: string; cycle: string; price_cents: number; trial_started_at: string | null; trial_ends_at: string | null; trial_choice: string;
   payer_user_id: string | null; card_pm: string | null; current_period_end: string | null; failed_attempts: number; next_attempt_at: string | null; courtesy_until: string | null; ended_at: string | null };
@@ -169,37 +171,42 @@ async function aFree(negocio: string, por: string) {
 
 /* Procesa lo vencido: fin de prueba, renovación, reintentos, cortesía y avisos del día 25. Una sola vez a la vez. */
 let ultimo = 0;
+const VENCIDA = `((status = 'trial' and trial_ends_at <= now()) or (status = 'trial' and trial_ends_at <= now() + interval '5 days')
+       or (status in ('active', 'canceling') and current_period_end <= now()) or (status = 'past_due' and next_attempt_at <= now())
+       or (status = 'courtesy' and courtesy_until <= now()))`;
+/* 9t · El candado del plan es de sesión: se toma y se suelta en la MISMA conexión (antes cada consulta podía ir por otra conexión del pool:
+   el desbloqueo fallaba y el candado quedaba tomado en esa conexión). */
+async function conCandado<T>(negocio: string, fn: (c: PoolClient) => Promise<T>): Promise<{ tomado: false } | { tomado: true; r: T }> {
+  const c = await db().connect();
+  try {
+    if (!(await c.query<{ ok: boolean }>(`select pg_try_advisory_lock(hashtext('sub:' || $1)) as ok`, [negocio])).rows[0]?.ok) return { tomado: false };
+    try { return { tomado: true, r: await fn(c) }; } finally { await c.query(`select pg_advisory_unlock(hashtext('sub:' || $1))`, [negocio]).catch(() => undefined); }
+  } finally { c.release(); }
+}
 export async function procesar(negocio?: string) {
   if (!negocio && Date.now() - ultimo < 5 * 60_000) return;
   if (!negocio) ultimo = Date.now();
-  const L = (await db().query<Fila>(
-    `select * from subscriptions where ($1::text is null or business_id = $1) and (
-       (status = 'trial' and trial_ends_at <= now()) or (status = 'trial' and trial_ends_at <= now() + interval '5 days')
-       or (status in ('active', 'canceling') and current_period_end <= now()) or (status = 'past_due' and next_attempt_at <= now())
-       or (status = 'courtesy' and courtesy_until <= now())) limit 200`, [negocio ?? null])).rows;
-  for (const s of L) {
-    const lock = await db().query<{ ok: boolean }>(`select pg_try_advisory_lock(hashtext('sub:' || $1)) as ok`, [s.business_id]);
-    if (!lock.rows[0]?.ok) continue;
-    try {
-      if (s.status === "trial" && Date.parse(s.trial_ends_at!) > Date.now()) {
-        // Día 25 (quedan 5 o menos): un solo aviso.
-        if (await evento(s.business_id, "notice_d25", { idem: `d25-${s.business_id}-${s.trial_ends_at}` }))
-          await avisarDueño(s.business_id, "pro_d25", { negocio: await nombre(s.business_id), dia: new Date(s.trial_ends_at!).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(/\./g, "") });
-        continue;
-      }
-      if (s.status === "trial") {
-        if (s.trial_choice === "card" && s.card_pm) {
-          const r = await cobrarPeriodo(s, Date.parse(s.trial_ends_at!));
-          if (!r.ok) await fallo(s, "verificar" in r);
-        } else await aFree(s.business_id, s.trial_choice === "no_continue" ? "decidio" : "fin_prueba");
-      } else if (s.status === "canceling") await aFree(s.business_id, "pasar_a_free");
-      else if (s.status === "active") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end!)); if (!r.ok) await fallo(s, "verificar" in r); }
-      else if (s.status === "past_due") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end ?? s.trial_ends_at!)); if (!r.ok) await fallo(s, "verificar" in r); }
-      else if (s.status === "courtesy") await aFree(s.business_id, "fin_cortesia");
-    } finally {
-      await db().query(`select pg_advisory_unlock(hashtext('sub:' || $1))`, [s.business_id]);
+  const L = (await db().query<{ business_id: string }>(`select business_id from subscriptions where ($1::text is null or business_id = $1) and ${VENCIDA} limit 200`, [negocio ?? null])).rows;
+  for (const x of L) await conCandado(x.business_id, async (k) => {
+    // 9t · La fila se lee otra vez CON el candado: lo que cambió entre la lista y el candado (Anular, otro proceso que ya cobró) no se pisa.
+    const s = (await k.query<Fila>(`select * from subscriptions where business_id = $1 and ${VENCIDA}`, [x.business_id])).rows[0];
+    if (!s) return;
+    if (s.status === "trial" && Date.parse(s.trial_ends_at!) > Date.now()) {
+      // Día 25 (quedan 5 o menos): un solo aviso.
+      if (await evento(s.business_id, "notice_d25", { idem: `d25-${s.business_id}-${s.trial_ends_at}` }))
+        await avisarDueño(s.business_id, "pro_d25", { negocio: await nombre(s.business_id), dia: new Date(s.trial_ends_at!).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(/\./g, "") });
+      return;
     }
-  }
+    if (s.status === "trial") {
+      if (s.trial_choice === "card" && s.card_pm) {
+        const r = await cobrarPeriodo(s, Date.parse(s.trial_ends_at!));
+        if (!r.ok) await fallo(s, "verificar" in r);
+      } else await aFree(s.business_id, s.trial_choice === "no_continue" ? "decidio" : "fin_prueba");
+    } else if (s.status === "canceling") await aFree(s.business_id, "pasar_a_free");
+    else if (s.status === "active") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end!)); if (!r.ok) await fallo(s, "verificar" in r); }
+    else if (s.status === "past_due") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end ?? s.trial_ends_at!)); if (!r.ok) await fallo(s, "verificar" in r); }
+    else if (s.status === "courtesy") await aFree(s.business_id, "fin_cortesia");
+  });
 }
 async function fallo(s: Fila, verificar = false) {
   const n = s.failed_attempts + 1;
@@ -222,19 +229,22 @@ export async function seguirConPro(negocio: string, userId: string, pm: string, 
   const cyc = ciclo === "year" ? "year" : "month";
   const s = (await db().query<Fila>(`select * from subscriptions where business_id = $1`, [negocio])).rows[0];
   if (s?.status === "trial") {
-    await tx(async (c) => {
-      await c.query(`update subscriptions set trial_choice = 'card', card_pm = $2, payer_user_id = $3, cycle = $4, updated_at = now() where business_id = $1`, [negocio, card, userId, cyc]);
+    // 9t · Con su estado esperado en el `where` (el barrido pudo terminar la prueba entre la lectura y la escritura).
+    return tx(async (c) => {
+      if (!(await c.query(`update subscriptions set trial_choice = 'card', card_pm = $2, payer_user_id = $3, cycle = $4, updated_at = now() where business_id = $1 and status = 'trial'`, [negocio, card, userId, cyc])).rowCount) return CAMBIO_PLAN;
       await evento(negocio, "decided_card", { actor: userId, note: { ciclo: cyc } }, c);
       await alGuardar?.(c, false);
+      return { ok: true } as const;
     });
-    return { ok: true };
   }
   if (s && (s.status === "active" || s.status === "canceling" || s.status === "past_due")) {
-    await tx(async (c) => {
-      await c.query(`update subscriptions set card_pm = $2, payer_user_id = $3, status = case when status = 'canceling' then 'active' else status end, updated_at = now() where business_id = $1`, [negocio, card, userId]);
+    const r = await tx(async (c) => {
+      if (!(await c.query(`update subscriptions set card_pm = $2, payer_user_id = $3, status = case when status = 'canceling' then 'active' else status end, updated_at = now() where business_id = $1 and status = $4`, [negocio, card, userId, s.status])).rowCount) return CAMBIO_PLAN;
       await evento(negocio, s.status === "canceling" ? "undo_free" : "card_changed", { actor: userId }, c);
       await alGuardar?.(c, s.status === "past_due");
+      return { ok: true } as const;
     });
+    if (!r.ok) return r;
     if (s.status === "past_due") { await procesarYa(negocio); return { ok: true, cobrado: true }; }
     return { ok: true };
   }
@@ -262,14 +272,15 @@ async function procesarYa(negocio: string) {
 export async function pasarAFree(negocio: string, userId: string, alGuardar?: AlGuardar): Promise<ResS> {
   const s = (await db().query<Fila>(`select * from subscriptions where business_id = $1`, [negocio])).rows[0];
   if (!s) return no("Tu página no tiene un plan que cambiar.", "Your page has no plan to change.");
-  if (s.status === "trial") { await tx(async (c) => { await c.query(`update subscriptions set trial_choice = 'no_continue', updated_at = now() where business_id = $1`, [negocio]); await evento(negocio, "decided_free", { actor: userId }, c); await alGuardar?.(c); }); return { ok: true }; }
-  if (s.status === "active") { await tx(async (c) => { await c.query(`update subscriptions set status = 'canceling', updated_at = now() where business_id = $1`, [negocio]); await evento(negocio, "canceling", { actor: userId }, c); await alGuardar?.(c); }); return { ok: true }; }
+  // 9t · Cada cambio con su estado esperado en el `where` (el barrido o el Super Admin pudieron cambiarlo entre la lectura y la escritura).
+  if (s.status === "trial") return tx(async (c) => { if (!(await c.query(`update subscriptions set trial_choice = 'no_continue', updated_at = now() where business_id = $1 and status = 'trial'`, [negocio])).rowCount) return CAMBIO_PLAN; await evento(negocio, "decided_free", { actor: userId }, c); await alGuardar?.(c); return { ok: true } as const; });
+  if (s.status === "active") return tx(async (c) => { if (!(await c.query(`update subscriptions set status = 'canceling', updated_at = now() where business_id = $1 and status = 'active'`, [negocio])).rowCount) return CAMBIO_PLAN; await evento(negocio, "canceling", { actor: userId }, c); await alGuardar?.(c); return { ok: true } as const; });
   return no("Ya está en Free o pasando a Free.", "It is already on Free or switching to Free.");
 }
 export async function deshacerFree(negocio: string, userId: string, alGuardar?: AlGuardar): Promise<ResS> {
   const s = (await db().query<Fila>(`select * from subscriptions where business_id = $1`, [negocio])).rows[0];
-  if (s?.status === "trial" && s.trial_choice === "no_continue") { await tx(async (c) => { await c.query(`update subscriptions set trial_choice = case when card_pm is null then 'none' else 'card' end, updated_at = now() where business_id = $1`, [negocio]); await evento(negocio, "undo_free", { actor: userId }, c); await alGuardar?.(c); }); return { ok: true }; }
-  if (s?.status === "canceling") { await tx(async (c) => { await c.query(`update subscriptions set status = 'active', updated_at = now() where business_id = $1`, [negocio]); await evento(negocio, "undo_free", { actor: userId }, c); await alGuardar?.(c); }); return { ok: true }; }
+  if (s?.status === "trial" && s.trial_choice === "no_continue") return tx(async (c) => { if (!(await c.query(`update subscriptions set trial_choice = case when card_pm is null then 'none' else 'card' end, updated_at = now() where business_id = $1 and status = 'trial' and trial_choice = 'no_continue'`, [negocio])).rowCount) return CAMBIO_PLAN; await evento(negocio, "undo_free", { actor: userId }, c); await alGuardar?.(c); return { ok: true } as const; });
+  if (s?.status === "canceling") return tx(async (c) => { if (!(await c.query(`update subscriptions set status = 'active', updated_at = now() where business_id = $1 and status = 'canceling'`, [negocio])).rowCount) return CAMBIO_PLAN; await evento(negocio, "undo_free", { actor: userId }, c); await alGuardar?.(c); return { ok: true } as const; });
   return no("No hay nada que deshacer.", "There is nothing to undo.");
 }
 
@@ -336,22 +347,48 @@ export async function reintentarCobro(negocio: string, actor: string, alGuardar?
 }
 /* Anular la suscripción (Super Admin, prototipo subX): Pro pagado sigue hasta el fin del período y luego Free; en prueba,
    el día 30 pasa a Free; con cobro fallido, Free hoy (ese período no se pagó). No se devuelve lo cobrado; nada se borra.
-   alGuardar (20 nov): la auditoría de quien decide entra con «canceled_admin», en su transacción. Con cobro fallido, el paso a Free (aFree) va
-   después y aparte porque primero mira la pasarela (una verificación del banco que ya pasó completa el período en vez de bajar a Free). */
+   alGuardar (20 nov): la auditoría de quien decide entra con «canceled_admin», en su transacción.
+   21 nov (9t) · «Anuló» en la auditoría y el plan nunca se contradicen: todo con el candado del plan (el del barrido que cobra; si lo tiene otro,
+   se dice y no se hace nada), la fila releída con él y cada cambio con su estado esperado en el `where` (si cambió, no se escribe nada, tampoco la
+   auditoría). Con cobro fallido, primero la pasarela: si una verificación del banco ya pasó, el período quedó pagado y la acción lo dice (no se
+   anula: decidir otra vez con el plan a la vista); si no, el paso a Free, «canceled_admin», «ended» y la auditoría van en UNA transacción. */
+async function enTxDe(c: PoolClient, fn: () => Promise<ResS>): Promise<ResS> {
+  await c.query("begin");
+  try { const r = await fn(); await c.query(r.ok ? "commit" : "rollback"); return r; } catch (e) { await c.query("rollback").catch(() => undefined); throw e; }
+}
 export async function anularSuscripcion(negocio: string, actor: string, motivo: string, alGuardar?: AlGuardar): Promise<ResS> {
-  const s = (await db().query<Fila>(`select * from subscriptions where business_id = $1`, [negocio])).rows[0];
-  if (s?.status === "active") {
-    await tx(async (c) => { await c.query(`update subscriptions set status = 'canceling', updated_at = now() where business_id = $1 and status = 'active'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });
-    return { ok: true };
-  }
-  if (s?.status === "trial") {
-    await tx(async (c) => { await c.query(`update subscriptions set trial_choice = 'no_continue', updated_at = now() where business_id = $1 and status = 'trial'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });
-    return { ok: true };
-  }
-  if (s?.status === "past_due") {
-    await tx(async (c) => { await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });
-    await aFree(negocio, "admin");
-    return { ok: true };
-  }
-  return no("No hay una suscripción que anular.", "There is no subscription to cancel.");
+  let aFreeHoy = false;
+  const h = await conCandado(negocio, async (c): Promise<ResS> => {
+    const s = (await c.query<Fila>(`select * from subscriptions where business_id = $1`, [negocio])).rows[0];
+    if (s?.status === "active") return enTxDe(c, async () => {
+      if (!(await c.query(`update subscriptions set status = 'canceling', updated_at = now() where business_id = $1 and status = 'active'`, [negocio])).rowCount) return CAMBIO_PLAN;
+      await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); return { ok: true };
+    });
+    if (s?.status === "trial") return enTxDe(c, async () => {
+      if (!(await c.query(`update subscriptions set trial_choice = 'no_continue', updated_at = now() where business_id = $1 and status = 'trial'`, [negocio])).rowCount) return CAMBIO_PLAN;
+      await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); return { ok: true };
+    });
+    if (s?.status === "past_due") {
+      // La pasarela primero (sin la transacción): una verificación del banco que ya pasó completa el período (completarRenovacion, sin candado:
+      // ya es nuestro); una pendiente se suelta en Stripe (nunca cobra después).
+      if (await soltarVerificaciones(negocio)) {
+        const f = (await c.query<{ st: string; fin: string | null }>(`select status as st, to_char(current_period_end at time zone 'America/New_York', 'YYYY-MM-DD') as fin from subscriptions where business_id = $1`, [negocio])).rows[0];
+        const hasta = f?.st === "active" && f.fin ? { es: `: sigue en Pro hasta el ${f.fin}`, en: `: it stays on Pro until ${f.fin}` } : { es: "", en: "" };
+        return no(`El banco ya había cobrado este período (el dueño lo confirmó en su banco)${hasta.es}. No se anuló nada; si todavía quieres anularla, toca «Anular» otra vez (pasará a Free al final del período).`,
+          `The bank had already charged this period (the owner confirmed it with their bank)${hasta.en}. Nothing was cancelled; if you still want to, tap «Cancel» again (it switches to Free at the end of the period).`);
+      }
+      return enTxDe(c, async () => {
+        if (!(await c.query(`update subscriptions set status = 'ended', ended_at = now(), next_attempt_at = null, updated_at = now() where business_id = $1 and status = 'past_due'`, [negocio])).rowCount) return CAMBIO_PLAN;
+        await plan(c, negocio, "free");
+        await adminEvento(c, negocio, "canceled_admin", actor, { motivo });
+        await evento(negocio, "ended", { note: { por: "admin" } }, c);
+        await alGuardar?.(c); aFreeHoy = true; return { ok: true };
+      });
+    }
+    return no("No hay una suscripción que anular.", "There is no subscription to cancel.");
+  });
+  if (!h.tomado) return no("El plan se está procesando ahora mismo (un cobro o un cambio). Prueba en un minuto.", "The plan is being processed right now (a charge or a change). Try again in a minute.");
+  // Con cobro fallido, el aviso al dueño de que quedó en Free (después del commit, como aFree).
+  if (h.r.ok && aFreeHoy) await avisarDueño(negocio, "pro_free", { negocio: await nombre(negocio) }).catch(() => undefined);
+  return h.r;
 }

@@ -39,21 +39,22 @@ const casos = [
   // Una acción de Planes deja de pasarle la auditoría a su función de lib.
   [U, PL, '(s, al) => reintentarCobro(String(negocio), s.id, al)', '(s) => reintentarCobro(String(negocio), s.id)'],
   // Colas › Ayuda con monto: la devolución sin su auditoría (solo «soporte.resolver», después).
-  [U, CL, 'idem: `sop-${clave}` },\n      (c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver"', 'idem: `sop-${clave}` });\n    void ((c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver"'],
+  [U, CL, 'motivo: m, idem },\n      (c2, x) => auditar(c2, { actor: s.id, action: "transacciones.devolver"', 'motivo: m, idem });\n    void ((c2, x) => auditar(c2, { actor: s.id, action: "transacciones.devolver"'],
   // Colas › Disputas: la auditoría vuelve al cierre del caso (aparte y salteable).
   [U, CL, 'D.responderDisputa(q.subject_id, s.id, m, audita) : await D.aceptarDisputa(q.subject_id, audita)', 'D.responderDisputa(q.subject_id, s.id, m) : await D.aceptarDisputa(q.subject_id)'],
   [U, CL, '    await cerrar(c, q2, s, accion, m);\n  });', '    await cerrar(c, q2, s, accion, m);\n    await auditar(c, { actor: s.id, action: "disputa.aceptar", targetKind: "dispute", targetId: q.subject_id });\n  });'],
   // Las funciones de lib dejan de escribirla en la transacción del cambio.
-  [U, CB, '    await alGuardar?.(c, { pago: p.id, centavos: n });\n', ''],
+  [U, CB, '  await alGuardar?.(c, { pago: p.id, centavos: n });\n  return { ok: true, id, monto: n, estado: "pending" };', '  return { ok: true, id, monto: n, estado: "pending" };'],
   [U, CB, ',\n      alGuardar ? (c, h) => alGuardar(c, { ...h, parte }) : undefined);', ');'],
   [U, CN, '    await alGuardar?.(c, { estado, diferencias: unicas.length, corrida: run });\n  });', '  });\n  if (alGuardar) await tx((c) => alGuardar(c, { estado, diferencias: unicas.length, corrida: null }));'],
   [U, SU, '    await adminEvento(c, negocio, "trial_extended", actor, { dias: n, motivo });\n    await alGuardar?.(c);\n', '    await adminEvento(c, negocio, "trial_extended", actor, { dias: n, motivo });\n'],
   [U, SU, '    await alGuardar?.(c);\n    return true;\n  });\n  if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");\n  await procesar(negocio);\n',
     '    return true;\n  });\n  if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");\n  await procesar(negocio);\n  await tx(async (c) => { await alGuardar?.(c); });\n'],
-  [U, SU, 'await tx(async (c) => { await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); await alGuardar?.(c); });\n    await aFree', 'await tx((c) => adminEvento(c, negocio, "canceled_admin", actor, { motivo }));\n    await aFree'],
-  [U, DI, "    await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);\n    await alGuardar?.(c);\n",
-    "    await c.query(`update payments set failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);\n"],
-  [U, DI, "evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);\n    await alGuardar?.(c);\n", "evidence_submitted_at = now(), updated_at = now() where id = $1::bigint`, [disputa, texto.trim().slice(0, 2000), staffId]);\n"],
+  [U, SU, '        await evento(negocio, "ended", { note: { por: "admin" } }, c);\n        await alGuardar?.(c); aFreeHoy = true;', '        await evento(negocio, "ended", { note: { por: "admin" } }, c);\n        aFreeHoy = true;'],
+  [U, DI, "failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);\n      await alGuardar?.(c, { cambio: null });\n", "failure_code = 'dispute_lost', updated_at = now() where id = (select payment_id from disputes where id = $1::bigint)`, [disputa]);\n"],
+  [U, DI, "      await c.query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);\n      await alGuardar?.(c, { cambio: null });\n", "      await c.query(`update dispute_evidence set sent_at = now() where dispute_id = $1::bigint and stripe_file_id is not null and sent_at is null`, [disputa]);\n"],
+  // 21 nov (9t) · La disputa que ya cambió: la auditoría deja de entrar (lo que se mandó a Stripe quedaría sin renglón).
+  [U, DI, "    await alGuardar?.(c, { cambio: ahora });\n    return { ok: false, cambio: ahora, msg: `La disputa cambió mientras tanto (ahora: ${ESTADO_ES[ahora] ?? ahora}). Stripe recibió", "    return { ok: false, cambio: ahora, msg: `La disputa cambió mientras tanto (ahora: ${ESTADO_ES[ahora] ?? ahora}). Stripe recibió"],
   // La prueba de la conciliación afloja: espera el renglón, o deja de decir cuántos hay.
   [U, D9, "    const audC = sql(`select count(*) from audit_entries where action = 'conciliacion.correr' and after->>'corrida' = '${RUNID}'`);\n    ok(audC === '1', ", "    const audC = '1'; ok(await espera(() => sql(`select count(*) from audit_entries where action = 'conciliacion.correr' and after->>'corrida' = '${RUNID}'`) === '1'), "],
   [U, D9, "ok(audC === '1', `en la auditoría: un renglón «conciliacion.correr» escrito con la corrida (hay ${audC})`);", "ok(audC !== '0', 'en la auditoría');"],

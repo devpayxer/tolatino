@@ -1,7 +1,7 @@
 # Super Admin: Negocio 360° › Dinero · Super Admin: Business 360° › Money
 
 _Pantallas: ADM-NEG › pestaña **Dinero** (`/admin/negocios/{id}?tab=din`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como
-copiloto del equipo). Versión: 6 nov 2026. Audiencia: equipo. Tema: equipo._
+copiloto del equipo). Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Cifras de 90 días:** cobrado con tarjeta, retenido ahora (pedidos que el negocio todavía no acepta), devuelto y la
@@ -34,7 +34,10 @@ Solo negocios de tus ciudades. Todo pide motivo y queda en el Historial.
 | Tocar dos veces | Si ya estaba así, no se repite el aviso ni la auditoría. |
 | Anular con Pro pagado | Sigue en Pro hasta el final del período y luego Free. No se devuelve lo cobrado. |
 | Anular en prueba | El último día de la prueba pasa a Free. |
-| Anular con cobro fallido | Pasa a Free hoy (ese período no se pagó). |
+| Anular con cobro fallido | Pasa a Free hoy (ese período no se pagó); el paso a Free, «anulada» en el historial y la auditoría van juntos. |
+| Anular con cobro fallido, pero el dueño ya confirmó el cobro en su banco | No se anula: «El banco ya había cobrado este período…» y el plan sigue en Pro hasta el fin del período. Si todavía quieres, toca «Anular» otra vez. |
+| Anular mientras el plan se está cobrando | «El plan se está procesando ahora mismo…»: nada cambia; prueba en un minuto. |
+| El plan cambió entre que lo abriste y tocaste | «El plan cambió mientras tanto»: nada cambia (tampoco la auditoría); actualiza y decide otra vez. |
 | Negocio sin cuenta de cobro | Dice «Sin conectar · no cobra en línea»; no hay pagos que pausar. |
 | Sandbox | Todo va contra el simulador: no se mueve dinero real. Los pagos al banco se calculan de lo cobrado. |
 
@@ -80,7 +83,10 @@ Only businesses in your cities. Everything asks for a reason and goes into the H
 | Tapping twice | If it was already that way, the notice and the audit entry are not repeated. |
 | Cancel with paid Pro | It stays Pro until the end of the period and then Free. What was charged is not refunded. |
 | Cancel during a trial | On the last day of the trial it goes to Free. |
-| Cancel with a failed charge | It goes to Free today (that period was not paid). |
+| Cancel with a failed charge | It goes to Free today (that period was not paid); the switch to Free, «cancelled» in the history and the audit entry go together. |
+| Cancel with a failed charge, but the owner already confirmed the charge with their bank | It is not cancelled: «The bank had already charged this period…» and the plan stays Pro until the end of the period. If you still want to, tap «Cancel» again. |
+| Cancel while the plan is being charged | «The plan is being processed right now…»: nothing changes; try again in a minute. |
+| The plan changed between opening it and tapping | «The plan changed meanwhile»: nothing changes (not the audit either); refresh and decide again. |
 | Business without a payout account | It says «Not connected · does not charge online»; there are no payouts to pause. |
 | Sandbox | Everything goes against the simulator: no real money moves. Bank payouts are calculated from what was charged. |
 

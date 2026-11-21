@@ -353,6 +353,9 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
   if (!u.rowCount) return no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
   if (devuelve) {
     const d = await devolverOperacion({ opId: h.op, centavos: devolver, kinds: KINDS_AYUDA, por: "business", actorId, motivo: `Ayuda con la cita: ${t.slice(0, 200)}`, idem: `ayb-${x.clave}` });
+    // 9t · Sin respuesta de Stripe la devolución sigue en camino (el barrido la termina con su llave): la respuesta se queda; volver a abrir la
+    // solicitud dejaría responder otra vez con otra llave (devolver dos veces).
+    if (!d.ok && d.enCamino) { await tx(async (c) => { await alGuardar?.(c); }); return { ok: false, msg: d.msg }; }
     if (!d.ok) {
       await db().query(`update help_requests set status = 'open', decision = null, offer_cents = null, reply = null, reply_at = null, reply_by = null, updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);
       return { ok: false, msg: d.msg };

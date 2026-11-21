@@ -11930,11 +11930,14 @@ const guardianes = {
     for (const [a, l] of [["planExtender", "extenderPrueba"], ["planCortesia", "darCortesia"], ["planQuitarCortesia", "quitarCortesia"], ["planReintentar", "reintentarCobro"], ["planAnular", "anularSuscripcion"]])
       if (!new RegExp(`\\(s, al\\) => ${l}\\([^\\n]*, al\\)`).test(fn(plA, a))) falla(G, PL, 0, `${a} no le pasa la auditoría (al) a ${l}`);
     const sp = fn(clA, "decidirSop");
-    if (!/devolverPago\(\{[^\n]*\},\s*\(c, x\) => auditar\(c, \{ actor: s\.id, action: "transacciones\.devolver"/.test(sp)) falla(G, CL, 0, "decidirSop no le pasa a devolverPago la auditoría del dinero que sale (entra con la devolución, no solo en «soporte.resolver» después)");
+    // 21 nov (9t) · decidirSop anota la devolución del caso con su auditoría en la transacción de la intención (anotarDevolucionPago), antes de la pasarela.
+    if (!/anotarDevolucionPago\(c, \{[^\n]*\},\s*\(c2, x\) => auditar\(c2, \{ actor: s\.id, action: "transacciones\.devolver"/.test(sp)) falla(G, CL, 0, "decidirSop no le pasa a devolverPago la auditoría del dinero que sale (entra con la devolución, no solo en «soporte.resolver» después)");
     const dd = fn(clA, "decidirDisputa");
     if (!/D\.responderDisputa\(q\.subject_id, s\.id, m, audita\) : await D\.aceptarDisputa\(q\.subject_id, audita\)/.test(dd) || /auditar\(/.test(dd.split("if (!r.ok) return no(r.msg);")[1] ?? "auditar(")) falla(G, CL, 0, "decidirDisputa no le pasa su auditoría a responderDisputa/aceptarDisputa (entra con el cambio de la disputa, no al cerrar el caso)");
     // Las funciones de lib: la escriben dentro de la transacción que anota el cambio.
-    if (!/insert into refunds [^\n]*\n[\s\S]*?await alGuardar\?\.\(c, \{ pago: p\.id, centavos: n \}\);\n  \}\);/.test(fn(cb, "devolverPago"))) falla(G, CB, 0, "devolverPago no escribe la auditoría de quien llama en la transacción que anota la devolución");
+    // 21 nov (9t) · La devolución nace pendiente con la auditoría (anotarDevolucionPago, paso 1); devolverPago la anota en su transacción y después va a la pasarela.
+    if (!/insert into refunds [^\n]*'pending'[^\n]*\n[^\n]*\n  await alGuardar\?\.\(c, \{ pago: p\.id, centavos: n \}\);\n  return \{ ok: true, id, monto: n, estado: "pending" \};/.test(fn(cb, "anotarDevolucionPago"))
+      || !/const a = await tx\(\(c\) => anotarDevolucionPago\(c, x, alGuardar\)\);/.test(fn(cb, "devolverPago"))) falla(G, CB, 0, "devolverPago no escribe la auditoría de quien llama en la transacción que anota la devolución");
     const dop = fn(cb, "devolverOperacion");
     if (!/^\nexport async function devolverOperacion\([^\n]*\balGuardar\?: AlGuardar</.test(dop) || !/devolverPago\(\{[^\n]*\},\s*alGuardar \? \(c, h\) => alGuardar\(c, \{ \.\.\.h, parte \}\) : undefined\)/.test(dop)) falla(G, CB, 0, "devolverOperacion no le pasa a cada devolverPago la auditoría de quien llama");
     if (!/insert into recon_runs [\s\S]*?insert into recon_diffs [\s\S]*?\n    await alGuardar\?\.\(c, \{ estado, diferencias: unicas\.length, corrida: run \}\);\n  \}\);/.test(fn(cn, "conciliarDia"))) falla(G, CN, 0, "conciliarDia no escribe la auditoría de quien la pide en la transacción de la corrida");
@@ -11943,11 +11946,101 @@ const guardianes = {
       if (!new RegExp(`^\\nexport async function ${n}\\([^\\n]*\\balGuardar\\?: AlGuardar\\)`).test(b) || (b.match(/await alGuardar\?\.\(c\);/g) ?? []).length !== k) falla(G, SU, 0, `${n} no escribe la auditoría de quien llama en la transacción del cambio del plan`);
     }
     if (!/const pedido = await tx\(async \(c\) => \{[\s\S]*?update subscriptions set next_attempt_at = now\(\)[\s\S]*?await alGuardar\?\.\(c\);\n    return true;\n  \}\);\n  if \(!pedido\)[^\n]*\n  await procesar\(negocio\);/.test(fn(su, "reintentarCobro"))) falla(G, SU, 0, "reintentarCobro: la decisión y su auditoría van en una transacción ANTES de cobrar (procesar), no después ni solo si el banco acepta");
-    if (!/disputaResponder\([\s\S]*?await tx\(async \(c\) => \{[^\n]*\n[^\n]*\n    await c\.query\(`update disputes set status = 'under_review'[^\n]*\n    await alGuardar\?\.\(c\);\n  \}\);/.test(fn(di, "responderDisputa"))) falla(G, DI, 0, "responderDisputa no escribe la auditoría de quien decide en la transacción que anota la respuesta");
-    if (!/disputaAceptar\([\s\S]*?await tx\(async \(c\) => \{\n    await c\.query\(`update disputes set status = 'accepted'[^\n]*\n[^\n]*\n    await alGuardar\?\.\(c\);\n  \}\);/.test(fn(di, "aceptarDisputa"))) falla(G, DI, 0, "aceptarDisputa no escribe la auditoría de quien decide en la transacción que anota la aceptación");
+    // 21 nov (9t) · Con el estado esperado en el `where` (estadoEnElWhere): la auditoría entra en la transacción tanto si se anotó (cambio: null) como si
+    // la disputa ya había cambiado (cambio: ahora: lo que se mandó a Stripe y lo que encontró).
+    if (!/disputaResponder\([\s\S]*?return tx\(async \(c\) => \{\n    const u = await c\.query\(`update disputes set status = 'under_review'[\s\S]*?\n      await alGuardar\?\.\(c, \{ cambio: null \}\);\n[\s\S]*?\n    await alGuardar\?\.\(c, \{ cambio: ahora \}\);\n/.test(fn(di, "responderDisputa"))) falla(G, DI, 0, "responderDisputa no escribe la auditoría de quien decide en la transacción que anota la respuesta");
+    if (!/disputaAceptar\([\s\S]*?return tx\(async \(c\) => \{\n    const u = await c\.query\(`update disputes set status = 'accepted'[\s\S]*?failure_code = 'dispute_lost'[^\n]*\n      await alGuardar\?\.\(c, \{ cambio: null \}\);\n[\s\S]*?\n    await alGuardar\?\.\(c, \{ cambio: ahora \}\);\n/.test(fn(di, "aceptarDisputa"))) falla(G, DI, 0, "aceptarDisputa no escribe la auditoría de quien decide en la transacción que anota la aceptación");
     // La prueba: el renglón de la corrida se mira sin esperar y se dice cuántos hay.
     if (!/const audC = sql\(`select count\(\*\) from audit_entries where action = 'conciliacion\.correr' and after->>'corrida' = '\$\{RUNID\}'`\);\s*ok\(audC === '1', `[^`\n]*\$\{audC\}/.test(d9)) falla(G, D9, 0, "din9k no exige exactamente un renglón «conciliacion.correr» de la corrida diciendo cuántos hay");
     d9.split("\n").forEach((x, i) => { if (/conciliacion\.correr/.test(x) && /\bespera\(/.test(x)) falla(G, D9, i + 1, "la auditoría de la corrida entra con ella: se mira sin esperar"); });
+  },
+
+  /* 9t (21 nov) · devolucionEnDosPasos (LAUNCH «Devolución: la pasarela antes que cualquier renglón en la base»): devolverPago devolvía en Stripe y
+     DESPUÉS anotaba refunds (si el proceso moría en ese hueco, el dinero salía sin renglón ni auditoría). Toda devolución va en dos pasos, como los
+     boletos (6d): (1) anotarDevolucionPago, con el cobro bloqueado: la fila 'pending' con su llave y la auditoría de quien decide; (2) la pasarela con
+     la MISMA llave y el cierre en otra transacción. Sin respuesta de Stripe sigue pendiente (no 'failed'); el barrido la termina con su llave mientras
+     Stripe la recuerda (< 24 h). El cierre toma lo devuelto del libro (la suma de lo hecho), no suma otra vez (el webhook charge.refunded pudo contarla).
+     Nadie más llama a pasarela.devolver ni anota una devolución que nace 'done'. Colas › Ayuda con monto: la llave es el caso y el caso suma lo que
+     de verdad salió. Soporte y la ayuda de la cita no dan por fallida una devolución en camino. Al revés: alreves9tdinero. */
+  devolucionEnDosPasos() {
+    const G = "devolucionEnDosPasos", CB = "apps/web/lib/cobros.ts", BA = "apps/web/lib/barrido.ts", CL = "apps/web/app/admin/acciones-colas.ts";
+    if (!existsSync(CB)) return falla(G, CB, 0, "falta lib/cobros.ts");
+    const cb = sinComent(CB);
+    const an = cuerpoFn(cb, "anotarDevolucionPago"), ej = cuerpoFn(cb, "ejecutarDevolucionPago"), ce = cuerpoFn(cb, "cerrarDevolucionPago"), dp = cuerpoFn(cb, "devolverPago"), ba = cuerpoFn(cb, "barrerDevolucionesPago");
+    if (!/insert into refunds \([^)]*\) values \([^)]*'pending'/.test(an) || /pasarela\./.test(an)) falla(G, CB, 0, "anotarDevolucionPago anota la devolución 'pending' (con su llave) y no llama a la pasarela");
+    if (an.indexOf("for update") < 0 || an.indexOf("from refunds where payment_id") < 0 || an.indexOf("for update") > an.indexOf("from refunds where payment_id")) falla(G, CB, 0, "anotarDevolucionPago bloquea el cobro y suma lo pendiente DESPUÉS, en otra consulta (la que espera el candado ve lo que la otra anotó)");
+    if (!/const a = await tx\(\(c\) => anotarDevolucionPago\(c, x, alGuardar\)\);[\s\S]*return ejecutarDevolucionPago\(a\.id\);/.test(dp) || /pasarela\./.test(dp)) falla(G, CB, 0, "devolverPago: primero la intención en la base (anotarDevolucionPago, en su transacción) y después la pasarela (ejecutarDevolucionPago)");
+    const sr = /const SIN_RESPUESTA = new Set\(\[([^\]]*)\]\)/.exec(cb)?.[1] ?? "";
+    if (!["red", "api_error", "error"].every((k) => sr.includes(`"${k}"`))) falla(G, CB, 0, "sin respuesta de Stripe (red, api_error, error) la devolución no es un «no»: sigue pendiente");
+    const bloque = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n  \}/.exec(ej)?.[0] ?? "";
+    if (!bloque || /'failed'/.test(bloque) || !/enCamino: true/.test(bloque)) falla(G, CB, 0, "ejecutarDevolucionPago: sin respuesta, queda pendiente y dice «en camino» (nunca 'failed')");
+    if (!/where id = \$1::bigint and status = 'pending' and manual_at is null returning/.test(ce)) falla(G, CB, 0, "el cierre de una devolución es una vez (where status = 'pending') y nunca la resuelta a mano");
+    if (/refunded_cents \+/.test(ce) || !/greatest\(p\.refunded_cents, x\.hecho\)/.test(ce)) falla(G, CB, 0, "el cierre toma lo devuelto del libro (greatest con la suma de lo hecho), no suma otra vez: el webhook charge.refunded pudo contarla");
+    const h = Number(/const HORAS_LLAVE = (\d+);/.exec(cb)?.[1] ?? 99);
+    if (!(h < 24) || !/make_interval\(hours => \$1::int\)/.test(ba) || !/ejecutarDevolucionPago\(r\.id, \{ barrido: true \}\)/.test(ba) || !/not exists \(select 1 from ticket_refund_lines/.test(ba)) falla(G, CB, 0, "barrerDevolucionesPago pregunta con la misma llave solo mientras Stripe la recuerda (< 24 h) y deja las de boletos a su barrido");
+    if (!existsSync(BA) || !/\["devolucionesPago", \(\) => cobros\.barrerDevolucionesPago\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "las devoluciones que quedaron a medias se terminan en el barrido central (barrerDevolucionesPago)");
+    // Nadie más devuelve: solo los dos pasos de cobros, los de boletos (6d) y el patrocinio (la base decide el monto al terminar, antes de la pasarela).
+    const PERMITIDOS = { [CB]: ["ejecutarDevolucionPago"], "apps/web/lib/boletos-despues.ts": ["ejecutarDevolucion"], "apps/web/lib/patrocinio.ts": ["devolverPatrocinio"] };
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f) || f.startsWith("apps/web/lib/pagos/")) continue;
+      const s = sinComent(f);
+      if (/insert into refunds\b[^;`]*'done'/.test(s)) falla(G, f, 0, "una devolución que nace 'done' es la pasarela antes que la base: anótala 'pending' (anotarDevolucionPago) y ciérrala después");
+      for (const m of s.matchAll(/pasarela\.devolver\(/g)) {
+        const antes = s.slice(0, m.index), fnN = [...antes.matchAll(/\n(?:export )?(?:async )?function (\w+)\(/g)].pop()?.[1] ?? "";
+        if (!(PERMITIDOS[f] ?? []).includes(fnN)) falla(G, f, antes.split("\n").length, `pasarela.devolver fuera de los dos pasos (${fnN || "?"}): devuelve con devolverPago`);
+      }
+    }
+    // Colas › Ayuda con monto: una devolución por caso, y el caso suma lo que de verdad salió.
+    const sp = cuerpoFn(sinComent(CL), "decidirSop");
+    if (!/idem = `sop-q\$\{id\}`/.test(sp)) falla(G, CL, 0, "decidirSop: la llave de la devolución es el caso (sop-q<caso>), no el toque: otra pestaña llega a la misma devolución");
+    if (!/select amount_cents as amt from refunds where id = \$1::bigint and \(status = 'done' or manual_at is not null\)/.test(sp) || !/refunded_cents = refunded_cents \+ \$4/.test(sp)) falla(G, CL, 0, "decidirSop cierra el caso con lo que de verdad salió (la devolución del caso, hecha), sumado por quien cierra el caso");
+    if (sp.indexOf("anotarDevolucionPago(") < 0 || sp.indexOf("anotarDevolucionPago(") > sp.indexOf("ejecutarDevolucionPago(")) falla(G, CL, 0, "decidirSop anota la devolución con el caso bloqueado ANTES de llamar a la pasarela");
+    for (const [f, re, msg] of [["apps/web/lib/soporte-equipo.ts", /if \(d\.enCamino\) return no\(d\.msg\.es\);\n\s*await db\(\)\.query\(`update support_refunds set status = 'failed'/, "Soporte no da por fallida una devolución en camino"],
+      ["apps/web/lib/ayuda-cita.ts", /if \(!d\.ok && d\.enCamino\) \{[^\n]*return \{ ok: false, msg: d\.msg \}; \}\n\s*if \(!d\.ok\) \{\n\s*await db\(\)\.query\(`update help_requests set status = 'open'/, "la ayuda de la cita no vuelve a abrir una solicitud con la devolución en camino (se respondería otra vez con otra llave)"]])
+      if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, msg);
+  },
+
+  /* 9t (21 nov) · estadoEnElWhere: un estado de dinero o de plan se cambia con el estado que se leyó en el `where` y se mira cuántas filas cambió (si un
+     webhook u otra persona lo cambió en medio, no se pisa y se dice). Disputas (responder/aceptar), los cambios del plan del dueño y del Super Admin, y
+     «Anular» con cobro fallido: con el candado del plan, la pasarela primero y el paso a Free con su auditoría en UNA transacción (nunca «anuló» con Pro
+     pagado). procesar relee la fila con el candado. Al revés: alreves9tdinero. */
+  estadoEnElWhere() {
+    const G = "estadoEnElWhere", DI = "apps/web/lib/disputas.ts", SU = "apps/web/lib/suscripcion.ts";
+    if (existsSync(DI)) {
+      const d = sinComent(DI), r = cuerpoFn(d, "responderDisputa"), a = cuerpoFn(d, "aceptarDisputa");
+      const ups = [...r.matchAll(/update disputes set [^`]*`/g)].map((m) => m[0]);
+      if (!ups.length || ups.some((u) => !/where id = \$1::bigint and status = '(needs_response|under_review)'/.test(u))) falla(G, DI, 0, "responderDisputa cambia la disputa sin su estado esperado en el where (un webhook queda pisado)");
+      if (!/update disputes set status = 'accepted'[^`]*where id = \$1::bigint and status in \('needs_response', 'under_review'\)/.test(a)) falla(G, DI, 0, "aceptarDisputa cambia la disputa sin su estado esperado en el where (un webhook queda pisado)");
+      if (!/cambio: ahora, msg: `La disputa cambió mientras tanto/.test(r) || !/cambio: ahora, msg: `La disputa cambió mientras tanto/.test(a)) falla(G, DI, 0, "si la disputa cambió en medio, la acción lo dice (no da por hecho lo que no anotó)");
+    }
+    if (!existsSync(SU)) return;
+    const s = sinComent(SU);
+    for (const n of ["anularSuscripcion", "pasarAFree", "deshacerFree", "seguirConPro"]) {
+      const b = cuerpoFn(s, n);
+      if (!b) { falla(G, SU, 0, `falta ${n}`); continue; }
+      for (const l of b.split("\n").filter((x) => /update subscriptions set/.test(x)))
+        if (!/if \(!\(await c\.query\(`update subscriptions set [^`]*where business_id = \$1 and status (=|in) /.test(l)) falla(G, SU, 0, `${n} cambia el plan sin su estado esperado en el where o sin mirar si cambió (rowCount)`);
+    }
+    const an = cuerpoFn(s, "anularSuscripcion");
+    if (!/conCandado\(negocio,/.test(an) || /\baFree\(/.test(an)) falla(G, SU, 0, "Anular va con el candado del plan y hace el paso a Free en su transacción (no aparte con aFree)");
+    const iV = an.indexOf("soltarVerificaciones(negocio)"), iE = an.indexOf("status = 'ended'");
+    if (iV < 0 || iE < 0 || iV > iE || !/ya había cobrado este período/.test(an)) falla(G, SU, 0, "Anular con cobro fallido mira primero la pasarela: si una verificación del banco ya pasó, lo dice y no anula");
+    if (!/update subscriptions set status = 'ended'[^\n]*\n\s*await plan\(c, negocio, "free"\);\n\s*await adminEvento\(c, negocio, "canceled_admin"[^\n]*\n\s*await evento\(negocio, "ended"[^\n]*, c\);\n\s*await alGuardar\?\.\(c\);/.test(an)) falla(G, SU, 0, "con cobro fallido: Free, «canceled_admin», «ended» y la auditoría en UNA transacción");
+    const pr = cuerpoFn(s, "procesar");
+    if (!/conCandado\(x\.business_id, async \(k\) =>/.test(pr) || !/k\.query<Fila>\(`select \* from subscriptions where business_id = \$1 and \$\{VENCIDA\}`/.test(pr)) falla(G, SU, 0, "procesar toma el candado del plan y relee la fila con él (lo que cambió entre la lista y el candado no se pisa)");
+  },
+
+  /* 9t (21 nov) · candadoEnSuConexion: un candado de sesión de Postgres (pg_try_advisory_lock / pg_advisory_lock / pg_advisory_unlock) se toma y se
+     suelta en la MISMA conexión. Con db().query cada consulta puede ir por otra conexión del pool: el desbloqueo falla en silencio y el candado queda
+     tomado para siempre en esa conexión (el plan Pro de ese negocio no se volvía a procesar). Los de transacción (_xact_) se sueltan solos. */
+  candadoEnSuConexion() {
+    const G = "candadoEnSuConexion";
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        if (/pg_(try_)?advisory_(lock|unlock)\(/.test(l) && /\bdb\(\)\.query\(/.test(l)) falla(G, f, i + 1, "candado de sesión por el pool (db().query): tómalo y suéltalo con UNA conexión (db().connect()) o usa pg_advisory_xact_lock en la transacción");
+      });
+    }
   },
 
   /* Fotos a la medida (F2a, 20 nov): toda foto de datos que se pinta pide la variante que le toca a su caja (packages/ui/src/foto.ts: fotoSrc / fotoFondo /
