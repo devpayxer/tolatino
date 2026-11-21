@@ -2249,6 +2249,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       "gateway_checks" does not exist` y `column "key_from" does not exist` en el registro de la base, tres veces en 3 s, hasta que entró la
       migración). En el sandbox no pasó de ahí; en producción con gente adentro es un barrido o una pantalla que falla ese rato. Para producción:
       migrar ANTES de cambiar la app (y que cada migración sea compatible con la versión anterior), y comprobarlo en el ensayo de 9o. (21 nov)
+      Visto otra vez al subir la 0205 (estado-sandbox 44919262137): la salud ya decía el commit nuevo con 203 migraciones; unos minutos después, 204.
 - [x] **→ 9t** · **`app8a` inestable en la revisión completa 44902103048 (única inestable de la corrida; «la isla del Repartidor abre»):** la
       prueba leía la pantalla al instante de navegar, antes de que la isla pintara el turno guardado. Ahora espera a que lo pinte (hasta 15 s) y
       comprueba lo mismo. En local: 111 ✓. Si vuelve a salir, ya no es la prueba: mirar el montaje de `/repartidor/sin-conexion`. (21 nov)

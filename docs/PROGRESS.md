@@ -20,6 +20,17 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (noche) · `main` y `pruebas` = 879c16b, sandbox comprobado desde fuera** (estado-sandbox 44919500455: salud con commit 879c16b1,
+  **0205 aplicada, 204 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia: revisión completa **44915220253 VERDE, 0 rojas
+  y 0 inestables** (comprobado en los registros que corrieron `din9t6b` 46 ✓, `rev9u2` 46 ✓, `app8a`, `dm9t`). Subió lo que esperaba en la rama
+  de trabajo: la hoja «Elegir cuál vale» con monto, fecha e id de cada opción (0205, Opus); su prueba de navegador `din9t6b` (Sonnet); el
+  arreglo del texto largo que ensanchaba la pantalla en teléfono (filas del panel `Bloques.tsx` y piezas del Super Admin por el script de
+  portado; guardián `textosLargos`; Sonnet); «Para mirar» elige entre las que siguen publicadas (causa de `rev9u2` inestable; Fable); la
+  renovación cerrada por la consulta conserva la marca de la tarjeta (Fable). **En curso:** dinero 9t7 (devoluciones y reversiones atascadas:
+  anotadas antes con su dato, consulta pasada la llave, «Resolver a mano» que pregunta antes), lo escribe Opus en su worktree desde ca5e556;
+  al volver: fusionar, revisar (migración 0206, lo de dinero lo revisa Fable), tipos/guardianes/Semgrep/al revés, contrato con stripe-mock,
+  `base.sh` + `servir.sh` y las `din9t*` + su prueba de navegador en local, CI completo, subir. **Pendiente para producción (sin cambios):** una
+  confirmación completa (dos veces + barajada + anchos) con 3 inestables o menos; la causa del toque en el detalle del panel en iPad.
 - **21 nov (tarde, más) · `main` y `pruebas` = 280ff61, sandbox comprobado desde fuera** (estado-sandbox 44912311667: salud con commit 280ff616,
   **0204 aplicada, 203 migraciones**). Evidencia: revisión completa **44908076139 VERDE, 0 rojas y 1 inestable** (`rev9u2`). Subió **dinero 9t6**
   (renovar una retención es una intención; «Elegir cuál vale» en las alertas `gateway_review`; lo escribió Opus, lo revisó Fable).

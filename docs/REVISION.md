@@ -5981,7 +5981,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      que el teléfono las guarde para que abran más rápido (quedarían en el disco del aparato, también en uno compartido), dilo.
 - **Quedó anotado en LAUNCH:** las fotos al subir (12 MB) siguen costando ~91 MB cada una; «Descargar mis datos» todavía arma el ZIP en memoria.
 
-## Dinero, sexta tanda: retenciones que se renuevan y «elegir cuál vale» (21 nov · migración 0204) — YA en el sandbox (commit 280ff61, 0204 aplicada) — seis cosas para ti
+## Dinero, sexta tanda: retenciones que se renuevan y «elegir cuál vale» (21 nov · migraciones 0204 y 0205) — YA en el sandbox (commit 879c16b) — seis cosas para ti
 - **Qué pasaba:** (1) Cuando la tarjeta iba a soltar el depósito de una renta o lo retenido de un estimado (7 días), el sistema lo volvía a retener; si
   Stripe no contestaba, soltaba el viejo y le decía al negocio (y a la persona) «el banco ya no deja», aunque no fuera cierto y aunque Stripe sí
   hubiera hecho la nueva. (2) Cuando Stripe tenía dos cobros para una sola cosa, uno con otro monto, o Pro cobrado dos veces el mismo mes, se avisaba al
@@ -5990,8 +5990,10 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   se avisa a nadie; se reintenta y después se le pregunta a Stripe; el aviso dice el motivo verdadero. (2) En la alerta, **«Elegir cuál vale»**: el
   servidor vuelve a preguntar a Stripe antes de guardar, solo deja elegir lo que Stripe tiene, con el monto correcto, una sola vez; lo que sobra se
   devuelve solo (con su propia llave). Pro cobrado dos veces: se devuelve uno y el mes siguiente se cobra normal.
-- **Qué mirar (sandbox, cuando suba):** Super Admin › Planes › Ingresos › Alertas: una alerta «Lo que dijo Stripe no se cierra solo» muestra «Elegir
-  cuál vale» con los cobros de Stripe y «Ninguno». (En el sandbox se fabrica con una prueba; no aparece sola.)
+- **Qué mirar (sandbox, desde el teléfono):** Super Admin › Planes › Ingresos › Alertas: una alerta «Lo que dijo Stripe no se cierra solo» muestra
+  «Elegir cuál vale». Cada opción dice el monto, la fecha y hora en que salió y su número de Stripe, la primera arriba; lo que no se puede
+  elegir sale explicado en el texto; y «Ninguno». La pantalla ya no se sale a los lados en el teléfono aunque una alerta traiga un texto largo
+  sin espacios. (En el sandbox la alerta se fabrica con una prueba; no aparece sola.)
 - **Decide tú (dejé lo más seguro; todo se cambia):**
   1. *Cuánto se reintenta la renovación con la misma llave:* mientras Stripe la recuerde **y** la retención vieja siga viva. Como se renueva a las
      164 h y la vieja vive 168 h, son **unas 4 horas**, no 23. Alternativa: renovar antes (p. ej. a las 144 h) para tener más margen.
