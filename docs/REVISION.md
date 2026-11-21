@@ -5965,3 +5965,18 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      sabemos si la herramienta se entregó o si el anuncio salió).
   5. *Lo que quedó sin hacer:* renovar lo retenido en la tarjeta (depósito de una renta, lo retenido de un estimado) todavía trata «Stripe no
      contestó» como «el banco ya no deja» y avisa en falso al negocio. No cobra dos veces. Va en la siguiente tanda.
+
+## Subir un video ya no carga 120 MB en la memoria de la app (21 nov) — en la rama de trabajo, falta el CI — dos cosas para ti
+- **Qué pasaba:** al subir el video de presentación, la app tenía el archivo entero en memoria varias veces (medido: +612 MB por un video de
+  120 MB). Tres o cuatro negocios subiendo a la vez podían tumbar la app entera.
+- **Ahora (Opus lo escribió; Fable lo fusionó y corrió tipos, guardianes, la prueba con dobles —41 comprobaciones— y el «al revés», 15/15):** el
+  video pasa por disco y en trozos (medido: +25 MB), el tope de 120 MB se corta mientras llega, y hay un **cupo de videos preparándose a la vez**
+  (2 por proceso, 3 en total). Si está lleno: «Estamos preparando otros videos en este momento. Prueba en un momento.» (no gasta de los 10 del
+  día). Las fotos privadas (mensajes, entrega, ayuda, reclamo) se entregan en trozos y con su huella de versión.
+- **Qué mirar (sandbox, cuando suba):** Panel › Tu página › Fotos › subir un video desde el iPhone: debe quedar «En revisión» como siempre.
+- **Decide tú:**
+  1. *El cupo de videos a la vez (2 y 3):* lo fijé por el tamaño del servicio de video del sandbox. Hoy se cambia en el código; si lo quieres en
+     Configuración, dilo.
+  2. *Las fotos privadas no se guardan en el teléfono* (cada vez que se abren, se bajan otra vez). Es lo más privado, y lo dejé así. Si prefieres
+     que el teléfono las guarde para que abran más rápido (quedarían en el disco del aparato, también en uno compartido), dilo.
+- **Quedó anotado en LAUNCH:** las fotos al subir (12 MB) siguen costando ~91 MB cada una; «Descargar mis datos» todavía arma el ZIP en memoria.

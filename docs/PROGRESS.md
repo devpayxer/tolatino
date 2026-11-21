@@ -35,8 +35,12 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
     `gateway_checks`, alerta `gateway_review`, `sent_at` en Pro, migración **0203**) y «ya cobrado no se queda mudo». Aquí: tipos, guardianes,
     textos y `alreves9tdinero` 126/126. Falta: su revisión completa en el CI (din9t5, din9t4, din9t3, plan4f, renta4f, pat002, pat003 y la prueba de
     contrato con stripe-mock, que el agente no pudo correr), y después `main`/`pruebas`. Lo que quedó: LAUNCH «lo que quedó de 9t5».
-  - **Agente en curso:** Opus en `medios-9t-flujo` (el video del negocio en flujo y con cupo de videos a la vez; ETag/304 en las fotos privadas;
-    si necesita migración es la **0204**). Al volver: revisar (Fable), tipos/guardianes/al revés, fusionar, CI.
+  - **«Medios en flujo» FUSIONADO en la rama de trabajo, sin CI todavía (sin migración):** el video del negocio por disco y en trozos (+612 MB →
+    +25 MB medidos con `scripts/carga/memoria-medios.mjs`), cupo de videos a la vez (`lib/topes.ts › tomarCupo`), el servicio de video contesta
+    en binario (`services/video/app.py`: el despliegue lo reconstruye con `up -d --build video`), `lib/entrega-privada.ts` (flujo + ETag/304,
+    siempre `private, no-store`). Aquí: tipos, guardianes, `medios9tflujo` 41 ✓, `alreves9tflujo` 15/15. Falta en el CI: `vid001` con ffmpeg de
+    verdad. En el sandbox: subir un video real y mirar la memoria del contenedor.
+  - **Ningún agente en curso.**
   - **Sin resolver:** el toque que no entra en el detalle del panel en el iPad (`dlv2f4`, `pro4l2`): la sonda corrió 24 aperturas sin fallar
     en una corrida sola (la ventana mide 70..742, se desplaza 269 de 371 y el toque entra); falta cazarlo bajo carga. `rev9u` sin confirmar.
 - **21 nov (mañana) · al día:**
