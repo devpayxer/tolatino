@@ -9,7 +9,8 @@ const casos = [
   ['videoSoloAprobado', L, "where v.business_id = any($1::text[]) and v.status = 'aprobado'", "where v.business_id = any($1::text[]) and v.status in ('aprobado', 'revision')"],
   ['videoSoloAprobado', L, "join business_stats_cache s on s.business_id = v.business_id and s.plan = 'pro'", "join business_stats_cache s on s.business_id = v.business_id"],
   ['videoSoloAprobado', A, '  if (plan !== "pro") return err(403, "El video de presentación es de Pro.", "The intro video is a Pro feature.");\n', ''],
-  ['videoSoloAprobado', A, 'await guardarObjeto(cv, p.mp4, "video/mp4");', 'await guardarObjeto(cv, Buffer.from(await f.arrayBuffer()), "video/mp4");'],
+  // 9t · El video procesado va del disco (p.mp4.ruta); guardar la entrada (el original) tiene que fallar.
+  ['videoSoloAprobado', A, 'await guardarArchivo(cv, p.mp4.ruta, "video/mp4", p.mp4.sha256);', 'await guardarArchivo(cv, join(dir, "entrada"), "video/mp4");'],
 ];
 const crear = [
   // Una pantalla pública que lee los videos sin pasar por videosVivos.

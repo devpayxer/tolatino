@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auditar, staff } from "@/lib/admin";
 import { colasVisibles } from "@/lib/admin-colas";
 import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
-import { leerObjeto } from "@/lib/medios";
+import { entregarPrivado } from "@/lib/entrega-privada";
 
 /* Revisión automática de las fotos públicas (decisión AJ) · Ver una foto que NO se publicó (retenida, rechazada u oculta por reportes): su archivo
    vive solo en la llave privada (privado/rev/<uuid>.jpg; nginx nunca la sirve). La ven:
@@ -13,7 +13,7 @@ import { leerObjeto } from "@/lib/medios";
    Nunca se cachea ni se lista. Lo demás: 404 (no se dice si existe). */
 export const dynamic = "force-dynamic";
 const no = () => new NextResponse(null, { status: 404 });
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
   const m = (await db().query<{ llave: string; subio: string | null }>(
@@ -40,7 +40,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   // 21 nov · Quien SÍ puede verla y su archivo ya no está en el almacén (una fila sin su objeto): 410 «ya no está», sin traza en el registro en
   // cada vista (antes, un 500). No es 404: ese es «no puedes o no existe», y a quien puede no se le esconde nada. Un almacén caído sigue siendo
   // un error de verdad (no se disfraza de 410).
-  const img = await leerObjeto(m.llave).catch((e) => { if (/^almacenamiento 404\b/.test(String((e as Error)?.message ?? e))) return null; throw e; });
-  if (!img) return new NextResponse(null, { status: 410, headers: { "cache-control": "private, no-store" } });
-  return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" } });
+  // 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match (lib/entrega-privada.ts).
+  return entregarPrivado(req, [{ clave: m.llave, tipo: "image/jpeg" }], { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" },
+    () => new NextResponse(null, { status: 410, headers: { "cache-control": "private, no-store" } }));
 }

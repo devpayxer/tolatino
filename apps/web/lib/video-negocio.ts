@@ -1,4 +1,11 @@
+import { createHash } from "node:crypto";
+import { mkdtemp, open, readdir, rm, stat, type FileHandle } from "node:fs/promises";
+import type { IncomingMessage } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { db } from "@/lib/db";
+import { enviarArchivo, textoConTope } from "@/lib/medios";
+import { renovarCupo, soltarCupo, tomarCupo } from "@/lib/topes";
 
 /* C-001 · Video de presentación del negocio (Pro). Lo sube el negocio (archivo, no enlace) desde Panel › Tu página › Fotos; el servicio
    propio services/video (ffmpeg, en la red interna) lo deja en `video_max_s` segundos como mucho, 720p, sin metadatos, y saca la portada.
@@ -12,26 +19,104 @@ const URL_VIDEO = () => (process.env.VIDEO_URL || "").replace(/\/+$/, "");
 export const videoListo = () => !!URL_VIDEO();
 
 export type Procesado =
-  | { ok: true; segundos: number; ancho: number | null; alto: number | null; mp4: Buffer; portada: Buffer }
+  | { ok: true; segundos: number; ancho: number | null; alto: number | null; mp4: { ruta: string; bytes: number; sha256: string }; portada: Buffer }
   | { ok: false; error: "no_es_video" | "muy_grande" | "fallo" | "sin_servicio" };
 
-/* El video tal como lo subió el negocio → el servicio propio lo procesa (hasta 150 s). Nunca se guarda el original. */
-export async function procesarVideo(cuerpo: Buffer, maxS: number): Promise<Procesado> {
+/* 9t · Medios en flujo. El video ya está en el DISCO (lib/subida.ts recibirArchivo) → al servicio propio por partes, con su content-length (el
+   servicio lo escribe a su carpeta temporal por partes: ffprobe/ffmpeg necesitan el archivo entero y buscable —un MOV del iPhone lleva el índice
+   al final—, así que el disco es el lugar natural y la memoria nunca lo tiene entero). La respuesta (binaria, «application/x-tolatino-video»):
+   la portada (chica, a memoria) y después el MP4, que va por partes a `dir/salida.mp4` calculando su sha256 al pasar (lo firma el PUT al
+   almacén sin otra lectura). Antes iba y volvía entero y en base64 dentro de un JSON: ~610 MB de memoria de la app por video de 120 MB.
+   Un servicio que conteste otra cosa (el de antes, con base64) es un fallo: nunca se lee una respuesta grande a memoria. Nunca se guarda el
+   original. Guardián mediosEnFlujo. */
+const MAX_PORTADA = 4 * 1024 * 1024, MAX_SALIDA = 200 * 1024 * 1024, MAX_JSON = 64 * 1024;
+export async function procesarVideo(entrada: { ruta: string; bytes: number }, maxS: number, dir: string): Promise<Procesado> {
   const base = URL_VIDEO();
   if (!base) return { ok: false, error: "sin_servicio" };
+  let fh: FileHandle | null = null, r: IncomingMessage | null = null;
   try {
-    const r = await fetch(`${base}/procesar?max=${Math.max(10, Math.min(60, Math.round(maxS)))}`, {
-      method: "POST", body: new Uint8Array(cuerpo), headers: { "content-type": "application/octet-stream" }, signal: AbortSignal.timeout(170_000),
+    r = await enviarArchivo(`${base}/procesar?max=${Math.max(10, Math.min(60, Math.round(maxS)))}`, {
+      metodo: "POST", ruta: entrada.ruta, bytes: entrada.bytes, ms: 170_000,
+      headers: { "content-type": "application/octet-stream", accept: "application/x-tolatino-video" },
     });
-    const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; segundos?: number; ancho?: number; alto?: number; mp4?: string; portada?: string };
-    if (!j.ok || !j.mp4 || !j.portada || !(Number(j.segundos) > 0)) {
-      const e = j.error === "no_es_video" || j.error === "muy_grande" ? j.error : "fallo";
-      return { ok: false, error: e };
+    const cab = (k: string) => { const v = r!.headers[k]; return Array.isArray(v) ? v[0] ?? "" : v ?? ""; };
+    if (r.statusCode !== 200 || !/^application\/x-tolatino-video\b/.test(cab("content-type"))) {
+      // Un error del servicio es un JSON chico; se lee con tope (nunca una respuesta grande a memoria).
+      let j: { ok?: boolean; error?: string } = {};
+      try { j = JSON.parse(await textoConTope(r, MAX_JSON)) as typeof j; } catch { /* no es JSON */ }
+      if (j.ok) console.warn("[video] el servicio contestó en el formato de antes (base64): ¿falta reconstruir services/video?");
+      return { ok: false, error: j.error === "no_es_video" || j.error === "muy_grande" ? j.error : "fallo" };
     }
-    return { ok: true, segundos: Number(j.segundos), ancho: j.ancho ?? null, alto: j.alto ?? null, mp4: Buffer.from(j.mp4, "base64"), portada: Buffer.from(j.portada, "base64") };
+    const num = (k: string) => { const v = Number(cab(k)); return Number.isFinite(v) && v > 0 ? v : null; };
+    const segundos = num("x-segundos") ?? 0, nP = num("x-portada-bytes") ?? 0;
+    if (!(segundos > 0) || !(nP > 0) || nP > MAX_PORTADA) return { ok: false, error: "fallo" };
+    const portada = Buffer.alloc(nP), sha = createHash("sha256"), ruta = join(dir, "salida.mp4");
+    fh = await open(ruta, "w", 0o600);
+    let p = 0, bytes = 0;
+    for await (const t of r) {
+      let c = t as Buffer;
+      if (p < nP) { const k = Math.min(nP - p, c.length); c.copy(portada, p, 0, k); p += k; c = c.subarray(k); }
+      if (!c.length) continue;
+      if (bytes + c.length > MAX_SALIDA) return { ok: false, error: "fallo" };
+      sha.update(c);
+      await fh.write(c);
+      bytes += c.length;
+    }
+    if (p < nP || bytes === 0 || !r.complete) return { ok: false, error: "fallo" };
+    return { ok: true, segundos, ancho: num("x-ancho"), alto: num("x-alto"), mp4: { ruta, bytes, sha256: sha.digest("hex") }, portada };
   } catch {
     return { ok: false, error: "sin_servicio" };
+  } finally {
+    r?.destroy();
+    await fh?.close().catch(() => undefined);
   }
+}
+
+
+/* 9t · Medios en flujo · Cuántos videos se reciben y procesan A LA VEZ. El servicio de video (1 CPU, 1 GB) corre un ffmpeg por video y cada
+   subida ocupa disco (hasta 120 MB de entrada y la salida) y una conexión larga: sin cupo, unas cuantas subidas juntas lo ahogan a él y a la
+   máquina. Dos topes: por proceso (VIDEO_A_LA_VEZ_PROCESO, en memoria: protege a ESTE proceso aunque la base no responda) y entre todos los
+   procesos (VIDEO_A_LA_VEZ, lib/topes.ts tomarCupo: compartido en rate_counters; el turno vence solo si el proceso se cae). El turno se toma
+   ANTES de leer el cuerpo: quien llega con el cupo lleno lo sabe al instante (503 + Retry-After, «prueba en un momento»), no después de subir
+   120 MB. Devuelve con qué soltarlo (una vez, en el finally de quien llama) o null si no hay lugar. */
+export const VIDEO_A_LA_VEZ = 3, VIDEO_A_LA_VEZ_PROCESO = 2, VIDEO_TURNO_S = 90;
+let enEsteProceso = 0;
+export async function turnoVideo(): Promise<(() => Promise<void>) | null> {
+  if (enEsteProceso >= VIDEO_A_LA_VEZ_PROCESO) return null;
+  enEsteProceso++;
+  const ficha = await tomarCupo("video_cupo", VIDEO_A_LA_VEZ, VIDEO_TURNO_S).catch(() => null);
+  if (!ficha) { enEsteProceso--; return null; }
+  // Mientras se sube y se procesa (puede pasar de los 90 s), el turno se renueva cada 30 s.
+  const reloj = setInterval(() => { void renovarCupo("video_cupo", ficha, VIDEO_TURNO_S); }, (VIDEO_TURNO_S / 3) * 1000);
+  reloj.unref?.();
+  let suelto = false;
+  return async () => {
+    if (suelto) return;
+    suelto = true;
+    clearInterval(reloj);
+    enEsteProceso--;
+    await soltarCupo("video_cupo", ficha);
+  };
+}
+
+/* 9t · La carpeta temporal de UNA subida (entrada y salida del video). Quien la pide la borra en su finally (pase lo que pase). Si un proceso se
+   cayó a mitad, su carpeta queda: cada carpeta nueva barre antes las de más de una hora (los videos de nadie no se acumulan en el disco). */
+const PREFIJO_TMP = "tl-video-";
+export async function carpetaVideo(): Promise<string> {
+  const raiz = tmpdir();
+  try {
+    const hace1h = Date.now() - 3_600_000;
+    for (const d of await readdir(raiz)) {
+      if (!d.startsWith(PREFIJO_TMP)) continue;
+      const s = await stat(join(raiz, d)).catch(() => null);
+      if (s && s.mtimeMs < hace1h) await rm(join(raiz, d), { recursive: true, force: true }).catch(() => undefined);
+    }
+  } catch { /* sin permiso para listar: sigue */ }
+  return mkdtemp(join(raiz, PREFIJO_TMP));
+}
+export async function borrarCarpetaVideo(dir: string): Promise<void> {
+  if (!dir.includes(PREFIJO_TMP)) return;
+  await rm(dir, { recursive: true, force: true }).catch(() => undefined);
 }
 
 /* Lo que se ve en público: el video APROBADO de cada negocio Pro activo (una consulta para toda la lista; sin N+1). */

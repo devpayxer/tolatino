@@ -2265,8 +2265,27 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       no tiene escritor ni lector (0 filas): queda documentada como sin uso (comment) y el guardián `fotosTextoComun` falla si alguien la usa sin cubrirla;
       no se quita la columna (nada se borra). Índices: `media_chat_subidas_idx` sobraba (mismas columnas y su condición contenida en la de
       `media_msj_subidas_idx`; el único lector pide chat + dm): 0200 la quita._
-- [ ] **→ 9t** · **Las rutas de fotos y video cargan el archivo entero en memoria** (12 MB por foto, 120 MB por video) y las privadas se
-      entregan sin `Range` ni `ETag`. Medir con carga y, si pesa, pasar a flujo. (20 nov)
+- [x] **→ 9t** · **Las rutas de fotos y video cargan el archivo entero en memoria** (12 MB por foto, 120 MB por video) y las privadas se
+      entregan sin `Range` ni `ETag`. Medir con carga y, si pesa, pasar a flujo. (20 nov) — _(21 nov): medido con
+      `scripts/carga/memoria-medios.mjs` (el código real con dobles del almacén y del servicio; pico de RSS del núcleo por caso). **Video de
+      120 MB: ~612 MB de memoria de la app → ~24 MB** (al disco por partes con el tope mientras llega, `lib/subida.ts recibirArchivo`; al servicio
+      y al almacén desde el disco con node:http, `enviarArchivo`/`guardarArchivo`: el fetch de Node no frena la lectura; el servicio contesta en
+      binario, sin base64; carpeta temporal borrada en un finally) y **cupo de videos a la vez** (2 por proceso, 3 entre procesos en
+      `rate_counters`, `tomarCupo`; lleno → 503 + Retry-After 30). **Fotos privadas entregadas** (50 a la vez de 1,5 MB): ~88 MB → ~35 MB, en
+      flujo, con ETag del almacén y 304 a If-None-Match después del permiso (`lib/entrega-privada.ts`); caché igual que antes. Sin `Range`: la app
+      solo entrega fotos; el video lo sirve nginx desde el almacén. **Fotos que se suben: sin cambio** (~91 MB por foto de 12 MB, 4 a la vez ~330 MB;
+      sharp necesita la imagen entera y solo él pone ~34 MB): ver la línea de abajo. Guardián `mediosEnFlujo` (al revés `alreves9tflujo`),
+      prueba con dobles `medios9tflujo`._
+- [ ] **→ 9t** · **Fotos que se suben: tope de subidas a la vez por proceso** (de `memoria-medios.mjs`, 21 nov): cada foto de 12 MB cuesta
+      ~91 MB a la app (~57 MB son copias del formulario: `leerFormulario` junta las partes, las une, `formData()` y `arrayBuffer()`; ~34 MB es
+      sharp). Con 4 a la vez ~330 MB; con 10, ~0,9 GB en un proceso. Decidir con la carga de 9b si hace falta un turno por proceso (esperar unos
+      segundos o 503 «prueba en un momento») o quitar las copias de `leerFormulario` (pasarle a sharp la parte del archivo sin `formData`).
+- [ ] **→ 9t** · **Fotos privadas: el navegador no las vuelve a pedir con If-None-Match** porque salen con `private, no-store` (no se guardan
+      en el disco del teléfono o de una computadora compartida). El ETag y el 304 ya están (sirven a quien manda If-None-Match); pasar a
+      `private, no-cache` ahorraría bajarlas otra vez pero las deja en el disco del aparato: decisión de privacidad del fundador, no se aflojó.
+- [ ] **→ 9t** · **El archivo de «Descargar mis datos» se entrega entero en memoria** (`lib/datos/exportar.ts bajarExportacion` lee el ZIP con
+      `leerObjeto` y la ruta lo devuelve de una vez; además se arma entero en memoria). Misma clase que los medios en flujo: entregarlo con
+      `abrirObjeto` (en flujo) y medir cuánto pesa el ZIP de una cuenta grande. No se tocó el 21 nov (fuera del encargo).
 
 
 ## Fotos a la medida — F1 (decisión AI, 20 nov) — lo que quedó anotado
