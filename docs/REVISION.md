@@ -5912,3 +5912,18 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      podría cobrar dos veces). Recomiendo arreglarlos ya con el mismo patrón; lo hago en cuanto digas, o lo hago igual si no dices nada (es
      reversible y solo quita un riesgo).
 
+
+## Dinero, cuarta tanda: planes del Hogar, rentas y patrocinios (21 nov · migración 0202) — tres cosas para ti
+- **Qué cambió (Opus lo escribió; Fable lo revisó, lo fusionó y corrió tipos, guardianes y el «al revés» de dinero, 98/98):** el cobro con la
+  tarjeta guardada de un **plan del Hogar**, de una **renta** (devolución tarde, «un día más») y de la **renovación de un patrocinio** (de negocio y
+  de evento) ahora se anota antes de pedírselo a Stripe, igual que Pro. Si Stripe no contesta, no es un rechazo: queda «en camino», se reintenta
+  con la misma llave (nunca dos cobros) y a las 23 h avisa al equipo. Nada de esto se ve distinto en pantalla cuando todo sale bien.
+- **Qué mirar:** nada a mano; lo cubren `din9t4` y las pruebas de planes, rentas y patrocinio en el CI.
+- **Decide tú (dejé lo más cerrado):**
+  1. *Un cobro que lleva 23 h «en camino» bloquea los cobros siguientes de ese plan o esa renta* hasta que alguien lo cierre, y hoy no hay botón.
+     En vez de dos botones donde una persona afirma «sí se cobró / no se cobró» (si se equivoca, se cobra dos veces), **estoy construyendo que
+     el servidor le pregunte a Stripe y cierre solo** con lo que Stripe diga, más un botón «Preguntar a Stripe ahora» en la alerta. Es lo más
+     seguro y se puede quitar. Si prefieres los dos botones a mano, dilo.
+  2. *Renovar lo retenido en la tarjeta* (depósito de una renta, lo retenido de un estimado): si Stripe no contesta, hoy se le avisa al negocio
+     «el banco ya no deja» aunque no sea cierto. No cobra dos veces, pero el aviso es falso. Lo corrijo en la misma tanda si alcanza.
+  3. *«Un día más» en una renta:* dos toques seguidos son dos días (como antes). Si quieres que pida confirmar el segundo, dilo.
