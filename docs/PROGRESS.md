@@ -28,13 +28,15 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
   - **`main` y `pruebas` = dbd3130** (confirmación completa **44856657972 VERDE** sobre 207fef9: dinero 9t, fotos privadas F3 con la migración
     0197, tope de cuenta nueva solo para públicas, doble toque del panel, `?w=` de las privadas, `correo2q`). Cerradas 27 líneas «9 dispositivos»
     de LAUNCH (queda la de 7f, que además pide correr `msg2p` con El Compa apagado). Inestables anotadas en LAUNCH: push8c, rev9u, cre9h, dlv2f4.
-  - **En la rama de trabajo (a9f1e80), esperando su revisión rápida 44866551623:** dinero 9t2 (Opus, migración **0198**; su primer CI 44863184517
-    salió ROJO por `sop7b`: el intento de devolver más de lo que cabe ya no quedaba en `support_refunds`; arreglado por Fable con savepoint y
-    guardián `intentoFallidoQueda`), la pareja Desde/Hasta del panel (Sonnet: `grupo` en `pasoSrv`), las copias por texto de una foto quitada
-    (Opus, migración **0200**: trigger `media_fotos_texto` + libro `photo_text_refs`; revisada por Fable; `fot9utexto`) y el arreglo de la
-    inestable `rev9u` (el barrido de la prueba cierra el corte del modelo propio). Si sale verde → `main`/`pruebas` y `estado-sandbox`.
-  - **Agente en curso:** Opus en `dinero-9t3` (lo que quedó de «Dinero por clase»: liquidaciones y cobro de Pro sin tope de reintento, resolver a
-    mano sin intentos, boletos con devolución fallida después, ayuda de la cita; migración **0199**). Al volver: revisar, fusionar, CI.
+  - **En la rama de trabajo (a2c7018 + documentos), esperando su revisión rápida 44872463837; NADA de esto está en `main`/`pruebas`:** dinero 9t2
+    (0198) y 9t3 (0199: `subscription_charges`, `dinero_a_mano`, `evt_liq_calc`), copias por texto de una foto quitada (0200), la zona horaria
+    de una ciudad validada en la base (0201), la pareja Desde/Hasta del panel, el bloque «Fotos a la medida» del Super Admin (F4, Sonnet), `?w=`
+    de las fotos privadas, **«al escribir hace zoom» (regla de 16 px en táctil, `globals.css`; guardián `camposSinZoom`; se mide en `a11y9c`)**,
+    el visor de fotos retenidas sin archivo (404), el tope de inestables por corrida en `ci.yml` y `scripts/sandbox/pesar-fotos.cjs`.
+    El CI anterior 44866551623 salió ROJO por `ciu9i` y `vid001`: las dos dependían de la hora (madrugada) y están arregladas.
+    Si 44872463837 sale verde con 3 inestables o menos → `main`/`pruebas`, `estado-sandbox`, y traer las capturas nuevas (`aprobadas.py`): las
+    de teléfono con un campo a la vista cambian por la regla de 16 px (van a REVISION para el OK del fundador).
+  - **Agentes:** ninguno en curso. Siguiente de dinero (decisión 3 de REVISION): planes, rentas y patrocinio con el patrón de `subscription_charges`.
   - **Sin resolver:** `pro4l2` como requisito no puede tocar «Pasó la consulta» (dejó roja la programada 44851886841 sobre `main` por `ayu4m`);
     causa desconocida, el registro ya dirá el motivo.
 - **21 nov (madrugada) · dónde quedó cada cosa, para retomar:**
