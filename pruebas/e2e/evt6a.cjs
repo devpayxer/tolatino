@@ -106,7 +106,7 @@ const TERRAZA = '5705550366', SABOR = '5705550133', PADRE = '5705550422', ADM = 
     await decidir(ad, 'Aprobar', null, null, 'Aprobar');
     ok(await espera(() => sql(`select status from events where id = ${EV}`) === 'live'), 'aprobado: en vivo');
     ok(sql(`select (approved_by = '${uid(ADM)}')::text || '|' || (select listable::text from event_dates where event_id = ${EV}) from events where id = ${EV}`) === 'true|true', 'aprobado por esa persona y listable');
-    ok(sql(`select sms_status from notifications where user_id = '${OWNER}' and tpl = 'evt_aprobado' order by id desc limit 1`) === smsEsperado('evt_aprobado', `'${OWNER}'`), 'aviso «Tu evento ya está publicado» con SMS (modo pruebas)');
+    ok(await espera(async () => sql(`select sms_status from notifications where user_id = '${OWNER}' and tpl = 'evt_aprobado' order by id desc limit 1`) === smsEsperado('evt_aprobado', `'${OWNER}'`)), 'aviso «Tu evento ya está publicado» con SMS (modo pruebas)');
 
     // ── 5 · Cambio que importa (la hora) de un organizador sin verificar: vuelve a la cola, la versión anterior sigue en vivo ──
     const T0 = sql(`select starts_at from event_dates where event_id = ${EV}`), H0 = sql(`select start_min from events where id = ${EV}`);
