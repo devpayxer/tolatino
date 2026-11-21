@@ -23,7 +23,8 @@ export const CADA_MIN = 15;
    lo que sobró decidida desde una gateway_review (gateway_refunds: entre las devoluciones de ese cobro o las reversiones de esa transferencia). */
 /* 9t7 (0206) · Y las devoluciones de un cobro (refunds: las de lib/cobros y las de boletos) y las reversiones de una transferencia al organizador
    (event_settlement_reversals): entre las devoluciones de ESE cobro o las reversiones de ESA transferencia, como gateway_refunds. */
-export type Tabla = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "gateway_refunds" | "refunds" | "event_settlement_reversals";
+/* 9t8 (0207) · Y la devolución de lo no usado de un patrocinio (sponsorship_refunds): entre las devoluciones de ESE cobro, como refunds. */
+export type Tabla = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "gateway_refunds" | "refunds" | "event_settlement_reversals" | "sponsorship_refunds";
 export type Resultado = "hecho" | "fallido" | "en_curso" | "no_hallado" | "varios" | "monto_distinto" | "sin_respuesta";
 export type Origen = { origen: "barrido" } | { origen: "equipo"; staff: string; alGuardar?: (c: PoolClient) => Promise<unknown> };
 /* 9t6 · revisado: una persona del equipo cerró la gateway_review de esta intención (gateway_reviews, una vez): «vale» (resultado hecho con el que eligió,
@@ -54,7 +55,7 @@ export async function tocaConsultar(t: Tabla, id: string): Promise<boolean> {
 export async function consultar(x: Sujeto, o: Origen, detalle?: Detalle): Promise<Resultado> {
   const ref = refDe(x.tabla, x.id);
   const r: Consulta = await (x.tabla === "event_settlements" ? pasarela.buscarTransferencia(ref, x.grupo ?? "", x.id)
-    : x.tabla === "gateway_refunds" || x.tabla === "refunds" || x.tabla === "event_settlement_reversals" ? pasarela.buscarDevolucion(ref, x.medio ?? (x.tabla === "event_settlement_reversals" ? "reversal" : "refund"), x.objeto ?? "")
+    : esDevolucion(x.tabla) ? pasarela.buscarDevolucion(ref, x.medio ?? (x.tabla === "event_settlement_reversals" ? "reversal" : "refund"), x.objeto ?? "")
     : pasarela.buscarCobro(ref, { retencion: x.tabla === "hold_renewals" })).catch((): Consulta => ({ ok: false }));
   let resultado: Resultado, h: Hallado | null = null, n = 0;
   if (!r.ok) resultado = "sin_respuesta";
@@ -91,7 +92,7 @@ export async function consultar(x: Sujeto, o: Origen, detalle?: Detalle): Promis
   return resultado;
 }
 /* 9t7 · Las intenciones que devuelven dinero (no lo cobran): con varias en Stripe solo se elige cuál vale. */
-export const esDevolucion = (t: Tabla) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds";
+export const esDevolucion = (t: Tabla) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds" || t === "sponsorship_refunds";
 export async function alertaRevisar(x: { monto: number; ciudad: string | null; negocio: string | null }, ref: string, detalle: Bi) {
   await (await import("./dinero-alertas")).alertar("gateway_review", ref, { monto: x.monto, negocio: x.negocio, ciudad: x.ciudad, detalle }).catch(() => undefined);
 }
@@ -102,10 +103,10 @@ export async function veredicto(t: Tabla, id: string, c?: Pick<PoolClient, "quer
   // La tabla y el «desde» salen de una lista cerrada escrita aquí, nunca del parámetro tal cual (Semgrep, CI 44889132454: un nombre de tabla que
   // llega de afuera no entra al texto de una consulta, aunque hoy todos los que llaman pasen un valor fijo).
   const tabla = t === "subscription_charges" ? "subscription_charges" : t === "offsession_charges" ? "offsession_charges" : t === "event_settlements" ? "event_settlements" : t === "hold_renewals" ? "hold_renewals" : t === "gateway_refunds" ? "gateway_refunds"
-    : t === "refunds" ? "refunds" : t === "event_settlement_reversals" ? "event_settlement_reversals" : null;
+    : t === "refunds" ? "refunds" : t === "event_settlement_reversals" ? "event_settlement_reversals" : t === "sponsorship_refunds" ? "sponsorship_refunds" : null;
   if (!tabla) throw new Error("veredicto: tabla desconocida");
   // 9t7 · Una devolución o reversión cuya llave volvió a valer (nunca llegó): desde que volvió a valer (la de antes ya se dio por no llegada).
-  const desde = tabla === "event_settlements" ? "greatest(z.sent_at, coalesce(z.key_from, z.paying_at))" : tabla === "refunds" || tabla === "event_settlement_reversals" ? "greatest(z.sent_at, coalesce(z.key_from, z.sent_at))" : "z.sent_at";
+  const desde = tabla === "event_settlements" ? "greatest(z.sent_at, coalesce(z.key_from, z.paying_at))" : tabla === "refunds" || tabla === "event_settlement_reversals" || tabla === "sponsorship_refunds" ? "greatest(z.sent_at, coalesce(z.key_from, z.sent_at))" : "z.sent_at";
   // 9t6 · La decisión del equipo (gateway_reviews, una vez) manda sobre la última consulta: ya se comprobó contra lo que la pasarela dijo al decidir.
   const rv = (await (c ?? db()).query<{ d: "vale" | "ninguno"; stripe: string | null; centavos: number; at: string }>(
     `select decision as d, stripe_id as stripe, amount_cents as centavos, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from gateway_reviews where subject_kind = $1 and subject_id = $2::bigint`, [tabla, id])).rows[0];

@@ -65,6 +65,9 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const b7 = await pasarela.buscarDevolucion('refunds:1', 'refund', 'pi_123'); ok(b7.ok === true && ('hallado' in b7 || 'varios' in b7), 'consulta: la devolución de un cobro por su dato (refunds:<id>)');
   const b8 = await pasarela.buscarDevolucion('event_settlement_reversals:1', 'reversal', 'tr_123'); ok(b8.ok === true && ('hallado' in b8 || 'varios' in b8), 'consulta: la reversión al organizador por su dato');
   const b9 = await pasarela.buscarDevolucion('refunds:1', 'reversal', 'pi_123'); ok(b9.ok === false, 'consulta: un medio que no es el del objeto no se pregunta (ok: false, nunca «no hallado»)');
+  // 9t8 · La devolución de lo no usado de un patrocinio: un cobro de la plataforma (sin revertir transferencia ni comisión), con su dato sponsorship_refunds:<id>.
+  const dpa = await pasarela.devolver(pi, 200, 'contrato-9t8-' + Date.now(), { plataforma: true, meta: { tl_intencion: 'sponsorship_refunds:1' } }); ok(dpa.ok && /^re_/.test(dpa.id), 'devolver un patrocinio: plataforma, con metadata tl_intencion (sponsorship_refunds:<id>)');
+  const bp = await pasarela.buscarDevolucion('sponsorship_refunds:1', 'refund', 'pi_123'); ok(bp.ok === true && ('hallado' in bp || 'varios' in bp), 'consulta: la devolución de un patrocinio por su dato');
   // 9k · La huella de una tarjeta guardada (card.fingerprint): payment_methods/{id}.
   const hu = await pasarela.huella('pm_card_visa_123'); ok(hu === null || typeof hu === 'string', 'huella: payment_methods/{id} (card.fingerprint)');
   // 9k · La conciliación del día: payment_intents, refunds, transfers y disputes con created[gte|lt] y paginación, y payouts de una cuenta conectada.

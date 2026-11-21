@@ -141,6 +141,17 @@ guardar: si Stripe dice que **salió**, se cierra como hecha y **no** se marca a
 cambia nada (te dice por qué); si no la tiene, la tiene fallida o con otro monto, se marca a mano con tu nota. Dos personas a la vez: queda una sola.
 «Preguntar a Stripe ahora» también sirve en estas alertas.
 
+### La devolución de lo no usado de un patrocinio (desde el 21 nov, octava tanda)
+Cuando un patrocinio (de negocio o de evento) termina con devolución, la base anota la devolución en ese mismo momento y se manda a Stripe con su dato
+propio. Va por el mismo camino que las demás devoluciones (la tabla de arriba), con dos diferencias:
+- **Un «no» de Stripe** (al mandarla o en la consulta) la deja **fallida** y **no se reintenta sola** (Stripe contestaría lo mismo). La alerta es
+  «Devolución atascada» de esa devolución («Devolución de $X de lo no usado de un patrocinio (N): …»), con **«Resolver a mano»**: hazla por fuera (o desde
+  Stripe) y márcala con tu nota. Antes de marcarla, el servidor vuelve a preguntar a Stripe.
+- **Nunca llegó** siempre se vuelve a mandar con otra llave (una vez por ventana): lo que se debe no cambia, lo fijó la base al terminar.
+Si la consulta caída dejó la alerta en «sin respuesta» y después Stripe dice «fallida», la misma alerta sigue abierta y muestra lo que dijo Stripe.
+Las alertas de antes («pat-dev-…», sin botones) se cerraron solas: las sigue la de cada devolución. Una devolución de patrocinio que quedó en camino
+antes del 21 nov no tiene el dato: su alerta dice mirarla en Stripe y resolverla a mano.
+
 ## Los eventos del webhook
 El libro se pone al día con lo que Stripe avisa por el webhook (firmado). Al conectar Stripe de verdad, el endpoint debe suscribirse a **todos** estos
 eventos, también los de las **cuentas conectadas** (los `payout.*` llegan de la cuenta de cada negocio). Es la misma lista que está escrita al principio
@@ -307,6 +318,17 @@ Stripe and resolve it manually.
 **went through**, it is closed as done and **not** marked manually; if it **does not answer**, has it **in progress** or has **several**, nothing changes
 (it tells you why); if it does not have it, has it as failed or with another amount, it is marked manually with your note. Two people at once: only one
 counts. «Ask Stripe now» also works on these alerts.
+
+#### Refunding the unused part of a sponsorship (since Nov 21, eighth batch)
+When a sponsorship (business or event) ends with a refund, the database records the refund at that same moment and it is sent to Stripe with its own
+tag. It follows the same path as the other refunds (the table above), with two differences:
+- **A «no» from Stripe** (when sending it or in the query) leaves it **failed** and it is **not retried by itself** (Stripe would answer the same). The
+  alert is that refund's «Stuck refund» («Refund of $X for the unused part of a sponsorship (N): …»), with **«Resolve manually»**: make it outside (or
+  from Stripe) and mark it with your note. Before marking it, the server asks Stripe again.
+- **Never arrived** is always sent again with another key (once per window): what is owed does not change, the database fixed it when it ended.
+If the query was down and left the alert as «no answer» and later Stripe says «failed», the same alert stays open and shows what Stripe said.
+The old alerts («pat-dev-…», without buttons) closed by themselves: each refund's alert follows them. A sponsorship refund left on its way before Nov 21
+has no tag: its alert says to check it in Stripe and resolve it manually.
 
 ### Webhook events
 The ledger catches up with what Stripe reports through the (signed) webhook. When Stripe is connected for real, the endpoint must subscribe to **all**

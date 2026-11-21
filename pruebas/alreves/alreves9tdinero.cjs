@@ -119,9 +119,10 @@ const casos = [
   // (2) Una llave de más de un día vuelve a la pasarela (otro toque, el barrido de boletos o el de patrocinios devolverían dos veces).
   [L, CB, '  if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };\n', ''],
   [L, BO, '  if (r.vieja) return false;\n', ''],
-  [L, PA, 'if (!s || s.ya || s.vieja) return 0;', 'if (!s || s.ya) return 0;'],
+  // 9t8 · La del patrocinio es una intención (sponsorship_refunds): la llave vieja no vuelve a la pasarela; su barrido no reintenta 30 días.
+  [L, PA, '  if (r.mano || r.vieja) return "pending";', '  if (r.mano) return "pending";'],
   [L, BO, " and coalesce(r.key_from, r.created_at) > now() - make_interval(hours => $1::int)", ''],
-  [L, PA, "s.ended_at > now() - make_interval(hours => $2::int) order by", "s.ended_at > now() - interval '30 days' order by"],
+  [L, PA, "coalesce(z.key_from, z.created_at) > now() - make_interval(hours => $2::int)\n      order by z.created_at limit 50", "coalesce(z.key_from, z.created_at) > now() - interval '30 days'\n      order by z.created_at limit 50"],
   // (3) La ayuda de la cita: la llave del toque, la suma de lo pedido y el caso que no se cierra con la devolución.
   [C, AY, 'idem: `ayb-h${h.id}`', 'idem: `ayb-${x.clave}`'],
   [C, AY, "closed_by = 'user', resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);", "closed_by = 'user', refunded_cents = refunded_cents + $2, resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id, 0]);"],

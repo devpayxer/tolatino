@@ -9,7 +9,7 @@ const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const L = 'apps/web/lib/patrocinio.ts', A = 'apps/web/app/panel/acciones-patrocinio.ts', PG = 'apps/web/app/(app)/c/[slug]/page.tsx',
-  T = 'apps/web/app/(app)/c/[slug]/Patrocinados.tsx', M = 'packages/db/migrations/0173_patrocinios.sql', M5 = 'packages/db/migrations/0175_patrocinio_devoluciones.sql',
+  T = 'apps/web/app/(app)/c/[slug]/Patrocinados.tsx', M = 'packages/db/migrations/0173_patrocinios.sql', M5 = 'packages/db/migrations/0175_patrocinio_devoluciones.sql', M7 = 'packages/db/migrations/0207_patrocinio_devolucion_pregunta.sql',
   CZ = 'apps/web/lib/conciliacion.ts';
 const G = 'patrocinioDelServidor';
 const casos = [
@@ -43,10 +43,13 @@ const casos = [
   [L, '      await capturarCobro(p, centavos);\n', ''],
   [L, 'pasarela.capturarPlataforma(p.pi, centavos)', 'pasarela.capturarPlataforma(p.pi, 1500)'],
   // Devolver: dos veces (otra llave), más de lo cobrado, sin la fila del libro (o repitiéndola), sin auditoría.
-  [L, 'idem = `pat-dev-${kind}-${id}`;', 'idem = `pat-dev-${kind}-${id}-${Date.now()}`;'],
-  [L, 'const cents = Math.min(s.cents, s.cobrado), idem', 'const cents = s.cents + 100, idem'],
-  [L, "'devolucion', $11, $12::bigint, $13, $14) on conflict do nothing", "'devolucion', $11, $12::bigint, $13, $14)"],
-  [L, "await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system'", "await c.query(`select ('system'"],
+  // 9t8 (0207) · La intención la anota la base al terminar (sponsorship_refunds): otra llave cada vez, más de lo cobrado, sin «una por patrocinio»; el cierre
+  // sin la intención hecha primero (el libro dos veces) o sin auditoría.
+  [M7, "'pat-dev-' || k || '-' || new.id)", "'pat-dev-' || k || '-' || new.id || '-' || clock_timestamp())"],
+  [M7, 'least(new.refund_cents, p.amount_cents), ', 'new.refund_cents + 100, '],
+  [M7, '  unique (kind, ref_id),\n', ''],
+  [L, '    if (!u) return null;\n    // Lo que el patrocinio decidió al terminar', '    // Lo que el patrocinio decidió al terminar'],
+  [L, "    await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system', null, $1, $2, $3, $4, null, $5::jsonb, null)`,\n      [ev ? \"patrocinio_evento.devolver\"", "    await c.query(`select ('system', null, $1, $2, $3, $4, null, $5::jsonb, null)`,\n      [ev ? \"patrocinio_evento.devolver\""],
   // El monto: de la pantalla, o escrito a mano en vez de la base; la reserva cancelada no devuelve; el barrido no reintenta.
   [L, 'motivo: string, devolver: boolean): Promise<ResPat>', 'motivo: string, devolver: number): Promise<ResPat>'],
   [L, 'from patrocinio_devolucion(${modo}, ${t}price_cents', 'from patrocinio_devolucion(${modo}, 1700'],

@@ -2099,7 +2099,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `alertasDelDinero` al día); al revés `alreves9tdinero` (72/72); prueba `din9t3` (base + pasarela de mentira; 12 defectos inyectados la ponen roja).
       `din9t3` cazó además que una intención pendiente de un período ya cobrado llegaba a Stripe (la base solo la frenaba al cerrar, con el dinero ya
       cobrado): `anotarCobro` y `terminarCobro` lo impiden antes de la pasarela. Lo que quedó, en la línea de abajo.
-- [ ] **→ 9t** · **Dinero por clase, 21 nov · lo que quedó de 9t3 (21 nov):** (1) **(e) al conectar Stripe de verdad:** suscribir el endpoint del
+- [x] **→ 9t** · **Dinero por clase, 21 nov · lo que quedó de 9t3 (21 nov):** (1) **(e) al conectar Stripe de verdad:** suscribir el endpoint del
       webhook a los 14 eventos de la lista (`docs/ayuda/admin-conciliacion.md › Los eventos del webhook`), también «eventos de cuentas conectadas» (los
       `payout.*`). (2) **Sin camino para cerrar `transfer_stuck` y `charge_stuck`:** la alerta es informativa. Una transferencia que Stripe sí hizo queda
       'paying' (falta anotar el `transfer_id` hallado en Stripe y pasarla a 'paid', con nota y auditoría); un cobro de Pro en camino de más de 23 h deja al
@@ -2126,7 +2126,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       renovación ya mandada se termina con su monto sin volver a mirar puesto ni tarjeta. Guardián `cobroFueraAnotadoAntes` (por clase: ningún
       `cobrarFuera`/`cobrarDirecto` fuera de los dos `terminarCobro`); al revés `alreves9tdinero` (98/98); prueba `din9t4` (base + pasarela de mentira, 41
       comprobaciones; 13 defectos inyectados la ponen roja). Pro sigue con su tabla (0199): mismo patrón, dos tablas; unificarlas no se hizo.
-- [ ] **→ 9t** · **Cobros fuera de sesión, lo que quedó de 9t4 (21 nov):** (1) **Sin camino para cerrar `offsession_stuck`** (igual que `charge_stuck`,
+      **Cerrada (21 nov, 9t8, contrastada con el código):** (2) hecho en 9t5 (`consulta-pasarela.ts`: `charge_stuck`/`transfer_stuck` se le preguntan a Stripe y se cierran por su flujo); (4) hecho en 9t4 (`cobro-fuera.ts`); (5) hecho (CI y la revisión de Fable de 9t6). Siguen abiertos y pasan a «Dinero por clase: lo que queda después de 9t8»: (1) espera a Stripe de verdad; (3) devolver otra vez unos boletos (se puede construir).
+- [x] **→ 9t** · **Cobros fuera de sesión, lo que quedó de 9t4 (21 nov):** (1) **Sin camino para cerrar `offsession_stuck`** (igual que `charge_stuck`,
       punto (2) de arriba): una intención de más de 23 h queda en camino para siempre y **bloquea los cobros siguientes de ese objeto** (un plan del Hogar
       con una así sigue con sus visitas sin cobrar los meses siguientes; una renta apartada no se puede cancelar ni vence). Falta la acción del equipo
       «se cobró» (cerrar con el `pi` de Stripe) / «no se cobró» (dejarla fallida), con nota y auditoría, en `lib/dinero-alertas.ts` y `app/admin/Planes.tsx`.
@@ -2165,7 +2166,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `offsession_unapplied`); la renta («La recogió» o «un día más» con la renta todavía esperándolo) avisa al equipo (`offsession_unapplied`, una vez) y
       lo dice a quien tocó, sin cambiarse sola; el patrocinio vivo con su renovación ya cobrada termina con su motivo y avisa al equipo. Nunca otro cobro.
       Guardián `yaCobradoNoSeQuedaMudo` + 5 casos al revés + sección 6 de `din9t5`. `plan4f.cjs` no se tocó (lo arregla quien orquesta).
-- [ ] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t5 (21 nov):** (1) **Retenciones con «sin respuesta» como «no»** (el punto (3) de arriba,
+      **Cerrada (21 nov, 9t8, contrastada con el código):** (1) hecho en 9t5; (2) hecho en 9t5 y verificado: `suscripcion.ts › terminarCobro` decide «nunca mandada» con `sent_at is null` (no con `attempts`), `sent_at` se anota en la misma sentencia que el dato antes de la llamada y 0203 dio por mandado lo de antes; no queda ningún camino de Pro ni de `offsession_charges` que decida por `attempts = 0` (grep en `lib/` y en las migraciones 0199–0207); (3) hecho en 9t6 (`renovar-retencion.ts`); (4) **hecho en 9t8:** «Un día más» lleva la clave del toque (`rentas.ts › rentaCliente`: exige un UUID, busca antes el cobro de ESA clave y lo termina por su mismo cierre, la guarda en `detail.toque`; `RentaEstado.tsx` la cambia solo cuando el servidor contestó; índice único `offsession_charges_toque` en 0207; guardián `diaMasConToque`); (5) **hecho en 9t8:** `din9t8 §7` recorre la renovación sola de un patrocinio de evento (`vencerUnoEvt`) con Stripe sin contestar; (6) hecho (Fable corrió `plan4f`, `renta4f`, `pat002`, `pat003` en la revisión de 9t6).
+- [x] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t5 (21 nov):** (1) **Retenciones con «sin respuesta» como «no»** (el punto (3) de arriba,
       no hecho): `lib/rentas.ts › barrerRentas` (paso 4, `renta-renov-<pago>`) y `lib/estimados.ts › renovarRetenciones` (`renov-<pago>`) sueltan la
       retención vieja y avisan «el banco ya no deja» aunque Stripe no contestó. Hacerlo bien pide la misma clase que 9t5: no soltar ni avisar con un código
       de `SIN_RESPUESTA`, reintentar con la misma llave solo mientras `held_at + 164 h + 23 h`, mandar `tl_intencion` en la retención nueva y, pasado eso,
@@ -2199,7 +2201,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `devolucionEnDosPasos`, `pagoDespuesDelEvento`, `contratoCubreLaPasarela`); al revés `alreves9tdinero` 155/155; prueba `din9t6` (base aislada + pasarela
       de mentira, 44 comprobaciones; 4 defectos inyectados la ponen roja). (4) y (5) siguen abajo; (6) `din9t5`, `din9t4`, `din9t3`, `din9t2`, `din9t`
       corrieron aquí contra una base aislada.
-- [ ] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t6 (21 nov):** (1) **`refund_stuck` y `transfer_reversal_stuck` todavía no se le preguntan
+      **Cerrada (21 nov, 9t8, contrastada con el código):** (1)(2)(3) hechos en 9t6; (4) hecho en 9t7 y, la del patrocinio, en 9t8; (5) y (6) hechos (Fable corrió el contrato con stripe-mock y las de punta a punta en la revisión de 9t6).
+- [x] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t6 (21 nov):** (1) **`refund_stuck` y `transfer_reversal_stuck` todavía no se le preguntan
       a Stripe** (punto (4) de arriba): siguen con «Resolver a mano». Lo que falta, con la pieza que ya existe: (a) `refunds` y `event_settlement_reversals`
       con `sent_at` y `gateway_ref` (`refunds:<id>`, `event_settlement_reversals:<id>`) anotados en una sentencia antes de `pasarela.devolver` /
       `revertirTransferencia` en `cobros.ts › ejecutarDevolucionPago`, `boletos-despues.ts › ejecutarDevolucion`, `patrocinio.ts › devolverPatrocinio` (su
@@ -2245,7 +2248,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       lo impone); otro monto → sin «Elegir», la alerta dice resolverla a mano. (d) «Resolver a mano» pregunta antes (`antesDeAMano`). (2) `extra_refund_stuck`
       tiene «Resolver a mano» (`gateway_refunds.manual_*`, también sobre una fallida). Guardián `devolucionPreguntaALaPasarela` (al revés `alreves9t7`
       19/19); `din9t7` 39/39 contra base aislada. (3) Transferencias en `gateway_review` con otro monto o «ninguno»: **sigue igual** (no se tocó).
-- [ ] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t7 (21 nov):** (1) **La devolución de lo no usado de un patrocinio**
+      **Cerrada (21 nov, 9t8, contrastada con el código):** (1) hecho en 9t7 y, el patrocinio, en 9t8; (2) hecho en 9t7; (4) hecho (0205); (5) hecho (revisión de Fable); (6) y (8) hechos. Pasan a «Dinero por clase: lo que queda después de 9t8»: (3) transferencias en `gateway_review` con otro monto o «ninguno» (espera la decisión del fundador, REVISION 9t6 (3)); (7) el plazo del «nunca llegó» de una renovación de retención (decisión del fundador, REVISION 9t6).
+- [x] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t7 (21 nov):** (1) **La devolución de lo no usado de un patrocinio**
       (`patrocinio.ts › devolverPatrocinio`) sigue como antes: no hay fila de intención antes de la pasarela (el patrocinio guarda `refund_cents` y el libro
       `sponsorship_payments` se escribe DESPUÉS del «sí»), así que no se manda con `tl_intencion`, no se pregunta pasadas 23 h (alerta `refund_stuck`
       `pat-dev-<tipo>-<id>`, solo «Resuelta», sin «Resolver a mano»). El guardián `devolucionPreguntaALaPasarela` la nombra como la única pendiente. Plan:
@@ -2265,6 +2269,23 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       «Resolver a mano» y «Preguntar a Stripe ahora» en devoluciones no tenían prueba de navegador: encargada (`din9t7b`). Un encargo corrió una
       vez `din9t` contra la base local de quien orquesta por error (se cayó en la primera consulta; pudo dejar un usuario, un negocio y una
       operación de prueba): sin efecto fuera de esa base de pruebas.
+      **Cerrada (21 nov, 9t8; migración 0207):** (1) **hecho:** la devolución de lo no usado de un patrocinio (negocios y eventos) es una intención (`sponsorship_refunds`, una por patrocinio) que la BASE anota en la transacción que decide `refund_cents` (trigger `sponsorship_refunds_anotar`); `patrocinio.ts › ejecutarDevolucionPat` anota `sent_at` y `gateway_ref` en una sentencia antes de la pasarela y manda `tl_intencion`; el «sí» cierra una vez (intención hecha, fila 'devolucion' del libro y auditoría en una transacción); sin respuesta, la misma llave dentro de 23 h; pasada la llave, `resolverDevolucionPat` (barrido, «Preguntar a Stripe ahora», «Elegir cuál vale» solo «vale») y «Resolver a mano» por `antesDeAMano`; «nunca llegó» vuelve a valer con otra llave (`llaveDe`). **«Fallida»** = un «no» de Stripe (al mandarla o en la consulta): queda fallida, no se reintenta sola y alerta `refund_stuck` con sujeto `sponsorship_refunds:<id>` (con «Resolver a mano», también sobre una fallida); decisión anotada en REVISION «Dinero, octava tanda» (1). Lo de antes: las devueltas pasaron como 'done'; las pendientes, mandadas sin el dato y con su fecha de fin (nunca «no llegó»); sus alertas `pat-dev-…` se cerraron solas. El guardián `devolucionPreguntaALaPasarela` ya no tiene excepciones; guardián nuevo `patrocinioDevolucionPregunta` (al revés `alreves9t8`); `din9t8`. (2) hecho (Fable corrió `din9t6b`, `din9t7b`, Semgrep, `sop7b`, `pat002`, `pat003`). Pasa a la línea de abajo: (3) la carrera de «Resolver a mano» mientras el barrido la manda (se puede construir).
+- [ ] **→ 9t** · **Dinero por clase: lo que queda después de 9t8 (21 nov):** lo que de verdad sigue abierto de las líneas de 9t3–9t7 (cerradas arriba).
+      **Se puede construir:** (a) **devolver otra vez unos boletos** desde su alerta `refund_failed` (9t3 (3)): `ticket_refund_lines` es única por boleto
+      y Transacciones › Devolver no acepta órdenes `tickets`; camino: permitir `tickets` en `app/admin/acciones-tx.ts › devolverTx` (cobro `full`,
+      `devolverPago`, sin líneas de boletos) o una acción en la alerta. (b) **La carrera de «Resolver a mano»** mientras el barrido la manda (9t7 (3)):
+      `antesDeAMano` pregunta, pero un objeto recién creado puede no verse aún; mitigación: que la base no deje marcar a mano en los minutos siguientes a
+      un envío (hoy `sent_at` es solo el primero: haría falta anotar el último envío). (c) **No se corrieron aquí** (sin el servidor de `:3100`): las de
+      punta a punta con servidor que tocan lo de 9t8 (`renta4f` —la pantalla de la renta ahora manda la clave del toque—, `pat002`, `pat003`), una prueba de
+      navegador de la alerta de una devolución de patrocinio (como `din9t7b`) y Semgrep (las consultas nuevas no interpolan texto; la tabla de `notaAlerta`
+      sale de la lista cerrada). (d) La alerta de una devolución de patrocinio que primero quedó «sin respuesta» y después Stripe dio por fallida conserva
+      su texto de «sin respuesta» (`money_alerts` es de una vez); la fila muestra lo último que dijo Stripe y ofrece «Resolver a mano».
+      **Espera a Stripe de verdad:** (e) suscribir el endpoint del webhook a los 14 eventos (también de cuentas conectadas) (9t3 (1)); (f) confirmar con la
+      cuenta real que `GET /v1/refunds?payment_intent=` devuelve la metadata de una devolución de la plataforma (la del patrocinio): stripe-mock lo valida
+      contra la especificación, no contra datos reales.
+      **Espera una decisión del fundador:** (g) transferencias al organizador en `gateway_review` con otro monto, y «ninguno vale» para una transferencia
+      (9t6 (3), REVISION 9t6 (3)); (h) el plazo del «nunca llegó» de una renovación de retención (9t6 (7)); (i) lo decidido en 9t8 sin preguntar (REVISION
+      «Dinero, octava tanda»: una devolución de patrocinio fallida no se reintenta sola; no se le avisa al negocio cuando falla). (21 nov)
 - [ ] **→ 9u** · **Super Admin: el título sale dos veces en la hoja de confirmar** (visto en la captura de teléfono de «Elegir cuál vale»: «Qué vale
       de lo que tiene Stripe» arriba y otra vez debajo de «CONFIRMAR»). Pasa en las pantallas que ponen `conf.titulo` en la cabecera Y dejan el
       mismo título en la hoja: `Planes.tsx`, `Ciudades.tsx`, `Colas.tsx` (línea ~651), `Crecimiento.tsx`, `Negocios.tsx`, `Liquidaciones.tsx`. Ya

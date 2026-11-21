@@ -390,7 +390,9 @@ async function liquidarDeposito(rid: string): Promise<void> {
 
 /* ── Lo que hace el cliente ── */
 export type QueCliente = "cancelar" | "dia" | "tarjeta" | "dano_ok" | "dano_no";
-export async function rentaCliente(userId: string, numero: string, que: QueCliente, pm?: string): Promise<Res> {
+/* 9t8 · clave: la del toque («Un día más»): la pantalla la crea una vez por intento y la cambia solo cuando el servidor contestó. El mismo toque repetido (la red
+   se cortó con el día ya cobrado) devuelve lo que ya pasó con ESA clave y nunca es otro día; otro toque (otra clave) sí es otro día. */
+export async function rentaCliente(userId: string, numero: string, que: QueCliente, pm?: string, clave?: string): Promise<Res> {
   if (!NUM.test(String(numero))) return no("Esa renta no existe.", "That rental does not exist.");
   const x = (await db().query<Fila>(`${SEL} where o.number = $1 and r.user_id = $2`, [numero, userId])).rows[0];
   if (!x) return no("Esa renta no existe.", "That rental does not exist.");
@@ -418,14 +420,23 @@ export async function rentaCliente(userId: string, numero: string, que: QueClien
     return { ok: true };
   }
   if (que === "dia") {
+    if (!UUID.test(String(clave ?? ""))) return no("Vuelve a intentarlo.", "Try again.");
+    // 9t8 · Ya hubo un cobro con esta clave del toque: lo mismo otra vez, por el mismo cierre (hecho y aplicado → listo; en camino → se termina ESE; rechazado →
+    // lo que dijo el banco). Nunca otro día.
+    const CF = await import("./cobro-fuera");
+    const toque = async () => (await db().query<{ id: string }>(`select id::text from offsession_charges where kind = 'renta' and ref_id = $1 and detail->>'toque' = $2`, [x.rid, clave])).rows[0];
+    const ya = await toque();
+    if (ya) return terminarCobroRenta((await CF.intencion(ya.id))!);
     if (x.st !== "out") return no("Solo mientras la tienes.", "Only while you have it.");
     const destino = await cuentaDe(db(), x.biz);
     if (!destino) return no("Llama al negocio para quedártela un día más.", "Call the business to keep it one more day.");
     const fee = Math.min(await comision(db(), "renta", x.p), x.p);
     // 9t4 · La intención antes de la pasarela (lib/cobro-fuera.ts): el día que se agrega (dia-N) se cobra una sola vez, y el mismo toque otra vez (o con
     // Stripe sin contestar) termina ESA intención con su llave, no otra.
-    const a = await (await import("./cobro-fuera")).anotarCobro({ kind: "renta", ref: x.rid, para: `dia-${x.dias}`, op: x.op, negocio: x.biz, ciudad: x.city, payer: x.uid, monto: x.p, fee, destino, pm: x.pm,
-      idem: (k) => `renta-${x.rid}-dia${x.dias}-i${k}`, detalle: { meta: { rental: numero, business_id: x.biz }, que: "dia", dias: x.dias, actor: userId } });
+    // La clave del toque va con la intención (la base no deja dos con la misma: offsession_charges_toque). Dos a la vez con la misma: la segunda lee la primera.
+    const a = await CF.anotarCobro({ kind: "renta", ref: x.rid, para: `dia-${x.dias}`, op: x.op, negocio: x.biz, ciudad: x.city, payer: x.uid, monto: x.p, fee, destino, pm: x.pm,
+      idem: (k) => `renta-${x.rid}-dia${x.dias}-i${k}`, detalle: { meta: { rental: numero, business_id: x.biz }, que: "dia", dias: x.dias, actor: userId, toque: clave } })
+      .catch(async (e) => { const b = (e as { code?: string })?.code === "23505" ? await toque() : null; if (!b) throw e; return (await CF.intencion(b.id))!; });
     if (a.para !== `dia-${x.dias}`) { await terminarCobroRenta(a); return no(CAMINO_OTRO.es, CAMINO_OTRO.en); }
     return terminarCobroRenta(a);
   }
