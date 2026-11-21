@@ -50,7 +50,11 @@ const subir = (cookie, bytes, ruta = '/api/medios', extra = {}) => new Promise((
 });
 const interno = (cuerpo) => fetch(B + '/api/interno/compa', { method: 'POST', headers: { 'x-barrido-token': ENT.TOK, 'content-type': 'application/json' }, body: JSON.stringify(cuerpo) }).then((r) => r.json());
 const fotosVistas = async () => ((await interno({ op: 'simulador' })).recibidos ?? []).filter((x) => x.uso === 'foto');
-const barrer = () => fetch(B + '/api/interno/barrido', { method: 'POST', headers: { 'x-barrido-token': ENT.TOK } }).then((r) => r.json());
+// El barrido reintenta TODAS las retenidas que tocan, también las que dejó una vuelta anterior de esta prueba sobre la misma base (la confirmación
+// corre todo dos veces): las de ancho 404 (§4 r4b, §9 r9f) hacen fallar al modelo propio de mentira, y un solo fallo abre su corta-circuito 30 s
+// (lib/moderacion-img.ts). Lo que la prueba sube justo después se quedaba sin capa 1 (sin_servicio): la dudosa de §6 no llegaba a la capa 4 (CI
+// 44856657972, segunda vuelta) y §9 vería una privada dudosa entrar. Cada barrido de la prueba cierra el corte al volver: cada caso decide con lo suyo.
+const barrer = async () => { const j = await fetch(B + '/api/interno/barrido', { method: 'POST', headers: { 'x-barrido-token': ENT.TOK } }).then((r) => r.json()); corteAbajo(); return j; };
 const fila = (id) => { const [st, rr, ll, capa, mot, it] = sql(`select status, coalesce(removed_reason, ''), coalesce(rev_llave, ''), coalesce(rev_capa, ''), coalesce(rev_motivo, ''), rev_intentos from media where id = '${id}'`).split('|'); return { st, rr, ll, capa, mot, it: Number(it) }; };
 const libro = (id) => sql(`select string_agg(capa || ':' || decision, ',' order by id) from photo_reviews where media_id = '${id}'`);
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
