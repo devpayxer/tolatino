@@ -4,6 +4,7 @@
 // intereses, acepta las reglas y «Tengo 18 años o más»): es una cuenta de ejemplo. Lo corre el flujo «Estado del sandbox» (entradas fotos + como).
 // Uso: node scripts/sandbox/pesar-fotos.cjs <teléfono de ejemplo> <ruta> [<ruta> …]
 const { chromium, devices } = require('playwright');
+const { campos } = require('../../pruebas/lib/tactil.cjs');
 const B = process.env.SANDBOX || 'http://2.31.196.167';
 const [tel, ...rutas] = process.argv.slice(2);
 if (!/^570555\d{4}$/.test(tel || '') || !rutas.length || rutas.some((r) => !r.startsWith('/'))) { console.error('uso: pesar-fotos.cjs 570555xxxx /ruta [/ruta …]'); process.exit(1); }
@@ -43,6 +44,9 @@ const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
     await p.waitForLoadState('networkidle').catch(() => undefined);
     for (const h of await p.locator('a[href^="/comunidad/p/"]').evaluateAll((L) => L.map((x) => x.getAttribute('href')))) publicaciones.add(h.split('?')[0]);
     console.log(`== ${ruta} → ${p.url().replace(B, '')} · «${await p.title()}»`);
+    // 21 nov · De paso, los campos de texto de esa pantalla: en teléfono deben medir 16 px o más (si no, Safari de iPhone hace zoom al escribir).
+    const c = await campos(p);
+    console.log(`   campos de texto: ${c.medidos} · táctil: ${c.tactil ? 'sí' : 'no'} · con menos de 16 px: ${c.chicos.length ? c.chicos.join(' | ') : 'ninguno'} · achicados: ${c.achicados.length ? c.achicados.join(' | ') : 'ninguno'} · la regla subió ${c.subidos}`);
   };
   for (const r of rutas) await mirar(r);
   // Las publicaciones más nuevas del muro, abiertas una por una (ahí la foto va grande).
