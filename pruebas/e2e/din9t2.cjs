@@ -57,11 +57,15 @@ Object.assign(SE, cargar('apps/web/lib/soporte-equipo.ts', { './reportar': {}, '
 
 const db = D.db();
 const q1 = async (s, v = []) => (await db.query(s, v)).rows[0];
+// 21 nov · Teléfonos de prueba SIEMPRE 570-555 (el repo es público) y con sus 10 dígitos. Antes salían de la hora: números que pueden ser de
+// alguien y, donde pasaban por Number(), uno de cada diez con un dígito de menos (users_phone_check; din9t4 roja en el CI 44884103116).
+const { esFijo } = require('../lib/telefonos-fijos.cjs');
+const telNuevo = async () => { for (let i = 0; i < 400; i++) { const t = '570555' + String(Math.floor(Math.random() * 10000)).padStart(4, '0'); if (!esFijo(t) && !(await q1(`select 1 as x from users where phone = $1`, ['+1' + t]))) return '+1' + t; } throw new Error('no queda un teléfono 570-555 libre'); };
 const n1 = async (s, v = []) => Number((await q1(s, v)).n);
 const RUN = crypto.randomBytes(4).toString('hex');
 
 async function datos(cat = 'NEG-FOOD') {
-  const tel = `+1570${String(Date.now()).slice(-7)}`;
+  const tel = await telNuevo();
   const u = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Prueba', 'Dinero') returning id::text`, [tel])).id;
   const b = (await q1(`insert into businesses (id, city_id, category_id, name) values ($1, 'hzl', $2, 'Prueba 9t2') returning id`, [`p9u-${crypto.randomBytes(4).toString('hex')}`, cat])).id;
   await dormir(2);
@@ -185,7 +189,7 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   }
 
   console.log('4 · Soporte: la devolución en camino cierra la fila y el caso al terminar');
-  const staffU = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Equipo', 'Soporte') returning id::text`, [`+1484${String(Date.now()).slice(-7)}`])).id;
+  const staffU = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Equipo', 'Soporte') returning id::text`, [await telNuevo()])).id;
   await db.query(`insert into staff_members (user_id, role, status) values ($1, 'admin', 'active') on conflict (user_id) do update set role = 'admin', status = 'active'`, [staffU]);
   const S = { id: staffU, role: 'admin', cities: [], first_name: 'Equipo', puede: () => true };
   async function caso() {

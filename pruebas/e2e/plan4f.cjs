@@ -61,7 +61,10 @@ const hoy = () => sql(`select (now() at time zone 'America/New_York')::date`);
   ok(sql(`select count(*) from notifications where tpl = 'plan_pausa' and ref_id = '${P}'`) === '1', 'aviso: plan en pausa');
   await clic(m.getByRole('button', { name: 'Reanudar' })); await m.getByText('PLAN ACTIVO').first().waitFor(); ok(true, 'reanudar → activo');
   // ── El banco rechaza: reintento a los 2 días; al tercero, pausa ──
-  sql(`update plan_subscriptions set payment_method = 'pm_sim_visa_0002_7725ac2e', next_charge_on = '${hoy()}', retry_on = null, fail_count = 0 where operation_id = (select id from operations where number = '${P}')`);
+  // 21 nov · El período que se rechaza es OTRO que el ya cobrado (el de ayer, sin cobrar). Antes se volvía a poner el de hoy, que COBRO 1 ya pagó:
+  // desde 9t4 un período pagado no se vuelve a mandar al banco (un solo cobro hecho por plan y período), así que no había rechazo que ver
+  // (CI 44884103116). En la vida real el plan nunca vuelve a un período ya cobrado.
+  sql(`update plan_subscriptions set payment_method = 'pm_sim_visa_0002_7725ac2e', next_charge_on = '${hoy()}'::date - 1, retry_on = null, fail_count = 0 where operation_id = (select id from operations where number = '${P}')`);
   await m.goto(B + `/plan/${P}`); await m.getByText(/Tu banco rechazó el último cobro/).waitFor();
   ok(sql(`select fail_count || '|' || (retry_on = '${hoy()}'::date + 2) from plan_subscriptions s join operations o on o.id = s.operation_id where o.number = '${P}'`) === '1|true', 'rechazo 1: reintento en 2 días');
   for (let k = 0; k < 2; k++) { sql(`update plan_subscriptions set retry_on = '${hoy()}' where operation_id = (select id from operations where number = '${P}')`); await m.goto(B + `/plan/${P}`); await m.waitForTimeout(300); }

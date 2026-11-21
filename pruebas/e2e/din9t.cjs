@@ -48,13 +48,17 @@ const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela':
 
 const db = D.db();
 const q1 = async (s, v = []) => (await db.query(s, v)).rows[0];
+// 21 nov · Teléfonos de prueba SIEMPRE 570-555 (el repo es público) y con sus 10 dígitos. Antes salían de la hora: números que pueden ser de
+// alguien y, donde pasaban por Number(), uno de cada diez con un dígito de menos (users_phone_check; din9t4 roja en el CI 44884103116).
+const { esFijo } = require('../lib/telefonos-fijos.cjs');
+const telNuevo = async () => { for (let i = 0; i < 400; i++) { const t = '570555' + String(Math.floor(Math.random() * 10000)).padStart(4, '0'); if (!esFijo(t) && !(await q1(`select 1 as x from users where phone = $1`, ['+1' + t]))) return '+1' + t; } throw new Error('no queda un teléfono 570-555 libre'); };
 // Cada corrida con sus propios renglones (la base de pruebas guarda los de corridas anteriores: nada se borra).
 const RUN = crypto.randomBytes(4).toString('hex');
 const auditoria = (accion) => async (c, x) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after) values ('system', null, $1, 'payment', $2, $3::jsonb)`, [`${accion}.${RUN}`, x.pago, JSON.stringify(x)]);
 const cuantas = async (accion) => Number((await q1(`select count(*)::int as n from audit_entries where action = $1`, [`${accion}.${RUN}`])).n);
 
 async function datos() {
-  const tel = `+1570${String(Date.now()).slice(-7)}`;
+  const tel = await telNuevo();
   const u = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Prueba', 'Dinero') returning id::text`, [tel])).id;
   const b = (await q1(`insert into businesses (id, city_id, category_id, name) values ($1, 'hzl', 'NEG-FOOD', 'Prueba 9t') returning id`, [`p9t-${crypto.randomBytes(4).toString('hex')}`])).id;
   return { u, b };
@@ -186,7 +190,7 @@ const atrasar = (id, min) => db.query(`update refunds set created_at = created_a
   }
 
   console.log('2 · Colas › Ayuda con monto (decidirSop)');
-  const staffU = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Equipo', 'Dinero') returning id::text`, [`+1484${String(Date.now()).slice(-7)}`])).id;
+  const staffU = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Equipo', 'Dinero') returning id::text`, [await telNuevo()])).id;
   const S = { id: staffU, role: 'admin', cities: [], puede: () => true };
   const auditar = async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('staff', $1, $2, $3, $4, $5, $6, $7, $8)`,
     [a.actor, a.action, a.targetKind, a.targetId ?? null, a.city ?? null, a.before === undefined ? null : JSON.stringify(a.before), a.after === undefined ? null : JSON.stringify(a.after), a.reason ?? null]);

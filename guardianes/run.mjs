@@ -11716,6 +11716,20 @@ const guardianes = {
     if (!/if \(e\.destacado\) \{/.test(cuerpoFn(sinComent(PA), "ficha")) || !/DESTACADO POR TO’LATINO · Sale arriba de Eventos/.test(cuerpoFn(sinComent(PA), "ficha"))) falla(G, PA, 0, "la ficha del evento en el panel del organizador dice que está destacado");
   },
 
+  /* 21 nov · telefonoDePrueba555 (din9t4 roja en el CI 44884103116): un teléfono de prueba ARMADO (un prefijo y algo calculado) es siempre 570-555 y
+     cuatro dígitos. din9t…din9t4 los sacaban de la hora (`+1570${…slice(-7)}`): números que pueden ser de una persona de verdad (el repo es
+     público) y, donde pasaban por Number(), uno de cada diez con un dígito de menos (users_phone_check). Al revés: alreves9ttel. */
+  telefonoDePrueba555() {
+    const G = "telefonoDePrueba555";
+    for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x) && !/alreves9ttel\.cjs$/.test(x))) {
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/^\s*\/\//.test(l)) return;
+        for (const m of l.matchAll(/\+1(\d{3,9})\$\{/g)) if (!m[1].startsWith("570555")) falla(G, f, i + 1, `arma un teléfono de prueba con el prefijo +1${m[1]}: los de prueba son siempre +1570555 y cuatro dígitos (telNuevo o pruebas/lib/telefono-libre.cjs)`);
+        if (/Number\(String\(Date\.now\(\)\)\.slice\(-\d+\)\)/.test(l) && /TEL|tel\b|phone/.test(l)) falla(G, f, i + 1, "saca un teléfono de la hora pasando por Number(): pierde los ceros de la izquierda y queda con dígitos de menos");
+      });
+    }
+  },
+
   telefonoAlAzarRespetaFijos() {
     const G = "telefonoAlAzarRespetaFijos";
     for (const f of archivos.filter((x) => /^pruebas\/(e2e|lib|alreves)\/[^/]+\.(cjs|mjs)$/.test(x))) {

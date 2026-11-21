@@ -64,6 +64,10 @@ Object.assign(PA, cargar('apps/web/lib/patrocinio.ts', { './config': { valores: 
 
 const db = D.db();
 const q1 = async (s, v = []) => (await db.query(s, v)).rows[0];
+// 21 nov · Teléfonos de prueba SIEMPRE 570-555 (el repo es público) y con sus 10 dígitos. Antes salían de la hora: números que pueden ser de
+// alguien y, donde pasaban por Number(), uno de cada diez con un dígito de menos (users_phone_check; din9t4 roja en el CI 44884103116).
+const { esFijo } = require('../lib/telefonos-fijos.cjs');
+const telNuevo = async () => { for (let i = 0; i < 400; i++) { const t = '570555' + String(Math.floor(Math.random() * 10000)).padStart(4, '0'); if (!esFijo(t) && !(await q1(`select 1 as x from users where phone = $1`, ['+1' + t]))) return '+1' + t; } throw new Error('no queda un teléfono 570-555 libre'); };
 const n1 = async (s, v = []) => Number((await q1(s, v)).n);
 // Lo que la app nunca escribe así (filas «de otro día»): con los triggers apagados en ESTA conexión y vueltos a encender antes de soltarla.
 async function crudo(fn) {
@@ -74,9 +78,8 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
 const intenciones = (kind, ref) => db.query(`select status as st, idem_key as k, attempts::int as n, purpose as para, sent_at is not null as mandada, hold_pi as hold from offsession_charges where kind = $1 and ref_id = $2 order by id`, [kind, String(ref)]).then((r) => r.rows);
 const atrasar = (kind, ref, min) => crudo((k) => k.query(`update offsession_charges set created_at = created_at - make_interval(mins => $3::int) where kind = $1 and ref_id = $2 and status = 'pending'`, [kind, String(ref), min]));
 const avisosDe = (tpl) => avisados.filter((a) => a[2] === tpl);
-let TEL = Number(String(Date.now()).slice(-7));
 async function datos(cat = 'NEG-HOGAR') {
-  const u = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Prueba', 'Fuera') returning id::text`, [`+1570${String(++TEL).slice(-7)}`])).id;
+  const u = (await q1(`insert into users (phone, first_name, last_name) values ($1, 'Prueba', 'Fuera') returning id::text`, [await telNuevo()])).id;
   const b = (await q1(`insert into businesses (id, city_id, category_id, name) values ($1, 'hzl', $2, 'Prueba 9t4') returning id`, [`p9w-${crypto.randomBytes(4).toString('hex')}`, cat])).id;
   await db.query(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, simulated) values ($1, $2, 'enabled', true, true, true)`, [b, `acct_sim_9t4_${b}`]);
   return { u, b, pm: `pm_sim_visa_4242_${crypto.randomBytes(4).toString('hex')}` };
