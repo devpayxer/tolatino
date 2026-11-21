@@ -32,6 +32,8 @@ const YM = 'yaCobradoNoSeQuedaMudo';
 // 9t6 (21 nov): retencionRenovadaComoIntencion y revisionPreguntaOtraVez; su prueba con la base es pruebas/e2e/din9t6.cjs.
 const RT6 = 'retencionRenovadaComoIntencion', RV6 = 'revisionPreguntaOtraVez', RRF = 'apps/web/lib/renovar-retencion.ts', RVF = 'apps/web/lib/revision-pasarela.ts', ESF = 'apps/web/lib/estimados.ts';
 const MG4 = 'packages/db/migrations/0204_retenciones_y_revision.sql';
+// 9t6 (0205, LAUNCH «lo que quedó de 9t6» (4)): la hoja «Elegir cuál vale» con monto, fecha y orden; el detalle guardado nunca decide.
+const MG5 = 'packages/db/migrations/0205_consulta_con_detalle.sql';
 const casos6 = [
   // (1) Como estaba: el estimado vuelve a retener y soltar por su cuenta (sin respuesta = «el banco no dejó»).
   [RT6, ESF, "    if (x) await RR.renovarRetencion(x).catch(", "    if (x) await pasarela.retener({ centavos: 1, comision: 0, destino: \"a\", pm: \"p\", idem: `renov-${p.id}`, meta: {}, fuera: true });\n    if (x) await RR.renovarRetencion(x).catch("],
@@ -71,6 +73,16 @@ const casos6 = [
   [RV6, PLT, '...(a.revisar ? [{ l: E("Elegir cuál vale", "Choose which counts")', '...(true ? [{ l: E("Elegir cuál vale", "Choose which counts")'],
   [RV6, DA, "  if (accion === \"resuelta\" && a.kind === \"gateway_review\" && (await opcionesDeAlertas([{ id, sujeto: a.sujeto }])).has(id))", "  if (false)"],
   [RV6, MG4, "create trigger gateway_reviews_no_cambia before update or delete on gateway_reviews for each row execute function dinero_solo_insercion();\n", ""],
+  // (6) 0205 · La hoja ofrece ids pelados (sin monto ni fecha), o sin la fecha; la pantalla ignora el detalle guardado; la consulta no lo guarda; la base
+  // sin su forma.
+  [RV6, PLT, "l: etiqueta(h, a.revisar!.tz) }))", "l: h.id }))"],
+  [RV6, PLT, "h.creado ? cuandoSalio(h.creado, tz) : null, h.id]", "h.id]"],
+  [RV6, DA, "x.found, x.found_n from gateway_checks", "null::jsonb as found, x.found_n from gateway_checks"],
+  [RV6, KP, "        found ? JSON.stringify(found) : null])).rows[0]!;", "        null])).rows[0]!;"],
+  [RV6, MG5, "alter table gateway_checks add constraint gateway_checks_found_forma check (gateway_checks_found_ok(found));\n", ""],
+  // (1b) La decisión usa el detalle guardado de la consulta anterior en vez de lo que la pasarela contesta ahora.
+  [RV6, RVF, "  if (resultado === \"sin_respuesta\") return { ok: false, msg: \"Stripe no contestó la consulta: no se cambió nada. Prueba en un momento.\" };\n",
+    "  if (resultado === \"sin_respuesta\") return { ok: false, msg: \"Stripe no contestó la consulta: no se cambió nada. Prueba en un momento.\" };\n  det.hallados = (await db().query(`select found from gateway_checks where subject_kind = $1 and subject_id = $2::bigint and found is not null order by at desc limit 1 offset 1`, [t, id])).rows[0]?.found ?? det.hallados;\n"],
 ];
 const casos = [
   ...casos6,

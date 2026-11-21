@@ -93,7 +93,7 @@ export type FilaAlerta = { id: string; kind: TipoAlerta; sujeto: string; negocio
   consulta: { resultado: string; at: string; stripe: string | null; origen: string } | null; preguntar: boolean;
   /* 9t6 · gateway_review abierta que una persona puede cerrar: qué puede elegir según la última consulta (solo para mostrar: al guardar, el servidor vuelve a
      preguntar a la pasarela y decide con eso). */
-  revisar: { vale: string[]; ninguno: boolean } | null };
+  revisar: Revisar | null };
 const CIUD = "(cardinality($1::text[]) = 0 or a.city_id = any($1::text[]))";
 /* 9t5 · La intención de una alerta «sin respuesta» (para la consulta a la pasarela): su tabla, su id y si sigue en camino.
    9t6 · También la renovación de una retención (hold_stuck) y la devolución de lo que sobró (extra_refund_stuck), por su id. */
@@ -126,7 +126,7 @@ export async function alertasDinero(s: Staff, abiertas: boolean, antes: string |
       order by a.id desc limit $4::int`, [s.cities, abiertas, antes, n + 1]);
   // 9t6 · Las gateway_review abiertas: qué se puede elegir (una consulta para todas; el servidor vuelve a decidir al guardar).
   const abiertasRev = r.rows.slice(0, n).filter((x) => x.kind === "gateway_review" && !["resuelta", "resuelta_a_mano", "resuelta_sola"].includes(x.ult ?? ""));
-  const rev = abiertasRev.length ? await opcionesDeAlertas(abiertasRev.map((x) => ({ id: x.id, sujeto: x.sujeto }))) : new Map<string, { vale: string[]; ninguno: boolean }>();
+  const rev = abiertasRev.length ? await opcionesDeAlertas(abiertasRev.map((x) => ({ id: x.id, sujeto: x.sujeto }))) : new Map<string, Revisar>();
   const filas = r.rows.slice(0, n).map(({ ult, mano, vivo, ...x }) => ({ ...x, monto: Number(x.monto), estado: (ult === "resuelta" || ult === "resuelta_a_mano" || ult === "resuelta_sola" ? "resuelta" : ult === "me_hago_cargo" ? "con_dueno" : "abierta") as FilaAlerta["estado"],
     aMano: mano && ult !== "resuelta_a_mano", preguntar: vivo === true, revisar: rev.get(x.id) ?? null }));
   return { filas, sigue: r.rows.length > n ? filas[filas.length - 1]!.id : null };
@@ -261,17 +261,34 @@ export function elegibles(x: { t: T4; monto: number; periodoCobrado: boolean }, 
   // Una transferencia que sobra se revierte; «ninguna vale» no: la llave de la transferencia ya se usó y el organizador espera su pago.
   return { vale, ninguno: x.t !== "event_settlements", enCurso };
 }
+/* 9t6 (0205) · Cada cosa que Stripe tiene para la intención, como la ve la hoja «Elegir cuál vale»: su id, su monto, cuándo se creó y si se puede elegir
+   (si no, por qué: otro monto, no salió, sigue en curso, o el período de Pro ya estaba cobrado). Solo para mostrar: al decidir, el servidor vuelve a
+   preguntar a la pasarela (revision-pasarela.ts › decidirRevision) y decide con ESA respuesta. centavos y creado son null en una consulta anterior a 0205
+   (sin detalle guardado): entonces se ofrecen los ids como antes. */
+export type PorQueNo = "otro_monto" | "no_salio" | "en_curso" | "periodo_cobrado";
+export type OpcionRevision = { id: string; centavos: number | null; creado: string | null; vale: boolean; por: PorQueNo | null };
+/* tz: la zona de la ciudad de la alerta (null: sin ciudad; la pantalla usa la del sandbox, como el resto del Super Admin). mas: cuántos halló la consulta
+   que no se guardaron con su detalle (tope de 0205). */
+export type Revisar = { vale: string[]; ninguno: boolean; hallados: OpcionRevision[]; tz: string | null; mas: number };
+type Guardado = { id: string; estado: string; centavos: number; creado?: string | null };
+/* El primero arriba: por cuándo se creó; lo que no trae fecha, al final y en el orden en que llegó. */
+function porCreacion<T extends { creado?: string | null }>(H: T[]): T[] {
+  return H.map((h, i) => ({ h, i })).sort((a, b) => (a.h.creado && b.h.creado ? (a.h.creado < b.h.creado ? -1 : a.h.creado > b.h.creado ? 1 : a.i - b.i) : a.h.creado ? -1 : b.h.creado ? 1 : a.i - b.i)).map((x) => x.h);
+}
 /* Para la pantalla (solo mostrar; el servidor decide al guardar): qué se puede elegir en cada alerta gateway_review abierta, según la ÚLTIMA consulta
    anotada (una consulta solo se hace pasada la ventana de la llave). Una sentencia para todas (sin N+1). */
-export async function opcionesDeAlertas(L: { id: string; sujeto: string }[]): Promise<Map<string, { vale: string[]; ninguno: boolean }>> {
-  const out = new Map<string, { vale: string[]; ninguno: boolean }>();
+export async function opcionesDeAlertas(L: { id: string; sujeto: string }[]): Promise<Map<string, Revisar>> {
+  const out = new Map<string, Revisar>();
   const P = L.map((a) => ({ a: a.id, m: REF_REV.exec(a.sujeto) })).filter((x): x is { a: string; m: RegExpExecArray } => !!x.m);
   if (!P.length) return out;
-  const R = (await db().query<{ a: string; t: T4; vivo: boolean; monto: number; pc: boolean; res: string | null; ids: string | null; cents: number | null; rev: boolean }>(
+  const R = (await db().query<{ a: string; t: T4; vivo: boolean; monto: number; pc: boolean; res: string | null; ids: string | null; cents: number | null; found: Guardado[] | null; n: number; tz: string | null; rev: boolean }>(
     `with s as (select * from unnest($1::text[], $2::text[], $3::bigint[]) as s(a, t, id))
      select s.a, s.t, coalesce(z.vivo, false) as vivo, coalesce(z.monto, 0) as monto, coalesce(z.pc, false) as pc, g.result as res, g.stripe_id as ids, g.amount_cents as cents,
+            g.found, coalesce(g.found_n, 0)::int as n, ci.timezone as tz,
             exists (select 1 from gateway_reviews r where r.subject_kind = s.t and r.subject_id = s.id) as rev
        from s
+       left join money_alerts al on al.id = s.a::bigint
+       left join cities ci on ci.id = al.city_id
        left join lateral (
          select y.status = 'pending' as vivo, y.amount_cents as monto,
                 exists (select 1 from subscription_charges w where w.business_id = y.business_id and w.period_start = y.period_start and w.status = 'done' and w.id <> y.id) as pc
@@ -281,15 +298,26 @@ export async function opcionesDeAlertas(L: { id: string; sujeto: string }[]): Pr
          union all select y.status = 'pending', y.amount_cents, false from hold_renewals y where s.t = 'hold_renewals' and y.id = s.id
        ) z on true
        -- La última consulta que CONTESTÓ (una que no contestó no cambia lo que hay que decidir).
-       left join lateral (select x.result, x.stripe_id, x.amount_cents from gateway_checks x where x.subject_kind = s.t and x.subject_id = s.id and x.result <> 'sin_respuesta' order by x.at desc, x.id desc limit 1) g on true`,
+       left join lateral (select x.result, x.stripe_id, x.amount_cents, x.found, x.found_n from gateway_checks x where x.subject_kind = s.t and x.subject_id = s.id and x.result <> 'sin_respuesta' order by x.at desc, x.id desc limit 1) g on true`,
     [P.map((x) => x.a), P.map((x) => x.m[1]!), P.map((x) => x.m[2]!)])).rows;
   for (const r of R) {
     if (!r.vivo || r.rev || !r.res) continue;
-    // «varios» guarda los ids (sin montos: la pantalla los ofrece y el servidor comprueba el monto al decidir); uno solo, con su monto.
+    // Con detalle (0205): cada hallado con su estado, su monto y cuándo se creó, el primero arriba.
+    const det = Array.isArray(r.found) ? porCreacion(r.found.filter((h) => STRIPE_ID.test(h.id))) : null;
+    // Sin detalle (una consulta anterior a 0205): «varios» guardó solo los ids (sin montos: se ofrecen y el servidor comprueba el monto al decidir); uno
+    // solo, con su monto.
     const ids = (r.ids ?? "").split(",").filter((x) => STRIPE_ID.test(x));
-    const H = r.res === "varios" ? ids.map((x) => ({ id: x, estado: "hecho", centavos: r.monto })) : ids.map((x) => ({ id: x, estado: r.res === "hecho" || r.res === "monto_distinto" ? "hecho" : "en_curso", centavos: r.cents ?? 0 }));
-    const e = elegibles({ t: r.t, monto: r.monto, periodoCobrado: r.pc }, r.res, H);
-    if (e.vale.length || e.ninguno) out.set(r.a, { vale: e.vale, ninguno: e.ninguno });
+    const H = det ?? (r.res === "varios" ? ids.map((x) => ({ id: x, estado: "hecho", centavos: r.monto })) : ids.map((x) => ({ id: x, estado: r.res === "hecho" || r.res === "monto_distinto" ? "hecho" : "en_curso", centavos: r.cents ?? 0 })));
+    // Uno que sigue en curso se muestra (con su porqué) y no se puede elegir; lo demás se ofrece igual: la alerta sigue decidiéndose desde aquí (no se
+    // marca «Resuelta» sin decidir) y, al decidir, el servidor vuelve a preguntar y espera si todavía hay algo en curso.
+    const e = elegibles({ t: r.t, monto: r.monto, periodoCobrado: r.pc }, r.res, H.filter((h) => h.estado !== "en_curso"));
+    if (!e.vale.length && !e.ninguno) continue;
+    const hallados = H.map((h): OpcionRevision => {
+      const vale = e.vale.includes(h.id);
+      const por: PorQueNo | null = vale ? null : h.estado === "en_curso" ? "en_curso" : h.estado !== "hecho" ? "no_salio" : r.t === "subscription_charges" && r.pc ? "periodo_cobrado" : h.centavos !== r.monto ? "otro_monto" : null;
+      return { id: h.id, centavos: det || r.res !== "varios" ? h.centavos : null, creado: det ? ((h as Guardado).creado ?? null) : null, vale, por };
+    });
+    out.set(r.a, { vale: e.vale, ninguno: e.ninguno, hallados, tz: r.tz, mas: det ? Math.max(0, r.n - det.length) : 0 });
   }
   return out;
 }

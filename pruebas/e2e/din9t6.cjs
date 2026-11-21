@@ -11,6 +11,9 @@
 //      vez (una sola vez), el elegido con otro monto; lo que sobra se devuelve con su llave.
 //   4. Pro cobrado dos veces el mismo período: solo «ninguno» (devolver), sin contar como rechazo, y el negocio se cobra el período siguiente.
 //   5. La devolución de lo que sobró: sin respuesta (misma llave), la respuesta perdida (pasada la llave la consulta la encuentra), un «no» (alerta).
+//   6. (0205) La hoja «Elegir cuál vale»: la consulta guarda lo hallado con su detalle (estado, monto, cuándo se creó) en orden de creación; cada opción
+//      trae su monto, su fecha y si vale (y por qué no: otro monto, no salió); la zona de la ciudad; una consulta vieja sin detalle ofrece los ids como
+//      antes; y la decisión NO usa el detalle guardado: vuelve a preguntar (lo que ya no está en Stripe no vale aunque la hoja lo haya mostrado).
 // Uso: DATABASE_URL=… node pruebas/e2e/din9t6.cjs   (por defecto lee la de $PRUEBAS_SECRETOS, como las demás pruebas)
 require('../lib/entorno.cjs');
 const { cargar } = require('../lib/ts-servidor.cjs');
@@ -379,6 +382,9 @@ const revisiones = (t, id) => n1(`select count(*)::int as n from gateway_reviews
     ok(!r3.ok && /no contestó/.test(r3.msg) && await revisiones('offsession_charges', L.a.id) === 0, `la pasarela no contesta al decidir: no cambia nada («${r3.msg}»)`);
     const rn = await alertas.notaAlerta(S, L.alerta, 'resuelta', 'Lo vi en Stripe.');
     ok(!rn.ok && /Elegir cuál vale/.test(rn.msg), `«Resuelta» sin decidir no se deja (la intención seguiría en camino): «${rn.ok ? '' : rn.msg}»`);
+    // 0205 · La última consulta que contestó vio B en curso: la hoja lo muestra con su porqué y no lo deja elegir; A sí (al decidir, el servidor espera).
+    const fc = await filaAlerta('gateway_review', L.ref);
+    ok(fc?.revisar?.hallados.find((h) => h.id === B)?.por === 'en_curso' && fc.revisar.vale.join() === A && fc.revisar.ninguno === true, 'la hoja muestra el que sigue en curso como información (no elegible), y lo demás se ofrece');
     // Dos personas a la vez: una sola decisión, una devolución, un cierre.
     const [x1, x2] = await Promise.all([RV.decidirRevision(S, L.alerta, A, 'Duplicado: vale el primero.'), RV.decidirRevision(S2, L.alerta, A, 'Duplicado: vale el primero (otra).')]);
     const a = await intencion('plan', L.id), dv = await devsDe('offsession_charges', L.a.id);
@@ -399,6 +405,55 @@ const revisiones = (t, id) => n1(`select count(*)::int as n from gateway_reviews
     const r2 = await RV.decidirRevision(S, L.alerta, A, 'Vale el de 149.');
     const dv = await devsDe('offsession_charges', L.a.id);
     ok(r2.ok && (await intencion('plan', L.id)).pi === A && dv.length === 1 && dv[0].stripe === B && dv[0].n === 9900 && dv[0].st === 'done', `con el monto que cuadra, sí; se devuelve el otro por SU monto ($99) (${dv[0]?.st})`);
+  }
+
+  console.log('6 · La hoja «Elegir cuál vale»: monto, fecha y orden (0205)');
+  {
+    const t0 = Date.now(), iso = (min) => new Date(t0 - min * 60000).toISOString().slice(0, 19) + 'Z';
+    const A = `pi_fake_9t6_oa_${hex()}`, B = `pi_fake_9t6_ob_${hex()}`, C = `pi_fake_9t6_oc_${hex()}`, F = `pi_fake_9t6_of_${hex()}`;
+    // Stripe contesta en desorden (la Search API no promete orden): el segundo (B) antes que el primero (A); uno de otro monto (C) y uno que no salió (F).
+    const L = await planEnRevision(X, [{ id: B, estado: 'hecho', centavos: 14900, creado: iso(60) }, { id: C, estado: 'hecho', centavos: 9900, creado: iso(50) },
+      { id: A, estado: 'hecho', centavos: 14900, creado: iso(90) }, { id: F, estado: 'fallido', centavos: 14900, creado: iso(40) }]);
+    const g = await q1(`select found, found_n::int as n, stripe_id as ids from gateway_checks where subject_kind = 'offsession_charges' and subject_id = $1::bigint order by at desc, id desc limit 1`, [L.a.id]);
+    ok(Array.isArray(g?.found) && g.found.map((h) => h.id).join() === [A, B, C, F].join() && g.n === 4 && g.found[0].creado === iso(90) && g.found[0].centavos === 14900 && g.found[2].centavos === 9900
+      && g.found[3].estado === 'fallido' && Object.keys(g.found[0]).sort().join() === 'centavos,creado,estado,id',
+      `la consulta guarda lo hallado con su detalle, en orden de creación (el primero arriba) aunque Stripe conteste en desorden (${g?.found?.map((h) => h.id.slice(-4)).join(' ')})`);
+    const f = await filaAlerta('gateway_review', L.ref), H = f?.revisar?.hallados ?? [];
+    ok(H.map((h) => h.id).join() === [A, B, C, F].join() && H.map((h) => h.vale).join() === 'true,true,false,false' && H.map((h) => h.centavos).join() === '14900,14900,9900,14900'
+      && H[0].creado === iso(90) && H[1].creado === iso(60) && f.revisar.vale.join() === [A, B].join() && f.revisar.ninguno === true,
+      'cada opción trae su monto y cuándo se creó, en orden; solo vale lo hecho con el monto de la intención');
+    ok(H[2].por === 'otro_monto' && H[3].por === 'no_salio' && H[0].por === null && f.revisar.mas === 0, `y lo que no vale dice por qué (${H.map((h) => h.por).join(',')})`);
+    ok(f.revisar.tz === (await q1(`select timezone as tz from cities where id = 'hzl'`)).tz, `la fecha se muestra en la zona de la ciudad de la alerta (${f.revisar.tz})`);
+    // Decide con lo que Stripe contesta al decidir: lo que sobra es lo que salió y no es el elegido (B y el de otro monto); el que no salió, nada.
+    const r = await RV.decidirRevision(S, L.alerta, A, 'Cobro duplicado: se queda el primero.');
+    const dv = await devsDe('offsession_charges', L.a.id);
+    ok(r.ok && (await intencion('plan', L.id)).pi === A && dv.map((d) => `${d.stripe}:${d.n}`).sort().join() === [`${B}:14900`, `${C}:9900`].sort().join(),
+      `vale el primero; se devuelven el segundo y el de otro monto, cada uno por SU monto; el que no salió, nada (${dv.length})`);
+  }
+  {
+    // La hoja mostró A y B; al decidir, Stripe ya no tiene A (y tiene otro, E): el servidor decide con ESO, no con el detalle guardado.
+    const A = `pi_fake_9t6_ga_${hex()}`, B = `pi_fake_9t6_gb_${hex()}`, E = `pi_fake_9t6_ge_${hex()}`;
+    const L = await planEnRevision(X, [{ id: A, estado: 'hecho', centavos: 14900, creado: '2026-11-20T20:14:00Z' }, { id: B, estado: 'hecho', centavos: 14900, creado: '2026-11-20T20:15:00Z' }]);
+    const f0 = await filaAlerta('gateway_review', L.ref);
+    ok(f0?.revisar?.vale.join() === [A, B].join(), 'la hoja ofrece los dos que guardó la consulta');
+    P.stripe.set(L.ref, [{ id: B, estado: 'hecho', centavos: 14900, creado: '2026-11-20T20:15:00Z' }, { id: E, estado: 'hecho', centavos: 14900, creado: '2026-11-20T20:16:00Z' }]);
+    const r1 = await RV.decidirRevision(S, L.alerta, A, 'Cobro duplicado: se queda el primero.');
+    ok(!r1.ok && /no está entre/.test(r1.msg) && await revisiones('offsession_charges', L.a.id) === 0, `elegir uno que la hoja mostró pero Stripe ya no tiene: rechazado, decide con lo que Stripe contesta ahora («${r1.msg}»)`);
+    const f1 = await filaAlerta('gateway_review', L.ref);
+    ok(f1?.revisar?.hallados.map((h) => h.id).join() === [B, E].join(), 'y la hoja muestra ahora lo que dijo esa consulta (la más reciente)');
+    const r2 = await RV.decidirRevision(S, L.alerta, B, 'Cobro duplicado: se queda el primero.');
+    ok(r2.ok && (await devsDe('offsession_charges', L.a.id)).map((d) => d.stripe).join() === E, 'con uno que Stripe sí tiene, se decide y se devuelve el otro');
+  }
+  {
+    // Una consulta anterior a 0205 (sin detalle): la hoja ofrece los ids como antes, sin monto ni fecha (no los inventa).
+    const A = `pi_fake_9t6_va_${hex()}`, B = `pi_fake_9t6_vb_${hex()}`;
+    const L = await planEnRevision(X, [{ id: A, estado: 'hecho', centavos: 14900 }, { id: B, estado: 'hecho', centavos: 14900 }]);
+    await db.query(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, result, stripe_id, found_n, city_id) values ('offsession_charges', $1::bigint, $2, 'barrido', 'varios', $3, 2, 'hzl')`, [L.a.id, L.ref, `${A},${B}`]);
+    const f = await filaAlerta('gateway_review', L.ref), H = f?.revisar?.hallados ?? [];
+    ok(f?.revisar?.vale.join() === [A, B].join() && H.length === 2 && H.every((h) => h.vale && h.centavos === null && h.creado === null && h.por === null) && f.revisar.ninguno === true,
+      'una consulta vieja sin detalle: los ids como antes (sin monto ni fecha inventados) y «ninguno»');
+    const r = await RV.decidirRevision(S, L.alerta, 'ninguno', 'Se cobró dos veces el mismo período: devolver.');
+    ok(r.ok && (await devsDe('offsession_charges', L.a.id)).length === 2, 'y se decide igual (el servidor vuelve a preguntar)');
   }
 
   console.log('4 · Pro cobrado dos veces el mismo período');
@@ -478,6 +533,13 @@ const revisiones = (t, id) => n1(`select count(*)::int as n from gateway_reviews
     const d = await q1(`select review_id::text as r, subject_kind as t, subject_id::text as s, medio, plataforma, stripe_id as x, amount_cents as n, business_id as b, city_id as c from gateway_refunds where status = 'done' order by id desc limit 1`);
     let e2 = null; try { await db.query(`insert into gateway_refunds (review_id, subject_kind, subject_id, medio, plataforma, stripe_id, amount_cents, idem_key, business_id, city_id) values ($1::bigint, $2, $3::bigint, $4, $5, $6, $7, $8, $9, $10)`, [d.r, d.t, d.s, d.medio, d.plataforma, d.x, d.n, `gwr-otra-${hex()}`, d.b, d.c]); } catch (e) { e2 = e.message; }
     ok(!!e1 && /solo de inserción/.test(e1) && !!e2 && /gateway_refunds_uno_por_objeto/.test(e2), 'la base: la decisión es solo de inserción y no deja dos devoluciones vivas del mismo cobro');
+    // 0205 · El detalle de una consulta: con su forma y su tope, y no se cambia después (la tabla sigue solo de inserción).
+    const malo = async (found) => { try { await db.query(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, result, found_n, found) values ('offsession_charges', 1, 'offsession_charges:1', 'barrido', 'varios', 2, $1::jsonb)`, [JSON.stringify(found)]); return null; } catch (e) { return e.message; } };
+    const bueno = { id: 'pi_fake_9t6_forma', estado: 'hecho', centavos: 100, creado: '2026-11-20T20:14:00Z' };
+    const e3 = await malo([{ id: 'pi_fake_9t6_forma' }]), e4 = await malo(Array.from({ length: 21 }, () => bueno)), e5 = await malo([{ ...bueno, centavos: -1 }]), e6 = await malo([{ ...bueno, otra: 1 }]);
+    const ck = await q1(`select id::text from gateway_checks where found is not null order by id desc limit 1`);
+    let e7 = null; try { await db.query(`update gateway_checks set found = '[]'::jsonb where id = $1::bigint`, [ck.id]); } catch (e) { e7 = e.message; }
+    ok([e3, e4, e5, e6].every((e) => /gateway_checks_found_forma/.test(e ?? '')) && /solo de inserción/.test(e7 ?? ''), 'la base: el detalle de lo hallado tiene forma y tope (20), y no se cambia');
   }
 
   await db.end();

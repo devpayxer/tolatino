@@ -12627,6 +12627,9 @@ const guardianes = {
     // (1) La pasarela otra vez, antes de la transacción, y la decisión con su respuesta.
     if (!antes(de, "await K.consultar(", "await tx(") || !/const E = elegibles\(x, resultado, det\.hallados\);/.test(de) || !/if \(eleccion === "ninguno" \? !E\.ninguno : !E\.vale\.includes\(eleccion\)\)/.test(de)
       || !/if \(resultado === "sin_respuesta"\) return \{ ok: false/.test(de) || !/if \(E\.enCurso\) return \{ ok: false/.test(de)) falla(G, RV, 0, "decidirRevision: vuelve a preguntar a la pasarela y decide con ESA respuesta (sin respuesta o algo en curso: no cambia nada)");
+    // (1b) 0205 · Lo que la consulta guardó con su detalle es SOLO para mostrar: la decisión no lo lee (ni la hoja ni la fila de la consulta), y lo que sobra
+    // sale de lo que la pasarela contestó ahora.
+    if (/\bfound\b|gateway_checks|opcionesDeAlertas/.test(de) || !/const sobra = det\.hallados\.filter\(/.test(de)) falla(G, RV, 0, "decidirRevision: decide con lo que la pasarela contesta AHORA, nunca con el detalle guardado de una consulta anterior (found) ni con lo que mostró la hoja");
     if (!/h\.estado === "hecho" && h\.centavos === x\.monto/.test(el) || !/x\.t === "subscription_charges" && x\.periodoCobrado \? \[\]/.test(el) || !/ninguno: x\.t !== "event_settlements"/.test(el)) falla(G, DA, 0, "elegibles: vale solo lo hallado, hecho y con el monto de la intención; un período de Pro ya cobrado no puede valer otra vez; una transferencia no queda sin ninguna");
     // (2) Una vez, todo en una transacción y antes de la pasarela.
     const t0 = de.indexOf("await tx("), t1 = de.indexOf("if (!(\"review\" in d))"), txb = de.slice(t0, t1);
@@ -12651,11 +12654,22 @@ const guardianes = {
     const ac = cuerpoFn(sinComent(AC), "alertaDecidir"), pt = readFileSync(PT, "utf8");
     if (!/s\.puede\("tx", "aprobar"\)/.test(ac) || !/decidirRevision\(s, /.test(ac)) falla(G, AC, 0, "«Elegir cuál vale»: el permiso de las demás acciones del dinero (tx:aprobar)");
     if (!/\.\.\.\(a\.revisar \? \[\{ l: E\("Elegir cuál vale", "Choose which counts"\)/.test(pt) || !/alertaDecidir\(a\.id, e \?\? "", m\)/.test(pt) || !/hold_stuck: E\(/.test(pt) || !/extra_refund_stuck: E\(/.test(pt)) falla(G, PT, 0, "la alerta ofrece «Elegir cuál vale» solo si el servidor lo deja (revisar) y nombra las alertas nuevas");
+    // (6) 0205 · La hoja dice de cada cosa que Stripe tiene su monto, cuándo salió (en la zona de la ciudad) y su id, el primero arriba; lo que no se puede
+    // elegir va como información con su porqué. La consulta guarda ese detalle y la hoja lo lee (una consulta vieja sin detalle, los ids como antes).
+    const k0 = cuerpoFn(sinComent(K), "consultar"), op = cuerpoFn(sinComent(DA), "opcionesDeAlertas");
+    if (!/found \? JSON\.stringify\(found\) : null\]\)\)\.rows\[0\]!;/.test(k0) || !/\$11::jsonb\) returning id::text/.test(k0) || !/enOrden\(/.test(k0)) falla(G, K, 0, "consultar: guarda lo hallado con su detalle (estado, monto, cuándo se creó), en orden de creación");
+    if (!/select x\.result, x\.stripe_id, x\.amount_cents, x\.found, x\.found_n from gateway_checks/.test(op) || !/porCreacion\(r\.found/.test(op) || !/return \{ id: h\.id, centavos: [^\n]*creado: [^\n]*vale, por \};/.test(op))
+      falla(G, DA, 0, "opcionesDeAlertas: cada opción con su monto, cuándo se creó y si vale (y por qué no), leídos del detalle guardado y en orden de creación");
+    if (!/items: \[\.\.\.a\.revisar!\.hallados\.filter\(\(h\) => h\.vale\)\.map\(\(h\) => \(\{ k: h\.id, l: etiqueta\(h, a\.revisar!\.tz\) \}\)\)/.test(pt)
+      || !/const etiqueta = \(h: OpcionRevision, tz: string \| null\) => \[h\.centavos != null \? usd\(h\.centavos\) : null, h\.creado \? cuandoSalio\(h\.creado, tz\) : null, h\.id\]/.test(pt)
+      || !/const cuandoSalio = \(iso: string, tz: string \| null\) => new Intl\.DateTimeFormat\(loc, \{ timeZone: tz \?\? "America\/New_York"/.test(pt) || !/\$\{nosePuede\(a\.revisar!\)\}/.test(pt))
+      falla(G, PT, 0, "«Elegir cuál vale»: cada opción con su monto, cuándo salió (zona de la ciudad) y su id; lo que no se puede elegir, como información con su porqué (no ids pelados)");
     if (!/a\.kind === "gateway_review" && \(await opcionesDeAlertas\(\[\{ id, sujeto: a\.sujeto \}\]\)\)\.has\(id\)\)/.test(cuerpoFn(sinComent(DA), "notaAlerta"))) falla(G, DA, 0, "una gateway_review que se puede decidir no se marca «resuelta» sin decidir (la intención seguiría en camino)");
     const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8")).join("\n");
     if (!/unique \(subject_kind, subject_id\),\n  check \(\(decision = 'vale'\) = \(stripe_id is not null\)\)/.test(mig) || !/create trigger gateway_reviews_no_cambia before update or delete on gateway_reviews for each row execute function dinero_solo_insercion\(\);/.test(mig)
       || !/create unique index if not exists gateway_refunds_uno_por_objeto on gateway_refunds \(stripe_id\) where status in \('pending', 'done'\);/.test(mig) || !/raise exception 'una devolución de lo que sobró no se borra \(estados\)'/.test(mig))
       falla(G, "packages/db/migrations", 0, "la base: una decisión por intención (solo inserción) y una devolución viva por objeto de Stripe; nada se borra");
+    if (!/add constraint gateway_checks_found_forma check \(gateway_checks_found_ok\(found\)\);/.test(mig)) falla(G, "packages/db/migrations", 0, "la base: el detalle de lo hallado (gateway_checks.found) con su forma y su tope");
   },
 
   /* 9t3 (21 nov) · manoTrasLaLlave (LAUNCH «Dinero por clase · lo que quedó» (c)): «Resolver a mano» lo deja la base (dinero_a_mano) cuando Stripe ya la

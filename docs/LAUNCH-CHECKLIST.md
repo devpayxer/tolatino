@@ -2211,9 +2211,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       también pregunta a la pasarela (si Stripe dice que salió, no deja). Una devolución anotada antes de 9t6 (sin el dato) nunca se da por «no llegó».
       (2) **`extra_refund_stuck` con un «no» de Stripe:** solo se marca «Resuelta» con la nota (no hay `manual_at` ni «Resolver a mano» para
       `gateway_refunds`). (3) **Transferencias en `gateway_review`:** con otro monto no hay acción (la liquidación sigue en 'paying'); «ninguno» no se ofrece
-      (REVISION 9t6 (3)). Tampoco hay decisión para una `gateway_review` de una devolución de lo que sobró (varios para una sola llave). (4) La pantalla de
+      (REVISION 9t6 (3)). Tampoco hay decisión para una `gateway_review` de una devolución de lo que sobró (varios para una sola llave). (4) ~~La pantalla de
       «Elegir cuál vale» muestra los ids de la última consulta que contestó; con «varios» no sabe los montos de cada uno (los comprueba el servidor al
-      guardar). (5) **No corrieron aquí:** la prueba de contrato con stripe-mock (`buscarCobro(…, { retencion })`, `buscarDevolucion` refund y reversal: la
+      guardar).~~ **Hecho (21 nov, 0205):** `gateway_checks.found` guarda lo hallado con su estado, monto y fecha de creación (`Hallado.creado`), en orden
+      de creación y con tope de 20; la hoja muestra «$monto · fecha y hora en la zona de la ciudad · id», el primero arriba, y lo que no se puede elegir
+      (otro monto, no salió, en curso, período ya cobrado) como información con su porqué. La decisión sigue volviendo a preguntar (guardián
+      `revisionPreguntaOtraVez` ampliado; din9t6 §6, din9t6b §6). Una consulta anterior a 0205 sigue ofreciendo los ids pelados. Más de 20 hallados: la
+      hoja muestra los 20 primeros y «Y N más en Stripe». (5) **No corrieron aquí:** la prueba de contrato con stripe-mock (`buscarCobro(…, { retencion })`, `buscarDevolucion` refund y reversal: la
       corre el CI; si su stripe-mock no trae `GET /v1/refunds?payment_intent=` con metadata o `/v1/transfers/{id}/reversals`, falla ahí); las de punta a punta
       con el servidor (`renov4d` —la renovación de estimados por el panel, ahora por `renovarRetencion`—, `renta4f`, `plan4f`, `pat002`, `pat003`) y la
       captura de «Elegir cuál vale» (el servidor de `:3100` es de quien orquesta); Semgrep (no está instalado aquí). El simulador ya ensaya «sin respuesta» en

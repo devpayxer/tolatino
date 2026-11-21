@@ -8,7 +8,9 @@
 //   3) alguien del equipo SIN permiso de dinero (Soporte): no abre Planes, y el servidor, si se le manda la acción tal cual, contesta «Tu rol no decide
 //      sobre dinero.» y en la base no cambia nada;
 //   4) en inglés (tl_lang=en): «Choose which counts», la hoja «What counts of what Stripe has» y «None: refund everything that went through»;
-//   5) una alerta hold_stuck (retención renovada sin respuesta) ofrece «Preguntar a Stripe ahora» (y no «Elegir cuál vale»).
+//   5) una alerta hold_stuck (retención renovada sin respuesta) ofrece «Preguntar a Stripe ahora» (y no «Elegir cuál vale»);
+//   6) (0205) cada opción de la hoja dice su monto, cuándo salió (zona de la ciudad) y su id, el primero arriba; uno de otro monto NO se ofrece y la hoja
+//      dice por qué; una consulta vieja sin detalle (la segunda intención) ofrece los ids como antes.
 // Precondiciones propias (orden indiferente, corre dos veces seguidas): su negocio, su cuenta de cobro simulada, su plan, su intención en camino (más vieja que
 // la llave), los cobros del simulador (sim_intents con tl_intencion), la última consulta anotada y la alerta. Lo que la pantalla decide lo hace el servidor.
 const ENT = require('../lib/entorno.cjs');
@@ -31,7 +33,9 @@ const telPropio = () => { for (let i = 0; i < 300; i++) { const t = '570555' + S
 
 // Una intención de cobro de un plan del Hogar ($149), en camino y pasada la ventana de la llave (30 h), con DOS cobros hechos en el simulador para esa
 // misma intención y la última consulta anotada («varios»), como lo deja el barrido; su alerta gateway_review abierta.
-function armar(X, tag) {
+// o.viejo: la consulta anotada como antes de 0205 (solo los ids, sin detalle). o.otroMonto: el segundo cobro es de $99 (no puede valer).
+// El primero (A) salió hace 31 h y el segundo (C) 5 min después; el detalle se guarda al revés (el más nuevo primero) para ver que la hoja los ordena.
+function armar(X, tag, o = {}) {
   const num = `PL-9B${RUN}${tag}`.toUpperCase().slice(0, 18);
   const op = primero(sql(`insert into operations (number, kind, city_id, business_id, user_id, status, details, subtotal_cents, total_cents, pay_mode, client_key)
     values ('${num}', 'plan', 'hzl', '${X.b}', '${X.u}', 'confirmed', '{"svc":{"es":"Plan 9t6b","en":"Plan 9t6b"}}'::jsonb, 14900, 14900, 'app', gen_random_uuid()) returning id`));
@@ -44,16 +48,27 @@ function armar(X, tag) {
   // Por eso primero se reserva su id, luego van lo de Stripe (sim_intents) y la consulta anotada, y al final la intención (con ese id).
   const oc = sql(`select nextval(pg_get_serial_sequence('offsession_charges', 'id'))`);
   const ref = `offsession_charges:${oc}`, A = `pi_sim_9t6b_${RUN}${tag}a`, C = `pi_sim_9t6b_${RUN}${tag}b`;
-  for (const id of [A, C]) sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, metadata, capture_method) values ('${id}', 14900, 0, 'acct_sim_${X.b}', 'succeeded', 14900, '${X.pm}', '{"tl_intencion":"${ref}"}'::jsonb, 'automatic')`);
-  sql(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, result, stripe_id, found_n, city_id) values ('offsession_charges', ${oc}, '${ref}', 'barrido', 'varios', '${A},${C}', 2, 'hzl')`);
+  for (const [id, n, min] of [[A, 14900, 31 * 60], [C, o.otroMonto ? 9900 : 14900, 31 * 60 - 5]]) sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, metadata, capture_method, created_at)
+    values ('${id}', ${n}, 0, 'acct_sim_${X.b}', 'succeeded', ${n}, '${X.pm}', '{"tl_intencion":"${ref}"}'::jsonb, 'automatic', now() - interval '${min} minutes')`);
+  const found = o.viejo ? 'null' : `(select jsonb_agg(jsonb_build_object('id', id, 'estado', 'hecho', 'centavos', amount_cents, 'creado', to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) order by created_at desc) from sim_intents where id in ('${A}', '${C}'))`;
+  sql(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, result, stripe_id, found_n, city_id, found) values ('offsession_charges', ${oc}, '${ref}', 'barrido', 'varios', '${A},${C}', 2, 'hzl', ${found})`);
   sql(`set session_replication_role = replica; insert into offsession_charges (id, kind, ref_id, purpose, operation_id, business_id, city_id, payer_user_id, amount_cents, fee_cents, destination, pm, idem_key, detail, gateway_ref, sent_at, attempts, last_error, created_at)
     overriding system value values (${oc}, 'plan', '${plan}', 'periodo-${hoy}', ${op}, '${X.b}', 'hzl', '${X.u}', 14900, 0, 'acct_sim_${X.b}', '${X.pm}', '${idem}', '{"meta":{"plan":"${num}"},"next":"${hoy}","day":5}'::jsonb,
             '${ref}', now() - interval '30 hours', 1, 'error', now() - interval '30 hours')`);
   sql(`insert into money_alerts (kind, subject_id, business_id, city_id, amount_cents, detail) values ('gateway_review', '${ref}', '${X.b}', 'hzl', 14900,
     '{"es":"Stripe tiene 2 objetos para una sola intención (${ref}, $149.00): no se cierra sola. Elige en la alerta cuál vale.","en":"Stripe has 2 objects for a single intent (${ref}, $149.00): it does not close by itself. Choose in the alert which one counts."}'::jsonb) on conflict (kind, subject_id) do nothing`);
   const al = sql(`select id from money_alerts where kind = 'gateway_review' and subject_id = '${ref}'`);
-  return { oc, ref, A, C, al, plan, num, idem };
+  const creado = (id) => sql(`select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from sim_intents where id = '${id}'`);
+  return { oc, ref, A, C, al, plan, num, idem, cA: creado(A), cC: creado(C) };
 }
+// La etiqueta de una opción como la arma la hoja (monto · cuándo salió en la zona de la ciudad · id). Se compara sin espacios ni puntos: el formato de la
+// hora (p. m. / PM, con espacio fino o no) depende de la versión de ICU del navegador.
+const zonaHzl = () => sql(`select timezone from cities where id = 'hzl'`);
+const cuando = (iso, en = false) => new Intl.DateTimeFormat(en ? 'en-US' : 'es-US', { timeZone: zonaHzl(), day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(iso)).replace(/\./g, '');
+const sinEsp = (x) => x.replace(/[\s.]/g, '');
+const etiq = (monto, iso, id, en = false) => `${monto} · ${cuando(iso, en)} · ${id}`;
+// La opción en la hoja: el texto que termina con su id (con su monto y su fecha delante).
+const opcion = (p, id) => p.getByText(new RegExp(`^\\$[0-9.]+ · .+ · ${id}$`));
 const estadoDe = (oc) => sql(`select status || '|' || coalesce(last_error, '') || '|' || coalesce(stripe_pi, '') from offsession_charges where id = ${oc}`);
 const revDe = (oc) => sql(`select decision || '|' || coalesce(stripe_id, '') || '|' || staff_id from gateway_reviews where subject_kind = 'offsession_charges' and subject_id = ${oc}`);
 const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where subject_kind = 'offsession_charges' and subject_id = ${oc}) || '|' || (select count(*) from gateway_refunds where subject_kind = 'offsession_charges' and subject_id = ${oc})
@@ -67,7 +82,7 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
   sql(`insert into businesses (id, city_id, category_id, name) values ('${X.b}', 'hzl', 'NEG-HOGAR', 'Hogar 9t6b ${RUN}')`);
   sql(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, simulated) values ('${X.b}', 'acct_sim_${X.b}', 'enabled', true, true, true)`);
   const NEG = `Hogar 9t6b ${RUN}`;
-  const L1 = armar(X, 'u'), L2 = armar(X, 'd'), L3 = armar(X, 't');
+  const L1 = armar(X, 'u'), L2 = armar(X, 'd', { viejo: true }), L3 = armar(X, 't');
   ok(!!L1.al && !!L2.al && !!L3.al, `tres intenciones en camino con dos cobros cada una en el simulador y su alerta (${L1.ref}, ${L2.ref}, ${L3.ref})`);
   const b = await chromium.launch();
   const abiertas = [], err = [];
@@ -90,10 +105,14 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     await a.getByText('Qué vale de lo que tiene Stripe').first().waitFor();
     let t = await texto(a);
     ok(t.includes('Qué vale de lo que tiene Stripe') && t.includes(L1.A) && t.includes(L1.C) && t.includes('Ninguno: devolver todo lo que salió'), 'la hoja «Qué vale de lo que tiene Stripe»: los dos ids y «Ninguno: devolver todo lo que salió»');
+    // 0205 · Cada opción con su monto y cuándo salió, el primero arriba (aunque la consulta lo guardó al revés).
+    const eA = etiq('$149.00', L1.cA, L1.A), eC = etiq('$149.00', L1.cC, L1.C);
+    ok(sinEsp(t).includes(sinEsp(eA)) && sinEsp(t).includes(sinEsp(eC)) && sinEsp(t).indexOf(sinEsp(eA)) < sinEsp(t).indexOf(sinEsp(eC)), `cada opción dice su monto y cuándo salió, el primero arriba («${eA}», luego «${eC}»)`);
+    ok((await vis(opcion(a, L1.A))) !== null && (await vis(opcion(a, L1.C))) !== null && (await a.getByText(L1.A, { exact: true }).count()) === 0, 'ninguna opción es un id pelado');
     await arriba(a); await shot(a, 'hoja');
     const decidir = a.getByRole('button', { name: 'Decidir', exact: true });
     ok(await decidir.last().isDisabled(), 'sin elegir ni nota, «Decidir» no deja');
-    await clic(a.getByText(L1.A, { exact: true }));
+    await clic(opcion(a, L1.A));
     ok(await decidir.last().isDisabled(), 'con uno elegido pero sin nota, tampoco');
     await clic(a.getByText('Cobro duplicado: se queda el primero.', { exact: true }));
     const antes = cuentas(L1.oc);
@@ -124,6 +143,8 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     await ingresos(a, L2.ref);
     await clic(filaAl(a, L2.ref).getByRole('button', { name: 'Elegir cuál vale' }));
     await a.getByText('Qué vale de lo que tiene Stripe').first().waitFor();
+    // Esta intención tiene su consulta anotada como antes de 0205 (sin detalle): los ids como antes, sin monto ni fecha inventados.
+    ok((await vis(a.getByText(L2.A, { exact: true }))) !== null && (await vis(a.getByText(L2.C, { exact: true }))) !== null, 'una consulta vieja sin detalle: la hoja ofrece los ids como antes');
     await clic(a.getByText('Ninguno: devolver todo lo que salió', { exact: true }));
     await clic(a.getByText('Se cobró dos veces el mismo período: devolver.', { exact: true }));
     await clic(a.getByRole('button', { name: 'Decidir', exact: true }));
@@ -159,6 +180,8 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     await e.getByText('What counts of what Stripe has').first().waitFor();
     t = await texto(e);
     ok(t.includes('None: refund everything that went through') && t.includes(L3.A) && t.includes(L3.C), 'la hoja «What counts of what Stripe has»: «None: refund everything that went through» y los dos ids');
+    ok(sinEsp(t).indexOf(sinEsp(etiq('$149.00', L3.cA, L3.A, true))) >= 0 && sinEsp(t).indexOf(sinEsp(etiq('$149.00', L3.cA, L3.A, true))) < sinEsp(t).indexOf(sinEsp(etiq('$149.00', L3.cC, L3.C, true))),
+      `en inglés, la fecha en inglés y el primero arriba («${etiq('$149.00', L3.cA, L3.A, true)}»)`);
     await arriba(e); await shot(e, 'hoja-en');
     await clic(e.getByText('None: refund everything that went through', { exact: true }));
     await clic(e.getByText('The same period was charged twice: refund.', { exact: true }));
@@ -182,7 +205,7 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     await ingresos(a, L4.ref);
     await clic(filaAl(a, L4.ref).getByRole('button', { name: 'Elegir cuál vale' }));
     await a.getByText('Qué vale de lo que tiene Stripe').first().waitFor();
-    await clic(a.getByText(L4.C, { exact: true })); await clic(a.getByText('Cobro duplicado: se queda el primero.', { exact: true })); await clic(a.getByRole('button', { name: 'Decidir', exact: true }));
+    await clic(opcion(a, L4.C)); await clic(a.getByText('Cobro duplicado: se queda el primero.', { exact: true })); await clic(a.getByRole('button', { name: 'Decidir', exact: true }));
     await a.getByText(`Decidido: vale ${L4.C}`).first().waitFor({ timeout: 30000 });
     ok(revDe(L4.oc) === `vale|${L4.C}|${stf}` && estadoDe(L4.oc) === `done||${L4.C}`, 'el Admin sí: decide la misma alerta y queda hecha con el cobro elegido (el segundo)');
 
@@ -217,10 +240,26 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     await clic(f5.getByRole('button', { name: 'Elegir cuál vale' }));
     await m.getByText('Qué vale de lo que tiene Stripe').first().waitFor();
     await arriba(m); await m.screenshot({ path: OUT + 'd9t6b-hoja-m.png' });
-    await clic(m.getByText(L5.A, { exact: true })); await clic(m.getByText('Cobro duplicado: se queda el primero.', { exact: true })); await clic(m.getByRole('button', { name: 'Decidir', exact: true }));
+    await clic(opcion(m, L5.A)); await clic(m.getByText('Cobro duplicado: se queda el primero.', { exact: true })); await clic(m.getByRole('button', { name: 'Decidir', exact: true }));
     await m.getByText(`Decidido: vale ${L5.A}`).first().waitFor({ timeout: 30000 });
     await m.screenshot({ path: OUT + 'd9t6b-resultado-m.png' });
     ok(estadoDe(L5.oc) === `done||${L5.A}` && cuentas(L5.oc) === '1|1|1', 'en el teléfono: decidido igual (hecha con ese cobro, una devolución, una auditoría)');
+
+    // ── 6 · Uno de otro monto: no se ofrece; la hoja dice por qué ──
+    console.log('6 · Dos cobros, uno de otro monto: solo se ofrece el que cuadra; el otro sale como información con su porqué');
+    const L6 = armar(X, 'o', { otroMonto: true });
+    await ingresos(a, L6.ref);
+    await clic(filaAl(a, L6.ref).getByRole('button', { name: 'Elegir cuál vale' }));
+    await a.getByText('Qué vale de lo que tiene Stripe').first().waitFor();
+    t = await texto(a);
+    const e6 = etiq('$99.00', L6.cC, L6.C);
+    ok((await vis(opcion(a, L6.A))) !== null && (await opcion(a, L6.C).count()) === 0, 'el de $149.00 se ofrece; el de otro monto NO es una opción');
+    ok(t.includes('No se puede elegir:') && sinEsp(t).includes(sinEsp(`${e6} (otro monto: no es el de la intención)`)), `la hoja dice cuál no se puede elegir y por qué («${e6} (otro monto: no es el de la intención)»)`);
+    await arriba(a); await shot(a, 'hoja-otro-monto');
+    await clic(opcion(a, L6.A)); await clic(a.getByText('Cobro duplicado: se queda el primero.', { exact: true })); await clic(a.getByRole('button', { name: 'Decidir', exact: true }));
+    await a.getByText(`Decidido: vale ${L6.A}`).first().waitFor({ timeout: 30000 });
+    ok(estadoDe(L6.oc) === `done||${L6.A}` && cuentas(L6.oc) === '1|1|1' && sql(`select amount_cents from gateway_refunds where subject_kind = 'offsession_charges' and subject_id = ${L6.oc} and stripe_id = '${L6.C}'`) === '9900',
+      'decidido: vale el de $149.00 y el de otro monto se devuelve por SU monto ($99.00)');
 
     ok(!err.length, 'sin errores en las páginas' + (err.length ? ': ' + err.slice(0, 3).join(' | ') : ''));
     console.log(`\nOK · ${n} comprobaciones`);
