@@ -495,8 +495,15 @@ export async function barrerPatrocinios(): Promise<{ empezaron: number; venciero
   return { empezaron, vencieron, renovados };
 }
 
+/* 9t5 · Uno solo, sin esperar al siguiente barrido: la renovación en camino que la consulta a la pasarela ya resolvió (lib/cobro-fuera.ts ›
+   resolverCobroFuera) se cierra por el mismo vencimiento (vencerUno), con su aviso. */
+export async function renovacionConsultada(id: string): Promise<void> {
+  const r = await vencerUno(id);
+  if (r) await avisoNeg(r.negocio, r.tpl, r.v).catch(() => undefined);
+}
 /* Un patrocinio que llegó a su fin: con «renovar» encendido, se cobra el siguiente período (misma duración, el precio de hoy) con la tarjeta del
    pago, si hay puesto; si no cobra o no hay puesto, termina y se avisa por qué. Una sola vez: la llave del cobro es la del período que termina. */
+const YA_COBRADA: Bi = { es: "la renovación ya estaba cobrada y no se aplicó: la revisa To'Latino", en: "the renewal was already charged and was not applied: To'Latino reviews it" };
 type Vencido = { r: "renovado" | "termino"; negocio: string; tpl: string; v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string } };
 async function vencerUno(id: string): Promise<Vencido | null> {
   return tx(async (c) => {
@@ -537,7 +544,16 @@ async function vencerUno(id: string): Promise<Vencido | null> {
       if (!p.ok && p.enCamino) return null;
       if (p.ok) {
         // El cierre de la intención va en ESTA transacción (con el patrocinio nuevo y el libro): una vez.
-        if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) return null;
+        // 9t5 · marcarHecho no pudo: si la intención ya estaba HECHA con el patrocinio todavía vivo (un arreglo a mano, un fallo: en el flujo normal el
+        // cierre y la renovación van en la misma transacción), no se queda mudo en cada barrido: termina con su motivo y el equipo de dinero decide
+        // (offsession_unapplied, una vez). Nunca se cobra otra vez.
+        if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) {
+          const ia = await CF.intencion(p.intencion!);
+          if (ia?.st !== "done") return null;
+          await terminar(YA_COBRADA);
+          await CF.alertaSinAplicar(ia, { es: `el patrocinio ${id} seguía vivo con su renovación ya cobrada.`, en: `sponsorship ${id} was still live with its renewal already charged.` });
+          return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: YA_COBRADA.es } };
+        }
         const monto = p.centavos ?? aCobrar;
         await c.query(`update sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now() where id = $1::bigint`, [id]);
         await c.query("savepoint renueva");

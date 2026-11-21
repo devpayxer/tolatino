@@ -51,6 +51,10 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   ok((await pasarela.cliente('00000000-0000-4000-8000-000000000001')) === c1, 'cliente: la segunda vez sale de la base, sin crear otro');
   // 9k · 3-D Secure: el estado de un PaymentIntent (después de la verificación) y su tarjeta con la huella.
   const it = await pasarela.intento('pi_123'); ok(it && typeof it.estado === 'string' && typeof it.monto === 'number', 'intento: payment_intents/{id} con expand de la tarjeta (huella)');
+  // 9t5 · Preguntarle a la pasarela por una intención que quedó sin respuesta: los PaymentIntents de la plataforma por su metadata (Search API, sin
+  // Stripe-Account) y las transferencias por su transfer_group. Tres respuestas, nunca un booleano.
+  const bc = await pasarela.buscarCobro('subscription_charges:1'); ok(bc.ok === true && ('hallado' in bc || 'varios' in bc), 'consulta: payment_intents/search por metadata tl_intencion (con expand de la tarjeta)');
+  const bt = await pasarela.buscarTransferencia('event_settlements:1', 'evt-2', '1'); ok(bt.ok === true && ('hallado' in bt || 'varios' in bt), 'consulta: transfers por transfer_group (y su metadata)');
   // 9k · La huella de una tarjeta guardada (card.fingerprint): payment_methods/{id}.
   const hu = await pasarela.huella('pm_card_visa_123'); ok(hu === null || typeof hu === 'string', 'huella: payment_methods/{id} (card.fingerprint)');
   // 9k · La conciliación del día: payment_intents, refunds, transfers y disputes con created[gte|lt] y paginación, y payouts de una cuenta conectada.

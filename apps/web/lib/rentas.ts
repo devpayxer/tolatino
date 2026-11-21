@@ -236,11 +236,19 @@ async function falloRecoger(x: Fila, m: Bi): Promise<{ ok: false; msg: Bi }> {
 }
 export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Promise<Res> {
   const CF = await import("./cobro-fuera");
-  if (a.st === "done") return { ok: true };
   if (a.st === "failed") return no(CF.YA_RECHAZADO.es, CF.YA_RECHAZADO.en, { tarjeta: true });
   const x = (await db().query<Fila>(`${SEL} where r.id = $1::bigint`, [a.ref])).rows[0];
   if (!x) return no("Esa renta no existe.", "That rental does not exist.");
   const d = a.detalle as { que: "recoger" | "dia" | "tarde"; dias?: number; dep?: number; actor?: string; lic?: boolean; odo?: number | null };
+  // 9t5 · Ya cobrado (hecho) y la renta TODAVÍA lo espera (sigue apartada al recoger, o con los mismos días en «un día más»): en el flujo normal no pasa
+  // (el cierre y el cambio de la renta van en la misma transacción); si pasa (un arreglo a mano, un fallo) no se contesta «listo» en silencio ni se cobra
+  // otra vez: el equipo de dinero decide (offsession_unapplied, una vez) y quien tocó lo lee. La renta no se cambia sola: no sabemos si se entregó.
+  if (a.st === "done") {
+    const espera = (d.que === "recoger" && x.st === "held") || (d.que === "dia" && x.st === "out" && x.dias === d.dias);
+    if (!espera) return { ok: true };
+    await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} seguía esperando ese cobro (${x.st}) aunque ya estaba hecho.`, en: `rental ${x.numero} was still waiting for that charge (${x.st}) although it was already done.` });
+    return no("Ese cobro ya se hizo y no se aplicó: lo revisa To'Latino. No lo repitas.", "That charge was already made and was not applied: To'Latino reviews it. Do not repeat it.");
+  }
   const av = await import("./avisos"), hrefN = { href: `/panel/${x.biz}/hoy?det=renta:${x.numero}`, ref: ["renta", x.numero] as [string, string] }, hrefC = { href: `/renta/${x.numero}`, ref: ["renta", x.numero] as [string, string] };
 
   if (d.que === "recoger") {
@@ -252,7 +260,10 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
     }
     // 1. El depósito (retenido, sin comisión), con la llave de esta intención. 2. La renta (cobrada). Si la renta no pasa, se suelta el depósito.
     let hold: { pi: string; marca: string | null; ultimos4: string | null } | null = null;
-    if ((d.dep ?? 0) > 0) {
+    // 9t5 · Una intención de más de HORAS_LLAVE no vuelve a la pasarela con su llave, tampoco la del depósito (podría retenerlo dos veces): el depósito es
+    // el que ya quedó anotado, si quedó; la renta se cierra con lo que contestó la consulta (terminarCobro).
+    if (a.vieja) hold = a.hold ? { pi: a.hold, marca: null, ultimos4: null } : null;
+    else if ((d.dep ?? 0) > 0) {
       const destino = a.destino!, cliente = await pasarela.cliente(x.uid).catch(() => null);
       const dep = await pasarela.retener({ centavos: d.dep!, comision: 0, destino, pm: a.pm, cliente, idem: `${a.idem}-dep`, meta: { rental: x.numero, business_id: x.biz, kind: "security" }, fuera: true })
         .catch(() => ({ ok: false as const, codigo: "error", mensaje: CF.EN_CAMINO }));
@@ -292,7 +303,11 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
       if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: "la renta que quedó en camino ya se cobró · ya la tiene", articulo: x.n.es }, hrefN);
       return { ok: true };
     }
-    if (r.enCamino) return { ...no(r.msg === CF.EN_CAMINO ? CAMINO_RENTA.es : r.msg.es, r.msg === CF.EN_CAMINO ? CAMINO_RENTA.en : r.msg.en), enCamino: true };
+    if (r.enCamino) {
+      // 9t5 · Nunca llegó a Stripe (la consulta): nada se cobró y el depósito se soltó; la renta sigue apartada y puede volver a tocarse «La recogió».
+      if (r.noLlego && desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: "el cobro que quedó en camino nunca llegó a Stripe · no se cobró nada: vuelve a tocar «La recogió»", articulo: x.n.es }, hrefN);
+      return { ...no(r.msg === CF.EN_CAMINO ? CAMINO_RENTA.es : r.msg.es, r.msg === CF.EN_CAMINO ? CAMINO_RENTA.en : r.msg.en), enCamino: true };
+    }
     if (hold) await pasarela.liberar(hold.pi).catch(() => undefined);
     const f = await falloRecoger(x, r.msg);
     if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: "la tarjeta no pasó al terminar el cobro en camino · no se cobró nada", articulo: x.n.es }, hrefN);
@@ -334,6 +349,8 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
     if (!r.ya && desdeBarrido) await av.avisar(x.uid, "renta_devuelta", { articulo: x.n.es, que: `Se cobraron ${money(a.monto)} por los días tarde.` }, hrefC);
     return { ok: true };
   }
+  // 9t5 · Los días tarde que nunca llegaron a Stripe (la consulta): nadie más los vuelve a anotar; otra intención, con otra llave.
+  if (r.enCamino && r.noLlego) return terminarCobroRenta(await CF.reanotar(a), desdeBarrido);
   if (r.enCamino) return { ...no(r.msg.es, r.msg.en), enCamino: true };
   await db().query(`update rentals set late_cents = 0, updated_at = now() where id = $1::bigint`, [x.rid]);
   await ev(db(), x.op, "payment_failed", "system", null, { es: `Días tarde sin cobrar (${money(a.monto)}): se arregla en el local`, en: `Late days not charged (${money(a.monto)}): settled in person` });

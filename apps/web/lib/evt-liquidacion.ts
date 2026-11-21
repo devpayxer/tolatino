@@ -99,32 +99,79 @@ async function retenerAuto(id: string, hold: "nuevo" | "disputa" | "cuenta") {
    21 nov (9t3) · La intención es el paso a 'paying' (paying_at, en su transacción). Pasadas HORAS_LLAVE (23 h; las de lib/cobros) desde ahí, Stripe
    ya no recuerda la llave: preguntar otra vez podría transferir dos veces. Desde ahí nadie la vuelve a mandar (ni el barrido ni otra llamada): el
    equipo de dinero recibe la alerta transfer_stuck (una vez por liquidación) y lo mira en Stripe. */
+/* 9t5 (21 nov, 0203) · Pasadas HORAS_LLAVE ya no se manda, pero tampoco se queda 'paying' para siempre: el barrido (o «Preguntar a Stripe ahora» del Super
+   Admin) le PREGUNTA a la pasarela (las transferencias del grupo del evento con su metadata: lib/consulta-pasarela.ts) y pagarUna cierra con lo que dijo:
+   salió → 'paid' con esa transferencia, por el mismo cierre (cerrarPagada), una vez; nunca llegó (y se mandó con el dato buscable y pasó el margen) → su
+   llave vuelve a valer (key_from: el MISMO monto y la MISMA llave, ya fijos; Stripe ya la olvidó y no hay transferencia) y el barrido la manda otra vez;
+   sin respuesta o varias → sigue en camino con su alerta transfer_stuck. */
+const VIEJA_LLAVE = "coalesce(s.key_from, s.paying_at) <= now() - make_interval(hours => $2::int)";
 export async function pagarUna(id: string): Promise<boolean> {
   const { HORAS_LLAVE_STRIPE } = await import("./cobros");
   const s = (await db().query<{ id: string; st: string; net: number; dest: string; idem: string; eid: string; fid: string; biz: string; city: string; t: Bi; dia: string; h0: number; vieja: boolean; n: number; err: string | null }>(
     `select s.id::text, s.status as st, s.net_cents as net, s.destination as dest, s.idem_key as idem, s.event_id::text as eid, s.event_date_id::text as fid, s.business_id as biz, s.city_id as city,
             e.title as t, d.local_date::text as dia, (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
-            s.paying_at <= now() - make_interval(hours => $2::int) as vieja, s.attempts as n, s.last_error as err
+            ${VIEJA_LLAVE} as vieja, s.attempts as n, s.last_error as err
        from event_settlements s join events e on e.id = s.event_id join event_dates d on d.id = s.event_date_id join cities ci on ci.id = s.city_id where s.id = $1::bigint`, [id, HORAS_LLAVE_STRIPE])).rows[0];
   if (!s || s.st !== "paying") return s?.st === "paid";
-  if (s.vieja && s.net > 0) { await alertaTransferenciaVieja(s); return false; }
+  if (s.vieja && s.net > 0) return pagarVieja(s);
   let tr: string | null = null;
   if (s.net > 0) {
-    const r = await pasarela.transferir({ centavos: s.net, destino: s.dest, grupo: `evt-${s.eid}`, idem: s.idem, meta: { event_date_id: s.fid, business_id: s.biz, settlement: s.id } }).catch(() => ({ ok: false as const, codigo: "error" }));
+    // 9t5 · Que se manda (sent_at) y con qué dato buscable (gateway_ref), ANTES de la llamada y en una sentencia; el dato, solo la primera vez (un reintento
+    // de una que salió sin él va sin él: la misma llave con otros parámetros, Stripe la rechaza).
+    const m = (await db().query<{ gref: string | null }>(`update event_settlements set gateway_ref = case when sent_at is null then 'event_settlements:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'paying' returning gateway_ref as gref`, [id])).rows[0];
+    if (!m) return false;
+    const r = await pasarela.transferir({ centavos: s.net, destino: s.dest, grupo: `evt-${s.eid}`, idem: s.idem, meta: { event_date_id: s.fid, business_id: s.biz, settlement: s.id, ...(m.gref ? { tl_intencion: m.gref } : {}) } }).catch(() => ({ ok: false as const, codigo: "error" }));
     if (!r.ok || !("id" in r) || !r.id) {
       await db().query(`update event_settlements set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'paying'`, [id, ("codigo" in r && r.codigo) || "error"]);
       return false;
     }
     tr = r.id;
   }
+  return cerrarPagada(s, tr);
+}
+type LiqEnCamino = { id: string; net: number; biz: string; city: string; t: Bi; dia: string; h0: number; n: number; err: string | null };
+/* El cierre de una liquidación pagada, el mismo para la respuesta de la pasarela y para lo que encontró la consulta: 'paid' una vez (where status =
+   'paying') con su auditoría en la misma transacción; después, el aviso al organizador. */
+async function cerrarPagada(s: LiqEnCamino, tr: string | null, porConsulta = false): Promise<boolean> {
   const ok = await tx(async (c) => {
-    const u = await c.query(`update event_settlements set status = 'paid', transfer_id = $2, paid_at = now(), last_error = null where id = $1::bigint and status = 'paying'`, [id, tr]);
+    const u = await c.query(`update event_settlements set status = 'paid', transfer_id = $2, paid_at = now(), last_error = null where id = $1::bigint and status = 'paying'`, [s.id, tr]);
     if (!u.rowCount) return false;
-    await auditar(c, { actor: null, action: "evento.liquidacion.pagar", id, city: s.city, after: { monto: dinero(s.net), transferencia: tr ?? "sin transferencia (neto $0)" } });
+    await auditar(c, { actor: null, action: "evento.liquidacion.pagar", id: s.id, city: s.city, after: { monto: dinero(s.net), transferencia: tr ?? "sin transferencia (neto $0)", ...(porConsulta ? { origen: "consulta a la pasarela" } : {}) } });
     return true;
   });
   if (ok && s.net > 0) await (await import("./avisos")).avisarNegocio(s.biz, "evt_pago", { evento: s.t.es, cuando: `${diaCorto(s.dia, true)} · ${hora(s.h0)}`, monto: dinero(s.net) }, { href: `/panel/${s.biz}/cobros`, ref: ["evt_liq", s.id] });
   return ok;
+}
+/* 9t5 · Una transferencia de más de HORAS_LLAVE: NUNCA a la pasarela con su llave. Se cierra con el último veredicto de la consulta. */
+async function pagarVieja(s: LiqEnCamino): Promise<boolean> {
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  const v = await (await import("./consulta-pasarela")).veredicto("event_settlements", s.id);
+  if (v?.resultado === "hecho" && v.stripe) return cerrarPagada(s, v.stripe, true);
+  if (v?.noLlego) {
+    // La llave vuelve a valer desde ahora (una vez: el where pide que la anterior ya haya pasado HORAS_LLAVE) y la auditoría lo dice, en una transacción.
+    await tx(async (c) => {
+      const u = await c.query(`update event_settlements s set key_from = now(), last_error = 'nunca_llego' where s.id = $1::bigint and s.status = 'paying' and ${VIEJA_LLAVE}`, [s.id, HORAS_LLAVE_STRIPE]);
+      if (u.rowCount) await auditar(c, { actor: null, action: "evento.liquidacion.reintentar", id: s.id, city: s.city, after: { monto: dinero(s.net), origen: "consulta a la pasarela", motivo: "la transferencia nunca llegó a Stripe: se manda otra vez con la misma llave" } });
+    });
+    return false;
+  }
+  await alertaTransferenciaVieja(s);
+  return false;
+}
+/* 9t5 · Preguntarle a la pasarela por una transferencia de más de HORAS_LLAVE y cerrarla con eso: el barrido, o «Preguntar a Stripe ahora» del Super Admin
+   (con su auditoría en la transacción que anota la consulta). La consulta va FUERA de cualquier transacción. */
+export async function resolverTransferencia(id: string, o: import("./consulta-pasarela").Origen): Promise<{ resultado: import("./consulta-pasarela").Resultado | null; quedo: "hecha" | "reabierta" | "sigue" | "ya_no_estaba" }> {
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  const K = await import("./consulta-pasarela");
+  const s = (await db().query<{ id: string; net: number; eid: string; biz: string; city: string; vieja: boolean }>(
+    `select s.id::text, s.net_cents as net, s.event_id::text as eid, s.business_id as biz, s.city_id as city, ${VIEJA_LLAVE} as vieja from event_settlements s where s.id = $1::bigint and s.status = 'paying'`, [id, HORAS_LLAVE_STRIPE])).rows[0];
+  if (!s || !s.vieja || s.net <= 0) return { resultado: null, quedo: "ya_no_estaba" };
+  const resultado = await K.consultar({ tabla: "event_settlements", id: s.id, monto: s.net, ciudad: s.city, negocio: s.biz, grupo: `evt-${s.eid}` }, o);
+  await pagarUna(id);
+  const f = (await db().query<{ st: string; reabierta: boolean }>(`select s.status as st, not (${VIEJA_LLAVE}) as reabierta from event_settlements s where s.id = $1::bigint`, [id, HORAS_LLAVE_STRIPE])).rows[0];
+  const quedo = f?.st === "paid" || f?.st === "reversed" ? "hecha" : f?.reabierta ? "reabierta" : "sigue";
+  if (quedo === "hecha") await K.cerrarAlertaSola("transfer_stuck", s.id, { es: `Cerrada sola: la consulta a Stripe dijo que ${K.RESULTADO[resultado].es}.`, en: `Closed by itself: the Stripe query said ${K.RESULTADO[resultado].en}.` });
+  return { resultado, quedo };
 }
 
 /* 3) Lo que quedó en camino (la app se cortó o Stripe no respondió): se reintenta con la misma llave y el mismo monto MIENTRAS Stripe la recuerda
@@ -132,16 +179,20 @@ export async function pagarUna(id: string): Promise<boolean> {
    dinero por transferencia (transfer_stuck) o por reversión (transfer_reversal_stuck), una vez; nunca una segunda transferencia ni reversión. */
 export async function repararLiquidaciones(): Promise<number> {
   const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  // 9t5 · Desde que su llave vale (paying_at, o key_from si la consulta dijo que nunca llegó y la llave volvió a valer).
   const L = (await db().query<{ id: string }>(
-    `select id::text from event_settlements where status = 'paying' and paying_at < now() - interval '1 minute' and paying_at > now() - make_interval(hours => $1::int)
+    `select id::text from event_settlements where status = 'paying' and paying_at < now() - interval '1 minute' and coalesce(key_from, paying_at) > now() - make_interval(hours => $1::int)
       order by paying_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   let n = 0;
   for (const s of L) if (await pagarUna(s.id)) n++;
-  // Las viejas: solo la alerta (pagarUna no llama a Stripe con una llave de más de HORAS_LLAVE).
+  // 9t5 · Las viejas: se le pregunta a la pasarela (una vez cada CADA_MIN por liquidación) y pagarUna cierra con lo que dijo, sin llamar a Stripe con una
+  // llave de más de HORAS_LLAVE; si no cierra, la alerta transfer_stuck (una vez).
   const LV = (await db().query<{ id: string }>(
-    `select s.id::text from event_settlements s where s.status = 'paying' and s.net_cents > 0 and s.paying_at <= now() - make_interval(hours => $1::int)
-        and not exists (select 1 from money_alerts a where a.kind = 'transfer_stuck' and a.subject_id = s.id::text) order by s.paying_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
-  for (const s of LV) await pagarUna(s.id);
+    `select s.id::text from event_settlements s left join lateral (select max(y.at) as ult from gateway_checks y where y.subject_kind = 'event_settlements' and y.subject_id = s.id) g on true
+      where s.status = 'paying' and s.net_cents > 0 and coalesce(s.key_from, s.paying_at) <= now() - make_interval(hours => $1::int)
+        and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
+      order by g.ult nulls first, s.paying_at limit 20`, [HORAS_LLAVE_STRIPE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
+  for (const s of LV) if ((await resolverTransferencia(s.id, { origen: "barrido" })).quedo === "hecha") n++;
   // Las reversiones pendientes, con su llave, dentro del mismo tiempo; las viejas, la alerta.
   const R = (await db().query<{ id: string }>(
     `select id::text from event_settlement_reversals where status = 'pending' and manual_at is null and created_at < now() - interval '30 seconds'

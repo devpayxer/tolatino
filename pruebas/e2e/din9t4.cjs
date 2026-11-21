@@ -48,13 +48,17 @@ const P = {
   },
   async liberar(pi) { this.liberados.add(pi); return { ok: true }; },
   cliente: async () => null,
+  // 9t5 · La consulta a la pasarela (lo de más de 23 h): aquí no contesta; lo que hace con cada respuesta lo prueba din9t5.
+  buscarCobro: async () => ({ ok: false }),
   cobrosCon(pref) { return [...this.cargos.keys()].filter((k) => k.startsWith(pref)).length; },
   holdsCon(pref) { return [...this.holds.keys()].filter((k) => k.startsWith(pref)).length; },
 };
 const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
   './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined } });
 const PL = {}, RE = {}, PA = {};
-const CF = cargar('apps/web/lib/cobro-fuera.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas, './planes': PL, './rentas': RE, './patrocinio': PA });
+const K = cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas });
+const CF = cargar('apps/web/lib/cobro-fuera.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas, './planes': PL, './rentas': RE, './patrocinio': PA,
+  './patrocinio-evento': {}, './consulta-pasarela': K });
 Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: () => new Date().toISOString().slice(0, 10) },
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './avisos': avisos }));
 Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { diasEspeciales: async () => [], rangosDia: () => [] }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P },

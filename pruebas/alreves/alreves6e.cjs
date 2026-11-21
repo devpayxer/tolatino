@@ -33,7 +33,7 @@ const casos = [
   ['pagoDespuesDelEvento', M, "      raise exception 'evt_liq_fija: lo que se transfiere ya quedó fijo';", "      null;"],
   ['pagoDespuesDelEvento', M, "  idem_key       text not null unique check (idem_key ~ '^evt-liq-\\d{1,18}$'),", "  idem_key       text not null,"],
   ['pagoDespuesDelEvento', L, "idem: s.idem, meta:", "idem: `${s.idem}-${s.id}-${Date.now()}`, meta:"],
-  ['pagoDespuesDelEvento', L, "and status = 'paying'`, [id, tr]);", "`, [id, tr]);"],
+  ['pagoDespuesDelEvento', L, "and status = 'paying'`, [s.id, tr]);", "`, [s.id, tr]);"],
   ['pagoDespuesDelEvento', TX, "export async function listaTx(", "export async function arreglar(id: string) { await (await import(\"./db\")).db().query(`update event_settlements set net_cents = 0 where id = $1`, [id]); }\nexport async function listaTx("],
   ['pagoDespuesDelEvento', AE, "export async function evtAvisar(", "export async function evtPagar(n: string) { await (await import(\"@/lib/pagos/pasarela\")).pasarela.transferir({ centavos: 1, destino: n, grupo: 'x', idem: 'x', meta: {} }); }\nexport async function evtAvisar("],
   ['pagoDespuesDelEvento', BA, '["evtLiquidar", () => liq.liquidar()], ', ""],

@@ -3966,7 +3966,8 @@ const guardianes = {
     if (!/event_date_id  bigint not null unique references event_dates/.test(m)) falla(G, M, 0, "una liquidación por fecha");
     const l = sinComent(L), pu = cuerpoFn(l, "pagarUna");
     if (!/pasarela\.transferir\(\{ centavos: s\.net, destino: s\.dest, grupo: `evt-\$\{s\.eid\}`, idem: s\.idem,/.test(pu)) falla(G, L, 0, "pagarUna: el monto, el destino y la llave guardados por la base");
-    if (!/if \(!s \|\| s\.st !== "paying"\) return/.test(pu) || !/set status = 'paid'[^`]*where id = \$1::bigint and status = 'paying'`/.test(pu)) falla(G, L, 0, "pagarUna: solo desde 'paying' y 'paid' una vez");
+    // 9t5 · El cierre 'paid' es uno (cerrarPagada), el mismo para la respuesta de la pasarela y para lo que encontró la consulta.
+    if (!/if \(!s \|\| s\.st !== "paying"\) return/.test(pu) || !/return cerrarPagada\(s, tr\);/.test(pu) || !/set status = 'paid'[^`]*where id = \$1::bigint and status = 'paying'`/.test(cuerpoFn(l, "cerrarPagada"))) falla(G, L, 0, "pagarUna: solo desde 'paying' y 'paid' una vez");
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const tx = sinComent(x);
@@ -12197,15 +12198,19 @@ const guardianes = {
     const LQ = "apps/web/lib/evt-liquidacion.ts", SU = "apps/web/lib/suscripcion.ts";
     if (!existsSync(LQ) || !existsSync(SU)) return falla(G, LQ, 0, "faltan evt-liquidacion o suscripcion");
     const lq = sinComent(LQ), su = sinComent(SU), pu = cuerpoFn(lq, "pagarUna"), er = cuerpoFn(lq, "ejecutarReversion"), rl = cuerpoFn(lq, "repararLiquidaciones");
-    if (!/s\.paying_at <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(pu) || !/\[id, HORAS_LLAVE_STRIPE\]/.test(pu) || !antes(pu, "if (s.vieja && s.net > 0) { await alertaTransferenciaVieja(s); return false; }", "pasarela.transferir(")) falla(G, LQ, 0, "pagarUna no transfiere con una llave de más de HORAS_LLAVE desde que pasó a 'paying' (podría transferir dos veces): alerta transfer_stuck");
+    // 9t5 · Desde que su llave vale (paying_at, o key_from si la consulta dijo que nunca llegó); la vieja se cierra con la consulta (pagarVieja), sin la pasarela.
+    const pv = cuerpoFn(lq, "pagarVieja");
+    if (!/const VIEJA_LLAVE = "coalesce\(s\.key_from, s\.paying_at\) <= now\(\) - make_interval\(hours => \$2::int\)";/.test(lq) || !/\$\{VIEJA_LLAVE\} as vieja/.test(pu) || !/\[id, HORAS_LLAVE_STRIPE\]/.test(pu)
+      || !antes(pu, "if (s.vieja && s.net > 0) return pagarVieja(s);", "pasarela.transferir(") || /pasarela\./.test(pv) || !/await alertaTransferenciaVieja\(s\);/.test(pv)) falla(G, LQ, 0, "pagarUna no transfiere con una llave de más de HORAS_LLAVE desde que pasó a 'paying' (podría transferir dos veces): alerta transfer_stuck");
     if (!/r\.created_at <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(er) || !antes(er, "if (r.vieja) { await alertaReversionVieja(r); return false; }", "pasarela.revertirTransferencia(")) falla(G, LQ, 0, "ejecutarReversion no revierte con una llave de más de HORAS_LLAVE (podría revertir dos veces): alerta");
-    if (!/status = 'paying' and paying_at < now\(\) - interval '1 minute' and paying_at > now\(\) - make_interval\(hours => \$1::int\)/.test(rl) || !/created_at > now\(\) - make_interval\(hours => \$1::int\) order by created_at/.test(rl)
-      || !/a\.kind = 'transfer_stuck'/.test(rl) || !/a\.kind = 'transfer_reversal_stuck'/.test(rl)) falla(G, LQ, 0, "repararLiquidaciones reintenta transferencias y reversiones solo dentro de HORAS_LLAVE y después alerta, una vez");
+    if (!/status = 'paying' and paying_at < now\(\) - interval '1 minute' and coalesce\(key_from, paying_at\) > now\(\) - make_interval\(hours => \$1::int\)/.test(rl) || !/created_at > now\(\) - make_interval\(hours => \$1::int\) order by created_at/.test(rl)
+      || !/resolverTransferencia\(s\.id, \{ origen: "barrido" \}\)/.test(rl) || !/a\.kind = 'transfer_reversal_stuck'/.test(rl)) falla(G, LQ, 0, "repararLiquidaciones reintenta transferencias y reversiones solo dentro de HORAS_LLAVE y después alerta, una vez");
     if (!/alertar\("transfer_stuck", s\.id/.test(cuerpoFn(lq, "alertaTransferenciaVieja")) || !/alertar\("transfer_reversal_stuck", r\.id/.test(cuerpoFn(lq, "alertaReversionVieja"))) falla(G, LQ, 0, "las alertas de lo que pasó HORAS_LLAVE en camino, una por transferencia o reversión");
     if (Number(/const HORAS_LLAVE = (\d+);/.exec(su)?.[1] ?? 0) !== Number(/const HORAS_LLAVE = (\d+);/.exec(cb)?.[1] ?? 99)) falla(G, SU, 0, "HORAS_LLAVE del cobro de Pro es la misma de lib/cobros");
     const tc = cuerpoFn(su, "terminarCobro"), bc = cuerpoFn(su, "barrerCobrosPro");
-    if (!antes(tc, "if (a.vieja) { await alertaCobroViejo(s.business_id, a); return { ok: false, msg: VIEJO, enCamino: true }; }", "pasarela.cobrarDirecto(") || !/created_at <= now\(\) - make_interval\(hours => \$\{HORAS_LLAVE\}\) as vieja/.test(su)) falla(G, SU, 0, "terminarCobro no cobra con una llave de más de HORAS_LLAVE (podría cobrar dos veces): alerta charge_stuck");
-    if (!/created_at > now\(\) - make_interval\(hours => \$1::int\)/.test(bc) || !/a\.kind = 'charge_stuck'/.test(bc)) falla(G, SU, 0, "barrerCobrosPro reintenta solo dentro de HORAS_LLAVE y después alerta, una vez");
+    const tv = cuerpoFn(su, "terminarViejo");
+    if (!antes(tc, "if (a.vieja) return terminarViejo(s, a);", "pasarela.cobrarDirecto(") || /pasarela\./.test(tv) || !/await alertaCobroViejo\(s\.business_id, a\);/.test(tv) || !/created_at <= now\(\) - make_interval\(hours => \$\{HORAS_LLAVE\}\) as vieja/.test(su)) falla(G, SU, 0, "terminarCobro no cobra con una llave de más de HORAS_LLAVE (podría cobrar dos veces): alerta charge_stuck");
+    if (!/created_at > now\(\) - make_interval\(hours => \$1::int\)/.test(bc) || !/resolverCobroPro\(x\.id, \{ origen: "barrido" \}\)/.test(bc)) falla(G, SU, 0, "barrerCobrosPro reintenta solo dentro de HORAS_LLAVE y después pregunta a la pasarela (o alerta)");
   },
 
   /* 9t2 (21 nov) · casoSeCierraConSuDevolucion (LAUNCH «Dinero por clase» (3)(4)): lo que una devolución deja hecho en su caso se escribe en la
@@ -12269,7 +12274,10 @@ const guardianes = {
     if (!/insert into subscription_charges/.test(an) || /pasarela\./.test(an) || !/return tx\(async \(c\) => \{/.test(an) || an.indexOf("insert into subscription_charges") > an.indexOf("await alGuardar?.(c);")) falla(G, SU, 0, "anotarCobro anota la intención (con su auditoría) en su transacción y no llama a la pasarela");
     // 9t3 · Ni una intención nueva ni una pendiente de un período que ya tiene su cobro hecho llegan a Stripe (la base solo lo frenaría al cerrar,
     // con el dinero ya cobrado).
-    if (!antes(tc, "y.status = 'done' and y.id <> z.id", "pasarela.cobrarDirecto(") || !/status = 'failed', last_error = 'periodo_ya_cobrado'/.test(tc)) falla(G, SU, 0, "terminarCobro no manda a Stripe la intención de un período que ya quedó cobrado");
+    // 9t5 · «Nunca se mandó» lo dice sent_at (se anota antes de la llamada), no attempts (se anota después).
+    if (!antes(tc, "if (await periodoYaCobrado(a.id)) {", "pasarela.cobrarDirecto(") || !/y\.status = 'done' and y\.id <> z\.id/.test(/const periodoYaCobrado = [^\n]*\n[^\n]*/.exec(su)?.[0] ?? "")
+      || !/status = 'failed', last_error = 'periodo_ya_cobrado' where id = \$1::bigint and status = 'pending' and sent_at is null`/.test(tc) || /attempts = 0/.test(tc)) falla(G, SU, 0, "terminarCobro no manda a Stripe la intención de un período que ya quedó cobrado (y solo suelta sin preguntar la que nunca se mandó: sent_at)");
+    if (!antes(tc, "sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending'", "pasarela.cobrarDirecto(")) falla(G, SU, 0, "terminarCobro anota que se manda (sent_at) ANTES de llamar a la pasarela");
     if (!/where business_id = \$1 and \(status = 'pending' or idem_key = \$2 or \(status = 'done' and period_start = \$3::timestamptz\)\)/.test(an)) falla(G, SU, 0, "anotarCobro termina primero la intención en camino de ese negocio (o la de esa llave): nunca anota otra mientras una va en camino");
     if (!/return terminarCobro\(s, await anotarCobro\(s, desde, alGuardar\), enSesion\);/.test(cp) || /pasarela\./.test(cp)) falla(G, SU, 0, "cobrarPeriodo: primero la intención (anotarCobro) y después la pasarela (terminarCobro)");
     const bloque = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n    \}/.exec(tc)?.[0] ?? "";
@@ -12305,13 +12313,16 @@ const guardianes = {
     if (!/import \{ HORAS_LLAVE_STRIPE as HORAS_LLAVE \} from "\.\/cobros";/.test(cf) || /const HORAS_LLAVE = /.test(cf)) falla(G, CF, 0, "las horas de la llave son las de lib/cobros (HORAS_LLAVE_STRIPE), no otras");
     if (!/insert into offsession_charges/.test(an) || /pasarela\./.test(an) || !/return c \? en\(c\) : tx\(en\);/.test(an) || an.indexOf("insert into offsession_charges") > an.indexOf("await alGuardar?.(k);")) falla(G, CF, 0, "anotarCobro anota la intención (con la auditoría de quien decide) en una transacción y no llama a la pasarela");
     if (!/where kind = \$1 and ref_id = \$2 and \(status = 'pending' or \(status = 'done' and purpose = \$3\)\)/.test(an)) falla(G, CF, 0, "anotarCobro devuelve la intención en camino de ese objeto (o la ya cobrada de ese propósito): nunca anota otra mientras una va en camino");
-    if (!antes(tc, "if (a.vieja) { await alertaVieja(a); return { ok: false, enCamino: true, msg: VIEJO }; }", "pasarela.cobrar") || !/created_at <= now\(\) - make_interval\(hours => \$\{HORAS_LLAVE\}\) as vieja/.test(cf)) falla(G, CF, 0, "terminarCobro no cobra con una llave de más de HORAS_LLAVE (podría cobrar dos veces): alerta offsession_stuck");
-    if (!antes(tc, "set sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending'", "pasarela.cobrar")) falla(G, CF, 0, "terminarCobro anota que se manda ANTES de llamar a la pasarela (si el proceso muere, nadie la suelta como «nunca mandada»)");
+    const tvj = cuerpoFn(cf, "terminarVieja");
+    if (!antes(tc, "if (a.vieja) return terminarVieja(a, cerrar);", "pasarela.cobrar") || /pasarela\.cobrar/.test(tvj) || !/await alertaVieja\(a\);/.test(tvj) || !/created_at <= now\(\) - make_interval\(hours => \$\{HORAS_LLAVE\}\) as vieja/.test(cf)) falla(G, CF, 0, "terminarCobro no cobra con una llave de más de HORAS_LLAVE (podría cobrar dos veces): alerta offsession_stuck");
+    if (!antes(tc, "sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending'", "pasarela.cobrar")) falla(G, CF, 0, "terminarCobro anota que se manda ANTES de llamar a la pasarela (si el proceso muere, nadie la suelta como «nunca mandada»)");
     const bloque = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n    \}/.exec(tc)?.[0] ?? "";
     if (!bloque || /'failed'/.test(bloque) || !/enCamino: true/.test(bloque) || !/export const SIN_RESPUESTA = new Set\(\["red", "api_error", "error",/.test(cf)) falla(G, CF, 0, "terminarCobro: sin respuesta de Stripe, la intención sigue en camino (nunca 'failed')");
-    if (!/where id = \$1::bigint and status = 'pending'`, \[id, pi\]\)\)\.rowCount;/.test(mh) || !/if \(!\(await marcarHecho\(c, a\.id, r\.id\)\)\) return false;\s+await cerrar\(c, hecho\);/.test(tc)) falla(G, CF, 0, "el cierre marca 'done' una vez (where status = 'pending') y aplica el flujo en la MISMA transacción");
+    // 9t5 · Un solo cierre (cerrarHecho) para la respuesta de la pasarela y para lo que encontró la consulta.
+    if (!/where id = \$1::bigint and status = 'pending' returning city_id as ciudad`, \[id, pi\]\)\)\.rows\[0\];\s+if \(!u\) return false;/.test(mh) || !/if \(!\(await marcarHecho\(c, a\.id, hecho\.pi\)\)\) return false;\s+await cerrar\(c, hecho\);/.test(cuerpoFn(cf, "cerrarHecho"))
+      || !/return cerrarHecho\(a, \{ pi: r\.id,/.test(tc)) falla(G, CF, 0, "el cierre marca 'done' una vez (where status = 'pending') y aplica el flujo en la MISMA transacción");
     if (!/if \(!a\.enviada && \(await soltarSinMandar\(a\.id, porque\)\)\) return true;/.test(cuerpoFn(cf, "noAplica")) || !/and status = 'pending' and sent_at is null/.test(cuerpoFn(cf, "soltarSinMandar"))) falla(G, CF, 0, "lo que ya no aplica se suelta solo si nunca se mandó; lo mandado se le pregunta a Stripe con su llave");
-    if (!/created_at > now\(\) - make_interval\(hours => \$1::int\)/.test(bc) || !/m\.kind = 'offsession_stuck'/.test(bc)) falla(G, CF, 0, "barrerCobrosFuera reintenta solo dentro de HORAS_LLAVE y después alerta, una vez");
+    if (!/created_at > now\(\) - make_interval\(hours => \$1::int\)/.test(bc) || !/resolverCobroFuera\(x\.id, \{ origen: "barrido" \}\)/.test(bc)) falla(G, CF, 0, "barrerCobrosFuera reintenta solo dentro de HORAS_LLAVE y después pregunta a la pasarela (o alerta)");
     if (!/\["cobrosFuera", async \(\) => \(await import\("\.\/cobro-fuera"\)\)\.barrerCobrosFuera\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "el barrido central termina los cobros fuera de sesión en camino (barrerCobrosFuera)");
     // Planes: la intención antes; en camino no es rechazo.
     const pl = sinComent(PL), cp = cuerpoFn(pl, "cobrarPeriodo"), tp = cuerpoFn(pl, "terminarCobroPlan");
@@ -12327,7 +12338,7 @@ const guardianes = {
     // Patrocinios: la renovación sola por su intención; en camino no termina; el cierre de la intención con el patrocinio nuevo.
     for (const [f, fn, tabla] of [[PA, "vencerUno", "sponsorships"], [PE, "vencerUnoEvt", "event_sponsorships"]]) {
       const v = cuerpoFn(sinComent(f), fn);
-      if (!antes(v, "if (!p.ok && p.enCamino) return null;", "await terminar(motivo);") || !antes(v, "if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) return null;", `insert into ${tabla}`) || !/, ref: id \};/.test(v)) falla(G, f, 0, `${fn}: la renovación va por su intención (ref), en camino no termina el patrocinio y el cierre va con el patrocinio nuevo, una vez`);
+      if (!antes(v, "if (!p.ok && p.enCamino) return null;", "await terminar(motivo);") || !antes(v, "if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) {", `insert into ${tabla}`) || !/, ref: id \};/.test(v)) falla(G, f, 0, `${fn}: la renovación va por su intención (ref), en camino no termina el patrocinio y el cierre va con el patrocinio nuevo, una vez`);
     }
     const co = cuerpoFn(sinComent(PA), "cobrar");
     if (/cobrarDirecto/.test(co) || !antes(co, "CF.anotarCobro(", "CF.terminarCobro(a)")) falla(G, PA, 0, "cobrar fuera de sesión: la intención antes (anotarCobro) y la pasarela por terminarCobro");
@@ -12338,6 +12349,101 @@ const guardianes = {
       || !/raise exception 'un cobro fuera de sesión no se borra \(estados\)'/.test(mig)) falla(G, "packages/db/migrations", 0, "la base impone una intención en camino por objeto, un cobro hecho por propósito y que nada se borre (offsession_charges)");
     const da = sinComent("apps/web/lib/dinero-alertas.ts"), pt = readFileSync("apps/web/app/admin/Planes.tsx", "utf8");
     for (const k of ["offsession_stuck", "offsession_unapplied"]) if (!new RegExp(`"${k}"`).test(da) || !new RegExp(`${k}: \\{ es:`).test(da) || !new RegExp(`${k}: E\\(`).test(pt) || !new RegExp(`'${k}'`).test(mig)) falla(G, "apps/web/lib/dinero-alertas.ts", 0, `la alerta «${k}» está en la base, en el tipo, en el aviso y en el rótulo del Super Admin`);
+  },
+
+  /* 9t5 (21 nov) · preguntarALaPasarela (LAUNCH «Cobros fuera de sesión, lo que quedó de 9t4» y «Dinero por clase · lo que quedó» (2)), por clase: una
+     intención de dinero «sin respuesta» (cobro de Pro, cobro con tarjeta guardada, transferencia al organizador) no se queda en camino para siempre, y
+     nadie la cierra de memoria: el servidor le PREGUNTA a la pasarela por el dato propio que mandó al crear y cierra con esa verdad.
+     (1) Toda creación de esas intenciones manda el dato buscable (metadata tl_intencion) y lo anota en la fila (gateway_ref) en la MISMA sentencia que
+         «se mandó» (sent_at), ANTES de la llamada, y solo la primera vez.
+     (2) Ninguna intención se da por «no llegó» sin consultar: todo lo que la deja 'nunca_llego' (o le devuelve la llave) lee el veredicto de la consulta
+         (veredicto().noLlego), y el veredicto lo exige con el dato buscable y pasado el margen desde que se mandó (HORAS_LLAVE + MARGEN_NO_LLEGO_H).
+     (3) La consulta a la pasarela la hace solo lib/consulta-pasarela.ts, fuera de cualquier transacción, y queda anotada (gateway_checks, solo inserción).
+     (4) Lo viejo nunca vuelve a la pasarela con su llave; el barrido pregunta (cada CADA_MIN) y cierra por el MISMO cierre del flujo normal.
+     (5) «Preguntar a Stripe ahora» (Super Admin): tx:aprobar, la misma función del barrido, con su auditoría; solo si la intención sigue en camino.
+     Al revés: alreves9tdinero; con la base: pruebas/e2e/din9t5.cjs. */
+  preguntarALaPasarela() {
+    const G = "preguntarALaPasarela", K = "apps/web/lib/consulta-pasarela.ts", PS = "apps/web/lib/pagos/pasarela.ts", CF = "apps/web/lib/cobro-fuera.ts", SU = "apps/web/lib/suscripcion.ts", LQ = "apps/web/lib/evt-liquidacion.ts";
+    const DA = "apps/web/lib/dinero-alertas.ts", AC = "apps/web/app/admin/acciones-conciliacion.ts", PT = "apps/web/app/admin/Planes.tsx";
+    for (const f of [K, PS, CF, SU, LQ, DA, AC, PT]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    const k = sinComent(K), ps = sinComent(PS), cf = sinComent(CF), su = sinComent(SU), lq = sinComent(LQ);
+    const antes = (t, a, b) => t.indexOf(a) >= 0 && t.indexOf(b) >= 0 && t.indexOf(a) < t.indexOf(b);
+    // (1) El dato buscable, en cada creación, antes de la llamada.
+    const crear = [[CF, cuerpoFn(cf, "terminarCobro"), "offsession_charges", "pasarela.cobrar"], [SU, cuerpoFn(su, "terminarCobro"), "subscription_charges", "pasarela.cobrarDirecto("], [LQ, cuerpoFn(lq, "pagarUna"), "event_settlements", "pasarela.transferir("]];
+    for (const [f, b, t, llamada] of crear) {
+      const marca = `set gateway_ref = case when sent_at is null then '${t}:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = '${t === "event_settlements" ? "paying" : "pending"}' returning gateway_ref as gref`;
+      if (!antes(b, marca, llamada)) falla(G, f, 0, `la intención (${t}) anota que se manda y su dato buscable (gateway_ref) en UNA sentencia, antes de la pasarela, y solo la primera vez`);
+      const m = new RegExp(`${llamada.replace(/[.(]/g, (x) => `\\${x}`)}[^\\n]*`).exec(b)?.[0] ?? "";
+      if (!/\.\.\.\(m\.gref \? \{ tl_intencion: m\.gref \} : \{\}\)/.test(m) && !/\.\.\.\(m\.gref \? \{ tl_intencion: m\.gref \} : \{\}\)/.test(/const meta = [^\n]*/.exec(b)?.[0] ?? "")) falla(G, f, 0, `la creación de ${t} manda el dato buscable a la pasarela (metadata tl_intencion)`);
+    }
+    // Por clase: nadie más crea esos cobros ni transfiere (cobroFueraAnotadoAntes y pagoDespuesDelEvento ya lo miran) y el simulador guarda la metadata.
+    const metodo = (fn) => { const i = ps.search(new RegExp(`\\n  (?:async )?${fn}\\(`)); if (i < 0) return ""; const j = ps.slice(i + 1).search(/\n  (?:async )?\w+\(/); return ps.slice(i, j < 0 ? undefined : i + 1 + j); };
+    for (const fn of ["cobrarDirecto", "cobrarFuera", "transferir"]) if (!/metadata\)? values \([^`]*\$\d+::jsonb\)/.test(metodo(fn))) falla(G, PS, 0, `el simulador guarda la metadata en ${fn} (la consulta la busca igual que en Stripe)`);
+    // (2) «No llegó» solo con el veredicto de la consulta.
+    const ve = cuerpoFn(k, "veredicto");
+    if (!/g\.result = 'no_hallado' and z\.gateway_ref is not null and z\.sent_at is not null and g\.at >= \$\{desde\} \+ make_interval\(hours => \$3::int\)/.test(ve) || !/\[t, id, HORAS_LLAVE \+ MARGEN_NO_LLEGO_H\]/.test(ve)
+      || !(Number(/export const MARGEN_NO_LLEGO_H = (\d+);/.exec(k)?.[1] ?? 0) >= 1) || !/const desde = t === "event_settlements" \? "greatest\(z\.sent_at, coalesce\(z\.key_from, z\.paying_at\)\)" : "z\.sent_at";/.test(ve))
+      falla(G, K, 0, "veredicto: «no llegó» solo con el dato buscable (gateway_ref) y pasadas HORAS_LLAVE + MARGEN_NO_LLEGO_H (≥ 1 h) desde que se mandó");
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
+      const t = sinComent(f);
+      for (const m of t.matchAll(/\n(?:export )?(?:async )?function (\w+)\(/g)) {
+        const b = cuerpoFn(t, m[1]);
+        const escribe = /`update (offsession_charges|subscription_charges|event_settlements)[^`]*(status = 'failed'|key_from = now\(\))[^`]*`/.test(b);
+        if (escribe && /["']nunca_llego["']/.test(b) && !(/veredicto\(/.test(b) && /v\?\.noLlego/.test(b))) falla(G, f, t.slice(0, m.index).split("\n").length, `${m[1]} da una intención por «nunca llegó» sin el veredicto de la consulta a la pasarela (veredicto().noLlego)`);
+      }
+    }
+    // (3) La consulta: solo aquí, fuera de una transacción, y anotada.
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x) && x !== K && x !== PS)) if (/pasarela\.(buscarCobro|buscarTransferencia)\(/.test(sinComent(f))) falla(G, f, 0, "la consulta a la pasarela va por lib/consulta-pasarela.ts › consultar (fuera de transacción y anotada)");
+    const co = cuerpoFn(k, "consultar");
+    if (!antes(co, "pasarela.buscarTransferencia(", "await tx(") || !antes(co, "pasarela.buscarCobro(", "await tx(") || !/insert into gateway_checks \(/.test(co) || !antes(co, "insert into gateway_checks (", "await o.alGuardar?.(c);")) falla(G, K, 0, "consultar: la pasarela FUERA de la transacción; después, la consulta anotada con la auditoría de quien la pidió, en una transacción");
+    if (!/"varios" in r/.test(co) || !/resultado === "varios" \|\| resultado === "monto_distinto"\) await alertaRevisar\(/.test(co)) falla(G, K, 0, "consultar: varios hallados u otro monto no se cierran solos (gateway_review)");
+    const busca = metodo("buscarCobro");
+    if (!/"\/v1\/payment_intents\/search", \{ query: `metadata\['tl_intencion'\]:'\$\{ref\}'`/.test(busca) || /cuenta:/.test(busca) || /catch \{ return \{ ok: true/.test(busca) || (busca.match(/catch \{ return \{ ok: false \}; \}/g) ?? []).length !== 2) falla(G, PS, 0, "buscarCobro: los PaymentIntents de la plataforma (sin Stripe-Account) por su metadata; si Stripe no contesta, { ok: false } (nunca «no hallado»)");
+    // (4) Los barridos preguntan; lo viejo nunca vuelve a la pasarela con su llave (llaveSoloUnDia y cobroFueraAnotadoAntes miran el antes).
+    for (const [f, fn, t] of [[CF, "resolverCobroFuera", "offsession_charges"], [SU, "resolverCobroPro", "subscription_charges"], [LQ, "resolverTransferencia", "event_settlements"]]) {
+      const b = cuerpoFn(f === CF ? cf : f === SU ? su : lq, fn);
+      if (!new RegExp(`K\\.consultar\\(\\{ tabla: "${t}"`).test(b) || /await tx\(/.test(b.slice(0, b.indexOf("K.consultar(")))) falla(G, f, 0, `${fn}: primero la consulta (fuera de transacción) y después el cierre por el flujo`);
+    }
+    if (!/if \(resultado === "hecho" \|\| resultado === "fallido" \|\| resultado === "no_hallado"\) \{\s+await conCandado\(a\.biz,/.test(cuerpoFn(su, "resolverCobroPro"))) falla(G, SU, 0, "resolverCobroPro cierra con el candado del plan (el mismo de procesar y del barrido)");
+    if (!/if \(v\?\.resultado === "hecho" && v\.stripe\) \{[\s\S]*?await registrarPeriodo\(s, a, v\.stripe\);/.test(cuerpoFn(su, "terminarViejo"))) falla(G, SU, 0, "un cobro de Pro que la consulta encontró se cierra por el mismo cierre (registrarPeriodo)");
+    if (!/if \(v\?\.resultado === "hecho" && v\.stripe\) return cerrarHecho\(a, \{ pi: v\.stripe,/.test(cuerpoFn(cf, "terminarVieja"))) falla(G, CF, 0, "un cobro con tarjeta guardada que la consulta encontró se cierra por el mismo cierre (cerrarHecho)");
+    if (!/if \(v\?\.resultado === "hecho" && v\.stripe\) return cerrarPagada\(s, v\.stripe, true\);/.test(cuerpoFn(lq, "pagarVieja"))) falla(G, LQ, 0, "una transferencia que la consulta encontró se cierra por el mismo cierre (cerrarPagada)");
+    // (5) La acción del Super Admin y la alerta.
+    const da = sinComent(DA), pa = cuerpoFn(da, "preguntarPorAlerta"), ac = cuerpoFn(sinComent(AC), "alertaPreguntar"), pt = readFileSync(PT, "utf8");
+    if (!/s\.puede\("tx", "aprobar"\)/.test(ac) || !/preguntarPorAlerta\(s, /.test(ac)) falla(G, AC, 0, "«Preguntar a Stripe ahora»: el permiso de las demás acciones del dinero (tx:aprobar)");
+    if (!/if \(!a\.vivo\) return/.test(pa) || !/origen: "equipo", staff: s\.id, alGuardar: \(c\) => auditar\(c, \{ actor: s\.id, action: "dinero\.alerta\.preguntar"/.test(pa) || !/resolverCobroPro\(a\.sid, o\)/.test(pa) || !/resolverCobroFuera\(a\.sid, o\)/.test(pa) || !/resolverTransferencia\(a\.sid, o\)/.test(pa))
+      falla(G, DA, 0, "preguntarPorAlerta: solo si sigue en camino, la misma función del barrido y la auditoría de quien la pidió");
+    if (!/\.\.\.\(a\.preguntar \? \[\{ l: E\("Preguntar a Stripe ahora", "Ask Stripe now"\)/.test(pt) || !/alertaPreguntar\(a\.id, m\)/.test(pt) || !/gateway_review: E\(/.test(pt) || !/a\.consulta \?/.test(pt)) falla(G, PT, 0, "la alerta ofrece «Preguntar a Stripe ahora» solo si el servidor lo deja (preguntar), dice qué dijo la última consulta y nombra gateway_review");
+    if (!/preguntar: vivo === true/.test(cuerpoFn(da, "alertasDinero")) || !/'resuelta_sola'/.test(cuerpoFn(da, "alertasDinero")) || !/insert into money_alert_notes \(alert_id, action, staff_id, note\) values \(\$1::bigint, 'resuelta_sola', null, \$2\)/.test(cuerpoFn(da, "cerrarAlertaSola"))) falla(G, DA, 0, "la alerta se cierra sola cuando la intención deja de estar en camino (resuelta_sola) y ofrece preguntar solo si sigue en camino");
+    if (!/await cerrarAlertasResueltas\(\);/.test(cuerpoFn(da, "barrerAlertasDinero"))) falla(G, DA, 0, "el barrido cierra las alertas cuya intención ya no está en camino");
+    // La base.
+    const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8")).join("\n");
+    if (!/create trigger gateway_checks_no_cambia before update or delete on gateway_checks for each row execute function dinero_solo_insercion\(\);/.test(mig) || !/'gateway_review'\)\);/.test(mig)
+      || !/alter table subscription_charges add column if not exists sent_at timestamptz;/.test(mig) || !/if old\.gateway_ref is not null and new\.gateway_ref is distinct from old\.gateway_ref then raise exception 'cobro_fuera: gateway_ref se anota una vez'/.test(mig))
+      falla(G, "packages/db/migrations", 0, "la base: las consultas solo de inserción, la alerta gateway_review, sent_at de Pro y el dato buscable anotado una vez");
+  },
+
+  /* 9t5 (21 nov, CI de 9t4: plan4f) · yaCobradoNoSeQuedaMudo, por clase: un cobro fuera de sesión cuya intención ya está HECHA mientras el objeto TODAVÍA
+     lo espera (el plan con el mismo próximo cobro, la renta apartada o con los mismos días, el patrocinio vivo y vencido) no puede contestar «listo» en
+     silencio en cada barrido (el objeto quedaba atascado para siempre y nadie se enteraba) ni cobrar otra vez. El plan se pone al día (el período está
+     pagado: avanza sin otro pago, con evento y auditoría, una vez); la renta y el patrocinio, que no pueden cambiarse solos sin saber qué pasó, avisan al
+     equipo de dinero (offsession_unapplied, una vez): la renta lo dice a quien tocó, el patrocinio termina con su motivo. Al revés: alreves9tdinero; con
+     la base: pruebas/e2e/din9t5.cjs. */
+  yaCobradoNoSeQuedaMudo() {
+    const G = "yaCobradoNoSeQuedaMudo", PL = "apps/web/lib/planes.ts", RE = "apps/web/lib/rentas.ts", PA = "apps/web/lib/patrocinio.ts", PE = "apps/web/lib/patrocinio-evento.ts";
+    for (const f of [PL, RE, PA, PE]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    const pl = sinComent(PL), tp = cuerpoFn(pl, "terminarCobroPlan"), pp = cuerpoFn(pl, "periodoYaPagado");
+    if (!/if \(r\.ya\) \{ await periodoYaPagado\(a\); return true; \}/.test(tp) || /if \(r\.ya\) return/.test(tp)) falla(G, PL, 0, "terminarCobroPlan: «ya cobrado» con el plan esperando ese período no es mudo (periodoYaPagado)");
+    if (!/where id = \$1::bigint and next_charge_on = \$3::date and status = 'active' returning/.test(pp) || !/'plan\.periodo_al_dia'/.test(pp) || !/'period_caught_up'/.test(pp) || /pasarela\.|insert into payments/.test(pp)
+      || !/kind = 'offsession_unapplied' and subject_id = \$1/.test(pp)) falla(G, PL, 0, "periodoYaPagado: avanza solo si el plan sigue esperando ESE período, una vez, sin otro pago ni la pasarela, con evento y auditoría (y no si el cobro salió sin aplicar)");
+    const tr = cuerpoFn(sinComent(RE), "terminarCobroRenta");
+    const bloque = /if \(a\.st === "done"\) \{[\s\S]*?\n  \}/.exec(tr)?.[0] ?? "";
+    if (/if \(a\.st === "done"\) return \{ ok: true \};/.test(tr) || !/const espera = \(d\.que === "recoger" && x\.st === "held"\) \|\| \(d\.que === "dia" && x\.st === "out" && x\.dias === d\.dias\);/.test(bloque)
+      || !/await CF\.alertaSinAplicar\(a, /.test(bloque) || !/return no\(/.test(bloque)) falla(G, RE, 0, "terminarCobroRenta: un cobro ya hecho que la renta todavía espera avisa al equipo y lo dice; no contesta «listo»");
+    for (const [f, fn] of [[PA, "vencerUno"], [PE, "vencerUnoEvt"]]) {
+      const v = cuerpoFn(sinComent(f), fn), b = /if \(!\(await CF\.marcarHecho\(c, p\.intencion!, p\.pi\)\)\) \{[\s\S]*?\n        \}/.exec(v)?.[0] ?? "";
+      if (!/if \(ia\?\.st !== "done"\) return null;/.test(b) || !/await terminar\(YA_COBRADA\);/.test(b) || !/await CF\.alertaSinAplicar\(ia, /.test(b) || /pasarela\./.test(b)) falla(G, f, 0, `${fn}: una renovación ya cobrada con el patrocinio vivo termina con su motivo y avisa al equipo (no se queda muda en cada barrido)`);
+    }
   },
 
   /* 9t3 (21 nov) · manoTrasLaLlave (LAUNCH «Dinero por clase · lo que quedó» (c)): «Resolver a mano» lo deja la base (dinero_a_mano) cuando Stripe ya la
