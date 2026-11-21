@@ -31,7 +31,8 @@ const barrer = () => fetch(B + '/api/interno/barrido', { method: 'POST', headers
   ok(sql(`select o.status || '|' || p.status from operations o join payments p on p.operation_id = o.id where o.number = '${N}'`) === 'pending|held', `${N}: pendiente y retenido`);
   sql(`update operations set respond_by = now() - interval '1 minute' where number = '${N}'`);
   const [r1, r2] = await Promise.all([barrer(), barrer()]);
-  ok([r1.corrio, r2.corrio].filter(Boolean).length >= 1 && r1.ok && r2.ok, `dos barridos a la vez: corrió ${[r1.corrio, r2.corrio].filter(Boolean).length} (el otro esperó su turno o no corrió)`);
+  const fallas = [...(r1.fallas ?? []), ...(r2.fallas ?? [])].map((x) => `${x.tarea} → ${x.error}`).join(' | ').slice(0, 600);
+  ok([r1.corrio, r2.corrio].filter(Boolean).length >= 1 && r1.ok && r2.ok, `dos barridos a la vez: corrió ${[r1.corrio, r2.corrio].filter(Boolean).length} (el otro esperó su turno o no corrió)${fallas ? ' · falló: ' + fallas : ''}`);
   ok(sql(`select o.status || '|' || p.status from operations o join payments p on p.operation_id = o.id where o.number = '${N}'`) === 'expired|released', `${N}: vencido y LIBERADO por el barrido, sin abrir ninguna página`);
   ok(sql(`select count(*) from notifications where user_id = '${MAR}' and body like '%${N.slice(2)}%' or (user_id = '${MAR}' and title like 'Sin respuesta%' and created_at > now() - interval '1 minute')`) !== '0', 'y a la clienta le llegó el aviso');
   const r3 = await fetch(B + '/api/interno/barrido', { method: 'POST' }); ok(r3.status === 404, 'sin token: 404');

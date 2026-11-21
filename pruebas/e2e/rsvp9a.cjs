@@ -52,7 +52,7 @@ const RUN = Date.now().toString(36), TAG = `[r9a ${RUN}]`;
     console.log('3 · Desde la hora: sale una vez, a quien va');
     if (hora >= 6) {
       cfg(Math.min(20, hora)); const r = barrido();
-      ok(r && r.ok !== false, 'el barrido corre');
+      ok(r && r.ok !== false, `el barrido corre${r && r.ok === false ? ' · falló: ' + (r.fallas ?? []).map((x) => `${x.tarea} → ${x.error}`).join(' | ').slice(0, 600) : ''}`);
       ok(avisos(MARI, MAN) === 1, 'Marisol (va, RSVP de hace 3 h) recibe «rsvp_recordatorio» del evento de mañana');
       ok(avisos(LUCIA, MAN) === 1, 'Lucía también');
       ok(avisos(YARI, MAN) === 0, 'Yari canceló: no le llega');

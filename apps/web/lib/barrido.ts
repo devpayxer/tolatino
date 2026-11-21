@@ -224,7 +224,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
       for (const [name, f] of T) {
         const t = Date.now();
         let error: string | undefined;
-        try { await f(); } catch (e) { error = String((e as Error)?.message ?? e).slice(0, 300); }
+        // Una tarea que falla también deja su línea en el registro del servidor (además de system_jobs): el CI 44936378282 tuvo el barrido en rojo
+        // y ni la prueba ni el registro decían qué tarea era.
+        try { await f(); } catch (e) { error = String((e as Error)?.message ?? e).slice(0, 300); console.error(`[barrido] ${name}: ${error}`); }
         const ms = Date.now() - t;
         out.push({ name, ok: !error, ms, ...(error ? { error } : {}) });
         await db().query(
