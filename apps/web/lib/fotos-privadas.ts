@@ -194,3 +194,21 @@ async function moverAPrivada(f: { id: string; url: string; status: string; w: nu
 
 /* La lista de llaves de variantes privadas que pueden existir (la purga de una cuenta las saca con la maestra: clavesVariantes ya las conoce). */
 export const llavesPrivadasDe = (uuid: string, ancho?: number | null, hechos?: number[] | null) => clavesVariantes(llavePrivada(uuid), ancho, hechos);
+
+/* F4 · Las cifras de las fotos de destino privado para el Super Admin (la hermana de cifrasFotos, lib/fotos-variantes.ts, que solo cuenta las públicas):
+   las que se ven (visibles, sin purgar) con su dirección privada. Una fila por archivo (la id es la del nombre). UNA consulta, una pasada y sin
+   N+1; ningún índice cubre el universo entero (media_privadas_sin_variantes_idx solo tiene las pendientes), como pasa con las públicas: la pantalla
+   la pide a demanda y el filtro `private` deja fuera todo lo público. Solo números: nunca sale una foto, una persona ni una dirección. */
+export type CifrasFotosPrivadas = { privadas: number; convertidas: number; pendientes: number; sinMaestra: number; bytesMaestras: number; bytesVariantes: number };
+export async function cifrasFotosPrivadas(): Promise<CifrasFotosPrivadas> {
+  const r = (await db().query<{ privadas: number; convertidas: number; pendientes: number; sin_maestra: number; bytes_maestras: number; bytes_variantes: number }>(
+    `select count(*)::int as privadas,
+            count(*) filter (where cardinality(var_widths) > 0)::int as convertidas,
+            count(*) filter (where var_at is null)::int as pendientes,
+            count(*) filter (where var_widths = '{}')::int as sin_maestra,
+            coalesce(sum(bytes), 0)::float8 as bytes_maestras,
+            coalesce(sum(coalesce(var_bytes[1], 0) + coalesce(var_bytes[2], 0) + coalesce(var_bytes[3], 0) + coalesce(var_bytes[4], 0)), 0)::float8 as bytes_variantes
+       from media
+      where private and status = 'visible' and purged_at is null and url like '/api/medios/privada/%'`)).rows[0]!;
+  return { privadas: r.privadas, convertidas: r.convertidas, pendientes: r.pendientes, sinMaestra: r.sin_maestra, bytesMaestras: r.bytes_maestras, bytesVariantes: r.bytes_variantes };
+}

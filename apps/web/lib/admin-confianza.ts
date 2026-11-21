@@ -2,6 +2,8 @@ import "server-only";
 import type { Staff } from "./admin";
 import { db } from "./db";
 import { gastoFotosMes, resumenFotos } from "./fotos-resumen";
+import { cifrasFotos } from "./fotos-variantes";
+import { cifrasFotosPrivadas } from "./fotos-privadas";
 import { SLA_SQL } from "./admin-colas";
 import { catalogoConfig, valor } from "./config";
 import { saludImagen } from "./moderacion-img";
@@ -138,8 +140,11 @@ export async function autoModeracion() {
   const marcas = (await db().query<{ regla: string; n: number }>(`select rule_key as regla, count(*)::int as n from mod_flags where created_at > now() - interval '30 days' group by rule_key`)).rows;
   // R3 · Revisión automática de las fotos públicas (AJ): las cifras de hoy y de la semana por capa, cinco para mirar y el gasto del mes de la segunda opinión.
   const [fHoy, fSemana, fGasto] = await Promise.all([resumenFotos(0, -1), resumenFotos(6, -1), gastoFotosMes()]);
+  // F4 · Fotos a la medida: cuántas fotos ya tienen sus tamaños, cuántas faltan y cuánto peso se ahorra (solo números; las privadas aparte).
+  const [medPub, medPriv] = await Promise.all([cifrasFotos(), cifrasFotosPrivadas()]);
   return {
     fotos: { hoy: fHoy, semana: fSemana, gasto: fGasto },
+    medios: { pub: medPub, priv: medPriv },
     reglas: ORDEN_REGLAS.map((k) => { const r = R.rows.find((x) => x.key === k); return { k, on: r?.enabled ?? true, params: r?.params ?? {}, at: r?.updated_at ?? null, quien: r?.quien ?? null, n30: marcas.find((m) => m.regla === k)?.n ?? 0 }; }),
     // Los límites y el tope de traducciones son de Configuración (lib/config.ts): valor, de fábrica y límites salen del catálogo.
     terminos: T.rows, limites: ORDEN_LIMITES.map((k) => { const c = cfg.find((x) => x.key === LIMITES[k].key)!; return { k, v: c.v, def: c.def, min: c.min, max: c.max }; }), img,

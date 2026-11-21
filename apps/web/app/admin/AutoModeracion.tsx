@@ -107,11 +107,38 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
       { type: "note" as const, tone: "info" as const, t: E("Son fotos ya publicadas (por el modelo propio, la segunda opinión o la confianza). Si una no debió salir, quítala desde la ficha del negocio o de la publicación.", "These are already published (by our own model, the second opinion or trust). If one should not be out, remove it from the business or the post.") }]
       : [{ type: "note" as const, tone: "info" as const, t: E("Esta semana no hubo fotos publicadas por los modelos para mirar.", "No photos published by the models this week to look at.") }]),
   ];
+  /* F4 · Fotos a la medida (decisión AI): el espejo de lo que el servidor convierte al subir y en el barrido. Todo son cifras (lib/admin-confianza.ts
+     › cifrasFotos y cifrasFotosPrivadas): solo lectura, sin fotos ni personas. 1 MB = 1 048 576 bytes. */
+  const M = d.medios.pub, MP = d.medios.priv;
+  const dec = (n: number) => (en ? n.toFixed(1) : n.toFixed(1).replace(".", ","));
+  const mb = (b: number) => `${dec(b / 1048576)} MB`;
+  const colKpi = desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))";
+  const bloquesMedios: Bloque[] = [
+    { type: "group", k: E("FOTOS A LA MEDIDA", "PHOTOS SIZED TO FIT") },
+    { type: "note", tone: "info", icon: "image", t: E("Al subir una foto se guarda la original y salen sus tamaños (WebP en 320, 640, 1080 y 1600 de ancho): cada pantalla pide el de su caja y baja mucho menos. Las que ya existían las convierte el barrido por tandas; si una falta o no tiene archivo, se ve la original, nunca una foto rota. Aquí solo se lee.",
+      "When a photo is uploaded the original is kept and its sizes are made (WebP at 320, 640, 1080 and 1600 wide): each screen asks for the one its box needs and downloads far less. Photos that already existed are converted by the sweep in batches; if one is missing or has no file, the original shows, never a broken photo. Read-only here.") },
+    { type: "kpis", cols: colKpi, items: [
+      { k: E("FOTOS PÚBLICAS", "PUBLIC PHOTOS"), v: String(M.publicas), s: E("visibles, de nuestro almacén", "visible, in our storage") },
+      { k: E("CON SUS TAMAÑOS", "WITH THEIR SIZES"), v: String(M.convertidas), s: E("ya convertidas", "already converted") },
+      { k: E("FALTAN", "PENDING"), v: String(M.pendientes), s: E("las convierte el barrido", "the sweep converts them") },
+      { k: E("SIN ARCHIVO", "NO FILE"), v: String(M.sinMaestra), s: E("la original ya no está", "the original is gone"), sFg: M.sinMaestra > 0 ? "var(--tl-danger)" : undefined }] },
+    { type: "kpis", cols: desk ? "repeat(3,minmax(0,1fr))" : "repeat(1,minmax(0,1fr))", items: [
+      { k: E("PESO DE LAS ORIGINALES", "WEIGHT OF THE ORIGINALS"), v: mb(M.bytesMaestras), s: E("todas las que tienen peso anotado", "all those with a recorded weight") },
+      { k: E("PESO DE LOS TAMAÑOS", "WEIGHT OF THE SIZES"), v: mb(M.bytesVariantes), s: E("suma de todos los tamaños", "sum of all the sizes") },
+      { k: E("AHORRO A 640", "SAVING AT 640"), v: `${dec(M.vista640.ahorro * 100)} %`, s: E(`${mb(M.vista640.maestras)} de originales contra ${mb(M.vista640.variantes)} servidas a 640 (${mb(M.vista640.maestras - M.vista640.variantes)} menos)`, `${mb(M.vista640.maestras)} of originals against ${mb(M.vista640.variantes)} served at 640 (${mb(M.vista640.maestras - M.vista640.variantes)} less)`) }] },
+    { type: "group", k: E("FOTOS PRIVADAS (SOLO NÚMEROS)", "PRIVATE PHOTOS (NUMBERS ONLY)") },
+    { type: "kpis", cols: colKpi, items: [
+      { k: E("PRIVADAS", "PRIVATE"), v: String(MP.privadas), s: E(`originales ${mb(MP.bytesMaestras)} · tamaños ${mb(MP.bytesVariantes)}`, `originals ${mb(MP.bytesMaestras)} · sizes ${mb(MP.bytesVariantes)}`) },
+      { k: E("PRIVADAS CON SUS TAMAÑOS", "PRIVATE WITH SIZES"), v: String(MP.convertidas) },
+      { k: E("PRIVADAS QUE FALTAN", "PRIVATE PENDING"), v: String(MP.pendientes) },
+      { k: E("PRIVADAS SIN ARCHIVO", "PRIVATE NO FILE"), v: String(MP.sinMaestra) }] },
+  ];
   const B: Bloque[] = [...arriba,
     { type: "note", tone: "ink", icon: "shield", t: E("Las reglas marcan; una persona decide. Nada se oculta solo salvo los teléfonos (se frenan antes de publicarse), el auto-ocultar por reportes de personas distintas y las fotos públicas, que se revisan solas en cuatro capas (siempre con aviso y apelación).", "Rules flag; a person decides. Nothing is hidden automatically except phone numbers (stopped before posting), auto-hide from reports by different people and public photos, which are reviewed automatically in four layers (always with notice and appeal).") },
     { type: "group", k: E("REGLAS", "RULES") },
     { type: "rows", items: d.reglas.filter((r) => !esFoto(r.k)).map(fila) },
     ...bloquesFotos,
+    ...bloquesMedios,
     { type: "group", k: E("LISTAS DE TÉRMINOS (ES/EN)", "TERM LISTS (ES/EN)") },
     { type: "chips", items: TIPOS_TERMINO.map(([k, l]) => ({ l: `${tipoL(k, l)} · ${d.terminos.filter((t) => t.kind === k && t.enabled).length}`, v: lista === k ? "selected" : "filter", onClick: () => setLista(k) })) },
     { type: "note", tone: "info", t: lista === "autolesion" ? E("Autolesión: siempre activa (aunque la regla de listas esté apagada). Marca con prioridad y quien escribe ve la línea del 988.", "Self-harm: always on (even if the list rule is off). It flags with priority and the writer sees the 988 line.") : lista === "migra" ? E("Inmigración: va con prioridad. Los avisos de operativos se permiten sin fotos de personas, placas ni direcciones; nunca se pide ni se señala el estatus de nadie.", "Immigration: gets priority. Alerts about raids are allowed without photos of people, plates or addresses; nobody’s status is ever asked about or pointed out.") : E("Marcan para revisión; nunca ocultan solas. Un término se apaga, no se borra.", "They flag for review; they never hide on their own. A term is turned off, not deleted.") },

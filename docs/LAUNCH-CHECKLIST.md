@@ -2157,8 +2157,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       le da también a un navegador sin WebP (Safari 13 o anterior, < 1 %); la maestra que se le da a un navegador sin WebP va «private» y nunca queda
       en el borde. Safari 14–15 no dice image/webp en Accept aunque lo lee: recibe la maestra (se ve bien, pesa más). Si pesa en las cifras: que F2
       pinte con `<picture type="image/webp">` o mirar «Vary for images» de Cloudflare. (20 nov)
-- [ ] **→ 9u** · **F2–F4:** pintar con `fotoSrc`/`fotoFondo`/`Foto` (F2), las fotos privadas con `?w=` (F3), el bloque del Super Admin con
+- [x] **→ 9u** · **F2–F4:** pintar con `fotoSrc`/`fotoFondo`/`Foto` (F2), las fotos privadas con `?w=` (F3), el bloque del Super Admin con
       `cifrasFotos()` de lib/fotos-variantes.ts y su ayuda de equipo (F4). Hasta F2 las variantes existen pero ninguna pantalla las pide. (20 nov)
+      _(21 nov): F2 y F3 hechas (las pantallas piden el tamaño: `fotoSrc`/`fotoFondo` de `packages/ui/src/foto.ts`, también para
+      `/api/medios/privada/<uuid>`). **F4 hecha:** Super Admin › Contenido › Auto-moderación › «Fotos a la medida» (solo lectura; mismo permiso de
+      Contenido) con las cifras de `cifrasFotos()` y las de las privadas (`cifrasFotosPrivadas()` en lib/fotos-privadas.ts); ayuda
+      `docs/ayuda/admin-fotos-a-la-medida.md`; guardián `fotosCifrasEnElAdmin` (al revés: `alreves9ufotosadmin`); punta a punta `fot9uadmin`
+      (escrita; la corre el CI: no hubo base ni servidor en la sesión de F4). Queda la medida en el sandbox con fotos de cámara (línea de arriba)._
 
 ## Revisión automática de las fotos públicas — R1 + R2 (decisión AJ, 20 nov) — lo que quedó anotado
 - [ ] **→ 9u** · **Plazo de retención de las fotos rechazadas o retenidas** (`privado/rev/<uuid>.jpg` + su fila en `media`): hoy no se borran
