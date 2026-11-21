@@ -2178,6 +2178,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       de contrato con stripe-mock (`scripts/contrato-stripe/prueba.cjs`) ya llama a `buscarCobro` y `buscarTransferencia`, pero no se corrió aquí (no hay
       stripe-mock en este entorno): la corre el CI; si su versión no trae `/v1/payment_intents/search`, falla ahí. (6) `din9t5` corrió aquí contra una base
       aislada; `plan4f`, `renta4f`, `pat002` y `pat003` no (las corre el CI). (21 nov)
+- [x] **→ 9t** · **`app8a` inestable en la revisión completa 44902103048 (única inestable de la corrida; «la isla del Repartidor abre»):** la
+      prueba leía la pantalla al instante de navegar, antes de que la isla pintara el turno guardado. Ahora espera a que lo pinte (hasta 15 s) y
+      comprueba lo mismo. En local: 111 ✓. Si vuelve a salir, ya no es la prueba: mirar el montaje de `/repartidor/sin-conexion`. (21 nov)
 - [x] **→ 9t** · **Una foto privada que no está en el almacén dejaba el pedido colgado (CI 44892361124: `dm9t` 25 min y `rev9u2` rojas dos veces):**
       desde «medios en flujo» `abrirObjeto` soltaba el cuerpo de la respuesta del almacén con `await r.body.cancel()`. En el servidor, Next envuelve
       cada `fetch` GET que no lleva `signal` (su «dedupe»): parte el cuerpo en dos ramas y se queda con una; el cancel de una rama solo termina cuando

@@ -388,6 +388,8 @@ const PUENTE = `if (window === window.top) {
   // Recargar perdería la memoria del puente simulado: se vuelve a montar la pantalla con un cambio de ruta del cliente.
   await pr2.evaluate(() => { history.pushState({}, '', '/repartidor/sin-conexion?x=1'); });
   await pr2.goto(B + '/repartidor/sin-conexion').catch(() => undefined);
+  // La isla lee el turno del almacén al montarse: se espera a que lo pinte (CI 44902103048: leído al instante, salió INESTABLE una vez).
+  await espera(async () => (await texto(pr2)).includes('Tus entregas en este teléfono'));
   const tr = await texto(pr2);
   ok(tr.includes('Tus entregas en este teléfono') && tr.includes('TO’LATINO REPARTIDOR · SIN CONEXIÓN'), 'la isla del Repartidor abre (estática, sin servidor)');
   ok(ruta(pr2) === '/repartidor/sin-conexion', 'y no la manda a ningún lado');
