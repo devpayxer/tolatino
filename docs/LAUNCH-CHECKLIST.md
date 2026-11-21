@@ -2258,6 +2258,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (`sop7b`, boletos, `pat002/003`). (3) **Carrera conocida, de antes:** si una persona resuelve a mano justo mientras el barrido la está mandando (en la
       ventana), la marca puede llegar después de `sent_at` y antes de la respuesta de Stripe; `antesDeAMano` pregunta a Stripe pero un objeto recién creado
       puede no verse aún. Mitigación posible: que el trigger `dinero_a_mano` no deje marcar con `sent_at` en los últimos minutos. (21 nov)
+      **Revisión de quien orquesta (Fable, 21 nov) sobre lo fusionado (5257f25):** leídos la migración 0206 y `lib/devolucion-consulta.ts`; tipos;
+      guardianes; Semgrep 0 hallazgos (también las dos interpolaciones de `notaAlerta`); `alreves9t7` 19/19, `alreves9tdinero` 161/161, `alreves6d`
+      42/42; contrato con stripe-mock (la imagen del CI): OK; y contra el servidor local con la 0206 aplicada: `din9t7 din9t6 din9t6b din9t5 din9t4
+      din9t3 din9t2 din9t din9k sop7b pat002 pat003 evt6d evt6e evt6f evt6i lay4r res4s ana9g renta4f plan4f`, 21/21 (1297 ✓). La hoja nueva de
+      «Resolver a mano» y «Preguntar a Stripe ahora» en devoluciones no tenían prueba de navegador: encargada (`din9t7b`). Un encargo corrió una
+      vez `din9t` contra la base local de quien orquesta por error (se cayó en la primera consulta; pudo dejar un usuario, un negocio y una
+      operación de prueba): sin efecto fuera de esa base de pruebas.
 - [ ] **→ 9u** · **Super Admin: el título sale dos veces en la hoja de confirmar** (visto en la captura de teléfono de «Elegir cuál vale»: «Qué vale
       de lo que tiene Stripe» arriba y otra vez debajo de «CONFIRMAR»). Pasa en las pantallas que ponen `conf.titulo` en la cabecera Y dejan el
       mismo título en la hoja: `Planes.tsx`, `Ciudades.tsx`, `Colas.tsx` (línea ~651), `Crecimiento.tsx`, `Negocios.tsx`, `Liquidaciones.tsx`. Ya

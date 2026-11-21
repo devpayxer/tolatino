@@ -6015,7 +6015,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Qué pasaba:** cuando devolvíamos dinero a un cliente (una devolución normal o de boletos) o le quitábamos dinero a un organizador (una reversión), y
   Stripe no contestaba durante un día, se quedaba «en camino» para siempre con una alerta. La única salida era «Resolver a mano», y ahí el sistema creía
   lo que dijera la persona: alguien podía marcar como «pagado por fuera» algo que Stripe sí había devuelto (el cliente cobraba dos veces).
-- **Ahora (Opus lo escribió; falta la revisión de otro modelo):** cada devolución y reversión se anota antes de ir a Stripe con una etiqueta para
+- **Ahora (Opus lo escribió; Fable lo revisó y corrió 21 pruebas contra el servidor, todas en verde):** cada devolución y reversión se anota antes de ir a Stripe con una etiqueta para
   encontrarla. Pasado el día, el sistema le pregunta a Stripe y la cierra con lo que diga: si salió, queda hecha; si Stripe la tiene como fallida, queda
   fallida con su aviso; si nunca llegó, se manda otra vez (una sola vez, con otra llave) siempre que se siga debiendo lo mismo. «Resolver a mano» ahora
   pregunta primero: si Stripe dice que salió, no te deja marcarla (la cierra como hecha); si Stripe no contesta, no cambia nada. La devolución de «lo que
