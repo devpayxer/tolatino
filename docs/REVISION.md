@@ -5878,3 +5878,10 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   de más de un día que ahora alertan en vez de repetir, Soporte que cierra el caso solo cuando termina la devolución, pausar pagos de un negocio
   aunque Stripe no conteste, y dos alertas nuevas («Devolución que Stripe dio por fallida», «Cobro de Pro sin aplicar»).
 
+## Fotos a la medida — medida con tu foto (21 nov)
+- **Tu foto de Comunidad (el tazón de dulces), medida en el sandbox con un navegador de teléfono:** la original pesa 223.7 KB; el muro en tu
+  teléfono baja la versión de 134.9 KB (40 % menos); una miniatura baja 25.1 KB (89 % menos); una tarjeta mediana, 70.2 KB (69 % menos).
+- **Qué mirar tú:** que se vea nítida en el muro y al abrirla. Si la ves bien, no hay nada que hacer.
+- **Falta medir** una foto subida desde el panel de un negocio (Fotos y portada): ahí se ve la tarjeta de la lista y la galería. Cuando subas
+  una, la mido igual.
+

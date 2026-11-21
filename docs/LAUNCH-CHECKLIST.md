@@ -2149,10 +2149,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       sus variantes, pero Cloudflare las guarda hasta un año (caché inmutable de `/medios/n/`) y nadie le pide que las suelte. Con la zona y el
       token (Paquete 8-0): pedir a Cloudflare que purgue esas direcciones (maestra + variantes) en el mismo paso, con reintento desde el barrido,
       y su guardián. Hasta entonces, lo borrado puede seguir saliendo a quien tenga la dirección. (revisión de F1, 20 nov)
-- [ ] **→ 9u** · **fot9u (punta a punta con Garage) no corrió fuera del CI:** la sesión de F1 no tenía almacén ni docker; corrieron tipos, guardianes,
+- [x] **→ 9u** · **fot9u (punta a punta con Garage) no corrió fuera del CI:** la sesión de F1 no tenía almacén ni docker; corrieron tipos, guardianes,
       alreves9ufotos, fotos9uvariantes (variantesDe y el barrido con dobles) y medios-nginx.test.sh con nginx 1.24 de verdad. Correrla en el CI
       dirigido y en el sandbox con una foto de cámara real (peso de cada variante, antes/después de una tarjeta, una ficha y una galería). (20 nov)
       **21 nov:** `fot9u` (27 ✓) ya corre en verde en el CI. Queda la medida en el sandbox con fotos de cámara reales (las sube el fundador: REVISION).
+      **Hecho (21 nov) · medida con una foto de cámara del fundador en el sandbox** (Comunidad, vertical 1200×1600; `scripts/sandbox/pesar-fotos.cjs`
+      con navegador real, iPhone 13): original JPEG 223.7 KB · 320 → 25.1 KB · 640 → 70.2 KB · 1080 → 134.9 KB · sin tamaño 1600 (la original mide
+      1200 de ancho: pedirlo entrega la original, como está previsto) · sin WebP entrega el JPEG. El muro en un teléfono de 390 px pide la de 1080
+      (134.9 KB, 40 % menos que la original). Queda por medir una tarjeta de lista y una galería del negocio con fotos del panel.
 - [ ] **→ 9u** · **WebP y el caché de Cloudflare:** Cloudflare (plan gratis) no separa la caché por Accept. Una variante real guardada en el borde se
       le da también a un navegador sin WebP (Safari 13 o anterior, < 1 %); la maestra que se le da a un navegador sin WebP va «private» y nunca queda
       en el borde. Safari 14–15 no dice image/webp en Accept aunque lo lee: recibe la maestra (se ve bien, pesa más). Si pesa en las cifras: que F2
