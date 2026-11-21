@@ -24,6 +24,7 @@ calefacción en octubre y aire en abril), cobrada cada mes con tu tarjeta.
 |---|---|
 | Tu banco rechaza el cobro | Te avisamos y lo intentamos otra vez a los 2 días y a los 4. Al tercer rechazo, el plan queda en pausa (sin visitas) hasta que cambies la tarjeta en tu plan; al cambiarla se cobra lo pendiente y sigue. |
 | Stripe no contesta al cobrar (una falla de la red) | No cuenta como rechazo: el plan sigue igual y no te llega «tu banco rechazó el cobro». El cobro queda en camino y se termina solo en unos minutos; nunca se cobra dos veces el mismo mes. |
+| Pasa un día y Stripe sigue sin contestar | To'Latino le pregunta a Stripe qué pasó: si se cobró, el mes queda pagado (una vez); si el cobro nunca llegó, no se cobró nada y el plan se vuelve a cobrar solo, sin contarlo como rechazo. |
 | Saltas la próxima | Esa visita se quita y ese mes no se cobra. |
 | Pausas un mes | Igual que saltar, y el plan dice «En pausa» hasta la fecha en que vuelve (o hasta que toques «Reanudar»). |
 | Cancelas | No se cobra el mes siguiente y la próxima visita se quita. |
@@ -63,6 +64,7 @@ conditioning in April), charged every month to your card.
 |---|---|
 | Your bank declines the charge | We notify you and try again after 2 days and after 4. On the third decline, the plan is paused (no visits) until you change the card in your plan; when you change it, what is pending is charged and it continues. |
 | Stripe does not answer when charging (a network failure) | It does not count as a decline: the plan stays the same and you do not get «your bank declined the charge». The charge is on its way and finishes by itself in a few minutes; the same month is never charged twice. |
+| A day passes and Stripe still has not answered | To'Latino asks Stripe what happened: if it was charged, the month is paid (once); if the charge never arrived, nothing was charged and the plan is charged again by itself, without counting it as a decline. |
 | You skip the next one | That visit is removed and that month is not charged. |
 | You pause a month | Same as skipping, and the plan says "Paused" until the date it returns (or until you tap "Resume"). |
 | You cancel | The following month is not charged and the next visit is removed. |
