@@ -5885,3 +5885,24 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Falta medir** una foto subida desde el panel de un negocio (Fotos y portada): ahí se ve la tarjeta de la lista y la galería. Cuando subas
   una, la mido igual.
 
+## «Al escribir hace zoom en el teléfono» (21 nov) — arreglado en la rama de trabajo, esperando su CI
+- **Qué pasaba:** Safari de iPhone agranda la página al tocar un campo cuya letra mide menos de 16 px, y casi todos nuestros campos medían 14 a 15.
+- **Qué cambié:** en teléfonos y tabletas (pantalla táctil) todo campo donde se escribe mide 16 px. Con ratón no cambia nada. El código de 6
+  números conserva su letra grande. No quité el zoom de la página con los dedos: lo necesita quien ve poco.
+- **Qué vas a notar:** la letra dentro de los campos se ve un poco más grande en el teléfono (como en las apps grandes). Las capturas aprobadas
+  de teléfono que tienen un campo a la vista cambian por eso: te las paso para aprobar cuando termine el CI.
+- **Qué mirar cuando esté en el sandbox (te aviso):** toca el buscador, escribe una publicación en Comunidad y un mensaje: la página no debe
+  agrandarse sola.
+
+## Dinero, tercera tanda (21 nov) — tres decisiones tuyas
+- **Qué cambió (Opus, revisado por Fable):** el cobro de Pro se anota antes de pedírselo a Stripe; una transferencia a un organizador o un cobro
+  de Pro que lleva 23 h sin respuesta ya no se repite: avisa al equipo; «Resolver a mano» aparece también cuando pasaron 23 h sin ningún intento.
+- **Decide tú (dejé lo más cerrado):**
+  1. *Cómo se cierra una alerta de «transferencia sin respuesta» o «cobro de Pro sin respuesta».* Hoy solo informa: alguien mira en Stripe.
+     Propongo dos botones en la alerta, «Sí se hizo» (se anota el número de Stripe) y «No se hizo» (se libera para intentarlo de nuevo).
+  2. *Cómo devolver otra vez unos boletos cuya devolución falló después* (la tarjeta se cerró, el banco la rechazó). Hoy la alerta dice qué
+     boletos y de quién, pero no hay botón para repetirla. Propongo una acción en la misma alerta.
+  3. *Planes recurrentes, rentas y patrocinios* tienen el mismo riesgo que tenía Pro (si Stripe no contesta, el reintento va con otra llave y
+     podría cobrar dos veces). Recomiendo arreglarlos ya con el mismo patrón; lo hago en cuanto digas, o lo hago igual si no dices nada (es
+     reversible y solo quita un riesgo).
+
