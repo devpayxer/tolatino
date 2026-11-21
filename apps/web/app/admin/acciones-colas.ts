@@ -529,36 +529,71 @@ export async function crearSemilla(id: string): Promise<ResAdm> {
 const SANC_CONTENIDO = ["adv", "mute7", "nopub", "susp14"] as const;
 /* Ayuda con pedidos y citas: To'Latino resuelve con un mensaje que el cliente ve en su pedido o su cita y el negocio en
    su panel. Con monto (solo quien aprueba dinero en Transacciones), además devuelve a la tarjeta lo pagado en la app
-   (el pedido con tarjeta o el depósito de la cita); idempotente por la clave del intento. */
+   (el pedido con tarjeta o el depósito de la cita).
+   21 nov (9t) · Una sola devolución por caso, en tres pasos (el patrón de support_refunds y de los boletos):
+   (1) con el caso bloqueado (abierto), la devolución queda 'pending' con la llave DEL CASO (`sop-q<caso>`, no la del toque: otra pestaña u otro
+       toque llegan a la misma devolución) y su auditoría «transacciones.devolver», en una transacción;
+   (2) la pasarela con esa llave (lib/cobros: ejecutarDevolucionPago); sin respuesta, queda en camino y el barrido la termina;
+   (3) con el caso bloqueado otra vez: el caso se cierra y help_requests.refunded_cents suma lo que de verdad salió (la devolución del caso, hecha),
+       una sola vez (quien cierra el caso). Si el proceso muere entre (1) y (3), el caso sigue abierto en la cola y la devolución la termina el
+       barrido; al decidirlo otra vez se usa ESA devolución (con su monto), nunca otra. */
 export async function decidirSop(id: string, mensaje: string, monto?: string | null, clave?: string | null, borrador?: string | null): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");
+  if (!/^\d{1,18}$/.test(String(id))) return no("Ese caso no existe.");
   const m = motivoOk(mensaje);
   if (!m) return no("Escribe la respuesta para el cliente.");
   if (m.length > 500) return no("Máximo 500 letras.");
   const cents = monto ? Math.round((parseFloat(String(monto).replace(/[^0-9.]/g, "")) || 0) * 100) : 0;
-  let devuelto = 0;
   if (cents > 0) {
     if (!s.puede("tx", "aprobar")) return no("Tu rol no devuelve dinero.");
     if (!/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return no("Prueba de nuevo.");
-    const p = (await (await import("@/lib/db")).db().query<{ pid: string; hid: string; op: string; num: string; city: string | null }>(
-      `select p.id::text as pid, h.id::text as hid, p.operation_id::text as op, h.number as num, q.city_id as city from queue_items q join help_requests h on h.id = q.subject_id::bigint join payments p on p.operation_id = h.operation_id
-        where q.id = $1::bigint and q.queue in ('sop', 'cuidado', 'salir') and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[])) and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [id, s.cities])).rows[0];
-    if (!p) return no("Ahí no hay nada pagado en la app para devolver (o el caso ya se decidió).");
-    // 20 nov · El dinero que sale queda auditado en la MISMA transacción que lo anota (devolverPago, alGuardar): antes solo lo decía «soporte.resolver»,
-    // escrito después y aparte (si el proceso moría en el hueco, o el caso ya se había decidido, la devolución quedaba sin auditoría).
-    const d = await (await import("@/lib/cobros")).devolverPago({ paymentId: p.pid, centavos: cents, por: "admin", actorId: s.id, motivo: m, idem: `sop-${clave}` },
-      (c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "operation", targetId: p.op, city: p.city, after: { solicitud: p.num, monto: `$${(x.centavos / 100).toFixed(2)}`, cobro: `pago ${x.pago}`, desde: "Colas › Ayuda" }, reason: m }));
-    if (!d.ok) return no(d.msg.es);
-    devuelto = cents;
   }
+  const usd = (n: number) => `$${(n / 100).toFixed(2)}`, idem = `sop-q${id}`;
+  const COLA = `q.queue in ('sop', 'cuidado', 'salir') and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))`;
+  const cobros = await import("@/lib/cobros");
+  // (1) La intención: el caso bloqueado, la devolución del caso (la que ya tenga o una nueva) y su auditoría, juntas.
+  const a = await tx(async (c): Promise<string | { rf: string | null; estado: "pending" | "done" | "manual" | null }> => {
+    const q = (await c.query<{ hid: string; op: string; num: string; city: string | null }>(
+      `select h.id::text as hid, h.operation_id::text as op, h.number as num, q.city_id as city from queue_items q join help_requests h on h.id = q.subject_id::bigint
+        where q.id = $1::bigint and ${COLA} for update of q`, [id, s.cities])).rows[0];
+    if (!q) return "Este caso ya se decidió.";
+    const ya = (await c.query<{ id: string; st: string; amt: number; mano: boolean }>(`select id::text, status as st, amount_cents as amt, manual_at is not null as mano from refunds where idem_key = $1`, [idem])).rows[0];
+    if (ya) {
+      // Ya salió (o va saliendo) dinero por este caso: se resuelve con ESA devolución, nunca con otra.
+      if (cents > 0 && cents !== ya.amt) return `En este caso ya hay una devolución de ${usd(ya.amt)} ${ya.st === "done" || ya.mano ? "hecha" : "en camino"}. Resuélvelo con ese monto (o sin monto); si hace falta más, usa Transacciones.`;
+      return { rf: ya.id, estado: ya.mano ? "manual" : ya.st === "done" ? "done" : "pending" };
+    }
+    if (!(cents > 0)) return { rf: null, estado: null };
+    const p = (await c.query<{ pid: string }>(`select p.id::text as pid from payments p where p.operation_id = $1::bigint and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [q.op])).rows[0];
+    if (!p) return "Ahí no hay nada pagado en la app para devolver.";
+    // 20 nov · El dinero que sale queda auditado en la MISMA transacción que lo anota (alGuardar), ahora la de la intención, antes de la pasarela.
+    const d = await cobros.anotarDevolucionPago(c, { paymentId: p.pid, centavos: cents, por: "admin", actorId: s.id, motivo: m, idem },
+      (c2, x) => auditar(c2, { actor: s.id, action: "transacciones.devolver", targetKind: "operation", targetId: q.op, city: q.city, after: { solicitud: q.num, monto: usd(x.centavos), cobro: `pago ${x.pago}`, desde: "Colas › Ayuda" }, reason: m }));
+    if (!d.ok) return d.msg.es;
+    return { rf: d.id, estado: d.estado };
+  });
+  if (typeof a === "string") return no(a);
+  // (2) La pasarela, fuera de la base, con la llave del caso (la misma llave nunca devuelve dos veces).
+  if (a.rf && a.estado === "pending") {
+    const d = await cobros.ejecutarDevolucionPago(a.rf);
+    if (!d.ok) return no(d.enCamino ? `${d.msg.es} El caso sigue abierto: resuélvelo cuando termine.` : d.msg.es);
+  }
+  // (3) El cierre del caso con lo que de verdad salió.
   return tx(async (c) => {
     const q = (await c.query<{ subject_id: string; business_id: string | null; city_id: string }>(
-      `select subject_id, business_id, city_id from queue_items where id = $1::bigint and queue in ('sop', 'cuidado', 'salir') and status = 'open' and (cardinality($2::text[]) = 0 or city_id = any($2::text[])) for update`, [id, s.cities])).rows[0];
+      `select q.subject_id, q.business_id, q.city_id from queue_items q where q.id = $1::bigint and ${COLA} for update`, [id, s.cities])).rows[0];
     if (!q) return no("Este caso ya se decidió.");
+    const devuelto = a.rf ? (await c.query<{ amt: number }>(`select amount_cents as amt from refunds where id = $1::bigint and (status = 'done' or manual_at is not null)`, [a.rf])).rows[0]?.amt ?? -1 : 0;
+    if (devuelto < 0) return no("La devolución de este caso todavía no terminó. Inténtalo en un momento.");
     const h = await c.query(`update help_requests set status = 'resolved', resolution = $2, resolved_at = now(), resolved_by = $3, closed_by = 'admin', refunded_cents = refunded_cents + $4, updated_at = now()
                               where id = $1::bigint and status in ('open', 'answered', 'escalated') returning number`, [q.subject_id, m, s.id, devuelto]);
-    if (!h.rowCount) return no("Esta solicitud ya se resolvió.");
+    if (!h.rowCount) {
+      if (!devuelto) return no("Esta solicitud ya se resolvió.");
+      // La solicitud se cerró por otro lado, pero el dinero de este caso salió: queda sumado (una vez: este paso cierra el caso de la cola).
+      await c.query(`update help_requests set refunded_cents = refunded_cents + $2, updated_at = now() where id = $1::bigint`, [q.subject_id, devuelto]);
+      h.rows.push((await c.query<{ number: string }>(`select number from help_requests where id = $1::bigint`, [q.subject_id])).rows[0]!);
+    }
     await c.query(`update queue_items set status = 'decided', decision = 'resuelta', reason = $2, decided_by = $3, decided_at = now() where id = $1::bigint`, [id, m, s.id]);
     // 7g · El mensaje salió de un borrador del copiloto (de ESTA ayuda, de ESTA persona del equipo, sin usar): se anota una vez si tal cual o editado.
     if (borrador && /^[0-9a-f-]{36}$/.test(String(borrador)))
@@ -719,8 +754,11 @@ export async function decidirDisputa(id: string, accion: "responder" | "aceptar"
   const D = await import("@/lib/disputas");
   // 20 nov · La auditoría entra con el cambio de la disputa, en su transacción (alGuardar): antes se escribía aparte, al cerrar el caso, y se saltaba
   // en silencio si el caso ya no estaba abierto (dinero aceptado para el cliente sin renglón). Cerrar el caso de la cola sigue después.
-  const audita = (c: PoolClient) => auditar(c, { actor: s.id, action: accion === "responder" ? "disputa.responder" : "disputa.aceptar", targetKind: "dispute", targetId: q.subject_id, city: q.city_id,
-    before: { disputa: "abierta" }, after: { disputa: accion === "responder" ? "respondida con evidencia" : "aceptada · devuelto al cliente" }, reason: m });
+  // 21 nov (9t) · Si un webhook (u otra persona) la cambió entre la lectura y la escritura, la disputa no se pisa: el renglón dice lo que se mandó a
+  // Stripe y el estado que encontró (cambio), y la acción lo dice.
+  const audita = (c: PoolClient, x: { cambio: string | null }) => auditar(c, { actor: s.id, action: accion === "responder" ? "disputa.responder" : "disputa.aceptar", targetKind: "dispute", targetId: q.subject_id, city: q.city_id,
+    before: { disputa: "abierta" }, after: x.cambio ? { disputa: accion === "responder" ? "respuesta enviada a Stripe; no se anotó" : "aceptación enviada a Stripe; no se anotó", ya_estaba: x.cambio }
+      : { disputa: accion === "responder" ? "respondida con evidencia" : "aceptada · devuelto al cliente" }, reason: m });
   const r = accion === "responder" ? await D.responderDisputa(q.subject_id, s.id, m, audita) : await D.aceptarDisputa(q.subject_id, audita);
   if (!r.ok) return no(r.msg);
   await tx(async (c) => {

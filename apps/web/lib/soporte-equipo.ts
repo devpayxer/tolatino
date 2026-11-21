@@ -330,6 +330,9 @@ export async function resolverYDevolver(s: Staff, numero: string, monto: string,
   const { devolverPago } = await import("./cobros");
   const d = await devolverPago({ paymentId: fila.pid, centavos: fila.amount, por: "admin", actorId: s.id, motivo: crudo.slice(0, 300), idem });
   if (!d.ok) {
+    // 9t · Stripe no contestó: la devolución sigue en camino (el barrido la termina con la misma llave); la fila del caso queda pendiente y el
+    // mismo toque, después, la cierra. Solo un «no» de Stripe la deja fallida.
+    if (d.enCamino) return no(d.msg.es);
     await db().query(`update support_refunds set status = 'failed', fail_reason = $2, done_at = now() where id = $1::bigint and status = 'pending'`, [fila.id, d.msg.es.slice(0, 200)]);
     return no(d.msg.es);
   }
