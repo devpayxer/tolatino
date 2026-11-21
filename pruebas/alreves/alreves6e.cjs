@@ -11,7 +11,9 @@ const casos = [
   ['scriptsSeLeen', SE, "import ", "import { (; import "],
   // contratoCubreLaPasarela
   ['contratoCubreLaPasarela', CT, "  const tr = await pasarela.transferir(", "  const tr = await pasarela.transferirX("],
-  ['contratoCubreLaPasarela', CT, "  const rv = await pasarela.revertirTransferencia(", "  const rv = await pasarela.revertirX("],
+  // (21 nov, CI 44922339414: desde 9t7 la prueba de contrato llama dos veces a revertirTransferencia —la segunda, con su dato—; quitar una sola ya no
+  // deja el método sin contrato. El caso quita TODAS: «TODAS:» delante del texto a cambiar.)
+  ['contratoCubreLaPasarela', CT, "TODAS: await pasarela.revertirTransferencia(", " await pasarela.revertirX("],
   ['contratoCubreLaPasarela', PA, "  /* Cobro directo a To'Latino (suscripción Pro)", "  async nuevaLlamada(x: string) { return stripe(\"POST\", `/v1/payouts`, { amount: 1, x }); },\n  /* Cobro directo a To'Latino (suscripción Pro)"],
   // devolucionTotalAlCancelar
   ['devolucionTotalAlCancelar', C, "idem: `evtcx-${cx.id}-${op}`", "idem: `evtcx-${cx.id}-${op}-${Date.now()}`"],
@@ -59,8 +61,9 @@ for (const [g, f, a, b] of casos) {
   const ruta = `${R}/${f}`;
   if (!fs.existsSync(ruta)) { console.log(`  ✗ ${g}: no existe ${f}`); continue; }
   const orig = fs.readFileSync(ruta, 'utf8');
-  if (!orig.includes(a)) { console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
-  fs.writeFileSync(ruta, orig.replace(a, () => b));
+  const todas = a.startsWith('TODAS:'), aa = todas ? a.slice(6) : a;
+  if (!orig.includes(aa)) { console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}: ${aa.slice(0, 70)}`); continue; }
+  fs.writeFileSync(ruta, todas ? orig.split(aa).join(b) : orig.replace(aa, () => b));
   let falla = false, out = '';
   try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe' }); } catch (e) { falla = true; out = String(e.stderr).split('\n').find((l) => l.includes('[')) || ''; }
   fs.writeFileSync(ruta, orig);
