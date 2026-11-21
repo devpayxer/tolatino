@@ -12283,6 +12283,63 @@ const guardianes = {
       || !/create unique index if not exists subscription_charges_un_cobro_por_periodo on subscription_charges \(business_id, period_start\) where status = 'done';/.test(mig)) falla(G, SU, 0, "la base impone una intención en camino por negocio y un cobro hecho por período (subscription_charges)");
   },
 
+  /* 9t4 (21 nov) · cobroFueraAnotadoAntes (LAUNCH «Dinero por clase · lo que quedó» (4)), por clase: TODO cobro con tarjeta guardada fuera de sesión
+     (pasarela.cobrarFuera / pasarela.cobrarDirecto) pasa por una intención anotada antes: el de Pro (suscripcion.ts › terminarCobro, cobroProAnotadoAntes) y
+     los demás (cobro-fuera.ts › terminarCobro: planes del Hogar, rentas, renovaciones de patrocinios). La intención (offsession_charges) se anota en una
+     transacción y no llama a la pasarela; reusa la que va en camino; se marca «mandada» antes de la llamada; nunca con una llave de más de HORAS_LLAVE;
+     sin respuesta no es «no» (sigue en camino); el cierre una vez; el barrido la termina y después alerta. Cada flujo: la intención antes, en camino no
+     cambia su estado (ni rechazo, ni «la tarjeta no pasó», ni «no se renovó»). Al revés: alreves9tdinero; con la base: pruebas/e2e/din9t4.cjs. */
+  cobroFueraAnotadoAntes() {
+    const G = "cobroFueraAnotadoAntes", CF = "apps/web/lib/cobro-fuera.ts", PL = "apps/web/lib/planes.ts", RE = "apps/web/lib/rentas.ts", PA = "apps/web/lib/patrocinio.ts", PE = "apps/web/lib/patrocinio-evento.ts", BA = "apps/web/lib/barrido.ts";
+    for (const f of [CF, PL, RE, PA, PE, BA]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    // Por clase: ningún cobro fuera de sesión fuera de los dos terminarCobro.
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x) && !x.startsWith("apps/web/lib/pagos/"))) {
+      const t = sinComent(f);
+      for (const m of t.matchAll(/pasarela\.(cobrarFuera|cobrarDirecto)\(/g)) {
+        const fnN = [...t.slice(0, m.index).matchAll(/\n(?:export )?(?:async )?function (\w+)\(/g)].pop()?.[1] ?? "";
+        if (!((f === CF || f === "apps/web/lib/suscripcion.ts") && fnN === "terminarCobro")) falla(G, f, t.slice(0, m.index).split("\n").length, `pasarela.${m[1]} fuera de terminarCobro (${fnN || "?"}): un cobro fuera de sesión va por su intención anotada antes (lib/cobro-fuera.ts › anotarCobro)`);
+      }
+    }
+    const cf = sinComent(CF), an = cuerpoFn(cf, "anotarCobro"), tc = cuerpoFn(cf, "terminarCobro"), mh = cuerpoFn(cf, "marcarHecho"), bc = cuerpoFn(cf, "barrerCobrosFuera");
+    const antes = (t, guard, llamada) => t.indexOf(guard) >= 0 && t.indexOf(llamada) >= 0 && t.indexOf(guard) < t.indexOf(llamada);
+    if (!/import \{ HORAS_LLAVE_STRIPE as HORAS_LLAVE \} from "\.\/cobros";/.test(cf) || /const HORAS_LLAVE = /.test(cf)) falla(G, CF, 0, "las horas de la llave son las de lib/cobros (HORAS_LLAVE_STRIPE), no otras");
+    if (!/insert into offsession_charges/.test(an) || /pasarela\./.test(an) || !/return c \? en\(c\) : tx\(en\);/.test(an) || an.indexOf("insert into offsession_charges") > an.indexOf("await alGuardar?.(k);")) falla(G, CF, 0, "anotarCobro anota la intención (con la auditoría de quien decide) en una transacción y no llama a la pasarela");
+    if (!/where kind = \$1 and ref_id = \$2 and \(status = 'pending' or \(status = 'done' and purpose = \$3\)\)/.test(an)) falla(G, CF, 0, "anotarCobro devuelve la intención en camino de ese objeto (o la ya cobrada de ese propósito): nunca anota otra mientras una va en camino");
+    if (!antes(tc, "if (a.vieja) { await alertaVieja(a); return { ok: false, enCamino: true, msg: VIEJO }; }", "pasarela.cobrar") || !/created_at <= now\(\) - make_interval\(hours => \$\{HORAS_LLAVE\}\) as vieja/.test(cf)) falla(G, CF, 0, "terminarCobro no cobra con una llave de más de HORAS_LLAVE (podría cobrar dos veces): alerta offsession_stuck");
+    if (!antes(tc, "set sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending'", "pasarela.cobrar")) falla(G, CF, 0, "terminarCobro anota que se manda ANTES de llamar a la pasarela (si el proceso muere, nadie la suelta como «nunca mandada»)");
+    const bloque = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n    \}/.exec(tc)?.[0] ?? "";
+    if (!bloque || /'failed'/.test(bloque) || !/enCamino: true/.test(bloque) || !/export const SIN_RESPUESTA = new Set\(\["red", "api_error", "error",/.test(cf)) falla(G, CF, 0, "terminarCobro: sin respuesta de Stripe, la intención sigue en camino (nunca 'failed')");
+    if (!/where id = \$1::bigint and status = 'pending'`, \[id, pi\]\)\)\.rowCount;/.test(mh) || !/if \(!\(await marcarHecho\(c, a\.id, r\.id\)\)\) return false;\s+await cerrar\(c, hecho\);/.test(tc)) falla(G, CF, 0, "el cierre marca 'done' una vez (where status = 'pending') y aplica el flujo en la MISMA transacción");
+    if (!/if \(!a\.enviada && \(await soltarSinMandar\(a\.id, porque\)\)\) return true;/.test(cuerpoFn(cf, "noAplica")) || !/and status = 'pending' and sent_at is null/.test(cuerpoFn(cf, "soltarSinMandar"))) falla(G, CF, 0, "lo que ya no aplica se suelta solo si nunca se mandó; lo mandado se le pregunta a Stripe con su llave");
+    if (!/created_at > now\(\) - make_interval\(hours => \$1::int\)/.test(bc) || !/m\.kind = 'offsession_stuck'/.test(bc)) falla(G, CF, 0, "barrerCobrosFuera reintenta solo dentro de HORAS_LLAVE y después alerta, una vez");
+    if (!/\["cobrosFuera", async \(\) => \(await import\("\.\/cobro-fuera"\)\)\.barrerCobrosFuera\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "el barrido central termina los cobros fuera de sesión en camino (barrerCobrosFuera)");
+    // Planes: la intención antes; en camino no es rechazo.
+    const pl = sinComent(PL), cp = cuerpoFn(pl, "cobrarPeriodo"), tp = cuerpoFn(pl, "terminarCobroPlan");
+    if (!antes(cp, "CF.anotarCobro(", "terminarCobroPlan(a)") || !antes(cp, 'CF.enCamino("plan", subId)', "CF.anotarCobro(") || /pasarela\.cobrar/.test(pl)) falla(G, PL, 0, "cobrarPeriodo: primero termina la que va en camino, después anota la intención y solo entonces la pasarela");
+    if (!antes(tp, "if (r.enCamino) return false;", "await rechazoPlan(") || !/next_charge_on = \$3::date and status = 'active'/.test(tp)) falla(G, PL, 0, "terminarCobroPlan: un cobro en camino no cuenta como rechazo y el período avanza solo si el plan lo sigue esperando");
+    // Rentas: los tres cobros por su intención; los días tarde en la transacción de la devolución; el depósito con la llave de la intención; en camino
+    // no se cancela ni vence el apartado.
+    const re = sinComent(RE), rn = cuerpoFn(re, "rentaNegocio"), rc = cuerpoFn(re, "rentaCliente"), tr = cuerpoFn(re, "terminarCobroRenta");
+    if (!/para: "recoger"/.test(rn) || !/para: `dia-\$\{x\.dias\}`/.test(rc) || !/para: "tarde"[\s\S]*?\}, c\);\s+await alGuardar\?\.\(c\);/.test(rn)) falla(G, RE, 0, "los cobros de la renta (recoger, un día más, días tarde) anotan su intención antes; la de los días tarde en la transacción de la devolución");
+    if (!/idem: `\$\{a\.idem\}-dep`/.test(tr)) falla(G, RE, 0, "el depósito al recoger va con la llave de la intención (otro toque o el barrido no retienen dos veces)");
+    if ((re.match(/q\.kind = 'renta' and q\.ref_id = (rentals|r)\.id::text and q\.status = 'pending'/g) ?? []).length < 4) falla(G, RE, 0, "un cobro de la renta en camino no deja cancelar (cliente, negocio) ni vencer el apartado");
+    if (/card_failed = true/.test((/if \(r\.enCamino\)[^\n]*/.exec(tr) ?? [""])[0])) falla(G, RE, 0, "en camino no es «la tarjeta no pasó»");
+    // Patrocinios: la renovación sola por su intención; en camino no termina; el cierre de la intención con el patrocinio nuevo.
+    for (const [f, fn, tabla] of [[PA, "vencerUno", "sponsorships"], [PE, "vencerUnoEvt", "event_sponsorships"]]) {
+      const v = cuerpoFn(sinComent(f), fn);
+      if (!antes(v, "if (!p.ok && p.enCamino) return null;", "await terminar(motivo);") || !antes(v, "if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) return null;", `insert into ${tabla}`) || !/, ref: id \};/.test(v)) falla(G, f, 0, `${fn}: la renovación va por su intención (ref), en camino no termina el patrocinio y el cierre va con el patrocinio nuevo, una vez`);
+    }
+    const co = cuerpoFn(sinComent(PA), "cobrar");
+    if (/cobrarDirecto/.test(co) || !antes(co, "CF.anotarCobro(", "CF.terminarCobro(a)")) falla(G, PA, 0, "cobrar fuera de sesión: la intención antes (anotarCobro) y la pasarela por terminarCobro");
+    // La base y las alertas.
+    const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8")).join("\n");
+    if (!/create unique index if not exists offsession_charges_una_en_camino on offsession_charges \(kind, ref_id\) where status = 'pending';/.test(mig)
+      || !/create unique index if not exists offsession_charges_un_cobro_por_proposito on offsession_charges \(kind, ref_id, purpose\) where status = 'done';/.test(mig)
+      || !/raise exception 'un cobro fuera de sesión no se borra \(estados\)'/.test(mig)) falla(G, "packages/db/migrations", 0, "la base impone una intención en camino por objeto, un cobro hecho por propósito y que nada se borre (offsession_charges)");
+    const da = sinComent("apps/web/lib/dinero-alertas.ts"), pt = readFileSync("apps/web/app/admin/Planes.tsx", "utf8");
+    for (const k of ["offsession_stuck", "offsession_unapplied"]) if (!new RegExp(`"${k}"`).test(da) || !new RegExp(`${k}: \\{ es:`).test(da) || !new RegExp(`${k}: E\\(`).test(pt) || !new RegExp(`'${k}'`).test(mig)) falla(G, "apps/web/lib/dinero-alertas.ts", 0, `la alerta «${k}» está en la base, en el tipo, en el aviso y en el rótulo del Super Admin`);
+  },
+
   /* 9t3 (21 nov) · manoTrasLaLlave (LAUNCH «Dinero por clase · lo que quedó» (c)): «Resolver a mano» lo deja la base (dinero_a_mano) cuando Stripe ya la
      intentó o cuando lleva HORAS_LLAVE anotada sin intentos (nadie la va a mandar ya), nunca antes; la pantalla lo ofrece en los mismos casos
      (alertasDinero) y las horas son las de lib/cobros. Al revés: alreves9tdinero. */

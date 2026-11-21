@@ -388,32 +388,60 @@ async function vencerUnoEvt(id: string): Promise<VencidoE | null> {
     // Lo que estuvo en pausa y no se pudo alargar se devuelve al terminar ('pausa'; devolverPendientes al final del barrido).
     const terminar = async (motivo: Bi | null) => { await c.query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), renew_note = $2, ${DEVOLUCION("'pausa'", "'pausa'", true)} where id = $1::bigint`, [id, motivo?.es ?? null]); };
     const e = await eventoPat(c, s.event_id, s.business_id);
-    if (!s.auto_renew || !s.card_pm || s.duration === "until_event" || !e) { await terminar(null); return { r: "termino", evento: s.event_id, tpl: "biz_patevt_termino", v: {} }; }
+    // 9t4 · Una renovación ya mandada a Stripe que no contestó (offsession_charges en camino) se termina con SU llave y SU monto sin volver a mirar el
+    // puesto, la tarjeta ni el evento (Stripe pudo cobrarla); una anotada que nunca salió se suelta si ya no aplica (lib/patrocinio.ts › vencerUno).
+    const CF = await import("./cobro-fuera");
+    const camino = await CF.enCamino("patrocinio_evento", id), mandada = !!camino?.enviada;
+    if (!mandada && (!s.auto_renew || !s.card_pm || s.duration === "until_event" || !e)) {
+      if (camino) await CF.soltarSinMandar(camino.id, "no_renueva");
+      await terminar(null); return { r: "termino", evento: s.event_id, tpl: "biz_patevt_termino", v: {} };
+    }
     await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`patevt:${s.city_id}`]);
     const P = await preciosEvento();
     let motivo: Bi | null = null;
-    if (!vivoEvt(e) || (e.dia && e.dia < s.fin)) motivo = { es: "el evento ya pasó", en: "the event is over" };
-    const f = motivo ? null : (await fechasPeriodo(c, s.city_id, s.fin, s.duration))!;
-    if (f && (await c.query<{ n: number }>(`select patrocinio_evt_a_la_vez($1, $2::timestamptz, $3::timestamptz, $4::bigint) as n`, [s.city_id, f.a, f.b, id])).rows[0]!.n >= P.puestos) motivo = { es: "no quedaba puesto", en: "there was no slot left" };
-    const tarjeta = motivo ? null : await tarjetaDe(s.payer_user_id, s.card_pm);
+    if (!mandada && (!e || !vivoEvt(e) || (e.dia && e.dia < s.fin))) motivo = { es: "el evento ya pasó", en: "the event is over" };
+    const f = motivo || s.duration === "until_event" ? null : (await fechasPeriodo(c, s.city_id, s.fin, s.duration))!;
+    if (f && !mandada && (await c.query<{ n: number }>(`select patrocinio_evt_a_la_vez($1, $2::timestamptz, $3::timestamptz, $4::bigint) as n`, [s.city_id, f.a, f.b, id])).rows[0]!.n >= P.puestos) motivo = { es: "no quedaba puesto", en: "there was no slot left" };
+    const tarjeta = motivo ? null : mandada ? { pm: camino!.pm } : s.card_pm ? await tarjetaDe(s.payer_user_id, s.card_pm) : null;
     if (!motivo && !tarjeta) motivo = { es: "la tarjeta ya no está guardada", en: "the card is no longer saved" };
+    if (motivo && camino && !mandada) await CF.soltarSinMandar(camino.id, motivo.en.replace(/\W+/g, "_").slice(0, 60));
     if (!motivo && f && tarjeta) {
       const centavos = s.duration === "week" ? P.week : P.month, idem = `pat-evento-renov-${id}`;
-      const cobro: Cobro = { kind: "evento", negocio: s.business_id, ciudad: s.city_id, payer: s.payer_user_id, pm: tarjeta.pm, centavos, idem, razon: "renovacion", meta: { business_id: s.business_id, event_id: s.event_id, duration: s.duration } };
+      // Una renovación ya anotada se cobra con SU monto (el de Configuración el día que se anotó), nunca con otro.
+      const aCobrar = camino?.monto ?? centavos;
+      const cobro: Cobro = { kind: "evento", negocio: s.business_id, ciudad: s.city_id, payer: s.payer_user_id, pm: tarjeta.pm, centavos: aCobrar, idem, razon: "renovacion", meta: { business_id: s.business_id, event_id: s.event_id, duration: s.duration }, ref: id };
       const p = await cobrar(cobro);
+      // Stripe no contestó: nada cambia (el patrocinio no termina ni se avisa); el próximo paso del barrido la termina con la misma llave.
+      if (!p.ok && p.enCamino) return null;
       if (p.ok) {
+        // El cierre de la intención va en ESTA transacción (con el patrocinio nuevo y el libro): una vez.
+        if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) return null;
+        const monto = p.centavos ?? aCobrar;
         await c.query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), ${DEVOLUCION("'pausa'", "'pausa'", true)} where id = $1::bigint`, [id]);
-        const nid = (await c.query<{ id: string }>(
-          `insert into event_sponsorships (event_id, business_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
-           values ($1::bigint, $2, $3, $4::timestamptz, $5::timestamptz, $6, 'activo', $7, $8, $9, true, $10::bigint) returning id::text`,
-          [s.event_id, s.business_id, s.city_id, f.a, f.b, s.duration, centavos, s.payer_user_id, tarjeta.pm, id])).rows[0]!.id;
-        await anotarPago(c, { ...cobro, ref: nid, pi: p.pi, marca: p.marca, l4: p.l4 });
-        await auditarEvento(c, s.payer_user_id, s.event_id, s.city_id, "patrocinio_evento.renovado_solo", { patrocinio: nid, de: id, monto: money(centavos), hasta: f.b });
+        await c.query("savepoint renueva");
+        let nid: string | null = null;
+        try {
+          nid = (await c.query<{ id: string }>(
+            `insert into event_sponsorships (event_id, business_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
+             values ($1::bigint, $2, $3, $4::timestamptz, $5::timestamptz, $6, 'activo', $7, $8, $9, true, $10::bigint) returning id::text`,
+            [s.event_id, s.business_id, s.city_id, f.a, f.b, s.duration, monto, s.payer_user_id, tarjeta.pm, id])).rows[0]!.id;
+        } catch (er) {
+          // Ya mandada y sin puesto (otro lo tomó mientras Stripe no contestaba): el cobro salió y no se aplica; lo decide el equipo de dinero.
+          if (!errorDePuestos(er)) throw er;
+          await c.query("rollback to savepoint renueva");
+          await c.query(`update event_sponsorships set renew_note = $2 where id = $1::bigint`, [id, "no quedaba puesto"]);
+          const ia = await CF.intencion(p.intencion!);
+          if (ia) await CF.alertaSinAplicar(ia, { es: `al renovar el patrocinio de evento ${id} ya no quedaba puesto.`, en: `when renewing event sponsorship ${id} there was no slot left.` });
+          return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: "no quedaba puesto" } };
+        }
+        await anotarPago(c, { ...cobro, centavos: monto, idem: p.idem ?? idem, ref: nid!, pi: p.pi, marca: p.marca, l4: p.l4 });
+        await auditarEvento(c, s.payer_user_id, s.event_id, s.city_id, "patrocinio_evento.renovado_solo", { patrocinio: nid, de: id, monto: money(monto), hasta: f.b });
         const tj = p.marca && p.l4 ? `${p.marca.toUpperCase()} ·· ${p.l4}` : "";
-        return { r: "renovado", evento: s.event_id, tpl: "biz_patevt_renovado", v: { hasta: f.b, monto: money(centavos), tarjeta: tj } };
+        return { r: "renovado", evento: s.event_id, tpl: "biz_patevt_renovado", v: { hasta: f.b, monto: money(monto), tarjeta: tj } };
       }
       motivo = { es: p.msg.es.replace(/\.$/, "").toLowerCase(), en: p.msg.en.replace(/\.$/, "").toLowerCase() };
     }
+    motivo ??= { es: "no se pudo renovar", en: "it could not be renewed" };
     await terminar(motivo);
     return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: motivo!.es } };
   });
