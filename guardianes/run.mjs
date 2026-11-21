@@ -12480,8 +12480,10 @@ const guardianes = {
     for (const fn of ["cobrarDirecto", "cobrarFuera", "transferir"]) if (!/metadata\)? values \([^`]*\$\d+::jsonb\)/.test(metodo(fn))) falla(G, PS, 0, `el simulador guarda la metadata en ${fn} (la consulta la busca igual que en Stripe)`);
     // (2) «No llegó» solo con el veredicto de la consulta.
     const ve = cuerpoFn(k, "veredicto");
-    if (!/g\.result = 'no_hallado' and z\.gateway_ref is not null and z\.sent_at is not null and g\.at >= \$\{desde\} \+ make_interval\(hours => \$3::int\)/.test(ve) || !/\[t, id, HORAS_LLAVE \+ MARGEN_NO_LLEGO_H\]/.test(ve)
-      || !(Number(/export const MARGEN_NO_LLEGO_H = (\d+);/.exec(k)?.[1] ?? 0) >= 1) || !/const desde = t === "event_settlements" \? "greatest\(z\.sent_at, coalesce\(z\.key_from, z\.paying_at\)\)" : "z\.sent_at";/.test(ve))
+    if (!/g\.result = 'no_hallado' and z\.gateway_ref is not null and z\.sent_at is not null and g\.at >= \$\{desde\} \+ make_interval\(hours => \$3::int\)/.test(ve) || !/\[tabla, id, HORAS_LLAVE \+ MARGEN_NO_LLEGO_H\]/.test(ve)
+      || !(Number(/export const MARGEN_NO_LLEGO_H = (\d+);/.exec(k)?.[1] ?? 0) >= 1) || !/const desde = tabla === "event_settlements" \? "greatest\(z\.sent_at, coalesce\(z\.key_from, z\.paying_at\)\)" : "z\.sent_at";/.test(ve)
+      // La tabla de la consulta sale de una lista cerrada escrita en el código, no del parámetro tal cual (Semgrep, CI 44889132454).
+      || !/const tabla = t === "subscription_charges" \? "subscription_charges" : t === "offsession_charges" \? "offsession_charges" : t === "event_settlements" \? "event_settlements" : null;\s*if \(!tabla\) throw/.test(ve) || /join \$\{t\} /.test(ve) || !/join \$\{tabla\} z/.test(ve))
       falla(G, K, 0, "veredicto: «no llegó» solo con el dato buscable (gateway_ref) y pasadas HORAS_LLAVE + MARGEN_NO_LLEGO_H (≥ 1 h) desde que se mandó");
     for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
       const t = sinComent(f);

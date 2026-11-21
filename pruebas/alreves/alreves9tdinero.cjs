@@ -188,6 +188,9 @@ const casos = [
   [PG, KP, "z.gateway_ref is not null and ", ""],
   [PG, KP, " and g.at >= ${desde} + make_interval(hours => $3::int)", ""],
   [PG, KP, "export const MARGEN_NO_LLEGO_H = 1;", "export const MARGEN_NO_LLEGO_H = 0;"],
+  // La tabla vuelve a entrar al texto de la consulta desde el parámetro (lo que cazó Semgrep), o se quita el corte de la lista cerrada
+  [PG, KP, "from gateway_checks g join ${tabla} z on", "from gateway_checks g join ${t} z on"],
+  [PG, KP, '  if (!tabla) throw new Error("veredicto: tabla desconocida");\n', ""],
   // (3) La consulta fuera de su lugar (dentro de un cierre), sin anotarse, o «no hallado» cuando Stripe no contestó; varios que se cierran solos.
   [PG, SU, "async function terminarViejo(s: Fila, a: Intencion): Promise<ResCobro> {\n", "async function terminarViejo(s: Fila, a: Intencion): Promise<ResCobro> {\n  await pasarela.buscarCobro(`subscription_charges:${a.id}`);\n"],
   [PG, KP, "    await c.query(`insert into gateway_checks (", "    await c.query(`insert into gateway_checks_x ("],

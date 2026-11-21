@@ -64,13 +64,17 @@ export async function alertaRevisar(x: { monto: number; ciudad: string | null; n
 /* Lo último que dijo la pasarela de una intención, y si cuenta como «no llegó» (con el dato buscable y pasado el margen desde que se mandó; en una
    transferencia, desde que su llave volvió a valer, si volvió). `c`: la transacción del cierre, si la hay (solo lee). */
 export async function veredicto(t: Tabla, id: string, c?: Pick<PoolClient, "query">): Promise<Veredicto | null> {
-  const desde = t === "event_settlements" ? "greatest(z.sent_at, coalesce(z.key_from, z.paying_at))" : "z.sent_at";
+  // La tabla y el «desde» salen de una lista cerrada escrita aquí, nunca del parámetro tal cual (Semgrep, CI 44889132454: un nombre de tabla que
+  // llega de afuera no entra al texto de una consulta, aunque hoy todos los que llaman pasen un valor fijo).
+  const tabla = t === "subscription_charges" ? "subscription_charges" : t === "offsession_charges" ? "offsession_charges" : t === "event_settlements" ? "event_settlements" : null;
+  if (!tabla) throw new Error("veredicto: tabla desconocida");
+  const desde = tabla === "event_settlements" ? "greatest(z.sent_at, coalesce(z.key_from, z.paying_at))" : "z.sent_at";
   const v = (await (c ?? db()).query<Veredicto>(
     `select g.result as resultado, g.stripe_id as stripe, g.amount_cents as centavos, to_char(g.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
             (g.result = 'no_hallado' and z.gateway_ref is not null and z.sent_at is not null and g.at >= ${desde} + make_interval(hours => $3::int)) as "noLlego",
             null::text as marca, null::text as l4
-       from gateway_checks g join ${t} z on z.id = g.subject_id
-      where g.subject_kind = $1 and g.subject_id = $2::bigint order by g.at desc, g.id desc limit 1`, [t, id, HORAS_LLAVE + MARGEN_NO_LLEGO_H])).rows[0];
+       from gateway_checks g join ${tabla} z on z.id = g.subject_id
+      where g.subject_kind = $1 and g.subject_id = $2::bigint order by g.at desc, g.id desc limit 1`, [tabla, id, HORAS_LLAVE + MARGEN_NO_LLEGO_H])).rows[0];
   return v ?? null;
 }
 
