@@ -20,6 +20,14 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (mañana) · al día:**
+  - **`main` y `pruebas` = dbd3130** (confirmación completa **44856657972 VERDE** sobre 207fef9: dinero 9t, fotos privadas F3 con la migración
+    0197, tope de cuenta nueva solo para públicas, doble toque del panel, `?w=` de las privadas, `correo2q`). Cerradas 27 líneas «9 dispositivos»
+    de LAUNCH (queda la de 7f, que además pide correr `msg2p` con El Compa apagado). Inestables anotadas en LAUNCH: push8c, rev9u, cre9h, dlv2f4.
+  - **En la rama de trabajo, esperando su revisión rápida 44863184517:** dinero 9t2 (Opus, rama `dinero-9t2`, migración **0198**: los nueve puntos
+    de «Dinero por clase»; revisado por Fable; `din9t2` corre en el CI) y el diagnóstico de `requiere.cjs`. Si sale verde → `main`/`pruebas`.
+  - **Sin resolver:** `pro4l2` como requisito no puede tocar «Pasó la consulta» (dejó roja la programada 44851886841 sobre `main` por `ayu4m`);
+    causa desconocida, el registro ya dirá el motivo.
 - **21 nov (madrugada) · dónde quedó cada cosa, para retomar:**
   - **En la rama de trabajo (207fef9), todavía NO en `main`/`pruebas`:** dinero 9t (Opus, rama `dinero-9t`: `devolverPago` en dos pasos, barrido
     `barrerDevolucionesPago`, `decidirSop` por caso, Anular con candado, disputas con estado en el `where`; prueba `din9t`), fotos privadas F3
