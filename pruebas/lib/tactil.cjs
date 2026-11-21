@@ -92,4 +92,27 @@ const desbordan = (p) => p.evaluate((SEL) => {
   return malos;
 }, CONTROLES);
 
-module.exports = { CONTROLES, PERMITIDOS, REGLAS, chicos, pisan, desbordan };
+// 21 nov · «Al escribir hace zoom en el teléfono» (pedido del fundador): Safari de iPhone agranda la página al enfocar un campo cuya letra mide
+// menos de 16 px. En pantallas táctiles la regla de globals.css pone todo campo de texto a 16. Aquí se mide sobre lo servido, en ESTA pantalla:
+//   - cada campo de texto visible (input de texto, textarea, select) mide 16 px o más;
+//   - ninguno quedó ACHICADO por la regla: con la regla apagada (html[data-sin-campo16], solo para esto) se lee la letra que el campo traía; si
+//     traía más de 16 y ahora mide menos que eso, le falta data-letra-propia.
+// tactil: false cuando el navegador no dice (pointer: coarse); quien llama decide si eso es un fallo (en teléfono de Chromium, sí).
+const CAMPOS = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not([type=hidden]),textarea,select';
+const campos = (p) => p.evaluate((SEL) => {
+  const tactil = matchMedia('(pointer: coarse)').matches, R = document.documentElement;
+  const E = [...document.querySelectorAll(SEL)].filter((e) => e.getClientRects().length && !e.closest('[aria-hidden=true],[inert]') && getComputedStyle(e).visibility !== 'hidden');
+  const dice = (e) => `«${(e.getAttribute('aria-label') || e.getAttribute('placeholder') || e.getAttribute('name') || e.tagName).trim().slice(0, 28)}»`;
+  const ahora = E.map((e) => parseFloat(getComputedStyle(e).fontSize));
+  R.setAttribute('data-sin-campo16', '');
+  const traia = E.map((e) => parseFloat(getComputedStyle(e).fontSize));
+  R.removeAttribute('data-sin-campo16');
+  const chicos = [], achicados = [];
+  E.forEach((e, i) => {
+    if (ahora[i] < 16) chicos.push(`${dice(e)} ${ahora[i]} px`);
+    if (traia[i] > 16 && ahora[i] < traia[i]) achicados.push(`${dice(e)} traía ${traia[i]} px y quedó en ${ahora[i]}`);
+  });
+  return { tactil, medidos: E.length, chicos, achicados, subidos: E.filter((_, i) => traia[i] < 16 && ahora[i] >= 16).length };
+}, CAMPOS);
+
+module.exports = { CONTROLES, PERMITIDOS, REGLAS, CAMPOS, chicos, pisan, desbordan, campos };

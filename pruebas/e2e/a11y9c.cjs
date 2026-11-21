@@ -106,7 +106,12 @@ async function tactil44(p, donde) {
   const ps = await TACTIL.pisan(p); ok(ps.length === 0, `${donde}: ninguna caja le quita el toque a otro control` + (ps.length ? ': ' + ps.slice(0, 6).join(' · ') : ''));
   const fu = [...await botonesQueNoCaben(p), ...await TACTIL.desbordan(p)]; ok(fu.length === 0, `${donde}: cada botón cabe en su caja y nada se sale de la suya` + (fu.length ? ': ' + fu.slice(0, 6).join(' · ') : ''));
   const lado = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth); ok(lado <= 1, `${donde}: la página no se mueve de lado (${lado} px de más)`);
+  // 21 nov · Escribir no hace zoom: en el teléfono cada campo de texto mide 16 px o más y ninguno de letra grande se achicó (TACTIL.campos).
+  const c = await TACTIL.campos(p); camposVistos.tactil ||= c.tactil; camposVistos.medidos += c.medidos; camposVistos.subidos += c.subidos;
+  if (c.tactil) ok(c.chicos.length === 0 && c.achicados.length === 0, `${donde}: los ${c.medidos} campos de texto miden 16 px o más (escribir no hace zoom) y ninguno se achicó` + (c.chicos.length ? ' · CHICOS: ' + c.chicos.slice(0, 6).join(' · ') : '') + (c.achicados.length ? ' · ACHICADOS (falta data-letra-propia): ' + c.achicados.slice(0, 6).join(' · ') : ''));
 }
+// Lo que tactil44 midió de campos en toda la corrida: al final se exige que de verdad se haya medido algo (regla 10: si sale limpio, que haya corrido).
+const camposVistos = { tactil: false, medidos: 0, subidos: 0 };
 // Las pantallas clave del vecino (la ficha con el menú, una barbería, Comunidad, Eventos, Mi cuenta…).
 // El primer día (de hoy en adelante, zona de la ciudad) en que /eventos muestra tarjetas de evento. La semilla de pruebas trae eventos.
 const diaConEventos = async (p) => {
@@ -349,6 +354,17 @@ const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/s
     const ch = await chicos(a); console.log(`  (informe: en el escritorio (ratón), ${ch} controles del Super Admin miden menos de 44 px; en el teléfono se exige arriba)`);
     { const mi = await minimos(a); ok(mi.length === 0, `el Super Admin a 1440: AA 2.5.8, ningún control mide menos de 24 px${mi.length ? ': ' + mi.slice(0, 12).join(' · ') : ''}`); }
     console.log('  controles operados con el teclado (' + nombres.length + '): ' + [...new Set(nombres)].slice(0, 40).join(' · '));
+    // 21 nov · Escribir no hace zoom: además de lo medido en cada pantalla de arriba, dos pantallas donde se escribe (Entrar y Buscar), en teléfono.
+    { const esChromium = br.browserType().name() === 'chromium';
+      const q = await nuevo({ ...devices['iPhone 13'] }); watch(q, 'campos');
+      for (const ruta of ['/entrar', '/buscar']) {
+        await q.goto(B + ruta); await q.waitForLoadState('networkidle').catch(() => undefined);
+        const c = await TACTIL.campos(q); camposVistos.tactil ||= c.tactil; camposVistos.medidos += c.medidos; camposVistos.subidos += c.subidos;
+        // Chromium de teléfono siempre dice (pointer: coarse); otro motor del CI puede no decirlo (ahí se informa y no se exige; un iPhone de verdad sí lo dice).
+        ok((c.tactil || !esChromium) && c.medidos > 0 && (!c.tactil || (c.chicos.length === 0 && c.achicados.length === 0)), `390 ${ruta}: sus ${c.medidos} campos de texto miden 16 px o más y ninguno se achicó${c.tactil ? '' : ' (este motor no dice «táctil»: solo se informa)'}` + (c.chicos.length ? ' · CHICOS: ' + c.chicos.join(' · ') : '') + (c.achicados.length ? ' · ACHICADOS: ' + c.achicados.join(' · ') : ''));
+      }
+      await q.context().close();
+      ok((camposVistos.tactil || !esChromium) && camposVistos.medidos > 0, `campos de texto medidos en teléfono en toda la corrida: ${camposVistos.medidos} (${camposVistos.subidos} traían menos de 16 px y la regla los subió)${camposVistos.tactil ? '' : ' · este motor no dice «táctil»'}`); }
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ').slice(0, 400) : ''));
     console.log(`\n${n} ✓ · a11y9c`);
   } finally {

@@ -12142,6 +12142,25 @@ const guardianes = {
     }
   },
 
+  /* 21 nov · camposSinZoom («al escribir hace zoom en el teléfono», pedido del fundador): Safari de iPhone agranda la página al enfocar un campo cuya
+     letra mide menos de 16 px. La regla vive en UN lugar (globals.css, solo pantallas táctiles: los campos de texto a 16 px; los de letra más
+     grande a propósito llevan data-letra-propia) y se mide sobre lo servido (pruebas/lib/tactil.cjs › campos, desde a11y9c en cada pantalla de
+     teléfono). Nadie lo «arregla» quitando el zoom de la página (maximum-scale / user-scalable): eso le quita el zoom a quien lo necesita. */
+  camposSinZoom() {
+    const G = "camposSinZoom", C = "apps/web/app/globals.css", T = "pruebas/lib/tactil.cjs", A = "pruebas/e2e/a11y9c.cjs", L = "apps/web/app/layout.tsx";
+    for (const f of [C, T, A, L]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    const css = readFileSync(C, "utf8");
+    if (!/@media \(pointer: coarse\) \{\s*html:not\(\[data-sin-campo16\]\) :is\(input, textarea, select\):not\([^)]*\[data-letra-propia\]\) \{ font-size: 16px !important; \}\s*\}/.test(css))
+      falla(G, C, 0, "en pantallas táctiles todo campo de texto mide 16 px (la regla @media (pointer: coarse) con su excepción data-letra-propia y su interruptor de pruebas)");
+    const t = readFileSync(T, "utf8"), a = readFileSync(A, "utf8");
+    if (!/if \(ahora\[i\] < 16\) chicos\.push/.test(t) || !/if \(traia\[i\] > 16 && ahora\[i\] < traia\[i\]\) achicados\.push/.test(t) || !/module\.exports = \{[^}]*\bcampos\b/.test(t)) falla(G, T, 0, "tactil.cjs › campos mide los campos de menos de 16 px y los que la regla achicó");
+    if (!/const c = await TACTIL\.campos\(p\);/.test(a) || !/if \(c\.tactil\) ok\(c\.chicos\.length === 0 && c\.achicados\.length === 0,/.test(a) || !/ok\(\(camposVistos\.tactil \|\| !esChromium\) && camposVistos\.medidos > 0,/.test(a)) falla(G, A, 0, "a11y9c mide los campos en cada pantalla de teléfono (tactil44) y exige que de verdad se hayan medido");
+    for (const f of codigo) {
+      if (!/^(apps\/web\/app|packages\/ui\/src)\/.+\.tsx?$/.test(f)) continue;
+      sinComent(f).split("\n").forEach((l, i) => { if (/maximumScale|userScalable|maximum-scale|user-scalable/.test(l)) falla(G, f, i + 1, "no se quita el zoom de la página para tapar el zoom al escribir: el campo mide 16 px en táctil (globals.css)"); });
+    }
+  },
+
   /* 9t2 (21 nov, CI 44863184517: sop7b roja) · intentoFallidoQueda: en Soporte, pedir devolver más de lo que queda por devolver no mueve dinero,
      pero el INTENTO queda en el libro del caso (support_refunds, solo inserción) como fallido con su motivo: quién quiso devolver cuánto. Al pasar
      la devolución a dos pasos se anotaba todo en una transacción y, si no cabía, se deshacía entera: el intento desaparecía. Ahora la devolución

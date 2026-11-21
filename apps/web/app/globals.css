@@ -122,3 +122,12 @@
    se ajusta de 15 a 23 px a lo que queda, packages/ui SiteHeader) ya no tiene sitio para el nombre «To’Latino» a 320 sin sesión o con letra
    grande: ahí queda solo el logo (su nombre accesible sigue siendo «To’Latino»). Antes el nombre se dibujaba encima de «ES». */
 @container (max-width: 102px) { [data-marca] { display: none; } }
+
+/* 21 nov · Al escribir en un iPhone la página se agrandaba sola (pedido del fundador): Safari hace zoom al enfocar un campo cuya letra mide
+   menos de 16 px, y casi todos los campos del sistema miden 14 a 15. En pantallas táctiles todo campo de texto mide 16 px (lo que hacen las
+   apps grandes); con ratón, nada cambia. !important porque los campos traen su letra en el estilo en línea. Un campo que a propósito lleva
+   la letra MÁS grande (el código de 6 números) se marca con data-letra-propia para que no se achique. html[data-sin-campo16] apaga la regla:
+   solo lo usan las pruebas, para comparar con la letra que cada campo traía (pruebas/lib/tactil.cjs › campos). Guardián: camposSinZoom. */
+@media (pointer: coarse) {
+  html:not([data-sin-campo16]) :is(input, textarea, select):not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"], [data-letra-propia]) { font-size: 16px !important; }
+}

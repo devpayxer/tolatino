@@ -301,6 +301,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
                   onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
                   autoComplete="one-time-code"
+                  data-letra-propia
                   placeholder="······"
                   aria-label={E2("Código", "Code")}
                   className={`h-14 w-full rounded-input border-[1.5px] bg-white px-[18px] font-display text-[24px] font-extrabold tracking-[0.5em] text-ink outline-none ${codigo.length === 6 ? "border-ink" : "border-action"}`}

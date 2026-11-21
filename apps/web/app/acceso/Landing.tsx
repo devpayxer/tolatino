@@ -132,7 +132,7 @@ export function Landing({ d }: { d: DatosLanding }) {
       {enviado && !d.conSesion ? (
         <label className="flex flex-col gap-[7px]">
           <Clave>{t.codigoK}</Clave>
-          <input ref={refCodigo} value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="······" aria-label={t.codigoK}
+          <input ref={refCodigo} value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))} data-letra-propia inputMode="numeric" autoComplete="one-time-code" placeholder="······" aria-label={t.codigoK}
             className={`h-14 w-full rounded-input border-[1.5px] bg-white px-[18px] font-display text-[24px] font-extrabold tracking-[0.5em] text-ink outline-none ${codigo.length === 6 ? "border-ink" : "border-action"}`} />
           <div className="flex justify-between gap-2.5 text-[12.5px] font-semibold text-text-3">
             <span>{pon(t.enviado!, { tel: fmt(tel) })}</span>
