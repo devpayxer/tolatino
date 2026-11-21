@@ -4,6 +4,7 @@
    (solo si sube), las 3 próximas noches que abre si son distintas, edad, lista de la noche, la fila AHORA (se ve en vivo y dura 60
    min), la música, quién toca y el código de vestimenta (huecos #5 del diseño, compuestos con field), el tope de la lista y las
    REGLAS · NO SE APAGAN con candado. Cada toque se guarda en el servidor (acciones-noche.ts) con su historia. */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { diaNoche, FILAS, hNoche, LISTA_HORAS, MUSICA, resumenNoche, tituloNoche, usdN, type HerrNoche, type NocheIn } from "@/lib/noche-comun";
 import { nocheFila, nocheGuardar } from "./acciones-noche";
@@ -42,8 +43,8 @@ export function herramientaNocheBloques(c: Ctx): Sec {
   // El cover de la próxima noche que abre (hoy si abre): «Cover de esta noche» o «Cover del viernes».
   const n0 = h.noches.find((n) => n.abre) ?? h.noches[0]!, hoy = n0 === h.noches[0];
   if (!h.noches.some((n) => n.abre)) out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Tu horario no tiene noches abiertas esta semana: tu página no dice el cover. Revisa Tu página › Horario.", "Your hours have no open nights this week: your page shows no cover. Check Your page › Hours."), cta: E2("Horario", "Hours"), onCta: () => c.go("pag", "horario") });
-  out.push({ type: "step", t: hoy ? E2("Cover de esta noche", "Tonight’s cover") : E2(`Cover del ${diaNoche(n0.dow, true)}`, `${diaNoche(n0.dow, false)} cover`), s: E2("El que ves es el que pagas en la puerta.", "What you see is what you pay at the door."),
-    v: h.cover ? usdN(h.cover) : E2("Gratis", "Free"), onM: () => save({ cover: Math.max(0, h.cover - 500) }), onP: () => save({ cover: Math.min(10000, h.cover + 500) }) });
+  out.push(pasoSrv({ t: hoy ? E2("Cover de esta noche", "Tonight’s cover") : E2(`Cover del ${diaNoche(n0.dow, true)}`, `${diaNoche(n0.dow, false)} cover`), s: E2("El que ves es el que pagas en la puerta.", "What you see is what you pay at the door."),
+    n: h.cover, fmt: (x) => x ? usdN(x) : E2("Gratis", "Free"), sig: (x, d) => d < 0 ? Math.max(0, x - 500) : Math.min(10000, x + 500), save: (x) => save({ cover: x }) }));
   out.push({ type: "chips", k: E2("DESPUÉS DE CIERTA HORA", "AFTER A CERTAIN TIME"), help: E2("solo si sube", "only if it goes up"), items: ([[null, E2("Igual toda la noche", "Same all night")], [660, E2(`Después de las 11 PM · ${usdN(h.cover + 500)}`, `After 11 PM · ${usdN(h.cover + 500)}`)],
     [720, E2(`Después de las 12 AM · ${usdN(h.cover + 1000)}`, `After 12 AM · ${usdN(h.cover + 1000)}`)]] as [number | null, string][]).map(([m, l]) => ({ l, v: (h.afterMin ?? null) === m ? "selected" : "filter",
       onClick: () => save({ after: m == null ? null : { min: m, cents: h.cover + (m === 660 ? 500 : 1000) } }) })) });
@@ -52,15 +53,15 @@ export function herramientaNocheBloques(c: Ctx): Sec {
   const otras = h.noches.filter((n) => n.abre && n !== n0).slice(0, 3);
   for (const n of otras) {
     const cv = h.byDow[String(n.dow)] ?? h.cover;
-    out.push({ type: "step", t: E2(`El ${diaNoche(n.dow, true)}`, diaNoche(n.dow, false)), s: h.byDow[String(n.dow)] != null ? E2("Distinto a esta noche.", "Different from tonight.") : E2("Si esa noche es distinto.", "If that night is different."),
-      v: cv ? usdN(cv) : E2("Gratis", "Free"), onM: () => save({ byDow: { d: n.dow, cents: Math.max(0, cv - 500) } }), onP: () => save({ byDow: { d: n.dow, cents: Math.min(10000, cv + 500) } }) });
+    out.push(pasoSrv({ t: E2(`El ${diaNoche(n.dow, true)}`, diaNoche(n.dow, false)), s: h.byDow[String(n.dow)] != null ? E2("Distinto a esta noche.", "Different from tonight.") : E2("Si esa noche es distinto.", "If that night is different."),
+      n: cv, fmt: (x) => x ? usdN(x) : E2("Gratis", "Free"), sig: (x, d) => d < 0 ? Math.max(0, x - 500) : Math.min(10000, x + 500), save: (x) => save({ byDow: { d: n.dow, cents: x } }) }));
   }
   if (Object.keys(h.byDow).length) out.push({ type: "acts", items: [{ l: E2("Igual todas las noches", "Same every night"), v: "ghost", icon: "close", onClick: () => save({ igual: true }) }] });
   out.push({ type: "chips", k: E2("EDAD MÍNIMA", "MINIMUM AGE"), items: [18, 21].map((n) => ({ l: `${n}+`, v: h.edad === n ? "selected" : "filter", onClick: () => save({ edad: n }) })) });
   out.push({ type: "chips", k: E2("LISTA DE LA NOCHE", "GUEST LIST"), help: h.lista ? E2("anotarse es gratis · entra con el precio de la lista hasta esa hora", "signing up is free · list price until that time") : undefined,
     items: [{ l: E2("Sin lista", "No list"), v: !h.lista ? "selected" : "filter", onClick: () => save({ lista: null }) }, ...LISTA_HORAS.map((m) => ({ l: hNoche(m), v: h.lista && h.listaHasta === m ? "selected" : "filter", onClick: () => save({ lista: m }) }))] });
-  if (h.lista) out.push({ type: "step", t: E2("Tope de la lista", "List cap"), s: h.listaTope ? E2("Al llenarse, tu página dice «La lista de esta noche está llena».", "When full, your page says “Tonight’s list is full”.") : E2("Sin tope: se anota quien quiera.", "No cap: anyone can sign up."),
-    v: h.listaTope ? String(h.listaTope) : E2("Sin tope", "No cap"), onM: () => save({ tope: !h.listaTope || h.listaTope <= 25 ? null : h.listaTope - 25 }), onP: () => save({ tope: Math.min(2000, (h.listaTope ?? 0) + 25) }) });
+  if (h.lista) out.push(pasoSrv({ t: E2("Tope de la lista", "List cap"), s: h.listaTope ? E2("Al llenarse, tu página dice «La lista de esta noche está llena».", "When full, your page says “Tonight’s list is full”.") : E2("Sin tope: se anota quien quiera.", "No cap: anyone can sign up."),
+    n: h.listaTope ?? 0, fmt: (x) => x ? String(x) : E2("Sin tope", "No cap"), sig: (x, d) => d < 0 ? (x <= 25 ? 0 : x - 25) : Math.min(2000, x + 25), save: (x) => save({ tope: x || null }) }));
   out.push(filaAhoraBloque(c, h, false));
   out.push({ type: "chips", k: E2("MÚSICA DE ESTA NOCHE", "TONIGHT’S MUSIC"), help: E2("al menos una", "at least one"), items: MUSICA.map(([v, a, b]) => ({ l: es ? a : b, v: h.musica.includes(v) ? "selected" : "filter",
     onClick: () => { const L = h.musica.includes(v) ? h.musica.filter((x) => x !== v) : [...h.musica, v]; if (L.length) save({ musica: L }); else c.toast(E2("Deja al menos una.", "Keep at least one.")); } })) });

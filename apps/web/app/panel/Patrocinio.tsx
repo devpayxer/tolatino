@@ -179,7 +179,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
   out.push({ type: "rows", items: [{ t: cadaL(dur), s: ui.patRen ? E2(`${$c(precio(dur))} el ${q ? dia(q.hasta, es) : "—"}, si hay puesto`, `${$c(precio(dur))} on ${q ? dia(q.hasta, es) : "—"}, if there is a slot`) : E2("Apagada", "Off"), tgOn: !!ui.patRen, onTg: () => setUi({ patRen: !ui.patRen }) }] });
   // 3-D Secure: si el banco pide confirmar, la hoja del banco (c.ver) y, al confirmar, lo MISMO otra vez con la MISMA clave (un solo cobro).
   const compra = { dur, desde: renDe ? diaDe(x.vivo?.hasta ?? x.siguiente?.hasta ?? new Date().toISOString(), tz) : desdeSel, pm, renovar: !!ui.patRen, clave: ui.patClave, renovarDe: renDe };
-  const pagar = (): void => c.run(
+  const pagar = (): void => void c.run(
     async () => { const r = await patComprar(d.id, compra); if (!r.ok && c.ver(r, pagar)) return { ok: true, verificando: true } as Res; return r; },
     (r: { estado?: string; verificando?: boolean }) => r?.verificando ? undefined : r?.estado === "reservado" ? E2("Listo. Tu puesto quedó reservado.", "Done. Your slot is booked.") : E2("Listo. Ya sales en Patrocinados.", "Done. You now show in Sponsored."),
     (r: { verificando?: boolean }) => { if (!r?.verificando) setUi({ patPaso: 0, patDesde: "hoy", patLib: null, patRenDe: null, patClave: null }); });

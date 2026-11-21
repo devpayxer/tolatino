@@ -8,6 +8,7 @@
      (dash2-cat.js L508–533), con sus REGLAS que no se apagan. Los montos que toca son los de la propiedad (una sola fuente).
    Cada propiedad que se pinta lleva el pie de igualdad de oportunidad y la nota de los animales de servicio (guardián viviendaJusta). */
 import { ctaPro } from "./pro-cta";
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { DIA_FE, horaFe } from "@/lib/fe-comun";
 import {
@@ -236,7 +237,7 @@ export function herramientaInmBloques(c: Ctx): Sec {
       out.push({ type: "rows", items: [{ icon: "key", t: vend ? E2("Vendida", "Sold") : E2("En venta", "For sale"), s: vend ? E2("Ya no sale en la app.", "No longer in the app.") : E2("Sale en tu página con el precio y la cuota estimada.", "Shows on your page with the price and estimated payment."), tgOn: !vend,
         onTg: () => save({ estado: { item: p.id, status: vend ? "available" : "sold" } }), compact: true }] });
       if (!vend && p.price != null) {
-        out.push({ type: "step", t: E2("Precio", "Price"), s: E2("El precio de venta.", "The sale price."), v: usd(p.price), onM: () => save({ precio: { item: p.id, cents: Math.max(100000, p.price! - 100000) } }), onP: () => save({ precio: { item: p.id, cents: p.price! + 100000 } }) });
+        out.push(pasoSrv({ t: E2("Precio", "Price"), s: E2("El precio de venta.", "The sale price."), n: p.price, fmt: usd, sig: (n, d) => d < 0 ? Math.max(100000, n - 100000) : n + 100000, save: (n) => save({ precio: { item: p.id, cents: n } }) }));
         if (p.cuota != null) out.push({ type: "rows", items: [{ icon: "dollar", t: E2("Cuota estimada al mes", "Estimated monthly payment"), s: `${cuotaTexto(p.cuota, p.downPct, es)}. ${bi(CUOTA_NOTA, es)}`, r: usd(p.cuota), compact: true }] });
       }
     }
@@ -265,10 +266,11 @@ export function herramientaInmBloques(c: Ctx): Sec {
       s: off ? E2("Ya no sale en la app.", "No longer in the app.") : p.moveIn != null ? mudarteTexto(p, es) : E2("Sale en tu página.", "Shows on your page."), tag: off ? (es ? ESTADO[p.status][0] : ESTADO[p.status][1]).toUpperCase() : null, tone: "neutral",
       tgOn: !off, onTg: () => save({ estado: { item: p.id, status: off ? "available" : "rented" } }), compact: true }] });
     if (off || p.rent == null) continue;
-    out.push({ type: "step", t: alMes(p.kind) ? E2("Renta al mes", "Monthly rent") : E2("Precio", "Price"), s: alMes(p.kind) ? E2("Lo que pagan cada mes.", "What they pay each month.") : E2("El total que sale en tu página.", "The total shown on your page."), v: usd(p.rent),
-      onM: () => save({ renta: { item: p.id, cents: Math.max(500, p.rent! - (alMes(p.kind) ? 2500 : 500)) } }), onP: () => save({ renta: { item: p.id, cents: p.rent! + (alMes(p.kind) ? 2500 : 500) } }) });
-    if (alMes(p.kind)) out.push({ type: "step", t: E2("Depósito", "Deposit"), s: E2(`Hasta 2 meses (${usd(2 * p.rent)}). Se devuelve al mudarse, menos daños con foto.`, `Up to 2 months (${usd(2 * p.rent)}). Returned at move-out, minus photo-documented damage.`), v: usd(p.dep),
-      onM: () => save({ deposito: { item: p.id, cents: Math.max(0, p.dep - 2500) } }), onP: () => { if (p.dep + 2500 > 2 * p.rent!) { c.toast(E2("El depósito no puede pasar de 2 meses de renta.", "The deposit cannot be more than 2 months of rent.")); return; } save({ deposito: { item: p.id, cents: p.dep + 2500 } }); } });
+    out.push(pasoSrv({ t: alMes(p.kind) ? E2("Renta al mes", "Monthly rent") : E2("Precio", "Price"), s: alMes(p.kind) ? E2("Lo que pagan cada mes.", "What they pay each month.") : E2("El total que sale en tu página.", "The total shown on your page."),
+      n: p.rent, fmt: usd, sig: (n, d) => d < 0 ? Math.max(500, n - (alMes(p.kind) ? 2500 : 500)) : n + (alMes(p.kind) ? 2500 : 500), save: (n) => save({ renta: { item: p.id, cents: n } }) }));
+    if (alMes(p.kind)) out.push(pasoSrv({ t: E2("Depósito", "Deposit"), s: E2(`Hasta 2 meses (${usd(2 * p.rent)}). Se devuelve al mudarse, menos daños con foto.`, `Up to 2 months (${usd(2 * p.rent)}). Returned at move-out, minus photo-documented damage.`),
+      n: p.dep, fmt: usd, sig: (n, d) => d < 0 ? Math.max(0, n - 2500) : n + 2500 > 2 * p.rent! ? undefined : n + 2500,
+      tope: () => c.toast(E2("El depósito no puede pasar de 2 meses de renta.", "The deposit cannot be more than 2 months of rent.")), save: (n) => save({ deposito: { item: p.id, cents: n } }) }));
     if (p.visitas.length) out.push({ type: "chips", k: E2("HORAS DE VISITA", "VIEWING TIMES"), help: E2("toca para prender o apagar", "tap to turn on or off"), items: p.visitas.map((v, i) => ({ l: cortoVis(v.dow, v.min, es), v: v.on ? "selected" : "filter", onClick: () => {
       if (v.on && VIV(p.kind) && p.visitas.filter((x) => x.on).length <= 1) { c.toast(E2("Deja al menos una hora de visita.", "Keep at least one viewing time.")); return; }
       save({ visita: { item: p.id, i, on: !v.on } }); } })) });

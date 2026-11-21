@@ -3,6 +3,7 @@
    renderizador de bloques. Cada bloque se copió 1:1 de la plantilla del diseño (estilos y textos por defecto); los
    colores son tokens. Las pantallas del panel arman listas de bloques y las pinta <PanelBloques>. */
 import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import * as DS from "../ds/index";
 import type { ComponentType } from "react";
@@ -12,6 +13,23 @@ import { fotoCss, fotoFondo } from "../foto";
 const { Icon, Button, Chip, Tag, SelectBox, QtyStepper, SelectionBar, MenuItemRow, OptionGroup } = DS as unknown as Record<"Icon" | "Button" | "Chip" | "Tag" | "SelectBox" | "QtyStepper" | "SelectionBar" | "MenuItemRow" | "OptionGroup", ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
 type Fn = () => void;
+/* 21 nov · Un paso (− valor +) que guarda en el servidor en cada toque. Los cierres onM/onP de la pantalla calculan desde el valor que tenían al
+   pintarse: un segundo toque antes de que vuelva el guardado salía del valor viejo y se perdía un incremento (o se guardaba dos veces el mismo).
+   Con srv, el paso (Paso) lleva la cuenta: muestra y calcula desde el ÚLTIMO valor pedido (sig(base, ±1)), manda uno a la vez y, al terminar,
+   lo último que se pidió; si el servidor dice que no (save devuelve false) vuelve al valor que tiene el servidor (n). Guardián pasoQueSuma. */
+export type PasoSrv = {
+  n: number; // lo que tiene el servidor (el valor de la pantalla al pintarse)
+  sig: (n: number, d: 1 | -1) => number | undefined; // el valor que sigue de n (undefined: ya no se puede; n: no cambia)
+  fmt: (n: number) => string; // cómo se dice un valor
+  save: (n: number, desde: number) => Promise<boolean> | void; // guarda n; desde = el valor que se supone que ya tiene el servidor (para quien guarda cambios)
+  tope?: (d: 1 | -1) => void; // el aviso que la pantalla ya daba al tocar más allá del límite
+};
+// v: lo que dice el paso mientras nadie lo toca, si no es fmt(n) (un valor sin poner dice «—» y el primer toque sale de su valor de partida).
+export function pasoSrv(p: { t: string; s?: string; v?: string } & PasoSrv): Extract<Bloque, { type: "step" }> {
+  const { t, s, v, ...srv } = p;
+  const va = (d: 1 | -1): Fn => () => { const x = srv.sig(srv.n, d); if (x === undefined) srv.tope?.(d); else if (x !== srv.n) void srv.save(x, srv.n); };
+  return { type: "step", t, ...(s ? { s } : {}), v: v ?? srv.fmt(srv.n), onM: va(-1), onP: va(1), srv };
+}
 // 9c · Enter y Espacio activan lo que es un botón con rol (solo con el foco en el propio elemento, para no robarle la tecla a un campo de dentro).
 const tecla = (fn?: Fn) => fn ? (e: React.KeyboardEvent<HTMLElement>) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); fn(); } } : undefined;
 const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.6)" };
@@ -49,7 +67,8 @@ export type Bloque =
   | { type: "lock"; t: string; s: string; cta?: string; onCta?: Fn }
   | { type: "kv"; cols?: number; items: { k: string; v: string; fg?: string }[] }
   | { type: "field"; k: string; val: string; onChange: (v: string) => void; ph?: string; area?: boolean; rows?: number; count?: string; help?: string; lock?: boolean; pre?: string; suf?: string; im?: string; max?: number }
-  | { type: "step"; t: string; s?: string; v: string; onM: Fn; onP: Fn }
+  /* 21 nov · srv: un paso que GUARDA EN EL SERVIDOR en cada toque (ver pasoSrv). Sin srv, onM/onP mandan (estado local de la pantalla). */
+  | { type: "step"; t: string; s?: string; v: string; onM: Fn; onP: Fn; srv?: PasoSrv }
   | { type: "photos"; k?: string; count?: string; cols?: number; items: { bg: string; on?: boolean; tag?: string; onClick?: Fn; key?: string }[]; addL?: string; onAdd?: Fn; selActs?: Accion[] }
   | { type: "hours"; items: Dia[]; todayL: string; openK: string; closeK: string; copyL: string; free?: boolean }
   | { type: "empty"; icon: string; t: string; s: string; cta?: string; onCta?: Fn }
@@ -99,6 +118,53 @@ const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRa
 const bolita = (on: boolean): CSSProperties => ({ position: "absolute", top: 3, left: 3, width: 18, height: 18, borderRadius: 99, background: "var(--tl-white)", transform: `translateX(${on ? 18 : 0}px)`, transition: "transform .2s" });
 const NOTA = { info: ["rgba(75,55,245,.07)", "var(--tl-action-ink)", "info"], ok: ["rgba(0,229,196,.12)", "var(--tl-open-text)", "check"], warn: ["rgba(255,176,32,.14)", "var(--tl-pro-ink)", "warning"], danger: ["rgba(192,57,43,.08)", "var(--tl-danger)", "warning"], ink: ["var(--tl-ink)", "var(--tl-white)", "bolt"] } as const;
 const para = (e: { stopPropagation: () => void }) => e.stopPropagation();
+
+/* 21 nov · El paso (− valor +). Sin srv es el de siempre. Con srv: `want` es el último valor pedido (lo que se ve y de donde sale el siguiente
+   toque); se manda al servidor de uno en uno y, al terminar, lo último pedido; `known` es lo que se supone que ya tiene el servidor. Se suelta
+   `want` cuando la pantalla ya trae el valor del servidor, si el servidor dijo que no, o a los 4 s por si nunca cambia (el servidor lo ajustó). */
+function Paso({ b }: { b: Extract<Bloque, { type: "step" }> }): ReactNode {
+  const srv = b.srv, [want, setWant] = useState<number | null>(null);
+  const sv = useRef(srv as PasoSrv); sv.current = srv as PasoSrv; // solo se usa con srv
+  const r = useRef({ want: null as number | null, known: null as number | null, busy: false, settled: false, nSettle: 0, timer: null as ReturnType<typeof setTimeout> | null });
+  const suelta = () => { const x = r.current; if (x.timer) clearTimeout(x.timer); x.timer = null; x.want = null; x.known = null; x.settled = false; setWant(null); };
+  const manda = (): void => {
+    const x = r.current, cur = sv.current;
+    if (x.busy || x.want === null || x.want === (x.known ?? cur.n)) return;
+    const v = x.want, desde = x.known ?? cur.n;
+    x.busy = true; x.settled = false; if (x.timer) clearTimeout(x.timer);
+    void Promise.resolve().then<boolean | void>(() => cur.save(v, desde)).catch(() => false).then((ok) => {
+      x.busy = false;
+      if (ok === false) { suelta(); return; }
+      x.known = v;
+      if (x.want !== null && x.want !== v) { manda(); return; }
+      if (sv.current.n === v) { suelta(); return; } // la pantalla ya trajo el valor guardado
+      x.settled = true; x.nSettle = sv.current.n;
+      if (x.timer) clearTimeout(x.timer);
+      x.timer = setTimeout(() => { if (!x.busy) suelta(); }, 4000);
+    });
+  };
+  const toca = (d: 1 | -1) => {
+    if (!srv) return;
+    const x = r.current, base = x.want ?? sv.current.n, nx = sv.current.sig(base, d);
+    if (nx === undefined) { sv.current.tope?.(d); return; }
+    if (nx === base) return;
+    x.want = nx; x.settled = false; setWant(nx); manda();
+  };
+  // La pantalla ya trae lo que se pidió (o, ya guardado, otro valor del servidor): se deja de mostrar lo pedido.
+  const n = srv?.n;
+  useEffect(() => { const x = r.current; if (!x.busy && x.want !== null && (n === x.want || (x.settled && n !== x.nSettle))) suelta(); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { const t = r.current.timer; if (t) clearTimeout(t); }, []);
+  const v = srv && want !== null ? srv.fmt(want) : b.v;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
+      <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px Manrope,sans-serif" }}>{b.t}</span>{b.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span> : null}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button type="button" aria-label={`${b.t} −`} onClick={srv ? () => toca(-1) : b.onM} style={{ width: 32, height: 32, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></button>
+        <span style={{ minWidth: 64, textAlign: "center", font: "800 14px Sora,sans-serif" }}>{v}</span>
+        <button type="button" aria-label={`${b.t} +`} onClick={srv ? () => toca(1) : b.onP} style={{ width: 32, height: 32, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></button>
+      </span>
+    </div>);
+}
 
 export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNode {
   switch (b.type) {
@@ -266,15 +332,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             </span>}
         {b.help ? <span style={{ font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.help}</span> : null}
       </label>); }
-    case "step": return (
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
-        <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px Manrope,sans-serif" }}>{b.t}</span>{b.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span> : null}</span>
-        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button type="button" aria-label={`${b.t} −`} onClick={b.onM} style={{ width: 32, height: 32, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></button>
-          <span style={{ minWidth: 64, textAlign: "center", font: "800 14px Sora,sans-serif" }}>{b.v}</span>
-          <button type="button" aria-label={`${b.t} +`} onClick={b.onP} style={{ width: 32, height: 32, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></button>
-        </span>
-      </div>);
+    case "step": return <Paso b={b} />;
     case "photos": return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {b.k ? <span style={{ ...K, display: "flex", justifyContent: "space-between" }}><span>{b.k}</span><span style={{ fontWeight: 600 }}>{b.count}</span></span> : null}

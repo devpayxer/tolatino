@@ -3,6 +3,7 @@
    fase4-fiestas-transporte.md §4w y §5. Por tipo: van «Salidas y asientos» (las salidas de hoy con «No sale hoy», lo vendido en la
    oficina y lo que queda, maletas incluidas y la maleta extra); caja «Salidas de la caja» (qué día sale y cuánto tarda); el resto
    «Disponibilidad y servicio» (disponible hoy, asiento de niño, rampa). REGLAS · NO SE APAGAN con candado. Cada toque se guarda. */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { resumenTrans, tituloTrans } from "@/lib/transporte-comun";
 import { transFuera, transGuardar, transSalida } from "./acciones-transporte";
@@ -36,12 +37,13 @@ export function herramientaTransBloques(c: Ctx): Sec {
     const vivas = h.salidas.filter((s) => !s.cancelada);
     if (vivas.length) {
       out.push({ type: "group", k: E2("VENDIDOS EN LA OFICINA · SE DESCUENTAN DE LO QUE QUEDA", "SOLD AT THE OFFICE · TAKEN OFF WHAT IS LEFT") });
+      // GUARDIAN-OK pasoQueSuma: cada toque es UN movimiento de ±1 que el servidor suma de forma atómica (venderFuera: seats_outside + delta), no un valor: N toques suman N.
       for (const s of vivas) out.push({ type: "step", t: `${hL(s.m)} · ${nm(s.svc)}`, s: E2(`Quedan ${s.quedan} en la app`, `${s.quedan} left in the app`), v: String(s.fuera),
         onM: () => c.run(() => transFuera(c.d.id, s.run, -1), E2("Listo.", "Done.")), onP: () => c.run(() => transFuera(c.d.id, s.run, 1), E2("Listo: un asiento menos en la app.", "Done: one seat less in the app.")) });
     }
     out.push({ type: "chips", k: E2("MALETAS INCLUIDAS POR PERSONA", "BAGS INCLUDED PER PERSON"), items: [0, 1, 2, 3].map((n) => ({ l: n ? String(n) : E2("Ninguna", "None"), v: h.bags === n ? "selected" : "filter", onClick: () => save({ bags: n }) })) });
-    out.push({ type: "step", t: E2("Maleta extra", "Extra bag"), s: h.extraBag == null ? E2("No vendes maleta extra.", "You do not sell extra bags.") : E2("Se paga al reservar; nada se cobra al subir.", "Paid when booking; nothing is charged when boarding."),
-      v: h.extraBag == null ? E2("No", "No") : usd(h.extraBag), onM: () => save({ extraBag: h.extraBag == null || h.extraBag <= 500 ? null : h.extraBag - 500 }), onP: () => save({ extraBag: Math.min(20000, (h.extraBag ?? 0) + 500) }) });
+    out.push(pasoSrv({ t: E2("Maleta extra", "Extra bag"), s: h.extraBag == null ? E2("No vendes maleta extra.", "You do not sell extra bags.") : E2("Se paga al reservar; nada se cobra al subir.", "Paid when booking; nothing is charged when boarding."),
+      n: h.extraBag ?? 0, fmt: (n) => n ? usd(n) : E2("No", "No"), sig: (n, d) => d < 0 ? (n <= 500 ? 0 : n - 500) : Math.min(20000, n + 500), save: (n) => save({ extraBag: n || null }) }));
   }
   if (h.kind === "caja") {
     out.push({ type: "chips", k: E2("LA CAJA SALE", "THE BOX SHIPS"), items: ([["sab", E2("El sábado", "Saturday")], ["mie", E2("El miércoles", "Wednesday")], ["15d", E2("Cada 15 días", "Every 2 weeks")]] as const).map(([k, l]) => ({ l, v: h.shipDay === k ? "selected" : "filter", onClick: () => save({ shipDay: k }) })) });

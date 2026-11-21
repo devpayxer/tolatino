@@ -5,6 +5,7 @@
    FAMILIA); funeraria → «Precios y repatriación» (Las 24 horas, PRECIO TOTAL por servicio, plan de pagos como texto, REPATRIACIÓN A RD ·
    DÍAS); REGLAS · NO SE APAGAN. Plan fase4-iglesias-inmuebles-autos.md §4ia y §5. La hora libre fuera de los atajos va en «Otro horario».
    Cada toque se guarda en el servidor (acciones-fe.ts) con su línea en la auditoría. */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { AYUDA, DIA_FE, FREQ, LANG_FE, QUE_FE, REGLAS_FE, REGLAS_FUN, REP, atajosDe, cortoFe, horaFe, pideUnHorario, resumenFe, tituloFe, type HerrFe } from "@/lib/fe-comun";
 import { feGuardar } from "./acciones-fe";
@@ -50,8 +51,8 @@ export function herramientaFeBloques(c: Ctx): Sec {
       tgOn: h.h24, onTg: () => save({ h24: !h.h24 }) }] });
     out.push({ type: "group", k: E2("PRECIO TOTAL · SALE EN TU PÁGINA", "TOTAL PRICE · SHOWS ON YOUR PAGE") });
     if (!h.totales.length) out.push({ type: "note", tone: "warn", icon: "info", t: E2("Primero agrega tus servicios con «Precio total por escrito» en Servicios.", "First add your services with “Written total price” in Services."), cta: E2("Servicios", "Services"), onCta: () => c.go("mod", "servicios") });
-    for (const it of h.totales) out.push({ type: "step", t: es ? it.name.es : it.name.en || it.name.es, s: E2("El total por escrito; lo que va aparte se dice.", "The written total; anything extra is stated."), v: usd(it.cents),
-      onM: () => save({ precio: { item: it.id, cents: Math.max(50000, Math.ceil(it.cents / 10000) * 10000 - 10000) } }), onP: () => save({ precio: { item: it.id, cents: Math.min(3000000, Math.floor(it.cents / 10000) * 10000 + 10000) } }) });
+    for (const it of h.totales) out.push(pasoSrv({ t: es ? it.name.es : it.name.en || it.name.es, s: E2("El total por escrito; lo que va aparte se dice.", "The written total; anything extra is stated."), n: it.cents, fmt: usd,
+      sig: (n, d) => d < 0 ? Math.max(50000, Math.ceil(n / 10000) * 10000 - 10000) : Math.min(3000000, Math.floor(n / 10000) * 10000 + 10000), save: (n) => save({ precio: { item: it.id, cents: n } }) }));
     out.push({ type: "rows", items: [{ icon: "dollar", t: E2("Plan de pagos · hasta 12 pagos", "Payment plan · up to 12 payments"), s: h.plan ? E2("Sale en el servicio completo. Lo acuerdas con la familia; To’Latino no lo cobra.", "Shows on the full service. You agree on it with the family; To’Latino does not charge it.") : E2("Apagado: se paga al contratar.", "Off: paid when you sign."), tgOn: h.plan, onTg: () => save({ plan: !h.plan }) }] });
     if (h.repatria) out.push({ type: "chips", k: E2("REPATRIACIÓN A RD · DÍAS", "REPATRIATION TO THE DR · DAYS"), items: REP.map((r) => ({ l: `${r}${E2(" días", " days")}`, v: h.rep === r ? "selected" : "filter", onClick: () => save({ rep: r }) })) });
     reglas(REGLAS_FUN);
