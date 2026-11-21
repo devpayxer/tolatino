@@ -5885,20 +5885,22 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Falta medir** una foto subida desde el panel de un negocio (Fotos y portada): ahí se ve la tarjeta de la lista y la galería. Cuando subas
   una, la mido igual.
 
-## «Al escribir hace zoom en el teléfono» (21 nov) — arreglado en la rama de trabajo, esperando su CI
+## «Al escribir hace zoom en el teléfono» (21 nov) — YA en el sandbox (commit 59676bd)
 - **Qué pasaba:** Safari de iPhone agranda la página al tocar un campo cuya letra mide menos de 16 px, y casi todos nuestros campos medían 14 a 15.
 - **Qué cambié:** en teléfonos y tabletas (pantalla táctil) todo campo donde se escribe mide 16 px. Con ratón no cambia nada. El código de 6
   números conserva su letra grande. No quité el zoom de la página con los dedos: lo necesita quien ve poco.
 - **Qué vas a notar:** la letra dentro de los campos se ve un poco más grande en el teléfono (como en las apps grandes). Las capturas aprobadas
   de teléfono que tienen un campo a la vista cambian por eso: te las paso para aprobar cuando termine el CI.
-- **Qué mirar cuando esté en el sandbox (te aviso):** toca el buscador, escribe una publicación en Comunidad y un mensaje: la página no debe
+- **Medido en el sandbox con un navegador de teléfono (21 nov):** el buscador y el campo de «nueva publicación» de Comunidad medían menos de 16 px
+  y ahora miden 16; los cuatro campos de Mi cuenta › Perfil ya estaban bien. Falta lo único que no puedo hacer yo: tu iPhone de verdad.
+- **Qué mirar en tu teléfono:** toca el buscador, escribe una publicación en Comunidad y un mensaje: la página no debe
   agrandarse sola.
 - **Capturas que cambian (21 nov, CI 44872463837):** solo las seis de «Buscar» en teléfono y tableta (`pruebas/visual/buscar/`): el texto del
   buscador, «¿Qué necesitas hoy?», pasa de 14,5 a 16 px. Ya quedaron como las aprobadas nuevas; si no te gusta cómo se ve, dímelo y lo ajusto
   de otra forma. La prueba `a11y9c` midió 208 comprobaciones en verde, entre ellas que en cada pantalla de teléfono ningún campo mide menos
   de 16 px y que el código de 6 números no se achicó.
 
-## Dinero, tercera tanda (21 nov) — tres decisiones tuyas
+## Dinero, tercera tanda (21 nov) — YA en el sandbox (migraciones 0198 y 0199) — tres decisiones tuyas
 - **Qué cambió (Opus, revisado por Fable):** el cobro de Pro se anota antes de pedírselo a Stripe; una transferencia a un organizador o un cobro
   de Pro que lleva 23 h sin respuesta ya no se repite: avisa al equipo; «Resolver a mano» aparece también cuando pasaron 23 h sin ningún intento.
 - **Decide tú (dejé lo más cerrado):**
