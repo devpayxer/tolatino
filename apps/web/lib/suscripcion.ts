@@ -112,9 +112,13 @@ type ResCobro = { ok: true } | { ok: false; msg: Bi; verificar?: true; hoja?: im
 /* Paso 1. La intención de ESTE negocio que sigue en camino (de cualquier período) se termina primero; si no hay, la de esta llave (hecha o rechazada)
    o una nueva. Con el candado de los cobros del negocio en la transacción: dos a la vez no anotan dos. */
 async function anotarCobro(s: Fila, desde: number, alGuardar?: (c: PoolClient) => Promise<unknown>): Promise<Intencion> {
-  const monto = precio(s.cycle), idem = `sub-${s.business_id}-${new Date(desde).toISOString()}-${s.card_pm!.slice(-16)}-${s.failed_attempts}`;
+  const monto = precio(s.cycle), base = `sub-${s.business_id}-${new Date(desde).toISOString()}-${s.card_pm!.slice(-16)}-${s.failed_attempts}`;
   return tx(async (c) => {
     await c.query(`select pg_advisory_xact_lock(hashtext('sub-cobro:' || $1))`, [s.business_id]);
+    // 9t5 · Una intención de esta llave que la consulta dio por «nunca llegó a Stripe» no cuenta como un «no» del banco (no sube el intento): la siguiente va
+    // con otra llave (-r<n>), nunca con la misma (devolvería la rechazada).
+    const r = Number((await c.query<{ n: number }>(`select count(*)::int as n from subscription_charges where business_id = $1 and left(idem_key, length($2)) = $2 and status = 'failed' and last_error = 'nunca_llego'`, [s.business_id, base])).rows[0]!.n);
+    const idem = r ? `${base}-r${r}` : base;
     // También el cobro ya hecho de ESE período (con otra llave: otra tarjeta, otro intento, la verificación del banco): no se anota otro.
     const ya = (await c.query<Omit<Intencion, "nueva">>(`select ${SEL_INT} from subscription_charges where business_id = $1 and (status = 'pending' or idem_key = $2 or (status = 'done' and period_start = $3::timestamptz))
                                                          order by (status = 'pending') desc, id desc limit 1`, [s.business_id, idem, new Date(desde).toISOString()])).rows[0];
@@ -137,17 +141,22 @@ async function terminarCobro(s: Fila, a: Intencion, enSesion = false): Promise<R
   if (a.st === "done") return { ok: true };
   if (a.st === "failed") return { ok: false, msg: YA_RECHAZADO };
   if (a.st !== "pending") return { ok: false, msg: { es: "Tu banco pide confirmar que eres tú. Confírmalo para seguir.", en: "Your bank asks you to confirm it is you. Confirm it to continue." }, verificar: true };
-  if (a.vieja) { await alertaCobroViejo(s.business_id, a); return { ok: false, msg: VIEJO, enCamino: true }; }
+  // 9t5 · Pasadas HORAS_LLAVE nunca va a la pasarela con su llave: se cierra con lo que contestó la consulta (o sigue en camino con su alerta).
+  if (a.vieja) return terminarViejo(s, a);
   // Un período que ya tiene su cobro hecho (otra intención, o la verificación del banco que se completó mientras esta esperaba) no va a Stripe:
   // la que nunca se mandó queda fallida (nada salió); la que ya se mandó y no contestó, alerta (Stripe pudo cobrarla también) y sigue en camino.
-  if ((await db().query(`select 1 from subscription_charges z join subscription_charges y on y.business_id = z.business_id and y.period_start = z.period_start and y.status = 'done' and y.id <> z.id
-                          where z.id = $1::bigint`, [a.id])).rowCount) {
-    if (a.n === 0 && (await db().query(`update subscription_charges set status = 'failed', last_error = 'periodo_ya_cobrado' where id = $1::bigint and status = 'pending' and attempts = 0`, [a.id])).rowCount) return { ok: true };
+  // 9t5 · «Nunca se mandó» lo dice sent_at (se anota ANTES de la llamada), no attempts (se anota después: un proceso que murió en la llamada dejaba 0).
+  if (await periodoYaCobrado(a.id)) {
+    if ((await db().query(`update subscription_charges set status = 'failed', last_error = 'periodo_ya_cobrado' where id = $1::bigint and status = 'pending' and sent_at is null`, [a.id])).rowCount) return { ok: true };
     await alertaCobroViejo(s.business_id, a, true);
     return { ok: false, msg: VIEJO, enCamino: true };
   }
+  // 9t5 · Se anota que se manda ANTES de la llamada (sent_at) con el dato buscable (gateway_ref), en una sentencia y solo la primera vez: un reintento de
+  // una intención que salió sin él va sin él (la misma llave con otros parámetros, Stripe la rechaza) y esa nunca se da por «no llegó».
+  const m = (await db().query<{ gref: string | null }>(`update subscription_charges set gateway_ref = case when sent_at is null then 'subscription_charges:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' returning gateway_ref as gref`, [a.id])).rows[0];
+  if (!m) return (await db().query(`select 1 from subscription_charges where id = $1::bigint and status = 'done'`, [a.id])).rowCount ? { ok: true } : { ok: false, msg: YA_RECHAZADO };
   const cliente = await pasarela.cliente(a.payer).catch(() => null);
-  const r = await pasarela.cobrarDirecto({ centavos: a.monto, pm: a.pm, cliente, idem: a.idem, meta: { business_id: s.business_id, kind: "pro" } })
+  const r = await pasarela.cobrarDirecto({ centavos: a.monto, pm: a.pm, cliente, idem: a.idem, meta: { business_id: s.business_id, kind: "pro", ...(m.gref ? { tl_intencion: m.gref } : {}) } })
     .catch(() => ({ ok: false as const, codigo: "error", mensaje: EN_CAMINO, pi: undefined, secreto: undefined }));
   if (!r.ok && r.codigo === "authentication_required" && r.pi) {
     // 9k · 3-D Secure fuera de sesión (L382): el banco pide al dueño confirmar. Queda la verificación a su nombre (hasta el próximo intento) y le
@@ -173,6 +182,35 @@ async function terminarCobro(s: Fila, a: Intencion, enSesion = false): Promise<R
   await registrarPeriodo(s, a, r.id);
   return { ok: true };
 }
+const periodoYaCobrado = async (id: string) => !!(await db().query(`select 1 from subscription_charges z join subscription_charges y on y.business_id = z.business_id and y.period_start = z.period_start and y.status = 'done' and y.id <> z.id
+                          where z.id = $1::bigint`, [id])).rowCount;
+const NO_LLEGO: Bi = { es: "Ese cobro de Pro nunca llegó a Stripe: no se cobró nada. Se vuelve a intentar solo.", en: "That Pro charge never reached Stripe: nothing was charged. It is retried by itself." };
+/* 9t5 · Un cobro de Pro de más de HORAS_LLAVE: NUNCA a la pasarela con su llave. Se cierra con el último veredicto de la consulta (lib/consulta-pasarela.ts):
+   salió → el período queda cobrado por el mismo cierre (registrarPeriodo, una vez); el banco dijo que no → rechazado (procesar hace lo de un «no»); nunca
+   llegó → rechazado sin contar como intento (el siguiente va con otra llave); un período que ya estaba cobrado por otro cobro, y este también salió → no
+   se cierra solo (gateway_review: devolver uno). Sin un veredicto que cierre, sigue en camino y alerta (charge_stuck, una vez). */
+async function terminarViejo(s: Fila, a: Intencion): Promise<ResCobro> {
+  const K = await import("./consulta-pasarela");
+  const v = await K.veredicto("subscription_charges", a.id);
+  if (v?.resultado === "hecho" && v.stripe) {
+    if (await periodoYaCobrado(a.id)) {
+      await K.alertaRevisar({ monto: a.monto, negocio: s.business_id, ciudad: null }, K.refDe("subscription_charges", a.id), {
+        es: `Cobro de Pro de ${money(a.monto)} (${v.stripe}) que Stripe sí hizo, de un período que ya quedó cobrado con otro cobro: se cobró dos veces. Devuelve uno.`,
+        en: `Pro charge of ${money(a.monto)} (${v.stripe}) that Stripe did make, for a period already paid by another charge: it was charged twice. Refund one.` });
+      return { ok: false, msg: VIEJO, enCamino: true };
+    }
+    await registrarPeriodo(s, a, v.stripe);
+    return { ok: true };
+  }
+  if (v?.resultado === "fallido" || v?.noLlego) {
+    const motivo = v.resultado === "fallido" ? "consulta_fallido" : "nunca_llego";
+    if (!(await db().query(`update subscription_charges set status = 'failed', last_error = $2 where id = $1::bigint and status = 'pending'`, [a.id, motivo])).rowCount)
+      return (await db().query(`select 1 from subscription_charges where id = $1::bigint and status = 'done'`, [a.id])).rowCount ? { ok: true } : { ok: false, msg: YA_RECHAZADO };
+    return motivo === "consulta_fallido" ? { ok: false, msg: YA_RECHAZADO } : { ok: false, msg: NO_LLEGO, enCamino: true };
+  }
+  await alertaCobroViejo(s.business_id, a);
+  return { ok: false, msg: VIEJO, enCamino: true };
+}
 async function alertaCobroViejo(negocio: string, a: Intencion, doble = false) {
   const ciudad = (await db().query<{ c: string | null }>(`select city_id as c from businesses where id = $1`, [negocio])).rows[0]?.c ?? null;
   await (await import("./dinero-alertas")).alertar("charge_stuck", a.idem, { monto: a.monto, negocio, ciudad, detalle: doble ? {
@@ -190,6 +228,9 @@ async function registrarPeriodo(s: Fila, a: Intencion, pi: string) {
   const hasta = new Date(a.desde); hasta.setMonth(hasta.getMonth() + (a.cycle === "year" ? 12 : 1));
   const h = await tx(async (c) => {
     if (!(await c.query(`update subscription_charges set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending'`, [a.id, pi])).rowCount) return null;
+    // 9t5 · El cobro que encontró la consulta a la pasarela: la auditoría lo dice (origen «consulta a la pasarela»), en esta transacción.
+    if ((await c.query(`select 1 from gateway_checks where subject_kind = 'subscription_charges' and subject_id = $1::bigint and result = 'hecho' and stripe_id = $2 limit 1`, [a.id, pi])).rowCount)
+      await (await import("./consulta-pasarela")).auditarCierre(c, "subscription_charges", a.id, null, { estado: "hecho", pi, negocio: s.business_id });
     const u = await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1 and status = $3`,
       [s.business_id, hasta.toISOString(), s.status]);
     if (!u.rowCount) {
@@ -231,11 +272,41 @@ export async function barrerCobrosPro(): Promise<number> {
     });
     if (h.tomado && h.r) n++;
   }
-  const V = (await db().query<Omit<Intencion, "nueva"> & { biz: string }>(
-    `select ${SEL_INT}, business_id as biz from subscription_charges c where status = 'pending' and created_at <= now() - make_interval(hours => $1::int)
-        and not exists (select 1 from money_alerts a where a.kind = 'charge_stuck' and a.subject_id = c.idem_key) order by created_at limit 50`, [HORAS_LLAVE])).rows;
-  for (const a of V) await alertaCobroViejo(a.biz, { ...a, nueva: false });
+  // 9t5 · Los de más de HORAS_LLAVE: se le pregunta a la pasarela (una vez cada CADA_MIN por intención) y se cierran con lo que dijo; si no cierra, siguen en
+  // camino con su alerta charge_stuck (una vez). Nunca otra vez a la pasarela con su llave.
+  const V = (await db().query<{ id: string }>(
+    `select c.id::text from subscription_charges c left join lateral (select max(y.at) as ult from gateway_checks y where y.subject_kind = 'subscription_charges' and y.subject_id = c.id) g on true
+      where c.status = 'pending' and c.created_at <= now() - make_interval(hours => $1::int)
+        and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
+      order by g.ult nulls first, c.created_at limit 20`, [HORAS_LLAVE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
+  for (const x of V) if ((await resolverCobroPro(x.id, { origen: "barrido" })).quedo === "hecha") n++;
   return n;
+}
+/* 9t5 · Preguntarle a la pasarela por un cobro de Pro de más de HORAS_LLAVE y cerrarlo con eso: el barrido, o «Preguntar a Stripe ahora» del Super Admin
+   (con su auditoría en la transacción que anota la consulta). La consulta va FUERA de cualquier transacción y del candado; el cierre, con el candado del
+   plan (el del barrido y procesar), una vez. Si otro tiene el candado, lo cierra él con el mismo veredicto (procesar o el siguiente barrido). */
+export type QuedoPro = "hecha" | "fallida" | "no_llego" | "sigue" | "ya_no_estaba";
+export async function resolverCobroPro(id: string, o: import("./consulta-pasarela").Origen): Promise<{ resultado: import("./consulta-pasarela").Resultado | null; quedo: QuedoPro }> {
+  const K = await import("./consulta-pasarela");
+  const a = (await db().query<Omit<Intencion, "nueva"> & { biz: string; ciudad: string | null }>(
+    `select ${SEL_INT}, business_id as biz, city_id as ciudad from subscription_charges where id = $1::bigint`, [id])).rows[0];
+  if (!a || a.st !== "pending" || !a.vieja) return { resultado: null, quedo: "ya_no_estaba" };
+  const resultado = await K.consultar({ tabla: "subscription_charges", id: a.id, monto: a.monto, ciudad: a.ciudad, negocio: a.biz }, o);
+  if (resultado === "hecho" || resultado === "fallido" || resultado === "no_hallado") {
+    await conCandado(a.biz, async (k) => {
+      const s = (await k.query<Fila>(`select * from subscriptions where business_id = $1`, [a.biz])).rows[0];
+      const b = (await k.query<Omit<Intencion, "nueva">>(`select ${SEL_INT} from subscription_charges where id = $1::bigint and status = 'pending'`, [id])).rows[0];
+      if (!s || !b) return;
+      const r = await terminarCobro(s, { ...b, nueva: false });
+      // El banco dijo que no: lo mismo que un «no» al cobrar (procesar: reintento o Free), con el estado leído con el candado.
+      if (!r.ok && !r.enCamino && ["active", "past_due", "trial"].includes(s.status) && s.card_pm) await fallo(s, false);
+    });
+  }
+  const f = (await db().query<{ st: string; err: string | null }>(`select status as st, last_error as err from subscription_charges where id = $1::bigint`, [id])).rows[0];
+  const quedo: QuedoPro = f?.st === "done" ? "hecha" : f?.st === "failed" ? (f.err === "nunca_llego" ? "no_llego" : "fallida") : "sigue";
+  if (quedo !== "sigue") await K.cerrarAlertaSola("charge_stuck", a.idem, { es: `Cerrada sola: la consulta a Stripe dijo que ${K.RESULTADO[resultado].es}.`, en: `Closed by itself: the Stripe query said ${K.RESULTADO[resultado].en}.` });
+  else await alertaCobroViejo(a.biz, { ...a, nueva: false });
+  return { resultado, quedo };
 }
 
 /* 9k · El dueño confirmó en su banco el cobro de Pro que pedía verificar (lib/pagos/verificacion.ts ya miró que Stripe lo cobró). Con el candado del

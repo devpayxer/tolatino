@@ -24,6 +24,11 @@ const LQ = 'apps/web/lib/evt-liquidacion.ts', MG = 'packages/db/migrations/0199_
 // rentas, renovaciones de patrocinios); su prueba con la base es pruebas/e2e/din9t4.cjs.
 const FA = 'cobroFueraAnotadoAntes', CFU = 'apps/web/lib/cobro-fuera.ts', PLN = 'apps/web/lib/planes.ts', REN = 'apps/web/lib/rentas.ts', PEV = 'apps/web/lib/patrocinio-evento.ts';
 const MG2 = 'packages/db/migrations/0202_cobros_fuera_de_sesion.sql', PLT = 'apps/web/app/admin/Planes.tsx';
+// 9t5 (21 nov): preguntarALaPasarela (y lo nuevo de llaveSoloUnDia, cobroProAnotadoAntes y cobroFueraAnotadoAntes); su prueba con la base es pruebas/e2e/din9t5.cjs.
+const PG = 'preguntarALaPasarela', KP = 'apps/web/lib/consulta-pasarela.ts', PSA = 'apps/web/lib/pagos/pasarela.ts', ACO = 'apps/web/app/admin/acciones-conciliacion.ts';
+const MG3 = 'packages/db/migrations/0203_preguntar_a_la_pasarela.sql';
+// 9t5 (CI de 9t4, plan4f): yaCobradoNoSeQuedaMudo.
+const YM = 'yaCobradoNoSeQuedaMudo';
 const casos = [
   // 9t2 · Soporte: el intento que no cabe queda en el libro como fallido (sop7b lo vio rojo cuando se deshacía la transacción entera).
   [IF, SE, "        await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where id = $1::bigint and status = 'pending'`, [fx.id, a.msg.es]);\n        return a.msg.es;", "        return a.msg.es;"],
@@ -82,11 +87,11 @@ const casos = [
   [A, DA, "and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))", ')'],
   // ── 9t3 (21 nov, LAUNCH «Dinero por clase, 21 nov · lo que quedó») ──
   // (a) La transferencia al organizador y su reversión vuelven a Stripe con una llave de más de un día (o el barrido las reintenta sin tope).
-  [L, LQ, '  if (s.vieja && s.net > 0) { await alertaTransferenciaVieja(s); return false; }\n', ''],
+  [L, LQ, '  if (s.vieja && s.net > 0) return pagarVieja(s);\n', ''],
   [L, LQ, '  if (r.vieja) { await alertaReversionVieja(r); return false; }\n', ''],
-  [L, LQ, " and paying_at > now() - make_interval(hours => $1::int)", ''],
+  [L, LQ, " and coalesce(key_from, paying_at) > now() - make_interval(hours => $1::int)", ''],
   // (b) El cobro de Pro: una llave de más de un día, o 72 h en vez de las de cobros.
-  [L, SU, '  if (a.vieja) { await alertaCobroViejo(s.business_id, a); return { ok: false, msg: VIEJO, enCamino: true }; }\n', ''],
+  [L, SU, '  if (a.vieja) return terminarViejo(s, a);\n', ''],
   [L, SU, 'const HORAS_LLAVE = 23;', 'const HORAS_LLAVE = 72;'],
   // (b) Como estaba: la pasarela antes de anotar; sin respuesta = «no»; en camino cuenta como cobro fallido; el cierre sin «una vez»; sin barrido; otra
   // intención mientras una va en camino; la base sin su tope de una en camino.
@@ -146,9 +151,9 @@ const casos = [
   // va en camino; lo mandado se suelta sin preguntar; el barrido sin tope o sin correr; otras horas que las de lib/cobros.
   [FA, CFU, "      await db().query(`update offsession_charges set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);\n      return { ok: false, enCamino: true, msg: EN_CAMINO };",
     "      await db().query(`update offsession_charges set status = 'failed', attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);\n      return { ok: false, enCamino: true, msg: EN_CAMINO };"],
-  [FA, CFU, "  if (a.vieja) { await alertaVieja(a); return { ok: false, enCamino: true, msg: VIEJO }; }\n", ""],
-  [FA, CFU, "  if (!(await db().query(`update offsession_charges set sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending'`, [a.id])).rowCount) {", "  if (!(await db().query(`select 1 from offsession_charges where id = $1::bigint and status = 'pending'`, [a.id])).rowCount) {"],
-  [FA, CFU, "set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending'`, [id, pi])).rowCount;", "set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint`, [id, pi])).rowCount;"],
+  [FA, CFU, "  if (a.vieja) return terminarVieja(a, cerrar);\n", ""],
+  [FA, CFU, "(`update offsession_charges set gateway_ref = case when sent_at is null then 'offsession_charges:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' returning gateway_ref as gref`", "(`select gateway_ref as gref from offsession_charges where id = $1::bigint and status = 'pending'`"],
+  [FA, CFU, "set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending' returning city_id as ciudad`", "set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint returning city_id as ciudad`"],
   [FA, CFU, "(status = 'pending' or (status = 'done' and purpose = $3))", "(status = 'done' and purpose = $3)"],
   [FA, CFU, "  if (!a.enviada && (await soltarSinMandar(a.id, porque))) return true;", "  if (await soltarSinMandar(a.id, porque)) return true;"],
   [FA, CFU, "and status = 'pending' and sent_at is null`, [id, porque]", "and status = 'pending'`, [id, porque]"],
@@ -164,11 +169,49 @@ const casos = [
   [FA, REN, " and status = 'held' and expires_at < now() and not exists (select 1 from offsession_charges q where q.kind = 'renta' and q.ref_id = rentals.id::text and q.status = 'pending')`", " and status = 'held' and expires_at < now()`"],
   // Patrocinios: en camino termina el patrocinio; la intención no se cierra con el patrocinio nuevo; la renovación sin su intención (sin ref).
   [FA, PA, "      if (!p.ok && p.enCamino) return null;\n      if (p.ok) {", "      if (p.ok) {"],
-  [FA, PEV, "        if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) return null;\n", ""],
+  [FA, PEV, "        if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) {\n", "        if (false) {\n"],
   [FA, PEV, ', duration: s.duration }, ref: id };', ', duration: s.duration } };'],
   // La base sin su tope de una en camino; una alerta nueva sin su rótulo en el Super Admin.
   [FA, MG2, "create unique index if not exists offsession_charges_una_en_camino on offsession_charges (kind, ref_id) where status = 'pending';\n", ''],
   [FA, PLT, ', offsession_unapplied: E("Cobro con tarjeta guardada sin aplicar", "Unapplied saved-card charge")', ''],
+  // ── 9t5 (21 nov, LAUNCH «Cobros fuera de sesión, lo que quedó de 9t4» y «Dinero por clase · lo que quedó» (2)): preguntarle a la pasarela ──
+  // (1) Una creación sin el dato buscable, o el dato anotado cada vez (un reintento de una que salió sin él lo «inventaría»).
+  [PG, CFU, "cobro: a.id, ...(m.gref ? { tl_intencion: m.gref } : {}) };", "cobro: a.id };"],
+  [PG, SU, 'kind: "pro", ...(m.gref ? { tl_intencion: m.gref } : {}) } })', 'kind: "pro" } })'],
+  [PG, LQ, "settlement: s.id, ...(m.gref ? { tl_intencion: m.gref } : {}) } })", "settlement: s.id } })"],
+  [PG, CFU, "set gateway_ref = case when sent_at is null then 'offsession_charges:' || id else gateway_ref end, sent_at", "set gateway_ref = 'offsession_charges:' || id, sent_at"],
+  [PG, PSA, "await db().query(`insert into sim_transfers (id, destination, amount_cents, transfer_group, metadata) values ($1, $2, $3, $4, $5::jsonb) on conflict (id) do nothing`, [id, x.destino, x.centavos, x.grupo, JSON.stringify(x.meta)]);",
+    "await db().query(`insert into sim_transfers (id, destination, amount_cents, transfer_group) values ($1, $2, $3, $4) on conflict (id) do nothing`, [id, x.destino, x.centavos, x.grupo]);"],
+  // (2) «No llegó» sin consultar, sin el dato buscable, sin margen, o con un margen de 0.
+  [PG, CFU, '  if (v?.resultado === "fallido" || v?.noLlego) {', '  if (v?.resultado === "fallido" || a.vieja) {'],
+  [PG, SU, "export async function resolverCobroPro(", "async function soltarViejos(biz: string) { await db().query(`update subscription_charges set status = 'failed', last_error = 'nunca_llego' where business_id = $1 and status = 'pending'`, [biz]); }\nexport async function resolverCobroPro("],
+  [PG, KP, "z.gateway_ref is not null and ", ""],
+  [PG, KP, " and g.at >= ${desde} + make_interval(hours => $3::int)", ""],
+  [PG, KP, "export const MARGEN_NO_LLEGO_H = 1;", "export const MARGEN_NO_LLEGO_H = 0;"],
+  // (3) La consulta fuera de su lugar (dentro de un cierre), sin anotarse, o «no hallado» cuando Stripe no contestó; varios que se cierran solos.
+  [PG, SU, "async function terminarViejo(s: Fila, a: Intencion): Promise<ResCobro> {\n", "async function terminarViejo(s: Fila, a: Intencion): Promise<ResCobro> {\n  await pasarela.buscarCobro(`subscription_charges:${a.id}`);\n"],
+  [PG, KP, "    await c.query(`insert into gateway_checks (", "    await c.query(`insert into gateway_checks_x ("],
+  [PG, PSA, "    } catch { return { ok: false }; }\n  },\n  async buscarTransferencia(", "    } catch { return { ok: true, hallado: null }; }\n  },\n  async buscarTransferencia("],
+  [PG, KP, 'if (resultado === "varios" || resultado === "monto_distinto") await alertaRevisar(', 'if (false) await alertaRevisar('],
+  // (4) Lo que encontró la consulta se cierra por fuera del cierre del flujo (sin el período, sin el libro, sin el aviso).
+  [PG, SU, "    await registrarPeriodo(s, a, v.stripe);\n    return { ok: true };", "    await db().query(`update subscription_charges set status = 'done', stripe_pi = $2 where id = $1::bigint`, [a.id, v.stripe]);\n    return { ok: true };"],
+  [PG, LQ, "  if (v?.resultado === \"hecho\" && v.stripe) return cerrarPagada(s, v.stripe, true);", "  if (v?.resultado === \"hecho\" && v.stripe) { await db().query(`update event_settlements set status = 'paid', transfer_id = $2 where id = $1::bigint`, [s.id, v.stripe]); return true; }"],
+  [FA, CFU, 'resolverCobroFuera(x.id, { origen: "barrido" })', 'intencion(x.id)'],
+  // (5) «Preguntar a Stripe ahora» sin el permiso, sobre algo que ya no está en camino, o el botón siempre; la alerta que no se cierra sola.
+  [PG, ACO, '  if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no decide sobre dinero." };\n  const r = await (await import("@/lib/dinero-alertas")).preguntarPorAlerta(', '  if (!s) return { ok: false, mensaje: "Entra otra vez." };\n  const r = await (await import("@/lib/dinero-alertas")).preguntarPorAlerta('],
+  [PG, DA, '  if (!a.vivo) return { ok: false, msg: "Ya no está en camino: se cerró." };\n', ''],
+  [PG, PLT, '...(a.preguntar ? [{ l: E("Preguntar a Stripe ahora"', '...(true ? [{ l: E("Preguntar a Stripe ahora"'],
+  [PG, DA, '  await cerrarAlertasResueltas();\n', ''],
+  // La base: las consultas se pueden cambiar; Pro vuelve a decidir «nunca se mandó» con attempts = 0.
+  [PG, MG3, "create trigger gateway_checks_no_cambia before update or delete on gateway_checks for each row execute function dinero_solo_insercion();\n", ''],
+  [PR, SU, "and status = 'pending' and sent_at is null`, [a.id])).rowCount) return { ok: true };", "and status = 'pending' and attempts = 0`, [a.id])).rowCount) return { ok: true };"],
+  // 9t5 (CI de 9t4) · «Ya cobrado» con el objeto esperándolo: mudo otra vez (el plan atascado), avanzar sin mirar el período, la renta «lista» sin avisar,
+  // el patrocinio vivo para siempre.
+  [YM, PLN, "    if (r.ya) { await periodoYaPagado(a); return true; }", "    if (r.ya) return true;"],
+  [YM, PLN, "where id = $1::bigint and next_charge_on = $3::date and status = 'active' returning city_id as ciudad`", "where id = $1::bigint and status = 'active' returning city_id as ciudad`"],
+  [YM, REN, "    await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} seguía esperando ese cobro", "    void ({ es: `la renta ${x.numero} seguía esperando ese cobro"],
+  [YM, PA, "          await terminar(YA_COBRADA);\n", ""],
+  [YM, PEV, "          await CF.alertaSinAplicar(ia, {", "          void ({"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

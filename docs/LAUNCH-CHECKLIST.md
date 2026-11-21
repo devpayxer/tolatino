@@ -2140,6 +2140,44 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       como antes; a la vez, uno. `rentaAccion` no manda una clave del toque. (5) `din9t4` no recorre la renovación de un patrocinio de evento (`vencerUnoEvt`
       es la misma forma que `vencerUno`: la cubren el guardián, el al revés y `pat003` en el CI). (6) `din9t4` corrió aquí contra una base aislada; las
       pruebas de punta a punta que tocan estos flujos (`plan4f`, `renta4f`, `pat002`, `pat003`) no se corrieron aquí: las corre el CI. (21 nov)
+      **Hecho (1) y (2) (21 nov, rama dinero-9t5; migración 0203) — y el punto (2) de la línea de arriba (`transfer_stuck`, `charge_stuck`):** el servidor
+      le PREGUNTA a la pasarela en vez de que una persona afirme «se cobró / no se cobró». Cada intención (Pro, `offsession_charges`, la transferencia de
+      la liquidación) anota su dato buscable (`gateway_ref` = `<tabla>:<id>`) en la MISMA sentencia que «se mandó» (`sent_at`), antes de la llamada y solo la
+      primera vez, y lo manda en la metadata (`tl_intencion`). `lib/consulta-pasarela.ts`: `consultar` (la pasarela fuera de transacción; lo que dijo,
+      anotado en `gateway_checks`, solo inserción, con la auditoría de quien la pidió) y `veredicto`. La pasarela (`pagos/pasarela.ts`): `buscarCobro`
+      (Search API de PaymentIntents por metadata, en la cuenta de la PLATAFORMA, sin `Stripe-Account`: Pro es un cobro directo y los demás son «destination
+      charges», el PaymentIntent vive en la plataforma) y `buscarTransferencia` (`/v1/transfers?transfer_group=evt-<evento>` filtrado por metadata, también
+      la `settlement` que ya llevaban desde 6e); tres respuestas, nunca un booleano; el simulador igual (metadata en `sim_intents`/`sim_transfers`, tarjetas
+      ···· 0404 «no contesta, nada sale» y ···· 0408 «sale y la respuesta se pierde», `TOLATINO_SIM_CONSULTA=caida`). Los barridos (`barrerCobrosPro`,
+      `barrerCobrosFuera`, `repararLiquidaciones`) preguntan por lo de más de 23 h (cada 15 min por intención, lo nunca consultado primero) y cierran por el
+      MISMO cierre del flujo (`registrarPeriodo`, `cerrarHecho`/`marcarHecho` + el flujo, `cerrarPagada`), una vez: salió → hecha; el banco dijo que no →
+      rechazada (lo de un «no»); no está y se mandó con el dato hace 24 h (23 h de la llave + 1 h de margen de la búsqueda) → «nunca llegó»: rechazada sin
+      contar como rechazo y el siguiente cobro del objeto sale con otra llave (Pro `-r<n>`; días tarde de una renta, `reanotar`; la transferencia: su llave
+      vuelve a valer, `key_from`, mismo monto); en curso / sin respuesta → sigue con su alerta; varios u otro monto → alerta nueva `gateway_review`. La
+      alerta se cierra sola (`resuelta_sola`, sin persona) y muestra la última consulta; Super Admin «Preguntar a Stripe ahora» (tx:aprobar, la misma
+      función, con auditoría). Pro: `sent_at` (0203, con lo de antes dado por mandado) y `periodo_ya_cobrado` decide con `sent_at is null`. Una renta vieja
+      no vuelve a retener el depósito con su llave. Guardián `preguntarALaPasarela` (y lo nuevo de `llaveSoloUnDia`, `cobroProAnotadoAntes`,
+      `cobroFueraAnotadoAntes`, `pagoDespuesDelEvento`, `contratoCubreLaPasarela`); al revés `alreves9tdinero` (126/126); prueba `din9t5` (base + pasarela de
+      mentira, 51 comprobaciones; un margen saboteado la pone roja).
+      **Y del CI de 9t4 (`plan4f` roja):** un cobro fuera de sesión ya HECHO mientras el objeto todavía lo espera era mudo (el plan quedaba atascado: cada
+      barrido encontraba «ya» y nunca avanzaba). Ahora: el plan se pone al día (`planes.ts › periodoYaPagado`: el período está pagado, avanza sin otro
+      pago, con evento `period_caught_up` y auditoría `plan.periodo_al_dia`, una vez; si ese cobro salió «sin aplicar», no: lo decide el equipo con su
+      `offsession_unapplied`); la renta («La recogió» o «un día más» con la renta todavía esperándolo) avisa al equipo (`offsession_unapplied`, una vez) y
+      lo dice a quien tocó, sin cambiarse sola; el patrocinio vivo con su renovación ya cobrada termina con su motivo y avisa al equipo. Nunca otro cobro.
+      Guardián `yaCobradoNoSeQuedaMudo` + 5 casos al revés + sección 6 de `din9t5`. `plan4f.cjs` no se tocó (lo arregla quien orquesta).
+- [ ] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t5 (21 nov):** (1) **Retenciones con «sin respuesta» como «no»** (el punto (3) de arriba,
+      no hecho): `lib/rentas.ts › barrerRentas` (paso 4, `renta-renov-<pago>`) y `lib/estimados.ts › renovarRetenciones` (`renov-<pago>`) sueltan la
+      retención vieja y avisan «el banco ya no deja» aunque Stripe no contestó. Hacerlo bien pide la misma clase que 9t5: no soltar ni avisar con un código
+      de `SIN_RESPUESTA`, reintentar con la misma llave solo mientras `held_at + 164 h + 23 h`, mandar `tl_intencion` en la retención nueva y, pasado eso,
+      preguntar a la pasarela (`buscarCobro` ya sirve: los PaymentIntents son de la plataforma) antes de soltar o anotar la nueva; su prueba con la base.
+      No se hizo a medias. (2) **Pro cobrado dos veces el mismo período** (la consulta encuentra hecho un cobro de un período que ya quedó pagado con otro):
+      queda 'pending' con `gateway_review` («devuelve uno»), y mientras siga así a ese negocio no se le cobra Pro (una en camino por negocio). Falta el
+      camino para cerrarla (devolver uno y dejar la intención hecha o fallida con su nota). (3) **Varios hallados / otro monto** (`gateway_review`): la
+      intención sigue en camino y bloquea al objeto hasta que una persona lo resuelva en Stripe; no hay acción en la alerta para cerrarla con el que vale.
+      (4) Las devoluciones y reversiones atascadas (`refund_stuck`, `transfer_reversal_stuck`) no se consultan: siguen con «Resolver a mano». (5) La prueba
+      de contrato con stripe-mock (`scripts/contrato-stripe/prueba.cjs`) ya llama a `buscarCobro` y `buscarTransferencia`, pero no se corrió aquí (no hay
+      stripe-mock en este entorno): la corre el CI; si su versión no trae `/v1/payment_intents/search`, falla ahí. (6) `din9t5` corrió aquí contra una base
+      aislada; `plan4f`, `renta4f`, `pat002` y `pat003` no (las corre el CI). (21 nov)
 - [x] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no

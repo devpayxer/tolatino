@@ -223,7 +223,8 @@ export async function terminarCobroPlan(a: import("./cobro-fuera").Intencion): P
     await pagoDelPlan(c, a, h.pi, h.marca, h.l4, aplicado);
   });
   if (r.ok) {
-    if (r.ya) return true;
+    // 9t5 · «Ya cobrado»: si el plan TODAVÍA espera ese mismo período, se pone al día (ver periodoYaPagado); nunca se cobra otra vez.
+    if (r.ya) { await periodoYaPagado(a); return true; }
     if (aplicado) await (await import("./avisos")).avisar(p.uid, "plan_cobro", { plan: p.plan, monto: money(a.monto) }, { href: `/plan/${p.num}`, ref: ["plan", p.num] });
     else await CF.alertaSinAplicar(a, { es: `el plan ${p.num} cambió en ese momento.`, en: `plan ${p.num} changed at that moment.` });
     return true;
@@ -231,6 +232,25 @@ export async function terminarCobroPlan(a: import("./cobro-fuera").Intencion): P
   if (r.enCamino) return false;
   await rechazoPlan(a.ref, a.op!, p.num, p.uid);
   return false;
+}
+/* 9t5 · El cobro de ESTE período ya está hecho (la intención de su propósito, 'done') y el plan sigue esperándolo (activo, el mismo next_charge_on): en el
+   flujo normal no pasa (el cierre marca hecho y avanza en la misma transacción); si pasa (un arreglo a mano, un fallo), antes era mudo y el plan quedaba
+   atascado para siempre (cada barrido encontraba «ya», nunca avanzaba, las visitas seguían sin cobrarse). Decisión: el período ESTÁ pagado (Stripe lo
+   cobró y el pago está en el libro), así que el plan se pone al día: el próximo cobro pasa al mes siguiente, SIN otro pago, con su evento y su
+   auditoría, una vez (where next_charge_on = el período). Si ese cobro salió «sin aplicar» (el equipo de dinero tiene su offsession_unapplied y puede
+   haberlo devuelto), no se pone al día: lo decide el equipo con esa alerta, que ya le llegó. Nunca otro cobro. */
+async function periodoYaPagado(a: import("./cobro-fuera").Intencion): Promise<void> {
+  const d = a.detalle as { next: string; day: number };
+  if ((await db().query(`select 1 from money_alerts where kind = 'offsession_unapplied' and subject_id = $1`, [a.idem])).rowCount) return;
+  await tx(async (c) => {
+    const u = (await c.query<{ ciudad: string | null }>(`update plan_subscriptions set next_charge_on = $2::date, fail_count = 0, retry_on = null, updated_at = now()
+                                                          where id = $1::bigint and next_charge_on = $3::date and status = 'active' returning city_id as ciudad`, [a.ref, mesSiguiente(d.next, d.day), d.next])).rows[0];
+    if (!u) return;
+    await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'period_caught_up', 'system', $2::jsonb)`, [a.op, JSON.stringify(
+      { es: `El cobro del ${d.next} ya estaba hecho (${money(a.monto)}): el plan se puso al día sin cobrar otra vez`, en: `The ${d.next} charge was already made (${money(a.monto)}): the plan caught up without charging again` })]);
+    await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after) values ('system', null, 'plan.periodo_al_dia', 'plan_subscription', $1, $2, $3::jsonb)`,
+      [a.ref, u.ciudad, JSON.stringify({ periodo: d.next, siguiente: mesSiguiente(d.next, d.day), cobro: a.pi, motivo: "el período ya estaba cobrado: no se cobra otra vez" })]);
+  });
 }
 /* El pago en el libro (el dinero salió, se haya aplicado o no) y su evento, en la transacción del cierre. */
 async function pagoDelPlan(c: PoolClient, a: import("./cobro-fuera").Intencion, pi: string, marca: string | null, l4: string | null, aplicado: boolean) {

@@ -40,6 +40,11 @@ const SIM_PM = /^pm_sim_(visa|mc|amex|disc)_(\d{4})(?:_[0-9a-f]{8})?$/;
 function simRechazo(l4: string) { return l4 === "0002" ? "card_declined" : l4 === "9995" ? "insufficient_funds" : l4 === "0069" ? "expired_card" : null; }
 /* 9k · 4000 0027 6000 3184: el banco SIEMPRE pide 3-D Secure (como la tarjeta de prueba de Stripe). */
 const SIM_3DS = "3184";
+/* 9t5 · Lo que Stripe no tiene como tarjeta de prueba y el sandbox necesita para ensayar «sin respuesta» en un cobro fuera de sesión:
+   ···· 0404 = la pasarela no contesta y nada sale (cada intento, igual); ···· 0408 = el cobro SÍ sale pero la respuesta se pierde (el primer intento con
+   esa llave no contesta; el siguiente con la misma llave dice «hecho», como Stripe con Idempotency-Key). */
+const SIM_CALLA = "0404", SIM_COBRA_Y_CALLA = "0408";
+const SIN_RESPUESTA_SIM = { es: "Tu banco no respondió. Prueba de nuevo en un momento.", en: "Your bank did not respond. Try again in a moment." };
 /* 9k · La huella simulada (card.fingerprint): la misma marca y los mismos 4 dan la misma huella en cualquier cuenta, como una tarjeta física. */
 export const huellaSim = (marca: string, l4: string) => `fpsim${createHash("sha256").update(`tl-sim-card:${marca}:${l4}`).digest("hex").slice(0, 20)}`;
 const huellaDePm = (pm: string) => { const m = SIM_PM.exec(pm); return m ? huellaSim(m[1]!, m[2]!) : null; };
@@ -181,7 +186,7 @@ export const pasarela = {
     if ((modoPago() === "simulador") !== x.destino.startsWith("acct_sim_")) return { ok: false, codigo: "modo" };
     if (modoPago() === "simulador") {
       const id = `tr_sim_${x.idem}`.slice(0, 200);
-      await db().query(`insert into sim_transfers (id, destination, amount_cents, transfer_group) values ($1, $2, $3, $4) on conflict (id) do nothing`, [id, x.destino, x.centavos, x.grupo]);
+      await db().query(`insert into sim_transfers (id, destination, amount_cents, transfer_group, metadata) values ($1, $2, $3, $4, $5::jsonb) on conflict (id) do nothing`, [id, x.destino, x.centavos, x.grupo, JSON.stringify(x.meta)]);
       const t = (await db().query<{ amount_cents: number; destination: string }>(`select amount_cents, destination from sim_transfers where id = $1`, [id])).rows[0];
       // La misma llave con otro monto o destino es un error (como Stripe con Idempotency-Key).
       return t && t.amount_cents === x.centavos && t.destination === x.destino ? { ok: true, id } : { ok: false, codigo: "idempotency_error" };
@@ -220,10 +225,13 @@ export const pasarela = {
       if (!m) return { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
       const id = `pi_sim_${x.idem}`, ya = (await db().query<{ status: string }>(`select status from sim_intents where id = $1`, [id])).rows[0];
       if (ya) return ya.status === "succeeded" ? { ok: true, id } : ya.status === "requires_action" ? { ok: false, codigo: "authentication_required", mensaje: VERIFICAR_MSG, pi: id, secreto: secretoSim(id) } : { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
+      // 9t5 · «Sin respuesta» del sandbox: nada sale (0404) o sale y la respuesta se pierde (0408).
+      if (m[2] === SIM_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
       // 9k · Fuera de sesión con 3-D Secure: el banco pide al dueño confirmar (la renovación lo avisa con un enlace a la hoja).
       const r = simRechazo(m[2]!), pide = m[2] === SIM_3DS;
-      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, capture_method) values ($1, $2, 0, 'tolatino', $3, $4, $5, 'automatic')`,
-        [id, x.centavos, r ? "failed" : pide ? "requires_action" : "succeeded", r || pide ? 0 : x.centavos, x.pm]);
+      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, capture_method, metadata) values ($1, $2, 0, 'tolatino', $3, $4, $5, 'automatic', $6::jsonb)`,
+        [id, x.centavos, r ? "failed" : pide ? "requires_action" : "succeeded", r || pide ? 0 : x.centavos, x.pm, JSON.stringify(x.meta)]);
+      if (m[2] === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
       return r ? { ok: false, codigo: r, mensaje: traducir(r) } : pide ? { ok: false, codigo: "authentication_required", mensaje: VERIFICAR_MSG, pi: id, secreto: secretoSim(id) } : { ok: true, id };
     }
     if (modoPago() === "apagado") return { ok: false, codigo: "apagado", mensaje: { es: "El cobro con tarjeta no está disponible.", en: "Card charging is not available." } };
@@ -250,8 +258,11 @@ export const pasarela = {
       if (!m) return { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
       const id = `pi_sim_${x.idem}`, ya = (await db().query<{ status: string }>(`select status from sim_intents where id = $1`, [id])).rows[0];
       if (ya) return ya.status === "succeeded" ? { ok: true, id, marca: m[1]!, ultimos4: m[2]! } : { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
+      if (m[2] === SIM_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
       const r = simRechazo(m[2]!);
-      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card) values ($1, $2, $3, $4, $5, $6, $7)`, [id, x.centavos, x.comision, x.destino, r ? "failed" : "succeeded", r ? 0 : x.centavos, x.pm]);
+      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, metadata) values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
+        [id, x.centavos, x.comision, x.destino, r ? "failed" : "succeeded", r ? 0 : x.centavos, x.pm, JSON.stringify(x.meta)]);
+      if (m[2] === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red", mensaje: SIN_RESPUESTA_SIM };
       return r ? { ok: false, codigo: r, mensaje: traducir(r) } : { ok: true, id, marca: m[1]!, ultimos4: m[2]! };
     }
     if (modoPago() === "apagado") return { ok: false, codigo: "apagado", mensaje: { es: "El cobro con tarjeta no está disponible.", en: "Card charging is not available." } };
@@ -472,6 +483,64 @@ export const pasarela = {
     return r.rows;
   },
 
+  /* ── 9t5 · Preguntarle a la pasarela qué pasó con una intención que quedó «sin respuesta» pasadas HORAS_LLAVE (lib/consulta-pasarela.ts). No depende de
+     la llave de idempotencia (Stripe la olvida a las 24 h): busca por el dato propio que se mandó al crear (metadata tl_intencion = '<tabla>:<id>').
+     Solo lectura; nunca dentro de una transacción abierta. Tres respuestas, nunca un booleano: { ok: false } = la pasarela no contestó la consulta;
+     { ok: true, hallado: null } = no hay nada con ese dato; { ok: true, hallado } = uno; { ok: true, varios } = más de uno (no se cierra solo).
+     · Cobros (Pro con cobrarDirecto; planes, rentas y patrocinios con cobrarFuera o cobrarDirecto): TODOS son PaymentIntents de la PLATAFORMA (el directo
+       sin destino; el de un negocio es un «destination charge»: transfer_data.destination, pero el PaymentIntent vive en la cuenta de To'Latino). Se buscan
+       en la cuenta de la plataforma, SIN la cabecera Stripe-Account, con la Search API (eventual: lo nuevo tarda hasta ~1 min en verse y hasta una hora en
+       un incidente de Stripe; el margen para «no llegó» está en lib/consulta-pasarela.ts).
+     · Transferencias al organizador: salen del saldo de la plataforma (/v1/transfers) con su transfer_group (evt-<evento>): se listan por ese grupo (no es
+       búsqueda eventual) y se filtra por la metadata (tl_intencion, o la que ya llevaban desde 6e: settlement = <liquidación>). ── */
+  async buscarCobro(ref: string): Promise<Consulta> {
+    if (!REF_OK.test(ref)) return { ok: false };
+    if (modoPago() === "simulador") {
+      if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
+      try {
+        const L = (await db().query<{ id: string; status: string; amount_cents: number; card: string }>(
+          `select id, status, amount_cents, card from sim_intents where metadata->>'tl_intencion' = $1 order by created_at limit 11`, [ref])).rows;
+        const H = L.map((x): Hallado => { const m = SIM_PM.exec(x.card); return { id: x.id, estado: estadoCobro(x.status), centavos: x.amount_cents, marca: m?.[1] ?? null, ultimos4: m?.[2] ?? null }; });
+        return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
+      } catch { return { ok: false }; }
+    }
+    if (modoPago() !== "stripe") return { ok: false };
+    try {
+      const r = await stripe<{ data: { id: string; status: string; amount: number; payment_method?: { card?: { brand?: string; last4?: string } } | string | null }[]; has_more: boolean }>(
+        "GET", "/v1/payment_intents/search", { query: `metadata['tl_intencion']:'${ref}'`, limit: 10, expand: ["data.payment_method"] });
+      const H = r.data.map((x): Hallado => { const c = typeof x.payment_method === "object" && x.payment_method ? x.payment_method.card : undefined;
+        return { id: x.id, estado: estadoCobro(x.status), centavos: x.amount, marca: c?.brand ?? null, ultimos4: c?.last4 ?? null }; });
+      return H.length > 1 || r.has_more ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
+    } catch { return { ok: false }; }
+  },
+  async buscarTransferencia(ref: string, grupo: string, liquidacion: string): Promise<Consulta> {
+    if (!REF_OK.test(ref) || !/^[a-z0-9-]{1,80}$/.test(grupo) || !/^\d{1,18}$/.test(liquidacion)) return { ok: false };
+    if (modoPago() === "simulador") {
+      if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
+      try {
+        const L = (await db().query<{ id: string; amount_cents: number }>(
+          `select id, amount_cents from sim_transfers where metadata->>'tl_intencion' = $1 or (transfer_group = $2 and metadata->>'settlement' = $3) order by created_at limit 11`, [ref, grupo, liquidacion])).rows;
+        const H = L.map((x): Hallado => ({ id: x.id, estado: "hecho", centavos: x.amount_cents }));
+        return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
+      } catch { return { ok: false }; }
+    }
+    if (modoPago() !== "stripe") return { ok: false };
+    try {
+      const H: Hallado[] = [];
+      let tras: string | undefined;
+      for (let i = 0; i < 20; i++) {
+        const p = await stripe<{ data: { id: string; amount: number; metadata?: Record<string, string> }[]; has_more: boolean }>(
+          "GET", "/v1/transfers", { transfer_group: grupo, limit: 100, ...(tras ? { starting_after: tras } : {}) });
+        // Una transferencia de Stripe existe o no (no tiene estado intermedio): si está, salió.
+        for (const t of p.data) if (t.metadata?.tl_intencion === ref || t.metadata?.settlement === liquidacion) H.push({ id: t.id, estado: "hecho", centavos: t.amount });
+        if (!p.has_more || !p.data.length) break;
+        tras = p.data[p.data.length - 1]!.id;
+        if (i === 19) return { ok: false }; // más de 2000 transferencias en un grupo: no se decide con una lista a medias
+      }
+      return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
+    } catch { return { ok: false }; }
+  },
+
   /* ── 9k · Conciliación: lo que dice «Stripe» de un día (UTC). Con Stripe de verdad, la API (paginada de 100 en 100; los payouts, por cuenta
      conectada con su cabecera); en el sandbox, el simulador. Solo lectura. ── */
   async delDia(desde: Date, hasta: Date, cuentas: string[]): Promise<LadoStripe> {
@@ -519,6 +588,16 @@ export const pasarela = {
     };
   },
 };
+/* 9t5 · Lo que contesta una consulta (buscarCobro / buscarTransferencia). estado: hecho (succeeded; una transferencia que existe) · fallido (canceled, o
+   requires_payment_method: el banco dijo que no y nadie la vuelve a confirmar) · en_curso (processing, requires_action: el banco pide verificar, etc.). */
+export type Hallado = { id: string; estado: "hecho" | "fallido" | "en_curso"; centavos: number; marca?: string | null; ultimos4?: string | null };
+export type Consulta = { ok: false } | { ok: true; hallado: Hallado | null } | { ok: true; varios: Hallado[] };
+const REF_OK = /^(subscription_charges|offsession_charges|event_settlements):\d{1,18}$/;
+function estadoCobro(st: string): Hallado["estado"] {
+  if (st === "succeeded") return "hecho";
+  if (st === "canceled" || st === "failed" || st === "requires_payment_method") return "fallido";
+  return "en_curso";
+}
 /* Lo que dice «Stripe» de un día, para la conciliación (lib/conciliacion.ts compara cada objeto con el libro propio). */
 export type LadoStripe = {
   intents: { id: string; monto: number; capturado: number; devuelto: number; estado: string }[];

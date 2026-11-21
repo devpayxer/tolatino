@@ -15,22 +15,28 @@ import { pasarela } from "./pagos/pasarela";
    (3) El cierre, en otra transacción, una vez ('done' where status = 'pending') con lo que el flujo hace al cobrar.
    Sin respuesta de Stripe NO es un «no» del banco: la intención sigue en camino y el estado del plan, la renta o el patrocinio no cambia por eso; la
    persona lee «quedó en camino, no lo repitas» y el barrido (barrerCobrosFuera) la termina con la misma llave. Un «no» de verdad deja la intención
-   rechazada (nada salió): el siguiente intento es otra intención con otra llave. */
+   rechazada (nada salió): el siguiente intento es otra intención con otra llave.
+   9t5 (21 nov, 0203) · Pasadas HORAS_LLAVE ya no se manda con su llave, pero tampoco se queda 'pending' para siempre: el barrido (o «Preguntar a Stripe
+   ahora» del Super Admin) le PREGUNTA a la pasarela por el dato buscable que se mandó al crear (gateway_ref → metadata tl_intencion) y el cierre lee lo
+   que contestó (lib/consulta-pasarela.ts › veredicto): salió → se cierra hecha por este mismo cierre (marcarHecho + lo del flujo, una vez); el banco dijo
+   que no → rechazada (el flujo hace lo de un «no»); no está en Stripe (y se mandó con el dato y pasó el margen) → rechazada «nunca llegó» (nada salió:
+   el siguiente cobro del objeto puede salir; el flujo no lo cuenta como rechazo); en curso, varios o sin respuesta → sigue en camino con su alerta. */
 export type TipoCobro = "plan" | "renta" | "patrocinio_negocio" | "patrocinio_evento";
 type Bi = { es: string; en: string };
 export type Intencion = {
   id: string; kind: TipoCobro; ref: string; para: string; op: string | null; negocio: string; ciudad: string | null; payer: string; monto: number; fee: number;
   destino: string | null; pm: string; idem: string; detalle: Record<string, unknown>; st: "pending" | "done" | "failed"; enviada: boolean; n: number; err: string | null;
-  pi: string | null; hold: string | null; vieja: boolean; nueva: boolean;
+  pi: string | null; hold: string | null; vieja: boolean; nueva: boolean; gref: string | null;
 };
 const SEL = `id::text, kind, ref_id as ref, purpose as para, operation_id::text as op, business_id as negocio, city_id as ciudad, payer_user_id::text as payer, amount_cents as monto,
              fee_cents as fee, destination as destino, pm, idem_key as idem, detail as detalle, status as st, sent_at is not null as enviada, attempts as n, last_error as err,
-             stripe_pi as pi, hold_pi as hold, created_at <= now() - make_interval(hours => ${HORAS_LLAVE}) as vieja`;
+             stripe_pi as pi, hold_pi as hold, created_at <= now() - make_interval(hours => ${HORAS_LLAVE}) as vieja, gateway_ref as gref`;
 /* Lo que la pasarela contesta SIN decir si cobró (las mismas de Pro): la intención sigue en camino. Cualquier otro código es un «no» de verdad. */
 export const SIN_RESPUESTA = new Set(["red", "api_error", "error", "rate_limit", "rate_limit_error", "lock_timeout", "idempotency_key_in_use", "idempotency_error", "processing"]);
 export const EN_CAMINO: Bi = { es: "Stripe no contestó. El cobro quedó en camino y se termina solo en unos minutos: no lo repitas.", en: "Stripe did not answer. The charge is on its way and finishes by itself in a few minutes: do not repeat it." };
 export const VIEJO: Bi = { es: "Hay un cobro de hace más de un día sin respuesta de Stripe: el equipo de dinero lo revisa. No lo repitas.", en: "There is a charge from over a day ago with no answer from Stripe: the money team reviews it. Do not repeat it." };
 export const YA_RECHAZADO: Bi = { es: "Tu banco ya rechazó este cobro. Prueba con otra tarjeta.", en: "Your bank already declined this charge. Try another card." };
+export const NO_LLEGO: Bi = { es: "Ese cobro nunca llegó a Stripe: no se cobró nada. Vuelve a intentarlo.", en: "That charge never reached Stripe: nothing was charged. Try again." };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const QUE: Record<TipoCobro, Bi> = {
   plan: { es: "el plan", en: "the plan" }, renta: { es: "la renta", en: "the rental" },
@@ -81,26 +87,37 @@ export async function anotarIntento(id: string, codigo: string) {
 export async function anotarRetencion(id: string, holdPi: string) {
   await db().query(`update offsession_charges set hold_pi = $2 where id = $1::bigint and status = 'pending' and hold_pi is null`, [id, holdPi]);
 }
-/* El cierre (paso 3) dentro de la transacción del flujo: 'done' una vez. false = otro (otra pestaña, el barrido) ya lo cerró: no se aplica nada. */
+/* El cierre (paso 3) dentro de la transacción del flujo: 'done' una vez. false = otro (otra pestaña, el barrido) ya lo cerró: no se aplica nada.
+   9t5 · Si el PaymentIntent es el que encontró la consulta a la pasarela, la auditoría lo dice (origen «consulta a la pasarela») en ESTA transacción. */
 export async function marcarHecho(c: PoolClient, id: string, pi: string): Promise<boolean> {
-  return !!(await c.query(`update offsession_charges set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending'`, [id, pi])).rowCount;
+  const u = (await c.query<{ ciudad: string | null }>(`update offsession_charges set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending' returning city_id as ciudad`, [id, pi])).rows[0];
+  if (!u) return false;
+  if ((await c.query(`select 1 from gateway_checks where subject_kind = 'offsession_charges' and subject_id = $1::bigint and result = 'hecho' and stripe_id = $2 limit 1`, [id, pi])).rowCount)
+    await (await import("./consulta-pasarela")).auditarCierre(c, "offsession_charges", id, u.ciudad, { estado: "hecho", pi });
+  return true;
 }
 
+/* noLlego (9t5): la consulta dijo que ese cobro nunca llegó a Stripe; la intención quedó rechazada sin que el banco dijera que no: el flujo no lo cuenta
+   como rechazo (como enCamino) y el siguiente cobro del objeto es otra intención con otra llave. */
 export type Cobrado = { ok: true; pi: string; marca: string | null; l4: string | null; ya?: true }
-  | { ok: false; enCamino: true; msg: Bi } | { ok: false; enCamino?: undefined; codigo: string; msg: Bi; pi?: string };
+  | { ok: false; enCamino: true; msg: Bi; noLlego?: true } | { ok: false; enCamino?: undefined; codigo: string; msg: Bi; pi?: string };
 /* Pasos 2 y 3 (también desde el barrido). `cerrar`: lo que el flujo hace con el cobro hecho, en la MISMA transacción que lo marca 'done' (una vez); sin
    él, quien llama cierra en su propia transacción con marcarHecho. */
 export async function terminarCobro(a: Intencion, cerrar?: (c: PoolClient, r: { pi: string; marca: string | null; l4: string | null }) => Promise<unknown>): Promise<Cobrado> {
   if (a.st === "done") return { ok: true, pi: a.pi ?? "", marca: null, l4: null, ya: true };
   if (a.st === "failed") return { ok: false, codigo: "ya_rechazado", msg: YA_RECHAZADO };
-  if (a.vieja) { await alertaVieja(a); return { ok: false, enCamino: true, msg: VIEJO }; }
-  // Se anota que se manda ANTES de la llamada (en su propia sentencia): si el proceso muere después, nadie la suelta como «nunca mandada».
-  if (!(await db().query(`update offsession_charges set sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending'`, [a.id])).rowCount) {
+  // 9t5 · Pasadas HORAS_LLAVE nunca va a la pasarela con su llave: se cierra con lo que contestó la consulta (o sigue en camino con su alerta).
+  if (a.vieja) return terminarVieja(a, cerrar);
+  // Se anota que se manda ANTES de la llamada (en su propia sentencia): si el proceso muere después, nadie la suelta como «nunca mandada». 9t5 · Con el dato
+  // buscable (gateway_ref) en la MISMA sentencia, solo la primera vez: un reintento de una intención que salió sin él va sin él (la misma llave con otros
+  // parámetros, Stripe la rechaza), y esa nunca se da por «no llegó».
+  const m = (await db().query<{ gref: string | null }>(`update offsession_charges set gateway_ref = case when sent_at is null then 'offsession_charges:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' returning gateway_ref as gref`, [a.id])).rows[0];
+  if (!m) {
     const b = await intencion(a.id);
     return b?.st === "done" ? { ok: true, pi: b.pi ?? "", marca: null, l4: null, ya: true } : { ok: false, codigo: "ya_rechazado", msg: YA_RECHAZADO };
   }
   const cliente = await pasarela.cliente(a.payer).catch(() => null);
-  const meta = { ...((a.detalle.meta as Record<string, string> | undefined) ?? {}), cobro: a.id };
+  const meta = { ...((a.detalle.meta as Record<string, string> | undefined) ?? {}), cobro: a.id, ...(m.gref ? { tl_intencion: m.gref } : {}) };
   type R = { ok: true; id: string; marca?: string | null; ultimos4?: string | null } | { ok: false; codigo: string; mensaje: Bi; pi?: string };
   const caida = { ok: false as const, codigo: "error", mensaje: EN_CAMINO };
   const r: R = a.destino
@@ -116,14 +133,44 @@ export async function terminarCobro(a: Intencion, cerrar?: (c: PoolClient, r: { 
     await db().query(`update offsession_charges set status = 'failed', attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);
     return { ok: false, codigo, msg: r.mensaje, ...(r.pi ? { pi: r.pi } : {}) };
   }
-  const hecho = { pi: r.id, marca: r.marca ?? null, l4: r.ultimos4 ?? null };
+  return cerrarHecho(a, { pi: r.id, marca: r.marca ?? null, l4: r.ultimos4 ?? null }, cerrar);
+}
+type Cerrar = (c: PoolClient, r: { pi: string; marca: string | null; l4: string | null }) => Promise<unknown>;
+/* El cierre de un cobro hecho, el mismo para la respuesta de la pasarela y para lo que encontró la consulta: 'done' una vez y lo del flujo en la MISMA
+   transacción. Sin `cerrar`, quien llama cierra en su propia transacción con marcarHecho. */
+async function cerrarHecho(a: Intencion, hecho: { pi: string; marca: string | null; l4: string | null }, cerrar?: Cerrar): Promise<Cobrado> {
   if (!cerrar) return { ok: true, ...hecho };
   const nuevo = await tx(async (c) => {
-    if (!(await marcarHecho(c, a.id, r.id))) return false;
+    if (!(await marcarHecho(c, a.id, hecho.pi))) return false;
     await cerrar(c, hecho);
     return true;
   });
   return nuevo ? { ok: true, ...hecho } : { ok: true, ...hecho, ya: true };
+}
+/* 9t5 · Una intención de más de HORAS_LLAVE: NUNCA a la pasarela con su llave. Se cierra con el último veredicto de la consulta (lib/consulta-pasarela.ts),
+   cada cambio una vez (where status = 'pending'); sin un veredicto que cierre, sigue en camino y alerta (offsession_stuck, una vez). */
+async function terminarVieja(a: Intencion, cerrar?: Cerrar): Promise<Cobrado> {
+  const v = await (await import("./consulta-pasarela")).veredicto("offsession_charges", a.id);
+  if (v?.resultado === "hecho" && v.stripe) return cerrarHecho(a, { pi: v.stripe, marca: null, l4: null }, cerrar);
+  if (v?.resultado === "fallido" || v?.noLlego) {
+    const motivo = v.resultado === "fallido" ? "consulta_fallido" : "nunca_llego";
+    if (!(await db().query(`update offsession_charges set status = 'failed', last_error = $2 where id = $1::bigint and status = 'pending'`, [a.id, motivo])).rowCount) {
+      const b = await intencion(a.id);
+      return b?.st === "done" ? { ok: true, pi: b.pi ?? "", marca: null, l4: null, ya: true } : { ok: false, codigo: "ya_rechazado", msg: YA_RECHAZADO };
+    }
+    if (motivo === "consulta_fallido") return { ok: false, codigo: motivo, msg: YA_RECHAZADO };
+    // Nunca llegó: nada salió. El depósito que se retuvo para esta renta se suelta (el siguiente toque retiene con su propia llave).
+    if (a.hold) await pasarela.liberar(a.hold).catch(() => undefined);
+    return { ok: false, enCamino: true, noLlego: true, msg: NO_LLEGO };
+  }
+  await alertaVieja(a);
+  return { ok: false, enCamino: true, msg: VIEJO };
+}
+/* 9t5 · Otra intención igual a una que nunca llegó a Stripe (los días tarde de una renta: nadie más la vuelve a anotar). Otra llave (-r<n>). */
+export async function reanotar(a: Intencion): Promise<Intencion> {
+  const base = a.idem.replace(/-r\d+$/, "");
+  return anotarCobro({ kind: a.kind, ref: a.ref, para: a.para, op: a.op, negocio: a.negocio, ciudad: a.ciudad, payer: a.payer, monto: a.monto, fee: a.fee, destino: a.destino, pm: a.pm,
+    idem: (k) => `${base}-r${k}`, detalle: a.detalle });
 }
 
 /* Lo que ya no aplica (el plan se canceló, la renta cambió, el patrocinio terminó): si nunca se mandó, se suelta; si se mandó, se le pregunta a Stripe con
@@ -156,15 +203,43 @@ export async function barrerCobrosFuera(): Promise<number> {
   for (const x of L) {
     const a = await intencion(x.id);
     if (!a || a.st !== "pending") continue;
-    const termina = async (): Promise<boolean> => x.kind === "plan" ? (await import("./planes")).terminarCobroPlan(a)
-      : x.kind === "renta" ? (await (await import("./rentas")).terminarCobroRenta(a, true)).ok
-      : (await import("./patrocinio")).terminarRenovacionSuelta(a);
-    const hecho = await termina().catch((e) => { console.error("[cobro-fuera]", x.kind, x.id, e instanceof Error ? e.message : e); return false; });
-    if (hecho) n++;
+    if (await termina(a)) n++;
   }
-  const V = (await db().query<Omit<Intencion, "nueva">>(
-    `select ${SEL} from offsession_charges c where status = 'pending' and created_at <= now() - make_interval(hours => $1::int)
-        and not exists (select 1 from money_alerts m where m.kind = 'offsession_stuck' and m.subject_id = c.idem_key) order by created_at limit 50`, [HORAS_LLAVE])).rows;
-  for (const a of V) await alertaVieja({ ...a, nueva: false });
+  // 9t5 · Las de más de HORAS_LLAVE: se le pregunta a la pasarela (una vez cada CADA_MIN por intención) y el flujo cierra con lo que dijo; si no cierra,
+  // sigue en camino con su alerta offsession_stuck (una vez). Nunca otra vez a la pasarela con su llave.
+  const V = (await db().query<{ id: string }>(
+    `select c.id::text from offsession_charges c left join lateral (select max(y.at) as ult from gateway_checks y where y.subject_kind = 'offsession_charges' and y.subject_id = c.id) g on true
+      where c.status = 'pending' and c.created_at <= now() - make_interval(hours => $1::int)
+        and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
+      order by g.ult nulls first, c.created_at limit 20`, [HORAS_LLAVE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
+  for (const x of V) if ((await resolverCobroFuera(x.id, { origen: "barrido" })).quedo === "hecha") n++;
   return n;
+}
+/* Pasos 2 y 3 de una intención, por el flujo que la anotó (también con lo que contestó la consulta). true = quedó hecha. */
+async function termina(a: Intencion): Promise<boolean> {
+  const f = async (): Promise<boolean> => a.kind === "plan" ? (await import("./planes")).terminarCobroPlan(a)
+    : a.kind === "renta" ? (await (await import("./rentas")).terminarCobroRenta(a, true)).ok
+    : (await import("./patrocinio")).terminarRenovacionSuelta(a);
+  return f().catch((e) => { console.error("[cobro-fuera]", a.kind, a.id, e instanceof Error ? e.message : e); return false; });
+}
+/* 9t5 · Preguntarle a la pasarela por una intención de más de HORAS_LLAVE y cerrarla con eso, por su flujo: el barrido, o «Preguntar a Stripe ahora» del
+   Super Admin (con su auditoría en la transacción que anota la consulta). La consulta va FUERA de cualquier transacción; el cierre, por el flujo, una vez.
+   La renovación de un patrocinio vivo y vencido la cierra su propio vencimiento (renovacionConsultada), con el mismo veredicto. */
+export type Quedo = "hecha" | "fallida" | "no_llego" | "sigue" | "ya_no_estaba";
+export async function resolverCobroFuera(id: string, o: import("./consulta-pasarela").Origen): Promise<{ resultado: import("./consulta-pasarela").Resultado | null; quedo: Quedo }> {
+  const K = await import("./consulta-pasarela");
+  const a = await intencion(id);
+  if (!a || a.st !== "pending" || !a.vieja) return { resultado: null, quedo: "ya_no_estaba" };
+  const resultado = await K.consultar({ tabla: "offsession_charges", id: a.id, monto: a.monto, ciudad: a.ciudad, negocio: a.negocio }, o);
+  if (resultado === "hecho" || resultado === "fallido" || resultado === "no_hallado") {
+    if (a.kind === "patrocinio_negocio") await (await import("./patrocinio")).renovacionConsultada(a.ref).catch(() => undefined);
+    if (a.kind === "patrocinio_evento") await (await import("./patrocinio-evento")).renovacionConsultadaEvt(a.ref).catch(() => undefined);
+    const b = await intencion(id);
+    if (b?.st === "pending") await termina(b);
+  }
+  const b = await intencion(id);
+  const quedo: Quedo = b?.st === "done" ? "hecha" : b?.st === "failed" ? (b.err === "nunca_llego" ? "no_llego" : "fallida") : "sigue";
+  if (quedo !== "sigue") await K.cerrarAlertaSola("offsession_stuck", a.idem, { es: `Cerrada sola: la consulta a Stripe dijo que ${K.RESULTADO[resultado].es}.`, en: `Closed by itself: the Stripe query said ${K.RESULTADO[resultado].en}.` });
+  else await alertaVieja(a);
+  return { resultado, quedo };
 }

@@ -1,8 +1,8 @@
 # Super Admin › Planes › Ingresos › Conciliación y alertas del dinero · Reconciliation and money alerts
 
 _Pantallas: `/admin/planes?tab=ing` (CONCILIACIÓN DIARIA y ALERTAS DEL DINERO), el Inicio del Super Admin («EL DINERO NO CUADRA») y Sistema ›
-Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (me hago cargo, resuelta, reabrir, conciliar otra vez, resolver a mano) con
-«Transacciones: aprobar». Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
+Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (me hago cargo, resuelta, reabrir, conciliar otra vez, resolver a mano,
+preguntar a Stripe ahora) con «Transacciones: aprobar». Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **La conciliación diaria** (el guardián del dinero): cada mañana, a la hora de Configuración › Dinero (6 AM del Este de fábrica), el sistema cuadra el
@@ -32,6 +32,22 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
   **23 horas** sin respuesta llega **cobro con tarjeta guardada sin respuesta**, una vez, para mirarlo en Stripe. Si el cobro salió cuando lo que pagaba
   ya había cambiado (el plan se canceló, la renta ya no estaba apartada, el patrocinio terminó o ya no quedaba puesto), queda en el libro sin aplicarse
   y llega **cobro con tarjeta guardada sin aplicar**: decide si se devuelve. Ninguno se cobra dos veces por lo mismo (la base lo impide).
+- **Preguntarle a Stripe (desde el 21 nov):** lo que pasa esas **23 horas** sin respuesta (un cobro de Pro, un cobro con tarjeta guardada o una
+  transferencia al organizador) ya no se queda en camino para siempre. Cada cobro y cada transferencia salen con un **dato propio** (en Stripe, la
+  metadata `tl_intencion`, por ejemplo `offsession_charges:812`), y el sistema le **pregunta a Stripe** por ese dato (cada 15 minutos por intención) y
+  cierra con lo que Stripe dice, nunca con lo que alguien recuerda:
+  - **Sí salió** → queda hecho, **una sola vez**, por el mismo camino de siempre (el período del plan avanza, la renta sale, el patrocinio se renueva, Pro
+    queda pagado, la liquidación queda pagada) y sin cobrar otra vez. La auditoría dice «consulta a la pasarela».
+  - **El banco dijo que no** → queda rechazado y sigue lo de un «no» (el plan reintenta, la renta pide otra tarjeta, Pro pasa a cobro fallido).
+  - **No está en Stripe** → «nunca llegó»: no se cobró nada y el siguiente cobro de ese plan, renta, patrocinio o Pro **vuelve a poder salir** (con otra
+    llave). En una transferencia, su llave vuelve a valer y se manda otra vez, el mismo monto. Solo si se mandó con su dato propio y pasaron **24 horas**
+    desde que se mandó (Stripe tarda en mostrar lo nuevo en su búsqueda). Lo que se mandó antes del 21 nov, sin ese dato, **nunca** se da por «no llegó».
+  - **Sigue en curso** (por ejemplo, el banco pide verificar) o **Stripe no contestó la consulta** → nada cambia; la alerta sigue abierta.
+  - **Más de uno en Stripe**, u **otro monto** → no se cierra solo: llega **«lo que dijo Stripe no se cierra solo»** para que una persona decida.
+  La alerta dice **qué dijo la última consulta y cuándo**, y **se cierra sola** (firmada «To'Latino») cuando la intención deja de estar en camino.
+- **Preguntar a Stripe ahora** (en esas alertas, mientras la intención siga en camino): la misma consulta del sistema, sin esperar su turno. Escribes por
+  qué (queda en la auditoría con tu nombre); el servidor pregunta y cierra con la respuesta. No hay botón para decir «sí se cobró» o «no se cobró»: si te
+  equivocaras, se cobraría dos veces.
 - **Devolución de boletos que Stripe dio por fallida**: la alerta dice la orden, quién pagó y los códigos de los boletos. Los boletos siguen devueltos
   (no entran: no se reponen solos), el cobro vuelve a tener ese saldo y la cancelación del evento deja de contarlo como devuelto. Decide con la persona si
   se le devuelve otra vez o se le repone el boleto (hoy, por fuera de la app: la acción todavía no existe).
@@ -58,6 +74,12 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
 | Un cobro de Pro lleva 23 h sin respuesta de Stripe | No se cobra otra vez ni pasa a «cobro fallido»; llega «cobro de Pro sin respuesta» una vez: mira en Stripe si se cobró. |
 | Un cobro del plan del Hogar, de una renta o de la renovación de un patrocinio lleva 23 h sin respuesta | No se cobra otra vez y nada cambia por eso; llega «cobro con tarjeta guardada sin respuesta» una vez (si era al recoger una renta, dice el depósito que sigue retenido): mira en Stripe si se cobró. |
 | Ese cobro salió cuando ya no aplicaba | Queda en el libro (el pago del plan o de la renta) sin aplicarse; llega «cobro con tarjeta guardada sin aplicar» una vez: decide si se devuelve. |
+| Pasadas 23 h, Stripe dice que sí salió | Se cierra hecho una vez, sin cobrar otra vez; la alerta se cierra sola. |
+| Pasadas 23 h, no está en Stripe (y pasaron 24 h desde que se mandó) | «Nunca llegó»: no se cobró; el siguiente cobro vuelve a poder salir (una renta apartada suelta su depósito y ya se puede cancelar; una transferencia se manda otra vez). |
+| Stripe no contesta la consulta | Nada cambia; se vuelve a preguntar en 15 minutos o con «Preguntar a Stripe ahora». |
+| Stripe tiene dos cobros para una intención, u otro monto | No se cierra solo: llega «lo que dijo Stripe no se cierra solo». |
+| Un cobro de Pro que Stripe sí hizo, de un período que ya estaba pagado con otro cobro | No se cierra solo («lo que dijo Stripe…»): se cobró dos veces; devuelve uno. Mientras tanto, a ese negocio no se le cobra Pro otra vez. |
+| «Preguntar a Stripe ahora» en algo que ya se cerró | No deja: «Ya no está en camino». |
 | Rol sin «Transacciones: aprobar» | Ves todo, sin botones. |
 | Diferencias de otra ciudad | No aparecen (las de To'Latino sin ciudad, solo a quien ve todas). |
 
@@ -76,6 +98,10 @@ del código del webhook; si el código escucha uno que no está aquí, un guardi
 dueño que la mire.
 **¿Puedo borrar una diferencia?** No: se resuelve con su nota. La conciliación y sus notas son de solo inserción.
 **¿Qué hago con una retención suelta?** Se suelta sola en 7 días si nadie la cobra; si el pedido existe, revisa con el negocio y Stripe.
+**¿Por qué no hay un botón «sí se cobró»?** Porque el servidor decide con lo que dice Stripe. «Preguntar a Stripe ahora» hace la misma consulta que el
+sistema; si Stripe no contesta, inténtalo más tarde.
+**¿Y si la alerta dice «sin dato propio» o la consulta siempre dice «no está»?** Es un cobro que salió antes del 21 nov: no se da por «no llegó» solo.
+Míralo en Stripe por el negocio y la fecha y anótalo con «Me hago cargo».
 
 ## English
 
@@ -108,6 +134,23 @@ dueño que la mire.
   through when what it paid for had already changed (the plan was cancelled, the rental was no longer on hold, the sponsorship ended or there was no slot
   left), it stays in the ledger without being applied and **unapplied saved-card charge** arrives: decide whether to refund it. None is charged twice for
   the same thing (the database prevents it).
+- **Asking Stripe (since Nov 21):** what spends those **23 hours** with no answer (a Pro charge, a saved-card charge or a transfer to the organizer) no
+  longer stays on its way forever. Each charge and transfer goes out with **its own tag** (in Stripe, the `tl_intencion` metadata, e.g.
+  `offsession_charges:812`), and the system **asks Stripe** for that tag (every 15 minutes per intent) and closes it with what Stripe says, never with what
+  someone remembers:
+  - **It went through** → it is done, **only once**, the usual way (the plan period moves on, the rental goes out, the sponsorship renews, Pro is paid,
+    the settlement is paid) and nothing is charged again. The audit log says «gateway query».
+  - **The bank declined it** → it is declined and the usual «no» follows (the plan retries, the rental asks for another card, Pro goes to failed charge).
+  - **It is not in Stripe** → «never arrived»: nothing was charged and the next charge for that plan, rental, sponsorship or Pro **can go out again**
+    (with another key). For a transfer, its key becomes valid again and it is sent again, same amount. Only if it was sent with its own tag and **24
+    hours** have passed since it was sent (Stripe's search takes time to show new things). Whatever was sent before Nov 21, without that tag, is **never**
+    taken as «never arrived».
+  - **Still in progress** (e.g. the bank asks to verify) or **Stripe did not answer the query** → nothing changes; the alert stays open.
+  - **More than one in Stripe**, or **another amount** → it does not close by itself: **«what Stripe said doesn’t close by itself»** arrives so a person decides.
+  The alert shows **what the last query said and when**, and **closes by itself** (signed «To'Latino») once the intent is no longer on its way.
+- **Ask Stripe now** (on those alerts, while the intent is still on its way): the same query the system makes, without waiting for its turn. You write why
+  (it stays in the audit log with your name); the server asks and closes with the answer. There is no button to say «it was charged» or «it wasn’t»: a
+  mistake would charge twice.
 - **Ticket refund Stripe marked as failed**: the alert names the order, who paid and the ticket codes. The tickets stay refunded (no entry: they are not
   reissued by themselves), the charge has that balance again and the event cancellation stops counting it as refunded. Decide with the person whether to
   refund again or reissue the ticket (for now, outside the app: the action does not exist yet).
@@ -134,6 +177,12 @@ dueño que la mire.
 | A Pro charge has had no answer from Stripe for 23 h | It is not charged again and does not become a «failed charge»; «Pro charge with no answer» arrives once: check in Stripe whether it was charged. |
 | A home plan, rental or sponsorship renewal charge has had no answer for 23 h | It is not charged again and nothing changes because of it; «saved-card charge with no answer» arrives once (at a rental pickup, it names the deposit still held): check in Stripe whether it was charged. |
 | That charge went through when it no longer applied | It stays in the ledger (the plan or rental payment) without being applied; «unapplied saved-card charge» arrives once: decide whether to refund it. |
+| After 23 h, Stripe says it went through | It closes as done once, without charging again; the alert closes by itself. |
+| After 23 h, it is not in Stripe (and 24 h have passed since it was sent) | «Never arrived»: nothing was charged; the next charge can go out again (a held rental releases its deposit and can be cancelled; a transfer is sent again). |
+| Stripe does not answer the query | Nothing changes; it is asked again in 15 minutes or with «Ask Stripe now». |
+| Stripe has two charges for one intent, or another amount | It does not close by itself: «what Stripe said doesn’t close by itself» arrives. |
+| A Pro charge Stripe did make, for a period already paid by another charge | It does not close by itself: it was charged twice; refund one. Meanwhile that business is not charged Pro again. |
+| «Ask Stripe now» on something already closed | It will not let you: «It is no longer on its way». |
 | Role without «Transactions: approve» | You see everything, without buttons. |
 | Differences from another city | They do not show (To'Latino's own, with no city, only to whoever sees all cities). |
 
@@ -152,3 +201,7 @@ of the webhook code; if the code listens to one that is not here, a guardian sto
 look at it.
 **Can I delete a difference?** No: it is resolved with its note. The reconciliation and its notes are insert-only.
 **What do I do with an orphan hold?** It releases itself in 7 days if nobody charges it; if the order exists, check with the business and Stripe.
+**Why is there no «it was charged» button?** Because the server decides with what Stripe says. «Ask Stripe now» makes the same query as the system; if
+Stripe does not answer, try again later.
+**What if the query always says «not in Stripe» for an old charge?** It is a charge sent before Nov 21, without its own tag: it is not taken as «never
+arrived» by itself. Look it up in Stripe by business and date and note it with «I’ll take it».

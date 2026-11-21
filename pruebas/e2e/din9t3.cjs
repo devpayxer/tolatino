@@ -71,6 +71,8 @@ const P = {
     return { ok: true, id: this.cargos.get(x.idem).id };
   },
   cliente: async () => null, intento: async () => null, liberar: async () => ({ ok: true }),
+  // 9t5 · La consulta a la pasarela (lo de más de 23 h): aquí no contesta; lo que hace con cada respuesta lo prueba din9t5.
+  buscarCobro: async () => ({ ok: false }), buscarTransferencia: async () => ({ ok: false }),
   vecesSalio(idem) { return [...this.salio.keys()].filter((k) => k === idem).length; },
   cobrosDe(biz) { return [...this.cargos.keys()].filter((k) => k.startsWith(`sub-${biz}-`)).length; },
 };
@@ -78,10 +80,11 @@ const SE = {};
 const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
   './soporte-equipo': SE, './soporte': { avisarCaso: async () => undefined } });
 const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' };
+const K = cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas });
 const LQ = cargar('apps/web/lib/evt-liquidacion.ts', { './config': { cfgSql: () => '7', valor: async () => 2 }, './db': D, './evt-comun': evtComun, './pagos/pasarela': { pasarela: P },
-  './cobros': cobros, './dinero-alertas': alertas, './avisos': avisos });
+  './cobros': cobros, './dinero-alertas': alertas, './avisos': avisos, './consulta-pasarela': K });
 const SU = cargar('apps/web/lib/suscripcion.ts', { './db': D, './pagos/pasarela': { pasarela: P, registrarAccion: async () => undefined }, './plan': { PRECIO_PRO: 30 }, './avisos': avisos,
-  './correo/recibos': { reciboPro: async () => undefined }, './dinero-alertas': alertas });
+  './correo/recibos': { reciboPro: async () => undefined }, './dinero-alertas': alertas, './consulta-pasarela': K });
 const AY = cargar('apps/web/lib/ayuda-cita.ts', { './config': { cfgSql: () => '24', valor: async () => 24 }, './plazo-txt': { horasTxt: () => '' }, './colas': { COLA_AYUDA_SQL: "'sop'" }, './db': D, './cobros': cobros,
   './ayuda': { escalarVencidas: async () => undefined }, './ayuda-estafa': { esEstafa: () => false, pausarPorAyuda: async () => undefined }, './avisos': avisos });
 

@@ -29,6 +29,15 @@ export async function conciliarOtraVez(dia: string, motivo: string): Promise<Res
   return { ok: true, mensaje: r.estado === "cuadra" ? `El ${d} cuadra.` : r.estado === "fallo" ? "La conciliación falló: Stripe no respondió. Prueba en un momento." : `El ${d} tiene ${r.diferencias} diferencia${r.diferencias === 1 ? "" : "s"} (${r.sinDueno} sin dueño).` };
 }
 
+/* 9t5 · «Preguntar a Stripe ahora» en una alerta «sin respuesta» (cobro de Pro, cobro con tarjeta guardada, transferencia al organizador): la misma función
+   del barrido; la persona solo pide la consulta (con su nota en la auditoría), nunca dice «sí se cobró». Mismo permiso que las demás acciones del dinero. */
+export async function alertaPreguntar(id: string, nota: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no decide sobre dinero." };
+  const r = await (await import("@/lib/dinero-alertas")).preguntarPorAlerta(s, String(id ?? ""), String(nota ?? ""));
+  return r.ok ? { ok: true, mensaje: r.msg } : { ok: false, mensaje: r.msg };
+}
+
 export async function alertaNota(id: string, accion: string, nota: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no decide sobre dinero." };
