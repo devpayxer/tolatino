@@ -56,6 +56,8 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
 | Apelación levantada | Se publica y se recuerda su contenido. |
 | Apelación mantenida | Queda rechazada; el contenido se rechaza para cualquiera. |
 | El almacén de fotos no responde al decidir | La acción dice «No se pudo mover la foto…» y no cambia nada; se repite. |
+| La foto oculta o quitada estaba también en un plato o servicio, era un logo, una foto de perfil o la de alguien del equipo | En el mismo paso (capa 3, **Quitar foto** de Medios marcados o de Negocio 360, rechazo de la revisión, cuenta purgada) sale también de ahí: nadie ve una foto rota. Queda anotado de dónde salió. Las fotos de afuera (las de la semilla) y lo que el dueño quita él mismo no se tocan. |
+| Esa foto vuelve a verse (Está bien, apelación levantada, Restaurar) | Vuelve sola a cada lugar del que salió (al mismo lugar entre las fotos del plato), si sigue libre: si el negocio o la persona ya pusieron otra, o el plato tiene 5, se queda lo nuevo. Una foto de destino privado nunca vuelve a un lugar público. |
 
 ## Preguntas frecuentes
 - **¿Retiene demasiado?** Sube el umbral de duda de la capa 1 (por ejemplo de 60 a 70) y mira las cifras de la semana.
@@ -120,6 +122,8 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
 | Appeal lifted | Published and its content is remembered. |
 | Appeal kept | Stays rejected; the content is rejected for anyone. |
 | The photo store does not answer when deciding | The action says “Could not move the photo…” and nothing changes; try again. |
+| The hidden or removed photo was also on a dish or service, was a logo, a profile photo or a team member's photo | In the same step (layer 3, **Remove photo** in Flagged media or Business 360, a rejection by the review, a purged account) it comes off there too: nobody sees a broken photo. Where it came off is recorded. Outside photos (the seed's) and what the owner removes themselves are not touched. |
+| That photo shows again (It's fine, appeal lifted, Restore) | It goes back on its own to each place it came off (the same place among the dish's photos), if still free: if the business or the person already put in another one, or the dish has 5, the new one stays. A private-destination photo never goes back to a public place. |
 
 ### Frequently asked questions
 - **Does it hold too much?** Raise layer 1's doubt threshold (for example from 60 to 70) and watch the week's numbers.

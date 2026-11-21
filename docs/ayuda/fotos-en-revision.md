@@ -38,6 +38,7 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 | Una persona dice que está bien | Se publica y te llega «Tu foto ya se puede publicar». Al subirla otra vez, entra directo. |
 | Una persona confirma el rechazo | La decisión es final; te llega con el motivo. |
 | Varias personas la reportan | Queda oculta mientras se revisa; si está bien, vuelve a verse donde estaba. |
+| Esa foto era tu foto de perfil (o la de un plato, el logo o la foto de alguien del equipo) | Mientras está oculta o quitada, **no sale en ninguna parte**: tu perfil queda con tus iniciales, el plato sin foto, la página con su primera foto en lugar del logo. Nunca se ve una foto rota. Si se aprueba (la revisión o tu apelación), **vuelve sola al mismo lugar**, salvo que ya hayas puesto otra: entonces se queda la tuya nueva. |
 | Tu cuenta es nueva (menos de 7 días) | Puedes subir hasta 10 fotos por hora que se vean en público. Las de una cita, una solicitud, una mudanza o una «Ayuda con…» no cuentan para ese tope (sí para el de 60 fotos por hora de cualquier cuenta). |
 | La foto va solo a un negocio (una solicitud, una cita, un presupuesto, un viaje) | Si es dudosa queda EN REVISIÓN hasta que una persona la mire; puedes pedir revisión o subir otra. |
 | La foto va solo a un negocio y ya entró | **No tiene dirección pública**: la ven solo tú, el negocio que la recibe y, si abres un caso («Ayuda con…» o el daño de una renta), el equipo de To'Latino que lo atiende (queda registrado). Si alguien más abre el enlace, no ve nada. |
@@ -96,6 +97,7 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 | A person says it is fine | It is published and you get “Your photo can be published”. Uploading it again goes straight in. |
 | A person confirms the rejection | The decision is final; you get it with the reason. |
 | Several people report it | Hidden while it is reviewed; if fine, it shows again where it was. |
+| That photo was your profile photo (or a dish photo, the logo or a team member's photo) | While it is hidden or removed it **does not show anywhere**: your profile shows your initials, the dish shows no photo, the page shows its first photo instead of the logo. A broken photo never shows. If it is approved (by the review or your appeal), **it goes back to the same place on its own**, unless you already put in another one: then your new one stays. |
 | Your account is new (under 7 days) | You can upload up to 10 photos an hour that show in public. Photos for an appointment, a request, a move or a “Help with…” do not count toward that cap (they do count toward the 60-photos-an-hour cap of any account). |
 | The photo goes only to a business (a request, an appointment, a quote, a trip) | If doubtful it stays UNDER REVIEW until a person looks at it; you can ask for a review or upload another one. |
 | The photo goes only to a business and it went in | **It has no public address**: only you, the business that receives it and, if you open a case (“Help with…” or rental damage), the To'Latino team member handling it can see it (it is logged). If anyone else opens the link, they see nothing. |

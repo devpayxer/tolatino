@@ -2079,12 +2079,17 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       las de Mensajes, ayuda de Salud y Pro, entrega y reclamo (sus rutas son otras)._
 - [ ] **→ 9t** · **Fotos a la medida · después:** AVIF para los anchos grandes; el color dominante mientras carga (hoy, el fondo neutro del
       sistema); variantes del póster del video del negocio (`/medios/v/…jpg`, que además no está en la regla de caché de Cloudflare). (20 nov)
-- [ ] **→ 9t** · **Fotos guardadas como texto fuera de `media`:** `menu_items.photos text[]`, `users.photo_url`, `subcategories.photo_url`,
+- [x] **→ 9t** · **Fotos guardadas como texto fuera de `media`:** `menu_items.photos text[]`, `users.photo_url`, `subcategories.photo_url`,
       `business_members.photo_url`, y `businesses.logo_url` (sin lector: el logo vive en `media`). Unificar o retirar lo que no se usa. Dos
       índices que se pisan en `media` (`media_chat_subidas_idx` y `media_msj_subidas_idx`). (20 nov) — _(21 nov, F3): al GUARDAR, los cinco
       catálogos (Oficios, Servicios, Autos, Bienes Raíces, Renta de artículos) y el Menú ya validan cada foto nueva de `items.photos` contra
       `media` (`lib/fotos-catalogo.ts`). Sigue: que los LECTORES miren `media` (la línea de «Quitar una foto no llega a las copias por TEXTO»)
-      y unificar o retirar las columnas de texto._
+      y unificar o retirar las columnas de texto._ — _(21 nov, 0200): hecho. Las cuatro columnas que se usan (`items.photos`, `users.photo_url`,
+      `business_members.photo_url`, `businesses.logo_url`: el logo SÍ tiene ~25 lectores) quedan como texto, mantenidas por la base: el trigger
+      `media_fotos_texto` retira y restaura su dirección (ver la línea de «Quitar una foto no llega a las copias por TEXTO»). `subcategories.photo_url`
+      no tiene escritor ni lector (0 filas): queda documentada como sin uso (comment) y el guardián `fotosTextoComun` falla si alguien la usa sin cubrirla;
+      no se quita la columna (nada se borra). Índices: `media_chat_subidas_idx` sobraba (mismas columnas y su condición contenida en la de
+      `media_msj_subidas_idx`; el único lector pide chat + dm): 0200 la quita._
 - [ ] **→ 9t** · **Las rutas de fotos y video cargan el archivo entero en memoria** (12 MB por foto, 120 MB por video) y las privadas se
       entregan sin `Range` ni `ETag`. Medir con carga y, si pesa, pasar a flujo. (20 nov)
 
@@ -2108,11 +2113,28 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **Plazo de retención de las fotos rechazadas o retenidas** (`privado/rev/<uuid>.jpg` + su fila en `media`): hoy no se borran
       nunca (estados; nada se borra). Decidir con el fundador cuánto se guardan (y si la apelación cerrada cambia el plazo) y construir la purga
       con su guardián. No se inventó un plazo. (R1, 20 nov)
-- [ ] **→ 9u** · **Quitar una foto no llega a las copias por TEXTO de su dirección:** la capa 3 (y el «Quitar» de siempre en «Medios marcados»)
+- [x] **→ 9u** · **Quitar una foto no llega a las copias por TEXTO de su dirección:** la capa 3 (y el «Quitar» de siempre en «Medios marcados»)
       cambian el estado en `media` (la galería, la ficha y las filas que comparten el archivo: novedades y eventos copiados), pero `items.photos`
       (menú y catálogos: ~15 lectores), `users.photo_url`, `business_members.photo_url` y `businesses.logo_url` guardan la DIRECCIÓN y no miran
       `media`. Antes de AJ la foto quitada seguía viéndose ahí; ahora, con el archivo fuera de `n/`, ahí se ve rota hasta que vuelva. Arreglo de
       fondo: que esos lectores filtren por `media.status = 'visible'` (o que la quita limpie y restaure esas referencias), con su guardián. (R2, 20 nov)
+      _(21 nov, 0200): hecho por la segunda forma, en la base. El trigger `media_fotos_texto` (after update of status, purged_at on media), en la MISMA
+      transacción que cambia el estado: capa 3 (review + c3), «Quitar» del equipo (admin), rechazo de la revisión (revision) y purga → la dirección
+      sale de las cuatro columnas y cada salida queda en `photo_text_refs` (tabla, fila, lugar en el arreglo, ciudad; libro de estados: retirada →
+      restaurada | descartada, nunca se borra); al volver a verse y ser PÚBLICA (ni private ni rev_sin_c2) vuelve a su lugar si cabe. Solo
+      direcciones nuestras (`/medios/n/…`); Pexels y lo que el dueño quita él mismo no se tocan. Índices: GIN `items.photos`, hash en las otras
+      tres. Los ~50 lectores no cambian. Guardián `fotosTextoComun` (al revés `alreves9utexto`, 21/21); prueba de la base `fot9utexto` (27).
+      Lo que queda: correr `fot9utexto` en el carril de punta a punta del CI (aquí corrió contra una base aislada con la semilla, sin servidor ni
+      almacén); el aviso a la persona no cambia (ya recibe «foto_oculta» / «foto_vuelve»).
+- [ ] **→ 9u** · **Restaurar una copia por texto en un caso raro:** si mientras la foto está oculta la persona pone otra foto de perfil (o logo, o
+      foto del equipo) y después la quita, al aprobarse la de antes vuelve sola al lugar vacío; en un plato, vuelve si tiene menos de 5 fotos aunque
+      el dueño haya cambiado las demás. Es lo que pide quien apela, pero no lo eligió de nuevo. Si molesta: que escribir esas columnas cierre como
+      «descartada» lo retirado de esa fila (trigger en las cuatro tablas). (0200, 21 nov)
+- [ ] **→ 9u** · **rev9u inestable (CI 44856657972, segunda vuelta, §6 «su dudosa entra por la capa 4»):** causa encontrada leyendo el código, no
+      reproducida (aquí no hay servidor ni almacén). El barrido reintenta las retenidas de la PRIMERA vuelta (r4b y r9f, ancho 404 = el modelo propio
+      de mentira contesta 500) y un solo fallo abre el corta-circuito de `moderacion-img` 30 s; la dudosa de §6, subida segundos después del barrido
+      de §5, salía sin puntaje (sin_servicio) → capa 2 «no segura» → 202. Arreglo en la prueba (el producto hace lo correcto: fallo cerrado): cada
+      `barrer()` de rev9u cierra el corte al volver. Confirmar en la próxima confirmación completa (dos vueltas) que rev9u pasa sin repetir. (21 nov)
 - [ ] **→ 9p** · **La foto oculta por reportes sigue en el borde de Cloudflare:** la capa 3 saca el archivo y sus variantes de `n/`, pero
       Cloudflare guarda `/medios/n/` hasta un año (caché inmutable). Va con la purga del borde ya anotada (F1): pedirle a Cloudflare que suelte la
       maestra y las variantes al ocultar (y al rechazar algo que estuvo publicado), con reintento desde el barrido. (R2, 20 nov)
