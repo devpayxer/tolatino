@@ -316,9 +316,9 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
                 {x.img || x.imgIni ? <span style={{ width: x.imgW ?? "44px", height: x.imgW ?? "44px", borderRadius: 13, backgroundImage: fotoCss(x.img, parseInt(String(x.imgW ?? 44)) || 44), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 15px/1 Sora,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.img ? "" : x.imgIni}</span>
                   : x.icon ? <span style={{ width: 40, height: 40, borderRadius: 12, background: x.ibg ?? "rgba(75,55,245,.08)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={x.icon} size={18} color={x.ifg ?? "var(--tl-action)"} /></span> : null}
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: x.tFg ?? "var(--tl-ink)" }}>{x.t}</span>
-                  {x.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.s}</span> : null}
-                  {x.m ? <span style={{ display: "block", marginTop: 4, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: x.mFg ?? "rgba(11,14,18,.6)" }}>{x.m}</span> : null}
+                  <span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: x.tFg ?? "var(--tl-ink)", overflowWrap: "anywhere" }}>{x.t}</span>
+                  {x.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)", overflowWrap: "anywhere" }}>{x.s}</span> : null}
+                  {x.m ? <span style={{ display: "block", marginTop: 4, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: x.mFg ?? "rgba(11,14,18,.6)", overflowWrap: "anywhere" }}>{x.m}</span> : null}
                 </span>
                 {x.tag ? <Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag> : null}
                 {x.r ? <span style={{ font: "800 15px/1 Sora,sans-serif", flex: "none", textAlign: "right" }}>{x.r}</span> : null}
@@ -334,7 +334,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
     case "note": { const T = NOTA[b.tone ?? "info"]; return (
       <div style={{ padding: "13px 14px", borderRadius: 16, background: T[0], color: T[1], display: "flex", alignItems: "center", gap: 11 }}>
         <Icon name={b.icon ?? T[2]} size={18} color={T[1]} />
-        <span style={{ flex: 1, minWidth: 0, font: "600 13px/1.45 Manrope,sans-serif" }}>{b.t}</span>
+        <span style={{ flex: 1, minWidth: 0, font: "600 13px/1.45 Manrope,sans-serif", overflowWrap: "anywhere" }}>{b.t}</span>
         {b.cta ? <span role="button" onClick={b.onCta} tabIndex={0} onKeyDown={tecla(b.onCta)} style={{ font: "800 12.5px Manrope,sans-serif", color: b.tone === "ink" ? "var(--tl-signal)" : "var(--tl-action)", cursor: "pointer", flex: "none" }}>{b.cta}</span> : null}
       </div>); }
     case "lock": return (
