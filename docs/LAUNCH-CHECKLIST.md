@@ -2336,6 +2336,21 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `salud-publico.ts` y otros): comprobar que ninguno lo pasa crudo a un componente de cliente. (5) La revisión miró solo por encima Textos,
       Notificaciones, Integraciones, Configuración y Sistema (39 confirmaciones: auditoría o registro que solo lee el admin), y no recorrió una por
       una las 85 «persona». (21 nov)
+- [x] **→ 9u** · **«Asignar a…» en Colas reventaba el servidor desde el 14 nov** (`equipoDeCola`: `… || ' · ' || r.name->>'es'`; Postgres lo lee
+      `(… || r.name) ->> 'es'` → «operator does not exist: text ->> unknown»; la hoja se caía con «Application error»). Lo cazó la prueba nueva `nota9u`
+      (Sonnet) al abrir la hoja por primera vez. **Hecho (21 nov, 4ee2ae2):** paréntesis, guardián `jsonTrasConcatenar` (apps, services, scripts y
+      migraciones: era el único caso), caso en `alreves9u` (15/15), `nota9u` 36 ✓ dos veces en local y en la dirigida 44952826764.
+- [ ] **→ 9b** · **Consultas que ninguna prueba ejecuta (la clase de «Asignar a…»).** Un error de SQL en una consulta que ninguna prueba corre llega
+      vivo al sandbox (este estuvo siete días). Camino: en el servidor de pruebas, anotar cada sitio de consulta que se ejecuta durante la regresión
+      completa (archivo:línea de quien llama a `db().query` / `c.query`) y compararlo con la lista estática de sitios del código; lo que nunca se
+      ejecutó sale en una lista (y, donde se pueda, se le pasa un `EXPLAIN` contra la base de pruebas). Lo mismo, del lado de pantallas: las hojas
+      de confirmar del Super Admin que ninguna prueba abre. (21 nov)
+- [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
+      veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
+      `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).
+- [x] **→ 9b** · **El CI dijo «inestables de la corrida: 0» con una** (44947348390): la lectura del registro de un trabajo falló callada
+      (`gh api … 2>/dev/null | grep … || true`). **Hecho (21 nov, 3bfec03):** se reintenta hasta 6 veces y, si no se puede leer, la tubería sale roja
+      diciéndolo; `tuberiaNoSeSalta` lo exige; caso nuevo en `alreves9b2` (49/49 en local). Falta verlo correr en una corrida completa.
 - [ ] **→ 9b** · **`compa7g` inestable en local (21 nov):** falló una vez («el borrador quedó "editado"») y pasó a la segunda con 98 ✓, en la corrida del
       encargo de las hojas (99 pruebas de pantallas del Super Admin). Buscar la espera que falta antes de leer el estado del borrador.
 - [x] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
