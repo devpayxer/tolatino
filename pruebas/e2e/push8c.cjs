@@ -147,11 +147,21 @@ const PUENTE = (token) => `if (window === window.top) {
     ok(sql(`select count(*) from push_deliveries where notification_id = ${NID1} and provider = 'webpush' and result = 'enviado'`) === '1', 'una entrega anotada (sin personas)');
     ok(sql(`select count(*) from push_outbox where notification_id = ${NID1} and payload_enc is null and status = 'hecho'`) === '1', 'la cola vacía el contenido al terminar');
     const cdp = await pw.context().newCDPSession(pw); const regs = [];
-    cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations)); await cdp.send('ServiceWorker.enable');
+    // 21 nov · INESTABLE una vez (CI 44856657972: «el service worker mostró la notificación»). El aviso se entregaba en cuanto el registro EXISTÍA; un
+    // service worker registrado puede seguir instalándose, y un push entregado a un registro sin versión activa se pierde. Ahora se espera a que
+    // esté ACTIVO (navigator.serviceWorker.ready, lo mismo que espera el navegador de verdad antes de despertar al worker) y, si aun así no se ve,
+    // la prueba dice en qué estado estaba cada versión y qué errores dio el worker, en vez de solo «no».
+    const vers = new Map(), fallosSw = [];
+    cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations));
+    cdp.on('ServiceWorker.workerVersionUpdated', (e) => { for (const v of e.versions) vers.set(v.versionId, `${v.status}/${v.runningStatus}`); });
+    cdp.on('ServiceWorker.workerErrorReported', (e) => fallosSw.push(String(e.errorMessage?.errorMessage ?? '').slice(0, 160)));
+    await cdp.send('ServiceWorker.enable');
     ok(await espera(() => regs.some((r) => r.scopeURL === B + '/')), 'el service worker /sw-push.js está registrado con alcance «/»');
+    ok(await pw.evaluate(() => Promise.race([navigator.serviceWorker.ready.then((r) => !!r.active), new Promise((r) => setTimeout(() => r(false), 15000))])), 'y está activo (no solo registrado) antes de entregarle el aviso');
     await cdp.send('ServiceWorker.deliverPushMessage', { origin: B, registrationId: regs.find((r) => r.scopeURL === B + '/').registrationId, data: w1.texto });
     const notis = async () => pw.evaluate(async () => (await (await navigator.serviceWorker.getRegistration('/')).getNotifications()).map((x) => ({ t: x.title, b: x.body, tag: x.tag, u: x.data && x.data.u })));
-    ok(await espera(async () => (await notis()).length === 1), 'el service worker mostró la notificación');
+    const vio = await espera(async () => (await notis()).length === 1);
+    ok(vio, `el service worker mostró la notificación${vio ? '' : ` — hay ${(await notis()).length}; versiones: ${[...vers.values()].join(', ') || 'ninguna'}; errores del worker: ${fallosSw.join(' | ') || 'ninguno'}`}`);
     const nn = (await notis())[0];
     ok(nn.t === 'Pedido aceptado' && nn.b === c1.b && nn.u === c1.u && nn.tag === c1.tag, 'con el título, el texto, la etiqueta y la ruta que llegaron cifrados');
     await pw.goto(B + '/cuenta'); await pw.waitForLoadState('networkidle');
