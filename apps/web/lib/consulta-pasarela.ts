@@ -37,6 +37,12 @@ export type Sujeto = { tabla: Tabla; id: string; monto: number; ciudad: string |
 /* 9t6 · Lo que la consulta halló (para la decisión del equipo: el servidor la compara con lo que se eligió) y la fila que la anotó. */
 export type Detalle = { hallados: Hallado[]; check: string | null };
 
+/* 9t6 (0205) · Lo hallado en orden de creación (el primero arriba; sin fecha, al final y en el orden en que llegó) y cuántos se guardan con su detalle. */
+export const MAX_DETALLE = 20;
+export function enOrden<T extends { creado?: string | null }>(H: T[]): T[] {
+  return H.map((h, i) => ({ h, i })).sort((a, b) => (a.h.creado && b.h.creado ? (a.h.creado < b.h.creado ? -1 : a.h.creado > b.h.creado ? 1 : a.i - b.i) : a.h.creado ? -1 : b.h.creado ? 1 : a.i - b.i)).map((x) => x.h);
+}
+
 /* ¿Toca preguntar? El barrido, una vez cada CADA_MIN por intención (la búsqueda de Stripe tiene su tope); la acción del equipo, siempre. */
 export async function tocaConsultar(t: Tabla, id: string): Promise<boolean> {
   return !(await db().query(`select 1 from gateway_checks where subject_kind = $1 and subject_id = $2::bigint and at > now() - make_interval(mins => $3::int) limit 1`, [t, id, CADA_MIN])).rowCount;
@@ -53,10 +59,14 @@ export async function consultar(x: Sujeto, o: Origen, detalle?: Detalle): Promis
   else if ("varios" in r) { resultado = "varios"; n = r.varios.length; }
   else if (!r.hallado) resultado = "no_hallado";
   else { h = r.hallado; n = 1; resultado = h.centavos !== x.monto ? "monto_distinto" : h.estado; }
+  // 9t6 (0205) · Lo hallado, con su detalle (estado, monto y cuándo se creó), en orden de creación y con tope: SOLO para mostrar en la hoja «Elegir cuál vale»
+  // (dinero-alertas › opcionesDeAlertas). La decisión del equipo vuelve a preguntar a la pasarela y decide con ESA respuesta, nunca con esto.
+  const found = !r.ok ? null : enOrden("varios" in r ? r.varios : r.hallado ? [r.hallado] : []).slice(0, MAX_DETALLE).map((v) => ({ id: v.id, estado: v.estado, centavos: v.centavos, creado: v.creado ?? null }));
   const check = await tx(async (c) => {
-    const g = (await c.query<{ id: string }>(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, staff_id, result, stripe_id, amount_cents, found_n, city_id)
-                   values ($1, $2::bigint, $3, $4, $5::uuid, $6, $7, $8, $9, (select id from cities where id = $10::text)) returning id::text`,
-      [x.tabla, x.id, ref, o.origen, o.origen === "equipo" ? o.staff : null, resultado, h?.id ?? (r.ok && "varios" in r ? r.varios.map((v) => v.id).join(",").slice(0, 200) : null), h?.centavos ?? null, n, x.ciudad])).rows[0]!;
+    const g = (await c.query<{ id: string }>(`insert into gateway_checks (subject_kind, subject_id, lookup, origin, staff_id, result, stripe_id, amount_cents, found_n, city_id, found)
+                   values ($1, $2::bigint, $3, $4, $5::uuid, $6, $7, $8, $9, (select id from cities where id = $10::text), $11::jsonb) returning id::text`,
+      [x.tabla, x.id, ref, o.origen, o.origen === "equipo" ? o.staff : null, resultado, h?.id ?? (r.ok && "varios" in r ? r.varios.map((v) => v.id).join(",").slice(0, 200) : null), h?.centavos ?? null, n, x.ciudad,
+        found ? JSON.stringify(found) : null])).rows[0]!;
     if (o.origen === "equipo") await o.alGuardar?.(c);
     return g.id;
   });

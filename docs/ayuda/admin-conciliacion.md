@@ -135,6 +135,12 @@ dueño que la mire.
 sistema; si Stripe no contesta, inténtalo más tarde.
 **¿Puedo cambiar una decisión de «Elegir cuál vale»?** No: se decide una vez y queda en la auditoría (la base no deja cambiarla). Si lo devuelto no
 llegó, sale la alerta de esa devolución.
+**¿Cómo sé cuál fue el primero en «Elegir cuál vale»?** Cada opción dice su **monto**, **cuándo salió** (día y hora en la zona de la ciudad de la
+alerta; si la alerta no tiene ciudad, la hora del Este, como el resto del Super Admin) y su **id de Stripe** completo, p. ej. «$149.00 · 20 nov, 3:14 pm ·
+pi_…». Van **en orden de cobro: el primero arriba**. Lo que Stripe tiene pero no se puede elegir (de **otro monto**, que **no salió**, que **sigue en
+curso**, o un período de Pro que ya estaba cobrado) no sale como opción: aparece en el texto de la hoja, en «No se puede elegir», con su monto, su fecha y
+el porqué. Es lo que contestó **la última consulta**; al decidir, el servidor vuelve a preguntar a Stripe y decide con esa respuesta (si algo cambió, te lo
+dice y no guarda nada). Una alerta de antes del 21 nov (consulta sin ese detalle) muestra solo los ids, como antes.
 **¿Y si la alerta dice «sin dato propio» o la consulta siempre dice «no está»?** Es un cobro que salió antes del 21 nov: no se da por «no llegó» solo.
 Míralo en Stripe por el negocio y la fecha y anótalo con «Me hago cargo».
 
@@ -273,5 +279,11 @@ look at it.
 Stripe does not answer, try again later.
 **Can I change a «Choose which counts» decision?** No: it is decided once and stays in the audit log (the database does not allow changing it). If the
 refund did not arrive, that refund's alert shows up.
+**How do I know which was first in «Choose which counts»?** Each option shows its **amount**, **when it went through** (day and time in the alert's
+city time zone; if the alert has no city, Eastern time, like the rest of the Super Admin) and its full **Stripe id**, e.g. «$149.00 · Nov 20, 3:14 PM ·
+pi_…». They come **in charge order: the first on top**. What Stripe has but cannot be chosen (**another amount**, **did not go through**, **still in
+progress**, or a Pro period already charged) is not an option: it appears in the sheet's text, under «Can’t be chosen», with its amount, its date and
+why. This is what **the last query** answered; when you decide, the server asks Stripe again and decides with that answer (if something changed, it tells
+you and saves nothing). An alert from before Nov 21 (a query without that detail) shows only the ids, as before.
 **What if the query always says «not in Stripe» for an old charge?** It is a charge sent before Nov 21, without its own tag: it is not taken as «never
 arrived» by itself. Look it up in Stripe by business and date and note it with «I’ll take it».

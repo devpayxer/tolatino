@@ -510,18 +510,18 @@ export const pasarela = {
     if (modoPago() === "simulador") {
       if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
       try {
-        const L = (await db().query<{ id: string; status: string; amount_cents: number; card: string }>(
-          `select id, status, amount_cents, card from sim_intents where metadata->>'tl_intencion' = $1 order by created_at limit 11`, [ref])).rows;
-        const H = L.map((x): Hallado => { const m = SIM_PM.exec(x.card); return { id: x.id, estado: est(x.status), centavos: x.amount_cents, marca: m?.[1] ?? null, ultimos4: m?.[2] ?? null }; });
+        const L = (await db().query<{ id: string; status: string; amount_cents: number; card: string; creado: string | null }>(
+          `select id, status, amount_cents, card, to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as creado from sim_intents where metadata->>'tl_intencion' = $1 order by created_at limit 11`, [ref])).rows;
+        const H = L.map((x): Hallado => { const m = SIM_PM.exec(x.card); return { id: x.id, estado: est(x.status), centavos: x.amount_cents, marca: m?.[1] ?? null, ultimos4: m?.[2] ?? null, creado: x.creado }; });
         return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
       } catch { return { ok: false }; }
     }
     if (modoPago() !== "stripe") return { ok: false };
     try {
-      const r = await stripe<{ data: { id: string; status: string; amount: number; payment_method?: { card?: { brand?: string; last4?: string } } | string | null }[]; has_more: boolean }>(
+      const r = await stripe<{ data: { id: string; status: string; amount: number; created?: number; payment_method?: { card?: { brand?: string; last4?: string } } | string | null }[]; has_more: boolean }>(
         "GET", "/v1/payment_intents/search", { query: `metadata['tl_intencion']:'${ref}'`, limit: 10, expand: ["data.payment_method"] });
       const H = r.data.map((x): Hallado => { const c = typeof x.payment_method === "object" && x.payment_method ? x.payment_method.card : undefined;
-        return { id: x.id, estado: est(x.status), centavos: x.amount, marca: c?.brand ?? null, ultimos4: c?.last4 ?? null }; });
+        return { id: x.id, estado: est(x.status), centavos: x.amount, marca: c?.brand ?? null, ultimos4: c?.last4 ?? null, creado: creadoDe(x.created) }; });
       return H.length > 1 || r.has_more ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
     } catch { return { ok: false }; }
   },
@@ -530,9 +530,9 @@ export const pasarela = {
     if (modoPago() === "simulador") {
       if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
       try {
-        const L = (await db().query<{ id: string; amount_cents: number }>(
-          `select id, amount_cents from sim_transfers where metadata->>'tl_intencion' = $1 or (transfer_group = $2 and metadata->>'settlement' = $3) order by created_at limit 11`, [ref, grupo, liquidacion])).rows;
-        const H = L.map((x): Hallado => ({ id: x.id, estado: "hecho", centavos: x.amount_cents }));
+        const L = (await db().query<{ id: string; amount_cents: number; creado: string | null }>(
+          `select id, amount_cents, to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as creado from sim_transfers where metadata->>'tl_intencion' = $1 or (transfer_group = $2 and metadata->>'settlement' = $3) order by created_at limit 11`, [ref, grupo, liquidacion])).rows;
+        const H = L.map((x): Hallado => ({ id: x.id, estado: "hecho", centavos: x.amount_cents, creado: x.creado }));
         return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
       } catch { return { ok: false }; }
     }
@@ -541,10 +541,10 @@ export const pasarela = {
       const H: Hallado[] = [];
       let tras: string | undefined;
       for (let i = 0; i < 20; i++) {
-        const p = await stripe<{ data: { id: string; amount: number; metadata?: Record<string, string> }[]; has_more: boolean }>(
+        const p = await stripe<{ data: { id: string; amount: number; created?: number; metadata?: Record<string, string> }[]; has_more: boolean }>(
           "GET", "/v1/transfers", { transfer_group: grupo, limit: 100, ...(tras ? { starting_after: tras } : {}) });
         // Una transferencia de Stripe existe o no (no tiene estado intermedio): si está, salió.
-        for (const t of p.data) if (t.metadata?.tl_intencion === ref || t.metadata?.settlement === liquidacion) H.push({ id: t.id, estado: "hecho", centavos: t.amount });
+        for (const t of p.data) if (t.metadata?.tl_intencion === ref || t.metadata?.settlement === liquidacion) H.push({ id: t.id, estado: "hecho", centavos: t.amount, creado: creadoDe(t.created) });
         if (!p.has_more || !p.data.length) break;
         tras = p.data[p.data.length - 1]!.id;
         if (i === 19) return { ok: false }; // más de 2000 transferencias en un grupo: no se decide con una lista a medias
@@ -563,9 +563,9 @@ export const pasarela = {
       if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
       try {
         const L = medio === "refund"
-          ? (await db().query<{ id: string; amount_cents: number }>(`select id, amount_cents from sim_refunds where payment_intent = $1 and metadata->>'tl_intencion' = $2 order by created_at limit 11`, [objeto, ref])).rows
-          : (await db().query<{ id: string; amount_cents: number }>(`select id, amount_cents from sim_transfer_reversals where transfer_id = $1 and metadata->>'tl_intencion' = $2 order by created_at limit 11`, [objeto, ref])).rows;
-        const H = L.map((x): Hallado => ({ id: x.id, estado: "hecho", centavos: x.amount_cents }));
+          ? (await db().query<{ id: string; amount_cents: number; creado: string | null }>(`select id, amount_cents, to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as creado from sim_refunds where payment_intent = $1 and metadata->>'tl_intencion' = $2 order by created_at limit 11`, [objeto, ref])).rows
+          : (await db().query<{ id: string; amount_cents: number; creado: string | null }>(`select id, amount_cents, to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as creado from sim_transfer_reversals where transfer_id = $1 and metadata->>'tl_intencion' = $2 order by created_at limit 11`, [objeto, ref])).rows;
+        const H = L.map((x): Hallado => ({ id: x.id, estado: "hecho", centavos: x.amount_cents, creado: x.creado }));
         return H.length > 1 ? { ok: true, varios: H } : { ok: true, hallado: H[0] ?? null };
       } catch { return { ok: false }; }
     }
@@ -575,10 +575,10 @@ export const pasarela = {
       let tras: string | undefined;
       for (let i = 0; i < 20; i++) {
         const p = medio === "refund"
-          ? await stripe<{ data: { id: string; amount: number; status?: string; metadata?: Record<string, string> }[]; has_more: boolean }>("GET", "/v1/refunds", { payment_intent: objeto, limit: 100, ...(tras ? { starting_after: tras } : {}) })
-          : await stripe<{ data: { id: string; amount: number; status?: string; metadata?: Record<string, string> }[]; has_more: boolean }>("GET", `/v1/transfers/${encodeURIComponent(objeto)}/reversals`, { limit: 100, ...(tras ? { starting_after: tras } : {}) });
+          ? await stripe<{ data: { id: string; amount: number; status?: string; created?: number; metadata?: Record<string, string> }[]; has_more: boolean }>("GET", "/v1/refunds", { payment_intent: objeto, limit: 100, ...(tras ? { starting_after: tras } : {}) })
+          : await stripe<{ data: { id: string; amount: number; status?: string; created?: number; metadata?: Record<string, string> }[]; has_more: boolean }>("GET", `/v1/transfers/${encodeURIComponent(objeto)}/reversals`, { limit: 100, ...(tras ? { starting_after: tras } : {}) });
         // Una reversión de Stripe existe o no (no tiene estado intermedio): si está, se hizo.
-        for (const x of p.data) if (x.metadata?.tl_intencion === ref) H.push({ id: x.id, estado: medio === "reversal" ? "hecho" : estadoDevolucion(x.status ?? ""), centavos: x.amount });
+        for (const x of p.data) if (x.metadata?.tl_intencion === ref) H.push({ id: x.id, estado: medio === "reversal" ? "hecho" : estadoDevolucion(x.status ?? ""), centavos: x.amount, creado: creadoDe(x.created) });
         if (!p.has_more || !p.data.length) break;
         tras = p.data[p.data.length - 1]!.id;
         if (i === 19) return { ok: false }; // más de 2000: no se decide con una lista a medias
@@ -635,8 +635,11 @@ export const pasarela = {
   },
 };
 /* 9t5 · Lo que contesta una consulta (buscarCobro / buscarTransferencia). estado: hecho (succeeded; una transferencia que existe) · fallido (canceled, o
-   requires_payment_method: el banco dijo que no y nadie la vuelve a confirmar) · en_curso (processing, requires_action: el banco pide verificar, etc.). */
-export type Hallado = { id: string; estado: "hecho" | "fallido" | "en_curso"; centavos: number; marca?: string | null; ultimos4?: string | null };
+   requires_payment_method: el banco dijo que no y nadie la vuelve a confirmar) · en_curso (processing, requires_action: el banco pide verificar, etc.).
+   9t6 · creado: cuándo se creó el objeto en Stripe (ISO en UTC; `created` de Stripe, `created_at` del simulador). Solo para mostrar (la hoja «Elegir cuál
+   vale» del Super Admin): nada de dinero se decide con él. */
+export type Hallado = { id: string; estado: "hecho" | "fallido" | "en_curso"; centavos: number; marca?: string | null; ultimos4?: string | null; creado?: string | null };
+const creadoDe = (s?: number) => (typeof s === "number" && Number.isFinite(s) && s > 0 ? new Date(s * 1000).toISOString().slice(0, 19) + "Z" : null);
 export type Consulta = { ok: false } | { ok: true; hallado: Hallado | null } | { ok: true; varios: Hallado[] };
 const REF_OK = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals):\d{1,18}$/;
 function estadoCobro(st: string): Hallado["estado"] {
