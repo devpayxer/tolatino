@@ -62,7 +62,9 @@ const esperado = (d, en) => {
       const ctx = await b.newContext({ viewport: { width: ancho, height: ancho < 600 ? 844 : 900 }, ...(ancho < 600 ? { isMobile: true, hasTouch: true } : {}) });
       await ctx.addCookies([{ name: 'tl_lang', value: lang, url: B }]);
       const p = await ctx.newPage(), errores = [];
-      p.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()); }); p.on('pageerror', (e) => errores.push(String(e)));
+      // Las filas que esta prueba siembra no tienen archivo en el almacén: si la pantalla enseña una (las «cinco al azar»), su 404 es de la siembra,
+      // no de la pantalla. Cualquier otro error de consola sí cuenta.
+      p.on('console', (m) => { if (m.type() === 'error' && !sembradas.some((id) => String(m.location()?.url ?? '').includes(id))) errores.push(`${m.text()} · ${String(m.location()?.url ?? '').slice(0, 120)}`); }); p.on('pageerror', (e) => errores.push(String(e)));
       await entrarComo(p, '5705550188');
       // El barrido puede mover las cifras entre la consulta y la pantalla: se repite una vez con la base de ese momento.
       let faltan = [];

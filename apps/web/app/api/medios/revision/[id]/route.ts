@@ -37,8 +37,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   }
   if (!ok) return no();
-  // 21 nov · Sin archivo en el almacén (una fila sin su objeto): 404 como todo lo demás, no un 500 con su traza en el registro en cada vista.
-  const img = await leerObjeto(m.llave).catch(() => null);
-  if (!img) return no();
+  // 21 nov · Quien SÍ puede verla y su archivo ya no está en el almacén (una fila sin su objeto): 410 «ya no está», sin traza en el registro en
+  // cada vista (antes, un 500). No es 404: ese es «no puedes o no existe», y a quien puede no se le esconde nada. Un almacén caído sigue siendo
+  // un error de verdad (no se disfraza de 410).
+  const img = await leerObjeto(m.llave).catch((e) => { if (/^almacenamiento 404\b/.test(String((e as Error)?.message ?? e))) return null; throw e; });
+  if (!img) return new NextResponse(null, { status: 410, headers: { "cache-control": "private, no-store" } });
   return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" } });
 }

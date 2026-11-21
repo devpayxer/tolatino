@@ -170,9 +170,9 @@ const libro = (id, capa, decision, motivo, puntaje, dias = 0) => sql(`insert int
     // ── 5 · Colas: la apelación y la foto reportada ──
     console.log('5 · Colas: la apelación de una foto y la foto reportada se ven por el visor privado y se deciden');
     const vA = await ctx.request.get(B + `/api/medios/revision/${M4}`), vB = await pb.context().request.get(B + `/api/medios/revision/${M4}`);
-    ok([200, 500, 503].includes(vA.status()) && vB.status() === 404, `el visor: quien la subió la pide (${vA.status()}: 200 con almacén) y otra persona recibe 404`);
+    ok([200, 410, 503].includes(vA.status()) && vB.status() === 404, `el visor: quien la subió la pide (${vA.status()}: 200 con su archivo, 410 si el archivo ya no está) y otra persona recibe 404`);
     const vAdm = await adm.context().request.get(B + `/api/medios/revision/${M3}`), vAdm2 = await adm.context().request.get(B + `/api/medios/revision/${M1}`);
-    ok([200, 500, 503].includes(vAdm.status()) && vAdm2.status() === 404, 'el equipo la ve solo con un caso abierto de esa foto (la reportada sí; una retenida sin caso, 404)');
+    ok([200, 410, 503].includes(vAdm.status()) && vAdm2.status() === 404, 'el equipo la ve solo con un caso abierto de esa foto (la reportada sí; una retenida sin caso, 404)');
     const pedAdm = []; adm.on('request', (r) => { if (r.url().includes('/api/medios/revision/')) pedAdm.push(r.url()); });
     await adm.goto(B + '/admin/colas?caso=' + QA); await adm.getByText('LO QUE ESCRIBIÓ').first().waitFor();
     t = await texto(adm);
