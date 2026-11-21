@@ -1,3 +1,10 @@
+/* EVENTOS QUE ESCUCHA (al conectar Stripe de verdad, el endpoint del webhook se suscribe a TODOS, también a los de las cuentas conectadas;
+   la misma lista está en docs/ayuda/admin-conciliacion.md › «Los eventos del webhook». Guardián webhookEventosEscritos: un `case` que no esté
+   aquí y en la ayuda pone rojo):
+     account.updated · payment_intent.canceled · payment_intent.succeeded · payment_intent.amount_capturable_updated · charge.refunded ·
+     charge.refund.updated · charge.dispute.created · charge.dispute.updated · charge.dispute.closed · payout.created · payout.updated ·
+     payout.paid · payout.failed · payout.canceled
+   FIN DE LA LISTA */
 import { NextResponse, type NextRequest } from "next/server";
 import { db, tx } from "@/lib/db";
 import { cerrarDisputa, registrarDisputa } from "@/lib/disputas";

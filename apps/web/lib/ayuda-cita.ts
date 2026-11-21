@@ -371,16 +371,35 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
   }).catch((e) => { if (e instanceof NoCabe) return e.m; throw e; });
   if (!u) return no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
   if (!("ids" in u)) return { ok: false, msg: u };
+  // 21 nov (9t3) · Se mandan TODAS las partes (una que Stripe rechaza no detiene a las demás: el negocio decidió devolver todo eso) y después se mira
+  // lo que de verdad pasó, del libro (las devoluciones de la llave del caso): lo que salió, lo que va en camino (el barrido lo termina) y lo que Stripe
+  // rechazó. Sin estados contradictorios:
+  //   - nada salió ni va en camino (Stripe dijo que no a todo): la solicitud vuelve a quedar abierta para responder otra vez (como antes);
+  //   - algo salió o va en camino: la respuesta se queda (no se reabre: responder otra vez dejaría decidir de nuevo sobre dinero que ya salió) y lo que
+  //     la persona ve que le devuelven (offer_cents) es lo que salió más lo que va en camino, nunca lo que Stripe rechazó. El negocio lo lee en el mensaje.
+  let camino = false, rechazo: Bi | null = null;
   for (const id of u.ids) {
     const d = await cobros.ejecutarDevolucionPago(id);
-    // 9t · Sin respuesta de Stripe la devolución sigue en camino (el barrido la termina con su llave): la respuesta se queda; volver a abrir la
-    // solicitud dejaría responder otra vez mientras el dinero va saliendo.
-    if (!d.ok && d.enCamino) return { ok: false, msg: d.msg };
-    if (!d.ok) {
-      // Un «no» de Stripe: la solicitud vuelve a quedar abierta para responder otra vez (la misma llave del caso: lo que ya salió cuenta y no sale dos veces).
+    if (!d.ok && d.enCamino) camino = true;
+    else if (!d.ok) rechazo = d.msg;
+  }
+  if (devuelve && (camino || rechazo)) {
+    const L = (await db().query<{ salio: number; va: number }>(
+      `select coalesce(sum(r.amount_cents) filter (where r.status = 'done' or r.manual_at is not null), 0)::int as salio,
+              coalesce(sum(r.amount_cents) filter (where r.status = 'pending' and r.manual_at is null), 0)::int as va
+         from refunds r join payments p on p.id = r.payment_id
+        where p.operation_id = $1::bigint and r.idem_key like $2`, [h.op, `ayb-h${h.id}-p%`])).rows[0]!;
+    if (L.salio + L.va === 0) {
+      // Stripe dijo que no a todo: nada salió. La solicitud vuelve a quedar abierta (la misma llave del caso, libre después del «no»).
       await db().query(`update help_requests set status = 'open', decision = null, offer_cents = null, reply = null, reply_at = null, reply_by = null, updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);
-      return { ok: false, msg: d.msg };
+      return { ok: false, msg: rechazo ?? { es: "Stripe no pudo hacer la devolución. Prueba de nuevo en un momento.", en: "Stripe could not make the refund. Try again in a moment." } };
     }
+    if (rechazo) await db().query(`update help_requests set offer_cents = $2, updated_at = now() where id = $1::bigint and status in ('answered', 'resolved')`, [h.id, L.salio + L.va]);
+    const falta = devolver - L.salio - L.va;
+    if (!rechazo) return { ok: false, msg: { es: `Respondida. Stripe no contestó: la devolución de ${money(L.va)} quedó en camino y se termina sola en unos minutos (no la repitas).${L.salio ? ` Ya salieron ${money(L.salio)}.` : ""}`,
+      en: `Replied. Stripe did not answer: the ${money(L.va)} refund is on its way and finishes by itself in a few minutes (do not repeat it).${L.salio ? ` ${money(L.salio)} already went out.` : ""}` } };
+    return { ok: false, msg: { es: `Respondida. A su tarjeta salieron ${money(L.salio)}${L.va ? ` y ${money(L.va)} van en camino` : ""}; Stripe no pudo devolver ${money(falta)}. La persona ve lo que de verdad le devolvimos; lo que falta, arréglalo con ella en el local.`,
+      en: `Replied. ${money(L.salio)} went back to their card${L.va ? ` and ${money(L.va)} is on its way` : ""}; Stripe could not refund ${money(falta)}. The person sees what was really refunded; settle the rest with them at the shop.` } };
   }
   await avisarAyudaCita(numero, "help_reply");
   if (fuera) return { ok: true, mensaje: { es: "Respondida. Devuélvele lo cobrado directamente (no pasó por la app); cuando lo tenga, lo confirma.", en: "Replied. Refund the charge directly (it did not go through the app); once they have it, they confirm." } };

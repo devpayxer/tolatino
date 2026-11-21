@@ -22,9 +22,17 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
   cobró Pro mientras el plan cambiaba, por ejemplo una cortesía puesta en ese momento: el cambio se respeta y tú decides si se devuelve). Una devolución
   (de un cobro, de boletos o de un patrocinio) que lleva **23 horas** sin respuesta de Stripe ya no se le vuelve a pedir con la misma llave (Stripe la
   olvida a las 24 h y podría devolver dos veces): llega como devolución atascada para mirarla en Stripe. Cada una llega una sola vez.
-- **Resolver a mano** (solo devoluciones y reversiones atascadas que **siguen pendientes** y que Stripe ya intentó): cuando el dinero se movió fuera de
-  Stripe (un cheque, una transferencia), escribes cómo; desde ahí el sistema **nunca** la vuelve a pedir a Stripe (sería pagar dos veces) y sigue contando
-  como devuelta. Si la devolución ya quedó hecha o fallida, la alerta es solo informativa: no ofrece «Resolver a mano».
+- Lo mismo con el resto del dinero que sale: la **transferencia al organizador** (la liquidación del martes) y su **reversión**, y el **cobro de Pro**.
+  Si a las **23 horas** Stripe no dijo que sí, no se le vuelve a pedir: llega **transferencia al organizador sin respuesta**, **transferencia sin saldo
+  para revertir** o **cobro de Pro sin respuesta**, una vez, para mirarlo en Stripe. Un cobro de Pro en camino no cuenta como «cobro fallido» (el plan no
+  cambia) y, mientras siga en camino, a ese negocio no se le cobra otra cosa.
+- **Devolución de boletos que Stripe dio por fallida**: la alerta dice la orden, quién pagó y los códigos de los boletos. Los boletos siguen devueltos
+  (no entran: no se reponen solos), el cobro vuelve a tener ese saldo y la cancelación del evento deja de contarlo como devuelto. Decide con la persona si
+  se le devuelve otra vez o se le repone el boleto (hoy, por fuera de la app: la acción todavía no existe).
+- **Resolver a mano** (solo devoluciones y reversiones atascadas que **siguen pendientes**, y que Stripe ya intentó **o** que llevan **23 horas** anotadas
+  sin un solo intento: desde ahí nadie las va a mandar): cuando el dinero se movió fuera de Stripe (un cheque, una transferencia), escribes cómo; desde ahí
+  el sistema **nunca** la vuelve a pedir a Stripe (sería pagar dos veces) y sigue contando como devuelta. Antes de esas 23 horas, una sin intentos no se
+  ofrece (todavía podría salir sola). Si la devolución ya quedó hecha o fallida, la alerta es solo informativa: no ofrece «Resolver a mano».
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -38,10 +46,22 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
 | La devolución de la alerta ya quedó fallida o hecha | La alerta se ve sin «Resolver a mano» (informativa): «Me hago cargo» y «Resuelta» siguen. |
 | Una devolución lleva 23 h sin respuesta de Stripe | No se vuelve a pedir; llega «devolución atascada» una vez: mira en Stripe si salió y resuélvela. |
 | Stripe da por fallida días después una devolución hecha | La devolución queda fallida, el cobro vuelve a tener ese saldo (y la solicitud o el caso restan lo que habían sumado) y llega la alerta. |
+| …y era de boletos | Además: los boletos siguen devueltos, la cancelación del evento lo resta y la alerta dice qué boletos y de quién. Nada se devuelve ni se repone solo. |
+| Una devolución anotada murió antes de su primer intento | El barrido la manda con su llave en las 23 h siguientes; pasadas, llega la alerta y ya se puede «Resolver a mano». |
+| Una transferencia al organizador lleva 23 h en camino | No se vuelve a pedir; llega «transferencia al organizador sin respuesta» una vez: mira en Stripe si salió. |
+| Un cobro de Pro lleva 23 h sin respuesta de Stripe | No se cobra otra vez ni pasa a «cobro fallido»; llega «cobro de Pro sin respuesta» una vez: mira en Stripe si se cobró. |
 | Rol sin «Transacciones: aprobar» | Ves todo, sin botones. |
 | Diferencias de otra ciudad | No aparecen (las de To'Latino sin ciudad, solo a quien ve todas). |
 
 Para el reporte diario al fundador, la base da `conciliacion_del_dia(día)`: si corrió, su estado, cuántas diferencias y cuántas sin dueño.
+
+## Los eventos del webhook
+El libro se pone al día con lo que Stripe avisa por el webhook (firmado). Al conectar Stripe de verdad, el endpoint debe suscribirse a **todos** estos
+eventos, también los de las **cuentas conectadas** (los `payout.*` llegan de la cuenta de cada negocio). Es la misma lista que está escrita al principio
+del código del webhook; si el código escucha uno que no está aquí, un guardián lo detiene.
+`account.updated` · `payment_intent.canceled` · `payment_intent.succeeded` · `payment_intent.amount_capturable_updated` · `charge.refunded` ·
+`charge.refund.updated` · `charge.dispute.created` · `charge.dispute.updated` · `charge.dispute.closed` · `payout.created` · `payout.updated` ·
+`payout.paid` · `payout.failed` · `payout.canceled`
 
 ## Preguntas frecuentes
 **¿Una diferencia es dinero perdido?** No siempre: muchas son tiempos (algo que Stripe hizo y el webhook todavía no anotó). Por eso cada una necesita un
@@ -69,9 +89,17 @@ dueño que la mire.
   (Pro was charged while the plan was changing, for example a courtesy given at that moment: the change is kept and you decide whether to refund it). A
   refund (of a charge, of tickets or of a sponsorship) with **23 hours** and no answer from Stripe is no longer requested again with the same key (Stripe
   forgets it after 24 h and could refund twice): it arrives as a stuck refund to check in Stripe. Each one arrives only once.
-- **Resolve by hand** (only stuck refunds and reversals that are **still pending** and that Stripe already tried): when the money moved outside Stripe (a
-  check, a transfer), you write how; from then on the system **never** asks Stripe for it again (that would pay twice) and it keeps counting as refunded. If
-  the refund is already done or failed, the alert is informational only: it does not offer «Resolve by hand».
+- The same for the rest of the money that goes out: the **transfer to the organizer** (Tuesday's settlement) and its **reversal**, and the **Pro charge**.
+  If after **23 hours** Stripe has not said yes, it is not requested again: **organizer transfer with no answer**, **transfer with no balance to reverse**
+  or **Pro charge with no answer** arrives once, to check in Stripe. A Pro charge on its way does not count as a «failed charge» (the plan does not change)
+  and, while it is on its way, that business is not charged anything else.
+- **Ticket refund Stripe marked as failed**: the alert names the order, who paid and the ticket codes. The tickets stay refunded (no entry: they are not
+  reissued by themselves), the charge has that balance again and the event cancellation stops counting it as refunded. Decide with the person whether to
+  refund again or reissue the ticket (for now, outside the app: the action does not exist yet).
+- **Resolve by hand** (only stuck refunds and reversals that are **still pending**, and that Stripe already tried **or** that have been recorded for
+  **23 hours** without a single attempt: from then on nobody will send them): when the money moved outside Stripe (a check, a transfer), you write how; from
+  then on the system **never** asks Stripe for it again (that would pay twice) and it keeps counting as refunded. Before those 23 hours, one with no attempts
+  is not offered (it could still go out by itself). If the refund is already done or failed, the alert is informational only: it does not offer «Resolve by hand».
 
 ### What happens in each case
 | Case | What happens |
@@ -85,10 +113,22 @@ dueño que la mire.
 | The alert's refund is already failed or done | The alert shows without «Resolve by hand» (informational): «I’ll take it» and «Resolved» remain. |
 | A refund has 23 h with no answer from Stripe | It is not requested again; «stuck refund» arrives once: check in Stripe whether it went out and resolve it. |
 | Stripe marks a refund that was made as failed days later | The refund is marked failed, the charge has that balance again (and the request or case subtracts what it had added) and the alert arrives. |
+| …and it was a ticket refund | Also: the tickets stay refunded, the event cancellation subtracts it and the alert names the tickets and who they belong to. Nothing is refunded or reissued by itself. |
+| A recorded refund died before its first attempt | The sweep sends it with its key within the next 23 h; after that, the alert arrives and «Resolve by hand» becomes available. |
+| A transfer to the organizer has been on its way for 23 h | It is not requested again; «organizer transfer with no answer» arrives once: check in Stripe whether it went out. |
+| A Pro charge has had no answer from Stripe for 23 h | It is not charged again and does not become a «failed charge»; «Pro charge with no answer» arrives once: check in Stripe whether it was charged. |
 | Role without «Transactions: approve» | You see everything, without buttons. |
 | Differences from another city | They do not show (To'Latino's own, with no city, only to whoever sees all cities). |
 
 For the daily report to the founder, the database provides `conciliacion_del_dia(day)`: whether it ran, its status, how many differences and how many have no owner.
+
+### Webhook events
+The ledger catches up with what Stripe reports through the (signed) webhook. When Stripe is connected for real, the endpoint must subscribe to **all**
+these events, including those from **connected accounts** (the `payout.*` ones come from each business's account). It is the same list written at the top
+of the webhook code; if the code listens to one that is not here, a guardian stops it.
+`account.updated` · `payment_intent.canceled` · `payment_intent.succeeded` · `payment_intent.amount_capturable_updated` · `charge.refunded` ·
+`charge.refund.updated` · `charge.dispute.created` · `charge.dispute.updated` · `charge.dispute.closed` · `payout.created` · `payout.updated` ·
+`payout.paid` · `payout.failed` · `payout.canceled`
 
 ### FAQ
 **Is a difference lost money?** Not always: many are timing (something Stripe did that the webhook has not recorded yet). That is why each one needs an owner to
