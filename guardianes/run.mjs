@@ -9295,7 +9295,9 @@ const guardianes = {
     }
     if (!/r\.status = 'pending' and r\.manual_at is null/.test(sinComent("apps/web/lib/boletos-despues.ts")) || !/if \(r\.mano\) return false;/.test(sinComent("apps/web/lib/boletos-despues.ts"))) falla(G, "apps/web/lib/boletos-despues.ts", 0, "una devolución resuelta a mano no se vuelve a pedir a Stripe");
     // 9t3 · ejecutarReversion lee manual_at con la reversión (una consulta) y sale antes de la pasarela.
-    if (!/status = 'pending' and manual_at is null/.test(sinComent("apps/web/lib/evt-liquidacion.ts")) || !/r\.manual_at is not null as mano/.test(/const leerRev = [\s\S]*?\n\};/.exec(sinComent("apps/web/lib/evt-liquidacion.ts"))?.[0] ?? "") || !/const r = await leerRev\(id\);/.test(cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion"))
+    // 21 nov (CI 44922339414, alreves9k 37/38) · El barrido de las reversiones, no cualquier consulta del archivo: desde 9t7 otras sentencias traen
+    // «manual_at is null» y la del barrido podía perderlo sin que se notara.
+    if (!/from event_settlement_reversals where status = 'pending' and manual_at is null and created_at/.test(sinComent("apps/web/lib/evt-liquidacion.ts")) || !/r\.manual_at is not null as mano/.test(/const leerRev = [\s\S]*?\n\};/.exec(sinComent("apps/web/lib/evt-liquidacion.ts"))?.[0] ?? "") || !/const r = await leerRev\(id\);/.test(cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion"))
       || !(cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion").indexOf("if (r.mano) return false;") >= 0 && cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion").indexOf("if (r.mano) return false;") < cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion").indexOf("pasarela.revertirTransferencia("))) falla(G, "apps/web/lib/evt-liquidacion.ts", 0, "una reversión resuelta a mano no se vuelve a pedir a Stripe");
   },
 
