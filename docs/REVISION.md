@@ -6100,3 +6100,17 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Lo que falta (en LAUNCH):** la revisión no ve todavía las 837 consultas que se arman por partes; la prueba de navegador de este caso está
   encargada.
 
+## Dinero, novena tanda: un cobro que falla ya no detiene a los demás, y nadie queda fuera por un tope (21 nov · migración 0208) — en la rama, falta subir — dos cosas para ti
+- **Qué pasaba:** cada minuto el sistema recorre los cobros, devoluciones y pagos que tocan. Si UNO fallaba (por ejemplo un plan del Hogar con un
+  dato malo), el recorrido se detenía ahí y los que venían detrás no se cobraban, minuto tras minuto. Además, los planes del Hogar se recorrían de 50
+  en 50 sin orden: con más de 50 planes vivos, algunos no se habrían cobrado nunca.
+- **Ahora (Opus lo escribió; Fable lo revisó y lo corrió contra el servidor):** en los 31 recorridos de dinero cada elemento va por su cuenta: el que
+  falla queda anotado y los demás siguen. En Super Admin › Sistema › Salud la tarea sale en rojo diciendo «N de M fallaron» y cuáles. Los planes
+  se eligen por lo que toca hoy, lo más atrasado primero.
+- **Qué mirar (sandbox, cuando suba):** no hay nada que tocar a mano; en Super Admin › Sistema › Salud las tareas del barrido deben salir en verde.
+- **Decide tú (dejé lo más seguro; todo se cambia):**
+  1. *La visita de un plan que el negocio canceló.* Antes el sistema volvía a crear esa cita cada minuto (el negocio la cancelaba y reaparecía).
+     Ahora no la vuelve a crear sola; se crea la siguiente cuando pasa la fecha. Alternativa: avisarle al cliente y ofrecerle otra fecha.
+  2. *Los recorridos que no son de dinero* (avisos, fotos, soporte, El Compa…) tienen la misma debilidad y están en la lista para el mismo
+     arreglo. No es una decisión: es para que sepas que falta.
+

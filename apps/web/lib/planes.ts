@@ -164,7 +164,7 @@ const TOCA_PLAN = `with h as (select (now() at time zone 'UTC')::date + 1 as top
    where s.id in (select id from plan_subscriptions, h where status = 'paused' and paused_until <= h.tope
                   union select id from plan_subscriptions, h where status = 'active' and next_visit_on < h.tope
                   union select id from plan_subscriptions, h where status = 'active' and next_charge_on <= h.tope
-                  union select ref_id::bigint from offsession_charges where kind = 'plan' and status = 'pending'
+                  union select ref_id::bigint from offsession_charges where kind = 'plan' and status = 'pending' and ref_id ~ '^[0-9]{1,18}$'
                   union select id from plan_subscriptions where status = 'active' and updated_at > now() - interval '1 day')
      and s.status <> 'cancelled' and not (s.id = any($1::bigint[]))
      and ((s.status = 'paused' and s.paused_until <= (now() at time zone ci.timezone)::date)

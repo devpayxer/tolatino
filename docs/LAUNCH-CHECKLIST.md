@@ -2270,6 +2270,23 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       vez `din9t` contra la base local de quien orquesta por error (se cayó en la primera consulta; pudo dejar un usuario, un negocio y una
       operación de prueba): sin efecto fuera de esa base de pruebas.
       **Cerrada (21 nov, 9t8; migración 0207):** (1) **hecho:** la devolución de lo no usado de un patrocinio (negocios y eventos) es una intención (`sponsorship_refunds`, una por patrocinio) que la BASE anota en la transacción que decide `refund_cents` (trigger `sponsorship_refunds_anotar`); `patrocinio.ts › ejecutarDevolucionPat` anota `sent_at` y `gateway_ref` en una sentencia antes de la pasarela y manda `tl_intencion`; el «sí» cierra una vez (intención hecha, fila 'devolucion' del libro y auditoría en una transacción); sin respuesta, la misma llave dentro de 23 h; pasada la llave, `resolverDevolucionPat` (barrido, «Preguntar a Stripe ahora», «Elegir cuál vale» solo «vale») y «Resolver a mano» por `antesDeAMano`; «nunca llegó» vuelve a valer con otra llave (`llaveDe`). **«Fallida»** = un «no» de Stripe (al mandarla o en la consulta): queda fallida, no se reintenta sola y alerta `refund_stuck` con sujeto `sponsorship_refunds:<id>` (con «Resolver a mano», también sobre una fallida); decisión anotada en REVISION «Dinero, octava tanda» (1). Lo de antes: las devueltas pasaron como 'done'; las pendientes, mandadas sin el dato y con su fecha de fin (nunca «no llegó»); sus alertas `pat-dev-…` se cerraron solas. El guardián `devolucionPreguntaALaPasarela` ya no tiene excepciones; guardián nuevo `patrocinioDevolucionPregunta` (al revés `alreves9t8`); `din9t8`. (2) hecho (Fable corrió `din9t6b`, `din9t7b`, Semgrep, `sop7b`, `pat002`, `pat003`). Pasa a la línea de abajo: (3) la carrera de «Resolver a mano» mientras el barrido la manda (se puede construir).
+- [ ] **→ 9t** · **Barridos por clase: lo que quedó de 9t9 (21 nov).** 9t9 (Opus lo escribió, Fable lo revisó; migración 0208) dejó los 31 barridos de
+      DINERO con cada elemento por su cuenta (`lib/barrido-uno.ts`: el que falla queda en el registro y en `system_jobs` como «N de M fallaron
+      (ids)», los demás corren) y sin topes que dejen gente fuera (orden justo, por tandas, y `barrerPlanes` elige solo lo que toca hoy en la
+      ciudad de cada plan); guardián `barridoUnoPorUno`, `alreves9t9` 17/17, `din9t9` 20 ✓. **Queda:** (1) **los barridos que NO son de dinero**
+      con la misma clase. Con tope sin orden: puertaAbre, eventoPrivado (devuelve dinero), bolRecordatorios, evtAforo, compaRetencion, llaves,
+      datosArchivosVencer, llavesVencen, respaldosVigilar, temasResenas, esperaMesas, fotosAyudaPurga. Con bucle por elemento sin el ayudante:
+      soporte, compaRespuestasAuto, compaCanales, push, errores, beta, tiendas, reportes, datosPurga, salud, despliegues, mantenimientoAviso,
+      campanas, verificaciones (3-D Secure: dinero), avisoApertura, vacantes, ofertas, fotosEntrega, colasTomado, fotosSinEnviar, fotosVariantes,
+      fotosRevision, fotosPrivadas, ayudaDevuelto, repartoSolo. (2) `layaway.repararPlanes` libera el abono de un apartado en `change_proposed`
+      (el código solo excluye `pending`; choca con la regla `reparaVivas`): decidir y arreglar. (3) `boletos.vencerApartados`: una autorización
+      que Stripe no suelta nunca sube `pay_attempts` y queda primera para siempre; con más de 50 así tapa a las demás. (4) `EXPLAIN` de
+      `TOCA_PLAN` con 1M de planes (no se midió). (5) **Cambio de comportamiento a decidir (REVISION 9t9):** antes el barrido volvía a crear cada
+      minuto la cita de la próxima visita de un plan aunque el negocio la hubiera cancelado; ahora solo si el plan cambió en el último día o al
+      abrir su página. Y «Saltar la próxima» no crea la visita siguiente: depende del barrido. (6) `evt-liquidacion.revertirDeudas`: dentro de un
+      organizador las reversiones recién anotadas van en bucle sin aislar (si una lanza, la termina `repararLiquidaciones`). (7) `din9t9` no se
+      corrió contra el código de antes (que caza el fallo se sabe por el guardián y por `alreves9t9`). (8) `create index` de la 0208 sin
+      `concurrently`: bien con la base vacía de hoy; con datos, las migraciones de índices en tablas grandes van aparte (→ 9o). (21 nov)
 - [ ] **→ 9t** · **Dinero por clase: lo que queda después de 9t8 (21 nov):** lo que de verdad sigue abierto de las líneas de 9t3–9t7 (cerradas arriba).
       **Se puede construir:** (a) **devolver otra vez unos boletos** desde su alerta `refund_failed` (9t3 (3)): `ticket_refund_lines` es única por boleto
       y Transacciones › Devolver no acepta órdenes `tickets`; camino: permitir `tickets` en `app/admin/acciones-tx.ts › devolverTx` (cobro `full`,
