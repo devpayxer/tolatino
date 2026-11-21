@@ -20,6 +20,16 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (noche, después del cierre) · `main` y `pruebas` = ceaaba2, sandbox comprobado desde fuera** (estado-sandbox 44956863436: salud con
+  commit ceaaba2e, 206 migraciones, las cuatro rutas en 200). Evidencia (AF): dirigida **44955120667** — tipos, build, guardianes, Semgrep y
+  **10/10 de punta a punta** (`sql9u`, `vi4b`, `em4e`, `pre4e`, `plan4f`, `fi4b`, `pq4e`, `cat9n2`, `din9n4`, `nota9u`); en local
+  `alreves9usql` 4/4. Subió **`sql9u`**: las 4857 consultas fijas del código pasan por `PREPARE` contra la base de pruebas (la clase de
+  «Asignar a…»: una consulta rota que ninguna prueba corre). En su primera pasada cazó **otro fallo vivo: «Mi casa» reventaba al guardar otra
+  vez una casa en la misma dirección** (arreglado). **En curso:** 9t9 (Opus; ya tiene el ayudante `barrido-uno.ts`, la migración 0208 y su
+  prueba, y corre las suites al revés) y, en esta copia con el servidor local `:3100`, Sonnet con la prueba de navegador de «Mi casa» y la
+  inestabilidad de `compa7g` (solo toca `pruebas/e2e/`; no editar ni reconstruir aquí hasta que vuelva). Lo siguiente sigue siendo la lista
+  del punto de abajo. **Regla nueva:** una herramienta de comprobación también se prueba al revés antes de creerle (el primer al revés de
+  `sql9u` mostró que se saltaba un tercio de las consultas).
 - **21 nov (noche, cierre) · `main` y `pruebas` = 4ee2ae2, sandbox comprobado desde fuera** (estado-sandbox 44954504105: salud con commit
   4ee2ae20, 206 migraciones, las cuatro rutas en 200). Evidencia (AF, revisión rápida): dirigida **44952826764** — tipos, build, guardianes y
   Semgrep en verde y **9/9 de punta a punta** (`nota9u` 36 ✓, `disp2r`, `rec1j`, `admin1i`, `adm6j`, `evt6i` 75 ✓ a la primera, `evt6a`,

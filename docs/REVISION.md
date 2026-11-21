@@ -6089,3 +6089,14 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   3. *Cinco confirmaciones pedían una nota que nadie guardaba* (asignar un caso, «Ya existe» en una recomendación y las tres de simular una disputa).
      **Hecho:** ahora quedan en la auditoría, que es lo que la hoja promete (en «Ya existe», a la recomendación sigue yendo el texto fijo «Ya estaba
      en To'Latino» y tu nota solo a la auditoría). Dime si prefieres que ahí no se pida nota.
+
+## «Mi casa» fallaba al guardar otra vez en la misma dirección (21 nov) — YA en el sandbox (commit ceaaba2) — mirar
+- **Qué pasaba:** si ya tenías una casa guardada en una dirección y volvías a guardar «Mi casa» para esa misma dirección (para cambiar un dato),
+  salía un error del servidor y no se guardaba. Estaba así desde que se hizo; ninguna prueba pasaba por ahí.
+- **Cómo se encontró:** con una revisión nueva que le pasa a la base todas las consultas fijas del código (4857) para que diga si están bien
+  escritas, sin ejecutarlas. Corre en cada revisión desde hoy. Es la misma clase del fallo de «Asignar a…» en Colas.
+- **Qué mirar (sandbox, teléfono):** en la ficha de un negocio de Hogar, «Mi casa»: guarda una casa; vuelve a abrirla, cambia un dato (por ejemplo
+  las mascotas) y guarda. Tiene que quedar el dato nuevo, sin error y sin una casa repetida.
+- **Lo que falta (en LAUNCH):** la revisión no ve todavía las 837 consultas que se arman por partes; la prueba de navegador de este caso está
+  encargada.
+
