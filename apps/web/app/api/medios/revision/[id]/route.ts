@@ -37,6 +37,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   }
   if (!ok) return no();
-  const img = await leerObjeto(m.llave);
+  // 21 nov · Sin archivo en el almacén (una fila sin su objeto): 404 como todo lo demás, no un 500 con su traza en el registro en cada vista.
+  const img = await leerObjeto(m.llave).catch(() => null);
+  if (!img) return no();
   return new NextResponse(new Uint8Array(img), { headers: { "content-type": "image/jpeg", "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" } });
 }

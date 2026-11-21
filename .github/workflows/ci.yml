@@ -267,7 +267,14 @@ jobs:
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
       - name: Lo último que dijo el servidor (solo si algo cayó)
         if: failure()
-        run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
+        # 21 nov · Además de la cola, los errores de servidor de toda la corrida, una vez cada uno (la cola sola quedó tapada por un error repetido
+        # y no se veía la excepción que tumbó a ciu9i: CI 44866551623).
+        run: |
+          L="$RUNNER_TEMP/salida/server.log"
+          echo "--- errores del servidor (cada uno una vez, con cuántas veces salió):"
+          grep -aE '^(\s*⨯|Error:|\[?[A-Za-z]*Error\b|error: )|digest: ' "$L" 2>/dev/null | cut -c1-400 | sort | uniq -c | sort -rn | head -40 || true
+          echo "--- la cola del registro:"
+          tail -n 150 "$L" 2>/dev/null | cut -c1-600 || true
       - name: Lo que dejó cada prueba (sin secretos, solo res y el registro del servidor)
         if: always()
         run: |
@@ -309,7 +316,14 @@ jobs:
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
       - name: Lo último que dijo el servidor (solo si algo cayó)
         if: failure()
-        run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
+        # 21 nov · Además de la cola, los errores de servidor de toda la corrida, una vez cada uno (la cola sola quedó tapada por un error repetido
+        # y no se veía la excepción que tumbó a ciu9i: CI 44866551623).
+        run: |
+          L="$RUNNER_TEMP/salida/server.log"
+          echo "--- errores del servidor (cada uno una vez, con cuántas veces salió):"
+          grep -aE '^(\s*⨯|Error:|\[?[A-Za-z]*Error\b|error: )|digest: ' "$L" 2>/dev/null | cut -c1-400 | sort | uniq -c | sort -rn | head -40 || true
+          echo "--- la cola del registro:"
+          tail -n 150 "$L" 2>/dev/null | cut -c1-600 || true
       - name: Lo que dejó cada prueba
         if: always()
         run: |
@@ -397,7 +411,14 @@ jobs:
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
       - name: Lo último que dijo el servidor (solo si algo cayó)
         if: failure()
-        run: tail -n 150 "$RUNNER_TEMP/salida/server.log" 2>/dev/null | cut -c1-600 || true
+        # 21 nov · Además de la cola, los errores de servidor de toda la corrida, una vez cada uno (la cola sola quedó tapada por un error repetido
+        # y no se veía la excepción que tumbó a ciu9i: CI 44866551623).
+        run: |
+          L="$RUNNER_TEMP/salida/server.log"
+          echo "--- errores del servidor (cada uno una vez, con cuántas veces salió):"
+          grep -aE '^(\s*⨯|Error:|\[?[A-Za-z]*Error\b|error: )|digest: ' "$L" 2>/dev/null | cut -c1-400 | sort | uniq -c | sort -rn | head -40 || true
+          echo "--- la cola del registro:"
+          tail -n 150 "$L" 2>/dev/null | cut -c1-600 || true
       - name: Lo que dejó cada prueba
         if: always()
         run: |
