@@ -20,6 +20,13 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (noche, tarde) · `main` y `pruebas` = bb3842e, sandbox comprobado desde fuera** (estado-sandbox 44933387357: salud con commit
+  bb3842e2, **0206 aplicada, 205 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia: revisión completa **44927840579
+  VERDE, 0 rojas y 0 inestables** (corrieron `din9t7` 39 ✓, `din9t7b` 44 ✓, `alreves9k` 38/38, `alreves6e`). Subió **dinero 9t7** (las
+  devoluciones y reversiones atascadas le preguntan a Stripe; «Resolver a mano» pregunta antes y cierra la alerta en el acto si Stripe dice
+  que sí salió). **Encargos en curso (worktrees desde 8aa46a0):** dinero 9t8 (Opus) y las hojas de confirmar del Super Admin (Sonnet, con el
+  servidor local `:3100`). Al volver cada uno: fusionar, revisar, tipos/guardianes/Semgrep, **el carril de al revés entero**, pruebas contra el
+  servidor, CI completo, subir.
 - **21 nov (noche, más) · dinero 9t7 en la rama de trabajo (8aa46a0), todavía NO en `main` (`main` y `pruebas` = cc7b947, sandbox en 879c16b +
   documentos).** 9t7 = las devoluciones y las reversiones atascadas le preguntan a Stripe, y «Resolver a mano» pregunta antes de marcar
   (migración **0206**; Opus; quedó fuera la devolución del patrocinio). Revisado por Fable: tipos, guardianes, Semgrep 0, al revés, contrato con

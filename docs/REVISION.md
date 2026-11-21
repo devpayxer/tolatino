@@ -6011,7 +6011,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Quedó anotado en LAUNCH:** las devoluciones y reversiones atascadas de antes (`refund_stuck`, `transfer_reversal_stuck`) todavía no se le
   preguntan a Stripe; siguen con «Resolver a mano».
 
-## Dinero, séptima tanda: las devoluciones también le preguntan a Stripe (21 nov · migración 0206) — en la rama, falta subir — cinco cosas para ti
+## Dinero, séptima tanda: las devoluciones también le preguntan a Stripe (21 nov · migración 0206) — YA en el sandbox (commit bb3842e, 0206 aplicada) — cinco cosas para ti
 - **Qué pasaba:** cuando devolvíamos dinero a un cliente (una devolución normal o de boletos) o le quitábamos dinero a un organizador (una reversión), y
   Stripe no contestaba durante un día, se quedaba «en camino» para siempre con una alerta. La única salida era «Resolver a mano», y ahí el sistema creía
   lo que dijera la persona: alguien podía marcar como «pagado por fuera» algo que Stripe sí había devuelto (el cliente cobraba dos veces).
@@ -6020,7 +6020,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   fallida con su aviso; si nunca llegó, se manda otra vez (una sola vez, con otra llave) siempre que se siga debiendo lo mismo. «Resolver a mano» ahora
   pregunta primero: si Stripe dice que salió, no te deja marcarla (la cierra como hecha); si Stripe no contesta, no cambia nada. La devolución de «lo que
   Stripe hizo de más» (de la tanda anterior) también tiene ahora «Resolver a mano».
-- **Qué mirar (sandbox, cuando suba):** Super Admin › Planes › Ingresos › Alertas: una «Devolución atascada» muestra «Preguntar a Stripe ahora» y lo
+- **Qué mirar (sandbox, desde el teléfono):** Super Admin › Planes › Ingresos › Alertas: una «Devolución atascada» muestra «Preguntar a Stripe ahora» y lo
   que dijo la última consulta; al tocar «Resolver a mano», la hoja avisa que antes se le pregunta a Stripe. (Las alertas se fabrican con una prueba; no
   aparecen solas.)
 - **Decide tú (dejé lo más seguro; todo se cambia):**
