@@ -412,7 +412,22 @@ jobs:
     needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]
     if: always()
     runs-on: ubuntu-latest
+    permissions: { contents: read, actions: read }
     steps:
+      # Decisión AG (20 nov): más de 3 inestables en una corrida = roja. El tope de pruebas/correr.mjs es por proceso y la corrida va repartida en
+      # partes: la confirmación 44856657972 salió verde con 4 inestables (una por parte). Aquí se cuentan las de TODA la corrida, por nombre de prueba.
+      - name: Inestables de toda la corrida (más de 3 = roja)
+        env: { GH_TOKEN: "${{ github.token }}", CORRIDA: "${{ github.run_id }}", INTENTO: "${{ github.run_attempt }}", REPO: "${{ github.repository }}" }
+        run: |
+          export LC_ALL=C.UTF-8
+          : > "$RUNNER_TEMP/inestables.txt"
+          for id in $(gh api "repos/$REPO/actions/runs/$CORRIDA/attempts/$INTENTO/jobs" --paginate -q '.jobs[] | select(.status == "completed") | .id'); do
+            gh api "repos/$REPO/actions/jobs/$id/logs" 2>/dev/null | grep -aoE '~ INESTABLE [A-Za-z0-9_-]+' | sed 's/.*INESTABLE //' >> "$RUNNER_TEMP/inestables.txt" || true
+          done
+          sort -u "$RUNNER_TEMP/inestables.txt" > "$RUNNER_TEMP/inestables-unicas.txt"
+          n=$(grep -c . "$RUNNER_TEMP/inestables-unicas.txt" || true)
+          echo "inestables de la corrida: $n$( [ "$n" -gt 0 ] && echo " · $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")")"
+          if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables en la corrida (más de 3 = roja, decisión AG): $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")"; exit 1; fi
       - name: Cada parte terminó en verde (una parte saltada cuenta como roja, salvo en una corrida parcial a mano)
         env:
           RESULTADOS: ${{ toJSON(needs) }}

@@ -7998,6 +7998,10 @@ const guardianes = {
     for (const n of ["verificar", "seguridad", "regresion", "dispositivos"]) if (!new RegExp(`needs: \\[[^\\]]*\\b${n}\\b`).test(j)) falla(G, Y, 0, `«tuberia» no depende de «${n}»`);
     if (!/if: always\(\)/.test(j)) falla(G, Y, 0, "«tuberia» tiene que correr siempre (if: always()) para ver lo que falló");
     if (!/v\.result === "success"/.test(j)) falla(G, Y, 0, "«tuberia» solo da verde con «success»");
+    // 21 nov · Decisión AG: más de 3 inestables en una corrida = roja. El tope de correr.mjs es por proceso y la corrida va en partes (la
+    // confirmación 44856657972 salió verde con 4, una por parte): «tuberia» cuenta las de TODA la corrida leyendo los registros de sus trabajos.
+    if (!/permissions: \{ contents: read, actions: read \}/.test(j) || !/actions\/runs\/\$CORRIDA\/attempts\/\$INTENTO\/jobs/.test(j) || !/grep -aoE '~ INESTABLE \[A-Za-z0-9_-\]\+'/.test(j) || !/if \[ "\$n" -gt 3 \]; then[^\n]*exit 1; fi/.test(j))
+      falla(G, Y, 0, "«tuberia» cuenta las pruebas inestables de toda la corrida (los registros de cada trabajo) y sale roja con más de 3 (decisión AG)");
     if (!/on:[\s\S]*?push:[\s\S]*?branches: \[main\]/.test(y) || !/\n  pull_request:/.test(y) || !/schedule:/.test(y)) falla(G, Y, 0, "el CI corre en push a main, en pull_request y programado");
     if (!/- cron: "\d+ \d+ \* \* \*"\n\s+- cron: "\d+ \d+ \* \* \*"/.test(y)) falla(G, Y, 0, "el CI se programa a dos horas distintas del día");
     const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";

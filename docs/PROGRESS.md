@@ -21,6 +21,10 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
 
 ## Estado
 - **21 nov (mañana) · al día:**
+  - **OJO (21 nov, visto después):** la confirmación 44856657972 salió verde en el CI pero tuvo **4 inestables** (push8c, rev9u, cre9h, dlv2f4). Por la
+    decisión AG (más de 3 = roja) NO vale como confirmación para producción: el CI contaba el tope por parte, no por corrida. Arreglado en
+    `ci.yml` (el trabajo «tuberia» cuenta las de toda la corrida; guardián `tuberiaNoSeSalta`). El sandbox no se toca (le basta la revisión
+    rápida, decisión AF). Hace falta otra confirmación completa con 3 o menos antes de hablar de producción.
   - **`main` y `pruebas` = dbd3130** (confirmación completa **44856657972 VERDE** sobre 207fef9: dinero 9t, fotos privadas F3 con la migración
     0197, tope de cuenta nueva solo para públicas, doble toque del panel, `?w=` de las privadas, `correo2q`). Cerradas 27 líneas «9 dispositivos»
     de LAUNCH (queda la de 7f, que además pide correr `msg2p` con El Compa apagado). Inestables anotadas en LAUNCH: push8c, rev9u, cre9h, dlv2f4.

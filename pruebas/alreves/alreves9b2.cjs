@@ -26,6 +26,10 @@ const casos = [
   // tuberiaNoSeSalta: «tuberia» sin una parte, saltando lo saltado, un grupo de la regresión fuera de la matriz, un continue-on-error
   ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, regresion, dispositivos, confirmacion, anchos]'],
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
+  // 21 nov · El tope de inestables es de la corrida entera (decisión AG), no de cada parte.
+  ['tuberiaNoSeSalta', Y, 'if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables', 'if [ "$n" -gt 30 ]; then echo "::error::$n pruebas inestables'],
+  ['tuberiaNoSeSalta', Y, "grep -aoE '~ INESTABLE [A-Za-z0-9_-]+'", "grep -aoE '~ NINGUNA [A-Za-z0-9_-]+'"],
+  ['tuberiaNoSeSalta', Y, '    permissions: { contents: read, actions: read }\n', ''],
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
   ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}", "fase9,varios') }} --parte 1/4"],

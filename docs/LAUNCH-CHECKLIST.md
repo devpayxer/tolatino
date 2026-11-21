@@ -2105,6 +2105,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       detalle del panel). Sospecha sin comprobar: los botones del detalle llevan `off: c.pending` y la transición del panel queda pendiente.
       `pruebas/lib/requiere.cjs` ahora dice el motivo que da Playwright (deshabilitado, tapado, moviéndose, fuera de pantalla): leerlo en la
       próxima corrida y arreglar la causa, no la prueba. (21 nov)
+- [ ] **→ 9t** · **La confirmación completa 44856657972 tuvo 4 inestables: por la decisión AG es ROJA para producción** (el CI la dio verde
+      porque el tope de 3 era por proceso y la corrida va en partes). Corregido el 21 nov: «tuberia» cuenta las inestables de toda la corrida
+      y sale roja con más de 3 (guardián `tuberiaNoSeSalta` + al revés). Falta: una confirmación completa (dos veces + barajada + anchos) con 3
+      inestables o menos, después de arreglar `push8c`, `cre9h`, `dlv2f4` y de confirmar el arreglo de `rev9u`. (21 nov)
 - [ ] **→ 9t** · **Inestables de la confirmación 44856657972 (21 nov; pasaron al repetir, se arreglan igual):** `push8c` («el service worker
       mostró la notificación»), `rev9u` («del equipo de un negocio verificado con 10 fotos: su dudosa entra por la capa 4»: mirar si la cuenta de
       fotos visibles o la memoria por contenido dependen de lo que dejó otra prueba) y `cre9h` («un negocio publicado con PROMO52: 60 días de
