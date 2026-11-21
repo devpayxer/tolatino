@@ -2233,6 +2233,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       el libro sigue diciendo «retenido» y a nadie se le avisa hasta 20 h después: como ya no se reintenta con esa llave, el «nunca llegó» de una
       renovación podría darse mucho antes (decisión de plazo: REVISION 9t6); (8) «Elegir cuál vale» y «Preguntar a Stripe ahora» no tenían prueba
       de navegador: encargada (`din9t6b`).
+- [ ] **→ 9u** · **Super Admin: el título sale dos veces en la hoja de confirmar** (visto en la captura de teléfono de «Elegir cuál vale»: «Qué vale
+      de lo que tiene Stripe» arriba y otra vez debajo de «CONFIRMAR»). Pasa en las pantallas que ponen `conf.titulo` en la cabecera Y dejan el
+      mismo título en la hoja: `Planes.tsx`, `Ciudades.tsx`, `Colas.tsx` (línea ~651), `Crecimiento.tsx`, `Negocios.tsx`, `Liquidaciones.tsx`. Ya
+      hay dos formas buenas en el repo: la cabecera dice dónde estás y la hoja dice la acción (`N360`, `Configuracion`, `Contenido`), o la
+      cabecera dice la acción y la hoja pregunta «¿Por qué?» (`AutoModeracion`, `Gamificacion`, `HoyAdmin`). Unificar con una de las dos (no
+      inventar una tercera), con captura a 390 de cada pantalla. Es de siempre, no de 9t6. (21 nov)
 - [ ] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho
