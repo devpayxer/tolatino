@@ -20,6 +20,19 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (noche, cierre) · `main` y `pruebas` = 4ee2ae2, sandbox comprobado desde fuera** (estado-sandbox 44954504105: salud con commit
+  4ee2ae20, 206 migraciones, las cuatro rutas en 200). Evidencia (AF, revisión rápida): dirigida **44952826764** — tipos, build, guardianes y
+  Semgrep en verde y **9/9 de punta a punta** (`nota9u` 36 ✓, `disp2r`, `rec1j`, `admin1i`, `adm6j`, `evt6i` 75 ✓ a la primera, `evt6a`,
+  `evt6d`, `din9k`); en local `alreves9u` 15/15, `alreves9b2` 49/49, textos, Semgrep 0. La dirigida anterior (44943966440, sobre 9t8) cerró
+  entera en verde con su carril de al revés 118/118. Subió lo que el punto de abajo daba como «en la rama»: las cinco notas a la auditoría,
+  el conteo de inestables que ya no da cero sin leer, la carrera de los avisos de `evt6*` y **«Asignar a…» de Colas, que reventaba desde el
+  14 nov** (guardián `jsonTrasConcatenar`). **Sigue en curso:** 9t9 (Opus, worktree `agent-a9cd737c72caa7a06`, contenedores `tl9t9-*`).
+  **Siguiente, en orden:** (1) recibir y revisar 9t9 (tipos, guardianes, Semgrep, el carril de al revés entero, pruebas contra el servidor,
+  CI completo: toca dinero y guardianes); (2) encargar a Opus «la nota interna no sale del equipo» (LAUNCH 9u: columnas de motivo del equipo
+  fuera de «Descargar mis datos» —lo más seguro y reversible; decisión anotada en REVISION—, datos que viajan al navegador sin mostrarse,
+  `modules_off.reason` en lectores públicos) cuando 9t9 libere disco y número de migración; (3) «Descargar mis datos» en flujo (LAUNCH 9t);
+  (4) la clase «consultas que ninguna prueba ejecuta» (LAUNCH 9b). Falta una confirmación completa del CI sobre 4ee2ae2 (la última completa
+  fue sobre d7ef961): se lanza con 9t9.
 - **21 nov (noche, última) · `main` y `pruebas` = cd7f7d0, sandbox comprobado desde fuera** (estado-sandbox 44951939483: salud con commit
   cd7f7d0c, **0207 aplicada, 206 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia: revisión completa **44947348390
   VERDE sobre d7ef961, 21 trabajos, 0 rojas, 1 inestable (`evt6i`, ya arreglada: leía un aviso antes de que el servidor lo escribiera)**.

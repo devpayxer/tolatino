@@ -6064,7 +6064,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Quedó en LAUNCH («Dinero por clase: lo que queda después de 9t8»):** devolver otra vez unos boletos desde su alerta, la carrera de «Resolver a mano»
   justo mientras el barrido la manda, y lo que espera a Stripe de verdad o a tu decisión de tandas anteriores (las transferencias con otro monto).
 
-## Super Admin: la hoja de confirmar dice un solo título y a quién le llega lo que escribes (21 nov) — YA en el sandbox (commit cd7f7d0; las cinco notas a la auditoría y «Asignar a…» suben en el siguiente) — tres cosas para ti
+## Super Admin: la hoja de confirmar dice un solo título y a quién le llega lo que escribes (21 nov) — YA en el sandbox (commit 4ee2ae2) — tres cosas para ti
 - **Qué pasaba:** al confirmar una acción en el Super Admin, el título salía dos veces en el teléfono (arriba y otra vez en la hoja), y el campo de la
   nota decía siempre «Escríbelo como se lo dirías a la persona», también cuando la nota solo queda en la auditoría.
 - **Ahora (Sonnet lo escribió; Opus revisó aparte a quién le llega cada nota; Fable corrigió lo que encontró la revisión):** un solo título en 19
@@ -6072,6 +6072,8 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   «Queda en la auditoría con tu nombre» cuando es interna, y «Escríbelo para el banco, en inglés si puedes» en el resumen de una disputa. La revisión
   aparte encontró cuatro que decían «interna» y la persona sí las lee (quitar una foto de perfil, aprobar un evento, pausar El Compa en un negocio,
   apagar un módulo en una ciudad): corregidas y fijadas con un guardián.
+- **De paso, un fallo que ya estaba en el sandbox desde el 14 nov:** en Colas, «Asignar a…» se caía con «Application error» (un error en la
+  consulta que arma la lista de a quién asignar; ninguna prueba abría esa hoja). Arreglado; lo cazó la prueba nueva de estas hojas.
 - **Qué mirar (sandbox; teléfono):** Super Admin › Planes › una alerta › «Resolver a mano»: un solo título y, en la nota, «Queda en la
   auditoría con tu nombre». Super Admin › Eventos › Liquidaciones › «Retener»: «Escríbelo como se lo dirías a la persona». Usuarios › una persona con
   foto › «Quitar foto de perfil»: «Escríbelo como se lo dirías a la persona» (ella lo lee en su Perfil).
