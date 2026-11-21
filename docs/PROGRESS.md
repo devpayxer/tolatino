@@ -20,6 +20,25 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (noche, última) · `main` y `pruebas` = cd7f7d0, sandbox comprobado desde fuera** (estado-sandbox 44951939483: salud con commit
+  cd7f7d0c, **0207 aplicada, 206 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia: revisión completa **44947348390
+  VERDE sobre d7ef961, 21 trabajos, 0 rojas, 1 inestable (`evt6i`, ya arreglada: leía un aviso antes de que el servidor lo escribiera)**.
+  Subieron: **dinero 9t8** (0207: la devolución de un patrocinio le pregunta a Stripe; «Un día más» con la clave del toque) y **las hojas de
+  confirmar del Super Admin** (un solo título; cada hoja dice a quién le llega la nota). **El rojo de 9t8 (`rsvp9a`, `barr`) no era del producto:**
+  `din9t6b` fabricaba una intención de plan con la llave `-i1` (el servidor escribe `-i0`), y al cambiar el reparto de carriles el barrido de
+  planes chocó con ella (dirigida 44943966440: 50/50). Lo que destapó sí es del producto y está encargado: **9t9 (Opus, en curso, worktree
+  propio, contenedores `tl9t9-*`):** en los barridos de dinero un elemento que falla no detiene a los demás, y ninguna selección con tope deja
+  gente fuera (`barrerPlanes` elegía 50 planes sin orden ni filtro).
+  **En la rama de trabajo, todavía NO en `main` (805468e + lo que sigue):** (1) las cinco notas que se pedían y nadie guardaba van a la
+  auditoría (ed30bd6); (2) el CI ya no da «0 inestables» cuando no pudo leer un registro (3bfec03; la corrida 44947348390 dijo 0 con una);
+  (3) la carrera de los avisos con SMS en `evt6i`, `evt6a`, `evt6d` (805468e); (4) **«Asignar a…» en Colas reventaba el servidor desde el 14
+  nov** (un campo de JSON tras `||` sin paréntesis; lo cazó la prueba nueva `nota9u`, de Sonnet): arreglado con el guardián `jsonTrasConcatenar`.
+  Falta: correr `nota9u` y `alreves9u`/`alreves9b2` en local, revisión dirigida 44951093908, subir.
+  **Reparto de hoy (regla 14):** Opus escribió 9t8 y está con 9t9, y revisó aparte (solo lectura) a quién le llega cada nota de las 265
+  «internas» (encontró 4 mal marcadas y 8 columnas que salen en «Descargar mis datos»: LAUNCH y REVISION); Sonnet escribió las hojas y `nota9u`;
+  Fable diagnosticó el rojo, corrigió lo que encontró la revisión, el CI y las carreras, y revisó y corrió todo antes de subir.
+  **Reglas nuevas:** una prueba que fabrica una fila la fabrica como la escribiría el servidor (misma llave, mismo estado); un contador del CI
+  que no pudo leer no dice cero; lo delegado que toca a quién le llega un texto lo revisa otro modelo siguiendo el dato hasta su destino.
 - **21 nov (noche, tarde) · `main` y `pruebas` = bb3842e, sandbox comprobado desde fuera** (estado-sandbox 44933387357: salud con commit
   bb3842e2, **0206 aplicada, 205 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia: revisión completa **44927840579
   VERDE, 0 rojas y 0 inestables** (corrieron `din9t7` 39 ✓, `din9t7b` 44 ✓, `alreves9k` 38/38, `alreves6e`). Subió **dinero 9t7** (las

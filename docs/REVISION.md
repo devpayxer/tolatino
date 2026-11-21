@@ -6038,17 +6038,17 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Quedó anotado en LAUNCH («lo que quedó de 9t7»):** la devolución de lo que no se usó de un **patrocinio** todavía no se anota antes ni se le
   pregunta a Stripe (sigue como estaba: alerta y «Resuelta»).
 
-## Dinero, octava tanda: la devolución de un patrocinio también le pregunta a Stripe, y «Un día más» no cobra dos días por un toque (21 nov · migración 0207) — en la rama, falta subir — cuatro cosas para ti
+## Dinero, octava tanda: la devolución de un patrocinio también le pregunta a Stripe, y «Un día más» no cobra dos días por un toque (21 nov · migración 0207) — YA en el sandbox (commit cd7f7d0, 0207 aplicada) — cuatro cosas para ti
 - **Qué pasaba:** (1) cuando un patrocinio terminaba con devolución (lo cancelabas antes de empezar, lo terminaba To'Latino o se cancelaba el evento) y
   Stripe no contestaba, se reintentaba un día y después quedaba una alerta sin botones; si Stripe decía que no (por ejemplo, el cobro ya estaba devuelto),
   se seguía reintentando un día entero con la misma respuesta. Era la única devolución que no se anotaba antes de ir a Stripe. (2) En una renta, si tocabas
   «Un día más», se cobraba, y se te cortaba la red antes de ver «listo», al volver a tocar se cobraba **otro** día.
-- **Ahora (Opus lo escribió; falta la revisión de quien orquesta):** (1) la base anota la devolución del patrocinio en el mismo momento en que decide
+- **Ahora (Opus lo escribió; Fable lo revisó y lo corrió contra el servidor):** (1) la base anota la devolución del patrocinio en el mismo momento en que decide
   cuánto se devuelve, y va a Stripe con una etiqueta para encontrarla. Pasado un día sin respuesta, el sistema le pregunta a Stripe y la cierra con lo que
   diga, igual que las demás devoluciones (séptima tanda). La alerta ya tiene «Preguntar a Stripe ahora» y «Resolver a mano» (que antes pregunta a Stripe).
   (2) Cada toque de «Un día más» lleva su propia clave: el mismo toque repetido (porque no viste la respuesta) nunca es otro día; un toque nuevo, después de
   ver la respuesta, sí.
-- **Qué mirar (sandbox, cuando suba):** Super Admin › Crecimiento › Patrocinios: termina uno reservado con «Devolver lo que no se usó» → el mensaje dice
+- **Qué mirar (sandbox):** Super Admin › Crecimiento › Patrocinios: termina uno reservado con «Devolver lo que no se usó» → el mensaje dice
   cuánto se devolvió y en los recibos del negocio sale «Devolución». En una renta que tienes, «Un día más» suma un día por toque (con el modo avión a mitad
   del toque, al volver a tocar no suma otro). Las alertas de devoluciones de patrocinio atascadas se fabrican con una prueba; no aparecen solas.
 - **Decide tú (dejé lo más seguro; todo se cambia):**
@@ -6064,7 +6064,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Quedó en LAUNCH («Dinero por clase: lo que queda después de 9t8»):** devolver otra vez unos boletos desde su alerta, la carrera de «Resolver a mano»
   justo mientras el barrido la manda, y lo que espera a Stripe de verdad o a tu decisión de tandas anteriores (las transferencias con otro monto).
 
-## Super Admin: la hoja de confirmar dice un solo título y a quién le llega lo que escribes (21 nov) — en la rama, falta subir — tres cosas para ti
+## Super Admin: la hoja de confirmar dice un solo título y a quién le llega lo que escribes (21 nov) — YA en el sandbox (commit cd7f7d0; las cinco notas a la auditoría y «Asignar a…» suben en el siguiente) — tres cosas para ti
 - **Qué pasaba:** al confirmar una acción en el Super Admin, el título salía dos veces en el teléfono (arriba y otra vez en la hoja), y el campo de la
   nota decía siempre «Escríbelo como se lo dirías a la persona», también cuando la nota solo queda en la auditoría.
 - **Ahora (Sonnet lo escribió; Opus revisó aparte a quién le llega cada nota; Fable corrigió lo que encontró la revisión):** un solo título en 19
@@ -6072,7 +6072,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   «Queda en la auditoría con tu nombre» cuando es interna, y «Escríbelo para el banco, en inglés si puedes» en el resumen de una disputa. La revisión
   aparte encontró cuatro que decían «interna» y la persona sí las lee (quitar una foto de perfil, aprobar un evento, pausar El Compa en un negocio,
   apagar un módulo en una ciudad): corregidas y fijadas con un guardián.
-- **Qué mirar (sandbox, cuando suba; teléfono):** Super Admin › Planes › una alerta › «Resolver a mano»: un solo título y, en la nota, «Queda en la
+- **Qué mirar (sandbox; teléfono):** Super Admin › Planes › una alerta › «Resolver a mano»: un solo título y, en la nota, «Queda en la
   auditoría con tu nombre». Super Admin › Eventos › Liquidaciones › «Retener»: «Escríbelo como se lo dirías a la persona». Usuarios › una persona con
   foto › «Quitar foto de perfil»: «Escríbelo como se lo dirías a la persona» (ella lo lee en su Perfil).
 - **Decide tú (dejé lo más seguro; todo se cambia):**
