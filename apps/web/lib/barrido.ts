@@ -12,10 +12,11 @@ type Tarea = [string, () => Promise<unknown>];
 const LOCK = 913_337_001; // pg_try_advisory_lock: un número fijo solo para el barrido central
 
 async function negociosConRetenido(): Promise<string[]> {
+  // 9t9 · Con su orden (antes sin orden: con más de 2000, los de fuera de la tajada nunca se reparaban): primero el que tiene lo retenido más viejo.
   return (await db().query<{ b: string }>(
-    `select distinct business_id as b from payments where status = 'held' and business_id is not null
-     union select distinct o.business_id from operations o where o.status = 'confirmed' and o.kind in ('appointment', 'market_order', 'hold', 'plan') and o.updated_at > now() - interval '30 days'
-     limit 2000`)).rows.map((x) => x.b);
+    `select b from (select business_id as b, min(held_at) as t from payments where status = 'held' and business_id is not null group by business_id
+                    union all select o.business_id, min(o.updated_at) from operations o where o.status = 'confirmed' and o.kind in ('appointment', 'market_order', 'hold', 'plan') and o.updated_at > now() - interval '30 days' group by o.business_id) x
+      group by b order by min(t) nulls first, b limit 2000`)).rows.map((x) => x.b);
 }
 
 export type ResultadoBarrido = { corrio: boolean; ms: number; tareas: { name: string; ok: boolean; ms: number; error?: string }[] };
@@ -215,10 +216,18 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // están en línea (rep_auto_intentos) y el recordatorio de los programados (rep_programado_min antes de estar listos).
         ["ayudaDevuelto", async () => (await import("./ayuda-cita")).cerrarDevueltosSinRespuesta()], ["repartoSolo", async () => (await import("./repartidor-auto")).asignarSolos()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
-        ["dinero", async () => { for (const b of await negociosConRetenido()) {
-          await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);
-          await mercado.repararMercado(b).catch(() => undefined); await apartados.repararApartados(b).catch(() => undefined); await layaway.repararPlanes(b).catch(() => undefined);
-        } }],
+        // 9t9 · Cada negocio y cada reparación por su cuenta (lib/barrido-uno.ts): antes el error se tragaba sin rastro (.catch(() => undefined)) y la tarea
+        // salía bien; ahora los demás siguen igual y la tarea sale fallida diciendo cuáles.
+        ["dinero", async () => {
+          const B = new (await import("./barrido-uno")).Fallos("dinero");
+          await B.cada(await negociosConRetenido(), (b) => b, async (b) => {
+            const N = new (await import("./barrido-uno")).Fallos(b);
+            await N.uno("pagos", () => cobros.repararPagos(b)); await N.uno("estimados", () => estimados.repararEstimados(b)); await N.uno("renovar", () => estimados.renovarRetenciones(b));
+            await N.uno("mercado", () => mercado.repararMercado(b)); await N.uno("apartados", () => apartados.repararApartados(b)); await N.uno("layaway", () => layaway.repararPlanes(b));
+            N.fin();
+          });
+          B.fin();
+        }],
       ];
       const out: ResultadoBarrido["tareas"] = [];
       for (const [name, f] of T) {

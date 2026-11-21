@@ -155,26 +155,56 @@ async function crearVisita(c: PoolClient, numero: string, fecha: string, entorno
 }
 
 /* ── El barrido (idempotente): cobros que tocan, visitas que siguen, pausas que terminan ── */
+/* 9t9 · Lo que TOCA hoy (el día de la ciudad del plan): la pausa que terminó, la visita que pasó, el cobro del período (o su reintento), una intención en
+   camino y la visita que falta de un plan que cambió en el último día (saltar la próxima la quita y deja la siguiente al barrido). Antes el barrido central
+   tomaba 50 planes vivos cualesquiera (sin orden ni filtro): con más de 50, los demás no se cobraban nunca. Cada rama con su índice (0208); el tope de UTC
+   + 1 día deja usar el índice y el día exacto de la ciudad decide. Lo más atrasado primero; por tandas sin repetir el mismo plan en la corrida. */
+const TOCA_PLAN = `with h as (select (now() at time zone 'UTC')::date + 1 as tope)
+  select s.id::text, o.number as numero, s.city_id as city from plan_subscriptions s join operations o on o.id = s.operation_id join cities ci on ci.id = s.city_id
+   where s.id in (select id from plan_subscriptions, h where status = 'paused' and paused_until <= h.tope
+                  union select id from plan_subscriptions, h where status = 'active' and next_visit_on < h.tope
+                  union select id from plan_subscriptions, h where status = 'active' and next_charge_on <= h.tope
+                  union select ref_id::bigint from offsession_charges where kind = 'plan' and status = 'pending'
+                  union select id from plan_subscriptions where status = 'active' and updated_at > now() - interval '1 day')
+     and s.status <> 'cancelled' and not (s.id = any($1::bigint[]))
+     and ((s.status = 'paused' and s.paused_until <= (now() at time zone ci.timezone)::date)
+       or (s.status = 'active' and s.next_visit_on < (now() at time zone ci.timezone)::date)
+       or (s.status = 'active' and s.next_charge_on <= (now() at time zone ci.timezone)::date and (s.retry_on is null or s.retry_on <= (now() at time zone ci.timezone)::date))
+       or exists (select 1 from offsession_charges q where q.kind = 'plan' and q.ref_id = s.id::text and q.status = 'pending')
+       or (s.status = 'active' and s.next_visit_on is not null and s.updated_at > now() - interval '1 day'
+           and not exists (select 1 from operations v where v.kind = 'appointment' and v.details->>'plan' = o.number and v.status <> 'cancelled'
+                             and (v.scheduled_at at time zone ci.timezone)::date = s.next_visit_on)))
+   order by least(case when s.status = 'paused' then s.paused_until end, s.next_charge_on, s.next_visit_on) nulls last, s.id
+   limit 50`;
 export async function barrerPlanes(f: { negocio?: string; userId?: string; numero?: string } = {}, entorno = process.env.TOLATINO_ENTORNO ?? "pruebas"): Promise<void> {
-  const W = f.numero ? "o.number = $1" : f.negocio ? "s.business_id = $1" : f.userId ? "s.user_id = $1" : "true";
-  const A = f.numero ? [f.numero] : f.negocio ? [f.negocio] : f.userId ? [f.userId] : [];
-  const L = (await db().query<{ id: string; numero: string; city: string }>(`select s.id::text, o.number as numero, s.city_id as city from plan_subscriptions s join operations o on o.id = s.operation_id where ${W} and s.status <> 'cancelled' limit 50`, A)).rows;
-  for (const x of L) {
-    const hoy = await hoyDe(db(), x.city);
-    // 1. Pausa que terminó.
-    await db().query(`update plan_subscriptions set status = 'active', paused_until = null, updated_at = now() where id = $1::bigint and status = 'paused' and paused_until is not null and paused_until <= $2::date`, [x.id, hoy]);
-    // 2. Visitas: la próxima ya pasó → la siguiente (y se crea su cita); siempre existe la cita de la próxima.
-    await tx(async (c) => {
-      const s = (await c.query<{ next: string | null; dow: number; nth: number; meses: number[] | null; st: string }>(`select next_visit_on::text as next, dow, nth, visit_months as meses, status as st from plan_subscriptions where id = $1::bigint for update`, [x.id])).rows[0]!;
-      if (s.st !== "active" || !s.next) return;
-      let next = s.next;
-      while (next < hoy) next = siguienteVisita(next, s.dow, s.nth, s.meses);
-      if (next !== s.next) await c.query(`update plan_subscriptions set next_visit_on = $2::date, updated_at = now() where id = $1::bigint`, [x.id, next]);
-      await crearVisita(c, x.numero, next, entorno);
-    });
-    // 3. Cobro del período (uno por período: idem = plan + fecha del cobro).
-    await cobrarPeriodo(x.id, hoy);
+  const U = await import("./barrido-uno"), B = new U.Fallos("planes");
+  type P = { id: string; numero: string; city: string };
+  // La app al abrir una página (un plan, un negocio, una persona): todos los suyos, como siempre. El barrido central: solo lo que toca, por tandas.
+  if (f.numero || f.negocio || f.userId) {
+    const W = f.numero ? "o.number = $1" : f.negocio ? "s.business_id = $1" : "s.user_id = $1";
+    const L = (await db().query<P>(`select s.id::text, o.number as numero, s.city_id as city from plan_subscriptions s join operations o on o.id = s.operation_id where ${W} and s.status <> 'cancelled' order by s.id limit 50`,
+      [f.numero ?? f.negocio ?? f.userId])).rows;
+    await B.cada(L, (x) => x.numero, (x) => unPlan(x, entorno));
+  } else {
+    await U.porTandas(B, 50, async (vistos) => (await db().query<P>(TOCA_PLAN, [vistos])).rows, (x) => x.numero, (x) => unPlan(x, entorno), { clave: (x) => x.id });
   }
+  B.fin();
+}
+async function unPlan(x: { id: string; numero: string; city: string }, entorno: string): Promise<void> {
+  const hoy = await hoyDe(db(), x.city);
+  // 1. Pausa que terminó.
+  await db().query(`update plan_subscriptions set status = 'active', paused_until = null, updated_at = now() where id = $1::bigint and status = 'paused' and paused_until is not null and paused_until <= $2::date`, [x.id, hoy]);
+  // 2. Visitas: la próxima ya pasó → la siguiente (y se crea su cita); siempre existe la cita de la próxima.
+  await tx(async (c) => {
+    const s = (await c.query<{ next: string | null; dow: number; nth: number; meses: number[] | null; st: string }>(`select next_visit_on::text as next, dow, nth, visit_months as meses, status as st from plan_subscriptions where id = $1::bigint for update`, [x.id])).rows[0]!;
+    if (s.st !== "active" || !s.next) return;
+    let next = s.next;
+    while (next < hoy) next = siguienteVisita(next, s.dow, s.nth, s.meses);
+    if (next !== s.next) await c.query(`update plan_subscriptions set next_visit_on = $2::date, updated_at = now() where id = $1::bigint`, [x.id, next]);
+    await crearVisita(c, x.numero, next, entorno);
+  });
+  // 3. Cobro del período (uno por período: idem = plan + fecha del cobro).
+  await cobrarPeriodo(x.id, hoy);
 }
 
 /* 21 nov (9t4) · El cobro del período, como el de Pro (lib/cobro-fuera.ts): (1) la INTENCIÓN se anota (offsession_charges 'pending': la llave, el monto,

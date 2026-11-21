@@ -3655,7 +3655,8 @@ const guardianes = {
     // C-002 (0175) · lib/patrocinio.ts también retiene y captura en la plataforma: su propio cobro directo a To'Latino en sesión, con 3-D Secure
     // (no son boletos; patrocinioDelServidor vigila que capture exactamente el precio del servidor y que suelte lo retenido si algo falla).
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== L && x !== "apps/web/lib/pagos/pasarela.ts" && x !== "apps/web/lib/patrocinio.ts" && /capturarPlataforma\(|retenerPlataforma\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts cobra boletos");
-    if (!/'tickets'\) limit 20/.test(readFileSync("apps/web/lib/cobros.ts", "utf8"))) falla(G, "apps/web/lib/cobros.ts", 0, "repararPagos no toca boletos (los repara repararBoletos, que captura sin comisión de destino)");
+    // 9t9 · Con su orden antes del tope (barridoUnoPorUno).
+    if (!/o\.kind not in \('market_order', 'hold', 'tickets'\)\s+order by p\.held_at nulls first, p\.id limit 20/.test(readFileSync("apps/web/lib/cobros.ts", "utf8"))) falla(G, "apps/web/lib/cobros.ts", 0, "repararPagos no toca boletos (los repara repararBoletos, que captura sin comisión de destino)");
   },
 
   /* 6c. El precio que ves es el que pagas (§6 #1): lo cobrado = lo apartado (suma de precios − descuento, calculado en el servidor) y la
@@ -13536,6 +13537,73 @@ const guardianes = {
         if (usos.some((u) => u === "conf")) falla(G, p, 0, "la cabecera pone `conf.titulo` y la hoja de confirmar lleva el mismo título: sale dos veces (la cabecera dice dónde estás y la hoja la acción, o la cabecera la acción y la hoja «¿Por qué?»)");
       }
     }
+  },
+
+  /* 9t9 (21 nov) · barridoUnoPorUno, por clase (CI 44940985674: un plan con su intención rota dejó sin cobrar a todos los planes detrás de él, cada minuto):
+     (A) un elemento malo no detiene a los demás: cada función de barrido de dinero que llama lib/barrido.ts recorre sus elementos con lib/barrido-uno.ts
+         (cadaUno / Fallos / porTandas), que anota cada fallo en el registro, sigue con los demás y al final hace fallar la tarea diciendo cuántos de cuántos;
+         sin bucles por elemento a mano (salvo las excepciones escritas abajo, con su motivo) y sin tragar el error de un elemento (.catch que devuelve
+         null/false/'pending'/ok:false, o console.error y seguir). Solo se dejan los .catch de un aviso o de la pasarela (su fallo es un resultado, no un error).
+     (B) nada queda fuera por un tope: toda selección con «limit» de esas funciones lleva su «order by»; barrerPlanes elige lo que TOCA hoy en la ciudad del plan
+         (TOCA_PLAN), por tandas, y la tarea «dinero» de barrido.ts no traga el error de un negocio. Al revés: alreves9t9; con la base: pruebas/e2e/din9t9.cjs. */
+  barridoUnoPorUno() {
+    const G = "barridoUnoPorUno", H = "apps/web/lib/barrido-uno.ts", BA = "apps/web/lib/barrido.ts", L = (x) => `apps/web/lib/${x}.ts`;
+    if (!existsSync(H)) return falla(G, H, 0, "falta lib/barrido-uno.ts (el ayudante: un elemento malo no detiene a los demás)");
+    const h = sinComent(H), uno = /async uno<R>[\s\S]*?\n  \}/.exec(h)?.[0] ?? "";
+    if (!/try \{ return await f\(\); \} catch \(e\) \{/.test(uno) || !/this\.ids\.push\(id\);/.test(uno) || !/console\.error\(`\[barrido\] \$\{this\.tarea\} · \$\{id\}: \$\{msg\(e\)\}`\)/.test(uno)) falla(G, H, 0, "Fallos.uno: si el elemento lanza, se anota (registro del servidor) y se sigue");
+    if (!/throw new Error\(`\$\{this\.tarea\}: \$\{this\.ids\.length\} de \$\{this\.total\} fallaron \(\$\{this\.ids\.join\(", "\)\}\)`\.slice\(0, TOPE\)\)/.test(h) || !/const TOPE = 300;/.test(h)) falla(G, H, 0, "Fallos.fin: con fallidos, la tarea sale fallida con «N de M fallaron (ids)», acotado a 300");
+    const fnG = (n) => { const i = h.search(new RegExp(`\\nexport async function ${n}<`)); return i < 0 ? "" : h.slice(i, h.indexOf("\n}", i + 1) + 2); };
+    if (!/b\.fin\(\);/.test(fnG("cadaUno"))) falla(G, H, 0, "cadaUno termina con fin() (nunca traga el error)");
+    if (!/vistos\.push\(\.\.\.L\.map\(clave\)\);/.test(fnG("porTandas")) || !/const L = await traer\(vistos\);/.test(fnG("porTandas"))) falla(G, H, 0, "porTandas no repite en la corrida lo que ya recorrió");
+    // Las funciones de barrido de dinero que llama barrido.ts (directa o por otra de la lista).
+    const F = [["planes", "barrerPlanes"], ["layaway", "barrerPlanes"], ["layaway", "repararPlanes"], ["rentas", "barrerRentas"], ["apartados", "barrerApartados"], ["apartados", "repararApartados"],
+      ["patrocinio", "barrerPatrocinios"], ["patrocinio", "barrerDevolucionesPat"], ["patrocinio-evento", "barrerPatrociniosEventos"], ["cobro-fuera", "barrerCobrosFuera"],
+      ["suscripcion", "procesar"], ["suscripcion", "barrerCobrosPro"], ["renovar-retencion", "barrerRenovaciones"], ["revision-pasarela", "barrerDevolucionesSobra"],
+      ["cobros", "repararPagos"], ["cobros", "barrerDevolucionesPago"], ["boletos-despues", "vencerTransferencias"], ["boletos-despues", "barrerDevolucionesBoletos"],
+      ["boletos", "vencerApartados"], ["boletos", "repararBoletos"], ["evt-liquidacion", "liquidar"], ["evt-liquidacion", "repararLiquidaciones"], ["evt-liquidacion", "revertirDeudas"],
+      ["evt-cambios", "barrerCancelaciones"], ["pagos-banco", "pagarAlBanco"], ["pagos-banco", "sincronizarPausas"], ["dinero-alertas", "barrerAlertasDinero"],
+      ["estimados", "repararEstimados"], ["estimados", "renovarRetenciones"], ["mercado", "repararMercado"], ["devolucion-consulta", "preguntarViejas"]];
+    // Sin elementos que recorrer (una sola llamada por corrida): no necesitan el ayudante.
+    const SIN_BUCLE = { "conciliacion.conciliarAyer": "concilia un día, una vez", "conciliacion.vigilarConciliacion": "una sola alerta por día" };
+    // Bucles a mano que se dejan, con su motivo (el texto exacto del bucle).
+    const EXC = {
+      "evt-liquidacion.revertirDeudas": { "for (const s of S) {": "arma en una transacción la lista de reversiones de un organizador (no es un barrido por elemento)",
+        "for (const id of ids) if (await ejecutarReversion(id)) n++;": "las reversiones recién anotadas de un organizador: si una lanza, quedan pendientes y las termina repararLiquidaciones" },
+      "evt-cambios.barrerCancelaciones": { "for (const x of C) await avisarCambio(x.id).catch(() => 0);": "avisos de un cambio de fecha (no dinero; una vez por cambio)" },
+    };
+    for (const k of Object.keys(SIN_BUCLE)) { const [a, f] = k.split("."); const c = cuerpoFn(sinComent(L(a)), f); if (!c) falla(G, L(a), 0, `falta ${f}`); else if (/for \(const /.test(c)) falla(G, L(a), 0, `${f} ahora recorre elementos: debe usar lib/barrido-uno.ts (${SIN_BUCLE[k]} ya no vale)`); }
+    for (const [a, f] of F) {
+      const A = L(a);
+      if (!existsSync(A)) { falla(G, A, 0, `falta ${A}`); continue; }
+      const c = cuerpoFn(sinComent(A), f);
+      if (!c) { falla(G, A, 0, `falta la función ${f}`); continue; }
+      if (!/\b(cadaUno|porTandas)\(|new (\(await import\("\.\/barrido-uno"\)\)\.|U\.)?Fallos\(/.test(c) || !/barrido-uno/.test(c)) falla(G, A, 0, `${f} no recorre sus elementos con lib/barrido-uno.ts (cadaUno / Fallos / porTandas): un elemento malo detendría a los demás`);
+      if (/new (\(await import\("\.\/barrido-uno"\)\)\.|U\.)?Fallos\(/.test(c) && !/\bB\.fin\(\);/.test(c)) falla(G, A, 0, `${f} junta sus fallos y nunca llama fin(): la tarea saldría bien con elementos fallidos`);
+      const exc = EXC[`${a}.${f}`] ?? {};
+      // Un bucle que solo manda un aviso por fila (cada aviso con su propio .catch: un aviso que no sale no detiene al siguiente) no es dinero.
+      const soloAvisos = (l) => /^for \(const x of \w+\.rows\) \{ \w+\+\+; await aviso(Neg|Evt)\([^;]*\)\.catch\(\(\) => undefined\); \}$/.test(l);
+      for (const m of c.matchAll(/^.*for \(const .*$/gm)) { const l = m[0].trim(); if (!soloAvisos(l) && !Object.keys(exc).some((x) => l.startsWith(x))) falla(G, A, 0, `${f}: bucle por elemento a mano («${l.slice(0, 90)}»): usa lib/barrido-uno.ts o escribe su excepción con motivo`); }
+      for (const m of c.matchAll(/^.*\.catch\(.*$/gm)) {
+        const l = m[0];
+        if (Object.keys(exc).some((x) => l.trim().startsWith(x)) || soloAvisos(l.trim())) continue;
+        // Lo que queda antes del .catch: un aviso, la pasarela o los avisos y el recibo de una venta ya hecha (despuesDeVender).
+        const antes = l.slice(0, l.lastIndexOf(".catch("));
+        if (!/(avis\w*|pasarela\.\w+|despuesDeVender)\([^()]*(\([^()]*\)[^()]*)*\)$/.test(antes) || /console\.error/.test(l)) falla(G, A, 0, `${f}: un .catch que traga el error de un elemento («${l.trim().slice(0, 90)}»): deja que lo anote lib/barrido-uno.ts`);
+      }
+      for (const q of c.matchAll(/`[^`]*`/g)) if (/\blimit\s+(\d+|\$\d+)/.test(q[0]) && !/\border by\b/.test(q[0])) falla(G, A, 0, `${f}: una selección con tope sin orden («${q[0].replace(/\s+/g, " ").slice(0, 90)}»): con más filas que el tope, las de fuera de la tajada no se tocarían nunca`);
+    }
+    // barrerPlanes: lo que toca hoy en la ciudad del plan, lo más atrasado primero, por tandas.
+    const pl = sinComent(L("planes")), toca = /const TOCA_PLAN = `[\s\S]*?`;/.exec(pl)?.[0] ?? "", bp = cuerpoFn(pl, "barrerPlanes");
+    if (!toca || !/\(now\(\) at time zone ci\.timezone\)::date/.test(toca) || !/s\.next_charge_on <= \(now\(\) at time zone ci\.timezone\)::date and \(s\.retry_on is null or s\.retry_on <= \(now\(\) at time zone ci\.timezone\)::date\)/.test(toca)
+      || !/order by least\(/.test(toca) || !/not \(s\.id = any\(\$1::bigint\[\]\)\)/.test(toca) || !/limit 50/.test(toca)) falla(G, L("planes"), 0, "barrerPlanes (barrido central): TOCA_PLAN elige lo que toca hoy en la ciudad de cada plan (cobro, reintento, visita, pausa, en camino), lo más atrasado primero y sin repetir los ya vistos");
+    if (!/U\.porTandas\(B, 50, async \(vistos\) => \(await db\(\)\.query<P>\(TOCA_PLAN, \[vistos\]\)\)\.rows/.test(bp)) falla(G, L("planes"), 0, "barrerPlanes (barrido central) recorre TOCA_PLAN por tandas (porTandas)");
+    if (!/B\.cada\(L, \(x\) => x\.numero, \(x\) => unPlan\(x, entorno\)\)/.test(bp)) falla(G, L("planes"), 0, "barrerPlanes (al abrir una página: f.negocio / f.userId / f.numero) recorre cada plan con el ayudante");
+    // La tarea «dinero» de barrido.ts y su selección.
+    const b = sinComent(BA), din = /\["dinero", async \(\) => \{[\s\S]*?\}\],/.exec(b)?.[0] ?? "";
+    if (!din || /\.catch\(\(\) => undefined\)/.test(din) || !/B\.fin\(\);/.test(din) || !/N\.fin\(\);/.test(din) || !/new \(await import\("\.\/barrido-uno"\)\)\.Fallos\("dinero"\)/.test(din)) falla(G, BA, 0, "la tarea «dinero» recorre cada negocio y cada reparación con lib/barrido-uno.ts (sin tragar el error: .catch(() => undefined))");
+    if (!/order by min\(t\) nulls first, b limit 2000/.test(cuerpoFn(b, "negociosConRetenido"))) falla(G, BA, 0, "negociosConRetenido: la tajada de 2000 lleva su orden (el retenido más viejo primero)");
+    const M = "packages/db/migrations/0208_barrido_lo_que_toca.sql";
+    if (!existsSync(M) || ["plan_subs_pausa_idx", "plan_subs_visita_idx", "plan_subs_cambio_idx", "operations_visita_plan_idx"].some((x) => !readFileSync(M, "utf8").includes(`create index if not exists ${x} `))) falla(G, M, 0, "los índices de lo que toca de los planes (0208)");
   },
 
 };

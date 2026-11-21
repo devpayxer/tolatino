@@ -208,15 +208,18 @@ async function alertaVieja(a: Intencion) {
 /* El barrido: las intenciones que quedaron en camino (Stripe no contestó, o el proceso murió entre la intención y el cierre) las termina cada flujo con su
    llave, dentro de HORAS_LLAVE; las más viejas, la alerta (una vez). Los patrocinios vencidos que siguen vivos los termina su propio barrido (vencerUno). */
 export async function barrerCobrosFuera(): Promise<number> {
-  const L = (await db().query<{ id: string; kind: TipoCobro }>(
-    `select id::text, kind from offsession_charges where status = 'pending' and created_at < now() - interval '2 minutes'
-        and created_at > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE])).rows;
+  // 9t9 · Cada intención por su cuenta (lib/barrido-uno.ts): antes el error de una se tragaba (solo el registro); ahora la tarea sale fallida diciendo cuál.
+  // Las que Stripe no contesta siguen en camino (y tocando): por tandas sin repetirlas en la corrida, para que no tapen a las de detrás.
+  const U = await import("./barrido-uno"), B = new U.Fallos("cobrosFuera");
   let n = 0;
-  for (const x of L) {
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ id: string; kind: TipoCobro }>(
+    `select id::text, kind from offsession_charges where status = 'pending' and created_at < now() - interval '2 minutes'
+        and created_at > now() - make_interval(hours => $1::int) and not (id = any($2::bigint[])) order by created_at, offsession_charges.id limit 50`, [HORAS_LLAVE, vistos])).rows,
+  (x) => `${x.kind} ${x.id}`, async (x) => {
     const a = await intencion(x.id);
-    if (!a || a.st !== "pending") continue;
-    if (await termina(a)) n++;
-  }
+    if (!a || a.st !== "pending") return;
+    if (await termina(a, true)) n++;
+  }, { clave: (x) => x.id });
   // 9t5 · Las de más de HORAS_LLAVE: se le pregunta a la pasarela (una vez cada CADA_MIN por intención) y el flujo cierra con lo que dijo; si no cierra,
   // sigue en camino con su alerta offsession_stuck (una vez). Nunca otra vez a la pasarela con su llave.
   const V = (await db().query<{ id: string }>(
@@ -224,14 +227,17 @@ export async function barrerCobrosFuera(): Promise<number> {
       where c.status = 'pending' and c.created_at <= now() - make_interval(hours => $1::int)
         and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
       order by g.ult nulls first, c.created_at limit 20`, [HORAS_LLAVE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
-  for (const x of V) if ((await resolverCobroFuera(x.id, { origen: "barrido" })).quedo === "hecha") n++;
+  await B.cada(V, (x) => `consulta ${x.id}`, async (x) => { if ((await resolverCobroFuera(x.id, { origen: "barrido" })).quedo === "hecha") n++; });
+  B.fin();
   return n;
 }
-/* Pasos 2 y 3 de una intención, por el flujo que la anotó (también con lo que contestó la consulta). true = quedó hecha. */
-async function termina(a: Intencion): Promise<boolean> {
+/* Pasos 2 y 3 de una intención, por el flujo que la anotó (también con lo que contestó la consulta). true = quedó hecha. 9t9 · El barrido (lanzar) deja que
+   el error llegue a su ayudante (la tarea sale fallida); la consulta lo anota y sigue, como siempre. */
+async function termina(a: Intencion, lanzar = false): Promise<boolean> {
   const f = async (): Promise<boolean> => a.kind === "plan" ? (await import("./planes")).terminarCobroPlan(a)
     : a.kind === "renta" ? (await (await import("./rentas")).terminarCobroRenta(a, true)).ok
     : (await import("./patrocinio")).terminarRenovacionSuelta(a);
+  if (lanzar) return f();
   return f().catch((e) => { console.error("[cobro-fuera]", a.kind, a.id, e instanceof Error ? e.message : e); return false; });
 }
 /* 9t5 · Preguntarle a la pasarela por una intención de más de HORAS_LLAVE y cerrarla con eso, por su flujo: el barrido, o «Preguntar a Stripe ahora» del

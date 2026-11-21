@@ -89,14 +89,17 @@ export async function preguntarViejas(boletos: boolean): Promise<number> {
         and ${lin} (select 1 from ticket_refund_lines l where l.refund_id = r.id) and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
       order by g.ult nulls first, r.created_at limit 20`, [HORAS_LLAVE, K.CADA_MIN])).rows;
   let n = 0;
-  for (const r of Q) if ((await resolverDevolucion(r.id, { origen: "barrido" }).catch(() => ({ quedo: "sigue" }))).quedo === "hecha") n++;
+  // 9t9 · Cada devolución por su cuenta (lib/barrido-uno.ts): antes el error de una se tragaba sin rastro; ahora queda en el registro y la tarea sale fallida.
+  const B = new (await import("./barrido-uno")).Fallos(`viejas${boletos ? " boletos" : ""}`);
+  await B.cada(Q, (r) => `consulta ${r.id}`, async (r) => { if ((await resolverDevolucion(r.id, { origen: "barrido" })).quedo === "hecha") n++; });
   const V = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; n: number; err: string | null }>(
     `select r.id::text, r.amount_cents as amt, p.business_id as biz, p.city_id as city, r.attempts as n, r.last_error as err from refunds r join payments p on p.id = r.payment_id
       where r.status = 'pending' and r.manual_at is null and r.gateway_ref is null and coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $1::int)
         and ${lin} (select 1 from ticket_refund_lines l where l.refund_id = r.id)
         and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = r.id::text) order by r.created_at limit 50`, [HORAS_LLAVE])).rows;
   const { alertaVieja } = await import("./cobros");
-  for (const r of V) await alertaVieja(r, false);
+  await B.cada(V, (r) => `alerta ${r.id}`, (r) => alertaVieja(r, false));
+  B.fin();
   return n;
 }
 

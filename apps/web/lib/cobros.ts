@@ -108,17 +108,22 @@ export async function repararPagos(negocio: string) {
   if (soloLectura()) return; // 9n-23 · la vista del equipo (solo lectura) no cobra ni libera nada al mirar: lo hace el barrido de cada minuto
   const L = (await db().query<{ op: string; st: string }>(
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and o.status not in ('pending', 'change_proposed') and o.kind not in ('market_order', 'hold', 'tickets') limit 20`, [negocio])).rows;
-  for (const x of L) {
+      where p.business_id = $1 and p.status = 'held' and o.status not in ('pending', 'change_proposed') and o.kind not in ('market_order', 'hold', 'tickets')
+      order by p.held_at nulls first, p.id limit 20`, [negocio])).rows;
+  // 9t9 · Cada cobro y cada paso por su cuenta (lib/barrido-uno.ts), lo más viejo primero: uno que falla no deja a los demás (ni al mercado, la tienda o
+  // los estimados) sin reparar; al final, un solo error que dice cuáles.
+  const B = new (await import("./barrido-uno")).Fallos(`pagos.reparar ${negocio}`);
+  await B.cada(L, (x) => `op ${x.op}`, async (x) => {
     if (x.st === "confirmed" || x.st === "done") await cobrarOperacion(x.op);
     else await liberarOperacion(x.op);
-  }
+  });
   // Pedido del mercado (4p): nunca se captura lo retenido completo; se cobra lo que pesó (liquidarMercado) o se libera.
-  await (await import("./mercado")).repararMercado(negocio);
+  await B.uno("mercado", async () => (await import("./mercado")).repararMercado(negocio));
   // Envío de la tienda (4q-2): se cobra lo que se envió (cobrarApartado), nunca lo retenido completo; o se libera.
-  await (await import("./apartados")).repararApartados(negocio);
+  await B.uno("apartados", async () => (await import("./apartados")).repararApartados(negocio));
   // Auto y Hogar (4d): estimado y «algo más» (liquidaciones a medias, retenciones que vencen).
-  await (await import("./estimados")).repararEstimados(negocio);
+  await B.uno("estimados", async () => (await import("./estimados")).repararEstimados(negocio));
+  B.fin();
 }
 
 /* Devolver dinero de un cobro (total o parcial). Lo hace el negocio (desde su pedido) o To'Latino (Soporte o
@@ -313,10 +318,13 @@ export async function barrerDevolucionesPago(): Promise<number> {
         and coalesce(r.key_from, r.created_at) > now() - make_interval(hours => $1::int) and not exists (select 1 from ticket_refund_lines l where l.refund_id = r.id)
       order by r.created_at limit 50`, [HORAS_LLAVE])).rows;
   let n = 0;
-  for (const r of L) if ((await ejecutarDevolucionPago(r.id, { barrido: true }).catch(() => ({ ok: false }))).ok) n++;
+  // 9t9 · Cada devolución por su cuenta (lib/barrido-uno.ts): antes el error de una se tragaba sin rastro; ahora queda en el registro y la tarea sale fallida.
+  const B = new (await import("./barrido-uno")).Fallos("devolucionesPago");
+  await B.cada(L, (r) => `devolucion ${r.id}`, async (r) => { if ((await ejecutarDevolucionPago(r.id, { barrido: true })).ok) n++; });
   // 9t7 · Las viejas: se le pregunta a la pasarela (lib/devolucion-consulta.ts, una vez cada CADA_MIN por devolución) y se cierran con lo que dijo, sin
   // llamar a Stripe con una llave de más de HORAS_LLAVE; las que no cierran (y las anotadas sin el dato buscable), la alerta refund_stuck, una vez.
-  n += await (await import("./devolucion-consulta")).preguntarViejas(false);
+  await B.uno("viejas", async () => { n += await (await import("./devolucion-consulta")).preguntarViejas(false); });
+  B.fin();
   return n;
 }
 /* La alerta de una devolución que pasó HORAS_LLAVE sin respuesta (la usan este barrido y el de los boletos): una vez por devolución. 9t7 · conDato: se

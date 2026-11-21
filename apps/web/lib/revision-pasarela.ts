@@ -261,7 +261,8 @@ export async function barrerDevolucionesSobra(): Promise<number> {
     `select id::text from gateway_refunds where status = 'pending' and manual_at is null and created_at < now() - interval '2 minutes'
       order by (sent_at is not null and sent_at <= now() - make_interval(hours => $1::int)), created_at limit 50`, [HORAS_LLAVE])).rows;
   let n = 0;
-  for (const g of L) if ((await ejecutarDevolucionSobra(g.id).catch(() => "pending")) === "done") n++;
+  // 9t9 · Cada devolución por su cuenta (lib/barrido-uno.ts): antes el error de una se tragaba sin rastro; ahora queda en el registro y la tarea sale fallida.
+  await (await import("./barrido-uno")).cadaUno("devolucionesSobra", L, (g) => `devolucion ${g.id}`, async (g) => { if ((await ejecutarDevolucionSobra(g.id)) === "done") n++; });
   return n;
 }
 /* 9t7 · Para «Resolver a mano» (lib/devolucion-consulta.ts › antesDeAMano): la devolución de lo que sobró que sigue sin resolver (en camino o rechazada por

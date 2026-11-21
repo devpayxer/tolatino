@@ -323,22 +323,27 @@ async function cerrarConVeredictoPat(r: Pd): Promise<QuedoPat> {
    más que no se preguntan primero); las anotadas sin el dato (antes de 0207), la alerta, una vez. */
 async function barrerDevolucionesPat(kind: KindPat): Promise<number> {
   const K = await import("./consulta-pasarela");
+  // 9t9 · Cada devolución por su cuenta (lib/barrido-uno.ts): antes el error de una se tragaba sin rastro; ahora queda en el registro y la tarea sale fallida.
+  // Las de la ventana de la llave van por tandas sin repetir en la corrida (una que Stripe no contesta no tapa a las de detrás).
+  const U = await import("./barrido-uno"), B = new U.Fallos(`devolucionesPat ${kind}`);
   let n = 0;
-  const L = (await db().query<{ id: string }>(
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ id: string }>(
     `select z.id::text from sponsorship_refunds z where z.kind = $1 and z.status = 'pending' and z.manual_at is null and coalesce(z.key_from, z.created_at) > now() - make_interval(hours => $2::int)
-      order by z.created_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
-  for (const r of L) if ((await ejecutarDevolucionPat(r.id).catch(() => "pending")) === "done") n++;
+        and not (z.id = any($3::bigint[])) order by z.created_at, z.id limit 50`, [kind, HORAS_LLAVE_STRIPE, vistos])).rows, (r) => `devolucion ${r.id}`, async (r) => {
+    if ((await ejecutarDevolucionPat(r.id)) === "done") n++;
+  }, { clave: (r) => r.id });
   const Q = (await db().query<{ id: string }>(
     `select z.id::text from sponsorship_refunds z left join lateral (select max(y.at) as ult from gateway_checks y where y.subject_kind = 'sponsorship_refunds' and y.subject_id = z.id) g on true
       where z.kind = $1 and z.status = 'pending' and z.manual_at is null and z.gateway_ref is not null and coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int)
         and (g.ult is null or g.ult <= now() - make_interval(mins => $3::int))
       order by g.ult nulls first, z.created_at limit 20`, [kind, HORAS_LLAVE_STRIPE, K.CADA_MIN])).rows;
-  for (const r of Q) if ((await resolverDevolucionPat(r.id, { origen: "barrido" }).catch(() => ({ quedo: "sigue" }))).quedo === "hecha") n++;
+  await B.cada(Q, (r) => `consulta ${r.id}`, async (r) => { if ((await resolverDevolucionPat(r.id, { origen: "barrido" })).quedo === "hecha") n++; });
   const V = (await db().query<{ id: string }>(
     `select z.id::text from sponsorship_refunds z where z.kind = $1 and z.status = 'pending' and z.manual_at is null and z.gateway_ref is null
         and coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int)
         and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = 'sponsorship_refunds:' || z.id::text) order by z.created_at limit 50`, [kind, HORAS_LLAVE_STRIPE])).rows;
-  for (const x of V) { const r = await leerPd(x.id); if (r) await alertaPat(r, SIN_DATO); }
+  await B.cada(V, (x) => `alerta ${x.id}`, async (x) => { const r = await leerPd(x.id); if (r) await alertaPat(r, SIN_DATO); });
+  B.fin();
   return n;
 }
 
@@ -621,26 +626,30 @@ export async function barrerPatrocinios(): Promise<{ empezaron: number; venciero
   for (const x of emp.rows) { empezaron++; await avisoNeg(x.negocio, "biz_patrocinio_activo", { hasta: x.hasta, monto: money(x.precio) }).catch(() => undefined); }
   // Un reservado que nunca empezó y ya pasó (el barrido no corrió a tiempo en todo el período): termina.
   await db().query(`update sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), auto_renew = false where status = 'reservado' and ends_at <= now()`);
-  const L = (await db().query<{ id: string }>(`select id::text from sponsorships where status = 'activo' and ends_at <= now() order by ends_at limit 200`)).rows;
-  for (const { id } of L) {
-    const r = await vencerUno(id).catch((e) => { console.error("[patrocinio] vencer", id, e instanceof Error ? e.message : e); return null; });
-    if (!r) continue;
+  // 9t9 · Cada patrocinio por su cuenta (lib/barrido-uno.ts): antes el error de uno se tragaba (solo el registro) y la tarea salía bien; ahora los demás
+  // siguen igual y la tarea sale fallida diciendo cuál. Un vencido que no se cerró sigue tocando: por tandas sin repetirlo en la corrida.
+  const U = await import("./barrido-uno"), B = new U.Fallos("patrocinios");
+  await U.porTandas(B, 200, async (vistos) => (await db().query<{ id: string }>(
+    `select id::text from sponsorships where status = 'activo' and ends_at <= now() and not (id = any($1::bigint[])) order by ends_at, sponsorships.id limit 200`, [vistos])).rows, (x) => `patrocinio ${x.id}`, async ({ id }) => {
+    const r = await vencerUno(id);
+    if (!r) return;
     if (r.r === "renovado") renovados++; else vencieron++;
     await avisoNeg(r.negocio, r.tpl, r.v).catch(() => undefined);
-  }
+  }, { clave: (x) => x.id });
   // «Avísame si se libera antes»: hay un puesto libre esta semana en su categoría.
   const W = (await db().query<{ id: string; negocio: string }>(
     `select w.id::text, w.business_id as negocio from sponsorship_waits w where w.kind = 'negocio' and w.status = 'espera'
-        and patrocinio_a_la_vez(w.city_id, w.category_id, now(), now() + interval '7 days', null) < cfg_int('patrocinio_puestos') limit 200`)).rows;
-  for (const w of W) {
+        and patrocinio_a_la_vez(w.city_id, w.category_id, now(), now() + interval '7 days', null) < cfg_int('patrocinio_puestos') order by w.id limit 200`)).rows;
+  await B.cada(W, (w) => `espera ${w.id}`, async (w) => {
     const u = await db().query(`update sponsorship_waits set status = 'avisado', notified_at = now() where id = $1::bigint and status = 'espera'`, [w.id]);
     if (u.rowCount) await avisoNeg(w.negocio, "biz_patrocinio_libre", {}).catch(() => undefined);
-  }
+  });
   // Lo que se decidió devolver y la pasarela todavía no hizo (no respondió): otra vez, con la misma llave.
   await devolverPendientes("negocio");
   await db().query(`select patrocinio_cifras_al_dia()`);
   // Las filas de «ya se le contó la vista hoy» solo sirven el día: se van a los 2 días (técnicas, no un historial).
   await db().query(`delete from sponsorship_views where day < (now() at time zone 'America/New_York')::date - 2`);
+  B.fin();
   return { empezaron, vencieron, renovados };
 }
 

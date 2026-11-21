@@ -41,6 +41,7 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
 | Subes de 10 a 20 % | Se suman personas; las que ya lo tenían lo siguen teniendo. |
 | Quieres acotar uno de todo o nada | «Este interruptor se lee todo o nada.» La base tampoco lo deja. |
 | Un servicio no responde bien | Su fila dice **REVISAR** y arriba sale cuántos hay para revisar. |
+| Una tarea del barrido dice «N de M fallaron (…)» | De los M elementos que recorrió (planes, patrocinios, cobros, devoluciones…), N lanzaron un error; los demás sí se hicieron. Entre paréntesis van los que fallaron: se vuelven a intentar cada minuto y la tarea sigue en rojo hasta que se arreglen. |
 | Dos mantenimientos a la misma hora | «Ya hay un mantenimiento a esa hora.» |
 | El respaldo de la base pasó de 26 horas | Respaldos lo dice arriba en rojo. |
 | Un error del servidor con un teléfono en el mensaje | Se guarda con «[tel]» en su lugar, en el grupo de los iguales. |
@@ -94,7 +95,9 @@ producción (9t). Simbolizar los cierres nativos con los dSYM queda para cuando 
 ### What happens in each case
 A flag at 10% in a city: people in that city who fall in its 10% have it; nobody from another city, nobody without an account. Going from 10 to 20%: people
 are added; those who had it keep it. Limiting an all-or-nothing flag: «This flag is read all-or-nothing», and the database refuses too. A service not doing
-well: its row says **CHECK** and the top says how many to check. Two maintenance windows at the same time: «There is already maintenance at that time.» The
+well: its row says **CHECK** and the top says how many to check. A sweep task that says «N de M fallaron (…)» (N of M failed): of the M items it went
+through (plans, sponsorships, charges, refunds…), N threw an error and the rest were done; the ones in parentheses are retried every minute and the task
+stays red until they are fixed. Two maintenance windows at the same time: «There is already maintenance at that time.» The
 database backup older than 26 hours: Backups says so at the top in red. A server error with a phone in the message: stored with «[tel]» instead, in the group
 of identical ones. A key expiring in 30 days: each Admin gets one notice per stage. A Health photo without a reason: it is not shown (not even by its address).
 

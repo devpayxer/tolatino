@@ -51,30 +51,41 @@ export async function crearLiquidaciones(): Promise<number> {
 
 /* 2) Las que llegan a su martes: retener con su motivo o pagar. */
 export async function liquidar(): Promise<{ pagadas: number; retenidas: number }> {
-  await crearLiquidaciones();
+  // 9t9 · Crear las del día y cada liquidación por su cuenta (lib/barrido-uno.ts): antes el error de una se tragaba (solo el registro) y el de crear detenía
+  // todo; ahora las demás siguen y la tarea sale fallida diciendo cuál. La selección trae solo las que tienen algo que hacer AHORA (retener con otro motivo
+  // o pagar): una retenida por disputa o cuenta, o una que espera devoluciones o cobros a medias, ya no ocupa la tajada de 100 cada martes (con más de 100
+  // así, las de detrás no se pagaban nunca). La misma regla que el cuerpo, en el where; lo más atrasado primero.
+  const B = new (await import("./barrido-uno")).Fallos("evtLiquidar");
+  await B.uno("crear", () => crearLiquidaciones());
   const L = (await db().query<{ id: string; st: string; hk: string | null; eid: string; biz: string; city: string; acc: boolean; nuevo: boolean; abiertas: number; pend: number; held: number; vivos: number }>(
-    `select s.id::text, s.status as st, s.hold_kind as hk, s.event_id::text as eid, s.business_id as biz, s.city_id as city,
-            exists (select 1 from stripe_accounts a where a.business_id = s.business_id and a.stripe_account_id is not null and a.payouts_enabled and not a.payouts_paused) as acc,
-            evt_liq_retener_nuevo(s.event_id, s.business_id) as nuevo, k.abiertas, k.pendientes as pend, k.retenidos as held, k.vivos_cx as vivos
-       from event_settlements s join cities ci on ci.id = s.city_id cross join lateral evt_liq_calc(s.event_date_id) k
-      where (s.status = 'pending' or (s.status = 'held' and s.hold_kind in ('disputa', 'cuenta'))) and s.pay_on <= (now() at time zone ci.timezone)::date
-      order by s.pay_on, s.id limit 100`)).rows;
+    `select * from (
+       select s.id::text, s.id as n, s.pay_on, s.status as st, s.hold_kind as hk, s.event_id::text as eid, s.business_id as biz, s.city_id as city,
+              exists (select 1 from stripe_accounts a where a.business_id = s.business_id and a.stripe_account_id is not null and a.payouts_enabled and not a.payouts_paused) as acc,
+              coalesce(evt_liq_retener_nuevo(s.event_id, s.business_id), false) as nuevo, coalesce(k.abiertas, 0) as abiertas, coalesce(k.pendientes, 0) as pend,
+              coalesce(k.retenidos, 0) as held, coalesce(k.vivos_cx, 0) as vivos
+         from event_settlements s join cities ci on ci.id = s.city_id cross join lateral evt_liq_calc(s.event_date_id) k
+        where (s.status = 'pending' or (s.status = 'held' and s.hold_kind in ('disputa', 'cuenta'))) and s.pay_on <= (now() at time zone ci.timezone)::date) x
+      where case when x.nuevo then 'nuevo' when x.abiertas > 0 then 'disputa' when not x.acc then 'cuenta' end is not null
+              and (x.st <> 'held' or x.hk is distinct from case when x.nuevo then 'nuevo' when x.abiertas > 0 then 'disputa' when not x.acc then 'cuenta' end)
+         or (not x.nuevo and x.abiertas = 0 and x.acc and x.pend = 0 and x.held = 0 and x.vivos = 0)
+      order by x.pay_on, x.n limit 100`)).rows;
   let pagadas = 0, retenidas = 0;
-  for (const s of L) {
+  await B.cada(L, (s) => `liquidacion ${s.id}`, async (s) => {
     // El organizador nuevo: lo suelta una persona (Finanzas) desde Colas; las demás retenciones salen solas.
     const hold = s.nuevo ? "nuevo" : s.abiertas > 0 ? "disputa" : !s.acc ? "cuenta" : null;
     if (hold) {
       if (s.st !== "held" || s.hk !== hold) { await retenerAuto(s.id, hold); retenidas++; }
-      continue;
+      return;
     }
-    if (s.pend > 0 || s.held > 0 || s.vivos > 0) continue; // devoluciones o cobros a medias: espera a que terminen (el barrido los acaba)
+    if (s.pend > 0 || s.held > 0 || s.vivos > 0) return; // devoluciones o cobros a medias: espera a que terminen (el barrido los acaba)
     const ok = await tx(async (c) => {
       if (s.st === "held") await c.query(`update event_settlements set status = 'pending', hold_kind = null, hold_note = null where id = $1::bigint and status = 'held'`, [s.id]);
       const u = await c.query(`update event_settlements set status = 'paying' where id = $1::bigint and status = 'pending'`, [s.id]);
       return !!u.rowCount;
-    }).catch((e) => { console.error("[evt-liquidacion] pagar", s.id, String((e as Error)?.message ?? e).slice(0, 200)); return false; });
+    });
     if (ok && (await pagarUna(s.id))) pagadas++;
-  }
+  });
+  B.fin();
   return { pagadas, retenidas };
 }
 async function retenerAuto(id: string, hold: "nuevo" | "disputa" | "cuenta") {
@@ -186,7 +197,9 @@ export async function repararLiquidaciones(): Promise<number> {
     `select id::text from event_settlements where status = 'paying' and paying_at < now() - interval '1 minute' and coalesce(key_from, paying_at) > now() - make_interval(hours => $1::int)
       order by paying_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   let n = 0;
-  for (const s of L) if (await pagarUna(s.id)) n++;
+  // 9t9 · Cada liquidación y cada reversión por su cuenta (lib/barrido-uno.ts): una que falla no deja a las demás (ni a los pasos de después) sin terminar.
+  const B = new (await import("./barrido-uno")).Fallos("evtLiquidacionesReparar");
+  await B.cada(L, (s) => `liquidacion ${s.id}`, async (s) => { if (await pagarUna(s.id)) n++; });
   // 9t5 · Las viejas: se le pregunta a la pasarela (una vez cada CADA_MIN por liquidación) y pagarUna cierra con lo que dijo, sin llamar a Stripe con una
   // llave de más de HORAS_LLAVE; si no cierra, la alerta transfer_stuck (una vez).
   const LV = (await db().query<{ id: string }>(
@@ -194,12 +207,12 @@ export async function repararLiquidaciones(): Promise<number> {
       where s.status = 'paying' and s.net_cents > 0 and coalesce(s.key_from, s.paying_at) <= now() - make_interval(hours => $1::int)
         and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
       order by g.ult nulls first, s.paying_at limit 20`, [HORAS_LLAVE_STRIPE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
-  for (const s of LV) if ((await resolverTransferencia(s.id, { origen: "barrido" })).quedo === "hecha") n++;
+  await B.cada(LV, (s) => `consulta ${s.id}`, async (s) => { if ((await resolverTransferencia(s.id, { origen: "barrido" })).quedo === "hecha") n++; });
   // Las reversiones pendientes, con su llave, dentro del mismo tiempo (9t7: desde que su llave vale); las viejas, la alerta.
   const R = (await db().query<{ id: string }>(
     `select id::text from event_settlement_reversals where status = 'pending' and manual_at is null and created_at < now() - interval '30 seconds'
         and coalesce(key_from, created_at) > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
-  for (const r of R) await ejecutarReversion(r.id);
+  await B.cada(R, (r) => `reversion ${r.id}`, (r) => ejecutarReversion(r.id));
   // 9t7 · Las viejas mandadas con su dato buscable: se le pregunta a la pasarela (una vez cada CADA_MIN por reversión) y se cierran con lo que dijo; las que
   // no cierran, y las anotadas antes de 0206 (sin el dato: nunca se dan por «no llegó»), la alerta transfer_reversal_stuck, una vez.
   const RQ = (await db().query<{ id: string }>(
@@ -207,11 +220,12 @@ export async function repararLiquidaciones(): Promise<number> {
       where r.status = 'pending' and r.manual_at is null and r.gateway_ref is not null and coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $1::int)
         and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
       order by g.ult nulls first, r.created_at limit 20`, [HORAS_LLAVE_STRIPE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
-  for (const r of RQ) if ((await resolverReversion(r.id, { origen: "barrido" })).quedo === "hecha") n++;
+  await B.cada(RQ, (r) => `consulta reversion ${r.id}`, async (r) => { if ((await resolverReversion(r.id, { origen: "barrido" })).quedo === "hecha") n++; });
   const RV = (await db().query<{ id: string }>(
     `select r.id::text from event_settlement_reversals r where r.status = 'pending' and r.manual_at is null and r.gateway_ref is null and coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $1::int)
         and not exists (select 1 from money_alerts a where a.kind = 'transfer_reversal_stuck' and a.subject_id = r.id::text) order by r.created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
-  for (const r of RV) await ejecutarReversion(r.id);
+  await B.cada(RV, (r) => `reversion vieja ${r.id}`, (r) => ejecutarReversion(r.id));
+  B.fin();
   return n;
 }
 /* Las alertas de lo que pasó HORAS_LLAVE en camino (una por liquidación o por reversión: money_alerts es única por tipo y objeto). */
@@ -236,13 +250,14 @@ async function alertaReversionVieja(r: { id: string; amt: number; biz: string; c
    tiene fechas por delante con cobros), se revierte de sus transferencias más recientes. */
 export async function revertirDeudas(): Promise<number> {
   const B = (await db().query<{ biz: string }>(
-    `select distinct s.business_id as biz from event_settlements s where s.status in ('paid', 'reversed') and s.paid_at < now() - make_interval(days => ${cfgSql("evt_ajuste_dias")})
+    `select s.business_id as biz from event_settlements s where s.status in ('paid', 'reversed') and s.paid_at < now() - make_interval(days => ${cfgSql("evt_ajuste_dias")})
         and not exists (select 1 from event_settlements z where z.business_id = s.business_id and (z.status in ('pending', 'held', 'paying') or z.paid_at >= now() - make_interval(days => ${cfgSql("evt_ajuste_dias")})))
         and not exists (select 1 from event_dates d join events e on e.id = d.event_id where e.business_id = s.business_id and d.status = 'scheduled' and d.ends_at > now()
                           and exists (select 1 from payments p where p.transfer_group = 'evt-' || e.id and p.status in ('captured', 'partially_refunded')))
-        and evt_liq_deuda(s.business_id) > 0 limit 50`)).rows;
+        and evt_liq_deuda(s.business_id) > 0 group by s.business_id order by min(s.paid_at), s.business_id limit 50`)).rows;
   let n = 0;
-  for (const { biz } of B) {
+  // 9t9 · Lo más viejo primero (antes sin orden) y cada organizador por su cuenta (lib/barrido-uno.ts): uno que falla no deja a los demás sin su ajuste.
+  await (await import("./barrido-uno")).cadaUno("evtAjustes", B, (x) => x.biz, async ({ biz }) => {
     const ids = await tx(async (c) => {
       await c.query(`select pg_advisory_xact_lock(hashtext('evt-liq:' || $1))`, [biz]);
       let deuda = (await c.query<{ d: number }>(`select evt_liq_deuda($1) as d`, [biz])).rows[0]!.d;
@@ -262,7 +277,7 @@ export async function revertirDeudas(): Promise<number> {
       return out;
     });
     for (const id of ids) if (await ejecutarReversion(id)) n++;
-  }
+  });
   return n;
 }
 /* 9t7 (0206) · Desde que su llave vale: created_at, o key_from si la consulta dijo que nunca llegó y la llave volvió a valer (con OTRA llave: -r<n>). */

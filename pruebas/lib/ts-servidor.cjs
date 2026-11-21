@@ -12,6 +12,8 @@ function cargar(rel, stubs = {}) {
   const js = ts.transpileModule(fuente, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const req = (m) => {
     if (m in stubs) return stubs[m];
+    // 9t9 · El ayudante de los barridos (un elemento malo no detiene a los demás) no tiene importaciones: se carga el real, sin stub.
+    if (m === './barrido-uno') return cargar('apps/web/lib/barrido-uno.ts');
     if (m.startsWith('.')) throw new Error(`${rel} importa ${m}: pásalo en stubs`);
     return require(require.resolve(m, { paths: [WEB] }));
   };
