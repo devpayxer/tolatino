@@ -46,7 +46,7 @@ function armar(X, tag, o = {}) {
   const hoy = sql(`select (now() at time zone 'America/New_York')::date::text`);
   const plan = primero(sql(`insert into plan_subscriptions (operation_id, business_id, user_id, city_id, item_id, price_cents, dow, nth, window_m, charge_day, first_visit_on, next_visit_on, next_charge_on, payment_method)
     values (${op}, '${X.b}', '${X.u}', 'hzl', ${item}, 14900, 2, 2, 540, 5, '${hoy}'::date, null, '${hoy}'::date, '${X.pm}') returning id`));
-  const idem = `plan-${plan}-${hoy}-i1`;
+  const idem = `plan-${plan}-${hoy}-i0`; // la primera intención de un período lleva -i0 (anotarCobro: k = las que ya hubo). Con -i1 el barrido de planes, al anotar la siguiente, chocaba con esta llave (CI 44940985674).
   // El servidor tiene su propio barrido: una intención vieja y en camino que apareciera ANTES que sus cobros en Stripe la cerraría como «nunca llegó».
   // Por eso primero se reserva su id, luego van lo de Stripe (sim_intents) y la consulta anotada, y al final la intención (con ese id).
   const oc = sql(`select nextval(pg_get_serial_sequence('offsession_charges', 'id'))`);
