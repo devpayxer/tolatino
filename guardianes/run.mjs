@@ -13503,6 +13503,15 @@ const guardianes = {
         const val = v[1].trim();
         if (/^"/.test(val) && !/^"(persona|interna|banco)"$/.test(val)) falla(G, p, t.slice(0, m.index).split("\n").length, `nota: ${val} no es persona, interna ni banco`);
       }
+      // (a2) Acciones cuyo texto SÍ lee alguien de fuera (comprobado en el servidor por una revisión aparte, 21 nov): nunca "interna". quitarFotoPerfil →
+      // users.photo_removed_reason → Mi cuenta › Perfil («To'Latino quitó tu foto: …»); evtDecidir → event_review_log.note → Panel › Eventos «REVISIÓN»;
+      // compaPausarEn("business") → compa_pauses.reason → Panel › El Compa; modCiudad (apagar) → modules_off.reason → el panel de cada negocio de la ciudad.
+      for (const [re, quien] of [[/nota: "interna", hacer: \([^)]*\) => quitarFotoPerfil\(/, "la persona lo lee en su Perfil"], [/nota: "interna", hacer: \([^)]*\) => evtDecidir\(/, "el negocio lo lee en el historial de revisión de su evento"],
+        [/nota: "interna", hacer: \([^)]*\) => compaPausarEn\("business"/, "el negocio lo lee en su panel de El Compa"]]) {
+        const m = re.exec(t);
+        if (m) falla(G, p, t.slice(0, m.index).split("\n").length, `nota: "interna" en una acción cuyo texto llega fuera del equipo (${quien})`);
+      }
+      if (f === "Catalogo.tsx" && !/modCiudad\([^)]*\), "persona"\)/.test(t)) falla(G, p, 0, "apagar un módulo en una ciudad: cada negocio ve el motivo en su panel (modules_off.reason); la fila debe pedir la nota como \"persona\"");
       // (b) Una cabecera con el título de la hoja (`t: conf.titulo`) y la hoja con el mismo título: el título sale dos veces.
       if (/\bt: conf\.titulo\b/.test(t)) {
         const usos = [...t.matchAll(/<ConfirmarMotivo c=\{(\{ \.\.\.conf, titulo: [^}]*\}|conf)\}/g)].map((x) => x[1]);

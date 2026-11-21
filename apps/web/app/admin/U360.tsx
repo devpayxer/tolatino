@@ -409,7 +409,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
       </>);
   } else {
     const acts: { l: string; v?: string; icon?: string; off?: boolean; onClick: () => void }[] = [];
-    if (u.photo && (P.editar || P.retirar) && !borrada) acts.push({ l: E("Quitar foto de perfil", "Remove profile photo"), icon: "image", onClick: () => setConf({ titulo: E(`Quitar la foto de ${corto}`, `Remove ${corto}’s photo`), plantillas: PLU, nota: "interna", hacer: (m) => quitarFotoPerfil(u.id, m) }) });
+    if (u.photo && (P.editar || P.retirar) && !borrada) acts.push({ l: E("Quitar foto de perfil", "Remove profile photo"), icon: "image", onClick: () => setConf({ titulo: E(`Quitar la foto de ${corto}`, `Remove ${corto}’s photo`), plantillas: PLU, nota: "persona", hacer: (m) => quitarFotoPerfil(u.id, m) }) });
     // 9n-3 · Enviar mensaje del equipo (AdminMessage): por la app o por SMS; tope por hora y por destinatario, sin enlaces.
     if (P.editar && !borrada && !u.yoMismo) acts.push({ l: E("Enviar mensaje", "Send message"), icon: "chat", onClick: () => setConf({
       titulo: E(`Mensaje a ${corto}`, `Message to ${corto}`), sub: E("Lo ve en su campana y, si eliges SMS, también por texto (no sale de noche ni a quien dijo STOP). Sin enlaces. El motivo de abajo es interno: queda en la auditoría.", "They see it in their bell and, if you choose SMS, also by text (not sent at night or to anyone who said STOP). No links. The reason below is internal: it stays in the audit log."),

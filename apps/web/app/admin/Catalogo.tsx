@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import { catCiudad, catEjemplo, catHorario, filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, limiteCambiar, modCiudad, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, subFusionar, subMover, subNombre, subSeparar, topeCargoDealer } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
-import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar, type NotaPara } from "./Colas";
 import { useAhora } from "@/lib/ahora";
 import { useE } from "./idioma-admin";
 
@@ -72,11 +72,11 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
   const sinPermiso = () => setToast(E("Tu rol no edita el catálogo.", "Your role can’t edit the catalog."));
   const nNeg = (n: number) => `${n} ${n === 1 ? E("negocio", "business") : E("negocios", "businesses")}`;
   // 9n · Una ciudad con su interruptor (categoría o módulo activos por ciudad): apagar dice a cuántos negocios afecta y pide motivo.
-  const filaCiudad = (x: Ciudad, que: Bi, cuenta: string, efecto: Bi, hacerlo: (encender: boolean, m: string) => Promise<ResAdm>) => ({
+  const filaCiudad = (x: Ciudad, que: Bi, cuenta: string, efecto: Bi, hacerlo: (encender: boolean, m: string) => Promise<ResAdm>, alApagar: NotaPara = "interna") => ({
     key: x.id, icon: "pin", t: x.name, s: `${x.on ? E("Activa", "On") : E("Apagada", "Off")} · ${cuenta}${x.status !== "on" ? E(" · la ciudad no abre todavía", " · city not open yet") : ""}`,
     tag: x.on ? null : E("APAGADA", "OFF"), tone: "danger", dim: !x.on, tgOn: x.on,
     onTg: !d.puede ? sinPermiso : x.on
-      ? () => setConf({ titulo: E(`Apagar ${que.es} en ${x.name}`, `Turn off ${que.en} in ${x.name}`), sub: E(`Afecta a ${cuenta} en ${x.name}: ${efecto.es}`, `Affects ${cuenta} in ${x.name}: ${efecto.en}`), peligro: x.negocios > 0, cta: E("Apagar", "Turn off"), nota: "interna", hacer: (m) => hacerlo(false, m) })
+      ? () => setConf({ titulo: E(`Apagar ${que.es} en ${x.name}`, `Turn off ${que.en} in ${x.name}`), sub: E(`Afecta a ${cuenta} en ${x.name}: ${efecto.es}`, `Affects ${cuenta} in ${x.name}: ${efecto.en}`), peligro: x.negocios > 0, cta: E("Apagar", "Turn off"), nota: alApagar, hacer: (m) => hacerlo(false, m) })
       : () => setConf({ titulo: E(`¿Por qué vuelve ${que.es} en ${x.name}?`, `Why is ${que.en} coming back in ${x.name}?`), cta: E("Encender", "Turn on"), nota: "interna", hacer: (m) => hacerlo(true, m) }),
   });
   // 9n · Un límite del plan (Configuración): solo un Admin lo cambia, con motivo; la auditoría guarda antes → después.
@@ -207,7 +207,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
           m.porCiudad
             ? { type: "rows", cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: m.ciudades.map((x) => filaCiudad(x, { es: m.es, en: mN }, nNeg(x.negocios),
               { es: "los negocios de la ciudad lo tienen en pausa (dejan de ofrecerlo en su página y ven el motivo en su panel), y los que publiquen después también.", en: "the city’s businesses have it paused (they stop offering it on their page and see the reason in their panel), and so will new ones." },
-              (encender, mo) => modCiudad(m.key, x.id, encender, mo))) }
+              (encender, mo) => modCiudad(m.key, x.id, encender, mo), "persona")) }
             : { type: "note", tone: "ink", icon: "info", t: E("Este módulo todavía no se apaga por ciudad: su página no tiene la pausa de To’Latino.", "This module can’t be turned off by city yet: its page doesn’t have the To’Latino pause.") },
           ...(d.limites?.filas.length ? [{ type: "group", k: E("LÍMITES FREE Y PRO", "FREE AND PRO LIMITS") } as Bloque, { type: "rows", items: d.limites.filas.map((l) => filaLimite(l, d.limites!.admin)) } as Bloque] : []),
           { type: "group", k: E("HISTORIAL RECIENTE", "RECENT HISTORY") }]} />

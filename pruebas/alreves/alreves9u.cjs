@@ -2,14 +2,19 @@
 // propósito y el guardián tiene que fallar con SU mensaje (el texto de cada caso abajo); después se restaura y los guardianes quedan limpios:
 //   el tipo Confirmar sin `nota` obligatorio · una confirmación sin `nota:` · una nota con un valor que no es persona/interna/banco · ConfirmarMotivo con el
 //   mismo texto de ayuda para todas (el de siempre) · ConfirmarMotivo sin el texto de la nota interna · la cabecera de Planes con `conf.titulo` y la hoja con
-//   el mismo título · lo mismo en Colas (ajustes) y en Liquidaciones.
+//   el mismo título · lo mismo en Colas (ajustes) y en Liquidaciones · las cuatro acciones cuyo texto lee alguien de fuera, marcadas «interna».
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ, G = 'notaDiceAQuien';
 const CM = 'apps/web/app/admin/Colas.tsx', CAT = 'apps/web/app/admin/Catalogo.tsx', PL = 'apps/web/app/admin/Planes.tsx', LQ = 'apps/web/app/admin/Liquidaciones.tsx';
 const casos = [
   [CM, 'nota: NotaPara; sub?: string;', 'nota?: NotaPara; sub?: string;', 'el tipo Confirmar no pide `nota: NotaPara`'],
-  [CAT, 'nota: "interna", hacer: (m) => hacerlo(false, m)', 'hacer: (m) => hacerlo(false, m)', 'una confirmación sin `nota:`'],
+  [CAT, 'nota: alApagar, hacer: (m) => hacerlo(false, m)', 'hacer: (m) => hacerlo(false, m)', 'una confirmación sin `nota:`'],
+  // Las cuatro que una revisión aparte cazó como «interna» cuando alguien de fuera sí las lee (21 nov).
+  ['apps/web/app/admin/U360.tsx', 'nota: "persona", hacer: (m) => quitarFotoPerfil(u.id, m)', 'nota: "interna", hacer: (m) => quitarFotoPerfil(u.id, m)', 'la persona lo lee en su Perfil'],
+  ['apps/web/app/admin/ColasEventos.tsx', 'nota: "persona", hacer: (m) => evtDecidir(e.id, "aprobar", null, m)', 'nota: "interna", hacer: (m) => evtDecidir(e.id, "aprobar", null, m)', 'el negocio lo lee en el historial de revisión de su evento'],
+  ['apps/web/app/admin/ElCompaAdmin.tsx', 'nota: "persona", hacer: (m, e, v) => compaPausarEn("business"', 'nota: "interna", hacer: (m, e, v) => compaPausarEn("business"', 'el negocio lo lee en su panel de El Compa'],
+  [CAT, '(encender, mo) => modCiudad(m.key, x.id, encender, mo), "persona")', '(encender, mo) => modCiudad(m.key, x.id, encender, mo))', 'cada negocio ve el motivo en su panel'],
   [CAT, 'nota: "interna", hacer: (m) => hacerlo(true, m)', 'nota: "nadie", hacer: (m) => hacerlo(true, m)', 'no es persona, interna ni banco'],
   [CM, 'placeholder={c.nota === "persona" ? E("Escríbelo como se lo dirías a la persona.", "Write it the way you would say it to the person.")', 'placeholder={E("Escríbelo como se lo dirías a la persona.", "Write it.")} data-x={c.nota === "persona" ? E("Escríbelo como se lo dirías a la persona.", "Write it the way you would say it to the person.")', 'no pasa el texto de ayuda de la nota según a quién le llega'],
   [CM, 'E("Queda en la auditoría con tu nombre.", "It stays in the audit log under your name.")', 'E("Escribe el motivo.", "Write the reason.")', 'no pasa el texto de ayuda de la nota según a quién le llega'],
