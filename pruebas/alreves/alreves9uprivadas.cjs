@@ -4,7 +4,7 @@
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const G = 'fotosPrivadasConPermiso', A = 'fotosRevisionAntesDePublicar', AY = 'fotoAyudaPrivada';
+const G = 'fotosPrivadasConPermiso', A = 'fotosRevisionAntesDePublicar', AY = 'fotoAyudaPrivada', T = 'topeNuevaSoloPublicas';
 const FP = 'apps/web/lib/fotos-privadas.ts', RV = 'apps/web/app/api/medios/privada/[id]/route.ts', RT = 'apps/web/app/api/medios/route.ts', FR = 'apps/web/lib/fotos-revision.ts',
   FC = 'apps/web/lib/fotos-catalogo.ts', AC = 'apps/web/lib/ayuda-cita.ts', BR = 'apps/web/lib/barrido.ts';
 const casos = [
@@ -56,6 +56,13 @@ const casos = [
   [G, AC, "values ('system', null, 'ayuda.fotos.purga', 'media'", "values ('system', null, 'ayuda.fotos', 'media'"],
   [G, AC, "case when m.private and m.url like 'privado/a/%' then '/api/ayuda/foto/'", "case when m.private then '/api/ayuda/foto/'"],
   [AY, AC, "($4::boolean = false or (private and url like 'privado/a/%'))", '($4::boolean = false or private)'],
+  // (j) 21 nov · El tope de cuenta nueva solo para las públicas: contar las privadas, frenar una privada con él, decidir sin el destino, la prueba sin el caso.
+  [T, FR, '  if (!privada && t.nueva && t.publicas >= t.topeNueva) return "nueva";', '  if (t.nueva && t.publicas >= t.topeNueva) return "nueva";'],
+  [T, FR, '  if (!privada && t.nueva && t.publicas >= t.topeNueva) return "nueva";', '  if (!privada && t.nueva && t.n >= t.topeNueva) return "nueva";'],
+  [T, FR, 'count(*) filter (where not rev_sin_c2)::int as publicas', 'count(*)::int as publicas'],
+  [T, FR, '  if (t.n >= TOPE_HORA) return "general";\n', ''],
+  [T, RT, 'const frena = topeQueFrena(t, sinC2);', 'const frena = topeQueFrena(t, false);'],
+  [T, 'pruebas/e2e/rev9u.cjs', 'cuenta nueva con el tope público agotado: una privada sigue subiendo', 'una privada'],
   // (i) nginx y la prueba de la base.
   [G, 'pruebas/infra/medios-nginx.test.sh', '"/medios/privado/o/$ID.jpg" ', ''],
   [G, 'pruebas/e2e/fot9uprivadas.cjs', "'el equipo sin un caso abierto → no'", "'el equipo'"],

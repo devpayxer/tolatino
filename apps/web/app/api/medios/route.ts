@@ -4,7 +4,7 @@ import sharp, { type OutputInfo } from "sharp";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
 import { HTTP_RECHAZADA, HTTP_RETENIDA, mensajeSubida } from "@/lib/fotos-decision";
-import { anotarVeredicto, guardarNoPublicada, huella, reglasFotos, revisarSubida, topeSubidas, veredictosDe } from "@/lib/fotos-revision";
+import { anotarVeredicto, guardarNoPublicada, huella, reglasFotos, revisarSubida, topeQueFrena, topeSubidas, veredictosDe } from "@/lib/fotos-revision";
 import { guardarVariantesPrivadas, llavePrivada, urlPrivada } from "@/lib/fotos-privadas";
 import { guardarVariantes } from "@/lib/fotos-variantes";
 import { guardarObjeto, mediosListos, urlPublica } from "@/lib/medios";
@@ -37,13 +37,17 @@ export async function POST(req: NextRequest) {
   if (!mediosListos()) return err(503, "Las fotos no están disponibles en este momento.", "Photos are not available right now.");
   if (Number(req.headers.get("content-length") ?? 0) > MAX + 4096) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
   const R = await reglasFotos();
+  // El tope general (60 por hora, todas las fotos) antes de leer el cuerpo; el de cuenta nueva, que solo frena las de destino público, cuando ya se
+  // sabe el destino (lib/fotos-revision.ts topeQueFrena).
   const t = await topeSubidas(me.id, R);
-  if (t.n >= t.tope) return t.nueva
-    ? err(429, `Las cuentas nuevas suben hasta ${t.tope} fotos por hora. Prueba en un rato.`, `New accounts can upload up to ${t.tope} photos an hour. Try again later.`)
+  const lf = topeQueFrena(t, true) ? null : await leerFormulario(req, MAX + 4096);
+  if (lf && !lf.ok && lf.grande) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
+  const form = lf?.ok ? lf.fd : null;
+  const sinC2 = form?.get("destino") === "privado";
+  const frena = topeQueFrena(t, sinC2);
+  if (frena) return frena === "nueva"
+    ? err(429, `Las cuentas nuevas suben hasta ${t.topeNueva} fotos por hora. Prueba en un rato.`, `New accounts can upload up to ${t.topeNueva} photos an hour. Try again later.`)
     : err(429, "Subiste muchas fotos seguidas. Prueba en un rato.", "Too many photos in a row. Try again later.");
-  const lf = await leerFormulario(req, MAX + 4096);
-  if (!lf.ok && lf.grande) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
-  const form = lf.ok ? lf.fd : null;
   const f = form?.get("foto");
   if (f instanceof File && f.size > MAX) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
   if (!(f instanceof File) || f.size === 0) return err(400, "No llegó la foto.", "The photo did not arrive.");
@@ -56,7 +60,6 @@ export async function POST(req: NextRequest) {
     return err(415, "Eso no parece una foto. Prueba con otra.", "That doesn’t look like a photo. Try another one.");
   }
   // La decisión, antes de guardar nada en lo público.
-  const sinC2 = form?.get("destino") === "privado";
   const sha = huella(img.data);
   const v = await revisarSubida({ id: randomUUID(), datos: img.data, sha, userId: me.id, sinC2 }, R);
   if (v.d.estado !== "visible") {

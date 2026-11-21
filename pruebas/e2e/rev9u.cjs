@@ -175,6 +175,16 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
     const sts = []; for (let i = 0; i < 10; i++) sts.push((await subir(cD, await foto(120, 90, 700 + i))).status);
     const r7 = await subir(cD, await foto(120, 90, 799));
     ok(sts.every((x) => x === 200) && r7.status === 429 && /cuentas nuevas/i.test(r7.json?.mensaje?.es) && /10/.test(r7.json?.mensaje?.es), `cuenta nueva: 10 fotos en la hora y la 11 → 429 con el porqué (${sts.join(',')} · ${r7.status})`);
+    // El tope de cuenta nueva es solo para las de destino PÚBLICO: las de una operación (destino privado) no esperan; el general de 60 las frena igual.
+    const r7p = await subir(cD, await foto(120, 90, 798), '/api/medios', { destino: 'privado' });
+    ok(r7p.status === 200 && r7p.json?.ok, `cuenta nueva con el tope público agotado: una privada sigue subiendo (${r7p.status})`);
+    const r7b = await subir(cD, await foto(120, 90, 797));
+    ok(r7b.status === 429 && /cuentas nuevas/i.test(r7b.json?.mensaje?.es), 'y la pública sigue dando 429');
+    const UD = uid(TD);
+    sql(`insert into media (owner_kind, owner_id, url, uploaded_by, status, private, rev_sin_c2) select 'user', '${UD}', '/x/' || g, '${UD}', 'visible', true, true from generate_series(1, 49) g`);
+    const r7g = await subir(cD, await foto(120, 90, 796), '/api/medios', { destino: 'privado' });
+    ok(r7g.status === 429 && /muchas fotos seguidas/i.test(r7g.json?.mensaje?.es) && /Too many photos/i.test(r7g.json?.mensaje?.en), `el tope general de 60 por hora frena también las privadas (${r7g.status})`);
+    sql(`update media set created_at = now() - interval '2 hours' where uploaded_by = '${UD}'`);
 
     // ── 8 · Capa 3: reportes ──
     const r8 = await subir(cC, await foto(401, 330, 80));

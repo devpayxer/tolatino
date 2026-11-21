@@ -10,6 +10,8 @@
 //   3. barrerPrivadas: una foto de antes (bajo n/) pasa a privado/o/ con su dirección con permiso, su copia en una visita se reescribe y sale de n/.
 //   4. purgarFotosAyuda: borra SOLO la foto privada de la ayuda (privado/a/) de una ayuda cerrada hace más del plazo, con su renglón en la auditoría;
 //      sin almacén no hace nada.
+//   5. El tope por hora (lib/fotos-revision.ts topeSubidas + topeQueFrena): el de cuenta nueva cuenta y frena SOLO las de destino público; una
+//      privada solo responde al general de 60 (que cuenta todas).
 // Guardián fotosPrivadasConPermiso. En el CI corre en el carril de punta a punta (hay base); aquí con DATABASE_URL apuntando a una base de pruebas.
 const ENT = require('../lib/entorno.cjs');
 const path = require('path'), { randomUUID } = require('crypto');
@@ -45,6 +47,8 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
   const CAT = cargar('apps/web/lib/fotos-catalogo.ts', {});
   const AY = cargar('apps/web/lib/ayuda-cita.ts', { './config': { cfgSql: (k) => `cfg_int('${k}')`, valor: async () => 0 }, './plazo-txt': { horasTxt: () => '' }, './colas': { COLA_AYUDA_SQL: "'sop'" },
     './db': base, './cobros': {}, './ayuda': {}, './ayuda-estafa': {}, './medios': medios });
+  const REV = cargar('apps/web/lib/fotos-revision.ts', { './db': base, './medios': medios, './fotos-privadas': F, './fotos-variantes': V, './avisos': {}, './fotos-decision': {},
+    './fotos-segunda-opinion': {}, './moderacion': {}, './moderacion-img': {} });
   const q1 = async (sql, p) => (await c.query(sql, p)).rows[0];
   try {
     await c.query('begin');
@@ -191,6 +195,27 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
     ok(await st(P2) === `visible:false:${enA(P2)}` && G.has(enA(P2)), 'purgarFotosAyuda no toca una ayuda cerrada hace poco');
     ok(await st(P3) === `visible:false:${enA(P3)}`, 'ni una ayuda que no está cerrada');
     ok(await st(P4) === `visible:false:${F.urlPrivada(P4)}`, 'ni una foto de destino «privado» de /api/medios (no promete ese plazo)');
+
+    // ── 5. El tope por hora ──
+    const R4 = { c4: { nuevaDias: 7, nuevaHora: 10 } };
+    const nuevaU = await usuario('Nueva'), viejaU = await usuario('Vieja');
+    await c.query(`update users set created_at = now() - interval '30 days' where id = $1::uuid`, [viejaU]);
+    const subidas = (u, k, privada) => c.query(`insert into media (owner_kind, owner_id, url, uploaded_by, status, private, rev_sin_c2) select 'user', $1::text, '/x/' || g, $1::uuid, 'visible', $3::boolean, $3::boolean from generate_series(1, $2::int) g`, [u, k, privada]);
+    await subidas(nuevaU, 10, false);
+    let t = await REV.topeSubidas(nuevaU, R4);
+    ok(t.nueva && t.n === 10 && t.publicas === 10 && REV.topeQueFrena(t, false) === 'nueva', 'cuenta nueva con 10 públicas en la hora: la pública 11 → tope de cuenta nueva (429)');
+    ok(REV.topeQueFrena(t, true) === null, 'cuenta nueva con el tope público agotado: una privada (de una operación) sigue subiendo');
+    await subidas(nuevaU, 39, true);
+    t = await REV.topeSubidas(nuevaU, R4);
+    ok(t.n === 49 && t.publicas === 10 && REV.topeQueFrena(t, true) === null, 'las privadas no cuentan para el tope de cuenta nueva (49 en la hora, 10 públicas)');
+    await subidas(nuevaU, 11, true);
+    t = await REV.topeSubidas(nuevaU, R4);
+    ok(t.n === 60 && REV.topeQueFrena(t, true) === 'general' && REV.topeQueFrena(t, false) === 'general', 'el tope general de 60 por hora frena también las privadas (cuenta todas)');
+    await subidas(viejaU, 10, false);
+    t = await REV.topeSubidas(viejaU, R4);
+    ok(!t.nueva && REV.topeQueFrena(t, false) === null, 'una cuenta vieja con 10 públicas sigue subiendo');
+    await c.query(`update media set created_at = now() - interval '2 hours' where uploaded_by = $1::uuid`, [nuevaU]);
+    ok(REV.topeQueFrena(await REV.topeSubidas(nuevaU, R4), false) === null, 'las de hace más de una hora no cuentan');
   } catch (e) { console.error(e); malas++; } finally {
     await c.query('rollback').catch(() => undefined);
     await c.end();

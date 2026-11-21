@@ -12225,6 +12225,26 @@ const guardianes = {
       if (!pr.includes(k)) falla(G, PR, 0, `la prueba de la base dejó de revisar ${k}`);
   },
 
+  /* 21 nov · topeNuevaSoloPublicas: el tope bajo de «cuenta nueva» (capa 4, foto4.nueva_hora) cuenta y frena SOLO las subidas de destino PÚBLICO; una
+     de destino «privado» (la foto de una operación: cita, solicitud, mudanza, la balanza, el daño de una renta…) solo responde al tope general de 60
+     por hora, que cuenta TODAS. Lo que se teme (confirmación 44847327303: cit3e, ayu4g, res4s y tra4y2 se quedaban esperando con Marisol, cuenta de
+     la semilla = nueva, porque /api/medios contaba todas sus fotos): volver a contar las privadas en el tope de cuenta nueva, frenarlas con él, o
+     dejar las privadas sin el general. Al revés: alreves9uprivadas; pruebas: fot9uprivadas §5 (la base) y rev9u §7 (punta a punta). */
+  topeNuevaSoloPublicas() {
+    const G = "topeNuevaSoloPublicas", F = "apps/web/lib/fotos-revision.ts", R = "apps/web/app/api/medios/route.ts", P = "pruebas/e2e/rev9u.cjs";
+    if (!existsSync(F) || !existsSync(R)) return falla(G, F, 0, "falta la subida de fotos o su revisión");
+    const f = sinComent(F), r = sinComent(R), ts = cuerpoFn(f, "topeSubidas"), tq = cuerpoFn(f, "topeQueFrena");
+    if (!/export const TOPE_HORA = 60;/.test(f) || !/select count\(\*\)::int as n, count\(\*\) filter \(where not rev_sin_c2\)::int as publicas,/.test(ts) || !/from media where uploaded_by = \$1 and created_at > now\(\) - interval '1 hour'`/.test(ts))
+      falla(G, F, 0, "topeSubidas cuenta todas las fotos de la última hora (el general) y aparte las de destino público (not rev_sin_c2) para el tope de cuenta nueva");
+    if (!/if \(t\.n >= TOPE_HORA\) return "general";/.test(tq) || !/if \(!privada && t\.nueva && t\.publicas >= t\.topeNueva\) return "nueva";/.test(tq) || /t\.n >= t\.topeNueva/.test(tq))
+      falla(G, F, 0, "topeQueFrena: el general (60, todas) frena a cualquiera; el de cuenta nueva solo a una pública y contando solo las públicas");
+    const iSin = r.indexOf('const sinC2 = form?.get("destino") === "privado";'), iFrena = r.indexOf("const frena = topeQueFrena(t, sinC2);");
+    if (iSin < 0 || iFrena < iSin || !/const lf = topeQueFrena\(t, true\) \? null : await leerFormulario\(/.test(r) || !/if \(frena\) return frena === "nueva"/.test(r))
+      falla(G, R, 0, "la subida decide el tope con el destino ya leído (topeQueFrena(t, sinC2)); antes de leer el cuerpo solo el general");
+    const p = existsSync(P) ? readFileSync(P, "utf8") : "";
+    if (!p.includes("cuenta nueva con el tope público agotado: una privada sigue subiendo") || !p.includes("el tope general de 60 por hora frena también las privadas")) falla(G, P, 0, "la prueba de punta a punta dejó de revisar el tope de cuenta nueva con una privada");
+  },
+
   /* fotosRevisionFalloCerrado: si un modelo no responde, la capa está apagada, no hay presupuesto o la respuesta no encaja, la foto queda RETENIDA:
      nunca se publica «por si acaso». La decisión es pura (lib/fotos-decision.ts) y su prueba recorre todas las ramas (fotos9urevision). Lo que se
      teme: un camino que publique sin un «publicar» de un modelo, la confianza que publique lo que el modelo propio no miró, leer la segunda opinión

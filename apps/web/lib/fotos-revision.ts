@@ -48,13 +48,26 @@ export async function reglasFotos(c?: Q): Promise<ReglasFotos> {
   };
 }
 
-/* ── Tope de subidas por hora: 60 para todos; una cuenta nueva (< nueva_dias), el de la capa 4 (10 por defecto). Vale aunque la capa 4 esté
-   apagada (es antiabuso, no confianza). ── */
-export async function topeSubidas(userId: string, R: ReglasFotos): Promise<{ n: number; tope: number; nueva: boolean }> {
-  const r = (await db().query<{ n: number; nueva: boolean }>(
-    `select (select count(*)::int from media where uploaded_by = $1 and created_at > now() - interval '1 hour') as n,
-            coalesce((select created_at > now() - make_interval(days => $2) from users where id = $1), true) as nueva`, [userId, R.c4.nuevaDias])).rows[0]!;
-  return { n: r.n, nueva: r.nueva, tope: r.nueva ? Math.min(60, R.c4.nuevaHora) : 60 };
+/* ── Tope de subidas por hora. Vale aunque la capa 4 esté apagada (es antiabuso, no confianza).
+   - General: 60 por hora para todos, contando TODAS las fotos de la persona (públicas y de destino «privado»).
+   - Cuenta nueva (< nueva_dias): además, el de la capa 4 (nueva_hora, 10 por defecto), que cuenta y frena SOLO las de destino PÚBLICO (las que no
+     son rev_sin_c2). Una foto de una operación (cita, solicitud, mudanza, la balanza, el daño de una renta…) no puede esperar (la misma regla que
+     con el modelo propio caído): una persona del equipo de un mercado recién invitada que pesa 15 productos, o un vecino nuevo que pide una
+     mudanza con fotos y luego un pre-estimado, no se quedan bloqueados (confirmación 44847327303: cit3e, ayu4g, res4s, tra4y2). ── */
+export const TOPE_HORA = 60;
+export type TopeSubidas = { n: number; publicas: number; nueva: boolean; topeNueva: number };
+export async function topeSubidas(userId: string, R: ReglasFotos): Promise<TopeSubidas> {
+  const r = (await db().query<{ n: number; publicas: number; nueva: boolean }>(
+    `select count(*)::int as n, count(*) filter (where not rev_sin_c2)::int as publicas,
+            coalesce((select created_at > now() - make_interval(days => $2) from users where id = $1), true) as nueva
+       from media where uploaded_by = $1 and created_at > now() - interval '1 hour'`, [userId, R.c4.nuevaDias])).rows[0]!;
+  return { n: r.n, publicas: r.publicas, nueva: r.nueva, topeNueva: Math.min(TOPE_HORA, R.c4.nuevaHora) };
+}
+/* Pura: qué tope frena esta subida (o ninguno). La de destino «privado» solo responde al general. */
+export function topeQueFrena(t: TopeSubidas, privada: boolean): "general" | "nueva" | null {
+  if (t.n >= TOPE_HORA) return "general";
+  if (!privada && t.nueva && t.publicas >= t.topeNueva) return "nueva";
+  return null;
 }
 
 /* ── Memoria por contenido (sha256 de la maestra normalizada): los veredictos que miraron ese contenido, del más nuevo al más viejo ── */
