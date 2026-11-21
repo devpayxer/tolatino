@@ -2172,6 +2172,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Contenido) con las cifras de `cifrasFotos()` y las de las privadas (`cifrasFotosPrivadas()` en lib/fotos-privadas.ts); ayuda
       `docs/ayuda/admin-fotos-a-la-medida.md`; guardián `fotosCifrasEnElAdmin` (al revés: `alreves9ufotosadmin`); punta a punta `fot9uadmin`
       (escrita; la corre el CI: no hubo base ni servidor en la sesión de F4). Queda la medida en el sandbox con fotos de cámara (línea de arriba)._
+- [ ] **→ 9u** · **Las cifras de fotos del Super Admin recorren `media` entera cada vez que se abre Auto-moderación** (`cifrasFotos` y
+      `cifrasFotosPrivadas`: una pasada de agregación sin índice que la cubra). Con cientos de miles de fotos pesará: guardarlas por día en una
+      tabla de resumen (como la analítica) o cachearlas unos minutos, y medirlo en la base de carga. (F4, 21 nov)
 
 ## Revisión automática de las fotos públicas — R1 + R2 (decisión AJ, 20 nov) — lo que quedó anotado
 - [ ] **→ 9u** · **Plazo de retención de las fotos rechazadas o retenidas** (`privado/rev/<uuid>.jpg` + su fila en `media`): hoy no se borran
