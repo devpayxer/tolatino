@@ -35,8 +35,13 @@ const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l
 // La confirmación con motivo (ReasonConfirm): el motivo y el botón de esa hoja.
 const confirmar = async (p, cta, m) => { await p.locator('textarea').last().fill(`${m} · ciu9i ${RUN}`); await clic(p.getByRole('button', { name: cta, exact: true })); };
 // Un huso donde AHORA es de día (10–19 h) o de noche (1–5 h): la prueba no depende de la hora a la que corre.
-const huso = (dia) => sql(`select tz from (values ('America/New_York'), ('Europe/Madrid'), ('Asia/Tokyo'), ('Pacific/Honolulu'), ('Asia/Kolkata'), ('America/Los_Angeles'), ('Australia/Sydney'), ('Asia/Dubai')) v(tz)
-  where extract(hour from now() at time zone tz) ${dia ? 'between 10 and 19' : 'between 1 and 5'} order by tz limit 1`);
+// 21 nov · Con solo esas ocho ciudades, de 05:00 a 05:59 UTC ninguna estaba «de noche» (1–5 h): salía vacío, la ciudad quedaba con la zona horaria
+// en blanco y su página del Super Admin se caía («time zone "" not recognized», CI 44866551623). Detrás van los 24 husos fijos (Etc/GMT±n): siempre
+// hay uno de día y uno de noche; se prefiere una ciudad de verdad. Y si aun así saliera vacío, la prueba lo dice en vez de escribirlo.
+const huso = (dia) => { const z = sql(`select tz from (select tz, 0 as o from (values ('America/New_York'), ('Europe/Madrid'), ('Asia/Tokyo'), ('Pacific/Honolulu'), ('Asia/Kolkata'), ('America/Los_Angeles'), ('Australia/Sydney'), ('Asia/Dubai')) v(tz)
+    union all select 'Etc/GMT' || case when n < 0 then n::text else '+' || n::text end, 1 from generate_series(-12, 11) n) z
+  where extract(hour from now() at time zone tz) ${dia ? 'between 10 and 19' : 'between 1 and 5'} order by o, tz limit 1`);
+  if (!z) throw new Error('huso: ningún huso está ' + (dia ? 'de día' : 'de noche') + ' ahora'); return z; };
 const pasos = () => Number(sql(`select count(*) from city_launch_steps s join city_launches l on l.id = s.launch_id where l.city_id = 'rdg' and l.status = 'en_curso'`));
 const estado = () => sql(`select status from cities where id = 'rdg'`);
 const verComo = async (b, tel, tag, tam = 390) => {
@@ -132,6 +137,8 @@ const vePronto = async (p) => { await p.goto(B + '/'); await p.locator('[data-sc
     const L = sql(`select id from city_launches where city_id = 'rdg' and status = 'en_curso'`);
     ok(sql(`select evidence->'ciudadManager'->>0 from city_launch_steps where launch_id = ${L} and step = 4`) === 'Raúl R', 'la evidencia del paso 4 guarda lo que el servidor vio');
     ok(/ciudad_paso: el asistente solo avanza/.test(sqlErr(`insert into city_launch_steps (launch_id, step, city_id, done_by, evidence, reason) values (${L}, 7, 'rdg', '${ANA}', '{"x":1}', 'saltar')`)), 'saltarse un paso → no (la base)');
+    // 21 nov · La zona horaria de una ciudad no queda vacía ni inventada (0201): con ella en blanco se caía la página de la ciudad.
+    ok(sqlErr(`update cities set timezone = '' where id = 'rdg'`) !== '' && sqlErr(`update cities set timezone = 'Luna/Mar_de_la_Tranquilidad' where id = 'rdg'`) !== '' && sql(`select timezone from cities where id = 'rdg'`) !== '', 'una zona horaria vacía o inventada → no (la base)');
     ok(/ciudad_paso: un paso del asistente no se cambia/.test(sqlErr(`update city_launch_steps set reason = 'otro' where launch_id = ${L} and step = 1`)), 'un paso hecho no se cambia (la base)');
     ok(/ciudad_apertura: faltan pasos del asistente \(5 de 6/.test(sqlErr(`begin; select set_config('tl.apertura', '${L}', true); update cities set status = 'on' where id = 'rdg'; rollback;`)), 'abrir con el asistente sin «Comprobar» → no (faltan pasos)');
     ok(/ciudad_apertura: una ciudad solo abre con el asistente/.test(sqlErr(`begin; update platform_config set value = '"produccion"'::jsonb where key = 'entorno'; update schema_seeds set name = 'x' || name where name like 'pruebas/%'; update cities set status = 'on' where id = 'rdg'; rollback;`)),

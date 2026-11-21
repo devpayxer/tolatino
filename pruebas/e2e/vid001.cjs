@@ -7,7 +7,7 @@
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const fs = require('fs');
-const { entrarComo, medios, sql } = require('../lib/negocio-nuevo.cjs');
+const { entrarComo, medios, sql, abiertoTodoElDia } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
@@ -45,6 +45,9 @@ const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and
     const fd = new FormData(); fd.append('video', new Blob([cuerpo], { type: tipo }), 'x');
     const r = await fetch(`/api/negocio/video?negocio=${biz}`, { method: 'POST', body: fd }); return { s: r.status, j: await r.json().catch(() => ({})) };
   }, [BIZ, tipo, cuerpo]);
+  // 21 nov · La tarjeta grande con el video sale en la vitrina de «abiertos ahora» de la página de categoría: de madrugada el negocio está cerrado
+  // y la tarjeta no estaba (CI 44866551623, 00:40 de Hazleton). La prueba lo deja abierto todo el día mientras corre y vuelve a su horario al salir.
+  const volverHorario = abiertoTodoElDia(BIZ);
   try {
     console.log('1 · El dueño sube un video de 35 s → queda en 30 s, EN REVISIÓN, y en público no sale');
     const pd = await nueva(1360, 900, DUENO);
@@ -122,6 +125,7 @@ const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and
     ok(await pv.locator('[data-portada-video]').count() === 0, 'la ficha vuelve a la foto de portada');
     console.log(`\nvid001 · ${n} comprobaciones en verde`);
   } finally {
+    try { volverHorario(); } catch (e) { console.error('horario:', e.message); }
     sql(`update business_stats_cache set plan = 'pro' where business_id = '${BIZ}'`);
     try { sql(`update business_posts set status = 'removed' where id = ${POST}`); } catch (e) { console.error('limpieza', e.message); }
     for (const c of abiertas) await c.close().catch(() => {});
