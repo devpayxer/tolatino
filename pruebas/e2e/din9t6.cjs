@@ -30,7 +30,10 @@ const avisados = [];
 const avisos = { avisar: async (u, t, v) => { avisados.push(['u', u, t, v]); }, avisarMuchos: async () => undefined, avisarNegocio: async (b, t, v) => { avisados.push(['b', b, t, v]); } };
 const auditarStaff = async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after, reason) values ('staff', $1, $2, $3, $4, $5, $6)`,
   [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null), a.reason ?? null]);
-const SU = {}, CF = {}, LQ = {}, K = {}, RR = {}, RV = {}, ES = {}, RE = {}, PL = {}, PA = {};
+const SU = {}, CF = {}, LQ = {}, K = {}, RR = {}, RV = {}, ES = {}, RE = {}, PL = {};
+// El barrido de cobros recorre TODO lo que esté en camino en la base, también lo que dejó otra prueba (un patrocinio viejo de pat002/pat003/din9t5): aquí
+// el patrocinio es un doble, y su cierre no hace nada (sin esto, con esa fila en la base, la prueba se caía con «renovacionConsultada is not a function»).
+const PA = { renovacionConsultada: async () => undefined }, PAE = { renovacionConsultadaEvt: async () => undefined };
 const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './admin': { auditar: auditarStaff }, './suscripcion': SU, './cobro-fuera': CF, './evt-liquidacion': LQ,
   './consulta-pasarela': K, './renovar-retencion': RR, './revision-pasarela': RV });
 // La pasarela de mentira: una vez por llave (como Stripe con Idempotency-Key), guarda la metadata de cada cobro, retención y devolución y contesta la
@@ -92,7 +95,7 @@ const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela':
   './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined } });
 Object.assign(K, cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas }));
 Object.assign(CF, cargar('apps/web/lib/cobro-fuera.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas, './planes': PL, './rentas': RE, './patrocinio': PA,
-  './patrocinio-evento': {}, './consulta-pasarela': K }));
+  './patrocinio-evento': PAE, './consulta-pasarela': K }));
 Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: () => new Date().toISOString().slice(0, 10) },
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './avisos': avisos }));
 Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { diasEspeciales: async () => [], rangosDia: () => [] }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P },
