@@ -125,13 +125,8 @@ const cambios = (L) => [devDe(L), notas(L, 'resuelta_a_mano'), notas(L, 'resuelt
     ok(audit(L1, 'dinero.alerta.preguntar') === '1' && sql(`select count(*) from audit_entries where action = 'dinero.alerta.preguntar' and target_id = '${L1.al}' and actor_id = '${stf}' and reason = 'Se le mandó un cheque al cliente.'`) === '1', 'la auditoría «dinero.alerta.preguntar» lleva a quien la pidió y su nota (una vez)');
     ok(notas(L1, 'resuelta_a_mano') === '0' && audit(L1, 'dinero.alerta.resuelta_a_mano') === '0', 'y NO quedó ninguna nota ni auditoría de «resuelta a mano»');
     ok(pagado(L1) === String(L1.amt), `el libro cuenta la devolución una vez (el cobro lleva ${usd(L1.amt)} devueltos)`);
-    // «la alerta se cierra sola»: la cierra el barrido del servidor (cerrarAlertasResueltas). En el servidor local nadie lo llama cada minuto (lo llama el servicio
-    // «barrido» del despliegue): se llama aquí, igual que adm6j, y se espera la condición, sin pausas fijas.
-    const enElActo = notas(L1, 'resuelta_sola') === '1';
-    console.log(`  · al contestar la acción, la alerta ${enElActo ? 'ya estaba cerrada' : 'sigue ABIERTA hasta el próximo barrido'} (nota «resuelta_sola»: ${notas(L1, 'resuelta_sola')})`);
-    execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`);
-    let cerro = false; for (let i = 0; i < 60 && !cerro; i++) { cerro = notas(L1, 'resuelta_sola') === '1'; if (!cerro) await new Promise((r) => setTimeout(r, 500)); }
-    ok(cerro, 'tras el barrido, la alerta se cierra sola (nota «resuelta_sola», una vez)');
+    // «la alerta se cierra sola»: en el acto, sin esperar al barrido (como «Preguntar a Stripe ahora»). Antes seguía abierta hasta el siguiente barrido.
+    ok(notas(L1, 'resuelta_sola') === '1', 'la alerta se cierra sola en el acto (nota «resuelta_sola», una vez), sin esperar al barrido');
     await verTodas(a, L1);
     const r1 = resuelta(a, L1);
     ok((await r1.count()) === 1 && (await r1.getByRole('button', { name: /Resolver a mano|Preguntar a Stripe ahora|Resuelta/ }).count()) === 0, 'Ver todas: la alerta sale RESUELTA y sin acciones');

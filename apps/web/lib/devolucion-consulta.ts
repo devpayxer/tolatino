@@ -136,6 +136,9 @@ export async function antesDeAMano(s: Staff, alerta: string, kind: string, sujet
   if (resultado === "hecho") {
     const v = await K.veredicto(kind === "refund_stuck" ? "refunds" : kind === "transfer_reversal_stuck" ? "event_settlement_reversals" : "gateway_refunds", sujeto);
     const hecha = !!v?.stripe && (await cerrar(v.stripe));
+    // La alerta se cierra en el acto, como con «Preguntar a Stripe ahora» (antes seguía abierta hasta el siguiente barrido: quien acababa de leer «se
+    // cerró como hecha» la seguía viendo como atascada, con sus botones).
+    if (hecha) await K.cerrarAlertaSola(kind as "refund_stuck" | "transfer_reversal_stuck" | "extra_refund_stuck", sujeto, { es: `Cerrada sola: al ir a resolverla a mano, Stripe dijo que sí salió (${v!.stripe}).`, en: `Closed by itself: when resolving it by hand, Stripe said it did go through (${v!.stripe}).` }).catch(() => false);
     return { sigue: false, ok: hecha, msg: hecha ? `Stripe dice que sí salió (${v!.stripe}): se cerró como hecha, una vez, y la alerta se cierra sola. No se marca a mano.`
       : `Stripe dice que sí salió${v?.stripe ? ` (${v.stripe})` : ""}: no se marca a mano. Míralo en Stripe.` };
   }
