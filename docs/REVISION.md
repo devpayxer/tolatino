@@ -6063,3 +6063,26 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      Alternativa: dejarlas abiertas (quedarían dos alertas por la misma devolución).
 - **Quedó en LAUNCH («Dinero por clase: lo que queda después de 9t8»):** devolver otra vez unos boletos desde su alerta, la carrera de «Resolver a mano»
   justo mientras el barrido la manda, y lo que espera a Stripe de verdad o a tu decisión de tandas anteriores (las transferencias con otro monto).
+
+## Super Admin: la hoja de confirmar dice un solo título y a quién le llega lo que escribes (21 nov) — en la rama, falta subir — tres cosas para ti
+- **Qué pasaba:** al confirmar una acción en el Super Admin, el título salía dos veces en el teléfono (arriba y otra vez en la hoja), y el campo de la
+  nota decía siempre «Escríbelo como se lo dirías a la persona», también cuando la nota solo queda en la auditoría.
+- **Ahora (Sonnet lo escribió; Opus revisó aparte a quién le llega cada nota; Fable corrigió lo que encontró la revisión):** un solo título en 19
+  pantallas. Cada confirmación (347) dice a quién le llega la nota: «Escríbelo como se lo dirías a la persona» cuando la persona o el negocio la leen,
+  «Queda en la auditoría con tu nombre» cuando es interna, y «Escríbelo para el banco, en inglés si puedes» en el resumen de una disputa. La revisión
+  aparte encontró cuatro que decían «interna» y la persona sí las lee (quitar una foto de perfil, aprobar un evento, pausar El Compa en un negocio,
+  apagar un módulo en una ciudad): corregidas y fijadas con un guardián.
+- **Qué mirar (sandbox, cuando suba; teléfono):** Super Admin › Planes › una alerta › «Resolver a mano»: un solo título y, en la nota, «Queda en la
+  auditoría con tu nombre». Super Admin › Eventos › Liquidaciones › «Retener»: «Escríbelo como se lo dirías a la persona». Usuarios › una persona con
+  foto › «Quitar foto de perfil»: «Escríbelo como se lo dirías a la persona» (ella lo lee en su Perfil).
+- **Decide tú (dejé lo más seguro; todo se cambia):**
+  1. *Las notas internas y «Descargar mis datos».* La revisión encontró que ocho motivos que el equipo escribe como internos (por ejemplo, por qué se
+     descartó una recomendación, por qué se le quitó el acceso al panel a un empleado de un negocio, por qué se revocó una llave) salen en el archivo
+     que la persona descarga con sus datos. Hoy siguen saliendo (no lo cambié: es una decisión de privacidad). Opciones: **(a)** que no salgan (la hoja
+     dice «interna» y es verdad; riesgo: la persona no ve el motivo de una decisión sobre ella) o **(b)** que salgan y la hoja diga «la persona puede
+     leerlo si descarga sus datos». Lo más seguro para lo que el equipo ya escribió es (a); conviene preguntárselo al abogado (paquete legal). Está en
+     LAUNCH y no se abre al público sin decidirlo.
+  2. *Las dos flechas de volver* (la de la cabecera y la de la hoja) siguen en todas las hojas, como en las pantallas que ya estaban bien. Quitar la de
+     la cabecera es un cambio pequeño si te molesta en el teléfono.
+  3. *Cinco confirmaciones piden una nota que nadie guarda* (asignar un caso, «Ya existe» en una recomendación y las tres de simular una disputa).
+     Voy a hacer que se guarden en la auditoría, que es lo que la hoja promete; dime si prefieres que no se pida nota ahí.
