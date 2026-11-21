@@ -5981,7 +5981,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      que el teléfono las guarde para que abran más rápido (quedarían en el disco del aparato, también en uno compartido), dilo.
 - **Quedó anotado en LAUNCH:** las fotos al subir (12 MB) siguen costando ~91 MB cada una; «Descargar mis datos» todavía arma el ZIP en memoria.
 
-## Dinero, sexta tanda: retenciones que se renuevan y «elegir cuál vale» (21 nov · migración 0204) — en la rama de trabajo, falta el CI — seis cosas para ti
+## Dinero, sexta tanda: retenciones que se renuevan y «elegir cuál vale» (21 nov · migración 0204) — YA en el sandbox (commit 280ff61, 0204 aplicada) — seis cosas para ti
 - **Qué pasaba:** (1) Cuando la tarjeta iba a soltar el depósito de una renta o lo retenido de un estimado (7 días), el sistema lo volvía a retener; si
   Stripe no contestaba, soltaba el viejo y le decía al negocio (y a la persona) «el banco ya no deja», aunque no fuera cierto y aunque Stripe sí
   hubiera hecho la nueva. (2) Cuando Stripe tenía dos cobros para una sola cosa, uno con otro monto, o Pro cobrado dos veces el mismo mes, se avisaba al

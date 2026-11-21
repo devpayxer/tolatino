@@ -2233,6 +2233,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       el libro sigue diciendo «retenido» y a nadie se le avisa hasta 20 h después: como ya no se reintenta con esa llave, el «nunca llegó» de una
       renovación podría darse mucho antes (decisión de plazo: REVISION 9t6); (8) «Elegir cuál vale» y «Preguntar a Stripe ahora» no tenían prueba
       de navegador: encargada (`din9t6b`).
+- [ ] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
+      mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
+      privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho
+      (21 nov, Fable):** `lib/fotos-revision.ts` elige entre las que siguen publicadas; guardián `muestraDeLasQueSePuedenVer`, al revés
+      `alreves9umuestra` 5/5; `rev9u2` compara el número exacto (pantalla y correo). **Falta para cerrarla:** correr `rev9u2` y `rev9u` contra
+      el servidor y verla en el CI. (21 nov)
+- [ ] **→ 9o** · **Al desplegar, la app nueva corre unos segundos contra la base vieja** (sandbox, 21 nov 07:50 EST, al subir la 0203: `relation
+      "gateway_checks" does not exist` y `column "key_from" does not exist` en el registro de la base, tres veces en 3 s, hasta que entró la
+      migración). En el sandbox no pasó de ahí; en producción con gente adentro es un barrido o una pantalla que falla ese rato. Para producción:
+      migrar ANTES de cambiar la app (y que cada migración sea compatible con la versión anterior), y comprobarlo en el ensayo de 9o. (21 nov)
 - [x] **→ 9t** · **`app8a` inestable en la revisión completa 44902103048 (única inestable de la corrida; «la isla del Repartidor abre»):** la
       prueba leía la pantalla al instante de navegar, antes de que la isla pintara el turno guardado. Ahora espera a que lo pinte (hasta 15 s) y
       comprueba lo mismo. En local: 111 ✓. Si vuelve a salir, ya no es la prueba: mirar el montaje de `/repartidor/sin-conexion`. (21 nov)

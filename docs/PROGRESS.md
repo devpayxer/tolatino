@@ -20,6 +20,18 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (tarde, más) · `main` y `pruebas` = 280ff61, sandbox comprobado desde fuera** (estado-sandbox 44912311667: salud con commit 280ff616,
+  **0204 aplicada, 203 migraciones**). Evidencia: revisión completa **44908076139 VERDE, 0 rojas y 1 inestable** (`rev9u2`). Subió **dinero 9t6**
+  (renovar una retención es una intención; «Elegir cuál vale» en las alertas `gateway_review`; lo escribió Opus, lo revisó Fable).
+  **En la rama de trabajo (a40850c), todavía NO en `main`:** (1) la renovación cerrada por la consulta conserva la marca de la tarjeta;
+  (2) `din9t6b`, la prueba de navegador de «Elegir cuál vale» (Sonnet): pasa en local y **falla en el CI dirigido 44908921751 en teléfono** por un
+  desborde real (la pestaña Ingresos mide 459 px en una pantalla de 390: una cadena larga sin espacios en el detalle de una alerta; y una ficha de
+  plantilla que no se parte) → arreglo encargado a Sonnet en el script de portado del sistema de diseño (`AdminRow`, `ReasonConfirm`), con el
+  servidor local cedido; (3) la hoja con monto y fecha de cada opción (migración **0205**, Opus; revisado: tipos, guardianes, Semgrep, al revés
+  161/161, `din9t6` 58 ✓ y `din9t6b` 42 ✓ en local); (4) «Para mirar» elige las cinco entre las que siguen publicadas (causa de `rev9u2`
+  inestable; guardián y al revés hechos; **falta correr `rev9u2` y `rev9u` contra el servidor**). **Sigue:** recibir el arreglo del desborde,
+  revisarlo, correr en local `din9t6b rev9u2 rev9u din9k` y las del admin, CI (completo, porque toca una pieza del sistema de diseño que usa todo
+  el Super Admin), y subir.
 - **21 nov (tarde, después) · `main` y `pruebas` = c704b47, sandbox comprobado desde fuera** (estado-sandbox 44905950003: salud con commit
   c704b47b, **0203 aplicada, 202 migraciones**, servicio de video reiniciado, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia:
   revisión completa **44902103048 VERDE, 0 rojas y 1 inestable** (`app8a`, arreglada después en la rama de trabajo: esperaba poco). Subió:
