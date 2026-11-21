@@ -808,6 +808,31 @@ for (const src of archivos) {
     if (t === antes) throw new Error("parche AdminBar: sin cambios");
   }
 
+  // AdminBar (9t6c, 21 nov): ningún texto que viene de los datos ensancha la pantalla. En Planes › Ingresos el detalle de una alerta traía una llave o
+  // un id largo sin espacios (60 caracteres) y la página del teléfono pasaba de 390 a 459 (se arrastraba a los lados); la ficha de plantilla de la hoja
+  // de confirmar («El monto no es el de la intención: devolver y cobrar otra vez.») no se partía y la dejaba en 397. Ahora el título, el texto secundario
+  // y el meta de AdminRow parten la cadena larga (overflowWrap: anywhere; el contenedor ya tenía minWidth 0) y las fichas de ChipGroup (las plantillas y las
+  // opciones de elegir de ReasonConfirm) ocupan más de una línea sin salirse. Lo mismo el texto de AdminNote y las líneas de AuditRow (quién y qué,
+  // antes → después, motivo). QueueCard y AdminList no necesitan nada: la primera corta con «…» y la segunda arma sus filas con AdminRow. Cuando el texto cabe se ve igual (misma tipografía; el táctil de 44 px del Chip
+  // se conserva). Guardián textosLargos.
+  if (rel === "admin/AdminBar.js") {
+    const cambios = [
+      [`      font: '700 14px/1.3 Manrope,sans-serif',\n      color: titleColor\n    }`, `      font: '700 14px/1.3 Manrope,sans-serif',\n      color: titleColor,\n      overflowWrap: 'anywhere'\n    }`, "AdminRow (título)"],
+      [`      font: '500 12.5px/1.4 Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)'\n    }\n  }, sub) : null, has(meta)`, `      font: '500 12.5px/1.4 Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)',\n      overflowWrap: 'anywhere'\n    }\n  }, sub) : null, has(meta)`, "AdminRow (texto secundario)"],
+      [`      letterSpacing: '.06em',\n      color: metaColor\n    }\n  }, meta)`, `      letterSpacing: '.06em',\n      color: metaColor,\n      overflowWrap: 'anywhere'\n    }\n  }, meta)`, "AdminRow (meta)"],
+      [`      font: '600 13px/1.45 Manrope,sans-serif',\n      textWrap: 'pretty'\n    }\n  }, children)`, `      font: '600 13px/1.45 Manrope,sans-serif',\n      textWrap: 'pretty',\n      overflowWrap: 'anywhere'\n    }\n  }, children)`, "AdminNote"],
+      [`      font: '500 13px/1.4 Manrope,sans-serif'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    style: {\n      fontWeight: 800\n    }\n  }, who), " ", action)`, `      font: '500 13px/1.4 Manrope,sans-serif',\n      overflowWrap: 'anywhere'\n    }\n  }, /*#__PURE__*/React.createElement("span", {\n    style: {\n      fontWeight: 800\n    }\n  }, who), " ", action)`, "AuditRow (quién y qué)"],
+      [`      gap: 6,\n      font: '600 10px ' + mono,\n      letterSpacing: '.04em'\n    }`, `      gap: 6,\n      font: '600 10px ' + mono,\n      letterSpacing: '.04em',\n      overflowWrap: 'anywhere'\n    }`, "AuditRow (antes → después)"],
+      [`      font: '500 12px/1.4 Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)'\n    }\n  }, why)`, `      font: '500 12px/1.4 Manrope,sans-serif',\n      color: 'rgba(11,14,18,.6)',\n      overflowWrap: 'anywhere'\n    }\n  }, why)`, "AuditRow (motivo)"],
+      [`}, items.map((x, i) => /*#__PURE__*/React.createElement("span", {\n  key: i,\n  style: {\n    flex: 'none'\n  }\n}, /*#__PURE__*/React.createElement(__ds_scope.Chip, {\n  variant: x.on ? 'selected' : 'filter',\n  onClick: x.onClick\n}, x.label)))));`,
+       `}, items.map((x, i) => /*#__PURE__*/React.createElement("span", {\n  key: i,\n  style: {\n    display: 'flex',\n    flex: '0 1 auto',\n    minWidth: 0,\n    maxWidth: '100%'\n  }\n}, /*#__PURE__*/React.createElement(__ds_scope.Chip, {\n  variant: x.on ? 'selected' : 'filter',\n  onClick: x.onClick,\n  style: {\n    whiteSpace: 'normal',\n    overflowWrap: 'anywhere',\n    textAlign: 'left',\n    flex: '0 1 auto',\n    minWidth: 0\n  }\n}, x.label)))));`, "ChipGroup (fichas en varias líneas)"],
+    ];
+    for (const [de, a, que] of cambios) {
+      if (t.split(de).length - 1 !== 1) throw new Error(`parche AdminBar (9t6c, ${que}): el origen cambió, revisar`);
+      t = t.replace(de, () => a);
+    }
+  }
+
   // MenuItemRow «no disponible hoy» (17 nov, axe color-contrast): atenuaba TODA la fila con opacity .45 y el nombre, el precio y las etiquetas
   // quedaban a 1,9–3,1:1. Ahora se atenúa solo la foto; el texto va en el gris AA (ink al 60 %) y las etiquetas conservan su tono. Se ve apagada igual.
   if (rel === "menu/MenuItemRow.js") {

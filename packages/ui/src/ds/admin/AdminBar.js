@@ -68,7 +68,8 @@ function AdminNote({
       flex: 1,
       minWidth: 0,
       font: '600 13px/1.45 Manrope,sans-serif',
-      textWrap: 'pretty'
+      textWrap: 'pretty',
+      overflowWrap: 'anywhere'
     }
   }, children), has(cta) ? /*#__PURE__*/React.createElement("span", {
     onClick: onCta,
@@ -668,7 +669,8 @@ function AdminRow({
     style: {
       display: 'block',
       font: '700 14px/1.3 Manrope,sans-serif',
-      color: titleColor
+      color: titleColor,
+      overflowWrap: 'anywhere'
     }
   }, /*#__PURE__*/React.createElement("span", {
     ...(toggle != null ? __ds_scope.__btn(onClick) : {})
@@ -677,7 +679,8 @@ function AdminRow({
       display: 'block',
       marginTop: 3,
       font: '500 12.5px/1.4 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.6)'
+      color: 'rgba(11,14,18,.6)',
+      overflowWrap: 'anywhere'
     }
   }, sub) : null, has(meta) ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -685,7 +688,8 @@ function AdminRow({
       marginTop: 4,
       font: '600 9.5px ' + mono,
       letterSpacing: '.06em',
-      color: metaColor
+      color: metaColor,
+      overflowWrap: 'anywhere'
     }
   }, meta) : null), has(tag) ? /*#__PURE__*/React.createElement(__ds_scope.Tag, {
     tone: tone
@@ -999,7 +1003,8 @@ function AuditRow({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      font: '500 13px/1.4 Manrope,sans-serif'
+      font: '500 13px/1.4 Manrope,sans-serif',
+      overflowWrap: 'anywhere'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1012,7 +1017,8 @@ function AuditRow({
       alignItems: 'center',
       gap: 6,
       font: '600 10px ' + mono,
-      letterSpacing: '.04em'
+      letterSpacing: '.04em',
+      overflowWrap: 'anywhere'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1035,7 +1041,8 @@ function AuditRow({
   }, has(after) ? after : '—')) : null, has(why) ? /*#__PURE__*/React.createElement("span", {
     style: {
       font: '500 12px/1.4 Manrope,sans-serif',
-      color: 'rgba(11,14,18,.6)'
+      color: 'rgba(11,14,18,.6)',
+      overflowWrap: 'anywhere'
     }
   }, why) : null), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1402,11 +1409,21 @@ const ChipGroup = ({
 }, items.map((x, i) => /*#__PURE__*/React.createElement("span", {
   key: i,
   style: {
-    flex: 'none'
+    display: 'flex',
+    flex: '0 1 auto',
+    minWidth: 0,
+    maxWidth: '100%'
   }
 }, /*#__PURE__*/React.createElement(__ds_scope.Chip, {
   variant: x.on ? 'selected' : 'filter',
-  onClick: x.onClick
+  onClick: x.onClick,
+  style: {
+    whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
+    textAlign: 'left',
+    flex: '0 1 auto',
+    minWidth: 0
+  }
 }, x.label)))));
 function ReasonConfirm({
   eyebrow = 'CONFIRMAR',

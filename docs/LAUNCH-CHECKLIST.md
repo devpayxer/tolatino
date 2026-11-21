@@ -2246,6 +2246,20 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9t** · **`app8a` inestable en la revisión completa 44902103048 (única inestable de la corrida; «la isla del Repartidor abre»):** la
       prueba leía la pantalla al instante de navegar, antes de que la isla pintara el turno guardado. Ahora espera a que lo pinte (hasta 15 s) y
       comprueba lo mismo. En local: 111 ✓. Si vuelve a salir, ya no es la prueba: mirar el montaje de `/repartidor/sin-conexion`. (21 nov)
+- [x] **→ 9t** · **Un texto largo ensanchaba la pantalla del teléfono en Super Admin › Planes › Ingresos (`din9t6b` roja en el CI 44908921751: pasaba en escritorio y fallaba dos veces en el teléfono con «<div> intercepts pointer events»):**
+      el detalle de una alerta del dinero traía una cadena sin espacios (una llave o un id de 60 caracteres) y la página pasaba de 390 a 459 px (en un
+      teléfono se arrastra a los lados y la barra de abajo queda corrida y tapa clics); y la ficha de plantilla de la hoja de confirmar («El monto no es el de
+      la intención: devolver y cobrar otra vez.») no se partía (397 px). **La causa:** las filas de esa pantalla no las pinta `AdminRow` sino las filas de
+      `PanelBloques` (`packages/ui/src/panel/Bloques.tsx`, a mano), que no partían cadenas largas; la hoja sí es `ReasonConfirm`.
+      **Hecho (21 nov):** `overflowWrap: 'anywhere'` en título, texto secundario y meta de las filas del panel (`rows`) y de `AdminRow`, y en la nota (`note`
+      del panel y `AdminNote`); en `AuditRow` (quién y qué, antes → después, motivo); y las fichas de `ChipGroup` (plantillas y opciones de `ReasonConfirm`) ocupan
+      más de una línea y pueden encogerse (mismo táctil de 44 px, misma tipografía cuando cabe). `AdminBar.js` no se edita: los cambios son parches en
+      `scripts/portar-sistema.mjs` (se detienen si el origen cambia) y el archivo se volvió a generar. Guardián `textosLargos` (por clase: las dos piezas de
+      filas, las fichas, las notas, `AuditRow`, que el parche siga en el script y que `din9t6b` mida el ancho); al revés `alreves9t6c`.
+      **Comprobado:** a 390 px, `innerWidth`/`scrollWidth` 482/482 (antes del arreglo, con la alerta de cadena larga) → 390/390 en la lista, con la hoja abierta y con el
+      resultado; `din9t6b` ahora arma esa alerta y hace el recorrido de teléfono (elegir, plantilla, «Decidir») con clics de verdad, sin `force` ni
+      `dispatchEvent`, y ya no hay clic tapado. **Queda:** otras piezas del panel con texto fijo (etiquetas, no datos; p. ej. filas `kv`, la línea de tiempo de
+      Confianza) no cortan una cadena larga: no reciben datos libres hoy; si alguna los recibe, mismo parche. (21 nov)
 - [x] **→ 9t** · **Una foto privada que no está en el almacén dejaba el pedido colgado (CI 44892361124: `dm9t` 25 min y `rev9u2` rojas dos veces):**
       desde «medios en flujo» `abrirObjeto` soltaba el cuerpo de la respuesta del almacén con `await r.body.cancel()`. En el servidor, Next envuelve
       cada `fetch` GET que no lleva `signal` (su «dedupe»): parte el cuerpo en dos ramas y se queda con una; el cancel de una rama solo termina cuando

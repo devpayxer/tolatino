@@ -9,6 +9,7 @@
 //      sobre dinero.» y en la base no cambia nada;
 //   4) en inglés (tl_lang=en): «Choose which counts», la hoja «What counts of what Stripe has» y «None: refund everything that went through»;
 //   5) una alerta hold_stuck (retención renovada sin respuesta) ofrece «Preguntar a Stripe ahora» (y no «Elegir cuál vale»);
+//   7) (9t6c) en el teléfono (390) una cadena de 60 caracteres sin espacios en la alerta no ensancha la página (lista y hoja) y el recorrido va con clics reales.
 //   6) (0205) cada opción de la hoja dice su monto, cuándo salió (zona de la ciudad) y su id, el primero arriba; uno de otro monto NO se ofrece y la hoja
 //      dice por qué; una consulta vieja sin detalle (la segunda intención) ofrece los ids como antes.
 // Precondiciones propias (orden indiferente, corre dos veces seguidas): su negocio, su cuenta de cobro simulada, su plan, su intención en camino (más vieja que
@@ -29,11 +30,13 @@ const shot = (p, nom, full = false) => p.screenshot({ path: OUT + `d9t6b-${nom}-
 const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
 const primero = (s) => s.split('\n').find((l) => /^\d+$/.test(l)); // el id de un «returning» (psql también imprime la etiqueta de cada sentencia)
 const RUN = crypto.randomBytes(4).toString('hex');
+const LARGO = ('idpi_' + RUN + 'z'.repeat(60)).slice(0, 60); // 60 caracteres sin un solo espacio
 const telPropio = () => { for (let i = 0; i < 300; i++) { const t = '570555' + String(crypto.randomInt(10000)).padStart(4, '0'); if (!require('../lib/telefonos-fijos.cjs').esFijo(t) && sql(`select count(*) from users where phone = '+1${t}'`) === '0') return t; } throw new Error('no hay un teléfono 555 libre'); };
 
 // Una intención de cobro de un plan del Hogar ($149), en camino y pasada la ventana de la llave (30 h), con DOS cobros hechos en el simulador para esa
 // misma intención y la última consulta anotada («varios»), como lo deja el barrido; su alerta gateway_review abierta.
 // o.viejo: la consulta anotada como antes de 0205 (solo los ids, sin detalle). o.otroMonto: el segundo cobro es de $99 (no puede valer).
+// o.largo: el detalle de la alerta trae una cadena larga SIN espacios (una llave, un id), como la que ensanchaba la pantalla del teléfono (9t6c).
 // El primero (A) salió hace 31 h y el segundo (C) 5 min después; el detalle se guarda al revés (el más nuevo primero) para ver que la hoja los ordena.
 function armar(X, tag, o = {}) {
   const num = `PL-9B${RUN}${tag}`.toUpperCase().slice(0, 18);
@@ -55,8 +58,9 @@ function armar(X, tag, o = {}) {
   sql(`set session_replication_role = replica; insert into offsession_charges (id, kind, ref_id, purpose, operation_id, business_id, city_id, payer_user_id, amount_cents, fee_cents, destination, pm, idem_key, detail, gateway_ref, sent_at, attempts, last_error, created_at)
     overriding system value values (${oc}, 'plan', '${plan}', 'periodo-${hoy}', ${op}, '${X.b}', 'hzl', '${X.u}', 14900, 0, 'acct_sim_${X.b}', '${X.pm}', '${idem}', '{"meta":{"plan":"${num}"},"next":"${hoy}","day":5}'::jsonb,
             '${ref}', now() - interval '30 hours', 1, 'error', now() - interval '30 hours')`);
+  const largo = o.largo ? ` Llave: ${LARGO}.` : '', largoEn = o.largo ? ` Key: ${LARGO}.` : '';
   sql(`insert into money_alerts (kind, subject_id, business_id, city_id, amount_cents, detail) values ('gateway_review', '${ref}', '${X.b}', 'hzl', 14900,
-    '{"es":"Stripe tiene 2 objetos para una sola intención (${ref}, $149.00): no se cierra sola. Elige en la alerta cuál vale.","en":"Stripe has 2 objects for a single intent (${ref}, $149.00): it does not close by itself. Choose in the alert which one counts."}'::jsonb) on conflict (kind, subject_id) do nothing`);
+    '{"es":"Stripe tiene 2 objetos para una sola intención (${ref}, $149.00): no se cierra sola. Elige en la alerta cuál vale.${largo}","en":"Stripe has 2 objects for a single intent (${ref}, $149.00): it does not close by itself. Choose in the alert which one counts.${largoEn}"}'::jsonb) on conflict (kind, subject_id) do nothing`);
   const al = sql(`select id from money_alerts where kind = 'gateway_review' and subject_id = '${ref}'`);
   const creado = (id) => sql(`select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from sim_intents where id = '${id}'`);
   return { oc, ref, A, C, al, plan, num, idem, cA: creado(A), cC: creado(C) };
@@ -230,19 +234,30 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     sql(`insert into money_alert_notes (alert_id, action, staff_id, note) values (${alH}, 'resuelta_sola', null, 'Cerrada por la prueba 9t6b.')`);
 
     // ── Teléfono 390 ──
+    // 9t6c · Nada ensancha la pantalla: con una cadena de 60 caracteres sin espacios en el detalle de la alerta, la página mide 390 (ni un píxel de más)
+    // en la lista y con la hoja abierta; y el recorrido (elegir, plantilla, «Decidir») va con clics de verdad (sin force ni dispatchEvent): si algo tapa, falla.
+    console.log('Teléfono 390 · una cadena larga sin espacios no ensancha la pantalla y el recorrido se hace con clics de verdad');
     const cm = await tel390(b), m = await cm.newPage(); abiertas.push(cm); mirar(m, 'admin-390');
     await entrarComo(m, ADM);
-    const L5 = armar(X, 'm');
+    const L5 = armar(X, 'm', { largo: true });
     await ingresos(m, L5.ref);
     const f5 = filaAl(m, L5.ref);
     ok((await vis(f5.getByRole('button', { name: 'Elegir cuál vale' }))) !== null, 'en el teléfono (390) también se ofrece «Elegir cuál vale»');
+    ok((await texto(m)).includes(LARGO), `la alerta trae la cadena larga de ${LARGO.length} caracteres sin espacios`);
+    const ancho = (p) => p.evaluate(() => ({ inner: window.innerWidth, scroll: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
+    let w = await ancho(m);
+    ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la lista de alertas a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
     await f5.scrollIntoViewIfNeeded(); await m.screenshot({ path: OUT + 'd9t6b-alerta-m.png' });
     await clic(f5.getByRole('button', { name: 'Elegir cuál vale' }));
     await m.getByText('Qué vale de lo que tiene Stripe').first().waitFor();
+    w = await ancho(m);
+    ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la hoja abierta a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
     await arriba(m); await m.screenshot({ path: OUT + 'd9t6b-hoja-m.png' });
     await clic(opcion(m, L5.A)); await clic(m.getByText('Cobro duplicado: se queda el primero.', { exact: true })); await clic(m.getByRole('button', { name: 'Decidir', exact: true }));
     await m.getByText(`Decidido: vale ${L5.A}`).first().waitFor({ timeout: 30000 });
     await m.screenshot({ path: OUT + 'd9t6b-resultado-m.png' });
+    w = await ancho(m);
+    ok(w.inner === 390 && w.scroll <= 390, `y con el resultado a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}`);
     ok(estadoDe(L5.oc) === `done||${L5.A}` && cuentas(L5.oc) === '1|1|1', 'en el teléfono: decidido igual (hecha con ese cobro, una devolución, una auditoría)');
 
     // ── 6 · Uno de otro monto: no se ofrece; la hoja dice por qué ──

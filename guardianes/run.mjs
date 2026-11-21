@@ -13270,6 +13270,55 @@ const guardianes = {
       "y la foto del barbero vuelve", "restaurado por el equipo: el logo vuelve", "nunca vuelve a un lugar público", "lo que no es nuestro no se toca"])
       if (!p.includes(k)) falla(G, P, 0, `la prueba de la base no revisa: «${k}»`);
   },
+  /* 9t6c (21 nov) · textosLargos: un texto que viene de los datos (el detalle de una alerta, una llave, un id) no puede ensanchar la pantalla del teléfono.
+     En Super Admin › Planes › Ingresos el detalle de una alerta traía una cadena de 60 caracteres sin espacios y la página pasaba de 390 a 459 (en un
+     teléfono se arrastraba a los lados y la barra de abajo quedaba corrida); la ficha de plantilla de la hoja de confirmar («El monto no es el de la
+     intención: devolver y cobrar otra vez.») no se partía y la dejaba en 397. Dos piezas pintan esas filas: AdminRow (sistema de diseño, generado por
+     scripts/portar-sistema.mjs: el corte va como parche ahí, no a mano en AdminBar.js) y las filas del panel (packages/ui/src/panel/Bloques.tsx, que arma
+     el Super Admin con PanelBloques). Aquí: el título, el texto secundario y el meta de las dos parten una cadena larga (overflowWrap: anywhere); las fichas de
+     ChipGroup (plantillas y opciones de ReasonConfirm) ocupan más de una línea y pueden encogerse; AdminNote y AuditRow igual; el parche existe en el script
+     (si no, regenerar lo perdería); y din9t6b mide el ancho a 390 con la cadena larga y hace el recorrido con clics de verdad (sin force ni dispatchEvent).
+     Al revés: alreves9t6c. */
+  textosLargos() {
+    const G = "textosLargos", AB = "packages/ui/src/ds/admin/AdminBar.js", PS = "scripts/portar-sistema.mjs", BL = "packages/ui/src/panel/Bloques.tsx", E2E = "pruebas/e2e/din9t6b.cjs";
+    for (const f of [AB, PS, BL, E2E]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de los textos largos");
+    const ab = readFileSync(AB, "utf8");
+    // El cuerpo de una función del sistema generado: hasta la siguiente función o constante de primer nivel (cuerpoFn se detiene en «})» de los parámetros).
+    const pieza = (nombre) => { const i = ab.indexOf(`\nfunction ${nombre}(`); if (i < 0) return ""; const j = ab.slice(i + 1).search(/\n(?:function |const |\/\*)/); return j < 0 ? ab.slice(i) : ab.slice(i, i + 1 + j); };
+    // El objeto de estilo que sigue a una ancla (hasta su «}») corta cadenas largas.
+    const corta = (src, ancla) => { const i = src.indexOf(ancla); return i >= 0 && /overflowWrap: 'anywhere'/.test(src.slice(i, src.indexOf("}", i))); };
+    // (1) AdminRow: título, texto secundario y meta.
+    const fila = pieza("AdminRow");
+    if (!corta(fila, "font: '700 14px/1.3 Manrope,sans-serif'")) falla(G, AB, 0, "AdminRow: el título no parte una cadena larga sin espacios (overflowWrap: 'anywhere')");
+    if (!corta(fila, "font: '500 12.5px/1.4 Manrope,sans-serif'")) falla(G, AB, 0, "AdminRow: el texto secundario no parte una cadena larga sin espacios (overflowWrap: 'anywhere')");
+    if (!corta(fila, "color: metaColor")) falla(G, AB, 0, "AdminRow: el meta no parte una cadena larga sin espacios (overflowWrap: 'anywhere')");
+    // (2) Las fichas de la hoja de confirmar.
+    const iC = ab.indexOf("const ChipGroup = "), jC = ab.indexOf("function ReasonConfirm(", iC), cg = iC >= 0 && jC > iC ? ab.slice(iC, jC) : "";
+    if (!cg || !/whiteSpace: 'normal',\s*overflowWrap: 'anywhere'/.test(cg)) falla(G, AB, 0, "las fichas de ReasonConfirm (ChipGroup) no pueden ocupar más de una línea ni partir una cadena larga (whiteSpace: 'normal' + overflowWrap: 'anywhere'): una plantilla larga ensancha la pantalla");
+    if (!cg || /flex: 'none'/.test(cg.split("React.createElement(__ds_scope.Chip")[0].split("items.map")[1] ?? "x") || !/minWidth: 0,\s*maxWidth: '100%'/.test(cg)) falla(G, AB, 0, "el envoltorio de cada ficha de ChipGroup no puede encogerse (flex: 'none' o sin minWidth: 0 / maxWidth: '100%')");
+    // (3) Las demás piezas que pintan texto de datos.
+    if (!/overflowWrap: 'anywhere'/.test(pieza("AdminNote"))) falla(G, AB, 0, "AdminNote: el texto no parte una cadena larga sin espacios");
+    const au = pieza("AuditRow");
+    if (!corta(au, "font: '500 13px/1.4 Manrope,sans-serif'") || !corta(au, "font: '500 12px/1.4 Manrope,sans-serif'") || !corta(au, "font: '600 10px ' + mono")) falla(G, AB, 0, "AuditRow: quién y qué, el antes → después y el motivo parten una cadena larga sin espacios");
+    // (4) El parche: AdminBar.js se genera; sin el parche en el script, volver a generar perdería el corte.
+    const ps = readFileSync(PS, "utf8");
+    for (const [que, ...fichas] of [["AdminRow (título)"], ["AdminRow (texto secundario)"], ["AdminRow (meta)"], ["ChipGroup (fichas en varias líneas)", "whiteSpace: 'normal'"], ["AdminNote"], ["AuditRow (quién y qué)"], ["AuditRow (antes → después)"], ["AuditRow (motivo)"]]) {
+      const l = ps.split("\n").find((x) => x.includes(`"${que}"]`));
+      if (!l || !/overflowWrap: 'anywhere'/.test(l) || fichas.some((x) => !l.includes(x))) falla(G, PS, 0, `el parche «${que}» (9t6c) no está en scripts/portar-sistema.mjs con su corte: AdminBar.js no se edita a mano, y al volver a generarlo se perdería`);
+    }
+    if (!/parche AdminBar \(9t6c, \$\{que\}\): el origen cambió/.test(ps)) falla(G, PS, 0, "los parches 9t6c se detienen si el origen cambió (en vez de perderse sin avisar)");
+    // (5) Las filas y notas del panel (Bloques.tsx, lo que arma Planes › Ingresos).
+    const bl = sinComent(BL);
+    for (const [x, que] of [["x.t", "el título"], ["x.s", "el texto secundario"], ["x.m", "el meta"]]) if (!new RegExp(`overflowWrap: "anywhere"[^}]*\\}\\}>\\{${x.replace(".", "\\.")}\\}</span>`).test(bl)) falla(G, BL, 0, `las filas del panel (rows): ${que} no parte una cadena larga sin espacios (overflowWrap: "anywhere")`);
+    if (!/overflowWrap: "anywhere" \}\}>\{b\.t\}<\/span>\s*\{b\.cta/.test(bl)) falla(G, BL, 0, "la nota del panel (note) no parte una cadena larga sin espacios");
+    // (6) La prueba de la pantalla: mide el ancho a 390 con la cadena larga y hace el recorrido sin trucos.
+    const e = sinComent(E2E), iT = e.indexOf("tel390(b)"), jT = e.indexOf("armar(X, 'o'", iT), tel = iT >= 0 && jT > iT ? e.slice(iT, jT) : "";
+    if (!/const LARGO = \(.*\.slice\(0, 60\)/.test(e) || !/o\.largo/.test(e) || !/armar\(X, 'm', \{ largo: true \}\)/.test(tel)) falla(G, E2E, 0, "din9t6b ya no arma una alerta con una cadena de 60 caracteres sin espacios para el teléfono");
+    if (!/la lista de alertas a 390[^\n]*\n/.test(tel) || !/w\.inner === 390 && w\.scroll <= 390 && w\.body <= 390, `la lista de alertas a 390/.test(tel)) falla(G, E2E, 0, "din9t6b no comprueba innerWidth === 390 y scrollWidth <= 390 en la lista del teléfono");
+    if (!/w\.inner === 390 && w\.scroll <= 390 && w\.body <= 390, `la hoja abierta a 390/.test(tel)) falla(G, E2E, 0, "din9t6b no comprueba innerWidth === 390 y scrollWidth <= 390 con la hoja abierta");
+    if (!/Decidir/.test(tel) || /force: true|dispatchEvent|\.evaluate\([^)]*\.click\(/.test(tel)) falla(G, E2E, 0, "el recorrido de teléfono de din9t6b se hace con clics de verdad (sin force, dispatchEvent ni click por evaluate) y llega a «Decidir»");
+  },
+
 };
 
 
