@@ -25,7 +25,16 @@ function requiere(nombre, consulta, { siempre = false, que = '', veces = 1 } = {
       // La salida entera de la que falló, al lado de las demás (aquí solo van las últimas líneas).
       try { const f = path.join(ENT.S, 'res', `requiere-${nombre}-${Date.now()}.out`); require('fs').mkdirSync(path.dirname(f), { recursive: true }); require('fs').writeFileSync(f, out); console.log(`  [${nombre}] salida entera: ${f}`); } catch { /* sin carpeta de salida */ }
       // 9b-3 · Lo que dice algo (los últimos ✓, el error y adónde había llegado), no la cola del registro de Playwright («waiting… retrying…»).
-      const ls = out.split('\n').filter(Boolean), dice = ls.filter((l) => /✓|Error|ASSERT|FALLO|Timeout|navigated to|ERROR|waiting for (locator|getBy)|la página dice/.test(l) && !/^\s+at /.test(l));
+      // 21 nov · Y POR QUÉ no pudo tocar (deshabilitado, tapado, moviéndose, fuera de pantalla): Playwright lo dice en cada reintento; aquí una vez
+      // cada motivo (pro4l2 como requisito de ayu4m y res4m se quedó 30 s en «Pasó la consulta» y el registro no decía por qué).
+      const visto = new Set();
+      const ls = out.split('\n').filter(Boolean), dice = ls.filter((l) => {
+        if (/^\s+at /.test(l)) return false;
+        if (/✓|Error|ASSERT|FALLO|Timeout|navigated to|ERROR|waiting for (locator|getBy)|la página dice/.test(l)) return true;
+        const m = /(not enabled|not visible|not stable|intercepts pointer events|outside of the viewport|detached|not attached)/.exec(l);
+        if (!m || visto.has(m[1])) return false;
+        visto.add(m[1]); return true;
+      });
       console.log([...dice.slice(-18), ...ls.slice(-3)].map((l) => `  [${nombre}] ${l.slice(0, 400)}`).join('\n'));
       throw new Error(`requiere: ${nombre} falló, así que no hay ${que || 'lo que esta prueba necesita'}`);
     }

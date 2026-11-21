@@ -2091,6 +2091,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       834); en Chromium con las mismas medidas, agente y toque del iPad el clic llega (probado el 20 nov), así que es de WebKit o de un momento.
       La prueba ahora dice por qué no pudo (tapado, moviéndose, fuera de pantalla) y cuánto se desplazó la hoja: leerlo en la próxima corrida
       de anchos y, si es de la app (la hoja no se desplaza en Safari), arreglar la hoja del detalle del panel. (20 nov)
+- [ ] **→ 9t** · **`pro4l2` como requisito no puede tocar «Pasó la consulta» (30 s), dos corridas seguidas:** en la confirmación 44847327303
+      dejó a `res4m` INESTABLE (pasó al repetir) y en la programada 44851886841 sobre `main` (ancho iPad 2/4) dejó ROJA a `ayu4m` dos veces.
+      Corrida sola en ese mismo carril, `pro4l2` pasa (13 ✓). El botón se ve pero el toque no entra: misma familia que `dlv2f4` («Aceptar» en el
+      detalle del panel). Sospecha sin comprobar: los botones del detalle llevan `off: c.pending` y la transición del panel queda pendiente.
+      `pruebas/lib/requiere.cjs` ahora dice el motivo que da Playwright (deshabilitado, tapado, moviéndose, fuera de pantalla): leerlo en la
+      próxima corrida y arreglar la causa, no la prueba. (21 nov)
 - [ ] **→ 9b** · **`evt9t`: /eventos tardó más de 30 s en cargar una vez** (CI repartido 44743122204, parte 3/4, Chromium). Sin causa todavía;
       el CI ahora imprime lo último del servidor cuando algo cae. Mirarlo si se repite. (20 nov)
 
