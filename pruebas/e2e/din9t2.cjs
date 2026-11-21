@@ -27,10 +27,11 @@ const avisos = { avisar: async () => undefined, avisarMuchos: async () => undefi
 const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './admin': { auditar: async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after) values ('staff', $1, $2, $3, $4, $5)`, [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null)]) } });
 // La pasarela de mentira (la de din9t): devuelve una vez por llave y lleva la cuenta de lo que salió de verdad.
 const P = {
-  modo: () => 'simulador', salio: new Map(), llamadas: 0, plan: [], saldo: new Map(), pausas: [], pausaPlan: [],
+  modo: () => 'simulador', salio: new Map(), llamadas: 0, plan: [], para: null, saldo: new Map(), pausas: [], pausaPlan: [],
   async devolver(pi, n, idem) {
     this.llamadas++;
-    const paso = this.plan.length ? this.plan.shift() : 'ok';
+    // El plan es solo para las llaves de ESTA prueba (para): el barrido también termina devoluciones de otras corridas y no debe gastarlo.
+    const paso = this.plan.length && (!this.para || idem.startsWith(this.para)) ? this.plan.shift() : 'ok';
     if (paso === 'no') return { ok: false, codigo: 'charge_disputed' };
     if (paso === 'red') return { ok: false, codigo: 'red' };
     const ya = this.salio.get(idem);
@@ -119,7 +120,7 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
     ok(await alertasDe('refund_stuck', rf) === 1, 'boletos: el equipo de dinero recibe UNA alerta');
     const c2 = await cobro(X), k2 = `t9u-bol-${crypto.randomUUID()}`;
     const rf2 = await devBoletos(c2, 700, k2);
-    await atrasar(rf2, 3); P.plan = ['red'];
+    await atrasar(rf2, 3); P.para = k2; P.plan = ['red'];
     await BO.barrerDevolucionesBoletos();
     await BO.barrerDevolucionesBoletos();
     ok((await q1(`select status from refunds where id = $1::bigint`, [rf2])).status === 'done' && P.vecesSalio(k2) === 1, 'boletos: dentro de las 23 h el barrido la termina con la misma llave');
@@ -153,7 +154,7 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   const nAud = (accion) => n1(`select count(*)::int as n from audit_entries where action = $1`, [`${accion}.${RUN}`]);
   {
     const k = await ayuda();
-    P.plan = ['red'];
+    P.para = `ayb-h${k.h}-`; P.plan = ['red'];
     const r = await AY.responderAyudaCita(XB.b, k.num, { decision: 'ok', texto: 'Te devolvemos el depósito.', monto: '20', clave: crypto.randomUUID() }, XB.u, true, audCita('ay.encamino'));
     const f = await q1(`select id::text, status, idem_key from refunds where payment_id = $1::bigint`, [k.p]);
     let h = await q1(`select status, refunded_cents::int as dev from help_requests where id = $1::bigint`, [k.h]);
@@ -174,7 +175,7 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   }
   {
     const k = await ayuda();
-    P.plan = ['no'];
+    P.para = `ayb-h${k.h}-`; P.plan = ['no'];
     const r = await AY.responderAyudaCita(XB.b, k.num, { decision: 'ok', texto: 'Te devolvemos el depósito.', monto: '10', clave: crypto.randomUUID() }, XB.u, true, audCita('ay.no'));
     const h = await q1(`select status, refunded_cents::int as dev from help_requests where id = $1::bigint`, [k.h]);
     ok(!r.ok && h.status === 'open' && h.dev === 0, 'Stripe dice que no: la solicitud vuelve a quedar abierta y nada se suma');
@@ -195,7 +196,7 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   }
   {
     const k = await caso(), clave = crypto.randomUUID();
-    P.plan = ['red'];
+    P.para = `tk-${clave}`; P.plan = ['red'];
     const r = await SE.resolverYDevolver(S, k.num, '12.00', clave, 'Te devolvimos lo del pedido.', null);
     let fila = await q1(`select status from support_refunds where idem_key = $1`, [`tk-${clave}`]);
     let kc = await q1(`select status, refunded_cents::int as dev from support_cases where id = $1::bigint`, [k.k]);
@@ -222,7 +223,7 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   }
   {
     const k = await caso(), clave = crypto.randomUUID();
-    P.plan = ['red', 'no'];
+    P.para = `tk-${clave}`; P.plan = ['red', 'no'];
     await SE.resolverYDevolver(S, k.num, '5.00', clave, 'Te devolvemos.', null);
     const f = await q1(`select id::text from refunds where idem_key = $1`, [`tk-${clave}`]);
     await atrasar(f.id, 3);
@@ -239,21 +240,23 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   {
     const b = (await datos()).b, acct = `acct_fake_${RUN}_${b}`;
     await db.query(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled) values ($1, $2, 'enabled', true, true)`, [b, acct]);
+    // Solo las llamadas de ESTA cuenta (el barrido también termina las marcas que dejaron otras corridas).
+    const mias = () => P.pausas.filter(([x]) => x === acct);
     P.pausaPlan = ['no'];
     const r = await ADM.pagosPausar(b, true, 'Disputa abierta');
     let a = await q1(`select payouts_paused as p, payouts_sync_at is not null as sync from stripe_accounts where business_id = $1`, [b]);
-    ok(r.ok && /Stripe no respondió/.test(r.mensaje) && a.p && a.sync && P.pausas.length === 0, `Stripe no contesta: la pausa ya está anotada (con su auditoría) y marcada para pedírsela otra vez («${r.mensaje}»)`);
+    ok(r.ok && /Stripe no respondió/.test(r.mensaje) && a.p && a.sync && mias().length === 0, `Stripe no contesta: la pausa ya está anotada (con su auditoría) y marcada para pedírsela otra vez («${r.mensaje}»)`);
     ok(await n1(`select count(*)::int as n from audit_entries where action = 'negocio.pagos.pausar' and target_id = $1`, [b]) === 1, 'la auditoría entró con la decisión');
     await PB.sincronizarPausas();
-    ok((await q1(`select payouts_sync_at is not null as sync from stripe_accounts where business_id = $1`, [b])).sync && P.pausas.length === 0, 'el barrido espera un minuto (puede ir en camino)');
+    ok((await q1(`select payouts_sync_at is not null as sync from stripe_accounts where business_id = $1`, [b])).sync && mias().length === 0, 'el barrido espera un minuto (puede ir en camino)');
     await db.query(`update stripe_accounts set payouts_sync_at = payouts_sync_at - interval '2 minutes' where business_id = $1`, [b]);
     await PB.sincronizarPausas();
     a = await q1(`select payouts_paused as p, payouts_sync_at is not null as sync from stripe_accounts where business_id = $1`, [b]);
-    ok(a.p && !a.sync && P.pausas.length === 1 && P.pausas[0][0] === acct && P.pausas[0][1] === true, 'el barrido se lo pide a Stripe con lo que dice la base: los dos quedan en pausa');
+    ok(a.p && !a.sync && mias().length === 1 && mias()[0][1] === true, 'el barrido se lo pide a Stripe con lo que dice la base: los dos quedan en pausa');
     // El proceso muere entre la base y Stripe (reanudar): la base dice activos; el barrido deja Stripe igual.
     await db.query(`update stripe_accounts set payouts_paused = false, paused_reason = null, paused_at = null, paused_by = null, payouts_sync_at = now() - interval '2 minutes' where business_id = $1`, [b]);
     await PB.sincronizarPausas();
-    ok(P.pausas.length === 2 && P.pausas[1][1] === false && !(await q1(`select payouts_sync_at is not null as sync from stripe_accounts where business_id = $1`, [b])).sync, 'el proceso murió después de anotar: el barrido deja Stripe como la base');
+    ok(mias().length === 2 && mias()[1][1] === false && !(await q1(`select payouts_sync_at is not null as sync from stripe_accounts where business_id = $1`, [b])).sync, 'el proceso murió después de anotar: el barrido deja Stripe como la base');
     // Una decisión que cambió mientras Stripe contestaba no se da por confirmada.
     await db.query(`update stripe_accounts set payouts_paused = true, payouts_sync_at = now() - interval '2 minutes' where business_id = $1`, [b]);
     const P0 = P.cuentaPagos; P.cuentaPagos = async (c2, p2) => { await db.query(`update stripe_accounts set payouts_paused = false, payouts_sync_at = now() where business_id = $1`, [b]); return P0.call(P, c2, p2); };
@@ -279,13 +282,13 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   console.log('7 · «Resolver a mano» solo con la devolución pendiente');
   {
     const c = await cobro(X), k = `t9u-${crypto.randomUUID()}`;
-    P.plan = ['red', 'no'];
+    P.para = k; P.plan = ['red', 'no'];
     await cobros.devolverPago({ paymentId: c.p, centavos: 400, por: 'admin', actorId: null, motivo: 'prueba', idem: k });
     const f = await q1(`select id::text from refunds where payment_id = $1::bigint`, [c.p]);
     await atrasar(f.id, 3);
     await cobros.barrerDevolucionesPago();
     const c2 = await cobro(X), k2 = `t9u-${crypto.randomUUID()}`;
-    P.plan = ['red'];
+    P.para = k2; P.plan = ['red'];
     await cobros.devolverPago({ paymentId: c2.p, centavos: 300, por: 'admin', actorId: null, motivo: 'prueba', idem: k2 });
     const f2 = await q1(`select id::text from refunds where idem_key = $1`, [k2]);
     await alertas.alertar('refund_stuck', f2.id, { monto: 300, detalle: { es: 'prueba', en: 'test' } });
