@@ -12612,6 +12612,78 @@ const guardianes = {
     for (const k of ["la foto en revisión sale como un ESTADO", "Pedir revisión» lleva a Mi cuenta", "después de pedirla dice que una persona la va a mirar", "Fotos y portada dice cuántas fotos", "las cuatro capas, cada una con su fila", "el gasto del mes contra su tope", "la apelación: la foto (por el visor privado)"])
       if (!e.includes(k)) falla(G, "pruebas/e2e/rev9u2.cjs", 0, `la prueba de punta a punta no revisa: «${k}»`);
   },
+
+  /* 0200 · fotosTextoComun (LAUNCH 9u «Quitar una foto no llega a las copias por TEXTO»): «una foto retenida o rechazada no se ve en ninguna pantalla».
+     Cuatro columnas guardan la DIRECCIÓN de una foto como texto (items.photos, users.photo_url, business_members.photo_url, businesses.logo_url) y
+     ~50 lectores las leen sin mirar media. El camino común NO es un filtro en cada lector: es la base. El trigger media_fotos_texto, en la misma
+     transacción que cambia el estado, retira la dirección de esas columnas (capa 3, «Quitar» del equipo, la revisión, la purga) y la restaura al
+     volver a verse (solo si es pública), con su libro photo_text_refs. Así cada lector, el de hoy y el de mañana, lee una columna ya limpia. Lo que
+     se teme (la clase), y lo que vigila:
+     (1) que el trigger o sus dos funciones pierdan una columna, un camino (c3 / admin / revision / purga) o la regla «vuelve solo si es pública»;
+     (2) una columna NUEVA que guarde una dirección de foto como texto (un lector nuevo que no pasa por el camino común): o la cubre
+         fotos_texto_retirar, o va en la lista de exentas con su porqué;
+     (3) que alguien empiece a leer o escribir una columna exenta (subcategories.photo_url: sin uso) sin cubrirla;
+     (4) una manera NUEVA de dejar de ver una foto que el trigger no conoce: un removed_reason nuevo sin clasificar (moderación o del dueño), o
+         status 'review' puesto fuera de la capa 3 y de la Comunidad;
+     (5) quien escribe esas columnas fuera de los lugares que toman la dirección de media (visible, no privada) o la validan (fotosDeCatalogoOk);
+     (6) la prueba de la base (fot9utexto) sin sus casos. Al revés: alreves9utexto. */
+  fotosTextoComun() {
+    const G = "fotosTextoComun", dir = "packages/db/migrations", P = "pruebas/e2e/fot9utexto.cjs";
+    const migs = readdirSync(dir).filter((x) => x.endsWith(".sql")).sort();
+    // (1) El trigger y sus funciones (la última definición manda).
+    const ret = ultimaFn("fotos_texto_retirar"), res = ultimaFn("fotos_texto_restaurar"), trg = ultimaFn("media_fotos_texto");
+    if (!ret || !res || !trg) return falla(G, dir, 0, "faltan fotos_texto_retirar / fotos_texto_restaurar / media_fotos_texto (migración 0200)");
+    const COLS = [["items", /update items i set photos = array_remove\(i\.photos, p_url\)/, /i\.photos @> array\[p_url\]/],
+      ["users", /update users x set photo_url = null where x\.photo_url = p_url/], ["business_members", /update business_members m set photo_url = null[^;]*where m\.photo_url = p_url/],
+      ["businesses", /update businesses b set logo_url = null[^;]*where b\.logo_url = p_url/]];
+    for (const [t, ...re] of COLS) if (!re.every((r) => r.test(ret))) falla(G, dir, 0, `fotos_texto_retirar no retira la dirección de ${t} (y cada columna con su renglón en photo_text_refs)`);
+    if ((ret.match(/insert into photo_text_refs/g) ?? []).length < COLS.length) falla(G, dir, 0, "fotos_texto_retirar: cada columna retirada deja su renglón en photo_text_refs (de dónde salió, para volver)");
+    if (!/if p_url is null or p_url !~ '\^\/medios\/n\//.test(ret)) falla(G, dir, 0, "fotos_texto_retirar solo toca direcciones nuestras (/medios/n/…): lo de afuera (Pexels) nunca");
+    for (const [t, col] of [["items", "photos"], ["users", "photo_url"], ["business_members", "photo_url"], ["businesses", "logo_url"]])
+      if (!new RegExp(`r\\.tabla = '${t}' then\\s*update ${t} \\w+ set ${col} = `).test(res)) falla(G, dir, 0, `fotos_texto_restaurar no devuelve la dirección a ${t}.${col}`);
+    if (!/new\.purged_at is not null and old\.purged_at is null then\s*perform fotos_texto_retirar\(old\.url, new\.id, 'purga', true\)/.test(trg)) falla(G, dir, 0, "media_fotos_texto: una purga retira para siempre");
+    if (!/old\.status = 'visible' and new\.status <> 'visible'\s*and \(\(new\.status = 'review' and new\.rev_capa = 'c3'\) or new\.removed_reason in \('admin', 'revision'\)\)/.test(trg))
+      falla(G, dir, 0, "media_fotos_texto: retira por la capa 3 (review + c3), el «Quitar» del equipo (admin) y la revisión (revision)");
+    if (!/new\.status = 'visible' and old\.status <> 'visible' and new\.purged_at is null and not new\.private and not new\.rev_sin_c2 then\s*perform fotos_texto_restaurar\(new\.url\)/.test(trg))
+      falla(G, dir, 0, "media_fotos_texto: restaura solo al volver a verse y si es PÚBLICA (ni private ni rev_sin_c2): una foto privada nunca vuelve a un lugar público");
+    const ultimaTrg = migs.filter((x) => /media_fotos_texto on media/.test(readFileSync(`${dir}/${x}`, "utf8"))).pop();
+    if (!ultimaTrg || !/create trigger media_fotos_texto after update of status, purged_at on media for each row/.test(readFileSync(`${dir}/${ultimaTrg}`, "utf8").replace(/--.*$/gm, "")))
+      falla(G, ultimaTrg ?? dir, 0, "el trigger media_fotos_texto existe (after update of status, purged_at on media, por fila): sin él la quita no llega a las copias por texto");
+    // (2) Toda columna de texto con una dirección de foto está cubierta o exenta con su porqué.
+    const CUBIERTAS = new Set(["items.photos", "users.photo_url", "business_members.photo_url", "businesses.logo_url"]);
+    const EXENTAS = { "subcategories.photo_url": "sin uso (0200): nadie la escribe ni la lee" };
+    for (const [t, cols] of tiposDeColumnas()) for (const [c, ty] of cols) {
+      if (!/^(photos?|fotos?|images?|imgs?|logo|avatar|picture|cover)(_url)?$|_(photo|foto|logo|image|img|avatar|picture)_url$|^(photo|foto|logo|image|img|avatar|picture|cover)_url$/.test(c) || !/^text(\[\])?$/.test(ty)) continue;
+      const k = `${t}.${c}`;
+      if (!CUBIERTAS.has(k) && !(k in EXENTAS)) falla(G, dir, 0, `${k} guarda una dirección de foto como TEXTO y fotos_texto_retirar no la cubre: agrégala al trigger (y a su prueba) o a las exentas con su porqué`);
+    }
+    // (3) Una exenta no se empieza a usar por la puerta de atrás; (4) una manera nueva de dejar de ver una foto; (5) quien escribe las cubiertas.
+    const MODERACION = new Set(["admin", "revision"]), DEL_DUENO = new Set(["owner", "replaced", "autor", "retencion", "sin_enviar"]);
+    const ESCRIBEN = new Set(["apps/web/lib/perfil.ts", "apps/web/app/panel/acciones.ts", "apps/web/app/panel/acciones-equipo.ts", "apps/web/lib/equipo-invitacion.ts", "apps/web/app/admin/acciones-usuarios.ts",
+      "apps/web/app/panel/acciones-menu.ts", "apps/web/app/panel/acciones-servicios.ts", "apps/web/app/panel/acciones-oficios.ts", "apps/web/app/panel/acciones-rentas.ts", "apps/web/lib/autos.ts", "apps/web/lib/inmuebles.ts"]);
+    const ESCRIBE = /\bupdate (users|business_members|businesses)\b[^`;]*\bset\b[^`;]*\b(photo_url|logo_url)\s*=|\binsert into (users|business_members|businesses)\s*\([^)]*\b(photo_url|logo_url)\b|\binsert into items\s*\([^)]*\bphotos\b|\bupdate items\b[^`;]*\bset\b[^`;]*\bphotos\s*=/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(/`[^`]*`/g)) {
+        const q = m[0], ln = t.slice(0, m.index).split("\n").length;
+        if (/\bsubcategories\b/.test(q) && /\bphoto_url\b/.test(q)) falla(G, f, ln, "subcategories.photo_url es exenta (sin uso): para usarla, que fotos_texto_retirar la cubra (0200) y sacarla de las exentas");
+        const set = /\bupdate media set\b([\s\S]*?)(?:\bwhere\b|$)/.exec(q)?.[1] ?? "";
+        if (set) {
+          for (const r of set.matchAll(/removed_reason = (?:coalesce\(removed_reason, )?'([^']+)'/g)) if (!MODERACION.has(r[1]) && !DEL_DUENO.has(r[1]) && !/purged_at = now\(\)/.test(set))
+            falla(G, f, ln, `removed_reason '${r[1]}' nuevo: clasifícalo (¿moderación? → media_fotos_texto lo retira; ¿del dueño, su archivo sigue en n/? → la lista DEL_DUENO)`);
+          if (/\bstatus = (?:case\b[^,]*?then )?'review'/.test(set) && !(f === "apps/web/lib/fotos-revision.ts" && /rev_capa = 'c3'/.test(set)) && f !== "apps/web/lib/comunidad.ts")
+            falla(G, f, ln, "una foto pasa a 'review' fuera de la capa 3 (fotos-revision.ts) y de la Comunidad: media_fotos_texto no la retira de las copias por texto");
+        }
+        if (ESCRIBE.test(q) && !ESCRIBEN.has(f)) falla(G, f, ln, "escribe una dirección de foto como TEXTO fuera de los lugares que la toman de media (visible, no privada) o la validan (fotosDeCatalogoOk)");
+      }
+    }
+    // (6) La prueba de la base.
+    const p = existsSync(P) ? readFileSync(P, "utf8") : "";
+    for (const k of ["y en la MISMA transacción su dirección salió de items.photos", "el menú del panel (menuPanel) ya no la trae", "vuelve a su lugar en cada arreglo", "y vuelve a ser su foto de perfil",
+      "y la foto del barbero vuelve", "restaurado por el equipo: el logo vuelve", "nunca vuelve a un lugar público", "lo que no es nuestro no se toca"])
+      if (!p.includes(k)) falla(G, P, 0, `la prueba de la base no revisa: «${k}»`);
+  },
 };
 
 

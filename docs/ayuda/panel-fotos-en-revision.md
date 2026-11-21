@@ -33,6 +33,8 @@ _Pantallas: Panel › Tu página › **Fotos y portada** (el aviso «Tienes N fo
 | Fotos de solicitudes, citas, presupuestos o viajes | Las ve solo el negocio; si una es dudosa queda en revisión hasta que una persona la mira. |
 | Varias personas reportan una foto de tu galería | Se oculta mientras se revisa; tu cuenta de fotos baja mientras tanto. |
 | Una persona la aprueba | Se publica; si estaba en tu galería, vuelve a su lugar. |
+| Esa foto también estaba en un plato o servicio de tu menú o catálogo, era tu logo o la foto de alguien del equipo | Mientras está oculta o quitada **sale de ahí también**: el plato queda sin foto (o con sus otras fotos), tu página muestra su primera foto en lugar del logo y la persona del equipo sus iniciales. Nunca se ve una foto rota. Puedes subir otra cuando quieras. |
+| Se aprueba (la revisión o tu apelación) | **Vuelve sola** al plato (a su mismo lugar entre sus fotos), al logo o al equipo. Si mientras tanto pusiste otra (o el plato ya tiene 5 fotos), se queda lo tuyo nuevo y la de antes no se agrega. |
 | Tienes fotos sin publicar | El aviso de Fotos y portada dice cuántas. |
 
 ## Preguntas frecuentes
@@ -76,6 +78,8 @@ _Pantallas: Panel › Tu página › **Fotos y portada** (el aviso «Tienes N fo
 | Photos in requests, appointments, quotes or trips | Only the business sees them; if one is doubtful it stays under review until a person looks at it. |
 | Several people report a photo in your gallery | Hidden while it is reviewed; your photo count goes down meanwhile. |
 | A person approves it | Published; if it was in your gallery, it goes back to its place. |
+| That photo was also on a dish or service in your menu or catalog, was your logo or a team member's photo | While it is hidden or removed **it comes off there too**: the dish shows no photo (or its other photos), your page shows its first photo instead of the logo and the team member shows their initials. A broken photo never shows. You can upload another one any time. |
+| It is approved (by the review or your appeal) | **It goes back on its own** to the dish (in the same place among its photos), the logo or the team. If you put in another one meanwhile (or the dish already has 5 photos), your new one stays and the old one is not added. |
 | You have unpublished photos | The Photos and cover notice says how many. |
 
 ### Frequently asked questions
