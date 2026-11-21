@@ -1,20 +1,24 @@
 /* Fotos a la medida (F2a) · Una foto pública nuestra vive en `/medios/n/<uuid>.jpg`; el servidor ofrece variantes WebP en
    `/medios/n/<uuid>.w<W>.webp` (W = 320, 640, 1080, 1600) y, si falta una, contesta el JPEG original en esa misma dirección: pedir
    cualquiera de los cuatro anchos es siempre seguro. Aquí se elige el ancho que le toca a una caja. Todo lo demás (fotos de afuera,
-   llaves privadas, carteles de video, data:, blob:, variantes ya pedidas, vacío) pasa SIN CAMBIO. TypeScript plano: sin React ni dependencias. */
+   llaves privadas de Mensajes y ayuda, carteles de video, data:, blob:, variantes ya pedidas, vacío) pasa SIN CAMBIO. TypeScript plano: sin React ni dependencias. */
 export const ANCHOS_FOTO = [320, 640, 1080, 1600] as const;
 
 const NUESTRA = /^\/medios\/n\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jpg$/;
 
 const variante = (id: string, w: number) => `/medios/n/${id}.w${w}.webp`;
 
+/* F3 · Una foto de destino privado (la de una cita, una mudanza, la balanza…) vive en `/api/medios/privada/<uuid>`: la ruta decide quién la ve y,
+   con `?w=<ancho>`, entrega la variante de ese ancho con el MISMO permiso (o la maestra si falta). Se le pide igual que a una pública. */
+const PRIVADA = /^\/api\/medios\/privada\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 /* La dirección de la variante más chica que alcanza para `caja` (el ancho de la caja en px CSS) en pantallas de doble densidad, con tope en 1600. */
 export function fotoSrc(url: string | null | undefined, caja?: number | null): string {
   const u = url ?? "";
-  const m = NUESTRA.exec(u);
-  if (!m || !caja || !(caja > 0) || !Number.isFinite(caja)) return u;
+  const m = NUESTRA.exec(u), priv = !m && PRIVADA.test(u);
+  if ((!m && !priv) || !caja || !(caja > 0) || !Number.isFinite(caja)) return u;
   const w = ANCHOS_FOTO.find((a) => a >= caja * 2) ?? 1600;
-  return variante(m[1]!, w);
+  return m ? variante(m[1]!, w) : `${u}?w=${w}`;
 }
 
 /* `url("…")` para backgroundImage, con la dirección a salvo de comillas, barras invertidas y saltos de línea. Si ya llega envuelta
@@ -30,8 +34,9 @@ export function fotoFondo(url: string | null | undefined, caja?: number | null):
 
 /* El `srcset` de una foto nuestra (los cuatro anchos); `undefined` si no es nuestra. */
 export function fotoSrcSet(url: string | null | undefined): string | undefined {
-  const m = NUESTRA.exec(url ?? "");
-  return m ? ANCHOS_FOTO.map((w) => `${variante(m[1]!, w)} ${w}w`).join(", ") : undefined;
+  const u = url ?? "", m = NUESTRA.exec(u);
+  if (m) return ANCHOS_FOTO.map((w) => `${variante(m[1]!, w)} ${w}w`).join(", ");
+  return PRIVADA.test(u) ? ANCHOS_FOTO.map((w) => `${u}?w=${w} ${w}w`).join(", ") : undefined;
 }
 
 /* Un valor CSS de `background` que ya trae sus `url(…)` puestos (p. ej. `url(/medios/n/x.jpg) center/cover`, o un degradado): cada url() de

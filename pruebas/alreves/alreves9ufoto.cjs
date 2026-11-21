@@ -44,5 +44,14 @@ ok(fotoCss(`url("${jpg}"), url('${jpg}')`, 400) === `url("${w(1080)}"), url("${w
 ok(fotoSrcSet(jpg) === `${w(320)} 320w, ${w(640)} 640w, ${w(1080)} 1080w, ${w(1600)} 1600w`, 'fotoSrcSet lista los cuatro anchos');
 ok(fotoSrcSet('https://x.test/a.jpg') === undefined && fotoSrcSet('') === undefined && fotoSrcSet(undefined) === undefined && fotoSrcSet(w(320)) === undefined, 'fotoSrcSet es undefined si no es nuestra');
 
+// F3 (21 nov) · Una foto de destino privado pide su variante a la ruta con permiso (?w=), no a /medios/.
+const priv = `/api/medios/privada/${id}`;
+for (const [caja, ancho] of [[27, 320], [161, 640], [400, 1080], [2000, 1600]]) ok(fotoSrc(priv, caja) === `${priv}?w=${ancho}`, `privada: caja ${caja} → ?w=${ancho}`);
+ok(fotoSrc(priv) === priv && fotoSrc(priv, 0) === priv, 'privada sin caja válida queda como está');
+ok(fotoSrc(`${priv}?w=320`, 400) === `${priv}?w=320`, 'privada con su ancho ya pedido no se toca dos veces');
+ok(fotoSrc(`/api/medios/revision/${id}`, 400) === `/api/medios/revision/${id}` && fotoSrc(`${priv}/x`, 400) === `${priv}/x` && fotoSrc('/api/medios/privada/abc', 400) === '/api/medios/privada/abc', 'otras rutas de /api/medios pasan sin cambio');
+ok(fotoFondo(priv, 400) === `url("${priv}?w=1080")` && fotoCss(`url(${priv}) center/cover`, 160) === `url("${priv}?w=320") center/cover`, 'privada: fotoFondo y fotoCss piden el ancho');
+ok(fotoSrcSet(priv) === [320, 640, 1080, 1600].map((n) => `${priv}?w=${n} ${n}w`).join(', '), 'privada: fotoSrcSet lista los cuatro anchos');
+
 console.log(`\n${mal === 0 ? 'foto.ts: todo en orden' : mal + ' comprobaciones fallaron'}`);
 process.exit(mal ? 1 : 0);

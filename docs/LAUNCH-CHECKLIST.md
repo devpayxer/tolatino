@@ -2136,10 +2136,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       tiempo límite y fallo cerrado (si no contesta, la foto queda retenida y la subida sigue). Confirmarlo con el fundador. (R2, 20 nov)
 
 ## Fotos a la medida — F3 · las fotos de destino privado (21 nov) — lo que quedó anotado
-- [ ] **→ 9u** · **Las pantallas todavía no piden `?w=` de una foto privada:** la ruta `/api/medios/privada/<id>?w=320|640|1080|1600` ya entrega
+- [x] **→ 9u** · **Las pantallas todavía no piden `?w=` de una foto privada:** la ruta `/api/medios/privada/<id>?w=320|640|1080|1600` ya entrega
       la variante WebP con el mismo permiso, pero `fotoSrc`/`fotoFondo` (`packages/ui/src/foto.ts`) solo reconocen `/medios/n/…` y dejan pasar la
       dirección privada sin tocar: las miniaturas de una cita, solicitud o viaje bajan la maestra (≤ 1600 px). Arreglo: que reconozcan
       `/api/medios/privada/<uuid>` y agreguen `?w=<ancho>` (cambio del sistema de diseño; esta entrega no tocó `packages/ui`). (21 nov)
+      **Hecho (21 nov):** `fotoSrc`, `fotoFondo`, `fotoCss` y `fotoSrcSet` reconocen `/api/medios/privada/<uuid>` y piden `?w=<ancho>`
+      (prueba pura en `pruebas/alreves/alreves9ufoto.cjs`). Falta verlo servido con una foto real: lo corre el CI (aquí no hay almacén).
 - [ ] **→ 9u** · **fot9uprivadas y rev9u (F3) corren en el CI:** aquí corrió `fot9uprivadas` contra una base propia con todas las migraciones y la
       semilla (41/41) y nginx de verdad (`medios-nginx.test.sh`); NO corrieron la subida real ni la ruta servida (sin almacén: `/api/medios` da
       503). Correr en el CI dirigido `rev9u` (sus pasos F3: la fila privada, nada bajo n/, la ruta 200 para quien subió y 404 sin sesión u otra
