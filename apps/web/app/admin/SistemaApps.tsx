@@ -46,14 +46,14 @@ export function SistemaApps({ apps, sesiones, web, admin }: { apps: FilaApp[]; s
       tag: a.on ? E("ABIERTA", "OPEN") : E("EN PAUSA", "PAUSED"), tone: a.on ? "signal" : "action",
       ...(admin ? { tgOn: a.on, onTg: () => setConf({ titulo: a.on ? E(`Pausar ${nom(a)}`, `Pause ${nom(a)}`) : E(`Abrir ${nom(a)}`, `Open ${nom(a)}`), cta: a.on ? E("Pausar", "Pause") : E("Abrir", "Open"), peligro: a.on,
         sub: a.on ? E("La app deja de abrir su entrada y muestra «Esta app está en pausa · Abrir en la web» hasta que la abras otra vez. Para emergencias.", "The app stops opening its entry and shows “This app is paused · Open on the web” until you open it again. For emergencies.") : E("La app vuelve a abrir su entrada al abrirse.", "The app opens its entry again when launched."),
-        plantillas: a.on ? [E("Falla grave en la app", "Serious app failure"), E("Mantenimiento", "Maintenance")] : [E("Ya se corrigió", "Already fixed"), E("Terminó el mantenimiento", "Maintenance finished")], hacer: (m) => appPausa(a.key, !a.on, m) }) } : {}),
+        plantillas: a.on ? [E("Falla grave en la app", "Serious app failure"), E("Mantenimiento", "Maintenance")] : [E("Ya se corrigió", "Already fixed"), E("Terminó el mantenimiento", "Maintenance finished")], nota: "interna", hacer: (m) => appPausa(a.key, !a.on, m) }) } : {}),
     }];
     for (const b of a.builds) {
       const editar = (tipo: "min" | "aviso") => setConf({ titulo: `${nom(a)} · ${PLAT[b.plat]} · ${tipo === "min" ? E("build mínimo", "minimum build") : E("build de aviso", "notice build")}`, cta: E("Guardar", "Save"),
         sub: E(`Ahora: ${tipo === "min" ? b.min || "sin mínimo" : b.aviso || "sin aviso"}. De 0 a ${(tipo === "min" ? b.minMax : b.avisoMax).toLocaleString("en-US")}; 0 = sin límite. ${tipo === "aviso" ? "Tiene que ser mayor que el mínimo." : "Una app con un build menor no sigue hasta actualizarse."}`,
           `Now: ${tipo === "min" ? b.min || "no minimum" : b.aviso || "no notice"}. From 0 to ${(tipo === "min" ? b.minMax : b.avisoMax).toLocaleString("en-US")}; 0 = no limit. ${tipo === "aviso" ? "It must be higher than the minimum." : "An app with a lower build can’t continue until it updates."}`),
         valor: { k: "BUILD", ini: String(tipo === "min" ? b.min : b.aviso), max: 6 }, plantillas: [E("Versión con un arreglo importante", "Version with an important fix"), E("Ya está en la tienda", "Already in the store"), E("Quitar el límite", "Remove the limit")],
-        hacer: (m, _e, v) => appBuild(a.key, b.plat, tipo, v, m) });
+        nota: "interna", hacer: (m, _e, v) => appBuild(a.key, b.plat, tipo, v, m) });
       filas.push({ key: `${a.key}-${b.plat}`, icon: "phone", t: `${PLAT[b.plat]} · ${E("mínimo", "minimum")} ${b.min || "—"} · ${E("aviso", "notice")} ${b.aviso || "—"}`,
         s: [b.minAt ? `${E("mínimo cambiado", "minimum changed")} ${cuando(b.minAt)}` : null, b.avisoAt ? `${E("aviso cambiado", "notice changed")} ${cuando(b.avisoAt)}` : null].filter(Boolean).join(" · ") || E("Sin cambios", "No changes"),
         ...(admin ? { acts: [{ l: E("Mínimo", "Minimum"), icon: "edit", onClick: () => editar("min") }, { l: E("Aviso", "Notice"), icon: "edit", onClick: () => editar("aviso") }] } : {}) });

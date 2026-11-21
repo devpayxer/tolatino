@@ -50,7 +50,7 @@ export function IntegracionesPush({ d, admin }: { d: EstadoPushAdmin; admin: boo
       tag: !c.on ? E("APAGADO", "OFF") : c.lista ? E("ENCENDIDO", "ON") : E("SIN LLAVE", "NO KEY"), tone: !c.on ? "action" : c.lista ? "signal" : "neutral",
       ...(admin ? { tgOn: c.on, onTg: () => setConf({ titulo: c.on ? E(`Apagar ${c.es}`, `Turn off ${c.es}`) : E(`Encender ${c.es}`, `Turn on ${c.es}`), cta: c.on ? E("Apagar", "Turn off") : E("Encender", "Turn on"), peligro: c.on,
         sub: c.on ? E("No se encola nada más por este canal y lo pendiente no sale; los avisos con SMS de respaldo salen por SMS.", "Nothing more is queued on this channel and pending items don’t go out; notifications with backup SMS go out by SMS.") : E("Los avisos nuevos vuelven a salir por este canal.", "New notifications go out through this channel again."),
-        plantillas: c.on ? [E("El proveedor está fallando", "The provider is failing"), E("Llave comprometida", "Compromised key")] : [E("Ya se corrigió", "Already fixed"), E("Llave nueva subida", "New key uploaded")], hacer: (m) => pushCanal(c.k, !c.on, m) }) } : {}),
+        plantillas: c.on ? [E("El proveedor está fallando", "The provider is failing"), E("Llave comprometida", "Compromised key")] : [E("Ya se corrigió", "Already fixed"), E("Llave nueva subida", "New key uploaded")], nota: "interna", hacer: (m) => pushCanal(c.k, !c.on, m) }) } : {}),
     })) },
     { type: "group", k: E("TELÉFONOS CON AVISOS POR APP Y CANAL", "PHONES WITH NOTIFICATIONS BY APP AND CHANNEL") },
   ];
@@ -64,7 +64,7 @@ export function IntegracionesPush({ d, admin }: { d: EstadoPushAdmin; admin: boo
   B.push({ type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: d.cfg.map((k): Fila => ({
     key: k.key, icon: "clock", t: `${bi(k.label)}: ${k.v.toLocaleString("en-US")} ${bi(k.unidad)}`, s: `${bi(k.help)} ${E("De", "From")} ${k.min.toLocaleString("en-US")} ${E("a", "to")} ${k.max.toLocaleString("en-US")}${k.cambiado ? ` · ${E("de fábrica", "default")} ${k.def.toLocaleString("en-US")}` : ""}${k.at ? ` · ${E("cambiado", "changed")} ${cuando(k.at)}${k.quien ? ` ${E("por", "by")} ${k.quien}` : ""}` : ""}`,
     ...(admin ? { acts: [{ l: E("Cambiar", "Change"), icon: "edit", onClick: () => setConf({ titulo: bi(k.label), cta: E("Guardar", "Save"), sub: E(`Ahora: ${k.v.toLocaleString("en-US")} ${bi(k.unidad)}. Entre ${k.min.toLocaleString("en-US")} y ${k.max.toLocaleString("en-US")}.`, `Now: ${k.v.toLocaleString("en-US")} ${bi(k.unidad)}. Between ${k.min.toLocaleString("en-US")} and ${k.max.toLocaleString("en-US")}.`),
-      valor: { k: bi(k.unidad).toUpperCase(), ini: String(k.v), max: 6 }, plantillas: [E("Ajuste por volumen", "Volume adjustment"), E("Volver al de fábrica", "Back to default")], hacer: (m, _e, v) => pushConfig(k.key, v, m) }) }] } : {}),
+      valor: { k: bi(k.unidad).toUpperCase(), ini: String(k.v), max: 6 }, plantillas: [E("Ajuste por volumen", "Volume adjustment"), E("Volver al de fábrica", "Back to default")], nota: "interna", hacer: (m, _e, v) => pushConfig(k.key, v, m) }) }] } : {}),
   })) });
   B.push({ type: "acts", items: [{ l: pend ? E("Mandando…", "Sending…") : E("Mandar un push de prueba a mi teléfono", "Send a test push to my phone"), v: "primary", icon: "bell", off: pend, onClick: () => start(async () => { const r = await pushProbar(); setToast(r.mensaje ?? ""); router.refresh(); }) }] });
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;

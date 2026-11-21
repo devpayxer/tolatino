@@ -69,7 +69,7 @@ export function Integraciones({ filas, tipos, admin, listo, subir: subirInicial 
       ...(admin && listo ? { acts: [
         { l: f ? E("Reemplazar", "Replace") : E("Subir archivo", "Upload file"), icon: "plus", onClick: () => setSubir(t) },
         ...(f ? [{ l: E("Comprobar", "Check"), icon: "check", onClick: () => { void llaveComprobar(f.id).then((r) => { setToast(r.mensaje ?? ""); router.refresh(); }); } },
-          { l: E("Retirar", "Withdraw"), icon: "trash", onClick: () => setConf({ titulo: E(`Retirar ${nomT(t)}`, `Withdraw ${nomT(t)}`), cta: E("Retirar", "Withdraw"), peligro: true, sub: E(`Versión ${f.version} · ${huellaCorta(f.fingerprint)}. Deja de usarse al instante; el registro queda.`, `Version ${f.version} · ${huellaCorta(f.fingerprint)}. Stops being used immediately; the record stays.`), plantillas: [E("La llave se filtró o se revocó en Apple / Google", "The key leaked or was revoked at Apple / Google"), E("Ya no se usa", "No longer used")], hacer: (m) => llaveRetirar(f.id, m) }) }] : []),
+          { l: E("Retirar", "Withdraw"), icon: "trash", onClick: () => setConf({ titulo: E(`Retirar ${nomT(t)}`, `Withdraw ${nomT(t)}`), cta: E("Retirar", "Withdraw"), peligro: true, sub: E(`Versión ${f.version} · ${huellaCorta(f.fingerprint)}. Deja de usarse al instante; el registro queda.`, `Version ${f.version} · ${huellaCorta(f.fingerprint)}. Stops being used immediately; the record stays.`), plantillas: [E("La llave se filtró o se revocó en Apple / Google", "The key leaked or was revoked at Apple / Google"), E("Ya no se usa", "No longer used")], nota: "interna", hacer: (m) => llaveRetirar(f.id, m) }) }] : []),
       ] } : {}),
     };
   });

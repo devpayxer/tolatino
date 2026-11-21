@@ -175,14 +175,14 @@ function destacadoAdm(e: EvtAdm, X: DestAdm | null, publico: boolean, puede: boo
     const ult = new Date(Date.parse(D.hasta) - 60_000).toISOString();
     return [{ type: "note", tone: "ok", icon: "star", t: D.luego ? E(`DESTACADO EN EVENTOS · programado del ${dia(D.desde)} al ${dia(ult)}`, `FEATURED ON EVENTS · scheduled from ${dia(D.desde)} to ${dia(ult)}`) : E(`DESTACADO EN EVENTOS · arriba de Eventos de la ciudad hasta el ${dia(ult)}`, `FEATURED ON EVENTS · at the top of Events in the city until ${dia(ult)}`),
       cta: puede ? E("Retirar", "Retire") : undefined, onCta: puede ? () => setConf({ titulo: E(`Retirar «${t}» de Destacados`, `Retire “${t}” from Featured`), cta: E("Retirar", "Retire"), peligro: true,
-        sub: E("Deja de salir en Destacados de Eventos al momento. Nada se borra.", "It stops showing in Featured events right away. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")], hacer: (m) => destacadoRetirar(D.id, m) }) : undefined } as Bloque];
+        sub: E("Deja de salir en Destacados de Eventos al momento. Nada se borra.", "It stops showing in Featured events right away. Nothing is deleted."), plantillas: [E("Ya no hace falta.", "No longer needed."), E("Queja abierta de los vecinos.", "Open complaint from neighbors.")], nota: "interna", hacer: (m) => destacadoRetirar(D.id, m) }) : undefined } as Bloque];
   }
   if (!publico || !puede) return [];
   return [{ type: "acts", items: [{ l: E("Destacar en Eventos", "Feature on Events"), icon: "star", onClick: () => setConf({ titulo: E(`Destacar «${t}» en Eventos`, `Feature “${t}” on Events`), cta: E("Destacar", "Feature"),
     sub: E("Sale arriba de Eventos de su ciudad y primero en la lista de su día, desde hoy hasta el día que escribas (máximo 30). Si el evento se cancela, se oculta o pasa, deja de salir solo. Para empezar otro día: Crecimiento › Destacados.", "It shows at the top of Events in its city and first in its day’s list, from today to the day you write (30 at most). If the event is cancelled, hidden or over, it stops showing on its own. To start another day: Growth › Featured."),
     valor: { k: E("HASTA (AAAA-MM-DD, EL ÚLTIMO DÍA QUE SALE)", "UNTIL (YYYY-MM-DD, THE LAST DAY IT SHOWS)"), ini: sumarDias(X.hoy, 6), max: 10 },
     plantillas: [E("Evento de la comunidad.", "Community event."), E("Fiesta patria de la ciudad.", "City heritage celebration."), E("Campaña de la ciudad.", "City campaign.")],
-    hacer: (m, _el, v) => destacadoEvtFijar(e.id, "", v.trim(), m) }) }] } as Bloque];
+    nota: "interna", hacer: (m, _el, v) => destacadoEvtFijar(e.id, "", v.trim(), m) }) }] } as Bloque];
 }
 
 /* 6e · La ficha del evento en el Super Admin: lo que cambió y el dinero por fecha, y las dos acciones de To'Latino. */
@@ -199,10 +199,10 @@ function cambiosAdm(e: EvtAdm, K: CambiosPanel | null, L: LiqPanel | null, puede
   const vivo = e.st === "live" || e.st === "paused";
   const A: { l: string; v?: string; icon?: string; onClick: () => void }[] = [];
   if (vivo && puede.editar) A.push(K?.congelado
-    ? { l: E("Descongelar ventas", "Unfreeze sales"), icon: "check", onClick: () => setConf({ titulo: E(`¿Por qué vuelve a vender «${t}»?`, `Why is “${t}” selling again?`), plantillas: [E("Se resolvió con el organizador", "Resolved with the organizer"), E("Revisión terminada", "Review finished")], cta: E("Descongelar", "Unfreeze"), hacer: (m) => evtCongelar(e.id, false, m) }) }
-    : { l: E("Congelar ventas", "Freeze sales"), icon: "lock", onClick: () => setConf({ titulo: E(`Congelar la venta de «${t}»`, `Freeze sales for “${t}”`), sub: E("La venta en línea se detiene; los que compraron entran igual. El organizador recibe el motivo y no la puede reabrir.", "Online sales stop; people who already bought still get in. The organizer gets the reason and can’t reopen sales."), peligro: true, plantillas: [E("Reportes de que el evento no va a pasar", "Reports that the event won’t happen"), E("Revisión de Confianza", "Trust review"), E("Sobreventa o problema con el lugar", "Overselling or a venue problem")], cta: E("Congelar", "Freeze"), hacer: (m) => evtCongelar(e.id, true, m) }) });
+    ? { l: E("Descongelar ventas", "Unfreeze sales"), icon: "check", onClick: () => setConf({ titulo: E(`¿Por qué vuelve a vender «${t}»?`, `Why is “${t}” selling again?`), plantillas: [E("Se resolvió con el organizador", "Resolved with the organizer"), E("Revisión terminada", "Review finished")], cta: E("Descongelar", "Unfreeze"), nota: "interna", hacer: (m) => evtCongelar(e.id, false, m) }) }
+    : { l: E("Congelar ventas", "Freeze sales"), icon: "lock", onClick: () => setConf({ titulo: E(`Congelar la venta de «${t}»`, `Freeze sales for “${t}”`), sub: E("La venta en línea se detiene; los que compraron entran igual. El organizador recibe el motivo y no la puede reabrir.", "Online sales stop; people who already bought still get in. The organizer gets the reason and can’t reopen sales."), peligro: true, plantillas: [E("Reportes de que el evento no va a pasar", "Reports that the event won’t happen"), E("Revisión de Confianza", "Trust review"), E("Sobreventa o problema con el lugar", "Overselling or a venue problem")], cta: E("Congelar", "Freeze"), nota: "persona", hacer: (m) => evtCongelar(e.id, true, m) }) });
   if (vivo && puede.retirar) A.push({ l: E("Cancelar y devolver todo", "Cancel and refund everything"), v: "danger", icon: "ban", onClick: () => setConf({ titulo: E(`Cancelar «${t}» y devolver todo`, `Cancel “${t}” and refund everything`), sub: E("Regla del módulo: cancela el evento → devolución total a cada comprador (boletos, mesa y extras; la comisión no se cobra). Avisamos a cada persona; no se puede deshacer.", "Module rule: canceling the event → full refund to every buyer (tickets, table and extras; no fee is charged). We notify each person; it can’t be undone."), peligro: true,
-    plantillas: [E("El evento no va a pasar", "The event won’t happen"), E("El lugar no tiene permiso", "The venue has no permit"), E("Fraude del organizador", "Organizer fraud")], cta: E("Cancelar y devolver", "Cancel and refund"), hacer: (m) => evtCancelarAdmin(e.id, m) }) });
+    plantillas: [E("El evento no va a pasar", "The event won’t happen"), E("El lugar no tiene permiso", "The venue has no permit"), E("Fraude del organizador", "Organizer fraud")], cta: E("Cancelar y devolver", "Cancel and refund"), nota: "persona", hacer: (m) => evtCancelarAdmin(e.id, m) }) });
   if (A.length) B.push({ type: "acts", items: A });
   return B;
 }
@@ -226,7 +226,7 @@ function cuposAdm(e: EvtAdm, C: CuposFecha | null, fechas: FechaPanel[], puede: 
           : E(`Ahora ${x.cantidad} · vendidos ${x.vendidos} · apartados ${x.apartados}. No baja de ${x.vendidos + x.apartados}. Manda sobre lo que guarde el organizador para esta fecha; recibe el aviso con el motivo y queda en la auditoría.`,
             `Now ${x.cantidad} · sold ${x.vendidos} · on hold ${x.apartados}. It can’t go below ${x.vendidos + x.apartados}. It overrides what the organizer saves for this date; they get a notice with the reason, and it stays in the audit log.`),
         valor: { k: E("CUPO NUEVO", "NEW CAPACITY"), ini: String(x.cantidad), max: 6 }, plantillas: [E("El lugar bajó su aforo", "The venue lowered its capacity"), E("Lo pidió el organizador", "The organizer asked for it"), E("Sobreventa o error de carga", "Overselling or a data entry error")],
-        hacer: (m, _e, v) => evtCupo(C.fecha, x.kind, x.ref, v, m) }) }] : undefined };
+        nota: "persona", hacer: (m, _e, v) => evtCupo(C.fecha, x.kind, x.ref, v, m) }) }] : undefined };
   }) });
   const opciones = C.extender, CL = CORTE_L(E);
   if (!C.rsvp) B.push({ type: "note", tone: "ink", icon: "clock", t: `${E("VENTA EN LÍNEA HASTA", "ONLINE SALES UNTIL")} · ${C.ventaHastaH}${C.extendida ? E(" · extendida por To'Latino", " · extended by To'Latino") : E(` · el organizador la cierra ${CL[C.corte] ?? ""}`, ` · the organizer closes it ${CL[C.corte] ?? ""}`)}. ${E("En la puerta no se venden boletos.", "No tickets are sold at the door.")}`,
@@ -234,7 +234,7 @@ function cuposAdm(e: EvtAdm, C: CuposFecha | null, fechas: FechaPanel[], puede: 
     onCta: pe && opciones.length ? () => setConf({ titulo: `${E("Extender ventas", "Extend sales")} · ${diaCorto(C.dia, !en)}`, cta: E("Extender", "Extend"),
       sub: E("La venta en línea de esta fecha cierra más tarde (nunca después de que empieza: en la puerta no se vende). El organizador recibe el aviso con el motivo; queda en la auditoría.", "Online sales for this date close later (never after it starts: nothing is sold at the door). The organizer gets a notice with the reason; it stays in the audit log."),
       elegir: { label: E("HASTA", "UNTIL"), items: opciones.map((k) => ({ k, l: k === "doors" ? E("Al abrir las puertas", "When doors open") : E("Al empezar", "When it starts") })) }, plantillas: [E("Lo pidió el organizador", "The organizer asked for it"), E("Mucha demanda el día del evento", "High demand on the day of the event")],
-      hacer: (m, el) => evtExtenderVenta(C.fecha, el ?? "", m) }) : undefined } as Bloque);
+      nota: "persona", hacer: (m, el) => evtExtenderVenta(C.fecha, el ?? "", m) }) : undefined } as Bloque);
   return B;
 }
 

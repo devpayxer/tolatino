@@ -42,17 +42,17 @@ export function Notificaciones({ d, tab, puede, com = false, evt = false, sop = 
     titulo: `${tx(p.title)} · ${lang === "es" ? E("español", "Spanish") : E("inglés", "English")}`, cta: E("Guardar", "Save"),
     sub: `${E("Variables entre llaves, solo las que ya usa", "Variables in braces, only the ones it already uses")}: ${[...new Set((p.body.es + p.body.en).match(/\{\w+\}/g) ?? [])].join(" ") || E("ninguna", "none")}. ${p.sms ? E("Máximo 160 caracteres: también sale como SMS.", "Up to 160 characters: it also goes out as SMS.") : E("Máximo 300 caracteres.", "Up to 300 characters.")} ${E("El motivo queda en la auditoría.", "The reason stays in the audit log.")}`,
     valor: { k: lang === "es" ? E("TEXTO EN ESPAÑOL", "TEXT IN SPANISH") : E("TEXTO EN INGLÉS", "TEXT IN ENGLISH"), ini: p.body[lang], area: true, max: p.sms ? 160 : 300 },
-    hacer: (m, _e, v) => plantillaEditar(p.key, lang, v, m),
+    nota: "interna", hacer: (m, _e, v) => plantillaEditar(p.key, lang, v, m),
   });
   // 8c · El push de una plantilla: encender/apagar, texto genérico y la app que lo abre (con motivo y auditoría).
   const cambiarPush = (p: Plantilla, campo: "push" | "priv" | "app") => setConf(campo === "app" ? {
     titulo: `${tx(p.title)} · ${E("qué app lo abre", "which app opens it")}`, cta: E("Guardar", "Save"), sub: E(`Ahora: ${app[p.app]}. Al tocar el push se abre esa app (si no la tiene, To'Latino; en la web, el navegador).`, `Now: ${app[p.app]}. Tapping the push opens that app (if they don’t have it, To'Latino; on the web, the browser).`),
-    elegir: { label: "APP", items: Object.entries(app).map(([k, l]) => ({ k, l })) }, hacer: (m, e) => plantillaPush(p.key, "app", e ?? "", m),
+    elegir: { label: "APP", items: Object.entries(app).map(([k, l]) => ({ k, l })) }, nota: "interna", hacer: (m, e) => plantillaPush(p.key, "app", e ?? "", m),
   } : {
     titulo: `${tx(p.title)} · ${campo === "push" ? (p.push ? E("apagar el push", "turn push off") : E("encender el push", "turn push on")) : p.priv ? E("mostrar el texto en el push", "show the text in the push") : E("texto genérico en el push", "generic text in the push")}`, cta: E("Guardar", "Save"), peligro: campo === "push" && p.push,
     sub: campo === "push" ? (p.push ? E("Deja de ir por push; queda en la campana y, si la plantilla lleva SMS, sale el SMS.", "It stops going by push; it stays in the bell and, if the template has SMS, the SMS goes out.") : E("Vuelve a ir por push a los teléfonos con avisos.", "It goes by push again to phones with notifications on."))
       : p.priv ? E("Apple y Google verán el título y el texto del aviso.", "Apple and Google will see the notification’s title and text.") : E("Por Apple y Google solo pasa «Tienes un aviso nuevo en To'Latino.»; el detalle se lee al abrirlo.", "Only “You have a new notification on To'Latino.” goes through Apple and Google; the details are read when it’s opened."),
-    hacer: (m) => plantillaPush(p.key, campo, campo === "push" ? (p.push ? "no" : "si") : p.priv ? "no" : "si", m),
+    nota: "interna", hacer: (m) => plantillaPush(p.key, campo, campo === "push" ? (p.push ? "no" : "si") : p.priv ? "no" : "si", m),
   });
   const probar = (p: Plantilla) => start(async () => { const r = await plantillaProbar(p.key); setToast(r.mensaje ?? E("Enviada.", "Sent.")); router.refresh(); });
   const ir = (t: string, antes?: string) => { const q = t === "tpl" && !antes ? "" : `tab=${t}${antes ? `&antes=${antes}` : ""}`; router.push(q ? `/admin/notificaciones?${q}` : "/admin/notificaciones"); };

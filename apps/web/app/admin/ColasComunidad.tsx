@@ -68,9 +68,9 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     if (c.marcas.length) B.push({ type: "group", k: E("LO QUE MARCARON LAS REGLAS", "WHAT THE RULES FLAGGED") }, { type: "rows", items: c.marcas.map((f, i) => ({ key: `f${i}`, icon: "bolt", t: REGLA[f.regla] ?? f.regla, s: `${f.detalle} · ${hace(f.at, x.ahora, E)}` })) });
     return { bloques: B, acts: [
       { l: E("Ver en la Comunidad", "See in the Community"), icon: "search", onClick: () => x.abrir(`/comunidad/p/${c.post}`) },
-      { l: auto ? E("Vuelve a verse", "Show again") : E("Se queda", "Keep"), v: "action", icon: "check", onClick: () => x.setConf({ titulo: auto ? E("¿Por qué vuelve a verse?", "Why is it shown again?") : E("¿Por qué se queda?", "Why does it stay?"), sub: E("Quienes lo reportaron reciben el resultado (sin nombres). Queda en la auditoría.", "Those who reported it get the outcome (no names). It stays in the audit log."), plantillas: P.queda, hacer: (m) => decidirRepCom(k.id, "mantener", m) }) },
+      { l: auto ? E("Vuelve a verse", "Show again") : E("Se queda", "Keep"), v: "action", icon: "check", onClick: () => x.setConf({ titulo: auto ? E("¿Por qué vuelve a verse?", "Why is it shown again?") : E("¿Por qué se queda?", "Why does it stay?"), sub: E("Quienes lo reportaron reciben el resultado (sin nombres). Queda en la auditoría.", "Those who reported it get the outcome (no names). It stays in the audit log."), plantillas: P.queda, nota: "interna", hacer: (m) => decidirRepCom(k.id, "mantener", m) }) },
       { l: E("Ocultar", "Hide"), v: "danger", icon: "ban", onClick: () => x.setConf({ titulo: c.kind === "com_post" ? E(`Ocultar la publicación de ${c.quien}`, `Hide ${c.quien}'s post`) : E(`Ocultar el comentario de ${c.quien}`, `Hide ${c.quien}'s comment`), sub: E(`Su autor recibe el motivo tal cual y puede apelar ${x.apelarDias} días; la apelación la decide otra persona. Nada se borra.`, `The author gets the reason as written and can appeal for ${x.apelarDias} days; another person decides the appeal. Nothing is deleted.`), peligro: true, plantillas: P.ocultar,
-        elegir: { label: E("SANCIÓN (OPCIONAL)", "SANCTION (OPTIONAL)"), items: sanciones("banea" in k && !!k.banea, true, E) }, hacer: (m, e) => decidirRepCom(k.id, "ocultar", m, e && e !== "ninguna" ? e : null) }) },
+        elegir: { label: E("SANCIÓN (OPCIONAL)", "SANCTION (OPTIONAL)"), items: sanciones("banea" in k && !!k.banea, true, E) }, nota: "persona", hacer: (m, e) => decidirRepCom(k.id, "ocultar", m, e && e !== "ninguna" ? e : null) }) },
     ] };
   }
   if (k.queue === "repUsr" && "persona" in k && k.persona) {
@@ -84,9 +84,9 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     if (p.sanciones.length) B.push({ type: "group", k: E("SANCIONES ANTES", "PRIOR SANCTIONS") }, { type: "rows", items: p.sanciones.map((s, i) => ({ key: `s${i}`, icon: "shield", t: sanL(s.kind), s: `${s.reason} · ${fecha(s.at, en)}${s.vigente ? E(" · vigente", " · active") : ""}` })) });
     B.push({ type: "note", tone: "info", t: E("Escalera: advertencia → silencio 7 días → bloquear publicación 30 días → suspender 14 días → banear (solo un Admin). Toda sanción avisa con el motivo y se puede apelar.", "Ladder: warning → mute 7 days → block posting 30 days → suspend 14 days → ban (Admin only). Every sanction notifies with the reason and can be appealed.") });
     return { bloques: B, acts: p.staff ? [] : [
-      { l: E("Sin acción", "No action"), icon: "check", onClick: () => x.setConf({ titulo: E("¿Por qué no se hace nada?", "Why is no action taken?"), plantillas: [E("El reporte no trae evidencia", "The report has no evidence"), E("No rompe las reglas del barrio", "Doesn't break the neighborhood rules"), E("Ya se resolvió", "Already resolved")], hacer: (m) => decidirRepUsr(k.id, "sin_accion", m) }) },
+      { l: E("Sin acción", "No action"), icon: "check", onClick: () => x.setConf({ titulo: E("¿Por qué no se hace nada?", "Why is no action taken?"), plantillas: [E("El reporte no trae evidencia", "The report has no evidence"), E("No rompe las reglas del barrio", "Doesn't break the neighborhood rules"), E("Ya se resolvió", "Already resolved")], nota: "interna", hacer: (m) => decidirRepUsr(k.id, "sin_accion", m) }) },
       { l: E("Sancionar", "Sanction"), v: "danger", icon: "shield", onClick: () => x.setConf({ titulo: E(`Sancionar a ${p.quien}`, `Sanction ${p.quien}`), sub: E(`La persona recibe el motivo tal cual y puede apelar ${x.apelarDias} días; la apelación la decide otra persona.`, `The person gets the reason as written and can appeal for ${x.apelarDias} days; another person decides the appeal.`), peligro: true, plantillas: P.usr,
-        elegir: { label: E("SANCIÓN", "SANCTION"), items: sanciones("banea" in k && !!k.banea, false, E) }, hacer: (m, e) => decidirRepUsr(k.id, "sancionar", m, e) }) },
+        elegir: { label: E("SANCIÓN", "SANCTION"), items: sanciones("banea" in k && !!k.banea, false, E) }, nota: "persona", hacer: (m, e) => decidirRepUsr(k.id, "sancionar", m, e) }) },
     ] };
   }
   if (k.queue === "apel" && "apel" in k) {
@@ -103,8 +103,8 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     if (a.historial.length) B.push({ type: "group", k: E("SU HISTORIAL", "THEIR HISTORY") }, { type: "rows", items: a.historial.map((s, i) => ({ key: String(i), icon: "shield", t: sanL(s.kind), s: `${s.reason} · ${fecha(s.at, en)}${s.lifted ? E(" · levantada", " · lifted") : ""}` })) });
     return { bloques: B, acts: a.mia ? [] : [
       ...(a.contenido.href ? [{ l: E("Ver dónde estaba", "See where it was"), icon: "search", onClick: () => x.abrir(a.contenido.href!) }] : []),
-      { l: E("Levantar", "Lift"), v: "action", icon: "check", onClick: () => x.setConf({ titulo: E("¿Por qué se levanta?", "Why is it lifted?"), sub: a.k === "sanction" ? E("La sanción termina y la cuenta vuelve a la normalidad. La persona recibe el motivo.", "The sanction ends and the account goes back to normal. The person gets the reason.") : E("El contenido vuelve a verse y los casos abiertos se cierran. La persona recibe el motivo.", "The content is shown again and open cases are closed. The person gets the reason."), cta: E("Levantar", "Lift"), plantillas: P.levantar, hacer: (m) => decidirApel(k.id, "lifted", m) }) },
-      { l: E("Mantener", "Uphold"), v: "danger", icon: "close", onClick: () => x.setConf({ titulo: E("¿Por qué se mantiene?", "Why is it upheld?"), sub: E("Esta revisión es final. La persona recibe el motivo.", "This review is final. The person gets the reason."), peligro: true, cta: E("Mantener", "Uphold"), plantillas: P.mantener, hacer: (m) => decidirApel(k.id, "upheld", m) }) },
+      { l: E("Levantar", "Lift"), v: "action", icon: "check", onClick: () => x.setConf({ titulo: E("¿Por qué se levanta?", "Why is it lifted?"), sub: a.k === "sanction" ? E("La sanción termina y la cuenta vuelve a la normalidad. La persona recibe el motivo.", "The sanction ends and the account goes back to normal. The person gets the reason.") : E("El contenido vuelve a verse y los casos abiertos se cierran. La persona recibe el motivo.", "The content is shown again and open cases are closed. The person gets the reason."), cta: E("Levantar", "Lift"), plantillas: P.levantar, nota: "persona", hacer: (m) => decidirApel(k.id, "lifted", m) }) },
+      { l: E("Mantener", "Uphold"), v: "danger", icon: "close", onClick: () => x.setConf({ titulo: E("¿Por qué se mantiene?", "Why is it upheld?"), sub: E("Esta revisión es final. La persona recibe el motivo.", "This review is final. The person gets the reason."), peligro: true, cta: E("Mantener", "Uphold"), plantillas: P.mantener, nota: "persona", hacer: (m) => decidirApel(k.id, "upheld", m) }) },
     ] };
   }
   // 9t · La foto de un mensaje (privada): la ves porque este caso está abierto (queda en la auditoría). La otra parte no la ve hasta decidir.
@@ -118,7 +118,7 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     B.push({ type: "note", tone: "info", t: E("El modelo propio (NudeNet) solo mide desnudez. Violencia, texto promocional y fotos de otras personas los decides tú.", "Our own model (NudeNet) only checks for nudity. You decide on violence, promotional text and photos of other people.") });
     return { bloques: B, acts: [
       { l: E("Está bien", "It's fine"), v: "action", icon: "check", onClick: () => x.run(() => decidirFotoCom(k.id, "mantener", ""), x.fuera) },
-      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E("Quien la mandó recibe el motivo. En la conversación sale «Foto quitada por To’Latino».", "The sender gets the reason. The conversation shows “Photo removed by To’Latino”."), peligro: true, plantillas: P.foto, hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
+      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E("Quien la mandó recibe el motivo. En la conversación sale «Foto quitada por To’Latino».", "The sender gets the reason. The conversation shows “Photo removed by To’Latino”."), peligro: true, plantillas: P.foto, nota: "persona", hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
     ] };
   }
   // 9t (19 nov) · La foto de un mensaje entre vecinos (privada): la ves porque este caso está abierto (queda en la auditoría). Ni el texto ni la otra
@@ -132,7 +132,7 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     B.push({ type: "note", tone: "info", t: E("El modelo propio (NudeNet) solo mide desnudez. Violencia, texto promocional y fotos de otras personas los decides tú.", "Our own model (NudeNet) only checks for nudity. You decide on violence, promotional text and photos of other people.") });
     return { bloques: B, acts: [
       { l: E("Está bien", "It's fine"), v: "action", icon: "check", onClick: () => x.run(() => decidirFotoCom(k.id, "mantener", ""), x.fuera) },
-      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E("Quien la mandó recibe el motivo. En la conversación sale «Foto quitada por To’Latino».", "The sender gets the reason. The conversation shows “Photo removed by To’Latino”."), peligro: true, plantillas: P.foto, hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
+      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E("Quien la mandó recibe el motivo. En la conversación sale «Foto quitada por To’Latino».", "The sender gets the reason. The conversation shows “Photo removed by To’Latino”."), peligro: true, plantillas: P.foto, nota: "persona", hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
     ] };
   }
   if (k.queue === "medios" && "fotoCom" in k) {
@@ -144,7 +144,7 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     return { bloques: B, acts: [
       ...(f.post ? [{ l: E("Ver la publicación", "See the post"), icon: "search", onClick: () => x.abrir(`/comunidad/p/${f.post}`) }] : []),
       { l: E("Está bien", "It's fine"), v: "action", icon: "check", onClick: () => x.run(() => decidirFotoCom(k.id, "mantener", ""), x.fuera) },
-      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E(`Su autor recibe el motivo y puede apelar ${x.apelarDias} días.`, `The author gets the reason and can appeal for ${x.apelarDias} days.`), peligro: true, plantillas: P.foto, hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
+      { l: E("Quitar foto", "Remove photo"), v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: E("¿Por qué se quita?", "Why is it removed?"), sub: E(`Su autor recibe el motivo y puede apelar ${x.apelarDias} días.`, `The author gets the reason and can appeal for ${x.apelarDias} days.`), peligro: true, plantillas: P.foto, nota: "persona", hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
     ] };
   }
   return null;

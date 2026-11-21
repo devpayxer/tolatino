@@ -24,7 +24,7 @@ export function TextosAyudaEditar({ a, l, editar }: { a: ArticuloEd; l: L; edita
   const head: Bloque = { type: "head", eye: E("TEXTOS Y PÁGINAS · AYUDA · EDITAR", "COPY AND PAGES · HELP · EDIT"), t: a.title[l], s: `${a.slug}${a.status === "paused" ? ` · ${E("pausado", "paused")}` : ""}`, onBack: abierta ? () => setAbierta(null) : volver };
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · AYUDA", "COPY AND PAGES · HELP"), t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: E("TEXTOS Y PÁGINAS · AYUDA", "COPY AND PAGES · HELP"), t: a.title[l], onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>
@@ -42,7 +42,7 @@ export function TextosAyudaEditar({ a, l, editar }: { a: ArticuloEd; l: L; edita
             { l: E("Guardar", "Save"), off: !cambio || !texto.trim(), onClick: () => setConf({ titulo: `${E("Guardar", "Save")} · ${abierta.heading}`, cta: E("Guardar", "Save"),
               sub: E("Sale al instante. El repo sigue siendo la fuente: cuando el archivo cambie, manda el repo. Queda en el historial con tu motivo.", "It goes live right away. The repo is still the source: when the file changes, the repo wins. It goes in the history with your reason."),
               plantillas: [E("Decía algo que ya no es cierto.", "It said something that is no longer true."), E("Faltaba un caso importante.", "An important case was missing."), E("Se entendía mal.", "It was unclear.")],
-              hacer: (m) => ayudaEditar(a.slug, abierta.lang, abierta.sec, texto, m) }) },
+              nota: "interna", hacer: (m) => ayudaEditar(a.slug, abierta.lang, abierta.sec, texto, m) }) },
             { l: E("Cancelar", "Cancel"), v: "secondary", onClick: () => setAbierta(null) },
           ] },
         ]} />
@@ -61,7 +61,7 @@ export function TextosAyudaEditar({ a, l, editar }: { a: ArticuloEd; l: L; edita
       acts: editar ? [{ l: E("Editar", "Edit"), v: "secondary", onClick: () => { setTexto(x.body); setAbierta(x); } },
         ...(x.edicion ? [{ l: E("Deshacer", "Undo"), v: "secondary", onClick: () => setConf({ titulo: `${E("Deshacer", "Undo")} · ${x.heading}`, cta: E("Deshacer", "Undo"), peligro: true,
           sub: E("La sección vuelve al texto que tenía antes de esa edición. Queda en el historial.", "The section goes back to its text before that edit. It goes in the history."),
-          plantillas: [E("Se publicó por error.", "Published by mistake."), E("Ya se corrigió en el repo.", "Already fixed in the repo.")], hacer: (m) => ayudaDeshacer(x.edicion!.id, m) }) }] : [])] : undefined })) },
+          plantillas: [E("Se publicó por error.", "Published by mistake."), E("Ya se corrigió en el repo.", "Already fixed in the repo.")], nota: "interna", hacer: (m) => ayudaDeshacer(x.edicion!.id, m) }) }] : [])] : undefined })) },
     { type: "rows", k: E("EDICIONES DE ESTE ARTÍCULO", "EDITS OF THIS ARTICLE"), items: a.ediciones.length ? a.ediciones.map((e) => ({ key: e.id, icon: e.status === "viva" ? "check" : "folder", compact: true, chev: false,
       t: `${e.lang.toUpperCase()} · ${e.heading}`, tag: ESTADO[e.status] ?? e.status, tone: e.status === "viva" ? "signal" : "neutral",
       s: `${cuando(e.at)}${e.quien ? ` · ${e.quien}` : ""} · ${e.motivo}${e.fin ? ` · ${cuando(e.fin)}${e.finMotivo ? ` · ${e.finMotivo}` : ""}` : ""}` }))

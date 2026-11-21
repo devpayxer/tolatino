@@ -77,7 +77,7 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
 
   if (conf) return (
     <div data-pantalla="ADM-CIUD" style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
-      <PanelBloques bloques={[{ type: "head", eye, t: conf.titulo, s: nombre, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye, t: nombre, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={(r) => { setForm(null); hecho(r.mensaje); }} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -98,10 +98,10 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
         onClick: () => setConf({ titulo: form.id ? E("Corregir barrio", "Edit neighborhood") : E("Agregar barrio", "Add neighborhood"), cta: E("Guardar", "Save"),
           sub: E("El selector de ciudad lo muestra al momento. Queda en la auditoría con tu motivo.", "The city selector shows it right away. It goes in the audit log with your reason."),
           plantillas: [E("Lo pidió el equipo local.", "The local team asked for it."), E("El punto estaba corrido.", "The point was off.")],
-          hacer: (m) => res(ciudadBarrio(d.id, { id: form.id, es: form.es, en: form.en, calleEs: form.calleEs, calleEn: form.calleEn, lat: Number(form.lat), lng: Number(form.lng) }, m)) }) }];
+          nota: "interna", hacer: (m) => res(ciudadBarrio(d.id, { id: form.id, es: form.es, en: form.en, calleEs: form.calleEs, calleEn: form.calleEn, lat: Number(form.lat), lng: Number(form.lng) }, m)) }) }];
       if (form.id && !form.id.endsWith("-centro")) acts.push({ l: E("Retirar barrio", "Retire neighborhood"), v: "danger", off: false,
         onClick: () => setConf({ titulo: E("Retirar barrio", "Retire neighborhood"), peligro: true, cta: E("Retirar", "Retire"), sub: E("No se borra: deja de salir y quien medía desde ahí pasa al centro.", "It is not deleted: it stops showing and whoever measured from there moves to downtown."),
-          hacer: (m) => res(ciudadRetirarBarrio(d.id, form.id!, m)) }) });
+          nota: "interna", hacer: (m) => res(ciudadRetirarBarrio(d.id, form.id!, m)) }) });
       F.push({ type: "acts", items: acts });
     } else if (form.t === "regla") {
       F.push({ type: "note", tone: "info", icon: "info", t: E("Cumple = (negocios listos ≥ el mínimo o personas en la lista ≥ el mínimo) y cada categoría clave con su mínimo. Una categoría en 0 no se pide.",
@@ -111,13 +111,13 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
         ...CLAVES.map(([k, n]): Bloque => ({ type: "field", k: `${B2(n).toUpperCase()} (${E("MÍNIMO", "MINIMUM")})`, val: form.cats[k] ?? "0", onChange: (v) => set({ cats: { ...form.cats, [k]: v.replace(/\D/g, "") } }), im: "numeric", max: 4 })),
         { type: "acts", items: [{ l: E("Guardar la regla", "Save the rule"), v: "action", onClick: () => setConf({ titulo: E("Cambiar la regla de apertura", "Change the opening rule"), cta: E("Guardar", "Save"),
           sub: E("El paso «Comprobar» del asistente la vuelve a mirar. Queda en la auditoría con antes y después.", "The wizard's «Check» step looks at it again. It goes in the audit log with before and after."),
-          hacer: (m) => res(ciudadRegla(d.id, { listos: Number(form.listos || 0), espera: Number(form.espera || 0), cats: Object.fromEntries(CLAVES.map(([k]) => [k, Number(form.cats[k] || 0)])) }, m)) }) }] });
+          nota: "interna", hacer: (m) => res(ciudadRegla(d.id, { listos: Number(form.listos || 0), espera: Number(form.espera || 0), cats: Object.fromEntries(CLAVES.map(([k]) => [k, Number(form.cats[k] || 0)])) }, m)) }) }] });
     } else {
       F.push({ type: "note", tone: "info", icon: "info", t: E("La persona tiene que tener cuenta (que entre una vez con su teléfono). Desde que la invitas, ve la ciudad abierta.", "The person must have an account (they sign in once with their phone). From the moment you invite them, they see the city open.") },
         { type: "field", k: E("TELÉFONO", "PHONE"), val: form.tel, onChange: (v) => set({ tel: v.replace(/[^0-9 ()+-]/g, "") }), im: "tel", max: 16, ph: "(570) 555-0100" },
         { type: "acts", items: [{ l: E("Invitar", "Invite"), v: "action", off: form.tel.replace(/\D/g, "").length < 10, onClick: () => setConf({ titulo: E("Invitar a la beta", "Invite to the beta"), cta: E("Invitar", "Invite"),
           plantillas: [E("Vecino de confianza para la beta.", "Trusted neighbor for the beta."), E("Dueño de un negocio de la beta.", "Owner of a beta business.")],
-          hacer: (m) => res(ciudadInvitar(d.id, form.tel, m)) }) }] });
+          nota: "interna", hacer: (m) => res(ciudadInvitar(d.id, form.tel, m)) }) }] });
     }
     return <div data-pantalla="ADM-CIUD" style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}><PanelBloques bloques={F} /><Toast t={toast} desk={desk} /></div>;
   }
@@ -137,10 +137,10 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
     B.push({ type: "note", tone: "warn", icon: "warning", t: E(`CIERRE POR APROBAR · ${x.quien ?? "Alguien"} pidió pasarla a ${est(x.a)} (${cuando(x.at)}): «${x.motivo}». La aprueba otra persona del equipo.`,
       `CLOSE PENDING · ${x.quien ?? "Someone"} asked to move it to ${est(x.a)} (${cuando(x.at)}): «${x.motivo}». Another team member approves it.`) });
     if (puede.aprobar) B.push({ type: "acts", items: x.mio
-      ? [{ l: E("Retirar mi pedido", "Withdraw my request"), v: "secondary", onClick: () => setConf({ titulo: E("Retirar el pedido de cierre", "Withdraw the close request"), cta: E("Retirar", "Withdraw"), hacer: (m) => res(ciudadRetirarCierre(d.id, x.id, m)) }) }]
+      ? [{ l: E("Retirar mi pedido", "Withdraw my request"), v: "secondary", onClick: () => setConf({ titulo: E("Retirar el pedido de cierre", "Withdraw the close request"), cta: E("Retirar", "Withdraw"), nota: "interna", hacer: (m) => res(ciudadRetirarCierre(d.id, x.id, m)) }) }]
       : [{ l: E("Aprobar el cierre", "Approve the close"), v: "danger", onClick: () => setConf({ titulo: E(`Aprobar: ${d.name} pasa a ${est(x.a)}`, `Approve: ${d.name} goes to ${est(x.a)}`), peligro: true, cta: E("Aprobar", "Approve"),
-          sub: E("Se nota al instante en la app y en todos los procesos. Queda en el historial de la ciudad.", "It shows right away in the app and in every process. It goes in the city's history."), hacer: (m) => res(ciudadDecidirCierre(d.id, x.id, true, m)) }) },
-        { l: E("Rechazar", "Reject"), v: "secondary", onClick: () => setConf({ titulo: E("Rechazar el cierre", "Reject the close"), cta: E("Rechazar", "Reject"), hacer: (m) => res(ciudadDecidirCierre(d.id, x.id, false, m)) }) }] });
+          sub: E("Se nota al instante en la app y en todos los procesos. Queda en el historial de la ciudad.", "It shows right away in the app and in every process. It goes in the city's history."), nota: "interna", hacer: (m) => res(ciudadDecidirCierre(d.id, x.id, true, m)) }) },
+        { l: E("Rechazar", "Reject"), v: "secondary", onClick: () => setConf({ titulo: E("Rechazar el cierre", "Reject the close"), cta: E("Rechazar", "Reject"), nota: "interna", hacer: (m) => res(ciudadDecidirCierre(d.id, x.id, false, m)) }) }] });
   }
 
   const R = d.regla;
@@ -188,18 +188,18 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
       if (a.paso < 7) acts.push({ l: `${E("Confirmar paso", "Confirm step")} ${a.paso}: ${B2(P)}`, v: "action", icon: "check", off: !a.ev.ok,
         onClick: () => setConf({ titulo: `${E("Paso", "Step")} ${a.paso} · ${B2(P)}`, cta: E("Confirmar", "Confirm"),
           sub: E("Se guarda lo que ves arriba como evidencia, con tu nombre y tu motivo. El asistente solo avanza.", "What you see above is saved as evidence, with your name and reason. The wizard only moves forward."),
-          hacer: (m) => res(ciudadPaso(d.id, a.paso, m, false)) }) });
+          nota: "interna", hacer: (m) => res(ciudadPaso(d.id, a.paso, m, false)) }) });
       else acts.push({ l: `${E("Abrir", "Open")} ${d.name}`, v: "primary", icon: "globe", off: !a.ev.ok || !puede.admin,
         onClick: () => setConf({ titulo: `${E("Abrir", "Open")} ${d.name}`, cta: E("Abrir la ciudad", "Open the city"),
           sub: E("Deja de salir «próximamente» en Inicio, Negocios, Buscar y Eventos y la lista de espera recibe su aviso. Se puede cerrar de nuevo con motivo y otra persona.",
             "It stops showing «coming soon» in Home, Businesses, Search and Events and the waitlist gets its notice. It can be closed again with a reason and another person."),
-          hacer: (m) => res(ciudadPaso(d.id, 7, m, false)) }) });
+          nota: "interna", hacer: (m) => res(ciudadPaso(d.id, 7, m, false)) }) });
       if (a.paso === 6 && !a.ev.ok && a.ev.abrirIgual && puede.admin) acts.push({ l: E("Abrir igual (la regla no se cumple)", "Open anyway (the rule is not met)"), v: "danger",
         onClick: () => setConf({ titulo: E("Comprobar y abrir igual", "Check and open anyway"), peligro: true, cta: E("Confirmar", "Confirm"),
           sub: E("La regla de apertura no se cumple. Queda anotado que se decidió abrir igual, quién y por qué (§6 #17: lo decide el fundador).", "The opening rule is not met. It is recorded that the decision was to open anyway, who and why (§6 #17: the founder decides)."),
-          hacer: (m) => res(ciudadPaso(d.id, 6, m, true)) }) });
+          nota: "interna", hacer: (m) => res(ciudadPaso(d.id, 6, m, true)) }) });
       if (d.asistente.lanzamiento?.status === "en_curso") acts.push({ l: E("Cancelar asistente", "Cancel wizard"), v: "ghost", onClick: () => setConf({ titulo: E("Cancelar el asistente", "Cancel the wizard"), cta: E("Cancelar asistente", "Cancel wizard"),
-        sub: E("Lo hecho queda en el historial; para abrir se empieza otro desde el paso 1.", "What was done stays in the history; to open, start another one from step 1."), hacer: (m) => res(ciudadCancelarAsistente(d.id, m)) }) });
+        sub: E("Lo hecho queda en el historial; para abrir se empieza otro desde el paso 1.", "What was done stays in the history; to open, start another one from step 1."), nota: "interna", hacer: (m) => res(ciudadCancelarAsistente(d.id, m)) }) });
     }
     if (acts.length) B.push({ type: "acts", items: acts });
     if (a.paso === 7 && !puede.admin) B.push({ type: "note", tone: "info", icon: "lock", t: E("Abrir una ciudad lo hace un Admin.", "Opening a city is done by an Admin.") });
@@ -209,12 +209,12 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
   if (d.status === "soon" && puede.aprobar) B.push({ type: "acts", items: [{ l: E("Pasar a beta (solo invitados)", "Move to beta (invited only)"), v: "secondary", icon: "users",
     onClick: () => setConf({ titulo: E(`${d.name} en beta`, `${d.name} in beta`), cta: E("Pasar a beta", "Move to beta"),
       sub: E("Solo la ven abierta las cuentas que invites y las de revisión de Apple y Google; para los demás sigue «próximamente».", "Only the accounts you invite and the Apple and Google review accounts see it open; for everyone else it stays «coming soon»."),
-      hacer: (m) => res(ciudadBeta(d.id, m)) }) }] });
+      nota: "interna", hacer: (m) => res(ciudadBeta(d.id, m)) }) }] });
   if (d.status === "beta") {
     B.push({ type: "rows", k: E(`BETA · ${d.invitadas.length} INVITADAS · ${d.revision} CUENTAS DE REVISIÓN ACTIVAS`, `BETA · ${d.invitadas.length} INVITED · ${d.revision} ACTIVE REVIEW ACCOUNTS`),
       link: puede.aprobar ? E("Invitar", "Invite") : undefined, onLink: puede.aprobar ? () => setForm({ t: "invitar", tel: "" }) : undefined,
       items: d.invitadas.length ? d.invitadas.map((x): Fila => ({ key: x.id, icon: "users", t: `${x.nombre} · ${x.tel}`, s: `${E("Invitada", "Invited")} ${cuando(x.at)}${x.por ? ` · ${x.por}` : ""}`, tag: x.prueba ? E("PRUEBA", "TEST") : undefined, tone: "neutral",
-        acts: puede.aprobar ? [{ l: E("Quitar", "Remove"), v: "ghost", onClick: () => setConf({ titulo: E(`Quitar a ${x.nombre} de la beta`, `Remove ${x.nombre} from the beta`), cta: E("Quitar", "Remove"), hacer: (m) => res(ciudadQuitarInvitacion(d.id, x.id, m)) }) }] : undefined }))
+        acts: puede.aprobar ? [{ l: E("Quitar", "Remove"), v: "ghost", onClick: () => setConf({ titulo: E(`Quitar a ${x.nombre} de la beta`, `Remove ${x.nombre} from the beta`), cta: E("Quitar", "Remove"), nota: "interna", hacer: (m) => res(ciudadQuitarInvitacion(d.id, x.id, m)) }) }] : undefined }))
         : [{ icon: "users", t: E("Nadie invitado todavía", "No one invited yet"), s: E("Invita por teléfono a quien entra a la beta.", "Invite by phone whoever joins the beta.") }] });
   }
 
@@ -229,13 +229,13 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
 
   // Ajustes: radio (ciud:editar), zona horaria e impuesto (Admin).
   if (puede.editar) B.push({ type: "chips", k: E("RADIO POR DEFECTO PARA QUIEN LLEGA NUEVO", "DEFAULT RADIUS FOR NEWCOMERS"), items: d.radios.map((r) => ({ l: `${r} mi`, v: r === d.radio ? "selected" : "filter",
-    onClick: r === d.radio ? undefined : () => setConf({ titulo: E(`Radio por defecto: ${r} mi`, `Default radius: ${r} mi`), cta: E("Guardar", "Save"), hacer: (m) => res(ciudadAjuste(d.id, "radio", String(r), m)) }) })) });
+    onClick: r === d.radio ? undefined : () => setConf({ titulo: E(`Radio por defecto: ${r} mi`, `Default radius: ${r} mi`), cta: E("Guardar", "Save"), nota: "interna", hacer: (m) => res(ciudadAjuste(d.id, "radio", String(r), m)) }) })) });
   if (puede.admin) {
     B.push({ type: "chips", k: E("ZONA HORARIA", "TIME ZONE"), items: ZONAS_HORARIAS.map((z) => ({ l: B2(NOMBRE_ZONA[z]!), v: z === d.tz ? "selected" : "filter",
-      onClick: z === d.tz ? undefined : () => setConf({ titulo: E("Cambiar la zona horaria", "Change the time zone"), cta: E("Guardar", "Save"), sub: B2(NOMBRE_ZONA[z]!), hacer: (m) => res(ciudadAjuste(d.id, "zona", z, m)) }) })) });
+      onClick: z === d.tz ? undefined : () => setConf({ titulo: E("Cambiar la zona horaria", "Change the time zone"), cta: E("Guardar", "Save"), sub: B2(NOMBRE_ZONA[z]!), nota: "interna", hacer: (m) => res(ciudadAjuste(d.id, "zona", z, m)) }) })) });
     B.push({ type: "acts", items: [{ l: E("Cambiar el impuesto", "Change the tax"), v: "secondary", icon: "card", onClick: () => setConf({ titulo: E(`Impuesto de ${d.name}`, `${d.name} tax`), cta: E("Guardar", "Save"),
       sub: E("Vale para lo que se cobre desde ahora; lo ya cobrado no cambia. El contador lo confirma antes de abrir (9s).", "It applies to what is charged from now on; what was already charged does not change. The accountant confirms it before opening (9s)."),
-      valor: { k: E("IMPUESTO (%)", "TAX (%)"), ini: d.tax, max: 5 }, hacer: (m, _e, v) => res(ciudadAjuste(d.id, "impuesto", v, m)) }) }] });
+      valor: { k: E("IMPUESTO (%)", "TAX (%)"), ini: d.tax, max: 5 }, nota: "interna", hacer: (m, _e, v) => res(ciudadAjuste(d.id, "impuesto", v, m)) }) }] });
   }
 
   // Barrios.
@@ -252,7 +252,7 @@ export function CiudadDetalle({ d, l, puede }: { d: DetalleCiudad; l: L; puede: 
     const opciones = (d.status === "on" ? ["beta", "soon", "off"] : ["soon", "off"]).map((k) => ({ k, l: est(k) }));
     B.push({ type: "acts", items: [{ l: E("Pedir cierre", "Request close"), v: "danger", icon: "ban", onClick: () => setConf({ titulo: E(`Cerrar ${d.name}`, `Close ${d.name}`), peligro: true, cta: E("Pedir el cierre", "Request the close"),
       sub: E("Lo aprueba otra persona del equipo; mientras, la ciudad sigue como está. Tu motivo lo ve quien lo aprueba.", "Another team member approves it; meanwhile the city stays as it is. The approver sees your reason."),
-      elegir: { label: E("PASA A", "GOES TO"), items: opciones }, hacer: (m, e) => res(ciudadPedirCierre(d.id, e ?? "", m)) }) }] });
+      elegir: { label: E("PASA A", "GOES TO"), items: opciones }, nota: "interna", hacer: (m, e) => res(ciudadPedirCierre(d.id, e ?? "", m)) }) }] });
   }
 
   // Historial de estados (solo inserción).
