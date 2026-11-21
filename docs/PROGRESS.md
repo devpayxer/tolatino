@@ -20,6 +20,20 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (noche, más) · dinero 9t7 en la rama de trabajo (8aa46a0), todavía NO en `main` (`main` y `pruebas` = cc7b947, sandbox en 879c16b +
+  documentos).** 9t7 = las devoluciones y las reversiones atascadas le preguntan a Stripe, y «Resolver a mano» pregunta antes de marcar
+  (migración **0206**; Opus; quedó fuera la devolución del patrocinio). Revisado por Fable: tipos, guardianes, Semgrep 0, al revés, contrato con
+  stripe-mock, 21 pruebas contra el servidor local. Prueba de navegador `din9t7b` (Sonnet, 44 ✓) y un arreglo que salió de ahí: la alerta se
+  cierra en el acto cuando Stripe dice que sí salió. **CI:** la completa 44922339414 (5257f25) salió ROJA por dos pruebas al revés, ninguna del
+  producto: `alreves9k` (el guardián `alertasDelDinero` quedó flojo: apretado) y `alreves6e` (un caso viejo: la prueba de contrato ahora llama
+  dos veces a revertir); punta a punta y dispositivos, en verde. Corriendo: la completa **44927840579** sobre 8aa46a0. Verde con 3 inestables o
+  menos → `git push origin <ese commit o el HEAD si solo hay documentos>:main …:pruebas` y comprobar en el sandbox que la 0206 quedó aplicada
+  (205 migraciones). **Encargos en curso (worktrees desde 8aa46a0):** dinero 9t8 (Opus: contrastar y cerrar lo que quedó de 9t3–9t7, empezando
+  por la devolución del patrocinio; base aislada) y las hojas de confirmar del Super Admin (Sonnet: un solo título y la nota que dice a quién
+  le llega; tiene el servidor local `:3100`).
+  **Regla para los encargos (nueva, de hoy):** quien toca un archivo corre TODAS las pruebas al revés que lo nombran (`grep -l` en
+  `pruebas/alreves/`), no solo las de su tanda; y quien orquesta corre el carril de al revés entero antes de dar por buena una tanda que toque
+  guardianes o la prueba de contrato.
 - **21 nov (noche) · `main` y `pruebas` = 879c16b, sandbox comprobado desde fuera** (estado-sandbox 44919500455: salud con commit 879c16b1,
   **0205 aplicada, 204 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad` en 200). Evidencia: revisión completa **44915220253 VERDE, 0 rojas
   y 0 inestables** (comprobado en los registros que corrieron `din9t6b` 46 ✓, `rev9u2` 46 ✓, `app8a`, `dm9t`). Subió lo que esperaba en la rama
