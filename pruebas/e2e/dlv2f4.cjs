@@ -72,6 +72,36 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   ok(await d.getByText('420 N Wyoming St, Apt 2').first().isVisible() && await d.getByText('Dejar en la puerta').first().isVisible(), 'panel: a dónde y «Dejar en la puerta»');
   // 19 nov · En el iPad (WebKit) otra pieza tapaba «Aceptar» (30 s). Si pasa otra vez, dice cuál: el elemento que está encima del centro del botón.
   { const ac = d.getByText('Aceptar', { exact: true }).last();
+    // 21 nov · Sonda (ventana del detalle entre 1024 y 1199, el iPad en horizontal): el toque que «no entra» pasa una vez de muchas y solo en
+    // WebKit, así que aquí se repite: 12 aperturas, en cada una todo lo que hace un toque menos tocar (desplazar, esperar quieto, mirar quién
+    // recibe el punto). Si una falla se anota EN ESE INSTANTE cómo está la ventana (alto, desplazamiento, si es otra ventana que la de antes,
+    // animaciones, quién está en el punto) y si un desplazamiento puesto a mano se queda o se devuelve. SONDA_TODO=1 lo imprime aunque pase.
+    if (await d.evaluate(() => innerWidth >= 1024 && innerWidth < 1200)) {
+      const estado = () => d.evaluate(() => {
+        const dlg = document.querySelector('[role="dialog"]'); if (!dlg) return 'sin ventana';
+        const hs = [...dlg.querySelectorAll('*')].filter((e) => e.childElementCount === 0 && (e.textContent || '').trim() === 'Aceptar'), b = hs[hs.length - 1];
+        const r = dlg.getBoundingClientRect(), rb = b ? b.getBoundingClientRect() : null, cs = getComputedStyle(dlg), nueva = !dlg.__vista; dlg.__vista = true;
+        const pt = rb ? document.elementFromPoint(rb.x + rb.width / 2, rb.y + rb.height / 2) : null;
+        const quien = !pt ? 'nada' : `${pt.tagName.toLowerCase()}${pt.getAttribute('role') ? '[' + pt.getAttribute('role') + ']' : ''}${b && (b === pt || b.contains(pt) || pt.contains(b) && dlg.contains(pt)) ? ' (el botón)' : dlg.contains(pt) ? ' (otra pieza de la ventana)' : pt.contains(dlg) ? ' (el fondo)' : ' (fuera de la ventana)'}`;
+        return `ventana ${Math.round(r.y)}..${Math.round(r.bottom)}, alto ${dlg.clientHeight} de ${dlg.scrollHeight}, en ${Math.round(dlg.scrollTop)}, max-height ${cs.maxHeight}${nueva ? ', NUEVA' : ''} · botón en y=${rb ? Math.round(rb.y) : '—'} · en su punto: ${quien} · animaciones: ${document.getAnimations().map((a) => `${a.animationName || a.constructor.name}:${a.playState}`).join(',') || 'ninguna'} · página en ${Math.round(scrollY)} · ${innerWidth}×${innerHeight}`;
+      });
+      const vueltas = [], malas = [];
+      for (let i = 0; i < 12; i++) {
+        if (i) { await d.reload(); await d.getByText('ENTREGA', { exact: true }).first().waitFor(); }
+        const antes = await estado(), t0 = Date.now();
+        try { await ac.click({ trial: true, timeout: 2500 }); vueltas.push(`vuelta ${i} bien en ${Date.now() - t0} ms · antes [${antes}] · después [${await estado()}]`); }
+        catch (e) {
+          const en = await estado().catch((x) => String(x));
+          const pega = await d.evaluate(async () => { const dlg = document.querySelector('[role="dialog"]'); if (!dlg) return 'sin ventana'; const de = dlg.scrollTop; dlg.scrollTop = 200; const a = dlg.scrollTop; await new Promise((r) => setTimeout(r, 150)); const b = dlg.scrollTop; await new Promise((r) => setTimeout(r, 700)); const dlg2 = document.querySelector('[role="dialog"]'); return `a mano: de ${Math.round(de)} a 200 → ${Math.round(a)} → ${Math.round(b)} → ${Math.round(dlg.scrollTop)}${dlg2 !== dlg ? ' (la ventana es OTRA)' : ''}`; }).catch((x) => String(x));
+          const porque = [...new Set(String(e.message).split('\n').filter((l) => /intercepts|not stable|outside of the viewport|not visible|not enabled|detached|scrolling|done scrolling/.test(l)).map((l) => l.trim().slice(0, 200)))].slice(0, 6).join(' | ');
+          const l = `vuelta ${i} MAL · antes [${antes}] · al fallar [${en}] · ${pega} · ${porque}`; vueltas.push(l); malas.push(l);
+        }
+      }
+      if (malas.length || process.env.SONDA_TODO) { for (const l of vueltas) console.log('  · sonda ' + l); }
+      if (malas.length) throw new Error(`sonda del detalle: ${malas.length} de 12 aperturas no dejaron tocar «Aceptar» · ${malas[0].slice(0, 1500)}`);
+      if (process.env.SONDA_TODO) throw new Error('sonda del detalle: SONDA_TODO pide ver las 12 vueltas (arriba)');
+      console.log('  ✓ ventana del detalle (1024–1199): 12 aperturas seguidas dejan tocar «Aceptar»');
+    }
     try { await ac.click({ timeout: 10000 }); } catch (e) {
       const encima = await ac.evaluate((el) => { const r = el.getBoundingClientRect(), x = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
         const camino = []; for (let n = x; n && camino.length < 4; n = n.parentElement) camino.push(`${n.tagName.toLowerCase()}${n.getAttribute('data-screen-label') ? '[' + n.getAttribute('data-screen-label') + ']' : ''}.${String(n.className).slice(0, 60)}`);
