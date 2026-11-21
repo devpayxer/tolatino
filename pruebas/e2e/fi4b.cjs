@@ -53,6 +53,28 @@ const limpiar = () => { sql(`update user_vehicles set removed_at = now() where u
   ok(sql(`select kind || '|' || tenure || '|' || year_band from user_homes where user_id = ${MARISOL} and removed_at is null`) === 'casa|inq|pre50', 'casa guardada: casa, inquilino, antes de 1950');
   ok(!!(await vis(m.getByText(/Necesitas el permiso de tu landlord/))), 'Plomería Rodríguez: llega a tu casa, con el permiso del landlord');
   await m.screenshot({ path: OUT + 'f6-hogar-svc-m.png', fullPage: true });
+  // ── Guardar OTRA VEZ en la misma dirección («Mi casa» no edita en sitio: «Cambiar» abre la hoja y «Agregar otra casa» con una dirección que ya tiene casa
+  //    cae en el update de guardarCasa; antes reventaba con «could not determine data type of parameter $1») ──
+  const casaId = sql(`select id from user_homes where user_id = ${MARISOL} and removed_at is null`);
+  ok(/^[0-9a-f-]{36}$/.test(casaId), 'una sola casa viva antes de guardar otra vez: ' + casaId);
+  sql(`update user_homes set is_default = false where id = '${casaId}'`); // así se comprueba que el update la vuelve a poner por omisión
+  await m.reload(); await m.getByText('Precio completo antes de empezar', { exact: false }).first().waitFor();
+  await clic(m.getByText('VA A TU CASA'));
+  const hc2 = m.locator('[data-screen-label="Mi casa"]'); await hc2.waitFor();
+  const agregar = hc2.getByRole('button', { name: 'Agregar otra casa' });
+  for (let i = 0; i < 24 && !(await vis(agregar)) && !(await vis(hc2.getByLabel('Dirección'))); i++) await new Promise((r) => setTimeout(r, 250));
+  if (await vis(agregar)) await clic(agregar);
+  await (await vis(hc2.getByLabel('Dirección'))).selectOption({ label: '112 W Oak St, 18201' }); // la MISMA dirección
+  await clic(hc2.getByText('Apartamento', { exact: true })); await clic(hc2.getByText('Soy dueño', { exact: true }));
+  await clic(hc2.getByText('1.5', { exact: true })); await clic(hc2.getByText('Perro', { exact: true }));
+  await clic(hc2.getByRole('button', { name: 'Guardar casa' })); await hc2.waitFor({ state: 'detached' });
+  const alertas = (await m.locator('[role="alert"]').allInnerTexts()).map((x) => x.trim()).filter(Boolean);
+  ok(alertas.length === 0, 'guardar otra vez en la misma dirección: la hoja cerró sin mostrar error' + (alertas.length ? ': ' + alertas.join(' / ') : ''));
+  ok(sql(`select count(*) from user_homes where user_id = ${MARISOL} and removed_at is null`) === '1', 'sigue habiendo UNA sola casa viva (no se duplicó)');
+  ok(sql(`select id from user_homes where user_id = ${MARISOL} and removed_at is null`) === casaId, 'es la misma fila (misma id): se actualizó, no se insertó');
+  const filaNueva = sql(`select kind || '|' || tenure || '|' || coalesce(baths::float::text, '-') || '|' || coalesce(pets, '-') || '|' || is_default from user_homes where id = '${casaId}'`);
+  ok(filaNueva === 'apto|dueno|1.5|perro|true', 'datos nuevos (en la base: ' + filaNueva + '): apartamento, dueño, 1.5 baños, perro, y otra vez por omisión');
+  ok(!!(await vis(m.getByText(/Apartamento/i).first())), 'la interfaz refleja el cambio (Apartamento)');
   // Desktop
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p.push(d); d.on('pageerror', e => err.push('desk ' + e.message)); await entrar(d, '5705550122');
   await d.goto(B + `/n/${T}?tab=svc`); await d.waitForSelector('text=TU VEHÍCULO >> visible=true'); await d.screenshot({ path: OUT + 'f7-taller-svc-d.png', fullPage: true });

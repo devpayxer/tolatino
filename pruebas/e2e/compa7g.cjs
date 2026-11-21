@@ -133,8 +133,9 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   ok(await espera(() => msjs(TK1.id) === m0 + 1), 'Enviar → un mensaje nuevo en el caso');
   const ult = sql(`select sender || '|' || internal || '|' || from_draft || '|' || staff_id || '|' || id from support_messages where case_id = ${TK1.id} order by id desc limit 1`).split('|');
   ok(ult[0] === 'staff' && ult[1] === 'false' && ult[2] === 'true' && ult[3] === DU, 'el mensaje es de Dayana, para la persona, from_draft');
+  await espera(() => borr(TK1.id, DU)[1] !== '-'); // el estado del borrador se lee por condición, no justo al ver el mensaje
   const b1b = borr(TK1.id, DU);
-  ok(b1b[0] === b1[0] && b1b[1] === 'edited' && b1b[3] === ult[4], 'el borrador quedó «editado» con ese mensaje');
+  ok(b1b[0] === b1[0] && b1b[1] === 'edited' && b1b[3] === ult[4], `el borrador quedó «editado» con ese mensaje (antes: ${b1.join('|')} · ahora: ${b1b.join('|')} · último mensaje: ${ult.join('|')})`);
   await ficha(pd, TK1.num);
   await pd.getByRole('button', { name: 'Sugerir respuesta con El Compa' }).click();
   ok(await espera(async () => (await campo(pd).inputValue()).length > 10), 'otro borrador al campo');

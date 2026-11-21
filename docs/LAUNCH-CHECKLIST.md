@@ -2349,8 +2349,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       consultas fijas** que se dan a `.query(` contra la base de pruebas; `alreves9usql` 4/4. En su primera pasada cazó otra viva: **«Mi casa»
       reventaba al guardar otra vez una casa en la misma dirección** (`guardarCasa`: un update con 15 valores que no usaba `$1` ni `$2`),
       arreglada. **Queda:** (a) las **837 consultas armadas con `${…}`** no entran (hay que prepararlas con sus trozos resueltos, o anotar en el
-      servidor de pruebas las que de verdad se ejecutan y listar las que nunca); (b) una prueba de navegador que edite «Mi casa» en la misma
-      dirección y vea los datos cambiados (hoy solo se comprueba que la consulta prepara); (c) las hojas del Super Admin que ninguna prueba abre.
+      servidor de pruebas las que de verdad se ejecutan y listar las que nunca); (b) **hecho (21 nov, Sonnet; Fable lo corrió):** `fi4b` guarda
+      otra vez «Mi casa» en la misma dirección por la interfaz («Cambiar» → «Agregar otra casa» con una dirección que ya tiene casa: la interfaz
+      no edita en sitio) y comprueba una sola fila, la misma `id`, los datos nuevos y `is_default`; 18 ✓ dos veces. «Mi vehículo» no tiene camino
+      de actualizar (solo inserta). (c) las hojas del Super Admin que ninguna prueba abre.
 - [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
       veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
       `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).
@@ -2359,6 +2361,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       diciéndolo; `tuberiaNoSeSalta` lo exige; caso nuevo en `alreves9b2` (49/49 en local). Falta verlo correr en una corrida completa.
 - [ ] **→ 9b** · **`compa7g` inestable en local (21 nov):** falló una vez («el borrador quedó "editado"») y pasó a la segunda con 98 ✓, en la corrida del
       encargo de las hojas (99 pruebas de pantallas del Super Admin). Buscar la espera que falta antes de leer el estado del borrador.
+      **Buscada, sin causa probada (21 nov, Sonnet):** no se reprodujo en 16 corridas (10 con el código de antes, 6 con el de ahora). No es «leer
+      antes de tiempo» por el lado del servidor: el mensaje (`from_draft`) y el estado del borrador se escriben en la misma transacción
+      (`lib/soporte-equipo.ts › responder`). Se dejó una espera por condición y, sobre todo, el mensaje de la comprobación ahora trae el estado
+      de antes, el de ahora y el último mensaje: si vuelve a fallar dirá cuál de las tres ramas fue. Sigue abierta hasta verla fallar otra vez.
 - [x] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho
