@@ -2114,6 +2114,32 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       dos veces el mismo período); `lib/rentas.ts` (un día más: `renta-<id>-dia<n>-a<intentos>`; al recoger: `renta-<id>-renta-a<n>`; tarde:
       `renta-<id>-tarde`, sin tope de 23 h); `lib/patrocinio.ts › cobrar` fuera de sesión (`cobrarDirecto` antes de guardar el período). Mismo patrón que
       `subscription_charges`. (5) `din9t3` corrió aquí contra una base aislada; en el CI, la primera vez con la confirmación. (21 nov)
+      **Hecho (4) (21 nov, rama dinero-9t4; migración 0202):** una tabla para los tres (`offsession_charges`) y un módulo (`lib/cobro-fuera.ts`:
+      `anotarCobro` / `terminarCobro` / `marcarHecho` / `noAplica` / `barrerCobrosFuera`): la intención (llave, monto, comisión, tarjeta y a qué corresponde)
+      en una transacción ANTES de la pasarela; «mandada» (`sent_at`) antes de la llamada; la pasarela con ESA llave; el cierre una vez en otra transacción.
+      Sin respuesta = en camino (no rechazo); el barrido central (`cobrosFuera`) la termina con la misma llave dentro de 23 h y después alerta
+      `offsession_stuck` (nueva) una vez; lo que salió cuando ya no aplicaba queda en el libro y alerta `offsession_unapplied` (nueva). La base: una en
+      camino por objeto, un cobro hecho por propósito (período del plan, «recoger», «dia-N», «tarde», «renovacion»), nada se borra. Planes: la llave es
+      `plan-<sub>-<período>-i<k>` (k sube solo tras un «no» del banco). Rentas: recoger (con el depósito retenido con la llave de la intención y la auditoría
+      del negocio en su transacción), un día más y los días tarde (anotados en la transacción de la devolución); un cobro en camino no deja cancelar ni
+      vencer el apartado. Patrocinio: `cobrar` fuera de sesión (negocios y eventos: `vencerUno` y `vencerUnoEvt`): en camino no termina ni avisa; la
+      renovación ya mandada se termina con su monto sin volver a mirar puesto ni tarjeta. Guardián `cobroFueraAnotadoAntes` (por clase: ningún
+      `cobrarFuera`/`cobrarDirecto` fuera de los dos `terminarCobro`); al revés `alreves9tdinero` (98/98); prueba `din9t4` (base + pasarela de mentira, 41
+      comprobaciones; 13 defectos inyectados la ponen roja). Pro sigue con su tabla (0199): mismo patrón, dos tablas; unificarlas no se hizo.
+- [ ] **→ 9t** · **Cobros fuera de sesión, lo que quedó de 9t4 (21 nov):** (1) **Sin camino para cerrar `offsession_stuck`** (igual que `charge_stuck`,
+      punto (2) de arriba): una intención de más de 23 h queda en camino para siempre y **bloquea los cobros siguientes de ese objeto** (un plan del Hogar
+      con una así sigue con sus visitas sin cobrar los meses siguientes; una renta apartada no se puede cancelar ni vence). Falta la acción del equipo
+      «se cobró» (cerrar con el `pi` de Stripe) / «no se cobró» (dejarla fallida), con nota y auditoría, en `lib/dinero-alertas.ts` y `app/admin/Planes.tsx`.
+      (2) **Pro: «nunca mandada» = `attempts = 0`** (`lib/suscripcion.ts › terminarCobro`, `periodo_ya_cobrado`): los intentos suben DESPUÉS de la
+      respuesta; si el proceso muere entre el cobro y esa escritura, una intención de un período ya cobrado se da por fallida aunque Stripe la cobrara.
+      `offsession_charges` lo resuelve con `sent_at` antes de la llamada; Pro debería hacer lo mismo (o pasar a `offsession_charges`). (3) **Por clase,
+      retenciones (no cobros) con el «sin respuesta» como «no»:** `lib/rentas.ts › barrerRentas` (renovar el depósito, `renta-renov-<pago>`) y
+      `lib/estimados.ts` (renovar lo retenido, `renov-<pago>`): si Stripe no contesta, se da por «el banco ya no deja», se suelta la vieja y se le avisa al
+      negocio, aunque Stripe pudo crear la retención nueva (queda suelta hasta 7 días; la conciliación la ve como «retención suelta»). No cobra dos veces,
+      pero el aviso es falso. (4) **«Un día más» sin llave por toque:** dos toques seguidos (el segundo después de que el primero terminó) son dos días,
+      como antes; a la vez, uno. `rentaAccion` no manda una clave del toque. (5) `din9t4` no recorre la renovación de un patrocinio de evento (`vencerUnoEvt`
+      es la misma forma que `vencerUno`: la cubren el guardián, el al revés y `pat003` en el CI). (6) `din9t4` corrió aquí contra una base aislada; las
+      pruebas de punta a punta que tocan estos flujos (`plan4f`, `renta4f`, `pat002`, `pat003`) no se corrieron aquí: las corre el CI. (21 nov)
 - [x] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no

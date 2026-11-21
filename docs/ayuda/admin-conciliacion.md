@@ -26,6 +26,12 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
   Si a las **23 horas** Stripe no dijo que sí, no se le vuelve a pedir: llega **transferencia al organizador sin respuesta**, **transferencia sin saldo
   para revertir** o **cobro de Pro sin respuesta**, una vez, para mirarlo en Stripe. Un cobro de Pro en camino no cuenta como «cobro fallido» (el plan no
   cambia) y, mientras siga en camino, a ese negocio no se le cobra otra cosa.
+- Igual con los **cobros con tarjeta guardada** que To'Latino hace sin la persona delante: el **plan del Hogar** de cada mes, la **renta** (al recoger,
+  «un día más» y los días tarde) y la **renovación sola de un patrocinio**. Si Stripe no contesta, el cobro queda **en camino** (no es un «no» del banco:
+  el plan no pasa a fallido, la renta no dice «la tarjeta no pasó» y el patrocinio no termina) y el sistema lo termina solo con la misma llave. A las
+  **23 horas** sin respuesta llega **cobro con tarjeta guardada sin respuesta**, una vez, para mirarlo en Stripe. Si el cobro salió cuando lo que pagaba
+  ya había cambiado (el plan se canceló, la renta ya no estaba apartada, el patrocinio terminó o ya no quedaba puesto), queda en el libro sin aplicarse
+  y llega **cobro con tarjeta guardada sin aplicar**: decide si se devuelve. Ninguno se cobra dos veces por lo mismo (la base lo impide).
 - **Devolución de boletos que Stripe dio por fallida**: la alerta dice la orden, quién pagó y los códigos de los boletos. Los boletos siguen devueltos
   (no entran: no se reponen solos), el cobro vuelve a tener ese saldo y la cancelación del evento deja de contarlo como devuelto. Decide con la persona si
   se le devuelve otra vez o se le repone el boleto (hoy, por fuera de la app: la acción todavía no existe).
@@ -50,6 +56,8 @@ Configuración › Dinero. Permiso: ver con «Planes y suscripciones»; actuar (
 | Una devolución anotada murió antes de su primer intento | El barrido la manda con su llave en las 23 h siguientes; pasadas, llega la alerta y ya se puede «Resolver a mano». |
 | Una transferencia al organizador lleva 23 h en camino | No se vuelve a pedir; llega «transferencia al organizador sin respuesta» una vez: mira en Stripe si salió. |
 | Un cobro de Pro lleva 23 h sin respuesta de Stripe | No se cobra otra vez ni pasa a «cobro fallido»; llega «cobro de Pro sin respuesta» una vez: mira en Stripe si se cobró. |
+| Un cobro del plan del Hogar, de una renta o de la renovación de un patrocinio lleva 23 h sin respuesta | No se cobra otra vez y nada cambia por eso; llega «cobro con tarjeta guardada sin respuesta» una vez (si era al recoger una renta, dice el depósito que sigue retenido): mira en Stripe si se cobró. |
+| Ese cobro salió cuando ya no aplicaba | Queda en el libro (el pago del plan o de la renta) sin aplicarse; llega «cobro con tarjeta guardada sin aplicar» una vez: decide si se devuelve. |
 | Rol sin «Transacciones: aprobar» | Ves todo, sin botones. |
 | Diferencias de otra ciudad | No aparecen (las de To'Latino sin ciudad, solo a quien ve todas). |
 
@@ -93,6 +101,13 @@ dueño que la mire.
   If after **23 hours** Stripe has not said yes, it is not requested again: **organizer transfer with no answer**, **transfer with no balance to reverse**
   or **Pro charge with no answer** arrives once, to check in Stripe. A Pro charge on its way does not count as a «failed charge» (the plan does not change)
   and, while it is on its way, that business is not charged anything else.
+- The same for the **saved-card charges** To'Latino makes without the person present: the monthly **home plan**, the **rental** (at pickup, «one more
+  day» and late days) and a **sponsorship's automatic renewal**. If Stripe does not answer, the charge stays **on its way** (it is not a «no» from the
+  bank: the plan does not fail, the rental does not say «the card did not go through» and the sponsorship does not end) and the system finishes it by
+  itself with the same key. After **23 hours** with no answer, **saved-card charge with no answer** arrives once, to check in Stripe. If the charge went
+  through when what it paid for had already changed (the plan was cancelled, the rental was no longer on hold, the sponsorship ended or there was no slot
+  left), it stays in the ledger without being applied and **unapplied saved-card charge** arrives: decide whether to refund it. None is charged twice for
+  the same thing (the database prevents it).
 - **Ticket refund Stripe marked as failed**: the alert names the order, who paid and the ticket codes. The tickets stay refunded (no entry: they are not
   reissued by themselves), the charge has that balance again and the event cancellation stops counting it as refunded. Decide with the person whether to
   refund again or reissue the ticket (for now, outside the app: the action does not exist yet).
@@ -117,6 +132,8 @@ dueño que la mire.
 | A recorded refund died before its first attempt | The sweep sends it with its key within the next 23 h; after that, the alert arrives and «Resolve by hand» becomes available. |
 | A transfer to the organizer has been on its way for 23 h | It is not requested again; «organizer transfer with no answer» arrives once: check in Stripe whether it went out. |
 | A Pro charge has had no answer from Stripe for 23 h | It is not charged again and does not become a «failed charge»; «Pro charge with no answer» arrives once: check in Stripe whether it was charged. |
+| A home plan, rental or sponsorship renewal charge has had no answer for 23 h | It is not charged again and nothing changes because of it; «saved-card charge with no answer» arrives once (at a rental pickup, it names the deposit still held): check in Stripe whether it was charged. |
+| That charge went through when it no longer applied | It stays in the ledger (the plan or rental payment) without being applied; «unapplied saved-card charge» arrives once: decide whether to refund it. |
 | Role without «Transactions: approve» | You see everything, without buttons. |
 | Differences from another city | They do not show (To'Latino's own, with no city, only to whoever sees all cities). |
 

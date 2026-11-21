@@ -55,12 +55,18 @@ export async function tarjetaDe(userId: string, pm: string) {
     `select stripe_pm_id as pm, brand as marca, last4 as l4 from payment_methods where user_id = $1 and stripe_pm_id = $2 and status = 'active'`, [userId, pm])).rows[0] ?? null;
 }
 
-export type Cobro = { kind: "negocio" | "evento"; negocio: string; ciudad: string; payer: string; pm: string; centavos: number; idem: string; razon: "compra" | "renovacion"; meta: Record<string, string>; enSesion?: boolean };
-export type Cobrado = { ok: true; pi: string; marca: string | null; l4: string | null; retenido: boolean } | { ok: false; msg: Bi; verificar?: Verificar };
+/* `ref`: fuera de sesión, el patrocinio que se renueva (la intención del cobro es suya: offsession_charges, lib/cobro-fuera.ts). */
+export type Cobro = { kind: "negocio" | "evento"; negocio: string; ciudad: string; payer: string; pm: string; centavos: number; idem: string; razon: "compra" | "renovacion"; meta: Record<string, string>; enSesion?: boolean; ref?: string };
+/* intencion/idem/centavos: fuera de sesión, la intención anotada (quien llama la cierra con marcarHecho en su transacción y anota el pago con ESA llave y
+   ESE monto). enCamino: Stripe no contestó; nada cambia (ni se termina el patrocinio ni se avisa) y el barrido la termina con la misma llave. */
+export type Cobrado = { ok: true; pi: string; marca: string | null; l4: string | null; retenido: boolean; intencion?: string; idem?: string; centavos?: number }
+  | { ok: false; msg: Bi; verificar?: Verificar; enCamino?: true };
 /* El cobro de un período (dentro de la transacción del candado). En sesión (comprar o «Renovar otra semana» desde el panel): se RETIENE en la
    plataforma con la verificación a nombre de quien paga; si el banco pide 3-D Secure, vuelve `verificar` (la hoja) y no se guarda nada; con lo
    retenido, quien llama guarda el patrocinio y lo captura (capturarCobro) antes de soltar el candado. Fuera de sesión (la renovación sola del
-   barrido): cobro directo; si el banco pide verificar, se suelta ese intento y el patrocinio termina con su motivo (el aviso lleva al panel). */
+   barrido): cobro directo; si el banco pide verificar, se suelta ese intento y el patrocinio termina con su motivo (el aviso lleva al panel).
+   21 nov (9t4) · Fuera de sesión, la INTENCIÓN se anota antes (lib/cobro-fuera.ts, en su propia transacción: queda aunque la del candado se deshaga) y
+   la pasarela va con ESA llave; sin respuesta de Stripe, enCamino (antes contaba como «no»: el patrocinio terminaba aunque Stripe hubiera cobrado). */
 export async function cobrar(x: Cobro): Promise<Cobrado> {
   const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [x.pm])).rows[0];
   const cliente = await pasarela.cliente(x.payer).catch(() => null);
@@ -74,15 +80,29 @@ export async function cobrar(x: Cobro): Promise<Cobrado> {
     }
     return { ok: true, pi: r.pi, marca: t?.marca ?? r.marca, l4: t?.l4 ?? r.ultimos4, retenido: true };
   }
-  const r = await pasarela.cobrarDirecto({ centavos: x.centavos, pm: x.pm, cliente, idem: x.idem, meta });
+  if (!x.ref) return { ok: false, msg: { es: "Vuelve a intentarlo.", en: "Try again." } };
+  const CF = await import("./cobro-fuera");
+  const a = await CF.anotarCobro({ kind: x.kind === "evento" ? "patrocinio_evento" : "patrocinio_negocio", ref: x.ref, para: "renovacion", negocio: x.negocio, ciudad: x.ciudad, payer: x.payer,
+    monto: x.centavos, fee: 0, destino: null, pm: x.pm, idem: (k) => (k ? `${x.idem}-i${k}` : x.idem), detalle: { meta } });
+  const r = await CF.terminarCobro(a);
   if (!r.ok) {
+    if (r.enCamino) return { ok: false, msg: r.msg, enCamino: true };
     if (r.codigo === "authentication_required" && r.pi) {
       await pasarela.liberar(r.pi).catch(() => undefined);
       return { ok: false, msg: { es: "Tu banco pide confirmar cada cobro: compra otro desde tu panel y confírmalo ahí.", en: "Your bank asks to confirm each charge: buy another from your dashboard and confirm it there." } };
     }
-    return { ok: false, msg: r.mensaje };
+    return { ok: false, msg: r.msg };
   }
-  return { ok: true, pi: r.id, marca: t?.marca ?? null, l4: t?.l4 ?? null, retenido: false };
+  return { ok: true, pi: r.pi, marca: t?.marca ?? null, l4: t?.l4 ?? null, retenido: false, intencion: a.id, idem: a.idem, centavos: a.monto };
+}
+/* 9t4 · Una renovación en camino cuyo patrocinio ya no está vivo y vencido (lo terminó el Super Admin, el negocio dejó de estar publicado): si nunca se
+   mandó, se suelta; si se mandó y Stripe cobró, el equipo de dinero decide si se devuelve (offsession_unapplied). Las de un patrocinio que sigue vivo
+   y vencido las termina su barrido (vencerUno / vencerUnoEvt) con la misma llave. */
+export async function terminarRenovacionSuelta(a: import("./cobro-fuera").Intencion): Promise<boolean> {
+  const T = a.kind === "patrocinio_evento" ? "event_sponsorships" : "sponsorships";
+  const s = (await db().query<{ st: string; vencido: boolean }>(`select status as st, ends_at <= now() as vencido from ${T} where id = $1::bigint`, [a.ref])).rows[0];
+  if (s?.st === "activo" && s.vencido) return false;
+  return (await import("./cobro-fuera")).noAplica(a, "patrocinio_termino", { es: `el patrocinio ${a.ref} ya había terminado (${s?.st ?? "no existe"}).`, en: `sponsorship ${a.ref} had already ended (${s?.st ?? "missing"}).` });
 }
 /* Capturar lo retenido de una compra en sesión, ya guardado el patrocinio (en la misma transacción): si no se puede, la transacción se deshace
    (SinCaptura) y lo retenido se suelta: nada queda guardado sin cobrar ni cobrado sin guardar. */
@@ -489,28 +509,57 @@ async function vencerUno(id: string): Promise<Vencido | null> {
       await c.query(`update sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), renew_note = $2 where id = $1::bigint`, [id, motivo?.es ?? null]);
       return motivo;
     };
-    if (!s.auto_renew || !s.card_pm || !s.b_on) { await terminar(null); return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_termino", v: {} }; }
+    // 9t4 · Una renovación ya mandada a Stripe que no contestó (offsession_charges en camino): se termina con SU llave y SU monto, sin volver a mirar el
+    // puesto ni la tarjeta (Stripe pudo cobrarla); una anotada que nunca salió se suelta si ya no aplica.
+    const CF = await import("./cobro-fuera");
+    const camino = await CF.enCamino("patrocinio_negocio", id), mandada = !!camino?.enviada;
+    if (!s.auto_renew || !s.card_pm || !s.b_on) {
+      if (!mandada) {
+        if (camino) await CF.soltarSinMandar(camino.id, "no_renueva");
+        await terminar(null); return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_termino", v: {} };
+      }
+    }
     await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`pat:${s.city_id}:${s.category_id}`]);
     const P = await preciosNegocio(), f = (await fechasPeriodo(c, s.city_id, s.fin, s.duration))!;
     const vivos = (await c.query<{ n: number }>(`select patrocinio_a_la_vez($1, $2, $3::timestamptz, $4::timestamptz, $5::bigint) as n`, [s.city_id, s.category_id, f.a, f.b, id])).rows[0]!.n;
-    const tarjeta = await tarjetaDe(s.payer_user_id, s.card_pm);
+    const tarjeta = mandada ? { pm: camino!.pm } : s.card_pm ? await tarjetaDe(s.payer_user_id, s.card_pm) : null;
     let motivo: Bi | null = null;
-    if (vivos >= P.puestos) motivo = { es: "no quedaba puesto", en: "there was no slot left" };
+    if (!mandada && vivos >= P.puestos) motivo = { es: "no quedaba puesto", en: "there was no slot left" };
     else if (!tarjeta) motivo = { es: "la tarjeta ya no está guardada", en: "the card is no longer saved" };
+    if (motivo && camino && !mandada) await CF.soltarSinMandar(camino.id, motivo.en.replace(/\W+/g, "_").slice(0, 60));
     if (!motivo) {
       const centavos = s.duration === "week" ? P.week : P.month, idem = `pat-negocio-renov-${id}`;
-      const cobro: Cobro = { kind: "negocio", negocio: s.business_id, ciudad: s.city_id, payer: s.payer_user_id, pm: tarjeta!.pm, centavos, idem, razon: "renovacion", meta: { business_id: s.business_id, category_id: s.category_id } };
+      // Una renovación ya anotada se cobra con SU monto (el de Configuración el día que se anotó), nunca con otro.
+      const aCobrar = camino?.monto ?? centavos;
+      const cobro: Cobro = { kind: "negocio", negocio: s.business_id, ciudad: s.city_id, payer: s.payer_user_id, pm: tarjeta!.pm, centavos: aCobrar, idem, razon: "renovacion", meta: { business_id: s.business_id, category_id: s.category_id }, ref: id };
       const p = await cobrar(cobro);
+      // Stripe no contestó: nada cambia (el patrocinio no termina ni se avisa); el próximo paso del barrido la termina con la misma llave.
+      if (!p.ok && p.enCamino) return null;
       if (p.ok) {
+        // El cierre de la intención va en ESTA transacción (con el patrocinio nuevo y el libro): una vez.
+        if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) return null;
+        const monto = p.centavos ?? aCobrar;
         await c.query(`update sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now() where id = $1::bigint`, [id]);
-        const nid = (await c.query<{ id: string }>(
-          `insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
-           values ($1, $2, $3, $4::timestamptz, $5::timestamptz, $6, 'activo', $7, $8, $9, true, $10::bigint) returning id::text`,
-          [s.business_id, s.category_id, s.city_id, f.a, f.b, s.duration, centavos, s.payer_user_id, tarjeta!.pm, id])).rows[0]!.id;
-        await anotarPago(c, { ...cobro, ref: nid, pi: p.pi, marca: p.marca, l4: p.l4 });
-        await auditarNegocio(c, s.payer_user_id, s.business_id, s.city_id, "patrocinio.renovado_solo", { patrocinio: nid, de: id, monto: money(centavos), hasta: f.b });
+        await c.query("savepoint renueva");
+        let nid: string | null = null;
+        try {
+          nid = (await c.query<{ id: string }>(
+            `insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
+             values ($1, $2, $3, $4::timestamptz, $5::timestamptz, $6, 'activo', $7, $8, $9, true, $10::bigint) returning id::text`,
+            [s.business_id, s.category_id, s.city_id, f.a, f.b, s.duration, monto, s.payer_user_id, tarjeta!.pm, id])).rows[0]!.id;
+        } catch (e) {
+          // Ya mandada y sin puesto (otro negocio lo tomó mientras Stripe no contestaba): el cobro salió y no se aplica; lo decide el equipo de dinero.
+          if (!errorDePuestos(e)) throw e;
+          await c.query("rollback to savepoint renueva");
+          await c.query(`update sponsorships set renew_note = $2 where id = $1::bigint`, [id, "no quedaba puesto"]);
+          const ia = await CF.intencion(p.intencion!);
+          if (ia) await CF.alertaSinAplicar(ia, { es: `al renovar el patrocinio ${id} ya no quedaba puesto.`, en: `when renewing sponsorship ${id} there was no slot left.` });
+          return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: "no quedaba puesto" } };
+        }
+        await anotarPago(c, { ...cobro, centavos: monto, idem: p.idem ?? idem, ref: nid!, pi: p.pi, marca: p.marca, l4: p.l4 });
+        await auditarNegocio(c, s.payer_user_id, s.business_id, s.city_id, "patrocinio.renovado_solo", { patrocinio: nid, de: id, monto: money(monto), hasta: f.b });
         const tj = p.marca && p.l4 ? `${p.marca.toUpperCase()} ·· ${p.l4}` : "";
-        return { r: "renovado", negocio: s.business_id, tpl: "biz_patrocinio_renovado", v: { hasta: f.b, monto: money(centavos), tarjeta: tj } };
+        return { r: "renovado", negocio: s.business_id, tpl: "biz_patrocinio_renovado", v: { hasta: f.b, monto: money(monto), tarjeta: tj } };
       }
       motivo = { es: p.msg.es.replace(/\.$/, "").toLowerCase(), en: p.msg.en.replace(/\.$/, "").toLowerCase() };
     }

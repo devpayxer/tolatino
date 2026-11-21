@@ -179,6 +179,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["alertasDinero", async () => (await import("./dinero-alertas")).barrerAlertasDinero()], ["planPro", async () => (await import("./suscripcion")).procesar()],
         // 9t3 · Los cobros de Pro que quedaron en camino (Stripe no contestó o el proceso murió) se terminan con su llave; pasadas 23 h, la alerta.
         ["cobrosPro", async () => (await import("./suscripcion")).barrerCobrosPro()],
+        // 9t4 · Los demás cobros con tarjeta guardada (planes del Hogar, rentas, renovaciones de patrocinios) que quedaron en camino, igual.
+        ["cobrosFuera", async () => (await import("./cobro-fuera")).barrerCobrosFuera()],
         // 9l · Avisos y canales: los reintentos del SMS (el único camino) y su retención, la retención del correo a Soporte, pedido tarde, «ya publicó», «Avísame
         // cuando haya», la prueba de Pro (día 20 y último, 10 AM) y el resumen de la semana (lunes, 9 AM). Cada aviso una vez (notif_once).
         ["canales9l", async () => (await import("./canales/barrido")).barrerCanales9l()],

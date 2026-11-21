@@ -177,38 +177,82 @@ export async function barrerPlanes(f: { negocio?: string; userId?: string; numer
   }
 }
 
+/* 21 nov (9t4) · El cobro del período, como el de Pro (lib/cobro-fuera.ts): (1) la INTENCIÓN se anota (offsession_charges 'pending': la llave, el monto,
+   la comisión, la tarjeta y el período fijos); (2) la pasarela con ESA llave; (3) el cierre (el período avanza, el pago y su evento) en otra transacción,
+   una vez. Antes, la llave era el número de intento (cobros + rechazos) y un «sin respuesta» contaba como rechazo: el siguiente intento iba con OTRA llave
+   y podía cobrar dos veces el mismo período. Ahora un «sin respuesta» deja la intención en camino (el plan no cambia: ni fallo, ni reintento, ni aviso)
+   y la terminan el siguiente barrido del plan o el de los cobros (barrerCobrosFuera) con la MISMA llave; pasadas 23 h, la alerta y ningún cobro más.
+   Un «no» del banco sí cuenta: reintento a los 2 y 4 días (otra intención, otra llave); al tercero, el plan queda en pausa. Nunca dos cobros del mismo
+   período (la base: un solo 'done' por plan y período). */
 async function cobrarPeriodo(subId: string, hoy: string): Promise<void> {
-  const s = (await db().query<{ op: string; num: string; biz: string; uid: string; city: string; cents: number; pm: string; next: string; retry: string | null; fails: number; seq: number; intento: number; day: number; plan: string }>(
+  const CF = await import("./cobro-fuera");
+  // Una intención en camino de este plan (de cualquier período) se termina primero: nadie le cobra otra cosa mientras tanto.
+  const camino = await CF.enCamino("plan", subId);
+  if (camino) { await terminarCobroPlan(camino); return; }
+  const s = (await db().query<{ op: string; num: string; biz: string; uid: string; city: string; cents: number; pm: string; next: string; day: number }>(
     `select s.operation_id::text as op, o.number as num, s.business_id as biz, s.user_id::text as uid, s.city_id as city, s.price_cents as cents, s.payment_method as pm, s.next_charge_on::text as next,
-            s.retry_on::text as retry, s.fail_count as fails, s.charges_ok + 1 as seq,
-            (select count(*)::int from operation_events e where e.operation_id = s.operation_id and e.kind in ('payment_captured', 'payment_failed')) as intento, s.charge_day as day, o.details#>>'{svc,es}' as plan
+            s.charge_day as day
        from plan_subscriptions s join operations o on o.id = s.operation_id where s.id = $1::bigint and s.status = 'active' and s.next_charge_on <= $2::date and (s.retry_on is null or s.retry_on <= $2::date)`, [subId, hoy])).rows[0];
   if (!s) return;
   const destino = await cuentaDe(db(), s.biz);
+  // Sin cuenta de cobro del negocio no se anota nada (no hay a quién cobrarle): cuenta como un intento fallido, como siempre.
+  if (!destino) { await rechazoPlan(subId, s.op, s.num, s.uid); return; }
   const fee = Math.min(await comision(db(), "plan", s.cents), s.cents);
-  const r = destino ? await pasarela.cobrarFuera({ centavos: s.cents, comision: fee, destino, pm: s.pm, cliente: await pasarela.cliente(s.uid).catch(() => null), idem: `plan-${subId}-a${s.intento}` /* el número de intento (cobros + rechazos): nunca se repite (ni la fecha ni el contador de fallos sirven: se repiten al reanudar o al cambiar la tarjeta) y dos barridos a la vez dan la misma clave */, meta: { plan: s.num, business_id: s.biz } })
-    : { ok: false as const, codigo: "sin_cuenta", mensaje: { es: "", en: "" } };
-  const av = await import("./avisos");
-  if (r.ok) {
-    const hecho = await tx(async (c) => {
-      const u = await c.query(`update plan_subscriptions set charges_ok = charges_ok + 1, next_charge_on = $2::date, fail_count = 0, retry_on = null, updated_at = now() where id = $1::bigint and next_charge_on = $3::date`, [subId, mesSiguiente(s.next, s.day), s.next]);
-      if (!u.rowCount) return false;
-      await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, captured_at, simulated, payment_method)
-                     values ($1::bigint, $2, $3, $4, 'plan', $5, 'card', $6, $7, $7, $8, 'captured', $9, $10, now(), $11, $12) on conflict (stripe_payment_intent) do nothing`,
-        [s.op, s.uid, s.biz, s.city, s.seq, r.id, s.cents, fee, r.marca, r.ultimos4, r.id.startsWith("pi_sim_"), s.pm]);
-      await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'payment_captured', 'system', $2::jsonb)`, [s.op, JSON.stringify({ es: `Cobro ${s.seq} del plan: ${money(s.cents)}`, en: `Plan charge ${s.seq}: ${money(s.cents)}` })]);
-      return true;
-    });
-    if (hecho) await av.avisar(s.uid, "plan_cobro", { plan: s.plan, monto: money(s.cents) }, { href: `/plan/${s.num}`, ref: ["plan", s.num] });
-    return;
+  const a = await CF.anotarCobro({ kind: "plan", ref: subId, para: `periodo-${s.next}`, op: s.op, negocio: s.biz, ciudad: s.city, payer: s.uid, monto: s.cents, fee, destino, pm: s.pm,
+    idem: (k) => `plan-${subId}-${s.next}-i${k}`, detalle: { meta: { plan: s.num, business_id: s.biz }, next: s.next, day: s.day } });
+  await terminarCobroPlan(a);
+}
+/* Pasos 2 y 3 (también desde barrerCobrosFuera). true = el cobro quedó hecho. */
+export async function terminarCobroPlan(a: import("./cobro-fuera").Intencion): Promise<boolean> {
+  const CF = await import("./cobro-fuera");
+  const d = a.detalle as { next: string; day: number };
+  const p = (await db().query<{ num: string; uid: string; plan: string; st: string; next: string | null }>(
+    `select o.number as num, s.user_id::text as uid, o.details#>>'{svc,es}' as plan, s.status as st, s.next_charge_on::text as next from plan_subscriptions s join operations o on o.id = s.operation_id where s.id = $1::bigint`, [a.ref])).rows[0];
+  if (!p) return false;
+  // El plan se canceló, se pausó o su período se movió mientras el cobro iba en camino: si nunca se mandó, se suelta; si se mandó y Stripe cobró, el pago
+  // queda en el libro y el equipo de dinero decide si se devuelve (offsession_unapplied). Nunca se aplica a otro período.
+  if (p.st !== "active" || p.next !== d.next) {
+    return CF.noAplica(a, "plan_cambio", { es: `el plan ${p.num} ya no esperaba ese cobro (${p.st}, próximo cobro ${p.next ?? "ninguno"}).`, en: `plan ${p.num} no longer expected that charge (${p.st}, next charge ${p.next ?? "none"}).` },
+      (c, r) => pagoDelPlan(c, a, r.pi, null, null, false));
   }
-  // Rechazo: reintento a los 2 y 4 días; al tercero, el plan queda en pausa (sin visita) hasta que cambie la tarjeta.
-  const fails = s.fails + 1, pausa = fails >= 3;
-  await db().query(`update plan_subscriptions set fail_count = $2, retry_on = case when $3 then null else $4::date end, status = case when $3 then 'paused' else status end, paused_until = null, updated_at = now() where id = $1::bigint`,
-    [subId, fails, pausa, addD(hoy, 2)]);
-  await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'payment_failed', 'system', $2::jsonb)`, [s.op, JSON.stringify(pausa ? { es: "El banco rechazó el cobro 3 veces: plan en pausa", en: "The bank declined 3 times: plan paused" } : { es: `El banco rechazó el cobro (intento ${fails})`, en: `The bank declined the charge (attempt ${fails})` })]);
-  if (pausa) await db().query(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'plan_pausa' where kind = 'appointment' and details->>'plan' = $1 and status = 'confirmed' and scheduled_at > now()`, [s.num]);
-  await av.avisar(s.uid, "plan_fallo", { plan: s.plan }, { href: `/plan/${s.num}`, ref: ["plan", s.num] });
+  let aplicado = false;
+  const r = await CF.terminarCobro(a, async (c, h) => {
+    const u = await c.query(`update plan_subscriptions set charges_ok = charges_ok + 1, next_charge_on = $2::date, fail_count = 0, retry_on = null, updated_at = now() where id = $1::bigint and next_charge_on = $3::date and status = 'active'`,
+      [a.ref, mesSiguiente(d.next, d.day), d.next]);
+    aplicado = !!u.rowCount;
+    await pagoDelPlan(c, a, h.pi, h.marca, h.l4, aplicado);
+  });
+  if (r.ok) {
+    if (r.ya) return true;
+    if (aplicado) await (await import("./avisos")).avisar(p.uid, "plan_cobro", { plan: p.plan, monto: money(a.monto) }, { href: `/plan/${p.num}`, ref: ["plan", p.num] });
+    else await CF.alertaSinAplicar(a, { es: `el plan ${p.num} cambió en ese momento.`, en: `plan ${p.num} changed at that moment.` });
+    return true;
+  }
+  if (r.enCamino) return false;
+  await rechazoPlan(a.ref, a.op!, p.num, p.uid);
+  return false;
+}
+/* El pago en el libro (el dinero salió, se haya aplicado o no) y su evento, en la transacción del cierre. */
+async function pagoDelPlan(c: PoolClient, a: import("./cobro-fuera").Intencion, pi: string, marca: string | null, l4: string | null, aplicado: boolean) {
+  const seq = Number((await c.query<{ n: number }>(`select coalesce(max(seq), 0)::int + 1 as n from payments where operation_id = $1::bigint and kind = 'plan'`, [a.op])).rows[0]!.n);
+  await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, captured_at, simulated, payment_method)
+                 values ($1::bigint, $2, $3, $4, 'plan', $5, 'card', $6, $7, $7, $8, 'captured', $9, $10, now(), $11, $12) on conflict (stripe_payment_intent) do nothing`,
+    [a.op, a.payer, a.negocio, a.ciudad, seq, pi, a.monto, a.fee, marca, l4, pi.startsWith("pi_sim_"), a.pm]);
+  await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'payment_captured', 'system', $2::jsonb)`, [a.op, JSON.stringify(aplicado
+    ? { es: `Cobro ${seq} del plan: ${money(a.monto)}`, en: `Plan charge ${seq}: ${money(a.monto)}` }
+    : { es: `Cobro del plan de ${money(a.monto)} que llegó cuando el plan ya había cambiado: lo revisa To'Latino`, en: `Plan charge of ${money(a.monto)} that arrived after the plan changed: To'Latino reviews it` })]);
+}
+/* Un «no» del banco: reintento a los 2 y 4 días; al tercero, el plan queda en pausa (sin visita) hasta que cambie la tarjeta. */
+async function rechazoPlan(subId: string, op: string, num: string, uid: string) {
+  const p = (await db().query<{ plan: string }>(`select o.details#>>'{svc,es}' as plan from operations o where o.id = $1::bigint`, [op])).rows[0];
+  const u = (await db().query<{ fails: number; pausa: boolean }>(
+    `update plan_subscriptions s set fail_count = s.fail_count + 1, retry_on = case when s.fail_count + 1 >= 3 then null else (now() at time zone ci.timezone)::date + 2 end,
+            status = case when s.fail_count + 1 >= 3 then 'paused' else s.status end, paused_until = null, updated_at = now()
+       from cities ci where ci.id = s.city_id and s.id = $1::bigint and s.status = 'active' returning s.fail_count as fails, s.status = 'paused' as pausa`, [subId])).rows[0];
+  if (!u) return;
+  await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'payment_failed', 'system', $2::jsonb)`, [op, JSON.stringify(u.pausa ? { es: "El banco rechazó el cobro 3 veces: plan en pausa", en: "The bank declined 3 times: plan paused" } : { es: `El banco rechazó el cobro (intento ${u.fails})`, en: `The bank declined the charge (attempt ${u.fails})` })]);
+  if (u.pausa) await db().query(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'plan_pausa' where kind = 'appointment' and details->>'plan' = $1 and status = 'confirmed' and scheduled_at > now()`, [num]);
+  await (await import("./avisos")).avisar(uid, "plan_fallo", { plan: p?.plan ?? "" }, { href: `/plan/${num}`, ref: ["plan", num] });
 }
 
 /* ── La persona: saltar la próxima, pausar un mes, reanudar, cancelar, cambiar la tarjeta ── */
