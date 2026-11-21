@@ -2239,12 +2239,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       hay dos formas buenas en el repo: la cabecera dice dónde estás y la hoja dice la acción (`N360`, `Configuracion`, `Contenido`), o la
       cabecera dice la acción y la hoja pregunta «¿Por qué?» (`AutoModeracion`, `Gamificacion`, `HoyAdmin`). Unificar con una de las dos (no
       inventar una tercera), con captura a 390 de cada pantalla. Es de siempre, no de 9t6. (21 nov)
-- [ ] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
+- [x] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho
       (21 nov, Fable):** `lib/fotos-revision.ts` elige entre las que siguen publicadas; guardián `muestraDeLasQueSePuedenVer`, al revés
-      `alreves9umuestra` 5/5; `rev9u2` compara el número exacto (pantalla y correo). **Falta para cerrarla:** correr `rev9u2` y `rev9u` contra
-      el servidor y verla en el CI. (21 nov)
+      `alreves9umuestra` 5/5; `rev9u2` compara el número exacto (pantalla y correo). **Cerrada (21 nov):** `rev9u2` (46 ✓) y `rev9u` (66 ✓) contra
+      el servidor local, y en la revisión completa 44915220253 (verde, 0 rojas, 0 inestables). (21 nov)
 - [ ] **→ 9o** · **Al desplegar, la app nueva corre unos segundos contra la base vieja** (sandbox, 21 nov 07:50 EST, al subir la 0203: `relation
       "gateway_checks" does not exist` y `column "key_from" does not exist` en el registro de la base, tres veces en 3 s, hasta que entró la
       migración). En el sandbox no pasó de ahí; en producción con gente adentro es un barrido o una pantalla que falla ese rato. Para producción:
