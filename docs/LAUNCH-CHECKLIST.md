@@ -2178,6 +2178,17 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       de contrato con stripe-mock (`scripts/contrato-stripe/prueba.cjs`) ya llama a `buscarCobro` y `buscarTransferencia`, pero no se corrió aquí (no hay
       stripe-mock en este entorno): la corre el CI; si su versión no trae `/v1/payment_intents/search`, falla ahí. (6) `din9t5` corrió aquí contra una base
       aislada; `plan4f`, `renta4f`, `pat002` y `pat003` no (las corre el CI). (21 nov)
+- [x] **→ 9t** · **Una foto privada que no está en el almacén dejaba el pedido colgado (CI 44892361124: `dm9t` 25 min y `rev9u2` rojas dos veces):**
+      desde «medios en flujo» `abrirObjeto` soltaba el cuerpo de la respuesta del almacén con `await r.body.cancel()`. En el servidor, Next envuelve
+      cada `fetch` GET que no lleva `signal` (su «dedupe»): parte el cuerpo en dos ramas y se queda con una; el cancel de una rama solo termina cuando
+      se sueltan las dos, así que la espera no acababa nunca (y la rama de Next juntaba el objeto entero en memoria, lo contrario de «en flujo»). No
+      lo vio la prueba con dobles porque no pasa por el fetch de Next, y quien lo escribió no corrió las pruebas contra el servidor de verdad.
+      **Hecho (21 nov, lo escribió Fable):** `abrirObjeto` pide con `signal` (corta solo la espera de las cabeceras, 30 s) y suelta sin esperar;
+      el GET general del almacén (`leerObjeto`) también lleva señal (sin copia). Guardián `mediosEnFlujo` (4b), por clase: nadie en el servidor
+      espera el cancel de un cuerpo, y quien usa `x.body` de un fetch pide con señal. Al revés `alreves9tflujo` 18/18; `medios9tflujo` ahora
+      envuelve el fetch como Next (con el código anterior: «colgada»). En local contra el servidor: `dm9t`, `rev9u2` y las otras nueve que piden
+      fotos privadas (`ayu4m beta8f fot9uadmin fot9uprivadas msg9t neg9n rev9u sop7b sub9t`), en verde. **Queda:** una foto privada cuya fila
+      existe pero cuyo archivo no está en el almacén responde 500 (como antes de «medios en flujo»), no 404. (21 nov)
 - [x] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no

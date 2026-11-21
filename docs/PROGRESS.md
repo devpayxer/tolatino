@@ -20,6 +20,15 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (tarde) · la revisión completa 44892361124 (9t5 + medios en flujo, b7e4273) salió ROJA por dos pruebas: `dm9t` (25 min, se detiene) y
+  `rev9u2` (30 s esperando la página).** Causa real, del producto: una foto privada que no está en el almacén dejaba el pedido colgado (el fetch
+  de Next parte el cuerpo de un GET sin `signal`; `abrirObjeto` esperaba un cancel que no termina). Arreglado y con guardián (LAUNCH, «Una foto
+  privada que no está en el almacén…»). Comprobado en local contra el servidor de verdad (base y almacén locales recreados: los contenedores de
+  hace 9 días ya no arrancaban): `dm9t`, `rev9u2` y las otras nueve pruebas de fotos privadas en verde; tipos, guardianes, textos, al revés.
+  **`main` y `pruebas` siguen en ab11fc0.** Sigue: revisión completa sobre el HEAD de la rama de trabajo; verde con 3 inestables o menos →
+  `git push origin HEAD:main HEAD:pruebas` y comprobar en el sandbox que la 0203 quedó aplicada.
+  **Regla para los encargos (nueva):** lo que toca una ruta servida se prueba contra el servidor de verdad (`pruebas/correr.mjs`), no solo con
+  dobles; si el agente no puede levantarlo, lo dice y lo corre quien orquesta antes del CI.
 - **21 nov (mediodía) · `main` y `pruebas` = ab11fc0, sandbox comprobado desde fuera** (estado-sandbox 44892363540: commit ab11fc04, migración
   0202 aplicada, 201 migraciones, salud OK, `/`, `/buscar` y `/publica` en 200). Evidencia: revisión completa **44888202039 VERDE, 0 rojas y 0
   inestables**. Subió: dinero 9t4, «código escrito manda» (Publica, pago del pedido, boletos), `push8c`, teléfonos de prueba 570-555, `plan4f`,

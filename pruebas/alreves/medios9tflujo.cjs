@@ -195,6 +195,22 @@ const MiB = 1024 * 1024;
       ok(S3.pedidos.length === a0, 'y el almacén ni se tocó');
       quien.id = 'cliente';
 
+      // Como lo deja Next en el servidor (CI 44892361124: dm9t y rev9u2 colgadas): todo fetch GET SIN señal sale con el cuerpo partido en dos
+      // ramas y Next se queda con una. Soltar la nuestra y esperar no termina nunca, y la rama guardada junta el objeto entero en memoria.
+      // abrirObjeto pide con señal (Next no lo toca) y suelta sin esperar: una foto que no está en el almacén RESPONDE.
+      {
+        const fetch0 = globalThis.fetch, guardadas = [];
+        globalThis.fetch = async (u, o) => { const r = await fetch0(u, o); if (o?.signal || (o?.method ?? 'GET') !== 'GET' || !r.body) return r; const [x, y] = r.body.tee(); guardadas.push(y); return new Response(x, { status: r.status, headers: r.headers }); };
+        try {
+          const conTope = (p) => Promise.race([p.then((x) => `respondió ${x.st}`, (e) => `falló: ${String(e.message).slice(0, 40)}`), new Promise((ya) => setTimeout(() => ya('colgada'), 3000))]);
+          const bien = await conTope(pedir());
+          S3.objetos.delete('privado/e/foto.jpg');
+          const falta = await conTope(pedir());
+          ok(bien === 'respondió 200' && falta !== 'colgada' && !/200/.test(falta), `con el fetch como lo envuelve Next: la foto sale (${bien}) y una que NO está en el almacén responde, no se cuelga (${falta})`);
+          ok(guardadas.length === 0, `el pedido al almacén lleva señal: Next no parte el cuerpo ni guarda una copia (${guardadas.length} partidos)`);
+        } finally { globalThis.fetch = fetch0; S3.objetos.set('privado/e/foto.jpg', { bytes: datos.length, etag: `"${md5}"`, tipo: 'image/jpeg', datos }); }
+      }
+
       // La variante que falta → la maestra (Fotos a la medida, F3).
       S3.objetos.set('privado/o/maestra.jpg', { bytes: datos.length, etag: `"${md5}"`, tipo: 'image/jpeg', datos });
       const P = cargarApp('apps/web/app/api/medios/privada/[id]/route.ts', {

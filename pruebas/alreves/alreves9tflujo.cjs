@@ -3,7 +3,7 @@
 //   la ruta del video vuelve a leer el cuerpo entero · el cupo después de leer (o sin él) · el 503 sin Retry-After · el turno que no se suelta ·
 //   recibirArchivo que escribe sin mirar el tope · procesarVideo sin el binario · turnoVideo sin tope por proceso · enviarArchivo que lee el
 //   archivo entero · tomarCupo sin candado · el servicio que lee la entrada entera · entregarPrivado que deja salir una caché pública ·
-//   abrirObjeto sin If-None-Match · una ruta que entrega sin el 404 del permiso antes · una con caché pública · una ruta nueva con leerObjeto.
+//   abrirObjeto sin If-None-Match · abrirObjeto sin señal · esperar el cancel de un cuerpo · un cuerpo de fetch en flujo sin señal · una ruta que entrega sin el 404 del permiso antes · una con caché pública · una ruta nueva con leerObjeto.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ, G = 'mediosEnFlujo';
@@ -22,6 +22,9 @@ const casos = [
   [P, '            if not recibir(self.rfile, n, os.path.join(tmp, "entrada")):', '            if not open(os.path.join(tmp, "entrada"), "wb").write(self.rfile.read(n)):', 'escribe la entrada a disco por partes'],
   [E, 'if (!/^private,/.test(cabeceras["cache-control"] ?? "") || ', 'if (', 'solo con caché «private»'],
   [M, 'headers: inm ? { ...headers, "if-none-match": inm } : headers', 'headers', 'abrirObjeto pasa If-None-Match'],
+  [M, ', signal: corte.signal }); }', ' }); }', 'abrirObjeto pide al almacén con `signal`'],
+  [M, '  if (r.status === 404) { soltar(r); return null; }', '  if (r.status === 404) { await r.body?.cancel().catch(() => undefined); return null; }', 'espera el cancel del cuerpo'],
+  [E, '    const a = await abrirObjeto(l.clave, inm);', '    const x = await fetch("http://127.0.0.1:1/" + l.clave); if (x.status === 299) return new Response(x.body);\n    const a = await abrirObjeto(l.clave, inm);', 'usa en flujo el cuerpo de un fetch del servidor sin `signal`'],
   ['apps/web/app/api/entrega/foto/[id]/route.ts', '  if (!ok) return no();\n  // 9t · En flujo', '  // 9t · En flujo', 'sin antes contestar 404'],
   ['apps/web/app/api/ayuda/foto/[id]/route.ts', '{ "cache-control": "private, no-store", "x-content-type-options": "nosniff" });', '{ "cache-control": "public, max-age=3600", "x-content-type-options": "nosniff" });', 'caché «private, no-store»'],
 ];

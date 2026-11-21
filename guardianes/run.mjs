@@ -10009,6 +10009,7 @@ const guardianes = {
      - El servicio (services/video/app.py) escribe la entrada a disco por partes y contesta en binario (sin base64).
      - Entregar un objeto privado: ninguna ruta lee el almacén entero (leerObjeto); van por lib/entrega-privada.ts entregarPrivado (en flujo, ETag,
        304), siempre DESPUÉS del «return 404» del permiso, con «private» y nunca «public».
+     - 21 nov: el fetch de Next parte el cuerpo de un GET sin `signal`; abrirObjeto pide con señal y nadie espera el cancel de un cuerpo (4b).
      Prueba con dobles: medios9tflujo (sin servidor ni docker). Al revés (alreves9tflujo). */
   mediosEnFlujo() {
     const G = "mediosEnFlujo", R = "apps/web/app/api/negocio/video/route.ts", V = "apps/web/lib/video-negocio.ts", S = "apps/web/lib/subida.ts", M = "apps/web/lib/medios.ts",
@@ -10040,6 +10041,20 @@ const guardianes = {
     const e = sinComent(E), ep = cuerpoFn(e, "entregarPrivado");
     if (!/if \(!\/\^private,\/\.test\(cabeceras\["cache-control"\]/.test(ep) || !/abrirObjeto\(l\.clave, inm\)/.test(ep) || !/status: 304/.test(ep) || /arrayBuffer|leerObjeto|Buffer\.concat/.test(ep)) falla(G, E, 0, "entregarPrivado: en flujo (abrirObjeto con If-None-Match → 304), y solo con caché «private»");
     if (!/"if-none-match": inm/.test(cuerpoFn(m, "abrirObjeto"))) falla(G, M, 0, "abrirObjeto pasa If-None-Match al almacén (304 sin leer el cuerpo)");
+    // (4b) 21 nov (CI 44892361124) · Next parte en dos el cuerpo de todo fetch GET del servidor que no lleva `signal` y se queda con una rama:
+    // esperar a soltar la nuestra no termina nunca (dm9t y rev9u2 colgadas con una foto que no estaba en el almacén) y la otra junta el objeto
+    // en memoria. El fetch de abrirObjeto lleva señal y un cuerpo se suelta sin esperar. Por clase: en todo el servidor, nadie espera el cancel
+    // del cuerpo de una respuesta, y quien usa el cuerpo de un fetch en flujo (x.body) pide con señal.
+    if (!/await fetch\(u, \{ method: "GET", headers: [^\n]*, signal: corte\.signal \}\)/.test(cuerpoFn(m, "abrirObjeto"))) falla(G, M, 0, "abrirObjeto pide al almacén con `signal` (sin ella Next parte el cuerpo en dos y guarda una copia)");
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
+      const t = sinComent(f);
+      const esp = /await\s+[\w.]+\.body\??\.cancel\(/.exec(t);
+      if (esp) falla(G, f, t.slice(0, esp.index).split("\n").length, "espera el cancel del cuerpo de una respuesta: con el fetch de Next esa espera no termina nunca (se suelta sin await)");
+      for (const x of t.matchAll(/\b(\w+) = await fetch\(([^\n]*)/g)) {
+        if (/\bsignal\b/.test(x[2])) continue;
+        if (new RegExp(`\\b${x[1]}\\.body\\b(?!\\?\\.cancel)`).test(t.slice(x.index).replace(/!\w+\.body\b/g, ""))) falla(G, f, t.slice(0, x.index).split("\n").length, "usa en flujo el cuerpo de un fetch del servidor sin `signal` (Next lo parte en dos y guarda una copia entera)");
+      }
+    }
     for (const f of archivos.filter((x) => /^apps\/web\/app\/api\/.*route\.ts$/.test(x))) {
       const t = sinComent(f);
       if (/\bleerObjeto\(/.test(t)) falla(G, f, 0, "una ruta lee un objeto del almacén entero (leerObjeto) para entregarlo: va por entregarPrivado (en flujo, ETag, después del permiso)");

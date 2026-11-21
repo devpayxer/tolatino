@@ -57,7 +57,8 @@ function firmar(metodo: "PUT" | "GET" | "DELETE" | "HEAD", clave: string, hp: st
 }
 async function pedir(metodo: "PUT" | "GET" | "DELETE" | "HEAD", clave: string, cuerpo?: Buffer, tipo?: string): Promise<Buffer | boolean | void> {
   const { u, headers } = firmar(metodo, clave, h(cuerpo ?? ""), tipo);
-  const r = await fetch(u, { method: metodo, body: metodo === "PUT" ? new Uint8Array(cuerpo!) : undefined, headers });
+  // GET con `signal`: sin ella Next parte el cuerpo en dos y guarda una copia entera hasta que el recolector la suelta (ver abrirObjeto).
+  const r = await fetch(u, { method: metodo, body: metodo === "PUT" ? new Uint8Array(cuerpo!) : undefined, headers, signal: metodo === "GET" ? new AbortController().signal : undefined });
   if (metodo === "HEAD" && (r.ok || r.status === 404)) return r.ok;
   if (!r.ok && !(metodo === "DELETE" && r.status === 404)) throw new Error(`almacenamiento ${r.status}: ${(await r.text()).slice(0, 200)}`);
   if (metodo === "GET") return Buffer.from(await r.arrayBuffer());
@@ -100,17 +101,28 @@ export async function textoConTope(r: IncomingMessage, tope = 64 * 1024): Promis
 /* 9t · Medios en flujo · GET de un objeto privado POR PARTES, para entregarlo tal cual (lib/entrega-privada.ts). `siNoCoincide` es el
    If-None-Match de quien pide: va al almacén (S3 contesta 304 sin cuerpo) y, si el almacén lo ignora y la versión es la misma, el cuerpo se
    suelta sin leerlo. El ETag es el del almacén (de la versión del objeto: cambia si el contenido cambia). 404 → null; otro error, se lanza.
-   Solo el servidor, con el permiso ya revisado por quien llama (guardián mediosEnFlujo). */
+   Solo el servidor, con el permiso ya revisado por quien llama (guardián mediosEnFlujo).
+   21 nov (CI 44892361124: dm9t y rev9u2 colgadas) · Este fetch lleva SIEMPRE `signal`. Next envuelve cada fetch GET del servidor que no trae
+   señal (su «dedupe»): parte el cuerpo en dos ramas (tee) y se queda con una. Con eso (a) soltar nuestra rama no termina nunca —el cancel de
+   una rama se resuelve cuando se sueltan las dos—: una foto privada que no está en el almacén dejaba el pedido colgado en vez de responder;
+   y (b) la rama de Next junta el objeto entero en memoria mientras la nuestra pasa en flujo. Con `signal` Next no lo toca. La señal corta
+   solo la espera de las cabeceras (30 s); el cuerpo pasa a su ritmo. Y un cuerpo se suelta SIN esperar (soltar): nunca `await …cancel()`. */
+const ESPERA_CABECERAS_MS = 30_000;
+/* Soltar el cuerpo de una respuesta que no se va a leer, sin esperar a que termine (ver abrirObjeto). */
+function soltar(r: Response) { void r.body?.cancel().catch(() => undefined); }
 export type Abierto = { estado: 200; cuerpo: ReadableStream<Uint8Array>; etag: string | null; largo: number | null } | { estado: 304; etag: string };
 export async function abrirObjeto(clave: string, siNoCoincide?: string | null): Promise<Abierto | null> {
   const { u, headers } = firmar("GET", clave, h(""));
   const inm = (siNoCoincide ?? "").trim().slice(0, 200);
-  const r = await fetch(u, { method: "GET", headers: inm ? { ...headers, "if-none-match": inm } : headers });
+  const corte = new AbortController(), reloj = setTimeout(() => corte.abort(), ESPERA_CABECERAS_MS);
+  let r: Response;
+  try { r = await fetch(u, { method: "GET", headers: inm ? { ...headers, "if-none-match": inm } : headers, signal: corte.signal }); }
+  finally { clearTimeout(reloj); }
   const etag = r.headers.get("etag");
   if (r.status === 304) return { estado: 304, etag: etag ?? inm };
-  if (r.status === 404) { await r.body?.cancel().catch(() => undefined); return null; }
+  if (r.status === 404) { soltar(r); return null; }
   if (!r.ok || !r.body) throw new Error(`almacenamiento ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
-  if (etag && inm && coincide(inm, etag)) { await r.body.cancel().catch(() => undefined); return { estado: 304, etag }; }
+  if (etag && inm && coincide(inm, etag)) { soltar(r); return { estado: 304, etag }; }
   const largo = Number(r.headers.get("content-length") ?? "");
   return { estado: 200, cuerpo: r.body, etag, largo: Number.isFinite(largo) && largo >= 0 ? largo : null };
 }
