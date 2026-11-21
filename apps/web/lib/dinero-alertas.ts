@@ -15,8 +15,11 @@ import { db, tx } from "./db";
    de Pro que salió mientras el plan cambiaba (no se pisó el cambio: el equipo de dinero decide si se devuelve). */
 /* 9t3 (0199) · transfer_stuck: la transferencia al organizador lleva HORAS_LLAVE en camino sin un «sí» de Stripe (ya no se pide otra vez con la
    misma llave); charge_stuck: un cobro de Pro anotado que lleva HORAS_LLAVE sin respuesta de Stripe (no se cobra otra vez). Las dos, para mirar en Stripe. */
+/* 9t4 (0202) · offsession_stuck: un cobro con tarjeta guardada (plan del Hogar, renta, renovación de un patrocinio) anotado que lleva HORAS_LLAVE sin
+   respuesta de Stripe (no se cobra otra vez); offsession_unapplied: uno que salió cuando lo que pagaba ya había cambiado (no se aplicó: el equipo decide si
+   se devuelve). lib/cobro-fuera.ts. */
 export type TipoAlerta = "refund_stuck" | "transfer_reversal_stuck" | "dispute_due" | "recon_diff" | "recon_no_corrio" | "payout_failed" | "refund_failed" | "charge_unapplied"
-  | "transfer_stuck" | "charge_stuck";
+  | "transfer_stuck" | "charge_stuck" | "offsession_stuck" | "offsession_unapplied";
 type Bi = { es: string; en: string };
 const QUE: Record<TipoAlerta, Bi> = {
   refund_stuck: { es: "una devolución atascada", en: "a stuck refund" }, transfer_reversal_stuck: { es: "una transferencia sin saldo para revertir", en: "a transfer that cannot be reversed" },
@@ -24,6 +27,8 @@ const QUE: Record<TipoAlerta, Bi> = {
   recon_no_corrio: { es: "la conciliación no corrió", en: "reconciliation did not run" }, payout_failed: { es: "un pago al banco falló", en: "a bank payout failed" },
   refund_failed: { es: "una devolución que Stripe dio por fallida", en: "a refund Stripe marked as failed" }, charge_unapplied: { es: "un cobro de Pro sin aplicar", en: "an unapplied Pro charge" },
   transfer_stuck: { es: "una transferencia al organizador sin respuesta", en: "an organizer transfer with no answer" }, charge_stuck: { es: "un cobro de Pro sin respuesta", en: "a Pro charge with no answer" },
+  offsession_stuck: { es: "un cobro con tarjeta guardada sin respuesta", en: "a saved-card charge with no answer" },
+  offsession_unapplied: { es: "un cobro con tarjeta guardada sin aplicar", en: "an unapplied saved-card charge" },
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 

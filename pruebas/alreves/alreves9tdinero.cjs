@@ -20,6 +20,10 @@ const IF = 'intentoFallidoQueda';
 // webhookEventosEscritos (y lo nuevo de llaveSoloUnDia); su prueba con la base es pruebas/e2e/din9t3.cjs.
 const PR = 'cobroProAnotadoAntes', M = 'manoTrasLaLlave', BF = 'boletoFallidoCoherente', AN = 'ayudaNoReabreConDinero', WE = 'webhookEventosEscritos';
 const LQ = 'apps/web/lib/evt-liquidacion.ts', MG = 'packages/db/migrations/0199_dinero_llaves_y_cobros_pro.sql', DOC = 'docs/ayuda/admin-conciliacion.md';
+// 9t4 (21 nov, LAUNCH «Dinero por clase, 21 nov · lo que quedó» (4)): cobroFueraAnotadoAntes, por clase (todo cobro fuera de sesión: planes del Hogar,
+// rentas, renovaciones de patrocinios); su prueba con la base es pruebas/e2e/din9t4.cjs.
+const FA = 'cobroFueraAnotadoAntes', CFU = 'apps/web/lib/cobro-fuera.ts', PLN = 'apps/web/lib/planes.ts', REN = 'apps/web/lib/rentas.ts', PEV = 'apps/web/lib/patrocinio-evento.ts';
+const MG2 = 'packages/db/migrations/0202_cobros_fuera_de_sesion.sql', PLT = 'apps/web/app/admin/Planes.tsx';
 const casos = [
   // 9t2 · Soporte: el intento que no cabe queda en el libro como fallido (sop7b lo vio rojo cuando se deshacía la transacción entera).
   [IF, SE, "        await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where id = $1::bigint and status = 'pending'`, [fx.id, a.msg.es]);\n        return a.msg.es;", "        return a.msg.es;"],
@@ -133,6 +137,38 @@ const casos = [
   [W, SU, "    const s = (await k.query<Fila>(`select * from subscriptions where business_id = $1 and ${VENCIDA}`, [x.business_id])).rows[0];", "    const s = x as unknown as Fila;"],
   // Por clase: el candado del plan por el pool.
   [K, SU, "    try { return { tomado: true, r: await fn(c) }; } finally { await c.query(`select pg_advisory_unlock(", "    try { return { tomado: true, r: await fn(c) }; } finally { await db().query(`select pg_advisory_unlock("],
+  // ── 9t4 (21 nov, LAUNCH «Dinero por clase · lo que quedó» (4)) ──
+  // Como estaba: el plan, la renta y el patrocinio llaman a la pasarela sin intención anotada (por clase: en cualquier archivo).
+  [FA, PLN, "  await terminarCobroPlan(a);\n}", "  await pasarela.cobrarFuera({ centavos: s.cents, comision: fee, destino, pm: s.pm, idem: `plan-${subId}-a1`, meta: {} });\n  await terminarCobroPlan(a);\n}"],
+  [FA, REN, "    if (x.st !== \"out\") return no(\"Solo mientras la tienes.\", \"Only while you have it.\");\n", "    if (x.st !== \"out\") return no(\"Solo mientras la tienes.\", \"Only while you have it.\");\n    await pasarela.cobrarFuera({ centavos: x.p, comision: 0, destino: \"x\", pm: x.pm, idem: `renta-${x.rid}-dia${x.dias}-a1`, meta: {} });\n"],
+  [FA, PA, "  const r = await CF.terminarCobro(a);\n  if (!r.ok) {\n    if (r.enCamino)", "  await pasarela.cobrarDirecto({ centavos: x.centavos, pm: x.pm, idem: x.idem, meta });\n  const r = await CF.terminarCobro(a);\n  if (!r.ok) {\n    if (r.enCamino)"],
+  // La intención: sin respuesta = «no»; una llave de más de un día; «mandada» después de la llamada; el cierre sin «una vez»; otra intención mientras una
+  // va en camino; lo mandado se suelta sin preguntar; el barrido sin tope o sin correr; otras horas que las de lib/cobros.
+  [FA, CFU, "      await db().query(`update offsession_charges set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);\n      return { ok: false, enCamino: true, msg: EN_CAMINO };",
+    "      await db().query(`update offsession_charges set status = 'failed', attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);\n      return { ok: false, enCamino: true, msg: EN_CAMINO };"],
+  [FA, CFU, "  if (a.vieja) { await alertaVieja(a); return { ok: false, enCamino: true, msg: VIEJO }; }\n", ""],
+  [FA, CFU, "  if (!(await db().query(`update offsession_charges set sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending'`, [a.id])).rowCount) {", "  if (!(await db().query(`select 1 from offsession_charges where id = $1::bigint and status = 'pending'`, [a.id])).rowCount) {"],
+  [FA, CFU, "set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending'`, [id, pi])).rowCount;", "set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint`, [id, pi])).rowCount;"],
+  [FA, CFU, "(status = 'pending' or (status = 'done' and purpose = $3))", "(status = 'done' and purpose = $3)"],
+  [FA, CFU, "  if (!a.enviada && (await soltarSinMandar(a.id, porque))) return true;", "  if (await soltarSinMandar(a.id, porque)) return true;"],
+  [FA, CFU, "and status = 'pending' and sent_at is null`, [id, porque]", "and status = 'pending'`, [id, porque]"],
+  [FA, CFU, "        and created_at > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE])).rows;\n  let n = 0;", "        order by created_at limit 50`, [])).rows;\n  let n = 0;"],
+  [FA, BA, '        ["cobrosFuera", async () => (await import("./cobro-fuera")).barrerCobrosFuera()],\n', ''],
+  [FA, CFU, 'import { HORAS_LLAVE_STRIPE as HORAS_LLAVE } from "./cobros";', 'const HORAS_LLAVE = 72;'],
+  // Planes: en camino cuenta como rechazo; el período avanza aunque el plan ya no lo espere.
+  [FA, PLN, "  if (r.enCamino) return false;\n  await rechazoPlan(", "  await rechazoPlan("],
+  [FA, PLN, "where id = $1::bigint and next_charge_on = $3::date and status = 'active'`", "where id = $1::bigint`"],
+  // Rentas: los días tarde fuera de la transacción de la devolución; el depósito con otra llave por toque; vence con un cobro en camino.
+  [FA, REN, 'detalle: { meta: { rental: numero, business_id: negocio }, que: "tarde", dias: tarde } }, c);', 'detalle: { meta: { rental: numero, business_id: negocio }, que: "tarde", dias: tarde } });'],
+  [FA, REN, 'idem: `${a.idem}-dep`', 'idem: `${a.idem}-dep-${Date.now()}`'],
+  [FA, REN, " and status = 'held' and expires_at < now() and not exists (select 1 from offsession_charges q where q.kind = 'renta' and q.ref_id = rentals.id::text and q.status = 'pending')`", " and status = 'held' and expires_at < now()`"],
+  // Patrocinios: en camino termina el patrocinio; la intención no se cierra con el patrocinio nuevo; la renovación sin su intención (sin ref).
+  [FA, PA, "      if (!p.ok && p.enCamino) return null;\n      if (p.ok) {", "      if (p.ok) {"],
+  [FA, PEV, "        if (!(await CF.marcarHecho(c, p.intencion!, p.pi))) return null;\n", ""],
+  [FA, PEV, ', duration: s.duration }, ref: id };', ', duration: s.duration } };'],
+  // La base sin su tope de una en camino; una alerta nueva sin su rótulo en el Super Admin.
+  [FA, MG2, "create unique index if not exists offsession_charges_una_en_camino on offsession_charges (kind, ref_id) where status = 'pending';\n", ''],
+  [FA, PLT, ', offsession_unapplied: E("Cobro con tarjeta guardada sin aplicar", "Unapplied saved-card charge")', ''],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {
