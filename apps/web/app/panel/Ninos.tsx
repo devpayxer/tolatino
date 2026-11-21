@@ -51,8 +51,8 @@ export function herramientaNinosBloques(c: Ctx): Sec {
   // Las edades que atiende (la tarjeta y la ficha las dicen).
   const ed = h.edad ?? [0, 5];
   out.push({ type: "group", k: E2("EDADES QUE ATIENDES", "AGES YOU SERVE") },
-    pasoSrv({ t: E2("Desde", "From"), s: edadTexto(h.edad, es), n: ed[0], fmt: (n) => n === 0 ? E2("Bebés", "Babies") : E2(`${n} años`, `Age ${n}`), sig: (n, d) => d < 0 ? Math.max(0, n - 1) : Math.min(ed[1], n + 1), save: (n) => save({ edad: [n, ed[1]] }) }),
-    pasoSrv({ t: E2("Hasta", "To"), s: E2("La edad mayor que recibes.", "The oldest age you take."), n: ed[1], fmt: (n) => E2(`${n} años`, `Age ${n}`), sig: (n, d) => d < 0 ? Math.max(ed[0], n - 1) : Math.min(18, n + 1), save: (n) => save({ edad: [ed[0], n] }) }));
+    pasoSrv({ t: E2("Desde", "From"), s: edadTexto(h.edad, es), n: ed[0], fmt: (n) => n === 0 ? E2("Bebés", "Babies") : E2(`${n} años`, `Age ${n}`), sig: (n, d, p) => d < 0 ? Math.max(0, n - 1) : Math.min(p.hasta ?? ed[1], n + 1), grupo: { id: `ninos-edad:${c.d.id}`, campo: "desde" }, save: (n, _d, p) => save({ edad: [n, p.hasta ?? ed[1]] }) }),
+    pasoSrv({ t: E2("Hasta", "To"), s: E2("La edad mayor que recibes.", "The oldest age you take."), n: ed[1], fmt: (n) => E2(`${n} años`, `Age ${n}`), sig: (n, d, p) => d < 0 ? Math.max(p.desde ?? ed[0], n - 1) : Math.min(18, n + 1), grupo: { id: `ninos-edad:${c.d.id}`, campo: "hasta" }, save: (n, _d, p) => save({ edad: [p.desde ?? ed[0], n] }) }));
   if (h.cuidado) {
     const tot = libresNinos(h);
     out.splice(1, 0, { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("CUPOS LIBRES", "OPENINGS"), v: String(tot) }, { k: "CCIS", v: h.ccis ? E2("Sí", "Yes") : "No" }, { k: E2("POR SEMANA", "PER WEEK"), v: h.semana ? usdN0(h.semana) : "—" }] });
