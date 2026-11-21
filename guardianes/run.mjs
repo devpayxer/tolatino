@@ -1719,6 +1719,16 @@ const guardianes = {
     }
   },
 
+  /* 9u (21 nov) · jsonTrasConcatenar: en Postgres `||` y `->>` tienen la misma precedencia y asocian a la izquierda: `a || ' · ' || r.name->>'es'` se
+     lee `(a || ' · ' || r.name) ->> 'es'` y revienta («operator does not exist: text ->> unknown»). Así estaba «Asignar a…» en Colas desde el 14 nov:
+     la hoja se caía con un error del servidor y ninguna prueba la abría (la cazó nota9u). El campo de JSON va entre paréntesis. */
+  jsonTrasConcatenar() {
+    for (const f of codigo) {
+      if (!/^(apps\/web|services|scripts)\/.*\.(ts|tsx|mjs)$/.test(f) && !/^packages\/db\/migrations\/.*\.sql$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\|\|\s*[A-Za-z_][\w.]*\s*(->>?|#>>?)\s*'/.test(l)) falla("jsonTrasConcatenar", f, i + 1, "un campo de JSON justo después de `||` sin paréntesis: Postgres lo lee `(… || col) ->> 'k'` y la consulta revienta; escribe `|| (col->>'k')`"); });
+    }
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   /* 4ib. Vivienda justa (Fair Housing Act y PHRA · fase4-iglesias-inmuebles-autos.md §3): ningún filtro ni campo de una clase protegida
      (niños o familia, religión, raza, origen, sexo, discapacidad, edad); la lista de frases vive SOLO en lib/vivienda-justa.ts y el

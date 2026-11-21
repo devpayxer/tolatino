@@ -14,6 +14,8 @@ const casos = [
   ['apps/web/app/admin/U360.tsx', 'nota: "persona", hacer: (m) => quitarFotoPerfil(u.id, m)', 'nota: "interna", hacer: (m) => quitarFotoPerfil(u.id, m)', 'la persona lo lee en su Perfil'],
   ['apps/web/app/admin/ColasEventos.tsx', 'nota: "persona", hacer: (m) => evtDecidir(e.id, "aprobar", null, m)', 'nota: "interna", hacer: (m) => evtDecidir(e.id, "aprobar", null, m)', 'el negocio lo lee en el historial de revisión de su evento'],
   ['apps/web/app/admin/ElCompaAdmin.tsx', 'nota: "persona", hacer: (m, e, v) => compaPausarEn("business"', 'nota: "interna", hacer: (m, e, v) => compaPausarEn("business"', 'el negocio lo lee en su panel de El Compa'],
+  // «Asignar a…» reventaba el servidor: un campo de JSON tras `||` sin paréntesis (guardián jsonTrasConcatenar).
+  ['apps/web/app/admin/acciones-colas.ts', "|| ' · ' || (r.name->>'es') as nombre", "|| ' · ' || r.name->>'es' as nombre", 'un campo de JSON justo después de `||` sin paréntesis', 'jsonTrasConcatenar'],
   // Una nota que se pide y nadie guarda.
   [CM, 'hacer: async (m, e) => { const r = await asignarCaso(ids, e, m);', 'hacer: async (_m, e) => { const r = await asignarCaso(ids, e);', 'la hoja pide una nota y la acción la descarta'],
   ['apps/web/app/admin/Transacciones.tsx', 'hacer: (m) => disputaSimularResultado(x.pid!, true, m)', 'hacer: () => disputaSimularResultado(x.pid!, true)', 'la hoja pide una nota y la acción la descarta'],
@@ -27,9 +29,9 @@ const casos = [
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 let bien = 0, total = 0;
-const correr = () => {
-  try { execSync(`node guardianes/run.mjs --solo ${G}`, { cwd: R, stdio: 'pipe' }); return []; }
-  catch (e) { return String(e.stderr).split('\n').filter((x) => x.trim().startsWith(`[${G}]`)); }
+const correr = (g = G) => {
+  try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe' }); return []; }
+  catch (e) { return String(e.stderr).split('\n').filter((x) => x.trim().startsWith(`[${g}]`)); }
 };
 const informe = (que, msg, lineas) => {
   total++;
@@ -37,12 +39,12 @@ const informe = (que, msg, lineas) => {
   console.log(`  ${l ? '✓' : '✗'} ${G} al revés (${que}: «${msg}»)${l ? ' → ' + l.trim().slice(0, 200) : lineas.length ? ' → otro mensaje: ' + lineas[0].trim().slice(0, 160) : ' → el guardián no falló'}`);
   if (l) bien++;
 };
-for (const [f, a, b, msg] of casos) {
+for (const [f, a, b, msg, g = G] of casos) {
   const ruta = path.join(R, f);
   const orig = fs.readFileSync(ruta, 'utf8');
   if (!orig.includes(a)) { total++; console.log(`  ✗ ${G}: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
   fs.writeFileSync(ruta, orig.replace(a, () => b));
-  try { informe(path.basename(f), msg, correr()); } finally { fs.writeFileSync(ruta, orig); }
+  try { informe(path.basename(f), msg, correr(g)); } finally { fs.writeFileSync(ruta, orig); }
 }
 let limpio = true;
 try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch { limpio = false; }

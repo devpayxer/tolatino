@@ -108,7 +108,7 @@ export async function equipoDeCola(id: string): Promise<{ id: string; nombre: st
   const s = await staff();
   if (!s || !s.puede("colas", "editar") || !/^\d{1,18}$/.test(String(id))) return [];
   return (await db().query<{ id: string; nombre: string }>(
-    `select m.user_id::text as id, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Alguien') || ' · ' || r.name->>'es' as nombre
+    `select m.user_id::text as id, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Alguien') || ' · ' || (r.name->>'es') as nombre
        from queue_items q join staff_members m on m.status = 'active' join users u on u.id = m.user_id join staff_roles r on r.key = m.role
       where q.id = $1::bigint and exists (select 1 from queue_roles x where x.role = m.role and x.queue = q.queue and x.allowed)
         and exists (select 1 from role_permissions p where p.role = m.role and p.section = 'colas' and p.action = 'aprobar' and p.allowed)
