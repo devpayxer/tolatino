@@ -42,6 +42,9 @@ const restaurar = () => { try { sql(`update users set email = nullif('${prev.ema
   const rn = requiere('rsv2e', () => sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'table' and scheduled_at > now() order by id desc limit 1`), { que: 'una reservación futura de Marisol' });
   // 9b-3 · Pendiente de verdad: sin respuesta y con tiempo para contestar (la de rsv2e podía venir ya contestada o vencida).
   sql(`update operations set status = 'pending', status_detail = null, cancelled_at = null, answered_at = null, confirmed_at = null, respond_by = now() + interval '30 minutes' where number = '${rn}'`);
+  // 21 nov · La confirmación de mesa lleva su llave (rcpt-tbl-<operación>-<hora>): en la segunda vuelta sobre la misma base la reservación es la misma
+  // y el correo ya estaba, así que no salía otro. Como con el recibo del pedido de arriba, se quita el de la vuelta anterior.
+  sql(`delete from email_outbox where idem_key like 'rcpt-tbl-' || (select id from operations where number = '${rn}' and business_id = '${BIZ}') || '-%'`);
   await p.goto(B + `/panel/${BIZ}/clientes?t=rsv&det=rsv:${rn}`); await clic(p.locator('[data-screen-label="Panel v2 · detalle"]').getByRole('button', { name: 'Confirmar' })); await p.waitForTimeout(1500);
   ok(sql(`select count(*) from email_outbox where tpl = 'receipt_table' and user_id = ${MARI} and created_at > now() - interval '1 minute'`) === '1', 'confirmación de mesa por correo');
   // Recibos apagado: no llega
