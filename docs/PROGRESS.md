@@ -21,7 +21,7 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
 
 ## Estado
 - **21 nov (noche, después del cierre) · `main` y `pruebas` = ceaaba2, sandbox comprobado desde fuera** (estado-sandbox 44956863436: salud con
-  commit ceaaba2e, 206 migraciones, las cuatro rutas en 200). Evidencia (AF): dirigida **44955120667** — tipos, build, guardianes, Semgrep y
+  commit ceaaba2, 206 migraciones, las cuatro rutas en 200). Evidencia (AF): dirigida **44955120667** — tipos, build, guardianes, Semgrep y
   **10/10 de punta a punta** (`sql9u`, `vi4b`, `em4e`, `pre4e`, `plan4f`, `fi4b`, `pq4e`, `cat9n2`, `din9n4`, `nota9u`); en local
   `alreves9usql` 4/4. Subió **`sql9u`**: las 4857 consultas fijas del código pasan por `PREPARE` contra la base de pruebas (la clase de
   «Asignar a…»: una consulta rota que ninguna prueba corre). En su primera pasada cazó **otro fallo vivo: «Mi casa» reventaba al guardar otra
