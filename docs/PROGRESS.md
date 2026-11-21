@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
+_Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -20,6 +20,22 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (media mañana) · en vuelo, NADA de esto está en `main` todavía (`main` y `pruebas` siguen en fd1f1ee):**
+  - **Rama de trabajo = ab11fc0.** Lleva, en orden: la fusión de **dinero 9t4** (planes del Hogar, rentas y patrocinios con el cobro anotado;
+    migración **0202**; lo escribió Opus) · la **sonda de `dlv2f4`** (12 aperturas del detalle del panel entre 1024 y 1199; ver LAUNCH) ·
+    **«código escrito manda»** (Publica, pago del pedido y boletos: un código escrito sin «Aplicar» ya no se pierde ni cobra precio completo
+    callado; guardián `codigoEscritoManda`, al revés `alreves9tpromo` 18/18; lo escribió Fable y lo revisó Opus aparte) · `push8c` espera al
+    service worker activo · teléfonos de prueba 570-555 en `din9t…din9t4` (guardián `telefonoDePrueba555`) y `plan4f` rechaza un período sin cobrar.
+  - **CI:** la revisión completa de 9t4 sola (44884103116) salió **ROJA** por dos pruebas, no por el producto (`din9t4`: teléfono con un dígito
+    de menos; `plan4f`: reusaba un período ya cobrado); arregladas en ab11fc0. Corriendo: **44888202039** (completa sobre ab11fc0) y
+    **44885700254** (completa con anchos sobre 98af974: saldrá roja por `plan4f`, sirve para leer la sonda bajo carga). Si 44888202039 sale
+    verde con 3 inestables o menos: `git push origin ab11fc0:main ab11fc0:pruebas`, comprobar el sandbox (`estado-sandbox.yml`, que la 0202 esté
+    aplicada) y anotarlo aquí.
+  - **Agente en curso:** Opus en `dinero-9t5` («preguntarle a la pasarela»: una intención de cobro sin respuesta de más de 23 h se consulta y se
+    cierra sola; `sent_at` en Pro; migración **0203**; y la rama muda «ya cobrado y el plan sigue en ese período» que destapó `plan4f`). Al volver:
+    revisar (Fable), tipos/guardianes/al revés, fusionar, CI, sandbox.
+  - **Sin resolver:** el toque que no entra en el detalle del panel en el iPad (`dlv2f4`, `pro4l2`): la sonda corrió 24 aperturas sin fallar
+    en una corrida sola (la ventana mide 70..742, se desplaza 269 de 371 y el toque entra); falta cazarlo bajo carga. `rev9u` sin confirmar.
 - **21 nov (mañana) · al día:**
   - **OJO (21 nov, visto después):** la confirmación 44856657972 salió verde en el CI pero tuvo **4 inestables** (push8c, rev9u, cre9h, dlv2f4). Por la
     decisión AG (más de 3 = roja) NO vale como confirmación para producción: el CI contaba el tope por parte, no por corrida. Arreglado en
@@ -34,7 +50,6 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
     retenidas (410 con permiso y sin archivo), tope de inestables por corrida. Evidencia: CI completo 44872463837 (todo verde y 0 inestables
     salvo vid001, rev9u2 y fot9uadmin, arregladas y verdes en las dirigidas 44875887036 y 44876495491) + los al revés tocados corridos aquí.
     Capturas nuevas aprobadas: solo `pruebas/visual/buscar/` en táctil (REVISION).
-  - **Agente en curso:** Opus en `dinero-9t4` (planes recurrentes, rentas y patrocinio con intención de cobro anotada; migración **0202**).
   - **Sin resolver:** `pro4l2` como requisito no puede tocar «Pasó la consulta» (dejó roja la programada 44851886841 sobre `main` por `ayu4m`);
     causa desconocida, el registro ya dirá el motivo.
 - **21 nov (madrugada) · dónde quedó cada cosa, para retomar:**

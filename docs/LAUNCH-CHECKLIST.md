@@ -2174,6 +2174,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       alto, la hoja del detalle sin desplazar (0 de 371) y un `div` encima recibe el toque. O sea: el botón queda bajo el borde y WebKit no
       desplaza la hoja sola antes de tocar. Falta saber si a una persona en un iPad le pasa (¿la hoja se desplaza con el dedo y el botón queda
       a la vista?) o es solo del toque automático: verlo en WebKit con captura antes de tocar la prueba.
+      **21 nov · sonda puesta en la prueba:** entre 1024 y 1199 `dlv2f4` abre el detalle 12 veces y hace todo lo de un toque menos tocar; si una
+      falla anota en ese instante el alto y el desplazamiento de la ventana, si es otra ventana (se desmontó), las animaciones, quién está en el
+      punto, las ventanas montadas, los cambios de ancho y si un desplazamiento a mano se queda. Una corrida sola (44884725925): 24 de 24 bien
+      (ventana 70..742, alto 672 de 1043, el toque la desplaza a 269 y entra; el toque llega con `d2Up` todavía corriendo y espera). Falta que
+      falle bajo carga (corridas con anchos) para leer la causa.
 - [ ] **→ 9t** · **`pro4l2` como requisito no puede tocar «Pasó la consulta» (30 s), dos corridas seguidas:** en la confirmación 44847327303
       dejó a `res4m` INESTABLE (pasó al repetir) y en la programada 44851886841 sobre `main` (ancho iPad 2/4) dejó ROJA a `ayu4m` dos veces.
       Corrida sola en ese mismo carril, `pro4l2` pasa (13 ✓). El botón se ve pero el toque no entra: misma familia que `dlv2f4` («Aceptar» en el
@@ -2188,6 +2193,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       mostró la notificación»), `rev9u` («del equipo de un negocio verificado con 10 fotos: su dudosa entra por la capa 4»: mirar si la cuenta de
       fotos visibles o la memoria por contenido dependen de lo que dejó otra prueba) y `cre9h` («un negocio publicado con PROMO52: 60 días de
       prueba y traído por el promotor»). Ninguna se repitió dos veces. (21 nov)
+      **21 nov · `cre9h` resuelta (era la app):** la prueba tocaba «Publicar» antes de que «Aplicar» contestara y el negocio salía sin código;
+      a una persona le pasaba igual. Guardián `codigoEscritoManda` (Publica, pago del pedido y boletos). **`push8c`:** ahora entrega el aviso con
+      el service worker activo y, si no se ve, dice el estado de cada versión; falta verla pasar varias corridas. `rev9u` sigue sin confirmar.
 - [ ] **→ 9b** · **`evt9t`: /eventos tardó más de 30 s en cargar una vez** (CI repartido 44743122204, parte 3/4, Chromium). Sin causa todavía;
       el CI ahora imprime lo último del servidor cuando algo cae. Mirarlo si se repite. (20 nov)
 
