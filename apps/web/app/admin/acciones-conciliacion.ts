@@ -1,6 +1,7 @@
 "use server";
 /* 9k · Planes › Ingresos · Conciliación y alertas del dinero: «Me hago cargo», «Resuelta», «Reabrir» y «Conciliar otra vez» de un día; en las alertas,
-   además, «Resolver a mano» (una devolución o una reversión atascada que se hizo fuera de Stripe). Permiso tx:aprobar, solo tus ciudades, con nota y en la
+   además, «Resolver a mano» (una devolución o una reversión atascada que se hizo fuera de Stripe; 9t7: también la devolución de lo que sobró, y siempre
+   después de que el servidor le pregunte a Stripe). Permiso tx:aprobar, solo tus ciudades, con nota y en la
    auditoría (lib/conciliacion.ts, lib/dinero-alertas.ts). El servidor decide todo: aquí no entra ningún monto (9t6: tampoco «sí se cobró»: lo que se
    elige en una gateway_review lo comprueba el servidor contra la pasarela). */
 import { staff } from "@/lib/admin";
@@ -54,5 +55,6 @@ export async function alertaNota(id: string, accion: string, nota: string): Prom
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no decide sobre dinero." };
   if (!["me_hago_cargo", "resuelta", "reabierta", "resuelta_a_mano"].includes(String(accion))) return { ok: false, mensaje: "Esa acción no existe." };
   const r = await (await import("@/lib/dinero-alertas")).notaAlerta(s, String(id ?? ""), accion as "me_hago_cargo" | "resuelta" | "reabierta" | "resuelta_a_mano", String(nota ?? ""));
-  return r.ok ? { ok: true, mensaje: accion === "resuelta_a_mano" ? "Resuelta fuera de Stripe: ya no se reintenta. Quedó en la auditoría." : "Listo. Quedó en la auditoría." } : { ok: false, mensaje: r.msg };
+  // 9t7 · «Resolver a mano» le pregunta antes a Stripe: si dice que salió, se cerró como hecha (el servidor lo dice en msg) y no se marcó a mano.
+  return r.ok ? { ok: true, mensaje: r.msg ?? (accion === "resuelta_a_mano" ? "Resuelta fuera de Stripe: ya no se reintenta. Quedó en la auditoría." : "Listo. Quedó en la auditoría.") } : { ok: false, mensaje: r.msg };
 }

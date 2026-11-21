@@ -42,9 +42,18 @@ const P = {
     if (paso === 'red-pero-hizo') return { ok: false, codigo: 'red' };
     return { ok: true, id: r.id };
   },
+  // 9t7 · La consulta a la pasarela (lo de más de 23 h): aquí no contesta; lo que hace con cada respuesta lo prueba din9t7.
+  buscarDevolucion: async () => ({ ok: false }),
   vecesSalio(idem) { return [...this.salio.keys()].filter((k) => k === idem).length; },
 };
-const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas });
+// 9t7 · Lo que pasó la ventana de la llave se le pregunta a la pasarela (lib/devolucion-consulta.ts, lib/consulta-pasarela.ts): los módulos reales. Esta
+// pasarela de mentira no contesta la consulta (no tiene buscarDevolucion: «sin respuesta»), como antes no se preguntaba; lo que hace con cada respuesta lo
+// prueba din9t7.
+const K = {}, DC = {};
+const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
+  './consulta-pasarela': K, './devolucion-consulta': DC });
+Object.assign(K, cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas }));
+Object.assign(DC, cargar('apps/web/lib/devolucion-consulta.ts', { './db': D, './cobros': cobros, './consulta-pasarela': K }));
 
 const db = D.db();
 const q1 = async (s, v = []) => (await db.query(s, v)).rows[0];

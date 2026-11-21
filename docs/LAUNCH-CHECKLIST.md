@@ -2233,6 +2233,31 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       el libro sigue diciendo «retenido» y a nadie se le avisa hasta 20 h después: como ya no se reintenta con esa llave, el «nunca llegó» de una
       renovación podría darse mucho antes (decisión de plazo: REVISION 9t6); (8) «Elegir cuál vale» y «Preguntar a Stripe ahora» no tenían prueba
       de navegador: encargada (`din9t6b`).
+      **Hecho (1) y (2) (21 nov, rama 9t7, migración 0206), salvo el patrocinio:** (a) `refunds` y `event_settlement_reversals` con `sent_at`, `gateway_ref`,
+      `key_from` y `key_n`; anotados en una sentencia antes de la pasarela, con `tl_intencion`, en `cobros.ts › ejecutarDevolucionPago`,
+      `boletos-despues.ts › ejecutarDevolucion` y `evt-liquidacion.ts › ejecutarReversion` (grep de `pasarela.devolver` / `revertirTransferencia` en
+      `apps/web`: esos tres, `revision-pasarela.ts › ejecutarDevolucionSobra` (ya de 9t6) y `patrocinio.ts › devolverPatrocinio`, que queda abajo). Lo de
+      antes de 0206 se dio por mandado sin el dato (nunca «no llegó»). (b) `gateway_checks`/`buscarDevolucion`/`veredicto` con esas tablas. (c) El barrido
+      (`lib/devolucion-consulta.ts › preguntarViejas`, `evt-liquidacion.ts › resolverReversion`) pregunta pasadas 23 h, cada 15 min: hecha → su cierre
+      (`cerrarDevolucionPago`, `cerrarDevolucionBoletos`, `cerrarReversion`); fallida → `fallarDevolucionPago` / `fallarDevolucionBoletos` y alerta
+      `refund_failed`; nunca llegó → **la misma** fila vuelve a valer con otra llave (`llaveDe`: `<idem>-r<n>`) si lo debido sigue igual (cobro cobrado, sin
+      disputa, con saldo), si no, fallida «nunca llegó»; varias → `gateway_review` con «Elegir cuál vale» solo «vale» (también para `gateway_refunds`; la base
+      lo impone); otro monto → sin «Elegir», la alerta dice resolverla a mano. (d) «Resolver a mano» pregunta antes (`antesDeAMano`). (2) `extra_refund_stuck`
+      tiene «Resolver a mano» (`gateway_refunds.manual_*`, también sobre una fallida). Guardián `devolucionPreguntaALaPasarela` (al revés `alreves9t7`
+      19/19); `din9t7` 39/39 contra base aislada. (3) Transferencias en `gateway_review` con otro monto o «ninguno»: **sigue igual** (no se tocó).
+- [ ] **→ 9t** · **Preguntarle a la pasarela, lo que quedó de 9t7 (21 nov):** (1) **La devolución de lo no usado de un patrocinio**
+      (`patrocinio.ts › devolverPatrocinio`) sigue como antes: no hay fila de intención antes de la pasarela (el patrocinio guarda `refund_cents` y el libro
+      `sponsorship_payments` se escribe DESPUÉS del «sí»), así que no se manda con `tl_intencion`, no se pregunta pasadas 23 h (alerta `refund_stuck`
+      `pat-dev-<tipo>-<id>`, solo «Resuelta», sin «Resolver a mano»). El guardián `devolucionPreguntaALaPasarela` la nombra como la única pendiente. Plan:
+      tabla `sponsorship_refunds` (una viva por `(kind, ref_id)`, estados pending/done/failed, `sent_at`/`gateway_ref`/`key_from`/`key_n`/`manual_*`),
+      anotada en la transacción que termina el patrocinio; `devolverPatrocinio` marca y manda con `tl_intencion`; el cierre inserta la fila `devolucion` del
+      libro y marca la intención en UNA transacción; `buscarDevolucion` con `sponsorship_refunds:<id>`; el barrido pregunta como `preguntarViejas`; la
+      alerta con subject numérico y «Resolver a mano» por `antesDeAMano`. Ojo: un «no» hoy no deja fallida (reintenta hasta 23 h): definir qué es fallida.
+      (2) **No corrieron aquí:** las pruebas de navegador (`din9t6b` y la hoja nueva de «Resolver a mano»), Semgrep (no está instalado; las dos
+      interpolaciones nuevas en `notaAlerta` salen de listas cerradas: `${t}` y `${est}`), y las de punta a punta con servidor que tocan devoluciones
+      (`sop7b`, boletos, `pat002/003`). (3) **Carrera conocida, de antes:** si una persona resuelve a mano justo mientras el barrido la está mandando (en la
+      ventana), la marca puede llegar después de `sent_at` y antes de la respuesta de Stripe; `antesDeAMano` pregunta a Stripe pero un objeto recién creado
+      puede no verse aún. Mitigación posible: que el trigger `dinero_a_mano` no deje marcar con `sent_at` en los últimos minutos. (21 nov)
 - [ ] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho

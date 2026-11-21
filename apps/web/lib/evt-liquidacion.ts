@@ -195,13 +195,21 @@ export async function repararLiquidaciones(): Promise<number> {
         and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
       order by g.ult nulls first, s.paying_at limit 20`, [HORAS_LLAVE_STRIPE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
   for (const s of LV) if ((await resolverTransferencia(s.id, { origen: "barrido" })).quedo === "hecha") n++;
-  // Las reversiones pendientes, con su llave, dentro del mismo tiempo; las viejas, la alerta.
+  // Las reversiones pendientes, con su llave, dentro del mismo tiempo (9t7: desde que su llave vale); las viejas, la alerta.
   const R = (await db().query<{ id: string }>(
     `select id::text from event_settlement_reversals where status = 'pending' and manual_at is null and created_at < now() - interval '30 seconds'
-        and created_at > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
+        and coalesce(key_from, created_at) > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   for (const r of R) await ejecutarReversion(r.id);
+  // 9t7 · Las viejas mandadas con su dato buscable: se le pregunta a la pasarela (una vez cada CADA_MIN por reversión) y se cierran con lo que dijo; las que
+  // no cierran, y las anotadas antes de 0206 (sin el dato: nunca se dan por «no llegó»), la alerta transfer_reversal_stuck, una vez.
+  const RQ = (await db().query<{ id: string }>(
+    `select r.id::text from event_settlement_reversals r left join lateral (select max(y.at) as ult from gateway_checks y where y.subject_kind = 'event_settlement_reversals' and y.subject_id = r.id) g on true
+      where r.status = 'pending' and r.manual_at is null and r.gateway_ref is not null and coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $1::int)
+        and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
+      order by g.ult nulls first, r.created_at limit 20`, [HORAS_LLAVE_STRIPE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
+  for (const r of RQ) if ((await resolverReversion(r.id, { origen: "barrido" })).quedo === "hecha") n++;
   const RV = (await db().query<{ id: string }>(
-    `select r.id::text from event_settlement_reversals r where r.status = 'pending' and r.manual_at is null and r.created_at <= now() - make_interval(hours => $1::int)
+    `select r.id::text from event_settlement_reversals r where r.status = 'pending' and r.manual_at is null and r.gateway_ref is null and coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $1::int)
         and not exists (select 1 from money_alerts a where a.kind = 'transfer_reversal_stuck' and a.subject_id = r.id::text) order by r.created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   for (const r of RV) await ejecutarReversion(r.id);
   return n;
@@ -213,11 +221,15 @@ async function alertaTransferenciaVieja(s: { id: string; net: number; biz: strin
     es: `Transferencia de ${dinero(s.net)} al organizador (${s.t.es}, ${s.dia}) sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h (${s.n} intentos, ${s.err ?? "sin motivo"}): ya no se pide otra vez. Mira en Stripe si salió.`,
     en: `Transfer of ${dinero(s.net)} to the organizer (${s.t.en}, ${s.dia}) with no answer from Stripe in ${HORAS_LLAVE_STRIPE} h (${s.n} attempts, ${s.err ?? "no reason"}): it is not requested again. Check in Stripe whether it went out.` } }).catch(() => undefined);
 }
-async function alertaReversionVieja(r: { id: string; amt: number; biz: string; city: string; n: number; err: string | null }) {
+/* 9t7 · conDato: se mandó con su dato buscable (el servidor le sigue preguntando a Stripe y la cierra con lo que diga); sin él, se mira en Stripe y se
+   resuelve a mano (antes de marcarla, el servidor vuelve a preguntar). */
+async function alertaReversionVieja(r: { id: string; amt: number; biz: string; city: string; n: number; err: string | null }, conDato = false) {
   const { HORAS_LLAVE_STRIPE } = await import("./cobros");
-  await (await import("./dinero-alertas")).alertar("transfer_reversal_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: {
-    es: `Revertir ${dinero(r.amt)} al organizador: sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): ya no se pide otra vez. Mira en Stripe si se revirtió y resuélvela a mano.`,
-    en: `Reverse ${dinero(r.amt)} from the organizer: no answer from Stripe in ${HORAS_LLAVE_STRIPE} h (${r.n} attempts, ${r.err ?? "no reason"}): it is not requested again. Check in Stripe whether it was reversed and resolve it by hand.` } }).catch(() => undefined);
+  await (await import("./dinero-alertas")).alertar("transfer_reversal_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: conDato ? {
+    es: `Revertir ${dinero(r.amt)} al organizador: sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): ya no se pide con esa llave. El servidor le pregunta a Stripe y la cierra con lo que diga.`,
+    en: `Reverse ${dinero(r.amt)} from the organizer: no answer from Stripe in ${HORAS_LLAVE_STRIPE} h (${r.n} attempts, ${r.err ?? "no reason"}): it is not requested with that key again. The server asks Stripe and closes it with the answer.` } : {
+    es: `Revertir ${dinero(r.amt)} al organizador: sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): ya no se pide otra vez. Mira en Stripe si se revirtió y resuélvela a mano (antes de marcarla, el servidor vuelve a preguntar).`,
+    en: `Reverse ${dinero(r.amt)} from the organizer: no answer from Stripe in ${HORAS_LLAVE_STRIPE} h (${r.n} attempts, ${r.err ?? "no reason"}): it is not requested again. Check in Stripe whether it was reversed and resolve it by hand (the server asks again before marking it).` } }).catch(() => undefined);
 }
 
 /* 4) Ajustes sin liquidación siguiente: si el organizador debe algo de fechas ya pagadas y en evt_ajuste_dias no tuvo otra liquidación (ni
@@ -253,26 +265,82 @@ export async function revertirDeudas(): Promise<number> {
   }
   return n;
 }
-async function ejecutarReversion(id: string): Promise<boolean> {
+/* 9t7 (0206) · Desde que su llave vale: created_at, o key_from si la consulta dijo que nunca llegó y la llave volvió a valer (con OTRA llave: -r<n>). */
+const VIEJA_REV = "coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $2::int)";
+type Rev = { id: string; st: string; amt: number; idem: string; kn: number; tr: string; sid: string; city: string; net: number; biz: string; mano: boolean; vieja: boolean; n: number; err: string | null; gref: string | null; enviada: boolean; viva: boolean };
+const leerRev = async (id: string) => {
   const { HORAS_LLAVE_STRIPE } = await import("./cobros");
-  const r = (await db().query<{ id: string; st: string; amt: number; idem: string; tr: string; sid: string; city: string; net: number; biz: string; mano: boolean; vieja: boolean; n: number; err: string | null }>(
-    `select r.id::text, r.status as st, r.amount_cents as amt, r.idem_key as idem, s.transfer_id as tr, s.id::text as sid, s.city_id as city, s.net_cents as net, r.business_id as biz,
-            r.manual_at is not null as mano, r.created_at <= now() - make_interval(hours => $2::int) as vieja, r.attempts as n, r.last_error as err
+  return (await db().query<Rev>(
+    `select r.id::text, r.status as st, r.amount_cents as amt, r.idem_key as idem, r.key_n as kn, s.transfer_id as tr, s.id::text as sid, s.city_id as city, s.net_cents as net, r.business_id as biz,
+            r.manual_at is not null as mano, ${VIEJA_REV} as vieja, r.attempts as n, r.last_error as err, r.gateway_ref as gref, r.sent_at is not null as enviada,
+            s.status in ('paid', 'reversed') and s.transfer_id is not null as viva
        from event_settlement_reversals r join event_settlements s on s.id = r.settlement_id where r.id = $1::bigint`, [id, HORAS_LLAVE_STRIPE])).rows[0];
+};
+async function ejecutarReversion(id: string): Promise<boolean> {
+  const r = await leerRev(id);
   if (!r || r.st !== "pending") return r?.st === "done";
   // 9k · Resuelta a mano (se le cobró al organizador fuera de Stripe): no se vuelve a pedir a Stripe.
   if (r.mano) return false;
-  // 9t3 · Una llave de más de HORAS_LLAVE ya no vuelve a Stripe (podría revertir dos veces): la alerta, una vez.
-  if (r.vieja) { await alertaReversionVieja(r); return false; }
-  const x = await pasarela.revertirTransferencia(r.tr, r.amt, r.idem).catch(() => ({ ok: false as const, codigo: "error" }));
+  // 9t3 · Una llave de más de HORAS_LLAVE ya no vuelve a Stripe (podría revertir dos veces). 9t7 · Se le pregunta a la pasarela (resolverReversion, desde el
+  // barrido); aquí, sin la pasarela, la alerta (una vez) si nadie la cerró.
+  if (r.vieja) { await alertaReversionVieja(r, !!r.gref); return false; }
+  // 9t7 · Que se manda y con qué dato buscable, ANTES de la llamada y en una sentencia (el dato, solo la primera vez).
+  const m = (await db().query<{ gref: string | null }>(`update event_settlement_reversals set gateway_ref = case when sent_at is null then 'event_settlement_reversals:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];
+  if (!m) return false;
+  const { llaveDe } = await import("./cobros");
+  const x = await pasarela.revertirTransferencia(r.tr, r.amt, llaveDe(r.idem, r.kn), m.gref ? { tl_intencion: m.gref } : undefined).catch(() => ({ ok: false as const, codigo: "error" }));
   if (!x.ok) { await db().query(`update event_settlement_reversals set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [id, ("codigo" in x && x.codigo) || "error"]); return false; }
-  return tx(async (c) => {
-    const u = await c.query(`update event_settlement_reversals set status = 'done', stripe_reversal_id = $2, last_error = null where id = $1::bigint and status = 'pending'`, [id, ("id" in x && x.id) || null]);
+  return cerrarReversion(r, ("id" in x && x.id) || null);
+}
+/* El «sí» de la pasarela (al mandarla, o lo que halló la consulta pasada la llave: 9t7), una vez, con su auditoría en la misma transacción. */
+async function cerrarReversion(r: Rev, trr: string | null, porConsulta = false): Promise<boolean> {
+  const ok = await tx(async (c) => {
+    const u = await c.query(`update event_settlement_reversals set status = 'done', stripe_reversal_id = $2, last_error = null where id = $1::bigint and status = 'pending' and manual_at is null`, [r.id, trr]);
     if (!u.rowCount) return false;
     await c.query(`update event_settlements s set status = 'reversed' where s.id = $1::bigint and s.status = 'paid' and (select coalesce(sum(amount_cents), 0) from event_settlement_reversals where settlement_id = s.id and status = 'done') >= s.net_cents`, [r.sid]);
-    await auditar(c, { actor: null, action: "evento.liquidacion.revertir", id: r.sid, city: r.city, after: { monto: dinero(r.amt), motivo: "Ajuste después de pagar sin otra liquidación" } });
+    await auditar(c, { actor: null, action: "evento.liquidacion.revertir", id: r.sid, city: r.city, after: { monto: dinero(r.amt), motivo: "Ajuste después de pagar sin otra liquidación", ...(porConsulta ? { origen: "consulta a la pasarela", reversion: trr } : {}) } });
     return true;
   });
+  if (ok) await (await import("./consulta-pasarela")).cerrarAlertaSola("transfer_reversal_stuck", r.id, { es: `Cerrada sola: Stripe hizo la reversión (${trr ?? "sin id"}).`, en: `Closed by itself: Stripe made the reversal (${trr ?? "no id"}).` });
+  return ok;
+}
+/* 9t7 · Preguntarle a la pasarela por una reversión de más de HORAS_LLAVE y cerrarla con eso: el barrido, «Preguntar a Stripe ahora» o «Elegir cuál vale»
+   (con su auditoría en la transacción que anota la consulta). La consulta va FUERA de cualquier transacción. Una reversión de Stripe existe o no (no tiene
+   estado «fallida»): la halló → hecha, una vez; nunca llegó (con el dato y pasado el margen) → su llave vuelve a valer con OTRA llave (la liquidación sigue
+   pagada: lo que se debe no cambió) y se manda; varias u otro monto → gateway_review; sin respuesta → sigue, con su alerta transfer_reversal_stuck. */
+/* 9t7 · Para «Resolver a mano» (lib/devolucion-consulta.ts › antesDeAMano): la reversión que sigue pendiente (sin resolver a mano), lo que se le pregunta a
+   la pasarela, y su cierre si Stripe dice que salió (el mismo cierre, una vez). */
+export async function reversionParaConsulta(id: string): Promise<{ amt: number; city: string; biz: string; tr: string } | null> {
+  const r = await leerRev(id);
+  return r && r.st === "pending" && !r.mano && r.tr ? { amt: r.amt, city: r.city, biz: r.biz, tr: r.tr } : null;
+}
+export async function cerrarReversionPorConsulta(id: string, trr: string): Promise<boolean> {
+  const r = await leerRev(id);
+  return !!r && r.st === "pending" && !r.mano && (await cerrarReversion(r, trr, true));
+}
+export async function resolverReversion(id: string, o: import("./consulta-pasarela").Origen): Promise<{ resultado: import("./consulta-pasarela").Resultado | null; quedo: "hecha" | "reabierta" | "sigue" | "ya_no_estaba" }> {
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  const K = await import("./consulta-pasarela");
+  const r = await leerRev(id);
+  if (!r || r.st !== "pending" || r.mano || !r.enviada || !r.vieja) return { resultado: null, quedo: "ya_no_estaba" };
+  if (o.origen === "barrido" && !(await K.tocaConsultar("event_settlement_reversals", id))) return { resultado: null, quedo: "sigue" };
+  // Ya decidida por el equipo (gateway_review: cuál de las halladas vale): no se vuelve a preguntar; se cierra con la decisión.
+  const resultado = (await K.revisada("event_settlement_reversals", id)) ? (await K.veredicto("event_settlement_reversals", id))!.resultado
+    : await K.consultar({ tabla: "event_settlement_reversals", id, monto: r.amt, ciudad: r.city, negocio: r.biz, medio: "reversal", objeto: r.tr }, o);
+  const v = await K.veredicto("event_settlement_reversals", id);
+  let quedo: "hecha" | "reabierta" | "sigue" = "sigue";
+  if (v?.resultado === "hecho" && v.stripe) quedo = (await cerrarReversion(r, v.stripe, true)) ? "hecha" : "sigue";
+  else if (v?.noLlego && r.viva) {
+    // La llave vuelve a valer desde ahora, con OTRA llave (key_n), una vez (el where pide que la anterior ya haya pasado HORAS_LLAVE), con su auditoría.
+    const u = await tx(async (c) => {
+      const x = await c.query(`update event_settlement_reversals r set key_from = now(), key_n = r.key_n + 1, last_error = 'nunca_llego' where r.id = $1::bigint and r.status = 'pending' and r.manual_at is null and ${VIEJA_REV}`, [id, HORAS_LLAVE_STRIPE]);
+      if (x.rowCount) await auditar(c, { actor: null, action: "evento.liquidacion.revertir_otra_vez", id: r.sid, city: r.city, after: { monto: dinero(r.amt), origen: "consulta a la pasarela", motivo: "la reversión nunca llegó a Stripe: se manda otra vez con otra llave" } });
+      return !!x.rowCount;
+    });
+    if (u) quedo = (await ejecutarReversion(id)) ? "hecha" : "reabierta";
+  }
+  if (quedo === "sigue") await alertaReversionVieja(r, true);
+  return { resultado, quedo };
 }
 
 /* ── Super Admin › Liquidaciones de eventos: retener con motivo / soltar (Finanzas, tx:aprobar). ── */

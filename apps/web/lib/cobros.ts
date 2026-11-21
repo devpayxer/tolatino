@@ -182,9 +182,12 @@ export async function anotarDevolucionPago(c: PoolClient, x: InDevolver, alGuard
 export type AlCerrar = (c: PoolClient) => Promise<void>;
 const VIEJA: Msg = { es: "Esta devolución lleva más de un día sin respuesta de Stripe: el equipo de dinero la revisa y la resuelve. No la repitas.",
   en: "This refund has had no answer from Stripe for over a day: the money team reviews and resolves it. Do not repeat it." };
+/* 9t7 (0206) · La llave que va a Stripe: la de la fila la primera vez; si la consulta dijo que nunca llegó y la llave volvió a valer (key_n), OTRA llave
+   (Stripe pudo guardar la respuesta de la anterior): la misma intención, con sus líneas, su caso y su auditoría. */
+export const llaveDe = (idem: string, n: number) => (n > 0 ? `${idem}-r${n}` : idem);
 export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean; alCerrar?: AlCerrar } = {}): Promise<ResDevolucion> {
-  const r = (await db().query<{ id: string; amt: number; idem: string; st: string; mano: boolean; vieja: boolean; pi: string; plataforma: boolean; biz: string | null; city: string | null; por: string }>(
-    `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.status as st, r.manual_at is not null as mano, r.created_at <= now() - make_interval(hours => $2::int) as vieja,
+  const r = (await db().query<{ id: string; amt: number; idem: string; kn: number; st: string; mano: boolean; vieja: boolean; pi: string; plataforma: boolean; biz: string | null; city: string | null; por: string }>(
+    `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.key_n as kn, r.status as st, r.manual_at is not null as mano, coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $2::int) as vieja,
             p.stripe_payment_intent as pi, p.transfer_group is not null as plataforma, r.initiated_by as por, p.business_id as biz, p.city_id as city
        from refunds r join payments p on p.id = r.payment_id where r.id = $1::bigint`, [id, HORAS_LLAVE])).rows[0];
   if (!r) return { ok: false, msg: STRIPE_NO };
@@ -192,14 +195,25 @@ export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean;
   if (r.st === "done" || r.mano) return { ok: true };
   if (r.st !== "pending") return { ok: false, msg: STRIPE_NO };
   if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };
+  // 9t7 · Que se manda (sent_at) y con qué dato buscable (gateway_ref), ANTES de la llamada y en una sentencia; el dato, solo la primera vez (un reintento de
+  // una que salió sin él va sin él: la misma llave con otros parámetros, Stripe la rechaza).
+  const m = (await db().query<{ gref: string | null }>(`update refunds set gateway_ref = case when sent_at is null then 'refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
+  if (!m) return { ok: false, msg: STRIPE_NO };
   // Un cobro de la plataforma (boletos) no tiene transferencia ni comisión de destino que revertir.
-  const g = await pasarela.devolver(r.pi, r.amt, r.idem, { plataforma: r.plataforma }).catch(() => ({ ok: false as const, id: undefined, codigo: "error" }));
+  const g = await pasarela.devolver(r.pi, r.amt, llaveDe(r.idem, r.kn), { plataforma: r.plataforma, ...(m.gref ? { meta: { tl_intencion: m.gref } } : {}) }).catch(() => ({ ok: false as const, id: undefined, codigo: "error" }));
   if (g.ok) return cerrarDevolucionPago(r.id, g.id ?? null, o.alCerrar);
   const codigo = String(g.codigo ?? "error").slice(0, 60);
   if (SIN_RESPUESTA.has(codigo)) {
     await db().query(`update refunds set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending' and manual_at is null`, [r.id, codigo]);
     return { ok: false, msg: enCamino(r.amt), enCamino: true };
   }
+  await fallarDevolucionPago(r, codigo, o.barrido || r.por === "policy" ? "stuck" : null);
+  return { ok: false, msg: STRIPE_NO };
+}
+/* El «no» de Stripe (al mandarla, o lo que dijo la consulta pasada la llave: 9t7), una vez: 'failed' libera el saldo (el tope cuenta solo lo pendiente y lo
+   hecho) y su llave, con la fila del caso de Soporte en la misma transacción. alerta: «stuck» cuando nadie mira la pantalla (el barrido, una política);
+   «fallida» cuando lo dijo la consulta (alerta refund_failed, con la auditoría del cierre). nunca: la consulta dijo que nunca llegó y el cobro cambió. */
+export async function fallarDevolucionPago(r: { id: string; amt: number; idem: string; biz: string | null; city: string | null }, codigo: string, alerta: "stuck" | "fallida" | null, nunca = false): Promise<boolean> {
   const f = await tx(async (c) => {
     // 'failed' libera el saldo (el tope cuenta solo lo pendiente y lo hecho) y su llave (la fila guarda la original con «~fallida-<id>»): el
     // mismo toque otra vez es otro intento, como antes, sin una fila que diga «hecha».
@@ -210,15 +224,22 @@ export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean;
       await evento(c, u.op, "refund_failed", { es: `Stripe no hizo la devolución de ${money(r.amt)}`, en: `Stripe did not make the ${money(r.amt)} refund` });
       // 9t2 · La fila del caso de Soporte (la misma llave) queda fallida con ella, en la misma transacción: nadie tiene que volver a tocar.
       await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where idem_key = $1 and status = 'pending'`, [r.idem, STRIPE_NO.es]);
+      if (alerta === "fallida") await (await import("./consulta-pasarela")).auditarCierre(c, "refunds", r.id, r.city, { estado: nunca ? "nunca llegó a Stripe y el cobro cambió: no se volvió a mandar" : "fallida", monto: money(r.amt) });
     }
     return !!u;
   });
   // Desde el barrido, o en una devolución por política (cancelar a tiempo: la hace el sistema), nadie está mirando la pantalla: el equipo de dinero
   // lo sabe (una vez por devolución).
-  if (f && (o.barrido || r.por === "policy")) await (await import("./dinero-alertas")).alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city,
+  if (f && alerta === "stuck") await (await import("./dinero-alertas")).alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city,
     detalle: { es: `Devolución de ${money(r.amt)}: al terminarla, Stripe dijo que no (${codigo}). Quedó fallida y su saldo libre: si todavía se debe, devuélvela otra vez.`,
       en: `Refund of ${money(r.amt)}: when finishing it, Stripe said no (${codigo}). It is now failed and its balance free: if it is still owed, refund it again.` } }).catch(() => undefined);
-  return { ok: false, msg: STRIPE_NO };
+  // 9t7 · Lo dijo la consulta a la pasarela (pasada la llave): la alerta de una devolución que Stripe dio por fallida, una vez.
+  if (f && alerta === "fallida") await (await import("./dinero-alertas")).alertar("refund_failed", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: nunca
+    ? { es: `Devolución de ${money(r.amt)}: nunca llegó a Stripe y el cobro cambió mientras tanto (se devolvió por otro lado, tiene una disputa o ya no le queda saldo), así que no se volvió a mandar. Quedó fallida y su saldo libre: si todavía se debe, devuélvela otra vez.`,
+        en: `Refund of ${money(r.amt)}: it never reached Stripe and the charge changed meanwhile (refunded elsewhere, disputed or no balance left), so it was not sent again. It is now failed and its balance free: if it is still owed, refund it again.` }
+    : { es: `Devolución de ${money(r.amt)}: Stripe la tiene como fallida (lo dijo la consulta, pasado un día sin respuesta). Quedó fallida y su saldo libre: si todavía se debe, devuélvela otra vez.`,
+        en: `Refund of ${money(r.amt)}: Stripe has it as failed (the query said so, after a day with no answer). It is now failed and its balance free: if it is still owed, refund it again.` } }).catch(() => undefined);
+  return f;
 }
 
 /* Lo devuelto de un cobro sale del libro (la suma de las devoluciones hechas), nunca de sumar otra vez: si el webhook charge.refunded ya lo había
@@ -234,12 +255,14 @@ export async function devueltoDelLibro(c: Q, pid: string): Promise<{ st: string;
 /* El «sí» de la pasarela, en su transacción y una sola vez (lo devuelto, de devueltoDelLibro). Avisa a la persona solo quien la cierra.
    9t2 · En la MISMA transacción se cierra lo que esa devolución deja hecho en su caso (cerrarDelCaso, por su llave), la cierre quien la cierre:
    quien la pidió o el barrido. Lo del caso va ANTES del cobro (el mismo orden de candados que al anotar: el caso y después el cobro). */
-async function cerrarDevolucionPago(id: string, stripeId: string | null, alCerrar?: AlCerrar): Promise<ResDevolucion> {
+/* 9t7 · porConsulta: la cerró lo que dijo la consulta a la pasarela (pasada la llave): su auditoría de sistema en la misma transacción. */
+export async function cerrarDevolucionPago(id: string, stripeId: string | null, alCerrar?: AlCerrar, porConsulta = false): Promise<ResDevolucion> {
   const h = await tx(async (c) => {
-    const u = (await c.query<{ pid: string; amt: number; idem: string }>(
+    const u = (await c.query<{ pid: string; amt: number; idem: string; city: string | null }>(
       `update refunds set status = 'done', stripe_refund_id = coalesce(stripe_refund_id, $2), done_at = now(), last_error = null
-        where id = $1::bigint and status = 'pending' and manual_at is null returning payment_id::text as pid, amount_cents as amt, idem_key as idem`, [id, stripeId])).rows[0];
+        where id = $1::bigint and status = 'pending' and manual_at is null returning payment_id::text as pid, amount_cents as amt, idem_key as idem, (select y.city_id from payments y where y.id = payment_id) as city`, [id, stripeId])).rows[0];
     if (!u) return null;
+    if (porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "refunds", id, u.city, { estado: "hecha", devolucion: stripeId, monto: money(u.amt) });
     await alCerrar?.(c);
     const caso = await cerrarDelCaso(c, { idem: u.idem, amt: u.amt }, !!alCerrar);
     const l = await devueltoDelLibro(c, u.pid);
@@ -284,25 +307,27 @@ export async function devolverPago(x: InDevolver, alGuardar?: AlGuardar<{ pago: 
    entre la intención y la pasarela, o entre el «sí» y el cierre, o Stripe no contestó) se preguntan otra vez con la MISMA llave mientras Stripe
    la recuerda; pasado eso no se pregunta más (podría devolver dos veces): el equipo de dinero lo revisa en Stripe y la resuelve a mano. */
 export async function barrerDevolucionesPago(): Promise<number> {
+  // 9t7 · Desde que su llave vale (created_at, o key_from si la consulta dijo que nunca llegó y la llave volvió a valer).
   const L = (await db().query<{ id: string }>(
     `select r.id::text from refunds r where r.status = 'pending' and r.manual_at is null and r.created_at < now() - interval '2 minutes'
-        and r.created_at > now() - make_interval(hours => $1::int) and not exists (select 1 from ticket_refund_lines l where l.refund_id = r.id)
+        and coalesce(r.key_from, r.created_at) > now() - make_interval(hours => $1::int) and not exists (select 1 from ticket_refund_lines l where l.refund_id = r.id)
       order by r.created_at limit 50`, [HORAS_LLAVE])).rows;
   let n = 0;
   for (const r of L) if ((await ejecutarDevolucionPago(r.id, { barrido: true }).catch(() => ({ ok: false }))).ok) n++;
-  const V = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; n: number; err: string | null }>(
-    `select r.id::text, r.amount_cents as amt, p.business_id as biz, p.city_id as city, r.attempts as n, r.last_error as err from refunds r join payments p on p.id = r.payment_id
-      where r.status = 'pending' and r.manual_at is null and r.created_at <= now() - make_interval(hours => $1::int)
-        and not exists (select 1 from ticket_refund_lines l where l.refund_id = r.id)
-        and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = r.id::text) order by r.created_at limit 50`, [HORAS_LLAVE])).rows;
-  for (const r of V) await alertaVieja(r);
+  // 9t7 · Las viejas: se le pregunta a la pasarela (lib/devolucion-consulta.ts, una vez cada CADA_MIN por devolución) y se cierran con lo que dijo, sin
+  // llamar a Stripe con una llave de más de HORAS_LLAVE; las que no cierran (y las anotadas sin el dato buscable), la alerta refund_stuck, una vez.
+  n += await (await import("./devolucion-consulta")).preguntarViejas(false);
   return n;
 }
-/* La alerta de una devolución que pasó HORAS_LLAVE sin respuesta (la usan este barrido y el de los boletos): una vez por devolución. */
-export async function alertaVieja(r: { id: string; amt: number; biz: string | null; city: string | null; n: number; err: string | null }) {
-  await (await import("./dinero-alertas")).alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city,
-    detalle: { es: `Devolución de ${money(r.amt)} sin respuesta de Stripe en ${HORAS_LLAVE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): mira en Stripe si salió y resuélvela a mano.`,
-      en: `Refund of ${money(r.amt)} with no answer from Stripe in ${HORAS_LLAVE} h (${r.n} attempts, ${r.err ?? "no reason"}): check in Stripe whether it went out and resolve it by hand.` } }).catch(() => undefined);
+/* La alerta de una devolución que pasó HORAS_LLAVE sin respuesta (la usan este barrido y el de los boletos): una vez por devolución. 9t7 · conDato: se
+   mandó con su dato buscable (el servidor le sigue preguntando a Stripe y la cierra con lo que diga); sin él (anotada antes de 0206), se mira en Stripe y
+   se resuelve a mano (antes de marcarla, el servidor vuelve a preguntar). */
+export async function alertaVieja(r: { id: string; amt: number; biz: string | null; city: string | null; n: number; err: string | null }, conDato = false) {
+  await (await import("./dinero-alertas")).alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: conDato
+    ? { es: `Devolución de ${money(r.amt)} sin respuesta de Stripe en ${HORAS_LLAVE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): ya no se manda con esa llave. El servidor le pregunta a Stripe y la cierra con lo que diga.`,
+        en: `Refund of ${money(r.amt)} with no answer from Stripe in ${HORAS_LLAVE} h (${r.n} attempts, ${r.err ?? "no reason"}): it is not sent with that key again. The server asks Stripe and closes it with the answer.` }
+    : { es: `Devolución de ${money(r.amt)} sin respuesta de Stripe en ${HORAS_LLAVE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): se anotó sin el dato para buscarla en Stripe. Mira en Stripe si salió y resuélvela a mano (antes de marcarla, el servidor vuelve a preguntar).`,
+        en: `Refund of ${money(r.amt)} with no answer from Stripe in ${HORAS_LLAVE} h (${r.n} attempts, ${r.err ?? "no reason"}): it was recorded without the data to find it in Stripe. Check in Stripe whether it went out and resolve it by hand (the server asks again before marking it).` } }).catch(() => undefined);
 }
 export const HORAS_LLAVE_STRIPE = HORAS_LLAVE;
 

@@ -118,6 +118,29 @@ preguntar a Stripe ahora, elegir cuál vale) con «Transacciones: aprobar». Ver
 
 Para el reporte diario al fundador, la base da `conciliacion_del_dia(día)`: si corrió, su estado, cuántas diferencias y cuántas sin dueño.
 
+### Devoluciones y reversiones que Stripe no contestó (desde el 21 nov)
+Cada devolución de un cobro (también la de boletos) y cada reversión al organizador queda anotada **antes** de ir a Stripe, con un dato propio para
+buscarla después. Si Stripe no contesta, no se da por rechazada: se vuelve a pedir con la misma llave durante 23 h. Pasado eso, el sistema **le pregunta a
+Stripe** cada 15 minutos y la cierra con lo que diga:
+
+| Lo que dice Stripe | Qué pasa |
+|---|---|
+| Sí salió | Queda hecha, una vez, con su objeto de Stripe; la alerta «Devolución atascada» se cierra sola. |
+| La tiene como fallida | Queda fallida y su saldo libre (como cuando Stripe dice que no): alerta «Devolución que Stripe dio por fallida». Si todavía se debe, devuélvela otra vez. En boletos, la alerta dice qué orden y qué boletos; los boletos siguen devueltos. |
+| No la tiene, y ya pasaron 24 h desde que se mandó | Nunca llegó: la **misma** devolución se manda con **otra llave**, una vez, si lo que se debe sigue igual. Si el cobro cambió (se devolvió por otro lado, tiene una disputa o no le queda saldo), queda fallida «nunca llegó» con su alerta. |
+| No la tiene, pero todavía no pasa el margen | Sigue en camino; alerta «Devolución atascada» (una vez); se vuelve a preguntar. |
+| Tiene varias para una sola | Alerta «Lo que dijo Stripe no se cierra solo» con «Elegir cuál vale»: la elegida queda como la hecha. Lo que salió de más **no se deshace desde aquí**: queda en la auditoría para verlo con la persona. No hay «ninguna». |
+| La tiene con otro monto | Misma alerta, sin «Elegir»: míralo en Stripe y resuelve la devolución a mano. |
+| No contesta la consulta | No cambia nada; se vuelve a preguntar. |
+
+Una devolución anotada **antes del 21 nov** no tiene ese dato: nunca se da por «no llegó» y el sistema no la pregunta; su alerta lo dice. Mírala en Stripe y
+resuélvela a mano.
+
+**«Resolver a mano»** (devolución atascada, reversión atascada y, desde ahora, «Devolver lo que Stripe hizo de más») vuelve a preguntar a Stripe antes de
+guardar: si Stripe dice que **salió**, se cierra como hecha y **no** se marca a mano; si **no contesta**, la tiene **en curso** o tiene **varias**, no
+cambia nada (te dice por qué); si no la tiene, la tiene fallida o con otro monto, se marca a mano con tu nota. Dos personas a la vez: queda una sola.
+«Preguntar a Stripe ahora» también sirve en estas alertas.
+
 ## Los eventos del webhook
 El libro se pone al día con lo que Stripe avisa por el webhook (firmado). Al conectar Stripe de verdad, el endpoint debe suscribirse a **todos** estos
 eventos, también los de las **cuentas conectadas** (los `payout.*` llegan de la cuenta de cada negocio). Es la misma lista que está escrita al principio
@@ -261,6 +284,29 @@ Míralo en Stripe por el negocio y la fecha y anótalo con «Me hago cargo».
 | Differences from another city | They do not show (To'Latino's own, with no city, only to whoever sees all cities). |
 
 For the daily report to the founder, the database provides `conciliacion_del_dia(day)`: whether it ran, its status, how many differences and how many have no owner.
+
+#### Refunds and reversals Stripe did not answer (since Nov 21)
+Every refund of a charge (tickets too) and every reversal from an organizer is recorded **before** going to Stripe, with its own tag to find it later. If
+Stripe does not answer, it is not taken as rejected: it is requested again with the same key for 23 h. After that, the system **asks Stripe** every 15
+minutes and closes it with the answer:
+
+| What Stripe says | What happens |
+|---|---|
+| It went through | Done, once, with its Stripe object; the «Stuck refund» alert closes by itself. |
+| It has it as failed | Failed and its balance free (as when Stripe says no): «Refund Stripe marked as failed» alert. If it is still owed, refund it again. For tickets, the alert names the order and the tickets; the tickets stay refunded. |
+| It does not have it, 24 h after it was sent | It never arrived: the **same** refund is sent with **another key**, once, if what is owed is unchanged. If the charge changed (refunded elsewhere, disputed, or no balance left), it fails as «never arrived» with its alert. |
+| It does not have it, before the margin | Still on its way; «Stuck refund» alert (once); asked again later. |
+| It has several for one | «What Stripe said doesn’t close by itself» alert with «Choose which counts»: the chosen one is the done one. What went out in excess **is not undone from here**: it stays in the audit log to sort out with the person. There is no «none». |
+| It has it with another amount | Same alert, without «Choose»: check Stripe and resolve the refund manually. |
+| It does not answer the query | Nothing changes; it is asked again. |
+
+A refund recorded **before Nov 21** has no tag: it is never taken as «never arrived» and the system does not ask about it; its alert says so. Check it in
+Stripe and resolve it manually.
+
+**«Resolve manually»** (stuck refund, stuck reversal and, now, «Refund what Stripe made in excess») asks Stripe again before saving: if Stripe says it
+**went through**, it is closed as done and **not** marked manually; if it **does not answer**, has it **in progress** or has **several**, nothing changes
+(it tells you why); if it does not have it, has it as failed or with another amount, it is marked manually with your note. Two people at once: only one
+counts. «Ask Stripe now» also works on these alerts.
 
 ### Webhook events
 The ledger catches up with what Stripe reports through the (signed) webhook. When Stripe is connected for real, the endpoint must subscribe to **all**

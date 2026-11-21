@@ -53,7 +53,7 @@ const casos6 = [
   [RT6, ESF, 'm === "banco" ? "hold_fallo" : "hold_no_renovada"', '"hold_fallo"'],
   [RT6, MG4, "  payment_id      bigint not null unique references payments (id),", "  payment_id      bigint not null references payments (id),"],
   // revisionPreguntaOtraVez · (1) decide con lo que dice la pantalla (sin volver a preguntar), o deja valer uno que no está, de otro monto o en curso.
-  [RV6, RVF, "  const resultado = await K.consultar({ tabla: t, id, monto: x.monto, ciudad: x.ciudad, negocio: x.negocio, grupo: x.grupo }, { origen: \"equipo\", staff: s.id }, det);", "  const resultado = \"varios\" as import(\"./consulta-pasarela\").Resultado; det.hallados = [{ id: eleccion, estado: \"hecho\", centavos: x.monto }];"],
+  [RV6, RVF, "  const resultado = await K.consultar({ tabla: t, id, monto: x.monto, ciudad: x.ciudad, negocio: x.negocio, grupo: x.grupo, medio: x.medio, objeto: x.objeto }, { origen: \"equipo\", staff: s.id }, det);", "  const resultado = \"varios\" as import(\"./consulta-pasarela\").Resultado; det.hallados = [{ id: eleccion, estado: \"hecho\", centavos: x.monto }];"],
   [RV6, RVF, "  if (eleccion === \"ninguno\" ? !E.ninguno : !E.vale.includes(eleccion)) {", "  if (eleccion === \"ninguno\" && !E.ninguno) {"],
   [RV6, DA, "h.estado === \"hecho\" && h.centavos === x.monto", "h.estado === \"hecho\""],
   [RV6, RVF, "  if (E.enCurso) return { ok: false, msg: \"Stripe todavía tiene uno en curso: espera a que termine y vuelve a intentarlo.\" };\n", ""],
@@ -115,12 +115,12 @@ const casos = [
   [D, AY, '    if (!d.ok && d.enCamino) camino = true;\n    else if (!d.ok) rechazo = d.msg;\n', '    if (!d.ok) rechazo = d.msg;\n'],
   // ── 9t2 (21 nov, LAUNCH «Dinero por clase, 21 nov») ──
   // (1) El cierre de los boletos vuelve a sumar a lo devuelto (el webhook charge.refunded pudo contarla antes).
-  [D, BO, '    const p = await devueltoDelLibro(c, r.pid);\n', '    const p = (await c.query<{ st: string }>(`update payments set refunded_cents = refunded_cents + $2 where id = $1::bigint returning status as st`, [r.pid, r.amt])).rows[0]!;\n'],
+  [D, BO, '    const p = await devueltoDelLibro(c, u.pid);\n', '    const p = (await c.query<{ st: string }>(`update payments set refunded_cents = refunded_cents + $2 where id = $1::bigint returning status as st`, [u.pid, u.amt])).rows[0]!;\n'],
   // (2) Una llave de más de un día vuelve a la pasarela (otro toque, el barrido de boletos o el de patrocinios devolverían dos veces).
   [L, CB, '  if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };\n', ''],
   [L, BO, '  if (r.vieja) return false;\n', ''],
   [L, PA, 'if (!s || s.ya || s.vieja) return 0;', 'if (!s || s.ya) return 0;'],
-  [L, BO, " and r.created_at > now() - make_interval(hours => $1::int)", ''],
+  [L, BO, " and coalesce(r.key_from, r.created_at) > now() - make_interval(hours => $1::int)", ''],
   [L, PA, "s.ended_at > now() - make_interval(hours => $2::int) order by", "s.ended_at > now() - interval '30 days' order by"],
   // (3) La ayuda de la cita: la llave del toque, la suma de lo pedido y el caso que no se cierra con la devolución.
   [C, AY, 'idem: `ayb-h${h.id}`', 'idem: `ayb-${x.clave}`'],
@@ -144,7 +144,7 @@ const casos = [
   // ── 9t3 (21 nov, LAUNCH «Dinero por clase, 21 nov · lo que quedó») ──
   // (a) La transferencia al organizador y su reversión vuelven a Stripe con una llave de más de un día (o el barrido las reintenta sin tope).
   [L, LQ, '  if (s.vieja && s.net > 0) return pagarVieja(s);\n', ''],
-  [L, LQ, '  if (r.vieja) { await alertaReversionVieja(r); return false; }\n', ''],
+  [L, LQ, '  if (r.vieja) { await alertaReversionVieja(r, !!r.gref); return false; }\n', ''],
   [L, LQ, " and coalesce(key_from, paying_at) > now() - make_interval(hours => $1::int)", ''],
   // (b) El cobro de Pro: una llave de más de un día, o 72 h en vez de las de cobros.
   [L, SU, '  if (a.vieja) return terminarViejo(s, a);\n', ''],

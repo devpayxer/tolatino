@@ -3823,8 +3823,12 @@ const guardianes = {
     if (!/'pending', \$6, 'platform'/.test(cuerpoFn(d, "anotarDevolucion")) || !/update tickets set status = 'refunded' where id = any\(\$1::bigint\[\]\) and status = 'valid'/.test(cuerpoFn(d, "anotarDevolucion"))) falla(G, D, 0, "paso 1: los boletos devueltos y la devolución pendiente en la misma transacción");
     const ej = cuerpoFn(d, "ejecutarDevolucion");
     // 9t2 · Lo devuelto del cobro sale del libro (devueltoDelLibro, la suma de lo hecho), después del 'done' de esta devolución.
-    if (!/set status = 'done'[^`]*where id = \$1::bigint and status = 'pending'`/.test(ej) || !/if \(!u\.rowCount\) return;/.test(ej) || ej.indexOf("devueltoDelLibro(c, r.pid)") < 0 || ej.indexOf("status = 'done'") > ej.indexOf("devueltoDelLibro(c, r.pid)")) falla(G, D, 0, "paso 2: 'done' una sola vez (where status = 'pending') antes de poner al día lo devuelto (del libro)");
-    if (!/pasarela\.devolver\(r\.pi, r\.amt, r\.idem/.test(ej)) falla(G, D, 0, "paso 2: Stripe con la llave guardada de la devolución (la misma en cada reintento)");
+    // 9t7 · El cierre es uno (cerrarDevolucionBoletos): lo usan la respuesta de la pasarela y lo que halló la consulta pasada la llave.
+    const cb = cuerpoFn(d, "cerrarDevolucionBoletos");
+    if (!/set status = 'done'[^`]*where r\.id = \$1::bigint and r\.status = 'pending'/.test(cb) || !/if \(!u\) return;/.test(cb) || cb.indexOf("devueltoDelLibro(c, u.pid)") < 0 || cb.indexOf("status = 'done'") > cb.indexOf("devueltoDelLibro(c, u.pid)")
+      || !/return cerrarDevolucionBoletos\(r\.id, x\.id \?\? null\);/.test(ej)) falla(G, D, 0, "paso 2: 'done' una sola vez (where status = 'pending') antes de poner al día lo devuelto (del libro)");
+    // 9t7 · La llave guardada de la devolución (la misma en cada reintento); otra (llaveDe: -r<n>) solo si la consulta dijo que nunca llegó.
+    if (!/pasarela\.devolver\(r\.pi, r\.amt, llaveDe\(r\.idem, r\.kn\)/.test(ej)) falla(G, D, 0, "paso 2: Stripe con la llave guardada de la devolución (la misma en cada reintento)");
     const ca = cuerpoFn(d, "calcular");
     if (!/b\.precio - b\.cargo/.test(ca) || /monto\s*[:=]\s*x\./.test(ca)) falla(G, D, 0, "lo que vuelve se calcula de lo guardado (precio − cargo), nunca de lo que manda la pantalla");
     for (const fn of ["cancelarBoletos"]) if (!/cfgSql\("bol_cancelar_h"\)/.test(cuerpoFn(d, fn))) falla(G, D, 0, "cancelar con devolución hasta bol_cancelar_h (Configuración), lo decide la base");
@@ -9291,7 +9295,7 @@ const guardianes = {
     }
     if (!/r\.status = 'pending' and r\.manual_at is null/.test(sinComent("apps/web/lib/boletos-despues.ts")) || !/if \(r\.mano\) return false;/.test(sinComent("apps/web/lib/boletos-despues.ts"))) falla(G, "apps/web/lib/boletos-despues.ts", 0, "una devolución resuelta a mano no se vuelve a pedir a Stripe");
     // 9t3 · ejecutarReversion lee manual_at con la reversión (una consulta) y sale antes de la pasarela.
-    if (!/status = 'pending' and manual_at is null/.test(sinComent("apps/web/lib/evt-liquidacion.ts")) || !/r\.manual_at is not null as mano/.test(cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion"))
+    if (!/status = 'pending' and manual_at is null/.test(sinComent("apps/web/lib/evt-liquidacion.ts")) || !/r\.manual_at is not null as mano/.test(/const leerRev = [\s\S]*?\n\};/.exec(sinComent("apps/web/lib/evt-liquidacion.ts"))?.[0] ?? "") || !/const r = await leerRev\(id\);/.test(cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion"))
       || !(cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion").indexOf("if (r.mano) return false;") >= 0 && cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion").indexOf("if (r.mano) return false;") < cuerpoFn(sinComent("apps/web/lib/evt-liquidacion.ts"), "ejecutarReversion").indexOf("pasarela.revertirTransferencia("))) falla(G, "apps/web/lib/evt-liquidacion.ts", 0, "una reversión resuelta a mano no se vuelve a pedir a Stripe");
   },
 
@@ -12302,11 +12306,14 @@ const guardianes = {
     if (!(Number(/const HORAS_LLAVE = (\d+);/.exec(cb)?.[1] ?? 99) < 24) || !/export const HORAS_LLAVE_STRIPE = HORAS_LLAVE;/.test(cb)) falla(G, CB, 0, "HORAS_LLAVE (< 24) es una sola y la usan todas las devoluciones");
     const antes = (t, guard, llamada) => t.indexOf(guard) >= 0 && t.indexOf(llamada) >= 0 && t.indexOf(guard) < t.indexOf(llamada);
     const ej = cuerpoFn(cb, "ejecutarDevolucionPago"), eb = cuerpoFn(bo, "ejecutarDevolucion"), dp = cuerpoFn(pa, "devolverPatrocinio");
-    if (!/r\.created_at <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(ej) || !antes(ej, "if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };", "pasarela.devolver(")) falla(G, CB, 0, "ejecutarDevolucionPago no llama a la pasarela con una llave de más de HORAS_LLAVE (otro toque o el barrido devolverían dos veces)");
-    if (!/r\.created_at <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(eb) || !antes(eb, "if (r.vieja) return false;", "pasarela.devolver(")) falla(G, BO, 0, "ejecutarDevolucion (boletos) no llama a la pasarela con una llave de más de HORAS_LLAVE");
+    // 9t7 · Desde que su llave vale: created_at, o key_from si la consulta dijo que nunca llegó y volvió a valer (con otra llave).
+    if (!/coalesce\(r\.key_from, r\.created_at\) <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(ej) || !antes(ej, "if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };", "pasarela.devolver(")) falla(G, CB, 0, "ejecutarDevolucionPago no llama a la pasarela con una llave de más de HORAS_LLAVE (otro toque o el barrido devolverían dos veces)");
+    if (!/coalesce\(r\.key_from, r\.created_at\) <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(eb) || !antes(eb, "if (r.vieja) return false;", "pasarela.devolver(")) falla(G, BO, 0, "ejecutarDevolucion (boletos) no llama a la pasarela con una llave de más de HORAS_LLAVE");
     if (!/s\.ended_at <= now\(\) - make_interval\(hours => \$3::int\) as vieja/.test(dp) || !antes(dp, "if (!s || s.ya || s.vieja) return 0;", "pasarela.devolver(")) falla(G, PA, 0, "devolverPatrocinio no llama a la pasarela pasadas HORAS_LLAVE desde que terminó");
     const bb = cuerpoFn(bo, "barrerDevolucionesBoletos"), bp = cuerpoFn(pa, "devolverPendientes");
-    if (!/r\.created_at > now\(\) - make_interval\(hours => \$1::int\)/.test(bb) || !/alertaVieja\(r\)/.test(bb)) falla(G, BO, 0, "barrerDevolucionesBoletos reintenta solo dentro de HORAS_LLAVE y después alerta (refund_stuck), nunca otra devolución");
+    // 9t7 · Las viejas se le preguntan a la pasarela (devolucion-consulta › preguntarViejas); las que no cierran, o sin el dato, la alerta (una vez).
+    const pvj = cuerpoFn(sinComent("apps/web/lib/devolucion-consulta.ts"), "preguntarViejas");
+    if (!/coalesce\(r\.key_from, r\.created_at\) > now\(\) - make_interval\(hours => \$1::int\)/.test(bb) || !/preguntarViejas\(true\)/.test(bb) || !/alertaVieja\(r, false\)/.test(pvj) || !/resolverDevolucion\(r\.id, \{ origen: "barrido" \}\)/.test(pvj)) falla(G, BO, 0, "barrerDevolucionesBoletos reintenta solo dentro de HORAS_LLAVE y después alerta (refund_stuck), nunca otra devolución");
     if (!/s\.ended_at > now\(\) - make_interval\(hours => \$2::int\)/.test(bp) || !/alertar\("refund_stuck", `pat-dev-\$\{kind\}-\$\{x\.id\}`/.test(bp)) falla(G, PA, 0, "devolverPendientes (patrocinios) reintenta solo dentro de HORAS_LLAVE y después alerta, no 30 días con la misma llave");
     /* 9t3 (21 nov, LAUNCH «Dinero por clase · lo que quedó» (a)(b)), por clase: todo el dinero que sale con una llave, no solo las devoluciones. La
        transferencia al organizador (pagarUna, desde paying_at), su reversión (ejecutarReversion, desde created_at) y el cobro de Pro (terminarCobro, desde
@@ -12318,8 +12325,8 @@ const guardianes = {
     const pv = cuerpoFn(lq, "pagarVieja");
     if (!/const VIEJA_LLAVE = "coalesce\(s\.key_from, s\.paying_at\) <= now\(\) - make_interval\(hours => \$2::int\)";/.test(lq) || !/\$\{VIEJA_LLAVE\} as vieja/.test(pu) || !/\[id, HORAS_LLAVE_STRIPE\]/.test(pu)
       || !antes(pu, "if (s.vieja && s.net > 0) return pagarVieja(s);", "pasarela.transferir(") || /pasarela\./.test(pv) || !/await alertaTransferenciaVieja\(s\);/.test(pv)) falla(G, LQ, 0, "pagarUna no transfiere con una llave de más de HORAS_LLAVE desde que pasó a 'paying' (podría transferir dos veces): alerta transfer_stuck");
-    if (!/r\.created_at <= now\(\) - make_interval\(hours => \$2::int\) as vieja/.test(er) || !antes(er, "if (r.vieja) { await alertaReversionVieja(r); return false; }", "pasarela.revertirTransferencia(")) falla(G, LQ, 0, "ejecutarReversion no revierte con una llave de más de HORAS_LLAVE (podría revertir dos veces): alerta");
-    if (!/status = 'paying' and paying_at < now\(\) - interval '1 minute' and coalesce\(key_from, paying_at\) > now\(\) - make_interval\(hours => \$1::int\)/.test(rl) || !/created_at > now\(\) - make_interval\(hours => \$1::int\) order by created_at/.test(rl)
+    if (!/const VIEJA_REV = "coalesce\(r\.key_from, r\.created_at\) <= now\(\) - make_interval\(hours => \$2::int\)";/.test(lq) || !/\$\{VIEJA_REV\} as vieja/.test(lq) || !/const r = await leerRev\(id\);/.test(er) || !antes(er, "if (r.vieja) { await alertaReversionVieja(r, !!r.gref); return false; }", "pasarela.revertirTransferencia(")) falla(G, LQ, 0, "ejecutarReversion no revierte con una llave de más de HORAS_LLAVE (podría revertir dos veces): alerta");
+    if (!/status = 'paying' and paying_at < now\(\) - interval '1 minute' and coalesce\(key_from, paying_at\) > now\(\) - make_interval\(hours => \$1::int\)/.test(rl) || !/coalesce\(key_from, created_at\) > now\(\) - make_interval\(hours => \$1::int\) order by created_at/.test(rl) || !/resolverReversion\(r\.id, \{ origen: "barrido" \}\)/.test(rl)
       || !/resolverTransferencia\(s\.id, \{ origen: "barrido" \}\)/.test(rl) || !/a\.kind = 'transfer_reversal_stuck'/.test(rl)) falla(G, LQ, 0, "repararLiquidaciones reintenta transferencias y reversiones solo dentro de HORAS_LLAVE y después alerta, una vez");
     if (!/alertar\("transfer_stuck", s\.id/.test(cuerpoFn(lq, "alertaTransferenciaVieja")) || !/alertar\("transfer_reversal_stuck", r\.id/.test(cuerpoFn(lq, "alertaReversionVieja"))) falla(G, LQ, 0, "las alertas de lo que pasó HORAS_LLAVE en camino, una por transferencia o reversión");
     if (Number(/const HORAS_LLAVE = (\d+);/.exec(su)?.[1] ?? 0) !== Number(/const HORAS_LLAVE = (\d+);/.exec(cb)?.[1] ?? 99)) falla(G, SU, 0, "HORAS_LLAVE del cobro de Pro es la misma de lib/cobros");
@@ -12346,7 +12353,8 @@ const guardianes = {
     const se = sinComent(SE), cd = cuerpoFn(se, "cerrarCasoDevuelto"), rd = cuerpoFn(se, "resolverYDevolver");
     if (!/update support_refunds set status = 'done', done_at = now\(\) where idem_key = \$1 and status = 'pending'/.test(cd) || !/'devuelto'/.test(cd) || !/status not in \('resolved', 'merged'\)/.test(cd) || !/insert into audit_entries/.test(cd)) falla(G, SE, 0, "cerrarCasoDevuelto: la fila hecha una vez (where status = 'pending'), «Te devolvimos», el caso resuelto y su auditoría");
     if (/update support_refunds set status = 'done'/.test(rd) || !/ejecutarDevolucionPago\(f\.rf!, \{ alCerrar: /.test(rd)) falla(G, SE, 0, "resolverYDevolver no cierra la fila por su cuenta: la cierra el cierre de la devolución (también si la termina el barrido)");
-    if (!/update support_refunds set status = 'failed'[^`]*where idem_key = \$1 and status = 'pending'/.test(cuerpoFn(cb, "ejecutarDevolucionPago"))) falla(G, CB, 0, "un «no» de Stripe deja la fila de Soporte fallida en la misma transacción que la devolución");
+    // 9t7 · El «no» (al mandarla o el que dijo la consulta) es uno: fallarDevolucionPago, que ejecutarDevolucionPago llama.
+    if (!/update support_refunds set status = 'failed'[^`]*where idem_key = \$1 and status = 'pending'/.test(cuerpoFn(cb, "fallarDevolucionPago")) || !/await fallarDevolucionPago\(r, codigo, /.test(cuerpoFn(cb, "ejecutarDevolucionPago"))) falla(G, CB, 0, "un «no» de Stripe deja la fila de Soporte fallida en la misma transacción que la devolución");
   },
 
   /* 9t2 (21 nov) · intencionAntesDeStripe (LAUNCH «Dinero por clase» (5)): pausar o reanudar los pagos al banco anota la decisión (con el estado
@@ -12498,16 +12506,16 @@ const guardianes = {
     // (2) «No llegó» solo con el veredicto de la consulta.
     const ve = cuerpoFn(k, "veredicto");
     if (!/g\.result = 'no_hallado' and z\.gateway_ref is not null and z\.sent_at is not null and g\.at >= \$\{desde\} \+ make_interval\(hours => \$3::int\)/.test(ve) || !/\[tabla, id, HORAS_LLAVE \+ MARGEN_NO_LLEGO_H\]/.test(ve)
-      || !(Number(/export const MARGEN_NO_LLEGO_H = (\d+);/.exec(k)?.[1] ?? 0) >= 1) || !/const desde = tabla === "event_settlements" \? "greatest\(z\.sent_at, coalesce\(z\.key_from, z\.paying_at\)\)" : "z\.sent_at";/.test(ve)
+      || !(Number(/export const MARGEN_NO_LLEGO_H = (\d+);/.exec(k)?.[1] ?? 0) >= 1) || !/const desde = tabla === "event_settlements" \? "greatest\(z\.sent_at, coalesce\(z\.key_from, z\.paying_at\)\)" : tabla === "refunds" \|\| tabla === "event_settlement_reversals" \? "greatest\(z\.sent_at, coalesce\(z\.key_from, z\.sent_at\)\)" : "z\.sent_at";/.test(ve)
       // La tabla de la consulta sale de una lista cerrada escrita en el código, no del parámetro tal cual (Semgrep, CI 44889132454).
       // 9t6 · La lista crece (hold_renewals, gateway_refunds), pero cada opción se devuelve a sí misma, escrita aquí, y lo demás es null.
-      || !/const tabla = t === "subscription_charges" \? "subscription_charges" : t === "offsession_charges" \? "offsession_charges" : t === "event_settlements" \? "event_settlements" : t === "hold_renewals" \? "hold_renewals" : t === "gateway_refunds" \? "gateway_refunds" : null;\s*if \(!tabla\) throw/.test(ve) || /join \$\{t\} /.test(ve) || !/join \$\{tabla\} z/.test(ve))
+      || !/const tabla = t === "subscription_charges" \? "subscription_charges" : t === "offsession_charges" \? "offsession_charges" : t === "event_settlements" \? "event_settlements" : t === "hold_renewals" \? "hold_renewals" : t === "gateway_refunds" \? "gateway_refunds"\s*: t === "refunds" \? "refunds" : t === "event_settlement_reversals" \? "event_settlement_reversals" : null;\s*if \(!tabla\) throw/.test(ve) || /join \$\{t\} /.test(ve) || !/join \$\{tabla\} z/.test(ve))
       falla(G, K, 0, "veredicto: «no llegó» solo con el dato buscable (gateway_ref) y pasadas HORAS_LLAVE + MARGEN_NO_LLEGO_H (≥ 1 h) desde que se mandó");
     for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
       const t = sinComent(f);
       for (const m of t.matchAll(/\n(?:export )?(?:async )?function (\w+)\(/g)) {
         const b = cuerpoFn(t, m[1]);
-        const escribe = /`update (offsession_charges|subscription_charges|event_settlements)[^`]*(status = 'failed'|key_from = now\(\))[^`]*`/.test(b);
+        const escribe = /`update (offsession_charges|subscription_charges|event_settlements|refunds|event_settlement_reversals)\b[^`]*(status = 'failed'|key_from = now\(\))[^`]*`/.test(b);
         if (escribe && /["']nunca_llego["']/.test(b) && !(/veredicto\(/.test(b) && /v\?\.noLlego/.test(b))) falla(G, f, t.slice(0, m.index).split("\n").length, `${m[1]} da una intención por «nunca llegó» sin el veredicto de la consulta a la pasarela (veredicto().noLlego)`);
       }
     }
@@ -12645,7 +12653,8 @@ const guardianes = {
     if (!/if \(v\?\.revisado === "ninguno"\) \{\s+if \(!\(await db\(\)\.query\(`update offsession_charges set status = 'failed', last_error = 'devuelto'/.test(cuerpoFn(sinComent(CF), "terminarVieja"))) falla(G, CF, 0, "un cobro con tarjeta guardada: «ninguno vale» falla 'devuelto' (como «nunca llegó», no como un «no» del banco)");
     for (const [f, fn] of [[SU, "resolverCobroPro"], [CF, "resolverCobroFuera"]]) if (!/const rev = await K\.revisada\(/.test(cuerpoFn(sinComent(f), fn))) falla(G, f, 0, `${fn}: con la decisión del equipo no vuelve a preguntar; cierra con ella`);
     // (4) Lo que sobra: anotado antes, su llave, sin respuesta no es rechazo, pasada la llave se pregunta.
-    const marca = "set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' returning gateway_ref as gref";
+    // 9t7 · Y nunca una resuelta a mano (manual_at).
+    const marca = "set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref";
     const sr = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n  \}/.exec(ej)?.[0] ?? "";
     if (!antes(ej, marca, "pasarela.devolver(") || !/if \(g\.enviada && g\.vieja\) return \(await resolverDevolucionSobra\(id, \{ origen: "barrido" \}\)\)\.st;/.test(ej) || !sr || /'failed'|fallar/.test(sr) || !/return "pending";/.test(sr) || !/tl_intencion: m\.gref/.test(ej))
       falla(G, RV, 0, "ejecutarDevolucionSobra: anotada que se manda (con su dato buscable) antes de la pasarela; sin respuesta sigue en camino; pasada la llave se pregunta, nunca se manda otra vez con ella");
@@ -12670,6 +12679,71 @@ const guardianes = {
       || !/create unique index if not exists gateway_refunds_uno_por_objeto on gateway_refunds \(stripe_id\) where status in \('pending', 'done'\);/.test(mig) || !/raise exception 'una devolución de lo que sobró no se borra \(estados\)'/.test(mig))
       falla(G, "packages/db/migrations", 0, "la base: una decisión por intención (solo inserción) y una devolución viva por objeto de Stripe; nada se borra");
     if (!/add constraint gateway_checks_found_forma check \(gateway_checks_found_ok\(found\)\);/.test(mig)) falla(G, "packages/db/migrations", 0, "la base: el detalle de lo hallado (gateway_checks.found) con su forma y su tope");
+  },
+
+  /* 9t7 (21 nov, 0206) · devolucionPreguntaALaPasarela (LAUNCH «Preguntarle a la pasarela, lo que quedó de 9t6» (1)(2)), por clase: el dinero que SALE
+     (una devolución de un cobro, una reversión al organizador, la devolución de lo que sobró) es una intención como un cobro: «sin respuesta» no es
+     «rechazado» y lo que una persona cierra el servidor lo comprueba con la pasarela.
+     (1) Toda llamada a pasarela.devolver / pasarela.revertirTransferencia anota antes, en UNA sentencia, que se manda (sent_at) y su dato buscable
+         (gateway_ref, solo la primera vez) y lo manda (tl_intencion). La única que falta es la del patrocinio (devolverPatrocinio): no tiene fila de
+         intención antes de la pasarela; está escrita en LAUNCH «lo que quedó de 9t7» y aquí se nombra (si aparece otra, falla).
+     (2) Pasada la ventana de la llave, los barridos le preguntan a la pasarela (resolverDevolucion, resolverReversion: la consulta fuera de transacción) y
+         cierran por el cierre de su flujo; «nunca llegó» vuelve a valer con OTRA llave (llaveDe) solo con veredicto().noLlego; una anotada sin el dato
+         nunca se pregunta como «no llegó» (solo alerta).
+     (3) «Resolver a mano» (refund_stuck, transfer_reversal_stuck, extra_refund_stuck) pregunta ANTES de marcar: sin respuesta no cambia nada; si salió, se
+         cierra como hecha y no se marca.
+     (4) La base: el dato se anota una vez y solo en camino; la llave vuelve a valer una vez por ventana; «Elegir cuál vale» en una devolución es solo «vale».
+     Al revés: alreves9t7; con la base: pruebas/e2e/din9t7.cjs. */
+  devolucionPreguntaALaPasarela() {
+    const G = "devolucionPreguntaALaPasarela", DC = "apps/web/lib/devolucion-consulta.ts", CB = "apps/web/lib/cobros.ts", BO = "apps/web/lib/boletos-despues.ts", LQ = "apps/web/lib/evt-liquidacion.ts";
+    const RV = "apps/web/lib/revision-pasarela.ts", DA = "apps/web/lib/dinero-alertas.ts", PS = "apps/web/lib/pagos/pasarela.ts", K = "apps/web/lib/consulta-pasarela.ts", PT = "apps/web/app/admin/Planes.tsx";
+    for (const f of [DC, CB, BO, LQ, RV, DA, PS, K, PT]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    const antes = (t, a, b) => t.indexOf(a) >= 0 && t.indexOf(b) >= 0 && t.indexOf(a) < t.indexOf(b);
+    // (1) Por clase: cada llamada que devuelve o revierte, con su marca antes y su dato.
+    const TABLA = { [CB]: { ejecutarDevolucionPago: "refunds" }, [BO]: { ejecutarDevolucion: "refunds" }, [LQ]: { ejecutarReversion: "event_settlement_reversals" }, [RV]: { ejecutarDevolucionSobra: "gateway_refunds" } };
+    const PENDIENTE = { "apps/web/lib/patrocinio.ts": ["devolverPatrocinio"] };
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f) || f.startsWith("apps/web/lib/pagos/")) continue;
+      const s = sinComent(f);
+      for (const m of s.matchAll(/pasarela\.(devolver|revertirTransferencia)\(/g)) {
+        const pre = s.slice(0, m.index), fnN = [...pre.matchAll(/\n(?:export )?(?:async )?function (\w+)\(/g)].pop()?.[1] ?? "", ln = pre.split("\n").length;
+        if ((PENDIENTE[f] ?? []).includes(fnN)) continue;
+        const t = TABLA[f]?.[fnN];
+        if (!t) { falla(G, f, ln, `pasarela.${m[1]} en ${fnN || "?"} sin su intención anotada antes (sent_at y el dato buscable): devuelve por una de las que ya preguntan a la pasarela`); continue; }
+        const b = cuerpoFn(s, fnN), marca = `set gateway_ref = case when sent_at is null then '${t}:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`;
+        if (!antes(b, marca, `pasarela.${m[1]}(`)) falla(G, f, ln, `${fnN}: anota que se manda y su dato buscable (${t}) en UNA sentencia antes de la pasarela, solo la primera vez y nunca si se resolvió a mano`);
+        if (!/tl_intencion: m\.gref/.test(b)) falla(G, f, ln, `${fnN}: manda el dato buscable a la pasarela (metadata tl_intencion)`);
+      }
+    }
+    if (!/const REF_DEV = \/\^\(gateway_refunds\|refunds\|event_settlement_reversals\):\\d\{1,18\}\$\/;/.test(sinComent(PS))) falla(G, PS, 0, "buscarDevolucion busca también refunds:<id> y event_settlement_reversals:<id>");
+    // (2) Pasada la llave: la consulta y el cierre con su veredicto; otra llave solo con «nunca llegó».
+    const dc = sinComent(DC), rd = cuerpoFn(dc, "resolverDevolucion"), cv = cuerpoFn(dc, "cerrarConVeredicto"), pv = cuerpoFn(dc, "preguntarViejas"), lq = sinComent(LQ), rr = cuerpoFn(lq, "resolverReversion");
+    if (!/K\.consultar\(\{ tabla: "refunds"/.test(rd) || /await tx\(/.test(rd.slice(0, rd.indexOf("K.consultar("))) || !/if \(!r \|\| r\.st !== "pending" \|\| r\.mano \|\| !r\.enviada \|\| !r\.vieja\) return/.test(rd))
+      falla(G, DC, 0, "resolverDevolucion: solo pasada la llave (y mandada, sin resolver a mano); primero la consulta, fuera de transacción");
+    if (!/if \(v\?\.resultado === "hecho" && v\.stripe\) \{[\s\S]*?cerrarDevolucionBoletos\(r\.id, v\.stripe, true\)[\s\S]*?cerrarDevolucionPago\(r\.id, v\.stripe, undefined, true\)/.test(cv)
+      || !/if \(v\?\.resultado === "fallido"\)/.test(cv) || !/if \(v\?\.noLlego\) \{\s+if \(!r\.igual\)/.test(cv) || !/set key_from = now\(\), key_n = key_n \+ 1, last_error = 'nunca_llego'/.test(cv))
+      falla(G, DC, 0, "cerrarConVeredicto: hecha por el mismo cierre; fallida como un «no»; «nunca llegó» vuelve a valer con otra llave solo si lo debido sigue igual");
+    if (!/r\.gateway_ref is not null and coalesce\(r\.key_from, r\.created_at\) <= now\(\)/.test(pv) || !/r\.gateway_ref is null and coalesce\(r\.key_from, r\.created_at\) <= now\(\)/.test(pv) || !/g\.ult <= now\(\) - make_interval\(mins => \$2::int\)/.test(pv))
+      falla(G, DC, 0, "preguntarViejas: pregunta solo las mandadas con su dato (una vez cada CADA_MIN); las anotadas sin él solo alertan (nunca «no llegó»)");
+    if (!/K\.consultar\(\{ tabla: "event_settlement_reversals"/.test(rr) || /await tx\(/.test(rr.slice(0, rr.indexOf("K.consultar("))) || !/else if \(v\?\.noLlego && r\.viva\)/.test(rr) || !/key_n = r\.key_n \+ 1, last_error = 'nunca_llego'/.test(rr))
+      falla(G, LQ, 0, "resolverReversion: pasada la llave, la consulta fuera de transacción y el cierre con su veredicto («nunca llegó» → otra llave)");
+    for (const [f, re] of [[CB, /pasarela\.devolver\(r\.pi, r\.amt, llaveDe\(r\.idem, r\.kn\)/], [BO, /pasarela\.devolver\(r\.pi, r\.amt, llaveDe\(r\.idem, r\.kn\)/], [LQ, /pasarela\.revertirTransferencia\(r\.tr, r\.amt, llaveDe\(r\.idem, r\.kn\)/]])
+      if (!re.test(sinComent(f))) falla(G, f, 0, "la llave que va a Stripe es la de la fila, u otra (llaveDe) solo si la consulta dijo que nunca llegó");
+    if (!/export const llaveDe = \(idem: string, n: number\) => \(n > 0 \? `\$\{idem\}-r\$\{n\}` : idem\);/.test(sinComent(CB))) falla(G, CB, 0, "llaveDe: la de la fila la primera vez; después, -r<n>");
+    // (3) «Resolver a mano» pregunta antes.
+    const na = cuerpoFn(sinComent(DA), "notaAlerta"), am = cuerpoFn(dc, "antesDeAMano");
+    if (!antes(na, "antesDeAMano(s, id, a.kind, a.sujeto, n)", "await tx(") || !/if \(!pre\.sigue\) return/.test(na)) falla(G, DA, 0, "notaAlerta: «Resolver a mano» le pregunta a la pasarela ANTES de marcar (fuera de la transacción)");
+    if ((am.match(/await K\.consultar\(\{ tabla: /g) ?? []).length !== 3 || !/if \(resultado === "sin_respuesta"\) return \{ sigue: false, ok: false/.test(am) || !/if \(resultado === "hecho"\) \{/.test(am) || !/if \(resultado === "en_curso"\) return \{ sigue: false/.test(am)
+      || !/if \(resultado === "varios"\) return \{ sigue: false/.test(am) || am.indexOf("return { sigue: true };") < am.indexOf('if (resultado === "hecho")')) falla(G, DC, 0, "antesDeAMano: la pasarela antes; sin respuesta, en curso o varias no deja marcar; si salió, se cierra como hecha y no se marca a mano");
+    if (!/a\.kind !== "extra_refund_stuck"/.test(na) || !/when a\.kind = 'extra_refund_stuck' then exists \(select 1 from gateway_refunds g/.test(cuerpoFn(sinComent(DA), "alertasDinero"))) falla(G, DA, 0, "la devolución de lo que sobró también tiene «Resolver a mano» (con la misma regla)");
+    if (!/union all select 'refunds', z\.id, z\.status = 'pending' and z\.manual_at is null from refunds z where a\.kind = 'refund_stuck'/.test(sinComent(DA)) || !/union all select 'event_settlement_reversals', z\.id/.test(sinComent(DA))) falla(G, DA, 0, "«Preguntar a Stripe ahora» también en las devoluciones y reversiones atascadas");
+    if (!/Antes de guardar, se le pregunta a Stripe/.test(readFileSync(PT, "utf8"))) falla(G, PT, 0, "la hoja de «Resolver a mano» dice que antes se le pregunta a Stripe");
+    // (4) La base.
+    const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8")).join("\n");
+    if (!/create trigger refunds_consulta before insert or update on refunds/.test(mig) || !/create trigger event_settlement_reversals_consulta before insert or update on event_settlement_reversals/.test(mig)
+      || !/raise exception 'devolucion: gateway_ref se anota una vez'/.test(mig) || !/new\.key_from < coalesce\(old\.key_from, old\.created_at\) \+ interval '23 hours'/.test(mig)
+      || !/check \(subject_kind not in \('refunds', 'event_settlement_reversals', 'gateway_refunds'\) or decision = 'vale'\)/.test(mig) || !/update refunds set sent_at = created_at where sent_at is null and status = 'pending';/.test(mig)
+      || !/create trigger gateway_refunds_a_mano before update on gateway_refunds/.test(mig)) falla(G, "packages/db/migrations", 0, "la base: el dato una vez y en camino; la llave vuelve a valer una vez por ventana; lo de antes se da por mandado sin el dato; una devolución solo «vale»; lo de lo que sobró a mano, una vez");
   },
 
   /* 9t3 (21 nov) · manoTrasLaLlave (LAUNCH «Dinero por clase · lo que quedó» (c)): «Resolver a mano» lo deja la base (dinero_a_mano) cuando Stripe ya la

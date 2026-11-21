@@ -24,7 +24,8 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const D = cargar('apps/web/lib/db.ts');
 const avisados = [];
 const avisos = { avisar: async () => undefined, avisarMuchos: async () => undefined, avisarNegocio: async (b, t) => { avisados.push([b, t]); } };
-const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './admin': { auditar: async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after) values ('staff', $1, $2, $3, $4, $5)`, [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null)]) } });
+const K = {}, DC = {}, BOS = {}; // 9t7 · se llenan abajo (consulta a la pasarela y lo de más de 23 h)
+const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './devolucion-consulta': DC, './admin': { auditar: async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after) values ('staff', $1, $2, $3, $4, $5)`, [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null)]) } });
 // La pasarela de mentira (la de din9t): devuelve una vez por llave y lleva la cuenta de lo que salió de verdad.
 const P = {
   modo: () => 'simulador', salio: new Map(), llamadas: 0, plan: [], para: null, saldo: new Map(), pausas: [], pausaPlan: [],
@@ -44,11 +45,19 @@ const P = {
     return { ok: true, id: r.id };
   },
   async cuentaPagos(cuenta, pausar) { const paso = this.pausaPlan.length ? this.pausaPlan.shift() : 'ok'; if (paso !== 'ok') return false; this.pausas.push([cuenta, pausar]); return true; },
+  // 9t7 · La consulta a la pasarela (lo de más de 23 h y «Resolver a mano»): Stripe no tiene la devolución (así se puede resolver a mano, como antes); lo
+  // que pasa con cada otra respuesta lo prueba din9t7.
+  buscarDevolucion: async () => ({ ok: true, hallado: null }),
   vecesSalio(idem) { return [...this.salio.keys()].filter((k) => k === idem).length; },
 };
 const SE = {}; // lib/soporte-equipo (se llena abajo: cobros lo importa al cerrar una devolución de Soporte)
+// 9t7 · Lo que pasó la ventana de la llave se le pregunta a la pasarela (lib/devolucion-consulta.ts, lib/consulta-pasarela.ts): los módulos reales. Esta
+// pasarela de mentira dice que Stripe no tiene la devolución (nada se cierra solo, como antes); lo que hace con cada respuesta lo prueba din9t7.
 const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
-  './soporte-equipo': SE, './soporte': { avisarCaso: async () => undefined } });
+  './soporte-equipo': SE, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': K, './devolucion-consulta': DC });
+Object.assign(K, cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas }));
+Object.assign(DC, cargar('apps/web/lib/devolucion-consulta.ts', { './db': D, './cobros': cobros, './consulta-pasarela': K, './boletos-despues': BOS,
+  './admin': { auditar: async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after, reason) values ('staff', $1, $2, $3, $4, $5, $6)`, [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null), a.reason ?? null]) } }));
 const tapar = (t) => ({ texto: String(t) });
 Object.assign(SE, cargar('apps/web/lib/soporte-equipo.ts', { './reportar': {}, './admin': { auditar: async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('staff', $1, $2, $3, $4, $5, $6, $7, $8)`,
   [a.actor, a.action, a.targetKind, a.targetId ?? null, a.city ?? null, a.before === undefined ? null : JSON.stringify(a.before), a.after === undefined ? null : JSON.stringify(a.after), a.reason ?? null]) },
@@ -92,7 +101,9 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   console.log('1 · Boletos: lo devuelto sale del libro');
   const pases = { pasesPronto: () => undefined };
   const BO = cargar('apps/web/lib/boletos-despues.ts', { './config': { cfgSql: () => '0', valores: async () => ({}) }, './cuenta': { normalizarTelefono: (x) => x }, './db': D,
-    './evt-comun': { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' }, './pagos/pasarela': { pasarela: P }, './pases/pronto': pases, './cobros': cobros });
+    './evt-comun': { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' }, './pagos/pasarela': { pasarela: P }, './pases/pronto': pases, './cobros': cobros,
+    './devolucion-consulta': DC, './consulta-pasarela': K, './dinero-alertas': alertas });
+  Object.assign(BOS, BO);
   async function devBoletos(c, monto, idem) {
     const rf = (await q1(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key) values ($1::bigint, $2, 'boletos', 'buyer', 'pending', $3) returning id::text`, [c.p, monto, idem])).id;
     const l = (await q1(`insert into operation_lines (operation_id, name, qty, unit_price_cents, line_total_cents) values ($1::bigint, '{"es":"Extra","en":"Extra"}'::jsonb, 1, $2, $2) returning id::text`, [c.op, monto])).id;

@@ -23,12 +23,35 @@ type Bi = { es: string; en: string };
 export type { T4 };
 type Res = { ok: true; msg: string } | { ok: false; msg: string };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const REF = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals):(\d{1,18})$/;
-const STRIPE_ID = /^(pi|tr)_[A-Za-z0-9_]{3,200}$/;
+const REF = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals|refunds|event_settlement_reversals|gateway_refunds):(\d{1,18})$/;
+/* 9t7 · Lo que se elige puede ser una devolución (re_…) o una reversión (trr_…) cuando la intención devuelve dinero. */
+const STRIPE_ID = /^(pi|tr|re|trr|pyr)_[A-Za-z0-9_]{3,200}$/;
+/* 9t7 · Las intenciones que DEVUELVEN dinero (una devolución de un cobro, una reversión al organizador, la devolución de lo que sobró): con varias en Stripe
+   solo se elige cuál vale; lo que salió de más no se deshace con otra devolución (queda en la auditoría). La base lo impone (gateway_reviews_devolucion_solo_vale). */
+const DEVUELVE = (t: T4) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds";
 
 /* La intención detrás de la alerta, con lo que hace falta para decidir. Cuatro consultas fijas (nunca el nombre de la tabla en el texto). */
-type Int = { t: T4; id: string; vivo: boolean; vieja: boolean; monto: number; ciudad: string | null; negocio: string | null; grupo?: string; plataforma: boolean; periodoCobrado: boolean };
+type Int = { t: T4; id: string; vivo: boolean; vieja: boolean; monto: number; ciudad: string | null; negocio: string | null; grupo?: string; plataforma: boolean; periodoCobrado: boolean;
+  medio?: "refund" | "reversal"; objeto?: string };
 async function intencionDe(t: T4, id: string): Promise<Int | null> {
+  // 9t7 · Una devolución de un cobro, una reversión al organizador o la devolución de lo que sobró: viva si sigue en camino sin resolver a mano; vieja pasada
+  // su llave (la que vale: key_from si volvió a valer).
+  if (t === "refunds") {
+    const r = (await db().query<{ vivo: boolean; vieja: boolean; monto: number; ciudad: string | null; negocio: string | null; pi: string }>(
+      `select z.status = 'pending' and z.manual_at is null as vivo, coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int) as vieja, z.amount_cents as monto,
+              p.city_id as ciudad, p.business_id as negocio, p.stripe_payment_intent as pi from refunds z join payments p on p.id = z.payment_id where z.id = $1::bigint`, [id, HORAS_LLAVE])).rows[0];
+    return r ? { t, id, vivo: r.vivo, vieja: r.vieja, monto: r.monto, ciudad: r.ciudad, negocio: r.negocio, plataforma: false, periodoCobrado: false, medio: "refund", objeto: r.pi } : null;
+  }
+  if (t === "event_settlement_reversals") {
+    const r = (await db().query<{ vivo: boolean; vieja: boolean; monto: number; ciudad: string | null; negocio: string | null; tr: string }>(
+      `select z.status = 'pending' and z.manual_at is null as vivo, coalesce(z.key_from, z.created_at) <= now() - make_interval(hours => $2::int) as vieja, z.amount_cents as monto,
+              z.city_id as ciudad, z.business_id as negocio, s.transfer_id as tr from event_settlement_reversals z join event_settlements s on s.id = z.settlement_id where z.id = $1::bigint`, [id, HORAS_LLAVE])).rows[0];
+    return r ? { t, id, vivo: r.vivo, vieja: r.vieja, monto: r.monto, ciudad: r.ciudad, negocio: r.negocio, plataforma: true, periodoCobrado: false, medio: "reversal", objeto: r.tr } : null;
+  }
+  if (t === "gateway_refunds") {
+    const g = (await db().query<Dev>(`select ${SEL_DEV} from gateway_refunds where id = $1::bigint`, [id])).rows[0];
+    return g ? { t, id, vivo: g.st === "pending" && !g.mano, vieja: g.enviada && g.vieja, monto: g.monto, ciudad: g.ciudad, negocio: g.biz, plataforma: g.plataforma, periodoCobrado: false, medio: g.medio, objeto: g.stripe } : null;
+  }
   if (t === "subscription_charges") {
     const r = (await db().query<{ vivo: boolean; vieja: boolean; monto: number; ciudad: string | null; negocio: string; pc: boolean }>(
       `select z.status = 'pending' as vivo, z.created_at <= now() - make_interval(hours => $2::int) as vieja, z.amount_cents as monto, z.city_id as ciudad, z.business_id as negocio,
@@ -74,7 +97,7 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
   if (!x.vieja) return { ok: false, msg: "Todavía no pasa la ventana de la llave: se cierra sola." };
   // (1) La pasarela otra vez (fuera de cualquier transacción, anotada con quien la pidió): se decide con ESTO, no con la pantalla.
   const det: import("./consulta-pasarela").Detalle = { hallados: [], check: null };
-  const resultado = await K.consultar({ tabla: t, id, monto: x.monto, ciudad: x.ciudad, negocio: x.negocio, grupo: x.grupo }, { origen: "equipo", staff: s.id }, det);
+  const resultado = await K.consultar({ tabla: t, id, monto: x.monto, ciudad: x.ciudad, negocio: x.negocio, grupo: x.grupo, medio: x.medio, objeto: x.objeto }, { origen: "equipo", staff: s.id }, det);
   if (resultado === "sin_respuesta") return { ok: false, msg: "Stripe no contestó la consulta: no se cambió nada. Prueba en un momento." };
   const E = elegibles(x, resultado, det.hallados);
   if (E.enCurso) return { ok: false, msg: "Stripe todavía tiene uno en curso: espera a que termine y vuelve a intentarlo." };
@@ -85,13 +108,17 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
   const elegido = eleccion === "ninguno" ? null : eleccion;
   // Lo que sobra: lo hallado que salió y no es el elegido. De un cobro se devuelve; de una transferencia se revierte; de una retención se suelta.
   const sobra = det.hallados.filter((h) => h.estado === "hecho" && h.id !== elegido);
-  const medio: "refund" | "reversal" | null = t === "hold_renewals" ? null : t === "event_settlements" ? "reversal" : "refund";
+  // 9t7 · Una devolución (o reversión) de más no se devuelve con otra: se nombra en la auditoría y en el mensaje, y nada más.
+  const medio: "refund" | "reversal" | null = t === "hold_renewals" || DEVUELVE(t) ? null : t === "event_settlements" ? "reversal" : "refund";
   const { auditar } = await import("./admin");
   // (2) Una vez, en una transacción: la intención sigue en camino (con su candado), la decisión, lo que se devuelve, la auditoría y la nota de la alerta.
   const d = await tx(async (c): Promise<{ msg: string } | { review: string; devs: { id: string; stripe: string; centavos: number }[] }> => {
     const vivo = t === "subscription_charges" ? (await c.query(`select 1 from subscription_charges where id = $1::bigint and status = 'pending' for update`, [id])).rowCount
       : t === "offsession_charges" ? (await c.query(`select 1 from offsession_charges where id = $1::bigint and status = 'pending' for update`, [id])).rowCount
       : t === "event_settlements" ? (await c.query(`select 1 from event_settlements where id = $1::bigint and status = 'paying' for update`, [id])).rowCount
+      : t === "refunds" ? (await c.query(`select 1 from refunds where id = $1::bigint and status = 'pending' and manual_at is null for update`, [id])).rowCount
+      : t === "event_settlement_reversals" ? (await c.query(`select 1 from event_settlement_reversals where id = $1::bigint and status = 'pending' and manual_at is null for update`, [id])).rowCount
+      : t === "gateway_refunds" ? (await c.query(`select 1 from gateway_refunds where id = $1::bigint and status = 'pending' and manual_at is null for update`, [id])).rowCount
       : (await c.query(`select 1 from hold_renewals where id = $1::bigint and status = 'pending' for update`, [id])).rowCount;
     // (Si la cerró la decisión de otra persona que llegó primero, se dice eso.)
     if (!vivo) return { msg: (await c.query(`select 1 from gateway_reviews where subject_kind = $1 and subject_id = $2::bigint`, [t, id])).rowCount ? "Ya lo decidió otra persona del equipo." : "Ya no está en camino: se cerró." };
@@ -112,7 +139,7 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
     }
     await auditar(c, { actor: s.id, action: "dinero.alerta.decidir", targetKind: "money_alert", targetId: alerta, city: a.city, reason: n,
       after: { intencion: a.sujeto, decision: elegido ? `vale ${elegido}` : "ninguno vale", stripe_dijo: resultado, hallados: det.hallados.map((h) => `${h.id} ${money(h.centavos)} ${h.estado}`),
-        [medio === "reversal" ? "revertir" : medio === "refund" ? "devolver" : "soltar"]: sobra.map((h) => `${h.id} ${money(h.centavos)}`), consulta: det.check } });
+        [DEVUELVE(t) ? "salio_de_mas" : medio === "reversal" ? "revertir" : medio === "refund" ? "devolver" : "soltar"]: sobra.map((h) => `${h.id} ${money(h.centavos)}`), consulta: det.check } });
     await (await import("./dinero-alertas")).notaEnTx(c, alerta, s.id, n);
     return { review: rv.id, devs };
   });
@@ -122,7 +149,11 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
   const q = t === "subscription_charges" ? (await (await import("./suscripcion")).resolverCobroPro(id, o)).quedo
     : t === "offsession_charges" ? (await (await import("./cobro-fuera")).resolverCobroFuera(id, o)).quedo
     : t === "event_settlements" ? (await (await import("./evt-liquidacion")).resolverTransferencia(id, o)).quedo
+    : t === "refunds" ? (await (await import("./devolucion-consulta")).resolverDevolucion(id, o)).quedo
+    : t === "event_settlement_reversals" ? (await (await import("./evt-liquidacion")).resolverReversion(id, o)).quedo
+    : t === "gateway_refunds" ? ((await resolverDevolucionSobra(id, o)).st === "done" ? "hecha" : "sigue")
     : (await (await import("./renovar-retencion")).resolverRenovacion(id, o)).quedo;
+  if (DEVUELVE(t)) return { ok: true, msg: `Decidido: vale ${elegido}; ${QUEDO_DEV[q] ?? q}.${sobra.length ? ` Salió de más en Stripe: ${sobra.map((h) => `${h.id} ${money(h.centavos)}`).join(", ")} (no se deshace desde aquí; míralo con la persona).` : ""} Quedó en la auditoría.` };
   if (!medio) for (const h of sobra) await pasarela.liberar(h.id).catch(() => undefined);
   let salio = 0, camino = 0, no = 0;
   for (const g of d.devs) { const r = await ejecutarDevolucionSobra(g.id); if (r === "done") salio++; else if (r === "pending") camino++; else no++; }
@@ -135,16 +166,20 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
   return { ok: true, msg: partes.join(" ") };
 }
 
+const QUEDO_DEV: Record<string, string> = { hecha: "quedó hecha con esa, una vez", sigue: "sigue en camino: el barrido la cierra con la decisión", ya_no_estaba: "ya se había cerrado", reabierta: "sigue en camino" };
+
 /* ── La devolución de lo que sobró (gateway_refunds) ── */
-type Dev = { id: string; st: string; medio: "refund" | "reversal"; plataforma: boolean; stripe: string; monto: number; idem: string; enviada: boolean; vieja: boolean; n: number; err: string | null; biz: string | null; ciudad: string | null; review: string };
-const SEL_DEV = `id::text, status as st, medio, plataforma, stripe_id as stripe, amount_cents as monto, idem_key as idem, sent_at is not null as enviada,
+type Dev = { id: string; st: string; mano: boolean; medio: "refund" | "reversal"; plataforma: boolean; stripe: string; monto: number; idem: string; enviada: boolean; vieja: boolean; n: number; err: string | null; biz: string | null; ciudad: string | null; review: string };
+const SEL_DEV = `id::text, status as st, manual_at is not null as mano, medio, plataforma, stripe_id as stripe, amount_cents as monto, idem_key as idem, sent_at is not null as enviada,
                  coalesce(sent_at, created_at) <= now() - make_interval(hours => ${HORAS_LLAVE}) as vieja, attempts as n, last_error as err, business_id as biz, city_id as ciudad, review_id::text as review`;
-/* A la pasarela con su llave (solo mientras Stripe la recuerda); el «sí» se cierra una vez; sin respuesta sigue en camino; un «no», fallida y alerta. */
+/* A la pasarela con su llave (solo mientras Stripe la recuerda); el «sí» se cierra una vez; sin respuesta sigue en camino; un «no», fallida y alerta.
+   9t7 · Una resuelta a mano (el dinero se devolvió fuera de Stripe) nunca se vuelve a mandar ni a preguntar. */
 export async function ejecutarDevolucionSobra(id: string): Promise<"done" | "pending" | "failed"> {
   const g = (await db().query<Dev>(`select ${SEL_DEV} from gateway_refunds where id = $1::bigint`, [id])).rows[0];
   if (!g || g.st !== "pending") return (g?.st as "done" | "failed" | undefined) ?? "failed";
+  if (g.mano) return "pending";
   if (g.enviada && g.vieja) return (await resolverDevolucionSobra(id, { origen: "barrido" })).st;
-  const m = (await db().query<{ gref: string | null }>(`update gateway_refunds set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' returning gateway_ref as gref`, [id])).rows[0];
+  const m = (await db().query<{ gref: string | null }>(`update gateway_refunds set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];
   if (!m) return "pending";
   const meta = { review: g.review, ...(m.gref ? { tl_intencion: m.gref } : {}) };
   const r = await (g.medio === "refund" ? pasarela.devolver(g.stripe, g.monto, g.idem, { plataforma: g.plataforma, meta }) : pasarela.revertirTransferencia(g.stripe, g.monto, g.idem, meta))
@@ -160,7 +195,7 @@ export async function ejecutarDevolucionSobra(id: string): Promise<"done" | "pen
 }
 async function cerrarDevolucion(g: Dev, stripeRefund: string, porConsulta: boolean): Promise<"done"> {
   await tx(async (c) => {
-    const u = await c.query(`update gateway_refunds set status = 'done', stripe_refund_id = $2, last_error = null where id = $1::bigint and status = 'pending'`, [g.id, stripeRefund]);
+    const u = await c.query(`update gateway_refunds set status = 'done', stripe_refund_id = $2, last_error = null where id = $1::bigint and status = 'pending' and manual_at is null`, [g.id, stripeRefund]);
     if (u.rowCount && porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "gateway_refunds", g.id, g.ciudad, { estado: "hecha", devolucion: stripeRefund, de: g.stripe });
   });
   await (await import("./consulta-pasarela")).cerrarAlertaSola("extra_refund_stuck", g.id, { es: `Cerrada sola: Stripe hizo la devolución (${stripeRefund}).`, en: `Closed by itself: Stripe made the refund (${stripeRefund}).` });
@@ -168,12 +203,12 @@ async function cerrarDevolucion(g: Dev, stripeRefund: string, porConsulta: boole
 }
 async function fallar(g: Dev, codigo: string, porConsulta: boolean): Promise<"failed"> {
   const u = await tx(async (c) => {
-    const x = await c.query(`update gateway_refunds set status = 'failed', last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [g.id, codigo]);
+    const x = await c.query(`update gateway_refunds set status = 'failed', last_error = left($2, 120) where id = $1::bigint and status = 'pending' and manual_at is null`, [g.id, codigo]);
     if (x.rowCount && porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "gateway_refunds", g.id, g.ciudad, { estado: "fallida", de: g.stripe });
     return !!x.rowCount;
   });
-  if (u) await alertaDev(g, { es: `Stripe dijo que no (${codigo}): no se ${g.medio === "reversal" ? "revirtió" : "devolvió"}. Hazlo desde Stripe (o por fuera) y márcala resuelta con la nota.`,
-    en: `Stripe said no (${codigo}): it was not ${g.medio === "reversal" ? "reversed" : "refunded"}. Do it from Stripe (or outside it) and mark it resolved with the note.` });
+  if (u) await alertaDev(g, { es: `Stripe dijo que no (${codigo}): no se ${g.medio === "reversal" ? "revirtió" : "devolvió"}. Hazlo desde Stripe (o por fuera) y resuélvela a mano con la nota (antes de marcarla, el servidor vuelve a preguntar).`,
+    en: `Stripe said no (${codigo}): it was not ${g.medio === "reversal" ? "reversed" : "refunded"}. Do it from Stripe (or outside it) and resolve it manually with the note (the server asks again before marking it).` });
   return "failed";
 }
 async function alertaDev(g: Dev, porque: Bi) {
@@ -186,15 +221,17 @@ async function alertaDev(g: Dev, porque: Bi) {
 export async function resolverDevolucionSobra(id: string, o: import("./consulta-pasarela").Origen): Promise<{ resultado: import("./consulta-pasarela").Resultado | null; st: "done" | "pending" | "failed" }> {
   const K = await import("./consulta-pasarela");
   const g = (await db().query<Dev>(`select ${SEL_DEV} from gateway_refunds where id = $1::bigint`, [id])).rows[0];
-  if (!g || g.st !== "pending" || !g.enviada || !g.vieja) return { resultado: null, st: (g?.st as "done" | "pending" | "failed" | undefined) ?? "failed" };
+  if (!g || g.st !== "pending" || g.mano || !g.enviada || !g.vieja) return { resultado: null, st: (g?.st as "done" | "pending" | "failed" | undefined) ?? "failed" };
   if (o.origen === "barrido" && !(await K.tocaConsultar("gateway_refunds", id))) return { resultado: null, st: "pending" };
-  const resultado = await K.consultar({ tabla: "gateway_refunds", id, monto: g.monto, ciudad: g.ciudad, negocio: g.biz, medio: g.medio, objeto: g.stripe }, o);
+  // 9t7 · Ya decidida por el equipo (varias en Stripe: cuál vale): no se vuelve a preguntar; se cierra con la decisión.
+  const resultado = (await K.revisada("gateway_refunds", id)) ? (await K.veredicto("gateway_refunds", id))!.resultado
+    : await K.consultar({ tabla: "gateway_refunds", id, monto: g.monto, ciudad: g.ciudad, negocio: g.biz, medio: g.medio, objeto: g.stripe }, o);
   const v = await K.veredicto("gateway_refunds", id);
   if (v?.resultado === "hecho" && v.stripe) return { resultado, st: await cerrarDevolucion(g, v.stripe, true) };
   if (v?.resultado === "fallido") return { resultado, st: await fallar(g, "consulta_fallido", true) };
   if (v?.noLlego) {
     const nueva = await tx(async (c) => {
-      const u = await c.query(`update gateway_refunds set status = 'failed', last_error = 'nunca_llego' where id = $1::bigint and status = 'pending'`, [id]);
+      const u = await c.query(`update gateway_refunds set status = 'failed', last_error = 'nunca_llego' where id = $1::bigint and status = 'pending' and manual_at is null`, [id]);
       if (!u.rowCount) return null;
       await K.auditarCierre(c, "gateway_refunds", id, g.ciudad, { estado: "nunca llegó a Stripe: sale otra con otra llave", de: g.stripe });
       const k = Number((await c.query<{ n: number }>(`select count(*)::int as n from gateway_refunds where review_id = $1::bigint and stripe_id = $2`, [g.review, g.stripe])).rows[0]!.n);
@@ -214,9 +251,21 @@ export async function resolverDevolucionSobra(id: string, o: import("./consulta-
 export async function barrerDevolucionesSobra(): Promise<number> {
   // Las que todavía se mandan con su llave primero; las viejas (que solo se preguntan) después: unas no tapan a las otras.
   const L = (await db().query<{ id: string }>(
-    `select id::text from gateway_refunds where status = 'pending' and created_at < now() - interval '2 minutes'
+    `select id::text from gateway_refunds where status = 'pending' and manual_at is null and created_at < now() - interval '2 minutes'
       order by (sent_at is not null and sent_at <= now() - make_interval(hours => $1::int)), created_at limit 50`, [HORAS_LLAVE])).rows;
   let n = 0;
   for (const g of L) if ((await ejecutarDevolucionSobra(g.id).catch(() => "pending")) === "done") n++;
   return n;
+}
+/* 9t7 · Para «Resolver a mano» (lib/devolucion-consulta.ts › antesDeAMano): la devolución de lo que sobró que sigue sin resolver (en camino o rechazada por
+   Stripe; nunca una hecha), lo que se le pregunta a la pasarela y su cierre si Stripe dice que salió (el mismo cierre, una vez, solo si sigue en camino). */
+export async function sobraParaConsulta(id: string): Promise<{ st: string; monto: number; ciudad: string | null; biz: string | null; medio: "refund" | "reversal"; stripe: string } | null> {
+  const g = (await db().query<Dev>(`select ${SEL_DEV} from gateway_refunds where id = $1::bigint`, [id])).rows[0];
+  return g && g.st !== "done" && !g.mano ? { st: g.st, monto: g.monto, ciudad: g.ciudad, biz: g.biz, medio: g.medio, stripe: g.stripe } : null;
+}
+export async function cerrarSobraPorConsulta(id: string, stripeRefund: string): Promise<boolean> {
+  const g = (await db().query<Dev>(`select ${SEL_DEV} from gateway_refunds where id = $1::bigint`, [id])).rows[0];
+  if (!g || g.st !== "pending" || g.mano) return false;
+  await cerrarDevolucion(g, stripeRefund, true);
+  return (await db().query(`select 1 from gateway_refunds where id = $1::bigint and status = 'done'`, [id])).rowCount === 1;
 }

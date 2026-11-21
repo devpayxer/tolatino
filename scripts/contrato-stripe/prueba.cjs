@@ -59,6 +59,12 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const br = await pasarela.buscarCobro('hold_renewals:1', { retencion: true }); ok(br.ok === true && ('hallado' in br || 'varios' in br), 'consulta: la retención renovada por su metadata tl_intencion');
   const bd = await pasarela.buscarDevolucion('gateway_refunds:1', 'refund', 'pi_123'); ok(bd.ok === true && ('hallado' in bd || 'varios' in bd), 'consulta: refunds de un payment_intent (y su metadata)');
   const bv = await pasarela.buscarDevolucion('gateway_refunds:1', 'reversal', 'tr_123'); ok(bv.ok === true && ('hallado' in bv || 'varios' in bv), 'consulta: reversals de una transferencia (y su metadata)');
+  // 9t7 · Toda devolución y reversión se manda con su dato buscable (metadata tl_intencion) y se busca por él: refunds:<id> y event_settlement_reversals:<id>.
+  const dm = await pasarela.devolver(pi, 300, 'contrato-9t7-' + Date.now(), { meta: { tl_intencion: 'refunds:1' } }); ok(dm.ok && /^re_/.test(dm.id), 'devolver con metadata tl_intencion (refunds:<id>)');
+  const rm = await pasarela.revertirTransferencia(tr.ok ? tr.id : 'tr_123', 300, 'evt-rev-2-' + Date.now(), { tl_intencion: 'event_settlement_reversals:1' }); ok(rm.ok && /^trr_/.test(rm.id), 'revertir con metadata tl_intencion');
+  const b7 = await pasarela.buscarDevolucion('refunds:1', 'refund', 'pi_123'); ok(b7.ok === true && ('hallado' in b7 || 'varios' in b7), 'consulta: la devolución de un cobro por su dato (refunds:<id>)');
+  const b8 = await pasarela.buscarDevolucion('event_settlement_reversals:1', 'reversal', 'tr_123'); ok(b8.ok === true && ('hallado' in b8 || 'varios' in b8), 'consulta: la reversión al organizador por su dato');
+  const b9 = await pasarela.buscarDevolucion('refunds:1', 'reversal', 'pi_123'); ok(b9.ok === false, 'consulta: un medio que no es el del objeto no se pregunta (ok: false, nunca «no hallado»)');
   // 9k · La huella de una tarjeta guardada (card.fingerprint): payment_methods/{id}.
   const hu = await pasarela.huella('pm_card_visa_123'); ok(hu === null || typeof hu === 'string', 'huella: payment_methods/{id} (card.fingerprint)');
   // 9k · La conciliación del día: payment_intents, refunds, transfers y disputes con created[gte|lt] y paginación, y payouts de una cuenta conectada.
