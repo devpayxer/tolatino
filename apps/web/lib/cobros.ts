@@ -322,6 +322,18 @@ export async function devolucionFallidaEnStripe(stripeRefundId: string, motivo: 
     if (ay) await c.query(`update help_requests set refunded_cents = greatest(0, refunded_cents - $2), updated_at = now() where id = $1::bigint`, [ay[1], r.amt]);
     if (sq) await c.query(`update help_requests set refunded_cents = greatest(0, refunded_cents - $2), updated_at = now() where id = (select q.subject_id::bigint from queue_items q where q.id = $1::bigint and q.subject_kind = 'help_request')`, [sq[1], r.amt]);
     if (/^tk-/.test(r.idem)) await c.query(`update support_cases set refunded_cents = greatest(0, refunded_cents - $2) where id = (select case_id from support_refunds where idem_key = $1)`, [r.idem, r.amt]);
+    // 9t3 · Boletos: los boletos se quedan devueltos (no se reponen solos ni se devuelve otra vez solo: lo decide una persona del equipo desde la
+    // alerta) y lo que la cancelación del evento contaba como devuelto lo resta, aquí mismo (la llave de esa devolución: evtcx-<cancelación>-<orden>).
+    // Lo que To'Latino había cedido de su comisión en esos boletos deja de contar con la devolución fallida (evt_liq_calc, 0199).
+    const cx = /^evtcx-(\d{1,18})-\d{1,18}$/.exec(r.idem);
+    if (cx) await c.query(`update event_cancellations set refunded_cents = greatest(0, refunded_cents - $2) where id = $1::bigint`, [cx[1], r.amt]);
+    const bol = (await c.query<{ num: string; quien: string | null; codes: string | null; titulares: string | null }>(
+      `select o.number as num, nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien,
+              string_agg(t.code, ', ' order by t.id) as codes,
+              string_agg(distinct nullif(trim(coalesce(h.first_name, '') || ' ' || left(coalesce(h.last_name, ''), 1)), ''), ', ') as titulares
+         from ticket_refund_lines l join operations o on o.id = l.operation_id left join users u on u.id = o.user_id
+         left join tickets t on t.id = l.ticket_id left join users h on h.id = t.holder_user_id
+        where l.refund_id = $1::bigint group by o.number, u.first_name, u.last_name`, [r.id])).rows[0] ?? null;
     const l = (await c.query<{ st: string; op: string }>(
       `with x as (select coalesce(sum(amount_cents), 0)::int as hecho from refunds where payment_id = $1::bigint and status = 'done'),
             y as (select p.id, least(p.amount_cents, greatest(x.hecho, p.refunded_cents - $2::int)) as dev from payments p, x where p.id = $1::bigint)
@@ -331,9 +343,17 @@ export async function devolucionFallidaEnStripe(stripeRefundId: string, motivo: 
       await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [l.op, l.st]);
       await evento(c, l.op, "refund_failed", { es: `Stripe no pudo completar la devolución de ${money(r.amt)}: el dinero no llegó a la tarjeta`, en: `Stripe could not complete the ${money(r.amt)} refund: the money did not reach the card` });
     }
-    return r;
+    return { ...r, bol };
   });
   const { alertar } = await import("./dinero-alertas");
+  if (h?.bol) {
+    // 9t3 · Qué boletos y de quién: una persona del equipo decide con eso (devolver otra vez o reponer el boleto); nada de eso pasa solo.
+    const b = h.bol, quien = b.quien ?? "sin nombre", tit = b.titulares && b.titulares !== b.quien ? ` (a nombre de ${b.titulares})` : "", titEn = b.titulares && b.titulares !== b.quien ? ` (held by ${b.titulares})` : "";
+    await alertar("refund_failed", h.id, { monto: h.amt, negocio: h.biz, ciudad: h.city, detalle: {
+      es: `Stripe dio por fallida la devolución de ${money(h.amt)} de la orden de boletos ${b.num} de ${quien} (${why}): el dinero no llegó a la tarjeta. Boletos: ${b.codes ?? "solo extras"}${tit}. Siguen devueltos (no entran) y su saldo volvió al cobro: decide con la persona si se le devuelve otra vez o se le repone el boleto.`,
+      en: `Stripe marked the ${money(h.amt)} refund of ticket order ${b.num} from ${quien} as failed (${why}): the money did not reach the card. Tickets: ${b.codes ?? "extras only"}${titEn}. They stay refunded (no entry) and the balance is back on the charge: decide with the person whether to refund again or reissue the ticket.` } }).catch(() => undefined);
+    return "anotada";
+  }
   if (!h) {
     const ya = (await db().query(`select 1 from refunds where stripe_refund_id = $1 and status = 'failed'`, [stripeRefundId])).rowCount;
     if (ya) return "ya";

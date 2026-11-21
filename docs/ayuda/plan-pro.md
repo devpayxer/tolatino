@@ -1,7 +1,7 @@
 # Plan Pro · Pro plan
 
 _Pantallas: Panel › Cobros y plan › **Tu plan** (`/panel/{negocio}/cobros/plan`), los avisos de la prueba en Tu página y Hoy, y cada «Ver Pro» del
-panel. Versión: 14 nov 2026. Audiencia: vecino. Tema: negocios._
+panel. Versión: 21 nov 2026. Audiencia: vecino. Tema: negocios._
 
 ## Qué hace
 - Al publicar el negocio empieza la **prueba Pro de 30 días** (60 con el código HZL30): todo Pro, sin tarjeta.
@@ -24,6 +24,7 @@ panel. Versión: 14 nov 2026. Audiencia: vecino. Tema: negocios._
 | Volver a Pro con una tarjeta rechazada | No cambia nada: sigue Free y te dice por qué. |
 | Pro de cortesía (To'Latino) | Sin cobro hasta la fecha; luego Free. |
 | Recargar o tocar dos veces | Nunca se cobra dos veces el mismo período. |
+| Stripe no contesta al cobrar | El cobro queda **en camino** («no lo repitas») y se termina solo en unos minutos con el mismo intento: nunca se cobra dos veces. No cuenta como cobro fallido. Si en un día no hay respuesta, To'Latino lo revisa en Stripe y no se te cobra otra vez. |
 | Sandbox | Los cobros van contra el simulador: 4242… aprueba, 0002 rechaza. |
 
 ## Preguntas frecuentes
@@ -63,6 +64,7 @@ misma hoja.
 | Back to Pro with a declined card | Nothing changes: it stays Free and it tells you why. |
 | Courtesy Pro (To'Latino) | No charge until the date; then Free. |
 | Reloading or tapping twice | The same period is never charged twice. |
+| Stripe does not answer the charge | The charge is **on its way** («do not repeat it») and finishes by itself in a few minutes with the same attempt: you are never charged twice. It does not count as a failed charge. If there is no answer within a day, To'Latino checks it in Stripe and you are not charged again. |
 | Sandbox | Charges go against the simulator: 4242… approves, 0002 declines. |
 
 ### FAQ

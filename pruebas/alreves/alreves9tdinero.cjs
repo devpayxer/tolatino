@@ -16,6 +16,10 @@ const D = 'devolucionEnDosPasos', W = 'estadoEnElWhere', K = 'candadoEnSuConexio
 const L = 'llaveSoloUnDia', C = 'casoSeCierraConSuDevolucion', I = 'intencionAntesDeStripe', A = 'alertaSoloConCaminoReal', H = 'webhookDevolucionFallida', DC = 'disputaCierraSuCaso';
 const PA = 'apps/web/lib/patrocinio.ts', AD = 'apps/web/app/admin/acciones-dinero.ts', PB = 'apps/web/lib/pagos-banco.ts', DA = 'apps/web/lib/dinero-alertas.ts', RT = 'apps/web/app/api/stripe/webhook/route.ts';
 const IF = 'intentoFallidoQueda';
+// 9t3 (21 nov, LAUNCH «Dinero por clase, 21 nov · lo que quedó», a–f): cobroProAnotadoAntes, manoTrasLaLlave, boletoFallidoCoherente, ayudaNoReabreConDinero,
+// webhookEventosEscritos (y lo nuevo de llaveSoloUnDia); su prueba con la base es pruebas/e2e/din9t3.cjs.
+const PR = 'cobroProAnotadoAntes', M = 'manoTrasLaLlave', BF = 'boletoFallidoCoherente', AN = 'ayudaNoReabreConDinero', WE = 'webhookEventosEscritos';
+const LQ = 'apps/web/lib/evt-liquidacion.ts', MG = 'packages/db/migrations/0199_dinero_llaves_y_cobros_pro.sql', DOC = 'docs/ayuda/admin-conciliacion.md';
 const casos = [
   // 9t2 · Soporte: el intento que no cabe queda en el libro como fallido (sop7b lo vio rojo cuando se deshacía la transacción entera).
   [IF, SE, "        await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where id = $1::bigint and status = 'pending'`, [fx.id, a.msg.es]);\n        return a.msg.es;", "        return a.msg.es;"],
@@ -43,7 +47,7 @@ const casos = [
     "  await cobros.ejecutarDevolucionPago(\"0\");\n  const a = await tx(async (c): Promise<string | { rf: string | null; estado: \"pending\" | \"done\" | \"manual\" | null }> => {\n"],
   // Soporte y la ayuda de la cita dan por fallida (o reabren) una devolución en camino.
   [D, SE, '    if (!d.enCamino) {\n', '    {\n'],
-  [D, AY, '    if (!d.ok && d.enCamino) return { ok: false, msg: d.msg };\n', ''],
+  [D, AY, '    if (!d.ok && d.enCamino) camino = true;\n    else if (!d.ok) rechazo = d.msg;\n', '    if (!d.ok) rechazo = d.msg;\n'],
   // ── 9t2 (21 nov, LAUNCH «Dinero por clase, 21 nov») ──
   // (1) El cierre de los boletos vuelve a sumar a lo devuelto (el webhook charge.refunded pudo contarla antes).
   [D, BO, '    const p = await devueltoDelLibro(c, r.pid);\n', '    const p = (await c.query<{ st: string }>(`update payments set refunded_cents = refunded_cents + $2 where id = $1::bigint returning status as st`, [r.pid, r.amt])).rows[0]!;\n'],
@@ -71,7 +75,41 @@ const casos = [
   [W, SU, 'where business_id = $1 and status = $4`', 'where business_id = $1`'],
   // (7) «Resolver a mano» por el tipo de alerta, no por el estado de hoy de la devolución.
   [A, DA, 'aMano: mano && ult !== "resuelta_a_mano"', 'aMano: (x.kind === "refund_stuck" || x.kind === "transfer_reversal_stuck") && ult !== "resuelta_a_mano"'],
-  [A, DA, "and r.status = 'pending' and r.manual_at is null and r.attempts >= 1)", ')'],
+  [A, DA, "and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))", ')'],
+  // ── 9t3 (21 nov, LAUNCH «Dinero por clase, 21 nov · lo que quedó») ──
+  // (a) La transferencia al organizador y su reversión vuelven a Stripe con una llave de más de un día (o el barrido las reintenta sin tope).
+  [L, LQ, '  if (s.vieja && s.net > 0) { await alertaTransferenciaVieja(s); return false; }\n', ''],
+  [L, LQ, '  if (r.vieja) { await alertaReversionVieja(r); return false; }\n', ''],
+  [L, LQ, " and paying_at > now() - make_interval(hours => $1::int)", ''],
+  // (b) El cobro de Pro: una llave de más de un día, o 72 h en vez de las de cobros.
+  [L, SU, '  if (a.vieja) { await alertaCobroViejo(s.business_id, a); return { ok: false, msg: VIEJO, enCamino: true }; }\n', ''],
+  [L, SU, 'const HORAS_LLAVE = 23;', 'const HORAS_LLAVE = 72;'],
+  // (b) Como estaba: la pasarela antes de anotar; sin respuesta = «no»; en camino cuenta como cobro fallido; el cierre sin «una vez»; sin barrido; otra
+  // intención mientras una va en camino; la base sin su tope de una en camino.
+  [PR, SU, '  return terminarCobro(s, await anotarCobro(s, desde, alGuardar), enSesion);\n', '  await pasarela.cobrarDirecto({ centavos: 1, pm: s.card_pm, idem: "x", meta: {} });\n  return terminarCobro(s, await anotarCobro(s, desde, alGuardar), enSesion);\n'],
+  [PR, SU, "      await db().query(`update subscription_charges set attempts = least(10000, attempts + 1)", "      await db().query(`update subscription_charges set status = 'failed', attempts = least(10000, attempts + 1)"],
+  [PR, SU, 'if (!r.ok && !r.enCamino) await fallo(', 'if (!r.ok) await fallo('],
+  [PR, SU, "where id = $1::bigint and status = 'pending'`, [a.id, pi])).rowCount) return null;", "where id = $1::bigint`, [a.id, pi])).rowCount) return null;"],
+  [PR, BA, '        ["cobrosPro", async () => (await import("./suscripcion")).barrerCobrosPro()],\n', ''],
+  [PR, SU, "where business_id = $1 and (status = 'pending' or idem_key = $2 or (status = 'done' and period_start = $3::timestamptz))", "where business_id = $1 and (status = 'pending' or idem_key = $2)"],
+  // Una intención de un período ya cobrado llega a Stripe (la base la frenaría solo al cerrar, con el dinero ya cobrado).
+  [PR, SU, "y.status = 'done' and y.id <> z.id", "y.status = 'ninguno' and y.id <> z.id"],
+  [PR, MG, "create unique index if not exists subscription_charges_una_en_camino on subscription_charges (business_id) where status = 'pending';\n", ''],
+  // (c) «Resolver a mano» sin intentos antes de las 23 h (la base), o la pantalla con otras horas que la base.
+  [M, MG, "if old.attempts < 1 and old.created_at > now() - interval '23 hours' then", "if old.attempts < 1 and old.created_at > now() - interval '1 hours' then"],
+  [M, DA, "(r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))", "(r.attempts >= 1 or r.created_at <= now() - interval '1 hours'))"],
+  // (d) Boletos: la cancelación no resta, el boleto se repone solo, o la comisión cedida sigue contando con la devolución fallida.
+  [BF, CB, "    if (cx) await c.query(`update event_cancellations set refunded_cents = greatest(0, refunded_cents - $2) where id = $1::bigint`, [cx[1], r.amt]);\n", ''],
+  [BF, CB, '    return { ...r, bol };\n', "    await c.query(`update tickets set status = 'valid' where id in (select ticket_id from ticket_refund_lines where refund_id = $1::bigint)`, [r.id]);\n    return { ...r, bol };\n"],
+  [BF, MG, "from ticket_refund_lines l join refunds r on r.id = l.refund_id\n                      where l.operation_id = p.op and r.status in ('pending', 'done')", 'from ticket_refund_lines l where l.operation_id = p.op'],
+  // (f) La ayuda de la cita: se corta en el primer «no», reabre aunque algo haya salido, o muestra lo pedido en vez de lo que salió.
+  [AN, AY, '    else if (!d.ok) rechazo = d.msg;\n', '    else if (!d.ok) { rechazo = d.msg; break; }\n'],
+  [AN, AY, 'if (L.salio + L.va === 0) {', 'if (L.salio === 0) {'],
+  [AN, AY, '[h.id, L.salio + L.va]', '[h.id, devolver]'],
+  // (e) El webhook escucha un evento que no está escrito en su lista o en la ayuda del equipo.
+  [WE, RT, '     charge.refund.updated · charge.dispute.created', '     charge.dispute.created'],
+  [WE, DOC, '`charge.refund.updated` · `charge.dispute.created`', '`charge.dispute.created`'],
+  [WE, RT, '    case "charge.dispute.created":\n', '    case "charge.refund.created":\n    case "charge.dispute.created":\n'],
   // (8) El webhook no escucha charge.refund.updated; la fallida sin «una vez» o con lo devuelto restado sin el libro.
   [H, RT, '    case "charge.refund.updated": {', '    case "charge.refund.updated.x": {'],
   [H, CB, "where r.stripe_refund_id = $1 and r.status = 'done'", 'where r.stripe_refund_id = $1'],

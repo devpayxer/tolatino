@@ -2069,7 +2069,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (quién: «sistema»). Guardianes `llaveSoloUnDia`, `casoSeCierraConSuDevolucion`, `intencionAntesDeStripe`, `alertaSoloConCaminoReal`,
       `webhookDevolucionFallida`, `disputaCierraSuCaso` (y `devolucionEnDosPasos`, `estadoEnElWhere`, `devolucionUnaVez`, `soporteDevolverConTope`
       al día); al revés `alreves9tdinero`; prueba `din9t2` (base + pasarela de mentira + webhook firmado).
-- [ ] **→ 9t** · **Dinero por clase, 21 nov · lo que quedó (encontrado al cerrar la línea de arriba):** (a) `lib/evt-liquidacion.ts ›
+- [x] **→ 9t** · **Dinero por clase, 21 nov · lo que quedó (encontrado al cerrar la línea de arriba):** (a) `lib/evt-liquidacion.ts ›
       repararLiquidaciones` → `pagarUna` (transferencia al organizador) y `ejecutarReversion` reintentan con la MISMA llave sin tope de tiempo: pasadas
       24 h, Stripe podría transferir o revertir dos veces. Tope de 23 h y alerta, como las devoluciones (falta un tipo de alerta para transferencias en
       camino). (b) `lib/suscripcion.ts › cobrarPeriodo` cobra antes de anotar (se apoya en la llave del cobro: si el barrido no vuelve a pasar en 24 h,
@@ -2080,6 +2080,40 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Stripe de verdad, el endpoint del webhook debe suscribirse también a `charge.refund.updated` (hoy no hay lista escrita de eventos en el repo).
       (f) `responderAyudaCita` con un «no» de Stripe vuelve a abrir la solicitud aunque otra parte de esa devolución ya haya salido (lo que salió
       cuenta y no sale dos veces, pero la persona ve la solicitud abierta otra vez). (21 nov)
+      **Hecho (21 nov, rama dinero-9t3; migración 0199) — a, b, c, d, f; e a medias (la lista está escrita; suscribir el endpoint es al conectar):**
+      (a) La intención de la transferencia es el paso a 'paying' (paying_at); `pagarUna` y `ejecutarReversion` no llaman a Stripe con una llave de más de
+      `HORAS_LLAVE` (23 h, la de lib/cobros) y `repararLiquidaciones` reintenta solo dentro de ese tiempo; pasado, alerta `transfer_stuck` (nueva) o
+      `transfer_reversal_stuck`, una vez. (b) `subscription_charges` (0199): la intención del cobro de Pro (llave, monto, tarjeta y período fijos) y la
+      auditoría del dueño en UNA transacción ANTES de la pasarela (`anotarCobro`); la pasarela con esa llave (`terminarCobro`); el cierre ('done' + el
+      período + «cobrado», y «volvió a Pro» si venía de Free) en otra, una vez (`registrarPeriodo`). Sin respuesta de Stripe ya no es «cobro fallido»
+      (antes subía el intento: el siguiente iba con OTRA llave y podía cobrar dos veces): queda en camino y lo terminan `procesar` o el barrido nuevo
+      `barrerCobrosPro` (también los de «Volver a Pro») con la misma llave; pasadas 23 h, alerta `charge_stuck` (nueva) y nunca otro cobro. La base: una
+      intención en camino por negocio y un solo cobro hecho por período. (c) `dinero_a_mano` (0199, reemplaza la de 0141): también lo que lleva 23 h
+      anotado sin intentos, nunca antes; `alertasDinero` ofrece «Resolver a mano» con la misma regla. (d) `devolucionFallidaEnStripe` con boletos: en la
+      misma transacción la cancelación del evento resta lo devuelto (`evtcx-…`) y `evt_liq_calc` (0199) deja de contar la comisión cedida de una devolución
+      fallida; los boletos siguen devueltos (nada se repone ni se devuelve solo) y la alerta dice orden, quién pagó, códigos y titulares. (e) La lista de
+      eventos del webhook al principio de `route.ts` y en `docs/ayuda/admin-conciliacion.md` («Los eventos del webhook», ES/EN). (f) `responderAyudaCita`
+      manda todas las partes y mira el libro: reabre solo si nada salió ni va en camino; si algo salió, la respuesta se queda, `offer_cents` = lo que salió
+      + lo que va en camino y el negocio lee cuánto salió y cuánto no. Guardianes `cobroProAnotadoAntes`, `manoTrasLaLlave`, `boletoFallidoCoherente`,
+      `ayudaNoReabreConDinero`, `webhookEventosEscritos` (y `llaveSoloUnDia`, `alertaSoloConCaminoReal`, `devolucionEnDosPasos`, `estadoEnElWhere`,
+      `alertasDelDinero` al día); al revés `alreves9tdinero` (72/72); prueba `din9t3` (base + pasarela de mentira; 12 defectos inyectados la ponen roja).
+      `din9t3` cazó además que una intención pendiente de un período ya cobrado llegaba a Stripe (la base solo la frenaba al cerrar, con el dinero ya
+      cobrado): `anotarCobro` y `terminarCobro` lo impiden antes de la pasarela. Lo que quedó, en la línea de abajo.
+- [ ] **→ 9t** · **Dinero por clase, 21 nov · lo que quedó de 9t3 (21 nov):** (1) **(e) al conectar Stripe de verdad:** suscribir el endpoint del
+      webhook a los 14 eventos de la lista (`docs/ayuda/admin-conciliacion.md › Los eventos del webhook`), también «eventos de cuentas conectadas» (los
+      `payout.*`). (2) **Sin camino para cerrar `transfer_stuck` y `charge_stuck`:** la alerta es informativa. Una transferencia que Stripe sí hizo queda
+      'paying' (falta anotar el `transfer_id` hallado en Stripe y pasarla a 'paid', con nota y auditoría); un cobro de Pro en camino de más de 23 h deja al
+      negocio con el plan como estaba (sigue con Pro si lo tenía) y bloquea otro cobro hasta que alguien decida «se cobró» (cerrar con el `pi`) o «no se
+      cobró» (dejarla fallida). Camino: «Resolver a mano» de `notaAlerta` con esas dos salidas, en `lib/dinero-alertas.ts` y `app/admin/Planes.tsx`. (3)
+      **Devolver otra vez unos boletos** (alerta `refund_failed` de boletos): no hay acción. `ticket_refund_lines` es única por boleto (0109) y
+      Transacciones › Devolver no acepta órdenes `tickets` (`app/admin/acciones-tx.ts › devolverTx`). Camino: permitir `tickets` en `devolverTx` (cobro
+      `full`, `devolverPago`, sin líneas de boletos) o una acción «Devolver otra vez» en la alerta; reponer el boleto, desde Eventos › boletos. Mientras
+      tanto, si la fecha todavía no se liquidó, ese dinero cuenta para el organizador el martes (lo que se devuelva después se descuenta como ajuste). (4)
+      **Por clase, la pasarela antes de anotar o con una llave por intento** (no arreglado aquí): `lib/planes.ts › cobrarPeriodo` (`cobrarFuera`, llave
+      `plan-<sub>-a<intentos>`: un «sin respuesta» cuenta como rechazo, sube el contador de intentos y el siguiente cobro va con OTRA llave — podría cobrar
+      dos veces el mismo período); `lib/rentas.ts` (un día más: `renta-<id>-dia<n>-a<intentos>`; al recoger: `renta-<id>-renta-a<n>`; tarde:
+      `renta-<id>-tarde`, sin tope de 23 h); `lib/patrocinio.ts › cobrar` fuera de sesión (`cobrarDirecto` antes de guardar el período). Mismo patrón que
+      `subscription_charges`. (5) `din9t3` corrió aquí contra una base aislada; en el CI, la primera vez con la confirmación. (21 nov)
 - [x] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no

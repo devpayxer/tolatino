@@ -82,59 +82,160 @@ async function soltarVerificaciones(negocio: string): Promise<boolean> {
       continue;
     }
     const r = await pasarela.liberar(x.pi);
-    if (r.ok && x.status === "pendiente") await db().query(`update payment_actions set status = 'vencida' where pi = $1::text and status = 'pendiente'`, [x.pi]);
+    if (r.ok && x.status === "pendiente") {
+      await db().query(`update payment_actions set status = 'vencida' where pi = $1::text and status = 'pendiente'`, [x.pi]);
+      // 9t3 · La intención de ese cobro (esperaba al banco) queda fallida: nada se cobró con ella.
+      await db().query(`update subscription_charges set status = 'failed', last_error = 'verificacion_vencida' where stripe_pi = $1::text and status = 'action'`, [x.pi]);
+    }
   }
   return cobrado;
 }
 /* 9n-4 · enSesion: «Volver a Pro» desde el panel (el dueño está en Tu plan): la hoja del banco se abre ahí mismo (hoja), sin el aviso con el enlace, y la
    verificación vive lo de cualquier cobro en sesión (verificacion_min); si la cierra, el barrido la suelta y «Volver a Pro» es otro intento. */
-async function cobrarPeriodo(s: Fila, desde: number, enSesion = false): Promise<{ ok: true } | { ok: false; msg: Bi; verificar?: true; hoja?: import("./pagos/pasarela").Verificar }> {
+/* 21 nov (9t3) · El cobro de Pro, como el dinero que sale (lib/cobros): (1) la INTENCIÓN se anota en una transacción (subscription_charges 'pending',
+   con su llave, el monto, la tarjeta y el período fijos; y la auditoría de quien decide, si la hay: alGuardar); (2) la pasarela con ESA llave; (3) el
+   cierre en otra transacción, una vez (registrarPeriodo: 'done' where status = 'pending', el período y el evento). Si Stripe no contesta (o el proceso
+   muere entre (1) y (3)), la intención sigue 'pending': nadie cobra otra cosa a ese negocio (una sola en camino, la base lo impone) y procesar o el
+   barrido (barrerCobrosPro) la terminan con la MISMA llave mientras Stripe la recuerda (HORAS_LLAVE). Pasado eso no se pregunta más (podría cobrar
+   dos veces): el equipo de dinero recibe charge_stuck, una vez, y lo mira en Stripe. Nunca dos cobros del mismo período (un solo 'done' por período). */
+const HORAS_LLAVE = 23; // las de lib/cobros.ts (HORAS_LLAVE): el guardián llaveSoloUnDia las compara
+/* Lo que la pasarela contesta SIN decir si cobró: la intención sigue en camino. Cualquier otro código es un «no» de verdad. */
+const SIN_RESPUESTA = new Set(["red", "api_error", "error", "rate_limit", "rate_limit_error", "lock_timeout", "idempotency_key_in_use", "idempotency_error", "processing"]);
+type Intencion = { id: string; idem: string; monto: number; pm: string; payer: string; desde: number; cycle: string; st: string; vieja: boolean; n: number; err: string | null; nueva: boolean };
+const EN_CAMINO: Bi = { es: "Stripe no contestó. El cobro de Pro quedó en camino y se termina solo en unos minutos: no lo repitas.", en: "Stripe did not answer. The Pro charge is on its way and finishes by itself in a few minutes: do not repeat it." };
+const VIEJO: Bi = { es: "Hay un cobro de Pro de hace más de un día sin respuesta de Stripe: el equipo de dinero lo revisa. No lo repitas.", en: "There is a Pro charge from over a day ago with no answer from Stripe: the money team reviews it. Do not repeat it." };
+const YA_RECHAZADO: Bi = { es: "Tu banco ya rechazó este cobro. Prueba con otra tarjeta.", en: "Your bank already declined this charge. Try another card." };
+const SEL_INT = `id::text, idem_key as idem, amount_cents as monto, pm, payer_user_id::text as payer, (extract(epoch from period_start) * 1000)::float8 as desde, cycle, status as st,
+                 created_at <= now() - make_interval(hours => ${HORAS_LLAVE}) as vieja, attempts as n, last_error as err`;
+type ResCobro = { ok: true } | { ok: false; msg: Bi; verificar?: true; hoja?: import("./pagos/pasarela").Verificar; enCamino?: true };
+
+/* Paso 1. La intención de ESTE negocio que sigue en camino (de cualquier período) se termina primero; si no hay, la de esta llave (hecha o rechazada)
+   o una nueva. Con el candado de los cobros del negocio en la transacción: dos a la vez no anotan dos. */
+async function anotarCobro(s: Fila, desde: number, alGuardar?: (c: PoolClient) => Promise<unknown>): Promise<Intencion> {
+  const monto = precio(s.cycle), idem = `sub-${s.business_id}-${new Date(desde).toISOString()}-${s.card_pm!.slice(-16)}-${s.failed_attempts}`;
+  return tx(async (c) => {
+    await c.query(`select pg_advisory_xact_lock(hashtext('sub-cobro:' || $1))`, [s.business_id]);
+    // También el cobro ya hecho de ESE período (con otra llave: otra tarjeta, otro intento, la verificación del banco): no se anota otro.
+    const ya = (await c.query<Omit<Intencion, "nueva">>(`select ${SEL_INT} from subscription_charges where business_id = $1 and (status = 'pending' or idem_key = $2 or (status = 'done' and period_start = $3::timestamptz))
+                                                         order by (status = 'pending') desc, id desc limit 1`, [s.business_id, idem, new Date(desde).toISOString()])).rows[0];
+    if (ya) return { ...ya, nueva: false };
+    const n = (await c.query<Omit<Intencion, "nueva">>(
+      `insert into subscription_charges (business_id, city_id, period_start, cycle, amount_cents, pm, payer_user_id, idem_key)
+       values ($1, (select city_id from businesses where id = $1), $2::timestamptz, $3, $4, $5, $6::uuid, $7) returning ${SEL_INT}`,
+      [s.business_id, new Date(desde).toISOString(), s.cycle === "year" ? "year" : "month", monto, s.card_pm, s.payer_user_id, idem])).rows[0]!;
+    await alGuardar?.(c);
+    return { ...n, nueva: true };
+  });
+}
+async function cobrarPeriodo(s: Fila, desde: number, enSesion = false, alGuardar?: (c: PoolClient) => Promise<unknown>): Promise<ResCobro> {
   if (!s.card_pm || !s.payer_user_id) return { ok: false, msg: { es: "Falta la tarjeta.", en: "The card is missing." } };
   if (await soltarVerificaciones(s.business_id)) return { ok: true };
-  const monto = precio(s.cycle), idem = `sub-${s.business_id}-${new Date(desde).toISOString()}-${s.card_pm.slice(-16)}-${s.failed_attempts}`;
-  const cliente = await pasarela.cliente(s.payer_user_id).catch(() => null);
-  const r = await pasarela.cobrarDirecto({ centavos: monto, pm: s.card_pm, cliente, idem, meta: { business_id: s.business_id, kind: "pro" } });
+  return terminarCobro(s, await anotarCobro(s, desde, alGuardar), enSesion);
+}
+/* Pasos 2 y 3 (también desde el barrido). Nunca con una llave de más de HORAS_LLAVE. */
+async function terminarCobro(s: Fila, a: Intencion, enSesion = false): Promise<ResCobro> {
+  if (a.st === "done") return { ok: true };
+  if (a.st === "failed") return { ok: false, msg: YA_RECHAZADO };
+  if (a.st !== "pending") return { ok: false, msg: { es: "Tu banco pide confirmar que eres tú. Confírmalo para seguir.", en: "Your bank asks you to confirm it is you. Confirm it to continue." }, verificar: true };
+  if (a.vieja) { await alertaCobroViejo(s.business_id, a); return { ok: false, msg: VIEJO, enCamino: true }; }
+  // Un período que ya tiene su cobro hecho (otra intención, o la verificación del banco que se completó mientras esta esperaba) no va a Stripe:
+  // la que nunca se mandó queda fallida (nada salió); la que ya se mandó y no contestó, alerta (Stripe pudo cobrarla también) y sigue en camino.
+  if ((await db().query(`select 1 from subscription_charges z join subscription_charges y on y.business_id = z.business_id and y.period_start = z.period_start and y.status = 'done' and y.id <> z.id
+                          where z.id = $1::bigint`, [a.id])).rowCount) {
+    if (a.n === 0 && (await db().query(`update subscription_charges set status = 'failed', last_error = 'periodo_ya_cobrado' where id = $1::bigint and status = 'pending' and attempts = 0`, [a.id])).rowCount) return { ok: true };
+    await alertaCobroViejo(s.business_id, a, true);
+    return { ok: false, msg: VIEJO, enCamino: true };
+  }
+  const cliente = await pasarela.cliente(a.payer).catch(() => null);
+  const r = await pasarela.cobrarDirecto({ centavos: a.monto, pm: a.pm, cliente, idem: a.idem, meta: { business_id: s.business_id, kind: "pro" } })
+    .catch(() => ({ ok: false as const, codigo: "error", mensaje: EN_CAMINO, pi: undefined, secreto: undefined }));
   if (!r.ok && r.codigo === "authentication_required" && r.pi) {
     // 9k · 3-D Secure fuera de sesión (L382): el banco pide al dueño confirmar. Queda la verificación a su nombre (hasta el próximo intento) y le
     // llega el aviso con el enlace a la hoja; si confirma, el período se completa (completarRenovacion). Cuenta como intento para el calendario.
+    await db().query(`update subscription_charges set status = 'action', stripe_pi = $2 where id = $1::bigint and status = 'pending'`, [a.id, r.pi]);
     const { registrarAccion } = await import("./pagos/pasarela");
     const city = (await db().query<{ c: string | null }>(`select city_id as c from businesses where id = $1`, [s.business_id])).rows[0]?.c ?? null;
-    const hoja = await registrarAccion({ pi: r.pi, base: idem, idem, quien: { id: s.payer_user_id, negocio: s.business_id, ciudad: city }, kind: "renovacion", monto, pm: s.card_pm, secreto: r.secreto ?? "", minutos: enSesion ? undefined : (s.failed_attempts === 0 ? 3 : 4) * 1440 });
-    const pide = await evento(s.business_id, "action_required", { monto, note: { pi: r.pi, ...(enSesion ? { en_sesion: true } : {}) }, idem: `ver-pide-${r.pi}` });
-    if (!enSesion && pide) await (await import("./avisos")).avisarNegocio(s.business_id, "pro_verify", { monto: money(monto), negocio: await nombre(s.business_id) }, { href: `/pago/verificar?pi=${encodeURIComponent(r.pi)}` });
+    const hoja = await registrarAccion({ pi: r.pi, base: a.idem, idem: a.idem, quien: { id: a.payer, negocio: s.business_id, ciudad: city }, kind: "renovacion", monto: a.monto, pm: a.pm, secreto: r.secreto ?? "", minutos: enSesion ? undefined : (s.failed_attempts === 0 ? 3 : 4) * 1440 });
+    const pide = await evento(s.business_id, "action_required", { monto: a.monto, note: { pi: r.pi, ...(enSesion ? { en_sesion: true } : {}) }, idem: `ver-pide-${r.pi}` });
+    if (!enSesion && pide) await (await import("./avisos")).avisarNegocio(s.business_id, "pro_verify", { monto: money(a.monto), negocio: await nombre(s.business_id) }, { href: `/pago/verificar?pi=${encodeURIComponent(r.pi)}` });
     return { ok: false, msg: r.mensaje, verificar: true, ...(enSesion ? { hoja } : {}) };
   }
-  if (!r.ok) return { ok: false, msg: r.mensaje };
-  await registrarPeriodo(s, desde, monto, r.id, idem);
+  if (!r.ok) {
+    const codigo = String(r.codigo ?? "error").slice(0, 60);
+    if (SIN_RESPUESTA.has(codigo)) {
+      await db().query(`update subscription_charges set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);
+      return { ok: false, msg: EN_CAMINO, enCamino: true };
+    }
+    // Un «no» de verdad: nada se cobró; la intención queda rechazada (el siguiente intento es otra llave).
+    await db().query(`update subscription_charges set status = 'failed', attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [a.id, codigo]);
+    return { ok: false, msg: r.mensaje };
+  }
+  await registrarPeriodo(s, a, r.id);
   return { ok: true };
 }
-/* El período cobrado: Pro activo hasta la fecha, el evento, el aviso y el recibo. Una vez por llave (subscription_events.idem_key).
+async function alertaCobroViejo(negocio: string, a: Intencion, doble = false) {
+  const ciudad = (await db().query<{ c: string | null }>(`select city_id as c from businesses where id = $1`, [negocio])).rows[0]?.c ?? null;
+  await (await import("./dinero-alertas")).alertar("charge_stuck", a.idem, { monto: a.monto, negocio, ciudad, detalle: doble ? {
+    es: `Cobro de Pro de ${money(a.monto)} que Stripe no contestó (${a.n} intentos), de un período que ya quedó cobrado con otro cobro: no se pide otra vez. Mira en Stripe si también se cobró y, si es así, devuélvelo.`,
+    en: `Pro charge of ${money(a.monto)} that Stripe did not answer (${a.n} attempts), for a period already paid by another charge: it is not requested again. Check in Stripe whether it was charged too and, if so, refund it.` } : {
+    es: `Cobro de Pro de ${money(a.monto)} sin respuesta de Stripe en ${HORAS_LLAVE} h (${a.n} intentos, ${a.err ?? "sin motivo"}): no se cobra otra vez. Mira en Stripe si se cobró.`,
+    en: `Pro charge of ${money(a.monto)} with no answer from Stripe in ${HORAS_LLAVE} h (${a.n} attempts, ${a.err ?? "no reason"}): it is not charged again. Check in Stripe whether it was charged.` } }).catch(() => undefined);
+}
+/* El período cobrado (paso 3): la intención 'done' (una vez: quien llegue segundo, otra pestaña o el barrido, no aplica ni avisa nada), Pro activo
+   hasta la fecha y el evento, en UNA transacción; después el aviso y el recibo.
    21 nov (9t2) · Con el estado que se leyó en el `where` (y mirando rowCount): «Volver a Pro» va fuera del candado del plan, y una cortesía, «Anular»
    u otro cambio hecho en ese segundo no se pisa. Si cambió, el cobro (que ya salió) queda en el historial con el estado que encontró y el equipo de
    dinero recibe la alerta para decidir si se devuelve; al dueño no se le dice «cobrado» ni se le manda recibo de un período que no se aplicó. */
-async function registrarPeriodo(s: Fila, desde: number, monto: number, pi: string, idem: string) {
-  if (!s.payer_user_id || !s.card_pm) return;
-  const hasta = new Date(desde); hasta.setMonth(hasta.getMonth() + (s.cycle === "year" ? 12 : 1));
-  const aplicado = await tx(async (c) => {
+async function registrarPeriodo(s: Fila, a: Intencion, pi: string) {
+  const hasta = new Date(a.desde); hasta.setMonth(hasta.getMonth() + (a.cycle === "year" ? 12 : 1));
+  const h = await tx(async (c) => {
+    if (!(await c.query(`update subscription_charges set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending'`, [a.id, pi])).rowCount) return null;
     const u = await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1 and status = $3`,
       [s.business_id, hasta.toISOString(), s.status]);
-    if (!u.rowCount) return false;
+    if (!u.rowCount) {
+      const ahora = (await c.query<{ st: string | null }>(`select status as st from subscriptions where business_id = $1`, [s.business_id])).rows[0]?.st ?? "sin plan";
+      await evento(s.business_id, "charged", { monto: a.monto, note: { pi, hasta: hasta.toISOString(), no_aplicado: ahora, esperaba: s.status }, idem: a.idem }, c);
+      return { aplicado: false, ahora };
+    }
     await plan(c, s.business_id, "pro");
-    return true;
+    await evento(s.business_id, "charged", { monto: a.monto, note: { pi, hasta: hasta.toISOString() }, idem: a.idem }, c);
+    // «Volver a Pro» desde Free: la vuelta queda en el historial con el cobro (la cierre la acción o el barrido).
+    if (s.status === "ended") await evento(s.business_id, "back_to_pro", { actor: a.payer }, c);
+    return { aplicado: true, ahora: "active" };
   });
-  if (!aplicado) {
-    const ahora = (await db().query<{ st: string | null }>(`select status as st from subscriptions where business_id = $1`, [s.business_id])).rows[0]?.st ?? "sin plan";
-    await evento(s.business_id, "charged", { monto, note: { pi, hasta: hasta.toISOString(), no_aplicado: ahora, esperaba: s.status }, idem });
+  if (!h) return;
+  if (!h.aplicado) {
     const ciudad = (await db().query<{ c: string | null }>(`select city_id as c from businesses where id = $1`, [s.business_id])).rows[0]?.c ?? null;
-    await (await import("./dinero-alertas")).alertar("charge_unapplied", idem, { monto, negocio: s.business_id, ciudad, detalle: {
-      es: `Se cobró Pro (${money(monto)}) mientras el plan cambiaba (esperaba «${s.status}», ahora «${ahora}»): no se aplicó el período. Decide si se devuelve.`,
-      en: `Pro was charged (${money(monto)}) while the plan was changing (expected «${s.status}», now «${ahora}»): the period was not applied. Decide whether to refund it.` } }).catch(() => undefined);
+    await (await import("./dinero-alertas")).alertar("charge_unapplied", a.idem, { monto: a.monto, negocio: s.business_id, ciudad, detalle: {
+      es: `Se cobró Pro (${money(a.monto)}) mientras el plan cambiaba (esperaba «${s.status}», ahora «${h.ahora}»): no se aplicó el período. Decide si se devuelve.`,
+      en: `Pro was charged (${money(a.monto)}) while the plan was changing (expected «${s.status}», now «${h.ahora}»): the period was not applied. Decide whether to refund it.` } }).catch(() => undefined);
     return;
   }
-  await evento(s.business_id, "charged", { monto, note: { pi, hasta: hasta.toISOString() }, idem });
-  const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [s.card_pm])).rows[0];
-  await avisarDueño(s.business_id, "pro_charged", { monto: money(monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
-  await (await import("./correo/recibos")).reciboPro(s.business_id, s.payer_user_id, monto, hasta.toISOString(), t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", idem); // 2q
+  const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [a.pm])).rows[0];
+  await avisarDueño(s.business_id, "pro_charged", { monto: money(a.monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
+  await (await import("./correo/recibos")).reciboPro(s.business_id, a.payer, a.monto, hasta.toISOString(), t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", a.idem); // 2q
+}
+/* Barrido: los cobros de Pro que quedaron en camino (Stripe no contestó, o el proceso murió entre la intención y el cierre; también los de «Volver a
+   Pro», que procesar no mira) se terminan con su llave, con el candado del plan, dentro de HORAS_LLAVE; los más viejos, la alerta (una vez). */
+export async function barrerCobrosPro(): Promise<number> {
+  const L = (await db().query<{ id: string; biz: string }>(
+    `select id::text, business_id as biz from subscription_charges where status = 'pending' and created_at < now() - interval '2 minutes'
+        and created_at > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE])).rows;
+  let n = 0;
+  for (const x of L) {
+    const h = await conCandado(x.biz, async (k) => {
+      const s = (await k.query<Fila>(`select * from subscriptions where business_id = $1`, [x.biz])).rows[0];
+      const a = (await k.query<Omit<Intencion, "nueva">>(`select ${SEL_INT} from subscription_charges where id = $1::bigint and status = 'pending'`, [x.id])).rows[0];
+      if (!s || !a) return false;
+      return (await terminarCobro(s, { ...a, nueva: false })).ok;
+    });
+    if (h.tomado && h.r) n++;
+  }
+  const V = (await db().query<Omit<Intencion, "nueva"> & { biz: string }>(
+    `select ${SEL_INT}, business_id as biz from subscription_charges c where status = 'pending' and created_at <= now() - make_interval(hours => $1::int)
+        and not exists (select 1 from money_alerts a where a.kind = 'charge_stuck' and a.subject_id = c.idem_key) order by created_at limit 50`, [HORAS_LLAVE])).rows;
+  for (const a of V) await alertaCobroViejo(a.biz, { ...a, nueva: false });
+  return n;
 }
 
 /* 9k · El dueño confirmó en su banco el cobro de Pro que pedía verificar (lib/pagos/verificacion.ts ya miró que Stripe lo cobró). Con el candado del
@@ -162,6 +263,9 @@ export async function completarRenovacion(negocio: string, pi: string, candado =
     const ev = await c.query(`insert into subscription_events (business_id, kind, amount_cents, note, actor_id, idem_key) values ($1, 'charged', $2, $3::jsonb, null, $4) on conflict (idem_key) do nothing`,
       [negocio, a.monto, JSON.stringify({ pi, hasta: hasta.toISOString(), verificado: true }), a.idem]);
     if (!ev.rowCount) return null;
+    // 9t3 · La intención de ese cobro (esperaba al banco) queda hecha en la misma transacción (salvo que el período ya tenga otro cobro hecho).
+    await c.query(`update subscription_charges z set status = 'done', stripe_pi = coalesce(z.stripe_pi, $2::text) where z.idem_key = $1 and z.status in ('action', 'pending')
+                     and not exists (select 1 from subscription_charges y where y.business_id = z.business_id and y.period_start = z.period_start and y.status = 'done')`, [a.idem, pi]);
     await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1`,
       [negocio, hasta.toISOString()]);
     await plan(c, negocio, "pro");
@@ -218,11 +322,13 @@ export async function procesar(negocio?: string) {
     if (s.status === "trial") {
       if (s.trial_choice === "card" && s.card_pm) {
         const r = await cobrarPeriodo(s, Date.parse(s.trial_ends_at!));
-        if (!r.ok) await fallo(s, "verificar" in r);
+        if (!r.ok && !r.enCamino) await fallo(s, "verificar" in r);
       } else await aFree(s.business_id, s.trial_choice === "no_continue" ? "decidio" : "fin_prueba", s.status);
     } else if (s.status === "canceling") await aFree(s.business_id, "pasar_a_free", s.status);
-    else if (s.status === "active") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end!)); if (!r.ok) await fallo(s, "verificar" in r); }
-    else if (s.status === "past_due") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end ?? s.trial_ends_at!)); if (!r.ok) await fallo(s, "verificar" in r); }
+    // 9t3 · Un cobro en camino (Stripe no contestó) no es un «no» del banco: no cuenta como intento fallido (otro intento sería otra llave: cobraría dos
+    // veces); el siguiente paso de procesar o el barrido lo terminan con su llave.
+    else if (s.status === "active") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end!)); if (!r.ok && !r.enCamino) await fallo(s, "verificar" in r); }
+    else if (s.status === "past_due") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end ?? s.trial_ends_at!)); if (!r.ok && !r.enCamino) await fallo(s, "verificar" in r); }
     else if (s.status === "courtesy") await aFree(s.business_id, "fin_cortesia", s.status);
   });
 }
@@ -273,14 +379,11 @@ export async function seguirConPro(negocio: string, userId: string, pm: string, 
     payer_user_id: userId, card_pm: card, current_period_end: null, failed_attempts: 0, next_attempt_at: null, courtesy_until: null, ended_at: null };
   await db().query(`insert into subscriptions (business_id, status, cycle, payer_user_id, card_pm, trial_choice) values ($1, 'ended', $2, $3, $4, 'card')
                     on conflict (business_id) do update set cycle = $2, payer_user_id = $3, card_pm = $4, updated_at = now()`, [negocio, cyc, userId, card]);
-  const r = await cobrarPeriodo(fila, Math.floor(Date.now() / 60_000) * 60_000, true); // el mismo minuto y tarjeta = el mismo intento (doble toque)
+  // 9t3 · La auditoría del dueño entra con la intención del cobro (en su transacción, una vez); «back_to_pro» entra con el cobro hecho (registrarPeriodo),
+  // lo cierre esta acción o el barrido. Con un cobro en camino, el mismo toque otra vez no anota otro: termina ese.
+  const r = await cobrarPeriodo(fila, Math.floor(Date.now() / 60_000) * 60_000, true, alGuardar ? (c) => alGuardar(c, true) : undefined); // el mismo minuto y tarjeta = el mismo intento (doble toque)
   // 9n-4 · El banco pide confirmar: la hoja se abre en Tu plan; al confirmar, la verificación completa el período (completarRenovacion), sin otro cobro.
   if (!r.ok) return { ok: false, msg: r.msg, ...(r.hoja ? { verificar: r.hoja } : {}) };
-  // El cobro va a Stripe fuera de la base; la vuelta a Pro queda en el historial y en la auditoría juntos.
-  await tx(async (c) => {
-    await evento(negocio, "back_to_pro", { actor: userId }, c);
-    await alGuardar?.(c, true);
-  });
   return { ok: true, cobrado: true };
 }
 async function procesarYa(negocio: string) {
@@ -361,8 +464,10 @@ export async function reintentarCobro(negocio: string, actor: string, alGuardar?
   });
   if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");
   await procesar(negocio);
-  const s = (await db().query<{ status: string }>(`select status from subscriptions where business_id = $1`, [negocio])).rows[0];
-  return s?.status === "active" ? { ok: true } : no("Se intentó y el banco volvió a rechazarla.", "We tried and the bank declined again.");
+  const s = (await db().query<{ status: string; camino: boolean }>(`select status, exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'pending') as camino from subscriptions where business_id = $1`, [negocio])).rows[0];
+  if (s?.status === "active") return { ok: true };
+  // 9t3 · Stripe no contestó: el cobro quedó en camino (no es un «no» del banco) y se termina solo con su llave.
+  return s?.camino ? { ok: false, msg: EN_CAMINO } : no("Se intentó y el banco volvió a rechazarla.", "We tried and the bank declined again.");
 }
 /* Anular la suscripción (Super Admin, prototipo subX): Pro pagado sigue hasta el fin del período y luego Free; en prueba,
    el día 30 pasa a Free; con cobro fallido, Free hoy (ese período no se pagó). No se devuelve lo cobrado; nada se borra.

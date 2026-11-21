@@ -95,13 +95,19 @@ async function retenerAuto(id: string, hold: "nuevo" | "disputa" | "cuenta") {
   await (await import("./avisos")).avisarNegocio(s.biz, "evt_pago_retenido", { evento: s.t.es, cuando: `${diaCorto(s.dia, true)} · ${hora(s.h0)}`, motivo: MOTIVO_HOLD[hold]!.es }, { href: `/panel/${s.biz}/cobros`, ref: ["evt_liq", `${id}:${hold}`] });
 }
 
-/* La transferencia de una liquidación ya en 'paying' (monto y destino fijos). Idempotente: la misma llave en cada intento. */
+/* La transferencia de una liquidación ya en 'paying' (monto y destino fijos). Idempotente: la misma llave en cada intento.
+   21 nov (9t3) · La intención es el paso a 'paying' (paying_at, en su transacción). Pasadas HORAS_LLAVE (23 h; las de lib/cobros) desde ahí, Stripe
+   ya no recuerda la llave: preguntar otra vez podría transferir dos veces. Desde ahí nadie la vuelve a mandar (ni el barrido ni otra llamada): el
+   equipo de dinero recibe la alerta transfer_stuck (una vez por liquidación) y lo mira en Stripe. */
 export async function pagarUna(id: string): Promise<boolean> {
-  const s = (await db().query<{ id: string; st: string; net: number; dest: string; idem: string; eid: string; fid: string; biz: string; city: string; t: Bi; dia: string; h0: number }>(
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  const s = (await db().query<{ id: string; st: string; net: number; dest: string; idem: string; eid: string; fid: string; biz: string; city: string; t: Bi; dia: string; h0: number; vieja: boolean; n: number; err: string | null }>(
     `select s.id::text, s.status as st, s.net_cents as net, s.destination as dest, s.idem_key as idem, s.event_id::text as eid, s.event_date_id::text as fid, s.business_id as biz, s.city_id as city,
-            e.title as t, d.local_date::text as dia, (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0
-       from event_settlements s join events e on e.id = s.event_id join event_dates d on d.id = s.event_date_id join cities ci on ci.id = s.city_id where s.id = $1::bigint`, [id])).rows[0];
+            e.title as t, d.local_date::text as dia, (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
+            s.paying_at <= now() - make_interval(hours => $2::int) as vieja, s.attempts as n, s.last_error as err
+       from event_settlements s join events e on e.id = s.event_id join event_dates d on d.id = s.event_date_id join cities ci on ci.id = s.city_id where s.id = $1::bigint`, [id, HORAS_LLAVE_STRIPE])).rows[0];
   if (!s || s.st !== "paying") return s?.st === "paid";
+  if (s.vieja && s.net > 0) { await alertaTransferenciaVieja(s); return false; }
   let tr: string | null = null;
   if (s.net > 0) {
     const r = await pasarela.transferir({ centavos: s.net, destino: s.dest, grupo: `evt-${s.eid}`, idem: s.idem, meta: { event_date_id: s.fid, business_id: s.biz, settlement: s.id } }).catch(() => ({ ok: false as const, codigo: "error" }));
@@ -121,15 +127,44 @@ export async function pagarUna(id: string): Promise<boolean> {
   return ok;
 }
 
-/* 3) Lo que quedó en camino (la app se cortó o Stripe no respondió): se reintenta con la misma llave y el mismo monto. */
+/* 3) Lo que quedó en camino (la app se cortó o Stripe no respondió): se reintenta con la misma llave y el mismo monto MIENTRAS Stripe la recuerda
+   (HORAS_LLAVE desde la intención: paying_at de la liquidación, created_at de la reversión). Pasado eso no se pregunta más: una alerta al equipo de
+   dinero por transferencia (transfer_stuck) o por reversión (transfer_reversal_stuck), una vez; nunca una segunda transferencia ni reversión. */
 export async function repararLiquidaciones(): Promise<number> {
-  const L = (await db().query<{ id: string }>(`select id::text from event_settlements where status = 'paying' and paying_at < now() - interval '1 minute' order by paying_at limit 50`)).rows;
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  const L = (await db().query<{ id: string }>(
+    `select id::text from event_settlements where status = 'paying' and paying_at < now() - interval '1 minute' and paying_at > now() - make_interval(hours => $1::int)
+      order by paying_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   let n = 0;
   for (const s of L) if (await pagarUna(s.id)) n++;
-  // Las reversiones pendientes, con su llave.
-  const R = (await db().query<{ id: string }>(`select id::text from event_settlement_reversals where status = 'pending' and manual_at is null and created_at < now() - interval '30 seconds' order by created_at limit 50`)).rows;
+  // Las viejas: solo la alerta (pagarUna no llama a Stripe con una llave de más de HORAS_LLAVE).
+  const LV = (await db().query<{ id: string }>(
+    `select s.id::text from event_settlements s where s.status = 'paying' and s.net_cents > 0 and s.paying_at <= now() - make_interval(hours => $1::int)
+        and not exists (select 1 from money_alerts a where a.kind = 'transfer_stuck' and a.subject_id = s.id::text) order by s.paying_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
+  for (const s of LV) await pagarUna(s.id);
+  // Las reversiones pendientes, con su llave, dentro del mismo tiempo; las viejas, la alerta.
+  const R = (await db().query<{ id: string }>(
+    `select id::text from event_settlement_reversals where status = 'pending' and manual_at is null and created_at < now() - interval '30 seconds'
+        and created_at > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   for (const r of R) await ejecutarReversion(r.id);
+  const RV = (await db().query<{ id: string }>(
+    `select r.id::text from event_settlement_reversals r where r.status = 'pending' and r.manual_at is null and r.created_at <= now() - make_interval(hours => $1::int)
+        and not exists (select 1 from money_alerts a where a.kind = 'transfer_reversal_stuck' and a.subject_id = r.id::text) order by r.created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
+  for (const r of RV) await ejecutarReversion(r.id);
   return n;
+}
+/* Las alertas de lo que pasó HORAS_LLAVE en camino (una por liquidación o por reversión: money_alerts es única por tipo y objeto). */
+async function alertaTransferenciaVieja(s: { id: string; net: number; biz: string; city: string; n: number; err: string | null; t: Bi; dia: string }) {
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  await (await import("./dinero-alertas")).alertar("transfer_stuck", s.id, { monto: s.net, negocio: s.biz, ciudad: s.city, detalle: {
+    es: `Transferencia de ${dinero(s.net)} al organizador (${s.t.es}, ${s.dia}) sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h (${s.n} intentos, ${s.err ?? "sin motivo"}): ya no se pide otra vez. Mira en Stripe si salió.`,
+    en: `Transfer of ${dinero(s.net)} to the organizer (${s.t.en}, ${s.dia}) with no answer from Stripe in ${HORAS_LLAVE_STRIPE} h (${s.n} attempts, ${s.err ?? "no reason"}): it is not requested again. Check in Stripe whether it went out.` } }).catch(() => undefined);
+}
+async function alertaReversionVieja(r: { id: string; amt: number; biz: string; city: string; n: number; err: string | null }) {
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  await (await import("./dinero-alertas")).alertar("transfer_reversal_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: {
+    es: `Revertir ${dinero(r.amt)} al organizador: sin respuesta de Stripe en ${HORAS_LLAVE_STRIPE} h (${r.n} intentos, ${r.err ?? "sin motivo"}): ya no se pide otra vez. Mira en Stripe si se revirtió y resuélvela a mano.`,
+    en: `Reverse ${dinero(r.amt)} from the organizer: no answer from Stripe in ${HORAS_LLAVE_STRIPE} h (${r.n} attempts, ${r.err ?? "no reason"}): it is not requested again. Check in Stripe whether it was reversed and resolve it by hand.` } }).catch(() => undefined);
 }
 
 /* 4) Ajustes sin liquidación siguiente: si el organizador debe algo de fechas ya pagadas y en evt_ajuste_dias no tuvo otra liquidación (ni
@@ -166,12 +201,16 @@ export async function revertirDeudas(): Promise<number> {
   return n;
 }
 async function ejecutarReversion(id: string): Promise<boolean> {
-  const r = (await db().query<{ id: string; st: string; amt: number; idem: string; tr: string; sid: string; city: string; net: number }>(
-    `select r.id::text, r.status as st, r.amount_cents as amt, r.idem_key as idem, s.transfer_id as tr, s.id::text as sid, s.city_id as city, s.net_cents as net
-       from event_settlement_reversals r join event_settlements s on s.id = r.settlement_id where r.id = $1::bigint`, [id])).rows[0];
+  const { HORAS_LLAVE_STRIPE } = await import("./cobros");
+  const r = (await db().query<{ id: string; st: string; amt: number; idem: string; tr: string; sid: string; city: string; net: number; biz: string; mano: boolean; vieja: boolean; n: number; err: string | null }>(
+    `select r.id::text, r.status as st, r.amount_cents as amt, r.idem_key as idem, s.transfer_id as tr, s.id::text as sid, s.city_id as city, s.net_cents as net, r.business_id as biz,
+            r.manual_at is not null as mano, r.created_at <= now() - make_interval(hours => $2::int) as vieja, r.attempts as n, r.last_error as err
+       from event_settlement_reversals r join event_settlements s on s.id = r.settlement_id where r.id = $1::bigint`, [id, HORAS_LLAVE_STRIPE])).rows[0];
   if (!r || r.st !== "pending") return r?.st === "done";
   // 9k · Resuelta a mano (se le cobró al organizador fuera de Stripe): no se vuelve a pedir a Stripe.
-  if ((await db().query(`select 1 from event_settlement_reversals where id = $1::bigint and manual_at is not null`, [id])).rowCount) return false;
+  if (r.mano) return false;
+  // 9t3 · Una llave de más de HORAS_LLAVE ya no vuelve a Stripe (podría revertir dos veces): la alerta, una vez.
+  if (r.vieja) { await alertaReversionVieja(r); return false; }
   const x = await pasarela.revertirTransferencia(r.tr, r.amt, r.idem).catch(() => ({ ok: false as const, codigo: "error" }));
   if (!x.ok) { await db().query(`update event_settlement_reversals set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [id, ("codigo" in x && x.codigo) || "error"]); return false; }
   return tx(async (c) => {

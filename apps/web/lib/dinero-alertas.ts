@@ -13,13 +13,17 @@ import { db, tx } from "./db";
    Stripe con su nota (refunds / event_settlement_reversals.manual_*: el barrido deja de reintentarla y sigue contando como hecha; la base lo impone). */
 /* 9t2 (0198) · refund_failed: una devolución hecha que Stripe dio por fallida después (webhook charge.refund.updated); charge_unapplied: un cobro
    de Pro que salió mientras el plan cambiaba (no se pisó el cambio: el equipo de dinero decide si se devuelve). */
-export type TipoAlerta = "refund_stuck" | "transfer_reversal_stuck" | "dispute_due" | "recon_diff" | "recon_no_corrio" | "payout_failed" | "refund_failed" | "charge_unapplied";
+/* 9t3 (0199) · transfer_stuck: la transferencia al organizador lleva HORAS_LLAVE en camino sin un «sí» de Stripe (ya no se pide otra vez con la
+   misma llave); charge_stuck: un cobro de Pro anotado que lleva HORAS_LLAVE sin respuesta de Stripe (no se cobra otra vez). Las dos, para mirar en Stripe. */
+export type TipoAlerta = "refund_stuck" | "transfer_reversal_stuck" | "dispute_due" | "recon_diff" | "recon_no_corrio" | "payout_failed" | "refund_failed" | "charge_unapplied"
+  | "transfer_stuck" | "charge_stuck";
 type Bi = { es: string; en: string };
 const QUE: Record<TipoAlerta, Bi> = {
   refund_stuck: { es: "una devolución atascada", en: "a stuck refund" }, transfer_reversal_stuck: { es: "una transferencia sin saldo para revertir", en: "a transfer that cannot be reversed" },
   dispute_due: { es: "una disputa por vencer", en: "a dispute about to expire" }, recon_diff: { es: "el dinero no cuadra", en: "money does not match" },
   recon_no_corrio: { es: "la conciliación no corrió", en: "reconciliation did not run" }, payout_failed: { es: "un pago al banco falló", en: "a bank payout failed" },
   refund_failed: { es: "una devolución que Stripe dio por fallida", en: "a refund Stripe marked as failed" }, charge_unapplied: { es: "un cobro de Pro sin aplicar", en: "an unapplied Pro charge" },
+  transfer_stuck: { es: "una transferencia al organizador sin respuesta", en: "an organizer transfer with no answer" }, charge_stuck: { es: "un cobro de Pro sin respuesta", en: "a Pro charge with no answer" },
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
@@ -72,12 +76,13 @@ const CIUD = "(cardinality($1::text[]) = 0 or a.city_id = any($1::text[]))";
 export async function alertasDinero(s: Staff, abiertas: boolean, antes: string | null = null, n = 30): Promise<{ filas: FilaAlerta[]; sigue: string | null }> {
   // 9t2 · «Resolver a mano» solo cuando la devolución (o la reversión) SIGUE pendiente y la base lo deja (Stripe ya la intentó): una que quedó
   // fallida o hecha muestra la alerta como informativa (antes ofrecía el botón y contestaba «Ya no está pendiente»). Lo decide el servidor.
+  // 9t3 (0199) · La base también lo deja cuando lleva 23 h (HORAS_LLAVE) anotada sin un solo intento (nadie la va a mandar ya): la misma regla aquí.
   const r = await db().query<Omit<FilaAlerta, "estado" | "aMano"> & { monto: string; ult: string | null; mano: boolean }>(
     `select a.id::text, a.kind, a.subject_id as sujeto, case
               when a.kind = 'refund_stuck' then exists (select 1 from refunds r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
-                                                          and r.status = 'pending' and r.manual_at is null and r.attempts >= 1)
+                                                          and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))
               when a.kind = 'transfer_reversal_stuck' then exists (select 1 from event_settlement_reversals r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
-                                                          and r.status = 'pending' and r.manual_at is null and r.attempts >= 1)
+                                                          and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))
               else false end as mano, a.business_id as negocio, b.name as nombre, a.city_id as ciudad, coalesce(a.amount_cents, 0)::text as monto, a.detail as detalle,
             to_char(a.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, x.action as ult,
             case when x.action is null then null else json_build_object('accion', x.action, 'quien', x.quien, 'nota', x.note, 'at', to_char(x.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) end as nota

@@ -83,6 +83,8 @@ Ciudad (evt:aprobar); **ocultar y bloquear**: Admin (evt:retirar). Pestaña **Bu
 | Reemites un boleto | Sube la versión del QR: el anterior sale «QR viejo» y no entra (en línea y sin conexión). |
 | Anulas un boleto | Queda **ANULADO** con el motivo; el dinero no se devuelve solo (devolver: el comprador cancela, el organizador devuelve o una ayuda B-; o cancelar el evento). |
 | Alguien intenta publicar sin revisión | La base no deja un evento en vivo sin aprobación (ni sin persona que apruebe, salvo organizador verificado). |
+| La transferencia del martes (o su reversión) lleva 23 h sin respuesta de Stripe | Ya no se le pide otra vez con la misma llave (podría salir dos veces): la liquidación se queda «pagando» y llega la alerta del dinero, una vez, para mirarla en Stripe. |
+| Stripe da por fallida la devolución de unos boletos | Los boletos siguen devueltos (no entran), la cancelación del evento deja de contarla como devuelta y la alerta dice qué boletos y de quién: decides con la persona. |
 
 **Los plazos de esta página** (el día de pago: el martes después de cada fecha) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
 
@@ -234,6 +236,8 @@ adds payouts by status and cancellations.
 | You reissue a ticket | The QR version goes up: the old one shows as «old QR» and does not get in (online and offline). |
 | You void a ticket | It is left as **VOIDED** with the reason; the money is not refunded on its own (to refund: the buyer cancels, the organizer refunds or a B- help request; or cancel the event). |
 | Someone tries to publish without review | The database does not allow a live event without approval (or without a person who approves, except a verified organizer). |
+| Tuesday's transfer (or its reversal) has had no answer from Stripe for 23 h | It is not requested again with the same key (it could go out twice): the settlement stays «paying» and the money alert arrives once, to check it in Stripe. |
+| Stripe marks a ticket refund as failed | The tickets stay refunded (no entry), the event cancellation stops counting it as refunded and the alert names the tickets and who they belong to: you decide with the person. |
 
 **The deadlines on this page** (payout day: the Tuesday after each date) are today's: To'Latino sets them in its Configuration and the screen always says the
 one that applies at that moment.
