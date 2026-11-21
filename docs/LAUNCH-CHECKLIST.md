@@ -2224,8 +2224,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `alreves9tdinero` 155/155; y contra el servidor local con la 0204 aplicada: `din9t6 din9t5 din9t4 din9t3 din9t2 din9t din9k din9n4 renov4d
       renta4f plan4f pat002 pat003 pro4l avi9l est4d`, 16/16 (844 ✓). Leídos la migración, `renovar-retencion.ts`, `revision-pasarela.ts`, `veredicto`,
       `elegibles`, la acción del admin y los cambios de `rentas`/`estimados`/`pasarela`. **Anotado para arreglar (no bloquea el sandbox):**
-      (6) una renovación que se cierra por la consulta guarda el pago nuevo sin marca ni últimos 4 de la tarjeta (los de la vieja sirven: misma
-      tarjeta); (7) entre que la tarjeta suelta la retención vieja (168 h) y el «nunca llegó» (24 h después de mandar), si Stripe dice «no hallado»
+      (6) ~~una renovación que se cierra por la consulta guarda el pago nuevo sin marca ni últimos 4 de la tarjeta~~ **hecho (21 nov):** toma los de
+      la retención vieja (misma tarjeta); `din9t6` lo comprueba (45 ✓; con el código anterior, ✗); (7) entre que la tarjeta suelta la retención vieja (168 h) y el «nunca llegó» (24 h después de mandar), si Stripe dice «no hallado»
       el libro sigue diciendo «retenido» y a nadie se le avisa hasta 20 h después: como ya no se reintenta con esa llave, el «nunca llegó» de una
       renovación podría darse mucho antes (decisión de plazo: REVISION 9t6); (8) «Elegir cuál vale» y «Preguntar a Stripe ahora» no tenían prueba
       de navegador: encargada (`din9t6b`).

@@ -422,7 +422,9 @@ export async function renovacionRetencion(pago: string): Promise<import("./renov
       const seq = Number((await c.query<{ n: number }>(`select coalesce(max(seq), 0)::int + 1 as n from payments where operation_id = $1::bigint and kind = $2`, [p.op, p.kind])).rows[0]!.n);
       const id = (await c.query<{ id: string }>(
         `insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method, renewed_from)
-         values ($1::bigint, $2, $3, $4, $5, $6, 'card', $7, $8, $8, $9, 'held', $10, $11, now(), $12, $13, $14::bigint) returning id::text`,
+         values ($1::bigint, $2, $3, $4, $5, $6, 'card', $7, $8, $8, $9, 'held', coalesce($10, (select v.card_brand from payments v where v.id = $14::bigint)),
+                 coalesce($11, (select v.card_last4 from payments v where v.id = $14::bigint)), now(), $12, $13, $14::bigint) returning id::text`,
+        // La marca y los últimos 4: los que dio la pasarela; cerrada por la consulta no los trae, y es la misma tarjeta que la retención vieja.
         [p.op, p.uid, p.biz, p.city, p.kind, seq, r.pi, p.held, fee, r.marca, r.l4, r.pi.startsWith("pi_sim_"), p.pm, p.id])).rows[0]!.id;
       await ev(c, p.op, "hold_renewed", "system", null, { es: `Se renovó la retención de ${money(p.held)}`, en: `The ${money(p.held)} hold was renewed` });
       return id;

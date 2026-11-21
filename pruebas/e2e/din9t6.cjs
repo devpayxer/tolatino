@@ -228,12 +228,15 @@ const revisiones = (t, id) => n1(`select count(*)::int as n from gateway_reviews
     await RE.barrerRentas({ numero: R.num });
     let h = await renovDe(R.pago);
     await envejecerRenov(h.id, 5 * 60);
+    await crudo((k) => k.query(`update payments set card_brand = 'mastercard', card_last4 = '4444' where id = $1::bigint`, [R.pago]));
     const n0 = P.llamadasCon(R.idem);
     await RE.barrerRentas({ numero: R.num });
     h = await renovDe(R.pago);
     const v = await pago(R.pago), hold = P.holds.get(R.idem);
     ok(h.st === 'done' && h.pi === hold.pi && P.llamadasCon(R.idem) === n0 && v.st === 'released' && P.liberados.has(v.pi),
       `la vieja ya murió (168 h): no se vuelve a mandar con la llave; la consulta encuentra la retención y se anota (${h.st}, ${P.llamadasCon(R.idem) - n0} llamadas más)`);
+    const tj = await q1(`select card_brand as marca, card_last4 as l4 from payments where id = $1::bigint`, [h.nuevo]);
+    ok(tj?.marca === 'mastercard' && tj.l4 === '4444', `cerrada por la consulta (que no trae la tarjeta): el depósito nuevo conserva la marca y los últimos 4 del viejo (${tj?.marca} ${tj?.l4})`);
     ok(await auditadas('dinero.consulta.cerrar', h.id, 'hold_renewals') === 1 && avisosDe('biz_renta', X.b).length === 0, 'la auditoría dice que la cerró la consulta a la pasarela; nadie recibe un aviso falso');
   }
   {
