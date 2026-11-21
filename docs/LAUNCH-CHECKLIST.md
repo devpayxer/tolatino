@@ -1482,13 +1482,17 @@ en el momento. Se marca solo cuando está hecho de verdad.
       **9b-1 (12 nov), sigue abierta:** en bases nuevas, B3 **199/199 (7 120 ✓)**; A 196, B1 198, B2 197, C 198 y D 198 de 199; F parada en
       171/199 por costo. Cada roja arreglada en su raíz y comprobada sola en verde (tabla en PROGRESS «Fase 9 · 9b-1»). Falta lo que pide esta
       línea para cerrarla: dos corridas enteras seguidas en verde y una `--barajar` → la corrida de confirmación va al CI de 9b-2.
+      **21 nov:** en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable) las 213 pruebas pasaron las dos vueltas seguidas y la barajada (4 partes cada una), pero con
+      4 inestables (push8c, rev9u, cre9h, dlv2f4): por la decisión AG esa corrida es roja. Se cierra con una confirmación de 3 inestables o menos.
 
 ## Fase 9 · 9b-1 (la regresión entera en una base nueva; 12 nov)
 - [x] **→ 9t** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
       ahora corre un día hacia atrás la hora de las ayudas de esa persona antes de abrir otra (`sinTopeDeAyuda`), así que nada comprueba que la
       sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._ — _9m (14 nov): pasa a 9t (lo del vecino que queda antes de encender): no cupo en 9m: la prueba del sexto pedido del día y el número en Configuración._ — _9t (19 nov): hecho. El número sale de Configuración › Soporte (`ayuda_tope_dia`, 0182, 1–50, de fábrica 5) y se lee con `cfgSql` en la misma consulta que cuenta (lib/ayuda.ts y lib/ayuda-cita.ts; un reporte de seguridad nunca se frena). Prueba de punta a punta `ayu9t` (persona nueva: con el tope en 2 la tercera se rechaza con «Abriste muchas solicitudes hoy», la de ayer no cuenta, con 3 pasa), guardián `topeAyudaDeConfig` y su al revés `alreves9t3` (8/8)._
-- [ ] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
+- [x] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
       (9b-2) va por grupos en paralelo, cada grupo con su base nueva. (9b-1, 12 nov)
+      **Hecho:** el CI la corre en 4 partes en paralelo; en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable) cada parte de «dos veces seguidas» tardó 47–66 min y
+      la barajada 26–38 min.
 - [x] **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,
       free2b, rep2l): el último pedido es 15 min antes de cerrar, así que de 11:44 PM a medianoche (hora de Hazleton) «Enviar pedido» se apaga y
       fallarían. dlvsrv tenía lo mismo con 06:00–05:00 (falló a las 4:45 AM en la corrida del 12 nov) y ya abre 3 h antes de la hora de la
@@ -1499,7 +1503,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       fuera del alcance de esa app (`apps/mobile/apps.json`: solo `/panel` y lo común). Comprobar en la cáscara qué ve (¿se abre fuera?) y que
       llegue a Mi cuenta › Ajustes › Borrar mi cuenta, como ya llega el Repartidor sin equipo (9b-1). Hoy `borrarCuentaEnCadaApp` solo mira el
       panel con negocio. (9b-1, 12 nov) — _9b-3 (13 nov): con lo diferido del negocio (9n)._ — **✓ 9n-2 (14 nov):** /panel sin negocio en la app Negocios muestra SinNegocio (publicar, entrar a un equipo, Mi cuenta › Ajustes › Borrar mi cuenta). Guardián negociosSinNegocio; pan9n2 §8. Falta probarlo en la cáscara nativa real (CI 9b).
-- [ ] **→ 9b** · **(9b-2) Pruebas que no aguantan repetirse en la misma base:** corriendo `--todas` 2 y 3 veces seguidas sobre una base (12 nov,
+- [x] **→ 9b** · **(9b-2) Pruebas que no aguantan repetirse en la misma base:** corriendo `--todas` 2 y 3 veces seguidas sobre una base (12 nov,
       corridas B4 197/199 y B5 194/199 en `tl9b1acc5`), salieron en rojo por lo que dejaba la corrida anterior: menu2a-f («Res guisada» quedaba
       agotada), adm2i (contaba las cortesías de evt6*), tra4y y adm4y (cada corrida gastaba dos días de salidas y a la tercera no quedaban en la
       semana generada), y además pq4e (pedía la SEGUNDA franja libre: a media tarde no hay) y ayu7a (contaba la navegación de escritorio antes
@@ -1507,6 +1511,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       después de tres corridas (5/5), pero **no se repitió otra corrida entera** sobre la misma base con los arreglos. beta8f salió en rojo
       una vez en B5 («Recibimos tu reporte · TK-…» no apareció tras «Enviar»; sola, en la misma base, pasa): causa sin encontrar. Para 9b-2:
       una base nueva por corrida en el CI, y una corrida repetida a propósito para cazar lo que no se limpia. (9b-1, 12 nov)
+      **Hecho:** en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable) menu2a-f, adm2i, tra4y, adm4y, pq4e, ayu7a y beta8f pasaron las dos vueltas sobre la misma
+      base (0 ✗).
 - [ ] **→ 9b** · **(9b-2) La corrida de confirmación de 9b-1 en el CI:** `--todas` dos veces seguidas en verde sobre una base nueva y una
       `--barajar` (con su semilla). En la máquina quedó: 199/199 una vez (B3) y 198/199 en C y D, con las rojas arregladas y comprobadas solas
       (noc4c, noc4d, compa7h 3/3 al final); no se hizo ninguna corrida `--barajar` entera. Por costo no se siguió repitiendo aquí. Las
@@ -1737,6 +1743,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **Destacar eventos (9t) en la corrida completa:** la e2e `evt9t` (Crecimiento › Destacados › EVENTOS, /eventos 390/1360, el panel del
       organizador, el tope, ocultar, retirar y la ficha del Super Admin) está escrita y no corrió (sin Docker ni Playwright en esa máquina), y `next build` no
       llegó a correr (disco lleno); tsc, guardianes, alreves9tevt y CMS sí. Correrlas en el CI dirigido y mirar las capturas `evt9t-*`. (9t, 19 nov)
+      **21 nov:** `evt9t` pasó 7 de 7 (dos vueltas, barajada y anchos de iPad, iPhone SE y escritorio) y `alreves9tevt` también, en la
+      confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable). Quedan por mirar sus capturas (no salen en el registro).
 - [ ] **→ 9n** · **Segmento «Free con N ítems» y la insignia Fundadores en la página del negocio:** las campañas segmentan por rol, ciudad, inactivos, categoría y plan; contar ítems no se
       construyó. El número de negocio fundador queda en `early_access.founder_negocio_n` y la landing lo dice; la insignia en la ficha del negocio no se pintó. (9h, 14 nov) — _(9n-7, 15 nov): el segmento «ÍTEMS EN SU CATÁLOGO» (5/10/20/50+, solo dueños; cre9h lo cuenta contra la base) está hecho. Sigue abierto: la insignia Fundadores en la ficha del negocio (sin diseño de esa pieza: va a REVISION para el fundador, regla 7)._
 - [x] **Campañas por correo de verdad:** salen por la bandeja de correo (`email_outbox`, plantilla `campaign`, solo correos verificados, con el pie «para no recibir más: Mi cuenta ›
@@ -1907,6 +1915,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (ver la línea de abajo) y com5c (Comunidad › «CONVERSACIÓN», paso 5; su parte de /c/comida pasó). Lo de la categoría que esas pruebas miran
       se comprobó a mano: «Se acabó por hoy» y el cover de esta noche salen en la caja HOY. Safari/iPad, la matriz de 9 dispositivos y estas
       pruebas van en la corrida completa al terminar C-003. Las capturas aprobadas de `pruebas/visual` de la página de categoría cambian (diseño D).
+      **21 nov:** sus pruebas de punta a punta pasaron todas (0 ✗) en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable), también en el ancho de iPad. Lo que no
+      cubre el CI: la comparación visual de esas pantallas (no están entre las 6 capturas aprobadas) y, en 0175, el contrato contra Stripe real.
 - [x] **Privacidad (falsa alarma, revisado 17 nov):** en local, fic4id vio «857 N Laurel St» en el HTML de cuartos-dona-mary. Viene de la
       información de depuración que React solo manda con `next dev` (`env`, `stack`, `owner` con los datos internos del componente); el build
       de producción no la manda y fic4id pasa en CI (regresión completa). La ficha ya devuelve `direccion: null` cuando el negocio trabaja desde casa.
@@ -1934,11 +1944,15 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `pruebas/visual`: la hoja del banco del patrocinio y EN PAUSA son pantallas nuevas sin captura aprobada) y la prueba de contrato contra
       Stripe de verdad (`/v1/refunds` con `payment_intent` de un cobro de la plataforma, y la retención con 3-D Secure + captura) en el sandbox con llave.
       (17 nov)
+      **21 nov:** sus pruebas de punta a punta pasaron todas (0 ✗) en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable), también en el ancho de iPad. Lo que no
+      cubre el CI: la comparación visual de esas pantallas (no están entre las 6 capturas aprobadas) y, en 0175, el contrato contra Stripe real.
 - [ ] **→ 9b** · **C-003 en la corrida completa:** en local (Chromium, `next dev`) pasaron pat003 (66 ✓), pat002 (55 ✓), alrevesC003 (28/28) y
       alrevesC002 (20/20). evt6b-6c y evt6f se pasaron al calendario: sus partes de /eventos pasaron (evt6b-6c 68 ✓, evt6f 43 ✓), pero ninguna de las
       dos llegó al final en local por cosas de fuera de C-003: publicar desde el editor pide subir el cartel (sin almacén de medios local, 503),
       y el servidor de desarrollo se reinició por memoria o tardó más de 30 s en compilar /admin/eventos/{id}. Van enteras en la corrida completa
       con Safari/iPad y los 9 dispositivos; `pruebas/visual` no tiene capturas aprobadas de Eventos.
+      **21 nov:** sus pruebas de punta a punta pasaron todas (0 ✗) en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable), también en el ancho de iPad. Lo que no
+      cubre el CI: la comparación visual de esas pantallas (no están entre las 6 capturas aprobadas) y, en 0175, el contrato contra Stripe real.
 - [x] **→ 9b** · **Anchos (4), después de C-001 → C-003 (CI 43996571745):** — **✓ (17 nov):** arreglados en las pruebas (esperas de Safari, copias escondidas del iPad, UA de iOS) y en vivo (vec9m: el panel se pone al día al conectarse); CI 44028911097 + 44045893242 + 44051353861 en verde en los tres anchos. Solo queda dir9m en el iPad (línea de abajo). escritorio 1024 sin rojos propios; Safari falla en iPhone SE
       (silla3d, app8a, inm4ib, noc4d, pan9n2) y en iPad (silla3d, app8a, app8e, ayu4z, tra4y, dir9m). silla3d, app8a y dir9m ya venían de antes;
       los demás son nuevos en esta corrida y hay que ver uno por uno si son de la prueba (esperas de Safari) o de la pantalla.
@@ -1946,6 +1960,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Chromium a tamaño iPad: ahí pasa todo, «muy lejos» incluido) y, moviéndolo con las flechas, el pin se ve movido pero al guardar llega sin
       pin (el servidor guarda el punto de la dirección). Mirarlo en un iPad real (REVISION · «Pin en el iPad»): si pasa con el dedo, es la
       prueba; si no, es la pantalla. La prueba ya usa el mapa VISIBLE (había dos copias) y dice dónde quedó.
+      **21 nov:** `dir9m` pasó 7 de 7 en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable), incluido el ancho de iPad. Queda probarlo en un iPad de verdad.
 - [x] **→ 9b** · **merc9n en Safari (SE e iPad), Anchos (6):** — **✓ 18 nov:** en la web, si el GPS se calla dos intervalos, el repartidor pide una lectura fresca (`lib/nativo/ruta.ts`); merc9n en verde en el SE y el iPad (CI 44229046199). Queda mirarlo en un iPhone real (REVISION). la ubicación del repartidor en el envío del mercado. En el WebKit de las pruebas la página
       manda UNA lectura (de hace 31 s, después de empezar la ruta) que la base rechaza (`rejected_n = 1`) y después el emulador no da más lecturas
       aunque la prueba mueve el GPS cada 2 s; en Chromium pasa y en app8e (repartidor de comida) Safari sí sube posiciones. Diagnóstico en la salida
