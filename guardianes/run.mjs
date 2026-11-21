@@ -12134,6 +12134,19 @@ const guardianes = {
     }
   },
 
+  /* 9t2 (21 nov, CI 44863184517: sop7b roja) · intentoFallidoQueda: en Soporte, pedir devolver más de lo que queda por devolver no mueve dinero,
+     pero el INTENTO queda en el libro del caso (support_refunds, solo inserción) como fallido con su motivo: quién quiso devolver cuánto. Al pasar
+     la devolución a dos pasos se anotaba todo en una transacción y, si no cabía, se deshacía entera: el intento desaparecía. Ahora la devolución
+     que no cabe se deshace hasta su savepoint y la fila del intento queda 'failed'. Al revés: alreves9tdinero; punta a punta: sop7b. */
+  intentoFallidoQueda() {
+    const G = "intentoFallidoQueda", F = "apps/web/lib/soporte-equipo.ts";
+    if (!existsSync(F)) return;
+    const t = sinComent(F);
+    const m = /if \(!a\.ok\) \{([\s\S]{0,500}?)return a\.msg\.es;/.exec(t);
+    if (!/await c\.query\("savepoint anota"\);\s*const a = await cobros\.anotarDevolucionPago\(/.test(t)) falla(G, F, 0, "resolverYDevolver: la devolución se anota después de un savepoint (para deshacer solo eso si no cabe)");
+    if (!m || !/rollback to savepoint anota/.test(m[1]) || !/update support_refunds set status = 'failed', fail_reason = left\(\$2, 200\)/.test(m[1])) falla(G, F, 0, "resolverYDevolver: si la devolución no cabe, se deshace hasta el savepoint y el intento queda 'failed' con su motivo (no se tira la transacción entera)");
+  },
+
   /* 9t2 (21 nov) · llaveSoloUnDia (LAUNCH «Dinero por clase, 21 nov» (2)): Stripe recuerda una llave de idempotencia 24 h; preguntar otra vez con
      la misma llave después podría devolver dos veces. Toda función que llama a pasarela.devolver mira antes si la devolución (o el patrocinio que la
      decidió) pasó HORAS_LLAVE (< 24) y, si pasó, no llama; los barridos solo reintentan dentro de ese tiempo y desde ahí alertan al equipo de dinero

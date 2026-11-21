@@ -287,7 +287,6 @@ export async function resolver(s: Staff, numero: string, texto: string, borrador
    cierre de la devolución cierra también el caso, una vez y en su transacción (lib/cobros: cerrarDelCaso): la fila hecha, «Te devolvimos», lo
    devuelto sumado y el caso resuelto, la cierre esta acción (con la respuesta, alCerrar) o el barrido (si quedó en camino: con la respuesta que
    quedó guardada como nota interna). Un «no» de Stripe deja la fila fallida en la misma transacción que la devolución. */
-class NoDevuelve extends Error { constructor(readonly m: string) { super("no_devuelve"); } }
 export async function resolverYDevolver(s: Staff, numero: string, monto: string, clave: string, texto: string, borrador?: string | null): Promise<ResE> {
   if (!puedeDevolverRol(s)) return no("Tu rol no devuelve dinero.");
   if (!UUID.test(String(clave ?? ""))) return no("Prueba de nuevo.");
@@ -336,13 +335,20 @@ export async function resolverYDevolver(s: Staff, numero: string, monto: string,
           throw e;
         }
       }
-      // La devolución de esa fila, con la MISMA llave y su monto, y la auditoría de quien decide: en esta transacción (si no cabe, nada queda).
+      // La devolución de esa fila, con la MISMA llave y su monto, y la auditoría de quien decide: en esta transacción. Si no cabe (pide más de lo
+      // que queda por devolver), de la devolución no queda nada (savepoint) y el INTENTO queda en el libro del caso como fallido con su motivo
+      // (support_refunds es solo inserción: quién quiso devolver cuánto también se ve; sop7b).
       const fx = r;
+      await c.query("savepoint anota");
       const a = await cobros.anotarDevolucionPago(c, { paymentId: fx.pid, centavos: fx.amount, por: "admin", actorId: s.id, motivo: crudo.slice(0, 300), idem },
         (c2, x) => audit(c2, s, k, "soporte.devolver", { estado: EST[k.status] }, { devolucion: money(x.centavos), cobro: `pago ${x.pago}`, estado: "en camino" }, crudo.slice(0, 300)));
-      if (!a.ok) throw new NoDevuelve(a.msg.es);
+      if (!a.ok) {
+        await c.query("rollback to savepoint anota");
+        await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where id = $1::bigint and status = 'pending'`, [fx.id, a.msg.es]);
+        return a.msg.es;
+      }
       return { ...fx, rf: a.id };
-    }).catch((e) => { if (e instanceof NoDevuelve) return e.m; throw e; });
+    });
     if (typeof ins === "string") return no(ins);
     fila = { id: ins.id, status: "pending", amount: ins.amount, pid: ins.pid, fail: null, viejo: false, rf: ins.rf };
   }

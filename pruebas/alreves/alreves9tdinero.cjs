@@ -15,7 +15,12 @@ const D = 'devolucionEnDosPasos', W = 'estadoEnElWhere', K = 'candadoEnSuConexio
 // 9t2 (21 nov): los guardianes de «Dinero por clase, 21 nov».
 const L = 'llaveSoloUnDia', C = 'casoSeCierraConSuDevolucion', I = 'intencionAntesDeStripe', A = 'alertaSoloConCaminoReal', H = 'webhookDevolucionFallida', DC = 'disputaCierraSuCaso';
 const PA = 'apps/web/lib/patrocinio.ts', AD = 'apps/web/app/admin/acciones-dinero.ts', PB = 'apps/web/lib/pagos-banco.ts', DA = 'apps/web/lib/dinero-alertas.ts', RT = 'apps/web/app/api/stripe/webhook/route.ts';
+const IF = 'intentoFallidoQueda';
 const casos = [
+  // 9t2 · Soporte: el intento que no cabe queda en el libro como fallido (sop7b lo vio rojo cuando se deshacía la transacción entera).
+  [IF, SE, "        await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where id = $1::bigint and status = 'pending'`, [fx.id, a.msg.es]);\n        return a.msg.es;", "        return a.msg.es;"],
+  [IF, SE, '        await c.query("rollback to savepoint anota");\n', ""],
+  [IF, SE, '      await c.query("savepoint anota");\n', ""],
   // (1) Como estaba: la pasarela primero y la devolución nace 'done'.
   [D, CB, "  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n", "  await pasarela.devolver(\"pi\", x.centavos, x.idem);\n  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n"],
   [D, CB, "values ($1::bigint, $2, $3, $4, $5, 'pending', $6) returning id::text`,", "values ($1::bigint, $2, $3, $4, $5, 'done', $6) returning id::text`,"],
