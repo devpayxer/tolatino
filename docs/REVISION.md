@@ -5853,3 +5853,23 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   ahora los pesos son estimados. Avísame cuando las subas y te doy los números.
 - **Lo que no vas a notar (y está bien):** la foto se sirve en WebP al tamaño de cada caja; si un navegador viejo no acepta WebP recibe el JPEG.
 
+## Fotos privadas con dirección privada y dinero en dos pasos (21 nov) — en la rama de trabajo, esperando su CI; decisiones para ti
+- **Qué cambió (lo hizo Opus, lo revisó Fable):** la foto que va solo a un negocio o al equipo (la de una cita, visita, mudanza, presupuesto,
+  pre-estimado, emergencia, «Ayuda con…», la balanza del mercado, el daño de una renta, la línea de un estimado) ya no tiene dirección pública.
+  Solo la abren quien la subió, el cliente de esa operación y el negocio que la recibe (dueño o equipo con «Pedidos»). A cualquier otro: no existe.
+  Las que ya estaban subidas se mudan solas (el barrido, por tandas).
+- **Tres decisiones tuyas (dejé lo más cerrado; se abre cuando digas):**
+  1. *El equipo de To'Latino* hoy ve una foto privada **solo con un caso abierto** de esa operación en su cola y su ciudad (y queda anotado cada
+     vez). En Transacciones, el 360° o el «Panel del dueño» sin caso abierto, la foto sale vacía. ¿Lo dejamos así o quieres que quien tenga
+     permiso de Transacciones la vea siempre (anotado en la auditoría)? Recomiendo dejarlo así hasta abrir.
+  2. *Cuánto se guardan* las fotos privadas de una operación terminada. Hoy no se borran (las de «Ayuda con…» de Salud y Pro sí tienen plazo).
+     Recomiendo el mismo plazo que la operación en la política de privacidad; lo confirmo con el abogado en su paquete.
+  3. *El tope de cuentas nuevas* (10 fotos por hora) ahora frena **solo fotos públicas**. Una foto de una operación (pesar 15 productos, una
+     mudanza con muchas fotos) solo responde al tope general de 60 por hora. Lo cambié porque bloqueaba operaciones reales y tumbó la confirmación
+     del CI (todo corre dos veces con la misma cuenta). Ojo: un negocio nuevo que sube su menú con más de 10 fotos en una hora sí se frena; si
+     quieres, subo ese número en Contenido › Auto-moderación (tú también puedes).
+- **Dinero (devoluciones):** una devolución ahora se anota antes de pedírsela a Stripe y la termina sola un barrido si Stripe no contesta. Lo que
+  vas a ver distinto: «Stripe no contestó. La devolución de $X quedó en camino… no la repitas». Si pasa un día sin respuesta, te llega una alerta.
+- **Qué mirar cuando esté en el sandbox (te aviso):** pide una cita con foto desde tu teléfono y ábrela desde el panel del negocio: la foto se ve
+  en los dos lados; copia su dirección y ábrela en una ventana privada: no debe verse.
+

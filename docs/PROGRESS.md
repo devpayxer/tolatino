@@ -20,6 +20,21 @@ _Actualizado: 20 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 14 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **21 nov (madrugada) · dónde quedó cada cosa, para retomar:**
+  - **En la rama de trabajo (de4ec7a), todavía NO en `main`/`pruebas`:** dinero 9t (Opus, rama `dinero-9t`: `devolverPago` en dos pasos, barrido
+    `barrerDevolucionesPago`, `decidirSop` por caso, Anular con candado, disputas con estado en el `where`; prueba `din9t`), fotos privadas F3
+    (Opus, rama `fotos-f3`: `privado/o/`, ruta `/api/medios/privada/[id]`, `lib/fotos-privadas.ts`, migración **0197**, 5 catálogos validan contra
+    `media`, `purgarFotosAyuda` en el barrido, tope de cuenta nueva solo para públicas) y el arreglo de `correo2q` para la segunda vuelta.
+    Fable revisó las dos entregas y corrió tipos, guardianes, textos y sus al revés (22/22 y 49/49).
+  - **CI:** la confirmación completa 44847327303 (b66f22e) salió ROJA: seis pruebas por el tope de fotos de cuenta nueva al correr dos veces
+    (cit3e, ayu4g, res4s, tra4y2, noc4d, pre4e; adm4y por depender de tra4y2) y `correo2q` por la llave del correo de mesa. Las dos causas están
+    arregladas. Corre la confirmación nueva **44856024910** sobre de4ec7a: si sale verde → `main` y `pruebas`, `estado-sandbox`, y
+    `python3 $S/cerrar9.py 44856024910` para las 28 líneas «9 dispositivos» de LAUNCH. La subida real de una foto privada y su ruta solo se
+    prueban en el CI (aquí no hay almacén).
+  - **Agentes en curso:** Opus en `dinero-9t2` (los nueve puntos de «Dinero por clase, 21 nov» de LAUNCH; si necesita migración es la 0198) y
+    Sonnet en `panel-doble-toque` (pasos del panel que guardan en cada toque). Al volver: revisar, fusionar, tipos/guardianes/textos, CI.
+  - **Pendiente de F3 (LAUNCH):** `fotoSrc`/`fotoFondo` de `packages/ui` no piden `?w=` a las privadas (bajan la maestra); plazo de retención y
+    acceso del equipo sin caso abierto esperan al fundador (REVISION, 21 nov).
 - **20 nov (tarde) · dónde quedó cada cosa, para retomar:**
   - **Fotos a la medida (decisión AI):** F1+F2 en `main`, `pruebas` y el sandbox (commit 2963479, migración 0195 aplicada; visto desde fuera con
     `estado-sandbox`). Falta la medida con fotos de cámara reales del fundador (REVISION), F3 (privadas con `?w=`) y F4 (bloque del Super Admin).
