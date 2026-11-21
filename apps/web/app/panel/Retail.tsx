@@ -3,6 +3,7 @@
    Diseño: Panel v2 · dash2-cat.js (TOOLS NEG-MERC / NEG-TIENDA, blocksD); plan fase4-mercados-tiendas.md §6. Cada toque se
    guarda en el servidor (acciones-retail.ts) y la página y Buscar lo dicen al momento. Cupo por franja, «si algo no hay» y los
    números del layaway son huecos del diseño (#3, #6) compuestos con las mismas piezas (REVISION). */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { resumenRetail, type HerrMerc, type HerrTienda } from "@/lib/retail-comun";
 import { mercAgotado, mercGuardar, mercPrecioLb, tallaExistencia, tiendaGuardar, type MercIn, type TiendaIn } from "./acciones-retail";
@@ -36,21 +37,21 @@ function merc(c: Ctx, S: HerrMerc, head: Bloque): (Bloque | null)[] {
     { type: "rows", k: E2("CÓMO ENTREGAS", "HOW YOU HAND OFF"), items: [
       { icon: "bag", t: "Pickup", tgOn: S.pk, onTg: () => { if (S.pk && !S.env) { c.toast(E2("Deja al menos una forma.", "Keep at least one.")); return; } save({ pk: !S.pk }); } },
       { icon: "truck", t: E2("Envío a casa", "Home delivery"), tgOn: S.env, onTg: () => { if (S.env && !S.pk) { c.toast(E2("Deja al menos una forma.", "Keep at least one.")); return; } save({ env: !S.env }); } }] },
-    S.env ? { type: "step", t: E2("Costo del envío", "Delivery fee"), s: E2("Lo que paga el cliente por llevárselo a su casa.", "What the customer pays to have it brought home."), v: S.fee ? usd(S.fee) : E2("Gratis", "Free"),
-      onM: () => save({ fee: Math.max(0, S.fee - 50) }), onP: () => save({ fee: Math.min(5000, S.fee + 50) }) } : null,
-    S.env ? { type: "step", t: E2("Pedido mínimo para envío", "Delivery minimum"), s: E2("Para pickup no hay mínimo.", "No minimum for pickup."), v: S.min ? usd(S.min) : E2("Sin mínimo", "No minimum"),
-      onM: () => save({ min: Math.max(0, S.min - 500) }), onP: () => save({ min: Math.min(50000, S.min + 500) }) } : null,
+    S.env ? pasoSrv({ t: E2("Costo del envío", "Delivery fee"), s: E2("Lo que paga el cliente por llevárselo a su casa.", "What the customer pays to have it brought home."),
+      n: S.fee, fmt: (n) => n ? usd(n) : E2("Gratis", "Free"), sig: (n, d) => d < 0 ? Math.max(0, n - 50) : Math.min(5000, n + 50), save: (n) => save({ fee: n }) }) : null,
+    S.env ? pasoSrv({ t: E2("Pedido mínimo para envío", "Delivery minimum"), s: E2("Para pickup no hay mínimo.", "No minimum for pickup."),
+      n: S.min, fmt: (n) => n ? usd(n) : E2("Sin mínimo", "No minimum"), sig: (n, d) => d < 0 ? Math.max(0, n - 500) : Math.min(50000, n + 500), save: (n) => save({ min: n }) }) : null,
     // Hueco #3: cuántos pedidos caben por franja (pickup 30 min, envío 1 h).
-    { type: "step", t: E2("Pedidos por franja", "Orders per time slot"), s: E2("Cuántos pedidos preparas a la vez. Una franja llena no se ofrece.", "How many orders you prepare at once. A full slot is not offered."), v: String(S.cap),
-      onM: () => save({ cap: Math.max(1, S.cap - 1) }), onP: () => save({ cap: Math.min(30, S.cap + 1) }) },
+    pasoSrv({ t: E2("Pedidos por franja", "Orders per time slot"), s: E2("Cuántos pedidos preparas a la vez. Una franja llena no se ofrece.", "How many orders you prepare at once. A full slot is not offered."),
+      n: S.cap, fmt: String, sig: (n, d) => d < 0 ? Math.max(1, n - 1) : Math.min(30, n + 1), save: (n) => save({ cap: n }) }),
     { type: "chips", k: E2("SI ALGO NO HAY · LO QUE SALE MARCADO AL PEDIR", "IF SOMETHING IS OUT · THE DEFAULT AT CHECKOUT"), items: ([["call", E2("Llamar al cliente", "Call the customer")], ["similar", E2("Uno parecido, con su OK", "A similar one, with their OK")], ["no", E2("Quitarlo", "Remove it")]] as const)
       .map(([k, l]) => ({ l, v: S.sub === k ? "selected" : "filter", onClick: () => save({ sub: k }) })) },
     { type: "rows", k: E2("CÓMO TE PAGAN EN LA TIENDA", "HOW YOU GET PAID IN STORE"), items: [
       { icon: "card", t: "EBT / SNAP", s: E2("Solo comida que no está caliente. No cubre alcohol, tabaco ni el envío.", "Only food that is not hot. Does not cover alcohol, tobacco or delivery."), tgOn: S.ebt, onTg: () => save({ ebt: !S.ebt }) },
       { icon: "dollar", t: E2("Efectivo", "Cash"), tgOn: S.cash, onTg: () => save({ cash: !S.cash }) }] },
     { type: "rows", items: [{ icon: "scale", t: E2("Se pesa delante del cliente", "Weighed in front of the customer"), s: E2("Sale «Pesan delante de ti» en tu página y en Buscar.", "Shows “Weighed in front of you” on your page and in Search."), tgOn: S.pesa, onTg: () => save({ pesa: !S.pesa }) }] },
-    ...S.prods.filter((p) => p.peso).map((p): Bloque => ({ type: "step", t: nm(p.name), s: E2("Por libra · se pesa delante", "Per pound · weighed in front"), v: `${usd(p.price)}/lb`,
-      onM: () => c.run(() => mercPrecioLb(c.d.id, p.id, Math.max(10, p.price - 10)), ok), onP: () => c.run(() => mercPrecioLb(c.d.id, p.id, p.price + 10), ok) })),
+    ...S.prods.filter((p) => p.peso).map((p): Bloque => pasoSrv({ t: nm(p.name), s: E2("Por libra · se pesa delante", "Per pound · weighed in front"),
+      n: p.price, fmt: (n) => `${usd(n)}/lb`, sig: (n, d) => d < 0 ? Math.max(10, n - 10) : n + 10, save: (n) => c.run(() => mercPrecioLb(c.d.id, p.id, n), ok) })),
     S.prods.length ? { type: "rows", k: E2("SE ACABÓ HOY · TOCA PARA QUITAR DE LA APP", "RAN OUT TODAY · TAP TO HIDE IN THE APP"), cols: cols2, items: S.prods.map((p): Fila => ({ key: p.id, icon: p.peso ? "scale" : "cart", t: nm(p.name), s: `${usd(p.price)}${p.peso ? "/lb" : ""}`,
       tag: p.ago ? E2("AGOTADO HOY", "SOLD OUT TODAY") : null, tone: "danger", tgOn: !p.ago, onTg: () => c.run(() => mercAgotado(c.d.id, p.id, !p.ago), p.ago ? E2("Vuelve a salir en tu página.", "It shows on your page again.") : E2("Agotado hoy · mañana vuelve solo.", "Sold out today · back tomorrow by itself.")), compact: true })) }
       : { type: "note", tone: "info", t: E2("Cuando agregues productos en Productos, salen aquí para marcar lo que se acabó.", "When you add products under Products, they show here to mark what ran out.") },
@@ -69,22 +70,23 @@ function tienda(c: Ctx, S: HerrTienda, head: Bloque): (Bloque | null)[] {
   ];
   // Hueco #6: los números del layaway (salen por escrito en el acuerdo que acepta el cliente).
   if (S.lay) out.push(
-    { type: "step", t: E2("Abono para apartar", "Down payment"), s: E2("Lo que paga hoy para guardarlo.", "What they pay today to hold it."), v: `${S.down} %`, onM: () => save({ down: Math.max(10, S.down - 5) }), onP: () => save({ down: Math.min(50, S.down + 5) }) },
-    { type: "step", t: E2("Pagos", "Payments"), s: E2("En cuántos pagos se reparte el resto.", "How many payments the rest is split into."), v: String(S.pagos), onM: () => save({ pagos: Math.max(2, S.pagos - 1) }), onP: () => save({ pagos: Math.min(6, S.pagos + 1) }) },
+    pasoSrv({ t: E2("Abono para apartar", "Down payment"), s: E2("Lo que paga hoy para guardarlo.", "What they pay today to hold it."), n: S.down, fmt: (n) => `${n} %`, sig: (n, d) => d < 0 ? Math.max(10, n - 5) : Math.min(50, n + 5), save: (n) => save({ down: n }) }),
+    pasoSrv({ t: E2("Pagos", "Payments"), s: E2("En cuántos pagos se reparte el resto.", "How many payments the rest is split into."), n: S.pagos, fmt: String, sig: (n, d) => d < 0 ? Math.max(2, n - 1) : Math.min(6, n + 1), save: (n) => save({ pagos: n }) }),
     { type: "chips", k: E2("CADA CUÁNTO", "HOW OFTEN"), items: ([7, 14, 30] as const).map((d) => ({ l: E2(`Cada ${d} días`, `Every ${d} days`), v: S.cada === d ? "selected" : "filter", onClick: () => save({ cada: d }) })) },
-    { type: "step", t: E2("Cargo si no termina de pagar", "Fee if they do not finish"), s: E2("Se dice por escrito antes de aceptar. Lo demás se devuelve.", "Stated in writing before accepting. The rest is refunded."), v: `${S.cargo} %`, onM: () => save({ cargo: Math.max(0, S.cargo - 1) }), onP: () => save({ cargo: Math.min(10, S.cargo + 1) }) });
+    pasoSrv({ t: E2("Cargo si no termina de pagar", "Fee if they do not finish"), s: E2("Se dice por escrito antes de aceptar. Lo demás se devuelve.", "Stated in writing before accepting. The rest is refunded."), n: S.cargo, fmt: (n) => `${n} %`, sig: (n, d) => d < 0 ? Math.max(0, n - 1) : Math.min(10, n + 1), save: (n) => save({ cargo: n }) }));
   out.push(
-    { type: "step", t: E2("Cambios con el recibo", "Returns with receipt"), s: E2("0 = no acepta cambios. Sale en tu página.", "0 = no returns. Shows on your page."), v: S.dev ? E2(`${S.dev} días`, `${S.dev} days`) : E2("No", "No"),
-      onM: () => save({ dev: Math.max(0, S.dev - 7) }), onP: () => save({ dev: Math.min(90, S.dev + 7) }) },
+    pasoSrv({ t: E2("Cambios con el recibo", "Returns with receipt"), s: E2("0 = no acepta cambios. Sale en tu página.", "0 = no returns. Shows on your page."),
+      n: S.dev, fmt: (n) => n ? E2(`${n} días`, `${n} days`) : E2("No", "No"), sig: (n, d) => d < 0 ? Math.max(0, n - 7) : Math.min(90, n + 7), save: (n) => save({ dev: n }) }),
     { type: "rows", k: E2("PAGO", "PAYMENT"), items: [{ icon: "dollar", t: E2("Aceptas efectivo", "You take cash"), s: E2("La tarjeta siempre se acepta.", "Cards are always accepted."), tgOn: S.cash, onTg: () => save({ cash: !S.cash }) }] },
     // Envío por correo (MD DeliverySettings «solo Tienda»): se paga con tarjeta; sin tarjeta, solo se recoge en la tienda.
     { type: "rows", k: E2("ENVÍO POR CORREO", "SHIPPING BY MAIL"), items: [{ icon: "truck", t: E2("Envías por correo", "You ship by mail"), s: E2("El cliente lo paga con tarjeta al apartar. Sin tarjeta, lo recoge en la tienda.", "The customer pays it by card when holding. Without a card, they pick it up in store."), tgOn: S.ship, onTg: () => save({ ship: !S.ship }) }] });
   if (S.ship) out.push(
-    { type: "step", t: E2("Costo del envío", "Shipping fee"), s: E2("Lo que paga el cliente por el correo.", "What the customer pays for shipping."), v: S.shipFee ? usd(S.shipFee) : E2("Gratis", "Free"), onM: () => save({ shipFee: Math.max(0, S.shipFee - 100) }), onP: () => save({ shipFee: Math.min(20000, S.shipFee + 100) }) },
-    { type: "step", t: E2("Envío gratis desde", "Free shipping over"), s: E2("0 = nunca es gratis.", "0 = never free."), v: S.shipFree ? usd(S.shipFree) : E2("Nunca", "Never"), onM: () => save({ shipFree: Math.max(0, S.shipFree - 500) }), onP: () => save({ shipFree: Math.min(500000, S.shipFree + 500) }) },
+    pasoSrv({ t: E2("Costo del envío", "Shipping fee"), s: E2("Lo que paga el cliente por el correo.", "What the customer pays for shipping."), n: S.shipFee, fmt: (n) => n ? usd(n) : E2("Gratis", "Free"), sig: (n, d) => d < 0 ? Math.max(0, n - 100) : Math.min(20000, n + 100), save: (n) => save({ shipFee: n }) }),
+    pasoSrv({ t: E2("Envío gratis desde", "Free shipping over"), s: E2("0 = nunca es gratis.", "0 = never free."), n: S.shipFree, fmt: (n) => n ? usd(n) : E2("Nunca", "Never"), sig: (n, d) => d < 0 ? Math.max(0, n - 500) : Math.min(500000, n + 500), save: (n) => save({ shipFree: n }) }),
     { type: "chips", k: E2("LLEGA EN", "ARRIVES IN"), items: (["1-2", "3-5", "5-7"] as const).map((d) => ({ l: E2(`${d.replace("-", "–")} días`, `${d.replace("-", "–")} days`), v: S.shipDays === d ? "selected" : "filter", onClick: () => save({ shipDays: d }) })) });
   for (const it of S.inv) {
     out.push({ type: "group", k: nm(it.name).toUpperCase() });
+    // GUARDIAN-OK pasoQueSuma: cada toque es UN movimiento de ±1 que el servidor suma de forma atómica (tallaExistencia: stock_left + delta), no un valor: N toques suman N.
     for (const t of it.tallas) out.push({ type: "step", t: `${nm(it.label)} ${t.label}`, s: t.stock ? E2("Se puede apartar", "Can be held") : E2("Agotada · no se aparta", "Sold out · cannot be held"), v: String(t.stock),
       onM: () => (t.stock ? c.run(() => tallaExistencia(c.d.id, t.id, -1), E2("Guardado.", "Saved.")) : undefined), onP: () => c.run(() => tallaExistencia(c.d.id, t.id, 1), E2("Guardado.", "Saved.")) });
   }

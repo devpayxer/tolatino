@@ -3,6 +3,7 @@
    asvBlocks / asvDet (dash2-asv.js, «Servicios de Auto») y dash2-cat.js blocksB («Taller y estimados» · «Visitas, planes y
    renta»). Servicios de Hogar no tiene pantalla en el diseño: es la misma de Auto con las formas de cobrar de Hogar
    (neg-hogar-listing.js: visita · fijo · hora · área · presupuesto · emergencia · plan) — anotado en docs/REVISION.md. */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { subirFoto } from "@/lib/subir-foto";
 import type { Attrs, Bi, OfiPanel, Oficio, Rubro } from "@/lib/oficios";
@@ -208,7 +209,7 @@ export function herramientaBloques(c: Ctx): Sec {
   const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES · TU HERRAMIENTA", "WHAT YOU SELL · YOUR TOOL"), t: A ? E2("Taller y estimados", "Shop and estimates") : E2("Visitas, planes y renta", "Visits, plans and rentals"),
     s: A ? E2("Tu tarifa, la garantía y a qué hora entregas el mismo día. El estimado le llega al cliente línea por línea y nada se hace sin su OK.", "Your rate, warranty and same-day cutoff. Customers get the estimate line by line and nothing is done without their OK.")
       : E2("Tu tarifa, hasta dónde vas, emergencias, tus planes y lo que rentas.", "Your rate, how far you go, emergencies, your plans and what you rent."), onBack: () => c.go("mod") },
-    { type: "step", t: E2("Mano de obra por hora", "Labor per hour"), s: E2("Con esto se arma cada línea del estimado.", "Every estimate line is built with this."), v: money(S.rate), onM: () => save({ rate: Math.max(4000, S.rate - 500) }), onP: () => save({ rate: Math.min(25000, S.rate + 500) }) }];
+    pasoSrv({ t: E2("Mano de obra por hora", "Labor per hour"), s: E2("Con esto se arma cada línea del estimado.", "Every estimate line is built with this."), n: S.rate, fmt: money, sig: (n, d) => d < 0 ? Math.max(4000, n - 500) : Math.min(25000, n + 500), save: (n) => save({ rate: n }) })];
   if (A) {
     out.push({ type: "chips", k: E2("GARANTÍA DEL TRABAJO", "WORK WARRANTY"), items: ([[3, 3000], [12, 12000], [24, 24000]] as [number, number][]).map((w) => ({ l: `${w[0]}${E2(" meses · ", " months · ")}${w[1].toLocaleString("en-US")} mi`, v: S.warrM === w[0] && S.warrMi === w[1] ? "selected" : "filter", onClick: () => save({ warr: w }) })) },
       { type: "chips", k: E2("LISTO EL MISMO DÍA SI LO DEJAN ANTES DE", "SAME DAY IF DROPPED OFF BY"), items: [11, 12, 14, 15].map((h) => ({ l: hL(h), v: S.cut === h ? "selected" : "filter", onClick: () => save({ cut: h }) })) },

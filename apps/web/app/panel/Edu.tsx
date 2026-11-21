@@ -5,6 +5,7 @@
    de cada grupo (0 = lleno, no sale en la página; «Deja al menos un grupo con cupo»); REGLAS · NO SE APAGAN. Abrir un grupo y la
    lista de grupos (hueco #1 del diseño) se componen con step, chips, field y acts. Cada toque se guarda en el servidor
    (acciones-edu.ts) con su línea en la auditoría. */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { DIAS_INSC, dowDe, etiquetaGrupo, fechaCorta, FORMA, horaInsc, planTexto, PLANES, resumenEdu, sumarDiasI, tituloEdu, usdI, type CursoH, type GrupoH } from "@/lib/inscripciones-comun";
 import { eduAbrirGrupo, eduGuardar, eduQuitarGrupo } from "./acciones-edu";
@@ -46,22 +47,22 @@ export function herramientaEduBloques(c: Ctx): Sec {
 
 /* Un curso con su precio, matrícula, plan, primera clase gratis y los cupos de sus grupos. Niños (nik, 4eb): «Inscripción · aparta el
    cupo», sin plan de pagos (NIK, L460) y $0 = «Gratis si calificas». */
-export function cursoBloques(c: Ctx, x: CursoH, save: (p: Parameters<typeof eduGuardar>[1], m?: string) => void, nik = false): (Bloque | null)[] {
+export function cursoBloques(c: Ctx, x: CursoH, save: (p: Parameters<typeof eduGuardar>[1], m?: string) => Promise<boolean>, nik = false): (Bloque | null)[] {
   const { E2, es } = c, out: (Bloque | null)[] = [{ type: "group", k: `${nm(c, x.name).toUpperCase()}${x.vende ? "" : E2(" · OCULTO", " · HIDDEN")}` }];
   const stp = x.k === "curso" ? 1000 : 500;
-  out.push({ type: "step", t: E2("Precio", "Price"), s: x.k === "curso" ? E2(`El curso completo · ${x.sem ?? 0} semanas`, `Whole course · ${x.sem ?? 0} weeks`) : es ? FORMA[x.k].t.es : FORMA[x.k].t.en,
-    v: x.cents || !nik ? usdI(x.cents) : E2("Gratis", "Free"), onM: () => save({ item: x.id, precio: Math.max(x.k === "curso" ? x.mat + 100 : nik ? 0 : 100, x.cents - stp) }), onP: () => save({ item: x.id, precio: Math.min(5000000, x.cents + stp) }) });
+  out.push(pasoSrv({ t: E2("Precio", "Price"), s: x.k === "curso" ? E2(`El curso completo · ${x.sem ?? 0} semanas`, `Whole course · ${x.sem ?? 0} weeks`) : es ? FORMA[x.k].t.es : FORMA[x.k].t.en,
+    n: x.cents, fmt: (n) => n || !nik ? usdI(n) : E2("Gratis", "Free"), sig: (n, d) => d < 0 ? Math.max(x.k === "curso" ? x.mat + 100 : nik ? 0 : 100, n - stp) : Math.min(5000000, n + stp), save: (n) => save({ item: x.id, precio: n }) }));
   if (x.k === "curso") {
-    out.push({ type: "step", t: nik ? E2("Inscripción · aparta el cupo", "Signup fee · holds the spot") : E2("Matrícula · aparta el cupo", "Registration · holds the seat"),
+    out.push(pasoSrv({ t: nik ? E2("Inscripción · aparta el cupo", "Signup fee · holds the spot") : E2("Matrícula · aparta el cupo", "Registration · holds the seat"),
       s: x.mat ? E2(`Hoy se retienen ${usdI(x.mat)} · se descuenta del total; si el grupo no abre, se devuelve`, `${usdI(x.mat)} held today · comes off the total; refunded if the group does not open`) : E2("Sin matrícula: pagan el primer día", "No registration: they pay on day one"),
-      v: usdI(x.mat), onM: () => save({ item: x.id, mat: Math.max(0, x.mat - 500) }), onP: () => save({ item: x.id, mat: Math.min(x.cents - 100, x.mat + 500) }) });
+      n: x.mat, fmt: usdI, sig: (n, d) => d < 0 ? Math.max(0, n - 500) : Math.min(x.cents - 100, n + 500), save: (n) => save({ item: x.id, mat: n }) }));
     if (!nik) out.push({ type: "chips", k: E2("PLAN DE PAGOS", "PAYMENT PLAN"), help: planTexto(x.cents, x.mat, x.plan, es),
       items: PLANES.map((n) => ({ l: n ? String(n) : E2("Sin plan", "None"), v: x.plan === n ? "selected" : "filter", onClick: () => save({ item: x.id, plan: n }) })) });
   } else out.push({ type: "rows", items: [{ icon: "star", t: E2("Primera clase gratis", "First class free"), s: x.g1 ? E2("Sin tarjeta y sin compromiso.", "No card and no commitment.") : E2("Apagado", "Off"), tgOn: x.g1, compact: true, onTg: () => save({ item: x.id, g1: !x.g1 }) }] });
   const abiertos = x.grupos.filter((g) => g.estado === "open");
-  for (const g of abiertos) out.push({ type: "step", t: `${E2("Cupos", "Seats")} · ${grupoL(c, g)}`,
+  for (const g of abiertos) out.push(pasoSrv({ t: `${E2("Cupos", "Seats")} · ${grupoL(c, g)}`,
     s: g.libres ? (g.ocupados + g.fuera ? E2(`Se puede inscribir · ${g.ocupados + g.fuera} ya inscritos`, `Open for enrollment · ${g.ocupados + g.fuera} already enrolled`) : E2("Se puede inscribir", "Open for enrollment")) : E2("Lleno · no sale en tu página", "Full · hidden on your page"),
-    v: String(g.libres), onM: () => save({ grupo: g.id, libres: Math.max(0, g.libres - 1) }), onP: () => save({ grupo: g.id, libres: Math.min(40, g.libres + 1) }) });
+    n: g.libres, fmt: String, sig: (n, d) => d < 0 ? Math.max(0, n - 1) : Math.min(40, n + 1), save: (n) => save({ grupo: g.id, libres: n }) }));
   if (!abiertos.length) out.push({ type: "note", tone: "warn", icon: "calendar", t: E2("Este curso no tiene grupos abiertos: no se puede inscribir nadie. Abre un grupo.", "This course has no open groups: nobody can enroll. Open a group.") });
   out.push({ type: "acts", items: [{ l: E2("Abrir un grupo", "Open a group"), v: "secondary", icon: "plus", onClick: () => c.det(`grp:new:${x.id}`) },
     ...(abiertos.length ? [{ l: E2("Ver grupos", "See groups"), v: "ghost", icon: "grid", onClick: () => c.det(`grp:list:${x.id}`) }] : [])] });

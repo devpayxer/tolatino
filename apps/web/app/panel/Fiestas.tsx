@@ -3,6 +3,7 @@
    (blocksD, state L193); plan fase4-fiestas-transporte.md §4t y §5. Cada toque se guarda en el servidor (acciones-fiesta.ts)
    y la página y Buscar lo dicen al momento («Libre este sábado»). El calendario es un hueco del diseño (#1 del plan),
    compuesto con chips por fin de semana y un campo para cualquier otra fecha (REVISION). */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { resumenFiesta } from "@/lib/fiestas-comun";
 import { fiestaDia, fiestaGuardar, type FiestaIn } from "./acciones-fiesta";
@@ -34,14 +35,14 @@ export function herramientaFiestaBloques(c: Ctx): Sec {
   const out: (Bloque | null)[] = [
     { type: "head", eye: E2("LO QUE VENDES · TU HERRAMIENTA", "WHAT YOU SELL · YOUR TOOL"), onBack: () => c.go("mod"), t: E2("Calendario y depósito", "Calendar and deposit"),
       s: E2("Las fechas que ya están tomadas y lo que se deja para apartar una. Tu página dice «Libre el sábado» u «Ocupada» con esto.", "The dates already taken and what it takes to hold one. Your page says “Free on Saturday” or “Booked” from this.") },
-    { type: "step", t: E2("Depósito para apartar la fecha", "Deposit to hold the date"), s: E2("Se retiene al pedir y se cobra cuando confirmas. Si no confirmas, se libera completo.", "Held when they ask and charged when you confirm. If you do not confirm, it is fully released."),
-      v: h.dep ? usd(h.dep) : E2("Sin depósito", "No deposit"), onM: () => save({ dep: Math.max(0, h.dep - 5000) }), onP: () => save({ dep: Math.min(300000, h.dep + 5000) }) },
-    { type: "step", t: E2("Invitados como máximo", "Maximum guests"), s: E2("Si piden más, la app dice «No caben». En 0 no aplica (DJ, fotos…).", "If they ask for more, the app says “Won’t fit”. At 0 it does not apply (DJ, photos…)."),
-      v: h.guests ? String(h.guests) : E2("No aplica", "N/A"), onM: () => save({ guests: !h.guests || h.guests <= 10 ? null : h.guests - 10 }), onP: () => save({ guests: Math.min(1000, (h.guests ?? 0) + 10) }) },
-    { type: "step", t: E2("Eventos el mismo día", "Events the same day"), s: E2("Cuántas fiestas puedes atender en un día. Al llenarse, la fecha sale ocupada.", "How many parties you can serve in a day. When full, the date shows as booked."),
-      v: String(h.perDay), onM: () => save({ perDay: Math.max(1, h.perDay - 1) }), onP: () => save({ perDay: Math.min(20, h.perDay + 1) }) },
-    { type: "step", t: E2("Hasta dónde vas", "How far you travel"), s: E2("Millas desde tu dirección. En 0 solo en tu local.", "Miles from your address. At 0 only at your place."),
-      v: h.zone ? `${h.zone} mi` : E2("Solo aquí", "Here only"), onM: () => save({ zone: Math.max(0, (h.zone ?? 0) - 5) }), onP: () => save({ zone: Math.min(150, (h.zone ?? 0) + 5) }) },
+    pasoSrv({ t: E2("Depósito para apartar la fecha", "Deposit to hold the date"), s: E2("Se retiene al pedir y se cobra cuando confirmas. Si no confirmas, se libera completo.", "Held when they ask and charged when you confirm. If you do not confirm, it is fully released."),
+      n: h.dep, fmt: (n) => n ? usd(n) : E2("Sin depósito", "No deposit"), sig: (n, d) => d < 0 ? Math.max(0, n - 5000) : Math.min(300000, n + 5000), save: (n) => save({ dep: n }) }),
+    pasoSrv({ t: E2("Invitados como máximo", "Maximum guests"), s: E2("Si piden más, la app dice «No caben». En 0 no aplica (DJ, fotos…).", "If they ask for more, the app says “Won’t fit”. At 0 it does not apply (DJ, photos…)."),
+      n: h.guests ?? 0, fmt: (n) => n ? String(n) : E2("No aplica", "N/A"), sig: (n, d) => d < 0 ? (n <= 10 ? 0 : n - 10) : Math.min(1000, n + 10), save: (n) => save({ guests: n || null }) }),
+    pasoSrv({ t: E2("Eventos el mismo día", "Events the same day"), s: E2("Cuántas fiestas puedes atender en un día. Al llenarse, la fecha sale ocupada.", "How many parties you can serve in a day. When full, the date shows as booked."),
+      n: h.perDay, fmt: String, sig: (n, d) => d < 0 ? Math.max(1, n - 1) : Math.min(20, n + 1), save: (n) => save({ perDay: n }) }),
+    pasoSrv({ t: E2("Hasta dónde vas", "How far you travel"), s: E2("Millas desde tu dirección. En 0 solo en tu local.", "Miles from your address. At 0 only at your place."),
+      n: h.zone ?? 0, fmt: (n) => n ? `${n} mi` : E2("Solo aquí", "Here only"), sig: (n, d) => d < 0 ? Math.max(0, n - 5) : Math.min(150, n + 5), save: (n) => save({ zone: n }) }),
     { type: "chips", k: E2("SE APARTA EN LA APP HASTA", "BOOKED IN THE APP UP TO"), help: E2("MÁS LEJOS: «LLAMA PARA ESA FECHA»", "FURTHER OUT: “CALL FOR THAT DATE”"),
       items: ([90, 180, 365] as const).map((d) => ({ l: E2(`${d} días`, `${d} days`), v: h.ahead === d ? "selected" : "filter", onClick: () => save({ ahead: d }) })) },
     { type: "group", k: E2("TUS FECHAS · TOCA PARA MARCAR OCUPADA O LIBRE", "YOUR DATES · TAP TO MARK BOOKED OR FREE") },

@@ -154,7 +154,7 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
   else out.push({ type: "rows", items: [{ t: cadaL(dur), s: ui.peRen ? E2(`${$c(precioDe(dur))} el ${q ? dia(q.hasta, es) : "—"}, si hay puesto`, `${$c(precioDe(dur))} on ${q ? dia(q.hasta, es) : "—"}, if there is a slot`) : E2("Apagada", "Off"), tgOn: !!ui.peRen, onTg: () => setUi({ peRen: !ui.peRen }) }] });
   // 3-D Secure: si el banco pide confirmar, la hoja del banco (c.ver) y, al confirmar, lo MISMO otra vez con la MISMA clave (un solo cobro).
   const compra = { dur, desde: desdeSel, pm, renovar: dur !== "until_event" && !!ui.peRen, clave: ui.peClave, renovarDe: renDe };
-  const pagar = (): void => c.run(
+  const pagar = (): void => void c.run(
     async () => { const r = await pevComprar(d.id, eventoId, compra); if (!r.ok && c.ver(r, pagar)) return { ok: true, verificando: true } as Res; return r; },
     (r: { estado?: string; verificando?: boolean }) => r?.verificando ? undefined : r?.estado === "reservado" ? E2("Listo. Tu puesto quedó reservado.", "Done. Your slot is booked.") : E2("Listo. Tu evento ya sale en Patrocinados.", "Done. Your event now shows in Sponsored."),
     (r: { verificando?: boolean }) => { if (!r?.verificando) setUi({ pePaso: 0, peDesde: "hoy", peLib: null, peRenDe: null, peClave: null }); });

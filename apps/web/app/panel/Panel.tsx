@@ -128,7 +128,7 @@ export type Ctx = {
   tel: EsteTelefono;
   d: DatosPanel; es: boolean; E2: (a: string, b: string) => string; desk: boolean; w: number; detCol: boolean;
   go: (sec: Ruta["sec"], sub?: string | null) => void; det: (id: string) => void; closeDet: () => void; ruta: Ruta;
-  toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
+  toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => Promise<boolean>;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any> | ((z: Record<string, any>) => Record<string, any>)) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void, accept?: string) => void; modoPruebas: boolean; menu?: MenuPanel;
   /* 8i · ¿Se puede comprar Pro aquí? En la web sí; dentro de las apps de las tiendas, no (Apple 3.1.3(f), Pagos de Google; guardián
@@ -174,19 +174,25 @@ function PanelBase({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, 
   const det = useCallback((id: string) => { const q = new URLSearchParams(sp.toString()); q.set("det", id); router.push(`${path}?${q}`, { scroll: !desk }); }, [router, path, sp, desk]);
   const nav = useCallback((href: string) => router.push(conEq(href), { scroll: false }), [router, conEq]);
   const closeDet = useCallback(() => { setForms((f) => Object.fromEntries(Object.entries(f).filter(([k]) => !k.startsWith("det:")))); const q = new URLSearchParams(sp.toString()); q.delete("det"); router.push(q.size ? `${path}?${q}` : path, { scroll: false }); }, [router, path, sp]);
-  const run = useCallback((f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => {
+  // 21 nov · Devuelve si se guardó (true) o no (false), para el paso que guarda en el servidor en cada toque (pasoSrv en packages/ui): manda el
+  // siguiente toque cuando este terminó y vuelve al valor del servidor si dijo que no. Quien no lo espera lo ignora, como antes.
+  const run = useCallback((f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void): Promise<boolean> => new Promise<boolean>((fin) => {
     start(async () => {
-      const r = await f().catch(() => ({ ok: false as const, mensaje: { es: "No se pudo guardar. Revisa tu conexión.", en: "Couldn’t save. Check your connection." } }));
-      // Si no se pudo (p. ej. «ya la tomó otro negocio», «esta cita ya cambió»), la pantalla se pone al día igual:
-      // lo escrito no se pierde (vive en el cliente) y lo que cambió en el servidor se ve.
-      // 9n-23 · En la vista del equipo todo cambio lo rechaza el servidor (las acciones piden ser del negocio): se dice así, con su mensaje.
-      if (!r.ok) { toast(soloVer ? `${dosIdiomas(lang === "es", "Solo lectura: no se guardó nada", "Read only: nothing was saved")} · ${r.mensaje[lang]}` : r.mensaje[lang]); router.refresh(); return; }
-      const t = typeof ok === "function" ? ok(r) : ok;
-      if (t) toast(t);
-      after?.(r);
-      router.refresh();
+      let bien = false;
+      try {
+        const r = await f().catch(() => ({ ok: false as const, mensaje: { es: "No se pudo guardar. Revisa tu conexión.", en: "Couldn’t save. Check your connection." } }));
+        // Si no se pudo (p. ej. «ya la tomó otro negocio», «esta cita ya cambió»), la pantalla se pone al día igual:
+        // lo escrito no se pierde (vive en el cliente) y lo que cambió en el servidor se ve.
+        // 9n-23 · En la vista del equipo todo cambio lo rechaza el servidor (las acciones piden ser del negocio): se dice así, con su mensaje.
+        if (!r.ok) { toast(soloVer ? `${dosIdiomas(lang === "es", "Solo lectura: no se guardó nada", "Read only: nothing was saved")} · ${r.mensaje[lang]}` : r.mensaje[lang]); router.refresh(); return; }
+        const t = typeof ok === "function" ? ok(r) : ok;
+        if (t) toast(t);
+        after?.(r);
+        router.refresh();
+        bien = true;
+      } finally { fin(bien); }
     });
-  }, [lang, router, toast, soloVer]);
+  }), [lang, router, toast, soloVer]);
   const form = useCallback(<T,>(key: string, b: T): Form<T> => {
     const cur = (forms[key] as T | undefined) ?? b;
     return { key, d: cur, dirty: forms[key] !== undefined && JSON.stringify(cur) !== JSON.stringify(b), set: (p) => setForms((z) => ({ ...z, [key]: { ...((z[key] as T | undefined) ?? b), ...p } })) };

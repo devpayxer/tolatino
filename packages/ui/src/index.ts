@@ -6,4 +6,4 @@ export { Foto, type FotoProps } from "./core/Foto";
 export { ANCHOS_FOTO, fotoSrc, fotoFondo, fotoCss, fotoSrcSet } from "./foto";
 export * from "./ds/index";
 export { CATALOGO } from "./ds/catalogo";
-export { PanelBloque, PanelBloques, type Bloque as PanelBloqueT, type Fila as PanelFila, type Accion as PanelAccion, type Dia as PanelDia } from "./panel/Bloques";
+export { PanelBloque, PanelBloques, pasoSrv, type PasoSrv, type Bloque as PanelBloqueT, type Fila as PanelFila, type Accion as PanelAccion, type Dia as PanelDia } from "./panel/Bloques";

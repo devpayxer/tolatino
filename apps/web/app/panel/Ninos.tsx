@@ -4,6 +4,7 @@
    fase4-edu-ninos-deporte.md §4eb y §5. La licencia del DHS no es un interruptor: sale de Tu página › Licencias y la verifica
    To'Latino; sin licencia vigente, la guardería y el cuidado en casa no reciben solicitudes por la app (§6 #9). Niñera y nana trabajan
    sin local: solo contacto (§6 #10). Cada toque se guarda en el servidor (acciones-ninos.ts y, para los grupos, acciones-edu.ts). */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { fechaCorta, resumenEdu } from "@/lib/inscripciones-comun";
 import { edadTexto, libresNinos, resumenNinos, tituloNinos, usdN0, type HerrNinos } from "@/lib/ninos-comun";
@@ -50,21 +51,21 @@ export function herramientaNinosBloques(c: Ctx): Sec {
   // Las edades que atiende (la tarjeta y la ficha las dicen).
   const ed = h.edad ?? [0, 5];
   out.push({ type: "group", k: E2("EDADES QUE ATIENDES", "AGES YOU SERVE") },
-    { type: "step", t: E2("Desde", "From"), s: edadTexto(h.edad, es), v: ed[0] === 0 ? E2("Bebés", "Babies") : E2(`${ed[0]} años`, `Age ${ed[0]}`), onM: () => save({ edad: [Math.max(0, ed[0] - 1), ed[1]] }), onP: () => save({ edad: [Math.min(ed[1], ed[0] + 1), ed[1]] }) },
-    { type: "step", t: E2("Hasta", "To"), s: E2("La edad mayor que recibes.", "The oldest age you take."), v: E2(`${ed[1]} años`, `Age ${ed[1]}`), onM: () => save({ edad: [ed[0], Math.max(ed[0], ed[1] - 1)] }), onP: () => save({ edad: [ed[0], Math.min(18, ed[1] + 1)] }) });
+    pasoSrv({ t: E2("Desde", "From"), s: edadTexto(h.edad, es), n: ed[0], fmt: (n) => n === 0 ? E2("Bebés", "Babies") : E2(`${n} años`, `Age ${n}`), sig: (n, d) => d < 0 ? Math.max(0, n - 1) : Math.min(ed[1], n + 1), save: (n) => save({ edad: [n, ed[1]] }) }),
+    pasoSrv({ t: E2("Hasta", "To"), s: E2("La edad mayor que recibes.", "The oldest age you take."), n: ed[1], fmt: (n) => E2(`${n} años`, `Age ${n}`), sig: (n, d) => d < 0 ? Math.max(ed[0], n - 1) : Math.min(18, n + 1), save: (n) => save({ edad: [ed[0], n] }) }));
   if (h.cuidado) {
     const tot = libresNinos(h);
     out.splice(1, 0, { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("CUPOS LIBRES", "OPENINGS"), v: String(tot) }, { k: "CCIS", v: h.ccis ? E2("Sí", "Yes") : "No" }, { k: E2("POR SEMANA", "PER WEEK"), v: h.semana ? usdN0(h.semana) : "—" }] });
     out.push({ type: "group", k: h.casa ? E2("CUPOS", "OPENINGS") : E2("CUPOS POR EDAD", "OPENINGS BY AGE") });
-    for (const b of h.bandas) out.push({ type: "step", t: h.casa ? E2(`Cupos libres · ${es ? b.label.es : b.label.en} · hasta 6 niños`, `Openings · ${b.label.en} · up to 6 kids`) : es ? b.label.es : b.label.en,
-      s: b.libres ? E2("Se puede pedir", "Can be requested") : E2("Lleno · lista de espera", "Full · waitlist"), v: String(b.libres),
-      onM: () => save({ banda: b.id, libres: Math.max(0, b.libres - 1) }), onP: () => save({ banda: b.id, libres: Math.min(h.casa ? 6 : 20, b.libres + 1) }) });
+    for (const b of h.bandas) out.push(pasoSrv({ t: h.casa ? E2(`Cupos libres · ${es ? b.label.es : b.label.en} · hasta 6 niños`, `Openings · ${b.label.en} · up to 6 kids`) : es ? b.label.es : b.label.en,
+      s: b.libres ? E2("Se puede pedir", "Can be requested") : E2("Lleno · lista de espera", "Full · waitlist"), n: b.libres, fmt: String,
+      sig: (n, d) => d < 0 ? Math.max(0, n - 1) : Math.min(h.casa ? 6 : 20, n + 1), save: (n) => save({ banda: b.id, libres: n }) }));
     if (!h.bandas.length || (!h.casa && h.bandas.length < 6)) out.push({ type: "chips", k: h.bandas.length ? E2("AGREGAR UN GRUPO DE EDAD", "ADD AN AGE GROUP") : E2("¿QUÉ EDADES CUIDAS?", "WHAT AGES DO YOU CARE FOR?"),
       items: ([[0, 1, E2("Bebés", "Babies")], [2, 2, E2("2 años", "Age 2")], [3, 3, E2("3 años", "Age 3")], [4, 5, E2("4 y 5 años", "Ages 4 and 5")], [6, 12, E2("6 a 12 años", "Ages 6–12")]] as [number, number, string][])
         .filter(([mn, mx]) => !h.bandas.some((b) => b.min === mn && b.max === mx)).map(([mn, mx, l]) => ({ l, v: "filter", onClick: () => save({ nuevaBanda: { min: mn, max: mx } }, E2("Listo. Ponle cuántos cupos tienes.", "Done. Set how many openings you have.")) })) });
     const wk = h.semana ?? 23500;
-    out.push({ type: "step", t: E2("Precio por semana sin subsidio", "Weekly price without subsidy"), s: E2("Con CCIS, el estado paga una parte; lo que te toca se dice antes.", "With CCIS the state pays part; your share is said upfront."),
-      v: h.semana ? usdN0(h.semana) : "—", onM: () => save({ semana: Math.max(5000, wk - 500) }), onP: () => save({ semana: Math.min(60000, wk + 500) }) });
+    out.push(pasoSrv({ t: E2("Precio por semana sin subsidio", "Weekly price without subsidy"), s: E2("Con CCIS, el estado paga una parte; lo que te toca se dice antes.", "With CCIS the state pays part; your share is said upfront."),
+      n: wk, v: h.semana ? usdN0(h.semana) : "—", fmt: usdN0, sig: (n, d) => d < 0 ? Math.max(5000, n - 500) : Math.min(60000, n + 500), save: (n) => save({ semana: n }) }));
     out.push({ type: "rows", cols: cols2, items: [
       { icon: "dollar", t: E2("Aceptas el subsidio CCIS", "You take the CCIS subsidy"), s: E2("Sale en el filtro «Acepta subsidio».", "Shows under “Takes subsidy”."), tgOn: h.ccis, onTg: () => save({ ccis: !h.ccis }) },
       { icon: "clock", t: E2("Horario extendido · 6 AM a 6 PM", "Extended hours · 6 AM to 6 PM"), tgOn: h.ext, onTg: () => save({ ext: !h.ext }) },
@@ -83,8 +84,8 @@ export function herramientaNinosBloques(c: Ctx): Sec {
   if (h.kind === "after" || h.kind === "camp") OF.push({ icon: "truck", t: h.kind === "after" ? E2("Recoges a los niños en la escuela", "You pick kids up at school") : E2("Transporte desde paradas", "Bus from stops"), s: E2("Sale en el filtro «Transporte».", "Shows under “Transport”."), tgOn: h.transporte, compact: true, onTg: () => save({ transporte: !h.transporte }) });
   if (h.kind === "terapia" || h.kind === "familia") OF.push({ icon: "insurance", t: E2("Aceptas Medicaid y CHIP", "You take Medicaid and CHIP"), s: E2("No se pide el número aquí: lo ven en persona.", "No number is asked here: it is handled in person."), tgOn: h.medicaid, compact: true, onTg: () => save({ medicaid: !h.medicaid }) });
   out.push({ type: "rows", k: E2("LO QUE OFRECES", "WHAT YOU OFFER"), cols: cols2, items: OF });
-  if (h.kind === "terapia") { const w = h.espera ?? 4; out.push({ type: "step", t: E2("Espera para la evaluación", "Wait for an evaluation"), s: E2("Sale en tu página: «Evaluación en N semanas».", "Shows on your page: «Evaluation within N weeks»."),
-    v: E2(`${h.espera ?? "—"} sem`, `${h.espera ?? "—"} wk`), onM: () => save({ espera: Math.max(1, w - 1) }), onP: () => save({ espera: Math.min(12, w + 1) }) }); }
+  if (h.kind === "terapia") { const w = h.espera ?? 4; out.push(pasoSrv({ t: E2("Espera para la evaluación", "Wait for an evaluation"), s: E2("Sale en tu página: «Evaluación en N semanas».", "Shows on your page: «Evaluation within N weeks»."),
+    n: w, v: E2(`${h.espera ?? "—"} sem`, `${h.espera ?? "—"} wk`), fmt: (n) => E2(`${n} sem`, `${n} wk`), sig: (n, d) => d < 0 ? Math.max(1, n - 1) : Math.min(12, n + 1), save: (n) => save({ espera: n }) })); }
   if (!e?.cursos.length) out.push({ type: "empty", icon: "calendar", t: E2("Todavía no tienes programas", "No programs yet"), s: E2("Agrégalos en Servicios: por semana, por mes, por clase o una temporada con inscripción. Después abres sus grupos aquí.", "Add them in Services: weekly, monthly, per class or a season with a signup fee. Then open their groups here."),
     cta: E2("Ir a Servicios", "Go to Services"), onCta: () => c.go("mod", "servicios") });
   const saveEdu = (p: Parameters<typeof eduGuardar>[1], m = ok) => c.run(() => eduGuardar(c.d.id, p), m);

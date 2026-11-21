@@ -7747,6 +7747,47 @@ const guardianes = {
     if (!/const k = b\.type === "step" \? `step:\$\{b\.t\}` : b\.type;/.test(t)) falla(G, F, 0, "la llave de un paso (step) es su rótulo, no cuántos pasos van antes: al quitarse uno de arriba, el «+» de otro queda bajo el dedo");
   },
 
+  /* 21 nov · Un paso del panel (− valor +) que GUARDA EN EL SERVIDOR en cada toque no calcula desde el valor que tenía al pintarse: con onM/onP
+     como `() => save({ x: h.x + 1 })`, un segundo toque antes de que vuelva el guardado salía del valor viejo y se perdía un incremento (o se
+     guardaba dos veces lo mismo). Todo paso de apps/web/app cuyos onM/onP llaman a c.run, a un save*() o a una acción del servidor pasa por
+     pasoSrv (packages/ui: muestra y calcula desde el ÚLTIMO valor pedido, manda de uno en uno y al final lo último, y vuelve al del servidor si
+     dice que no). Excepción con GUARDIAN-OK y su motivo en el paso o en las dos líneas de arriba: un movimiento de ±1 que el servidor suma de
+     forma atómica (transFuera, tallaExistencia). También vigila las tres piezas de la solución: el paso con srv en Bloques.tsx, c.run que
+     devuelve si se guardó, y que pasoSrv siga exportado. Al revés (alreves9tpaso): volver a un paso con save({ … h.x + 1 }) directo, quitar
+     el último valor pedido del paso, o que run no devuelva el resultado. */
+  pasoQueSuma() {
+    const G = "pasoQueSuma", B = "packages/ui/src/panel/Bloques.tsx", P = "apps/web/app/panel/Panel.tsx", I = "packages/ui/src/index.ts";
+    for (const f of [B, P, I]) if (!existsSync(f)) return falla(G, f, 0, "falta (la solución común del paso que guarda en el servidor)");
+    const b = sinComent(B), p = sinComent(P), ix = sinComent(I);
+    if (!/base = x\.want \?\? sv\.current\.n, nx = sv\.current\.sig\(base, d\)/.test(b) || !/onClick=\{srv \? \(\) => toca\(-1\) : b\.onM\}/.test(b) || !/onClick=\{srv \? \(\) => toca\(1\) : b\.onP\}/.test(b))
+      falla(G, B, 0, "el paso con srv (Paso) calcula cada toque desde el ÚLTIMO valor pedido (want), no desde el que trae la pantalla: dos toques rápidos pierden uno");
+    if (!/if \(x\.want !== null && x\.want !== v\) \{ manda\(\); return; \}/.test(b) || !/if \(x\.busy \|\| x\.want === null/.test(b))
+      falla(G, B, 0, "el paso con srv manda de uno en uno y, al terminar, lo último pedido (si no, dos guardados a la vez pisan el valor)");
+    if (!/if \(ok === false\) \{ suelta\(\); return; \}/.test(b)) falla(G, B, 0, "si el servidor dice que no, el paso vuelve al valor del servidor (suelta lo pedido)");
+    if (!/export function pasoSrv\(/.test(b) || !/pasoSrv, type PasoSrv/.test(ix)) falla(G, I, 0, "pasoSrv sale de @tolatino/ui para las pantallas del panel");
+    if (!/run: \(f: \(\) => Promise<Res>[^;]*=> Promise<boolean>;/.test(p) || !/finally \{ fin\(bien\); \}/.test(p))
+      falla(G, P, 0, "c.run devuelve si se guardó (Promise<boolean>): el paso espera a que termine un guardado para mandar el siguiente");
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f)) continue;
+      const crudo = readFileSync(f, "utf8"), t = sinComent(f);
+      if (!/type: "step"/.test(t)) continue;
+      // Lo que cuenta como «guardar en el servidor»: c.run, save*() y las acciones del servidor que importa el archivo (./acciones…) o un ayudante que llama a c.run.
+      const nombres = new Set(["save"]);
+      for (const m of t.matchAll(/import \{([^}]*)\} from "\.\/acciones[^"]*";/g)) for (const x of m[1].split(",")) { const n = x.replace(/\btype\b/, "").trim().split(/\s+as\s+/).pop(); if (n) nombres.add(n); }
+      for (const m of t.matchAll(/const (\w+)\s*=\s*(?:\([^)]*\)|\w+)\s*(?::[^=]+)?=>\s*c\.run\(/g)) nombres.add(m[1]);
+      const re = new RegExp(`(?:\\bc\\.run\\(|\\b(?:${[...nombres].map((x) => x.replace(/[$]/g, "\\$")).join("|")}|save\\w*)\\()`);
+      for (const m of t.matchAll(/type: "step"/g)) {
+        let i = t.lastIndexOf("{", m.index), n = 0, j = i;
+        for (; j < t.length; j++) { if (t[j] === "{") n++; else if (t[j] === "}" && --n === 0) break; }
+        const seg = t.slice(i, Math.min(j + 1, i + 3000)), h = seg.slice(Math.max(0, seg.search(/\bonM\b/)));
+        if (!/\bonM\b/.test(seg) || !re.test(h)) continue;
+        const linea = t.slice(0, m.index).split("\n").length, previas = crudo.split("\n").slice(Math.max(0, linea - 3), linea).join("\n");
+        if (/GUARDIAN-OK/.test(seg) || /GUARDIAN-OK/.test(previas) || /GUARDIAN-OK/.test(crudo.split("\n").slice(linea - 1, linea + 3).join("\n"))) continue;
+        falla(G, f, linea, "un paso (− valor +) guarda en el servidor en cada toque con onM/onP calculados desde el valor pintado: un segundo toque rápido sale del valor viejo y pierde un incremento. Ármalo con pasoSrv({ n, sig, fmt, save }) de @tolatino/ui");
+      }
+    }
+  },
+
   /* 9b-1 · La lista de la noche en la Puerta no ofrece lo que el servidor va a rechazar: trae reservas «confirmed» y «done», y marcarLlegada solo
      acepta «confirmed». Una «done» (ya entró, o la noche se cerró) cuenta como completa (entraron = personas) para que no salga «Entró 1»;
      antes la puerta lo ofrecía en una mesa terminada y al tocarlo decía «Esta reserva ya cambió…» (evt6g tocó esa fila). Al revés

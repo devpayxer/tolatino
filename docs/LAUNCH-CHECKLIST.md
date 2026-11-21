@@ -2032,7 +2032,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       ese segundo. (7) La alerta `refund_stuck` de una devolución que quedó fallida en el barrido ofrece «Resolver a mano», que contesta «Ya no está
       pendiente» (correcto, pero la pantalla debería no ofrecerlo). (8) El webhook no escucha `charge.refund.updated` (una devolución que Stripe da
       por fallida días después). (9) Una disputa que el banco cerró (webhook) deja su caso abierto en Colas. (21 nov)
-- [ ] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
+- [x] **→ 9t** · **Panel: llaves por posición (`step#n`) y doble toque en un «+»:** `packages/ui/src/panel/Bloques.tsx` da a cada bloque una
       llave por su posición: al quitar un paso, el nodo que era «Mensualidad +» pasa a ser «Cuota de inscripción +» (dep4c lo vio; la prueba
       ahora espera la pantalla). Y un doble toque rápido en el mismo «+» pierde un incremento. Llaves estables por bloque y contador que no
       pierda toques; revisar las demás pruebas que tocan «+» seguido. (20 nov)
@@ -2040,6 +2040,20 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       un paso de arriba, el «+» de otro ya no queda bajo el dedo. **Falta:** el doble toque rápido en el mismo «+» cuando ese paso guarda en
       el servidor en cada toque (el segundo toque sale del valor viejo): revisar los ~120 pasos del panel, cuáles guardan en cada toque, y que
       sumen sobre el último valor.
+      **Hecho (21 nov):** de los 124 pasos de `apps/web/app`, 67 viven en el estado local de la pantalla (formularios `c.form`/`c.setUi`: React
+      pinta entre dos clics, sin fallo) y 57 guardan en el servidor en cada toque. Esos 57 se armaban con `onM/onP` calculados desde el valor
+      pintado. Una sola solución: `pasoSrv` (`@tolatino/ui`) + el paso con `srv` en `Bloques.tsx` (`Paso`): se ve y se calcula desde el ÚLTIMO
+      valor pedido, el guardado va de uno en uno y, al terminar, lo último pedido; si el servidor dice que no, vuelve al valor del servidor y la
+      pantalla muestra el error como ya lo hacía. `c.run` ahora devuelve si se guardó. 55 pasos pasan por `pasoSrv` (Autos, Deporte, Edu, Fe,
+      Fiestas, Inmuebles, Ninos, Noche, NocheReservas, Oficios, Retail, SaludPro, Transporte); 2 quedan como estaban (`transFuera`,
+      `tallaExistencia`): cada toque es UN ±1 que el servidor suma de forma atómica, N toques suman N. Guardián `pasoQueSuma` (al revés
+      `alreves9tpaso`, 9/9); prueba `toque9t` (5 toques seguidos en Deporte › Pase de un día y Mercados › precio por libra, y mira la base).
+      Un toque en un tope sin cambio (p. ej. «−» en el mínimo) ya no guarda lo mismo otra vez. El catálogo `cms-cadenas-e2.json` se regeneró
+      (solo cuentas de llamadas).
+- [ ] **→ 9t** · **Panel: `toque9t` sin correr, y la pareja Desde/Hasta de Ninos:** `toque9t` (5 toques seguidos) se escribió el 21 nov sin
+      servidor local (el puerto era de otro dueño): la corre el CI y, si falla, se mira antes de subir. Y «Desde» y «Hasta» (Ninos › Edades)
+      guardan el par `edad` completo cada uno: dos toques rápidos, uno en cada paso, todavía pueden pisarse (cada paso suma bien sobre sí
+      mismo, no sobre el otro). Lo mismo cualquier par de pasos que guarde el mismo registro entero. (21 nov)
 - [ ] **→ 9t** · **`dlv2f4` en el iPad horizontal (WebKit): no pudo tocar «Aceptar» en el detalle del pedido, dos veces seguidas** (corrida
       programada 44778631725, ancho iPad 4/4; ya había pasado el 19 nov). El botón queda abajo, dentro de la hoja que se desplaza (y=967 de
       834); en Chromium con las mismas medidas, agente y toque del iPad el clic llega (probado el 20 nov), así que es de WebKit o de un momento.

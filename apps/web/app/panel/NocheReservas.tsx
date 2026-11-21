@@ -5,6 +5,7 @@
    El detalle: personas, hora, ocasión, nota, depósito, lo de la puerta, cuántas mesas de ese tipo quedan esa noche; Confirmar (cobra el
    depósito) · Otra hora · No hay mesa; «Cancelar la mesa» con motivo (devolución completa). «Pasó la noche» no es un botón: el barrido
    cierra la noche a las 6 AM. */
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { hNoche, nocheCorta, usdN } from "@/lib/noche-comun";
 import type { FilaNoche, NochePanelV, nocheHoy } from "@/lib/noche-reservas";
@@ -26,6 +27,10 @@ function tagDe(c: Ctx, x: FilaNoche): [string, string] {
   return [E2("CONFIRMADA", "CONFIRMED"), "signal"];
 }
 
+/* 21 nov · «Entraron N de M»: cada toque guarda el total en el servidor; el paso suma sobre el último valor pedido (pasoSrv). */
+const entraron = (c: Ctx, t: string, s: string, x: FilaNoche): Bloque => { const { E2 } = c; return pasoSrv({ t, s, n: x.inN ?? 0, fmt: (n) => `${n}/${x.pax}`, sig: (n, d) => d < 0 ? Math.max(0, n - 1) : Math.min(x.pax, n + 1),
+  save: (n, desde) => c.run(() => nocheMarcar(c.d.id, x.numero, "entraron", n), n > desde ? E2("Entró.", "Got in.") : E2("Listo.", "Done.")) }); };
+
 export function hoyNoche(c: Ctx): Bloque[] {
   const { E2, es, ui } = c, H = c.noc?.hoy, nm = (b: Bi) => (es ? b.es : b.en || b.es);
   if (!H) return [];
@@ -44,9 +49,7 @@ export function hoyNoche(c: Ctx): Bloque[] {
     const L = vivas.filter((x) => !q || x.who.toLowerCase().includes(q) || (x.code ?? "").includes(q) || x.numero.toLowerCase().includes(q));
     out.push({ type: "group", k: `${E2("LA LISTA DE ESTA NOCHE", "TONIGHT'S LIST")} · ${E2(`ENTRARON ${dentro} DE ${total}`, `${dentro} OF ${total} IN`)}` });
     out.push({ type: "field", k: E2("BUSCAR POR NOMBRE O CÓDIGO", "SEARCH BY NAME OR CODE"), val: String(ui.nqLista ?? ""), max: 30, ph: E2("Ej.: Ana o 4821", "e.g. Ana or 4821"), onChange: (v) => c.setUi({ nqLista: v.slice(0, 30) }) });
-    for (const x of L.slice(0, 40)) out.push({ type: "step", t: `${x.who} · ${x.code ?? "—"}`, s: E2(`${x.pax} en la lista · llega ${hNoche(x.llega)}`, `${x.pax} on the list · arrives ${hNoche(x.llega)}`), v: `${x.inN ?? 0}/${x.pax}`,
-      onM: () => c.run(() => nocheMarcar(c.d.id, x.numero, "entraron", Math.max(0, (x.inN ?? 0) - 1)), E2("Listo.", "Done.")),
-      onP: () => c.run(() => nocheMarcar(c.d.id, x.numero, "entraron", Math.min(x.pax, (x.inN ?? 0) + 1)), E2("Entró.", "Got in.")) });
+    for (const x of L.slice(0, 40)) out.push(entraron(c, `${x.who} · ${x.code ?? "—"}`, E2(`${x.pax} en la lista · llega ${hNoche(x.llega)}`, `${x.pax} on the list · arrives ${hNoche(x.llega)}`), x));
     if (!L.length) out.push({ type: "note", tone: "info", icon: "search", t: E2("Nadie en la lista con ese nombre o código.", "Nobody on the list with that name or code.") });
   }
   return out;
@@ -82,8 +85,7 @@ export function nocheDetalle(c: Ctx): Sec {
       items: x.slots.map((m) => ({ l: hNoche(m), v: "filter", onClick: () => c.run(() => nocheResponder(c.d.id, x.numero, "otra", m), E2(`Propusiste las ${hNoche(m)}.`, `You proposed ${hNoche(m)}.`), () => c.setUi({ nOtra: null })) })) });
   }
   if (x.st === "confirmed" && x.esHoy) {
-    if (lista) out.push({ type: "step", t: E2("Entraron", "Got in"), s: E2(`De ${x.pax} en la lista. Pagan en la puerta lo que dice «En la puerta».`, `Of ${x.pax} on the list. They pay at the door what “At the door” says.`), v: `${x.inN ?? 0}/${x.pax}`,
-      onM: () => c.run(() => nocheMarcar(c.d.id, x.numero, "entraron", Math.max(0, (x.inN ?? 0) - 1)), E2("Listo.", "Done.")), onP: () => c.run(() => nocheMarcar(c.d.id, x.numero, "entraron", Math.min(x.pax, (x.inN ?? 0) + 1)), E2("Entró.", "Got in.")) });
+    if (lista) out.push(entraron(c, E2("Entraron", "Got in"), E2(`De ${x.pax} en la lista. Pagan en la puerta lo que dice «En la puerta».`, `Of ${x.pax} on the list. They pay at the door what “At the door” says.`), x));
     else if (!x.llego) {
       const yaPuede = x.nowN >= x.llega + x.hold;
       out.push({ type: "acts", items: [

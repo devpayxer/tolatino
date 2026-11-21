@@ -9,6 +9,7 @@
      recalcula el total en la puerta y el pago de ejemplo de todos los carros. REGLAS que no se apagan.
    Cada vehículo que se pinta lleva sus notas (notasCarro): un título salvage dice siempre que no se maneja en la calle. */
 import { ctaPro } from "./pro-cta";
+import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import {
   BODIES, BODY, BUYERS_GUIDE, DRIVE, ESTADO_CARRO, FUEL, GARANTIA, LINEA_AUTOS_SUB, MESES_BHPH, MESES_PAGO, NO_OBLIGATORIA, PARABRISAS, SALVAGE, SIN_GARANTIA, TITULO, TOPE_CARROS_FREE, TRANS,
@@ -188,8 +189,9 @@ export function herramientaAutosBloques(c: Ctx): Sec {
   out.push({ type: "note", tone: "ink", icon: "lock", t: bi(lineaAutos(h.kind, h.pro), es) });
   const bhph = h.kind === "bhph", tax = h.taxBp ?? 0;
   if (bhph) {
-    out.push({ type: "step", t: E2("Enganche", "Down payment"), s: E2("Lo que pagan para llevarse el carro.", "What they pay to drive off."), v: usd(h.bhphDown), onM: () => save({ bhphEng: Math.max(0, h.bhphDown - 10000) }), onP: () => save({ bhphEng: h.bhphDown + 10000 }) },
-      { type: "step", t: E2("Pago a la semana", "Weekly payment"), s: E2("Sale en cada carro con el total pagado y la tasa.", "Shows on each car with the total paid and the rate."), v: usd(h.bhphWeek), onM: () => { if (h.bhphWeek - 500 < 2500) { c.toast(E2("El pago a la semana va desde $25.", "The weekly payment starts at $25.")); return; } save({ bhphSem: h.bhphWeek - 500 }); }, onP: () => save({ bhphSem: h.bhphWeek + 500 }) },
+    out.push(pasoSrv({ t: E2("Enganche", "Down payment"), s: E2("Lo que pagan para llevarse el carro.", "What they pay to drive off."), n: h.bhphDown, fmt: usd, sig: (n, d) => d < 0 ? Math.max(0, n - 10000) : n + 10000, save: (n) => save({ bhphEng: n }) }),
+      pasoSrv({ t: E2("Pago a la semana", "Weekly payment"), s: E2("Sale en cada carro con el total pagado y la tasa.", "Shows on each car with the total paid and the rate."), n: h.bhphWeek, fmt: usd,
+        sig: (n, d) => d < 0 ? (n - 500 < 2500 ? undefined : n - 500) : n + 500, tope: () => c.toast(E2("El pago a la semana va desde $25.", "The weekly payment starts at $25.")), save: (n) => save({ bhphSem: n }) }),
       { type: "chips", k: E2("MESES", "MONTHS"), items: MESES_BHPH.map((n) => ({ l: String(n), v: h.bhphMonths === n ? "selected" : "filter", onClick: () => save({ bhphMeses: n }) })) },
       { type: "rows", items: [{ icon: "check", t: E2("Reportas los pagos al crédito", "You report payments to credit"), s: h.reporta ? E2("Tu página dice que pagar a tiempo sube el puntaje.", "Your page says paying on time builds credit.") : E2("Tu página dice que no reportas.", "Your page says you do not report."), tgOn: h.reporta, onTg: () => save({ reporta: !h.reporta }) }] });
   } else {
@@ -200,23 +202,23 @@ export function herramientaAutosBloques(c: Ctx): Sec {
       { icon: "car", t: E2("Aceptas carros a cambio", "You take trade-ins"), tgOn: h.trade, onTg: () => save({ trade: !h.trade }), compact: true },
       { icon: "home", t: E2("Prueba de manejo en casa", "Test drive at home"), tgOn: h.casa, onTg: () => save({ casa: !h.casa }), compact: true }] });
     if (h.fin) {
-      out.push({ type: "step", t: h.itin ? E2("Enganche con ITIN desde", "ITIN down payment from") : E2("Enganche desde", "Down payment from"), s: E2("Sale en cada carro con la tasa y los meses.", "Shows on each car with the rate and term."), v: usd(h.itinDown),
-        onM: () => { if (h.itinDown - 10000 < 50000) { c.toast(E2("El enganche va desde $500.", "The down payment starts at $500.")); return; } save({ enganche: h.itinDown - 10000 }); }, onP: () => save({ enganche: h.itinDown + 10000 }) });
+      out.push(pasoSrv({ t: h.itin ? E2("Enganche con ITIN desde", "ITIN down payment from") : E2("Enganche desde", "Down payment from"), s: E2("Sale en cada carro con la tasa y los meses.", "Shows on each car with the rate and term."), n: h.itinDown, fmt: usd,
+        sig: (n, d) => d < 0 ? (n - 10000 < 50000 ? undefined : n - 10000) : n + 10000, tope: () => c.toast(E2("El enganche va desde $500.", "The down payment starts at $500.")), save: (n) => save({ enganche: n }) }));
       out.push({ type: "chips", k: E2("PAGO DE EJEMPLO · MESES", "EXAMPLE PAYMENT · TERM"), help: E2("con tasa, meses y enganche juntos", "rate, term and down payment together"),
         items: [{ l: E2("Sin ejemplo", "No example"), v: h.termM == null ? "selected" : "filter", onClick: () => save({ pago: null }) },
           ...MESES_PAGO.filter((n) => n >= 24).map((n) => ({ l: `${n}`, v: h.termM === n ? "selected" : "filter", onClick: () => save({ pago: { aprBp: h.aprBp ?? 1490, meses: n } }) }))] });
-      if (h.aprBp != null && h.termM != null) out.push({ type: "step", t: E2("Tasa (APR) del ejemplo", "Example rate (APR)"), s: E2("La que das por escrito a la mayoría.", "The one you put in writing for most buyers."), v: pctBp(h.aprBp),
-        onM: () => save({ pago: { aprBp: Math.max(0, h.aprBp! - 50), meses: h.termM! } }), onP: () => { if (h.aprBp! + 50 > 3000) { c.toast(E2("La tasa va hasta 30 %.", "The rate goes up to 30%.")); return; } save({ pago: { aprBp: h.aprBp! + 50, meses: h.termM! } }); } });
+      if (h.aprBp != null && h.termM != null) out.push(pasoSrv({ t: E2("Tasa (APR) del ejemplo", "Example rate (APR)"), s: E2("La que das por escrito a la mayoría.", "The one you put in writing for most buyers."), n: h.aprBp, fmt: pctBp,
+        sig: (n, d) => d < 0 ? Math.max(0, n - 50) : n + 50 > 3000 ? undefined : n + 50, tope: () => c.toast(E2("La tasa va hasta 30 %.", "The rate goes up to 30%.")), save: (n) => save({ pago: { aprBp: n, meses: h.termM! } }) }));
       out.push({ type: "note", tone: "info", icon: "info", t: `${bi(NO_OBLIGATORIA, es)} ${bi(SIN_GARANTIA, es)}` });
     }
     out.push({ type: "chips", k: E2("GARANTÍA EN MOTOR Y TRANSMISIÓN", "POWERTRAIN WARRANTY"), items: ([[0, E2("Se vende como está", "Sold as is")], [3, E2("3 meses", "3 months")], [6, E2("6 meses", "6 months")]] as [number, string][]).map(([n, l]) => ({ l, v: h.garantia === n ? "selected" : "filter", onClick: () => save({ garantia: n }) })) });
     out.push({ type: "note", tone: "ink", icon: "law", t: bi(BUYERS_GUIDE, es) });
   }
-  out.push({ type: "step", t: E2("Cargo del dealer", "Dealer fee"), s: E2(`Se suma al total en la puerta de cada carro. Tope de PA: ${usd(h.tope)}.`, `Added to each car’s out-the-door total. PA cap: ${usd(h.tope)}.`), v: usd(h.fee),
-    onM: () => save({ cargo: Math.max(0, h.fee - 5000) }), onP: () => { if (h.fee + 5000 > h.tope) { c.toast(E2(`El cargo del dealer no puede pasar del tope de PA (${usd(h.tope)}).`, `The dealer fee cannot exceed the PA cap (${usd(h.tope)}).`)); return; } save({ cargo: h.fee + 5000 }); } });
+  out.push(pasoSrv({ t: E2("Cargo del dealer", "Dealer fee"), s: E2(`Se suma al total en la puerta de cada carro. Tope de PA: ${usd(h.tope)}.`, `Added to each car’s out-the-door total. PA cap: ${usd(h.tope)}.`), n: h.fee, fmt: usd,
+    sig: (n, d) => d < 0 ? Math.max(0, n - 5000) : n + 5000 > h.tope ? undefined : n + 5000, tope: () => c.toast(E2(`El cargo del dealer no puede pasar del tope de PA (${usd(h.tope)}).`, `The dealer fee cannot exceed the PA cap (${usd(h.tope)}).`)), save: (n) => save({ cargo: n }) }));
   const V = h.carros.filter((x) => x.adm == null && x.status !== "hidden"), enApp = V.filter((x) => visibleCarro(x.status)).length;
-  out.push({ type: "step", t: E2("Carros en el lote", "Cars on the lot"), s: E2("Los que tienes, aunque no todos estén en la app.", "All you have, even if not all are in the app."), v: String(Math.max(h.lot, enApp)),
-    onM: () => { if (h.lot - 1 < enApp) { c.toast(E2("En el lote hay al menos los que están en la app.", "The lot has at least the ones in the app.")); return; } save({ lote: h.lot - 1 }); }, onP: () => save({ lote: Math.max(h.lot, enApp) + 1 }) });
+  out.push(pasoSrv({ t: E2("Carros en el lote", "Cars on the lot"), s: E2("Los que tienes, aunque no todos estén en la app.", "All you have, even if not all are in the app."), n: Math.max(h.lot, enApp), fmt: String,
+    sig: (n, d) => d < 0 ? (n - 1 < enApp ? undefined : n - 1) : n + 1, tope: () => c.toast(E2("En el lote hay al menos los que están en la app.", "The lot has at least the ones in the app.")), save: (n) => save({ lote: n }) }));
   // 4ie · Horas de prueba de manejo «cualquier carro»: patrón semanal → 14 días adelante; toca para prender o apagar. La prueba es gratis.
   const P0 = h.prueba.pattern, pDow = (c.ui.pDow as number | undefined) ?? 6, pMin = (c.ui.pMin as number | undefined) ?? 600;
   const savePrueba = (pattern: typeof P0, cupo = h.prueba.cupo) => save({ prueba: { pattern, cupo } }, E2("Guardado: las horas ya salen en tu página.", "Saved: the times show on your page now."));
@@ -228,7 +230,7 @@ export function herramientaAutosBloques(c: Ctx): Sec {
     { type: "step", t: E2("Hora de prueba", "Test drive time"), v: horaFe(pMin), onM: () => c.setUi({ pMin: Math.max(360, pMin - 30) }), onP: () => c.setUi({ pMin: Math.min(1320, pMin + 30) }) },
     { type: "acts", pt: "0", items: [{ l: E2("Agregar hora", "Add time"), v: "secondary", icon: "plus", off: c.pending || P0.some((x) => x.dow === pDow && x.min === pMin) || P0.length >= 21, onClick: () => savePrueba([...P0, { dow: pDow, min: pMin, on: true }]) },
       ...(P0.length ? [{ l: E2("Quitar las apagadas", "Remove the off ones"), v: "ghost", off: c.pending || !P0.some((x) => !x.on), onClick: () => savePrueba(P0.filter((x) => x.on)) }] : [])] },
-    { type: "step", t: E2("Personas por hora", "People per time"), s: E2("Cuántas pruebas caben a la misma hora.", "How many test drives fit at the same time."), v: String(h.prueba.cupo), onM: () => savePrueba(P0, Math.max(1, h.prueba.cupo - 1)), onP: () => savePrueba(P0, Math.min(5, h.prueba.cupo + 1)) });
+    pasoSrv({ t: E2("Personas por hora", "People per time"), s: E2("Cuántas pruebas caben a la misma hora.", "How many test drives fit at the same time."), n: h.prueba.cupo, fmt: String, sig: (n, d) => d < 0 ? Math.max(1, n - 1) : Math.min(5, n + 1), save: (n) => savePrueba(P0, n) }));
   out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("EN EL LOTE", "ON THE LOT"), v: String(Math.max(h.lot, enApp)) }, { k: E2("VENDIDOS", "SOLD"), v: String(h.vendidos30), s: E2("30 días", "30 days") }, { k: E2("EN LA APP", "IN THE APP"), v: String(enApp) }] });
   if (!V.length) out.push({ type: "note", tone: "info", icon: "car", t: E2("Agrega tus carros en Inventario: VIN, millaje, precio y fotos.", "Add your cars in Inventory: VIN, mileage, price and photos."), cta: E2("Inventario", "Inventory"), onCta: () => c.go("mod", "inventario") });
   for (const x of V) {
@@ -238,8 +240,8 @@ export function herramientaAutosBloques(c: Ctx): Sec {
       tag: vend ? E2("VENDIDO", "SOLD") : x.status === "pending" ? E2("APARTADO", "ON HOLD") : null, tone: "neutral", compact: true,
       tgOn: !vend, onTg: () => { if (!vend && enApp <= 1) { c.toast(E2("Deja al menos un carro en la app.", "Keep at least one car in the app.")); return; } save({ estado: { item: x.id, status: vend ? "lot" : "sold" } }); } }] });
     if (vend) continue;
-    out.push({ type: "step", t: E2("Precio", "Price"), s: E2("Antes de impuesto, placas y cargos.", "Before tax, plates and fees."), v: usd(x.puerta.price),
-      onM: () => save({ precio: { item: x.id, cents: Math.max(10000, x.puerta.price - 10000) } }), onP: () => save({ precio: { item: x.id, cents: x.puerta.price + 10000 } }) });
+    out.push(pasoSrv({ t: E2("Precio", "Price"), s: E2("Antes de impuesto, placas y cargos.", "Before tax, plates and fees."), n: x.puerta.price, fmt: usd,
+      sig: (n, d) => d < 0 ? Math.max(10000, n - 10000) : n + 10000, save: (n) => save({ precio: { item: x.id, cents: n } }) }));
     const L = [x.est ? pagoTexto(x.est, es) : "", x.bhph ? bhphTexto(x.bhph, es) : "", ...notasCarro(x, es).filter((t) => t === bi(SALVAGE, es))].filter(Boolean);
     for (const t of L) out.push({ type: "note", tone: t === bi(SALVAGE, es) ? "danger" : "info", icon: t === bi(SALVAGE, es) ? "ban" : "dollar", t });
   }
