@@ -105,8 +105,22 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
     setAt(a);
   };
 
+  /* 21 nov · codigoEscritoManda: un cupón ESCRITO y sin «Aplicar» no se ignora callado (antes el pedido salía a precio completo sin decir nada).
+     «Aplicar» y el botón de enviar pasan por aquí: el servidor dice si vale. */
+  const aplicarCupon = async (): Promise<boolean> => {
+    if (!cupIn || cupBusy) return false;
+    setCupBusy(true); setCupErr("");
+    let bien = false;
+    try { const r = await cuponPago(biz, cupIn, C.sub); if (r.ok) { setCup({ code: r.code, off: r.off }); setCupIn(""); bien = true; } else if (r.entrar) router.push(`/entrar?volver=${aqui}`); else setCupErr(es ? r.msg.es : r.msg.en); }
+    catch { setCupErr(E2("No se pudo revisar el cupón. Prueba de nuevo.", "Could not check the coupon. Try again.")); }
+    setCupBusy(false);
+    return bien;
+  };
   const enviar = async () => {
     if (!lines.length || enviando || sinPedidos) return;
+    // Hay un cupón escrito sin aplicar: se revisa AHORA y este toque no envía. Si vale, el total cambia a la vista y el siguiente toque envía con
+    // el precio que la persona ya vio; si no vale, se dice junto al campo. Nunca se cobra un total que no estuvo en pantalla.
+    if (cupIn && !cup) { await aplicarCupon(); document.querySelector("[data-cupon]")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
     if (sinDir) { router.push(`/cuenta/direcciones/nueva?volver=${aqui}`); return; }
     if (bloqueo) { setError({ msg: bloqueo, menu: !!ENT.blk && !ENT.blk.includes(" mi ") }); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
     if (conTarjeta && !tarjeta) { setHoja(true); return; }
@@ -344,12 +358,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
                         <input value={cupIn} onChange={(e) => { setCupIn(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12)); setCupErr(""); }} placeholder={E2("Código de cupón", "Coupon code")}
                           aria-label={E2("Código de cupón", "Coupon code")} autoCapitalize="characters" className="min-w-0 flex-1 bg-transparent font-mono text-[13px] font-bold tracking-[0.06em] text-ink outline-none" />
                       </div>
-                      <Button variant="secondary" size="md" disabled={!cupIn || cupBusy} onClick={async () => {
-                        setCupBusy(true); setCupErr("");
-                        try { const r = await cuponPago(biz, cupIn, C.sub); if (r.ok) { setCup({ code: r.code, off: r.off }); setCupIn(""); } else if (r.entrar) router.push(`/entrar?volver=${aqui}`); else setCupErr(es ? r.msg.es : r.msg.en); }
-                        catch { setCupErr(E2("No se pudo revisar el cupón. Prueba de nuevo.", "Could not check the coupon. Try again.")); }
-                        setCupBusy(false);
-                      }}>{E2("Aplicar", "Apply")}</Button>
+                      <Button variant="secondary" size="md" disabled={!cupIn || cupBusy} onClick={() => void aplicarCupon()}>{E2("Aplicar", "Apply")}</Button>
                     </div>
                     {cupErr && <div role="alert" className="mt-[7px] text-[11.5px] font-medium leading-[1.45] text-danger">{cupErr}</div>}
                   </>

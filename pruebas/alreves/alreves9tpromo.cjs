@@ -5,6 +5,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs'), path = require('path');
 const R = path.resolve(__dirname, '..', '..');
+const PG = 'apps/web/app/(app)/n/[id]/pagar/Pagar.tsx', BO = 'apps/web/app/(app)/eventos/[slug]/boletos/Boletos.tsx', TC = 'pruebas/e2e/cup9n21.cjs', TE = 'pruebas/e2e/evt6c.cjs';
 const G = 'codigoEscritoManda', A = 'apps/web/app/(app)/publica/acciones.ts', F = 'apps/web/app/(app)/publica/PasosFH.tsx', P = 'apps/web/app/(app)/publica/Publica.tsx', N = 'pruebas/lib/negocio-nuevo.cjs', E = 'pruebas/e2e/cre9h.cjs';
 const casos = [
   // El servidor vuelve a creerle a la bandera de la pantalla, o deja pasar callado un código que no vale
@@ -19,6 +20,14 @@ const casos = [
   // Las pruebas: la carrera de antes (esperar un botón que ya existe) o dejar de probar lo escrito sin aplicar
   [N, "if (aplicar) { await p.getByText('Aplicar', { exact: true }).click(); await p.getByText(new RegExp(`^Con ${promo} tienes", "if (aplicar) { await p.getByText('Aplicar', { exact: true }).click(); await p.getByText(new RegExp(`^Publicar · "],
   [E, "publicarBarberia(b, { promo: PC, aplicar: false, promoAntes: 'NOEXISTE9'", "publicarBarberia(b, { promo: PC"],
+  // La misma clase con dinero: el pago del pedido vuelve a ignorar el cupón escrito, o lo aplica y cobra en el mismo toque
+  [PG, 'if (cupIn && !cup) { await aplicarCupon();', 'if (false) { await aplicarCupon();'],
+  [PG, 'document.querySelector("[data-cupon]")?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }', 'document.querySelector("[data-cupon]")?.scrollIntoView({ block: "center", behavior: "smooth" }); }'],
+  // Los boletos vuelven a apartar con lo «aplicado» y no con lo escrito, o apartan aunque el código no valga
+  [BO, 'extras, codigo: cod }', 'extras, codigo: aplicado?.codigo ?? null }'],
+  [BO, 'if (!a) { setOcupado(false);', 'if (false) { setOcupado(false);'],
+  [TC, "'un cupón escrito que no vale: «Enviar pedido» no envía y lo dice junto al campo'", "'cupón'"],
+  [TE, "'escrito y sin tocar «Aplicar»: se aparta CON el código (a pagar $12, no $15)'", "'código'"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

@@ -39,20 +39,30 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
   const entrar = () => router.push(`/entrar?volver=${encodeURIComponent(`/eventos/${p.evento.slug}/boletos?${lista}`)}`);
   const cambiar = (id: string, d: number) => { setAplicado(null); setError(null); setQ((x) => ({ ...x, [id]: Math.max(0, Math.min((x[id] ?? 0) + d, p.tipos.find((t) => t.id === id)?.quedan ?? 0)) })); };
   const elegirMesa = (id: string) => { setError(null); setMesa(mesa === id ? null : id); if (mesa === id) setExtras((L) => L.filter((a) => !p.extras.find((x) => x.id === a)?.mesa)); };
-  const aplicar = async () => {
-    if (!yo) return entrar();
-    if (!codigo.trim()) return;
+  const aplicar = async (): Promise<{ codigo: string; descuento: number } | null> => {
+    if (!yo) { entrar(); return null; }
+    if (!codigo.trim()) return null;
     setCodErr(null);
     const r = await evtCodigo(p.fecha, Object.entries(q).filter(([, n]) => n > 0).map(([id, n]) => ({ id, q: n })), codigo).catch(() => null);
-    if (r && !r.ok && r.entrar) return entrar();
-    if (!r?.ok) { setAplicado(null); setCodErr(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); return; }
-    setAplicado({ codigo: r.codigo, descuento: r.descuento });
+    if (r && !r.ok && r.entrar) { entrar(); return null; }
+    if (!r?.ok) { setAplicado(null); setCodErr(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); return null; }
+    const a = { codigo: r.codigo, descuento: r.descuento };
+    setAplicado(a);
+    return a;
   };
   const seguir = async () => {
     if (!elegido || ocupado || admits > libres) return;
     if (!yo) return entrar();
     setOcupado(true); setError(null);
-    const r = await evtApartar({ fecha: p.fecha, boletos: Object.entries(q).filter(([, n]) => n > 0).map(([id, n]) => ({ id, q: n })), mesa, extras, codigo: aplicado?.codigo ?? null }).catch(() => null);
+    // 21 nov · codigoEscritoManda: un código ESCRITO y sin «Aplicar» no se ignora callado (antes se apartaba a precio completo). Se revisa ahora: si
+    // vale, se aparta con él (la pantalla de pago muestra el descuento antes de cobrar); si no vale, no se aparta y se dice junto al campo.
+    let cod = aplicado?.codigo ?? null;
+    if (!aplicado && codigo.trim() && nTk > 0) {
+      const a = await aplicar();
+      if (!a) { setOcupado(false); document.querySelector('[data-screen-label="Boletos · código"]')?.scrollIntoView({ block: "center", behavior: "smooth" }); return; }
+      cod = a.codigo;
+    }
+    const r = await evtApartar({ fecha: p.fecha, boletos: Object.entries(q).filter(([, n]) => n > 0).map(([id, n]) => ({ id, q: n })), mesa, extras, codigo: cod }).catch(() => null);
     if (r?.ok) { router.push(`/eventos/pagar/${r.apartado}`); return; }
     if (r && !r.ok && r.entrar) return entrar();
     setOcupado(false); setError(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not. Check your connection."));

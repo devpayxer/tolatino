@@ -48,6 +48,14 @@ const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
     await aplicar(m, CODE);
     ok(await espera(async () => (await texto(m)).includes(`Este cupón es para pedidos de ${money(MIN)} o más.`)), `un plato: «para pedidos de ${money(MIN)} o más»`);
     await carrito(m, 2); await m.goto(B + `/n/${BIZ}/pagar`); await m.locator('[data-cupon]').waitFor();
+    // 21 nov · Escrito y SIN tocar «Aplicar» (guardián codigoEscritoManda): «Enviar pedido» no manda a precio completo callado. Primero lo revisa:
+    // si no vale, lo dice junto al campo; si vale, lo aplica, muestra el total nuevo y ese toque todavía no envía.
+    const enviarB = m.locator('[data-screen-label="Checkout · barra"]').getByText(/^Enviar pedido/), pedidosAntes = sql(`select count(*) from operations where user_id = '${M0}' and business_id = '${BIZ}'`);
+    await m.getByLabel('Código de cupón').fill('NOEXISTE9'); await enviarB.click();
+    ok(await espera(async () => (await m.locator('[data-cupon] [role="alert"]').count()) === 1) && /\/pagar$/.test(m.url()), 'un cupón escrito que no vale: «Enviar pedido» no envía y lo dice junto al campo');
+    await m.getByLabel('Código de cupón').fill(CODE); await enviarB.click();
+    ok(await espera(async () => (await texto(m)).includes('−$3.00 · APLICADO')) && /\/pagar$/.test(m.url()) && sql(`select count(*) from operations where user_id = '${M0}' and business_id = '${BIZ}'`) === pedidosAntes, 'escrito y sin tocar «Aplicar»: «Enviar pedido» lo aplica, muestra el total nuevo y ese toque todavía NO envía');
+    await m.locator('[data-cupon]').getByRole('button', { name: 'Quitar' }).click();
     await aplicar(m, CODE.toLowerCase());
     ok(await espera(async () => (await texto(m)).includes('−$3.00 · APLICADO')), 'dos platos (escrito en minúsculas): «−$3.00 · APLICADO»');
     ok((await texto(m)).includes(`Cupón ${CODE} −$3.00`), `la línea «Cupón ${CODE} −$3.00» en el resumen`);

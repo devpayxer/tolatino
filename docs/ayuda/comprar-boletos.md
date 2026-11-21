@@ -7,7 +7,7 @@ orden** (`/eventos/orden/B-…`). Teléfono y escritorio. Para vecinos con cuent
 - En un evento con boletos, **Boletos** abre la compra. Eliges cuántos de cada tipo (con **MÁX. N POR PERSONA**), **una mesa por orden**
   (trae sus entradas: «4 personas · incluye sus entradas»; el depósito se descuenta de tu consumo esa noche) y los **extras** (algunos van
   **SOLO CON MESA**). Debajo de cada boleto dice **Solo quedan N.** o **Agotado.**
-- **¿Tienes un código?** Escríbelo y toca **Aplicar**: el servidor dice **CÓDIGO APLICADO · −$X** o por qué no vale. El código baja el
+- **¿Tienes un código?** Escríbelo y toca **Aplicar**: el servidor dice **CÓDIGO APLICADO · −$X** o por qué no vale. Si lo escribes y tocas **Continuar** sin tocar Aplicar, vale igual: se revisa en ese momento; si vale, la pantalla de pago ya muestra el descuento antes de cobrar, y si no vale, no se aparta nada y se dice por qué. El código baja el
   precio de los boletos (no la mesa ni los extras).
 - **Continuar** te guarda boletos y mesa por **{N} minutos** mientras pagas (lo pone To'Latino en Configuración; hoy 8). Si no pagas a
   tiempo, vuelven a la venta.
@@ -45,7 +45,7 @@ orden** (`/eventos/orden/B-…`). Teléfono y escritorio. Para vecinos con cuent
 - On an event with tickets, **Tickets** opens checkout. You pick how many of each type (with **MAX. N PER PERSON**), **one table per order** (it
   comes with its entries: "4 people · includes their entries"; the deposit comes off your spend that night) and the **extras** (some are
   **TABLE ONLY**). Below each ticket it says **Only N left.** or **Sold out.**
-- **Have a code?** Type it and tap **Apply**: the server says **CODE APPLIED · −$X** or why it is not valid. The code lowers the price of the
+- **Have a code?** Type it and tap **Apply**: the server says **CODE APPLIED · −$X** or why it is not valid. If you type it and tap **Continue** without tapping Apply, it still counts: it is checked right then; if it is valid, the payment screen already shows the discount before charging, and if it is not, nothing is held and it says why. The code lowers the price of the
   tickets (not the table or the extras).
 - **Continue** holds your tickets and table for **{N} minutes** while you pay (To'Latino sets this in Configuration; today 8). If you do not pay in
   time, they go back on sale.

@@ -73,7 +73,8 @@ para seguidores» se ven en tu página, no en Hoy. Ver `hoy-en-el-barrio.md`.
 ## Cupón para seguidores
 Algunos negocios publican un **cupón para quienes los siguen**: un descuento en sus pedidos en línea desde una compra mínima. El código solo lo ves si
 sigues al negocio (si no, la novedad dice «Solo para seguidores» y puedes seguirlo ahí mismo). Lo escribes al pagar, en «Código de cupón», y tocas
-«Aplicar». Lo usas una vez; si tu pedido no sigue (el negocio no lo acepta o se cancela), lo puedes usar otra vez.
+«Aplicar». Si lo escribes y tocas «Enviar pedido» sin tocar «Aplicar», no se pierde: ese toque lo revisa, te muestra el total con el descuento (o por
+qué no vale) y todavía no envía; con el segundo toque envías con el precio que ya viste. Lo usas una vez; si tu pedido no sigue (el negocio no lo acepta o se cancela), lo puedes usar otra vez.
 
 ## English
 
@@ -143,5 +144,6 @@ businesses; the person turns it off in My account › Notices › «What’s in 
 
 ### Follower coupon
 Some businesses post a **coupon for their followers**: a discount on their online orders from a minimum order. You only see the code if you follow the
-business (if not, the update says «Followers only» and you can follow it right there). You type it at checkout, in «Coupon code», and tap «Apply». You use
+business (if not, the update says «Followers only» and you can follow it right there). You type it at checkout, in «Coupon code», and tap «Apply». If you type it and tap «Send order» without tapping «Apply», it is not lost: that tap
+checks it, shows you the total with the discount (or why it is not valid) and does not send yet; the second tap sends with the price you already saw. You use
 it once; if your order does not go through (the business does not accept it or it is cancelled), you can use it again.

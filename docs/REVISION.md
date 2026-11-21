@@ -5936,3 +5936,8 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   publica** y el campo queda en rojo con «Ese código no existe o ya venció»: se corrige o se borra. Guardián `codigoEscritoManda` + al revés (9/9).
 - **Qué mirar (teléfono, sandbox):** Publica tu negocio → último paso → «¿Tienes un código de promotor?» → escribe `HZL30` y toca «Publicar»
   directo: la pantalla final debe decir Pro gratis por 60 días. Y con un código inventado: no publica y lo dice.
+- **Lo mismo donde hay dinero (misma clase, buscada en toda la app):** en el **pago de un pedido** un cupón escrito sin «Aplicar» salía a precio
+  completo sin decir nada; ahora «Enviar pedido» lo revisa, muestra el total con el descuento y **ese toque no envía** (nunca se cobra un total que
+  no estuvo en pantalla); el segundo toque envía. En **boletos**, un código escrito sin «Aplicar» apartaba a precio completo; ahora «Continuar» lo
+  revisa y aparta con él (la pantalla de pago muestra el descuento antes de cobrar). En los dos, si el código no vale: no sigue y lo dice.
+  *Decidí yo (reversible):* en el pago del pedido pido el segundo toque en vez de cobrar de una vez con el descuento. Si prefieres un solo toque, dilo.

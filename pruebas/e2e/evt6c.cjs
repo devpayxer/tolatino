@@ -140,6 +140,10 @@ const firmaBuena = (t) => { const m = /^TL1\.([a-f0-9]{8})\.(\d+)\.(\d+)\.(\d+)\
     await clic(p2.locator(`[data-tipo="${T_GEN}"] >> text="+"`));
     await p2.fill('input[aria-label="Código de descuento"]', 'UNAVEZ'); await clic(p2.locator('button, [role="button"]', { hasText: 'Aplicar' }));
     ok(await contiene(p2, 'Ese código ya se usó todas las veces.'), 'código hasta su tope: «Ese código ya se usó todas las veces.»');
+    // 21 nov · Con ese código todavía ESCRITO (guardián codigoEscritoManda): «Continuar» no aparta a precio completo callado; lo revisa y lo dice.
+    { const antes = sql(`select held_n from ticket_stock where ticket_type_id = ${T_GEN}`);
+      await clic(p2.locator('button, [role="button"]', { hasText: 'Continuar' })); await sleep(1500);
+      ok(/\/boletos\?/.test(p2.url()) && await contiene(p2, 'Ese código ya se usó todas las veces.') && sql(`select held_n from ticket_stock where ticket_type_id = ${T_GEN}`) === antes, 'un código escrito que no vale: «Continuar» no aparta nada y lo dice junto al campo'); }
     // ── 6 · El apartado vence (reloj movido) y lo suelta el barrido; «Se acabaron mientras pagabas» ──
     await p2.fill('input[aria-label="Código de descuento"]', '');
     await clic(p2.locator('button, [role="button"]', { hasText: 'Continuar' })); await p2.waitForURL(/\/eventos\/pagar\//);
@@ -190,7 +194,12 @@ const firmaBuena = (t) => { const m = /^TL1\.([a-f0-9]{8})\.(\d+)\.(\d+)\.(\d+)\
     sql(`update ticket_stock set quantity = 6 where ticket_type_id = ${T_GEN}`);
     await p1.goto(B + `/eventos/${SLUG}/boletos?fecha=${F}`); await clic(p1.locator(`[data-tipo="${T_GEN}"] >> text="+"`));
     await p1.fill('input[aria-label="Código de descuento"]', 'DOSVECES'); await clic(p1.locator('button, [role="button"]', { hasText: 'Aplicar' })); ok(await contiene(p1, 'CÓDIGO APLICADO · −$3'), 'código de monto fijo: −$3');
-    await clic(p1.locator('button, [role="button"]', { hasText: 'Continuar' })); await p1.waitForURL(/\/eventos\/pagar\//); await clic(p1.locator('button, [role="button"]', { hasText: /^Pagar \$12$/ })); await p1.waitForURL(/\/eventos\/orden\/B-/, { timeout: 20000 });
+    // 21 nov · Se vuelve a escribir (ya no está «aplicado») y se toca «Continuar» directo: lo escrito vale igual, el servidor lo revisa al apartar.
+    await p1.fill('input[aria-label="Código de descuento"]', ''); await p1.fill('input[aria-label="Código de descuento"]', 'DOSVECES');
+    ok(!(await contiene(p1, 'CÓDIGO APLICADO')), 'al reescribirlo deja de estar «aplicado»');
+    await clic(p1.locator('button, [role="button"]', { hasText: 'Continuar' })); await p1.waitForURL(/\/eventos\/pagar\//);
+    ok(await espera(async () => (await p1.locator('button, [role="button"]', { hasText: /^Pagar \$12$/ }).count()) > 0), 'escrito y sin tocar «Aplicar»: se aparta CON el código (a pagar $12, no $15)');
+    await clic(p1.locator('button, [role="button"]', { hasText: /^Pagar \$12$/ })); await p1.waitForURL(/\/eventos\/orden\/B-/, { timeout: 20000 });
     await p1.goto(B + `/eventos/${SLUG}/boletos?fecha=${F}`); await clic(p1.locator(`[data-tipo="${T_GEN}"] >> text="+"`));
     await p1.fill('input[aria-label="Código de descuento"]', 'DOSVECES'); await clic(p1.locator('button, [role="button"]', { hasText: 'Aplicar' }));
     ok(await contiene(p1, 'Ya usaste ese código en este evento.'), 'el mismo código no se aplica dos veces a la misma persona');
