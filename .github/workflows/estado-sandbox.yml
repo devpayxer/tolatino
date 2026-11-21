@@ -85,3 +85,19 @@ jobs:
         run: curl -s -m 30 http://2.31.196.167/estado/diag.txt | head -120
       - name: Carga de los demos (tolatino-demos)
         run: curl -s -m 30 http://2.31.196.167/estado/demos.txt | tail -45
+  # 21 nov · Lo que baja un teléfono de verdad en las rutas de «fotos», entrando con la cuenta de ejemplo de «como» (navegador real).
+  fotos:
+    if: ${{ inputs.fotos != '' && inputs.como != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Navegador
+        run: |
+          npm ci --ignore-scripts --prefix pruebas/herramientas > /dev/null
+          (cd pruebas/herramientas && npx playwright install --with-deps chromium > /dev/null)
+      - name: Pesar las fotos
+        env: { RUTAS: "${{ inputs.fotos }}", COMO: "${{ inputs.como }}", NODE_PATH: "${{ github.workspace }}/pruebas/herramientas/node_modules" }
+        run: node scripts/sandbox/pesar-fotos.cjs "$COMO" $RUTAS
