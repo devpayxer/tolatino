@@ -46,13 +46,17 @@ function proRows(d: Borrador, es: boolean) {
   return out.slice(0, 6);
 }
 
-export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
-  d: Borrador; up: Up; es: boolean; desk: boolean; dw: number; pv: unknown; fechas: { fin: string; aviso: string }; len: number; toast: (t: string) => void;
+export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast, promoMal, quitarPromoMal }: {
+  d: Borrador; up: Up; es: boolean; desk: boolean; dw: number; pv: unknown; fechas: { fin: string; aviso: string }; len: number; toast: (t: string) => void; promoMal: boolean; quitarPromoMal: () => void;
 }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const cam = useRef<HTMLInputElement>(null), rollo = useRef<HTMLInputElement>(null);
   const [subiendo, setSubiendo] = useState(0), [full, setFull] = useState(false);
-  const [promo, setPromo] = useState<{ open: boolean; v: string; err: boolean }>({ open: false, v: "", err: false });
+  // 21 nov · Lo escrito vive también en el borrador (d.promo, con promoOk en falso): «Publicar» lo manda aunque no se haya tocado «Aplicar» y el
+  // servidor lo valida. Al volver a esta pantalla el campo se abre con lo que había (un código guardado nunca queda escondido).
+  // El campo muestra SIEMPRE lo que hay en el borrador: no hay una copia aparte que pueda quedar distinta de lo que se manda.
+  const [promo, setPromo] = useState<{ open: boolean; err: string | null }>({ open: false, err: null });
+  const escrito = d.promoOk ? "" : (d.promo || ""), abierto = !d.promoOk && (promo.open || promoMal || !!escrito), malo = promoMal || (promo.err !== null && promo.err === escrito);
   const todas = [d.cover, ...(d.gallery || [])].filter((x): x is string => !!x);
   const subir = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -69,7 +73,7 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
   };
   const portada = (id: string) => up((z) => { const t = [z.cover, ...(z.gallery || [])].filter((x): x is string => !!x && x !== id); return { cover: id, gallery: t }; });
   const quitar = (id: string) => up((z) => { const t = [z.cover, ...(z.gallery || [])].filter((x): x is string => !!x && x !== id); return { cover: t[0] ?? null, gallery: t.slice(1) }; });
-  const aplicar = async () => { const r = await probarPromo(promo.v); if (r.ok) { up({ promo: promo.v.toUpperCase(), promoOk: true, promoDias: r.dias }); setPromo({ open: false, v: "", err: false }); } else setPromo({ ...promo, err: true }); };
+  const aplicar = async () => { const v0 = escrito; if (!v0) return; const r = await probarPromo(v0); if (r.ok) { quitarPromoMal(); up((z) => (z.promoOk || z.promo !== v0 ? {} : { promo: v0, promoOk: true, promoDias: r.dias })); setPromo({ open: false, err: null }); } else setPromo((z) => ({ ...z, err: v0 })); };
   return (
     <div data-screen-label="ONB-NEG-F1 · tu foto y tu página" style={{ display: "flex", flexDirection: "column", gap: 14, animation: "oFade .2s ease-out" }}>
       <input ref={cam} type="file" accept="image/*" capture="environment" onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
@@ -115,14 +119,14 @@ export function PasoF1({ d, up, es, desk, dw, pv, fechas, len, toast }: {
         ))}
       </div>
       <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(0,229,196,.12)", font: "600 12.5px/1.5 Manrope,sans-serif", color: "var(--tl-open-text)" }}>{E2(`Hoy no se cobra nada. El ${fechas.aviso} te avisamos; si no sigues, el ${fechas.fin} tu página pasa a Free y no se borra nada.`, `Nothing is charged today. On ${fechas.aviso} we remind you; if you don’t continue, on ${fechas.fin} your page moves to Free and nothing is deleted.`)}</div>
-      {!promo.open && !d.promoOk ? <span role="button" onClick={() => setPromo({ ...promo, open: true })} {...tec(() => setPromo({ ...promo, open: true }))} style={{ alignSelf: "flex-start", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("¿Tienes un código de promotor?", "Have a promoter code?")}</span> : null}
-      {promo.open && !d.promoOk ? (
+      {!abierto && !d.promoOk ? <span role="button" onClick={() => setPromo({ ...promo, open: true })} {...tec(() => setPromo({ ...promo, open: true }))} style={{ alignSelf: "flex-start", font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{E2("¿Tienes un código de promotor?", "Have a promoter code?")}</span> : null}
+      {abierto ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <input value={promo.v} onChange={(e) => setPromo({ ...promo, v: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12), err: false })} placeholder="HZL30" aria-label={E2("Código de promotor", "Promoter code")} style={{ flex: 1, minWidth: 0, height: 46, boxSizing: "border-box", borderRadius: 13, border: `1.5px solid ${promo.err ? "var(--tl-danger)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", padding: "0 14px", outline: "none", font: "700 15px 'JetBrains Mono',monospace", letterSpacing: ".1em", textTransform: "uppercase", color: "var(--tl-ink)" }} />
+            <input value={escrito} onChange={(e) => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12); setPromo({ open: true, err: null }); quitarPromoMal(); up({ promo: v, promoOk: false, promoDias: 0 }); }} placeholder="HZL30" aria-label={E2("Código de promotor", "Promoter code")} style={{ flex: 1, minWidth: 0, height: 46, boxSizing: "border-box", borderRadius: 13, border: `1.5px solid ${malo ? "var(--tl-danger)" : "rgba(11,14,18,.14)"}`, background: "var(--tl-white)", padding: "0 14px", outline: "none", font: "700 15px 'JetBrains Mono',monospace", letterSpacing: ".1em", textTransform: "uppercase", color: "var(--tl-ink)" }} />
             <Button variant="secondary" size="md" onClick={() => void aplicar()}>{E2("Aplicar", "Apply")}</Button>
           </div>
-          {promo.err ? <span role="alert" style={{ font: "600 12.5px Manrope,sans-serif", color: "var(--tl-danger)" }}>{E2("Ese código no existe o ya venció.", "That code does not exist or has expired.")}</span> : null}
+          {malo ? <span role="alert" style={{ font: "600 12.5px Manrope,sans-serif", color: "var(--tl-danger)" }}>{E2("Ese código no existe o ya venció.", "That code does not exist or has expired.")}</span> : null}
         </div>
       ) : null}
       {d.promoOk ? (

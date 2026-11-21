@@ -111,10 +111,10 @@ const hhmm = (h: number) => { const H = ((Math.round(h * 2) / 2) % 24 + 24) % 24
 
 export type RespPublicar =
   | { ok: true; negocio: { id: string; nombre: string; minutos: number; hasta: string; items: number; fotos: number } }
-  | { ok: false; mensaje: { es: string; en: string }; paso?: string };
+  | { ok: false; mensaje: { es: string; en: string }; paso?: string; campo?: "promo" };
 
 export async function publicar(dIn: Borrador): Promise<RespPublicar> {
-  const no = (es: string, en: string, paso?: string): RespPublicar => ({ ok: false, mensaje: { es, en }, paso });
+  const no = (es: string, en: string, paso?: string, campo?: "promo"): RespPublicar => ({ ok: false, mensaje: { es, en }, paso, ...(campo ? { campo } : {}) });
   if (!(await mismoOrigen())) return no("No permitido.", "Not allowed.");
   const me = await yo();
   if (!me) return no("Entra para publicar.", "Sign in to publish.", "A1");
@@ -144,8 +144,13 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   const subIds = d.subs.map((s) => subs.find((x) => NN(x.es) === NN(s))?.id).filter((x): x is string => !!x);
   // 9h · El código (si lo trae): sus días de prueba; el de un promotor no vale para su propia cuenta ni para alguien de su mismo dispositivo (antiabuso 5d).
   const dev = await dispositivo(false);
-  const promo = d.promoOk ? await codigoVivo(d.promo) : null;
+  // 21 nov · Lo ESCRITO manda, aplicado o no (antes solo contaba si la pantalla decía «aplicado»: quien escribía su código y tocaba «Publicar» sin
+  // tocar «Aplicar», o antes de que «Aplicar» contestara, publicaba sin el código y sin enterarse: el promotor perdía su negocio traído y el dueño
+  // sus días; así falló cre9h una vez en el CI 44856657972). Y un código escrito que no vale no se ignora callado: no se publica y se dice.
+  const escrito = String(d.promo ?? "").trim();
+  const promo = escrito ? await codigoVivo(escrito) : null;
   const promoOk = !!promo && (await tx((c) => codigoPermitido(c, promo, me.id, dev)));
+  if (escrito && !promoOk) return no("Ese código no existe o ya venció. Corrígelo o bórralo para publicar.", "That code does not exist or has expired. Fix it or clear it to publish.", "F1", "promo");
   const dias = promoOk ? promo!.dias : 30;
   const fin = new Date(Date.now() + dias * 864e5);
   const hasta = fin.toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(".", "");

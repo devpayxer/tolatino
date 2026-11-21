@@ -5927,3 +5927,12 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   2. *Renovar lo retenido en la tarjeta* (depósito de una renta, lo retenido de un estimado): si Stripe no contesta, hoy se le avisa al negocio
      «el banco ya no deja» aunque no sea cierto. No cobra dos veces, pero el aviso es falso. Lo corrijo en la misma tanda si alcanza.
   3. *«Un día más» en una renta:* dos toques seguidos son dos días (como antes). Si quieres que pida confirmar el segundo, dilo.
+
+## Publica tu negocio: el código de promotor escrito ya no se pierde (21 nov) — mirar
+- **Qué pasaba:** si alguien escribía su código y tocaba «Publicar» sin tocar «Aplicar» (o antes de que «Aplicar» contestara), el negocio se
+  publicaba **sin el código y sin avisar**: el promotor perdía su negocio traído y el dueño sus 60 días. Lo cazó una prueba que fallaba una vez
+  de muchas (`cre9h`); no era la prueba, era la app.
+- **Ahora (Fable):** lo escrito lo revisa el servidor al publicar, aplicado o no. Si el código vale, se publica con él. Si no vale, **no se
+  publica** y el campo queda en rojo con «Ese código no existe o ya venció»: se corrige o se borra. Guardián `codigoEscritoManda` + al revés (9/9).
+- **Qué mirar (teléfono, sandbox):** Publica tu negocio → último paso → «¿Tienes un código de promotor?» → escribe `HZL30` y toca «Publicar»
+  directo: la pantalla final debe decir Pro gratis por 60 días. Y con un código inventado: no publica y lo dice.

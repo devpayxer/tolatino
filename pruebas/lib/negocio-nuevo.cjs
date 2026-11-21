@@ -42,7 +42,9 @@ const telLibre = (pre = '570555') => {
 };
 /* Publica una barbería con el flujo de /publica (como publica.cjs) y devuelve { id, tel, nombre, uid }. */
 // 9h · promo: un código (HZL30 o el de un promotor) que se aplica en el último paso («¿Tienes un código de promotor?»).
-async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Mario', apellido = 'Peña', promo = null } = {}) {
+// 21 nov · aplicar: false lo deja ESCRITO sin tocar «Aplicar» (vale igual: lo valida el servidor al publicar); promoAntes: un código que no existe,
+// escrito antes: «Publicar» no publica y lo dice.
+async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Mario', apellido = 'Peña', promo = null, aplicar = true, promoAntes = null } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await medios(ctx);
   const p = await ctx.newPage();
@@ -80,8 +82,16 @@ async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Ma
   await p.waitForFunction(() => document.querySelectorAll('[aria-label="Quitar foto"]').length === 2, null, { timeout: 20000 });
   await p.waitForTimeout(800);
   if (promo) {
-    await p.getByText('¿Tienes un código de promotor?', { exact: true }).click(); await p.getByLabel('Código de promotor').fill(promo);
-    await p.getByText('Aplicar', { exact: true }).click(); await p.locator('text=/^Publicar · \\d+ días de Pro gratis$/').last().waitFor({ timeout: 8000 });
+    await p.getByText('¿Tienes un código de promotor?', { exact: true }).click();
+    if (promoAntes) {
+      await p.getByLabel('Código de promotor').fill(promoAntes); await p.locator('text=/^Publicar · /').last().click();
+      await p.getByRole('alert').filter({ hasText: 'Ese código no existe o ya venció.' }).first().waitFor({ timeout: 15000 });
+      if (sql(`select count(*) from businesses b join users u on u.id = b.owner_user_id where u.phone = '+1${tel}'`) !== '0') throw new Error('publicarBarberia: con un código que no existe se publicó igual');
+    }
+    await p.getByLabel('Código de promotor').fill(promo);
+    // 21 nov · Se espera a que el código esté APLICADO («Con X tienes N días…»). Antes se esperaba el botón «Publicar · N días de Pro gratis», que ya
+    // decía «30 días» sin código: la prueba tocaba «Publicar» antes de que «Aplicar» contestara y el negocio salía sin código (cre9h, CI 44856657972).
+    if (aplicar) { await p.getByText('Aplicar', { exact: true }).click(); await p.getByText(new RegExp(`^Con ${promo} tienes \\d+ días de Pro gratis\\.$`)).waitFor({ timeout: 8000 }); }
   }
   await p.locator('text=/^Publicar · /').last().click();
   await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });

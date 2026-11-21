@@ -12161,6 +12161,24 @@ const guardianes = {
     }
   },
 
+  /* 21 nov · codigoEscritoManda (cre9h inestable en el CI 44856657972, y fallo de la app): en «Publica tu negocio» el código de promotor solo contaba
+     si la pantalla decía «aplicado» (`d.promoOk`). Quien lo escribía y tocaba «Publicar» sin tocar «Aplicar», o antes de que «Aplicar» contestara,
+     publicaba SIN el código y sin enterarse: el promotor perdía su negocio traído y el dueño sus días. Regla de la clase: lo que la persona escribió
+     lo decide el servidor al enviar, nunca una bandera de la pantalla; y si lo escrito no vale, no se sigue callado. */
+  codigoEscritoManda() {
+    const G = "codigoEscritoManda", A = "apps/web/app/(app)/publica/acciones.ts", F = "apps/web/app/(app)/publica/PasosFH.tsx", P = "apps/web/app/(app)/publica/Publica.tsx", N = "pruebas/lib/negocio-nuevo.cjs", E = "pruebas/e2e/cre9h.cjs";
+    for (const f of [A, F, P, N, E]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    const a = sinComent(A), f = sinComent(F), p = sinComent(P), n = readFileSync(N, "utf8"), e = readFileSync(E, "utf8");
+    if (/d\.promoOk\s*\?/.test(a) || !/const escrito = String\(d\.promo \?\? ""\)\.trim\(\);/.test(a) || !/const promo = escrito \? await codigoVivo\(escrito\) : null;/.test(a))
+      falla(G, A, 0, "publicar valida el código ESCRITO (d.promo), aplicado o no: no depende de la bandera d.promoOk de la pantalla");
+    if (!/if \(escrito && !promoOk\) return no\([^;]*"F1", "promo"\);/.test(a) || !/paso, \.\.\.\(campo \? \{ campo \} : \{\}\) \}\);/.test(a)) falla(G, A, 0, "un código escrito que no vale no se ignora callado: no se publica y se dice (campo: \"promo\")");
+    if (!/<input value=\{escrito\}/.test(f) || !/up\(\{ promo: v, promoOk: false, promoDias: 0 \}\)/.test(f) || !/const escrito = d\.promoOk \? "" : \(d\.promo \|\| ""\)/.test(f))
+      falla(G, F, 0, "el campo del código muestra y guarda lo escrito en el borrador (d.promo): no hay una copia aparte que «Publicar» no mande");
+    if (!/if \(r\.campo === "promo"\) \{ up\(\{ promoOk: false, promoDias: 0 \}\); setPromoMal\(true\); \}/.test(p)) falla(G, P, 0, "cuando el servidor dice que el código no vale, el campo queda abierto, en rojo y con lo escrito");
+    if (!/if \(aplicar\) \{ await p\.getByText\('Aplicar', \{ exact: true \}\)\.click\(\); await p\.getByText\(new RegExp\(`\^Con \$\{promo\} tienes/.test(n)) falla(G, N, 0, "publicarBarberia espera a que el código esté aplicado («Con X tienes…»), no al botón «Publicar · N días», que ya existe sin código");
+    if (!/publicarBarberia\(b, \{ promo: PC, aplicar: false, promoAntes: 'NOEXISTE9'/.test(e) || !/escrito y sin tocar «Aplicar»: publica con/.test(e)) falla(G, E, 0, "cre9h publica con el código escrito sin tocar «Aplicar» y comprueba que uno que no existe no publica");
+  },
+
   /* 9t2 (21 nov, CI 44863184517: sop7b roja) · intentoFallidoQueda: en Soporte, pedir devolver más de lo que queda por devolver no mueve dinero,
      pero el INTENTO queda en el libro del caso (support_refunds, solo inserción) como fallido con su motivo: quién quiso devolver cuánto. Al pasar
      la devolución a dos pasos se anotaba todo en una transacción y, si no cabía, se deshacía entera: el intento desaparecía. Ahora la devolución

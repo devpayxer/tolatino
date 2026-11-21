@@ -330,6 +330,10 @@ async function anotarse(p, zip, tel, negocio = null) {
         && sql(`select promo_code || '|' || (trial_ends_at > now() + interval '59 days') from subscriptions where business_id = '${N.id}'`) === `${PC}|true`, `un negocio publicado con ${PC}: 60 días de prueba y «traído» por el promotor`);
       await pa.goto(B + '/admin/crecimiento?t=promo'); await pa.getByText(new RegExp(`· ${PC}`)).first().waitFor();
       ok(/1 negocios traídos/.test(await texto(pa)), 'Promotores lo cuenta (1 negocio traído)');
+      // 21 nov · El código ESCRITO vale aunque no se toque «Aplicar» (lo valida el servidor al publicar), y uno que no existe no publica callado.
+      const N2 = await publicarBarberia(b, { promo: PC, aplicar: false, promoAntes: 'NOEXISTE9', nombre: 'Nora', apellido: 'Sinaplicar' });
+      ok(sql(`select status || '|' || code from business_referrals where business_id = '${N2.id}'`) === `traido|${PC}`
+        && sql(`select promo_code || '|' || (trial_ends_at > now() + interval '59 days') from subscriptions where business_id = '${N2.id}'`) === `${PC}|true`, `escrito y sin tocar «Aplicar»: publica con ${PC} (60 días y «traído»); antes, con un código que no existe, no publicó y lo dijo`);
     }
     await pa.goto(B + '/admin/crecimiento?t=promo'); await pa.getByText(new RegExp(`· ${PC}$`)).first().waitFor().catch(() => {});
     await pa.getByText(new RegExp(`${PC}`)).first().locator('xpath=ancestor::div[.//div[@role="button"]][1]').getByText('Retirar', { exact: true }).click();

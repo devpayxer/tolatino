@@ -79,12 +79,14 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
     if (await d.evaluate(() => innerWidth >= 1024 && innerWidth < 1200)) {
       const estado = () => d.evaluate(() => {
         const dlg = document.querySelector('[role="dialog"]'); if (!dlg) return 'sin ventana';
-        const hs = [...dlg.querySelectorAll('*')].filter((e) => e.childElementCount === 0 && (e.textContent || '').trim() === 'Aceptar'), b = hs[hs.length - 1];
+        const es = (e) => (e.textContent || '').trim() === 'Aceptar', hs = [...dlg.querySelectorAll('*')].filter((e) => es(e) && ![...e.children].some(es)), b = hs[hs.length - 1];
         const r = dlg.getBoundingClientRect(), rb = b ? b.getBoundingClientRect() : null, cs = getComputedStyle(dlg), nueva = !dlg.__vista; dlg.__vista = true;
         const pt = rb ? document.elementFromPoint(rb.x + rb.width / 2, rb.y + rb.height / 2) : null;
         const quien = !pt ? 'nada' : `${pt.tagName.toLowerCase()}${pt.getAttribute('role') ? '[' + pt.getAttribute('role') + ']' : ''}${b && (b === pt || b.contains(pt) || pt.contains(b) && dlg.contains(pt)) ? ' (el botón)' : dlg.contains(pt) ? ' (otra pieza de la ventana)' : pt.contains(dlg) ? ' (el fondo)' : ' (fuera de la ventana)'}`;
-        return `ventana ${Math.round(r.y)}..${Math.round(r.bottom)}, alto ${dlg.clientHeight} de ${dlg.scrollHeight}, en ${Math.round(dlg.scrollTop)}, max-height ${cs.maxHeight}${nueva ? ', NUEVA' : ''} · botón en y=${rb ? Math.round(rb.y) : '—'} · en su punto: ${quien} · animaciones: ${document.getAnimations().map((a) => `${a.animationName || a.constructor.name}:${a.playState}`).join(',') || 'ninguna'} · página en ${Math.round(scrollY)} · ${innerWidth}×${innerHeight}`;
+        return `ventana ${Math.round(r.y)}..${Math.round(r.bottom)}, alto ${dlg.clientHeight} de ${dlg.scrollHeight}, en ${Math.round(dlg.scrollTop)}, max-height ${cs.maxHeight}${nueva ? ', NUEVA' : ''} · botón en y=${rb ? Math.round(rb.y) : '—'} · en su punto: ${quien} · animaciones: ${document.getAnimations().map((a) => `${a.animationName || a.constructor.name}:${a.playState}`).join(',') || 'ninguna'} · página en ${Math.round(scrollY)} · ${innerWidth}×${innerHeight} · ventanas montadas ${window.__sonda ? window.__sonda.dlg : '?'} · cambios de ancho [${window.__sonda ? window.__sonda.res.slice(-8).join(',') : '?'}]`;
       });
+      // Cuántas veces se montó la ventana del detalle y qué anchos dijo la página (si el ancho baila alrededor de 1200 la ventana se desmonta y vuelve).
+      await d.addInitScript(() => { window.__sonda = { dlg: 0, res: [] }; new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches?.('[role="dialog"]') || n.querySelector?.('[role="dialog"]'))) window.__sonda.dlg++; }).observe(document, { childList: true, subtree: true }); addEventListener('resize', () => window.__sonda.res.push(innerWidth)); });
       const vueltas = [], malas = [];
       for (let i = 0; i < 12; i++) {
         if (i) { await d.reload(); await d.getByText('ENTREGA', { exact: true }).first().waitFor(); }
@@ -97,7 +99,6 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
           const l = `vuelta ${i} MAL · antes [${antes}] · al fallar [${en}] · ${pega} · ${porque}`; vueltas.push(l); malas.push(l);
         }
       }
-      process.env.SONDA_TODO = '1'; // TEMPORAL (se quita en el commit siguiente): la primera corrida imprime las 12 vueltas
       if (malas.length || process.env.SONDA_TODO) { for (const l of vueltas) console.log('  · sonda ' + l); }
       if (malas.length) throw new Error(`sonda del detalle: ${malas.length} de 12 aperturas no dejaron tocar «Aceptar» · ${malas[0].slice(0, 1500)}`);
       if (process.env.SONDA_TODO) throw new Error('sonda del detalle: SONDA_TODO pide ver las 12 vueltas (arriba)');

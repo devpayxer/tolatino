@@ -25,7 +25,7 @@ Todo se guarda solo: si sales, vuelves a /publica (también desde otro teléfono
 | Falta algo en el paso | Una nota arriba del botón (p. ej. «FALTA LA DIRECCIÓN») y el botón apagado | Completar. |
 | La foto no es una foto | «Eso no parece una foto. Prueba con otra.» | Elegir otra. |
 | Muchas fotos seguidas (60 en una hora) | «Subiste muchas fotos seguidas. Prueba en un rato.» | Esperar. |
-| Código de promotor | «¿Tienes un código de promotor?» → 60 días de Pro con HZL30 o con el código de un promotor. El código propio no vale: «Ese código no existe o ya venció». | Escribirlo y «Aplicar». |
+| Código de promotor | «¿Tienes un código de promotor?» → 60 días de Pro con HZL30 o con el código de un promotor. El código propio no vale: «Ese código no existe o ya venció». Si lo escribes y tocas «Publicar» sin tocar «Aplicar», vale igual: lo revisa el servidor al publicar. Si el código escrito no vale, no se publica: se corrige o se borra y se vuelve a tocar «Publicar». | Escribirlo y «Aplicar» (o directo «Publicar»). |
 | Ya publicó | «… ya sale en …» y «Ver mi página» | — |
 
 ## Seguridad y privacidad
@@ -67,7 +67,7 @@ Everything saves by itself: if you leave, you go back to /publica (also from ano
 | Something is missing in the step | A note above the button (e.g. «THE ADDRESS IS MISSING») and the button off | Complete it. |
 | The photo isn't a photo | «That doesn't look like a photo. Try another.» | Choose another. |
 | Many photos in a row (60 in one hour) | «You uploaded many photos in a row. Try again in a while.» | Wait. |
-| Promoter code | «Have a promoter code?» → 60 days of Pro with HZL30 or with a promoter's code. Your own code doesn't count: «That code does not exist or has expired». | Type it and «Apply». |
+| Promoter code | «Have a promoter code?» → 60 days of Pro with HZL30 or with a promoter's code. Your own code doesn't count: «That code does not exist or has expired». If you type it and tap «Publish» without tapping «Apply», it still counts: the server checks it when publishing. If the typed code is not valid, nothing is published: fix it or clear it and tap «Publish» again. | Type it and «Apply» (or go straight to «Publish»). |
 | Already published | «… is now live in …» and «See my page» | — |
 
 ### Security and privacy

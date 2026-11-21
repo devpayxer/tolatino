@@ -205,7 +205,7 @@ export function Publica({ v }: { v: VistaPublica }) {
   if (flow && !ok(st, d, dupPend)) goB.disabled = true;
 
   // F1 (tu foto y tu página) y H1 (publicada): textos del diseño; publicar lo hace el servidor.
-  const [publicando, setPublicando] = useState(false);
+  const [publicando, setPublicando] = useState(false), [promoMal, setPromoMal] = useState(false);
   const fechas = fechasPrueba(len, es);
   if (st === "F1") {
     H.t = E2("Una foto y listo", "One photo and done"); H.s = E2("Es la portada de tu página: tu local, tu fachada o tu trabajo. Tómala ahora.", "It’s your page cover: your place, your storefront or your work. Take it now.");
@@ -217,7 +217,8 @@ export function Publica({ v }: { v: VistaPublica }) {
       setPublicando(true);
       const r = await publicar(d);
       setPublicando(false);
-      if (!r.ok) { toast(r.mensaje[v.lang]); if (r.paso) go(r.paso as Paso); return; }
+      // El código escrito no vale (lo dice el servidor): el campo queda abierto, en rojo, con lo escrito; nada se publicó.
+      if (!r.ok) { if (r.campo === "promo") { up({ promoOk: false, promoDias: 0 }); setPromoMal(true); } toast(r.mensaje[v.lang]); if (r.paso) go(r.paso as Paso); return; }
       try { localStorage.removeItem(KEY); } catch { /* */ }
       setPublicado(r.negocio); router.push(`${ruta}?paso=H1`);
     };
@@ -229,7 +230,7 @@ export function Publica({ v }: { v: VistaPublica }) {
     goB.label = E2("Ir a mi panel", "Go to my dashboard"); goB.onClick = () => router.push(`/panel/${publicado.id}`);
     note = E2(`PRO GRATIS HASTA EL ${publicado.hasta.toUpperCase()} · SIN TARJETA`, `PRO FREE UNTIL ${publicado.hasta.toUpperCase()} · NO CARD`);
   }
-  const cuerpoF1 = st === "F1" ? <PasoF1 d={d} up={up} es={es} desk={desk} dw={dw} pv={pv} fechas={fechas} len={len} toast={toast} /> : null;
+  const cuerpoF1 = st === "F1" ? <PasoF1 d={d} up={up} es={es} desk={desk} dw={dw} pv={pv} fechas={fechas} len={len} toast={toast} promoMal={promoMal} quitarPromoMal={() => setPromoMal(false)} /> : null;
   const cuerpoH1 = st === "H1" && publicado ? <PasoH1 p={publicado} d={d} es={es} pv={pv} toast={toast} /> : null;
 
   const pvR = desk && dw >= 960 && (flow || st === "H1"), rail = desk && dw >= 1200 && flow;
