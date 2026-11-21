@@ -224,7 +224,7 @@ export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resu
       let mid: string | null = null;
       if (foto) {
         // Foto PRIVADA de la persona (subida por /api/ayuda/foto): pasa a ser del caso. Una pública no entra.
-        const u = await c.query(`update media set owner_kind = 'support', owner_id = $1 where id = $2::uuid and uploaded_by = $3 and owner_kind = 'user' and status = 'visible' and private`, [k.id, foto, q.userId]);
+        const u = await c.query(`update media set owner_kind = 'support', owner_id = $1 where id = $2::uuid and uploaded_by = $3 and owner_kind = 'user' and status = 'visible' and private and url like 'privado/a/%'`, [k.id, foto, q.userId]);
         if (!u.rowCount) throw new FotoPerdida();
         mid = foto;
       }
@@ -274,7 +274,7 @@ export async function escribirCaso(q: Quien, numero: string, texto: string, foto
       const h = (await c.query<{ n: number }>(`select count(*)::int as n from support_messages where user_id = $1 and sender = 'user' and at > now() - interval '1 hour'`, [q.userId])).rows[0]!.n;
       if (h >= 30) return no("Escribiste muchos mensajes seguidos. Espera un rato: el equipo ya los tiene.", "You wrote many messages in a row. Wait a bit: the team has them.");
       if (f) {
-        const u = await c.query(`update media set owner_kind = 'support', owner_id = $1 where id = $2::uuid and uploaded_by = $3 and owner_kind = 'user' and status = 'visible' and private`, [k.id, f, q.userId]);
+        const u = await c.query(`update media set owner_kind = 'support', owner_id = $1 where id = $2::uuid and uploaded_by = $3 and owner_kind = 'user' and status = 'visible' and private and url like 'privado/a/%'`, [k.id, f, q.userId]);
         if (!u.rowCount) throw new FotoPerdida();
       }
       await c.query(`insert into support_messages (case_id, city_id, sender, user_id, body, photo_media_id) values ($1, $2, 'user', $3, $4, $5::uuid)`, [k.id, k.city_id, q.userId, t.texto || null, f]);

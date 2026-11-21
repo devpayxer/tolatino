@@ -2053,15 +2053,24 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9t** · _Hecho el 20 nov (decisión AJ: cuatro capas, en el sandbox desde be601ea; plan `docs/diseno/plan/fotos-revision-automatica.md`)._ **Las fotos públicas no pasan por revisión de contenido al subir:** `/api/medios` (portada y galería del negocio, menú, reseñas,
       eventos, novedades, foto de perfil) guarda la foto ya visible; solo las de Mensajes y las de Comunidad pasan por el modelo propio
       (`revisarImagen`). Decidir con el fundador si las públicas también pasan (y qué se hace mientras se revisan) y construirlo. (20 nov)
-- [ ] **→ 9t** · **La limpieza de las fotos de ayuda a los 90 días no corre:** `purgarFotosAyuda()` (`lib/ayuda-cita.ts`) existe pero nadie la
-      llama (el barrido no la tiene) y la ruta promete borrarlas 90 días después de cerrar. Registrarla en el barrido, con su guardián. (20 nov)
+- [x] **→ 9t** · **La limpieza de las fotos de ayuda a los 90 días no corre:** `purgarFotosAyuda()` (`lib/ayuda-cita.ts`) existe pero nadie la
+      llama (el barrido no la tiene) y la ruta promete borrarlas 90 días después de cerrar. Registrarla en el barrido, con su guardián. (20 nov) — **✓ (21 nov, F3):** el barrido la corre (`fotosAyudaPurga`). Borra SOLO la foto privada
+      de la ayuda (`privado/a/`: Salud, Pro, Niños, Iglesias, Bienes Raíces y Autos) de una ayuda `resolved` hace más de `sp_fotos_ayuda_dias`;
+      sin almacén no hace nada (antes marcaba borrado lo que seguía ahí); el archivo primero y, en la misma transacción, la fila «borrada»
+      (status, purged_at, `privado/borrada`) y su renglón en la auditoría (`ayuda.fotos.purga`, system). Guardián `fotosPrivadasConPermiso`;
+      prueba de la base `fot9uprivadas` (sin almacén, vieja, reciente, abierta, F3).
 - [ ] **→ 9t** · **Fotos a la medida · privadas (F3):** variantes de las fotos de Mensajes, ayuda, entrega y reclamo bajo `privado/…`,
-      entregadas por su misma ruta con permiso (`?w=`). Hoy una miniatura del chat baja la foto entera. (20 nov)
+      entregadas por su misma ruta con permiso (`?w=`). Hoy una miniatura del chat baja la foto entera. (20 nov) — _(21 nov, F3): hecho para las
+      fotos de destino privado de `/api/medios` (las 10 pantallas: variantes en `privado/o/`, `/api/medios/privada/<id>?w=`). Siguen sin variantes
+      las de Mensajes, ayuda de Salud y Pro, entrega y reclamo (sus rutas son otras)._
 - [ ] **→ 9t** · **Fotos a la medida · después:** AVIF para los anchos grandes; el color dominante mientras carga (hoy, el fondo neutro del
       sistema); variantes del póster del video del negocio (`/medios/v/…jpg`, que además no está en la regla de caché de Cloudflare). (20 nov)
 - [ ] **→ 9t** · **Fotos guardadas como texto fuera de `media`:** `menu_items.photos text[]`, `users.photo_url`, `subcategories.photo_url`,
       `business_members.photo_url`, y `businesses.logo_url` (sin lector: el logo vive en `media`). Unificar o retirar lo que no se usa. Dos
-      índices que se pisan en `media` (`media_chat_subidas_idx` y `media_msj_subidas_idx`). (20 nov)
+      índices que se pisan en `media` (`media_chat_subidas_idx` y `media_msj_subidas_idx`). (20 nov) — _(21 nov, F3): al GUARDAR, los cinco
+      catálogos (Oficios, Servicios, Autos, Bienes Raíces, Renta de artículos) y el Menú ya validan cada foto nueva de `items.photos` contra
+      `media` (`lib/fotos-catalogo.ts`). Sigue: que los LECTORES miren `media` (la línea de «Quitar una foto no llega a las copias por TEXTO»)
+      y unificar o retirar las columnas de texto._
 - [ ] **→ 9t** · **Las rutas de fotos y video cargan el archivo entero en memoria** (12 MB por foto, 120 MB por video) y las privadas se
       entregan sin `Range` ni `ETag`. Medir con carga y, si pesa, pasar a flujo. (20 nov)
 
@@ -2101,17 +2110,21 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       foto» aunque esté retenida: decir «En revisión»), Contenido › Auto-moderación (las cuatro capas ya salen con el patrón de siempre; falta el
       gasto de la capa 2), el bloque del reporte diario con `cifrasRevisionFotos()` y la ayuda en `docs/ayuda/` (quien sube y el equipo). La
       acción `pedirRevisionFoto` está hecha y sin botón. (R1, 20 nov)
-- [ ] **→ 9u** · **/api/medios también recibe fotos que van solo a un negocio** (las de una solicitud, una cita, un viaje, un estimado, la
+- [x] **→ 9u** · **/api/medios también recibe fotos que van solo a un negocio** (las de una solicitud, una cita, un viaje, un estimado, la
       balanza o el daño de una renta: se guardan en `n/` y se adjuntan con `owner_kind` request, appointment, trip, estimate_line…). Desde la
       revisión de R2 las pantallas que suben esas fotos mandan `destino=privado` (lista en el guardián fotosRevisionPrivacidad): nunca van a la
       segunda opinión y su dudosa queda retenida («privada») hasta que una persona la revise. Queda: su archivo sigue en `n/` (dirección pública
-      que nadie lista); decidir si deberían subirse por una ruta privada, como las de ayuda. (R2, 20 nov)
-- [ ] **→ 9u** · **El atajo de la foto «privada» en los catálogos:** desde el 20 nov una foto subida con destino «privado» entra aunque el modelo
+      que nadie lista); decidir si deberían subirse por una ruta privada, como las de ayuda. (R2, 20 nov) — **✓ (21 nov, F3):** van por una
+      llave privada servida con permiso: `privado/o/<uuid>.jpg`, `media.private`, `/api/medios/privada/<uuid>` (quien la subió, el cliente y el
+      negocio de su operación, el equipo con un caso abierto, auditado). Ver «Fotos a la medida — F3».
+- [x] **→ 9u** · **El atajo de la foto «privada» en los catálogos:** desde el 20 nov una foto subida con destino «privado» entra aunque el modelo
       propio esté caído (decisión de después del CI). Las acciones que adjuntan una foto de `media` a algo público ya la rechazan
       (`not rev_sin_c2`: Publica tu negocio, galería, logo, foto del equipo, menú, perfil, Comunidad, novedades, eventos, reseñas; guardián
       fotosRevisionPrivacidad). Los catálogos que guardan la DIRECCIÓN como texto sin mirar `media` (oficios, servicios, autos, inmuebles y renta de
       artículos: `items.photos` por expresión regular) no la validan: quien mienta «privado» con el modelo caído puede pegar esa dirección ahí.
-      Arreglo de fondo (F3 de Fotos a la medida): las fotos privadas a una llave privada servida con permiso; mientras, o validar esas direcciones contra `media`. (20 nov)
+      Arreglo de fondo (F3 de Fotos a la medida): las fotos privadas a una llave privada servida con permiso; mientras, o validar esas direcciones contra `media`. (20 nov) — **✓ (21 nov, F3):** cerrado de fondo
+      (una foto de destino privado no tiene dirección pública que pegar) y en cada catálogo: `fotosDeCatalogoOk` (visible, sin purgar, no
+      privada, sin `rev_sin_c2`, del negocio o de quien guarda; por el id de la dirección). Guardián `fotosPrivadasConPermiso` (+ al revés).
 - [ ] **→ 9u** · **rev9u (punta a punta con Garage) no corrió fuera del CI:** esta sesión no tenía almacén (/api/medios da 503) ni el servidor
       de pruebas. Corrieron tipos, todos los guardianes, alreves9urevision 31/31, la prueba pura fotos9urevision y la migración 0196 dos veces
       sobre todas las anteriores (con el SQL de cada camino probado contra la base). Correr rev9u y com5d (su paso 13 cambió) en el CI dirigido.
@@ -2121,3 +2134,30 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **La segunda opinión en la subida contra el guardián compaSinRutaCritica:** El Compa nunca está en la ruta crítica, y la segunda
       opinión usa su modelo dentro de la subida (decisión AJ: en el mismo pedido, ≈ 8 s). Se permitió solo `lib/fotos-segunda-opinion.ts`, con
       tiempo límite y fallo cerrado (si no contesta, la foto queda retenida y la subida sigue). Confirmarlo con el fundador. (R2, 20 nov)
+
+## Fotos a la medida — F3 · las fotos de destino privado (21 nov) — lo que quedó anotado
+- [ ] **→ 9u** · **Las pantallas todavía no piden `?w=` de una foto privada:** la ruta `/api/medios/privada/<id>?w=320|640|1080|1600` ya entrega
+      la variante WebP con el mismo permiso, pero `fotoSrc`/`fotoFondo` (`packages/ui/src/foto.ts`) solo reconocen `/medios/n/…` y dejan pasar la
+      dirección privada sin tocar: las miniaturas de una cita, solicitud o viaje bajan la maestra (≤ 1600 px). Arreglo: que reconozcan
+      `/api/medios/privada/<uuid>` y agreguen `?w=<ancho>` (cambio del sistema de diseño; esta entrega no tocó `packages/ui`). (21 nov)
+- [ ] **→ 9u** · **fot9uprivadas y rev9u (F3) corren en el CI:** aquí corrió `fot9uprivadas` contra una base propia con todas las migraciones y la
+      semilla (41/41) y nginx de verdad (`medios-nginx.test.sh`); NO corrieron la subida real ni la ruta servida (sin almacén: `/api/medios` da
+      503). Correr en el CI dirigido `rev9u` (sus pasos F3: la fila privada, nada bajo n/, la ruta 200 para quien subió y 404 sin sesión u otra
+      persona), `fot9uprivadas` y las 10 pruebas de esos flujos (`est4d`, `pq4e`, `pre4e`, `merc4p`, `merc9n`, `cit3e`, `renta4f`, `tra4y2`,
+      `ayu4f`, `ayu4z`). (21 nov)
+- [ ] **→ 9u** · **Las fotos de antes bajo n/ que el barrido mueve:** 0197 marca como de destino privado las de una solicitud, cita, viaje,
+      balanza, estimado, ayuda no privada y daño de renta, y `barrerPrivadas` las pasa a `privado/o/` de a 20 por minuto. Cómo saber que terminó:
+      `select count(*) from media where rev_sin_c2 and not private and purged_at is null` → 0. Mientras tanto, la que falta se sigue viendo por su
+      dirección vieja. Lo ya movido puede seguir en el borde de Cloudflare (`/medios/n/` se cacheaba un año): va con la purga del borde (9p). (21 nov)
+- [ ] **→ 9u** · **El equipo en «Panel del dueño (solo lectura)» no ve las fotos privadas:** la ruta solo deja pasar al equipo con un caso
+      ABIERTO de esa operación en su cola («Ayuda con…» o el daño de una renta). En la vista de solo lectura del panel, en una disputa o en el
+      360° de una cita sin caso, la foto sale vacía (404). Decidir con el fundador si se abre (con motivo escrito y auditoría, como el vidrio
+      roto) o se deja así. (21 nov)
+- [ ] **→ 9u** · **Plazo de las fotos de destino privado:** no tienen purga propia (como antes de F3: vivían en n/ sin plazo). Las de una ayuda
+      de Salud y Pro sí (90 días); decidir con el fundador si las de una cita, solicitud, viaje, balanza, estimado, daño y «Ayuda con…» de los
+      demás rubros se borran a los N días de cerrar su operación, y construirlo con su guardián. No se inventó un plazo. (21 nov)
+- [ ] **→ 9u** · **Una privada de otra ruta (`privado/a/`, ayuda de Salud y Pro) en un destino público:** las consultas del atajo exigen
+      `not rev_sin_c2` (que esas filas no tienen) y no `not private`; el Menú y los cinco catálogos ya exigen las dos. Si alguien pega el id de
+      una foto de ayuda en la galería o el perfil, la dirección guardada sería `privado/a/…`, que no se sirve (se ve rota, no se filtra).
+      Agregar `not private` a las 11 consultas del atajo (guardián `fotosRevisionPrivacidad`). (21 nov)
+

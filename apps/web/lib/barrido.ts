@@ -196,6 +196,11 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Revisión automática de las fotos públicas (decisión AJ): las retenidas vuelven a pasar por las capas por tandas (con tope de intentos y el tope
         // de gasto de la capa 2), y se sueltan las reservas de la capa 2 que nunca volvieron (foto2_soltar_reservas). lib/fotos-revision.ts.
         ["fotosRevision", async () => (await import("./fotos-revision")).barrerRevision()],
+        // Fotos a la medida · F3: las fotos de destino privado que quedaron bajo n/ antes de F3 pasan a su llave privada (privado/o/) con su dirección
+        // con permiso, y las privadas sin variantes las reciben (lib/fotos-privadas.ts barrerPrivadas). Las fotos privadas de una ayuda (Salud, Pro…)
+        // se borran a los sp_fotos_ayuda_dias de cerrarse, con su renglón en la auditoría (lib/ayuda-cita.ts purgarFotosAyuda). Guardián fotosPrivadasConPermiso.
+        ["fotosPrivadas", async () => (await import("./fotos-privadas")).barrerPrivadas()],
+        ["fotosAyudaPurga", async () => (await import("./ayuda-cita")).purgarFotosAyuda()],
         // 9n-4 · «Me lo devolvieron» sin respuesta: recordatorio a la mitad y cierre a los ayuda_devuelto_dias (4if). El Repartidor: la oferta sola a los que
         // están en línea (rep_auto_intentos) y el recordatorio de los programados (rep_programado_min antes de estar listos).
         ["ayudaDevuelto", async () => (await import("./ayuda-cita")).cerrarDevueltosSinRespuesta()], ["repartoSolo", async () => (await import("./repartidor-auto")).asignarSolos()],

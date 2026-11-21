@@ -379,7 +379,10 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
       if (!(cents >= 100 && cents <= max)) return no(`El daño va de $1 a ${money(max)} (lo que queda del depósito).`, `Damage goes from $1 to ${money(max)} (what is left of the deposit).`);
       if (!UUID.test(String(a.foto))) return no("El daño va con foto: el cliente la ve antes de que se descuente.", "Damage needs a photo: the customer sees it before it is deducted.");
       if (nota.length < 4) return no("Di qué se dañó.", "Say what was damaged.");
-      if (!(await db().query(`select 1 from media where id = $1::uuid and status = 'visible'`, [a.foto])).rowCount) return no("Vuelve a subir la foto.", "Upload the photo again.");
+      // F3 · La foto la subió quien la manda (con destino «privado»: el cliente y el negocio la ven por /api/medios/privada, que da permiso desde
+      // rentals.damage_photo), recién subida y sin usar en otro daño: nunca la foto de otra persona u otra operación.
+      if (!(await db().query(`select 1 from media m where m.id = $1::uuid and m.status = 'visible' and m.uploaded_by = $2::uuid and m.owner_kind = 'user' and m.purged_at is null
+                                and not exists (select 1 from rentals r where r.damage_photo = m.id)`, [a.foto, actorId])).rowCount) return no("Vuelve a subir la foto.", "Upload the photo again.");
       dano = { cents, foto: a.foto, nota };
     }
     const ok = await tx(async (c) => {

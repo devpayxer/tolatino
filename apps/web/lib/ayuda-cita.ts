@@ -50,8 +50,10 @@ export const PRIVADA = (r: RubroAyuda) => r === "salud" || r === "pro" || r === 
 export const SIN_DINERO = new Set<RubroAyuda>(["fe", "inm", "dealer"]);
 export const QUIERE: Record<RubroAyuda, QuiereCita[]> = { belleza: ["corr", "rev", "avis"], auto: ["corr", "rev", "avis"], hogar: ["corr", "rev", "avis"], salud: ["rev", "seg", "avis"], pro: ["rev", "fin", "avis"], fiesta: ["rev", "desc", "avis"], trans: ["rev", "corr", "avis"], noche: ["rev", "avis"], edu: ["rev", "grupo", "avis"], ninos: ["rev", "arreglar", "avis"], dep: ["rev", "baja", "avis"], merc: ["rev", "corr", "avis"], tienda: ["rev", "corr", "avis"],
   fe: ["rev", "llamar", "avis"], inm: ["rev", "otra", "avis"], dealer: ["rev", "antes", "avis"], evt: ["rev", "avis"], evp: ["rev", "desc", "avis"] };
-/* La URL de una foto de ayuda: las privadas solo por la ruta con permiso, nunca por /medios. */
-export const FOTO_AYUDA_SQL = `case when m.private then '/api/ayuda/foto/' || m.id::text else m.url end`;
+/* La URL de una foto de ayuda: las privadas solo por la ruta con permiso, nunca por /medios. Las de Salud y Pro (y Niños, Iglesias, Bienes Raíces y
+   Autos) por /api/ayuda/foto/{id}; F3 · las demás («Ayuda con…» de belleza, auto, hogar, fiestas…: destino «privado» de /api/medios) ya traen su
+   dirección privada en media.url (/api/medios/privada/{id}). */
+export const FOTO_AYUDA_SQL = `case when m.private and m.url like 'privado/a/%' then '/api/ayuda/foto/' || m.id::text else m.url end`;
 export const MOTIVOS_CITA: MotivoCita[] = MOTIVOS.belleza;
 /* Los que piden foto (diseño: RSN[3] = 1; Hogar: needPh = quedó mal o dañó algo). */
 export const CON_FOTO = new Set<MotivoCita>(["cobro", "quedo", "bad", "dmg", "dano", "seguro", "noseg", "peso", "falto", "fresco", "caja", "cambio", "nocomo", "equipaje", "cover", "minimo", "salir", "ver", "mudar", "precio"]);
@@ -201,9 +203,10 @@ export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCit
       if (esEstafa(reason, rubro)) pausado = await pausarPorAyuda(c, { id: h.id, number: h.number, business_id: o.business_id, city_id: o.city_id, user_id: userId }, { kind: "user", id: userId });
     }
     if (fotos.length) {
-      // Salud y Pro: solo fotos privadas (una pública con una factura médica no entra).
+      // Salud y Pro: solo fotos privadas de la ayuda (privado/a/, con su ruta, su vidrio roto y su borrado a los 90 días): una pública con una factura
+      // médica no entra, ni una privada de otra ruta (F3: las de destino «privado» de /api/medios también son private).
       const ok = await c.query(`update media set owner_kind = 'help', owner_id = $1, sort = array_position($3::uuid[], id)
-                                 where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible' and ($4::boolean = false or private)`, [h.id, userId, fotos, PRIVADA(rubro)]);
+                                 where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible' and ($4::boolean = false or (private and url like 'privado/a/%'))`, [h.id, userId, fotos, PRIVADA(rubro)]);
       if (ok.rowCount !== fotos.length) throw new FotoPerdida();
     }
     return { ok: true, numero: h.number };
@@ -415,8 +418,6 @@ async function marcarLicencia(numero: string) {
      on conflict do nothing`, [numero]);
 }
 
-/* Las fotos privadas de una ayuda (Salud y Pro) se borran a los días de Configuración (sp_fotos_ayuda_dias) de cerrarse (§3): el archivo sale del
-   almacenamiento y la fila queda como borrada (nada se borra de la base; la URL ya no lleva a nada). */
 /* 9n-4 · 4if «Me lo devolvieron» sin respuesta (LAUNCH L561): si la persona nunca confirma ni dice que no, a la mitad del plazo
    (ayuda_devuelto_dias, Configuración) le llega un recordatorio (una vez: outside_reminded_at es el candado) y al cumplirse la solicitud se cierra
    sola (closed_by 'system', outside_refund 'expired'; nada se borra) con su aviso. Los avisos son NEUTROS (sin el lugar ni el servicio: puede ser
@@ -440,15 +441,29 @@ export async function cerrarDevueltosSinRespuesta(): Promise<number> {
   return L.length;
 }
 
-export async function purgarFotosAyuda() {
-  const L = (await db().query<{ id: string; url: string }>(
-    `select m.id::text, m.url from media m join help_requests h on m.owner_kind = 'help' and h.id::text = m.owner_id
-      where m.private and m.status = 'visible' and h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql("sp_fotos_ayuda_dias")}) limit 50`)).rows;
-  if (!L.length) return 0;
+/* Las fotos privadas de una ayuda (las de /api/ayuda/foto: Salud, Pro, Niños, Iglesias, Bienes Raíces y Autos, privado/a/) se borran a los días de
+   Configuración (sp_fotos_ayuda_dias, 90 por defecto) de cerrarse la ayuda (status 'resolved' con resolved_at): el archivo sale del almacenamiento
+   y la fila queda como borrada (status 'removed', purged_at, url 'privado/borrada': nada se borra de la base), con su renglón en la auditoría
+   (system, ayuda.fotos.purga) en la misma transacción. Una ayuda abierta, respondida o escalada no se toca; tampoco las fotos de destino «privado»
+   de /api/medios (F3), que no prometen ese plazo. Sin almacén no hace nada (no marca borrado lo que sigue ahí). Lo corre el barrido (fotosAyudaPurga),
+   de a 50; un error del almacén deja esa foto para la próxima vuelta. Guardián fotosPrivadasConPermiso; prueba fotosf3privadas. */
+export async function purgarFotosAyuda(): Promise<number> {
   const { borrarObjeto, mediosListos } = await import("./medios");
+  if (!mediosListos()) return 0;
+  const L = (await db().query<{ id: string; url: string; hnum: string; city: string }>(
+    `select m.id::text, m.url, h.number as hnum, h.city_id as city from media m join help_requests h on m.owner_kind = 'help' and m.owner_id ~ '^[0-9]{1,18}$' and h.id = m.owner_id::bigint
+      where m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/a/%'
+        and h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql("sp_fotos_ayuda_dias")}) limit 50`)).rows;
+  let n = 0;
   for (const m of L) {
-    if (mediosListos() && m.url.startsWith("privado/")) await borrarObjeto(m.url);
-    await db().query(`update media set status = 'removed', removed_reason = 'Borrada a los ' || ${cfgSql("sp_fotos_ayuda_dias")} || ' días (ayuda cerrada)', url = 'privado/borrada', purged_at = now() where id = $1::uuid`, [m.id]);
+    try { await borrarObjeto(m.url); } catch { continue; }
+    await tx(async (c) => {
+      const u = await c.query(`update media set status = 'removed', removed_reason = 'Borrada a los ' || ${cfgSql("sp_fotos_ayuda_dias")} || ' días (ayuda cerrada)', url = 'privado/borrada', purged_at = now()
+                                where id = $1::uuid and purged_at is null`, [m.id]);
+      if (u.rowCount) await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason) values ('system', null, 'ayuda.fotos.purga', 'media', $1, $2, $3::jsonb, null, $4)`,
+        [m.id, m.city, JSON.stringify({ ayuda: m.hnum }), "Foto privada de una ayuda cerrada: pasó el plazo de Configuración (sp_fotos_ayuda_dias)"]);
+    });
+    n++;
   }
-  return L.length;
+  return n;
 }

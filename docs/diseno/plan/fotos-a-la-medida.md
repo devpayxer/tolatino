@@ -37,7 +37,7 @@ públicas al subir (hoy solo se revisan las de Mensajes y Comunidad: hallazgo de
 | F0 | Inventario | Haiku ✓ |
 | F1 | Migración, generador, `/api/medios`, respaldo en nginx/Cloudflare, conversión de lo existente, cifras para el admin, pruebas, guardián | Opus |
 | F2 | `fotoSrc`/`fotoFondo`/`Foto` en el sistema de diseño y cambio pantalla por pantalla, con pruebas y guardián | Sonnet |
-| F3 | Privadas con `?w=` | Opus |
+| F3 | Privadas con `?w=` | Opus · **hecho en parte (21 nov):** ver «Estado de F3» |
 | F4 | Bloque del Super Admin y ayuda | Sonnet |
 | Siempre | Plan, revisión de cada entrega, correr guardianes/tipos/pruebas, medir con fotos reales en el sandbox | Fable |
 
@@ -46,3 +46,15 @@ públicas al subir (hoy solo se revisan las de Mensajes y Comunidad: hallazgo de
 - Punta a punta en el CI (hay almacén): subir → existen las 4 variantes, pesan menos, la tarjeta pide la de su tamaño, una variante que falta
   entrega la maestra.
 - Presupuesto de velocidad (LCP) de las pantallas con fotos: igual o mejor.
+
+## Estado de F3 (21 nov)
+- **Las fotos de destino privado (las 10 pantallas de `destino=privado`) ya no tienen dirección pública:** `/api/medios` las guarda en
+  `privado/o/<uuid>.jpg` con `media.private`, contesta `/api/medios/privada/<uuid>` y genera sus variantes WebP en `privado/o/<uuid>.w<ancho>.webp`.
+  La ruta con permiso (`app/api/medios/privada/[id]`) decide desde la fila y su operación (`lib/fotos-privadas.ts permisoFotoPrivada`) y sirve
+  `?w=` con el mismo permiso; sin caché, `nosniff`, 404 a quien no puede. Una retenida de destino privado, al aprobarse, vuelve a `privado/o/`.
+- **Las de antes** (bajo `n/`): migración 0197 las marca y el barrido (`barrerPrivadas`) las mueve y reescribe su copia en `preFotos`.
+- **Los catálogos** que guardan la foto como texto validan contra `media` (`lib/fotos-catalogo.ts`).
+- **Falta:** que las pantallas PIDAN `?w=` (hoy piden la maestra): `fotoSrc`/`fotoFondo` de `packages/ui/src/foto.ts` tienen que reconocer
+  `/api/medios/privada/<uuid>` y agregar `?w=<ancho>` (cambio del sistema de diseño, fuera de esta entrega; anotado en LAUNCH). Las privadas de
+  antes (Mensajes, ayuda de Salud y Pro, entrega, reclamo) siguen sin variantes.
+- Guardián `fotosPrivadasConPermiso`; al revés `alreves9uprivadas`; prueba de la base `fot9uprivadas`; nginx `pruebas/infra/medios-nginx.test.sh`.

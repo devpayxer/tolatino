@@ -6,6 +6,7 @@
 import type { PoolClient } from "pg";
 import { mismoOrigen } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
+import { fotosDeCatalogoOk } from "@/lib/fotos-catalogo";
 import { limpiarOficio, recalcularFiltros, rubroDe, type Attrs } from "@/lib/oficios";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import type { Res } from "./acciones";
@@ -43,6 +44,8 @@ export async function oficioGuardar(negocio: string, itemId: string, p: OficioFo
     const v = limpiarOficio(rubroDe(cat)!, { k: p?.k, cents: p?.cents, dur: p?.dur, a: p?.a });
     if (!v.ok) return no(v.es, v.en);
     const foto = typeof p?.foto === "string" && /^(https?:\/\/|\/)[^\s"']{1,500}$/.test(p.foto) ? p.foto : null;
+    // F3 · Una foto nueva: de media, visible, no privada (lib/fotos-catalogo.ts; el mismo criterio que los demás destinos públicos).
+    if (!(await fotosDeCatalogoOk(c, { negocio: a.negocio.id, userId: a.yo.id, itemId: itemId === "new" ? null : itemId, fotos: foto ? [foto] : [] }))) return no("Vuelve a subir la foto.", "Upload the photo again.");
     let sec: string | null = ID.test(String(p?.sec ?? "")) ? String(p.sec) : null;
     if (sec && !(await c.query(`select 1 from item_sections where id = $1 and business_id = $2 and module = 'svc' and removed_at is null`, [sec, a.negocio.id])).rowCount) sec = null;
     const nueva = txt(p?.newSec, 30);

@@ -19,7 +19,9 @@ export async function POST(req: NextRequest) {
   if (!me) return err(401, "Entra para subir la foto.", "Sign in to upload the photo.");
   if (!mediosListos()) return err(503, "Las fotos no están disponibles en este momento.", "Photos are not available right now.");
   if (Number(req.headers.get("content-length") ?? 0) > MAX + 4096) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");
-  const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where uploaded_by = $1 and private and created_at > now() - interval '1 hour'`, [me.id])).rows[0]?.n ?? 0;
+  // Su tope (20 por hora) cuenta solo las fotos de ESTA ruta (privado/a/): desde F3 las de destino privado de /api/medios también son private y
+  // tienen el suyo (lib/fotos-revision.ts topeSubidas).
+  const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where uploaded_by = $1 and private and url like 'privado/a/%' and created_at > now() - interval '1 hour'`, [me.id])).rows[0]?.n ?? 0;
   if (n >= 20) return err(429, "Subiste muchas fotos seguidas. Prueba en un rato.", "Too many photos in a row. Try again later.");
   const lf = await leerFormulario(req, MAX + 4096);
   if (!lf.ok && lf.grande) return err(413, "La foto pesa demasiado (máximo 12 MB).", "The photo is too large (12 MB max).");

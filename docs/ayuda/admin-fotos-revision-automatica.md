@@ -14,11 +14,15 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
   - **Capa 3 · reportes**: 3 cuentas distintas (que no sean de menos de 72 h; los reportes desde un mismo dispositivo cuentan como una) → la
     foto se oculta sola, su archivo sale de lo público, el dueño recibe aviso y pasa a la capa 2 para el veredicto.
   - **Capa 4 · confianza ganada**: un negocio verificado, con 10 fotos visibles o más y ninguna quitada en 90 días, publica sus dudosas
-    sin la capa 2 (las claras se rechazan igual). Una cuenta de menos de 7 días sube hasta 10 fotos por hora.
+    sin la capa 2 (las claras se rechazan igual). Una cuenta de menos de 7 días sube hasta 10 fotos públicas por hora; las de una operación (destino privado) solo tienen el tope general de 60 por hora.
 - **Ante la duda se retiene; nunca se publica «por si acaso».** Si un modelo no responde, la capa está apagada o no hay presupuesto, la
   foto queda retenida y el barrido la vuelve a intentar.
 - **Nunca sale de casa una foto privada.** A la capa 2 solo van fotos destinadas a lo público. Mensajes, ayuda, entrega y reclamos usan
   solo el modelo propio; una foto que va solo a un negocio (solicitud, cita, estimado, viaje) que sale dudosa queda retenida y no se manda.
+- **Una foto que va solo a un negocio no tiene dirección pública** (desde el 21 nov): la ven quien la subió, el cliente y el negocio de esa
+  operación, y el equipo **solo con un caso abierto** de esa operación en su cola y su ciudad («Ayuda con…» o el daño de una renta; en una
+  ayuda de Salud, con el motivo de «vidrio roto»). Cada vez que alguien del equipo la abre queda en la auditoría (`fotos.privada.ver`). Esa
+  foto tampoco se puede poner en algo público (menú, catálogos, galería): el servidor la rechaza.
 - **Una foto retenida o rechazada** no se ve en ninguna pantalla y su archivo deja de ser público (vive en una llave privada). Si se
   aprueba, vuelve. Se recuerda por su contenido: lo rechazado se rechaza para cualquiera; lo aprobado por una persona entra directo para
   quien la subió.
@@ -75,11 +79,15 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
   - **Layer 3 · reports**: 3 different accounts (none under 72 h old; reports from one device count as one) → the photo hides itself,
     its file leaves public storage, the owner gets a notice and it goes to layer 2 for the verdict.
   - **Layer 4 · earned trust**: a verified business with 10 or more visible photos and none removed in 90 days publishes its doubtful
-    photos without layer 2 (clear ones are still rejected). An account under 7 days old uploads up to 10 photos an hour.
+    photos without layer 2 (clear ones are still rejected). An account under 7 days old uploads up to 10 public photos an hour; photos for an operation (private destination) only have the general cap of 60 an hour.
 - **When in doubt it is held; it is never published “just in case”.** If a model does not answer, a layer is off or there is no budget,
   the photo is held and the sweep retries.
 - **A private photo never leaves.** Only photos meant to be public go to layer 2. Messages, help, delivery and claims use only the own
   model; a photo that goes only to a business (request, appointment, estimate, trip) that comes out doubtful is held and not sent.
+- **A photo that goes only to a business has no public address** (since Nov 21): it is seen by whoever uploaded it, the client and the
+  business of that operation, and the team **only with an open case** about that operation in their queue and city (“Help with…” or rental
+  damage; for a Health help, with the “break glass” reason). Each time a team member opens it, it is logged (`fotos.privada.ver`). That photo
+  cannot be put on anything public either (menu, catalogs, gallery): the server rejects it.
 - **A held or rejected photo** shows on no screen and its file stops being public (it lives under a private key). If approved, it comes
   back. It is remembered by its content: what was rejected is rejected for anyone; what a person approved goes straight in for whoever uploaded it.
 

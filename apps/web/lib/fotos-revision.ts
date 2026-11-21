@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { PoolClient } from "pg";
 import { avisar } from "./avisos";
 import { db, tx } from "./db";
+import { DE_URL_PRIVADA, guardarVariantesPrivadas, llavePrivada, urlPrivada } from "./fotos-privadas";
 import { clavesVariantes, guardarVariantes } from "./fotos-variantes";
 import { decidir, memoriaDe, MOTIVO_TEXTO, umbralesDe, type Capa, type Decision, type EntradaDecision, type Memoria, type Motivo, type MotivoRechazo, type Umbrales, type VeredictoGuardado } from "./fotos-decision";
 import { segundaOpinion, type ResultadoSegunda } from "./fotos-segunda-opinion";
@@ -47,13 +48,26 @@ export async function reglasFotos(c?: Q): Promise<ReglasFotos> {
   };
 }
 
-/* ── Tope de subidas por hora: 60 para todos; una cuenta nueva (< nueva_dias), el de la capa 4 (10 por defecto). Vale aunque la capa 4 esté
-   apagada (es antiabuso, no confianza). ── */
-export async function topeSubidas(userId: string, R: ReglasFotos): Promise<{ n: number; tope: number; nueva: boolean }> {
-  const r = (await db().query<{ n: number; nueva: boolean }>(
-    `select (select count(*)::int from media where uploaded_by = $1 and created_at > now() - interval '1 hour') as n,
-            coalesce((select created_at > now() - make_interval(days => $2) from users where id = $1), true) as nueva`, [userId, R.c4.nuevaDias])).rows[0]!;
-  return { n: r.n, nueva: r.nueva, tope: r.nueva ? Math.min(60, R.c4.nuevaHora) : 60 };
+/* ── Tope de subidas por hora. Vale aunque la capa 4 esté apagada (es antiabuso, no confianza).
+   - General: 60 por hora para todos, contando TODAS las fotos de la persona (públicas y de destino «privado»).
+   - Cuenta nueva (< nueva_dias): además, el de la capa 4 (nueva_hora, 10 por defecto), que cuenta y frena SOLO las de destino PÚBLICO (las que no
+     son rev_sin_c2). Una foto de una operación (cita, solicitud, mudanza, la balanza, el daño de una renta…) no puede esperar (la misma regla que
+     con el modelo propio caído): una persona del equipo de un mercado recién invitada que pesa 15 productos, o un vecino nuevo que pide una
+     mudanza con fotos y luego un pre-estimado, no se quedan bloqueados (confirmación 44847327303: cit3e, ayu4g, res4s, tra4y2). ── */
+export const TOPE_HORA = 60;
+export type TopeSubidas = { n: number; publicas: number; nueva: boolean; topeNueva: number };
+export async function topeSubidas(userId: string, R: ReglasFotos): Promise<TopeSubidas> {
+  const r = (await db().query<{ n: number; publicas: number; nueva: boolean }>(
+    `select count(*)::int as n, count(*) filter (where not rev_sin_c2)::int as publicas,
+            coalesce((select created_at > now() - make_interval(days => $2) from users where id = $1), true) as nueva
+       from media where uploaded_by = $1 and created_at > now() - interval '1 hour'`, [userId, R.c4.nuevaDias])).rows[0]!;
+  return { n: r.n, publicas: r.publicas, nueva: r.nueva, topeNueva: Math.min(TOPE_HORA, R.c4.nuevaHora) };
+}
+/* Pura: qué tope frena esta subida (o ninguno). La de destino «privado» solo responde al general. */
+export function topeQueFrena(t: TopeSubidas, privada: boolean): "general" | "nueva" | null {
+  if (t.n >= TOPE_HORA) return "general";
+  if (!privada && t.nueva && t.publicas >= t.topeNueva) return "nueva";
+  return null;
 }
 
 /* ── Memoria por contenido (sha256 de la maestra normalizada): los veredictos que miraron ese contenido, del más nuevo al más viejo ── */
@@ -145,10 +159,11 @@ export async function guardarNoPublicada(x: { r: Revision; datos: Buffer; ancho:
   await tx(async (c) => {
     await c.query(
       `insert into media (id, owner_kind, owner_id, url, w, h, uploaded_by, status, bytes, sha256, rev_at, rev_capa, rev_motivo, rev_nota, rev_llave, rev_intentos, rev_siguiente,
-                          removed_reason, removed_note, removed_at, rev_sin_c2)
+                          removed_reason, removed_note, removed_at, rev_sin_c2, private)
        values ($1, 'user', $2, $3, $4, $5, $13::uuid, $6, $7, $8, now(), $9, $10, $11, $12, 0, case when $6 = 'review' then now() + interval '2 minutes' end,
-               case when $6 = 'removed' then 'revision' end, case when $6 = 'removed' then $11 end, case when $6 = 'removed' then now() end, $14)`,
-      [r.id, x.userId, `/medios/n/${r.id}.jpg`, x.ancho, x.alto, rechazada ? "removed" : "review", x.datos.length, x.sha, r.d.capa, r.d.motivo, notaDe(r.d), llave, x.userId, x.sinC2]);
+               case when $6 = 'removed' then 'revision' end, case when $6 = 'removed' then $11 end, case when $6 = 'removed' then now() end, $14, $14)`,
+      // F3 · Una de destino «privado» nunca lleva una dirección pública, tampoco retenida: si se aprueba, vuelve a privado/o/ (aVisible).
+      [r.id, x.userId, x.sinC2 ? urlPrivada(r.id) : `/medios/n/${r.id}.jpg`, x.ancho, x.alto, rechazada ? "removed" : "review", x.datos.length, x.sha, r.d.capa, r.d.motivo, notaDe(r.d), llave, x.userId, x.sinC2]);
     for (const v of veredictosDe(r, { mediaId: r.id, sha: x.sha, uploader: x.userId })) await anotarVeredicto(c, v);
   });
   await avisarFoto(x.userId, rechazada ? "foto_rechazada" : "foto_revision", r.id, r.d.motivo);
@@ -163,20 +178,23 @@ async function avisarFoto(userId: string, tpl: "foto_rechazada" | "foto_revision
 
 /* ── Publicar lo que estaba retenido u oculto (barrido, capa 2 después de la capa 3, o una persona). La maestra vuelve a n/ ANTES de que la fila
    sea visible (una fila visible nunca apunta a un archivo que no está); las filas que comparten el archivo (copias) vuelven con ella. ── */
-type Fila = { id: string; url: string; uploaded_by: string | null; rev_llave: string; rev_capa: string | null; rev_motivo: string | null; sha256: string | null; owner_kind: string; owner_id: string; w: number | null; rev_sin_c2: boolean };
+type Fila = { id: string; url: string; uploaded_by: string | null; rev_llave: string; rev_capa: string | null; rev_motivo: string | null; sha256: string | null; owner_kind: string; owner_id: string; w: number | null; rev_sin_c2: boolean; private?: boolean };
 async function filaRev(c: Q, id: string, bloquear = false): Promise<Fila | null> {
   if (!UUID.test(id)) return null;
-  return (await c.query<Fila>(`select id::text, url, uploaded_by::text, rev_llave, rev_capa, rev_motivo, sha256, owner_kind, owner_id, w, rev_sin_c2 from media
+  return (await c.query<Fila>(`select id::text, url, uploaded_by::text, rev_llave, rev_capa, rev_motivo, sha256, owner_kind, owner_id, w, rev_sin_c2, private from media
                                where id = $1::uuid and rev_llave is not null and purged_at is null and status in ('review', 'removed')${bloquear ? " for update" : ""}`, [id])).rows[0] ?? null;
 }
 const recontar = (c: Q, negocios: string[]) => negocios.length ? c.query(
   `update business_stats_cache s set photo_count = (select count(*) from media where owner_kind = 'business' and owner_id = s.business_id and status = 'visible'), updated_at = now()
     where s.business_id = any($1::text[])`, [negocios]) : Promise.resolve();
 async function aVisible(c: Q, f: Fila, v: Omit<Veredicto, "mediaId" | "sha" | "uploader">): Promise<void> {
-  const u = DE_URL.exec(f.url);
-  if (!u) throw new Error("revisión: la foto no tiene una dirección pública nuestra");
-  // La maestra vuelve a lo público primero (idempotente: mismo nombre, mismo contenido).
-  await guardarObjeto(`n/${u[1]}.jpg`, await leerObjeto(f.rev_llave), "image/jpeg");
+  // F3 · Una de destino «privado» vuelve a SU llave privada (privado/o/), nunca a n/: sigue sin dirección pública.
+  const p = f.private ? DE_URL_PRIVADA.exec(f.url) : null;
+  const u = p ?? DE_URL.exec(f.url);
+  if (!u || (f.private && !p)) throw new Error("revisión: la foto no tiene una dirección nuestra");
+  // La maestra vuelve primero (a n/, o a privado/o/ si es de destino privado; idempotente: mismo nombre, mismo contenido).
+  if (p) await guardarObjeto(llavePrivada(p[1]!), await leerObjeto(f.rev_llave), "image/jpeg");
+  else await guardarObjeto(`n/${u[1]}.jpg`, await leerObjeto(f.rev_llave), "image/jpeg");
   const filas = (await c.query<{ id: string; owner_kind: string; owner_id: string }>(
     `update media set status = 'visible', rev_at = now(), rev_capa = $3, rev_motivo = null, rev_nota = null, rev_llave = null, rev_siguiente = null,
             removed_reason = null, removed_note = null, removed_by = null, removed_at = null, var_widths = null, var_bytes = null, var_at = null
@@ -203,6 +221,13 @@ async function aRechazada(c: Q, f: Fila, v: Omit<Veredicto, "mediaId" | "sha" | 
 }
 /* Después de publicar: la copia privada sale (el contenido ya está en n/), se rehacen las variantes y se avisa. Nunca lanza. */
 async function despuesDePublicar(f: Fila): Promise<void> {
+  const p = f.private ? DE_URL_PRIVADA.exec(f.url) : null;
+  if (p) {
+    try { await guardarVariantesPrivadas(p[1]!, await leerObjeto(llavePrivada(p[1]!)), f.w ?? null); } catch { /* el barrido de privadas las completa */ }
+    await borrarObjeto(f.rev_llave).catch(() => undefined);
+    if (f.uploaded_by) await avisarFoto(f.uploaded_by, "foto_aprobada", f.id, null);
+    return;
+  }
   const u = DE_URL.exec(f.url);
   if (!u) return;
   try {
@@ -374,8 +399,14 @@ export async function decidirFotoPorPersona(c: Q, mediaId: string, staffId: stri
 /* Después de guardar la decisión de una persona: variantes y la copia privada fuera (si se publicó). Nunca lanza. */
 export async function despuesDePersona(mediaId: string): Promise<void> {
   if (!UUID.test(mediaId)) return;
-  const f = (await db().query<Fila & { status: string }>(`select id::text, url, uploaded_by::text, rev_capa, owner_kind, owner_id, w, status from media where id = $1::uuid`, [mediaId]).catch(() => ({ rows: [] as (Fila & { status: string })[] }))).rows[0];
+  const f = (await db().query<Fila & { status: string }>(`select id::text, url, uploaded_by::text, rev_capa, owner_kind, owner_id, w, status, private from media where id = $1::uuid`, [mediaId]).catch(() => ({ rows: [] as (Fila & { status: string })[] }))).rows[0];
   if (!f || f.status !== "visible") return;
+  const p = f.private ? DE_URL_PRIVADA.exec(f.url) : null;
+  if (p) {
+    try { await guardarVariantesPrivadas(p[1]!, await leerObjeto(llavePrivada(p[1]!)), f.w ?? null); } catch { /* el barrido de privadas */ }
+    await borrarObjeto(llaveRevision(p[1]!)).catch(() => undefined);
+    return;
+  }
   const u = DE_URL.exec(f.url);
   if (!u) return;
   try { await guardarVariantes(u[1]!, await leerObjeto(`n/${u[1]}.jpg`), f.w ?? null, [f.id, ...(f.id !== u[1] ? [u[1]!] : [])]); } catch { /* el barrido de variantes */ }

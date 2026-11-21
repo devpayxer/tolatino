@@ -58,8 +58,12 @@ async function fotosFuera(cuenta: string, donde: string | null): Promise<number>
   // después las variantes: si el barrido las está generando en ese momento, al terminar ve que la maestra ya no está y las saca él
   // (lib/fotos-variantes.ts guardarVariantes). Guardián fotosConVariantes.
   const { clavesVariantes } = await import("../fotos-variantes");
+  // F3 · media.url puede ser /medios/<llave>, una llave privado/… o la ruta con permiso de una foto de destino privado (/api/medios/privada/<uuid> →
+  // privado/o/<uuid>.jpg, con sus variantes privadas): llaveDeUrl da la llave de cada una.
+  const { llaveDeUrl } = await import("../fotos-privadas");
   for (const f of F) {
-    const clave = f.url.replace(/^\/medios\//, "");
+    const clave = llaveDeUrl(f.url);
+    if (!clave) continue;
     await borrarObjeto(clave);
     for (const v of clavesVariantes(clave, f.w, f.var_widths)) await borrarObjeto(v);
     // Revisión automática (decisión AJ): una foto retenida, rechazada u oculta vive en la llave privada (privado/rev/<uuid>.jpg): sale también.
