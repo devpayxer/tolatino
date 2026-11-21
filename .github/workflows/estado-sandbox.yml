@@ -20,6 +20,10 @@ on:
         description: "Rutas cuyas fotos se pesan (separadas por espacio): de cada foto nuestra de la página, la original y sus 4 tamaños"
         type: string
         default: ""
+      como:
+        description: "Teléfono de EJEMPLO (570555xxxx) con el que se entra al sandbox para mirar las rutas de «fotos» que piden cuenta"
+        type: string
+        default: ""
   schedule:
     - cron: '17 */6 * * *'
 permissions:
@@ -47,12 +51,20 @@ jobs:
       # 21 nov · Fotos a la medida: lo que pesa de verdad una foto subida al sandbox (la original y cada tamaño), y qué tamaño pide la página.
       - name: Fotos de las rutas pedidas
         if: inputs.fotos != ''
-        env: { RUTAS: "${{ inputs.fotos }}", GALLETA: "${{ inputs.cookie }}" }
+        env: { RUTAS: "${{ inputs.fotos }}", GALLETA: "${{ inputs.cookie }}", COMO: "${{ inputs.como }}" }
         run: |
-          B=http://2.31.196.167
+          B=http://2.31.196.167; J="$RUNNER_TEMP/galletas.txt"; : > "$J"
+          # Solo teléfonos de ejemplo de la semilla y solo en el sandbox (el código de un uso sale en la respuesta porque está en modo pruebas).
+          if [ -n "$COMO" ]; then
+            case "$COMO" in 570555[0-9][0-9][0-9][0-9]) ;; *) echo "«como» solo acepta teléfonos de ejemplo 570555xxxx"; exit 1 ;; esac
+            c=$(curl -s -m 30 -c "$J" -b "$J" -H "Origin: $B" -H 'content-type: application/json' -d "{\"telefono\":\"$COMO\"}" "$B/api/cuenta/codigo" | grep -oE '"codigoPrueba":"[0-9]+"' | grep -oE '[0-9]+' || true)
+            if [ -z "$c" ]; then echo "no se pudo entrar: el sandbox no devolvió el código de pruebas"; else
+              curl -s -o /dev/null -m 30 -c "$J" -b "$J" -H "Origin: $B" -H 'content-type: application/json' -d "{\"telefono\":\"$COMO\",\"codigo\":\"$c\"}" -w "entrar como cuenta de ejemplo: %{http_code}\n" "$B/api/cuenta/verificar"
+            fi
+          fi
           for p in $RUTAS; do
             case "$p" in /*) ;; *) echo "$p: ruta inválida"; continue ;; esac
-            h=$(curl -s -m 60 ${GALLETA:+-b "$GALLETA"} "$B$p")
+            h=$(curl -s -m 60 -b "$J" ${GALLETA:+-b "$GALLETA"} "$B$p")
             echo "== $p · lo que la página pide:"
             printf '%s' "$h" | grep -oE '/medios/n/[0-9a-f-]{36}(\.w[0-9]+\.webp|\.jpg)' | sort | uniq -c | head -40
             for id in $(printf '%s' "$h" | grep -oE '/medios/n/[0-9a-f-]{36}' | sort -u | head -12); do
