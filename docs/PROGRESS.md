@@ -31,9 +31,12 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
     **44885700254** (completa con anchos sobre 98af974: saldrá roja por `plan4f`, sirve para leer la sonda bajo carga). Si 44888202039 sale
     verde con 3 inestables o menos: `git push origin ab11fc0:main ab11fc0:pruebas`, comprobar el sandbox (`estado-sandbox.yml`, que la 0202 esté
     aplicada) y anotarlo aquí.
-  - **Agente en curso:** Opus en `dinero-9t5` («preguntarle a la pasarela»: una intención de cobro sin respuesta de más de 23 h se consulta y se
-    cierra sola; `sent_at` en Pro; migración **0203**; y la rama muda «ya cobrado y el plan sigue en ese período» que destapó `plan4f`). Al volver:
-    revisar (Fable), tipos/guardianes/al revés, fusionar, CI, sandbox.
+  - **Dinero 9t5 FUSIONADO en la rama de trabajo (0537f12 y lo que sigue), sin CI todavía:** «preguntarle a la pasarela» (`lib/consulta-pasarela.ts`,
+    `gateway_checks`, alerta `gateway_review`, `sent_at` en Pro, migración **0203**) y «ya cobrado no se queda mudo». Aquí: tipos, guardianes,
+    textos y `alreves9tdinero` 126/126. Falta: su revisión completa en el CI (din9t5, din9t4, din9t3, plan4f, renta4f, pat002, pat003 y la prueba de
+    contrato con stripe-mock, que el agente no pudo correr), y después `main`/`pruebas`. Lo que quedó: LAUNCH «lo que quedó de 9t5».
+  - **Agente en curso:** Opus en `medios-9t-flujo` (el video del negocio en flujo y con cupo de videos a la vez; ETag/304 en las fotos privadas;
+    si necesita migración es la **0204**). Al volver: revisar (Fable), tipos/guardianes/al revés, fusionar, CI.
   - **Sin resolver:** el toque que no entra en el detalle del panel en el iPad (`dlv2f4`, `pro4l2`): la sonda corrió 24 aperturas sin fallar
     en una corrida sola (la ventana mide 70..742, se desplaza 269 de 371 y el toque entra); falta cazarlo bajo carga. `rev9u` sin confirmar.
 - **21 nov (mañana) · al día:**

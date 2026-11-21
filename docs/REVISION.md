@@ -5944,3 +5944,24 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   revisa y aparta con él (la pantalla de pago muestra el descuento antes de cobrar). En los dos, si el código no vale: no sigue, lo dice y
   dice la salida («Bórralo para enviar sin cupón» / «Bórralo para seguir sin código»).
   *Decidí yo (reversible):* en el pago del pedido pido el segundo toque en vez de cobrar de una vez con el descuento. Si prefieres un solo toque, dilo.
+
+## Dinero, quinta tanda: el servidor le pregunta a Stripe (21 nov · migración 0203) — en la rama de trabajo, falta el CI — cinco cosas para ti
+- **Qué cambió (Opus lo escribió; Fable leyó la migración y el módulo que decide, lo fusionó y corrió tipos, guardianes y el «al revés» de dinero,
+  126/126):** un cobro (Pro, plan del Hogar, renta, patrocinio) o una transferencia a un organizador que lleva 23 h «sin respuesta» ya no se queda
+  frenado para siempre. El servidor **le pregunta a Stripe** qué pasó, por una marca propia que manda al crear cada cobro, y cierra con esa verdad:
+  si salió, queda hecho una sola vez; si el banco dijo que no, falla como siempre; si nunca llegó, se libera para el siguiente cobro; si Stripe no
+  contesta la consulta, no se toca nada. Nadie afirma «sí se cobró» de memoria. En Super Admin › Planes, la alerta tiene **«Preguntar a Stripe
+  ahora»** y dice qué contestó la última consulta y cuándo.
+- **También:** un mes de un plan que ya figura cobrado ya no deja el plan atascado sin avisar (lo destapó una prueba): el plan avanza solo, sin
+  cobrar otra vez.
+- **Qué mirar:** nada a mano hasta conectar Stripe de verdad; lo recorre `din9t5` (51 comprobaciones) contra el simulador.
+- **Decide tú (dejé lo más cerrado; todo se cambia):**
+  1. *Cuánto esperar antes de decir «nunca llegó a Stripe»:* 24 h desde que se mandó. Más corto arriesga cobrar dos veces; más largo deja el plan
+     o la renta frenados más tiempo.
+  2. *Cada cuánto pregunta solo:* una vez cada 15 minutos por cobro atascado.
+  3. *Si Stripe tiene dos cobros para lo mismo, o con otro monto:* no se arregla solo; llega una alerta y decide una persona. Mientras tanto ese
+     plan, renta o Pro no se vuelve a cobrar. **Falta** el botón para cerrar ese caso desde la alerta (hoy se resuelve en Stripe).
+  4. *Ya cobrado pero sin aplicar:* en un plan, el mes se da por pagado y avanza solo; en una renta o un patrocinio solo se avisa al equipo (no
+     sabemos si la herramienta se entregó o si el anuncio salió).
+  5. *Lo que quedó sin hacer:* renovar lo retenido en la tarjeta (depósito de una renta, lo retenido de un estimado) todavía trata «Stripe no
+     contestó» como «el banco ya no deja» y avisa en falso al negocio. No cobra dos veces. Va en la siguiente tanda.
