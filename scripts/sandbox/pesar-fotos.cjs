@@ -29,10 +29,10 @@ const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
     if (!/bienvenida=1/.test(p.url())) return;
     console.log('la cuenta de ejemplo no había hecho la bienvenida de la Comunidad: se hace');
     for (let i = 0; i < 2; i++) { const s = p.getByRole('button', { name: 'Saltar por ahora' }); if (await s.count()) { await s.first().click(); await p.waitForTimeout(800); } }
-    await p.getByRole('checkbox', { name: 'Acepto las reglas del barrio' }).click();
-    await p.getByRole('checkbox', { name: 'Tengo 18 años o más' }).click();
-    await p.getByRole('button', { name: 'Entrar a Comunidad' }).or(p.getByRole('button', { name: 'Ir a Mi cuenta' })).first().click();
-    await p.waitForTimeout(2500);
+    const marca = async (n) => { const c = p.getByRole('checkbox', { name: n }); if ((await c.getAttribute('aria-checked')) !== 'true' && !(await c.isChecked().catch(() => false))) await c.click(); };
+    await marca('Acepto las reglas del barrio'); await marca('Tengo 18 años o más');
+    await p.getByRole('button', { name: "Entrar a To'Latino" }).click();
+    await p.getByText('PARA EMPEZAR').waitFor({ timeout: 20000 }).catch(() => undefined);
   };
   const publicaciones = new Set();
   const mirar = async (ruta) => {
