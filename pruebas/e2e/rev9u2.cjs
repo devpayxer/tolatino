@@ -154,7 +154,13 @@ const libro = (id, capa, decision, motivo, puntaje, dias = 0) => sql(`insert int
     ok(t.includes('GASTO DEL MES · SEGUNDA OPINIÓN') && t.includes('$2.31') && t.includes('de $10.00 de tope') && t.includes('TOPE AL MES'), 'el gasto del mes contra su tope');
     ok(t.includes('HOY') && t.includes('ÚLTIMOS 7 DÍAS · POR CAPA') && t.includes('PUBLICADAS') && t.includes('RETENIDAS') && t.includes('RECHAZADAS') && t.includes('OCULTAS POR REPORTES') && t.includes('Capa 1 · modelo propio'), 'las cifras de hoy y de la semana, por capa');
     ok(t.includes('PARA MIRAR · CINCO PUBLICADAS POR LOS MODELOS, AL AZAR'), 'el bloque «Para mirar»');
-    ok(await adm.locator('[style*="/medios/n/"]').count() >= 1, 'con miniaturas de fotos ya publicadas (por su dirección pública)');
+    // Las cinco salen de las que SIGUEN publicadas y con dirección pública (CI 44908076139: se elegían entre todas las «publicar», también las privadas y
+    // las ocultadas después, y la pantalla descartaba las que no podía mostrar: salían menos de cinco, o ninguna). El número exacto, no «al menos una».
+    const paraMirar = (desde, hasta) => Math.min(5, Number(sql(`select count(*) from photo_reviews r join media x on x.id = r.media_id and x.status = 'visible' and x.purged_at is null and not x.private and x.url like '/medios/n/%'
+      where r.decision = 'publicar' and r.capa in ('c1', 'c2', 'c4') and r.created_at >= ((now() at time zone 'America/New_York')::date - ${desde})::timestamp at time zone 'America/New_York'
+        and r.created_at < ((now() at time zone 'America/New_York')::date - (${hasta}))::timestamp at time zone 'America/New_York'`)));
+    const esperadas = paraMirar(6, -1), vistas = await adm.locator('[style*="/medios/n/"]').count();
+    ok(esperadas >= 1 && vistas === esperadas, `con miniaturas de fotos ya publicadas (por su dirección pública): ${vistas} de ${esperadas} que se pueden mostrar`);
     ok((await adm.getByRole('button', { name: 'Cambiar valores' }).count()) >= 8, '«Cambiar valores» en cada capa');
     sql(`update mod_rules set params = jsonb_set(params, '{tope_cents}', '0') where key = 'foto2'`);
     await adm.goto(B + '/admin/contenido?tab=auto'); await adm.waitForLoadState('networkidle');
@@ -203,7 +209,8 @@ const libro = (id, capa, decision, motivo, puntaje, dias = 0) => sql(`insert int
     ok(await espera(() => Number(sql(`select count(*) from email_outbox where tpl = 'founder_daily' and user_id = '${U}'`)) === f0 + 1), 'el reporte llegó al simulador de correo');
     const html = sql(`select html from email_outbox where tpl = 'founder_daily' and user_id = '${U}' order by id desc limit 1`);
     ok(html.includes('Fotos de ayer (pub. · ret. · rech. · ocultas)') && html.includes('Capa 1 · modelo propio') && html.includes('gasto del mes') && /\$\d+\.\d\d de \$10\.00/.test(html), 'el correo: las fotos de ayer por capa y el gasto del mes contra su tope');
-    ok(html.includes('Para mirar: cinco fotos publicadas por los modelos, al azar') && (html.match(/<img src="[^"]*\.w320\.webp"/g) ?? []).length >= 3 && html.includes('/medios/n/'), 'y las cinco al azar, como miniaturas con su enlace');
+    const enCorreo = (html.match(/<img src="[^"]*\.w320\.webp"/g) ?? []).length, deAyer = paraMirar(1, 0);
+    ok(html.includes('Para mirar: cinco fotos publicadas por los modelos, al azar') && deAyer >= 3 && enCorreo === deAyer && html.includes('/medios/n/'), `y las cinco al azar, como miniaturas con su enlace (${enCorreo} de ${deAyer} que se pueden mostrar)`);
     ok(!/570555\d{4}|Yolotzin|Quetzal/.test(html), 'sin teléfonos ni nombres de personas');
     console.log(`OK (${n} comprobaciones)`);
   } catch (e) { console.error(e); process.exitCode = 1; } finally {

@@ -12846,6 +12846,25 @@ const guardianes = {
     }
   },
 
+  /* 9u (21 nov) · muestraDeLasQueSePuedenVer: «Para mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco fotos al azar
+     de TODAS las «publicar» (también las de destino privado y las que después se ocultaron) y quien las muestra descartaba las que no tenían
+     dirección pública: salían menos de cinco, o ninguna, habiendo fotos que mostrar (rev9u2 inestable en el CI 44908076139). Clase: una muestra
+     al azar se elige DESPUÉS de filtrar lo que se puede mostrar, nunca antes. La prueba compara el número exacto. Al revés (alreves9umuestra). */
+  muestraDeLasQueSePuedenVer() {
+    const G = "muestraDeLasQueSePuedenVer", F = "apps/web/lib/fotos-revision.ts", T = "pruebas/e2e/rev9u2.cjs";
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
+      const t = sinComent(f);
+      for (const m of t.matchAll(/order by random\(\)/g)) {
+        const antes = t.slice(Math.max(0, m.index - 900), m.index);
+        if (f !== F) { falla(G, f, t.slice(0, m.index).split("\n").length, "una muestra al azar nueva: que se elija entre lo que se puede mostrar (filtrar antes de «limit») y añádela a este guardián"); continue; }
+        if (!/join media x on x\.id = r\.media_id and x\.status = 'visible' and x\.purged_at is null and not x\.private and x\.url like '\/medios\/n\/%'/.test(antes)) falla(G, f, t.slice(0, m.index).split("\n").length, "«Para mirar» elige las cinco al azar antes de filtrar las que siguen publicadas (con dirección pública)");
+      }
+    }
+    if (!/order by random\(\) limit 5/.test(sinComent(F))) falla(G, F, 0, "falta la muestra de cinco de «Para mirar»");
+    const p = readFileSync(T, "utf8");
+    if (!/vistas === esperadas/.test(p) || !/enCorreo === deAyer/.test(p)) falla(G, T, 0, "rev9u2 compara el número exacto de miniaturas de «Para mirar» con las que se pueden mostrar (pantalla y reporte diario)");
+  },
+
   /* fotosRevisionPrivacidad: a la segunda opinión (Claude con visión) solo van fotos destinadas a lo público. lib/fotos-segunda-opinion.ts lo
      comprueba adentro (nunca private, nunca Mensajes/ayuda/entrega/reclamo, solo las llaves n/ y privado/rev/, y con fila se vuelve a leer de la
      base) ANTES de leer la imagen o reservar; solo lo importa lib/fotos-revision.ts, y a esta solo la subida pública, el barrido, la capa 3 (el

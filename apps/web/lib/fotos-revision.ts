@@ -428,8 +428,12 @@ export async function cifrasRevisionFotos(desde: Date, hasta: Date): Promise<Cif
               coalesce(sum(cost_microusd), 0)::text as costo, count(*) filter (where capa = 'c2' and modelo is not null)::int as llamadas
          from photo_reviews where created_at >= $1 and created_at < $2 group by capa order by capa`, [desde, hasta]),
     db().query<{ media_id: string; capa: Capa; puntaje: number | null; at: string }>(
-      `select media_id::text, capa, puntaje, created_at as at from photo_reviews
-        where created_at >= $1 and created_at < $2 and decision = 'publicar' and capa in ('c1', 'c2', 'c4') order by random() limit 5`, [desde, hasta]),
+      /* 21 nov (rev9u2 inestable en el CI 44908076139) · Las cinco se eligen entre las que SIGUEN publicadas y con dirección pública. Antes se sacaban
+         cinco al azar de todas las «publicar» (también las de destino privado —la foto de una operación— y las que después se ocultaron) y quien
+         las muestra descartaba las que no tenían dirección pública: «Para mirar» salía con menos de cinco, o vacío, habiendo fotos que mostrar. */
+      `select r.media_id::text, r.capa, r.puntaje, r.created_at as at from photo_reviews r
+         join media x on x.id = r.media_id and x.status = 'visible' and x.purged_at is null and not x.private and x.url like '/medios/n/%'
+        where r.created_at >= $1 and r.created_at < $2 and r.decision = 'publicar' and r.capa in ('c1', 'c2', 'c4') order by random() limit 5`, [desde, hasta]),
   ]);
   return {
     porCapa: a.rows.map((x) => ({ capa: x.capa, publicadas: x.publicadas, retenidas: x.retenidas, rechazadas: x.rechazadas, ocultadas: x.ocultadas })),
