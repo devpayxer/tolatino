@@ -2271,6 +2271,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       hay dos formas buenas en el repo: la cabecera dice dónde estás y la hoja dice la acción (`N360`, `Configuracion`, `Contenido`), o la
       cabecera dice la acción y la hoja pregunta «¿Por qué?» (`AutoModeracion`, `Gamificacion`, `HoyAdmin`). Unificar con una de las dos (no
       inventar una tercera), con captura a 390 de cada pantalla. Es de siempre, no de 9t6. (21 nov)
+      **Y el texto de ayuda del campo de la nota** dice «Escríbelo como se lo dirías a la persona.» también donde la nota es interna y solo va a
+      la auditoría (visto en «Resolver a mano» de una devolución, captura `d9t7b-hoja-m.png`): que cada hoja diga a quién le llega lo que se
+      escribe («queda en la auditoría» o «se le manda a la persona»). Mismo arreglo, mismas pantallas. (21 nov)
 - [x] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho
