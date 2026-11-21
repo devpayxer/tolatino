@@ -136,8 +136,10 @@ export async function guardarCasa(userId: string, p: CasaIn): Promise<Res> {
     await c.query(`update user_homes set is_default = false, updated_at = now() where user_id = $1 and is_default`, [userId]);
     const vals = [userId, p.address, kind, tenure, beds, baths, sqft, en(p?.year, ["pre50", "50", "80", "00"] as const), en(p?.pets, ["no", "perro", "gato", "otra"] as const),
       en(p?.heat, ["caldera", "horno", "bomba", "zocalo"] as const), en(p?.heatAge, AGE), en(p?.wh, ["gas", "elec", "sintanque", "aceite"] as const), en(p?.whAge, AGE), access];
+    // 21 nov · El update recibía los 14 valores y no usaba $1 ni $2: Postgres no puede saber su tipo («could not determine data type of parameter $1») y
+    // guardar una casa en una dirección que ya tenía una reventaba. Ahora los usa (y de paso el cambio queda atado a su dueño y a su dirección). Lo cazó sql9u.
     const id = ya ? (await c.query<{ id: string }>(`update user_homes set kind = $3, tenure = $4, beds = $5, baths = $6, sqft = $7, year_band = $8, pets = $9, heat = $10, heat_age = $11, water_heater = $12, wh_age = $13, access_note = $14, is_default = true, updated_at = now()
-                                                     where id = $15 returning id::text`, [...vals, ya])).rows[0]!.id
+                                                     where id = $15 and user_id = $1 and address_id = $2 returning id::text`, [...vals, ya])).rows[0]!.id
       : (await c.query<{ id: string }>(`insert into user_homes (user_id, address_id, kind, tenure, beds, baths, sqft, year_band, pets, heat, heat_age, water_heater, wh_age, access_note, is_default)
                                         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true) returning id::text`, vals)).rows[0]!.id;
     return { ok: true as const, id };
