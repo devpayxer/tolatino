@@ -2081,7 +2081,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       manda todas las partes y mira el libro: reabre solo si nada salió ni va en camino; si algo salió, la respuesta se queda, `offer_cents` = lo que salió
       + lo que va en camino y el negocio lee cuánto salió y cuánto no. Guardianes `cobroProAnotadoAntes`, `manoTrasLaLlave`, `boletoFallidoCoherente`,
       `ayudaNoReabreConDinero`, `webhookEventosEscritos` (y `llaveSoloUnDia`, `alertaSoloConCaminoReal`, `devolucionEnDosPasos`, `estadoEnElWhere`,
-      `alertasDelDinero` al día); al revés `alreves9tdinero` (71/71); prueba `din9t3` (base + pasarela de mentira). Lo que quedó, en la línea de abajo.
+      `alertasDelDinero` al día); al revés `alreves9tdinero` (72/72); prueba `din9t3` (base + pasarela de mentira; 12 defectos inyectados la ponen roja).
+      `din9t3` cazó además que una intención pendiente de un período ya cobrado llegaba a Stripe (la base solo la frenaba al cerrar, con el dinero ya
+      cobrado): `anotarCobro` y `terminarCobro` lo impiden antes de la pasarela. Lo que quedó, en la línea de abajo.
 - [ ] **→ 9t** · **Dinero por clase, 21 nov · lo que quedó de 9t3 (21 nov):** (1) **(e) al conectar Stripe de verdad:** suscribir el endpoint del
       webhook a los 14 eventos de la lista (`docs/ayuda/admin-conciliacion.md › Los eventos del webhook`), también «eventos de cuentas conectadas» (los
       `payout.*`). (2) **Sin camino para cerrar `transfer_stuck` y `charge_stuck`:** la alerta es informativa. Una transferencia que Stripe sí hizo queda
