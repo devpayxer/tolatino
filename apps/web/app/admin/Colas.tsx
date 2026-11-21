@@ -147,7 +147,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     if (!eq.length) { setToast(E("Nadie más del equipo trabaja esa cola en esa ciudad.", "No one else on the team works that queue in that city.")); return; }
     setConf({ titulo: ids.length === 1 ? E("Asignar el caso a…", "Assign the case to…") : E(`Asignar ${ids.length} casos a…`, `Assign ${ids.length} cases to…`), cta: E("Asignar", "Assign"), elegir: { label: E("PERSONA DEL EQUIPO", "TEAM MEMBER"), items: eq.map((x) => ({ k: x.id, l: x.nombre })) },
       sub: E("Le sale en «Míos». Si no lo decide en el tiempo de Configuración › Colas, vuelve a la cola. Queda en la auditoría.", "It shows in their “Mine”. If they don't decide within the time set in Configuration › Queues, it goes back to the queue. It stays in the audit log."), ini: E("Reparto del día", "Today's assignments"), plantillas: [E("Reparto del día", "Today's assignments"), E("Sabe de este tema", "Knows this topic"), E("Cubre a alguien de vacaciones", "Covering for someone on vacation")],
-      nota: "interna", hacer: async (_m, e) => { const r = await asignarCaso(ids, e); if (r.ok) setSel(null); return r; } });
+      nota: "interna", hacer: async (m, e) => { const r = await asignarCaso(ids, e, m); if (r.ok) setSel(null); return r; } });
   });
   // Atajos de teclado (escritorio): no se activan escribiendo en un campo.
   useEffect(() => {
@@ -591,7 +591,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       }
       acts = [
         { l: E("Crear semilla", "Create seed"), v: "action", icon: "plus", off: !r.cat, onClick: () => run(() => crearSemilla(k.id), () => ir({ caso: null })) },
-        { l: E("Ya existe", "Already listed"), icon: "check", off: !par.length, onClick: () => setConf({ titulo: E("¿Cuál negocio es?", "Which business is it?"), sub: E("La recomendación queda enlazada a ese negocio.", "The recommendation is linked to that business."), cta: E("Guardar", "Save"), elegir: { label: E("ES ESTE", "IT'S THIS ONE"), items: par.map((p) => ({ k: p.id, l: p.name })) }, plantillas: [E("Ya estaba en To’Latino", "Already on To’Latino")], nota: "interna", hacer: (_m, e) => decidirRec(k.id, "existe", "", e) }) },
+        { l: E("Ya existe", "Already listed"), icon: "check", off: !par.length, onClick: () => setConf({ titulo: E("¿Cuál negocio es?", "Which business is it?"), sub: E("La recomendación queda enlazada a ese negocio.", "The recommendation is linked to that business."), cta: E("Guardar", "Save"), elegir: { label: E("ES ESTE", "IT'S THIS ONE"), items: par.map((p) => ({ k: p.id, l: p.name })) }, plantillas: [E("Ya estaba en To’Latino", "Already on To’Latino")], nota: "interna", hacer: (m, e) => decidirRec(k.id, "existe", m, e) }) },
         { l: E("Descartar", "Discard"), v: "danger", icon: "close", onClick: () => setConf({ titulo: E("¿Por qué se descarta?", "Why is it discarded?"), peligro: true, nota: "interna", hacer: (m) => decidirRec(k.id, "descartar", m) }) },
       ];
     }

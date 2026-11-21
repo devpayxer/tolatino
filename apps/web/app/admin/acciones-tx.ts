@@ -46,16 +46,20 @@ export async function devolverTx(numero: string, monto: string, motivo: string, 
 
 /* Sandbox: simular una disputa del banco sobre un cobro, y el resultado del banco después de responder (2r). Solo con el
    simulador de pagos (en producción las disputas llegan de Stripe). */
-export async function disputaSimular(pago: string, motivo: string): Promise<ResAdm> {
+/* 9u · Las dos simulaciones (solo en el sandbox) dejan su línea en la auditoría con la nota de la hoja: antes se pedía y no se guardaba. */
+const notaSim = (x: unknown) => (typeof x === "string" ? x.trim().slice(0, 500) || null : null);
+export async function disputaSimular(pago: string, motivo: string, nota?: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no toca dinero." };
   const r = await (await import("@/lib/disputas")).simularDisputa(String(pago ?? "").replace(/\D/g, "") || "0", String(motivo ?? ""));
+  if (r.ok) await tx((c) => auditar(c, { actor: s.id, action: "disputa.simular", targetKind: "payment", targetId: String(pago ?? "").replace(/\D/g, "") || "0", after: { disputa: "simulada (sandbox)" }, reason: notaSim(nota) })).catch(() => undefined);
   return r.ok ? { ok: true, mensaje: "Disputa simulada: está en Colas › Disputas con el banco." } : { ok: false, mensaje: r.msg };
 }
-export async function disputaSimularResultado(pago: string, gana: boolean): Promise<ResAdm> {
+export async function disputaSimularResultado(pago: string, gana: boolean, nota?: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no toca dinero." };
   const r = await (await import("@/lib/disputas")).simularResultado(String(pago ?? "").replace(/\D/g, "") || "0", !!gana);
+  if (r.ok) await tx((c) => auditar(c, { actor: s.id, action: "disputa.simular_resultado", targetKind: "payment", targetId: String(pago ?? "").replace(/\D/g, "") || "0", after: { resultado: gana ? "gana el negocio (sandbox)" : "gana el cliente (sandbox)" }, reason: notaSim(nota) })).catch(() => undefined);
   return r.ok ? { ok: true, mensaje: gana ? "El banco dio la razón: el dinero se queda." : "El banco dio la razón al cliente." } : { ok: false, mensaje: r.msg };
 }
 

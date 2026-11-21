@@ -33,6 +33,8 @@ const webhook = async (ev) => { const cuerpo = JSON.stringify(ev), t = Math.floo
   await a.goto(B + `/admin/transacciones?q=${P1[1]}`); await clic(a.getByText('Simular disputa', { exact: true }));
   await clic(a.getByText('No recibió el pedido', { exact: true })); await clic(a.getByText('Prueba de disputa en el sandbox.', { exact: true })); await clic(a.getByRole('button', { name: 'Simular' }).last());
   await a.getByText(/Disputa simulada/).first().waitFor();
+  // 9u · La nota que pide la hoja queda en la auditoría (antes se pedía y el servidor la tiraba).
+  ok(sql(`select reason from audit_entries where action = 'disputa.simular' and target_id = '${P1[0]}' order by at desc limit 1`) === 'Prueba de disputa en el sandbox.', 'la nota de «Simular disputa» quedó en la auditoría');
   const D1 = sql(`select id from disputes where payment_id = ${P1[0]}`); ok(!!D1 && sql(`select status from disputes where id = ${D1}`) === 'needs_response', 'disputa registrada (falta responder)');
   const Q1 = sql(`select id from queue_items where queue = 'disputa' and subject_id = '${D1}' and status = 'open'`); ok(!!Q1, 'caso abierto en la cola');
   ok(Number(sql(`select count(*) from notifications where tpl = 'biz_dispute' and user_id = ${PEDRO}`)) === n0 + 1, 'aviso al dueño');
@@ -47,6 +49,7 @@ const webhook = async (ev) => { const cuerpo = JSON.stringify(ev), t = Math.floo
   // 3) Resultado del banco (simulado): gana el negocio
   await a.goto(B + `/admin/transacciones?q=${P1[1]}`); await clic(a.getByText('Banco: gana el negocio', { exact: true })); await clic(a.getByText('Prueba en el sandbox.', { exact: true })); await clic(a.getByRole('button', { name: 'Simular' }).last());
   await a.getByText(/El banco dio la razón: el dinero se queda/).first().waitFor();
+  ok(sql(`select reason from audit_entries where action = 'disputa.simular_resultado' and target_id = '${P1[0]}' order by at desc limit 1`) === 'Prueba en el sandbox.', 'la nota de «Simular resultado» quedó en la auditoría');
   ok(sql(`select status from disputes where id = ${D1}`) === 'won', 'ganada'); ok(Number(sql(`select count(*) from notifications where tpl = 'biz_dispute_end' and user_id = ${PEDRO}`)) === e0 + 1, 'resultado al dueño');
   // 4) Webhook real (firmado): charge.dispute.created sobre otro cobro, repetido no duplica
   const ev = { id: 'evt_dp_' + Date.now(), type: 'charge.dispute.created', data: { object: { id: 'dp_test_' + Date.now(), payment_intent: P2[2], amount: 1234, reason: 'fraudulent', status: 'needs_response', evidence_details: { due_by: Math.floor(Date.now() / 1000) + 5 * 86400 } } } };

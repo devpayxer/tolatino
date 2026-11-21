@@ -13512,6 +13512,10 @@ const guardianes = {
         if (m) falla(G, p, t.slice(0, m.index).split("\n").length, `nota: "interna" en una acción cuyo texto llega fuera del equipo (${quien})`);
       }
       if (f === "Catalogo.tsx" && !/modCiudad\([^)]*\), "persona"\)/.test(t)) falla(G, p, 0, "apagar un módulo en una ciudad: cada negocio ve el motivo en su panel (modules_off.reason); la fila debe pedir la nota como \"persona\"");
+      // (a3) La hoja pide una nota: la acción la recibe. Un `hacer` que la descarta (`(_m…) =>`, `() =>`) pide un texto que nadie guarda y la hoja promete
+      // «Queda en la auditoría con tu nombre» (21 nov: asignar un caso, «Ya existe» y las tres de simular una disputa). SistemaEstados es una demostración.
+      if (f !== "SistemaEstados.tsx") for (const m of t.matchAll(/\bnota: [^,]+, hacer: (?:async )?\((?:_\w*)?(?:,[^)]*)?\) =>/g))
+        falla(G, p, t.slice(0, m.index).split("\n").length, "la hoja pide una nota y la acción la descarta (`hacer` no recibe el motivo): que la guarde en la auditoría o que no se pida");
       // (b) Una cabecera con el título de la hoja (`t: conf.titulo`) y la hoja con el mismo título: el título sale dos veces.
       if (/\bt: conf\.titulo\b/.test(t)) {
         const usos = [...t.matchAll(/<ConfirmarMotivo c=\{(\{ \.\.\.conf, titulo: [^}]*\}|conf)\}/g)].map((x) => x[1]);

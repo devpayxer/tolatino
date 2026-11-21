@@ -62,12 +62,13 @@ async function puedeTrabajar(c: PoolClient, uid: string, q: Fila): Promise<strin
         and (cardinality(m.cities) = 0 or $3::text = any(m.cities))`, [uid, q.queue, q.city_id])).rows[0];
   return p?.nombre ?? null;
 }
-export async function asignarCaso(ids: string[], uid: string | null): Promise<ResAdm> {
+/* 9u · La nota de la hoja (por qué se le asigna o se suelta) queda en la auditoría: antes se pedía y no se guardaba. */
+export async function asignarCaso(ids: string[], uid: string | null, nota?: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("colas", "editar")) return no("Tu rol no reparte casos.");
-  return repartir(s, ids, uid);
+  return repartir(s, ids, uid, motivoOk(nota) || null);
 }
-async function repartir(s: Staff, ids: string[], uid: string | null): Promise<ResAdm> {
+async function repartir(s: Staff, ids: string[], uid: string | null, nota: string | null = null): Promise<ResAdm> {
   const L = (Array.isArray(ids) ? ids : []).map(String).filter((x) => /^\d{1,18}$/.test(x)).slice(0, 100);
   if (!L.length) return no("Elige al menos un caso.");
   if (uid !== null && !/^[0-9a-f-]{36}$/.test(String(uid))) return no("Elige a alguien del equipo.");
@@ -79,14 +80,14 @@ async function repartir(s: Staff, ids: string[], uid: string | null): Promise<Re
       if (uid === null) {
         if (!q.assigned_to) return false;
         await c.query(`update queue_items set assigned_to = null, assigned_at = null where id = $1`, [q.id]);
-        await auditar(c, { actor: s.id, action: "cola.soltar", targetKind: "case", targetId: q.id, city: q.city_id, before: { asignado: q.assignee ?? null }, after: { asignado: null } });
+        await auditar(c, { actor: s.id, action: "cola.soltar", targetKind: "case", targetId: q.id, city: q.city_id, before: { asignado: q.assignee ?? null }, after: { asignado: null }, reason: nota });
         return true;
       }
       const n = await puedeTrabajar(c, uid, q);
       if (!n) return false;
       nombre = n;
       await c.query(`update queue_items set assigned_to = $2, assigned_at = now() where id = $1`, [q.id, uid]);
-      await auditar(c, { actor: s.id, action: "cola.asignar", targetKind: "case", targetId: q.id, city: q.city_id, before: { asignado: q.assignee ?? null }, after: { asignado: n } });
+      await auditar(c, { actor: s.id, action: "cola.asignar", targetKind: "case", targetId: q.id, city: q.city_id, before: { asignado: q.assignee ?? null }, after: { asignado: n }, reason: nota });
       return true;
     });
     if (r) hechos++; else saltados++;
@@ -335,8 +336,10 @@ export async function decidirVideo(id: string, accion: "aprobar" | "rechazar", m
 export async function decidirRec(id: string, accion: "existe" | "descartar", motivo: string, negocio?: string | null): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");
+  // «Ya existe»: a la recomendación (que la persona puede descargar con sus datos) va un texto fijo; lo que el equipo escribió queda solo en la auditoría.
   const m = accion === "existe" ? "Ya estaba en To’Latino" : motivoOk(motivo);
   if (!m) return no("Escribe el motivo.");
+  const notaEquipo = accion === "existe" ? (motivoOk(motivo) || m) : m;
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
@@ -349,7 +352,7 @@ export async function decidirRec(id: string, accion: "existe" | "descartar", mot
     await c.query(`update recommendations set status = $2, business_id = coalesce($3, business_id), decided_by = $4, decided_at = now(), decision_reason = $5 where id = $1::bigint`,
       [q.subject_id, accion === "existe" ? "duplicate" : "declined", bid, s.id, m]);
     await cerrar(c, q, s, accion, m);
-    await auditar(c, { actor: s.id, action: accion === "existe" ? "recomendacion.duplicada" : "recomendacion.descartar", targetKind: "recommendation", targetId: q.subject_id, city: q.city_id, before: { estado: "recomendación" }, after: { estado: accion === "existe" ? "duplicada" : "descartada", negocio: bid }, reason: m });
+    await auditar(c, { actor: s.id, action: accion === "existe" ? "recomendacion.duplicada" : "recomendacion.descartar", targetKind: "recommendation", targetId: q.subject_id, city: q.city_id, before: { estado: "recomendación" }, after: { estado: accion === "existe" ? "duplicada" : "descartada", negocio: bid }, reason: notaEquipo });
     return "ok";
   });
   if (r !== "ok") return no(r);
