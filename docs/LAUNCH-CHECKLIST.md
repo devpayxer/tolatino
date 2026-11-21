@@ -2312,6 +2312,31 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       en las pantallas que ya estaban bien (`N360`, `Contenido`, `Configuracion`); quitar la de la cabecera es una línea por pantalla si se decide. (c)
       Extender prueba / Pro de cortesía (Planes y N360): el motivo solo va a `subscription_events`/auditoría; el texto «El dueño lo ve en Tu plan» habla de
       la extensión, no del motivo (verificado: nada lo lee en el panel).
+      **Revisión aparte (21 nov, Opus, solo lectura, sobre 7814338; Fable comprobó las cuatro en el código y las corrigió):** de las 265 marcadas
+      «interna», **cuatro sí las lee alguien de fuera** y pasaron a «persona»: quitar la foto de perfil (`users.photo_removed_reason` → Mi cuenta › Perfil
+      «To'Latino quitó tu foto: …»), aprobar un evento (`event_review_log.note` → Panel › Eventos «REVISIÓN»), pausar El Compa en un negocio
+      (`compa_pauses.reason` → Panel › El Compa; su texto secundario decía «Queda en el historial») y apagar un módulo en una ciudad
+      (`modules_off.reason` → el panel de cada negocio; apagar una categoría sigue «interna»). Las cuatro quedaron en el guardián `notaDiceAQuien` y en
+      `alreves9u` (12 casos). Lo demás que encontró la revisión es la línea siguiente.
+- [ ] **→ 9u** · **La nota «interna» no sale del equipo: lo que encontró la revisión aparte (21 nov) y no es un cambio de etiqueta.**
+      (1) **«Descargar mis datos» exporta columnas donde cae una nota interna** (`lib/datos/exportar.ts` hace `select *` de las tablas del mapa y solo
+      quita las columnas de otra persona, las de `equipo` y `NUNCA_SE_EXPORTA`): `claims.reason` (aplicar un reclamo, `Colas.tsx`),
+      `recommendations.decision_reason` (descartar una recomendación), `business_members.panel_off_reason` (quitar acceso al panel a alguien del
+      equipo de un negocio), `chat_threads.compa_off_reason` (apagar El Compa en una conversación), `support_messages.hidden_reason` (ocultar un
+      mensaje de Soporte), `passkeys.revoked_reason` (revocar una llave), `promo_codes.retired_reason` (retirar un código de promotor),
+      `city_beta_invites.reason` (invitar a la beta), y `users.photo_removed_reason` (esta ya es «persona»). Camino: clasificar en el mapa cada columna
+      de motivo/nota que escribe el equipo (sale o no sale) y un guardián que no deje una sin clasificar; decisión para el fundador en REVISION.
+      (2) **Llega al navegador sin mostrarse** (el servidor decide, el cliente solo muestra): `verification_requests.note` va en los datos del Panel
+      del dueño aunque solo se pinta en «falta un dato» / «no aprobado» (`lib/panel.ts` `ver.selloNote`), y `claims.reason` va a `Recuperar.tsx` aunque
+      solo se pinta si fue rechazado (`lib/reclamos.ts`). Que el servidor lo mande solo cuando se muestra.
+      (3) **Notas que nadie guarda** (la hoja dice «Queda en la auditoría con tu nombre»): «Asignar el caso a…» (`asignarCaso` no recibe el motivo),
+      «Ya existe» de una recomendación (guarda un texto fijo) y las tres de «Simular disputa / resultado». O se guardan en la auditoría o no se piden.
+      (4) **Sin determinar:** varios lectores públicos traen `modules_off` entero con su `reason` (`lib/fe-publico.ts`, `autos-publico.ts`,
+      `salud-publico.ts` y otros): comprobar que ninguno lo pasa crudo a un componente de cliente. (5) La revisión miró solo por encima Textos,
+      Notificaciones, Integraciones, Configuración y Sistema (39 confirmaciones: auditoría o registro que solo lee el admin), y no recorrió una por
+      una las 85 «persona». (21 nov)
+- [ ] **→ 9b** · **`compa7g` inestable en local (21 nov):** falló una vez («el borrador quedó "editado"») y pasó a la segunda con 98 ✓, en la corrida del
+      encargo de las hojas (99 pruebas de pantallas del Super Admin). Buscar la espera que falta antes de leer el estado del borrador.
 - [x] **→ 9u** · **`rev9u2` inestable en la revisión completa 44908076139 («con miniaturas de fotos ya publicadas»): era del producto.** «Para
       mirar» (Super Admin › Contenido › Auto-moderación y el reporte diario) sacaba cinco al azar de TODAS las «publicar» (también las de destino
       privado y las ocultadas después) y la pantalla descartaba las que no tenían dirección pública: salían menos de cinco, o ninguna. **Hecho
