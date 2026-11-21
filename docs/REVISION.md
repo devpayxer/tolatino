@@ -5893,6 +5893,10 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   de teléfono que tienen un campo a la vista cambian por eso: te las paso para aprobar cuando termine el CI.
 - **Qué mirar cuando esté en el sandbox (te aviso):** toca el buscador, escribe una publicación en Comunidad y un mensaje: la página no debe
   agrandarse sola.
+- **Capturas que cambian (21 nov, CI 44872463837):** solo las seis de «Buscar» en teléfono y tableta (`pruebas/visual/buscar/`): el texto del
+  buscador, «¿Qué necesitas hoy?», pasa de 14,5 a 16 px. Ya quedaron como las aprobadas nuevas; si no te gusta cómo se ve, dímelo y lo ajusto
+  de otra forma. La prueba `a11y9c` midió 208 comprobaciones en verde, entre ellas que en cada pantalla de teléfono ningún campo mide menos
+  de 16 px y que el código de 6 números no se achicó.
 
 ## Dinero, tercera tanda (21 nov) — tres decisiones tuyas
 - **Qué cambió (Opus, revisado por Fable):** el cobro de Pro se anota antes de pedírselo a Stripe; una transferencia a un organizador o un cobro
