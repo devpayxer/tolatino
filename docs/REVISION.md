@@ -5853,7 +5853,7 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   ahora los pesos son estimados. Avísame cuando las subas y te doy los números.
 - **Lo que no vas a notar (y está bien):** la foto se sirve en WebP al tamaño de cada caja; si un navegador viejo no acepta WebP recibe el JPEG.
 
-## Fotos privadas con dirección privada y dinero en dos pasos (21 nov) — en la rama de trabajo, esperando su CI; decisiones para ti
+## Fotos privadas con dirección privada y dinero en dos pasos (21 nov) — YA en el sandbox (commit dbd3130, migración 0197 aplicada); decisiones para ti
 - **Qué cambió (lo hizo Opus, lo revisó Fable):** la foto que va solo a un negocio o al equipo (la de una cita, visita, mudanza, presupuesto,
   pre-estimado, emergencia, «Ayuda con…», la balanza del mercado, el daño de una renta, la línea de un estimado) ya no tiene dirección pública.
   Solo la abren quien la subió, el cliente de esa operación y el negocio que la recibe (dueño o equipo con «Pedidos»). A cualquier otro: no existe.
@@ -5870,6 +5870,11 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      quieres, subo ese número en Contenido › Auto-moderación (tú también puedes).
 - **Dinero (devoluciones):** una devolución ahora se anota antes de pedírsela a Stripe y la termina sola un barrido si Stripe no contesta. Lo que
   vas a ver distinto: «Stripe no contestó. La devolución de $X quedó en camino… no la repitas». Si pasa un día sin respuesta, te llega una alerta.
-- **Qué mirar cuando esté en el sandbox (te aviso):** pide una cita con foto desde tu teléfono y ábrela desde el panel del negocio: la foto se ve
+- **Qué mirar, desde tu teléfono, en el sandbox:** pide una cita con foto desde tu teléfono y ábrela desde el panel del negocio: la foto se ve
   en los dos lados; copia su dirección y ábrela en una ventana privada: no debe verse.
+- **También está ya en el sandbox (21 nov):** en el panel, los «+» y «−» que guardan al tocar (precios, cupos, depósitos, edades…) ya no pierden
+  toques: toca «+» cinco veces seguidas rápido en Deporte › Pase de un día o en el precio por libra de un mercado y debe quedar +5.
+- **Viene detrás (en la rama de trabajo, con su CI corriendo):** la segunda tanda de dinero (migración 0198): el cierre de boletos, los reintentos
+  de más de un día que ahora alertan en vez de repetir, Soporte que cierra el caso solo cuando termina la devolución, pausar pagos de un negocio
+  aunque Stripe no conteste, y dos alertas nuevas («Devolución que Stripe dio por fallida», «Cobro de Pro sin aplicar»).
 
