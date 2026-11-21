@@ -101,7 +101,9 @@ const INTENCION_DE_LA_ALERTA = `select 'subscription_charges'::text as sk, z.id 
                           union all select 'offsession_charges', z.id, z.status = 'pending' from offsession_charges z where a.kind = 'offsession_stuck' and z.idem_key = a.subject_id
                           union all select 'event_settlements', z.id, z.status = 'paying' from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                           union all select 'hold_renewals', z.id, z.status = 'pending' from hold_renewals z where a.kind = 'hold_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
-                          union all select 'gateway_refunds', z.id, z.status = 'pending' from gateway_refunds z where a.kind = 'extra_refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint`;
+                          union all select 'gateway_refunds', z.id, z.status = 'pending' and z.manual_at is null from gateway_refunds z where a.kind = 'extra_refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                          union all select 'refunds', z.id, z.status = 'pending' and z.manual_at is null from refunds z where a.kind = 'refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                          union all select 'event_settlement_reversals', z.id, z.status = 'pending' and z.manual_at is null from event_settlement_reversals z where a.kind = 'transfer_reversal_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint`;
 export async function alertasDinero(s: Staff, abiertas: boolean, antes: string | null = null, n = 30): Promise<{ filas: FilaAlerta[]; sigue: string | null }> {
   // 9t2 · «Resolver a mano» solo cuando la devolución (o la reversión) SIGUE pendiente y la base lo deja (Stripe ya la intentó): una que quedó
   // fallida o hecha muestra la alerta como informativa (antes ofrecía el botón y contestaba «Ya no está pendiente»). Lo decide el servidor.
@@ -113,6 +115,9 @@ export async function alertasDinero(s: Staff, abiertas: boolean, antes: string |
                                                           and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))
               when a.kind = 'transfer_reversal_stuck' then exists (select 1 from event_settlement_reversals r where r.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end
                                                           and r.status = 'pending' and r.manual_at is null and (r.attempts >= 1 or r.created_at <= now() - interval '23 hours'))
+              -- 9t7 · La devolución de lo que sobró: en camino (con la misma regla de la base: gateway_refunds_a_mano) o rechazada por Stripe; nunca hecha.
+              when a.kind = 'extra_refund_stuck' then exists (select 1 from gateway_refunds g where g.id = case when a.subject_id ~ '^[0-9]{1,18}$' then a.subject_id::bigint end and g.manual_at is null
+                                                          and (g.status = 'failed' or (g.status = 'pending' and (g.attempts >= 1 or coalesce(g.sent_at, g.created_at) <= now() - interval '23 hours'))))
               else false end as mano, a.business_id as negocio, b.name as nombre, a.city_id as ciudad, coalesce(a.amount_cents, 0)::text as monto, a.detail as detalle,
             to_char(a.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, x.action as ult,
             case when x.action is null then null else json_build_object('accion', x.action, 'quien', x.quien, 'nota', x.note, 'at', to_char(x.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) end as nota,
@@ -159,9 +164,15 @@ export async function preguntarPorAlerta(s: Staff, id: string, nota: string): Pr
     : a.sk === "offsession_charges" ? await (await import("./cobro-fuera")).resolverCobroFuera(a.sid, o)
     : a.sk === "hold_renewals" ? await (await import("./renovar-retencion")).resolverRenovacion(a.sid, o)
     : a.sk === "gateway_refunds" ? await (await import("./revision-pasarela")).resolverDevolucionSobra(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.st === "done" ? "devolucion_hecha" : x.st === "failed" ? "devolucion_fallida" : "sigue" }))
+    // 9t7 · Una devolución de un cobro (o de boletos) y una reversión al organizador: la misma función del barrido.
+    : a.sk === "refunds" ? await (await import("./devolucion-consulta")).resolverDevolucion(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.quedo === "hecha" ? "devolucion_hecha" : x.quedo === "fallida" ? "devolucion_no" : x.quedo === "reabierta" ? "devolucion_otra_llave" : x.quedo === "no_llego" ? "devolucion_no_llego" : x.quedo }))
+    : a.sk === "event_settlement_reversals" ? await (await import("./evt-liquidacion")).resolverReversion(a.sid, o).then((x) => ({ resultado: x.resultado, quedo: x.quedo === "hecha" ? "reversion_hecha" : x.quedo === "reabierta" ? "reversion_otra_llave" : x.quedo }))
     : await (await import("./evt-liquidacion")).resolverTransferencia(a.sid, o);
   if (!r.resultado) return { ok: false, msg: "Todavía no pasa la ventana de la llave (o ya no está en camino): no se le pregunta a Stripe." };
   const QUEDO: Record<string, string> = { hecha: "quedó hecha, una vez, y la alerta se cerró", fallida: "quedó fallida: no se cobró y sigue el flujo normal", no_llego: "nunca llegó a Stripe: quedó fallida y el siguiente cobro puede salir",
+    devolucion_no: "Stripe la tiene como fallida: quedó fallida y su saldo libre (alerta aparte: si todavía se debe, devuélvela otra vez)",
+    devolucion_otra_llave: "nunca llegó a Stripe: se mandó otra vez con otra llave y sigue en camino", devolucion_no_llego: "nunca llegó a Stripe y el cobro cambió: quedó fallida (alerta aparte)",
+    reversion_hecha: "la reversión quedó hecha y la alerta se cerró", reversion_otra_llave: "nunca llegó a Stripe: se mandó otra vez con otra llave y sigue en camino",
     reabierta: "nunca llegó a Stripe: se manda otra vez con la misma llave", sigue: "sigue en camino; la alerta sigue abierta", ya_no_estaba: "ya no estaba en camino",
     devuelto: "el equipo decidió que ninguno vale: quedó fallida y se devuelve lo cobrado", soltada: "la retención nueva ya no hacía falta: se soltó",
     devolucion_hecha: "la devolución quedó hecha y la alerta se cerró", devolucion_fallida: "Stripe dijo que no: quedó fallida (hazla desde Stripe o por fuera)" };
@@ -170,21 +181,29 @@ export async function preguntarPorAlerta(s: Staff, id: string, nota: string): Pr
 
 /* «Me hago cargo», «Resuelta», «Reabrir» o «Resolver a mano» (la devolución o la reversión se hizo fuera de Stripe: con nota, una vez, y el barrido
    deja de reintentarla). Solo inserción + la auditoría; lo llama la acción con permiso (tx:aprobar). */
-export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" | "resuelta" | "reabierta" | "resuelta_a_mano", nota: string): Promise<{ ok: true } | { ok: false; msg: string }> {
+export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" | "resuelta" | "reabierta" | "resuelta_a_mano", nota: string): Promise<{ ok: true; msg?: string } | { ok: false; msg: string }> {
   const n = nota.trim().slice(0, 500);
   if (n.length < 4) return { ok: false, msg: "Escribe la nota (mínimo 4 letras)." };
   if (!/^\d{1,18}$/.test(id)) return { ok: false, msg: "Esa alerta no existe." };
   const a = (await db().query<{ kind: TipoAlerta; sujeto: string; city: string | null }>(`select a.kind, a.subject_id as sujeto, a.city_id as city from money_alerts a where a.id = $2::bigint and ${CIUD}`, [s.cities, id])).rows[0];
   if (!a) return { ok: false, msg: "Esa alerta no existe (o no es de tus ciudades)." };
-  if (accion === "resuelta_a_mano" && ((a.kind !== "refund_stuck" && a.kind !== "transfer_reversal_stuck") || !/^\d{1,18}$/.test(a.sujeto))) return { ok: false, msg: "Esta alerta no tiene camino manual." };
+  if (accion === "resuelta_a_mano" && ((a.kind !== "refund_stuck" && a.kind !== "transfer_reversal_stuck" && a.kind !== "extra_refund_stuck") || !/^\d{1,18}$/.test(a.sujeto))) return { ok: false, msg: "Esta alerta no tiene camino manual." };
+  // 9t7 · «Resolver a mano» le pregunta ANTES a la pasarela (fuera de la transacción, anotada con quien la pidió): si Stripe dice que salió, se cierra como
+  // hecha y no se marca a mano; si no contesta (o la tiene en curso, o tiene varias), no cambia nada. Lo decide el servidor, nunca la pantalla.
+  if (accion === "resuelta_a_mano") {
+    const pre = await (await import("./devolucion-consulta")).antesDeAMano(s, id, a.kind, a.sujeto, n);
+    if (!pre.sigue) return pre.ok ? { ok: true, msg: pre.msg } : { ok: false, msg: pre.msg };
+  }
   // 9t6 · Una gateway_review que todavía se puede decidir no se marca «resuelta» sin decidir: la intención seguiría en camino y bloqueando al objeto.
   if (accion === "resuelta" && a.kind === "gateway_review" && (await opcionesDeAlertas([{ id, sujeto: a.sujeto }])).has(id))
     return { ok: false, msg: "Esta alerta se cierra con «Elegir cuál vale»: si solo se marca resuelta, la intención sigue en camino." };
   const { auditar } = await import("./admin");
   const r = await tx(async (c) => {
     if (accion === "resuelta_a_mano") {
-      const t = a.kind === "refund_stuck" ? "refunds" : "event_settlement_reversals";
-      const u = await c.query(`update ${t} set manual_at = now(), manual_by = $2::uuid, manual_note = $3::text where id = $1::bigint and status = 'pending' and manual_at is null`, [a.sujeto, s.id, n]);
+      // La tabla sale de una lista cerrada escrita aquí (Semgrep). La devolución de lo que sobró también se resuelve a mano rechazada por Stripe (9t7).
+      const t = a.kind === "refund_stuck" ? "refunds" : a.kind === "transfer_reversal_stuck" ? "event_settlement_reversals" : "gateway_refunds";
+      const est = t === "gateway_refunds" ? "status in ('pending', 'failed')" : "status = 'pending'";
+      const u = await c.query(`update ${t} set manual_at = now(), manual_by = $2::uuid, manual_note = $3::text where id = $1::bigint and ${est} and manual_at is null`, [a.sujeto, s.id, n]);
       if (!u.rowCount) return "Ya no está pendiente: Stripe la hizo o ya se resolvió a mano.";
     }
     await c.query(`insert into money_alert_notes (alert_id, action, staff_id, note) values ($1::bigint, $2::text, $3::uuid, $4::text)`, [id, accion, s.id, n]);
@@ -202,7 +221,9 @@ export async function notaEnTx(c: Pick<import("pg").PoolClient, "query">, alerta
 
 /* ── 9t5 · Las alertas «sin respuesta» que se cierran solas (lib/consulta-pasarela.ts) ── */
 /* La alerta «sin respuesta» de una intención se cierra sola cuando deja de estar en camino: una nota 'resuelta_sola' (sin persona), una vez. */
-export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck" | "hold_stuck" | "extra_refund_stuck" | "gateway_review", sujeto: string, nota: Bi): Promise<boolean> {
+/* 9t7 · También refund_stuck y transfer_reversal_stuck (la consulta a la pasarela las cierra). */
+export type KindSola = "charge_stuck" | "offsession_stuck" | "transfer_stuck" | "hold_stuck" | "extra_refund_stuck" | "gateway_review" | "refund_stuck" | "transfer_reversal_stuck";
+export async function cerrarAlertaSola(kind: KindSola, sujeto: string, nota: Bi): Promise<boolean> {
   return tx(async (c) => {
     // El candado de la alerta primero; la última nota, después, en otra sentencia (ve lo que otro cerró mientras esperaba): una sola vez.
     const a = (await c.query<{ id: string }>(`select a.id::text from money_alerts a where a.kind = $1 and a.subject_id = $2 for update`, [kind, sujeto])).rows[0];
@@ -216,8 +237,10 @@ export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck"
 /* El barrido: las alertas «sin respuesta» abiertas cuya intención ya no está en camino (la cerró la consulta o el flujo) se cierran solas. */
 /* 9t6 · También: hold_stuck (la renovación dejó de estar en camino), gateway_review (la intención se cerró: por la decisión del equipo o por su flujo) y
    extra_refund_stuck SOLO cuando la devolución quedó hecha (una que Stripe rechazó sigue abierta: alguien tiene que devolver ese dinero). */
+/* 9t7 · Y refund_stuck / transfer_reversal_stuck SOLO cuando la devolución o la reversión quedó hecha (una fallida sigue abierta: si todavía se debe, alguien
+   tiene que devolverla otra vez; una resuelta a mano ya tiene su nota). */
 export async function cerrarAlertasResueltas(): Promise<number> {
-  const L = (await db().query<{ kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck" | "hold_stuck" | "extra_refund_stuck" | "gateway_review"; sujeto: string; st: string }>(
+  const L = (await db().query<{ kind: KindSola; sujeto: string; st: string }>(
     `select a.kind, a.subject_id as sujeto, o.st from money_alerts a
        join lateral (select z.status as st from subscription_charges z where a.kind = 'charge_stuck' and z.idem_key = a.subject_id
                      union all select z.status from offsession_charges z where a.kind = 'offsession_stuck' and z.idem_key = a.subject_id
@@ -227,8 +250,13 @@ export async function cerrarAlertasResueltas(): Promise<number> {
                      union all select z.status from subscription_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^subscription_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select z.status from offsession_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^offsession_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select z.status from event_settlements z where a.kind = 'gateway_review' and a.subject_id ~ '^event_settlements:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
-                     union all select z.status from hold_renewals z where a.kind = 'gateway_review' and a.subject_id ~ '^hold_renewals:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint) o on true
-      where a.kind in ('charge_stuck', 'offsession_stuck', 'transfer_stuck', 'hold_stuck', 'extra_refund_stuck', 'gateway_review') and o.st not in ('pending', 'paying')
+                     union all select z.status from hold_renewals z where a.kind = 'gateway_review' and a.subject_id ~ '^hold_renewals:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     union all select case when z.status = 'done' then 'refund_done' else 'pending' end from refunds z where a.kind = 'refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                     union all select case when z.status = 'done' then 'reversal_done' else 'pending' end from event_settlement_reversals z where a.kind = 'transfer_reversal_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                     union all select case when z.manual_at is not null then 'manual' else z.status end from refunds z where a.kind = 'gateway_review' and a.subject_id ~ '^refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     union all select case when z.manual_at is not null then 'manual' else z.status end from event_settlement_reversals z where a.kind = 'gateway_review' and a.subject_id ~ '^event_settlement_reversals:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     union all select case when z.manual_at is not null then 'manual' else z.status end from gateway_refunds z where a.kind = 'gateway_review' and a.subject_id ~ '^gateway_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint) o on true
+      where a.kind in ('charge_stuck', 'offsession_stuck', 'transfer_stuck', 'hold_stuck', 'extra_refund_stuck', 'gateway_review', 'refund_stuck', 'transfer_reversal_stuck') and o.st not in ('pending', 'paying')
         and coalesce((select n.action from money_alert_notes n where n.alert_id = a.id order by n.at desc, n.id desc limit 1), '') not in ('resuelta_sola', 'resuelta', 'resuelta_a_mano')
       order by a.id limit 100`)).rows;
   let n = 0;
@@ -243,17 +271,24 @@ const CERRADA: Record<string, Bi> = {
   reversed: { es: "Cerrada sola: la transferencia quedó hecha (y después se revirtió).", en: "Closed by itself: the transfer is done (and was reversed later)." },
   dropped: { es: "Cerrada sola: la retención nueva ya no hacía falta y se soltó.", en: "Closed by itself: the new hold was no longer needed and was released." },
   refund_done: { es: "Cerrada sola: la devolución quedó hecha.", en: "Closed by itself: the refund is done." },
+  reversal_done: { es: "Cerrada sola: la reversión quedó hecha.", en: "Closed by itself: the reversal is done." },
+  manual: { es: "Cerrada sola: se resolvió a mano desde su alerta.", en: "Closed by itself: it was resolved manually from its alert." },
 };
 
 /* ── 9t6 · gateway_review: lo que se puede elegir. lib/revision-pasarela.ts decide con esta regla y con la pasarela OTRA VEZ; la pantalla la usa solo para
    mostrar, con la última consulta anotada. Vive aquí para que la lista de alertas no dependa de otro módulo. ── */
-export type T4 = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals";
-const REF_REV = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals):(\d{1,18})$/;
-const STRIPE_ID = /^(pi|tr)_[A-Za-z0-9_]{3,200}$/;
+/* 9t7 · También las intenciones que DEVUELVEN dinero: una devolución de un cobro (refunds), una reversión al organizador (event_settlement_reversals) y la
+   devolución de lo que sobró (gateway_refunds). Con varias en Stripe se elige cuál vale (solo «vale»: lo que salió de más no se deshace con otra devolución);
+   con otro monto no se elige (se mira en Stripe y se resuelve a mano en su alerta; el servidor vuelve a preguntar antes). */
+export type T4 = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "refunds" | "event_settlement_reversals" | "gateway_refunds";
+const REF_REV = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals|refunds|event_settlement_reversals|gateway_refunds):(\d{1,18})$/;
+const STRIPE_ID = /^(pi|tr|re|trr|pyr)_[A-Za-z0-9_]{3,200}$/;
+const DEVUELVE = (t: T4) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds";
 /* Lo que se puede elegir con lo que contestó la pasarela: vale solo lo hallado, hecho y con el monto de la intención; nada en curso; y solo si Stripe sigue
    diciendo lo que pide revisión (varios, otro monto, o un cobro de Pro hecho de un período que ya estaba cobrado). */
 export function elegibles(x: { t: T4; monto: number; periodoCobrado: boolean }, resultado: string, H: { id: string; estado: string; centavos: number }[]): { vale: string[]; ninguno: boolean; enCurso: boolean } {
   const enCurso = H.some((h) => h.estado === "en_curso");
+  if (DEVUELVE(x.t)) return resultado !== "varios" || enCurso ? { vale: [], ninguno: false, enCurso } : { vale: H.filter((h) => h.centavos === x.monto && h.estado === "hecho").map((h) => h.id), ninguno: false, enCurso };
   const pide = resultado === "varios" || resultado === "monto_distinto" || (x.t === "subscription_charges" && resultado === "hecho" && x.periodoCobrado);
   if (!pide || enCurso) return { vale: [], ninguno: false, enCurso };
   // Un período de Pro ya cobrado con otro cobro: este no puede valer (sería cobrar dos veces el mismo período); solo se devuelve.
@@ -269,7 +304,8 @@ export type PorQueNo = "otro_monto" | "no_salio" | "en_curso" | "periodo_cobrado
 export type OpcionRevision = { id: string; centavos: number | null; creado: string | null; vale: boolean; por: PorQueNo | null };
 /* tz: la zona de la ciudad de la alerta (null: sin ciudad; la pantalla usa la del sandbox, como el resto del Super Admin). mas: cuántos halló la consulta
    que no se guardaron con su detalle (tope de 0205). */
-export type Revisar = { vale: string[]; ninguno: boolean; hallados: OpcionRevision[]; tz: string | null; mas: number };
+/* 9t7 · devuelve: la intención devuelve dinero (lo que salió de más no se devuelve: la hoja lo dice). */
+export type Revisar = { vale: string[]; ninguno: boolean; hallados: OpcionRevision[]; tz: string | null; mas: number; devuelve: boolean };
 type Guardado = { id: string; estado: string; centavos: number; creado?: string | null };
 /* El primero arriba: por cuándo se creó; lo que no trae fecha, al final y en el orden en que llegó. */
 function porCreacion<T extends { creado?: string | null }>(H: T[]): T[] {
@@ -296,6 +332,9 @@ export async function opcionesDeAlertas(L: { id: string; sujeto: string }[]): Pr
          union all select y.status = 'pending', y.amount_cents, false from offsession_charges y where s.t = 'offsession_charges' and y.id = s.id
          union all select y.status = 'paying' and y.net_cents > 0, y.net_cents, false from event_settlements y where s.t = 'event_settlements' and y.id = s.id
          union all select y.status = 'pending', y.amount_cents, false from hold_renewals y where s.t = 'hold_renewals' and y.id = s.id
+         union all select y.status = 'pending' and y.manual_at is null, y.amount_cents, false from refunds y where s.t = 'refunds' and y.id = s.id
+         union all select y.status = 'pending' and y.manual_at is null, y.amount_cents, false from event_settlement_reversals y where s.t = 'event_settlement_reversals' and y.id = s.id
+         union all select y.status = 'pending' and y.manual_at is null, y.amount_cents, false from gateway_refunds y where s.t = 'gateway_refunds' and y.id = s.id
        ) z on true
        -- La última consulta que CONTESTÓ (una que no contestó no cambia lo que hay que decidir).
        left join lateral (select x.result, x.stripe_id, x.amount_cents, x.found, x.found_n from gateway_checks x where x.subject_kind = s.t and x.subject_id = s.id and x.result <> 'sin_respuesta' order by x.at desc, x.id desc limit 1) g on true`,
@@ -317,7 +356,7 @@ export async function opcionesDeAlertas(L: { id: string; sujeto: string }[]): Pr
       const por: PorQueNo | null = vale ? null : h.estado === "en_curso" ? "en_curso" : h.estado !== "hecho" ? "no_salio" : r.t === "subscription_charges" && r.pc ? "periodo_cobrado" : h.centavos !== r.monto ? "otro_monto" : null;
       return { id: h.id, centavos: det || r.res !== "varios" ? h.centavos : null, creado: det ? ((h as Guardado).creado ?? null) : null, vale, por };
     });
-    out.set(r.a, { vale: e.vale, ninguno: e.ninguno, hallados, tz: r.tz, mas: det ? Math.max(0, r.n - det.length) : 0 });
+    out.set(r.a, { vale: e.vale, ninguno: e.ninguno, hallados, tz: r.tz, mas: det ? Math.max(0, r.n - det.length) : 0, devuelve: DEVUELVE(r.t) });
   }
   return out;
 }

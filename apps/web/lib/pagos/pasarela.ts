@@ -558,7 +558,9 @@ export const pasarela = {
      reversiones de ESA transferencia (/v1/transfers/<tr>/reversals). Listas, no búsqueda eventual. Solo lectura; tres respuestas, nunca un booleano.
      estado: hecho (succeeded; una reversión que existe) · fallido (failed, canceled) · en_curso (pending, requires_action). ── */
   async buscarDevolucion(ref: string, medio: "refund" | "reversal", objeto: string): Promise<Consulta> {
-    if (!/^gateway_refunds:\d{1,18}$/.test(ref) || !/^(pi|tr)_[A-Za-z0-9_]{3,200}$/.test(objeto)) return { ok: false };
+    // 9t7 · También las devoluciones de un cobro (refunds:<id>: las de lib/cobros y las de boletos) y las reversiones al organizador
+    // (event_settlement_reversals:<id>): la misma búsqueda por su dato, entre las de ESE cobro o ESA transferencia.
+    if (!REF_DEV.test(ref) || !/^(pi|tr)_[A-Za-z0-9_]{3,200}$/.test(objeto) || (medio === "refund") !== objeto.startsWith("pi_")) return { ok: false };
     if (modoPago() === "simulador") {
       if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
       try {
@@ -642,6 +644,7 @@ export type Hallado = { id: string; estado: "hecho" | "fallido" | "en_curso"; ce
 const creadoDe = (s?: number) => (typeof s === "number" && Number.isFinite(s) && s > 0 ? new Date(s * 1000).toISOString().slice(0, 19) + "Z" : null);
 export type Consulta = { ok: false } | { ok: true; hallado: Hallado | null } | { ok: true; varios: Hallado[] };
 const REF_OK = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals):\d{1,18}$/;
+const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals):\d{1,18}$/;
 function estadoCobro(st: string): Hallado["estado"] {
   if (st === "succeeded") return "hecho";
   if (st === "canceled" || st === "failed" || st === "requires_payment_method") return "fallido";

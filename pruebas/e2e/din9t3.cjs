@@ -25,7 +25,9 @@ const D = cargar('apps/web/lib/db.ts');
 const avisados = [];
 const avisos = { avisar: async () => undefined, avisarMuchos: async () => undefined, avisarNegocio: async (b, t) => { avisados.push([b, t]); } };
 const auditarStaff = async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after) values ('staff', $1, $2, $3, $4, $5)`, [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null)]);
-const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './admin': { auditar: auditarStaff } });
+// 9t7 · Lo que pasó la ventana de la llave y «Resolver a mano» le preguntan a la pasarela (lib/devolucion-consulta.ts): los módulos reales (se llenan abajo).
+const DC = {}, BOS = {};
+const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './admin': { auditar: auditarStaff }, './devolucion-consulta': DC });
 // La pasarela de mentira: una vez por llave (como Stripe con Idempotency-Key) y la cuenta de lo que salió de verdad. El plan es solo para las llaves
 // de ESTA prueba (para): los barridos también terminan lo de otras corridas y no deben gastarlo.
 const P = {
@@ -73,16 +75,21 @@ const P = {
   cliente: async () => null, intento: async () => null, liberar: async () => ({ ok: true }),
   // 9t5 · La consulta a la pasarela (lo de más de 23 h): aquí no contesta; lo que hace con cada respuesta lo prueba din9t5.
   buscarCobro: async () => ({ ok: false }), buscarTransferencia: async () => ({ ok: false }),
+  // 9t7 · Las devoluciones y reversiones: Stripe no las tiene (así se pueden resolver a mano, como antes); lo que pasa con cada otra respuesta lo prueba din9t7.
+  buscarDevolucion: async () => ({ ok: true, hallado: null }),
   vecesSalio(idem) { return [...this.salio.keys()].filter((k) => k === idem).length; },
   cobrosDe(biz) { return [...this.cargos.keys()].filter((k) => k.startsWith(`sub-${biz}-`)).length; },
 };
 const SE = {};
+const KS = {};
 const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
-  './soporte-equipo': SE, './soporte': { avisarCaso: async () => undefined } });
+  './soporte-equipo': SE, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': KS, './devolucion-consulta': DC });
 const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' };
 const K = cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas });
 const LQ = cargar('apps/web/lib/evt-liquidacion.ts', { './config': { cfgSql: () => '7', valor: async () => 2 }, './db': D, './evt-comun': evtComun, './pagos/pasarela': { pasarela: P },
   './cobros': cobros, './dinero-alertas': alertas, './avisos': avisos, './consulta-pasarela': K });
+Object.assign(KS, K);
+Object.assign(DC, cargar('apps/web/lib/devolucion-consulta.ts', { './db': D, './cobros': cobros, './consulta-pasarela': K, './boletos-despues': BOS, './evt-liquidacion': LQ, './admin': { auditar: auditarStaff } }));
 const SU = cargar('apps/web/lib/suscripcion.ts', { './db': D, './pagos/pasarela': { pasarela: P, registrarAccion: async () => undefined }, './plan': { PRECIO_PRO: 30 }, './avisos': avisos,
   './correo/recibos': { reciboPro: async () => undefined }, './dinero-alertas': alertas, './consulta-pasarela': K });
 const AY = cargar('apps/web/lib/ayuda-cita.ts', { './config': { cfgSql: () => '24', valor: async () => 24 }, './plazo-txt': { horasTxt: () => '' }, './colas': { COLA_AYUDA_SQL: "'sop'" }, './db': D, './cobros': cobros,

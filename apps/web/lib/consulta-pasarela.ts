@@ -21,7 +21,9 @@ export const MARGEN_NO_LLEGO_H = 1;
 export const CADA_MIN = 15;
 /* 9t6 (0204) · También las renovaciones de una retención (hold_renewals: lo que se busca es una retención, «requires_capture» es hecha) y la devolución de
    lo que sobró decidida desde una gateway_review (gateway_refunds: entre las devoluciones de ese cobro o las reversiones de esa transferencia). */
-export type Tabla = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "gateway_refunds";
+/* 9t7 (0206) · Y las devoluciones de un cobro (refunds: las de lib/cobros y las de boletos) y las reversiones de una transferencia al organizador
+   (event_settlement_reversals): entre las devoluciones de ESE cobro o las reversiones de ESA transferencia, como gateway_refunds. */
+export type Tabla = "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals" | "gateway_refunds" | "refunds" | "event_settlement_reversals";
 export type Resultado = "hecho" | "fallido" | "en_curso" | "no_hallado" | "varios" | "monto_distinto" | "sin_respuesta";
 export type Origen = { origen: "barrido" } | { origen: "equipo"; staff: string; alGuardar?: (c: PoolClient) => Promise<unknown> };
 /* 9t6 · revisado: una persona del equipo cerró la gateway_review de esta intención (gateway_reviews, una vez): «vale» (resultado hecho con el que eligió,
@@ -52,7 +54,7 @@ export async function tocaConsultar(t: Tabla, id: string): Promise<boolean> {
 export async function consultar(x: Sujeto, o: Origen, detalle?: Detalle): Promise<Resultado> {
   const ref = refDe(x.tabla, x.id);
   const r: Consulta = await (x.tabla === "event_settlements" ? pasarela.buscarTransferencia(ref, x.grupo ?? "", x.id)
-    : x.tabla === "gateway_refunds" ? pasarela.buscarDevolucion(ref, x.medio ?? "refund", x.objeto ?? "")
+    : x.tabla === "gateway_refunds" || x.tabla === "refunds" || x.tabla === "event_settlement_reversals" ? pasarela.buscarDevolucion(ref, x.medio ?? (x.tabla === "event_settlement_reversals" ? "reversal" : "refund"), x.objeto ?? "")
     : pasarela.buscarCobro(ref, { retencion: x.tabla === "hold_renewals" })).catch((): Consulta => ({ ok: false }));
   let resultado: Resultado, h: Hallado | null = null, n = 0;
   if (!r.ok) resultado = "sin_respuesta";
@@ -74,13 +76,22 @@ export async function consultar(x: Sujeto, o: Origen, detalle?: Detalle): Promis
   // 9t6 · Lo que no se cierra solo lo cierra una persona del equipo desde la alerta («Elegir cuál vale»: lib/revision-pasarela.ts); el servidor vuelve a
   // preguntar y devuelve (o suelta, si es una retención; o revierte, si es una transferencia) lo que sobra.
   const sobra = x.tabla === "hold_renewals" ? { es: "suelta", en: "releases" } : x.tabla === "event_settlements" ? { es: "revierte", en: "reverses" } : { es: "devuelve", en: "refunds" };
-  if (resultado === "varios" || resultado === "monto_distinto") await alertaRevisar(x, ref, resultado === "varios"
+  // 9t7 · Una devolución (o reversión) con varias en Stripe: se elige cuál vale; lo que salió de más NO se deshace con otra devolución (queda en la auditoría).
+  // Con otro monto: no se elige; se mira en Stripe y se resuelve a mano en su alerta (el servidor vuelve a preguntar antes de dejarla marcar).
+  if ((resultado === "varios" || resultado === "monto_distinto") && esDevolucion(x.tabla)) await alertaRevisar(x, ref, resultado === "varios"
+    ? { es: `Stripe tiene ${n} para una sola ${x.tabla === "event_settlement_reversals" ? "reversión" : "devolución"} (${ref}, ${money(x.monto)}): no se cierra sola. Elige en la alerta cuál vale; la intención queda hecha con esa. Lo que salió de más no se deshace desde aquí: queda en la auditoría para verlo con la persona.`,
+        en: `Stripe has ${n} for a single ${x.tabla === "event_settlement_reversals" ? "reversal" : "refund"} (${ref}, ${money(x.monto)}): it does not close by itself. Choose in the alert which one counts; the intent is done with it. What went out in excess is not undone from here: it stays in the audit log to sort out with the person.` }
+    : { es: `Stripe tiene ${h!.id} por ${money(h!.centavos)} para una ${x.tabla === "event_settlement_reversals" ? "reversión" : "devolución"} de ${money(x.monto)} (${ref}): no se cierra sola. Míralo en Stripe y resuélvela a mano desde su alerta (el servidor vuelve a preguntar antes de dejarla marcar).`,
+        en: `Stripe has ${h!.id} for ${money(h!.centavos)} for a ${x.tabla === "event_settlement_reversals" ? "reversal" : "refund"} of ${money(x.monto)} (${ref}): it does not close by itself. Check it in Stripe and resolve it manually from its alert (the server asks again before letting you mark it).` });
+  else if (resultado === "varios" || resultado === "monto_distinto") await alertaRevisar(x, ref, resultado === "varios"
     ? { es: `Stripe tiene ${n} objetos para una sola intención (${ref}, ${money(x.monto)}): no se cierra sola. Elige en la alerta cuál vale; el servidor vuelve a preguntar a Stripe y ${sobra.es} lo que sobra.`,
         en: `Stripe has ${n} objects for a single intent (${ref}, ${money(x.monto)}): it does not close by itself. Choose in the alert which one counts; the server asks Stripe again and ${sobra.en} the rest.` }
     : { es: `Stripe tiene ${h!.id} por ${money(h!.centavos)} para una intención de ${money(x.monto)} (${ref}): no se cierra sola. ${x.tabla === "event_settlements" ? "Míralo en Stripe." : `En la alerta, «Ninguno vale» lo ${sobra.es} y la intención queda fallida.`}`,
         en: `Stripe has ${h!.id} for ${money(h!.centavos)} for an intent of ${money(x.monto)} (${ref}): it does not close by itself. ${x.tabla === "event_settlements" ? "Check it in Stripe." : `In the alert, «None counts» ${sobra.en} it and the intent fails.`}` });
   return resultado;
 }
+/* 9t7 · Las intenciones que devuelven dinero (no lo cobran): con varias en Stripe solo se elige cuál vale. */
+export const esDevolucion = (t: Tabla) => t === "refunds" || t === "event_settlement_reversals" || t === "gateway_refunds";
 export async function alertaRevisar(x: { monto: number; ciudad: string | null; negocio: string | null }, ref: string, detalle: Bi) {
   await (await import("./dinero-alertas")).alertar("gateway_review", ref, { monto: x.monto, negocio: x.negocio, ciudad: x.ciudad, detalle }).catch(() => undefined);
 }
@@ -90,9 +101,11 @@ export async function alertaRevisar(x: { monto: number; ciudad: string | null; n
 export async function veredicto(t: Tabla, id: string, c?: Pick<PoolClient, "query">): Promise<Veredicto | null> {
   // La tabla y el «desde» salen de una lista cerrada escrita aquí, nunca del parámetro tal cual (Semgrep, CI 44889132454: un nombre de tabla que
   // llega de afuera no entra al texto de una consulta, aunque hoy todos los que llaman pasen un valor fijo).
-  const tabla = t === "subscription_charges" ? "subscription_charges" : t === "offsession_charges" ? "offsession_charges" : t === "event_settlements" ? "event_settlements" : t === "hold_renewals" ? "hold_renewals" : t === "gateway_refunds" ? "gateway_refunds" : null;
+  const tabla = t === "subscription_charges" ? "subscription_charges" : t === "offsession_charges" ? "offsession_charges" : t === "event_settlements" ? "event_settlements" : t === "hold_renewals" ? "hold_renewals" : t === "gateway_refunds" ? "gateway_refunds"
+    : t === "refunds" ? "refunds" : t === "event_settlement_reversals" ? "event_settlement_reversals" : null;
   if (!tabla) throw new Error("veredicto: tabla desconocida");
-  const desde = tabla === "event_settlements" ? "greatest(z.sent_at, coalesce(z.key_from, z.paying_at))" : "z.sent_at";
+  // 9t7 · Una devolución o reversión cuya llave volvió a valer (nunca llegó): desde que volvió a valer (la de antes ya se dio por no llegada).
+  const desde = tabla === "event_settlements" ? "greatest(z.sent_at, coalesce(z.key_from, z.paying_at))" : tabla === "refunds" || tabla === "event_settlement_reversals" ? "greatest(z.sent_at, coalesce(z.key_from, z.sent_at))" : "z.sent_at";
   // 9t6 · La decisión del equipo (gateway_reviews, una vez) manda sobre la última consulta: ya se comprobó contra lo que la pasarela dijo al decidir.
   const rv = (await (c ?? db()).query<{ d: "vale" | "ninguno"; stripe: string | null; centavos: number; at: string }>(
     `select decision as d, stripe_id as stripe, amount_cents as centavos, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from gateway_reviews where subject_kind = $1 and subject_id = $2::bigint`, [tabla, id])).rows[0];
@@ -107,7 +120,7 @@ export async function veredicto(t: Tabla, id: string, c?: Pick<PoolClient, "quer
   return v ?? null;
 }
 /* 9t6 · ¿Una persona del equipo ya decidió esta intención? (Los barridos y «Preguntar a Stripe ahora» no vuelven a preguntar: cierran con la decisión.) */
-export async function revisada(t: "subscription_charges" | "offsession_charges" | "event_settlements" | "hold_renewals", id: string): Promise<boolean> {
+export async function revisada(t: Tabla, id: string): Promise<boolean> {
   return !!(await db().query(`select 1 from gateway_reviews where subject_kind = $1 and subject_id = $2::bigint`, [t, id])).rowCount;
 }
 
@@ -121,7 +134,7 @@ export const RESULTADO: Record<Resultado, Bi> = {
 };
 
 /* La alerta «sin respuesta» de una intención se cierra sola cuando deja de estar en camino (las alertas las escribe solo lib/dinero-alertas.ts). */
-export async function cerrarAlertaSola(kind: "charge_stuck" | "offsession_stuck" | "transfer_stuck" | "hold_stuck" | "extra_refund_stuck" | "gateway_review", sujeto: string, nota: Bi): Promise<boolean> {
+export async function cerrarAlertaSola(kind: import("./dinero-alertas").KindSola, sujeto: string, nota: Bi): Promise<boolean> {
   return (await import("./dinero-alertas")).cerrarAlertaSola(kind, sujeto, nota);
 }
 

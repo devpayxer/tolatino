@@ -6010,3 +6010,30 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
      vence (unas 4 horas), porque ya no se vuelve a mandar con esa llave.
 - **Quedó anotado en LAUNCH:** las devoluciones y reversiones atascadas de antes (`refund_stuck`, `transfer_reversal_stuck`) todavía no se le
   preguntan a Stripe; siguen con «Resolver a mano».
+
+## Dinero, séptima tanda: las devoluciones también le preguntan a Stripe (21 nov · migración 0206) — en la rama, falta subir — cinco cosas para ti
+- **Qué pasaba:** cuando devolvíamos dinero a un cliente (una devolución normal o de boletos) o le quitábamos dinero a un organizador (una reversión), y
+  Stripe no contestaba durante un día, se quedaba «en camino» para siempre con una alerta. La única salida era «Resolver a mano», y ahí el sistema creía
+  lo que dijera la persona: alguien podía marcar como «pagado por fuera» algo que Stripe sí había devuelto (el cliente cobraba dos veces).
+- **Ahora (Opus lo escribió; falta la revisión de otro modelo):** cada devolución y reversión se anota antes de ir a Stripe con una etiqueta para
+  encontrarla. Pasado el día, el sistema le pregunta a Stripe y la cierra con lo que diga: si salió, queda hecha; si Stripe la tiene como fallida, queda
+  fallida con su aviso; si nunca llegó, se manda otra vez (una sola vez, con otra llave) siempre que se siga debiendo lo mismo. «Resolver a mano» ahora
+  pregunta primero: si Stripe dice que salió, no te deja marcarla (la cierra como hecha); si Stripe no contesta, no cambia nada. La devolución de «lo que
+  Stripe hizo de más» (de la tanda anterior) también tiene ahora «Resolver a mano».
+- **Qué mirar (sandbox, cuando suba):** Super Admin › Planes › Ingresos › Alertas: una «Devolución atascada» muestra «Preguntar a Stripe ahora» y lo
+  que dijo la última consulta; al tocar «Resolver a mano», la hoja avisa que antes se le pregunta a Stripe. (Las alertas se fabrican con una prueba; no
+  aparecen solas.)
+- **Decide tú (dejé lo más seguro; todo se cambia):**
+  1. *Una devolución que nunca llegó se vuelve a mandar sola* (la misma devolución, con otra llave), solo si el cobro sigue igual (sin disputa, sin
+     haberse devuelto por otro lado y con saldo). Si cambió, queda fallida y te llega el aviso para decidir. Alternativa: no mandarla nunca sola y que
+     siempre la decida una persona.
+  2. *No es una devolución nueva, es la misma que vuelve a valer.* Así sus boletos, su caso de Soporte y su auditoría siguen con ella. Alternativa: anotar
+     una devolución nueva (habría que mover los boletos y el caso).
+  3. *Stripe tiene dos devoluciones para una sola:* se elige cuál vale y la otra **no se recupera desde la app** (queda en la auditoría para hablarlo con
+     la persona); no hay «ninguna vale». Alternativa: ofrecer cobrarle de nuevo a la persona (es una decisión de trato con el cliente, no técnica).
+  4. *Stripe la tiene con otro monto:* no se ofrece «Elegir cuál vale»; se mira en Stripe y se resuelve a mano. Alternativa: aceptar ese monto como
+     hecho.
+  5. *Una devolución que Stripe da por fallida en la consulta (también de boletos):* queda fallida y el saldo libre; los boletos siguen devueltos y no se
+     devuelve otra vez sola: lo decides con la persona. Alternativa: reintentar sola con otra llave una vez.
+- **Quedó anotado en LAUNCH («lo que quedó de 9t7»):** la devolución de lo que no se usó de un **patrocinio** todavía no se anota antes ni se le
+  pregunta a Stripe (sigue como estaba: alerta y «Resuelta»).
