@@ -97,6 +97,7 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
           const l = `vuelta ${i} MAL · antes [${antes}] · al fallar [${en}] · ${pega} · ${porque}`; vueltas.push(l); malas.push(l);
         }
       }
+      process.env.SONDA_TODO = '1'; // TEMPORAL (se quita en el commit siguiente): la primera corrida imprime las 12 vueltas
       if (malas.length || process.env.SONDA_TODO) { for (const l of vueltas) console.log('  · sonda ' + l); }
       if (malas.length) throw new Error(`sonda del detalle: ${malas.length} de 12 aperturas no dejaron tocar «Aceptar» · ${malas[0].slice(0, 1500)}`);
       if (process.env.SONDA_TODO) throw new Error('sonda del detalle: SONDA_TODO pide ver las 12 vueltas (arriba)');
