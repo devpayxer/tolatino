@@ -349,16 +349,21 @@ async function primeroLaFila(fecha: string) {
 /* Barrido (cada minuto, y al leer una fecha): suelta los apartados vencidos y libera la autorización que quedó sin orden. */
 export async function vencerApartados(o: { fecha?: string } = {}): Promise<number> {
   const L = (await db().query<{ id: string }>(
-    `select id::text from ticket_holds where status = 'held' and expires_at <= now() ${o.fecha ? "and event_date_id = $1::bigint" : ""} order by expires_at limit 300`, o.fecha ? [o.fecha] : [])).rows;
+    `select id::text from ticket_holds where status = 'held' and expires_at <= now() ${o.fecha ? "and event_date_id = $1::bigint" : ""} order by expires_at, ticket_holds.id limit 300`, o.fecha ? [o.fecha] : [])).rows;
   let n = 0;
-  for (const h of L) if (await tx((c) => soltarEn(c, h.id, "expired")).catch(() => false)) n++;
+  // 9t9 · Cada apartado por su cuenta (lib/barrido-uno.ts): antes el error de uno se tragaba sin rastro. En el barrido central la tarea sale fallida
+  // diciendo cuál; al leer una fecha (la página) queda en el registro y la página sigue, como antes.
+  const B = new (await import("./barrido-uno")).Fallos("evtApartados");
+  await B.cada(L, (h) => `apartado ${h.id}`, async (h) => { if (await tx((c) => soltarEn(c, h.id, "expired"))) n++; });
   if (!o.fecha) {
     const P = (await db().query<{ id: string; pi: string }>(
-      `select id::text, payment_intent as pi from ticket_holds where status in ('expired', 'released') and payment_intent is not null and operation_id is null and pi_released_at is null limit 50`)).rows;
-    for (const p of P) {
+      `select id::text, payment_intent as pi from ticket_holds where status in ('expired', 'released') and payment_intent is not null and operation_id is null and pi_released_at is null
+        order by expires_at, ticket_holds.id limit 50`)).rows;
+    await B.cada(P, (p) => `autorizacion ${p.id}`, async (p) => {
       const r = await pasarela.liberar(p.pi).catch(() => ({ ok: false }));
       if (r.ok) await db().query(`update ticket_holds set pi_released_at = now(), pay_attempts = pay_attempts + 1 where id = $1::uuid`, [p.id]);
-    }
+    });
+    B.fin();
   }
   return n;
 }
@@ -555,12 +560,13 @@ export async function repararBoletos(): Promise<number> {
   const L = (await db().query<{ op: string; pi: string; total: number; ok: boolean }>(
     `select p.operation_id::text as op, p.stripe_payment_intent as pi, p.amount_cents as total, o.status = 'confirmed' as ok
        from payments p join operations o on o.id = p.operation_id
-      where p.transfer_group is not null and p.status = 'held' and o.kind = 'tickets' and p.held_at < now() - interval '2 minutes' limit 50`)).rows;
-  for (const x of L) {
-    if (!x.ok) { await anularPorCobro(x.op, x.pi, "orden_cancelada"); continue; }
+      where p.transfer_group is not null and p.status = 'held' and o.kind = 'tickets' and p.held_at < now() - interval '2 minutes' order by p.held_at, p.id limit 50`)).rows;
+  // 9t9 · Cada orden por su cuenta (lib/barrido-uno.ts), lo más viejo primero: una que falla no deja a las demás sin capturar o anular.
+  await (await import("./barrido-uno")).cadaUno("boletosReparar", L, (x) => `op ${x.op}`, async (x) => {
+    if (!x.ok) { await anularPorCobro(x.op, x.pi, "orden_cancelada"); return; }
     const r = await pasarela.capturarPlataforma(x.pi, x.total);
     if (r.ok) { await marcarCobrado(x.op); await despuesDeVender(x.op).catch(() => undefined); } else await anularPorCobro(x.op, x.pi, r.codigo ?? "error");
-  }
+  });
   return L.length;
 }
 

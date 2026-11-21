@@ -60,29 +60,33 @@ export async function alertar(kind: TipoAlerta, sujeto: string, x: { monto: numb
 /* Barrido: las alertas que nadie más hace. Cada una se anota una sola vez. */
 export async function barrerAlertasDinero(): Promise<number> {
   let n = 0;
+  // 9t9 · Cada alerta por su cuenta (lib/barrido-uno.ts): una que no se anota no deja a las demás sin anotar; la tarea sale fallida diciendo cuál. Cada
+  // selección con su orden (la más vieja primero; antes sin orden).
+  const B = new (await import("./barrido-uno")).Fallos("alertasDinero");
   const R = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; n: number; err: string | null }>(
     `select r.id::text, r.amount_cents as amt, p.business_id as biz, p.city_id as city, r.attempts as n, r.last_error as err from refunds r join payments p on p.id = r.payment_id
       where r.status = 'pending' and r.manual_at is null and r.attempts >= cfg_int('dinero_alerta_intentos')
-        and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = r.id::text) limit 100`)).rows;
-  for (const r of R) if (await alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: { es: `Devolución de ${money(r.amt)}: Stripe la rechazó ${r.n} veces (${r.err ?? "sin motivo"})`, en: `Refund of ${money(r.amt)}: Stripe rejected it ${r.n} times (${r.err ?? "no reason"})` } })) n++;
+        and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = r.id::text) order by r.created_at, r.id limit 100`)).rows;
+  await B.cada(R, (r) => `devolucion ${r.id}`, async (r) => { if (await alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: { es: `Devolución de ${money(r.amt)}: Stripe la rechazó ${r.n} veces (${r.err ?? "sin motivo"})`, en: `Refund of ${money(r.amt)}: Stripe rejected it ${r.n} times (${r.err ?? "no reason"})` } })) n++; });
   const V = (await db().query<{ id: string; amt: number; biz: string; city: string; n: number; err: string | null }>(
     `select r.id::text, r.amount_cents as amt, r.business_id as biz, r.city_id as city, r.attempts as n, r.last_error as err from event_settlement_reversals r
       where r.status = 'pending' and r.manual_at is null and r.attempts >= cfg_int('dinero_alerta_intentos')
-        and not exists (select 1 from money_alerts a where a.kind = 'transfer_reversal_stuck' and a.subject_id = r.id::text) limit 100`)).rows;
-  for (const r of V) if (await alertar("transfer_reversal_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: { es: `Revertir ${money(r.amt)} al organizador: Stripe lo rechazó ${r.n} veces (${r.err ?? "sin saldo"})`, en: `Reverse ${money(r.amt)} from the organizer: Stripe rejected it ${r.n} times (${r.err ?? "no balance"})` } })) n++;
+        and not exists (select 1 from money_alerts a where a.kind = 'transfer_reversal_stuck' and a.subject_id = r.id::text) order by r.created_at, r.id limit 100`)).rows;
+  await B.cada(V, (r) => `reversion ${r.id}`, async (r) => { if (await alertar("transfer_reversal_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: { es: `Revertir ${money(r.amt)} al organizador: Stripe lo rechazó ${r.n} veces (${r.err ?? "sin saldo"})`, en: `Reverse ${money(r.amt)} from the organizer: Stripe rejected it ${r.n} times (${r.err ?? "no balance"})` } })) n++; });
   // Disputas sin responder cerca del plazo del banco (una vez por disputa).
   const D = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; due: string; num: string | null }>(
     `update disputes d set due_alert_at = now() where d.status = 'needs_response' and d.due_alert_at is null and d.evidence_due_by is not null
         and d.evidence_due_by < now() + make_interval(days => cfg_int('disputa_alerta_dias'))
      returning d.id::text, d.amount_cents as amt, d.business_id as biz, d.city_id as city, to_char(d.evidence_due_by at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') as due,
                (select o.number from operations o where o.id = d.operation_id) as num`)).rows;
-  for (const d of D) if (await alertar("dispute_due", d.id, { monto: d.amt, negocio: d.biz, ciudad: d.city, detalle: { es: `Disputa ${d.num ? `del pedido ${d.num}` : d.id} (${money(d.amt)}) sin responder: el banco cierra el ${d.due}`, en: `Dispute ${d.num ? `for order ${d.num}` : d.id} (${money(d.amt)}) unanswered: the bank closes on ${d.due}` } })) n++;
+  await B.cada(D, (d) => `disputa ${d.id}`, async (d) => { if (await alertar("dispute_due", d.id, { monto: d.amt, negocio: d.biz, ciudad: d.city, detalle: { es: `Disputa ${d.num ? `del pedido ${d.num}` : d.id} (${money(d.amt)}) sin responder: el banco cierra el ${d.due}`, en: `Dispute ${d.num ? `for order ${d.num}` : d.id} (${money(d.amt)}) unanswered: the bank closes on ${d.due}` } })) n++; });
   const P = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; code: string | null }>(
     `select p.stripe_payout_id as id, p.amount_cents as amt, p.business_id as biz, p.city_id as city, p.failure_code as code from payouts p
-      where p.status = 'failed' and not exists (select 1 from money_alerts a where a.kind = 'payout_failed' and a.subject_id = p.stripe_payout_id) limit 100`)).rows;
-  for (const p of P) if (await alertar("payout_failed", p.id, { monto: p.amt, negocio: p.biz, ciudad: p.city, detalle: { es: `El pago al banco de ${money(p.amt)} falló (${p.code ?? "sin código"})`, en: `The ${money(p.amt)} bank payout failed (${p.code ?? "no code"})` } })) n++;
+      where p.status = 'failed' and not exists (select 1 from money_alerts a where a.kind = 'payout_failed' and a.subject_id = p.stripe_payout_id) order by p.created_at, p.id limit 100`)).rows;
+  await B.cada(P, (p) => `pago ${p.id}`, async (p) => { if (await alertar("payout_failed", p.id, { monto: p.amt, negocio: p.biz, ciudad: p.city, detalle: { es: `El pago al banco de ${money(p.amt)} falló (${p.code ?? "sin código"})`, en: `The ${money(p.amt)} bank payout failed (${p.code ?? "no code"})` } })) n++; });
   // 9t5 · Las alertas «sin respuesta» cuya intención ya no está en camino (la cerró la consulta a la pasarela o su flujo) se cierran solas.
   await cerrarAlertasResueltas();
+  B.fin();
   return n;
 }
 

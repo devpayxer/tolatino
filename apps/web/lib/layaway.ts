@@ -262,11 +262,13 @@ export async function barrerPlanes(f: { negocio?: string; userId?: string; numer
   const L = (await db().query<{ op: string; plan: string; seq: number; monto: number; vence: string; tarde: boolean }>(
     `select o.id::text as op, lp.id::text as plan, lpp.seq, lpp.amount_cents as monto, lpp.due_at as vence, lpp.due_at < now() as tarde
        from layaway_payments lpp join layaway_plans lp on lp.id = lpp.plan_id join operations o on o.id = lp.operation_id
-      where ${W} and lp.status in ('active', 'late') and lpp.seq >= 1 and ((lpp.status = 'due' and lpp.due_at < now()) or (lpp.status = 'due' and lpp.reminded_at is null and lpp.due_at < now() + interval '2 days')) limit 50`, A)).rows;
+      where ${W} and lp.status in ('active', 'late') and lpp.seq >= 1 and ((lpp.status = 'due' and lpp.due_at < now()) or (lpp.status = 'due' and lpp.reminded_at is null and lpp.due_at < now() + interval '2 days'))
+      order by lpp.due_at, lpp.plan_id, lpp.seq limit 50`, A)).rows;
   const av = await import("./avisos");
-  for (const y of L) {
+  // 9t9 · Cada pago por su cuenta (lib/barrido-uno.ts): uno que falla no deja a los demás sin su aviso o su atraso.
+  await (await import("./barrido-uno")).cadaUno("layaway", L, (y) => `${y.plan}#${y.seq}`, async (y) => {
     const x = await opDe("o.id = $1::bigint", [y.op]);
-    if (!x) continue;
+    if (!x) return;
     if (y.tarde) {
       const u = await tx(async (c) => {
         const k = await c.query(`update layaway_payments set status = 'late', late_noticed_at = now() where plan_id = $1::bigint and seq = $2 and status = 'due'`, [y.plan, y.seq]);
@@ -280,7 +282,7 @@ export async function barrerPlanes(f: { negocio?: string; userId?: string; numer
       const k = await db().query(`update layaway_payments set reminded_at = now() where plan_id = $1::bigint and seq = $2 and reminded_at is null`, [y.plan, y.seq]);
       if (k.rowCount) await av.avisar(x.uid, "lay_pronto", { negocio: x.bname, monto: money(y.monto), fecha: fechaL(y.vence) }, hrefC(x));
     }
-  }
+  });
 }
 
 /* Lo que quedó a medias con el plan: abono retenido de un apartado confirmado → cobrar y empezar; pago retenido → cobrar;
@@ -288,14 +290,19 @@ export async function barrerPlanes(f: { negocio?: string; userId?: string; numer
 export async function repararPlanes(negocio: string) {
   const L = (await db().query<{ op: string; pid: string; kind: string; ost: string }>(
     `select o.id::text as op, p.id::text as pid, p.kind, o.status as ost from payments p join operations o on o.id = p.operation_id join layaway_plans lp on lp.operation_id = o.id
-      where p.business_id = $1 and p.status = 'held' and p.kind in ('deposit', 'balance') and o.kind = 'hold' limit 20`, [negocio])).rows;
-  for (const x of L) {
+      where p.business_id = $1 and p.status = 'held' and p.kind in ('deposit', 'balance') and o.kind = 'hold'
+      order by p.held_at nulls first, p.id limit 20`, [negocio])).rows;
+  // 9t9 · Lo más viejo primero (antes sin orden) y cada uno por su cuenta (lib/barrido-uno.ts).
+  const B = new (await import("./barrido-uno")).Fallos(`layaway.reparar ${negocio}`);
+  await B.cada(L, (x) => `pago ${x.pid}`, async (x) => {
     if (x.kind === "balance") await liquidarCuota(x.pid);
     else if (x.ost === "confirmed") await activarPlan(x.op);
     else if (x.ost !== "pending") await (await import("./cobros")).liberarOperacion(x.op);
-  }
+  });
   const C = (await db().query<{ op: string }>(
     `select o.id::text as op from layaway_plans lp join operations o on o.id = lp.operation_id where o.business_id = $1 and lp.status = 'cancelled'
-        and (select coalesce(sum(amount_cents - refunded_cents), 0) from payments p where p.operation_id = o.id and p.kind in ('deposit', 'balance') and p.status in ('captured', 'partially_refunded')) > lp.fee_kept_cents limit 10`, [negocio])).rows;
-  for (const x of C) await reembolsarPlan(x.op);
+        and (select coalesce(sum(amount_cents - refunded_cents), 0) from payments p where p.operation_id = o.id and p.kind in ('deposit', 'balance') and p.status in ('captured', 'partially_refunded')) > lp.fee_kept_cents
+      order by lp.updated_at, o.id limit 10`, [negocio])).rows;
+  await B.cada(C, (x) => `op ${x.op}`, (x) => reembolsarPlan(x.op));
+  B.fin();
 }

@@ -575,12 +575,15 @@ export async function numeroDeRenta(rid: string): Promise<string | null> {
 export async function barrerRentas(f: { negocio?: string; userId?: string; numero?: string }): Promise<void> {
   const W = f.numero ? "o.number = $1" : f.negocio ? "r.business_id = $1" : f.userId ? "r.user_id = $1" : "true", A = f.numero ? [f.numero] : f.negocio ? [f.negocio] : f.userId ? [f.userId] : [];
   const av = await import("./avisos");
+  // 9t9 · Cada paso y cada renta por su cuenta (lib/barrido-uno.ts): una que falla no deja a las demás (ni a los pasos de después) sin hacer; la tarea
+  // sale fallida diciendo cuáles. Cada selección con su orden (lo más atrasado primero).
+  const B = new (await import("./barrido-uno")).Fallos("rentas");
   // 1. Apartados que pasaron las 48 h: vencen y vuelve la unidad.
   const V = (await db().query<{ rid: string; op: string; item: string; uid: string; numero: string; n: Bi; bname: string; biz: string }>(
     `select r.id::text as rid, r.operation_id::text as op, r.item_id::text as item, r.user_id::text as uid, o.number as numero, r.item_name as n, b.name as bname, r.business_id as biz
        from rentals r join operations o on o.id = r.operation_id join businesses b on b.id = r.business_id where ${W} and r.status = 'held' and r.expires_at < now()
-        and not exists (select 1 from offsession_charges q where q.kind = 'renta' and q.ref_id = r.id::text and q.status = 'pending') limit 50`, A)).rows;
-  for (const x of V) {
+        and not exists (select 1 from offsession_charges q where q.kind = 'renta' and q.ref_id = r.id::text and q.status = 'pending') order by r.expires_at, r.id limit 50`, A)).rows;
+  await B.cada(V, (x) => x.numero, async (x) => {
     const ok = await tx(async (c) => {
       // 9t4 · Un cobro al recoger que va en camino no deja vencer el apartado (la persona ya pudo llevársela): lo termina el barrido de los cobros.
       const u = await c.query(`update rentals set status = 'expired', cancelled_at = now(), cancelled_by = 'system', updated_at = now() where id = $1::bigint and status = 'held' and expires_at < now() and not exists (select 1 from offsession_charges q where q.kind = 'renta' and q.ref_id = rentals.id::text and q.status = 'pending')`, [x.rid]);
@@ -591,21 +594,21 @@ export async function barrerRentas(f: { negocio?: string; userId?: string; numer
       return true;
     });
     if (ok) await av.avisar(x.uid, "renta_vence", { articulo: x.n.es, negocio: x.bname }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
-  }
+  });
   // 2. Se pasó el día de devolver: un aviso (al cliente y al negocio).
   const T = (await db().query<{ rid: string; uid: string; numero: string; n: Bi; p: number; due: string; biz: string; cliente: string; hoy: string }>(
     `select r.id::text as rid, r.user_id::text as uid, o.number as numero, r.item_name as n, r.price_cents as p, r.due_on::text as due, r.business_id as biz, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, (now() at time zone ci.timezone)::date::text as hoy
        from rentals r join operations o on o.id = r.operation_id join users u on u.id = r.user_id join cities ci on ci.id = r.city_id
-      where ${W} and r.status = 'out' and r.due_on < (now() at time zone ci.timezone)::date and r.late_noticed_on is null limit 50`, A)).rows;
-  for (const x of T) {
+      where ${W} and r.status = 'out' and r.due_on < (now() at time zone ci.timezone)::date and r.late_noticed_on is null order by r.due_on, r.id limit 50`, A)).rows;
+  await B.cada(T, (x) => x.numero, async (x) => {
     const u = await db().query(`update rentals set late_noticed_on = $2::date, updated_at = now() where id = $1::bigint and late_noticed_on is null`, [x.rid, x.hoy]);
-    if (!u.rowCount) continue;
+    if (!u.rowCount) return;
     await av.avisar(x.uid, "renta_tarde", { articulo: x.n.es, dia: diaCorto(x.due), monto: money(x.p) }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
     await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: `se pasó del día de devolver (${diaCorto(x.due)})`, articulo: x.n.es }, { href: `/panel/${x.biz}/hoy?det=renta:${x.numero}`, ref: ["renta", x.numero] });
-  }
+  });
   // 3. Daños sin respuesta en 72 h: los decide To'Latino.
   const D = (await db().query<{ rid: string }>(`update rentals r set damage_status = 'disputed', updated_at = now() from operations o where o.id = r.operation_id and ${W} and r.damage_status = 'asked' and r.damage_asked_at < now() - interval '72 hours' returning r.id::text as rid`, A)).rows;
-  for (const x of D) await aCola(x.rid);
+  await B.cada(D, (x) => `renta ${x.rid}`, (x) => aCola(x.rid));
   // 4. Depósitos retenidos de más de 6 días y 20 horas (la tarjeta los suelta a los 7): se renuevan fuera de sesión.
   // 9t6 · Como una intención (lib/renovar-retencion.ts): «sin respuesta» no suelta la vieja ni avisa; se reintenta con la misma llave mientras se puede y
   // después se le pregunta a la pasarela. La vieja sigue retenida en el libro mientras la renovación va en camino (este paso la vuelve a recorrer); las que
@@ -617,15 +620,17 @@ export async function barrerRentas(f: { negocio?: string; userId?: string; numer
         and not exists (select 1 from hold_renewals h join gateway_checks g on g.subject_kind = 'hold_renewals' and g.subject_id = h.id
                          where h.payment_id = p.id and h.status = 'pending' and g.at > now() - make_interval(mins => ${(await import("./consulta-pasarela")).CADA_MIN}))
       order by p.held_at limit 10`, A)).rows;
-  for (const p of R) {
+  // 9t9 · Antes el error de una renovación se tragaba (solo el registro): ahora la tarea sale fallida diciendo cuál.
+  await B.cada(R, (p) => `deposito ${p.id}`, async (p) => {
     const x = await renovacionDeposito(p.id);
-    if (x) await RR.renovarRetencion(x).catch((e) => console.error("[rentas] renovar", p.id, e instanceof Error ? e.message : e));
-  }
+    if (x) await RR.renovarRetencion(x);
+  });
   // 5. Devueltas con el depósito todavía retenido y nada pendiente (un cobro que falló): se reintenta.
   // 9t6 · (Una renovación en camino no estorba: si la renta vuelve mientras tanto, el depósito viejo se liquida y la nueva, si salió, se suelta sola.)
   const L = (await db().query<{ rid: string }>(`select r.id::text as rid from rentals r join operations o on o.id = r.operation_id join payments p on p.operation_id = r.operation_id and p.kind = 'security' and p.status = 'held'
-      where ${W} and r.status = 'back' and (r.damage_status is null or r.damage_status in ('accepted', 'waived', 'charged')) limit 10`, A)).rows;
-  for (const x of L) await liquidarDeposito(x.rid);
+      where ${W} and r.status = 'back' and (r.damage_status is null or r.damage_status in ('accepted', 'waived', 'charged')) order by p.held_at, r.id limit 10`, A)).rows;
+  await B.cada(L, (x) => `renta ${x.rid}`, (x) => liquidarDeposito(x.rid));
+  B.fin();
 }
 /* 9t6 · La renovación del depósito retenido (lib/renovar-retencion.ts), armada desde la base: la usan el paso 4 del barrido, el barrido central de las
    renovaciones, «Preguntar a Stripe ahora» y la decisión del equipo. Lo que ve el negocio dice el motivo verdadero: el banco dijo que no, o no se pudo

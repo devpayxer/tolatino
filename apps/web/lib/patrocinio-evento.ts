@@ -313,38 +313,42 @@ export async function barrerPatrociniosEventos(): Promise<{ terminaron: number; 
         and not exists (select 1 from event_dates d where d.event_id = s.event_id and d.listable and d.ends_at > now())
       returning s.event_id::text as evento`);
   for (const x of pz.rows) { pausados++; await avisoEvt(x.evento, "biz_patevt_pausa", {}).catch(() => undefined); }
+  // 9t9 · Cada patrocinio por su cuenta (lib/barrido-uno.ts): antes el error de uno se tragaba (solo el registro) y la tarea salía bien; ahora los demás
+  // siguen igual y la tarea sale fallida diciendo cuál. Los que siguen tocando (falló, o Stripe no contestó) van por tandas sin repetirse en la corrida.
+  const U = await import("./barrido-uno"), B = new U.Fallos("patrociniosEventos");
   // Vuelve a verse: sigue, alargado lo que duró la pausa (si cabe).
-  const RS = (await db().query<{ id: string }>(
-    `select s.id::text from event_sponsorships s where s.status = 'activo' and s.paused_at is not null
-        and exists (select 1 from event_dates d where d.event_id = s.event_id and d.listable and d.ends_at > now()) order by s.paused_at limit 200`)).rows;
-  for (const { id } of RS) {
-    const r = await reanudarUno(id).catch((e) => { console.error("[patrocinio-evento] seguir", id, e instanceof Error ? e.message : e); return null; });
-    if (!r) continue;
+  await U.porTandas(B, 200, async (vistos) => (await db().query<{ id: string }>(
+    `select s.id::text from event_sponsorships s where s.status = 'activo' and s.paused_at is not null and not (s.id = any($1::bigint[]))
+        and exists (select 1 from event_dates d where d.event_id = s.event_id and d.listable and d.ends_at > now()) order by s.paused_at, s.id limit 200`, [vistos])).rows, (x) => `seguir ${x.id}`, async ({ id }) => {
+    const r = await reanudarUno(id);
+    if (!r) return;
     siguieron++;
     await avisoEvt(r.evento, "biz_patevt_sigue", { hasta: r.hasta }).catch(() => undefined);
-  }
+  }, { clave: (x) => x.id });
   await db().query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), auto_renew = false where status = 'reservado' and ends_at <= now()`);
   // Lo que está en pausa no vence: espera a que el evento vuelva (y se alargue) o a que pase (y se devuelva lo que no se usó).
-  const L = (await db().query<{ id: string }>(`select id::text from event_sponsorships where status = 'activo' and paused_at is null and ends_at <= now() order by ends_at limit 200`)).rows;
-  for (const { id } of L) {
-    const r = await vencerUnoEvt(id).catch((e) => { console.error("[patrocinio-evento] vencer", id, e instanceof Error ? e.message : e); return null; });
-    if (!r) continue;
+  await U.porTandas(B, 200, async (vistos) => (await db().query<{ id: string }>(
+    `select id::text from event_sponsorships where status = 'activo' and paused_at is null and ends_at <= now() and not (id = any($1::bigint[])) order by ends_at, event_sponsorships.id limit 200`, [vistos])).rows,
+  (x) => `vencer ${x.id}`, async ({ id }) => {
+    const r = await vencerUnoEvt(id);
+    if (!r) return;
     if (r.r === "renovado") renovados++; else vencieron++;
     await avisoEvt(r.evento, r.tpl, r.v).catch(() => undefined);
-  }
+  }, { clave: (x) => x.id });
   // «Avísame si se libera un puesto»: hay uno libre esta semana en Eventos de su ciudad.
   const W = (await db().query<{ id: string; negocio: string; ciudad: string }>(
     `select w.id::text, w.business_id as negocio, w.city_id as ciudad from sponsorship_waits w where w.kind = 'evento' and w.status = 'espera'
-        and patrocinio_evt_a_la_vez(w.city_id, now(), now() + interval '7 days', null) < cfg_int('patrocinio_evt_puestos') limit 200`)).rows;
-  for (const w of W) {
+        and patrocinio_evt_a_la_vez(w.city_id, now(), now() + interval '7 days', null) < cfg_int('patrocinio_evt_puestos') order by w.id limit 200`)).rows;
+  await B.cada(W, (w) => `espera ${w.id}`, async (w) => {
     const u = await db().query(`update sponsorship_waits set status = 'avisado', notified_at = now() where id = $1::bigint and status = 'espera'`, [w.id]);
-    if (!u.rowCount) continue;
+    if (!u.rowCount) return;
     const ci = (await db().query<{ n: string }>(`select name as n from cities where id = $1`, [w.ciudad])).rows[0]?.n ?? "";
     await (await import("./avisos")).avisarNegocio(w.negocio, "biz_patevt_libre", { ciudad: ci }, { href: `/panel/${w.negocio}/eventos` }).catch(() => undefined);
-  }
+  });
   // Lo que se decidió devolver (evento cancelado, pausa que no cupo) y todavía no está en el libro: a la pasarela, con su llave.
   await devolverPendientes("evento");
   await db().query(`select patrocinio_evt_cifras_al_dia()`);
+  B.fin();
   return { terminaron, empezaron, vencieron, renovados, pausados, siguieron };
 }
 

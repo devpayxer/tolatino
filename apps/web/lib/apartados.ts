@@ -509,14 +509,17 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
 
 /* ── El barrido (idempotente): sin respuesta a tiempo y no pasó en 48 h → vence y vuelve al estante ── */
 export async function barrerApartados(f: { negocio?: string; userId?: string; numero?: string }): Promise<void> {
-  await (await import("./layaway")).barrerPlanes(f);
+  // 9t9 · El layaway, y después cada apartado, por su cuenta (lib/barrido-uno.ts): uno que falla no deja a los demás sin vencer; la tarea sale fallida.
+  const B = new (await import("./barrido-uno")).Fallos("apartados");
+  await B.uno("layaway", async () => (await import("./layaway")).barrerPlanes(f));
   const W = f.numero ? "o.number = $1" : f.negocio ? "o.business_id = $1" : f.userId ? "o.user_id = $1" : "true", A = f.numero ? [f.numero] : f.negocio ? [f.negocio] : f.userId ? [f.userId] : [];
   const V = (await db().query<{ op: string; numero: string; st: St; uid: string; biz: string; bname: string; cliente: string; sms: boolean; hh: number; ship: boolean }>(
     `select o.id::text as op, o.number as numero, o.status as st, coalesce((o.details->>'sms')::boolean, true) as sms, coalesce((o.details->>'hold_hours')::int, 48) as hh, o.mode = 'delivery' as ship, o.user_id::text as uid, o.business_id as biz, b.name as bname, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id
-      where ${W} and o.kind = 'hold' and ((o.status in ('pending', 'change_proposed') and o.respond_by < now()) or (o.status = 'confirmed' and o.ready_at < now() and o.stage <> 'on_the_way' and not exists (select 1 from layaway_plans lp where lp.operation_id = o.id and lp.status in ('active', 'late', 'paid')))) limit 50`, A)).rows;
+      where ${W} and o.kind = 'hold' and ((o.status in ('pending', 'change_proposed') and o.respond_by < now()) or (o.status = 'confirmed' and o.ready_at < now() and o.stage <> 'on_the_way' and not exists (select 1 from layaway_plans lp where lp.operation_id = o.id and lp.status in ('active', 'late', 'paid'))))
+      order by case when o.status = 'confirmed' then o.ready_at else o.respond_by end, o.id limit 50`, A)).rows;
   const av = await import("./avisos");
-  for (const x of V) {
+  await B.cada(V, (x) => x.numero, async (x) => {
     const det = x.st === "pending" ? "sin_respuesta" : x.st === "change_proposed" ? "sin_decision" : x.ship ? "no_envio" : "no_paso";
     const ok = await tx(async (c) => {
       const u = await c.query(`update operations set status = 'expired', status_detail = $2, cancelled_at = now(), cancelled_by = 'system', updated_at = now() where id = $1::bigint and status = $3`, [x.op, det, x.st]);
@@ -527,12 +530,13 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
       await ev(c, x.op, "expired", "system", null, det === "no_envio" ? { es: "La tienda no lo envió a tiempo: se liberó lo retenido", en: "The store did not ship in time: the hold was released" } : det === "no_paso" ? { es: `Pasaron las ${x.hh} horas: volvió al estante`, en: `${x.hh} hours passed: back on the shelf` } : det === "sin_respuesta" ? { es: "La tienda no respondió a tiempo", en: "The store did not reply in time" } : { es: "No decidió a tiempo qué hacer con lo que faltaba", en: "No decision in time on the missing item" });
       return true;
     });
-    if (!ok) continue;
+    if (!ok) return;
     await (await import("./cobros")).liberarOperacion(x.op);
     const que = det === "no_envio" ? `${x.bname} no envió tu pedido a tiempo. Se liberó lo retenido en tu tarjeta.` : det === "no_paso" ? `Pasaron las ${x.hh} horas y tu apartado en ${x.bname} volvió al estante.` : det === "sin_respuesta" ? `${x.bname} no respondió a tiempo a tu apartado.` : `Tu apartado en ${x.bname} se cerró sin decidir qué hacer con lo que faltaba.`;
     await av.avisar(x.uid, "apt_vence", { que }, { href: `/apartado/${x.numero}`, ref: ["apartado", x.numero], sinSms: !x.sms });
     if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "su apartado venció sin tu respuesta" }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
-  }
+  });
+  B.fin();
 }
 export const horaApartado = horaL;
 export const diaApartado = (f: string) => { const d = s2d(f); return `${DIA[d.getUTCDay()]} ${d.getUTCDate()} ${MES[d.getUTCMonth()]}`; };
@@ -575,12 +579,16 @@ export async function cobrarApartado(opId: string): Promise<{ cobrado: number; l
 }
 /* Lo que quedó a medias (una llamada a la pasarela que falló): enviado o entregado → cobrar; ya no sigue → liberar. */
 export async function repararApartados(negocio: string) {
-  await (await import("./layaway")).repararPlanes(negocio);
+  // 9t9 · El layaway y cada apartado por su cuenta (lib/barrido-uno.ts), lo más viejo primero.
+  const B = new (await import("./barrido-uno")).Fallos(`apartados.reparar ${negocio}`);
+  await B.uno("layaway", async () => (await import("./layaway")).repararPlanes(negocio));
   const L = (await db().query<{ op: string; st: string; stage: string }>(
     `select p.operation_id::text as op, o.status as st, o.stage from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and p.kind = 'full' and o.kind = 'hold' and (o.stage in ('on_the_way', 'delivered') or o.status in ('declined', 'cancelled', 'expired')) limit 20`, [negocio])).rows;
-  for (const x of L) {
+      where p.business_id = $1 and p.status = 'held' and p.kind = 'full' and o.kind = 'hold' and (o.stage in ('on_the_way', 'delivered') or o.status in ('declined', 'cancelled', 'expired'))
+      order by p.held_at nulls first, p.id limit 20`, [negocio])).rows;
+  await B.cada(L, (x) => `op ${x.op}`, async (x) => {
     if (x.stage === "on_the_way" || x.stage === "delivered") await cobrarApartado(x.op);
     else await (await import("./cobros")).liberarOperacion(x.op);
-  }
+  });
+  B.fin();
 }

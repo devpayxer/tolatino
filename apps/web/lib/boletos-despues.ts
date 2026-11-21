@@ -117,9 +117,10 @@ export async function cancelarTransferencia(userId: string, code: string): Promi
 
 /* Barrido: lo que nadie recibió a tiempo vuelve a quien lo mandó (QR nuevo); una cortesía sin recibir queda sin dueño (la puerta la busca por nombre). */
 export async function vencerTransferencias(): Promise<number> {
-  const L = (await db().query<{ id: string }>(`select id::text from ticket_transfers where status = 'pending' and expires_at <= now() order by expires_at limit 200`)).rows;
+  const L = (await db().query<{ id: string }>(`select id::text from ticket_transfers where status = 'pending' and expires_at <= now() order by expires_at, ticket_transfers.id limit 200`)).rows;
   let n = 0;
-  for (const x of L) {
+  // 9t9 · Cada envío por su cuenta (lib/barrido-uno.ts): antes el error de uno se tragaba sin rastro; ahora queda en el registro y la tarea sale fallida.
+  await (await import("./barrido-uno")).cadaUno("bolTransferencias", L, (x) => `envio ${x.id}`, async (x) => {
     const r = await tx(async (c) => {
       const t = (await c.query<{ kind: string; tid: string; op: string; city: string; uid: string; code: string; title: Bi }>(
         `update ticket_transfers x set status = 'expired', ended_at = now() from tickets t join events e on e.id = t.event_id
@@ -131,12 +132,12 @@ export async function vencerTransferencias(): Promise<number> {
         await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_kind) values ($1::bigint, $2::bigint, $3, 'transfer_vencido', 'system')`, [t.tid, t.op, t.city]);
       }
       return t;
-    }).catch(() => null);
-    if (!r) continue;
+    });
+    if (!r) return;
     n++;
     pasesPronto();
     if (r.kind === "transfer") await (await import("./avisos")).avisar(r.uid, "bol_transfer_vuelve", { codigo: r.code, evento: r.title.es }, { href: `/cuenta/boletos/${r.code}`, ref: ["tickets", r.code] });
-  }
+  });
   return n;
 }
 
@@ -404,9 +405,12 @@ export async function barrerDevolucionesBoletos(): Promise<number> {
     `select r.id::text from refunds r where r.status = 'pending' and r.manual_at is null and r.created_at < now() - interval '30 seconds' and coalesce(r.key_from, r.created_at) > now() - make_interval(hours => $1::int)
         and exists (select 1 from ticket_refund_lines l where l.refund_id = r.id) order by r.created_at limit 50`, [HORAS_LLAVE_STRIPE])).rows;
   let n = 0;
-  for (const r of L) if (await ejecutarDevolucion(r.id)) n++;
+  // 9t9 · Cada devolución por su cuenta (lib/barrido-uno.ts): una que falla no deja a las demás (ni a las viejas) sin terminar; la tarea sale fallida.
+  const B = new (await import("./barrido-uno")).Fallos("bolDevoluciones");
+  await B.cada(L, (r) => `devolucion ${r.id}`, async (r) => { if (await ejecutarDevolucion(r.id)) n++; });
   // 9t7 · Las viejas: se le pregunta a la pasarela y se cierran con lo que dijo (lib/devolucion-consulta.ts); las que no cierran, la alerta (alertaVieja), una vez.
-  n += await (await import("./devolucion-consulta")).preguntarViejas(true);
+  await B.uno("viejas", async () => { n += await (await import("./devolucion-consulta")).preguntarViejas(true); });
+  B.fin();
   return n;
 }
 

@@ -399,10 +399,11 @@ export async function renovarRetenciones(negocio: string): Promise<void> {
         and not exists (select 1 from hold_renewals h join gateway_checks g on g.subject_kind = 'hold_renewals' and g.subject_id = h.id
                          where h.payment_id = p.id and h.status = 'pending' and g.at > now() - make_interval(mins => ${(await import("./consulta-pasarela")).CADA_MIN}))
       order by p.held_at limit 10`, [negocio])).rows;
-  for (const p of L) {
+  // 9t9 · Cada retención por su cuenta (lib/barrido-uno.ts): antes el error de una se tragaba (solo el registro); ahora la tarea sale fallida diciendo cuál.
+  await (await import("./barrido-uno")).cadaUno(`renovar ${negocio}`, L, (p) => `pago ${p.id}`, async (p) => {
     const x = await renovacionRetencion(p.id);
-    if (x) await RR.renovarRetencion(x).catch((e) => console.error("[estimados] renovar", p.id, e instanceof Error ? e.message : e));
-  }
+    if (x) await RR.renovarRetencion(x);
+  });
 }
 /* 9t6 · La renovación de lo retenido de un estimado o de «algo más», armada desde la base (el barrido, el barrido central de renovaciones, «Preguntar a
    Stripe ahora» y la decisión del equipo). Lo que ven la persona y el negocio dice el motivo verdadero: su banco no dejó (hold_fallo), o no se pudo
@@ -438,17 +439,22 @@ export async function renovacionRetencion(pago: string): Promise<import("./renov
 /* Reintenta lo que quedó a medias: liquidaciones cuyo cobro falló y retenciones de citas que ya no siguen. */
 export async function repararEstimados(negocio: string): Promise<void> {
   if (soloLectura()) return; // 9n-23 · la vista del equipo (solo lectura) no cobra ni libera nada al mirar: lo hace el barrido de cada minuto
+  // 9t9 · Solo lo que el cuerpo hace algo con ello (una con su monto a cobrar todavía «confirmada» no hace nada y ocupaba la tajada para siempre), lo más
+  // viejo primero (antes sin orden), y cada cita por su cuenta (lib/barrido-uno.ts), también la renovación de después.
   const L = (await db().query<{ op: string; st: string; t: number | null }>(
-    `select distinct p.operation_id::text as op, o.status as st, p.capture_target_cents as t from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and p.kind in ('estimate', 'extra') and (p.capture_target_cents is not null or o.status in ('cancelled', 'declined', 'expired')) limit 20`, [negocio])).rows;
-  for (const x of L) {
+    `select p.operation_id::text as op, o.status as st, max(p.capture_target_cents) as t from payments p join operations o on o.id = p.operation_id
+      where p.business_id = $1 and p.status = 'held' and p.kind in ('estimate', 'extra') and ((p.capture_target_cents is not null and o.status = 'done') or o.status in ('cancelled', 'declined', 'expired'))
+      group by p.operation_id, o.status order by min(p.held_at) nulls first, p.operation_id limit 20`, [negocio])).rows;
+  const B = new (await import("./barrido-uno")).Fallos(`estimados.reparar ${negocio}`);
+  await B.cada(L, (x) => `op ${x.op}`, async (x) => {
     if (x.st === "done" && x.t != null) await cobrarLiquidacion(x.op);
     else if (x.st !== "confirmed" && x.st !== "done") {
       await db().query(`update payments set capture_target_cents = 0 where operation_id = $1::bigint and kind in ('estimate', 'extra') and status = 'held'`, [x.op]);
       await cobrarLiquidacion(x.op);
     }
-  }
-  await renovarRetenciones(negocio);
+  });
+  await B.uno("renovar", () => renovarRetenciones(negocio));
+  B.fin();
 }
 
 /* ── Plantillas del panel (por clase de trabajo de la categoría) ── */

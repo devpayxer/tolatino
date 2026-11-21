@@ -620,8 +620,9 @@ export async function noHay(negocio: string, numero: string, linea: string, sust
 export async function repararMercado(negocio: string) {
   const L = (await db().query<{ op: string; st: string }>(
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and o.kind = 'market_order' and o.status in ('declined', 'expired', 'cancelled', 'done') limit 20`, [negocio])).rows;
-  for (const x of L) { if (x.st === "done") await liquidarMercado(x.op); else await liberarOperacion(x.op); }
+      where p.business_id = $1 and p.status = 'held' and o.kind = 'market_order' and o.status in ('declined', 'expired', 'cancelled', 'done') order by p.held_at nulls first, p.id limit 20`, [negocio])).rows;
+  // 9t9 · Lo más viejo primero (antes sin orden) y cada pedido por su cuenta (lib/barrido-uno.ts): uno que falla no deja a los demás sin cobrar o liberar.
+  await (await import("./barrido-uno")).cadaUno(`mercado.reparar ${negocio}`, L, (x) => `op ${x.op}`, async (x) => { if (x.st === "done") await liquidarMercado(x.op); else await liberarOperacion(x.op); });
 }
 
 /* Avisos (al cliente con enlace a su pedido; al negocio con enlace al detalle). */

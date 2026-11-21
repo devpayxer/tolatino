@@ -170,10 +170,11 @@ export async function barrerRenovaciones(): Promise<number> {
         and (g.ult is null or g.ult <= now() - make_interval(mins => $1::int))
       order by g.ult nulls first, h.created_at limit 20`, [K.CADA_MIN])).rows;
   let n = 0;
-  for (const h of L) {
+  // 9t9 · Cada renovación por su cuenta (lib/barrido-uno.ts): una que falla no deja a las demás sin terminar; la tarea sale fallida diciendo cuál.
+  await (await import("./barrido-uno")).cadaUno("renovaciones", L, (h) => `${h.kind} ${h.pago}`, async (h) => {
     const x = await flujoDe(h.kind, h.pago);
     if (x && (await renovarRetencion(x)) === "soltada") n++;
-  }
+  });
   return n;
 }
 export type { Bi };

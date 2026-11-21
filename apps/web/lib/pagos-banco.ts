@@ -20,14 +20,15 @@ export async function pagarAlBanco(): Promise<number> {
   if (!C.length) return 0;
   const por = new Map(C.map((x) => [x.acct, x]));
   let n = 0;
-  for (const p of await pasarela.simPagarAlBanco(C.map((x) => x.acct), h.hoy)) {
+  // 9t9 · Cada pago por su cuenta (lib/barrido-uno.ts): uno que no se anota no deja a los demás fuera del libro; la tarea sale fallida diciendo cuál.
+  await (await import("./barrido-uno")).cadaUno("pagosAlBanco", await pasarela.simPagarAlBanco(C.map((x) => x.acct), h.hoy), (p) => p.id, async (p) => {
     const c = por.get(p.destino);
     const r = await db().query(
       `insert into payouts (stripe_payout_id, stripe_account_id, business_id, city_id, amount_cents, status, arrival_date, simulated)
        values ($1::text, $2::text, $3::text, $4::text, $5::int, 'paid', $6::date + 2, true) on conflict (stripe_payout_id) do nothing`,
       [p.id, p.destino, c?.biz ?? null, c?.city ?? null, p.centavos, h.hoy]);
     n += r.rowCount ?? 0;
-  }
+  });
   return n;
 }
 
@@ -68,9 +69,13 @@ export async function aplicarPausaEnStripe(negocio: string): Promise<boolean> {
   return true;
 }
 export async function sincronizarPausas(): Promise<number> {
-  const L = (await db().query<{ b: string }>(
-    `select business_id as b from stripe_accounts where payouts_sync_at is not null and payouts_sync_at < now() - interval '1 minute' order by payouts_sync_at limit 50`)).rows;
   let n = 0;
-  for (const x of L) if (await aplicarPausaEnStripe(x.b)) n++;
+  // 9t9 · Cada cuenta por su cuenta (lib/barrido-uno.ts): una que falla no deja a las demás sin su pausa; la tarea sale fallida diciendo cuál. Una que Stripe
+  // no confirma sigue marcada (y primera): por tandas sin repetirla en la corrida, para que no tape a las de detrás.
+  const U = await import("./barrido-uno"), B = new U.Fallos("pausasStripe");
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ b: string }>(
+    `select business_id as b from stripe_accounts where payouts_sync_at is not null and payouts_sync_at < now() - interval '1 minute' and not (business_id = any($1::text[]))
+      order by payouts_sync_at, business_id limit 50`, [vistos])).rows, (x) => x.b, async (x) => { if (await aplicarPausaEnStripe(x.b)) n++; });
+  B.fin();
   return n;
 }

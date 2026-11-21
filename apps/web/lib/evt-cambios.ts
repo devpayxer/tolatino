@@ -358,17 +358,21 @@ async function revisarCancelaciones(cxId: string) {
 
 /* Barrido: las cancelaciones que quedaron a medias siguen (y sus avisos), y los avisos de un cambio de fecha que se cortaron. */
 export async function barrerCancelaciones(): Promise<number> {
-  const L = (await db().query<{ id: string }>(`select id::text from event_cancellations where status = 'running' order by created_at limit 20`)).rows;
+  // 9t9 · Cada cancelación por su cuenta (lib/barrido-uno.ts): una que falla no deja a las demás (ni a los avisos de los cambios) sin seguir; la tarea sale
+  // fallida diciendo cuál. Una que sigue a medias (muchas órdenes) vuelve la corrida siguiente; por tandas sin repetirla, no tapa a las de detrás.
+  const U = await import("./barrido-uno"), B = new U.Fallos("evtCancelaciones");
   let n = 0;
-  for (const x of L) {
+  await U.porTandas(B, 20, async (vistos) => (await db().query<{ id: string }>(
+    `select id::text from event_cancellations where status = 'running' and not (id = any($1::bigint[])) order by created_at, event_cancellations.id limit 20`, [vistos])).rows, (x) => `cancelacion ${x.id}`, async (x) => {
     const r = await procesarCancelacion(x.id, { ordenes: 200, ms: 20_000 });
     n += r.ordenes;
     await avisarCancelacion(x.id).catch(() => 0);
-  }
+  }, { clave: (x) => x.id, tandas: 2 });
   const C = (await db().query<{ id: string }>(
     `select x.id::text from event_changes x where x.kind in ('moved', 'time_changed') and x.at > now() - interval '2 days' and x.at < now() - interval '1 minute'
         and not exists (select 1 from notifications n where n.ref_kind = 'evt_cambio' and n.ref_id = x.id::text) order by x.at limit 20`)).rows;
   for (const x of C) await avisarCambio(x.id).catch(() => 0);
+  B.fin();
   return n;
 }
 

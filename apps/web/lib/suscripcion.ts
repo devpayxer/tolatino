@@ -268,11 +268,13 @@ async function registrarPeriodo(s: Fila, a: Intencion, pi: string) {
 /* Barrido: los cobros de Pro que quedaron en camino (Stripe no contestó, o el proceso murió entre la intención y el cierre; también los de «Volver a
    Pro», que procesar no mira) se terminan con su llave, con el candado del plan, dentro de HORAS_LLAVE; los más viejos, la alerta (una vez). */
 export async function barrerCobrosPro(): Promise<number> {
-  const L = (await db().query<{ id: string; biz: string }>(
-    `select id::text, business_id as biz from subscription_charges where status = 'pending' and created_at < now() - interval '2 minutes'
-        and created_at > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE])).rows;
+  // 9t9 · Cada cobro por su cuenta (lib/barrido-uno.ts) y por tandas sin repetirlo en la corrida: uno que falla o que Stripe no contesta no tapa a los demás.
+  const U = await import("./barrido-uno"), B = new U.Fallos("cobrosPro");
   let n = 0;
-  for (const x of L) {
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ id: string; biz: string }>(
+    `select id::text, business_id as biz from subscription_charges where status = 'pending' and created_at < now() - interval '2 minutes'
+        and created_at > now() - make_interval(hours => $1::int) and not (id = any($2::bigint[])) order by created_at, subscription_charges.id limit 50`, [HORAS_LLAVE, vistos])).rows,
+  (x) => `${x.biz} · ${x.id}`, async (x) => {
     const h = await conCandado(x.biz, async (k) => {
       const s = (await k.query<Fila>(`select * from subscriptions where business_id = $1`, [x.biz])).rows[0];
       const a = (await k.query<Omit<Intencion, "nueva">>(`select ${SEL_INT} from subscription_charges where id = $1::bigint and status = 'pending'`, [x.id])).rows[0];
@@ -280,7 +282,7 @@ export async function barrerCobrosPro(): Promise<number> {
       return (await terminarCobro(s, { ...a, nueva: false })).ok;
     });
     if (h.tomado && h.r) n++;
-  }
+  }, { clave: (x) => x.id });
   // 9t5 · Los de más de HORAS_LLAVE: se le pregunta a la pasarela (una vez cada CADA_MIN por intención) y se cierran con lo que dijo; si no cierra, siguen en
   // camino con su alerta charge_stuck (una vez). Nunca otra vez a la pasarela con su llave.
   const V = (await db().query<{ id: string }>(
@@ -288,7 +290,8 @@ export async function barrerCobrosPro(): Promise<number> {
       where c.status = 'pending' and c.created_at <= now() - make_interval(hours => $1::int)
         and (g.ult is null or g.ult <= now() - make_interval(mins => $2::int))
       order by g.ult nulls first, c.created_at limit 20`, [HORAS_LLAVE, (await import("./consulta-pasarela")).CADA_MIN])).rows;
-  for (const x of V) if ((await resolverCobroPro(x.id, { origen: "barrido" })).quedo === "hecha") n++;
+  await B.cada(V, (x) => `consulta ${x.id}`, async (x) => { if ((await resolverCobroPro(x.id, { origen: "barrido" })).quedo === "hecha") n++; });
+  B.fin();
   return n;
 }
 /* 9t5 · Preguntarle a la pasarela por un cobro de Pro de más de HORAS_LLAVE y cerrarlo con eso: el barrido, o «Preguntar a Stripe ahora» del Super Admin
@@ -391,8 +394,13 @@ async function conCandado<T>(negocio: string, fn: (c: PoolClient) => Promise<T>)
 export async function procesar(negocio?: string) {
   if (!negocio && Date.now() - ultimo < 5 * 60_000) return;
   if (!negocio) ultimo = Date.now();
-  const L = (await db().query<{ business_id: string }>(`select business_id from subscriptions where ($1::text is null or business_id = $1) and ${VENCIDA} limit 200`, [negocio ?? null])).rows;
-  for (const x of L) await conCandado(x.business_id, async (k) => {
+  // 9t9 · Lo más atrasado primero (antes sin orden: con más de 200, las pruebas que solo esperan su aviso del día 25 podían tapar cobros vencidos), por
+  // tandas sin repetir el mismo negocio en la corrida, y cada negocio por su cuenta (lib/barrido-uno.ts): uno que falla no deja a los demás sin procesar.
+  const U = await import("./barrido-uno"), B = new U.Fallos("planPro");
+  await U.porTandas(B, 200, async (vistos) => (await db().query<{ business_id: string }>(
+    `select business_id from subscriptions where ($1::text is null or business_id = $1) and ${VENCIDA} and not (business_id = any($2::text[]))
+      order by case when status = 'trial' then trial_ends_at when status = 'past_due' then next_attempt_at when status = 'courtesy' then courtesy_until else current_period_end end, business_id
+      limit 200`, [negocio ?? null, vistos])).rows, (x) => x.business_id, (x) => conCandado(x.business_id, async (k) => {
     // 9t · La fila se lee otra vez CON el candado: lo que cambió entre la lista y el candado (Anular, otro proceso que ya cobró) no se pisa.
     const s = (await k.query<Fila>(`select * from subscriptions where business_id = $1 and ${VENCIDA}`, [x.business_id])).rows[0];
     if (!s) return;
@@ -413,7 +421,8 @@ export async function procesar(negocio?: string) {
     else if (s.status === "active") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end!)); if (!r.ok && !r.enCamino) await fallo(s, "verificar" in r); }
     else if (s.status === "past_due") { const r = await cobrarPeriodo(s, Date.parse(s.current_period_end ?? s.trial_ends_at!)); if (!r.ok && !r.enCamino) await fallo(s, "verificar" in r); }
     else if (s.status === "courtesy") await aFree(s.business_id, "fin_cortesia", s.status);
-  });
+  }));
+  B.fin();
 }
 async function fallo(s: Fila, verificar = false) {
   const n = s.failed_attempts + 1;

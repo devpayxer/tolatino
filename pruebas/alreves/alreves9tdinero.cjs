@@ -36,8 +36,8 @@ const MG4 = 'packages/db/migrations/0204_retenciones_y_revision.sql';
 const MG5 = 'packages/db/migrations/0205_consulta_con_detalle.sql';
 const casos6 = [
   // (1) Como estaba: el estimado vuelve a retener y soltar por su cuenta (sin respuesta = «el banco no dejó»).
-  [RT6, ESF, "    if (x) await RR.renovarRetencion(x).catch(", "    if (x) await pasarela.retener({ centavos: 1, comision: 0, destino: \"a\", pm: \"p\", idem: `renov-${p.id}`, meta: {}, fuera: true });\n    if (x) await RR.renovarRetencion(x).catch("],
-  [RT6, REN, "    if (x) await RR.renovarRetencion(x).catch(", "    if (x) await pasarela.liberar(x.pi);\n    if (x) await RR.renovarRetencion(x).catch("],
+  [RT6, ESF, "    if (x) await RR.renovarRetencion(x);", "    if (x) await pasarela.retener({ centavos: 1, comision: 0, destino: \"a\", pm: \"p\", idem: `renov-${p.id}`, meta: {}, fuera: true });\n    if (x) await RR.renovarRetencion(x);"],
+  [RT6, REN, "    if (x) await RR.renovarRetencion(x);", "    if (x) await pasarela.liberar(x.pi);\n    if (x) await RR.renovarRetencion(x);"],
   // (2) Sin el dato buscable, o anotado DESPUÉS de mandar.
   [RT6, RRF, ", ...(m.gref ? { tl_intencion: m.gref } : {}) }, fuera: true })", " }, fuera: true })"],
   // (3) Sin respuesta como «no»: suelta la vieja y avisa; o reintenta con la llave vencida o con la vieja ya muerta.
@@ -122,7 +122,7 @@ const casos = [
   // 9t8 · La del patrocinio es una intención (sponsorship_refunds): la llave vieja no vuelve a la pasarela; su barrido no reintenta 30 días.
   [L, PA, '  if (r.mano || r.vieja) return "pending";', '  if (r.mano) return "pending";'],
   [L, BO, " and coalesce(r.key_from, r.created_at) > now() - make_interval(hours => $1::int)", ''],
-  [L, PA, "coalesce(z.key_from, z.created_at) > now() - make_interval(hours => $2::int)\n      order by z.created_at limit 50", "coalesce(z.key_from, z.created_at) > now() - interval '30 days'\n      order by z.created_at limit 50"],
+  [L, PA, "coalesce(z.key_from, z.created_at) > now() - make_interval(hours => $2::int)\n        and not (z.id = any($3::bigint[])) order by z.created_at, z.id limit 50", "coalesce(z.key_from, z.created_at) > now() - interval '30 days'\n        and not (z.id = any($3::bigint[])) order by z.created_at, z.id limit 50"],
   // (3) La ayuda de la cita: la llave del toque, la suma de lo pedido y el caso que no se cierra con la devolución.
   [C, AY, 'idem: `ayb-h${h.id}`', 'idem: `ayb-${x.clave}`'],
   [C, AY, "closed_by = 'user', resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);", "closed_by = 'user', refunded_cents = refunded_cents + $2, resolved_at = now(), updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id, 0]);"],
@@ -214,7 +214,7 @@ const casos = [
   [FA, CFU, "(status = 'pending' or (status = 'done' and purpose = $3))", "(status = 'done' and purpose = $3)"],
   [FA, CFU, "  if (!a.enviada && (await soltarSinMandar(a.id, porque))) return true;", "  if (await soltarSinMandar(a.id, porque)) return true;"],
   [FA, CFU, "and status = 'pending' and sent_at is null`, [id, porque]", "and status = 'pending'`, [id, porque]"],
-  [FA, CFU, "        and created_at > now() - make_interval(hours => $1::int) order by created_at limit 50`, [HORAS_LLAVE])).rows;\n  let n = 0;", "        order by created_at limit 50`, [])).rows;\n  let n = 0;"],
+  [FA, CFU, "        and created_at > now() - make_interval(hours => $1::int) and not (id = any($2::bigint[])) order by created_at, offsession_charges.id limit 50`, [HORAS_LLAVE, vistos])).rows,", "        and not (id = any($2::bigint[])) order by created_at, offsession_charges.id limit 50`, [HORAS_LLAVE, vistos])).rows,"],
   [FA, BA, '        ["cobrosFuera", async () => (await import("./cobro-fuera")).barrerCobrosFuera()],\n', ''],
   [FA, CFU, 'import { HORAS_LLAVE_STRIPE as HORAS_LLAVE } from "./cobros";', 'const HORAS_LLAVE = 72;'],
   // Planes: en camino cuenta como rechazo; el período avanza aunque el plan ya no lo espere.
