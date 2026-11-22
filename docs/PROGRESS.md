@@ -20,6 +20,13 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (mañana) · tarjeta Vitrina (AK) en `main` y `pruebas` = dbb5dc9 por la vía rápida de diseño (decisión AL, nueva).** Evidencia:
+  tipos, guardianes (2992 archivos), textos, build servido en :3100 visto en teléfono y escritorio, `tarAK` (93) y `vid001` (30). **No** corrió el
+  resto de las pruebas de listas ni varias al revés: están en LAUNCH («Vitrina, segunda ronda»). La rama de trabajo lleva además lo que `main`
+  todavía NO tiene: el conteo de inestables por lo que sube cada carril, `sql9u` ampliada y 9u-2 «nota interna» (datos personales: espera su CI
+  dirigida 44971472965 en verde antes de ir a `main`; no entra por la vía rápida). Quién hizo qué: Sonnet construyó la Vitrina; Fable la revisó,
+  corrigió el localizador de `vid001` y la subió. **Siguiente:** segunda ronda de la Vitrina y el reparto en 4 (barridos que no son de dinero,
+  «Descargar mis datos» en flujo, las 153 pruebas con el puerto fijo, layaway).
 - **22 nov (madrugada) · `main` y `pruebas` = 5c329c6, sandbox comprobado desde fuera** (estado-sandbox 44967835492: salud con commit 5c329c6,
   **0208 aplicada, 207 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad`, `/negocios` en 200). Evidencia: revisión completa
   **44961847914** sobre 7091ca4 — los 20 carriles reales en verde (punta a punta 227 pruebas en 4 partes, al revés 121 suites, 9 dispositivos,

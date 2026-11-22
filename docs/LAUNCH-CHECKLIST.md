@@ -2678,4 +2678,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `not rev_sin_c2` (que esas filas no tienen) y no `not private`; el Menú y los cinco catálogos ya exigen las dos. Si alguien pega el id de
       una foto de ayuda en la galería o el perfil, la dirección guardada sería `privado/a/…`, que no se sirve (se ve rota, no se filtra).
       Agregar `not private` a las 11 consultas del atajo (guardián `fotosRevisionPrivacidad`). (21 nov)
+- [ ] **→ 9u** · **Vitrina, segunda ronda (22 nov, subió por la vía rápida de diseño, decisión AL):** (1) correr contra el servidor las pruebas de listas
+      que no corrieron tras el cambio: `pat002`, `pat003`, `fi4b`, `cat9n2`, `a11y9c` (44 px de toque y 24 px a 1440 con la tarjeta nueva),
+      `vec9m`, `nav9t`, `bus9t`, `cat9n` y toda la que nombre `/negocios`, `/c/`, `/buscar` o `/comunidad/hoy`; (2) al revés sin resultado
+      confirmado: 8a, 8c, 7e, 8i, 9f3, 9n22, 9t8, 9tdinero, 9tpatrocinio, 9f, 9u, 9usql (releer con su código de salida); (3) horarios libres
+      sin conectar: falta una consulta que dé el próximo hueco de varios negocios de una pasada (hoy `lib/citas.ts` sería un N+1 por tarjeta) y
+      un parámetro para que el horario elegido viaje a la reserva; (4) capturas contra las de la entrega solo a ojo; (5) la nota nueva de
+      Panel › Tu página › Fotos no se vio en pantalla; (6) la barra «Anterior / Siguiente» del teléfono tapa la tarjeta que queda debajo (ya era
+      así) y `/sistema` imprime un TypeError de ChangeProposal sin datos; (7) el botón «Ordenar» en negocios de Comida que cotizan (REVISION).
 

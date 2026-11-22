@@ -6128,3 +6128,23 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Decide tú:** cuál va (o qué mezclar). Mi recomendación es la B. La que elijas se construye con el sistema de diseño (si es B o C, con una pieza
   nueva), con captura real en teléfono y escritorio antes de conectarla. El resto de Inicio sigue en pausa hasta que traigas las referencias.
 
+## Tarjeta de negocio «Vitrina» (22 nov · decisión AK) — en el sandbox por la vía rápida (commit dbb5dc9) — mirar y cinco cosas para ti
+- **Qué cambió:** la tarjeta de las listas de negocios es la Vitrina de tu entrega de Claude Design: galería de hasta 3 fotos, estado y corazón
+  sobre la foto, «+N FOTOS», caja «HOY», video solo en la foto grande, y el negocio Free como fila.
+- **Dónde mirar (teléfono y escritorio):** `/negocios`, `/c/comida` y `/buscar?q=pollo`. En `/c/comida`: el corazón (sin sesión te lleva a
+  entrar), «+19 FOTOS» en «To'Latino Demo · Comida», la pastilla «Abierto · hasta…» / «Cerrado · abre…», llamar, y la fila Free al final de la lista.
+  En `/sistema` está la pieza con horarios libres de muestra.
+- **Cómo subió:** vía rápida (decisión AL): tipos, build y guardianes en verde, vista servida en teléfono y escritorio, y sus dos pruebas
+  (`tarAK` 93 comprobaciones, `vid001` 30). El resto de las pruebas de listas corre en la segunda ronda (LAUNCH).
+- **Decide tú:**
+  1. *Medidas de toque.* Los botones miden 44 de caja (regla de accesibilidad) con la forma de tu diseño dentro (40 el botón, 34 el corazón, 27
+     los chips). La fila Free queda un poco más alta que en tu captura 01 por eso. ¿Así, o prefieres la altura exacta del diseño donde se pueda?
+  2. *Grises del texto.* Van al 60 % (contraste AA), no al 50 % / 42 % del diseño.
+  3. *Horarios libres en la tarjeta* («Hoy 3:30 PM»). La pieza los pinta, pero no están conectados: calcular el próximo hueco de cada negocio de
+     la lista de una sola pasada pide una función nueva en la base. ¿Va en la segunda ronda o se deja para después de abrir?
+  4. *Destacados y Nuevos en Negocios* siguen como carrusel (tarjetas de 340 de ancho), no como rejilla. ¿Así o rejilla?
+  5. *El botón dice «Ordenar» en negocios de Comida que cotizan* (barra móvil, catering: «Cotiza gratis»). Ya era así antes de la Vitrina; con la
+     tarjeta nueva se nota más. Propuesta: «Cotizar» cuando el negocio no vende por menú.
+- **Lo que ya decidiste y se respetó (AK):** las palabras de la app («hasta 9 PM», «Reservar»), menos de 5 reseñas sin estrellas, el anillo de Hoy
+  sale de la tarjeta y la caja «HOY» abre «Hoy en el barrio».
+
