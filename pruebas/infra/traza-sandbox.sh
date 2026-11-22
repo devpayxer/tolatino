@@ -31,10 +31,11 @@ cat > "$T/stubs/_anota" <<'EOF'
 #!/bin/bash
 n=$(basename "$0"); a="$*"; a=${a//$TL_RAIZ/RAIZ}
 # Un psql que lee de una tubería se anota DESPUÉS de leerla (así el orden no depende de quién arrancó primero).
-case "$n $*" in "docker "*"exec -T db psql"*) [ -p /dev/stdin ] && cat >/dev/null ;; esac
+# 22 nov · migrar.sh comprueba que cada migración quedó anotada (select count(*) … :'tl_m_huella', por la entrada): la base de mentira dice que sí.
+ent=""; case "$n $*" in "docker "*"exec -T db psql"*) { [ -p /dev/stdin ] || [ -f /dev/stdin ]; } && ent=$(cat) ;; esac
 echo "$n $a" >> "$TL_TRAZA"
 case "$n $*" in
-  "docker "*"exec -T db psql"*) exit 0 ;;
+  "docker "*"exec -T db psql"*) case "$ent" in *"select count(*) from"*"tl_m_huella';"*) echo 1 ;; esac; exit 0 ;;
   "docker "*"exec -T medios /garage status"*) echo "0123456789abcdef  nodo  127.0.0.1:3901" ;;
   "docker "*"exec -T medios /garage key create"*) printf 'Key ID: GKprueba\nSecret key: secretoprueba\n' ;;
   "docker "*"exec -T medios /garage layout show"*) echo "No nodes currently have a role" ;;

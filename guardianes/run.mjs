@@ -9940,6 +9940,43 @@ const guardianes = {
       falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/sync-pruebas.test.sh (el tolatino-sync del sandbox)");
   },
 
+  /* 22 nov · migracionConTransaccion: cada migración NUEVA empieza con «begin;» y termina con «commit;» (sin contar comentarios), y no usa
+     «create/drop index concurrently» ni «reindex … concurrently» (no pueden ir dentro de una transacción). Así, si falla a mitad, se deshace entera y no
+     queda medio aplicada y sin anotar. Las 16 de antes del 22 nov que no la traen no se editan (cambiaría su huella y migrar.sh se detendría): la lista
+     es cerrada y el encabezado de migrar.sh lo dice. Al revés: alrevesDespliegue. */
+  migracionConTransaccion() {
+    const G = "migracionConTransaccion", DM = "packages/db/migrations", M = "packages/db/migrar.sh";
+    const VIEJAS = new Set(["0058_citas_salud.sql", "0059_citas_salud_avisos.sql", "0060_consulta_pro.sql", "0061_total_por_escrito.sql", "0062_total_suma.sql",
+      "0084_colas_noche.sql", "0090_colas_inscripciones.sql", "0166_impuestos_admin.sql", "0167_web_vitals.sql", "0168_ayuda_editar.sql", "0169_cupon_seguidores.sql",
+      "0176_direccion_punto_cardinal.sql", "0189_tabla_ganador_idx.sql", "0194_patrocinio_dias_por_calendario.sql", "0195_fotos_a_la_medida.sql", "0198_dinero_por_clase.sql"]);
+    for (const x of readdirSync(DM).filter((y) => y.endsWith(".sql"))) {
+      const f = `${DM}/${x}`, t = readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+      const l = t.split("\n").map((y) => y.replace(/--.*$/, "").trim()).filter(Boolean);
+      const con = /^begin;$/i.test(l[0] ?? "") && /^commit;$/i.test(l[l.length - 1] ?? "");
+      if (VIEJAS.has(x)) { if (con) falla(G, f, 0, "ya trae su transacción: sale de la lista de las viejas sin begin/commit"); continue; }
+      if (!con) falla(G, f, 0, "una migración nueva empieza con «begin;» y termina con «commit;» (si falla a mitad se deshace entera; sin eso queda medio aplicada y sin anotar)");
+      if (/\b(create|drop)\s+(unique\s+)?index\s+concurrently\b|\breindex\b[^;]*\bconcurrently\b/i.test(t.replace(/--.*$/gm, ""))) falla(G, f, 0, "«index concurrently» no puede ir dentro de begin/commit: el índice va sin concurrently (o en su propia migración, fuera de la lista)");
+    }
+    const m = readFileSync(M, "utf8");
+    if (/los \.sql traen begin\/commit/.test(m) || !m.includes(`SALVO ${VIEJAS.size} viejas que no lo traen`)) falla(G, M, 0, `el encabezado de migrar.sh dice la verdad: cada migración trae su begin/commit SALVO ${VIEJAS.size} viejas que no lo traen`);
+  },
+
+  /* 22 nov · migrarUnaLectura: migrar.sh lee lo aplicado UNA vez (nombre y huella de schema_migrations y de schema_seeds) y compara en local; antes era
+     un psql por archivo (~280 idas y vueltas, ~58 s por despliegue sin nada nuevo). Aplicar y anotar van en la MISMA sesión de psql (el archivo y su
+     insert por la entrada), y después se comprueba que quedó anotada (un begin sin commit se deshace con su insert: se detiene). La prueba de verdad,
+     contra Postgres 16, es pruebas/infra/migrar.test.sh (orden, «cambió» se detiene, error se detiene, semillas, --verificar, idas y vueltas). */
+  migrarUnaLectura() {
+    const G = "migrarUnaLectura", M = "packages/db/migrar.sh", C = "pruebas/infra/correr.sh";
+    const m = readFileSync(M, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    if (/select sha256 from schema_(migrations|seeds) where name =/.test(m)) falla(G, M, 0, "migrar.sh vuelve a preguntar archivo por archivo (un psql por migración): se lee lo aplicado una vez (leer) y se compara aquí");
+    if (!/\nleer schema_migrations\nnuevas=0\nfor f in "\$DIR"\/\*\.sql; do/.test(m) || !/\n  leer schema_seeds pruebas\//.test(m) || !/\nleer schema_seeds\n/.test(m)) falla(G, M, 0, "migrar.sh lee schema_migrations y schema_seeds una vez, antes de recorrer los archivos");
+    const ap = (/\naplicar\(\) \{\n([\s\S]*?)\n\}/.exec(m) ?? [])[1] ?? "";
+    if (!/\{ cat "\$f"; printf '\\n;\\n%s\\n' "\$sql"; \} \| psql -v tl_m_nombre="\$n" -v tl_m_huella="\$h"/.test(ap) || !/select count\(\*\) from \$tabla where name = :'tl_m_nombre' and sha256 = :'tl_m_huella';[\s\S]*exit 1/.test(ap))
+      falla(G, M, 0, "aplicar y anotar van en la misma sesión de psql (el archivo y su insert), y después se comprueba que quedó anotada");
+    if ((m.match(/\n\s*psql < "\$f"/g) ?? []).length) falla(G, M, 0, "un archivo se aplica sin su anotación en la misma sesión (psql < \"$f\" suelto)");
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/migrar\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/migrar.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/migrar.test.sh (migrar.sh contra Postgres 16)");
+  },
+
   /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del
      fundador anotado (etiqueta ok-produccion/*, que va a deploy_releases.founder_ok_ref). Lo revisan el que empuja (scripts/produccion/promover.sh) y el que
      despliega (infra/produccion/tolatino-sync, en cada máquina); ningún flujo de GitHub empuja a produccion; y si las ramas están a mano, produccion es
