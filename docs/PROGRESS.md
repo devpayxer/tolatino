@@ -20,6 +20,12 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (11:35 UTC) · tanda 4 de la revisión del CI: confirmación completa en 22 min** (dirigida entera 45015746411 en la rama, en verde con una
+  inestable, `cms9f3`): regresión en 8 partes por la asignación de `pruebas/reparto.json` (`scripts/ci/repartir.mjs`), «al revés» en 3, dispositivos
+  con `max-parallel: 3`, y la verificación partida en `rapida` (1,6 min), `contratos`, `imagenes` y `basedatos` con un solo build (el de `web`) y la
+  compuerta «tipos · build · guardianes». Antes de esta tanda: 32,8 min (45009371431, con las tandas 2 y 3a) y 40,8 de mediana antes de la revisión.
+  En marcha: tanda 5 (despliegue del sandbox) como flujo con dos revisores. **Ojo:** las corridas anteriores a esta tanda ya no «confirman» para
+  el alcance por documentos ni para `promover.sh` (les falta la familia de verificación): la primera subida de documentos tras esta correrá todo.
 - **22 nov (10:00 UTC) · revisión del CI y de los procesos: fases 1 y 2 hechas, tandas 1, 2 y 3a implementadas y vistas servidas.** Plan
   verificado por nueve verificadores (resumen y decisiones en REVISION «Revisión del CI y de los procesos»). Tanda 1 en `main` desde 209fc2d
   (confirmación 44997280034 en verde, 38,9 min): alcance por documentos solo si el código de debajo quedó confirmado, guardianes que ven nombres con

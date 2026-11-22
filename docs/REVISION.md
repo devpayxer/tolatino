@@ -6186,4 +6186,10 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   30 minutos, con una prueba nueva que demuestra que un cambio de Configuración se ve en menos de un segundo.
 - **Decide tú (dirigidas):** hoy una revisión dirigida corre SIEMPRE todas las suites «al revés» (así lo piden AD y AF). Con 4 partes ya son unos 10
   minutos. ¿Lo dejamos así, o que corra solo las que tocan lo cambiado? Mi recomendación: dejarlo así; ya no estorba.
+- **Tanda 4, hecha (22 nov): la confirmación completa bajó de 40,8 a 22 minutos, dentro del plan gratis de GitHub.** Corrida 45015746411, en verde:
+  la punta a punta va en 8 partes repartidas por duración (12–19 min cada una), «al revés» en 3 partes (8,5–11 min), los 9 dispositivos de 3 en 3,
+  y la verificación en cuatro trabajos a la vez con un solo build: la señal de tipos y guardianes llega en 1 minuto 36 segundos (antes iba dentro
+  de un trabajo de 11–14 minutos). Una confirmación pide 16 máquinas como mucho y deja 4 libres.
+- **Decide tú (dos cosas menores):** «al revés» quedó en 3 partes (con 2 también cabría); y los anchos de la corrida programada van en 8 partes, 4 a
+  la vez (unos 100 minutos de noche). Si no dices nada, se quedan así.
 

@@ -2705,4 +2705,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `escuchandoConfig()` no la llama nadie: mostrarla en Sistema › Salud y dejar una sola escucha por proceso; (3) una espera fija puede tapar
       otro límite de reloj sin decirlo (`llave9t` cubría los 30 s entre dos códigos al mismo teléfono): el guardián `sinEsperaFijaLarga` ya obliga
       a escribir el motivo. (22 nov)
+- [ ] **→ 9b** · **Tanda 4 de la revisión del CI (22 nov), lo que queda:** (1) regenerar `pruebas/reparto.json` (sin `--rebalancear`) con tres corridas
+      verdes de 8 partes posteriores a la tanda 3a: la parte 8/8 tardó 19,1 min y la 5/8, 12 (se repartió con duraciones de antes y con 60 s
+      supuestos para `cfgcal9b`, `nota9u2` y `tarAK`); rebalancear solo en un commit propio con su confirmación; (2) las dirigidas con `solo` y el
+      valor por omisión abren 8 carriles y los que quedan sin pruebas salen verdes: hasta tener la matriz calculada (min(4, nº de pruebas)), lanzarlas
+      con `partes=4`; (3) `cms9f3` salió INESTABLE en la corrida 45015746411 (error de hidratación 418 de React en `/privacidad`, teléfono EN): es de
+      la clase «la página pinta distinto en servidor y cliente»: mirar la causa; (4) `com5d` deja encendido el puerto 8790; (5) `compa7d` elige sus
+      requisitos con un nombre que no está escrito en el código (anotado en `dinamicos` del reparto); (6) ver servida una corrida con
+      `confirmar=si` (12 trabajos de confirmación a la vez) y los anchos en 8 partes, 4 a la vez.
 
