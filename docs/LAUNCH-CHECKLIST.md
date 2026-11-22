@@ -1472,7 +1472,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       por qué (registro de fallos, lo que dijo el sistema, la memoria). Emulador con 4 GB, 3 núcleos y sin Vulkan. Cáscaras **43152344555 en
       verde** en `claude/vibrant-franklin-krutwa` (3613f94): las cuatro apps «modo avión: enabled · Active default network: none (1–4 s)» y
       «red para la WebView: no»; la 43149361486 (antes de subir la memoria) había visto a la del Repartidor cerrarse sola a los 10 s.
-- [ ] **→ 9b** · **La regresión entera en verde (`orden9a`):** la corrida completa del 12 nov (`node pruebas/correr.mjs --todas`, una a la vez) dio
+- [x] **→ 9b** · **La regresión entera en verde (`orden9a`):** la corrida completa del 12 nov (`node pruebas/correr.mjs --todas`, una a la vez) dio
       **169/198 en verde (6 397 ✓)**; volviendo a correr solo las rojas pasaron 2 más (em4e, renta4f: dependen del orden). Quedan **27 rojas**, por
       tres causas: (1) pruebas de las fases 1–2 que nunca volvieron a correr y cuya pantalla cambió (admin1i, cat1m, rec1j, lic, rec, rec2,
       menu2a-f, free2b, cit3b); (2) datos acumulados de la base local o cuentas compartidas entre pruebas (adm2i, plan4f, adm4ne, adm4y, wal8g,
@@ -1484,6 +1484,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       línea para cerrarla: dos corridas enteras seguidas en verde y una `--barajar` → la corrida de confirmación va al CI de 9b-2.
       **21 nov:** en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable) las 213 pruebas pasaron las dos vueltas seguidas y la barajada (4 partes cada una), pero con
       4 inestables (push8c, rev9u, cre9h, dlv2f4): por la decisión AG esa corrida es roja. Se cierra con una confirmación de 3 inestables o menos.
+      **✓ 22 nov:** confirmación completa 45033884173 (22 nov, 8 partes: dos veces seguidas y barajada, 16 trabajos en verde; 1 inestable, `compa7g`, dentro del tope de 3).
 
 ## Fase 9 · 9b-1 (la regresión entera en una base nueva; 12 nov)
 - [x] **→ 9t** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
@@ -1513,7 +1514,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       una base nueva por corrida en el CI, y una corrida repetida a propósito para cazar lo que no se limpia. (9b-1, 12 nov)
       **Hecho:** en la confirmación 44856657972 (21 nov; registros leídos por Haiku, decidido por Fable) menu2a-f, adm2i, tra4y, adm4y, pq4e, ayu7a y beta8f pasaron las dos vueltas sobre la misma
       base (0 ✗).
-- [ ] **→ 9b** · **(9b-2) La corrida de confirmación de 9b-1 en el CI:** `--todas` dos veces seguidas en verde sobre una base nueva y una
+- [x] **→ 9b** · **(9b-2) La corrida de confirmación de 9b-1 en el CI:** `--todas` dos veces seguidas en verde sobre una base nueva y una
       `--barajar` (con su semilla). En la máquina quedó: 199/199 una vez (B3) y 198/199 en C y D, con las rojas arregladas y comprobadas solas
       (noc4c, noc4d, compa7h 3/3 al final); no se hizo ninguna corrida `--barajar` entera. Por costo no se siguió repitiendo aquí. Las
       pruebas atadas a la hora salieron una por cada franja del día en que se corrió (4:45 AM dlvsrv, 6 AM evt6g, media tarde pq4e, 6 PM
@@ -1524,6 +1525,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       con ~15 rojas por orden (pruebas que dan por hecho lo que dejó otra: código de entrada pedido hace <30 s, umbral de Configuración, filas de
       anoche). Es de las pruebas, no de la app, pero no se da por cerrado: queda para 9b-3 (independizar esas pruebas del orden y de lo que dejó la
       vuelta anterior) con su guardián.
+      **✓ 22 nov:** confirmación completa 45033884173 (22 nov, 8 partes: dos veces seguidas y barajada, 16 trabajos en verde; 1 inestable, `compa7g`, dentro del tope de 3). El CI ya corre programado a dos horas del día.
 
 ## Fase 9 · 9b-2 (la tubería en el CI; 13 nov)
 - [x] **→ 9c** · **axe `color-contrast` (serio) en las seis pantallas clave** (inicio 13 nodos, ficha 24, mi cuenta 23, panel hoy 8, admin hoy 13; en buscar solo en tres dispositivos):
@@ -2497,6 +2499,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       porque el tope de 3 era por proceso y la corrida va en partes). Corregido el 21 nov: «tuberia» cuenta las inestables de toda la corrida
       y sale roja con más de 3 (guardián `tuberiaNoSeSalta` + al revés). Falta: una confirmación completa (dos veces + barajada + anchos) con 3
       inestables o menos, después de arreglar `push8c`, `cre9h`, `dlv2f4` y de confirmar el arreglo de `rev9u`. (21 nov)
+      **22 nov:** la confirmación completa 45033884173 (22 nov, 8 partes: dos veces seguidas y barajada, 16 trabajos en verde; 1 inestable, `compa7g`, dentro del tope de 3) cumple «dos veces + barajada» con 3 o menos. Sigue abierta por lo demás: falta el trabajo `anchos` en verde y el arreglo de raíz de `push8c`, `cre9h` y `dlv2f4` (no salieron inestables en esa corrida, pero no se arreglaron).
 - [ ] **→ 9t** · **Inestables de la confirmación 44856657972 (21 nov; pasaron al repetir, se arreglan igual):** `push8c` («el service worker
       mostró la notificación»), `rev9u` («del equipo de un negocio verificado con 10 fotos: su dudosa entra por la capa 4»: mirar si la cuenta de
       fotos visibles o la memoria por contenido dependen de lo que dejó otra prueba) y `cre9h` («un negocio publicado con PROMO52: 60 días de
@@ -2607,11 +2610,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       foto del equipo) y después la quita, al aprobarse la de antes vuelve sola al lugar vacío; en un plato, vuelve si tiene menos de 5 fotos aunque
       el dueño haya cambiado las demás. Es lo que pide quien apela, pero no lo eligió de nuevo. Si molesta: que escribir esas columnas cierre como
       «descartada» lo retirado de esa fila (trigger en las cuatro tablas). (0200, 21 nov)
-- [ ] **→ 9u** · **rev9u inestable (CI 44856657972, segunda vuelta, §6 «su dudosa entra por la capa 4»):** causa encontrada leyendo el código, no
+- [x] **→ 9u** · **rev9u inestable (CI 44856657972, segunda vuelta, §6 «su dudosa entra por la capa 4»):** causa encontrada leyendo el código, no
       reproducida (aquí no hay servidor ni almacén). El barrido reintenta las retenidas de la PRIMERA vuelta (r4b y r9f, ancho 404 = el modelo propio
       de mentira contesta 500) y un solo fallo abre el corta-circuito de `moderacion-img` 30 s; la dudosa de §6, subida segundos después del barrido
       de §5, salía sin puntaje (sin_servicio) → capa 2 «no segura» → 202. Arreglo en la prueba (el producto hace lo correcto: fallo cerrado): cada
       `barrer()` de rev9u cierra el corte al volver. Confirmar en la próxima confirmación completa (dos vueltas) que rev9u pasa sin repetir. (21 nov)
+      **✓ 22 nov:** en la confirmación completa 45033884173 (22 nov, 8 partes: dos veces seguidas y barajada, 16 trabajos en verde; 1 inestable, `compa7g`, dentro del tope de 3) rev9u pasó las dos vueltas y la barajada sin repetirse.
 - [ ] **→ 9p** · **La foto oculta por reportes sigue en el borde de Cloudflare:** la capa 3 saca el archivo y sus variantes de `n/`, pero
       Cloudflare guarda `/medios/n/` hasta un año (caché inmutable). Va con la purga del borde ya anotada (F1): pedirle a Cloudflare que suelte la
       maestra y las variantes al ocultar (y al rechazar algo que estuvo publicado), con reintento desde el barrido. (R2, 20 nov)
@@ -2723,4 +2727,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       no tiene nada de esto (copia buena de nginx, avisos que no cortan, comprobar el commit servido, `bash -n` del sync): va con la fase 9;
       (7) `com5g` salió INESTABLE otra vez (corridas 44972632142 y 45029130411): mirar la causa; (8) sin azul/verde: si la app nueva arranca y no
       contesta, queda la página de mantenimiento hasta el siguiente push.
-
+- [ ] **→ 9o** · **Tanda 6 de la revisión del CI (herramienta de subida, 22 nov), lo que queda:** (1) `subir.mjs --dirigida` no se ha visto correr de
+      punta a punta (`--subir` sí: 3d2aa87 y un push de documentos); verlo en la primera dirigida real; (2) del veredicto quedó fuera: un trabajo del CI
+      que en cada push a `main` compruebe que hubo evidencia, la auditoría de pushes sobre el registro de GitHub, que `deploy.sh` no despliegue una cabeza
+      de `pruebas` que no venga de `main`, una cola si GitHub no responde, y partir `guardianes/run.mjs` por temas; (3) reglas de rama de GitHub (bloquear
+      empujes forzados y borrado en `main` y `pruebas`): solo las puede poner el fundador; (4) la clase «sensible» hoy solo avisa, no exige más;
+      (5) la herramienta enseña de guardianes la primera línea de la salida en vez de «sin fallos»; (6) `alreves9u2` y `alreves9usql` necesitan la
+      base local y no corren en una copia de trabajo sin ella; (7) la corrida programada sigue en el grupo de `main`; (8) el puerto único de las
+      pruebas (commit 04b14e2 sin integrar; 159 pruebas con `localhost:3100` fijo).
