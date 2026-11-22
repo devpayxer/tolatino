@@ -205,7 +205,7 @@ export async function ejecutarDevolucionPat(id: string): Promise<"done" | "pendi
   if (r.mano || r.vieja) return "pending";
   // Que se manda (sent_at) y con qué dato buscable (gateway_ref), ANTES de la llamada y en una sentencia; el dato, solo la primera vez (un reintento de una que
   // salió sin él va sin él: la misma llave con otros parámetros, Stripe la rechaza).
-  const m = (await db().query<{ gref: string | null }>(`update sponsorship_refunds set gateway_ref = case when sent_at is null then 'sponsorship_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
+  const m = (await db().query<{ gref: string | null }>(`update sponsorship_refunds set gateway_ref = case when sent_at is null then 'sponsorship_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
   if (!m) return ((await leerPd(r.id))?.st ?? "failed");
   // Un cobro de la plataforma (el patrocinio se cobra a To'Latino): sin transferencia ni comisión que revertir.
   const g = await pasarela.devolver(r.pi, r.amt, llaveDe(r.idem, r.kn), { plataforma: true, ...(m.gref ? { meta: { tl_intencion: m.gref } } : {}) }).catch(() => ({ ok: false as const, id: undefined, codigo: "error" }));

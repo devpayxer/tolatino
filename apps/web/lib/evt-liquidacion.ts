@@ -300,7 +300,7 @@ async function ejecutarReversion(id: string): Promise<boolean> {
   // barrido); aquí, sin la pasarela, la alerta (una vez) si nadie la cerró.
   if (r.vieja) { await alertaReversionVieja(r, !!r.gref); return false; }
   // 9t7 · Que se manda y con qué dato buscable, ANTES de la llamada y en una sentencia (el dato, solo la primera vez).
-  const m = (await db().query<{ gref: string | null }>(`update event_settlement_reversals set gateway_ref = case when sent_at is null then 'event_settlement_reversals:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];
+  const m = (await db().query<{ gref: string | null }>(`update event_settlement_reversals set gateway_ref = case when sent_at is null then 'event_settlement_reversals:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];
   if (!m) return false;
   const { llaveDe } = await import("./cobros");
   const x = await pasarela.revertirTransferencia(r.tr, r.amt, llaveDe(r.idem, r.kn), m.gref ? { tl_intencion: m.gref } : undefined).catch(() => ({ ok: false as const, codigo: "error" }));

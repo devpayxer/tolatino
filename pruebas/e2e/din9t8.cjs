@@ -93,9 +93,9 @@ async function crudo(fn) {
   const k = await db.connect();
   try { await k.query('set session_replication_role = replica'); return await fn(k); } finally { await k.query('set session_replication_role = default').catch(() => undefined); k.release(); }
 }
-// «Hace N minutos»: la intención (anotada, mandada y su llave si volvió a valer) y sus consultas.
+// «Hace N minutos» (0209: también el último envío, como lo deja la app): la intención (anotada, mandada y su llave si volvió a valer) y sus consultas.
 const envejecer = (id, min) => crudo(async (k) => {
-  await k.query(`update sponsorship_refunds set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int), key_from = key_from - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
+  await k.query(`update sponsorship_refunds set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int), last_sent_at = last_sent_at - make_interval(mins => $2::int), key_from = key_from - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
   await k.query(`update gateway_checks set at = at - make_interval(mins => $2::int) where subject_kind = 'sponsorship_refunds' and subject_id = $1::bigint`, [id, min]);
 });
 const intPat = (kind, ref) => q1(`select id::text, status as st, gateway_ref as gref, sent_at is not null as mandada, key_n::int as kn, stripe_refund_id as re, last_error as err, idem_key as k, manual_at is not null as mano,

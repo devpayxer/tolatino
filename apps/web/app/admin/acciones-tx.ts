@@ -44,6 +44,16 @@ export async function devolverTx(numero: string, monto: string, motivo: string, 
   return { ok: true, mensaje: `Devueltos $${(cents / 100).toFixed(2)}. El cliente ya lo sabe.` };
 }
 
+/* 22 nov (0209) · «Devolver otra vez» unos boletos desde su alerta refund_failed (Planes › Ingresos › Alertas). El mismo permiso que «Devolver»
+   (tx:aprobar, tus ciudades), con nota (queda en la auditoría y la lee la persona como motivo). Aquí no entra ningún monto: lo de la devolución fallida,
+   y la base no deja pasar de lo cobrado menos lo devuelto o en camino; una sola por devolución fallida (lib/dinero-alertas.ts › devolverOtraVez). */
+export async function devolverOtraVezTx(alerta: string, nota: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no devuelve dinero." };
+  const r = await (await import("@/lib/dinero-alertas")).devolverOtraVez(s, String(alerta ?? ""), String(nota ?? ""));
+  return r.ok ? { ok: true, mensaje: r.msg } : { ok: false, mensaje: r.msg };
+}
+
 /* Sandbox: simular una disputa del banco sobre un cobro, y el resultado del banco después de responder (2r). Solo con el
    simulador de pagos (en producción las disputas llegan de Stripe). */
 /* 9u · Las dos simulaciones (solo en el sandbox) dejan su línea en la auditoría con la nota de la hoja: antes se pedía y no se guardaba. */

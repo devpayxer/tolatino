@@ -339,7 +339,7 @@ export async function ejecutarDevolucion(refundId: string): Promise<boolean> {
   if (r.vieja) return false;
   // 9t7 · Que se manda y con qué dato buscable, ANTES de la llamada y en una sentencia (el dato, solo la primera vez); la llave, la de la fila u otra si la
   // consulta dijo que nunca llegó (llaveDe).
-  const m = (await db().query<{ gref: string | null }>(`update refunds set gateway_ref = case when sent_at is null then 'refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
+  const m = (await db().query<{ gref: string | null }>(`update refunds set gateway_ref = case when sent_at is null then 'refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
   if (!m) return false;
   const x = await pasarela.devolver(r.pi, r.amt, llaveDe(r.idem, r.kn), { plataforma: r.pg, ...(m.gref ? { meta: { tl_intencion: m.gref } } : {}) }).catch(() => ({ ok: false as const, codigo: "error" }));
   if (!x.ok) {

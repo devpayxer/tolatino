@@ -137,7 +137,9 @@ export async function repararPagos(negocio: string) {
    Si el proceso muere entre (1) y (2) o entre el «sí» y el cierre, barrerDevolucionesPago la termina con la misma llave. */
 type Msg = { es: string; en: string };
 export type ResDevolucion = { ok: true } | { ok: false; msg: Msg; enCamino?: true };
-type InDevolver = { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string };
+type InDevolver = { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string;
+  /* 0209 · «Devolver otra vez» unos boletos: la devolución fallida de la que es (la base lo comprueba: refunds_otra_vez). */
+  otraVezDe?: string };
 const STRIPE_NO: Msg = { es: "Stripe no pudo hacer la devolución. Prueba de nuevo en un momento.", en: "Stripe could not make the refund. Try again in a moment." };
 const enCamino = (n: number): Msg => ({ es: `Stripe no contestó. La devolución de ${money(n)} quedó en camino y se termina sola en unos minutos: no la repitas.`,
   en: `Stripe did not answer. The ${money(n)} refund is on its way and finishes by itself in a few minutes: do not repeat it.` });
@@ -174,8 +176,8 @@ export async function anotarDevolucionPago(c: PoolClient, x: InDevolver, alGuard
         and not exists (select 1 from ticket_refund_lines l where l.refund_id = r.id) order by r.id limit 1`, [p.id])).rows[0];
   if (otra) return { ok: false, msg: { es: `Hay una devolución de ${money(otra.amt)} en camino para este cobro. Espera a que termine y vuelve a intentarlo.`, en: `A ${money(otra.amt)} refund is on its way for this charge. Wait for it to finish and try again.` } };
   const id = (await c.query<{ id: string }>(
-    `insert into refunds (payment_id, amount_cents, reason, initiated_by, actor_id, status, idem_key) values ($1::bigint, $2, $3, $4, $5, 'pending', $6) returning id::text`,
-    [p.id, n, x.motivo.slice(0, 300), x.por, x.actorId, x.idem])).rows[0]!.id;
+    `insert into refunds (payment_id, amount_cents, reason, initiated_by, actor_id, status, idem_key, retry_of) values ($1::bigint, $2, $3, $4, $5, 'pending', $6, $7::bigint) returning id::text`,
+    [p.id, n, x.motivo.slice(0, 300), x.por, x.actorId, x.idem, x.otraVezDe ?? null])).rows[0]!.id;
   await alGuardar?.(c, { pago: p.id, centavos: n });
   return { ok: true, id, monto: n, estado: "pending" };
 }
@@ -202,7 +204,7 @@ export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean;
   if (r.vieja) return { ok: false, msg: VIEJA, enCamino: true };
   // 9t7 · Que se manda (sent_at) y con qué dato buscable (gateway_ref), ANTES de la llamada y en una sentencia; el dato, solo la primera vez (un reintento de
   // una que salió sin él va sin él: la misma llave con otros parámetros, Stripe la rechaza).
-  const m = (await db().query<{ gref: string | null }>(`update refunds set gateway_ref = case when sent_at is null then 'refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
+  const m = (await db().query<{ gref: string | null }>(`update refunds set gateway_ref = case when sent_at is null then 'refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];
   if (!m) return { ok: false, msg: STRIPE_NO };
   // Un cobro de la plataforma (boletos) no tiene transferencia ni comisión de destino que revertir.
   const g = await pasarela.devolver(r.pi, r.amt, llaveDe(r.idem, r.kn), { plataforma: r.plataforma, ...(m.gref ? { meta: { tl_intencion: m.gref } } : {}) }).catch(() => ({ ok: false as const, id: undefined, codigo: "error" }));
@@ -222,17 +224,32 @@ export async function fallarDevolucionPago(r: { id: string; amt: number; idem: s
   const f = await tx(async (c) => {
     // 'failed' libera el saldo (el tope cuenta solo lo pendiente y lo hecho) y su llave (la fila guarda la original con «~fallida-<id>»): el
     // mismo toque otra vez es otro intento, como antes, sin una fila que diga «hecha».
-    const u = (await c.query<{ op: string }>(
+    const u = (await c.query<{ op: string; otra: string | null; raiz: string | null }>(
       `update refunds r set status = 'failed', attempts = least(10000, r.attempts + 1), last_error = left($2, 120), idem_key = left(r.idem_key, 180) || '~fallida-' || r.id::text
-         from payments p where r.id = $1::bigint and r.status = 'pending' and r.manual_at is null and p.id = r.payment_id returning p.operation_id::text as op`, [r.id, codigo])).rows[0];
+         from payments p where r.id = $1::bigint and r.status = 'pending' and r.manual_at is null and p.id = r.payment_id
+       returning p.operation_id::text as op, r.retry_of::text as otra, (select split_part(x.idem_key, '~fallida-', 1) from refunds x where x.id = r.lines_of) as raiz`, [r.id, codigo])).rows[0];
+    if (u?.otra) {
+      // 0209 · La de otra vez de unos boletos: lo que la cancelación del evento contaba vuelve a restarse (devolverOtraVez lo había sumado).
+      const cx = /^evtcx-(\d{1,18})-\d{1,18}$/.exec(u.raiz ?? "");
+      if (cx) await c.query(`update event_cancellations set refunded_cents = greatest(0, refunded_cents - $2::int) where id = $1::bigint`, [cx[1], r.amt]);
+    }
     if (u) {
       await evento(c, u.op, "refund_failed", { es: `Stripe no hizo la devolución de ${money(r.amt)}`, en: `Stripe did not make the ${money(r.amt)} refund` });
       // 9t2 · La fila del caso de Soporte (la misma llave) queda fallida con ella, en la misma transacción: nadie tiene que volver a tocar.
       await c.query(`update support_refunds set status = 'failed', fail_reason = left($2, 200), done_at = now() where idem_key = $1 and status = 'pending'`, [r.idem, STRIPE_NO.es]);
       if (alerta === "fallida") await (await import("./consulta-pasarela")).auditarCierre(c, "refunds", r.id, r.city, { estado: nunca ? "nunca llegó a Stripe y el cobro cambió: no se volvió a mandar" : "fallida", monto: money(r.amt) });
     }
-    return !!u;
+    return u ? { otra: u.otra } : null;
   });
+  // 0209 · Una devolución de otra vez de unos boletos que falla tiene SU alerta refund_failed (desde ella se puede devolver otra vez) y la de antes se reabre.
+  if (f?.otra) {
+    const { alertar, reabrirOtraVez } = await import("./dinero-alertas");
+    await alertar("refund_failed", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city, detalle: {
+      es: `La devolución de otra vez de ${money(r.amt)} de unos boletos (la fallida de antes: ${f.otra}) también falló: Stripe dijo que no (${codigo}). Los boletos siguen devueltos y su saldo volvió al cobro: decide con la persona si se le devuelve otra vez.`,
+      en: `The ${money(r.amt)} refund made again for some tickets (the earlier failed one: ${f.otra}) also failed: Stripe said no (${codigo}). The tickets stay refunded and the balance is back on the charge: decide with the person whether to refund again.` } }).catch(() => undefined);
+    await reabrirOtraVez(f.otra, r.id).catch(() => false);
+    if (alerta === "stuck" || alerta === "fallida") return true;
+  }
   // Desde el barrido, o en una devolución por política (cancelar a tiempo: la hace el sistema), nadie está mirando la pantalla: el equipo de dinero
   // lo sabe (una vez por devolución).
   if (f && alerta === "stuck") await (await import("./dinero-alertas")).alertar("refund_stuck", r.id, { monto: r.amt, negocio: r.biz, ciudad: r.city,
@@ -244,7 +261,7 @@ export async function fallarDevolucionPago(r: { id: string; amt: number; idem: s
         en: `Refund of ${money(r.amt)}: it never reached Stripe and the charge changed meanwhile (refunded elsewhere, disputed or no balance left), so it was not sent again. It is now failed and its balance free: if it is still owed, refund it again.` }
     : { es: `Devolución de ${money(r.amt)}: Stripe la tiene como fallida (lo dijo la consulta, pasado un día sin respuesta). Quedó fallida y su saldo libre: si todavía se debe, devuélvela otra vez.`,
         en: `Refund of ${money(r.amt)}: Stripe has it as failed (the query said so, after a day with no answer). It is now failed and its balance free: if it is still owed, refund it again.` } }).catch(() => undefined);
-  return f;
+  return !!f;
 }
 
 /* Lo devuelto de un cobro sale del libro (la suma de las devoluciones hechas), nunca de sumar otra vez: si el webhook charge.refunded ya lo había
@@ -263,9 +280,9 @@ export async function devueltoDelLibro(c: Q, pid: string): Promise<{ st: string;
 /* 9t7 · porConsulta: la cerró lo que dijo la consulta a la pasarela (pasada la llave): su auditoría de sistema en la misma transacción. */
 export async function cerrarDevolucionPago(id: string, stripeId: string | null, alCerrar?: AlCerrar, porConsulta = false): Promise<ResDevolucion> {
   const h = await tx(async (c) => {
-    const u = (await c.query<{ pid: string; amt: number; idem: string; city: string | null }>(
+    const u = (await c.query<{ pid: string; amt: number; idem: string; city: string | null; otra: string | null }>(
       `update refunds set status = 'done', stripe_refund_id = coalesce(stripe_refund_id, $2), done_at = now(), last_error = null
-        where id = $1::bigint and status = 'pending' and manual_at is null returning payment_id::text as pid, amount_cents as amt, idem_key as idem, (select y.city_id from payments y where y.id = payment_id) as city`, [id, stripeId])).rows[0];
+        where id = $1::bigint and status = 'pending' and manual_at is null returning payment_id::text as pid, amount_cents as amt, idem_key as idem, (select y.city_id from payments y where y.id = payment_id) as city, retry_of::text as otra`, [id, stripeId])).rows[0];
     if (!u) return null;
     if (porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "refunds", id, u.city, { estado: "hecha", devolucion: stripeId, monto: money(u.amt) });
     await alCerrar?.(c);
@@ -275,7 +292,7 @@ export async function cerrarDevolucionPago(id: string, stripeId: string | null, 
       `select p.user_id::text as uid, o.number as num, o.kind, p.card_brand as brand, p.card_last4 as l4 from payments p join operations o on o.id = p.operation_id where p.id = $1::bigint`, [u.pid])).rows[0]!;
     await c.query(`update operations set pay_status = $2 where id = $1::bigint`, [l.op, l.st]);
     await evento(c, l.op, "refunded", { es: `Devolución de ${money(u.amt)}`, en: `Refund of ${money(u.amt)}` });
-    return { ...p, amt: u.amt, caso };
+    return { ...p, amt: u.amt, caso, otra: u.otra };
   });
   if (!h) {
     const st = (await db().query<{ st: string; mano: boolean }>(`select status as st, manual_at is not null as mano from refunds where id = $1::bigint`, [id])).rows[0];
@@ -285,6 +302,8 @@ export async function cerrarDevolucionPago(id: string, stripeId: string | null, 
   const R = refDe(h.kind, h.num);
   await (await import("./avisos")).avisar(h.uid, "pay_refund", { monto: money(h.amt), num: R.num, tarjeta }, { href: R.href, ref: R.ref }).catch(() => undefined);
   if (h.caso) await (await import("./soporte")).avisarCaso(h.caso, "sop_resuelto").catch(() => undefined);
+  // 0209 · La devolución de otra vez de unos boletos quedó hecha: la alerta de la fallida de antes se cierra sola, ya (el barrido también la cierra).
+  if (h.otra) await (await import("./dinero-alertas")).cerrarAlertaSola("refund_failed", h.otra, { es: `Cerrada sola: la devolución de otra vez quedó hecha (${money(h.amt)}).`, en: `Closed by itself: the refund made again is done (${money(h.amt)}).` }).catch(() => false);
   return { ok: true };
 }
 
@@ -346,10 +365,12 @@ export const HORAS_LLAVE_STRIPE = HORAS_LLAVE;
 export async function devolucionFallidaEnStripe(stripeRefundId: string, motivo: string, monto: number): Promise<"anotada" | "fuera" | "ya"> {
   const why = String(motivo || "failed").slice(0, 60);
   const h = await tx(async (c) => {
-    const r = (await c.query<{ id: string; amt: number; pid: string; idem: string; biz: string | null; city: string | null }>(
+    const r = (await c.query<{ id: string; amt: number; pid: string; idem: string; biz: string | null; city: string | null; otra: string | null; lineas: string }>(
       `update refunds r set status = 'failed', last_error = left($2, 120), idem_key = left(r.idem_key, 180) || '~fallida-' || r.id::text
          from payments p where r.stripe_refund_id = $1 and r.status = 'done' and p.id = r.payment_id
-       returning r.id::text, r.amount_cents as amt, r.payment_id::text as pid, split_part(r.idem_key, '~fallida-', 1) as idem, p.business_id as biz, p.city_id as city`, [stripeRefundId, `stripe:${why}`])).rows[0];
+       returning r.id::text, r.amount_cents as amt, r.payment_id::text as pid, r.retry_of::text as otra, coalesce(r.lines_of, r.id)::text as lineas,
+                 -- 0209 · Una devolución de otra vez de unos boletos lleva la llave de la de los boletos (la cancelación del evento se reconoce por ella).
+                 split_part(coalesce((select x.idem_key from refunds x where x.id = r.lines_of), r.idem_key), '~fallida-', 1) as idem, p.business_id as biz, p.city_id as city`, [stripeRefundId, `stripe:${why}`])).rows[0];
     if (!r) return null;
     const ay = /^(?:ayb-h|ayc-)(\d{1,18})-p\d{1,18}$/.exec(r.idem), sq = /^sop-q(\d{1,18})$/.exec(r.idem);
     if (ay) await c.query(`update help_requests set refunded_cents = greatest(0, refunded_cents - $2), updated_at = now() where id = $1::bigint`, [ay[1], r.amt]);
@@ -366,7 +387,7 @@ export async function devolucionFallidaEnStripe(stripeRefundId: string, motivo: 
               string_agg(distinct nullif(trim(coalesce(h.first_name, '') || ' ' || left(coalesce(h.last_name, ''), 1)), ''), ', ') as titulares
          from ticket_refund_lines l join operations o on o.id = l.operation_id left join users u on u.id = o.user_id
          left join tickets t on t.id = l.ticket_id left join users h on h.id = t.holder_user_id
-        where l.refund_id = $1::bigint group by o.number, u.first_name, u.last_name`, [r.id])).rows[0] ?? null;
+        where l.refund_id = $1::bigint group by o.number, u.first_name, u.last_name`, [r.lineas])).rows[0] ?? null;
     const l = (await c.query<{ st: string; op: string }>(
       `with x as (select coalesce(sum(amount_cents), 0)::int as hecho from refunds where payment_id = $1::bigint and status = 'done'),
             y as (select p.id, least(p.amount_cents, greatest(x.hecho, p.refunded_cents - $2::int)) as dev from payments p, x where p.id = $1::bigint)
@@ -385,6 +406,8 @@ export async function devolucionFallidaEnStripe(stripeRefundId: string, motivo: 
     await alertar("refund_failed", h.id, { monto: h.amt, negocio: h.biz, ciudad: h.city, detalle: {
       es: `Stripe dio por fallida la devolución de ${money(h.amt)} de la orden de boletos ${b.num} de ${quien} (${why}): el dinero no llegó a la tarjeta. Boletos: ${b.codes ?? "solo extras"}${tit}. Siguen devueltos (no entran) y su saldo volvió al cobro: decide con la persona si se le devuelve otra vez o se le repone el boleto.`,
       en: `Stripe marked the ${money(h.amt)} refund of ticket order ${b.num} from ${quien} as failed (${why}): the money did not reach the card. Tickets: ${b.codes ?? "extras only"}${titEn}. They stay refunded (no entry) and the balance is back on the charge: decide with the person whether to refund again or reissue the ticket.` } }).catch(() => undefined);
+    // 0209 · Era la devolución de otra vez: la alerta de la fallida de antes se reabre y dice dónde sigue.
+    if (h.otra) await (await import("./dinero-alertas")).reabrirOtraVez(h.otra, h.id).catch(() => false);
     return "anotada";
   }
   if (!h) {

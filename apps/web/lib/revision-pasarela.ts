@@ -186,7 +186,7 @@ export async function ejecutarDevolucionSobra(id: string): Promise<"done" | "pen
   if (!g || g.st !== "pending") return (g?.st as "done" | "failed" | undefined) ?? "failed";
   if (g.mano) return "pending";
   if (g.enviada && g.vieja) return (await resolverDevolucionSobra(id, { origen: "barrido" })).st;
-  const m = (await db().query<{ gref: string | null }>(`update gateway_refunds set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];
+  const m = (await db().query<{ gref: string | null }>(`update gateway_refunds set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];
   if (!m) return "pending";
   const meta = { review: g.review, ...(m.gref ? { tl_intencion: m.gref } : {}) };
   const r = await (g.medio === "refund" ? pasarela.devolver(g.stripe, g.monto, g.idem, { plataforma: g.plataforma, meta }) : pasarela.revertirTransferencia(g.stripe, g.monto, g.idem, meta))

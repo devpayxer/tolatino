@@ -92,7 +92,7 @@ const casos = [
   [IF, SE, '      await c.query("savepoint anota");\n', ""],
   // (1) Como estaba: la pasarela primero y la devolución nace 'done'.
   [D, CB, "  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n", "  await pasarela.devolver(\"pi\", x.centavos, x.idem);\n  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n"],
-  [D, CB, "values ($1::bigint, $2, $3, $4, $5, 'pending', $6) returning id::text`,", "values ($1::bigint, $2, $3, $4, $5, 'done', $6) returning id::text`,"],
+  [D, CB, "values ($1::bigint, $2, $3, $4, $5, 'pending', $6, $7::bigint) returning id::text`,", "values ($1::bigint, $2, $3, $4, $5, 'done', $6, $7::bigint) returning id::text`,"],
   // Lo pendiente sumado en la misma sentencia del candado (la que espera no ve lo que la otra anotó).
   [D, CB, "`select p.id::text, p.amount_cents as amount, p.refunded_cents as refunded, p.status from payments p where p.id = $1::bigint for update`",
     "`select p.id::text, p.amount_cents as amount, p.refunded_cents + (select coalesce(sum(amount_cents), 0) from refunds where payment_id = p.id and status = 'pending') as refunded, p.status from payments p where p.id = $1::bigint`"],
@@ -167,7 +167,8 @@ const casos = [
   // (d) Boletos: la cancelación no resta, el boleto se repone solo, o la comisión cedida sigue contando con la devolución fallida.
   [BF, CB, "    if (cx) await c.query(`update event_cancellations set refunded_cents = greatest(0, refunded_cents - $2) where id = $1::bigint`, [cx[1], r.amt]);\n", ''],
   [BF, CB, '    return { ...r, bol };\n', "    await c.query(`update tickets set status = 'valid' where id in (select ticket_id from ticket_refund_lines where refund_id = $1::bigint)`, [r.id]);\n    return { ...r, bol };\n"],
-  [BF, MG, "from ticket_refund_lines l join refunds r on r.id = l.refund_id\n                      where l.operation_id = p.op and r.status in ('pending', 'done')", 'from ticket_refund_lines l where l.operation_id = p.op'],
+  // 0209 · evt_liq_calc vive ahora en la 0209 (la última que la define es la que manda).
+  [BF, 'packages/db/migrations/0209_devolver_otra_vez_y_envio_reciente.sql', "from ticket_refund_lines l join refunds r on r.id = l.refund_id\n                      where l.operation_id = p.op and r.status in ('pending', 'done')", 'from ticket_refund_lines l where l.operation_id = p.op'],
   // (f) La ayuda de la cita: se corta en el primer «no», reabre aunque algo haya salido, o muestra lo pedido en vez de lo que salió.
   [AN, AY, '    else if (!d.ok) rechazo = d.msg;\n', '    else if (!d.ok) { rechazo = d.msg; break; }\n'],
   [AN, AY, 'if (L.salio + L.va === 0) {', 'if (L.salio === 0) {'],

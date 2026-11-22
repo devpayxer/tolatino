@@ -320,6 +320,8 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
     await cobros.devolverPago({ paymentId: c2.p, centavos: 300, por: 'admin', actorId: null, motivo: 'prueba', idem: k2 });
     const f2 = await q1(`select id::text from refunds where idem_key = $1`, [k2]);
     await alertas.alertar('refund_stuck', f2.id, { monto: 300, detalle: { es: 'prueba', en: 'test' } });
+    // 0209 · Recién mandada no se ofrece (la base no deja en los 10 minutos siguientes a un envío: din9t10); aquí, su último envío hace 11 minutos.
+    { const k = await db.connect(); try { await k.query('set session_replication_role = replica'); await k.query(`update refunds set last_sent_at = last_sent_at - interval '11 minutes' where id = $1::bigint`, [f2.id]); } finally { await k.query('set session_replication_role = default').catch(() => undefined); k.release(); } }
     const L = (await alertas.alertasDinero({ id: staffU, cities: [] }, false, null, 200)).filas;
     const fall = L.find((a) => a.kind === 'refund_stuck' && a.sujeto === f.id), pend = L.find((a) => a.kind === 'refund_stuck' && a.sujeto === f2.id);
     ok(fall && fall.aMano === false, 'la alerta de una devolución que ya quedó fallida no ofrece «Resolver a mano» (informativa)');

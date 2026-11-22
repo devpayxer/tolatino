@@ -80,11 +80,11 @@ async function crudo(fn) {
   const k = await db.connect();
   try { await k.query('set session_replication_role = replica'); return await fn(k); } finally { await k.query('set session_replication_role = default').catch(() => undefined); k.release(); }
 }
-// «Hace N minutos»: la devolución (anotada y mandada, y su llave si volvió a valer) y sus consultas.
+// «Hace N minutos» (0209: también el último envío, como lo deja la app): la devolución (anotada y mandada, y su llave si volvió a valer) y sus consultas.
 const envejecer = (t, id, min) => crudo(async (k) => {
-  if (t === 'refunds') await k.query(`update refunds set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int), key_from = key_from - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
-  if (t === 'event_settlement_reversals') await k.query(`update event_settlement_reversals set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int), key_from = key_from - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
-  if (t === 'gateway_refunds') await k.query(`update gateway_refunds set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
+  if (t === 'refunds') await k.query(`update refunds set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int), last_sent_at = last_sent_at - make_interval(mins => $2::int), key_from = key_from - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
+  if (t === 'event_settlement_reversals') await k.query(`update event_settlement_reversals set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int), last_sent_at = last_sent_at - make_interval(mins => $2::int), key_from = key_from - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
+  if (t === 'gateway_refunds') await k.query(`update gateway_refunds set created_at = created_at - make_interval(mins => $2::int), sent_at = sent_at - make_interval(mins => $2::int), last_sent_at = last_sent_at - make_interval(mins => $2::int) where id = $1::bigint`, [id, min]);
   await k.query(`update gateway_checks set at = at - make_interval(mins => $2::int) where subject_kind = $3 and subject_id = $1::bigint`, [id, min, t]);
 });
 const devDe = (k) => q1(`select id::text, status as st, gateway_ref as gref, sent_at is not null as mandada, key_n::int as kn, key_from is not null as reabierta, stripe_refund_id as re, last_error as err, idem_key as k, manual_at is not null as mano, attempts::int as n from refunds where idem_key = $1 or idem_key like $1 || '~fallida-%'`, [k]);
