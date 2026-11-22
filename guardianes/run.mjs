@@ -8135,9 +8135,63 @@ const guardianes = {
     // El CI: «cambios» corre el script; si cae, «todo».
     const job = (n) => new RegExp(`\\n  ${n}:\\n[\\s\\S]*?(?=\\n  [a-z]+:\\n|$)`).exec(y)?.[0] ?? "";
     const ca = job("cambios");
-    if (!ca || !/\n      - id: calcular\n        env: \{ EVENTO: "\$\{\{ github\.event_name \}\}", ANTES: "\$\{\{ github\.event\.before \}\}", DESPUES: "\$\{\{ github\.sha \}\}" \}\n        run: node scripts\/ci\/alcance\.mjs \|\| echo "alcance=todo" >> "\$GITHUB_OUTPUT"\n/.test(ca)
+    if (!ca || !/\n      - id: calcular\n        env: \{ EVENTO: "\$\{\{ github\.event_name \}\}", ANTES: "\$\{\{ github\.event\.before \}\}", DESPUES: "\$\{\{ github\.sha \}\}", REPO: "\$\{\{ github\.repository \}\}", GH_TOKEN: "\$\{\{ github\.token \}\}" \}\n        run: node scripts\/ci\/alcance\.mjs \|\| echo "alcance=todo" >> "\$GITHUB_OUTPUT"\n/.test(ca)
       || !/alcance: \$\{\{ steps\.calcular\.outputs\.alcance \}\}/.test(ca) || /^\s+(if|needs|continue-on-error):/m.test(ca))
-      falla(G, Y, 0, "falta el trabajo «cambios»: corre node scripts/ci/alcance.mjs con el evento, before y sha, y si cae escribe «alcance=todo»");
+      falla(G, Y, 0, "falta el trabajo «cambios»: corre node scripts/ci/alcance.mjs con el evento, before, sha, repo y el token, y si cae escribe «alcance=todo»");
+    // 22 nov · El token de «cambios» solo lee (la API de corridas y trabajos); nada de escritura en ese trabajo ni en el flujo.
+    if (!/\n    permissions: \{ contents: read, actions: read \}\n/.test(ca) || /:\s*write\b|write-all/.test(ca)) falla(G, Y, 0, "«cambios» lleva «permissions: { contents: read, actions: read }» (un token de solo lectura para preguntar por la corrida del código)");
+    // 22 nov · Los dos huecos de main (un push de documentos que sustituye en la cola a uno de código; documentos sobre un main rojo): «documentos»
+    // exige además que el código (el ancla: el primer commit hacia atrás que no es de solo documentos) tenga una corrida de push en verde con
+    // sus carriles largos corridos. Sin API, sin ancla o con error: «todo».
+    if (!/if \(a !== "documentos"\) return \{ alcance: "todo"/.test(sc) || !/const ancla = anclaDe\(antes, git\);\n\s*if \(!ancla\.sha\) return \{ alcance: "todo"/.test(sc)
+      || !/const c = confirmadoEnGithub\(ancla\.sha, \{ repo, api \}\);\n\s*if \(!c\.ok\) return \{ alcance: "todo"/.test(sc) || (sc.match(/alcance: "documentos"/g) ?? []).length !== 1)
+      falla(G, S, 0, "«documentos» solo si el código de ese push (su ancla) quedó confirmado por una corrida de push en verde con los carriles largos corridos (confirmadoEnGithub); si no, «todo»");
+    if (!/if \(veredicto\(git\("diff", "--no-renames", "--name-only", "-z", p, x\)[^\n]*\) !== "documentos"\) return \{ sha: x, pasos: i \};\n\s*x = p;/.test(sc) || !/for \(let i = 0; i <= tope; i\+\+\)/.test(sc) || !/return \{ sha: "", pasos: tope,/.test(sc))
+      falla(G, S, 0, "el ancla se busca hacia atrás por el primer padre mientras el commit sea de solo documentos, con tope (más = sin ancla = «todo»)");
+    if (!/api: process\.env\.GH_TOKEN \? apiGh\(\{ repo \}\) : null/.test(sc) || /process\.env\.(?!EVENTO|ANTES|DESPUES|REPO|GH_TOKEN|GITHUB_OUTPUT)\w+/.test(sc))
+      falla(G, S, 0, "el script solo lee EVENTO, ANTES, DESPUES, REPO, GH_TOKEN y GITHUB_OUTPUT (nada de variables que cambien la decisión, como una API de mentira)");
+    // Qué es «confirmado» (scripts/ci/corrida.mjs): se prueba de verdad con corridas y trabajos de mentira (sin red).
+    const CO = "scripts/ci/corrida.mjs";
+    if (!existsSync(CO)) falla(G, CO, 0, "falta scripts/ci/corrida.mjs (qué corrida confirma un commit)");
+    else {
+      const co = sinComent(CO), disp = /\n  dispositivos:\n[\s\S]*?\n        id: \[([^\]]*)\]/.exec(y)?.[1]?.split(",").map((x) => x.trim()) ?? [];
+      const dl = /export const DISPOSITIVOS = Object\.freeze\(\[([^\]]*)\]\);/.exec(co)?.[1]?.split(",").map((x) => x.trim().replace(/^"|"$/g, "")) ?? [];
+      if (!disp.length || dl.join(",") !== disp.join(",")) falla(G, CO, 0, `DISPOSITIVOS de corrida.mjs (${dl.join(", ")}) tiene que ser la matriz «dispositivos» de ci.yml (${disp.join(", ")})`);
+      const SH = "a".repeat(40), RP = "dueno/repo";
+      const run = (x = {}) => ({ id: 1, head_sha: SH, event: "push", head_branch: "main", path: ".github/workflows/ci.yml", repository: { full_name: RP }, head_repository: { full_name: RP }, status: "completed", conclusion: "success", ...x });
+      const j = (name, conclusion = "success", status = "completed") => ({ name, status, conclusion });
+      const base = () => [j("alcance (todo o solo documentos)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
+        ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]), ...disp.map((d) => j(`dispositivo · ${d}`)),
+        j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería completa (todo en verde, nada saltado)")];
+      const sin = (re) => base().filter((x) => !re.test(x.name)), con = (re, c, st) => base().map((x) => (re.test(x.name) ? j(x.name, c, st) : x));
+      const CC = [
+        ["una corrida de push completa y en verde", run(), base(), true],
+        ["con un solo trabajo por carril (partes=1)", run(), [...sin(/^punta a punta · (al revés|todas las fases)/), j("punta a punta · al revés"), j("punta a punta · todas las fases")], true],
+        ["un push de solo documentos (web, regresión y dispositivos saltados)", run(), base().map((x) => (/^(web|punta a punta · (al|todas)|dispositivo) /.test(x.name) ? j(x.name, "skipped") : x)), false],
+        ["regresión saltada", run(), con(/^punta a punta · todas las fases/, "skipped"), false],
+        ["otro carril de punta a punta saltado (solo confirmación y anchos pueden faltar)", run(), [...base(), j("punta a punta · otro carril", "skipped")], false],
+        ["falta una parte de «al revés»", run(), sin(/^punta a punta · al revés · 3\/4$/), false],
+        ["una parte repetida en lugar de otra", run(), base().map((x) => (x.name === "punta a punta · al revés · 3/4" ? j("punta a punta · al revés · 2/4") : x)), false],
+        ["una parte roja", run(), con(/^punta a punta · todas las fases · 2\/4$/, "failure"), false],
+        ["falta un dispositivo", run(), sin(/^dispositivo · galaxy$/), false],
+        ["un dispositivo cancelado", run(), con(/^dispositivo · ipad$/, "cancelled"), false],
+        ["un trabajo en curso", run(), con(/^seguridad /, null, "in_progress"), false],
+        ["web saltado", run(), con(/^web /, "skipped"), false],
+        ["sin trabajos", run(), [], false],
+        ["evento pull_request", run({ event: "pull_request" }), base(), false],
+        ["a mano", run({ event: "workflow_dispatch" }), base(), false],
+        ["otra rama", run({ head_branch: "trabajo" }), base(), false],
+        ["otro flujo", run({ path: ".github/workflows/otro.yml" }), base(), false],
+        ["otro repositorio (fork)", run({ head_repository: { full_name: "otro/repo" } }), base(), false],
+        ["otro commit", run({ head_sha: "b".repeat(40) }), base(), false],
+        ["corrida roja", run({ conclusion: "failure" }), base(), false],
+        ["corrida cancelada", run({ conclusion: "cancelled" }), base(), false],
+        ["corrida en curso", run({ status: "in_progress", conclusion: null }), base(), false],
+      ];
+      let r; try { r = JSON.parse(execSync(`node ${CO} --decidir`, { encoding: "utf8", input: JSON.stringify(CC.map((c) => [c[1], c[2], { sha: SH, repo: RP }])), stdio: ["pipe", "pipe", "pipe"] })); } catch { r = null; }
+      if (!Array.isArray(r) || r.length !== CC.length) falla(G, CO, 0, "«node scripts/ci/corrida.mjs --decidir» no responde un veredicto por corrida");
+      else CC.forEach(([que, , , ok], i) => { if (r[i]?.ok !== ok) falla(G, CO, 0, `${que}: ${ok ? "tiene que confirmar" : "NO puede confirmar"} el código (dijo ${JSON.stringify(r[i]).slice(0, 140)})`); });
+    }
     // La única vía para apagar un carril largo en un push: «!= 'documentos'» de «cambios», en la línea exacta de cada trabajo.
     const IFS = {
       web: "    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n",

@@ -32,7 +32,8 @@ const casos = [
   ['tuberiaNoSeSalta', Y, 'no se pueden contar y no se dan por cero"; exit 1; fi', 'no se pueden contar"; fi'],
   ['tuberiaNoSeSalta', Y, '        with: { pattern: "anchos-*", path: "${{ runner.temp }}/listas" }\n', ''],
   ['tuberiaNoSeSalta', 'pruebas/correr.mjs', 'writeFileSync(join(RES, "inestables.json")', 'writeFileSync(join(RES, "otra.json")'],
-  ['tuberiaNoSeSalta', Y, '    permissions: { contents: read, actions: read }\n', ''],
+  // 22 nov · «cambios» también lleva ese permiso (pregunta por la corrida del código): el caso quita el de «tuberia», que va tras su «runs-on».
+  ['tuberiaNoSeSalta', Y, '    if: always()\n    runs-on: ubuntu-latest\n    permissions: { contents: read, actions: read }\n', '    if: always()\n    runs-on: ubuntu-latest\n'],
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
   ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}", "fase9,varios') }} --parte 1/4"],

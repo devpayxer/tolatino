@@ -67,17 +67,22 @@ concurrency:
 jobs:
   # 22 nov · El alcance de un push: «todo» o «documentos» (scripts/ci/alcance.mjs, probado en alreves9vd). Cualquier duda o error = «todo»; si el
   # script cae, el paso escribe «todo». pull_request, programado y a mano: siempre «todo».
+  # 22 nov · «documentos» además exige que el código de ese push (el de su commit de código anterior) tenga en main una corrida de push en verde
+  # con sus carriles largos corridos: lo pregunta a la API de GitHub con el token de la corrida, de SOLO lectura (contents y actions).
   cambios:
     name: alcance (todo o solo documentos)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: { contents: read, actions: read }
     outputs:
       alcance: ${{ steps.calcular.outputs.alcance }}
       n: ${{ steps.calcular.outputs.n }}
+      ancla: ${{ steps.calcular.outputs.ancla }}
+      corrida: ${{ steps.calcular.outputs.corrida }}
     steps:
       - uses: actions/checkout@v4
       - id: calcular
-        env: { EVENTO: "${{ github.event_name }}", ANTES: "${{ github.event.before }}", DESPUES: "${{ github.sha }}" }
+        env: { EVENTO: "${{ github.event_name }}", ANTES: "${{ github.event.before }}", DESPUES: "${{ github.sha }}", REPO: "${{ github.repository }}", GH_TOKEN: "${{ github.token }}" }
         run: node scripts/ci/alcance.mjs || echo "alcance=todo" >> "$GITHUB_OUTPUT"
 
   verificar:
