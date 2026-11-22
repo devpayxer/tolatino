@@ -231,7 +231,7 @@ export async function fallarDevolucionPago(r: { id: string; amt: number; idem: s
     if (u?.otra) {
       // 0209 · La de otra vez de unos boletos: lo que la cancelación del evento contaba vuelve a restarse (devolverOtraVez lo había sumado).
       const cx = /^evtcx-(\d{1,18})-\d{1,18}$/.exec(u.raiz ?? "");
-      if (cx) await c.query(`update event_cancellations set refunded_cents = greatest(0, refunded_cents - $2) where id = $1::bigint`, [cx[1], r.amt]);
+      if (cx) await c.query(`update event_cancellations set refunded_cents = greatest(0, refunded_cents - $2::int) where id = $1::bigint`, [cx[1], r.amt]);
     }
     if (u) {
       await evento(c, u.op, "refund_failed", { es: `Stripe no hizo la devolución de ${money(r.amt)}`, en: `Stripe did not make the ${money(r.amt)} refund` });
