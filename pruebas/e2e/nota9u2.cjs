@@ -76,8 +76,19 @@ const ADM = '5705550199';
   const COL_INTERNAS = Object.keys(MAPA.internas ?? {}).filter((k) => !k.startsWith('$'));
   ok(COL_INTERNAS.includes('tickets.door_name') && COL_INTERNAS.includes('media.rev_llave') && COL_INTERNAS.every((k) => todas.has(k) && exp.includes(k.split('.')[0])), `cada columna de «internas» existe en la base y su tabla sale en el archivo: ${COL_INTERNAS.join(', ')}`);
   // Mensajes de Soporte: el archivo trae los de la columna de la persona (user_id). Las respuestas y las notas internas del equipo (internal, y el
-  // «escalado» con su motivo y quién) nacen sin user_id y la base no deja cambiarlo: que siga así en todas las filas.
-  ok(sql(`select count(*) from support_messages where sender <> 'user' and user_id is not null`) === '0', 'Soporte: ningún mensaje del equipo o del sistema lleva la cuenta de la persona (no entra a su archivo)');
+  // «escalado» con su motivo y quién) nacen sin user_id y la base no deja cambiarlo. 0211 · Ya no se comprueba a mano en todas las filas: lo impone
+  // la base (check support_messages_equipo_sin_persona, validado sobre lo que ya había): un mensaje del equipo, una nota interna o uno del sistema
+  // CON la cuenta de una persona se rechaza. Cada intento va en una transacción que se deshace (si la base lo dejara pasar, no queda la fila).
+  const rechaza = (q) => { try { sql(`begin; ${q}; rollback;`); return ''; } catch (e) { return String(e.stderr || e.message); } };
+  const UX = `(select id from users order by created_at limit 1)`, CX = `(select id from support_cases order by id limit 1)`;
+  const intentos = {
+    'una respuesta del equipo': `insert into support_messages (case_id, city_id, sender, staff_id, user_id, body) values (${CX}, 'hzl', 'staff', ${UX}, ${UX}, 'Hola, ya lo vi.')`,
+    'una nota interna': `insert into support_messages (case_id, city_id, sender, staff_id, user_id, body, internal) values (${CX}, 'hzl', 'staff', ${UX}, ${UX}, 'nota del equipo', true)`,
+    'uno del sistema': `insert into support_messages (case_id, city_id, sender, user_id, sys_key, vars, internal) values (${CX}, 'hzl', 'system', ${UX}, 'escalado', '{}', true)`,
+  };
+  for (const [que, q] of Object.entries(intentos)) ok(/support_messages_equipo_sin_persona/.test(rechaza(q)), `Soporte: la base rechaza ${que} con la cuenta de la persona (no entra a su archivo)`);
+  ok(rechaza(`insert into support_messages (case_id, city_id, sender, user_id, body) values (${CX}, 'hzl', 'user', ${UX}, 'Hola, una pregunta')`) === '', '… y deja el de la persona con su cuenta');
+  ok(sql(`select convalidated from pg_constraint where conname = 'support_messages_equipo_sin_persona' and conrelid = 'support_messages'::regclass`) === 't', '… y el check está validado sobre lo que ya había (no solo para lo nuevo)');
   ok(internas.length >= 15, `internas (no salen): ${internas.length}; salen: ${Object.values(NOTAS).filter((v) => v.sale === true).length}; por fila: ${Object.values(NOTAS).filter((v) => typeof v.sale === 'string').length}`);
   // NOTA9U2_SOLO_BASE=1: solo el paso 0 (lo usa alreves9u2: no necesita el servidor).
   if (process.env.NOTA9U2_SOLO_BASE) { console.log(`\nnota9u2 (solo la base): ${n} ✓`); return; }
