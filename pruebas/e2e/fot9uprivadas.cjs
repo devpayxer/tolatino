@@ -322,6 +322,40 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
       await c.query('set local enable_seqscan = on');
       ok(/media_privadas_ruta_sin_variantes_idx/.test(plan), 'la tanda la sirve el índice parcial de 0210 (el mismo predicado)');
     }
+    // 8 · 22 nov · entregarPrivado (lib/entrega-privada.ts, lo que hay detrás de las cinco rutas de fotos privadas): un archivo que falta en el almacén con la
+    // fila viva contesta lo que diga la ruta (siFalta: su 404), nunca 500; el renglón de «vio la foto» (alEntregar) sale SOLO con el objeto abierto.
+    {
+      const cancelados = [];
+      const EP = cargar('apps/web/lib/entrega-privada.ts', { './medios': { abrirObjeto: async (k, inm) => {
+        if (!G.has(k)) return null;
+        if (inm === 'W/"e"') return { estado: 304, etag: 'W/"e"' };
+        return { estado: 200, cuerpo: new ReadableStream({ start(ct) { ct.enqueue(G.get(k)); ct.close(); }, cancel() { cancelados.push(k); } }), etag: '"e"', largo: G.get(k).length };
+      } } });
+      const req = (inm) => ({ headers: { get: (h) => (h.toLowerCase() === 'if-none-match' ? inm ?? null : null) } });
+      const cab = { 'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff' };
+      const id8 = randomUUID(), m8 = `privado/m/${id8}.jpg`, v8 = `privado/m/${id8}.w320.webp`;
+      const no404 = () => new Response(null, { status: 404 });
+      let vistas = 0; const ver = async () => { vistas++; };
+      G.set(m8, JPG);
+      const llaves = [{ clave: v8, tipo: 'image/webp' }, { clave: m8, tipo: 'image/jpeg' }];
+      let r = await EP.entregarPrivado(req(), llaves, cab, no404, ver);
+      ok(r.status === 200 && r.headers.get('content-type') === 'image/jpeg' && vistas === 1, 'entregarPrivado: la variante falta y la maestra está → la maestra, y el renglón de «vio la foto» sale una vez');
+      G.set(v8, JPG); vistas = 0;
+      r = await EP.entregarPrivado(req(), llaves, cab, no404, ver);
+      ok(r.status === 200 && r.headers.get('content-type') === 'image/webp' && vistas === 1, 'entregarPrivado: con la variante, la variante, y el renglón una vez');
+      r = await EP.entregarPrivado(req('W/"e"'), llaves, cab, no404, ver);
+      ok(r.status === 304 && vistas === 2, 'entregarPrivado: un 304 también pasa por el permiso y deja su renglón (como antes)');
+      G.delete(m8); G.delete(v8); vistas = 0;
+      r = await EP.entregarPrivado(req(), llaves, cab, no404, ver);
+      ok(r.status === 404 && vistas === 0, 'entregarPrivado: ni la variante ni la maestra están (la fila vive): contesta el 404 de la ruta, SIN el renglón de «vio la foto»');
+      let lanzo = '';
+      try { await EP.entregarPrivado(req(), llaves, cab, undefined, ver); } catch (e) { lanzo = String(e.message); }
+      ok(/almacenamiento 404/.test(lanzo) && vistas === 0, 'entregarPrivado: sin siFalta sigue lanzando (ninguna ruta de fotos privadas lo usa así: guardián fotosPrivadasConPermiso)');
+      G.set(m8, JPG); let lanzo2 = '';
+      try { await EP.entregarPrivado(req(), llaves, cab, no404, async () => { throw new Error('auditoría caída'); }); } catch (e) { lanzo2 = String(e.message); }
+      ok(lanzo2 === 'auditoría caída' && cancelados.includes(m8), 'entregarPrivado: si el renglón no se puede dejar, la foto NO sale (se lanza) y el cuerpo ya abierto se suelta');
+      G.delete(m8);
+    }
   } catch (e) { console.error(e); malas++; } finally {
     await c.query('rollback').catch(() => undefined);
     await c.end();

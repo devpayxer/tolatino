@@ -32,7 +32,7 @@ const casos = [
   [G, RV, 'const no = () => new NextResponse(null, { status: 404 });', 'const no = () => new NextResponse(null, { status: 403 });'],
   [G, RV, '"cache-control": "private, no-store"', '"cache-control": "public, max-age=31536000, immutable"'],
   [G, RV, '"x-content-type-options": "nosniff", ', ''],
-  [G, RV, 'await tx((c) => auditar(c, { actor: p.staff, action: "fotos.privada.ver"', 'await tx((c) => auditar(c, { actor: p.staff, action: "foto.ver"'],
+  [G, RV, 'tx((c) => auditar(c, { actor: p.staff, action: "fotos.privada.ver"', 'tx((c) => auditar(c, { actor: p.staff, action: "foto.ver"'],
   [G, RV, '  if (!p.ok) return no();\n', ''],
   // (e) Otro archivo que toca privado/o/ por su cuenta.
   [G, 'apps/web/lib/medios.ts', 'export const urlPublica = (clave: string) => `/medios/${clave}`;', 'export const urlPublica = (clave: string) => `/medios/${clave}`;\nexport const deOtro = (id: string) => `privado/o/${id}.jpg`;'],
@@ -102,6 +102,25 @@ const casos = [
   [G, FP, '  }, { tandas: TANDAS_RUTA });\n  B.fin();', '  }, { tandas: TANDAS_RUTA });', 'barrerVariantesDeRuta recorre con porTandas y Fallos'],
   [G, FP, '    if (!sigue.rowCount) return;\n', '', 'vuelve a leer la fila justo antes de generar'],
   [G, FP, '    if (!x || x.purgada) { for (const v of clavesVariantes(f.url, x?.w, x?.anchos)) await borrarObjeto(v); return; }\n', '', 'vuelve a leer la fila justo antes de generar'],
+  // 22 nov · Un archivo que falta en el almacén con la fila viva da 404 (el mismo que «no tienes permiso») y no deja el renglón de «vio la foto»: cada
+  // ruta pasa `no` (siFalta) y `ver` (alEntregar), el renglón no se escribe antes de entregar, y entregarPrivado solo lo llama con el objeto abierto.
+  [G, RV, 'return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, [maestra], cab, no, ver)).catch(() => no());', 'return entregarPrivado(req, llaves, cab, no).catch(() => entregarPrivado(req, [maestra], cab, no)).catch(() => no());', 'la ruta de una foto privada'],
+  [G, RV, '  const ver = p.por === "equipo"\n    ? () => tx((c) => auditar(', '  if (p.por === "equipo") await tx((c) => auditar(', 'la ruta de una foto privada'],
+  [G, 'apps/web/app/api/mensajes/foto/[id]/route.ts', 'entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));', 'entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));', 'F3b: la ruta entrega las llaves'],
+  [G, 'apps/web/app/api/mensajes/foto/[id]/route.ts', '        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: "chat_message"', '        await tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: "chat_message"', 'deja el renglón de «vio la foto» ANTES de entregar'],
+  [G, 'apps/web/app/api/mensajes/foto/[id]/route.ts', '        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg', '        await tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg', 'deja el renglón de «vio la foto» ANTES de entregar'],
+  [G, 'apps/web/app/api/mensajes/foto/[id]/route.ts', '  return servir(req, d.url, d.var_widths, ver);', '  return servir(req, d.url, d.var_widths);', 'F3b: la foto de un mensaje'],
+  [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', 'entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));', 'entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));', 'F3b: la ruta entrega las llaves'],
+  [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', '        ver = () => tx((c) => auditar(c, { actor: s.id, action: "soporte.foto.ver"', '        await tx((c) => auditar(c, { actor: s.id, action: "soporte.foto.ver"', 'deja el renglón de «vio la foto» ANTES de entregar'],
+  [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', '      ver = () => tx((c) => auditar(c, { actor: s.id, action: "ayuda.foto.ver"', '      await tx((c) => auditar(c, { actor: s.id, action: "ayuda.foto.ver"', 'deja el renglón de «vio la foto» ANTES de entregar'],
+  [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', 'entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));', 'entregarPrivado(req, llaves, cab, no).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no));', 'F3b: la ruta entrega las llaves'],
+  [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', '      ver = () => tx((c) => auditar(c, { actor: s.id, action: "entrega.foto.ver"', '      await tx((c) => auditar(c, { actor: s.id, action: "entrega.foto.ver"', 'deja el renglón de «vio la foto» ANTES de entregar'],
+  [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', 'const no = () => new NextResponse(null, { status: 404 });', 'const no = () => new NextResponse(null, { status: 404, headers: { "x-otro": "1" } });', 'no tiene su 404 único'],
+  [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', 'entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));', 'entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));', 'F3b: la ruta entrega las llaves'],
+  [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', '  const ver = () => tx((c) => auditar(c, { actor: s.id, action: "reclamo.documento.ver"', '  await tx((c) => auditar(c, { actor: s.id, action: "reclamo.documento.ver"', 'deja el renglón de «vio la foto» ANTES de entregar'],
+  [G, 'apps/web/lib/entrega-privada.ts', '    if (alEntregar) { try { await alEntregar(); } catch (e) { if (a.estado === 200) void a.cuerpo.cancel().catch(() => undefined); throw e; } }\n', '', 'entregarPrivado: el renglón del equipo (alEntregar)'],
+  [G, 'apps/web/lib/entrega-privada.ts', '    if (!a) continue;\n    if (alEntregar) { try { await alEntregar(); } catch (e) { if (a.estado === 200) void a.cuerpo.cancel().catch(() => undefined); throw e; } }\n', '    if (alEntregar) { try { await alEntregar(); } catch (e) { if (a?.estado === 200) void a.cuerpo.cancel().catch(() => undefined); throw e; } }\n    if (!a) continue;\n', 'entregarPrivado: el renglón del equipo (alEntregar)'],
+  [G, 'apps/web/lib/entrega-privada.ts', '  if (siFalta) return siFalta();\n', '', 'entregarPrivado: el renglón del equipo (alEntregar)'],
   // La prueba pura de fotoSrc sin una de las rutas.
   [G, 'pruebas/alreves/alreves9ufoto.cjs', "['entrega', `/api/entrega/foto/${id}`], ", '', 'la prueba pura de fotoSrc dejó de revisar'],
 ];

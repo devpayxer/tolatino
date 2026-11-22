@@ -12,6 +12,7 @@ const { requiere } = require('../lib/requiere.cjs'); // (y sin ayuda pedida: la 
 // Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
 const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
+const { quitarDelAlmacen } = require('../lib/almacen-quitar.cjs'); // 22 nov · el caso «la fila vive y el archivo no está»
 const OUT = ENT.S + '/cap/', B = ENT.B, S = 'centro-medico-quisqueya', P = 'bufete-almonte', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const MARISOL = "(select id from users where phone = '+15705550122')";
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -92,6 +93,13 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
     // palabras y la galería del negocio quedan igual después de los rechazos.
     sql(`update business_members set photo_url = '/medios/n/foto-del-atajo.jpg' where id = '${MID}'`);
     const ESTADO = () => sql(`select photo_url || '|' || role::text || '|' || coalesce(bio::text, '') from business_members where id = '${MID}'`) + '#' + sql(`select coalesce(string_agg(id || ':' || sort, ',' order by id), '') from media where owner_kind = 'business' and owner_id = '${S}' and status = 'visible'`);
+    // 22 nov · El logo (logoPoner quitaba el anterior ANTES de validar la foto nueva y, si no pasaba, el negocio se quedaba sin logo): el negocio tiene
+    // uno puesto (su fila de media y su dirección) y tras el rechazo sigue puesto: la misma fila visible y la misma dirección.
+    const LOGO_ANTES = sql(`select coalesce(logo_url, '') from businesses where id = '${S}'`);
+    const LOGO = sql(`insert into media (owner_kind, owner_id, url, uploaded_by, status, w) values ('logo', '${S}', '/medios/n/logo-del-atajo.jpg', '${DOC}', 'visible', 400) returning id`).split('\n')[0];
+    sql(`update businesses set logo_url = '/medios/n/logo-del-atajo.jpg' where id = '${S}'`);
+    const LOGO_ESTADO = () => sql(`select (select coalesce(logo_url, '') from businesses where id = '${S}') || '|' || (select coalesce(string_agg(id || ':' || status, ',' order by id), '') from media where owner_kind = 'logo' and owner_id = '${S}' and id = '${LOGO}')`);
+    ok(LOGO_ESTADO() === `/medios/n/logo-del-atajo.jpg|${LOGO}:visible`, 'el atajo · logo: el negocio tiene un logo puesto antes de la prueba');
     const ANTES = ESTADO();
     try {
       for (const [p, X, archivo, nombre, args, que, espera, ruta] of intentos) {
@@ -100,8 +108,12 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
         ok(sigue && espera.test(r), `el atajo · ${que}: mandada a mano, el servidor no la adjunta (sigue de quien la subió, privada)${sigue && espera.test(r) ? '' : ' · fila ' + fila(X.id) + ' · contestó ' + r.replace(/\s+/g, ' ').slice(-200)}`);
       }
       ok(sql(`select count(*) from events where business_id = '${SAB}' and title->>'es' = 'Noche del atajo'`) === '0', 'el atajo · evento: rechazada la foto, el evento no se guardó (ni como borrador)');
+      ok(LOGO_ESTADO() === `/medios/n/logo-del-atajo.jpg|${LOGO}:visible`, 'el atajo · logo: rechazada la foto nueva, el logo ANTERIOR sigue puesto (su fila visible y su dirección en el negocio)');
       ok(ESTADO() === ANTES && ANTES.startsWith('/medios/n/foto-del-atajo.jpg|'), 'el atajo: rechazada la foto, no se guardó nada más del pedido (la foto del equipo no se vació; rol, palabras y galería igual)');
-    } finally { sql(`update business_members set photo_url = ${FOTO_EQ ? `'${FOTO_EQ}'` : 'null'} where id = '${MID}'`); }
+    } finally {
+      sql(`update business_members set photo_url = ${FOTO_EQ ? `'${FOTO_EQ}'` : 'null'} where id = '${MID}'`);
+      sql(`update media set status = 'removed', removed_reason = 'prueba' where id = '${LOGO}'`); sql(`update businesses set logo_url = ${LOGO_ANTES ? `'${LOGO_ANTES}'` : 'null'} where id = '${S}'`);
+    }
     const dondeSale = (id) => sql(`select (select count(*) from users where photo_url like '%${id}%') + (select count(*) from businesses where logo_url like '%${id}%') + (select count(*) from business_members where photo_url like '%${id}%')
       + (select count(*) from items where array_to_string(photos, ' ') like '%${id}%') + (select count(*) from media where url like '%${id}%' and id <> '${id}')`);
     const pag = await (await anon.request.get(B + `/n/${S}`)).text(), pagR = await (await anon.request.get(B + `/n/${RES}`)).text();
@@ -144,6 +156,15 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
   const vg = await api(adm, '/api/admin/vidrio', { foto: fm[0], motivo: 'Revisar la factura para decidir la ayuda.' });
   ok(vg.ok === true && sql(`select count(*) from audit_entries where action = 'ayuda.foto.vidrio' and reason = 'Revisar la factura para decidir la ayuda.' and target_id = (select owner_id from media where id = '${fm[0]}')`) !== '0', 'con su motivo escrito: queda en la auditoría');
   ok(await st(adm, U) === 200 && Number(sql(`select count(*) from audit_entries where action = 'ayuda.foto.ver'`)) === audAntes + 1, 'To’Latino la ve y queda en la auditoría');
+  { // 22 nov · Un archivo que falta en el almacén con la fila viva: 404 (antes 500), el MISMO que «no tienes permiso», entera y variante, para el paciente, el
+    // consultorio y To'Latino (con su motivo vigente), y sin renglón de «vio la foto» (el que acaba de quedar arriba es el único).
+    const au = () => Number(sql(`select count(*) from audit_entries where action = 'ayuda.foto.ver'`)), n0 = au(), claves = await quitarDelAlmacen(sql, fm[0]);
+    const sin = await traerVar(otro, U), fal = [];
+    for (const [quien, ruta] of [[m, U], [m, `${U}?w=320`], [doc, U], [doc, `${U}?w=320`], [adm, U], [adm, `${U}?w=320`]]) fal.push(await traerVar(quien, ruta));
+    ok(claves.length >= 2 && sql(`select (purged_at is null) || '|' || status from media where id = '${fm[0]}'`) === 'true|visible' && sin.st === 404 && fal.every((x) => x.st === 404 && x.cc === sin.cc && x.ct === sin.ct && x.vary === sin.vary),
+      `el archivo no está pero la fila vive: 404 al paciente, al consultorio y a To’Latino, entera y variante (${fal.map((x) => x.st).join('/')}), con las cabeceras de «no tienes permiso»`);
+    ok(au() === n0, 'archivo ausente: To’Latino no deja renglón de «vio la foto» (nadie vio nada)');
+  }
   // Aviso al consultorio: neutro (sin nombre del paciente).
   const nb = sql(`select tpl || '|' || coalesce(body::text, '') from notifications where tpl = 'biz_sal_help' order by id desc limit 1`);
   ok(/^biz_sal_help\|/.test(nb) && !/Marisol/.test(nb), `aviso al consultorio neutro (${nb.slice(0, 80)})`);

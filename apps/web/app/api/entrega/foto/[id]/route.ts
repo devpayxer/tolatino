@@ -20,12 +20,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       where m.id = $1 and m.owner_kind = 'delivery' and m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/e/%'`, [id])).rows[0];
   if (!m) return no();
   const me = await yo();
+  let ver: (() => Promise<unknown>) | undefined; // el renglón del equipo se deja solo si el archivo existe y sale (entregarPrivado alEntregar)
   let ok = !!me && ((me.id === m.uploaded_by && m.hoy) || me.id === m.cliente);
   if (!ok) ok = !!(await accesoPanel(m.biz, "ord")) || !!(await accesoPanel(m.biz, "dlv"));
   if (!ok) {
     const s = await staff();
     if (s && (s.puede("dlv", "ver") || s.puede("tx", "ver") || s.puede("sop", "ver")) && (!s.cities.length || s.cities.includes(m.city))) {
-      await tx((c) => auditar(c, { actor: s.id, action: "entrega.foto.ver", targetKind: "order", targetId: m.numero, city: m.city }));
+      ver = () => tx((c) => auditar(c, { actor: s.id, action: "entrega.foto.ver", targetKind: "order", targetId: m.numero, city: m.city }));
       ok = true;
     }
   }
@@ -34,5 +35,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // MISMO permiso de arriba y las mismas cabeceras privadas; si la variante falla en el almacén, la maestra.
   const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };
   const llaves = llavesAEntregar(req, m.url, m.var_widths);
-  return entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));
+  return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));
 }

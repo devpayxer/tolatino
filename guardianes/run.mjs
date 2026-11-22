@@ -14117,6 +14117,10 @@ const guardianes = {
     if (!/if \(puestas !== lista\.length\) throw new FotoNoAdjunta\(\);/.test(fa)) falla(G, A, 0, "fotosAgregar: si adjuntó menos de las que pidió, lanza dentro de la transacción (no se adjunta ninguna y nada más se guarda)");
     if (!/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return /.test(fa) || !VARIAS.test(fa)) falla(G, A, 0, "fotosAgregar: una foto que no se puede adjuntar se rechaza con «Una de las fotos ya no está. Súbela otra vez.» (como Comunidad, reseñas y novedades), nunca ok");
     if (!/\[\.\.\.new Set\(ids\.filter/.test(fa)) falla(G, A, 0, "fotosAgregar: quita los ids repetidos antes de contar (un id dos veces no puede dar un rechazo falso)");
+    // El logo (22 nov): quita el anterior y pone el nuevo en la MISMA transacción; si la nueva no se puede adjuntar lanza (se deshace: el negocio conserva su logo) y dice «Esa foto no existe.».
+    const lg = cuerpoFn(a, "logoPoner");
+    if (!/\(await c\.query<\{ url: string \}>\(\s*`update media set owner_kind = 'logo'/.test(lg) || !/if \(!m\) throw new FotoNoAdjunta\(\);/.test(lg)) falla(G, A, 0, "logoPoner: si la foto nueva no se puede adjuntar lanza dentro de la transacción (se deshace también el logo anterior que ya había quitado): nunca return que no deshace");
+    if (!/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return no\("Esa foto no existe\.", "That photo doesn’t exist\."\); throw e; \}/.test(lg) || /return false;|const ok = await tx/.test(lg)) falla(G, A, 0, "logoPoner: una foto que no se puede adjuntar se rechaza con «Esa foto no existe.» y nunca se queda sin logo (sin «return false» dentro de tx, que no deshace)");
     // La foto del equipo: si el id no se adjunta, rechaza y deshace (antes dejaba photo_url vacío).
     if (!/if \(!photo\) throw new FotoNoAdjunta\(\);/.test(q) || !/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return /.test(q) || !UNA.test(q)) falla(G, Q, 0, "equipoGuardar: una foto nueva que no se puede adjuntar se rechaza con «Esa foto no existe.» (como perfil y logo) y deshace todo el pedido; nunca deja vacía la del equipo");
     if (/\?\? null;\s*\n\s*(?:\/\/[^\n]*\n\s*)?if \(photo\) await/.test(q)) falla(G, Q, 0, "equipoGuardar: vuelve el «if (photo)» que ignora en silencio la foto que no se adjuntó");
@@ -14124,7 +14128,7 @@ const guardianes = {
     if (!/\(puestas\.rowCount \?\? 0\) !== ids\.length\) throw new FotosAjenasEvt\(\);/.test(e) || !/\[\.\.\.new Set\(d\.fotos\.map/.test(e)) falla(G, E, 0, "lineupYFotos: compara las fotos adjuntadas con las pedidas y lanza dentro de la transacción");
     if (!/err instanceof FotosAjenasEvt\) return /.test(e) || !VARIAS.test(e)) falla(G, E, 0, "eventos: una foto que no se puede adjuntar se rechaza con «Una de las fotos ya no está. Súbela otra vez.», nunca ok");
     // Por clase: un update media a negocio / equipo / evento cuyo resultado nadie lee ignora en silencio lo que no adjuntó.
-    for (const [x, t] of [[A, a], [Q, q], [E, e]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event)'/gm))
+    for (const [x, t] of [[A, a], [Q, q], [E, e]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event|logo)'/gm))
       falla(G, x, t.slice(0, m.index).split("\n").length + 1, "un update media a negocio / equipo / evento sin leer su resultado: si no adjunta la foto no se entera nadie (usa rowCount o returning y rechaza)");
   },
 
@@ -14292,7 +14296,7 @@ const guardianes = {
     // (5) La ruta: 404 a quien no puede, sin caché, nosniff, el equipo auditado en su transacción; la variante con el mismo permiso.
     if (!/const no = \(\) => new NextResponse\(null, \{ status: 404 \}\);/.test(rv) || /status: 403/.test(rv) || !/const p = await permisoFotoPrivada\(db\(\), id, \{ userId: me\.id, equipo \}\);\s*if \(!p\.ok\) return no\(\);/.test(rv)
       || !/"cache-control": "private, no-store", "x-content-type-options": "nosniff"/.test(rv) || /public|max-age|s-maxage|immutable/.test(rv.replace(/private, no-store/, ""))
-      || !/if \(p\.por === "equipo"\)\s*await tx\(\(c\) => auditar\(c, \{ actor: p\.staff, action: "fotos\.privada\.ver"/.test(rv) || !/\{ clave: llaveVariantePrivada\(id, a\), tipo: "image\/webp" \}/.test(rv) || !/const maestra = \{ clave: p\.llave, tipo: "image\/jpeg" \};/.test(rv))
+      || !/const ver = p\.por === "equipo"\s*\? \(\) => tx\(\(c\) => auditar\(c, \{ actor: p\.staff, action: "fotos\.privada\.ver"/.test(rv) || !rv.includes("return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, [maestra], cab, no, ver)).catch(() => no());") || !/\{ clave: llaveVariantePrivada\(id, a\), tipo: "image\/webp" \}/.test(rv) || !/const maestra = \{ clave: p\.llave, tipo: "image\/jpeg" \};/.test(rv))
       falla(G, RV, 0, "la ruta de una foto privada: el permiso de permisoFotoPrivada (404 a quien no puede, nunca 403), private, no-store, nosniff, el equipo auditado, y la variante con el mismo permiso");
     // (6) Nadie más toca privado/o/ por su cuenta (ni lee ni escribe ni sirve).
     for (const x of codigo) if (/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x) && ![FP, "apps/web/lib/fotos-variantes.ts"].includes(x) && /privado\/o\//.test(sinComent(x)))
@@ -14360,10 +14364,10 @@ const guardianes = {
       const t = sinComent(f);
       if (!t.includes(CAB) || /\b(public|s-maxage|immutable)\b|max-age/.test(t)) falla(G, f, 0, "F3b: la entera y su variante salen con las mismas cabeceras privadas (private, no-store, nosniff, Vary: Accept, Cookie); nunca públicas");
       if (/\.w\$\{|\.webp|llaveVarianteDe\(|leerObjeto\(/.test(t)) falla(G, f, 0, "F3b: la ruta elige la variante solo con llavesAEntregar (después del permiso), nunca armando la llave por su cuenta");
-      if (!t.includes("return entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));")) falla(G, f, 0, "F3b: la ruta entrega las llaves de llavesAEntregar (la variante y, si falla, la maestra) con sus cabeceras");
+      if (!t.includes("return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));")) falla(G, f, 0, "F3b: la ruta entrega las llaves de llavesAEntregar (la variante y, si falla, la maestra) con sus cabeceras; un archivo ausente da el MISMO 404 que «no tienes permiso» (no) y el renglón del equipo sale con la entrega (ver)");
       if (tipo === "msg") {
         // Cada entrega (servir) viene justo después de «if (!ok) return no();»: la variante pasa por el mismo permiso que la entera.
-        const n = (t.match(/servir\(req, /g) ?? []).length, bien = (t.match(/if \(!ok\) return no\(\);\s*return servir\(req, \w+\.url, \w+\.var_widths\);/g) ?? []).length;
+        const n = (t.match(/servir\(req, /g) ?? []).length, bien = (t.match(/if \(!ok\) return no\(\);\s*return servir\(req, \w+\.url, \w+\.var_widths, ver\);/g) ?? []).length;
         if (n !== 2 || bien !== 2 || !cuerpoFn(t, "servir").includes("const llaves = llavesAEntregar(req, url, anchos);"))
           falla(G, f, 0, "F3b: la foto de un mensaje (y su variante) solo se entrega después de «if (!ok) return no();», en sus dos caminos (cliente-negocio y vecinos)");
       } else {
@@ -14388,6 +14392,19 @@ const guardianes = {
     }
     const pu = existsSync("pruebas/alreves/alreves9ufoto.cjs") ? readFileSync("pruebas/alreves/alreves9ufoto.cjs", "utf8") : "";
     for (const k of ["['mensajes', `/api/mensajes/foto/${id}`]", "['ayuda', `/api/ayuda/foto/${id}`]", "['entrega', `/api/entrega/foto/${id}`]", "['reclamo', '/api/admin/reclamo/CL-1234']"]) if (!pu.includes(k)) falla(G, "pruebas/alreves/alreves9ufoto.cjs", 0, `la prueba pura de fotoSrc dejó de revisar «${k}»`);
+    // (15) 22 nov · Un archivo que falta en el almacén con la fila viva da 404 (el mismo, sin cabeceras distintas, que «no tienes permiso»; antes 500) y
+    // NO deja el renglón de «vio la foto» del equipo: el renglón es lo que entregarPrivado llama (alEntregar) cuando el objeto existe y va a salir. Ninguna
+    // de las cinco rutas lo escribe antes de entregar (un «await tx(… auditar(…))» suelto), y toda entrega pasa `no` (siFalta) y `ver` (alEntregar).
+    // Al revés: alreves9uprivadas.
+    for (const f of [RV, ...Object.keys(VER)]) {
+      const t = existsSync(f) ? sinComent(f) : "";
+      if (/await tx\(\(c\) => auditar\(c, \{[^\n]*"[\w.]+\.ver"/.test(t)) falla(G, f, 0, "deja el renglón de «vio la foto» ANTES de entregar: si el archivo falta quedaría el renglón de algo que nadie vio (va en `ver`, que entregarPrivado llama al abrir el objeto)");
+      if (!/const no = \(\) => new NextResponse\(null, \{ status: 404 \}\);/.test(t)) falla(G, f, 0, "la ruta no tiene su 404 único (no): el de un archivo ausente debe ser el mismo que el de «no tienes permiso»");
+      for (const x of t.matchAll(/entregarPrivado\(req, [^\n]*/g)) if (!/, cab, no, ver\)/.test(x[0])) falla(G, f, t.slice(0, x.index).split("\n").length, "entregarPrivado sin `no` y `ver`: un archivo ausente daría 500 (o dejaría el renglón de quien vio la foto)");
+    }
+    const ent = sinComent("apps/web/lib/entrega-privada.ts"), epr = cuerpoFn(ent, "entregarPrivado");
+    if (!/alEntregar\?: \(\) => Promise<unknown>/.test(ent) || !/if \(!a\) continue;\s*if \(alEntregar\) \{ try \{ await alEntregar\(\); \} catch \(e\) \{ if \(a\.estado === 200\) void a\.cuerpo\.cancel\(\)\.catch\(\(\) => undefined\); throw e; \} \}/.test(epr) || !/if \(siFalta\) return siFalta\(\);/.test(epr))
+      falla(G, "apps/web/lib/entrega-privada.ts", 0, "entregarPrivado: el renglón del equipo (alEntregar) se llama solo con el objeto ya abierto (si falla se suelta el cuerpo sin esperar) y sin archivo contesta siFalta");
     // (13) 22 nov · Una fila PURGADA (retención, cuenta borrada: su dirección pasa a «privado/borrada», que no existe en el almacén) nunca llega a
     // entregarPrivado: cada consulta de media de las rutas de las otras privadas lleva «purged_at is null» (el documento de un reclamo purgado daba 500;
     // la ruta de privado/o/ lo trae en LADOS, arriba). Al revés: alreves9uprivadas; de punta a punta: rec1j (el documento purgado da 404).

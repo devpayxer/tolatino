@@ -28,6 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       where m.id = $1 and m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/a/%'`, [id])).rows[0];
   if (!m) return no();
   const me = await yo();
+  let ver: (() => Promise<unknown>) | undefined; // el renglón del equipo se deja solo si el archivo existe y sale (entregarPrivado alEntregar)
   let ok = !!me && me.id === m.uploaded_by;
   if (!ok && m.tk) {
     ok = !!me && me.id === m.tkuser;
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!ok) {
       const s = await staff();
       if (s && s.puede("sop", "ver") && (!s.cities.length || (m.tkcity && s.cities.includes(m.tkcity)))) {
-        await tx((c) => auditar(c, { actor: s.id, action: "soporte.foto.ver", targetKind: "support_case", targetId: m.tk, city: m.tkcity ?? undefined }));
+        ver = () => tx((c) => auditar(c, { actor: s.id, action: "soporte.foto.ver", targetKind: "support_case", targetId: m.tk, city: m.tkcity ?? undefined }));
         ok = true;
       }
     }
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // 9j · «Vidrio roto»: la foto de una ayuda de Salud (consultorio) solo con un motivo escrito y vigente de esta persona (lib/sistema/vidrio.ts).
     const sinMotivo = !!s && m.owner_kind === "help" && (await ayudaDeSalud(m.owner_id)) && !(await vidrioVigente(s.id, m.owner_id));
     if (s && !sinMotivo && colasVisibles(s).includes("sop") && (!s.cities.length || (m.city && s.cities.includes(m.city)))) {
-      await tx((c) => auditar(c, { actor: s.id, action: "ayuda.foto.ver", targetKind: "help_request", targetId: m.hnum ?? m.owner_id, city: m.city ?? undefined }));
+      ver = () => tx((c) => auditar(c, { actor: s.id, action: "ayuda.foto.ver", targetKind: "help_request", targetId: m.hnum ?? m.owner_id, city: m.city ?? undefined }));
       ok = true;
     }
   }
@@ -55,5 +56,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // MISMO permiso de arriba y las mismas cabeceras privadas; si la variante falla en el almacén, la maestra.
   const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };
   const llaves = llavesAEntregar(req, m.url, m.var_widths);
-  return entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));
+  return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));
 }

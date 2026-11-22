@@ -35,6 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!m) return fotoDeVecinos(req, id);
   const me = await yo();
   if (!me) return no();
+  let ver: Ver | undefined; // el renglón del equipo se deja solo si el archivo existe y sale (entregarPrivado alEntregar)
   let ok = me.id === m.subio;
   const lista = m.status === "visible" && !!m.msg && !m.oculto;
   if (!ok && lista && m.vecino === me.id) ok = true;
@@ -50,21 +51,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
              or (q.queue = 'medios' and q.subject_kind = 'media' and q.subject_id = $2))
           order by (q.queue = 'medios') desc limit 1`, [m.hilo, id])).rows[0];
       if (caso && colas.includes(caso.q as (typeof colas)[number])) {
-        await tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: "chat_message", targetId: m.msg, city: m.city, after: { foto: id, por: caso.q === "medios" ? "foto en revisión" : "conversación reportada" } }));
+        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: "chat_message", targetId: m.msg, city: m.city, after: { foto: id, por: caso.q === "medios" ? "foto en revisión" : "conversación reportada" } }));
         ok = true;
       }
     }
   }
   if (!ok) return no();
-  return servir(req, m.url, m.var_widths);
+  return servir(req, m.url, m.var_widths, ver);
 }
 /* 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match; solo después del permiso (lib/entrega-privada.ts).
    F3b · Con `?w=` la variante de ese ancho (lib/fotos-privadas.ts llavesAEntregar), con EL MISMO permiso que la entera (ya se decidió arriba), las mismas
    cabeceras privadas y Vary: si la variante falla en el almacén, la maestra. */
-async function servir(req: Request, url: string, anchos: number[] | null) {
+type Ver = () => Promise<unknown>;
+async function servir(req: Request, url: string, anchos: number[] | null, ver?: Ver) {
   const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };
   const llaves = llavesAEntregar(req, url, anchos);
-  return entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));
+  return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));
 }
 
 /* 9t · La foto de un mensaje entre vecinos. Ninguna consulta de aquí lee los mensajes: eso lo hacen mensajes-vecinos.ts (las dos personas) y
@@ -76,6 +78,7 @@ async function fotoDeVecinos(req: Request, id: string) {
   if (!d) return no();
   const me = await yo();
   if (!me) return no();
+  let ver: Ver | undefined;
   let ok = me.id === d.subio;
   if (!ok && d.status === "visible") ok = await fotoDmVecino(me.id, id);
   if (!ok) {
@@ -89,11 +92,11 @@ async function fotoDeVecinos(req: Request, id: string) {
       const caso = med && colas.includes("medios") && enCiudad(med.city) ? { por: "foto en revisión", city: med.city, msg: null as string | null }
         : rep && colas.includes("chat") && enCiudad(rep.city) ? { por: "conversación reportada", city: rep.city, msg: rep.msg } : null;
       if (caso) {
-        await tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg ? "dm_message" : "media", targetId: caso.msg ?? id, city: caso.city, after: { foto: id, por: caso.por } }));
+        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg ? "dm_message" : "media", targetId: caso.msg ?? id, city: caso.city, after: { foto: id, por: caso.por } }));
         ok = true;
       }
     }
   }
   if (!ok) return no();
-  return servir(req, d.url, d.var_widths);
+  return servir(req, d.url, d.var_widths, ver);
 }

@@ -21,7 +21,7 @@ const casos = [
   ['fotoMensajePrivada', VE, " and x.private and x.purged_at is null", " and x.purged_at is null"],
   ['fotoMensajePrivada', VE, 'const lista = m.status === "visible" && !!m.msg && !m.oculto;', 'const lista = !!m.msg;'],
   ['fotoMensajePrivada', VE, 'ok = !!(await accesoPanel(m.biz, "msg"))', 'ok = !!(await accesoPanel(m.biz))'],
-  ['fotoMensajePrivada', VE, '        await tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver",', '        void tx; void auditar; void (async (c: unknown) => ({ c, actor: s.id, action: "mensajes.foto.ver",'],
+  ['fotoMensajePrivada', VE, '        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver",', '        void tx; void auditar; void (async (c: unknown) => ({ c, actor: s.id, action: "mensajes.foto.ver",'],
   ['fotoMensajePrivada', VE, 'if (caso && colas.includes(caso.q as (typeof colas)[number])) {', 'if (caso) { void colas;'],
   ['fotoMensajePrivada', VE, '"cache-control": "private, no-store"', '"cache-control": "public, max-age=3600"'],
   // · lib/mensajes.ts: tomar la foto de otra persona, sin marcar la que está en revisión, la dirección a quien no la puede ver, sin atarla en el envío

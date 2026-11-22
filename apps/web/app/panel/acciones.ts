@@ -129,18 +129,17 @@ export async function logoPoner(id: string, mediaId: string | null): Promise<Res
   if (!a) return SIN_ACCESO;
   if (mediaId !== null && (typeof mediaId !== "string" || !UUID.test(mediaId))) return no("Esa foto no existe.", "That photo doesn’t exist.");
   const antes = (await db().query<{ logo_url: string | null }>(`select logo_url from businesses where id = $1`, [a.negocio.id])).rows[0]?.logo_url ?? null;
-  const ok = await tx(async (c) => {
+  // Todo o nada: el logo anterior se quita en la misma transacción que pone el nuevo; si la foto nueva no se puede adjuntar se lanza y se deshace (el negocio conserva su logo).
+  try { await tx(async (c) => {
     await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2 where owner_kind = 'logo' and owner_id = $1 and status = 'visible'`, [a.negocio.id, a.yo.id]);
-    if (mediaId === null) { await c.query(`update businesses set logo_url = null, updated_at = now() where id = $1`, [a.negocio.id]); await auditar(c, a, "panel.logo_quitar", { logo: antes }, { media: mediaId }); return true; }
+    if (mediaId === null) { await c.query(`update businesses set logo_url = null, updated_at = now() where id = $1`, [a.negocio.id]); await auditar(c, a, "panel.logo_quitar", { logo: antes }, { media: mediaId }); return; }
     const m = (await c.query<{ url: string }>(
       `update media set owner_kind = 'logo', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`,
       [a.negocio.id, mediaId, a.yo.id])).rows[0];
-    if (!m) return false;
+    if (!m) throw new FotoNoAdjunta();
     await c.query(`update businesses set logo_url = $2, updated_at = now() where id = $1`, [a.negocio.id, m.url]);
     await auditar(c, a, "panel.logo", { logo: antes }, { media: mediaId });
-    return true;
-  });
-  if (!ok) return no("Esa foto no existe.", "That photo doesn’t exist.");
+  }); } catch (e) { if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist."); throw e; }
   return { ok: true };
 }
 
