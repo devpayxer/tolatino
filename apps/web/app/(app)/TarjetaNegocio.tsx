@@ -1,22 +1,23 @@
 "use client";
-/* Tarjeta de negocio en cualquier lista: BusinessCard del sistema + lo que pasa al tocarla. Abrir → ficha;
-   Llamar → teléfono; Cómo llegar → mapas del teléfono; corazón → Guardados (sin sesión: entrar y volver). */
-import * as UI from "@tolatino/ui";
+/* Tarjeta de negocio en cualquier lista: la «Vitrina» del sistema (TarjetaVitrina para Pro, FilaFree para Free; decisión AK, 22 nov) + lo que
+   pasa al tocarla. Abrir → ficha; Llamar → teléfono; botón principal → lo que decide el servidor (botonPrincipal: ficha, llamar o mapas del
+   teléfono); corazón → Guardados (sin sesión: entrar y volver); «+N FOTOS» → la galería de la ficha; el video aprobado (C-001) se mueve en
+   la celda grande de la galería; la caja HOY (con algo publicado en las últimas 24 h) abre «Hoy en el barrio» de ese negocio.
+   Las palabras de los botones y del estado salen del servidor (botonPrincipal, estado()); aquí solo se arman los nombres accesibles. */
+import { FilaFree, TarjetaVitrina } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useState } from "react";
 import type { Accion, Tarjeta } from "@/lib/tarjeta";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 import { guardarNegocio, registrarToque } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { VideoTarjeta, VisorHoy } from "./VideoNegocio";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { BusinessCard } = UI as unknown as Record<"BusinessCard", ComponentType<any>>;
-
-/* C-002 · `una`: la tarjeta Pro de la página de categoría (una línea de datos y un botón; BusinessCard oneLine). */
-export function TarjetaNegocio({ b, origen, textos, es = true, una = false }: { b: Tarjeta; origen: string; textos: { hoy: string; llamar: string }; es?: boolean; una?: boolean }) {
+export function TarjetaNegocio({ b, origen, textos, es = true, urgente = false }: { b: Tarjeta; origen: string; textos: { hoy: string; llamar: string }; es?: boolean; urgente?: boolean }) {
+  const E2 = (a: string, c: string) => dosIdiomas(es, a, c);
   const router = useRouter();
   const [guardado, setGuardado] = useState(b.saved);
-  const [anillo, setAnillo] = useState(false);
+  const [hoy, setHoy] = useState(false);
   const hacer = (a: Accion) => () => {
     if (a === "ficha") return router.push(`/n/${b.id}`);
     if (a === "llamar" && b.phone) {
@@ -37,20 +38,30 @@ export function TarjetaNegocio({ b, origen, textos, es = true, una = false }: { 
     setGuardado(antes);
     if ("entrar" in r && r.entrar) router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`);
   };
-  // C-001 · Pro: el video aprobado en la foto (solo se mueve el del centro) y el anillo del logo si el negocio tiene algo de hoy.
+  const llamar = b.phone ? hacer("llamar") : undefined;
+  const llamarNombre = `${E2("Llamar a", "Call")} ${b.name}`;
+  if (b.plan === "free")
+    return <FilaFree nombre={b.name} dato={b.meta} calificacion={b.rating} resenas={b.reviews} calificacionNota={b.reviewsNote} foto={b.photo}
+      llamarEtiqueta={textos.llamar} llamarNombre={llamarNombre} onLlamar={llamar} onAbrir={hacer("ficha")} />;
+  // C-001 · la caja HOY: con algo publicado en las últimas 24 h (historia) abre «Hoy en el barrio» de este negocio (ya no hay anillo sobre un logo).
   const h = b.historia && b.historia.avisos.length ? b.historia : null;
+  const oferta = b.offer ?? h?.avisos[0]?.texto ?? undefined;
   return (
     <>
-    <BusinessCard
-      plan={b.plan} name={b.name} verified={b.verified} meta={una && b.plan === "pro" ? (b.donde ?? "").toLowerCase() : b.meta} rating={b.rating} reviews={b.reviews} reviewsNote={b.reviewsNote}
-      status={b.status} open={b.open} photos={b.photo ? [b.photo] : []} chips={b.chips} offer={b.offer ?? undefined} offerTag={textos.hoy}
-      cta={b.cta} ctaIcon={b.ctaIcon} contactLabel={textos.llamar} saved={guardado}
-      onOpen={hacer("ficha")} onCta={hacer(b.accion)} onSave={guardar} onContact={hacer("llamar")}
-      media={b.video ? <VideoTarjeta src={b.video.src} poster={b.video.poster} nombre={b.name} es={es} /> : null}
-      oneLine={una || undefined}
-      ring={h ? h.logo ?? b.photo ?? "" : undefined} onRing={() => setAnillo(true)} ringLabel={`${es ? "Hoy en el barrio" : "Today nearby"} · ${b.name}`}
-    />
-    {anillo && h ? <VisorHoy h={h} es={es} onClose={() => setAnillo(false)} /> : null}
+      <TarjetaVitrina nombre={b.name} verificado={b.verified} verificadoEtiqueta={E2("Verificado", "Verified")}
+        calificacion={b.rating} resenas={b.reviews} calificacionNota={b.reviewsNote} dato={b.meta}
+        estado={b.status} abierto={b.open} fotos={b.fotos} fotosTotal={b.nfotos} urgente={urgente}
+        masFotosEtiqueta={(n) => `+${n} ${E2("FOTOS", "PHOTOS")}`} masFotosNombre={(n) => `${E2("Ver las fotos de", "See the photos of")} ${b.name} (+${n})`}
+        onMasFotos={() => router.push(`/n/${b.id}/fotos`)}
+        media={b.video ? <VideoTarjeta src={b.video.src} poster={b.video.poster} nombre={b.name} es={es} solo={b.fotos.length < 2} /> : null}
+        chips={b.chips} horarioNombre={(l) => `${E2("Horario", "Time")} ${l} · ${b.name}`}
+        oferta={oferta} ofertaEtiqueta={textos.hoy} onOferta={h ? () => setHoy(true) : undefined}
+        ofertaNombre={`${E2("Hoy en el barrio", "Today nearby")} · ${b.name}${oferta ? `: ${oferta}` : ""}`}
+        cta={b.cta} ctaIcono={b.ctaIcon} onCta={hacer(b.accion)}
+        llamarNombre={llamarNombre} onLlamar={llamar}
+        guardado={guardado} guardarNombre={`${E2("Guardar", "Save")} ${b.name}`} quitarNombre={`${E2("Quitar de guardados", "Remove from saved")} · ${b.name}`} onGuardar={guardar}
+        onAbrir={hacer("ficha")} />
+      {hoy && h ? <VisorHoy h={h} es={es} onClose={() => setHoy(false)} /> : null}
     </>
   );
 }

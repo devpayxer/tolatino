@@ -78,7 +78,8 @@ type BiOpt = { es?: string; en?: string } | undefined;
 export function chipsTarjeta(cat: string, pro: boolean, tags: string[], attrs: Record<string, unknown>, lang: Lang) {
   const es = lang === "es", tj = (attrs.tarjeta ?? {}) as { eta?: BiOpt; fee?: BiOpt };
   const out: { variant: string; label: string }[] = [];
-  if (tj.eta?.[lang]) out.push({ variant: "slot", label: tj.eta[lang]! });
+  // Vitrina (AK) · «Pickup 20 min» es una CARACTERÍSTICA (chip gris), no un horario libre: el verde («slot») es solo para horas libres de Booking.
+  if (tj.eta?.[lang]) out.push({ variant: "feature", label: tj.eta[lang]! });
   if (tj.fee?.[lang]) out.push({ variant: "feature", label: tj.fee[lang]! });
   if (!pro) return out;
   const v = (label: string) => out.push({ variant: "verified", label });
@@ -118,10 +119,10 @@ export function resenas(rating: number | null, n: number, lang: Lang) {
   return { rating: es ? "Nuevo" : "New", reviews: 0, note: es ? "· en To'Latino" : "· on To'Latino" };
 }
 
-/* Lo que la pantalla recibe por tarjeta (todo listo para pintar con BusinessCard). */
+/* Lo que la pantalla recibe por tarjeta (todo listo para pintar con TarjetaVitrina / FilaFree). `fotos` = hasta 3 (la portada primero), `nfotos` = las públicas en total. */
 export type Tarjeta = {
   id: string; plan: "pro" | "free"; name: string; verified: boolean; meta: string; donde?: string; rating: string; reviews: number; reviewsNote?: string;
-  status: string; open: boolean; photo: string | null; chips: { variant: string; label: string }[]; offer: string | null;
+  status: string; open: boolean; photo: string | null; fotos: string[]; nfotos: number; chips: { variant: string; label: string }[]; offer: string | null;
   cta: string; ctaIcon: string; accion: Accion; saved: boolean; phone: string | null; lat: number | null; lng: number | null;
   // C-001 · Pro: el video aprobado (se mueve solo el de la tarjeta del centro) y su historia de Hoy (el anillo del logo; sin historia, sin anillo).
   video?: { src: string; poster: string } | null; historia?: Historia | null;

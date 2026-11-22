@@ -5,7 +5,7 @@ import { db, tx } from "./db";
 import { HORAS_LLAVE_STRIPE, llaveDe } from "./cobros";
 import { SIN_RESPUESTA } from "./cobro-fuera";
 import { pasarela, type Verificar } from "./pagos/pasarela";
-import { COLUMNAS, CTE, DESDE, FOTO, condiciones, conFoto, type Regla, type Resultado } from "./categoria";
+import { COLUMNAS, CTE, DESDE, FOTOS, condiciones, conFotos, type ConFotosJ, type Regla, type Resultado } from "./categoria";
 import type { Punto } from "./punto";
 import type { Tarjeta } from "./tarjeta";
 
@@ -517,15 +517,15 @@ export async function terminarPorDueno(negocio: string, quien: string, id: strin
 export async function vitrinaCategoria(p: Punto, cat: string, sub: Regla | null, filtros: string[]): Promise<(Resultado & { sid: string })[]> {
   const params: unknown[] = [p.ciudad, cat];
   const extra = condiciones({ sub, filtros }, params);
-  const r = await db().query<Resultado & { sid: string; rn?: number }>(
+  const r = await db().query<Resultado & ConFotosJ & { sid: string; rn?: number }>(
     // nosemgrep: tolatino-sql-con-texto-interpolado — condiciones() solo pone $n; CTE validado
     `${CTE(p)},
           sp as (select id, business_id from sponsorships where city_id = $1 and category_id = $2 and status = 'activo' and starts_at <= now() and ends_at > now()),
           base as (select ${COLUMNAS}, (select sp.id from sp where sp.business_id = b.id order by sp.id limit 1) as sn ${DESDE} and b.category_id = $2 and b.id in (select business_id from sp)${extra}),
           r as (select *, sn::text as sid, (row_number() over (order by sn) - 1)::int as rk, count(*) over ()::int as nn from base)
-     select r.*, ${FOTO("r")} from r order by mod(rk + (extract(epoch from now()) / 3600)::bigint, greatest(nn, 1)) limit ${cfgPuestos}`,
+     select r.*, ${FOTOS("r")} from r order by mod(rk + (extract(epoch from now()) / 3600)::bigint, greatest(nn, 1)) limit ${cfgPuestos}`,
     params);
-  return r.rows.map(({ rn: _rn, ...x }) => (void _rn, conFoto(x)));
+  return r.rows.map(({ rn: _rn, ...x }) => (void _rn, conFotos(x)));
 }
 const cfgPuestos = "(select cfg_int('patrocinio_puestos'))";
 
@@ -547,10 +547,10 @@ export async function tarjetaPropia(negocio: string, lang: "es" | "en"): Promise
     `select b.city_id as ciudad, st_y(ci.center::geometry) as lat, st_x(ci.center::geometry) as lng from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [negocio])).rows[0];
   if (!ci) return null;
   const p: Punto = { ciudad: ci.ciudad, lat: ci.lat, lng: ci.lng, rad: 100 };
-  const r = await db().query<Resultado>(`${CTE(p)} select ${COLUMNAS}, ${FOTO("b")} from businesses b join business_stats_cache s on s.business_id = b.id, c, t where b.id = $2`, [ci.ciudad, negocio]);
+  const r = await db().query<Resultado & ConFotosJ>(`${CTE(p)} select ${COLUMNAS}, ${FOTOS("b")} from businesses b join business_stats_cache s on s.business_id = b.id, c, t where b.id = $2`, [ci.ciudad, negocio]);
   if (!r.rows[0]) return null;
   const { armarTarjetas } = await import("./tarjetas");
-  return (await armarTarjetas(ci.ciudad, r.rows.map((x) => conFoto(x)), lang, null))[0] ?? null;
+  return (await armarTarjetas(ci.ciudad, r.rows.map((x) => conFotos(x)), lang, null))[0] ?? null;
 }
 
 /* ── El panel (Cobros y plan › Patrocinio) ── */

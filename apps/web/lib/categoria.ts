@@ -76,6 +76,8 @@ export type Resultado = {
   id: string; cat: string; name: string; pro: boolean; verified: boolean; rating: number | null; reviews: number; mi: number | null;
   radius: number | null; fromHome: boolean; phone: string | null; lat: number | null; lng: number | null;
   subs: string[]; tags: string[]; attrs: Record<string, unknown>; open: boolean; photo: string | null;
+  // Vitrina (AK) · hasta 3 fotos de la galería (la portada primero) y cuántas fotos públicas tiene en total; salen de FOTOS(), en la misma consulta.
+  fotos?: string[]; nfotos?: number;
 };
 
 /* Condiciones SQL de un mosaico y de los filtros. Los valores siempre van como parámetros. */
@@ -123,6 +125,19 @@ export const DESDE = `from businesses b join business_stats_cache s on s.busines
 export const FOTO = (x: string) =>
   `(select m.url from media m where m.owner_kind = 'business' and m.owner_id = ${x}.id and m.status = 'visible' order by m.sort limit 1) as photo`;
 export const conFoto = <X extends { photo: string | null }>(x: X) => ({ ...x, photo: foto(x.photo) });
+/* Vitrina (AK) · La galería de la tarjeta: las tres primeras fotos que el público puede ver (visibles, no privadas, no purgadas; la portada es la de menor
+   `sort`) y cuántas son en total, en UNA subconsulta por negocio de la página (nunca una consulta por tarjeta). Usa el mismo índice que FOTO
+   (media_owner_idx: owner_kind, owner_id, status, sort) y se aplica después del límite de la página. `fotos_j` = {"u": [urls], "n": total}. */
+export const FOTOS = (x: string) =>
+  `(select jsonb_build_object('u', coalesce(jsonb_agg(q.url order by q.rn) filter (where q.rn <= 3), '[]'::jsonb), 'n', count(*))
+      from (select m.url, row_number() over (order by m.sort, m.id) as rn
+              from media m where m.owner_kind = 'business' and m.owner_id = ${x}.id and m.status = 'visible' and not m.private and m.purged_at is null) q) as fotos_j`;
+export type ConFotosJ = { photo?: string | null; fotos_j?: { u: string[]; n: number } | null };
+/* Lo que sale de FOTOS(): `photo` (la portada, como antes), `fotos` (hasta 3) y `nfotos` (el total). */
+export const conFotos = <X extends ConFotosJ>({ fotos_j, ...x }: X) => {
+  const u = (fotos_j?.u ?? []).map((f) => foto(f) ?? f);
+  return { ...x, photo: u[0] ?? null, fotos: u, nfotos: Number(fotos_j?.n ?? 0) };
+};
 
 /* Fiestas (4t): «Libre este sábado» cambia solo a medianoche; la primera vez del día que alguien mira la categoría en una
    ciudad se recalculan sus filtros de fechas (una vez por ciudad y día por proceso). */
@@ -156,7 +171,7 @@ export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total
     top: `rating desc nulls last, id`,
     rev: `reviews desc, id`,
   }[p.orden];
-  const r = await db().query<Resultado & { total: string }>(
+  const r = await db().query<Resultado & ConFotosJ & { total: string }>(
     // nosemgrep: tolatino-sql-con-texto-interpolado — condiciones() solo pone $n; el orden sale de un mapa fijo; CTE validado; offset como $n
     `${CTE(p.punto)},
           base as (select ${COLUMNAS} ${DESDE} and b.category_id = $2${extra}),
@@ -164,12 +179,12 @@ export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total
             select *, (row_number() over (partition by pro order by score desc, id) - 1)::int as rn,
                    (count(*) filter (where pro) over ())::int as npro, count(*) over () as total
               from base)
-     select r.*, ${FOTO("r")} from r order by pro desc, ${orden} limit ${POR_PAGINA} offset ${off}`,
+     select r.*, ${FOTOS("r")} from r order by pro desc, ${orden} limit ${POR_PAGINA} offset ${off}`,
     params,
   );
   const total = Number(r.rows[0]?.total ?? 0);
   const paginas = Math.max(1, Math.min(PAGINA_MAX, Math.ceil(total / POR_PAGINA)));
-  const items = r.rows.map(({ total: _t, ...x }) => conFoto(x));
+  const items = r.rows.map(({ total: _t, ...x }) => conFotos(x));
   return { items, total, pagina, paginas };
 }
 
@@ -177,7 +192,7 @@ export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total
    9h · Super Admin › Crecimiento › Destacados (featured, 0138): lo FIJADO por el equipo sale primero (activo, en el radio, en el orden en que se fijó) y lo
    QUITADO no entra a la rotación, mientras dure (destacados_dias). Sin destacados vivos, la vitrina es exactamente la de siempre. */
 export async function destacados(p: Punto, n: number): Promise<Resultado[]> {
-  const r = await db().query<Resultado>(
+  const r = await db().query<Resultado & ConFotosJ>(
     `${CTE(p)},
           fx as (select business_id, mode, created_at from featured where city_id = $1 and placement = 'negocios' and retired_at is null and from_at <= now() and to_at > now()),
           fij as (select ${COLUMNAS}, 0 as rn, 0 as npro, 0 as grupo, (select extract(epoch from min(f.created_at)) from fx f where f.business_id = b.id)::float8 as orden
@@ -187,21 +202,21 @@ export async function destacados(p: Punto, n: number): Promise<Resultado[]> {
                      and b.id not in (select business_id from fx)),
           r as (select *, (row_number() over (order by id) - 1)::int as rn, count(*) over ()::int as npro from base),
           rot as (select r.*, 1 as grupo, mod(rn - mod(dia, greatest(npro, 1)) + npro, greatest(npro, 1))::float8 as orden from r)
-     select x.*, ${FOTO("x")} from (select * from fij union all select * from rot) x order by x.grupo, x.orden limit $2`,
+     select x.*, ${FOTOS("x")} from (select * from fij union all select * from rot) x order by x.grupo, x.orden limit $2`,
     [p.ciudad, n],
   );
-  return r.rows.map(conFoto);
+  return r.rows.map(conFotos);
 }
 
 /* Nuevos en el barrio: los que se unieron en los últimos 60 días, el más reciente primero. */
 export async function nuevos(p: Punto, n: number): Promise<Resultado[]> {
-  const r = await db().query<Resultado>(
+  const r = await db().query<Resultado & ConFotosJ>(
     `${CTE(p)}
-     select ${COLUMNAS}, ${FOTO("b")} ${DESDE} and b.created_at > now() - interval '60 days'
+     select ${COLUMNAS}, ${FOTOS("b")} ${DESDE} and b.created_at > now() - interval '60 days'
       order by b.created_at desc, s.plan = 'pro' desc, b.id limit $2`,
     [p.ciudad, n],
   );
-  return r.rows.map(conFoto);
+  return r.rows.map(conFotos);
 }
 
 /* Cuántos negocios activos tiene cada categoría desde el punto y radio elegidos (tarjetas de Negocios). */

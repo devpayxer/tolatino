@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@tolatino/ui/tokens.css";
 @import "@tolatino/ui/esqueleto.css";
+@import "@tolatino/ui/vitrina.css";
 
 
 /* Los tokens del sistema (docs/diseno/design-system/tokens) expuestos a Tailwind.

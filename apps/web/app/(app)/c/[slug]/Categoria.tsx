@@ -6,7 +6,7 @@
    en la portada (teléfono), UNA fila de pestañas (cada fila de exploración + Antojos; se ve una a la vez), la vitrina «Patrocinados», filtros y la
    lista. La tarjeta Pro: una línea de datos y un botón; la oferta solo si hay algo de hoy. */
 import * as UI from "@tolatino/ui";
-import { fotoFondo } from "@tolatino/ui";
+import { FilaFree, fotoFondo } from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import { avisame, registrarToqueSemilla } from "../../acciones";
@@ -15,9 +15,9 @@ import { usarBuscadorPagina } from "../../BuscadorPagina";
 import { Patrocinados, type Patrocinada } from "./Patrocinados";
 import type { Tarjeta } from "@/lib/tarjeta";
 
-type N = "Chip" | "Button" | "IconButton" | "Icon" | "InfoCard" | "Eyebrow" | "SearchSelect" | "BusinessCard";
+type N = "Chip" | "Button" | "IconButton" | "Icon" | "InfoCard" | "Eyebrow" | "SearchSelect";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Chip, Button, IconButton, Icon, InfoCard, Eyebrow, SearchSelect, BusinessCard } = UI as unknown as Record<N, ComponentType<any>>;
+const { Chip, Button, IconButton, Icon, InfoCard, Eyebrow, SearchSelect } = UI as unknown as Record<N, ComponentType<any>>;
 
 type Tile = { key: string; label: string; photo: string | null; flag: string | null };
 export type Vista = {
@@ -78,7 +78,7 @@ export function Categoria({ v }: { v: Vista }) {
 
   const pros = v.tarjetas.filter((b) => b.plan === "pro"), frees = v.tarjetas.filter((b) => b.plan === "free");
   const tarjeta = (b: Tarjeta) => (
-    <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} una b={b} origen="categoria" textos={{ hoy: T.hoy ?? "", llamar: T.llamar ?? "" }} /></div>
+    <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="categoria" textos={{ hoy: T.hoy ?? "", llamar: T.llamar ?? "" }} /></div>
   );
 
   return (
@@ -249,21 +249,21 @@ export function Categoria({ v }: { v: Vista }) {
           </InfoCard>
         )}
 
-        {pros.length > 0 && <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:gap-4">{pros.map(tarjeta)}</div>}
+        {pros.length > 0 && <div className="tl-vit-rejilla" data-lista="pro">{pros.map(tarjeta)}</div>}
         {(frees.length > 0 || v.semillas.length > 0) && (
           <div className="flex flex-col gap-3">
             <div className="hidden flex-wrap items-baseline gap-3 lg:flex">
               <span className="font-display text-[22px] font-extrabold tracking-[-0.035em]">{T.freeTitulo}</span>
               <span className="font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/60">{T.freeSub}</span>
             </div>
-            <div className="flex flex-col gap-3 lg:mt-0.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
+            <div className="tl-fila-rejilla" data-lista="free">
               {frees.map(tarjeta)}
               {/* Semilla: «SIN RECLAMAR · ¿Es tuyo? Reclámalo gratis» → Publica tu negocio (Prototipo P:2419-2421). */}
               {v.semillas.map((x) => (
                 <div key={`s${x.id}`} className="grid">
-                  <BusinessCard plan="free" name={x.name} verified={false} meta={`${T.sinReclamar}${x.address ? ` · ${x.address.toUpperCase()}` : ""}`} rating={T.esTuyo} reviews={0} reviewsNote={T.reclamalo}
-                    photos={[]} chips={[]} contactLabel={T.llamar} onOpen={() => router.push(`/publica?semilla=${x.id}`)}
-                    onContact={() => { if (x.phone) { void registrarToqueSemilla(x.id, "categoria"); location.href = `tel:${x.phone}`; } else router.push(`/publica?semilla=${x.id}`); }} />
+                  <FilaFree nombre={x.name} dato={`${T.sinReclamar}${x.address ? ` · ${x.address.toUpperCase()}` : ""}`} calificacion={T.esTuyo ?? ""} resenas={0} calificacionNota={T.reclamalo}
+                    llamarEtiqueta={T.llamar ?? ""} llamarNombre={`${T.llamar ?? ""} · ${x.name}`} onAbrir={() => router.push(`/publica?semilla=${x.id}`)}
+                    onLlamar={() => { if (x.phone) { void registrarToqueSemilla(x.id, "categoria"); location.href = `tel:${x.phone}`; } else router.push(`/publica?semilla=${x.id}`); }} />
                 </div>))}
             </div>
           </div>

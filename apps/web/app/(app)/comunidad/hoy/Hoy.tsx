@@ -55,9 +55,12 @@ function Cuerpo({ es, ciudad, cat, d, nuevos, ancho, tx }: { es: boolean; ciudad
           {nuevos.length > 0 && (
             <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <SectionHeader title={E2("Nuevos en el barrio", "New in the neighborhood")} />
-              <div style={{ display: "grid", gridTemplateColumns: D ? "repeat(auto-fill,minmax(300px,1fr))" : "minmax(0,1fr)", gap: 12 }}>
-                {nuevos.map((b) => <div key={b.id} style={{ display: "grid" }}><TarjetaNegocio es={es} b={b} origen="hoy" textos={tx} /></div>)}
-              </div>
+              {nuevos.some((b) => b.plan === "pro") && <div className="tl-vit-rejilla" data-lista="pro">
+                {nuevos.filter((b) => b.plan === "pro").map((b) => <div key={b.id} style={{ display: "grid" }}><TarjetaNegocio es={es} b={b} origen="hoy" textos={tx} /></div>)}
+              </div>}
+              {nuevos.some((b) => b.plan === "free") && <div className="tl-fila-rejilla" data-lista="free">
+                {nuevos.filter((b) => b.plan === "free").map((b) => <div key={b.id} style={{ display: "grid" }}><TarjetaNegocio es={es} b={b} origen="hoy" textos={tx} /></div>)}
+              </div>}
             </section>
           )}
         </div>

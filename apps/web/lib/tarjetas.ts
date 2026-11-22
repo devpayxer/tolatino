@@ -28,7 +28,7 @@ export async function armarTarjetas(ciudad: string, items: Resultado[], lang: La
       meta: metaTarjeta(b.cat, b.pro, b.subs.map((s) => nom.get(s) ?? "").filter(Boolean), b.mi, b.radius, b.fromHome, lang),
       donde: dondeTarjeta(b.cat, b.mi, b.radius, b.fromHome, lang),
       rating: rv.rating, reviews: rv.reviews, reviewsNote: rv.note, status: st.text, open: st.open,
-      photo: b.photo, chips: chipsTarjeta(b.cat, b.pro, b.tags, b.attrs, lang), offer: b.pro ? tj.offer?.[lang] ?? null : null,
+      photo: b.photo, fotos: b.fotos ?? (b.photo ? [b.photo] : []), nfotos: b.nfotos ?? (b.photo ? 1 : 0), chips: chipsTarjeta(b.cat, b.pro, b.tags, b.attrs, lang), offer: b.pro ? tj.offer?.[lang] ?? null : null,
       cta: btn.label, ctaIcon: btn.icon, accion: btn.accion, saved: fav.has(b.id),
       phone: b.phone, lat: b.lat, lng: b.lng,
       video: b.pro ? vids.get(b.id) ?? null : null, historia: b.pro ? hist.get(b.id) ?? null : null,

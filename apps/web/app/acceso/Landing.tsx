@@ -6,7 +6,7 @@
    falla y lo dice), ya anotada, código vencido o incorrecto, de fuera de las cinco («Pide tu ciudad»), con negocio («Publica tu negocio»). */
 import { useAncho as useAnchoComun } from "@/app/_ancho/Ancho";
 import * as UI from "@tolatino/ui";
-import { Wordmark } from "@tolatino/ui";
+import { FilaFree, Wordmark } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { MODOS, type Modo } from "@/lib/crecimiento/comun";
@@ -17,7 +17,7 @@ import { listaCodigo, listaConSesion, listaEntrar, listaQuitar } from "./accione
 import type { DatosLanding } from "./datos";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Button, Chip, Icon, Tag, BusinessCard, Eyebrow, InfoCard } = UI as unknown as Record<"Button" | "Chip" | "Icon" | "Tag" | "BusinessCard" | "Eyebrow" | "InfoCard", ComponentType<any>>;
+const { Button, Chip, Icon, Tag, Eyebrow, InfoCard } = UI as unknown as Record<"Button" | "Chip" | "Icon" | "Tag" | "Eyebrow" | "InfoCard", ComponentType<any>>;
 const fmt = (d: string) => { d = d.replace(/\D/g, "").slice(0, 10); return d.length < 4 ? d : d.length < 7 ? `(${d.slice(0, 3)}) ${d.slice(3)}` : `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`; };
 const pon = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => (v[k] != null ? String(v[k]) : `{${k}}`));
 const MODO_T: Record<Modo, string> = { local: "t0", casa: "t1", domicilio: "t2", encargo: "t3", tiempo_libre: "t4" };
@@ -158,7 +158,7 @@ export function Landing({ d }: { d: DatosLanding }) {
     <div data-vitrina={caso} className="flex flex-col gap-3">
       <Eyebrow>{t.vitrinaK}</Eyebrow>
       <p className="font-display text-[22px] font-extrabold leading-[1.2] tracking-[-0.03em]" aria-live="polite">{t[`q${caso}`]}</p>
-      <BusinessCard plan="free" name={t[`n${caso}`]} meta={t[`m${caso}`]} rating="" reviews={0} reviewsNote={t.ejemplo} contactLabel={t.avisame} contactIcon="bell" onContact={irForm} />
+      <FilaFree nombre={t[`n${caso}`] ?? ""} dato={t[`m${caso}`]} calificacion="" resenas={0} calificacionNota={t.ejemplo} llamarEtiqueta={t.avisame ?? ""} llamarIcono="bell" llamarNombre={`${t.avisame ?? ""} · ${t[`n${caso}`] ?? ""}`} onLlamar={irForm} />
       <div className="flex flex-wrap gap-1.5">{[0, 1, 2, 3, 4, 5].map((i) => <Chip key={i} variant={caso === i ? "selected" : "filter"} onClick={() => { setCaso(i); setFijo(true); }}>{t[`n${i}`]}</Chip>)}</div>
     </div>
   );

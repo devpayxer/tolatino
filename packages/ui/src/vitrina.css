@@ -1,0 +1,119 @@
+/* Tarjeta de negocio «Vitrina» (decisión AK, 22 nov; entrega de Claude Design en docs/diseno/entrega/tarjeta-vitrina/README.md).
+   La foto vende: galería de 3 fotos con el estado encima, guardar sobre la foto y la barra de abajo solo para actuar. Pro = tarjeta; Free = fila
+   compacta. Lo pinta packages/ui/src/core/Vitrina.tsx (TarjetaVitrina, FilaFree y sus esqueletos).
+   Reglas del sistema: sin efectos de escala ni elevación al pasar el ratón; los cambios de estado se funden en .2 s y nada más (con «reducir
+   movimiento», sin fundido); foco visible en cada control. Objetivos táctiles: cada control es un <button> cuya CAJA mide 44 × 44 como mínimo
+   (guardián objetivosTactiles); lo que se VE (el círculo de guardar de 34, el botón de 40, la pastilla del horario) va dentro de esa caja, con el
+   relleno puesto DENTRO de ella, igual que el nombre del plato (data-toque="nombre"): nunca un área invisible fuera de la caja. */
+
+.tl-vit { position: relative; display: flex; flex-direction: column; min-width: 0; box-sizing: border-box; overflow: hidden; background: var(--tl-white); color: var(--tl-ink);
+  border: 1px solid var(--tl-line); border-radius: 22px; box-shadow: var(--shadow-card); cursor: pointer; }
+:where(.tl-vit, .tl-fila) button { font-family: inherit; cursor: pointer; }
+.tl-vit button:focus-visible, .tl-fila button:focus-visible { outline: 2px solid var(--tl-action); outline-offset: 2px; border-radius: 12px; }
+
+/* ── Galería (187 px: dos filas de 92 y 3 de separación) ── */
+.tl-vit-gal { position: relative; display: grid; height: 187px; gap: 3px; background: var(--tl-white); }
+.tl-vit-gal[data-fotos="3"] { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: 92px 92px; }
+.tl-vit-gal[data-fotos="2"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 187px; }
+.tl-vit-gal[data-fotos="1"], .tl-vit-gal[data-fotos="0"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: 187px; }
+.tl-vit-celda { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--tl-photo-bg); }
+.tl-vit-gal[data-fotos="3"] .tl-vit-celda:first-child { grid-row: 1 / 3; }
+.tl-vit-celda > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Sin fotos: el rayado del sistema. */
+.tl-vit-rayado { background: repeating-linear-gradient(135deg, var(--tl-ds-e7e5e0) 0 10px, var(--tl-desk) 10px 20px); }
+
+/* Estado: pastilla sólida (sin capa oscura sobre la foto), arriba a la izquierda. */
+.tl-vit-estado { position: absolute; top: 12px; left: 12px; z-index: 2; max-width: calc(100% - 70px); display: inline-flex; align-items: center; gap: 6px; box-sizing: border-box;
+  padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, .96); font: 700 11.5px/1.25 var(--font-body); color: var(--tl-open-text); transition: color .2s ease, background-color .2s ease; }
+.tl-vit-estado > i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--tl-open); transition: background-color .2s ease; }
+.tl-vit-estado > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-vit-estado[data-abierto="false"] { color: var(--tl-danger); }
+.tl-vit-estado[data-abierto="false"] > i { background: var(--tl-danger); }
+
+/* Guardar: el círculo se ve de 34 (a 10 del borde); el botón mide 44 y lo lleva dentro. */
+.tl-vit-guardar { position: absolute; z-index: 3; top: 5px; right: 5px; width: 44px; height: 44px; margin: 0; padding: 0; border: 0; background: none; display: grid; place-items: center; }
+.tl-vit-guardar > span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .96); transition: background-color .2s ease; }
+
+/* «+24 FOTOS»: la pastilla se ve a 10 del borde; el botón (44 de alto) la lleva dentro. */
+.tl-vit-mas { position: absolute; z-index: 3; right: 0; bottom: 0; min-width: 44px; height: 44px; box-sizing: border-box; margin: 0; padding: 0 10px 10px 10px; border: 0; background: none;
+  display: flex; align-items: flex-end; justify-content: flex-end; }
+.tl-vit-mas > span { padding: 4px 8px; border-radius: 7px; background: rgba(11, 14, 18, .72); color: var(--tl-white); font: 800 9.5px/1.2 var(--font-mono); letter-spacing: .1em; white-space: nowrap; }
+
+/* ── Cuerpo ── */
+.tl-vit-cuerpo { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 14px 16px 16px; }
+.tl-vit-ident { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tl-vit-nombre-fila { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.tl-vit-nombre { flex: 0 1 auto; min-width: 44px; max-width: 100%; box-sizing: border-box; margin: -13px 0; padding: 13px 0; border: 0; background: none; text-align: left; color: var(--tl-ink);
+  font: 800 18px/1.15 var(--font-display); letter-spacing: -.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-vit-verificado { flex: none; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--tl-action); }
+.tl-vit-meta { display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; white-space: nowrap; font: 600 10.5px/1.4 var(--font-mono); letter-spacing: .04em; color: var(--tl-text-3); }
+.tl-vit-cal { flex: none; font: 700 12.5px/1.2 var(--font-body); letter-spacing: 0; color: var(--tl-ink); }
+.tl-vit-cal > b { color: var(--tl-pro); font-weight: 700; }
+.tl-vit-cal > em { font-style: normal; font-weight: 500; color: var(--tl-text-3); }
+.tl-vit-dato { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.tl-vit-punto { flex: none; }
+
+/* Características (gris) y horarios (menta; el elegido, tinta). */
+.tl-vit-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.tl-vit-car { max-width: 100%; box-sizing: border-box; padding: 6px 11px; border-radius: 8px; background: rgba(11, 14, 18, .05); color: var(--tl-text-2); font: 600 11.5px/1.3 var(--font-body);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.tl-vit-horas { display: flex; flex-wrap: wrap; gap: 0 6px; min-width: 0; margin: -8px 0; }
+.tl-vit-hora { min-height: 44px; max-width: 100%; box-sizing: border-box; margin: 0; padding: 0; border: 0; background: none; display: inline-flex; align-items: center; }
+.tl-vit-hora > span { box-sizing: border-box; padding: 6px 11px; border-radius: 8px; background: rgba(0, 229, 196, .16); color: var(--tl-open-text); font: 700 11.5px/1.3 var(--font-body); white-space: nowrap;
+  transition: background-color .2s ease, color .2s ease; }
+.tl-vit-hora[aria-pressed="true"] > span { background: var(--tl-ink); color: var(--tl-white); }
+
+/* Oferta de HOY (con historia del negocio, la caja es un botón que abre «Hoy en el barrio»). */
+.tl-vit-oferta { display: flex; align-items: center; gap: 10px; box-sizing: border-box; min-width: 0; width: 100%; margin: 0; padding: 10px 12px; border: 0; border-radius: 13px;
+  background: rgba(75, 55, 245, .06); color: var(--tl-ink); text-align: left; }
+button.tl-vit-oferta { min-height: 44px; }
+.tl-vit-oferta > i { flex: none; font-style: normal; padding: 3px 7px; border-radius: 5px; background: rgba(75, 55, 245, .1); color: var(--tl-action); font: 800 9px/1.3 var(--font-mono); letter-spacing: .08em; }
+.tl-vit-oferta > span { flex: 1; min-width: 0; font: 600 12.5px/1.35 var(--font-body); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+
+/* Acciones: botón principal y llamar (40 a la vista; la caja de cada uno mide 44). */
+.tl-vit-acciones { display: flex; gap: 8px; padding-top: 2px; min-width: 0; }
+.tl-vit-cta { flex: 1; min-width: 0; height: 44px; margin: -2px 0; padding: 2px 0; box-sizing: border-box; border: 0; background: none; display: flex; }
+.tl-vit-cta > span { flex: 1; min-width: 0; height: 40px; box-sizing: border-box; padding: 0 16px; border-radius: 13px; background: var(--tl-ink); color: var(--tl-white); display: flex; align-items: center; justify-content: center; gap: 9px;
+  font: 700 12.5px/1 var(--font-body); white-space: nowrap; }
+.tl-vit-cta > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tl-vit-llamar { flex: none; width: 44px; height: 44px; margin: -2px 0; padding: 0; box-sizing: border-box; border: 0; background: none; display: grid; place-items: center; }
+.tl-vit-llamar > span { display: grid; place-items: center; width: 40px; height: 40px; box-sizing: border-box; border-radius: 12px; background: var(--tl-white); border: 1px solid rgba(11, 14, 18, .09); transition: background-color .2s ease; }
+
+/* Rejillas de las listas: Pro a 320 como mínimo y 16 de separación; Free en dos columnas con 12; en el teléfono, una columna con 12. */
+.tl-vit-rejilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.tl-vit-rejilla > * { min-width: 0; }
+.tl-fila-rejilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.tl-fila-rejilla > * { min-width: 0; }
+@media (min-width: 1024px) {
+  .tl-vit-rejilla { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .tl-fila-rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── Fila Free ── */
+.tl-fila { display: flex; min-width: 0; box-sizing: border-box; overflow: hidden; background: var(--tl-white); color: var(--tl-ink); border: 1px solid var(--tl-line); border-radius: 18px; cursor: pointer; }
+.tl-fila-foto { position: relative; flex: none; width: 96px; min-height: 96px; background: var(--tl-photo-bg); }
+.tl-fila-foto > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.tl-fila-cuerpo { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; box-sizing: border-box; padding: 13px 14px; }
+.tl-fila-nombre { display: block; align-self: flex-start; max-width: 100%; min-width: 44px; box-sizing: border-box; margin: -13px 0; padding: 13px 0; border: 0; background: none; text-align: left; color: var(--tl-ink);
+  font: 700 14.5px/1.25 var(--font-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-fila-dato { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; font: 600 10.5px/1.4 var(--font-mono); letter-spacing: .04em; color: var(--tl-text-3); }
+.tl-fila-abajo { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding-top: 2px; }
+.tl-fila-cal { min-width: 0; font: 700 12px/1.25 var(--font-body); color: var(--tl-ink); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.tl-fila-cal > b { color: var(--tl-pro); font-weight: 700; }
+.tl-fila-cal > em { font-style: normal; font-weight: 500; color: var(--tl-text-3); }
+.tl-fila-llamar { flex: none; min-width: 44px; height: 44px; margin: -5px 0; padding: 5px 0; box-sizing: border-box; border: 0; background: none; display: flex; align-items: center; }
+.tl-fila-llamar > span { height: 34px; box-sizing: border-box; padding: 0 14px; border-radius: 11px; background: var(--tl-white); border: 1.5px solid var(--tl-line-strong); display: flex; align-items: center; gap: 9px;
+  font: 700 11.5px/1 var(--font-body); white-space: nowrap; transition: background-color .2s ease; }
+
+/* El esqueleto con la misma geometría (hueco de foto en el fondo de foto del sistema; barras y botón en gris tenue). */
+.tl-vit-esq { cursor: default; }
+.tl-vit-esq-barra { display: block; border-radius: 6px; }
+.tl-vit-esq-barra.tl-esq, .tl-vit-esq-boton.tl-esq { background: var(--tl-fill); }
+.tl-vit-esq-boton { display: block; height: 40px; border-radius: 13px; }
+
+@media (hover: hover) {
+  .tl-vit-llamar:hover > span, .tl-fila-llamar:hover > span { background: var(--tl-fill-soft); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-vit *, .tl-fila * { transition: none !important; }
+}

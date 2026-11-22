@@ -12958,6 +12958,78 @@ const guardianes = {
     if ((b.match(/\bfoto(Css|Fondo)\(/g) ?? []).length < 8) falla(G, B, 0, "Bloques.tsx pinta fotos sin pasarlas por fotoCss / fotoFondo");
   },
 
+  /* AK (22 nov) · vitrinaEnLasListas: la tarjeta «Vitrina» (decisión AK; docs/diseno/entrega/tarjeta-vitrina/README.md) es la de TODAS las listas de negocios.
+     (1) Las listas (Negocios, categoría, Buscar y su desplegable, Hoy) pintan TarjetaNegocio, que pinta TarjetaVitrina (Pro) y FilaFree (Free) del sistema; la
+     tarjeta vieja (BusinessCard, la «una línea» de C-002, el anillo sobre el logo) no vuelve a ninguna pantalla (Inicio › «Abierto ahora» usa BusinessRow y no
+     se toca). (2) Las fotos de la galería salen de LA MISMA consulta que ya traía la portada (FOTOS en lib/categoria.ts: tres primeras + el total, solo
+     visibles, no privadas, no purgadas, una subconsulta por página; nunca una consulta por tarjeta: tarjetas.ts no toca la tabla media). (3) La pieza
+     (core/Vitrina.tsx) pinta sus fotos con <Foto> (nada de <img> ni background-image), «+N FOTOS» solo con más de 3 (total − 3 > 0) y el video solo en la
+     celda grande; cada control es un <button> con su caja de 44 (vitrina.css). (4) Existe la prueba punta a punta tarAK y la pieza está en el catálogo
+     del sistema. Al revés: alrevesAK. */
+  vitrinaEnLasListas() {
+    const G = "vitrinaEnLasListas", V = "packages/ui/src/core/Vitrina.tsx", CSS = "packages/ui/src/vitrina.css", W = "apps/web/app/(app)/TarjetaNegocio.tsx";
+    const leer = (f) => (existsSync(f) ? sinComent(f) : null);
+    // (1) las pantallas
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f)) continue;
+      const t = sinComent(f);
+      if (/\bBusinessCard\b/.test(t)) falla(G, f, 0, "la tarjeta vieja (BusinessCard) volvió a una pantalla: las listas usan la Vitrina (TarjetaNegocio / FilaFree del sistema)");
+      if (/<TarjetaNegocio\b[^>]*\buna\b/.test(t) || /\boneLine\b/.test(t)) falla(G, f, 0, "volvió la tarjeta «de una línea» de la categoría (C-002): la Vitrina completa la sustituyó (decisión AK)");
+    }
+    const w = leer(W);
+    if (!w) falla(G, W, 0, "falta el envoltorio de la tarjeta");
+    else {
+      if (!/import \{ FilaFree, TarjetaVitrina \} from "@tolatino\/ui";/.test(w) || !/<TarjetaVitrina\b/.test(w) || !/<FilaFree\b/.test(w)) falla(G, W, 0, "TarjetaNegocio no pinta TarjetaVitrina (Pro) y FilaFree (Free) del sistema");
+      if (/\bring=|onRing|ringLabel|data-anillo/.test(w)) falla(G, W, 0, "la tarjeta vuelve a llevar el anillo sobre un logo: la caja HOY (onOferta → VisorHoy) lo sustituyó");
+      if (!/onOferta=\{h \? \(\) => setHoy\(true\) : undefined\}/.test(w) || !/<VisorHoy\b/.test(w)) falla(G, W, 0, "la caja HOY de la tarjeta abre «Hoy en el barrio» de ese negocio (VisorHoy) cuando tiene historia");
+      if (!/media=\{b\.video \? <VideoTarjeta\b/.test(w)) falla(G, W, 0, "el video aprobado va como `media` de la tarjeta (la celda grande de la galería)");
+      if (!/fotos=\{b\.fotos\} fotosTotal=\{b\.nfotos\}/.test(w)) falla(G, W, 0, "la galería recibe las fotos y el total que trae la consulta de la lista (b.fotos, b.nfotos)");
+    }
+    for (const [f, n] of [["apps/web/app/(app)/negocios/Negocios.tsx", 1], ["apps/web/app/(app)/c/[slug]/Categoria.tsx", 1], ["apps/web/app/(app)/buscar/Buscar.tsx", 2], ["apps/web/app/(app)/buscar/Desplegable.tsx", 1], ["apps/web/app/(app)/comunidad/hoy/Hoy.tsx", 2]]) {
+      const t = leer(f);
+      if (!t || (t.match(/<TarjetaNegocio\b/g) ?? []).length < n) falla(G, f, 0, `la lista no pinta sus tarjetas con TarjetaNegocio (la Vitrina), ${n} sitio(s)`);
+    }
+    for (const f of ["apps/web/app/(app)/c/[slug]/Categoria.tsx", "apps/web/app/acceso/Landing.tsx"]) {
+      const t = leer(f);
+      if (!t || !/<FilaFree\b/.test(t)) falla(G, f, 0, "las filas Free de esta pantalla (semillas sin reclamar, ejemplo de la landing) usan FilaFree del sistema");
+    }
+    { const t = leer("apps/web/app/(app)/c/[slug]/Categoria.tsx") ?? "", b = leer("apps/web/app/(app)/buscar/Buscar.tsx") ?? "";
+      if (!/className="tl-vit-rejilla" data-lista="pro"/.test(t) || !/className="tl-fila-rejilla" data-lista="free"/.test(t) || !/className="tl-vit-rejilla" data-lista="pro"/.test(b))
+        falla(G, "apps/web/app/(app)/c/[slug]/Categoria.tsx", 0, "las listas usan las rejillas del sistema (tl-vit-rejilla para Pro, tl-fila-rejilla para Free): Pro siempre antes que Free"); }
+    // (2) las fotos, en la misma consulta
+    const C = "apps/web/lib/categoria.ts", c = leer(C) ?? "", TJ = "apps/web/lib/tarjetas.ts", tj = leer(TJ) ?? "";
+    const fo = (c.match(/export const FOTOS = \(x: string\) =>[\s\S]*?as fotos_j`;/) ?? [])[0] ?? "";
+    for (const [re, que] of [[/m\.owner_kind = 'business'/, "solo fotos del negocio"], [/m\.status = 'visible'/, "solo las visibles (la revisión automática las deja en «review»)"], [/not m\.private/, "ninguna privada (fotosPrivadasConPermiso)"], [/m\.purged_at is null/, "ninguna purgada"], [/q\.rn <= 3/, "las tres primeras"], [/count\(\*\)/, "el total de las públicas"]])
+      if (!re.test(fo)) falla(G, C, 0, `FOTOS (la galería de la tarjeta) no cumple: ${que}`);
+    for (const x of ["resultados", "nuevos", "destacados"]) {
+      const i = c.indexOf(`export async function ${x}`), j = c.indexOf("\nexport ", i + 10), cuerpo = i >= 0 ? c.slice(i, j > 0 ? j : undefined) : "";
+      if (!/\$\{FOTOS\("/.test(cuerpo) || /\$\{FOTO\("/.test(cuerpo)) falla(G, C, 0, `${x}() trae las fotos de la galería con FOTOS() en su misma consulta`);
+    }
+    for (const f of ["apps/web/lib/buscar.ts", "apps/web/lib/patrocinio.ts"]) if (!/\$\{FOTOS\("/.test(leer(f) ?? "")) falla(G, f, 0, "la consulta de esta lista trae las fotos de la galería con FOTOS()");
+    if (/\bmedia\b|\.query\(|db\(\)/.test(tj.replace(/import[^\n]*\n/g, ""))) falla(G, TJ, 0, "armarTarjetas no consulta fotos: salen de la consulta de la lista (una consulta por tarjeta es un N+1)");
+    if (!/fotos: b\.fotos \?\? /.test(tj) || !/nfotos: b\.nfotos \?\? /.test(tj)) falla(G, TJ, 0, "la tarjeta arma sus fotos y su total desde lo que trae la lista (b.fotos, b.nfotos)");
+    // (3) la pieza
+    const v = leer(V);
+    if (!v) falla(G, V, 0, "falta la pieza de la Vitrina en el sistema");
+    else {
+      if (!/<Foto\b/.test(v) || /<img\b|backgroundImage|background-image|url\(/.test(v)) falla(G, V, 0, "la Vitrina pinta sus fotos con <Foto> (variante a la medida), sin <img> ni background-image sueltos");
+      if (!/const total = Math\.max\(p\.fotosTotal \?\? 0, n\), extra = total - 3;/.test(v) || !/\{extra > 0 && p\.onMasFotos && p\.masFotosEtiqueta \?/.test(v)) falla(G, V, 0, "«+N FOTOS» solo sale con más de 3 fotos (N = total − 3)");
+      if (!/\{grande \? p\.media \?\? null : null\}/.test(v) || (v.match(/p\.media/g) ?? []).length !== 2) falla(G, V, 0, "el video (media) va SOLO en la celda grande de la galería");
+      if (!/\.filter\(\(f\): f is string => !!f\)\.slice\(0, 3\)/.test(v) || !/fotos\.length as 0 \| 1 \| 2 \| 3/.test(v)) falla(G, V, 0, "la galería tiene como mucho 3 fotos");
+      if ((v.match(/<button type="button"/g) ?? []).length < 8) falla(G, V, 0, "cada control de la Vitrina (nombre, guardar, +N FOTOS, horario, oferta, principal, llamar, y los de la fila Free) es un <button type=\"button\"> de verdad");
+      if (/<div[^>]*onClick=\{(?!p\.onAbrir)/.test(v) || /role="button"/.test(v)) falla(G, V, 0, "un <div> hace de botón en la Vitrina: cada control es un <button type=\"button\">");
+    }
+    const css = leer(CSS) ?? "";
+    if (!/\.tl-vit-gal \{[^}]*height: 187px;/.test(css) || !/grid-template-columns: minmax\(0, 2fr\) minmax\(0, 1fr\); grid-template-rows: 92px 92px;/.test(css)) falla(G, CSS, 0, "la galería mide 187 px (dos filas de 92, columnas 2fr / 1fr)");
+    for (const [re, que] of [[/\.tl-vit-guardar \{[^}]*width: 44px; height: 44px;/, "la caja del corazón mide 44"], [/\.tl-vit-guardar > span \{[^}]*width: 34px; height: 34px;/, "el círculo del corazón se ve de 34"], [/\.tl-vit-mas \{[^}]*height: 44px;/, "la caja de «+N FOTOS» mide 44"], [/\.tl-vit-hora \{ min-height: 44px;/, "la caja de cada horario mide 44"], [/prefers-reduced-motion: reduce/, "sin fundido con «reducir movimiento»"]])
+      if (!re.test(css)) falla(G, CSS, 0, `vitrina.css: ${que}`);
+    if (/scale\(|translateY\(|:hover[^{]*\{[^}]*(transform|box-shadow)/.test(css)) falla(G, CSS, 0, "la Vitrina no tiene efectos de escala ni elevación al pasar el ratón (regla del sistema)");
+    if (!/@import "@tolatino\/ui\/vitrina\.css";/.test(readFileSync("apps/web/app/globals.css", "utf8")) || !/"\.\/vitrina\.css": "\.\/src\/vitrina\.css"/.test(readFileSync("packages/ui/package.json", "utf8"))) falla(G, "apps/web/app/globals.css", 0, "vitrina.css se exporta del paquete del sistema y globals.css lo importa");
+    // (4) catálogo y prueba
+    if (!/CATALOGO_TIPADAS/.test(readFileSync("packages/ui/src/index.ts", "utf8")) || !/TarjetaVitrina: \(\) =>/.test(readFileSync("apps/web/app/sistema/ejemplos.tsx", "utf8"))) falla(G, "apps/web/app/sistema/ejemplos.tsx", 0, "la Vitrina está en el catálogo del sistema (/sistema) con su ejemplo");
+    if (!existsSync("pruebas/e2e/tarAK.cjs") || !existsSync("pruebas/alreves/alrevesAK.cjs")) falla(G, "pruebas/e2e/tarAK.cjs", 0, "faltan la prueba de punta a punta (tarAK) o la prueba al revés (alrevesAK) de la Vitrina");
+  },
+
   /* 20 nov · alrevesConSuTexto: cada caso al revés dice «en este archivo, cambia ESTE texto y el guardián tiene que fallar». Si ese renglón del código
      cambia (aunque sea para bien), el caso ya no encuentra su texto y la prueba al revés cae con «no encontré el texto a cambiar»… pero eso solo se veía
      en el CI, 40 min después (correr las ~100 pruebas al revés aquí son horas). Pasó dos veces el mismo día: alreves9k tras llevar la auditoría de las

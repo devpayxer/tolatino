@@ -11,9 +11,12 @@ Cada **categoría** tiene una portada baja con un **solo buscador** que busca de
 sobre la portada; en la computadora es el buscador de arriba, que dice «Buscar en …»), el radio en la portada (toca
 «5 MI» para cambiarlo), **una fila de pestañas** para elegir rápido (p. ej. «Por país» y «Qué se te antoja» en Comida;
 «¿Qué necesitas?», «Tu seguro» y «Para quién» en Doctores): se ve una a la vez. Debajo, **Patrocinados** (si algún
-negocio patrocina esa categoría), los filtros y la lista de negocios: primero los Pro (tarjeta con foto o video, una
-línea con las estrellas, la distancia y si está abierto, y un botón) y después los Free (fila con botón Llamar). La
-caja **HOY** solo sale cuando el negocio tiene algo de hoy (una oferta de hoy, el cover de esta noche…). Solo salen
+negocio patrocina esa categoría), los filtros y la lista de negocios: primero los Pro (la tarjeta **Vitrina**: galería de hasta 3 fotos con «Abierto · hasta 9 PM» o «Cerrado · abre 10 AM» encima, el corazón
+para guardar sobre la foto, «+N FOTOS» si el negocio tiene más de 3, el nombre con su sello, una línea con las estrellas, el tipo de negocio
+y la distancia, sus características, el botón de lo que hace esa categoría y el botón de llamar) y después los Free (fila con foto, el
+nombre, el dato, la calificación y botón Llamar). Las **tres primeras fotos** de la galería de cada negocio son las que salen en su tarjeta.
+La caja **HOY** solo sale cuando el negocio tiene algo de hoy (una oferta de hoy, el cover de esta noche…); si publicó algo en las últimas 24 h,
+tocarla abre «Hoy en el barrio» de ese negocio. Solo salen
 negocios a 5 millas o menos del centro de la ciudad (o del radio que elijas).
 
 ## Cómo se usa
@@ -22,7 +25,8 @@ negocios a 5 millas o menos del centro de la ciudad (o del radio que elijas).
 3. Usa los filtros rápidos (p. ej. **Abierto ahora**, **Delivery**) o toca **Filtros** para ver todos y el orden.
 4. **Ordenar**: Relevancia, Más cerca, Mejor calificados o Más reseñas.
 5. En cada tarjeta: tócala para ver el negocio; el botón hace lo de esa categoría (Ordenar, Booking, Inscribirme,
-   Cómo llegar…). Para guardarlo en **Guardados**, usa el corazón de la página del negocio.
+   Cómo llegar…); el teléfono de al lado llama. Para guardarlo en **Guardados**, toca el corazón sobre la foto (si no has entrado, te lleva a
+   Entra y vuelves). **+N FOTOS** abre todas las fotos del negocio. El video aprobado, si tiene, se mueve sin sonido en la foto grande.
 6. Al final de la lista: **Anterior / Siguiente** (10 negocios por página).
 
 ## Qué pasa en cada caso
@@ -60,17 +64,20 @@ every day so all of them show) and the **New in the neighborhood** ones (those t
 Each **category** has a low cover with **one search box** that searches inside that category (on the phone it sits on the cover; on a computer it is the
 search at the top, which says «Search …»), the radius on the cover (tap «5 MI» to change it), and **one row of tabs** to pick quickly (e.g. «By country» and
 «What are you craving» in Food; «What do you need?», «Your insurance» and «For whom» in Doctors): one shows at a time. Below, **Sponsored** (if any business
-sponsors that category), the filters and the list of businesses: Pro first (card with photo or video, one line with the stars, the distance and whether it is
-open, and one button) and then Free (row with a Call button). The **TODAY** box only shows when the business has something today (a deal for today, tonight's
-cover…). Only businesses 5 miles or less from the city center (or the radius you choose) show.
+sponsors that category), the filters and the list of businesses: Pro first (the **Vitrina** card: a gallery of up to 3 photos with «Open · until 9 PM» or «Closed · opens 10 AM» on top, the heart to save
+on the photo, «+N PHOTOS» if the business has more than 3, the name with its badge, a line with the stars, the kind of business and the distance,
+its features, the button for what that category does and the call button) and then Free (row with a photo, the name, the detail, the rating and a Call button).
+The **first three photos** of each business's gallery are the ones shown on its card. The **TODAY** box only shows when the business has something today (a deal
+for today, tonight's cover…); if it posted something in the last 24 h, tapping it opens that business's «Today nearby». Only businesses 5 miles or less from the city center (or the radius you choose) show.
 
 ### How to use it
 1. Tap **Businesses** at the bottom (or the tab at the top on a computer) and pick a category.
 2. Pick a tab and tap a circle or a photo to see only that. Tap it again (or **All**) to clear it.
 3. Use the quick filters (e.g. **Open now**, **Delivery**) or tap **Filters** to see all of them and the sort order.
 4. **Sort**: Relevance, Closest, Top rated or Most reviews.
-5. On each card: tap it to see the business; the button does what that category does (Order, Booking, Sign up, Directions…). To save it to **Saved**,
-   use the heart on the business page.
+5. On each card: tap it to see the business; the button does what that category does (Order, Booking, Sign up, Directions…); the phone next to it calls. To save it to **Saved**,
+   tap the heart on the photo (if you have not signed in, it takes you to Sign in and you come back). **+N PHOTOS** opens all the business's photos. The approved video, if it has one,
+   plays muted in the large photo.
 6. At the end of the list: **Previous / Next** (10 businesses per page).
 
 ### What happens in each case

@@ -12,7 +12,24 @@ type K = "Button" | "Chip" | "Tag" | "Icon" | "IconButton" | "Placeholder" | "Se
 const { Button, Chip, Tag, Icon, IconButton, Placeholder, SectionHeader, Eyebrow, Tabs, FilterRail, BusinessRow, EventCard, InfoCard, StoryCard, ReviewCard, OwnerCard, TodayCard, ServiceRow, DateStrip, TimeSlots, KpiCard, OnbProgress } = UI as unknown as Record<K, ComponentType<any>>;
 const ICONOS = (UI as unknown as { ICON_NAMES?: string[] }).ICON_NAMES ?? [];
 
+/* Vitrina (AK): las piezas tipadas del sistema; datos de muestra, sin fotos de verdad (el rayado del sistema). */
+const FOTO_M = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><rect width='8' height='8' fill='%23d9d5cc'/></svg>";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { TarjetaVitrina, FilaFree, TarjetaVitrinaEsqueleto, FilaFreeEsqueleto } = UI as unknown as Record<"TarjetaVitrina" | "FilaFree" | "TarjetaVitrinaEsqueleto" | "FilaFreeEsqueleto", ComponentType<any>>;
+
 export const EJEMPLOS: Record<string, () => ReactNode> = {
+  TarjetaVitrina: () => (
+    <Col>
+      <TarjetaVitrina nombre="Sabor Dominicano" verificado verificadoEtiqueta="Verificado" calificacion="4.8" resenas={212} dato="DOMINICANA · CATERING · 0.3 MI" estado="Abierto · hasta 9 PM" abierto
+        fotos={[FOTO_M, FOTO_M, FOTO_M]} fotosTotal={27} masFotosEtiqueta={(n: number) => `+${n} FOTOS`} onMasFotos={() => undefined} chips={[{ label: "Pickup 25 min", variant: "feature" }, { label: "Delivery $3", variant: "feature" }]}
+        oferta="Mofongo de chicharrón $12, hasta agotar" cta="Ordenar" ctaIcono="bag" onCta={() => undefined} onLlamar={() => undefined} llamarNombre="Llamar" guardarNombre="Guardar" quitarNombre="Quitar de guardados" onGuardar={() => undefined} />
+      <TarjetaVitrina nombre="Barbería La Silla" calificacion="4.9" resenas={341} dato="BARBERÍA · 0.6 MI" estado="Cerrado · abre 10 AM" abierto={false} fotos={[]}
+        chips={[{ label: "Hoy 4:30", variant: "slot" }, { label: "Hoy 5:15", variant: "slot" }, { label: "Mañana 10:00", variant: "slot" }]} cta="Booking" ctaIcono="calendar" onCta={() => undefined} />
+    </Col>
+  ),
+  FilaFree: () => <Col><FilaFree nombre="Fritura Doña Carmen" dato="FRITURAS · 0.6 MI" calificacion="4.5" resenas={18} llamarEtiqueta="Llamar" llamarNombre="Llamar" onLlamar={() => undefined} /></Col>,
+  TarjetaVitrinaEsqueleto: () => <TarjetaVitrinaEsqueleto />,
+  FilaFreeEsqueleto: () => <FilaFreeEsqueleto />,
   Button: () => (
     <Col>
       {["primary", "action", "secondary", "soft", "danger", "ghost"].map((v) => (

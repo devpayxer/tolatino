@@ -75,7 +75,7 @@ const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and
     await pv.screenshot({ path: OUT + 'c001-ficha-390.png' });
     // 21 nov · En «Relevancia» los negocios Pro ROTAN cada día (lib/categoria.ts) y la lista trae 10 por página: el negocio de la prueba no siempre
     // cae en la primera (el 21 nov no caía: CI 44866551623 y 44872463837). Se busca su tarjeta página por página, hasta la que hoy le toca.
-    const tarjeta = pv.locator('video[data-video-tarjeta]').first();
+    const tarjeta = pv.locator('article[data-vitrina] video[data-video-tarjeta]').first();
     let conVideo = false;
     for (let pg = 1; pg <= 8 && !conVideo; pg++) {
       await pv.goto(B + `/c/comida${pg > 1 ? `?p=${pg}` : ''}`);
@@ -86,11 +86,16 @@ const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and
     // Chromium de Playwright no trae H.264: se comprueba que esta es LA elegida para moverse (solo una a la vez), no que reproduzca.
     ok(await espera(async () => pv.evaluate(() => document.querySelectorAll('video[data-video-tarjeta][data-centro]').length === 1)), 'y es la única elegida para moverse (la del centro)');
     await pv.screenshot({ path: OUT + 'c001-tarjeta-390.png' });
-    const anillo = pv.locator('[data-anillo]').first();
-    ok(await anillo.count() > 0, 'el logo lleva el anillo (hay novedad de hoy)');
-    // La barra fija de arriba tapa el logo si se desplaza justo al borde (anchos, 18 nov): se centra antes de tocarlo.
-    await anillo.first().evaluate((e) => e.scrollIntoView({ block: 'center' })); await anillo.click();
-    ok(await espera(async () => (await pv.locator('[data-visor-hoy]').count()) > 0 && (await texto(pv)).includes('Hoy hay sancocho de la casa')), 'el anillo abre «Hoy en el barrio» con la novedad de hoy');
+    // Vitrina (AK): el video se mueve SOLO en la celda grande de la galería y ya no hay anillo sobre un logo: la caja «HOY» de la tarjeta (con algo
+    // publicado en las últimas 24 h) es un botón que abre «Hoy en el barrio» de ese negocio.
+    const cartaV = pv.locator('article[data-vitrina="pro"]', { has: tarjeta });
+    ok(await cartaV.locator('[data-celda="grande"] video[data-video-tarjeta]').count() === 1 && await cartaV.locator('[data-celda="chica"] video').count() === 0, 'el video está en la celda GRANDE de la galería (y en ninguna otra)');
+    ok(await cartaV.locator('[data-anillo]').count() === 0, 'la tarjeta ya no lleva el anillo del logo');
+    const cajaHoy = cartaV.locator('button[data-oferta]');
+    ok(await cajaHoy.count() > 0, 'la caja HOY de la tarjeta es un botón (hay novedad de hoy)');
+    // La barra fija de arriba tapa la caja si se desplaza justo al borde (anchos, 18 nov): se centra antes de tocarla.
+    await cajaHoy.first().evaluate((e) => e.scrollIntoView({ block: 'center' })); await cajaHoy.click();
+    ok(await espera(async () => (await pv.locator('[data-visor-hoy]').count()) > 0 && (await texto(pv)).includes('Hoy hay sancocho de la casa')), 'la caja HOY abre «Hoy en el barrio» con la novedad de hoy');
     ok((await texto(pv)).includes('Ver la página'), 'con «Ver la página»');
     await pv.screenshot({ path: OUT + 'c001-visor-390.png' });
     await pv.keyboard.press('Escape');

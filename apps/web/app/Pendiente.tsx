@@ -10,10 +10,10 @@
      unos milisegundos con la dirección nueva y todavía el esqueleto (pq4e lo cazó en la confirmación 44755954339: contó 0 casillas). */
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { EsqAdmin, EsqFicha, EsqLista, EsqMuro } from "./_esqueletos";
+import { EsqAdmin, EsqFicha, EsqLista, EsqMuro, EsqNegocios } from "./_esqueletos";
 
-type Tipo = "ficha" | "muro" | "admin" | "lista";
-const tipoDe = (ruta: string): Tipo => (/^\/n\/[^/]+/.test(ruta) ? "ficha" : /^\/comunidad\/?$/.test(ruta) ? "muro" : /^\/admin(\/|$)/.test(ruta) ? "admin" : "lista");
+type Tipo = "ficha" | "muro" | "admin" | "lista" | "negocios";
+const tipoDe = (ruta: string): Tipo => (/^\/n\/[^/]+/.test(ruta) ? "ficha" : /^\/comunidad\/?$/.test(ruta) ? "muro" : /^\/admin(\/|$)/.test(ruta) ? "admin" : /^\/(negocios|buscar)\/?$|^\/c\/[^/]+\/?$/.test(ruta) ? "negocios" : "lista");
 
 export function Pendiente({ children }: { children: ReactNode }) {
   const ruta = usePathname();
@@ -42,5 +42,5 @@ export function Pendiente({ children }: { children: ReactNode }) {
   useEffect(() => { limpiar(); setTipo(null); }, [ruta]);
 
   if (!tipo || origen.current !== ruta) return <>{children}</>;
-  return tipo === "ficha" ? <EsqFicha /> : tipo === "muro" ? <EsqMuro /> : tipo === "admin" ? <EsqAdmin /> : <EsqLista />;
+  return tipo === "ficha" ? <EsqFicha /> : tipo === "muro" ? <EsqMuro /> : tipo === "admin" ? <EsqAdmin /> : tipo === "negocios" ? <EsqNegocios /> : <EsqLista />;
 }

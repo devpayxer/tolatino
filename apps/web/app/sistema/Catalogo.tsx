@@ -3,9 +3,12 @@
    sistema de diseño renderizado con sus valores por defecto, para revisar el puerto y para el guardián visual.
    Cada pieza va aislada: si una falla, se marca y las demás siguen. */
 import * as UI from "@tolatino/ui";
-import { CATALOGO } from "@tolatino/ui";
+import { CATALOGO as GENERADO, CATALOGO_TIPADAS } from "@tolatino/ui";
 import { EJEMPLOS } from "./ejemplos";
 import { Component, useEffect, useState, type ComponentType, type ReactNode } from "react";
+
+/* Lo portado (generado) + las piezas tipadas del sistema (Vitrina: tarjeta Pro, fila Free y sus esqueletos). */
+const CATALOGO: Record<string, string[]> = Object.fromEntries(Object.keys({ ...GENERADO, ...CATALOGO_TIPADAS }).map((g) => [g, [...(GENERADO[g] ?? []), ...(CATALOGO_TIPADAS[g] ?? [])]]));
 
 const NOMBRE_GRUPO: Record<string, string> = {
   core: "Base", navigation: "Navegación", layout: "Estructura", cards: "Tarjetas", listing: "Página del negocio",

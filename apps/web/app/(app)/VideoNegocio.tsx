@@ -71,7 +71,9 @@ function Barra({ v, abajo = 0, alto = 3 }: { v: HTMLVideoElement | null; abajo?:
 
 const chip: CSSProperties = { position: "absolute", height: 26, padding: "0 10px", borderRadius: 99, background: "rgba(11,14,18,.6)", color: "var(--tl-white)", display: "flex", alignItems: "center", font: `800 9px ${MONO}`, letterSpacing: ".08em", zIndex: 2 };
 
-export function VideoTarjeta({ src, poster, nombre, es }: { src: string; poster: string; nombre: string; es: boolean }) {
+/* `solo`: la galería es de una sola foto (la celda grande ocupa todo el ancho): el ▶ y «SIN SONIDO» se apartan del corazón de guardar (Vitrina, AK). */
+export function VideoTarjeta({ src, poster, nombre, es, solo = false }: { src: string; poster: string; nombre: string; es: boolean; solo?: boolean }) {
+  const der = solo ? 56 : 12;
   const ref = useRef<HTMLVideoElement | null>(null);
   const [el, setEl] = useState<HTMLVideoElement | null>(null);
   const [mueve, setMueve] = useState(false);
@@ -99,13 +101,16 @@ export function VideoTarjeta({ src, poster, nombre, es }: { src: string; poster:
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       {mueve ? (
         <>
-          <span style={{ ...chip, right: 12, top: 12 }}>{es ? "SIN SONIDO" : "MUTED"}</span>
+          <span style={{ ...chip, right: der, top: 12 }}>{es ? "SIN SONIDO" : "MUTED"}</span>
           <Barra v={el} />
         </>
       ) : (
+        // Vitrina (AK): el círculo se ve de 30; la caja del botón mide 44 (objetivos táctiles) y lo lleva dentro.
         <button type="button" onClick={tocar} aria-label={es ? `Ver el video de ${nombre}` : `Play the ${nombre} video`}
-          style={{ position: "absolute", right: 12, top: 12, width: 30, height: 30, borderRadius: 99, border: 0, padding: 0, background: "rgba(11,14,18,.6)", display: "grid", placeItems: "center", cursor: "pointer", zIndex: 2 }}>
-          <span style={{ marginLeft: 2, width: 0, height: 0, borderLeft: "8px solid var(--tl-white)", borderTop: "5px solid transparent", borderBottom: "5px solid transparent" }} />
+          style={{ position: "absolute", right: der - 7, top: 5, width: 44, height: 44, border: 0, padding: 0, margin: 0, background: "none", display: "grid", placeItems: "center", cursor: "pointer", zIndex: 2 }}>
+          <span style={{ width: 30, height: 30, borderRadius: 99, background: "rgba(11,14,18,.6)", display: "grid", placeItems: "center" }}>
+            <span style={{ marginLeft: 2, width: 0, height: 0, borderLeft: "8px solid var(--tl-white)", borderTop: "5px solid transparent", borderBottom: "5px solid transparent" }} />
+          </span>
         </button>
       )}
     </>

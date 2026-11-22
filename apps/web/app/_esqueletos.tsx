@@ -2,7 +2,7 @@
    Solo piezas del sistema (Esq, EsqTexto, EsqCirculo, EsqZona de @tolatino/ui, con el «fondo de foto mientras carga»). La forma imita la
    pantalla que viene (lista, ficha, muro, tabla del equipo); el marco (encabezado, pestañas de abajo, menú del Super Admin) no se toca:
    vive en el layout y sigue en su lugar. Los usa cada loading.tsx. */
-import { Esq, EsqCirculo, EsqTexto, EsqZona } from "@tolatino/ui";
+import { Esq, EsqCirculo, EsqTexto, EsqZona, FilaFreeEsqueleto, TarjetaVitrinaEsqueleto } from "@tolatino/ui";
 
 const Tarjeta = () => (
   <div className="flex gap-3 rounded-[17px] border border-line bg-white p-3">
@@ -19,6 +19,18 @@ export function EsqLista() {
       <div className="mt-2"><Esq h={12} w="35%" r={6} /></div>
       <div className="mt-4 flex gap-2 overflow-hidden">{[78, 96, 70, 88, 64].map((w, i) => <Esq key={i} w={w} h={34} r={999} style={{ flex: "none" }} />)}</div>
       <div className="mt-5 grid gap-3 lg:grid-cols-2">{Array.from({ length: 6 }, (_, i) => <Tarjeta key={i} />)}</div>
+    </EsqZona>
+  );
+}
+
+/* Las listas de negocios (Negocios, categoría, Buscar): tarjetas Vitrina y filas Free con la misma geometría que la pieza (decisión AK). */
+export function EsqNegocios() {
+  return (
+    <EsqZona className="mx-auto w-full max-w-[1440px] px-5 pt-4 lg:px-[30px]">
+      <Esq h={26} w="55%" r={8} />
+      <div className="mt-4 flex gap-2 overflow-hidden">{[78, 96, 70, 88, 64].map((w, i) => <Esq key={i} w={w} h={34} r={999} style={{ flex: "none" }} />)}</div>
+      <div className="tl-vit-rejilla mt-5">{Array.from({ length: 4 }, (_, i) => <TarjetaVitrinaEsqueleto key={i} />)}</div>
+      <div className="tl-fila-rejilla mt-4">{Array.from({ length: 2 }, (_, i) => <FilaFreeEsqueleto key={i} />)}</div>
     </EsqZona>
   );
 }

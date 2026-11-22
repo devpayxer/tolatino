@@ -672,6 +672,7 @@ function fotos(c: Ctx): (Bloque | null)[] {
       { l: E2("Quitar", "Remove"), icon: "trash", off: g.length <= 1 || c.pending, onClick: () => { const m = g[sel]!; c.run(() => fotoQuitar(d.id, m.id), undefined, () => c.setUi({ gSel: -1, orden: null })); } },
     ] : [],
   });
+  out.push({ type: "note", tone: "info", icon: "image", t: E2("Las tres primeras fotos de tu galería son las que salen en tu tarjeta de las listas: la primera, grande. Con Free sale solo la portada.", "The first three photos of your gallery are the ones shown on your card in the lists: the first one, large. On Free only the cover shows.") });
   out.push({ type: "note", tone: "info", icon: "image", t: E2("Las fotos con gente y comida real reciben más clics que los logos y los carteles.", "Photos with real people and food get more clicks than logos and posters.") });
   return out;
 }
@@ -714,7 +715,7 @@ function videoBloques(c: Ctx): (Bloque | null)[] {
     { type: "rows", k: E2("VIDEO DE PRESENTACIÓN · PRO", "INTRO VIDEO · PRO"), cols: cols2, items: [fila] },
     { type: "note", tone: "info", icon: "image", t: E2("Hasta 30 segundos. Que se vea tu trabajo o tu local. Sin música de otros artistas: en Instagram tiene permiso, aquí no.", "Up to 30 seconds. Show your work or your place. No music by other artists: Instagram has permission, here it does not.") },
     { type: "rows", k: E2("HOY EN EL BARRIO · TU ANILLO", "TODAY NEARBY · YOUR RING"), cols: cols2, items: [
-      { icon: "news", t: E2("Tus novedades de hoy", "Your updates today"), s: E2("Lo que publicas en Novedades sale 24 h en el anillo de tu logo.", "What you post in Updates shows for 24 h in the ring on your logo."), acts: [{ l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.go("pag", "nov") }] },
+      { icon: "news", t: E2("Tus novedades de hoy", "Your updates today"), s: E2("Lo que publicas en Novedades sale 24 h en la caja HOY de tu tarjeta y en el anillo de tu logo.", "What you post in Updates shows for 24 h in the TODAY box of your card and in the ring on your logo."), acts: [{ l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.go("pag", "nov") }] },
       { icon: "share", t: E2("Tus historias de Instagram", "Your Instagram stories"), s: E2("Pronto: conecta tu Instagram y tus historias salen en el mismo anillo.", "Coming soon: connect your Instagram and your stories show in the same ring."), acts: [] },
     ] },
   ];

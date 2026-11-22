@@ -389,9 +389,13 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             ) : R.tab === "biz" ? (
               <div className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
                 <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/60">{f(t.conteo, { n: R.total })}{R.paginas > 1 ? ` · ${f(t.pagina, { p: R.pagina + 1, n: R.paginas })}` : ""}</span>
-                <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:gap-4">
-                  {R.tarjetas.map((b) => <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="buscar" textos={v.tarjeta} /></div>)}
-                </div>
+                {/* Vitrina (AK): Pro siempre antes que Free; Pro en rejilla de 320 como mínimo, Free en dos columnas. */}
+                {R.tarjetas.some((b) => b.plan === "pro") && <div className="tl-vit-rejilla" data-lista="pro">
+                  {R.tarjetas.filter((b) => b.plan === "pro").map((b) => <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="buscar" textos={v.tarjeta} /></div>)}
+                </div>}
+                {R.tarjetas.some((b) => b.plan === "free") && <div className="tl-fila-rejilla" data-lista="free">
+                  {R.tarjetas.filter((b) => b.plan === "free").map((b) => <div key={b.id} className="grid"><TarjetaNegocio es={v.lang === "es"} b={b} origen="buscar" textos={v.tarjeta} /></div>)}
+                </div>}
                 {R.paginas > 1 && (
                   <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
                     {Array.from({ length: Math.min(R.paginas, 10) }, (_, i) => (

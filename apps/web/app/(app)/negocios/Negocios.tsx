@@ -120,7 +120,7 @@ function Fila({ titulo, items, t, es }: { titulo: string; items: Tarjeta[]; t: T
       </div>
       <div ref={ref} className="hs -mx-5 -mb-3.5 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-5 pb-3.5 scroll-px-5 lg:mx-0 lg:gap-3.5 lg:px-0">
         {items.map((b) => (
-          <div key={b.id} className="grid w-[300px] flex-none snap-start lg:w-[320px]">
+          <div key={b.id} className="grid w-[min(340px,calc(100vw-40px))] flex-none snap-start">
             <TarjetaNegocio es={es} b={b} origen="negocios" textos={{ hoy: t.hoy, llamar: t.llamar }} />
           </div>
         ))}
