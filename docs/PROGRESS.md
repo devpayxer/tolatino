@@ -20,6 +20,10 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (12:00 UTC) · `main` = `pruebas` = b0a468f, sandbox comprobado desde fuera; confirmación de push 45017737500 en verde en 20 min 17 s**
+  (189 min de máquina, 29 trabajos, sin rojas ni inestables; antes de la revisión, 40,8 min de mediana y ~285 de máquina). `promover.sh` en seco la
+  reconoce como corrida entera. En marcha: tanda 5 (despliegue del sandbox), ya escrita y revisada por dos revisores (15 hallazgos, ninguno bloquea);
+  se están arreglando antes de subir. Regla para esa tanda: primero a `main`, ver construida la imagen en el CI, y solo después a `pruebas`.
 - **22 nov (11:35 UTC) · tanda 4 de la revisión del CI: confirmación completa en 22 min** (dirigida entera 45015746411 en la rama, en verde con una
   inestable, `cms9f3`): regresión en 8 partes por la asignación de `pruebas/reparto.json` (`scripts/ci/repartir.mjs`), «al revés» en 3, dispositivos
   con `max-parallel: 3`, y la verificación partida en `rapida` (1,6 min), `contratos`, `imagenes` y `basedatos` con un solo build (el de `web`) y la
