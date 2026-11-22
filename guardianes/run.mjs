@@ -15047,10 +15047,13 @@ const guardianes = {
      (1) Ninguna pantalla cuenta un toque (ni el «entraron» de un patrocinio) con una acción del servidor; ni existen ya esas acciones
          (registrarToque…, entroPatrocinado): salen SOLO por lib/contar-toque.ts, nadie la espera, y nadie más habla con /api/toque.
      (2) lib/contar-toque.ts anota el toque pendiente (memoria + sessionStorage, con su id y su hora) ANTES de mandarlo; lo manda con sendBeacon
-         (y, si no, fetch con keepalive); lo reintenta con fetch a los 1–5 s y al volver a verse la página (visibilitychange, pageshow) y al montar
+         (y, si no, fetch con keepalive); lo reintenta con un fetch normal a los 1–5 s y, mientras quede algo, cada vez más espaciado (hasta 60 s),
+         sin esperar a que el envío anterior termine («en camino» caduca a los 4 s: en WebKit un keepalive abortado no terminaba), y al volver a verse la página (visibilitychange, pageshow) y al montar
          la app (iniciarBandeja en el Arranque del marco raíz); solo un 204 lo confirma; un pendiente de más de 10 min (o menos) se tira.
      (3) /api/toque solo tiene POST, acota el cuerpo (512 bytes, antes de leerlo entero), acepta exactamente { id, kind, origen }, { semilla, origen }
-         o { entro, patrocinio } y llama a lib/toques.ts o a lib/patrocinio.ts (entroPatrocinado); contesta 204 siempre.
+         o { entro, patrocinio } y llama a lib/toques.ts o a lib/patrocinio-entrada.ts (entroPatrocinado); contesta 204 siempre.
+         entroPatrocinado vive en su archivo, NO en lib/patrocinio.ts: ese es de dinero y las pruebas din9t* lo cargan con sus «stubs» contados
+         (CI 45071274895: al meterlo ahí llegó `import ./cuenta` y las cinco din9t* quedaron rojas).
      (4) lib/toques.ts tiene las reglas de siempre: primero el mismo origen; id y tipo válidos; una vez cada 10 min por persona o red; máx. 60 por red
          y hora; la gente del propio negocio no cuenta; el evento «contactar»; y, como el mismo toque llega más de una vez, un candado por toque
          (pg_advisory_xact_lock) antes de la consulta, para que dos copias a la vez no cuenten dos. Es lo ÚNICO del código que escribe contact_taps.
@@ -15059,7 +15062,7 @@ const guardianes = {
      alrevesToqueSalida. */
   toqueSobreviveSalida() {
     const G = "toqueSobreviveSalida", CT = "apps/web/lib/contar-toque.ts", RT = "apps/web/app/api/toque/route.ts", LT = "apps/web/lib/toques.ts",
-      LP = "apps/web/lib/patrocinio.ts", AR = "apps/web/app/_cascara/Arranque.tsx",
+      LP = "apps/web/lib/patrocinio-entrada.ts", LD = "apps/web/lib/patrocinio.ts", AR = "apps/web/app/_cascara/Arranque.tsx",
       PA = ["apps/web/app/(app)/c/[slug]/Patrocinados.tsx", "apps/web/app/(app)/eventos/PatrocinadosEventos.tsx"];
     const SALIDA = /location\.(href\s*=|assign\(|replace\()|window\.open\(|abrirComoLlegar\(|compartirNativo\(|compartir\(|urlComoLlegar\(|urlTelefono\(/;
     for (const f of codigo) {
@@ -15082,20 +15085,24 @@ const guardianes = {
     if (!existsSync(CT)) return falla(G, CT, 0, "falta lib/contar-toque.ts (la única vía para contar un toque desde la pantalla)");
     const ct = sinComent(CT), cuerpoDe = (n) => { const i = ct.indexOf(`function ${n}(`); return i < 0 ? "" : ct.slice(i, ct.indexOf("\n}", i) + 2); };
     if (!/navigator\.sendBeacon\(RUTA, /.test(ct)) falla(G, CT, 0, "el toque sale con navigator.sendBeacon (sobrevive a la salida de la página)");
-    if (!/fetch\(RUTA, \{[^}]*keepalive: true/.test(ct)) falla(G, CT, 0, "sin sendBeacon, el toque sale con fetch y keepalive: true (sobrevive a la salida de la página)");
+    if (!/fetch\(RUTA, \{[^}]*\bkeepalive, /.test(ct) || !/^function enviar\(p: Pendiente, keepalive = false\): void \{/.test(cuerpoDe("enviar")) || !/if \(!enCola\) enviar\(p, true\);/.test(cuerpoDe("mandar"))) falla(G, CT, 0, "sin sendBeacon, el toque sale con fetch y keepalive: true (sobrevive a la salida de la página); los reintentos, con un fetch normal");
     if (!/const RUTA = "\/api\/toque";/.test(ct)) falla(G, CT, 0, "el toque va a /api/toque");
     if (/\bawait\b|\basync\b|from "\.\.?\/.*acciones"|from "@\/app/.test(ct)) falla(G, CT, 0, "lib/contar-toque.ts no espera nada ni llama a una acción del servidor: manda y vuelve en el mismo toque");
     const md = cuerpoDe("mandar"), iG = md.indexOf("guardar("), iB = md.indexOf("sendBeacon(");
     if (!/sessionStorage\.setItem\(LLAVE, /.test(cuerpoDe("guardar")) || !/sessionStorage\.getItem\(LLAVE\)/.test(cuerpoDe("cargar")) || iG < 0 || iB < 0 || iG > iB) falla(G, CT, 0, "la bandeja: el toque se anota pendiente (memoria y sessionStorage) ANTES de mandarlo, para reintentarlo si se pierde");
     const re = /const REINTENTO_MS = (\d+);/.exec(ct);
-    if (!re || +re[1] < 500 || +re[1] > 5000 || !/setTimeout\(\(\) => \{[^}]*vaciar\(\);? \}, REINTENTO_MS\)/.test(cuerpoDe("programar")) || !/\n  programar\(\);\n/.test(md)) falla(G, CT, 0, "la bandeja reintenta lo no confirmado a los 1–5 s del toque (REINTENTO_MS, programar en cada toque)");
+    if (!re || +re[1] < 500 || +re[1] > 5000 || !/^function programar\(ms = REINTENTO_MS\): void \{\n[^]*setTimeout\(\(\) => \{[^}]*vaciar\(\);? \}, ms\)/.test(cuerpoDe("programar")) || !/\n  programar\(\);\n/.test(md)) falla(G, CT, 0, "la bandeja reintenta lo no confirmado a los 1–5 s del toque (REINTENTO_MS, programar en cada toque)");
     const ib = cuerpoDe("iniciarBandeja");
     if (!/addEventListener\("visibilitychange", /.test(ib) || !/addEventListener\("pageshow", vaciar\)/.test(ib) || !/\n  vaciar\(\);\n/.test(ib)) falla(G, CT, 0, "la bandeja reintenta al volver a verse la página (visibilitychange, pageshow) y al montar (iniciarBandeja manda lo pendiente)");
     if (!existsSync(AR) || !/useEffect\(\(\) => iniciarBandeja\(\), \[\]\);/.test(sinComent(AR))) falla(G, AR, 0, "el Arranque del marco raíz monta la bandeja (iniciarBandeja): lo pendiente de la página anterior sale al cargar la siguiente");
     const tope = /const TOPE_MS = (\d+) \* 60_000;/.exec(ct);
     if (!tope || +tope[1] > 10 || +tope[1] < 1 || !/ahora - p\.h < TOPE_MS/.test(cuerpoDe("vigentes"))) falla(G, CT, 0, "la bandeja tira lo pendiente de más de 10 min (TOPE_MS ≤ 10 min): más tarde, la ventana del servidor ya no evita contarlo dos veces");
     const en = cuerpoDe("enviar");
-    if (!/\.then\(\(r\) => \{ if \(r\.status === 204\) quitar\(p\.t\); \}/.test(en) || (ct.match(/\bquitar\(/g) ?? []).length !== 2) falla(G, CT, 0, "la bandeja solo da por confirmado un toque con el 204 del servidor (el beacon no confirma)");
+    if (!/\.then\(\(r\) => \{ soltar\(\); if \(r\.status === 204\) \{ fallos = 0; quitar\(p\.t\); \} else otraVez\(\); \}, \(\) => \{ soltar\(\); otraVez\(\); \}\)/.test(en) || !/catch \{ soltar\(\); otraVez\(\); \}/.test(en)
+      || !/if \(!reloj\) programar\(Math\.min\(REINTENTO_MS \* fallos, 60_000\)\);/.test(cuerpoDe("otraVez"))) falla(G, CT, 0, "un envío que falla (abortado, sin red, 5xx) rearma el reintento (otraVez, espaciado hasta 60 s): el de los 1,5 s se salta lo que sigue en camino (CI 45071274895)");
+    const vuelo = /const EN_VUELO_MS = (\d+);/.exec(ct);
+    if (!vuelo || +vuelo[1] > 10000 || !/if \(antes !== undefined && ahora - antes < EN_VUELO_MS\) return;/.test(en) || /\.finally\(/.test(en) || !/\n  if \(l\.length\) otraVez\(\);\n/.test(cuerpoDe("vaciar"))) falla(G, CT, 0, "el reintento no depende de que el envío anterior termine: «en camino» caduca (EN_VUELO_MS ≤ 10 s) y, mientras quede algo, vaciar arma el siguiente intento (CI 45071274895: en WebKit un fetch keepalive abortado no terminaba nunca)");
+    if (!/\.then\(\(r\) => \{ soltar\(\); if \(r\.status === 204\) \{ fallos = 0; quitar\(p\.t\); \}/.test(en) || (ct.match(/\bquitar\(/g) ?? []).length !== 2) falla(G, CT, 0, "la bandeja solo da por confirmado un toque con el 204 del servidor (el beacon no confirma)");
     // (3) La puerta.
     if (!existsSync(RT)) return falla(G, RT, 0, "falta /api/toque");
     const rt = sinComent(RT);
@@ -15107,7 +15114,7 @@ const guardianes = {
       || !/claves === "id,kind,origen" && typeof x\.origen === "string" && typeof x\.id === "string" && typeof x\.kind === "string"\)/.test(rt)
       || !/claves === "origen,semilla" && typeof x\.origen === "string" && typeof x\.semilla === "string"\)/.test(rt)
       || !/claves === "entro,patrocinio" && \(x\.entro === "negocio" \|\| x\.entro === "evento"\) && typeof x\.patrocinio === "string"\)/.test(rt)) falla(G, RT, 0, "/api/toque acepta exactamente { id, kind, origen }, { semilla, origen } o { entro, patrocinio }, todo texto");
-    if (!/import \{ contarToque, contarToqueSemilla \} from "@\/lib\/toques";/.test(rt) || !/import \{ entroPatrocinado \} from "@\/lib\/patrocinio";/.test(rt) || /\bdb\(\)|\btx\(|insert into|from "@\/lib\/db"/.test(rt)) falla(G, RT, 0, "/api/toque no toca la base: las reglas son las de lib/toques.ts y lib/patrocinio.ts");
+    if (!/import \{ contarToque, contarToqueSemilla \} from "@\/lib\/toques";/.test(rt) || !/import \{ entroPatrocinado \} from "@\/lib\/patrocinio-entrada";/.test(rt) || /\bdb\(\)|\btx\(|insert into|from "@\/lib\/db"/.test(rt)) falla(G, RT, 0, "/api/toque no toca la base: las reglas son las de lib/toques.ts y lib/patrocinio-entrada.ts");
     if (/status: (?!204)\d+/.test(rt)) falla(G, RT, 0, "/api/toque contesta 204 siempre (no dice si el toque se contó)");
     // (4) Las reglas, en un solo lugar.
     if (!existsSync(LT)) return falla(G, LT, 0, "falta lib/toques.ts");
@@ -15125,11 +15132,13 @@ const guardianes = {
     if (!/!ID_NEG\.test\(id\) \|\| !TOQUES\.has\(kind\)\) return;/.test(p0)) falla(G, LT, 0, "contarToque valida el id del negocio y el tipo de toque");
     if (!/not exists \(select 1 from business_members m where m\.business_id = b\.id and m\.user_id = \$2::uuid and m\.status = 'active'\)/.test(p0)) falla(G, LT, 0, "contarToque: la gente del propio negocio no cuenta");
     // El «entraron» del patrocinio: sus reglas de siempre.
+    const ld = existsSync(LD) ? sinComent(LD) : "";
+    if (/\bentroPatrocinado\b/.test(ld) || /from "\.\/(cuenta|eventos)"/.test(ld)) falla(G, LD, 0, "lib/patrocinio.ts (dinero) no lleva el «entraron» ni importa ./cuenta o ./eventos: va en lib/patrocinio-entrada.ts (las din9t* cargan lib/patrocinio.ts con sus stubs)");
     const lp = existsSync(LP) ? sinComent(LP) : "", ep = (() => { const i = lp.indexOf("export async function entroPatrocinado("); return i < 0 ? "" : lp.slice(i, lp.indexOf("\n}", i) + 2); })();
     if (!/^[^\n]*\{\n\s*try \{\n\s*if \(!\(await mismoOrigen\(\)\)\) return;/.test(ep) || !/if \(ctx\.robot\) return;/.test(ep) || !/if \(propio\.rowCount\) return;/.test(ep)
       || !/!\/\^\\d\{1,18\}\$\/\.test\(id\)\) return;/.test(ep) || !/await contarEntrada\(kind, id, u\?\.id \?\? null, u \? null : await dispositivo\(false\)\);/.test(ep)) falla(G, LP, 0, "entroPatrocinado perdió sus reglas: mismo origen primero, id válido, sin robots, sin la gente del negocio, y contarEntrada (una vez por persona o dispositivo y día)");
     const tk = existsSync("pruebas/e2e/tarAK.cjs") ? readFileSync("pruebas/e2e/tarAK.cjs", "utf8") : "";
-    if (!existsSync("pruebas/alreves/alrevesToqueSalida.cjs") || !["se corta en el mismo instante", "el primer envío se pierde", "llegan los dos", "recargar con un toque pendiente", "un pendiente viejo se tira"].every((x) => tk.includes(x))) falla(G, "pruebas/e2e/tarAK.cjs", 0, "falta la prueba (tarAK: la página se corta, el primer envío se pierde, llegan los dos, recargar con un pendiente, uno viejo se tira) o su prueba al revés (alrevesToqueSalida)");
+    if (!existsSync("pruebas/alreves/alrevesToqueSalida.cjs") || !["se corta en el mismo instante", "el primer envío se pierde", "el primer envío se queda colgado", "llegan los dos", "recargar con un toque pendiente", "un pendiente viejo se tira"].every((x) => tk.includes(x))) falla(G, "pruebas/e2e/tarAK.cjs", 0, "falta la prueba (tarAK: la página se corta, el primer envío se pierde, llegan los dos, recargar con un pendiente, uno viejo se tira) o su prueba al revés (alrevesToqueSalida)");
   },
 
 
