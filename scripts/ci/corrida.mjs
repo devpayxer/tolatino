@@ -5,7 +5,8 @@
    Se decide con lo que la API de GitHub dice de la corrida y de cada uno de sus trabajos, nunca con lo que la corrida diga de sí misma:
    - la corrida: evento push, rama main, flujo .github/workflows/ci.yml de ESTE repo, el commit pedido, terminada y en verde;
    - sus trabajos: todo lo que corrió, en verde; solo «confirmación» y «anchos» pueden quedar saltados (en un push no corren);
-     alcance, tipos · build · guardianes, seguridad y web, uno cada uno y en verde; los 9 dispositivos, uno cada uno y en verde; y los carriles
+     alcance, la familia de verificación (señal rápida, contratos, imágenes, base real y su compuerta «tipos · build · guardianes»), seguridad
+     y web, uno cada uno y en verde; los 9 dispositivos, uno cada uno y en verde; y los carriles
      «punta a punta · al revés» y «punta a punta · todas las fases» con TODAS sus partes (1/n … n/n, una vez cada una) en verde.
    Un carril saltado (un push de solo documentos), una parte que falta, un trabajo rojo, cancelado o en curso, una lista de trabajos
    incompleta, otro evento, otra rama u otro repo: no confirma. Cualquier error = no.
@@ -20,6 +21,11 @@ export const DISPOSITIVOS = Object.freeze(["iphone-se", "iphone-15", "iphone-15-
 // Los trabajos que corren una vez en toda corrida completa (por el principio de su nombre en ci.yml).
 const FIJOS = Object.freeze([
   ["alcance", /^alcance \(/],
+  // 22 nov (B4) · La familia de la verificación: la señal rápida, contratos, imágenes y base real, más la compuerta con el nombre de siempre.
+  ["verificación · señal rápida", /^verificación · señal rápida /],
+  ["verificación · contratos", /^verificación · contratos /],
+  ["verificación · imágenes", /^verificación · imágenes /],
+  ["verificación · base real", /^verificación · base real /],
   ["tipos · build · guardianes", /^tipos · build · guardianes$/],
   ["seguridad", /^seguridad · /],
   ["web", /^web · /],

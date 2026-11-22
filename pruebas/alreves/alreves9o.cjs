@@ -44,7 +44,7 @@ const casos = [
   ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'if (!fases.ok && !conf.every((c) => c.ok)) return no(', 'if (!fases.ok && !conf.some((c) => c.ok)) return no('],
   ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'PENDIENTE (lo decide el fundador): la «confirmación completa» de la decisión AD', 'la confirmación completa'],
   ['produccionSoloAvanza', '.github/workflows/ci.yml', ' · solo=«${{ inputs.solo }}» · aprobar=', ' · aprobar='],
-  // 22 nov · migracionReversible: «tipos · build · guardianes» vuelve a clonar sin el commit anterior
+  // 22 nov · migracionReversible: la señal rápida (antes «tipos · build · guardianes») vuelve a clonar sin el commit anterior
   ['migracionReversible', '.github/workflows/ci.yml', '      - uses: actions/checkout@v4\n        with: { fetch-depth: 2 }\n      - uses: pnpm/action-setup@v4', '      - uses: actions/checkout@v4\n      - uses: pnpm/action-setup@v4'],
   ['migracionReversible', '.github/workflows/ci.yml', '      - uses: actions/checkout@v4\n        with: { fetch-depth: 2 }\n      - uses: pnpm/action-setup@v4', '      - uses: actions/checkout@v4\n        with: { fetch-depth: 1 }\n      - uses: pnpm/action-setup@v4'],
   // … la base deja anotar un despliegue de producción sin el OK
@@ -182,8 +182,8 @@ console.log(JSON.stringify(x));
     const RPO = 'dueno/repo', DSP = ['iphone-se', 'iphone-15', 'iphone-15-pro-max', 'pixel', 'galaxy', 'ipad', 'escritorio-1024', 'escritorio-1280', 'escritorio-1440'];
     const j = (name, conclusion = 'success', steps) => ({ name, status: 'completed', conclusion, ...(steps ? { steps } : {}) });
     const ent = (t = 'entradas: alcance=todo · solo=«» · aprobar=no · medir=no') => [{ name: 'Run actions/checkout@v4' }, { name: t }];
-    const trabajos = (e) => [j('alcance (todo o solo documentos)', 'success', ent(e)), j('tipos · build · guardianes'), j('seguridad · Semgrep (reglas propias) · dependencias'), j('web · build una vez para todos los grupos'),
-      ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]), ...DSP.map((d) => j(`dispositivo · ${d}`)),
+    const trabajos = (e) => [j('alcance (todo o solo documentos)', 'success', ent(e)), j('verificación · señal rápida (tipos · guardianes · textos)'), j('verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)'), j('verificación · imágenes y producción como código'), j('verificación · base real (migraciones · ayuda · legales · cadenas · semilla)'), j('tipos · build · guardianes'), j('seguridad · Semgrep (reglas propias) · dependencias'), j('web · build una vez para todos los grupos'),
+      ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...DSP.map((d) => j(`dispositivo · ${d}`)),
       j('confirmación · ${{ matrix.nombre }}', 'skipped'), j('punta a punta · ancho ${{ matrix.id }}', 'skipped'), j('la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)')];
     const corrida = (x = {}) => ({ id: 41, head_sha: C, event: 'push', head_branch: 'main', path: '.github/workflows/ci.yml', repository: { full_name: RPO }, head_repository: { full_name: RPO }, run_attempt: 1, status: 'completed', conclusion: 'success', ...x });
     const DOCS = /^(web|punta a punta · (al revés|todas las fases)|dispositivo) /;
@@ -198,7 +198,7 @@ console.log(JSON.stringify(x));
       ['solo una de otra rama', { corridas: [corrida({ head_branch: 'trabajo' })], trabajos: { 41: trabajos() } }, false],
       ['solo un segundo intento en verde', { corridas: [corrida({ run_attempt: 2 })], trabajos: { 41: trabajos() } }, false],
       ['un dispositivo que falta', { corridas: [corrida()], trabajos: { 41: trabajos().filter((x) => x.name !== 'dispositivo · galaxy') } }, false],
-      ['una parte de «al revés» saltada', { corridas: [corrida()], trabajos: { 41: trabajos().map((x) => (x.name === 'punta a punta · al revés · 3/4' ? j(x.name, 'skipped') : x)) } }, false],
+      ['una parte de «al revés» saltada', { corridas: [corrida()], trabajos: { 41: trabajos().map((x) => (x.name === 'punta a punta · al revés · 3/3' ? j(x.name, 'skipped') : x)) } }, false],
       ['la lista de trabajos llega incompleta', { corridas: [corrida()], trabajos: {} }, false],
       ['una parcial y después una entera', { corridas: [corrida({ id: 40, event: 'workflow_dispatch' }), corrida()], trabajos: { 40: trabajos('entradas: alcance=regresion · solo=«» · aprobar=no · medir=no'), 41: trabajos() } }, true],
     ];

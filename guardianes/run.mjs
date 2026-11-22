@@ -8201,7 +8201,7 @@ const guardianes = {
       const SH = "a".repeat(40), RP = "dueno/repo";
       const run = (x = {}) => ({ id: 1, head_sha: SH, event: "push", head_branch: "main", path: ".github/workflows/ci.yml", repository: { full_name: RP }, head_repository: { full_name: RP }, status: "completed", conclusion: "success", ...x });
       const j = (name, conclusion = "success", status = "completed") => ({ name, status, conclusion });
-      const base = () => [j("alcance (todo o solo documentos)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
+      const base = () => [j("alcance (todo o solo documentos)"), j("verificación · señal rápida (tipos · guardianes · textos)"), j("verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)"), j("verificación · imágenes y producción como código"), j("verificación · base real (migraciones · ayuda · legales · cadenas · semilla)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
         ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...disp.map((d) => j(`dispositivo · ${d}`)),
         j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
       const sin = (re) => base().filter((x) => !re.test(x.name)), con = (re, c, st) => base().map((x) => (re.test(x.name) ? j(x.name, c, st) : x));
@@ -8219,6 +8219,8 @@ const guardianes = {
         ["un dispositivo cancelado", run(), con(/^dispositivo · ipad$/, "cancelled"), false],
         ["un trabajo en curso", run(), con(/^seguridad /, null, "in_progress"), false],
         ["web saltado", run(), con(/^web /, "skipped"), false],
+        ["falta un trabajo de la verificación (la base real)", run(), sin(/^verificación · base real/), false],
+        ["la señal rápida roja", run(), con(/^verificación · señal rápida/, "failure"), false],
         ["sin trabajos", run(), [], false],
         ["evento pull_request", run({ event: "pull_request" }), base(), false],
         ["a mano", run({ event: "workflow_dispatch" }), base(), false],
@@ -8237,6 +8239,9 @@ const guardianes = {
     // La única vía para apagar un carril largo en un push: «!= 'documentos'» de «cambios», en la línea exacta de cada trabajo.
     const IFS = {
       web: "    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n",
+      contratos: "    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n",
+      imagenes: "    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n",
+      basedatos: "    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n",
       alreves: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}\n",
       regresion: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' && !(inputs.confirmar == 'si' && inputs.solo == '') }}\n",
       dispositivos: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'regresion' }}\n",
@@ -8247,12 +8252,16 @@ const guardianes = {
       const resto = b.replace(linea, "");
       if (/^    if:/m.test(resto) || /github\.event|head_commit|documentos|continue-on-error|\bpaths\b/.test(resto)) falla(G, Y, 0, `«${k}»: otra vía para no correr en un push (un «if» con el evento o el commit, «documentos», paths o continue-on-error)`);
     }
-    for (const k of ["verificar", "seguridad"]) { const b = job(k); if (!b || /^    (if|needs):/m.test(b) || /continue-on-error|documentos/.test(b)) falla(G, Y, 0, `«${k}» corre siempre, también en un push de solo documentos (sin «needs» ni «if»)`); }
+    for (const k of ["rapida", "seguridad"]) { const b = job(k); if (!b || /^    (if|needs):/m.test(b) || /continue-on-error|documentos/.test(b)) falla(G, Y, 0, `«${k}» corre siempre, también en un push de solo documentos (sin «needs» ni «if»)`); }
+    // 22 nov (B4) · La compuerta «verificar» corre siempre (salvo cancelada) y solo perdona lo saltado por documentos en un PUSH, y nunca la señal rápida.
+    { const v = job("verificar");
+      if (!v.includes("\n    if: ${{ !cancelled() }}\n") || !v.includes("SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}") || !v.includes('ok = r === "success" || (docs && k !== "rapida" && r === "skipped");'))
+        falla(G, Y, 0, "«verificar» (la compuerta) corre siempre y solo perdona contratos, imágenes, base y web saltados en un PUSH de solo documentos; la señal rápida, nunca"); }
     const on = /\non:\n[\s\S]*?\n(?=permissions:|concurrency:|jobs:)/.exec(y)?.[0] ?? "";
     if (!on || /paths(-ignore)?:|branches-ignore:|tags-ignore:/.test(on)) falla(G, Y, 0, "el CI no filtra por archivos ni ramas en «on:» (eso saltaría también los guardianes): el alcance lo decide «cambios»");
     const usos = [...y.matchAll(/needs\.cambios\.outputs\.alcance\s*(==|!=)\s*'([^']*)'/g)].map((x) => `${x[1]} '${x[2]}'`);
-    if (usos.filter((u) => u === "!= 'documentos'").length !== 4 || usos.filter((u) => u === "== 'documentos'").length !== 1 || usos.length !== 5 || /needs\.cambios\.outputs\.alcance(?!\s*(==|!=)\s*'documentos')/.test(y))
-      falla(G, Y, 0, "el alcance de «cambios» se usa en 5 lugares: «!= 'documentos'» en web, al revés, regresión y dispositivos (si falta, corre todo) y «== 'documentos'» solo en «tuberia»");
+    if (usos.filter((u) => u === "!= 'documentos'").length !== 7 || usos.filter((u) => u === "== 'documentos'").length !== 2 || usos.length !== 9 || /needs\.cambios\.outputs\.alcance(?!\s*(==|!=)\s*'documentos')/.test(y))
+      falla(G, Y, 0, "el alcance de «cambios» se usa en 9 lugares: «!= 'documentos'» en contratos, imágenes, base, web, al revés, regresión y dispositivos (si falta, corre todo) y «== 'documentos'» solo en «verificar» y «tuberia»");
     // «tuberia»: lo dice y solo perdona regresión y dispositivos en un PUSH de solo documentos.
     const tu = job("tuberia");
     if (!/needs: \[[^\]]*\bcambios\b/.test(tu)) falla(G, Y, 0, "«tuberia» depende de «cambios» (si el alcance no se pudo calcular, la tubería es roja)");
@@ -9953,7 +9962,7 @@ const guardianes = {
       const j = (name, conclusion = "success", steps) => ({ name, status: "completed", conclusion, ...(steps ? { steps } : {}) });
       const ent = (t = "entradas: alcance=todo · solo=«» · aprobar=no · medir=no") => [{ name: "Run actions/checkout@v4" }, { name: "Run node scripts/ci/alcance.mjs || echo \"alcance=todo\" >> \"$GITHUB_OUTPUT\"" }, { name: t }];
       const DSP = ["iphone-se", "iphone-15", "iphone-15-pro-max", "pixel", "galaxy", "ipad", "escritorio-1024", "escritorio-1280", "escritorio-1440"];
-      const base = (e) => [j("alcance (todo o solo documentos)", "success", ent(e)), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
+      const base = (e) => [j("alcance (todo o solo documentos)", "success", ent(e)), j("verificación · señal rápida (tipos · guardianes · textos)"), j("verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)"), j("verificación · imágenes y producción como código"), j("verificación · base real (migraciones · ayuda · legales · cadenas · semilla)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
         ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...DSP.map((d) => j(`dispositivo · ${d}`)),
         j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
       const conConf = () => [...base().filter((x) => !/^(punta a punta · todas las fases|confirmación)/.test(x.name)), ...[1, 2, 3, 4, 5, 6, 7, 8].flatMap((i) => [j(`confirmación · dos veces seguidas · ${i}/8`), j(`confirmación · barajada · ${i}/8`)])];
@@ -9974,6 +9983,7 @@ const guardianes = {
         ["otro repositorio", run({ repository: { full_name: "otro/repo" } }), base(), false],
         ["corrida roja", run({ conclusion: "failure" }), base(), false],
         ["falta un dispositivo", run(), base().filter((x) => x.name !== "dispositivo · pixel"), false],
+        ["un trabajo de la verificación saltado (contratos)", run(), base().map((x) => (/^verificación · contratos/.test(x.name) ? j(x.name, "skipped") : x)), false],
         ["una parte de «al revés» saltada", run(), base().map((x) => (x.name === "punta a punta · al revés · 2/3" ? j(x.name, "skipped") : x)), false],
         ["confirmar=si con la barajada incompleta", run({ event: "workflow_dispatch" }), conConf().filter((x) => x.name !== "confirmación · barajada · 8/8"), false],
         ["sin trabajos", run(), [], false],
@@ -10004,8 +10014,8 @@ const guardianes = {
     // 22 nov · En el CI el commit anterior TIENE que verse: con un checkout sin historia esta mitad no corría y el guardián pasaba callado (el
     // trabajo «tipos · build · guardianes» clonaba un solo commit; lo hacía de verdad solo el carril «al revés»). En local, sin historia, sigue.
     if (!previo && process.env.GITHUB_ACTIONS === "true") falla(G, "HEAD~1", 0, "en el CI no se resuelve el commit anterior (HEAD~1): el checkout no trae historia (fetch-depth: 2 o más) y no se puede mirar quién leía lo que una migración borra o renombra");
-    { const y = readFileSync(".github/workflows/ci.yml", "utf8"), v = /\n  verificar:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", d = /\n      - uses: actions\/checkout@v4\n        with: \{ fetch-depth: (\d+) \}\n/.exec(v);
-      if (!d || !(Number(d[1]) === 0 || Number(d[1]) >= 2)) falla(G, ".github/workflows/ci.yml", 0, "«tipos · build · guardianes» clona con el commit anterior (actions/checkout con fetch-depth: 2, o 0): sin él no se mira quién leía lo que una migración borra"); }
+    { const y = readFileSync(".github/workflows/ci.yml", "utf8"), v = /\n  rapida:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", d = /\n      - uses: actions\/checkout@v4\n        with: \{ fetch-depth: (\d+) \}\n/.exec(v);
+      if (!d || !(Number(d[1]) === 0 || Number(d[1]) >= 2)) falla(G, ".github/workflows/ci.yml", 0, "«verificación · señal rápida» (donde corren los guardianes) clona con el commit anterior (actions/checkout con fetch-depth: 2, o 0): sin él no se mira quién leía lo que una migración borra"); }
     // Quién lo lee: el código del commit anterior (git grep en HEAD~1) y el de ahora (también lo que todavía no está en git).
     const vivos = archivos.filter((f) => /^(apps|services|packages\/db\/seeds|scripts)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|sql|json|sh)$/.test(f) && !f.includes("node_modules"));
     const lee = (id) => {
@@ -11082,6 +11092,71 @@ const guardianes = {
     }
     // Generar: LPT con afinidad, orden topológico, estable (regenerar no mueve a nadie), nuevas sin mover a otras (casos sobre catálogos de mentira).
     try { execSync(`node ${S} --casos`, { stdio: "pipe", timeout: 60_000 }); } catch (e) { falla(G, S, 0, `los casos del reparto no pasan: ${String(e.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 3).join(" · ").slice(0, 300)}`); }
+  },
+
+  /* 22 nov · Revisión del CI (B4) · verificarEntero: «tipos · build · guardianes» va en trabajos paralelos (señal rápida, contratos, imágenes y
+     producción como código, base real) más el build único de «web», y «verificar» queda como compuerta. Hasta hoy ningún guardián fijaba el
+     contenido de esa familia (solo que «tuberia» dependiera de un trabajo llamado «verificar»): al partirla, un paso podía perderse en verde. Aquí la
+     lista CERRADA de comandos: cada uno en su trabajo y las veces que toca (en todo ci.yml), ningún «if» de paso que lo apague, ningún trabajo de la
+     familia con otro «if» que el de solo documentos, y la compuerta exige «success» de cada uno (no «no rojo», no always() + echo). Y el build de la
+     web cubre todo lo que se construye: solo @tolatino/web tiene script «build». Al revés: alrevesVerificar. */
+  verificarEntero() {
+    const G = "verificarEntero", Y = ".github/workflows/ci.yml";
+    if (!existsSync(Y)) return falla(G, Y, 0, "falta ci.yml");
+    const y = readFileSync(Y, "utf8"), job = (n) => new RegExp(`\\n  ${n}:\\n[\\s\\S]*?(?=\\n  [a-z]+:\\n|$)`).exec(y)?.[0] ?? "";
+    const LISTA = [
+      ["rapida", "      - uses: actions/checkout@v4\n        with: { fetch-depth: 2 }\n", 1],
+      ["rapida", "      - run: pnpm typecheck\n", 1],
+      ["rapida", "      - run: pnpm guardianes\n", 1],
+      ["contratos", "docker run -d --rm --name stripe-mock -p 12111:12111 stripe/stripe-mock@sha256:", 1],
+      ["contratos", "bash scripts/contrato-stripe/correr.sh\n", 1],
+      ["contratos", "run: bash scripts/contrato-canales/correr.sh\n", 1],
+      ["contratos", "run: bash scripts/contrato-push/correr.sh\n", 1],
+      ["contratos", "run: bash scripts/contrato-tiendas/correr.sh\n", 1],
+      ["contratos", "run: bash scripts/contrato-oidc/correr.sh\n", 1],
+      ["contratos", "run: bash scripts/contrato-wallet/correr.sh\n", 1],
+      ["contratos", "run: node scripts/prueba-firma-ses/prueba.mjs\n", 1],
+      ["imagenes", "run: docker build -f infra/pruebas/Dockerfile -t tolatino/web:ci .\n", 1],
+      ["imagenes", "sudo apt-get install -y -q age shellcheck pgbackrest postgresql-16 >/dev/null\n", 1],
+      ["imagenes", 'sudo -E env "PATH=$PATH" CI=true bash pruebas/infra/correr.sh\n', 1],
+      ["imagenes", "run: docker build -t tolatino/base:ci infra/produccion/base\n", 1],
+      ["basedatos", "          bash packages/db/migrar.sh $C\n", 2],
+      ["basedatos", `-c 'select count(*) from categories')" = "17"`, 1],
+      ["basedatos", `-c 'select count(*) from cities')" = "5"`, 1],
+      ["basedatos", "node scripts/ayuda/indexar.mjs | $C exec -T db psql", 2],
+      ["basedatos", "node scripts/legal/indexar.mjs | $C exec -T db psql", 2],
+      ["basedatos", "          node scripts/cms/extraer.mjs --verificar\n", 1],
+      ["basedatos", "node scripts/cms/indexar.mjs | $C exec -T db psql", 2],
+      ["basedatos", "SEMILLA_DIR=infra/pruebas/semilla bash packages/db/migrar.sh --semilla-pruebas $C\n", 2],
+      ["web", "      - run: pnpm --filter @tolatino/web build\n", 1],
+      ["web", `run: test -z "$(find apps/web/.next/static -name '*.map' -print -quit)" && test -n "$(find apps/web/.next/standalone/apps/web/.next/mapas -name '*.map' -print -quit)"\n`, 1],
+    ];
+    const FAMILIA = ["rapida", "contratos", "imagenes", "basedatos", "web"];
+    for (const [k, cmd, n] of LISTA) {
+      const b = job(k), enJob = b.split(cmd).length - 1, enTodo = y.split(cmd).length - 1;
+      if (enJob !== n || enTodo !== n) falla(G, Y, 0, `«${k}» corre «${cmd.trim().slice(0, 90)}» ${n === 1 ? "una vez" : `${n} veces`} (está ${enJob} en el trabajo y ${enTodo} en ci.yml)`);
+    }
+    for (const k of FAMILIA) {
+      const b = job(k);
+      if (!b) { falla(G, Y, 0, `falta el trabajo «${k}» de la verificación`); continue; }
+      if (/^        if:/m.test(b)) falla(G, Y, 0, `«${k}»: un paso con «if» (un paso de la verificación no se apaga)`);
+      if (/continue-on-error/.test(b)) falla(G, Y, 0, `«${k}»: continue-on-error (un paso que falla no puede dejar pasar)`);
+      const ifs = [...b.matchAll(/^    if: (.*)$/gm)].map((m) => m[1]);
+      if (ifs.length > (k === "rapida" ? 0 : 1) || (ifs.length && ifs[0] !== "${{ needs.cambios.outputs.alcance != 'documentos' }}")) falla(G, Y, 0, `«${k}»: el único «if» de la familia es el de solo documentos (y la señal rápida no lleva ninguno)`);
+    }
+    // El mapa de fuente, tras el build y antes de empaquetar (mira el artefacto que se prueba).
+    const w = job("web"), ib = w.indexOf("pnpm --filter @tolatino/web build"), im = w.indexOf("find apps/web/.next/static -name '*.map'"), it = w.indexOf("tar czf");
+    if (!(ib >= 0 && im > ib && it > im)) falla(G, Y, 0, "«web»: «Ningún mapa de fuente» va después del build y antes de empaquetar");
+    // La compuerta.
+    const v = job("verificar");
+    if (!v.includes("    name: tipos · build · guardianes\n") || !v.includes("    needs: [cambios, rapida, contratos, imagenes, basedatos, web]\n") || !v.includes("\n    if: ${{ !cancelled() }}\n") || /always\(\)/.test(v))
+      falla(G, Y, 0, "«verificar» es la compuerta «tipos · build · guardianes»: needs [cambios, rapida, contratos, imagenes, basedatos, web] e «if: ${{ !cancelled() }}» (no always())");
+    if (!v.includes("RESULTADOS: ${{ toJSON(needs) }}") || !v.includes(`for (const k of ["rapida", "contratos", "imagenes", "basedatos", "web"]) {`) || !v.includes('const r = n[k]?.result, ok = r === "success" || (docs && k !== "rapida" && r === "skipped");') || !v.includes("if (mal) process.exit(1);"))
+      falla(G, Y, 0, "«verificar» exige «success» de cada trabajo de la familia (solo perdona lo saltado por documentos, nunca la señal rápida)");
+    if (!new RegExp("\\n  tuberia:\\n[\\s\\S]*?needs: \\[[^\\]]*\\bverificar\\b").test(y)) falla(G, Y, 0, "«tuberia» depende de la compuerta «verificar»");
+    // Un solo build: el de «web» cubre todo lo que se construye.
+    const conBuild = archivos.filter((f) => /^(apps|packages|services)\/[^/]+\/package\.json$/.test(f)).filter((f) => { try { return !!JSON.parse(readFileSync(f, "utf8")).scripts?.build; } catch { return false; } });
+    if (conBuild.join() !== "apps/web/package.json") falla(G, conBuild.find((f) => f !== "apps/web/package.json") ?? "apps/web/package.json", 0, `solo @tolatino/web tiene script «build» (el build único es el de «web»: pnpm --filter @tolatino/web build); tienen: ${conBuild.join(", ") || "ninguno"}`);
   },
 
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j

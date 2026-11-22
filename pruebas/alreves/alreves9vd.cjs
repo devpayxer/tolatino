@@ -86,8 +86,8 @@ if (!soloTextos) {
     const REP = 'o/r';
     const trabajos = (x = {}) => {
       const j = (name, conclusion = 'success') => ({ name, status: 'completed', conclusion });
-      let js = [j('alcance (todo o solo documentos)'), j('tipos · build · guardianes'), j('seguridad · Semgrep (reglas propias) · dependencias'), j('web · build una vez para todos los grupos'),
-        ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]),
+      let js = [j('alcance (todo o solo documentos)'), j('verificación · señal rápida (tipos · guardianes · textos)'), j('verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)'), j('verificación · imágenes y producción como código'), j('verificación · base real (migraciones · ayuda · legales · cadenas · semilla)'), j('tipos · build · guardianes'), j('seguridad · Semgrep (reglas propias) · dependencias'), j('web · build una vez para todos los grupos'),
+        ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)),
         ...['iphone-se', 'iphone-15', 'iphone-15-pro-max', 'pixel', 'galaxy', 'ipad', 'escritorio-1024', 'escritorio-1280', 'escritorio-1440'].map((d) => j(`dispositivo · ${d}`)),
         j('confirmación · ${{ matrix.nombre }}', 'skipped'), j('punta a punta · ancho ${{ matrix.id }}', 'skipped'), j('la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)')];
       if (x.saltados) js = js.map((t) => (x.saltados.test(t.name) ? j(t.name, 'skipped') : t));
@@ -125,7 +125,7 @@ if (!soloTextos) {
       ['la corrida del código todavía en curso', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { status: 'in_progress', conclusion: null })] } }, 'todo', c0],
       ['la corrida del código fue a su vez de solo documentos (carriles saltados) aunque salió verde', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { saltados: DOCS })] } }, 'todo', c0],
       ['la corrida del código saltó solo los dispositivos', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { saltados: /^dispositivo /, })] } }, 'todo', c0],
-      ['a la corrida del código le falta una parte de «al revés»', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { sin: /^punta a punta · al revés · 4\/4$/ })] } }, 'todo', c0],
+      ['a la corrida del código le falta una parte de «al revés»', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { sin: /^punta a punta · al revés · 3\/3$/ })] } }, 'todo', c0],
       ['la única corrida verde del código es de pull_request', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { event: 'pull_request' })] } }, 'todo', c0],
       ['la única corrida verde del código es a mano', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { event: 'workflow_dispatch' })] } }, 'todo', c0],
       ['la única corrida verde del código es de otra rama', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { head_branch: 'trabajo' })] } }, 'todo', c0],
@@ -217,12 +217,16 @@ const casos = [
   [Y, '      - name: Regresión de todas las fases en base nueva\n', "      - name: Regresión de todas las fases en base nueva\n        if: ${{ github.event_name != 'push' }}\n", 'otra vía para no correr en un push'],
   [Y, '      - name: Regresión de al revés en base nueva\n', "      - name: Regresión de al revés en base nueva\n        if: ${{ github.event_name != 'push' }}\n", 'otra vía para no correr en un push'],
   [Y, "needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'regresion'", "needs.cambios.outputs.alcance == 'todo' && (inputs.alcance || 'todo') != 'regresion'", '«dispositivos» se apaga en un push solo por el alcance'],
-  [Y, "    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n    runs-on", "    if: ${{ needs.cambios.outputs.alcance != 'documentos' && !contains(github.event.head_commit.message, 'docs') }}\n    runs-on", '«web» se apaga en un push solo por el alcance'],
+  [Y, "    name: web · build una vez para todos los grupos\n    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n    runs-on", "    name: web · build una vez para todos los grupos\n    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && !contains(github.event.head_commit.message, 'docs') }}\n    runs-on", '«web» se apaga en un push solo por el alcance'],
   [Y, '  push:\n    branches: [main]\n', '  push:\n    branches: [main]\n    paths-ignore: ["docs/**"]\n', 'no filtra por archivos'],
-  [Y, '  verificar:\n    name: tipos · build · guardianes\n', "  verificar:\n    name: tipos · build · guardianes\n    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n", '«verificar» corre siempre'],
+  [Y, '  rapida:\n    name: verificación · señal rápida (tipos · guardianes · textos)\n', "  rapida:\n    name: verificación · señal rápida (tipos · guardianes · textos)\n    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n", '«rapida» corre siempre'],
+  // 22 nov (B4) · contratos, imágenes y base solo se apagan por «documentos»; la compuerta no perdona la señal rápida ni lo saltado fuera de un push.
+  [Y, "  contratos:\n    name: verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)\n    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n", "  contratos:\n    name: verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)\n    needs: cambios\n    if: ${{ github.event_name != 'push' }}\n", '«contratos» se apaga en un push solo por el alcance'],
+  [Y, 'ok = r === "success" || (docs && k !== "rapida" && r === "skipped");', 'ok = r === "success" || (docs && r === "skipped");', '«verificar» (la compuerta) corre siempre'],
+  [Y, "          SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}\n        run: |\n          echo \"$RESULTADOS\" | node -e '\n            const n = JSON.parse(require(\"fs\").readFileSync(0, \"utf8\")), docs", "          SOLO_DOCUMENTOS: ${{ needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}\n        run: |\n          echo \"$RESULTADOS\" | node -e '\n            const n = JSON.parse(require(\"fs\").readFileSync(0, \"utf8\")), docs", '«verificar» (la compuerta) corre siempre'],
   // «tuberia»: sin «cambios», perdonar lo saltado fuera de un push o más allá de regresión y dispositivos, quitar el aviso.
   [Y, 'needs: [cambios, verificar,', 'needs: [verificar,', '«tuberia» depende de «cambios»'],
-  [Y, "SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs", 'SOLO_DOCUMENTOS: ${{ needs', 'solo perdona lo saltado por documentos en un push'],
+  [Y, "SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}\n          N_DOCUMENTOS", "SOLO_DOCUMENTOS: ${{ needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}\n          N_DOCUMENTOS", 'solo perdona lo saltado por documentos en un push'],
   [Y, 'const porDocs = docs && (k === "alreves" || k === "regresion" || k === "dispositivos");', 'const porDocs = docs;', 'solo al revés, regresión y dispositivos'],
   [Y, '"solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"', '"solo documentos"', 'con todas las letras'],
   // 22 nov · El nombre de la tubería no promete «nada saltado» y su resumen dice qué corrió y qué no.

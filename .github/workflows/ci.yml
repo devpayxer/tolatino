@@ -95,8 +95,14 @@ jobs:
       - name: "entradas: alcance=${{ inputs.alcance || 'todo' }} · solo=«${{ inputs.solo }}» · aprobar=${{ inputs.aprobar || 'no' }} · medir=${{ inputs.medir || 'no' }}"
         run: echo "las entradas de esta corrida van en el nombre de este paso"
 
-  verificar:
-    name: tipos · build · guardianes
+  # 22 nov · Revisión del CI (B4) · «tipos · build · guardianes» en trabajos paralelos y un solo build. Antes, un trabajo de 11–14 min con todo en
+  # serie (y la web construida dos veces por corrida). Ahora: la señal rápida (tipos + guardianes, que incluyen los textos de las pruebas al revés)
+  # en ~3 min; contratos; imágenes y producción como código; la base real. El build de la web es UNO, el del trabajo «web» (su artefacto es el que
+  # se prueba), y ahí se mira que no se sirva ningún mapa de fuente. «verificar» queda como compuerta con el mismo nombre: exige que cada uno
+  # termine en verde. En un push sin código (lo decide «cambios») corren la señal rápida y la seguridad, y nada más. Guardián verificarEntero (la lista cerrada
+  # de pasos: ninguno puede desaparecer sin ponerse rojo).
+  rapida:
+    name: verificación · señal rápida (tipos · guardianes · textos)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -110,8 +116,22 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm build
+      # Los guardianes llevan dentro los textos de las pruebas al revés (alrevesConSuTexto: node pruebas/alreves/textos.cjs).
       - run: pnpm guardianes
+
+  contratos:
+    name: verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)
+    needs: cambios
+    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
       - name: Contrato con Stripe (stripe-mock valida cada llamada contra la API oficial)
         run: |
           docker run -d --rm --name stripe-mock -p 12111:12111 stripe/stripe-mock@sha256:aeb96b83e87a893d2ac005e363ac01ffa6e59a5ad85b49c155dfc9129de02e78
@@ -127,12 +147,27 @@ jobs:
         run: bash scripts/contrato-oidc/correr.sh
       - name: Contrato de Wallet (Apple con su formato fijado y una cadena de prueba hecha en el momento; Google con su descubrimiento oficial)
         run: bash scripts/contrato-wallet/correr.sh
-      - name: Ningún mapa de fuente en lo que se sirve (el build los saca a .next/mapas)
-        run: test -z "$(find apps/web/.next/static -name '*.map' -print -quit)" && test -n "$(find apps/web/.next/standalone/apps/web/.next/mapas -name '*.map' -print -quit)"
       - name: Firma del correo (SES SigV4) contra el vector oficial de AWS
         run: node scripts/prueba-firma-ses/prueba.mjs
+
+  imagenes:
+    name: verificación · imágenes y producción como código
+    needs: cambios
+    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      # Las imágenes primero, sin node_modules ni .next del anfitrión en el contexto (como las construye el servidor desde su copia).
       - name: Imagen del sandbox se construye
         run: docker build -f infra/pruebas/Dockerfile -t tolatino/web:ci .
+      - name: Imagen de la base de producción se construye (Postgres + PostGIS + pgBackRest)
+        run: docker build -t tolatino/base:ci infra/produccion/base
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
       - name: Producción como código sin servidor (azul/verde, sobre sellado, recuperación, PITR de verdad con pgBackRest, la traza del sandbox, compose)
         run: |
           # El PITR se saltaba (18 nov): sin «apt-get update» no siempre llegaba pgbackrest y la imagen no trae el servidor de Postgres 16. Se instala
@@ -144,8 +179,20 @@ jobs:
           sudo apt-get install -y -q age shellcheck pgbackrest postgresql-16 >/dev/null
           echo "pgbackrest: $(command -v pgbackrest || echo falta) · Postgres 16: $(test -x /usr/lib/postgresql/16/bin/initdb && echo sí || echo falta)"
           sudo -E env "PATH=$PATH" CI=true bash pruebas/infra/correr.sh
-      - name: Imagen de la base de producción se construye (Postgres + PostGIS + pgBackRest)
-        run: docker build -t tolatino/base:ci infra/produccion/base
+
+  basedatos:
+    name: verificación · base real (migraciones · ayuda · legales · cadenas · semilla)
+    needs: cambios
+    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
       - name: Migraciones en una base real (dos veces, la segunda no cambia nada)
         env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
         run: |
@@ -218,6 +265,31 @@ jobs:
           test "$(Q "select count(*) from photo_reports")" = "3"
           test "$(Q "select count(*) from media where status = 'visible'")" -gt 1000
 
+
+  # La compuerta: el nombre de siempre, para la tubería, la puerta de producción (scripts/ci/corrida.mjs) y quien lo lea. Verde solo si cada
+  # trabajo de la verificación (y el build de «web») terminó en verde; en un push sin código (lo decide «cambios»), solo la señal rápida corre.
+  verificar:
+    name: tipos · build · guardianes
+    needs: [cambios, rapida, contratos, imagenes, basedatos, web]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cada trabajo de la verificación terminó en verde (en un push de solo documentos, solo la señal rápida)
+        env:
+          RESULTADOS: ${{ toJSON(needs) }}
+          SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}
+        run: |
+          echo "$RESULTADOS" | node -e '
+            const n = JSON.parse(require("fs").readFileSync(0, "utf8")), docs = process.env.SOLO_DOCUMENTOS === "si"; let mal = 0;
+            for (const k of ["rapida", "contratos", "imagenes", "basedatos", "web"]) {
+              const r = n[k]?.result, ok = r === "success" || (docs && k !== "rapida" && r === "skipped");
+              console.log((ok ? "✓ " : "✗ ") + k + " · " + r + (ok && r === "skipped" ? " (a propósito: solo documentos)" : ""));
+              if (!ok) mal++;
+            }
+            if (mal) process.exit(1);
+          '
+
   seguridad:
     name: seguridad · Semgrep (reglas propias) · dependencias
     runs-on: ubuntu-latest
@@ -254,6 +326,9 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @tolatino/web build
+      # 22 nov (B4) · Sobre el build que se prueba (antes miraba otro, el de «tipos · build · guardianes»).
+      - name: Ningún mapa de fuente en lo que se sirve (el build los saca a .next/mapas)
+        run: test -z "$(find apps/web/.next/static -name '*.map' -print -quit)" && test -n "$(find apps/web/.next/standalone/apps/web/.next/mapas -name '*.map' -print -quit)"
       - name: Empaquetar con tar (conserva los enlaces de pnpm; sin la caché del build)
         run: |
           cd apps/web && cp -r .next/static .next/standalone/apps/web/.next/ && cp -r public .next/standalone/apps/web/
