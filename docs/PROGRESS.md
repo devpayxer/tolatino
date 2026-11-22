@@ -20,6 +20,12 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (14:30 UTC) · `main` = `pruebas` = ee13605, sandbox comprobado desde fuera (estado-sandbox 45032937857).** Tanda 5 (despliegue) servida:
+  primero a `main` (imagen construida en el CI, corrida 45031957848) y después a `pruebas`. Primer despliegue con tramos medidos: preparar 3 s, imagen
+  251 s, **migraciones 3 s (antes ~58)**, semilla 1 s, recrear 31 s, total 292 s; `/` y `/negocios` respondieron 200 durante el despliegue. Decisión
+  AM escrita (el CI y el proceso nuevos son regla). Falta de la revisión: herramienta de subida y texto único del flujo (tanda 6), regenerar el
+  reparto con medidas nuevas, la programada, el puerto de las pruebas. Quién hizo qué: Opus escribió la tanda 5 y sus arreglos; un revisor Fable y
+  uno Sonnet la revisaron; Fable unió, comprobó y subió.
 - **22 nov (12:00 UTC) · `main` = `pruebas` = b0a468f, sandbox comprobado desde fuera; confirmación de push 45017737500 en verde en 20 min 17 s**
   (189 min de máquina, 29 trabajos, sin rojas ni inestables; antes de la revisión, 40,8 min de mediana y ~285 de máquina). `promover.sh` en seco la
   reconoce como corrida entera. En marcha: tanda 5 (despliegue del sandbox), ya escrita y revisada por dos revisores (15 hallazgos, ninguno bloquea);
