@@ -14,7 +14,7 @@ const casos = [
   [VR, '  if (!turno) return ocupado();\n', '', 'se toma ANTES de leer el cuerpo'],
   [VR, 'headers: { "Retry-After": "30" }', 'headers: {}', '503 con Retry-After'],
   [VR, '    if (dir) await borrarCarpetaVideo(dir);\n    await turno();\n', '    if (dir) await borrarCarpetaVideo(dir);\n', 'se suelta en un finally'],
-  [S, '            if (escritos + hasta > o.tope) { await tirarResto(); return { ok: false, motivo: "grande" }; }\n', '', 'mira el tope ANTES de escribir'],
+  [S, '            if (escritos + hasta > o.tope) { await tirarResto(); return no("grande"); }\n', '', 'mira el tope ANTES de escribir'],
   [V, 'accept: "application/x-tolatino-video"', 'accept: "application/json"', 'procesarVideo manda el video desde el disco'],
   [V, '  if (enEsteProceso >= VIDEO_A_LA_VEZ_PROCESO) return null;\n', '', 'turnoVideo: tope por proceso'],
   [M, 'pipeline(createReadStream(o.ruta, { highWaterMark: 1 << 20 }), pedido).catch(no);', 'pedido.end(require("node:fs").readFileSync(o.ruta));', 'el archivo va del disco por partes'],

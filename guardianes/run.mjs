@@ -10745,6 +10745,59 @@ const guardianes = {
       if (/leerFormulario\(/.test(t) && !/lf\.grande/.test(t)) falla(G, f, 0, "con leerFormulario, el archivo grande contesta 413 (lf.grande)");
     }
     if (!/13 MB por partes, sin avisar el tamaño → 413/.test(readFileSync("pruebas/e2e/sub9t.cjs", "utf8"))) falla(G, "pruebas/e2e/sub9t.cjs", 0, "sub9t no prueba la subida sin content-length");
+    // 22 nov · Turno de fotos (LAUNCH «Fotos que se suben: tope de subidas a la vez por proceso»). Medido: 50 fotos de 11,5 MB a la vez llevaban un
+    // proceso de ~0,5 GB a ~2,3 GB en cualquiera de las rutas de fotos (cada foto juntada y copiada en memoria; sharp sin límite de cuántas a la vez).
+    // (a) La pieza común, conFotoSubida: lugar ANTES de leer el cuerpo (sin lugar: 503 al instante), la foto al disco (recibirArchivo), turno de
+    //     FOTOS_A_LA_VEZ antes de abrirla (sin turno a tiempo: el mismo 503), todo suelto en un finally; 503 con Retry-After y «Prueba en un momento.»;
+    //     el rechazo queda en los errores del servidor (Sistema › Salud), con freno.
+    const cf = cuerpoFn(l, "conFotoSubida"), tf = cuerpoFn(l, "turnoFoto");
+    if (!cf) falla(G, L, 0, "falta conFotoSubida (la pieza común de las subidas de fotos, con lugar y turno)");
+    else {
+      const iLugar = cf.indexOf("if (dentro >= FOTOS_DENTRO) { avisarLleno(ruta, \"lugar\"); return fotosOcupado(); }"), iMas = cf.indexOf("dentro++;"), iRec = cf.indexOf("await recibirArchivo(req, {"),
+        iTurno = cf.indexOf("soltar = await turnoFoto(FOTOS_ESPERA_MS);"), iSin = cf.indexOf("if (!soltar) { avisarLleno(ruta, \"turno\"); return fotosOcupado(); }"), iHacer = cf.indexOf("return await hacer(f);"), iFin = cf.indexOf("} finally {");
+      if (iLugar < 0 || iMas < iLugar || iRec < iMas) falla(G, L, 0, "conFotoSubida toma el lugar ANTES de leer el cuerpo (sin lugar: fotosOcupado, sin leer nada)");
+      if (iTurno < iRec || iSin < iTurno || iHacer < iSin) falla(G, L, 0, "conFotoSubida espera el turno (turnoFoto) después de recibir la foto y antes de abrirla (hacer); sin turno, fotosOcupado");
+      if (iFin < iHacer || !/\} finally \{\s*soltar\?\.\(\);\s*dentro--;\s*if \(dir\) await borrarCarpetaVideo\(dir\);\s*\}/.test(cf)) falla(G, L, 0, "conFotoSubida suelta el turno y el lugar y borra la carpeta temporal en un finally");
+      if (/\.(arrayBuffer|formData|blob)\(\)|Buffer\.concat|leerFormulario\(/.test(cf)) falla(G, L, 0, "conFotoSubida junta la foto en memoria: va al disco por partes (recibirArchivo)");
+    }
+    if (!/if \(activas < FOTOS_A_LA_VEZ\) \{ activas\+\+; return Promise\.resolve\(soltador\(\)\); \}/.test(tf) || !/enCola\.push\(paso\);/.test(tf) || !/listo\(null\); \}, espera\);/.test(tf) || !/while \(enCola\.length\) if \(enCola\.shift\(\)!\(\)\) return;\s*activas--;/.test(tf))
+      falla(G, L, 0, "turnoFoto: como mucho FOTOS_A_LA_VEZ a la vez; el resto espera en la cola con plazo (null si no llega) y al soltar el turno pasa al siguiente");
+    const cte = /export const FOTOS_A_LA_VEZ = (\d+), FOTOS_DENTRO = (\d+), FOTOS_ESPERA_MS = ([\d_]+), AVISO_LLENO_MS = ([\d_]+);/.exec(l);
+    if (!cte || +cte[1] < 1 || +cte[1] > 4 || +cte[2] <= +cte[1] || +cte[2] > 32 || +cte[3].replace(/_/g, "") > 60_000 || +cte[4].replace(/_/g, "") < 1000) falla(G, L, 0, "los topes de fotos: 1–4 a la vez por proceso, más lugar que turnos (≤ 32), espera ≤ 60 s y aviso con freno");
+    if (!/status: 503, headers: \{ "Retry-After": "\d+" \}/.test(cuerpoFn(l, "fotosOcupado") || l.slice(l.indexOf("export const fotosOcupado"), l.indexOf("export const fotosOcupado") + 600)) || !/Prueba en un momento\./.test(l) || !/Try again in a moment\./.test(l))
+      falla(G, L, 0, "sin lugar o sin turno: 503 con Retry-After y «Prueba en un momento.» / «Try again in a moment.»");
+    const al = cuerpoFn(l, "avisarLleno");
+    if (!/if \(Date\.now\(\) - ultimoAviso < AVISO_LLENO_MS\) return;/.test(al) || !/recibirErrorServidor\(e, ruta\)/.test(al)) falla(G, L, 0, "un rechazo por estar lleno queda en los errores del servidor (Sistema › Salud), como mucho uno cada AVISO_LLENO_MS");
+    // (b) Por clase: TODA ruta que recibe un archivo pasa por una pieza con turno. Fotos (abre con sharp): conFotoSubida, y sharp abre el archivo
+    //     del disco (f.ruta) dentro de ella. El video: recibirArchivo + turnoVideo (mediosEnFlujo). Sin turno, solo lo de SIN_TURNO (archivo chico y
+    //     sin abrir: la llave del llavero, 64 KB, solo un Admin con código; al disco no va porque es un secreto).
+    const VIDEO = "apps/web/app/api/negocio/video/route.ts", SIN_TURNO = { "apps/web/app/api/admin/llavero/route.ts": ["apps/web/lib/tiendas/llavero.ts", /export const MAX_BYTES = 64 \* 1024;/] };
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/api\/.*route\.ts$/.test(x))) {
+      const t = sinComent(f);
+      const recibe = /leerFormulario\(|recibirArchivo\(|conFotoSubida\(|instanceof (File|Blob)\b|\.formData\(\)/.test(t);
+      if (!recibe && !/\bsharp\(/.test(t)) continue;
+      if (f === VIDEO) { if (!/await turnoVideo\(\)/.test(t)) falla(G, f, 0, "el video se recibe con su turno (turnoVideo)"); continue; }
+      if (SIN_TURNO[f]) {
+        const [lib, tope] = SIN_TURNO[f];
+        if (!existsSync(lib) || !tope.test(readFileSync(lib, "utf8"))) falla(G, lib, 0, "una ruta sin turno solo recibe un archivo chico (la llave del llavero: 64 KB)");
+        if (/\bsharp\(|recibirArchivo\(/.test(t)) falla(G, f, 0, "una ruta sin turno no abre imágenes ni recibe archivos grandes");
+        continue;
+      }
+      if (/leerFormulario\(|recibirArchivo\(|instanceof (File|Blob)\b/.test(t)) falla(G, f, 0, "recibe un archivo sin turno: una foto va por conFotoSubida (lib/subida.ts), un archivo nuevo de otra clase necesita su turno antes de entrar aquí");
+      const iC = t.indexOf("return conFotoSubida(req, {"), iS = t.indexOf("sharp(");
+      if (iC < 0) { falla(G, f, 0, "abre una imagen recibida sin pasar por conFotoSubida (lugar, disco y turno)"); continue; }
+      if (iS >= 0 && iS < iC) falla(G, f, 0, "abre la imagen fuera del turno (sharp antes de conFotoSubida)");
+      for (const m of t.matchAll(/\bsharp\(([^,)]*)/g)) if (m[1].trim() !== "f.ruta") falla(G, f, 0, `sharp abre la foto desde la memoria (${m[1].trim().slice(0, 40)}): la abre desde el disco (f.ruta)`);
+      if (/\.arrayBuffer\(\)|Buffer\.concat/.test(t)) falla(G, f, 0, "junta la foto en memoria (arrayBuffer/Buffer.concat): llega al disco por conFotoSubida");
+      if (!/grande: \(\) => err\(413,/.test(t)) falla(G, f, 0, "con conFotoSubida, la foto grande contesta 413 (grande)");
+    }
+    // (c) Ninguna acción del servidor recibe archivos (no tienen tope ni turno): las subidas van por una ruta de arriba.
+    for (const f of archivos.filter((x) => /^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x) && !/\/route\.ts$/.test(x))) {
+      const t = sinComent(f);
+      if (/^["']use server["']/m.test(t) && /instanceof (File|Blob)\b|\.arrayBuffer\(\)/.test(t)) falla(G, f, 0, "una acción del servidor recibe un archivo (sin tope ni turno): súbelo por una ruta con conFotoSubida");
+    }
+    const e2 = existsSync("pruebas/e2e/sub9t2.cjs") ? readFileSync("pruebas/e2e/sub9t2.cjs", "utf8") : "";
+    for (const x of ["30 a la vez", "ninguna 500", "/api/salud respondió durante la ráfaga", "guardada entera con sus variantes", "x.j?.mensaje?.es === 'Estamos preparando otras fotos en este momento. Prueba en un momento.'", "/^\\d+$/.test(x.ra || '')"]) if (!e2.includes(x)) falla(G, "pruebas/e2e/sub9t2.cjs", 0, `la prueba de la ráfaga ya no comprueba «${x}»`);
   },
 
   /* 9t (21 nov) · mediosEnFlujo: una subida o una entrega que carga el archivo ENTERO en la memoria del proceso de la app. Subir un video de
@@ -11123,7 +11176,7 @@ const guardianes = {
     if (!existsSync(UP) || !existsSync(VE)) { falla(G, existsSync(UP) ? VE : UP, 0, "falta la ruta de las fotos de Mensajes"); return; }
     const u = sinComent(UP);
     if (!/if \(!\(await mismoOrigen\(\)\)\) return err\(403/.test(u) || !/const me = await yo\(\);\n  if \(!me\) return err\(401/.test(u)) falla(G, UP, 0, "subir pide mismo origen y sesión");
-    if (!/f\.size > MAX_FOTO_MSJ/.test(u) || !/n >= FOTOS_MSJ_HORA/.test(u) || !/limitInputPixels: \d/.test(u)) falla(G, UP, 0, "topes del servidor: tamaño, píxeles y fotos por hora");
+    if (!/return conFotoSubida\(req, \{\n    tope: MAX_FOTO_MSJ, /.test(u) || !/n >= FOTOS_MSJ_HORA/.test(u) || !/limitInputPixels: \d/.test(u)) falla(G, UP, 0, "topes del servidor: tamaño, píxeles y fotos por hora");
     if (!/sharp\([^)]*\)[\s\S]{0,40}\.rotate\(\)[\s\S]{0,140}\.jpeg\(/.test(u) || /withMetadata|keepMetadata|keepExif/.test(u)) falla(G, UP, 0, "la foto se vuelve a codificar sin metadatos (sharp … .jpeg, sin withMetadata)");
     if (!/clave = `privado\/m\/\$\{id\}\.jpg`/.test(u) || /urlPublica|\/medios\//.test(u)) falla(G, UP, 0, "la foto de un mensaje se guarda solo bajo «privado/m/» (nunca pública)");
     if (!/revisarImagen\(img, /.test(u) || !/const estado = rv\.estado === "ok" \? "visible" : "review";/.test(u)) falla(G, UP, 0, "el modelo propio decide: 'visible' solo si respondió «ok»; si no, revisión");
@@ -11168,7 +11221,8 @@ const guardianes = {
       AD = "apps/web/lib/admin-dm.ts", TR = "apps/web/lib/traduccion.ts", CH = "apps/web/app/(app)/comunidad/mensajes/[id]/Chat.tsx", AC = "apps/web/lib/admin-colas.ts", PU = "apps/web/lib/datos/purgar.ts";
     for (const f of [UP, VE, MV, AD, TR, CH]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
     const u = sinComent(UP);
-    if (!/kind = fd\?\.get\("para"\) === "dm" \? "dm" : "chat"/.test(u) || !/if \(kind === "dm" && !\(await enComunidad\(me\.id\)\)\.ok\) return err\(403/.test(u)) falla(G, UP, 0, "subir para Mensajes entre vecinos: owner_kind 'dm' y solo con la Comunidad completa");
+    if (!/const kind = f\.textos\.para === "dm" \? "dm" : "chat"/.test(u) || !/const sinComunidad = async \(x: Record<string, string>\) => x\.para === "dm" && !\(await enComunidad\(me\.id\)\)\.ok\n    \? err\(403/.test(u)
+      || !/sinArchivo: async \(x\) => \(await sinComunidad\(x\)\) \?\? err\(400/.test(u) || !/antes: async \(f\) => \(await sinComunidad\(f\.textos\)\)\n/.test(u) || !/textos: \["para"\]/.test(u)) falla(G, UP, 0, "subir para Mensajes entre vecinos: owner_kind 'dm' y solo con la Comunidad completa");
     if (!/owner_kind in \('chat', 'dm'\) and created_at > now\(\) - interval '1 hour'/.test(u)) falla(G, UP, 0, "el tope por hora cuenta las fotos de los dos Mensajes");
     const v = sinComent(VE), fv = cuerpoFn(v, "fotoDeVecinos");
     if (!/x\.owner_kind = 'dm' and x\.private and x\.purged_at is null and x\.status in \('visible', 'review'\) and x\.url like 'privado\/m\/%'/.test(fv)) falla(G, VE, 0, "ver solo fotos privadas 'dm' («privado/m/», sin purgar)");
@@ -14057,7 +14111,7 @@ const guardianes = {
     const r = sinComent(R), f = sinComent(F);
     const iRev = r.indexOf("const v = await revisarSubida("), iNo = r.indexOf('if (v.d.estado !== "visible") {'), iGuardar = r.indexOf("await guardarObjeto(clave, img.data"), iPrimero = r.indexOf("guardarObjeto(");
     if (iRev < 0 || iNo < iRev || iGuardar < iNo || iPrimero !== iGuardar + "await ".length) falla(G, R, 0, "la subida guarda la foto en lo público sin decidir antes (revisarSubida → si no es «visible», nada en n/)");
-    const noPub = r.slice(iNo, r.indexOf("\n  }\n", iNo));
+    const sangria = /[ ]*$/.exec(r.slice(0, iNo))[0], noPub = r.slice(iNo, r.indexOf(`\n${sangria}}\n`, iNo));
     if (!/await guardarNoPublicada\(/.test(noPub) || !/return NextResponse\.json\(\{ ok: false, estado:/.test(noPub) || /\burl\b|urlPublica|n\/\$\{/.test(noPub)) falla(G, R, 0, "una foto retenida o rechazada se guarda solo en la llave privada y contesta ok: false con su estado, SIN dirección");
     // F3 · Con destino «privado», la llave es la privada (privado/o/<uuid>.jpg) y la dirección la de la ruta con permiso: nunca n/ (guardián fotosPrivadasConPermiso).
     if (!/const id = v\.id, clave = sinC2 \? llavePrivada\(id\) : `n\/\$\{id\}\.jpg`, url = sinC2 \? urlPrivada\(id\) : urlPublica\(clave\);/.test(r)) falla(G, R, 0, "la llave pública sale del id de la foto que se revisó (y una de destino «privado» va a su llave privada)");
@@ -14170,7 +14224,7 @@ const guardianes = {
     if (!/and \(not rev_sin_c2 or rev_motivo = 'sin_servicio'\)/.test(cuerpoFn(f, "barrerRevision"))) falla(G, F, 0, "el barrido no vuelve a mandar una foto de destino «privado» (solo la mira si el modelo propio no pudo)");
     // El destino: la ruta lo lee (solo restringe) y lo guarda en la fila; el cliente lo manda desde cada pantalla privada.
     const RT = "apps/web/app/api/medios/route.ts", rt = existsSync(RT) ? sinComent(RT) : "";
-    if (!/const sinC2 = form\?\.get\("destino"\) === "privado";/.test(rt) || !/revisarSubida\(\{ id: randomUUID\(\), datos: img\.data, sha, userId: me\.id, sinC2 \}/.test(rt) || !/userId: me\.id, sinC2 \}\);/.test(rt) || !/rev_sin_c2, bytes\) values/.test(rt))
+    if (!/const sinC2 = f\.textos\.destino === "privado";/.test(rt) || !/tope: MAX, textos: \["destino"\],/.test(rt) || !/revisarSubida\(\{ id: randomUUID\(\), datos: img\.data, sha, userId: me\.id, sinC2 \}/.test(rt) || !/userId: me\.id, sinC2 \}\);/.test(rt) || !/rev_sin_c2, bytes\) values/.test(rt))
       falla(G, RT, 0, "la subida lee destino=privado (solo restringe), lo pasa a la revisión y lo guarda en la fila (rev_sin_c2)");
     const SF = "apps/web/lib/subir-foto.ts";
     if (!/export const subirFoto = \(file: File, destino: DestinoFoto = "publico"\): Promise<Subida> => mandar\("\/api\/medios", file, destino === "privado" \? \{ destino: "privado" \} : \{\}\);/.test(existsSync(SF) ? readFileSync(SF, "utf8") : ""))
@@ -14423,8 +14477,12 @@ const guardianes = {
       falla(G, F, 0, "topeSubidas cuenta todas las fotos de la última hora (el general) y aparte las de destino público (not rev_sin_c2) para el tope de cuenta nueva");
     if (!/if \(t\.n >= TOPE_HORA\) return "general";/.test(tq) || !/if \(!privada && t\.nueva && t\.publicas >= t\.topeNueva\) return "nueva";/.test(tq) || /t\.n >= t\.topeNueva/.test(tq))
       falla(G, F, 0, "topeQueFrena: el general (60, todas) frena a cualquiera; el de cuenta nueva solo a una pública y contando solo las públicas");
-    const iSin = r.indexOf('const sinC2 = form?.get("destino") === "privado";'), iFrena = r.indexOf("const frena = topeQueFrena(t, sinC2);");
-    if (iSin < 0 || iFrena < iSin || !/const lf = topeQueFrena\(t, true\) \? null : await leerFormulario\(/.test(r) || !/if \(frena\) return frena === "nueva"/.test(r))
+    // 22 nov · Con la foto al disco (conFotoSubida): antes de leer el cuerpo solo el general; el de cuenta nueva, con el destino ya leído (antes y
+    // sinArchivo), y la subida usa el mismo destino.
+    const iGen = r.indexOf("if (topeQueFrena(t, true)) return frenada(false)!;"), iSube = r.indexOf("return conFotoSubida(req, {");
+    if (iGen < 0 || iSube < iGen || !/const frena = topeQueFrena\(t, sinC2\);\n    if \(!frena\) return null;\n    return frena === "nueva"/.test(r)
+      || !/antes: \(f\) => frenada\(f\.textos\.destino === "privado"\),/.test(r) || !/sinArchivo: \(x\) => frenada\(x\.destino === "privado"\) \?\? err\(400/.test(r)
+      || !/const sinC2 = f\.textos\.destino === "privado";/.test(r))
       falla(G, R, 0, "la subida decide el tope con el destino ya leído (topeQueFrena(t, sinC2)); antes de leer el cuerpo solo el general");
     const p = existsSync(P) ? readFileSync(P, "utf8") : "";
     if (!p.includes("cuenta nueva con el tope público agotado: una privada sigue subiendo") || !p.includes("el tope general de 60 por hora frena también las privadas")) falla(G, P, 0, "la prueba de punta a punta dejó de revisar el tope de cuenta nueva con una privada");

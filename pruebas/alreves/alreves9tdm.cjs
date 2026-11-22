@@ -8,8 +8,13 @@ const UP = 'apps/web/app/api/mensajes/foto/route.ts', VE = 'apps/web/app/api/men
   PU = 'apps/web/lib/datos/purgar.ts', MIG = 'packages/db/migrations/0187_mensajes_vecinos_fotos_traduccion.sql', PG = 'apps/web/lib/mensajes-purga.ts', G = 'fotoDmPrivada';
 const casos = [
   // · subir: cualquier «para» como 'dm', sin la Comunidad, el tope por hora que no cuenta las de vecinos
-  [G, UP, 'kind = fd?.get("para") === "dm" ? "dm" : "chat"', 'kind = fd?.get("para") ? "dm" : "chat"'],
-  [G, UP, '  if (kind === "dm" && !(await enComunidad(me.id)).ok) return err(403,', '  if (kind === "dm" && false && !(await enComunidad(me.id)).ok) return err(403,'],
+  // 22 nov · Con la foto al disco (conFotoSubida): el destino sale de los campos leídos de paso (f.textos) y la Comunidad se mira antes del turno
+  // (antes) y cuando no llegó la foto (sinArchivo).
+  [G, UP, 'const kind = f.textos.para === "dm" ? "dm" : "chat"', 'const kind = f.textos.para ? "dm" : "chat"'],
+  [G, UP, 'x.para === "dm" && !(await enComunidad(me.id)).ok', 'x.para === "dm" && false && !(await enComunidad(me.id)).ok'],
+  [G, UP, 'antes: async (f) => (await sinComunidad(f.textos))\n', 'antes: async (f) => (await Promise.resolve(null))\n'],
+  [G, UP, 'sinArchivo: async (x) => (await sinComunidad(x)) ?? err(400,', 'sinArchivo: async (x) => err(400,'],
+  [G, UP, 'tope: MAX_FOTO_MSJ, textos: ["para"],', 'tope: MAX_FOTO_MSJ,'],
   [G, UP, "owner_kind in ('chat', 'dm') and created_at > now() - interval '1 hour'", "owner_kind = 'chat' and created_at > now() - interval '1 hour'"],
   // · ver: cualquier foto (no solo privadas 'dm'), la otra persona en revisión, sin fotoDmVecino, el equipo sin su cola o sin auditoría, cacheada
   [G, VE, "x.owner_kind = 'dm' and x.private and x.purged_at is null", "x.owner_kind = 'dm' and x.purged_at is null"],

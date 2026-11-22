@@ -1,12 +1,38 @@
-// Prueba al revés de los guardianes subidaConTope (19 nov), topeFotoSinNavegador, gotoDevuelveRespuesta y fotoComoPersona (20 nov): toda subida lee el formulario con tope (lib/subida.ts) y contesta 413 al archivo grande,
+// Prueba al revés de los guardianes subidaConTope (19 nov; 22 nov: el turno de fotos, conFotoSubida), topeFotoSinNavegador, gotoDevuelveRespuesta y fotoComoPersona (20 nov): toda subida lee el formulario con tope (lib/subida.ts) y contesta 413 al archivo grande,
 // aunque el navegador no avise el tamaño. Se inyecta el defecto, el guardián debe fallar con SU mensaje ([subidaConTope]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const L = 'apps/web/lib/subida.ts', G = 'subidaConTope';
 const casos = [
-  [G, 'apps/web/app/api/ayuda/foto/route.ts', 'const lf = await leerFormulario(req, MAX + 4096);', 'const lf = await leerFormulario(req, MAX + 4096); void (await req.formData().catch(() => null));'],
-  [G, 'apps/web/app/api/mensajes/foto/route.ts', 'if (!lf.ok && lf.grande) return err(413,', 'if (!lf.ok && false) return err(413,'],
+  [G, 'apps/web/app/api/ayuda/foto/route.ts', 'return conFotoSubida(req, {', 'void (await req.formData().catch(() => null));\n  return conFotoSubida(req, {'],
+  [G, 'apps/web/app/api/mensajes/foto/route.ts', 'grande: () => err(413,', 'grande: () => err(400,'],
+  // 22 nov · Turno de fotos: la pieza común conFotoSubida (lugar antes de leer, la foto al disco, turno antes de abrirla, todo suelto en un finally).
+  [G, L, 'if (dentro >= FOTOS_DENTRO) { avisarLleno(ruta, "lugar"); return fotosOcupado(); }\n', ''],
+  [G, L, '    soltar = await turnoFoto(FOTOS_ESPERA_MS);\n    if (!soltar) { avisarLleno(ruta, "turno"); return fotosOcupado(); }\n    return await hacer(f);', '    return await hacer(f);'],
+  [G, L, '    soltar?.();\n', ''],
+  [G, L, '    if (dir) await borrarCarpetaVideo(dir);\n', ''],
+  [G, L, 'const rec = await recibirArchivo(req, {', 'void (await new Response(req.body).arrayBuffer()); const rec = await recibirArchivo(req, {'],
+  [G, L, 'export const FOTOS_A_LA_VEZ = 2,', 'export const FOTOS_A_LA_VEZ = 50,'],
+  [G, L, 'FOTOS_DENTRO = 16,', 'FOTOS_DENTRO = 1000,'],
+  [G, L, 'if (activas < FOTOS_A_LA_VEZ) { activas++; return', 'if (activas < FOTOS_A_LA_VEZ) { return'],
+  [G, L, 'listo(null); }, espera);', 'listo(soltador()); }, espera);'],
+  [G, L, '{ status: 503, headers: { "Retry-After": "15" } }', '{ status: 500 }'],
+  [G, L, 'Prueba en un momento."', 'Error."'],
+  [G, L, 'if (Date.now() - ultimoAviso < AVISO_LLENO_MS) return;\n', ''],
+  [G, L, 'void import("./errores/ingesta").then((x) => x.recibirErrorServidor(e, ruta))', 'void Promise.resolve(e)'],
+  // Por clase: cada ruta que recibe un archivo, y cada forma de saltarse el turno.
+  [G, 'apps/web/app/api/medios/route.ts', 'sharp(f.ruta, {', 'sharp(Buffer.from(await new Response(req.body).arrayBuffer()), {'],
+  [G, 'apps/web/app/api/reclamo/documento/route.ts', 'return conFotoSubida(req, {', 'return sinTurno(req, {'],
+  [G, 'apps/web/app/api/repartidor/foto/route.ts', 'return conFotoSubida(req, {', 'await sharp(Buffer.alloc(0)).metadata().catch(() => null);\n  return conFotoSubida(req, {'],
+  [G, 'apps/web/app/api/ayuda/foto/route.ts', 'return conFotoSubida(req, {', 'void (await leerFormulario(req, 1));\n  return conFotoSubida(req, {'],
+  [G, 'apps/web/app/api/mensajes/foto/route.ts', 'const r = await sharp(f.ruta, {', 'const r = await sharp(await readFile(f.ruta), {'],
+  [G, 'apps/web/app/api/negocio/video/route.ts', 'const turno = await turnoVideo();', 'const turno = async () => undefined;'],
+  [G, 'apps/web/lib/tiendas/llavero.ts', 'export const MAX_BYTES = 64 * 1024;', 'export const MAX_BYTES = 64 * 1024 * 1024;'],
+  [G, 'apps/web/app/admin/acciones-sistema.ts', '"use server";\n', '"use server";\nexport async function subirAlgo(f: unknown) { return f instanceof File; }\n'],
+  [G, 'pruebas/e2e/sub9t2.cjs', '/api/salud respondió durante la ráfaga', '/api/salud contestó'],
+  [G, 'pruebas/e2e/sub9t2.cjs', "x.j?.mensaje?.es === 'Estamos preparando otras fotos en este momento. Prueba en un momento.' && ", ""],
+  [G, 'pruebas/e2e/sub9t2.cjs', " && /^\\d+$/.test(x.ra || '')", ""],
   [G, L, '    partes.push(value);\n', ''],
   [G, L, 'if (Number(req.headers.get("content-length") ?? 0) > tope) return { ok: false, grande: true };', ''],
   [G, 'pruebas/e2e/sub9t.cjs', '13 MB por partes, sin avisar el tamaño → 413', '13 MB → algo'],
