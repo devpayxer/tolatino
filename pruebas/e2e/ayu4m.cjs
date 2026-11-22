@@ -93,6 +93,13 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
     sql(`update business_members set photo_url = '/medios/n/foto-del-atajo.jpg' where id = '${MID}'`);
     const ESTADO = () => sql(`select photo_url || '|' || role::text || '|' || coalesce(bio::text, '') from business_members where id = '${MID}'`) + '#' + sql(`select coalesce(string_agg(id || ':' || sort, ',' order by id), '') from media where owner_kind = 'business' and owner_id = '${S}' and status = 'visible'`);
     const ANTES = ESTADO();
+    // 22 nov · El logo (logoPoner quitaba el anterior ANTES de validar la foto nueva y, si no pasaba, el negocio se quedaba sin logo): el negocio tiene
+    // uno puesto (su fila de media y su dirección) y tras el rechazo sigue puesto: la misma fila visible y la misma dirección.
+    const LOGO_ANTES = sql(`select coalesce(logo_url, '') from businesses where id = '${S}'`);
+    const LOGO = sql(`insert into media (owner_kind, owner_id, url, uploaded_by, status, w) values ('logo', '${S}', '/medios/n/logo-del-atajo.jpg', '${DOC}', 'visible', 400) returning id`).split('\n')[0];
+    sql(`update businesses set logo_url = '/medios/n/logo-del-atajo.jpg' where id = '${S}'`);
+    const LOGO_ESTADO = () => sql(`select (select coalesce(logo_url, '') from businesses where id = '${S}') || '|' || (select coalesce(string_agg(id || ':' || status, ',' order by id), '') from media where owner_kind = 'logo' and owner_id = '${S}' and id = '${LOGO}')`);
+    ok(LOGO_ESTADO() === `/medios/n/logo-del-atajo.jpg|${LOGO}:visible`, 'el atajo · logo: el negocio tiene un logo puesto antes de la prueba');
     try {
       for (const [p, X, archivo, nombre, args, que, espera, ruta] of intentos) {
         const r = await llamar(p, archivo, nombre, args, ruta);
@@ -101,7 +108,11 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
       }
       ok(sql(`select count(*) from events where business_id = '${SAB}' and title->>'es' = 'Noche del atajo'`) === '0', 'el atajo · evento: rechazada la foto, el evento no se guardó (ni como borrador)');
       ok(ESTADO() === ANTES && ANTES.startsWith('/medios/n/foto-del-atajo.jpg|'), 'el atajo: rechazada la foto, no se guardó nada más del pedido (la foto del equipo no se vació; rol, palabras y galería igual)');
-    } finally { sql(`update business_members set photo_url = ${FOTO_EQ ? `'${FOTO_EQ}'` : 'null'} where id = '${MID}'`); }
+      ok(LOGO_ESTADO() === `/medios/n/logo-del-atajo.jpg|${LOGO}:visible`, 'el atajo · logo: rechazada la foto nueva, el logo ANTERIOR sigue puesto (su fila visible y su dirección en el negocio)');
+    } finally {
+      sql(`update business_members set photo_url = ${FOTO_EQ ? `'${FOTO_EQ}'` : 'null'} where id = '${MID}'`);
+      sql(`update media set status = 'removed', removed_reason = 'prueba' where id = '${LOGO}'`); sql(`update businesses set logo_url = ${LOGO_ANTES ? `'${LOGO_ANTES}'` : 'null'} where id = '${S}'`);
+    }
     const dondeSale = (id) => sql(`select (select count(*) from users where photo_url like '%${id}%') + (select count(*) from businesses where logo_url like '%${id}%') + (select count(*) from business_members where photo_url like '%${id}%')
       + (select count(*) from items where array_to_string(photos, ' ') like '%${id}%') + (select count(*) from media where url like '%${id}%' and id <> '${id}')`);
     const pag = await (await anon.request.get(B + `/n/${S}`)).text(), pagR = await (await anon.request.get(B + `/n/${RES}`)).text();

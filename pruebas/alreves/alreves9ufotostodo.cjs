@@ -15,6 +15,13 @@ const casos = [
   [A, 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.");', 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist.");'],
   [A, '[...new Set(ids.filter((x) => typeof x === "string" && UUID.test(x)))]', 'ids.filter((x) => typeof x === "string" && UUID.test(x))'],
   [A, '      puestas += (await c.query(`update media set owner_kind = \'business\'', '      await c.query(`update media set owner_kind = \'business\''],
+  // El logo: volver a devolver sin lanzar (el logo anterior ya quitado no se deshace), decir ok, otro texto, o adjuntar sin leer el resultado.
+  [A, '    if (!m) throw new FotoNoAdjunta();\n', '    if (!m) return;\n'],
+  [A, '    if (!m) throw new FotoNoAdjunta();\n', ''],
+  [A, '  try { await tx(async (c) => {\n    await c.query(`update media set status = \'removed\', removed_reason = \'replaced\'', '  const ok = await tx(async (c) => {\n    await c.query(`update media set status = \'removed\', removed_reason = \'replaced\''],
+  [A, 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist."); throw e; }\n  return { ok: true };\n}\n\n/* ── Horario', 'if (e instanceof FotoNoAdjunta) return { ok: true }; throw e; }\n  return { ok: true };\n}\n\n/* ── Horario'],
+  [A, 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist."); throw e; }\n  return { ok: true };\n}\n\n/* ── Horario', 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); throw e; }\n  return { ok: true };\n}\n\n/* ── Horario'],
+  [A, "    const m = (await c.query<{ url: string }>(\n      `update media set owner_kind = 'logo'", "    await c.query(\n      `update media set owner_kind = 'logo'"],
   // La foto del equipo: ignorarla en silencio (la vacía), o rechazarla con otro texto.
   [Q, '        if (!photo) throw new FotoNoAdjunta();\n', ''],
   [Q, 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist.");', 'if (e instanceof FotoNoAdjunta) return { ok: true };'],
