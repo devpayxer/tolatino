@@ -12,7 +12,7 @@ const enReparto = [
   ['el requisito DESPUÉS de quien lo pide', (rep) => { const p = rep.partes[parteDe(rep, 'ayu4z')]; p.splice(p.indexOf('fie4v'), 1); p.push('fie4v'); }],
   ['una prueba en dos partes', (rep) => { const k = parteDe(rep, 'push8c'); rep.partes[(k + 1) % rep.partes.length].push('push8c'); }],
   ['una prueba que ya no existe', (rep) => { rep.partes[0].push('zz9noexiste'); rep.seg.zz9noexiste = 10; }],
-  ['un reparto para una n que el input «partes» no ofrece', (rep) => { const u = rep.partes.pop(); rep.partes[0].push(...u); }],
+  ['un reparto para otra n que la de ci.yml', (rep) => { const u = rep.partes.pop(); rep.partes[0].push(...u); }],
   ['sin anotar a quien llama a requiere con un nombre no escrito', (rep) => { rep.dinamicos = []; }],
   ['una prueba sin su duración', (rep) => { delete rep.seg.din9n4; }],
 ];

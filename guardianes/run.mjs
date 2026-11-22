@@ -8046,7 +8046,7 @@ const guardianes = {
     if (!existsSync(Y)) return falla(G, Y, 0, "falta ci.yml");
     const y = readFileSync(Y, "utf8"), j = /\n  tuberia:\n[\s\S]*$/.exec(y)?.[0] ?? "";
     if (!j) return falla(G, Y, 0, "falta el trabajo «tuberia» (cierra el CI)");
-    for (const n of ["verificar", "seguridad", "regresion", "dispositivos"]) if (!new RegExp(`needs: \\[[^\\]]*\\b${n}\\b`).test(j)) falla(G, Y, 0, `«tuberia» no depende de «${n}»`);
+    for (const n of ["verificar", "seguridad", "alreves", "regresion", "dispositivos"]) if (!new RegExp(`needs: \\[[^\\]]*\\b${n}\\b`).test(j)) falla(G, Y, 0, `«tuberia» no depende de «${n}»`);
     if (!/if: always\(\)/.test(j)) falla(G, Y, 0, "«tuberia» tiene que correr siempre (if: always()) para ver lo que falló");
     if (!/v\.result === "success"/.test(j)) falla(G, Y, 0, "«tuberia» solo da verde con «success»");
     // 21 nov · Decisión AG: más de 3 inestables en una corrida = roja. El tope de correr.mjs es por proceso y la corrida va en partes (la
@@ -8055,27 +8055,32 @@ const guardianes = {
       falla(G, Y, 0, "«tuberia» cuenta las pruebas inestables de toda la corrida (los registros de cada trabajo) y sale roja con más de 3 (decisión AG)");
     // 22 nov · Las inestables se cuentan desde lo que cada carril sube (res/inestables.json), no desde su registro, que no se deja leer desde dentro
     // de la corrida (44961847914: 22 de 22 sin leer; antes eso se callaba y salía «0»). Un carril en verde sin su lista no cuenta como cero.
-    if (/actions\/jobs\/\$id\/logs/.test(j) || !/pattern: "regresion-\*"/.test(j) || !/pattern: "confirmacion-\*"/.test(j) || !/pattern: "anchos-\*"/.test(j)
+    if (/actions\/jobs\/\$id\/logs/.test(j) || !/pattern: "alreves-\*"/.test(j) || !/pattern: "regresion-\*"/.test(j) || !/pattern: "confirmacion-\*"/.test(j) || !/pattern: "anchos-\*"/.test(j)
       || !/if \[ "\$halladas" -lt "\$esperadas" \]; then[^\n]*exit 1; fi/.test(j))
       falla(G, Y, 0, "«tuberia» da por cero las inestables de un carril que no subió su lista (se cuentan desde res/inestables.json de cada carril y, si falta una, sale roja)");
     const cm = existsSync("pruebas/correr.mjs") ? readFileSync("pruebas/correr.mjs", "utf8") : "";
     if (!/writeFileSync\(join\(RES, "inestables\.json"\)/.test(cm)) falla(G, "pruebas/correr.mjs", 0, "correr.mjs ya no escribe res/inestables.json: la tubería no tendría de dónde contar las inestables");
     if (!/on:[\s\S]*?push:[\s\S]*?branches: \[main\]/.test(y) || !/\n  pull_request:/.test(y) || !/schedule:/.test(y)) falla(G, Y, 0, "el CI corre en push a main, en pull_request y programado");
     if (!/- cron: "\d+ \d+ \* \* \*"\n\s+- cron: "\d+ \d+ \* \* \*"/.test(y)) falla(G, Y, 0, "el CI se programa a dos horas distintas del día");
-    const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
-    for (const g of ["alreves", "fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}'`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}» (toda la punta a punta en el orden de las fases y las pruebas al revés en su carril)`);
+    const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", al = /\n  alreves:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
+    if (!rg.includes("'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios'")) falla(G, Y, 0, "la regresión no corre «--grupo fase1,…,varios» (toda la punta a punta en el orden de las fases)");
+    // 22 nov (tanda 4) · «al revés» en su trabajo, en 3 partes fijas (su --parte i/3 y su nombre «· i/3»; «partes» no lo cambia).
+    if (!al.includes("\n        parte: [1, 2, 3]\n") || (al.match(/--parte /g) ?? []).length !== 1 || !al.includes("run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n") || !al.includes("    name: punta a punta · al revés · ${{ matrix.parte }}/3\n"))
+      falla(G, Y, 0, "«alreves»: las pruebas al revés corren en su trabajo, en 3 partes (--grupo alreves --parte i/3, nombre «· i/3»)");
     // 20 nov · Reparto en partes (input «partes»): cada carril largo (regresión, confirmación, anchos) en n trabajos con base nueva, por posición
     // (--parte i/n). Se permite porque cada prueba prepara sus datos (precondicionPropia); lo que se teme es un reparto a medias: una parte que no
     // corre (la matriz sin la parte o un --parte fijo) o un carril que se reparte y otro no.
     const cf = /\n  confirmacion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", an0 = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
-    const PM = "parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}", PA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}";
-    // 22 nov (B2) · En «regresion», «al revés» va siempre en 4 partes: su --parte lleva «/4» para ese carril y «partes» para la punta a punta.
-    const PAR = "--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }}";
-    for (const [k, t, n, pa] of [["regresion", rg, 1, PAR], ["confirmacion", cf, 2, PA], ["anchos", an0, 1, PA]]) {
+    // 22 nov (tanda 4) · 8 partes por omisión (por la asignación de pruebas/reparto.json), 4 o 1 a mano.
+    const PM = "parte: ${{ fromJSON((inputs.partes || '8') == '8' && '[1,2,3,4,5,6,7,8]' || ((inputs.partes || '8') == '4' && '[1,2,3,4]' || '[1]')) }}", PA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '8' }}";
+    for (const [k, t, n, pa] of [["regresion", rg, 1, PA], ["confirmacion", cf, 2, PA], ["anchos", an0, 1, PA]]) {
       if (!t.includes(PM)) falla(G, Y, 0, `«${k}» no reparte su matriz en las partes pedidas (${PM})`);
       if (t.split(pa).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${pa} (ni fija ni olvidada)`);
     }
-    if (!/\n      partes:\n[\s\S]*?options: \["1", "4", "8"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1, 4 u 8)");
+    if (!/\n      partes:\n[\s\S]*?options: \["1", "4", "8"\]\n\s*default: "8"\n/.test(y)) falla(G, Y, 0, "falta el input «partes» (1, 4 u 8; 8 por omisión)");
+    // 22 nov (tanda 4) · La cuenta tiene tope de 20 trabajos a la vez: la confirmación (2 × 8) y los anchos (3 × 8) no piden todo de golpe.
+    if (!/\n    strategy:\n      fail-fast: false\n      max-parallel: 12\n/.test(cf)) falla(G, Y, 0, "«confirmacion» con max-parallel: 12 (2 × 8 partes más al revés y dispositivos pasarían del tope de 20 trabajos)");
+    if (!/\n    strategy:\n      fail-fast: false\n      max-parallel: 4\n/.test(an0)) falla(G, Y, 0, "«anchos» con max-parallel: 4 (3 × 8 partes; la programada no le quita sitio a un push)");
     // 20 nov · El entorno de cada trabajo no se queda colgado: cada paso que baja algo de la red (pip, apt, npm, navegadores, la base, los
     // recursos, el servidor) va con tope de tiempo y UN reintento (dos trabajos se quedaron 40 min en ese paso, CI 44771585360).
     { const EA = ".github/actions/entorno-pruebas/action.yml", ea = existsSync(EA) ? readFileSync(EA, "utf8") : "";
@@ -8098,7 +8103,7 @@ const guardianes = {
       } }
     // 20 nov · «todas las fases» solo se deja de correr en la regresión cuando la confirmación la corre (confirmar=si y sin «solo»): la primera
     // pasada de «dos veces seguidas» es el mismo comando en base nueva. Lo que se teme: que se quite sin que nadie más la corra.
-    if (!rg.includes(`nombre: \${{ fromJSON((inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]') }}`)) falla(G, Y, 0, "«regresion»: «todas las fases» solo se omite con confirmar=si y sin «solo» (la corre «confirmación · dos veces seguidas»)");
+    if (!rg.includes("\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' && !(inputs.confirmar == 'si' && inputs.solo == '') }}\n") || !j.includes('(k === "regresion" && process.env.CONFIRMAR === "si" && !(process.env.SOLO || "").trim())')) falla(G, Y, 0, "«regresion»: «todas las fases» solo se omite con confirmar=si y sin «solo» (la corre «confirmación · dos veces seguidas»), y solo entonces «tuberia» la perdona");
     if (!/- name: Primera pasada\n\s+run: node pruebas\/correr\.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios \$\{\{ matrix\.nombre == 'barajada' && format\('--barajar \{0\}', inputs\.semilla\) \|\| '' \}\} --parte/.test(cf)) falla(G, Y, 0, "«confirmacion»: la primera pasada corre todas las fases (en orden; barajada solo en su carril)");
     if (!/\n  confirmacion:\n[\s\S]*?inputs\.confirmar == 'si'/.test(y)) falla(G, Y, 0, "falta el trabajo «confirmacion» (dos veces seguidas y barajada, a mano con confirmar=si)");
     // 9c · La punta a punta entera en los anchos extremos, de noche (L1511): el trabajo «anchos» corre programado y cuenta en «tuberia».
@@ -8193,7 +8198,7 @@ const guardianes = {
       const run = (x = {}) => ({ id: 1, head_sha: SH, event: "push", head_branch: "main", path: ".github/workflows/ci.yml", repository: { full_name: RP }, head_repository: { full_name: RP }, status: "completed", conclusion: "success", ...x });
       const j = (name, conclusion = "success", status = "completed") => ({ name, status, conclusion });
       const base = () => [j("alcance (todo o solo documentos)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
-        ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]), ...disp.map((d) => j(`dispositivo · ${d}`)),
+        ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...disp.map((d) => j(`dispositivo · ${d}`)),
         j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
       const sin = (re) => base().filter((x) => !re.test(x.name)), con = (re, c, st) => base().map((x) => (re.test(x.name) ? j(x.name, c, st) : x));
       const CC = [
@@ -8202,9 +8207,10 @@ const guardianes = {
         ["un push de solo documentos (web, regresión y dispositivos saltados)", run(), base().map((x) => (/^(web|punta a punta · (al|todas)|dispositivo) /.test(x.name) ? j(x.name, "skipped") : x)), false],
         ["regresión saltada", run(), con(/^punta a punta · todas las fases/, "skipped"), false],
         ["otro carril de punta a punta saltado (solo confirmación y anchos pueden faltar)", run(), [...base(), j("punta a punta · otro carril", "skipped")], false],
-        ["falta una parte de «al revés»", run(), sin(/^punta a punta · al revés · 3\/4$/), false],
-        ["una parte repetida en lugar de otra", run(), base().map((x) => (x.name === "punta a punta · al revés · 3/4" ? j("punta a punta · al revés · 2/4") : x)), false],
-        ["una parte roja", run(), con(/^punta a punta · todas las fases · 2\/4$/, "failure"), false],
+        ["falta una parte de «al revés»", run(), sin(/^punta a punta · al revés · 3\/3$/), false],
+        ["una parte repetida en lugar de otra", run(), base().map((x) => (x.name === "punta a punta · al revés · 3/3" ? j("punta a punta · al revés · 2/3") : x)), false],
+        ["una parte roja", run(), con(/^punta a punta · todas las fases · 2\/8$/, "failure"), false],
+        ["falta una de las 8 partes de «todas las fases»", run(), sin(/^punta a punta · todas las fases · 8\/8$/), false],
         ["falta un dispositivo", run(), sin(/^dispositivo · galaxy$/), false],
         ["un dispositivo cancelado", run(), con(/^dispositivo · ipad$/, "cancelled"), false],
         ["un trabajo en curso", run(), con(/^seguridad /, null, "in_progress"), false],
@@ -8227,7 +8233,8 @@ const guardianes = {
     // La única vía para apagar un carril largo en un push: «!= 'documentos'» de «cambios», en la línea exacta de cada trabajo.
     const IFS = {
       web: "    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n",
-      regresion: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}\n",
+      alreves: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}\n",
+      regresion: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' && !(inputs.confirmar == 'si' && inputs.solo == '') }}\n",
       dispositivos: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'regresion' }}\n",
     };
     for (const [k, linea] of Object.entries(IFS)) {
@@ -8240,17 +8247,17 @@ const guardianes = {
     const on = /\non:\n[\s\S]*?\n(?=permissions:|concurrency:|jobs:)/.exec(y)?.[0] ?? "";
     if (!on || /paths(-ignore)?:|branches-ignore:|tags-ignore:/.test(on)) falla(G, Y, 0, "el CI no filtra por archivos ni ramas en «on:» (eso saltaría también los guardianes): el alcance lo decide «cambios»");
     const usos = [...y.matchAll(/needs\.cambios\.outputs\.alcance\s*(==|!=)\s*'([^']*)'/g)].map((x) => `${x[1]} '${x[2]}'`);
-    if (usos.filter((u) => u === "!= 'documentos'").length !== 3 || usos.filter((u) => u === "== 'documentos'").length !== 1 || usos.length !== 4 || /needs\.cambios\.outputs\.alcance(?!\s*(==|!=)\s*'documentos')/.test(y))
-      falla(G, Y, 0, "el alcance de «cambios» se usa en 4 lugares: «!= 'documentos'» en web, regresión y dispositivos (si falta, corre todo) y «== 'documentos'» solo en «tuberia»");
+    if (usos.filter((u) => u === "!= 'documentos'").length !== 4 || usos.filter((u) => u === "== 'documentos'").length !== 1 || usos.length !== 5 || /needs\.cambios\.outputs\.alcance(?!\s*(==|!=)\s*'documentos')/.test(y))
+      falla(G, Y, 0, "el alcance de «cambios» se usa en 5 lugares: «!= 'documentos'» en web, al revés, regresión y dispositivos (si falta, corre todo) y «== 'documentos'» solo en «tuberia»");
     // «tuberia»: lo dice y solo perdona regresión y dispositivos en un PUSH de solo documentos.
     const tu = job("tuberia");
     if (!/needs: \[[^\]]*\bcambios\b/.test(tu)) falla(G, Y, 0, "«tuberia» depende de «cambios» (si el alcance no se pudo calcular, la tubería es roja)");
     if (!tu.includes("SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}")) falla(G, Y, 0, "«tuberia» solo perdona lo saltado por documentos en un push");
-    if (!tu.includes('const porDocs = docs && (k === "regresion" || k === "dispositivos");') || !/\|\| \(k === "anchos" && process\.env\.ANCHOS !== "si"\) \|\| porDocs;/.test(tu)) falla(G, Y, 0, "«tuberia» perdona por documentos solo regresión y dispositivos");
+    if (!tu.includes('const porDocs = docs && (k === "alreves" || k === "regresion" || k === "dispositivos");') || !/\|\| \(k === "anchos" && process\.env\.ANCHOS !== "si"\) \|\| porDocs;/.test(tu)) falla(G, Y, 0, "«tuberia» perdona por documentos solo al revés, regresión y dispositivos");
     if (!tu.includes('"solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"') || !/console\.log\("::notice::" \+ m\)/.test(tu)) falla(G, Y, 0, "«tuberia» dice con todas las letras «solo documentos: N archivos; los carriles largos no corren por diseño»");
     // 22 nov · Su verde no quiere decir «todo corrió»: el nombre no lo promete y el resumen dice qué corrió, qué no y si fue una pasada completa.
     if (/\n    name: [^\n]*nada saltado/.test(tu) || !tu.includes('"CORRIÓ: " + (corrio.join(", ") || "nada")') || !tu.includes('"NO CORRIÓ: " + (noCorrio.join(", ") || "nada")')
-      || !tu.includes('"esta corrida NO es una pasada completa: la regresión entera o los dispositivos no corrieron en ella"') || !/for \(const l of lineas\) \{ console\.log\(l\); console\.log\("::notice::" \+ l\); \}/.test(tu) || !/GITHUB_STEP_SUMMARY/.test(tu))
+      || !tu.includes('"esta corrida NO es una pasada completa: al revés, la regresión entera o los dispositivos no corrieron en ella"') || !/for \(const l of lineas\) \{ console\.log\(l\); console\.log\("::notice::" \+ l\); \}/.test(tu) || !/GITHUB_STEP_SUMMARY/.test(tu))
       falla(G, Y, 0, "«tuberia» no promete «nada saltado» y su resumen dice con todas las letras qué corrió, qué no corrió y si fue una pasada completa (registro, avisos y resumen de la corrida)");
   },
 
@@ -9943,9 +9950,9 @@ const guardianes = {
       const ent = (t = "entradas: alcance=todo · solo=«» · aprobar=no · medir=no") => [{ name: "Run actions/checkout@v4" }, { name: "Run node scripts/ci/alcance.mjs || echo \"alcance=todo\" >> \"$GITHUB_OUTPUT\"" }, { name: t }];
       const DSP = ["iphone-se", "iphone-15", "iphone-15-pro-max", "pixel", "galaxy", "ipad", "escritorio-1024", "escritorio-1280", "escritorio-1440"];
       const base = (e) => [j("alcance (todo o solo documentos)", "success", ent(e)), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
-        ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]), ...DSP.map((d) => j(`dispositivo · ${d}`)),
+        ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...DSP.map((d) => j(`dispositivo · ${d}`)),
         j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
-      const conConf = () => [...base().filter((x) => !/^(punta a punta · todas las fases|confirmación)/.test(x.name)), ...[1, 2, 3, 4].flatMap((i) => [j(`confirmación · dos veces seguidas · ${i}/4`), j(`confirmación · barajada · ${i}/4`)])];
+      const conConf = () => [...base().filter((x) => !/^(punta a punta · todas las fases|confirmación)/.test(x.name)), ...[1, 2, 3, 4, 5, 6, 7, 8].flatMap((i) => [j(`confirmación · dos veces seguidas · ${i}/8`), j(`confirmación · barajada · ${i}/8`)])];
       const CP = [
         ["una corrida de push entera y en verde", run(), base(), true],
         ["una programada entera", run({ event: "schedule" }), base(), true],
@@ -9963,8 +9970,8 @@ const guardianes = {
         ["otro repositorio", run({ repository: { full_name: "otro/repo" } }), base(), false],
         ["corrida roja", run({ conclusion: "failure" }), base(), false],
         ["falta un dispositivo", run(), base().filter((x) => x.name !== "dispositivo · pixel"), false],
-        ["una parte de «al revés» saltada", run(), base().map((x) => (x.name === "punta a punta · al revés · 2/4" ? j(x.name, "skipped") : x)), false],
-        ["confirmar=si con la barajada incompleta", run({ event: "workflow_dispatch" }), conConf().filter((x) => x.name !== "confirmación · barajada · 4/4"), false],
+        ["una parte de «al revés» saltada", run(), base().map((x) => (x.name === "punta a punta · al revés · 2/3" ? j(x.name, "skipped") : x)), false],
+        ["confirmar=si con la barajada incompleta", run({ event: "workflow_dispatch" }), conConf().filter((x) => x.name !== "confirmación · barajada · 8/8"), false],
         ["sin trabajos", run(), [], false],
       ];
       let rr; try { rr = JSON.parse(execSync(`node ${CO} --decidir-produccion`, { encoding: "utf8", input: JSON.stringify(CP.map((c) => [c[1], c[2], { sha: SH, repo: RP }])), stdio: ["pipe", "pipe", "pipe"] })); } catch { rr = null; }
@@ -10933,7 +10940,7 @@ const guardianes = {
     if (!/const REFS = \['HEAD', 'HEAD~1', 'refs\/remotes\/origin\/produccion', 'refs\/remotes\/origin\/pruebas'\];/.test(a) || !/GIT_OPTIONAL_LOCKS: '0'/.test(a)) falla(G, A, 0, "la huella lleva HEAD, HEAD~1, origin/produccion y origin/pruebas, sin tomar el candado del índice");
     if (!/out\.apartados\.push\(rel\)/.test(a) || /\bfs\.unlinkSync\(src\)/.test(a)) falla(G, A, 0, "lo nuevo que deja una suite no se borra: se aparta a la copia (y se dice dónde)");
     const y = existsSync(".github/workflows/ci.yml") ? readFileSync(".github/workflows/ci.yml", "utf8") : "";
-    if (!/# Historia completa: [^\n]*\n\s*- uses: actions\/checkout@v4\n\s*with: \{ fetch-depth: 0 \}/.test(/\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "")) falla(G, ".github/workflows/ci.yml", 0, "el carril «al revés» clona con toda la historia (fetch-depth: 0): sus pasadas reales miran HEAD~1");
+    if (!/# Historia completa: [^\n]*\n\s*- uses: actions\/checkout@v4\n\s*with: \{ fetch-depth: 0 \}/.test(/\n  alreves:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "")) falla(G, ".github/workflows/ci.yml", 0, "el carril «al revés» clona con toda la historia (fetch-depth: 0): sus pasadas reales miran HEAD~1");
   },
 
   /* 22 nov · Revisión del CI (A1) · alrevesPasadaFinal: la pasada final de guardianes de cada suite al revés va por UN ayudante
@@ -11018,14 +11025,15 @@ const guardianes = {
     const G = "dirigidaEnPartes", Y = ".github/workflows/ci.yml", C = "pruebas/correr.mjs";
     if (!existsSync(Y) || !existsSync(C)) return falla(G, Y, 0, "falta ci.yml o el corredor");
     const y = readFileSync(Y, "utf8"), job = (n) => new RegExp(`\\n  ${n}:\\n[\\s\\S]*?(?=\\n  [a-z]+:\\n|$)`).exec(y)?.[0] ?? "";
-    const rg = job("regresion"), ca = job("cambios");
-    if (!rg.includes(`include: \${{ fromJSON((inputs.partes || '4') == '1' && '[{"nombre":"al revés","parte":2},{"nombre":"al revés","parte":3},{"nombre":"al revés","parte":4}]' || '[]') }}`))
-      falla(G, Y, 0, "«regresion»: con partes=1, «al revés» suma sus partes 2, 3 y 4 (include): ese carril va siempre en 4 partes");
-    if (!rg.includes("--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar")) falla(G, Y, 0, "«regresion»: «al revés» corre --parte i/4 aunque partes sea 1");
-    if (!rg.includes("format(' · {0}/{1}', matrix.parte, matrix.nombre == 'al revés' && '4' || inputs.partes || '4')") || !rg.includes("(matrix.nombre == 'al revés' || (inputs.partes || '4') != '1')")) falla(G, Y, 0, "«regresion»: el nombre de cada parte de «al revés» es «· i/4» (scripts/ci/corrida.mjs cuenta las partes por el nombre)");
+    const rg = job("regresion"), al = job("alreves"), ca = job("cambios");
+    // 22 nov (tanda 4) · «al revés» en su propio trabajo, con 3 partes fijas: ni «partes» ni «solo» lo cambian (una dirigida corre «al revés» entero,
+    // decisiones AD/AF). Su nombre «· i/3» es el que scripts/ci/corrida.mjs cuenta.
+    if (!al.includes("\n      matrix:\n        parte: [1, 2, 3]\n") || /inputs\.(partes|solo)/.test(al)) falla(G, Y, 0, "«alreves»: 3 partes fijas (matrix parte: [1, 2, 3]); ni «partes» ni «solo» lo cambian");
+    if (!al.includes("run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n")) falla(G, Y, 0, "«alreves»: corre --grupo alreves --parte i/3 (entero, también en una dirigida)");
+    if (!al.includes("    name: punta a punta · al revés · ${{ matrix.parte }}/3\n")) falla(G, Y, 0, "«alreves»: el nombre de cada parte es «· i/3» (scripts/ci/corrida.mjs cuenta las partes por el nombre)");
     if (!/\n      - name: Las pruebas de «solo» existen \(antes de arrancar los carriles\)\n        env: \{ SOLO: "\$\{\{ inputs\.solo \}\}" \}\n        run: \|\n          if \[ -n "\$SOLO" \]; then node pruebas\/correr\.mjs --comprobar \$SOLO; fi\n/.test(ca))
       falla(G, Y, 0, "«cambios» valida los nombres de «solo» con pruebas/correr.mjs --comprobar antes de que arranque ningún carril");
-    if (!/needs: \[cambios, web\]/.test(rg)) falla(G, Y, 0, "«regresion» espera a «cambios» (si un nombre de «solo» no existe, no arranca)");
+    if (!/needs: \[cambios, web\]/.test(rg) || !/needs: \[cambios, web\]/.test(al)) falla(G, Y, 0, "«regresion» y «alreves» esperan a «cambios» (si un nombre de «solo» no existe, no arrancan)");
     const vivo = (a) => { try { execSync(`node ${C} --comprobar ${a}`, { stdio: "pipe", timeout: 30_000 }); return 0; } catch (e) { return e.status ?? -1; } };
     const una = archivos.find((f) => /^pruebas\/alreves\/alreves[^/]+\.cjs$/.test(f))?.split("/").pop().replace(/\.cjs$/, "");
     if (una && vivo(una) !== 0) falla(G, C, 0, `--comprobar ${una} (una prueba que existe) no sale con 0`);
@@ -11044,10 +11052,9 @@ const guardianes = {
     let RP, rep;
     try { RP = createRequire(import.meta.url)(`../${L}`); } catch (e) { return falla(G, L, 0, `no carga: ${String(e?.message ?? e).slice(0, 160)}`); }
     try { rep = JSON.parse(readFileSync(A, "utf8")); } catch (e) { return falla(G, A, 0, `no se deja leer: ${String(e?.message ?? e).slice(0, 160)}`); }
-    // Las partes de la regresión en ci.yml: el reparto tiene que ser para una de las que el input «partes» ofrece.
+    // Las partes de la regresión en ci.yml: el reparto es para las de por omisión del input «partes» (push, programada y a mano).
     const y = readFileSync(Y, "utf8"), inp = /\n      partes:\n[\s\S]*?options: \[([^\]]*)\]\n\s*default: "(\d+)"/.exec(y);
-    const ops = (inp?.[1] ?? "").split(",").map((x) => x.trim().replace(/^"|"$/g, ""));
-    if (!inp || !ops.includes(String(rep?.partes?.length))) falla(G, A, 0, `el reparto es para ${rep?.partes?.length} partes y el input «partes» de ci.yml no la ofrece (${ops.join(", ")})`);
+    if (!inp || String(rep?.partes?.length) !== inp[2]) falla(G, A, 0, `el reparto es para ${rep?.partes?.length} partes y la regresión de ci.yml corre por omisión en ${inp?.[2] ?? "?"}: regenerar con --partes ${inp?.[2] ?? "?"}`);
     for (const x of RP.comprobar(process.cwd(), rep)) { if (x.falla) falla(G, A, 0, x.msg); else avisos.push(`[${G}] ${A} — ${x.msg}`); }
     // El corredor la usa de verdad: cada --parte i/n de la punta a punta entera es la parte i de la asignación (con las nuevas), y al barajar o con
     // otra n, por posición.
@@ -12441,7 +12448,7 @@ const guardianes = {
     if ((c.match(/await correrUna\(t\)/g) ?? []).length !== 2) falla(G, C, 0, "una prueba se corre una vez y, si falla, UNA vez más (ni más ni un bucle)");
     if (!/else r = \{ \.\.\.r2, error: `\$\{r2\.error\} · dos veces seguidas/.test(c)) falla(G, C, 0, "la que falla dos veces es roja");
     if (!/console\.log\(`INESTABLES \(\$\{inestables\.length\}\)/.test(c) || !/GITHUB_STEP_SUMMARY/.test(c) || !/inestables\.json/.test(c)) falla(G, C, 0, "las inestables se dicen: al final de la corrida, en inestables.json y en el resumen del trabajo");
-    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar").length - 1 + y.split("--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
+    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
   },
   /* 9t · subidaReintenta (20 nov, confirmación 44734711575, msg9t en el iPhone SE): una foto normal recién elegida llegó al servidor sin
      archivo («No llegó la foto», 400). La app la reintenta UNA vez con el archivo original (lib/subir-foto.ts, mandar) y el servidor deja dicho

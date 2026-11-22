@@ -50,10 +50,10 @@ on:
         options: ["no", "si"]
         default: "no"
       partes:
-        description: "En cuántos trabajos paralelos se reparte cada carril largo de punta a punta (cada parte en su base nueva; cada prueba prepara sus datos; con 8, por la asignación de pruebas/reparto.json); «al revés» va siempre en 4"
+        description: "En cuántos trabajos paralelos se reparte cada carril largo de punta a punta (cada parte en su base nueva; cada prueba prepara sus datos; con 8, por la asignación de pruebas/reparto.json); «al revés» va siempre en 3"
         type: choice
         options: ["1", "4", "8"]
-        default: "4"
+        default: "8"
 
 permissions:
   contents: read
@@ -261,11 +261,16 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: web, path: "${{ runner.temp }}/web.tgz", retention-days: 1, compression-level: 0 }
 
-  # Dos carriles: las pruebas al revés (tocan archivos del repo y corren los guardianes) y TODA la punta a punta en una sola base y en el orden de
-  # las fases, UNA a la vez. No se reparte por grupos: las pruebas se heredan datos (las de la fase 4 dependen de las de la 2, com5g del plan que deja
-  # free2b…); repartidas en trabajos con base propia fallaron 30 de 199 en la primera corrida (13 nov) por eso, no por la app.
-  regresion:
-    name: punta a punta · ${{ matrix.nombre }}${{ (matrix.nombre == 'al revés' || (inputs.partes || '4') != '1') && format(' · {0}/{1}', matrix.parte, matrix.nombre == 'al revés' && '4' || inputs.partes || '4') || '' }}
+  # Dos carriles: las pruebas al revés (tocan archivos del repo y corren los guardianes) y TODA la punta a punta en el orden de las fases, UNA a la
+  # vez dentro de cada parte. Las pruebas se heredan datos (las de la fase 4 dependen de las de la 2, com5g del plan que deja free2b…): repartidas en
+  # trabajos con base propia fallaron 30 de 199 en la primera corrida (13 nov) por eso; desde el 20 nov cada prueba prepara sus datos
+  # (precondicionPropia) y lo que una necesita de otra va con requiere (en la misma parte y antes, por pruebas/reparto.json).
+  # 22 nov · Revisión del CI (tanda 4) · «al revés» en su propio trabajo y en 3 partes: medido el 22 nov (45008066438), sus 134 suites suman 872 s
+  # en serie bajo el corredor (árbol idéntico) más dos pasadas reales de 20–33 s por parte; en 3 partes, unos 9 min por trabajo, lejos de los ~18
+  # de la punta a punta en 8. Por posición: por duración ganaría ~1 min en un carril que no marca el final (no compensa una asignación más).
+  # «partes» no lo cambia. Guardián dirigidaEnPartes.
+  alreves:
+    name: punta a punta · al revés · ${{ matrix.parte }}/3
     needs: [cambios, web]
     if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
@@ -273,18 +278,10 @@ jobs:
     # 20 nov · Los textos de las pruebas al revés ya se comprobaron en «tipos · build · guardianes» (alrevesConSuTexto): aquí no se repiten al
     # final de cada una de las ~100 pruebas al revés (serían 8 s más por prueba).
     env: { GUARDIANES_SIN_TEXTOS: "1" }
-    # 20 nov · Cada carril se reparte en `partes` trabajos (por posición, el mismo reparto en cada corrida), cada uno con su base
-    # nueva. Exige que cada prueba prepare sus propios datos (precondicionPropia). Por defecto 4 (también en push y programado); 1 = un solo trabajo.
     strategy:
       fail-fast: false
       matrix:
-        # Con confirmar=si (y sin «solo»), «todas las fases» sería repetir la primera pasada de «confirmación · dos veces seguidas» (el mismo
-        # comando en base nueva): corre una sola vez, allá. Sin confirmar, corre aquí como siempre.
-        nombre: ${{ fromJSON((inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]') }}
-        parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}
-        # 22 nov · Revisión del CI (B2) · «al revés» va SIEMPRE en 4 partes, también en una dirigida con partes=1: en un solo trabajo tardaba
-        # 86–128 min y la dirigida esperaba eso (32,4 h del 18 al 22 nov). «partes» sigue mandando en la punta a punta. Guardián dirigidaEnPartes.
-        include: ${{ fromJSON((inputs.partes || '4') == '1' && '[{"nombre":"al revés","parte":2},{"nombre":"al revés","parte":3},{"nombre":"al revés","parte":4}]' || '[]') }}
+        parte: [1, 2, 3]
     steps:
       # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>».
       - uses: actions/checkout@v4
@@ -295,13 +292,11 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
-      # alreves9o arma sobres de verdad (age-keygen) para el caso del sobre que no es para su servidor. También cuando una dirigida
-      # (solo=…) nombra pruebas al revés: corren en este carril (19 nov: alreves9o falló sin age en «todas las fases»).
+      # alreves9o arma sobres de verdad (age-keygen) para el caso del sobre que no es para su servidor.
       - name: age para las pruebas al revés de 9o
-        if: ${{ matrix.nombre == 'al revés' || contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
-      - name: Regresión de ${{ matrix.nombre }} en base nueva
-        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar
+      - name: Regresión de al revés en base nueva
+        run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -322,21 +317,77 @@ jobs:
           cp "$RUNNER_TEMP/salida/server.log" "$RUNNER_TEMP/subir/" 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: "regresion-${{ strategy.job-index }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
+        with: { name: "alreves-${{ matrix.parte }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
+
+  # 22 nov · Revisión del CI (tanda 4) · La punta a punta en 8 partes por defecto (push, programada y a mano), cada una con la parte que le da
+  # pruebas/reparto.json (por duración: ~14 min de pruebas cada una, en vez de 27–36 por posición en 4). Con confirmar=si (y sin «solo») no corre
+  # aquí: sería repetir la primera pasada de «confirmación · dos veces seguidas» (el mismo comando en base nueva). Guardián repartoAsignado.
+  regresion:
+    name: punta a punta · todas las fases${{ (inputs.partes || '8') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '8') || '' }}
+    needs: [cambios, web]
+    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' && !(inputs.confirmar == 'si' && inputs.solo == '') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    # Una dirigida (solo=…) puede nombrar pruebas al revés: corren aquí, sin repetir los textos (alrevesConSuTexto ya corrió).
+    env: { GUARDIANES_SIN_TEXTOS: "1" }
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: ${{ fromJSON((inputs.partes || '8') == '8' && '[1,2,3,4,5,6,7,8]' || ((inputs.partes || '8') == '4' && '[1,2,3,4]' || '[1]')) }}
+    steps:
+      # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>» (una dirigida puede nombrarlas).
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/entorno-pruebas
+      # 19 nov · alreves9o falló sin age en «todas las fases»: una dirigida (solo=…) que nombra pruebas al revés las corre aquí.
+      - name: age para las pruebas al revés de 9o
+        if: ${{ contains(inputs.solo, 'alreves') }}
+        run: sudo apt-get install -y -q age >/dev/null
+      - name: Regresión de todas las fases en base nueva
+        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar
+      - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
+        if: always()
+        run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
+      - name: Lo último que dijo el servidor (solo si algo cayó)
+        if: failure()
+        # 21 nov · Además de la cola, los errores de servidor de toda la corrida, una vez cada uno (la cola sola quedó tapada por un error repetido
+        # y no se veía la excepción que tumbó a ciu9i: CI 44866551623).
+        run: |
+          L="$RUNNER_TEMP/salida/server.log"
+          echo "--- errores del servidor (cada uno una vez, con cuántas veces salió):"
+          grep -aE '^(\s*⨯|Error:|\[?[A-Za-z]*Error\b|error: )|digest: ' "$L" 2>/dev/null | cut -c1-400 | sort | uniq -c | sort -rn | head -40 || true
+          echo "--- la cola del registro:"
+          tail -n 150 "$L" 2>/dev/null | cut -c1-600 || true
+      - name: Lo que dejó cada prueba (sin secretos, solo res y el registro del servidor)
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/subir" && cp -r "$RUNNER_TEMP/salida/res" "$RUNNER_TEMP/subir/res" 2>/dev/null || true
+          cp "$RUNNER_TEMP/salida/server.log" "$RUNNER_TEMP/subir/" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "regresion-${{ matrix.parte }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
 
   # La confirmación de 9b-1 (solo a mano, confirmar=si): toda la punta a punta DOS veces seguidas sobre la misma base (lo que una corrida no limpia) y,
   # en otra base, una vez barajada (lo que depende del orden). Cada una en su trabajo: juntas pasarían de las 6 horas que da GitHub.
   confirmacion:
-    name: confirmación · ${{ matrix.nombre }}${{ (inputs.partes || '4') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '4') || '' }}
+    name: confirmación · ${{ matrix.nombre }}${{ (inputs.partes || '8') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '8') || '' }}
     needs: web
     if: ${{ inputs.confirmar == 'si' && (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
     timeout-minutes: 350
+    # 22 nov · Revisión del CI (tanda 4) · 2 × 8 partes = 16 trabajos más «al revés» (3) y los dispositivos (3 a la vez) pasarían del tope de 20
+    # trabajos a la vez de la cuenta: 12 a la vez (arranca primero «dos veces seguidas», lo más largo).
     strategy:
       fail-fast: false
+      max-parallel: 12
       matrix:
         nombre: ["dos veces seguidas", "barajada"]
-        parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}
+        parte: ${{ fromJSON((inputs.partes || '8') == '8' && '[1,2,3,4,5,6,7,8]' || ((inputs.partes || '8') == '4' && '[1,2,3,4]' || '[1]')) }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -347,10 +398,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
       - name: Primera pasada
-        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.nombre == 'barajada' && format('--barajar {0}', inputs.semilla) || '' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.nombre == 'barajada' && format('--barajar {0}', inputs.semilla) || '' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar
       - name: Segunda pasada, en la MISMA base
         if: ${{ matrix.nombre == 'dos veces seguidas' }}
-        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -422,16 +473,18 @@ jobs:
   # 375), la tableta (iPad, 820) y el escritorio más angosto (1024); los anchos de en medio los cubren la regresión de siempre (390 y 1360) y
   # disp9b + capturas + axe en los 9. El repo es público: el CI no cuesta minutos. A mano: anchos=si.
   anchos:
-    name: punta a punta · ancho ${{ matrix.id }}${{ (inputs.partes || '4') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '4') || '' }}
+    name: punta a punta · ancho ${{ matrix.id }}${{ (inputs.partes || '8') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '8') || '' }}
     needs: web
     if: ${{ github.event_name == 'schedule' || inputs.anchos == 'si' }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
+    # 22 nov · Revisión del CI (tanda 4) · 3 anchos × 8 partes = 24 trabajos: 4 a la vez (la programada no le quita sitio a un push).
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         id: [iphone-se, ipad, escritorio-1024]
-        parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}
+        parte: ${{ fromJSON((inputs.partes || '8') == '8' && '[1,2,3,4,5,6,7,8]' || ((inputs.partes || '8') == '4' && '[1,2,3,4]' || '[1]')) }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -445,7 +498,7 @@ jobs:
         if: ${{ contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
       - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
-        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
+        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -472,7 +525,7 @@ jobs:
   # propósito y la tubería sale verde igual. Lo que corrió y lo que no lo dice el resumen del último paso, con todas las letras.
   tuberia:
     name: la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)
-    needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion, anchos]
+    needs: [cambios, verificar, seguridad, alreves, regresion, dispositivos, confirmacion, anchos]
     if: always()
     runs-on: ubuntu-latest
     permissions: { contents: read, actions: read }
@@ -482,6 +535,8 @@ jobs:
       # 22 nov · Se cuentan desde lo que cada carril SUBE (res/inestables.json, que pruebas/correr.mjs escribe siempre), no desde su registro: el
       # registro de un trabajo no se deja leer desde dentro de la corrida (44961847914: 22 de 22 sin leer), y antes eso se callaba y salía «0»
       # (44947348390 dijo 0 con una). Un carril que terminó en verde y no trae su lista no cuenta como cero: la tubería sale roja diciéndolo.
+      - uses: actions/download-artifact@v4
+        with: { pattern: "alreves-*", path: "${{ runner.temp }}/listas" }
       - uses: actions/download-artifact@v4
         with: { pattern: "regresion-*", path: "${{ runner.temp }}/listas" }
       - uses: actions/download-artifact@v4
@@ -501,7 +556,7 @@ jobs:
           n=$(grep -c . "$RUNNER_TEMP/inestables-unicas.txt" || true)
           echo "inestables de la corrida: $n (de $halladas listas)$( [ "$n" -gt 0 ] && echo " · $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")")"
           if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables en la corrida (más de 3 = roja, decisión AG): $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")"; exit 1; fi
-      # 22 nov · En un push de solo documentos (lo decide «cambios»), regresión y dispositivos se saltan por diseño y se dice con todas las letras.
+      # 22 nov · En un push de solo documentos (lo decide «cambios»), al revés, regresión y dispositivos se saltan por diseño y se dice con todas las letras.
       - name: Cada parte terminó en verde (una parte saltada cuenta como roja, salvo en una corrida parcial a mano o un push de solo documentos)
         env:
           RESULTADOS: ${{ toJSON(needs) }}
@@ -519,23 +574,23 @@ jobs:
             const docs = process.env.SOLO_DOCUMENTOS === "si";
             if (docs) { const m = "solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"; console.log(m); console.log("::notice::" + m); }
             for (const [k, v] of Object.entries(n)) {
-              const porDocs = docs && (k === "regresion" || k === "dispositivos");
-              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos") || (k === "confirmacion" && process.env.CONFIRMAR !== "si") || (k === "anchos" && process.env.ANCHOS !== "si") || porDocs;
+              const porDocs = docs && (k === "alreves" || k === "regresion" || k === "dispositivos");
+              const parcial = (a === "pantallas" && (k === "alreves" || k === "regresion")) || (k === "regresion" && process.env.CONFIRMAR === "si" && !(process.env.SOLO || "").trim()) || (a === "regresion" && k === "dispositivos") || (k === "confirmacion" && process.env.CONFIRMAR !== "si") || (k === "anchos" && process.env.ANCHOS !== "si") || porDocs;
               const ok = v.result === "success" || (v.result === "skipped" && parcial);
               console.log((ok ? "✓ " : "✗ ") + k + " · " + v.result + (v.result === "skipped" && parcial ? (porDocs ? " (a propósito: solo documentos)" : " (a propósito: alcance " + a + ")") : ""));
               if (!ok) mal++;
             }
             // 22 nov · Qué corrió y qué no, con todas las letras (el verde de esta tubería no quiere decir «todo corrió»).
-            const por = (k) => (docs && (k === "regresion" || k === "dispositivos") ? "solo documentos" : k === "confirmacion" ? "no se pidió confirmar=si" : k === "anchos" ? "ni programada ni anchos=si" : a !== "todo" ? "alcance " + a : "sin motivo: cuenta como rojo");
+            const por = (k) => (docs && (k === "alreves" || k === "regresion" || k === "dispositivos") ? "solo documentos" : k === "confirmacion" ? "no se pidió confirmar=si" : k === "anchos" ? "ni programada ni anchos=si" : k === "regresion" && process.env.CONFIRMAR === "si" ? "la corre la confirmación" : a !== "todo" ? "alcance " + a : "sin motivo: cuenta como rojo");
             const corrio = Object.entries(n).filter(([, x]) => x.result === "success").map(([k]) => k);
             const noCorrio = Object.entries(n).filter(([, x]) => x.result === "skipped").map(([k]) => k + " (" + por(k) + ")");
             const solo = (process.env.SOLO || "").trim();
-            const largos = ["regresion", "dispositivos"].every((k) => n[k]?.result === "success") && !solo;
+            const largos = ["alreves", "dispositivos"].every((k) => n[k]?.result === "success") && (n.regresion?.result === "success" || (process.env.CONFIRMAR === "si" && n.confirmacion?.result === "success")) && !solo;
             const lineas = [
               "CORRIÓ: " + (corrio.join(", ") || "nada"),
               "NO CORRIÓ: " + (noCorrio.join(", ") || "nada") + (solo ? " · y la regresión corrió SOLO estas pruebas: " + solo.slice(0, 300) : ""),
-              largos ? "pasada completa de un push: regresión (todas sus partes) y los 9 dispositivos corrieron" + (n.confirmacion?.result === "success" ? ", y también la confirmación" : "; la confirmación completa de AD (dos veces seguidas + barajada) NO corrió")
-                : "esta corrida NO es una pasada completa: la regresión entera o los dispositivos no corrieron en ella" + (docs && process.env.ANCLA ? "; el código de este commit es el de " + process.env.ANCLA.slice(0, 12) + ", que confirmó la corrida " + process.env.CORRIDA_CODIGO : ""),
+              largos ? "pasada completa de un push: al revés y la regresión (todas sus partes) y los 9 dispositivos corrieron" + (n.confirmacion?.result === "success" ? ", y también la confirmación" : "; la confirmación completa de AD (dos veces seguidas + barajada) NO corrió")
+                : "esta corrida NO es una pasada completa: al revés, la regresión entera o los dispositivos no corrieron en ella" + (docs && process.env.ANCLA ? "; el código de este commit es el de " + process.env.ANCLA.slice(0, 12) + ", que confirmó la corrida " + process.env.CORRIDA_CODIGO : ""),
             ];
             for (const l of lineas) { console.log(l); console.log("::notice::" + l); }
             try { require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, "### Qué corrió en esta corrida\n\n" + lineas.map((l) => "- " + l).join("\n") + "\n"); } catch {}

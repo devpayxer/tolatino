@@ -212,8 +212,10 @@ const casos = [
   // El CI: «cambios» sin su red, otra vía para saltar un carril, verificar apagable, un filtro de archivos en «on:».
   [Y, 'run: node scripts/ci/alcance.mjs || echo "alcance=todo" >> "$GITHUB_OUTPUT"', 'run: node scripts/ci/alcance.mjs', 'falta el trabajo «cambios»'],
   [Y, 'run: node scripts/ci/alcance.mjs || echo "alcance=todo" >> "$GITHUB_OUTPUT"', 'run: node scripts/ci/alcance.mjs || echo "alcance=documentos" >> "$GITHUB_OUTPUT"', 'falta el trabajo «cambios»'],
-  [Y, "!= 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}", "!= 'documentos' && github.event_name != 'push' && (inputs.alcance || 'todo') != 'pantallas' }}", '«regresion» se apaga en un push solo por el alcance'],
-  [Y, '      - name: Regresión de ${{ matrix.nombre }} en base nueva\n', "      - name: Regresión de ${{ matrix.nombre }} en base nueva\n        if: ${{ github.event_name != 'push' }}\n", 'otra vía para no correr en un push'],
+  [Y, "!= 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}", "!= 'documentos' && github.event_name != 'push' && (inputs.alcance || 'todo') != 'pantallas' }}", '«alreves» se apaga en un push solo por el alcance'],
+  [Y, "!= 'documentos' && (inputs.alcance || 'todo') != 'pantallas' && !(inputs.confirmar", "!= 'documentos' && github.event_name != 'push' && (inputs.alcance || 'todo') != 'pantallas' && !(inputs.confirmar", '«regresion» se apaga en un push solo por el alcance'],
+  [Y, '      - name: Regresión de todas las fases en base nueva\n', "      - name: Regresión de todas las fases en base nueva\n        if: ${{ github.event_name != 'push' }}\n", 'otra vía para no correr en un push'],
+  [Y, '      - name: Regresión de al revés en base nueva\n', "      - name: Regresión de al revés en base nueva\n        if: ${{ github.event_name != 'push' }}\n", 'otra vía para no correr en un push'],
   [Y, "needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'regresion'", "needs.cambios.outputs.alcance == 'todo' && (inputs.alcance || 'todo') != 'regresion'", '«dispositivos» se apaga en un push solo por el alcance'],
   [Y, "    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n    runs-on", "    if: ${{ needs.cambios.outputs.alcance != 'documentos' && !contains(github.event.head_commit.message, 'docs') }}\n    runs-on", '«web» se apaga en un push solo por el alcance'],
   [Y, '  push:\n    branches: [main]\n', '  push:\n    branches: [main]\n    paths-ignore: ["docs/**"]\n', 'no filtra por archivos'],
@@ -221,12 +223,12 @@ const casos = [
   // «tuberia»: sin «cambios», perdonar lo saltado fuera de un push o más allá de regresión y dispositivos, quitar el aviso.
   [Y, 'needs: [cambios, verificar,', 'needs: [verificar,', '«tuberia» depende de «cambios»'],
   [Y, "SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs", 'SOLO_DOCUMENTOS: ${{ needs', 'solo perdona lo saltado por documentos en un push'],
-  [Y, 'const porDocs = docs && (k === "regresion" || k === "dispositivos");', 'const porDocs = docs;', 'solo regresión y dispositivos'],
+  [Y, 'const porDocs = docs && (k === "alreves" || k === "regresion" || k === "dispositivos");', 'const porDocs = docs;', 'solo al revés, regresión y dispositivos'],
   [Y, '"solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"', '"solo documentos"', 'con todas las letras'],
   // 22 nov · El nombre de la tubería no promete «nada saltado» y su resumen dice qué corrió y qué no.
   [Y, '    name: la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)', '    name: la tubería completa (todo en verde, nada saltado)', 'no promete «nada saltado»'],
   [Y, '"NO CORRIÓ: " + (noCorrio.join(", ") || "nada")', '"OTROS: " + (noCorrio.join(", ") || "nada")', 'no promete «nada saltado»'],
-  [Y, '"esta corrida NO es una pasada completa: la regresión entera o los dispositivos no corrieron en ella"', '"pasada"', 'no promete «nada saltado»'],
+  [Y, '"esta corrida NO es una pasada completa: al revés, la regresión entera o los dispositivos no corrieron en ella"', '"pasada"', 'no promete «nada saltado»'],
   [Y, 'for (const l of lineas) { console.log(l); console.log("::notice::" + l); }', 'for (const l of []) { console.log(l); }', 'no promete «nada saltado»'],
 ];
 const correr = () => {

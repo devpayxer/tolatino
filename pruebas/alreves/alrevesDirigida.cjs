@@ -1,4 +1,4 @@
-// Prueba al revés del guardián dirigidaEnPartes (22 nov, revisión del CI B2): «al revés» siempre en 4 partes y los nombres de «solo»
+// Prueba al revés del guardián dirigidaEnPartes (22 nov, revisión del CI B2 y tanda 4): «al revés» siempre en sus 3 partes y los nombres de «solo»
 // validados antes de arrancar los carriles. Cada caso siembra un defecto en ci.yml o en el corredor; el guardián debe fallar con SU renglón
 // ([dirigidaEnPartes]); se restaura.
 const { execSync } = require('child_process');
@@ -6,9 +6,12 @@ const fs = require('fs'), path = require('path');
 const R = path.resolve(__dirname, '..', '..');
 const G = 'dirigidaEnPartes';
 const casos = [
-  [".github/workflows/ci.yml","        include: ${{ fromJSON((inputs.partes || '4') == '1' && '[{\"nombre\":\"al revés\",\"parte\":2},{\"nombre\":\"al revés\",\"parte\":3},{\"nombre\":\"al revés\",\"parte\":4}]' || '[]') }}\n",""],
-  [".github/workflows/ci.yml","--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar","--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar"],
-  [".github/workflows/ci.yml","format(' · {0}/{1}', matrix.parte, matrix.nombre == 'al revés' && '4' || inputs.partes || '4')","format(' · {0}/{1}', matrix.parte, inputs.partes || '4')"],
+  // 22 nov (tanda 4) · «al revés» en su trabajo con 3 partes fijas: que «partes» o «solo» lo cambien, una parte menos, su --parte o su nombre.
+  [".github/workflows/ci.yml","      matrix:\n        parte: [1, 2, 3]\n","      matrix:\n        parte: ${{ fromJSON((inputs.partes || '8') == '1' && '[1]' || '[1, 2, 3]') }}\n"],
+  [".github/workflows/ci.yml","      matrix:\n        parte: [1, 2, 3]\n","      matrix:\n        parte: [1, 2]\n"],
+  [".github/workflows/ci.yml","run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n","run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo alreves' }} --parte ${{ matrix.parte }}/3\n"],
+  [".github/workflows/ci.yml","run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n","run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/4\n"],
+  [".github/workflows/ci.yml","    name: punta a punta · al revés · ${{ matrix.parte }}/3\n","    name: punta a punta · al revés · ${{ matrix.parte }}\n"],
   [".github/workflows/ci.yml","          if [ -n \"$SOLO\" ]; then node pruebas/correr.mjs --comprobar $SOLO; fi\n","          echo \"$SOLO\"\n"],
   [".github/workflows/ci.yml","    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}\n    runs-on: ubuntu-latest\n    timeout-minutes: 300","    needs: [web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}\n    runs-on: ubuntu-latest\n    timeout-minutes: 300"],
   ["pruebas/correr.mjs","process.exit(sel.length ? 0 : 2); }","process.exit(0); }"],

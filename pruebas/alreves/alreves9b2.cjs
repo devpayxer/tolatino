@@ -24,7 +24,9 @@ const casos = [
   ['tuberiaVelocidad', Y, '{ id: escritorio-1280, velocidad: true }', '{ id: escritorio-1280 }'],
   ['tuberiaVelocidad', Y, "${{ inputs.medir == 'si' && '--medir' || '' }}", '--medir'],
   // tuberiaNoSeSalta: «tuberia» sin una parte, saltando lo saltado, un grupo de la regresión fuera de la matriz, un continue-on-error
-  ['tuberiaNoSeSalta', Y, 'needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [cambios, verificar, regresion, dispositivos, confirmacion, anchos]'],
+  ['tuberiaNoSeSalta', Y, 'needs: [cambios, verificar, seguridad, alreves, regresion, dispositivos, confirmacion, anchos]', 'needs: [cambios, verificar, alreves, regresion, dispositivos, confirmacion, anchos]'],
+  ['tuberiaNoSeSalta', Y, 'needs: [cambios, verificar, seguridad, alreves, regresion, dispositivos, confirmacion, anchos]', 'needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion, anchos]'],
+  ['tuberiaNoSeSalta', Y, '        with: { pattern: "alreves-*", path: "${{ runner.temp }}/listas" }\n', ''],
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
   // 21 nov · El tope de inestables es de la corrida entera (decisión AG), no de cada parte.
   ['tuberiaNoSeSalta', Y, 'if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables', 'if [ "$n" -gt 30 ]; then echo "::error::$n pruebas inestables'],
@@ -34,9 +36,17 @@ const casos = [
   ['tuberiaNoSeSalta', 'pruebas/correr.mjs', 'writeFileSync(join(RES, "inestables.json")', 'writeFileSync(join(RES, "otra.json")'],
   // 22 nov · «cambios» también lleva ese permiso (pregunta por la corrida del código): el caso quita el de «tuberia», que va tras su «runs-on».
   ['tuberiaNoSeSalta', Y, '    if: always()\n    runs-on: ubuntu-latest\n    permissions: { contents: read, actions: read }\n', '    if: always()\n    runs-on: ubuntu-latest\n'],
-  ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
+  ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }}"],
+  // 22 nov (tanda 4) · «al revés» en su trabajo: sin su grupo, con una parte menos, o con una parte fija.
+  ['tuberiaNoSeSalta', Y, 'run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n', 'run: node pruebas/correr.mjs --grupo alreves9b2 --parte ${{ matrix.parte }}/3\n'],
+  ['tuberiaNoSeSalta', Y, '\n        parte: [1, 2, 3]\n', '\n        parte: [1, 2]\n'],
+  ['tuberiaNoSeSalta', Y, 'run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n', 'run: node pruebas/correr.mjs --grupo alreves --parte 1/3\n'],
+  // 22 nov (tanda 4) · el tope de trabajos a la vez de la confirmación y de los anchos.
+  ['tuberiaNoSeSalta', Y, '      fail-fast: false\n      max-parallel: 12\n', '      fail-fast: false\n'],
+  ['tuberiaNoSeSalta', Y, '      fail-fast: false\n      max-parallel: 4\n', '      fail-fast: false\n'],
+  ['tuberiaNoSeSalta', Y, '        options: ["1", "4", "8"]\n        default: "8"\n', '        options: ["1", "4", "8"]\n        default: "4"\n'],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
-  ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }}", "fase9,varios') }} --parte 1/4"],
+  ['tuberiaNoSeSalta', Y, "fase9,varios' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }}", "fase9,varios' }} --parte 1/8"],
   // 20 nov · el entorno de pruebas sin tope de tiempo en un paso de red
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 npx playwright install', 'npx playwright install'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 bash pruebas/servir/base.sh', 'bash pruebas/servir/base.sh'],
@@ -59,12 +69,13 @@ const casos = [
   ['reintentoQueSeVe', 'pruebas/correr.mjs', 'if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {', 'if (!r.ok && t.carril === "e2e") {'],
   ['reintentoQueSeVe', 'pruebas/correr.mjs', 'console.log(`INESTABLES (${inestables.length})', 'void (`INESTABLES (${inestables.length})'],
   ['reintentoQueSeVe', 'pruebas/correr.mjs', "else r = { ...r2, error: `${r2.error} · dos veces seguidas", "else r = { ...(await correrUna(t)), error: `${r2.error} · dos veces seguidas"],
-  ['reintentoQueSeVe', Y, "--dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar", "--dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}"],
+  ['reintentoQueSeVe', Y, "--dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar", "--dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }}"],
   // 20 nov · «todas las fases» fuera de la regresión sin que la confirmación la corra, y la primera pasada de la confirmación recortada.
-  ['tuberiaNoSeSalta', Y, `(inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]'`, `'["al revés"]'`],
+  ['tuberiaNoSeSalta', Y, "!= 'pantallas' && !(inputs.confirmar == 'si' && inputs.solo == '') }}", "!= 'pantallas' && inputs.confirmar != 'si' }}"],
+  ['tuberiaNoSeSalta', Y, '|| (k === "regresion" && process.env.CONFIRMAR === "si" && !(process.env.SOLO || "").trim()) ||', '|| (k === "regresion") ||'],
   ['tuberiaNoSeSalta', Y, "      - name: Primera pasada\n        run: node pruebas/correr.mjs --grupo fase1,fase2,", "      - name: Primera pasada\n        run: node pruebas/correr.mjs --grupo fase1,"],
-  ['tuberiaNoSeSalta', Y, "        id: [iphone-se, ipad, escritorio-1024]\n        parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}\n", "        id: [iphone-se, ipad, escritorio-1024]\n        parte: [1]\n"],
-  ['tuberiaNoSeSalta', Y, "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}", "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"],
+  ['tuberiaNoSeSalta', Y, "        id: [iphone-se, ipad, escritorio-1024]\n        parte: ${{ fromJSON((inputs.partes || '8') == '8' && '[1,2,3,4,5,6,7,8]' || ((inputs.partes || '8') == '4' && '[1,2,3,4]' || '[1]')) }}\n", "        id: [iphone-se, ipad, escritorio-1024]\n        parte: [1]\n"],
+  ['tuberiaNoSeSalta', Y, "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }}", "        if: ${{ matrix.nombre == 'dos veces seguidas' }}\n        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"],
   ['tuberiaVisual', Y, '    timeout-minutes: 40\n', '    timeout-minutes: 40\n    continue-on-error: true\n'],
 ];
 // borrar: la captura aprobada de una pantalla en un dispositivo (el CI la tomaría como «nueva» y el guardián la echa en falta)
