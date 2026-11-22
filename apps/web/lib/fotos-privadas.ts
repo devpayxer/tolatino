@@ -2,8 +2,9 @@ import "server-only";
 import type { PoolClient } from "pg";
 import sharp from "sharp";
 import { db } from "./db";
-import { ANCHOS, clavesVariantes, variantesDe } from "./fotos-variantes";
+import { ANCHOS, cifrasGuardadas, clavesVariantes, variantesDe } from "./fotos-variantes";
 import { borrarObjeto, existeObjeto, guardarObjeto, leerObjeto, mediosListos } from "./medios";
+import { Fallos, porTandas } from "./barrido-uno";
 
 /* Fotos a la medida · F3 · Las fotos de destino PRIVADO (docs/diseno/plan/fotos-a-la-medida.md F3 y fotos-revision-automatica.md, «Fotos que van
    solo a un negocio o al equipo»): la de una cita, una visita, un viaje o una mudanza, un presupuesto, un pre-estimado, una emergencia, el recibo
@@ -205,6 +206,48 @@ export async function barrerPrivadas(): Promise<{ movidas: number; sinArchivo: n
   return out;
 }
 
+/* F3b (22 nov) · barrerVariantesDeRuta (lib/barrido.ts, tarea fotosVariantesRuta, cada minuto): las privadas de las OTRAS rutas (Mensajes privado/m/,
+   ayuda privado/a/, entrega privado/e/, reclamo privado/r/) subidas ANTES de que se generaran sus variantes. Mientras no tengan, su ruta entrega la
+   maestra (nunca una foto rota). Una en revisión (Mensajes) también: es la misma foto y la ve quien la subió.
+   - La selección es el predicado del índice parcial media_privadas_ruta_sin_variantes_idx (0210), la más vieja primero: sin él recorría media entera
+     cada minuto. Una con variantes (o con '{}') sale del índice: idempotente.
+   - Por tandas de TANDA_PRIVADAS, hasta TANDAS_RUTA por vuelta y con tope de tiempo (lib/barrido-uno.ts porTandas + Fallos): una foto que falla (el
+     almacén no contesta) no detiene a las demás ni vuelve a ocupar la tanda en la misma vuelta; al final la tarea sale fallida diciendo cuáles.
+   - Nunca una variante de una foto purgada u oculta: justo antes se vuelve a leer la fila (visible o en revisión, sin purgar, con la MISMA dirección);
+     guardarVariantesEn confirma que la maestra sigue después de guardar (la purga la saca primero); y si al terminar la fila quedó purgada, sus
+     variantes salen. Una maestra que ya no está o no se puede leer queda con '{}' (no se reintenta cada minuto). La maestra no se toca. */
+const TANDAS_RUTA = 5, PRESUPUESTO_RUTA_MS = 20_000;
+const SIN_VARIANTES_RUTA = `update media set var_widths = '{}', var_bytes = '{}', var_at = now() where id = $1::uuid and var_at is null and purged_at is null`;
+export async function barrerVariantesDeRuta(): Promise<{ variantes: number; sinArchivo: number }> {
+  const out = { variantes: 0, sinArchivo: 0 };
+  if (!mediosListos()) return out;
+  const t0 = Date.now(), B = new Fallos("fotosVariantesRuta");
+  await porTandas(B, TANDA_PRIVADAS, async (vistos) => (Date.now() - t0 > PRESUPUESTO_RUTA_MS ? [] : (await db().query<{ id: string; url: string; w: number | null }>(
+    `select id::text, url, w from media where private and var_at is null and status in ('visible', 'review') and purged_at is null and url ~ '^privado/[amer]/'
+        and created_at < now() - interval '2 minutes' and not (id = any($1::uuid[])) order by created_at limit ${TANDA_PRIVADAS}`, [vistos])).rows),
+  (f) => f.id, async (f) => {
+    if (Date.now() - t0 > PRESUPUESTO_RUTA_MS) return;
+    const m = MAESTRA_PRIVADA.exec(f.url);
+    if (!m || m[2] !== f.id) { await db().query(SIN_VARIANTES_RUTA, [f.id]); out.sinArchivo++; return; }
+    const sigue = await db().query(`select 1 from media where id = $1::uuid and private and var_at is null and status in ('visible', 'review') and purged_at is null and url = $2`, [f.id, f.url]);
+    if (!sigue.rowCount) return;
+    let maestra: Buffer;
+    try { maestra = await leerObjeto(f.url); }
+    catch (e) {
+      if (!/^almacenamiento 404\b/.test(String((e as Error)?.message ?? e))) throw e;
+      await db().query(SIN_VARIANTES_RUTA, [f.id]); out.sinArchivo++; return;
+    }
+    const r = await guardarVariantesEn(f.url, maestra, f.w);
+    if (r === "fallo") throw new Error("el almacén no guardó sus variantes");
+    if (r !== "ok") { await db().query(SIN_VARIANTES_RUTA, [f.id]); out.sinArchivo++; return; }
+    const x = (await db().query<{ purgada: boolean; w: number | null; anchos: number[] | null }>(`select purged_at is not null as purgada, w, var_widths as anchos from media where id = $1::uuid`, [f.id])).rows[0];
+    if (!x || x.purgada) { for (const v of clavesVariantes(f.url, x?.w, x?.anchos)) await borrarObjeto(v); return; }
+    out.variantes++;
+  }, { tandas: TANDAS_RUTA });
+  B.fin();
+  return out;
+}
+
 /* Una foto de antes de F3: true si su archivo pasó a la llave privada; false si ya no había archivo en n/ (la fila igual queda privada). */
 async function moverAPrivada(f: { id: string; url: string; status: string; w: number | null; var_widths: number[] | null }): Promise<boolean> {
   const nueva = urlPrivada(f.id), vieja = f.url;
@@ -237,20 +280,13 @@ async function moverAPrivada(f: { id: string; url: string; status: string; w: nu
 /* La lista de llaves de variantes privadas que pueden existir (la purga de una cuenta las saca con la maestra: clavesVariantes ya las conoce). */
 export const llavesPrivadasDe = (uuid: string, ancho?: number | null, hechos?: number[] | null) => clavesVariantes(llavePrivada(uuid), ancho, hechos);
 
-/* F4 · Las cifras de las fotos de destino privado para el Super Admin (la hermana de cifrasFotos, lib/fotos-variantes.ts, que solo cuenta las públicas):
-   las que se ven (visibles, sin purgar) con su dirección privada. Una fila por archivo (la id es la del nombre). UNA consulta, una pasada y sin
-   N+1; ningún índice cubre el universo entero (media_privadas_sin_variantes_idx solo tiene las pendientes), como pasa con las públicas: la pantalla
-   la pide a demanda y el filtro `private` deja fuera todo lo público. Solo números: nunca sale una foto, una persona ni una dirección. */
+/* F4 · Las cifras de las fotos privadas para el Super Admin (la hermana de cifrasFotos, lib/fotos-variantes.ts, que solo cuenta las públicas): las que se
+   ven (visibles, sin purgar) de destino privado (/api/medios/privada/) y, desde el 22 nov, también las de las otras rutas (Mensajes privado/m/, ayuda
+   privado/a/, entrega privado/e/, reclamo privado/r/): el espejo ve todo lo que existe. Una fila por archivo (la id es la del nombre). Un derivado
+   (0210 media_cifras_cache, que rehace el barrido cada 10 minutos): nunca un recorrido de media en cada carga (cifrasGuardadas). Solo números: nunca
+   sale una foto, una persona ni una dirección. */
 export type CifrasFotosPrivadas = { privadas: number; convertidas: number; pendientes: number; sinMaestra: number; bytesMaestras: number; bytesVariantes: number };
 export async function cifrasFotosPrivadas(): Promise<CifrasFotosPrivadas> {
-  const r = (await db().query<{ privadas: number; convertidas: number; pendientes: number; sin_maestra: number; bytes_maestras: number; bytes_variantes: number }>(
-    `select count(*)::int as privadas,
-            count(*) filter (where cardinality(var_widths) > 0)::int as convertidas,
-            count(*) filter (where var_at is null)::int as pendientes,
-            count(*) filter (where var_widths = '{}')::int as sin_maestra,
-            coalesce(sum(bytes), 0)::float8 as bytes_maestras,
-            coalesce(sum(coalesce(var_bytes[1], 0) + coalesce(var_bytes[2], 0) + coalesce(var_bytes[3], 0) + coalesce(var_bytes[4], 0)), 0)::float8 as bytes_variantes
-       from media
-      where private and status = 'visible' and purged_at is null and url like '/api/medios/privada/%'`)).rows[0]!;
-  return { privadas: r.privadas, convertidas: r.convertidas, pendientes: r.pendientes, sinMaestra: r.sin_maestra, bytesMaestras: r.bytes_maestras, bytesVariantes: r.bytes_variantes };
+  const { priv: r } = await cifrasGuardadas();
+  return { privadas: r.total, convertidas: r.convertidas, pendientes: r.pendientes, sinMaestra: r.sin_maestra, bytesMaestras: r.bytes_maestras, bytesVariantes: r.bytes_variantes };
 }

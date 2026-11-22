@@ -212,6 +212,11 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // se borran a los sp_fotos_ayuda_dias de cerrarse, con su renglón en la auditoría (lib/ayuda-cita.ts purgarFotosAyuda). Guardián fotosPrivadasConPermiso.
         ["fotosPrivadas", async () => (await import("./fotos-privadas")).barrerPrivadas()],
         ["fotosAyudaPurga", async () => (await import("./ayuda-cita")).purgarFotosAyuda()],
+        // F3b (22 nov) · Las privadas de Mensajes, ayuda, entrega y reclamo subidas antes de sus variantes las reciben, por tandas y por el índice parcial
+        // de 0210 (lib/fotos-privadas.ts barrerVariantesDeRuta). F4 · Las cifras de fotos del Super Admin son un derivado (0210 media_cifras_cache):
+        // se rehacen si tienen más de 10 minutos (la pantalla nunca recorre media). Guardianes fotosPrivadasConPermiso y fotosCifrasEnElAdmin.
+        ["fotosVariantesRuta", async () => (await import("./fotos-privadas")).barrerVariantesDeRuta()],
+        ["fotosCifras", async () => { await db().query(`select fotos_cifras_al_dia()`); }],
         // 9n-4 · «Me lo devolvieron» sin respuesta: recordatorio a la mitad y cierre a los ayuda_devuelto_dias (4if). El Repartidor: la oferta sola a los que
         // están en línea (rep_auto_intentos) y el recordatorio de los programados (rep_programado_min antes de estar listos).
         ["ayudaDevuelto", async () => (await import("./ayuda-cita")).cerrarDevueltosSinRespuesta()], ["repartoSolo", async () => (await import("./repartidor-auto")).asignarSolos()],

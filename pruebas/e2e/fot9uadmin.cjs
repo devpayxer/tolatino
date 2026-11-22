@@ -4,6 +4,8 @@
 //     tamaños, ahorro a 640 en % y en MB, y las mismas de las privadas) COINCIDEN con la base (una consulta aparte, escrita de otro modo)
 //   2 teléfono (390) y escritorio (1360), español e inglés: las mismas cifras, sin errores de consola, sin desborde horizontal
 //   3 solo lectura: ningún botón en el bloque; una cuenta sin permiso de Contenido no ve la pantalla
+//   4 (22 nov) las cifras salen del DERIVADO (0210 media_cifras_cache, que el barrido rehace cada 10 minutos): sin rehacerlo, una foto nueva no mueve la
+//     pantalla (no recorre media en cada carga); las privadas cuentan también Mensajes, ayuda, entrega y reclamo (privado/m|a|e|r/)
 // Puede correr dos veces seguidas: lo que siembra lo retira (status removed + purged_at) y no toca nada más.
 // Guardián fotosCifrasEnElAdmin (al revés: alreves9ufotosadmin). La función que da las cifras: cifrasFotos / cifrasFotosPrivadas.
 const ENT = require('../lib/entorno.cjs');
@@ -14,6 +16,8 @@ const B = ENT.B;
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const espera = async (f, ms = 15000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 300)); } return false; };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
+// Lo que hace el barrido cada 10 minutos (fotos_cifras_al_dia), ya: el derivado queda con lo que dice la base ahora.
+const rehacer = () => sql('select fotos_cifras_contar()');
 
 // Lo que dice la base, con otra consulta que la de la pantalla (unnest con orden en lugar de índices fijos).
 const base = () => {
@@ -26,7 +30,7 @@ const base = () => {
   const pri = JSON.parse(sql(`select row_to_json(x) from (select count(*)::int as total,
       count(*) filter (where cardinality(var_widths) > 0)::int as conv, count(*) filter (where var_at is null)::int as pend, count(*) filter (where cardinality(var_widths) = 0)::int as sin,
       coalesce(sum(bytes), 0)::float8 as maes, coalesce(sum((select sum(v) from unnest(var_bytes) v)), 0)::float8 as vars
-    from media where private and status = 'visible' and purged_at is null and url ~ '^/api/medios/privada/') x`));
+    from media where private and status = 'visible' and purged_at is null and (url ~ '^/api/medios/privada/' or url ~ '^privado/(m|a|e|r)/')) x`));
   return { pub, pri };
 };
 // Cómo las escribe la pantalla (1 MB = 1 048 576 bytes, un decimal; coma en español).
@@ -56,6 +60,9 @@ const esperado = (d, en) => {
     x = id(); fila(`/medios/n/${x}.jpg`, x, false, '', '', 90000);
     x = id(); fila(`/api/medios/privada/${x}`, x, true, '320,640', '9000,25000', 150000);
     x = id(); fila(`/api/medios/privada/${x}`, x, true, null, null, 120000);
+    // 22 nov · Las privadas de las otras rutas (una de ayuda con sus tamaños y un documento de reclamo que falta) también cuentan.
+    x = id(); fila(`privado/a/${x}.jpg`, x, true, '320,640,1080', '8000,21000,52000', 180000);
+    x = id(); fila(`privado/r/${x}.jpg`, x, true, null, null, 70000);
     equipo('5705550188');
 
     const corrida = async (ancho, lang, etiqueta) => {
@@ -71,7 +78,7 @@ const esperado = (d, en) => {
       // El barrido puede mover las cifras entre la consulta y la pantalla: se repite una vez con la base de ese momento.
       let faltan = [];
       for (let i = 0; i < 3; i++) {
-        const d = base();
+        rehacer(); const d = base();
         await p.goto(B + '/admin/contenido?tab=auto'); await p.waitForLoadState('networkidle');
         await p.getByText(lang === 'en' ? 'PHOTOS SIZED TO FIT' : 'FOTOS A LA MEDIDA').first().waitFor({ timeout: 20000 });
         const t = await texto(p);
@@ -86,6 +93,18 @@ const esperado = (d, en) => {
     console.log('1 · Teléfono y escritorio, español e inglés: las cifras del bloque coinciden con la base');
     await corrida(390, 'es', 'teléfono ES'); await corrida(390, 'en', 'teléfono EN');
     await corrida(1360, 'es', 'escritorio ES'); await corrida(1360, 'en', 'escritorio EN');
+
+    console.log('4 · Las cifras salen del derivado');
+    {
+      rehacer(); const d0 = base();
+      const z = id(); fila(`/medios/n/${z}.jpg`, z, false, '320,640', '9000,26000', 310000);
+      const ctx = await b.newContext({ viewport: { width: 1360, height: 900 } }), p = await ctx.newPage();
+      await entrarComo(p, '5705550188');
+      await p.goto(B + '/admin/contenido?tab=auto'); await p.getByText('FOTOS A LA MEDIDA').first().waitFor({ timeout: 20000 });
+      const t = await texto(p), faltan = esperado(d0, false).filter((s) => !t.includes(s));
+      ok(!faltan.length && base().pub.total === d0.pub.total + 1, `sin rehacer el derivado, la pantalla no recorre media: una foto nueva no la mueve${faltan.length ? ' (falta: ' + faltan.join(' | ') + ')' : ''}`);
+      await ctx.close();
+    }
 
     console.log('2 · Solo lectura y permiso');
     const ctx = await b.newContext({ viewport: { width: 1360, height: 900 } }), p = await ctx.newPage();
@@ -105,6 +124,7 @@ const esperado = (d, en) => {
     console.log(`OK (${n} comprobaciones)`);
   } catch (e) { console.error(e); process.exitCode = 1; } finally {
     for (const s of sembradas) { try { sql(`update media set status = 'removed', removed_reason = 'admin', removed_note = 'Prueba', removed_at = now(), purged_at = now() where id = '${s}'`); } catch { /* ya retirada */ } }
+    try { rehacer(); } catch { /* sin base */ }
     await b.close();
   }
 })();

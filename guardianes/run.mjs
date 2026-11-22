@@ -14345,6 +14345,26 @@ const guardianes = {
     }
     const pu = existsSync("pruebas/alreves/alreves9ufoto.cjs") ? readFileSync("pruebas/alreves/alreves9ufoto.cjs", "utf8") : "";
     for (const k of ["['mensajes', `/api/mensajes/foto/${id}`]", "['ayuda', `/api/ayuda/foto/${id}`]", "['entrega', `/api/entrega/foto/${id}`]", "['reclamo', '/api/admin/reclamo/CL-1234']"]) if (!pu.includes(k)) falla(G, "pruebas/alreves/alreves9ufoto.cjs", 0, `la prueba pura de fotoSrc dejó de revisar «${k}»`);
+    // (13) 22 nov · Una fila PURGADA (retención, cuenta borrada: su dirección pasa a «privado/borrada», que no existe en el almacén) nunca llega a
+    // entregarPrivado: cada consulta de media de las rutas de las otras privadas lleva «purged_at is null» (el documento de un reclamo purgado daba 500;
+    // la ruta de privado/o/ lo trae en LADOS, arriba). Al revés: alreves9uprivadas; de punta a punta: rec1j (el documento purgado da 404).
+    for (const f of Object.keys(VER)) {
+      const t = existsSync(f) ? sinComent(f) : "";
+      for (const q of t.matchAll(/`[^`]*\b(from|join) media \w+[^`]*`/g)) if (!/\b\w+\.purged_at is null\b/.test(q[0])) falla(G, f, 0, "una consulta de la foto no mira purged_at: una fila purgada (dirección «privado/borrada», sin archivo) llegaría al almacén y daría 500 en lugar de 404");
+    }
+    // (14) 22 nov · Las privadas de las otras rutas subidas ANTES de sus variantes las reciben (barrerVariantesDeRuta), por el índice parcial de 0210 (el
+    // MISMO predicado: sin él recorrería media entera cada minuto), por tandas con lib/barrido-uno.ts (una que falla no detiene a las demás), volviendo a
+    // leer la fila justo antes (nunca una purgada u oculta) y sacando lo generado si la fila quedó purgada. Al revés: alreves9uprivadas.
+    const PREDR = "where private and var_at is null and status in ('visible', 'review') and purged_at is null and url ~ '^privado/[amer]/'", M10 = "packages/db/migrations/0210_fotos_privadas_ruta_y_cifras.sql";
+    if (!/\["fotosVariantesRuta", async \(\) => \(await import\("\.\/fotos-privadas"\)\)\.barrerVariantesDeRuta\(\)\]/.test(br)) falla(G, BR, 0, "el barrido no corre barrerVariantesDeRuta (las privadas de Mensajes, ayuda, entrega y reclamo de antes nunca tendrían variantes)");
+    if (!existsSync(M10) || !readFileSync(M10, "utf8").includes(`create index if not exists media_privadas_ruta_sin_variantes_idx on media (created_at)\n  ${PREDR};`)) falla(G, M10, 0, "falta el índice parcial de las privadas de las otras rutas sin variantes (el barrido recorrería media entera cada minuto)");
+    const bvr = cuerpoFn(fp, "barrerVariantesDeRuta");
+    if (!bvr.includes(`${PREDR}\n        and created_at < now() - interval '2 minutes' and not (id = any($1::uuid[])) order by created_at limit \${TANDA_PRIVADAS}`))
+      falla(G, FP, 0, "barrerVariantesDeRuta: la tanda sale por el índice parcial de 0210 (el mismo predicado), la más vieja primero, sin repetir lo visto en la vuelta");
+    if (!/await porTandas\(B, TANDA_PRIVADAS, /.test(bvr) || !/\}, \{ tandas: TANDAS_RUTA \}\);\s*B\.fin\(\);/.test(bvr) || /\.catch\(/.test(bvr))
+      falla(G, FP, 0, "barrerVariantesDeRuta recorre con porTandas y Fallos (lib/barrido-uno.ts) y termina con B.fin(): una foto que falla no detiene a las demás y la tarea dice cuáles");
+    if (!bvr.includes("and status in ('visible', 'review') and purged_at is null and url = $2`, [f.id, f.url]);\n    if (!sigue.rowCount) return;") || !/if \(!x \|\| x\.purgada\) \{ for \(const v of clavesVariantes\(f\.url, x\?\.w, x\?\.anchos\)\) await borrarObjeto\(v\); return; \}/.test(bvr))
+      falla(G, FP, 0, "barrerVariantesDeRuta: vuelve a leer la fila justo antes de generar (nunca una purgada u oculta) y, si al terminar quedó purgada, saca lo generado");
   },
 
   /* 21 nov · topeNuevaSoloPublicas: el tope bajo de «cuenta nueva» (capa 4, foto4.nueva_hora) cuenta y frena SOLO las subidas de destino PÚBLICO; una
@@ -14400,6 +14420,25 @@ const guardianes = {
     }
     if (!existsSync(E2) || !readFileSync(E2, "utf8").includes("${etiqueta}: las cifras del bloque coinciden con la base")) falla(G, E2, 0, "falta la prueba de punta a punta que compara el bloque con la base");
     if (!existsSync(AY)) falla(G, AY, 0, "falta la ayuda del equipo (docs/ayuda/admin-fotos-a-la-medida.md)");
+    // (7) 22 nov · Las cifras son un DERIVADO (regla 12): la pantalla nunca recorre media (con 2 M de filas, ~450 ms + ~100 ms en cada carga). Se teme:
+    // que cifrasFotos o cifrasFotosPrivadas vuelvan a leer media; que el barrido deje de rehacerlas; que el derivado se pueda escribir a mano o desde
+    // el código; que las privadas dejen de contar las cuatro familias de las otras rutas; que la prueba de punta a punta deje de mirar que sale del derivado.
+    const M10 = "packages/db/migrations/0210_fotos_privadas_ruta_y_cifras.sql", BR = "apps/web/lib/barrido.ts", fvs = sinComent(FV), m10 = existsSync(M10) ? readFileSync(M10, "utf8").replace(/--.*$/gm, "") : "";
+    for (const [x, fn] of [[FV, "cifrasFotos"], [FP, "cifrasFotosPrivadas"], [FV, "cifrasGuardadas"]]) if (/\b(from|join) media\b(?!_)/.test(cuerpoFn(sinComent(x), fn))) falla(G, x, 0, `${fn} recorre media en cada carga de la pantalla: lee el derivado (media_cifras_cache)`);
+    const cg = cuerpoFn(fvs, "cifrasGuardadas");
+    if (!/from media_cifras_cache where k in \('pub', 'priv'\)/.test(cg) || !/if \(F\.length < 2\) \{ await db\(\)\.query\(`select fotos_cifras_contar\(\)`\); F = await leer\(\); \}/.test(cg)
+      || !/const \{ pub \} = await cifrasGuardadas\(\)/.test(cuerpoFn(fvs, "cifrasFotos")) || !/const \{ priv: r \} = await cifrasGuardadas\(\);/.test(cuerpoFn(sinComent(FP), "cifrasFotosPrivadas")))
+      falla(G, FV, 0, "cifrasFotos y cifrasFotosPrivadas leen las dos filas del derivado (cifrasGuardadas); si todavía no hay, se cuentan una vez con fotos_cifras_contar");
+    if (!/\["fotosCifras", async \(\) => \{ await db\(\)\.query\(`select fotos_cifras_al_dia\(\)`\); \}\]/.test(existsSync(BR) ? sinComent(BR) : "")) falla(G, BR, 0, "el barrido no rehace las cifras de fotos (fotos_cifras_al_dia): la pantalla se quedaría con las de la primera carga");
+    if (!/create trigger media_cifras_cache_no_editable before insert or update or delete on media_cifras_cache for each row execute function fotos_cifras_no_editables\(\);/.test(m10)
+      || (m10.match(/set_config\('tl\.fotos_cifras', 'on', true\)/g) ?? []).length !== 1 || !/if \(select count\(\*\) from media_cifras_cache where refreshed_at > now\(\) - interval '10 minutes'\) = 2 then return 0; end if;/.test(m10))
+      falla(G, M10, 0, "el derivado no se puede escribir a mano (trigger; solo fotos_cifras_contar enciende tl.fotos_cifras) y se rehace a los 10 minutos");
+    if (!m10.includes("from media where private and status = 'visible' and purged_at is null and (url like '/api/medios/privada/%' or url ~ '^privado/[amer]/');"))
+      falla(G, M10, 0, "las privadas del Super Admin cuentan también Mensajes (privado/m/), ayuda (privado/a/), entrega (privado/e/) y reclamo (privado/r/): el espejo ve todo lo que existe");
+    for (const x of archivos) if (x !== M10 && /^(apps|packages|scripts|services|infra)\/.*\.(tsx?|mjs|cjs|sql|sh)$/.test(x) && existsSync(x) && /\b(insert into|update|delete from|truncate)\s+media_cifras_cache\b|tl\.fotos_cifras/.test(readFileSync(x, "utf8")))
+      falla(G, x, 0, "escribe media_cifras_cache (o enciende tl.fotos_cifras): las cifras de fotos las escribe solo la base (fotos_cifras_contar)");
+    const e2 = existsSync(E2) ? readFileSync(E2, "utf8") : "";
+    if (!e2.includes("sin rehacer el derivado, la pantalla no recorre media") || !e2.includes("url ~ '^privado/(m|a|e|r)/'")) falla(G, E2, 0, "la prueba de punta a punta deja de mirar que las cifras salen del derivado o que las privadas cuentan las cuatro familias");
   },
 
   /* fotosRevisionFalloCerrado: si un modelo no responde, la capa está apagada, no hay presupuesto o la respuesta no encaja, la foto queda RETENIDA:

@@ -22,6 +22,15 @@ const casos = [
   [G, 'apps/web/app/admin/contenido/page.tsx', 'await requerir("cont", "ver")', 'await requerir("cont", "editar")'],
   // Otra función de cifras que ninguna pantalla muestra (la misma clase).
   [G, 'apps/web/lib/fotos-variantes.ts', 'export type CifrasFotos = {', 'export async function cifrasHuerfana() { return 1; }\nexport type CifrasFotos = {'],
+  // 22 nov · Las cifras son un derivado: la pantalla vuelve a recorrer media, el barrido deja de rehacerlas, se pueden escribir a mano o desde el código,
+  // las privadas dejan de contar las otras rutas, o la prueba deja de mirarlo.
+  [G, 'apps/web/lib/fotos-privadas.ts', '  const { priv: r } = await cifrasGuardadas();', '  await db().query(`select count(*) from media where private`);\n  const { priv: r } = await cifrasGuardadas();'],
+  [G, 'apps/web/lib/fotos-variantes.ts', "       from media_cifras_cache where k in ('pub', 'priv')`)).rows;", "       from media_cifras_cache where k in ('pub', 'priv') union all select 'pub', count(*)::int, 0, 0, 0, 0, 0, 0, 0 from media`)).rows;"],
+  [G, 'apps/web/lib/barrido.ts', '        ["fotosCifras", async () => { await db().query(`select fotos_cifras_al_dia()`); }],\n', ''],
+  [G, 'packages/db/migrations/0210_fotos_privadas_ruta_y_cifras.sql', 'create trigger media_cifras_cache_no_editable before insert or update or delete on media_cifras_cache for each row execute function fotos_cifras_no_editables();', ''],
+  [G, 'packages/db/migrations/0210_fotos_privadas_ruta_y_cifras.sql', "purged_at is null and (url like '/api/medios/privada/%' or url ~ '^privado/[amer]/');", "purged_at is null and url like '/api/medios/privada/%';"],
+  [G, 'apps/web/lib/admin-confianza.ts', 'const [medPub, medPriv] = await Promise.all([cifrasFotos(), cifrasFotosPrivadas()]);', 'const [medPub, medPriv] = await Promise.all([cifrasFotos(), cifrasFotosPrivadas()]);\n  await db().query(`update media_cifras_cache set total = 0`);'],
+  [G, 'pruebas/e2e/fot9uadmin.cjs', 'sin rehacer el derivado, la pantalla no recorre media', 'la pantalla sale'],
   // La prueba de punta a punta que compara con la base.
   [G, 'pruebas/e2e/fot9uadmin.cjs', '${etiqueta}: las cifras del bloque coinciden con la base', '${etiqueta}: las cifras del bloque existen'],
 ];

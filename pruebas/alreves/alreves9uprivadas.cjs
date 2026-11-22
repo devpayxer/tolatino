@@ -91,6 +91,17 @@ const casos = [
   [G, 'apps/web/lib/datos/retener.ts', 'await borrarConVariantes(m.url, m.w, m.var_widths);', 'await (await import("../medios")).borrarObjeto(m.url);', 'F3b: la purga o retención de una foto privada saca también sus variantes'],
   [G, FP, '  await borrarObjeto(llave);\n  for (const v of clavesVariantes(llave, ancho, hechos)) await borrarObjeto(v);', '  await borrarObjeto(llave);', 'F3b: borrarConVariantes saca la maestra y DESPUÉS'],
   [G, 'apps/web/lib/fotos-variantes.ts', 'const MAESTRA_PRIVADA = new RegExp(`^privado/([oamer])/(${UUID})\\\\.jpg$`);', 'const MAESTRA_PRIVADA = new RegExp(`^privado/(o)/(${UUID})\\\\.jpg$`);', 'F3b: clavesVariantes conoce las variantes de TODAS las privadas'],
+  // 22 nov · Una fila purgada que llega al almacén (el documento de un reclamo purgado daba 500): cada consulta de la foto mira purged_at.
+  [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', 'where cl.id = $1 and m.private and m.purged_at is null`', 'where cl.id = $1 and m.private`', 'una consulta de la foto no mira purged_at'],
+  [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', "m.status = 'visible' and m.purged_at is null and m.url like 'privado/a/%'", "m.status = 'visible' and m.url like 'privado/a/%'", 'una consulta de la foto no mira purged_at'],
+  // 22 nov · barrerVariantesDeRuta: fuera del barrido, sin su índice, otra consulta, sin el ayudante por elemento, sin volver a leer la fila, o dejando
+  // las variantes de una que quedó purgada.
+  [G, BR, '        ["fotosVariantesRuta", async () => (await import("./fotos-privadas")).barrerVariantesDeRuta()],\n', '', 'el barrido no corre barrerVariantesDeRuta'],
+  [G, 'packages/db/migrations/0210_fotos_privadas_ruta_y_cifras.sql', "  where private and var_at is null and status in ('visible', 'review') and purged_at is null and url ~ '^privado/[amer]/';", "  where private and var_at is null and purged_at is null;", 'falta el índice parcial de las privadas de las otras rutas'],
+  [G, FP, "status in ('visible', 'review') and purged_at is null and url ~ '^privado/[amer]/'\n        and created_at", "purged_at is null and url ~ '^privado/[amer]/'\n        and created_at", 'barrerVariantesDeRuta: la tanda sale por el índice parcial'],
+  [G, FP, '  }, { tandas: TANDAS_RUTA });\n  B.fin();', '  }, { tandas: TANDAS_RUTA });', 'barrerVariantesDeRuta recorre con porTandas y Fallos'],
+  [G, FP, '    if (!sigue.rowCount) return;\n', '', 'vuelve a leer la fila justo antes de generar'],
+  [G, FP, '    if (!x || x.purgada) { for (const v of clavesVariantes(f.url, x?.w, x?.anchos)) await borrarObjeto(v); return; }\n', '', 'vuelve a leer la fila justo antes de generar'],
   // La prueba pura de fotoSrc sin una de las rutas.
   [G, 'pruebas/alreves/alreves9ufoto.cjs', "['entrega', `/api/entrega/foto/${id}`], ", '', 'la prueba pura de fotoSrc dejó de revisar'],
 ];

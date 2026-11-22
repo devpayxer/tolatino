@@ -126,24 +126,28 @@ export async function barrerVariantes(): Promise<{ hechas: number; copiadas: num
    maestra contra la variante que esa caja pide (la más angosta de ≥ 640; si la foto es más chica, la más grande). Por eso se guarda el peso de
    cada ancho (var_bytes en el orden de var_widths) y no solo la suma. Una foto de ≥ 640 px siempre tiene la de 640 (anchosDe); una más chica
    da su variante más grande (la última). Como mucho hay 4 variantes por foto (los 4 anchos fijos, o los que caben más el de la maestra), por eso
-   la suma va por posición, sin unnest: una pasada por las filas públicas, ~125 ms con 200 mil fotos (base local, 20 nov); F4 la pide a demanda. */
+   la suma va por posición, sin unnest.
+   22 nov · Un DERIVADO, nunca un recorrido en cada carga: con 2 M de filas la pasada costaba ~450 ms (y la de las privadas ~100 ms) cada vez que
+   alguien abría la pantalla. Las cuenta la base (0210 fotos_cifras_contar, con la misma consulta de antes) en media_cifras_cache, el barrido las
+   rehace cada 10 minutos (tarea fotosCifras: fotos_cifras_al_dia) y aquí se leen dos filas (< 1 ms). Si todavía no hay (la base recién migrada, antes
+   de la primera vuelta del barrido), se cuentan una vez y quedan guardadas. Guardián fotosCifrasEnElAdmin. */
 export type CifrasFotos = {
   publicas: number; convertidas: number; pendientes: number; sinMaestra: number;
   bytesMaestras: number; bytesVariantes: number;
   vista640: { maestras: number; variantes: number; ahorro: number };
 };
+type FilaCifras = { k: "pub" | "priv"; total: number; convertidas: number; pendientes: number; sin_maestra: number; bytes_maestras: number; bytes_variantes: number; m640: number; v640: number };
+export async function cifrasGuardadas(): Promise<Record<"pub" | "priv", FilaCifras>> {
+  const leer = async () => (await db().query<FilaCifras>(
+    `select k, total, convertidas, pendientes, sin_maestra, bytes_maestras::float8 as bytes_maestras, bytes_variantes::float8 as bytes_variantes, m640::float8 as m640, v640::float8 as v640
+       from media_cifras_cache where k in ('pub', 'priv')`)).rows;
+  let F = await leer();
+  if (F.length < 2) { await db().query(`select fotos_cifras_contar()`); F = await leer(); }
+  const de = (k: "pub" | "priv") => F.find((f) => f.k === k) ?? { k, total: 0, convertidas: 0, pendientes: 0, sin_maestra: 0, bytes_maestras: 0, bytes_variantes: 0, m640: 0, v640: 0 };
+  return { pub: de("pub"), priv: de("priv") };
+}
 export async function cifrasFotos(): Promise<CifrasFotos> {
-  const r = (await db().query<{ publicas: number; convertidas: number; pendientes: number; sin_maestra: number; bytes_maestras: number; bytes_variantes: number; m640: number; v640: number }>(
-    `select count(*)::int as publicas,
-            count(*) filter (where cardinality(var_widths) > 0)::int as convertidas,
-            count(*) filter (where var_at is null)::int as pendientes,
-            count(*) filter (where var_widths = '{}')::int as sin_maestra,
-            coalesce(sum(bytes), 0)::float8 as bytes_maestras,
-            coalesce(sum(coalesce(var_bytes[1], 0) + coalesce(var_bytes[2], 0) + coalesce(var_bytes[3], 0) + coalesce(var_bytes[4], 0)), 0)::float8 as bytes_variantes,
-            coalesce(sum(bytes) filter (where cardinality(var_widths) > 0), 0)::float8 as m640,
-            coalesce(sum(coalesce(var_bytes[array_position(var_widths, 640::smallint)], var_bytes[cardinality(var_bytes)])) filter (where cardinality(var_widths) > 0), 0)::float8 as v640
-       from media
-      where status = 'visible' and purged_at is null and url like '/medios/n/%.jpg' and url = '/medios/n/' || id::text || '.jpg'`)).rows[0]!;
+  const { pub } = await cifrasGuardadas(), r = { ...pub, publicas: pub.total };
   return {
     publicas: r.publicas, convertidas: r.convertidas, pendientes: r.pendientes, sinMaestra: r.sin_maestra,
     bytesMaestras: r.bytes_maestras, bytesVariantes: r.bytes_variantes,
