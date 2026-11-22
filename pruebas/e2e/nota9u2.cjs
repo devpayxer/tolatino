@@ -5,13 +5,17 @@
 //       y ninguna clasificada que ya no existe. (Esto es lo que el guardián notaInternaFueraDelArchivo no puede saber sin la base.)
 //   1 · Una cuenta nueva con una nota única en CADA columna interna (escrita directo en la base con session_replication_role = replica: las
 //       acciones del equipo son veinte hojas distintas y varias tablas nacen de flujos largos —la llave de acceso, el correo entrante—; lo que se
-//       prueba aquí es la exportación) y en las que salen; pide su archivo (fila en data_exports, como datos9d), el barrido lo arma y lo baja con
+//       prueba aquí es la exportación) y en las que salen. 22 nov · Una nota por FAMILIA se escribe por la hoja del equipo (la pantalla, como
+//       Beto): la interna (Negocio 360 › Equipo › Quitar acceso: panel_off_reason), la que sale solo en ciertas filas (Negocio 360 › Lo que vende
+//       › Ocultar un plato: items.hidden_reason, sin quién del equipo lo ocultó) y la que el Panel pinta (Negocio 360 › Ocultar: status_reason, 3b); pide su archivo (fila en data_exports, como datos9d), el barrido lo arma y lo baja con
 //       POST como en «Bajar». El ZIP no trae ninguna nota interna en ningún archivo (ni la columna, en las de código fijo); trae las que salen;
 //       el motivo de un reclamo sale solo si fue rechazado, la nota de una foto quitada solo si la quitó el equipo ('admin').
 //   2 · El archivo del negocio: el motivo de un plato oculto sale mientras está oculto (lo que el Panel pinta); uno que ya no está oculto, vacío.
 //   3 · Lo que viaja al navegador (el HTML y los datos de la página que manda el servidor, no lo visible): la nota del sello solo en «falta un
 //       dato» / «no aprobado»; el motivo del reclamo solo si fue rechazado; Moderación no recibe la nota interna de la revisión de una foto ni la
 //       copia en la apelación.
+//   3b · El motivo de To'Latino sobre la página (status_reason, el del cierre temporal, las notas de las fotos que quitó) viaja solo a la pantalla
+//       que lo pinta (Hoy y Tu página; Fotos y portada) y solo mientras se pinta (la página oculta, el cierre vigente).
 //   4 · La pausa de un módulo (modules_off con su motivo) en la página pública de un negocio de cada categoría: el motivo no llega.
 // Teléfono de prueba nuevo (570555 + 4 al azar). Lo que toma prestado de la semilla (modules_off) se devuelve al final.
 const ENT = require('../lib/entorno.cjs');
@@ -36,6 +40,20 @@ const ES_NOTA = new RegExp(lit.slice(1, -1));
 
 const postArchivo = (p, id) => p.evaluate(async (id) => { const r = await fetch(`/api/datos/archivo/${id}`, { method: 'POST' }); return { s: r.status, b: r.ok ? Array.from(new Uint8Array(await r.arrayBuffer())) : [] }; }, id);
 const html = async (p, url) => { const r = await p.request.get(B + url); return { s: r.status(), t: await r.text() }; };
+// Las hojas del equipo (Negocio 360): la fila con su acción, el botón de la hoja y esperar lo que el servidor guardó.
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+const vis = async (l) => { const k = await l.count(); for (let i = 0; i < k; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
+const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await dormir(250); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
+const espera = async (f, ms = 12000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await dormir(300); } return false; };
+const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: new RegExp(`^${t}$`) });
+const fila = (p, t, accion) => p.locator('div').filter({ hasText: t }).filter({ has: p.locator('[role=button]').filter({ hasText: new RegExp(`^${accion}$`) }) });
+const hoja = async (p, nota, cta) => {
+  let x = null;
+  for (let i = 0; i < 40 && !x; i++) { x = await vis(p.locator('textarea')); if (!x) await dormir(250); }
+  if (!x) throw new Error('la hoja no abrió');
+  await x.fill(nota); await clic(boton(p, cta).last());
+};
+const ADM = '5705550199';
 
 (async () => {
   // ── 0 · Cada nota de cada tabla exportada, clasificada (contra la base) ──
@@ -53,6 +71,9 @@ const html = async (p, url) => { const r = await p.request.get(B + url); return 
   const fantasmas = Object.keys(NOTAS).filter((k) => !todas.has(k));
   ok(fantasmas.length === 0, `toda nota clasificada existe en la base${fantasmas.length ? ': ' + fantasmas.join(', ') : ''}`);
   const internas = Object.entries(NOTAS).filter(([, v]) => v.sale === false).map(([k]) => k);
+  // Mensajes de Soporte: el archivo trae los de la columna de la persona (user_id). Las respuestas y las notas internas del equipo (internal, y el
+  // «escalado» con su motivo y quién) nacen sin user_id y la base no deja cambiarlo: que siga así en todas las filas.
+  ok(sql(`select count(*) from support_messages where sender <> 'user' and user_id is not null`) === '0', 'Soporte: ningún mensaje del equipo o del sistema lleva la cuenta de la persona (no entra a su archivo)');
   ok(internas.length >= 15, `internas (no salen): ${internas.length}; salen: ${Object.values(NOTAS).filter((v) => v.sale === true).length}; por fila: ${Object.values(NOTAS).filter((v) => typeof v.sale === 'string').length}`);
   // NOTA9U2_SOLO_BASE=1: solo el paso 0 (lo usa alreves9u2: no necesita el servidor).
   if (process.env.NOTA9U2_SOLO_BASE) { console.log(`\nnota9u2 (solo la base): ${n} ✓`); return; }
@@ -67,14 +88,25 @@ const html = async (p, url) => { const r = await p.request.get(B + url); return 
     await entrarComo(pa, A, { nombre: 'Nota', apellido: 'Interna' });
     const UA = sql(`select id from users where phone = '+1${A}'`);
     sql(`update users set home_city_id = 'hzl', is_test = true where id = '${UA}'`);
-    const NEG = negocioSinDueno('bufete-almonte', 'Nota');
+    // Un negocio de Comida (su menú sale en Negocio 360 › Lo que vende, donde el equipo oculta un plato con la hoja).
+    const NEG = negocioSinDueno('sabor-dominicano', 'Nota');
     sql(`update businesses set owner_user_id = '${UA}' where id = '${NEG.id}'`);
     sql(`insert into business_members (business_id, kind, display_name, user_id, status) values ('${NEG.id}', 'owner', 'Nota Interna', '${UA}', 'active')`);
     const OTRO = 'agencia-progreso';
     const T = {}; // columna → su nota única
     const pon = (k, q) => { T[k] = tag(k.replace(/[^a-z]/g, '').slice(0, 10)); try { R(q(T[k])); } catch (e) { throw new Error(`no pude escribir ${k}: ${String(e.stderr ?? e.message).slice(0, 300)}`); } };
     const kind = sql(`select kind from business_members where kind <> 'owner' limit 1`) || 'staff';
-    pon('business_members.panel_off_reason', (x) => `insert into business_members (business_id, kind, display_name, user_id, status, panel_off_at, panel_off_by, panel_off_reason) values ('${OTRO}', '${kind}', 'Nota Interna', '${UA}', 'active', now(), '${UA}', '${x}')`);
+    // La familia «interna», por la hoja del equipo: el Admin en Negocio 360 › Equipo › Quitar acceso (accesoPanelEquipo, nota interna).
+    const cadm = await b.newContext({ viewport: { width: 1360, height: 900 } }), padm = await cadm.newPage();
+    await entrarComo(padm, ADM);
+    const NOMEQ = `Nota ${RUN}`;
+    sql(`insert into business_members (business_id, kind, display_name, user_id, status, panel_access) values ('${OTRO}', '${kind}', '${NOMEQ}', '${UA}', 'active', '{msg}')`);
+    T['business_members.panel_off_reason'] = tag('POFF');
+    await padm.goto(`${B}/admin/negocios/${OTRO}?tab=equipo`);
+    await clic(fila(padm, NOMEQ, 'Quitar acceso').last().getByText('Quitar acceso', { exact: true }));
+    await hoja(padm, T['business_members.panel_off_reason'], 'Quitar acceso');
+    ok(await espera(() => sql(`select panel_off_reason from business_members where business_id = '${OTRO}' and display_name = '${NOMEQ}'`) === T['business_members.panel_off_reason']),
+      'por la hoja del equipo (interna): Negocio 360 › Equipo › Quitar acceso guarda su nota');
     pon('chat_threads.compa_off_reason', (x) => `insert into chat_threads (user_id, business_id, compa_off_at, compa_off_by, compa_off_reason) values ('${UA}', '${OTRO}', now(), '${UA}', '${x}')`);
     pon('city_beta_invites.reason', (x) => `insert into city_beta_invites (user_id, invited_by, city_id, reason) values ('${UA}', '${UA}', 'hzl', '${x}')`);
     pon('delivery_drivers.removed_reason', (x) => `insert into delivery_drivers (business_id, display_name, user_id, status, removed_at, removed_reason) values ('${OTRO}', 'Nota Interna', '${UA}', 'removed', now(), '${x}')`);
@@ -146,8 +178,14 @@ const html = async (p, url) => { const r = await p.request.get(B + url); return 
     // ── 2 · El archivo del negocio: el motivo de un plato oculto sale mientras está oculto ──
     console.log('2 · El archivo del negocio (catálogo)');
     T['items.hidden_reason (oculto)'] = tag('IHO'); T['items.hidden_reason (visible)'] = tag('IHV');
-    R(`insert into items (business_id, name, price_cents, status, hidden_reason) values ('${NEG.id}', '{"es":"Plato oculto","en":"Hidden dish"}', 1000, 'hidden', '${T['items.hidden_reason (oculto)']}'),
+    R(`insert into items (business_id, name, price_cents, status, hidden_reason) values ('${NEG.id}', '{"es":"Plato oculto","en":"Hidden dish"}', 1000, 'live', null),
                                                                                   ('${NEG.id}', '{"es":"Plato de vuelta","en":"Dish back"}', 1000, 'live', '${T['items.hidden_reason (visible)']}')`);
+    // La familia «sale solo en ciertas filas», por la hoja del equipo: Negocio 360 › Lo que vende › Ocultar el plato (platoOcultar, nota persona).
+    await padm.goto(`${B}/admin/negocios/${NEG.id}?tab=vende`);
+    await clic(fila(padm, 'Plato oculto', 'Ocultar').last().getByText('Ocultar', { exact: true }));
+    await hoja(padm, T['items.hidden_reason (oculto)'], 'Confirmar');
+    ok(await espera(() => sql(`select status || '|' || coalesce(hidden_reason, '') || '|' || (hidden_by is not null) from items where business_id = '${NEG.id}' and name->>'es' = 'Plato oculto'`) === `hidden|${T['items.hidden_reason (oculto)']}|true`),
+      'por la hoja del equipo (por fila): Negocio 360 › Ocultar el plato guarda el motivo y quién del equipo');
     const E2 = sql(`insert into data_exports (user_id, business_id, is_test) values ('${UA}', '${NEG.id}', true) returning id`).split('\n')[0];
     barrido();
     ok(sql(`select status from data_exports where id = '${E2}'`) === 'listo', `el archivo del negocio, listo (${sql(`select coalesce(error, status) from data_exports where id = '${E2}'`)})`);
@@ -156,6 +194,8 @@ const html = async (p, url) => { const r = await p.request.get(B + url); return 
     ok(todo2.includes(T['items.hidden_reason (oculto)']), 'catálogo: el motivo del plato oculto sale (el Panel se lo pinta)');
     ok(!todo2.includes(T['items.hidden_reason (visible)']), 'catálogo: el de un plato que ya no está oculto no sale (la pantalla no lo pinta)');
     ok(!/__sale__/.test(todo2) && !/__sale__/.test(todo), 'ninguna bandera interna en los archivos');
+    const cat = JSON.parse(z2['catalogo.json']?.toString('utf8') ?? '[]');
+    ok(cat.length >= 2 && cat.every((x) => !('hidden_by' in x)), `catálogo: sin quién del equipo ocultó el plato (hidden_by no sale; ${cat.length} filas)`);
 
     // ── 3 · Lo que viaja al navegador ──
     console.log('3 · La respuesta del servidor (HTML y datos de la página)');
@@ -171,6 +211,32 @@ const html = async (p, url) => { const r = await p.request.get(B + url); return 
     ok((await html(pa, `/panel/${NEG.id}/pagina/ver`)).t.includes(T.sello), '«falta un dato»: viaja y se pinta (la prueba ve la respuesta de verdad)');
     sql(`update verification_requests set status = 'no' where id = ${V}`);
     ok((await html(pa, `/panel/${NEG.id}/pagina/ver`)).t.includes(T.sello), '«no aprobado»: viaja y se pinta');
+
+    // ── 3b · El motivo de To'Latino sobre la página: solo a la pantalla que lo pinta, y solo mientras lo pinta ──
+    console.log('3b · El motivo de To’Latino en el Panel (status_reason, cierre temporal, fotos quitadas)');
+    // La familia «la ve el dueño en su Panel», por la hoja del equipo: Negocio 360 › Ocultar (cambiarEstado, nota persona).
+    T.estado = tag('EST');
+    await padm.goto(`${B}/admin/negocios/${NEG.id}`);
+    await clic(boton(padm, 'Ocultar'));
+    await hoja(padm, T.estado, 'Confirmar');
+    ok(await espera(() => sql(`select status || '|' || coalesce(status_reason, '') from businesses where id = '${NEG.id}'`) === `hidden|${T.estado}`), 'por la hoja del equipo (persona): Negocio 360 › Ocultar guarda el motivo');
+    ok((await html(pa, `/panel/${NEG.id}`)).t.includes(T.estado) && (await html(pa, `/panel/${NEG.id}/hoy`)).t.includes(T.estado), 'página oculta: el motivo viaja a Tu página y a Hoy (donde se pinta)');
+    for (const u of ['/mensajes', '/pagina/ver', '/pagina/fotos', '/mas', '/vendes']) { r = await html(pa, `/panel/${NEG.id}${u}`); ok(r.s === 200 && !r.t.includes(T.estado), `página oculta: el motivo NO viaja a ${u} (no lo pinta) (${r.s})`); }
+    // Como la dejaban la restauración vieja y otras pruebas (neg9n20): activa con el motivo todavía en la columna.
+    sql(`update businesses set status = 'active', status_at = now() where id = '${NEG.id}'`);
+    ok(sql(`select status_reason from businesses where id = '${NEG.id}'`) === T.estado && !(await html(pa, `/panel/${NEG.id}`)).t.includes(T.estado) && !(await html(pa, `/panel/${NEG.id}/hoy`)).t.includes(T.estado),
+      'página activa con el motivo viejo en la columna: no viaja (no se pinta)');
+    T.temp = tag('TMP');
+    sql(`update businesses set temp_closed_until = now() - interval '1 day', temp_closed_reason = 'Cierre ${T.temp}' where id = '${NEG.id}'`);
+    ok(!(await html(pa, `/panel/${NEG.id}/hoy`)).t.includes(T.temp) && !(await html(pa, `/panel/${NEG.id}`)).t.includes(T.temp), 'cierre temporal vencido: su motivo no viaja');
+    sql(`update businesses set temp_closed_until = now() + interval '1 day' where id = '${NEG.id}'`);
+    ok((await html(pa, `/panel/${NEG.id}/hoy`)).t.includes(T.temp), 'cierre temporal vigente: viaja a Hoy (lo pinta)');
+    ok(!(await html(pa, `/panel/${NEG.id}/mensajes`)).t.includes(T.temp), 'cierre temporal vigente: no viaja a Mensajes');
+    sql(`update businesses set temp_closed_until = null, temp_closed_reason = null where id = '${NEG.id}'`);
+    T.fotoNeg = tag('FNG');
+    R(`insert into media (owner_kind, owner_id, url, uploaded_by, status, removed_reason, removed_note, removed_at) values ('business', '${NEG.id}', 'n/${RUN}-neg.jpg', '${UA}', 'removed', 'admin', 'Foto ${T.fotoNeg}', now())`);
+    ok((await html(pa, `/panel/${NEG.id}/pagina/fotos`)).t.includes(T.fotoNeg), 'foto quitada por el equipo: su nota viaja a Fotos y portada (la pinta)');
+    ok(!(await html(pa, `/panel/${NEG.id}`)).t.includes(T.fotoNeg) && !(await html(pa, `/panel/${NEG.id}/mensajes`)).t.includes(T.fotoNeg), 'y no a Tu página ni a Mensajes (no la pintan)');
 
     r = await html(pa, `/recuperar/${OTRO}`);
     ok(r.s === 200 && r.t.includes(tag('CLA')), `Recuperar responde con su reclamo aprobado (su propia nota viaja y se pinta) (${r.s})`);
@@ -201,7 +267,7 @@ const html = async (p, url) => { const r = await p.request.get(B + url); return 
         ok(p1.s === 200 && p2.s === 200 && p1.t.includes(nom.replace(/&/g, '&amp;').replace(/'/g, '&#x27;')) && !p1.t.includes(T.pausa) && !p2.t.includes(T.pausa), `/n/${id} ${i ? '(svc en pausa)' : '(12 módulos en pausa)'}: el motivo no llega (anónimo y con sesión)`);
       }
     }
-    await anon.close(); await ca.close();
+    await anon.close(); await ca.close(); await cadm.close();
     console.log(`\nnota9u2: ${n} ✓`);
   } finally {
     for (const f of restaurar) { try { f(); } catch (e) { console.error('no pude devolver', e.message); } }

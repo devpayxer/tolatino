@@ -74,14 +74,15 @@ export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Con
 
 /* El archivo de un negocio: lo que su panel ya muestra. Ningún teléfono, correo ni dirección de un cliente; el cliente con su nombre y la inicial. */
 export function datosDeNegocio(negocio: string): Consulta[] {
-  const L = (nombre: string, sql: string, tabla?: string): Consulta => ({ nombre, sql, args: [negocio], fuera: new Set(), tabla });
+  const L = (nombre: string, sql: string, tabla?: string, fuera: string[] = []): Consulta => ({ nombre, sql, args: [negocio], fuera: new Set(fuera), tabla });
   const cliente = `nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1) || '.', '')), '')`;
   return [
     L("negocio", `select id, name, category_id, subcategory_ids, city_id, status, operation, address, phone, whatsapp, email, instagram, facebook, languages, about, founded_year,
                          amenities, payment_modes, modules_on, created_at from businesses where id = $1`),
     L("equipo", `select display_name as nombre, kind as tipo, role as puesto, status as estado, languages as idiomas, since_year as desde, invited_at as invitado from business_members where business_id = $1 order by sort`),
-    // 9u-2 · items: sus notas según NOTAS (el motivo de un plato oculto sale solo mientras está oculto: lo que el panel le muestra).
-    L("catalogo", `select i.*${banderasDeNotas("items")} from items i where i.business_id = $1 order by i.id`, "items"),
+    // 9u-2 · items: sus notas según NOTAS (el motivo de un plato oculto sale solo mientras está oculto: lo que el panel le muestra). 22 nov · Sin
+    // hidden_by: quién del equipo lo ocultó (una cuenta del equipo) no sale; el Panel tampoco lo dice.
+    L("catalogo", `select i.*${banderasDeNotas("items")} from items i where i.business_id = $1 order by i.id`, "items", ["hidden_by"]),
     L("operaciones", `select o.number as numero, o.kind as tipo, o.status as estado, o.mode as modo, o.sent_at as pedido, o.scheduled_at as para, o.done_at as terminado,
                              o.cancelled_at as cancelado, o.subtotal_cents, o.delivery_cents, o.tip_cents, o.tax_cents, o.discount_cents, o.total_cents, o.pay_mode as pago,
                              o.customer_note as nota_del_cliente, ${cliente} as cliente

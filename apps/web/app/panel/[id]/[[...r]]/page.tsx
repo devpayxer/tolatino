@@ -96,6 +96,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   }
   const d = await datosPanel(acc, lang);
   if (!d) notFound();
+  // 9u-2 (2) · Lo que To'Latino escribió sobre la página viaja solo a la pantalla que lo pinta: el motivo de ocultarla, suspenderla o cerrarla
+  // y el del cierre temporal, a Hoy y a Tu página (avisosAdmin); las notas de las fotos que quitó, a Fotos y portada. En las demás secciones
+  // (Mensajes, Lo que vendes, Cobros, Más…) no llegan al navegador (guardián notaInternaFueraDelArchivo; prueba nota9u2).
+  if (!(ruta.sec === "hoy" || (ruta.sec === "pag" && !ruta.sub))) d.adm = { ...d.adm, reason: null, tempReason: null };
+  if (!(ruta.sec === "pag" && ruta.sub === "fotos")) d.adm = { ...d.adm, fotos: [] };
   // Sin cobros con tarjeta (no es comida): Cobros y plan abre directo «Tu plan». 6e: un organizador de eventos (módulo Eventos encendido) sí
   // ve Cobros con tarjeta: ahí conecta su cuenta y ve PAGOS DE EVENTOS (la liquidación del martes por fecha).
   const organiza = ruta.sec === "pay" && !ruta.sub && d.cat !== "NEG-FOOD" ? !!(await db().query(`select 1 from businesses where id = $1 and 'eventos' = any(modules_on)`, [d.id])).rowCount : false;

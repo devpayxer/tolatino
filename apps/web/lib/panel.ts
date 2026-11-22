@@ -95,7 +95,10 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
             to_char(now() at time zone c.timezone, 'YYYY-MM-DD') as hoy, extract(hour from now() at time zone c.timezone)::int as hora,
             negocio_abierto(b.id, (now() at time zone c.timezone)::timestamp) as open,
             coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as closed_today, b.created_at as created,
-            b.status_reason, case when b.temp_closed_until > now() then b.temp_closed_until end as temp_until, b.temp_closed_reason as temp_reason, b.admin_edits,
+            -- 9u-2 (2) · El motivo de To’Latino viaja solo cuando el Panel lo pinta (avisosAdmin): la página oculta, suspendida o cerrada, y el
+            -- cierre temporal vigente. Con la página activa (o el cierre vencido) el motivo que quedó en la columna no sale.
+            case when b.status in ('hidden', 'suspended', 'closed') then b.status_reason end as status_reason,
+            case when b.temp_closed_until > now() then b.temp_closed_until end as temp_until, case when b.temp_closed_until > now() then b.temp_closed_reason end as temp_reason, b.admin_edits,
             b.phone, u.phone as owner_phone, u.email,
             (select v.status from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello,
             -- 9u-2 · La nota del equipo sobre el sello viaja SOLO cuando la pantalla la pinta («falta un dato» / «no aprobado»: Panel.tsx sello).

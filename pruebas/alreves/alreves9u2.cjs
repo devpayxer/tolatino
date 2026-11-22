@@ -14,7 +14,17 @@ const casos = [
   [X, 'if (s === false) continue;', 'if (s === false && false) continue;', 'limpiar: cada columna pasa por notaSale'],
   [X, 'if (typeof s === "string" && f[`__sale__${k}`] !== true) { o[k] = null; continue; }', '', 'limpiar: cada columna pasa por notaSale'],
   [X, 'sql: `select *${banderasDeNotas(f.tabla)} from ${ident(f.tabla)}', 'sql: `select * from ${ident(f.tabla)}', 'el archivo de la persona: cada tabla con sus notas clasificadas'],
-  [X, 'from items i where i.business_id = $1 order by i.id`, "items"),', 'from items i where i.business_id = $1 order by i.id`),', 'el archivo del negocio: un «select *» sin sus notas clasificadas'],
+  [X, 'from items i where i.business_id = $1 order by i.id`, "items", ["hidden_by"]),', 'from items i where i.business_id = $1 order by i.id`),', 'el archivo del negocio: un «select *» sin sus notas clasificadas'],
+  // 22 nov · Quién del equipo ocultó un plato (hidden_by) otra vez en el catálogo del archivo del negocio.
+  [X, 'order by i.id`, "items", ["hidden_by"]),', 'order by i.id`, "items"),', 'el catálogo del archivo del negocio no lleva quién del equipo'],
+  // 22 nov · (2) El motivo de To’Latino sobre la página viaja aunque el Panel no lo pinte.
+  ['apps/web/lib/panel.ts', "case when b.status in ('hidden', 'suspended', 'closed') then b.status_reason end as status_reason,", 'b.status_reason,', 'el motivo de To’Latino (status_reason, temp_closed_reason) viaja solo mientras'],
+  ['apps/web/lib/panel.ts', 'case when b.temp_closed_until > now() then b.temp_closed_reason end as temp_reason', 'b.temp_closed_reason as temp_reason', 'el motivo de To’Latino (status_reason, temp_closed_reason) viaja solo mientras'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "hoy" || (ruta.sec === "pag" && !ruta.sub))) d.adm = { ...d.adm, reason: null, tempReason: null };', '', 'el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "pag" && ruta.sub === "fotos")) d.adm = { ...d.adm, fotos: [] };', '', 'el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta'],
+  // 22 nov · (4) La prueba vuelve a escribir todas las notas directo en la base, o deja de mirar el catálogo y las pantallas que no pintan.
+  [E, "'por la hoja del equipo (interna)", "'directo en la base (interna)", 'nota9u2: una nota por familia'],
+  [E, "cat.every((x) => !('hidden_by' in x))", 'cat.every(() => true)', 'nota9u2 mira el catálogo sin hidden_by'],
   [X, 'r.rows.map((x) => limpiar(x, q.fuera, q.tabla))', 'r.rows.map((x) => limpiar(x, q.fuera))', 'el ZIP y la vista previa limpian con la tabla'],
   [MP, '  if (!n) return false;', '  if (!n) return true;', 'notaSale: una nota sin clasificar'],
   [MP, 'export const ES_NOTA = /(^|_)(reason|note|notes|motivo|nota|notas)$/;', 'export const ES_NOTA = /(^|_)(reason|note|notes|nota|notas)$/;', 'ES_NOTA deja fuera «motivo»'],

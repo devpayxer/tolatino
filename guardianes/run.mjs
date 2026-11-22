@@ -8654,14 +8654,28 @@ const guardianes = {
     if (!/notaSale\(tabla, k\)/.test(lim) || !/if \(s === false\) continue;/.test(lim) || !/k\.startsWith\("__sale__"\)/.test(lim) || !/f\[`__sale__\$\{k\}`\] !== true\) \{ o\[k\] = null;/.test(lim)) falla(G, X, 0, "limpiar: cada columna pasa por notaSale (interna o sin clasificar no sale; la de condición, vacía donde no se pinta)");
     const dc = cuerpoFn(x, "datosDeCuenta");
     if (!/select \*\$\{banderasDeNotas\(f\.tabla\)\} from \$\{ident\(f\.tabla\)\}/.test(dc) || !/tabla: f\.tabla/.test(dc)) falla(G, X, 0, "el archivo de la persona: cada tabla con sus notas clasificadas (banderasDeNotas y tabla)");
-    for (const q of cuerpoFn(x, "datosDeNegocio").split("\n    L(").slice(1)) if (/select (\w+\.)?\*/.test(q) && !/banderasDeNotas\("(\w+)"\)[\s\S]*, "\w+"\),?\s*$/.test(q.trim())) falla(G, X, 0, `el archivo del negocio: un «select *» sin sus notas clasificadas («${q.slice(0, 40)}…»)`);
+    for (const q of cuerpoFn(x, "datosDeNegocio").split("\n    L(").slice(1)) if (/select (\w+\.)?\*/.test(q) && !/banderasDeNotas\("(\w+)"\)[\s\S]*, "\w+"(, \[[^\]]*\])?\),?\s*$/.test(q.trim())) falla(G, X, 0, `el archivo del negocio: un «select *» sin sus notas clasificadas («${q.slice(0, 40)}…»)`);
     if ((x.match(/limpiar\(x, q\.fuera, q\.tabla\)\)/g) ?? []).length < 2 || /limpiar\(x, q\.fuera\)/.test(x)) falla(G, X, 0, "el ZIP y la vista previa limpian con la tabla de cada consulta");
     if (!/select case when v\.status in \('info', 'no'\) then v\.note end from verification_requests v/.test(sinComent(PN)) || /select v\.note from verification_requests/.test(sinComent(PN))) falla(G, PN, 0, "la nota del sello viaja solo cuando el Panel la pinta («falta un dato» / «no aprobado»)");
     if (!/case when status = 'rejected' then reason end as reason/.test(cuerpoFn(sinComent(RC), "recuperar"))) falla(G, RC, 0, "el motivo del reclamo viaja solo si fue rechazado (lo único que Recuperar pinta)");
     const ap = sinComent(AP);
     if (/\bm\.rev_nota\b/.test(ap) || /hidden_reason as motivo\s+from appeals/.test(ap)) falla(G, AP, 0, "Moderación no recibe la nota interna de la revisión de fotos (rev_nota ni su copia en la apelación)");
+    // 22 nov · (2) Lo que viaja al Panel y no se pinta: el motivo de To’Latino sobre la página sale de la base solo mientras se pinta (página oculta,
+    // suspendida o cerrada; cierre temporal vigente) y la página lo manda solo a la pantalla que lo pinta (avisosAdmin en Hoy y Tu página; las
+    // notas de las fotos quitadas, a Fotos y portada).
+    const pnS = sinComent(PN), PG = "apps/web/app/panel/[id]/[[...r]]/page.tsx";
+    if (!/case when b\.status in \('hidden', 'suspended', 'closed'\) then b\.status_reason end as status_reason/.test(pnS) || !/case when b\.temp_closed_until > now\(\) then b\.temp_closed_reason end as temp_reason/.test(pnS) || /\n\s+b\.status_reason,|, b\.temp_closed_reason as temp_reason/.test(pnS))
+      falla(G, PN, 0, "el motivo de To’Latino (status_reason, temp_closed_reason) viaja solo mientras el Panel lo pinta (página oculta, suspendida o cerrada; cierre vigente)");
+    const pg = existsSync(PG) ? sinComent(PG) : "";
+    if (!/if \(!\(ruta\.sec === "hoy" \|\| \(ruta\.sec === "pag" && !ruta\.sub\)\)\) d\.adm = \{ \.\.\.d\.adm, reason: null, tempReason: null \};/.test(pg) || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "fotos"\)\) d\.adm = \{ \.\.\.d\.adm, fotos: \[\] \};/.test(pg))
+      falla(G, PG, 0, "el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta (Hoy y Tu página; las fotos quitadas, a Fotos y portada)");
+    if (!/L\("catalogo", `select i\.\*\$\{banderasDeNotas\("items"\)\} from items i where i\.business_id = \$1 order by i\.id`, "items", \["hidden_by"\]\)/.test(x)) falla(G, X, 0, "el catálogo del archivo del negocio no lleva quién del equipo ocultó un plato (hidden_by)");
     if (!existsSync(E)) return falla(G, E, 0, "falta la prueba contra la base que clasifica cada nota de cada tabla exportada");
     const e = readFileSync(E, "utf8");
+    // (4) Una nota por familia, escrita por la hoja del equipo (la pantalla), no directo en la base.
+    const fam = new Set((e.match(/'por la hoja del equipo \((interna|por fila|persona)\)/g) ?? []));
+    if (fam.size < 3 || !/await padm\.goto\(`\$\{B\}\/admin\/negocios\//.test(e) || !/await hoja\(padm, /.test(e)) falla(G, E, 0, "nota9u2: una nota por familia (interna, por fila, persona) se escribe por la hoja del equipo en Negocio 360");
+    if (!/cat\.every\(\(x\) => !\('hidden_by' in x\)\)/.test(e) || !/NO viaja a \$\{u\} \(no lo pinta\)/.test(e)) falla(G, E, 0, "nota9u2 mira el catálogo sin hidden_by y que el motivo de To’Latino no viaje a las pantallas que no lo pintan");
     if (!/information_schema\.columns/.test(e) || !/ES_NOTA\.test\(/.test(e) || !/ok\(sinClasificar\.length === 0, `ninguna nota sin clasificar/.test(e) || !/ok\(fantasmas\.length === 0/.test(e) || !/mapa-de-datos\.json/.test(e)) falla(G, E, 0, "la prueba recorre information_schema.columns de cada tabla exportada con ES_NOTA y falla si una nota queda sin clasificar");
   },
 
