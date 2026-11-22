@@ -14670,6 +14670,8 @@ const guardianes = {
       [/d\.status in \('needs_response', 'under_review', 'lost', 'accepted'\)\) then\s+raise exception/, "sin disputa con el banco"],
       [/new\.lines_of := null;\s+if new\.retry_of is null then return new; end if;/, "lines_of solo lo pone la base"],
       [/if old\.status = 'failed' and new\.status <> 'failed' and exists \(select 1 from refunds x where x\.retry_of = old\.id\) then/, "la fallida que ya tiene la suya sigue fallida"],
+      [/select \* into f from refunds where id = new\.retry_of for update;/, "lee la fallida con candado (for update): «Resolver a mano» a la vez espera o la ve"],
+      [/if new\.manual_at is not null and old\.manual_at is null and exists \(select 1 from refunds x where x\.retry_of = old\.id and x\.status in \('pending', 'done'\)\) then\s+raise exception 'otra_vez_a_mano/, "una que ya se devolvió otra vez no se resuelve a mano"],
     ]) if (!re.test(fn)) falla(G, "packages/db/migrations", 0, `refunds_otra_vez: ${msg}`);
     if (!/create trigger refunds_otra_vez before insert or update on refunds for each row execute function refunds_otra_vez\(\);/.test(mig)) falla(G, "packages/db/migrations", 0, "refunds: sin el trigger refunds_otra_vez");
     const da = sinComent(DA), dv = cuerpoFn(da, "devolverOtraVez");
@@ -14683,6 +14685,7 @@ const guardianes = {
     if (!/retry_of::text as otra/.test(cuerpoFn(cb, "cerrarDevolucionPago")) || !/cerrarAlertaSola\("refund_failed", h\.otra/.test(cuerpoFn(cb, "cerrarDevolucionPago"))) falla(G, CB, 0, "cerrarDevolucionPago: la devolución de otra vez hecha cierra la alerta de la fallida de antes");
     if (!/reabrirOtraVez\(f\.otra, r\.id\)/.test(cuerpoFn(cb, "fallarDevolucionPago")) || !/alertar\("refund_failed", r\.id/.test(cuerpoFn(cb, "fallarDevolucionPago"))) falla(G, CB, 0, "fallarDevolucionPago: la de otra vez que falla trae su propia refund_failed y reabre la de antes");
     if (!/reabrirOtraVez\(h\.otra, h\.id\)/.test(cuerpoFn(cb, "devolucionFallidaEnStripe"))) falla(G, CB, 0, "devolucionFallidaEnStripe: la de otra vez que Stripe da por fallida después reabre la alerta de antes");
+    if (!/otra_vez_a_mano/.test(cuerpoFn(da, "notaAlerta"))) falla(G, DA, 0, "notaAlerta dice que ya se devolvió otra vez cuando la base no deja resolverla a mano (otra_vez_a_mano)");
     if (!/\.\.\.\(a\.otraVez \? \[\{ l: E\("Devolver otra vez", "Refund again"\)/.test(sinComent(PT))) falla(G, PT, 0, "Planes: «Devolver otra vez» solo cuando el servidor lo ofrece (a.otraVez)");
   },
 

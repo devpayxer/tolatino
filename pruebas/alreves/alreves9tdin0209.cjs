@@ -37,6 +37,9 @@ const casos = [
   [O, MG, "d.status in ('needs_response', 'under_review', 'lost', 'accepted')) then\n      raise exception 'otra_vez: el cobro tiene una disputa", "d.status in ('needs_response')) then\n      raise exception 'otra_vez: el cobro tiene una disputa", 'sin disputa con el banco'],
   [O, MG, "    new.lines_of := null;\n", '', 'lines_of solo lo pone la base'],
   [O, MG, "  if old.status = 'failed' and new.status <> 'failed' and exists (select 1 from refunds x where x.retry_of = old.id) then\n", "  if false then\n", 'la fallida que ya tiene la suya sigue fallida'],
+  [O, MG, '    select * into f from refunds where id = new.retry_of for update;', '    select * into f from refunds where id = new.retry_of;', 'lee la fallida con candado'],
+  [O, MG, "  if new.manual_at is not null and old.manual_at is null and exists (select 1 from refunds x where x.retry_of = old.id and x.status in ('pending', 'done')) then\n", "  if false then\n", 'una que ya se devolvió otra vez no se resuelve a mano'],
+  [O, DA, "if (/otra_vez_a_mano|dinero_a_mano: solo lo que sigue pendiente/.test(", "if (/dinero_a_mano: solo lo que sigue pendiente/.test(", 'notaAlerta dice que ya se devolvió otra vez'],
   // (a) La app
   [O, DA, 'idem: `bol-otra-${a.sujeto}`, otraVezDe: a.sujeto', 'idem: `bol-otra-${a.sujeto}-${Date.now()}`, otraVezDe: a.sujeto', 'la llave sale de la devolución fallida'],
   [O, DA, 'centavos: a.amt!, por: "admin"', 'centavos: Math.round(parseFloat(n) * 100), por: "admin"', 'el monto es el de la devolución fallida'],

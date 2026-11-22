@@ -236,6 +236,67 @@ async function tel() {
     ok(/otra_vez: de cuál es no cambia/.test(await falla(() => db.query(`update refunds set retry_of = null where retry_of = $1::bigint`, [F.rf]))), 'de cuál es no cambia');
   }
 
+  console.log('3b · «Devolver otra vez» contra «Resolver a mano» a la vez (dos conexiones, orden controlado)');
+  {
+    // Espera a que esa conexión esté detenida en un candado (una condición de la base, no un tiempo al azar); tope de 10 s.
+    const esperando = async (pid) => { for (let i = 0; i < 200; i++) { if ((await q1(`select wait_event_type as w from pg_stat_activity where pid = $1`, [pid]))?.w === 'Lock') return true; await new Promise((r) => setTimeout(r, 50)); } return false; };
+    const conexion = async () => { const k = await db.connect(); const pid = (await k.query('select pg_backend_pid() as p')).rows[0].p; return { k, pid }; };
+    const aMano = (k, id) => k.query(`update refunds set manual_at = now(), manual_by = $2::uuid, manual_note = 'Se le mandó un cheque al cliente.' where id = $1::bigint`, [id, staffU]);
+    const otra = (k, O, F) => cobros.anotarDevolucionPago(k, { paymentId: O.p, centavos: 2000, por: 'admin', actorId: staffU, motivo: 'otra vez', idem: `bol-otra-${F.rf}`, otraVezDe: F.rf });
+    const salidas = async (O) => n1(`select count(*)::int as n from refunds where payment_id = $1::bigint and (status in ('pending', 'done') or manual_at is not null)`, [O.p]);
+    // (i) «Resolver a mano» primero, sin confirmar: la fila de la fallida queda tomada; «otra vez» se lanza y ESPERA a que termine.
+    {
+      const O = await ordenBoletos(), F = await fallida(O);
+      const A = await conexion(), B = await conexion();
+      try {
+        await A.k.query('begin');
+        await A.k.query(`select 1 from refunds where id = $1::bigint for no key update`, [F.rf]); // el mismo candado que toma el marcado a mano (un update sin tocar la llave)
+        await B.k.query('begin');
+        const pB = otra(B.k, O, F).then((x) => ({ x }), (e) => ({ e: String(e.message) }));
+        const espera = await esperando(B.pid);
+        const m = await falla(() => aMano(A.k, F.rf));
+        await A.k.query(m ? 'rollback' : 'commit');
+        const rB = await pB;
+        await B.k.query(rB.e ? 'rollback' : 'commit');
+        ok(/dinero_a_mano: solo lo que sigue pendiente/.test(m), `(i) «a mano» sobre la fallida: la base no la deja (${m.slice(0, 70)})`);
+        ok(espera, '(i) «otra vez» espera el candado de la fallida mientras «a mano» no termina');
+        ok(rB.x?.ok && !(await refund(F.rf)).mano && (await otraDe(F.rf))?.st === 'pending' && await salidas(O) === 1, `(i) una sola salida de dinero: la de otra vez (${rB.e ?? rB.x?.estado})`);
+      } finally { A.k.release(); B.k.release(); }
+    }
+    // (ii) «otra vez» primero, sin confirmar (tiene la fallida con candado); «a mano» se lanza y ESPERA; al confirmar, «a mano» se rechaza.
+    {
+      const O = await ordenBoletos(), F = await fallida(O);
+      const A = await conexion(), B = await conexion();
+      try {
+        await B.k.query('begin');
+        const rB = await otra(B.k, O, F);
+        await A.k.query('begin');
+        const pA = aMano(A.k, F.rf).then(() => '', (e) => String(e.message));
+        const espera = await esperando(A.pid);
+        await B.k.query('commit');
+        const m = await pA;
+        await A.k.query(m ? 'rollback' : 'commit');
+        ok(rB.ok && espera, '(ii) «a mano» espera mientras «otra vez» no confirma');
+        ok(/otra_vez_a_mano|dinero_a_mano: solo lo que sigue pendiente/.test(m) && !(await refund(F.rf)).mano && await salidas(O) === 1, `(ii) al confirmar «otra vez», «a mano» se rechaza: una sola salida de dinero (${m.slice(0, 70)})`);
+      } finally { A.k.release(); B.k.release(); }
+    }
+    // La regla propia de 0209, aunque dinero_a_mano cambiara: con su candado apagado en esta conexión no se prueba; se prueba que la fila no ofrece «Resolver a mano».
+    {
+      const O = await ordenBoletos(), F = await fallida(O);
+      await alertas.alertar('refund_stuck', F.rf, { monto: 2000, negocio: b, ciudad: 'hzl', detalle: { es: 'prueba 0209', en: 'test 0209' } });
+      const a = await idAlerta('refund_failed', F.rf);
+      P.para = `bol-otra-${F.rf}`; P.plan = ['red'];
+      await alertas.devolverOtraVez(S, a, 'Hablé con la persona.');
+      P.para = null;
+      const fs = await filaAlerta('refund_stuck', F.rf), m = await alertas.notaAlerta(S, await idAlerta('refund_stuck', F.rf), 'resuelta_a_mano', 'Se le mandó un cheque al cliente.');
+      // La regla propia de 0209, sola: con dinero_a_mano apagado SOLO dentro de una transacción que se deshace (nada queda cambiado).
+      const solo = await (async () => { const k = await db.connect(); try { await k.query('begin'); await k.query('alter table refunds disable trigger refunds_a_mano');
+        return await k.query(`update refunds set manual_at = now(), manual_by = $2::uuid, manual_note = 'Se le mandó un cheque.' where id = $1::bigint`, [F.rf, staffU]).then(() => '', (e) => String(e.message)); } finally { await k.query('rollback'); k.release(); } })();
+      ok(/otra_vez_a_mano: ya se devolvió otra vez/.test(solo), `la regla de 0209 sola también lo impide (${solo.slice(0, 80)})`);
+      ok(fs?.aMano === false && !m.ok && !(await refund(F.rf)).mano && (await otraDe(F.rf)).st === 'pending', `con la de otra vez en camino, la fila no ofrece «Resolver a mano» y el servidor no la marca (${m.msg})`);
+    }
+  }
+
   console.log('4 · La carrera de «Resolver a mano» mientras el barrido la manda (orden controlado)');
   const carrera = async () => {
     // Una devolución de un cobro que Stripe no contestó: en camino, ya intentada (la base deja resolverla a mano), con su alerta; su último envío, hace 15 min.

@@ -255,6 +255,8 @@ export async function notaAlerta(s: Staff, id: string, accion: "me_hago_cargo" |
       after: { alerta: QUE[a.kind].es, estado: ({ me_hago_cargo: "con dueño", resuelta: "resuelta", reabierta: "abierta", resuelta_a_mano: "resuelta fuera de Stripe" } as Record<string, string>)[accion]! }, reason: n });
     return "ok";
   }).catch((e: unknown) => {
+    // 0209 · Ya se devolvió otra vez (o ya no está pendiente): la base no deja marcarla a mano; se dice, sin cambiar nada.
+    if (/otra_vez_a_mano|dinero_a_mano: solo lo que sigue pendiente/.test(String((e as Error)?.message ?? ""))) return "Ya no está pendiente: se devolvió otra vez desde su alerta o Stripe la cerró. No se cambió nada.";
     if (/dinero_a_mano_reciente/.test(String((e as Error)?.message ?? ""))) return `Se mandó a Stripe hace menos de ${MINUTOS_ENVIO_MANO} minutos y puede no verse todavía: espera y vuelve a intentarlo. No se cambió nada.`;
     throw e;
   });

@@ -76,7 +76,9 @@ begin
   if tg_op = 'INSERT' then
     new.lines_of := null;
     if new.retry_of is null then return new; end if;
-    select * into f from refunds where id = new.retry_of;
+    -- Con candado: «Resolver a mano» sobre la misma fila espera a que esto termine (o esto espera y ve su manual_at). Orden de candados de toda devolución
+    -- nueva: el cobro (anotarDevolucionPago y refunds_tope) y DESPUÉS la fallida; «Resolver a mano» toma solo la fila de la devolución, nunca el cobro.
+    select * into f from refunds where id = new.retry_of for update;
     if not found then raise exception 'otra_vez: esa devolución no existe'; end if;
     if f.status <> 'failed' or f.manual_at is not null then raise exception 'otra_vez: solo una devolución que Stripe dio por fallida (y sin resolver a mano)'; end if;
     if f.payment_id <> new.payment_id or f.amount_cents <> new.amount_cents then raise exception 'otra_vez: del mismo cobro y por el mismo monto'; end if;
@@ -89,6 +91,11 @@ begin
     return new;
   end if;
   if (new.retry_of, new.lines_of) is distinct from (old.retry_of, old.lines_of) then raise exception 'otra_vez: de cuál es no cambia'; end if;
+  -- Una que ya se devolvió otra vez (en camino o hecha) no se resuelve a mano: sería pagar dos veces. (dinero_a_mano, 0199, ya no deja marcar a mano una
+  -- fallida; esto lo dice aunque esa regla cambie.)
+  if new.manual_at is not null and old.manual_at is null and exists (select 1 from refunds x where x.retry_of = old.id and x.status in ('pending', 'done')) then
+    raise exception 'otra_vez_a_mano: ya se devolvió otra vez desde su alerta; no se resuelve a mano';
+  end if;
   if old.status = 'failed' and new.status <> 'failed' and exists (select 1 from refunds x where x.retry_of = old.id) then
     raise exception 'otra_vez: ya se devolvió otra vez; la fallida sigue fallida';
   end if;
