@@ -1,6 +1,7 @@
 // Prueba al revés de las fotos de destino PRIVADO (Fotos a la medida F3, 21 nov): fotosPrivadasConPermiso (y los guardianes que F3 cambió:
 // fotosRevisionAntesDePublicar, fotoAyudaPrivada). Se inyecta el defecto, el guardián debe fallar con SU mensaje ([guardián]); se restaura. La prueba
-// de la base es pruebas/e2e/fot9uprivadas.cjs; la de nginx, pruebas/infra/medios-nginx.test.sh.
+// de la base es pruebas/e2e/fot9uprivadas.cjs; la de nginx, pruebas/infra/medios-nginx.test.sh. F3b (22 nov): las variantes de las otras rutas
+// privadas (Mensajes, ayuda, entrega, reclamo); un caso con quinto dato exige que salga ESE mensaje.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -67,21 +68,46 @@ const casos = [
   [G, 'pruebas/infra/medios-nginx.test.sh', '"/medios/privado/o/$ID.jpg" ', ''],
   [G, 'pruebas/e2e/fot9uprivadas.cjs', "'el equipo sin un caso abierto → no'", "'el equipo'"],
   [G, 'pruebas/e2e/fot9uprivadas.cjs', "'un catálogo rechaza la dirección de una foto privada'", "'un catálogo'"],
+  // (k) F3b (22 nov) · Las privadas de las otras rutas (Mensajes, ayuda, entrega, reclamo) con variantes. El quinto dato: el mensaje que debe salir.
+  // Variante sin permiso (servida antes del 404, en cada forma de ruta).
+  [G, 'apps/web/app/api/mensajes/foto/[id]/route.ts', '  if (!m) return fotoDeVecinos(req, id);\n', '  if (!m) return fotoDeVecinos(req, id);\n  if (req.nextUrl.searchParams.get("w")) return servir(req, m.url, m.var_widths);\n', 'F3b: la foto de un mensaje'],
+  [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', '  if (!m) return no();\n  const me = await yo();', '  if (!m) return no();\n  if (req.nextUrl.searchParams.get("w")) return entregarPrivado(req, llavesAEntregar(req, m.url, m.var_widths), { "cache-control": "private, no-store" });\n  const me = await yo();', 'F3b: la variante se elige DESPUÉS'],
+  [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', '  if (!ok) return no();\n', '', 'F3b: la variante se elige DESPUÉS'],
+  [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', '  if (!r || !r.url.startsWith("privado/")) return new NextResponse(null, { status: 404 });\n', '', 'F3b: la variante se elige DESPUÉS'],
+  // Variante por otra ruta (otro permiso).
+  [G, 'apps/web/app/api/medios/revision/[id]/route.ts', 'export const dynamic', 'import { llaveVarianteDe } from "@/lib/fotos-privadas";\nexport const deOtra = (id: string) => llaveVarianteDe(`privado/m/${id}.jpg`, 320);\nexport const dynamic', 'F3b: sirve la variante de una foto privada por otra ruta'],
+  // Variante con cabecera pública, sin Vary, o con la llave armada a mano.
+  [G, 'apps/web/app/api/mensajes/foto/[id]/route.ts', 'const cab = { "cache-control": "private, no-store",', 'const cab = { "cache-control": "public, max-age=31536000",', 'F3b: la entera y su variante salen con las mismas cabeceras privadas'],
+  [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', ', vary: "Accept, Cookie" };', ' };', 'F3b: la entera y su variante salen con las mismas cabeceras privadas'],
+  [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', 'const llaves = llavesAEntregar(req, m.url, m.var_widths);', 'const llaves = [{ clave: m.url.replace(".jpg", ".w320.webp"), tipo: "image/webp" }, { clave: m.url, tipo: "image/jpeg" }];', 'F3b: la ruta elige la variante solo con llavesAEntregar'],
+  [G, FP, '  const a = anchoServido(anchos, w, /image\\/webp/i.test(req.headers.get("accept") ?? ""));', '  const a = anchoServido(anchos, w, true);', 'F3b: llavesAEntregar solo elige la llave'],
+  [G, FP, '  return m ? `privado/${m[1]}/${m[2]}.w${ancho}.webp` : null;', '  return m ? `n/${m[2]}.w${ancho}.webp` : null;', 'F3b: la variante de una privada vive al lado de su maestra'],
+  // Subida sin variantes.
+  [G, 'apps/web/app/api/mensajes/foto/route.ts', '  await guardarVariantesEn(clave, img, w);\n', '', 'F3b: la subida de una foto privada genera sus variantes'],
+  [G, 'apps/web/app/api/reclamo/documento/route.ts', '  await guardarVariantesEn(clave, img);\n', '', 'F3b: la subida de una foto privada genera sus variantes'],
+  [G, FP, '    if (!(await existeObjeto(llave))) {', '    if (false) {', 'F3b: guardarVariantesEn nunca lanza'],
+  // Variante que sobrevive a la purga (o a la retención, o al borrado de la cuenta).
+  [G, 'apps/web/lib/mensajes-purga.ts', 'try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }', 'try { await borrarConVariantes(m.url, null, null); } catch { continue; }', 'F3b: la purga o retención de una foto privada saca también sus variantes'],
+  [G, 'apps/web/lib/datos/retener.ts', 'await borrarConVariantes(m.url, m.w, m.var_widths);', 'await (await import("../medios")).borrarObjeto(m.url);', 'F3b: la purga o retención de una foto privada saca también sus variantes'],
+  [G, FP, '  await borrarObjeto(llave);\n  for (const v of clavesVariantes(llave, ancho, hechos)) await borrarObjeto(v);', '  await borrarObjeto(llave);', 'F3b: borrarConVariantes saca la maestra y DESPUÉS'],
+  [G, 'apps/web/lib/fotos-variantes.ts', 'const MAESTRA_PRIVADA = new RegExp(`^privado/([oamer])/(${UUID})\\\\.jpg$`);', 'const MAESTRA_PRIVADA = new RegExp(`^privado/(o)/(${UUID})\\\\.jpg$`);', 'F3b: clavesVariantes conoce las variantes de TODAS las privadas'],
+  // La prueba pura de fotoSrc sin una de las rutas.
+  [G, 'pruebas/alreves/alreves9ufoto.cjs', "['entrega', `/api/entrega/foto/${id}`], ", '', 'la prueba pura de fotoSrc dejó de revisar'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {
   try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe' }); return [false, '']; }
   catch (e) { const l = String(e.stderr).split('\n').find((x) => x.trim().startsWith(`[${g}]`)) ?? ''; return [!!l, l]; }
 };
-const informe = (g, que, [falla, out]) => { total++; console.log(`  ${falla ? '✓' : '✗'} ${g} al revés (${que})${out ? ' → ' + out.trim().slice(0, 170) : ''}`); if (falla) bien++; };
-for (const [g, f, a, b] of casos) {
+const informe = (g, que, [falla0, out], msg) => { const falla = falla0 && (!msg || out.includes(msg)); total++; console.log(`  ${falla ? '✓' : '✗'} ${g} al revés (${que})${out ? ' → ' + out.trim().slice(0, 170) : ''}`); if (falla) bien++; };
+for (const [g, f, a, b, msg] of casos) {
   const ruta = path.join(R, f);
   if (!fs.existsSync(ruta)) { total++; console.log(`  ✗ no existe ${f}`); continue; }
   const orig = fs.readFileSync(ruta, 'utf8');
   if (!orig.includes(a)) { total++; console.log(`  ✗ no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
   fs.writeFileSync(ruta, orig.replace(a, () => b));
   let r; try { r = correr(g); } finally { fs.writeFileSync(ruta, orig); }
-  informe(g, f.split('/').pop(), r);
+  informe(g, f.split('/').pop(), r, msg);
 }
 let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
