@@ -8,7 +8,7 @@ import type { PoolClient } from "pg";
 import { db, tx } from "../db";
 import { celda } from "../csv";
 import { zipPorPartes } from "../pases/zip";
-import { banderasDeNotas, columnasDePersona, ident, mapa, notaSale, NUNCA_SE_EXPORTA } from "./mapa";
+import { banderasDeNotas, columnaInterna, columnasDePersona, ident, mapa, notaSale, NUNCA_SE_EXPORTA } from "./mapa";
 import type { PruebaLlave } from "../llaves/llaves";
 
 /* 9d · Descargar mis datos (vecino) y Exportar los datos del negocio (panel) (fase9-apertura.md §3.7, §6 #9, §1c «Exportar mis datos»).
@@ -44,6 +44,7 @@ function limpiar(f: Fila, fuera: Set<string>, tabla?: string): Fila {
   const o: Fila = {};
   for (const [k, v] of Object.entries(f)) {
     if (k.startsWith("__sale__") || fuera.has(k) || NUNCA_SE_EXPORTA.test(k) || Buffer.isBuffer(v)) continue;
+    if (tabla && columnaInterna(tabla, k)) continue; // 22 nov · «internas» del mapa de datos (el nombre de búsqueda de la puerta, la ruta de la copia de revisión)
     const s = tabla ? notaSale(tabla, k) : true;
     if (s === false) continue;
     if (typeof s === "string" && f[`__sale__${k}`] !== true) { o[k] = null; continue; }

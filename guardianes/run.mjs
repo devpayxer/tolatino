@@ -8703,6 +8703,14 @@ const guardianes = {
     if (de["claims.reason"]?.sale !== "status = 'rejected'") falla(G, MJ, 0, "claims.reason sale solo si el reclamo fue rechazado (lo que Recuperar pinta)");
     const x = sinComent(X), lim = cuerpoFn(x, "limpiar");
     if (!/notaSale\(tabla, k\)/.test(lim) || !/if \(s === false\) continue;/.test(lim) || !/k\.startsWith\("__sale__"\)/.test(lim) || !/f\[`__sale__\$\{k\}`\] !== true\) \{ o\[k\] = null;/.test(lim)) falla(G, X, 0, "limpiar: cada columna pasa por notaSale (interna o sin clasificar no sale; la de condición, vacía donde no se pinta)");
+    // 22 nov · (2) «internas»: lo que no sale aunque la fila sea de la persona (tickets.door_name: el texto de búsqueda de la puerta, con el nombre que
+    // escribió el negocio; media.rev_llave: la ruta interna de la copia de revisión). UNA fuente (el mapa), leída por mapa.ts y aplicada en limpiar().
+    let internas = {};
+    try { internas = JSON.parse(readFileSync(MJ, "utf8")).internas ?? {}; } catch { /* ya falló arriba */ }
+    for (const k of ["tickets.door_name", "media.rev_llave"]) if (typeof internas[k]?.ve !== "string" || internas[k].ve.trim().length < 20) falla(G, MJ, 0, `«internas» no trae ${k} con su porqué: sale en el archivo de la persona`);
+    for (const [k] of Object.entries(internas).filter(([k]) => !k.startsWith("$"))) if (!/^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/.test(k)) falla(G, MJ, 0, `internas: «${k}» no es tabla.columna`);
+    if (!/export const INTERNAS\b[^\n]*MAPA\.internas/.test(mp) || !/export const columnaInterna = \(tabla: string, col: string\): boolean => `\$\{tabla\}\.\$\{col\}` in INTERNAS;/.test(mp)) falla(G, MP, 0, "INTERNAS sale de «internas» del mapa de datos (una sola fuente) y columnaInterna la consulta");
+    if (!/if \(tabla && columnaInterna\(tabla, k\)\) continue;/.test(lim)) falla(G, X, 0, "limpiar: una columna de «internas» no sale (ni en el JSON ni en el CSV)");
     const dc = cuerpoFn(x, "datosDeCuenta");
     if (!/select \*\$\{banderasDeNotas\(f\.tabla\)\} from \$\{ident\(f\.tabla\)\}/.test(dc) || !/tabla: f\.tabla/.test(dc)) falla(G, X, 0, "el archivo de la persona: cada tabla con sus notas clasificadas (banderasDeNotas y tabla)");
     for (const q of cuerpoFn(x, "datosDeNegocio").split("\n    L(").slice(1)) if (/select (\w+\.)?\*/.test(q) && !/banderasDeNotas\("(\w+)"\)[\s\S]*, "\w+"(, \[[^\]]*\])?\),?\s*$/.test(q.trim())) falla(G, X, 0, `el archivo del negocio: un «select *» sin sus notas clasificadas («${q.slice(0, 40)}…»)`);
@@ -8720,12 +8728,18 @@ const guardianes = {
     const pg = existsSync(PG) ? sinComent(PG) : "";
     if (!/if \(!\(ruta\.sec === "hoy" \|\| \(ruta\.sec === "pag" && !ruta\.sub\)\)\) d\.adm = \{ \.\.\.d\.adm, reason: null, tempReason: null \};/.test(pg) || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "fotos"\)\) d\.adm = \{ \.\.\.d\.adm, fotos: \[\] \};/.test(pg))
       falla(G, PG, 0, "el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta (Hoy y Tu página; las fotos quitadas, a Fotos y portada)");
+    // 22 nov · (3) Lo mismo con lo que el Panel guarda por sección: pausas.cot (Lo que vendes › Servicios), pausas.staff (Tu página › Equipo), equipo[].hidden (Equipo y la
+    // hoja de cada persona, ?det=stf:) y ver.selloNote (Verificación).
+    if (!/if \(!\(ruta\.sec === "mod" && ruta\.sub === "servicios"\)\) d\.pausas = \{ \.\.\.d\.pausas, cot: null \};/.test(pg) || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "equipo"\)\) d\.pausas = \{ \.\.\.d\.pausas, staff: null \};/.test(pg)
+      || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "equipo"\) && !ruta\.det\?\.startsWith\("stf:"\)\) d\.equipo = d\.equipo\.map\(\(m\) => \(\{ \.\.\.m, hidden: null \}\)\);/.test(pg) || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "ver"\)\) d\.ver = \{ \.\.\.d\.ver, selloNote: null \};/.test(pg))
+      falla(G, PG, 0, "el Panel manda la pausa de Cotizaciones, la de Staff, quién quitó To’Latino del equipo y la nota del sello solo a la sección que los pinta (Servicios, Equipo y la hoja de la persona, Verificación)");
     if (!/L\("catalogo", `select i\.\*\$\{banderasDeNotas\("items"\)\} from items i where i\.business_id = \$1 order by i\.id`, "items", \["hidden_by"\]\)/.test(x)) falla(G, X, 0, "el catálogo del archivo del negocio no lleva quién del equipo ocultó un plato (hidden_by)");
     if (!existsSync(E)) return falla(G, E, 0, "falta la prueba contra la base que clasifica cada nota de cada tabla exportada");
     const e = readFileSync(E, "utf8");
     // (4) Una nota por familia, escrita por la hoja del equipo (la pantalla), no directo en la base.
     const fam = new Set((e.match(/'por la hoja del equipo \((interna|por fila|persona)\)/g) ?? []));
     if (fam.size < 3 || !/await padm\.goto\(`\$\{B\}\/admin\/negocios\//.test(e) || !/await hoja\(padm, /.test(e)) falla(G, E, 0, "nota9u2: una nota por familia (interna, por fila, persona) se escribe por la hoja del equipo en Negocio 360");
+    if (!/3c · pausas\.cot, pausas\.staff, equipo\[\]\.hidden y ver\.selloNote/.test(e) || !/«internas» · \$\{k\} no sale/.test(e)) falla(G, E, 0, "nota9u2 mira que pausas.cot, pausas.staff, equipo[].hidden y ver.selloNote viajen solo a lo que los pinta, y que las «internas» no salgan del archivo");
     if (!/cat\.every\(\(x\) => !\('hidden_by' in x\)\)/.test(e) || !/NO viaja a \$\{u\} \(no lo pinta\)/.test(e)) falla(G, E, 0, "nota9u2 mira el catálogo sin hidden_by y que el motivo de To’Latino no viaje a las pantallas que no lo pintan");
     if (!/information_schema\.columns/.test(e) || !/ES_NOTA\.test\(/.test(e) || !/ok\(sinClasificar\.length === 0, `ninguna nota sin clasificar/.test(e) || !/ok\(fantasmas\.length === 0/.test(e) || !/mapa-de-datos\.json/.test(e)) falla(G, E, 0, "la prueba recorre information_schema.columns de cada tabla exportada con ES_NOTA y falla si una nota queda sin clasificar");
   },
@@ -14083,6 +14097,35 @@ const guardianes = {
     if (!/order by random\(\) limit 5/.test(sinComent(F))) falla(G, F, 0, "falta la muestra de cinco de «Para mirar»");
     const p = readFileSync(T, "utf8");
     if (!/vistas === esperadas/.test(p) || !/enCorreo === deAyer/.test(p)) falla(G, T, 0, "rev9u2 compara el número exacto de miniaturas de «Para mirar» con las que se pueden mostrar (pantalla y reporte diario)");
+  },
+
+  /* fotosAdjuntarTodoONada (22 nov): una acción que adjunta fotos por id (galería y portada del panel, la foto del equipo, los eventos) compara cuántas
+     pidió con cuántas adjuntó y, si no coinciden, RECHAZA con el mensaje de siempre (el de perfil y logo «Esa foto no existe» para una sola; el de
+     Comunidad, reseñas y novedades «Una de las fotos ya no está» para varias) y deshace TODO el pedido (se lanza dentro de la transacción: nada más se
+     guarda, y la foto del equipo no queda vacía). Antes contestaban ok y no la adjuntaban (el filtro de fotosRevisionPrivacidad no cambia). Por clase: en
+     esos tres archivos, un «update media … set owner_kind = 'business' | 'member' | 'event'» que nadie lee (sin guardar su resultado) falla. Al revés:
+     alreves9ufotostodo; punta a punta: ayu4m (el atajo: ahora espera el rechazo). */
+  fotosAdjuntarTodoONada() {
+    const G = "fotosAdjuntarTodoONada", A = "apps/web/app/panel/acciones.ts", Q = "apps/web/app/panel/acciones-equipo.ts", E = "apps/web/lib/evt.ts";
+    for (const x of [A, Q, E]) if (!existsSync(x)) return falla(G, x, 0, "falta el archivo que adjunta fotos por id");
+    const a = sinComent(A), q = sinComent(Q), e = sinComent(E);
+    const VARIAS = /no\("Una de las fotos ya no está\. Súbela otra vez\.", "One of the photos is gone\. Upload it again\."\)/;
+    const UNA = /no\("Esa foto no existe\.", "That photo doesn’t exist\."\)/;
+    // Galería y portada: cuenta lo que adjuntó (rowCount), lo compara con lo que pidió y, si no coincide, lanza dentro de la transacción; la acción lo dice.
+    const fa = cuerpoFn(a, "fotosAgregar");
+    if (!/puestas \+= \(await c\.query\(`update media set owner_kind = 'business'/.test(fa) || !/\.rowCount \?\? 0/.test(fa)) falla(G, A, 0, "fotosAgregar: cuenta las fotos que de verdad adjuntó (rowCount de cada update)");
+    if (!/if \(puestas !== lista\.length\) throw new FotoNoAdjunta\(\);/.test(fa)) falla(G, A, 0, "fotosAgregar: si adjuntó menos de las que pidió, lanza dentro de la transacción (no se adjunta ninguna y nada más se guarda)");
+    if (!/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return /.test(fa) || !VARIAS.test(fa)) falla(G, A, 0, "fotosAgregar: una foto que no se puede adjuntar se rechaza con «Una de las fotos ya no está. Súbela otra vez.» (como Comunidad, reseñas y novedades), nunca ok");
+    if (!/\[\.\.\.new Set\(ids\.filter/.test(fa)) falla(G, A, 0, "fotosAgregar: quita los ids repetidos antes de contar (un id dos veces no puede dar un rechazo falso)");
+    // La foto del equipo: si el id no se adjunta, rechaza y deshace (antes dejaba photo_url vacío).
+    if (!/if \(!photo\) throw new FotoNoAdjunta\(\);/.test(q) || !/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return /.test(q) || !UNA.test(q)) falla(G, Q, 0, "equipoGuardar: una foto nueva que no se puede adjuntar se rechaza con «Esa foto no existe.» (como perfil y logo) y deshace todo el pedido; nunca deja vacía la del equipo");
+    if (/\?\? null;\s*\n\s*(?:\/\/[^\n]*\n\s*)?if \(photo\) await/.test(q)) falla(G, Q, 0, "equipoGuardar: vuelve el «if (photo)» que ignora en silencio la foto que no se adjuntó");
+    // Eventos: lo mismo con la lista de fotos del evento.
+    if (!/\(puestas\.rowCount \?\? 0\) !== ids\.length\) throw new FotosAjenasEvt\(\);/.test(e) || !/\[\.\.\.new Set\(d\.fotos\.map/.test(e)) falla(G, E, 0, "lineupYFotos: compara las fotos adjuntadas con las pedidas y lanza dentro de la transacción");
+    if (!/err instanceof FotosAjenasEvt\) return /.test(e) || !VARIAS.test(e)) falla(G, E, 0, "eventos: una foto que no se puede adjuntar se rechaza con «Una de las fotos ya no está. Súbela otra vez.», nunca ok");
+    // Por clase: un update media a negocio / equipo / evento cuyo resultado nadie lee ignora en silencio lo que no adjuntó.
+    for (const [x, t] of [[A, a], [Q, q], [E, e]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event)'/gm))
+      falla(G, x, t.slice(0, m.index).split("\n").length + 1, "un update media a negocio / equipo / evento sin leer su resultado: si no adjunta la foto no se entera nadie (usa rowCount o returning y rechaza)");
   },
 
   /* fotosRevisionPrivacidad: a la segunda opinión (Claude con visión) solo van fotos destinadas a lo público. lib/fotos-segunda-opinion.ts lo

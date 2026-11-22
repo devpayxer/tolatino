@@ -60,6 +60,11 @@ export const NUNCA_SE_EXPORTA = /(^|_)(hash|enc|token|secret|public_key|credenti
    clasifique. Guardián notaInternaFueraDelArchivo; al revés: alreves9u2. */
 export const ES_NOTA = /(^|_)(reason|note|notes|motivo|nota|notas)$/;
 export const NOTAS: Record<string, { sale: boolean | string; ve: string }> = Object.fromEntries(Object.entries(MAPA.notas).filter(([k]) => !k.startsWith("$"))) as Record<string, { sale: boolean | string; ve: string }>;
+/* 22 nov · Las columnas que NO salen en el archivo aunque la fila sea de la persona (lo que dice de OTRA persona o la ruta interna de una copia):
+   «internas» en packages/db/mapa-de-datos.json, tabla.columna → por qué. La exportación las quita de cada archivo (limpiar). Guardián
+   notaInternaFueraDelArchivo; la prueba contra la base, nota9u2. */
+export const INTERNAS: Record<string, { ve: string }> = Object.fromEntries(Object.entries(MAPA.internas).filter(([k]) => !k.startsWith("$"))) as Record<string, { ve: string }>;
+export const columnaInterna = (tabla: string, col: string): boolean => `${tabla}.${col}` in INTERNAS;
 /* Una condición de NOTAS: solo «columna = 'valor'» o «columna in ('a', 'b')» (va dentro de la consulta de la exportación). */
 export const CONDICION_NOTA = /^[a-z_]+ (= '[a-z_]+'|in \('[a-z_]+'(, '[a-z_]+')*\))$/;
 /* ¿Sale esta columna de esta tabla? true / false / la condición por fila. Lo que no tiene nombre de nota, sale (lo demás lo deciden el mapa y

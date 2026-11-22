@@ -101,6 +101,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // (Mensajes, Lo que vendes, Cobros, Más…) no llegan al navegador (guardián notaInternaFueraDelArchivo; prueba nota9u2).
   if (!(ruta.sec === "hoy" || (ruta.sec === "pag" && !ruta.sub))) d.adm = { ...d.adm, reason: null, tempReason: null };
   if (!(ruta.sec === "pag" && ruta.sub === "fotos")) d.adm = { ...d.adm, fotos: [] };
+  // 9u-2 (3) · Lo mismo con lo que el Panel guarda por sección y otras no pintan: el motivo de la pausa de Cotizaciones solo viaja a Lo que vendes ›
+  // Servicios (serviciosBloques / oficiosBloques); el de la pausa de Staff y quién quitó To’Latino del equipo, a Tu página › Equipo y a la hoja de cada
+  // persona (?det=stf:…); la nota del sello, a Tu página › Verificación. En las demás secciones llegan vacíos (guardián notaInternaFueraDelArchivo; nota9u2).
+  if (!(ruta.sec === "mod" && ruta.sub === "servicios")) d.pausas = { ...d.pausas, cot: null };
+  if (!(ruta.sec === "pag" && ruta.sub === "equipo")) d.pausas = { ...d.pausas, staff: null };
+  if (!(ruta.sec === "pag" && ruta.sub === "equipo") && !ruta.det?.startsWith("stf:")) d.equipo = d.equipo.map((m) => ({ ...m, hidden: null }));
+  if (!(ruta.sec === "pag" && ruta.sub === "ver")) d.ver = { ...d.ver, selloNote: null };
   // Sin cobros con tarjeta (no es comida): Cobros y plan abre directo «Tu plan». 6e: un organizador de eventos (módulo Eventos encendido) sí
   // ve Cobros con tarjeta: ahí conecta su cuenta y ve PAGOS DE EVENTOS (la liquidación del martes por fecha).
   const organiza = ruta.sec === "pay" && !ruta.sub && d.cat !== "NEG-FOOD" ? !!(await db().query(`select 1 from businesses where id = $1 and 'eventos' = any(modules_on)`, [d.id])).rowCount : false;

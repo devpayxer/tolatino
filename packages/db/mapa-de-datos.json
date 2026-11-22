@@ -308,6 +308,11 @@
     "special_hours": { "reglas": [ { "col": "created_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
     "subcategory_merges": { "equipo": ["created_by", "undone_by"] }
   },
+  "internas": {
+    "$fuente": "22 nov · Columnas que NO salen en «Descargar mis datos» aunque la fila sea de la persona: lo que dice de OTRA persona o de cómo está armado por dentro el servicio. tabla.columna → ve (por qué no sale). La lee apps/web/lib/datos/mapa.ts (columnaInterna) y limpiar() de lib/datos/exportar.ts las quita de cada archivo (JSON y CSV); guardián notaInternaFueraDelArchivo; la prueba contra la base, nota9u2. Aquí no entran las notas (van en «notas») ni lo que nunca sale por su nombre (NUNCA_SE_EXPORTA).",
+    "tickets.door_name": {"ve": "el texto de búsqueda de la puerta (en minúsculas y sin acentos: el nombre del invitado que escribió el negocio, el del titular y el de su cuenta, juntos): es un derivado para buscar, trae el nombre que escribió OTRA persona (el negocio) y la persona ya recibe su propio nombre en el archivo"},
+    "media.rev_llave": {"ve": "la ruta interna de la copia de revisión de la foto en el almacén: no es del usuario y no sirve fuera del servicio"}
+  },
   "notas": {
     "$fuente": "9u-2 · Las notas y los motivos (reason, *_reason, note, *_note, notes, motivo, *_motivo, nota, *_nota, notas) de lo que sale en «Descargar mis datos» y en el archivo del negocio. sale: true = la persona la ve (ve: dónde); false = interna (la escribe el equipo, el sistema o el negocio para sí): NO sale; un texto = sale solo en las filas que cumplen esa condición («columna = 'valor'» o «columna in ('a', 'b')»), vacía en las demás. Una nota sin clasificar no sale y la prueba nota9u2 (contra la base) se pone en rojo. La lee apps/web/lib/datos/mapa.ts (notaSale); guardián notaInternaFueraDelArchivo.",
     "claims.note": {"sale": true, "ve": "app/(app)/recuperar/Recuperar.tsx «NOTA»"},

@@ -147,6 +147,7 @@ export async function equipoQuitar(id: string, mid: string): Promise<ResEq> {
   return { ok: true };
 }
 
+class FotoNoAdjunta extends Error {} // lanzada dentro de la transacción: deshace todo lo del pedido
 /* Lo que pone el negocio (rol, desde, especialidades, horario) y, si es el perfil propio del dueño, su foto, sus
    palabras y sus idiomas. Lo de cada persona solo lo cambia esa persona. */
 export async function equipoGuardar(id: string, mid: string, x: {
@@ -164,7 +165,7 @@ export async function equipoGuardar(id: string, mid: string, x: {
   const same = m.kind === "renter" ? true : !!x?.same;
   if (!same && !(semanaValida(x?.wk) && x.wk.some(Boolean))) return no("Para guardar falta: al menos un día de trabajo.", "To save, add: at least one work day.");
   const propio = m.kind === "owner" && m.user_id === a.yo.id;
-  await tx(async (c) => {
+  try { await tx(async (c) => {
     await c.query(
       `update business_members set role = $2::jsonb, since_year = $3, specialties = $4::jsonb, same_as_business_hours = $5, weekly_schedule = $6::jsonb, updated_at = now() where id = $1`,
       [m.id, JSON.stringify(role), y, JSON.stringify(sp), same, same ? null : JSON.stringify(x.wk)]);
@@ -177,7 +178,9 @@ export async function equipoGuardar(id: string, mid: string, x: {
         photo = (await c.query<{ url: string }>(
           `update media set owner_kind = 'member', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`,
           [m.id, x.photo, a.yo.id])).rows[0]?.url ?? null;
-        if (photo) await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3 where owner_kind = 'member' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [m.id, x.photo, a.yo.id]);
+        // Todo o nada: si la foto no se puede adjuntar (no es suya, no está visible, es privada o está en revisión) no se guarda nada y la foto de ahora se queda.
+        if (!photo) throw new FotoNoAdjunta();
+        await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3 where owner_kind = 'member' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [m.id, x.photo, a.yo.id]);
       } else if (typeof x?.photo === "string") photo = (await c.query<{ photo_url: string | null }>(`select photo_url from business_members where id = $1`, [m.id])).rows[0]?.photo_url ?? null;
       else if (x?.photo === null) await c.query(`update media set status = 'removed', removed_reason = 'owner', removed_by = $2 where owner_kind = 'member' and owner_id = $1 and status = 'visible'`, [m.id, a.yo.id]);
       await c.query(`update business_members set bio = $2::jsonb, languages = $3, photo_url = $4, updated_at = now() where id = $1`,
@@ -185,6 +188,6 @@ export async function equipoGuardar(id: string, mid: string, x: {
     }
     await recalcularFiltrosSP(c, a.negocio.id); // sus idiomas cuentan para «El médico habla español»
     await auditar(c, a, "panel.equipo_guardar", m.id, { role, y, sp, same });
-  });
+  }); } catch (e) { if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist."); throw e; }
   return { ok: true };
 }

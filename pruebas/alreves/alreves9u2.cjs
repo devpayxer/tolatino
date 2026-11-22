@@ -22,9 +22,21 @@ const casos = [
   ['apps/web/lib/panel.ts', 'case when b.temp_closed_until > now() then b.temp_closed_reason end as temp_reason', 'b.temp_closed_reason as temp_reason', 'el motivo de To’Latino (status_reason, temp_closed_reason) viaja solo mientras'],
   ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "hoy" || (ruta.sec === "pag" && !ruta.sub))) d.adm = { ...d.adm, reason: null, tempReason: null };', '', 'el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta'],
   ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "pag" && ruta.sub === "fotos")) d.adm = { ...d.adm, fotos: [] };', '', 'el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta'],
+  // 22 nov · (3) Cada dato viaja a otra sección además de la que lo pinta (o la prueba deja de mirarlo).
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "mod" && ruta.sub === "servicios")) d.pausas = { ...d.pausas, cot: null };', '', 'la pausa de Cotizaciones, la de Staff'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "pag" && ruta.sub === "equipo")) d.pausas = { ...d.pausas, staff: null };', '', 'la pausa de Cotizaciones, la de Staff'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'd.equipo = d.equipo.map((m) => ({ ...m, hidden: null }));', 'd.equipo = d.equipo;', 'la pausa de Cotizaciones, la de Staff'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "pag" && ruta.sub === "ver")) d.ver = { ...d.ver, selloNote: null };', '', 'la pausa de Cotizaciones, la de Staff'],
+  [E, "3c · pausas.cot, pausas.staff, equipo[].hidden y ver.selloNote", "3c · otras cosas", 'nota9u2 mira que pausas.cot'],
+  [E, "«internas» · ${k} no sale", "internas · ${k} no sale", 'las «internas» no salgan del archivo'],
   // 22 nov · (4) La prueba vuelve a escribir todas las notas directo en la base, o deja de mirar el catálogo y las pantallas que no pintan.
   [E, "'por la hoja del equipo (interna)", "'directo en la base (interna)", 'nota9u2: una nota por familia'],
   [E, "cat.every((x) => !('hidden_by' in x))", 'cat.every(() => true)', 'nota9u2 mira el catálogo sin hidden_by'],
+  // 22 nov · (2) «internas»: tickets.door_name y media.rev_llave salen otra vez (limpiar no las quita, el mapa pierde una, o mapa.ts no lee la lista).
+  [X, '    if (tabla && columnaInterna(tabla, k)) continue;', '    if (false) continue;', 'limpiar: una columna de «internas» no sale'],
+  [MJ, '"tickets.door_name": {', '"tickets.door_nombre": {', 'no trae tickets.door_name'],
+  [MJ, '"media.rev_llave": {', '"media.rev_llave_x": {', 'no trae media.rev_llave'],
+  [MP, 'export const columnaInterna = (tabla: string, col: string): boolean => `${tabla}.${col}` in INTERNAS;', 'export const columnaInterna = (tabla: string, col: string): boolean => false;', 'columnaInterna la consulta'],
   [X, 'r.rows.map((x) => limpiar(x, q.fuera, q.tabla))', 'r.rows.map((x) => limpiar(x, q.fuera))', 'el ZIP y la vista previa limpian con la tabla'],
   [MP, '  if (!n) return false;', '  if (!n) return true;', 'notaSale: una nota sin clasificar'],
   [MP, 'export const ES_NOTA = /(^|_)(reason|note|notes|motivo|nota|notas)$/;', 'export const ES_NOTA = /(^|_)(reason|note|notes|nota|notas)$/;', 'ES_NOTA deja fuera «motivo»'],
@@ -43,6 +55,8 @@ const casos = [
 ];
 // Los que caza la prueba contra la base (sin el servidor).
 const casosBase = [
+  // 22 nov · (2) Una columna de «internas» que ya no existe en la base (renombrada) o una tabla que no sale en el archivo.
+  [MJ, '"media.rev_llave": {', '"media.rev_llavero": {', 'cada columna de «internas» existe en la base'],
   [MJ, '    "user_badges.reason": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"}', '    "user_badges.reasons": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"}', 'ninguna nota sin clasificar en «notas» del mapa de datos: user_badges.reason'],
   [MJ, '    "user_badges.reason": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"}', '    "user_badges.reason": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"},\n    "user_badges.motivo": {"sale": false, "ve": "una columna que la base no tiene"}', 'toda nota clasificada existe en la base: user_badges.motivo'],
 ];
