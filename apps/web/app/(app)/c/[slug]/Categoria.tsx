@@ -9,7 +9,8 @@ import * as UI from "@tolatino/ui";
 import { FilaFree, fotoFondo } from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { avisame, registrarToqueSemilla } from "../../acciones";
+import { avisame } from "../../acciones";
+import { contarToqueSemilla } from "@/lib/contar-toque";
 import { TarjetaNegocio } from "../../TarjetaNegocio";
 import { usarBuscadorPagina } from "../../BuscadorPagina";
 import { Patrocinados, type Patrocinada } from "./Patrocinados";
@@ -263,7 +264,7 @@ export function Categoria({ v }: { v: Vista }) {
                 <div key={`s${x.id}`} className="grid">
                   <FilaFree nombre={x.name} dato={`${T.sinReclamar}${x.address ? ` · ${x.address.toUpperCase()}` : ""}`} calificacion={T.esTuyo ?? ""} resenas={0} calificacionNota={T.reclamalo}
                     llamarEtiqueta={T.llamar ?? ""} llamarNombre={`${T.llamar ?? ""} · ${x.name}`} onAbrir={() => router.push(`/publica?semilla=${x.id}`)}
-                    onLlamar={() => { if (x.phone) { void registrarToqueSemilla(x.id, "categoria"); location.href = `tel:${x.phone}`; } else router.push(`/publica?semilla=${x.id}`); }} />
+                    onLlamar={() => { if (x.phone) { contarToqueSemilla(x.id, "categoria"); location.href = `tel:${x.phone}`; } else router.push(`/publica?semilla=${x.id}`); }} />
                 </div>))}
             </div>
           </div>

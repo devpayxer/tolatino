@@ -12,7 +12,8 @@ import type { ficha } from "@/lib/ficha";
 import type { MenuPublico } from "@/lib/pedir";
 import type { RsvPublica } from "@/lib/reservas";
 import type { CitasPublica } from "@/lib/citas";
-import { guardarNegocio, registrarToque } from "../../acciones";
+import { guardarNegocio } from "../../acciones";
+import { contarToque } from "@/lib/contar-toque";
 import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } from "./MenuCliente";
 import { RsvBarra, RsvRapida, RsvRiel, RsvTab, useRsv } from "./Reservar";
 import { SvcBarra, SvcHoja, SvcResumen, SvcRiel, SvcTab, useSvc } from "./Servicios";
@@ -150,15 +151,15 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
     </button>
   ) : null;
-  const escribir = () => { void registrarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); };
-  const llamar = () => { if (!f.telefono) return; void registrarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; };
+  const escribir = () => { contarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); };
+  const llamar = () => { if (!f.telefono) return; contarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; };
   const llegar = () => {
     if (f.lat == null || f.lng == null) return;
-    void registrarToque(f.id, "directions", "ficha");
+    contarToque(f.id, "directions", "ficha");
     abrirComoLlegar({ lat: f.lat, lng: f.lng });
   };
   const compartir = async () => {
-    void registrarToque(f.id, "share", "ficha");
+    contarToque(f.id, "share", "ficha");
     const url = location.href;
     if ((await compartirNativo({ titulo: f.nombre, url })) !== "copiado") return;
     setCopiado(true);
@@ -345,8 +346,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
                       <div className="grid min-w-0 flex-1">
                         <Button variant="secondary" size="md" icon={x.movil ? "phone" : "pin"}
                           onClick={() => {
-                            if (x.movil && x.telefono) { void registrarToque(x.id, "call", "relacionados"); location.href = `tel:${x.telefono}`; }
-                            else if (x.lat != null && x.lng != null) { void registrarToque(x.id, "directions", "relacionados"); abrirComoLlegar({ lat: x.lat, lng: x.lng }); }
+                            if (x.movil && x.telefono) { contarToque(x.id, "call", "relacionados"); location.href = `tel:${x.telefono}`; }
+                            else if (x.lat != null && x.lng != null) { contarToque(x.id, "directions", "relacionados"); abrirComoLlegar({ lat: x.lat, lng: x.lng }); }
                           }}>{x.movil ? t.call : t.map}</Button>
                       </div>
                       <div className="grid min-w-0 flex-1"><Button variant="primary" size="md" onClick={() => router.push(`/n/${x.id}`)}>{x.cta}</Button></div>
