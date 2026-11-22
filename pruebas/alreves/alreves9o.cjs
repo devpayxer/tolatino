@@ -33,6 +33,17 @@ const casos = [
   ['produccionSoloAvanza', SY, '    git merge-base --is-ancestor "$REMOTE" origin/pruebas 2>/dev/null || RECHAZO="el commit no pasó por pruebas"\n', ''],
   // … promover.sh empuja a la fuerza
   ['produccionSoloAvanza', PR, 'git push -q origin "$C:refs/heads/produccion"', 'git push -q --force origin "$C:refs/heads/produccion"'],
+  // 22 nov · … promover.sh vuelve a aceptar CUALQUIER corrida verde con ese commit, o no pregunta
+  ['produccionSoloAvanza', PR, 'node "$(dirname "$0")/../ci/corrida.mjs" --produccion "$C" || { echo "✗ $C no tiene una corrida entera del CI en verde: no sube a produccion"; exit 1; }',
+    'v=$(gh run list --workflow ci.yml --commit "$C" --json conclusion,status --jq \'[.[] | select(.status == "completed")] | (map(select(.conclusion == "success")) | length)\' 2>/dev/null || echo 0)\n[ "${v:-0}" -ge 1 ] || { echo "✗ $C no tiene una corrida del CI en verde"; exit 1; }'],
+  ['produccionSoloAvanza', PR, 'node "$(dirname "$0")/../ci/corrida.mjs" --produccion "$C" || { echo', 'node "$(dirname "$0")/../ci/corrida.mjs" --produccion "$C" || true || { echo'],
+  // … qué corrida vale: un segundo intento, un pull_request, una corrida a mano con «solo», la confirmación a medias, sin la nota de AD
+  ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'if (r.run_attempt !== 1) return no(', 'if (r.run_attempt === 0) return no('],
+  ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', '["push", "schedule", "workflow_dispatch"].includes(r.event)', '["push", "schedule", "workflow_dispatch", "pull_request"].includes(r.event)'],
+  ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'if (entradas.length !== 1 || !ENTRADAS_ENTERAS.test(entradas[0])) return no(', 'if (entradas.length > 9) return no('],
+  ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'if (!fases.ok && !conf.every((c) => c.ok)) return no(', 'if (!fases.ok && !conf.some((c) => c.ok)) return no('],
+  ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'PENDIENTE (lo decide el fundador): la «confirmación completa» de la decisión AD', 'la confirmación completa'],
+  ['produccionSoloAvanza', '.github/workflows/ci.yml', ' · solo=«${{ inputs.solo }}» · aprobar=', ' · aprobar='],
   // … la base deja anotar un despliegue de producción sin el OK
   ['produccionSoloAvanza', M, "  check (entorno <> 'produccion' or founder_ok_ref is not null),\n", ''],
   // selladoSoloSuServidor: el servidor abre sobres fuera de la lista cerrada
@@ -128,6 +139,62 @@ for (const [g, f, c] of crear) {
     informe('selladoSoloSuServidor', 'un sobre age de verdad cifrado para otra llave', correr('selladoSoloSuServidor'));
   } catch (e) { total++; console.log(`  ✗ selladoSoloSuServidor: no se pudo armar el caso (${e.message.slice(0, 80)})`); }
   finally { fs.writeFileSync(L, oL); fs.writeFileSync(S, oS); try { fs.unlinkSync(A); fs.rmdirSync(path.dirname(A)); } catch { /* */ } fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+// 22 nov · promover.sh de verdad (en seco), en un repo de mentira con su «origin», y un «gh» de mentira que contesta la API de GitHub con las
+// corridas de cada caso (aquí nunca se llama a GitHub). Solo con una corrida entera, en main, de primer intento y con todo en verde sale ✓.
+if (!process.env.ALREVES_SOLO_TEXTOS) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'alreves9o-promover-'));
+  try {
+    const sh = (c, cwd = tmp) => execSync(c, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_AUTHOR_NAME: 'p', GIT_AUTHOR_EMAIL: 'p@ejemplo.invalid', GIT_COMMITTER_NAME: 'p', GIT_COMMITTER_EMAIL: 'p@ejemplo.invalid' } });
+    sh('git init -q --bare origen.git && git init -q -b main repo');
+    const repo = path.join(tmp, 'repo');
+    fs.writeFileSync(path.join(repo, 'a.txt'), 'a\n');
+    sh('git add -A && git -c commit.gpgsign=false commit -q -m a && git remote add origin ../origen.git && git push -q origin main main:pruebas', repo);
+    const C = sh('git rev-parse HEAD', repo).trim();
+    fs.mkdirSync(path.join(tmp, 'bin'));
+    fs.writeFileSync(path.join(tmp, 'bin', 'gh'), `#!/usr/bin/env node
+const m = JSON.parse(require('fs').readFileSync(process.env.GH_MUNDO, 'utf8')), a = process.argv.slice(2), ruta = a[a.length - 1];
+if (m.cae) { console.error('gh: HTTP 503'); process.exit(1); }
+if (a[0] !== 'api') { console.error('gh de mentira: solo api'); process.exit(1); }
+let x = /actions\\/workflows\\/ci\\.yml\\/runs\\?head_sha=/.test(ruta) ? { workflow_runs: m.corridas } : null;
+const t = /actions\\/runs\\/(\\d+)\\/attempts\\/1\\/jobs/.exec(ruta); if (t) { const js = m.trabajos[t[1]] ?? []; x = { total_count: js.length, jobs: js }; }
+if (!x) { console.error('gh de mentira: ruta desconocida ' + ruta); process.exit(1); }
+console.log(JSON.stringify(x));
+`, { mode: 0o755 });
+    const RPO = 'dueno/repo', DSP = ['iphone-se', 'iphone-15', 'iphone-15-pro-max', 'pixel', 'galaxy', 'ipad', 'escritorio-1024', 'escritorio-1280', 'escritorio-1440'];
+    const j = (name, conclusion = 'success', steps) => ({ name, status: 'completed', conclusion, ...(steps ? { steps } : {}) });
+    const ent = (t = 'entradas: alcance=todo · solo=«» · aprobar=no · medir=no') => [{ name: 'Run actions/checkout@v4' }, { name: t }];
+    const trabajos = (e) => [j('alcance (todo o solo documentos)', 'success', ent(e)), j('tipos · build · guardianes'), j('seguridad · Semgrep (reglas propias) · dependencias'), j('web · build una vez para todos los grupos'),
+      ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]), ...DSP.map((d) => j(`dispositivo · ${d}`)),
+      j('confirmación · ${{ matrix.nombre }}', 'skipped'), j('punta a punta · ancho ${{ matrix.id }}', 'skipped'), j('la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)')];
+    const corrida = (x = {}) => ({ id: 41, head_sha: C, event: 'push', head_branch: 'main', path: '.github/workflows/ci.yml', repository: { full_name: RPO }, head_repository: { full_name: RPO }, run_attempt: 1, status: 'completed', conclusion: 'success', ...x });
+    const DOCS = /^(web|punta a punta · (al revés|todas las fases)|dispositivo) /;
+    const CP = [
+      ['una corrida de push entera y en verde', { corridas: [corrida()], trabajos: { 41: trabajos() } }, true],
+      ['sin corridas', { corridas: [], trabajos: {} }, false],
+      ['la API cae', { cae: true }, false],
+      ['solo una corrida de solo documentos (carriles saltados)', { corridas: [corrida()], trabajos: { 41: trabajos().map((x) => (DOCS.test(x.name) ? j(x.name, 'skipped') : x)) } }, false],
+      ['solo una corrida a mano con «solo»', { corridas: [corrida({ event: 'workflow_dispatch' })], trabajos: { 41: trabajos('entradas: alcance=todo · solo=«sql9u» · aprobar=no · medir=no') } }, false],
+      ['solo una corrida a mano de pantallas', { corridas: [corrida({ event: 'workflow_dispatch' })], trabajos: { 41: trabajos('entradas: alcance=pantallas · solo=«» · aprobar=no · medir=no').map((x) => (/^punta a punta · (al|todas)/.test(x.name) ? j(x.name, 'skipped') : x)) } }, false],
+      ['solo una de pull_request', { corridas: [corrida({ event: 'pull_request', head_branch: 'trabajo' })], trabajos: { 41: trabajos() } }, false],
+      ['solo una de otra rama', { corridas: [corrida({ head_branch: 'trabajo' })], trabajos: { 41: trabajos() } }, false],
+      ['solo un segundo intento en verde', { corridas: [corrida({ run_attempt: 2 })], trabajos: { 41: trabajos() } }, false],
+      ['un dispositivo que falta', { corridas: [corrida()], trabajos: { 41: trabajos().filter((x) => x.name !== 'dispositivo · galaxy') } }, false],
+      ['una parte de «al revés» saltada', { corridas: [corrida()], trabajos: { 41: trabajos().map((x) => (x.name === 'punta a punta · al revés · 3/4' ? j(x.name, 'skipped') : x)) } }, false],
+      ['la lista de trabajos llega incompleta', { corridas: [corrida()], trabajos: {} }, false],
+      ['una parcial y después una entera', { corridas: [corrida({ id: 40, event: 'workflow_dispatch' }), corrida()], trabajos: { 40: trabajos('entradas: alcance=regresion · solo=«» · aprobar=no · medir=no'), 41: trabajos() } }, true],
+    ];
+    for (const [que, mundo, ok] of CP) {
+      const M = path.join(tmp, 'mundo.json'); fs.writeFileSync(M, JSON.stringify(mundo));
+      let sale = 0, out = '';
+      try { out = execSync(`bash ${JSON.stringify(path.join(R, PR))} ${C} "OK de prueba" 2026-11-22`, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, PATH: `${path.join(tmp, 'bin')}:${process.env.PATH}`, GH_MUNDO: M, REPO: RPO, PROMOVER_SECO: '1', GIT_CONFIG_GLOBAL: '/dev/null' } }); }
+      catch (e) { sale = e.status; out = String(e.stdout) + String(e.stderr); }
+      const bien1 = ok ? sale === 0 && /✓ \(seco\)/.test(out) : sale !== 0 && !/✓ \(seco\)/.test(out);
+      total++; if (bien1) bien++;
+      console.log(`  ${bien1 ? '✓' : '✗'} promover.sh (seco): ${que} → ${ok ? 'pasa' : 'no pasa'}${bien1 ? '' : ` · salió ${sale}: ${out.split('\n').filter(Boolean).slice(-2).join(' | ').slice(0, 200)}`}`);
+    }
+  } catch (e) { total++; console.log(`  ✗ promover.sh: no se pudo armar el repo de mentira (${String(e.message).slice(0, 160)})`); }
+  finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 }
 let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);

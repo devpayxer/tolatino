@@ -84,6 +84,10 @@ jobs:
       - id: calcular
         env: { EVENTO: "${{ github.event_name }}", ANTES: "${{ github.event.before }}", DESPUES: "${{ github.sha }}", REPO: "${{ github.repository }}", GH_TOKEN: "${{ github.token }}" }
         run: node scripts/ci/alcance.mjs || echo "alcance=todo" >> "$GITHUB_OUTPUT"
+      # 22 nov · La API no enseña las entradas de una corrida a mano: van en el NOMBRE de este paso, que sí enseña. La puerta de producción
+      # (promover.sh → scripts/ci/corrida.mjs) exige «alcance=todo · solo=«» · aprobar=no · medir=no».
+      - name: "entradas: alcance=${{ inputs.alcance || 'todo' }} · solo=«${{ inputs.solo }}» · aprobar=${{ inputs.aprobar || 'no' }} · medir=${{ inputs.medir || 'no' }}"
+        run: echo "las entradas de esta corrida van en el nombre de este paso"
 
   verificar:
     name: tipos · build · guardianes

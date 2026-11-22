@@ -9879,7 +9879,49 @@ const guardianes = {
     if (!/export TOLATINO_OK_REF/.test(s)) falla(G, S, 0, "el OK del fundador no llega al registro del despliegue");
     if (/git (reset|pull)[^\n]*\n[\s\S]*?RECHAZO=/.test(s.slice(0, s.indexOf("RECHAZO=\"\"")))) falla(G, S, 0, "el servidor se mueve antes de comprobar");
     const p = existsSync(PR) ? readFileSync(PR, "utf8") : "";
-    if (!/--is-ancestor "\$C" origin\/pruebas/.test(p) || !/--is-ancestor origin\/produccion "\$C"/.test(p) || !/conclusion == "success"/.test(p) || !/git tag -a "\$T" "\$C" -m "OK del fundador/.test(p)) falla(G, PR, 0, "promover.sh: pruebas, fast-forward, CI en verde y la etiqueta con el OK");
+    if (!/--is-ancestor "\$C" origin\/pruebas/.test(p) || !/--is-ancestor origin\/produccion "\$C"/.test(p) || !/git tag -a "\$T" "\$C" -m "OK del fundador/.test(p)) falla(G, PR, 0, "promover.sh: pruebas, fast-forward, CI en verde y la etiqueta con el OK");
+    // 22 nov · «CI en verde» ya no es cualquier corrida verde con ese commit (parcial, de solo documentos, de pull_request, de otra rama): se
+    // recalcula desde la API de trabajos (scripts/ci/corrida.mjs, corridaDeProduccion) y se prueba aquí con corridas de mentira.
+    if (!/\nnode "\$\(dirname "\$0"\)\/\.\.\/ci\/corrida\.mjs" --produccion "\$C" \|\| \{ echo "✗ [^\n]*"; exit 1; \}\n/.test(p) || /gh run list|conclusion == "success"/.test(p) || p.indexOf("corrida.mjs\" --produccion") > p.indexOf("git tag -a"))
+      falla(G, PR, 0, "promover.sh exige, antes de etiquetar, una corrida entera del CI (node scripts/ci/corrida.mjs --produccion: push, programada o a mano sin solo ni alcance parcial, en main, primer intento, todos los carriles en verde), no cualquier verde");
+    { const CO = "scripts/ci/corrida.mjs", co = existsSync(CO) ? sinComent(CO) : "", ct = existsSync(CO) ? readFileSync(CO, "utf8") : "", y = readFileSync(".github/workflows/ci.yml", "utf8");
+      if (!/PENDIENTE \(lo decide el fundador\): la «confirmación completa» de la decisión AD/.test(ct)) falla(G, CO, 0, "corrida.mjs anota que la confirmación completa de AD (dos veces + barajada) es un nivel más alto que todavía no se exige");
+      if (!y.includes(`      - name: "entradas: alcance=\${{ inputs.alcance || 'todo' }} · solo=«\${{ inputs.solo }}» · aprobar=\${{ inputs.aprobar || 'no' }} · medir=\${{ inputs.medir || 'no' }}"\n`) || !/export const ENTRADAS_ENTERAS = \/\^entradas: alcance=todo · solo=«» · aprobar=no · medir=no\$\/;/.test(co))
+        falla(G, ".github/workflows/ci.yml", 0, "«alcance» escribe las entradas de la corrida en el nombre del paso «entradas: …» y producción exige «alcance=todo · solo=«» · aprobar=no · medir=no»");
+      const SH = "c".repeat(40), RP = "dueno/repo";
+      const run = (x = {}) => ({ id: 7, head_sha: SH, event: "push", head_branch: "main", path: ".github/workflows/ci.yml", repository: { full_name: RP }, head_repository: { full_name: RP }, run_attempt: 1, status: "completed", conclusion: "success", ...x });
+      const j = (name, conclusion = "success", steps) => ({ name, status: "completed", conclusion, ...(steps ? { steps } : {}) });
+      const ent = (t = "entradas: alcance=todo · solo=«» · aprobar=no · medir=no") => [{ name: "Run actions/checkout@v4" }, { name: "Run node scripts/ci/alcance.mjs || echo \"alcance=todo\" >> \"$GITHUB_OUTPUT\"" }, { name: t }];
+      const DSP = ["iphone-se", "iphone-15", "iphone-15-pro-max", "pixel", "galaxy", "ipad", "escritorio-1024", "escritorio-1280", "escritorio-1440"];
+      const base = (e) => [j("alcance (todo o solo documentos)", "success", ent(e)), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
+        ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]), ...DSP.map((d) => j(`dispositivo · ${d}`)),
+        j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
+      const conConf = () => [...base().filter((x) => !/^(punta a punta · todas las fases|confirmación)/.test(x.name)), ...[1, 2, 3, 4].flatMap((i) => [j(`confirmación · dos veces seguidas · ${i}/4`), j(`confirmación · barajada · ${i}/4`)])];
+      const CP = [
+        ["una corrida de push entera y en verde", run(), base(), true],
+        ["una programada entera", run({ event: "schedule" }), base(), true],
+        ["a mano entera", run({ event: "workflow_dispatch" }), base(), true],
+        ["a mano con confirmar=si (todas las fases van en la confirmación)", run({ event: "workflow_dispatch" }), conConf(), true],
+        ["a mano con «solo»", run({ event: "workflow_dispatch" }), base("entradas: alcance=todo · solo=«sql9u» · aprobar=no · medir=no"), false],
+        ["a mano con alcance pantallas", run({ event: "workflow_dispatch" }), base("entradas: alcance=pantallas · solo=«» · aprobar=no · medir=no").map((x) => (/^punta a punta · (al revés|todas)/.test(x.name) ? j(x.name, "skipped") : x)), false],
+        ["a mano con aprobar=si", run({ event: "workflow_dispatch" }), base("entradas: alcance=todo · solo=«» · aprobar=si · medir=no"), false],
+        ["a mano con medir=si", run({ event: "workflow_dispatch" }), base("entradas: alcance=todo · solo=«» · aprobar=no · medir=si"), false],
+        ["sin el paso de las entradas (una corrida de antes)", run(), base().map((x) => (/^alcance/.test(x.name) ? j(x.name) : x)), false],
+        ["un push de solo documentos", run(), base().map((x) => (/^(web|punta a punta · (al|todas)|dispositivo) /.test(x.name) ? j(x.name, "skipped") : x)), false],
+        ["pull_request", run({ event: "pull_request" }), base(), false],
+        ["otra rama", run({ head_branch: "trabajo" }), base(), false],
+        ["segundo intento", run({ run_attempt: 2 }), base(), false],
+        ["otro repositorio", run({ repository: { full_name: "otro/repo" } }), base(), false],
+        ["corrida roja", run({ conclusion: "failure" }), base(), false],
+        ["falta un dispositivo", run(), base().filter((x) => x.name !== "dispositivo · pixel"), false],
+        ["una parte de «al revés» saltada", run(), base().map((x) => (x.name === "punta a punta · al revés · 2/4" ? j(x.name, "skipped") : x)), false],
+        ["confirmar=si con la barajada incompleta", run({ event: "workflow_dispatch" }), conConf().filter((x) => x.name !== "confirmación · barajada · 4/4"), false],
+        ["sin trabajos", run(), [], false],
+      ];
+      let rr; try { rr = JSON.parse(execSync(`node ${CO} --decidir-produccion`, { encoding: "utf8", input: JSON.stringify(CP.map((c) => [c[1], c[2], { sha: SH, repo: RP }])), stdio: ["pipe", "pipe", "pipe"] })); } catch { rr = null; }
+      if (!Array.isArray(rr) || rr.length !== CP.length) falla(G, CO, 0, "«node scripts/ci/corrida.mjs --decidir-produccion» no responde un veredicto por corrida");
+      else CP.forEach(([que, , , ok], i) => { if (rr[i]?.ok !== ok) falla(G, CO, 0, `producción, ${que}: ${ok ? "tiene que valer" : "NO puede valer"} (dijo ${JSON.stringify(rr[i]).slice(0, 140)})`); });
+    }
     p.split("\n").forEach((l, i) => { if (/git push/.test(l) && /(--force|\s-f\b|\+refs|\s\+)/.test(l)) falla(G, PR, i + 1, "a produccion no se empuja a la fuerza"); });
     if (!/check \(entorno <> 'produccion' or founder_ok_ref is not null\)/.test(readFileSync("packages/db/migrations/0145_despliegues.sql", "utf8"))) falla(G, "packages/db/migrations/0145_despliegues.sql", 0, "la base no exige el OK en un despliegue de producción");
     for (const f of archivos.filter((x) => /^\.github\/workflows\/.*\.ya?ml$/.test(x))) {
