@@ -23,6 +23,8 @@ if (!soloTextos) {
 
 // (2) Al revés.
 const casos = [
+  // La programada en su propio grupo.
+  [Y, "(github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && format('-{0}', github.run_id)", "github.event_name == 'workflow_dispatch' && format('-{0}', github.run_id)", 'la corrida programada y las de a mano van en su propio grupo'],
   // La lista de documentos se importa, no se copia.
   [S, 'import { DOCUMENTOS, veredicto } from "./alcance.mjs";', `import { veredicto } from "./alcance.mjs";\nconst DOCUMENTOS = Object.freeze(${JSON.stringify(DOCS.slice(0, 2))});`, 'importa DOCUMENTOS de scripts/ci/alcance.mjs'],
   [S, 'const DOC = new Set(DOCUMENTOS);', `const DOC = new Set([...DOCUMENTOS, "docs/LAUNCH-CHECKLIST.md", ${JSON.stringify(ULT)}]);`, `copia DOCUMENTOS («${ULT}» escrito a mano)`],

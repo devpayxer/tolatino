@@ -64,7 +64,9 @@ permissions:
 # Un push nuevo a una rama cancela la corrida vieja de esa rama (main nunca). Las corridas a mano (workflow_dispatch: «solo estas pruebas»,
 # anchos) llevan su propio grupo: dos dirigidas seguidas ya no se cancelan entre sí (16 nov: una en cola canceló la combinada).
 concurrency:
-  group: ci-${{ github.ref }}${{ github.event_name == 'workflow_dispatch' && format('-{0}', github.run_id) || '' }}
+# 22 nov · La programada (dos al día, con anchos: la más larga) también lleva su grupo: en el de main hacía esperar al push siguiente, y un tercer
+# push reemplazaba al que esperaba (guardián subidaConHerramienta).
+  group: ci-${{ github.ref }}${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:

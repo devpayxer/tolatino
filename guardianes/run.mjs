@@ -14595,6 +14595,8 @@ const guardianes = {
     const G = "subidaConHerramienta", S = "scripts/ci/subir.mjs", A = "scripts/ci/alcance.mjs", Y = ".github/workflows/ci.yml", D = "infra/pruebas/deploy.sh", C = "infra/pruebas/docker-compose.yml";
     for (const f of [S, A, Y, D, C]) if (!existsSync(f)) return falla(G, f, 0, "falta (la herramienta de subida o lo que lee)");
     if (!SUBIR || SUBIR.error) return falla(G, S, 0, `no carga: ${String(SUBIR?.error ?? "sin cargar").slice(0, 200)}`);
+    // 0. La programada y las de a mano no hacen cola con los pushes a main (cada una en su grupo).
+    if (!readFileSync(Y, "utf8").includes("\n  group: ci-${{ github.ref }}${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && format('-{0}', github.run_id) || '' }}\n")) falla(G, Y, 0, "la corrida programada y las de a mano van en su propio grupo (no hacen cola con los pushes a main)");
     const s = sinComent(S);
     // 1. La lista de documentos de trabajo es la de alcance.mjs, importada.
     if (!/import \{[^}]*\bDOCUMENTOS\b[^}]*\} from "\.\/alcance\.mjs";/.test(s)) falla(G, S, 0, "importa DOCUMENTOS de scripts/ci/alcance.mjs (la única lista de documentos de trabajo)");
