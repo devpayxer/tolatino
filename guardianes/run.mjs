@@ -9915,6 +9915,31 @@ const guardianes = {
     if (/infra\/ensayo\/ordenes/.test(td) && !/if \[ "\$TOLATINO_ENTORNO" = ensayo \]; then\n\s+if \[ -f "\$REPO\/infra\/ensayo\/ordenes/.test(td)) falla(G, D, 0, "las órdenes del ensayo solo corren con TOLATINO_ENTORNO=ensayo");
   },
 
+  /* 22 nov · sandboxSeArreglaSolo: el sandbox no tiene SSH y tolatino-sync es el ÚNICO camino por el que se arregla solo; un push nunca puede dejarlo
+     sin poder bajar el siguiente. (1) deploy.sh se reinstala tolatino-sync solo con instalar_si_valido (infra/comun/lib.sh: bash -n y cambio atómico
+     con mv; «install» escribe encima del archivo que está corriendo), nunca con un install directo; (2) tolatino-sync comprueba con bash -n deploy.sh
+     y cada script que deploy.sh carga o corre en el momento (lo de systemd-run va aparte) y, si uno no pasa, NO despliega (FALLO con su motivo);
+     (3) pruebas/infra/sync-pruebas.test.sh corre en las pruebas de infra. Al revés: alrevesDespliegue. */
+  sandboxSeArreglaSolo() {
+    const G = "sandboxSeArreglaSolo", D = "infra/pruebas/deploy.sh", S = "infra/pruebas/tolatino-sync", L = "infra/comun/lib.sh", C = "pruebas/infra/correr.sh";
+    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const d = sinC(readFileSync(D, "utf8")), s = sinC(readFileSync(S, "utf8")), l = readFileSync(L, "utf8");
+    if (!/instalar_si_valido "\$REPO\/infra\/pruebas\/tolatino-sync" \/usr\/local\/bin\/tolatino-sync/.test(d) || /\binstall\b[^\n]*\/usr\/local\/bin\/tolatino-sync/.test(d))
+      falla(G, D, 0, "deploy.sh se reinstala tolatino-sync solo con instalar_si_valido (bash -n y cambio atómico), nunca con un install directo");
+    const fn = (/\ninstalar_si_valido\(\) \{\n([\s\S]*?)\n\}/.exec(l) ?? [])[1] ?? "";
+    const iN = fn.indexOf('bash -n "$src"'), iT = fn.indexOf('install -m "$modo" "$src" "$tmp"'), iM = fn.indexOf('mv -f "$tmp" "$dst"');
+    if (iN < 0 || iT < 0 || iM < 0 || !(iN < iT && iT < iM) || !/if ! err=\$\(bash -n "\$src" 2>&1\); then[\s\S]{0,200}return 1/.test(fn))
+      falla(G, L, 0, "instalar_si_valido: bash -n primero (si no pasa, return 1 y se queda el anterior), después install a un archivo nuevo y mv (cambio atómico)");
+    const lista = ((/\n\s*VALIDAR="([^"]+)"/.exec(s) ?? [])[1] ?? "").split(/\s+/).filter(Boolean);
+    const usa = new Set([D]);
+    for (const linea of d.split("\n")) { if (/systemd-run/.test(linea)) continue; for (const m of linea.matchAll(/(?:^|\s)(?:\.|bash)\s+"\$REPO\/([^"]+\.sh)"/g)) usa.add(m[1]); }
+    for (const u of usa) if (!lista.includes(u)) falla(G, S, 0, `tolatino-sync no comprueba con bash -n ${u} (deploy.sh lo carga o lo corre) antes de desplegar`);
+    if (!/bash -n "\$f" 2>>"\$LOG" \|\| MAL="\$MAL \$f"/.test(s) || !/\n  if \[ -n "\$MAL" \]; then\n[^\n]*echo FALLO > "\$STATE\/last-result"[\s\S]{0,200}\n  elif \[ -f infra\/pruebas\/deploy\.sh \]; then/.test(s))
+      falla(G, S, 0, "si deploy.sh o lo que carga no es bash válido, tolatino-sync NO lo corre (FALLO con su motivo; sigue sirviendo lo de antes)");
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/sync-pruebas\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/sync-pruebas.test.sh"))
+      falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/sync-pruebas.test.sh (el tolatino-sync del sandbox)");
+  },
+
   /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del
      fundador anotado (etiqueta ok-produccion/*, que va a deploy_releases.founder_ok_ref). Lo revisan el que empuja (scripts/produccion/promover.sh) y el que
      despliega (infra/produccion/tolatino-sync, en cada máquina); ningún flujo de GitHub empuja a produccion; y si las ramas están a mano, produccion es

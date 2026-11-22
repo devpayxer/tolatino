@@ -18,8 +18,14 @@ ENV_FILE=/etc/tolatino/pruebas.env
 INICIO=$(date -u +%FT%TZ)
 PREVIO=$(cat /var/lib/tolatino/last-deploy 2>/dev/null || true)
 
-# 1) El script de sincronización con candado (corrige el choque del primer arranque).
-install -m 0755 "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync
+# 1) El script de sincronización con candado (corrige el choque del primer arranque). Es el ÚNICO camino por el que el servidor se arregla solo (sin
+#    SSH): se instala solo si es bash válido y con cambio atómico (infra/comun/lib.sh · instalar_si_valido); si no, sigue el anterior y /estado/ lo dice.
+mkdir -p /var/www/estado
+if instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync; then
+  echo "tolatino-sync: el del commit $COMMIT ($(date -Is))" > /var/www/estado/sync.txt
+else
+  echo "tolatino-sync: el del commit $COMMIT NO es bash válido; sigue el anterior ($(date -Is))" > /var/www/estado/sync.txt
+fi
 
 # 2) Secretos del sandbox: se generan una sola vez en el servidor, nunca viven en el repo.
 mkdir -p /etc/tolatino

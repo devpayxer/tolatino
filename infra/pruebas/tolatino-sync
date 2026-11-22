@@ -1,13 +1,15 @@
 #!/bin/bash
 # Sincroniza el servidor de pruebas con la rama `pruebas` y despliega si cambió.
-# Versión 2 (con candado): nunca corren dos a la vez. deploy.sh la instala en /usr/local/bin.
+# Versión 2 (con candado): nunca corren dos a la vez. deploy.sh la instala en /usr/local/bin (solo si es bash válido: instalar_si_valido).
+# 22 nov · Antes de correr deploy.sh comprueba que deploy.sh y lo que carga son bash válido: si no, NO despliega (los contenedores siguen como
+# estaban, sirviendo lo de antes), anota FALLO con el motivo y /estado/ lo dice. Prueba: pruebas/infra/sync-pruebas.test.sh (guardián sandboxSeArreglaSolo).
 set -u
 exec 9>/var/lock/tolatino-sync.lock
 flock -n 9 || exit 0
 
-REPO=https://github.com/devpayxer/tolatino.git
+REPO=${TOLATINO_SYNC_REPO:-https://github.com/devpayxer/tolatino.git}   # (las variables solo las pone la prueba; el servidor no las tiene)
 BR=pruebas
-DIR=/opt/tolatino
+DIR=${TOLATINO_SYNC_DIR:-/opt/tolatino}
 LOG=/var/log/tolatino-sync.log
 STATE=/var/lib/tolatino
 mkdir -p "$STATE" /var/www/estado
@@ -27,7 +29,18 @@ if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-dep
   git reset -q --hard "origin/$BR"
   git clean -qfd
   echo "$(date -Is) actualizado a $(git rev-parse --short HEAD)" >>"$LOG"
-  if [ -f infra/pruebas/deploy.sh ]; then
+  # Lo que deploy.sh corre o carga en el momento (lo de systemd-run va aparte y no tumba nada); el guardián sandboxSeArreglaSolo vigila la lista.
+  VALIDAR="infra/pruebas/deploy.sh infra/comun/lib.sh infra/comun/registro.sh infra/comun/sellado.sh infra/pruebas/medios.sh packages/db/migrar.sh"
+  MAL=""
+  for f in $VALIDAR; do
+    [ -f "$f" ] || continue
+    bash -n "$f" 2>>"$LOG" || MAL="$MAL $f"
+  done
+  rm -f "$STATE/last-motivo"
+  if [ -n "$MAL" ]; then
+    echo "$(date -Is) NO se despliega: no es bash válido:$MAL (sigue sirviendo lo de antes)" >>"$LOG"; echo FALLO > "$STATE/last-result"
+    echo "no es bash válido:$MAL (sigue sirviendo lo de antes)" > "$STATE/last-motivo"
+  elif [ -f infra/pruebas/deploy.sh ]; then
     echo "$(date -Is) deploy.sh inicio" >>"$LOG"
     if bash infra/pruebas/deploy.sh >>"$LOG" 2>&1; then
       echo "$(date -Is) deploy.sh OK" >>"$LOG"; echo OK > "$STATE/last-result"
@@ -49,5 +62,7 @@ RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
 { echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>To'Latino · pruebas</title>"
   echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · servidor de pruebas</h1>"
   echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
+  [ -s "$STATE/last-motivo" ] && echo "<p><b>Motivo:</b> $(sed 's/&/\&amp;/g;s/</\&lt;/g' "$STATE/last-motivo")</p>"
+  [ -s /var/www/estado/sync.txt ] && echo "<p>$(sed 's/&/\&amp;/g;s/</\&lt;/g' /var/www/estado/sync.txt)</p>"
   echo "<p><a href='/'>Abrir la app</a> · <a href='/api/salud'>Salud</a> · <a href='/estado/diag.txt'>Diagnóstico</a></p><h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
   tail -n 25 "$LOG" | sed 's/&/\&amp;/g;s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html

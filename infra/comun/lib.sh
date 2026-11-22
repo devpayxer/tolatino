@@ -6,6 +6,24 @@
 
 log() { echo "$(date -Is) [deploy] $*"; }
 
+# ── Instalar un script del que depende que el servidor se arregle solo (22 nov) ──
+# instalar_si_valido ORIGEN DESTINO [MODO]: copia ORIGEN a DESTINO solo si es bash válido (bash -n). El cambio es atómico (archivo nuevo + mv): un
+# script a medio copiar o con un error de sintaxis nunca reemplaza al que funciona, y el que está corriendo (tolatino-sync se reinstala a sí mismo
+# mientras espera a deploy.sh) sigue leyendo su copia vieja (install escribe encima del mismo archivo y bash lo lee por partes).
+# 0 = instalado (o ya era igual); 1 = no pasó y se queda el anterior (lo dice en el registro).
+instalar_si_valido() {
+  local src="$1" dst="$2" modo="${3:-0755}" err tmp
+  if ! err=$(bash -n "$src" 2>&1); then
+    log "$(basename "$dst"): el nuevo NO es bash válido; se queda el anterior · ${err:0:300}"
+    return 1
+  fi
+  cmp -s "$src" "$dst" 2>/dev/null && return 0
+  tmp="$dst.nuevo.$$"
+  if install -m "$modo" "$src" "$tmp" && mv -f "$tmp" "$dst"; then return 0; fi
+  rm -f "$tmp"; log "$(basename "$dst"): no se pudo instalar; se queda el anterior"
+  return 1
+}
+
 # ── Secretos que NACEN en el servidor (una vez; nunca viajan, nunca en el repo) ──
 # secreto_nace ARCHIVO NOMBRE: si el archivo no tiene NOMBRE=, lo genera con su receta y lo agrega. Las recetas son las de siempre del sandbox.
 secreto_receta() {
