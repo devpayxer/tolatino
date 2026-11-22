@@ -5,8 +5,7 @@ services:
     build:
       context: ../..
       dockerfile: infra/pruebas/Dockerfile
-      args:
-        TOLATINO_COMMIT: ${TOLATINO_COMMIT:-desconocido}
+      # 22 nov · Sin el commit como argumento del build (rompía la caché en cada subida): va solo en environment (/api/salud dice el desplegado).
     image: tolatino/web:pruebas
     restart: unless-stopped
     ports:

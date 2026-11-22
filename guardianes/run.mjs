@@ -3312,7 +3312,8 @@ const guardianes = {
     if (/\n      traductor:/.test(web)) falla(G, C, 0, "la app no espera al traductor para arrancar (sin depends_on)");
     if (!/COMPOSE_TRAD=\(docker compose [^)]*--profile traductor\)/.test(d)) falla(G, D, 0, "deploy.sh enciende el traductor con su perfil (COMPOSE_TRAD … --profile traductor)");
     if (!/\n  systemd-run --unit tolatino-traductor --collect [^\n]*traductor-modelos && [^\n]*up -d traductor[^\n]*\|\| true\n/.test(d)) falla(G, D, 0, "deploy.sh baja los modelos y enciende el traductor APARTE (systemd-run … || true)");
-    for (const l of d.split("\n")) if (/(^docker compose |COMPOSE\[@\]\}"? ).*up -d --build/.test(l) && /--profile/.test(l)) falla(G, D, 0, "el despliegue de la app no enciende perfiles: cada uno va aparte");
+    // 22 nov · La app se construye («build web») y se levanta («up -d») en pasos separados: ninguno de los dos enciende perfiles.
+    for (const l of d.split("\n")) if (/(^docker compose |COMPOSE\[@\]\}"? ).*\b(up -d|build)\b/.test(l) && /--profile/.test(l)) falla(G, D, 0, "el despliegue de la app no enciende perfiles: cada uno va aparte");
   },
 
   /* 5h. El Super Admin ve siempre el original (§4 5h): nada del Super Admin traduce ni lee la caché de traducciones; lo que ve es el texto
@@ -9975,6 +9976,84 @@ const guardianes = {
       falla(G, M, 0, "aplicar y anotar van en la misma sesión de psql (el archivo y su insert), y después se comprueba que quedó anotada");
     if ((m.match(/\n\s*psql < "\$f"/g) ?? []).length) falla(G, M, 0, "un archivo se aplica sin su anotación en la misma sesión (psql < \"$f\" suelto)");
     if (!/seccion "[^"]*"; bash pruebas\/infra\/migrar\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/migrar.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/migrar.test.sh (migrar.sh contra Postgres 16)");
+  },
+
+  /* 22 nov · imagenSoloLoQueUsa: el contexto de la imagen de la app es una lista blanca (.dockerignore: «*» y después «!ruta») con EXACTAMENTE lo que su
+     build lee: cada import, import() o lectura del disco de apps/web y packages/ui (y de lo que se lista, como scripts/ayuda/forma.mjs) que sale de esas
+     dos carpetas, la base de tsconfig, la traza de Next (outputFileTracingIncludes: docs/LAUNCH-CHECKLIST.md, que se lee en ejecución y, si faltara, el
+     build NO falla: el asistente de apertura diría «no leída»), el paso que sigue al build (scripts/mapas-privados.mjs) y lo que copia el Dockerfile. Ni
+     una ruta de más (cada «!» se usa). El commit no entra al build (un ARG que cambia en cada subida rompería la caché): solo en environment. Lo que
+     BuildKit de verdad manda lo comprueba pruebas/infra/contexto-imagen.test.sh. Al revés: alrevesDespliegue. */
+  imagenSoloLoQueUsa() {
+    const G = "imagenSoloLoQueUsa", I = ".dockerignore", D = "infra/pruebas/Dockerfile", Y = "infra/pruebas/docker-compose.yml", C = "pruebas/infra/correr.sh";
+    if (!existsSync(I)) return falla(G, I, 0, "falta el .dockerignore de lista blanca (la imagen solo ve lo que su build lee)");
+    const li = readFileSync(I, "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+    if (li[0] !== "*") falla(G, I, 0, "el .dockerignore empieza con «*» (lista blanca: todo fuera salvo lo que se nombra)");
+    const W = li.filter((l) => l.startsWith("!")).map((l) => l.slice(1));
+    for (const x of ["**/node_modules", "**/.next"]) if (!li.includes(x)) falla(G, I, 0, `el .dockerignore no deja fuera ${x} (el del equipo que construye taparía lo que instala la imagen)`);
+    const RAICES = ["apps/web", "packages/ui"];
+    const en = (p, r) => p === r || p.startsWith(r + "/");
+    const dentro = (p) => W.some((w) => en(p, w));
+    const existe = new Set(archivos);
+    for (const f of archivos) for (let d = dirname(f); d !== "."; d = dirname(d)) existe.add(d);
+    const usados = new Set(RAICES);
+    // (1) Lo que el Dockerfile copia del contexto (salvo «COPY . .», que es el contexto entero).
+    const df = existsSync(D) ? readFileSync(D, "utf8") : "";
+    for (const m of df.matchAll(/^COPY (?!--from)(?:--\S+ )*(.+)$/gm)) {
+      const partes = m[1].trim().split(/\s+/); partes.pop();
+      for (const p of partes) { if (p === ".") continue; usados.add(p); if (!dentro(p)) falla(G, D, 0, `el Dockerfile copia ${p} y el .dockerignore lo deja fuera`); }
+    }
+    // (2) Lo que el código de la imagen lee de fuera de apps/web y packages/ui: rutas relativas al archivo (imports) y a apps/web (el directorio de la app:
+    //     lecturas del disco, la traza de Next, el paso que sigue al build). Se sigue también dentro de lo que la lista deja entrar.
+    const fuentes = archivos.filter((f) => (RAICES.some((r) => en(f, r)) || W.includes(f)) && /\.(tsx?|jsx?|mjs|cjs|json|css)$/.test(f) && !/(^|\/)(node_modules|\.next)\//.test(f));
+    for (const f of fuentes) {
+      const t = readFileSync(f, "utf8");
+      // Las rutas entre comillas y, en los scripts de un package.json (el paso que sigue al build), cada palabra que empieza con ./ o ../.
+      const rels = [...t.matchAll(/["'`](\.\.?\/[^"'`\s$]+)["'`]/g)].map((m) => m[1]);
+      if (f.endsWith("package.json")) { try { for (const v of Object.values(JSON.parse(t).scripts ?? {})) for (const w of String(v).split(/\s+/)) if (/^\.\.?\//.test(w)) rels.push(w); } catch { /* lo dice otro guardián */ } }
+      for (const rel of rels) {
+        for (const base of [dirname(f), "apps/web"]) {
+          const p = join(base, rel).replace(/\/+$/, "");
+          if (!p || p === "." || p.startsWith("..") || RAICES.some((r) => en(p, r)) || !existe.has(p)) continue;
+          usados.add(p);
+          if (!dentro(p)) falla(G, f, 0, `${p} se lee al construir o al servir la imagen y el .dockerignore lo deja fuera (añádelo con «!${p}»)`);
+        }
+      }
+      for (const m of t.matchAll(/["']@tolatino\/([a-z-]+)/g)) {
+        const pk = existsSync(`packages/${m[1]}`) ? `packages/${m[1]}` : `apps/${m[1]}`;
+        if (pk !== "apps/web" && !dentro(pk)) falla(G, f, 0, `@tolatino/${m[1]} (${pk}) se importa y el .dockerignore lo deja fuera`);
+        usados.add(pk);
+      }
+    }
+    // (3) Ni una ruta de más: cada «!» existe y algo la usa (los archivos de la raíz que pnpm necesita los copia el Dockerfile).
+    for (const w of W) {
+      if (!existe.has(w)) falla(G, I, 0, `«!${w}» no existe en el repo`);
+      else if (![...usados].some((u) => en(u, w) || en(w, u))) falla(G, I, 0, `«!${w}» no lo lee el build (la lista blanca no lleva nada de más: cada ruta rompe la caché de la imagen)`);
+    }
+    // (4) El commit, solo en ejecución.
+    if (/^\s*ARG\s+TOLATINO_COMMIT\b/m.test(df)) falla(G, D, 0, "el commit no entra al build (ARG TOLATINO_COMMIT rompe la caché en cada subida): la app lo lee en ejecución (environment)");
+    const web = (/\n  web:\n([\s\S]*?)\n  [a-z][\w-]*:\n/.exec(existsSync(Y) ? readFileSync(Y, "utf8") : "") ?? [])[1] ?? "";
+    const build = (/\n    build:\n((?:      .*\n)+)/.exec("\n" + web + "\n") ?? [])[1] ?? "";
+    if (/TOLATINO_COMMIT/.test(build)) falla(G, Y, 0, "el compose no pasa el commit al build (args): va solo en environment");
+    if (!/\n      TOLATINO_COMMIT: \$\{TOLATINO_COMMIT:-desconocido\}\n/.test(web)) falla(G, Y, 0, "la app sigue leyendo el commit desplegado en environment (/api/salud lo dice)");
+    // (5) La prueba con BuildKit de verdad.
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/contexto-imagen\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/contexto-imagen.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/contexto-imagen.test.sh (lo que BuildKit de verdad manda)");
+  },
+
+  /* 22 nov · imagenSoloSiCambia: deploy.sh no reconstruye la imagen de la app cuando no cambió lo que entra en ella. Lo decide huella_imagen (lib.sh,
+     por contenido: las rutas «!» del .dockerignore, la receta y el .dockerignore; sin huella ante cualquier duda) junto con el Id de la imagen que
+     salió de esa huella: solo si los dos coinciden se salta el build; la huella se anota DESPUÉS de construir bien. Prueba: huella-imagen.test.sh. */
+  imagenSoloSiCambia() {
+    const G = "imagenSoloSiCambia", D = "infra/pruebas/deploy.sh", L = "infra/comun/lib.sh", C = "pruebas/infra/correr.sh";
+    const d = readFileSync(D, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n"), l = readFileSync(L, "utf8");
+    const fn = (/\nhuella_imagen\(\) \{\n([\s\S]*?)\n\}/.exec(l) ?? [])[1] ?? "";
+    if (!/sed -n 's\/\^!\/\/p' \.dockerignore/.test(fn) || !/git status --porcelain --ignored --/.test(fn) || !/git rev-parse HEAD:\.dockerignore HEAD:infra\/pruebas\/Dockerfile "\$\{rutas\[@\]\/#\/HEAD:\}"/.test(fn))
+      falla(G, L, 0, "huella_imagen sale de las rutas «!» del .dockerignore, la receta y el .dockerignore (objetos de git) y no da huella si hay algo sin versionar o cambiado");
+    if (!/HUELLA=\$\(huella_imagen \|\| true\)/.test(d) || !/\[ -n "\$HUELLA" \] && \[ -n "\$IMAGEN_ANTES" \] && \[ "\$\(cat \/var\/lib\/tolatino\/imagen-huella 2>\/dev\/null \|\| true\)" = "\$HUELLA \$IMAGEN_ANTES" \]/.test(d))
+      falla(G, D, 0, "deploy.sh se salta el build solo si la huella Y el Id de la imagen son los de la última construcción buena");
+    const iBuild = d.search(/up -d "\$\{CONSTRUIR\[@\]\}"|build web/), iAnota = d.indexOf('> /var/lib/tolatino/imagen-huella');
+    if (iBuild < 0 || iAnota < iBuild) falla(G, D, 0, "la huella se anota después de construir bien, nunca antes");
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/huella-imagen\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/huella-imagen.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/huella-imagen.test.sh");
   },
 
   /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del

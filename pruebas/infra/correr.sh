@@ -35,6 +35,8 @@ node scripts/produccion/mantenimiento.mjs --revisar || mal=1
 seccion "azul/verde"; bash pruebas/infra/azulverde.test.sh || mal=1
 seccion "sobre sellado y recuperación"; bash pruebas/infra/sellado.test.sh || mal=1
 seccion "fotos a la medida: el respaldo de las variantes en nginx (sandbox y producción)"; bash pruebas/infra/medios-nginx.test.sh || mal=1
+seccion "la imagen de la app: su huella (huella-imagen.test.sh)"; bash pruebas/infra/huella-imagen.test.sh || mal=1
+seccion "la imagen de la app: lo que BuildKit de verdad manda (contexto-imagen.test.sh)"; bash pruebas/infra/contexto-imagen.test.sh || mal=1
 if [ "$(id -u)" = 0 ] && [ "${INFRA_SIN_ROOT:-0}" != 1 ]; then
   seccion "el sandbox no cambia (traza)"; bash pruebas/infra/traza-sandbox.sh || mal=1
   seccion "producción solo avanza (tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1

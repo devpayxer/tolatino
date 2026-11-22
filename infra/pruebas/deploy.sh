@@ -67,9 +67,22 @@ diag "antes"
 
 # 3) Contenedores: app (se reconstruye con el commit nuevo), Postgres + PostGIS y Garage (fotos).
 #    Si la base tarda en quedar sana (recuperación después de un corte), se espera hasta 10 min y se vuelve a intentar una vez.
+#    22 nov · La imagen solo se construye si cambió lo que entra en ella (infra/comun/lib.sh · huella_imagen: las rutas «!» del .dockerignore, la
+#    receta y el .dockerignore, por contenido). Si la huella y la imagen son las de la última construcción, se reutiliza: ni build ni barrido/push
+#    recreados. Ante la duda (sin huella, sin imagen, otra imagen) se construye. La app se recrea igual: TOLATINO_COMMIT (environment) cambia y
+#    /api/salud tiene que decir el commit desplegado.
 export TOLATINO_COMMIT="$COMMIT"
+HUELLA=$(huella_imagen || true)
+IMAGEN_ANTES=$(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)
+CONSTRUIR=(--build)
+if [ -n "$HUELLA" ] && [ -n "$IMAGEN_ANTES" ] && [ "$(cat /var/lib/tolatino/imagen-huella 2>/dev/null || true)" = "$HUELLA $IMAGEN_ANTES" ]; then
+  CONSTRUIR=()
+  log "imagen: no cambió lo que entra en ella (huella ${HUELLA:0:12}): se reutiliza ${IMAGEN_ANTES:7:12}"
+else
+  log "imagen: se construye (huella ${HUELLA:-sin huella})"
+fi
 log "docker compose up (commit $COMMIT)"
-if ! "${COMPOSE[@]}" up -d --build --remove-orphans; then
+if ! "${COMPOSE[@]}" up -d "${CONSTRUIR[@]}" --remove-orphans; then
   log "la base no quedó sana a tiempo: se espera hasta 10 min y se reintenta"
   diag "primer intento fallido"
   "${COMPOSE[@]}" up -d db || true
@@ -77,8 +90,12 @@ if ! "${COMPOSE[@]}" up -d --build --remove-orphans; then
     "${COMPOSE[@]}" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && break
     sleep 10
   done
-  "${COMPOSE[@]}" up -d --build --remove-orphans || { diag "segundo intento fallido"; exit 1; }
+  "${COMPOSE[@]}" up -d "${CONSTRUIR[@]}" --remove-orphans || { diag "segundo intento fallido"; exit 1; }
 fi
+# La huella queda con la imagen que salió (la próxima subida con la misma huella y esta imagen no construye).
+mkdir -p /var/lib/tolatino
+if [ -n "$HUELLA" ]; then echo "$HUELLA $(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)" > /var/lib/tolatino/imagen-huella
+else rm -f /var/lib/tolatino/imagen-huella; fi
 diag "después"
 docker image prune -f >/dev/null 2>&1 || true
 

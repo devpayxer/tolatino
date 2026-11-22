@@ -7,12 +7,16 @@
 //   todas traen begin/commit.
 //   migrarUnaLectura · migrar.sh vuelve a preguntar archivo por archivo; aplica sin anotar en la misma sesión o sin comprobar que quedó anotada; la
 //   prueba contra Postgres 16 deja de correr.
+//   imagenSoloLoQueUsa · el .dockerignore deja fuera algo que el build lee (LAUNCH, que fallaría en silencio; un JSON de apps/mobile; un import nuevo
+//   a scripts/) o deja entrar algo que nadie lee; sin «*», sin excluir node_modules; el commit vuelve a entrar al build; la prueba con BuildKit no corre.
+//   imagenSoloSiCambia · se salta el build solo con la huella (sin el Id de la imagen); la huella deja de mirar lo que no está versionado; la prueba no corre.
 // «crear» (el texto a cambiar es null): se crea el archivo, se corre el guardián y se quita.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const D = 'infra/pruebas/deploy.sh', S = 'infra/pruebas/tolatino-sync', L = 'infra/comun/lib.sh', C = 'pruebas/infra/correr.sh', M = 'packages/db/migrar.sh';
 const NUEVA = 'packages/db/migrations/0999_alreves_despliegue.sql';
+const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
 const casos = [
   ['sandboxSeArreglaSolo', D, 'if instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync; then',
     'install -m 0755 "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync\nif true; then', 'nunca con un install directo'],
@@ -31,6 +35,19 @@ const casos = [
   ['migrarUnaLectura', M, "where name = :'tl_m_nombre' and sha256 = :'tl_m_huella';\")\" != 1 ]", "where false;\")\" != 0 ]", 'se comprueba que quedó anotada'],
   ['migrarUnaLectura', C, '  if [ -x /usr/lib/postgresql/16/bin/initdb ]; then seccion "migraciones en una lectura (migrar.sh contra Postgres 16)"; bash pruebas/infra/migrar.test.sh || mal=1\n',
     '  if [ -x /usr/lib/postgresql/16/bin/initdb ]; then :\n', 'no corren pruebas/infra/migrar.test.sh'],
+  ['imagenSoloLoQueUsa', I, '!docs/LAUNCH-CHECKLIST.md\n', '', 'docs/LAUNCH-CHECKLIST.md se lee al construir o al servir la imagen y el .dockerignore lo deja fuera'],
+  ['imagenSoloLoQueUsa', I, '!apps/mobile/apps.json\n', '', 'apps/mobile/apps.json se lee al construir o al servir la imagen y el .dockerignore lo deja fuera'],
+  ['imagenSoloLoQueUsa', AN, 'import APPS from "../../mobile/apps.json";', 'import APPS from "../../mobile/apps.json";\nimport "../../../scripts/ci/alcance.mjs";', 'scripts/ci/alcance.mjs se lee al construir'],
+  ['imagenSoloLoQueUsa', I, '!docs/LAUNCH-CHECKLIST.md\n', '!docs/LAUNCH-CHECKLIST.md\n!infra/pruebas\n', '«!infra/pruebas» no lo lee el build'],
+  ['imagenSoloLoQueUsa', I, '\n*\n!package.json', '\n!package.json', 'empieza con «*»'],
+  ['imagenSoloLoQueUsa', I, '**/node_modules\n', '', 'no deja fuera **/node_modules'],
+  ['imagenSoloLoQueUsa', DF, 'FROM deps AS build\n', 'FROM deps AS build\nARG TOLATINO_COMMIT=desconocido\n', 'el commit no entra al build'],
+  ['imagenSoloLoQueUsa', Y, '      dockerfile: infra/pruebas/Dockerfile\n', '      dockerfile: infra/pruebas/Dockerfile\n      args:\n        TOLATINO_COMMIT: ${TOLATINO_COMMIT:-desconocido}\n', 'no pasa el commit al build'],
+  ['imagenSoloLoQueUsa', C, 'seccion "la imagen de la app: lo que BuildKit de verdad manda (contexto-imagen.test.sh)"; bash pruebas/infra/contexto-imagen.test.sh || mal=1\n', '', 'no corren pruebas/infra/contexto-imagen.test.sh'],
+  ['imagenSoloSiCambia', D, '[ -n "$HUELLA" ] && [ -n "$IMAGEN_ANTES" ] && [ "$(cat /var/lib/tolatino/imagen-huella 2>/dev/null || true)" = "$HUELLA $IMAGEN_ANTES" ]',
+    '[ -n "$HUELLA" ] && [ "$(cut -d" " -f1 /var/lib/tolatino/imagen-huella 2>/dev/null || true)" = "$HUELLA" ]', 'la huella Y el Id de la imagen'],
+  ['imagenSoloSiCambia', L, '  estado=$(git status --porcelain --ignored -- .dockerignore infra/pruebas/Dockerfile "${rutas[@]}" 2>/dev/null) || return 0', '  estado=""', 'sin versionar o cambiado'],
+  ['imagenSoloSiCambia', C, 'seccion "la imagen de la app: su huella (huella-imagen.test.sh)"; bash pruebas/infra/huella-imagen.test.sh || mal=1\n', '', 'no corren pruebas/infra/huella-imagen.test.sh'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 let bien = 0, total = 0;
