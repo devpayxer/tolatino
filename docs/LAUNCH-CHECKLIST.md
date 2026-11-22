@@ -2522,10 +2522,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       sin almacén no hace nada (antes marcaba borrado lo que seguía ahí); el archivo primero y, en la misma transacción, la fila «borrada»
       (status, purged_at, `privado/borrada`) y su renglón en la auditoría (`ayuda.fotos.purga`, system). Guardián `fotosPrivadasConPermiso`;
       prueba de la base `fot9uprivadas` (sin almacén, vieja, reciente, abierta, F3).
-- [ ] **→ 9t** · **Fotos a la medida · privadas (F3):** variantes de las fotos de Mensajes, ayuda, entrega y reclamo bajo `privado/…`,
+- [x] **→ 9t** · **Fotos a la medida · privadas (F3):** variantes de las fotos de Mensajes, ayuda, entrega y reclamo bajo `privado/…`,
       entregadas por su misma ruta con permiso (`?w=`). Hoy una miniatura del chat baja la foto entera. (20 nov) — _(21 nov, F3): hecho para las
       fotos de destino privado de `/api/medios` (las 10 pantallas: variantes en `privado/o/`, `/api/medios/privada/<id>?w=`). Siguen sin variantes
       las de Mensajes, ayuda de Salud y Pro, entrega y reclamo (sus rutas son otras)._
+      **✓ 22 nov (F3b):** hechas también Mensajes (`privado/m/`), ayuda y Soporte (`privado/a/`), entrega (`privado/e/`) y reclamo (`privado/r/`): variantes al subir, `?w=` por su misma ruta DESPUÉS de su permiso, cabeceras privadas con `Vary`, y las purgas se llevan las variantes. Guardián `fotosPrivadasConPermiso` (12) con 18 casos al revés nuevos. Visto en local sobre base nueva (`msg9t`, `ayu4m`, `neg9n`, `rec1j`, `fot9uprivadas`): la miniatura de una ayuda baja 898 B en vez de 15.387; el documento de un reclamo, 3.678 B en vez de 130.474; otra persona y sin sesión reciben 404 igual que con la entera.
 - [ ] **→ 9t** · **Fotos a la medida · después:** AVIF para los anchos grandes; el color dominante mientras carga (hoy, el fondo neutro del
       sistema); variantes del póster del video del negocio (`/medios/v/…jpg`, que además no está en la regla de caché de Cloudflare). (20 nov)
 - [x] **→ 9t** · **Fotos guardadas como texto fuera de `media`:** `menu_items.photos text[]`, `users.photo_url`, `subcategories.photo_url`,
@@ -2757,3 +2758,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       cortar la señal: de la prueba. (4) Verlo en un iPhone real: Llamar en una tarjeta y en la ficha, y en el panel del negocio Estadísticas › contactos sube 1.
 - [ ] **→ 9t** · **Lecturas en paralelo de las cadenas tras un aviso (22 nov):** la primera petición después de un cambio hace de 1 a 3 lecturas de `cms.ts
       editadas` dentro del mismo render (ya pasaba); `juntar: true` en esa copia.
+- [ ] **→ 9u** · **Fotos privadas a la medida, lo que queda (22 nov):** (1) las privadas de Mensajes, ayuda, entrega y reclamo subidas antes del 22 nov no tienen
+      variantes (se sirven enteras, nunca rotas): falta una migración con el índice parcial `media_privadas_ruta_sin_variantes_idx` y registrar en el barrido
+      `barrerVariantesDeRuta` (escrito y apartado: sin el índice recorrería `media` entera cada minuto); (2) `cifrasFotosPrivadas` (Super Admin) no cuenta esas
+      cuatro familias; (3) el documento de un reclamo ya purgado da 500 en `/api/admin/reclamo/<CL>` (no mira `purged_at`): que dé 404; (4) falta la medida de
+      una conversación con 10 fotos (guion listo, no corrió).
