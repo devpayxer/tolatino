@@ -2706,12 +2706,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       el CI pasaron las 22 en la dirigida 45006294341); (4) `compa7g` («sin ids crudos ni el teléfono de la cuenta») falló una vez en base nueva
       según el orden y pasa sola: inestable por mirar; (5) `scripts/ci/corrida.mjs --produccion` necesita `REPO` cuando `gh repo view` no responde:
       que lo saque del remoto de git.
-- [ ] **→ 9t** · **Caché de Configuración, del producto (lo vio la tanda 3a, no se tocó):** (1) `lib/config.ts:123-126` guarda la caché al volver de la
+- [x] **→ 9t** · **Caché de Configuración, del producto (lo vio la tanda 3a, no se tocó):** (1) `lib/config.ts:123-126` guarda la caché al volver de la
       consulta sin mirar si llegó un aviso entre medias: una lectura que salió antes del cambio puede dejar el valor viejo hasta 15 s; el mismo
       patrón en otras nueve cachés (arreglo: contador de generación); (2) hay tres conexiones `LISTEN` por proceso (una por capa de Next) y
       `escuchandoConfig()` no la llama nadie: mostrarla en Sistema › Salud y dejar una sola escucha por proceso; (3) una espera fija puede tapar
       otro límite de reloj sin decirlo (`llave9t` cubría los 30 s entre dos códigos al mismo teléfono): el guardián `sinEsperaFijaLarga` ya obliga
       a escribir el motivo. (22 nov)
+      **✓ 22 nov:** (1) eran 15 cachés con aviso, no 9; todas pasan a `lib/cache-aviso.ts` (`cacheConAviso`, contador de generación): `cachegen9t` reproduce la carrera en las 15 (16 fallas contra el código anterior, 76/76 con el arreglo) y `cfgcarrera9t` la fuerza contra el servidor con candados de la base; mismos vencimientos y ninguna consulta de más por petición; guardián `cacheConGeneracion` (`alrevesCacheGen`, 13). (2) Una sola escucha `LISTEN` por proceso (antes 2–3) y su estado en Sistema › Salud («Cambios al instante»), con su ayuda ES/EN.
 - [ ] **→ 9b** · **Tanda 4 de la revisión del CI (22 nov), lo que queda:** (1) regenerar `pruebas/reparto.json` (sin `--rebalancear`) con tres corridas
       verdes de 8 partes posteriores a la tanda 3a: la parte 8/8 tardó 19,1 min y la 5/8, 12 (se repartió con duraciones de antes y con 60 s
       supuestos para `cfgcal9b`, `nota9u2` y `tarAK`); rebalancear solo en un commit propio con su confirmación; (2) las dirigidas con `solo` y el
@@ -2748,3 +2749,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       or user_id is null)`, para que un mensaje del equipo no pueda entrar nunca al archivo de una persona (hoy no hay fuga; `nota9u2` lo comprueba en toda
       la base); (2) salen en el archivo de la persona `tickets.door_name` (el nombre del portero, otra persona) y `media.rev_llave` (la ruta interna de la copia
       de revisión): quitarlos; (3) `pausas.cot`, `pausas.staff`, `equipo[].hidden` y `ver.selloNote` llegan a secciones del Panel que no los pintan.
+- [ ] **→ 9t** · **El toque de «Llamar» que se perdía en Safari, lo que queda (22 nov):** el toque (llamar, cómo llegar, compartir, escribir) ya sale por
+      `lib/contar-toque.ts` (sendBeacon / keepalive → `/api/toque`, mismas reglas; guardián `toqueSobreviveSalida`). (1) `entroPatrocinado`
+      (`acciones-patrocinio.ts`, `Patrocinados.tsx`) es de la misma clase: una acción del servidor seguida de `tel:` o del mapa; pasarlo a la misma vía y
+      ampliar el guardián. (2) `beta8f` (iPad) lanza el error 10 ms después de `load`, antes de que el colector se monte: de la prueba, y un límite real
+      menor (se pierden errores de los primeros instantes). (3) `evt6h` en escritorio no espera al service worker ni a que el boleto quede guardado antes de
+      cortar la señal: de la prueba. (4) Verlo en un iPhone real: Llamar en una tarjeta y en la ficha, y en el panel del negocio Estadísticas › contactos sube 1.
+- [ ] **→ 9t** · **Lecturas en paralelo de las cadenas tras un aviso (22 nov):** la primera petición después de un cambio hace de 1 a 3 lecturas de `cms.ts
+      editadas` dentro del mismo render (ya pasaba); `juntar: true` en esa copia.

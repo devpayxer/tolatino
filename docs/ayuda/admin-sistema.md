@@ -15,6 +15,9 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
   pantalla), en % de mediciones buenas. **BIEN** si 75 % o más son buenas en las tres; **REVISAR** si más de 25 % son malas en alguna. Solo cifras
   por día y pantalla (el nombre del negocio o el número de un pedido se vuelve «:x»): nunca quién, ni su teléfono, ni la dirección. Se apaga con el
   flag **app.vitals**.
+- **Cambios al instante (Salud):** si este servidor está escuchando los cambios que se guardan en el Super Admin (Configuración, interruptores,
+  ciudades, textos), desde cuándo, el último aviso que recibió y cuántos. **VIVA:** lo que cambias se ve al momento. **REVISAR:** el servidor se
+  está reconectando (cada 5 segundos) y un cambio puede tardar hasta 15 segundos en verse (60 las ciudades).
 - **Respaldos:** lo que importa es que se puede restaurar: arriba la **restauración de prueba** (si restauró, cuánto tardó, el punto en el tiempo y las
   filas que contó), y después lo último de cada tipo (base completa, registro continuo, fotos y el sobre de llaves de recuperación) y la lista. Avisa si
   el respaldo de la base pasó de 26 horas, si la última restauración falló o si no hubo una buena en 8 días.
@@ -47,6 +50,7 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
 | Un error del servidor con un teléfono en el mensaje | Se guarda con «[tel]» en su lugar, en el grupo de los iguales. |
 | Una llave vence en 30 días | Cada Admin recibe un aviso (una vez por etapa). |
 | Una foto de Salud sin motivo | No se muestra (ni por la dirección de la foto). |
+| La escucha de cambios se cae | Salud dice **REVISAR** en «Cambios al instante»; los cambios tardan hasta 15 segundos (60 las ciudades) y se reconecta sola cada 5 segundos. |
 
 ## Preguntas frecuentes
 - **¿Puedo borrar un respaldo, un mantenimiento o un motivo?** No: nada de esto se borra; un mantenimiento se cancela.
@@ -73,6 +77,9 @@ producción (9t). Simbolizar los cierres nativos con los dSYM queda para cuando 
 - **Health:** how the platform is doing now. Database uptime and timing, errors in the last 24 hours (server, web and apps), one row per service (the
   database, the sweep jobs, the push queue, the disk and errors) with the latest measurement (every 5 minutes), sweep tasks with errors, keys and
   certificates that expire and **scheduled maintenance**.
+- **Instant changes (Health):** whether this server is listening for changes saved in the Super Admin (Settings, flags, cities, texts), since when,
+  the last notice it received and how many. **LIVE:** what you change shows at once. **CHECK:** the server is reconnecting (every 5 seconds) and a
+  change can take up to 15 seconds to show (60 for cities).
 - **Backups:** what matters is that it can be restored: the **test restore** comes first (whether it restored, how long it took, the point in time and the
   rows it counted), then the latest of each kind (full database, continuous log, photos and the recovery key envelope) and the list. It warns if the
   database backup is older than 26 hours, if the latest restore failed or if there was no good one in 8 days.
