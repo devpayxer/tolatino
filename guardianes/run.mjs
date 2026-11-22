@@ -8162,7 +8162,7 @@ const guardianes = {
       const j = (name, conclusion = "success", status = "completed") => ({ name, status, conclusion });
       const base = () => [j("alcance (todo o solo documentos)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
         ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]), ...disp.map((d) => j(`dispositivo · ${d}`)),
-        j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería completa (todo en verde, nada saltado)")];
+        j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
       const sin = (re) => base().filter((x) => !re.test(x.name)), con = (re, c, st) => base().map((x) => (re.test(x.name) ? j(x.name, c, st) : x));
       const CC = [
         ["una corrida de push completa y en verde", run(), base(), true],
@@ -8216,6 +8216,10 @@ const guardianes = {
     if (!tu.includes("SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}")) falla(G, Y, 0, "«tuberia» solo perdona lo saltado por documentos en un push");
     if (!tu.includes('const porDocs = docs && (k === "regresion" || k === "dispositivos");') || !/\|\| \(k === "anchos" && process\.env\.ANCHOS !== "si"\) \|\| porDocs;/.test(tu)) falla(G, Y, 0, "«tuberia» perdona por documentos solo regresión y dispositivos");
     if (!tu.includes('"solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"') || !/console\.log\("::notice::" \+ m\)/.test(tu)) falla(G, Y, 0, "«tuberia» dice con todas las letras «solo documentos: N archivos; los carriles largos no corren por diseño»");
+    // 22 nov · Su verde no quiere decir «todo corrió»: el nombre no lo promete y el resumen dice qué corrió, qué no y si fue una pasada completa.
+    if (/\n    name: [^\n]*nada saltado/.test(tu) || !tu.includes('"CORRIÓ: " + (corrio.join(", ") || "nada")') || !tu.includes('"NO CORRIÓ: " + (noCorrio.join(", ") || "nada")')
+      || !tu.includes('"esta corrida NO es una pasada completa: la regresión entera o los dispositivos no corrieron en ella"') || !/for \(const l of lineas\) \{ console\.log\(l\); console\.log\("::notice::" \+ l\); \}/.test(tu) || !/GITHUB_STEP_SUMMARY/.test(tu))
+      falla(G, Y, 0, "«tuberia» no promete «nada saltado» y su resumen dice con todas las letras qué corrió, qué no corrió y si fue una pasada completa (registro, avisos y resumen de la corrida)");
   },
 
   /* 9b-3 · Ningún tope por minuto (o por segundo) ni corta-circuito en la memoria de un proceso de la app (LAUNCH L685, L699, L1235, L1302): con

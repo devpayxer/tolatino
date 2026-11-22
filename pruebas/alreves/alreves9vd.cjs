@@ -89,7 +89,7 @@ if (!soloTextos) {
       let js = [j('alcance (todo o solo documentos)'), j('tipos · build · guardianes'), j('seguridad · Semgrep (reglas propias) · dependencias'), j('web · build una vez para todos los grupos'),
         ...[1, 2, 3, 4].flatMap((i) => [j(`punta a punta · al revés · ${i}/4`), j(`punta a punta · todas las fases · ${i}/4`)]),
         ...['iphone-se', 'iphone-15', 'iphone-15-pro-max', 'pixel', 'galaxy', 'ipad', 'escritorio-1024', 'escritorio-1280', 'escritorio-1440'].map((d) => j(`dispositivo · ${d}`)),
-        j('confirmación · ${{ matrix.nombre }}', 'skipped'), j('punta a punta · ancho ${{ matrix.id }}', 'skipped'), j('la tubería completa (todo en verde, nada saltado)')];
+        j('confirmación · ${{ matrix.nombre }}', 'skipped'), j('punta a punta · ancho ${{ matrix.id }}', 'skipped'), j('la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)')];
       if (x.saltados) js = js.map((t) => (x.saltados.test(t.name) ? j(t.name, 'skipped') : t));
       if (x.rojo) js = js.map((t) => (x.rojo.test(t.name) ? j(t.name, 'failure') : t));
       if (x.sin) js = js.filter((t) => !x.sin.test(t.name));
@@ -223,6 +223,11 @@ const casos = [
   [Y, "SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs", 'SOLO_DOCUMENTOS: ${{ needs', 'solo perdona lo saltado por documentos en un push'],
   [Y, 'const porDocs = docs && (k === "regresion" || k === "dispositivos");', 'const porDocs = docs;', 'solo regresión y dispositivos'],
   [Y, '"solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"', '"solo documentos"', 'con todas las letras'],
+  // 22 nov · El nombre de la tubería no promete «nada saltado» y su resumen dice qué corrió y qué no.
+  [Y, '    name: la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)', '    name: la tubería completa (todo en verde, nada saltado)', 'no promete «nada saltado»'],
+  [Y, '"NO CORRIÓ: " + (noCorrio.join(", ") || "nada")', '"OTROS: " + (noCorrio.join(", ") || "nada")', 'no promete «nada saltado»'],
+  [Y, '"esta corrida NO es una pasada completa: la regresión entera o los dispositivos no corrieron en ella"', '"pasada"', 'no promete «nada saltado»'],
+  [Y, 'for (const l of lineas) { console.log(l); console.log("::notice::" + l); }', 'for (const l of []) { console.log(l); }', 'no promete «nada saltado»'],
 ];
 const correr = () => {
   try { execSync(`node guardianes/run.mjs --solo ${G}`, { cwd: R, stdio: 'pipe' }); return []; }

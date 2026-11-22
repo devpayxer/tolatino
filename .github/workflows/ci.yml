@@ -452,8 +452,10 @@ jobs:
         if: always()
         with: { name: "anchos-${{ matrix.id }}-${{ matrix.parte }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
 
+  # 22 nov · El nombre ya no promete «nada saltado»: en un push de solo documentos o en una corrida parcial a mano hay carriles que no corren a
+  # propósito y la tubería sale verde igual. Lo que corrió y lo que no lo dice el resumen del último paso, con todas las letras.
   tuberia:
-    name: la tubería completa (todo en verde, nada saltado)
+    name: la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)
     needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion, anchos]
     if: always()
     runs-on: ubuntu-latest
@@ -492,6 +494,9 @@ jobs:
           ALCANCE: ${{ inputs.alcance || 'todo' }}
           CONFIRMAR: ${{ inputs.confirmar }}
           ANCHOS: ${{ (github.event_name == 'schedule' || inputs.anchos == 'si') && 'si' || 'no' }}
+          SOLO: ${{ inputs.solo }}
+          ANCLA: ${{ needs.cambios.outputs.ancla }}
+          CORRIDA_CODIGO: ${{ needs.cambios.outputs.corrida }}
         run: |
           echo "$RESULTADOS" | node -e '
             const n = JSON.parse(require("fs").readFileSync(0, "utf8")), a = process.env.ALCANCE; let mal = 0;
@@ -504,5 +509,19 @@ jobs:
               console.log((ok ? "✓ " : "✗ ") + k + " · " + v.result + (v.result === "skipped" && parcial ? (porDocs ? " (a propósito: solo documentos)" : " (a propósito: alcance " + a + ")") : ""));
               if (!ok) mal++;
             }
+            // 22 nov · Qué corrió y qué no, con todas las letras (el verde de esta tubería no quiere decir «todo corrió»).
+            const por = (k) => (docs && (k === "regresion" || k === "dispositivos") ? "solo documentos" : k === "confirmacion" ? "no se pidió confirmar=si" : k === "anchos" ? "ni programada ni anchos=si" : a !== "todo" ? "alcance " + a : "sin motivo: cuenta como rojo");
+            const corrio = Object.entries(n).filter(([, x]) => x.result === "success").map(([k]) => k);
+            const noCorrio = Object.entries(n).filter(([, x]) => x.result === "skipped").map(([k]) => k + " (" + por(k) + ")");
+            const solo = (process.env.SOLO || "").trim();
+            const largos = ["regresion", "dispositivos"].every((k) => n[k]?.result === "success") && !solo;
+            const lineas = [
+              "CORRIÓ: " + (corrio.join(", ") || "nada"),
+              "NO CORRIÓ: " + (noCorrio.join(", ") || "nada") + (solo ? " · y la regresión corrió SOLO estas pruebas: " + solo.slice(0, 300) : ""),
+              largos ? "pasada completa de un push: regresión (todas sus partes) y los 9 dispositivos corrieron" + (n.confirmacion?.result === "success" ? ", y también la confirmación" : "; la confirmación completa de AD (dos veces seguidas + barajada) NO corrió")
+                : "esta corrida NO es una pasada completa: la regresión entera o los dispositivos no corrieron en ella" + (docs && process.env.ANCLA ? "; el código de este commit es el de " + process.env.ANCLA.slice(0, 12) + ", que confirmó la corrida " + process.env.CORRIDA_CODIGO : ""),
+            ];
+            for (const l of lineas) { console.log(l); console.log("::notice::" + l); }
+            try { require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, "### Qué corrió en esta corrida\n\n" + lineas.map((l) => "- " + l).join("\n") + "\n"); } catch {}
             if (mal) process.exit(1);
           '
