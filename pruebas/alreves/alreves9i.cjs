@@ -31,7 +31,7 @@ const casos = [
   ['ciudadAlInstante', M, "perform pg_notify('ciudades', tg_table_name);", "perform 1;"],
   ['ciudadAlInstante', M, "create trigger zones_avisa_ciudades after insert or update or delete on zones for each statement execute function ciudades_avisar();", ""],
   ['ciudadAlInstante', CC, 'listen tl_config; listen ciudades', 'listen tl_config'],
-  ['ciudadAlInstante', U, 'Date.now() - cache.at < 60_000', 'Date.now() - cache.at < 600_000'],
+  ['ciudadAlInstante', U, 'const CIUDADES = cacheConAviso({ ttlMs: 60_000', 'const CIUDADES = cacheConAviso({ ttlMs: 600_000'],
   ['ciudadAlInstante', U, '  if (!cs.some((c) => c.status === "beta")) return cs;', '  if (!cs.some((c) => c.status === "beta")) return cs;\n  const cache = 1; void cache;'],
   // betaSoloInvitados: la base deja entrar a cualquiera o a una invitación quitada, ubicacion sin vista, la beta abierta para todos, el selector sin vista,
   // y las acciones del servidor con «status = 'on'» a secas

@@ -1,5 +1,5 @@
 import "server-only";
-import { alCambiarConfig } from "./cambios-config";
+import { cacheConAviso } from "./cache-aviso";
 import { headers } from "next/headers";
 import { auditar, type Staff } from "./admin";
 import { cambiarConfig, valores, type ClaveConfig } from "./config";
@@ -24,14 +24,9 @@ export const claveMin = (a: ClaveApp, p: Plataforma) => `app_min_build_${a}_${p}
 export const claveAviso = (a: ClaveApp, p: Plataforma) => `app_aviso_build_${a}_${p}` as ClaveConfig;
 export const flagCascara = (a: ClaveApp) => `app.cascara.${a}`;
 
-let flags: { at: number; m: Map<string, boolean> } | null = null, escucha = false;
-async function encendidas(): Promise<Map<string, boolean>> {
-  if (!escucha) { escucha = true; alCambiarConfig(() => { flags = null; }); }
-  if (flags && Date.now() - flags.at < 15_000) return flags.m;
-  const r = await db().query<{ key: string; enabled: boolean }>(`select key, enabled from feature_flags where key like 'app.cascara.%'`);
-  flags = { at: Date.now(), m: new Map(r.rows.map((x) => [x.key, x.enabled])) };
-  return flags.m;
-}
+const FLAGS = cacheConAviso({ ttlMs: 15_000,
+  cargar: async () => new Map((await db().query<{ key: string; enabled: boolean }>(`select key, enabled from feature_flags where key like 'app.cascara.%'`)).rows.map((x) => [x.key, x.enabled])) });
+const encendidas = (): Promise<Map<string, boolean>> => FLAGS.leer();
 
 export type Compuerta = { estado: "web" } | { estado: "ok" | "aviso" | "actualizar" | "pausa"; app: AppNativa; nombre: { es: string; en: string }; tienda: string };
 /* Dónde se actualiza: la ficha de la tienda cuando exista (Fase 9); antes, TestFlight (iOS) o Play (Android, prueba interna). */
@@ -143,6 +138,6 @@ export async function pausarApp(s: Staff, app: string, encender: boolean, motivo
       before: { [nom]: a.enabled ? "abierta" : "en pausa" }, after: { [nom]: encender ? "abierta" : "en pausa" }, reason: m });
     return { ok: true, msg: encender ? `${nom} está abierta otra vez.` : `${nom} en pausa: la app muestra «Abrir en la web».` };
   });
-  flags = null;
+  FLAGS.olvidar(); // este proceso lo ve ya (los demás, por el aviso)
   return r;
 }

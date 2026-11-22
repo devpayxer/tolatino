@@ -1,5 +1,5 @@
 import "server-only";
-import { alCambiarConfig } from "./cambios-config";
+import { cacheConAviso } from "./cache-aviso";
 import { db } from "./db";
 import { CTE, COLUMNAS, DESDE, FOTOS, conFotos, POR_PAGINA, type ConFotosJ, type Resultado } from "./categoria";
 import type { Punto } from "./punto";
@@ -23,11 +23,8 @@ const INT = new Map(DATOS.intenciones.map((i) => [i.key, i]));
 const stem = (w: string) => (w.length > 5 && w.endsWith("es") ? w.slice(0, -2) : w.length > 4 && w.endsWith("s") ? w.slice(0, -1) : w);
 
 type Dic = { syn: Map<string, string[]>; frases: [string, string][]; intenciones: [string, string][] };
-let cache: { at: number; dic: Dic } | null = null, escucha = false;
 /* Sinónimos, frases e intenciones activos (60 s en memoria: cambian solo cuando el admin los edita). */
-async function diccionario(): Promise<Dic> {
-  if (!escucha) { escucha = true; alCambiarConfig(() => { cache = null; }); }
-  if (cache && Date.now() - cache.at < 60_000) return cache.dic;
+const DICCIONARIO = cacheConAviso({ ttlMs: 60_000, cargar: async (): Promise<Dic> => {
   const r = await db().query<{ term: string; kind: string; target: string }>(
     `select lower(term) as term, target_kind as kind, lower(target) as target from synonyms where active and target_kind in ('query', 'filter')`);
   const syn = new Map<string, string[]>(), frases: [string, string][] = [], intenciones: [string, string][] = [];
@@ -41,9 +38,9 @@ async function diccionario(): Promise<Dic> {
     else if (limpio(x.target)) syn.set(t, [...(syn.get(t) ?? []), limpio(x.target)]);
   }
   intenciones.sort((a, b) => b[0].length - a[0].length);
-  cache = { at: Date.now(), dic: { syn, frases, intenciones } };
-  return cache.dic;
-}
+  return { syn, frases, intenciones };
+} });
+const diccionario = (): Promise<Dic> => DICCIONARIO.leer();
 
 export type Grupo = { w: string; a: string[]; corregida?: string };
 export type Entendido = { intenciones: { k: string; frase: string; label: { es: string; en: string }; tipo: string }[]; grupos: Grupo[]; palabras: string[] };
