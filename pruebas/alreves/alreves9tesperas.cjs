@@ -55,6 +55,7 @@ for (const [que, f, c] of limpios) {
   let r; try { r = correr(G); } finally { fs.unlinkSync(ruta); }
   total++; console.log(`  ${r[0] ? '✗' : '✓'} ${G}: ${que} no es un defecto${r[1] ? ' → ' + r[1].trim().slice(0, 170) : ''}`); if (!r[0]) bien++;
 }
-let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+let limpio = true;
+if (!require('../lib/alreves-fin.cjs')(R)) limpio = false;
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio ? 0 : 1);
