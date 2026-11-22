@@ -6192,4 +6192,8 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   de un trabajo de 11–14 minutos). Una confirmación pide 16 máquinas como mucho y deja 4 libres.
 - **Decide tú (dos cosas menores):** «al revés» quedó en 3 partes (con 2 también cabría); y los anchos de la corrida programada van en 8 partes, 4 a
   la vez (unos 100 minutos de noche). Si no dices nada, se quedan así.
+- **Tanda 5, el sandbox (22 nov):** el despliegue construye → migra → cambia la app (una migración que falla deja la app de antes sirviendo), no
+  reconstruye la imagen si la app no cambió, revisa las migraciones en una sola consulta, enseña una página «volvemos en unos segundos» en vez del
+  error de nginx, y un guion roto ya no puede instalarse. Dos revisores independientes la revisaron (15 hallazgos, ninguno la bloqueaba, todos
+  arreglados). **Qué mirar:** nada cambia a la vista; si alguna vez ves «volvemos en unos segundos» durante más de un minuto, dímelo.
 

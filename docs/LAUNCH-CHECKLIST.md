@@ -2713,4 +2713,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       la clase «la página pinta distinto en servidor y cliente»: mirar la causa; (4) `com5d` deja encendido el puerto 8790; (5) `compa7d` elige sus
       requisitos con un nombre que no está escrito en el código (anotado en `dinamicos` del reparto); (6) ver servida una corrida con
       `confirmar=si` (12 trabajos de confirmación a la vez) y los anchos en 8 partes, 4 a la vez.
+- [ ] **→ 9o** · **Tanda 5 de la revisión del CI (despliegue del sandbox, 22 nov), lo que queda:** (1) ver servido en `/estado/` tras el push a
+      `pruebas`: «deploy.sh OK», la línea de tramos, el tramo de migraciones en pocos segundos, y en una segunda subida sin cambios de la app «imagen:
+      no cambió… se reutiliza»; la página de mantenimiento (503) durante el cambio; el primer despliegue lo hace todavía el `tolatino-sync` viejo;
+      (2) la app se recrea en cada subida aunque la imagen no cambie, porque `/api/salud` lee el commit del entorno: arreglo de fondo en `apps/`;
+      (3) `traza-sandbox.sh` compara contra HEAD por omisión (en el CI, consigo mismo): es una comprobación manual contra una revisión fija;
+      (4) `migracionReversible` no caza `add constraint` que rompa escrituras de la app vieja ni un cambio de cuerpo de una función con la misma
+      firma; (5) 16 migraciones viejas no traen `begin/commit` (no se tocan; las nuevas las vigila `migracionConTransaccion`); (6) `infra/produccion`
+      no tiene nada de esto (copia buena de nginx, avisos que no cortan, comprobar el commit servido, `bash -n` del sync): va con la fase 9;
+      (7) `com5g` salió INESTABLE otra vez (corridas 44972632142 y 45029130411): mirar la causa; (8) sin azul/verde: si la app nueva arranca y no
+      contesta, queda la página de mantenimiento hasta el siguiente push.
 
