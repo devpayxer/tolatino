@@ -2686,4 +2686,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       un parámetro para que el horario elegido viaje a la reserva; (4) capturas contra las de la entrega solo a ojo; (5) la nota nueva de
       Panel › Tu página › Fotos no se vio en pantalla; (6) la barra «Anterior / Siguiente» del teléfono tapa la tarjeta que queda debajo (ya era
       así) y `/sistema` imprime un TypeError de ChangeProposal sin datos; (7) el botón «Ordenar» en negocios de Comida que cotizan (REVISION).
+- [ ] **→ 9b** · **Tanda 1 de la revisión del CI (22 nov), lo que queda por ver o hacer:** (1) ver servido el alcance con la API (`gh` dentro del
+      trabajo «alcance»), el paso `entradas:` en la API de trabajos y `promover.sh` en seco contra una corrida real; (2) `gitListaConZ` deja como
+      aviso tres archivos que aún listan sin `-z` (`apps/mobile/scripts/version.mjs`, `pruebas/e2e/sql9u.cjs`, `pruebas/infra/traza-sandbox.sh`);
+      (3) `tub9b`, `alreves9u2` y `alreves9usql` no corrieron en local en esta tanda (faltaban `pngjs` y la base): los cubre la confirmación del
+      CI; (4) `scripts/ci/corrida.mjs` lleva escritos los nombres de los trabajos del CI: al repartir en más partes o partir la verificación hay
+      que cambiarlo en el mismo commit; (5) el resto del plan verificado (tandas 2 a 6: «al revés» con árbol idéntico, dirigidas en partes,
+      esperas de 16 s, verificación en paralelo, reparto por duración, despliegue, herramienta de subida).
 

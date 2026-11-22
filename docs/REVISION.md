@@ -6172,4 +6172,11 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Ya arreglado y servido:** el paso final del CI (8 s en vez de 23 min) y las subidas de solo documentos sin los carriles largos.
 - **Decide tú (cuando llegue el plan):** el punto 9 toca «se abre cuando esté todo»: hace falta un criterio de qué bloquea abrir y qué puede hacerse
   con la app abierta. Te llevo dos o tres opciones con sus números.
+- **Tanda 1, hecha (22 nov):** cerrados cuatro huecos que encontraron los verificadores: un push de solo documentos ya no sale verde si el código de
+  debajo no quedó confirmado; los guardianes ya ven los archivos con ñ o acento en el nombre; el guardián de «toda migración se puede revertir»
+  corre también en la revisión rápida; y la puerta de producción ya no acepta una corrida parcial ni una de solo documentos. La pasada de
+  guardianes bajó de 84 a 41 segundos.
+- **Decide tú (producción):** la puerta exige hoy una corrida entera en `main`, de primer intento y con todos sus carriles. Tu regla (AD) pide más:
+  la confirmación completa, dos veces seguidas más una barajada, que casi nunca sale verde (3 de 39). ¿Producción exige esa confirmación, y también
+  los anchos? Hasta que decidas, queda anotado en el código como un nivel pendiente.
 
