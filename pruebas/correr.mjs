@@ -111,11 +111,14 @@ function cerrarVentanas() {
   } catch { /* sin base local (solo al revés): nada que cerrar */ }
 }
 
+/* 22 nov · Revisión del CI (A1) · Cada suite al revés, con el árbol ya vigilado, recibe ALREVES_CORREDOR=<pid>:<huella inicial> SOLO en su proceso:
+   su pasada final (pruebas/lib/alreves-fin.cjs) no se repite, comprueba la huella y lo dice. Guardián alrevesPasadaFinal. */
+const envDe = (t) => (t.carril === "alreves" && vigia.ini ? { ...ENV, ALREVES_CORREDOR: `${process.pid}:${vigia.ini.digest}` } : ENV);
 const correrUna = (t) => new Promise((ok) => {
   if (t.carril === "e2e") cerrarVentanas();
   const ini = Date.now(), out = join(RES, `${t.nombre}.out`), w = createWriteStream(out);
   const [cmd, cargs] = t.tipo === "sh" ? ["bash", [t.archivo]] : ["node", [t.archivo]];
-  const p = spawn(cmd, cargs, { cwd: RAIZ, env: ENV, stdio: ["ignore", "pipe", "pipe"] });
+  const p = spawn(cmd, cargs, { cwd: RAIZ, env: envDe(t), stdio: ["ignore", "pipe", "pipe"] });
   let texto = "";
   const mira = (d) => { w.write(d); texto += d; if (texto.length > 2e6) texto = texto.slice(-1e6); };
   p.stdout.on("data", mira); p.stderr.on("data", mira);

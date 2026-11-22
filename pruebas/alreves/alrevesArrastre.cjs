@@ -26,6 +26,6 @@ for (const [g, f, a, b] of casos) {
   let r; try { r = correr(g); } finally { fs.writeFileSync(ruta, orig); }
   console.log(`  ${r[0] ? '✓' : '✗'} ${g} al revés (${f.split('/').pop()})${r[1] ? ' → ' + r[1].trim().slice(0, 170) : ''}`); if (r[0]) bien++;
 }
-let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 if (bien !== total || !limpio) process.exit(1);

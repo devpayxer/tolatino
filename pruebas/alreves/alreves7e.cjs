@@ -65,6 +65,6 @@ for (const [g, f, a, b] of casos) {
   console.log(`  ${falla ? '✓' : '✗'} ${g} al revés (${f.split('/').pop()})${out ? ' → ' + out.trim().slice(0, 150) : ''}`); if (falla) bien++;
 }
 console.log(`\n${bien}/${casos.length} al revés`);
-execSync('node guardianes/run.mjs', { cwd: R, stdio: 'inherit' });
+require('../lib/alreves-fin.cjs')(R, { heredar: true });
 // 9b-3 · alrevesQueFalla: un defecto sin cazar pone la prueba en rojo (antes salía con 0 y el CI la contaba en verde).
 if (bien !== casos.length) process.exit(1);

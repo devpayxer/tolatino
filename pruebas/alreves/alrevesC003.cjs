@@ -88,6 +88,6 @@ for (const [f, contenido] of crear) {
   try { informe(path.basename(f), correr()); } finally { fs.unlinkSync(ruta); }
 }
 let limpio = true;
-try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch { limpio = false; }
+if (!require('../lib/alreves-fin.cjs')(R)) limpio = false;
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio ? 0 : 1);

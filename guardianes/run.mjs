@@ -10934,6 +10934,32 @@ const guardianes = {
     if (!/# Historia completa: [^\n]*\n\s*- uses: actions\/checkout@v4\n\s*with: \{ fetch-depth: 0 \}/.test(/\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "")) falla(G, ".github/workflows/ci.yml", 0, "el carril «al revés» clona con toda la historia (fetch-depth: 0): sus pasadas reales miran HEAD~1");
   },
 
+  /* 22 nov · Revisión del CI (A1) · alrevesPasadaFinal: la pasada final de guardianes de cada suite al revés va por UN ayudante
+     (pruebas/lib/alreves-fin.cjs). Lanzada por el corredor (ALREVES_CORREDOR=<pid>:<huella>, que el corredor pone SOLO en el proceso de la suite y
+     que solo vale si ese pid es su padre) no repite la pasada completa: comprueba la huella inicial del carril y lo dice («pasada final a cargo del
+     corredor: árbol idéntico»); a mano corre la pasada de verdad. Lo que se teme: una suite que vuelva a la pasada completa directa (otra vez 113
+     pasadas), un ayudante que se salte la pasada sin ser hijo del corredor o sin comprobar la huella, uno que a mano no corra nada, y sobre todo un
+     atajo dentro de guardianes/run.mjs («node guardianes/run.mjs» corre SIEMPRE de verdad: la versión con memoria dio cuatro verdes falsos).
+     Al revés: alrevesFin (casos) y fin9z (el ayudante de verdad: hijo del corredor, huella distinta, a mano). */
+  alrevesPasadaFinal() {
+    const G = "alrevesPasadaFinal", H = "pruebas/lib/alreves-fin.cjs", C = "pruebas/correr.mjs";
+    if (!existsSync(H)) return falla(G, H, 0, "falta el ayudante de la pasada final de las suites al revés");
+    const h = sinComent(H), c = existsSync(C) ? sinComent(C) : "";
+    // alrevesFin nombra la pasada directa como dato (el texto de uno de sus defectos).
+    for (const f of archivos.filter((x) => /^pruebas\/alreves\/[^/]+\.(cjs|mjs)$/.test(x) && x !== "pruebas/alreves/alrevesFin.cjs")) {
+      const t = sinComent(f);
+      if (/\b(execSync|execFileSync|spawnSync)\(\s*['"`]node guardianes\/run\.mjs['"`]/.test(t)) falla(G, f, 0, "la pasada final va por require('../lib/alreves-fin.cjs')(R): una pasada completa directa se repite en cada suite del carril");
+    }
+    if (!/if \(pid && Number\(pid\) === process\.ppid && \/\^\[0-9a-f\]\{64\}\$\/\.test\(huella \?\? ''\)\) \{/.test(h) || !/\.huella\(R\)\.digest;/.test(h) || !/if \(ahora === huella\) \{/.test(h))
+      falla(G, H, 0, "el ayudante solo se salta la pasada si su padre es el corredor que puso ALREVES_CORREDOR y el árbol tiene la huella inicial del carril");
+    if (!/const AVISO = 'pasada final a cargo del corredor: árbol idéntico';/.test(h) || !/console\.log\(`\$\{heredar \? '✓ guardianes: ' : '  '\}\$\{AVISO\}/.test(h)) falla(G, H, 0, "el ayudante dice que no repitió la pasada («pasada final a cargo del corredor: árbol idéntico»), con el ✓ donde la suite lo contaba");
+    if (!/if \(heredar\) \{ cp\.execSync\('node guardianes\/run\.mjs', \{ cwd: R, stdio: 'inherit' \}\); return true; \}/.test(h) || !/try \{ cp\.execSync\('node guardianes\/run\.mjs', \{ cwd: R, stdio: 'pipe' \}\); return true; \}/.test(h))
+      falla(G, H, 0, "fuera del corredor el ayudante corre la pasada completa de verdad, como siempre");
+    if (!/const envDe = \(t\) => \(t\.carril === "alreves" && vigia\.ini \? \{ \.\.\.ENV, ALREVES_CORREDOR: `\$\{process\.pid\}:\$\{vigia\.ini\.digest\}`/.test(c) || !/spawn\(cmd, cargs, \{ cwd: RAIZ, env: envDe\(t\), /.test(c)) falla(G, C, 0, "el corredor pone ALREVES_CORREDOR (su pid y la huella inicial) solo en el proceso de cada suite al revés, con el árbol ya vigilado");
+    if (/process\.env(\.|\[\s*["'`])(ALREVES_\w+|GUARDIANES_(VERDE|HUELLA)\w*)/.test(readFileSync("guardianes/run.mjs", "utf8")))
+      falla(G, "guardianes/run.mjs", 0, "guardianes/run.mjs no guarda ni consulta ningún veredicto: «node guardianes/run.mjs» corre siempre de verdad");
+  },
+
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
      buscaba «Llegan cuando se encienda producción», que 9o cambió por la sección de despliegues de verdad: la prueba quedó roja en las 3 vueltas
      (14 nov). Lo que la pantalla ARMA con datos (nombres de la prueba, cifras, MAYÚSCULAS) no está escrito en el código: esos van, uno por uno, en
