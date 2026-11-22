@@ -81,33 +81,43 @@ todo (salvo El Patio).
     la vez del servidor local y de cada archivo. En cada reporte al fundador se dice qué hizo cada modelo.
 
 ## Flujo de cada cambio
-commit → CI (tipos, pruebas, punta a punta en 9 dispositivos, visual, seguridad,
-accesibilidad, velocidad, build) → `pruebas` avanza → el sandbox se actualiza solo
-(60 s) → captura + «qué mirar y en qué condiciones» al fundador → OK → `produccion`
-avanza → producción se actualiza; vuelta atrás automática si suben los errores.
-**Desde el 6 nov (decisión AA):** en el sandbox los bloques se encadenan sin esperar OK; lo que el fundador debe mirar
-se anota en `docs/REVISION.md` y se revisa al final, paso a paso. Producción sigue pidiendo su OK.
-**Desde el 6 nov (decisión AB):** no se para hasta terminar todo. Una decisión pendiente no detiene el trabajo: se elige lo
-más seguro y reversible, se construye y se anota en `docs/REVISION.md`; lo de terceros (Stripe, SMS, correo) se deja listo y
-probado contra simuladores. Sin resúmenes a mitad de camino: una línea de avance y al siguiente bloque.
-**Desde el 14 nov (decisión AD):** en el sandbox cada bloque pasa tipos, build, guardianes, al revés y sus pruebas de punta a punta
-(CI dirigido) y sube; la confirmación completa de CI corre solo en hitos (cierre de 9b-3, después de 9k, al terminar 9o). Producción: siempre
-confirmación completa + OK.
-**Desde el 20 nov (decisiones AF y AG):** el sandbox sube con la revisión rápida en verde, sin esperar la confirmación completa (que corre aparte
-y solo es obligatoria para producción). En el CI una prueba de punta a punta que falla se repite una vez: si pasa queda INESTABLE (listada, se
-arregla y se anota en LAUNCH); si falla dos veces es roja. Más de 3 inestables en una corrida = roja.
-**Desde el 20 nov (decisión AE):** un bug con la app abierta se contiene primero (interruptor o versión anterior) y se arregla por el camino
-normal. Solo lo grave (seguridad, cobro mal hecho, app caída) va por la vía urgente: revisión rápida + prueba corta en producción, con la
-confirmación completa justo después y vuelta atrás automática si caza algo. Siempre con el OK del fundador.
-**Desde el 22 nov (decisión AL):** vía rápida de diseño: lo que es solo de cómo se ve sube al sandbox con tipos + build + guardianes en verde y
-visto servido; sus pruebas de punta a punta corren después (lo que falte, a LAUNCH en el momento). No aplica a dinero, permisos, datos personales,
-migraciones ni producción. Captura primero (en cuanto una pieza se ve, el fundador la recibe), entregar por partes, y el trabajo grande se
-reparte en hasta 4 encargos en paralelo.
-**Desde el 22 nov (decisión AM):** el CI y el proceso nuevos son regla y los guardan guardianes: confirmación de push en ~20 min (8 partes por
-`pruebas/reparto.json`, «al revés» con árbol idéntico, verificación en paralelo con un solo build); un push de solo documentos de trabajo corre solo
-la señal rápida; las dirigidas van siempre en partes; una roja local se repite sobre base nueva; un cambio del CI se ve correr entero en la rama antes
-de `main` y va solo; lo que toca el despliegue sube primero a `main` y después a `pruebas`. Si la confirmación pasa de 25 min o `main` queda rojo por
-el propio CI, eso se arregla antes que nada. Quitar o aflojar un guardián del CI es decisión del fundador (lista en DECISIONES, AM).
+Lo vigente, sin historia: este texto se reescribe, no se enmienda. El porqué y la fecha de cada regla están en `docs/DECISIONES.md` (su letra).
+**Camino:** commit → revisión del CI → `main` y `pruebas` avanzan → el sandbox se actualiza solo (60 s) → captura + «qué mirar y en qué
+condiciones» al fundador → confirmación completa + OK → `produccion` avanza → producción se actualiza; vuelta atrás automática si suben los errores.
+
+**En el sandbox (`main` + `pruebas`)**
+- Los bloques se encadenan sin esperar OK: lo que el fundador debe mirar se anota en `docs/REVISION.md` y se revisa al final, paso a paso (AA).
+- No se para hasta terminar todo. Una decisión pendiente no detiene el trabajo: se elige lo más seguro y reversible, se construye y se anota en
+  REVISION; lo de terceros (Stripe, SMS, correo) se deja listo y probado contra simuladores. Sin resúmenes a mitad de camino: una línea de
+  avance y al siguiente bloque (AB).
+- Cada bloque sube con la **revisión rápida** en verde: tipos, build, guardianes, al revés y sus pruebas de punta a punta, por CI dirigido.
+  No espera la confirmación completa; lo que esta cace después se arregla en el bloque siguiente y se anota en REVISION (AD, AF).
+- **Vía rápida de diseño:** lo que es solo de cómo se ve (pieza del sistema de diseño, pantalla, textos, estilos y los datos de lectura que esa
+  pantalla pinta) sube con tipos + build + guardianes en verde y visto servido; sus pruebas de punta a punta y al revés corren después, y lo
+  que falte va a LAUNCH en el momento. No aplica a dinero, permisos, datos personales ni migraciones (AL).
+- Captura primero: en cuanto una pieza se ve, el fundador recibe la captura real (teléfono y escritorio). Se entrega por partes, y el trabajo
+  grande se reparte en hasta 4 encargos en paralelo, cada uno con su base y su puerto (AL, regla 14).
+
+**En el CI**
+- La tubería entera: tipos, build, guardianes, seguridad, punta a punta, al revés y los 9 dispositivos (visual, accesibilidad, velocidad).
+- **Confirmación completa** = todo lo anterior con todas las fases, barajada y dos veces seguidas. Corre aparte y en hitos (cierre de 9b-3,
+  después de 9k, al terminar 9o); solo es obligatoria para producción (AD, AF).
+- Una prueba de punta a punta que falla se repite una vez: si pasa queda INESTABLE (listada, se arregla y se anota en LAUNCH); si falla dos
+  veces es roja. Más de 3 inestables en una corrida = roja. Las pruebas al revés y los guardianes no se repiten nunca (AG).
+
+**A producción (`produccion`)**
+- Siempre confirmación completa en verde + OK del fundador, y el mismo paquete que pasó por `pruebas`; ninguna vía rápida aplica (AD, AL, regla 2).
+- Un bug con la app abierta se contiene primero (interruptor o versión anterior) y se arregla por el camino normal. Solo lo grave (seguridad,
+  cobro mal hecho, app caída) va por la **vía urgente**: revisión rápida + prueba corta en producción, con la confirmación completa justo
+  después y vuelta atrás automática si caza algo. Siempre con el OK del fundador (AE).
+
+**Lo que no se vuelve atrás (AM)**
+- La estructura del CI la guardan guardianes: confirmación de un push en ~20 min (punta a punta en 8 partes por `pruebas/reparto.json`, «al
+  revés» en partes con árbol idéntico, verificación en paralelo con un solo build). Quitar o aflojar uno es decisión del fundador (lista en
+  DECISIONES, AM).
+- Un push de solo documentos de trabajo corre solo la señal rápida. Las dirigidas van siempre en partes. Una roja local se repite sobre base nueva.
+- Un cambio del CI se ve correr entero en la rama antes de `main` y va solo. Lo que toca el despliegue sube primero a `main` y después a `pruebas`.
+- Si la confirmación pasa de 25 min o `main` queda rojo por el propio CI, eso se arregla antes que nada.
 
 ## Ramas
 `main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que
