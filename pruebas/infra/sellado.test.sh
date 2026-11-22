@@ -74,7 +74,7 @@ printf 'DATOS_SECRET=datos_de_siempre\nQR_LLAVE_PRIVADA=qr_de_siempre\nAGE_SERVI
 age -r "$(age-keygen -y "$T/recuperacion.key")" -o "$T/sobre-recuperacion.age" "$T/sobre.txt"; rm -f "$T/sobre.txt"
 # La máquina nueva nace con una llave provisional y la publica.
 mkdir -p "$T/var/lib/tolatino"; AGE_LLAVE="$T/nueva.key"
-# (recuperar_si_hace_falta usa /var/www/estado/llave.txt y /var/lib/tolatino/recuperada: se corre en un espacio de montaje aparte)
+# (recuperar_si_hace_falta usa /var/www/estado/llave.txt y /var/lib/tolatino/recuperada: se corre aislado)
 fpN=$(sellado_preparar "$T/llave-nueva.txt")
 # reconstruir.sh (lado de Claude): abre el sobre con la llave de recuperación y lo vuelve a cifrar SOLO para la llave provisional, en la rama «recuperacion».
 git init -q --bare "$T/origen.git"; git -C "$T" clone -q "$T/origen.git" clon 2>/dev/null; git -C "$T/clon" checkout -q -b recuperacion
@@ -82,12 +82,14 @@ mkdir -p "$T/clon/recuperacion"; age -d -i "$T/recuperacion.key" "$T/sobre-recup
 git -C "$T/clon" add -A; git -C "$T/clon" -c user.email=t@t -c user.name=t commit -qm sobre; git -C "$T/clon" push -q origin recuperacion 2>/dev/null
 git -C "$T" clone -q "$T/origen.git" maquina 2>/dev/null
 : > "$T/n.env"
-unshare -m --propagation private bash -c '
-  mkdir -p /var/www/estado /var/lib/tolatino 2>/dev/null; mount -t tmpfs none /var/www; mount -t tmpfs none /var/lib/tolatino; mkdir -p /var/www/estado
-  cp "$1/llave-nueva.txt" /var/www/estado/llave.txt
-  . "$2/infra/comun/lib.sh"; log() { :; }; . "$2/infra/comun/sellado.sh"; . "$2/infra/comun/recuperacion.sh"
-  AGE_LLAVE="$1/nueva.key" TOLATINO_RECONSTRUIR=1 recuperar_si_hace_falta "$1/maquina" "$1/n.env" && echo listo > "$1/rc"' _ "$T" "$RAIZ" 2>/dev/null
-rmdir /var/www/estado /var/www 2>/dev/null || true
+# (aislado: pruebas/infra/aislar.sh, montajes y red aparte; tmpfs sobre /var/www, /var/lib/tolatino, /opt, /etc/tolatino, /run…)
+# shellcheck source=aislar.sh
+. "$RAIZ/pruebas/infra/aislar.sh"
+AISLAR_VISIBLES="$T $RAIZ" aislado '
+  mkdir -p /var/www/estado /var/lib/tolatino
+  cp "$0/llave-nueva.txt" /var/www/estado/llave.txt
+  . "$1/infra/comun/lib.sh"; log() { :; }; . "$1/infra/comun/sellado.sh"; . "$1/infra/comun/recuperacion.sh"
+  AGE_LLAVE="$0/nueva.key" TOLATINO_RECONSTRUIR=1 recuperar_si_hace_falta "$0/maquina" "$0/n.env" && echo listo > "$0/rc"' "$T" "$RAIZ" 2>/dev/null
 ok "la máquina nueva recupera sus llaves de siempre (DATOS_SECRET, QR) del sobre de la rama «recuperacion»" \
   '[ -f "$T/rc" ] && [ "$(val DATOS_SECRET "$T/n.env")" = datos_de_siempre ] && [ "$(val QR_LLAVE_PRIVADA "$T/n.env")" = qr_de_siempre ]'
 ok "… y vuelve a tener su llave age de siempre (los sobres sellados del repo vuelven a abrir); la provisional ya no existe" \

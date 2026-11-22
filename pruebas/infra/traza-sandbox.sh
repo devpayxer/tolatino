@@ -1,7 +1,7 @@
 #!/bin/bash
 # 9o · El sandbox vivo no puede romperse: infra/pruebas/deploy.sh pasó al paquete común (infra/comun/) y esta prueba lo demuestra comparando la TRAZA
-# de lo que hace contra la del deploy.sh de antes (el de una revisión dada, por defecto la rama de trabajo antes de 9o). Corre los dos en un espacio de
-# montaje aparte (unshare -m: /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino y /usr/local/bin son de mentira), con docker, systemctl, nginx,
+# de lo que hace contra la del deploy.sh de antes (el de una revisión dada, por defecto la rama de trabajo antes de 9o). Corre los dos aislados
+# (pruebas/infra/aislar.sh: montajes y red aparte, tmpfs sobre /opt, /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino, /var/log, /run…), con docker, systemctl, nginx,
 # curl… de mentira que anotan cada llamada. Las diferencias permitidas son SOLO las nuevas de 9o: el sobre sellado (sin efectos si no hay sobres) y el
 # registro del despliegue (dos psql más al final). Además: el archivo de secretos queda con las MISMAS claves y en el mismo orden.
 # Uso (root): bash pruebas/infra/traza-sandbox.sh [REVISIÓN_VIEJA]   → «traza del sandbox: igual salvo lo de 9o» o la diferencia.
@@ -11,6 +11,8 @@ RAIZ=$(cd "$(dirname "$0")/../.." && pwd)
 # se le pasa la revisión vieja a mano (así se comprobó 9o contra 32e5f31); en el CI una revisión fija se queda vieja con cada cambio legítimo.
 VIEJA=${1:-HEAD}
 echo "  comparado con: $VIEJA"
+# shellcheck source=aislar.sh
+. "$RAIZ/pruebas/infra/aislar.sh"
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 
@@ -31,16 +33,20 @@ cat > "$T/stubs/_anota" <<'EOF'
 #!/bin/bash
 n=$(basename "$0"); a="$*"; a=${a//$TL_RAIZ/RAIZ}
 # Un psql que lee de una tubería se anota DESPUÉS de leerla (así el orden no depende de quién arrancó primero).
-case "$n $*" in "docker "*"exec -T db psql"*) [ -p /dev/stdin ] && cat >/dev/null ;; esac
+# 22 nov · migrar.sh comprueba que cada migración quedó anotada (select count(*) … :'tl_m_huella', por la entrada): la base de mentira dice que sí.
+ent=""; case "$n $*" in "docker "*"exec -T db psql"*) { [ -p /dev/stdin ] || [ -f /dev/stdin ]; } && ent=$(cat) ;; esac
 echo "$n $a" >> "$TL_TRAZA"
 case "$n $*" in
-  "docker "*"exec -T db psql"*) exit 0 ;;
+  "docker "*"exec -T db psql"*) case "$ent" in *"select count(*) from"*"tl_m_huella';"*) echo 1 ;; esac; exit 0 ;;
   "docker "*"exec -T medios /garage status"*) echo "0123456789abcdef  nodo  127.0.0.1:3901" ;;
   "docker "*"exec -T medios /garage key create"*) printf 'Key ID: GKprueba\nSecret key: secretoprueba\n' ;;
   "docker "*"exec -T medios /garage layout show"*) echo "No nodes currently have a role" ;;
   "docker image inspect"*) echo "sha256:$(printf '%064d' 7)" ;;
   "docker run"*"indexar.mjs"*) echo "select 1;" ;;
-  "curl "*) echo '{"ok":true}' ;;
+  # 22 nov · deploy.sh comprueba que /api/salud dice el commit desplegado, y espera a que Docker dé la base por «healthy».
+  "curl "*) echo "{\"ok\":true,\"commit\":\"${TOLATINO_COMMIT:-}\"}" ;;
+  "docker "*" ps -q db"*) echo id-de-la-base ;;
+  "docker inspect"*) echo healthy ;;
   "systemctl is-active"*) exit 3 ;;
   "df "*) printf 'Uso%%\n 40%%\n' ;;
 esac
@@ -51,16 +57,13 @@ for p in docker systemctl systemd-run nginx curl journalctl apt-get df; do ln -s
 
 correr() { # correr ÁRBOL → $T/<árbol>.traza y $T/<árbol>.env
   local d="$1"
-  for m in /etc/tolatino /etc/nginx /var/www /var/lib/tolatino; do [ -d "$m" ] || { mkdir -p "$m"; echo "$m" >> "$T/creados"; }; done
-  TL_TRAZA="$T/$d.traza" TL_RAIZ="$T/$d" PATH="$T/stubs:$PATH" unshare -m --propagation private bash -c '
-    for m in /etc/tolatino /etc/nginx /var/www /var/lib/tolatino /usr/local/bin; do mount -t tmpfs none "$m"; done
+  TL_TRAZA="$T/$d.traza" TL_RAIZ="$T/$d" PATH="$T/stubs:$PATH" AISLAR_VISIBLES="$T" aislado '
     mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/lib/tolatino
     bash "$0/infra/pruebas/deploy.sh" > "$0.salida" 2>&1; echo "salida $?" >> "$0.salida"
     cut -d= -f1 /etc/tolatino/pruebas.env > "$0.env"' "$T/$d"
   sed -i -E 's/[0-9a-f]{7,40}/HASH/g' "$T/$d.traza"
 }
 correr viejo; correr nuevo
-[ -f "$T/creados" ] && while read -r m; do rmdir "$m" 2>/dev/null || true; done < "$T/creados"
 
 ok=1
 grep -q '^salida 0$' "$T/viejo.salida" || { echo "✗ el deploy.sh viejo no terminó bien en la prueba:"; tail -5 "$T/viejo.salida"; ok=0; }

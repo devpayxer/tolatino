@@ -3312,7 +3312,8 @@ const guardianes = {
     if (/\n      traductor:/.test(web)) falla(G, C, 0, "la app no espera al traductor para arrancar (sin depends_on)");
     if (!/COMPOSE_TRAD=\(docker compose [^)]*--profile traductor\)/.test(d)) falla(G, D, 0, "deploy.sh enciende el traductor con su perfil (COMPOSE_TRAD … --profile traductor)");
     if (!/\n  systemd-run --unit tolatino-traductor --collect [^\n]*traductor-modelos && [^\n]*up -d traductor[^\n]*\|\| true\n/.test(d)) falla(G, D, 0, "deploy.sh baja los modelos y enciende el traductor APARTE (systemd-run … || true)");
-    for (const l of d.split("\n")) if (/(^docker compose |COMPOSE\[@\]\}"? ).*up -d --build/.test(l) && /--profile/.test(l)) falla(G, D, 0, "el despliegue de la app no enciende perfiles: cada uno va aparte");
+    // 22 nov · La app se construye («build web») y se levanta («up -d») en pasos separados: ninguno de los dos enciende perfiles.
+    for (const l of d.split("\n")) if (/(^docker compose |COMPOSE\[@\]\}"? ).*\b(up -d|build)\b/.test(l) && /--profile/.test(l)) falla(G, D, 0, "el despliegue de la app no enciende perfiles: cada uno va aparte");
   },
 
   /* 5h. El Super Admin ve siempre el original (§4 5h): nada del Super Admin traduce ni lee la caché de traducciones; lo que ve es el texto
@@ -9935,6 +9936,266 @@ const guardianes = {
     if (/infra\/ensayo\/ordenes/.test(td) && !/if \[ "\$TOLATINO_ENTORNO" = ensayo \]; then\n\s+if \[ -f "\$REPO\/infra\/ensayo\/ordenes/.test(td)) falla(G, D, 0, "las órdenes del ensayo solo corren con TOLATINO_ENTORNO=ensayo");
   },
 
+  /* 22 nov · sandboxSeArreglaSolo: el sandbox no tiene SSH y tolatino-sync es el ÚNICO camino por el que se arregla solo; un push nunca puede dejarlo
+     sin poder bajar el siguiente. (1) deploy.sh se reinstala tolatino-sync solo con instalar_si_valido (infra/comun/lib.sh: bash -n y cambio atómico
+     con mv: el destino nunca falta ni queda a medio copiar si la copia se corta; 1 si no es bash válido, 2 si no se pudo copiar, y /estado/ dice
+     cuál), nunca con un install directo; (2) tolatino-sync comprueba con bash -n deploy.sh
+     y cada script que deploy.sh carga o corre en el momento (lo de systemd-run va aparte) y, si uno no pasa, NO despliega (FALLO con su motivo);
+     (3) pruebas/infra/sync-pruebas.test.sh corre en las pruebas de infra. Al revés: alrevesDespliegue. */
+  sandboxSeArreglaSolo() {
+    const G = "sandboxSeArreglaSolo", D = "infra/pruebas/deploy.sh", S = "infra/pruebas/tolatino-sync", L = "infra/comun/lib.sh", C = "pruebas/infra/correr.sh";
+    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const d = sinC(readFileSync(D, "utf8")), s = sinC(readFileSync(S, "utf8")), l = readFileSync(L, "utf8");
+    if (!/instalar_si_valido "\$REPO\/infra\/pruebas\/tolatino-sync" \/usr\/local\/bin\/tolatino-sync/.test(d) || /\binstall\b[^\n]*\/usr\/local\/bin\/tolatino-sync/.test(d))
+      falla(G, D, 0, "deploy.sh se reinstala tolatino-sync solo con instalar_si_valido (bash -n y cambio atómico), nunca con un install directo");
+    const fn = (/\ninstalar_si_valido\(\) \{\n([\s\S]*?)\n\}/.exec(l) ?? [])[1] ?? "";
+    const iN = fn.indexOf('bash -n "$src"'), iT = fn.indexOf('install -m "$modo" "$src" "$tmp"'), iM = fn.indexOf('mv -f "$tmp" "$dst"');
+    if (iN < 0 || iT < 0 || iM < 0 || !(iN < iT && iT < iM) || !/if ! err=\$\(bash -n "\$src" 2>&1\); then[\s\S]{0,200}return 1/.test(fn))
+      falla(G, L, 0, "instalar_si_valido: bash -n primero (si no pasa, return 1 y se queda el anterior), después install a un archivo nuevo y mv (cambio atómico)");
+    // Tanda 5b · «no es bash válido» y «no se pudo copiar» son dos cosas: 1 y 2, y /estado/sync.txt dice cuál.
+    if (!/rm -f "\$tmp"; log [^\n]*no se pudo instalar[^\n]*\n  return 2$/m.test(fn) || !/\n  1\) echo "tolatino-sync: [^"]*NO es bash válido[^"]*" > \/var\/www\/estado\/sync\.txt ;;\n  \*\) echo "tolatino-sync: [^"]*no se pudo instalar[^"]*" > \/var\/www\/estado\/sync\.txt ;;/.test(d))
+      falla(G, D, 0, "/estado/sync.txt separa «no es bash válido» (1) de «no se pudo instalar» (2: disco lleno, permisos)");
+    const lista = ((/\n\s*VALIDAR="([^"]+)"/.exec(s) ?? [])[1] ?? "").split(/\s+/).filter(Boolean);
+    const usa = new Set([D]);
+    for (const linea of d.split("\n")) { if (/systemd-run/.test(linea)) continue; for (const m of linea.matchAll(/(?:^|\s)(?:\.|bash)\s+"\$REPO\/([^"]+\.sh)"/g)) usa.add(m[1]); }
+    for (const u of usa) if (!lista.includes(u)) falla(G, S, 0, `tolatino-sync no comprueba con bash -n ${u} (deploy.sh lo carga o lo corre) antes de desplegar`);
+    if (!/bash -n "\$f" 2>>"\$LOG" \|\| MAL="\$MAL \$f"/.test(s) || !/\n  if \[ -n "\$MAL" \]; then\n[^\n]*echo FALLO > "\$STATE\/last-result"[\s\S]{0,200}\n  elif \[ -f infra\/pruebas\/deploy\.sh \]; then/.test(s))
+      falla(G, S, 0, "si deploy.sh o lo que carga no es bash válido, tolatino-sync NO lo corre (FALLO con su motivo; sigue sirviendo lo de antes)");
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/sync-pruebas\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/sync-pruebas.test.sh"))
+      falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/sync-pruebas.test.sh (el tolatino-sync del sandbox)");
+  },
+
+  /* 22 nov · migracionConTransaccion: cada migración NUEVA empieza con «begin;» y termina con «commit;» (sin contar comentarios), y no usa
+     «create/drop index concurrently» ni «reindex … concurrently» (no pueden ir dentro de una transacción). Así, si falla a mitad, se deshace entera y no
+     queda medio aplicada y sin anotar. Las 16 de antes del 22 nov que no la traen no se editan (cambiaría su huella y migrar.sh se detendría): la lista
+     es cerrada y el encabezado de migrar.sh lo dice. Al revés: alrevesDespliegue. */
+  migracionConTransaccion() {
+    const G = "migracionConTransaccion", DM = "packages/db/migrations", M = "packages/db/migrar.sh";
+    const VIEJAS = new Set(["0058_citas_salud.sql", "0059_citas_salud_avisos.sql", "0060_consulta_pro.sql", "0061_total_por_escrito.sql", "0062_total_suma.sql",
+      "0084_colas_noche.sql", "0090_colas_inscripciones.sql", "0166_impuestos_admin.sql", "0167_web_vitals.sql", "0168_ayuda_editar.sql", "0169_cupon_seguidores.sql",
+      "0176_direccion_punto_cardinal.sql", "0189_tabla_ganador_idx.sql", "0194_patrocinio_dias_por_calendario.sql", "0195_fotos_a_la_medida.sql", "0198_dinero_por_clase.sql"]);
+    for (const x of readdirSync(DM).filter((y) => y.endsWith(".sql"))) {
+      const f = `${DM}/${x}`, t = readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+      const l = t.split("\n").map((y) => y.replace(/--.*$/, "").trim()).filter(Boolean);
+      const con = /^begin;$/i.test(l[0] ?? "") && /^commit;$/i.test(l[l.length - 1] ?? "");
+      if (VIEJAS.has(x)) { if (con) falla(G, f, 0, "ya trae su transacción: sale de la lista de las viejas sin begin/commit"); continue; }
+      if (!con) falla(G, f, 0, "una migración nueva empieza con «begin;» y termina con «commit;» (si falla a mitad se deshace entera; sin eso queda medio aplicada y sin anotar)");
+      if (/\b(create|drop)\s+(unique\s+)?index\s+concurrently\b|\breindex\b[^;]*\bconcurrently\b/i.test(t.replace(/--.*$/gm, ""))) falla(G, f, 0, "«index concurrently» no puede ir dentro de begin/commit: el índice va sin concurrently (o en su propia migración, fuera de la lista)");
+    }
+    const m = readFileSync(M, "utf8");
+    if (/los \.sql traen begin\/commit/.test(m) || !m.includes(`SALVO ${VIEJAS.size} viejas que no lo traen`)) falla(G, M, 0, `el encabezado de migrar.sh dice la verdad: cada migración trae su begin/commit SALVO ${VIEJAS.size} viejas que no lo traen`);
+  },
+
+  /* 22 nov · migrarUnaLectura: migrar.sh lee lo aplicado UNA vez (nombre y huella de schema_migrations y de schema_seeds) y compara en local; antes era
+     un psql por archivo (~280 idas y vueltas, ~58 s por despliegue sin nada nuevo). Aplicar y anotar van en la MISMA sesión de psql (el archivo y su
+     insert por la entrada), y después se comprueba que quedó anotada (un begin sin commit se deshace con su insert: se detiene). La prueba de verdad,
+     contra Postgres 16, es pruebas/infra/migrar.test.sh (orden, «cambió» se detiene, error se detiene, semillas, --verificar, idas y vueltas). */
+  migrarUnaLectura() {
+    const G = "migrarUnaLectura", M = "packages/db/migrar.sh", C = "pruebas/infra/correr.sh";
+    const m = readFileSync(M, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    if (/select sha256 from schema_(migrations|seeds) where name =/.test(m)) falla(G, M, 0, "migrar.sh vuelve a preguntar archivo por archivo (un psql por migración): se lee lo aplicado una vez (leer) y se compara aquí");
+    if (!/\nleer schema_migrations\nnuevas=0\nfor f in "\$DIR"\/\*\.sql; do/.test(m) || !/\n  leer schema_seeds pruebas\//.test(m) || !/\nleer schema_seeds\n/.test(m)) falla(G, M, 0, "migrar.sh lee schema_migrations y schema_seeds una vez, antes de recorrer los archivos");
+    const ap = (/\naplicar\(\) \{\n([\s\S]*?)\n\}/.exec(m) ?? [])[1] ?? "";
+    if (!/\{ cat "\$f"; printf '\\n;\\n%s\\n' "\$sql"; \} \| psql -v tl_m_nombre="\$n" -v tl_m_huella="\$h"/.test(ap) || !/select count\(\*\) from \$tabla where name = :'tl_m_nombre' and sha256 = :'tl_m_huella';[\s\S]*exit 1/.test(ap))
+      falla(G, M, 0, "aplicar y anotar van en la misma sesión de psql (el archivo y su insert), y después se comprueba que quedó anotada");
+    if ((m.match(/\n\s*psql < "\$f"/g) ?? []).length) falla(G, M, 0, "un archivo se aplica sin su anotación en la misma sesión (psql < \"$f\" suelto)");
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/migrar\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/migrar.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/migrar.test.sh (migrar.sh contra Postgres 16)");
+  },
+
+  /* 22 nov · imagenSoloLoQueUsa: el contexto de la imagen de la app es una lista blanca (.dockerignore: «*» y después «!ruta») con EXACTAMENTE lo que su
+     build lee: cada import, import() o lectura del disco de apps/web y packages/ui (y de lo que se lista, como scripts/ayuda/forma.mjs) que sale de esas
+     dos carpetas, la base de tsconfig, la traza de Next (outputFileTracingIncludes: docs/LAUNCH-CHECKLIST.md, que se lee en ejecución y, si faltara, el
+     build NO falla: el asistente de apertura diría «no leída»), el paso que sigue al build (scripts/mapas-privados.mjs) y lo que copia el Dockerfile. Ni
+     una ruta de más (cada «!» se usa). El commit no entra al build (un ARG que cambia en cada subida rompería la caché): solo en environment. Lo que
+     BuildKit de verdad manda lo comprueba pruebas/infra/contexto-imagen.test.sh. Al revés: alrevesDespliegue. */
+  imagenSoloLoQueUsa() {
+    const G = "imagenSoloLoQueUsa", I = ".dockerignore", D = "infra/pruebas/Dockerfile", Y = "infra/pruebas/docker-compose.yml", C = "pruebas/infra/correr.sh";
+    if (!existsSync(I)) return falla(G, I, 0, "falta el .dockerignore de lista blanca (la imagen solo ve lo que su build lee)");
+    const li = readFileSync(I, "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+    if (li[0] !== "*") falla(G, I, 0, "el .dockerignore empieza con «*» (lista blanca: todo fuera salvo lo que se nombra)");
+    const W = li.filter((l) => l.startsWith("!")).map((l) => l.slice(1));
+    for (const x of ["**/node_modules", "**/.next"]) if (!li.includes(x)) falla(G, I, 0, `el .dockerignore no deja fuera ${x} (el del equipo que construye taparía lo que instala la imagen)`);
+    const RAICES = ["apps/web", "packages/ui"];
+    const en = (p, r) => p === r || p.startsWith(r + "/");
+    const dentro = (p) => W.some((w) => en(p, w));
+    const existe = new Set(archivos);
+    for (const f of archivos) for (let d = dirname(f); d !== "."; d = dirname(d)) existe.add(d);
+    const usados = new Set(RAICES);
+    // (1) Lo que el Dockerfile copia del contexto (salvo «COPY . .», que es el contexto entero).
+    const df = existsSync(D) ? readFileSync(D, "utf8") : "";
+    for (const m of df.matchAll(/^COPY (?!--from)(?:--\S+ )*(.+)$/gm)) {
+      const partes = m[1].trim().split(/\s+/); partes.pop();
+      for (const p of partes) { if (p === ".") continue; usados.add(p); if (!dentro(p)) falla(G, D, 0, `el Dockerfile copia ${p} y el .dockerignore lo deja fuera`); }
+    }
+    // (2) Lo que el código de la imagen lee de fuera de apps/web y packages/ui: rutas relativas al archivo (imports) y a apps/web (el directorio de la app:
+    //     lecturas del disco, la traza de Next, el paso que sigue al build). Se sigue también dentro de lo que la lista deja entrar.
+    const fuentes = archivos.filter((f) => (RAICES.some((r) => en(f, r)) || W.includes(f)) && /\.(tsx?|jsx?|mjs|cjs|json|css)$/.test(f) && !/(^|\/)(node_modules|\.next)\//.test(f));
+    for (const f of fuentes) {
+      const t = readFileSync(f, "utf8");
+      // Las rutas entre comillas y, en los scripts de un package.json (el paso que sigue al build), cada palabra que empieza con ./ o ../.
+      const rels = [...t.matchAll(/["'`](\.\.?\/[^"'`\s$]+)["'`]/g)].map((m) => m[1]);
+      if (f.endsWith("package.json")) { try { for (const v of Object.values(JSON.parse(t).scripts ?? {})) for (const w of String(v).split(/\s+/)) if (/^\.\.?\//.test(w)) rels.push(w); } catch { /* lo dice otro guardián */ } }
+      for (const rel of rels) {
+        for (const base of [dirname(f), "apps/web"]) {
+          const p = join(base, rel).replace(/\/+$/, "");
+          if (!p || p === "." || p.startsWith("..") || RAICES.some((r) => en(p, r)) || !existe.has(p)) continue;
+          usados.add(p);
+          if (!dentro(p)) falla(G, f, 0, `${p} se lee al construir o al servir la imagen y el .dockerignore lo deja fuera (añádelo con «!${p}»)`);
+        }
+      }
+      for (const m of t.matchAll(/["']@tolatino\/([a-z-]+)/g)) {
+        const pk = existsSync(`packages/${m[1]}`) ? `packages/${m[1]}` : `apps/${m[1]}`;
+        if (pk !== "apps/web" && !dentro(pk)) falla(G, f, 0, `@tolatino/${m[1]} (${pk}) se importa y el .dockerignore lo deja fuera`);
+        usados.add(pk);
+      }
+    }
+    // (2b) Tanda 5b · Las lecturas del disco, en lista CERRADA (archivo → cuántas llamadas). Lo de arriba solo ve rutas que empiezan con ./ o ../; una
+    //      lectura relativa a process.cwd() sin ../ (la segunda ruta de launch.ts) o hecha por segmentos (path.join(cwd, "..", "..", "docs", …)) se le
+    //      escapa, y con la lista blanca eso es el fallo silencioso de LAUNCH: el build pasa, Next no traza el archivo y la imagen sale sin él. Una lectura
+    //      nueva (o una más en un archivo de la lista) obliga a mirar qué lee y a que entre en la imagen (.dockerignore «!» y, si es en ejecución,
+    //      outputFileTracingIncludes) antes de añadirla aquí.
+    const LECTURAS_DISCO = { "apps/web/lib/ciudades/launch.ts": 2, "apps/web/lib/errores/simbolizar.ts": 1, "apps/web/lib/medios.ts": 2,
+      "apps/web/lib/pases/credenciales.ts": 2, "apps/web/lib/video-negocio.ts": 1 };
+    const RE_LEE = /\b(readFile|readFileSync|createReadStream|existsSync|readdir|readdirSync|statSync|lstatSync|opendir|opendirSync|accessSync|readlinkSync)\s*\(/g;
+    const vistos = new Set();
+    for (const f of fuentes.filter((x) => RAICES.some((r) => en(x, r)) && /\.(tsx?|jsx?|mjs|cjs)$/.test(x))) {
+      const n = (readFileSync(f, "utf8").replace(/^\s*\/\/.*$/gm, "").match(RE_LEE) ?? []).length;
+      if (!n) continue;
+      vistos.add(f);
+      if (!(f in LECTURAS_DISCO)) falla(G, f, 0, `lee del disco (${n} llamada(s)) y no está en la lista cerrada de lecturas (LECTURAS_DISCO): lo que lee tiene que entrar en la imagen (.dockerignore «!» y outputFileTracingIncludes) antes de añadirlo`);
+      else if (LECTURAS_DISCO[f] !== n) falla(G, f, 0, `cambió el número de lecturas del disco (${LECTURAS_DISCO[f]} → ${n}): mira que lo nuevo entre en la imagen y actualiza LECTURAS_DISCO`);
+    }
+    for (const f of Object.keys(LECTURAS_DISCO)) if (!vistos.has(f)) falla(G, f, 0, "ya no lee del disco (o no existe): sale de LECTURAS_DISCO");
+    // (3) Ni una ruta de más: cada «!» existe y algo la usa (los archivos de la raíz que pnpm necesita los copia el Dockerfile).
+    for (const w of W) {
+      if (!existe.has(w)) falla(G, I, 0, `«!${w}» no existe en el repo`);
+      else if (![...usados].some((u) => en(u, w) || en(w, u))) falla(G, I, 0, `«!${w}» no lo lee el build (la lista blanca no lleva nada de más: cada ruta rompe la caché de la imagen)`);
+    }
+    // (4) El commit, solo en ejecución.
+    if (/^\s*ARG\s+TOLATINO_COMMIT\b/m.test(df)) falla(G, D, 0, "el commit no entra al build (ARG TOLATINO_COMMIT rompe la caché en cada subida): la app lo lee en ejecución (environment)");
+    const web = (/\n  web:\n([\s\S]*?)\n  [a-z][\w-]*:\n/.exec(existsSync(Y) ? readFileSync(Y, "utf8") : "") ?? [])[1] ?? "";
+    const build = (/\n    build:\n((?:      .*\n)+)/.exec("\n" + web + "\n") ?? [])[1] ?? "";
+    if (/TOLATINO_COMMIT/.test(build)) falla(G, Y, 0, "el compose no pasa el commit al build (args): va solo en environment");
+    if (!/\n      TOLATINO_COMMIT: \$\{TOLATINO_COMMIT:-desconocido\}\n/.test(web)) falla(G, Y, 0, "la app sigue leyendo el commit desplegado en environment (/api/salud lo dice)");
+    // (5) La prueba con BuildKit de verdad.
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/contexto-imagen\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/contexto-imagen.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/contexto-imagen.test.sh (lo que BuildKit de verdad manda)");
+  },
+
+  /* 22 nov · imagenSoloSiCambia: deploy.sh no reconstruye la imagen de la app cuando no cambió lo que entra en ella. Lo decide huella_imagen (lib.sh,
+     por contenido: las rutas «!» del .dockerignore, la receta y el .dockerignore; sin huella ante cualquier duda) junto con el Id de la imagen que
+     salió de esa huella: solo si los dos coinciden se salta el build; la huella se anota DESPUÉS de construir bien. Prueba: huella-imagen.test.sh. */
+  imagenSoloSiCambia() {
+    const G = "imagenSoloSiCambia", D = "infra/pruebas/deploy.sh", L = "infra/comun/lib.sh", C = "pruebas/infra/correr.sh";
+    const d = readFileSync(D, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n"), l = readFileSync(L, "utf8");
+    const fn = (/\nhuella_imagen\(\) \{\n([\s\S]*?)\n\}/.exec(l) ?? [])[1] ?? "";
+    if (!/sed -n 's\/\^!\/\/p' \.dockerignore/.test(fn) || !/git status --porcelain --ignored --/.test(fn) || !/git rev-parse HEAD:\.dockerignore HEAD:infra\/pruebas\/Dockerfile "\$\{rutas\[@\]\/#\/HEAD:\}"/.test(fn))
+      falla(G, L, 0, "huella_imagen sale de las rutas «!» del .dockerignore, la receta y el .dockerignore (objetos de git) y no da huella si hay algo sin versionar o cambiado");
+    // Tanda 5b · «grep -q» cierra el tubo en cuanto encuentra: con pipefail (deploy.sh) y más de 64 KB de estado, lo de antes muere por SIGPIPE, el «if» sale
+    // falso y se daba la huella del commit con el árbol sucio. Prueba: huella-imagen.test.sh (3.100 archivos, set -euo pipefail).
+    if (/\|\s*grep\s+(-\w*q|--quiet)/.test(fn)) falla(G, L, 0, "huella_imagen sin «| grep -q»: con pipefail y más de 64 KB de estado cierra el tubo y da la huella con el árbol sucio");
+    // Tanda 5b · La huella no ve el compose: la sección «build:» de web solo lleva context y dockerfile (un «args:» o un «target:» cambiaría la imagen
+    // sin cambiar la huella, y se serviría la vieja con el commit nuevo en /api/salud).
+    const Y = "infra/pruebas/docker-compose.yml", web = (/\n  web:\n([\s\S]*?)\n  [a-z][\w-]*:\n/.exec(existsSync(Y) ? readFileSync(Y, "utf8") : "") ?? [])[1] ?? "";
+    const build = ((/\n    build:\n((?:      .*\n)+)/.exec("\n" + web + "\n") ?? [])[1] ?? "").split("\n").map((x) => x.trim()).filter((x) => x && !x.startsWith("#"));
+    if (build.join("|") !== "context: ../..|dockerfile: infra/pruebas/Dockerfile") falla(G, Y, 0, "la sección «build:» de web solo lleva «context: ../..» y «dockerfile: infra/pruebas/Dockerfile» (la huella no ve el compose: args, target u otra cosa servirían la imagen vieja)");
+    if (!/HUELLA=\$\(huella_imagen \|\| true\)/.test(d) || !/\[ -n "\$HUELLA" \] && \[ -n "\$IMAGEN_ANTES" \] && \[ "\$\(cat \/var\/lib\/tolatino\/imagen-huella 2>\/dev\/null \|\| true\)" = "\$HUELLA \$IMAGEN_ANTES" \]/.test(d))
+      falla(G, D, 0, "deploy.sh se salta el build solo si la huella Y el Id de la imagen son los de la última construcción buena");
+    const iBuild = d.search(/up -d "\$\{CONSTRUIR\[@\]\}"|build web/), iAnota = d.indexOf('> /var/lib/tolatino/imagen-huella');
+    if (iBuild < 0 || iAnota < iBuild) falla(G, D, 0, "la huella se anota después de construir bien, nunca antes");
+    if (!/seccion "[^"]*"; bash pruebas\/infra\/huella-imagen\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/huella-imagen.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/huella-imagen.test.sh");
+  },
+
+  /* 22 nov · despliegueSinCorte: el sandbox despliega como producción (infra/comun/azulverde.sh): construir → migrar → nginx → cambiar. Mientras se
+     construye y se migra, la app vieja sirve; un build o una migración que fallan salen ANTES de tocar el contenedor de la app (sigue lo de antes); un
+     build que falla no se reintenta como si fuera la base. barrido y push paran en el acto (init + stop_grace_period corto: «node -e» como proceso 1 no
+     atiende SIGTERM y Docker esperaba 10 s por cada uno). Mientras la app cambia, nginx enseña la página de mantenimiento con 503 (no «502 Bad
+     Gateway · nginx/1.x»), y una configuración de nginx que no pasa «nginx -t» no se queda. Pruebas: orden-despliegue.test.sh (deploy.sh de verdad con
+     piezas de mentira) y mantenimiento-nginx.test.sh (nginx de verdad). Al revés: alrevesDespliegue. */
+  despliegueSinCorte() {
+    const G = "despliegueSinCorte", D = "infra/pruebas/deploy.sh", Y = "infra/pruebas/docker-compose.yml", N = "infra/pruebas/nginx-pruebas.conf", C = "pruebas/infra/correr.sh";
+    const d = readFileSync(D, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const pos = (re) => d.search(re);
+    const iBase = pos(/\n"\$\{COMPOSE\[@\]\}" up -d db medios/), iBuild = pos(/\n  if ! "\$\{COMPOSE\[@\]\}" build web; then\n[^\n]*\n[^\n]*\n    exit 1\n/),
+      iMig = pos(/\nbash "\$REPO\/packages\/db\/migrar\.sh" "\$\{COMPOSE\[@\]\}"\n/), iNg = pos(/\nif nginx -t; then\n/), iUp = pos(/\nif ! "\$\{COMPOSE\[@\]\}" up -d --remove-orphans; then\n/);
+    if ([iBase, iBuild, iMig, iNg, iUp].some((x) => x < 0) || !(iBase < iBuild && iBuild < iMig && iMig < iNg && iNg < iUp))
+      falla(G, D, 0, "el orden es base → construir (un intento; si falla, exit 1) → migrar → nginx → cambiar (up -d): la app vieja sirve hasta el final");
+    if (/COMPOSE\[@\]\}"? [^\n]*up -d --build/.test(d)) falla(G, D, 0, "ningún «up -d --build»: quita la app vieja antes de saber si la nueva se construye");
+    const y = readFileSync(Y, "utf8");
+    for (const s of ["barrido", "push"]) {
+      const b = (new RegExp(`\\n  ${s}:\\n((?:    .*\\n|\\s*#.*\\n)+)`).exec(y) ?? [])[1] ?? "";
+      const g = /\n    stop_grace_period: (\d+)s\n/.exec("\n" + b);
+      if (!/\n    init: true\n/.test("\n" + b) || !g || Number(g[1]) > 3) falla(G, Y, 0, `«${s}» para en el acto: init: true y stop_grace_period de 3 s o menos (sin init, Docker espera 10 s en cada despliegue)`);
+    }
+    const n = readFileSync(N, "utf8").replace(/#.*$/gm, "");
+    if (!/\n    server_tokens off;\n/.test(n) || !/\n    error_page 502 504 =503 \/mantenimiento\.html;\n/.test(n) || !/location = \/mantenimiento\.html \{\n\s+root \/var\/www\/mantenimiento;\n\s+try_files \/index\.html =503;\n\s+internal;/.test(n))
+      falla(G, N, 0, "nginx del sandbox: server_tokens off y la página de mantenimiento (503) para 502/504, en vez de «502 Bad Gateway · nginx/1.x»");
+    if (!/\ninstall -m 0644 "\$REPO\/infra\/comun\/mantenimiento\/index\.html" \/var\/www\/mantenimiento\/index\.html /.test(d)) falla(G, D, 0, "deploy.sh instala la página de mantenimiento (la de producción) antes de cambiar");
+    // Tanda 5b · la copia BUENA se guarda solo después de un «nginx -t» que pasa (antes «.anterior» se copiaba sin saber si servía).
+    if (/\.anterior/.test(d) || !/\nif nginx -t; then\n  cp -p "\$NGINX_SITIO" "\$NGINX_SITIO\.buena"/.test(d) || !/\n  if \[ -f "\$NGINX_SITIO\.buena" \]; then\n    cp -p "\$NGINX_SITIO\.buena" "\$NGINX_SITIO"/.test(d))
+      falla(G, D, 0, "una configuración de nginx que no pasa «nginx -t» no se queda: vuelve la última buena (.buena, guardada solo después de un «nginx -t» que pasa)");
+    // Tanda 5b · entre migrar y cambiar, ningún paso accesorio corta (con la base ya migrada, cortar dejaba la app vieja contra la base nueva): la semilla
+    // y nginx son avisos (FALLO después del cambio), el mapa solo se anota; antes del «up» y de su reintento se espera a «healthy», no solo a pg_isready;
+    // tras la salud, el commit servido tiene que ser el desplegado; el umask 077 solo al crear los secretos; la carpeta de mantenimiento 755.
+    const tramoMC = d.slice(Math.max(iMig, 0), iUp > 0 ? iUp : undefined);
+    if (!/--semilla-pruebas "\$\{COMPOSE\[@\]\}" \\\n  \|\| aviso "/.test(d) || !/"\$\{COMPOSE_MAPA\[@\]\}" up -d mapa \|\| log /.test(d) || /\n\s*systemctl (reload|restart) nginx\s*\n/.test(tramoMC) || !/systemctl reload nginx \|\| systemctl restart nginx \|\| aviso /.test(d))
+      falla(G, D, 0, "entre migrar y cambiar ningún paso accesorio corta el despliegue: la semilla y nginx son avisos (FALLO después del cambio), el mapa se anota, la recarga cae a reinicio");
+    if ((d.match(/\nbase_sana 60 10 \|\| /g) ?? []).length !== 1 || !/\n  base_sana 60 10 \|\| true\n  "\$\{COMPOSE\[@\]\}" up -d --remove-orphans \|\|/.test(d) || !/State\.Health\.Status/.test(d) || iUp < 0 || d.indexOf("\nbase_sana 60 10 ||") > iUp)
+      falla(G, D, 0, "antes del «up» de la app y de su reintento se espera a que Docker dé la base por «healthy» (base_sana), no solo a pg_isready");
+    if (!/SERVIDO=\$\(sed -n 's\/\.\*"commit":"\\\(\[\^"\]\*\\\)"\.\*\/\\1\/p' \/tmp\/salud\.json/.test(d) || !/if \[ "\$SERVIDO" != "\$COMMIT" \]; then\n[\s\S]{0,600}?\n    exit 1\n  fi/.test(d))
+      falla(G, D, 0, "tras la salud, el commit que dice /api/salud tiene que ser el desplegado; si no, FALLO a la vista");
+    if (/\n\s*umask 0?77\n/.test(d) && !/\( umask 077\n/.test(d)) falla(G, D, 0, "el umask 077 solo en un subshell al crear los secretos (si no, /var/www/mantenimiento nace 700 y nginx no la lee)");
+    if (/\numask /.test(d) || !/\ninstall -d -m 0755 \/var\/www\/mantenimiento\n/.test(d)) falla(G, D, 0, "el umask 077 solo en un subshell al crear los secretos y la carpeta de mantenimiento 755 (install -d -m 0755)");
+    const c = readFileSync(C, "utf8");
+    for (const t of ["orden-despliegue", "mantenimiento-nginx"]) if (!new RegExp(`seccion "[^"]*"; bash pruebas\\/infra\\/${t}\\.test\\.sh \\|\\| mal=1`).test(c) || !existsSync(`pruebas/infra/${t}.test.sh`)) falla(G, C, 0, `las pruebas de infra no corren pruebas/infra/${t}.test.sh`);
+  },
+
+  /* 22 nov · despliegueConTramos: cada tramo del despliegue del sandbox queda con su hora y sus segundos en el registro que publica /estado/ (para medir
+     sin SSH lo que hoy se estima): base, imagen, migraciones, semilla, aparte, nginx, recrear y salud, en ese orden, y al salir (bien o mal, con un
+     trap) una línea «tramos (ok|fallo en …)» que también va a /estado/tramos.txt, enlazado desde /estado/. Prueba: orden-despliegue.test.sh. */
+  despliegueConTramos() {
+    const G = "despliegueConTramos", D = "infra/pruebas/deploy.sh", S = "infra/pruebas/tolatino-sync", O = "pruebas/infra/orden-despliegue.test.sh";
+    const d = readFileSync(D, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    if (!/\ntrap 'fin_tramos \$\?' EXIT\n/.test(d) || !/echo "\$\(date -Is\) \$linea" >> "\$t"/.test(d) || !/local res=ok linea t=\/var\/www\/estado\/tramos\.txt/.test(d))
+      falla(G, D, 0, "al salir (bien o mal) deploy.sh deja su línea de tramos en el registro y en /estado/tramos.txt (trap … EXIT)");
+    let antes = -1;
+    for (const t of ["base", "imagen", "migraciones", "semilla", "aparte", "nginx", "recrear", "salud"]) {
+      const i = d.search(new RegExp(`\\ntramo ${t}\\n`));
+      if (i < 0 || i < antes) { falla(G, D, 0, `falta «tramo ${t}» en su sitio (base → imagen → migraciones → semilla → aparte → nginx → recrear → salud)`); break; }
+      antes = i;
+    }
+    if (!/<a href='\/estado\/tramos\.txt'>Tramos<\/a>/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "/estado/ enlaza tramos.txt");
+    if (!/tramos \(fallo en imagen, commit/.test(existsSync(O) ? readFileSync(O, "utf8") : "")) falla(G, O, 0, "la prueba del orden comprueba la línea de tramos (también cuando falla)");
+  },
+
+  /* 22 nov · pruebasInfraAisladas: una prueba de infra que corre un guion de despliegue de verdad como root (deploy.sh, tolatino-sync, la recuperación)
+     nunca toca la máquina donde corre. Un revisor corrió sync-pruebas.test.sh contra un tolatino-sync que no leía las variables de la prueba y desplegó
+     de verdad en su máquina (clon en /opt/tolatino, /etc/tolatino, contenedores). (1) Ningún «unshare» suelto en pruebas/infra: todo va por «aislado»
+     (pruebas/infra/aislar.sh), que es montajes Y red aparte (unshare -m -n) con tmpfs sobre /opt, /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino,
+     /var/log, /usr/local/bin, /run (sockets de Docker y systemd, /var/lock) y /tmp, y comprueba que el aislamiento está antes de correr; (2) una prueba
+     que corre un tolatino-sync primero exige que lea TOLATINO_SYNC_REPO y TOLATINO_SYNC_DIR (aislar_exige) y, si no, no lo corre; (3) correr.sh corre
+     aislar.test.sh antes y, si no pasa, no corre las que despliegan. Al revés: alrevesDespliegue. */
+  pruebasInfraAisladas() {
+    const G = "pruebasInfraAisladas", A = "pruebas/infra/aislar.sh", C = "pruebas/infra/correr.sh";
+    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const a = existsSync(A) ? readFileSync(A, "utf8") : "";
+    const rutas = ((/\nAISLAR_RUTAS="([^"]+)"/.exec(a) ?? [])[1] ?? "").split(/\s+/);
+    const faltan = ["/opt", "/etc/tolatino", "/etc/nginx", "/var/www", "/var/lib/tolatino", "/var/log", "/usr/local/bin", "/run", "/tmp"].filter((r) => !rutas.includes(r));
+    if (!/unshare -m -n --propagation private bash -c '/.test(a) || faltan.length || !/mountpoint -q "\$m" \|\| \{[^}]*exit 98; \}/.test(a) || !/\/run\/docker\.sock/.test(a))
+      falla(G, A, 0, `«aislado» es montajes Y red aparte (unshare -m -n) con tmpfs sobre todo lo que un despliegue toca${faltan.length ? ` (faltan: ${faltan.join(", ")})` : ""} y comprueba que está antes de correr`);
+    for (const f of archivos.filter((x) => /^pruebas\/infra\/[^/]+\.sh$/.test(x) && x !== A)) {
+      const t = sinC(readFileSync(f, "utf8"));
+      if (/\bunshare\b/.test(t)) falla(G, f, 0, "nada de «unshare» suelto en las pruebas de infra: va por «aislado» (pruebas/infra/aislar.sh: montajes y red aparte, tmpfs sobre todo lo que un despliegue toca)");
+      const corre = /\bbash "[^"]*(?:deploy\.sh|tolatino-sync)"/.test(t) || /recuperar_si_hace_falta/.test(t);
+      if (corre && !/(^|\n)\. "\$RAIZ\/pruebas\/infra\/aislar\.sh"/.test(t)) falla(G, f, 0, "corre un guion de despliegue de verdad: carga pruebas/infra/aislar.sh y lo corre con «aislado»");
+      if (corre && !/\baislado '/.test(t)) falla(G, f, 0, "corre un guion de despliegue de verdad fuera de «aislado»");
+      if (/\bbash "[^"]*tolatino-sync"/.test(t) && !/\naislar_exige "[^"]*tolatino-sync" TOLATINO_SYNC_REPO TOLATINO_SYNC_DIR \|\| exit 1\n/.test(t))
+        falla(G, f, 0, "antes de correr un tolatino-sync, aislar_exige comprueba que lee TOLATINO_SYNC_REPO y TOLATINO_SYNC_DIR (si no, desplegaría en esta máquina)");
+    }
+    const c = readFileSync(C, "utf8");
+    if (!/\n  if bash pruebas\/infra\/aislar\.test\.sh; then AISLADO=1; else mal=1;/.test(c) || !/\nif \[ "\$AISLADO" = 1 \]; then\n  seccion "el sandbox no cambia \(traza\)"/.test(c) || !existsSync("pruebas/infra/aislar.test.sh"))
+      falla(G, C, 0, "correr.sh corre aislar.test.sh primero y, si no pasa, no corre las pruebas que despliegan");
+  },
+
   /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del
      fundador anotado (etiqueta ok-produccion/*, que va a deploy_releases.founder_ok_ref). Lo revisan el que empuja (scripts/produccion/promover.sh) y el que
      despliega (infra/produccion/tolatino-sync, en cada máquina); ningún flujo de GitHub empuja a produccion; y si las ramas están a mano, produccion es
@@ -10037,6 +10298,46 @@ const guardianes = {
       for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?([a-z_][a-z0-9_]*)\s+rename to/gi)) objetos.push([m[1], "rename table"]);
       for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?[a-z_][a-z0-9_]*\s+alter column\s+([a-z_][a-z0-9_]*)\s+(?:set data\s+)?type/gi)) objetos.push([m[1], "cambio de tipo"]);
       for (const [id, que] of objetos) { const quien = lee(id); if (quien) falla(G, f, 0, `${que} de «${id}»: el código todavía lo lee (${quien}); primero un despliegue sin lectores, después se contrae`); }
+    }
+    // Tanda 5b · Con construir → migrar → cambiar, la app VIEJA sirve contra la base NUEVA mientras se migra (de uno a varios minutos). Además de los
+    // drop / rename de arriba, rompen sus escrituras: (1) una columna NOT NULL sin valor por omisión (o un «set not null») en una tabla donde el código
+    // hace INSERT: sus INSERT fallan hasta el cambio; (2) un cambio de tipo en cualquier cláusula del «alter table» (arriba solo la primera); (3) una
+    // función con OTRA firma (create or replace con otros argumentos crea una sobrecarga: la vieja sigue, pero con argumentos por omisión la llamada de la
+    // app vieja puede volverse ambigua; reemplazarla es otro nombre y el drop después). Desde la 0209 (las de antes ya están desplegadas).
+    const inserta = (tabla) => {
+      if (previo) {
+        try {
+          const out = execSync(`git grep -l -i -E "insert into[[:space:]]+(public\\.)?${tabla}\\b" ${previo} -- apps services scripts`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+          if (out) return out.split("\n")[0].replace(/^[0-9a-f]+:/, "") + " (commit anterior)";
+        } catch { /* sin coincidencias */ }
+      }
+      const re = new RegExp(`insert into\\s+(public\\.)?${tabla}\\b`, "i");
+      return vivos.filter((f) => !/^packages\/db\/seeds\//.test(f)).find((f) => re.test(readFileSync(f, "utf8"))) ?? "";
+    };
+    const partes = (s) => { const r = []; let n = 0, a = ""; for (const ch of s) { if (ch === "(") n++; if (ch === ")") n--; if (ch === "," && n === 0) { r.push(a); a = ""; } else a += ch; } r.push(a); return r.map((x) => x.trim()); };
+    const firma = (s) => partes(s.toLowerCase().replace(/\s+/g, " ")).map((x) => x.replace(/\s+(default|=)\s+[\s\S]*$/, "").trim()).join(", ");
+    const firmas = new Map();
+    for (const x of readdirSync("packages/db/migrations").filter((y) => /^\d{4}_.*\.sql$/.test(y)).sort()) {
+      const f = `packages/db/migrations/${x}`, t = readFileSync(f, "utf8").replace(/--.*$/gm, ""), nueva = Number(x.slice(0, 4)) >= 209;
+      for (const m of t.matchAll(/\bcreate\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z_][a-z0-9_]*)\s*\(([^)]*(?:\([^)]*\)[^)]*)*)\)/gi)) {
+        const fn = m[1].toLowerCase(), sig = firma(m[2]), antes = firmas.get(fn);
+        if (nueva && antes !== undefined && antes !== sig) { const quien = lee(fn); if (quien) falla(G, f, 0, `otra firma de la función «${fn}» (${antes} → ${sig}): la vieja sigue como sobrecarga y la app vieja (${quien}) puede caer en una llamada ambigua; reemplazarla es otro nombre y el drop en un despliegue posterior`); }
+        firmas.set(fn, sig);
+      }
+      if (!nueva) continue;
+      for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+([\s\S]*?);/gi)) {
+        const tabla = m[1];
+        for (const c of partes(m[2])) {
+          const add = /^add\s+(?:column\s+)?(?:if not exists\s+)?([a-z_][a-z0-9_]*)\s+([\s\S]*)$/i.exec(c);
+          if (add && !/^(constraint|primary|unique|foreign|check|exclude)$/i.test(add[1]) && /\bnot null\b/i.test(add[2]) && !/\b(default|generated)\b/i.test(add[2])) {
+            const quien = inserta(tabla); if (quien) falla(G, f, 0, `columna «${add[1]}» NOT NULL sin valor por omisión en «${tabla}»: los INSERT de la app vieja (${quien}) fallan desde que migra hasta que cambia; primero con default (o nula), después se aprieta`);
+          }
+          const snn = /^alter\s+(?:column\s+)?([a-z_][a-z0-9_]*)\s+set not null$/i.exec(c);
+          if (snn) { const quien = inserta(tabla); if (quien) falla(G, f, 0, `«set not null» de «${tabla}.${snn[1]}»: los INSERT de la app vieja (${quien}) que no la llenan fallan hasta el cambio; primero un despliegue que siempre la llene`); }
+          const tipo = /^alter\s+(?:column\s+)?([a-z_][a-z0-9_]*)\s+(?:set data\s+)?type\b/i.exec(c);
+          if (tipo) { const quien = lee(tipo[1]); if (quien) falla(G, f, 0, `cambio de tipo de «${tabla}.${tipo[1]}»: el código todavía lo lee (${quien}); primero una columna nueva, después se contrae`); }
+        }
+      }
     }
   },
 

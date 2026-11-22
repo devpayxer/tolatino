@@ -30,7 +30,7 @@ const casos = [
   ['traductorEnPerfil', C, '    volumes:\n      - traductor-modelos:/home/libretranslate/.local\n    networks: [interna]', '    networks: [interna]'], // GUARDIAN-OK: ruta dentro del contenedor del traductor, no de una máquina
   ['traductorEnPerfil', C, '    networks: [default, interna]\n    depends_on:\n      db:\n        condition: service_healthy\n', '    networks: [default, interna]\n    depends_on:\n      db:\n        condition: service_healthy\n      traductor:\n        condition: service_healthy\n'],
   ['traductorEnPerfil', D, ' up -d traductor" || true', ' up -d traductor"'],
-  ['traductorEnPerfil', D, 'up -d --build --remove-orphans', 'up -d --build --remove-orphans --profile traductor'],
+  ['traductorEnPerfil', D, '--remove-orphans; then', '--remove-orphans --profile traductor; then'],
   ['traductorEnPerfil', D, 'COMPOSE_TRAD=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" --profile traductor)', 'COMPOSE_TRAD=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml")'],
   // adminVeOriginal
   ['adminVeOriginal', AM, 'import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";', 'import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";\nimport { useTraducir } from "../(app)/Traducir";'],
