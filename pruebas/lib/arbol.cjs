@@ -57,7 +57,9 @@ let fijo = null;
 function entornoFijo() {
   if (fijo) return fijo;
   let nodePath = '-'; try { nodePath = execFileSync('node', ['--version'], { encoding: 'utf8' }).trim(); } catch { /* sin node en el PATH */ }
-  fijo = { node: process.version, nodePath, variables: Object.fromEntries(VARIABLES.map((k) => [k, process.env[k] ?? null])) };
+  // La precarga que el corredor pone a cada suite (pruebas/lib/alreves-corredor.cjs) no cuenta: la suite y el corredor tienen que ver la misma huella.
+  const valor = (k) => (k === 'NODE_OPTIONS' ? (process.env[k] ?? '').replace(/\s*--require\s+("[^"]*alreves-corredor\.cjs"|\S*alreves-corredor\.cjs)/g, '').trim() || null : process.env[k] ?? null);
+  fijo = { node: process.version, nodePath, variables: Object.fromEntries(VARIABLES.map((k) => [k, valor(k)])) };
   return fijo;
 }
 function versionTs(raiz) {

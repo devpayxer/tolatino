@@ -6,7 +6,7 @@ const R = path.resolve(__dirname, '..', '..');
 const G = 'alrevesArbolIdentico', C = 'pruebas/correr.mjs', A = 'pruebas/lib/arbol.cjs', Y = '.github/workflows/ci.yml';
 const casos = [
   [C, 'if (t.carril === "alreves") r = vigia.despues(t, r);', ''],
-  [C, 'd = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ))', 'd = ARBOL.diferencias(ARBOL.huella(RAIZ), ARBOL.huella(RAIZ))'],
+  [C, 'try { d = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ)); }', 'try { d = ARBOL.diferencias(ARBOL.huella(RAIZ), ARBOL.huella(RAIZ)); }'],
   [C, 'const o = ARBOL.restaurar(RAIZ, this.ini, this.dir), otra', 'const o = { restaurados: [], apartados: [], carpetas: [] }, otra'],
   [C, 'if (otra.length) { this.cortado =', 'if (false) { this.cortado ='],
   [C, 'if (!r.ok) { this.cortado = "la pasada real', 'if (false) { this.cortado = "la pasada real'],

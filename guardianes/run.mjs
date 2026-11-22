@@ -10921,7 +10921,7 @@ const guardianes = {
     if (!/execSync\("git rev-parse --verify -q HEAD~1"/.test(v) || !/const r = await pasadaReal\("inicio"\); rs\.push\(r\);\s*if \(!r\.ok\) \{ this\.cortado =/.test(v) || !/rs\.push\(await pasadaReal\("final"\)\)/.test(v))
       falla(G, C, 0, "al empezar el carril: HEAD~1 resuelve y una pasada real (si es roja, se para); al terminar, otra pasada real");
     if (!/this\.ini = ARBOL\.huella\(RAIZ\);/.test(v) || !/ARBOL\.copiar\(RAIZ, this\.ini, this\.dir\)/.test(v) || !/mkdtempSync\(join\(tmpdir\(\), /.test(v)) falla(G, C, 0, "la huella inicial y la copia de referencia (fuera del árbol, en una carpeta temporal propia) se toman al empezar el carril");
-    if (!/d = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\)/.test(v) || !/ARBOL\.restaurar\(RAIZ, this\.ini, this\.dir\), otra = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\)/.test(v) || !/if \(otra\.length\) \{ this\.cortado =/.test(v) || !/return \{ \.\.\.r, ok: false, error: `dejó el árbol distinto del inicial/.test(v))
+    if (!/try \{ d = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\); \}/.test(v) || !/ARBOL\.restaurar\(RAIZ, this\.ini, this\.dir\), otra = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\)/.test(v) || !/if \(otra\.length\) \{ this\.cortado =/.test(v) || !/return \{ \.\.\.r, ok: false, error: `dejó el árbol distinto del inicial/.test(v))
       falla(G, C, 0, "tras cada suite se compara con la huella INICIAL; si difiere: roja con los archivos, restaurar desde la copia, volver a comparar y cortar si no vuelve");
     const pr = /const pasadaReal = [\s\S]*?\n\}\);/.exec(c)?.[0] ?? "";
     if (!/spawn\("node", \["guardianes\/run\.mjs"\], /.test(pr) || /--solo/.test(pr) || !/delete env\.ALREVES_CORREDOR;/.test(pr)) falla(G, C, 0, "la pasada real es «node guardianes/run.mjs» entero, sin --solo y sin la variable del corredor");
@@ -10958,6 +10958,32 @@ const guardianes = {
     if (!/const envDe = \(t\) => \(t\.carril === "alreves" && vigia\.ini \? \{ \.\.\.ENV, ALREVES_CORREDOR: `\$\{process\.pid\}:\$\{vigia\.ini\.digest\}`/.test(c) || !/spawn\(cmd, cargs, \{ cwd: RAIZ, env: envDe\(t\), /.test(c)) falla(G, C, 0, "el corredor pone ALREVES_CORREDOR (su pid y la huella inicial) solo en el proceso de cada suite al revés, con el árbol ya vigilado");
     if (/process\.env(\.|\[\s*["'`])(ALREVES_\w+|GUARDIANES_(VERDE|HUELLA)\w*)/.test(readFileSync("guardianes/run.mjs", "utf8")))
       falla(G, "guardianes/run.mjs", 0, "guardianes/run.mjs no guarda ni consulta ningún veredicto: «node guardianes/run.mjs» corre siempre de verdad");
+  },
+
+  /* 22 nov · Revisión del CI (A3) · alrevesSeguroSembrado: sin las pasadas finales el defecto está sembrado casi todo el tiempo de una suite;
+     un corte no puede dejarlo en el árbol. El corredor lanza cada prueba en su grupo de procesos y, por tope de tiempo, la mata entera
+     (SIGKILL) y restaura después (árbol idéntico tras cada suite); ante SIGINT/SIGTERM para la prueba en curso con su grupo, restaura desde la
+     copia de referencia y cierra el diario. El diario es POR ÁRBOL (pruebas/lib/diario.cjs, en la carpeta de git de la copia): candado de la
+     corrida (con una viva en el mismo árbol, otra no arranca) y lo que cada suite escribe, anotado ANTES (precarga pruebas/lib/alreves-corredor.cjs,
+     con fsync). Al arrancar tras una corrida muerta, devuelve un archivo SOLO si sigue con el defecto anotado; lo que alguien cambió no lo toca.
+     Al revés: alrevesSeguro (casos) y seguro9z (SIGKILL a medio caso y la recuperación de verdad, en un repo de prueba). */
+  alrevesSeguroSembrado() {
+    const G = "alrevesSeguroSembrado", C = "pruebas/correr.mjs", D = "pruebas/lib/diario.cjs", P = "pruebas/lib/alreves-corredor.cjs";
+    for (const f of [C, D, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del seguro contra el defecto sembrado");
+    const c = sinComent(C), d = sinComent(D), p = sinComent(P);
+    if (!/env: envDe\(t\), stdio: \["ignore", "pipe", "pipe"\], detached: true \}\);/.test(c) || !/const matarGrupo = \(p, sen\) => \{ try \{ process\.kill\(-p\.pid, sen\); \}/.test(c) || !/matarGrupo\(p, "SIGKILL"\); \}, TIEMPO\);/.test(c))
+      falla(G, C, 0, "cada prueba corre en su grupo de procesos y el tope de tiempo mata el grupo entero (no deja su --solo huérfano)");
+    if (!/for \(const \[sen, cod\] of \[\["SIGINT", 130\], \["SIGTERM", 143\]\]\) process\.on\(sen, /.test(c) || !/matarGrupo\(p, "SIGTERM"\);[^\n]*matarGrupo\(p, "SIGKILL"\);/.test(c) || !/vigia\.alParar\(\);\s*process\.exit\(cod\);/.test(c) || !/const o = ARBOL\.restaurar\(RAIZ, this\.ini, this\.dir\); console\.log\(`  restaurado desde la copia de referencia/.test(c))
+      falla(G, C, 0, "ante SIGINT/SIGTERM el corredor para la prueba con su grupo y restaura el árbol desde la copia antes de salir");
+    if (!/if \(c\.pid && c\.pid !== process\.pid && DIARIO\.vivo\(c\.pid\)\) \{[^\n]*process\.exit\(2\); \}/.test(c) || !/const o = DIARIO\.recuperar\(RAIZ, this\.diario\);/.test(c) || !/if \(o\.conflictos\.length\) \{[\s\S]*?process\.exit\(2\);/.test(c) || !/this\.abrir\(\);/.test(c))
+      falla(G, C, 0, "al empezar el carril: candado por árbol (una corrida viva en el mismo árbol frena a otra) y recuperación del diario de una corrida muerta (con lo que no se toca, se para)");
+    if (!/NODE_OPTIONS: `\$\{ENV\.NODE_OPTIONS \?\? ""\} --require \$\{JSON\.stringify\(join\(RAIZ, "pruebas\/lib\/alreves-corredor\.cjs"\)\)\}`/.test(c) || !/ALREVES_DIARIO: vigia\.diario/.test(c)) falla(G, C, 0, "cada suite al revés corre con la precarga que anota sus escrituras en el diario del árbol");
+    if (!/execFileSync\('git', \['rev-parse', '--absolute-git-dir'\]/.test(d) || !/fs\.writeSync\(fd, `\$\{JSON\.stringify\(entrada\)\}\\n`\); fs\.fsyncSync\(fd\);/.test(d)) falla(G, D, 0, "el diario vive en la carpeta de git de ESTA copia (no en $PRUEBAS_SALIDA, común a todas) y cada anotación llega al disco (fsync) antes de escribir");
+    if (!/if \(ahora === primera\.antes\) continue;/.test(d) || !/if \(ahora !== ultima\.despues\) \{ out\.conflictos\.push\(/.test(d) || !/fs\.renameSync\(abs, dst\); out\.apartados\.push\(rel\);/.test(d))
+      falla(G, D, 0, "la recuperación no restaura a ciegas: solo si el archivo sigue con el defecto anotado; lo que alguien cambió no se toca y lo nuevo se aparta");
+    if (!/if \(pidCorredor && Number\(pidCorredor\) === process\.ppid && process\.env\.ALREVES_DIARIO && process\.env\.ALREVES_RAIZ\) \{/.test(p)) falla(G, P, 0, "la precarga solo actúa en el proceso de la suite que lanzó el corredor");
+    for (const f of ["writeFileSync", "appendFileSync", "unlinkSync", "renameSync", "copyFileSync", "rmSync", "mkdirSync", "rmdirSync"])
+      if (!new RegExp(`fs\\.${f} = function \\([^)]*\\) \\{[\\s\\S]*?(nota\\(|D\\.anotar\\()[\\s\\S]*?return o\\.${f}\\.apply\\(this, arguments\\);`).test(p)) falla(G, P, 0, `la precarga anota ${f} en el diario ANTES de hacerlo`);
   },
 
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
