@@ -10049,6 +10049,23 @@ const guardianes = {
         usados.add(pk);
       }
     }
+    // (2b) Tanda 5b · Las lecturas del disco, en lista CERRADA (archivo → cuántas llamadas). Lo de arriba solo ve rutas que empiezan con ./ o ../; una
+    //      lectura relativa a process.cwd() sin ../ (la segunda ruta de launch.ts) o hecha por segmentos (path.join(cwd, "..", "..", "docs", …)) se le
+    //      escapa, y con la lista blanca eso es el fallo silencioso de LAUNCH: el build pasa, Next no traza el archivo y la imagen sale sin él. Una lectura
+    //      nueva (o una más en un archivo de la lista) obliga a mirar qué lee y a que entre en la imagen (.dockerignore «!» y, si es en ejecución,
+    //      outputFileTracingIncludes) antes de añadirla aquí.
+    const LECTURAS_DISCO = { "apps/web/lib/ciudades/launch.ts": 2, "apps/web/lib/errores/simbolizar.ts": 1, "apps/web/lib/medios.ts": 2,
+      "apps/web/lib/pases/credenciales.ts": 2, "apps/web/lib/video-negocio.ts": 1 };
+    const RE_LEE = /\b(readFile|readFileSync|createReadStream|existsSync|readdir|readdirSync|statSync|lstatSync|opendir|opendirSync|accessSync|readlinkSync)\s*\(/g;
+    const vistos = new Set();
+    for (const f of fuentes.filter((x) => RAICES.some((r) => en(x, r)) && /\.(tsx?|jsx?|mjs|cjs)$/.test(x))) {
+      const n = (readFileSync(f, "utf8").replace(/^\s*\/\/.*$/gm, "").match(RE_LEE) ?? []).length;
+      if (!n) continue;
+      vistos.add(f);
+      if (!(f in LECTURAS_DISCO)) falla(G, f, 0, `lee del disco (${n} llamada(s)) y no está en la lista cerrada de lecturas (LECTURAS_DISCO): lo que lee tiene que entrar en la imagen (.dockerignore «!» y outputFileTracingIncludes) antes de añadirlo`);
+      else if (LECTURAS_DISCO[f] !== n) falla(G, f, 0, `cambió el número de lecturas del disco (${LECTURAS_DISCO[f]} → ${n}): mira que lo nuevo entre en la imagen y actualiza LECTURAS_DISCO`);
+    }
+    for (const f of Object.keys(LECTURAS_DISCO)) if (!vistos.has(f)) falla(G, f, 0, "ya no lee del disco (o no existe): sale de LECTURAS_DISCO");
     // (3) Ni una ruta de más: cada «!» existe y algo la usa (los archivos de la raíz que pnpm necesita los copia el Dockerfile).
     for (const w of W) {
       if (!existe.has(w)) falla(G, I, 0, `«!${w}» no existe en el repo`);

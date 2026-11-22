@@ -50,6 +50,10 @@ const casos = [
   ['imagenSoloLoQueUsa', I, '!docs/LAUNCH-CHECKLIST.md\n', '', 'docs/LAUNCH-CHECKLIST.md se lee al construir o al servir la imagen y el .dockerignore lo deja fuera'],
   ['imagenSoloLoQueUsa', I, '!apps/mobile/apps.json\n', '', 'apps/mobile/apps.json se lee al construir o al servir la imagen y el .dockerignore lo deja fuera'],
   ['imagenSoloLoQueUsa', AN, 'import APPS from "../../mobile/apps.json";', 'import APPS from "../../mobile/apps.json";\nimport "../../../scripts/ci/alcance.mjs";', 'scripts/ci/alcance.mjs se lee al construir'],
+  // Tanda 5b · las lecturas del disco que el guardián no veía (relativas a process.cwd() sin ../, o por segmentos), en lista cerrada.
+  ['imagenSoloLoQueUsa', 'apps/web/lib/zz-alreves-lee.ts', null, 'import { readFileSync } from "fs";\nimport path from "path";\nexport const t = () => readFileSync(path.join(process.cwd(), "docs/legal/us/terminos.md"), "utf8");\n', 'no está en la lista cerrada de lecturas'],
+  ['imagenSoloLoQueUsa', 'apps/web/lib/zz-alreves-lee.ts', null, 'import { readFile } from "fs/promises";\nimport path from "path";\nexport const t = () => readFile(path.join(process.cwd(), "..", "..", "scripts", "legal", "indexar.mjs"), "utf8");\n', 'no está en la lista cerrada de lecturas'],
+  ['imagenSoloLoQueUsa', 'apps/web/lib/ciudades/launch.ts', '  const f = CANDIDATOS().find((x) => existsSync(x));', '  const f = CANDIDATOS().find((x) => existsSync(x)) ?? (existsSync("/x") ? "/x" : undefined);', 'cambió el número de lecturas del disco'],
   ['imagenSoloLoQueUsa', I, '!docs/LAUNCH-CHECKLIST.md\n', '!docs/LAUNCH-CHECKLIST.md\n!infra/pruebas\n', '«!infra/pruebas» no lo lee el build'],
   ['imagenSoloLoQueUsa', I, '\n*\n!package.json', '\n!package.json', 'empieza con «*»'],
   ['imagenSoloLoQueUsa', I, '**/node_modules\n', '', 'no deja fuera **/node_modules'],
