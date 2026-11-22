@@ -175,7 +175,7 @@ export async function equipoGuardar(id: string, mid: string, x: {
       if (typeof x?.photo === "string" && UUID.test(x.photo)) {
         // Foto nueva: la que la persona acaba de subir (/api/medios) pasa a su perfil del equipo.
         photo = (await c.query<{ url: string }>(
-          `update media set owner_kind = 'member', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 returning url`,
+          `update media set owner_kind = 'member', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`,
           [m.id, x.photo, a.yo.id])).rows[0]?.url ?? null;
         if (photo) await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3 where owner_kind = 'member' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [m.id, x.photo, a.yo.id]);
       } else if (typeof x?.photo === "string") photo = (await c.query<{ photo_url: string | null }>(`select photo_url from business_members where id = $1`, [m.id])).rows[0]?.photo_url ?? null;

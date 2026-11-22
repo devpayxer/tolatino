@@ -597,7 +597,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
     if (fotos.length) {
       const ok = await c.query(
         `update media set owner_kind = 'review', owner_id = $1, sort = array_position($3::uuid[], id)
-          where id = any($3::uuid[]) and uploaded_by = $2 and status = 'visible' and not rev_sin_c2 and (owner_kind = 'user' or (owner_kind = 'review' and owner_id = $1))`, [id, userId, fotos]);
+          where id = any($3::uuid[]) and uploaded_by = $2 and status = 'visible' and not rev_sin_c2 and not private and (owner_kind = 'user' or (owner_kind = 'review' and owner_id = $1))`, [id, userId, fotos]);
       if (ok.rowCount !== fotos.length) throw Object.assign(new Error("foto ajena"), { fotoAjena: true });
     }
     await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'review' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [id, fotos]);

@@ -38,10 +38,22 @@ const casos = [
   [P, 'apps/web/lib/subir-foto.ts', 'destino === "privado" ? { destino: "privado" } : {}', '{}'],
   [P, 'pruebas/e2e/rev9u.cjs', "'dudosa con destino privado → retenida y la segunda opinión no recibió nada'", "'dudosa con destino privado'"],
   // El atajo: una foto subida como «privado» que se adjunta a algo público; la decisión que no recibe el destino.
-  [P, 'apps/web/lib/resenas.ts', "status = 'visible' and not rev_sin_c2 and (owner_kind = 'user' or (owner_kind = 'review'", "status = 'visible' and (owner_kind = 'user' or (owner_kind = 'review'"],
-  [P, 'apps/web/app/panel/acciones.ts', "owner_id = $3 and status = 'visible' and not rev_sin_c2 returning url`", "owner_id = $3 and status = 'visible' returning url`"],
-  [P, 'apps/web/lib/comunidad.ts', "uploaded_by = $2 and status = 'visible' and not rev_sin_c2)", "uploaded_by = $2 and status = 'visible')"],
+  [P, 'apps/web/lib/resenas.ts', "status = 'visible' and not rev_sin_c2 and not private and (owner_kind = 'user' or (owner_kind = 'review'", "status = 'visible' and not private and (owner_kind = 'user' or (owner_kind = 'review'"],
+  [P, 'apps/web/app/panel/acciones.ts', "owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`", "owner_id = $3 and status = 'visible' and not private returning url`"],
+  [P, 'apps/web/lib/comunidad.ts', "uploaded_by = $2 and status = 'visible' and not rev_sin_c2 and not private)", "uploaded_by = $2 and status = 'visible')"],
   [P, F, ', privada: x.sinC2 };', ' };'],
+  // 22 nov · Una PRIVADA de otra ruta (privado/a/, la ayuda de Salud y Pro: owner 'user', private, sin rev_sin_c2) en un destino público: una consulta
+  //     de la lista sin not private (una por forma: el que toma, el que pasa al negocio, el que pasa a la reseña, la copia de la galería, el
+  //     catálogo); y por CLASE: un destino público NUEVO o una toma nueva que no lo exigen (no están en la lista), o la prueba que deja de mirarlo.
+  [P, 'apps/web/lib/perfil.ts', "status = 'visible' and not rev_sin_c2 and not private`", "status = 'visible' and not rev_sin_c2`"],
+  [P, 'apps/web/app/(app)/publica/acciones.ts', "owner_id = $4 and status = 'visible' and not rev_sin_c2 and not private`", "owner_id = $4`"],
+  [P, 'apps/web/lib/evt.ts', "status = 'visible' and not rev_sin_c2 and not private and ((owner_kind = 'user'", "status = 'visible' and not rev_sin_c2 and ((owner_kind = 'user'"],
+  [P, 'apps/web/lib/resenas.ts', "status = 'visible' and not rev_sin_c2 and not private and (owner_kind = 'user'", "status = 'visible' and not rev_sin_c2 and (owner_kind = 'user'"],
+  [P, 'apps/web/lib/novedades.ts', "owner_id = $2 and status = 'visible' and not rev_sin_c2 and not private`", "owner_id = $2 and status = 'visible' and not private`"],
+  [P, 'apps/web/lib/fotos-catalogo.ts', "purged_at is null and not private and not rev_sin_c2", "purged_at is null and not rev_sin_c2"],
+  [P, 'apps/web/lib/perfil.ts', 'export async function fotoPerfil(', 'export async function fotoPortadaPerfil(userId: string, mediaId: string) {\n  await db().query(`update media set owner_kind = \'portada_perfil\', owner_id = $2 where id = $1::uuid and owner_kind = \'user\' and uploaded_by = $2 and status = \'visible\' and not rev_sin_c2`, [mediaId, userId]);\n}\nexport async function fotoPerfil('],
+  [P, 'apps/web/lib/perfil.ts', 'export async function fotoPerfil(', 'export async function fotoNueva(userId: string, mediaId: string) {\n  return (await db().query(`select url from media where id = $1::uuid and owner_kind = \'user\' and owner_id = $2 and status = \'visible\'`, [mediaId, userId])).rows[0];\n}\nexport async function fotoPerfil('],
+  [P, 'pruebas/e2e/ayu4m.cjs', "'el atajo: la foto privada de una ayuda no entra en ningún destino público'", "'el atajo'"],
   // (c) Un camino que publica sin un «publicar»: la capa 2 que no responde, la confianza sin puntaje, leer la respuesta sin rigor, un error que
   //     no retiene, o el final de la decisión que publica.
   [C, D, '  if (c2.estado === "sin_respuesta") return { estado: "retenida", capa: "c2", motivo: porque === "sin_servicio" ? "sin_servicio" : "no_segura", puntaje: p };', '  if (c2.estado === "sin_respuesta") return { estado: "visible", capa: "c2", motivo: null, puntaje: p };'],

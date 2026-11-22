@@ -73,7 +73,7 @@ export async function fotosAgregar(id: string, ids: string[], portada = false): 
     if (n + lista.length > 60) return "tope" as const;
     if (portada) await c.query(`update media set sort = sort + $2 where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [a.negocio.id, lista.length]);
     for (let i = 0; i < lista.length; i++) {
-      await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible' and not rev_sin_c2`,
+      await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible' and not rev_sin_c2 and not private`,
         [a.negocio.id, portada ? i : n + i, lista[i], a.yo.id]);
     }
     await recontarFotos(c, a.negocio.id);
@@ -128,7 +128,7 @@ export async function logoPoner(id: string, mediaId: string | null): Promise<Res
     await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2 where owner_kind = 'logo' and owner_id = $1 and status = 'visible'`, [a.negocio.id, a.yo.id]);
     if (mediaId === null) { await c.query(`update businesses set logo_url = null, updated_at = now() where id = $1`, [a.negocio.id]); await auditar(c, a, "panel.logo_quitar", { logo: antes }, { media: mediaId }); return true; }
     const m = (await c.query<{ url: string }>(
-      `update media set owner_kind = 'logo', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 returning url`,
+      `update media set owner_kind = 'logo', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`,
       [a.negocio.id, mediaId, a.yo.id])).rows[0];
     if (!m) return false;
     await c.query(`update businesses set logo_url = $2, updated_at = now() where id = $1`, [a.negocio.id, m.url]);

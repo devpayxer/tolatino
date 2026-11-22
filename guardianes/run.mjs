@@ -13983,7 +13983,9 @@ const guardianes = {
      comprueba adentro (nunca private, nunca Mensajes/ayuda/entrega/reclamo, solo las llaves n/ y privado/rev/, y con fila se vuelve a leer de la
      base) ANTES de leer la imagen o reservar; solo lo importa lib/fotos-revision.ts, y a esta solo la subida pública, el barrido, la capa 3 (el
      reporte) y la apelación; ninguna ruta de fotos privadas la toca. A Claude va solo la imagen reducida (≤ 640 px, JPEG) y la pauta fija: sin
-     datos, sin ayuda, nada de quién la subió. Al revés: alreves9urevision. */
+     datos, sin ayuda, nada de quién la subió. Y el atajo (22 nov): ninguna consulta que acepta una foto para un destino público deja entrar una
+     privada (not private) ni una de destino «privado» (not rev_sin_c2), por lista y por clase (también las consultas nuevas). Al revés:
+     alreves9urevision; punta a punta: ayu4m (la foto de una ayuda mandada a mano a cada destino público). */
   fotosRevisionPrivacidad() {
     const G = "fotosRevisionPrivacidad", S = "apps/web/lib/fotos-segunda-opinion.ts", F = "apps/web/lib/fotos-revision.ts", SIM = "apps/web/lib/compa/modelo-simulador.ts", MC = "apps/web/lib/compa/modelo-claude.ts";
     if (!existsSync(S)) return falla(G, S, 0, "falta lib/fotos-segunda-opinion.ts");
@@ -14040,29 +14042,58 @@ const guardianes = {
       if (PRIV_FOTO.includes(x) && (directo || llamadas.some((m) => !/,\s*"privado"\s*$/.test(m[1])))) falla(G, x, 0, "una pantalla de fotos que solo ve un negocio o el equipo sube con subirFoto(…, \"privado\") (nunca va a la segunda opinión)");
     }
     for (const x of PRIV_FOTO) if (!existsSync(x)) falla(G, x, 0, "la lista de pantallas privadas nombra un archivo que ya no existe: actualizarla");
-    // El atajo: una foto subida como «privado» (entra sin modelo propio) no se puede adjuntar a algo PÚBLICO. Cada acción del servidor que adjunta
-    // una foto de media a un destino público lo exige en su consulta (not rev_sin_c2). Los catálogos que guardan la dirección como texto (oficios,
-    // servicios, autos, inmuebles, renta de artículos) validan contra media con fotosDeCatalogoOk (F3; guardián fotosPrivadasConPermiso).
+    // El atajo: una foto subida como «privado» (entra sin modelo propio) o una PRIVADA de otra ruta (privado/a/ de la ayuda de Salud y Pro, que
+    // queda a nombre de quien la sube: owner_kind 'user', private, sin rev_sin_c2) no se puede adjuntar a algo PÚBLICO. Cada consulta del servidor que
+    // acepta el id (o la dirección) de una foto para un destino público lo exige en la consulta: not rev_sin_c2 Y not private (22 nov: antes solo
+    // la primera; una de ayuda entraba en la galería o el perfil con su dirección privado/a/). Los catálogos que guardan la dirección como texto
+    // (oficios, servicios, autos, inmuebles, renta de artículos) validan contra media con fotosDeCatalogoOk (F3; guardián fotosPrivadasConPermiso).
     const ATAJO = [
-      ["apps/web/app/(app)/publica/acciones.ts", /and owner_kind = 'user' and owner_id = \$2 and status = 'visible' and not rev_sin_c2`/, "Publica tu negocio (portada y galería)"],
-      ["apps/web/app/panel/acciones.ts", /where id = \$3::uuid and owner_kind = 'user' and owner_id = \$4 and status = 'visible' and not rev_sin_c2`/, "la galería del panel"],
-      ["apps/web/app/panel/acciones.ts", /owner_kind = 'logo'[^`]*status = 'visible' and not rev_sin_c2 returning url`/, "el logo"],
-      ["apps/web/app/panel/acciones-equipo.ts", /owner_kind = 'member'[^`]*status = 'visible' and not rev_sin_c2 returning url`/, "la foto del equipo (panel)"],
-      ["apps/web/lib/equipo-invitacion.ts", /owner_kind = 'member'[^`]*status = 'visible' and not rev_sin_c2 returning url`/, "la foto del equipo (invitación)"],
-      ["apps/web/app/panel/acciones-menu.ts", /select url from media where url = any\(\$1::text\[\]\) and status = 'visible' and not rev_sin_c2/, "el menú"],
-      ["apps/web/lib/perfil.ts", /owner_id = \$2::text and status = 'visible' and not rev_sin_c2`/, "la foto de perfil"],
-      ["apps/web/lib/comunidad.ts", /\(owner_kind = 'user' and uploaded_by = \$2 and status = 'visible' and not rev_sin_c2\)/, "la Comunidad"],
-      ["apps/web/lib/novedades.ts", /status = 'visible' and not rev_sin_c2 and \(\(owner_kind = 'user' and uploaded_by = \$2\) or \(owner_kind = 'post'/, "las novedades"],
-      ["apps/web/lib/evt.ts", /status = 'visible' and not rev_sin_c2 and \(\(owner_kind = 'user' and uploaded_by = \$2\) or \(owner_kind = 'event'/, "los eventos"],
-      ["apps/web/lib/resenas.ts", /status = 'visible' and not rev_sin_c2 and \(owner_kind = 'user' or \(owner_kind = 'review'/, "las reseñas"],
+      ["apps/web/app/(app)/publica/acciones.ts", /and owner_kind = 'user' and owner_id = \$2 and status = 'visible' and not rev_sin_c2 and not private`/, "Publica tu negocio (portada y galería)"],
+      ["apps/web/app/(app)/publica/acciones.ts", /owner_kind = 'business'[^`]*where id = \$3::uuid and owner_kind = 'user' and owner_id = \$4 and status = 'visible' and not rev_sin_c2 and not private`/, "Publica tu negocio (al pasar las fotos al negocio)"],
+      ["apps/web/app/panel/acciones.ts", /where id = \$3::uuid and owner_kind = 'user' and owner_id = \$4 and status = 'visible' and not rev_sin_c2 and not private`/, "la galería del panel"],
+      ["apps/web/app/panel/acciones.ts", /owner_kind = 'logo'[^`]*status = 'visible' and not rev_sin_c2 and not private returning url`/, "el logo"],
+      ["apps/web/app/panel/acciones-equipo.ts", /owner_kind = 'member'[^`]*status = 'visible' and not rev_sin_c2 and not private returning url`/, "la foto del equipo (panel)"],
+      ["apps/web/lib/equipo-invitacion.ts", /owner_kind = 'member'[^`]*status = 'visible' and not rev_sin_c2 and not private returning url`/, "la foto del equipo (invitación)"],
+      ["apps/web/app/panel/acciones-menu.ts", /select url from media where url = any\(\$1::text\[\]\) and status = 'visible' and not rev_sin_c2 and not private/, "el menú"],
+      ["apps/web/lib/perfil.ts", /owner_id = \$2::text and status = 'visible' and not rev_sin_c2 and not private`/, "la foto de perfil"],
+      ["apps/web/lib/comunidad.ts", /\(owner_kind = 'user' and uploaded_by = \$2 and status = 'visible' and not rev_sin_c2 and not private\)/, "la Comunidad"],
+      ["apps/web/lib/novedades.ts", /owner_kind = 'business' and owner_id = \$2 and status = 'visible' and not rev_sin_c2 and not private`/, "las novedades (copia de la galería)"],
+      ["apps/web/lib/novedades.ts", /status = 'visible' and not rev_sin_c2 and not private and \(\(owner_kind = 'user' and uploaded_by = \$2\) or \(owner_kind = 'post'/, "las novedades"],
+      ["apps/web/lib/evt.ts", /status = 'visible' and not rev_sin_c2 and not private and \(\(owner_kind = 'user' and uploaded_by = \$2\) or \(owner_kind = 'event'/, "los eventos"],
+      ["apps/web/lib/resenas.ts", /status = 'visible' and not rev_sin_c2 and not private and \(owner_kind = 'user' or \(owner_kind = 'review'/, "las reseñas"],
+      ["apps/web/lib/fotos-catalogo.ts", /status = 'visible' and purged_at is null and not private and not rev_sin_c2/, "los cinco catálogos (fotosDeCatalogoOk)"],
     ];
-    for (const [x, re, que] of ATAJO) if (!existsSync(x) || !re.test(sinComent(x))) falla(G, x, 0, `${que}: una foto subida como «privado» no se adjunta a algo público (not rev_sin_c2 en la consulta que la valida)`);
+    for (const [x, re, que] of ATAJO) if (!existsSync(x) || !re.test(sinComent(x))) falla(G, x, 0, `${que}: una foto subida como «privado» o una privada de otra ruta (privado/a/) no se adjunta a algo público (not rev_sin_c2 y not private en la consulta que la valida)`);
+    // Y por CLASE, no por lista (lo nuevo también): en apps/web/{app,lib}, toda consulta que (a) pasa una foto de media a un dueño PÚBLICO
+    // (update media … set owner_kind = '<k>' con k fuera de los destinos privados) o (b) toma de media una foto todavía de la persona (owner_kind
+    // 'user') por un id o una dirección que llega de afuera, exige not private y not rev_sin_c2 en esa misma consulta. Un dueño nuevo cuenta como
+    // público (falla cerrado) hasta que se agregue a DESTINO_PRIVADO; una consulta que exige private (soporte, repartidor) es de un destino privado.
+    const DESTINO_PRIVADO = new Set(["request", "appointment", "trip", "help", "line", "estimate_line", "support", "delivery", "chat", "dm", "claim"]);
+    // (b) que toman la foto de la persona para un destino PRIVADO sin exigir private: el daño de una renta (su permiso sale de la renta).
+    const TOMA_PRIVADA = new Set(["apps/web/lib/rentas.ts"]);
+    const exige = (q) => /\bnot (?:[a-z]\.)?private\b/.test(q) && /\bnot (?:[a-z]\.)?rev_sin_c2\b/.test(q), pidePrivada = (q) => /\band (?:[a-z]\.)?private\b/.test(q.replace(/\bnot (?:[a-z]\.)?private\b/g, ""));
+    for (const x of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (!/\bmedia\b/.test(t)) continue;
+      for (const m of t.matchAll(/`[^`]*`/g)) {
+        const q = m[0], ln = t.slice(0, m.index).split("\n").length;
+        const up = /\bupdate media(?:\s+[a-z]\b)?\s+set\b((?:(?!\bwhere\b)[^`])*)\bwhere\b/.exec(q), k = up ? /(?:\bset|,)\s*owner_kind = '([a-z_]+)'/.exec(" set " + up[1]) : null;
+        if (k && !DESTINO_PRIVADO.has(k[1]) && !exige(q)) falla(G, x, ln, `pasa una foto de media a «${k[1]}» (un destino público) sin exigir not private y not rev_sin_c2 en la misma consulta: una foto privada (privado/a/, ayuda de Salud y Pro) o de destino «privado» saldría en público`);
+        if (k) continue;
+        const toma = /\bfrom media(?:\s+[a-z]\b)?\s+where\b/.test(q) && /\b(?:[a-z]\.)?(?:id|url) = (?:any\()?\$\d/.test(q) && /\b(?:[a-z]\.)?owner_kind = 'user'/.test(q);
+        if (toma && !exige(q) && !pidePrivada(q) && !TOMA_PRIVADA.has(x)) falla(G, x, ln, "toma una foto de la persona (owner_kind 'user') por un id o una dirección que llega de afuera sin exigir not private y not rev_sin_c2: si es para algo público, una foto privada (privado/a/) entraría; si es para un destino privado, agrégalo a TOMA_PRIVADA con su porqué");
+      }
+    }
+    for (const x of TOMA_PRIVADA) if (!existsSync(x)) falla(G, x, 0, "TOMA_PRIVADA nombra un archivo que ya no existe: actualizarla");
     // La imagen solo la manda el proveedor y la anota el simulador (para que la prueba vea que una privada nunca llega).
     if (!/\.\.\.\(e\.imagen \? \[\{ type: "image", source: \{ type: "base64", media_type: e\.imagen\.tipo, data: e\.imagen\.base64 \} \}\] : \[\]\)/.test(readFileSync(MC, "utf8"))) falla(G, MC, 0, "modelo-claude manda la imagen como un bloque image (solo la de la segunda opinión)");
     if (!/imagen: \{ sha256: createHash\("sha256"\)\.update\(img\)\.digest\("hex"\)/.test(readFileSync(SIM, "utf8"))) falla(G, SIM, 0, "el simulador anota la huella de cada imagen que recibe (la prueba lo revisa)");
     const e = existsSync("pruebas/e2e/rev9u.cjs") ? readFileSync("pruebas/e2e/rev9u.cjs", "utf8") : "";
     if (!/'una foto privada \(Mensajes\) jamás llega a la segunda opinión'/.test(e)) falla(G, "pruebas/e2e/rev9u.cjs", 0, "la prueba de punta a punta no revisa que una foto privada nunca llega al simulador");
     if (!/'dudosa con destino privado → retenida y la segunda opinión no recibió nada'/.test(e)) falla(G, "pruebas/e2e/rev9u.cjs", 0, "la prueba de punta a punta no revisa la dudosa de destino «privado»");
+    const ay = existsSync("pruebas/e2e/ayu4m.cjs") ? readFileSync("pruebas/e2e/ayu4m.cjs", "utf8") : "";
+    if (!ay.includes("'el atajo: la foto privada de una ayuda no entra en ningún destino público'")) falla(G, "pruebas/e2e/ayu4m.cjs", 0, "la prueba de punta a punta no manda a mano la foto privada de una ayuda a cada destino público (el atajo)");
   },
 
   /* F3 · fotosPrivadasConPermiso (Fotos a la medida F3, 21 nov): una foto de destino PRIVADO (cita, visita, viaje/mudanza, presupuesto, pre-estimado,
