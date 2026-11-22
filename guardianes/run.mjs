@@ -8076,6 +8076,94 @@ const guardianes = {
     if (!new RegExp("needs: \\[[^\\]]*\\banchos\\b").test(j)) falla(G, Y, 0, "«tuberia» no depende de «anchos»");
   },
 
+  /* 22 nov · ciSoloDocumentos: un push a main que solo cambia documentos de trabajo no corre los carriles largos (regresión y dispositivos hacían
+     cola por un renglón de PROGRESS). Lo que se teme es que eso se vuelva un hueco para saltarse pruebas:
+     - la lista: UNA, en scripts/ci/alcance.mjs (DOCUMENTOS), solo nombres escritos tal cual, cada uno docs/<NOMBRE>.md de primer nivel (nada de apps/,
+       packages/, services/, scripts/, pruebas/, guardianes/, infra/, .github/, docs/ayuda/ ni configuración) y ninguno que lea el producto o una
+       prueba (salvo las anotadas abajo, con su motivo);
+     - el script: decide de verdad bien (se le corre con casos: mezcla, vacío, docs/ayuda, rutas raras, git que falla, otro evento → «todo»), exige
+       push con «before» de verdad y compara sin renombres;
+     - el CI: «cambios» corre el script y, si cae, escribe «todo»; la ÚNICA condición que apaga un carril largo en un push es «!= 'documentos'» de
+       «cambios» (en web, regresión y dispositivos, la línea exacta; ningún otro «if», «paths» ni continue-on-error que los apague); verificar y
+       seguridad corren siempre; «tuberia» depende de «cambios», solo da por saltados regresión y dispositivos si es un PUSH de solo documentos y lo
+       dice con todas las letras. Al revés: alreves9vd. */
+  ciSoloDocumentos() {
+    const G = "ciSoloDocumentos", Y = ".github/workflows/ci.yml", S = "scripts/ci/alcance.mjs";
+    if (!existsSync(Y) || !existsSync(S)) return falla(G, S, 0, "falta el cálculo del alcance (scripts/ci/alcance.mjs) o ci.yml");
+    const sc = sinComent(S), y = readFileSync(Y, "utf8");
+    // La lista: una sola, escrita tal cual.
+    const m = /export const DOCUMENTOS = Object\.freeze\(\[([\s\S]*?)\]\);/.exec(sc);
+    if (!m) return falla(G, S, 0, "la lista de documentos es «export const DOCUMENTOS = Object.freeze([…])», una sola y en el script");
+    if ((sc.match(/DOCUMENTOS/g) ?? []).length !== 2 || (sc.match(/new Set\(/g) ?? []).length !== 1 || !/const DOC = new Set\(DOCUMENTOS\);/.test(sc)) falla(G, S, 0, "DOCUMENTOS es la única lista: el script la usa solo a través de «const DOC = new Set(DOCUMENTOS)»");
+    if (m[1].replace(/"[^"\\\n]*"|[\s,]/g, "") !== "") falla(G, S, 0, "la lista de documentos solo lleva nombres entre comillas, escritos tal cual (nada calculado ni con patrones)");
+    const lista = [...m[1].matchAll(/"([^"\\\n]*)"/g)].map((x) => x[1]);
+    if (!lista.length) falla(G, S, 0, "la lista de documentos está vacía");
+    const PROHIBIDO = /^(apps|packages|services|scripts|pruebas|guardianes|infra|\.github|docs\/ayuda)(\/|$)/;
+    for (const f of lista) if (PROHIBIDO.test(f) || !/^docs\/[A-Z][A-Z0-9-]*\.md$/.test(f) || /[*?[\]{}]/.test(f))
+      falla(G, S, 0, `«${f}» no puede ser «solo documentos»: solo docs/<NOMBRE>.md de primer nivel (nada de apps/, packages/, services/, scripts/, pruebas/, guardianes/, infra/, .github/, docs/ayuda/ ni configuración)`);
+    // Ninguno lo lee el producto ni una prueba. Se busca el nombre en el código sin comentarios (apps, packages, services, scripts, infra, pruebas).
+    const LECTORES = {
+      // tub9b lee PROGRESS solo fuera del CI (en el CI vuelve antes: «no se comprueba dentro del propio CI»).
+      "pruebas/alreves/tub9b.cjs": ["docs/PROGRESS.md"],
+      // alreves9a usa PROGRESS como texto a cambiar («# ») para e2eEnElRepo: que el texto siga ahí lo mira alrevesConSuTexto, que corre siempre.
+      "pruebas/alreves/alreves9a.cjs": ["docs/PROGRESS.md"],
+    };
+    const fuentes = archivos.filter((f) => /^(apps|packages|services|scripts|infra|pruebas)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs)$/.test(f) && f !== S && f !== "pruebas/alreves/alreves9vd.cjs" /* sus casos nombran la lista como datos de prueba */);
+    for (const f of fuentes) {
+      const t = sinComent(f);
+      // Una lectura es el nombre como ruta: un texto entre comillas sin espacios que termina en él ("docs/X.md", "../../docs/X.md", "X.md").
+      // Nombrarlo dentro de una frase (un mensaje, una etiqueta) no lo lee.
+      for (const d of lista) if (new RegExp(`["'\`][^"'\`\\s]*\\b${d.slice(d.lastIndexOf("/") + 1).replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")}["'\`]`).test(t) && !(LECTORES[f] ?? []).includes(d)) falla(G, f, 0, `«${d}» está en la lista de solo documentos y este archivo lo lee: es producto o prueba (sácalo de DOCUMENTOS)`);
+    }
+    for (const [f, ds] of Object.entries(LECTORES)) for (const d of ds) if (existsSync(f) && !sinComent(f).includes(d)) falla(G, S, 0, `LECTORES anota que ${f} lee ${d} y ya no lo hace: quita la excepción`);
+    // El script decide como se dice: push con «before» de verdad, sin renombres, cualquier error = «todo».
+    if (!/if \(evento !== "push"\) return \{ alcance: "todo"/.test(sc)) falla(G, S, 0, "fuera de un push el alcance es siempre «todo»");
+    if (!/if \(!SHA\.test\(antes \?\? ""\) \|\| \/\^0\+\$\/\.test\(antes\)\) return \{ alcance: "todo"/.test(sc)) falla(G, S, 0, "sin «before» de verdad (vacío o en ceros: rama nueva) el alcance es «todo»");
+    if (!/git\("diff", "--no-renames", "--name-only", "-z", antes, despues\)/.test(sc)) falla(G, S, 0, "los archivos cambiados salen de «git diff --no-renames --name-only -z before sha» (un renombre cuenta los dos nombres)");
+    if (!/return archivos\.every\(\(f\) => typeof f === "string" && DOC\.has\(f\)\) \? "documentos" : "todo";/.test(sc)) falla(G, S, 0, "«documentos» solo si TODOS los archivos están en la lista, comparados tal cual (DOC.has)");
+    const vivo = (env, entrada) => { try { return execSync(`node ${S}${entrada !== undefined ? " --decidir" : ""}`, { encoding: "utf8", input: entrada ?? "", stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, GITHUB_OUTPUT: "", ...env } }); } catch (e) { return `cayó: ${String(e.stderr ?? e.message).slice(0, 160)}`; } };
+    const casos = [[[lista[0]], "documentos"], [[], "todo"], [[lista[0], "apps/web/app/page.tsx"], "todo"], [["docs/ayuda/inicio.md"], "todo"], [[lista[0], "docs/ayuda/inicio.md"], "todo"],
+      [[`${lista[0]} `], "todo"], [[`./${lista[0]}`], "todo"], [[lista[0].toLowerCase()], "todo"], [[`apps/${lista[0]}`], "todo"], [null, "todo"], [[1], "todo"], ["docs", "todo"]];
+    let r; try { r = JSON.parse(vivo({}, JSON.stringify(casos.map((c) => c[0])))); } catch { r = null; }
+    if (!Array.isArray(r) || r.length !== casos.length) falla(G, S, 0, "«node scripts/ci/alcance.mjs --decidir» no responde un veredicto por lista");
+    else casos.forEach(([l, v], i) => { if (r[i] !== v) falla(G, S, 0, `el script decide «${r[i]}» para ${JSON.stringify(l)}: tiene que ser «${v}»`); });
+    for (const [que, env] of [["git que falla", { EVENTO: "push", ANTES: "1".repeat(40), DESPUES: "2".repeat(40), GIT_DIR: "/dev/null/sin-repo" }], ["otro evento", { EVENTO: "pull_request", ANTES: "1".repeat(40), DESPUES: "2".repeat(40), GIT_DIR: "/dev/null/sin-repo" }],
+      ["rama nueva (before en ceros)", { EVENTO: "push", ANTES: "0".repeat(40), DESPUES: "2".repeat(40), GIT_DIR: "/dev/null/sin-repo" }], ["sin before", { EVENTO: "push", ANTES: "", DESPUES: "2".repeat(40), GIT_DIR: "/dev/null/sin-repo" }]]) {
+      const out = vivo(env);
+      if (!/^alcance: todo /.test(out)) falla(G, S, 0, `con ${que} el alcance tiene que ser «todo» (dijo: ${out.split("\n")[0].slice(0, 120)})`);
+    }
+    // El CI: «cambios» corre el script; si cae, «todo».
+    const job = (n) => new RegExp(`\\n  ${n}:\\n[\\s\\S]*?(?=\\n  [a-z]+:\\n|$)`).exec(y)?.[0] ?? "";
+    const ca = job("cambios");
+    if (!ca || !/\n      - id: calcular\n        env: \{ EVENTO: "\$\{\{ github\.event_name \}\}", ANTES: "\$\{\{ github\.event\.before \}\}", DESPUES: "\$\{\{ github\.sha \}\}" \}\n        run: node scripts\/ci\/alcance\.mjs \|\| echo "alcance=todo" >> "\$GITHUB_OUTPUT"\n/.test(ca)
+      || !/alcance: \$\{\{ steps\.calcular\.outputs\.alcance \}\}/.test(ca) || /^\s+(if|needs|continue-on-error):/m.test(ca))
+      falla(G, Y, 0, "falta el trabajo «cambios»: corre node scripts/ci/alcance.mjs con el evento, before y sha, y si cae escribe «alcance=todo»");
+    // La única vía para apagar un carril largo en un push: «!= 'documentos'» de «cambios», en la línea exacta de cada trabajo.
+    const IFS = {
+      web: "    needs: cambios\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}\n",
+      regresion: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}\n",
+      dispositivos: "    needs: [cambios, web]\n    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'regresion' }}\n",
+    };
+    for (const [k, linea] of Object.entries(IFS)) {
+      const b = job(k);
+      if (!b.includes(linea)) { falla(G, Y, 0, `«${k}» se apaga en un push solo por el alcance de «cambios»: ${linea.trim().replace(/\n\s*/g, " · ")}`); continue; }
+      const resto = b.replace(linea, "");
+      if (/^    if:/m.test(resto) || /github\.event|head_commit|documentos|continue-on-error|\bpaths\b/.test(resto)) falla(G, Y, 0, `«${k}»: otra vía para no correr en un push (un «if» con el evento o el commit, «documentos», paths o continue-on-error)`);
+    }
+    for (const k of ["verificar", "seguridad"]) { const b = job(k); if (!b || /^    (if|needs):/m.test(b) || /continue-on-error|documentos/.test(b)) falla(G, Y, 0, `«${k}» corre siempre, también en un push de solo documentos (sin «needs» ni «if»)`); }
+    const on = /\non:\n[\s\S]*?\n(?=permissions:|concurrency:|jobs:)/.exec(y)?.[0] ?? "";
+    if (!on || /paths(-ignore)?:|branches-ignore:|tags-ignore:/.test(on)) falla(G, Y, 0, "el CI no filtra por archivos ni ramas en «on:» (eso saltaría también los guardianes): el alcance lo decide «cambios»");
+    const usos = [...y.matchAll(/needs\.cambios\.outputs\.alcance\s*(==|!=)\s*'([^']*)'/g)].map((x) => `${x[1]} '${x[2]}'`);
+    if (usos.filter((u) => u === "!= 'documentos'").length !== 3 || usos.filter((u) => u === "== 'documentos'").length !== 1 || usos.length !== 4 || /needs\.cambios\.outputs\.alcance(?!\s*(==|!=)\s*'documentos')/.test(y))
+      falla(G, Y, 0, "el alcance de «cambios» se usa en 4 lugares: «!= 'documentos'» en web, regresión y dispositivos (si falta, corre todo) y «== 'documentos'» solo en «tuberia»");
+    // «tuberia»: lo dice y solo perdona regresión y dispositivos en un PUSH de solo documentos.
+    const tu = job("tuberia");
+    if (!/needs: \[[^\]]*\bcambios\b/.test(tu)) falla(G, Y, 0, "«tuberia» depende de «cambios» (si el alcance no se pudo calcular, la tubería es roja)");
+    if (!tu.includes("SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}")) falla(G, Y, 0, "«tuberia» solo perdona lo saltado por documentos en un push");
+    if (!tu.includes('const porDocs = docs && (k === "regresion" || k === "dispositivos");') || !/\|\| \(k === "anchos" && process\.env\.ANCHOS !== "si"\) \|\| porDocs;/.test(tu)) falla(G, Y, 0, "«tuberia» perdona por documentos solo regresión y dispositivos");
+    if (!tu.includes('"solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"') || !/console\.log\("::notice::" \+ m\)/.test(tu)) falla(G, Y, 0, "«tuberia» dice con todas las letras «solo documentos: N archivos; los carriles largos no corren por diseño»");
+  },
+
   /* 9b-3 · Ningún tope por minuto (o por segundo) ni corta-circuito en la memoria de un proceso de la app (LAUNCH L685, L699, L1235, L1302): con
      varias réplicas cada una contaba y cortaba por su cuenta (el tope se multiplicaba). Todo pasa por lib/topes.ts (rate_counters, 0133). Caza:
      la ventana del minuto hecha con la hora del proceso, un «…Hasta = Date.now() + …» (corte en memoria), un contador de fallas de primer nivel y
