@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { db, tx } from "../db";
 import { celda } from "../csv";
 import { zipPorPartes } from "../pases/zip";
-import { columnasDePersona, ident, mapa, NUNCA_SE_EXPORTA } from "./mapa";
+import { banderasDeNotas, columnasDePersona, ident, mapa, notaSale, NUNCA_SE_EXPORTA } from "./mapa";
 import type { PruebaLlave } from "../llaves/llaves";
 
 /* 9d · Descargar mis datos (vecino) y Exportar los datos del negocio (panel) (fase9-apertura.md §3.7, §6 #9, §1c «Exportar mis datos»).
@@ -28,13 +28,18 @@ const no = (es: string, en: string): ResExp => ({ ok: false, msg: { es, en } });
    lo dice con el número exacto que quedó fuera y el equipo lo ve en Usuarios 360° (sections). */
 const PARTE = 20_000, TOPE_PARTES = 100;
 type Fila = Record<string, unknown>;
-export type Consulta = { nombre: string; sql: string; args: unknown[]; fuera: Set<string> };
+/* tabla: la de un «select *» (las notas y motivos de esa tabla salen según NOTAS de lib/datos/mapa.ts; 9u-2). */
+export type Consulta = { nombre: string; sql: string; args: unknown[]; fuera: Set<string>; tabla?: string };
 
-/* Una fila legible: fechas en ISO, sin binarios, sin lo que nunca sale ni lo de otra persona. */
-function limpiar(f: Fila, fuera: Set<string>): Fila {
+/* Una fila legible: fechas en ISO, sin binarios, sin lo que nunca sale ni lo de otra persona, y sin las notas internas del equipo (9u-2: una nota
+   «interna» o sin clasificar no sale; una que sale solo en ciertas filas va vacía en las demás: la bandera «__sale__<col>» la pone la consulta). */
+function limpiar(f: Fila, fuera: Set<string>, tabla?: string): Fila {
   const o: Fila = {};
   for (const [k, v] of Object.entries(f)) {
-    if (fuera.has(k) || NUNCA_SE_EXPORTA.test(k) || Buffer.isBuffer(v)) continue;
+    if (k.startsWith("__sale__") || fuera.has(k) || NUNCA_SE_EXPORTA.test(k) || Buffer.isBuffer(v)) continue;
+    const s = tabla ? notaSale(tabla, k) : true;
+    if (s === false) continue;
+    if (typeof s === "string" && f[`__sale__${k}`] !== true) { o[k] = null; continue; }
     o[k] = v instanceof Date ? v.toISOString() : v;
   }
   return o;
@@ -53,7 +58,7 @@ export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Con
     // Solo sus filas: la columna de la persona es su id. De OTRA persona no sale nada (sus columnas se quitan).
     const fuera = new Set([...(refs.get(f.tabla) ?? [])].filter((x) => x !== f.columna));
     if (f.tabla === "users") fuera.add("merged_into");
-    out.push({ nombre: f.exporta, sql: `select * from ${ident(f.tabla)} where ${ident(f.columna)} = $1::uuid`, args: [cuenta], fuera });
+    out.push({ nombre: f.exporta, sql: `select *${banderasDeNotas(f.tabla)} from ${ident(f.tabla)} where ${ident(f.columna)} = $1::uuid`, args: [cuenta], fuera, tabla: f.tabla });
   }
   // Sus sanciones (el equipo las pone con target = su cuenta): qué, por qué y hasta cuándo; nunca quién del equipo ni sus notas.
   out.push({ nombre: "sanciones", sql: `select kind as tipo, reason as motivo, starts_at as desde, ends_at as hasta, lifted_at as levantada from sanctions where target_kind = 'user' and target_id = $1::text order by starts_at`, args: [cuenta], fuera: new Set() });
@@ -62,13 +67,14 @@ export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Con
 
 /* El archivo de un negocio: lo que su panel ya muestra. Ningún teléfono, correo ni dirección de un cliente; el cliente con su nombre y la inicial. */
 export function datosDeNegocio(negocio: string): Consulta[] {
-  const L = (nombre: string, sql: string): Consulta => ({ nombre, sql, args: [negocio], fuera: new Set() });
+  const L = (nombre: string, sql: string, tabla?: string): Consulta => ({ nombre, sql, args: [negocio], fuera: new Set(), tabla });
   const cliente = `nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1) || '.', '')), '')`;
   return [
     L("negocio", `select id, name, category_id, subcategory_ids, city_id, status, operation, address, phone, whatsapp, email, instagram, facebook, languages, about, founded_year,
                          amenities, payment_modes, modules_on, created_at from businesses where id = $1`),
     L("equipo", `select display_name as nombre, kind as tipo, role as puesto, status as estado, languages as idiomas, since_year as desde, invited_at as invitado from business_members where business_id = $1 order by sort`),
-    L("catalogo", `select i.* from items i where i.business_id = $1 order by i.id`),
+    // 9u-2 · items: sus notas según NOTAS (el motivo de un plato oculto sale solo mientras está oculto: lo que el panel le muestra).
+    L("catalogo", `select i.*${banderasDeNotas("items")} from items i where i.business_id = $1 order by i.id`, "items"),
     L("operaciones", `select o.number as numero, o.kind as tipo, o.status as estado, o.mode as modo, o.sent_at as pedido, o.scheduled_at as para, o.done_at as terminado,
                              o.cancelled_at as cancelado, o.subtotal_cents, o.delivery_cents, o.tip_cents, o.tax_cents, o.discount_cents, o.total_cents, o.pay_mode as pago,
                              o.customer_note as nota_del_cliente, ${cliente} as cliente
@@ -91,7 +97,7 @@ async function* porPartes(c: PoolClient, q: Consulta, n: number, tam = PARTE): A
     for (;;) {
       // nosemgrep: tolatino-sql-con-texto-interpolado — cur = «exp_» + un número del propio bucle; tam = PARTE (número)
       const r = await c.query<Fila>(`fetch forward ${tam} from ${cur}`);
-      if (r.rows.length) yield r.rows.map((x) => limpiar(x, q.fuera));
+      if (r.rows.length) yield r.rows.map((x) => limpiar(x, q.fuera, q.tabla));
       if (r.rows.length < tam) break;
     }
   } finally {
@@ -107,7 +113,7 @@ export async function vistaPrevia(consultas: Consulta[], c: PoolClient, filas = 
     // nosemgrep: tolatino-sql-con-texto-interpolado — q.sql sale solo de datosDeCuenta/datosDeNegocio
     const n = Number((await c.query<{ n: string }>(`select count(*) as n from (${q.sql}) t`, q.args)).rows[0]?.n ?? 0);
     // nosemgrep: tolatino-sql-con-texto-interpolado — q.sql sale solo de datosDeCuenta/datosDeNegocio
-    if (n) out.push({ k: q.nombre, n, filas: (await c.query<Fila>(`select * from (${q.sql}) t limit ${filas}`, q.args)).rows.map((x) => limpiar(x, q.fuera)) });
+    if (n) out.push({ k: q.nombre, n, filas: (await c.query<Fila>(`select * from (${q.sql}) t limit ${filas}`, q.args)).rows.map((x) => limpiar(x, q.fuera, q.tabla)) });
   }
   return out;
 }

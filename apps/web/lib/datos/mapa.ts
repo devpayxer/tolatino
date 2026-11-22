@@ -1,6 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db } from "../db";
+// 9u-2 · Solo la lista «notas» del mapa (la exportación la lee aquí, sin pasar por la base: no cambia la purga ni la fusión).
+import MAPA from "../../../../packages/db/mapa-de-datos.json";
 
 /* 9d · El mapa de datos (data_map; fase9-apertura.md §3.7). Lo escribe SOLO la semilla packages/db/seeds/mapa_datos.sql, que sale de
    packages/db/mapa-de-datos.json (scripts/datos/mapa.mjs valida cada nombre y cada valor). Aquí solo se lee: la exportación (qué archivo),
@@ -46,6 +48,34 @@ export async function columnasDePersona(c?: PoolClient): Promise<Map<string, Set
 
 /* Lo que nunca sale en un archivo aunque sea de la persona: huellas, cifrados, tokens, llaves, el índice de búsqueda y la ubicación exacta. */
 export const NUNCA_SE_EXPORTA = /(^|_)(hash|enc|token|secret|public_key|credential_id|challenge|sign_count|aaguid|tsv|search_doc|geom)$|^(geo|viewing_center|stripe_\w+|is_test)$/;
+
+/* 9u-2 · Las notas y los motivos (columnas que se llaman reason, *_reason, note, *_note, notes, motivo, *_motivo, nota, *_nota, notas) de las tablas
+   que salen en un archivo: UNA sola lista, «notas» en packages/db/mapa-de-datos.json (junto a las reglas de cada tabla), que la exportación lee
+   aquí (limpiar). Decisión (REVISION 9u-2): lo que el equipo escribe como interno NO
+   sale en «Descargar mis datos»; lo que la persona ya ve en su pantalla o le llega en un aviso SÍ. Cada una dice:
+     sale: true   → sale (la persona la ve: «ve» dice dónde)
+     sale: false  → no sale (interna: la escribe el equipo, el sistema o el negocio para sí, y la persona no la ve)
+     sale: "…"    → sale SOLO en las filas donde la pantalla la pinta (la condición, sobre columnas de la misma fila); en las demás va vacía.
+   Una columna con nombre de nota que NO está aquí no sale (falla cerrada) y la prueba nota9u2 (contra la base) se pone en rojo hasta que alguien la
+   clasifique. Guardián notaInternaFueraDelArchivo; al revés: alreves9u2. */
+export const ES_NOTA = /(^|_)(reason|note|notes|motivo|nota|notas)$/;
+export const NOTAS: Record<string, { sale: boolean | string; ve: string }> = Object.fromEntries(Object.entries(MAPA.notas).filter(([k]) => !k.startsWith("$"))) as Record<string, { sale: boolean | string; ve: string }>;
+/* Una condición de NOTAS: solo «columna = 'valor'» o «columna in ('a', 'b')» (va dentro de la consulta de la exportación). */
+export const CONDICION_NOTA = /^[a-z_]+ (= '[a-z_]+'|in \('[a-z_]+'(, '[a-z_]+')*\))$/;
+/* ¿Sale esta columna de esta tabla? true / false / la condición por fila. Lo que no tiene nombre de nota, sale (lo demás lo deciden el mapa y
+   NUNCA_SE_EXPORTA); una nota sin clasificar, no. */
+export function notaSale(tabla: string, col: string): boolean | string {
+  if (!ES_NOTA.test(col)) return true;
+  const n = NOTAS[`${tabla}.${col}`];
+  if (!n) return false;
+  if (typeof n.sale === "string" && !CONDICION_NOTA.test(n.sale)) return false;
+  return n.sale;
+}
+/* Las condiciones por fila de una tabla: «, (cond) as "__sale__col"» para la consulta (limpiar las lee y las quita). */
+export function banderasDeNotas(tabla: string): string {
+  return Object.entries(NOTAS).filter(([k, v]) => k.startsWith(`${tabla}.`) && typeof v.sale === "string" && CONDICION_NOTA.test(v.sale))
+    .map(([k, v]) => `, (${v.sale as string}) is true as ${ident(`__sale__${k.slice(tabla.length + 1)}`)}`).join("");
+}
 
 /* Los porqués de lo que se guarda (Privacidad, Usuarios 360°). */
 export async function resumenMapa() {

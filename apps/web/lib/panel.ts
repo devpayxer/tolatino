@@ -98,7 +98,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
             b.status_reason, case when b.temp_closed_until > now() then b.temp_closed_until end as temp_until, b.temp_closed_reason as temp_reason, b.admin_edits,
             b.phone, u.phone as owner_phone, u.email,
             (select v.status from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello,
-            (select v.note from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello_note,
+            -- 9u-2 · La nota del equipo sobre el sello viaja SOLO cuando la pantalla la pinta («falta un dato» / «no aprobado»: Panel.tsx sello).
+            (select case when v.status in ('info', 'no') then v.note end from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello_note,
             (select cl.owner_notified_at from claims cl where cl.business_id = b.id and cl.status = 'pending' and cl.had_owner_id = b.owner_user_id order by cl.created_at limit 1) as reclamo_aviso,
             (select to_char(x.trial_ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from subscriptions x where x.business_id = b.id and x.status = 'trial') as sub_until,
             (select round(extract(epoch from x.trial_ends_at - x.trial_started_at) / 86400)::int from subscriptions x where x.business_id = b.id and x.status = 'trial') as sub_days,

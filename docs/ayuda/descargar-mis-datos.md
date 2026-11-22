@@ -1,7 +1,7 @@
 # Descargar mis datos · Download my data
 
 _Pantallas: **Mi cuenta › Ajustes › Privacidad y seguridad › Descargar mis datos** (`/cuenta/ajustes/privacidad/datos`) y **Términos que aceptaste**
-(`/cuenta/ajustes/privacidad/terminos`), en la web y en las cuatro apps. Teléfono y escritorio. Versión: 19 nov 2026. Audiencia: vecino. Tema: cuenta._
+(`/cuenta/ajustes/privacidad/terminos`), en la web y en las cuatro apps. Teléfono y escritorio. Versión: 21 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Te armamos **un archivo con lo tuyo**: tu perfil, tus pedidos, citas y reservas, tus pagos, tus boletos, tus reseñas, tus publicaciones y
@@ -11,6 +11,9 @@ _Pantallas: **Mi cuenta › Ajustes › Privacidad y seguridad › Descargar mis
 - **Un archivo grande va en partes:** si algo tiene más de 20 000 filas (por ejemplo, muchos avisos), viene completo en varias partes
   numeradas (avisos-1.csv, avisos-2.csv…), en orden. El LEEME dice cuántas filas y en cuántas partes va cada cosa. No se corta nada.
 - **Lo de otras personas no viene**: ni sus nombres, ni sus teléfonos, ni sus mensajes. Tampoco claves, códigos ni la ubicación exacta.
+- **Las notas que el equipo de To'Latino escribe para sí no vienen** (por ejemplo, la nota de una revisión de fotos o la de un reclamo aprobado).
+  **Sí vienen los motivos que ya te dimos** en la app o en un aviso: por qué ocultamos algo tuyo, por qué no se aprobó un reclamo, el motivo de
+  una sanción o de un ajuste de puntos.
 - **Términos que aceptaste**: cada término que aceptaste en To'Latino (las reglas de la Comunidad, los términos de un plan, la propuesta de un
   evento privado…), con su versión y su fecha. Solo sale lo que quedó anotado.
 
@@ -57,6 +60,9 @@ _Pantallas: **Mi cuenta › Ajustes › Privacidad y seguridad › Descargar mis
 - **A large file comes in parts:** if something has more than 20,000 rows (for example, many notices), it comes complete in several
   numbered parts (avisos-1.csv, avisos-2.csv…), in order. The LEEME says how many rows and in how many parts. Nothing is cut.
 - **Other people's data is not included**: not their names, phones or messages. No passwords, codes or exact location either.
+- **Notes the To'Latino team writes for itself are not included** (for example, the note from a photo review or from an approved claim).
+  **The reasons we already gave you** in the app or in a notification **are included**: why we hid something of yours, why a claim was not
+  approved, the reason for a sanction or a points adjustment.
 - **Terms you accepted**: each term you accepted on To'Latino (Community rules, a plan's terms, a private event proposal…), with its version and
   date. Only what was recorded shows up.
 
