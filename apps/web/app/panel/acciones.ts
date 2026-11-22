@@ -63,23 +63,28 @@ export async function videoQuitar(id: string): Promise<Res> {
 /* ── Fotos y portada ──
    Las fotos se suben con /api/medios (quedan a nombre de quien sube) y aquí pasan al negocio. La portada es siempre
    la primera de la galería (sort 0). El logo es una foto aparte (owner_kind 'logo'). */
+class FotoNoAdjunta extends Error {} // lanzada dentro de la transacción: deshace todo el pedido
 export async function fotosAgregar(id: string, ids: string[], portada = false): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
-  const lista = Array.isArray(ids) ? ids.filter((x) => typeof x === "string" && UUID.test(x)).slice(0, 20) : [];
+  const lista = Array.isArray(ids) ? [...new Set(ids.filter((x) => typeof x === "string" && UUID.test(x)))].slice(0, 20) : [];
   if (!lista.length) return no("No llegó ninguna foto.", "No photo arrived.");
-  const r = await tx(async (c) => {
+  let r: "ok" | "tope";
+  try { r = await tx(async (c) => {
     const n = (await c.query<{ n: number }>(`select count(*)::int as n from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [a.negocio.id])).rows[0]!.n;
     if (n + lista.length > 60) return "tope" as const;
     if (portada) await c.query(`update media set sort = sort + $2 where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [a.negocio.id, lista.length]);
+    let puestas = 0;
     for (let i = 0; i < lista.length; i++) {
-      await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible' and not rev_sin_c2 and not private`,
-        [a.negocio.id, portada ? i : n + i, lista[i], a.yo.id]);
+      puestas += (await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible' and not rev_sin_c2 and not private`,
+        [a.negocio.id, portada ? i : n + i, lista[i], a.yo.id])).rowCount ?? 0;
     }
+    // Todo o nada: si una sola no se puede adjuntar (no es suya, no está visible, es privada o está en revisión) no entra ninguna y nada más se guarda.
+    if (puestas !== lista.length) throw new FotoNoAdjunta();
     await recontarFotos(c, a.negocio.id);
     await auditar(c, a, portada ? "panel.portada" : "panel.fotos_agregar", null, { media: lista });
     return "ok" as const;
-  });
+  }); } catch (e) { if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); throw e; }
   if (r === "tope") return no("Tu galería llegó a 60 fotos. Quita alguna para subir más.", "Your gallery reached 60 photos. Remove some to add more.");
   return { ok: true };
 }

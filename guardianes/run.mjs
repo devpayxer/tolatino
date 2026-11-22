@@ -14085,6 +14085,35 @@ const guardianes = {
     if (!/vistas === esperadas/.test(p) || !/enCorreo === deAyer/.test(p)) falla(G, T, 0, "rev9u2 compara el número exacto de miniaturas de «Para mirar» con las que se pueden mostrar (pantalla y reporte diario)");
   },
 
+  /* fotosAdjuntarTodoONada (22 nov): una acción que adjunta fotos por id (galería y portada del panel, la foto del equipo, los eventos) compara cuántas
+     pidió con cuántas adjuntó y, si no coinciden, RECHAZA con el mensaje de siempre (el de perfil y logo «Esa foto no existe» para una sola; el de
+     Comunidad, reseñas y novedades «Una de las fotos ya no está» para varias) y deshace TODO el pedido (se lanza dentro de la transacción: nada más se
+     guarda, y la foto del equipo no queda vacía). Antes contestaban ok y no la adjuntaban (el filtro de fotosRevisionPrivacidad no cambia). Por clase: en
+     esos tres archivos, un «update media … set owner_kind = 'business' | 'member' | 'event'» que nadie lee (sin guardar su resultado) falla. Al revés:
+     alreves9ufotostodo; punta a punta: ayu4m (el atajo: ahora espera el rechazo). */
+  fotosAdjuntarTodoONada() {
+    const G = "fotosAdjuntarTodoONada", A = "apps/web/app/panel/acciones.ts", Q = "apps/web/app/panel/acciones-equipo.ts", E = "apps/web/lib/evt.ts";
+    for (const x of [A, Q, E]) if (!existsSync(x)) return falla(G, x, 0, "falta el archivo que adjunta fotos por id");
+    const a = sinComent(A), q = sinComent(Q), e = sinComent(E);
+    const VARIAS = /no\("Una de las fotos ya no está\. Súbela otra vez\.", "One of the photos is gone\. Upload it again\."\)/;
+    const UNA = /no\("Esa foto no existe\.", "That photo doesn’t exist\."\)/;
+    // Galería y portada: cuenta lo que adjuntó (rowCount), lo compara con lo que pidió y, si no coincide, lanza dentro de la transacción; la acción lo dice.
+    const fa = cuerpoFn(a, "fotosAgregar");
+    if (!/puestas \+= \(await c\.query\(`update media set owner_kind = 'business'/.test(fa) || !/\.rowCount \?\? 0/.test(fa)) falla(G, A, 0, "fotosAgregar: cuenta las fotos que de verdad adjuntó (rowCount de cada update)");
+    if (!/if \(puestas !== lista\.length\) throw new FotoNoAdjunta\(\);/.test(fa)) falla(G, A, 0, "fotosAgregar: si adjuntó menos de las que pidió, lanza dentro de la transacción (no se adjunta ninguna y nada más se guarda)");
+    if (!/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return /.test(fa) || !VARIAS.test(fa)) falla(G, A, 0, "fotosAgregar: una foto que no se puede adjuntar se rechaza con «Una de las fotos ya no está. Súbela otra vez.» (como Comunidad, reseñas y novedades), nunca ok");
+    if (!/\[\.\.\.new Set\(ids\.filter/.test(fa)) falla(G, A, 0, "fotosAgregar: quita los ids repetidos antes de contar (un id dos veces no puede dar un rechazo falso)");
+    // La foto del equipo: si el id no se adjunta, rechaza y deshace (antes dejaba photo_url vacío).
+    if (!/if \(!photo\) throw new FotoNoAdjunta\(\);/.test(q) || !/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return /.test(q) || !UNA.test(q)) falla(G, Q, 0, "equipoGuardar: una foto nueva que no se puede adjuntar se rechaza con «Esa foto no existe.» (como perfil y logo) y deshace todo el pedido; nunca deja vacía la del equipo");
+    if (/\?\? null;\s*\n\s*(?:\/\/[^\n]*\n\s*)?if \(photo\) await/.test(q)) falla(G, Q, 0, "equipoGuardar: vuelve el «if (photo)» que ignora en silencio la foto que no se adjuntó");
+    // Eventos: lo mismo con la lista de fotos del evento.
+    if (!/\(puestas\.rowCount \?\? 0\) !== ids\.length\) throw new FotosAjenasEvt\(\);/.test(e) || !/\[\.\.\.new Set\(d\.fotos\.map/.test(e)) falla(G, E, 0, "lineupYFotos: compara las fotos adjuntadas con las pedidas y lanza dentro de la transacción");
+    if (!/err instanceof FotosAjenasEvt\) return /.test(e) || !VARIAS.test(e)) falla(G, E, 0, "eventos: una foto que no se puede adjuntar se rechaza con «Una de las fotos ya no está. Súbela otra vez.», nunca ok");
+    // Por clase: un update media a negocio / equipo / evento cuyo resultado nadie lee ignora en silencio lo que no adjuntó.
+    for (const [x, t] of [[A, a], [Q, q], [E, e]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event)'/gm))
+      falla(G, x, t.slice(0, m.index).split("\n").length + 1, "un update media a negocio / equipo / evento sin leer su resultado: si no adjunta la foto no se entera nadie (usa rowCount o returning y rechaza)");
+  },
+
   /* fotosRevisionPrivacidad: a la segunda opinión (Claude con visión) solo van fotos destinadas a lo público. lib/fotos-segunda-opinion.ts lo
      comprueba adentro (nunca private, nunca Mensajes/ayuda/entrega/reclamo, solo las llaves n/ y privado/rev/, y con fila se vuelve a leer de la
      base) ANTES de leer la imagen o reservar; solo lo importa lib/fotos-revision.ts, y a esta solo la subida pública, el barrido, la capa 3 (el

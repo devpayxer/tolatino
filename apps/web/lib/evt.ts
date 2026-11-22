@@ -177,9 +177,11 @@ async function lineupYFotos(c: PoolClient, id: string, d: BorradorEvt, userId: s
     // 6f · En varios días, cada línea es de su día (day_index); en una serie, el programa es el de siempre (una fecha lo cambia aparte).
     for (const [i, l] of nuevo.entries()) await c.query(`insert into event_lineup (event_id, day_index, at_min, who, role, sort) values ($1::bigint, $2, $3, $4, $5::jsonb, $6)`, [id, l.dy, l.h, l.who, JSON.stringify(l.role), i]);
   }
-  const ids = d.fotos.map((f) => f.id);
-  await c.query(`update media set owner_kind = 'event', owner_id = $1, sort = array_position($3::uuid[], id)
+  const ids = [...new Set(d.fotos.map((f) => f.id))];
+  const puestas = await c.query(`update media set owner_kind = 'event', owner_id = $1, sort = array_position($3::uuid[], id)
                   where id = any($3::uuid[]) and status = 'visible' and not rev_sin_c2 and not private and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'event' and owner_id = $1))`, [id, userId, ids]);
+  // Todo o nada: si una sola no se puede adjuntar no entra ninguna y el evento no se guarda (se lanza dentro de la transacción: guardarEvento lo dice con palabras).
+  if ((puestas.rowCount ?? 0) !== ids.length) throw new FotosAjenasEvt();
   await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'event' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [id, ids]);
 }
 
@@ -302,7 +304,9 @@ async function chequeoVenta(c: Pick<PoolClient, "query">, e: Fila, d: BorradorEv
   return null;
 }
 /* Lo que la base rechaza (aunque el código de arriba lo deje pasar) se dice con palabras. */
+class FotosAjenasEvt extends Error {}
 function errorDeLaBase(err: unknown): { ok: false; msg: Bi } | null {
+  if (err instanceof FotosAjenasEvt) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.");
   const m = String((err as Error)?.message ?? "");
   if (/evt_forma_vendida/.test(m)) return no("Ya hay boletos vendidos: la duración del evento no cambia. Cancela y crea otro.", "Tickets are already sold: the event's duration cannot change. Cancel and create another.");
   if (/evt_aforo_bajo/.test(m) || /event_day_stock_cupo/.test(m)) return no("Un día ya tiene más gente que ese aforo: el aforo por día no baja de ahí.", "A day already has more people than that capacity: the daily capacity cannot go below that.");

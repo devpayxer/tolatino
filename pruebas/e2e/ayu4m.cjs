@@ -64,31 +64,43 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
     const fila = (id) => sql(`select owner_kind || '|' || owner_id || '|' || status || '|' || private::text || '|' || url from media where id = '${id}'`);
     // (la Comunidad la prueba una vecina de la semilla con su bienvenida hecha: 5705557008)
     const vec = await mk({ viewport: { width: 390, height: 844 } }, '5705557008');
-    const XM = await fotoAyuda(m), XD = await fotoAyuda(doc), XV = await fotoAyuda(vec);
-    ok(XM.ok && XD.ok && XV.ok && [XM, XD, XV].every((x) => /^user\|[^|]+\|visible\|true\|privado\/a\//.test(fila(x.id))), 'el atajo: fotos privadas de ayuda (privado/a/), a nombre de quien las subió');
+    // 22 nov · Eventos: una dueña con Pro y su evento de «noche» (la semilla); evtGuardar mandada a mano con la foto de ayuda en el cartel.
+    const SAB = 'sabor-dominicano', sab = await mk({ viewport: { width: 1360, height: 900 } }, '5705550133');
+    const XM = await fotoAyuda(m), XD = await fotoAyuda(doc), XV = await fotoAyuda(vec), XS = await fotoAyuda(sab);
+    ok(XM.ok && XD.ok && XV.ok && XS.ok && [XM, XD, XV, XS].every((x) => /^user\|[^|]+\|visible\|true\|privado\/a\//.test(fila(x.id))), 'el atajo: fotos privadas de ayuda (privado/a/), a nombre de quien las subió');
     const DOC = sql(`select id from users where phone = '+15705550244'`), MID = sql(`select id from business_members where business_id = '${S}' and user_id = '${DOC}' and kind = 'owner'`);
     const FOTO_EQ = sql(`select coalesce(photo_url, '') from business_members where id = '${MID}'`);
     const RES = sql(`select b.id from businesses b where b.status = 'active' and b.category_id not in ('NEG-NINOS', 'NEG-FE') and not exists (select 1 from reviews r where r.business_id = b.id and r.user_id = ${MARISOL} and r.status <> 'removed') order by b.id limit 1`);
-    // Cada intento: quién, la acción, lo que manda y lo que contesta el servidor (el rechazo de la foto; la galería, la portada y el equipo la
-    // ignoran sin adjuntarla: contestan ok y la foto sigue donde estaba).
-    const NO_EXISTE = /Esa foto no existe/, YA_NO = /Una de las fotos ya no está/, OK = /"ok":true/;
-    const DUENO = new Map([[XM, sql(`select id from users where phone = '+15705550122'`)], [XD, DOC], [XV, sql(`select id from users where phone = '+15705557008'`)]]);
+    // Cada intento: quién, la acción, lo que manda y lo que contesta el servidor: el rechazo de la foto con su mensaje (perfil, logo y equipo:
+    // «Esa foto no existe»; Comunidad, reseña, novedad, galería y portada: «Una de las fotos ya no está»; 22 nov: antes la galería, la portada y el
+    // equipo contestaban ok sin adjuntarla) y la foto sigue donde estaba.
+    const NO_EXISTE = /Esa foto no existe/, YA_NO = /Una de las fotos ya no está/;
+    const DUENO = new Map([[XM, sql(`select id from users where phone = '+15705550122'`)], [XD, DOC], [XS, sql(`select id from users where phone = '+15705550133'`)], [XV, sql(`select id from users where phone = '+15705557008'`)]]);
+    const DIA_EVT = sql(`select to_char((now() at time zone 'America/New_York')::date + 5, 'YYYY-MM-DD')`);
     const intentos = [
       [m, XM, 'app/(app)/cuenta/acciones-perfil.ts', 'perfilFoto', [XM.id], 'perfil', NO_EXISTE, '/cuenta/ajustes'],
       [vec, XV, 'app/(app)/comunidad/acciones.ts', 'comPublicar', [{ kind: 'publicacion', body: 'Hoy la feria del parque estuvo muy bonita, gracias a todos.', fotos: [XV.id] }], 'Comunidad', YA_NO, '/comunidad/mensajes'],
       [m, XM, 'app/(app)/n/[id]/acciones-resena.ts', 'publicarResena', [{ negocio: RES, visitante: true, stars: 5, body: 'Muy buena atención, rápidos y amables con todos. Volveré pronto.', fotos: [XM.id] }], 'reseña', YA_NO, `/n/${RES}`],
-      [doc, XD, 'app/panel/acciones.ts', 'fotosAgregar', [S, [XD.id], false], 'galería', OK, `/panel/${S}`],
-      [doc, XD, 'app/panel/acciones.ts', 'fotosAgregar', [S, [XD.id], true], 'portada', OK, `/panel/${S}`],
+      [doc, XD, 'app/panel/acciones.ts', 'fotosAgregar', [S, [XD.id], false], 'galería', YA_NO, `/panel/${S}`],
+      [doc, XD, 'app/panel/acciones.ts', 'fotosAgregar', [S, [XD.id], true], 'portada', YA_NO, `/panel/${S}`],
       [doc, XD, 'app/panel/acciones.ts', 'logoPoner', [S, XD.id], 'logo', NO_EXISTE, `/panel/${S}`],
-      [doc, XD, 'app/panel/acciones-equipo.ts', 'equipoGuardar', [S, MID, { role: ['Doctora', 'Doctor'], y: null, sp: [], same: true, wk: null, photo: XD.id, bio: ['', ''], langs: ['es'] }], 'foto del equipo', OK, `/panel/${S}`],
+      [doc, XD, 'app/panel/acciones-equipo.ts', 'equipoGuardar', [S, MID, { role: ['Rol del atajo', 'Shortcut role'], y: null, sp: [], same: true, wk: null, photo: XD.id, bio: ['Palabras del atajo', ''], langs: ['es'] }], 'foto del equipo', NO_EXISTE, `/panel/${S}`],
+      [sab, XS, 'app/panel/acciones-eventos.ts', 'evtGuardar', [SAB, null, { fmt: 'noche', ti: { es: 'Noche del atajo', en: 'Shortcut night' }, dia: DIA_EVT, fotos: [{ id: XS.id, url: '' }] }, false], 'evento', YA_NO, `/panel/${SAB}`],
       [doc, XD, 'app/panel/acciones-novedades.ts', 'novGuardar', [S, { kind: 'novedad', title: 'Horario nuevo', body: 'Abrimos más temprano.', link: 'none', fotos: [XD.id] }], 'novedad', YA_NO, `/panel/${S}`],
     ];
+    // Todo o nada (22 nov): lo que había antes no se toca. La foto del perfil del equipo del dueño (se le pone una de prueba si no tenía), su rol, sus
+    // palabras y la galería del negocio quedan igual después de los rechazos.
+    sql(`update business_members set photo_url = '/medios/n/foto-del-atajo.jpg' where id = '${MID}'`);
+    const ESTADO = () => sql(`select photo_url || '|' || role::text || '|' || coalesce(bio::text, '') from business_members where id = '${MID}'`) + '#' + sql(`select coalesce(string_agg(id || ':' || sort, ',' order by id), '') from media where owner_kind = 'business' and owner_id = '${S}' and status = 'visible'`);
+    const ANTES = ESTADO();
     try {
       for (const [p, X, archivo, nombre, args, que, espera, ruta] of intentos) {
         const r = await llamar(p, archivo, nombre, args, ruta);
         const sigue = fila(X.id) === `user|${DUENO.get(X)}|visible|true|privado/a/${X.id}.jpg`;
         ok(sigue && espera.test(r), `el atajo · ${que}: mandada a mano, el servidor no la adjunta (sigue de quien la subió, privada)${sigue && espera.test(r) ? '' : ' · fila ' + fila(X.id) + ' · contestó ' + r.replace(/\s+/g, ' ').slice(-200)}`);
       }
+      ok(sql(`select count(*) from events where business_id = '${SAB}' and title->>'es' = 'Noche del atajo'`) === '0', 'el atajo · evento: rechazada la foto, el evento no se guardó (ni como borrador)');
+      ok(ESTADO() === ANTES && ANTES.startsWith('/medios/n/foto-del-atajo.jpg|'), 'el atajo: rechazada la foto, no se guardó nada más del pedido (la foto del equipo no se vació; rol, palabras y galería igual)');
     } finally { sql(`update business_members set photo_url = ${FOTO_EQ ? `'${FOTO_EQ}'` : 'null'} where id = '${MID}'`); }
     const dondeSale = (id) => sql(`select (select count(*) from users where photo_url like '%${id}%') + (select count(*) from businesses where logo_url like '%${id}%') + (select count(*) from business_members where photo_url like '%${id}%')
       + (select count(*) from items where array_to_string(photos, ' ') like '%${id}%') + (select count(*) from media where url like '%${id}%' and id <> '${id}')`);
