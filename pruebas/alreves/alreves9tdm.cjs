@@ -15,7 +15,7 @@ const casos = [
   [G, VE, "x.owner_kind = 'dm' and x.private and x.purged_at is null", "x.owner_kind = 'dm' and x.purged_at is null"],
   [G, VE, 'if (!ok && d.status === "visible") ok = await fotoDmVecino(me.id, id);', 'if (!ok) ok = await fotoDmVecino(me.id, id);'],
   [G, VE, 'colas.includes("chat") && enCiudad(rep.city)', 'enCiudad(rep.city)'],
-  [G, VE, '        await tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg ? "dm_message" : "media",', '        void tx; void (async (c: unknown) => ({ c, actor: s.id, action: "mensajes.foto.verX", targetKind: caso.msg ? "dm_message" : "media",'],
+  [G, VE, '        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg ? "dm_message" : "media",', '        void tx; void (async (c: unknown) => ({ c, actor: s.id, action: "mensajes.foto.verX", targetKind: caso.msg ? "dm_message" : "media",'],
   [G, VE, '"cache-control": "private, no-store"', '"cache-control": "public, max-age=3600"'],
   // · lib/mensajes-vecinos.ts: tomar la foto de otra persona, sin marcar la que está en revisión, la dirección a quien no la puede ver, la foto antes de
   //   mirar los bloqueos, fotoDmVecino sin bloqueo o con la conversación cerrada, «Ver traducción» para cualquiera

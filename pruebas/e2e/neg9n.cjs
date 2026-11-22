@@ -18,6 +18,7 @@ const { chromium } = require('playwright');
 const { execSync } = require('child_process');
 const crypto = require('crypto'), fs = require('fs'), path = require('path');
 const { telefonoLibre } = require('../lib/telefono-libre.cjs');
+const { quitarDelAlmacen } = require('../lib/almacen-quitar.cjs'); // 22 nov · el caso «la fila vive y el archivo no está»
 const OUT = ENT.OUT, B = ENT.B, BIZ = 'sabor-dominicano', P = '/panel/' + BIZ, DUENO = '5705550133';
 const sql = (q) => execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -At -v ON_ERROR_STOP=1`, { input: q, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -168,6 +169,16 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
     ok(true, 'Super Admin › Repartidores: la lista encuentra al repartidor'); await a.screenshot({ path: OUT + 'neg9n-4-lista-1360.png', fullPage: true });
     await a.goto(B + `/admin/repartidores/${RU}`); await a.getByText('INCIDENCIAS · 1 ABIERTA').first().waitFor();
     ok(await a.getByText(`#${N1}`, { exact: false }).first().isVisible(), 'el 360°: sus entregas (con la prueba) e incidencias'); await a.screenshot({ path: OUT + 'neg9n-4-360-1360.png', fullPage: true });
+    { // 22 nov · Un archivo que falta en el almacén con la fila viva: 404 (antes 500), el MISMO que «no tienes permiso», entera y variante, y sin renglón de «vio la foto».
+      const U = `/api/entrega/foto/${mid}`, au = () => Number(sql(`select count(*) from audit_entries where action = 'entrega.foto.ver' and target_id = '${N1}'`));
+      const a0 = au(), ve = await traerVar(a, U);
+      ok(ve.st === 200 && au() > a0, `control: con el archivo en el almacén el equipo la ve (${ve.st}) y queda su renglón en la auditoría`);
+      const claves = await quitarDelAlmacen(sql, mid);
+      ok(claves.length >= 3, `se sacó del almacén la maestra y sus variantes (${claves.length} archivos); la fila sigue viva: ${sql(`select status || '|' || (purged_at is null) from media where id = '${mid}'`)}`);
+      const a1 = au(), sin = await traerVar(o, U), r = [await traerVar(a, U), await traerVar(a, `${U}?w=320`), await traerVar(c, U), await traerVar(c, `${U}?w=320`)];
+      ok(sin.st === 404 && r.every((x) => x.st === 404 && x.cc === sin.cc && x.ct === sin.ct && x.vary === sin.vary), `archivo ausente: 404 al equipo y a la clienta, la entera y la variante (${r.map((x) => x.st).join('/')}), con las mismas cabeceras que «no tienes permiso» (${sin.st})`);
+      ok(au() === a1, 'archivo ausente: el equipo no deja renglón de «vio la foto» (nadie vio nada)');
+    }
     const qid = sql(`select q.id from queue_items q join delivery_incidents i on i.id::text = q.subject_id join operations o on o.id = i.operation_id where q.queue = 'entrega' and o.number = '${N4}'`);
     await a.goto(B + `/admin/colas?cola=entrega&caso=${qid}`); await a.getByText(/Accidente o problema con el vehículo/).first().waitFor();
     await a.screenshot({ path: OUT + 'neg9n-4-cola-1360.png' });

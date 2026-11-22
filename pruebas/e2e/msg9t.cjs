@@ -21,6 +21,7 @@ const { elegirFoto } = require('../lib/elegir-foto.cjs'); // como una persona: t
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const NN = require('../lib/negocio-nuevo.cjs');
+const { quitarDelAlmacen } = require('../lib/almacen-quitar.cjs'); // 22 nov · el caso «la fila vive y el archivo no está»
 const S = ENT.S, OUT = S + '/cap/', B = ENT.B, BIZ = 'sabor-dominicano', PORT = ENT.P.traductor, STUB = `http://127.0.0.1:${PORT}`, TAG = '[m9t]';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -183,6 +184,13 @@ const limpiar = () => {
     ok(await espera(() => sql(`select x.status from chat_messages c join media x on x.id = c.media_id where c.thread_id = ${TH} and c.sender = 'user' order by c.id desc limit 1`) === 'visible'), 'regla apagada: visible al instante');
     const F3 = sql(`select media_id from chat_messages where thread_id = ${TH} and sender = 'user' and media_id is not null order by id desc limit 1`);
     ok((await traerFoto(p, `/api/mensajes/foto/${F3}`)).st === 200, 'y el negocio la ve');
+    // 22 nov · Un archivo que falta en el almacén con la fila viva: 404 (antes 500), el MISMO que «no tienes permiso», entera y variante, para quien la
+    // mandó y para el negocio; el equipo (abajo, con la conversación reportada) tampoco deja renglón de «vio la foto».
+    const U3 = `/api/mensajes/foto/${F3}`, MSG3 = sql(`select id from chat_messages where media_id = '${F3}'`);
+    const claves3 = await quitarDelAlmacen(sql, F3);
+    const sin3 = await traerFoto(otro, U3), fal3 = [await traerFoto(m, U3), await traerFoto(m, U3 + '?w=320'), await traerFoto(p, U3), await traerFoto(p, U3 + '?w=320')];
+    ok(claves3.length >= 1 && sin3.st === 404 && fal3.every((x) => x.st === 404 && x.cc === sin3.cc && x.ct === sin3.ct),
+      `archivo ausente (${claves3.length} sacados, la fila sigue viva): quien la mandó y el negocio, entera y variante, 404 (${fal3.map((x) => x.st).join('/')}) con las cabeceras de «no tienes permiso»`);
     sql(`update mod_rules set enabled = ${IMG0 === 'true'} where key = 'img'`);
 
     // ── 5b · La foto que se sube y nunca se manda: a las 24 h el barrido la saca del almacén (la fila queda con purged_at) ──
@@ -234,6 +242,13 @@ const limpiar = () => {
     const QC = await (async () => { let q = ''; await espera(() => (q = sql(`select id from queue_items where queue = 'chat' and status = 'open' and subject_id = (${TH})::text`)) !== ''); return q; })();
     await ad.goto(B + '/admin/colas?caso=' + QC); await ad.getByText(EN).first().waitFor();
     ok(!(await texto(ad)).includes('[stub→') && await ad.locator('[data-tr]').count() === 0, 'Super Admin: el original, sin traducción ni botón');
+    { // 22 nov · El equipo con la conversación reportada: la foto sin archivo da 404 y NO deja renglón; la que sí está, 200 y su renglón (control).
+      const au = (msg) => Number(sql(`select count(*) from audit_entries where action = 'mensajes.foto.ver' and target_id = '${msg}'`)), MSG1 = sql(`select id from chat_messages where media_id = '${F1}'`);
+      const c0 = au(MSG1), ver1 = await traerFoto(ad, `/api/mensajes/foto/${F1}`);
+      ok(ver1.st === 200 && au(MSG1) > c0, `control: con el archivo, el equipo la ve (${ver1.st}) y queda su renglón en la auditoría`);
+      const equipo3 = [await traerFoto(ad, U3), await traerFoto(ad, U3 + '?w=320')];
+      ok(equipo3.every((x) => x.st === 404 && x.cc === sin3.cc && x.ct === sin3.ct) && au(MSG3) === 0, `archivo ausente: el equipo con el caso abierto da 404 (${equipo3.map((x) => x.st).join('/')}) y no deja renglón de «vio la foto»`);
+    }
     await clic(ad.getByRole('button', { name: 'Todo bien' })); await (await vis(ad.getByRole('textbox').last())).fill('Revisado en la prueba'); await clic(ad.getByRole('button', { name: 'Confirmar' }).last());
     ok(await espera(() => sql(`select status from queue_items where id = ${QC}`) === 'decided'), 'el caso de la conversación se cierra');
     for (const x of [m]) { const w = await x.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); ok(w <= 0, 'teléfono sin scroll horizontal (' + w + ')'); }

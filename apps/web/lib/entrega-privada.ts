@@ -12,17 +12,21 @@ import { abrirObjeto } from "./medios";
      que se reanuda). Que el navegador las guarde («private, no-cache») es una decisión de privacidad pendiente (LAUNCH, 9t medios en flujo).
    - Sin Range: aquí solo salen fotos (1600 px como mucho, < 2 MB); el video lo sirve nginx desde el almacén (/medios/v/…), no la app.
    `llaves`: en orden; la primera que exista (la variante WebP y, si falta, la maestra). Ninguna → `siFalta()` (o se lanza «almacenamiento 404»).
+   `siFalta`: lo que se contesta si NINGUNA llave está en el almacén (la fila vive pero el archivo no: 404 igual al de «no tienes permiso», nunca 500).
+   `alEntregar` (22 nov): el renglón de auditoría de «vio la foto» del equipo. Se deja SOLO cuando el objeto existe y va a salir (también con 304): un
+   404 por archivo ausente no deja renglón de que alguien vio algo. Si falla, el cuerpo se suelta y el error sube (no sale la foto sin su renglón).
    `cabeceras`: las de cada ruta, escritas en la ruta (sus guardianes las leen ahí); van también en el 304. Una caché que no empiece con
    «private» no sale nunca (se lanza: un error de código, no una foto privada en una caché compartida). */
 export const CACHE_PRIVADA = "private, no-store";
 type Llave = { clave: string; tipo: string };
-export async function entregarPrivado(req: Request, llaves: Llave[], cabeceras: Record<string, string>, siFalta?: () => Response): Promise<Response> {
+export async function entregarPrivado(req: Request, llaves: Llave[], cabeceras: Record<string, string>, siFalta?: () => Response, alEntregar?: () => Promise<unknown>): Promise<Response> {
   if (!/^private,/.test(cabeceras["cache-control"] ?? "") || /\b(public|s-maxage)\b/.test(cabeceras["cache-control"] ?? "")) throw new Error("entregarPrivado: la caché de un objeto privado es «private»");
   const inm = req.headers.get("if-none-match");
   const base: Record<string, string> = { "x-content-type-options": "nosniff", ...cabeceras };
   for (const l of llaves) {
     const a = await abrirObjeto(l.clave, inm);
     if (!a) continue;
+    if (alEntregar) { try { await alEntregar(); } catch (e) { if (a.estado === 200) void a.cuerpo.cancel().catch(() => undefined); throw e; } }
     if (a.estado === 304) return new Response(null, { status: 304, headers: { ...base, etag: a.etag } });
     const h: Record<string, string> = { ...base, "content-type": l.tipo };
     if (a.etag) h.etag = a.etag;

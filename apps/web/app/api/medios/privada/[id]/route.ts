@@ -29,13 +29,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   };
   const p = await permisoFotoPrivada(db(), id, { userId: me.id, equipo });
   if (!p.ok) return no();
-  if (p.por === "equipo")
-    await tx((c) => auditar(c, { actor: p.staff, action: "fotos.privada.ver", targetKind: "media", targetId: id, city: p.caso.ciudad, after: { cola: p.caso.cola, caso: `${p.caso.kind}:${p.caso.ref}` } }));
+  // El renglón de «vio la foto» del equipo se deja solo si el archivo existe y sale (entregarPrivado alEntregar): un archivo ausente da 404 sin renglón.
+  const ver = p.por === "equipo"
+    ? () => tx((c) => auditar(c, { actor: p.staff, action: "fotos.privada.ver", targetKind: "media", targetId: id, city: p.caso.ciudad, after: { cola: p.caso.cola, caso: `${p.caso.kind}:${p.caso.ref}` } }))
+    : undefined;
   const wq = Number(req.nextUrl.searchParams.get("w") ?? ""), w = Number.isInteger(wq) && wq > 0 ? wq : null;
   const a = anchoServido(p.anchos, w, /image\/webp/i.test(req.headers.get("accept") ?? ""));
   const maestra = { clave: p.llave, tipo: "image/jpeg" };
   const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };
   const llaves = a ? [{ clave: llaveVariantePrivada(id, a), tipo: "image/webp" }, maestra] : [maestra];
   // Si la variante falla en el almacén, se intenta la maestra; si tampoco, 404 (como antes).
-  return entregarPrivado(req, llaves, cab, no).catch(() => entregarPrivado(req, [maestra], cab, no)).catch(() => no());
+  return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, [maestra], cab, no, ver)).catch(() => no());
 }
