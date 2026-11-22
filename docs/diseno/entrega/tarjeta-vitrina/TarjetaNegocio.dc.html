@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+</helmet>
+<sc-if value="{{ isPro }}" hint-placeholder-val="{{ true }}">
+  <div onClick="{{ onOpen }}" style="width: 100%; box-sizing: border-box; background: #fff; border-radius: 22px; border: 1px solid rgba(11,14,18,.08); box-shadow: 0 12px 26px -22px rgba(11,14,18,.45); overflow: hidden; cursor: pointer; color: #0B0E12;">
+    <div style="position: relative; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: 92px 92px; gap: 3px;">
+      <div style="grid-row: 1 / 3;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" image="{{ photo1 }}" hint-size="100%,187px"></x-import></div>
+      <div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" image="{{ photo2 }}" hint-size="100%,92px"></x-import></div>
+      <div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" image="{{ photo3 }}" hint-size="100%,92px"></x-import></div>
+      <sc-if value="{{ hasStatus }}" hint-placeholder-val="{{ true }}">
+        <span style="position: absolute; top: 12px; left: 12px; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.96); font: 700 11.5px Manrope, sans-serif; color: {{ statusColor }};">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: {{ dotColor }};"></span>{{ status }}</span>
+      </sc-if>
+      <span onClick="{{ toggleSave }}" style="position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 999px; background: rgba(255,255,255,.96); display: grid; place-items: center; cursor: pointer;">
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="17" strokeWidth="1.9" color="#0B0E12" fill="{{ heartFill }}" hint-size="17px,17px"></x-import>
+      </span>
+      <sc-if value="{{ hasPhotoCount }}" hint-placeholder-val="{{ false }}">
+        <span style="position: absolute; right: 10px; bottom: 10px; padding: 4px 8px; border-radius: 7px; background: rgba(11,14,18,.72); color: #fff; font: 800 9.5px 'JetBrains Mono', monospace; letter-spacing: .1em;">{{ photoCount }}</span>
+      </sc-if>
+    </div>
+    <div style="padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 7px; min-width: 0;">
+          <span style="font: 800 18px/1.15 Sora, sans-serif; letter-spacing: -.03em; color: #0B0E12;">{{ name }}</span>
+          <sc-if value="{{ verified }}" hint-placeholder-val="{{ true }}">
+            <span style="width: 17px; height: 17px; border-radius: 999px; background: #4B37F5; display: grid; place-items: center; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="10" strokeWidth="2.8" color="#fff" hint-size="10px,10px"></x-import></span>
+          </sc-if>
+        </div>
+        <div style="display: flex; align-items: center; gap: 7px; font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5); white-space: nowrap; overflow: hidden;">
+          <span style="font: 700 12.5px Manrope, sans-serif; letter-spacing: 0; color: #0B0E12;"><span style="color: #FFB020;">★</span> {{ rating }} <span style="font-weight: 500; color: rgba(11,14,18,.42);">{{ reviews }}</span></span>
+          <sc-if value="{{ meta }}" hint-placeholder-val="{{ true }}"><span>·</span><span style="overflow: hidden; text-overflow: ellipsis;">{{ meta }}</span></sc-if>
+        </div>
+      </div>
+      <sc-if value="{{ hasFeatures }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <sc-for list="{{ features }}" as="f" hint-placeholder-count="2">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="feature" hint-size="90px,28px">{{ f }}</x-import>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasSlots }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <sc-for list="{{ slots }}" as="s" hint-placeholder-count="3">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ s.variant }}" onClick="{{ s.pick }}" hint-size="80px,28px">{{ s.label }}</x-import>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasOffer }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 10px 12px; border-radius: 13px; background: rgba(75,55,245,.06); display: flex; align-items: center; gap: 10px;">
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="34px,18px">{{ offerTag }}</x-import>
+          <span style="flex: 1; min-width: 0; font: 600 12.5px/1.35 Manrope, sans-serif; color: #0B0E12;">{{ offer }}</span>
+        </div>
+      </sc-if>
+      <div style="display: flex; gap: 8px; padding-top: 2px;">
+        <div style="flex: 1; min-width: 0; display: flex;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" icon="{{ ctaIcon }}" block="{{ true }}" onClick="{{ onCta }}" hint-size="100%,40px">{{ cta }}</x-import></div>
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="{{ contactIcon }}" size="{{ 40 }}" onClick="{{ onContact }}" hint-size="40px,40px"></x-import>
+      </div>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{ isFree }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ onOpen }}" style="width: 100%; box-sizing: border-box; display: flex; background: #fff; border-radius: 18px; border: 1px solid rgba(11,14,18,.08); overflow: hidden; cursor: pointer;">
+    <div style="width: 96px; flex: none; position: relative; min-height: 96px;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" image="{{ photo1 }}" hint-size="96px,96px"></x-import></div>
+    <div style="flex: 1; min-width: 0; padding: 13px 14px; display: flex; flex-direction: column; gap: 5px;">
+      <span style="font: 700 14.5px/1.25 Manrope, sans-serif; color: #0B0E12;">{{ name }}</span>
+      <span style="font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ meta }}</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 2px;">
+        <span style="font: 700 12px Manrope, sans-serif; color: #0B0E12; white-space: nowrap;"><span style="color: #FFB020;">★</span> {{ rating }} <span style="font-weight: 500; color: rgba(11,14,18,.42);">{{ reviews }}</span></span>
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="sm" icon="{{ contactIcon }}" onClick="{{ onContact }}" hint-size="84px,34px">{{ contactLabel }}</x-import>
+      </div>
+    </div>
+  </div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:372,&quot;height&quot;:460},&quot;biz&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;plan&quot;:&quot;pro&quot;,&quot;name&quot;:&quot;Sabor Dominicano&quot;,&quot;verified&quot;:true,&quot;meta&quot;:&quot;DOMINICANA · CATERING · 0.3 MI&quot;,&quot;rating&quot;:4.8,&quot;reviews&quot;:212,&quot;status&quot;:&quot;Abierto · cierra 9 PM&quot;,&quot;open&quot;:true,&quot;chips&quot;:[{&quot;label&quot;:&quot;Pickup 25 min&quot;},{&quot;label&quot;:&quot;Delivery $3&quot;}],&quot;offer&quot;:&quot;Mofongo de chicharrón $12, hasta agotar&quot;,&quot;cta&quot;:&quot;Ordenar&quot;,&quot;ctaIcon&quot;:&quot;bag&quot;,&quot;photoCount&quot;:&quot;+24 FOTOS&quot;},&quot;tsType&quot;:&quot;{ plan?: 'pro'|'free'; name: string; verified?: boolean; meta?: string; rating: number|string; reviews?: number|string; status?: string; open?: boolean; photos?: string[]; photoCount?: string; chips?: {label:string; variant?:'slot'|'feature'}[]; offer?: string; offerTag?: string; cta?: string; ctaIcon?: string; contactLabel?: string; contactIcon?: string; saved?: boolean; onOpen?: () =&gt; void; onCta?: () =&gt; void; onContact?: () =&gt; void; onSave?: (v:boolean) =&gt; void }&quot;}}">
+class Component extends DCLogic {
+  state = { saved: null, slot: null };
+
+  renderVals() {
+    const b = this.props.biz || {};
+    const stop = f => e => { if (e && e.stopPropagation) e.stopPropagation(); f && f(e); };
+    const saved = this.state.saved ?? !!b.saved;
+    const chips = b.chips || [];
+    const photos = b.photos || [];
+    const open = b.open !== false;
+    const img = p => p || undefined;
+    return {
+      isPro: b.plan !== 'free', isFree: b.plan === 'free',
+      name: b.name, verified: !!b.verified, meta: b.meta || '',
+      rating: b.rating, reviews: b.reviews != null ? '(' + b.reviews + ')' : '',
+      status: b.status, hasStatus: !!b.status,
+      statusColor: open ? '#00695B' : '#C0392B', dotColor: open ? '#00A88F' : '#C0392B',
+      photo1: img(photos[0]), photo2: img(photos[1]), photo3: img(photos[2]),
+      photoCount: b.photoCount, hasPhotoCount: !!b.photoCount,
+      features: chips.filter(c => c.variant !== 'slot').map(c => c.label),
+      hasFeatures: chips.some(c => c.variant !== 'slot'),
+      slots: chips.filter(c => c.variant === 'slot').map(c => ({
+        label: c.label, variant: this.state.slot === c.label ? 'selected' : 'slot',
+        pick: stop(() => this.setState(st => ({ slot: st.slot === c.label ? null : c.label })))
+      })),
+      hasSlots: chips.some(c => c.variant === 'slot'),
+      offer: b.offer, hasOffer: !!b.offer, offerTag: b.offerTag || 'HOY',
+      cta: b.cta || 'Ordenar', ctaIcon: b.ctaIcon || 'bag',
+      contactLabel: b.contactLabel || 'Llamar', contactIcon: b.contactIcon || 'phone',
+      heartFill: saved ? '#0B0E12' : 'none',
+      toggleSave: stop(() => { this.setState({ saved: !saved }); b.onSave && b.onSave(!saved); }),
+      onOpen: b.onOpen, onCta: stop(b.onCta), onContact: stop(b.onContact)
+    };
+  }
+}
+</script>
+</body>
+</html>

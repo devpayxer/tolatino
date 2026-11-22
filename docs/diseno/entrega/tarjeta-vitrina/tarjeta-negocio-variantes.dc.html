@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <style>
+    body { margin: 0; background: #EDEBE6; -webkit-font-smoothing: antialiased; }
+    a { color: #4B37F5; text-decoration: none; }
+    a:hover { color: #2E1FD1; }
+  </style>
+</helmet>
+<section id="turn-1" style="display: flex; flex-direction: column; gap: 40px; padding: 64px; background: #EDEBE6;">
+
+  <div style="display: flex; flex-direction: column; gap: 10px; max-width: 760px;">
+    <span style="font: 800 12px 'JetBrains Mono', monospace; letter-spacing: .14em; color: rgba(11,14,18,.6);">TARJETA DE NEGOCIO · 3 VARIANTES · 372 PX</span>
+    <h1 style="margin: 0; font: 800 44px/1.04 Sora, sans-serif; letter-spacing: -.045em; color: #0B0E12;">Tres formas de decidir desde la lista.</h1>
+    <p style="margin: 0; font: 500 16px/1.6 Manrope, sans-serif; color: rgba(11,14,18,.75); text-wrap: pretty;">Cada variante apuesta por una cosa distinta: la foto, el dato o la gente. Todas con Pro (comida con Ordenar y barbería con Booking) y Free. Toca los horarios y el corazón.</p>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;">
+
+    <div id="1a" data-screen-label="1a Vitrina" style="background: #F7F6F3; border-radius: 26px; padding: 36px; display: flex; flex-direction: column; gap: 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px;">
+        <div style="display: flex; flex-direction: column; gap: 10px; max-width: 620px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="padding: 5px 9px; border-radius: 7px; background: #0B0E12; color: #fff; font: 800 12px 'JetBrains Mono', monospace; letter-spacing: .08em;">1a</span>
+            <span style="font: 800 11px 'JetBrains Mono', monospace; letter-spacing: .14em; color: #4B37F5;">LA FOTO VENDE</span>
+          </div>
+          <h2 style="margin: 0; font: 800 34px/1.05 Sora, sans-serif; letter-spacing: -.04em; color: #0B0E12;">Vitrina</h2>
+          <p style="margin: 0; font: 500 15px/1.6 Manrope, sans-serif; color: rgba(11,14,18,.75); text-wrap: pretty;">Galería de 3 fotos con el estado encima: se antoja antes de leer. Guardar vive en la foto y la barra de abajo queda para actuar.</p>
+        </div>
+        <span style="font: 700 10.5px 'JetBrains Mono', monospace; letter-spacing: .1em; color: rgba(11,14,18,.5); text-align: right; flex: none;">MEJOR EN · HOME · CATEGORÍA</span>
+      </div>
+      <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <sc-for list="{{ a }}" as="c" hint-placeholder-count="2">
+          <div style="width: 372px; flex: none; background: #fff; border-radius: 22px; border: 1px solid rgba(11,14,18,.08); box-shadow: 0 12px 26px -22px rgba(11,14,18,.45); overflow: hidden; cursor: pointer;">
+            <div style="position: relative; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: 92px 92px; gap: 3px;">
+              <div style="grid-row: 1 / 3;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" hint-size="100%,187px"></x-import></div>
+              <div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" hint-size="100%,92px"></x-import></div>
+              <div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" hint-size="100%,92px"></x-import></div>
+              <span style="position: absolute; top: 12px; left: 12px; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.96); font: 700 11.5px Manrope, sans-serif; color: #00695B;">
+                <span style="width: 6px; height: 6px; border-radius: 999px; background: #00A88F;"></span>{{ c.status }}</span>
+              <span onClick="{{ c.toggleSave }}" style="position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 999px; background: rgba(255,255,255,.96); display: grid; place-items: center; cursor: pointer;">
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="17" strokeWidth="1.9" color="#0B0E12" fill="{{ c.heartFill }}" hint-size="17px,17px"></x-import>
+              </span>
+              <span style="position: absolute; right: 10px; bottom: 10px; padding: 4px 8px; border-radius: 7px; background: rgba(11,14,18,.72); color: #fff; font: 800 9.5px 'JetBrains Mono', monospace; letter-spacing: .1em;">{{ c.photoCount }}</span>
+            </div>
+            <div style="padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 7px;">
+                  <span style="font: 800 18px/1.15 Sora, sans-serif; letter-spacing: -.03em; color: #0B0E12;">{{ c.name }}</span>
+                  <span style="width: 17px; height: 17px; border-radius: 999px; background: #4B37F5; display: grid; place-items: center; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="10" strokeWidth="2.8" color="#fff" hint-size="10px,10px"></x-import></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 7px; font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5); white-space: nowrap; overflow: hidden;">
+                  <span style="font: 700 12.5px Manrope, sans-serif; letter-spacing: 0; color: #0B0E12;"><span style="color: #FFB020;">★</span> {{ c.rating }} <span style="font-weight: 500; color: rgba(11,14,18,.42);">{{ c.reviews }}</span></span>
+                  <span>·</span><span>{{ c.metaRest }}</span>
+                </div>
+              </div>
+              <sc-if value="{{ c.isFood }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <sc-for list="{{ c.features }}" as="f" hint-placeholder-count="2">
+                    <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="feature" hint-size="90px,28px">{{ f }}</x-import>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ c.isBooking }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <sc-for list="{{ c.slots }}" as="s" hint-placeholder-count="3">
+                    <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ s.variant }}" onClick="{{ s.pick }}" hint-size="80px,28px">{{ s.label }}</x-import>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ c.showOffer }}" hint-placeholder-val="{{ true }}">
+                <div style="padding: 10px 12px; border-radius: 13px; background: rgba(75,55,245,.06); display: flex; align-items: center; gap: 10px;">
+                  <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="34px,18px">HOY</x-import>
+                  <span style="flex: 1; min-width: 0; font: 600 12.5px/1.35 Manrope, sans-serif; color: #0B0E12;">{{ c.offer }}</span>
+                </div>
+              </sc-if>
+              <div style="display: flex; gap: 8px; padding-top: 2px;">
+                <div style="flex: 1; min-width: 0; display: flex;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" icon="{{ c.ctaIcon }}" block="{{ true }}" hint-size="100%,40px">{{ c.cta }}</x-import></div>
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="phone" size="{{ 40 }}" hint-size="40px,40px"></x-import>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="width: 372px; flex: none; display: flex; flex-direction: column; gap: 12px;">
+          <span style="font: 800 10.5px 'JetBrains Mono', monospace; letter-spacing: .14em; color: rgba(11,14,18,.5);">FREE</span>
+          <sc-for list="{{ free }}" as="f" hint-placeholder-count="2">
+            <div style="display: flex; background: #fff; border-radius: 18px; border: 1px solid rgba(11,14,18,.08); overflow: hidden; cursor: pointer;">
+              <div style="width: 96px; flex: none; position: relative;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="100%" hint-size="96px,96px"></x-import></div>
+              <div style="flex: 1; min-width: 0; padding: 13px 14px; display: flex; flex-direction: column; gap: 5px;">
+                <span style="font: 700 14.5px/1.25 Manrope, sans-serif; color: #0B0E12;">{{ f.name }}</span>
+                <span style="font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5);">{{ f.meta }}</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 2px;">
+                  <span style="font: 700 12px Manrope, sans-serif; color: #0B0E12;"><span style="color: #FFB020;">★</span> {{ f.rating }} <span style="font-weight: 500; color: rgba(11,14,18,.42);">{{ f.reviews }}</span></span>
+                  <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="sm" icon="phone" hint-size="84px,34px">Llamar</x-import>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" data-screen-label="1b Al grano" style="background: #F7F6F3; border-radius: 26px; padding: 36px; display: flex; flex-direction: column; gap: 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px;">
+        <div style="display: flex; flex-direction: column; gap: 10px; max-width: 620px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="padding: 5px 9px; border-radius: 7px; background: #0B0E12; color: #fff; font: 800 12px 'JetBrains Mono', monospace; letter-spacing: .08em;">1b</span>
+            <span style="font: 800 11px 'JetBrains Mono', monospace; letter-spacing: .14em; color: #4B37F5;">EL DATO DECIDE</span>
+          </div>
+          <h2 style="margin: 0; font: 800 34px/1.05 Sora, sans-serif; letter-spacing: -.04em; color: #0B0E12;">Al grano</h2>
+          <p style="margin: 0; font: 500 15px/1.6 Manrope, sans-serif; color: rgba(11,14,18,.75); text-wrap: pretty;">Responde antes del tap: cuánto espero, cuánto cuesta y lo que se retiene. Foto chica, tres datos fijos y más tarjetas por pantalla.</p>
+        </div>
+        <span style="font: 700 10.5px 'JetBrains Mono', monospace; letter-spacing: .1em; color: rgba(11,14,18,.5); text-align: right; flex: none;">MEJOR EN · BUSCAR · LISTAS LARGAS</span>
+      </div>
+      <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <sc-for list="{{ b }}" as="c" hint-placeholder-count="2">
+          <div style="width: 372px; flex: none; box-sizing: border-box; background: #fff; border-radius: 20px; border: 1px solid rgba(11,14,18,.08); box-shadow: 0 12px 26px -22px rgba(11,14,18,.45); padding: 14px; display: flex; flex-direction: column; gap: 12px; cursor: pointer;">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <div style="width: 76px; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="76px" radius="14" hint-size="76px,76px"></x-import></div>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; padding-top: 2px;">
+                <div style="display: flex; align-items: center; gap: 7px;">
+                  <span style="font: 800 17px/1.15 Sora, sans-serif; letter-spacing: -.03em; color: #0B0E12;">{{ c.name }}</span>
+                  <span style="width: 16px; height: 16px; border-radius: 999px; background: #4B37F5; display: grid; place-items: center; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="9" strokeWidth="2.8" color="#fff" hint-size="9px,9px"></x-import></span>
+                </div>
+                <span style="font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5);">{{ c.metaRest }}</span>
+                <div style="display: flex; align-items: center; gap: 7px; white-space: nowrap;">
+                  <span style="font: 700 12.5px Manrope, sans-serif; color: #0B0E12;"><span style="color: #FFB020;">★</span> {{ c.rating }} <span style="font-weight: 500; color: rgba(11,14,18,.42);">{{ c.reviews }}</span></span>
+                  <span style="width: 3px; height: 3px; border-radius: 999px; background: rgba(11,14,18,.25);"></span>
+                  <span style="font: 700 12.5px Manrope, sans-serif; color: #00695B;">{{ c.status }}</span>
+                </div>
+              </div>
+              <span onClick="{{ c.toggleSave }}" style="width: 32px; height: 32px; flex: none; display: grid; place-items: center; cursor: pointer; margin: -4px -4px 0 0;">
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="18" strokeWidth="1.9" color="#0B0E12" fill="{{ c.heartFill }}" hint-size="18px,18px"></x-import>
+              </span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: rgba(11,14,18,.08); border-radius: 14px; overflow: hidden;">
+              <sc-for list="{{ c.facts }}" as="x" hint-placeholder-count="3">
+                <div style="background: #F7F6F3; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+                  <span style="font: 800 9px 'JetBrains Mono', monospace; letter-spacing: .12em; color: rgba(11,14,18,.5);">{{ x.k }}</span>
+                  <span style="font: 800 14.5px/1.1 Sora, sans-serif; letter-spacing: -.02em; color: #0B0E12; white-space: nowrap;">{{ x.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ c.isBooking }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <sc-for list="{{ c.slots }}" as="s" hint-placeholder-count="3">
+                  <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ s.variant }}" onClick="{{ s.pick }}" hint-size="80px,28px">{{ s.label }}</x-import>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ c.showOffer }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="34px,18px">HOY</x-import>
+                <span style="flex: 1; min-width: 0; font: 600 12.5px/1.35 Manrope, sans-serif; color: rgba(11,14,18,.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.offer }}</span>
+              </div>
+            </sc-if>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex: 1; min-width: 0; display: flex;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" icon="{{ c.ctaIcon }}" block="{{ true }}" hint-size="100%,40px">{{ c.cta }}</x-import></div>
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="md" icon="phone" hint-size="96px,40px">Llamar</x-import>
+            </div>
+          </div>
+        </sc-for>
+        <div style="width: 372px; flex: none; display: flex; flex-direction: column; gap: 12px;">
+          <span style="font: 800 10.5px 'JetBrains Mono', monospace; letter-spacing: .14em; color: rgba(11,14,18,.5);">FREE</span>
+          <sc-for list="{{ free }}" as="f" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #fff; border-radius: 18px; border: 1px solid rgba(11,14,18,.08); cursor: pointer;">
+              <div style="width: 56px; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="56px" radius="13" hint-size="56px,56px"></x-import></div>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font: 700 14.5px/1.25 Manrope, sans-serif; color: #0B0E12;">{{ f.name }}</span>
+                <span style="font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5);">{{ f.meta }}</span>
+                <span style="font: 700 12px Manrope, sans-serif; color: #0B0E12; white-space: nowrap;"><span style="color: #FFB020;">★</span> {{ f.rating }} <span style="font-weight: 500; color: rgba(11,14,18,.42);">{{ f.reviews }}</span> <span style="color: #00695B;">· {{ f.status }}</span></span>
+              </div>
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="phone" size="{{ 40 }}" hint-size="40px,40px"></x-import>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="1c" data-screen-label="1c Del barrio" style="background: #F7F6F3; border-radius: 26px; padding: 36px; display: flex; flex-direction: column; gap: 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px;">
+        <div style="display: flex; flex-direction: column; gap: 10px; max-width: 620px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="padding: 5px 9px; border-radius: 7px; background: #0B0E12; color: #fff; font: 800 12px 'JetBrains Mono', monospace; letter-spacing: .08em;">1c</span>
+            <span style="font: 800 11px 'JetBrains Mono', monospace; letter-spacing: .14em; color: #4B37F5;">LA GENTE RESPALDA</span>
+          </div>
+          <h2 style="margin: 0; font: 800 34px/1.05 Sora, sans-serif; letter-spacing: -.04em; color: #0B0E12;">Del barrio</h2>
+          <p style="margin: 0; font: 500 15px/1.6 Manrope, sans-serif; color: rgba(11,14,18,.75); text-wrap: pretty;">Primero quién atiende y qué dice un vecino verificado. El aro en la foto del dueño avisa que hay avisos de hoy; un tap los abre.</p>
+        </div>
+        <span style="font: 700 10.5px 'JetBrains Mono', monospace; letter-spacing: .1em; color: rgba(11,14,18,.5); text-align: right; flex: none;">MEJOR EN · RECOMENDADOS · NEGOCIOS NUEVOS</span>
+      </div>
+      <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <sc-for list="{{ cc }}" as="c" hint-placeholder-count="2">
+          <div style="width: 372px; flex: none; background: #fff; border-radius: 22px; border: 1px solid rgba(11,14,18,.08); box-shadow: 0 12px 26px -22px rgba(11,14,18,.45); overflow: hidden; cursor: pointer;">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Placeholder" height="136px" hint-size="100%,136px"></x-import>
+            <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; gap: 12px; align-items: flex-start; margin-top: -30px; position: relative; z-index: 1;">
+                <span style="width: 64px; height: 64px; flex: none; border-radius: 999px; background: #4B37F5; padding: 2.5px; box-sizing: border-box; display: block; cursor: pointer;">
+                  <span style="display: block; width: 100%; height: 100%; border-radius: 999px; border: 3px solid #fff; overflow: hidden; box-sizing: border-box; background: #DDD9D1;"></span>
+                </span>
+                <div style="flex: 1; min-width: 0; margin-top: 36px; display: flex; flex-direction: column; gap: 3px;">
+                  <div style="display: flex; align-items: center; gap: 7px;">
+                    <span style="font: 800 18px/1.15 Sora, sans-serif; letter-spacing: -.03em; color: #0B0E12;">{{ c.name }}</span>
+                    <span style="width: 17px; height: 17px; border-radius: 999px; background: #4B37F5; display: grid; place-items: center; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="10" strokeWidth="2.8" color="#fff" hint-size="10px,10px"></x-import></span>
+                  </div>
+                  <span style="font: 600 12.5px/1.35 Manrope, sans-serif; color: rgba(11,14,18,.6);">{{ c.owner }}</span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 7px; font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5); white-space: nowrap; overflow: hidden;">
+                <span style="font: 700 12.5px Manrope, sans-serif; letter-spacing: 0; color: #0B0E12;"><span style="color: #FFB020;">★</span> {{ c.rating }} <span style="font-weight: 500; color: rgba(11,14,18,.42);">{{ c.reviews }}</span></span>
+                <span>·</span><span>{{ c.metaRest }}</span>
+              </div>
+              <span style="font: 700 12.5px Manrope, sans-serif; color: #00695B; margin-top: -4px;">{{ c.status }}</span>
+              <div style="background: #F7F6F3; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+                <span style="font: 600 13.5px/1.5 Manrope, sans-serif; color: #0B0E12; text-wrap: pretty;">“{{ c.quote }}”</span>
+                <span style="font: 700 9.5px 'JetBrains Mono', monospace; letter-spacing: .08em; color: rgba(11,14,18,.5);">{{ c.quoteBy }}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="display: flex; padding-left: 6px;">
+                  <span style="width: 22px; height: 22px; border-radius: 999px; background: #DDD9D1; border: 2px solid #fff; margin-left: -6px;"></span>
+                  <span style="width: 22px; height: 22px; border-radius: 999px; background: #E4E1DA; border: 2px solid #fff; margin-left: -6px;"></span>
+                  <span style="width: 22px; height: 22px; border-radius: 999px; background: #DDD9D1; border: 2px solid #fff; margin-left: -6px;"></span>
+                </span>
+                <span style="font: 700 12.5px Manrope, sans-serif; color: #0B0E12;">{{ c.neighbors }}</span>
+              </div>
+              <sc-if value="{{ c.showOffer }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="34px,18px">HOY</x-import>
+                  <span style="flex: 1; min-width: 0; font: 600 12.5px/1.35 Manrope, sans-serif; color: rgba(11,14,18,.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.offer }}</span>
+                </div>
+              </sc-if>
+              <div style="display: flex; gap: 8px; padding-top: 2px;">
+                <div style="flex: 1; min-width: 0; display: flex;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" icon="{{ c.ctaIcon }}" block="{{ true }}" hint-size="100%,40px">{{ c.cta }}</x-import></div>
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="heart" size="{{ 40 }}" active="{{ c.saved }}" onClick="{{ c.toggleSave }}" hint-size="40px,40px"></x-import>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="width: 372px; flex: none; display: flex; flex-direction: column; gap: 12px;">
+          <span style="font: 800 10.5px 'JetBrains Mono', monospace; letter-spacing: .14em; color: rgba(11,14,18,.5);">FREE</span>
+          <sc-for list="{{ free }}" as="f" hint-placeholder-count="2">
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: #fff; border-radius: 18px; border: 1px solid rgba(11,14,18,.08); cursor: pointer;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="width: 48px; height: 48px; flex: none; border-radius: 999px; background: #F7F6F3; display: grid; place-items: center; font: 800 15px Sora, sans-serif; letter-spacing: -.02em; color: #0B0E12;">{{ f.initials }}</span>
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+                  <span style="font: 700 14.5px/1.25 Manrope, sans-serif; color: #0B0E12;">{{ f.name }}</span>
+                  <span style="font: 600 10.5px 'JetBrains Mono', monospace; letter-spacing: .04em; color: rgba(11,14,18,.5); white-space: nowrap;"><span style="font: 700 12px Manrope, sans-serif; letter-spacing: 0; color: #0B0E12;"><span style="color: #FFB020;">★</span> {{ f.rating }}</span> · {{ f.meta }}</span>
+                </div>
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="sm" icon="phone" hint-size="84px,34px">Llamar</x-import>
+              </div>
+              <span style="font: 500 13px/1.45 Manrope, sans-serif; color: rgba(11,14,18,.75); border-top: 1px solid rgba(11,14,18,.07); padding-top: 10px;">“{{ f.quote }}”</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ showReference }}" hint-placeholder-val="{{ true }}">
+      <div id="ref" data-screen-label="Actual" style="border: 1.5px dashed rgba(11,14,18,.18); border-radius: 26px; padding: 36px; display: flex; flex-direction: column; gap: 24px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font: 800 11px 'JetBrains Mono', monospace; letter-spacing: .14em; color: rgba(11,14,18,.5);">REFERENCIA · PATRÓN 6A ACTUAL</span>
+          <h2 style="margin: 0; font: 800 26px/1.1 Sora, sans-serif; letter-spacing: -.04em; color: #0B0E12;">Actual</h2>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          <div style="width: 372px; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ refFood }}" hint-size="372px,420px"></x-import></div>
+          <div style="width: 372px; flex: none;"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ refBarber }}" hint-size="372px,420px"></x-import></div>
+          <div style="width: 372px; flex: none; display: flex; flex-direction: column; gap: 12px;">
+            <span style="font: 800 10.5px 'JetBrains Mono', monospace; letter-spacing: .14em; color: rgba(11,14,18,.5);">FREE</span>
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ refFree1 }}" hint-size="372px,90px"></x-import>
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ refFree2 }}" hint-size="372px,90px"></x-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;withOffer&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Contenido&quot;},&quot;showReference&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Comparar&quot;}}">
+class Component extends DCLogic {
+  state = { saved: { 'c-food': true }, slot: {} };
+
+  renderVals() {
+    const s = this.state;
+    const withOffer = this.props.withOffer ?? true;
+    const base = [
+      { id: 'food', name: 'Sabor Dominicano', rating: '4.8', reviews: '(212)', metaRest: 'DOMINICANA · CATERING · 0.3 MI', status: 'Abierto · cierra 9 PM', cta: 'Ordenar', ctaIcon: 'bag', isFood: true, isBooking: false, photoCount: '+24 FOTOS',
+        features: ['Pickup 25 min', 'Delivery $3', 'Catering'], offer: 'Mofongo de chicharrón $12, hasta agotar', slotList: [],
+        facts: [{ k: 'PICKUP', v: '25 min' }, { k: 'DELIVERY', v: '$3 · 40 min' }, { k: 'PLATOS', v: 'desde $9' }],
+        owner: 'Yokasta Peña · dueña desde 2014', quote: 'El mofongo sabe a casa de mi abuela. Llega caliente y bien servido.', quoteBy: 'CARMEN R. · VERIFICADA · PEDIDO · HACE 3 DÍAS', neighbors: '12 vecinos lo recomiendan' },
+      { id: 'barber', name: 'Barbería La Silla', rating: '4.9', reviews: '(341)', metaRest: 'BARBERÍA · 0.6 MI', status: 'Abierto · cierra 8 PM', cta: 'Booking', ctaIcon: 'calendar', isFood: false, isBooking: true, photoCount: '+41 FOTOS',
+        features: [], offer: 'Corte + barba $25 los martes', slotList: ['Hoy 4:30', 'Hoy 5:15', 'Mañana 10:00'],
+        facts: [{ k: 'ESPERA', v: '~15 min' }, { k: 'CORTE', v: 'desde $15' }, { k: 'DEPÓSITO', v: '$5 retenido' }],
+        owner: 'Ramón "Moncho" Díaz · 3 sillas', quote: 'Moncho no te apura y el fade queda igualito cada vez.', quoteBy: 'LUIS M. · VERIFICADA · CITA · LA SEMANA PASADA', neighbors: '8 vecinos lo recomiendan' }
+    ];
+    const mk = v => base.map(b => {
+      const key = v + '-' + b.id, saved = !!s.saved[key];
+      return { ...b, saved,
+        heartFill: saved ? '#0B0E12' : 'none',
+        toggleSave: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(st => ({ saved: { ...st.saved, [key]: !st.saved[key] } })); },
+        showOffer: withOffer && !!b.offer,
+        slots: b.slotList.map(l => ({ label: l, variant: s.slot[key] === l ? 'selected' : 'slot', pick: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(st => ({ slot: { ...st.slot, [key]: st.slot[key] === l ? null : l } })); } }))
+      };
+    });
+    return {
+      showReference: this.props.showReference ?? true,
+      a: mk('a'), b: mk('b'), cc: mk('c'),
+      free: [
+        { name: 'Fritura Doña Carmen', initials: 'DC', meta: 'FRITURAS · 0.6 MI', rating: '4.5', reviews: '(18)', status: 'Abierto · cierra 7 PM', quote: 'Las empanadas de la Wyoming. Ve temprano que se acaban.' },
+        { name: 'Colmado El Primo', initials: 'EP', meta: 'MERCADO · 0.4 MI', rating: '4.6', reviews: '(41)', status: 'Abierto · cierra 10 PM', quote: 'Tiene plátano bueno y te fían si eres del barrio.' }
+      ],
+      refFood: { plan: 'pro', name: 'Sabor Dominicano', verified: true, meta: 'DOMINICANA · CATERING · 0.3 MI', rating: 4.8, reviews: 212, status: 'Abierto · cierra 9 PM', open: true, photos: [''], chips: [{ label: 'Pickup 25 min' }, { label: 'Delivery $3' }], offer: withOffer ? 'Mofongo de chicharrón $12, hasta agotar' : undefined, cta: 'Ordenar', ctaIcon: 'bag' },
+      refBarber: { plan: 'pro', name: 'Barbería La Silla', verified: true, meta: 'BARBERÍA · 0.6 MI', rating: 4.9, reviews: 341, status: 'Abierto · cierra 8 PM', open: true, photos: [''], chips: [{ label: 'Hoy 4:30', variant: 'slot' }, { label: 'Hoy 5:15', variant: 'slot' }], offer: withOffer ? 'Corte + barba $25 los martes' : undefined, cta: 'Booking', ctaIcon: 'calendar' },
+      refFree1: { plan: 'free', name: 'Fritura Doña Carmen', meta: 'FRITURAS · 0.6 MI', rating: 4.5, reviews: 18, photos: [''] },
+      refFree2: { plan: 'free', name: 'Colmado El Primo', meta: 'MERCADO · 0.4 MI', rating: 4.6, reviews: 41, photos: [''] }
+    };
+  }
+}
+</script>
+</body>
+</html>
