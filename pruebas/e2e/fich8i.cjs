@@ -36,9 +36,9 @@ const env = ENT.env; // los secretos de la corrida (pruebas/servir/servir.sh)
   sql(`delete from platform_config where key in ('revision_intentos_hora', 'fichas_subidas_dia')`);
   sql(`update business_stats_cache set plan = 'free' where business_id = 'revision-tolatino'`); // Free: para ver los «Ver Pro» (se devuelve al final)
   const kp = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }), KID = 'ZX9Y8W7V6U', EMISOR = '57246542-96fe-1a63-e053-0824d011072a';
-  const asc = await ASC.arrancar({ puerto: 4404, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.apps.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
+  const asc = await ASC.arrancar({ puerto: ENT.P.asc, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.apps.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
   const cuenta = PLAY.cuentaDePrueba(), desc = JSON.parse(fs.readFileSync(ENT.rec('androidpublisher-v3.json'), 'utf8'));
-  const play = await PLAY.arrancar({ puerto: 4408, descubrimiento: desc, cuenta, paquetes: APPS.apps.map((a) => a.android) });
+  const play = await PLAY.arrancar({ puerto: ENT.P.play, descubrimiento: desc, cuenta, paquetes: APPS.apps.map((a) => a.android) });
   const br = await chromium.launch(), errs = [];
   const pagina = async (k, w, ua) => { const cx = await br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: 1, locale: 'es-US', ...(ua ? { userAgent: ua } : {}) }); const p = await cx.newPage(); p.on('pageerror', (e) => errs.push(`${k}: ${e.message}`)); return p; };
   const subirLlave = async (p, tipo, nombre, contenido, extra = {}) => {

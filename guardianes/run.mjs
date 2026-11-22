@@ -14680,6 +14680,20 @@ const guardianes = {
     if (!/pruebas\/lib\/puertos\.cjs" --sh\)" \|\| exit 2/.test(sv) || !/fuser -k "\$PUERTO\/tcp"/.test(sv) || !/VARS=\(PORT=\$PUERTO /.test(sv)) falla(G, "pruebas/servir/servir.sh", 0, "el puerto del servidor y lo que se mata salen de pruebas/lib/puertos.cjs (PRUEBAS_URL, 3100 por defecto), no de un número escrito");
     const co = leer("pruebas/correr.mjs");
     if (!/"\.\/lib\/puertos\.cjs"\)\.resolver\(process\.env\)/.test(co) || !/SERVIDOR\.url/.test(co)) falla(G, "pruebas/correr.mjs", 0, "el corredor pregunta la salud en la dirección de pruebas/lib/puertos.cjs (PRUEBAS_URL), no en una escrita");
+    /* Los simuladores y servicios de las pruebas (push 4401–4403, App Store Connect 4404, Wallet 4405/4406, GitHub 4407, Play 4408, «SNS» 4409, moderación 8790, video 8791,
+       traductor de mentira 5098/5099) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
+    const nom = [...(/const NOMINAL = \{([\s\S]*?)\n\};/.exec(pu)?.[1] ?? "").matchAll(/\b([A-Za-z]+): (\d{4})\b/g)].filter((m) => m[1] !== "servidor").map((m) => m[2]);
+    if (nom.length < 13) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 13): sin ella el guardián no puede vigilar los puertos escritos a mano`);
+    else {
+      const N = nom.join("|"), PS = [`(127\\.0\\.0\\.1|localhost|0\\.0\\.0\\.0):(${N})\\b`, `(puerto|Puerto|PUERTO|PORT)\\s*[:=,(]\\s*['"]?(${N})\\b`, `listen\\(\\s*(${N})\\b`, `['"](${N})['"]`, `\\|\\|\\s*(${N})\\b`].map((x) => new RegExp(x));
+      for (const f of archivos) {
+        if (f === "pruebas/lib/puertos.cjs" || !(/^pruebas\/(e2e|lib)\/[^/]+\.cjs$/.test(f) || f === "pruebas/servir/servir.sh")) continue;
+        readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+          if (/^\s*(\/\/|#|\*|\/\*)/.test(l) || !PS.some((r) => r.test(l))) return;
+          falla(G, f, i + 1, `escribe a mano el puerto de un simulador o servicio de las pruebas («${l.trim().slice(0, 90)}»): con el servidor en otro puerto cae sobre el de otro encargo; usa ENT.P.<nombre> (pruebas/lib/puertos.cjs; en servir.sh, $P_<NOMBRE>)`);
+        });
+      }
+    }
   },
 
 };

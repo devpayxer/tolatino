@@ -72,19 +72,19 @@ if [ "$PERFIL" = basico ]; then
 else
   # 8g: la cadena de PRUEBA de Wallet (raíz → WWDR de prueba), hecha aquí con openssl en la salida; el servidor confía en esa raíz solo en este proceso.
   PKI="$SALIDA/wal8g/pki"
-  node -e "require('$RAIZ/scripts/wallet-sim/pki.cjs').cadena({ dir: '$PKI', aia: 'http://127.0.0.1:4405/aia/wwdr.der' })"
+  node -e "require('$RAIZ/scripts/wallet-sim/pki.cjs').cadena({ dir: '$PKI', aia: 'http://127.0.0.1:$P_GOOGLE/aia/wwdr.der' })"
   VARS+=(HOSTNAME=0.0.0.0 PASSKEY_RP_ID=localhost PASSKEY_ORIGENES=http://localhost:$PUERTO
-    PUSH_APNS_URL=http://127.0.0.1:4401 PUSH_FCM_URL=http://127.0.0.1:4402 PUSH_FCM_OAUTH_URL=http://127.0.0.1:4402/token PUSH_WEB_HOSTS=127.0.0.1:4403
-    ASC_API_URL=http://127.0.0.1:4404 PASES_APNS_URL=https://127.0.0.1:4406 PASES_GOOGLE_URL=http://127.0.0.1:4405 PASES_GOOGLE_OAUTH_URL=http://127.0.0.1:4405/token
-    PASES_AIA_HOSTS=127.0.0.1:4405 TIENDAS_OIDC_JWKS_URL=http://127.0.0.1:4407/.well-known/jwks TIENDAS_GITHUB_API_URL=http://127.0.0.1:4407
-    PLAY_API_URL=http://127.0.0.1:4408 PLAY_OAUTH_URL=http://127.0.0.1:4408/token NODE_EXTRA_CA_CERTS="$PKI/raiz.pem"
-    CORREO_SNS_HOSTS=127.0.0.1:4409 CORREO_SNS_TEMA=arn:aws:sns:us-east-1:000000000000:tolatino-soporte-pruebas)  # 9l: el certificado de «SNS» lo sirve avi9l en :4409
+    PUSH_APNS_URL=http://127.0.0.1:$P_APNS PUSH_FCM_URL=http://127.0.0.1:$P_FCM PUSH_FCM_OAUTH_URL=http://127.0.0.1:$P_FCM/token PUSH_WEB_HOSTS=127.0.0.1:$P_WEBPUSH
+    ASC_API_URL=http://127.0.0.1:$P_ASC PASES_APNS_URL=https://127.0.0.1:$P_PASES PASES_GOOGLE_URL=http://127.0.0.1:$P_GOOGLE PASES_GOOGLE_OAUTH_URL=http://127.0.0.1:$P_GOOGLE/token
+    PASES_AIA_HOSTS=127.0.0.1:$P_GOOGLE TIENDAS_OIDC_JWKS_URL=http://127.0.0.1:$P_GITHUB/.well-known/jwks TIENDAS_GITHUB_API_URL=http://127.0.0.1:$P_GITHUB
+    PLAY_API_URL=http://127.0.0.1:$P_PLAY PLAY_OAUTH_URL=http://127.0.0.1:$P_PLAY/token NODE_EXTRA_CA_CERTS="$PKI/raiz.pem"
+    CORREO_SNS_HOSTS=127.0.0.1:$P_SNS CORREO_SNS_TEMA=arn:aws:sns:us-east-1:000000000000:tolatino-soporte-pruebas)  # 9l: el certificado de «SNS» lo sirve avi9l en el puerto de ENT.P.sns (4409 por defecto)
 fi
 [ -n "${TRADUCTOR_URL:-}" ] && VARS+=(TRADUCTOR_URL="$TRADUCTOR_URL")
-# 5d: la moderación de imágenes propia (la levanta com5d en :8790 con el venv de recursos.sh; sin ella, las fotos esperan revisión manual).
-VARS+=(MODERACION_IMG_URL="${MODERACION_IMG_URL:-http://127.0.0.1:8790}")
-# C-001: el servicio de video propio (services/video, ffmpeg; lo levanta vid001 en :8791; sin él, subir un video dice «no disponible»).
-VARS+=(VIDEO_URL="${VIDEO_URL:-http://127.0.0.1:8791}")
+# 5d: la moderación de imágenes propia (la levanta com5d en el puerto de ENT.P.moderacion (8790 por defecto) con el venv de recursos.sh; sin ella, las fotos esperan revisión manual).
+VARS+=(MODERACION_IMG_URL="${MODERACION_IMG_URL:-http://127.0.0.1:$P_MODERACION}")
+# C-001: el servicio de video propio (services/video, ffmpeg; lo levanta vid001 en el puerto de ENT.P.video (8791 por defecto); sin él, subir un video dice «no disponible»).
+VARS+=(VIDEO_URL="${VIDEO_URL:-http://127.0.0.1:$P_VIDEO}")
 
 fuser -k "$PUERTO/tcp" >/dev/null 2>&1 || true; sleep 1
 (set -a; . "$SEC"; set +a; unset TRADUCTOR_URL; env "${VARS[@]}" nohup node .next/standalone/apps/web/server.js > "$SALIDA/server.log" 2>&1 &)

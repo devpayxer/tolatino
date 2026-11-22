@@ -53,8 +53,8 @@ const ws = async (metodo, ruta, token, cuerpo, extra = {}) => {
 };
 
 (async () => {
-  const P = PKI.cadena({ dir: S + '/wal8g/pki', aia: 'http://127.0.0.1:4405/aia/wwdr.der' });
-  const sim = await SIM.arrancar({ googlePuerto: 4405, apnsPuerto: 4406, descubrimiento: ENT.rec('walletobjects-v1.json'), tls: { key: P.srv.key, cert: P.srv.cert, ca: P.raiz + P.inter }, interDer: P.interDer });
+  const P = PKI.cadena({ dir: S + '/wal8g/pki', aia: `http://127.0.0.1:${ENT.P.google}/aia/wwdr.der` });
+  const sim = await SIM.arrancar({ googlePuerto: ENT.P.google, apnsPuerto: ENT.P.pases, descubrimiento: ENT.rec('walletobjects-v1.json'), tls: { key: P.srv.key, cert: P.srv.cert, ca: P.raiz + P.inter }, interDer: P.interDer });
   const ADMID = uid(ADM), U1 = uid(C1), U2 = uid(C2);
   const retirar = () => sql(`update store_secrets set retired_at = now(), retired_by = '${ADMID}', retired_reason = 'prueba wal8g' where kind in ('pass_type_cert', 'pass_type_csr', 'google_wallet_sa') and retired_at is null`);
   const limpiar = () => {

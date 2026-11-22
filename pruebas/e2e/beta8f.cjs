@@ -67,7 +67,7 @@ const PUENTE = (o) => `if (window === window.top) {
   // Los casos que esta prueba abre hoy no cuentan para el tope diario de casos de Marisol y Yaritza.
   sql(`set session_replication_role = replica; update support_cases set created_at = created_at - interval '2 days' where user_id in (${U(MARI)}, ${U(YARI)}, ${U(DUENO)}) and created_at > now() - interval '1 day'`);
   const kp = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }), KID = 'ZX9Y8W7V6U', EMISOR = '57246542-96fe-1a63-e053-0824d011072a';
-  const asc = await SIM.arrancar({ puerto: 4404, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
+  const asc = await SIM.arrancar({ puerto: ENT.P.asc, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
   const br = await chromium.launch(), errs = [];
   const pagina = async (k, w, ua, o = {}) => {
     const cx = await br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2, userAgent: ua, locale: 'es-US', acceptDownloads: true });

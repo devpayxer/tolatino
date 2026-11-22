@@ -3,9 +3,9 @@
 // vuelve a codificar en JPEG sin cambiar su medida si es ≤ 1600), para que la prueba de punta a punta (rev9u) elija cada caso:
 //   401 → 0.10 (limpia) · 402 → 0.70 (dudosa) · 403 → 0.95 (clara) · 404 → error 500 (no responde) · 405 → 0.60 (borde: dudosa) ·
 //   406 → 0.85 (borde: clara) · cualquier otro ancho → 0.05
-// Uso: node pruebas/lib/sim-moderacion-img.cjs [puerto]   (8790 por defecto, el de MODERACION_IMG_URL en pruebas/servir/servir.sh)
+// Uso: node pruebas/lib/sim-moderacion-img.cjs [puerto]   (por defecto el de pruebas/lib/puertos.cjs: 8790 con el servidor en :3100, el de MODERACION_IMG_URL en pruebas/servir/servir.sh)
 const http = require('http');
-const PUERTO = Number(process.argv[2] || process.env.PUERTO || 8790);
+const PUERTO = Number(process.argv[2] || process.env.PUERTO || require('./puertos.cjs').resolver().p.moderacion);
 const PUNTAJE = { 401: 0.1, 402: 0.7, 403: 0.95, 405: 0.6, 406: 0.85 };
 function medida(b) {
   let i = 2;

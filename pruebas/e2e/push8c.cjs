@@ -38,7 +38,7 @@ const SHIM = `(() => {
     const k = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
     const pub = b64(await crypto.subtle.exportKey('raw', k.publicKey)), jwk = await crypto.subtle.exportKey('jwk', k.privateKey);
     const auth = b64(crypto.getRandomValues(new Uint8Array(16))), id = (window.__endpointId || 'sus') + Math.random().toString(36).slice(2, 10);
-    const endpoint = window.__endpoint || ('http://127.0.0.1:4403/wp/' + id);
+    const endpoint = window.__endpoint || ('http://127.0.0.1:${ENT.P.webpush}/wp/' + id);
     window.__sub = { id, priv: jwk.d, auth, endpoint };
     sub = { endpoint, expirationTime: null, toJSON: () => ({ endpoint, keys: { p256dh: pub, auth } }), unsubscribe: async () => { sub = null; return true; } };
     return sub;
@@ -77,7 +77,7 @@ const PUENTE = (token) => `if (window === window.top) {
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${U(MARI)} and status = 'pending'`);
   sql(`update delivery_settings set auto_accept=false where business_id='${BIZ}'`);
   sql(`update users set notif_prefs = notif_prefs || '{"quiet": false}'::jsonb - 'ord' where id in (${U(MARI)}, ${U(ADM)})`);
-  const sim = await SIM.arrancar({ apnsPuerto: 4401, fcmPuerto: 4402, webPuerto: 4403, temas: APPS.map((a) => a.ios) });
+  const sim = await SIM.arrancar({ apnsPuerto: ENT.P.apns, fcmPuerto: ENT.P.fcm, webPuerto: ENT.P.webpush, temas: APPS.map((a) => a.ios) });
   const reg = (prov) => sim.registro.filter((x) => x.prov === prov);
   // El headless nuevo de Chromium (channel «chromium»): el viejo no deja mostrar notificaciones.
   const br = await chromium.launch({ channel: 'chromium', args: ['--host-resolver-rules=MAP pruebas.test 127.0.0.1'] }), errs = [];
@@ -339,7 +339,7 @@ const PUENTE = (token) => `if (window === window.top) {
     const MID = sql(`select id from users where phone = '+1${MARI}'`);
     await pa.goto(B + `/admin/usuarios/${MID}?tab=seguridad`); await pa.getByText(/AVISOS PUSH · \d+ VIVOS?/).first().waitFor();
     const tu = await texto(pa);
-    ok(tu.includes('huella …') && !tu.includes(':4403') && !tu.includes('/wp/') && !tu.includes(TOKEN), 'Usuarios 360°: sus teléfonos con avisos enmascarados (huella, nunca el token ni el endpoint)');
+    ok(tu.includes('huella …') && !tu.includes(':' + ENT.P.webpush) && !tu.includes('/wp/') && !tu.includes(TOKEN), 'Usuarios 360°: sus teléfonos con avisos enmascarados (huella, nunca el token ni el endpoint)');
     ok(tu.includes('revocado') && tu.includes('salió de la cuenta') && tu.includes('el proveedor dijo que ya no sirve'), 'con los revocados y su motivo en palabras');
     await pa.screenshot({ path: OUT + 'p8c-admin-u360-push-1360.png', fullPage: true });
     await pa.locator('div', { has: pa.getByText(/^Chrome · Linux · Web$/) }).filter({ has: pa.getByText('Revocar', { exact: true }) }).last().getByText('Revocar', { exact: true }).click();

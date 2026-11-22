@@ -166,9 +166,9 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
     if (!fs.existsSync(pki + '/cert.pem')) execSync(`openssl req -x509 -newkey rsa:2048 -nodes -keyout ${pki}/key.pem -out ${pki}/cert.pem -days 30 -subj /CN=sns.us-east-1.amazonaws.com`, { stdio: 'ignore' });
     const llaveSns = c.createPrivateKey(fs.readFileSync(pki + '/key.pem')), certPem = fs.readFileSync(pki + '/cert.pem');
     const srv = http.createServer((q, r) => { r.setHeader('content-type', 'application/x-pem-file'); r.end(certPem); });
-    await new Promise((r) => srv.listen(4409, '127.0.0.1', r));
+    await new Promise((r) => srv.listen(ENT.P.sns, '127.0.0.1', r));
     abiertas.push({ close: () => new Promise((r) => srv.close(r)) });
-    const CERT = 'http://127.0.0.1:4409/SimpleNotificationService-prueba.pem';
+    const CERT = `http://127.0.0.1:${ENT.P.sns}/SimpleNotificationService-prueba.pem`;
     const cadena = (m) => ['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type'].filter((k) => m[k] != null).map((k) => `${k}\n${m[k]}\n`).join('');
     const sns = (aviso, o = {}) => {
       const m = { Type: 'Notification', MessageId: c.randomUUID(), TopicArn: o.tema ?? tema, Subject: 'Amazon SES Email Receipt Notification', Message: JSON.stringify(aviso), Timestamp: new Date().toISOString(), SignatureVersion: '2', SigningCertURL: CERT };
