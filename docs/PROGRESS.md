@@ -20,6 +20,20 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (23:10 UTC) · `main` = `pruebas` = 528a6c3, sandbox comprobado por la herramienta de subida.** Servido desde las 18:15 (dos tandas de
+  encargos, cada uno con su base y su puerto): fotos privadas fuera de destinos públicos · «Descargar mis datos» en flujo y notas de 9u-2 · caché de
+  Configuración con generación y una sola escucha (fila nueva en Sistema › Salud) · variantes de las privadas de Mensajes, ayuda, entrega y reclamo ·
+  dinero (0209: «Devolver otra vez», espera de 10 min tras un envío, alerta de patrocinio) · **toque de «Llamar»** (bandeja de salida con reintento;
+  `/api/toque`; candado; «entraron» de patrocinio por la misma vía): visto en WebKit, iPhone SE e iPad, CI 45078878395 · fotos (0210: índice y barrido
+  de variantes viejas, cifras como derivado, purgado = 404) · fotos todo o nada en galería, portada, equipo y eventos · `sql9u` prepara 5.720 consultas.
+  **En curso (3 encargos):** K toque único por id + check de `support_messages` (0211) · L `logoPoner` todo o nada + archivo ausente = 404 · M tope de
+  subidas a la vez + memoria al armar el archivo de datos. **Roja nueva en `anchos` (iPad):** `tarAK` «el nombre larguísimo se corta con elipsis, en
+  una línea y dentro de la tarjeta» (es de la Vitrina; estaba tapada porque la prueba fallaba antes en el toque): anotar en LAUNCH con la siguiente
+  subida. **Lecciones de hoy:** el disco se llena con 4 builds a la vez (quitar copias de trabajo ya unidas; cada encargo borra su `.next`); nadie
+  borra `/tmp/tolatino-alreves-ref-*` con comodín; un `pkill` del hijo no para un bucle de espera en segundo plano; en el trabajo `anchos` no se
+  mandan suites al revés en `solo`; antes de mover código a un archivo de dinero, `grep -rl` de quién lo carga en `pruebas/`.
+  Quién hizo qué: Opus escribió A, B, C, D, E, F, G y H; Sonnet I, J y el puerto; Haiku la ayuda de fotos; Fable planeó, revisó (migraciones 0209 y
+  0210 incluidas), corrió las comprobaciones y subió.
 - **22 nov (18:15 UTC) · `main` = `pruebas` = 1918d33, sandbox comprobado por la herramienta de subida.** Hecho desde las 16:10: LAUNCH (la
   confirmación 45033884173 cerró tres líneas); la programada en su propio grupo (dd969b0: ocupó la cola de `main` 90 min y canceló la confirmación de
   788d03a; ya no puede); **el puerto de las pruebas**: ninguna prueba lleva `localhost:3100` escrito, manda `PRUEBAS_URL` y la cuenta vive en

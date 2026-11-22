@@ -6242,3 +6242,15 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   enviadas el 22 nov.
 - **Decide tú (se construyó lo más seguro):** (1) la espera es de 10 minutos; (2) si la de otra vez también falla, la alerta de antes se reabre a
   nombre de quien la pidió; (3) si el cobro ya no alcanza no se devuelve un monto parcial: se resuelve con la persona.
+
+## Lo que falta para abrir · segunda tanda (22 nov, servido en 528a6c3)
+- **Llamar en iPhone y iPad (ya firme):** el toque se anota en el teléfono y se reintenta hasta que el servidor confirma; cuenta una sola vez. Visto en
+  el CI con el navegador de iPhone SE e iPad. Qué mirar en un iPhone real: toca Llamar en una tarjeta, cancela el diálogo, y en el panel del negocio
+  Estadísticas › contactos sube 1 (una vez cada 10 minutos por persona). Lo mismo con una tarjeta patrocinada y su cifra «Entraron».
+- **Super Admin › Contenido › Auto-moderación:** las cifras de fotos se rehacen cada 10 minutos (la pantalla abre al instante) y «Privadas» incluye
+  ahora Mensajes, ayuda, entrega y reclamo.
+- **Panel › Tu página › Fotos, Equipo y eventos:** si una foto no se puede usar sale «Una de las fotos ya no está. Súbela otra vez.» (o «Esa foto no
+  existe.») y no se guarda nada a medias. Captura enviada el 22 nov.
+- **«Descargar mis datos»:** ya no trae el texto de búsqueda de la puerta de un boleto (incluía el nombre que escribió el negocio) ni una ruta interna.
+- **Pendiente que verás en rojo en la corrida nocturna:** en iPad, un nombre de negocio larguísimo no se corta con puntos suspensivos dentro de la
+  tarjeta. Es de la tarjeta Vitrina (su segunda ronda está parada hasta que digas).
