@@ -2365,7 +2365,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       **Hecho en parte (21 nov, Fable, bf3937c):** `pruebas/e2e/sql9u.cjs` pasa por `PREPARE` (analiza y pone tipos, sin ejecutar) las **4857
       consultas fijas** que se dan a `.query(` contra la base de pruebas; `alreves9usql` 4/4. En su primera pasada cazó otra viva: **«Mi casa»
       reventaba al guardar otra vez una casa en la misma dirección** (`guardarCasa`: un update con 15 valores que no usaba `$1` ni `$2`),
-      arreglada. **Queda:** (a) las **837 consultas armadas con `${…}`** no entran (hay que prepararlas con sus trozos resueltos, o anotar en el
+      arreglada. **Ampliada (22 nov):** también entran las que se arman SOLO con constantes de texto o números fijos (del mismo archivo, importadas o
+      con otro nombre) y las que se pasan enteras por su nombre: **5094 consultas** (237 de esas), todas preparan; `alreves9usql` 6/6.
+      **Queda:** (a) **613 consultas armadas con algo que se decide al correr** no entran (hay que anotar en el
       servidor de pruebas las que de verdad se ejecutan y listar las que nunca); (b) **hecho (21 nov, Sonnet; Fable lo corrió):** `fi4b` guarda
       otra vez «Mi casa» en la misma dirección por la interfaz («Cambiar» → «Agregar otra casa» con una dirección que ya tiene casa: la interfaz
       no edita en sitio) y comprueba una sola fila, la misma `id`, los datos nuevos y `is_default`; 18 ✓ dos veces. «Mi vehículo» no tiene camino
