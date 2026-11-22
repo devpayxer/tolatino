@@ -1,5 +1,5 @@
 import "server-only";
-import { alCambiarConfig } from "./cambios-config";
+import { cacheConAviso } from "./cache-aviso";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { sinBloqueo, sinBloqueos } from "./comunidad";
@@ -32,18 +32,16 @@ const fecha = (iso: string | null, es: boolean) => iso ? new Date(iso).toLocaleD
 
 /* ── Reglas ── */
 export type Reglas = Record<ReglaKey, { on: boolean; p: Record<string, number> }>;
-let cacheR: { at: number; r: Reglas } | null = null;
-let escucha = false;
-export async function reglasMod(c: Q = db()): Promise<Reglas> {
-  if (!escucha) { escucha = true; alCambiarConfig(olvidarReglas); }
-  if (cacheR && Date.now() - cacheR.at < 15_000) return cacheR.r;
+/* Reglas (15 s) y términos (30 s): copias que el aviso de la base olvida al momento, con la generación de lib/cache-aviso.ts. Se leen con la conexión de
+   quien llama (puede ser su transacción); la copia es una sola. */
+const REGLAS = cacheConAviso({ ttlMs: 15_000, cargar: async (c: Q): Promise<Reglas> => {
   const r = (await c.query<{ key: ReglaKey; enabled: boolean; params: Record<string, number> }>(`select key, enabled, params from mod_rules`)).rows;
   const out = Object.fromEntries(r.map((x) => [x.key, { on: x.enabled, p: x.params ?? {} }])) as Reglas;
   for (const k of ["phone", "pii", "spam", "hate", "rev5", "img", "autohide", "foto1", "foto2", "foto3", "foto4"] as ReglaKey[]) out[k] ??= { on: true, p: {} };
-  cacheR = { at: Date.now(), r: out };
   return out;
-}
-export const olvidarReglas = () => { cacheR = null; cacheT = null; };
+} });
+export const reglasMod = (c: Q = db()): Promise<Reglas> => REGLAS.leer(c);
+export const olvidarReglas = () => { REGLAS.olvidar(); TERMINOS.olvidar(); };
 
 /* ── Límites del día ── */
 const CONTAR: Record<Limite, string> = {
@@ -111,16 +109,12 @@ export async function marcar(c: Q, m: Marca): Promise<string | null> {
 
 /* ── Revisar al escribir (marca; nunca oculta sola) ── */
 type Termino = { kind: "odio" | "estafa" | "migra" | "autolesion"; re: RegExp; term: string };
-let cacheT: { at: number; t: Termino[] } | null = null;
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-async function terminos(c: Q): Promise<Termino[]> {
-  if (!escucha) { escucha = true; alCambiarConfig(olvidarReglas); }
-  if (cacheT && Date.now() - cacheT.at < 30_000) return cacheT.t;
+const TERMINOS = cacheConAviso({ ttlMs: 30_000, cargar: async (c: Q): Promise<Termino[]> => {
   const r = (await c.query<{ kind: Termino["kind"]; term: string }>(`select kind, term from mod_terms where enabled`)).rows;
-  const t = r.map((x) => ({ kind: x.kind, term: x.term, re: new RegExp(`(^|[^a-z0-9])${norm(x.term).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")}($|[^a-z0-9])`) }));
-  cacheT = { at: Date.now(), t };
-  return t;
-}
+  return r.map((x) => ({ kind: x.kind, term: x.term, re: new RegExp(`(^|[^a-z0-9])${norm(x.term).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")}($|[^a-z0-9])`) }));
+} });
+const terminos = (c: Q): Promise<Termino[]> => TERMINOS.leer(c);
 /* Una placa de Pensilvania (ABC-1234) o «vive en / lives on …»: señal de dónde vive alguien → una persona revisa. */
 const PLACA = /\b[A-Z]{3}[-\s]?\d{4}\b/;
 const VIVE = /\b(vive|viven|vivo|lives|live)\s+(en|on|at)\s+(la|el|the)?\s*[\wÁÉÍÓÚÑáéíóúñ'.-]+/i;

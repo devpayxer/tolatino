@@ -8341,7 +8341,51 @@ const guardianes = {
       if (!/Date\.now\(\)\s*-\s*\w+\.at\s*[<>]/.test(t)) continue;           // una copia con hora
       const lee = TABLAS.filter((x) => new RegExp(`\\bfrom ${x}\\b`).test(t));
       if (!lee.length) continue;
-      if (!/alCambiarConfig\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida al cambiar (alCambiarConfig de lib/cambios-config.ts)`);
+      // 22 nov · cacheConAviso (lib/cache-aviso.ts) se registra con alCambiarConfig ella misma (guardián cacheConGeneracion).
+      if (!/alCambiarConfig\(|cacheConAviso\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida al cambiar (alCambiarConfig de lib/cambios-config.ts)`);
+    }
+  },
+
+  /* 22 nov (LAUNCH «Caché de Configuración, del producto») · cacheConGeneracion: una copia en la memoria del proceso de lo que la base avisa (NOTIFY tl_config o
+     ciudades) se guarda SOLO con lib/cache-aviso.ts (cacheConAviso), que lleva la generación: una lectura que salió antes de un cambio y vuelve después del
+     aviso no guarda lo viejo (se servía viejo hasta 15–60 s; pruebas/e2e/cachegen9t.cjs lo reproduce con el orden controlado). (1) El ayudante: el aviso y
+     olvidar() suben la generación; quien vuelve solo guarda (y solo pone con alGuardar) si la generación es la misma con la que salió; lo que se junta es
+     de la misma generación. (2) Nadie más llama a alCambiarConfig (una copia que se registra a mano vuelve a tener la carrera). (3) En apps/web/lib ninguna
+     copia con hora a mano (Date.now() − x.at) en una función que lee una tabla que avisa (las saca de las migraciones: los disparadores de config_avisar y
+     ciudades_avisar). Al revés: alrevesCacheGen. */
+  cacheConGeneracion() {
+    const G = "cacheConGeneracion", H = "apps/web/lib/cache-aviso.ts", CC = "apps/web/lib/cambios-config.ts";
+    for (const f of [H, CC]) if (!existsSync(f)) return falla(G, f, 0, "falta (las copias que se olvidan por aviso)");
+    // (1) El ayudante.
+    const h = sinComent(H);
+    if (!/const olvidar = \(\) => \{ gen\+\+; copias\.clear\(\); enVuelo\.clear\(\); \};/.test(h)) falla(G, H, 0, "olvidar() (el aviso o la escritura del propio proceso) sube la generación y vacía las copias y lo que está en vuelo");
+    const traer = (h.match(/\n {2}async function traer\([\s\S]*?\n {2}\}/) ?? [""])[0];
+    if (!/const g = gen;[\s\S]*await o\.cargar\(/.test(traer)) falla(G, H, 0, "quien va a la base anota la generación con la que SALE (antes de la consulta)");
+    if (!/if \(g === gen\) \{ copias\.set\(k, \{ hasta: Date\.now\(\) \+ ms, v \}\); o\.alGuardar\?\.\(v\); \}/.test(traer) || (traer.match(/copias\.set\(|alGuardar/g) ?? []).length !== 2)
+      falla(G, H, 0, "quien vuelve de la base solo guarda (y solo pone con alGuardar) si la generación es la misma con la que salió: si llegó un aviso, lo viejo no se guarda");
+    if (!/if \(x && x\.gen === gen\) return x\.p;/.test(h)) falla(G, H, 0, "juntar: una lectura solo se junta con la que salió en su MISMA generación (después de un aviso, no con la de antes)");
+    if (!/alCambiarConfig\(\(\) => \{ olvidar\(\);/.test(h)) falla(G, H, 0, "cada copia se registra con alCambiarConfig y el aviso la olvida (sube la generación)");
+    // (2) Nadie más se registra a mano.
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === H || f === CC) continue;
+      if (/\balCambiarConfig\b/.test(sinComent(f))) falla(G, f, 0, "registra su copia con alCambiarConfig a mano: usa cacheConAviso (lib/cache-aviso.ts), que lleva la generación (si no, una lectura en vuelo deja el valor viejo)");
+    }
+    // (3) Ninguna copia con hora a mano de una tabla que avisa.
+    const fns = new Set(), tablas = new Set();
+    const migs = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8"));
+    for (const m of migs) for (const x of m.matchAll(/create or replace function (\w+)\(\) returns trigger[\s\S]*?\$\$([\s\S]*?)\$\$/g)) if (/pg_notify\('(tl_config|ciudades)'/.test(x[2])) fns.add(x[1]);
+    for (const m of migs) for (const x of m.matchAll(/create trigger \w+ after [\w ]+ on (\w+) for each statement execute function (\w+)\(\)/g)) if (fns.has(x[2])) tablas.add(x[1]);
+    if (tablas.size < 10) falla(G, "packages/db/migrations", 0, `no encontré las tablas que avisan (config_avisar, ciudades_avisar): ${[...tablas].join(", ") || "ninguna"}`);
+    const lee = new RegExp(`\\b(?:from|join) (?:${[...tablas].join("|")})\\b`);
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/.*\.ts$/.test(f) || f === H || f === CC) continue;
+      const t = sinComent(f);
+      for (const x of t.matchAll(/Date\.now\(\)\s*-\s*[\w.]+\.at\s*[<>]/g)) {
+        const ini = Math.max(t.lastIndexOf("\nexport ", x.index), t.lastIndexOf("\nasync function ", x.index), t.lastIndexOf("\nfunction ", x.index), t.lastIndexOf("\nconst ", x.index), t.lastIndexOf("\nlet ", x.index));
+        const fin = t.indexOf("\n}", x.index), trozo = t.slice(Math.max(0, ini), fin < 0 ? undefined : fin);
+        const tb = lee.exec(trozo)?.[0];
+        if (tb) falla(G, f, t.slice(0, x.index).split("\n").length, `una copia con hora hecha a mano de lo que la base avisa («${tb}»): usa cacheConAviso (lib/cache-aviso.ts), con la generación`);
+      }
     }
   },
 
@@ -8972,15 +9016,18 @@ const guardianes = {
       if (/__tlEdicionesE2/.test(sinComent(f))) falla(G, f, 0, "el mapa de lo editado (globalThis.__tlEdicionesE2) solo lo toca lib/dos-idiomas.ts (ponerEdicionesE2)");
     }
     // (2) El servidor: solo lo editado y vivo, con el aviso de la base.
-    const c = sinComent(CMSF), ed = (c.match(/export async function edicionesE2\(\)[\s\S]*?\n\}/) ?? [""])[0];
-    if (!ed) falla(G, CMSF, 0, "falta edicionesE2() en lib/cms.ts");
+    // 22 nov · La copia es la de lib/cache-aviso.ts (EDICIONES = cacheConAviso, con la generación que cierra la carrera de una lectura en vuelo):
+    // lo que se mira es su definición más el cuerpo de edicionesE2.
+    const c = sinComent(CMSF), fnE2 = (c.match(/export async function edicionesE2\(\)[\s\S]*?\n\}/) ?? [""])[0];
+    const def = (c.match(/\nconst EDICIONES = cacheConAviso\(\{[\s\S]*?(?=\nexport async function edicionesE2\(\))/) ?? [""])[0], ed = def + fnE2;
+    if (!fnE2 || !def) falla(G, CMSF, 0, "falta edicionesE2() en lib/cms.ts (con su copia EDICIONES = cacheConAviso)");
     else {
       if (!/from cms_strings where edited and status = 'vivo' and id ~ '\\\\\.e2-\[0-9a-f\]\{12\}\$'/.test(ed)) falla(G, CMSF, 0, "edicionesE2 lee SOLO lo editado y vivo de las cadenas de E2 (nada de lo que no se editó viaja al navegador)");
-      if (!/ponerEdicionesE2\(v, l\)/.test(ed)) falla(G, CMSF, 0, "edicionesE2 pone lo leído en dosIdiomas (ponerEdicionesE2)");
-      if (!/catch \{\s*l = \[\];/.test(ed)) falla(G, CMSF, 0, "si la base no responde, edicionesE2 deja el texto del código (lista vacía)");
-      if (!/NEXT_PHASE === "phase-production-build"\) return \{ v: "", l: \[\] \}/.test(ed)) falla(G, CMSF, 0, "edicionesE2 no va a la base durante el build");
+      if (!/alGuardar: \(\{ v, l \}\) => ponerEdicionesE2\(v, l\)/.test(ed)) falla(G, CMSF, 0, "edicionesE2 pone lo leído en dosIdiomas (ponerEdicionesE2)");
+      if (!/siFalla: \(\)(?:: \w+)? => \(\{ v: "", l: \[\] \}\)/.test(ed)) falla(G, CMSF, 0, "si la base no responde, edicionesE2 deja el texto del código (lista vacía)");
+      if (!/NEXT_PHASE === "phase-production-build"\) return \{ v: "", l: \[\] \}/.test(fnE2) || !/return EDICIONES\.leer\(\);/.test(fnE2)) falla(G, CMSF, 0, "edicionesE2 no va a la base durante el build");
     }
-    if (!/alCambiarConfig\(\(\) => \{ cache = null; e2 = null; void edicionesE2\(\); \}\)/.test(c)) falla(G, CMSF, 0, "el aviso de la base (NOTIFY) vuelve a leer lo editado de las pantallas al momento");
+    if (!/\breleer: true\b/.test(def)) falla(G, CMSF, 0, "el aviso de la base (NOTIFY) vuelve a leer lo editado de las pantallas al momento");
     // (3) El layout raíz y EdicionesE2.
     const l = sinComent(LAY);
     if (!/export default async function RootLayout[\s\S]*?const ed = await edicionesE2\(\);/.test(l)) falla(G, LAY, 0, "el layout raíz espera lo editado (edicionesE2) antes de pintar");
@@ -9793,10 +9840,11 @@ const guardianes = {
       const t = sinComent(f);
       if (!/Date\.now\(\)\s*-\s*\w+\.at\s*[<>]/.test(t)) continue;
       const lee = ["cities", "zones", "city_beta_invites"].filter((x) => new RegExp(`\\b(from|join) ${x}\\b`).test(t));
-      if (lee.length && !/alCambiarConfig\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida con NOTIFY 'ciudades' (alCambiarConfig)`);
+      if (lee.length && !/alCambiarConfig\(|cacheConAviso\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida con NOTIFY 'ciudades' (alCambiarConfig)`);
     }
     const u = sinComent(U);
-    const ms = /Date\.now\(\) - cache\.at < (\d[\d_]*)/.exec(u)?.[1];
+    // 22 nov · La copia de las ciudades es una cacheConAviso (lib/cache-aviso.ts): su ttlMs.
+    const ms = /const CIUDADES = cacheConAviso\(\{ ttlMs: (\d[\d_]*)/.exec(u)?.[1];
     if (!ms || Number(ms.replace(/_/g, "")) > 60000) falla(G, U, 0, "la copia de las ciudades dura a lo más 60 s de respaldo (el NOTIFY la olvida antes)");
     const v = cuerpoFn(u, "vista");
     if (!/ciudad_abierta_para\(id, \$1::uuid\)/.test(v) || /\bcache\b|=\s*new Map\(/.test(v)) falla(G, U, 0, "quién entra a una ciudad en beta se pregunta en cada visita (vista), sin guardarlo en memoria");

@@ -1,5 +1,5 @@
 import "server-only";
-import { alCambiarConfig } from "./cambios-config";
+import { cacheConAviso } from "./cache-aviso";
 import { db } from "./db";
 import type { Lang } from "./idioma";
 
@@ -27,20 +27,13 @@ export function normalizarBloques(guardado: unknown): { key: BloqueHome; on: boo
 export const porDefecto = (): HomeCfg => ({ aviso: null, bloques: normalizarBloques([]) });
 
 const TTL_MS = 15_000;
-const cache = new Map<string, { at: number; v: HomeCfg }>();
-let escucha = false;
-export async function homeConfig(ciudad: string): Promise<HomeCfg> {
-  if (!escucha) { escucha = true; alCambiarConfig(() => cache.clear()); }
-  const c = cache.get(ciudad);
-  if (c && Date.now() - c.at < TTL_MS) return c.v;
-  let v = porDefecto(), ok = true;
-  try {
+/* Copia de 15 s por ciudad que la base olvida por NOTIFY (con la generación de lib/cache-aviso.ts). Sin respuesta de la base: lo de fábrica, 2 s. */
+const HOME = cacheConAviso({ ttlMs: TTL_MS, clave: (ciudad: string) => ciudad, siFalla: () => porDefecto(),
+  cargar: async (ciudad: string): Promise<HomeCfg> => {
     const r = await db().query<{ notice: Par | null; blocks: unknown }>(`select notice, blocks from city_home_config where city_id = $1`, [ciudad]);
-    if (r.rows[0]) v = { aviso: r.rows[0].notice, bloques: normalizarBloques(r.rows[0].blocks) };
-  } catch { ok = false; }
-  cache.set(ciudad, { at: ok ? Date.now() : Date.now() - TTL_MS + 2_000, v });
-  return v;
-}
+    return r.rows[0] ? { aviso: r.rows[0].notice, bloques: normalizarBloques(r.rows[0].blocks) } : porDefecto();
+  } });
+export const homeConfig = (ciudad: string): Promise<HomeCfg> => HOME.leer(ciudad);
 
 /* Los anuncios vivos ahora (dentro de sus fechas y sin retirar) para quien mira: «vecinos» solo con cuenta. Máximo 2, el más nuevo primero. */
 export async function anunciosVivos(ciudad: string, conSesion: boolean, lang: Lang): Promise<Anuncio[]> {
@@ -54,12 +47,6 @@ export async function anunciosVivos(ciudad: string, conSesion: boolean, lang: La
 
 /* El pie de la web en todas las páginas (feature_flags «web.pie_todas»; apagado hasta que el fundador apruebe las capturas nuevas): copia de 15 s que la base
    vacía por NOTIFY. Sin respuesta de la base, apagado. */
-let pie: { at: number; v: boolean } | null = null, escuchaPie = false;
-export async function pieEnTodas(): Promise<boolean> {
-  if (!escuchaPie) { escuchaPie = true; alCambiarConfig(() => { pie = null; }); }
-  if (pie && Date.now() - pie.at < TTL_MS) return pie.v;
-  let v = false, ok = true;
-  try { v = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'web.pie_todas'`)).rows[0]?.enabled === true; } catch { ok = false; }
-  pie = { at: ok ? Date.now() : Date.now() - TTL_MS + 2_000, v };
-  return v;
-}
+const PIE = cacheConAviso({ ttlMs: TTL_MS, siFalla: () => false,
+  cargar: async () => (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'web.pie_todas'`)).rows[0]?.enabled === true });
+export const pieEnTodas = (): Promise<boolean> => PIE.leer();

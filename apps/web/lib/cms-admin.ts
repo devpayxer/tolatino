@@ -1,6 +1,6 @@
 import "server-only";
 import { auditar, type Staff } from "./admin";
-import { alCambiarConfig } from "./cambios-config";
+import { cacheConAviso } from "./cache-aviso";
 import { BLOQUES, normalizarBloques, type BloqueHome } from "./cms-home";
 import { db, tx } from "./db";
 import { olvidarCadenas } from "./cms";
@@ -32,15 +32,12 @@ function lugares(): Promise<Map<string, { n: number; donde: string[] }>> {
   lugaresE2 ??= import("./cms-cadenas-e2.json").then((m) => new Map(((m.default ?? m) as unknown as CatE2).cadenas.map((c) => [c.id, { n: c.n, donde: c.donde }])));
   return lugaresE2;
 }
-let huerfanas: { at: number; ids: string[] } | null = null, escuchaHuerfanas = false;
-async function sinCodigo(): Promise<string[]> {
-  // Copia de 60 s que el aviso de la base olvida al momento (un despliegue que indexa cadenas nuevas avisa por cms_strings_avisa).
-  if (!escuchaHuerfanas) { escuchaHuerfanas = true; alCambiarConfig(() => { huerfanas = null; }); }
-  if (huerfanas && Date.now() - huerfanas.at < 60_000) return huerfanas.ids;
+/* Copia de 60 s que el aviso de la base olvida al momento (un despliegue que indexa cadenas nuevas avisa por cms_strings_avisa; lib/cache-aviso.ts). */
+const HUERFANAS = cacheConAviso({ ttlMs: 60_000, cargar: async () => {
   const L = await lugares(), r = await db().query<{ id: string }>(`select id from cms_strings where id ~ '\\.e2-[0-9a-f]{12}$'`);
-  huerfanas = { at: Date.now(), ids: r.rows.map((x) => x.id).filter((id) => !L.has(id)) };
-  return huerfanas.ids;
-}
+  return r.rows.map((x) => x.id).filter((id) => !L.has(id));
+} });
+const sinCodigo = (): Promise<string[]> => HUERFANAS.leer();
 export type CadenaAdm = {
   id: string; screen: string; es: string; en: string; code_es: string; code_en: string; status: "borrador" | "vivo"; en_state: "pendiente" | "traducido" | "revisado";
   max_len: number; locked: boolean; edited: boolean; version: number; updated_at: string; quien: string | null;
