@@ -42,6 +42,15 @@ export function SistemaSalud({ d, l, editar }: { d: DatosSalud; l: L; editar: bo
     key: s.service, icon: s.ok === false ? "warning" : s.ok ? "check" : "clock", ibg: s.ok === false ? "rgba(138,90,0,.12)" : "rgba(0,168,143,.12)", t: E(SERV[s.service][0], SERV[s.service][1]),
     s: s.at ? `${s.detail ?? ""} · ${cuando(s.at)}${s.caidas24 ? ` · ${s.caidas24} ${E("fallos en 24 h", "failures in 24 h")}` : ""}` : E("Todavía sin medir: el barrido lo mide cada 5 minutos.", "Not measured yet: the sweep measures it every 5 minutes."),
     tag: s.ok == null ? E("SIN DATOS", "NO DATA") : s.ok ? E("BIEN", "HEALTHY") : E("REVISAR", "CHECK"), tone: s.ok == null ? "neutral" : s.ok ? "signal" : "danger" })) });
+  // 22 nov · La escucha de los cambios de este proceso (NOTIFY tl_config y ciudades; una por proceso, lib/cambios-config.ts). Viva: lo que se cambia en el
+  // Super Admin se ve al momento. Caída: tarda hasta que vence la copia (15 s; 60 s las ciudades) mientras se reconecta cada 5 s.
+  const ce = d.escucha;
+  B.push({ type: "rows", k: E("CAMBIOS AL INSTANTE · ESTE PROCESO", "INSTANT CHANGES · THIS PROCESS"), items: [{ key: "escucha", icon: ce.viva ? "check" : "warning",
+    ibg: ce.viva ? "rgba(0,168,143,.12)" : "rgba(138,90,0,.12)", t: E("Escucha de los cambios de Configuración", "Settings change listener"),
+    s: ce.viva && ce.desde
+      ? `${E("Viva desde", "Live since")} ${cuando(ce.desde)} · ${ce.ultimoAviso ? `${E("último aviso", "last notice")} ${cuando(ce.ultimoAviso)} · ${ce.avisos} ${E("avisos", "notices")}` : E("sin avisos todavía", "no notices yet")}${ce.caidas ? ` · ${ce.caidas} ${E("caídas", "drops")}` : ""}`
+      : E("Sin escucha: un cambio tarda hasta 15 s en verse (60 s las ciudades). Se vuelve a conectar cada 5 s.", "Not listening: a change takes up to 15 s to show (60 s for cities). It reconnects every 5 s."),
+    tag: ce.viva ? E("VIVA", "LIVE") : E("REVISAR", "CHECK"), tone: ce.viva ? "signal" : "danger" }] });
   // 9j-2 · Web Vitals de teléfonos reales (RUM): por pantalla y perfil, % de mediciones buenas de LCP, INP y CLS en 7 días. Bien si ≥ 75 % buenas
   // (el criterio de Google); revisar si más de 25 % malas. Sin personas: solo cifras por ruta y día (web_vitals_dia).
   if (d.vitales) {

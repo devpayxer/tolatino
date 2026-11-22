@@ -13,7 +13,7 @@ const casos = [
   // la pantalla que no pregunta a nuestra API, el mapa sin teselas propias, la carga contra un servicio
   ['direccionSinTerceros', D, 'export async function sugerir(', 'export const GEO = "https://maps.googleapis.com/maps/api/geocode/json";\nexport async function sugerir('],
   ['direccionSinTerceros', MA, 'import { tec } from "@/lib/tec";', 'import { tec } from "@/lib/tec";\nexport const TESELA_MB = "https://api.mapbox.com/styles/v1/x/tiles/{z}/{x}/{y}";'],
-  ['direccionSinTerceros', MA, 'void registrarToque(b.id, "directions", "mapa"); abrirComoLlegar(', 'void registrarToque(b.id, "directions", "mapa"); window.open(`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`); abrirComoLlegar('],
+  ['direccionSinTerceros', MA, 'contarToque(b.id, "directions", "mapa"); abrirComoLlegar(', 'contarToque(b.id, "directions", "mapa"); window.open(`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`); abrirComoLlegar('],
   ['direccionSinTerceros', CL, 'if (/iPhone|iPad|iPod/.test(ua)) return `maps://?daddr=', 'if (/iPhone|iPad|iPod/.test(ua)) return `https://maps.apple.com/?daddr='],
   ['direccionSinTerceros', D, '  return tx(async (c) => {\n    await c.query(`set local statement_timeout = ${TOPE_MS}`);\n    const r = await c.query<Sugerencia>(', '  void fetch("https://api.geoapify.com/v1/geocode/autocomplete");\n  return tx(async (c) => {\n    await c.query(`set local statement_timeout = ${TOPE_MS}`);\n    const r = await c.query<Sugerencia>('],
   ['direccionSinTerceros', DC, 'const r = await fetch(`/api/direcciones?${p}`', 'const r = await fetch(`https://photon.komoot.io/api/?${p}`'],

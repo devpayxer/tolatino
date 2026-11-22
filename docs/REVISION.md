@@ -6214,3 +6214,21 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   36, dominio/Cloudflare 22, SMS 18, proveedor de producción 17, Stripe 9, otros), 38 una decisión tuya, 25 son construibles ya (unos 20 trabajos
   reales), 10 parecen hechas y falta cerrarlas, 7 son de después de abrir. Clasificación de Sonnet con muestra comprobada por Fable; falta la
   comprobación línea por línea antes de cerrar nada.
+
+## Lo que falta para abrir y depende de nosotros · primera tanda (22 nov)
+Nada de esto cambia lo que ves, salvo una fila nueva en el Super Admin. Lo que conviene mirar, en orden:
+- **Sistema › Salud (teléfono y escritorio):** fila nueva «Cambios al instante · este proceso» → «Escucha de los cambios de Configuración», con la
+  etiqueta VIVA, desde cuándo y el último aviso. Guarda cualquier cosa en Configuración y recarga Salud: «último aviso» tiene que moverse.
+- **Llamar en iPhone y iPad:** antes, en Safari, tocar «Llamar» (o «Cómo llegar», «Compartir», «Escribir») abría el teléfono pero el toque no se
+  contaba en las cifras del negocio. Ahora se cuenta. En un iPhone: toca Llamar en la tarjeta de un negocio de prueba y en su ficha; en su panel,
+  Estadísticas › contactos sube 1 (una vez cada 10 minutos por persona). Falta lo mismo para las entradas a Patrocinados (anotado en LAUNCH).
+- **Fotos privadas:** la foto de una ayuda de Salud o Pro ya no puede entrar en la galería, el perfil, el logo, el equipo, novedades, Comunidad,
+  eventos ni reseñas, ni mandándola a mano. Nada cambia en pantalla.
+- **«Descargar mis datos»:** el archivo se baja igual; ya no carga la memoria del servidor (un archivo de 51,6 MB pedía 236 MB; ahora nada).
+  Con la página de un negocio oculta, el dueño ve el motivo en Tu página y en Hoy, como antes; en las demás secciones ya no viaja al navegador.
+  El archivo del negocio ya no dice qué cuenta del equipo ocultó un plato.
+- **Configuración al instante:** un cambio guardado justo mientras alguien cargaba una página podía dejar el valor viejo hasta 15 segundos
+  (60 en ciudades). Ya no. Eran 15 copias en memoria con el mismo fallo; todas usan ahora una sola pieza.
+- **Dos decisiones tuyas que salieron de aquí (sin prisa):** (1) galería, portada, equipo y eventos ignoran en silencio una foto que no pueden
+  adjuntar: ¿que digan «Esa foto no se puede usar aquí»? (lo construyo así si no dices otra cosa); (2) el archivo de la persona trae el nombre del
+  portero que escaneó su boleto: ¿se quita? (lo quito si no dices otra cosa: es el nombre de otra persona).

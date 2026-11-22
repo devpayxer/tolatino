@@ -1,6 +1,6 @@
 import "server-only";
-import { alCambiarConfig } from "./cambios-config";
 import { auditar } from "./admin";
+import { cacheConAviso } from "./cache-aviso";
 import { db, tx } from "./db";
 
 /* 5i · Configuración global (fase5-comunidad.md §2 0105 y §4 5i; hueco #10). ÚNICO lugar de la app que lee o escribe un valor
@@ -114,18 +114,11 @@ export type ClaveConfig =
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
-let cache: { at: number; m: Map<string, number> } | null = null;
-
-let escucha = false;
-async function mapa(): Promise<Map<string, number>> {
-  // 9b-3: cada cambio en la base la olvida al momento en todos los procesos (lib/cambios-config.ts); los 15 s son el respaldo.
-  if (!escucha) { escucha = true; alCambiarConfig(olvidarConfig); }
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.m;
-  const r = await db().query<{ key: string; v: number }>(`select key, cfg_int(key) as v from config_keys`);
-  cache = { at: Date.now(), m: new Map(r.rows.map((x) => [x.key, x.v])) };
-  return cache.m;
-}
-export function olvidarConfig() { cache = null; }
+/* 9b-3: cada cambio en la base la olvida al momento en todos los procesos (lib/cambios-config.ts); los 15 s son el respaldo. 22 nov: con la generación de
+   lib/cache-aviso.ts, una lectura que salió antes del cambio y vuelve después del aviso ya no deja el valor viejo. */
+const CFG = cacheConAviso({ ttlMs: TTL_MS, cargar: async () => new Map((await db().query<{ key: string; v: number }>(`select key, cfg_int(key) as v from config_keys`)).rows.map((x) => [x.key, x.v])) });
+const mapa = (): Promise<Map<string, number>> => CFG.leer();
+export function olvidarConfig() { CFG.olvidar(); }
 
 /* El valor de una clave (acotado; el de fábrica si no hay fila). */
 export async function valor(k: ClaveConfig): Promise<number> {

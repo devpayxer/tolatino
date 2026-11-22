@@ -1,5 +1,5 @@
 import "server-only";
-import { alCambiarConfig } from "../cambios-config";
+import { cacheConAviso } from "../cache-aviso";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { db } from "../db";
@@ -65,16 +65,13 @@ export async function listos(): Promise<{ apple: boolean; google: boolean }> {
 
 /* Los interruptores app.wallet.apple / app.wallet.google (15 s de caché, como Configuración). Apagado = no se emiten pases NUEVOS; los
    emitidos siguen recibiendo sus cambios (un pase que ya está en un teléfono no se queda con un QR viejo). */
-let flags: { at: number; on: Set<string> } | null = null, escucha = false;
+const FLAGS = cacheConAviso({ ttlMs: 15_000,
+  cargar: async () => new Set((await db().query<{ key: string }>(`select key from feature_flags where key in ('app.wallet.apple', 'app.wallet.google') and enabled`).catch(() => ({ rows: [] as { key: string }[] }))).rows.map((x) => x.key)) });
 export async function encendidos(): Promise<{ apple: boolean; google: boolean }> {
-  if (!escucha) { escucha = true; alCambiarConfig(olvidarInterruptores); }
-  if (!flags || Date.now() - flags.at > 15_000) {
-    const r = await db().query<{ key: string }>(`select key from feature_flags where key in ('app.wallet.apple', 'app.wallet.google') and enabled`).catch(() => ({ rows: [] as { key: string }[] }));
-    flags = { at: Date.now(), on: new Set(r.rows.map((x) => x.key)) };
-  }
-  return { apple: flags.on.has("app.wallet.apple"), google: flags.on.has("app.wallet.google") };
+  const on = await FLAGS.leer();
+  return { apple: on.has("app.wallet.apple"), google: on.has("app.wallet.google") };
 }
-export const olvidarInterruptores = () => { flags = null; };
+export const olvidarInterruptores = () => FLAGS.olvidar();
 
 /* Las imágenes del pase, del sistema de diseño (public/assets: el ícono de la app de 8c y el logo blanco), con sharp, una vez por proceso. */
 let imgs: Imagenes | null = null;

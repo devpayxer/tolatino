@@ -8341,8 +8341,59 @@ const guardianes = {
       if (!/Date\.now\(\)\s*-\s*\w+\.at\s*[<>]/.test(t)) continue;           // una copia con hora
       const lee = TABLAS.filter((x) => new RegExp(`\\bfrom ${x}\\b`).test(t));
       if (!lee.length) continue;
-      if (!/alCambiarConfig\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida al cambiar (alCambiarConfig de lib/cambios-config.ts)`);
+      // 22 nov · cacheConAviso (lib/cache-aviso.ts) se registra con alCambiarConfig ella misma (guardián cacheConGeneracion).
+      if (!/alCambiarConfig\(|cacheConAviso\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida al cambiar (alCambiarConfig de lib/cambios-config.ts)`);
     }
+  },
+
+  /* 22 nov (LAUNCH «Caché de Configuración, del producto») · cacheConGeneracion: una copia en la memoria del proceso de lo que la base avisa (NOTIFY tl_config o
+     ciudades) se guarda SOLO con lib/cache-aviso.ts (cacheConAviso), que lleva la generación: una lectura que salió antes de un cambio y vuelve después del
+     aviso no guarda lo viejo (se servía viejo hasta 15–60 s; pruebas/e2e/cachegen9t.cjs lo reproduce con el orden controlado). (1) El ayudante: el aviso y
+     olvidar() suben la generación; quien vuelve solo guarda (y solo pone con alGuardar) si la generación es la misma con la que salió; lo que se junta es
+     de la misma generación. (2) Nadie más llama a alCambiarConfig (una copia que se registra a mano vuelve a tener la carrera). (3) En apps/web/lib ninguna
+     copia con hora a mano (Date.now() − x.at) en una función que lee una tabla que avisa (las saca de las migraciones: los disparadores de config_avisar y
+     ciudades_avisar). (4) UNA escucha por proceso: el estado de lib/cambios-config.ts vive en globalThis (cada capa de Next carga su copia del módulo y
+     cada una abría su LISTEN) y Sistema › Salud la muestra (estadoEscucha). Al revés: alrevesCacheGen. */
+  cacheConGeneracion() {
+    const G = "cacheConGeneracion", H = "apps/web/lib/cache-aviso.ts", CC = "apps/web/lib/cambios-config.ts", SA = "apps/web/lib/sistema/salud.ts", SP = "apps/web/app/admin/SistemaSalud.tsx";
+    for (const f of [H, CC, SA, SP]) if (!existsSync(f)) return falla(G, f, 0, "falta (las copias que se olvidan por aviso)");
+    // (1) El ayudante.
+    const h = sinComent(H);
+    if (!/const olvidar = \(\) => \{ gen\+\+; copias\.clear\(\); enVuelo\.clear\(\); \};/.test(h)) falla(G, H, 0, "olvidar() (el aviso o la escritura del propio proceso) sube la generación y vacía las copias y lo que está en vuelo");
+    const traer = (h.match(/\n {2}async function traer\([\s\S]*?\n {2}\}/) ?? [""])[0];
+    if (!/const g = gen;[\s\S]*await o\.cargar\(/.test(traer)) falla(G, H, 0, "quien va a la base anota la generación con la que SALE (antes de la consulta)");
+    if (!/if \(g === gen\) \{ copias\.set\(k, \{ hasta: Date\.now\(\) \+ ms, v \}\); o\.alGuardar\?\.\(v\); \}/.test(traer) || (traer.match(/copias\.set\(|alGuardar/g) ?? []).length !== 2)
+      falla(G, H, 0, "quien vuelve de la base solo guarda (y solo pone con alGuardar) si la generación es la misma con la que salió: si llegó un aviso, lo viejo no se guarda");
+    if (!/if \(x && x\.gen === gen\) return x\.p;/.test(h)) falla(G, H, 0, "juntar: una lectura solo se junta con la que salió en su MISMA generación (después de un aviso, no con la de antes)");
+    if (!/alCambiarConfig\(\(\) => \{ olvidar\(\);/.test(h)) falla(G, H, 0, "cada copia se registra con alCambiarConfig y el aviso la olvida (sube la generación)");
+    // (2) Nadie más se registra a mano.
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === H || f === CC) continue;
+      if (/\balCambiarConfig\b/.test(sinComent(f))) falla(G, f, 0, "registra su copia con alCambiarConfig a mano: usa cacheConAviso (lib/cache-aviso.ts), que lleva la generación (si no, una lectura en vuelo deja el valor viejo)");
+    }
+    // (3) Ninguna copia con hora a mano de una tabla que avisa.
+    const fns = new Set(), tablas = new Set();
+    const migs = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8"));
+    for (const m of migs) for (const x of m.matchAll(/create or replace function (\w+)\(\) returns trigger[\s\S]*?\$\$([\s\S]*?)\$\$/g)) if (/pg_notify\('(tl_config|ciudades)'/.test(x[2])) fns.add(x[1]);
+    for (const m of migs) for (const x of m.matchAll(/create trigger \w+ after [\w ]+ on (\w+) for each statement execute function (\w+)\(\)/g)) if (fns.has(x[2])) tablas.add(x[1]);
+    if (tablas.size < 10) falla(G, "packages/db/migrations", 0, `no encontré las tablas que avisan (config_avisar, ciudades_avisar): ${[...tablas].join(", ") || "ninguna"}`);
+    const lee = new RegExp(`\\b(?:from|join) (?:${[...tablas].join("|")})\\b`);
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/.*\.ts$/.test(f) || f === H || f === CC) continue;
+      const t = sinComent(f);
+      for (const x of t.matchAll(/Date\.now\(\)\s*-\s*[\w.]+\.at\s*[<>]/g)) {
+        const ini = Math.max(t.lastIndexOf("\nexport ", x.index), t.lastIndexOf("\nasync function ", x.index), t.lastIndexOf("\nfunction ", x.index), t.lastIndexOf("\nconst ", x.index), t.lastIndexOf("\nlet ", x.index));
+        const fin = t.indexOf("\n}", x.index), trozo = t.slice(Math.max(0, ini), fin < 0 ? undefined : fin);
+        const tb = lee.exec(trozo)?.[0];
+        if (tb) falla(G, f, t.slice(0, x.index).split("\n").length, `una copia con hora hecha a mano de lo que la base avisa («${tb}»): usa cacheConAviso (lib/cache-aviso.ts), con la generación`);
+      }
+    }
+    // (4) Una escucha por proceso, a la vista en Salud.
+    const cc = sinComent(CC);
+    if (!/const G = globalThis as typeof globalThis & \{ __tlCambiosConfig\?: Estado \};/.test(cc) || !/const E: Estado = \(G\.__tlCambiosConfig \?\?= \{/.test(cc) || /^let /m.test(cc))
+      falla(G, CC, 0, "el estado de la escucha vive en globalThis (una conexión LISTEN por proceso, no una por capa de Next) y no en variables del módulo");
+    if (!/export function estadoEscucha\(\)/.test(cc) || !/escucha: estadoEscucha\(\)/.test(sinComent(SA))) falla(G, SA, 0, "Sistema › Salud dice si la escucha de este proceso está viva, desde cuándo y el último aviso (estadoEscucha)");
+    if (!/const ce = d\.escucha;/.test(sinComent(SP)) || !/ce\.ultimoAviso/.test(sinComent(SP))) falla(G, SP, 0, "la pantalla de Salud muestra la escucha (viva, desde cuándo, el último aviso)");
   },
 
   /* 9b-3 · Una función NUESTRA (de las migraciones) en un «with x as (select f(…))» se evalúa una vez solo si el CTE dice «materialized»: si no,
@@ -8986,15 +9037,18 @@ const guardianes = {
       if (/__tlEdicionesE2/.test(sinComent(f))) falla(G, f, 0, "el mapa de lo editado (globalThis.__tlEdicionesE2) solo lo toca lib/dos-idiomas.ts (ponerEdicionesE2)");
     }
     // (2) El servidor: solo lo editado y vivo, con el aviso de la base.
-    const c = sinComent(CMSF), ed = (c.match(/export async function edicionesE2\(\)[\s\S]*?\n\}/) ?? [""])[0];
-    if (!ed) falla(G, CMSF, 0, "falta edicionesE2() en lib/cms.ts");
+    // 22 nov · La copia es la de lib/cache-aviso.ts (EDICIONES = cacheConAviso, con la generación que cierra la carrera de una lectura en vuelo):
+    // lo que se mira es su definición más el cuerpo de edicionesE2.
+    const c = sinComent(CMSF), fnE2 = (c.match(/export async function edicionesE2\(\)[\s\S]*?\n\}/) ?? [""])[0];
+    const def = (c.match(/\nconst EDICIONES = cacheConAviso\(\{[\s\S]*?(?=\nexport async function edicionesE2\(\))/) ?? [""])[0], ed = def + fnE2;
+    if (!fnE2 || !def) falla(G, CMSF, 0, "falta edicionesE2() en lib/cms.ts (con su copia EDICIONES = cacheConAviso)");
     else {
       if (!/from cms_strings where edited and status = 'vivo' and id ~ '\\\\\.e2-\[0-9a-f\]\{12\}\$'/.test(ed)) falla(G, CMSF, 0, "edicionesE2 lee SOLO lo editado y vivo de las cadenas de E2 (nada de lo que no se editó viaja al navegador)");
-      if (!/ponerEdicionesE2\(v, l\)/.test(ed)) falla(G, CMSF, 0, "edicionesE2 pone lo leído en dosIdiomas (ponerEdicionesE2)");
-      if (!/catch \{\s*l = \[\];/.test(ed)) falla(G, CMSF, 0, "si la base no responde, edicionesE2 deja el texto del código (lista vacía)");
-      if (!/NEXT_PHASE === "phase-production-build"\) return \{ v: "", l: \[\] \}/.test(ed)) falla(G, CMSF, 0, "edicionesE2 no va a la base durante el build");
+      if (!/alGuardar: \(\{ v, l \}\) => ponerEdicionesE2\(v, l\)/.test(ed)) falla(G, CMSF, 0, "edicionesE2 pone lo leído en dosIdiomas (ponerEdicionesE2)");
+      if (!/siFalla: \(\)(?:: \w+)? => \(\{ v: "", l: \[\] \}\)/.test(ed)) falla(G, CMSF, 0, "si la base no responde, edicionesE2 deja el texto del código (lista vacía)");
+      if (!/NEXT_PHASE === "phase-production-build"\) return \{ v: "", l: \[\] \}/.test(fnE2) || !/return EDICIONES\.leer\(\);/.test(fnE2)) falla(G, CMSF, 0, "edicionesE2 no va a la base durante el build");
     }
-    if (!/alCambiarConfig\(\(\) => \{ cache = null; e2 = null; void edicionesE2\(\); \}\)/.test(c)) falla(G, CMSF, 0, "el aviso de la base (NOTIFY) vuelve a leer lo editado de las pantallas al momento");
+    if (!/\breleer: true\b/.test(def)) falla(G, CMSF, 0, "el aviso de la base (NOTIFY) vuelve a leer lo editado de las pantallas al momento");
     // (3) El layout raíz y EdicionesE2.
     const l = sinComent(LAY);
     if (!/export default async function RootLayout[\s\S]*?const ed = await edicionesE2\(\);/.test(l)) falla(G, LAY, 0, "el layout raíz espera lo editado (edicionesE2) antes de pintar");
@@ -9807,10 +9861,11 @@ const guardianes = {
       const t = sinComent(f);
       if (!/Date\.now\(\)\s*-\s*\w+\.at\s*[<>]/.test(t)) continue;
       const lee = ["cities", "zones", "city_beta_invites"].filter((x) => new RegExp(`\\b(from|join) ${x}\\b`).test(t));
-      if (lee.length && !/alCambiarConfig\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida con NOTIFY 'ciudades' (alCambiarConfig)`);
+      if (lee.length && !/alCambiarConfig\(|cacheConAviso\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida con NOTIFY 'ciudades' (alCambiarConfig)`);
     }
     const u = sinComent(U);
-    const ms = /Date\.now\(\) - cache\.at < (\d[\d_]*)/.exec(u)?.[1];
+    // 22 nov · La copia de las ciudades es una cacheConAviso (lib/cache-aviso.ts): su ttlMs.
+    const ms = /const CIUDADES = cacheConAviso\(\{ ttlMs: (\d[\d_]*)/.exec(u)?.[1];
     if (!ms || Number(ms.replace(/_/g, "")) > 60000) falla(G, U, 0, "la copia de las ciudades dura a lo más 60 s de respaldo (el NOTIFY la olvida antes)");
     const v = cuerpoFn(u, "vista");
     if (!/ciudad_abierta_para\(id, \$1::uuid\)/.test(v) || /\bcache\b|=\s*new Map\(/.test(v)) falla(G, U, 0, "quién entra a una ciudad en beta se pregunta en cada visita (vista), sin guardarlo en memoria");
@@ -14507,11 +14562,13 @@ const guardianes = {
     const bl = sinComent(BL);
     for (const [x, que] of [["x.t", "el título"], ["x.s", "el texto secundario"], ["x.m", "el meta"]]) if (!new RegExp(`overflowWrap: "anywhere"[^}]*\\}\\}>\\{${x.replace(".", "\\.")}\\}</span>`).test(bl)) falla(G, BL, 0, `las filas del panel (rows): ${que} no parte una cadena larga sin espacios (overflowWrap: "anywhere")`);
     if (!/overflowWrap: "anywhere" \}\}>\{b\.t\}<\/span>\s*\{b\.cta/.test(bl)) falla(G, BL, 0, "la nota del panel (note) no parte una cadena larga sin espacios");
-    // (6) La prueba de la pantalla: mide el ancho a 390 con la cadena larga y hace el recorrido sin trucos.
+    // (6) La prueba de la pantalla: mide el ancho del teléfono (390, o el del dispositivo en el trabajo «anchos») con la cadena larga y hace el
+    //     recorrido sin trucos. Sin desborde: scrollWidth y body ≤ innerWidth, e innerWidth es el del contexto (no uno que ensanchó la página).
     const e = sinComent(E2E), iT = e.indexOf("tel390(b)"), jT = e.indexOf("armar(X, 'o'", iT), tel = iT >= 0 && jT > iT ? e.slice(iT, jT) : "";
     if (!/const LARGO = \(.*\.slice\(0, 60\)/.test(e) || !/o\.largo/.test(e) || !/armar\(X, 'm', \{ largo: true \}\)/.test(tel)) falla(G, E2E, 0, "din9t6b ya no arma una alerta con una cadena de 60 caracteres sin espacios para el teléfono");
-    if (!/la lista de alertas a 390[^\n]*\n/.test(tel) || !/w\.inner === 390 && w\.scroll <= 390 && w\.body <= 390, `la lista de alertas a 390/.test(tel)) falla(G, E2E, 0, "din9t6b no comprueba innerWidth === 390 y scrollWidth <= 390 en la lista del teléfono");
-    if (!/w\.inner === 390 && w\.scroll <= 390 && w\.body <= 390, `la hoja abierta a 390/.test(tel)) falla(G, E2E, 0, "din9t6b no comprueba innerWidth === 390 y scrollWidth <= 390 con la hoja abierta");
+    const SIN_DESBORDE = "w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `";
+    if (!tel.includes(SIN_DESBORDE + "la lista de alertas a ${w.inner}")) falla(G, E2E, 0, "din9t6b no comprueba en la lista del teléfono que innerWidth es el del teléfono y que scrollWidth y body no pasan de él");
+    if (!tel.includes(SIN_DESBORDE + "la hoja abierta a ${w.inner}")) falla(G, E2E, 0, "din9t6b no comprueba con la hoja abierta que innerWidth es el del teléfono y que scrollWidth y body no pasan de él");
     if (!/Decidir/.test(tel) || /force: true|dispatchEvent|\.evaluate\([^)]*\.click\(/.test(tel)) falla(G, E2E, 0, "el recorrido de teléfono de din9t6b se hace con clics de verdad (sin force, dispatchEvent ni click por evaluate) y llega a «Decidir»");
   },
   /* 9u (21 nov) · notaDiceAQuien: la hoja de confirmar del Super Admin (ConfirmarMotivo → ReasonConfirm) tenía dos defectos vistos en capturas de teléfono.
@@ -14841,6 +14898,67 @@ const guardianes = {
         });
       }
     }
+  },
+
+  /* 22 nov · toqueSobreviveSalida: el toque de «Llamar» no se contaba en Safari (CI 45042985880, tarAK rojo siempre en iPhone SE e iPad, verde en
+     Chromium). La pantalla hacía `void registrarToque(…)` (una acción del servidor: un fetch normal, en cola del enrutador) y justo después
+     `location.href = "tel:…"`; WebKit cancela lo que la página tiene en vuelo al navegar y el toque se perdía: las llamadas de la mayoría de los
+     vecinos faltaban en las cifras del panel. La misma pareja «contar y salir» estaba en la ficha (las dos), los relacionados, los patrocinados, la
+     semilla de la categoría, el mapa (cómo llegar) y compartir. Ahora:
+     (1) Ninguna pantalla cuenta un toque con una acción del servidor (registrarToque…) y sale de la página después (tel:, window.open, el mapa del
+         teléfono, compartir); ni existe ya esa acción: los toques salen SOLO por lib/contar-toque.ts.
+     (2) lib/contar-toque.ts manda con navigator.sendBeacon (y, si no, fetch con keepalive) a /api/toque, sin esperar la respuesta; nadie la llama
+         con await (tel: sale del propio toque).
+     (3) /api/toque solo tiene POST, acota el cuerpo (512 bytes, antes de leerlo entero), acepta exactamente { id, kind, origen } o { semilla, origen }
+         y llama a lib/toques.ts; contesta 204 siempre.
+     (4) lib/toques.ts tiene las reglas de siempre: primero el mismo origen; id y tipo válidos; una vez cada 10 min por persona o red; máx. 60 por red
+         y hora; la gente del propio negocio no cuenta; el evento «contactar». Y es lo ÚNICO del código que escribe contact_taps.
+     Prueba: tarAK («llamar y la página se corta en el mismo instante»). Al revés: alrevesToqueSalida. */
+  toqueSobreviveSalida() {
+    const G = "toqueSobreviveSalida", CT = "apps/web/lib/contar-toque.ts", RT = "apps/web/app/api/toque/route.ts", LT = "apps/web/lib/toques.ts";
+    const SALIDA = /location\.(href\s*=|assign\(|replace\()|window\.open\(|abrirComoLlegar\(|compartirNativo\(|compartir\(|urlComoLlegar\(|urlTelefono\(/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      // (1) La vía vieja: una acción del servidor que cuenta el toque, seguida de una salida de la página (en esa línea o en las 3 siguientes).
+      for (const m of t.matchAll(/\bregistrarToque\w*\(/g)) {
+        const linea = t.slice(0, m.index).split("\n").length, tramo = t.slice(m.index).split("\n").slice(0, 4).join("\n");
+        if (SALIDA.test(tramo)) falla(G, f, linea, "cuenta el toque con una acción del servidor y sale de la página justo después: en Safari la salida la cancela y el toque no se cuenta; usa contarToque de lib/contar-toque.ts");
+      }
+      if (/["']use server["']/.test(t.slice(0, 40)) && /\nexport async function registrarToque\w*\(/.test(t)) falla(G, f, 0, "vuelve a existir una acción del servidor que cuenta toques (registrarToque…): los toques salen solo por lib/contar-toque.ts → /api/toque");
+      if (/\binsert into contact_taps\b/i.test(t) && f !== LT) falla(G, f, 0, "escribe contact_taps fuera de lib/toques.ts (las reglas de los toques están en un solo lugar)");
+      if (/from "@\/lib\/contar-toque"/.test(t) && /await\s+contarToque\w*\(/.test(t)) falla(G, f, 0, "espera a contarToque antes de seguir: tel: tiene que salir del propio toque (iOS lo exige); el toque no se espera");
+    }
+    // (2) La pieza de la pantalla.
+    if (!existsSync(CT)) return falla(G, CT, 0, "falta lib/contar-toque.ts (la única vía para contar un toque desde la pantalla)");
+    const ct = sinComent(CT);
+    if (!/navigator\.sendBeacon\(RUTA, /.test(ct)) falla(G, CT, 0, "el toque sale con navigator.sendBeacon (sobrevive a la salida de la página)");
+    if (!/fetch\(RUTA, \{[^}]*keepalive: true/.test(ct)) falla(G, CT, 0, "sin sendBeacon, el toque sale con fetch y keepalive: true (sobrevive a la salida de la página)");
+    if (!/const RUTA = "\/api\/toque";/.test(ct)) falla(G, CT, 0, "el toque va a /api/toque");
+    if (/\bawait\b|\basync\b|from "\.\.?\/.*acciones"|from "@\/app/.test(ct)) falla(G, CT, 0, "lib/contar-toque.ts no espera nada ni llama a una acción del servidor: manda y vuelve en el mismo toque");
+    // (3) La puerta.
+    if (!existsSync(RT)) return falla(G, RT, 0, "falta /api/toque");
+    const rt = sinComent(RT);
+    const exportadas = [...rt.matchAll(/export (?:async )?function (\w+)/g)].map((m) => m[1]);
+    if (exportadas.join(",") !== "POST") falla(G, RT, 0, `/api/toque solo exporta POST (exporta: ${exportadas.join(", ") || "nada"})`);
+    if (!/const MAX = 512;/.test(rt) || !/content-length"\) \?\? 0\) > MAX\) return null/.test(rt) || !/if \(n > MAX\) \{/.test(rt)) falla(G, RT, 0, "/api/toque acota el cuerpo a 512 bytes antes de leerlo entero (content-length y por partes)");
+    if (!/claves === "id,kind,origen"/.test(rt) || !/claves === "origen,semilla"/.test(rt) || !/typeof x\.origen !== "string"\) return nada\(\)/.test(rt)) falla(G, RT, 0, "/api/toque acepta exactamente { id, kind, origen } o { semilla, origen }, todo texto");
+    if (!/import \{ contarToque, contarToqueSemilla \} from "@\/lib\/toques";/.test(rt) || /\bdb\(\)|\btx\(|insert into|from "@\/lib\/db"/.test(rt)) falla(G, RT, 0, "/api/toque no toca la base: las reglas son las de lib/toques.ts");
+    if (/status: (?!204)\d+/.test(rt)) falla(G, RT, 0, "/api/toque contesta 204 siempre (no dice si el toque se contó)");
+    // (4) Las reglas, en un solo lugar.
+    if (!existsSync(LT)) return falla(G, LT, 0, "falta lib/toques.ts");
+    const lt = sinComent(LT), partes = lt.split(/\nexport async function /).slice(1);
+    if (partes.map((p) => p.slice(0, p.indexOf("("))).join(",") !== "contarToque,contarToqueSemilla") falla(G, LT, 0, "lib/toques.ts exporta contarToque y contarToqueSemilla (y nada más que escriba)");
+    for (const p of partes) {
+      const nombre = p.slice(0, p.indexOf("(")), cuerpo = p.slice(0, p.indexOf("\n}") + 1);
+      if (!/^[^\n]*\{\n\s*if \(!\(await mismoOrigen\(\)\)\) return;/.test(cuerpo)) falla(G, LT, 0, `«${nombre}» no revisa primero el mismo origen`);
+      if (!/interval '10 minutes'/.test(cuerpo) || !/interval '1 hour'\) < 60\)/.test(cuerpo)) falla(G, LT, 0, `«${nombre}» perdió el tope: una vez cada 10 min por persona o red, y 60 por red y hora`);
+      if (!/await evento\("contactar"/.test(cuerpo)) falla(G, LT, 0, `«${nombre}» ya no anota el evento «contactar»`);
+    }
+    const p0 = partes.find((p) => p.startsWith("contarToque(")) ?? "";
+    if (!/!ID_NEG\.test\(id\) \|\| !TOQUES\.has\(kind\)\) return;/.test(p0)) falla(G, LT, 0, "contarToque valida el id del negocio y el tipo de toque");
+    if (!/not exists \(select 1 from business_members m where m\.business_id = b\.id and m\.user_id = \$2::uuid and m\.status = 'active'\)/.test(p0)) falla(G, LT, 0, "contarToque: la gente del propio negocio no cuenta");
+    if (!existsSync("pruebas/alreves/alrevesToqueSalida.cjs") || !/se corta en el mismo instante/.test(readFileSync("pruebas/e2e/tarAK.cjs", "utf8"))) falla(G, "pruebas/e2e/tarAK.cjs", 0, "falta la prueba (tarAK: la página se corta en el mismo instante del toque) o su prueba al revés (alrevesToqueSalida)");
   },
 
 };

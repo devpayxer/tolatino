@@ -228,19 +228,19 @@ const cambios = (L) => [devDe(L), notas(L, 'resuelta_a_mano'), notas(L, 'resuelt
     const f6 = filaAl(m, L6);
     ok((await vis(f6.getByRole('button', { name: 'Resolver a mano', exact: true }))) !== null && (await vis(f6.getByRole('button', { name: 'Preguntar a Stripe ahora', exact: true }))) !== null, 'en el teléfono (390) también se ofrece «Resolver a mano» y «Preguntar a Stripe ahora»');
     let w = await ancho(m);
-    ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la lista de alertas a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
+    ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la lista de alertas a ${w.inner} (el ancho del teléfono): innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
     await f6.scrollIntoViewIfNeeded(); await shotM(m, 'alerta');
     await clic(f6.getByRole('button', { name: 'Resolver a mano', exact: true }));
     await m.getByText('La devolución se hizo fuera de Stripe').first().waitFor();
     w = await ancho(m);
-    ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la hoja abierta a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
+    ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la hoja abierta a ${w.inner} (el ancho del teléfono): innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
     await arriba(m); await shotM(m, 'hoja');
     await nota(m, 'Se le mandó un cheque al cliente.');
     await clic(m.getByRole('button', { name: 'Resolver a mano', exact: true }));
     const m6 = await aviso(m, /Resuelta fuera de Stripe/);
     await shotM(m, 'res2');
     w = await ancho(m);
-    ok(w.inner === 390 && w.scroll <= 390, `y con el resultado a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}`);
+    ok(w.inner === m.viewportSize().width && w.scroll <= w.inner, `y con el resultado a ${w.inner} (el ancho del teléfono): innerWidth ${w.inner}, scrollWidth ${w.scroll}`);
     ok(m6.includes('Resuelta fuera de Stripe: ya no se reintenta') && devDe(L6) === `pending|true|${stf}|Se le mandó un cheque al cliente.|` && consultasEquipo(L6) === '1|no_hallado' && audit(L6, 'dinero.alerta.preguntar') === '1', 'en el teléfono: marcada a mano igual, tras preguntar a Stripe, con su auditoría');
 
     // ── 7 · Transferencia atascada / lo que sobró ──

@@ -24,7 +24,8 @@ import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { MiniMapa } from "@/app/_dir/MiniMapa";
 import { useAncho } from "@/app/_ancho/Ancho";
-import { guardarNegocio, registrarToque } from "../../acciones";
+import { guardarNegocio } from "../../acciones";
+import { contarToque } from "@/lib/contar-toque";
 import { horasDeCita } from "./acciones-cita";
 import { aprL, citaUrl, dinero, diaS, durL, horaL, precio, SvcHoja, useSvc, type Svc } from "./Servicios";
 import { aspectos, ResCapas, ResResumen, ResTab, useResenas, type CtlResenas } from "./Resenas";
@@ -232,10 +233,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 
   // ── Acciones del encabezado ──
   const avisar = (m: string) => { setAviso(m); setTimeout(() => setAviso(null), 2200); };
-  const llamar = f.telefono ? () => { void registrarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; } : null;
-  const escribir = f.mensajes ? () => { void registrarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); } : null;
-  const llegar = !porContrato && f.direccion && f.lat != null && f.lng != null ? () => { void registrarToque(f.id, "directions", "ficha"); abrirComoLlegar({ lat: f.lat!, lng: f.lng! }); } : null;
-  const compartir = async () => { void registrarToque(f.id, "share", "ficha"); if ((await compartirNativo({ titulo: f.nombre, url: location.href })) === "copiado") avisar(E2("Enlace copiado", "Link copied")); };
+  const llamar = f.telefono ? () => { contarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; } : null;
+  const escribir = f.mensajes ? () => { contarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); } : null;
+  const llegar = !porContrato && f.direccion && f.lat != null && f.lng != null ? () => { contarToque(f.id, "directions", "ficha"); abrirComoLlegar({ lat: f.lat!, lng: f.lng! }); } : null;
+  const compartir = async () => { contarToque(f.id, "share", "ficha"); if ((await compartirNativo({ titulo: f.nombre, url: location.href })) === "copiado") avisar(E2("Enlace copiado", "Link copied")); };
   const guardar = async () => {
     const antes = guardado; setGuardado(!antes);
     const r = await guardarNegocio(f.id);

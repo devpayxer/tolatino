@@ -177,6 +177,16 @@ const cerca = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       ok(/Llamar a/.test(await ll.getAttribute('aria-label')) && /Ordenar/.test(await cta.innerText()), `con su nombre: «${await ll.getAttribute('aria-label')}» · «${(await cta.innerText()).trim()}»`);
       await ll.click();
       ok(await espera(() => sql(`select count(*) from contact_taps where business_id = '${NEG.cinco}' and kind = 'call' and source = 'buscar'`) === '1'), 'llamar: la base cuenta el toque (source buscar) justo antes de abrir tel:');
+      // La página se corta en el mismo instante del toque (en Safari, abrir tel: cancela lo que la página tenía en vuelo; aquí, window.stop() mientras
+      // el envío del toque sigue en el camino, retenido 600 ms): el toque cuenta igual, porque sale por la vía que sobrevive a la salida
+      // (lib/contar-toque.ts: sendBeacon o fetch keepalive a /api/toque). Con la acción del servidor de antes, este caso queda en 0.
+      await abrir(pv);
+      const retener = async (r) => { if (r.request().method() === 'POST') await new Promise((x) => setTimeout(x, 600)); await r.continue().catch(() => {}); };
+      await pv.route('**/*', retener);
+      await card(pv, 'dos').locator('[data-llamar]').click();
+      await pv.evaluate(() => window.stop());
+      ok(await espera(() => sql(`select count(*) from contact_taps where business_id = '${NEG.dos}' and kind = 'call' and source = 'buscar'`) === '1'), 'llamar y la página se corta en el mismo instante: el toque cuenta igual (sobrevive a la salida)');
+      await pv.unroute('**/*', retener);
       await abrir(pv);
       await card(pv, 'cinco').locator('[data-cta]').click();
       ok(await espera(async () => new URL(pv.url()).pathname === `/n/${NEG.cinco}`), 'el botón principal («Ordenar») abre la ficha, como decide el servidor');

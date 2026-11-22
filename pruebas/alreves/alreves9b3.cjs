@@ -22,7 +22,8 @@ const casos = [
   // ingestaLimitada: el tope por teléfono de los errores se cae
   ['ingestaLimitada', IN, '(!dev || await dentroDelTope("errores_dev", dev, lim.dev)) && ', ''],
   // copiaQueSeOlvida: las ciudades vuelven a tardar 60 s en cada proceso; la base deja de avisar de un cambio de Configuración
-  ['copiaQueSeOlvida', UB, '  if (!escucha) { escucha = true; alCambiarConfig(() => { cache = null; }); }\n', ''],
+  // (22 nov: la copia es una cacheConAviso de lib/cache-aviso.ts; el defecto la cambia por una copia a mano que no se registra)
+  ['copiaQueSeOlvida', UB, 'const CIUDADES = cacheConAviso({ ttlMs: 60_000, cargar: async (): Promise<Ciudad[]> => {', 'let copia: { at: number; c: Ciudad[] } | null = null;\nconst CIUDADES = { leer: async () => (copia && Date.now() - copia.at < 60_000 ? copia.c : (copia = { at: Date.now(), c: await cargarCiudades() }).c) };\nasync function cargarCiudades(): Promise<Ciudad[]> {'],
   ['copiaQueSeOlvida', M, 'create trigger feature_flags_avisa after insert or update or delete on feature_flags for each statement execute function config_avisar();', ''],
   // parametroSinTipo: el mismo $2 como uuid (user_id) y como text (action) en un insert
   ['parametroSinTipo', LL, 'where id = $2), $3, $4, $5::inet', 'where id = $2), $2, $4, $5::inet'],

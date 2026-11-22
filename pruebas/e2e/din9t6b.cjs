@@ -246,18 +246,18 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     ok((await texto(m)).includes(LARGO), `la alerta trae la cadena larga de ${LARGO.length} caracteres sin espacios`);
     const ancho = (p) => p.evaluate(() => ({ inner: window.innerWidth, scroll: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
     let w = await ancho(m);
-    ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la lista de alertas a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
+    ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la lista de alertas a ${w.inner} (el ancho del teléfono): innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
     await f5.scrollIntoViewIfNeeded(); await m.screenshot({ path: OUT + 'd9t6b-alerta-m.png' });
     await clic(f5.getByRole('button', { name: 'Elegir cuál vale' }));
     await m.getByText('Qué vale de lo que tiene Stripe').first().waitFor();
     w = await ancho(m);
-    ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la hoja abierta a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
+    ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la hoja abierta a ${w.inner} (el ancho del teléfono): innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
     await arriba(m); await m.screenshot({ path: OUT + 'd9t6b-hoja-m.png' });
     await clic(opcion(m, L5.A)); await clic(m.getByText('Cobro duplicado: se queda el primero.', { exact: true })); await clic(m.getByRole('button', { name: 'Decidir', exact: true }));
     await m.getByText(`Decidido: vale ${L5.A}`).first().waitFor({ timeout: 30000 });
     await m.screenshot({ path: OUT + 'd9t6b-resultado-m.png' });
     w = await ancho(m);
-    ok(w.inner === 390 && w.scroll <= 390, `y con el resultado a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}`);
+    ok(w.inner === m.viewportSize().width && w.scroll <= w.inner, `y con el resultado a ${w.inner} (el ancho del teléfono): innerWidth ${w.inner}, scrollWidth ${w.scroll}`);
     ok(estadoDe(L5.oc) === `done||${L5.A}` && cuentas(L5.oc) === '1|1|1', 'en el teléfono: decidido igual (hecha con ese cobro, una devolución, una auditoría)');
 
     // ── 6 · Uno de otro monto: no se ofrece; la hoja dice por qué ──

@@ -1,5 +1,5 @@
 import "server-only";
-import { alCambiarConfig } from "../cambios-config";
+import { cacheConAviso } from "../cache-aviso";
 import { huella as hmac } from "../cifrado";
 import { leerRotulo } from "../app-nativa-comun";
 import { valores } from "../config";
@@ -31,14 +31,9 @@ async function permitir(dev: string | null, ip: string | null, lim: { global: nu
   return ok;
 }
 
-let interruptor: { at: number; on: boolean } | null = null, escucha = false;
-async function encendido(): Promise<boolean> {
-  if (!escucha) { escucha = true; alCambiarConfig(() => { interruptor = null; }); }
-  if (interruptor && Date.now() - interruptor.at < 15_000) return interruptor.on;
-  const on = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.errores'`).catch(() => ({ rows: [] as { enabled: boolean }[] }))).rows[0]?.enabled === true;
-  interruptor = { at: Date.now(), on };
-  return on;
-}
+const INTERRUPTOR = cacheConAviso({ ttlMs: 15_000,
+  cargar: async () => (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.errores'`).catch(() => ({ rows: [] as { enabled: boolean }[] }))).rows[0]?.enabled === true });
+const encendido = (): Promise<boolean> => INTERRUPTOR.leer();
 
 const texto = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 const TIPOS = new Set(["js", "red", "cierre", "nativo"]);

@@ -1,5 +1,5 @@
 import "server-only";
-import { alCambiarConfig } from "./cambios-config";
+import { cacheConAviso } from "./cache-aviso";
 import { cookies } from "next/headers";
 import { db } from "./db";
 import { millas, type LL } from "./mapa-geo";
@@ -18,13 +18,10 @@ export type Ubicacion = Punto & { c: Ciudad; ctr: string; gps: boolean; porDefec
 /* 9t · Una dirección guardada de la persona (Mi cuenta › Direcciones) con el punto que le puso el servidor: «Desde dónde medimos» › Casa / Trabajo. */
 export type DirPunto = { id: string; label: "casa" | "trabajo" | "otra"; lat: number; lng: number };
 
-let cache: { at: number; ciudades: Ciudad[] } | null = null, escucha = false;
 /* Ciudades y barrios (en memoria; 9b-3: un cambio en cities la olvida al momento en todos los procesos, lib/cambios-config.ts; 60 s de respaldo).
    9i · Con NOTIFY 'ciudades' (0139): abrir, cerrar, pasar a beta o cambiar un barrio se nota al instante (L71; guardián ciudadAlInstante). El estado
    «beta» sale tal cual: lo que ve cada persona lo decide vista() (invitada → abierta; el resto → próximamente). Los barrios retirados no salen. */
-export async function ciudades(): Promise<Ciudad[]> {
-  if (!escucha) { escucha = true; alCambiarConfig(() => { cache = null; }); }
-  if (cache && Date.now() - cache.at < 60_000) return cache.ciudades;
+const CIUDADES = cacheConAviso({ ttlMs: 60_000, cargar: async (): Promise<Ciudad[]> => {
   const [c, z] = await Promise.all([
     db().query<Omit<Ciudad, "zonas">>(
       `select id, name, state, status, st_y(center::geometry) as lat, st_x(center::geometry) as lng,
@@ -36,10 +33,9 @@ export async function ciudades(): Promise<Ciudad[]> {
               coalesce(streets->>'en', '') as "calleEn", st_y(center::geometry) as lat, st_x(center::geometry) as lng
          from zones where center is not null and retired_at is null order by city_id, sort`),
   ]);
-  const ciudades = c.rows.map((x) => ({ ...x, zonas: z.rows.filter((r) => r.city === x.id).map(({ city: _c, ...r }) => (void _c, r)) }));
-  cache = { at: Date.now(), ciudades };
-  return ciudades;
-}
+  return c.rows.map((x) => ({ ...x, zonas: z.rows.filter((r) => r.city === x.id).map(({ city: _c, ...r }) => (void _c, r)) }));
+} });
+export const ciudades = (): Promise<Ciudad[]> => CIUDADES.leer();
 
 /* 9i · Las ciudades como las ve ESTA persona: una ciudad en «beta» es abierta para quien está invitado (o es una cuenta de revisión activa) y
    «próximamente» para todos los demás (ciudad_abierta_para de 0139, la misma regla que usan las acciones del servidor). Sin beta, no consulta nada.

@@ -9,7 +9,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Accion, Tarjeta } from "@/lib/tarjeta";
 import { dosIdiomas } from "@/lib/dos-idiomas";
-import { guardarNegocio, registrarToque } from "./acciones";
+import { guardarNegocio } from "./acciones";
+import { contarToque } from "@/lib/contar-toque";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { VideoTarjeta, VisorHoy } from "./VideoNegocio";
 
@@ -21,12 +22,12 @@ export function TarjetaNegocio({ b, origen, textos, es = true, urgente = false }
   const hacer = (a: Accion) => () => {
     if (a === "ficha") return router.push(`/n/${b.id}`);
     if (a === "llamar" && b.phone) {
-      void registrarToque(b.id, "call", origen);
+      contarToque(b.id, "call", origen);
       location.href = `tel:${b.phone}`;
       return;
     }
     if (a === "llegar" && b.lat != null && b.lng != null) {
-      void registrarToque(b.id, "directions", origen);
+      contarToque(b.id, "directions", origen);
       abrirComoLlegar({ lat: b.lat, lng: b.lng });
     }
   };

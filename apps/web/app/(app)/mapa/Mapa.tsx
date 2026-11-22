@@ -7,7 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type CSSProperties, type PointerEvent as PE } from "react";
 import { proyectar, TESELAS, vista, type LL } from "@/lib/mapa-geo";
 import type { FiltroMapa, Pin } from "@/lib/mapa";
-import { registrarToque } from "../acciones";
+import { contarToque } from "@/lib/contar-toque";
 
 import { tec } from "@/lib/tec";
 import { abrirComoLlegar } from "@/lib/como-llegar";
@@ -80,7 +80,7 @@ export function Mapa({ v }: { v: VistaMapa }) {
   const meta = (b: Pin) => [b.reviews >= 5 && b.rating ? `★ ${b.rating.toFixed(1)}` : "", conPin(b) ? `${b.mi ?? "—"} MI` : b.domicilio ? E2("A DOMICILIO", "COMES TO YOU") : E2("SIN LOCAL", "NO VENUE"), (b.sub ?? "").toUpperCase()].filter(Boolean).join(" · ");
   const fila = (b: Pin) => ({ name: b.name, meta: meta(b), verified: b.verified, slot: b.eta ?? "", image: b.photo ?? undefined });
   const abrir = (id: string) => router.push(`/n/${id}`);
-  const comoLlegar = (b: Pin) => { if (!conPin(b) || b.casa) return; void registrarToque(b.id, "directions", "mapa"); abrirComoLlegar({ lat: b.lat, lng: b.lng }); };
+  const comoLlegar = (b: Pin) => { if (!conPin(b) || b.casa) return; contarToque(b.id, "directions", "mapa"); abrirComoLlegar({ lat: b.lat, lng: b.lng }); };
 
   // ── Filtros: van en la dirección (el servidor vuelve a contar) ──
   const ir = (cambios: Record<string, string | null>) => {

@@ -3,7 +3,7 @@ import "server-only";
    midió el navegador. Aquí: el flag app.vitals, el tope por conexión y en todo el sistema (lib/topes.ts, compartido), la forma (solo esos
    campos, con su rango) y la suma en web_vitals_dia (0167) por día, familia de ruta, perfil y métrica, en tres cubetas con los umbrales de
    Google. Nunca la URL, la persona, el teléfono ni la dirección: la ruta llega ya en familia y aquí se vuelve a reducir. */
-import { alCambiarConfig } from "./cambios-config";
+import { cacheConAviso } from "./cache-aviso";
 import { db } from "./db";
 import { dentroDelTope, sumarTope } from "./topes";
 
@@ -25,14 +25,9 @@ export function familiaVital(ruta: unknown): string | null {
 }
 export const cubeta = (m: Metrica, v: number): 0 | 1 | 2 => (v <= UMBRAL[m][0] ? 0 : v <= UMBRAL[m][1] ? 1 : 2);
 
-let flag: { at: number; on: boolean } | null = null, escucha = false;
-async function encendido() {
-  if (!escucha) { escucha = true; alCambiarConfig(() => { flag = null; }); }
-  if (flag && Date.now() - flag.at < 30_000) return flag.on;
-  const on = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.vitals'`).catch(() => ({ rows: [] as { enabled: boolean }[] }))).rows[0]?.enabled === true;
-  flag = { at: Date.now(), on };
-  return on;
-}
+const FLAG = cacheConAviso({ ttlMs: 30_000,
+  cargar: async () => (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.vitals'`).catch(() => ({ rows: [] as { enabled: boolean }[] }))).rows[0]?.enabled === true });
+const encendido = (): Promise<boolean> => FLAG.leer();
 
 export type ResVital = { ok: true; n: number } | { ok: false; por: "apagado" | "limite" | "invalido" };
 export async function recibirVital(e: { ip: string | null; cuerpo: unknown }): Promise<ResVital> {
