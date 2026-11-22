@@ -253,6 +253,32 @@ const ADM = '5705550199';
     ok((await html(pa, `/panel/${NEG.id}/pagina/fotos`)).t.includes(T.fotoNeg), 'foto quitada por el equipo: su nota viaja a Fotos y portada (la pinta)');
     ok(!(await html(pa, `/panel/${NEG.id}`)).t.includes(T.fotoNeg) && !(await html(pa, `/panel/${NEG.id}/mensajes`)).t.includes(T.fotoNeg), 'y no a Tu página ni a Mensajes (no la pintan)');
 
+    // 22 nov · (3) Lo que el Panel pinta en una sola sección: el motivo de la pausa de Cotizaciones (Lo que vendes › Servicios), el de la pausa de Staff y quién
+    // quitó To’Latino del equipo (Tu página › Equipo y la hoja de cada persona), la nota del sello (Tu página › Verificación). A las demás no viajan.
+    console.log('3c · pausas.cot, pausas.staff, equipo[].hidden y ver.selloNote: cada dato, solo a lo que lo pinta');
+    const SECCIONES = ['', '/hoy', '/mensajes', '/clientes', '/mas', '/vendes', '/pagina/hor', '/pagina/fotos', '/pagina/about', '/pagina/equipo', '/pagina/ver', '/pagina/resenas', '/vendes/servicios'];
+    const antesOff = sql(`select coalesce(modules_off::text, 'null') from businesses where id = '${NEG.id}'`);
+    restaurar.push(() => sql(`update businesses set modules_off = ${antesOff === 'null' ? 'null' : `'${antesOff.replace(/'/g, "''")}'::jsonb`} where id = '${NEG.id}'`));
+    T.cot = tag('COT'); T.staff = tag('STF'); T.quito = tag('QTO');
+    sql(`update businesses set modules_off = '${JSON.stringify({ cot: { reason: `Cotizaciones ${T.cot}`, at: new Date().toISOString(), by: 'admin' }, staff: { reason: `Staff ${T.staff}`, at: new Date().toISOString(), by: 'admin' } })}'::jsonb where id = '${NEG.id}'`);
+    const MIEMBRO = sql(`select id from business_members where business_id = '${NEG.id}' and user_id = '${UA}' limit 1`);
+    ok(/^[0-9a-f-]{36}$/.test(MIEMBRO), `la persona de la prueba es del equipo del negocio (${MIEMBRO || 'ninguna'})`);
+    const antesHid = sql(`select coalesce(hidden_by_admin::text, '') || '|' || coalesce(hidden_reason, '') from business_members where id = '${MIEMBRO}'`).split('|');
+    restaurar.push(() => sql(`update business_members set hidden_by_admin = ${antesHid[0] ? `'${antesHid[0]}'::timestamptz` : 'null'}, hidden_reason = ${antesHid[1] ? `'${antesHid[1].replace(/'/g, "''")}'` : 'null'} where id = '${MIEMBRO}'`));
+    sql(`update business_members set hidden_by_admin = now(), hidden_reason = 'Quitada ${T.quito}' where id = '${MIEMBRO}'`);
+    const PINTA = { cot: ['/vendes/servicios'], staff: ['/pagina/equipo'], quito: ['/pagina/equipo'], sello: ['/pagina/ver'] };
+    for (const k of Object.keys(PINTA)) {
+      for (const u of SECCIONES) {
+        r = await html(pa, `/panel/${NEG.id}${u}`);
+        const va = r.t.includes(T[k]), debe = PINTA[k].includes(u);
+        ok(r.s === 200 && va === debe, `${k === 'cot' ? 'pausas.cot' : k === 'staff' ? 'pausas.staff' : k === 'quito' ? 'equipo[].hidden' : 'ver.selloNote'} ${debe ? 'viaja a' : 'NO viaja a'} ${u || '/'} (${debe ? 'lo pinta' : 'no lo pinta'}) (${r.s})`);
+      }
+    }
+    r = await html(pa, `/panel/${NEG.id}/pagina/equipo?det=stf:${MIEMBRO}`);
+    ok(r.s === 200 && r.t.includes(T.quito), 'equipo[].hidden viaja a la hoja de la persona (?det=stf:…), donde se pinta');
+    r = await html(pa, `/panel/${NEG.id}/hoy?det=stf:${MIEMBRO}`);
+    ok(r.s === 200 && r.t.includes(T.quito) && !r.t.includes(T.staff), 'la hoja de la persona abierta desde otra sección también lo lleva, y pausas.staff no');
+
     r = await html(pa, `/recuperar/${OTRO}`);
     ok(r.s === 200 && r.t.includes(tag('CLA')), `Recuperar responde con su reclamo aprobado (su propia nota viaja y se pinta) (${r.s})`);
     ok(!r.t.includes(T['claims.reason (aprobado)']), 'Recuperar con el reclamo aprobado: el motivo (nota del equipo al aplicar) NO viaja');

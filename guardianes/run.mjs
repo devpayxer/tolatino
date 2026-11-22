@@ -8728,13 +8728,18 @@ const guardianes = {
     const pg = existsSync(PG) ? sinComent(PG) : "";
     if (!/if \(!\(ruta\.sec === "hoy" \|\| \(ruta\.sec === "pag" && !ruta\.sub\)\)\) d\.adm = \{ \.\.\.d\.adm, reason: null, tempReason: null \};/.test(pg) || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "fotos"\)\) d\.adm = \{ \.\.\.d\.adm, fotos: \[\] \};/.test(pg))
       falla(G, PG, 0, "el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta (Hoy y Tu página; las fotos quitadas, a Fotos y portada)");
+    // 22 nov · (3) Lo mismo con lo que el Panel guarda por sección: pausas.cot (Lo que vendes › Servicios), pausas.staff (Tu página › Equipo), equipo[].hidden (Equipo y la
+    // hoja de cada persona, ?det=stf:) y ver.selloNote (Verificación).
+    if (!/if \(!\(ruta\.sec === "mod" && ruta\.sub === "servicios"\)\) d\.pausas = \{ \.\.\.d\.pausas, cot: null \};/.test(pg) || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "equipo"\)\) d\.pausas = \{ \.\.\.d\.pausas, staff: null \};/.test(pg)
+      || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "equipo"\) && !ruta\.det\?\.startsWith\("stf:"\)\) d\.equipo = d\.equipo\.map\(\(m\) => \(\{ \.\.\.m, hidden: null \}\)\);/.test(pg) || !/if \(!\(ruta\.sec === "pag" && ruta\.sub === "ver"\)\) d\.ver = \{ \.\.\.d\.ver, selloNote: null \};/.test(pg))
+      falla(G, PG, 0, "el Panel manda la pausa de Cotizaciones, la de Staff, quién quitó To’Latino del equipo y la nota del sello solo a la sección que los pinta (Servicios, Equipo y la hoja de la persona, Verificación)");
     if (!/L\("catalogo", `select i\.\*\$\{banderasDeNotas\("items"\)\} from items i where i\.business_id = \$1 order by i\.id`, "items", \["hidden_by"\]\)/.test(x)) falla(G, X, 0, "el catálogo del archivo del negocio no lleva quién del equipo ocultó un plato (hidden_by)");
     if (!existsSync(E)) return falla(G, E, 0, "falta la prueba contra la base que clasifica cada nota de cada tabla exportada");
     const e = readFileSync(E, "utf8");
     // (4) Una nota por familia, escrita por la hoja del equipo (la pantalla), no directo en la base.
     const fam = new Set((e.match(/'por la hoja del equipo \((interna|por fila|persona)\)/g) ?? []));
     if (fam.size < 3 || !/await padm\.goto\(`\$\{B\}\/admin\/negocios\//.test(e) || !/await hoja\(padm, /.test(e)) falla(G, E, 0, "nota9u2: una nota por familia (interna, por fila, persona) se escribe por la hoja del equipo en Negocio 360");
-    if (!/«internas» · \$\{k\} no sale/.test(e)) falla(G, E, 0, "nota9u2 mira que las «internas» no salgan del archivo");
+    if (!/3c · pausas\.cot, pausas\.staff, equipo\[\]\.hidden y ver\.selloNote/.test(e) || !/«internas» · \$\{k\} no sale/.test(e)) falla(G, E, 0, "nota9u2 mira que pausas.cot, pausas.staff, equipo[].hidden y ver.selloNote viajen solo a lo que los pinta, y que las «internas» no salgan del archivo");
     if (!/cat\.every\(\(x\) => !\('hidden_by' in x\)\)/.test(e) || !/NO viaja a \$\{u\} \(no lo pinta\)/.test(e)) falla(G, E, 0, "nota9u2 mira el catálogo sin hidden_by y que el motivo de To’Latino no viaje a las pantallas que no lo pintan");
     if (!/information_schema\.columns/.test(e) || !/ES_NOTA\.test\(/.test(e) || !/ok\(sinClasificar\.length === 0, `ninguna nota sin clasificar/.test(e) || !/ok\(fantasmas\.length === 0/.test(e) || !/mapa-de-datos\.json/.test(e)) falla(G, E, 0, "la prueba recorre information_schema.columns de cada tabla exportada con ES_NOTA y falla si una nota queda sin clasificar");
   },

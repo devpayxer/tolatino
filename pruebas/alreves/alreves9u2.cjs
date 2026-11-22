@@ -22,6 +22,13 @@ const casos = [
   ['apps/web/lib/panel.ts', 'case when b.temp_closed_until > now() then b.temp_closed_reason end as temp_reason', 'b.temp_closed_reason as temp_reason', 'el motivo de To’Latino (status_reason, temp_closed_reason) viaja solo mientras'],
   ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "hoy" || (ruta.sec === "pag" && !ruta.sub))) d.adm = { ...d.adm, reason: null, tempReason: null };', '', 'el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta'],
   ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "pag" && ruta.sub === "fotos")) d.adm = { ...d.adm, fotos: [] };', '', 'el Panel manda el motivo de To’Latino solo a la pantalla que lo pinta'],
+  // 22 nov · (3) Cada dato viaja a otra sección además de la que lo pinta (o la prueba deja de mirarlo).
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "mod" && ruta.sub === "servicios")) d.pausas = { ...d.pausas, cot: null };', '', 'la pausa de Cotizaciones, la de Staff'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "pag" && ruta.sub === "equipo")) d.pausas = { ...d.pausas, staff: null };', '', 'la pausa de Cotizaciones, la de Staff'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'd.equipo = d.equipo.map((m) => ({ ...m, hidden: null }));', 'd.equipo = d.equipo;', 'la pausa de Cotizaciones, la de Staff'],
+  ['apps/web/app/panel/[id]/[[...r]]/page.tsx', 'if (!(ruta.sec === "pag" && ruta.sub === "ver")) d.ver = { ...d.ver, selloNote: null };', '', 'la pausa de Cotizaciones, la de Staff'],
+  [E, "3c · pausas.cot, pausas.staff, equipo[].hidden y ver.selloNote", "3c · otras cosas", 'nota9u2 mira que pausas.cot'],
+  [E, "«internas» · ${k} no sale", "internas · ${k} no sale", 'las «internas» no salgan del archivo'],
   // 22 nov · (4) La prueba vuelve a escribir todas las notas directo en la base, o deja de mirar el catálogo y las pantallas que no pintan.
   [E, "'por la hoja del equipo (interna)", "'directo en la base (interna)", 'nota9u2: una nota por familia'],
   [E, "cat.every((x) => !('hidden_by' in x))", 'cat.every(() => true)', 'nota9u2 mira el catálogo sin hidden_by'],
