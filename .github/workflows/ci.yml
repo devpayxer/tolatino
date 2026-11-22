@@ -50,9 +50,9 @@ on:
         options: ["no", "si"]
         default: "no"
       partes:
-        description: "En cuántos trabajos paralelos se reparte cada carril largo de punta a punta (cada parte en su base nueva; cada prueba prepara sus datos); «al revés» va siempre en 4"
+        description: "En cuántos trabajos paralelos se reparte cada carril largo de punta a punta (cada parte en su base nueva; cada prueba prepara sus datos; con 8, por la asignación de pruebas/reparto.json); «al revés» va siempre en 4"
         type: choice
-        options: ["1", "4"]
+        options: ["1", "4", "8"]
         default: "4"
 
 permissions:

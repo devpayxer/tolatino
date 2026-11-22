@@ -90,7 +90,13 @@ if (opt("--desde")) { const i = sel.findIndex((t) => t.nombre === opt("--desde")
 if (opt("--saltar")) { const fuera = new Set(opt("--saltar").split(",")); sel = sel.filter((t) => !fuera.has(t.nombre)); }
 if (opt("--parte")) {
   const m = /^(\d+)\/(\d+)$/.exec(opt("--parte") ?? ""); if (!m || +m[1] < 1 || +m[1] > +m[2]) { console.error("--parte <i>/<n> (1 ≤ i ≤ n)"); process.exit(2); }
-  sel = sel.filter((_, k) => k % +m[2] === +m[1] - 1);
+  /* 22 nov · Revisión del CI (B3) · Con la punta a punta entera, sin barajar y con la n de pruebas/reparto.json, la parte sale de la ASIGNACIÓN
+     guardada (por duración, con cada requisito en la misma parte y antes de quien lo pide; pruebas/lib/reparto.cjs). Si no (otra n, «solo»,
+     --saltar, --barajar, al revés), por posición como siempre. Guardián repartoAsignado. */
+  const RP = createRequire(import.meta.url)("./lib/reparto.cjs"), e2e = sel.filter((t) => t.carril === "e2e");
+  const asignada = flag("--barajar") || e2e.length !== sel.length ? null : RP.parteDe(RAIZ, RP.leer(RAIZ), e2e.map((t) => t.nombre), +m[1], +m[2]);
+  if (asignada) { sel = asignada.map((n) => catalogo.find((t) => t.nombre === n)); console.log(`--parte ${m[1]}/${m[2]} · por la asignación de ${RP.ARCHIVO} (${sel.length} pruebas)`); }
+  else sel = sel.filter((_, k) => k % +m[2] === +m[1] - 1);
 }
 const TIEMPO = Number(opt("--tiempo") ?? 25) * 60_000;
 /* 22 nov · Revisión del CI (B2) · --comprobar: solo resuelve la selección (un nombre que no existe ya salió con 2 arriba) y sale, sin correr nada,

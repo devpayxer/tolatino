@@ -8075,7 +8075,7 @@ const guardianes = {
       if (!t.includes(PM)) falla(G, Y, 0, `«${k}» no reparte su matriz en las partes pedidas (${PM})`);
       if (t.split(pa).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${pa} (ni fija ni olvidada)`);
     }
-    if (!/\n      partes:\n[\s\S]*?options: \["1", "4"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1 o 4)");
+    if (!/\n      partes:\n[\s\S]*?options: \["1", "4", "8"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1, 4 u 8)");
     // 20 nov · El entorno de cada trabajo no se queda colgado: cada paso que baja algo de la red (pip, apt, npm, navegadores, la base, los
     // recursos, el servidor) va con tope de tiempo y UN reintento (dos trabajos se quedaron 40 min en ese paso, CI 44771585360).
     { const EA = ".github/actions/entorno-pruebas/action.yml", ea = existsSync(EA) ? readFileSync(EA, "utf8") : "";
@@ -11031,6 +11031,46 @@ const guardianes = {
     if (una && vivo(una) !== 0) falla(G, C, 0, `--comprobar ${una} (una prueba que existe) no sale con 0`);
     if (vivo(`${una ?? "x"} zz-no-existe-esta-prueba`) !== 2) falla(G, C, 0, "--comprobar con un nombre que no existe tiene que salir con 2");
     if (!/if \(flag\("--comprobar"\)\) \{ console\.log\(`✓ --comprobar: [^`]*`\); process\.exit\(sel\.length \? 0 : 2\); \}/.test(sinComent(C))) falla(G, C, 0, "--comprobar solo resuelve la selección y sale (sin correr nada, sin servidor, sin candado)");
+  },
+
+  /* 22 nov · Revisión del CI (B3) · repartoAsignado: la punta a punta va en partes por una ASIGNACIÓN guardada (pruebas/reparto.json, la escribe
+     scripts/ci/repartir.mjs desde duraciones medidas; reglas en pruebas/lib/reparto.cjs). Lo que se teme: una prueba en dos partes o en ninguna, una
+     que ya no existe, las que se requieren en partes distintas o el requisito DESPUÉS de quien lo pide (lo corre por dentro, o falla en una base
+     nueva), un reparto para otra n que la de ci.yml, un corredor que deje de usar la asignación (o la use al barajar), y que regenerar mueva a
+     todos. Una prueba nueva sin asignar es un aviso (va a la parte más vacía o a la de su requisito) hasta 5; más, rojo. Al revés: alrevesReparto. */
+  repartoAsignado() {
+    const G = "repartoAsignado", A = "pruebas/reparto.json", L = "pruebas/lib/reparto.cjs", S = "scripts/ci/repartir.mjs", C = "pruebas/correr.mjs", Y = ".github/workflows/ci.yml";
+    for (const f of [A, L, S, C, Y]) if (!existsSync(f)) return falla(G, f, 0, "falta (el reparto de la punta a punta en partes)");
+    let RP, rep;
+    try { RP = createRequire(import.meta.url)(`../${L}`); } catch (e) { return falla(G, L, 0, `no carga: ${String(e?.message ?? e).slice(0, 160)}`); }
+    try { rep = JSON.parse(readFileSync(A, "utf8")); } catch (e) { return falla(G, A, 0, `no se deja leer: ${String(e?.message ?? e).slice(0, 160)}`); }
+    // Las partes de la regresión en ci.yml: el reparto tiene que ser para una de las que el input «partes» ofrece.
+    const y = readFileSync(Y, "utf8"), inp = /\n      partes:\n[\s\S]*?options: \[([^\]]*)\]\n\s*default: "(\d+)"/.exec(y);
+    const ops = (inp?.[1] ?? "").split(",").map((x) => x.trim().replace(/^"|"$/g, ""));
+    if (!inp || !ops.includes(String(rep?.partes?.length))) falla(G, A, 0, `el reparto es para ${rep?.partes?.length} partes y el input «partes» de ci.yml no la ofrece (${ops.join(", ")})`);
+    for (const x of RP.comprobar(process.cwd(), rep)) { if (x.falla) falla(G, A, 0, x.msg); else avisos.push(`[${G}] ${A} — ${x.msg}`); }
+    // El corredor la usa de verdad: cada --parte i/n de la punta a punta entera es la parte i de la asignación (con las nuevas), y al barajar o con
+    // otra n, por posición.
+    const n = rep?.partes?.length ?? 0, GR = "--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios";
+    const corre = (a) => { try { return (/existen: (.*)$/m.exec(execSync(`node ${C} ${a} --comprobar`, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 30_000 }))?.[1] ?? "").trim().split(" ").filter(Boolean); } catch { return null; } };
+    const cat = RP.catalogo(process.cwd());
+    if (n > 1) {
+      const todas = [];
+      for (let i = 1; i <= n; i++) {
+        const v = corre(`${GR} --parte ${i}/${n}`), esp = RP.parteDe(process.cwd(), rep, cat, i, n);
+        if (!v || JSON.stringify(v) !== JSON.stringify(esp)) { falla(G, C, 0, `--parte ${i}/${n} de la punta a punta no corre la parte ${i} de ${A} en su orden (corre: ${(v ?? ["(no corrió)"]).slice(0, 6).join(" ")}…)`); break; }
+        // Independiente de la biblioteca: en lo que de verdad corre la parte, cada requisito va antes de quien lo pide.
+        for (const [a, b] of RP.aristas(process.cwd()).aristas) if (v.includes(a) && v.includes(b) && v.indexOf(b) > v.indexOf(a)) falla(G, C, 0, `--parte ${i}/${n}: ${a} requiere ${b} y el corredor corre ${b} DESPUÉS`);
+        todas.push(...v);
+      }
+      if (todas.length && (todas.length !== cat.length || new Set(todas).size !== cat.length)) falla(G, C, 0, `las ${n} partes corren ${todas.length} pruebas (${new Set(todas).size} distintas) de ${cat.length}: cada una, una vez`);
+      const b = corre(`${GR} --parte 1/${n} --barajar 7`);
+      if (!b || JSON.stringify(b) === JSON.stringify(RP.parteDe(process.cwd(), rep, cat, 1, n))) falla(G, C, 0, "--barajar no puede usar la asignación (es el detector de dependencias de orden: reparte al azar)");
+      const otra = corre(`${GR} --parte 1/${n + 1}`), posOtra = cat.filter((_, k) => k % (n + 1) === 0);
+      if (!otra || JSON.stringify(otra) !== JSON.stringify(posOtra)) falla(G, C, 0, `con otra n (--parte 1/${n + 1}) el corredor reparte por posición`);
+    }
+    // Generar: LPT con afinidad, orden topológico, estable (regenerar no mueve a nadie), nuevas sin mover a otras (casos sobre catálogos de mentira).
+    try { execSync(`node ${S} --casos`, { stdio: "pipe", timeout: 60_000 }); } catch (e) { falla(G, S, 0, `los casos del reparto no pasan: ${String(e.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 3).join(" · ").slice(0, 300)}`); }
   },
 
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
