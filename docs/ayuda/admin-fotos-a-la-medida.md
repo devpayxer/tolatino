@@ -1,13 +1,14 @@
 # Super Admin: fotos a la medida · Super Admin: photos sized to fit
 
-_Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenido?tab=auto`, bloque «Fotos a la medida»). Solo lectura. Escritorio y teléfono. Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
+_Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenido?tab=auto`, bloque «Fotos a la medida»). Solo lectura. Escritorio y teléfono. Versión: 22 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Cada foto que se sube se guarda en varios tamaños.** La original (hasta 1600 px, sin los datos del teléfono) no se toca; de ella salen
   versiones WebP en 320, 640, 1080 y 1600 px de ancho (nunca más anchas que la original). Cada pantalla pide el tamaño de su caja, así una
   tarjeta no baja la foto entera.
 - **Las fotos de antes las convierte el barrido, por tandas.** Mientras una foto no tiene sus tamaños, se ve la original: nunca una foto rota.
-- **Este bloque enseña cómo va todo eso**, con números de la base en el momento de abrir la pantalla. No tiene botones: no cambia nada.
+- **Este bloque enseña cómo va todo eso**, con números de la base que el barrido rehace cada 10 minutos (no se recuentan al abrir la
+  pantalla: con millones de fotos eso la haría lenta). No tiene botones: no cambia nada.
 - **Lo ve quien ya puede ver Contenido** en el Super Admin; no hay permiso nuevo.
 
 ## Cómo se lee cada cifra
@@ -23,9 +24,10 @@ Fotos públicas (las de nuestro almacén que se ven; una por archivo, una copia 
 - **Ahorro a 640:** lo que se ahorra al servir una foto convertida en una caja de 640 px (el caso de una tarjeta): el porcentaje y, debajo,
   las originales contra las versiones de 640 en MB. Solo cuenta fotos ya convertidas.
 
-Fotos privadas (solo números; las de una cita, visita, ayuda, entrega o reclamo no tienen dirección pública y nunca se enseñan aquí):
-- **Privadas, con sus tamaños, que faltan, sin archivo:** igual que arriba, para las de destino privado. Debajo de «Privadas» va el peso de
-  sus originales y de sus tamaños.
+Fotos privadas (solo números; las de una cita, visita, ayuda, entrega, reclamo o un mensaje no tienen dirección pública y nunca se enseñan aquí):
+- **Privadas, con sus tamaños, que faltan, sin archivo:** igual que arriba, para las de destino privado y, desde el 22 nov, también las fotos de
+  Mensajes, de una ayuda o un caso de Soporte, de una entrega y el documento de un reclamo. Las de esas rutas subidas antes del 22 nov
+  reciben sus tamaños del barrido, por tandas; mientras tanto se ven enteras. Debajo de «Privadas» va el peso de sus originales y de sus tamaños.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -36,12 +38,13 @@ Fotos privadas (solo números; las de una cita, visita, ayuda, entrega o reclamo
 | «Ahorro a 640» en 0 % | Todavía no hay fotos convertidas o ninguna pesa menos servida a 640. |
 | Una foto se oculta, se rechaza o se purga | Deja de contar: solo cuentan las que se ven. |
 | Una persona sin permiso de Contenido | No ve la pantalla. |
+| Subí una foto y la cifra no cambió | Las cifras se rehacen cada 10 minutos; vuelve a abrir la pantalla después. |
 
 ## Preguntas frecuentes
 - **¿Puedo convertir una foto desde aquí?** No: es solo lectura; las convierte el barrido solo.
 - **¿Por qué «Peso de los tamaños» es mayor que el de las originales?** Suma las cuatro versiones de cada foto; lo que ahorra una pantalla
   es una sola, y eso lo dice «Ahorro a 640».
-- **¿Las cifras están en vivo?** Son de la base al abrir o refrescar la pantalla.
+- **¿Las cifras están en vivo?** No del todo: son de la base, rehechas por el barrido cada 10 minutos (como los totales de Contenido).
 - **¿Se ven aquí las fotos privadas?** No: solo cuántas son y cuántas están convertidas.
 
 ## English
@@ -51,7 +54,8 @@ Fotos privadas (solo números; las de una cita, visita, ayuda, entrega o reclamo
   versions at 320, 640, 1080 and 1600 px wide are made from it (never wider than the original). Each screen asks for the size of its box,
   so a card does not download the whole photo.
 - **Older photos are converted by the sweep, in batches.** While a photo has no sizes, the original shows: never a broken photo.
-- **This block shows how that is going**, with the database's numbers at the moment you open the screen. It has no buttons: it changes nothing.
+- **This block shows how that is going**, with database numbers the sweep refreshes every 10 minutes (they are not recounted when you
+  open the screen: with millions of photos that would make it slow). It has no buttons: it changes nothing.
 - **Whoever can already see Content** in the Super Admin sees it; there is no new permission.
 
 ### How to read each number
@@ -67,8 +71,10 @@ Public photos (those in our storage that are visible; one per file, a copy is no
 - **Saving at 640:** what is saved when a converted photo is served in a 640 px box (a card's case): the percentage and, below, the
   originals against the 640 versions in MB. It only counts photos already converted.
 
-Private photos (numbers only; those of an appointment, visit, help, delivery or claim have no public address and are never shown here):
-- **Private, with sizes, pending, no file:** same as above, for private-destination photos. Under “Private” goes the weight of their
+Private photos (numbers only; those of an appointment, visit, help, delivery, claim or a message have no public address and are never shown here):
+- **Private, with sizes, pending, no file:** same as above, for private-destination photos and, since Nov 22, also Messages photos,
+  help and Support case photos, delivery photos and claim documents. Those uploaded before Nov 22 get their sizes from the sweep, in batches;
+  until then they show whole. Under “Private” goes the weight of their
   originals and of their sizes.
 
 ### What happens in each case
@@ -80,10 +86,11 @@ Private photos (numbers only; those of an appointment, visit, help, delivery or 
 | “Saving at 640” at 0 % | There are no converted photos yet, or none weighs less served at 640. |
 | A photo is hidden, rejected or purged | It stops counting: only photos that show count. |
 | A person without Content permission | They do not see the screen. |
+| I uploaded a photo and the number did not change | The numbers are refreshed every 10 minutes; open the screen again later. |
 
 ### Frequently asked questions
 - **Can I convert a photo from here?** No: it is read-only; the sweep converts them on its own.
 - **Why is “Weight of the sizes” greater than the originals'?** It adds the four versions of each photo; what one screen saves is just
   one of them, and that is what “Saving at 640” says.
-- **Are the numbers live?** They are the database's when you open or refresh the screen.
+- **Are the numbers live?** Almost: they are the database's, refreshed by the sweep every 10 minutes (like the Content totals).
 - **Are private photos shown here?** No: only how many there are and how many are converted.
