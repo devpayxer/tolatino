@@ -14700,6 +14700,67 @@ const guardianes = {
     }
   },
 
+  /* 22 nov · toqueSobreviveSalida: el toque de «Llamar» no se contaba en Safari (CI 45042985880, tarAK rojo siempre en iPhone SE e iPad, verde en
+     Chromium). La pantalla hacía `void registrarToque(…)` (una acción del servidor: un fetch normal, en cola del enrutador) y justo después
+     `location.href = "tel:…"`; WebKit cancela lo que la página tiene en vuelo al navegar y el toque se perdía: las llamadas de la mayoría de los
+     vecinos faltaban en las cifras del panel. La misma pareja «contar y salir» estaba en la ficha (las dos), los relacionados, los patrocinados, la
+     semilla de la categoría, el mapa (cómo llegar) y compartir. Ahora:
+     (1) Ninguna pantalla cuenta un toque con una acción del servidor (registrarToque…) y sale de la página después (tel:, window.open, el mapa del
+         teléfono, compartir); ni existe ya esa acción: los toques salen SOLO por lib/contar-toque.ts.
+     (2) lib/contar-toque.ts manda con navigator.sendBeacon (y, si no, fetch con keepalive) a /api/toque, sin esperar la respuesta; nadie la llama
+         con await (tel: sale del propio toque).
+     (3) /api/toque solo tiene POST, acota el cuerpo (512 bytes, antes de leerlo entero), acepta exactamente { id, kind, origen } o { semilla, origen }
+         y llama a lib/toques.ts; contesta 204 siempre.
+     (4) lib/toques.ts tiene las reglas de siempre: primero el mismo origen; id y tipo válidos; una vez cada 10 min por persona o red; máx. 60 por red
+         y hora; la gente del propio negocio no cuenta; el evento «contactar». Y es lo ÚNICO del código que escribe contact_taps.
+     Prueba: tarAK («llamar y la página se corta en el mismo instante»). Al revés: alrevesToqueSalida. */
+  toqueSobreviveSalida() {
+    const G = "toqueSobreviveSalida", CT = "apps/web/lib/contar-toque.ts", RT = "apps/web/app/api/toque/route.ts", LT = "apps/web/lib/toques.ts";
+    const SALIDA = /location\.(href\s*=|assign\(|replace\()|window\.open\(|abrirComoLlegar\(|compartirNativo\(|compartir\(|urlComoLlegar\(|urlTelefono\(/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      // (1) La vía vieja: una acción del servidor que cuenta el toque, seguida de una salida de la página (en esa línea o en las 3 siguientes).
+      for (const m of t.matchAll(/\bregistrarToque\w*\(/g)) {
+        const linea = t.slice(0, m.index).split("\n").length, tramo = t.slice(m.index).split("\n").slice(0, 4).join("\n");
+        if (SALIDA.test(tramo)) falla(G, f, linea, "cuenta el toque con una acción del servidor y sale de la página justo después: en Safari la salida la cancela y el toque no se cuenta; usa contarToque de lib/contar-toque.ts");
+      }
+      if (/["']use server["']/.test(t.slice(0, 40)) && /\nexport async function registrarToque\w*\(/.test(t)) falla(G, f, 0, "vuelve a existir una acción del servidor que cuenta toques (registrarToque…): los toques salen solo por lib/contar-toque.ts → /api/toque");
+      if (/\binsert into contact_taps\b/i.test(t) && f !== LT) falla(G, f, 0, "escribe contact_taps fuera de lib/toques.ts (las reglas de los toques están en un solo lugar)");
+      if (/from "@\/lib\/contar-toque"/.test(t) && /await\s+contarToque\w*\(/.test(t)) falla(G, f, 0, "espera a contarToque antes de seguir: tel: tiene que salir del propio toque (iOS lo exige); el toque no se espera");
+    }
+    // (2) La pieza de la pantalla.
+    if (!existsSync(CT)) return falla(G, CT, 0, "falta lib/contar-toque.ts (la única vía para contar un toque desde la pantalla)");
+    const ct = sinComent(CT);
+    if (!/navigator\.sendBeacon\(RUTA, /.test(ct)) falla(G, CT, 0, "el toque sale con navigator.sendBeacon (sobrevive a la salida de la página)");
+    if (!/fetch\(RUTA, \{[^}]*keepalive: true/.test(ct)) falla(G, CT, 0, "sin sendBeacon, el toque sale con fetch y keepalive: true (sobrevive a la salida de la página)");
+    if (!/const RUTA = "\/api\/toque";/.test(ct)) falla(G, CT, 0, "el toque va a /api/toque");
+    if (/\bawait\b|\basync\b|from "\.\.?\/.*acciones"|from "@\/app/.test(ct)) falla(G, CT, 0, "lib/contar-toque.ts no espera nada ni llama a una acción del servidor: manda y vuelve en el mismo toque");
+    // (3) La puerta.
+    if (!existsSync(RT)) return falla(G, RT, 0, "falta /api/toque");
+    const rt = sinComent(RT);
+    const exportadas = [...rt.matchAll(/export (?:async )?function (\w+)/g)].map((m) => m[1]);
+    if (exportadas.join(",") !== "POST") falla(G, RT, 0, `/api/toque solo exporta POST (exporta: ${exportadas.join(", ") || "nada"})`);
+    if (!/const MAX = 512;/.test(rt) || !/content-length"\) \?\? 0\) > MAX\) return null/.test(rt) || !/if \(n > MAX\) \{/.test(rt)) falla(G, RT, 0, "/api/toque acota el cuerpo a 512 bytes antes de leerlo entero (content-length y por partes)");
+    if (!/claves === "id,kind,origen"/.test(rt) || !/claves === "origen,semilla"/.test(rt) || !/typeof x\.origen !== "string"\) return nada\(\)/.test(rt)) falla(G, RT, 0, "/api/toque acepta exactamente { id, kind, origen } o { semilla, origen }, todo texto");
+    if (!/import \{ contarToque, contarToqueSemilla \} from "@\/lib\/toques";/.test(rt) || /\bdb\(\)|\btx\(|insert into|from "@\/lib\/db"/.test(rt)) falla(G, RT, 0, "/api/toque no toca la base: las reglas son las de lib/toques.ts");
+    if (/status: (?!204)\d+/.test(rt)) falla(G, RT, 0, "/api/toque contesta 204 siempre (no dice si el toque se contó)");
+    // (4) Las reglas, en un solo lugar.
+    if (!existsSync(LT)) return falla(G, LT, 0, "falta lib/toques.ts");
+    const lt = sinComent(LT), partes = lt.split(/\nexport async function /).slice(1);
+    if (partes.map((p) => p.slice(0, p.indexOf("("))).join(",") !== "contarToque,contarToqueSemilla") falla(G, LT, 0, "lib/toques.ts exporta contarToque y contarToqueSemilla (y nada más que escriba)");
+    for (const p of partes) {
+      const nombre = p.slice(0, p.indexOf("(")), cuerpo = p.slice(0, p.indexOf("\n}") + 1);
+      if (!/^[^\n]*\{\n\s*if \(!\(await mismoOrigen\(\)\)\) return;/.test(cuerpo)) falla(G, LT, 0, `«${nombre}» no revisa primero el mismo origen`);
+      if (!/interval '10 minutes'/.test(cuerpo) || !/interval '1 hour'\) < 60\)/.test(cuerpo)) falla(G, LT, 0, `«${nombre}» perdió el tope: una vez cada 10 min por persona o red, y 60 por red y hora`);
+      if (!/await evento\("contactar"/.test(cuerpo)) falla(G, LT, 0, `«${nombre}» ya no anota el evento «contactar»`);
+    }
+    const p0 = partes.find((p) => p.startsWith("contarToque(")) ?? "";
+    if (!/!ID_NEG\.test\(id\) \|\| !TOQUES\.has\(kind\)\) return;/.test(p0)) falla(G, LT, 0, "contarToque valida el id del negocio y el tipo de toque");
+    if (!/not exists \(select 1 from business_members m where m\.business_id = b\.id and m\.user_id = \$2::uuid and m\.status = 'active'\)/.test(p0)) falla(G, LT, 0, "contarToque: la gente del propio negocio no cuenta");
+    if (!existsSync("pruebas/alreves/alrevesToqueSalida.cjs") || !/se corta en el mismo instante/.test(readFileSync("pruebas/e2e/tarAK.cjs", "utf8"))) falla(G, "pruebas/e2e/tarAK.cjs", 0, "falta la prueba (tarAK: la página se corta en el mismo instante del toque) o su prueba al revés (alrevesToqueSalida)");
+  },
+
 };
 
 

@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { Tarjeta } from "@/lib/tarjeta";
 import { abrirComoLlegar } from "@/lib/como-llegar";
-import { registrarToque } from "../../acciones";
+import { contarToque } from "@/lib/contar-toque";
 import { entroPatrocinado } from "../../acciones-patrocinio";
 import { VideoTarjeta, VisorHoy } from "../../VideoNegocio";
 import { fotoFondo } from "@tolatino/ui";
@@ -60,8 +60,8 @@ export function Patrocinados({ items, titulo, es }: { items: Patrocinada[]; titu
   const cta = (p: Patrocinada) => () => {
     const b = p.t;
     entrar(p);
-    if (b.accion === "llamar" && b.phone) { void registrarToque(b.id, "call", "patrocinados"); location.href = `tel:${b.phone}`; return; }
-    if (b.accion === "llegar" && b.lat != null && b.lng != null) { void registrarToque(b.id, "directions", "patrocinados"); abrirComoLlegar({ lat: b.lat, lng: b.lng }); return; }
+    if (b.accion === "llamar" && b.phone) { contarToque(b.id, "call", "patrocinados"); location.href = `tel:${b.phone}`; return; }
+    if (b.accion === "llegar" && b.lat != null && b.lng != null) { contarToque(b.id, "directions", "patrocinados"); abrirComoLlegar({ lat: b.lat, lng: b.lng }); return; }
     router.push(`/n/${b.id}`);
   };
   return (
