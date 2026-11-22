@@ -5,6 +5,7 @@
 // del árbol (pruebas/lib/diario.cjs) qué había y qué se escribe, con fsync, y guarda los bytes de lo que había. Si el corredor muere a medio caso
 // (SIGKILL, la máquina), el siguiente arranque devuelve lo sembrado comprobando que el archivo sigue con el defecto anotado. Lo que escribe un
 // comando de shell (perl -pi, age -o) no pasa por aquí: eso lo cubre la copia de referencia del corredor (árbol idéntico tras cada suite).
+// Y (A6) un «--solo X» que falla sin el renglón [X] de su guardián no cuenta como cazado (ver abajo).
 const fs = require('fs'), path = require('path');
 const [pidCorredor] = String(process.env.ALREVES_CORREDOR ?? '').split(':');
 if (pidCorredor && Number(pidCorredor) === process.ppid && process.env.ALREVES_DIARIO && process.env.ALREVES_RAIZ) {
@@ -52,4 +53,23 @@ if (pidCorredor && Number(pidCorredor) === process.ppid && process.env.ALREVES_D
     return o.mkdirSync.apply(this, arguments);
   };
   fs.rmdirSync = function (p) { const x = rel(p); if (x) D.anotar(DIR, { ruta: x.r, carpeta: 'quitada', suite, pid: process.pid }); return o.rmdirSync.apply(this, arguments); };
+  // 22 nov · Revisión del CI (A6) · Un caso cuenta como cazado SOLO si su guardián falló con su renglón: código 1, la cabecera «fallo(s) de
+  // guardianes» y un renglón [X]. Un guardián desconocido (código 2), un run.mjs que revienta o el renglón de otro guardián vuelven como si el
+  // guardián hubiera pasado (la suite lo cuenta como NO cazado) y se dice con un ✗. Sin la salida de error a la vista (stdio heredado) no se
+  // puede mirar: queda como antes. Solo en las suites que no miran el renglón por su cuenta (las 32 viejas, 5a … 8f: su código no arma
+  // «[${g}]»); las nuevas ya lo exigen y algunas esperan a propósito otro fallo (alreves9vd: run.mjs que revienta con EISDIR).
+  // Guardián alrevesCazadoConRenglon.
+  let fuente = ''; try { fuente = fs.readFileSync(process.argv[1] ?? '', 'utf8'); } catch { /* -e o sin archivo */ }
+  const cp = require('child_process'), execOrig = cp.execSync;
+  if (!/\[\$\{/.test(fuente)) cp.execSync = function (cmd, ...resto) {
+    const m = /^node guardianes\/run\.mjs --solo (\S+)/.exec(String(cmd));
+    if (!m) return execOrig.call(this, cmd, ...resto);
+    try { return execOrig.call(this, cmd, ...resto); } catch (e) {
+      if (e?.stderr == null) throw e;
+      const err = String(e.stderr);
+      if (e.status === 1 && /fallo\(s\) de guardianes:/.test(err) && err.split('\n').some((l) => l.trim().startsWith(`[${m[1]}]`))) throw e;
+      console.log(`  ✗ ${suite}: el caso de ${m[1]} no salió con el renglón [${m[1]}] de su guardián (código ${e.status ?? e.signal}: ${(err.trim().split('\n').pop() ?? '').slice(0, 160)}): no cuenta como cazado`);
+      return e.stdout ?? Buffer.from('');
+    }
+  };
 }

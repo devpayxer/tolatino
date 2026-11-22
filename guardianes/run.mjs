@@ -10986,6 +10986,26 @@ const guardianes = {
       if (!new RegExp(`fs\\.${f} = function \\([^)]*\\) \\{[\\s\\S]*?(nota\\(|D\\.anotar\\()[\\s\\S]*?return o\\.${f}\\.apply\\(this, arguments\\);`).test(p)) falla(G, P, 0, `la precarga anota ${f} en el diario ANTES de hacerlo`);
   },
 
+  /* 22 nov · Revisión del CI (A6) · alrevesCazadoConRenglon: un caso al revés cuenta como cazado solo si su guardián falló con SU renglón.
+     32 suites viejas (5a … 8f) cuentan como cazado cualquier salida distinta de 0: un guardián renombrado (código 2, «guardián desconocido») o un
+     run.mjs que revienta harían «cazar» todos sus casos. Sin tocar suite por suite: (1) la precarga de textos.cjs (pruebas/lib/alreves-sin-guardian.cjs)
+     dice «no existe el guardián X» si el nombre no está en guardianes/run.mjs (en segundos, en cada «tipos · build · guardianes»); (2) bajo el
+     corredor, la precarga de las suites (pruebas/lib/alreves-corredor.cjs) deja pasar como «falló» SOLO un código 1 con la cabecera
+     «fallo(s) de guardianes» y el renglón [X]; cualquier otro fallo vuelve como «no cazado» con un ✗. Al revés: alrevesRenglon (casos) y renglon9z
+     (de verdad, con un run.mjs doble). */
+  alrevesCazadoConRenglon() {
+    const G = "alrevesCazadoConRenglon", T = "pruebas/lib/alreves-sin-guardian.cjs", P = "pruebas/lib/alreves-corredor.cjs";
+    for (const f of [T, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una de las dos precargas que exigen el renglón del guardián");
+    const t = sinComent(T), p = sinComent(P);
+    if (!/matchAll\(\/\^ \{2\}\(\[a-zA-Z0-9_\]\+\)\\\(\\\) \\\{\$\/gm\)/.test(t) || !/if \(!existe\(m\[1\]\)\) console\.log\(`✗ \$\{path\.basename\(process\.argv\[1\] \?\? '\?'\)\}: no existe el guardián \$\{m\[1\]\}/.test(t))
+      falla(G, T, 0, "la precarga de textos.cjs dice «: no existe el guardián X» cuando el nombre no está definido en guardianes/run.mjs");
+    if (!/if \(!\/\\\[\\\$\\\{\/\.test\(fuente\)\) cp\.execSync = function \(cmd, \.\.\.resto\) \{\s*const m = \/\^node guardianes\\\/run\\\.mjs --solo \(\\S\+\)\/\.exec\(String\(cmd\)\);/.test(p)
+      || !/if \(e\.status === 1 && \/fallo\\\(s\\\) de guardianes:\/\.test\(err\) && err\.split\('\\n'\)\.some\(\(l\) => l\.trim\(\)\.startsWith\(`\[\$\{m\[1\]\}\]`\)\)\) throw e;/.test(p)
+      || !/return e\.stdout \?\? Buffer\.from\(''\);/.test(p))
+      falla(G, P, 0, "bajo el corredor, un --solo X que falla sin código 1, sin la cabecera o sin el renglón [X] vuelve como «no cazado» (con un ✗)");
+    if (!/const rotos = out\.split\('\\n'\)\.filter\(\(l\) => \/no encontré el texto a cambiar\|: no existe \/\.test\(l\)\);/.test(readFileSync("pruebas/alreves/textos.cjs", "utf8"))) falla(G, "pruebas/alreves/textos.cjs", 0, "textos.cjs cuenta como roto el «: no existe » de la precarga");
+  },
+
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
      buscaba «Llegan cuando se encienda producción», que 9o cambió por la sección de despliegues de verdad: la prueba quedó roja en las 3 vueltas
      (14 nov). Lo que la pantalla ARMA con datos (nombres de la prueba, cifras, MAYÚSCULAS) no está escrito en el código: esos van, uno por uno, en
