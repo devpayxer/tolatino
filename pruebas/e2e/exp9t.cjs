@@ -36,7 +36,10 @@ const PARTE = 20000, EXTRA = 45001, PRESUPUESTO_MS = 30000;
     // ── Se baja (POST, una vez) y trae todo ──
     const r = await p.evaluate(async (id) => { const r = await fetch(`/api/datos/archivo/${id}`, { method: 'POST' }); return { s: r.status, b: r.ok ? Array.from(new Uint8Array(await r.arrayBuffer())) : [] }; }, E);
     ok(r.s === 200, `se baja: ${r.s}`);
-    const z = leerZip(Buffer.from(r.b));
+    // 22 nov · En flujo (guardián exportacionEnFlujo): lo bajado es EXACTAMENTE lo que el barrido guardó (sha256 y tamaño en data_exports).
+    const bajado = Buffer.from(r.b), shaG = sql(`select sha256 from data_exports where id = '${E}'`), bytesG = Number(sql(`select bytes from data_exports where id = '${E}'`));
+    ok(require('crypto').createHash('sha256').update(bajado).digest('hex') === shaG && bajado.length === bytesG, `el archivo bajado es idéntico byte a byte al guardado (${bajado.length} bytes)`);
+    const z = leerZip(bajado);
     ok(!z['avisos.json'] && !z['avisos.csv'], 'más de una parte: sin el archivo suelto (avisos.json)');
     const ids = new Set(); let filas = 0;
     for (let i = 1; i <= partes; i++) {

@@ -85,7 +85,11 @@ const enRollback = (cuerpo) => { try { sql(`do $$ declare r text; begin ${cuerpo
     // ── 4 · A lo baja (una vez) ──
     await pa.reload(); await pa.getByText('Tu archivo está listo').first().waitFor(); await shot(pa, 'datos-listo-390');
     const dl = pa.waitForEvent('download'); await t(pa, 'Bajar').click(); const d = await dl;
-    const z = leerZip(fs.readFileSync(await d.path())), J = (k) => JSON.parse(z[`${k}.json`].toString('utf8'));
+    const bajado = fs.readFileSync(await d.path());
+    // 22 nov · En flujo (guardián exportacionEnFlujo): lo que baja la persona es EXACTAMENTE lo que el barrido guardó (sha256 y tamaño en data_exports).
+    const shaG = sql(`select sha256 from data_exports where id = '${E1}'`), bytesG = Number(sql(`select bytes from data_exports where id = '${E1}'`));
+    ok(require('crypto').createHash('sha256').update(bajado).digest('hex') === shaG && bajado.length === bytesG, `el archivo bajado es idéntico byte a byte al guardado (${bajado.length} bytes, sha256 ${shaG.slice(0, 12)}…)`);
+    const z = leerZip(bajado), J = (k) => JSON.parse(z[`${k}.json`].toString('utf8'));
     ok(d.suggestedFilename() === 'tolatino-mis-datos.zip' && !!z['LEEME.txt'] && /ES · /.test(z['LEEME.txt']) && /EN · /.test(z['LEEME.txt']), 'el ZIP con LEEME en español e inglés');
     ok(J('perfil')[0]?.phone === `+1${A}` && J('guardados').length === 1 && J('sigues').length === 1 && J('direcciones').length === 1 && J('publicaciones').length === 1 && J('resenas').length === 1, 'su perfil, guardados, seguidos, direcciones, publicaciones y reseñas');
     ok(J('pedidos_citas_y_reservas').some((o) => o.number === NUM) && !!z['pedidos_citas_y_reservas.csv'] && z['pedidos_citas_y_reservas.csv'].toString().includes(NUM), 'su pedido en JSON y en CSV');

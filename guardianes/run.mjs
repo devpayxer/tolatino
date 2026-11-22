@@ -10733,6 +10733,43 @@ const guardianes = {
     if (!existsSync("pruebas/alreves/medios9tflujo.cjs")) falla(G, "pruebas/alreves/medios9tflujo.cjs", 0, "falta la prueba con dobles de los medios en flujo");
   },
 
+  /* 9t (22 nov) · exportacionEnFlujo: el archivo de «Descargar mis datos» (y el del negocio) se armaba ENTERO en memoria (el ZIP completo antes de
+     subirlo) y se entregaba entero: bajarExportacion lo leía con leerObjeto y la ruta lo copiaba en un Uint8Array (misma clase que mediosEnFlujo,
+     que solo miraba las rutas: aquí la lectura entera estaba en la lib). Medido con una cuenta de 400 000 avisos (ZIP de 51,6 MB): bajarlo pedía
+     +236 MB al proceso. Ahora:
+     - Bajar: bajarExportacion abre el objeto con abrirObjeto (por partes) DESPUÉS del permiso (404 de otra persona y el dueño del negocio) y
+       ANTES de gastar el uso (si el archivo no está, no se gasta); quien pierde la carrera suelta el cuerpo sin esperar. La ruta pasa el cuerpo
+       tal cual con las mismas cabeceras (application/zip, attachment, «no-store, private», noindex). Nada en lib/datos lee un objeto entero.
+     - Armar: armarZip escribe cada trozo comprimido al llegar (zipPorPartes con salida) a un archivo temporal, con su sha256 y su tamaño, y sube
+       desde el disco (guardarArchivo); el archivo temporal se borra en un finally.
+     - Las pruebas datos9d y exp9t comparan el archivo bajado con el guardado (sha256 y tamaño de data_exports). Al revés: alreves9texpflujo. */
+  exportacionEnFlujo() {
+    const G = "exportacionEnFlujo", X = "apps/web/lib/datos/exportar.ts", R = "apps/web/app/api/datos/archivo/[id]/route.ts", Z = "apps/web/lib/pases/zip.ts";
+    for (const f of [X, R, Z]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de la exportación en flujo");
+    const x = sinComent(X), bj = cuerpoFn(x, "bajarExportacion");
+    if (!bj) return falla(G, X, 0, "falta bajarExportacion");
+    if (/leerObjeto|arrayBuffer|Buffer\.concat|guardarObjeto/.test(bj)) falla(G, X, 0, "bajarExportacion lee el archivo entero en memoria (leerObjeto/arrayBuffer): va en flujo con abrirObjeto");
+    const iPermiso = bj.indexOf("kind = 'owner' and status = 'active'"), iAbrir = bj.indexOf("await abrirObjeto(e.media_key)"), iGasta = bj.indexOf("set status = 'bajado'");
+    if (iAbrir < 0 || iPermiso < 0 || iGasta < 0 || iPermiso > iAbrir || iAbrir > iGasta) falla(G, X, 0, "bajarExportacion: el permiso, después abrirObjeto (en flujo) y solo entonces se gasta el uso");
+    if (!/if \(!a \|\| a\.estado !== 200\) return \{ ok: false, status: 410 \};/.test(bj)) falla(G, X, 0, "bajarExportacion: si el archivo no está en el almacén, 410 sin gastar el uso");
+    if (!/if \(!r\.rowCount\) \{ void a\.cuerpo\.cancel\(\)\.catch\(\(\) => undefined\); return \{ ok: false, status: 410 \}; \}/.test(bj)) falla(G, X, 0, "bajarExportacion: quien pierde la carrera suelta el cuerpo sin esperar (void …cancel()) y ve 410");
+    if (!/return \{ ok: true, cuerpo: a\.cuerpo, largo: a\.largo,/.test(bj) || !/export type ResBajar = \{ ok: true; cuerpo: ReadableStream<Uint8Array>;/.test(x)) falla(G, X, 0, "bajarExportacion devuelve el cuerpo en flujo (ReadableStream), no el ZIP");
+    for (const f of archivos.filter((a) => /^apps\/web\/lib\/datos\/.*\.ts$/.test(a))) if (/\bleerObjeto\(/.test(sinComent(f))) falla(G, f, 0, "lib/datos lee un objeto del almacén entero (leerObjeto): el archivo de la persona va en flujo (abrirObjeto)");
+    const r = sinComent(R), post = r.slice(r.indexOf("export async function POST"));
+    if (!/return new NextResponse\(r\.cuerpo, \{/.test(post) || /new Uint8Array\(|r\.zip\b|arrayBuffer|Buffer\.concat/.test(post)) falla(G, R, 0, "la ruta pasa el cuerpo en flujo (new NextResponse(r.cuerpo)), sin copiarlo entero");
+    if (!/"content-type": "application\/zip", "content-disposition": `attachment; filename="\$\{r\.nombre\}"`, "cache-control": "no-store, private", "x-robots-tag": "noindex"/.test(post)) falla(G, R, 0, "la ruta entrega con las mismas cabeceras (application/zip, attachment, «no-store, private», noindex)");
+    // Armar a disco.
+    const ap = cuerpoFn(x, "armarPendientes"), ad = cuerpoFn(x, "armarADisco"), az = cuerpoFn(x, "armarZip");
+    if (/guardarObjeto\(/.test(ap) || !/await guardarArchivo\(clave, ruta, "application\/zip", sha256\);/.test(ap) || !/await armarADisco\(/.test(ap)) falla(G, X, 0, "armarPendientes arma a disco (armarADisco) y sube desde el disco (guardarArchivo), nunca el ZIP entero (guardarObjeto)");
+    if (!/\} finally \{\s*if \(ruta\) await rm\(ruta, \{ force: true \}\)/.test(ap)) falla(G, X, 0, "armarPendientes borra su archivo temporal en un finally");
+    if (!/armarZip\(consultas, negocio, undefined, \(b\) => \{/.test(ad) || !/writeSync\(fd, b,/.test(ad) || !/hash\.update\(b\); bytes \+= b\.length;/.test(ad)) falla(G, X, 0, "armarADisco escribe cada trozo al llegar, con su sha256 y su tamaño");
+    if (!/zipPorPartes\(salida\)/.test(az)) falla(G, X, 0, "armarZip pasa la salida a zipPorPartes (cada trozo comprimido sale al llegar)");
+    const zp = sinComent(Z);
+    if (!/if \(salida\) \{ salida\(l\); salida\(nb\); salida\(cuerpo\); \} else locales\.push\(l, nb, cuerpo\);/.test(zp) || !/if \(salida\) \{ salida\(cd\); salida\(fin\); return Buffer\.alloc\(0\); \}/.test(zp)) falla(G, Z, 0, "zipPorPartes con salida no guarda los trozos (los entrega en orden) y cierra escribiendo el índice");
+    for (const t of ["pruebas/e2e/datos9d.cjs", "pruebas/e2e/exp9t.cjs"]) if (!existsSync(t) || !/idéntico byte a byte al guardado/.test(readFileSync(t, "utf8")) || !/select sha256 from data_exports/.test(readFileSync(t, "utf8"))) falla(G, t, 0, "la prueba compara el archivo bajado con el guardado (sha256 y tamaño de data_exports)");
+    if (!existsSync("pruebas/alreves/alreves9texpflujo.cjs")) falla(G, "pruebas/alreves/alreves9texpflujo.cjs", 0, "falta su prueba al revés");
+  },
+
   /* 9t (19 nov) · resumenComunidadUnaPasada: el barrido de la Comunidad con 1 M de vecinos tardaba 9,2 s de 10 (carga 44571463348): «activos por
      rango» recorría tres veces lo mismo (7, 30 y 90 días). Desde 0190 es una pasada (la última actividad de cada vecino por ciudad en 90 días,
      contada para los tres cortes). Que no vuelva el bucle por período ni una pasada por ciudad, y que com5e compare contra la regla
@@ -10796,7 +10833,7 @@ const guardianes = {
     const pp = (() => { const i = x.indexOf("async function* porPartes("); return i < 0 ? "" : x.slice(i, x.indexOf("\n}", i) + 2); })();
     if (!/declare \$\{cur\} no scroll cursor for \$\{q\.sql\}/.test(pp) || !/fetch forward \$\{tam\} from \$\{cur\}/.test(pp)) falla(G, X, 0, "se lee con un cursor de PARTE en PARTE (declare … cursor / fetch forward)");
     const az = cuerpoFn(x, "armarZip");
-    if (!/porPartes\(/.test(az) || !/zipPorPartes\(\)/.test(az)) falla(G, X, 0, "armarZip lee por partes y comprime cada parte al llegar (porPartes + zipPorPartes)");
+    if (!/porPartes\(/.test(az) || !/zipPorPartes\((salida)?\)/.test(az)) falla(G, X, 0, "armarZip lee por partes y comprime cada parte al llegar (porPartes + zipPorPartes)");
     if (!/`\$\{q\.nombre\}-\$\{s\.partes\}\.csv`/.test(az) || !/`\$\{q\.nombre\}-1\.csv`/.test(az)) falla(G, X, 0, "cada parte lleva su número (nombre-1.csv, nombre-2.csv…)");
     if (!/v\.partes > 1/.test(cuerpoFn(x, "LEEME") || x.slice(x.indexOf("const LEEME"), x.indexOf("const LEEME") + 3000))) falla(G, X, 0, "el LEEME dice en cuántas partes va cada archivo");
     if (!/const PARTE = 20_000/.test(x)) falla(G, X, 0, "PARTE = 20 000 filas por parte");

@@ -6,8 +6,10 @@ import { crc32, deflateRawSync } from "node:zlib";
 const FECHA = ((2026 - 1980) << 9) | (1 << 5) | 1, HORA = 0;
 
 /* 9t · El mismo ZIP armado de a un archivo: cada uno se comprime al agregarlo y su texto crudo se puede soltar (la exportación de datos de una
-   cuenta grande no tiene todo en memoria a la vez: solo lo comprimido). zip() = agregar todos y cerrar: los mismos bytes que antes. */
-export function zipPorPartes() {
+   cuenta grande no tiene todo en memoria a la vez: solo lo comprimido). zip() = agregar todos y cerrar: los mismos bytes que antes.
+   22 nov · `salida`: cada trozo ya comprimido se entrega en orden al llegar (la exportación lo escribe a un archivo temporal y lo sube desde el
+   disco) y no se guarda aquí; cerrar() escribe el índice y devuelve un Buffer vacío. Los bytes son los mismos que sin `salida`. */
+export function zipPorPartes(salida?: (b: Buffer) => void) {
   const locales: Buffer[] = [], centrales: Buffer[] = [];
   let off = 0, n = 0;
   return {
@@ -24,13 +26,15 @@ export function zipPorPartes() {
       k.writeUInt32LE(0x02014b50, 0); k.writeUInt16LE(0x0314, 4); k.writeUInt16LE(20, 6); k.writeUInt16LE(0x0800, 8); k.writeUInt16LE(metodo, 10); k.writeUInt16LE(HORA, 12); k.writeUInt16LE(FECHA, 14);
       k.writeUInt32LE(crc, 16); k.writeUInt32LE(cuerpo.length, 20); k.writeUInt32LE(datos.length, 24); k.writeUInt16LE(nb.length, 28); k.writeUInt16LE(0, 30); k.writeUInt16LE(0, 32);
       k.writeUInt16LE(0, 34); k.writeUInt16LE(0, 36); k.writeUInt32LE((0o100644 << 16) >>> 0, 38); k.writeUInt32LE(off, 42);
-      locales.push(l, nb, cuerpo); centrales.push(k, nb);
+      if (salida) { salida(l); salida(nb); salida(cuerpo); } else locales.push(l, nb, cuerpo);
+      centrales.push(k, nb);
       off += 30 + nb.length + cuerpo.length; n++;
     },
     cerrar(): Buffer {
       const cd = Buffer.concat(centrales), fin = Buffer.alloc(22);
       fin.writeUInt32LE(0x06054b50, 0); fin.writeUInt16LE(0, 4); fin.writeUInt16LE(0, 6); fin.writeUInt16LE(n, 8); fin.writeUInt16LE(n, 10);
       fin.writeUInt32LE(cd.length, 12); fin.writeUInt32LE(off, 16); fin.writeUInt16LE(0, 20);
+      if (salida) { salida(cd); salida(fin); return Buffer.alloc(0); }
       return Buffer.concat([...locales, cd, fin]);
     },
   };
