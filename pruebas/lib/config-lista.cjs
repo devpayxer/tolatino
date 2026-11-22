@@ -15,7 +15,7 @@
 const { execFileSync } = require('child_process');
 const ENT = require('./entorno.cjs');
 
-const MARGEN_MS = 300;       // lo que tarda Node en procesar el aviso (medido: unos milisegundos; el resto es holgura)
+const MARGEN_MS = 1000;      // lo que tarda Node en procesar el aviso (medido: 28–104 ms en local; el resto es holgura para una máquina del CI cargada)
 const RESPALDO_MS = 16000;   // la copia del servidor vence a los 15 s
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
