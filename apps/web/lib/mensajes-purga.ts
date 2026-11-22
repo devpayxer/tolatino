@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
-import { borrarObjeto, mediosListos } from "./medios";
+import { borrarConVariantes } from "./fotos-privadas";
+import { mediosListos } from "./medios";
 
 /* 9t · Las fotos de Mensajes que se subieron y NUNCA se enviaron (owner_id 'pendiente': se eligió una foto y se cerró la conversación, o se quitó
    antes de mandar). Pasadas 24 h ya no se pueden mandar (tomarFoto en lib/mensajes.ts pide < 24 h), así que el barrido saca el archivo del
@@ -9,13 +10,14 @@ import { borrarObjeto, mediosListos } from "./medios";
    9t (19 nov) · También las de Mensajes entre vecinos (owner_kind 'dm'; tomarFoto en lib/mensajes-vecinos.ts pide las mismas < 24 h); prueba dm9t §F5. */
 export async function purgarFotosSinEnviar(): Promise<number> {
   if (!mediosListos()) return 0;
-  const r = await db().query<{ id: string; url: string }>(
-    `select id::text, url from media
+  const r = await db().query<{ id: string; url: string; w: number | null; var_widths: number[] | null }>(
+    `select id::text, url, w, var_widths from media
       where owner_kind in ('chat', 'dm') and owner_id = 'pendiente' and purged_at is null and created_at < now() - interval '24 hours' and url like 'privado/m/%'
       order by created_at limit 200`);
   let n = 0;
   for (const m of r.rows) {
-    try { await borrarObjeto(m.url); } catch { continue; }
+    // F3b · Con la maestra salen sus variantes (privado/m/<id>.w<ancho>.webp).
+    try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }
     await db().query(`update media set purged_at = now(), status = 'removed', removed_reason = 'sin_enviar', removed_at = now()
                        where id = $1::uuid and owner_id = 'pendiente' and purged_at is null`, [m.id]);
     n++;

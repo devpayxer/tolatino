@@ -14278,7 +14278,7 @@ const guardianes = {
     // (9) purgarFotosAyuda: solo la privada de una ayuda cerrada hace más del plazo, nunca sin almacén, con su renglón en la auditoría en la misma transacción.
     const pa = cuerpoFn(existsSync(AC) ? sinComent(AC) : "", "purgarFotosAyuda");
     if (!/if \(!mediosListos\(\)\) return 0;/.test(pa) || !pa.includes("m.url like 'privado/a/%'") || !pa.includes("h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql(\"sp_fotos_ayuda_dias\")})")
-      || !/try \{ await borrarObjeto\(m\.url\); \} catch \{ continue; \}\s*await tx\(async \(c\) => \{/.test(pa) || !/'system', null, 'ayuda\.fotos\.purga', 'media'/.test(pa))
+      || !/try \{ await borrarConVariantes\(m\.url, m\.w, m\.var_widths\); \} catch \{ continue; \}\s*await tx\(async \(c\) => \{/.test(pa) || !/'system', null, 'ayuda\.fotos\.purga', 'media'/.test(pa))
       falla(G, AC, 0, "purgarFotosAyuda: solo las fotos privadas de la ayuda (privado/a/) de una ayuda cerrada hace más de sp_fotos_ayuda_dias, nada sin almacén, el archivo primero y la fila con su renglón de auditoría en la misma transacción");
     if (!(existsSync(AC) ? readFileSync(AC, "utf8") : "").includes("export const FOTO_AYUDA_SQL = `case when m.private and m.url like 'privado/a/%' then '/api/ayuda/foto/' || m.id::text else m.url end`;"))
       falla(G, AC, 0, "FOTO_AYUDA_SQL: solo las privadas de la ayuda (privado/a/) van por /api/ayuda/foto; las de destino privado ya traen su dirección con permiso");
@@ -14292,6 +14292,59 @@ const guardianes = {
     const pr = readFileSync(PR, "utf8");
     for (const k of ["'otro negocio → no'", "'otro cliente → no'", "'sin sesión → no'", "'el equipo sin un caso abierto → no'", "'un catálogo rechaza la dirección de una foto privada'", "'purgarFotosAyuda no toca una ayuda cerrada hace poco'"])
       if (!pr.includes(k)) falla(G, PR, 0, `la prueba de la base dejó de revisar ${k}`);
+    // (12) F3b (22 nov) · Las privadas de las OTRAS rutas (Mensajes privado/m/, ayuda y Soporte privado/a/, entrega privado/e/, reclamo privado/r/) con
+    // variantes. Se teme: una variante más fácil de ver que la entera (servida antes del permiso, por otra ruta, con caché pública o sin Vary), una subida
+    // sin variantes, la variante fuera de la carpeta privada de su maestra, y una purga o retención que saca la maestra y deja sus variantes.
+    // Al revés: alreves9uprivadas (F3b).
+    const lae = cuerpoFn(fp, "llavesAEntregar"), bcv = cuerpoFn(fp, "borrarConVariantes"), gve = cuerpoFn(fp, "guardarVariantesEn");
+    if (!fp.includes("const MAESTRA_PRIVADA = new RegExp(`^privado/([oamer])/(${UUID})\\\\.jpg$`);") || !fp.includes("return m ? `privado/${m[1]}/${m[2]}.w${ancho}.webp` : null;"))
+      falla(G, FP, 0, "F3b: la variante de una privada vive al lado de su maestra (privado/<familia>/<uuid>.w<ancho>.webp), nunca en otra carpeta");
+    if (!lae.includes('const a = anchoServido(anchos, w, /image\\/webp/i.test(req.headers.get("accept") ?? ""));') || !lae.includes('return a ? [{ clave: llaveVarianteDe(llave, a)!, tipo: "image/webp" }, maestra] : [maestra];') || /\b(db|query|staff|yo)\(/.test(lae))
+      falla(G, FP, 0, "F3b: llavesAEntregar solo elige la llave (la variante anotada del ancho pedido y, detrás, la maestra); nunca consulta ni decide el permiso");
+    if (!/await borrarObjeto\(llave\);\s*for \(const v of clavesVariantes\(llave, ancho, hechos\)\) await borrarObjeto\(v\);/.test(bcv))
+      falla(G, FP, 0, "F3b: borrarConVariantes saca la maestra y DESPUÉS todas sus variantes (clavesVariantes)");
+    if (!gve.includes("if (!(await existeObjeto(llave))) {") || !/\} catch \{ return "fallo"; \}\s*\}$/.test(gve.trim()))
+      falla(G, FP, 0, "F3b: guardarVariantesEn nunca lanza y, si la maestra ya no está (una purga en medio), saca las variantes recién guardadas");
+    const FV = "apps/web/lib/fotos-variantes.ts", fv = existsSync(FV) ? sinComent(FV) : "";
+    if (!fv.includes("const MAESTRA_PRIVADA = new RegExp(`^privado/([oamer])/(${UUID})\\\\.jpg$`);") || !fv.includes("`privado/${p![1]}/${p![2]}.w${w}.webp`"))
+      falla(G, FV, 0, "F3b: clavesVariantes conoce las variantes de TODAS las privadas (o, a, m, e, r): si no, la purga de una cuenta las deja");
+    // El valor: la línea que cierra el permiso de cada ruta (la variante se elige después de ella); la de Mensajes, por sus dos caminos (servir).
+    const VER = { "apps/web/app/api/mensajes/foto/[id]/route.ts": "msg", "apps/web/app/api/ayuda/foto/[id]/route.ts": "if (!ok) return no();", "apps/web/app/api/entrega/foto/[id]/route.ts": "if (!ok) return no();",
+      "apps/web/app/api/admin/reclamo/[id]/route.ts": 'if (!r || !r.url.startsWith("privado/")) return new NextResponse(null, { status: 404 });' };
+    const CAB = 'const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };';
+    for (const [f, tipo] of Object.entries(VER)) {
+      if (!existsSync(f)) { falla(G, f, 0, "F3b: falta la ruta de una foto privada"); continue; }
+      const t = sinComent(f);
+      if (!t.includes(CAB) || /\b(public|s-maxage|immutable)\b|max-age/.test(t)) falla(G, f, 0, "F3b: la entera y su variante salen con las mismas cabeceras privadas (private, no-store, nosniff, Vary: Accept, Cookie); nunca públicas");
+      if (/\.w\$\{|\.webp|llaveVarianteDe\(|leerObjeto\(/.test(t)) falla(G, f, 0, "F3b: la ruta elige la variante solo con llavesAEntregar (después del permiso), nunca armando la llave por su cuenta");
+      if (!t.includes("return entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));")) falla(G, f, 0, "F3b: la ruta entrega las llaves de llavesAEntregar (la variante y, si falla, la maestra) con sus cabeceras");
+      if (tipo === "msg") {
+        // Cada entrega (servir) viene justo después de «if (!ok) return no();»: la variante pasa por el mismo permiso que la entera.
+        const n = (t.match(/servir\(req, /g) ?? []).length, bien = (t.match(/if \(!ok\) return no\(\);\s*return servir\(req, \w+\.url, \w+\.var_widths\);/g) ?? []).length;
+        if (n !== 2 || bien !== 2 || !cuerpoFn(t, "servir").includes("const llaves = llavesAEntregar(req, url, anchos);"))
+          falla(G, f, 0, "F3b: la foto de un mensaje (y su variante) solo se entrega después de «if (!ok) return no();», en sus dos caminos (cliente-negocio y vecinos)");
+      } else {
+        const i = t.indexOf("const llaves = llavesAEntregar(req, "), j = t.lastIndexOf(tipo);
+        if (i < 0 || j < 0 || i < j || (t.match(/llavesAEntregar\(/g) ?? []).length !== 1) falla(G, f, 0, "F3b: la variante se elige DESPUÉS del último «404 a quien no puede» (el mismo permiso que la entera), una sola vez");
+      }
+    }
+    // Ninguna otra ruta sirve una variante privada (otra ruta = otro permiso).
+    for (const x of codigo) if (/^apps\/web\/app\/.*route\.ts$/.test(x) && !Object.keys(VER).includes(x) && x !== RV && /llavesAEntregar\(|llaveVarianteDe\(|llaveVariantePrivada\(/.test(sinComent(x)))
+      falla(G, x, 0, "F3b: sirve la variante de una foto privada por otra ruta (con otro permiso): solo la ruta de la foto entera la entrega");
+    const SUBE = { "apps/web/app/api/mensajes/foto/route.ts": "await guardarVariantesEn(clave, img, w);", "apps/web/app/api/ayuda/foto/route.ts": "await guardarVariantesEn(clave, img);",
+      "apps/web/app/api/repartidor/foto/route.ts": "await guardarVariantesEn(clave, img);", "apps/web/app/api/reclamo/documento/route.ts": "await guardarVariantesEn(clave, img);" };
+    for (const [f, v] of Object.entries(SUBE)) {
+      const t = existsSync(f) ? sinComent(f) : "", i = t.indexOf(v), k = t.search(/insert into media \(/);
+      if (i < 0 || k < 0 || i < k) falla(G, f, 0, "F3b: la subida de una foto privada genera sus variantes (guardarVariantesEn) después de guardar la maestra y su fila");
+    }
+    const BV = "try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }", BV2 = 'if (mediosListos() && m.url.startsWith("privado/")) await borrarConVariantes(m.url, m.w, m.var_widths);';
+    const PURGA = { "apps/web/lib/mensajes-purga.ts": BV, "apps/web/lib/repartidor-barrido.ts": BV, [AC]: BV, "apps/web/lib/compa/purga.ts": BV2, "apps/web/lib/datos/retener.ts": BV2 };
+    for (const [f, v] of Object.entries(PURGA)) {
+      const t = existsSync(f) ? sinComent(f) : "";
+      if (!t.includes(v) || /borrarObjeto\(m\.url\)/.test(t)) falla(G, f, 0, "F3b: la purga o retención de una foto privada saca también sus variantes (borrarConVariantes con m.w y m.var_widths): si no, la variante sobrevive a la foto");
+    }
+    const pu = existsSync("pruebas/alreves/alreves9ufoto.cjs") ? readFileSync("pruebas/alreves/alreves9ufoto.cjs", "utf8") : "";
+    for (const k of ["['mensajes', `/api/mensajes/foto/${id}`]", "['ayuda', `/api/ayuda/foto/${id}`]", "['entrega', `/api/entrega/foto/${id}`]", "['reclamo', '/api/admin/reclamo/CL-1234']"]) if (!pu.includes(k)) falla(G, "pruebas/alreves/alreves9ufoto.cjs", 0, `la prueba pura de fotoSrc dejó de revisar «${k}»`);
   },
 
   /* 21 nov · topeNuevaSoloPublicas: el tope bajo de «cuenta nueva» (capa 4, foto4.nueva_hora) cuenta y frena SOLO las subidas de destino PÚBLICO; una

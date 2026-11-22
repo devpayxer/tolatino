@@ -1,5 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
+import sharp from "sharp";
 import { db } from "./db";
 import { ANCHOS, clavesVariantes, variantesDe } from "./fotos-variantes";
 import { borrarObjeto, existeObjeto, guardarObjeto, leerObjeto, mediosListos } from "./medios";
@@ -40,21 +41,62 @@ export function llaveDeUrl(url: string | null | undefined): string | null {
    cuenta pudo sacarla mientras tanto): si no, las recién guardadas también salen. */
 export async function guardarVariantesPrivadas(uuid: string, maestra: Buffer, anchoMaestra?: number | null): Promise<"ok" | "ilegible" | "sin_maestra" | "fallo"> {
   if (!ES_UUID.test(uuid)) return "ilegible";
-  let vs: { width: number; buffer: Buffer }[];
+  return guardarVariantesEn(llavePrivada(uuid), maestra, anchoMaestra);
+}
+
+/* F3b (22 nov) · Las privadas de las OTRAS rutas, cada una con su propio permiso: Mensajes (privado/m/, /api/mensajes/foto/<id>), ayuda de Salud y Pro
+   y casos de Soporte (privado/a/, /api/ayuda/foto/<id>), entrega (privado/e/, /api/entrega/foto/<id>) y reclamo (privado/r/, /api/admin/reclamo/<CL>).
+   Sus variantes, como las de privado/o/: los mismos anchos y la misma calidad (variantesDe), al lado de su maestra con el nombre fijo
+   privado/<familia>/<uuid>.w<ancho>.webp; nunca bajo n/ ni con otra ruta: las sirve SU MISMA ruta con `?w=`, después de SU permiso (llavesAEntregar).
+   La id del nombre es la de la fila de media. */
+const MAESTRA_PRIVADA = new RegExp(`^privado/([oamer])/(${UUID})\\.jpg$`);
+export const llaveVarianteDe = (llave: string, ancho: number): string | null => {
+  const m = MAESTRA_PRIVADA.exec(llave);
+  return m ? `privado/${m[1]}/${m[2]}.w${ancho}.webp` : null;
+};
+
+/* Genera y guarda las variantes de una maestra privada (cualquier familia) y las anota en SU fila (la id del nombre). Nunca lanza: la subida vale
+   aunque fallen (la ruta entrega la maestra). Sin el ancho, se lee de la maestra. Después de guardar se confirma que la maestra sigue (una purga pudo
+   sacarla mientras tanto): si no, las recién guardadas también salen. */
+export async function guardarVariantesEn(llave: string, maestra: Buffer, anchoMaestra?: number | null): Promise<"ok" | "ilegible" | "sin_maestra" | "fallo"> {
+  const m = MAESTRA_PRIVADA.exec(llave);
+  if (!m) return "ilegible";
+  const id = m[2]!;
+  let vs: { width: number; buffer: Buffer }[], ancho = anchoMaestra ?? 0;
   try {
-    vs = await variantesDe(maestra, anchoMaestra ?? 0);
+    if (!ancho) ancho = (await sharp(maestra, { limitInputPixels: 50_000_000 }).metadata()).width ?? 0;
+    vs = await variantesDe(maestra, ancho);
     if (!vs.length) return "ilegible";
   } catch { return "ilegible"; }
   try {
-    await Promise.all(vs.map((v) => guardarObjeto(llaveVariantePrivada(uuid, v.width), v.buffer, "image/webp")));
-    if (!(await existeObjeto(llavePrivada(uuid)))) {
-      await Promise.all(vs.map((v) => borrarObjeto(llaveVariantePrivada(uuid, v.width)).catch(() => undefined)));
+    await Promise.all(vs.map((v) => guardarObjeto(llaveVarianteDe(llave, v.width)!, v.buffer, "image/webp")));
+    if (!(await existeObjeto(llave))) {
+      await Promise.all(vs.map((v) => borrarObjeto(llaveVarianteDe(llave, v.width)!).catch(() => undefined)));
       return "sin_maestra";
     }
-    await db().query(`update media set bytes = $2, var_widths = $3::smallint[], var_bytes = $4::int[], var_at = now() where id = $1::uuid and private`,
-      [uuid, maestra.length, vs.map((v) => v.width), vs.map((v) => v.buffer.length)]);
+    await db().query(`update media set bytes = $2, var_widths = $3::smallint[], var_bytes = $4::int[], var_at = now(), w = coalesce(w, $5) where id = $1::uuid and private`,
+      [id, maestra.length, vs.map((v) => v.width), vs.map((v) => v.buffer.length), ancho]);
     return "ok";
   } catch { return "fallo"; }
+}
+
+/* Lo que entrega la ruta de una privada DESPUÉS de su permiso: con `?w=` (320, 640, 1080 o 1600), si el navegador acepta WebP y esa variante está
+   anotada en la fila, la variante y, si falta en el almacén, la maestra; si no, solo la maestra. Nunca decide quién la ve: eso ya lo hizo la ruta. */
+export function llavesAEntregar(req: Request, llave: string, varWidths: number[] | null | undefined): { clave: string; tipo: string }[] {
+  const maestra = { clave: llave, tipo: "image/jpeg" };
+  if (!MAESTRA_PRIVADA.test(llave)) return [maestra];
+  const wq = Number(new URL(req.url).searchParams.get("w") ?? ""), w = Number.isInteger(wq) && wq > 0 ? wq : null;
+  const anchos = (varWidths ?? []).map(Number).filter((a) => a > 0).sort((a, b) => a - b);
+  const a = anchoServido(anchos, w, /image\/webp/i.test(req.headers.get("accept") ?? ""));
+  return a ? [{ clave: llaveVarianteDe(llave, a)!, tipo: "image/webp" }, maestra] : [maestra];
+}
+
+/* Borrar una foto privada (purga, retención, cuenta borrada): la maestra PRIMERO y después todas sus variantes que pueden existir (clavesVariantes):
+   si guardarVariantesEn está generando en ese momento, al terminar ve que la maestra ya no está y saca las suyas. Un error del almacén se lanza
+   (quien llama deja la foto para la próxima vuelta). */
+export async function borrarConVariantes(llave: string, ancho?: number | null, hechos?: number[] | null): Promise<void> {
+  await borrarObjeto(llave);
+  for (const v of clavesVariantes(llave, ancho, hechos)) await borrarObjeto(v);
 }
 
 /* ── El permiso ──

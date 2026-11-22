@@ -9,6 +9,8 @@ const { publicarBarberia, negocioSinDueno, entrarComo, telLibre, medios, sql } =
 const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/', B = ENT.B;
 const t = (p, x) => p.getByText(x, { exact: true }).last();
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓ ' + m); };
+// F3b · La foto privada con un Accept dado (WebP o no): estado, tipo, caché, Vary y el peso.
+const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8') => p.evaluate(async ([u, a]) => { const r = await fetch(u, { cache: 'no-store', headers: { accept: a } }); const b = await r.arrayBuffer(); return { st: r.status, ct: r.headers.get('content-type'), cc: r.headers.get('cache-control'), vary: r.headers.get('vary'), n: b.byteLength }; }, [u, accept]);
 const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p.screenshot({ path: OUT + n, fullPage: full }); };
 (async () => {
   const b = await chromium.launch(); const err = [];
@@ -56,6 +58,13 @@ const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p
   const cl = sql(`select c.id from claims c join users u on u.id = c.user_id where u.phone = '+1${TB}' order by c.created_at desc limit 1`);
   const r404 = await (await b.newContext()).request.get(B + '/api/admin/reclamo/' + cl);
   ok([401, 403, 404].includes(r404.status()), `el documento del reclamo ${cl} sin permiso → ${r404.status()}`);
+  { // F3b · El equipo con «Cambios sensibles»: la caja del caso pide ?w=1080 y baja la variante; sin permiso, la variante da lo mismo que la entera.
+    const U = '/api/admin/reclamo/' + cl, ent = await traerVar(a, U), mini = await traerVar(a, U + '?w=320');
+    ok(sql(`select cardinality(m.var_widths) > 0 from claims c join media m on m.id = c.doc_media where c.id = '${cl}'`) === 't' && mini.st === 200 && mini.ct === 'image/webp' && mini.n > 0 && mini.n < ent.n && mini.cc === 'private, no-store',
+      `F3b: el documento del reclamo tiene sus variantes; ?w=320 baja la WebP (${mini.n} B < ${ent.n} B), privada y sin caché`);
+    const v404 = await (await b.newContext()).request.get(B + U + '?w=1080', { headers: { accept: 'image/webp' } }), vq = await traerVar(q, U + '?w=1080');
+    ok(v404.status() === r404.status() && vq.st === 404, `F3b: la variante sin permiso (sin sesión ${v404.status()}, quien lo reclamó ${vq.st}): lo mismo que la entera`);
+  }
   ok(!err.length, 'sin errores en la página: ' + (err.join(' · ') || 'ninguno'));
   await b.close();
 })().catch(e => { console.error('FALLO', e.message.split('\n')[0]); process.exit(1); });

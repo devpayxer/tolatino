@@ -14,14 +14,16 @@ export async function retenerEscaneos(): Promise<number> {
 /* La foto del documento de un reclamo (L168): retener_doc_reclamo_dias después de decidido, el archivo sale del almacén privado; queda que hubo
    un documento (claims.doc_kind) y la fila de la foto, vacía. */
 export async function retenerDocReclamo(): Promise<number> {
-  const F = (await db().query<{ id: string; url: string }>(
-    `select m.id::text, m.url from claims c join media m on m.id = c.doc_media
+  const F = (await db().query<{ id: string; url: string; w: number | null; var_widths: number[] | null }>(
+    `select m.id::text, m.url, m.w, m.var_widths from claims c join media m on m.id = c.doc_media
       where c.decided_at is not null and c.decided_at < now() - make_interval(days => cfg_int('retener_doc_reclamo_dias')) and m.purged_at is null
       limit 100`)).rows;
   if (!F.length) return 0;
-  const { borrarObjeto, mediosListos } = await import("../medios");
+  const { mediosListos } = await import("../medios");
+  const { borrarConVariantes } = await import("../fotos-privadas");
   for (const m of F) {
-    if (mediosListos() && m.url.startsWith("privado/")) await borrarObjeto(m.url);
+    // F3b · Con la maestra salen sus variantes (privado/r/<id>.w<ancho>.webp).
+    if (mediosListos() && m.url.startsWith("privado/")) await borrarConVariantes(m.url, m.w, m.var_widths);
     await db().query(`update media set status = 'removed', removed_reason = coalesce(removed_reason, 'Documento del reclamo (retención)'), url = 'privado/borrada', purged_at = now() where id = $1::uuid`, [m.id]);
   }
   return F.length;

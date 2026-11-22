@@ -481,15 +481,17 @@ export async function cerrarDevueltosSinRespuesta(): Promise<number> {
    de /api/medios (F3), que no prometen ese plazo. Sin almacén no hace nada (no marca borrado lo que sigue ahí). Lo corre el barrido (fotosAyudaPurga),
    de a 50; un error del almacén deja esa foto para la próxima vuelta. Guardián fotosPrivadasConPermiso; prueba fotosf3privadas. */
 export async function purgarFotosAyuda(): Promise<number> {
-  const { borrarObjeto, mediosListos } = await import("./medios");
+  const { mediosListos } = await import("./medios");
+  const { borrarConVariantes } = await import("./fotos-privadas");
   if (!mediosListos()) return 0;
-  const L = (await db().query<{ id: string; url: string; hnum: string; city: string }>(
-    `select m.id::text, m.url, h.number as hnum, h.city_id as city from media m join help_requests h on m.owner_kind = 'help' and m.owner_id ~ '^[0-9]{1,18}$' and h.id = m.owner_id::bigint
+  const L = (await db().query<{ id: string; url: string; w: number | null; var_widths: number[] | null; hnum: string; city: string }>(
+    `select m.id::text, m.url, m.w, m.var_widths, h.number as hnum, h.city_id as city from media m join help_requests h on m.owner_kind = 'help' and m.owner_id ~ '^[0-9]{1,18}$' and h.id = m.owner_id::bigint
       where m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/a/%'
         and h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql("sp_fotos_ayuda_dias")}) limit 50`)).rows;
   let n = 0;
   for (const m of L) {
-    try { await borrarObjeto(m.url); } catch { continue; }
+    // F3b · Con la maestra salen sus variantes (privado/a/<id>.w<ancho>.webp).
+    try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }
     await tx(async (c) => {
       const u = await c.query(`update media set status = 'removed', removed_reason = 'Borrada a los ' || ${cfgSql("sp_fotos_ayuda_dias")} || ' días (ayuda cerrada)', url = 'privado/borrada', purged_at = now()
                                 where id = $1::uuid and purged_at is null`, [m.id]);

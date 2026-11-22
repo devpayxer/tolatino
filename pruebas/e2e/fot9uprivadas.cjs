@@ -12,6 +12,8 @@
 //      sin almacén no hace nada.
 //   5. El tope por hora (lib/fotos-revision.ts topeSubidas + topeQueFrena): el de cuenta nueva cuenta y frena SOLO las de destino público; una
 //      privada solo responde al general de 60 (que cuenta todas).
+//   6. F3b (22 nov): las privadas de las otras rutas (Mensajes, ayuda, entrega, reclamo): variantes al lado de su maestra, lo que entrega su ruta con
+//      ?w= (llavesAEntregar), y cada purga o retención (Mensajes sin mandar, entrega, reclamo, ayuda, cuenta) se lleva las variantes con la maestra.
 // Guardián fotosPrivadasConPermiso. En el CI corre en el carril de punta a punta (hay base); aquí con DATABASE_URL apuntando a una base de pruebas.
 const ENT = require('../lib/entorno.cjs');
 const path = require('path'), { randomUUID } = require('crypto');
@@ -46,10 +48,12 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
   const F = cargar('apps/web/lib/fotos-privadas.ts', { './db': base, './medios': medios, './fotos-variantes': V });
   const CAT = cargar('apps/web/lib/fotos-catalogo.ts', {});
   const AY = cargar('apps/web/lib/ayuda-cita.ts', { './config': { cfgSql: (k) => `cfg_int('${k}')`, valor: async () => 0 }, './plazo-txt': { horasTxt: () => '' }, './colas': { COLA_AYUDA_SQL: "'sop'" },
-    './db': base, './cobros': {}, './ayuda': {}, './ayuda-estafa': {}, './medios': medios });
+    './db': base, './cobros': {}, './ayuda': {}, './ayuda-estafa': {}, './medios': medios, './fotos-privadas': F });
   const REV = cargar('apps/web/lib/fotos-revision.ts', { './db': base, './medios': medios, './fotos-privadas': F, './fotos-variantes': V, './avisos': {}, './fotos-decision': {},
     './fotos-segunda-opinion': {}, './moderacion': {}, './moderacion-img': {} });
   const q1 = async (sql, p) => (await c.query(sql, p)).rows[0];
+  // F3b · Una maestra de verdad (900 px) para las variantes de las privadas de las otras rutas.
+  const JPG = await sharp({ create: { width: 900, height: 600, channels: 3, background: { r: 30, g: 110, b: 150 } } }).jpeg({ quality: 82 }).toBuffer();
   try {
     await c.query('begin');
     const tel = () => `+1570555${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
@@ -185,6 +189,9 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
     const fa = async (hid, url) => { const id = randomUUID(); await foto({ id, kind: 'help', owner: hid, url: url(id), privada: true, sinC2: false }); G.set(url(id), Buffer.from('x')); return id; };
     const enA = (id) => `privado/a/${id}.jpg`;
     const P1 = await fa(hVieja, enA), P2 = await fa(hReciente, enA), P3 = await fa(hAbierta, enA), P4 = await fa(hVieja, (id) => F.urlPrivada(id));
+    // F3b · La de la ayuda vieja con sus variantes (como las sube /api/ayuda/foto): la purga se las lleva con ella.
+    G.set(enA(P1), JPG);
+    ok(await F.guardarVariantesEn(enA(P1), JPG) === 'ok' && G.has(`privado/a/${P1}.w640.webp`), 'F3b: la foto privada de la ayuda tiene sus variantes al lado (privado/a/<id>.w<ancho>.webp)');
     listos = false;
     ok(await AY.purgarFotosAyuda() === 0 && (await q1(`select purged_at from media where id = $1::uuid`, [P1])).purged_at === null, 'purgarFotosAyuda sin almacén no hace nada (no marca borrado lo que sigue ahí)');
     listos = true;
@@ -192,6 +199,7 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
     const st = async (id) => (await q1(`select status || ':' || (purged_at is not null) || ':' || url as x from media where id = $1::uuid`, [id])).x;
     ok(nP >= 1 && await st(P1) === 'removed:true:privado/borrada' && !G.has(enA(P1)) && borradas.includes(enA(P1)), 'purgarFotosAyuda borra la foto privada de una ayuda cerrada hace más de 90 días (el archivo sale; la fila queda «borrada»)');
     ok(!!(await q1(`select 1 as x from audit_entries where action = 'ayuda.fotos.purga' and target_kind = 'media' and target_id = $1 and actor_kind = 'system'`, [P1])), 'y deja su renglón en la auditoría');
+    ok(![320, 640, 900].some((w) => G.has(`privado/a/${P1}.w${w}.webp`)), 'F3b: purgarFotosAyuda se lleva también sus variantes');
     ok(await st(P2) === `visible:false:${enA(P2)}` && G.has(enA(P2)), 'purgarFotosAyuda no toca una ayuda cerrada hace poco');
     ok(await st(P3) === `visible:false:${enA(P3)}`, 'ni una ayuda que no está cerrada');
     ok(await st(P4) === `visible:false:${F.urlPrivada(P4)}`, 'ni una foto de destino «privado» de /api/medios (no promete ese plazo)');
@@ -216,6 +224,58 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
     ok(!t.nueva && REV.topeQueFrena(t, false) === null, 'una cuenta vieja con 10 públicas sigue subiendo');
     await c.query(`update media set created_at = now() - interval '2 hours' where uploaded_by = $1::uuid`, [nuevaU]);
     ok(REV.topeQueFrena(await REV.topeSubidas(nuevaU, R4), false) === null, 'las de hace más de una hora no cuentan');
+
+    // ── 6. F3b (22 nov) · Las privadas de las OTRAS rutas (Mensajes privado/m/, ayuda privado/a/, entrega privado/e/, reclamo privado/r/) ──
+    // Sus variantes al lado de su maestra (nunca bajo n/), lo que entrega la ruta con ?w= (llavesAEntregar: solo elige la llave; el permiso ya lo
+    // decidió la ruta) y que cada purga o retención se lleve las variantes con la maestra (mensajes-purga, repartidor-barrido, retener).
+    const FAM = { m: 'chat', a: 'user', e: 'delivery', r: 'claim' }, ANCH = [320, 640, 900];
+    const priv = {};
+    for (const [f, kind] of Object.entries(FAM)) {
+      const id = randomUUID(), llave = `privado/${f}/${id}.jpg`;
+      await foto({ id, kind, owner: 'pendiente', url: llave, privada: true, sinC2: false });
+      G.set(llave, JPG);
+      const r = await F.guardarVariantesEn(llave, JPG);
+      const fila = await q1(`select array_to_string(var_widths, ',') as w, w as ancho, var_at is not null as at, bytes from media where id = $1::uuid`, [id]);
+      ok(r === 'ok' && ANCH.every((w) => G.has(`privado/${f}/${id}.w${w}.webp`)) && ![...G.keys()].some((k) => k.startsWith('n/') && k.includes(id)) && fila.w === '320,640,900' && fila.ancho === 900 && fila.at && Number(fila.bytes) === JPG.length,
+        `F3b: privado/${f}/: sus variantes (320, 640 y la de su ancho, 900) al lado de la maestra, ninguna bajo n/, anotadas en su fila`);
+      priv[f] = { id, llave };
+    }
+    {
+      const { llave } = priv.m, WEBP = 'image/avif,image/webp,*/*';
+      const pide = (q, accept) => F.llavesAEntregar(new Request(`http://x/api/mensajes/foto/${priv.m.id}${q}`, { headers: { accept } }), llave, [320, 640, 900]).map((k) => k.clave).join(' ');
+      ok(pide('?w=640', WEBP) === `privado/m/${priv.m.id}.w640.webp ${llave}`, 'F3b: llavesAEntregar con ?w=640 y WebP: la variante de 640 y, detrás, la maestra');
+      ok(pide('?w=1600', WEBP) === `privado/m/${priv.m.id}.w900.webp ${llave}` && pide('?w=320', WEBP).startsWith(`privado/m/${priv.m.id}.w320.webp`), 'F3b: un ancho más grande que la foto da la más grande que hay; 320 da la de 320');
+      ok(pide('?w=640', 'image/png,*/*') === llave && pide('', WEBP) === llave && pide('?w=700', WEBP) === llave && pide('?w=640&w=320', WEBP).startsWith(`privado/m/${priv.m.id}.w640`), 'F3b: sin WebP, sin ?w= o con un ancho que no es de los cuatro: solo la maestra');
+      ok(F.llavesAEntregar(new Request('http://x/?w=640', { headers: { accept: WEBP } }), llave, null).length === 1 && F.llavesAEntregar(new Request('http://x/?w=640', { headers: { accept: WEBP } }), 'privado/borrada', [640]).length === 1, 'F3b: sin variantes anotadas o con una llave que no es de foto: solo la maestra');
+    }
+    // Una purga en medio: si la maestra ya no está cuando terminan de guardarse, las variantes recién guardadas también salen.
+    {
+      const id = randomUUID(), llave = `privado/m/${id}.jpg`;
+      await foto({ id, kind: 'chat', owner: 'pendiente', url: llave, privada: true, sinC2: false });
+      ok(await F.guardarVariantesEn(llave, JPG) === 'sin_maestra' && !ANCH.some((w) => G.has(`privado/m/${id}.w${w}.webp`)), 'F3b: si la maestra ya no está (purgada mientras tanto), no queda ninguna variante');
+    }
+    // Mensajes: la foto subida y nunca mandada (24 h): sale del almacén con sus variantes.
+    const MP = cargar('apps/web/lib/mensajes-purga.ts', { './db': base, './medios': medios, './fotos-privadas': F });
+    await c.query(`update media set created_at = now() - interval '25 hours' where id = $1::uuid`, [priv.m.id]);
+    await MP.purgarFotosSinEnviar();
+    ok((await q1(`select purged_at is not null as p from media where id = $1::uuid`, [priv.m.id])).p && !G.has(priv.m.llave) && !ANCH.some((w) => G.has(`privado/m/${priv.m.id}.w${w}.webp`)), 'F3b: Mensajes: la purga de la foto sin mandar se lleva la maestra y sus variantes');
+    // Entrega: a los entrega_foto_dias (sin disputa abierta) sale con sus variantes.
+    const RB = cargar('apps/web/lib/repartidor-barrido.ts', { './config': { cfgSql: (k) => `cfg_int('${k}')` }, './db': base, './medios': medios, './fotos-privadas': F });
+    const opE = await q1(`select o.id::text from operations o where not exists (select 1 from disputes d where d.operation_id = o.id) order by o.id limit 1`);
+    await c.query(`update media set owner_id = $2, created_at = now() - interval '400 days' where id = $1::uuid`, [priv.e.id, opE.id]);
+    await RB.purgarFotosEntrega();
+    ok((await q1(`select purged_at is not null as p from media where id = $1::uuid`, [priv.e.id])).p && !G.has(priv.e.llave) && !ANCH.some((w) => G.has(`privado/e/${priv.e.id}.w${w}.webp`)), 'F3b: entrega: la retención de la foto de la entrega se lleva la maestra y sus variantes');
+    // Reclamo: a los retener_doc_reclamo_dias de decidido, el documento sale con sus variantes.
+    const RT = cargar('apps/web/lib/datos/retener.ts', { '../db': base, '../medios': medios, '../fotos-privadas': F });
+    const bz = await q1(`select id, city_id from businesses order by id limit 1`);
+    await c.query(`insert into claims (business_id, user_id, role, method, doc_kind, doc_media, status, decided_at, city_id) values ($1, $2::uuid, 'dueno', 'document', 'licencia', $3::uuid, 'rejected', now() - interval '400 days', $4)`, [bz.id, subio, priv.r.id, bz.city_id]);
+    await RT.retenerDocReclamo();
+    ok((await q1(`select url from media where id = $1::uuid`, [priv.r.id])).url === 'privado/borrada' && !G.has(priv.r.llave) && !ANCH.some((w) => G.has(`privado/r/${priv.r.id}.w${w}.webp`)), 'F3b: reclamo: la retención del documento se lleva la maestra y sus variantes');
+    // La purga de una cuenta (lib/datos/purgar.ts) saca cada foto por clavesVariantes: conoce las variantes de las cuatro familias.
+    ok(['m', 'a', 'e', 'r'].every((f) => { const id = randomUUID(), k = V.clavesVariantes(`privado/${f}/${id}.jpg`, 900, [320, 640, 900]); return ANCH.every((w) => k.includes(`privado/${f}/${id}.w${w}.webp`)) && k.every((x) => x.startsWith(`privado/${f}/${id}.w`)); }),
+      'F3b: clavesVariantes (la purga de una cuenta) lista las variantes de Mensajes, ayuda, entrega y reclamo, al lado de su maestra');
+    await F.borrarConVariantes(priv.a.llave, 900, [320, 640, 900]);
+    ok(!G.has(priv.a.llave) && !ANCH.some((w) => G.has(`privado/a/${priv.a.id}.w${w}.webp`)) && borradas.indexOf(priv.a.llave) < borradas.indexOf(`privado/a/${priv.a.id}.w320.webp`), 'F3b: borrarConVariantes saca la maestra primero y después sus variantes');
   } catch (e) { console.error(e); malas++; } finally {
     await c.query('rollback').catch(() => undefined);
     await c.end();

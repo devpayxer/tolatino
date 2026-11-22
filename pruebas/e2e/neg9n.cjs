@@ -32,6 +32,8 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
 const ID = crypto.randomBytes(3).toString('hex');
 const ck = (i) => `c0e1c6b0-9a9a-4000-8000-${ID}${String(i).padStart(6, '0')}`;
 
+// F3b · La foto privada con un Accept dado (WebP o no): estado, tipo, caché, Vary y el peso.
+const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8') => p.evaluate(async ([u, a]) => { const r = await fetch(u, { cache: 'no-store', headers: { accept: a } }); const b = await r.arrayBuffer(); return { st: r.status, ct: r.headers.get('content-type'), cc: r.headers.get('cache-control'), vary: r.headers.get('vary'), n: b.byteLength }; }, [u, accept]);
 (async () => {
   const REP = telefonoLibre('5705557'), CLI = telefonoLibre('5705558'), OTRO = telefonoLibre('5705559'), ADM = telefonoLibre('5705556');
   sql(`insert into users (phone, phone_verified_at, first_name, last_name, home_city_id, lang, is_test) values
@@ -142,6 +144,13 @@ const ck = (i) => `c0e1c6b0-9a9a-4000-8000-${ID}${String(i).padStart(6, '0')}`;
     ok((await c.evaluate(async (u) => (await fetch(u)).status, `/api/entrega/foto/${mid}`)) === 200, 'la clienta ve su foto');
     const oCtx = await b.newContext(M), o = await oCtx.newPage(); await entrar(o, OTRO);
     ok((await o.evaluate(async (u) => (await fetch(u)).status, `/api/entrega/foto/${mid}`)) === 404, 'otra cuenta no (404, no se dice si existe)');
+    { // F3b · ?w= baja la variante por la misma ruta y con el mismo permiso que la entera (otra cuenta y sin sesión: 404).
+      const U = `/api/entrega/foto/${mid}`, ent = await traerVar(c, U), mini = await traerVar(c, `${U}?w=320`);
+      ok(sql(`select array_to_string(var_widths, ',') from media where id = '${mid}'`) === '320,640' && mini.st === 200 && mini.ct === 'image/webp' && mini.n > 0 && mini.n < ent.n && mini.cc === 'private, no-store' && /Accept/.test(mini.vary || ''),
+        `F3b: la foto de la entrega tiene sus variantes; ?w=320 baja la WebP (${mini.n} B < ${ent.n} B), privada y sin caché`);
+      const an = await (await b.newContext()).request.get(B + `${U}?w=320`, { headers: { accept: 'image/webp' } });
+      ok((await traerVar(o, `${U}?w=320`)).st === 404 && an.status() === 404, 'F3b: la variante: otra cuenta y sin sesión, 404 como la entera');
+    }
     // La base no deja cerrar sin prueba un delivery con repartidor de un negocio que la pide.
     const N3 = pedido(3); sql(`update operations set driver_id = ${DID} where number = '${N3}'`);
     let rechazo = ''; try { sql(`update operations set status = 'done', stage = 'delivered', done_at = now() where number = '${N3}'`); } catch (e) { rechazo = String(e.stderr || e.message); }

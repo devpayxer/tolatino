@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import sharp from "sharp";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { db } from "@/lib/db";
+import { guardarVariantesEn } from "@/lib/fotos-privadas";
 import { guardarObjeto, mediosListos } from "@/lib/medios";
 import { leerFormulario } from "@/lib/subida";
 
@@ -37,5 +38,7 @@ export async function POST(req: NextRequest) {
   const id = randomUUID(), clave = `privado/a/${id}.jpg`;
   await guardarObjeto(clave, img, "image/jpeg");
   await db().query(`insert into media (id, owner_kind, owner_id, url, uploaded_by, status, private) values ($1, 'user', $2, $3, $4, 'visible', true)`, [id, me.id, clave, me.id]);
+  // F3b · Sus variantes (las miniaturas piden ?w=), al lado de la maestra y con el mismo permiso; un fallo no tumba la subida.
+  await guardarVariantesEn(clave, img);
   return NextResponse.json({ ok: true, id, url: `/api/ayuda/foto/${id}` });
 }

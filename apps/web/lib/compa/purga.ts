@@ -14,13 +14,15 @@ export type Purga = { retencion: number; casos: number; borradas: number; fotos:
 export async function barrerRetencion(lim = 500): Promise<Purga> {
   const r = (await db().query<{ x: { retencion: number; casos: number; borradas: number } }>(`select compa_purgar($1) as x`, [lim])).rows[0]!.x;
   // Las fotos de los casos ya purgados (cuenta borrada) que siguen en el almacenamiento.
-  const F = (await db().query<{ id: string; url: string }>(
-    `select m.id::text, m.url from media m join support_cases c on m.owner_kind = 'support' and m.owner_id = c.id::text
+  const F = (await db().query<{ id: string; url: string; w: number | null; var_widths: number[] | null }>(
+    `select m.id::text, m.url, m.w, m.var_widths from media m join support_cases c on m.owner_kind = 'support' and m.owner_id = c.id::text
       where c.purged_at is not null and m.private and m.status = 'visible' limit 50`)).rows;
   if (F.length) {
-    const { borrarObjeto, mediosListos } = await import("../medios");
+    const { mediosListos } = await import("../medios");
+    const { borrarConVariantes } = await import("../fotos-privadas");
     for (const m of F) {
-      if (mediosListos() && m.url.startsWith("privado/")) await borrarObjeto(m.url);
+      // F3b · Con la maestra salen sus variantes (privado/a/<id>.w<ancho>.webp).
+      if (mediosListos() && m.url.startsWith("privado/")) await borrarConVariantes(m.url, m.w, m.var_widths);
       await db().query(`update media set status = 'removed', removed_reason = 'Borrada con la cuenta (30 días)', url = 'privado/borrada', purged_at = now() where id = $1::uuid`, [m.id]);
     }
   }
