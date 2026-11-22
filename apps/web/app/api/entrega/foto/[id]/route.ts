@@ -3,6 +3,7 @@ import { auditar, staff } from "@/lib/admin";
 import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { entregarPrivado } from "@/lib/entrega-privada";
+import { llavesAEntregar } from "@/lib/fotos-privadas";
 import { accesoPanel } from "@/lib/panel";
 
 /* 9n · Ver la foto de una entrega (privada, «privado/e/»). La ven: quien la tomó (el repartidor) mientras sea del día; el cliente de ESE
@@ -13,8 +14,8 @@ const no = () => new NextResponse(null, { status: 404 });
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
-  const m = (await db().query<{ url: string; uploaded_by: string | null; hoy: boolean; cliente: string; biz: string; city: string; numero: string }>(
-    `select m.url, m.uploaded_by::text, m.created_at > now() - interval '1 day' as hoy, o.user_id::text as cliente, o.business_id as biz, o.city_id as city, o.number as numero
+  const m = (await db().query<{ url: string; var_widths: number[] | null; uploaded_by: string | null; hoy: boolean; cliente: string; biz: string; city: string; numero: string }>(
+    `select m.url, m.var_widths, m.uploaded_by::text, m.created_at > now() - interval '1 day' as hoy, o.user_id::text as cliente, o.business_id as biz, o.city_id as city, o.number as numero
        from media m join operations o on o.id::text = m.owner_id
       where m.id = $1 and m.owner_kind = 'delivery' and m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/e/%'`, [id])).rows[0];
   if (!m) return no();
@@ -29,6 +30,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   }
   if (!ok) return no();
-  // 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match (lib/entrega-privada.ts).
-  return entregarPrivado(req, [{ clave: m.url, tipo: "image/jpeg" }], { "cache-control": "private, no-store", "x-content-type-options": "nosniff" });
+  // 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match (lib/entrega-privada.ts). F3b · Con `?w=` la variante (llavesAEntregar), con el
+  // MISMO permiso de arriba y las mismas cabeceras privadas; si la variante falla en el almacén, la maestra.
+  const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };
+  const llaves = llavesAEntregar(req, m.url, m.var_widths);
+  return entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));
 }
