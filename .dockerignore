@@ -1,0 +1,29 @@
+# 22 nov · Lista blanca del contexto de la imagen de la app (infra/pruebas/Dockerfile, la misma receta en el sandbox, en producción y en el CI): el build
+# solo ve lo que lee. Antes entraba toda la carpeta (2,52 GB en el CI con node_modules y .next; en el sandbox .git y ~800 MB de SQL de los demos) y
+# cualquier cambio en docs/, pruebas/ o infra/ rompía la caché y reconstruía la imagen entera. Lo que sale de apps/web y packages/ui, uno por uno
+# (imports, lecturas del disco, la traza de Next y el paso que sigue al build): lo vigila el guardián imagenSoloLoQueUsa, y la prueba
+# pruebas/infra/contexto-imagen.test.sh lista con BuildKit de verdad lo que entra. deploy.sh saca de aquí (las líneas con «!») la huella de la imagen.
+*
+!package.json
+!pnpm-workspace.yaml
+!pnpm-lock.yaml
+!.npmrc
+!tsconfig.base.json
+!apps/web
+!packages/ui
+!apps/mobile/apps.json
+!apps/mobile/inventario-datos.json
+!apps/mobile/tiendas/declaraciones.json
+!apps/mobile/tiendas/fichas.json
+!apps/mobile/tiendas/privacidad/salidas.json
+!packages/db/mapa-de-datos.json
+!scripts/ayuda/forma.mjs
+!scripts/mapas-privados.mjs
+!docs/LAUNCH-CHECKLIST.md
+**/node_modules
+**/.next
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+apps/web/public/medios

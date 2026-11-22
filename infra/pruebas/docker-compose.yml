@@ -5,8 +5,7 @@ services:
     build:
       context: ../..
       dockerfile: infra/pruebas/Dockerfile
-      args:
-        TOLATINO_COMMIT: ${TOLATINO_COMMIT:-desconocido}
+      # 22 nov · Sin el commit como argumento del build (rompía la caché en cada subida): va solo en environment (/api/salud dice el desplegado).
     image: tolatino/web:pruebas
     restart: unless-stopped
     ports:
@@ -141,8 +140,12 @@ services:
   # página. Usa la misma imagen de la app (nada nuevo que bajar) y el token del entorno (lo crea deploy.sh).
   barrido:
     image: tolatino/web:pruebas
-    pull_policy: never # la construye el servicio web en este mismo `up --build`
+    pull_policy: never # la construye deploy.sh con «build web» antes de levantar nada
     restart: unless-stopped
+    # 22 nov · «node -e» como proceso 1 no atiende SIGTERM: Docker esperaba 10 s antes de matarlo en cada despliegue (parte del corte de 15-30 s).
+    # Con init (tini) la señal llega y para en el acto; 2 s de gracia como mucho.
+    init: true
+    stop_grace_period: 2s
     environment:
       BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
     command: ["node", "-e", "const t=process.env.BARRIDO_TOKEN;const go=async()=>{try{const r=await fetch('http://web:3000/api/interno/barrido',{method:'POST',headers:{'x-barrido-token':t},signal:AbortSignal.timeout(55000)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)console.error(new Date().toISOString(),'barrido',r.status,JSON.stringify(j))}catch(e){console.error(new Date().toISOString(),'barrido',e.message)}};setTimeout(go,30000);setInterval(go,60000)"]
@@ -154,8 +157,12 @@ services:
   # Caído: los avisos siguen en la campana y el SMS de respaldo sale al vencer push_ttl_h (el barrido).
   push:
     image: tolatino/web:pruebas
-    pull_policy: never # la construye el servicio web en este mismo `up --build`
+    pull_policy: never # la construye deploy.sh con «build web» antes de levantar nada
     restart: unless-stopped
+    # 22 nov · «node -e» como proceso 1 no atiende SIGTERM: Docker esperaba 10 s antes de matarlo en cada despliegue (parte del corte de 15-30 s).
+    # Con init (tini) la señal llega y para en el acto; 2 s de gracia como mucho.
+    init: true
+    stop_grace_period: 2s
     environment:
       BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
     command: ["node", "-e", "const t=process.env.BARRIDO_TOKEN;let ocupado=false;const go=async()=>{if(ocupado)return;ocupado=true;try{const r=await fetch('http://web:3000/api/interno/push',{method:'POST',headers:{'x-barrido-token':t},signal:AbortSignal.timeout(30000)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)console.error(new Date().toISOString(),'push',r.status,JSON.stringify(j))}catch(e){console.error(new Date().toISOString(),'push',e.message)}finally{ocupado=false}};setTimeout(go,20000);setInterval(go,5000)"]
