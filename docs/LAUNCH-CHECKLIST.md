@@ -2693,4 +2693,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       CI; (4) `scripts/ci/corrida.mjs` lleva escritos los nombres de los trabajos del CI: al repartir en más partes o partir la verificación hay
       que cambiarlo en el mismo commit; (5) el resto del plan verificado (tandas 2 a 6: «al revés» con árbol idéntico, dirigidas en partes,
       esperas de 16 s, verificación en paralelo, reparto por duración, despliegue, herramienta de subida).
+- [ ] **→ 9b** · **Tandas 2 y 3a de la revisión del CI (22 nov), lo que queda:** (1) tras SIGINT/SIGTERM el corredor de «al revés» no borra su copia
+      de referencia (`/tmp/tolatino-alreves-ref-*`): `alParar()` debe quitarla si no hay apartados; (2) `tub9b` necesita `pruebas/herramientas`
+      instalado en local (`pngjs`); (3) segunda pasada local completa de las 21 pruebas sin las esperas de 16 s (corrió una entera y otra de 16; en
+      el CI pasaron las 22 en la dirigida 45006294341); (4) `compa7g` («sin ids crudos ni el teléfono de la cuenta») falló una vez en base nueva
+      según el orden y pasa sola: inestable por mirar; (5) `scripts/ci/corrida.mjs --produccion` necesita `REPO` cuando `gh repo view` no responde:
+      que lo saque del remoto de git.
+- [ ] **→ 9t** · **Caché de Configuración, del producto (lo vio la tanda 3a, no se tocó):** (1) `lib/config.ts:123-126` guarda la caché al volver de la
+      consulta sin mirar si llegó un aviso entre medias: una lectura que salió antes del cambio puede dejar el valor viejo hasta 15 s; el mismo
+      patrón en otras nueve cachés (arreglo: contador de generación); (2) hay tres conexiones `LISTEN` por proceso (una por capa de Next) y
+      `escuchandoConfig()` no la llama nadie: mostrarla en Sistema › Salud y dejar una sola escucha por proceso; (3) una espera fija puede tapar
+      otro límite de reloj sin decirlo (`llave9t` cubría los 30 s entre dos códigos al mismo teléfono): el guardián `sinEsperaFijaLarga` ya obliga
+      a escribir el motivo. (22 nov)
 

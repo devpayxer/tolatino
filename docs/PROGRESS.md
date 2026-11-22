@@ -20,6 +20,17 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (10:00 UTC) · revisión del CI y de los procesos: fases 1 y 2 hechas, tandas 1, 2 y 3a implementadas y vistas servidas.** Plan
+  verificado por nueve verificadores (resumen y decisiones en REVISION «Revisión del CI y de los procesos»). Tanda 1 en `main` desde 209fc2d
+  (confirmación 44997280034 en verde, 38,9 min): alcance por documentos solo si el código de debajo quedó confirmado, guardianes que ven nombres con
+  acento, `migracionReversible` con historia, `promover.sh` cerrado a corridas parciales, caché de lecturas (pasada de guardianes 84 → 41 s). Tandas
+  2 y 3a: «al revés» con árbol idéntico y siempre en 4 partes (dirigida 45008066438: 12 min; `solo` inexistente corta en «alcance», 45008075519) y
+  sin esperas fijas de 16 s (dirigida 45006294341, 22 pruebas en verde). **Reglas nuevas:** las dirigidas van siempre en partes; una roja local se
+  repite sobre base nueva; el carril «al revés» se corre con `node pruebas/correr.mjs --grupo alreves` (unos 20 min en local, antes ~3 h).
+  **Siguiente (tanda 3b y 4):** partir «tipos · build · guardianes» en trabajos paralelos con un solo build, reparto por duración y afinidad en 8
+  partes, dispositivos de 3 en 3; después despliegue (no reconstruir si la app no cambió, migraciones en una consulta, aviso si el sandbox cae) y la
+  herramienta de subida. La máquina de trabajo se reinició el 22 nov ~04:50 UTC: base y servidor locales se levantan de nuevo cuando hagan falta.
+  Quién hizo qué: Opus escribió las tandas 1 y 2; Sonnet la 3a; Fable planeó, revisó, corrió guardianes y suites y subió.
 - **22 nov (madrugada, 05:00 UTC) · `main` = `pruebas` = 3559997, sandbox comprobado desde fuera** (estado-sandbox 44982310623: salud con ese
   commit, 207 migraciones; del push a servido 6 min 9 s). Confirmación de push **44981829795 en verde, 41,7 min**: la primera de `main` que no sale
   roja por el propio CI desde el 21 nov 21:55 (el paso final tarda 8 s, antes 23 min). Entró: 9u-2 «nota interna» (dirigida 44971472965 en verde +

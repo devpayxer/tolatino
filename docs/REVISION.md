@@ -6179,4 +6179,11 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Decide tú (producción):** la puerta exige hoy una corrida entera en `main`, de primer intento y con todos sus carriles. Tu regla (AD) pide más:
   la confirmación completa, dos veces seguidas más una barajada, que casi nunca sale verde (3 de 39). ¿Producción exige esa confirmación, y también
   los anchos? Hasta que decidas, queda anotado en el código como un nivel pendiente.
+- **Tandas 2 y 3a, hechas (22 nov):** una revisión dirigida ya no tarda dos horas: el carril «al revés» va siempre en 4 partes y cada parte tardó
+  6–9 minutos en GitHub (corrida 45008066438, 12 minutos en total; antes 86–128). El corredor comprueba que cada suite deja el código idéntico byte a
+  byte, con una pasada real de guardianes al empezar y otra al terminar, en vez de 113 pasadas repetidas. Un nombre de prueba mal escrito corta la
+  corrida en segundos (antes costaba hasta 71 minutos). Y las 53 esperas fijas de 16 segundos salieron de las pruebas: 21 pruebas pasaron de 45 a
+  30 minutos, con una prueba nueva que demuestra que un cambio de Configuración se ve en menos de un segundo.
+- **Decide tú (dirigidas):** hoy una revisión dirigida corre SIEMPRE todas las suites «al revés» (así lo piden AD y AF). Con 4 partes ya son unos 10
+  minutos. ¿Lo dejamos así, o que corra solo las que tocan lo cambiado? Mi recomendación: dejarlo así; ya no estorba.
 
