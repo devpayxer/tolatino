@@ -32,11 +32,17 @@ const sec = (k) => process.env[k] || falta(k);
 // leerlo: pruebas/lib/dispositivo-precarga.cjs (la pone correr.mjs --dispositivo) ya cambia cada contexto; esto es para las nuevas.
 const DISPOSITIVO = process.env.PRUEBAS_DISPOSITIVO || null;
 
+// 22 nov · La dirección del servidor de esta corrida (B) y los puertos de sus simuladores (P): salen de UNA variable, PRUEBAS_URL (pruebas/lib/puertos.cjs).
+// Sin variables: el servidor en :3100 y los puertos de siempre. Ninguna prueba escribe el puerto (guardián pruebasSinPuertoFijo).
+const PU = require('./puertos.cjs').resolver();
+
 module.exports = {
   RAIZ, S, REC, SECRETOS, DISPOSITIVO,
   get DISP() { return DISPOSITIVO ? require('./dispositivos.cjs').de(DISPOSITIVO) : null; },
   OUT: path.join(S, 'cap') + '/',
-  B: process.env.PRUEBAS_URL || 'http://localhost:3100',
+  B: PU.url,
+  P: PU.p,
+  PUERTO: PU.puerto,
   DB: process.env.PRUEBAS_DB_CONT || 'tlprueba-db-1',
   get TOK() { return sec('BARRIDO_TOKEN'); },
   sec,

@@ -6,7 +6,9 @@
 #                          tiendas 8h, cuentas de revisión 8i); es el que corre la regresión entera (pruebas/correr.mjs --todas)
 #             basico                · sin simuladores (como el servir.sh de las fases 1–7)
 #   SOLO=servir      no reconstruye: reinicia el servidor ya construido (sin perfil: el de la última vez)
-#   PRUEBAS_PUERTO=3119  otro puerto (por defecto el de PRUEBAS_URL si está puesta; si no, 3100). Solo reinicia lo que escucha en ESE puerto.
+#   PRUEBAS_URL=http://localhost:3120  otro servidor (UNA variable manda: de ella salen el puerto de aquí, el del corredor y el de las pruebas; sin ella, :3100).
+#                    Solo PRUEBAS_PUERTO=3120 también vale (la dirección se deriva); las dos y distintas: error antes de arrancar. Solo reinicia lo que
+#                    escucha en ESE puerto. Ver pruebas/lib/puertos.cjs.
 #   TRADUCTOR_URL=…  el traductor de «Ver traducción» (5h; com5h levanta su traductor de mentira y reinicia con esto)
 #
 # EL REPO ES PÚBLICO: ningún secreto vive aquí. Se leen de $PRUEBAS_SECRETOS (por defecto $PRUEBAS_SALIDA/secretos.env, FUERA del repo);
@@ -22,11 +24,10 @@ PERFIL="${1:-}"
 if [ -z "$PERFIL" ]; then PERFIL=$(cat "$SALIDA/perfil" 2>/dev/null || echo completo); fi
 case "$PERFIL" in completo|basico) ;; *) echo "perfil desconocido: $PERFIL (completo | basico)" >&2; exit 2;; esac
 echo "$PERFIL" > "$SALIDA/perfil"
-# El puerto: PRUEBAS_PUERTO; si no, el de PRUEBAS_URL (la misma dirección que leen las pruebas, pruebas/lib/entorno.cjs); si no, 3100.
-PUERTO="${PRUEBAS_PUERTO:-}"
-if [ -z "$PUERTO" ] && [ -n "${PRUEBAS_URL:-}" ]; then PUERTO="$(echo "$PRUEBAS_URL" | sed -nE 's#^[a-z]+://[^/:]+:([0-9]+).*#\1#p')"; fi
-PUERTO="${PUERTO:-3100}"
-case "$PUERTO" in ''|*[!0-9]*) echo "✗ puerto inválido: $PUERTO" >&2; exit 2;; esac
+# El puerto sale de PRUEBAS_URL (o de PRUEBAS_PUERTO; sin ninguna, 3100) con la MISMA cuenta que las pruebas y el corredor: pruebas/lib/puertos.cjs.
+# Si las dos variables no coinciden, el motivo sale por stderr y esto se detiene aquí, antes de construir o apagar nada.
+PUERTOS="$(node "$RAIZ/pruebas/lib/puertos.cjs" --sh)" || exit 2
+eval "$PUERTOS"
 DB_CONT="${PRUEBAS_DB_CONT:-tlprueba-db-1}"; MEDIOS_CONT="${PRUEBAS_MEDIOS_CONT:-tlprueba-medios-1}"
 
 # ── Secretos de la corrida: los que faltan se generan (al azar) y se guardan fuera del repo ──

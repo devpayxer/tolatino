@@ -112,10 +112,17 @@ if (opt("--dispositivo")) {
   ENV.NODE_OPTIONS = `${process.env.NODE_OPTIONS ?? ""} --require ${join(RAIZ, "pruebas/lib/dispositivo-precarga.cjs")}`.trim();
 }
 
+/* 22 nov · La dirección del servidor sale de UNA variable, PRUEBAS_URL (por defecto, el servidor en :3100; con solo PRUEBAS_PUERTO se deriva; las dos y distintas:
+   error aquí, antes de levantar o preguntar nada). La cuenta es la de pruebas/lib/puertos.cjs, la misma que hacen servir.sh y cada prueba (ENT.B). */
+let SERVIDOR = null;
+if (flag("--servir") || sel.some((t) => t.carril === "e2e")) {
+  try { SERVIDOR = createRequire(import.meta.url)("./lib/puertos.cjs").resolver(process.env); }
+  catch (e) { console.error(`✗ ${e.message}`); process.exit(2); }
+}
 mkdirSync(RES, { recursive: true });
 if (flag("--servir")) execSync(`bash ${JSON.stringify(join(RAIZ, "pruebas/servir/servir.sh"))} completo`, { stdio: "inherit", env: ENV });
 if (sel.some((t) => t.carril === "e2e")) {
-  const BASE = (process.env.PRUEBAS_URL || "http://127.0.0.1:3100").replace(/\/$/, ""); // la misma dirección que leen las pruebas (pruebas/lib/entorno.cjs)
+  const BASE = SERVIDOR.url.replace("localhost", "127.0.0.1"); // la misma dirección que leen las pruebas (ENT.B, pruebas/lib/entorno.cjs), por IPv4 como siempre
   try { execSync(`curl -fs -o /dev/null -m 10 ${JSON.stringify(BASE + "/api/salud")}`); }
   catch { console.error(`✗ nadie responde en ${BASE}. Primero: bash pruebas/servir/base.sh && bash pruebas/servir/servir.sh (o --servir)`); process.exit(2); }
 }
