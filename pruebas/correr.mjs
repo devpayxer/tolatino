@@ -23,12 +23,16 @@
    Salida: $PRUEBAS_SALIDA/res/<nombre>.out por prueba y resumen.json; al final, la tabla con las comprobaciones (✓) de cada una.
    Una prueba pasa si termina con código 0. Nada de esto lleva secretos: los lee cada prueba de $PRUEBAS_SALIDA/secretos.env. */
 import { spawn, execSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync, createWriteStream } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, createWriteStream } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+/* 22 nov · «Árbol idéntico» (A2): la huella del árbol se carga AL ARRANCAR, en este proceso. Una suite que siembra en pruebas/lib/arbol.cjs (o en
+   este archivo) no cambia la comparación de la corrida en curso. Guardián alrevesArbolIdentico. */
+const ARBOL = createRequire(import.meta.url)("./lib/arbol.cjs");
 const SALIDA = resolve(process.env.PRUEBAS_SALIDA || join(tmpdir(), "tolatino-pruebas"));
 const RES = join(SALIDA, "res");
 const args = process.argv.slice(2);
@@ -132,6 +136,70 @@ const correrUna = (t) => new Promise((ok) => {
   });
 });
 
+/* 22 nov · Revisión del CI (A2) · El carril «al revés», con el árbol vigilado. Hasta hoy cada suite terminaba con una pasada COMPLETA de guardianes
+   (113 por confirmación, el 85–88 % del carril) que solo veía un defecto mal restaurado si algún guardián lo miraba. Ahora:
+   - al empezar el carril: HEAD~1 tiene que resolver (migracionReversible mira el commit anterior), una pasada REAL y completa de guardianes (si es
+     roja, el carril se para ahí: nada se prueba sobre un árbol que ya está rojo), y la huella del árbol con una copia de referencia FUERA del árbol;
+   - tras CADA suite: la misma huella, comparada contra la INICIAL. Si difiere, la suite es roja nombrando los archivos, el corredor restaura desde
+     la copia (lo nuevo no se borra: se aparta a la copia y se dice dónde), recalcula y exige igualdad; si no lo logra, corta el carril;
+   - al terminar: otra pasada REAL y completa de guardianes.
+   Por inducción: árbol inicial en verde y huella idéntica tras cada suite ⇒ cada suite dejó un árbol que ya se probó en verde. */
+const vigia = {
+  ini: null, dir: null, cortado: null, empezado: false,
+  async empezar(rs) {
+    this.empezado = true;
+    try { execSync("git rev-parse --verify -q HEAD~1", { cwd: RAIZ, stdio: "ignore" }); }
+    catch { this.cortado = "sin historia: HEAD~1 no resuelve (las pasadas del carril miran el commit anterior; en el CI, checkout con fetch-depth: 0)"; rs.push(rojaDelCarril("guardianes-inicio", this.cortado)); return; }
+    const r = await pasadaReal("inicio"); rs.push(r);
+    if (!r.ok) { this.cortado = "la pasada real de guardianes del inicio está en rojo: nada se prueba sobre un árbol que ya está rojo"; return; }
+    try {
+      this.ini = ARBOL.huella(RAIZ);
+      this.dir = mkdtempSync(join(tmpdir(), "tolatino-alreves-ref-"));
+      ARBOL.copiar(RAIZ, this.ini, this.dir);
+      console.log(`  árbol del carril: huella ${this.ini.digest.slice(0, 16)} (${this.ini.archivos.size} archivos, ${this.ini.vacias.length} carpetas vacías) · copia de referencia en ${this.dir}`);
+    } catch (e) { this.cortado = `no se pudo tomar la huella del árbol: ${String(e?.message ?? e).slice(0, 200)}`; rs.push(rojaDelCarril("arbol-inicio", this.cortado)); }
+  },
+  /* Tras cada suite: la huella contra la inicial. */
+  despues(t, r) {
+    let d;
+    try { d = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ)); }
+    catch (e) { this.cortado = `no se pudo calcular la huella del árbol tras ${t.nombre}: ${String(e?.message ?? e).slice(0, 200)}`; return { ...r, ok: false, error: this.cortado }; }
+    if (!d.length) return r;
+    const lista = d.slice(0, 30).map((x) => `${x.ruta} (${x.que})`).join(" · ") + (d.length > 30 ? ` · y ${d.length - 30} más` : "");
+    console.log(`  ✗ ${t.nombre} es ROJA: dejó el árbol distinto del inicial: ${lista}`);
+    let nota;
+    try {
+      const o = ARBOL.restaurar(RAIZ, this.ini, this.dir), otra = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ));
+      if (otra.length) { this.cortado = `tras ${t.nombre} el árbol no volvió a la huella inicial (${otra.slice(0, 10).map((x) => `${x.ruta} (${x.que})`).join(" · ")}): el carril se corta`; nota = this.cortado; }
+      else nota = `restaurado desde la copia de referencia (${o.restaurados.length} archivo(s) devueltos${o.apartados.length ? `; ${o.apartados.length} nuevo(s) apartado(s) en ${join(this.dir, "apartados")}` : ""}${o.carpetas.length ? `; carpetas: ${o.carpetas.join(", ")}` : ""}): huella idéntica otra vez`;
+    } catch (e) { this.cortado = `no se pudo restaurar el árbol tras ${t.nombre}: ${String(e?.message ?? e).slice(0, 200)}`; nota = this.cortado; }
+    console.log(`    ${nota}`);
+    return { ...r, ok: false, error: `dejó el árbol distinto del inicial: ${lista} · ${nota}`.slice(0, 1500) };
+  },
+  async terminar(rs) {
+    if (!this.empezado) return;
+    if (this.cortado) { console.log(`  ✗ carril «al revés» cortado: ${this.cortado}`); }
+    else rs.push(await pasadaReal("final"));
+    if (this.dir && !existsSync(join(this.dir, "apartados"))) try { rmSync(this.dir, { recursive: true, force: true }); } catch { /* nada */ }
+  },
+};
+const rojaDelCarril = (nombre, error) => { console.log(`✗ ${nombre.padEnd(16)}    0 ✓     0 s  · ${error}`); return { nombre, grupo: "alreves", ok: false, codigo: null, checks: 0, malas: 1, seg: 0, error, salida: null }; };
+/* Una pasada REAL y completa de guardianes (sin --solo, sin nada que la acorte), con su salida en res/guardianes-<cual>.out. */
+const pasadaReal = (cual) => new Promise((ok) => {
+  const ini = Date.now(), out = join(RES, `guardianes-${cual}.out`), w = createWriteStream(out);
+  const env = { ...ENV }; delete env.ALREVES_CORREDOR;
+  const p = spawn("node", ["guardianes/run.mjs"], { cwd: RAIZ, env, stdio: ["ignore", "pipe", "pipe"] });
+  let texto = "";
+  const mira = (d) => { w.write(d); texto += d; if (texto.length > 2e6) texto = texto.slice(-1e6); };
+  p.stdout.on("data", mira); p.stderr.on("data", mira);
+  p.on("close", (codigo) => {
+    w.end();
+    const r = { nombre: `guardianes-${cual}`, grupo: "alreves", ok: codigo === 0, codigo, checks: (texto.match(/^\s*✓/gm) ?? []).length, malas: (texto.match(/^\s*✗/gm) ?? []).length, seg: Math.round((Date.now() - ini) / 1000), error: codigo === 0 ? "" : (texto.split("\n").filter((l) => /^\s*\[|✗|Error/.test(l)).slice(0, 8).join(" · ") || texto.trim().split("\n").pop() || "").trim().slice(0, 600), salida: out };
+    console.log(`${r.ok ? "✓" : "✗"} ${r.nombre.padEnd(16)} ${String(r.checks).padStart(4)} ✓ ${String(r.seg).padStart(5)} s  · pasada REAL y completa de guardianes (${cual} del carril «al revés»)${r.ok ? "" : `: ${r.error}`}`);
+    ok(r);
+  });
+});
+
 /* Un candado por carril (en la salida): dos corridas de punta a punta a la vez se pisan en la base, y dos de al revés en los archivos del repo. */
 const candados = [];
 for (const c of ["e2e", "alreves"]) {
@@ -148,7 +216,10 @@ const REINTENTAR = flag("--reintentar"), TOPE_INESTABLES = 3, inestables = [];
 const carril = async (ts) => {
   const rs = [];
   for (const t of ts) {
+    if (t.carril === "alreves" && !vigia.empezado) await vigia.empezar(rs);
+    if (t.carril === "alreves" && vigia.cortado) { rs.push(rojaDelCarril(t.nombre, `no corrió: ${vigia.cortado}`)); continue; }
     let r = await correrUna(t);
+    if (t.carril === "alreves") r = vigia.despues(t, r);
     if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {
       const primera = join(RES, `${t.nombre}.intento1.out`);
       try { renameSync(r.salida, primera); } catch { /* sin salida */ }
@@ -159,6 +230,7 @@ const carril = async (ts) => {
     }
     rs.push(r);
   }
+  if (ts.some((t) => t.carril === "alreves")) await vigia.terminar(rs);
   return rs;
 };
 const inicio = Date.now();

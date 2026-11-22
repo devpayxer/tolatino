@@ -10903,6 +10903,37 @@ const guardianes = {
     }
   },
 
+  /* 22 nov · Revisión del CI (A2) · alrevesArbolIdentico: en el carril «al revés» el corredor (pruebas/correr.mjs) vigila el árbol. Al empezar:
+     HEAD~1 resuelve y una pasada REAL y completa de guardianes (si es roja, el carril se para); la huella del árbol (pruebas/lib/arbol.cjs) y una
+     copia de referencia fuera del árbol. Tras CADA suite: la huella comparada con la INICIAL; si difiere, roja nombrando los archivos, restaurar
+     desde la copia y volver a comparar (si no vuelve, se corta el carril). Al terminar, otra pasada real. Lo que se teme: comparar solo «antes y
+     después» de la suite (la siguiente correría verde sobre un árbol envenenado), no restaurar, una huella que deje fuera las carpetas vacías, los
+     ignorados, las referencias de git o el modo, una huella cargada en un proceso por suite (correría el código que la suite dejó), una pasada
+     «real» que no lo es (--solo o con la variable del corredor), o borrar lo nuevo en vez de apartarlo. Al revés: alrevesArbol (casos) y
+     arbol9z (la huella y la restauración, de verdad, en un repo de prueba). */
+  alrevesArbolIdentico() {
+    const G = "alrevesArbolIdentico", C = "pruebas/correr.mjs", A = "pruebas/lib/arbol.cjs";
+    if (!existsSync(C) || !existsSync(A)) return falla(G, A, 0, "falta el corredor o la huella del árbol (pruebas/lib/arbol.cjs)");
+    const c = sinComent(C), a = sinComent(A), v = /const vigia = \{[\s\S]*?\n\};/.exec(c)?.[0] ?? "";
+    if (!/^const ARBOL = createRequire\(import\.meta\.url\)\("\.\/lib\/arbol\.cjs"\);$/m.test(c)) falla(G, C, 0, "la huella se carga al arrancar, en el proceso del corredor (const ARBOL = createRequire(import.meta.url)(\"./lib/arbol.cjs\")), nunca en un proceso por suite");
+    if (!/if \(t\.carril === "alreves" && !vigia\.empezado\) await vigia\.empezar\(rs\);/.test(c) || !/if \(t\.carril === "alreves"\) r = vigia\.despues\(t, r\);/.test(c) || !/if \(ts\.some\(\(t\) => t\.carril === "alreves"\)\) await vigia\.terminar\(rs\);/.test(c) || !/if \(t\.carril === "alreves" && vigia\.cortado\) \{ rs\.push\(rojaDelCarril\(/.test(c))
+      falla(G, C, 0, "el carril «al revés» empieza con vigia.empezar, compara tras CADA suite (vigia.despues), no corre nada si se cortó y termina con vigia.terminar");
+    if (!/execSync\("git rev-parse --verify -q HEAD~1"/.test(v) || !/const r = await pasadaReal\("inicio"\); rs\.push\(r\);\s*if \(!r\.ok\) \{ this\.cortado =/.test(v) || !/rs\.push\(await pasadaReal\("final"\)\)/.test(v))
+      falla(G, C, 0, "al empezar el carril: HEAD~1 resuelve y una pasada real (si es roja, se para); al terminar, otra pasada real");
+    if (!/this\.ini = ARBOL\.huella\(RAIZ\);/.test(v) || !/ARBOL\.copiar\(RAIZ, this\.ini, this\.dir\)/.test(v) || !/mkdtempSync\(join\(tmpdir\(\), /.test(v)) falla(G, C, 0, "la huella inicial y la copia de referencia (fuera del árbol, en una carpeta temporal propia) se toman al empezar el carril");
+    if (!/d = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\)/.test(v) || !/ARBOL\.restaurar\(RAIZ, this\.ini, this\.dir\), otra = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\)/.test(v) || !/if \(otra\.length\) \{ this\.cortado =/.test(v) || !/return \{ \.\.\.r, ok: false, error: `dejó el árbol distinto del inicial/.test(v))
+      falla(G, C, 0, "tras cada suite se compara con la huella INICIAL; si difiere: roja con los archivos, restaurar desde la copia, volver a comparar y cortar si no vuelve");
+    const pr = /const pasadaReal = [\s\S]*?\n\}\);/.exec(c)?.[0] ?? "";
+    if (!/spawn\("node", \["guardianes\/run\.mjs"\], /.test(pr) || /--solo/.test(pr) || !/delete env\.ALREVES_CORREDOR;/.test(pr)) falla(G, C, 0, "la pasada real es «node guardianes/run.mjs» entero, sin --solo y sin la variable del corredor");
+    if (!/const SALTAR = new Set\(\['node_modules', '\.git', '\.next', '\.turbo', '\.pnpm-store'\]\);/.test(a)) falla(G, A, 0, "la huella solo deja fuera node_modules, .git, .next, .turbo y .pnpm-store (los ignorados que leen los guardianes entran)");
+    if (!/\['ls-files', '-z', '--cached', '--others', '--exclude-standard'\]/.test(a) || !/if \(!hijos\.length && rel\) vacias\.push\(rel\);/.test(a) || !/`\$\{st\.mode & 0o100 \? '755' : '644'\}:\$\{sha\(fs\.readFileSync\(abs\)\)\}`/.test(a))
+      falla(G, A, 0, "la huella lleva los bytes y el modo normalizado de cada archivo, lo que enumera git ls-files -z y las carpetas vacías");
+    if (!/const REFS = \['HEAD', 'HEAD~1', 'refs\/remotes\/origin\/produccion', 'refs\/remotes\/origin\/pruebas'\];/.test(a) || !/GIT_OPTIONAL_LOCKS: '0'/.test(a)) falla(G, A, 0, "la huella lleva HEAD, HEAD~1, origin/produccion y origin/pruebas, sin tomar el candado del índice");
+    if (!/out\.apartados\.push\(rel\)/.test(a) || /\bfs\.unlinkSync\(src\)/.test(a)) falla(G, A, 0, "lo nuevo que deja una suite no se borra: se aparta a la copia (y se dice dónde)");
+    const y = existsSync(".github/workflows/ci.yml") ? readFileSync(".github/workflows/ci.yml", "utf8") : "";
+    if (!/# Historia completa: [^\n]*\n\s*- uses: actions\/checkout@v4\n\s*with: \{ fetch-depth: 0 \}/.test(/\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "")) falla(G, ".github/workflows/ci.yml", 0, "el carril «al revés» clona con toda la historia (fetch-depth: 0): sus pasadas reales miran HEAD~1");
+  },
+
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
      buscaba «Llegan cuando se encienda producción», que 9o cambió por la sección de despliegues de verdad: la prueba quedó roja en las 3 vueltas
      (14 nov). Lo que la pantalla ARMA con datos (nombres de la prueba, cifras, MAYÚSCULAS) no está escrito en el código: esos van, uno por uno, en
