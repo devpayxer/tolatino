@@ -1,5 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { closeSync, openSync, writeSync } from "node:fs";
+import { mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { PoolClient } from "pg";
 import { db, tx } from "../db";
 import { celda } from "../csv";
@@ -14,6 +18,9 @@ import type { PruebaLlave } from "../llaves/llaves";
      PRIVADO (privado/exportes/<id>.zip). Aviso «Tu archivo está listo».
    - Se baja UNA vez, durante export_vence_h (24 h), solo por la persona que lo pidió (bajarExportacion; la ruta /api/datos/archivo/<id> solo
      con POST: un GET —la vista previa de un enlace— nunca lo gasta; guardián enlaceUnUsoSinGet). Bajado o vencido, el archivo sale del almacén.
+   - 22 nov · En flujo (la misma clase que los medios en flujo): el ZIP se escribe por partes a un archivo temporal y sube desde el disco
+     (guardarArchivo), y se entrega del almacén a quien lo baja por partes (abrirObjeto), nunca entero en la memoria del proceso (antes: el ZIP
+     entero al armarlo, y al bajarlo leerObjeto + una copia; 51,6 MB pedían ~240 MB). Guardián exportacionEnFlujo.
    - La persona: lo que el MAPA dice que se exporta (exporta), solo sus filas (la columna de la persona = su id) y sin las columnas de OTRA persona
      ni huellas, cifrados, tokens o ubicación exacta (guardián exportaSoloLoSuyo).
    - El negocio: lo que su panel ya muestra (su página, catálogo, equipo, operaciones, cobros, clientes y reseñas con el nombre y la inicial),
@@ -67,14 +74,15 @@ export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Con
 
 /* El archivo de un negocio: lo que su panel ya muestra. Ningún teléfono, correo ni dirección de un cliente; el cliente con su nombre y la inicial. */
 export function datosDeNegocio(negocio: string): Consulta[] {
-  const L = (nombre: string, sql: string, tabla?: string): Consulta => ({ nombre, sql, args: [negocio], fuera: new Set(), tabla });
+  const L = (nombre: string, sql: string, tabla?: string, fuera: string[] = []): Consulta => ({ nombre, sql, args: [negocio], fuera: new Set(fuera), tabla });
   const cliente = `nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1) || '.', '')), '')`;
   return [
     L("negocio", `select id, name, category_id, subcategory_ids, city_id, status, operation, address, phone, whatsapp, email, instagram, facebook, languages, about, founded_year,
                          amenities, payment_modes, modules_on, created_at from businesses where id = $1`),
     L("equipo", `select display_name as nombre, kind as tipo, role as puesto, status as estado, languages as idiomas, since_year as desde, invited_at as invitado from business_members where business_id = $1 order by sort`),
-    // 9u-2 · items: sus notas según NOTAS (el motivo de un plato oculto sale solo mientras está oculto: lo que el panel le muestra).
-    L("catalogo", `select i.*${banderasDeNotas("items")} from items i where i.business_id = $1 order by i.id`, "items"),
+    // 9u-2 · items: sus notas según NOTAS (el motivo de un plato oculto sale solo mientras está oculto: lo que el panel le muestra). 22 nov · Sin
+    // hidden_by: quién del equipo lo ocultó (una cuenta del equipo) no sale; el Panel tampoco lo dice.
+    L("catalogo", `select i.*${banderasDeNotas("items")} from items i where i.business_id = $1 order by i.id`, "items", ["hidden_by"]),
     L("operaciones", `select o.number as numero, o.kind as tipo, o.status as estado, o.mode as modo, o.sent_at as pedido, o.scheduled_at as para, o.done_at as terminado,
                              o.cancelled_at as cancelado, o.subtotal_cents, o.delivery_cents, o.tip_cents, o.tax_cents, o.discount_cents, o.total_cents, o.pay_mode as pago,
                              o.customer_note as nota_del_cliente, ${cliente} as cliente
@@ -142,10 +150,12 @@ const LEEME = (negocio: boolean, archivos: Map<string, Seccion>) => [
 ].join("\r\n");
 
 /* El ZIP: JSON + CSV de cada parte de cada archivo, y el LEEME (con lo que de verdad salió). Todo por cursor, dentro de una transacción de solo lectura
-   (una foto fija de la base: las partes no se pisan aunque lleguen filas nuevas mientras se arma). */
-export async function armarZip(consultas: Consulta[], negocio: boolean, c?: PoolClient): Promise<{ zip: Buffer; secciones: Map<string, Seccion> }> {
+   (una foto fija de la base: las partes no se pisan aunque lleguen filas nuevas mientras se arma).
+   `salida` (22 nov): los trozos comprimidos van ahí en orden, al llegar (el barrido los escribe a disco) y `zip` vuelve vacío; sin ella, el ZIP
+   entero en `zip` (lo usa «Exportar sus datos» del equipo, que lo entrega en la misma respuesta). */
+export async function armarZip(consultas: Consulta[], negocio: boolean, c?: PoolClient, salida?: (b: Buffer) => void): Promise<{ zip: Buffer; secciones: Map<string, Seccion> }> {
   const hacer = async (c: PoolClient) => {
-    const z = zipPorPartes(), secciones = new Map<string, Seccion>();
+    const z = zipPorPartes(salida), secciones = new Map<string, Seccion>();
     let i = 0;
     for (const q of consultas) {
       const s: Seccion = { filas: 0, partes: 0, fuera: 0 }, crudas: Fila[][] = [];
@@ -218,9 +228,26 @@ export async function misArchivos(userId: string, negocio: string | null): Promi
        from data_exports where user_id = $1::uuid and coalesce(business_id, '') = $2::text order by requested_at desc limit 5`, [userId, negocio ?? ""])).rows;
 }
 
+/* 22 nov · El ZIP se arma en un archivo temporal (<tmp>/tl-exportes/<id del pedido>.zip, solo del proceso) y sube desde el disco. Se borra en el
+   finally de quien lo arma; si el proceso se cayó a mitad, el pedido vuelve a la fila (vencerExportaciones) con el MISMO id y el mismo nombre de
+   archivo: se escribe encima desde cero y se borra al terminar (nada se acumula en el disco). */
+const DIR_EXPORTES = () => join(tmpdir(), "tl-exportes");
+/* Armar el ZIP a un archivo: cada trozo comprimido se escribe al llegar (con su sha256 y su tamaño); en memoria nunca está el ZIP entero. */
+async function armarADisco(consultas: Consulta[], negocio: boolean, ruta: string): Promise<{ secciones: Map<string, Seccion>; sha256: string; bytes: number }> {
+  const fd = openSync(ruta, "w", 0o600), hash = createHash("sha256");
+  let bytes = 0;
+  try {
+    const { secciones } = await armarZip(consultas, negocio, undefined, (b) => {
+      for (let o = 0; o < b.length;) o += writeSync(fd, b, o, b.length - o);
+      hash.update(b); bytes += b.length;
+    });
+    return { secciones, sha256: hash.digest("hex"), bytes };
+  } finally { closeSync(fd); }
+}
+
 /* ── El barrido: armar los pedidos y sacar del almacén lo bajado o vencido ── */
 export async function armarPendientes(max = 3): Promise<number> {
-  const { guardarObjeto, mediosListos } = await import("../medios");
+  const { guardarArchivo, mediosListos } = await import("../medios");
   if (!mediosListos()) return 0; // sin almacén privado no se arma nada (el pedido espera)
   let n = 0;
   for (let i = 0; i < max; i++) {
@@ -228,15 +255,18 @@ export async function armarPendientes(max = 3): Promise<number> {
       `update data_exports set status = 'armando' where id = (select id from data_exports where status = 'pendiente' order by requested_at limit 1 for update skip locked)
        returning id::text, user_id::text, business_id`)).rows[0];
     if (!e) break;
+    let ruta: string | null = null;
     try {
       const t0 = Date.now();
-      const { zip: z, secciones } = await armarZip(e.business_id ? datosDeNegocio(e.business_id) : await datosDeCuenta(e.user_id), !!e.business_id);
+      await mkdir(DIR_EXPORTES(), { recursive: true, mode: 0o700 });
+      ruta = join(DIR_EXPORTES(), `${e.id}.zip`);
+      const { secciones, sha256, bytes } = await armarADisco(e.business_id ? datosDeNegocio(e.business_id) : await datosDeCuenta(e.user_id), !!e.business_id, ruta);
       const clave = `privado/exportes/${e.id}.zip`;
-      await guardarObjeto(clave, z, "application/zip");
+      await guardarArchivo(clave, ruta, "application/zip", sha256);
       await db().query(
         `update data_exports set status = 'listo', media_key = $2, sha256 = $3, bytes = $4::int, sections = $5::jsonb, ready_at = now(), expires_at = now() + make_interval(hours => cfg_int('export_vence_h'))
           where id = $1::uuid and status = 'armando'`,
-        [e.id, clave, createHash("sha256").update(z).digest("hex"), z.length, JSON.stringify({ ...Object.fromEntries([...secciones].map(([k, v]) => [k, v.filas])),
+        [e.id, clave, sha256, bytes, JSON.stringify({ ...Object.fromEntries([...secciones].map(([k, v]) => [k, v.filas])),
           ...([...secciones].some(([, v]) => v.partes > 1 || v.fuera) ? { _partes: Object.fromEntries([...secciones].filter(([, v]) => v.partes > 1 || v.fuera).map(([k, v]) => [k, v])) } : {}),
           _ms: Date.now() - t0 })]);
       const { avisar } = await import("../avisos");
@@ -247,6 +277,8 @@ export async function armarPendientes(max = 3): Promise<number> {
       n++;
     } catch (err) {
       await db().query(`update data_exports set status = 'fallo', error = $2 where id = $1::uuid and status = 'armando'`, [e.id, String((err as Error)?.message ?? err).slice(0, 300)]);
+    } finally {
+      if (ruta) await rm(ruta, { force: true }).catch(() => undefined);
     }
   }
   return n;
@@ -264,8 +296,10 @@ export async function vencerExportaciones(): Promise<number> {
   return V.length;
 }
 
-/* ── Bajar el archivo (POST /api/datos/archivo/<id>): solo quien lo pidió, una vez, antes de que venza ── */
-export type ResBajar = { ok: true; zip: Buffer; nombre: string } | { ok: false; status: 404 | 410 };
+/* ── Bajar el archivo (POST /api/datos/archivo/<id>): solo quien lo pidió, una vez, antes de que venza ──
+   22 nov · En flujo: después del permiso se ABRE el objeto en el almacén (abrirObjeto: por partes, nunca entero en memoria) y solo si está se gasta
+   el uso; quien pierde la carrera suelta el cuerpo sin leerlo (sin esperar). El cuerpo pasa tal cual a la respuesta (guardián exportacionEnFlujo). */
+export type ResBajar = { ok: true; cuerpo: ReadableStream<Uint8Array>; largo: number | null; nombre: string } | { ok: false; status: 404 | 410 };
 export async function bajarExportacion(id: string, userId: string, ip: string | null): Promise<ResBajar> {
   if (!/^[0-9a-f-]{36}$/.test(id)) return { ok: false, status: 404 };
   const e = (await db().query<{ media_key: string | null; status: string; vence: boolean; business_id: string | null }>(
@@ -276,13 +310,17 @@ export async function bajarExportacion(id: string, userId: string, ip: string | 
   // El negocio: quien lo pidió sigue siendo su dueño.
   if (e.business_id && !(await db().query(`select 1 from business_members where business_id = $1 and user_id = $2::uuid and kind = 'owner' and status = 'active'`, [e.business_id, userId])).rowCount)
     return { ok: false, status: 404 };
-  const { leerObjeto } = await import("../medios");
-  const z = await leerObjeto(e.media_key);
+  const { abrirObjeto } = await import("../medios");
+  const a = await abrirObjeto(e.media_key);
+  // El archivo ya no está en el almacén: no se gasta el uso (no hay nada que bajar).
+  if (!a || a.estado !== 200) return { ok: false, status: 410 };
   // Un uso: gana el primero (dos pedidos a la vez: el segundo ve 410).
   const ipHash = ip ? createHash("sha256").update(`ip:${ip}`).digest("hex") : null;
-  const r = await db().query(`update data_exports set status = 'bajado', downloaded_at = now(), ip_hash = $3 where id = $1::uuid and user_id = $2::uuid and status = 'listo' and expires_at > now()`, [id, userId, ipHash]);
-  if (!r.rowCount) return { ok: false, status: 410 };
-  return { ok: true, zip: z, nombre: e.business_id ? `tolatino-negocio-${e.business_id}.zip` : "tolatino-mis-datos.zip" };
+  let r: { rowCount: number | null };
+  try { r = await db().query(`update data_exports set status = 'bajado', downloaded_at = now(), ip_hash = $3 where id = $1::uuid and user_id = $2::uuid and status = 'listo' and expires_at > now()`, [id, userId, ipHash]); }
+  catch (err) { void a.cuerpo.cancel().catch(() => undefined); throw err; }
+  if (!r.rowCount) { void a.cuerpo.cancel().catch(() => undefined); return { ok: false, status: 410 }; }
+  return { ok: true, cuerpo: a.cuerpo, largo: a.largo, nombre: e.business_id ? `tolatino-negocio-${e.business_id}.zip` : "tolatino-mis-datos.zip" };
 }
 
 /* ── Usuarios 360° › Privacidad: sus archivos (sin contenido) ── */
