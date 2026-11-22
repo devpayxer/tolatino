@@ -88,7 +88,7 @@ const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and
     await pv.screenshot({ path: OUT + 'c001-tarjeta-390.png' });
     // Vitrina (AK): el video se mueve SOLO en la celda grande de la galería y ya no hay anillo sobre un logo: la caja «HOY» de la tarjeta (con algo
     // publicado en las últimas 24 h) es un botón que abre «Hoy en el barrio» de ese negocio.
-    const cartaV = pv.locator('article[data-vitrina="pro"]', { has: tarjeta });
+    const cartaV = pv.locator('article[data-vitrina="pro"]', { has: pv.locator('video[data-video-tarjeta]') }).first(); // `has` se busca DENTRO de la tarjeta: no puede empezar por `article`
     ok(await cartaV.locator('[data-celda="grande"] video[data-video-tarjeta]').count() === 1 && await cartaV.locator('[data-celda="chica"] video').count() === 0, 'el video está en la celda GRANDE de la galería (y en ninguna otra)');
     ok(await cartaV.locator('[data-anillo]').count() === 0, 'la tarjeta ya no lleva el anillo del logo');
     const cajaHoy = cartaV.locator('button[data-oferta]');

@@ -99,6 +99,10 @@ arregla y se anota en LAUNCH); si falla dos veces es roja. Más de 3 inestables 
 **Desde el 20 nov (decisión AE):** un bug con la app abierta se contiene primero (interruptor o versión anterior) y se arregla por el camino
 normal. Solo lo grave (seguridad, cobro mal hecho, app caída) va por la vía urgente: revisión rápida + prueba corta en producción, con la
 confirmación completa justo después y vuelta atrás automática si caza algo. Siempre con el OK del fundador.
+**Desde el 22 nov (decisión AL):** vía rápida de diseño: lo que es solo de cómo se ve sube al sandbox con tipos + build + guardianes en verde y
+visto servido; sus pruebas de punta a punta corren después (lo que falte, a LAUNCH en el momento). No aplica a dinero, permisos, datos personales,
+migraciones ni producción. Captura primero (en cuanto una pieza se ve, el fundador la recibe), entregar por partes, y el trabajo grande se
+reparte en hasta 4 encargos en paralelo.
 
 ## Ramas
 `main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que
