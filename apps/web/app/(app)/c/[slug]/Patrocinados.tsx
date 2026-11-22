@@ -10,8 +10,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { Tarjeta } from "@/lib/tarjeta";
 import { abrirComoLlegar } from "@/lib/como-llegar";
-import { contarToque } from "@/lib/contar-toque";
-import { entroPatrocinado } from "../../acciones-patrocinio";
+import { contarEntradaPatrocinio, contarToque } from "@/lib/contar-toque";
 import { VideoTarjeta, VisorHoy } from "../../VideoNegocio";
 import { fotoFondo } from "@tolatino/ui";
 
@@ -55,7 +54,7 @@ export function Patrocinados({ items, titulo, es }: { items: Patrocinada[]; titu
   const router = useRouter();
   const [hoy, setHoy] = useState<Tarjeta | null>(null);
   if (!items.length) return null;
-  const entrar = (p: Patrocinada) => { void entroPatrocinado("negocio", p.sid).catch(() => undefined); };
+  const entrar = (p: Patrocinada) => { contarEntradaPatrocinio("negocio", p.sid); };
   const abrir = (p: Patrocinada) => () => { entrar(p); router.push(`/n/${p.t.id}`); };
   const cta = (p: Patrocinada) => () => {
     const b = p.t;

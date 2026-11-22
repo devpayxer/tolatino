@@ -112,6 +112,16 @@ let OP = null;
     ok(await espera(async () => sql(`select coalesce((select entries from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}), 0)`) === '1'), 'tocar la tarjeta: «entraron» 1');
     await pv.goto(B + '/c/comida'); await pv.locator(`[data-patrocinada="${SID}"]`).click(); await pv.waitForURL(new RegExp(`/n/${BIZ}`)); await pv.waitForTimeout(800);
     ok(sql(`select entries from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '1', 'la misma persona el mismo día: sigue en 1');
+    // El «entraron» sale por la bandeja de lib/contar-toque.ts (antes, una acción del servidor que se perdía al salir de la página): si el primer
+    // envío se pierde (aquí, el beacon dice que sí y no manda nada), el reintento lo cuenta igual, y una sola vez.
+    await pw.goto(B + '/c/comida');
+    ok(await espera(async () => (await pw.locator(`[data-patrocinada="${SID}"]`).count()) > 0), 'otro visitante (sin cuenta) ve la tarjeta');
+    await pw.evaluate(() => { navigator.sendBeacon = () => true; });
+    await pw.locator(`[data-patrocinada="${SID}"]`).click();
+    await pw.waitForURL(new RegExp(`/n/${BIZ}`));
+    ok(await espera(async () => sql(`select entries from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '2'), 'su primer envío se pierde: «entraron» 2 igual (lo manda el reintento de la bandeja)');
+    await pw.waitForTimeout(2500);
+    ok(sql(`select entries from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '2' && await pw.evaluate(() => sessionStorage.getItem('tl-toques-pendientes')) === null, 'y una sola vez (la bandeja queda vacía)');
     const U = sql(`select id from users where phone = '+1${VEC}'`);
     OP = `PAT${Date.now() % 1e9}`;
     sql(`insert into operations (number, kind, city_id, business_id, user_id, pay_mode, client_key) values ('${OP}', 'order', 'hzl', '${BIZ}', '${U}', 'local', gen_random_uuid())`);

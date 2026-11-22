@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { TarjetaEvt } from "@/lib/evt-publico";
 import { dinero } from "@/lib/evt-comun";
-import { entroPatrocinado } from "../acciones-patrocinio";
+import { contarEntradaPatrocinio } from "@/lib/contar-toque";
 import { MONO } from "./comun";
 import { Foto } from "@tolatino/ui";
 
@@ -39,7 +39,7 @@ export function TarjetaPatEvt({ k, es, onOpen, chica = false, sid }: { k: Tarjet
 export function PatrocinadosEventos({ items, es, movil, conMios }: { items: PatEvt[]; es: boolean; movil: boolean; conMios?: boolean }) {
   const router = useRouter(), caja = useRef<HTMLDivElement>(null), [i, setI] = useState(0);
   if (!items.length) return null;
-  const abrir = (p: PatEvt) => () => { void entroPatrocinado("evento", p.sid).catch(() => undefined); router.push(p.href); };
+  const abrir = (p: PatEvt) => () => { contarEntradaPatrocinio("evento", p.sid); router.push(p.href); };
   if (!movil) return (
     <div data-screen-label="Eventos · Patrocinados · desktop (C-003)" data-patrocinados-evt={items.length}>
       <h2 className="font-display text-[21px] font-extrabold leading-none tracking-[-0.03em]">{es ? "Patrocinados" : "Sponsored"}</h2>
