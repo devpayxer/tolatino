@@ -13600,7 +13600,7 @@ const guardianes = {
     for (const [f, fn] of [[SU, "resolverCobroPro"], [CF, "resolverCobroFuera"]]) if (!/const rev = await K\.revisada\(/.test(cuerpoFn(sinComent(f), fn))) falla(G, f, 0, `${fn}: con la decisión del equipo no vuelve a preguntar; cierra con ella`);
     // (4) Lo que sobra: anotado antes, su llave, sin respuesta no es rechazo, pasada la llave se pregunta.
     // 9t7 · Y nunca una resuelta a mano (manual_at).
-    const marca = "set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref";
+    const marca = "set gateway_ref = case when sent_at is null then 'gateway_refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref";
     const sr = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n  \}/.exec(ej)?.[0] ?? "";
     if (!antes(ej, marca, "pasarela.devolver(") || !/if \(g\.enviada && g\.vieja\) return \(await resolverDevolucionSobra\(id, \{ origen: "barrido" \}\)\)\.st;/.test(ej) || !sr || /'failed'|fallar/.test(sr) || !/return "pending";/.test(sr) || !/tl_intencion: m\.gref/.test(ej))
       falla(G, RV, 0, "ejecutarDevolucionSobra: anotada que se manda (con su dato buscable) antes de la pasarela; sin respuesta sigue en camino; pasada la llave se pregunta, nunca se manda otra vez con ella");
@@ -13658,7 +13658,7 @@ const guardianes = {
         if ((PENDIENTE[f] ?? []).includes(fnN)) continue;
         const t = TABLA[f]?.[fnN];
         if (!t) { falla(G, f, ln, `pasarela.${m[1]} en ${fnN || "?"} sin su intención anotada antes (sent_at y el dato buscable): devuelve por una de las que ya preguntan a la pasarela`); continue; }
-        const b = cuerpoFn(s, fnN), marca = `set gateway_ref = case when sent_at is null then '${t}:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`;
+        const b = cuerpoFn(s, fnN), marca = `set gateway_ref = case when sent_at is null then '${t}:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`;
         if (!antes(b, marca, `pasarela.${m[1]}(`)) falla(G, f, ln, `${fnN}: anota que se manda y su dato buscable (${t}) en UNA sentencia antes de la pasarela, solo la primera vez y nunca si se resolvió a mano`);
         if (!/tl_intencion: m\.gref/.test(b)) falla(G, f, ln, `${fnN}: manda el dato buscable a la pasarela (metadata tl_intencion)`);
       }
@@ -14564,6 +14564,69 @@ const guardianes = {
         if (usos.some((u) => u === "conf")) falla(G, p, 0, "la cabecera pone `conf.titulo` y la hoja de confirmar lleva el mismo título: sale dos veces (la cabecera dice dónde estás y la hoja la acción, o la cabecera la acción y la hoja «¿Por qué?»)");
       }
     }
+  },
+
+  /* 22 nov (0209) · manoTrasEnvioReciente (LAUNCH «Dinero por clase: lo que queda después de 9t8» (b)): «Resolver a mano» mientras el barrido la manda.
+     antesDeAMano le pregunta a Stripe, pero algo recién mandado puede no verse todavía: la BASE no deja marcar a mano una intención en camino en los
+     MINUTOS_ENVIO_MANO siguientes a su ÚLTIMO envío (dinero_envio_reciente, en las cuatro que se resuelven a mano). Por clase: toda sentencia de lib/ que
+     anota que se manda una de esas cuatro (sent_at = coalesce(sent_at, now())) anota también el último envío (last_sent_at = now()); los minutos son los
+     mismos en la base, en lib/dinero-alertas y en la pantalla (alertasDinero no ofrece el botón en ese rato). Al revés: alreves9tdin0209; con la base:
+     pruebas/e2e/din9t10.cjs (la carrera con el orden controlado). */
+  manoTrasEnvioReciente() {
+    const G = "manoTrasEnvioReciente", DA = "apps/web/lib/dinero-alertas.ts";
+    const min = Number(/export const MINUTOS_ENVIO_MANO = (\d+);/.exec(sinComent(DA))?.[1] ?? -1);
+    const fn = ultimaFn("dinero_envio_reciente").replace(/--.*$/gm, "");
+    const m = /if new\.manual_at is not null and old\.manual_at is null and old\.status = 'pending' and old\.last_sent_at > now\(\) - interval '(\d+) minutes' then\s+raise exception 'dinero_a_mano_reciente/.exec(fn);
+    if (!m || Number(m[1]) !== min) falla(G, "packages/db/migrations", 0, `dinero_envio_reciente: la base no deja resolver a mano una en camino en los ${min} minutos (MINUTOS_ENVIO_MANO) siguientes a su último envío`);
+    if (!/if tg_op = 'INSERT' then new\.last_sent_at := null; return new; end if;/.test(fn) || !/new\.last_sent_at < coalesce\(old\.last_sent_at, '-infinity'::timestamptz\)/.test(fn)) falla(G, "packages/db/migrations", 0, "dinero_envio_reciente: el último envío lo anota solo quien manda, en camino y hacia adelante (al insertar, nada)");
+    const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8").replace(/--.*$/gm, "")).join("\n");
+    const T = ["refunds", "event_settlement_reversals", "gateway_refunds", "sponsorship_refunds"];
+    for (const t of T) if (!new RegExp(`create trigger ${t}_envio_reciente before insert or update on ${t} for each row execute function dinero_envio_reciente\\(\\);`).test(mig)) falla(G, "packages/db/migrations", 0, `${t}: sin el trigger dinero_envio_reciente (se podría marcar a mano justo después de mandarla)`);
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) continue;
+      const s0 = sinComent(f);
+      for (const x of s0.matchAll(/update (refunds|event_settlement_reversals|gateway_refunds|sponsorship_refunds) set [^`]*?sent_at = coalesce\(sent_at, now\(\)\)[^`]*`/g))
+        if (!/last_sent_at = now\(\)/.test(x[0])) falla(G, f, s0.slice(0, x.index).split("\n").length, `${x[1]}: anota que se manda pero no el último envío (last_sent_at = now()): «Resolver a mano» podría ganarle a Stripe`);
+    }
+    const ad = cuerpoFn(sinComent(DA), "alertasDinero");
+    const pant = [...ad.matchAll(/z\.last_sent_at > now\(\) - interval '(\d+) minutes'/g)].map((x) => Number(x[1]));
+    if (pant.length !== 4 || pant.some((x) => x !== min) || !/aMano: mano && ult !== "resuelta_a_mano" && !reciente/.test(ad)) falla(G, DA, 0, "alertasDinero no ofrece «Resolver a mano» en los minutos siguientes a un envío (las cuatro intenciones, con los mismos minutos)");
+    const na = cuerpoFn(sinComent(DA), "notaAlerta");
+    if (!/dinero_a_mano_reciente/.test(na) || !/throw e;/.test(na)) falla(G, DA, 0, "notaAlerta dice que espere cuando la base no deja (dinero_a_mano_reciente) y no traga ningún otro error");
+  },
+
+  /* 22 nov (0209) · devolverOtraVezUnaVez (LAUNCH «Dinero por clase: lo que queda después de 9t8» (a)): «Devolver otra vez» unos boletos desde su refund_failed.
+     La base: una sola por devolución fallida (índice único en retry_of), solo de una fallida sin resolver a mano, del mismo cobro y monto, con boletos, sin
+     disputa, pedida por una persona del equipo; el tope de lo cobrado (refunds_tope) corre en el mismo insert. La app: la llave sale de la alerta (no de la
+     pantalla), el permiso es el de Devolver (tx:aprobar), la auditoría entra en la transacción que la anota, y el resultado de Stripe cierra (hecha) o
+     reabre (fallida, con su propia alerta) la alerta de antes. Al revés: alreves9tdin0209; con la base: pruebas/e2e/din9t10.cjs. */
+  devolverOtraVezUnaVez() {
+    const G = "devolverOtraVezUnaVez", DA = "apps/web/lib/dinero-alertas.ts", CB = "apps/web/lib/cobros.ts", AT = "apps/web/app/admin/acciones-tx.ts", PT = "apps/web/app/admin/Planes.tsx";
+    const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8").replace(/--.*$/gm, "")).join("\n");
+    if (!/create unique index if not exists refunds_otra_vez_uq on refunds \(retry_of\) where retry_of is not null;/.test(mig)) falla(G, "packages/db/migrations", 0, "refunds: una sola devolución de otra vez por fallida (índice único en retry_of)");
+    const fn = ultimaFn("refunds_otra_vez").replace(/--.*$/gm, "");
+    for (const [re, msg] of [
+      [/if f\.status <> 'failed' or f\.manual_at is not null then raise exception/, "solo de una fallida sin resolver a mano"],
+      [/if f\.payment_id <> new\.payment_id or f\.amount_cents <> new\.amount_cents then raise exception/, "del mismo cobro y por el mismo monto"],
+      [/if new\.initiated_by <> 'admin' or new\.actor_id is null then raise exception/, "la pide una persona del equipo"],
+      [/if not exists \(select 1 from ticket_refund_lines l where l\.refund_id = new\.lines_of\) then raise exception/, "solo devoluciones de boletos"],
+      [/d\.status in \('needs_response', 'under_review', 'lost', 'accepted'\)\) then\s+raise exception/, "sin disputa con el banco"],
+      [/new\.lines_of := null;\s+if new\.retry_of is null then return new; end if;/, "lines_of solo lo pone la base"],
+      [/if old\.status = 'failed' and new\.status <> 'failed' and exists \(select 1 from refunds x where x\.retry_of = old\.id\) then/, "la fallida que ya tiene la suya sigue fallida"],
+    ]) if (!re.test(fn)) falla(G, "packages/db/migrations", 0, `refunds_otra_vez: ${msg}`);
+    if (!/create trigger refunds_otra_vez before insert or update on refunds for each row execute function refunds_otra_vez\(\);/.test(mig)) falla(G, "packages/db/migrations", 0, "refunds: sin el trigger refunds_otra_vez");
+    const da = sinComent(DA), dv = cuerpoFn(da, "devolverOtraVez");
+    if (!/idem: `bol-otra-\$\{a\.sujeto\}`, otraVezDe: a\.sujeto/.test(dv) || /clave/.test(dv)) falla(G, DA, 0, "devolverOtraVez: la llave sale de la devolución fallida (bol-otra-<id>), nunca de la pantalla: el mismo toque o dos personas = una sola devolución");
+    if (!/centavos: a\.amt!/.test(dv) || /parseFloat|monto:\s*string/.test(dv)) falla(G, DA, 0, "devolverOtraVez: el monto es el de la devolución fallida (no entra de la pantalla)");
+    const iTx = dv.indexOf("await tx("), iAud = dv.indexOf("dinero.alerta.devolver_otra_vez"), iEj = dv.indexOf("ejecutarDevolucionPago(rid)");
+    if (iTx < 0 || iAud < iTx || iEj < iAud) falla(G, DA, 0, "devolverOtraVez: la auditoría de quien la pide entra en la transacción que la anota, antes de ir a Stripe");
+    const at = cuerpoFn(sinComent(AT), "devolverOtraVezTx");
+    if (!/if \(!s \|\| !s\.puede\("tx", "aprobar"\)\) return/.test(at)) falla(G, AT, 0, "devolverOtraVezTx: el mismo permiso que Transacciones › Devolver (tx:aprobar)");
+    const cb = sinComent(CB);
+    if (!/retry_of::text as otra/.test(cuerpoFn(cb, "cerrarDevolucionPago")) || !/cerrarAlertaSola\("refund_failed", h\.otra/.test(cuerpoFn(cb, "cerrarDevolucionPago"))) falla(G, CB, 0, "cerrarDevolucionPago: la devolución de otra vez hecha cierra la alerta de la fallida de antes");
+    if (!/reabrirOtraVez\(f\.otra, r\.id\)/.test(cuerpoFn(cb, "fallarDevolucionPago")) || !/alertar\("refund_failed", r\.id/.test(cuerpoFn(cb, "fallarDevolucionPago"))) falla(G, CB, 0, "fallarDevolucionPago: la de otra vez que falla trae su propia refund_failed y reabre la de antes");
+    if (!/reabrirOtraVez\(h\.otra, h\.id\)/.test(cuerpoFn(cb, "devolucionFallidaEnStripe"))) falla(G, CB, 0, "devolucionFallidaEnStripe: la de otra vez que Stripe da por fallida después reabre la alerta de antes");
+    if (!/\.\.\.\(a\.otraVez \? \[\{ l: E\("Devolver otra vez", "Refund again"\)/.test(sinComent(PT))) falla(G, PT, 0, "Planes: «Devolver otra vez» solo cuando el servidor lo ofrece (a.otraVez)");
   },
 
   /* 9t9 (21 nov) · barridoUnoPorUno, por clase (CI 44940985674: un plan con su intención rota dejó sin cobrar a todos los planes detrás de él, cada minuto):

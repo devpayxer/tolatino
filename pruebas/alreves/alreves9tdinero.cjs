@@ -92,7 +92,7 @@ const casos = [
   [IF, SE, '      await c.query("savepoint anota");\n', ""],
   // (1) Como estaba: la pasarela primero y la devolución nace 'done'.
   [D, CB, "  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n", "  await pasarela.devolver(\"pi\", x.centavos, x.idem);\n  const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));\n"],
-  [D, CB, "values ($1::bigint, $2, $3, $4, $5, 'pending', $6) returning id::text`,", "values ($1::bigint, $2, $3, $4, $5, 'done', $6) returning id::text`,"],
+  [D, CB, "values ($1::bigint, $2, $3, $4, $5, 'pending', $6, $7::bigint) returning id::text`,", "values ($1::bigint, $2, $3, $4, $5, 'done', $6, $7::bigint) returning id::text`,"],
   // Lo pendiente sumado en la misma sentencia del candado (la que espera no ve lo que la otra anotó).
   [D, CB, "`select p.id::text, p.amount_cents as amount, p.refunded_cents as refunded, p.status from payments p where p.id = $1::bigint for update`",
     "`select p.id::text, p.amount_cents as amount, p.refunded_cents + (select coalesce(sum(amount_cents), 0) from refunds where payment_id = p.id and status = 'pending') as refunded, p.status from payments p where p.id = $1::bigint`"],

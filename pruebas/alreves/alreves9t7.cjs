@@ -14,11 +14,11 @@ const CB = 'apps/web/lib/cobros.ts', BO = 'apps/web/lib/boletos-despues.ts', LQ 
 const PS = 'apps/web/lib/pagos/pasarela.ts', PT = 'apps/web/app/admin/Planes.tsx', MG = 'packages/db/migrations/0206_devoluciones_preguntan.sql';
 const casos = [
   // (1)
-  [CB, "update refunds set gateway_ref = case when sent_at is null then 'refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];\n  if (!m) return { ok: false, msg: STRIPE_NO };",
+  [CB, "update refunds set gateway_ref = case when sent_at is null then 'refunds:' || id else gateway_ref end, sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [r.id])).rows[0];\n  if (!m) return { ok: false, msg: STRIPE_NO };",
     "update refunds set attempts = attempts where id = $1::bigint returning null::text as gref`, [r.id])).rows[0];\n  if (!m) return { ok: false, msg: STRIPE_NO };", 'ejecutarDevolucionPago: anota que se manda y su dato buscable'],
   [BO, "{ plataforma: r.pg, ...(m.gref ? { meta: { tl_intencion: m.gref } } : {}) }", "{ plataforma: r.pg }", 'ejecutarDevolucion: manda el dato buscable'],
-  [LQ, "sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];\n  if (!m) return false;\n  const { llaveDe }",
-    "sent_at = coalesce(sent_at, now()) where id = $1::bigint and status = 'pending' returning gateway_ref as gref`, [id])).rows[0];\n  if (!m) return false;\n  const { llaveDe }", 'ejecutarReversion: anota que se manda'],
+  [LQ, "sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' and manual_at is null returning gateway_ref as gref`, [id])).rows[0];\n  if (!m) return false;\n  const { llaveDe }",
+    "sent_at = coalesce(sent_at, now()), last_sent_at = now() where id = $1::bigint and status = 'pending' returning gateway_ref as gref`, [id])).rows[0];\n  if (!m) return false;\n  const { llaveDe }", 'ejecutarReversion: anota que se manda'],
   [CB, "export async function pagoDe(opId: string): Promise<PagoVista | null> {\n", "export async function pagoDe(opId: string): Promise<PagoVista | null> {\n  await pasarela.devolver(\"pi_x\", 1, \"x\");\n", 'pasarela.devolver en pagoDe sin su intención anotada antes'],
   [PS, 'const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals|sponsorship_refunds):\\d{1,18}$/;', 'const REF_DEV = /^(gateway_refunds|refunds|event_settlement_reversals):\\d{1,18}$/;', 'buscarDevolucion busca también'],
   // (2)
