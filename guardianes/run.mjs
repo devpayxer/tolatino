@@ -13991,6 +13991,37 @@ const guardianes = {
     if (!existsSync(M) || ["plan_subs_pausa_idx", "plan_subs_visita_idx", "plan_subs_cambio_idx", "operations_visita_plan_idx"].some((x) => !readFileSync(M, "utf8").includes(`create index if not exists ${x} `))) falla(G, M, 0, "los índices de lo que toca de los planes (0208)");
   },
 
+  /* 22 nov (revisión del CI, tanda 3a) · sinEsperaFijaLarga: 53 esperas fijas de 16 s «por la caché de Configuración» (848 s por pasada, 12 % de las pruebas
+     de punta a punta) esperaban a una copia que desde 0133 se olvida sola por aviso de la base, y de paso tapaban una escucha rota. Se cambiaron por
+     pruebas/lib/config-lista.cjs (mira que las conexiones que escuchan sigan vivas). La regla, en pruebas/e2e: una espera fija de 5 s o más
+     (dormir, sleep, waitForTimeout, setTimeout con un número, también 61_000 o 31 * 1000) lleva su motivo escrito, «// ESPERA-FIJA: <por qué>»
+     en la misma línea o en las dos de arriba, con al menos 15 caracteres; y una de 15 a 16 s con motivo de «caché de Configuración» no vale (eso
+     es de config-lista). Las que quedan con motivo se listan (aviso). Al revés: alreves9tesperas. */
+  sinEsperaFijaLarga() {
+    const G = "sinEsperaFijaLarga", MIN_MS = 5000;
+    const NUM = String.raw`(\d[\d_]*)(?:\s*\*\s*(1000))?`;
+    const LLAMADA = new RegExp(String.raw`\b(?:dormir|sleep|waitForTimeout|setTimeout\(\s*[\w$.]+\s*,\s*)\(?\s*` + NUM + String.raw`|\bsetTimeout\(\s*[\w$.]+\s*,\s*` + NUM, "g");
+    const MOTIVO = /ESPERA-FIJA:\s*(\S.{14,})/;
+    const con = [];
+    for (const f of archivos) {
+      if (!/^pruebas\/e2e\/[^/]+\.cjs$/.test(f) || !existsSync(f)) continue;
+      const ls = readFileSync(f, "utf8").split("\n");
+      ls.forEach((l, i) => {
+        for (const m of l.matchAll(LLAMADA)) {
+          const num = m[1] ?? m[3], por = m[2] ?? m[4];
+          if (!num) continue;
+          const ms = Number(num.replace(/_/g, "")) * (por ? 1000 : 1);
+          if (!(ms >= MIN_MS)) continue;
+          const ctx = [ls[i - 2] ?? "", ls[i - 1] ?? "", l].join("\n"), mo = MOTIVO.exec(ctx);
+          if (!mo) { falla(G, f, i + 1, `espera fija de ${ms / 1000} s sin motivo escrito: si espera a algo del servidor, mirarlo (pruebas/lib/config-lista.cjs para la Configuración, espera() para lo demás); si es el reloj de verdad, «// ESPERA-FIJA: <por qué>»`); continue; }
+          if (ms >= 15000 && ms <= 16000 && /cach[eé]|configuraci[oó]n|interruptor/i.test(mo[1])) falla(G, f, i + 1, "una espera de 16 s por la caché de Configuración: usar configLista() de pruebas/lib/config-lista.cjs (mira que la escucha viva)");
+          con.push(`${f.split("/").pop()}:${i + 1} (${ms / 1000} s)`);
+        }
+      });
+    }
+    if (con.length) avisos.push(`${G}: ${con.length} esperas fijas de 5 s o más, todas con su motivo: ${con.join(", ")}`);
+  },
+
 };
 
 
