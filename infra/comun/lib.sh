@@ -101,14 +101,16 @@ salud_esperar() {
 # versionar o cambiado a mano dentro de esas rutas que el .dockerignore no quite, una ruta que no está en el commit, o git que no contesta. Se corre
 # desde la raíz del repo. Prueba: pruebas/infra/huella-imagen.test.sh.
 huella_imagen() {
-  local rutas=() estado ids
+  local rutas=() estado sucio ids
   [ -f .dockerignore ] && [ -f infra/pruebas/Dockerfile ] || return 0
   mapfile -t rutas < <(sed -n 's/^!//p' .dockerignore)
   [ "${#rutas[@]}" -gt 0 ] || return 0
   estado=$(git status --porcelain --ignored -- .dockerignore infra/pruebas/Dockerfile "${rutas[@]}" 2>/dev/null) || return 0
-  if printf '%s\n' "$estado" | grep -vE '^!! (.*/)?(node_modules|\.next|\.turbo)/$|^!! .*\.tsbuildinfo$|^!! (.*/)?\.env(\.[^/]*)?$|^!! apps/web/public/medios/' | grep -q .; then
-    return 0
-  fi
+  # Lo que el .dockerignore deja fuera no cuenta (node_modules, .next, .turbo, *.tsbuildinfo, .env, las fotos locales de apps/web/public/medios, que en
+  # el servidor no están en el .gitignore: «??»). Sin «grep -q» (cerraba el tubo antes de tiempo: con pipefail y más de 64 KB de estado, el «if» salía
+  # falso y se daba la huella del commit con el árbol sucio).
+  sucio=$(printf '%s\n' "$estado" | grep -vE '^!! (.*/)?(node_modules|\.next|\.turbo)/$|^!! .*\.tsbuildinfo$|^!! (.*/)?\.env(\.[^/]*)?$|^(!!|\?\?) apps/web/public/medios/' || true)
+  [ -n "$sucio" ] && return 0
   ids=$(git rev-parse HEAD:.dockerignore HEAD:infra/pruebas/Dockerfile "${rutas[@]/#/HEAD:}" 2>/dev/null) || return 0
   printf '%s\n' "$ids" | sha256sum | cut -c1-32
 }

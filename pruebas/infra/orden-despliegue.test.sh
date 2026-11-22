@@ -5,7 +5,7 @@
 #   · una migración que falla: sale con 1 y la app NO se toca (la app vieja sigue sirviendo con la base a medio migrar, que tolera: migracionReversible);
 #   · la base que no contesta: sale con 1 sin construir ni tocar la app;
 #   · nginx -t que no pasa: vuelve la configuración anterior y el despliegue sigue;
-#   · la misma huella y la misma imagen: no se construye;
+#   · la misma huella y la misma imagen: no se construye; la misma huella con otra imagen (otro Id) o sin imagen: SÍ se construye;
 #   · cada tramo queda con su hora y al salir (bien o mal) una línea «tramos (ok|fallo en …)» (lo que publica /estado/).
 # Corre aislado (pruebas/infra/aislar.sh: montajes y red aparte; tmpfs sobre /opt, /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino, /var/log,
 # /usr/local/bin, /run con el socket de Docker y /tmp): un docker o un systemctl de verdad que se colara no llega a nada.
@@ -33,7 +33,7 @@ case "$n $*" in
   "docker "*"exec -T db psql"*)
     if [ "${TL_FALLA:-}" = migracion ] && [[ "$ent" == *"insert into schema_migrations"* ]]; then echo "ERROR: de mentira" >&2; exit 3; fi
     case "$ent" in *"select count(*) from"*"tl_m_huella';"*) echo 1 ;; esac; exit 0 ;;
-  "docker image inspect"*) echo "sha256:$(printf '%064d' 7)" ;;
+  "docker image inspect"*) [ "${TL_IMAGEN:-7}" = ninguna ] && exit 1; echo "sha256:$(printf '%064d' "${TL_IMAGEN:-7}")" ;;
   "nginx -t"*) [ "${TL_FALLA:-}" = nginx ] && [ ! -f "$TL_TRAZA.una" ] && { : > "$TL_TRAZA.una"; exit 1; }; exit 0 ;;
   "curl "*) echo '{"ok":true}' ;;
   "systemctl is-active"*) exit 3 ;;
@@ -78,5 +78,7 @@ ok "nginx -t no pasa: el despliegue sigue y vuelve la configuración anterior" "
 H=$(cd "$T/repo" && bash -c '. infra/comun/lib.sh; huella_imagen')
 ok "la misma huella y la misma imagen: no se construye (y sí se cambia: /api/salud dice el commit)" "$(correr '' "$H"):$(cuenta "$BUILD"):$(cuenta "$UP")" "0:0:1"
 ok "otra huella: se construye" "$(correr '' "otra$H"):$(cuenta "$BUILD")" "0:1"
+ok "la misma huella con OTRA imagen (otro Id: borrada y hecha a mano, o de otra receta): se construye" "$(TL_IMAGEN=8 correr '' "$H"):$(cuenta "$BUILD")" "0:1"
+ok "la misma huella SIN imagen (borrada): se construye" "$(TL_IMAGEN=ninguna correr '' "$H"):$(cuenta "$BUILD")" "0:1"
 echo "$bien/$total casos"
 [ "$bien" = "$total" ]

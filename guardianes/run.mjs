@@ -10069,6 +10069,14 @@ const guardianes = {
     const fn = (/\nhuella_imagen\(\) \{\n([\s\S]*?)\n\}/.exec(l) ?? [])[1] ?? "";
     if (!/sed -n 's\/\^!\/\/p' \.dockerignore/.test(fn) || !/git status --porcelain --ignored --/.test(fn) || !/git rev-parse HEAD:\.dockerignore HEAD:infra\/pruebas\/Dockerfile "\$\{rutas\[@\]\/#\/HEAD:\}"/.test(fn))
       falla(G, L, 0, "huella_imagen sale de las rutas «!» del .dockerignore, la receta y el .dockerignore (objetos de git) y no da huella si hay algo sin versionar o cambiado");
+    // Tanda 5b · «grep -q» cierra el tubo en cuanto encuentra: con pipefail (deploy.sh) y más de 64 KB de estado, lo de antes muere por SIGPIPE, el «if» sale
+    // falso y se daba la huella del commit con el árbol sucio. Prueba: huella-imagen.test.sh (3.100 archivos, set -euo pipefail).
+    if (/\|\s*grep\s+(-\w*q|--quiet)/.test(fn)) falla(G, L, 0, "huella_imagen sin «| grep -q»: con pipefail y más de 64 KB de estado cierra el tubo y da la huella con el árbol sucio");
+    // Tanda 5b · La huella no ve el compose: la sección «build:» de web solo lleva context y dockerfile (un «args:» o un «target:» cambiaría la imagen
+    // sin cambiar la huella, y se serviría la vieja con el commit nuevo en /api/salud).
+    const Y = "infra/pruebas/docker-compose.yml", web = (/\n  web:\n([\s\S]*?)\n  [a-z][\w-]*:\n/.exec(existsSync(Y) ? readFileSync(Y, "utf8") : "") ?? [])[1] ?? "";
+    const build = ((/\n    build:\n((?:      .*\n)+)/.exec("\n" + web + "\n") ?? [])[1] ?? "").split("\n").map((x) => x.trim()).filter((x) => x && !x.startsWith("#"));
+    if (build.join("|") !== "context: ../..|dockerfile: infra/pruebas/Dockerfile") falla(G, Y, 0, "la sección «build:» de web solo lleva «context: ../..» y «dockerfile: infra/pruebas/Dockerfile» (la huella no ve el compose: args, target u otra cosa servirían la imagen vieja)");
     if (!/HUELLA=\$\(huella_imagen \|\| true\)/.test(d) || !/\[ -n "\$HUELLA" \] && \[ -n "\$IMAGEN_ANTES" \] && \[ "\$\(cat \/var\/lib\/tolatino\/imagen-huella 2>\/dev\/null \|\| true\)" = "\$HUELLA \$IMAGEN_ANTES" \]/.test(d))
       falla(G, D, 0, "deploy.sh se salta el build solo si la huella Y el Id de la imagen son los de la última construcción buena");
     const iBuild = d.search(/up -d "\$\{CONSTRUIR\[@\]\}"|build web/), iAnota = d.indexOf('> /var/lib/tolatino/imagen-huella');

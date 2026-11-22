@@ -9,7 +9,8 @@
 //   prueba contra Postgres 16 deja de correr.
 //   imagenSoloLoQueUsa · el .dockerignore deja fuera algo que el build lee (LAUNCH, que fallaría en silencio; un JSON de apps/mobile; un import nuevo
 //   a scripts/) o deja entrar algo que nadie lee; sin «*», sin excluir node_modules; el commit vuelve a entrar al build; la prueba con BuildKit no corre.
-//   imagenSoloSiCambia · se salta el build solo con la huella (sin el Id de la imagen); la huella deja de mirar lo que no está versionado; la prueba no corre.
+//   imagenSoloSiCambia · se salta el build solo con la huella (sin el Id de la imagen); la huella deja de mirar lo que no está versionado; la prueba no corre;
+//   (tanda 5b) vuelve «| grep -q» a huella_imagen; web.build con «target:» o con «args:» que no son el commit.
 //   despliegueSinCorte · la app se cambia antes de migrar, vuelve «up --build», un build que falla se reintenta o no sale; barrido sin init o con 10 s
 //   de gracia; nginx sin la página de mantenimiento o con server_tokens; una configuración de nginx que no pasa nginx -t se queda; las pruebas no corren.
 //   despliegueConTramos · sin la línea de tramos al salir, un tramo que falta o fuera de su sitio, /estado/ sin el enlace, la prueba sin el caso del fallo.
@@ -54,6 +55,9 @@ const casos = [
   ['imagenSoloSiCambia', D, '[ -n "$HUELLA" ] && [ -n "$IMAGEN_ANTES" ] && [ "$(cat /var/lib/tolatino/imagen-huella 2>/dev/null || true)" = "$HUELLA $IMAGEN_ANTES" ]',
     '[ -n "$HUELLA" ] && [ "$(cut -d" " -f1 /var/lib/tolatino/imagen-huella 2>/dev/null || true)" = "$HUELLA" ]', 'la huella Y el Id de la imagen'],
   ['imagenSoloSiCambia', L, '  estado=$(git status --porcelain --ignored -- .dockerignore infra/pruebas/Dockerfile "${rutas[@]}" 2>/dev/null) || return 0', '  estado=""', 'sin versionar o cambiado'],
+  ['imagenSoloSiCambia', L, '  [ -n "$sucio" ] && return 0\n', '  printf \'%s\\n\' "$sucio" | grep -q . && return 0\n', 'sin «| grep -q»'],
+  ['imagenSoloSiCambia', Y, '      dockerfile: infra/pruebas/Dockerfile\n', '      dockerfile: infra/pruebas/Dockerfile\n      target: build\n', 'solo lleva «context: ../..» y «dockerfile'],
+  ['imagenSoloSiCambia', Y, '      dockerfile: infra/pruebas/Dockerfile\n', '      dockerfile: infra/pruebas/Dockerfile\n      args:\n        NODE_ENV: production\n', 'solo lleva «context: ../..» y «dockerfile'],
   ['imagenSoloSiCambia', C, 'seccion "la imagen de la app: su huella (huella-imagen.test.sh)"; bash pruebas/infra/huella-imagen.test.sh || mal=1\n', '', 'no corren pruebas/infra/huella-imagen.test.sh'],
   ['despliegueSinCorte', D, '\n# 3c) Base de datos: migraciones pendientes, en orden, una sola vez cada una (con la app vieja sirviendo). Si una falla, se detiene aquí.\nbash "$REPO/packages/db/migrar.sh" "${COMPOSE[@]}"\n',
     '\n', 'el orden es base → construir'],
