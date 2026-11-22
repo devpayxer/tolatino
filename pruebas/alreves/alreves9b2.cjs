@@ -8,6 +8,10 @@ const casos = [
   // tuberiaVisual: un dispositivo menos, una tolerancia aflojada, aprobar en cada corrida, una captura que falta
   ['tuberiaVisual', Y, 'galaxy, ipad, escritorio-1024, escritorio-1280, escritorio-1440]', 'galaxy, ipad, escritorio-1024, escritorio-1280]'],
   ['tuberiaVisual', 'pruebas/visual/comparar.cjs', 'MAXIMO = 0.005', 'MAXIMO = 0.5'],
+  // 22 nov (B5) · los dispositivos sin tope de trabajos a la vez, o juntados en un trabajo
+  ['tuberiaVisual', Y, '      fail-fast: false\n      max-parallel: 3\n', '      fail-fast: false\n'],
+  ['tuberiaVisual', Y, '      max-parallel: 3\n', '      max-parallel: 9\n'],
+  ['tuberiaVisual', Y, 'run: node pruebas/correr.mjs disp9b --dispositivo ${{ matrix.id }}\n', 'run: for d in iphone-se ipad; do node pruebas/correr.mjs disp9b --dispositivo $d; done\n'],
   ['tuberiaVisual', Y, 'run: node pruebas/visual/correr.mjs --dispositivo ${{ matrix.id }}\n      - name: Capturas NUEVAS', 'run: node pruebas/visual/correr.mjs --dispositivo ${{ matrix.id }} --aprobar\n      - name: Capturas NUEVAS'],
   ['tuberiaVisual', 'pruebas/visual/correr.mjs', 'captura nueva sin aprobar', 'captura nueva'],
   // tuberiaAccesibilidad: axe que ya no frena lo serio, una violación conocida sin destino, la versión de axe sin fijar

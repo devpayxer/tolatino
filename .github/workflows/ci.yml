@@ -430,8 +430,11 @@ jobs:
     if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'regresion' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # 22 nov · Revisión del CI (B5) · 3 a la vez: 9 dispositivos de 3–5 min son 3 tandas con 3 o con 4 (mismo reloj, una máquina menos), y una
+    # corrida ya no pide 9 máquinas de golpe. Cada dispositivo sigue en su trabajo y su base (las capturas aprobadas se tomaron así).
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         id: [iphone-se, iphone-15, iphone-15-pro-max, pixel, galaxy, ipad, escritorio-1024, escritorio-1280, escritorio-1440]
         include:

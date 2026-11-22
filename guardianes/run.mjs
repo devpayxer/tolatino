@@ -7921,6 +7921,10 @@ const guardianes = {
     const y = readFileSync(Y, "utf8"), d = /\n  dispositivos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
     if (!d) return falla(G, Y, 0, "falta el trabajo «dispositivos» (los 9 dispositivos con capturas)");
     for (const id of IDS) if (!d.includes(id)) falla(G, Y, 0, `el dispositivo ${id} no está en la matriz de «dispositivos»`);
+    // 22 nov · Revisión del CI (B5) · 3 a la vez (una corrida no pide 9 máquinas de golpe) y cada dispositivo en su trabajo: fusionarlos cambiaría el
+    // estado de la base con que se toman las capturas aprobadas.
+    if (!/\n    strategy:\n      fail-fast: false\n      max-parallel: 3\n      matrix:\n        id: \[[^\]]*\]\n/.test(d)) falla(G, Y, 0, "«dispositivos» con max-parallel: 3 y la matriz por dispositivo (id: […])");
+    if (((d.match(/node pruebas\/correr\.mjs disp9b --dispositivo \$\{\{ matrix\.id \}\}\n/g) ?? []).length !== 1) || (d.match(/correr\.mjs disp9b/g) ?? []).length !== 1) falla(G, Y, 0, "«dispositivos»: un dispositivo por trabajo (disp9b --dispositivo ${{ matrix.id }}), sin juntar varios en uno");
     if (/continue-on-error/.test(y)) falla(G, Y, 0, "continue-on-error en el CI: una parte que falla no puede dejar pasar");
     const comp = /- name: Capturas contra las aprobadas[\s\S]*?run: (.*)/.exec(d)?.[1] ?? "";
     if (!/pruebas\/visual\/correr\.mjs --dispositivo \$\{\{ matrix\.id \}\}$/.test(comp.trim())) falla(G, Y, 0, "el paso «Capturas contra las aprobadas» tiene que correr pruebas/visual/correr.mjs --dispositivo <id> a secas (sin --aprobar)");
