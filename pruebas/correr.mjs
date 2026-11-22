@@ -115,8 +115,9 @@ if (opt("--dispositivo")) {
 mkdirSync(RES, { recursive: true });
 if (flag("--servir")) execSync(`bash ${JSON.stringify(join(RAIZ, "pruebas/servir/servir.sh"))} completo`, { stdio: "inherit", env: ENV });
 if (sel.some((t) => t.carril === "e2e")) {
-  try { execSync("curl -fs -o /dev/null -m 10 http://127.0.0.1:3100/api/salud"); }
-  catch { console.error("✗ nadie responde en :3100. Primero: bash pruebas/servir/base.sh && bash pruebas/servir/servir.sh (o --servir)"); process.exit(2); }
+  const BASE = (process.env.PRUEBAS_URL || "http://127.0.0.1:3100").replace(/\/$/, ""); // la misma dirección que leen las pruebas (pruebas/lib/entorno.cjs)
+  try { execSync(`curl -fs -o /dev/null -m 10 ${JSON.stringify(BASE + "/api/salud")}`); }
+  catch { console.error(`✗ nadie responde en ${BASE}. Primero: bash pruebas/servir/base.sh && bash pruebas/servir/servir.sh (o --servir)`); process.exit(2); }
 }
 
 /* 9b-3 · Entre una prueba y la siguiente, las ventanas de UN MINUTO que dejó la anterior se cierran: la espera de 30 s entre códigos de un

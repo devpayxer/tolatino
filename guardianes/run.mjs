@@ -14647,6 +14647,38 @@ const guardianes = {
       if (!/ENTRADAS: \$\{\{ toJSON\(inputs\) \}\}/.test(ev)) falla(G, Y, 0, "la evidencia lleva todas las entradas (toJSON(inputs))");
     }
   },
+
+  /* 9vc (22 nov) · pruebasSinPuertoFijo, por clase (153 pruebas de pruebas/e2e llevaban http://localhost:3100 escrito: un agente con su servidor en otro puerto las
+     mandaba sin querer al servidor de otro, rec1j/rec2/sop7b): ninguna prueba, librería ni script de pruebas/ y scripts/ escribe un host con el puerto 3100
+     (localhost:3100, 127.0.0.1:3100, pruebas.test:3100, una IP:3100…); la dirección sale de ENT.B (PRUEBAS_URL, pruebas/lib/entorno.cjs) y el servidor se levanta en
+     el puerto del entorno (PRUEBAS_PUERTO; servir.sh solo reinicia lo que escucha en ESE puerto). Las excepciones son las de abajo, cada una con su motivo, y una
+     excepción que ya no aparece en su archivo también falla (la lista no se pudre). Al revés: alreves9vc. */
+  pruebasSinPuertoFijo() {
+    const G = "pruebasSinPuertoFijo", RE = /[A-Za-z0-9.\]]:3100(?![0-9])/;
+    const EXC = [
+      ["pruebas/lib/entorno.cjs", "process.env.PRUEBAS_URL || 'http://localhost:3100'", "el valor por defecto de la dirección del entorno (ENT.B)"],
+      ["pruebas/correr.mjs", 'process.env.PRUEBAS_URL || "http://127.0.0.1:3100"', "el mismo valor por defecto en el corredor, que lee PRUEBAS_URL antes de preguntar por la salud"],
+      ["scripts/tiendas/capturas.mjs", "--base http://127.0.0.1:3100", "ejemplo de uso en el encabezado: la dirección llega por --base y el CI la pasa explícita"],
+      ["scripts/tiendas/capturas.mjs", 'arg("base", "http://127.0.0.1:3100")', "valor por defecto del argumento --base de la herramienta de capturas de tiendas (el CI levanta su propio servidor, tiendas.yml)"],
+      ["scripts/tiendas/capturas-android.sh", "TOLATINO_URL=http://10.0.2.2:3100", "comentario sobre el emulador de Android del CI (tiendas.yml), que no pasa por pruebas/e2e"],
+    ];
+    const vistas = new Set();
+    for (const f of archivos) {
+      if (!/^(pruebas|scripts)\//.test(f) || !/\.(cjs|mjs|js|ts|sh)$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (!RE.test(l)) return;
+        const e = EXC.findIndex(([ef, s]) => ef === f && l.includes(s));
+        if (e >= 0) { vistas.add(e); return; }
+        falla(G, f, i + 1, `escribe un host con el puerto 3100 («${l.trim().slice(0, 90)}»): una prueba que lo hace va al servidor de otro cuando el tuyo está en otro puerto; usa ENT.B (pruebas/lib/entorno.cjs)`);
+      });
+    }
+    EXC.forEach(([ef, s], i) => { if (!vistas.has(i)) falla(G, ef, 0, `la excepción «${s}» ya no aparece en el archivo: quítala de la lista de pruebasSinPuertoFijo`); });
+    const ent = existsSync("pruebas/lib/entorno.cjs") ? readFileSync("pruebas/lib/entorno.cjs", "utf8") : "";
+    if (!/B: process\.env\.PRUEBAS_URL \|\|/.test(ent)) falla(G, "pruebas/lib/entorno.cjs", 0, "ENT.B ya no sale de PRUEBAS_URL");
+    const sv = existsSync("pruebas/servir/servir.sh") ? readFileSync("pruebas/servir/servir.sh", "utf8") : "";
+    if (!/PUERTO="\$\{PRUEBAS_PUERTO:-\}"/.test(sv) || !/fuser -k "\$PUERTO\/tcp"/.test(sv) || !/VARS=\(PORT=\$PUERTO /.test(sv)) falla(G, "pruebas/servir/servir.sh", 0, "el puerto del servidor y lo que se mata salen de PRUEBAS_PUERTO (por defecto 3100), no de un número escrito");
+  },
+
 };
 
 

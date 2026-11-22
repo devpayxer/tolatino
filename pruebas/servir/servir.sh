@@ -1,11 +1,12 @@
 #!/bin/bash
-# 9a · Sirve la app en :3100 para las pruebas de punta a punta (reemplaza los servir*.sh de cada fase: servir, servidor, servir8a…servir8i).
+# 9a · Sirve la app en :3100 (o en el puerto del entorno) para las pruebas de punta a punta (reemplaza los servir*.sh de cada fase: servir, servidor, servir8a…servir8i).
 #
 # Uso:  bash pruebas/servir/servir.sh [perfil]
 #   perfiles: completo (por defecto) · todos los simuladores (push 8c, App Store Connect 8f/8h, Wallet 8g, llaves de acceso 8d,
 #                          tiendas 8h, cuentas de revisión 8i); es el que corre la regresión entera (pruebas/correr.mjs --todas)
 #             basico                · sin simuladores (como el servir.sh de las fases 1–7)
 #   SOLO=servir      no reconstruye: reinicia el servidor ya construido (sin perfil: el de la última vez)
+#   PRUEBAS_PUERTO=3119  otro puerto (por defecto el de PRUEBAS_URL si está puesta; si no, 3100). Solo reinicia lo que escucha en ESE puerto.
 #   TRADUCTOR_URL=…  el traductor de «Ver traducción» (5h; com5h levanta su traductor de mentira y reinicia con esto)
 #
 # EL REPO ES PÚBLICO: ningún secreto vive aquí. Se leen de $PRUEBAS_SECRETOS (por defecto $PRUEBAS_SALIDA/secretos.env, FUERA del repo);
@@ -21,6 +22,11 @@ PERFIL="${1:-}"
 if [ -z "$PERFIL" ]; then PERFIL=$(cat "$SALIDA/perfil" 2>/dev/null || echo completo); fi
 case "$PERFIL" in completo|basico) ;; *) echo "perfil desconocido: $PERFIL (completo | basico)" >&2; exit 2;; esac
 echo "$PERFIL" > "$SALIDA/perfil"
+# El puerto: PRUEBAS_PUERTO; si no, el de PRUEBAS_URL (la misma dirección que leen las pruebas, pruebas/lib/entorno.cjs); si no, 3100.
+PUERTO="${PRUEBAS_PUERTO:-}"
+if [ -z "$PUERTO" ] && [ -n "${PRUEBAS_URL:-}" ]; then PUERTO="$(echo "$PRUEBAS_URL" | sed -nE 's#^[a-z]+://[^/:]+:([0-9]+).*#\1#p')"; fi
+PUERTO="${PUERTO:-3100}"
+case "$PUERTO" in ''|*[!0-9]*) echo "✗ puerto inválido: $PUERTO" >&2; exit 2;; esac
 DB_CONT="${PRUEBAS_DB_CONT:-tlprueba-db-1}"; MEDIOS_CONT="${PRUEBAS_MEDIOS_CONT:-tlprueba-medios-1}"
 
 # ── Secretos de la corrida: los que faltan se generan (al azar) y se guardan fuera del repo ──
@@ -59,14 +65,14 @@ if [ "${SOLO:-}" != "servir" ]; then
 fi
 
 # ── El entorno del servidor: los secretos (de $SEC) + lo de cada perfil (solo direcciones locales; nada secreto) ──
-VARS=(PORT=3100 MEDIOS_S3_URL=http://127.0.0.1:${PRUEBAS_S3_PUERTO:-3900} TOLATINO_ENTORNO=pruebas TOLATINO_SMS_MODO=pruebas)
+VARS=(PORT=$PUERTO MEDIOS_S3_URL=http://127.0.0.1:${PRUEBAS_S3_PUERTO:-3900} TOLATINO_ENTORNO=pruebas TOLATINO_SMS_MODO=pruebas)
 if [ "$PERFIL" = basico ]; then
   VARS+=(HOSTNAME=127.0.0.1)
 else
   # 8g: la cadena de PRUEBA de Wallet (raíz → WWDR de prueba), hecha aquí con openssl en la salida; el servidor confía en esa raíz solo en este proceso.
   PKI="$SALIDA/wal8g/pki"
   node -e "require('$RAIZ/scripts/wallet-sim/pki.cjs').cadena({ dir: '$PKI', aia: 'http://127.0.0.1:4405/aia/wwdr.der' })"
-  VARS+=(HOSTNAME=0.0.0.0 PASSKEY_RP_ID=localhost PASSKEY_ORIGENES=http://localhost:3100
+  VARS+=(HOSTNAME=0.0.0.0 PASSKEY_RP_ID=localhost PASSKEY_ORIGENES=http://localhost:$PUERTO
     PUSH_APNS_URL=http://127.0.0.1:4401 PUSH_FCM_URL=http://127.0.0.1:4402 PUSH_FCM_OAUTH_URL=http://127.0.0.1:4402/token PUSH_WEB_HOSTS=127.0.0.1:4403
     ASC_API_URL=http://127.0.0.1:4404 PASES_APNS_URL=https://127.0.0.1:4406 PASES_GOOGLE_URL=http://127.0.0.1:4405 PASES_GOOGLE_OAUTH_URL=http://127.0.0.1:4405/token
     PASES_AIA_HOSTS=127.0.0.1:4405 TIENDAS_OIDC_JWKS_URL=http://127.0.0.1:4407/.well-known/jwks TIENDAS_GITHUB_API_URL=http://127.0.0.1:4407
@@ -79,8 +85,8 @@ VARS+=(MODERACION_IMG_URL="${MODERACION_IMG_URL:-http://127.0.0.1:8790}")
 # C-001: el servicio de video propio (services/video, ffmpeg; lo levanta vid001 en :8791; sin él, subir un video dice «no disponible»).
 VARS+=(VIDEO_URL="${VIDEO_URL:-http://127.0.0.1:8791}")
 
-fuser -k 3100/tcp >/dev/null 2>&1 || true; sleep 1
+fuser -k "$PUERTO/tcp" >/dev/null 2>&1 || true; sleep 1
 (set -a; . "$SEC"; set +a; unset TRADUCTOR_URL; env "${VARS[@]}" nohup node .next/standalone/apps/web/server.js > "$SALIDA/server.log" 2>&1 &)
-for i in $(seq 1 40); do curl -s -o /dev/null http://127.0.0.1:3100/ && break; sleep 1; done
-curl -s -o /dev/null http://127.0.0.1:3100/ || { echo "✗ el servidor no respondió en :3100"; tail -20 "$SALIDA/server.log"; exit 1; }
-echo "servido ($PERFIL${TRADUCTOR_URL:+, TRADUCTOR_URL=$TRADUCTOR_URL})"
+for i in $(seq 1 40); do curl -s -o /dev/null http://127.0.0.1:$PUERTO/ && break; sleep 1; done
+curl -s -o /dev/null http://127.0.0.1:$PUERTO/ || { echo "✗ el servidor no respondió en :$PUERTO"; tail -20 "$SALIDA/server.log"; exit 1; }
+echo "servido en :$PUERTO ($PERFIL${TRADUCTOR_URL:+, TRADUCTOR_URL=$TRADUCTOR_URL})"

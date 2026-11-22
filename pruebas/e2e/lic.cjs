@@ -1,6 +1,6 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'multiservicios-la-patria';
+const OUT = ENT.S + '/cap/', B = ENT.B, BIZ = 'multiservicios-la-patria';
 // 9b-1 · Sin la espera entre códigos de ESE teléfono (otra prueba acaba de entrar con él), como las demás.
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); require('../lib/negocio-nuevo.cjs').sql(`delete from otp_codes where phone = '+1${tel}'`); const j = (u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]); const a = await j('/api/cuenta/codigo', { telefono: tel }); if (!a.codigoPrueba) throw new Error('sin código ' + JSON.stringify(a)); await j('/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const t = (p, x) => p.getByText(x, { exact: true }).last();

@@ -11,7 +11,7 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const m = await b.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const p = await m.newPage(); p.on('pageerror', e => err.push('m ' + e.message));
   // sin cuenta: borrador, faltantes, mandar a entrar
-  await p.goto('http://localhost:3100/recomendar?q=pupuseria');
+  await p.goto(ENT.B + '/recomendar?q=pupuseria');
   await p.getByText('¿Conoces un negocio que no está aquí?').waitFor();
   await p.screenshot({ path: OUT + 'r1-movil.png' });
   await p.getByText('Entra para enviar').click(); await p.waitForTimeout(300);
@@ -33,7 +33,7 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
     const v = await j('/api/cuenta/verificar', { telefono: TEL, codigo: a.codigoPrueba });
     if (!v.nombre) await j('/api/cuenta/perfil', { nombre: 'Rosa', apellido: 'Méndez', apodo: '' });
   }, TEL);
-  await p.goto('http://localhost:3100/recomendar?q=pupuseria');
+  await p.goto(ENT.B + '/recomendar?q=pupuseria');
   await p.getByText('Enviar recomendación').waitFor();
   ok(await p.getByPlaceholder('Ej.: Pica Pollo La Vieja Fefa').inputValue() === NOMBRE, 'al volver de entrar, el borrador se conserva');
   await p.getByText('Enviar recomendación').click();
@@ -51,7 +51,7 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   // escritorio
   const d = await b.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
   const q = await d.newPage(); q.on('pageerror', e => err.push('d ' + e.message));
-  await q.goto('http://localhost:3100/recomendar?ciudad=alw');
+  await q.goto(ENT.B + '/recomendar?ciudad=alw');
   await q.getByText('¿Conoces un negocio que no está aquí?').waitFor();
   await q.getByPlaceholder('Ej.: Pica Pollo La Vieja Fefa').fill('Colmado El Cibao');
   await q.getByText('Es mío', { exact: true }).click();

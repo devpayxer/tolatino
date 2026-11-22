@@ -2,7 +2,7 @@
 // % solo si ganas; no legal (TecnoFix): sin textos de abogado, «Nada se cobra sin tu OK», listo en / garantía.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', L = 'bufete-almonte', F = 'ferreira-injury-law', T = 'tecnofix-hazleton';
+const OUT = ENT.S + '/cap/', B = ENT.B, L = 'bufete-almonte', F = 'ferreira-injury-law', T = 'tecnofix-hazleton';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };

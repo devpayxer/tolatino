@@ -2,7 +2,7 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 const { chromium } = require('playwright');
 // 9b-1 · Su propio negocio recién publicado por /publica (antes `barberia-7747`, que solo existía en una base vieja).
 const { publicarBarberia, medios } = require('../lib/negocio-nuevo.cjs');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
+const OUT = ENT.S + '/cap/', B = ENT.B;
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); const j = (u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]); const a = await j('/api/cuenta/codigo', { telefono: tel }); if (!a.codigoPrueba) throw new Error('sin código ' + JSON.stringify(a)); await j('/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓ ' + m); };
 const t = (p, x) => p.getByText(x, { exact: true }).last();

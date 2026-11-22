@@ -8,7 +8,7 @@
 // TLPantalla.fijar tras confirmar; iPhone → Acceso guiado; navegador → cómo hacerlo). Configuración › Apps con las claves de la ubicación.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto');
-const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', TOKEN_BARRIDO = ENT.TOK;
+const S = ENT.S, OUT = S + '/cap/', B = ENT.B, TOKEN_BARRIDO = ENT.TOK;
 const sharp = require(ENT.RAIZ + '/apps/mobile/node_modules/sharp');
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlErr = (q) => { try { sql(q); return ''; } catch (e) { return String(e.stderr || e.message); } };

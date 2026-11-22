@@ -6,7 +6,7 @@ const ENT = require('../lib/entorno.cjs');
 const { hidratado } = require('../lib/hidratado.cjs');
 const { chromium, devices } = require('playwright');
 const { entrarComo, telLibre, sql } = require('../lib/negocio-nuevo.cjs');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'sabor-dominicano';
+const OUT = ENT.S + '/cap/', B = ENT.B, BIZ = 'sabor-dominicano';
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) return v; await new Promise((r) => setTimeout(r, 250)); } return f(); };
 const HOJA = /^(Algo no está bien|Algo no salió bien|Something is not right|Something went wrong)$/;

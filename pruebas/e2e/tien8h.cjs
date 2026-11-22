@@ -11,7 +11,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto');
-const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', REPO = ENT.RAIZ, TOKEN_BARRIDO = ENT.TOK;
+const S = ENT.S, OUT = S + '/cap/', B = ENT.B, REPO = ENT.RAIZ, TOKEN_BARRIDO = ENT.TOK;
 const GH = require(REPO + '/scripts/tiendas-sim/github.cjs'), ASC = require(REPO + '/scripts/tiendas-sim/sim.cjs'), PLAY = require(REPO + '/scripts/tiendas-sim/play.cjs');
 const APPS = JSON.parse(fs.readFileSync(REPO + '/apps/mobile/apps.json', 'utf8')), VERSION = APPS.version;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();

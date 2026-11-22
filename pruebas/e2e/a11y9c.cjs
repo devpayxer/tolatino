@@ -14,7 +14,7 @@ const { chromium, devices } = require('playwright'); const { execSync } = requir
 const { telefonoLibre } = require('../lib/telefono-libre.cjs'); // un teléfono sin cuenta para publicar
 const { medios } = require('../lib/negocio-nuevo.cjs'); // el puerto de Garage de ESTA corrida (fotos del asistente)
 const TACTIL = require('../lib/tactil.cjs'); const { botonesQueNoCaben } = require('../lib/caben.cjs'); // 9t · 44 px, medido sobre lo servido
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'sabor-dominicano', N = '/n/' + BIZ, FP = ENT.rec('fotos') + '/';
+const OUT = ENT.S + '/cap/', B = ENT.B, BIZ = 'sabor-dominicano', N = '/n/' + BIZ, FP = ENT.rec('fotos') + '/';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); const r = await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); if (!r.ok) throw new Error('no entró ' + tel); };

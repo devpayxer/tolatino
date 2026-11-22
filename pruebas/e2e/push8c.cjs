@@ -9,7 +9,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const crypto = require('crypto');
-const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', REPO = ENT.RAIZ;
+const S = ENT.S, OUT = S + '/cap/', B = ENT.B, REPO = ENT.RAIZ;
 const SIM = require(REPO + '/scripts/push-sim/sim.cjs');
 const APPS = JSON.parse(require('fs').readFileSync(REPO + '/apps/mobile/apps.json', 'utf8')).apps;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -qAt -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -88,7 +88,7 @@ const PUENTE = (token) => `if (window === window.top) {
     const p = await cx.newPage(); p.on('pageerror', (e) => errs.push(`${o.k ?? ''}: ${e.message}`)); return p;
   };
   const pedir = async (m) => {
-    const B = /^https?:\/\//.test(m.url()) ? new URL(m.url()).origin : 'http://localhost:3100';
+    const B = /^https?:\/\//.test(m.url()) ? new URL(m.url()).origin : ENT.B;
     await m.goto(B + '/n/' + BIZ); await m.evaluate(() => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id: '16', ch: {}, q: 1, nt: '', k: {} }] } }))); await m.evaluate(() => localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' }))); /* 9b-1 · Pickup a propósito: sin elegir, sale el primer modo del negocio (Delivery si otra prueba lo encendió) */
     await m.goto(B + '/n/' + BIZ + '/pagar'); await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
     await m.waitForURL(/\/pedido\/\d+$/); return m.url().split('/').pop();
@@ -107,8 +107,8 @@ const PUENTE = (token) => `if (window === window.top) {
   try {
     console.log('1 · Sin conexión segura (el sandbox por HTTP en la IP): «no disponible»; la campana y el SMS como siempre');
     const ph = await ctx(390, IOS, { k: 'http' });
-    await entrar(ph, MARI, 'http://pruebas.test:3100');
-    await ph.goto('http://pruebas.test:3100/cuenta/avisos'); await ph.getByText('Los avisos al teléfono no están disponibles aquí').first().waitFor();
+    await entrar(ph, MARI, 'http://pruebas.test:' + new URL(ENT.B).port);
+    await ph.goto('http://pruebas.test:' + new URL(ENT.B).port + '/cuenta/avisos'); await ph.getByText('Los avisos al teléfono no están disponibles aquí').first().waitFor();
     ok(!(await ph.evaluate(() => window.isSecureContext)), 'http://pruebas.test (como la IP del sandbox) no es un contexto seguro');
     ok((await texto(ph)).includes('necesitan una conexión segura (https)'), 'Mi cuenta › Avisos dice por qué no hay avisos al teléfono y que llegan en la campana y por SMS');
     ok(!(await ph.evaluate(async () => !!(await navigator.serviceWorker?.getRegistration?.('/')))), 'no se registra ningún service worker de push');
@@ -198,7 +198,7 @@ const PUENTE = (token) => `if (window === window.top) {
     ok(await espera(async () => new URL(pi.url()).pathname === `/pedido/${n2}`), 'en la app, tocar el aviso abre el pedido');
     ok(sql(`select opened_via from notifications where id = ${NID2}`) === 'push', 'abierto desde el push');
     await pi.evaluate(() => (window.__cbs.pushNotificationActionPerformed || []).forEach((f) => f({ actionId: 'tap', notification: { data: { u: 'https://malo.example/x' } } })));
-    await dormir(600); ok(new URL(pi.url()).host === 'localhost:3100', 'un toque con una ruta ajena no lleva a ningún lado');
+    await dormir(600); ok(new URL(pi.url()).host === new URL(ENT.B).host, 'un toque con una ruta ajena no lleva a ningún lado');
 
     console.log('5 · Salud → texto genérico; noche (11 PM) → nada salvo lo crítico; preferencia apagada; STOP');
     await pa.goto(B + '/cuenta/avisos'); await pa.locator('[role="switch"][aria-label="Avisos en este teléfono"]').click();

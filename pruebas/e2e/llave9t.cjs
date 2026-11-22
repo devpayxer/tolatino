@@ -1,5 +1,5 @@
 // 9t · Pedir el archivo con tus datos y borrar tu cuenta con la llave de acceso (Face ID / huella), además del código por SMS (LAUNCH «Pedir el
-// archivo con la llave de acceso»; fase9-apertura.md §3.7). Playwright contra :3100 (servir.sh: RP ID «localhost», origen http://localhost:3100);
+// archivo con la llave de acceso»; fase9-apertura.md §3.7). Playwright contra :3100 (servir.sh: RP ID «localhost», origen http://localhost:<puerto>);
 // el «teléfono» es el autenticador virtual de Chromium por CDP, como llave8d. Cubre: sin llave solo el código; con llave «Pedir con Face ID» y
 // «Mejor con un código»; pedir con la llave (sin SMS: el pedido, «confirmo» en el libro, account_changes y el contador); la misma firma otra vez
 // (un uso); el propósito no se cambia (el reto de entrar no pide el archivo, el del archivo no entra ni borra, el del borrado no pide el

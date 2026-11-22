@@ -6,7 +6,7 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 // vecinos nuevos (555 libres) y su propia recomendación; en la cola, cada caso por su nombre.
 const { chromium } = require('playwright');
 const { publicarBarberia, negocioSinDueno, entrarComo, telLibre, medios, sql } = require('../lib/negocio-nuevo.cjs');
-const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/', B = 'http://localhost:3100';
+const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/', B = ENT.B;
 const t = (p, x) => p.getByText(x, { exact: true }).last();
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓ ' + m); };
 const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p.screenshot({ path: OUT + n, fullPage: full }); };
