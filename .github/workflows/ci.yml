@@ -5,6 +5,8 @@ name: CI
 # siempre es «todo». «aprobar=si» escribe las capturas como las aprobadas (artefacto; entran por commit, ver docs/REVISION.md). «confirmar=si» vuelve
 # a correr cada grupo sobre la MISMA base y otra vez barajado (la confirmación de 9b-1). Programado a dos horas distintas del día: las pruebas
 # atadas a la hora salieron una por franja (4:45 AM, 6 AM, media tarde, 6 PM, 7 AM de Tokio).
+# 22 nov · Un push a main que solo cambia documentos de trabajo (la lista de scripts/ci/alcance.mjs) no corre los carriles largos: «cambios» lo
+# calcula y es la ÚNICA vía para que no corran en un push (guardián ciSoloDocumentos). Los guardianes, los textos y la seguridad corren siempre.
 on:
   push:
     branches: [main]
@@ -63,6 +65,21 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  # 22 nov · El alcance de un push: «todo» o «documentos» (scripts/ci/alcance.mjs, probado en alreves9vd). Cualquier duda o error = «todo»; si el
+  # script cae, el paso escribe «todo». pull_request, programado y a mano: siempre «todo».
+  cambios:
+    name: alcance (todo o solo documentos)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      alcance: ${{ steps.calcular.outputs.alcance }}
+      n: ${{ steps.calcular.outputs.n }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: calcular
+        env: { EVENTO: "${{ github.event_name }}", ANTES: "${{ github.event.before }}", DESPUES: "${{ github.sha }}" }
+        run: node scripts/ci/alcance.mjs || echo "alcance=todo" >> "$GITHUB_OUTPUT"
+
   verificar:
     name: tipos · build · guardianes
     runs-on: ubuntu-latest
@@ -207,6 +224,8 @@ jobs:
 
   web:
     name: web · build una vez para todos los grupos
+    needs: cambios
+    if: ${{ needs.cambios.outputs.alcance != 'documentos' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -229,8 +248,8 @@ jobs:
   # free2b…); repartidas en trabajos con base propia fallaron 30 de 199 en la primera corrida (13 nov) por eso, no por la app.
   regresion:
     name: punta a punta · ${{ matrix.nombre }}${{ (inputs.partes || '4') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '4') || '' }}
-    needs: web
-    if: ${{ (inputs.alcance || 'todo') != 'pantallas' }}
+    needs: [cambios, web]
+    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
     # 20 nov · Los textos de las pruebas al revés ya se comprobaron en «tipos · build · guardianes» (alrevesConSuTexto): aquí no se repiten al
@@ -335,8 +354,8 @@ jobs:
 
   dispositivos:
     name: dispositivo · ${{ matrix.id }}
-    needs: web
-    if: ${{ (inputs.alcance || 'todo') != 'regresion' }}
+    needs: [cambios, web]
+    if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'regresion' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -430,7 +449,7 @@ jobs:
 
   tuberia:
     name: la tubería completa (todo en verde, nada saltado)
-    needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]
+    needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion, anchos]
     if: always()
     runs-on: ubuntu-latest
     permissions: { contents: read, actions: read }
@@ -459,19 +478,25 @@ jobs:
           n=$(grep -c . "$RUNNER_TEMP/inestables-unicas.txt" || true)
           echo "inestables de la corrida: $n (de $halladas listas)$( [ "$n" -gt 0 ] && echo " · $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")")"
           if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables en la corrida (más de 3 = roja, decisión AG): $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")"; exit 1; fi
-      - name: Cada parte terminó en verde (una parte saltada cuenta como roja, salvo en una corrida parcial a mano)
+      # 22 nov · En un push de solo documentos (lo decide «cambios»), regresión y dispositivos se saltan por diseño y se dice con todas las letras.
+      - name: Cada parte terminó en verde (una parte saltada cuenta como roja, salvo en una corrida parcial a mano o un push de solo documentos)
         env:
           RESULTADOS: ${{ toJSON(needs) }}
+          SOLO_DOCUMENTOS: ${{ github.event_name == 'push' && needs.cambios.outputs.alcance == 'documentos' && 'si' || 'no' }}
+          N_DOCUMENTOS: ${{ needs.cambios.outputs.n }}
           ALCANCE: ${{ inputs.alcance || 'todo' }}
           CONFIRMAR: ${{ inputs.confirmar }}
           ANCHOS: ${{ (github.event_name == 'schedule' || inputs.anchos == 'si') && 'si' || 'no' }}
         run: |
           echo "$RESULTADOS" | node -e '
             const n = JSON.parse(require("fs").readFileSync(0, "utf8")), a = process.env.ALCANCE; let mal = 0;
+            const docs = process.env.SOLO_DOCUMENTOS === "si";
+            if (docs) { const m = "solo documentos: " + process.env.N_DOCUMENTOS + " archivos; los carriles largos no corren por diseño"; console.log(m); console.log("::notice::" + m); }
             for (const [k, v] of Object.entries(n)) {
-              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos") || (k === "confirmacion" && process.env.CONFIRMAR !== "si") || (k === "anchos" && process.env.ANCHOS !== "si");
+              const porDocs = docs && (k === "regresion" || k === "dispositivos");
+              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos") || (k === "confirmacion" && process.env.CONFIRMAR !== "si") || (k === "anchos" && process.env.ANCHOS !== "si") || porDocs;
               const ok = v.result === "success" || (v.result === "skipped" && parcial);
-              console.log((ok ? "✓ " : "✗ ") + k + " · " + v.result + (v.result === "skipped" && parcial ? " (a propósito: alcance " + a + ")" : ""));
+              console.log((ok ? "✓ " : "✗ ") + k + " · " + v.result + (v.result === "skipped" && parcial ? (porDocs ? " (a propósito: solo documentos)" : " (a propósito: alcance " + a + ")") : ""));
               if (!ok) mal++;
             }
             if (mal) process.exit(1);

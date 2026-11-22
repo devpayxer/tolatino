@@ -38,7 +38,7 @@ const casos = [
   ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/Mercado.tsx', '    <div className={`${tarjeta ? "flex items-center gap-[13px] rounded-[18px]', '    <div role="button" tabIndex={0} onClick={(e) => v.abrir(p.id, e)} className={`${tarjeta ? "flex items-center gap-[13px] rounded-[18px]'],
   ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/Pro.tsx', '    <div className={tarjeta ? "flex items-center gap-[13px] rounded-[18px]', '    <div role="button" tabIndex={0} onClick={(e) => v.abrir(it.id, e)} className={tarjeta ? "flex items-center gap-[13px] rounded-[18px]'],
   ['sinInteractivoAnidado', 'apps/web/app/(app)/publica/PasosFH.tsx', '<div key={id} style={{ position: "relative", aspectRatio: "1",', '<div key={id} role="button" tabIndex={0} onClick={() => portada(id)} style={{ position: "relative", aspectRatio: "1",'],
-  ['tuberiaNoSeSalta', '.github/workflows/ci.yml', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion]'],
+  ['tuberiaNoSeSalta', '.github/workflows/ci.yml', 'needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion]'],
 ];
 const crear = [
   ['objetivoTactil', 'apps/web/app/admin/TactilAlReves.tsx', 'export const T = () => <button type="button" className="flex w-full py-0.5">x</button>;\n'],

@@ -24,7 +24,7 @@ const casos = [
   ['tuberiaVelocidad', Y, '{ id: escritorio-1280, velocidad: true }', '{ id: escritorio-1280 }'],
   ['tuberiaVelocidad', Y, "${{ inputs.medir == 'si' && '--medir' || '' }}", '--medir'],
   // tuberiaNoSeSalta: «tuberia» sin una parte, saltando lo saltado, un grupo de la regresión fuera de la matriz, un continue-on-error
-  ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [verificar, regresion, dispositivos, confirmacion, anchos]'],
+  ['tuberiaNoSeSalta', Y, 'needs: [cambios, verificar, seguridad, regresion, dispositivos, confirmacion, anchos]', 'needs: [cambios, verificar, regresion, dispositivos, confirmacion, anchos]'],
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
   // 21 nov · El tope de inestables es de la corrida entera (decisión AG), no de cada parte.
   ['tuberiaNoSeSalta', Y, 'if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables', 'if [ "$n" -gt 30 ]; then echo "::error::$n pruebas inestables'],
