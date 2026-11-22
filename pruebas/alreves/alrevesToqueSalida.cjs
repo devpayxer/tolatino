@@ -8,7 +8,8 @@
 // 22 nov (bandeja de salida; CI 45060882235: en WebKit el beacon llegó casi siempre, no siempre): anotar después de mandar · sin sessionStorage ·
 //   sin reintento (o a los 30 s) · sin pageshow / visibilitychange · el Arranque sin la bandeja · sin tope de 10 min · confirmar sin 204 o por el
 //   beacon · otra pantalla hablando con /api/toque · el «entraron» de vuelta a una acción del servidor (importada o creada) · la puerta con una
-//   forma de más · las reglas sin el candado (o con uno que no es de la transacción) · entroPatrocinado sin sus reglas · tarAK sin sus casos.
+//   forma de más · las reglas sin el candado (o con uno que no es de la transacción) · entroPatrocinado sin sus reglas · tarAK sin sus casos ·
+//   un envío fallido que no rearma el reintento (o sin espaciarlo) · lib/patrocinio.ts (dinero) importando ./cuenta otra vez · la puerta trayendo entroPatrocinado de lib/patrocinio (CI 45071274895).
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ, G = 'toqueSobreviveSalida';
@@ -16,7 +17,7 @@ const FI = 'apps/web/app/(app)/n/[id]/Ficha.tsx', FN = 'apps/web/app/(app)/n/[id
   CA = 'apps/web/app/(app)/c/[slug]/Categoria.tsx', MA = 'apps/web/app/(app)/mapa/Mapa.tsx', AC = 'apps/web/app/(app)/acciones.ts',
   CT = 'apps/web/lib/contar-toque.ts', RT = 'apps/web/app/api/toque/route.ts', LT = 'apps/web/lib/toques.ts',
   AR = 'apps/web/app/_cascara/Arranque.tsx', PT = 'apps/web/app/(app)/c/[slug]/Patrocinados.tsx', PE = 'apps/web/app/(app)/eventos/PatrocinadosEventos.tsx',
-  LP = 'apps/web/lib/patrocinio.ts', TK = 'pruebas/e2e/tarAK.cjs';
+  LP = 'apps/web/lib/patrocinio-entrada.ts', LD = 'apps/web/lib/patrocinio.ts', TK = 'pruebas/e2e/tarAK.cjs';
 const BANDEJA = 'la bandeja: el toque se anota pendiente', REINT = 'la bandeja reintenta lo no confirmado a los 1–5 s', VOLVER = 'la bandeja reintenta al volver a verse la página',
   CONF = 'la bandeja solo da por confirmado un toque con el 204', PATR = 'el «entraron» del patrocinio sale por contarEntradaPatrocinio';
 const VIEJA = 'cuenta el toque con una acción del servidor y sale de la página justo después';
@@ -44,8 +45,11 @@ const casos = [
   [AR, '  useEffect(() => iniciarBandeja(), []);\n', '  void iniciarBandeja;\n', 'el Arranque del marco raíz monta la bandeja'],
   [CT, 'const TOPE_MS = 9 * 60_000;', 'const TOPE_MS = 60 * 60_000;', 'la bandeja tira lo pendiente de más de 10 min'],
   [CT, 'v = memoria.filter((p) => ahora - p.h < TOPE_MS && p.h <= ahora + 60_000);', 'v = memoria.filter((p) => p.h <= ahora + 60_000);', 'la bandeja tira lo pendiente de más de 10 min'],
-  [CT, '.then((r) => { if (r.status === 204) quitar(p.t); }', '.then((r) => { if (r.status < 600) quitar(p.t); }', CONF],
+  [CT, '.then((r) => { if (r.status === 204) { fallos = 0; quitar(p.t); }', '.then((r) => { if (r.status < 600) { fallos = 0; quitar(p.t); }', CONF],
   [CT, '  if (!enCola) enviar(p);\n', '  if (!enCola) enviar(p); else quitar(p.t);\n', CONF],
+  [CT, '} else otraVez(); }, otraVez)', '} }, () => undefined)', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
+  [CT, 'catch { enVuelo.delete(p.t); otraVez(); }', 'catch { enVuelo.delete(p.t); }', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
+  [CT, 'if (!reloj) programar(Math.min(REINTENTO_MS * 2 ** fallos, 60_000));', 'if (!reloj) programar(REINTENTO_MS);', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
   // Una sola pieza.
   [MA, 'contarToque(b.id, "directions", "mapa"); abrirComoLlegar(', 'void fetch("/api/toque", { method: "POST", body: JSON.stringify({ id: b.id, kind: "directions", origen: "mapa" }) }); abrirComoLlegar(', 'habla con /api/toque por su cuenta'],
   [PT, 'const entrar = (p: Patrocinada) => { contarEntradaPatrocinio("negocio", p.sid); };', 'const entrar = (p: Patrocinada) => { void entroPatrocinado("negocio", p.sid); };', PATR, PT, 'import { contarEntradaPatrocinio, contarToque } from "@/lib/contar-toque";', 'import { contarToque } from "@/lib/contar-toque";\nimport { entroPatrocinado } from "../../acciones-patrocinio";'],
@@ -69,6 +73,8 @@ const casos = [
   [LT, 'select pg_advisory_xact_lock(hashtextextended($1, 0))', 'select pg_advisory_lock(hashtextextended($1, 0))', 'falta el candado por toque'],
   [LP, '    if (ctx.robot) return;\n    if (u) {\n      const tabla = kind', '    if (u) {\n      const tabla = kind', 'entroPatrocinado perdió sus reglas'],
   [LP, '      if (propio.rowCount) return;\n', '', 'entroPatrocinado perdió sus reglas'],
+  [LD, 'import { db, tx } from "./db";\n', 'import { db, tx } from "./db";\nimport { yo } from "./cuenta";\nvoid yo;\n', 'lib/patrocinio.ts (dinero) no lleva el «entraron»'],
+  [RT, 'from "@/lib/patrocinio-entrada";', 'from "@/lib/patrocinio";', '/api/toque no toca la base'],
   [TK, "'un pendiente viejo se tira (más de 10 min)'", "'un pendiente antiguo se descarta'", 'falta la prueba (tarAK'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;

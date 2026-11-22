@@ -29,6 +29,7 @@ type Pendiente = { t: string; h: number; d: Cuerpo };
 let memoria: Pendiente[] | null = null;
 const enVuelo = new Set<string>();
 let reloj: ReturnType<typeof setTimeout> | null = null;
+let fallos = 0;
 let iniciada = false;
 
 const hayVentana = () => typeof window !== "undefined" && typeof document !== "undefined";
@@ -68,15 +69,17 @@ function vigentes(): Pendiente[] {
 
 function quitar(t: string): void { guardar(vigentes().filter((p) => p.t !== t)); }
 
-/* fetch con keepalive: si la página sigue viva, su 204 confirma y el pendiente sale de la bandeja. */
+/* fetch con keepalive: si la página sigue viva, su 204 confirma y el pendiente sale de la bandeja. Si falla (abortado, sin red, un 5xx), rearma
+   el reintento: el de los 1,5 s se salta lo que sigue «en camino», y un envío que tarda más que eso en fallar (CI 45071274895: tarAK en WebKit,
+   un fetch abortado) dejaba el toque esperando a la página siguiente. */
 function enviar(p: Pendiente): void {
   if (enVuelo.has(p.t)) return;
   enVuelo.add(p.t);
   try {
     void fetch(RUTA, { method: "POST", body: JSON.stringify(p.d), keepalive: true, credentials: "same-origin", cache: "no-store", headers: { "content-type": "text/plain;charset=UTF-8" } })
-      .then((r) => { if (r.status === 204) quitar(p.t); }, () => undefined)
+      .then((r) => { if (r.status === 204) { fallos = 0; quitar(p.t); } else otraVez(); }, otraVez)
       .finally(() => enVuelo.delete(p.t));
-  } catch { enVuelo.delete(p.t); }
+  } catch { enVuelo.delete(p.t); otraVez(); }
 }
 
 /* Manda todo lo pendiente que no esté ya en camino. */
@@ -85,9 +88,15 @@ function vaciar(): void {
   for (const p of vigentes()) enviar(p);
 }
 
-function programar(): void {
+function programar(ms = REINTENTO_MS): void {
   if (reloj) clearTimeout(reloj);
-  reloj = setTimeout(() => { reloj = null; vaciar(); }, REINTENTO_MS);
+  reloj = setTimeout(() => { reloj = null; vaciar(); }, ms);
+}
+
+/* Después de un envío fallido: otro intento, más espaciado cada vez (3 s, 6 s, 12 s… hasta 60 s), salvo que ya haya uno armado antes. */
+function otraVez(): void {
+  fallos = Math.min(fallos + 1, 6);
+  if (!reloj) programar(Math.min(REINTENTO_MS * 2 ** fallos, 60_000));
 }
 
 /* Una vez por página: los reintentos al volver a verse. La llama el Arranque del marco raíz al montar (y manda lo que quedó de la página
@@ -125,7 +134,7 @@ export function contarToqueSemilla(id: string, origen: string): void {
 }
 
 /* C-002 / C-003 · «Entraron» de un patrocinio (la tarjeta patrocinada de un negocio o de un evento). Las reglas son las de siempre
-   (lib/patrocinio.ts · entroPatrocinado: una vez por persona o dispositivo y día, solo activo, sin la gente del negocio ni robots). */
+   (lib/patrocinio-entrada.ts · entroPatrocinado: una vez por persona o dispositivo y día, solo activo, sin la gente del negocio ni robots). */
 export function contarEntradaPatrocinio(kind: "negocio" | "evento", sid: string): void {
   mandar({ entro: kind, patrocinio: sid });
 }

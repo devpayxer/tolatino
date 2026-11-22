@@ -199,11 +199,13 @@ const cerca = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       ok(await espera(() => cuantos('tres') === '1'), 'el primer envío se pierde (el beacon no llega): el toque cuenta igual por el reintento');
       await pv.waitForTimeout(2500);
       ok(cuantos('tres') === '1' && await pendientes() === null, '… una sola vez, y la bandeja queda vacía');
-      // (b) Sin beacon (sale por fetch keepalive) y la PRIMERA petición a /api/toque se aborta en el camino: el reintento lo cuenta, una vez.
+      // (b) Sin beacon (sale por fetch keepalive) y la PRIMERA petición a /api/toque se aborta en el camino, y TARDE: 2 s, después del reintento
+      // de los 1,5 s, que la salta porque sigue «en camino» (CI 45071274895: así quedó INESTABLE en WebKit, donde el fetch abortado tardó en
+      // fallar). Un envío fallido rearma el reintento: el toque se cuenta igual, una vez, sin esperar a la página siguiente.
       await abrir(pv);
       await pv.evaluate(() => { Object.defineProperty(navigator, 'sendBeacon', { value: undefined, configurable: true }); });
       const vistas = []; let abortadas = 0;
-      const cortarPrimera = async (r) => { vistas.push(r.request().method()); if (abortadas === 0) { abortadas++; await r.abort('failed').catch(() => {}); } else await r.continue().catch(() => {}); };
+      const cortarPrimera = async (r) => { vistas.push(r.request().method()); if (abortadas === 0) { abortadas++; await new Promise((x) => setTimeout(x, 2000)); await r.abort('failed').catch(() => {}); } else await r.continue().catch(() => {}); };
       await pv.route('**/api/toque', cortarPrimera);
       await card(pv, 'uno').locator('[data-llamar]').click();
       ok(await espera(() => cuantos('uno') === '1'), 'el primer envío se pierde (abortado en el camino): el toque cuenta igual por el reintento');

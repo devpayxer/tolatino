@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { contarToque, contarToqueSemilla } from "@/lib/toques";
-import { entroPatrocinado } from "@/lib/patrocinio";
+import { entroPatrocinado } from "@/lib/patrocinio-entrada";
 
 /* Toque de contacto (llamar, cómo llegar, compartir, escribir): la puerta que usa lib/contar-toque.ts con sendBeacon o fetch keepalive, para que
    el toque llegue aunque la página se vaya en el mismo instante (tel:, el mapa del teléfono, compartir). Las reglas son las de lib/toques.ts, que
    también revisa el mismo origen; aquí solo se acota el cuerpo (512 bytes, cortado ANTES de leerlo entero) y se aceptan exactamente tres
    pedidos: { id, kind, origen } (un negocio) o { semilla, origen } (una semilla, siempre «call»), y { entro, patrocinio } (el «entraron» de un
-   patrocinio, C-002 / C-003, que antes era una acción del servidor y se perdía igual; sus reglas, las de lib/patrocinio.ts · entroPatrocinado).
+   patrocinio, C-002 / C-003, que antes era una acción del servidor y se perdía igual; sus reglas, las de lib/patrocinio-entrada.ts · entroPatrocinado).
    La respuesta no dice si se contó (204 siempre); solo confirma que llegó: la bandeja de lib/contar-toque.ts deja de reintentar con ese 204.
    Si la base falla, la ruta falla (500) y la bandeja reintenta. Sin GET. */
 export const dynamic = "force-dynamic";
