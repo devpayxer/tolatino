@@ -7,6 +7,9 @@ name: CI
 # atadas a la hora salieron una por franja (4:45 AM, 6 AM, media tarde, 6 PM, 7 AM de Tokio).
 # 22 nov · Un push a main que solo cambia documentos de trabajo (la lista de scripts/ci/alcance.mjs) no corre los carriles largos: «cambios» lo
 # calcula y es la ÚNICA vía para que no corran en un push (guardián ciSoloDocumentos). Los guardianes, los textos y la seguridad corren siempre.
+# 22 nov · Revisión del CI (tanda 6a) · Cada corrida dice de qué es: evento, rama y, a mano, alcance, partes y «solo» (todas las corridas se llamaban
+# «CI» y la API no enseña las entradas). Las expresiones no tienen cómo recortar un texto: «solo» va entero (GitHub lo corta al enseñarlo).
+run-name: "CI · ${{ github.event_name }} · ${{ github.ref_name }}${{ github.event_name == 'workflow_dispatch' && format(' · alcance={0} · partes={1} · solo=«{2}»', inputs.alcance, inputs.partes, inputs.solo) || '' }}"
 on:
   push:
     branches: [main]
@@ -674,3 +677,32 @@ jobs:
             try { require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, "### Qué corrió en esta corrida\n\n" + lineas.map((l) => "- " + l).join("\n") + "\n"); } catch {}
             if (mal) process.exit(1);
           '
+      # 22 nov · Revisión del CI (tanda 6a) · La evidencia de esta corrida para scripts/ci/subir.mjs. Sin «if»: estos pasos solo corren si todos los de
+      # arriba dieron verde (todo lo pedido salió en verde). Una línea ÚNICA «EVIDENCIA {json}» en el registro de este trabajo (subir.mjs la lee por la
+      # API: el contenido de un artefacto no se puede bajar desde la sesión), con el commit, su árbol, el evento, todas las entradas y las pruebas
+      # pedidas en «solo» (o «todas»); y el artefacto evidencia-<corrida>.json como rastro. La línea sola no vale: subir.mjs lee de la API que la
+      # corrida y este trabajo terminaron en verde. El código no lleva la palabra entera (el registro enseña el guion y no se tiene que confundir
+      # con la línea). Guardián subidaConHerramienta.
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - name: Evidencia de la corrida (solo con todo en verde; scripts/ci/subir.mjs la lee del registro de este trabajo)
+        env:
+          ENTRADAS: ${{ toJSON(inputs) }}
+          EVENTO: ${{ github.event_name }}
+          SHA: ${{ github.sha }}
+          RAMA: ${{ github.ref_name }}
+          CORRIDA: ${{ github.run_id }}
+          INTENTO: ${{ github.run_attempt }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SHA"
+          mkdir -p "$RUNNER_TEMP/evidencia"
+          ARBOL="$(git rev-parse 'HEAD^{tree}')" node -e '
+            const e = process.env, entradas = JSON.parse(e.ENTRADAS || "null") ?? {}, solo = String(entradas.solo ?? "").trim();
+            const ev = { corrida: Number(e.CORRIDA), intento: Number(e.INTENTO), sha: e.SHA, arbol: e.ARBOL, evento: e.EVENTO, rama: e.RAMA, entradas, solo: solo ? solo.split(/\s+/) : "todas" };
+            if (!/^[0-9a-f]{40}$/.test(ev.sha) || !/^[0-9a-f]{40}$/.test(ev.arbol)) process.exit(1);
+            const j = JSON.stringify(ev);
+            require("fs").writeFileSync(e.RUNNER_TEMP + "/evidencia/evidencia-" + e.CORRIDA + ".json", j + "\n");
+            console.log(["EVID", "ENCIA"].join("") + " " + j);
+          '
+      - uses: actions/upload-artifact@v4
+        with: { name: "evidencia-${{ github.run_id }}", path: "${{ runner.temp }}/evidencia", retention-days: 30, if-no-files-found: error }
