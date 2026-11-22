@@ -10125,6 +10125,35 @@ const guardianes = {
     if (!/tramos \(fallo en imagen, commit/.test(existsSync(O) ? readFileSync(O, "utf8") : "")) falla(G, O, 0, "la prueba del orden comprueba la línea de tramos (también cuando falla)");
   },
 
+  /* 22 nov · pruebasInfraAisladas: una prueba de infra que corre un guion de despliegue de verdad como root (deploy.sh, tolatino-sync, la recuperación)
+     nunca toca la máquina donde corre. Un revisor corrió sync-pruebas.test.sh contra un tolatino-sync que no leía las variables de la prueba y desplegó
+     de verdad en su máquina (clon en /opt/tolatino, /etc/tolatino, contenedores). (1) Ningún «unshare» suelto en pruebas/infra: todo va por «aislado»
+     (pruebas/infra/aislar.sh), que es montajes Y red aparte (unshare -m -n) con tmpfs sobre /opt, /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino,
+     /var/log, /usr/local/bin, /run (sockets de Docker y systemd, /var/lock) y /tmp, y comprueba que el aislamiento está antes de correr; (2) una prueba
+     que corre un tolatino-sync primero exige que lea TOLATINO_SYNC_REPO y TOLATINO_SYNC_DIR (aislar_exige) y, si no, no lo corre; (3) correr.sh corre
+     aislar.test.sh antes y, si no pasa, no corre las que despliegan. Al revés: alrevesDespliegue. */
+  pruebasInfraAisladas() {
+    const G = "pruebasInfraAisladas", A = "pruebas/infra/aislar.sh", C = "pruebas/infra/correr.sh";
+    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const a = existsSync(A) ? readFileSync(A, "utf8") : "";
+    const rutas = ((/\nAISLAR_RUTAS="([^"]+)"/.exec(a) ?? [])[1] ?? "").split(/\s+/);
+    const faltan = ["/opt", "/etc/tolatino", "/etc/nginx", "/var/www", "/var/lib/tolatino", "/var/log", "/usr/local/bin", "/run", "/tmp"].filter((r) => !rutas.includes(r));
+    if (!/unshare -m -n --propagation private bash -c '/.test(a) || faltan.length || !/mountpoint -q "\$m" \|\| \{[^}]*exit 98; \}/.test(a) || !/\/run\/docker\.sock/.test(a))
+      falla(G, A, 0, `«aislado» es montajes Y red aparte (unshare -m -n) con tmpfs sobre todo lo que un despliegue toca${faltan.length ? ` (faltan: ${faltan.join(", ")})` : ""} y comprueba que está antes de correr`);
+    for (const f of archivos.filter((x) => /^pruebas\/infra\/[^/]+\.sh$/.test(x) && x !== A)) {
+      const t = sinC(readFileSync(f, "utf8"));
+      if (/\bunshare\b/.test(t)) falla(G, f, 0, "nada de «unshare» suelto en las pruebas de infra: va por «aislado» (pruebas/infra/aislar.sh: montajes y red aparte, tmpfs sobre todo lo que un despliegue toca)");
+      const corre = /\bbash "[^"]*(?:deploy\.sh|tolatino-sync)"/.test(t) || /recuperar_si_hace_falta/.test(t);
+      if (corre && !/(^|\n)\. "\$RAIZ\/pruebas\/infra\/aislar\.sh"/.test(t)) falla(G, f, 0, "corre un guion de despliegue de verdad: carga pruebas/infra/aislar.sh y lo corre con «aislado»");
+      if (corre && !/\baislado '/.test(t)) falla(G, f, 0, "corre un guion de despliegue de verdad fuera de «aislado»");
+      if (/\bbash "[^"]*tolatino-sync"/.test(t) && !/\naislar_exige "[^"]*tolatino-sync" TOLATINO_SYNC_REPO TOLATINO_SYNC_DIR \|\| exit 1\n/.test(t))
+        falla(G, f, 0, "antes de correr un tolatino-sync, aislar_exige comprueba que lee TOLATINO_SYNC_REPO y TOLATINO_SYNC_DIR (si no, desplegaría en esta máquina)");
+    }
+    const c = readFileSync(C, "utf8");
+    if (!/\n  if bash pruebas\/infra\/aislar\.test\.sh; then AISLADO=1; else mal=1;/.test(c) || !/\nif \[ "\$AISLADO" = 1 \]; then\n  seccion "el sandbox no cambia \(traza\)"/.test(c) || !existsSync("pruebas/infra/aislar.test.sh"))
+      falla(G, C, 0, "correr.sh corre aislar.test.sh primero y, si no pasa, no corre las pruebas que despliegan");
+  },
+
   /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del
      fundador anotado (etiqueta ok-produccion/*, que va a deploy_releases.founder_ok_ref). Lo revisan el que empuja (scripts/produccion/promover.sh) y el que
      despliega (infra/produccion/tolatino-sync, en cada máquina); ningún flujo de GitHub empuja a produccion; y si las ramas están a mano, produccion es

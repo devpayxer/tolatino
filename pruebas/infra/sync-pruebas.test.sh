@@ -6,10 +6,13 @@
 #   (2) sin cambios no se vuelve a desplegar; un FALLO se reintenta a los 15 min;
 #   (3) instalar_si_valido (infra/comun/lib.sh), con lo que deploy.sh se reinstala tolatino-sync: uno roto no reemplaza al bueno, y el bueno entra con
 #       cambio atómico (otro inodo: el que está corriendo sigue leyendo su copia).
-# Corre en un espacio de montaje aparte (root): /var/lib/tolatino, /var/www y /usr/local/bin son de mentira; el deploy.sh del repo de mentira solo anota.
+# Corre aislado (pruebas/infra/aislar.sh: montajes y red aparte, tmpfs sobre /opt, /etc, /var/lib/tolatino, /var/www, /var/log, /run…); el deploy.sh del
+# repo de mentira solo anota. Un tolatino-sync que no lee TOLATINO_SYNC_REPO y TOLATINO_SYNC_DIR no se corre (clonaría y desplegaría en esta máquina).
 # Uso (root): bash pruebas/infra/sync-pruebas.test.sh   → «N/N casos».
 set -uo pipefail
 RAIZ=$(cd "$(dirname "$0")/../.." && pwd)
+# shellcheck source=aislar.sh
+. "$RAIZ/pruebas/infra/aislar.sh"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 G() { git -C "$T/trabajo" -c user.email=t@t -c user.name=t -c commit.gpgsign=false "$@"; }
 git init -q --bare "$T/origen.git"
@@ -28,14 +31,16 @@ echo 0 > "$T/trabajo/salida"
 commit() { echo "$1" > "$T/trabajo/x"; G add -A; G commit -qm "$1"; G push -q origin pruebas 2>/dev/null; G rev-parse --short HEAD; }
 G remote add origin "$T/origen.git"
 correr() { # correr → el último resultado; los despliegues en $T/estado/desplegados, la página en $T/estado/index.html
-  unshare -m --propagation private bash -c '
-    for m in /var/lib/tolatino /var/www /usr/local/bin; do mkdir -p "$m" 2>/dev/null; mount -t tmpfs none "$m"; done
+  AISLAR_VISIBLES="$T" aislado '
     mkdir -p /var/lib/tolatino /var/www/estado
-    cp -a "$1/estado/." /var/lib/tolatino/ 2>/dev/null
-    TOLATINO_SYNC_REPO="$1/origen.git" TOLATINO_SYNC_DIR="$1/maquina" bash "$1/trabajo/infra/pruebas/tolatino-sync"
-    mkdir -p "$1/estado"; cp -a /var/lib/tolatino/. "$1/estado/"; cp /var/www/estado/index.html "$1/estado/index.html" 2>/dev/null' _ "$T" 2>/dev/null
+    cp -a "$0/estado/." /var/lib/tolatino/ 2>/dev/null
+    TOLATINO_SYNC_REPO="$0/origen.git" TOLATINO_SYNC_DIR="$0/maquina" bash "$0/trabajo/infra/pruebas/tolatino-sync"
+    [ -e /opt/tolatino ] && echo "$(date -Is)" >> "$0/desobedece"
+    mkdir -p "$0/estado"; cp -a /var/lib/tolatino/. "$0/estado/"; cp /var/www/estado/index.html "$0/estado/index.html" 2>/dev/null' "$T" 2>/dev/null
   cat "$T/estado/last-result" 2>/dev/null
 }
+# Antes de nada: el tolatino-sync bajo prueba lee las variables con las que la prueba lo apunta a sus carpetas; si no, no se corre.
+aislar_exige "$T/trabajo/infra/pruebas/tolatino-sync" TOLATINO_SYNC_REPO TOLATINO_SYNC_DIR || exit 1
 bien=0; total=0
 ok() { total=$((total + 1)); if [ "$2" = "$3" ]; then bien=$((bien + 1)); echo "  ✓ $1"; else echo "  ✗ $1: «$2» (esperaba «$3»)"; fi; }
 n() { grep -c . "$T/estado/desplegados" 2>/dev/null || echo 0; }
@@ -77,5 +82,6 @@ I=$(bash -c '
 ok "uno que no es bash válido no reemplaza al bueno" "$(echo "$I" | grep '^roto:')" "roto:1:sigue-el-viejo"
 ok "uno válido entra con cambio atómico (otro inodo) y 755" "$(echo "$I" | grep '^nuevo:')" "nuevo:0:instalado:otro-inodo:755"
 ok "… sin dejar archivos a medias" "$(echo "$I" | tail -1)" 0
+ok "ninguna vuelta tocó /opt/tolatino (el tolatino-sync obedece a la prueba)" "$(grep -c . "$T/desobedece" 2>/dev/null || echo 0)" 0
 echo "$bien/$total casos"
 [ "$bien" = "$total" ]

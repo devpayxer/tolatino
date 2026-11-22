@@ -7,10 +7,13 @@
 #   · nginx -t que no pasa: vuelve la configuración anterior y el despliegue sigue;
 #   · la misma huella y la misma imagen: no se construye;
 #   · cada tramo queda con su hora y al salir (bien o mal) una línea «tramos (ok|fallo en …)» (lo que publica /estado/).
-# Corre en un espacio de montaje aparte (root): /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino y /usr/local/bin son de mentira.
+# Corre aislado (pruebas/infra/aislar.sh: montajes y red aparte; tmpfs sobre /opt, /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino, /var/log,
+# /usr/local/bin, /run con el socket de Docker y /tmp): un docker o un systemctl de verdad que se colara no llega a nada.
 # Uso (root): bash pruebas/infra/orden-despliegue.test.sh   → «N/N casos».
 set -uo pipefail
 RAIZ=$(cd "$(dirname "$0")/../.." && pwd)
+# shellcheck source=aislar.sh
+. "$RAIZ/pruebas/infra/aislar.sh"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 mkdir -p "$T/repo" "$T/stubs"
 ( cd "$RAIZ" && git ls-files -z --cached --others --exclude-standard -- .dockerignore infra packages/db/migrar.sh packages/db/migrations packages/db/seeds \
@@ -42,8 +45,7 @@ chmod +x "$T/stubs/_anota"
 for p in docker systemctl systemd-run nginx curl journalctl apt-get df sleep; do ln -s _anota "$T/stubs/$p"; done
 correr() { # correr FALLA [HUELLA_PREVIA] → salida; la traza en $T/traza
   : > "$T/traza"; rm -f "$T/traza.una"
-  TL_FALLA="$1" TL_TRAZA="$T/traza" TL_RAIZ="$T/repo" PATH="$T/stubs:$PATH" unshare -m --propagation private bash -c '
-    for m in /etc/tolatino /etc/nginx /var/www /var/lib/tolatino /usr/local/bin; do mkdir -p "$m"; mount -t tmpfs none "$m"; done
+  TL_FALLA="$1" TL_TRAZA="$T/traza" TL_RAIZ="$T/repo" PATH="$T/stubs:$PATH" AISLAR_VISIBLES="$T" aislado '
     mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/lib/tolatino
     echo "server { listen 80; } # anterior" > /etc/nginx/sites-available/tolatino-pruebas
     [ -n "$1" ] && echo "$1 sha256:$(printf "%064d" 7)" > /var/lib/tolatino/imagen-huella
