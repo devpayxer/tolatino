@@ -4,7 +4,7 @@
 //     del reclamo otra vez en los datos de la página; la nota de la revisión de fotos otra vez en Moderación; la prueba sin su recorrido de la base.
 //   - el guardián guardianNombreUnico: un guardián con el nombre de otro (el segundo reemplaza al primero sin avisar).
 //   - la prueba nota9u2 contra la base (NOTA9U2_SOLO_BASE=1: no necesita el servidor): una nota de una tabla exportada sin clasificar, y una
-//     clasificada que no existe en la base.
+//     clasificada que no existe en la base; 0211: la base sin el check de Soporte (support_messages_equipo_sin_persona) o con él sin validar.
 // Se restaura cada archivo; al final, los guardianes y nota9u2 (solo la base) vuelven a pasar.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync, spawnSync } = require('child_process');
@@ -87,6 +87,21 @@ for (const [f, a, b, msg] of casosBase) {
   if (r === null) { console.log(`  ✗ nota9u2: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
   const cazo = r.st !== 0 && (soloTextos || r.txt.includes(`ASSERT ${msg}`));
   console.log(`  ${cazo ? '✓' : '✗'} nota9u2 al revés (${path.basename(f)}: «${msg}»)${cazo ? '' : r.st === 0 ? ' → nota9u2 no falló' : ' → falló con otra cosa: ' + (r.txt.match(/✗ .*/) || [r.txt.slice(-200)])[0].slice(0, 200)}`);
+  if (cazo) bien++;
+}
+// 0211 · La base sin el check de Soporte (un mensaje del equipo con la cuenta de la persona), o con él sin validar: nota9u2 (la base) lo caza. Se
+// cambia la base y se deja como estaba (not valid + validate, como la 0211).
+const CK = 'support_messages_equipo_sin_persona', psql = (q) => execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -v ON_ERROR_STOP=1 -qAt`, { input: q, stdio: ['pipe', 'pipe', 'pipe'] });
+const casosDeLaBase = [
+  [`alter table support_messages drop constraint ${CK};`, 'Soporte: la base rechaza una respuesta del equipo con la cuenta de la persona', 'la base sin el check'],
+  [`alter table support_messages drop constraint ${CK}; alter table support_messages add constraint ${CK} check (sender = 'user' or user_id is null) not valid;`, '… y el check está validado sobre lo que ya había', 'el check sin validar'],
+];
+for (const [romper, msg, que] of casosDeLaBase) {
+  total++;
+  let r;
+  try { psql(romper); r = base(); } finally { psql(`alter table support_messages drop constraint if exists ${CK}; alter table support_messages add constraint ${CK} check (sender = 'user' or user_id is null) not valid; alter table support_messages validate constraint ${CK};`); }
+  const cazo = r.st !== 0 && (soloTextos || r.txt.includes(`ASSERT ${msg}`));
+  console.log(`  ${cazo ? '✓' : '✗'} nota9u2 al revés (la base: ${que} → «${msg}»)${cazo ? '' : r.st === 0 ? ' → nota9u2 no falló' : ' → falló con otra cosa: ' + (r.txt.match(/✗ .*/) || [r.txt.slice(-200)])[0].slice(0, 200)}`);
   if (cazo) bien++;
 }
 let limpio = true;

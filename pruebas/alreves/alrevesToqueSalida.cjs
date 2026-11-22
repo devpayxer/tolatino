@@ -11,6 +11,10 @@
 //   forma de más · las reglas sin el candado (o con uno que no es de la transacción) · entroPatrocinado sin sus reglas · tarAK sin sus casos ·
 //   un envío fallido que no rearma el reintento (o sin espaciarlo) · «en camino» que no caduca (o tarda 60 s) · vaciar que no arma el siguiente
 //   intento · el reintento con keepalive (o el primero sin él) · «en camino» atado a que la promesa termine (.finally) · lib/patrocinio.ts (dinero) importando ./cuenta otra vez · la puerta trayendo entroPatrocinado de lib/patrocinio (CI 45071274895).
+// 22 nov (0211, un toque una fila): el cuerpo sin el id del toque · el beacon sin él · un id nuevo en cada reintento · la puerta sin validar el id,
+//   sin pasarlo a contarToque o a entroPatrocinado, o contándolo entre las claves · contarToque sin «on conflict do nothing» o sin validar el id ·
+//   la semilla sin escribirlo · entroPatrocinado tragándose el fallo de la base o de vuelta a contarEntrada · la migración con un índice no único o
+//   una patrocinio_entro_toque que no llama a patrocinio_entro · pat002 sin sus casos · tarAK sin el de otra red.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ, G = 'toqueSobreviveSalida';
@@ -18,7 +22,9 @@ const FI = 'apps/web/app/(app)/n/[id]/Ficha.tsx', FN = 'apps/web/app/(app)/n/[id
   CA = 'apps/web/app/(app)/c/[slug]/Categoria.tsx', MA = 'apps/web/app/(app)/mapa/Mapa.tsx', AC = 'apps/web/app/(app)/acciones.ts',
   CT = 'apps/web/lib/contar-toque.ts', RT = 'apps/web/app/api/toque/route.ts', LT = 'apps/web/lib/toques.ts',
   AR = 'apps/web/app/_cascara/Arranque.tsx', PT = 'apps/web/app/(app)/c/[slug]/Patrocinados.tsx', PE = 'apps/web/app/(app)/eventos/PatrocinadosEventos.tsx',
-  LP = 'apps/web/lib/patrocinio-entrada.ts', LD = 'apps/web/lib/patrocinio.ts', TK = 'pruebas/e2e/tarAK.cjs';
+  LP = 'apps/web/lib/patrocinio-entrada.ts', LD = 'apps/web/lib/patrocinio.ts', TK = 'pruebas/e2e/tarAK.cjs', PK = 'pruebas/e2e/pat002.cjs',
+  MG = 'packages/db/migrations/0211_toque_unico_y_soporte_sin_persona.sql';
+const UNA = 'el id del toque viaja', PUERTA = '/api/toque acepta «toque» solo si es un uuid', BASE = 'la base no impone un toque, una fila';
 const BANDEJA = 'la bandeja: el toque se anota pendiente', REINT = 'la bandeja reintenta lo no confirmado a los 1–5 s', VOLVER = 'la bandeja reintenta al volver a verse la página',
   CONF = 'la bandeja solo da por confirmado un toque con el 204', PATR = 'el «entraron» del patrocinio sale por contarEntradaPatrocinio';
 const VIEJA = 'cuenta el toque con una acción del servidor y sale de la página justo después';
@@ -68,20 +74,37 @@ const casos = [
   [RT, '  return nada();\n}\n', '  else if (claves === "origen,ver") await contarToque(String(x.ver), "call", x.origen as string);\n  return nada();\n}\n', '/api/toque acepta exactamente { id, kind, origen }'],
   [RT, 'import { contarToque, contarToqueSemilla } from "@/lib/toques";', 'import { contarToque, contarToqueSemilla } from "@/lib/toques";\nimport { db } from "@/lib/db";\nvoid db;', '/api/toque no toca la base'],
   [RT, 'return nada();\n}\n', 'return new NextResponse(null, { status: 429 });\n}\n', '/api/toque contesta 204 siempre'],
-  [LT, 'export async function contarToqueSemilla(id: string, origen: string): Promise<void> {\n  if (!(await mismoOrigen())) return;\n', 'export async function contarToqueSemilla(id: string, origen: string): Promise<void> {\n', '«contarToqueSemilla» no revisa primero el mismo origen'],
+  [LT, 'export async function contarToqueSemilla(id: string, origen: string, toque: string | null = null): Promise<void> {\n  if (!(await mismoOrigen())) return;\n', 'export async function contarToqueSemilla(id: string, origen: string, toque: string | null = null): Promise<void> {\n', '«contarToqueSemilla» no revisa primero el mismo origen'],
   [LT, "t.business_id = b.id and t.at > now() - interval '10 minutes'", "t.business_id = b.id and t.at > now() - interval '1 minute'", '«contarToque» perdió el tope'],
-  [LT, "t.at > now() - interval '1 hour') < 60)\n     returning (select city_id from seed_listings", "t.at > now() - interval '1 hour') < 600)\n     returning (select city_id from seed_listings", '«contarToqueSemilla» perdió el tope'],
+  [LT, "t.at > now() - interval '1 hour') < 60)\n     on conflict do nothing\n     returning (select city_id from seed_listings", "t.at > now() - interval '1 hour') < 600)\n     on conflict do nothing\n     returning (select city_id from seed_listings", '«contarToqueSemilla» perdió el tope'],
   [LT, 'if (t.rows[0]) await evento("contactar", { ref: id,', 'if (t.rows[0]) void evento; if (t.rows[0] && false) await Promise.resolve({ ref: id,', '«contarToque» ya no anota el evento «contactar»'],
   [LT, "and not exists (select 1 from business_members m where m.business_id = b.id and m.user_id = $2::uuid and m.status = 'active')\n", '', 'la gente del propio negocio no cuenta'],
   [LT, '!ID_NEG.test(id) || !TOQUES.has(kind)) return;', '!TOQUES.has(kind)) return;', 'contarToque valida el id del negocio y el tipo de toque'],
   [LT, 'await enFila(c, `toque:${id}:${u?.id ?? ip ?? ""}`); ', '', '«contarToque» cuenta sin el candado'],
   [LT, 'await enFila(c, `semilla:${id}:${u?.id ?? ip ?? ""}`); ', 'void enFila; ', '«contarToqueSemilla» cuenta sin el candado'],
   [LT, 'select pg_advisory_xact_lock(hashtextextended($1, 0))', 'select pg_advisory_lock(hashtextextended($1, 0))', 'falta el candado por toque'],
-  [LP, '    if (ctx.robot) return;\n    if (u) {\n      const tabla = kind', '    if (u) {\n      const tabla = kind', 'entroPatrocinado perdió sus reglas'],
-  [LP, '      if (propio.rowCount) return;\n', '', 'entroPatrocinado perdió sus reglas'],
+  [LP, '  if (ctx.robot) return;\n  if (u) {\n    const tabla = kind', '  if (u) {\n    const tabla = kind', 'entroPatrocinado perdió sus reglas'],
+  [LP, '    if (propio.rowCount) return;\n', '', 'entroPatrocinado perdió sus reglas'],
   [LD, 'import { db, tx } from "./db";\n', 'import { db, tx } from "./db";\nimport { yo } from "./cuenta";\nvoid yo;\n', 'lib/patrocinio.ts (dinero) no lleva el «entraron»'],
   [RT, 'from "@/lib/patrocinio-entrada";', 'from "@/lib/patrocinio";', '/api/toque no toca la base'],
   [TK, "'un pendiente viejo se tira (más de 10 min)'", "'un pendiente antiguo se descarta'", 'falta la prueba (tarAK'],
+  // 0211 · Un toque, una fila.
+  [CT, 'const cuerpo = (p: Pendiente): string => JSON.stringify(UUID.test(p.t) ? { ...p.d, toque: p.t } : p.d);', 'const cuerpo = (p: Pendiente): string => JSON.stringify(UUID.test(p.t) ? p.d : p.d);', UNA],
+  [CT, 'navigator.sendBeacon(RUTA, new Blob([cuerpo(p)], {', 'navigator.sendBeacon(RUTA, new Blob([JSON.stringify(d)], {', UNA],
+  [CT, 'body: cuerpo(p), keepalive,', 'body: cuerpo({ ...p, t: nuevoId() }), keepalive,', UNA],
+  [RT, '  if (toque !== undefined && (typeof toque !== "string" || !TOQUE.test(toque))) return nada();\n', '', PUERTA],
+  [RT, 'await contarToque(x.id, x.kind, x.origen, k);', 'await contarToque(x.id, x.kind, x.origen);', PUERTA],
+  [RT, 'await entroPatrocinado(x.entro, x.patrocinio, k);', 'await entroPatrocinado(x.entro, x.patrocinio);', PUERTA],
+  [RT, 'const { toque, ...x } = c as Record<string, unknown>, claves = Object.keys(x).sort().join(",");', 'const x = c as Record<string, unknown>, { toque } = x, claves = Object.keys(x).sort().join(",");', PUERTA],
+  [LT, '     on conflict do nothing\n     returning (select city_id from businesses', '     returning (select city_id from businesses', '«contarToque» no escribe el id del toque'],
+  [LT, '    [id, u?.id ?? null, String(origen ?? ""), ip, toque],', '    [id, u?.id ?? null, String(origen ?? ""), ip, null],', '«contarToqueSemilla» no escribe el id del toque'],
+  [LT, '  if (typeof id !== "string" || !ID_NEG.test(id) || !TOQUES.has(kind)) return;\n  if (toque !== null && (typeof toque !== "string" || !TOQUE.test(toque))) return;\n', '  if (typeof id !== "string" || !ID_NEG.test(id) || !TOQUES.has(kind)) return;\n', '«contarToque» no escribe el id del toque'],
+  [LP, ', [id, u.id]);', ', [id, u.id]).catch(() => ({ rowCount: 0 }));', 'entroPatrocinado se traga un fallo de la base'],
+  [LP, '  await db().query(`select patrocinio_entro_toque($1, $2::bigint, $3::uuid, $4::uuid, $5::uuid)`, [kind, id, u?.id ?? null, dev, toque]);', '  await contarEntrada(kind, id, u?.id ?? null, dev);', 'entroPatrocinado perdió sus reglas', LP, 'import { contexto } from "./eventos";', 'import { contexto } from "./eventos";\nimport { contarEntrada } from "./patrocinio";'],
+  [MG, 'create unique index if not exists contact_taps_un_toque', 'create index if not exists contact_taps_un_toque', BASE],
+  [MG, '  r := patrocinio_entro(k, id, quien, dev);', '  r := false;', BASE],
+  [PK, "'el mismo «entraron» al día siguiente", "'el «entraron» al día siguiente", 'falta la prueba (pat002'],
+  [TK, '`el mismo toque desde otra red: la red A', '`otra red: la red A', 'falta la prueba (tarAK', TK, '`el mismo toque desde otra red, con el mismo id', '`otra red, con el mismo id'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 let bien = 0, total = 0;
