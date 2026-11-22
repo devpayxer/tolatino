@@ -57,6 +57,9 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 - **¿Me aplican una sanción por una foto rechazada?** No. Una foto rechazada solo no se publica.
 - **¿Y si no estoy de acuerdo con la respuesta?** La decisión de la persona del equipo es final; si tu foto es otra, puedes subir otra.
 - **¿Qué hago con mi foto de portada si está en revisión?** Nada: sigue la que ya tenías hasta que la nueva esté lista.
+- **¿Y si una foto ya no se puede usar en el panel (galería, portada, equipo o un evento)?** Si quedó en revisión o es una foto privada, no se
+  agrega y **no se guarda nada más** de lo que estabas cambiando. Verás «Una de las fotos ya no está. Súbela otra vez.» (o «Esa foto no existe.» si
+  es la de tu perfil del equipo). Lo que escribiste se queda en la pantalla: sube la foto otra vez y guarda. Tu foto anterior no se borra.
 
 ## English
 
@@ -116,3 +119,6 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 - **Am I sanctioned for a rejected photo?** No. A rejected photo is simply not published.
 - **What if I disagree with the answer?** The team member's decision is final; if your photo is different, you can upload another one.
 - **What about my cover photo if the new one is under review?** Nothing: the one you had stays until the new one is ready.
+- **What if a photo can no longer be used in the panel (gallery, cover, team or an event)?** If it went into review or is a private photo, it is
+  not added and **nothing else** you were changing is saved. You will see “One of the photos is gone. Upload it again.” (or “That photo doesn’t
+  exist.” for your team profile photo). What you typed stays on the screen: upload the photo again and save. Your previous photo is not removed.

@@ -2743,9 +2743,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (5) la herramienta enseña de guardianes la primera línea de la salida en vez de «sin fallos»; (6) `alreves9u2` y `alreves9usql` necesitan la
       base local y no corren en una copia de trabajo sin ella; (7) la corrida programada sigue en el grupo de `main`; (8) el puerto único de las
       pruebas (commit 04b14e2 sin integrar; 159 pruebas con `localhost:3100` fijo).
-- [ ] **→ 9u** · **Fotos que no se pueden adjuntar se ignoran en silencio (22 nov):** galería, portada, equipo y eventos contestan `ok` y no la adjuntan, en vez
+- [x] **→ 9u** · **Fotos que no se pueden adjuntar se ignoran en silencio (22 nov):** galería, portada, equipo y eventos contestan `ok` y no la adjuntan, en vez
       de rechazarla con un mensaje; `equipoGuardar` con un id que no adjunta deja vacía la foto del perfil del equipo (ya pasaba antes). Que rechacen con
       mensaje. En `ayu4m` no se mandan a mano Publica tu negocio, la invitación del equipo ni eventos (los cubre solo el guardián).
+      **✓ 22 nov:** galería, portada, equipo y eventos rechazan con el mensaje que ya usaban perfil/logo y Comunidad/reseñas/novedades, y todo o nada (se deshace el pedido entero; la foto del equipo ya no se vacía). Guardián `fotosAdjuntarTodoONada` (`alreves9ufotostodo`, 15); `ayu4m` lo manda a mano, también a un evento. Queda `logoPoner` (línea aparte).
 - [ ] **→ 9t** · **Armar el archivo de «Descargar mis datos» de una cuenta grande pide ~1,3 GB de pico (22 nov):** ya no es el ZIP (va a disco) sino lo que
       deja cada parte de 20.000 filas (JSON con sangría, CSV y compresión): partes más chicas o escribir el JSON por partes. «Exportar sus datos» del
       equipo (`acciones-usuarios.ts`) sigue armando el ZIP en memoria y lo devuelve en base64. La ruta pone `content-length` y el navegador lo recibe vacío: mirar por qué.
@@ -2753,6 +2754,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       or user_id is null)`, para que un mensaje del equipo no pueda entrar nunca al archivo de una persona (hoy no hay fuga; `nota9u2` lo comprueba en toda
       la base); (2) salen en el archivo de la persona `tickets.door_name` (el nombre del portero, otra persona) y `media.rev_llave` (la ruta interna de la copia
       de revisión): quitarlos; (3) `pausas.cot`, `pausas.staff`, `equipo[].hidden` y `ver.selloNote` llegan a secciones del Panel que no los pintan.
+      **22 nov, hechos (2) y (3); sigue abierta por (1), la migración de `support_messages`:** (2) lista `internas` en `mapa-de-datos.json`: `tickets.door_name` y `media.rev_llave` ya no salen en el archivo. Corrección: `door_name` no es el nombre del portero sino el texto de búsqueda de la puerta (nombre del invitado que escribió el negocio, del titular y de su cuenta, en minúsculas y sin acentos); se quita igual por traer un nombre que escribió otra persona. (3) `pausas.cot`, `pausas.staff`, `equipo[].hidden` y `ver.selloNote` viajan solo a la sección que los pinta (`nota9u2` 3c: 52 comprobaciones).
 - [ ] **→ 9t** · **El toque de «Llamar» que se perdía en Safari, lo que queda (22 nov):** el toque (llamar, cómo llegar, compartir, escribir) ya sale por
       `lib/contar-toque.ts` (sendBeacon / keepalive → `/api/toque`, mismas reglas; guardián `toqueSobreviveSalida`). (1) `entroPatrocinado`
       (`acciones-patrocinio.ts`, `Patrocinados.tsx`) es de la misma clase: una acción del servidor seguida de `tel:` o del mapa; pasarlo a la misma vía y
@@ -2775,3 +2777,6 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **Un archivo que falta en el almacén con la fila viva da 500** en las rutas de fotos privadas (Mensajes, ayuda, entrega, reclamo): que dé
       404. Y una carrera estrecha: si una cuenta se purga mientras el barrido genera una variante de ancho nulo, puede quedar un archivo privado huérfano
       que nadie sirve (cerrarla pide tocar `datos/purgar.ts`).
+- [ ] **→ 9u** · **`logoPoner` quita el logo anterior antes de validar la foto nueva (22 nov):** si la foto no pasa el filtro devuelve el error sin deshacer
+      (`tx` solo deshace si se lanza): el negocio se queda sin logo. Lanzar dentro de la transacción, como las demás acciones de fotos, y sumarlo al
+      guardián `fotosAdjuntarTodoONada`.
