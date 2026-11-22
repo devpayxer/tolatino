@@ -152,6 +152,24 @@ Si la consulta caída dejó la alerta en «sin respuesta» y después Stripe dic
 Las alertas de antes («pat-dev-…», sin botones) se cerraron solas: las sigue la de cada devolución. Una devolución de patrocinio que quedó en camino
 antes del 21 nov no tiene el dato: su alerta dice mirarla en Stripe y resolverla a mano.
 
+### Devolver otra vez unos boletos y la espera de 10 minutos (desde el 22 nov)
+- **Devolver otra vez (boletos):** en la alerta «Devolución que Stripe dio por fallida» de unos boletos aparece **Devolver otra vez · $X** cuando el cobro
+  todavía tiene saldo y no hay una disputa con el banco. Devuelve exactamente lo que falló, a la misma tarjeta, **una sola vez** (dos personas a la vez =
+  una devolución). Los boletos siguen devueltos. Pide un motivo, que queda en la auditoría con tu nombre. Permiso: el mismo de Devolver.
+- **Si sale:** la persona recibe su aviso y la alerta se cierra sola. **Si Stripe dice que no:** queda su propia alerta (desde ahí se puede intentar otra
+  vez) y la de antes se reabre a tu nombre.
+- **Resolver a mano espera 10 minutos:** no deja marcar a mano una devolución en los 10 minutos siguientes a un envío a Stripe (Stripe puede no mostrarla
+  todavía): «Se mandó a Stripe hace menos de 10 minutos…». Espera y vuelve a intentarlo.
+- **La devolución de un patrocinio que primero quedó sin respuesta y después falló** dice ahora «Devolución que Stripe dio por fallida», con lo que dijo el
+  banco y cuándo.
+
+| Caso | Qué pasa |
+|---|---|
+| Ya se devolvió parte por otro lado y el cobro no alcanza | «Devolver otra vez» no se ofrece; se resuelve con la persona. |
+| Dos personas del equipo la piden a la vez | Una sola devolución; la otra ve que es la misma. |
+| El cobro tiene una disputa con el banco | No se ofrece hasta que la disputa se gane. |
+| Marcar a mano una fallida que ya se devolvió otra vez | No deja: «Ya no está pendiente: se devolvió otra vez desde su alerta o Stripe la cerró.» |
+
 ## Los eventos del webhook
 El libro se pone al día con lo que Stripe avisa por el webhook (firmado). Al conectar Stripe de verdad, el endpoint debe suscribirse a **todos** estos
 eventos, también los de las **cuentas conectadas** (los `payout.*` llegan de la cuenta de cada negocio). Es la misma lista que está escrita al principio
@@ -329,6 +347,23 @@ tag. It follows the same path as the other refunds (the table above), with two d
 If the query was down and left the alert as «no answer» and later Stripe says «failed», the same alert stays open and shows what Stripe said.
 The old alerts («pat-dev-…», without buttons) closed by themselves: each refund's alert follows them. A sponsorship refund left on its way before Nov 21
 has no tag: its alert says to check it in Stripe and resolve it manually.
+
+### Refund tickets again and the 10-minute wait (since 22 Nov)
+- **Refund again (tickets):** on the «Refund Stripe marked as failed» alert for tickets, **Refund again · $X** appears when the charge still has balance
+  and there is no bank dispute. It refunds exactly what failed, to the same card, **only once** (two people at once = one refund). The tickets stay
+  refunded. It asks for a reason, kept in the audit log under your name. Permission: the same as Refund.
+- **If it goes through:** the person is notified and the alert closes by itself. **If Stripe says no:** it gets its own alert (you can try again from
+  there) and the earlier one reopens under your name.
+- **Resolve manually waits 10 minutes:** a refund cannot be marked as resolved by hand within 10 minutes of a send to Stripe (Stripe may not show it
+  yet). Wait and try again.
+- **A sponsorship refund that first got no answer and then failed** now reads «Refund Stripe marked as failed», with what the bank said and when.
+
+| Case | What happens |
+|---|---|
+| Part was already refunded another way and the charge is not enough | «Refund again» is not offered; sort it out with the person. |
+| Two team members ask at once | One refund; the other sees it is the same one. |
+| The charge has a bank dispute | Not offered until the dispute is won. |
+| Marking as manual a failed refund that was already refunded again | Not allowed: it is no longer pending. |
 
 ### Webhook events
 The ledger catches up with what Stripe reports through the (signed) webhook. When Stripe is connected for real, the endpoint must subscribe to **all**

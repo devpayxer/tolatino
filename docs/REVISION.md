@@ -6232,3 +6232,13 @@ Nada de esto cambia lo que ves, salvo una fila nueva en el Super Admin. Lo que c
 - **Dos decisiones tuyas que salieron de aquí (sin prisa):** (1) galería, portada, equipo y eventos ignoran en silencio una foto que no pueden
   adjuntar: ¿que digan «Esa foto no se puede usar aquí»? (lo construyo así si no dices otra cosa); (2) el archivo de la persona trae el nombre del
   portero que escaneó su boleto: ¿se quita? (lo quito si no dices otra cosa: es el nombre de otra persona).
+
+## Dinero, décima tanda (22 nov · migración 0209)
+Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla más; el doble cobro que temía no podía darse: ya lo impedía una regla de antes).
+- **Qué cambió:** en la alerta de una devolución de boletos que Stripe dio por fallida hay **«Devolver otra vez»**: devuelve lo mismo, a la misma
+  tarjeta, una sola vez aunque dos personas toquen a la vez; pide un motivo. **«Resolver a mano»** no deja marcar en los 10 minutos siguientes a un
+  envío a Stripe. La alerta de una devolución de patrocinio que primero quedó sin respuesta dice ahora que Stripe la dio por fallida, con el motivo.
+- **Qué mirar:** Super Admin › Planes y suscripciones › alertas (las alertas se fabrican con una prueba: no aparecen solas en el sandbox). Capturas
+  enviadas el 22 nov.
+- **Decide tú (se construyó lo más seguro):** (1) la espera es de 10 minutos; (2) si la de otra vez también falla, la alerta de antes se reabre a
+  nombre de quien la pidió; (3) si el cobro ya no alcanza no se devuelve un monto parcial: se resuelve con la persona.

@@ -60,7 +60,7 @@ function bolFallida(X, tag) {
   const pago = primero(sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, fee_cents, status, captured_at, transfer_group)
     values (${op}, '${X.u}', '${X.b}', 'hzl', 'full', 'card', '${pi}', 5000, 500, 'captured', now(), 'evt-${e}') returning id`));
   sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, metadata, capture_method)
-    values ('${pi}', 5000, 500, null, 'succeeded', 5000, 'pm_sim_visa_4242_${RUN}', '{}'::jsonb, 'automatic')`);
+    values ('${pi}', 5000, 500, 'acct_sim_${X.b}', 'succeeded', 5000, 'pm_sim_visa_4242_${RUN}', '{}'::jsonb, 'automatic')`);
   const rf = primero(sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key) values (${pago}, ${amt}, 'Evento cancelado', 'event_cancelled', 'pending', 'evtx-${RUN}${tag}') returning id`));
   const l = primero(sql(`insert into operation_lines (operation_id, name, qty, unit_price_cents, line_total_cents) values (${op}, '{"es":"Extra","en":"Extra"}'::jsonb, 1, ${amt}, ${amt}) returning id`));
   sql(`insert into ticket_refund_lines (refund_id, operation_id, line_id, city_id, amount_cents, fee_kept_cents, fee_waived_cents) values (${rf}, ${op}, ${l}, 'hzl', ${amt}, 0, 0)`);
