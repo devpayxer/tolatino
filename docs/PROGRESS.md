@@ -20,6 +20,22 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (madrugada) · `main` y `pruebas` = 5c329c6, sandbox comprobado desde fuera** (estado-sandbox 44967835492: salud con commit 5c329c6,
+  **0208 aplicada, 207 migraciones**, `/`, `/buscar`, `/publica`, `/comunidad`, `/negocios` en 200). Evidencia: revisión completa
+  **44961847914** sobre 7091ca4 — los 20 carriles reales en verde (punta a punta 227 pruebas en 4 partes, al revés 121 suites, 9 dispositivos,
+  tipos, guardianes, Semgrep), **0 rojas y 0 inestables contadas a mano**; lo único rojo fue el paso que cuenta las inestables, que nunca pudo
+  leer los registros (arreglado en este mismo punto, abajo). En local, contra el servidor con la 0208: 24/24 (1094 ✓). Subió **dinero 9t9**
+  (Opus lo escribió, Fable lo revisó): en los 31 barridos de dinero un elemento que falla ya no detiene a los demás (`lib/barrido-uno.ts`) y
+  ninguna selección con tope deja gente fuera; guardián `barridoUnoPorUno`, `alreves9t9`, `din9t9`. Y la prueba de navegador de «Mi casa» (`fi4b`).
+  **El conteo de inestables del CI** ahora sale de `res/inestables.json` de cada carril (LAUNCH 9b): falta verlo en una corrida.
+  **Diseño (pedidos del fundador el 22 nov):** (1) **decisión AK · tarjeta «Vitrina»** (entrega de Claude Design en
+  `docs/diseno/entrega/tarjeta-vitrina/`): Sonnet la construye EN LA COPIA PRINCIPAL con el servidor `:3100` (pieza `packages/ui/src/core/Vitrina.tsx`,
+  listas, datos, pruebas `tarAK`, guardián); al volver: revisar, correr, comparar capturas con las de la entrega, CI, subir. Los choques con
+  C-001 y C-002 están resueltos en la fila AK de DECISIONES. (2) **«Abierto ahora», tres versiones** para elegir (REVISION; el artifact está
+  enlazado ahí): espera su respuesta; no se toca `Inicio.tsx`. (3) Una galería de capturas en 5 dispositivos (artifact «To'Latino en dispositivos»).
+  **En curso además:** Opus con «la nota interna no sale del equipo» (worktree `agent-a0854922ad2f573d4`, migración 0209 si la necesita).
+  **Regla nueva:** mientras un agente trabaja en la copia principal, quien orquesta no edita ni guarda ahí: sus cambios van en una copia aparte
+  (`git worktree`) y se unen cuando el agente entrega.
 - **21 nov (noche, después del cierre) · `main` y `pruebas` = ceaaba2, sandbox comprobado desde fuera** (estado-sandbox 44956863436: salud con
   commit ceaaba2, 206 migraciones, las cuatro rutas en 200). Evidencia (AF): dirigida **44955120667** — tipos, build, guardianes, Semgrep y
   **10/10 de punta a punta** (`sql9u`, `vi4b`, `em4e`, `pre4e`, `plan4f`, `fi4b`, `pq4e`, `cat9n2`, `din9n4`, `nota9u`); en local

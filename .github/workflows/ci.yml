@@ -437,22 +437,27 @@ jobs:
     steps:
       # Decisión AG (20 nov): más de 3 inestables en una corrida = roja. El tope de pruebas/correr.mjs es por proceso y la corrida va repartida en
       # partes: la confirmación 44856657972 salió verde con 4 inestables (una por parte). Aquí se cuentan las de TODA la corrida, por nombre de prueba.
+      # 22 nov · Se cuentan desde lo que cada carril SUBE (res/inestables.json, que pruebas/correr.mjs escribe siempre), no desde su registro: el
+      # registro de un trabajo no se deja leer desde dentro de la corrida (44961847914: 22 de 22 sin leer), y antes eso se callaba y salía «0»
+      # (44947348390 dijo 0 con una). Un carril que terminó en verde y no trae su lista no cuenta como cero: la tubería sale roja diciéndolo.
+      - uses: actions/download-artifact@v4
+        with: { pattern: "regresion-*", path: "${{ runner.temp }}/listas" }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "confirmacion-*", path: "${{ runner.temp }}/listas" }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "anchos-*", path: "${{ runner.temp }}/listas" }
       - name: Inestables de toda la corrida (más de 3 = roja)
         env: { GH_TOKEN: "${{ github.token }}", CORRIDA: "${{ github.run_id }}", INTENTO: "${{ github.run_attempt }}", REPO: "${{ github.repository }}" }
         run: |
           export LC_ALL=C.UTF-8
-          : > "$RUNNER_TEMP/inestables.txt"; : > "$RUNNER_TEMP/sin-registro.txt"
-          for id in $(gh api "repos/$REPO/actions/runs/$CORRIDA/attempts/$INTENTO/jobs" --paginate -q '.jobs[] | select(.status == "completed") | .id'); do
-            # El registro de un trabajo recién terminado puede tardar en estar (404): se pide hasta 6 veces. Sin registro NO se cuenta como cero:
-            # la corrida 44947348390 dijo «inestables de la corrida: 0» con una inestable (evt6i) porque la lectura falló callada.
-            ok=""; for k in 1 2 3 4 5 6; do if gh api "repos/$REPO/actions/jobs/$id/logs" > "$RUNNER_TEMP/registro.txt" 2>/dev/null && [ -s "$RUNNER_TEMP/registro.txt" ]; then ok=1; break; fi; sleep 10; done
-            if [ -z "$ok" ]; then echo "$id" >> "$RUNNER_TEMP/sin-registro.txt"; continue; fi
-            grep -aoE '~ INESTABLE [A-Za-z0-9_-]+' "$RUNNER_TEMP/registro.txt" | sed 's/.*INESTABLE //' >> "$RUNNER_TEMP/inestables.txt" || true
-          done
-          if [ -s "$RUNNER_TEMP/sin-registro.txt" ]; then echo "::error::no se pudo leer el registro de $(grep -c . "$RUNNER_TEMP/sin-registro.txt") trabajo(s) ($(paste -sd' ' "$RUNNER_TEMP/sin-registro.txt")): las inestables no se pueden contar y no se dan por cero"; exit 1; fi
+          mkdir -p "$RUNNER_TEMP/listas"
+          esperadas=$(gh api "repos/$REPO/actions/runs/$CORRIDA/attempts/$INTENTO/jobs" --paginate -q '.jobs[] | select(.conclusion == "success") | select(.name | test("^(punta a punta|confirmación) ")) | .id' | grep -c . || true)
+          halladas=$(find "$RUNNER_TEMP/listas" -path '*/res/inestables.json' | grep -c . || true)
+          if [ "$halladas" -lt "$esperadas" ]; then echo "::error::faltan listas de inestables: $halladas de $esperadas carriles en verde subieron la suya; no se pueden contar y no se dan por cero"; exit 1; fi
+          find "$RUNNER_TEMP/listas" -path '*/res/inestables.json' -print0 | xargs -0 -r node -e 'const fs = require("fs"); for (const f of process.argv.slice(1)) for (const x of JSON.parse(fs.readFileSync(f, "utf8"))) console.log(x.nombre);' > "$RUNNER_TEMP/inestables.txt"
           sort -u "$RUNNER_TEMP/inestables.txt" > "$RUNNER_TEMP/inestables-unicas.txt"
           n=$(grep -c . "$RUNNER_TEMP/inestables-unicas.txt" || true)
-          echo "inestables de la corrida: $n$( [ "$n" -gt 0 ] && echo " · $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")")"
+          echo "inestables de la corrida: $n (de $halladas listas)$( [ "$n" -gt 0 ] && echo " · $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")")"
           if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables en la corrida (más de 3 = roja, decisión AG): $(paste -sd' ' "$RUNNER_TEMP/inestables-unicas.txt")"; exit 1; fi
       - name: Cada parte terminó en verde (una parte saltada cuenta como roja, salvo en una corrida parcial a mano)
         env:

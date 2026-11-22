@@ -6078,12 +6078,15 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   auditoría con tu nombre». Super Admin › Eventos › Liquidaciones › «Retener»: «Escríbelo como se lo dirías a la persona». Usuarios › una persona con
   foto › «Quitar foto de perfil»: «Escríbelo como se lo dirías a la persona» (ella lo lee en su Perfil).
 - **Decide tú (dejé lo más seguro; todo se cambia):**
-  1. *Las notas internas y «Descargar mis datos».* La revisión encontró que ocho motivos que el equipo escribe como internos (por ejemplo, por qué se
-     descartó una recomendación, por qué se le quitó el acceso al panel a un empleado de un negocio, por qué se revocó una llave) salen en el archivo
-     que la persona descarga con sus datos. Hoy siguen saliendo (no lo cambié: es una decisión de privacidad). Opciones: **(a)** que no salgan (la hoja
-     dice «interna» y es verdad; riesgo: la persona no ve el motivo de una decisión sobre ella) o **(b)** que salgan y la hoja diga «la persona puede
-     leerlo si descarga sus datos». Lo más seguro para lo que el equipo ya escribió es (a); conviene preguntárselo al abogado (paquete legal). Está en
-     LAUNCH y no se abre al público sin decidirlo.
+  1. *Las notas internas y «Descargar mis datos».* **Hecho así (22 nov, lo más seguro y reversible):** lo que el equipo escribe como interno ya NO
+     sale en el archivo que la persona descarga; lo que la persona escribió, o ya ve en su pantalla o en un aviso, sí sale. Son 52 columnas
+     clasificadas una por una (29 salen, 20 no, 3 salen solo cuando la persona las ve: por ejemplo el motivo de un reclamo solo si fue rechazado).
+     Una columna nueva que nadie haya clasificado no sale hasta que se clasifique. Alternativa: que salgan todas y la hoja avise «la persona puede
+     leerlo si descarga sus datos». Conviene que el abogado lo vea (paquete legal). Tres casos dudosos que dejé fuera o dentro y puedes cambiar:
+     el motivo guardado en una apelación queda fuera (a veces es una copia de la nota interna de la revisión de fotos); los códigos que ninguna
+     pantalla muestra quedan fuera; el motivo por el que el equipo ocultó a un miembro del equipo de un negocio SÍ sale (lo ve el dueño en su panel).
+     **Qué mirar (sandbox, cuando suba):** Mi cuenta › Privacidad › Descargar mis datos con una cuenta a la que el equipo le haya descartado una
+     recomendación: el archivo no trae el motivo interno.
   2. *Las dos flechas de volver* (la de la cabecera y la de la hoja) siguen en todas las hojas, como en las pantallas que ya estaban bien. Quitar la de
      la cabecera es un cambio pequeño si te molesta en el teléfono.
   3. *Cinco confirmaciones pedían una nota que nadie guardaba* (asignar un caso, «Ya existe» en una recomendación y las tres de simular una disputa).
@@ -6100,14 +6103,14 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Lo que falta (en LAUNCH):** la revisión no ve todavía las 837 consultas que se arman por partes; la prueba de navegador de este caso está
   encargada.
 
-## Dinero, novena tanda: un cobro que falla ya no detiene a los demás, y nadie queda fuera por un tope (21 nov · migración 0208) — en la rama, falta subir — dos cosas para ti
+## Dinero, novena tanda: un cobro que falla ya no detiene a los demás, y nadie queda fuera por un tope (21 nov · migración 0208) — YA en el sandbox (commit 5c329c6, 0208 aplicada) — dos cosas para ti
 - **Qué pasaba:** cada minuto el sistema recorre los cobros, devoluciones y pagos que tocan. Si UNO fallaba (por ejemplo un plan del Hogar con un
   dato malo), el recorrido se detenía ahí y los que venían detrás no se cobraban, minuto tras minuto. Además, los planes del Hogar se recorrían de 50
   en 50 sin orden: con más de 50 planes vivos, algunos no se habrían cobrado nunca.
 - **Ahora (Opus lo escribió; Fable lo revisó y lo corrió contra el servidor):** en los 31 recorridos de dinero cada elemento va por su cuenta: el que
   falla queda anotado y los demás siguen. En Super Admin › Sistema › Salud la tarea sale en rojo diciendo «N de M fallaron» y cuáles. Los planes
   se eligen por lo que toca hoy, lo más atrasado primero.
-- **Qué mirar (sandbox, cuando suba):** no hay nada que tocar a mano; en Super Admin › Sistema › Salud las tareas del barrido deben salir en verde.
+- **Qué mirar (sandbox):** no hay nada que tocar a mano; en Super Admin › Sistema › Salud las tareas del barrido deben salir en verde.
 - **Decide tú (dejé lo más seguro; todo se cambia):**
   1. *La visita de un plan que el negocio canceló.* Antes el sistema volvía a crear esa cita cada minuto (el negocio la cancelaba y reaparecía).
      Ahora no la vuelve a crear sola; se crea la siguiente cuando pasa la fecha. Alternativa: avisarle al cliente y ofrecerle otra fecha.

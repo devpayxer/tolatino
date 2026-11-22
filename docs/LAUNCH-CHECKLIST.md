@@ -2335,7 +2335,17 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (`compa_pauses.reason` → Panel › El Compa; su texto secundario decía «Queda en el historial») y apagar un módulo en una ciudad
       (`modules_off.reason` → el panel de cada negocio; apagar una categoría sigue «interna»). Las cuatro quedaron en el guardián `notaDiceAQuien` y en
       `alreves9u` (12 casos). Lo demás que encontró la revisión es la línea siguiente.
-- [ ] **→ 9u** · **La nota «interna» no sale del equipo: lo que encontró la revisión aparte (21 nov) y no es un cambio de etiqueta.**
+- [ ] **→ 9b** · **153 pruebas de `pruebas/e2e/` llevan `http://localhost:3100` fijo** en vez de la dirección del entorno (`ENT.B` / `PRUEBAS_URL`): un
+      agente con su servidor en otro puerto las manda sin querer al servidor de `:3100` (pasó con `rec1j`, `rec2` y `sop7b` en 9u-2; fallaron por
+      tiempo antes de escribir nada). Pasarlas todas a la dirección del entorno, con guardián. (22 nov)
+- [ ] **→ 9u** · **Notas con otro nombre y datos que viajan sin pintarse, lo que quedó de 9u-2 (22 nov):** (1) la clasificación de 9u-2 va por NOMBRE de
+      columna (`reason`, `note`, `motivo`, `nota`…): una nota del equipo guardada en una columna con otro nombre (`detail`, `comment`, un `jsonb`)
+      no la ve; repasar las tablas exportadas por quién escribe cada columna de texto. (2) `lib/panel.ts` (hacia la línea 208) manda `adm.reason`
+      (`status_reason`) y `tempReason` al Panel: comprobar que siempre se pintan. (3) `appeals.hidden_reason` quedó fuera del archivo ENTERA (con una
+      foto de la revisión copia la nota interna y no hay una regla por fila segura); lo que la persona vio sale por la columna original. (4) Las
+      notas de la prueba `nota9u2` se escriben directo en la base, no desde las hojas del equipo (son unas veinte): que al menos una por familia
+      recorra la hoja. (5) Sale `business_members.hidden_reason` (la ve el dueño, no siempre el miembro): decisión en REVISION.
+- [x] **→ 9u** · **La nota «interna» no sale del equipo: lo que encontró la revisión aparte (21 nov) y no es un cambio de etiqueta.**
       (1) **«Descargar mis datos» exporta columnas donde cae una nota interna** (`lib/datos/exportar.ts` hace `select *` de las tablas del mapa y solo
       quita las columnas de otra persona, las de `equipo` y `NUNCA_SE_EXPORTA`): `claims.reason` (aplicar un reclamo, `Colas.tsx`),
       `recommendations.decision_reason` (descartar una recomendación), `business_members.panel_off_reason` (quitar acceso al panel a alguien del
@@ -2353,6 +2363,15 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `salud-publico.ts` y otros): comprobar que ninguno lo pasa crudo a un componente de cliente. (5) La revisión miró solo por encima Textos,
       Notificaciones, Integraciones, Configuración y Sistema (39 confirmaciones: auditoría o registro que solo lee el admin), y no recorrió una por
       una las 85 «persona». (21 nov)
+      **Hecho (22 nov, 9u-2; Opus lo escribió, Fable lo revisó; sin migración):** (1) cada columna de motivo o nota de las 76 tablas que se exportan
+      (52 columnas) está clasificada en UN sitio, `"notas"` de `packages/db/mapa-de-datos.json`: sale (la persona la escribió o la ve: 29), interna
+      (20) o sale solo en ciertas filas (3: `claims.reason` si fue rechazado, `media.removed_note` si la quitó el equipo, `items.hidden_reason`
+      mientras está oculto). La exportación lo respeta y **falla cerrada**: una columna con nombre de nota sin clasificar no sale, y `nota9u2`
+      (contra la base) se pone roja hasta que alguien la clasifique. (2) El sello, el reclamo y dos datos de Moderación que la revisión no había
+      nombrado ya solo viajan al navegador cuando la pantalla los pinta. (4) Los lectores públicos de `modules_off`, uno por uno: ninguno pasa el
+      motivo; comprobado sobre lo servido en `/n/` de las 17 categorías. Guardianes `notaInternaFueraDelArchivo` y `guardianNombreUnico` (un nombre
+      de guardián repetido reemplazaba en silencio al anterior: le pasó a este mismo encargo y lo cazó `alreves7b`). `nota9u2` 130 ✓ dos veces;
+      `alreves9u2` 20/20, `alreves7b` 46/46, `alreves9d` 23/23, `alreves9u` 15/15, `alreves9usql` 6/6, `alreves9texp` 9/9.
 - [x] **→ 9u** · **«Asignar a…» en Colas reventaba el servidor desde el 14 nov** (`equipoDeCola`: `… || ' · ' || r.name->>'es'`; Postgres lo lee
       `(… || r.name) ->> 'es'` → «operator does not exist: text ->> unknown»; la hoja se caía con «Application error»). Lo cazó la prueba nueva `nota9u`
       (Sonnet) al abrir la hoja por primera vez. **Hecho (21 nov, 4ee2ae2):** paréntesis, guardián `jsonTrasConcatenar` (apps, services, scripts y
@@ -2365,7 +2384,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       **Hecho en parte (21 nov, Fable, bf3937c):** `pruebas/e2e/sql9u.cjs` pasa por `PREPARE` (analiza y pone tipos, sin ejecutar) las **4857
       consultas fijas** que se dan a `.query(` contra la base de pruebas; `alreves9usql` 4/4. En su primera pasada cazó otra viva: **«Mi casa»
       reventaba al guardar otra vez una casa en la misma dirección** (`guardarCasa`: un update con 15 valores que no usaba `$1` ni `$2`),
-      arreglada. **Queda:** (a) las **837 consultas armadas con `${…}`** no entran (hay que prepararlas con sus trozos resueltos, o anotar en el
+      arreglada. **Ampliada (22 nov):** también entran las que se arman SOLO con constantes de texto o números fijos (del mismo archivo, importadas o
+      con otro nombre) y las que se pasan enteras por su nombre: **5094 consultas** (237 de esas), todas preparan; `alreves9usql` 6/6.
+      **Queda:** (a) **613 consultas armadas con algo que se decide al correr** no entran (hay que anotar en el
       servidor de pruebas las que de verdad se ejecutan y listar las que nunca); (b) **hecho (21 nov, Sonnet; Fable lo corrió):** `fi4b` guarda
       otra vez «Mi casa» en la misma dirección por la interfaz («Cambiar» → «Agregar otra casa» con una dirección que ya tiene casa: la interfaz
       no edita en sitio) y comprueba una sola fila, la misma `id`, los datos nuevos y `is_default`; 18 ✓ dos veces. «Mi vehículo» no tiene camino
@@ -2376,6 +2397,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9b** · **El CI dijo «inestables de la corrida: 0» con una** (44947348390): la lectura del registro de un trabajo falló callada
       (`gh api … 2>/dev/null | grep … || true`). **Hecho (21 nov, 3bfec03):** se reintenta hasta 6 veces y, si no se puede leer, la tubería sale roja
       diciéndolo; `tuberiaNoSeSalta` lo exige; caso nuevo en `alreves9b2` (49/49 en local). Falta verlo correr en una corrida completa.
+      **Visto correr (22 nov, 44961847914) y lo que enseñó:** con el arreglo, la tubería salió roja diciendo «no se pudo leer el registro de 22
+      trabajo(s)»: el registro de un trabajo NO se deja leer desde dentro de la corrida, así que el conteo nunca había funcionado (siempre «0»).
+      **Hecho de verdad (22 nov):** las inestables se cuentan desde lo que cada carril sube (`res/inestables.json`, que `pruebas/correr.mjs` ahora
+      escribe SIEMPRE, vacía si no hubo; en la confirmación, que corre dos veces, se suman); un carril en verde sin su lista pone la tubería en rojo.
+      `tuberiaNoSeSalta` al día; `alreves9b2` 51/51, `alreves9b1` 14/14, `alreves9b3` 59/59, `alreves9m` 41/41. Las de 44961847914 las conté a mano
+      leyendo cada carril: 0. Falta verlo en una corrida del CI.
 - [ ] **→ 9b** · **`compa7g` inestable en local (21 nov):** falló una vez («el borrador quedó "editado"») y pasó a la segunda con 98 ✓, en la corrida del
       encargo de las hojas (99 pruebas de pantallas del Super Admin). Buscar la espera que falta antes de leer el estado del borrador.
       **Buscada, sin causa probada (21 nov, Sonnet):** no se reprodujo en 16 corridas (10 con el código de antes, 6 con el de ahora). No es «leer

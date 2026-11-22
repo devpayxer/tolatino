@@ -26,7 +26,8 @@ export async function recuperar(id: string, userId: string | null, lang: Lang) {
       where b.id = $1 and b.status = 'active'`, [id, lang])).rows[0];
   if (!b) return null;
   const mio = userId ? (await db().query<{ id: string; status: string; method: string; doc_kind: string | null; role: string; note: string | null; reason: string | null; created_at: string; decided_at: string | null }>(
-    `select id, status, method, doc_kind, role, note, reason, created_at, decided_at from claims where business_id = $1 and user_id = $2 order by created_at desc limit 1`, [id, userId])).rows[0] ?? null : null;
+    // 9u-2 · El motivo viaja SOLO si el reclamo fue rechazado (lo único que Recuperar.tsx pinta); al aprobar, el equipo deja ahí una nota interna.
+    `select id, status, method, doc_kind, role, note, case when status = 'rejected' then reason end as reason, created_at, decided_at from claims where business_id = $1 and user_id = $2 order by created_at desc limit 1`, [id, userId])).rows[0] ?? null : null;
   const meta = [b.reviews >= 5 && b.rating ? `★ ${b.rating.toFixed(1)}` : null, b.sub?.toUpperCase()].filter(Boolean).join(" · ");
   return {
     id: b.id, nombre: b.name, cover: b.cover, meta, verificado: b.verified, direccion: b.address ? `${b.address.replace(/, [A-Za-z ]+ PA$/, "")} · ${b.ciudad}` : b.ciudad, ciudad: b.ciudad,

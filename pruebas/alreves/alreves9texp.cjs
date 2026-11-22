@@ -5,7 +5,7 @@ const fs = require('fs'), path = require('path'), { execSync } = require('child_
 const R = ENT.RAIZ;
 const X = 'apps/web/lib/datos/exportar.ts', G = 'exportarSinCorte';
 const casos = [
-  [G, X, 'args: [cuenta], fuera });', 'args: [cuenta], fuera }); void "limit 20000";'],
+  [G, X, 'args: [cuenta], fuera, tabla: f.tabla });', 'args: [cuenta], fuera, tabla: f.tabla }); void "limit 20000";'],
   [G, X, "from businesses where id = $1`),", "from businesses where id = $1 limit 1`),"],
   [G, X, 'from reviews r join users u on u.id = r.user_id where r.business_id = $1 order by r.created_at desc, r.id`', 'from reviews r join users u on u.id = r.user_id where r.business_id = $1 order by r.created_at desc, r.id limit 20000`'],
   [G, X, 'await c.query(`declare ${cur} no scroll cursor for ${q.sql}`, q.args);', 'await c.query(q.sql, q.args);'],
