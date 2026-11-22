@@ -20,6 +20,16 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (18:15 UTC) · `main` = `pruebas` = 1918d33, sandbox comprobado por la herramienta de subida.** Hecho desde las 16:10: LAUNCH (la
+  confirmación 45033884173 cerró tres líneas); la programada en su propio grupo (dd969b0: ocupó la cola de `main` 90 min y canceló la confirmación de
+  788d03a; ya no puede); **el puerto de las pruebas**: ninguna prueba lleva `localhost:3100` escrito, manda `PRUEBAS_URL` y la cuenta vive en
+  `pruebas/lib/puertos.cjs` (simuladores incluidos); probado de verdad con el servidor en :3120 y nadie en :3100 (push8c, wal8g, tien8h, avi9l,
+  msg9t, vid001), que cazó y arregló la cadena de certificados de Wallet reutilizada con la dirección vieja. **Dos encargos a la vez:** receta en
+  el encargo (cada uno su `PRUEBAS_URL` a 20 puertos, su base, su almacén y su `PRUEBAS_SALIDA`). Docker local se cae con cada reinicio de la
+  máquina: arrancar `containerd` y luego `dockerd`; los contenedores viejos de prueba quedan inservibles (borrarlos con su volumen y `garage*`).
+  **En curso (3 encargos Opus, base propia):** A fotos privadas fuera de destinos públicos · B «Descargar mis datos» en flujo y notas de 9u-2 ·
+  C caché de Configuración (carrera y una sola escucha). Pendiente del CI: las rojas fijas de `anchos` (iphone-se e ipad, partes 2, 5 y 6 de la
+  programada 45042985880). Quién hizo qué: Sonnet el puerto; Fable la revisión, la prueba real, el arreglo de Wallet y las subidas.
 - **22 nov (16:10 UTC) · `main` = `pruebas` = 3d2aa87, sandbox comprobado por la propia herramienta de subida.** Hecho: reparto de punta a punta
   rehecho y confirmado (45033884173; `main` 19 min 27 s, partes 828–951 s); tanda 6: `scripts/ci/subir.mjs` (`--plan`, `--dirigida`, `--subir`),
   título y línea de evidencia en cada corrida, guardián `subidaConHerramienta`, texto único del flujo en `CLAUDE.md`. **Regla de trabajo: las subidas
