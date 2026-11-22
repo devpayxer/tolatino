@@ -8352,10 +8352,11 @@ const guardianes = {
      olvidar() suben la generación; quien vuelve solo guarda (y solo pone con alGuardar) si la generación es la misma con la que salió; lo que se junta es
      de la misma generación. (2) Nadie más llama a alCambiarConfig (una copia que se registra a mano vuelve a tener la carrera). (3) En apps/web/lib ninguna
      copia con hora a mano (Date.now() − x.at) en una función que lee una tabla que avisa (las saca de las migraciones: los disparadores de config_avisar y
-     ciudades_avisar). Al revés: alrevesCacheGen. */
+     ciudades_avisar). (4) UNA escucha por proceso: el estado de lib/cambios-config.ts vive en globalThis (cada capa de Next carga su copia del módulo y
+     cada una abría su LISTEN) y Sistema › Salud la muestra (estadoEscucha). Al revés: alrevesCacheGen. */
   cacheConGeneracion() {
-    const G = "cacheConGeneracion", H = "apps/web/lib/cache-aviso.ts", CC = "apps/web/lib/cambios-config.ts";
-    for (const f of [H, CC]) if (!existsSync(f)) return falla(G, f, 0, "falta (las copias que se olvidan por aviso)");
+    const G = "cacheConGeneracion", H = "apps/web/lib/cache-aviso.ts", CC = "apps/web/lib/cambios-config.ts", SA = "apps/web/lib/sistema/salud.ts", SP = "apps/web/app/admin/SistemaSalud.tsx";
+    for (const f of [H, CC, SA, SP]) if (!existsSync(f)) return falla(G, f, 0, "falta (las copias que se olvidan por aviso)");
     // (1) El ayudante.
     const h = sinComent(H);
     if (!/const olvidar = \(\) => \{ gen\+\+; copias\.clear\(\); enVuelo\.clear\(\); \};/.test(h)) falla(G, H, 0, "olvidar() (el aviso o la escritura del propio proceso) sube la generación y vacía las copias y lo que está en vuelo");
@@ -8387,6 +8388,12 @@ const guardianes = {
         if (tb) falla(G, f, t.slice(0, x.index).split("\n").length, `una copia con hora hecha a mano de lo que la base avisa («${tb}»): usa cacheConAviso (lib/cache-aviso.ts), con la generación`);
       }
     }
+    // (4) Una escucha por proceso, a la vista en Salud.
+    const cc = sinComent(CC);
+    if (!/const G = globalThis as typeof globalThis & \{ __tlCambiosConfig\?: Estado \};/.test(cc) || !/const E: Estado = \(G\.__tlCambiosConfig \?\?= \{/.test(cc) || /^let /m.test(cc))
+      falla(G, CC, 0, "el estado de la escucha vive en globalThis (una conexión LISTEN por proceso, no una por capa de Next) y no en variables del módulo");
+    if (!/export function estadoEscucha\(\)/.test(cc) || !/escucha: estadoEscucha\(\)/.test(sinComent(SA))) falla(G, SA, 0, "Sistema › Salud dice si la escucha de este proceso está viva, desde cuándo y el último aviso (estadoEscucha)");
+    if (!/const ce = d\.escucha;/.test(sinComent(SP)) || !/ce\.ultimoAviso/.test(sinComent(SP))) falla(G, SP, 0, "la pantalla de Salud muestra la escucha (viva, desde cuándo, el último aviso)");
   },
 
   /* 9b-3 · Una función NUESTRA (de las migraciones) en un «with x as (select f(…))» se evalúa una vez solo si el CTE dice «materialized»: si no,

@@ -1,11 +1,12 @@
 // Prueba al revés de cacheConGeneracion (22 nov, LAUNCH «Caché de Configuración, del producto»): las copias que la base olvida por aviso se guardan solo
-// con lib/cache-aviso.ts, que lleva la generación (una lectura que salió antes de un cambio y vuelve después del aviso no guarda lo viejo). Se inyecta el defecto, el guardián debe fallar con SU mensaje ([nombre]); se restaura. «crear»: se
+// con lib/cache-aviso.ts, que lleva la generación (una lectura que salió antes de un cambio y vuelve después del aviso no guarda lo viejo), y hay UNA
+// escucha por proceso, a la vista en Sistema › Salud. Se inyecta el defecto, el guardián debe fallar con SU mensaje ([nombre]); se restaura. «crear»: se
 // crea el archivo, se corre y se borra.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const H = 'apps/web/lib/cache-aviso.ts', CC = 'apps/web/lib/cambios-config.ts', CF = 'apps/web/lib/config.ts',
-  VI = 'apps/web/lib/vitales.ts';
+const H = 'apps/web/lib/cache-aviso.ts', CC = 'apps/web/lib/cambios-config.ts', CF = 'apps/web/lib/config.ts', SA = 'apps/web/lib/sistema/salud.ts',
+  SP = 'apps/web/app/admin/SistemaSalud.tsx', VI = 'apps/web/lib/vitales.ts';
 const G = 'cacheConGeneracion';
 const casos = [
   // (1) El ayudante: guarda sin mirar la generación; el aviso no la sube; se junta con la lectura de antes del aviso; pone (alGuardar) aunque no guarde;
@@ -20,6 +21,10 @@ const casos = [
   [CF, 'import { cacheConAviso } from "./cache-aviso";', 'import { cacheConAviso } from "./cache-aviso";\nimport { alCambiarConfig } from "./cambios-config";\nlet cache: Map<string, number> | null = null;\nalCambiarConfig(() => { cache = null; });'],
   // (3) Un interruptor guardado a mano con hora (el de app.vitals)
   [VI, 'const encendido = (): Promise<boolean> => FLAG.leer();', 'let flag: { at: number; on: boolean } | null = null;\nasync function encendido() {\n  if (flag && Date.now() - flag.at < 30_000) return flag.on;\n  const on = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = \'app.vitals\'`)).rows[0]?.enabled === true;\n  flag = { at: Date.now(), on };\n  return on;\n}'],
+  // (4) La escucha vuelve a ser una por capa (estado del módulo); Salud no la muestra (datos o pantalla)
+  [CC, 'const E: Estado = (G.__tlCambiosConfig ??= {', 'const E: Estado = ({'],
+  [SA, ', escucha: estadoEscucha(),', ', escucha: { viva: true, desde: null, ultimoAviso: null, avisos: 0, caidas: 0, ultimaCaida: null, copias: 0 },'],
+  [SP, '  const ce = d.escucha;\n', '  const ce = { viva: true, desde: null, ultimoAviso: null, avisos: 0, caidas: 0 };\n'],
 ];
 const crear = [
   // Una caché nueva que se registra a mano con alCambiarConfig (la forma de antes: tiene la carrera)
