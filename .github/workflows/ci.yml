@@ -94,7 +94,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # 22 nov · Con el commit anterior: migracionReversible busca en HEAD~1 quién lee lo que una migración borra o renombra. Con un solo commit
+      # (lo de antes) HEAD~1 no existía y esa mitad no corría aquí, solo en el carril «al revés»; ahora el guardián falla si en el CI no lo ve.
       - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
       - uses: pnpm/action-setup@v4
         with: { version: 10.28.0 }
       - uses: actions/setup-node@v4

@@ -44,6 +44,9 @@ const casos = [
   ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'if (!fases.ok && !conf.every((c) => c.ok)) return no(', 'if (!fases.ok && !conf.some((c) => c.ok)) return no('],
   ['produccionSoloAvanza', 'scripts/ci/corrida.mjs', 'PENDIENTE (lo decide el fundador): la «confirmación completa» de la decisión AD', 'la confirmación completa'],
   ['produccionSoloAvanza', '.github/workflows/ci.yml', ' · solo=«${{ inputs.solo }}» · aprobar=', ' · aprobar='],
+  // 22 nov · migracionReversible: «tipos · build · guardianes» vuelve a clonar sin el commit anterior
+  ['migracionReversible', '.github/workflows/ci.yml', '      - uses: actions/checkout@v4\n        with: { fetch-depth: 2 }\n      - uses: pnpm/action-setup@v4', '      - uses: actions/checkout@v4\n      - uses: pnpm/action-setup@v4'],
+  ['migracionReversible', '.github/workflows/ci.yml', '      - uses: actions/checkout@v4\n        with: { fetch-depth: 2 }\n      - uses: pnpm/action-setup@v4', '      - uses: actions/checkout@v4\n        with: { fetch-depth: 1 }\n      - uses: pnpm/action-setup@v4'],
   // … la base deja anotar un despliegue de producción sin el OK
   ['produccionSoloAvanza', M, "  check (entorno <> 'produccion' or founder_ok_ref is not null),\n", ''],
   // selladoSoloSuServidor: el servidor abre sobres fuera de la lista cerrada
@@ -139,6 +142,21 @@ for (const [g, f, c] of crear) {
     informe('selladoSoloSuServidor', 'un sobre age de verdad cifrado para otra llave', correr('selladoSoloSuServidor'));
   } catch (e) { total++; console.log(`  ✗ selladoSoloSuServidor: no se pudo armar el caso (${e.message.slice(0, 80)})`); }
   finally { fs.writeFileSync(L, oL); fs.writeFileSync(S, oS); try { fs.unlinkSync(A); fs.rmdirSync(path.dirname(A)); } catch { /* */ } fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+// 22 nov · migracionReversible en el CI sin el commit anterior (un repo de un solo commit como GIT_DIR, el árbol de siempre): rojo con su renglón;
+// fuera del CI, lo mismo pasa (en local sin historia no es un error).
+if (!process.env.ALREVES_SOLO_TEXTOS) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'alreves9o-sinhistoria-'));
+  try {
+    const g = (c) => execSync(c, { cwd: tmp, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null' } });
+    g('git init -q && git -c user.name=p -c user.email=p@ejemplo.invalid -c commit.gpgsign=false commit -q --allow-empty -m uno');
+    const corre = (ci) => { try { execSync('node guardianes/run.mjs --solo migracionReversible', { cwd: R, stdio: 'pipe', env: { ...process.env, GIT_DIR: path.join(tmp, '.git'), GIT_WORK_TREE: R, GITHUB_ACTIONS: ci } }); return ['', 0]; } catch (e) { return [String(e.stderr), e.status]; } };
+    const [enCi] = corre('true'), [fuera, cf] = corre('');
+    const l = enCi.split('\n').find((x) => x.trim().startsWith('[migracionReversible] HEAD~1'));
+    informe('migracionReversible', 'en el CI sin el commit anterior', [!!l, l ?? '']);
+    total++; if (cf === 0) bien++; console.log(`  ${cf === 0 ? '✓' : '✗'} migracionReversible fuera del CI sin el commit anterior: sigue sin fallar${cf === 0 ? '' : ` (salió ${cf}: ${fuera.split('\n').find((x) => x.trim().startsWith('[')) ?? ''})`}`);
+  } catch (e) { total++; console.log(`  ✗ migracionReversible: no se pudo armar el repo sin historia (${String(e.message).slice(0, 120)})`); }
+  finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 }
 // 22 nov · promover.sh de verdad (en seco), en un repo de mentira con su «origin», y un «gh» de mentira que contesta la API de GitHub con las
 // corridas de cada caso (aquí nunca se llama a GitHub). Solo con una corrida entera, en main, de primer intento y con todo en verde sale ✓.

@@ -9962,6 +9962,11 @@ const guardianes = {
   migracionReversible() {
     const G = "migracionReversible";
     const previo = (() => { try { return execSync("git rev-parse -q --verify HEAD~1", { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch { return ""; } })();
+    // 22 nov · En el CI el commit anterior TIENE que verse: con un checkout sin historia esta mitad no corría y el guardián pasaba callado (el
+    // trabajo «tipos · build · guardianes» clonaba un solo commit; lo hacía de verdad solo el carril «al revés»). En local, sin historia, sigue.
+    if (!previo && process.env.GITHUB_ACTIONS === "true") falla(G, "HEAD~1", 0, "en el CI no se resuelve el commit anterior (HEAD~1): el checkout no trae historia (fetch-depth: 2 o más) y no se puede mirar quién leía lo que una migración borra o renombra");
+    { const y = readFileSync(".github/workflows/ci.yml", "utf8"), v = /\n  verificar:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", d = /\n      - uses: actions\/checkout@v4\n        with: \{ fetch-depth: (\d+) \}\n/.exec(v);
+      if (!d || !(Number(d[1]) === 0 || Number(d[1]) >= 2)) falla(G, ".github/workflows/ci.yml", 0, "«tipos · build · guardianes» clona con el commit anterior (actions/checkout con fetch-depth: 2, o 0): sin él no se mira quién leía lo que una migración borra"); }
     // Quién lo lee: el código del commit anterior (git grep en HEAD~1) y el de ahora (también lo que todavía no está en git).
     const vivos = archivos.filter((f) => /^(apps|services|packages\/db\/seeds|scripts)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|sql|json|sh)$/.test(f) && !f.includes("node_modules"));
     const lee = (id) => {
