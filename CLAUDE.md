@@ -103,6 +103,11 @@ confirmación completa justo después y vuelta atrás automática si caza algo. 
 visto servido; sus pruebas de punta a punta corren después (lo que falte, a LAUNCH en el momento). No aplica a dinero, permisos, datos personales,
 migraciones ni producción. Captura primero (en cuanto una pieza se ve, el fundador la recibe), entregar por partes, y el trabajo grande se
 reparte en hasta 4 encargos en paralelo.
+**Desde el 22 nov (decisión AM):** el CI y el proceso nuevos son regla y los guardan guardianes: confirmación de push en ~20 min (8 partes por
+`pruebas/reparto.json`, «al revés» con árbol idéntico, verificación en paralelo con un solo build); un push de solo documentos de trabajo corre solo
+la señal rápida; las dirigidas van siempre en partes; una roja local se repite sobre base nueva; un cambio del CI se ve correr entero en la rama antes
+de `main` y va solo; lo que toca el despliegue sube primero a `main` y después a `pruebas`. Si la confirmación pasa de 25 min o `main` queda rojo por
+el propio CI, eso se arregla antes que nada. Quitar o aflojar un guardián del CI es decisión del fundador (lista en DECISIONES, AM).
 
 ## Ramas
 `main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que
