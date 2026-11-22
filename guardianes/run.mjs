@@ -14965,7 +14965,8 @@ const guardianes = {
      (1) Ninguna pantalla cuenta un toque (ni el «entraron» de un patrocinio) con una acción del servidor; ni existen ya esas acciones
          (registrarToque…, entroPatrocinado): salen SOLO por lib/contar-toque.ts, nadie la espera, y nadie más habla con /api/toque.
      (2) lib/contar-toque.ts anota el toque pendiente (memoria + sessionStorage, con su id y su hora) ANTES de mandarlo; lo manda con sendBeacon
-         (y, si no, fetch con keepalive); lo reintenta con fetch a los 1–5 s, otra vez tras cada envío fallido (hasta 60 s entre uno y otro), y al volver a verse la página (visibilitychange, pageshow) y al montar
+         (y, si no, fetch con keepalive); lo reintenta con un fetch normal a los 1–5 s y, mientras quede algo, cada vez más espaciado (hasta 60 s),
+         sin esperar a que el envío anterior termine («en camino» caduca a los 4 s: en WebKit un keepalive abortado no terminaba), y al volver a verse la página (visibilitychange, pageshow) y al montar
          la app (iniciarBandeja en el Arranque del marco raíz); solo un 204 lo confirma; un pendiente de más de 10 min (o menos) se tira.
      (3) /api/toque solo tiene POST, acota el cuerpo (512 bytes, antes de leerlo entero), acepta exactamente { id, kind, origen }, { semilla, origen }
          o { entro, patrocinio } y llama a lib/toques.ts o a lib/patrocinio-entrada.ts (entroPatrocinado); contesta 204 siempre.
@@ -15002,7 +15003,7 @@ const guardianes = {
     if (!existsSync(CT)) return falla(G, CT, 0, "falta lib/contar-toque.ts (la única vía para contar un toque desde la pantalla)");
     const ct = sinComent(CT), cuerpoDe = (n) => { const i = ct.indexOf(`function ${n}(`); return i < 0 ? "" : ct.slice(i, ct.indexOf("\n}", i) + 2); };
     if (!/navigator\.sendBeacon\(RUTA, /.test(ct)) falla(G, CT, 0, "el toque sale con navigator.sendBeacon (sobrevive a la salida de la página)");
-    if (!/fetch\(RUTA, \{[^}]*keepalive: true/.test(ct)) falla(G, CT, 0, "sin sendBeacon, el toque sale con fetch y keepalive: true (sobrevive a la salida de la página)");
+    if (!/fetch\(RUTA, \{[^}]*\bkeepalive, /.test(ct) || !/^function enviar\(p: Pendiente, keepalive = false\): void \{/.test(cuerpoDe("enviar")) || !/if \(!enCola\) enviar\(p, true\);/.test(cuerpoDe("mandar"))) falla(G, CT, 0, "sin sendBeacon, el toque sale con fetch y keepalive: true (sobrevive a la salida de la página); los reintentos, con un fetch normal");
     if (!/const RUTA = "\/api\/toque";/.test(ct)) falla(G, CT, 0, "el toque va a /api/toque");
     if (/\bawait\b|\basync\b|from "\.\.?\/.*acciones"|from "@\/app/.test(ct)) falla(G, CT, 0, "lib/contar-toque.ts no espera nada ni llama a una acción del servidor: manda y vuelve en el mismo toque");
     const md = cuerpoDe("mandar"), iG = md.indexOf("guardar("), iB = md.indexOf("sendBeacon(");
@@ -15015,9 +15016,11 @@ const guardianes = {
     const tope = /const TOPE_MS = (\d+) \* 60_000;/.exec(ct);
     if (!tope || +tope[1] > 10 || +tope[1] < 1 || !/ahora - p\.h < TOPE_MS/.test(cuerpoDe("vigentes"))) falla(G, CT, 0, "la bandeja tira lo pendiente de más de 10 min (TOPE_MS ≤ 10 min): más tarde, la ventana del servidor ya no evita contarlo dos veces");
     const en = cuerpoDe("enviar");
-    if (!/\.then\(\(r\) => \{ if \(r\.status === 204\) \{ fallos = 0; quitar\(p\.t\); \} else otraVez\(\); \}, otraVez\)/.test(en) || !/catch \{ enVuelo\.delete\(p\.t\); otraVez\(\); \}/.test(en)
-      || !/if \(!reloj\) programar\(Math\.min\(REINTENTO_MS \* 2 \*\* fallos, 60_000\)\);/.test(cuerpoDe("otraVez"))) falla(G, CT, 0, "un envío que falla (abortado, sin red, 5xx) rearma el reintento (otraVez, espaciado hasta 60 s): el de los 1,5 s se salta lo que sigue en camino (CI 45071274895)");
-    if (!/\.then\(\(r\) => \{ if \(r\.status === 204\) \{ fallos = 0; quitar\(p\.t\); \}/.test(en) || (ct.match(/\bquitar\(/g) ?? []).length !== 2) falla(G, CT, 0, "la bandeja solo da por confirmado un toque con el 204 del servidor (el beacon no confirma)");
+    if (!/\.then\(\(r\) => \{ soltar\(\); if \(r\.status === 204\) \{ fallos = 0; quitar\(p\.t\); \} else otraVez\(\); \}, \(\) => \{ soltar\(\); otraVez\(\); \}\)/.test(en) || !/catch \{ soltar\(\); otraVez\(\); \}/.test(en)
+      || !/if \(!reloj\) programar\(Math\.min\(REINTENTO_MS \* fallos, 60_000\)\);/.test(cuerpoDe("otraVez"))) falla(G, CT, 0, "un envío que falla (abortado, sin red, 5xx) rearma el reintento (otraVez, espaciado hasta 60 s): el de los 1,5 s se salta lo que sigue en camino (CI 45071274895)");
+    const vuelo = /const EN_VUELO_MS = (\d+);/.exec(ct);
+    if (!vuelo || +vuelo[1] > 10000 || !/if \(antes !== undefined && ahora - antes < EN_VUELO_MS\) return;/.test(en) || /\.finally\(/.test(en) || !/\n  if \(l\.length\) otraVez\(\);\n/.test(cuerpoDe("vaciar"))) falla(G, CT, 0, "el reintento no depende de que el envío anterior termine: «en camino» caduca (EN_VUELO_MS ≤ 10 s) y, mientras quede algo, vaciar arma el siguiente intento (CI 45071274895: en WebKit un fetch keepalive abortado no terminaba nunca)");
+    if (!/\.then\(\(r\) => \{ soltar\(\); if \(r\.status === 204\) \{ fallos = 0; quitar\(p\.t\); \}/.test(en) || (ct.match(/\bquitar\(/g) ?? []).length !== 2) falla(G, CT, 0, "la bandeja solo da por confirmado un toque con el 204 del servidor (el beacon no confirma)");
     // (3) La puerta.
     if (!existsSync(RT)) return falla(G, RT, 0, "falta /api/toque");
     const rt = sinComent(RT);
@@ -15053,7 +15056,7 @@ const guardianes = {
     if (!/^[^\n]*\{\n\s*try \{\n\s*if \(!\(await mismoOrigen\(\)\)\) return;/.test(ep) || !/if \(ctx\.robot\) return;/.test(ep) || !/if \(propio\.rowCount\) return;/.test(ep)
       || !/!\/\^\\d\{1,18\}\$\/\.test\(id\)\) return;/.test(ep) || !/await contarEntrada\(kind, id, u\?\.id \?\? null, u \? null : await dispositivo\(false\)\);/.test(ep)) falla(G, LP, 0, "entroPatrocinado perdió sus reglas: mismo origen primero, id válido, sin robots, sin la gente del negocio, y contarEntrada (una vez por persona o dispositivo y día)");
     const tk = existsSync("pruebas/e2e/tarAK.cjs") ? readFileSync("pruebas/e2e/tarAK.cjs", "utf8") : "";
-    if (!existsSync("pruebas/alreves/alrevesToqueSalida.cjs") || !["se corta en el mismo instante", "el primer envío se pierde", "llegan los dos", "recargar con un toque pendiente", "un pendiente viejo se tira"].every((x) => tk.includes(x))) falla(G, "pruebas/e2e/tarAK.cjs", 0, "falta la prueba (tarAK: la página se corta, el primer envío se pierde, llegan los dos, recargar con un pendiente, uno viejo se tira) o su prueba al revés (alrevesToqueSalida)");
+    if (!existsSync("pruebas/alreves/alrevesToqueSalida.cjs") || !["se corta en el mismo instante", "el primer envío se pierde", "el primer envío se queda colgado", "llegan los dos", "recargar con un toque pendiente", "un pendiente viejo se tira"].every((x) => tk.includes(x))) falla(G, "pruebas/e2e/tarAK.cjs", 0, "falta la prueba (tarAK: la página se corta, el primer envío se pierde, llegan los dos, recargar con un pendiente, uno viejo se tira) o su prueba al revés (alrevesToqueSalida)");
   },
 };
 

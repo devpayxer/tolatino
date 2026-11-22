@@ -1,3 +1,4 @@
+"use client";
 /* Contar un toque de contacto desde la pantalla (llamar, cómo llegar, compartir, escribir) y el «entraron» de un patrocinio. La ÚNICA vía
    (guardián toqueSobreviveSalida). Casi siempre la página se va en el mismo instante: tel:, el mapa del teléfono, la hoja de compartir.
    Historia: una acción del servidor se cancelaba en Safari al abrir tel: (CI 45042985880); con navigator.sendBeacon llegaba casi siempre, pero
@@ -6,9 +7,11 @@
    1. Al tocar se anota pendiente (memoria + sessionStorage, con un id propio del toque y su hora) y se manda ya: sendBeacon (mejor esfuerzo:
       no deja leer la respuesta) o, si no hay o no lo acepta, fetch con keepalive (su 204 lo confirma). No se espera nada: tel: sale del propio
       toque (iOS lo exige).
-   2. Lo no confirmado se reintenta con fetch (keepalive) a los 1,5 s si la página sigue viva (con tel: casi siempre sigue: sale un diálogo del
-      sistema), al volver a verse (visibilitychange a visible, pageshow) y al montar la app en la siguiente página (iniciarBandeja, en
-      el Arranque del marco raíz). Confirmado = el servidor contestó 204 (lo recibió; si sus reglas no lo cuentan, reintentar no cambia nada).
+   2. Lo no confirmado se reintenta con un fetch NORMAL (sin keepalive: la página está viva) a los 1,5 s, y después, mientras quede algo, cada
+      vez más espaciado (1,5 s, 3 s, 4,5 s… hasta 60 s); al volver a verse (visibilitychange a visible, pageshow) y al montar la app en la
+      siguiente página (iniciarBandeja, en el Arranque del marco raíz). Confirmado = el servidor contestó 204 (lo recibió; si sus reglas no lo
+      cuentan, reintentar no cambia nada). El reintento NO depende de que el envío anterior termine: «en camino» caduca a los 4 s (CI 45071274895:
+      en WebKit un fetch con keepalive abortado no rechazaba su promesa, el toque quedaba «en camino» para siempre y nunca se reintentaba).
    3. Un pendiente con más de 9 min se tira: el servidor no cuenta otra vez a la misma persona (o red) en el mismo negocio durante 10 min, y el
       minuto de margen cubre la latencia, así un reintento nunca cae fuera de esa ventana y no puede contarse dos veces. Máx. 20 pendientes.
    El cuerpo es el de siempre (el id del toque no viaja: la ventana de 10 min del servidor ya deduplica, y bajo concurrencia lo cierra un candado
@@ -27,7 +30,8 @@ type Cuerpo = Record<string, string>;
 type Pendiente = { t: string; h: number; d: Cuerpo };
 
 let memoria: Pendiente[] | null = null;
-const enVuelo = new Set<string>();
+const EN_VUELO_MS = 4000;
+const enVuelo = new Map<string, number>();
 let reloj: ReturnType<typeof setTimeout> | null = null;
 let fallos = 0;
 let iniciada = false;
@@ -69,23 +73,26 @@ function vigentes(): Pendiente[] {
 
 function quitar(t: string): void { guardar(vigentes().filter((p) => p.t !== t)); }
 
-/* fetch con keepalive: si la página sigue viva, su 204 confirma y el pendiente sale de la bandeja. Si falla (abortado, sin red, un 5xx), rearma
-   el reintento: el de los 1,5 s se salta lo que sigue «en camino», y un envío que tarda más que eso en fallar (CI 45071274895: tarAK en WebKit,
-   un fetch abortado) dejaba el toque esperando a la página siguiente. */
-function enviar(p: Pendiente): void {
-  if (enVuelo.has(p.t)) return;
-  enVuelo.add(p.t);
+/* Un envío por fetch: el primero (sin beacon) con keepalive, para que sobreviva a la salida; los reintentos, normales. Si la página sigue viva,
+   su 204 confirma y el pendiente sale de la bandeja. Un envío sin respuesta en 4 s deja de estar «en camino» y vuelve a mandarse (su promesa
+   puede no terminar nunca: CI 45071274895). Si falla (abortado, sin red, un 5xx), se adelanta el siguiente intento. */
+function enviar(p: Pendiente, keepalive = false): void {
+  const antes = enVuelo.get(p.t), ahora = Date.now();
+  if (antes !== undefined && ahora - antes < EN_VUELO_MS) return;
+  enVuelo.set(p.t, ahora);
+  const soltar = () => { if (enVuelo.get(p.t) === ahora) enVuelo.delete(p.t); };
   try {
-    void fetch(RUTA, { method: "POST", body: JSON.stringify(p.d), keepalive: true, credentials: "same-origin", cache: "no-store", headers: { "content-type": "text/plain;charset=UTF-8" } })
-      .then((r) => { if (r.status === 204) { fallos = 0; quitar(p.t); } else otraVez(); }, otraVez)
-      .finally(() => enVuelo.delete(p.t));
-  } catch { enVuelo.delete(p.t); otraVez(); }
+    void fetch(RUTA, { method: "POST", body: JSON.stringify(p.d), keepalive, credentials: "same-origin", cache: "no-store", headers: { "content-type": "text/plain;charset=UTF-8" } })
+      .then((r) => { soltar(); if (r.status === 204) { fallos = 0; quitar(p.t); } else otraVez(); }, () => { soltar(); otraVez(); });
+  } catch { soltar(); otraVez(); }
 }
 
-/* Manda todo lo pendiente que no esté ya en camino. */
+/* Manda todo lo pendiente que no esté ya en camino, y, si queda algo, arma el siguiente intento (no espera a que lo enviado conteste). */
 function vaciar(): void {
   if (!hayVentana()) return;
-  for (const p of vigentes()) enviar(p);
+  const l = vigentes();
+  for (const p of l) enviar(p);
+  if (l.length) otraVez();
 }
 
 function programar(ms = REINTENTO_MS): void {
@@ -93,10 +100,10 @@ function programar(ms = REINTENTO_MS): void {
   reloj = setTimeout(() => { reloj = null; vaciar(); }, ms);
 }
 
-/* Después de un envío fallido: otro intento, más espaciado cada vez (3 s, 6 s, 12 s… hasta 60 s), salvo que ya haya uno armado antes. */
+/* Mientras quede algo sin confirmar: otro intento, más espaciado cada vez (1,5 s, 3 s, 4,5 s… hasta 60 s), salvo que ya haya uno armado. */
 function otraVez(): void {
-  fallos = Math.min(fallos + 1, 6);
-  if (!reloj) programar(Math.min(REINTENTO_MS * 2 ** fallos, 60_000));
+  fallos = Math.min(fallos + 1, 40);
+  if (!reloj) programar(Math.min(REINTENTO_MS * fallos, 60_000));
 }
 
 /* Una vez por página: los reintentos al volver a verse. La llama el Arranque del marco raíz al montar (y manda lo que quedó de la página
@@ -119,7 +126,7 @@ function mandar(d: Cuerpo): void {
   try {
     enCola = typeof navigator.sendBeacon === "function" && navigator.sendBeacon(RUTA, new Blob([JSON.stringify(d)], { type: "text/plain;charset=UTF-8" }));
   } catch { enCola = false; }
-  if (!enCola) enviar(p);
+  if (!enCola) enviar(p, true);
   programar();
 }
 

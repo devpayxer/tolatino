@@ -9,7 +9,8 @@
 //   sin reintento (o a los 30 s) · sin pageshow / visibilitychange · el Arranque sin la bandeja · sin tope de 10 min · confirmar sin 204 o por el
 //   beacon · otra pantalla hablando con /api/toque · el «entraron» de vuelta a una acción del servidor (importada o creada) · la puerta con una
 //   forma de más · las reglas sin el candado (o con uno que no es de la transacción) · entroPatrocinado sin sus reglas · tarAK sin sus casos ·
-//   un envío fallido que no rearma el reintento (o sin espaciarlo) · lib/patrocinio.ts (dinero) importando ./cuenta otra vez · la puerta trayendo entroPatrocinado de lib/patrocinio (CI 45071274895).
+//   un envío fallido que no rearma el reintento (o sin espaciarlo) · «en camino» que no caduca (o tarda 60 s) · vaciar que no arma el siguiente
+//   intento · el reintento con keepalive (o el primero sin él) · «en camino» atado a que la promesa termine (.finally) · lib/patrocinio.ts (dinero) importando ./cuenta otra vez · la puerta trayendo entroPatrocinado de lib/patrocinio (CI 45071274895).
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ, G = 'toqueSobreviveSalida';
@@ -31,25 +32,30 @@ const casos = [
   [AC, '/* «Avísame cuando haya»', 'export async function tocar(id: string): Promise<void> {\n  if (!(await mismoOrigen())) return;\n  await db().query("insert into contact_taps (business_id, kind) values ($1, \'call\')", [id]);\n}\n\n/* «Avísame cuando haya»', 'escribe contact_taps fuera de lib/toques.ts'],
   [TN, 'const hacer = (a: Accion) => () => {', 'const hacer = (a: Accion) => async () => {', 'espera a contarToque antes de seguir', TN, 'contarToque(b.id, "call", origen);\n      location.href', 'await contarToque(b.id, "call", origen);\n      location.href'],
   [CT, 'navigator.sendBeacon(RUTA, new Blob', 'navigator.vibrate?.(0) && (RUTA, new Blob', 'el toque sale con navigator.sendBeacon'],
-  [CT, 'keepalive: true, credentials', 'keepalive: false, credentials', 'sin sendBeacon, el toque sale con fetch y keepalive: true'],
+  [CT, '  if (!enCola) enviar(p, true);', '  if (!enCola) enviar(p);', 'sin sendBeacon, el toque sale con fetch y keepalive: true'],
+  [CT, 'function enviar(p: Pendiente, keepalive = false): void {', 'function enviar(p: Pendiente, _k = false): void {\n  const keepalive = true; void _k;', 'sin sendBeacon, el toque sale con fetch y keepalive: true'],
   [CT, 'const RUTA = "/api/toque";', 'const RUTA = "/api/toques";', 'el toque va a /api/toque'],
   [CT, 'function mandar(d: Cuerpo): void {', 'async function mandar(d: Cuerpo): Promise<void> {\n  await Promise.resolve();', 'lib/contar-toque.ts no espera nada'],
   // La bandeja.
-  [CT, '  guardar(l.slice(-MAX_PENDIENTES));\n  let enCola = false;\n', '  let enCola = false;\n', BANDEJA, CT, '  if (!enCola) enviar(p);\n', '  guardar(l.slice(-MAX_PENDIENTES));\n  if (!enCola) enviar(p);\n'],
+  [CT, '  guardar(l.slice(-MAX_PENDIENTES));\n  let enCola = false;\n', '  let enCola = false;\n', BANDEJA, CT, '  if (!enCola) enviar(p, true);\n', '  guardar(l.slice(-MAX_PENDIENTES));\n  if (!enCola) enviar(p, true);\n'],
   [CT, 'if (l.length) sessionStorage.setItem(LLAVE, JSON.stringify(l)); else ', '', BANDEJA],
   [CT, 'const REINTENTO_MS = 1500;', 'const REINTENTO_MS = 30000;', REINT],
-  [CT, '  if (!enCola) enviar(p);\n  programar();\n', '  if (!enCola) enviar(p);\n', REINT],
+  [CT, '  if (!enCola) enviar(p, true);\n  programar();\n', '  if (!enCola) enviar(p, true);\n', REINT],
   [CT, '  window.addEventListener("pageshow", vaciar);\n', '', VOLVER],
   [CT, '  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") vaciar(); });\n', '', VOLVER],
   [CT, '  window.addEventListener("pageshow", vaciar);\n  vaciar();\n', '  window.addEventListener("pageshow", vaciar);\n', VOLVER],
   [AR, '  useEffect(() => iniciarBandeja(), []);\n', '  void iniciarBandeja;\n', 'el Arranque del marco raíz monta la bandeja'],
   [CT, 'const TOPE_MS = 9 * 60_000;', 'const TOPE_MS = 60 * 60_000;', 'la bandeja tira lo pendiente de más de 10 min'],
   [CT, 'v = memoria.filter((p) => ahora - p.h < TOPE_MS && p.h <= ahora + 60_000);', 'v = memoria.filter((p) => p.h <= ahora + 60_000);', 'la bandeja tira lo pendiente de más de 10 min'],
-  [CT, '.then((r) => { if (r.status === 204) { fallos = 0; quitar(p.t); }', '.then((r) => { if (r.status < 600) { fallos = 0; quitar(p.t); }', CONF],
-  [CT, '  if (!enCola) enviar(p);\n', '  if (!enCola) enviar(p); else quitar(p.t);\n', CONF],
-  [CT, '} else otraVez(); }, otraVez)', '} }, () => undefined)', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
-  [CT, 'catch { enVuelo.delete(p.t); otraVez(); }', 'catch { enVuelo.delete(p.t); }', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
-  [CT, 'if (!reloj) programar(Math.min(REINTENTO_MS * 2 ** fallos, 60_000));', 'if (!reloj) programar(REINTENTO_MS);', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
+  [CT, 'if (r.status === 204) { fallos = 0; quitar(p.t); }', 'if (r.status < 600) { fallos = 0; quitar(p.t); }', CONF],
+  [CT, '  if (!enCola) enviar(p, true);\n', '  if (!enCola) enviar(p, true); else quitar(p.t);\n', CONF],
+  [CT, '}, () => { soltar(); otraVez(); })', '}, () => soltar())', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
+  [CT, 'catch { soltar(); otraVez(); }', 'catch { soltar(); }', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
+  [CT, 'if (!reloj) programar(Math.min(REINTENTO_MS * fallos, 60_000));', 'if (!reloj) programar(REINTENTO_MS);', 'un envío que falla (abortado, sin red, 5xx) rearma el reintento'],
+  [CT, '  if (antes !== undefined && ahora - antes < EN_VUELO_MS) return;\n', '  if (antes !== undefined) return;\n', 'el reintento no depende de que el envío anterior termine'],
+  [CT, 'const EN_VUELO_MS = 4000;', 'const EN_VUELO_MS = 60000;', 'el reintento no depende de que el envío anterior termine'],
+  [CT, '  for (const p of l) enviar(p);\n  if (l.length) otraVez();\n', '  for (const p of l) enviar(p);\n', 'el reintento no depende de que el envío anterior termine'],
+  [CT, 'const soltar = () => { if (enVuelo.get(p.t) === ahora) enVuelo.delete(p.t); };', 'const soltar = () => undefined;', 'el reintento no depende de que el envío anterior termine', CT, '  } catch { soltar(); otraVez(); }\n}', '  } catch { soltar(); otraVez(); }\n  void Promise.resolve().finally(() => enVuelo.delete(p.t));\n}'],
   // Una sola pieza.
   [MA, 'contarToque(b.id, "directions", "mapa"); abrirComoLlegar(', 'void fetch("/api/toque", { method: "POST", body: JSON.stringify({ id: b.id, kind: "directions", origen: "mapa" }) }); abrirComoLlegar(', 'habla con /api/toque por su cuenta'],
   [PT, 'const entrar = (p: Patrocinada) => { contarEntradaPatrocinio("negocio", p.sid); };', 'const entrar = (p: Patrocinada) => { void entroPatrocinado("negocio", p.sid); };', PATR, PT, 'import { contarEntradaPatrocinio, contarToque } from "@/lib/contar-toque";', 'import { contarToque } from "@/lib/contar-toque";\nimport { entroPatrocinado } from "../../acciones-patrocinio";'],
