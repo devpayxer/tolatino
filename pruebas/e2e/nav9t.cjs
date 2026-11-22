@@ -24,7 +24,7 @@ const tocados = (p) => p.evaluate(() => { const L = [...document.querySelectorAl
       await p.goto(B + '/buscar?q=' + encodeURIComponent('Café Quisqueya'), { waitUntil: 'networkidle' });
       ok((await tocados(p)).n === 0 && (await p.locator('.tl-barra-nav').count()) === 0, `${nom} · sin navegar, nada está marcado y no existe la línea de arriba`);
       await p.route('**/*', async (r) => { const h = r.request().headers(); if (h['rsc'] === '1' && !h['next-router-prefetch']) await new Promise((x) => setTimeout(x, 2500)); await r.continue(); });
-      const fila = () => p.getByRole('button', { name: /Café\s*Quisqueya/ });
+      const fila = () => p.getByRole('button', { name: /^Café\s*Quisqueya$/ });
       const tarjeta = fila().first();
       await tarjeta.waitFor();
       await tarjeta.click({ noWaitAfter: true });
