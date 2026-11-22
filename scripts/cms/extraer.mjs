@@ -151,7 +151,8 @@ function exigidosPorGuardianes() {
 export async function cadenasE2(cadenas, errores) {
   const ts = createRequire(join(RAIZ, "package.json"))("typescript");
   // Sin repetidos: en medio de un merge, git ls-files --cached lista un archivo en conflicto una vez por etapa (3) y contaba sus llamadas tres veces (18 nov).
-  const archivos = [...new Set(execSync("git ls-files --cached --others --exclude-standard -- apps/web", { cwd: RAIZ, encoding: "utf8" }).split("\n"))]
+  // 22 nov · Con -z: sin él un nombre con ñ o acento sale entre comillas y con escapes, y el archivo no se leía (guardián gitListaConZ).
+  const archivos = [...new Set(execSync("git ls-files -z --cached --others --exclude-standard -- apps/web", { cwd: RAIZ, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).split("\0"))]
     .filter((f) => /\.(ts|tsx)$/.test(f) && !/\.d\.ts$/.test(f) && existsSync(join(RAIZ, f)));
   const pares = new Map(); // par → {es, en, n, donde: Map(archivo → n)}
   for (const f of archivos) {

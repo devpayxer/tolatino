@@ -37,7 +37,8 @@ export const sinComentarios = (t) => t.replace(/\/\*(?=["'`])/g, "/_").replace(/
 
 /* Los archivos de apps/web que pueden definir un E2 (los de git y los nuevos que aún no lo están). */
 export function archivosWeb() {
-  return execSync("git ls-files --cached --others --exclude-standard -- apps/web", { cwd: RAIZ, encoding: "utf8" }).split("\n")
+  // 22 nov · Con -z (un nombre con ñ o acento no sale entre comillas; guardián gitListaConZ).
+  return execSync("git ls-files -z --cached --others --exclude-standard -- apps/web", { cwd: RAIZ, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).split("\0")
     .filter((f) => /\.(ts|tsx)$/.test(f) && !/\.d\.ts$/.test(f) && f !== MODULO && existsSync(join(RAIZ, f)));
 }
 

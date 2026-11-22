@@ -28,7 +28,9 @@ if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|cuentaBorradaBili
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
-const archivos = [...new Set(execSync("git ls-files --cached --others --exclude-standard", { encoding: "utf8" }).split("\n"))].filter((f) => f && existsSync(f)); // sin repetidos: en un merge con conflicto ls-files repite el archivo por etapa
+// 22 nov · Con -z: sin él git devuelve un nombre con ñ o acento entre comillas y con escapes («"apps/web/lib/zz-se\303\261al.ts"»), existsSync
+// da falso y NINGÚN guardián lo miraba (una clave sk_live en apps/web/lib/zz-señal.ts pasaba «secretos»). Guardián gitListaConZ.
+const archivos = [...new Set(execSync("git ls-files -z --cached --others --exclude-standard", { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 }).split("\0"))].filter((f) => f && existsSync(f)); // sin repetidos: en un merge con conflicto ls-files repite el archivo por etapa
 // .github/ también: un flujo de CI podría apuntar la semilla o un secreto a producción (5 nov: no se revisaba).
 const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
@@ -710,7 +712,9 @@ const guardianes = {
      se escribe o se lee donde toca (crear la cita, el detalle del panel, el borrado a los 30 días): nunca en avisos, correos,
      logs ni el Super Admin. */
   privacidadSalud() {
-    for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
+    // 22 nov · Solo las .sql (lo que migrar.sh aplica), como las demás lecturas de esa carpeta: una carpeta dentro de migrations tumbaba la
+    // pasada completa con EISDIR en vez de un renglón.
+    for (const f of readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
     const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts", "apps/web/lib/pases/pases.ts", "apps/web/lib/equipo/dos-pasos.ts", "apps/web/lib/sms/index.ts"]); // 9l: el teléfono y el texto cifrados de un SMS se abren solo para mandarlo (el único camino de los SMS) // 9j: el secreto del TOTP del equipo se abre solo para comprobar un código // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios) // 8g: el token de push del teléfono de Wallet (pass_devices.push_token_enc), solo para mandarle el aviso de cambio
@@ -8220,6 +8224,23 @@ const guardianes = {
     if (/\n    name: [^\n]*nada saltado/.test(tu) || !tu.includes('"CORRIÓ: " + (corrio.join(", ") || "nada")') || !tu.includes('"NO CORRIÓ: " + (noCorrio.join(", ") || "nada")')
       || !tu.includes('"esta corrida NO es una pasada completa: la regresión entera o los dispositivos no corrieron en ella"') || !/for \(const l of lineas\) \{ console\.log\(l\); console\.log\("::notice::" \+ l\); \}/.test(tu) || !/GITHUB_STEP_SUMMARY/.test(tu))
       falla(G, Y, 0, "«tuberia» no promete «nada saltado» y su resumen dice con todas las letras qué corrió, qué no corrió y si fue una pasada completa (registro, avisos y resumen de la corrida)");
+  },
+
+  /* 22 nov · La lista de archivos de git con -z. Sin él, git devuelve un nombre con ñ, acento o comillas entre comillas y con escapes
+     («"apps/web/lib/zz-se\303\261al.ts"»): existsSync da falso y el archivo desaparece de la lista sin aviso. Así ningún guardián miraba un archivo
+     con acento en el nombre (una clave sk_live en apps/web/lib/zz-señal.ts pasaba «secretos»). Caza la orden de listar sin -z en el código del
+     repo. PENDIENTES: los que este cambio no podía tocar (apps/ y una prueba que pide la base); salen como aviso hasta que se arreglen. Al revés:
+     alreves9vd. */
+  gitListaConZ() {
+    const G = "gitListaConZ", ORDEN = new RegExp("\\bgit\\b[^\\n]*?\\bls" + "-files\\b");
+    const PENDIENTES = { "apps/mobile/scripts/version.mjs": "huellaNativa", "pruebas/e2e/sql9u.cjs": "consultas", "pruebas/infra/traza-sandbox.sh": "la copia del árbol nuevo" };
+    for (const f of archivos) {
+      if (!/^(apps|packages|services|guardianes|scripts|pruebas|infra|\.github)\//.test(f) || !/\.(m?[jt]sx?|cjs|sh|ya?ml)$/.test(f) || f.includes("node_modules")) continue;
+      const t = /\.(sh|ya?ml)$/.test(f) ? readFileSync(f, "utf8").replace(/^\s*#.*$/gm, "") : sinComent(f);
+      const malas = t.split("\n").map((l, i) => [l, i + 1]).filter(([l]) => ORDEN.test(l) && !/(^|\s|["'`,[])-z(\s|["'`,\]]|$)/.test(l));
+      if (PENDIENTES[f]) { if (malas.length) avisos.push(`[${G}] ${f}:${malas[0][1]} — pendiente: lista los archivos de git sin -z (${PENDIENTES[f]}); un nombre con acento no se ve`); else falla(G, f, 0, "ya lista con -z: quita la excepción de PENDIENTES"); continue; }
+      for (const [, n] of malas) falla(G, f, n, "lista los archivos de git sin -z: un nombre con ñ, acento o comillas sale entre comillas y con escapes y desaparece de la lista (usa -z y separa por \\0)");
+    }
   },
 
   /* 9b-3 · Ningún tope por minuto (o por segundo) ni corta-circuito en la memoria de un proceso de la app (LAUNCH L685, L699, L1235, L1302): con

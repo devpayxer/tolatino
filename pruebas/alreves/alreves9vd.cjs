@@ -242,6 +242,47 @@ for (const [f, a, b, msg] of casos) {
   const l = soloTextos ? lineas[0] : lineas.find((x) => x.includes(msg));
   caso(!!l, `${G} al revés (${path.basename(f)}: «${msg}»)`, l ? l.trim().slice(0, 200) : lineas.length ? 'otro mensaje: ' + lineas[0].trim().slice(0, 160) : 'el guardián no falló');
 }
+// 22 nov · Los guardianes ven los archivos con ñ o acento en el nombre (la lista de git con -z; guardián gitListaConZ), y una carpeta dentro
+// de packages/db/migrations ya no tumba la pasada (privacidadSalud solo lee las .sql).
+{
+  const solo = (g) => { try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe' }); return { codigo: 0, err: '' }; } catch (e) { return { codigo: e.status, err: String(e.stderr) }; } };
+  const LZ = 'git ls' + '-files';
+  const mut = [
+    ['guardianes/run.mjs', `execSync("${LZ} -z --cached --others --exclude-standard", { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 }).split("\\0")`, `execSync("${LZ} --cached --others --exclude-standard", { encoding: "utf8" }).split("\\n")`],
+    ['scripts/cms/extraer.mjs', `execSync("${LZ} -z --cached --others --exclude-standard -- apps/web"`, `execSync("${LZ} --cached --others --exclude-standard -- apps/web"`],
+    ['scripts/cms/e2-al-cms.mjs', `execSync("${LZ} -z --cached --others --exclude-standard -- apps/web"`, `execSync("${LZ} --cached --others --exclude-standard -- apps/web"`],
+  ];
+  for (const [f, a, b] of mut) {
+    const ruta = path.join(R, f), orig = fs.readFileSync(ruta, 'utf8');
+    if (!orig.includes(a)) { total++; console.log(`  ✗ gitListaConZ: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
+    fs.writeFileSync(ruta, orig.replace(a, () => b));
+    let r; try { r = solo('gitListaConZ'); } finally { fs.writeFileSync(ruta, orig); }
+    const l = r.err.split('\n').find((x) => x.trim().startsWith(`[gitListaConZ] ${f}:`));
+    caso(!!l, `gitListaConZ al revés (${path.basename(f)} lista sin -z)`, l ? l.trim().slice(0, 160) : 'el guardián no falló');
+  }
+  if (!soloTextos) {
+    // Una clave de Stripe en un archivo con ñ en el nombre: «secretos» tiene que verla (antes salía con código 0).
+    const F = 'apps/web/lib/zz-señal.ts', ruta = path.join(R, F);
+    fs.writeFileSync(ruta, `export const k = "${'sk_' + 'live_' + 'Q'.repeat(24)}";\n`);
+    let r; try { r = solo('secretos'); } finally { fs.unlinkSync(ruta); }
+    const l = r.err.split('\n').find((x) => x.trim().startsWith(`[secretos] ${F}:1`));
+    caso(r.codigo === 1 && !!l, 'secretos ve una clave en un archivo con ñ en el nombre (apps/web/lib/zz-señal.ts)', l ? l.trim().slice(0, 120) : `salió ${r.codigo}`);
+    // Una carpeta dentro de packages/db/migrations: privacidadSalud no revienta; y si vuelve a leer todo lo de la carpeta, revienta (al revés).
+    const D = path.join(R, 'packages/db/migrations/zz-carpeta');
+    fs.mkdirSync(D);
+    try {
+      const r1 = solo('privacidadSalud');
+      caso(r1.codigo === 0, 'privacidadSalud con una carpeta dentro de packages/db/migrations: sin fallos y sin EISDIR', r1.codigo === 0 ? '' : r1.err.split('\n').find((x) => x.trim()) ?? `salió ${r1.codigo}`);
+      const ruta2 = path.join(R, 'guardianes/run.mjs'), orig = fs.readFileSync(ruta2, 'utf8'), a = 'readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).map((x) => `packages/db/migrations/${x}`)';
+      if (!orig.includes(a)) { total++; console.log('  ✗ privacidadSalud: no encontré el texto a cambiar en run.mjs'); }
+      else {
+        fs.writeFileSync(ruta2, orig.replace(a, () => 'readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)'));
+        let r2; try { r2 = solo('privacidadSalud'); } finally { fs.writeFileSync(ruta2, orig); }
+        caso(r2.codigo !== 0 && /EISDIR/.test(r2.err), 'privacidadSalud al revés (lee también lo que no es .sql): la carpeta la tumba con EISDIR', `salió ${r2.codigo}`);
+      }
+    } finally { fs.rmdirSync(D); }
+  }
+}
 let limpio = true;
 try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);

@@ -9,7 +9,7 @@ const DIR = __dirname, RAIZ = path.join(DIR, '..', '..');
 const archivos = fs.readdirSync(DIR).filter((f) => /^alreves.*\.cjs$/.test(f)).sort();
 const PRE = path.join(DIR, '..', 'lib', 'alreves-sin-guardian.cjs');
 let malos = 0, sinCasos = 0;
-const antes = spawnSync('git', ['status', '--porcelain'], { cwd: RAIZ, encoding: 'utf8' }).stdout;
+const antes = spawnSync('git', ['status', '--porcelain', '-z'], { cwd: RAIZ, encoding: 'utf8' }).stdout;
 for (const f of archivos) {
   const r = spawnSync(process.execPath, ['-r', PRE, path.join(DIR, f)], { cwd: RAIZ, encoding: 'utf8', timeout: 120000, env: { ...process.env, ALREVES_SOLO_TEXTOS: '1' } });
   const out = `${r.stdout || ''}\n${r.stderr || ''}`;
@@ -19,7 +19,7 @@ for (const f of archivos) {
   if (!/defectos cazados|✓/.test(out) && !rotos.length) sinCasos++;
 }
 // Ninguna prueba deja un archivo cambiado (cada una restaura lo que toca).
-const despues = spawnSync('git', ['status', '--porcelain'], { cwd: RAIZ, encoding: 'utf8' }).stdout;
-if (antes !== despues) { malos++; console.log('✗ una prueba al revés dejó el árbol distinto de como estaba:\n' + despues); }
+const despues = spawnSync('git', ['status', '--porcelain', '-z'], { cwd: RAIZ, encoding: 'utf8' }).stdout;
+if (antes !== despues) { malos++; console.log('✗ una prueba al revés dejó el árbol distinto de como estaba:\n' + despues.split('\0').join('\n')); }
 console.log(`${malos ? '✗' : '✓'} textos de las pruebas al revés: ${archivos.length} archivos · ${malos} caso(s) sin su texto${sinCasos ? ` · ${sinCasos} con otro formato (no se miran aquí)` : ''}`);
 process.exit(malos ? 1 : 0);
