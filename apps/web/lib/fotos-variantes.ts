@@ -43,14 +43,15 @@ export async function variantesDe(maestra: Buffer, anchoMaestra: number): Promis
 }
 
 /* Todas las llaves de variantes que pueden existir de una maestra (la purga de una cuenta las saca junto con la maestra). F3: también las de una
-   foto de destino privado (privado/o/<uuid>.jpg → privado/o/<uuid>.w<ancho>.webp; lib/fotos-privadas.ts). */
-const MAESTRA_PRIVADA = new RegExp(`^privado/o/(${UUID})\\.jpg$`);
+   foto de destino privado (privado/o/<uuid>.jpg → privado/o/<uuid>.w<ancho>.webp; lib/fotos-privadas.ts) y, F3b, las de las otras rutas privadas
+   (Mensajes privado/m/, ayuda privado/a/, entrega privado/e/, reclamo privado/r/), con su variante al lado de su maestra. */
+const MAESTRA_PRIVADA = new RegExp(`^privado/([oamer])/(${UUID})\\.jpg$`);
 export function clavesVariantes(claveMaestra: string, ancho?: number | null, hechos?: number[] | null): string[] {
   const m = MAESTRA.exec(claveMaestra), p = MAESTRA_PRIVADA.exec(claveMaestra);
   if (!m && !p) return [];
   const ws = new Set<number>([...ANCHOS, ...(hechos ?? [])]);
   if (ancho && ancho > 0 && ancho < MAX) ws.add(Math.floor(ancho));
-  return [...ws].sort((a, b) => a - b).map((w) => (m ? claveVariante(m[1]!, w) : `privado/o/${p![1]}.w${w}.webp`));
+  return [...ws].sort((a, b) => a - b).map((w) => (m ? claveVariante(m[1]!, w) : `privado/${p![1]}/${p![2]}.w${w}.webp`));
 }
 
 type Resultado = "ok" | "ilegible" | "sin_maestra" | "fallo";

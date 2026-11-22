@@ -53,5 +53,12 @@ ok(fotoSrc(`/api/medios/revision/${id}`, 400) === `/api/medios/revision/${id}` &
 ok(fotoFondo(priv, 400) === `url("${priv}?w=1080")` && fotoCss(`url(${priv}) center/cover`, 160) === `url("${priv}?w=320") center/cover`, 'privada: fotoFondo y fotoCss piden el ancho');
 ok(fotoSrcSet(priv) === [320, 640, 1080, 1600].map((n) => `${priv}?w=${n} ${n}w`).join(', '), 'privada: fotoSrcSet lista los cuatro anchos');
 
+// F3b (22 nov) · Las privadas de las otras rutas piden su variante a SU MISMA ruta (?w=), cada una con su permiso.
+for (const [nom, u] of [['mensajes', `/api/mensajes/foto/${id}`], ['ayuda', `/api/ayuda/foto/${id}`], ['entrega', `/api/entrega/foto/${id}`], ['reclamo', '/api/admin/reclamo/CL-1234']]) {
+  ok(fotoSrc(u, 180) === `${u}?w=640` && fotoFondo(u, 60) === `url("${u}?w=320")` && fotoCss(`url(${u}) center/cover`, 540) === `url("${u}?w=1080") center/cover`, `F3b: ${nom}: la caja pide su ancho en la misma ruta`);
+  ok(fotoSrc(u) === u && fotoSrc(`${u}?w=320`, 400) === `${u}?w=320` && fotoSrc(`${u}/x`, 400) === `${u}/x`, `F3b: ${nom}: sin caja, ya pedida o con algo detrás, sin cambio`);
+}
+ok(fotoSrc('/api/mensajes/foto/abc', 180) === '/api/mensajes/foto/abc' && fotoSrc('/api/admin/reclamo/42', 180) === '/api/admin/reclamo/42' && fotoSrc('/api/ayuda/fotos/' + id, 180) === '/api/ayuda/fotos/' + id, 'F3b: lo que no es una de esas rutas pasa sin cambio');
+
 console.log(`\n${mal === 0 ? 'foto.ts: todo en orden' : mal + ' comprobaciones fallaron'}`);
 process.exit(mal ? 1 : 0);

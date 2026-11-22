@@ -1,7 +1,7 @@
 /* Fotos a la medida (F2a) · Una foto pública nuestra vive en `/medios/n/<uuid>.jpg`; el servidor ofrece variantes WebP en
    `/medios/n/<uuid>.w<W>.webp` (W = 320, 640, 1080, 1600) y, si falta una, contesta el JPEG original en esa misma dirección: pedir
    cualquiera de los cuatro anchos es siempre seguro. Aquí se elige el ancho que le toca a una caja. Todo lo demás (fotos de afuera,
-   llaves privadas de Mensajes y ayuda, carteles de video, data:, blob:, variantes ya pedidas, vacío) pasa SIN CAMBIO. TypeScript plano: sin React ni dependencias. */
+   llaves privadas sueltas, carteles de video, data:, blob:, variantes ya pedidas, vacío) pasa SIN CAMBIO. TypeScript plano: sin React ni dependencias. */
 export const ANCHOS_FOTO = [320, 640, 1080, 1600] as const;
 
 const NUESTRA = /^\/medios\/n\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jpg$/;
@@ -9,8 +9,10 @@ const NUESTRA = /^\/medios\/n\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-
 const variante = (id: string, w: number) => `/medios/n/${id}.w${w}.webp`;
 
 /* F3 · Una foto de destino privado (la de una cita, una mudanza, la balanza…) vive en `/api/medios/privada/<uuid>`: la ruta decide quién la ve y,
-   con `?w=<ancho>`, entrega la variante de ese ancho con el MISMO permiso (o la maestra si falta). Se le pide igual que a una pública. */
-const PRIVADA = /^\/api\/medios\/privada\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+   con `?w=<ancho>`, entrega la variante de ese ancho con el MISMO permiso (o la maestra si falta). Se le pide igual que a una pública.
+   F3b (22 nov) · Lo mismo las privadas de las otras rutas, cada una con su permiso: Mensajes (/api/mensajes/foto/<uuid>), ayuda de Salud y Pro y
+   casos de Soporte (/api/ayuda/foto/<uuid>), entrega (/api/entrega/foto/<uuid>) y el documento de un reclamo (/api/admin/reclamo/CL-<n>). */
+const PRIVADA = /^\/api\/(?:(?:medios\/privada|mensajes\/foto|ayuda\/foto|entrega\/foto)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|admin\/reclamo\/CL-\d{1,12})$/;
 
 /* La dirección de la variante más chica que alcanza para `caja` (el ancho de la caja en px CSS) en pantallas de doble densidad, con tope en 1600. */
 export function fotoSrc(url: string | null | undefined, caja?: number | null): string {
