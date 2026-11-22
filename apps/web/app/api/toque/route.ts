@@ -8,9 +8,13 @@ import { entroPatrocinado } from "@/lib/patrocinio-entrada";
    pedidos: { id, kind, origen } (un negocio) o { semilla, origen } (una semilla, siempre «call»), y { entro, patrocinio } (el «entraron» de un
    patrocinio, C-002 / C-003, que antes era una acción del servidor y se perdía igual; sus reglas, las de lib/patrocinio-entrada.ts · entroPatrocinado).
    La respuesta no dice si se contó (204 siempre); solo confirma que llegó: la bandeja de lib/contar-toque.ts deja de reintentar con ese 204.
-   Si la base falla, la ruta falla (500) y la bandeja reintenta. Sin GET. */
+   Si la base falla, la ruta falla (500) y la bandeja reintenta. Sin GET.
+   22 nov (0211) · Cada una de las tres puede traer además «toque»: el id del toque en la bandeja (un uuid), que la base usa para no contar dos
+   veces el mismo toque aunque llegue desde otra red (contact_taps.tap_key, sponsorship_entries.tap_key, únicos). Opcional: una página vieja
+   abierta no lo manda y cuenta como antes. Si viene y no es un uuid, no se cuenta nada. */
 export const dynamic = "force-dynamic";
 const MAX = 512;
+const TOQUE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const nada = () => new NextResponse(null, { status: 204, headers: { "cache-control": "no-store" } });
 
 async function leer(req: NextRequest): Promise<string | null> {
@@ -34,9 +38,11 @@ export async function POST(req: NextRequest) {
   let c: unknown = null;
   try { c = t ? JSON.parse(t) : null; } catch { c = null; }
   if (!c || typeof c !== "object" || Array.isArray(c)) return nada();
-  const x = c as Record<string, unknown>, claves = Object.keys(x).sort().join(",");
-  if (claves === "id,kind,origen" && typeof x.origen === "string" && typeof x.id === "string" && typeof x.kind === "string") await contarToque(x.id, x.kind, x.origen);
-  else if (claves === "origen,semilla" && typeof x.origen === "string" && typeof x.semilla === "string") await contarToqueSemilla(x.semilla, x.origen);
-  else if (claves === "entro,patrocinio" && (x.entro === "negocio" || x.entro === "evento") && typeof x.patrocinio === "string") await entroPatrocinado(x.entro, x.patrocinio);
+  const { toque, ...x } = c as Record<string, unknown>, claves = Object.keys(x).sort().join(",");
+  if (toque !== undefined && (typeof toque !== "string" || !TOQUE.test(toque))) return nada();
+  const k = typeof toque === "string" ? toque : null;
+  if (claves === "id,kind,origen" && typeof x.origen === "string" && typeof x.id === "string" && typeof x.kind === "string") await contarToque(x.id, x.kind, x.origen, k);
+  else if (claves === "origen,semilla" && typeof x.origen === "string" && typeof x.semilla === "string") await contarToqueSemilla(x.semilla, x.origen, k);
+  else if (claves === "entro,patrocinio" && (x.entro === "negocio" || x.entro === "evento") && typeof x.patrocinio === "string") await entroPatrocinado(x.entro, x.patrocinio, k);
   return nada();
 }

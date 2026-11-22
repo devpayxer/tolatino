@@ -14,8 +14,10 @@
       en WebKit un fetch con keepalive abortado no rechazaba su promesa, el toque quedaba «en camino» para siempre y nunca se reintentaba).
    3. Un pendiente con más de 9 min se tira: el servidor no cuenta otra vez a la misma persona (o red) en el mismo negocio durante 10 min, y el
       minuto de margen cubre la latencia, así un reintento nunca cae fuera de esa ventana y no puede contarse dos veces. Máx. 20 pendientes.
-   El cuerpo es el de siempre (el id del toque no viaja: la ventana de 10 min del servidor ya deduplica, y bajo concurrencia lo cierra un candado
-   en lib/toques.ts). Cuerpo de texto (sin preflight; el servidor lo lee como JSON y lo acota a 512 bytes). Las reglas están en el servidor. */
+   El cuerpo es el de siempre más «toque», el id del toque (un uuid; el mismo en el beacon y en cada reintento): la base no cuenta dos veces el
+   mismo toque (0211: contact_taps.tap_key y sponsorship_entries.tap_key, únicos), aunque la copia llegue desde otra red, donde la ventana de 10 min
+   del servidor no la ve. Un pendiente sin uuid (guardado por una versión anterior) sale sin «toque» y cuenta como antes. Cuerpo de texto (sin
+   preflight; el servidor lo lee como JSON y lo acota a 512 bytes). Las reglas están en el servidor. */
 import { uuid } from "./uuid";
 
 export type Toque = "call" | "whatsapp" | "directions" | "share" | "calendar" | "copy" | "message";
@@ -73,6 +75,10 @@ function vigentes(): Pendiente[] {
 
 function quitar(t: string): void { guardar(vigentes().filter((p) => p.t !== t)); }
 
+/* Lo que viaja: el cuerpo guardado y, si su id es un uuid, el id del toque («toque»). Igual en el beacon y en cada reintento. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const cuerpo = (p: Pendiente): string => JSON.stringify(UUID.test(p.t) ? { ...p.d, toque: p.t } : p.d);
+
 /* Un envío por fetch: el primero (sin beacon) con keepalive, para que sobreviva a la salida; los reintentos, normales. Si la página sigue viva,
    su 204 confirma y el pendiente sale de la bandeja. Un envío sin respuesta en 4 s deja de estar «en camino» y vuelve a mandarse (su promesa
    puede no terminar nunca: CI 45071274895). Si falla (abortado, sin red, un 5xx), se adelanta el siguiente intento. */
@@ -82,7 +88,7 @@ function enviar(p: Pendiente, keepalive = false): void {
   enVuelo.set(p.t, ahora);
   const soltar = () => { if (enVuelo.get(p.t) === ahora) enVuelo.delete(p.t); };
   try {
-    void fetch(RUTA, { method: "POST", body: JSON.stringify(p.d), keepalive, credentials: "same-origin", cache: "no-store", headers: { "content-type": "text/plain;charset=UTF-8" } })
+    void fetch(RUTA, { method: "POST", body: cuerpo(p), keepalive, credentials: "same-origin", cache: "no-store", headers: { "content-type": "text/plain;charset=UTF-8" } })
       .then((r) => { soltar(); if (r.status === 204) { fallos = 0; quitar(p.t); } else otraVez(); }, () => { soltar(); otraVez(); });
   } catch { soltar(); otraVez(); }
 }
@@ -124,7 +130,7 @@ function mandar(d: Cuerpo): void {
   guardar(l.slice(-MAX_PENDIENTES));
   let enCola = false;
   try {
-    enCola = typeof navigator.sendBeacon === "function" && navigator.sendBeacon(RUTA, new Blob([JSON.stringify(d)], { type: "text/plain;charset=UTF-8" }));
+    enCola = typeof navigator.sendBeacon === "function" && navigator.sendBeacon(RUTA, new Blob([cuerpo(p)], { type: "text/plain;charset=UTF-8" }));
   } catch { enCola = false; }
   if (!enCola) enviar(p, true);
   programar();

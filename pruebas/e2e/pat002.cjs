@@ -117,11 +117,36 @@ let OP = null;
     await pw.goto(B + '/c/comida');
     ok(await espera(async () => (await pw.locator(`[data-patrocinada="${SID}"]`).count()) > 0), 'otro visitante (sin cuenta) ve la tarjeta');
     await pw.evaluate(() => { navigator.sendBeacon = () => true; });
+    const enviados = [];
+    const verEnvio = (r) => { if (r.url().endsWith('/api/toque') && r.method() === 'POST') enviados.push(r.postData() ?? ''); };
+    pw.on('request', verEnvio);
     await pw.locator(`[data-patrocinada="${SID}"]`).click();
     await pw.waitForURL(new RegExp(`/n/${BIZ}`));
     ok(await espera(async () => sql(`select entries from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '2'), 'su primer envío se pierde: «entraron» 2 igual (lo manda el reintento de la bandeja)');
     await pw.waitForTimeout(2500);
     ok(sql(`select entries from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`) === '2' && await pw.evaluate(() => sessionStorage.getItem('tl-toques-pendientes')) === null, 'y una sola vez (la bandeja queda vacía)');
+    pw.off('request', verEnvio);
+    // 0211 · Un toque, una fila. El «entraron» lleva el id del toque de la bandeja («toque», el mismo en cada envío) y la base no cuenta dos veces el
+    // mismo toque (sponsorship_entries.tap_key, único), llegue con la persona, el dispositivo, la red o el día que sea. Sus reglas no cambian (una
+    // vez por persona o dispositivo y día): por eso, para verlo, la misma copia se manda desde OTRO dispositivo (otro navegador, con su cookie
+    // tl_dev) y desde otra red (x-real-ip), y al día siguiente (la fila del día anterior se pone en la base: el reloj no se puede mover).
+    const KT = (() => { try { return JSON.parse(enviados[0] ?? '').toque; } catch { return null; } })();
+    ok(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(KT ?? '') && enviados.every((x) => { try { return JSON.parse(x).toque === KT; } catch { return false; } }), `el «entraron» lleva el id del toque, el mismo en cada envío (${enviados.length})`);
+    ok(sql(`select count(*) from sponsorship_entries where kind = 'negocio' and ref_id = ${SID} and tap_key = '${KT}' and user_id is null`) === '1', '… y la base lo guarda con su fila');
+    const pz = await nueva(390, 844);
+    await pz.goto(B + '/c/comida');
+    const desde = (cuerpo, ip) => pz.evaluate(([cuerpo, ip]) => fetch('/api/toque', { method: 'POST', body: JSON.stringify(cuerpo), headers: { 'content-type': 'text/plain;charset=UTF-8', 'x-real-ip': ip } }).then((r) => r.status), [cuerpo, ip]);
+    const entraron = () => sql(`select entries from sponsorship_stats where kind = 'negocio' and ref_id = ${SID}`);
+    const r1 = await desde({ entro: 'negocio', patrocinio: SID, toque: KT }, '198.51.100.21');
+    await pz.waitForTimeout(500);
+    ok(r1 === 204 && entraron() === '2', `el mismo «entraron» desde otro dispositivo y otra red, con el mismo id: sigue en 2 (${r1})`);
+    const r2 = await desde({ entro: 'negocio', patrocinio: SID }, '198.51.100.22');
+    ok(r2 === 204 && await espera(async () => entraron() === '3'), 'sin el id (una página vieja abierta), otro dispositivo cuenta como siempre: 3 (las reglas no cambian)');
+    const DEV = require('crypto').randomUUID(), KD = require('crypto').randomUUID();
+    sql(`insert into sponsorship_entries (kind, ref_id, device, day, at, tap_key) values ('negocio', ${SID}, '${DEV}', (now() at time zone 'America/New_York')::date - 1, now() - interval '5 minutes', '${KD}')`);
+    ok(sql(`select patrocinio_entro_toque('negocio', ${SID}, null, '${DEV}', '${KD}')`) === 'f' && entraron() === '3', 'el mismo «entraron» al día siguiente (un reintento que cruza la medianoche), con el mismo id: no cuenta otra vez');
+    ok(sql(`select patrocinio_entro_toque('negocio', ${SID}, null, '${DEV}', gen_random_uuid())`) === 't' && entraron() === '4', '… y un toque nuevo de ese dispositivo ese día sí cuenta (una vez por dispositivo y día, como siempre)');
+    ok(sql(`select patrocinio_entro('negocio', ${SID}, null, '${DEV}')`) === 'f' && entraron() === '4', '… y patrocinio_entro (la de lib/patrocinio.ts) sigue igual: ese dispositivo ya contó hoy');
     const U = sql(`select id from users where phone = '+1${VEC}'`);
     OP = `PAT${Date.now() % 1e9}`;
     sql(`insert into operations (number, kind, city_id, business_id, user_id, pay_mode, client_key) values ('${OP}', 'order', 'hzl', '${BIZ}', '${U}', 'local', gen_random_uuid())`);

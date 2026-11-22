@@ -252,6 +252,42 @@ const cerca = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       ok(await espera(async () => (await pendientes()) === null), 'un pendiente viejo se tira (más de 10 min)');
       await pv.waitForTimeout(2000);
       ok(cuantos('hoy') === '0', '… y no se manda');
+      // (f) 0211 · El mismo toque desde otra red: una persona SIN sesión cuyo primer envío llegó (y contó), cuyo reintento falló y que vuelve desde
+      // OTRA red (otra IP). La ventana de 10 min es por red para quien no tiene sesión, así que antes contaba dos veces. Ahora el id del toque viaja
+      // («toque», el mismo en cada envío) y la base no escribe otra fila con el mismo id (contact_taps.tap_key, único). La red se simula con la
+      // cabecera x-real-ip, que es lo que lee ipCliente (lib/cuenta.ts) detrás del proxy: cada petición a /api/toque sale con la IP que se le pone.
+      const red = (n) => `198.51.${100 + (Number(k) % 50)}.${n}`;
+      const cSin = await ctxDe(390, 844, true), ps = await pagina(cSin);
+      await abrir(ps);
+      await ps.evaluate(() => { navigator.sendBeacon = undefined; }); // el primer envío sale por fetch con keepalive (se puede leer y cortar su respuesta)
+      const cuerpos = [], estados = [];
+      const otraRed = async (r) => {
+        const h = { ...r.request().headers() }, primera = cuerpos.length === 0;
+        cuerpos.push(r.request().postData() ?? '');
+        if (primera) { // llega al servidor desde la red A (cuenta) y la respuesta se pierde en el camino: la bandeja reintenta
+          const resp = await r.fetch({ headers: { ...h, 'x-real-ip': red(1) } }); estados.push(resp.status());
+          await r.fulfill({ status: 503, body: '' });
+        } else await r.continue({ headers: { ...h, 'x-real-ip': red(2) } }); // los reintentos, desde la red B
+      };
+      await ps.route('**/api/toque', otraRed);
+      await card(ps, 'video').locator('[data-llamar]').click();
+      ok(await espera(async () => cuerpos.length >= 2 && (await ps.evaluate(() => sessionStorage.getItem('tl-toques-pendientes'))) === null, 20000), `el mismo toque desde otra red: la red A lo recibió (${estados.join(', ')}), la respuesta se perdió y el reintento llegó desde la red B (la bandeja queda vacía)`);
+      const ids = cuerpos.map((x) => { try { return JSON.parse(x).toque; } catch { return null; } });
+      ok(ids.every((x) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(x ?? '') && x === ids[0]), `… cada envío lleva el mismo id del toque (${cuerpos.length} envíos, toque ${String(ids[0]).slice(0, 8)}…)`);
+      await ps.waitForTimeout(1000);
+      ok(cuantos('video') === '1' && sql(`select count(*) from contact_taps where tap_key = '${ids[0]}' and user_id is null and ip = '${red(1)}'`) === '1', '… y cuenta UNO (la fila de la red A, con su id)');
+      await ps.unroute('**/api/toque', otraRed);
+      // La misma copia mandada a mano desde dos redes más: con el mismo id, UNO; sin id (una página vieja abierta) cuenta como antes, y ahí se ve
+      // el hueco que cierra el id (dos redes, dos filas): así se sabe que la red simulada de verdad cuenta como otra red.
+      const desde = (ip, cuerpo) => ps.evaluate(([ip, cuerpo]) => fetch('/api/toque', { method: 'POST', body: JSON.stringify(cuerpo), headers: { 'content-type': 'text/plain;charset=UTF-8', 'x-real-ip': ip } }).then((r) => r.status), [ip, cuerpo]);
+      const kh = uuid();
+      const conId = [await desde(red(3), { id: NEG.hoy, kind: 'call', origen: 'buscar', toque: kh }), await desde(red(4), { id: NEG.hoy, kind: 'call', origen: 'buscar', toque: kh })];
+      ok(conId.every((x) => x === 204) && cuantos('hoy') === '1', `el mismo toque desde otra red, con el mismo id: UNO (${conId.join(', ')})`);
+      const sinId = [await desde(red(5), { id: NEG.cerrado, kind: 'call', origen: 'buscar' }), await desde(red(6), { id: NEG.cerrado, kind: 'call', origen: 'buscar' })];
+      ok(sinId.every((x) => x === 204) && sql(`select count(*) from contact_taps where business_id = '${NEG.cerrado}' and user_id is null`) === '2', 'sin id (una página vieja): cuenta como antes, una vez por red (dos redes, dos)');
+      const malo = await desde(red(7), { id: NEG.uno, kind: 'call', origen: 'buscar', toque: 'no-es-un-uuid' });
+      ok(malo === 204 && sql(`select count(*) from contact_taps where business_id = '${NEG.uno}' and user_id is null`) === '0', 'un id que no es un uuid: no cuenta nada (204)');
+      await ps.close();
       await abrir(pv);
       await card(pv, 'cinco').locator('[data-cta]').click();
       ok(await espera(async () => new URL(pv.url()).pathname === `/n/${NEG.cinco}`), 'el botón principal («Ordenar») abre la ficha, como decide el servidor');
