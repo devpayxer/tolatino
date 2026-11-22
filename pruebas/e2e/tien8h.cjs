@@ -9,6 +9,7 @@
 //     tamaño, producción rechazada. 4 · Las paredes de la base. 5 · Super Admin a 390 y 1360: Versiones en vivo, «Pedir un build» (sin token y con
 //     él: el workflow_dispatch con los inputs del flujo), Integraciones con las lecturas del CI y los intentos; Soporte no pide builds.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', REPO = ENT.RAIZ, TOKEN_BARRIDO = ENT.TOK;
 const GH = require(REPO + '/scripts/tiendas-sim/github.cjs'), ASC = require(REPO + '/scripts/tiendas-sim/sim.cjs'), PLAY = require(REPO + '/scripts/tiendas-sim/play.cjs');
@@ -199,7 +200,7 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
     r = await reg({ app: 'delivery', plataforma: 'android', canal: 'apk_propio', version: VERSION, build: BL, estado: 'fallo', motivo: 'Falló el CI (run 1)' }); ok(r.s === 200 && sql(`select status from app_builds where app = 'delivery' and channel = 'apk_propio' and build = ${BL}`) === 'fallo', 'el CI: falló, con motivo');
     // Tamaño.
     sql(`insert into platform_config (key, value, note) values ('tiendas_archivo_mb', '10', 'prueba 8h') on conflict (key) do update set value = excluded.value`);
-    await new Promise((x) => setTimeout(x, 16000));
+    await configLista();
     r = await reg({ app: 'checkin', plataforma: 'android', canal: 'apk_propio', version: VERSION, build: BL, estado: 'compilando' });
     const grande = zip(11 * 1048576); r = await ci(`/api/tiendas/archivo?tipo=apk&app=checkin&canal=apk_propio&build=${BL}`, conRun(), grande, { put: true, h: { 'x-tl-sha256': sha(grande) } });
     ok(r.s === 413, 'un archivo de 11 MB con el tope en 10 MB → 413');
@@ -258,7 +259,7 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
     await p390.screenshot({ path: OUT + 't8h-vivo-390.png', fullPage: true });
     // Tope de pedidos por hora.
     sql(`insert into platform_config (key, value, note) values ('tiendas_pedidos_hora', '2', 'prueba 8h') on conflict (key) do update set value = excluded.value`);
-    await new Promise((x) => setTimeout(x, 16000));
+    await configLista();
     await pa.goto(B + '/admin/sistema/apps?v=versiones'); await boton(pa, 'Pedir un build').click(); await boton(pa, 'Arreglo en lo nativo').click(); await boton(pa, 'Pedir el build').click();
     await pa.getByText('Ya se pidieron 2 builds en la última hora', { exact: false }).waitFor();
     ok(gh.lanzados.length === 1, 'el tope de pedidos por hora (Configuración) → no se lanza');

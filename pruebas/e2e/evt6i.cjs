@@ -229,7 +229,7 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     tarjeta(U2, '4242'); await m2.goto(B + `/privado/${E4}`); ok(await contiene(m2, 'TE MANDARON SU PROPUESTA') && !!(await vis(btn(m2, /Aceptar y pagar/))), 'la propuesta abierta, con «Aceptar y pagar», antes de que venza');
     // La propuesta vence (valid_until = el evento al mandarla): se adelanta a 5 s, ya con la página abierta (sin los triggers: solo la prueba).
     sql(`set session_replication_role = replica; update private_event_quotes set valid_until = now() + interval '5 seconds' where operation_id = (select id from operations where number = '${E4}')`);
-    await new Promise((r) => setTimeout(r, 8000));
+    await new Promise((r) => setTimeout(r, 8000)); // ESPERA-FIJA: la propuesta vence a los 5 s (valid_until = ahora + 5 s): es el reloj, no el servidor
     await clic(btn(m2, /Aceptar y pagar/));
     ok(await contiene(m2, 'ya venció') && sql(`select count(*) from payments p join operations o on o.id = p.operation_id where o.number = '${E4}'`) === '0', 'propuesta vencida: «ya venció», no se cobra nada');
     ok(sqlErr(`insert into private_event_acceptances (quote_id, operation_id, kind, user_id) select q.id, q.operation_id, 'quote', '${U2}' from private_event_quotes q join operations o on o.id = q.operation_id where o.number = '${E4}'`).includes('venció'), 'la base: aceptar una propuesta vencida → error');

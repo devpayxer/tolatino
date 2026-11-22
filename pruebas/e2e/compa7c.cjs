@@ -4,6 +4,7 @@
 // persona (IDOR con dos vecinas), dinero / seguridad / emergencia / cuenta antes del modelo, interruptores (nivel, canal, ciudad) y límites.
 // Más el Super Admin › El Compa (Interruptores y tope) en 390 y 1360 con capturas, la alerta en Inicio y los permisos por rol.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -30,7 +31,7 @@ const gastado = () => +sql(`select coalesce(spent_microusd, 0) from compa_spend_
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${uid(ADM)}', lift_reason = 'prueba compa7c' where lifted_at is null`);
   cfg('compa_msgs_hora', 200); cfg('compa_msgs_dia', 1000); cfg('compa_espera_ms', 2000); cfg('compa_tope_mes_cents', null); cfg('compa_turnos_max', 100); cfg('soporte_casos_dia_max', 50);
   sql(`update compa_spend_month set alert_cap_at = null, alert_pct_at = null where month = compa_mes()`);
-  await new Promise((r) => setTimeout(r, 16000));
+  await configLista();
   const br = await chromium.launch();
   const ctx = async (w = 390) => br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2 });
   const MU = uid(MARISOL), YU = uid(YARITZA);
@@ -250,7 +251,7 @@ const gastado = () => +sql(`select coalesce(spent_microusd, 0) from compa_spend_
   console.log('12 · Límite por persona');
   const ya = +sql(`select count(*) from compa_messages where user_id = '${MU}' and sender = 'user' and at > now() - interval '1 hour'`);
   cfg('compa_msgs_hora', ya);
-  await new Promise((rr) => setTimeout(rr, 16000));
+  await configLista();
   r = await turno(pm, '¿cómo reservo una mesa?');
   ok(!r.ok && r.limite && /muchos mensajes seguidos/.test(r.msg.es), `el mensaje ${ya + 1} de la hora → límite con «te paso con una persona»`);
   ok(sql(`select result from compa_usage where user_id = '${MU}' order by id desc limit 1`) === 'limit', 'el libro anota el límite (sin llamar al modelo)');

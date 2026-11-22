@@ -9,6 +9,7 @@
 // tocan el pase; evento de Fe → genérico; nada personal; los botones (iPhone: Apple · Android: Google · computadora: los dos); Eventos › boleto ›
 // WALLET. Deja los datos como estaban (eventos de prueba cancelados, llaves de prueba retiradas).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs'); const zlib = require('zlib');
 const { S, B, sql, api, entrar, uid, firmar } = require('../lib/g6-comun.cjs');
 const REPO = ENT.RAIZ, OUT = S + '/cap/';
@@ -341,7 +342,7 @@ const ws = async (metodo, ruta, token, cuerpo, extra = {}) => {
     ok((await pd.locator('[data-arte="provisional"]').count()) === (ipad ? 1 : 2), 'las insignias están marcadas como PROVISIONALES (el arte oficial espera las licencias)');
     await pd.screenshot({ path: OUT + 'w8g-boleto-escritorio-d.png', fullPage: true });
     // Interruptor apagado: no salen pases nuevos.
-    sql(`update feature_flags set enabled = false where key = 'app.wallet.apple'`); await new Promise((r) => setTimeout(r, 16000));
+    sql(`update feature_flags set enabled = false where key = 'app.wallet.apple'`); await configLista();
     await pd.goto(B + `/cuenta/boletos/${nuevo}`);
     // En el iPad solo se ofrece Apple Wallet (Google Wallet no existe ahí): con Apple apagado no queda ningún botón.
     ok(await espera(async () => (await pd.locator('[data-wallet="apple"]').count()) === 0 && (await pd.locator('[data-wallet="google"]').count()) === (ipad ? 0 : 1)), ipad ? 'app.wallet.apple apagado: en el iPad no queda botón de Wallet' : 'app.wallet.apple apagado: el botón de Apple no sale (Google sí)');
@@ -354,7 +355,7 @@ const ws = async (metodo, ruta, token, cuerpo, extra = {}) => {
     for (let i = 0; i < 6; i++) { sts.push((await regN()).st); await ws('DELETE', `v1/devices/${DEV3}/registrations/${TIPO}/${pjN.serialNumber}`, pjN.authenticationToken); }
     ok(sts.slice(0, 5).every((x) => x === 201) && sts[5] === 429, `más de pase_registros_hora (5) registros de un teléfono en una hora → la base lo rechaza: 429 (${sts.join(',')})`);
     sql(`insert into platform_config (key, value, note, updated_by) values ('pase_ws_por_minuto', '10'::jsonb, 'prueba wal8g', 'prueba') on conflict (key) do update set value = excluded.value`);
-    await new Promise((r) => setTimeout(r, 16000)); // la caché de Configuración
+    await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
     const L = []; for (let i = 0; i < 14; i++) L.push((await ws('POST', 'v1/log', null, { logs: ['x'] })).st);
     ok(L.includes(429), `más de pase_ws_por_minuto (10) pedidos por minuto desde una dirección → 429 (${L.join(',')})`);
     sql(`delete from platform_config where key like 'pase_%'`);

@@ -7,6 +7,7 @@
 // la llave privada de la página, la entrega al service worker (CDP ServiceWorker.deliverPushMessage con lo descifrado), showNotification y el
 // toque (notificationclick) que abre la pantalla. Las cáscaras: el puente nativo simulado (como app8a) con el plugin PushNotifications.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const crypto = require('crypto');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', REPO = ENT.RAIZ;
 const SIM = require(REPO + '/scripts/push-sim/sim.cjs');
@@ -306,7 +307,7 @@ const PUENTE = (token) => `if (window === window.top) {
     await pa.getByText('El proveedor está fallando', { exact: true }).first().click(); await boton(pa, 'Apagar').last().click();
     ok(await espera(() => sql(`select enabled from feature_flags where key = 'push.webpush'`) === 'f'), 'Web Push apagado');
     ok(sql(`select count(*) from audit_entries where action = 'push.canal.apagar' and reason = 'El proveedor está fallando' and at >= '${T0}'`) === '1', 'en la auditoría con su motivo');
-    await dormir(16000); // la caché de los interruptores dura 15 s por proceso
+    await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
     const n7 = await pedir(po); await aceptar(pd, n7);
     ok(await espera(() => /\|sin_app\|pruebas$/.test(aviso(MARI, 'ord_ok', n7))), 'con el canal apagado: el aviso no va por push y el SMS sale como hoy');
     await pa.reload(); await pa.locator('[role="switch"][aria-label="Web Push (navegadores y la web instalada)"]').click();

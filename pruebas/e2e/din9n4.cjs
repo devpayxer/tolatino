@@ -13,6 +13,7 @@
 // Precondiciones propias (orden indiferente, dos veces seguidas en la misma base): cuentas nuevas con teléfonos 555 libres y SUS tarjetas; los
 // negocios quedan como estaban (lo que se cambia se devuelve al final). Nada depende de otra prueba. SOLO=A,B corre solo esas partes.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright');
 const { entrarComo, telLibre, sql, abiertoTodoElDia, direccion, medios, publicarBarberia } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT, FOTO = ENT.rec('fotos') + '/portada.jpg';
@@ -508,7 +509,7 @@ const parte = (k) => !SOLO.length || SOLO.includes(k);
       const seg0 = sql(`select coalesce((select value::text from platform_config where key = 'oferta_seg'), '')`);
       devolver.push(() => sql(seg0 ? `update platform_config set value = '${seg0}'::jsonb where key = 'oferta_seg'` : `update platform_config set value = (select to_jsonb(def::int) from config_keys where key = 'oferta_seg') where key = 'oferta_seg'`));
       sql(`insert into platform_config (key, value, note, updated_by) values ('oferta_seg', '20'::jsonb, 'din9n4', 'semilla') on conflict (key) do update set value = '20'::jsonb`);
-      await new Promise((r) => setTimeout(r, 16000)); // la caché de Configuración del servidor (15 s)
+      await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
       const PN = pedido(false), OP = sql(`select id from operations where number = '${PN}'`);
       ok(await hasta(() => sql(`select count(*) from delivery_offers where operation_id = ${OP} and created_by is null and status = 'open'`), '1') === '1', `el pedido #${PN} se ofreció solo a los repartidores en línea`);
       ok(sql(`select count(*) from notifications where tpl = 'drv_oferta' and ref_id = '${PN}' and position('${T3.slice(-4)}' in body) = 0`) === '1', 'al repartidor le llega la oferta (sin el teléfono del cliente)');

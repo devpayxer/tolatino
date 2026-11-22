@@ -4,6 +4,7 @@
 // vecino y otro negocio (página, foto y acciones del servidor); SLA en la cola (y viernes 5:30 PM → lunes 4:30 PM); ligar a una operación;
 // unir duplicados; macros sin HTML; límite de casos por día. Teléfono 390 y escritorio 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -38,7 +39,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
   // Reloj movido para la prueba: los mensajes de corridas anteriores pasan a hace 2 h (el límite de 30 por hora es por persona). Solo en la base local.
   sql(`set session_replication_role = replica; update support_messages set at = at - interval '2 hours' where user_id in ('${MU}', '${uid(YESENIA)}', '${uid(HECTOR)}') and at > now() - interval '1 hour'`);
   cfg('soporte_casos_dia_max', 50); cfg('soporte_devolver_max_cents', null);
-  await new Promise((r) => setTimeout(r, 16000)); // la caché de Configuración (15 s)
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
   const br = await chromium.launch();
   const tel = async () => br.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const esc = async () => br.newContext({ viewport: { width: 1360, height: 900 } });
@@ -342,7 +343,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
 
   console.log('10 · Límite de casos por día');
   const hoyH = sql(`select count(*) from support_cases where user_id = '${uid(HECTOR)}' and created_at > now() - interval '1 day'`);
-  cfg('soporte_casos_dia_max', +hoyH + 1); await new Promise((r) => setTimeout(r, 16000));
+  cfg('soporte_casos_dia_max', +hoyH + 1); await configLista();
   c = await tel(); p = await c.newPage(); await entrar(p, HECTOR); await p.goto(B + '/soporte');
   ok(/"ok":true/.test(await accion(p, 'casoAbrir', [{ tema: 'tecnico', texto: 'La app tarda en abrir el mapa del barrio.', clave: sql('select gen_random_uuid()') }, null])), `caso ${+hoyH + 1} del día: sí`);
   ok(/Abriste muchos casos hoy/.test(await accion(p, 'casoAbrir', [{ tema: 'tecnico', texto: 'La app tarda en abrir el mapa del barrio otra vez.', clave: sql('select gen_random_uuid()') }, null])), 'el siguiente → límite');

@@ -6,6 +6,7 @@
 // de un borrador es de ese caso); el límite por persona del equipo; el barrido descarta; Super Admin › El Compa cuenta el copiloto; y con el
 // copiloto apagado (nivel, canal, ciudad) o al tope, Soporte y la cola de ayudas TEXTO A TEXTO como antes. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -81,7 +82,7 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
     return { id: h[0], num: h[1], q };
   };
   const H1 = nuevaAyuda();
-  await dormir(16000);   // la caché de Configuración es de 15 s
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
 
   const br = await chromium.launch(), errs = [], sesiones = {};
   const ctx = async (w = 1360) => br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2 });
@@ -294,17 +295,17 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   sql(`insert into compa_pauses (scope, city_id, use, reason, paused_by) values ('city', 'hzl', 'copilot', 'prueba compa7g', '${AU}')`);
   ok((await foto(pd, FT, `[data-tk-abierto="${TK1.num}"]`)) === baseT && (await foto(pa, FQ)) === baseQ, 'Hazleton en pausa para el copiloto: texto a texto igual');
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${AU}', lift_reason = 'prueba compa7g' where lifted_at is null`);
-  cfg('compa_tope_mes_cents', 0); await dormir(16000);
+  cfg('compa_tope_mes_cents', 0); await configLista();
   ok((await foto(pd, FT, `[data-tk-abierto="${TK1.num}"]`)) === baseT && (await foto(pa, FQ)) === baseQ, 'al tope: texto a texto igual');
   await pd.screenshot({ path: OUT + 'e7g-soporte-tope-1360.png', fullPage: true });
   // Al tope entre que se abrió la ficha y el toque: borrador de reglas (no gasta).
   const rt = await accion(pd, 'copilotoSugerir', [{ caso: TK1.num }]);
   ok(/"motor":"reglas"/.test(rt), 'si el tope llega entre la ficha y el toque → borrador de reglas (sin gastar)');
-  cfg('compa_tope_mes_cents', null); await dormir(16000);
+  cfg('compa_tope_mes_cents', null); await configLista();
   ok((await foto(pd, FT, `[data-tk-abierto="${TK1.num}"]`)).includes('Sugerir respuesta con El Compa'), 'bajo el tope otra vez: vuelve el botón');
 
   console.log('9 · Límite por persona del equipo al día; el barrido descarta lo que nadie envió');
-  cfg('compa_copiloto_dia_staff', 10); await dormir(16000);
+  cfg('compa_copiloto_dia_staff', 10); await configLista();
   const hoy = () => Number(sql(`select count(*) from compa_drafts where staff_id = '${DU}' and at > now() - interval '1 day'`)), c0 = hoy();
   for (let i = 0; i < 12; i++) await accion(pd, 'copilotoSugerir', [{ caso: TK1.num }]);
   ok(/Llegaste al límite de borradores de El Compa por hoy/.test(await accion(pd, 'copilotoSugerir', [{ caso: TK1.num }])), 'pasado el límite del día: «Llegaste al límite…» (las macros siguen)');
@@ -314,8 +315,9 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   const viejo = borr(TK1.id, DU)[0];
   sql(`set session_replication_role = replica; update compa_drafts set at = now() - interval '2 days' where id = '${viejo}'`);
   await fetch(B + '/api/interno/barrido', { method: 'POST', headers: { 'x-barrido-token': TOK } });
-  await dormir(16000);   // el límite vuelve al de fábrica (caché de Configuración)
-  ok(sql(`select used from compa_drafts where id = '${viejo}'`) === 'discarded', 'el barrido: un borrador de hace un día sin enviar → «descartado»');
+  await configLista(); // el límite vuelve al de fábrica: la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
+  // Los 16 s de antes no eran de la Configuración sino del barrido (que pudiera seguir corriendo): se espera lo que de verdad se afirma, hasta 16 s.
+  ok(await espera(() => sql(`select used from compa_drafts where id = '${viejo}'`) === 'discarded', 16000), 'el barrido: un borrador de hace un día sin enviar → «descartado»');
 
   console.log('10 · Super Admin › El Compa: el copiloto en las cifras');
   await pa.goto(B + '/admin/compa'); await pa.getByText('COPILOTO EN SOPORTE · 30 D').waitFor();

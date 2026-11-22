@@ -13,6 +13,7 @@
 //    caché; lo suyo no trae botón. Al revés: la vecina escribe en inglés → el panel (español) lo ofrece. El Super Admin ve el original.
 // Preparación propia: El Compa apagado en el negocio mientras dura, conversación sin bloqueo, horario abierto. Todo se devuelve como estaba.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { subirCrudoNode } = require('../lib/subida-cruda.cjs');
 const { elegirFoto } = require('../lib/elegir-foto.cjs'); // como una persona: tocar «Agregar una foto» y elegir (no el input escondido)
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
@@ -67,8 +68,8 @@ const limpiar = () => {
   sql(`update mod_rules set enabled = true where key = 'img'`);
   SVC0 = saludImg();
   if (SVC0) { servicioImg(false); if (!(await espera(async () => !saludImg(), 8000))) throw new Error('PRECONDICIÓN el servicio de imágenes no se apagó'); }
-  // La app guarda las reglas 15 s (reglasMod): si la prueba anterior la había apagado, todavía la ve apagada y la foto saldría «visible».
-  await new Promise((r) => setTimeout(r, 16000));
+  // La app guarda las reglas 15 s (reglasMod) pero se olvidan por aviso de la base: si la prueba anterior las había apagado, hay que esperar a que llegue el cambio o la foto saldría «visible».
+  await configLista({ que: 'las reglas de moderación' });
   sql(`update chat_threads set blocked_at = null, blocked_by = null where business_id = '${BIZ}'`);
   sql(`update businesses set chat_auto_reply = false where id = '${BIZ}'`);
   horario = NN.abiertoTodoElDia(BIZ);
@@ -155,7 +156,7 @@ const limpiar = () => {
     await m.screenshot({ path: OUT + 'm9t-4-chat-m.png', fullPage: true });
 
     // ── 5 · Con la regla de fotos apagada, se ve al instante ──
-    sql(`update mod_rules set enabled = false where key = 'img'`); await new Promise((r) => setTimeout(r, 16000)); // la caché de las reglas dura 15 s
+    sql(`update mod_rules set enabled = false where key = 'img'`); await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
     await m.goto(B + `/cuenta/mensajes/${BIZ}`); await elegirFoto(m, FOTO2);
     await m.getByRole('button', { name: 'Enviar' }).click();
     ok(await espera(() => sql(`select x.status from chat_messages c join media x on x.id = c.media_id where c.thread_id = ${TH} and c.sender = 'user' order by c.id desc limit 1`) === 'visible'), 'regla apagada: visible al instante');

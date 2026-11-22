@@ -8,6 +8,7 @@
 // (simulador que valida contra la especificación), APK propio con enlace de un uso (ver no gasta; otra cuenta 404; bajar una vez; sha256), Play
 // interno pendiente en la consola, quitar con motivo; Salud (ficha, resolver, silenciar), Versiones, Reportes; Soporte (rol) no ve testers.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto'); const path = require('path');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', REPO = ENT.RAIZ, TOKEN_BARRIDO = ENT.TOK;
 const SIM = require(REPO + '/scripts/tiendas-sim/sim.cjs');
@@ -119,7 +120,7 @@ const PUENTE = (o) => `if (window === window.top) {
 
     console.log('4 · 1 000 errores iguales (con otros números) → UN grupo; los topes por minuto se respetan');
     sql(`insert into platform_config (key, value, note) values ('errores_por_minuto', '5000', 'prueba 8f') on conflict (key) do update set value = excluded.value`);
-    await dormir(16000); // la caché de Configuración (15 s)
+    await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
     const mil = await w.evaluate(async () => { let ok = 0; const L = [];
       for (let i = 0; i < 1000; i++) L.push(fetch('/api/errores', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-real-ip': `10.8.${Math.floor(i / 20)}.${i % 20}` }, credentials: 'omit',
         body: JSON.stringify({ tipo: 'js', nombre: 'RangeError', mensaje: `Prueba 8f mil: el pedido ${1000 + i} no cargó en ${i} ms`, stack: `RangeError: x\n    at cargarPedido (/_next/static/chunks/app/pedido-abcdef0123456789.js:1:${100 + i})`, ruta: `/pedido/${i}` }) }).then((r) => { if (r.status === 204) ok++; }));
@@ -129,7 +130,7 @@ const PUENTE = (o) => `if (window === window.top) {
     const G1000 = g1000.split('|')[2];
     sql(`delete from platform_config where key = 'errores_por_minuto'`);
     // Un minuto nuevo (la ventana del tope) y la caché de Configuración vencida; un teléfono nuevo (cookie tl_dev propia).
-    await dormir(16000); await dormir(61000 - (Date.now() % 60000)); 
+    await configLista(); await dormir(61000 - (Date.now() % 60000)); // ESPERA-FIJA: la ventana del tope es el minuto del reloj: hay que pasar al minuto siguiente (hasta 61 s)
     const wt = await pagina('tope', 390, IOS); await wt.goto(B + '/ayuda');
     const tope = await wt.evaluate(async () => { const r = []; for (let i = 0; i < 40; i++) r.push((await fetch('/api/errores', { method: 'POST', headers: { 'x-real-ip': '10.99.0.1' }, body: JSON.stringify({ tipo: 'js', mensaje: 'Prueba 8f tope ' + i, stack: '', ruta: '/' }) })).status); return r; });
     ok(tope.filter((x) => x === 204).length === 30 && tope.filter((x) => x === 429).length === 10, 'un mismo teléfono: 30 por minuto (errores_por_dispositivo), el resto 429 y no toca la base');
@@ -241,7 +242,7 @@ const PUENTE = (o) => `if (window === window.top) {
     ok(sql(`select device || '|' || app_version from support_cases where number = '${TK2}'`) === "Android · app|To'Latino 1.0.0 (7)", 'el caso dice la app y su versión (rótulo TLApp)');
     ok(sql(`select body->>'origen' from support_case_logs where case_id = (select id from support_cases where number = '${TK2}') and kind = 'captura'`) === 'agitar', 'captura «de la pantalla (agitar)»');
     ok(/pantalla \/cuenta\/boletos/.test(sql(`select body::text from support_case_logs where case_id = (select id from support_cases where number = '${TK2}') and kind = 'registro_app'`)), 'el registro del nativo (TLReporte.leer) trae la pantalla donde agitó');
-    sql(`insert into platform_config (key, value, note) values ('beta_agitar', '0', 'prueba 8f') on conflict (key) do update set value = excluded.value`); await dormir(16000);
+    sql(`insert into platform_config (key, value, note) values ('beta_agitar', '0', 'prueba 8f') on conflict (key) do update set value = excluded.value`); await configLista();
     const ap2 = await pagina('app-sin-agitar', 390, AND + rot('cliente', 'android', 7), { puente: true }); await entrar(ap2, MARI); await ap2.goto(B + '/ayuda'); await dormir(1500);
     ok(await ap2.evaluate(() => window.__agitar !== true), 'beta_agitar = 0 → la app no escucha el acelerómetro');
     sql(`delete from platform_config where key = 'beta_agitar'`);

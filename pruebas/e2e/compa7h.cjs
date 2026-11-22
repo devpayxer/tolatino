@@ -7,6 +7,7 @@
 // límite por teléfono; respuestas automáticas de un negocio por WhatsApp; Super Admin › El Compa › Canales (números, registro sin texto ni
 // teléfono, simulador) y Mi cuenta › Avisos. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const c = require('crypto'); const fs = require('fs');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -81,7 +82,7 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   sql(`update businesses set closed_on = null, temp_closed_until = null where id = '${NEG}'`);
   sql(`update business_hours set open = true, ranges = '[["11:00","21:00"]]' where business_id = '${NEG}' and module = ''`);
   sql(`update business_hours set open = false where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
-  await dormir(16000);   // la caché de Configuración es de 15 s
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
 
   const br = await chromium.launch(), errs = [], cap = [], sesiones = {};
   const ctx = async (w = 390) => br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2,
@@ -305,25 +306,25 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   silencioDeFabrica();
   const ciu0 = sql(`select home_city_id from users where id = '${MU}'`), tz0 = sql(`select timezone from cities where id = 'rdg'`);
   sql(`update users set home_city_id = 'rdg' where id = '${MU}'`); sql(`update cities set timezone = '${noche}' where id = 'rdg'`);
-  cfg('compa_canal_respuesta_min', 0); await dormir(16000);
+  cfg('compa_canal_respuesta_min', 0); await configLista();
   const q1 = await sms(MARI, '¿cómo reservo una mesa?');
   ok(q1.out[0]?.s === 'silencio', 'de noche en su ciudad, con «respuesta a tiempo» = 0: no sale («silencio»)' + (q1.out[0]?.s === 'silencio' ? '' : ' · salió: ' + JSON.stringify(q1).slice(0, 300)));
   sql(`update cities set timezone = '${dia}' where id = 'rdg'`);
   const q2 = await sms(MARI, '¿cómo reservo una mesa?'); ok(q2.out[0]?.s === 'simulado', 'de día: sale');
   sql(`update cities set timezone = '${noche}' where id = 'rdg'`);
-  cfg('compa_canal_respuesta_min', null); await dormir(16000);
+  cfg('compa_canal_respuesta_min', null); await configLista();
   const q3 = await sms(MARI, '¿cómo reservo una mesa?'); ok(q3.out[0]?.s === 'simulado', 'de noche pero A TIEMPO (contesta lo que acaba de preguntar): sale');
   const q4 = await sms(MARI, 'STOP'); ok(q4.out[0]?.s === 'simulado', 'la confirmación de STOP sale a cualquier hora'); await sms(MARI, 'START');
   sql(`update cities set timezone = '${tz0}' where id = 'rdg'`); sql(`update users set home_city_id = ${ciu0 ? `'${ciu0}'` : 'null'} where id = '${MU}'`);
 
   console.log('14 · Límite por teléfono al día: avisa una vez y calla');
-  cfg('compa_canal_msgs_dia', 5); await dormir(16000);
+  cfg('compa_canal_msgs_dia', 5); await configLista();
   const TELL = '5705550986';
   for (let i = 0; i < 5; i++) await sms(TELL, `hola ${i}`);
   const l6 = await sms(TELL, 'hola 6'); ok(l6.res === 'limite' && /Llegaste al límite de mensajes de hoy por aquí/.test(l6.out[0]?.b ?? ''), 'el 6.º → «Llegaste al límite…» una vez');
   const l7 = await sms(TELL, 'hola 7'); ok(l7.res === 'limite' && l7.out.length === 0, 'el 7.º → nada');
   const l8 = await sms(TELL, 'STOP'); ok(l8.res === 'baja', 'STOP pasa aunque esté en el límite');
-  cfg('compa_canal_msgs_dia', 200); await dormir(16000);
+  cfg('compa_canal_msgs_dia', 200); await configLista();
 
   console.log('15 · Respuestas automáticas de un negocio por WhatsApp (sin datos de ninguna cuenta)');
   const pdu = await como(DUENO, 1360);

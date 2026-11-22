@@ -95,7 +95,7 @@ const ck = (i) => `c0e1c6b0-9a9a-4000-8000-${ID}${String(i).padStart(6, '0')}`;
     await dormir(1500);
     await d.goto(B + P + `/hoy?det=ped:${N2}`); await clic(det.getByText('Ofrecer a los que están en línea', { exact: true }));
     ok(await espera(() => sql(`select count(*) from delivery_offers f join operations o on o.id = f.operation_id where o.number = '${N2}' and f.status = 'open' and f.expires_at < now() + interval '25 seconds'`), '1') === '1', 'segunda oferta con el tiempo de Configuración (20 s)');
-    await dormir(21000); barrer();
+    await dormir(21000); barrer(); // ESPERA-FIJA: la oferta vence a los 20 s (oferta_seg) y el barrido la cierra: es el reloj
     ok(await espera(() => sql(`select f.status from delivery_offers f join operations o on o.id = f.operation_id where o.number = '${N2}'`), 'expired') === 'expired', 'nadie la aceptó: el barrido la cierra');
     ok(await espera(() => sql(`select count(*) from notifications n join users u on u.id = n.user_id where u.phone = '+1${DUENO}' and n.tpl = 'biz_oferta_vencio' and n.ref_id = '${N2}'`), '1') === '1', 'el negocio recibe «Nadie aceptó el pedido»');
     ok(op(N2, `coalesce(driver_id::text, '-')`) === '-', 'el pedido sigue sin repartidor');

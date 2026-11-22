@@ -10,6 +10,7 @@
 // Precondiciones propias: los destacados de eventos vivos o programados de Hazleton se retiran (estados, nada se borra); el tope de Configuración
 // se restaura; los eventos de prueba se cancelan al final.
 const ENT = require('../lib/entorno.cjs');
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright');
 const { entrarComo, lejosDeMedianoche, medios, sql } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
@@ -48,7 +49,7 @@ const retirarVivos = (ADMID) => sql(`update featured set retired_at = now(), ret
   const titulo = (id) => sql(`select title->>'es' from events where id = ${id}`);
   sql('analyze event_dates');
   ponerCfg(4);
-  await new Promise((r) => setTimeout(r, 16000));   // la caché de Configuración (15 s)
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
   const b = await chromium.launch(); const abiertas = [], err = [];
   const nueva = async (w, h, tel) => {
     const c = await b.newContext(w < 600 ? { viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: UA_TEL } : { viewport: { width: w, height: h }, userAgent: UA_PC });
@@ -125,7 +126,7 @@ const retirarVivos = (ADMID) => sql(`update featured set retired_at = now(), ret
     ok(await espera(async () => (await pv.locator(`${M} [data-destacado-evt="${A}"]`).count()) === 1) && await pv.locator(`${M} [data-destacado-evt="${BE}"]`).count() === 0, 'hoy no sale B (empieza mañana)');
 
     console.log('5 · El tope (2) y lo que se cae solo');
-    ponerCfg(2); await new Promise((r) => setTimeout(r, 16000));
+    ponerCfg(2); await configLista();
     await fijarDesdeCrecimiento(pa, DE, HOY, D(4), 'Campaña de la ciudad');
     await toast(pa, /Ya hay 2 eventos fijados en esas fechas/);
     ok(sql(`select count(*) from featured where event_id = ${DE}`) === '0', 'el tercero no entra (lo impone la base)');

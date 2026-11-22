@@ -5,6 +5,7 @@
 // otra), origen cruzado, el formulario abierto por El Compa (help_requests.origin = 'compa'), la regresión «todo apagado» (nivel, canal, ciudad,
 // negocio y tope: las MISMAS pantallas de antes) y Super Admin › El Compa › Conversaciones con la ficha y la lectura anotada. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { requiere } = require('../lib/requiere.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
@@ -39,7 +40,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   // Reloj movido (solo en esta base): los casos de corridas anteriores pasan a hace 2 días (el límite de casos es por día).
   sql(`set session_replication_role = replica; update support_cases set created_at = created_at - interval '2 days' where user_id in ('${MU}', '${YU}') and created_at > now() - interval '1 day'`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id in ('${MU}', '${YU}') and kind in ('table', 'appointment') and status in ('pending', 'change_proposed')`);
-  await new Promise((r) => setTimeout(r, 16000));   // la caché de Configuración es de 15 s
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
   const FAM = fs.readFileSync(ENT.RAIZ + '/pruebas/lib/compa7d-familias.sql', 'utf8');
   const leerFam = () => execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -At`, { input: FAM }).toString().trim().split('\n').filter(Boolean).map((l) => { const [kind, num, tel, st, neg] = l.split('|'); return { kind, num, tel: tel.slice(2), st, neg }; });
   // 9b-1 · Una operación de cada familia sin ayuda pedida. Antes se daba por hecho que las otras pruebas ya las habían dejado (en una base nueva
@@ -301,7 +302,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   await p13.goto(B + '/soporte'); await p13.getByText('El Compa te ayuda al instante').waitFor(); await p13.waitForTimeout(700); await p13.screenshot({ path: OUT + 'e7d-soporte-1360.png' });
   const pe = await como(MARISOL); await pe.goto(B + '/cuenta'); ok(/EL COMPA · IA AL INSTANTE/.test(await texto(pe)), 'Mi cuenta › Ayuda y soporte: «EL COMPA · IA AL INSTANTE»');
   await pe.goto(B + '/cuenta/ajustes/privacidad'); ok(/LA IA DE LA AYUDA · QUÉ VE Y QUIÉN LO LEE/.test(await texto(pe)), 'Mi cuenta › Privacidad: El Compa → qué ve y quién lo lee');
-  cfg('compa_msgs_hora', 2); await new Promise((r) => setTimeout(r, 16000));
+  cfg('compa_msgs_hora', 2); await configLista();
   await pe.goto(B + '/soporte/compa'); await pe.getByText('Una cita o reservación').waitFor();
   await pe.locator('[data-pantalla="APP-COMPA"] input').fill('hola'); await pe.locator('[data-pantalla="APP-COMPA"] input').press('Enter');
   await pe.getByText(/Escribiste muchos mensajes seguidos/).waitFor({ timeout: 15000 });

@@ -5,6 +5,7 @@
 // el llavero: subir (código otra vez) → solo la huella, nunca el contenido (HTML, RSC, respuestas, base cifrada), comprobar, reemplazar, retirar;
 // cualquier otro rol → 403; las islas y la página local «Sin señal»; la hoja previa de permisos (con el puente simulado en el marco de arriba).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto');
 const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -136,7 +137,7 @@ const PUENTE = `if (window === window.top) {
   T = await cambiar("To'Latino Puerta", 'iPhone', 'min', -5);
   ok(/Entre/.test(T) && sql(`select cfg_int('app_min_build_checkin_ios')`) === '10', 'fuera de los límites se rechaza');
   // Como toda la Configuración: el valor nuevo vale en cada proceso a más tardar en 15 s (caché por proceso).
-  await new Promise((r) => setTimeout(r, 16000));
+  await configLista();
   const pv = await pagina('puerta-5', 390, IOS + rot('checkin', 'ios', 5));
   await pv.goto(B + '/puerta'); await pv.getByText('Actualiza la app').first().waitFor({ timeout: 10000 }).catch(async () => { console.log('URL', pv.url(), (await texto(pv)).slice(0, 300)); throw new Error('sin Actualiza'); });
   ok(ruta(pv) === '/app/actualizar', 'Puerta · build 5 < 10 → «Actualiza la app»');
@@ -151,7 +152,7 @@ const PUENTE = `if (window === window.top) {
   ok(!ruta(p12).startsWith('/app/actualizar'), 'Puerta · build 12 ≥ 10 → sigue');
   T = await cambiar("To'Latino Puerta", 'iPhone', 'aviso', 20);
   ok(sql(`select cfg_int('app_aviso_build_checkin_ios')`) === '20', 'build de aviso 20');
-  await new Promise((r) => setTimeout(r, 16000));
+  await configLista();
   await p12.goto(B + '/puerta'); await p12.getByText('Hay una versión nueva de To\'Latino Puerta.').waitFor();
   ok(true, 'Puerta · build 12 < 20 → el aviso suave arriba');
   await p12.screenshot({ path: OUT + 'a8a-aviso-suave-390.png' });
@@ -174,7 +175,7 @@ const PUENTE = `if (window === window.top) {
   ok(sql(`select enabled from feature_flags where key = 'app.cascara.negocio'`) === 'f', 'Negocios en pausa (interruptor app.cascara.negocio)');
   ok(sql(`select count(*) from audit_entries where action = 'app.pausar' and target_id = 'app.cascara.negocio'`) !== '0', 'la pausa queda en la auditoría');
   await pa.screenshot({ path: OUT + 'a8a-sistema-apps-1360.png', fullPage: true });
-  await new Promise((r) => setTimeout(r, 16000));
+  await configLista();
   await pn.goto(B + `/panel/${NEG}`); await pn.getByText('Esta app está en pausa').first().waitFor();
   ok(ruta(pn) === '/app/pausa', 'Negocios en pausa → «Esta app está en pausa · Abrir en la web»');
   await pn.screenshot({ path: OUT + 'a8a-pausa-390.png' });
@@ -184,7 +185,7 @@ const PUENTE = `if (window === window.top) {
   await pa.goto(B + '/admin/sistema/apps'); await pa.getByText('SESIONES ACTIVAS POR APP Y VERSIÓN · 30 DÍAS').waitFor();
   await pa.locator('[role="switch"]').nth(1).click(); await pa.getByText('Ya se corrigió', { exact: true }).first().click(); await boton(pa, 'Abrir').last().click();
   await pa.getByText(/abierta otra vez/).first().waitFor();
-  await new Promise((r) => setTimeout(r, 16000));
+  await configLista();
   await pn.goto(B + `/panel/${NEG}`); await pn.waitForLoadState('networkidle');
   ok(ruta(pn).startsWith(`/panel/${NEG}`), 'abierta otra vez: Negocios vuelve a su panel');
   const p390 = await pagina('adm390', 390, IOS); await entrar(p390, ADM);
@@ -259,7 +260,7 @@ const PUENTE = `if (window === window.top) {
   rech = ''; try { sql(`update store_secrets set fingerprint = repeat('a', 64)`); } catch (e) { rech = String(e.stderr ?? e.message); } ok(/solo se retira/.test(rech), 'de una llave solo se retira (no se cambia la huella ni el sobre)');
   // Reemplazar.
   await pa.getByText('Reemplazar', { exact: true }).first().click();
-  await new Promise((r) => setTimeout(r, 31000)); // otro código al mismo teléfono: 30 s después (como al entrar)
+  await new Promise((r) => setTimeout(r, 31000)); // ESPERA-FIJA: otro código al mismo teléfono solo se manda 30 s después del anterior (como al entrar)
   await pa.getByText('Mandar el código', { exact: true }).click(); await pa.getByText(/MODO PRUEBAS · tu código es \d{6}/).waitFor();
   const cod2 = /tu código es (\d{6})/.exec(await texto(pa))[1];
   await pa.getByRole('textbox', { name: 'CÓDIGO DE 6 NÚMEROS' }).fill(cod2);
@@ -277,7 +278,7 @@ const PUENTE = `if (window === window.top) {
   ok(sql(`select count(*) from store_secrets where retired_at is null`) === '0' && sql(`select count(*) from audit_entries where action = 'llavero.retirar'`) !== '0', 'retirar: ninguna viva, en la auditoría con motivo');
   // Un archivo que no es una llave .p8.
   await pa.getByText('Subir archivo', { exact: true }).first().click();
-  await new Promise((r) => setTimeout(r, 31000));
+  await new Promise((r) => setTimeout(r, 31000)); // ESPERA-FIJA: otro código al mismo teléfono solo se manda 30 s después del anterior
   await pa.getByText('Mandar el código', { exact: true }).click(); await pa.getByText(/MODO PRUEBAS · tu código es \d{6}/).waitFor();
   const cod3 = /tu código es (\d{6})/.exec(await texto(pa))[1];
   fs.writeFileSync(S + '/llaves8a/AuthKey_MALO000001.p8', 'no soy una llave');

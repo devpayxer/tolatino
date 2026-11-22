@@ -6,6 +6,7 @@
 // hilo colgado; y la regresión «todo apagado» de Mensajes (nivel, canal, ciudad, negocio, tope, Free): TEXTO A TEXTO igual que sin El Compa,
 // incluida la respuesta fija. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -56,7 +57,7 @@ const FIJA = 'Gracias por escribir a Sabor Dominicano. Ahora estamos cerrados; t
   };
   resetHilo();
   for (const u of [DU, RU, MU]) sql(`set session_replication_role = replica; update compa_messages set at = at - interval '2 days' where user_id = '${u}' and at > now() - interval '1 day'`);
-  await dormir(16000);   // la caché de Configuración es de 15 s
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
 
   const br = await chromium.launch(), errs = [], cap = [], sesiones = {};
   const ctx = async (w = 390) => br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2,

@@ -8,6 +8,7 @@
 // Super Admin (Buscar boleto por código y por QR, firma alterada = no entra, Reemitir → el QR viejo no entra, la ficha del evento con lo
 // vendido, Transacciones › Boletos). Deja los datos como estaban (evento de prueba cancelado y sus boletos anulados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process'); const crypto = require('crypto');
 const jsQR = require(ENT.rec('jsqr/package/dist/jsQR.js'));
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
@@ -207,11 +208,11 @@ const firmaBuena = (t) => { const m = /^TL1\.([a-f0-9]{8})\.(\d+)\.(\d+)\.(\d+)\
     await p1.fill('input[aria-label="Código de descuento"]', 'DOSVECES'); await clic(p1.locator('button, [role="button"]', { hasText: 'Aplicar' }));
     ok(await contiene(p1, 'Ya usaste ese código en este evento.'), 'el mismo código no se aplica dos veces a la misma persona');
     sql(`insert into platform_config (key, value) values ('evt_boletos_por_orden_max', '1'::jsonb) on conflict (key) do update set value = excluded.value`);
-    await sleep(16000);
+    await configLista();
     await p1.goto(B + `/eventos/${SLUG}/boletos?fecha=${F}`); await clic(p1.locator(`[data-tipo="${T_GEN}"] >> text="+"`)); await clic(p1.locator(`[data-tipo="${T_GEN}"] >> text="+"`));
     ok(await contiene(p1, 'MÁX. 1 POR PERSONA'), 'el tope por orden sale de Configuración (evt_boletos_por_orden_max = 1)');
     sql(`delete from platform_config where key = 'evt_boletos_por_orden_max'`);
-    await sleep(16000); // 9b-2 · la Configuración se guarda 15 s en el servidor: sin esto la prueba que sigue (evt6d) veía «MÁX. 1 POR PERSONA» y compraba un solo boleto
+    await configLista(); // 9b-2 · limpieza para la prueba que sigue (evt6d): si la Configuración no llegara, vería «MÁX. 1 POR PERSONA» y compraría un solo boleto (config-lista.cjs lo dice si la escucha está caída)
     // ── 12 · Cobros apagado y Free bloquean la venta ──
     sql(`update stripe_accounts set charges_enabled = false where business_id = '${NEG}'`);
     await p2.goto(B + `/eventos/${SLUG}?fecha=${F}`);

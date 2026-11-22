@@ -38,7 +38,7 @@ async function pedir(m, nota) {
   sql(`update operations set status = 'cancelled', cancelled_by = 'admin' where user_id = '${MU}' and kind = 'appointment' and status in ('pending','confirmed','change_proposed')`);
   await entrar(m, '5705550122'); await entrar(d, '5705550244');
   const N1 = await pedir(m, 'Me duele la garganta');
-  // El barrido de citas borra notas a lo sumo una vez por minuto por proceso (citas-flujo.ts): se le da hasta 75 s, llamándolo cada 5 s.
+  // ESPERA-FIJA: el barrido de citas borra notas a lo sumo una vez por minuto por proceso (citas-flujo.ts): se le da hasta 75 s, llamándolo cada 5 s.
   { let borrada = false; for (let i = 0; i < 15 && !borrada; i++) { execSync(`curl -s -o /dev/null -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`); borrada = sql(`select (note_enc is null)::text from op_private where operation_id = ${vieja}`) === 'true'; if (!borrada) await new Promise((r) => setTimeout(r, 5000)); }
     ok(borrada, 'nota de una cita terminada hace 31 días: borrada por el barrido'); }
   // ── Panel: lo que ve el consultorio ──

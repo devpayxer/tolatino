@@ -1,4 +1,5 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de esperar los 60 s de la caché
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"')}"`).toString().trim();
@@ -51,7 +52,7 @@ const cuenta = async (p, url, re) => { await p.goto(B + url); await p.waitForLoa
   // Sinónimo: agregar, Buscar lo usa (60 s de memoria), apagar
   await a.goto(B + '/admin/catalogo?tab=syn'); await t(a, 'Agregar sinónimo').click(); await a.locator('textarea').last().fill('zzrecorte → barberia'); await t(a, 'Agregar').click(); await a.locator('text=/Buscar lo entiende/').waitFor();
   await a.locator('input[aria-label="Buscar sinónimo"]').fill('zzrecorte'); await a.keyboard.press('Enter'); await a.locator('text=/zzrecorte/').first().waitFor(); await shot(a, 'm4-sinonimos-d.png');
-  await v.waitForTimeout(61000); await v.goto(B + '/buscar?q=zzrecorte'); await v.waitForLoadState('networkidle'); const txt = await v.locator('body').innerText();
+  await configLista({ que: 'el sinónimo en Buscar', ver: async () => { await v.goto(B + '/buscar?q=zzrecorte'); await v.waitForLoadState('networkidle'); return /barber/i.test(await v.locator('body').innerText()); } }); await v.goto(B + '/buscar?q=zzrecorte'); await v.waitForLoadState('networkidle'); const txt = await v.locator('body').innerText();
   ok(/barber/i.test(txt), 'Buscar «zzrecorte» encuentra barberías (el sinónimo, en menos de un minuto)');
   await a.getByText('Apagar', { exact: true }).first().click(); await a.locator('text=/Apagado. Buscar deja de usarlo/').waitFor();
   // Sin oferta (local: un aviso de prueba)

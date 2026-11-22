@@ -6,6 +6,7 @@
 // la ciudad y tope: las MISMAS pantallas del panel de antes, y la sección dice que no está). Super Admin › Conversaciones › Panel y Negocios 360°
 // › El Compa. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -37,7 +38,7 @@ const DUENO_L = 'Eso lo ve el dueño del negocio: tu parte del panel no lo inclu
     sql(`set session_replication_role = replica; update support_cases set created_at = created_at - interval '2 days' where user_id = '${u}' and created_at > now() - interval '1 day'`);
     sql(`update compa_conversations set closed_at = now(), outcome = case when outcome = 'open' then 'self_resolved' else outcome end where user_id = '${u}' and use = 'owner' and closed_at is null`);
   }
-  await new Promise((r) => setTimeout(r, 16000));   // la caché de Configuración es de 15 s
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
   const br = await chromium.launch(), errs = [];
   const ctx = async (w = 390) => br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2,
     userAgent: w > 500 ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15' : 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1' });
@@ -272,11 +273,11 @@ const DUENO_L = 'Eso lo ve el dueño del negocio: tu parte del panel no lo inclu
   await pd.goto(B + `/panel/${NEG}/compa`); await pd.getByText('PREGÚNTALE SOBRE TU PANEL').waitFor(); ok(true, 'encendido otra vez: la sección vuelve');
 
   console.log('7 · Límite de mensajes, escritorio 1360 y el Super Admin');
-  cfg('compa_msgs_hora', 1); await new Promise((r) => setTimeout(r, 16000));
+  cfg('compa_msgs_hora', 1); await configLista();
   const m0 = nCompa(DU);
   await pd.getByRole('textbox', { name: 'TU PREGUNTA' }).fill('otra pregunta'); await pd.getByText('Preguntar', { exact: true }).click();
   ok(await espera(async () => /Escribiste muchos mensajes seguidos/.test(await texto(pd)), 8000) && nCompa(DU) === m0, 'límite por hora: «Escribiste muchos mensajes seguidos…» y no se llama a nadie');
-  cfg('compa_msgs_hora', 200); await new Promise((r) => setTimeout(r, 16000));
+  cfg('compa_msgs_hora', 200); await configLista();
   const pD = await como(DUENO, 1360);
   await pD.goto(B + `/panel/${NEG}/compa`); await pD.getByText('PREGÚNTALE SOBRE TU PANEL').waitFor();
   ok(/TU NEGOCIO/.test(await pD.innerText('aside')) && /El Compa/.test(await pD.innerText('aside')), 'escritorio: «El Compa» en TU NEGOCIO del menú');

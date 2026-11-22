@@ -359,7 +359,7 @@ const M = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobil
     ok(await espera(() => sec2.url().includes('/admin/dos-pasos')), 'las OTRAS sesiones vuelven a pedir el segundo factor');
     await sec2.getByLabel('CÓDIGO DE 6 NÚMEROS').fill(totp(sec, pasoAhora() + 1)); await clic(boton(sec2, 'Entrar'));
     ok(await contiene(sec2, 'Ese código no es'), 'el código de la app VIEJA ya no entra');
-    await dormir(31000);
+    await dormir(31000); // ESPERA-FIJA: la app de códigos cambia de paso cada 30 s: el código de la app NUEVA solo vale en el paso siguiente
     await sec2.getByLabel('CÓDIGO DE 6 NÚMEROS').fill(totp(nueva2, pasoAhora())); await clic(boton(sec2, 'Entrar'));
     ok(await espera(() => new URL(sec2.url()).pathname === '/admin'), 'y el de la app NUEVA sí');
     await a.goto(B + '/admin/sistema');

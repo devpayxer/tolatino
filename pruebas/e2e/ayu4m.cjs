@@ -107,7 +107,7 @@ const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
   ok(sql(`select count(*) from notifications where tpl = 'biz_help_cita' and created_at > now() - interval '5 minutes'`) === '1', 'la oficina recibe el aviso');
   // ── Borrado a los 90 días ──
   sql(`update help_requests set resolved_at = now() - interval '91 days' where operation_id = (select id from operations where number = '${CS}')`);
-  await new Promise((r) => setTimeout(r, 61_000));
+  await new Promise((r) => setTimeout(r, 61_000)); // ESPERA-FIJA: la purga de lo cerrado hace más de 90 días corre a lo sumo una vez por minuto por proceso (citas-flujo.ts)
   await m.goto(B + `/cita/${CS}`); await m.goto(B + `/cita/${CS}/ayuda?de=compa`);
   ok(await espera(() => sql(`select status || '|' || url || '|' || (purged_at is not null)::text from media where id = '${fm[0]}'`), 'removed|privado/borrada|true') === 'removed|privado/borrada|true', 'a los 90 días de cerrada la foto se borra del almacenamiento');
   ok(await st(m, U) === 404, 'y ya no se ve ni para el paciente');

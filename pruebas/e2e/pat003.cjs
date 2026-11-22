@@ -13,6 +13,7 @@
 //   la pausa no cuenta como usada; 9 · 3-D Secure al comprar: la hoja del banco y un solo cobro.
 // Precondiciones propias: lo vivo de Eventos en Hazleton queda terminado (estados, nada se borra); precios y puestos de fábrica se restauran.
 const ENT = require('../lib/entorno.cjs');
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, lejosDeMedianoche, medios, sql, tarjeta, telLibre } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
@@ -60,7 +61,7 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
   const slug = (id) => sql(`select slug from events where id = ${id}`);
   sql('analyze event_dates');
   ponerCfg('patrocinio_evt_semana_cents', 1700); ponerCfg('patrocinio_evt_puestos', 6);
-  await new Promise((r) => setTimeout(r, 16000));   // la caché de Configuración (15 s)
+  await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
   const b = await chromium.launch(); const abiertas = [], err = [];
   const nueva = async (w, h, tel) => {
     const c = await b.newContext(w < 600 ? { viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: UA_TEL } : { viewport: { width: w, height: h }, userAgent: UA_PC });
@@ -175,7 +176,7 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     await pm.screenshot({ path: OUT + 'pat003-activo-390.png', fullPage: true });
 
     console.log('5 · Sin puestos (Configuración en 2): «Avísame» y reservar');
-    ponerCfg('patrocinio_evt_puestos', 2); await new Promise((r) => setTimeout(r, 16000));
+    ponerCfg('patrocinio_evt_puestos', 2); await configLista();
     await pm.goto(B + `/panel/${NEG}/eventos?det=evt:pat:${E}`);
     ok(await espera(async () => (await texto(pm)).includes('2 de 2 ocupados')), '«2 de 2 ocupados»');
     const libre = sql(`select to_char((ends_at at time zone 'America/New_York')::date, 'FMDD') from event_sponsorships where id = ${SA}`);
@@ -191,7 +192,7 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     await pm.getByRole('button', { name: 'Pagar $17.00' }).click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where event_id = ${E} and status = 'reservado'`) === '1'), 'queda RESERVADO desde el día que se libera');
     ok(sql(`select status from sponsorship_waits where kind = 'evento' and business_id = '${NEG}' order by id desc limit 1`) === 'compro', 'su «Avísame» queda cumplido');
-    ponerCfg('patrocinio_evt_puestos', 6); await new Promise((r) => setTimeout(r, 16000));   // la caché de Configuración
+    ponerCfg('patrocinio_evt_puestos', 6); await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
 
     console.log('6 · Super Admin › Crecimiento › Patrocinios › EVENTOS: «Terminar» con motivo');
     const ad = await nueva(1360, 900, ADMIN);

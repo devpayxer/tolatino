@@ -14,6 +14,7 @@
 // Precondiciones propias: la base dice «pruebas», teléfonos 555 libres, los números de SMS y WhatsApp de To'Latino conectados, el equipo de prueba, el correo de
 // cada persona puesto por la prueba. Lo que la prueba cambia vuelve a como estaba.
 const ENT = require('../lib/entorno.cjs');
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { esFijo } = require('../lib/telefonos-fijos.cjs'); // 9b-3 · nunca un número que otra prueba usa por su número
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const c = require('crypto'), fs = require('fs'), http = require('http'), path = require('path');
@@ -295,7 +296,7 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
                            decode(repeat('00', 64), 'hex'), '${meta2}'::jsonb, encode(sha256('prueba-avi9l-${kind}'::bytea), 'hex'), 64, '${AU}', now()) returning id`).split('\n').find((x) => /^\d+$/.test(x)));
       }
       sql(`update feature_flags set enabled = true where key in ('app.wallet.apple', 'app.wallet.google')`);
-      await new Promise((r) => setTimeout(r, 16000)); // los interruptores de Wallet se leen con 15 s de caché
+      await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
       const rb = await interno({ op: 'recibo_boletos', op_id: opId });
       ok(rb.ok && /data-wallet-correo/.test(rb.html) && (rb.html.match(/data-wallet-correo/g) ?? []).length === 2, 'el recibo trae los dos botones de Wallet');
       ok(rb.html.includes(`/cuenta/boletos/${code}`) && /Agregar a Apple Wallet|Add to Apple Wallet/.test(rb.html) && /Agregar a Google Wallet|Add to Google Wallet/.test(rb.html), `enlazados a la página del boleto (${code}), donde se agrega el pase con la sesión`);
@@ -304,7 +305,7 @@ const VARS = { ultimos: '0123', enlace: 'https://pruebas.tolatino.com/soporte', 
       const pr = await (await ctxTel(b)).newPage(); abiertas.push(pr.context()); await pr.setContent(rb.html); await shot(pr, 'recibo-wallet-390');
       for (const f of flags0.split(',')) { const [k, v] = f.split('='); sql(`update feature_flags set enabled = ${v === 'true'} where key = '${k}'`); }
       sql(`update feature_flags set enabled = false where key in ('app.wallet.apple', 'app.wallet.google')`);
-      await new Promise((r) => setTimeout(r, 16000));
+      await configLista();
       const rs = await interno({ op: 'recibo_boletos', op_id: opId });
       ok(rs.ok && !/data-wallet-correo/.test(rs.html), 'con Wallet apagado, el recibo no promete los botones');
     } finally {

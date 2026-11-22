@@ -8,6 +8,7 @@
 // código por SMS sigue igual con llave; borrar la cuenta con la llave (escritorio 1360) y cancelar. Cuentas nuevas (teléfonos 555 libres): nada
 // depende de otra prueba. Deja todo como estaba.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const crypto = require('crypto');
 const { S, B, sql } = require('../lib/g6-comun.cjs');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
@@ -86,7 +87,7 @@ const msg = (r) => (r && r.msg ? r.msg.es : JSON.stringify(r));
   };
   try {
     // En local todas las peticiones llegan desde la misma dirección: los topes por dirección se suben mientras corre (la sección 7 baja el de fallos).
-    cfg('passkey_fallos_hora', 100); cfg('passkey_retos_hora', 1000); await dormir(16000);
+    cfg('passkey_fallos_hora', 100); cfg('passkey_retos_hora', 1000); await configLista();
 
     console.log('1 · Teléfono 390 (iPhone), cuenta sin llave: Descargar mis datos ofrece solo el código');
     const A = await nuevo(390, IOS), p = A.p;
@@ -172,11 +173,11 @@ const msg = (r) => (r && r.msg ? r.msg.es : JSON.stringify(r));
     await p.goto(B + '/cuenta/ajustes/privacidad/datos');
     ok(await espera(() => p.url().includes('/entrar')), 'y la pantalla manda a Entrar');
     sql(`update users set status = 'active', status_until = null, status_reason = null where id = '${IDS.M}'`);
-    cfg('passkey_fallos_hora', 3); await dormir(16000);
+    cfg('passkey_fallos_hora', 3); await configLista();
     await p.goto(B + '/cuenta/ajustes/privacidad/datos'); await p.getByText('Descargar mis datos').first().waitFor();
     const x9 = await accion(p, PEDIR_ARCH, [{ id: 'x'.repeat(20), type: 'public-key', response: {} }, null]);
     ok(x9.ok === false && /Demasiados intentos/.test(msg(x9)), 'con el tope de fallos alcanzado (passkey_fallos_hora) → «Demasiados intentos»');
-    cfg('passkey_fallos_hora', 100); await dormir(16000);
+    cfg('passkey_fallos_hora', 100); await configLista();
 
     console.log('8 · Pedir con la llave otra vez, ya sin bloqueos; el interruptor apagado; el código sigue igual');
     await p.reload(); await boton(p, 'Pedir con Face ID').first().waitFor(); await boton(p, 'Pedir con Face ID').first().click();
@@ -187,7 +188,10 @@ const msg = (r) => (r && r.msg ? r.msg.es : JSON.stringify(r));
     ok((await boton(p, /Pedir con /).count()) === 0, 'con el interruptor cuenta.llaves apagado: solo el código');
     ok((await accion(p, RETO_ARCH, [])).ok === false, 'y el servidor tampoco da retos');
     sql(`update feature_flags set enabled = true where key = 'cuenta.llaves'`);
-    await p.reload(); await boton(p, 'Mejor con un código').first().waitFor(); await boton(p, 'Mejor con un código').first().click();
+    await p.reload(); await boton(p, 'Mejor con un código').first().waitFor();
+    // ESPERA-FIJA: otro código al mismo teléfono solo se manda 30 s después del anterior (REENVIO_SEG): los 16 s de antes de cada cambio de Configuración lo cubrían sin decirlo; ahora se espera solo lo que falta
+    const faltaCodigo = Number(sql(`select coalesce(greatest(0, ceil(31 - extract(epoch from now() - max(created_at))))::int, 0) from otp_codes where phone = '+1${MARI}'`)); if (faltaCodigo > 0) await dormir(faltaCodigo * 1000);
+    await boton(p, 'Mejor con un código').first().click();
     await p.getByText(/Sandbox: el código es \d{6}/).first().waitFor();
     const cod = /el código es (\d{6})/.exec(await texto(p))[1];
     await p.getByPlaceholder('482913').fill(cod);

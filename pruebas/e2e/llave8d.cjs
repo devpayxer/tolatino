@@ -7,6 +7,7 @@
 // quitada con aviso), límites, tope de llaves, las paredes de la base, el puente TLLlave simulado, Super Admin (Usuarios 360° › Seguridad: revocar
 // con motivo, aviso y auditoría; permiso; Sistema › Equipo) y el caso HTTP en una IP (sin botón, el SMS igual). Deja todo como estaba.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const crypto = require('crypto');
 const { S, B, sql, sqlErr } = require('../lib/g6-comun.cjs');
 const OUT = S + '/cap/', IPB = 'http://192.0.2.2:3100';
@@ -52,7 +53,7 @@ const esDe = async (p, tel) => (await yo(p))?.telefono === '+1' + tel;
   // los prueba contando lo que ya hay en la última hora.
   const cfg = (k, v) => sql(`insert into platform_config (key, value, updated_by) values ('${k}', '${v}', '${IDS.A}') on conflict (key) do update set value = excluded.value`);
   const altos = () => { cfg('passkey_fallos_hora', 100); cfg('passkey_retos_hora', 1000); };
-  altos(); await dormir(16000);
+  altos(); await configLista();
   const br = await chromium.launch();
   const nuevo = async (w, ua) => {
     const ctx = await br.newContext({ viewport: { width: w, height: w < 500 ? 844 : 900 }, ...(ua ? { userAgent: ua } : {}), locale: 'es-US' });
@@ -143,10 +144,10 @@ const esDe = async (p, tel) => (await yo(p))?.telefono === '+1' + tel;
     ok(oR.opciones.rpId === 'localhost' && oR.opciones.userVerification === 'required' && !oR.opciones.allowCredentials?.length && oR.opciones.challenge.length === 43, 'el reto: 32 bytes al azar, RP ID del entorno, verificación de la persona requerida, sin lista de llaves (no se adivina la cuenta)');
     ok(sql(`select count(*) from webauthn_challenges where challenge_hash = encode(sha256('${oR.opciones.challenge}'::bytea), 'hex')`) === '1' && sql(`select count(*) from webauthn_challenges where challenge_hash = '${oR.opciones.challenge}'`) === '0', 'se guarda solo su huella');
     cfg('passkey_reto_s', 30);
-    await dormir(16000); // la caché de Configuración (15 s)
+    await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
     const oV = await reto(p); const rV = await firmar(p, oV);
     ok(sql(`select round(extract(epoch from expires_at - created_at)) from webauthn_challenges order by id desc limit 1`) === '30', 'el reto vence a los passkey_reto_s (30 s en la prueba)');
-    await dormir(31000);
+    await dormir(31000); // ESPERA-FIJA: el reto vence a los 30 s (passkey_reto_s): enviado a los 31 s tiene que salir «vencido»
     ok((await api(p, '/api/cuenta/llave/entrar', { respuesta: rV })).error === 'reto_vencido' && (await yo(p)) === null, 'firmado a tiempo pero enviado a los 31 s → vencido, no entra');
     sql(`delete from platform_config where key = 'passkey_reto_s'`); altos();
     ok(sqlErr(`update webauthn_challenges set used_at = now() where id = (select id from webauthn_challenges where used_at is not null order by id desc limit 1)`).includes('un uso'), 'la base: un reto usado no se vuelve a usar');
@@ -280,22 +281,22 @@ const esDe = async (p, tel) => (await yo(p))?.telefono === '+1' + tel;
     console.log('10 · Límites y tope de llaves');
     const fallos0 = Number(sql(`select count(*) from passkey_log where action = 'entrar_fallo' and ip = '127.0.0.1' and at > now() - interval '1 hour'`));
     const topeF = Math.min(100, Math.max(3, fallos0 + 2)); cfg('passkey_fallos_hora', topeF);
-    const Dq = await nuevo(390, IOS), z = Dq.p; await z.goto(B + '/entrar'); await dormir(16000);
+    const Dq = await nuevo(390, IOS), z = Dq.p; await z.goto(B + '/entrar'); await configLista();
     const sts = []; for (let i = 0; i < topeF - fallos0 + 1; i++) sts.push((await api(z, '/api/cuenta/llave/entrar', { respuesta: falso })).st);
     ok(fallos0 + 2 <= 100 && sts.slice(0, -1).every((x) => x === 400) && sts[sts.length - 1] === 429, `al pasar passkey_fallos_hora intentos fallidos por dirección (${topeF} en la prueba) → 429 «Demasiados intentos»`);
     ok((await api(z, '/api/cuenta/llave/entrar', { respuesta: falso })).error === 'demasiados', 'y sigue así mientras dure la hora (el código por SMS sigue disponible)');
     const retos0 = Number(sql(`select count(*) from webauthn_challenges where ip = '127.0.0.1' and created_at > now() - interval '1 hour'`));
     const topeR = Math.max(10, retos0 + 3); cfg('passkey_retos_hora', topeR); cfg('passkey_fallos_hora', 100);
-    const E = await nuevo(390, IOS), e = E.p; await e.goto(B + '/entrar'); await dormir(16000);
+    const E = await nuevo(390, IOS), e = E.p; await e.goto(B + '/entrar'); await configLista();
     const st = []; for (let i = 0; i < topeR - retos0 + 1; i++) st.push((await api(e, '/api/cuenta/llave/entrar/reto', {})).st);
     ok(st.slice(0, -1).every((x) => x === 200) && st[st.length - 1] === 429, `al pasar passkey_retos_hora retos por dirección por hora (${topeR} en la prueba) → 429`);
-    altos(); await dormir(16000);
+    altos(); await configLista();
     // Tope: Yaritza agrega una llave (la del clon se quitó); con passkey_max = 1, una segunda → no (la app y la base).
     await porSms(q, YARI); await espera(() => q.url().endsWith('/cuenta'));
     await Bq.cdp.send('WebAuthn.clearCredentials', { authenticatorId: Bq.aid });
     await q.goto(B + '/cuenta/ajustes/privacidad'); await q.getByText(/Agregar .* en este dispositivo/).first().click();
     ok(await espera(() => sql(`select count(*) from passkeys where user_id = '${IDS.Y}' and revoked_at is null`) === '1'), 'Yaritza agrega otra llave');
-    cfg('passkey_max', 1); await dormir(16000);
+    cfg('passkey_max', 1); await configLista();
     ok((await api(q, '/api/cuenta/llave/registro/reto', {})).error === 'llave_maximo', 'con passkey_max = 1, agregar otra → «Ya tienes el máximo»');
     ok(sqlErr(`insert into passkeys (user_id, credential_id, public_key, name, rp_id) values ('${IDS.Y}', '${crypto.randomBytes(20).toString('base64url')}', '\\x${crypto.randomBytes(77).toString('hex')}', 'x', 'localhost')`).includes('máximo'), 'y la base tampoco lo deja');
     sql(`delete from platform_config where key = 'passkey_max'`);

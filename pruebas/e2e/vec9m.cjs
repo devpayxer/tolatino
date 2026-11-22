@@ -76,7 +76,7 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     await shot(pc, 'chat-vivo-390'); await shot(pn, 'panel-vivo-1360', false);
     // Quieta, la conversación no pregunta nada (antes: cada 4–5 s).
     const posts = []; pc.on('request', (r) => { if (r.method() === 'POST') posts.push(r.url()); });
-    await new Promise((r) => setTimeout(r, 6500));
+    await new Promise((r) => setTimeout(r, 6500)); // ESPERA-FIJA: es una afirmación negativa: quieta 6 s no pregunta nada (antes preguntaba cada 4 a 5 s)
     ok(posts.length === 0, `quieta 6 s, la conversación no pregunta nada (${posts.length} peticiones)`);
     // Lo que se tapa.
     await enviar('mi tarjeta es 4242 4242 4242 4242 y mi seguro 123-45-6789');
