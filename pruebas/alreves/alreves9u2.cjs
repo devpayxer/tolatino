@@ -66,7 +66,7 @@ for (const [f, a, b, msg] of casosBase) {
   if (cazo) bien++;
 }
 let limpio = true;
-try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch { limpio = false; }
+if (!require('../lib/alreves-fin.cjs')(R)) limpio = false;
 const fin = base();
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'} · nota9u2 (la base) limpia después: ${fin.st === 0 ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio && fin.st === 0 ? 0 : 1);

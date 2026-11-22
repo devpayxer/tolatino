@@ -36,7 +36,7 @@ const casos = [
   ['tuberiaNoSeSalta', Y, '    if: always()\n    runs-on: ubuntu-latest\n    permissions: { contents: read, actions: read }\n', '    if: always()\n    runs-on: ubuntu-latest\n'],
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.
-  ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}", "fase9,varios') }} --parte 1/4"],
+  ['tuberiaNoSeSalta', Y, "fase9,varios') }} --parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }}", "fase9,varios') }} --parte 1/4"],
   // 20 nov · el entorno de pruebas sin tope de tiempo en un paso de red
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 npx playwright install', 'npx playwright install'],
   ['tuberiaNoSeSalta', '.github/actions/entorno-pruebas/action.yml', 'reintenta 600 bash pruebas/servir/base.sh', 'bash pruebas/servir/base.sh'],
@@ -101,6 +101,6 @@ for (const [g, f, c] of crear) {
   let r; try { r = correr(g); } finally { fs.unlinkSync(ruta); if (nuevo) try { fs.rmdirSync(dir); } catch { /* no vacía */ } }
   informe(g, `crear ${f.split('/').pop()}`, r);
 }
-let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio ? 0 : 1);

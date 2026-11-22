@@ -23,12 +23,19 @@
    Salida: $PRUEBAS_SALIDA/res/<nombre>.out por prueba y resumen.json; al final, la tabla con las comprobaciones (✓) de cada una.
    Una prueba pasa si termina con código 0. Nada de esto lleva secretos: los lee cada prueba de $PRUEBAS_SALIDA/secretos.env. */
 import { spawn, execSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync, createWriteStream } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync, createWriteStream } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+/* 22 nov · «Árbol idéntico» (A2): la huella del árbol se carga AL ARRANCAR, en este proceso. Una suite que siembra en pruebas/lib/arbol.cjs (o en
+   este archivo) no cambia la comparación de la corrida en curso. Guardián alrevesArbolIdentico. */
+const ARBOL = createRequire(import.meta.url)("./lib/arbol.cjs");
+/* 22 nov · Revisión del CI (A3) · El diario de restauración POR ÁRBOL (en la carpeta de git de esta copia, fuera del árbol): candado de la corrida
+   al revés de este árbol y lo que cada suite escribe, anotado antes de escribirlo. Guardián alrevesSeguroSembrado. */
+const DIARIO = createRequire(import.meta.url)("./lib/diario.cjs");
 const SALIDA = resolve(process.env.PRUEBAS_SALIDA || join(tmpdir(), "tolatino-pruebas"));
 const RES = join(SALIDA, "res");
 const args = process.argv.slice(2);
@@ -48,6 +55,13 @@ for (const [dir, carril] of [["e2e", "e2e"], ["alreves", "alreves"]]) {
 }
 const grupos = [...new Set(catalogo.map((t) => t.grupo))].sort((a, b) => (a === "alreves" ? -1 : b === "alreves" ? 1 : a.localeCompare(b)));
 
+/* 22 nov · --cerrar-diario: después de mirar los archivos que el diario de una corrida muerta no quiso tocar, se cierra (se guarda aparte, no se borra). */
+if (flag("--cerrar-diario")) {
+  const d = DIARIO.carpetaDe(RAIZ), c = join(d, "cerrados", new Date().toISOString().replace(/[:.]/g, "-"));
+  mkdirSync(c, { recursive: true });
+  for (const f of ["corrida.json", "diario.jsonl", "originales", "apartados"]) if (existsSync(join(d, f))) renameSync(join(d, f), join(c, f));
+  console.log(`diario del árbol cerrado (guardado en ${c})`); process.exit(0);
+}
 if (flag("--lista") || !args.length) {
   for (const g of grupos) { const ts = catalogo.filter((t) => t.grupo === g); console.log(`${g} (${ts.length}): ${ts.map((t) => t.nombre).join(" ")}`); }
   console.log(`\n${catalogo.length} pruebas. Uso: node pruebas/correr.mjs <nombre…> | --grupo <g> | --todas`);
@@ -79,6 +93,9 @@ if (opt("--parte")) {
   sel = sel.filter((_, k) => k % +m[2] === +m[1] - 1);
 }
 const TIEMPO = Number(opt("--tiempo") ?? 25) * 60_000;
+/* 22 nov · Revisión del CI (B2) · --comprobar: solo resuelve la selección (un nombre que no existe ya salió con 2 arriba) y sale, sin correr nada,
+   sin servidor y sin candado. Lo usa «cambios» en el CI para parar una dirigida con un nombre mal escrito antes de arrancar los carriles. */
+if (flag("--comprobar")) { console.log(`✓ --comprobar: ${sel.length} prueba(s) existen: ${sel.map((t) => t.nombre).join(" ")}`); process.exit(sel.length ? 0 : 2); }
 
 /* Playwright: el del repo si lo hay; si no, el global (npm root -g). */
 let NODE_PATH = process.env.NODE_PATH ?? "";
@@ -107,17 +124,25 @@ function cerrarVentanas() {
   } catch { /* sin base local (solo al revés): nada que cerrar */ }
 }
 
+/* 22 nov · Revisión del CI (A1) · Cada suite al revés, con el árbol ya vigilado, recibe ALREVES_CORREDOR=<pid>:<huella inicial> SOLO en su proceso:
+   su pasada final (pruebas/lib/alreves-fin.cjs) no se repite, comprueba la huella y lo dice. Guardián alrevesPasadaFinal. */
+const envDe = (t) => (t.carril === "alreves" && vigia.ini ? { ...ENV, ALREVES_CORREDOR: `${process.pid}:${vigia.ini.digest}`, ALREVES_DIARIO: vigia.diario, ALREVES_RAIZ: RAIZ, NODE_OPTIONS: `${ENV.NODE_OPTIONS ?? ""} --require ${JSON.stringify(join(RAIZ, "pruebas/lib/alreves-corredor.cjs"))}`.trim() } : ENV);
+/* 22 nov · Revisión del CI (A3) · Cada prueba corre en su propio grupo de procesos (detached): al pararla se para con lo que lanzó (su
+   «node guardianes/run.mjs --solo» no queda huérfano), con SIGTERM primero y SIGKILL después. */
+const matarGrupo = (p, sen) => { try { process.kill(-p.pid, sen); } catch { try { p.kill(sen); } catch { /* ya no está */ } } };
+let enCurso = null, parando = false;
 const correrUna = (t) => new Promise((ok) => {
   if (t.carril === "e2e") cerrarVentanas();
   const ini = Date.now(), out = join(RES, `${t.nombre}.out`), w = createWriteStream(out);
   const [cmd, cargs] = t.tipo === "sh" ? ["bash", [t.archivo]] : ["node", [t.archivo]];
-  const p = spawn(cmd, cargs, { cwd: RAIZ, env: ENV, stdio: ["ignore", "pipe", "pipe"] });
+  const p = spawn(cmd, cargs, { cwd: RAIZ, env: envDe(t), stdio: ["ignore", "pipe", "pipe"], detached: true });
+  enCurso = p; if (t.carril === "alreves") vigia.anotarSuite(p.pid);
   let texto = "";
   const mira = (d) => { w.write(d); texto += d; if (texto.length > 2e6) texto = texto.slice(-1e6); };
   p.stdout.on("data", mira); p.stderr.on("data", mira);
-  const reloj = setTimeout(() => { mira(`\n✗ se pasó de ${TIEMPO / 60000} min: se detiene\n`); p.kill("SIGKILL"); }, TIEMPO);
+  const reloj = setTimeout(() => { mira(`\n✗ se pasó de ${TIEMPO / 60000} min: se detiene\n`); matarGrupo(p, "SIGKILL"); }, TIEMPO);
   p.on("close", (codigo) => {
-    clearTimeout(reloj); w.end();
+    clearTimeout(reloj); w.end(); enCurso = null;
     const checks = (texto.match(/^\s*✓/gm) ?? []).length, malas = (texto.match(/^\s*✗/gm) ?? []).length;
     // 9b-1 · Una prueba que termina sin ninguna comprobación (✓) no está en verde: 13 de la fase 1–2 solo imprimían lo que veían y la corrida
     // las contaba en verde con «0 ✓» (lic, menu2a…). Ahora cada una comprueba; si una vuelve a no comprobar nada, es roja.
@@ -128,6 +153,104 @@ const correrUna = (t) => new Promise((ok) => {
     const error = sinNada ? "terminó sin ninguna comprobación (✓): no se sabe si probó algo" : mudo ? `${malas} ✗ y salió con 0: ${(texto.split("\n").find((l) => /^\s*✗/.test(l)) ?? "").trim().slice(0, 180)}` : codigo === 0 ? "" : (texto.split("\n").reverse().find((l) => /ASSERT|Error|✗|Timeout|falla|fallo/i.test(l)) ?? texto.trim().split("\n").pop() ?? "").trim().slice(0, 220);
     const r = { nombre: t.nombre, grupo: t.grupo, ok: codigo === 0 && !sinNada && !mudo, codigo, checks, malas, seg: Math.round((Date.now() - ini) / 1000), error, salida: out };
     console.log(`${r.ok ? "✓" : "✗"} ${t.nombre.padEnd(16)} ${String(checks).padStart(4)} ✓ ${String(r.seg).padStart(5)} s${r.ok ? "" : `  · ${error}`}`);
+    ok(r);
+  });
+});
+
+/* 22 nov · Revisión del CI (A2) · El carril «al revés», con el árbol vigilado. Hasta hoy cada suite terminaba con una pasada COMPLETA de guardianes
+   (113 por confirmación, el 85–88 % del carril) que solo veía un defecto mal restaurado si algún guardián lo miraba. Ahora:
+   - al empezar el carril: HEAD~1 tiene que resolver (migracionReversible mira el commit anterior), una pasada REAL y completa de guardianes (si es
+     roja, el carril se para ahí: nada se prueba sobre un árbol que ya está rojo), y la huella del árbol con una copia de referencia FUERA del árbol;
+   - tras CADA suite: la misma huella, comparada contra la INICIAL. Si difiere, la suite es roja nombrando los archivos, el corredor restaura desde
+     la copia (lo nuevo no se borra: se aparta a la copia y se dice dónde), recalcula y exige igualdad; si no lo logra, corta el carril;
+   - al terminar: otra pasada REAL y completa de guardianes.
+   Por inducción: árbol inicial en verde y huella idéntica tras cada suite ⇒ cada suite dejó un árbol que ya se probó en verde. */
+const vigia = {
+  ini: null, dir: null, cortado: null, empezado: false, diario: null,
+  /* El candado del árbol y el diario de una corrida anterior que murió (SIGKILL, la máquina): se recupera SIN restaurar a ciegas. */
+  abrir() {
+    this.diario = DIARIO.carpetaDe(RAIZ);
+    mkdirSync(this.diario, { recursive: true });
+    const cj = join(this.diario, "corrida.json");
+    if (existsSync(cj)) {
+      let c = {}; try { c = JSON.parse(readFileSync(cj, "utf8")); } catch { /* a medias: de una corrida muerta */ }
+      if (c.pid && c.pid !== process.pid && DIARIO.vivo(c.pid)) { console.error(`✗ ya hay una corrida al revés viva en este árbol (pid ${c.pid}, desde ${c.inicio}): esperar a que termine (sembraría sobre lo sembrado)`); process.exit(2); }
+      if (c.suite && DIARIO.vivo(c.suite)) { try { process.kill(-c.suite, "SIGKILL"); } catch { /* ya no está */ } console.log(`  la suite huérfana de la corrida anterior (grupo ${c.suite}) se detuvo`); }
+      if (c.ref && existsSync(c.ref) && !existsSync(join(c.ref, "apartados"))) try { rmSync(c.ref, { recursive: true, force: true }); } catch { /* nada */ }
+      const o = DIARIO.recuperar(RAIZ, this.diario);
+      console.log(`  diario de una corrida anterior que no terminó (pid ${c.pid ?? "?"}, ${c.inicio ?? "?"}): ${o.devueltos.length} archivo(s) devueltos al original, ${o.apartados.length} apartado(s) en ${join(this.diario, "apartados")}, ${o.carpetas.length} carpeta(s)${o.devueltos.length ? ` · ${o.devueltos.join(", ")}` : ""}`);
+      if (o.conflictos.length) {
+        console.error(`✗ el diario de la corrida anterior tiene archivos que no toco (no tienen ni el original ni el defecto anotado):\n${o.conflictos.map((x) => `  ${x}`).join("\n")}\nMíralos; cuando estén como deben: node pruebas/correr.mjs --cerrar-diario`);
+        process.exit(2);
+      }
+      DIARIO.vaciar(this.diario);
+    }
+    writeFileSync(cj, JSON.stringify({ pid: process.pid, inicio: new Date().toISOString() }));
+  },
+  anotarSuite(pid) { if (this.diario) try { writeFileSync(join(this.diario, "corrida.json"), JSON.stringify({ pid: process.pid, inicio: new Date(inicio).toISOString(), suite: pid, ref: this.dir })); } catch { /* nada */ } },
+  cerrar() { if (this.diario) { DIARIO.vaciar(this.diario); try { unlinkSync(join(this.diario, "corrida.json")); } catch { /* nada */ } } },
+  /* SIGINT/SIGTERM: el árbol vuelve a la copia de referencia antes de salir; si vuelve, el diario se cierra; si no, queda para el próximo arranque. */
+  alParar() {
+    if (!this.ini) { if (!DIARIO.leer(this.diario ?? "/nada").length) this.cerrar(); return; }
+    try {
+      const d = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ));
+      if (d.length) { const o = ARBOL.restaurar(RAIZ, this.ini, this.dir); console.log(`  restaurado desde la copia de referencia: ${o.restaurados.length} devuelto(s), ${o.apartados.length} apartado(s)${o.apartados.length ? ` en ${join(this.dir, "apartados")}` : ""}`); }
+      const otra = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ));
+      if (otra.length) console.log(`  ✗ el árbol NO volvió a la huella inicial (${otra.slice(0, 10).map((x) => x.ruta).join(", ")}): el diario queda abierto y el próximo arranque lo recupera`);
+      else { console.log("  árbol idéntico al del inicio del carril"); this.cerrar(); }
+    } catch (e) { console.log(`  ✗ no se pudo restaurar al parar: ${String(e?.message ?? e).slice(0, 200)} (el diario queda abierto)`); }
+  },
+  async empezar(rs) {
+    this.empezado = true;
+    this.abrir();
+    try { execSync("git rev-parse --verify -q HEAD~1", { cwd: RAIZ, stdio: "ignore" }); }
+    catch { this.cortado = "sin historia: HEAD~1 no resuelve (las pasadas del carril miran el commit anterior; en el CI, checkout con fetch-depth: 0)"; rs.push(rojaDelCarril("guardianes-inicio", this.cortado)); return; }
+    const r = await pasadaReal("inicio"); rs.push(r);
+    if (!r.ok) { this.cortado = "la pasada real de guardianes del inicio está en rojo: nada se prueba sobre un árbol que ya está rojo"; return; }
+    try {
+      this.ini = ARBOL.huella(RAIZ);
+      this.dir = mkdtempSync(join(tmpdir(), "tolatino-alreves-ref-"));
+      ARBOL.copiar(RAIZ, this.ini, this.dir);
+      console.log(`  árbol del carril: huella ${this.ini.digest.slice(0, 16)} (${this.ini.archivos.size} archivos, ${this.ini.vacias.length} carpetas vacías) · copia de referencia en ${this.dir}`);
+    } catch (e) { this.cortado = `no se pudo tomar la huella del árbol: ${String(e?.message ?? e).slice(0, 200)}`; rs.push(rojaDelCarril("arbol-inicio", this.cortado)); }
+  },
+  /* Tras cada suite: la huella contra la inicial. */
+  despues(t, r) {
+    let d;
+    try { d = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ)); }
+    catch (e) { this.cortado = `no se pudo calcular la huella del árbol tras ${t.nombre}: ${String(e?.message ?? e).slice(0, 200)}`; return { ...r, ok: false, error: this.cortado }; }
+    if (!d.length) { DIARIO.vaciar(this.diario); return r; }
+    const lista = d.slice(0, 30).map((x) => `${x.ruta} (${x.que})`).join(" · ") + (d.length > 30 ? ` · y ${d.length - 30} más` : "");
+    console.log(`  ✗ ${t.nombre} es ROJA: dejó el árbol distinto del inicial: ${lista}`);
+    let nota;
+    try {
+      const o = ARBOL.restaurar(RAIZ, this.ini, this.dir), otra = ARBOL.diferencias(this.ini, ARBOL.huella(RAIZ));
+      if (otra.length) { this.cortado = `tras ${t.nombre} el árbol no volvió a la huella inicial (${otra.slice(0, 10).map((x) => `${x.ruta} (${x.que})`).join(" · ")}): el carril se corta`; nota = this.cortado; }
+      else { DIARIO.vaciar(this.diario); nota = `restaurado desde la copia de referencia (${o.restaurados.length} archivo(s) devueltos${o.apartados.length ? `; ${o.apartados.length} nuevo(s) apartado(s) en ${join(this.dir, "apartados")}` : ""}${o.carpetas.length ? `; carpetas: ${o.carpetas.join(", ")}` : ""}): huella idéntica otra vez`; }
+    } catch (e) { this.cortado = `no se pudo restaurar el árbol tras ${t.nombre}: ${String(e?.message ?? e).slice(0, 200)}`; nota = this.cortado; }
+    console.log(`    ${nota}`);
+    return { ...r, ok: false, error: `dejó el árbol distinto del inicial: ${lista} · ${nota}`.slice(0, 1500) };
+  },
+  async terminar(rs) {
+    if (!this.empezado) return;
+    if (this.cortado) { console.log(`  ✗ carril «al revés» cortado: ${this.cortado}`); }
+    else { rs.push(await pasadaReal("final")); this.cerrar(); }
+    if (this.dir && !existsSync(join(this.dir, "apartados"))) try { rmSync(this.dir, { recursive: true, force: true }); } catch { /* nada */ }
+  },
+};
+const rojaDelCarril = (nombre, error) => { console.log(`✗ ${nombre.padEnd(16)}    0 ✓     0 s  · ${error}`); return { nombre, grupo: "alreves", ok: false, codigo: null, checks: 0, malas: 1, seg: 0, error, salida: null }; };
+/* Una pasada REAL y completa de guardianes (sin --solo, sin nada que la acorte), con su salida en res/guardianes-<cual>.out. */
+const pasadaReal = (cual) => new Promise((ok) => {
+  const ini = Date.now(), out = join(RES, `guardianes-${cual}.out`), w = createWriteStream(out);
+  const env = { ...ENV }; delete env.ALREVES_CORREDOR;
+  const p = spawn("node", ["guardianes/run.mjs"], { cwd: RAIZ, env, stdio: ["ignore", "pipe", "pipe"] });
+  let texto = "";
+  const mira = (d) => { w.write(d); texto += d; if (texto.length > 2e6) texto = texto.slice(-1e6); };
+  p.stdout.on("data", mira); p.stderr.on("data", mira);
+  p.on("close", (codigo) => {
+    w.end();
+    const r = { nombre: `guardianes-${cual}`, grupo: "alreves", ok: codigo === 0, codigo, checks: (texto.match(/^\s*✓/gm) ?? []).length, malas: (texto.match(/^\s*✗/gm) ?? []).length, seg: Math.round((Date.now() - ini) / 1000), error: codigo === 0 ? "" : (texto.split("\n").filter((l) => /^\s*\[|✗|Error/.test(l)).slice(0, 8).join(" · ") || texto.trim().split("\n").pop() || "").trim().slice(0, 600), salida: out };
+    console.log(`${r.ok ? "✓" : "✗"} ${r.nombre.padEnd(16)} ${String(r.checks).padStart(4)} ✓ ${String(r.seg).padStart(5)} s  · pasada REAL y completa de guardianes (${cual} del carril «al revés»)${r.ok ? "" : `: ${r.error}`}`);
     ok(r);
   });
 });
@@ -148,7 +271,12 @@ const REINTENTAR = flag("--reintentar"), TOPE_INESTABLES = 3, inestables = [];
 const carril = async (ts) => {
   const rs = [];
   for (const t of ts) {
+    if (t.carril === "alreves" && !vigia.empezado) await vigia.empezar(rs);
+    if (t.carril === "alreves" && vigia.cortado) { rs.push(rojaDelCarril(t.nombre, `no corrió: ${vigia.cortado}`)); continue; }
+    if (parando) await new Promise(() => {}); // se está parando: el manejador de la señal termina
     let r = await correrUna(t);
+    if (parando) await new Promise(() => {});
+    if (t.carril === "alreves") r = vigia.despues(t, r);
     if (!r.ok && REINTENTAR && t.carril === "e2e" && inestables.length < TOPE_INESTABLES) {
       const primera = join(RES, `${t.nombre}.intento1.out`);
       try { renameSync(r.salida, primera); } catch { /* sin salida */ }
@@ -159,8 +287,19 @@ const carril = async (ts) => {
     }
     rs.push(r);
   }
+  if (ts.some((t) => t.carril === "alreves")) await vigia.terminar(rs);
   return rs;
 };
+/* 22 nov · Revisión del CI (A3) · SIGINT/SIGTERM: se para la prueba en curso con su grupo (SIGTERM, 5 s, SIGKILL), el árbol vuelve a la
+   copia de referencia y se cierra el diario; si no se logra, queda abierto y el próximo arranque lo recupera. */
+for (const [sen, cod] of [["SIGINT", 130], ["SIGTERM", 143]]) process.on(sen, async () => {
+  if (parando) return; parando = true;
+  console.log(`\n✗ ${sen}: se detiene la corrida; antes, el árbol vuelve a como estaba`);
+  const p = enCurso;
+  if (p) { matarGrupo(p, "SIGTERM"); await Promise.race([new Promise((ok) => p.once("close", ok)), new Promise((ok) => setTimeout(ok, 5000))]); if (enCurso) matarGrupo(p, "SIGKILL"); await new Promise((ok) => setTimeout(ok, 300)); }
+  vigia.alParar();
+  process.exit(cod);
+});
 const inicio = Date.now();
 console.log(`${sel.length} pruebas · salida en ${RES}${flag("--paralelo") ? " · dos carriles (al revés | punta a punta)" : " · una a la vez"}\n`);
 const res = flag("--paralelo")

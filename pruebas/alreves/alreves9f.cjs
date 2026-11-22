@@ -80,6 +80,6 @@ for (const [g, f, c] of crear) {
   let r; try { r = correr('cadenaConLlave'); } finally { fs.writeFileSync(ruta, orig); }
   informe('cadenaConLlave', 'cms-cadenas.json a mano', r);
 }
-let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 if (bien !== total || !limpio) process.exit(1);

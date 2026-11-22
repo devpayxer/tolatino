@@ -66,6 +66,6 @@ for (const [g, f, c] of crear) {
 informe('legalRevisado', 'BORRADOR con TOLATINO_FASE=9', correr('legalRevisado', { TOLATINO_FASE: '9' }));
 // La semilla del sandbox es la única que dice «pruebas» (si no existiera, la base sería producción): existe y solo en infra/pruebas/semilla.
 total++; if (fs.existsSync(path.join(R, SEM)) && /'entorno', '"pruebas"'/.test(fs.readFileSync(path.join(R, SEM), 'utf8'))) { bien++; console.log('  ✓ la semilla del sandbox marca la base como «pruebas»'); } else console.log('  ✗ falta la semilla 0053 con «entorno» = pruebas');
-let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 if (bien !== total || !limpio) process.exit(1);

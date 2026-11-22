@@ -8069,9 +8069,11 @@ const guardianes = {
     // corre (la matriz sin la parte o un --parte fijo) o un carril que se reparte y otro no.
     const cf = /\n  confirmacion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", an0 = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
     const PM = "parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}", PA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}";
-    for (const [k, t, n] of [["regresion", rg, 1], ["confirmacion", cf, 2], ["anchos", an0, 1]]) {
+    // 22 nov (B2) · En «regresion», «al revés» va siempre en 4 partes: su --parte lleva «/4» para ese carril y «partes» para la punta a punta.
+    const PAR = "--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }}";
+    for (const [k, t, n, pa] of [["regresion", rg, 1, PAR], ["confirmacion", cf, 2, PA], ["anchos", an0, 1, PA]]) {
       if (!t.includes(PM)) falla(G, Y, 0, `«${k}» no reparte su matriz en las partes pedidas (${PM})`);
-      if (t.split(PA).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${PA} (ni fija ni olvidada)`);
+      if (t.split(pa).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${pa} (ni fija ni olvidada)`);
     }
     if (!/\n      partes:\n[\s\S]*?options: \["1", "4"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1 o 4)");
     // 20 nov · El entorno de cada trabajo no se queda colgado: cada paso que baja algo de la red (pip, apt, npm, navegadores, la base, los
@@ -10903,6 +10905,134 @@ const guardianes = {
     }
   },
 
+  /* 22 nov · Revisión del CI (A2) · alrevesArbolIdentico: en el carril «al revés» el corredor (pruebas/correr.mjs) vigila el árbol. Al empezar:
+     HEAD~1 resuelve y una pasada REAL y completa de guardianes (si es roja, el carril se para); la huella del árbol (pruebas/lib/arbol.cjs) y una
+     copia de referencia fuera del árbol. Tras CADA suite: la huella comparada con la INICIAL; si difiere, roja nombrando los archivos, restaurar
+     desde la copia y volver a comparar (si no vuelve, se corta el carril). Al terminar, otra pasada real. Lo que se teme: comparar solo «antes y
+     después» de la suite (la siguiente correría verde sobre un árbol envenenado), no restaurar, una huella que deje fuera las carpetas vacías, los
+     ignorados, las referencias de git o el modo, una huella cargada en un proceso por suite (correría el código que la suite dejó), una pasada
+     «real» que no lo es (--solo o con la variable del corredor), o borrar lo nuevo en vez de apartarlo. Al revés: alrevesArbol (casos) y
+     arbol9z (la huella y la restauración, de verdad, en un repo de prueba). */
+  alrevesArbolIdentico() {
+    const G = "alrevesArbolIdentico", C = "pruebas/correr.mjs", A = "pruebas/lib/arbol.cjs";
+    if (!existsSync(C) || !existsSync(A)) return falla(G, A, 0, "falta el corredor o la huella del árbol (pruebas/lib/arbol.cjs)");
+    const c = sinComent(C), a = sinComent(A), v = /const vigia = \{[\s\S]*?\n\};/.exec(c)?.[0] ?? "";
+    if (!/^const ARBOL = createRequire\(import\.meta\.url\)\("\.\/lib\/arbol\.cjs"\);$/m.test(c)) falla(G, C, 0, "la huella se carga al arrancar, en el proceso del corredor (const ARBOL = createRequire(import.meta.url)(\"./lib/arbol.cjs\")), nunca en un proceso por suite");
+    if (!/if \(t\.carril === "alreves" && !vigia\.empezado\) await vigia\.empezar\(rs\);/.test(c) || !/if \(t\.carril === "alreves"\) r = vigia\.despues\(t, r\);/.test(c) || !/if \(ts\.some\(\(t\) => t\.carril === "alreves"\)\) await vigia\.terminar\(rs\);/.test(c) || !/if \(t\.carril === "alreves" && vigia\.cortado\) \{ rs\.push\(rojaDelCarril\(/.test(c))
+      falla(G, C, 0, "el carril «al revés» empieza con vigia.empezar, compara tras CADA suite (vigia.despues), no corre nada si se cortó y termina con vigia.terminar");
+    if (!/execSync\("git rev-parse --verify -q HEAD~1"/.test(v) || !/const r = await pasadaReal\("inicio"\); rs\.push\(r\);\s*if \(!r\.ok\) \{ this\.cortado =/.test(v) || !/rs\.push\(await pasadaReal\("final"\)\)/.test(v))
+      falla(G, C, 0, "al empezar el carril: HEAD~1 resuelve y una pasada real (si es roja, se para); al terminar, otra pasada real");
+    if (!/this\.ini = ARBOL\.huella\(RAIZ\);/.test(v) || !/ARBOL\.copiar\(RAIZ, this\.ini, this\.dir\)/.test(v) || !/mkdtempSync\(join\(tmpdir\(\), /.test(v)) falla(G, C, 0, "la huella inicial y la copia de referencia (fuera del árbol, en una carpeta temporal propia) se toman al empezar el carril");
+    if (!/try \{ d = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\); \}/.test(v) || !/ARBOL\.restaurar\(RAIZ, this\.ini, this\.dir\), otra = ARBOL\.diferencias\(this\.ini, ARBOL\.huella\(RAIZ\)\)/.test(v) || !/if \(otra\.length\) \{ this\.cortado =/.test(v) || !/return \{ \.\.\.r, ok: false, error: `dejó el árbol distinto del inicial/.test(v))
+      falla(G, C, 0, "tras cada suite se compara con la huella INICIAL; si difiere: roja con los archivos, restaurar desde la copia, volver a comparar y cortar si no vuelve");
+    const pr = /const pasadaReal = [\s\S]*?\n\}\);/.exec(c)?.[0] ?? "";
+    if (!/spawn\("node", \["guardianes\/run\.mjs"\], /.test(pr) || /--solo/.test(pr) || !/delete env\.ALREVES_CORREDOR;/.test(pr)) falla(G, C, 0, "la pasada real es «node guardianes/run.mjs» entero, sin --solo y sin la variable del corredor");
+    if (!/const SALTAR = new Set\(\['node_modules', '\.git', '\.next', '\.turbo', '\.pnpm-store'\]\);/.test(a)) falla(G, A, 0, "la huella solo deja fuera node_modules, .git, .next, .turbo y .pnpm-store (los ignorados que leen los guardianes entran)");
+    if (!/\['ls-files', '-z', '--cached', '--others', '--exclude-standard'\]/.test(a) || !/if \(!hijos\.length && rel\) vacias\.push\(rel\);/.test(a) || !/`\$\{st\.mode & 0o100 \? '755' : '644'\}:\$\{sha\(fs\.readFileSync\(abs\)\)\}`/.test(a))
+      falla(G, A, 0, "la huella lleva los bytes y el modo normalizado de cada archivo, lo que enumera git ls-files -z y las carpetas vacías");
+    if (!/const REFS = \['HEAD', 'HEAD~1', 'refs\/remotes\/origin\/produccion', 'refs\/remotes\/origin\/pruebas'\];/.test(a) || !/GIT_OPTIONAL_LOCKS: '0'/.test(a)) falla(G, A, 0, "la huella lleva HEAD, HEAD~1, origin/produccion y origin/pruebas, sin tomar el candado del índice");
+    if (!/out\.apartados\.push\(rel\)/.test(a) || /\bfs\.unlinkSync\(src\)/.test(a)) falla(G, A, 0, "lo nuevo que deja una suite no se borra: se aparta a la copia (y se dice dónde)");
+    const y = existsSync(".github/workflows/ci.yml") ? readFileSync(".github/workflows/ci.yml", "utf8") : "";
+    if (!/# Historia completa: [^\n]*\n\s*- uses: actions\/checkout@v4\n\s*with: \{ fetch-depth: 0 \}/.test(/\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "")) falla(G, ".github/workflows/ci.yml", 0, "el carril «al revés» clona con toda la historia (fetch-depth: 0): sus pasadas reales miran HEAD~1");
+  },
+
+  /* 22 nov · Revisión del CI (A1) · alrevesPasadaFinal: la pasada final de guardianes de cada suite al revés va por UN ayudante
+     (pruebas/lib/alreves-fin.cjs). Lanzada por el corredor (ALREVES_CORREDOR=<pid>:<huella>, que el corredor pone SOLO en el proceso de la suite y
+     que solo vale si ese pid es su padre) no repite la pasada completa: comprueba la huella inicial del carril y lo dice («pasada final a cargo del
+     corredor: árbol idéntico»); a mano corre la pasada de verdad. Lo que se teme: una suite que vuelva a la pasada completa directa (otra vez 113
+     pasadas), un ayudante que se salte la pasada sin ser hijo del corredor o sin comprobar la huella, uno que a mano no corra nada, y sobre todo un
+     atajo dentro de guardianes/run.mjs («node guardianes/run.mjs» corre SIEMPRE de verdad: la versión con memoria dio cuatro verdes falsos).
+     Al revés: alrevesFin (casos) y fin9z (el ayudante de verdad: hijo del corredor, huella distinta, a mano). */
+  alrevesPasadaFinal() {
+    const G = "alrevesPasadaFinal", H = "pruebas/lib/alreves-fin.cjs", C = "pruebas/correr.mjs";
+    if (!existsSync(H)) return falla(G, H, 0, "falta el ayudante de la pasada final de las suites al revés");
+    const h = sinComent(H), c = existsSync(C) ? sinComent(C) : "";
+    // alrevesFin nombra la pasada directa como dato (el texto de uno de sus defectos).
+    for (const f of archivos.filter((x) => /^pruebas\/alreves\/[^/]+\.(cjs|mjs)$/.test(x) && x !== "pruebas/alreves/alrevesFin.cjs")) {
+      const t = sinComent(f);
+      if (/\b(execSync|execFileSync|spawnSync)\(\s*['"`]node guardianes\/run\.mjs['"`]/.test(t)) falla(G, f, 0, "la pasada final va por require('../lib/alreves-fin.cjs')(R): una pasada completa directa se repite en cada suite del carril");
+    }
+    if (!/if \(pid && Number\(pid\) === process\.ppid && \/\^\[0-9a-f\]\{64\}\$\/\.test\(huella \?\? ''\)\) \{/.test(h) || !/\.huella\(R\)\.digest;/.test(h) || !/if \(ahora === huella\) \{/.test(h))
+      falla(G, H, 0, "el ayudante solo se salta la pasada si su padre es el corredor que puso ALREVES_CORREDOR y el árbol tiene la huella inicial del carril");
+    if (!/const AVISO = 'pasada final a cargo del corredor: árbol idéntico';/.test(h) || !/console\.log\(`\$\{heredar \? '✓ guardianes: ' : '  '\}\$\{AVISO\}/.test(h)) falla(G, H, 0, "el ayudante dice que no repitió la pasada («pasada final a cargo del corredor: árbol idéntico»), con el ✓ donde la suite lo contaba");
+    if (!/if \(heredar\) \{ cp\.execSync\('node guardianes\/run\.mjs', \{ cwd: R, stdio: 'inherit' \}\); return true; \}/.test(h) || !/try \{ cp\.execSync\('node guardianes\/run\.mjs', \{ cwd: R, stdio: 'pipe' \}\); return true; \}/.test(h))
+      falla(G, H, 0, "fuera del corredor el ayudante corre la pasada completa de verdad, como siempre");
+    if (!/const envDe = \(t\) => \(t\.carril === "alreves" && vigia\.ini \? \{ \.\.\.ENV, ALREVES_CORREDOR: `\$\{process\.pid\}:\$\{vigia\.ini\.digest\}`/.test(c) || !/spawn\(cmd, cargs, \{ cwd: RAIZ, env: envDe\(t\), /.test(c)) falla(G, C, 0, "el corredor pone ALREVES_CORREDOR (su pid y la huella inicial) solo en el proceso de cada suite al revés, con el árbol ya vigilado");
+    if (/process\.env(\.|\[\s*["'`])(ALREVES_\w+|GUARDIANES_(VERDE|HUELLA)\w*)/.test(readFileSync("guardianes/run.mjs", "utf8")))
+      falla(G, "guardianes/run.mjs", 0, "guardianes/run.mjs no guarda ni consulta ningún veredicto: «node guardianes/run.mjs» corre siempre de verdad");
+  },
+
+  /* 22 nov · Revisión del CI (A3) · alrevesSeguroSembrado: sin las pasadas finales el defecto está sembrado casi todo el tiempo de una suite;
+     un corte no puede dejarlo en el árbol. El corredor lanza cada prueba en su grupo de procesos y, por tope de tiempo, la mata entera
+     (SIGKILL) y restaura después (árbol idéntico tras cada suite); ante SIGINT/SIGTERM para la prueba en curso con su grupo, restaura desde la
+     copia de referencia y cierra el diario. El diario es POR ÁRBOL (pruebas/lib/diario.cjs, en la carpeta de git de la copia): candado de la
+     corrida (con una viva en el mismo árbol, otra no arranca) y lo que cada suite escribe, anotado ANTES (precarga pruebas/lib/alreves-corredor.cjs,
+     con fsync). Al arrancar tras una corrida muerta, devuelve un archivo SOLO si sigue con el defecto anotado; lo que alguien cambió no lo toca.
+     Al revés: alrevesSeguro (casos) y seguro9z (SIGKILL a medio caso y la recuperación de verdad, en un repo de prueba). */
+  alrevesSeguroSembrado() {
+    const G = "alrevesSeguroSembrado", C = "pruebas/correr.mjs", D = "pruebas/lib/diario.cjs", P = "pruebas/lib/alreves-corredor.cjs";
+    for (const f of [C, D, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del seguro contra el defecto sembrado");
+    const c = sinComent(C), d = sinComent(D), p = sinComent(P);
+    if (!/env: envDe\(t\), stdio: \["ignore", "pipe", "pipe"\], detached: true \}\);/.test(c) || !/const matarGrupo = \(p, sen\) => \{ try \{ process\.kill\(-p\.pid, sen\); \}/.test(c) || !/matarGrupo\(p, "SIGKILL"\); \}, TIEMPO\);/.test(c))
+      falla(G, C, 0, "cada prueba corre en su grupo de procesos y el tope de tiempo mata el grupo entero (no deja su --solo huérfano)");
+    if (!/for \(const \[sen, cod\] of \[\["SIGINT", 130\], \["SIGTERM", 143\]\]\) process\.on\(sen, /.test(c) || !/matarGrupo\(p, "SIGTERM"\);[^\n]*matarGrupo\(p, "SIGKILL"\);/.test(c) || !/vigia\.alParar\(\);\s*process\.exit\(cod\);/.test(c) || !/const o = ARBOL\.restaurar\(RAIZ, this\.ini, this\.dir\); console\.log\(`  restaurado desde la copia de referencia/.test(c))
+      falla(G, C, 0, "ante SIGINT/SIGTERM el corredor para la prueba con su grupo y restaura el árbol desde la copia antes de salir");
+    if (!/if \(c\.pid && c\.pid !== process\.pid && DIARIO\.vivo\(c\.pid\)\) \{[^\n]*process\.exit\(2\); \}/.test(c) || !/const o = DIARIO\.recuperar\(RAIZ, this\.diario\);/.test(c) || !/if \(o\.conflictos\.length\) \{[\s\S]*?process\.exit\(2\);/.test(c) || !/this\.abrir\(\);/.test(c))
+      falla(G, C, 0, "al empezar el carril: candado por árbol (una corrida viva en el mismo árbol frena a otra) y recuperación del diario de una corrida muerta (con lo que no se toca, se para)");
+    if (!/NODE_OPTIONS: `\$\{ENV\.NODE_OPTIONS \?\? ""\} --require \$\{JSON\.stringify\(join\(RAIZ, "pruebas\/lib\/alreves-corredor\.cjs"\)\)\}`/.test(c) || !/ALREVES_DIARIO: vigia\.diario/.test(c)) falla(G, C, 0, "cada suite al revés corre con la precarga que anota sus escrituras en el diario del árbol");
+    if (!/execFileSync\('git', \['rev-parse', '--absolute-git-dir'\]/.test(d) || !/fs\.writeSync\(fd, `\$\{JSON\.stringify\(entrada\)\}\\n`\); fs\.fsyncSync\(fd\);/.test(d)) falla(G, D, 0, "el diario vive en la carpeta de git de ESTA copia (no en $PRUEBAS_SALIDA, común a todas) y cada anotación llega al disco (fsync) antes de escribir");
+    if (!/if \(ahora === primera\.antes\) continue;/.test(d) || !/if \(ahora !== ultima\.despues\) \{ out\.conflictos\.push\(/.test(d) || !/fs\.renameSync\(abs, dst\); out\.apartados\.push\(rel\);/.test(d))
+      falla(G, D, 0, "la recuperación no restaura a ciegas: solo si el archivo sigue con el defecto anotado; lo que alguien cambió no se toca y lo nuevo se aparta");
+    if (!/if \(pidCorredor && Number\(pidCorredor\) === process\.ppid && process\.env\.ALREVES_DIARIO && process\.env\.ALREVES_RAIZ\) \{/.test(p)) falla(G, P, 0, "la precarga solo actúa en el proceso de la suite que lanzó el corredor");
+    for (const f of ["writeFileSync", "appendFileSync", "unlinkSync", "renameSync", "copyFileSync", "rmSync", "mkdirSync", "rmdirSync"])
+      if (!new RegExp(`fs\\.${f} = function \\([^)]*\\) \\{[\\s\\S]*?(nota\\(|D\\.anotar\\()[\\s\\S]*?return o\\.${f}\\.apply\\(this, arguments\\);`).test(p)) falla(G, P, 0, `la precarga anota ${f} en el diario ANTES de hacerlo`);
+  },
+
+  /* 22 nov · Revisión del CI (A6) · alrevesCazadoConRenglon: un caso al revés cuenta como cazado solo si su guardián falló con SU renglón.
+     32 suites viejas (5a … 8f) cuentan como cazado cualquier salida distinta de 0: un guardián renombrado (código 2, «guardián desconocido») o un
+     run.mjs que revienta harían «cazar» todos sus casos. Sin tocar suite por suite: (1) la precarga de textos.cjs (pruebas/lib/alreves-sin-guardian.cjs)
+     dice «no existe el guardián X» si el nombre no está en guardianes/run.mjs (en segundos, en cada «tipos · build · guardianes»); (2) bajo el
+     corredor, la precarga de las suites (pruebas/lib/alreves-corredor.cjs) deja pasar como «falló» SOLO un código 1 con la cabecera
+     «fallo(s) de guardianes» y el renglón [X]; cualquier otro fallo vuelve como «no cazado» con un ✗. Al revés: alrevesRenglon (casos) y renglon9z
+     (de verdad, con un run.mjs doble). */
+  alrevesCazadoConRenglon() {
+    const G = "alrevesCazadoConRenglon", T = "pruebas/lib/alreves-sin-guardian.cjs", P = "pruebas/lib/alreves-corredor.cjs";
+    for (const f of [T, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una de las dos precargas que exigen el renglón del guardián");
+    const t = sinComent(T), p = sinComent(P);
+    if (!/matchAll\(\/\^ \{2\}\(\[a-zA-Z0-9_\]\+\)\\\(\\\) \\\{\$\/gm\)/.test(t) || !/if \(!existe\(m\[1\]\)\) console\.log\(`✗ \$\{path\.basename\(process\.argv\[1\] \?\? '\?'\)\}: no existe el guardián \$\{m\[1\]\}/.test(t))
+      falla(G, T, 0, "la precarga de textos.cjs dice «: no existe el guardián X» cuando el nombre no está definido en guardianes/run.mjs");
+    if (!/if \(!\/\\\[\\\$\\\{\/\.test\(fuente\)\) cp\.execSync = function \(cmd, \.\.\.resto\) \{\s*const m = \/\^node guardianes\\\/run\\\.mjs --solo \(\\S\+\)\/\.exec\(String\(cmd\)\);/.test(p)
+      || !/if \(e\.status === 1 && \/fallo\\\(s\\\) de guardianes:\/\.test\(err\) && err\.split\('\\n'\)\.some\(\(l\) => l\.trim\(\)\.startsWith\(`\[\$\{m\[1\]\}\]`\)\)\) throw e;/.test(p)
+      || !/return e\.stdout \?\? Buffer\.from\(''\);/.test(p))
+      falla(G, P, 0, "bajo el corredor, un --solo X que falla sin código 1, sin la cabecera o sin el renglón [X] vuelve como «no cazado» (con un ✗)");
+    if (!/const rotos = out\.split\('\\n'\)\.filter\(\(l\) => \/no encontré el texto a cambiar\|: no existe \/\.test\(l\)\);/.test(readFileSync("pruebas/alreves/textos.cjs", "utf8"))) falla(G, "pruebas/alreves/textos.cjs", 0, "textos.cjs cuenta como roto el «: no existe » de la precarga");
+  },
+
+  /* 22 nov · Revisión del CI (B2) · dirigidaEnPartes: una revisión dirigida (a mano, solo=…) no espera dos horas por «al revés» ni 71 min por
+     un nombre mal escrito. (1) «al revés» se reparte SIEMPRE en 4 partes, también con partes=1 (las dirigidas de 1 parte tardaban 86–128 min solo
+     por ese carril: 32,4 h de espera del 18 al 22 nov); «partes» sigue mandando en la punta a punta. (2) Los nombres de «solo» se validan en
+     «cambios», ANTES de arrancar los carriles (pruebas/correr.mjs --comprobar: un nombre que no existe sale con 2 sin correr nada). Lo que se teme:
+     volver a «al revés» en un solo trabajo, validar después de preparar las máquinas, o un --comprobar que corra pruebas o acepte un nombre
+     inexistente. Al revés: alrevesDirigida. */
+  dirigidaEnPartes() {
+    const G = "dirigidaEnPartes", Y = ".github/workflows/ci.yml", C = "pruebas/correr.mjs";
+    if (!existsSync(Y) || !existsSync(C)) return falla(G, Y, 0, "falta ci.yml o el corredor");
+    const y = readFileSync(Y, "utf8"), job = (n) => new RegExp(`\\n  ${n}:\\n[\\s\\S]*?(?=\\n  [a-z]+:\\n|$)`).exec(y)?.[0] ?? "";
+    const rg = job("regresion"), ca = job("cambios");
+    if (!rg.includes(`include: \${{ fromJSON((inputs.partes || '4') == '1' && '[{"nombre":"al revés","parte":2},{"nombre":"al revés","parte":3},{"nombre":"al revés","parte":4}]' || '[]') }}`))
+      falla(G, Y, 0, "«regresion»: con partes=1, «al revés» suma sus partes 2, 3 y 4 (include): ese carril va siempre en 4 partes");
+    if (!rg.includes("--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar")) falla(G, Y, 0, "«regresion»: «al revés» corre --parte i/4 aunque partes sea 1");
+    if (!rg.includes("format(' · {0}/{1}', matrix.parte, matrix.nombre == 'al revés' && '4' || inputs.partes || '4')") || !rg.includes("(matrix.nombre == 'al revés' || (inputs.partes || '4') != '1')")) falla(G, Y, 0, "«regresion»: el nombre de cada parte de «al revés» es «· i/4» (scripts/ci/corrida.mjs cuenta las partes por el nombre)");
+    if (!/\n      - name: Las pruebas de «solo» existen \(antes de arrancar los carriles\)\n        env: \{ SOLO: "\$\{\{ inputs\.solo \}\}" \}\n        run: \|\n          if \[ -n "\$SOLO" \]; then node pruebas\/correr\.mjs --comprobar \$SOLO; fi\n/.test(ca))
+      falla(G, Y, 0, "«cambios» valida los nombres de «solo» con pruebas/correr.mjs --comprobar antes de que arranque ningún carril");
+    if (!/needs: \[cambios, web\]/.test(rg)) falla(G, Y, 0, "«regresion» espera a «cambios» (si un nombre de «solo» no existe, no arranca)");
+    const vivo = (a) => { try { execSync(`node ${C} --comprobar ${a}`, { stdio: "pipe", timeout: 30_000 }); return 0; } catch (e) { return e.status ?? -1; } };
+    const una = archivos.find((f) => /^pruebas\/alreves\/alreves[^/]+\.cjs$/.test(f))?.split("/").pop().replace(/\.cjs$/, "");
+    if (una && vivo(una) !== 0) falla(G, C, 0, `--comprobar ${una} (una prueba que existe) no sale con 0`);
+    if (vivo(`${una ?? "x"} zz-no-existe-esta-prueba`) !== 2) falla(G, C, 0, "--comprobar con un nombre que no existe tiene que salir con 2");
+    if (!/if \(flag\("--comprobar"\)\) \{ console\.log\(`✓ --comprobar: [^`]*`\); process\.exit\(sel\.length \? 0 : 2\); \}/.test(sinComent(C))) falla(G, C, 0, "--comprobar solo resuelve la selección y sale (sin correr nada, sin servidor, sin candado)");
+  },
+
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
      buscaba «Llegan cuando se encienda producción», que 9o cambió por la sección de despliegues de verdad: la prueba quedó roja en las 3 vueltas
      (14 nov). Lo que la pantalla ARMA con datos (nombres de la prueba, cifras, MAYÚSCULAS) no está escrito en el código: esos van, uno por uno, en
@@ -12271,7 +12401,7 @@ const guardianes = {
     if ((c.match(/await correrUna\(t\)/g) ?? []).length !== 2) falla(G, C, 0, "una prueba se corre una vez y, si falla, UNA vez más (ni más ni un bucle)");
     if (!/else r = \{ \.\.\.r2, error: `\$\{r2\.error\} · dos veces seguidas/.test(c)) falla(G, C, 0, "la que falla dos veces es roja");
     if (!/console\.log\(`INESTABLES \(\$\{inestables\.length\}\)/.test(c) || !/GITHUB_STEP_SUMMARY/.test(c) || !/inestables\.json/.test(c)) falla(G, C, 0, "las inestables se dicen: al final de la corrida, en inestables.json y en el resumen del trabajo");
-    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
+    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar").length - 1 + y.split("--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
   },
   /* 9t · subidaReintenta (20 nov, confirmación 44734711575, msg9t en el iPhone SE): una foto normal recién elegida llegó al servidor sin
      archivo («No llegó la foto», 400). La app la reintenta UNA vez con el archivo original (lib/subir-foto.ts, mandar) y el servidor deja dicho

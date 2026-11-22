@@ -70,6 +70,6 @@ const p1 = `${R}/${P1}`, o1 = fs.readFileSync(p1, 'utf8'); fs.writeFileSync(p1, 
 let f3 = false; try { execSync('node scripts/ayuda/indexar.mjs > /dev/null', { cwd: R, stdio: 'pipe' }); } catch { f3 = true; }
 fs.writeFileSync(p1, o1); console.log(`  ${f3 ? '✓' : '✗'} indexar.mjs no escribe nada con una ayuda sin forma`); if (f3) bien++;
 console.log(`\n${bien}/${casos.length + 2} al revés`);
-execSync('node guardianes/run.mjs', { cwd: R, stdio: 'inherit' });
+require('../lib/alreves-fin.cjs')(R, { heredar: true });
 // 9b-3 · alrevesQueFalla: un defecto sin cazar pone la prueba en rojo (antes salía con 0 y el CI la contaba en verde).
 if (bien !== casos.length + 2) process.exit(1);

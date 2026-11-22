@@ -97,6 +97,6 @@ for (const [g, f] of quitar) {
   console.log(`  ${falla ? '✓' : '✗'} ${g} al revés (quitar ${f.split('/').pop()})${out ? ' → ' + out.trim().slice(0, 150) : ''}`); if (falla) bien++;
 }
 console.log(`\n${bien}/${total} al revés`);
-execSync('node guardianes/run.mjs', { cwd: R, stdio: 'inherit' });
+require('../lib/alreves-fin.cjs')(R, { heredar: true });
 // 9b-3 · alrevesQueFalla: un defecto sin cazar pone la prueba en rojo.
 if (bien !== total) process.exit(1);

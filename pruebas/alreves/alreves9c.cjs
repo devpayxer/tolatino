@@ -74,6 +74,6 @@ for (const [lista, espera] of [[crear, true], [derecho, false]]) for (const [G, 
   let r; try { r = correr(G); } finally { fs.unlinkSync(ruta); }
   informe(G, `crear ${f.split('/').slice(-2).join('/')}`, r, espera);
 }
-let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio ? 0 : 1);

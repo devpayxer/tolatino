@@ -52,6 +52,6 @@ for (const [f, a, b] of casos) {
   informe(f.split('/').pop(), r);
 }
 for (const [f, c, esperaFalla] of crear) { const ruta = path.join(R, f); fs.writeFileSync(ruta, c); let r; try { r = correr(); } finally { fs.unlinkSync(ruta); } informe(`crear ${f.split('/').pop()}`, r, esperaFalla); }
-let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio ? 0 : 1);
