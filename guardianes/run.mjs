@@ -9938,7 +9938,8 @@ const guardianes = {
 
   /* 22 nov · sandboxSeArreglaSolo: el sandbox no tiene SSH y tolatino-sync es el ÚNICO camino por el que se arregla solo; un push nunca puede dejarlo
      sin poder bajar el siguiente. (1) deploy.sh se reinstala tolatino-sync solo con instalar_si_valido (infra/comun/lib.sh: bash -n y cambio atómico
-     con mv; «install» escribe encima del archivo que está corriendo), nunca con un install directo; (2) tolatino-sync comprueba con bash -n deploy.sh
+     con mv: el destino nunca falta ni queda a medio copiar si la copia se corta; 1 si no es bash válido, 2 si no se pudo copiar, y /estado/ dice
+     cuál), nunca con un install directo; (2) tolatino-sync comprueba con bash -n deploy.sh
      y cada script que deploy.sh carga o corre en el momento (lo de systemd-run va aparte) y, si uno no pasa, NO despliega (FALLO con su motivo);
      (3) pruebas/infra/sync-pruebas.test.sh corre en las pruebas de infra. Al revés: alrevesDespliegue. */
   sandboxSeArreglaSolo() {
@@ -9951,6 +9952,9 @@ const guardianes = {
     const iN = fn.indexOf('bash -n "$src"'), iT = fn.indexOf('install -m "$modo" "$src" "$tmp"'), iM = fn.indexOf('mv -f "$tmp" "$dst"');
     if (iN < 0 || iT < 0 || iM < 0 || !(iN < iT && iT < iM) || !/if ! err=\$\(bash -n "\$src" 2>&1\); then[\s\S]{0,200}return 1/.test(fn))
       falla(G, L, 0, "instalar_si_valido: bash -n primero (si no pasa, return 1 y se queda el anterior), después install a un archivo nuevo y mv (cambio atómico)");
+    // Tanda 5b · «no es bash válido» y «no se pudo copiar» son dos cosas: 1 y 2, y /estado/sync.txt dice cuál.
+    if (!/rm -f "\$tmp"; log [^\n]*no se pudo instalar[^\n]*\n  return 2$/m.test(fn) || !/\n  1\) echo "tolatino-sync: [^"]*NO es bash válido[^"]*" > \/var\/www\/estado\/sync\.txt ;;\n  \*\) echo "tolatino-sync: [^"]*no se pudo instalar[^"]*" > \/var\/www\/estado\/sync\.txt ;;/.test(d))
+      falla(G, D, 0, "/estado/sync.txt separa «no es bash válido» (1) de «no se pudo instalar» (2: disco lleno, permisos)");
     const lista = ((/\n\s*VALIDAR="([^"]+)"/.exec(s) ?? [])[1] ?? "").split(/\s+/).filter(Boolean);
     const usa = new Set([D]);
     for (const linea of d.split("\n")) { if (/systemd-run/.test(linea)) continue; for (const m of linea.matchAll(/(?:^|\s)(?:\.|bash)\s+"\$REPO\/([^"]+\.sh)"/g)) usa.add(m[1]); }
@@ -10108,9 +10112,22 @@ const guardianes = {
     const n = readFileSync(N, "utf8").replace(/#.*$/gm, "");
     if (!/\n    server_tokens off;\n/.test(n) || !/\n    error_page 502 504 =503 \/mantenimiento\.html;\n/.test(n) || !/location = \/mantenimiento\.html \{\n\s+root \/var\/www\/mantenimiento;\n\s+try_files \/index\.html =503;\n\s+internal;/.test(n))
       falla(G, N, 0, "nginx del sandbox: server_tokens off y la página de mantenimiento (503) para 502/504, en vez de «502 Bad Gateway · nginx/1.x»");
-    if (!/\ninstall -m 0644 "\$REPO\/infra\/comun\/mantenimiento\/index\.html" \/var\/www\/mantenimiento\/index\.html\n/.test(d)) falla(G, D, 0, "deploy.sh instala la página de mantenimiento (la de producción) antes de cambiar");
-    if (!/cp -p "\$NGINX_SITIO" "\$NGINX_SITIO\.anterior"/.test(d) || !/\nelse\n[^\n]*\n  if \[ -f "\$NGINX_SITIO\.anterior" \]; then cp -p "\$NGINX_SITIO\.anterior" "\$NGINX_SITIO";/.test(d))
-      falla(G, D, 0, "una configuración de nginx que no pasa «nginx -t» no se queda: vuelve la anterior");
+    if (!/\ninstall -m 0644 "\$REPO\/infra\/comun\/mantenimiento\/index\.html" \/var\/www\/mantenimiento\/index\.html /.test(d)) falla(G, D, 0, "deploy.sh instala la página de mantenimiento (la de producción) antes de cambiar");
+    // Tanda 5b · la copia BUENA se guarda solo después de un «nginx -t» que pasa (antes «.anterior» se copiaba sin saber si servía).
+    if (/\.anterior/.test(d) || !/\nif nginx -t; then\n  cp -p "\$NGINX_SITIO" "\$NGINX_SITIO\.buena"/.test(d) || !/\n  if \[ -f "\$NGINX_SITIO\.buena" \]; then\n    cp -p "\$NGINX_SITIO\.buena" "\$NGINX_SITIO"/.test(d))
+      falla(G, D, 0, "una configuración de nginx que no pasa «nginx -t» no se queda: vuelve la última buena (.buena, guardada solo después de un «nginx -t» que pasa)");
+    // Tanda 5b · entre migrar y cambiar, ningún paso accesorio corta (con la base ya migrada, cortar dejaba la app vieja contra la base nueva): la semilla
+    // y nginx son avisos (FALLO después del cambio), el mapa solo se anota; antes del «up» y de su reintento se espera a «healthy», no solo a pg_isready;
+    // tras la salud, el commit servido tiene que ser el desplegado; el umask 077 solo al crear los secretos; la carpeta de mantenimiento 755.
+    const tramoMC = d.slice(Math.max(iMig, 0), iUp > 0 ? iUp : undefined);
+    if (!/--semilla-pruebas "\$\{COMPOSE\[@\]\}" \\\n  \|\| aviso "/.test(d) || !/"\$\{COMPOSE_MAPA\[@\]\}" up -d mapa \|\| log /.test(d) || /\n\s*systemctl (reload|restart) nginx\s*\n/.test(tramoMC) || !/systemctl reload nginx \|\| systemctl restart nginx \|\| aviso /.test(d))
+      falla(G, D, 0, "entre migrar y cambiar ningún paso accesorio corta el despliegue: la semilla y nginx son avisos (FALLO después del cambio), el mapa se anota, la recarga cae a reinicio");
+    if ((d.match(/\nbase_sana 60 10 \|\| /g) ?? []).length !== 1 || !/\n  base_sana 60 10 \|\| true\n  "\$\{COMPOSE\[@\]\}" up -d --remove-orphans \|\|/.test(d) || !/State\.Health\.Status/.test(d) || iUp < 0 || d.indexOf("\nbase_sana 60 10 ||") > iUp)
+      falla(G, D, 0, "antes del «up» de la app y de su reintento se espera a que Docker dé la base por «healthy» (base_sana), no solo a pg_isready");
+    if (!/SERVIDO=\$\(sed -n 's\/\.\*"commit":"\\\(\[\^"\]\*\\\)"\.\*\/\\1\/p' \/tmp\/salud\.json/.test(d) || !/if \[ "\$SERVIDO" != "\$COMMIT" \]; then\n[\s\S]{0,600}?\n    exit 1\n  fi/.test(d))
+      falla(G, D, 0, "tras la salud, el commit que dice /api/salud tiene que ser el desplegado; si no, FALLO a la vista");
+    if (/\n\s*umask 0?77\n/.test(d) && !/\( umask 077\n/.test(d)) falla(G, D, 0, "el umask 077 solo en un subshell al crear los secretos (si no, /var/www/mantenimiento nace 700 y nginx no la lee)");
+    if (/\numask /.test(d) || !/\ninstall -d -m 0755 \/var\/www\/mantenimiento\n/.test(d)) falla(G, D, 0, "el umask 077 solo en un subshell al crear los secretos y la carpeta de mantenimiento 755 (install -d -m 0755)");
     const c = readFileSync(C, "utf8");
     for (const t of ["orden-despliegue", "mantenimiento-nginx"]) if (!new RegExp(`seccion "[^"]*"; bash pruebas\\/infra\\/${t}\\.test\\.sh \\|\\| mal=1`).test(c) || !existsSync(`pruebas/infra/${t}.test.sh`)) falla(G, C, 0, `las pruebas de infra no corren pruebas/infra/${t}.test.sh`);
   },

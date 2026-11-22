@@ -43,7 +43,10 @@ case "$n $*" in
   "docker "*"exec -T medios /garage layout show"*) echo "No nodes currently have a role" ;;
   "docker image inspect"*) echo "sha256:$(printf '%064d' 7)" ;;
   "docker run"*"indexar.mjs"*) echo "select 1;" ;;
-  "curl "*) echo '{"ok":true}' ;;
+  # 22 nov · deploy.sh comprueba que /api/salud dice el commit desplegado, y espera a que Docker dé la base por «healthy».
+  "curl "*) echo "{\"ok\":true,\"commit\":\"${TOLATINO_COMMIT:-}\"}" ;;
+  "docker "*" ps -q db"*) echo id-de-la-base ;;
+  "docker inspect"*) echo healthy ;;
   "systemctl is-active"*) exit 3 ;;
   "df "*) printf 'Uso%%\n 40%%\n' ;;
 esac

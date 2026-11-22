@@ -64,5 +64,7 @@ RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
   echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
   [ -s "$STATE/last-motivo" ] && echo "<p><b>Motivo:</b> $(sed 's/&/\&amp;/g;s/</\&lt;/g' "$STATE/last-motivo")</p>"
   [ -s /var/www/estado/sync.txt ] && echo "<p>$(sed 's/&/\&amp;/g;s/</\&lt;/g' /var/www/estado/sync.txt)</p>"
+  # 22 nov · Lo que el último despliegue anotó sin cortar (semilla, nginx: deploy.sh · aviso): a la vista, no solo en el registro.
+  [ -s /var/www/estado/avisos.txt ] && echo "<p><b>Avisos del último despliegue:</b><br>$(sed 's/&/\&amp;/g;s/</\&lt;/g;s/$/<br>/' /var/www/estado/avisos.txt)</p>"
   echo "<p><a href='/'>Abrir la app</a> · <a href='/api/salud'>Salud</a> · <a href='/estado/diag.txt'>Diagnóstico</a> · <a href='/estado/tramos.txt'>Tramos</a></p><h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
   tail -n 25 "$LOG" | sed 's/&/\&amp;/g;s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html

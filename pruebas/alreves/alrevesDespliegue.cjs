@@ -12,7 +12,9 @@
 //   imagenSoloSiCambia · se salta el build solo con la huella (sin el Id de la imagen); la huella deja de mirar lo que no está versionado; la prueba no corre;
 //   (tanda 5b) vuelve «| grep -q» a huella_imagen; web.build con «target:» o con «args:» que no son el commit.
 //   despliegueSinCorte · la app se cambia antes de migrar, vuelve «up --build», un build que falla se reintenta o no sale; barrido sin init o con 10 s
-//   de gracia; nginx sin la página de mantenimiento o con server_tokens; una configuración de nginx que no pasa nginx -t se queda; las pruebas no corren.
+//   de gracia; nginx sin la página de mantenimiento o con server_tokens; una configuración de nginx que no pasa nginx -t se queda; las pruebas no corren;
+//   (tanda 5b) vuelve «.anterior» sin «nginx -t»; la semilla, el mapa o la recarga de nginx cortan entre migrar y cambiar; el «up» sin esperar «healthy»;
+//   no se mira el commit que sirve /api/salud; umask 077 suelto; la carpeta de mantenimiento sin 755.
 //   despliegueConTramos · sin la línea de tramos al salir, un tramo que falta o fuera de su sitio, /estado/ sin el enlace, la prueba sin el caso del fallo.
 //   pruebasInfraAisladas (tanda 5b) · «aislado» sin red aparte o sin tapar /opt; una prueba que vuelve a «unshare» suelto; la del tolatino-sync sin
 //   aislar_exige; correr.sh corre las que despliegan aunque el aislamiento no pase.
@@ -26,8 +28,10 @@ const N = 'infra/pruebas/nginx-pruebas.conf', O = 'pruebas/infra/orden-despliegu
 const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh';
 const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
 const casos = [
-  ['sandboxSeArreglaSolo', D, 'if instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync; then',
-    'install -m 0755 "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync\nif true; then', 'nunca con un install directo'],
+  ['sandboxSeArreglaSolo', D, 'SYNC_R=0; instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?',
+    'SYNC_R=0; install -m 0755 "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?', 'nunca con un install directo'],
+  ['sandboxSeArreglaSolo', L, '; se queda el anterior"\n  return 2\n', '; se queda el anterior"\n  return 1\n', 'separa «no es bash válido» (1) de «no se pudo instalar»'],
+  ['sandboxSeArreglaSolo', D, '  *) echo "tolatino-sync: el del commit $COMMIT no se pudo instalar (¿disco lleno?); sigue el anterior', '  *) echo "tolatino-sync: el del commit $COMMIT NO es bash válido; sigue el anterior', 'separa «no es bash válido» (1) de «no se pudo instalar»'],
   ['sandboxSeArreglaSolo', L, '  if ! err=$(bash -n "$src" 2>&1); then', '  if ! err=$(true 2>&1); then', 'bash -n primero'],
   ['sandboxSeArreglaSolo', L, '  if install -m "$modo" "$src" "$tmp" && mv -f "$tmp" "$dst"; then return 0; fi', '  if install -m "$modo" "$src" "$dst"; then return 0; fi', 'cambio atómico'],
   ['sandboxSeArreglaSolo', S, ' infra/pruebas/medios.sh packages/db/migrar.sh"', ' infra/pruebas/medios.sh"', 'no comprueba con bash -n packages/db/migrar.sh'],
@@ -68,8 +72,17 @@ const casos = [
   ['despliegueSinCorte', Y, '  push:\n    image: tolatino/web:pruebas\n', '  push:\n    stop_grace_period: 10s\n    image: tolatino/web:pruebas\n', '«push» para en el acto'],
   ['despliegueSinCorte', N, '    error_page 502 504 =503 /mantenimiento.html;\n', '', 'la página de mantenimiento (503)'],
   ['despliegueSinCorte', N, '    server_tokens off;\n', '', 'server_tokens off'],
-  ['despliegueSinCorte', D, 'install -m 0644 "$REPO/infra/comun/mantenimiento/index.html" /var/www/mantenimiento/index.html\n', '', 'instala la página de mantenimiento'],
-  ['despliegueSinCorte', D, '  if [ -f "$NGINX_SITIO.anterior" ]; then cp -p "$NGINX_SITIO.anterior" "$NGINX_SITIO";', '  if false; then cp -p "$NGINX_SITIO.anterior" "$NGINX_SITIO";', 'vuelve la anterior'],
+  ['despliegueSinCorte', D, 'install -m 0644 "$REPO/infra/comun/mantenimiento/index.html" /var/www/mantenimiento/index.html || aviso', ': || aviso', 'instala la página de mantenimiento'],
+  ['despliegueSinCorte', D, '  if [ -f "$NGINX_SITIO.buena" ]; then\n    cp -p "$NGINX_SITIO.buena" "$NGINX_SITIO"', '  if false; then\n    cp -p "$NGINX_SITIO.buena" "$NGINX_SITIO"', 'vuelve la última buena'],
+  ['despliegueSinCorte', D, 'NGINX_SITIO=/etc/nginx/sites-available/tolatino-pruebas\n', 'NGINX_SITIO=/etc/nginx/sites-available/tolatino-pruebas\ncp -p "$NGINX_SITIO" "$NGINX_SITIO.anterior" || true\n', 'vuelve la última buena'],
+  ['despliegueSinCorte', D, ' "${COMPOSE[@]}" \\\n  || aviso "la semilla de pruebas falló', ' "${COMPOSE[@]}"\ntrue \\\n  || aviso "la semilla de pruebas falló', 'ningún paso accesorio corta'],
+  ['despliegueSinCorte', D, '"${COMPOSE_MAPA[@]}" up -d mapa || log "teselas', '"${COMPOSE_MAPA[@]}" up -d mapa; true || log "teselas', 'ningún paso accesorio corta'],
+  ['despliegueSinCorte', D, '  nginx_recargar\nelse\n', '  systemctl reload nginx\nelse\n', 'ningún paso accesorio corta'],
+  ['despliegueSinCorte', D, '\nbase_sana 60 10 || log "la base no quedó', '\nbase_lista 60 10 || log "la base no quedó', 'se espera a que Docker dé la base por «healthy»'],
+  ['despliegueSinCorte', D, '  base_sana 60 10 || true\n', '  base_lista 60 10 || true\n', 'se espera a que Docker dé la base por «healthy»'],
+  ['despliegueSinCorte', D, '  if [ "$SERVIDO" != "$COMMIT" ]; then', '  if false; then', 'el commit que dice /api/salud tiene que ser el desplegado'],
+  ['despliegueSinCorte', D, '  ( umask 077\n', '  umask 077\n  (\n', 'el umask 077 solo en un subshell'],
+  ['despliegueSinCorte', D, 'install -d -m 0755 /var/www/mantenimiento\n', 'mkdir -p /var/www/mantenimiento\n', 'carpeta de mantenimiento 755'],
   ['despliegueSinCorte', C, '  seccion "el orden del despliegue del sandbox: construir → migrar → cambiar (orden-despliegue.test.sh)"; bash pruebas/infra/orden-despliegue.test.sh || mal=1\n', '', 'orden-despliegue.test.sh'],
   ['despliegueSinCorte', C, 'seccion "la página de mantenimiento con el nginx del sandbox (mantenimiento-nginx.test.sh)"; bash pruebas/infra/mantenimiento-nginx.test.sh || mal=1\n', '', 'mantenimiento-nginx.test.sh'],
   ['despliegueConTramos', D, "\ntrap 'fin_tramos $?' EXIT\n", '\n', 'deja su línea de tramos en el registro y en /estado/tramos.txt'],

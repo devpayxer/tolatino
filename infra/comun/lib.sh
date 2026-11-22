@@ -7,10 +7,11 @@
 log() { echo "$(date -Is) [deploy] $*"; }
 
 # ── Instalar un script del que depende que el servidor se arregle solo (22 nov) ──
-# instalar_si_valido ORIGEN DESTINO [MODO]: copia ORIGEN a DESTINO solo si es bash válido (bash -n). El cambio es atómico (archivo nuevo + mv): un
-# script a medio copiar o con un error de sintaxis nunca reemplaza al que funciona, y el que está corriendo (tolatino-sync se reinstala a sí mismo
-# mientras espera a deploy.sh) sigue leyendo su copia vieja (install escribe encima del mismo archivo y bash lo lee por partes).
-# 0 = instalado (o ya era igual); 1 = no pasó y se queda el anterior (lo dice en el registro).
+# instalar_si_valido ORIGEN DESTINO [MODO]: copia ORIGEN a DESTINO solo si es bash válido (bash -n). El cambio es atómico (archivo nuevo al lado + mv,
+# un rename): DESTINO nunca falta ni queda a medio copiar, ni siquiera si la copia se corta (disco lleno) o el servidor se reinicia a mitad; un
+# script con un error de sintaxis nunca reemplaza al que funciona. (El tolatino-sync que está corriendo sigue con su inodo abierto en los dos casos:
+# «install» de GNU también borra y crea, no escribe encima; lo que cierra el cambio atómico es la ventana sin archivo o con uno a medias.)
+# 0 = instalado (o ya era igual); 1 = no es bash válido; 2 = no se pudo copiar. En 1 y 2 se queda el anterior (lo dice en el registro).
 instalar_si_valido() {
   local src="$1" dst="$2" modo="${3:-0755}" err tmp
   if ! err=$(bash -n "$src" 2>&1); then
@@ -21,7 +22,7 @@ instalar_si_valido() {
   tmp="$dst.nuevo.$$"
   if install -m "$modo" "$src" "$tmp" && mv -f "$tmp" "$dst"; then return 0; fi
   rm -f "$tmp"; log "$(basename "$dst"): no se pudo instalar; se queda el anterior"
-  return 1
+  return 2
 }
 
 # ── Secretos que NACEN en el servidor (una vez; nunca viajan, nunca en el repo) ──

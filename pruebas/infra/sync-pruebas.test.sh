@@ -78,9 +78,11 @@ I=$(bash -c '
   instalar_si_valido "$d/roto" "$d/dest" >/dev/null; echo "roto:$?:$(cmp -s "$d/viejo" "$d/dest" && echo sigue-el-viejo)"
   printf "#!/bin/bash\necho nuevo\n" > "$d/nuevo"
   instalar_si_valido "$d/nuevo" "$d/dest"; echo "nuevo:$?:$(cmp -s "$d/nuevo" "$d/dest" && echo instalado):$([ "$(stat -c %i "$d/dest")" != "$i1" ] && echo otro-inodo):$(stat -c %a "$d/dest")"
+  : > "$d/archivo"; instalar_si_valido "$d/nuevo" "$d/archivo/dest" >/dev/null 2>&1; echo "no-se-pudo:$?"
   ls "$d" | grep -c "nuevo\." ; rm -rf "$d"' _ "$RAIZ")
 ok "uno que no es bash válido no reemplaza al bueno" "$(echo "$I" | grep '^roto:')" "roto:1:sigue-el-viejo"
 ok "uno válido entra con cambio atómico (otro inodo) y 755" "$(echo "$I" | grep '^nuevo:')" "nuevo:0:instalado:otro-inodo:755"
+ok "uno válido que no se pudo copiar (disco lleno, permisos) devuelve 2, no 1 (/estado/ no dice «no es bash válido»)" "$(echo "$I" | grep '^no-se-pudo:')" "no-se-pudo:2"
 ok "… sin dejar archivos a medias" "$(echo "$I" | tail -1)" 0
 ok "ninguna vuelta tocó /opt/tolatino (el tolatino-sync obedece a la prueba)" "$(grep -c . "$T/desobedece" 2>/dev/null || echo 0)" 0
 echo "$bien/$total casos"

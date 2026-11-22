@@ -25,6 +25,7 @@ tramo() { local s=$((SECONDS - TRAMO_T)); TRAMOS="$TRAMOS · $TRAMO_N $s s"; log
 fin_tramos() {
   local res=ok linea t=/var/www/estado/tramos.txt
   [ "$1" = 0 ] || res="fallo en $TRAMO_N"
+  [ -z "${AVISOS:-}" ] || res="$res, con avisos"
   log "tramo $TRAMO_N: $((SECONDS - TRAMO_T)) s" || true
   linea="tramos ($res, commit $COMMIT):${TRAMOS# ·} · $TRAMO_N $((SECONDS - TRAMO_T)) s · total $SECONDS s"
   log "$linea" || true
@@ -34,23 +35,28 @@ trap 'fin_tramos $?' EXIT
 
 # 1) El script de sincronización con candado (corrige el choque del primer arranque). Es el ÚNICO camino por el que el servidor se arregla solo (sin
 #    SSH): se instala solo si es bash válido y con cambio atómico (infra/comun/lib.sh · instalar_si_valido); si no, sigue el anterior y /estado/ lo dice.
+#    instalar_si_valido devuelve 1 si no es bash válido y 2 si no se pudo copiar (disco lleno, permisos): /estado/ dice cuál de los dos.
 mkdir -p /var/www/estado
-if instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync; then
-  echo "tolatino-sync: el del commit $COMMIT ($(date -Is))" > /var/www/estado/sync.txt
-else
-  echo "tolatino-sync: el del commit $COMMIT NO es bash válido; sigue el anterior ($(date -Is))" > /var/www/estado/sync.txt
-fi
+SYNC_R=0; instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?
+case "$SYNC_R" in
+  0) echo "tolatino-sync: el del commit $COMMIT ($(date -Is))" > /var/www/estado/sync.txt ;;
+  1) echo "tolatino-sync: el del commit $COMMIT NO es bash válido; sigue el anterior ($(date -Is))" > /var/www/estado/sync.txt ;;
+  *) echo "tolatino-sync: el del commit $COMMIT no se pudo instalar (¿disco lleno?); sigue el anterior ($(date -Is))" > /var/www/estado/sync.txt ;;
+esac
 
 # 2) Secretos del sandbox: se generan una sola vez en el servidor, nunca viven en el repo.
 mkdir -p /etc/tolatino
 if [ ! -f "$ENV_FILE" ]; then
   log "creando $ENV_FILE"
-  umask 077
-  cat > "$ENV_FILE" <<EOF
+  # 22 nov · umask 077 solo para crear este archivo (subshell): antes quedaba puesto el resto del guion y, en un servidor recién nacido,
+  # /var/www/mantenimiento nacía 700 (nginx no la leía: 503 pelado en vez de la página) y diag.txt y tramos.txt 600.
+  ( umask 077
+    cat > "$ENV_FILE" <<EOF
 POSTGRES_PASSWORD=$(openssl rand -hex 24)
 MINIO_ROOT_USER=tolatino
 MINIO_ROOT_PASSWORD=$(openssl rand -hex 24)
 EOF
+  )
 fi
 # Secretos que se agregaron después: se completan sin tocar los que ya existen (las recetas, en infra/comun/lib.sh).
 #   AUTH_SECRET · DATOS_SECRET (cifrado de columna op_private, 4j: perderla vuelve ilegibles las notas vivas) · BARRIDO_TOKEN (0078) ·
@@ -92,6 +98,23 @@ base_lista() { # base_lista INTENTOS PAUSA: 0 cuando la base contesta
   done
   return 1
 }
+# 22 nov · base_sana INTENTOS PAUSA: 0 cuando Docker ya da la base por «healthy». Compose no espera: si el healthcheck (cada 10 s) todavía dice
+# «unhealthy», «up» de la app falla al instante aunque pg_isready ya conteste. Va antes de cada «up» de la app.
+base_sana() {
+  local i id
+  for i in $(seq 1 "$1"); do
+    id=$("${COMPOSE[@]}" ps -q db 2>/dev/null || true)
+    [ -n "$id" ] && [ "$(docker inspect -f '{{.State.Health.Status}}' "$id" 2>/dev/null || true)" = healthy ] && return 0
+    sleep "$2"
+  done
+  return 1
+}
+# 22 nov · Entre migrar y cambiar la app, un paso accesorio (la semilla de pruebas, el mapa, la recarga de nginx) NO corta el despliegue: con la base
+# ya migrada, cortar dejaba la app vieja contra la base nueva y el reintento repetía lo mismo. Se anota (registro y /estado/avisos.txt), la app se
+# cambia igual y, si hubo avisos, el despliegue termina en FALLO DESPUÉS de cambiar (tolatino-sync lo reintenta a los 15 min). Prueba: orden-despliegue.
+AVISOS=""
+: > /var/www/estado/avisos.txt
+aviso() { log "AVISO: $*"; AVISOS="$AVISOS · $*"; echo "$(date -Is) commit $COMMIT · $*" >> /var/www/estado/avisos.txt || true; }
 tramo base
 # 3a) La base y las fotos arriba, sin tocar la app. Si la base tarda en quedar sana (recuperación después de un corte), se espera hasta 10 min.
 "${COMPOSE[@]}" up -d db medios || log "base: «up -d db medios» falló; se espera a que conteste"
@@ -128,8 +151,10 @@ tramo migraciones
 bash "$REPO/packages/db/migrar.sh" "${COMPOSE[@]}"
 
 tramo semilla
-# 3c-semilla) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
-SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}"
+# 3c-semilla) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia. 22 nov · Si falla, se anota y la app
+#     se cambia igual (la semilla son datos de ejemplo; el esquema ya está migrado): el despliegue termina en FALLO después y se reintenta.
+SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}" \
+  || aviso "la semilla de pruebas falló (la app nueva se cambia igual; el despliegue queda en FALLO y se reintenta)"
 tramo aparte
 # 3c-demos) Los negocios DEMO del fundador (17 nov: 850, 10 en las 5 subcategorías principales de cada categoría, en las 5 ciudades, con
 #     historia de años): SOLO el sandbox. El CI no los carga (sus pruebas cuentan sobre la semilla de siempre) y producción nunca (candado de
@@ -160,7 +185,7 @@ indexar_docs "$REPO" "${PSQL[@]}"
 MAPA=/var/lib/tolatino/mapa
 COMPOSE_MAPA=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" --profile mapa)
 if [ -f "$MAPA/pennsylvania.mbtiles" ]; then
-  "${COMPOSE_MAPA[@]}" up -d mapa
+  "${COMPOSE_MAPA[@]}" up -d mapa || log "teselas: el servidor del mapa no arrancó (la app sigue; el mapa sale sin teselas)"
 elif ! systemctl is-active --quiet tolatino-mapa; then
   log "teselas: no existen todavía, se generan aparte"
   systemd-run --unit tolatino-mapa --collect bash -c "bash '$REPO/infra/mapa/generar.sh' '$MAPA' && ${COMPOSE_MAPA[*]} up -d mapa" || true
@@ -204,43 +229,60 @@ fi
 tramo nginx
 # 4) nginx: la app en /, la página de estado del servidor en /estado y, mientras la app cambia de contenedor o no contesta, la página de mantenimiento
 #    (la de producción, infra/comun/mantenimiento/index.html) en vez del «502 Bad Gateway» de nginx. Va ANTES de cambiar de contenedor. 22 nov · La
-#    configuración nueva solo se queda si «nginx -t» la acepta; si no, vuelve la anterior (un nginx que no arranca dejaría todo caído hasta otro push).
-mkdir -p /var/www/mantenimiento
-install -m 0644 "$REPO/infra/comun/mantenimiento/index.html" /var/www/mantenimiento/index.html
+#    configuración nueva solo se queda si «nginx -t» la acepta; si no, vuelve la ÚLTIMA BUENA («.buena»: se guarda solo después de un «nginx -t» que
+#    pasa; antes se copiaba «.anterior» sin saber si servía, y un despliegue cortado a mitad dejaba la rota como «anterior»). Nada de esto corta el
+#    despliegue: un fallo es un aviso (/estado/avisos.txt) y la app se cambia igual. Una recarga que falla se intenta como reinicio (nginx parado).
+nginx_recargar() { systemctl reload nginx || systemctl restart nginx || aviso "nginx: no se pudo recargar ni reiniciar (systemctl)"; }
+install -d -m 0755 /var/www/mantenimiento
+install -m 0644 "$REPO/infra/comun/mantenimiento/index.html" /var/www/mantenimiento/index.html || aviso "nginx: no se pudo instalar la página de mantenimiento"
 NGINX_SITIO=/etc/nginx/sites-available/tolatino-pruebas
-[ -f "$NGINX_SITIO" ] && cp -p "$NGINX_SITIO" "$NGINX_SITIO.anterior"
-install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" "$NGINX_SITIO"
-ln -sf "$NGINX_SITIO" /etc/nginx/sites-enabled/tolatino-pruebas
-rm -f /etc/nginx/sites-enabled/estado /etc/nginx/sites-enabled/default
+{ install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" "$NGINX_SITIO" && ln -sf "$NGINX_SITIO" /etc/nginx/sites-enabled/tolatino-pruebas \
+  && rm -f /etc/nginx/sites-enabled/estado /etc/nginx/sites-enabled/default; } || aviso "nginx: no se pudo instalar la configuración del commit $COMMIT"
 if nginx -t; then
-  systemctl reload nginx
+  cp -p "$NGINX_SITIO" "$NGINX_SITIO.buena" || aviso "nginx: no se pudo guardar la copia buena"
+  nginx_recargar
 else
-  log "nginx: la configuración nueva no pasa «nginx -t»; se vuelve a la anterior"
-  if [ -f "$NGINX_SITIO.anterior" ]; then cp -p "$NGINX_SITIO.anterior" "$NGINX_SITIO"; nginx -t && systemctl reload nginx; fi
+  aviso "nginx: la configuración del commit $COMMIT no pasa «nginx -t»; se vuelve a la última buena"
+  if [ -f "$NGINX_SITIO.buena" ]; then
+    cp -p "$NGINX_SITIO.buena" "$NGINX_SITIO" || true
+    if nginx -t; then nginx_recargar; else aviso "nginx: tampoco pasa la última buena (nginx sigue con la que tiene en memoria; NO reiniciar el servidor)"; fi
+  else
+    aviso "nginx: no hay copia buena a la que volver (nginx sigue con la que tiene en memoria; NO reiniciar el servidor)"
+  fi
 fi
 
 tramo recrear
 # 4b) Cambiar: la app nueva (y barrido y push si cambió su imagen). barrido y push paran en segundos (init + stop_grace_period en el compose; antes
-#     Docker esperaba 10 s por cada uno); durante el cambio nginx muestra la página de mantenimiento. Si la base no quedó sana a tiempo, se espera
-#     hasta 10 min y se reintenta una vez (sin construir otra vez).
+#     Docker esperaba 10 s por cada uno); durante el cambio nginx muestra la página de mantenimiento. Antes de cada «up» se espera a que Docker dé la base
+#     por «healthy» (hasta 10 min); si el primero falla, se reintenta una vez (sin construir otra vez).
+base_sana 60 10 || log "la base no quedó «healthy» en 10 min: se intenta igual"
 log "docker compose up (commit $COMMIT)"
 if ! "${COMPOSE[@]}" up -d --remove-orphans; then
-  log "la app nueva no arrancó a la primera: se espera a la base (hasta 10 min) y se reintenta"
+  log "la app nueva no arrancó a la primera: se espera a que la base quede «healthy» (hasta 10 min) y se reintenta"
   diag "primer intento fallido"
-  base_lista 60 10 || true
+  base_sana 60 10 || true
   "${COMPOSE[@]}" up -d --remove-orphans || { diag "segundo intento fallido"; exit 1; }
 fi
 diag "después"
 docker image prune -f >/dev/null 2>&1 || true
 
 tramo salud
-# 5) Comprobación real: la app responde y ve la base con PostGIS. 9o: el despliegue queda anotado en deploy_releases (Sistema › Despliegues) con su
-#    resultado; si la base no contesta, se dice y se sigue (el registro nunca cambia el resultado del despliegue).
+# 5) Comprobación real: la app responde, ve la base con PostGIS y es la DESPLEGADA: 22 nov · el commit que dice /api/salud tiene que ser $COMMIT (con
+#    el build aparte del «up», es la única prueba de qué se sirve; un contenedor viejo que sigue contestando daba «OK»). 9o: el despliegue queda anotado
+#    en deploy_releases (Sistema › Despliegues) con su resultado; si la base no contesta, se dice y se sigue (el registro nunca cambia el resultado).
 if salud_esperar http://127.0.0.1:3000/api/salud 30 3; then
   log "salud: $(cat /tmp/salud.json)"
+  SERVIDO=$(sed -n 's/.*"commit":"\([^"]*\)".*/\1/p' /tmp/salud.json | head -1)
+  if [ "$SERVIDO" != "$COMMIT" ]; then
+    log "salud: /api/salud contesta con el commit ${SERVIDO:-(ninguno)}, no con $COMMIT: la app nueva no quedó sirviendo"
+    "${COMPOSE[@]}" logs --tail=40 web || true
+    registrar_despliegue pruebas "$(git rev-parse HEAD)" "$PREVIO" "" unico "$INICIO" "" fallo "/api/salud dice el commit ${SERVIDO:-(ninguno)}, no $COMMIT" "" "" "" >/dev/null || true
+    exit 1
+  fi
   DIGEST=$(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)
   registrar_despliegue pruebas "$(git rev-parse HEAD)" "$PREVIO" "$DIGEST" unico "$INICIO" "$(date -u +%FT%TZ)" ok "" "" "" "" >/dev/null || true
   anotar_llave pruebas age_servidor sandbox "${FP_AGE:-}" || true
+  if [ -n "$AVISOS" ]; then log "la app nueva sirve, pero el despliegue terminó con avisos (FALLO; se reintenta):$AVISOS"; exit 1; fi
   exit 0
 fi
 log "la app no respondió en /api/salud a tiempo"
