@@ -10900,6 +10900,21 @@ const guardianes = {
     if (!/\} finally \{\s*if \(ruta\) await rm\(ruta, \{ force: true \}\)/.test(ap)) falla(G, X, 0, "armarPendientes borra su archivo temporal en un finally");
     if (!/armarZip\(consultas, negocio, undefined, \(b\) => \{/.test(ad) || !/writeSync\(fd, b,/.test(ad) || !/hash\.update\(b\); bytes \+= b\.length;/.test(ad)) falla(G, X, 0, "armarADisco escribe cada trozo al llegar, con su sha256 y su tamaño");
     if (!/zipPorPartes\(salida\)/.test(az)) falla(G, X, 0, "armarZip pasa la salida a zipPorPartes (cada trozo comprimido sale al llegar)");
+    // 22 nov · Armar sin el pico (LAUNCH «Armar el archivo… ~1,3 GB de pico»): medido con una cuenta de 400 000 avisos, armar pedía ~0,8 GB más al
+    // proceso del servidor. El mayor era la tanda del cursor (20 000 filas crudas de una vez) y luego el texto entero de cada parte (JSON con
+    // sangría, su Buffer, el CSV como tabla, la copia comprimida). Ahora: del cursor de a TANDA (≤ 2 000, menor que PARTE), cada parte sale fila
+    // por fila al flujo de compresión (agregarPorPartes, con jsonPorFilas/csvPorFilas: el mismo texto), y la parte 1 se suelta en cuanto se sabe
+    // que hay otra. El contenido del archivo no cambia (zip9tpartes lo compara con el de antes).
+    const tanda = /const TANDA = ([\d_]+);/.exec(x);
+    if (!tanda || +tanda[1].replace(/_/g, "") > 2000 || !/for await \(const tanda of porPartes\(c, q, i\+\+, TANDA\)\)/.test(az)) falla(G, X, 0, "armarZip lee el cursor de a TANDA filas (≤ 2 000), no de a PARTE");
+    if (/JSON\.stringify\(|Buffer\.from\(|z\.agregar\(`|aCsv\(/.test(az.replace('z.agregar("LEEME.txt", Buffer.from(LEEME(negocio, secciones), "utf8"));', "")) || !/await z\.agregarPorPartes\(json, \(\) => jsonPorFilas\(filas\)\);/.test(az) || !/await z\.agregarPorPartes\(csv, \(\) => csvPorFilas\(filas\)\);/.test(az))
+      falla(G, X, 0, "armarZip arma el texto de cada parte entero en memoria (JSON.stringify/Buffer.from): sale fila por fila al flujo de compresión (agregarPorPartes con jsonPorFilas/csvPorFilas)");
+    if (!/if \(espera && s\.partes === 1\) \{ await poner\(`\$\{q\.nombre\}-1\.json`, `\$\{q\.nombre\}-1\.csv`, espera\); p1 = null; \}/.test(az)) falla(G, X, 0, "armarZip suelta la parte 1 en cuanto llega la primera fila de la segunda (una sola parte en memoria)");
+    const jp = x.includes("function* jsonPorFilas(") ? x.slice(x.indexOf("function* jsonPorFilas("), x.indexOf("\n}", x.indexOf("function* jsonPorFilas(")) + 2) : "";
+    if (!/JSON\.stringify\(filas\.slice\(i, i \+ GRUPO\), null, 2\)\.slice\(2, -2\)/.test(jp) || /JSON\.stringify\(filas,/.test(jp)) falla(G, X, 0, "jsonPorFilas: de a GRUPO filas (el mismo texto que JSON.stringify(filas, null, 2)), nunca la parte entera");
+    const zz = sinComent(Z), agp = zz.slice(zz.indexOf("async agregarPorPartes("), zz.indexOf("agregar(nombre: string, datos: Buffer)"));
+    if (!/createDeflateRaw\(\{ level: 9 \}\)/.test(agp) || !/for \(const b of enBuffers\(trozos\(\)\)\) \{\s*crc = crc32\(b, crc\); largo \+= b\.length;/.test(agp) || /Buffer\.concat|deflateRawSync|\.join\(""\)/.test(agp)) falla(G, Z, 0, "agregarPorPartes comprime los trozos al llegar (DEFLATE 9 por partes, CRC por partes), sin juntar el texto");
+    if (!existsSync("pruebas/alreves/zip9tpartes.cjs")) falla(G, "pruebas/alreves/zip9tpartes.cjs", 0, "falta la prueba que compara el armado por partes con el de antes");
     const zp = sinComent(Z);
     if (!/if \(salida\) \{ salida\(l\); salida\(nb\); salida\(cuerpo\); \} else locales\.push\(l, nb, cuerpo\);/.test(zp) || !/if \(salida\) \{ salida\(cd\); salida\(fin\); return Buffer\.alloc\(0\); \}/.test(zp)) falla(G, Z, 0, "zipPorPartes con salida no guarda los trozos (los entrega en orden) y cierra escribiendo el índice");
     for (const t of ["pruebas/e2e/datos9d.cjs", "pruebas/e2e/exp9t.cjs"]) if (!existsSync(t) || !/idéntico byte a byte al guardado/.test(readFileSync(t, "utf8")) || !/select sha256 from data_exports/.test(readFileSync(t, "utf8"))) falla(G, t, 0, "la prueba compara el archivo bajado con el guardado (sha256 y tamaño de data_exports)");
