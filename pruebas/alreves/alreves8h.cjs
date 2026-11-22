@@ -52,6 +52,9 @@ const casos = [
   // flujosBienFormados (lo cazó el CI: corridas 43074283366 y 43072031036)
   ['flujosBienFormados', Y, '      ios: ${{ steps.p.outputs.ios }}\n', '      ios: ${{ steps.p.outputs.ios }}\n      ios: ${{ steps.p.outputs.ios }}\n'],
   ['flujosBienFormados', Y, '      VARIANTE: ${{ matrix.app.sabor }}\n', '      SABOR: ${{ matrix.app.sabor }}\n'],
+  // 22 nov · Un valor sin comillas con «: » dentro: la acción (o el flujo) no carga
+  ['flujosBienFormados', '.github/actions/entorno-pruebas/action.yml', '      run: |\n        echo "núcleos: $(nproc)"; free -m; uptime\n', '      run: echo "núcleos: $(nproc)"; free -m; uptime\n'],
+  ['flujosBienFormados', '.github/workflows/ci.yml', '    name: tipos · build · guardianes\n', '    name: tipos: build y guardianes\n'],
   // libroSoloInsercion (8h)
   ['libroSoloInsercion', M, "  if tg_op <> 'INSERT' then raise exception 'ci_oidc_log es solo de inserción'; end if;\n", ''],
   ['libroSoloInsercion', M, "  if tg_op = 'DELETE' then raise exception 'un pedido de build no se borra'; end if;\n", ''],

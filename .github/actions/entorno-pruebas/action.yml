@@ -10,6 +10,11 @@ inputs:
 runs:
   using: composite
   steps:
+    # 22 nov · Cómo es la máquina que tocó (nadie había medido los corredores): núcleos, memoria y carga al empezar.
+    - name: La máquina (núcleos, memoria y carga al empezar)
+      shell: bash
+      run: |
+        echo "núcleos: $(nproc)"; free -m; uptime
     - uses: actions/download-artifact@v4
       with: { name: web, path: "${{ runner.temp }}/web" }
     - name: La web construida en su sitio

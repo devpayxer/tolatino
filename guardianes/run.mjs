@@ -2,9 +2,17 @@
 /* Guardianes del build (decisión N). Cada uno vigila una CLASE de problema y rompe el build si la encuentra.
    Regla de oro: un guardián se prueba al revés (se inyecta el defecto y debe fallar) antes de confiar en él.
    Uso: node guardianes/run.mjs   (corre todos)   ·   node guardianes/run.mjs --solo secretos */
-import { execSync } from "node:child_process";
+import { execSync as ejecutar } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync as leerDisco, readdirSync, statSync } from "node:fs";
+// 22 nov · Caché de lecturas: una pasada completa leía ~550.000 veces los mismos ~3.000 archivos (y sinComent los volvía a limpiar cada vez).
+// Cada ruta de texto (utf8) se lee del disco una vez y sinComent se calcula una vez por ruta. Tras CADA proceso hijo (execSync) se vacía todo:
+// un hijo puede reescribir un archivo (un generador) y lo que se lea después tiene que ser lo de disco. Medido: misma salida, byte a byte, con
+// y sin caché, en un árbol limpio y en uno con defectos sembrados. GUARDIANES_SIN_CACHE=1 la apaga (para comparar).
+var _L = new Map(), _SC = new Map();
+const SIN_CACHE = process.env.GUARDIANES_SIN_CACHE === "1";
+const execSync = (...a) => { try { return ejecutar(...a); } finally { _L.clear(); _SC.clear(); } };
+var readFileSync = (f, o) => { if (SIN_CACHE || typeof f !== "string" || o !== "utf8") return leerDisco(f, o); let v = _L.get(f); if (v === undefined) { v = leerDisco(f, o); _L.set(f, v); } return v; };
 import { dirname, join } from "node:path";
 import { AUDIENCIAS, TEMAS, audienciaPorNombre, faseInterna, leerAyuda } from "../scripts/ayuda/forma.mjs";
 // 8i · Las fichas y la privacidad: el guardián usa el MISMO código que genera las salidas (y fija aquí lo que no se puede aflojar).
@@ -48,7 +56,8 @@ function conVisibles(f) {
   if (!/from "\.\/visible-publico"|from "@\/lib\/visible-publico"/.test(t) || !existsSync(VP)) return t;
   return t + "\n" + readFileSync(VP, "utf8").replace(/\$\{i\}/g, "i");
 }
-const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*(?=["'`])/g, "/_").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+const _sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*(?=["'`])/g, "/_").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+const sinComent = (f) => { if (SIN_CACHE) return _sinComent(f); let v = _SC.get(f); if (v === undefined) { v = _sinComent(f); _SC.set(f, v); } return v; };
 /* La última definición de una función de la base en las migraciones (una migración nueva puede reemplazarla). */
 const ultimaFn = (nombre) => { let b = ""; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); const re = new RegExp(`create or replace function ${nombre}\\([\\s\\S]*?\\$\\$([\\s\\S]*?)\\$\\$`, "g"); for (const m of t.matchAll(re)) b = m[1]; } return b; };
 /* Las filas del catálogo config_keys en todas las migraciones que lo amplían (0105 Comunidad, 0106 Eventos…). */
@@ -6457,6 +6466,23 @@ const guardianes = {
      llave repetida en el mismo mapa de un flujo, y SABOR solo puede valer pruebas. Al revés: repetir una salida o poner SABOR: negocios → falla. */
   flujosBienFormados() {
     const G = "flujosBienFormados";
+    // 22 nov · Un valor sin comillas con «: » dentro (run: echo "núcleos: $(nproc)") no es YAML válido: la acción o el flujo entero no carga.
+    // Se escapó en .github/actions/entorno-pruebas/action.yml (lo cazó un yaml.safe_load antes de subir). Flujos y acciones: el valor va entre
+    // comillas o en un bloque (|).
+    for (const f of archivos.filter((x) => /^\.github\/(workflows|actions)\/.*\.ya?ml$/.test(x))) {
+      let bloque = -1;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (!l.trim() || /^\s*#/.test(l)) return;
+        const ind = l.length - l.trimStart().length;
+        if (bloque >= 0) { if (ind > bloque) return; bloque = -1; }
+        const m = /^(\s*(?:- )?)[\w.-]+:\s+(.*)$/.exec(l);
+        if (!m) return;
+        const v = m[2];
+        if (/^[|>][-+]?\s*(#.*)?$/.test(v)) { bloque = m[1].length; return; }
+        if (/^["'{[&*!]/.test(v)) return;
+        if (/:(\s|$)/.test(v.replace(/\s#.*$/, "").replace(/\$\{\{[\s\S]*?\}\}/g, ""))) falla(G, f, i + 1, "un valor sin comillas con «: » dentro no es YAML válido (el archivo entero no carga): entre comillas o en un bloque con |");
+      });
+    }
     for (const f of archivos.filter((x) => /^\.github\/workflows\/.*\.ya?ml$/.test(x))) {
       const pila = [];
       let bloque = -1;
