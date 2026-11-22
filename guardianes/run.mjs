@@ -8285,7 +8285,7 @@ const guardianes = {
      alreves9vd. */
   gitListaConZ() {
     const G = "gitListaConZ", ORDEN = new RegExp("\\bgit\\b[^\\n]*?\\bls" + "-files\\b");
-    const PENDIENTES = { "apps/mobile/scripts/version.mjs": "huellaNativa", "pruebas/e2e/sql9u.cjs": "consultas", "pruebas/infra/traza-sandbox.sh": "la copia del árbol nuevo" };
+    const PENDIENTES = { "apps/mobile/scripts/version.mjs": "huellaNativa", "pruebas/infra/traza-sandbox.sh": "la copia del árbol nuevo" };
     for (const f of archivos) {
       if (!/^(apps|packages|services|guardianes|scripts|pruebas|infra|\.github)\//.test(f) || !/\.(m?[jt]sx?|cjs|sh|ya?ml)$/.test(f) || f.includes("node_modules")) continue;
       const t = /\.(sh|ya?ml)$/.test(f) ? readFileSync(f, "utf8").replace(/^\s*#.*$/gm, "") : sinComent(f);
@@ -15015,6 +15015,28 @@ const guardianes = {
     if (!/!ID_NEG\.test\(id\) \|\| !TOQUES\.has\(kind\)\) return;/.test(p0)) falla(G, LT, 0, "contarToque valida el id del negocio y el tipo de toque");
     if (!/not exists \(select 1 from business_members m where m\.business_id = b\.id and m\.user_id = \$2::uuid and m\.status = 'active'\)/.test(p0)) falla(G, LT, 0, "contarToque: la gente del propio negocio no cuenta");
     if (!existsSync("pruebas/alreves/alrevesToqueSalida.cjs") || !/se corta en el mismo instante/.test(readFileSync("pruebas/e2e/tarAK.cjs", "utf8"))) falla(G, "pruebas/e2e/tarAK.cjs", 0, "falta la prueba (tarAK: la página se corta en el mismo instante del toque) o su prueba al revés (alrevesToqueSalida)");
+  },
+
+
+  /* 22 nov · Ninguna consulta nueva queda fuera de la comprobación (clase «Asignar a…»: una consulta con un error que ninguna prueba ejecuta llega viva
+     al sandbox; pasó siete días). sql9u le pasa a Postgres con PREPARE toda consulta cuyo texto se puede saber de antemano (literal, armada con constantes,
+     con funciones de trozos de argumentos fijos, ternarios y listas cerradas). Las que el código arma en tiempo de ejecución (listas de condiciones con
+     push/join, una columna elegida por variable) no se pueden preparar: su número por archivo está en pruebas/consultas-fuera.json. Este guardián (sin
+     base: lee el repo) falla si un archivo tiene MÁS de esas que las aceptadas, si una menos sin bajar el número, o si el extractor no encuentra lo que
+     tiene que encontrar (un extractor roto que no ve nada no puede dar verde). Al revés: alreves9usql. */
+  consultasSinComprobar() {
+    const G = "consultasSinComprobar", L = "pruebas/lib/consultas-sitios.cjs", J = "pruebas/consultas-fuera.json", S = "pruebas/e2e/sql9u.cjs";
+    for (const f of [L, J, S]) if (!existsSync(f)) return falla(G, f, 0, "falta (la comprobación de todas las consultas con PREPARE)");
+    let C;
+    try { C = createRequire(import.meta.url)("../" + L); } catch (e) { return falla(G, L, 0, "no carga: " + String(e?.message ?? e).slice(0, 200)); }
+    const { sitios: ss } = C.sitios(process.cwd()), aceptado = C.aceptadas(process.cwd());
+    if (!aceptado) return falla(G, J, 0, "no se lee (JSON con «archivos»)");
+    const n = (e) => ss.filter((x) => x.estado === e).length;
+    if (ss.length < 6000 || n("fija") < 5300) falla(G, L, 0, `el extractor encontró ${ss.length} consultas (${n("fija")} fijas) y el código tiene más de 6000 (más de 5300 fijas): dejó de ver consultas`);
+    for (const m of C.comparar(C.fueraPorArchivo(ss), aceptado)) falla(G, m.split(": ")[0], 0, m.slice(m.indexOf(": ") + 2));
+    const s = readFileSync(S, "utf8");
+    if (!/require\('\.\.\/lib\/consultas-sitios\.cjs'\)/.test(s) || !/prepare q as \$\{q\.sql\}/.test(s) || !/comparar\(fueraPorArchivo\(ss\), acept\)/.test(s)) falla(G, S, 0, "sql9u prepara todo lo que enumera consultas-sitios.cjs y compara lo que queda fuera con la lista aceptada");
+    if (!/"sql9u"/.test(readFileSync("pruebas/reparto.json", "utf8"))) falla(G, "pruebas/reparto.json", 0, "sql9u está en el reparto de las pruebas de punta a punta");
   },
 
 };
