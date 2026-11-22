@@ -1,7 +1,7 @@
 # Exportar los datos del negocio · Export business data
 
 _Pantallas: **Panel › Más › Exportar los datos del negocio** (`/panel/{negocio}/exportar`), en la web y en la app Negocios. Teléfono y escritorio.
-Versión: 19 nov 2026. Audiencia: negocio. Tema: panel._
+Versión: 21 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - Te armamos **un archivo con lo que tu panel ya muestra** de tu negocio: tu página (nombre, dirección, contacto, horarios y lo que ofreces), tu
@@ -11,6 +11,8 @@ Versión: 19 nov 2026. Audiencia: negocio. Tema: panel._
 - Es un **ZIP** con cada parte en **.json** y en **.csv** (Excel o Google Sheets) y un **LEEME.txt** en español y en inglés.
 - **Un archivo grande va en partes:** si algo tiene más de 20 000 filas (por ejemplo, muchas operaciones), viene completo en varias partes
   numeradas (operaciones-1.csv, operaciones-2.csv…), en orden. El LEEME dice cuántas filas y en cuántas partes va cada cosa. No se corta nada.
+- **De To'Latino viene lo que tu panel te muestra**: el motivo de un plato que To'Latino ocultó, mientras sigue oculto. Las notas internas del
+  equipo no vienen.
 
 ## Cómo se usa
 1. En tu panel, toca **Más › Exportar los datos del negocio**. Solo el **dueño** lo ve y lo pide.
@@ -45,6 +47,8 @@ Versión: 19 nov 2026. Audiencia: negocio. Tema: panel._
 - It is a **ZIP** with each part in **.json** and **.csv** (Excel or Google Sheets) and a **LEEME.txt** in Spanish and English.
 - **A large file comes in parts:** if something has more than 20,000 rows (for example, many operations), it comes complete in several
   numbered parts (operaciones-1.csv, operaciones-2.csv…), in order. The LEEME says how many rows and in how many parts. Nothing is cut.
+- **From To'Latino you get what your dashboard shows you**: the reason To'Latino hid a dish, while it is still hidden. The team's internal notes
+  are not included.
 
 ### How to use it
 1. In your dashboard, tap **More › Export business data**. Only the **owner** sees it and requests it.

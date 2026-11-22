@@ -40,6 +40,7 @@ To'Latino. Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 **¿Los atajos funcionan en el teléfono?** No: son del teclado de escritorio.
 **¿Por qué mis casos no están todos en la primera página?** Van los más viejos contra su plazo primero; de a 50. Usa la flecha →, o filtra por cola, «Míos» o «Vencidos».
+**¿La nota que escribo en la hoja de confirmar le llega a la persona?** La hoja lo dice antes de confirmar. Si dice «Queda en la auditoría con tu nombre», es interna: no sale en la pantalla de la persona ni en su «Descargar mis datos». Si dice que le llega a la persona, también puede salir en su archivo.
 
 ## English
 
@@ -80,4 +81,5 @@ To'Latino. Versión: 21 nov 2026. Audiencia: equipo. Tema: equipo._
 
 **Do the shortcuts work on the phone?** No: they are for the desktop keyboard.
 **Why are my cases not all on the first page?** The oldest against their deadline come first, 50 at a time. Use the → arrow, or filter by queue, «Mine» or «Overdue».
+**Does the note I write in the confirmation sheet reach the person?** The sheet says so before you confirm. If it says «It stays in the audit log under your name», it is internal: it does not show on the person's screen or in their «Download my data». If it says it reaches the person, it can also show up in their file.
 

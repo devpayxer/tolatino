@@ -8386,6 +8386,76 @@ const guardianes = {
     for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== X && /privado\/exportes\//.test(sinComent(f))) falla(G, f, 0, "solo lib/datos/exportar.ts toca los archivos de las exportaciones");
   },
 
+  /* 9u-2 · notaInternaFueraDelArchivo: lo que el equipo escribe como interno no sale en «Descargar mis datos» ni viaja al navegador sin pintarse.
+     - UNA fuente: «notas» de packages/db/mapa-de-datos.json clasifica cada nota o motivo de lo que se exporta (sale: true / false / la condición por
+       fila, «ve»: dónde la ve la persona). La lee lib/datos/mapa.ts (notaSale); una nota sin clasificar no sale (falla cerrada).
+     - La exportación la respeta: limpiar() pasa cada columna por notaSale; el «select *» de la persona y el catálogo del negocio llevan su tabla y
+       las banderas por fila (banderasDeNotas).
+     - Las ocho que encontró la revisión (21 nov) no salen (claims.reason, solo rechazado: lo que Recuperar pinta).
+     - El servidor manda la nota del sello solo en «falta un dato» / «no aprobado», el motivo del reclamo solo si fue rechazado, y Moderación no
+       recibe la nota interna de la revisión de fotos.
+     - Lo que no se sabe sin la base (cada columna con nombre de nota de cada tabla exportada, clasificada): lo comprueba pruebas/e2e/nota9u2.cjs
+       contra la base de pruebas; aquí se exige que exista y lo haga. Al revés: alreves9u2. */
+  notaInternaFueraDelArchivo() {
+    const G = "notaInternaFueraDelArchivo", MP = "apps/web/lib/datos/mapa.ts", X = "apps/web/lib/datos/exportar.ts", MJ = "packages/db/mapa-de-datos.json";
+    const PN = "apps/web/lib/panel.ts", RC = "apps/web/lib/reclamos.ts", AP = "apps/web/lib/apelaciones.ts", E = "pruebas/e2e/nota9u2.cjs";
+    for (const f of [MP, X, MJ, PN, RC, AP]) if (!existsSync(f)) return falla(G, f, 0, "falta el archivo");
+    const mp = sinComent(MP);
+    const esNota = /export const ES_NOTA = (\/.*\/);/.exec(mp)?.[1] ?? "", cond = /export const CONDICION_NOTA = (\/.*\/);/.exec(mp)?.[1] ?? "";
+    const RE = esNota ? new RegExp(esNota.slice(1, -1)) : null, RC_ = cond ? new RegExp(cond.slice(1, -1)) : null;
+    if (!RE) falla(G, MP, 0, "falta ES_NOTA (qué columna es una nota o un motivo)");
+    else {
+      for (const k of ["reason", "decision_reason", "panel_off_reason", "note", "check_note", "notes", "motivo", "rev_motivo", "nota", "rev_nota", "notas"]) if (!RE.test(k)) falla(G, MP, 0, `ES_NOTA deja fuera «${k}»`);
+      for (const k of ["reason_key", "notes_count", "denote"]) if (RE.test(k)) falla(G, MP, 0, `ES_NOTA toma «${k}», que no es una nota`);
+    }
+    if (!RC_ || RC_.test("status = 'x' or true") || RC_.test("1 = 1") || !RC_.test("status = 'rejected'")) falla(G, MP, 0, "CONDICION_NOTA: solo «columna = 'valor'» o «columna in ('a', 'b')»");
+    if (!/import MAPA from "\.\.\/\.\.\/\.\.\/\.\.\/packages\/db\/mapa-de-datos\.json"/.test(mp) || !/export const NOTAS\b[^\n]*MAPA\.notas/.test(mp)) falla(G, MP, 0, "NOTAS sale de «notas» del mapa de datos (una sola fuente)");
+    const ns = cuerpoFn(mp, "notaSale");
+    if (!/if \(!ES_NOTA\.test\(col\)\) return true;/.test(ns) || !/if \(!n\) return false;/.test(ns) || !/CONDICION_NOTA\.test\(n\.sale\)\) return false;/.test(ns)) falla(G, MP, 0, "notaSale: una nota sin clasificar (o con una condición que no es de la lista) no sale");
+    if (!/CONDICION_NOTA\.test\(v\.sale\)/.test(cuerpoFn(mp, "banderasDeNotas")) || !/ident\(`__sale__/.test(cuerpoFn(mp, "banderasDeNotas"))) falla(G, MP, 0, "banderasDeNotas: solo condiciones de la lista, con el nombre por ident()");
+    let notas = {};
+    try { notas = JSON.parse(readFileSync(MJ, "utf8")).notas ?? {}; } catch { return falla(G, MJ, 0, "el mapa de datos no se lee"); }
+    const N = Object.entries(notas).filter(([k]) => !k.startsWith("$"));
+    if (N.length < 40) falla(G, MJ, 0, `«notas» tiene ${N.length} columnas: la clasificación de 9u-2 son más de 40`);
+    for (const [k, v] of N) {
+      const [t, c, ...resto] = k.split(".");
+      if (resto.length || !/^[a-z_][a-z0-9_]*$/.test(t ?? "") || !/^[a-z_][a-z0-9_]*$/.test(c ?? "")) { falla(G, MJ, 0, `notas: «${k}» no es tabla.columna`); continue; }
+      if (RE && !RE.test(c)) falla(G, MJ, 0, `notas: ${k} no tiene nombre de nota (ES_NOTA)`);
+      if (!(typeof v?.sale === "boolean" || (typeof v?.sale === "string" && RC_?.test(v.sale)))) falla(G, MJ, 0, `notas: ${k} sale = ${JSON.stringify(v?.sale)} (true, false o «columna = 'valor'»)`);
+      if (typeof v?.ve !== "string" || v.ve.trim().length < 8) falla(G, MJ, 0, `notas: ${k} necesita «ve» (dónde la ve la persona, o por qué es interna)`);
+    }
+    const de = Object.fromEntries(N);
+    for (const k of ["recommendations.decision_reason", "business_members.panel_off_reason", "chat_threads.compa_off_reason", "support_messages.hidden_reason",
+      "passkeys.revoked_reason", "promo_codes.retired_reason", "city_beta_invites.reason", "media.rev_nota", "media.check_note"]) if (de[k]?.sale !== false) falla(G, MJ, 0, `${k} es interna: no sale`);
+    if (de["claims.reason"]?.sale !== "status = 'rejected'") falla(G, MJ, 0, "claims.reason sale solo si el reclamo fue rechazado (lo que Recuperar pinta)");
+    const x = sinComent(X), lim = cuerpoFn(x, "limpiar");
+    if (!/notaSale\(tabla, k\)/.test(lim) || !/if \(s === false\) continue;/.test(lim) || !/k\.startsWith\("__sale__"\)/.test(lim) || !/f\[`__sale__\$\{k\}`\] !== true\) \{ o\[k\] = null;/.test(lim)) falla(G, X, 0, "limpiar: cada columna pasa por notaSale (interna o sin clasificar no sale; la de condición, vacía donde no se pinta)");
+    const dc = cuerpoFn(x, "datosDeCuenta");
+    if (!/select \*\$\{banderasDeNotas\(f\.tabla\)\} from \$\{ident\(f\.tabla\)\}/.test(dc) || !/tabla: f\.tabla/.test(dc)) falla(G, X, 0, "el archivo de la persona: cada tabla con sus notas clasificadas (banderasDeNotas y tabla)");
+    for (const q of cuerpoFn(x, "datosDeNegocio").split("\n    L(").slice(1)) if (/select (\w+\.)?\*/.test(q) && !/banderasDeNotas\("(\w+)"\)[\s\S]*, "\w+"\),?\s*$/.test(q.trim())) falla(G, X, 0, `el archivo del negocio: un «select *» sin sus notas clasificadas («${q.slice(0, 40)}…»)`);
+    if ((x.match(/limpiar\(x, q\.fuera, q\.tabla\)\)/g) ?? []).length < 2 || /limpiar\(x, q\.fuera\)/.test(x)) falla(G, X, 0, "el ZIP y la vista previa limpian con la tabla de cada consulta");
+    if (!/select case when v\.status in \('info', 'no'\) then v\.note end from verification_requests v/.test(sinComent(PN)) || /select v\.note from verification_requests/.test(sinComent(PN))) falla(G, PN, 0, "la nota del sello viaja solo cuando el Panel la pinta («falta un dato» / «no aprobado»)");
+    if (!/case when status = 'rejected' then reason end as reason/.test(cuerpoFn(sinComent(RC), "recuperar"))) falla(G, RC, 0, "el motivo del reclamo viaja solo si fue rechazado (lo único que Recuperar pinta)");
+    const ap = sinComent(AP);
+    if (/\bm\.rev_nota\b/.test(ap) || /hidden_reason as motivo\s+from appeals/.test(ap)) falla(G, AP, 0, "Moderación no recibe la nota interna de la revisión de fotos (rev_nota ni su copia en la apelación)");
+    if (!existsSync(E)) return falla(G, E, 0, "falta la prueba contra la base que clasifica cada nota de cada tabla exportada");
+    const e = readFileSync(E, "utf8");
+    if (!/information_schema\.columns/.test(e) || !/ES_NOTA\.test\(/.test(e) || !/ok\(sinClasificar\.length === 0, `ninguna nota sin clasificar/.test(e) || !/ok\(fantasmas\.length === 0/.test(e) || !/mapa-de-datos\.json/.test(e)) falla(G, E, 0, "la prueba recorre information_schema.columns de cada tabla exportada con ES_NOTA y falla si una nota queda sin clasificar");
+  },
+
+  /* 9u-2 · guardianNombreUnico: dos guardianes con el mismo nombre en este objeto no fallan: el segundo REEMPLAZA al primero en silencio (9u-2
+     llamó notaInternaNoSale al suyo y apagó sin aviso el de Soporte, 7b; lo cazó alreves7b). Cada nombre, una sola vez. Al revés: alreves9u2. */
+  guardianNombreUnico() {
+    const G = "guardianNombreUnico", F = "guardianes/run.mjs", vistos = new Map();
+    readFileSync(F, "utf8").split("\n").forEach((l, i) => {
+      const m = /^ {2}([a-zA-Z0-9_]+)\(\) \{$/.exec(l);
+      if (!m) return;
+      if (vistos.has(m[1])) falla(G, F, i + 1, `el guardián «${m[1]}» ya existe (línea ${vistos.get(m[1])}): el segundo reemplaza al primero sin avisar; ponle otro nombre`);
+      else vistos.set(m[1], i + 1);
+    });
+    if (vistos.size < 300) falla(G, F, 0, `encontré ${vistos.size} guardianes: el patrón de nombre ya no los encuentra`);
+  },
+
   /* 9d · enlaceUnUsoSinGet (fase9-apertura.md §3.7): el enlace del archivo es de UN uso y vence: un GET (la vista previa de un enlace pegado en un
      chat, un buscador) NUNCA lo gasta ni sirve el archivo; solo el POST del mismo sitio con la sesión de quien lo pidió lo baja, una vez (gana el
      primero: la condición status = 'listo' y vigente va en el update). La base: bajado no vuelve, y se baja una sola vez. Al revés: alreves9d. */

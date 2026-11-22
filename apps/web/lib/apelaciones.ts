@@ -70,7 +70,8 @@ const FILAS = (filtro: string) => `
   union all
   -- AJ · La foto que la revisión automática retuvo, rechazó u ocultó por reportes («Pedir revisión»): sin dirección pública (está en la llave privada).
   -- R3 · Su miniatura sale del visor privado (/api/medios/revision/{id}: solo quien la subió) y «fm» lleva su estado: status:motivo:capa.
-  select 'media', m.id::text, m.rev_nota, m.rev_at, '', '/api/medios/revision/' || m.id, m.rev_capa = 'c3', null, null, null, m.status || ':' || coalesce(m.rev_motivo, '') || ':' || coalesce(m.rev_capa, '')
+  -- 9u-2 · Sin rev_nota (la nota de la revisión es del equipo): la pantalla pinta el motivo traducido de «fm» (rev_motivo), nunca esta nota.
+  select 'media', m.id::text, null::text, m.rev_at, '', '/api/medios/revision/' || m.id, m.rev_capa = 'c3', null, null, null, m.status || ':' || coalesce(m.rev_motivo, '') || ':' || coalesce(m.rev_capa, '')
     from media m
    where m.uploaded_by = $1 and m.rev_llave is not null and m.rev_at is not null and m.purged_at is null and (m.status = 'review' or (m.status = 'removed' and m.removed_reason = 'revision'))
      and m.rev_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'media'").replace(/\$X/g, "m.id::text")}
@@ -122,8 +123,9 @@ export async function misAvisos(userId: string) {
   const [F, M, D] = await Promise.all([
     db().query<Fila>(`${FILAS("")} order by at desc limit 60`, [userId]),
     mensajesOcultosDe(userId, null),
-    db().query<{ numero: string; k: Apelable; estado: "upheld" | "lifted"; decision: string; decidida: string; motivo: string | null }>(
-      `select number as numero, target_kind as k, status as estado, decision_reason as decision, decided_at as decidida, hidden_reason as motivo
+    // 9u-2 · Sin hidden_reason: «Apelaciones decididas» pinta la decisión; el motivo copiado puede ser la nota interna de la revisión de fotos.
+    db().query<{ numero: string; k: Apelable; estado: "upheld" | "lifted"; decision: string; decidida: string }>(
+      `select number as numero, target_kind as k, status as estado, decision_reason as decision, decided_at as decidida
          from appeals where user_id = $1 and status <> 'open' and decided_at > now() - interval '90 days' order by decided_at desc limit 30`, [userId]),
   ]);
   const items = (await armar(userId, [...F.rows, ...M.map((m) => ({ ...m, k: "dm_message" as const, foto: null, auto: false, kind: null, hasta: null }))])).sort((a, b) => b.at.localeCompare(a.at));
