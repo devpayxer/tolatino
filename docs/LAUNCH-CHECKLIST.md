@@ -2780,10 +2780,15 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **Un archivo que falta en el almacén con la fila viva da 500** en las rutas de fotos privadas (Mensajes, ayuda, entrega, reclamo): que dé
       404. Y una carrera estrecha: si una cuenta se purga mientras el barrido genera una variante de ancho nulo, puede quedar un archivo privado huérfano
       que nadie sirve (cerrarla pide tocar `datos/purgar.ts`).
-- [ ] **→ 9u** · **`logoPoner` quita el logo anterior antes de validar la foto nueva (22 nov):** si la foto no pasa el filtro devuelve el error sin deshacer
+      **22 nov, hecha la primera frase (sigue abierta por la carrera de la purga):** las cinco rutas dan 404 (el mismo de «no tienes permiso») y el renglón de «vio la foto» del equipo se deja solo cuando el objeto existe y va a salir (`entregarPrivado`, `alEntregar`): un archivo ausente no deja renglón, y la foto no sale sin el suyo. `fotosPrivadasConPermiso` (15), `alreves9uprivadas` 92.
+- [x] **→ 9u** · **`logoPoner` quita el logo anterior antes de validar la foto nueva (22 nov):** si la foto no pasa el filtro devuelve el error sin deshacer
       (`tx` solo deshace si se lanza): el negocio se queda sin logo. Lanzar dentro de la transacción, como las demás acciones de fotos, y sumarlo al
       guardián `fotosAdjuntarTodoONada`.
+      **✓ 22 nov:** lanza dentro de la transacción y devuelve «Esa foto no existe.»; el logo anterior queda puesto (`ayu4m` lo comprueba). `fotosAdjuntarTodoONada` incluye el logo (`alreves9ufotostodo`, 21).
 - [ ] **→ 9t** · **`tarAK` en iPad: el nombre larguísimo no se corta con elipsis dentro de la tarjeta (22 nov):** «el nombre larguísimo se corta con
       elipsis, en una línea y dentro de la tarjeta» falla las dos veces en el ancho de iPad (WebKit; CI 45078878395) y pasa en iPhone SE y escritorio. Estaba
       tapada: la prueba fallaba antes, en el toque. Es de la tarjeta Vitrina (su segunda ronda está parada): ver con captura si es de la pieza o de la prueba.
       Mientras tanto la corrida nocturna de `anchos` sale roja por esto.
+- [ ] **→ 9u** · **Aceptar un código de equipo y «Publica tu negocio» ignoran en silencio una foto que no se adjunta (22 nov):** `lib/equipo-invitacion.ts` y
+      `app/(app)/publica/acciones.ts` contestan `ok` sin ella. Pedirles lo mismo que a `fotosAgregar` (rechazo con mensaje, todo o nada) y sumarlas al
+      guardián `fotosAdjuntarTodoONada`.
