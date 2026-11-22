@@ -82,5 +82,9 @@ export const EJEMPLOS: Record<string, () => ReactNode> = {
   ),
   TimeSlots: () => <TimeSlots selected="10:30 AM" slots={[{ t: "10:00 AM", taken: true }, { t: "10:30 AM" }, { t: "11:00 AM" }, { t: "11:30 AM" }]} />,
   KpiCard: () => <Fila><KpiCard label="NEGOCIOS NUEVOS" value="42" sub="+12 % vs semana anterior" /><KpiCard label="PEDIDOS" value="318" dark /></Fila>,
+  ChangeProposal: () => {
+    const CP = (UI as unknown as Record<"ChangeProposal", ComponentType<any>>).ChangeProposal; // eslint-disable-line @typescript-eslint/no-explicit-any
+    return <CP item={{ name: "Pollo guisado", price: "$12.50" }} options={[{ icon: "edit", label: "Cambiar por otro plato", sub: "Mismo precio o menos" }, { icon: "close", danger: true, label: "Quitar y seguir", sub: "Se descuenta $12.50" }]} note="El negocio confirma antes de cobrar." />;
+  },
   OnbProgress: () => <OnbProgress label="QUIÉN ERES · 2 DE 4" saved segments={[1, 1, 0.5, 0]} />,
 };
