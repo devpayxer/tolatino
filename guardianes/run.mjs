@@ -14425,11 +14425,13 @@ const guardianes = {
     const bl = sinComent(BL);
     for (const [x, que] of [["x.t", "el título"], ["x.s", "el texto secundario"], ["x.m", "el meta"]]) if (!new RegExp(`overflowWrap: "anywhere"[^}]*\\}\\}>\\{${x.replace(".", "\\.")}\\}</span>`).test(bl)) falla(G, BL, 0, `las filas del panel (rows): ${que} no parte una cadena larga sin espacios (overflowWrap: "anywhere")`);
     if (!/overflowWrap: "anywhere" \}\}>\{b\.t\}<\/span>\s*\{b\.cta/.test(bl)) falla(G, BL, 0, "la nota del panel (note) no parte una cadena larga sin espacios");
-    // (6) La prueba de la pantalla: mide el ancho a 390 con la cadena larga y hace el recorrido sin trucos.
+    // (6) La prueba de la pantalla: mide el ancho del teléfono (390, o el del dispositivo en el trabajo «anchos») con la cadena larga y hace el
+    //     recorrido sin trucos. Sin desborde: scrollWidth y body ≤ innerWidth, e innerWidth es el del contexto (no uno que ensanchó la página).
     const e = sinComent(E2E), iT = e.indexOf("tel390(b)"), jT = e.indexOf("armar(X, 'o'", iT), tel = iT >= 0 && jT > iT ? e.slice(iT, jT) : "";
     if (!/const LARGO = \(.*\.slice\(0, 60\)/.test(e) || !/o\.largo/.test(e) || !/armar\(X, 'm', \{ largo: true \}\)/.test(tel)) falla(G, E2E, 0, "din9t6b ya no arma una alerta con una cadena de 60 caracteres sin espacios para el teléfono");
-    if (!/la lista de alertas a 390[^\n]*\n/.test(tel) || !/w\.inner === 390 && w\.scroll <= 390 && w\.body <= 390, `la lista de alertas a 390/.test(tel)) falla(G, E2E, 0, "din9t6b no comprueba innerWidth === 390 y scrollWidth <= 390 en la lista del teléfono");
-    if (!/w\.inner === 390 && w\.scroll <= 390 && w\.body <= 390, `la hoja abierta a 390/.test(tel)) falla(G, E2E, 0, "din9t6b no comprueba innerWidth === 390 y scrollWidth <= 390 con la hoja abierta");
+    const SIN_DESBORDE = "w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `";
+    if (!tel.includes(SIN_DESBORDE + "la lista de alertas a ${w.inner}")) falla(G, E2E, 0, "din9t6b no comprueba en la lista del teléfono que innerWidth es el del teléfono y que scrollWidth y body no pasan de él");
+    if (!tel.includes(SIN_DESBORDE + "la hoja abierta a ${w.inner}")) falla(G, E2E, 0, "din9t6b no comprueba con la hoja abierta que innerWidth es el del teléfono y que scrollWidth y body no pasan de él");
     if (!/Decidir/.test(tel) || /force: true|dispatchEvent|\.evaluate\([^)]*\.click\(/.test(tel)) falla(G, E2E, 0, "el recorrido de teléfono de din9t6b se hace con clics de verdad (sin force, dispatchEvent ni click por evaluate) y llega a «Decidir»");
   },
   /* 9u (21 nov) · notaDiceAQuien: la hoja de confirmar del Super Admin (ConfirmarMotivo → ReasonConfirm) tenía dos defectos vistos en capturas de teléfono.

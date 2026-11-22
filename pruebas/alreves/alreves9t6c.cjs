@@ -2,7 +2,7 @@
 // mensaje (el texto de cada caso abajo); después se restaura y los guardianes quedan limpios:
 //   AdminRow sin el corte en el título · en el texto secundario · en el meta · las fichas de ChipGroup (plantillas y opciones de ReasonConfirm) que no
 //   ocupan más de una línea · el envoltorio de la ficha que no puede encogerse · AdminNote · AuditRow · el parche del script (meta, fichas) · las filas
-//   del panel (Bloques.tsx) sin el corte en el texto secundario · la nota del panel · din9t6b sin medir el ancho con la hoja abierta · con un clic forzado ·
+//   del panel (Bloques.tsx) sin el corte en el texto secundario · la nota del panel · din9t6b sin medir el ancho con la hoja abierta · ni el desborde en la lista · con un clic forzado ·
 //   sin la alerta de cadena larga.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -20,7 +20,8 @@ const casos = [
   [PS, "whiteSpace: 'normal',\\n    overflowWrap: 'anywhere',\\n    textAlign: 'left',", "textAlign: 'left',", 'el parche «ChipGroup (fichas en varias líneas)»'],
   [BL, 'color: "rgba(11,14,18,.6)", overflowWrap: "anywhere" }}>{x.s}', 'color: "rgba(11,14,18,.6)" }}>{x.s}', 'las filas del panel (rows): el texto secundario'],
   [BL, 'font: "600 13px/1.45 Manrope,sans-serif", overflowWrap: "anywhere" }}>{b.t}', 'font: "600 13px/1.45 Manrope,sans-serif" }}>{b.t}', 'la nota del panel (note)'],
-  [E2E, "ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la hoja abierta a 390", "ok(true, `la hoja abierta a 390", 'con la hoja abierta'],
+  [E2E, "ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la hoja abierta a ${w.inner}", "ok(true, `la hoja abierta a ${w.inner}", 'con la hoja abierta'],
+  [E2E, "ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la lista de alertas a ${w.inner}", "ok(w.inner === m.viewportSize().width && w.scroll <= 9999 && w.body <= w.inner, `la lista de alertas a ${w.inner}", 'en la lista del teléfono'],
   [E2E, "await clic(opcion(m, L5.A)); await clic(m.getByText('Cobro duplicado", "await opcion(m, L5.A).click({ force: true }); await clic(m.getByText('Cobro duplicado", 'con clics de verdad'],
   [E2E, "const L5 = armar(X, 'm', { largo: true });", "const L5 = armar(X, 'm');", 'ya no arma una alerta con una cadena de 60 caracteres'],
 ];
