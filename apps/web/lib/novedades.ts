@@ -380,7 +380,7 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string,
     }
     // 9n-2 · Fotos de TU GALERÍA (L301): las de la página del negocio se COPIAN a la novedad (la galería no cambia); las subidas nuevas pasan como siempre.
     // Fotos a la medida: la copia es la misma imagen con las mismas variantes; lleva lo anotado de ellas (guardián fotosConVariantes).
-    const gal = fotos.length ? (await c.query<{ id: string }>(`select id::text from media where id = any($1::uuid[]) and owner_kind = 'business' and owner_id = $2 and status = 'visible' and not private`, [fotos, negocio])).rows.map((x) => x.id) : [];
+    const gal = fotos.length ? (await c.query<{ id: string }>(`select id::text from media where id = any($1::uuid[]) and owner_kind = 'business' and owner_id = $2 and status = 'visible' and not rev_sin_c2 and not private`, [fotos, negocio])).rows.map((x) => x.id) : [];
     for (let i = 0; i < fotos.length; i++) {
       if (!gal.includes(fotos[i]!)) continue;
       const n = (await c.query<{ id: string }>(`insert into media (owner_kind, owner_id, url, w, h, credit, sort, uploaded_by, bytes, var_widths, var_bytes, var_at) select 'post', $1, url, w, h, credit, 0, $3, bytes, var_widths, var_bytes, var_at from media where id = $2::uuid returning id::text`, [id, fotos[i], actorId])).rows[0]!;
@@ -389,7 +389,7 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string,
     if (fotos.length) {
       const ok = await c.query(
         `update media set owner_kind = 'post', owner_id = $1, sort = array_position($3::uuid[], id)
-          where id = any($3::uuid[]) and status = 'visible' and not rev_sin_c2 and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'post' and owner_id = $1))`, [id, actorId, fotos]);
+          where id = any($3::uuid[]) and status = 'visible' and not rev_sin_c2 and not private and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'post' and owner_id = $1))`, [id, actorId, fotos]);
       if (ok.rowCount !== fotos.length) throw Object.assign(new Error("foto ajena"), { fotoAjena: true });
     }
     await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'post' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [id, fotos]);

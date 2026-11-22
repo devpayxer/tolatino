@@ -1,6 +1,9 @@
 // 4m-2 · Ayuda con la cita de Doctores y con el trámite de Profesionales: motivos por rubro, foto de la factura PRIVADA (solo
 // el paciente, el consultorio y To'Latino; nadie más, ni por /medios), avisos neutros de Salud, «Que corrijan el cobro a mi
 // seguro», Pro «Ofreció algo que no podía por ley» → licencias a revisión + aviso de la Fiscalía, borrado de fotos a 90 días.
+// 22 nov · El atajo (guardián fotosRevisionPrivacidad): la foto de una ayuda (privado/a/, a nombre de quien la sube) mandada A MANO, como un
+// atacante (la acción del servidor por su id, sin pantalla), a cada destino público que acepta el id de una foto: perfil, galería, portada,
+// logo, foto del equipo, novedad, Comunidad y reseña. El servidor no la adjunta (la fila sigue de quien la subió) y nada público la muestra.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 // 9b-1 · Lo que hace otra prueba se pide con requiere (si no está en la base, se corre esa prueba): ya no depende del orden.
 const { requiere } = require('../lib/requiere.cjs'); // (y sin ayuda pedida: la de una corrida anterior ya la tiene)
@@ -41,6 +44,57 @@ const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
   const m = await mk({ ...devices['iPhone 13'] }, '5705550122'), doc = await mk({ viewport: { width: 1360, height: 900 } }, '5705550244');
   const ofi = await mk({ viewport: { width: 1360, height: 900 } }, '5705550166'), otro = await mk({ viewport: { width: 1360, height: 900 } }, '5705550277');
   const anon = await mk({ viewport: { width: 390, height: 844 } }, null), adm = await mk({ viewport: { width: 1360, height: 900 } }, '5705550199');
+  // ── El atajo (22 nov): la foto privada de una ayuda, mandada a mano a cada destino público ──
+  {
+    const fs = require('fs');
+    // Las acciones del servidor por su id (como las ve cualquiera en el JavaScript de la página): nombre + archivo → id y una ruta que la sirve.
+    const MAN = JSON.parse(fs.readFileSync(ENT.RAIZ + '/apps/web/.next/server/server-reference-manifest.json', 'utf8')).node;
+    // (ruta: una página que usa esa acción; el servidor solo la ejecuta desde una página que la tiene)
+    const accion = (archivo, nombre, ruta) => {
+      const e = Object.entries(MAN).find(([, v]) => v.exportedName === nombre && (!v.filename || v.filename.endsWith(archivo)));
+      if (!e) throw new Error(`no encontré la acción ${nombre} (${archivo}) en el manifiesto`);
+      return { id: e[0], ruta };
+    };
+    const llamar = (p, archivo, nombre, args, ruta) => { const a = accion(archivo, nombre, ruta); return p.evaluate(async ([a, args]) => (await fetch(a.ruta, { method: 'POST', headers: { 'Next-Action': a.id, 'Content-Type': 'text/plain;charset=UTF-8', Accept: 'text/x-component' }, body: JSON.stringify(args) })).text(), [a, args]); };
+    // La foto privada de una ayuda, subida por la ruta de la ayuda (privado/a/): queda a nombre de quien la sube (owner 'user'), sin ayuda todavía.
+    const b64 = fs.readFileSync(FOTO).toString('base64');
+    const fotoAyuda = (p) => p.evaluate(async (b64) => { const fd = new FormData(); fd.append('foto', new Blob([Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0))], { type: 'image/jpeg' }), 'factura.jpg'); return (await fetch('/api/ayuda/foto', { method: 'POST', body: fd })).json(); }, b64);
+    const fila = (id) => sql(`select owner_kind || '|' || owner_id || '|' || status || '|' || private::text || '|' || url from media where id = '${id}'`);
+    // (la Comunidad la prueba una vecina de la semilla con su bienvenida hecha: 5705557008)
+    const vec = await mk({ viewport: { width: 390, height: 844 } }, '5705557008');
+    const XM = await fotoAyuda(m), XD = await fotoAyuda(doc), XV = await fotoAyuda(vec);
+    ok(XM.ok && XD.ok && XV.ok && [XM, XD, XV].every((x) => /^user\|[^|]+\|visible\|true\|privado\/a\//.test(fila(x.id))), 'el atajo: fotos privadas de ayuda (privado/a/), a nombre de quien las subió');
+    const DOC = sql(`select id from users where phone = '+15705550244'`), MID = sql(`select id from business_members where business_id = '${S}' and user_id = '${DOC}' and kind = 'owner'`);
+    const FOTO_EQ = sql(`select coalesce(photo_url, '') from business_members where id = '${MID}'`);
+    const RES = sql(`select b.id from businesses b where b.status = 'active' and b.category_id not in ('NEG-NINOS', 'NEG-FE') and not exists (select 1 from reviews r where r.business_id = b.id and r.user_id = ${MARISOL} and r.status <> 'removed') order by b.id limit 1`);
+    // Cada intento: quién, la acción, lo que manda y lo que contesta el servidor (el rechazo de la foto; la galería, la portada y el equipo la
+    // ignoran sin adjuntarla: contestan ok y la foto sigue donde estaba).
+    const NO_EXISTE = /Esa foto no existe/, YA_NO = /Una de las fotos ya no está/, OK = /"ok":true/;
+    const DUENO = new Map([[XM, sql(`select id from users where phone = '+15705550122'`)], [XD, DOC], [XV, sql(`select id from users where phone = '+15705557008'`)]]);
+    const intentos = [
+      [m, XM, 'app/(app)/cuenta/acciones-perfil.ts', 'perfilFoto', [XM.id], 'perfil', NO_EXISTE, '/cuenta/ajustes'],
+      [vec, XV, 'app/(app)/comunidad/acciones.ts', 'comPublicar', [{ kind: 'publicacion', body: 'Hoy la feria del parque estuvo muy bonita, gracias a todos.', fotos: [XV.id] }], 'Comunidad', YA_NO, '/comunidad/mensajes'],
+      [m, XM, 'app/(app)/n/[id]/acciones-resena.ts', 'publicarResena', [{ negocio: RES, visitante: true, stars: 5, body: 'Muy buena atención, rápidos y amables con todos. Volveré pronto.', fotos: [XM.id] }], 'reseña', YA_NO, `/n/${RES}`],
+      [doc, XD, 'app/panel/acciones.ts', 'fotosAgregar', [S, [XD.id], false], 'galería', OK, `/panel/${S}`],
+      [doc, XD, 'app/panel/acciones.ts', 'fotosAgregar', [S, [XD.id], true], 'portada', OK, `/panel/${S}`],
+      [doc, XD, 'app/panel/acciones.ts', 'logoPoner', [S, XD.id], 'logo', NO_EXISTE, `/panel/${S}`],
+      [doc, XD, 'app/panel/acciones-equipo.ts', 'equipoGuardar', [S, MID, { role: ['Doctora', 'Doctor'], y: null, sp: [], same: true, wk: null, photo: XD.id, bio: ['', ''], langs: ['es'] }], 'foto del equipo', OK, `/panel/${S}`],
+      [doc, XD, 'app/panel/acciones-novedades.ts', 'novGuardar', [S, { kind: 'novedad', title: 'Horario nuevo', body: 'Abrimos más temprano.', link: 'none', fotos: [XD.id] }], 'novedad', YA_NO, `/panel/${S}`],
+    ];
+    try {
+      for (const [p, X, archivo, nombre, args, que, espera, ruta] of intentos) {
+        const r = await llamar(p, archivo, nombre, args, ruta);
+        const sigue = fila(X.id) === `user|${DUENO.get(X)}|visible|true|privado/a/${X.id}.jpg`;
+        ok(sigue && espera.test(r), `el atajo · ${que}: mandada a mano, el servidor no la adjunta (sigue de quien la subió, privada)${sigue && espera.test(r) ? '' : ' · fila ' + fila(X.id) + ' · contestó ' + r.replace(/\s+/g, ' ').slice(-200)}`);
+      }
+    } finally { sql(`update business_members set photo_url = ${FOTO_EQ ? `'${FOTO_EQ}'` : 'null'} where id = '${MID}'`); }
+    const dondeSale = (id) => sql(`select (select count(*) from users where photo_url like '%${id}%') + (select count(*) from businesses where logo_url like '%${id}%') + (select count(*) from business_members where photo_url like '%${id}%')
+      + (select count(*) from items where array_to_string(photos, ' ') like '%${id}%') + (select count(*) from media where url like '%${id}%' and id <> '${id}')`);
+    const pag = await (await anon.request.get(B + `/n/${S}`)).text(), pagR = await (await anon.request.get(B + `/n/${RES}`)).text();
+    ok([XM, XD, XV].every((x) => dondeSale(x.id) === '0') && !pag.includes(XD.id) && !pagR.includes(XM.id) && !pag.includes('privado/a/') && !pagR.includes('privado/a/'),
+      'el atajo: la foto privada de una ayuda no entra en ningún destino público');
+    ok(await st(anon, `/api/ayuda/foto/${XD.id}`) === 404 && await st(otro, `/api/ayuda/foto/${XM.id}`) === 404, 'y por su ruta privada solo la ve quien puede (sin cuenta u otro: 404)');
+  }
   // ── Salud ──
   await m.goto(B + `/cita/${CS}`); await clic(m.getByRole('button', { name: 'Ayuda con la cita' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();

@@ -59,7 +59,7 @@ export async function aceptarEquipo(userId: string, tel: string, codigo: string,
     let photo: string | null = null;
     if (typeof x?.photo === "string" && UUID.test(x.photo)) {
       // La foto que la persona acaba de subir (/api/medios, suya) pasa a su perfil del equipo.
-      photo = (await c.query<{ url: string }>(`update media set owner_kind = 'member', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 returning url`, [m.id, x.photo, userId])).rows[0]?.url ?? null;
+      photo = (await c.query<{ url: string }>(`update media set owner_kind = 'member', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`, [m.id, x.photo, userId])).rows[0]?.url ?? null;
     }
     await c.query(
       `update business_members set status = 'active', user_id = $2, invite_code = null, invite_expires_at = null, show_on_page = true, same_as_business_hours = true,
