@@ -6114,3 +6114,14 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   2. *Los recorridos que no son de dinero* (avisos, fotos, soporte, El Compa…) tienen la misma debilidad y están en la lista para el mismo
      arreglo. No es una decisión: es para que sepas que falta.
 
+## Inicio › «Abierto ahora»: tres versiones para elegir (22 nov) — propuesta, nada en la app todavía — una decisión tuya
+- **Qué pediste:** tres versiones de la sección «Abierto ahora» que se vean mejor.
+- **Dónde verlas:** https://claude.ai/artifact/5XDfn6pK2adCHfsFevARYe (la de hoy y las tres, en teléfono y en escritorio, con los colores, las letras y
+  los negocios de ejemplo del proyecto). **A** · la misma fila, ordenada (nombre en una línea con el sello pegado, dato legible, disponibilidad como
+  texto). **B** · fotos primero (tarjeta con foto y la disponibilidad encima; en el teléfono se desliza de lado). **C** · un panel con filtros por lo
+  que quieres hacer y un botón directo en cada renglón.
+- **Lo que arreglan las tres:** el nombre partido en dos líneas, el dato cortado a media frase y en mayúsculas, la pastilla verde que pesa más que el
+  nombre, y «0 mi», que pasa a decir «aquí cerca».
+- **Decide tú:** cuál va (o qué mezclar). Mi recomendación es la B. La que elijas se construye con el sistema de diseño (si es B o C, con una pieza
+  nueva), con captura real en teléfono y escritorio antes de conectarla. El resto de Inicio sigue en pausa hasta que traigas las referencias.
+
