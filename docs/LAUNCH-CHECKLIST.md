@@ -2347,6 +2347,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       foto de la revisión copia la nota interna y no hay una regla por fila segura); lo que la persona vio sale por la columna original. (4) Las
       notas de la prueba `nota9u2` se escriben directo en la base, no desde las hojas del equipo (son unas veinte): que al menos una por familia
       recorra la hoja. (5) Sale `business_members.hidden_reason` (la ve el dueño, no siempre el miembro): decisión en REVISION.
+      **22 nov, hechos (1), (2) y (4); sigue abierta por (5), decisión en REVISION:** (1) auditadas las 480 columnas de texto, jsonb o arreglo de las 76 tablas del archivo por quién las escribe: salía `items.hidden_by` (quién del equipo ocultó un plato) y ya no sale; (2) el motivo de To'Latino sale de la base solo con la página oculta, suspendida o cerrada (y el del cierre temporal solo vigente), y llega solo a Hoy y Tu página; las notas de fotos, solo a Fotos y portada; (4) `nota9u2` escribe una nota por familia desde la hoja de Negocio 360. Guardián `notaInternaFueraDelArchivo` extendido (`alreves9u2`, 27).
 - [x] **→ 9u** · **La nota «interna» no sale del equipo: lo que encontró la revisión aparte (21 nov) y no es un cambio de etiqueta.**
       (1) **«Descargar mis datos» exporta columnas donde cae una nota interna** (`lib/datos/exportar.ts` hace `select *` de las tablas del mapa y solo
       quita las columnas de otra persona, las de `equipo` y `NUNCA_SE_EXPORTA`): `claims.reason` (aplicar un reclamo, `Colas.tsx`),
@@ -2556,9 +2557,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9t** · **Fotos privadas: el navegador no las vuelve a pedir con If-None-Match** porque salen con `private, no-store` (no se guardan
       en el disco del teléfono o de una computadora compartida). El ETag y el 304 ya están (sirven a quien manda If-None-Match); pasar a
       `private, no-cache` ahorraría bajarlas otra vez pero las deja en el disco del aparato: decisión de privacidad del fundador, no se aflojó.
-- [ ] **→ 9t** · **El archivo de «Descargar mis datos» se entrega entero en memoria** (`lib/datos/exportar.ts bajarExportacion` lee el ZIP con
+- [x] **→ 9t** · **El archivo de «Descargar mis datos» se entrega entero en memoria** (`lib/datos/exportar.ts bajarExportacion` lee el ZIP con
       `leerObjeto` y la ruta lo devuelve de una vez; además se arma entero en memoria). Misma clase que los medios en flujo: entregarlo con
       `abrirObjeto` (en flujo) y medir cuánto pesa el ZIP de una cuenta grande. No se tocó el 21 nov (fuera del encargo).
+      **✓ 22 nov:** se arma a disco y se entrega en flujo con `abrirObjeto` (mismos permisos, un uso, mismas cabeceras; si el archivo ya no está en el almacén, 410 sin gastar el uso). Guardián `exportacionEnFlujo` (`alreves9texpflujo`, 14 defectos). Medido con una cuenta de 400.000 avisos (ZIP de 51,6 MB): bajar pasó de +236 MB de memoria a +0. `datos9d` y `exp9t` comparan lo bajado byte a byte con lo guardado.
 
 
 ## Fotos a la medida — F1 (decisión AI, 20 nov) — lo que quedó anotado
@@ -2739,3 +2741,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **Fotos que no se pueden adjuntar se ignoran en silencio (22 nov):** galería, portada, equipo y eventos contestan `ok` y no la adjuntan, en vez
       de rechazarla con un mensaje; `equipoGuardar` con un id que no adjunta deja vacía la foto del perfil del equipo (ya pasaba antes). Que rechacen con
       mensaje. En `ayu4m` no se mandan a mano Publica tu negocio, la invitación del equipo ni eventos (los cubre solo el guardián).
+- [ ] **→ 9t** · **Armar el archivo de «Descargar mis datos» de una cuenta grande pide ~1,3 GB de pico (22 nov):** ya no es el ZIP (va a disco) sino lo que
+      deja cada parte de 20.000 filas (JSON con sangría, CSV y compresión): partes más chicas o escribir el JSON por partes. «Exportar sus datos» del
+      equipo (`acciones-usuarios.ts`) sigue armando el ZIP en memoria y lo devuelve en base64. La ruta pone `content-length` y el navegador lo recibe vacío: mirar por qué.
+- [ ] **→ 9u** · **Lo que la auditoría del archivo dejó anotado (22 nov):** (1) migración propuesta, sin escribir: `support_messages` con `check (sender = 'user'
+      or user_id is null)`, para que un mensaje del equipo no pueda entrar nunca al archivo de una persona (hoy no hay fuga; `nota9u2` lo comprueba en toda
+      la base); (2) salen en el archivo de la persona `tickets.door_name` (el nombre del portero, otra persona) y `media.rev_llave` (la ruta interna de la copia
+      de revisión): quitarlos; (3) `pausas.cot`, `pausas.staff`, `equipo[].hidden` y `ver.selloNote` llegan a secciones del Panel que no los pintan.
