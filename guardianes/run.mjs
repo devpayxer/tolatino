@@ -10299,6 +10299,46 @@ const guardianes = {
       for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?[a-z_][a-z0-9_]*\s+alter column\s+([a-z_][a-z0-9_]*)\s+(?:set data\s+)?type/gi)) objetos.push([m[1], "cambio de tipo"]);
       for (const [id, que] of objetos) { const quien = lee(id); if (quien) falla(G, f, 0, `${que} de «${id}»: el código todavía lo lee (${quien}); primero un despliegue sin lectores, después se contrae`); }
     }
+    // Tanda 5b · Con construir → migrar → cambiar, la app VIEJA sirve contra la base NUEVA mientras se migra (de uno a varios minutos). Además de los
+    // drop / rename de arriba, rompen sus escrituras: (1) una columna NOT NULL sin valor por omisión (o un «set not null») en una tabla donde el código
+    // hace INSERT: sus INSERT fallan hasta el cambio; (2) un cambio de tipo en cualquier cláusula del «alter table» (arriba solo la primera); (3) una
+    // función con OTRA firma (create or replace con otros argumentos crea una sobrecarga: la vieja sigue, pero con argumentos por omisión la llamada de la
+    // app vieja puede volverse ambigua; reemplazarla es otro nombre y el drop después). Desde la 0209 (las de antes ya están desplegadas).
+    const inserta = (tabla) => {
+      if (previo) {
+        try {
+          const out = execSync(`git grep -l -i -E "insert into[[:space:]]+(public\\.)?${tabla}\\b" ${previo} -- apps services scripts`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+          if (out) return out.split("\n")[0].replace(/^[0-9a-f]+:/, "") + " (commit anterior)";
+        } catch { /* sin coincidencias */ }
+      }
+      const re = new RegExp(`insert into\\s+(public\\.)?${tabla}\\b`, "i");
+      return vivos.filter((f) => !/^packages\/db\/seeds\//.test(f)).find((f) => re.test(readFileSync(f, "utf8"))) ?? "";
+    };
+    const partes = (s) => { const r = []; let n = 0, a = ""; for (const ch of s) { if (ch === "(") n++; if (ch === ")") n--; if (ch === "," && n === 0) { r.push(a); a = ""; } else a += ch; } r.push(a); return r.map((x) => x.trim()); };
+    const firma = (s) => partes(s.toLowerCase().replace(/\s+/g, " ")).map((x) => x.replace(/\s+(default|=)\s+[\s\S]*$/, "").trim()).join(", ");
+    const firmas = new Map();
+    for (const x of readdirSync("packages/db/migrations").filter((y) => /^\d{4}_.*\.sql$/.test(y)).sort()) {
+      const f = `packages/db/migrations/${x}`, t = readFileSync(f, "utf8").replace(/--.*$/gm, ""), nueva = Number(x.slice(0, 4)) >= 209;
+      for (const m of t.matchAll(/\bcreate\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z_][a-z0-9_]*)\s*\(([^)]*(?:\([^)]*\)[^)]*)*)\)/gi)) {
+        const fn = m[1].toLowerCase(), sig = firma(m[2]), antes = firmas.get(fn);
+        if (nueva && antes !== undefined && antes !== sig) { const quien = lee(fn); if (quien) falla(G, f, 0, `otra firma de la función «${fn}» (${antes} → ${sig}): la vieja sigue como sobrecarga y la app vieja (${quien}) puede caer en una llamada ambigua; reemplazarla es otro nombre y el drop en un despliegue posterior`); }
+        firmas.set(fn, sig);
+      }
+      if (!nueva) continue;
+      for (const m of t.matchAll(/\balter table\s+(?:if exists\s+)?(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+([\s\S]*?);/gi)) {
+        const tabla = m[1];
+        for (const c of partes(m[2])) {
+          const add = /^add\s+(?:column\s+)?(?:if not exists\s+)?([a-z_][a-z0-9_]*)\s+([\s\S]*)$/i.exec(c);
+          if (add && !/^(constraint|primary|unique|foreign|check|exclude)$/i.test(add[1]) && /\bnot null\b/i.test(add[2]) && !/\b(default|generated)\b/i.test(add[2])) {
+            const quien = inserta(tabla); if (quien) falla(G, f, 0, `columna «${add[1]}» NOT NULL sin valor por omisión en «${tabla}»: los INSERT de la app vieja (${quien}) fallan desde que migra hasta que cambia; primero con default (o nula), después se aprieta`);
+          }
+          const snn = /^alter\s+(?:column\s+)?([a-z_][a-z0-9_]*)\s+set not null$/i.exec(c);
+          if (snn) { const quien = inserta(tabla); if (quien) falla(G, f, 0, `«set not null» de «${tabla}.${snn[1]}»: los INSERT de la app vieja (${quien}) que no la llenan fallan hasta el cambio; primero un despliegue que siempre la llene`); }
+          const tipo = /^alter\s+(?:column\s+)?([a-z_][a-z0-9_]*)\s+(?:set data\s+)?type\b/i.exec(c);
+          if (tipo) { const quien = lee(tipo[1]); if (quien) falla(G, f, 0, `cambio de tipo de «${tabla}.${tipo[1]}»: el código todavía lo lee (${quien}); primero una columna nueva, después se contrae`); }
+        }
+      }
+    }
   },
 
   /* 9o · selladoSoloSuServidor: en infra/<entorno>/sellado/ solo hay llaves públicas (llaves.json, recuperacion.txt), la lista de sobres (sobres.json) y

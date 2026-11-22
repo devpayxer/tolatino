@@ -16,6 +16,8 @@
 //   (tanda 5b) vuelve «.anterior» sin «nginx -t»; la semilla, el mapa o la recarga de nginx cortan entre migrar y cambiar; el «up» sin esperar «healthy»;
 //   no se mira el commit que sirve /api/salud; umask 077 suelto; la carpeta de mantenimiento sin 755.
 //   despliegueConTramos · sin la línea de tramos al salir, un tramo que falta o fuera de su sitio, /estado/ sin el enlace, la prueba sin el caso del fallo.
+//   migracionReversible (tanda 5b) · columna NOT NULL sin default o «set not null» en una tabla con INSERT; cambio de tipo en una cláusula que no es la
+//   primera; una función con otra firma.
 //   pruebasInfraAisladas (tanda 5b) · «aislado» sin red aparte o sin tapar /opt; una prueba que vuelve a «unshare» suelto; la del tolatino-sync sin
 //   aislar_exige; correr.sh corre las que despliegan aunque el aislamiento no pase.
 // «crear» (el texto a cambiar es null): se crea el archivo, se corre el guardián y se quita.
@@ -94,6 +96,11 @@ const casos = [
   ['despliegueConTramos', D, '\ntramo recrear\n', '\n', 'falta «tramo recrear» en su sitio'],
   ['despliegueConTramos', S, " · <a href='/estado/tramos.txt'>Tramos</a>", '', '/estado/ enlaza tramos.txt'],
   ['despliegueConTramos', O, "tramos (fallo en imagen, commit", "tramos (fallo, commit", 'la prueba del orden comprueba la línea de tramos'],
+  // Tanda 5b · migracionReversible: lo que rompe las escrituras de la app vieja mientras se migra (construir → migrar → cambiar).
+  ['migracionReversible', NUEVA, null, 'begin;\nalter table audit_entries add column alreves_x text not null;\ncommit;\n', 'NOT NULL sin valor por omisión en «audit_entries»'],
+  ['migracionReversible', NUEVA, null, 'begin;\nalter table audit_entries alter column alreves_y set not null;\ncommit;\n', '«set not null» de «audit_entries.alreves_y»'],
+  ['migracionReversible', NUEVA, null, 'begin;\nalter table operations add column alreves_z int, alter column city_id type bigint;\ncommit;\n', 'cambio de tipo de «operations.city_id»'],
+  ['migracionReversible', NUEVA, null, 'begin;\ncreate or replace function patrocinio_devolucion(x integer) returns integer language sql as $$ select x $$;\ncommit;\n', 'otra firma de la función «patrocinio_devolucion»'],
   ['pruebasInfraAisladas', AI, 'unshare -m -n --propagation private', 'unshare -m --propagation private', 'montajes Y red aparte'],
   ['pruebasInfraAisladas', AI, 'AISLAR_RUTAS="/opt /etc/tolatino', 'AISLAR_RUTAS="/etc/tolatino', 'faltan: /opt'],
   ['pruebasInfraAisladas', SP, 'aislar_exige "$T/trabajo/infra/pruebas/tolatino-sync" TOLATINO_SYNC_REPO TOLATINO_SYNC_DIR || exit 1\n', '', 'aislar_exige comprueba que lee TOLATINO_SYNC_REPO'],
