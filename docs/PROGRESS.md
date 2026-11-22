@@ -20,6 +20,18 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (madrugada, 05:00 UTC) · `main` = `pruebas` = 3559997, sandbox comprobado desde fuera** (estado-sandbox 44982310623: salud con ese
+  commit, 207 migraciones; del push a servido 6 min 9 s). Confirmación de push **44981829795 en verde, 41,7 min**: la primera de `main` que no sale
+  roja por el propio CI desde el 21 nov 21:55 (el paso final tarda 8 s, antes 23 min). Entró: 9u-2 «nota interna» (dirigida 44971472965 en verde +
+  com5e, compa7f, neg9n8 y sop7b en verde sobre base local NUEVA), inestables por artefactos, alcance por documentos y el arreglo de la prueba de
+  navegación de la Vitrina. **En curso: revisión a fondo del CI y de los procesos (pedido del fundador).** Fase 1 hecha (nueve lectores; informes
+  y datos fuera del repo, resumen en REVISION «Revisión del CI y de los procesos»); fase 2 en marcha (nueve verificadores intentan refutar el plan);
+  después se implementa por tandas pequeñas, cada una medida. **Hueco abierto a cerrar primero:** un push de solo documentos que sustituye en la
+  cola a uno de código deja ese código sin regresión y en verde; hasta cerrarlo, no subir documentos solos a `main` con una corrida de código EN
+  COLA. **Encargos detenidos el 22 nov** (no relanzar sin pedirlo el fundador): barridos que no son de dinero (trabajo parcial sin revisar en una
+  rama local), segunda ronda de la Vitrina (LAUNCH) y el puerto de las pruebas (commit completo sin revisar: se integra con esta revisión).
+  **Regla nueva:** una roja en local se repite sobre base NUEVA antes de darla por defecto (hoy cuatro rojas dos veces seguidas eran la base local
+  con 15 h de datos acumulados). Quién hizo qué: Sonnet y Fable midieron y leyeron; Opus escribió el alcance por documentos; Fable revisó y subió.
 - **22 nov (mañana) · tarjeta Vitrina (AK) en `main` y `pruebas` = dbb5dc9 por la vía rápida de diseño (decisión AL, nueva).** Evidencia:
   tipos, guardianes (2992 archivos), textos, build servido en :3100 visto en teléfono y escritorio, `tarAK` (93) y `vid001` (30). **No** corrió el
   resto de las pruebas de listas ni varias al revés: están en LAUNCH («Vitrina, segunda ronda»). La rama de trabajo lleva además lo que `main`

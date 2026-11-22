@@ -6148,3 +6148,28 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
 - **Lo que ya decidiste y se respetó (AK):** las palabras de la app («hasta 9 PM», «Reservar»), menos de 5 reseñas sin estrellas, el anillo de Hoy
   sale de la tarjeta y la caja «HOY» abre «Hoy en el barrio».
 
+## Revisión del CI y de los procesos (22 nov) — diagnóstico entregado; el plan se está verificando; una decisión tuya al final
+- **Qué pediste:** revisar el CI y los procesos, ver qué hacemos mal y optimizarlo.
+- **Cómo se hizo:** nueve lectores independientes midieron las corridas reales del 14 al 22 nov y leyeron el CI, las pruebas, el despliegue y las
+  reglas. Nueve verificadores intentan ahora refutar cada cambio propuesto; solo entra lo que conserva las garantías.
+- **Lo principal:** el tiempo no se pierde porque las máquinas sean lentas, sino por cómo subimos y por trabajo repetido. Del 19 al 22 nov el CI
+  gastó 611 horas de máquina y solo el 26 % fue de corridas verdes; una confirmación sana tarda 40 minutos.
+- **Qué hacemos mal (medido):**
+  1. *Un solo tren:* del commit a `main` la mediana es 114 min y uno de cada diez tarda más de 21 h; lo que no tiene relación espera detrás de lo
+     rojo o lo sensible.
+  2. *La misma evidencia dos o tres veces:* en la rama, otra vez al subir y otra por el commit de documentos; la corrida de cada subida no cazó
+     ningún defecto nuevo en 28 subidas.
+  3. *Nada hace cumplir las reglas:* 22 de las 26 reglas del flujo dependen de la memoria; la puerta de producción acepta cualquier corrida verde.
+  4. *El CI se estorba a sí mismo:* el tope de 20 trabajos lo llena él; las 17 corridas programadas no dieron un solo verde; la revisión dirigida
+     tarda más que la completa (76 min frente a 40).
+  5. *Trabajo repetido en cada corrida:* 113 pasadas completas de guardianes (85–88 % del carril «al revés»), la web construida tres veces, 53
+     esperas fijas de 16 s que ya no hacen falta.
+  6. *Pruebas escritas contra la intención y no contra lo servido:* 14 episodios en 6 días.
+  7. *El sandbox reconstruye lo ya construido:* 5 min del push a verlo, 4:16 de ellos construyendo; cada despliegue corta el servicio 15–30 s y
+     nada avisa si el sandbox cae.
+  8. *La máquina local engaña:* una base local vieja dio cuatro rojos falsos; tres builds a la vez saturan la máquina.
+  9. *La lista de pendientes de lanzamiento no baja:* del 16 al 22 nov se cerraron 105 líneas y las abiertas pasaron de 264 a 256.
+- **Ya arreglado y servido:** el paso final del CI (8 s en vez de 23 min) y las subidas de solo documentos sin los carriles largos.
+- **Decide tú (cuando llegue el plan):** el punto 9 toca «se abre cuando esté todo»: hace falta un criterio de qué bloquea abrir y qué puede hacerse
+  con la app abierta. Te llevo dos o tres opciones con sus números.
+
