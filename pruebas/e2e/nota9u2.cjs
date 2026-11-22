@@ -71,6 +71,10 @@ const ADM = '5705550199';
   const fantasmas = Object.keys(NOTAS).filter((k) => !todas.has(k));
   ok(fantasmas.length === 0, `toda nota clasificada existe en la base${fantasmas.length ? ': ' + fantasmas.join(', ') : ''}`);
   const internas = Object.entries(NOTAS).filter(([, v]) => v.sale === false).map(([k]) => k);
+  // 22 nov · (2) «internas»: columnas que no salen aunque la fila sea de la persona (tickets.door_name: el texto de búsqueda de la puerta, con el nombre
+  // que escribió el negocio; media.rev_llave: la ruta interna de la copia de revisión). La misma fuente: «internas» del mapa de datos.
+  const COL_INTERNAS = Object.keys(MAPA.internas ?? {}).filter((k) => !k.startsWith('$'));
+  ok(COL_INTERNAS.includes('tickets.door_name') && COL_INTERNAS.includes('media.rev_llave') && COL_INTERNAS.every((k) => todas.has(k) && exp.includes(k.split('.')[0])), `cada columna de «internas» existe en la base y su tabla sale en el archivo: ${COL_INTERNAS.join(', ')}`);
   // Mensajes de Soporte: el archivo trae los de la columna de la persona (user_id). Las respuestas y las notas internas del equipo (internal, y el
   // «escalado» con su motivo y quién) nacen sin user_id y la base no deja cambiarlo: que siga así en todas las filas.
   ok(sql(`select count(*) from support_messages where sender <> 'user' and user_id is not null`) === '0', 'Soporte: ningún mensaje del equipo o del sistema lleva la cuenta de la persona (no entra a su archivo)');
@@ -150,6 +154,10 @@ const ADM = '5705550199';
     const libres = internas.filter((k) => !['business_members.removed_reason', 'business_referrals.reason', 'compa_conversations.handoff_reason', 'push_tokens.revoked_reason', 'support_email_in.reason', 'media.removed_reason'].includes(k));
     ok(libres.every((k) => INTERNAS_TEXTO.includes(k)), `cada interna de texto libre tiene su nota única (${libres.length}): ${libres.filter((k) => !INTERNAS_TEXTO.includes(k)).join(', ') || 'todas'}`);
 
+    // 22 nov · Un boleto de la persona con su texto de búsqueda de la puerta (door_name lo arma la base con el nombre del titular; copia de un boleto de la semilla).
+    const TKN = sql(`insert into tickets (event_date_id, event_id, city_id, ticket_type_id, operation_id, holder_user_id, holder_name, admits, kind, price_cents, fee_cents, discount_cents)
+      select event_date_id, event_id, city_id, ticket_type_id, operation_id, '${UA}', 'Invitada ${tag('PUE')}', 1, kind, price_cents, fee_cents, discount_cents from tickets order by id limit 1 returning id`).split('\n')[0];
+    ok(/^\d+$/.test(TKN) && sql(`select door_name from tickets where id = ${TKN}`).includes('invitada'), `un boleto de la persona con su door_name armado por la base (${TKN})`);
     // ── El archivo de la persona ──
     console.log('1b · Descargar mis datos (lo arma el barrido; se baja con POST)');
     const E1 = sql(`insert into data_exports (user_id, is_test) values ('${UA}', true) returning id`).split('\n')[0];
@@ -168,6 +176,13 @@ const ADM = '5705550199';
       ok(filas.every((x) => !(c in x)), `la columna ${k} no sale (${f}.json, ${filas.length} filas)`);
       ok(!(z[`${f}.csv`]?.toString('utf8').split('\r\n')[0] ?? '').split(',').includes(c), `ni en la cabecera de ${f}.csv`);
     }
+    for (const k of COL_INTERNAS) {
+      const [t, col] = k.split('.'), f = archivo(t), filas = J(f);
+      ok(filas.length > 0, `${f}.json trae sus filas (${filas.length}): hay dónde buscar ${k}`);
+      ok(filas.every((x) => !(col in x)), `«internas» · ${k} no sale (${f}.json, ${filas.length} filas)`);
+      ok(!(z[`${f}.csv`]?.toString('utf8').split('\r\n')[0] ?? '').split(',').includes(col), `ni en la cabecera de ${f}.csv`);
+    }
+    ok(!todo.includes('privado/rev/'), '«internas» · la ruta de la copia de revisión (privado/rev/…) no aparece en ningún archivo del ZIP');
     const rec = J(archivo('claims'));
     ok(rec.length === 2 && rec.some((x) => x.status === 'approved' && 'reason' in x && x.reason === null) && rec.some((x) => x.status === 'rejected' && String(x.reason).includes(T['claims.reason (rechazado)'])),
       'reclamos: el motivo va en el rechazado y vacío en el aprobado (la columna sigue, el CSV no cambia de forma)');

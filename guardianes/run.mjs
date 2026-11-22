@@ -8703,6 +8703,14 @@ const guardianes = {
     if (de["claims.reason"]?.sale !== "status = 'rejected'") falla(G, MJ, 0, "claims.reason sale solo si el reclamo fue rechazado (lo que Recuperar pinta)");
     const x = sinComent(X), lim = cuerpoFn(x, "limpiar");
     if (!/notaSale\(tabla, k\)/.test(lim) || !/if \(s === false\) continue;/.test(lim) || !/k\.startsWith\("__sale__"\)/.test(lim) || !/f\[`__sale__\$\{k\}`\] !== true\) \{ o\[k\] = null;/.test(lim)) falla(G, X, 0, "limpiar: cada columna pasa por notaSale (interna o sin clasificar no sale; la de condición, vacía donde no se pinta)");
+    // 22 nov · (2) «internas»: lo que no sale aunque la fila sea de la persona (tickets.door_name: el texto de búsqueda de la puerta, con el nombre que
+    // escribió el negocio; media.rev_llave: la ruta interna de la copia de revisión). UNA fuente (el mapa), leída por mapa.ts y aplicada en limpiar().
+    let internas = {};
+    try { internas = JSON.parse(readFileSync(MJ, "utf8")).internas ?? {}; } catch { /* ya falló arriba */ }
+    for (const k of ["tickets.door_name", "media.rev_llave"]) if (typeof internas[k]?.ve !== "string" || internas[k].ve.trim().length < 20) falla(G, MJ, 0, `«internas» no trae ${k} con su porqué: sale en el archivo de la persona`);
+    for (const [k] of Object.entries(internas).filter(([k]) => !k.startsWith("$"))) if (!/^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/.test(k)) falla(G, MJ, 0, `internas: «${k}» no es tabla.columna`);
+    if (!/export const INTERNAS\b[^\n]*MAPA\.internas/.test(mp) || !/export const columnaInterna = \(tabla: string, col: string\): boolean => `\$\{tabla\}\.\$\{col\}` in INTERNAS;/.test(mp)) falla(G, MP, 0, "INTERNAS sale de «internas» del mapa de datos (una sola fuente) y columnaInterna la consulta");
+    if (!/if \(tabla && columnaInterna\(tabla, k\)\) continue;/.test(lim)) falla(G, X, 0, "limpiar: una columna de «internas» no sale (ni en el JSON ni en el CSV)");
     const dc = cuerpoFn(x, "datosDeCuenta");
     if (!/select \*\$\{banderasDeNotas\(f\.tabla\)\} from \$\{ident\(f\.tabla\)\}/.test(dc) || !/tabla: f\.tabla/.test(dc)) falla(G, X, 0, "el archivo de la persona: cada tabla con sus notas clasificadas (banderasDeNotas y tabla)");
     for (const q of cuerpoFn(x, "datosDeNegocio").split("\n    L(").slice(1)) if (/select (\w+\.)?\*/.test(q) && !/banderasDeNotas\("(\w+)"\)[\s\S]*, "\w+"(, \[[^\]]*\])?\),?\s*$/.test(q.trim())) falla(G, X, 0, `el archivo del negocio: un «select *» sin sus notas clasificadas («${q.slice(0, 40)}…»)`);
@@ -8726,6 +8734,7 @@ const guardianes = {
     // (4) Una nota por familia, escrita por la hoja del equipo (la pantalla), no directo en la base.
     const fam = new Set((e.match(/'por la hoja del equipo \((interna|por fila|persona)\)/g) ?? []));
     if (fam.size < 3 || !/await padm\.goto\(`\$\{B\}\/admin\/negocios\//.test(e) || !/await hoja\(padm, /.test(e)) falla(G, E, 0, "nota9u2: una nota por familia (interna, por fila, persona) se escribe por la hoja del equipo en Negocio 360");
+    if (!/«internas» · \$\{k\} no sale/.test(e)) falla(G, E, 0, "nota9u2 mira que las «internas» no salgan del archivo");
     if (!/cat\.every\(\(x\) => !\('hidden_by' in x\)\)/.test(e) || !/NO viaja a \$\{u\} \(no lo pinta\)/.test(e)) falla(G, E, 0, "nota9u2 mira el catálogo sin hidden_by y que el motivo de To’Latino no viaje a las pantallas que no lo pintan");
     if (!/information_schema\.columns/.test(e) || !/ES_NOTA\.test\(/.test(e) || !/ok\(sinClasificar\.length === 0, `ninguna nota sin clasificar/.test(e) || !/ok\(fantasmas\.length === 0/.test(e) || !/mapa-de-datos\.json/.test(e)) falla(G, E, 0, "la prueba recorre information_schema.columns de cada tabla exportada con ES_NOTA y falla si una nota queda sin clasificar");
   },

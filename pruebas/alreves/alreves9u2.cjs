@@ -25,6 +25,11 @@ const casos = [
   // 22 nov · (4) La prueba vuelve a escribir todas las notas directo en la base, o deja de mirar el catálogo y las pantallas que no pintan.
   [E, "'por la hoja del equipo (interna)", "'directo en la base (interna)", 'nota9u2: una nota por familia'],
   [E, "cat.every((x) => !('hidden_by' in x))", 'cat.every(() => true)', 'nota9u2 mira el catálogo sin hidden_by'],
+  // 22 nov · (2) «internas»: tickets.door_name y media.rev_llave salen otra vez (limpiar no las quita, el mapa pierde una, o mapa.ts no lee la lista).
+  [X, '    if (tabla && columnaInterna(tabla, k)) continue;', '    if (false) continue;', 'limpiar: una columna de «internas» no sale'],
+  [MJ, '"tickets.door_name": {', '"tickets.door_nombre": {', 'no trae tickets.door_name'],
+  [MJ, '"media.rev_llave": {', '"media.rev_llave_x": {', 'no trae media.rev_llave'],
+  [MP, 'export const columnaInterna = (tabla: string, col: string): boolean => `${tabla}.${col}` in INTERNAS;', 'export const columnaInterna = (tabla: string, col: string): boolean => false;', 'columnaInterna la consulta'],
   [X, 'r.rows.map((x) => limpiar(x, q.fuera, q.tabla))', 'r.rows.map((x) => limpiar(x, q.fuera))', 'el ZIP y la vista previa limpian con la tabla'],
   [MP, '  if (!n) return false;', '  if (!n) return true;', 'notaSale: una nota sin clasificar'],
   [MP, 'export const ES_NOTA = /(^|_)(reason|note|notes|motivo|nota|notas)$/;', 'export const ES_NOTA = /(^|_)(reason|note|notes|nota|notas)$/;', 'ES_NOTA deja fuera «motivo»'],
@@ -43,6 +48,8 @@ const casos = [
 ];
 // Los que caza la prueba contra la base (sin el servidor).
 const casosBase = [
+  // 22 nov · (2) Una columna de «internas» que ya no existe en la base (renombrada) o una tabla que no sale en el archivo.
+  [MJ, '"media.rev_llave": {', '"media.rev_llavero": {', 'cada columna de «internas» existe en la base'],
   [MJ, '    "user_badges.reason": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"}', '    "user_badges.reasons": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"}', 'ninguna nota sin clasificar en «notas» del mapa de datos: user_badges.reason'],
   [MJ, '    "user_badges.reason": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"}', '    "user_badges.reason": {"sale": false, "ve": "el porqué del equipo al subir un rango; nadie lo pinta"},\n    "user_badges.motivo": {"sale": false, "ve": "una columna que la base no tiene"}', 'toda nota clasificada existe en la base: user_badges.motivo'],
 ];
