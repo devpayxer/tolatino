@@ -26,7 +26,7 @@ const casos = [
   [M, '  if (r.status === 404) { soltar(r); return null; }', '  if (r.status === 404) { await r.body?.cancel().catch(() => undefined); return null; }', 'espera el cancel del cuerpo'],
   [E, '    const a = await abrirObjeto(l.clave, inm);', '    const x = await fetch("http://127.0.0.1:1/" + l.clave); if (x.status === 299) return new Response(x.body);\n    const a = await abrirObjeto(l.clave, inm);', 'usa en flujo el cuerpo de un fetch del servidor sin `signal`'],
   ['apps/web/app/api/entrega/foto/[id]/route.ts', '  if (!ok) return no();\n  // 9t · En flujo', '  // 9t · En flujo', 'sin antes contestar 404'],
-  ['apps/web/app/api/ayuda/foto/[id]/route.ts', '{ "cache-control": "private, no-store", "x-content-type-options": "nosniff" });', '{ "cache-control": "public, max-age=3600", "x-content-type-options": "nosniff" });', 'caché «private, no-store»'],
+  ['apps/web/app/api/ayuda/foto/[id]/route.ts', 'const cab = { "cache-control": "private, no-store",', 'const cab = { "cache-control": "public, max-age=3600",', 'caché «private, no-store»'],
 ];
 const crear = [
   ['apps/web/app/api/zz-alreves-flujo/route.ts', 'import { leerObjeto } from "@/lib/medios";\nexport async function GET() {\n  return new Response(new Uint8Array(await leerObjeto("privado/x/zz.jpg")));\n}\n', 'lee un objeto del almacén entero'],

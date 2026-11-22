@@ -24,6 +24,8 @@ const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) ret
 const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); if (x === v) return x; await new Promise((r) => setTimeout(r, 250)); } return x; };
 const AY = (num, col) => sql(`select ${col} from help_requests h join operations o on o.id = h.operation_id where o.number = '${num}'`);
 const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
+// F3b · La foto privada con un Accept dado (WebP o no): estado, tipo, caché, Vary y el peso.
+const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8') => p.evaluate(async ([u, a]) => { const r = await fetch(u, { cache: 'no-store', headers: { accept: a } }); const b = await r.arrayBuffer(); return { st: r.status, ct: r.headers.get('content-type'), cc: r.headers.get('cache-control'), vary: r.headers.get('vary'), n: b.byteLength }; }, [u, accept]);
 (async () => {
   require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   // 9b-1 · Una cita de Salud (la hace sal4j) que termina aquí, como en res4m (antes tomaba «la última terminada», que dejaba res4m).
@@ -116,11 +118,17 @@ const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
   ok(await st(m, U) === 200, 'el paciente ve su foto');
   ok(await st(doc, U) === 200, 'el consultorio ve la foto de su paciente');
   ok(await st(anon, U) === 404 && await st(otro, U) === 404, 'sin cuenta u otro negocio: 404 (no se dice que existe)');
+  { // F3b · La miniatura (la caja de 60 px de la ayuda pide ?w=320) baja la variante, con el mismo permiso que la entera.
+    const ent = await traerVar(m, U), mini = await traerVar(m, `${U}?w=320`);
+    ok(sql(`select cardinality(var_widths) > 0 from media where id = '${fm[0]}'`) === 't' && mini.st === 200 && mini.ct === 'image/webp' && mini.n > 0 && mini.n < ent.n && mini.cc === 'private, no-store' && /Accept/.test(mini.vary || ''),
+      `F3b: la miniatura de la foto de la ayuda baja la variante WebP (${mini.n} B < ${ent.n} B), privada y sin caché`);
+    ok((await traerVar(doc, `${U}?w=320`)).st === 200 && (await traerVar(anon, `${U}?w=320`)).st === 404 && (await traerVar(otro, `${U}?w=320`)).st === 404, 'F3b: la variante: el consultorio sí; sin cuenta u otro negocio, 404 como la entera');
+  }
   ok(await st(anon, `/medios/${fm[2]}`) !== 200, 'por /medios no se sirve');
   const audAntes = Number(sql(`select count(*) from audit_entries where action = 'ayuda.foto.ver'`));
   // 9j · «Vidrio roto»: una foto de Salud, el equipo la ve solo después de escribir el motivo (10 minutos, en la auditoría).
   sql(`set session_replication_role = replica; delete from break_glass where target_id = (select owner_id from media where id = '${fm[0]}')`);
-  ok(await st(adm, U) === 404, 'To’Latino sin motivo: 404 (vidrio roto)');
+  ok(await st(adm, U) === 404 && (await traerVar(adm, `${U}?w=320`)).st === 404, 'To’Latino sin motivo: 404 (vidrio roto), también la variante');
   const vg = await api(adm, '/api/admin/vidrio', { foto: fm[0], motivo: 'Revisar la factura para decidir la ayuda.' });
   ok(vg.ok === true && sql(`select count(*) from audit_entries where action = 'ayuda.foto.vidrio' and reason = 'Revisar la factura para decidir la ayuda.' and target_id = (select owner_id from media where id = '${fm[0]}')`) !== '0', 'con su motivo escrito: queda en la auditoría');
   ok(await st(adm, U) === 200 && Number(sql(`select count(*) from audit_entries where action = 'ayuda.foto.ver'`)) === audAntes + 1, 'To’Latino la ve y queda en la auditoría');

@@ -14223,7 +14223,7 @@ const guardianes = {
     // (9) purgarFotosAyuda: solo la privada de una ayuda cerrada hace más del plazo, nunca sin almacén, con su renglón en la auditoría en la misma transacción.
     const pa = cuerpoFn(existsSync(AC) ? sinComent(AC) : "", "purgarFotosAyuda");
     if (!/if \(!mediosListos\(\)\) return 0;/.test(pa) || !pa.includes("m.url like 'privado/a/%'") || !pa.includes("h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql(\"sp_fotos_ayuda_dias\")})")
-      || !/try \{ await borrarObjeto\(m\.url\); \} catch \{ continue; \}\s*await tx\(async \(c\) => \{/.test(pa) || !/'system', null, 'ayuda\.fotos\.purga', 'media'/.test(pa))
+      || !/try \{ await borrarConVariantes\(m\.url, m\.w, m\.var_widths\); \} catch \{ continue; \}\s*await tx\(async \(c\) => \{/.test(pa) || !/'system', null, 'ayuda\.fotos\.purga', 'media'/.test(pa))
       falla(G, AC, 0, "purgarFotosAyuda: solo las fotos privadas de la ayuda (privado/a/) de una ayuda cerrada hace más de sp_fotos_ayuda_dias, nada sin almacén, el archivo primero y la fila con su renglón de auditoría en la misma transacción");
     if (!(existsSync(AC) ? readFileSync(AC, "utf8") : "").includes("export const FOTO_AYUDA_SQL = `case when m.private and m.url like 'privado/a/%' then '/api/ayuda/foto/' || m.id::text else m.url end`;"))
       falla(G, AC, 0, "FOTO_AYUDA_SQL: solo las privadas de la ayuda (privado/a/) van por /api/ayuda/foto; las de destino privado ya traen su dirección con permiso");
