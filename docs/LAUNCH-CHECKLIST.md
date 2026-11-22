@@ -2678,10 +2678,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **Plazo de las fotos de destino privado:** no tienen purga propia (como antes de F3: vivían en n/ sin plazo). Las de una ayuda
       de Salud y Pro sí (90 días); decidir con el fundador si las de una cita, solicitud, viaje, balanza, estimado, daño y «Ayuda con…» de los
       demás rubros se borran a los N días de cerrar su operación, y construirlo con su guardián. No se inventó un plazo. (21 nov)
-- [ ] **→ 9u** · **Una privada de otra ruta (`privado/a/`, ayuda de Salud y Pro) en un destino público:** las consultas del atajo exigen
+- [x] **→ 9u** · **Una privada de otra ruta (`privado/a/`, ayuda de Salud y Pro) en un destino público:** las consultas del atajo exigen
       `not rev_sin_c2` (que esas filas no tienen) y no `not private`; el Menú y los cinco catálogos ya exigen las dos. Si alguien pega el id de
       una foto de ayuda en la galería o el perfil, la dirección guardada sería `privado/a/…`, que no se sirve (se ve rota, no se filtra).
       Agregar `not private` a las 11 consultas del atajo (guardián `fotosRevisionPrivacidad`). (21 nov)
+      **✓ 22 nov:** las 14 consultas de la clase exigen `not private` y `not rev_sin_c2` (dos no estaban en las 11: Publica al pasar la foto al negocio y la copia de la galería en novedades); `fotosRevisionPrivacidad` lo exige por lista y por clase (un destino público nuevo también); `ayu4m` manda la foto de una ayuda a mano a 8 destinos y ninguno la adjunta.
 - [ ] **→ 9u** · **Vitrina, segunda ronda (22 nov, subió por la vía rápida de diseño, decisión AL):** (1) correr contra el servidor las pruebas de listas
       que no corrieron tras el cambio: `pat002`, `pat003`, `fi4b`, `cat9n2`, `a11y9c` (44 px de toque y 24 px a 1440 con la tarjeta nueva),
       `vec9m`, `nav9t`, `bus9t`, `cat9n` y toda la que nombre `/negocios`, `/c/`, `/buscar` o `/comunidad/hoy`; (2) al revés sin resultado
@@ -2735,3 +2736,6 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (5) la herramienta enseña de guardianes la primera línea de la salida en vez de «sin fallos»; (6) `alreves9u2` y `alreves9usql` necesitan la
       base local y no corren en una copia de trabajo sin ella; (7) la corrida programada sigue en el grupo de `main`; (8) el puerto único de las
       pruebas (commit 04b14e2 sin integrar; 159 pruebas con `localhost:3100` fijo).
+- [ ] **→ 9u** · **Fotos que no se pueden adjuntar se ignoran en silencio (22 nov):** galería, portada, equipo y eventos contestan `ok` y no la adjuntan, en vez
+      de rechazarla con un mensaje; `equipoGuardar` con un id que no adjunta deja vacía la foto del perfil del equipo (ya pasaba antes). Que rechacen con
+      mensaje. En `ayu4m` no se mandan a mano Publica tu negocio, la invitación del equipo ni eventos (los cubre solo el guardián).
