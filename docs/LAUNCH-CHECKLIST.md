@@ -2376,6 +2376,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9b** · **El CI dijo «inestables de la corrida: 0» con una** (44947348390): la lectura del registro de un trabajo falló callada
       (`gh api … 2>/dev/null | grep … || true`). **Hecho (21 nov, 3bfec03):** se reintenta hasta 6 veces y, si no se puede leer, la tubería sale roja
       diciéndolo; `tuberiaNoSeSalta` lo exige; caso nuevo en `alreves9b2` (49/49 en local). Falta verlo correr en una corrida completa.
+      **Visto correr (22 nov, 44961847914) y lo que enseñó:** con el arreglo, la tubería salió roja diciendo «no se pudo leer el registro de 22
+      trabajo(s)»: el registro de un trabajo NO se deja leer desde dentro de la corrida, así que el conteo nunca había funcionado (siempre «0»).
+      **Hecho de verdad (22 nov):** las inestables se cuentan desde lo que cada carril sube (`res/inestables.json`, que `pruebas/correr.mjs` ahora
+      escribe SIEMPRE, vacía si no hubo; en la confirmación, que corre dos veces, se suman); un carril en verde sin su lista pone la tubería en rojo.
+      `tuberiaNoSeSalta` al día; `alreves9b2` 51/51, `alreves9b1` 14/14, `alreves9b3` 59/59, `alreves9m` 41/41. Las de 44961847914 las conté a mano
+      leyendo cada carril: 0. Falta verlo en una corrida del CI.
 - [ ] **→ 9b** · **`compa7g` inestable en local (21 nov):** falló una vez («el borrador quedó "editado"») y pasó a la segunda con 98 ✓, en la corrida del
       encargo de las hojas (99 pruebas de pantallas del Super Admin). Buscar la espera que falta antes de leer el estado del borrador.
       **Buscada, sin causa probada (21 nov, Sonnet):** no se reprodujo en 16 corridas (10 con el código de antes, 6 con el de ahora). No es «leer

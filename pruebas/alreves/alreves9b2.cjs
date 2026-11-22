@@ -28,8 +28,10 @@ const casos = [
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
   // 21 nov · El tope de inestables es de la corrida entera (decisión AG), no de cada parte.
   ['tuberiaNoSeSalta', Y, 'if [ "$n" -gt 3 ]; then echo "::error::$n pruebas inestables', 'if [ "$n" -gt 30 ]; then echo "::error::$n pruebas inestables'],
-  ['tuberiaNoSeSalta', Y, "grep -aoE '~ INESTABLE [A-Za-z0-9_-]+'", "grep -aoE '~ NINGUNA [A-Za-z0-9_-]+'"],
-  ['tuberiaNoSeSalta', Y, 'las inestables no se pueden contar y no se dan por cero"; exit 1; fi', 'las inestables no se pueden contar"; fi'],
+  ['tuberiaNoSeSalta', Y, "-path '*/res/inestables.json' -print0", "-path '*/res/ninguna.json' -print0"],
+  ['tuberiaNoSeSalta', Y, 'no se pueden contar y no se dan por cero"; exit 1; fi', 'no se pueden contar"; fi'],
+  ['tuberiaNoSeSalta', Y, '        with: { pattern: "anchos-*", path: "${{ runner.temp }}/listas" }\n', ''],
+  ['tuberiaNoSeSalta', 'pruebas/correr.mjs', 'writeFileSync(join(RES, "inestables.json")', 'writeFileSync(join(RES, "otra.json")'],
   ['tuberiaNoSeSalta', Y, '    permissions: { contents: read, actions: read }\n', ''],
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }}"],
   // 20 nov · el reparto en partes a medias: una parte fija, una matriz sin partes, la segunda pasada de la confirmación sin su parte.

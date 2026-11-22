@@ -176,8 +176,13 @@ if (inestables.length) {
   for (const r of inestables) console.log(`  ~ ${r.nombre} · ${r.inestable.error}\n    ${r.inestable.salida}`);
   if (process.env.CI) for (const r of inestables) { try { const t = readFileSync(r.inestable.salida, "utf8").trimEnd().split("\n").slice(-30); console.log(`\n── cola de ${r.nombre} (el intento que falló) ──\n${t.map((l) => l.slice(0, 2000)).join("\n")}`); } catch { /* sin salida */ } }
   if (process.env.GITHUB_STEP_SUMMARY) { try { appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Inestables (${inestables.length})\n${inestables.map((r) => `- \`${r.nombre}\` · ${String(r.inestable.error).replace(/[|`]/g, " ").slice(0, 300)}`).join("\n")}\n`); } catch { /* fuera de GitHub */ } }
-  try { writeFileSync(join(RES, "inestables.json"), JSON.stringify(inestables.map((r) => ({ nombre: r.nombre, error: r.inestable.error })), null, 1)); } catch { /* nada */ }
 }
+// 22 nov · La lista se escribe SIEMPRE, vacía si no hubo inestables: la tubería del CI cuenta las de toda la corrida desde este archivo, y un carril en
+// verde que no trae su lista no puede pasar por «cero». En el CI, si el carril corre dos veces sobre la misma salida (la confirmación), se suman.
+try {
+  const previas = process.env.CI && existsSync(join(RES, "inestables.json")) ? JSON.parse(readFileSync(join(RES, "inestables.json"), "utf8")) : [];
+  writeFileSync(join(RES, "inestables.json"), JSON.stringify([...previas, ...inestables.map((r) => ({ nombre: r.nombre, error: r.inestable.error }))], null, 1));
+} catch { /* nada */ }
 if (mal.length) { console.log(`En rojo (${mal.length}):`); for (const r of mal) console.log(`  ✗ ${r.nombre} (código ${r.codigo}) · ${r.error}\n    ${r.salida}`); }
 /* 9b-2 · En el CI no hay a dónde mirar después (el almacén de artefactos no siempre se puede bajar): la cola de cada roja va al registro. */
 if (mal.length && process.env.CI) for (const r of mal) { try { const t = readFileSync(r.salida, "utf8").trimEnd().split("\n").slice(-50); console.log(`\n── cola de ${r.nombre} ──\n${t.map((l) => l.slice(0, 2000)).join("\n")}`); } catch { /* sin salida */ } }
