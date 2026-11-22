@@ -6197,3 +6197,20 @@ más en el teléfono (antes 26–42). No hay áreas invisibles: lo que se ve es 
   error de nginx, y un guion roto ya no puede instalarse. Dos revisores independientes la revisaron (15 hallazgos, ninguno la bloqueaba, todos
   arreglados). **Qué mirar:** nada cambia a la vista; si alguna vez ves «volvemos en unos segundos» durante más de un minuto, dímelo.
 
+  **Medido servido (22 nov):** primer despliegue 292 s (construyó la imagen), el siguiente sin cambios de la app 26–27 s (la reutiliza); las
+  migraciones pasaron de ~58 s a 2–3 s; `/` y `/negocios` respondieron 200 durante el cambio.
+- **Reparto rehecho (22 nov):** con las duraciones de hoy la parte más larga pasaba un 21 % de la media. Repartido de nuevo y confirmado dos veces
+  seguidas y barajado (corrida 45033884173, verde, 1 inestable conocida: `compa7g`). En `main` las 8 partes quedaron entre 828 y 951 s (antes 751 a
+  1.064) y la confirmación del push en 19 min 27 s.
+- **Tanda 6, la herramienta de subida (22 nov):** `node scripts/ci/subir.mjs`. `--plan` dice qué clase de cambio es y qué pruebas le tocan;
+  `--dirigida` las lanza siempre en partes; `--subir` corre tipos, guardianes y textos sobre el árbol, exige una corrida del CI en verde de ESE mismo
+  árbol (cada corrida deja ahora su título con lo que se pidió y una línea de evidencia que solo existe si todo dio verde), empuja sin forzar nunca
+  (lo que toca el despliegue: `main` primero, `pruebas` después de la imagen) y espera a ver el sandbox servir el commit. Primera subida real hecha
+  con ella (3d2aa87, corrida 45039828069). Guardián `subidaConHerramienta` con 32 defectos sembrados. **Desde aquí las subidas al sandbox van por
+  la herramienta, no a mano.** El texto «Flujo de cada cambio» de `CLAUDE.md` quedó en uno solo, vigente, sin cambiar ninguna decisión.
+  **Qué mirar:** nada a la vista. **Queda fuera y anotado en LAUNCH:** que el CI vigile en cada push que se usó la herramienta, y las reglas de rama
+  de GitHub (bloquear empujes forzados y borrado en `main` y `pruebas`), que solo puedes poner tú: decisión tuya, opcional.
+- **Medida de lo que falta para abrir (22 nov):** de 261 líneas abiertas de LAUNCH, 181 esperan a un tercero (tiendas de Apple/Google 53, abogado
+  36, dominio/Cloudflare 22, SMS 18, proveedor de producción 17, Stripe 9, otros), 38 una decisión tuya, 25 son construibles ya (unos 20 trabajos
+  reales), 10 parecen hechas y falta cerrarlas, 7 son de después de abrir. Clasificación de Sonnet con muestra comprobada por Fable; falta la
+  comprobación línea por línea antes de cerrar nada.

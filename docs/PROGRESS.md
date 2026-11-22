@@ -20,6 +20,14 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **22 nov (16:10 UTC) · `main` = `pruebas` = 3d2aa87, sandbox comprobado por la propia herramienta de subida.** Hecho: reparto de punta a punta
+  rehecho y confirmado (45033884173; `main` 19 min 27 s, partes 828–951 s); tanda 6: `scripts/ci/subir.mjs` (`--plan`, `--dirigida`, `--subir`),
+  título y línea de evidencia en cada corrida, guardián `subidaConHerramienta`, texto único del flujo en `CLAUDE.md`. **Regla de trabajo: las subidas
+  van con `node scripts/ci/subir.mjs --subir`** (antes, la corrida del CI del mismo árbol en la rama: completa si toca `.github/`, dirigida si no).
+  Segundo despliegue sin cambios de la app: 26–27 s. Medida de LAUNCH en REVISION (25 líneas construibles; el informe completo se rehace con
+  la clasificación línea por línea). Sigue: cerrar en LAUNCH lo que la confirmación de hoy cierra, anotar lo que la tanda 6 dejó fuera, la corrida
+  programada, el puerto de las pruebas (commit 04b14e2 sin integrar), limpieza de copias de trabajo; después, las líneas construibles.
+  Quién hizo qué: Opus escribió la herramienta; Sonnet clasificó LAUNCH; Fable planeó, rehizo el reparto, revisó, comprobó y subió.
 - **22 nov (14:30 UTC) · `main` = `pruebas` = ee13605, sandbox comprobado desde fuera (estado-sandbox 45032937857).** Tanda 5 (despliegue) servida:
   primero a `main` (imagen construida en el CI, corrida 45031957848) y después a `pruebas`. Primer despliegue con tramos medidos: preparar 3 s, imagen
   251 s, **migraciones 3 s (antes ~58)**, semilla 1 s, recrear 31 s, total 292 s; `/` y `/negocios` respondieron 200 durante el despliegue. Decisión
