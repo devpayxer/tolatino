@@ -7,8 +7,13 @@ const ssl = (d, ...a) => execFileSync('openssl', a, { cwd: d, stdio: ['pipe', 'p
 
 function cadena({ dir, aia = 'http://127.0.0.1:4405/aia/wwdr.der', tipo = 'pass.com.tolatino.boletos', equipo = 'TL12345678', dias = 365 } = {}) {
   const d = dir ?? fs.mkdtempSync(path.join(os.tmpdir(), 'tl-pki-'));
-  // Ya hecha (otro proceso de la misma prueba la generó): se reusa tal cual.
-  if (!fs.existsSync(path.join(d, 'srv.pem'))) generar(d, aia);
+  // Ya hecha (otro proceso de la misma prueba la generó): se reusa tal cual, SOLO si es de esta misma dirección de AIA. 22 nov: con el servidor
+  // de pruebas en otro puerto (PRUEBAS_URL) el simulador cambia de puerto, y una cadena vieja llevaba dentro la dirección anterior: el servidor
+  // iba a buscar el intermedio a un puerto donde no había nadie (wal8g en rojo). Si la dirección cambió, la cadena se hace de nuevo.
+  const hecha = fs.existsSync(path.join(d, 'srv.pem'));
+  const misma = hecha && (() => { try { return fs.readFileSync(path.join(d, 'ext.cnf'), 'utf8').split('\n').includes(`authorityInfoAccess=caIssuers;URI:${aia}`); } catch { return false; } })();
+  if (hecha && !misma) fs.rmSync(d, { recursive: true, force: true });
+  if (!misma) generar(d, aia);
   return abrir(d, tipo, equipo, dias);
 }
 function generar(d, aia) {
