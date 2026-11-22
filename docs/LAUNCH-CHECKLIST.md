@@ -2750,11 +2750,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9t** · **Armar el archivo de «Descargar mis datos» de una cuenta grande pide ~1,3 GB de pico (22 nov):** ya no es el ZIP (va a disco) sino lo que
       deja cada parte de 20.000 filas (JSON con sangría, CSV y compresión): partes más chicas o escribir el JSON por partes. «Exportar sus datos» del
       equipo (`acciones-usuarios.ts`) sigue armando el ZIP en memoria y lo devuelve en base64. La ruta pone `content-length` y el navegador lo recibe vacío: mirar por qué.
-- [ ] **→ 9u** · **Lo que la auditoría del archivo dejó anotado (22 nov):** (1) migración propuesta, sin escribir: `support_messages` con `check (sender = 'user'
+- [x] **→ 9u** · **Lo que la auditoría del archivo dejó anotado (22 nov):** (1) migración propuesta, sin escribir: `support_messages` con `check (sender = 'user'
       or user_id is null)`, para que un mensaje del equipo no pueda entrar nunca al archivo de una persona (hoy no hay fuga; `nota9u2` lo comprueba en toda
       la base); (2) salen en el archivo de la persona `tickets.door_name` (el nombre del portero, otra persona) y `media.rev_llave` (la ruta interna de la copia
       de revisión): quitarlos; (3) `pausas.cot`, `pausas.staff`, `equipo[].hidden` y `ver.selloNote` llegan a secciones del Panel que no los pintan.
       **22 nov, hechos (2) y (3); sigue abierta por (1), la migración de `support_messages`:** (2) lista `internas` en `mapa-de-datos.json`: `tickets.door_name` y `media.rev_llave` ya no salen en el archivo. Corrección: `door_name` no es el nombre del portero sino el texto de búsqueda de la puerta (nombre del invitado que escribió el negocio, del titular y de su cuenta, en minúsculas y sin acentos); se quita igual por traer un nombre que escribió otra persona. (3) `pausas.cot`, `pausas.staff`, `equipo[].hidden` y `ver.selloNote` viajan solo a la sección que los pinta (`nota9u2` 3c: 52 comprobaciones).
+      **✓ 22 nov (0211):** (1) check `support_messages_equipo_sin_persona` validado; `nota9u2` comprueba que la base rechaza una respuesta del equipo, una nota interna y un mensaje del sistema con `user_id`.
 - [ ] **→ 9t** · **El toque de «Llamar» que se perdía en Safari, lo que queda (22 nov):** el toque (llamar, cómo llegar, compartir, escribir) ya sale por
       `lib/contar-toque.ts` (sendBeacon / keepalive → `/api/toque`, mismas reglas; guardián `toqueSobreviveSalida`). (1) `entroPatrocinado`
       (`acciones-patrocinio.ts`, `Patrocinados.tsx`) es de la misma clase: una acción del servidor seguida de `tel:` o del mapa; pasarlo a la misma vía y
@@ -2762,6 +2763,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       menor (se pierden errores de los primeros instantes). (3) `evt6h` en escritorio no espera al service worker ni a que el boleto quede guardado antes de
       cortar la señal: de la prueba. (4) Verlo en un iPhone real: Llamar en una tarjeta y en la ficha, y en el panel del negocio Estadísticas › contactos sube 1.
       **22 nov (segunda parte):** en WebKit el beacon llegaba casi siempre, no siempre (CI 45060882235). Ahora hay una **bandeja de salida** (`lib/contar-toque.ts`): el toque se anota en el teléfono antes de mandarlo, se reintenta a los 1,5 s, al volver a la página y al montar la app, y solo un 204 lo saca; tope de 9 minutos. `lib/toques.ts` lleva un candado por persona y negocio (dos copias a la vez se contaban las dos). (1) hecho: `entroPatrocinado` va por la misma vía con sus reglas intactas (no es dinero: el patrocinio es a precio fijo). **Queda:** verlo en un iPhone real (que el reintento corra con el diálogo de `tel:` abierto); una persona sin sesión cuyo beacon llegó, cuyo reintento falló y que vuelve desde otra red puede contarse dos veces: lo cierra una columna única `contact_taps.tap_key` (migración propuesta, sin escribir); `entroPatrocinado` traga los errores de la base (204): si la base falla en ese instante la entrada se pierde.
+      **22 nov (tercera parte):** visto en WebKit (CI 45078878395): en iPhone SE e iPad pasan todos los casos del toque, incluidos «abortado en el camino» y «se queda colgado» («en camino» caduca a los 4 s; los reintentos van sin `keepalive` y no esperan al envío anterior). Migración 0211: `contact_taps.tap_key` y `sponsorship_entries.tap_key` únicos, el id del toque viaja (`toque`) y `entroPatrocinado` da 500 si la base falla, para que la bandeja reintente. **Queda solo:** verlo en un iPhone real (que el reintento corra con el diálogo de `tel:` abierto).
 - [ ] **→ 9t** · **Lecturas en paralelo de las cadenas tras un aviso (22 nov):** la primera petición después de un cambio hace de 1 a 3 lecturas de `cms.ts
       editadas` dentro del mismo render (ya pasaba); `juntar: true` en esa copia.
 - [ ] **→ 9u** · **Fotos privadas a la medida, lo que queda (22 nov):** (1) las privadas de Mensajes, ayuda, entrega y reclamo subidas antes del 22 nov no tienen
@@ -2774,9 +2776,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `migracionConTransaccion` prohíbe `create index concurrently`): con 2 M de filas en `media` son ~0,3 s de escrituras esperando. Decidir antes de
       abrir: `set local lock_timeout` en las migraciones que tocan tablas grandes, o una vía fuera de transacción para producción (aflojar ese guardián es
       decisión del fundador).
+      **22 nov, avance (sigue abierta):** la 0211 lleva `set local lock_timeout = '3s'`: con 2 M de filas de `contact_taps` la tabla queda tomada 125–150 ms (en caché); con otra sesión leyendo falla a los 3 s sin aplicar nada. Falta la medida en frío, qué hace `deploy.sh` cuando una migración falla por ese tope, y la decisión sobre la vía fuera de transacción.
 - [ ] **→ 9u** · **Un archivo que falta en el almacén con la fila viva da 500** en las rutas de fotos privadas (Mensajes, ayuda, entrega, reclamo): que dé
       404. Y una carrera estrecha: si una cuenta se purga mientras el barrido genera una variante de ancho nulo, puede quedar un archivo privado huérfano
       que nadie sirve (cerrarla pide tocar `datos/purgar.ts`).
 - [ ] **→ 9u** · **`logoPoner` quita el logo anterior antes de validar la foto nueva (22 nov):** si la foto no pasa el filtro devuelve el error sin deshacer
       (`tx` solo deshace si se lanza): el negocio se queda sin logo. Lanzar dentro de la transacción, como las demás acciones de fotos, y sumarlo al
       guardián `fotosAdjuntarTodoONada`.
+- [ ] **→ 9t** · **`tarAK` en iPad: el nombre larguísimo no se corta con elipsis dentro de la tarjeta (22 nov):** «el nombre larguísimo se corta con
+      elipsis, en una línea y dentro de la tarjeta» falla las dos veces en el ancho de iPad (WebKit; CI 45078878395) y pasa en iPhone SE y escritorio. Estaba
+      tapada: la prueba fallaba antes, en el toque. Es de la tarjeta Vitrina (su segunda ronda está parada): ver con captura si es de la pieza o de la prueba.
+      Mientras tanto la corrida nocturna de `anchos` sale roja por esto.
