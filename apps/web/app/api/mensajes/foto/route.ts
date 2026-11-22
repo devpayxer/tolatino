@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { enComunidad } from "@/lib/comunidad";
 import { db } from "@/lib/db";
+import { guardarVariantesEn } from "@/lib/fotos-privadas";
 import { guardarObjeto, mediosListos } from "@/lib/medios";
 import { leerFormulario } from "@/lib/subida";
 import { reglasMod } from "@/lib/moderacion";
@@ -58,5 +59,7 @@ export async function POST(req: NextRequest) {
   await guardarObjeto(clave, img, "image/jpeg");
   await db().query(`insert into media (id, owner_kind, owner_id, url, w, h, uploaded_by, status, private, check_note) values ($1, $8, 'pendiente', $2, $3, $4, $5, $6, true, $7)`,
     [id, clave, w, h, me.id, estado, nota, kind]);
+  // F3b · Sus variantes (la miniatura del chat pide ?w=), al lado de la maestra y con el mismo permiso; un fallo no tumba la subida.
+  await guardarVariantesEn(clave, img, w);
   return NextResponse.json({ ok: true, id, url: `/api/mensajes/foto/${id}`, revision: estado === "review" });
 }

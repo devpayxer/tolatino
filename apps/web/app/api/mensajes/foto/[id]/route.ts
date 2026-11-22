@@ -4,6 +4,7 @@ import { colasVisibles } from "@/lib/admin-colas";
 import { yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { entregarPrivado } from "@/lib/entrega-privada";
+import { llavesAEntregar } from "@/lib/fotos-privadas";
 import { accesoPanel } from "@/lib/panel";
 import { dmFotoConReporte } from "@/lib/admin-dm";
 import { fotoDmVecino } from "@/lib/mensajes-vecinos";
@@ -26,8 +27,8 @@ const no = () => new NextResponse(null, { status: 404 });
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
-  const m = (await db().query<{ url: string; subio: string | null; status: string; msg: string | null; oculto: boolean; hilo: string | null; vecino: string | null; biz: string | null; city: string | null }>(
-    `select x.url, x.uploaded_by::text as subio, x.status, cm.id::text as msg, cm.hidden_at is not null as oculto,
+  const m = (await db().query<{ url: string; var_widths: number[] | null; subio: string | null; status: string; msg: string | null; oculto: boolean; hilo: string | null; vecino: string | null; biz: string | null; city: string | null }>(
+    `select x.url, x.var_widths, x.uploaded_by::text as subio, x.status, cm.id::text as msg, cm.hidden_at is not null as oculto,
             t.id::text as hilo, t.user_id::text as vecino, t.business_id as biz, t.city_id as city
        from media x left join chat_messages cm on cm.media_id = x.id left join chat_threads t on t.id = cm.thread_id
       where x.id = $1::uuid and x.owner_kind = 'chat' and x.private and x.purged_at is null and x.status in ('visible', 'review') and x.url like 'privado/m/%'`, [id])).rows[0];
@@ -55,18 +56,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   }
   if (!ok) return no();
-  return servir(req, m.url);
+  return servir(req, m.url, m.var_widths);
 }
-/* 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match; solo después del permiso (lib/entrega-privada.ts). */
-async function servir(req: Request, url: string) {
-  return entregarPrivado(req, [{ clave: url, tipo: "image/jpeg" }], { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline" });
+/* 9t · En flujo desde el almacén, con ETag y 304 a If-None-Match; solo después del permiso (lib/entrega-privada.ts).
+   F3b · Con `?w=` la variante de ese ancho (lib/fotos-privadas.ts llavesAEntregar), con EL MISMO permiso que la entera (ya se decidió arriba), las mismas
+   cabeceras privadas y Vary: si la variante falla en el almacén, la maestra. */
+async function servir(req: Request, url: string, anchos: number[] | null) {
+  const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };
+  const llaves = llavesAEntregar(req, url, anchos);
+  return entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));
 }
 
 /* 9t · La foto de un mensaje entre vecinos. Ninguna consulta de aquí lee los mensajes: eso lo hacen mensajes-vecinos.ts (las dos personas) y
    admin-dm.ts (el equipo, con el reporte abierto). */
 async function fotoDeVecinos(req: Request, id: string) {
-  const d = (await db().query<{ url: string; subio: string | null; status: string }>(
-    `select x.url, x.uploaded_by::text as subio, x.status from media x
+  const d = (await db().query<{ url: string; var_widths: number[] | null; subio: string | null; status: string }>(
+    `select x.url, x.var_widths, x.uploaded_by::text as subio, x.status from media x
       where x.id = $1::uuid and x.owner_kind = 'dm' and x.private and x.purged_at is null and x.status in ('visible', 'review') and x.url like 'privado/m/%'`, [id])).rows[0];
   if (!d) return no();
   const me = await yo();
@@ -90,5 +95,5 @@ async function fotoDeVecinos(req: Request, id: string) {
     }
   }
   if (!ok) return no();
-  return servir(req, d.url);
+  return servir(req, d.url, d.var_widths);
 }

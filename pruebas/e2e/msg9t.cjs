@@ -8,6 +8,8 @@
 //    Pedro recibe el motivo (mod_hide). La foto quitada ya no se sirve a nadie.
 // 5) Con la regla de fotos apagada (Auto-moderación) la foto se ve al instante (y se vuelve a encender como estaba).
 // 5b) Una foto subida y nunca mandada: pasadas 24 h el barrido la saca del almacén (purged_at, «sin_enviar»); una ya enviada no se toca.
+// F3b (22 nov) · 2b) La miniatura baja la variante de su ancho (?w=640) por la misma ruta, con el mismo permiso (otra persona y sin sesión: 404) y
+//    cabeceras privadas; 5b) la purga se lleva también sus variantes del almacén.
 // 6) «Ver traducción» con un traductor DE MENTIRA solo para esta prueba (stub-traductor.cjs; dice «[stub→es]»): el negocio escribe en inglés → la
 //    vecina (app en español) ve «Ver traducción» → la traducción con «Ver original»; el original no cambia en la base; la segunda vez sale de la
 //    caché; lo suyo no trae botón. Al revés: la vecina escribe en inglés → el panel (español) lo ofrece. El Super Admin ve el original.
@@ -32,6 +34,9 @@ const contiene = (p, t, ms) => espera(async () => (await texto(p)).includes(t), 
 const sh = (c) => execSync(c, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 // Pedir una dirección con la sesión de esa página: estado, tipo, caché y los bytes (para ver que no lleva metadatos).
 const traerFoto = (p, u) => p.evaluate(async (u) => { const r = await fetch(u, { cache: 'no-store' }); const b = new Uint8Array(await r.arrayBuffer()); let s = ''; for (const x of b.slice(0, 4096)) s += String.fromCharCode(x); return { st: r.status, ct: r.headers.get('content-type'), cc: r.headers.get('cache-control'), cab: s }; }, u);
+// F3b · Pedir una dirección con la sesión de esa página y un Accept dado: estado, tipo, caché, Vary y el peso.
+const traerVar = (p, u, accept) => p.evaluate(async ([u, a]) => { const r = await fetch(u, { cache: 'no-store', headers: { accept: a } }); const b = await r.arrayBuffer(); return { st: r.status, ct: r.headers.get('content-type'), cc: r.headers.get('cache-control'), vary: r.headers.get('vary'), n: b.byteLength }; }, [u, accept]);
+const WEBP = 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8';
 const subirCrudo = (p, tipo, n) => p.evaluate(async ([tipo, n]) => { const fd = new FormData(); fd.append('foto', new Blob([new Uint8Array(n)], { type: tipo }), 'x.bin'); return (await fetch('/api/mensajes/foto', { method: 'POST', body: fd })).status; }, [tipo, n]);
 const MARI = "(select id from users where phone='+15705550122')", PEDRO = "(select id from users where phone='+15705550133')";
 const TH = `(select id from chat_threads where user_id = ${MARI} and business_id = '${BIZ}')`;
@@ -128,6 +133,22 @@ const limpiar = () => {
     ok(await espera(() => avP() === nP0 + 1) && /Foto/.test(sql(`select body from notifications where user_id = ${PEDRO} and tpl = 'biz_msg' order by id desc limit 1`)), 'aprobada: el negocio recibe el aviso de la foto (una vez)');
     ok((await traerFoto(otro, U1)).st === 404, 'y nadie más');
 
+    // ── 2b · F3b · La miniatura del chat baja la variante de su ancho (?w=640, caja de 180), con el MISMO permiso y las mismas cabeceras que la entera ──
+    ok(sql(`select array_to_string(var_widths, ',') from media where id = '${F1}'`) === '320,640', 'F3b: la foto del chat tiene sus variantes anotadas (320 y 640: mide 640)');
+    const ent = await traerVar(m, U1, WEBP), mini = await traerVar(m, `${U1}?w=640`, WEBP);
+    ok(ent.st === 200 && mini.st === 200 && mini.ct === 'image/webp' && mini.n > 0 && mini.n < ent.n && mini.cc === 'private, no-store' && /Accept/.test(mini.vary || ''),
+      `F3b: la miniatura baja la variante WebP (${mini.n} B < ${ent.n} B de la entera), «private, no-store», Vary: Accept`);
+    ok((await traerVar(m, `${U1}?w=640`, 'image/png,*/*;q=0.5')).ct === 'image/jpeg', 'F3b: un navegador sin WebP recibe la maestra JPEG');
+    for (const [x, quien] of [[otro, 'otra persona'], [anon, 'sin sesión']]) {
+      const a = await traerVar(x, U1, WEBP), v = await traerVar(x, `${U1}?w=640`, WEBP);
+      ok(a.st === 404 && v.st === 404 && v.n === 0, `F3b: ${quien}: la variante da lo mismo que la entera (404)`);
+    }
+    { // En el navegador: la burbuja del chat pide ?w=640 (fotoFondo de 180 px) y la recibe.
+      const r = m.waitForResponse((x) => x.url().endsWith(`/api/mensajes/foto/${F1}?w=640`), { timeout: 20000 });
+      await m.reload(); const x = await r;
+      ok(x.status() === 200 && /^image\/(webp|jpeg)$/.test(x.headers()['content-type'] || ''), `F3b: la burbuja del chat pide la de 640 (${x.headers()['content-type']})`);
+    }
+
     // ── 3 · Topes del servidor ──
     ok(await subirCrudo(m, 'text/plain', 64) === 415, 'un archivo que no es foto: 415');
     // Más de 12 MB, desde Node con la sesión (por partes y avisando el tamaño): pruebas/lib/subida-cruda.cjs (el fetch de 13 MB dentro del WebKit
@@ -168,12 +189,14 @@ const limpiar = () => {
     const subida = await m.evaluate(async (b) => { const fd = new FormData(); fd.append('foto', new Blob([new Uint8Array(b)], { type: 'image/jpeg' }), 'f.jpg'); const r = await fetch('/api/mensajes/foto', { method: 'POST', body: fd }); return r.json(); }, [...fs.readFileSync(FOTO2)]);
     ok(subida.ok && /^[0-9a-f-]{36}$/.test(subida.id), 'una foto subida y no mandada');
     ok((await traerFoto(m, `/api/mensajes/foto/${subida.id}`)).st === 200, 'antes de las 24 h quien la subió la ve');
+    ok((await NN.delAlmacen(`/privado/m/${subida.id}.w320.webp`)).s === 200 && (await NN.delAlmacen(`/privado/m/${subida.id}.w480.webp`)).s === 200, 'F3b: sus variantes (320 y 480) están en el almacén, al lado de la maestra');
     const enviada = sql(`select media_id from chat_messages where thread_id = ${TH} and media_id is not null order by id limit 1`);
     const enviada0 = sql(`select created_at from media where id = '${enviada}'`);
     sql(`update media set created_at = now() - interval '25 hours' where id in ('${subida.id}', '${enviada}')`);
     execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`);
     ok(sql(`select (purged_at is not null) || '|' || status || '|' || removed_reason || '|' || owner_id from media where id = '${subida.id}'`) === 'true|removed|sin_enviar|pendiente', 'el barrido la purga (purged_at, «sin_enviar»; la fila queda)');
     ok((await traerFoto(m, `/api/mensajes/foto/${subida.id}`)).st === 404, 'purgada: la dirección privada ya no la sirve');
+    ok((await NN.delAlmacen(`/privado/m/${subida.id}.jpg`)).s === 404 && (await NN.delAlmacen(`/privado/m/${subida.id}.w320.webp`)).s === 404 && (await NN.delAlmacen(`/privado/m/${subida.id}.w480.webp`)).s === 404, 'F3b: la purga se llevó la maestra y sus variantes del almacén');
     ok(sql(`select purged_at is null from media where id = '${enviada}'`) === 't', 'una foto ya enviada (aunque sea vieja) no se toca');
     sql(`update media set created_at = '${enviada0}' where id = '${enviada}'`);
 
