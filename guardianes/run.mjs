@@ -33,6 +33,9 @@ const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf
 // 9f · Lo que el extractor saca del código (si el código no se deja leer, el guardián lo dice).
 let CMS = { errores: [], cadenas: [], e2: [] };
 if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|cuentaBorradaBilingue|idioma|e2PorElCms)$/.test(solo)) { try { CMS = await cadenasDelCodigo(); } catch (e) { CMS = { errores: [`el extractor de cadenas falló: ${e.message}`], cadenas: [], e2: [] }; } }
+// 22 nov (tanda 6a) · La herramienta de subida, para subidaConHerramienta (si no carga, el guardián lo dice; no tumba a los demás).
+let SUBIR = null;
+if (!solo || solo === "subidaConHerramienta") { try { SUBIR = await import("../scripts/ci/subir.mjs"); } catch (e) { SUBIR = { error: String(e?.message ?? e) }; } }
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
@@ -14579,6 +14582,71 @@ const guardianes = {
     if (con.length) avisos.push(`${G}: ${con.length} esperas fijas de 5 s o más, todas con su motivo: ${con.join(", ")}`);
   },
 
+
+  /* 22 nov · Revisión del CI (tanda 6a) · subidaConHerramienta: las subidas se hacían a mano (13 dirigidas con partes=1, 4 dobles, una con un
+     nombre que no existía; «verde» de una corrida que no era del árbol subido; pushes a pruebas antes de que main construyera la imagen) y ahora
+     las hace scripts/ci/subir.mjs. Lo que se teme: que la herramienta copie la lista de documentos de trabajo en vez de importarla (dos listas que
+     se separan), que empuje forzado o a otra rama que main, pruebas y la de trabajo (y menos a la de producción), que lance una dirigida sin
+     partes (decisión AM) o desde otro sitio que su orden única, que la clase «despliegue» deje fuera algo que deploy.sh, compose o el trabajo
+     «imagenes» leen de verdad (las rutas se sacan de esos archivos, no de una lista), que sus casos dejen de pasar (árbol, documentos, propuesta,
+     main, conclusión de la API), y que ci.yml deje de decir de qué es cada corrida o imprima la evidencia sin que todo haya dado verde.
+     Al revés: alrevesSubir. */
+  subidaConHerramienta() {
+    const G = "subidaConHerramienta", S = "scripts/ci/subir.mjs", A = "scripts/ci/alcance.mjs", Y = ".github/workflows/ci.yml", D = "infra/pruebas/deploy.sh", C = "infra/pruebas/docker-compose.yml";
+    for (const f of [S, A, Y, D, C]) if (!existsSync(f)) return falla(G, f, 0, "falta (la herramienta de subida o lo que lee)");
+    if (!SUBIR || SUBIR.error) return falla(G, S, 0, `no carga: ${String(SUBIR?.error ?? "sin cargar").slice(0, 200)}`);
+    const s = sinComent(S);
+    // 1. La lista de documentos de trabajo es la de alcance.mjs, importada.
+    if (!/import \{[^}]*\bDOCUMENTOS\b[^}]*\} from "\.\/alcance\.mjs";/.test(s)) falla(G, S, 0, "importa DOCUMENTOS de scripts/ci/alcance.mjs (la única lista de documentos de trabajo)");
+    const docs = [...(/export const DOCUMENTOS = Object\.freeze\(\[([\s\S]*?)\]\);/.exec(sinComent(A))?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    if (!docs.length) falla(G, A, 0, "no encuentro DOCUMENTOS en alcance.mjs");
+    for (const d of docs) if ([`"${d}"`, `'${d}'`, `\`${d}\``].some((x) => s.includes(x))) falla(G, S, 0, `copia DOCUMENTOS («${d}» escrito a mano): se importa de alcance.mjs`);
+    // 2. Nunca forzado, nunca a otra rama que main, pruebas o la de trabajo; la de producción ni se nombra.
+    // Los empujes salen de planDeEmpuje y de nada más; ningún renglón con un push lleva una opción que fuerce o borre.
+    const pde = /export function planDeEmpuje\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    if (!pde) falla(G, S, 0, "los empujes salen de planDeEmpuje (no la encuentro)");
+    if (/["'`]push["'`]\s*,/.test(s.replace(pde, ""))) falla(G, S, 0, "un push fuera de planDeEmpuje: los empujes salen de ahí y de nada más");
+    for (const l of s.split("\n").filter((x) => /["'`]push["'`]|git push/.test(x)))
+      if (/--force|--mirror|--delete|--prune|["'`](-f|-d|\+[^"'`]*)["'`]|\bforce\s*:/.test(l)) falla(G, S, 0, `nunca fuerza ni borra ramas: un push con --force, -f, «+», --mirror o --delete (${l.trim().slice(0, 120)})`);
+    for (const m of s.matchAll(/HEAD:([^"'`\s,)\]]+)/g)) if (!["main", "pruebas", "refs/heads/${rama}"].includes(m[1])) falla(G, S, 0, `empuja a «HEAD:${m[1]}»: solo main, pruebas y la rama de trabajo`);
+    if (/:produccion\b|refs\/heads\/produccion|["'`]produccion["'`]/.test(s)) falla(G, S, 0, "la rama de producción no es destino de esta herramienta");
+    const pe = SUBIR.planDeEmpuje?.({ clases: ["despliegue"], rama: "r", remotaRama: "a", head: "b" }) ?? [];
+    if (pe.some((p) => p.args?.some((a) => a.startsWith("-") && a !== "--atomic"))) falla(G, S, 0, "planDeEmpuje: un push con una opción que no es --atomic");
+    // 3. La dirigida, siempre en partes y desde una sola orden.
+    if (!(SUBIR.PARTES_DIRIGIDA >= 4)) falla(G, S, 0, `la dirigida va siempre en partes: PARTES_DIRIGIDA ≥ 4 (decisión AM), no ${SUBIR.PARTES_DIRIGIDA}`);
+    const o = SUBIR.ordenDirigida?.({ rama: "r", nombres: ["a1x"] }) ?? [];
+    if (!o.includes(`partes=${SUBIR.PARTES_DIRIGIDA}`) || !o.includes("alcance=regresion") || o.slice(0, 3).join(" ") !== "workflow run ci.yml")
+      falla(G, S, 0, "la dirigida va siempre en partes: ordenDirigida lleva alcance=regresion y partes=PARTES_DIRIGIDA");
+    if ((s.match(/["']workflow["'],\s*["']run["'],\s*["']ci\.yml["']/g) ?? []).length !== 1) falla(G, S, 0, "ci.yml se lanza desde un solo sitio (ordenDirigida)");
+    // 4. La clase «despliegue» cubre lo que leen deploy.sh (sus «$REPO/…»), compose (contexto y receta de cada build) y el trabajo «imagenes».
+    const y = readFileSync(Y, "utf8"), img = /\n  imagenes:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
+    const leidas = [[".dockerignore", "la huella de la imagen"]];
+    for (const m of readFileSync(D, "utf8").matchAll(/\$REPO\/([A-Za-z0-9_][A-Za-z0-9_./-]*)/g)) leidas.push([m[1].replace(/\/$/, ""), "deploy.sh"]);
+    for (const m of readFileSync(C, "utf8").matchAll(/^\s*(context|dockerfile):\s*(\S+)/gm)) { const p = m[2].replace(/^(\.\.\/\.\.\/?)/, ""); if (p && p !== "." && p !== "../..") leidas.push([p, "docker-compose.yml"]); }
+    for (const m of img.matchAll(/docker build (?:-f (\S+) )?-t \S+ (\S+)/g)) { if (m[1]) leidas.push([m[1], "el trabajo imagenes"]); if (m[2] !== ".") leidas.push([m[2], "el trabajo imagenes"]); }
+    for (const m of img.matchAll(/\bbash (\S+\.sh)\b/g)) leidas.push([m[1], "el trabajo imagenes"]);
+    if (leidas.filter((x) => x[1] === "deploy.sh").length < 10 || leidas.filter((x) => x[1] === "el trabajo imagenes").length < 3) falla(G, D, 0, `no saco las rutas que leen deploy.sh y el trabajo imagenes (${leidas.length}): el guardián ya no ve lo que vigila`);
+    for (const [p, quien] of leidas) {
+      let dir = false; try { dir = statSync(p).isDirectory(); } catch { /* no existe: se mira como archivo */ }
+      if (!SUBIR.esDespliegue?.(dir ? `${p}/x` : p)) falla(G, S, 0, `la clase despliegue no cubre ${p} (lo lee ${quien})`);
+    }
+    // 5. Los casos puros (árbol, documentos, propuesta, main, conclusión de la API, nombres, empuje).
+    try { execSync(`node ${S} --casos`, { stdio: "pipe", timeout: 60_000 }); }
+    catch (e) { falla(G, S, 0, `los casos de subir.mjs no pasan: ${String(e.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 4).map((l) => l.trim()).join(" · ").slice(0, 400) || String(e.stderr ?? e.message).slice(0, 200)}`); }
+    // 6. ci.yml: cada corrida dice de qué es, y la evidencia solo sale con todo en verde, en una línea que el guion no imita.
+    if (!/^run-name: "CI · \$\{\{ github\.event_name \}\}[^\n]*inputs\.alcance[^\n]*inputs\.partes[^\n]*inputs\.solo[^\n]*"$/m.test(y)) falla(G, Y, 0, "run-name: cada corrida dice evento, alcance, partes y «solo»");
+    const tu = /\n  tuberia:\n[\s\S]*$/.exec(y)?.[0] ?? "";
+    const ev = /\n      - name: Evidencia de la corrida[^\n]*\n[\s\S]*?(?=\n      - |$)/.exec(tu)?.[0] ?? "";
+    if (!/^    name: la tubería /m.test(tu)) falla(G, Y, 0, "«la tubería» se llama «la tubería …» (subir.mjs la busca por ese nombre)");
+    if (!ev) falla(G, Y, 0, "«la tubería» imprime la evidencia de la corrida (paso «Evidencia de la corrida»)");
+    else {
+      if (tu.indexOf(ev) < tu.indexOf("- name: Cada parte terminó en verde")) falla(G, Y, 0, "la evidencia va después de comprobar que cada parte terminó en verde");
+      if (/\n        (if|continue-on-error):/.test(ev) || /continue-on-error/.test(tu)) falla(G, Y, 0, "la evidencia solo sale con todo en verde: su paso no lleva «if» ni continue-on-error");
+      if (/EVIDENCIA/.test(ev)) falla(G, Y, 0, "el guion de la evidencia no lleva la palabra EVIDENCIA entera (el registro enseña el guion y se leería como la línea)");
+      if (!ev.includes('test "$(git rev-parse HEAD)" = "$SHA"') || !ev.includes("ARBOL=\"$(git rev-parse 'HEAD^{tree}')\"") || !ev.includes('console.log(["EVID", "ENCIA"].join("") + " " + j);')) falla(G, Y, 0, "la evidencia lleva el commit comprobado, su árbol y una sola línea EVIDENCIA");
+      if (!/ENTRADAS: \$\{\{ toJSON\(inputs\) \}\}/.test(ev)) falla(G, Y, 0, "la evidencia lleva todas las entradas (toJSON(inputs))");
+    }
+  },
 };
 
 
