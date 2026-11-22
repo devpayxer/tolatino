@@ -64,6 +64,12 @@ const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p
       `F3b: el documento del reclamo tiene sus variantes; ?w=320 baja la WebP (${mini.n} B < ${ent.n} B), privada y sin caché`);
     const v404 = await (await b.newContext()).request.get(B + U + '?w=1080', { headers: { accept: 'image/webp' } }), vq = await traerVar(q, U + '?w=1080');
     ok(v404.status() === r404.status() && vq.st === 404, `F3b: la variante sin permiso (sin sesión ${v404.status()}, quien lo reclamó ${vq.st}): lo mismo que la entera`);
+    // 22 nov · El documento ya purgado (la retención o la cuenta borrada dejan la fila con purged_at y «privado/borrada», que no existe en el almacén):
+    // para el equipo con permiso da 404 (antes 500), la entera y la variante, y no deja renglón en la auditoría (nadie vio nada).
+    const aud = () => sql(`select count(*) from audit_entries where action = 'reclamo.documento.ver' and target_id = '${cl}'`);
+    sql(`update media set status = 'removed', removed_reason = 'Documento del reclamo (retención)', url = 'privado/borrada', purged_at = now() where id = (select doc_media from claims where id = '${cl}')`);
+    const a0 = aud(), pe = await traerVar(a, U), pv = await traerVar(a, U + '?w=320');
+    ok(pe.st === 404 && pv.st === 404 && aud() === a0, `el documento purgado da 404 al equipo (entera ${pe.st}, variante ${pv.st}), sin renglón en la auditoría`);
   }
   ok(!err.length, 'sin errores en la página: ' + (err.join(' · ') || 'ninguno'));
   await b.close();

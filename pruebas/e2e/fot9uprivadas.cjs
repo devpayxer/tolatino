@@ -14,6 +14,10 @@
 //      privada solo responde al general de 60 (que cuenta todas).
 //   6. F3b (22 nov): las privadas de las otras rutas (Mensajes, ayuda, entrega, reclamo): variantes al lado de su maestra, lo que entrega su ruta con
 //      ?w= (llavesAEntregar), y cada purga o retención (Mensajes sin mandar, entrega, reclamo, ayuda, cuenta) se lleva las variantes con la maestra.
+//   7. 22 nov · barrerVariantesDeRuta: las privadas de las otras rutas subidas ANTES de sus variantes las reciben (también una de Mensajes en revisión);
+//      sin maestra quedan con '{}'; una purgada, una quitada o una de afuera no se tocan; una que falla en el almacén no detiene a las demás (la
+//      tarea sale fallida diciendo cuál); una que se purga mientras se generan no se queda con variantes; otra vuelta no repite nada; su consulta
+//      la puede servir el índice parcial de 0210.
 // Guardián fotosPrivadasConPermiso. En el CI corre en el carril de punta a punta (hay base); aquí con DATABASE_URL apuntando a una base de pruebas.
 const ENT = require('../lib/entorno.cjs');
 const path = require('path'), { randomUUID } = require('crypto');
@@ -37,11 +41,11 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
     return c.query(sql, p);
   }, release: () => undefined };
   const base = { db: () => ({ ...cliente, connect: async () => cliente }), tx: async (fn) => { await cliente.query('begin'); try { const r = await fn(cliente); await cliente.query('commit'); return r; } catch (e) { await cliente.query('rollback'); throw e; } } };
-  const G = new Map(), borradas = [];
+  const G = new Map(), borradas = [], ROTAS = new Set(), AL_GUARDAR = new Map();
   let listos = true;
   const medios = {
-    guardarObjeto: async (k, b) => { G.set(k, b); }, existeObjeto: async (k) => G.has(k),
-    leerObjeto: async (k) => { if (!G.has(k)) throw new Error('almacenamiento 404: NoSuchKey'); return G.get(k); },
+    guardarObjeto: async (k, b) => { G.set(k, b); if (AL_GUARDAR.has(k)) await AL_GUARDAR.get(k)(); }, existeObjeto: async (k) => G.has(k),
+    leerObjeto: async (k) => { if (ROTAS.has(k)) throw new Error('almacenamiento 503: no contesta'); if (!G.has(k)) throw new Error('almacenamiento 404: NoSuchKey'); return G.get(k); },
     borrarObjeto: async (k) => { borradas.push(k); G.delete(k); }, mediosListos: () => listos,
   };
   const V = cargar('apps/web/lib/fotos-variantes.ts', { './db': base, './medios': medios });
@@ -276,6 +280,48 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
       'F3b: clavesVariantes (la purga de una cuenta) lista las variantes de Mensajes, ayuda, entrega y reclamo, al lado de su maestra');
     await F.borrarConVariantes(priv.a.llave, 900, [320, 640, 900]);
     ok(!G.has(priv.a.llave) && !ANCH.some((w) => G.has(`privado/a/${priv.a.id}.w${w}.webp`)) && borradas.indexOf(priv.a.llave) < borradas.indexOf(`privado/a/${priv.a.id}.w320.webp`), 'F3b: borrarConVariantes saca la maestra primero y después sus variantes');
+
+    // ── 7. barrerVariantesDeRuta (22 nov): las privadas de las otras rutas de antes ──
+    {
+      const viejas = {}, nueva = async (nom, f, kind, x = {}) => {
+        const id = randomUUID(), llave = `privado/${f}/${id}.jpg`;
+        await foto({ id, kind, owner: 'pendiente', url: x.url ?? llave, privada: true, sinC2: false, status: x.status, at: x.at ?? '2000-01-01' });
+        if (x.purgada) await c.query(`update media set purged_at = now() where id = $1::uuid`, [id]);
+        if (x.maestra !== false) G.set(llave, JPG);
+        viejas[nom] = { id, llave };
+      };
+      await nueva('rota', 'e', 'delivery', { at: '1999-12-31' });        // la más vieja: el almacén no contesta (va primero en la tanda)
+      await nueva('m', 'm', 'chat', { status: 'review' });               // Mensajes en revisión: es la misma foto, también
+      await nueva('a', 'a', 'user');
+      await nueva('r', 'r', 'claim');
+      await nueva('sin', 'e', 'delivery', { maestra: false });           // sin maestra en el almacén → '{}'
+      await nueva('purgada', 'r', 'claim', { status: 'removed', purgada: true });
+      await nueva('quitada', 'a', 'user', { status: 'removed' });
+      await nueva('enMedio', 'a', 'user');                               // se purga mientras se generan sus variantes
+      ROTAS.add(viejas.rota.llave);
+      AL_GUARDAR.set(`privado/a/${viejas.enMedio.id}.w320.webp`, () => c.query(`update media set purged_at = now(), status = 'removed' where id = $1::uuid`, [viejas.enMedio.id]));
+      const varDe = (v) => [...G.keys()].filter((k) => k.startsWith(v.llave.replace(/\.jpg$/, '.w')));
+      const fila = async (v) => q1(`select array_to_string(var_widths, ',') as w, var_at is not null as at from media where id = $1::uuid`, [v.id]);
+      let err = '';
+      try { await F.barrerVariantesDeRuta(); } catch (e) { err = String(e.message); }
+      ok(err.startsWith('fotosVariantesRuta: 1 de ') && err.includes(viejas.rota.id), `una que falla en el almacén no detiene a las demás y la tarea sale fallida diciendo cuál (${err.slice(0, 90)})`);
+      const fm = await fila(viejas.m), fa = await fila(viejas.a), fr = await fila(viejas.r);
+      ok(fm.w === '320,640,900' && fa.w === '320,640,900' && fr.w === '320,640,900' && ['m', 'a', 'r'].every((k) => varDe(viejas[k]).length === 3),
+        'barrerVariantesDeRuta: Mensajes (en revisión), ayuda y reclamo de antes reciben sus variantes al lado de su maestra, anotadas en su fila');
+      const fs0 = await fila(viejas.sin), frota = await fila(viejas.rota);
+      ok(fs0.at && fs0.w === '' && !frota.at && varDe(viejas.rota).length === 0, "sin maestra queda con '{}' (no se reintenta cada minuto); la que falló queda pendiente para la próxima vuelta");
+      const fp = await fila(viejas.purgada), fq = await fila(viejas.quitada);
+      ok(!fp.at && !fq.at && varDe(viejas.purgada).length === 0 && varDe(viejas.quitada).length === 0, 'una purgada o una quitada nunca reciben variantes');
+      ok(varDe(viejas.enMedio).length === 0, 'una que se purga mientras se generan sus variantes no se queda con ninguna');
+      const antes = G.size; ROTAS.clear(); err = '';
+      try { await F.barrerVariantesDeRuta(); } catch (e) { err = String(e.message); }
+      ok(!err && G.size === antes + 3 && (await fila(viejas.rota)).w === '320,640,900' && varDe(viejas.m).length === 3, 'otra vuelta solo hace la que había fallado (idempotente)');
+      await c.query('set local enable_seqscan = off');
+      const plan = (await c.query(`explain select id::text, url, w from media where private and var_at is null and status in ('visible', 'review') and purged_at is null and url ~ '^privado/[amer]/'
+        and created_at < now() - interval '2 minutes' and not (id = any($1::uuid[])) order by created_at limit 20`, [[]])).rows.map((r) => r['QUERY PLAN']).join(' ');
+      await c.query('set local enable_seqscan = on');
+      ok(/media_privadas_ruta_sin_variantes_idx/.test(plan), 'la tanda la sirve el índice parcial de 0210 (el mismo predicado)');
+    }
   } catch (e) { console.error(e); malas++; } finally {
     await c.query('rollback').catch(() => undefined);
     await c.end();

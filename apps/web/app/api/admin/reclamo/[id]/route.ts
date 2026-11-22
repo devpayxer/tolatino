@@ -6,7 +6,8 @@ import { entregarPrivado } from "@/lib/entrega-privada";
 import { llavesAEntregar } from "@/lib/fotos-privadas";
 
 /* El documento de un reclamo, solo para el equipo que trabaja «Cambios sensibles» (en su ciudad). Cada vez que alguien
-   lo ve queda en la auditoría. Nunca se cachea. */
+   lo ve queda en la auditoría. Nunca se cachea. 22 nov · Un documento ya purgado (retención o cuenta borrada: su fila queda con
+   purged_at y la dirección «privado/borrada», que no existe en el almacén) da 404, sin renglón en la auditoría: antes daba 500. */
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!s || !colasVisibles(s).includes("cambio") || !/^CL-\d{1,12}$/.test(id)) return new NextResponse(null, { status: 404 });
   const r = await tx(async (c) => {
     const x = (await c.query<{ url: string; var_widths: number[] | null; city_id: string; business_id: string }>(
-      `select m.url, m.var_widths, cl.city_id, cl.business_id from claims cl join media m on m.id = cl.doc_media where cl.id = $1 and m.private`, [id])).rows[0];
+      `select m.url, m.var_widths, cl.city_id, cl.business_id from claims cl join media m on m.id = cl.doc_media where cl.id = $1 and m.private and m.purged_at is null`, [id])).rows[0];
     if (!x || (s.cities.length && !s.cities.includes(x.city_id))) return null;
     await auditar(c, { actor: s.id, action: "reclamo.documento.ver", targetKind: "claim", targetId: id, city: x.city_id });
     return x;

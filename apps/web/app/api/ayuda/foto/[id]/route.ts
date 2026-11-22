@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             sc.number as tk, sc.user_id::text as tkuser, sc.business_id as tkbiz, sc.city_id as tkcity
        from media m left join help_requests h on m.owner_kind = 'help' and h.id::text = m.owner_id
        left join support_cases sc on m.owner_kind = 'support' and sc.id::text = m.owner_id
-      where m.id = $1 and m.private and m.status = 'visible' and m.url like 'privado/a/%'`, [id])).rows[0];
+      where m.id = $1 and m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/a/%'`, [id])).rows[0];
   if (!m) return no();
   const me = await yo();
   let ok = !!me && me.id === m.uploaded_by;
