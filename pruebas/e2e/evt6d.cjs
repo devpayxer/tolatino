@@ -15,7 +15,7 @@ const { smsEsperado } = require('../lib/negocio-nuevo.cjs');
 const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process'); const crypto = require('crypto');
 const jsQR = require(ENT.rec('jsqr/package/dist/jsQR.js'));
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
+const OUT = ENT.S + '/cap/', B = ENT.B;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlErr = (q) => { try { sql(q); return ''; } catch (e) { return String(e.stderr || e.message); } };
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);

@@ -12,7 +12,7 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   const m = await b.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await medios(m);
   const p = await m.newPage(); p.on('pageerror', e => err.push('m ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels/.test(x.text())) err.push('m console ' + x.text()); });
-  await p.goto('http://localhost:3100/publica');
+  await p.goto(ENT.B + '/publica');
   await p.getByText('Publica tu negocio en 5 minutos').waitFor();
   await p.screenshot({ path: OUT + 'p0-a1.png' });
   await p.getByPlaceholder('(570) 555-0134').fill(TEL);
@@ -69,7 +69,7 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   {
     const sqlp = (q) => require('child_process').execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -qAt -v ON_ERROR_STOP=1`, { input: q, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
     const U = sqlp(`select id from users where phone = '+1${TEL}'`), NEG = sqlp(`select business_id from onboarding_drafts where user_id = '${U}'`);
-    await p.goto('http://localhost:3100/publica'); await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });
+    await p.goto(ENT.B + '/publica'); await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });
     await p.getByText('Publicar otro negocio', { exact: true }).first().click();
     await p.getByText('¿Qué tipo de negocio tienes?').first().waitFor({ timeout: 15000 });
     ok(sqlp(`select count(*) from onboarding_drafts_done where user_id = '${U}' and business_id = '${NEG}'`) === '1', '«Publicar otro negocio»: el publicado quedó guardado (nada se borra)');
@@ -82,9 +82,9 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   const d = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
   await medios(d);
   const q = await d.newPage(); q.on('pageerror', e => err.push('d ' + e.message));
-  await q.goto('http://localhost:3100/publica');
+  await q.goto(ENT.B + '/publica');
   await q.evaluate(async (TEL2X) => { const j = (u, b) => fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) }).then(r => r.json()); const a = await j('/api/cuenta/codigo', { telefono: TEL2X }); const v = await j('/api/cuenta/verificar', { telefono: TEL2X, codigo: a.codigoPrueba }); if (!v.nombre) await j('/api/cuenta/perfil', { nombre: 'Lucía', apellido: 'Gómez', apodo: '' }); }, TEL2);
-  await q.goto('http://localhost:3100/publica?paso=B1');
+  await q.goto(ENT.B + '/publica?paso=B1');
   await q.getByText('Comida', { exact: true }).first().click(); await q.waitForTimeout(300);
   await q.locator('[data-screen-label="ONB-NEG-B1 · tu negocio"] div[style*="flex-wrap"] > *').first().click();
   await q.getByPlaceholder('Ej.: Barbería Don Fello').fill('Fonda Doña Lucía'); await q.waitForTimeout(600);

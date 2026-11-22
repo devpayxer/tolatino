@@ -14649,6 +14649,55 @@ const guardianes = {
       if (!/ENTRADAS: \$\{\{ toJSON\(inputs\) \}\}/.test(ev)) falla(G, Y, 0, "la evidencia lleva todas las entradas (toJSON(inputs))");
     }
   },
+
+  /* 9vc (22 nov) · pruebasSinPuertoFijo, por clase (153 pruebas de pruebas/e2e llevaban http://localhost:3100 escrito: un agente con su servidor en otro puerto las
+     mandaba sin querer al servidor de otro, rec1j/rec2/sop7b): ninguna prueba, librería ni script de pruebas/ y scripts/ escribe un host con el puerto 3100
+     (localhost:3100, 127.0.0.1:3100, pruebas.test:3100, una IP:3100…). UNA sola variable manda: PRUEBAS_URL. De ella sale todo, y solo en pruebas/lib/puertos.cjs
+     (la dirección ENT.B de las pruebas, el puerto de servir.sh —que solo reinicia lo que escucha en ESE puerto— y el del corredor); PRUEBAS_PUERTO solo se lee
+     allí. Las excepciones son las de abajo, cada una con su motivo; una excepción que ya no aparece en su archivo también falla (la lista no se pudre).
+     Al revés: alreves9vc. */
+  pruebasSinPuertoFijo() {
+    const G = "pruebasSinPuertoFijo", RE = /[A-Za-z0-9.\]]:3100(?![0-9])/;
+    const EXC = [
+      ["scripts/tiendas/capturas.mjs", "--base http://127.0.0.1:3100", "ejemplo de uso en el encabezado: la dirección llega por --base y el CI la pasa explícita"],
+      ["scripts/tiendas/capturas.mjs", 'arg("base", "http://127.0.0.1:3100")', "valor por defecto del argumento --base de la herramienta de capturas de tiendas (el CI levanta su propio servidor, tiendas.yml)"],
+      ["scripts/tiendas/capturas-android.sh", "TOLATINO_URL=http://10.0.2.2:3100", "comentario sobre el emulador de Android del CI (tiendas.yml), que no pasa por pruebas/e2e"],
+    ];
+    const vistas = new Set(), leer = (f) => (existsSync(f) ? readFileSync(f, "utf8") : "");
+    for (const f of archivos) {
+      if (!/^(pruebas|scripts)\//.test(f) || !/\.(cjs|mjs|js|ts|sh)$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (!/^\s*(\/\/|#|\*|\/\*)/.test(l) && /\bPRUEBAS_PUERTO\b/.test(l) && f !== "pruebas/lib/puertos.cjs" && !f.startsWith("pruebas/alreves/")) falla(G, f, i + 1, "lee PRUEBAS_PUERTO: la variable que manda es PRUEBAS_URL y la cuenta del puerto vive solo en pruebas/lib/puertos.cjs (ENT.B / ENT.P)");
+        if (!RE.test(l)) return;
+        const e = EXC.findIndex(([ef, s]) => ef === f && l.includes(s));
+        if (e >= 0) { vistas.add(e); return; }
+        falla(G, f, i + 1, `escribe un host con el puerto 3100 («${l.trim().slice(0, 90)}»): una prueba que lo hace va al servidor de otro cuando el tuyo está en otro puerto; usa ENT.B (pruebas/lib/entorno.cjs)`);
+      });
+    }
+    EXC.forEach(([ef, s], i) => { if (!vistas.has(i)) falla(G, ef, 0, `la excepción «${s}» ya no aparece en el archivo: quítala de la lista de pruebasSinPuertoFijo`); });
+    const pu = leer("pruebas/lib/puertos.cjs"), en = leer("pruebas/lib/entorno.cjs");
+    if (!/env\.PRUEBAS_URL/.test(pu) || !/env\.PRUEBAS_PUERTO/.test(pu) || !/no coinciden/.test(pu) || !/const SERVIDOR = 3100;/.test(pu)) falla(G, "pruebas/lib/puertos.cjs", 0, "la cuenta del puerto: sale de PRUEBAS_URL (o de PRUEBAS_PUERTO si es la única), 3100 por defecto, y si las dos no coinciden da error antes de arrancar");
+    if (!/require\('\.\/puertos\.cjs'\)\.resolver\(\)/.test(en) || !/B: PU\.url,/.test(en)) falla(G, "pruebas/lib/entorno.cjs", 0, "ENT.B ya no sale de pruebas/lib/puertos.cjs (PRUEBAS_URL)");
+    const sv = leer("pruebas/servir/servir.sh");
+    if (!/pruebas\/lib\/puertos\.cjs" --sh\)" \|\| exit 2/.test(sv) || !/fuser -k "\$PUERTO\/tcp"/.test(sv) || !/VARS=\(PORT=\$PUERTO /.test(sv)) falla(G, "pruebas/servir/servir.sh", 0, "el puerto del servidor y lo que se mata salen de pruebas/lib/puertos.cjs (PRUEBAS_URL, 3100 por defecto), no de un número escrito");
+    const co = leer("pruebas/correr.mjs");
+    if (!/"\.\/lib\/puertos\.cjs"\)\.resolver\(process\.env\)/.test(co) || !/SERVIDOR\.url/.test(co)) falla(G, "pruebas/correr.mjs", 0, "el corredor pregunta la salud en la dirección de pruebas/lib/puertos.cjs (PRUEBAS_URL), no en una escrita");
+    /* Los simuladores y servicios de las pruebas (push 4401–4403, App Store Connect 4404, Wallet 4405/4406, GitHub 4407, Play 4408, «SNS» 4409, moderación 8790, video 8791,
+       traductor de mentira 5098/5099) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
+    const nom = [...(/const NOMINAL = \{([\s\S]*?)\n\};/.exec(pu)?.[1] ?? "").matchAll(/\b([A-Za-z]+): (\d{4})\b/g)].filter((m) => m[1] !== "servidor").map((m) => m[2]);
+    if (nom.length < 13) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 13): sin ella el guardián no puede vigilar los puertos escritos a mano`);
+    else {
+      const N = nom.join("|"), PS = [`(127\\.0\\.0\\.1|localhost|0\\.0\\.0\\.0):(${N})\\b`, `(puerto|Puerto|PUERTO|PORT)\\s*[:=,(]\\s*['"]?(${N})\\b`, `listen\\(\\s*(${N})\\b`, `['"](${N})['"]`, `\\|\\|\\s*(${N})\\b`].map((x) => new RegExp(x));
+      for (const f of archivos) {
+        if (f === "pruebas/lib/puertos.cjs" || !(/^pruebas\/(e2e|lib)\/[^/]+\.cjs$/.test(f) || f === "pruebas/servir/servir.sh")) continue;
+        readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+          if (/^\s*(\/\/|#|\*|\/\*)/.test(l) || !PS.some((r) => r.test(l))) return;
+          falla(G, f, i + 1, `escribe a mano el puerto de un simulador o servicio de las pruebas («${l.trim().slice(0, 90)}»): con el servidor en otro puerto cae sobre el de otro encargo; usa ENT.P.<nombre> (pruebas/lib/puertos.cjs; en servir.sh, $P_<NOMBRE>)`);
+        });
+      }
+    }
+  },
+
 };
 
 

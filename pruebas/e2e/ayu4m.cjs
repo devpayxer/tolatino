@@ -9,7 +9,7 @@ const { requiere } = require('../lib/requiere.cjs'); // (y sin ayuda pedida: la 
 // Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
 const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', S = 'centro-medico-quisqueya', P = 'bufete-almonte', FOTO = ENT.rec('fotos') + '/portada.jpg';
+const OUT = ENT.S + '/cap/', B = ENT.B, S = 'centro-medico-quisqueya', P = 'bufete-almonte', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const MARISOL = "(select id from users where phone = '+15705550122')";
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);

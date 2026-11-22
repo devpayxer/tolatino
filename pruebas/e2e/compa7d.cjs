@@ -8,7 +8,7 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { requiere } = require('../lib/requiere.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
+const OUT = ENT.S + '/cap/', B = ENT.B, TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); await p.goto(B + '/ayuda'); };

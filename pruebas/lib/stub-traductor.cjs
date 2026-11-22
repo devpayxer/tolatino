@@ -2,7 +2,7 @@
 // sin el servicio real. Las traducciones son marcadas «[stub→es]» para que nadie las confunda con una traducción de verdad.
 // GET /__n = cuántas llamadas a /translate y /detect · GET /__lento?ms=N = responde tarde · GET /__reset.
 const http = require('http');
-const PORT = Number(process.argv[2] || 5099);
+const PORT = Number(process.argv[2] || require('./puertos.cjs').resolver().p.traductor);
 let n = { translate: 0, detect: 0 }, lento = 0;
 const EN = /\b(the|and|is|are|you|does|anyone|know|for|with|thanks|this|that|great|good|my|was|we|they|please|neighbors?|old)\b/gi;
 const ES = /\b(el|la|los|las|que|de|y|es|por|para|con|gracias|una?|muy|bueno|mi|vecinos?|alguien|dónde|donde)\b/gi;

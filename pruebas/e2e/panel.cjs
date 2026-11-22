@@ -4,7 +4,7 @@ const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/';
 // 9b-1 · Su propio negocio recién publicado por /publica (antes `barberia-7747`, que solo existía en una base vieja). TEL/BIZ del
 // entorno todavía mandan (para mirar un negocio dado).
 const { publicarBarberia, medios } = require('../lib/negocio-nuevo.cjs');
-const B = 'http://localhost:3100';
+const B = ENT.B;
 let TEL = process.env.TEL, BIZ = process.env.BIZ;
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓ ' + m); };
 const entrar = async (p) => {

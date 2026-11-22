@@ -59,7 +59,7 @@ const fila = (id) => { const [st, rr, ll, capa, mot, it] = sql(`select status, c
 const libro = (id) => sql(`select string_agg(capa || ':' || decision, ',' order by id) from photo_reviews where media_id = '${id}'`);
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
 const corteAbajo = () => sql(`delete from rate_counters where scope in ('corte', 'corte_fallas') and key_hash = 'moderacion_img'`);
-const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhost:8790/salud').toString()); } catch { return null; } };
+const saludImg = () => { try { return JSON.parse(execSync(`curl -s -m 3 localhost:${ENT.P.moderacion}/salud`).toString()); } catch { return null; } };
 
 (async () => {
   const b = await chromium.launch();
@@ -71,7 +71,7 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
     try { execSync("pkill -f 'services/moderacion-img/app.py'"); } catch { /* no estaba */ }
     try { execSync("pkill -f 'pruebas/lib/sim-moderacion-img.cjs'"); } catch { /* no estaba */ }
     await espera(async () => !saludImg(), 8000);
-    sim = spawn('node', [ENT.RAIZ + '/pruebas/lib/sim-moderacion-img.cjs', '8790'], { stdio: 'ignore' });
+    sim = spawn('node', [ENT.RAIZ + '/pruebas/lib/sim-moderacion-img.cjs', String(ENT.P.moderacion)], { stdio: 'ignore' });
     ok(await espera(async () => /simulador/.test(saludImg()?.modelo ?? '')), 'el modelo propio de mentira responde en :8790');
     corteAbajo();
     sql(`update mod_rules set enabled = true, params = case key when 'foto1' then '{"duda_pct": 60, "rechazo_pct": 85}'::jsonb when 'foto2' then '{"tope_cents": 1000, "espera_s": 8, "intentos": 5}'::jsonb
@@ -257,7 +257,7 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
   } catch (e) { console.error(e); process.exitCode = 1; } finally {
     try { sql(`update mod_rules m set enabled = (x->>'on')::boolean, params = x->'p' from json_array_elements('${reglas0}'::json) x where m.key = x->>'k'`); } catch { /* sin reglas guardadas */ }
     if (sim) sim.kill();
-    if (SVC0 && fs.existsSync(ENT.rec('imgvenv/bin/python'))) spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: '8790' }, detached: true, stdio: 'ignore' }).unref();
+    if (SVC0 && fs.existsSync(ENT.rec('imgvenv/bin/python'))) spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: String(ENT.P.moderacion) }, detached: true, stdio: 'ignore' }).unref();
     try { corteAbajo(); } catch { /* nada */ }
     await b.close();
   }

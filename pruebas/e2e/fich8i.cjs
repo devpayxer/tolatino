@@ -8,7 +8,7 @@
 //     (sin llaves → sin llave; con llaves → borrador en los simuladores, nada a revisión), Lo que te toca, Declaraciones, el CSV, Analítica › Apps.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto');
-const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', REPO = ENT.RAIZ;
+const S = ENT.S, OUT = S + '/cap/', B = ENT.B, REPO = ENT.RAIZ;
 const ASC = require(REPO + '/scripts/tiendas-sim/sim.cjs'), PLAY = require(REPO + '/scripts/tiendas-sim/play.cjs');
 const APPS = JSON.parse(fs.readFileSync(REPO + '/apps/mobile/apps.json', 'utf8')), V = APPS.version;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -36,9 +36,9 @@ const env = ENT.env; // los secretos de la corrida (pruebas/servir/servir.sh)
   sql(`delete from platform_config where key in ('revision_intentos_hora', 'fichas_subidas_dia')`);
   sql(`update business_stats_cache set plan = 'free' where business_id = 'revision-tolatino'`); // Free: para ver los «Ver Pro» (se devuelve al final)
   const kp = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }), KID = 'ZX9Y8W7V6U', EMISOR = '57246542-96fe-1a63-e053-0824d011072a';
-  const asc = await ASC.arrancar({ puerto: 4404, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.apps.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
+  const asc = await ASC.arrancar({ puerto: ENT.P.asc, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.apps.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
   const cuenta = PLAY.cuentaDePrueba(), desc = JSON.parse(fs.readFileSync(ENT.rec('androidpublisher-v3.json'), 'utf8'));
-  const play = await PLAY.arrancar({ puerto: 4408, descubrimiento: desc, cuenta, paquetes: APPS.apps.map((a) => a.android) });
+  const play = await PLAY.arrancar({ puerto: ENT.P.play, descubrimiento: desc, cuenta, paquetes: APPS.apps.map((a) => a.android) });
   const br = await chromium.launch(), errs = [];
   const pagina = async (k, w, ua) => { const cx = await br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: 1, locale: 'es-US', ...(ua ? { userAgent: ua } : {}) }); const p = await cx.newPage(); p.on('pageerror', (e) => errs.push(`${k}: ${e.message}`)); return p; };
   const subirLlave = async (p, tipo, nombre, contenido, extra = {}) => {

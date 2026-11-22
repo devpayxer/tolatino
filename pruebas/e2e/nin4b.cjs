@@ -3,7 +3,7 @@
 // el motor de Educación (sin plan de pagos, $0 = gratis), los datos de los niños (validación) y el Super Admin 360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', NEG = 'guarderia-mis-angelitos';
+const OUT = ENT.S + '/cap/', B = ENT.B, NEG = 'guarderia-mis-angelitos';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };

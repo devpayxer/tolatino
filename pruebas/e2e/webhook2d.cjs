@@ -1,6 +1,6 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const crypto = require('crypto'); const { execSync } = require('child_process');
-const B = 'http://127.0.0.1:3100', SEC = ENT.sec('STRIPE_WEBHOOK_SECRET');
+const B = ENT.B.replace('localhost', '127.0.0.1'), SEC = ENT.sec('STRIPE_WEBHOOK_SECRET');
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const enviar = async (ev, firma) => {

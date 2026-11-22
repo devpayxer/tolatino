@@ -2,7 +2,7 @@
 // pisan (el segundo no corre); sin token, 404.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const B = 'http://localhost:3100', V = 'van-express-nyc', TOK = ENT.TOK;
+const B = ENT.B, V = 'van-express-nyc', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 // 9b-1 · Los servicios de Van Express por su nombre (antes los ids 870 y 872 de una base vieja: en una base nueva son otros).
 const svcVan = (n) => sql(`select id from items where business_id = 'van-express-nyc' and name->>'es' = '${n}' and removed_at is null order by id limit 1`);

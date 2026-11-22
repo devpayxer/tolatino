@@ -1,5 +1,5 @@
 // 8d · Entrar con Face ID o huella (llaves de acceso, WebAuthn) de punta a punta (Playwright, teléfono 390 y escritorio 1360) contra :3100
-// (servir8d.sh: RP ID «localhost», origen http://localhost:3100). El «teléfono» es el autenticador virtual de Chromium por CDP (WebAuthn.enable +
+// (servir8d.sh: RP ID «localhost», origen http://localhost:<puerto>). El «teléfono» es el autenticador virtual de Chromium por CDP (WebAuthn.enable +
 // addVirtualAuthenticator: ctap2, internal, llaves residentes y verificación de la persona). Cubre: la hoja después del código (una vez),
 // registrar → aviso crit, salir, entrar SIN SMS (la misma sesión), reto repetido / vencido / inventado / de otra cuenta, llave de otra cuenta
 // (userHandle cambiado; id de otra llave), quitar → ya no entra, cuenta suspendida, dispositivo bloqueado (este y el de origen), sesión de origen
@@ -10,7 +10,7 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const crypto = require('crypto');
 const { S, B, sql, sqlErr } = require('../lib/g6-comun.cjs');
-const OUT = S + '/cap/', IPB = 'http://192.0.2.2:3100';
+const OUT = S + '/cap/', IPB = 'http://192.0.2.2:' + new URL(ENT.B).port;
 let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const espera = async (f, ms = 15000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 200)); } return false; };
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -367,7 +367,7 @@ const esDe = async (p, tel) => (await yo(p))?.telefono === '+1' + tel;
     console.log('13 · HTTP en una IP (como el sandbox hoy): sin contexto seguro no se ofrece nada y el SMS sigue igual');
     const H = await br.newContext({ viewport: { width: 390, height: 844 }, userAgent: IOS }), h = await H.newPage();
     await h.goto(IPB + '/entrar'); await h.getByText('Enviarme el código').first().waitFor(); await dormir(800);
-    ok(await h.evaluate(() => window.isSecureContext) === false, 'http://192.0.2.2:3100: el navegador no da contexto seguro');
+    ok(await h.evaluate(() => window.isSecureContext) === false, IPB + ': el navegador no da contexto seguro');
     ok((await h.locator('[data-llave]').count()) === 0 && !(await texto(h)).includes('llave de acceso'), 'Entrar no ofrece la llave (ningún botón roto)');
     await h.screenshot({ path: OUT + 'l8d-ip-entrar-390.png', fullPage: true });
     const rIp = await h.evaluate(async () => { const r = await fetch('/api/cuenta/llave/entrar/reto', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }); return [r.status, (await r.json()).error]; });

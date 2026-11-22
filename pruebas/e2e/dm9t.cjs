@@ -22,7 +22,7 @@ const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos 
 const { subirCrudoNode } = require('../lib/subida-cruda.cjs');
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const fs = require('fs'), crypto = require('crypto');
-const S = ENT.S, OUT = S + '/cap/', B = ENT.B, PORT = 5098, STUB = `http://127.0.0.1:${PORT}`, TAG = '[d9t]';
+const S = ENT.S, OUT = S + '/cap/', B = ENT.B, PORT = ENT.P.traductorDm, STUB = `http://127.0.0.1:${PORT}`, TAG = '[d9t]';
 const SIN_ALMACEN = process.env.DM9T_SIN_ALMACEN === '1';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlErr = (q) => { try { sql(q); return ''; } catch (e) { return String(e.stderr || e.message); } };

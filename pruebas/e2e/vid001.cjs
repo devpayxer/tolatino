@@ -16,9 +16,9 @@ const BIZ = 'sabor-dominicano', DUENO = '5705550133', ADMIN = '5705550199';
 const MOTIVO = 'Tiene música de otros artistas.';
 
 // El servicio de video propio (el mismo app.py del sandbox); si no está corriendo, se levanta aquí con el ffmpeg de la máquina.
-const salud = () => { try { return JSON.parse(execSync('curl -s -m 3 127.0.0.1:8791/salud').toString()).ok === true; } catch { return false; } };
+const salud = () => { try { return JSON.parse(execSync(`curl -s -m 3 127.0.0.1:${ENT.P.video}/salud`).toString()).ok === true; } catch { return false; } };
 let svc = null;
-if (!salud()) { svc = spawn('python3', ['-I', ENT.RAIZ + '/services/video/app.py'], { env: { ...process.env, PUERTO: '8791' }, detached: true, stdio: 'ignore' }); svc.unref(); }
+if (!salud()) { svc = spawn('python3', ['-I', ENT.RAIZ + '/services/video/app.py'], { env: { ...process.env, PUERTO: String(ENT.P.video) }, detached: true, stdio: 'ignore' }); svc.unref(); }
 
 const video = (seg, nombre) => { const f = `${ENT.S}/${nombre}`; execSync(`ffmpeg -loglevel error -y -f lavfi -i testsrc=size=320x240:rate=15 -f lavfi -i sine=frequency=440 -t ${seg} -pix_fmt yuv420p -c:v libx264 -c:a aac ${f}`); return f; };
 const caso = (vid) => sql(`select id from queue_items where queue = 'medios' and subject_kind = 'business_video' and subject_id = '${vid}' and status = 'open'`);

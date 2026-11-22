@@ -19,7 +19,7 @@ const { elegirFoto } = require('../lib/elegir-foto.cjs'); // como una persona: t
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const NN = require('../lib/negocio-nuevo.cjs');
-const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', BIZ = 'sabor-dominicano', PORT = 5099, STUB = `http://127.0.0.1:${PORT}`, TAG = '[m9t]';
+const S = ENT.S, OUT = S + '/cap/', B = ENT.B, BIZ = 'sabor-dominicano', PORT = ENT.P.traductor, STUB = `http://127.0.0.1:${PORT}`, TAG = '[m9t]';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
@@ -39,11 +39,11 @@ const stubN = async () => (await fetch(`${STUB}/__n`)).json();
 let stub = null, COMPA0 = null, IMG0 = null, horario = null, trad = false, SVC0 = false;
 // El servicio propio de imágenes (services/moderacion-img, :8790): com5d lo enciende y lo deja encendido. Esta prueba necesita «sin servicio»
 // (la foto queda en revisión, nunca abierta): lo apaga mientras dura y, si estaba encendido, lo vuelve a encender igual que com5d.
-const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhost:8790/salud').toString()).ok === true; } catch { return false; } };
+const saludImg = () => { try { return JSON.parse(execSync(`curl -s -m 3 localhost:${ENT.P.moderacion}/salud`).toString()).ok === true; } catch { return false; } };
 const servicioImg = (on) => {
   if (!on) { try { execSync("pkill -f 'services/moderacion-img/app.py'"); } catch { /* ya estaba */ } return; }
   if (!fs.existsSync(ENT.rec('imgvenv/bin/python'))) return;
-  spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: '8790' }, detached: true, stdio: 'ignore' }).unref();
+  spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: String(ENT.P.moderacion) }, detached: true, stdio: 'ignore' }).unref();
 };
 const stubArriba = async () => { stub = spawn('node', [ENT.RAIZ + '/pruebas/lib/stub-traductor.cjs', String(PORT)], { stdio: 'ignore' }); await espera(async () => { try { await stubN(); return true; } catch { return false; } }, 5000); };
 const stubAbajo = async () => { if (stub) { stub.kill(); stub = null; } };

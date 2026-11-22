@@ -1,6 +1,6 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const B = 'http://localhost:3100', N = '/n/sabor-dominicano', BIZ = 'sabor-dominicano', OUT = ENT.S + '/cap/';
+const B = ENT.B, N = '/n/sabor-dominicano', BIZ = 'sabor-dominicano', OUT = ENT.S + '/cap/';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };

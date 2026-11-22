@@ -13,7 +13,7 @@ const OUT = ENT.S + '/cap/', TES = ENT.rec('teselas-muestra') + '/'; // 9a: tese
   const m = await b.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await teselas(m);
   const p = await m.newPage(); p.on('pageerror', e => err.push('m ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/404|Failed to load/.test(x.text())) err.push('m console ' + x.text()); });
-  await p.goto('http://localhost:3100/mapa?cat=comida&ctx=1'); await p.waitForTimeout(1200);
+  await p.goto(ENT.B + '/mapa?cat=comida&ctx=1'); await p.waitForTimeout(1200);
   ok(/\/mapa/.test(p.url()), 'el mapa abre en el teléfono');
   await p.screenshot({ path: OUT + 'mp1-movil.png' });
   // tocar un pin
@@ -32,9 +32,9 @@ const OUT = ENT.S + '/cap/', TES = ENT.rec('teselas-muestra') + '/'; // 9a: tese
   const d = await b.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
   await teselas(d);
   const q = await d.newPage(); q.on('pageerror', e => err.push('d ' + e.message));
-  await q.goto('http://localhost:3100/c/comida'); await q.locator('text=Mapa >> visible=true').last().click(); await q.waitForURL(/\/mapa/);
+  await q.goto(ENT.B + '/c/comida'); await q.locator('text=Mapa >> visible=true').last().click(); await q.waitForURL(/\/mapa/);
   ok(/\/mapa/.test(q.url()), 'desde la categoría «Mapa» abre el mapa');
-  await q.goto('http://localhost:3100/mapa'); await q.waitForTimeout(1200);
+  await q.goto(ENT.B + '/mapa'); await q.waitForTimeout(1200);
   await q.screenshot({ path: OUT + 'mp5-desk.png' });
   await q.getByText('Abierto ahora', { exact: true }).click(); await q.waitForTimeout(1200);
   ok(/NEGOCIOS · EL MÁS CERCA/.test(await q.locator('text=/NEGOCIOS · EL MÁS CERCA/').first().textContent()), `«Abierto ahora» filtra la lista (${q.url().split('?')[1] ?? ''})`);

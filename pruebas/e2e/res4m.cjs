@@ -4,7 +4,7 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 // 9b-1 · Lo que hace otra prueba se pide con requiere (si no está en la base, se corre esa prueba): ya no depende del orden.
 const { requiere } = require('../lib/requiere.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', S = 'centro-medico-quisqueya', P = 'bufete-almonte';
+const OUT = ENT.S + '/cap/', B = ENT.B, S = 'centro-medico-quisqueya', P = 'bufete-almonte';
 const MARISOL = "(select id from users where phone = '+15705550122')";
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);

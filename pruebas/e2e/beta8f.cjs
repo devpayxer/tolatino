@@ -10,7 +10,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto'); const path = require('path');
-const S = ENT.S, OUT = S + '/cap/', B = 'http://localhost:3100', REPO = ENT.RAIZ, TOKEN_BARRIDO = ENT.TOK;
+const S = ENT.S, OUT = S + '/cap/', B = ENT.B, REPO = ENT.RAIZ, TOKEN_BARRIDO = ENT.TOK;
 const SIM = require(REPO + '/scripts/tiendas-sim/sim.cjs');
 const APPS = JSON.parse(fs.readFileSync(REPO + '/apps/mobile/apps.json', 'utf8')).apps;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -67,7 +67,7 @@ const PUENTE = (o) => `if (window === window.top) {
   // Los casos que esta prueba abre hoy no cuentan para el tope diario de casos de Marisol y Yaritza.
   sql(`set session_replication_role = replica; update support_cases set created_at = created_at - interval '2 days' where user_id in (${U(MARI)}, ${U(YARI)}, ${U(DUENO)}) and created_at > now() - interval '1 day'`);
   const kp = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }), KID = 'ZX9Y8W7V6U', EMISOR = '57246542-96fe-1a63-e053-0824d011072a';
-  const asc = await SIM.arrancar({ puerto: 4404, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
+  const asc = await SIM.arrancar({ puerto: ENT.P.asc, publica: kp.publicKey, emisor: EMISOR, kid: KID, apps: APPS.map((a, i) => ({ bundle: a.ios, id: 6400000001 + i })) });
   const br = await chromium.launch(), errs = [];
   const pagina = async (k, w, ua, o = {}) => {
     const cx = await br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2, userAgent: ua, locale: 'es-US', acceptDownloads: true });
@@ -82,7 +82,7 @@ const PUENTE = (o) => `if (window === window.top) {
     console.log('1 · Errores: lo que llega se TAPA antes de guardarse (teléfono, correo, tarjeta, URL con id y «?», valor de un campo)');
     const w = await pagina('web', 390, IOS); await w.goto(B + '/ayuda');
     const st = await errorDirecto(w, { tipo: 'js', nombre: 'TypeError', mensaje: "Prueba 8f: no cargó el pedido 104233 de Marisol: llama al (570) 555-0122 o a marisol@example.com; tarjeta 4242 4242 4242 4242; valor 'Marisol Gómez'",
-      stack: 'TypeError: x\n    at cargar (https://pruebas.tolatino.com/pedido/104233?token=abc123def&tel=5705550122:3:14)\n    at http://localhost:3100/_next/static/chunks/app/x-1234abcd5678ef90.js:1:2048', ruta: '/pedido/104233?tel=5705550122' }); // GUARDIAN-OK: datos de prueba que el reporte tiene que limpiar
+      stack: 'TypeError: x\n    at cargar (https://pruebas.tolatino.com/pedido/104233?token=abc123def&tel=5705550122:3:14)\n    at ' + ENT.B + '/_next/static/chunks/app/x-1234abcd5678ef90.js:1:2048', ruta: '/pedido/104233?tel=5705550122' }); // GUARDIAN-OK: datos de prueba que el reporte tiene que limpiar
     ok(st === 204, 'POST /api/errores → 204 (no dice qué guardó)');
     const ev = sql(`select message || '¦' || coalesce(stack, '') || '¦' || coalesce(route_family, '') from app_error_events where message like 'Prueba 8f: no cargó%' order by id desc limit 1`);
     ok(!!ev, 'quedó guardado');

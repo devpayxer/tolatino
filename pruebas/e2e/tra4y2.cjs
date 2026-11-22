@@ -4,7 +4,7 @@
 // salió · llegó).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', E = 'envios-quisqueya-cargo', MU = 'mudanzas-el-primo';
+const OUT = ENT.S + '/cap/', B = ENT.B, E = 'envios-quisqueya-cargo', MU = 'mudanzas-el-primo';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 // 9b-1 · Los servicios por su nombre (antes los ids 876 y 879 de una base vieja: en una base nueva son otros).
 const svcDe = (neg, n) => sql(`select id from items where business_id = '${neg}' and name->>'es' = '${n}' and removed_at is null order by id limit 1`);

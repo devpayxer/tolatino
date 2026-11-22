@@ -4,7 +4,7 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 // segunda vez ya tenía dueño y no salía «Mandarme el código». Ahora reclama un negocio sin dueño hecho para la corrida, con un vecino nuevo.
 const { chromium } = require('playwright');
 const { negocioSinDueno, entrarComo, telLibre, sql } = require('../lib/negocio-nuevo.cjs');
-const B = 'http://localhost:3100';
+const B = ENT.B;
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql(`delete from otp_codes where phone = '+1${tel}'`); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); if (!a.codigoPrueba) throw new Error('sin código ' + JSON.stringify(a)); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const t = (p, x) => p.getByText(x, { exact: true }).last();

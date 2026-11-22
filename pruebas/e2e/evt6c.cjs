@@ -11,7 +11,7 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process'); const crypto = require('crypto');
 const jsQR = require(ENT.rec('jsqr/package/dist/jsQR.js'));
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
+const OUT = ENT.S + '/cap/', B = ENT.B;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlA = (q) => new Promise((res) => exec(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, (e, so, se) => res(e ? 'ERR ' + se : so.trim())));
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);

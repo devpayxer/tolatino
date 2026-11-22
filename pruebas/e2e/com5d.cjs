@@ -10,7 +10,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { sinDesborde } = require('../lib/desborde.cjs');
 const { chromium } = require('playwright'); const { execSync, spawn } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', S = ENT.S;
+const OUT = ENT.S + '/cap/', B = ENT.B, S = ENT.S;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlErr = (q) => { try { sql(q); return ''; } catch (e) { return String(e.stderr || e.message); } };
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -36,9 +36,9 @@ const sharp = require(ENT.RAIZ + '/apps/web/node_modules/sharp');
 const fotoUnica = async () => ({ name: 'foto.jpg', mimeType: 'image/jpeg', buffer: await sharp(IMG).modulate({ brightness: 0.85 + Math.random() * 0.3 }).jpeg({ quality: 90 }).toBuffer() });
 const servicioImg = (on) => {
   if (!on) { try { execSync("pkill -f 'services/moderacion-img/app.py'"); } catch { /* ya estaba */ } return; }
-  svc = spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: '8790' }, detached: true, stdio: 'ignore' }); svc.unref();
+  svc = spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: String(ENT.P.moderacion) }, detached: true, stdio: 'ignore' }); svc.unref();
 };
-const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhost:8790/salud').toString()).ok === true; } catch { return false; } };
+const saludImg = () => { try { return JSON.parse(execSync(`curl -s -m 3 localhost:${ENT.P.moderacion}/salud`).toString()).ok === true; } catch { return false; } };
 
 (async () => {
   require('../lib/negocio-nuevo.cjs').equipo('5705550188'); // 9b-1 · el equipo de prueba que esta prueba usa (antes lo creaba otra prueba)

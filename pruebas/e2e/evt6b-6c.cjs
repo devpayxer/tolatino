@@ -10,7 +10,7 @@
 // RSVP que vence y libera el lugar, «un evento que guardaste es mañana»). Deja los datos como estaban (fixtures cancelados o quitados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', FOTO = ENT.rec('fotos') + '/portada.jpg';
+const OUT = ENT.S + '/cap/', B = ENT.B, FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 // 9b-1 · Los eventos de la semilla 0035 por su título (antes los ids 2, 3, 7, 11 y 12 de una base vieja: en una base nueva son 1, 2, 6, 10 y 11).
 const evId = (t) => sql(`select id from events where title->>'es' = '${t}' and status in ('live', 'paused') order by id limit 1`);
