@@ -93,6 +93,9 @@ if (opt("--parte")) {
   sel = sel.filter((_, k) => k % +m[2] === +m[1] - 1);
 }
 const TIEMPO = Number(opt("--tiempo") ?? 25) * 60_000;
+/* 22 nov · Revisión del CI (B2) · --comprobar: solo resuelve la selección (un nombre que no existe ya salió con 2 arriba) y sale, sin correr nada,
+   sin servidor y sin candado. Lo usa «cambios» en el CI para parar una dirigida con un nombre mal escrito antes de arrancar los carriles. */
+if (flag("--comprobar")) { console.log(`✓ --comprobar: ${sel.length} prueba(s) existen: ${sel.map((t) => t.nombre).join(" ")}`); process.exit(sel.length ? 0 : 2); }
 
 /* Playwright: el del repo si lo hay; si no, el global (npm root -g). */
 let NODE_PATH = process.env.NODE_PATH ?? "";

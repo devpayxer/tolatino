@@ -8069,9 +8069,11 @@ const guardianes = {
     // corre (la matriz sin la parte o un --parte fijo) o un carril que se reparte y otro no.
     const cf = /\n  confirmacion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", an0 = /\n  anchos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
     const PM = "parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}", PA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }}";
-    for (const [k, t, n] of [["regresion", rg, 1], ["confirmacion", cf, 2], ["anchos", an0, 1]]) {
+    // 22 nov (B2) · En «regresion», «al revés» va siempre en 4 partes: su --parte lleva «/4» para ese carril y «partes» para la punta a punta.
+    const PAR = "--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }}";
+    for (const [k, t, n, pa] of [["regresion", rg, 1, PAR], ["confirmacion", cf, 2, PA], ["anchos", an0, 1, PA]]) {
       if (!t.includes(PM)) falla(G, Y, 0, `«${k}» no reparte su matriz en las partes pedidas (${PM})`);
-      if (t.split(PA).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${PA} (ni fija ni olvidada)`);
+      if (t.split(pa).length - 1 !== n || (t.match(/--parte /g) ?? []).length !== n) falla(G, Y, 0, `«${k}»: cada corrida lleva ${pa} (ni fija ni olvidada)`);
     }
     if (!/\n      partes:\n[\s\S]*?options: \["1", "4"\]/.test(y)) falla(G, Y, 0, "falta el input «partes» (1 o 4)");
     // 20 nov · El entorno de cada trabajo no se queda colgado: cada paso que baja algo de la red (pip, apt, npm, navegadores, la base, los
@@ -11006,6 +11008,31 @@ const guardianes = {
     if (!/const rotos = out\.split\('\\n'\)\.filter\(\(l\) => \/no encontré el texto a cambiar\|: no existe \/\.test\(l\)\);/.test(readFileSync("pruebas/alreves/textos.cjs", "utf8"))) falla(G, "pruebas/alreves/textos.cjs", 0, "textos.cjs cuenta como roto el «: no existe » de la precarga");
   },
 
+  /* 22 nov · Revisión del CI (B2) · dirigidaEnPartes: una revisión dirigida (a mano, solo=…) no espera dos horas por «al revés» ni 71 min por
+     un nombre mal escrito. (1) «al revés» se reparte SIEMPRE en 4 partes, también con partes=1 (las dirigidas de 1 parte tardaban 86–128 min solo
+     por ese carril: 32,4 h de espera del 18 al 22 nov); «partes» sigue mandando en la punta a punta. (2) Los nombres de «solo» se validan en
+     «cambios», ANTES de arrancar los carriles (pruebas/correr.mjs --comprobar: un nombre que no existe sale con 2 sin correr nada). Lo que se teme:
+     volver a «al revés» en un solo trabajo, validar después de preparar las máquinas, o un --comprobar que corra pruebas o acepte un nombre
+     inexistente. Al revés: alrevesDirigida. */
+  dirigidaEnPartes() {
+    const G = "dirigidaEnPartes", Y = ".github/workflows/ci.yml", C = "pruebas/correr.mjs";
+    if (!existsSync(Y) || !existsSync(C)) return falla(G, Y, 0, "falta ci.yml o el corredor");
+    const y = readFileSync(Y, "utf8"), job = (n) => new RegExp(`\\n  ${n}:\\n[\\s\\S]*?(?=\\n  [a-z]+:\\n|$)`).exec(y)?.[0] ?? "";
+    const rg = job("regresion"), ca = job("cambios");
+    if (!rg.includes(`include: \${{ fromJSON((inputs.partes || '4') == '1' && '[{"nombre":"al revés","parte":2},{"nombre":"al revés","parte":3},{"nombre":"al revés","parte":4}]' || '[]') }}`))
+      falla(G, Y, 0, "«regresion»: con partes=1, «al revés» suma sus partes 2, 3 y 4 (include): ese carril va siempre en 4 partes");
+    if (!rg.includes("--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar")) falla(G, Y, 0, "«regresion»: «al revés» corre --parte i/4 aunque partes sea 1");
+    if (!rg.includes("format(' · {0}/{1}', matrix.parte, matrix.nombre == 'al revés' && '4' || inputs.partes || '4')") || !rg.includes("(matrix.nombre == 'al revés' || (inputs.partes || '4') != '1')")) falla(G, Y, 0, "«regresion»: el nombre de cada parte de «al revés» es «· i/4» (scripts/ci/corrida.mjs cuenta las partes por el nombre)");
+    if (!/\n      - name: Las pruebas de «solo» existen \(antes de arrancar los carriles\)\n        env: \{ SOLO: "\$\{\{ inputs\.solo \}\}" \}\n        run: \|\n          if \[ -n "\$SOLO" \]; then node pruebas\/correr\.mjs --comprobar \$SOLO; fi\n/.test(ca))
+      falla(G, Y, 0, "«cambios» valida los nombres de «solo» con pruebas/correr.mjs --comprobar antes de que arranque ningún carril");
+    if (!/needs: \[cambios, web\]/.test(rg)) falla(G, Y, 0, "«regresion» espera a «cambios» (si un nombre de «solo» no existe, no arranca)");
+    const vivo = (a) => { try { execSync(`node ${C} --comprobar ${a}`, { stdio: "pipe", timeout: 30_000 }); return 0; } catch (e) { return e.status ?? -1; } };
+    const una = archivos.find((f) => /^pruebas\/alreves\/alreves[^/]+\.cjs$/.test(f))?.split("/").pop().replace(/\.cjs$/, "");
+    if (una && vivo(una) !== 0) falla(G, C, 0, `--comprobar ${una} (una prueba que existe) no sale con 0`);
+    if (vivo(`${una ?? "x"} zz-no-existe-esta-prueba`) !== 2) falla(G, C, 0, "--comprobar con un nombre que no existe tiene que salir con 2");
+    if (!/if \(flag\("--comprobar"\)\) \{ console\.log\(`✓ --comprobar: [^`]*`\); process\.exit\(sel\.length \? 0 : 2\); \}/.test(sinComent(C))) falla(G, C, 0, "--comprobar solo resuelve la selección y sale (sin correr nada, sin servidor, sin candado)");
+  },
+
   /* 9b-3 · textoQueExiste: lo que una prueba de punta a punta busca en la pantalla (contiene(p, '…')) existe en el código, la base o la ayuda. sis9j
      buscaba «Llegan cuando se encienda producción», que 9o cambió por la sección de despliegues de verdad: la prueba quedó roja en las 3 vueltas
      (14 nov). Lo que la pantalla ARMA con datos (nombres de la prueba, cifras, MAYÚSCULAS) no está escrito en el código: esos van, uno por uno, en
@@ -12374,7 +12401,7 @@ const guardianes = {
     if ((c.match(/await correrUna\(t\)/g) ?? []).length !== 2) falla(G, C, 0, "una prueba se corre una vez y, si falla, UNA vez más (ni más ni un bucle)");
     if (!/else r = \{ \.\.\.r2, error: `\$\{r2\.error\} · dos veces seguidas/.test(c)) falla(G, C, 0, "la que falla dos veces es roja");
     if (!/console\.log\(`INESTABLES \(\$\{inestables\.length\}\)/.test(c) || !/GITHUB_STEP_SUMMARY/.test(c) || !/inestables\.json/.test(c)) falla(G, C, 0, "las inestables se dicen: al final de la corrida, en inestables.json y en el resumen del trabajo");
-    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
+    if (y.split("--parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar").length - 1 + y.split("--parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar").length - 1 !== 4 || (y.match(/--reintentar/g) ?? []).length !== 4) falla(G, Y, 0, "los cuatro carriles largos del CI (regresión, las dos pasadas de la confirmación y los anchos) llevan --reintentar");
   },
   /* 9t · subidaReintenta (20 nov, confirmación 44734711575, msg9t en el iPhone SE): una foto normal recién elegida llegó al servidor sin
      archivo («No llegó la foto», 400). La app la reintenta UNA vez con el archivo original (lib/subir-foto.ts, mandar) y el servidor deja dicho

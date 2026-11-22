@@ -50,7 +50,7 @@ on:
         options: ["no", "si"]
         default: "no"
       partes:
-        description: "En cuántos trabajos paralelos se reparte cada carril largo (cada parte en su base nueva; cada prueba prepara sus datos)"
+        description: "En cuántos trabajos paralelos se reparte cada carril largo de punta a punta (cada parte en su base nueva; cada prueba prepara sus datos); «al revés» va siempre en 4"
         type: choice
         options: ["1", "4"]
         default: "4"
@@ -86,6 +86,12 @@ jobs:
         run: node scripts/ci/alcance.mjs || echo "alcance=todo" >> "$GITHUB_OUTPUT"
       # 22 nov · La API no enseña las entradas de una corrida a mano: van en el NOMBRE de este paso, que sí enseña. La puerta de producción
       # (promover.sh → scripts/ci/corrida.mjs) exige «alcance=todo · solo=«» · aprobar=no · medir=no».
+      # 22 nov · Revisión del CI (B2) · Una dirigida con una prueba que no existe se para AQUÍ, antes de que arranque ningún carril (un nombre
+      # mal escrito costaba 56–71 min). Sin «solo», no hace nada. Guardián dirigidaEnPartes.
+      - name: Las pruebas de «solo» existen (antes de arrancar los carriles)
+        env: { SOLO: "${{ inputs.solo }}" }
+        run: |
+          if [ -n "$SOLO" ]; then node pruebas/correr.mjs --comprobar $SOLO; fi
       - name: "entradas: alcance=${{ inputs.alcance || 'todo' }} · solo=«${{ inputs.solo }}» · aprobar=${{ inputs.aprobar || 'no' }} · medir=${{ inputs.medir || 'no' }}"
         run: echo "las entradas de esta corrida van en el nombre de este paso"
 
@@ -259,7 +265,7 @@ jobs:
   # las fases, UNA a la vez. No se reparte por grupos: las pruebas se heredan datos (las de la fase 4 dependen de las de la 2, com5g del plan que deja
   # free2b…); repartidas en trabajos con base propia fallaron 30 de 199 en la primera corrida (13 nov) por eso, no por la app.
   regresion:
-    name: punta a punta · ${{ matrix.nombre }}${{ (inputs.partes || '4') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '4') || '' }}
+    name: punta a punta · ${{ matrix.nombre }}${{ (matrix.nombre == 'al revés' || (inputs.partes || '4') != '1') && format(' · {0}/{1}', matrix.parte, matrix.nombre == 'al revés' && '4' || inputs.partes || '4') || '' }}
     needs: [cambios, web]
     if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
@@ -276,6 +282,9 @@ jobs:
         # comando en base nueva): corre una sola vez, allá. Sin confirmar, corre aquí como siempre.
         nombre: ${{ fromJSON((inputs.confirmar == 'si' && inputs.solo == '') && '["al revés"]' || '["al revés","todas las fases"]') }}
         parte: ${{ fromJSON((inputs.partes || '4') == '4' && '[1,2,3,4]' || '[1]') }}
+        # 22 nov · Revisión del CI (B2) · «al revés» va SIEMPRE en 4 partes, también en una dirigida con partes=1: en un solo trabajo tardaba
+        # 86–128 min y la dirigida esperaba eso (32,4 h del 18 al 22 nov). «partes» sigue mandando en la punta a punta. Guardián dirigidaEnPartes.
+        include: ${{ fromJSON((inputs.partes || '4') == '1' && '[{"nombre":"al revés","parte":2},{"nombre":"al revés","parte":3},{"nombre":"al revés","parte":4}]' || '[]') }}
     steps:
       # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>».
       - uses: actions/checkout@v4
@@ -292,7 +301,7 @@ jobs:
         if: ${{ matrix.nombre == 'al revés' || contains(inputs.solo, 'alreves') }}
         run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de ${{ matrix.nombre }} en base nueva
-        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ inputs.partes || '4' }} --reintentar
+        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || (matrix.nombre == 'al revés' && '--grupo alreves' || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios') }} --parte ${{ matrix.parte }}/${{ matrix.nombre == 'al revés' && '4' || inputs.partes || '4' }} --reintentar
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
