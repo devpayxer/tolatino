@@ -12,13 +12,14 @@
 //   imagenSoloSiCambia · se salta el build solo con la huella (sin el Id de la imagen); la huella deja de mirar lo que no está versionado; la prueba no corre.
 //   despliegueSinCorte · la app se cambia antes de migrar, vuelve «up --build», un build que falla se reintenta o no sale; barrido sin init o con 10 s
 //   de gracia; nginx sin la página de mantenimiento o con server_tokens; una configuración de nginx que no pasa nginx -t se queda; las pruebas no corren.
+//   despliegueConTramos · sin la línea de tramos al salir, un tramo que falta o fuera de su sitio, /estado/ sin el enlace, la prueba sin el caso del fallo.
 // «crear» (el texto a cambiar es null): se crea el archivo, se corre el guardián y se quita.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const D = 'infra/pruebas/deploy.sh', S = 'infra/pruebas/tolatino-sync', L = 'infra/comun/lib.sh', C = 'pruebas/infra/correr.sh', M = 'packages/db/migrar.sh';
 const NUEVA = 'packages/db/migrations/0999_alreves_despliegue.sql';
-const N = 'infra/pruebas/nginx-pruebas.conf';
+const N = 'infra/pruebas/nginx-pruebas.conf', O = 'pruebas/infra/orden-despliegue.test.sh';
 const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
 const casos = [
   ['sandboxSeArreglaSolo', D, 'if instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync; then',
@@ -64,6 +65,11 @@ const casos = [
   ['despliegueSinCorte', D, '  if [ -f "$NGINX_SITIO.anterior" ]; then cp -p "$NGINX_SITIO.anterior" "$NGINX_SITIO";', '  if false; then cp -p "$NGINX_SITIO.anterior" "$NGINX_SITIO";', 'vuelve la anterior'],
   ['despliegueSinCorte', C, '  seccion "el orden del despliegue del sandbox: construir → migrar → cambiar (orden-despliegue.test.sh)"; bash pruebas/infra/orden-despliegue.test.sh || mal=1\n', '', 'orden-despliegue.test.sh'],
   ['despliegueSinCorte', C, 'seccion "la página de mantenimiento con el nginx del sandbox (mantenimiento-nginx.test.sh)"; bash pruebas/infra/mantenimiento-nginx.test.sh || mal=1\n', '', 'mantenimiento-nginx.test.sh'],
+  ['despliegueConTramos', D, "\ntrap 'fin_tramos $?' EXIT\n", '\n', 'deja su línea de tramos en el registro y en /estado/tramos.txt'],
+  ['despliegueConTramos', D, '\ntramo migraciones\n', '\n', 'falta «tramo migraciones» en su sitio'],
+  ['despliegueConTramos', D, '\ntramo recrear\n', '\n', 'falta «tramo recrear» en su sitio'],
+  ['despliegueConTramos', S, " · <a href='/estado/tramos.txt'>Tramos</a>", '', '/estado/ enlaza tramos.txt'],
+  ['despliegueConTramos', O, "tramos (fallo en imagen, commit", "tramos (fallo, commit", 'la prueba del orden comprueba la línea de tramos'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 let bien = 0, total = 0;

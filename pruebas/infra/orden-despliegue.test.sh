@@ -5,7 +5,8 @@
 #   · una migración que falla: sale con 1 y la app NO se toca (la app vieja sigue sirviendo con la base a medio migrar, que tolera: migracionReversible);
 #   · la base que no contesta: sale con 1 sin construir ni tocar la app;
 #   · nginx -t que no pasa: vuelve la configuración anterior y el despliegue sigue;
-#   · la misma huella y la misma imagen: no se construye.
+#   · la misma huella y la misma imagen: no se construye;
+#   · cada tramo queda con su hora y al salir (bien o mal) una línea «tramos (ok|fallo en …)» (lo que publica /estado/).
 # Corre en un espacio de montaje aparte (root): /etc/tolatino, /etc/nginx, /var/www, /var/lib/tolatino y /usr/local/bin son de mentira.
 # Uso (root): bash pruebas/infra/orden-despliegue.test.sh   → «N/N casos».
 set -uo pipefail
@@ -60,7 +61,12 @@ ok "todo bien: termina con 0" "$(correr '')" 0
 b=$(linea "$BUILD"); m=$(linea "$MIG"); x=$(linea '^nginx -t'); u=$(linea "$UP")
 ok "… construir → migrar → nginx → cambiar" "$([ -n "$b" ] && [ -n "$m" ] && [ -n "$x" ] && [ -n "$u" ] && [ "$b" -lt "$m" ] && [ "$m" -lt "$x" ] && [ "$x" -lt "$u" ] && echo en-orden)" en-orden
 ok "… sin «up --build» en la app (la app no se quita antes de tener la imagen)" "$(cuenta '^docker compose [^|]*docker-compose.yml up -d --build')" 0
+TR=$(grep -o 'tramos (ok, commit [0-9a-f]*):.*' "$T/repo.salida" | tail -1)
+ok "… y deja su línea de tramos: base, imagen, migraciones, semilla, aparte, nginx, recrear, salud y el total" \
+  "$(echo "$TR" | grep -cE ': preparar [0-9]+ s · base [0-9]+ s · imagen [0-9]+ s · migraciones [0-9]+ s · semilla [0-9]+ s · aparte [0-9]+ s · nginx [0-9]+ s · recrear [0-9]+ s · salud [0-9]+ s · total [0-9]+ s$')" 1
+ok "… cada tramo también con su hora en el registro" "$(grep -cE '^[0-9T:+-]+ \[deploy\] tramo (imagen|migraciones|recrear|salud): [0-9]+ s$' "$T/repo.salida")" 4
 ok "un build que falla: sale con 1" "$(correr build)" 1
+ok "… y la línea de tramos dice dónde falló" "$(grep -c 'tramos (fallo en imagen, commit' "$T/repo.salida")" 1
 ok "… un solo intento de build" "$(cuenta "$BUILD")" 1
 ok "… sin migrar y sin tocar la app" "$(cuenta 'tl_m_nombre='):$(cuenta "$UP")" "0:0"
 ok "una migración que falla: el despliegue falla" "$(r=$(correr migracion); [ "$r" != 0 ] && echo falla || echo "salió $r")" falla

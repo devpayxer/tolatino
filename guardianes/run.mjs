@@ -10087,6 +10087,24 @@ const guardianes = {
     for (const t of ["orden-despliegue", "mantenimiento-nginx"]) if (!new RegExp(`seccion "[^"]*"; bash pruebas\\/infra\\/${t}\\.test\\.sh \\|\\| mal=1`).test(c) || !existsSync(`pruebas/infra/${t}.test.sh`)) falla(G, C, 0, `las pruebas de infra no corren pruebas/infra/${t}.test.sh`);
   },
 
+  /* 22 nov · despliegueConTramos: cada tramo del despliegue del sandbox queda con su hora y sus segundos en el registro que publica /estado/ (para medir
+     sin SSH lo que hoy se estima): base, imagen, migraciones, semilla, aparte, nginx, recrear y salud, en ese orden, y al salir (bien o mal, con un
+     trap) una línea «tramos (ok|fallo en …)» que también va a /estado/tramos.txt, enlazado desde /estado/. Prueba: orden-despliegue.test.sh. */
+  despliegueConTramos() {
+    const G = "despliegueConTramos", D = "infra/pruebas/deploy.sh", S = "infra/pruebas/tolatino-sync", O = "pruebas/infra/orden-despliegue.test.sh";
+    const d = readFileSync(D, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    if (!/\ntrap 'fin_tramos \$\?' EXIT\n/.test(d) || !/echo "\$\(date -Is\) \$linea" >> "\$t"/.test(d) || !/local res=ok linea t=\/var\/www\/estado\/tramos\.txt/.test(d))
+      falla(G, D, 0, "al salir (bien o mal) deploy.sh deja su línea de tramos en el registro y en /estado/tramos.txt (trap … EXIT)");
+    let antes = -1;
+    for (const t of ["base", "imagen", "migraciones", "semilla", "aparte", "nginx", "recrear", "salud"]) {
+      const i = d.search(new RegExp(`\\ntramo ${t}\\n`));
+      if (i < 0 || i < antes) { falla(G, D, 0, `falta «tramo ${t}» en su sitio (base → imagen → migraciones → semilla → aparte → nginx → recrear → salud)`); break; }
+      antes = i;
+    }
+    if (!/<a href='\/estado\/tramos\.txt'>Tramos<\/a>/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "/estado/ enlaza tramos.txt");
+    if (!/tramos \(fallo en imagen, commit/.test(existsSync(O) ? readFileSync(O, "utf8") : "")) falla(G, O, 0, "la prueba del orden comprueba la línea de tramos (también cuando falla)");
+  },
+
   /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del
      fundador anotado (etiqueta ok-produccion/*, que va a deploy_releases.founder_ok_ref). Lo revisan el que empuja (scripts/produccion/promover.sh) y el que
      despliega (infra/produccion/tolatino-sync, en cada máquina); ningún flujo de GitHub empuja a produccion; y si las ramas están a mano, produccion es

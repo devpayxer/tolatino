@@ -17,6 +17,20 @@ ENV_FILE=/etc/tolatino/pruebas.env
 . "$REPO/infra/comun/sellado.sh"
 INICIO=$(date -u +%FT%TZ)
 PREVIO=$(cat /var/lib/tolatino/last-deploy 2>/dev/null || true)
+# 22 nov · Cada tramo del despliegue con su hora, para medir sin SSH: «tramo NOMBRE» cierra el que corría (lo anota en el registro con su hora y sus
+# segundos) y abre el siguiente. Al salir, bien o mal, queda una línea «tramos (ok|fallo en …)» en el registro que publica /estado/ y otra en
+# /estado/tramos.txt (una por despliegue; las últimas 500). Nunca cambia el resultado del despliegue.
+TRAMO_N=preparar; TRAMO_T=$SECONDS; TRAMOS=""
+tramo() { local s=$((SECONDS - TRAMO_T)); TRAMOS="$TRAMOS · $TRAMO_N $s s"; log "tramo $TRAMO_N: $s s"; TRAMO_N="$1"; TRAMO_T=$SECONDS; }
+fin_tramos() {
+  local res=ok linea t=/var/www/estado/tramos.txt
+  [ "$1" = 0 ] || res="fallo en $TRAMO_N"
+  log "tramo $TRAMO_N: $((SECONDS - TRAMO_T)) s" || true
+  linea="tramos ($res, commit $COMMIT):${TRAMOS# ·} · $TRAMO_N $((SECONDS - TRAMO_T)) s · total $SECONDS s"
+  log "$linea" || true
+  { mkdir -p /var/www/estado && echo "$(date -Is) $linea" >> "$t" && tail -n 500 "$t" > "$t.nuevo" && mv -f "$t.nuevo" "$t"; } 2>/dev/null || true
+}
+trap 'fin_tramos $?' EXIT
 
 # 1) El script de sincronización con candado (corrige el choque del primer arranque). Es el ÚNICO camino por el que el servidor se arregla solo (sin
 #    SSH): se instala solo si es bash válido y con cambio atómico (infra/comun/lib.sh · instalar_si_valido); si no, sigue el anterior y /estado/ lo dice.
@@ -78,6 +92,7 @@ base_lista() { # base_lista INTENTOS PAUSA: 0 cuando la base contesta
   done
   return 1
 }
+tramo base
 # 3a) La base y las fotos arriba, sin tocar la app. Si la base tarda en quedar sana (recuperación después de un corte), se espera hasta 10 min.
 "${COMPOSE[@]}" up -d db medios || log "base: «up -d db medios» falló; se espera a que conteste"
 if ! base_lista 60 10; then
@@ -90,6 +105,7 @@ fi
 #     receta y el .dockerignore, por contenido). Si la huella y la imagen son las de la última construcción buena, se reutiliza. Ante la duda (sin
 #     huella, sin imagen, otra imagen) se construye. Un build que falla NO se reintenta como si fuera la base (antes: dos builds cada 15 min) y no
 #     toca la app: sigue la versión anterior. La app se recrea igual en 4b: TOLATINO_COMMIT (environment) cambia y /api/salud dice el commit desplegado.
+tramo imagen
 HUELLA=$(huella_imagen || true)
 IMAGEN_ANTES=$(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)
 if [ -n "$HUELLA" ] && [ -n "$IMAGEN_ANTES" ] && [ "$(cat /var/lib/tolatino/imagen-huella 2>/dev/null || true)" = "$HUELLA $IMAGEN_ANTES" ]; then
@@ -107,11 +123,14 @@ else
   else rm -f /var/lib/tolatino/imagen-huella; fi
 fi
 
+tramo migraciones
 # 3c) Base de datos: migraciones pendientes, en orden, una sola vez cada una (con la app vieja sirviendo). Si una falla, se detiene aquí.
 bash "$REPO/packages/db/migrar.sh" "${COMPOSE[@]}"
 
+tramo semilla
 # 3c-semilla) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
 SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}"
+tramo aparte
 # 3c-demos) Los negocios DEMO del fundador (17 nov: 850, 10 en las 5 subcategorías principales de cada categoría, en las 5 ciudades, con
 #     historia de años): SOLO el sandbox. El CI no los carga (sus pruebas cuentan sobre la semilla de siempre) y producción nunca (candado de
 #     migrar.sh). Cada archivo marca is_demo y es idempotente (llaves fijas; se vuelve a aplicar si cambia).
@@ -182,6 +201,7 @@ if ! systemctl is-active --quiet tolatino-retiros; then
   systemd-run --unit tolatino-retiros --collect bash "$REPO/infra/retiros/generar.sh" /var/lib/tolatino/retiros "${COMPOSE[@]}" || true
 fi
 
+tramo nginx
 # 4) nginx: la app en /, la página de estado del servidor en /estado y, mientras la app cambia de contenedor o no contesta, la página de mantenimiento
 #    (la de producción, infra/comun/mantenimiento/index.html) en vez del «502 Bad Gateway» de nginx. Va ANTES de cambiar de contenedor. 22 nov · La
 #    configuración nueva solo se queda si «nginx -t» la acepta; si no, vuelve la anterior (un nginx que no arranca dejaría todo caído hasta otro push).
@@ -199,6 +219,7 @@ else
   if [ -f "$NGINX_SITIO.anterior" ]; then cp -p "$NGINX_SITIO.anterior" "$NGINX_SITIO"; nginx -t && systemctl reload nginx; fi
 fi
 
+tramo recrear
 # 4b) Cambiar: la app nueva (y barrido y push si cambió su imagen). barrido y push paran en segundos (init + stop_grace_period en el compose; antes
 #     Docker esperaba 10 s por cada uno); durante el cambio nginx muestra la página de mantenimiento. Si la base no quedó sana a tiempo, se espera
 #     hasta 10 min y se reintenta una vez (sin construir otra vez).
@@ -212,6 +233,7 @@ fi
 diag "después"
 docker image prune -f >/dev/null 2>&1 || true
 
+tramo salud
 # 5) Comprobación real: la app responde y ve la base con PostGIS. 9o: el despliegue queda anotado en deploy_releases (Sistema › Despliegues) con su
 #    resultado; si la base no contesta, se dice y se sigue (el registro nunca cambia el resultado del despliegue).
 if salud_esperar http://127.0.0.1:3000/api/salud 30 3; then
