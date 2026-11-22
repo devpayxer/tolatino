@@ -10056,6 +10056,37 @@ const guardianes = {
     if (!/seccion "[^"]*"; bash pruebas\/infra\/huella-imagen\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/huella-imagen.test.sh")) falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/huella-imagen.test.sh");
   },
 
+  /* 22 nov · despliegueSinCorte: el sandbox despliega como producción (infra/comun/azulverde.sh): construir → migrar → nginx → cambiar. Mientras se
+     construye y se migra, la app vieja sirve; un build o una migración que fallan salen ANTES de tocar el contenedor de la app (sigue lo de antes); un
+     build que falla no se reintenta como si fuera la base. barrido y push paran en el acto (init + stop_grace_period corto: «node -e» como proceso 1 no
+     atiende SIGTERM y Docker esperaba 10 s por cada uno). Mientras la app cambia, nginx enseña la página de mantenimiento con 503 (no «502 Bad
+     Gateway · nginx/1.x»), y una configuración de nginx que no pasa «nginx -t» no se queda. Pruebas: orden-despliegue.test.sh (deploy.sh de verdad con
+     piezas de mentira) y mantenimiento-nginx.test.sh (nginx de verdad). Al revés: alrevesDespliegue. */
+  despliegueSinCorte() {
+    const G = "despliegueSinCorte", D = "infra/pruebas/deploy.sh", Y = "infra/pruebas/docker-compose.yml", N = "infra/pruebas/nginx-pruebas.conf", C = "pruebas/infra/correr.sh";
+    const d = readFileSync(D, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const pos = (re) => d.search(re);
+    const iBase = pos(/\n"\$\{COMPOSE\[@\]\}" up -d db medios/), iBuild = pos(/\n  if ! "\$\{COMPOSE\[@\]\}" build web; then\n[^\n]*\n[^\n]*\n    exit 1\n/),
+      iMig = pos(/\nbash "\$REPO\/packages\/db\/migrar\.sh" "\$\{COMPOSE\[@\]\}"\n/), iNg = pos(/\nif nginx -t; then\n/), iUp = pos(/\nif ! "\$\{COMPOSE\[@\]\}" up -d --remove-orphans; then\n/);
+    if ([iBase, iBuild, iMig, iNg, iUp].some((x) => x < 0) || !(iBase < iBuild && iBuild < iMig && iMig < iNg && iNg < iUp))
+      falla(G, D, 0, "el orden es base → construir (un intento; si falla, exit 1) → migrar → nginx → cambiar (up -d): la app vieja sirve hasta el final");
+    if (/COMPOSE\[@\]\}"? [^\n]*up -d --build/.test(d)) falla(G, D, 0, "ningún «up -d --build»: quita la app vieja antes de saber si la nueva se construye");
+    const y = readFileSync(Y, "utf8");
+    for (const s of ["barrido", "push"]) {
+      const b = (new RegExp(`\\n  ${s}:\\n((?:    .*\\n|\\s*#.*\\n)+)`).exec(y) ?? [])[1] ?? "";
+      const g = /\n    stop_grace_period: (\d+)s\n/.exec("\n" + b);
+      if (!/\n    init: true\n/.test("\n" + b) || !g || Number(g[1]) > 3) falla(G, Y, 0, `«${s}» para en el acto: init: true y stop_grace_period de 3 s o menos (sin init, Docker espera 10 s en cada despliegue)`);
+    }
+    const n = readFileSync(N, "utf8").replace(/#.*$/gm, "");
+    if (!/\n    server_tokens off;\n/.test(n) || !/\n    error_page 502 504 =503 \/mantenimiento\.html;\n/.test(n) || !/location = \/mantenimiento\.html \{\n\s+root \/var\/www\/mantenimiento;\n\s+try_files \/index\.html =503;\n\s+internal;/.test(n))
+      falla(G, N, 0, "nginx del sandbox: server_tokens off y la página de mantenimiento (503) para 502/504, en vez de «502 Bad Gateway · nginx/1.x»");
+    if (!/\ninstall -m 0644 "\$REPO\/infra\/comun\/mantenimiento\/index\.html" \/var\/www\/mantenimiento\/index\.html\n/.test(d)) falla(G, D, 0, "deploy.sh instala la página de mantenimiento (la de producción) antes de cambiar");
+    if (!/cp -p "\$NGINX_SITIO" "\$NGINX_SITIO\.anterior"/.test(d) || !/\nelse\n[^\n]*\n  if \[ -f "\$NGINX_SITIO\.anterior" \]; then cp -p "\$NGINX_SITIO\.anterior" "\$NGINX_SITIO";/.test(d))
+      falla(G, D, 0, "una configuración de nginx que no pasa «nginx -t» no se queda: vuelve la anterior");
+    const c = readFileSync(C, "utf8");
+    for (const t of ["orden-despliegue", "mantenimiento-nginx"]) if (!new RegExp(`seccion "[^"]*"; bash pruebas\\/infra\\/${t}\\.test\\.sh \\|\\| mal=1`).test(c) || !existsSync(`pruebas/infra/${t}.test.sh`)) falla(G, C, 0, `las pruebas de infra no corren pruebas/infra/${t}.test.sh`);
+  },
+
   /* 9o · produccionSoloAvanza: la rama produccion solo AVANZA (fast-forward) a un commit que ya pasó por pruebas con su CI en verde y con el OK del
      fundador anotado (etiqueta ok-produccion/*, que va a deploy_releases.founder_ok_ref). Lo revisan el que empuja (scripts/produccion/promover.sh) y el que
      despliega (infra/produccion/tolatino-sync, en cada máquina); ningún flujo de GitHub empuja a produccion; y si las ramas están a mano, produccion es

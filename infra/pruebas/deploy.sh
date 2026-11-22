@@ -65,48 +65,52 @@ COMPOSE=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-co
 disco_liberar
 diag "antes"
 
-# 3) Contenedores: app (se reconstruye con el commit nuevo), Postgres + PostGIS y Garage (fotos).
-#    Si la base tarda en quedar sana (recuperación después de un corte), se espera hasta 10 min y se vuelve a intentar una vez.
-#    22 nov · La imagen solo se construye si cambió lo que entra en ella (infra/comun/lib.sh · huella_imagen: las rutas «!» del .dockerignore, la
-#    receta y el .dockerignore, por contenido). Si la huella y la imagen son las de la última construcción, se reutiliza: ni build ni barrido/push
-#    recreados. Ante la duda (sin huella, sin imagen, otra imagen) se construye. La app se recrea igual: TOLATINO_COMMIT (environment) cambia y
-#    /api/salud tiene que decir el commit desplegado.
+# 3) Construir → migrar → cambiar (22 nov; el orden de producción, infra/comun/azulverde.sh). Mientras se construye la imagen y se migra la base, la
+#    app VIEJA sigue sirviendo; si algo de eso falla, el despliegue se detiene SIN tocar el contenedor de la app (sigue lo de antes; la app vieja
+#    tolera la base nueva: guardián migracionReversible). Solo al final (4b) se cambia de contenedor: unos segundos, con la página de mantenimiento.
+#    Antes era al revés: «up --build» quitaba la app vieja antes de saber si la nueva arrancaba, y la app nueva corría ~1 min contra la base vieja.
 export TOLATINO_COMMIT="$COMMIT"
+base_lista() { # base_lista INTENTOS PAUSA: 0 cuando la base contesta
+  local i
+  for i in $(seq 1 "$1"); do
+    "${COMPOSE[@]}" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && return 0
+    sleep "$2"
+  done
+  return 1
+}
+# 3a) La base y las fotos arriba, sin tocar la app. Si la base tarda en quedar sana (recuperación después de un corte), se espera hasta 10 min.
+"${COMPOSE[@]}" up -d db medios || log "base: «up -d db medios» falló; se espera a que conteste"
+if ! base_lista 60 10; then
+  diag "la base no contesta"
+  log "la base no contestó en 10 min: no se cambia nada (la app sigue con lo de antes)"
+  exit 1
+fi
+
+# 3b) La imagen. 22 nov · Solo se construye si cambió lo que entra en ella (infra/comun/lib.sh · huella_imagen: las rutas «!» del .dockerignore, la
+#     receta y el .dockerignore, por contenido). Si la huella y la imagen son las de la última construcción buena, se reutiliza. Ante la duda (sin
+#     huella, sin imagen, otra imagen) se construye. Un build que falla NO se reintenta como si fuera la base (antes: dos builds cada 15 min) y no
+#     toca la app: sigue la versión anterior. La app se recrea igual en 4b: TOLATINO_COMMIT (environment) cambia y /api/salud dice el commit desplegado.
 HUELLA=$(huella_imagen || true)
 IMAGEN_ANTES=$(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)
-CONSTRUIR=(--build)
 if [ -n "$HUELLA" ] && [ -n "$IMAGEN_ANTES" ] && [ "$(cat /var/lib/tolatino/imagen-huella 2>/dev/null || true)" = "$HUELLA $IMAGEN_ANTES" ]; then
-  CONSTRUIR=()
   log "imagen: no cambió lo que entra en ella (huella ${HUELLA:0:12}): se reutiliza ${IMAGEN_ANTES:7:12}"
 else
-  log "imagen: se construye (huella ${HUELLA:-sin huella})"
+  log "imagen: se construye (commit $COMMIT, huella ${HUELLA:-sin huella})"
+  if ! "${COMPOSE[@]}" build web; then
+    diag "la imagen no se pudo construir"
+    log "la imagen no se pudo construir: la app sigue con lo de antes"
+    exit 1
+  fi
+  # La huella queda con la imagen que salió (la próxima subida con la misma huella y esta imagen no construye).
+  mkdir -p /var/lib/tolatino
+  if [ -n "$HUELLA" ]; then echo "$HUELLA $(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)" > /var/lib/tolatino/imagen-huella
+  else rm -f /var/lib/tolatino/imagen-huella; fi
 fi
-log "docker compose up (commit $COMMIT)"
-if ! "${COMPOSE[@]}" up -d "${CONSTRUIR[@]}" --remove-orphans; then
-  log "la base no quedó sana a tiempo: se espera hasta 10 min y se reintenta"
-  diag "primer intento fallido"
-  "${COMPOSE[@]}" up -d db || true
-  for i in $(seq 1 60); do
-    "${COMPOSE[@]}" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && break
-    sleep 10
-  done
-  "${COMPOSE[@]}" up -d "${CONSTRUIR[@]}" --remove-orphans || { diag "segundo intento fallido"; exit 1; }
-fi
-# La huella queda con la imagen que salió (la próxima subida con la misma huella y esta imagen no construye).
-mkdir -p /var/lib/tolatino
-if [ -n "$HUELLA" ]; then echo "$HUELLA $(docker image inspect tolatino/web:pruebas --format '{{.Id}}' 2>/dev/null || true)" > /var/lib/tolatino/imagen-huella
-else rm -f /var/lib/tolatino/imagen-huella; fi
-diag "después"
-docker image prune -f >/dev/null 2>&1 || true
 
-# 3b) Base de datos: migraciones pendientes, en orden, una sola vez cada una.
-for i in $(seq 1 30); do
-  "${COMPOSE[@]}" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && break
-  sleep 2
-done
+# 3c) Base de datos: migraciones pendientes, en orden, una sola vez cada una (con la app vieja sirviendo). Si una falla, se detiene aquí.
 bash "$REPO/packages/db/migrar.sh" "${COMPOSE[@]}"
 
-# 3c) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
+# 3c-semilla) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
 SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas "${COMPOSE[@]}"
 # 3c-demos) Los negocios DEMO del fundador (17 nov: 850, 10 en las 5 subcategorías principales de cada categoría, en las 5 ciudades, con
 #     historia de años): SOLO el sandbox. El CI no los carga (sus pruebas cuentan sobre la semilla de siempre) y producción nunca (candado de
@@ -178,11 +182,35 @@ if ! systemctl is-active --quiet tolatino-retiros; then
   systemd-run --unit tolatino-retiros --collect bash "$REPO/infra/retiros/generar.sh" /var/lib/tolatino/retiros "${COMPOSE[@]}" || true
 fi
 
-# 4) nginx: la app en /, la página de estado del servidor en /estado.
-install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" /etc/nginx/sites-available/tolatino-pruebas
-ln -sf /etc/nginx/sites-available/tolatino-pruebas /etc/nginx/sites-enabled/tolatino-pruebas
+# 4) nginx: la app en /, la página de estado del servidor en /estado y, mientras la app cambia de contenedor o no contesta, la página de mantenimiento
+#    (la de producción, infra/comun/mantenimiento/index.html) en vez del «502 Bad Gateway» de nginx. Va ANTES de cambiar de contenedor. 22 nov · La
+#    configuración nueva solo se queda si «nginx -t» la acepta; si no, vuelve la anterior (un nginx que no arranca dejaría todo caído hasta otro push).
+mkdir -p /var/www/mantenimiento
+install -m 0644 "$REPO/infra/comun/mantenimiento/index.html" /var/www/mantenimiento/index.html
+NGINX_SITIO=/etc/nginx/sites-available/tolatino-pruebas
+[ -f "$NGINX_SITIO" ] && cp -p "$NGINX_SITIO" "$NGINX_SITIO.anterior"
+install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" "$NGINX_SITIO"
+ln -sf "$NGINX_SITIO" /etc/nginx/sites-enabled/tolatino-pruebas
 rm -f /etc/nginx/sites-enabled/estado /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
+if nginx -t; then
+  systemctl reload nginx
+else
+  log "nginx: la configuración nueva no pasa «nginx -t»; se vuelve a la anterior"
+  if [ -f "$NGINX_SITIO.anterior" ]; then cp -p "$NGINX_SITIO.anterior" "$NGINX_SITIO"; nginx -t && systemctl reload nginx; fi
+fi
+
+# 4b) Cambiar: la app nueva (y barrido y push si cambió su imagen). barrido y push paran en segundos (init + stop_grace_period en el compose; antes
+#     Docker esperaba 10 s por cada uno); durante el cambio nginx muestra la página de mantenimiento. Si la base no quedó sana a tiempo, se espera
+#     hasta 10 min y se reintenta una vez (sin construir otra vez).
+log "docker compose up (commit $COMMIT)"
+if ! "${COMPOSE[@]}" up -d --remove-orphans; then
+  log "la app nueva no arrancó a la primera: se espera a la base (hasta 10 min) y se reintenta"
+  diag "primer intento fallido"
+  base_lista 60 10 || true
+  "${COMPOSE[@]}" up -d --remove-orphans || { diag "segundo intento fallido"; exit 1; }
+fi
+diag "después"
+docker image prune -f >/dev/null 2>&1 || true
 
 # 5) Comprobación real: la app responde y ve la base con PostGIS. 9o: el despliegue queda anotado en deploy_releases (Sistema › Despliegues) con su
 #    resultado; si la base no contesta, se dice y se sigue (el registro nunca cambia el resultado del despliegue).

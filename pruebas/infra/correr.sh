@@ -37,10 +37,12 @@ seccion "sobre sellado y recuperación"; bash pruebas/infra/sellado.test.sh || m
 seccion "fotos a la medida: el respaldo de las variantes en nginx (sandbox y producción)"; bash pruebas/infra/medios-nginx.test.sh || mal=1
 seccion "la imagen de la app: su huella (huella-imagen.test.sh)"; bash pruebas/infra/huella-imagen.test.sh || mal=1
 seccion "la imagen de la app: lo que BuildKit de verdad manda (contexto-imagen.test.sh)"; bash pruebas/infra/contexto-imagen.test.sh || mal=1
+seccion "la página de mantenimiento con el nginx del sandbox (mantenimiento-nginx.test.sh)"; bash pruebas/infra/mantenimiento-nginx.test.sh || mal=1
 if [ "$(id -u)" = 0 ] && [ "${INFRA_SIN_ROOT:-0}" != 1 ]; then
   seccion "el sandbox no cambia (traza)"; bash pruebas/infra/traza-sandbox.sh || mal=1
   seccion "producción solo avanza (tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1
   seccion "el sandbox se arregla solo (su tolatino-sync)"; bash pruebas/infra/sync-pruebas.test.sh || mal=1
+  seccion "el orden del despliegue del sandbox: construir → migrar → cambiar (orden-despliegue.test.sh)"; bash pruebas/infra/orden-despliegue.test.sh || mal=1
   if [ -x /usr/lib/postgresql/16/bin/initdb ]; then seccion "migraciones en una lectura (migrar.sh contra Postgres 16)"; bash pruebas/infra/migrar.test.sh || mal=1
   elif [ "${CI:-}" = true ]; then echo; echo "✗ migrar.sh: en el CI tiene que correr y falta Postgres 16"; mal=1
   else echo; echo "· migrar.sh: falta Postgres 16 (no corrió)"; fi
