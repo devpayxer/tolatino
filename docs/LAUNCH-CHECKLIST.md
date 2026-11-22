@@ -2395,6 +2395,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       otra vez «Mi casa» en la misma dirección por la interfaz («Cambiar» → «Agregar otra casa» con una dirección que ya tiene casa: la interfaz
       no edita en sitio) y comprueba una sola fila, la misma `id`, los datos nuevos y `is_default`; 18 ✓ dos veces. «Mi vehículo» no tiene camino
       de actualizar (solo inserta). (c) las hojas del Super Admin que ninguna prueba abre.
+      **22 nov, avance (sigue abierta):** `pruebas/lib/consultas-sitios.cjs` clasifica los 6.111 sitios `.query` y `sql9u` prepara contra la base **5.720 textos** (antes 5.101): funciones de trozos con argumentos fijos, ternarios, objetos y listas cerradas, constantes importadas. **Cero rotas** (11 casos sembrados lo demuestran). Quedan **220 en 88 archivos** que el código arma en ejecución (123 condiciones con push/join, 59 trozos de datos del momento, 30 tabla o columna elegida, 8 otras): su número por archivo está en `pruebas/consultas-fuera.json` y el guardián `consultasSinComprobar` no lo deja crecer. **Pendiente:** (1) armadores de condiciones como funciones puras y `PREPARE` de sus combinaciones; (2) correr la regresión con `PRUEBAS_ANOTAR_SQL` y `consultas-medir.cjs` para la lista de no ejecutadas del Super Admin; (3) las hojas de confirmar del admin que ninguna prueba abre; (4) `db-analisis.ts` no anota.
 - [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
       veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
       `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).
@@ -2589,9 +2590,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Contenido) con las cifras de `cifrasFotos()` y las de las privadas (`cifrasFotosPrivadas()` en lib/fotos-privadas.ts); ayuda
       `docs/ayuda/admin-fotos-a-la-medida.md`; guardián `fotosCifrasEnElAdmin` (al revés: `alreves9ufotosadmin`); punta a punta `fot9uadmin`
       (escrita; la corre el CI: no hubo base ni servidor en la sesión de F4). Queda la medida en el sandbox con fotos de cámara (línea de arriba)._
-- [ ] **→ 9u** · **Las cifras de fotos del Super Admin recorren `media` entera cada vez que se abre Auto-moderación** (`cifrasFotos` y
+- [x] **→ 9u** · **Las cifras de fotos del Super Admin recorren `media` entera cada vez que se abre Auto-moderación** (`cifrasFotos` y
       `cifrasFotosPrivadas`: una pasada de agregación sin índice que la cubra). Con cientos de miles de fotos pesará: guardarlas por día en una
       tabla de resumen (como la analítica) o cachearlas unos minutos, y medirlo en la base de carga. (F4, 21 nov)
+      **✓ 22 nov:** derivado `media_cifras_cache` (dos filas; solo lo escribe `fotos_cifras_contar`; el barrido lo rehace cada 10 minutos). Con 2 M de filas la pantalla pasa de 430–575 ms + 90–126 ms por carga a menos de 1 ms; el recuento del barrido tarda 1,8–1,9 s. Cifras iguales a las de antes, comparadas fila a fila. Guardián `fotosCifrasEnElAdmin` §7.
 
 ## Revisión automática de las fotos públicas — R1 + R2 (decisión AJ, 20 nov) — lo que quedó anotado
 - [ ] **→ 9u** · **Plazo de retención de las fotos rechazadas o retenidas** (`privado/rev/<uuid>.jpg` + su fila en `media`): hoy no se borran
@@ -2765,3 +2767,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `barrerVariantesDeRuta` (escrito y apartado: sin el índice recorrería `media` entera cada minuto); (2) `cifrasFotosPrivadas` (Super Admin) no cuenta esas
       cuatro familias; (3) el documento de un reclamo ya purgado da 500 en `/api/admin/reclamo/<CL>` (no mira `purged_at`): que dé 404; (4) falta la medida de
       una conversación con 10 fotos (guion listo, no corrió).
+      **22 nov, hechos (1), (2) y (3) (migración 0210); sigue abierta por (4), la medida de 10 fotos:** (1) índice parcial `media_privadas_ruta_sin_variantes_idx` y `barrerVariantesDeRuta` en el barrido (20 por tanda, hasta 5 tandas; una que falla no para a las demás; nunca una purgada u oculta): con 2 M de filas la vuelta lee 6 páginas en vez de 53.435; (2) las cifras privadas cuentan Mensajes, ayuda, entrega y reclamo; (3) el documento de un reclamo purgado da 404, y toda ruta de fotos privadas mira `purged_at` (guardián `fotosPrivadasConPermiso` §13 y §14).
+- [ ] **→ 9o** · **Índices sobre tablas grandes en producción (22 nov):** las migraciones crean los índices dentro de la transacción (el guardián
+      `migracionConTransaccion` prohíbe `create index concurrently`): con 2 M de filas en `media` son ~0,3 s de escrituras esperando. Decidir antes de
+      abrir: `set local lock_timeout` en las migraciones que tocan tablas grandes, o una vía fuera de transacción para producción (aflojar ese guardián es
+      decisión del fundador).
+- [ ] **→ 9u** · **Un archivo que falta en el almacén con la fila viva da 500** en las rutas de fotos privadas (Mensajes, ayuda, entrega, reclamo): que dé
+      404. Y una carrera estrecha: si una cuenta se purga mientras el barrido genera una variante de ancho nulo, puede quedar un archivo privado huérfano
+      que nadie sirve (cerrarla pide tocar `datos/purgar.ts`).
