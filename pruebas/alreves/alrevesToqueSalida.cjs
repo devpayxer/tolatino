@@ -5,12 +5,20 @@
 //   compartir · la acción registrarToque que vuelve · contact_taps escrito fuera de lib/toques.ts · esperar el toque antes de tel: · la pieza sin
 //   sendBeacon, sin keepalive, a otra ruta o esperando · la puerta con GET, sin tope, con otras claves, tocando la base o con otro estado · las reglas
 //   sin mismo origen, sin el tope de 10 min o de 60 por hora, sin el evento, contando a la gente del negocio o sin validar el id.
+// 22 nov (bandeja de salida; CI 45060882235: en WebKit el beacon llegó casi siempre, no siempre): anotar después de mandar · sin sessionStorage ·
+//   sin reintento (o a los 30 s) · sin pageshow / visibilitychange · el Arranque sin la bandeja · sin tope de 10 min · confirmar sin 204 o por el
+//   beacon · otra pantalla hablando con /api/toque · el «entraron» de vuelta a una acción del servidor (importada o creada) · la puerta con una
+//   forma de más · las reglas sin el candado (o con uno que no es de la transacción) · entroPatrocinado sin sus reglas · tarAK sin sus casos.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ, G = 'toqueSobreviveSalida';
 const FI = 'apps/web/app/(app)/n/[id]/Ficha.tsx', FN = 'apps/web/app/(app)/n/[id]/FichaNueva.tsx', TN = 'apps/web/app/(app)/TarjetaNegocio.tsx',
   CA = 'apps/web/app/(app)/c/[slug]/Categoria.tsx', MA = 'apps/web/app/(app)/mapa/Mapa.tsx', AC = 'apps/web/app/(app)/acciones.ts',
-  CT = 'apps/web/lib/contar-toque.ts', RT = 'apps/web/app/api/toque/route.ts', LT = 'apps/web/lib/toques.ts';
+  CT = 'apps/web/lib/contar-toque.ts', RT = 'apps/web/app/api/toque/route.ts', LT = 'apps/web/lib/toques.ts',
+  AR = 'apps/web/app/_cascara/Arranque.tsx', PT = 'apps/web/app/(app)/c/[slug]/Patrocinados.tsx', PE = 'apps/web/app/(app)/eventos/PatrocinadosEventos.tsx',
+  LP = 'apps/web/lib/patrocinio.ts', TK = 'pruebas/e2e/tarAK.cjs';
+const BANDEJA = 'la bandeja: el toque se anota pendiente', REINT = 'la bandeja reintenta lo no confirmado a los 1–5 s', VOLVER = 'la bandeja reintenta al volver a verse la página',
+  CONF = 'la bandeja solo da por confirmado un toque con el 204', PATR = 'el «entraron» del patrocinio sale por contarEntradaPatrocinio';
 const VIEJA = 'cuenta el toque con una acción del servidor y sale de la página justo después';
 const casos = [
   [FI, 'contarToque(f.id, "call", "ficha"); location.href = `tel:', 'void registrarToque(f.id, "call", "ficha"); location.href = `tel:', VIEJA],
@@ -24,10 +32,30 @@ const casos = [
   [CT, 'navigator.sendBeacon(RUTA, new Blob', 'navigator.vibrate?.(0) && (RUTA, new Blob', 'el toque sale con navigator.sendBeacon'],
   [CT, 'keepalive: true, credentials', 'keepalive: false, credentials', 'sin sendBeacon, el toque sale con fetch y keepalive: true'],
   [CT, 'const RUTA = "/api/toque";', 'const RUTA = "/api/toques";', 'el toque va a /api/toque'],
-  [CT, 'function mandar(d: Record<string, string>): void {', 'async function mandar(d: Record<string, string>): Promise<void> {\n  await Promise.resolve();', 'lib/contar-toque.ts no espera nada'],
+  [CT, 'function mandar(d: Cuerpo): void {', 'async function mandar(d: Cuerpo): Promise<void> {\n  await Promise.resolve();', 'lib/contar-toque.ts no espera nada'],
+  // La bandeja.
+  [CT, '  guardar(l.slice(-MAX_PENDIENTES));\n  let enCola = false;\n', '  let enCola = false;\n', BANDEJA, CT, '  if (!enCola) enviar(p);\n', '  guardar(l.slice(-MAX_PENDIENTES));\n  if (!enCola) enviar(p);\n'],
+  [CT, 'if (l.length) sessionStorage.setItem(LLAVE, JSON.stringify(l)); else ', '', BANDEJA],
+  [CT, 'const REINTENTO_MS = 1500;', 'const REINTENTO_MS = 30000;', REINT],
+  [CT, '  if (!enCola) enviar(p);\n  programar();\n', '  if (!enCola) enviar(p);\n', REINT],
+  [CT, '  window.addEventListener("pageshow", vaciar);\n', '', VOLVER],
+  [CT, '  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") vaciar(); });\n', '', VOLVER],
+  [CT, '  window.addEventListener("pageshow", vaciar);\n  vaciar();\n', '  window.addEventListener("pageshow", vaciar);\n', VOLVER],
+  [AR, '  useEffect(() => iniciarBandeja(), []);\n', '  void iniciarBandeja;\n', 'el Arranque del marco raíz monta la bandeja'],
+  [CT, 'const TOPE_MS = 9 * 60_000;', 'const TOPE_MS = 60 * 60_000;', 'la bandeja tira lo pendiente de más de 10 min'],
+  [CT, 'v = memoria.filter((p) => ahora - p.h < TOPE_MS && p.h <= ahora + 60_000);', 'v = memoria.filter((p) => p.h <= ahora + 60_000);', 'la bandeja tira lo pendiente de más de 10 min'],
+  [CT, '.then((r) => { if (r.status === 204) quitar(p.t); }', '.then((r) => { if (r.status < 600) quitar(p.t); }', CONF],
+  [CT, '  if (!enCola) enviar(p);\n', '  if (!enCola) enviar(p); else quitar(p.t);\n', CONF],
+  // Una sola pieza.
+  [MA, 'contarToque(b.id, "directions", "mapa"); abrirComoLlegar(', 'void fetch("/api/toque", { method: "POST", body: JSON.stringify({ id: b.id, kind: "directions", origen: "mapa" }) }); abrirComoLlegar(', 'habla con /api/toque por su cuenta'],
+  [PT, 'const entrar = (p: Patrocinada) => { contarEntradaPatrocinio("negocio", p.sid); };', 'const entrar = (p: Patrocinada) => { void entroPatrocinado("negocio", p.sid); };', PATR, PT, 'import { contarEntradaPatrocinio, contarToque } from "@/lib/contar-toque";', 'import { contarToque } from "@/lib/contar-toque";\nimport { entroPatrocinado } from "../../acciones-patrocinio";'],
+  [PE, 'import { contarEntradaPatrocinio } from "@/lib/contar-toque";', 'import { entroPatrocinado } from "../acciones-patrocinio";\nconst contarEntradaPatrocinio = (k: "evento", s: string) => void entroPatrocinado(k, s);', PATR],
+  [AC, '/* «Avísame cuando haya»', 'export async function entroPatrocinado(kind: string, id: string): Promise<void> {\n  if (!(await mismoOrigen())) return;\n  void kind; void id;\n}\n\n/* «Avísame cuando haya»', 'vuelve a existir la acción del servidor entroPatrocinado'],
   [RT, 'export async function POST(req: NextRequest) {', 'export async function GET() { return nada(); }\nexport async function POST(req: NextRequest) {', '/api/toque solo exporta POST'],
   [RT, 'const MAX = 512;', 'const MAX = 64 * 1024;', '/api/toque acota el cuerpo a 512 bytes'],
-  [RT, 'claves === "id,kind,origen"', 'claves.includes("id")', '/api/toque acepta exactamente { id, kind, origen } o { semilla, origen }'],
+  [RT, 'claves === "id,kind,origen"', 'claves.includes("id")', '/api/toque acepta exactamente { id, kind, origen }'],
+  [RT, '(x.entro === "negocio" || x.entro === "evento") && typeof x.patrocinio === "string")', 'typeof x.entro === "string" && typeof x.patrocinio === "string")', '/api/toque acepta exactamente { id, kind, origen }'],
+  [RT, '  return nada();\n}\n', '  else if (claves === "origen,ver") await contarToque(String(x.ver), "call", x.origen as string);\n  return nada();\n}\n', '/api/toque acepta exactamente { id, kind, origen }'],
   [RT, 'import { contarToque, contarToqueSemilla } from "@/lib/toques";', 'import { contarToque, contarToqueSemilla } from "@/lib/toques";\nimport { db } from "@/lib/db";\nvoid db;', '/api/toque no toca la base'],
   [RT, 'return nada();\n}\n', 'return new NextResponse(null, { status: 429 });\n}\n', '/api/toque contesta 204 siempre'],
   [LT, 'export async function contarToqueSemilla(id: string, origen: string): Promise<void> {\n  if (!(await mismoOrigen())) return;\n', 'export async function contarToqueSemilla(id: string, origen: string): Promise<void> {\n', '«contarToqueSemilla» no revisa primero el mismo origen'],
@@ -36,6 +64,12 @@ const casos = [
   [LT, 'if (t.rows[0]) await evento("contactar", { ref: id,', 'if (t.rows[0]) void evento; if (t.rows[0] && false) await Promise.resolve({ ref: id,', '«contarToque» ya no anota el evento «contactar»'],
   [LT, "and not exists (select 1 from business_members m where m.business_id = b.id and m.user_id = $2::uuid and m.status = 'active')\n", '', 'la gente del propio negocio no cuenta'],
   [LT, '!ID_NEG.test(id) || !TOQUES.has(kind)) return;', '!TOQUES.has(kind)) return;', 'contarToque valida el id del negocio y el tipo de toque'],
+  [LT, 'await enFila(c, `toque:${id}:${u?.id ?? ip ?? ""}`); ', '', '«contarToque» cuenta sin el candado'],
+  [LT, 'await enFila(c, `semilla:${id}:${u?.id ?? ip ?? ""}`); ', 'void enFila; ', '«contarToqueSemilla» cuenta sin el candado'],
+  [LT, 'select pg_advisory_xact_lock(hashtextextended($1, 0))', 'select pg_advisory_lock(hashtextextended($1, 0))', 'falta el candado por toque'],
+  [LP, '    if (ctx.robot) return;\n    if (u) {\n      const tabla = kind', '    if (u) {\n      const tabla = kind', 'entroPatrocinado perdió sus reglas'],
+  [LP, '      if (propio.rowCount) return;\n', '', 'entroPatrocinado perdió sus reglas'],
+  [TK, "'un pendiente viejo se tira (más de 10 min)'", "'un pendiente antiguo se descarta'", 'falta la prueba (tarAK'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 let bien = 0, total = 0;

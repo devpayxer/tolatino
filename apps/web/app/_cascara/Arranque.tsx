@@ -14,10 +14,13 @@ import { esApp } from "@/lib/nativo/puente";
 import { agitar, anotar } from "@/lib/nativo/reporte";
 import { alCambiarRed } from "@/lib/nativo/senal";
 import { agitarActivo } from "./acciones";
+import { iniciarBandeja } from "@/lib/contar-toque";
 
 export function Arranque() {
   const ruta = usePathname(), router = useRouter();
   useEffect(() => vigilarErrores(), []);
+  // 22 nov · La bandeja de los toques (lib/contar-toque.ts): manda lo que quedó pendiente de la página anterior y reintenta al volver a verse.
+  useEffect(() => iniciarBandeja(), []);
   useEffect(() => {
     if (!esApp()) return;
     void quitarSplash();

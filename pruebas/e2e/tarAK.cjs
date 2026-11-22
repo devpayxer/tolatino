@@ -187,6 +187,54 @@ const cerca = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
       await pv.evaluate(() => window.stop());
       ok(await espera(() => sql(`select count(*) from contact_taps where business_id = '${NEG.dos}' and kind = 'call' and source = 'buscar'`) === '1'), 'llamar y la página se corta en el mismo instante: el toque cuenta igual (sobrevive a la salida)');
       await pv.unroute('**/*', retener);
+      // Lo que de verdad se promete (la bandeja de lib/contar-toque.ts): ningún envío tiene garantizado sobrevivir a la salida de la página
+      // (CI 45060882235: en WebKit el beacon llegó casi siempre, no siempre), así que el toque queda pendiente hasta que el servidor contesta 204,
+      // y se reintenta. Cada caso, con su negocio (la persona cuenta una vez cada 10 min por negocio, de cualquier tipo).
+      const cuantos = (tag, kind = 'call') => sql(`select count(*) from contact_taps where business_id = '${NEG[tag]}' and kind = '${kind}'`);
+      const pendientes = () => pv.evaluate(() => sessionStorage.getItem('tl-toques-pendientes'));
+      // (a) El beacon dice que sí y no manda nada (lo que se ve en WebKit cuando se pierde): el reintento lo cuenta, una vez.
+      await abrir(pv);
+      await pv.evaluate(() => { navigator.sendBeacon = () => true; });
+      await card(pv, 'tres').locator('[data-llamar]').click();
+      ok(await espera(() => cuantos('tres') === '1'), 'el primer envío se pierde (el beacon no llega): el toque cuenta igual por el reintento');
+      await pv.waitForTimeout(2500);
+      ok(cuantos('tres') === '1' && await pendientes() === null, '… una sola vez, y la bandeja queda vacía');
+      // (b) Sin beacon (sale por fetch keepalive) y la PRIMERA petición a /api/toque se aborta en el camino: el reintento lo cuenta, una vez.
+      await abrir(pv);
+      await pv.evaluate(() => { Object.defineProperty(navigator, 'sendBeacon', { value: undefined, configurable: true }); });
+      const vistas = []; let abortadas = 0;
+      const cortarPrimera = async (r) => { vistas.push(r.request().method()); if (abortadas === 0) { abortadas++; await r.abort('failed').catch(() => {}); } else await r.continue().catch(() => {}); };
+      await pv.route('**/api/toque', cortarPrimera);
+      await card(pv, 'uno').locator('[data-llamar]').click();
+      ok(await espera(() => cuantos('uno') === '1'), 'el primer envío se pierde (abortado en el camino): el toque cuenta igual por el reintento');
+      await pv.waitForTimeout(2500);
+      ok(cuantos('uno') === '1' && abortadas === 1 && vistas.length === 2 && vistas.every((m) => m === 'POST') && await pendientes() === null, `… una sola vez (${vistas.length} envíos: el primero abortado, el reintento confirmado; la bandeja vacía)`);
+      await pv.unroute('**/api/toque', cortarPrimera);
+      // (c) Llegan los dos (el beacon y el reintento, que confirma con su 204): sigue siendo UNO.
+      await abrir(pv);
+      const confirmados = [];
+      const alResponder = (x) => { if (x.url().endsWith('/api/toque') && x.request().method() === 'POST' && x.request().resourceType() === 'fetch') confirmados.push(x.status()); };
+      pv.on('response', alResponder);
+      await card(pv, 'cero').locator('[data-llamar]').click();
+      ok(await espera(() => cuantos('cero') === '1'), 'llegan los dos (beacon y reintento): el toque cuenta');
+      ok(await espera(async () => confirmados.includes(204)) && await espera(async () => (await pendientes()) === null), 'el reintento llegó y confirmó (204): la bandeja queda vacía');
+      await pv.waitForTimeout(1000);
+      ok(cuantos('cero') === '1', 'llegan los dos: cuenta UNO');
+      pv.off('response', alResponder);
+      // (c') Seis copias del mismo toque A LA VEZ (el beacon y el reintento pueden cruzarse en el servidor): el candado deja contar UNO.
+      const seis = await pv.evaluate((id) => Promise.all(Array.from({ length: 6 }, () => fetch('/api/toque', { method: 'POST', body: JSON.stringify({ id, kind: 'call', origen: 'buscar' }), headers: { 'content-type': 'text/plain;charset=UTF-8' } }).then((r) => r.status))), NEG.largo);
+      ok(seis.every((s) => s === 204) && cuantos('largo') === '1', `seis copias a la vez (${seis.join(', ')}): cuenta UNO`);
+      // (d) Recargar con un toque pendiente (la página se fue antes de mandarlo, o no llegó): al montar la app sale, y cuenta.
+      await pv.evaluate((id) => sessionStorage.setItem('tl-toques-pendientes', JSON.stringify([{ t: 'ak-pendiente', h: Date.now() - 30000, d: { id, kind: 'directions', origen: 'buscar' } }])), NEG.video);
+      await pv.reload();
+      ok(await espera(() => cuantos('video', 'directions') === '1'), 'recargar con un toque pendiente: lo manda al montar, y cuenta');
+      ok(await espera(async () => (await pendientes()) === null), '… y sale de la bandeja');
+      // (e) Un pendiente viejo se tira (más de 10 min: fuera de la ventana del servidor, podría contarse dos veces).
+      await pv.evaluate((id) => sessionStorage.setItem('tl-toques-pendientes', JSON.stringify([{ t: 'ak-viejo', h: Date.now() - 11 * 60000, d: { id, kind: 'call', origen: 'buscar' } }])), NEG.hoy);
+      await pv.reload();
+      ok(await espera(async () => (await pendientes()) === null), 'un pendiente viejo se tira (más de 10 min)');
+      await pv.waitForTimeout(2000);
+      ok(cuantos('hoy') === '0', '… y no se manda');
       await abrir(pv);
       await card(pv, 'cinco').locator('[data-cta]').click();
       ok(await espera(async () => new URL(pv.url()).pathname === `/n/${NEG.cinco}`), 'el botón principal («Ordenar») abre la ficha, como decide el servidor');
