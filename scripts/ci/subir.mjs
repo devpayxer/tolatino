@@ -418,7 +418,7 @@ async function cmdSubir({ ensayo }) {
     for (const k of p.ex.locales) {
       const [cmd, a] = pasos[k], t0 = Date.now();
       const r = spawnSync(cmd, a, { cwd: RAIZ, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, timeout: 30 * 60_000 });
-      const ult = `${r.stdout ?? ""}\n${r.stderr ?? ""}`.trim().split("\n").filter((l) => l.trim()).slice(-1)[0] ?? "";
+      const ult = [r.stdout, r.stderr].map((x) => String(x ?? "").split("\n").filter((l) => l.trim()).slice(-1)[0] ?? "").find(Boolean) ?? "";
       linea(r.status === 0 ? { ok: true, linea: `CORRIÓ: ${k} en verde (${Math.round((Date.now() - t0) / 1000)} s) · ${ult.slice(0, 200)}` } : { ok: false, linea: `FALTA: ${k} en verde (salió con ${r.status}) · ${ult.slice(0, 300)}` });
     }
     if (git("status", "--porcelain").trim()) linea({ ok: false, linea: "FALTA: las comprobaciones dejaron el árbol cambiado" });
