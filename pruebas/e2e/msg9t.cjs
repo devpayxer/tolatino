@@ -191,6 +191,8 @@ const limpiar = () => {
     const sin3 = await traerFoto(otro, U3), fal3 = [await traerFoto(m, U3), await traerFoto(m, U3 + '?w=320'), await traerFoto(p, U3), await traerFoto(p, U3 + '?w=320')];
     ok(claves3.length >= 1 && sin3.st === 404 && fal3.every((x) => x.st === 404 && x.cc === sin3.cc && x.ct === sin3.ct),
       `archivo ausente (${claves3.length} sacados, la fila sigue viva): quien la mandó y el negocio, entera y variante, 404 (${fal3.map((x) => x.st).join('/')}) con las cabeceras de «no tienes permiso»`);
+    // 23 nov · Ese 404 (el de «no tienes permiso» y el del archivo ausente, que son el mismo) nunca se guarda: «private, no-store».
+    ok([sin3, ...fal3].every((x) => x.cc === 'private, no-store'), `archivo ausente: el 404 es privado y sin caché (${[sin3, ...fal3].map((x) => x.cc).join(' / ')})`);
     sql(`update mod_rules set enabled = ${IMG0 === 'true'} where key = 'img'`);
 
     // ── 5b · La foto que se sube y nunca se manda: a las 24 h el barrido la saca del almacén (la fila queda con purged_at) ──

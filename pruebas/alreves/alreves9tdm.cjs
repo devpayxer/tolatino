@@ -21,7 +21,7 @@ const casos = [
   [G, VE, 'if (!ok && d.status === "visible") ok = await fotoDmVecino(me.id, id);', 'if (!ok) ok = await fotoDmVecino(me.id, id);'],
   [G, VE, 'colas.includes("chat") && enCiudad(rep.city)', 'enCiudad(rep.city)'],
   [G, VE, '        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver", targetKind: caso.msg ? "dm_message" : "media",', '        void tx; void (async (c: unknown) => ({ c, actor: s.id, action: "mensajes.foto.verX", targetKind: caso.msg ? "dm_message" : "media",'],
-  [G, VE, '"cache-control": "private, no-store"', '"cache-control": "public, max-age=3600"'],
+  [G, VE, 'const cab = { "cache-control": "private, no-store"', 'const cab = { "cache-control": "public, max-age=3600"'], // 23 nov: el de la entrega (cab), no el del 404
   // · lib/mensajes-vecinos.ts: tomar la foto de otra persona, sin marcar la que está en revisión, la dirección a quien no la puede ver, la foto antes de
   //   mirar los bloqueos, fotoDmVecino sin bloqueo o con la conversación cerrada, «Ver traducción» para cualquiera
   [G, MV, "owner_kind = 'dm' and owner_id = 'pendiente' and uploaded_by = $2 and private", "owner_kind = 'dm' and owner_id = 'pendiente' and private and $2::uuid is not null"],

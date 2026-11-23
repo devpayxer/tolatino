@@ -177,6 +177,7 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
       ok(claves.length >= 3, `se sacó del almacén la maestra y sus variantes (${claves.length} archivos); la fila sigue viva: ${sql(`select status || '|' || (purged_at is null) from media where id = '${mid}'`)}`);
       const a1 = au(), sin = await traerVar(o, U), r = [await traerVar(a, U), await traerVar(a, `${U}?w=320`), await traerVar(c, U), await traerVar(c, `${U}?w=320`)];
       ok(sin.st === 404 && r.every((x) => x.st === 404 && x.cc === sin.cc && x.ct === sin.ct && x.vary === sin.vary), `archivo ausente: 404 al equipo y a la clienta, la entera y la variante (${r.map((x) => x.st).join('/')}), con las mismas cabeceras que «no tienes permiso» (${sin.st})`);
+      ok([sin, ...r].every((x) => x.cc === 'private, no-store'), `archivo ausente: el 404 es privado y sin caché (${[sin, ...r].map((x) => x.cc).join(' / ')})`); // 23 nov · nunca se guarda
       ok(au() === a1, 'archivo ausente: el equipo no deja renglón de «vio la foto» (nadie vio nada)');
     }
     const qid = sql(`select q.id from queue_items q join delivery_incidents i on i.id::text = q.subject_id join operations o on o.id = i.operation_id where q.queue = 'entrega' and o.number = '${N4}'`);

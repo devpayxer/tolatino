@@ -25,6 +25,7 @@ const { execSync, spawn } = require('child_process');
 const { randomUUID } = require('crypto');
 const { chromium } = require('playwright');
 const { entrarComo, telLibre, sql, servirMedio, delAlmacen, medios, equipo } = require('../lib/negocio-nuevo.cjs');
+const { quitarDelAlmacen } = require('../lib/almacen-quitar.cjs'); // 23 nov · el caso «la fila vive y el archivo no está» (destino privado)
 const { multipart, LIMITE } = require('../lib/subida-cruda.cjs');
 const sharp = require(ENT.RAIZ + '/apps/web/node_modules/sharp');
 const B = ENT.B;
@@ -238,6 +239,13 @@ const saludImg = () => { try { return JSON.parse(execSync(`curl -s -m 3 localhos
     ok((await pX.goto(B + `/api/medios/privada/${P9}`)).status() === 404, 'F3 · sin sesión: 404');
     await entrarComo(pX, telLibre(), { nombre: 'Otra', apellido: 'Persona' });
     ok((await pX.goto(B + `/api/medios/privada/${P9}`)).status() === 404 && (await pX.goto(B + `/api/medios/privada/${P9}?w=320`)).status() === 404, 'F3 · otra persona: 404 (también la variante)');
+    { // 23 nov · La fila vive y el archivo no está en el almacén (privado/o/ y sus variantes): quien la subió recibe 404 (nunca 500), entera y variante,
+      // y la otra persona la MISMA respuesta de siempre; las dos privadas y sin caché (guardián almacenPrivadoSinQuinientos).
+      const claves = await quitarDelAlmacen(sql, P9), ver = async (pg, u) => { const r = await pg.goto(B + u); return { st: r.status(), cc: r.headers()['cache-control'] ?? '' }; };
+      const duen = [await ver(p, `/api/medios/privada/${P9}`), await ver(p, `/api/medios/privada/${P9}?w=320`)], ajen = [await ver(pX, `/api/medios/privada/${P9}`), await ver(pX, `/api/medios/privada/${P9}?w=320`)];
+      ok(claves.length >= 2 && sql(`select (purged_at is null) || '|' || status from media where id = '${P9}'`) === 'true|visible' && [...duen, ...ajen].every((x) => x.st === 404 && x.cc === 'private, no-store'),
+        `F3 · archivo ausente con la fila viva: quien la subió 404 (${duen.map((x) => x.st).join('/')}) y otra persona lo mismo de siempre (${ajen.map((x) => x.st).join('/')}), privado y sin caché`);
+    }
     await ctxX.close();
     const antes9e = (await fotosVistas()).length;
     const r9e = await subir(cA, await foto(404, 301, 94), '/api/medios', { destino: 'privado' });

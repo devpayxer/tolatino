@@ -12,7 +12,9 @@ import { entregarPrivado } from "@/lib/entrega-privada";
      queda en la auditoría («fotos.revision.ver»).
    Nunca se cachea ni se lista. Lo demás: 404 (no se dice si existe). */
 export const dynamic = "force-dynamic";
-const no = () => new NextResponse(null, { status: 404 });
+// 23 nov · El MISMO 404 para «no tienes permiso», «no existe» y «el archivo no está en el almacén», y nunca se guarda (private, no-store): un
+// navegador o Cloudflare no siguen dando 404 cuando el archivo vuelve. Guardián almacenPrivadoSinQuinientos.
+const no = () => new NextResponse(null, { status: 404, headers: { "cache-control": "private, no-store" } });
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();

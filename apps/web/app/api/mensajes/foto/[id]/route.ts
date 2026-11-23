@@ -23,7 +23,9 @@ import { fotoDmVecino } from "@/lib/mensajes-vecinos";
    - el equipo de To'Latino solo con un caso abierto en su cola y ciudad: la conversación reportada (cola «chat», con el reporte abierto: lib/admin-dm.ts
      dmFotoConReporte) o esta foto en «medios»; cada vez queda en la auditoría («mensajes.foto.ver»). */
 export const dynamic = "force-dynamic";
-const no = () => new NextResponse(null, { status: 404 });
+// 23 nov · El MISMO 404 para «no tienes permiso», «no existe» y «el archivo no está en el almacén», y nunca se guarda (private, no-store): un
+// navegador o Cloudflare no siguen dando 404 cuando el archivo vuelve. Guardián almacenPrivadoSinQuinientos.
+const no = () => new NextResponse(null, { status: 404, headers: { "cache-control": "private, no-store" } });
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
