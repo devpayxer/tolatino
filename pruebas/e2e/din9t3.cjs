@@ -13,6 +13,7 @@
 // Uso: DATABASE_URL=… node pruebas/e2e/din9t3.cjs   (por defecto lee la de $PRUEBAS_SECRETOS, como las demás pruebas)
 require('../lib/entorno.cjs');
 const { cargar, RAIZ } = require('../lib/ts-servidor.cjs');
+const { hoyCiudad } = require('../lib/hoy-ciudad.cjs');
 const crypto = require('crypto'), fs = require('fs'), path = require('path');
 if (!process.env.DATABASE_URL) { console.error('✗ falta DATABASE_URL (corre pruebas/servir/base.sh o pásala)'); process.exit(1); }
 
@@ -238,7 +239,7 @@ async function liquidacion(biz, net, o = {}) {
     await atrasarCobro(b, 3);
     await SU.barrerCobrosPro();
     const s = await sub(b);
-    ok(P.cargos.has(k) && P.cobrosDe(b) === 1 && s.status === 'active' && s.fin > new Date().toISOString().slice(0, 10), `murió entre la intención y Stripe: el barrido cobra con ESA llave, una vez, y el período avanza (${s.fin})`);
+    ok(P.cargos.has(k) && P.cobrosDe(b) === 1 && s.status === 'active' && s.fin > hoyCiudad(), `murió entre la intención y Stripe: el barrido cobra con ESA llave, una vez, y el período avanza (${s.fin})`);
     await SU.procesar(b);
     ok(P.cobrosDe(b) === 1, 'procesar después no cobra otra vez el mismo período');
     let dup = null;
@@ -277,7 +278,7 @@ async function liquidacion(biz, net, o = {}) {
     ok(s.status === 'active' && s.n === 0 && I.length === 1 && I[0].status === 'pending' && I[0].n === 1, `renovación sin respuesta: sigue activa, sin intento fallido, la intención en camino (${s.status}, ${s.n})`);
     await SU.procesar(b);
     s = await sub(b); I = await intenciones(b);
-    ok(I.length === 1 && I[0].status === 'done' && P.cobrosDe(b) === 1 && s.fin > new Date().toISOString().slice(0, 10), 'el siguiente paso la termina con la misma llave: un cobro y el período avanza');
+    ok(I.length === 1 && I[0].status === 'done' && P.cobrosDe(b) === 1 && s.fin > hoyCiudad(), 'el siguiente paso la termina con la misma llave: un cobro y el período avanza');
   }
   {
     // Un «no» del banco sí es un intento fallido (el siguiente es otra llave).

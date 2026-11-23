@@ -17,6 +17,7 @@
 // Uso: DATABASE_URL=… node pruebas/e2e/din9t6.cjs   (por defecto lee la de $PRUEBAS_SECRETOS, como las demás pruebas)
 require('../lib/entorno.cjs');
 const { cargar } = require('../lib/ts-servidor.cjs');
+const { hoyCiudad } = require('../lib/hoy-ciudad.cjs');
 const { esFijo } = require('../lib/telefonos-fijos.cjs');
 const crypto = require('crypto');
 if (!process.env.DATABASE_URL) { console.error('✗ falta DATABASE_URL (corre pruebas/servir/base.sh o pásala)'); process.exit(1); }
@@ -96,7 +97,7 @@ const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela':
 Object.assign(K, cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas }));
 Object.assign(CF, cargar('apps/web/lib/cobro-fuera.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas, './planes': PL, './rentas': RE, './patrocinio': PA,
   './patrocinio-evento': PAE, './consulta-pasarela': K }));
-Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: () => new Date().toISOString().slice(0, 10) },
+Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: (z, d) => hoyCiudad(z, d) },
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './avisos': avisos }));
 Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { diasEspeciales: async () => [], rangosDia: () => [] }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P },
   './cobro-fuera': CF, './avisos': avisos, './renovar-retencion': RR, './consulta-pasarela': K }));
@@ -490,7 +491,7 @@ const revisiones = (t, id) => n1(`select count(*)::int as n from gateway_reviews
     await SU.procesar(b);
     const C = (await db.query(`select status from subscription_charges where business_id = $1 and id > $2::bigint order by id`, [b, x])).rows;
     const s2 = await q1(`select status, to_char(current_period_end at time zone 'UTC', 'YYYY-MM-DD') as fin from subscriptions where business_id = $1`, [b]);
-    ok(C.length === 1 && C[0].status === 'done' && s2.status === 'active' && s2.fin > new Date().toISOString().slice(0, 10), `el período siguiente se cobra una vez y el plan avanza (${C.map((y) => y.status).join(',')}, hasta ${s2.fin})`);
+    ok(C.length === 1 && C[0].status === 'done' && s2.status === 'active' && s2.fin > hoyCiudad(), `el período siguiente se cobra una vez y el plan avanza (${C.map((y) => y.status).join(',')}, hasta ${s2.fin})`);
   }
 
   console.log('5 · La devolución de lo que sobró: sin respuesta no es «rechazado»');

@@ -13,6 +13,7 @@
 // Uso: DATABASE_URL=… node pruebas/e2e/din9t4.cjs   (por defecto lee la de $PRUEBAS_SECRETOS, como las demás pruebas)
 require('../lib/entorno.cjs');
 const { cargar } = require('../lib/ts-servidor.cjs');
+const { hoyCiudad } = require('../lib/hoy-ciudad.cjs');
 const crypto = require('crypto');
 if (!process.env.DATABASE_URL) { console.error('✗ falta DATABASE_URL (corre pruebas/servir/base.sh o pásala)'); process.exit(1); }
 
@@ -59,7 +60,7 @@ const PL = {}, RE = {}, PA = {}, RR = {};
 const K = cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas });
 const CF = cargar('apps/web/lib/cobro-fuera.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas, './planes': PL, './rentas': RE, './patrocinio': PA,
   './patrocinio-evento': {}, './consulta-pasarela': K });
-Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: () => new Date().toISOString().slice(0, 10) },
+Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: (z, d) => hoyCiudad(z, d) },
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './avisos': avisos }));
 Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { diasEspeciales: async () => [], rangosDia: () => [] }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P },
   './cobro-fuera': CF, './avisos': avisos, './renovar-retencion': RR, './consulta-pasarela': K }));

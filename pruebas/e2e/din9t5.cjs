@@ -16,6 +16,7 @@
 // Uso: DATABASE_URL=… node pruebas/e2e/din9t5.cjs   (por defecto lee la de $PRUEBAS_SECRETOS, como las demás pruebas)
 require('../lib/entorno.cjs');
 const { cargar } = require('../lib/ts-servidor.cjs');
+const { hoyCiudad } = require('../lib/hoy-ciudad.cjs');
 const { esFijo } = require('../lib/telefonos-fijos.cjs');
 const crypto = require('crypto');
 if (!process.env.DATABASE_URL) { console.error('✗ falta DATABASE_URL (corre pruebas/servir/base.sh o pásala)'); process.exit(1); }
@@ -86,7 +87,7 @@ Object.assign(K, cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cob
 const PL = {}, RE = {}, PA = {}, RR = {};
 Object.assign(CF, cargar('apps/web/lib/cobro-fuera.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas, './planes': PL, './rentas': RE, './patrocinio': PA,
   './patrocinio-evento': {}, './consulta-pasarela': K }));
-Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: () => new Date().toISOString().slice(0, 10) },
+Object.assign(PL, cargar('apps/web/lib/planes.ts', { './dias-especiales': { cerradoElDia: () => false, diasEspeciales: async () => [] }, './fecha-local': { hoyEn: (z, d) => hoyCiudad(z, d) },
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './cobro-fuera': CF, './avisos': avisos }));
 Object.assign(RE, cargar('apps/web/lib/rentas.ts', { './dias-especiales': { diasEspeciales: async () => [], rangosDia: () => [] }, './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P },
   './cobro-fuera': CF, './avisos': avisos, './renovar-retencion': RR, './consulta-pasarela': K }));
@@ -333,7 +334,7 @@ async function planSinRespuesta(X, paso, min = 25 * 60) {
     await envejecer('subscription_charges', T.c.id, 25 * 60);
     await SU.procesar(T.b); await SU.barrerCobrosPro();
     const [c] = await cobrosPro(T.b), s = await proSub(T.b);
-    ok(c.status === 'done' && c.pi === cargo.id && s.status === 'active' && s.fin > new Date().toISOString().slice(0, 10) && P.cobrosCon(`sub-${T.b}-`) === 1, `sin respuesta y sí salió: la consulta cierra el período por registrarPeriodo, una vez (${s.status}, ${s.fin})`);
+    ok(c.status === 'done' && c.pi === cargo.id && s.status === 'active' && s.fin > hoyCiudad() && P.cobrosCon(`sub-${T.b}-`) === 1, `sin respuesta y sí salió: la consulta cierra el período por registrarPeriodo, una vez (${s.status}, ${s.fin})`);
     ok(await nEv(T.b, 'charged') === 1 && await auditadas('dinero.consulta.cerrar', c.id, 'subscription_charges') === 1, 'un «cobrado» y la auditoría con el origen «consulta a la pasarela»');
   }
   {
@@ -344,7 +345,7 @@ async function planSinRespuesta(X, paso, min = 25 * 60) {
     ok(r.quedo === 'no_llego' && C[0].status === 'failed' && C[0].err === 'nunca_llego' && s.status === 'active' && s.n === 0, `nunca llegó: falla sin contar como «cobro fallido» (${C[0].err}, intento ${s.n})`);
     await SU.procesar(T.b);
     C = await cobrosPro(T.b); s = await proSub(T.b);
-    ok(C.length === 2 && C[1].status === 'done' && C[1].k === `${C[0].k}-r1` && P.cobrosCon(`sub-${T.b}-`) === 1 && s.fin > new Date().toISOString().slice(0, 10), `procesar vuelve a cobrar con OTRA llave (${C[1]?.k.split('-').pop()}), una vez, y el período avanza`);
+    ok(C.length === 2 && C[1].status === 'done' && C[1].k === `${C[0].k}-r1` && P.cobrosCon(`sub-${T.b}-`) === 1 && s.fin > hoyCiudad(), `procesar vuelve a cobrar con OTRA llave (${C[1]?.k.split('-').pop()}), una vez, y el período avanza`);
   }
   {
     // El período ya cobrado: una intención de ese período que NUNCA se mandó (sin sent_at) se suelta; una que se mandó (aunque attempts = 0: el proceso
