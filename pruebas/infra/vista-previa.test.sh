@@ -46,7 +46,7 @@ huella() { echo "$1 $(sha256sum "$T/trabajo/packages/db/migrations/$1" | cut -d'
 C1=$(sub uno)
 huella 0001_a.sql > "$T/aplicadas.txt"
 vuelta() { # vuelta [VAR=valor…]: una vuelta de vista.sh con el repo de mentira
-  env VISTA_RAMA=rama/de-trabajo VISTA_REPO_URL="$T/origen.git" VISTA_DIR="$T/vista" VISTA_UNA_VUELTA=1 \
+  env VISTA_RAMA=rama/de-trabajo VISTA_REPO_URL="$T/origen.git" VISTA_DIR="$T/vista" VISTA_CALENTAR=0 VISTA_UNA_VUELTA=1 \
     VISTA_APLICADAS_CMD="cat '$T/aplicadas.txt'" VISTA_INSTALAR="echo instalado >> '$T/instalar.log'" VISTA_ARRANCAR="exec sleep 600" \
     "$@" bash infra/pruebas/vista-previa/vista.sh > "$T/vuelta.log" 2>&1
 }
@@ -86,7 +86,7 @@ ok "… el estado lo dice (/estado/vista.txt)" "$(head -1 "$T/vista/control/esta
 [ -n "$C5" ] || true
 for r in produccion "-x" "a..b" ""; do
   rm -rf "$T/otra"
-  env VISTA_RAMA="$r" VISTA_REPO_URL="$T/origen.git" VISTA_DIR="$T/otra" VISTA_UNA_VUELTA=1 VISTA_ARRANCAR="exec sleep 600" bash infra/pruebas/vista-previa/vista.sh > /dev/null 2>&1
+  env VISTA_RAMA="$r" VISTA_REPO_URL="$T/origen.git" VISTA_DIR="$T/otra" VISTA_CALENTAR=0 VISTA_UNA_VUELTA=1 VISTA_ARRANCAR="exec sleep 600" bash infra/pruebas/vista-previa/vista.sh > /dev/null 2>&1
   ok "VISTA_RAMA «$r»: se niega (64) sin clonar" "$?:$([ -d "$T/otra/repo" ] && echo clonado || echo no)" "64:no"
 done
 

@@ -67,6 +67,21 @@ arrancar_dev() {
   ( cd "$REPO" && TOLATINO_COMMIT="vista-$(cut -c1-7 "$COMMIT_F" 2>/dev/null)" exec setsid bash -c "$cmd" >> "$CONTROL/dev.log" 2>&1 ) &
   echo $! > "$PID_F"
   log "next dev arrancado (commit $(cut -c1-7 "$COMMIT_F" 2>/dev/null))"
+  calentar &
+}
+
+# 23 nov · En modo desarrollo cada página se compila la PRIMERA vez que alguien la pide (medido por el fundador en su teléfono: la portada se quedó
+# cargando más de un minuto y parecía que seguía en pausa). Al arrancar, el propio bucle pide las pantallas principales, una tras otra, para que
+# ya estén compiladas cuando él llegue. Solo lecturas (GET) a 127.0.0.1; si algo falla no pasa nada. VISTA_CALENTAR=0 lo apaga (las pruebas).
+RUTAS_CALIENTES=${VISTA_RUTAS:-"/ /negocios /n/sabor-dominicano /n/barberia-el-primo /comunidad /eventos /buscar /cuenta /panel /admin"}
+calentar() {
+  [ "${VISTA_CALENTAR:-1}" = 1 ] || return 0
+  local t0=$SECONDS n=0 r
+  for _ in $(seq 1 90); do node -e "fetch('http://127.0.0.1:$PUERTO/api/salud').then(()=>process.exit(0),()=>process.exit(1))" 2>/dev/null && break; sleep 2; done
+  for r in $RUTAS_CALIENTES; do
+    node -e "fetch('http://127.0.0.1:$PUERTO$r',{redirect:'manual',signal:AbortSignal.timeout(240000)}).then(()=>process.exit(0),()=>process.exit(1))" 2>/dev/null && n=$((n + 1))
+  done
+  log "páginas principales ya compiladas: $n en $((SECONDS - t0)) s"
 }
 
 traer() {
