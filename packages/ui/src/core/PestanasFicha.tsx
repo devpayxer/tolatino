@@ -1,5 +1,5 @@
 "use client";
-import type { CSSProperties, KeyboardEvent } from "react";
+import { useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
 import { Icon as IconDS } from "../ds/index";
 
 /* Pestañas de la ficha del negocio (23 nov, referencia del fundador): icono + palabra, grandes, y la activa en el color de acción con su raya.
@@ -23,6 +23,15 @@ export type PestanasFichaProps = {
   style?: CSSProperties;
 };
 
+/* 23 nov · La pestaña activa o con el foco siempre se ve: se mueve solo la tira (scrollLeft), nunca la página. Con diez pestañas, entrar por
+   ?tab=… o ir con las flechas dejaba la pestaña fuera de la pantalla (pruebas/e2e/fic9cab.cjs). */
+const verEnTira = (tira: HTMLElement, el: HTMLElement | null | undefined) => {
+  if (!el) return;
+  const t = tira.getBoundingClientRect(), b = el.getBoundingClientRect(), margen = 16;
+  if (b.left < t.left + margen) tira.scrollLeft += b.left - t.left - margen;
+  else if (b.right > t.right - margen) tira.scrollLeft += b.right - t.right + margen;
+};
+
 const flechas = (e: KeyboardEvent<HTMLDivElement>) => {
   if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End") return;
   const todas = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("[data-pestana]"));
@@ -30,13 +39,16 @@ const flechas = (e: KeyboardEvent<HTMLDivElement>) => {
   if (i < 0) return;
   e.preventDefault();
   const j = e.key === "Home" ? 0 : e.key === "End" ? todas.length - 1 : (i + (e.key === "ArrowRight" ? 1 : -1) + todas.length) % todas.length;
-  todas[j]?.focus();
+  todas[j]?.focus({ preventScroll: true });
+  verEnTira(e.currentTarget, todas[j]);
 };
 
 export function PestanasFicha({ items, active, onChange, modo, aside, asideWidth = 372, gap = 48, style }: PestanasFichaProps) {
   const desk = modo === "escritorio";
+  const tira = useRef<HTMLDivElement>(null);
+  useEffect(() => { const t = tira.current; if (t) verEnTira(t, t.querySelector<HTMLElement>('[data-pestana][aria-selected="true"],[data-pestana][aria-current="page"]')); }, [active]);
   const fila = (
-    <div role={desk ? undefined : "tablist"} onKeyDown={flechas}
+    <div ref={tira} role={desk ? undefined : "tablist"} onKeyDown={flechas}
       style={{ display: "flex", gap: desk ? 30 : 22, overflowX: "auto", scrollbarWidth: "none", padding: desk ? 0 : "0 20px", minWidth: 0 }}>
       {items.map((t) => {
         const on = t.id === active, fg = on ? "var(--tl-action)" : "rgba(11,14,18,.75)";

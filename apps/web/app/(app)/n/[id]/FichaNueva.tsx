@@ -70,10 +70,10 @@ import { VideoPortada } from "../../VideoNegocio";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
 
-type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
+type N = "Icon" | "Button" | "IconButton" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
   | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
   | "BusinessRow" | "OptionGroup";
-const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard, SectionHeader, ServiceRow, Placeholder, ReviewCard, StaffPicker,
+const { Icon, Button, IconButton, TodayCard, HoursPro, Tag, Chip, OwnerCard, SectionHeader, ServiceRow, Placeholder, ReviewCard, StaffPicker,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   DateStrip, TimeSlots, StepHeader, TotalBar, DepositNote, DepositOutcomes, Eyebrow, BusinessRow, OptionGroup } = UI as unknown as Record<N, ComponentType<any>>;
 
@@ -251,13 +251,14 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   // ── Encabezado (una sola vez el estado) ──
   const abierto = f.abierto, stFg = abierto ? "var(--tl-open-text)" : "var(--tl-danger)", stDot = abierto ? "var(--tl-open)" : "var(--tl-danger)";
   const resto = f.estadoResto.replace(/^·\s*/, ""), restoC = resto ? resto.charAt(0).toUpperCase() + resto.slice(1) : "";
-  const calle = (f.direccion ?? f.zona ?? "").split(",")[0]!.toUpperCase();
   const n = resenas?.n ?? 0, avg = resenas?.avg ?? null;
   const metaL = [n >= 5 && avg != null ? `★ ${avg.toFixed(1)} · ${n} ${E2("RESEÑAS", "REVIEWS")}` : n > 0 ? `${n} ${n === 1 ? E2("RESEÑA", "REVIEW") : E2("RESEÑAS", "REVIEWS")}` : E2("NUEVO EN TO'LATINO", "NEW ON TO'LATINO"),
     f.subsLinea ? f.subsLinea.split(" · ")[0]!.toUpperCase() : null, f.dist !== "—" ? f.dist.toUpperCase() : null].filter(Boolean) as string[];
   // 23 nov · Cabecera según la referencia del fundador: nombre + sello (la palomita), una fila de datos y el estado; la dirección vive en Ubicación.
   const metaD = [...metaL, f.ciudad ? f.ciudad.toUpperCase() : null].filter(Boolean) as string[];
   const [contacto, setContacto] = useState(false);
+  // El botón del sistema de diseño (pieza portada, no se edita) no pasa aria-haspopup: se le pone al botón de dentro, para que el lector de pantalla diga que abre una hoja.
+  const avisaHoja = useCallback((el: HTMLDivElement | null) => { el?.querySelector('[role="button"]')?.setAttribute("aria-haspopup", "dialog"); }, []);
   // El teléfono como se dice en EE. UU.: +15705550100 → (570) 555-0100; cualquier otro, tal cual.
   const telBonito = (t: string) => { const m = /^\+?1?(\d{3})(\d{3})(\d{4})$/.exec(t.replace(/[\s().-]/g, "")); return m ? `(${m[1]}) ${m[2]}-${m[3]}` : t; };
   const contactos = [
@@ -465,7 +466,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
               <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold">{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
             </div>
             {/* 23 nov · Llamar, Escribir y Cómo llegar viven en un menú que se despliega (pedido del fundador): un solo botón en la cabecera. */}
-            {contactos.length ? <div className="flex-none" data-pieza="contactar-ficha"><Button variant="secondary" size="sm" icon="phone" aria-haspopup="dialog" onClick={() => setContacto(true)}>{E2("Contactar", "Contact")}</Button></div> : null}
+            {contactos.length ? <div className="flex-none" data-pieza="contactar-ficha" ref={avisaHoja}><Button variant="secondary" size="sm" icon="phone" onClick={() => setContacto(true)}>{E2("Contactar", "Contact")}</Button></div> : null}
           </div>
         </div>
         {contacto ? (
@@ -664,7 +665,6 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 
 /* Alturas de la cabecera de la app (AppShell): las pestañas se pegan justo debajo. */
 const CAB_MOVIL = 57, CAB_DESK = 121;
-const CHIP_SM = { padding: "5px 10px", fontSize: 11.5 };
 
 /* ── La reserva (Belleza): 1 servicio y con quién → 2 día y hora → Booking (/cita) para Detalles y Revisa y envía ── */
 type Bk = { who: string | null; svc: string | null; opts: Record<string, number>; i: number; h: number | null; step: 1 | 2 };
