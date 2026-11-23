@@ -6362,7 +6362,7 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - En WhatsApp había que pulsar «Probar» dos veces (token e ID de la cuenta); ahora una sola prueba vale para los dos.
 - En el sandbox, «Lo que te toca» nunca marca hecho un proveedor: dice «Las llaves están y probadas, pero este entorno usa el simulador». Es a propósito.
 
-## Cabecera de la ficha: tres versiones para elegir (23 nov) — propuesta, nada en la app todavía — una decisión tuya
+## Cabecera de la ficha: tres versiones (23 nov) — DESCARTADAS por el fundador el 23 nov («ninguna me gusta, olvídalo»); la cabecera queda como está, no se retoma sin que lo pida
 - **Qué pediste:** la parte de arriba de la ficha (sellos, categoría, nombre, datos, horario y los botones Llamar / Escribir / Cómo llegar) no se ve
   bien en el teléfono; tres versiones que se vean muy bien en teléfono y escritorio.
 - **Dónde verlas:** https://claude.ai/artifact/P69oLqUyttAMJwo6cMf9Es (la de hoy y las tres, con el botón Teléfono / Escritorio). **A · Una sola
