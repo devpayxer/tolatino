@@ -12,7 +12,9 @@ import { anotarPrueba, type TipoProveedor } from "./tiendas/llavero";
    pública de los avisos de Telnyx, el número que manda los SMS, el secreto de la app y la palabra de verificación de WhatsApp, y el tema de SNS. Se
    comprueban solas cuando llega el primer aviso firmado (y su forma, al guardarlas). */
 export const SE_PRUEBA: ReadonlySet<TipoProveedor> = new Set<TipoProveedor>(["stripe_secret_key", "telnyx_api_key", "whatsapp_token", "whatsapp_waba_id", "ses_access_key_id", "ses_secret_access_key", "anthropic_api_key"]);
-const COMPANERA: Partial<Record<TipoProveedor, TipoProveedor>> = { whatsapp_token: "whatsapp_waba_id", whatsapp_waba_id: "whatsapp_token", ses_access_key_id: "ses_secret_access_key", ses_secret_access_key: "ses_access_key_id" };
+// Los pares que se prueban con UNA llamada (cada uno es la compañera del otro).
+const PARES: [TipoProveedor, TipoProveedor][] = [["whatsapp_token", "whatsapp_waba_id"], ["ses_access_key_id", "ses_secret_access_key"]];
+const COMPANERA = new Map<TipoProveedor, TipoProveedor>(PARES.flatMap(([a, b]) => [[a, b], [b, a]] as [TipoProveedor, TipoProveedor][]));
 export type ResultadoPrueba = { ok: boolean; resultado: string };
 
 /* Cada proveedor toma SU llave del lector dentro de su propio archivo: aquí nunca pasa un valor. */
@@ -35,7 +37,7 @@ export async function probarLlave(tipo: TipoProveedor, actor: string): Promise<R
   await anotarPrueba({ tipo, huella: o.huella, origen: o.origen, ok: r.ok, resultado: r.resultado, actor });
   // Las que se prueban JUNTAS (el token de WhatsApp con el ID de su cuenta; el par de SES) son una sola llamada: el resultado vale para las dos, y se
   // anota también en su compañera con SU huella. Sin esto «Lo que te toca» pedía pulsar «Probar» en cada una (visto servido el 23 nov).
-  const par = COMPANERA[tipo], oc = par ? todos.find((x) => x.tipo === par) : null;
+  const par = COMPANERA.get(tipo), oc = par ? todos.find((x) => x.tipo === par) : null;
   if (par && oc?.origen && oc.huella) await anotarPrueba({ tipo: par, huella: oc.huella, origen: oc.origen, ok: r.ok, resultado: r.resultado, actor });
   return r;
 }
