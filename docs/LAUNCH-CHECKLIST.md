@@ -2801,3 +2801,20 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Sistema › Salud (hoy se ven como errores del servidor, grupo «Subida de fotos llena»); (4) el 503 temprano en Safari mientras el teléfono todavía manda
       la foto, sin probar en un teléfono; (5) `carpetaVideo` se usa también para fotos: renombrarla; (6) OK del fundador al texto del aviso (REVISION);
       (7) `rev9u`, `beta8f` y `sop7b` con este cambio solo corrieron en el CI; `/api/repartidor/foto` la cubre solo el guardián.
+
+## Abogado y contador: las dos listas (23 nov)
+- [x] **→ 9s** · **`docs/legal/para-el-abogado.md` (50 preguntas, 34 bloquean abrir) y `para-el-contador.md` (12, 9 bloquean), ES y EN:** cada línea
+      abierta del abogado y del contador tiene su pregunta; la tabla «pregunta → línea» está al final de cada documento.
+- [ ] **→ 9s** · **Cerrar las líneas del abogado y del contador** con esa tabla cuando lleguen las respuestas.
+- [ ] **→ 9s** · **Privacidad e Inteligencia artificial dicen que la revisión de fotos no sale de nuestros servidores:** desde la decisión AJ la segunda
+      opinión manda la imagen reducida de la foto dudosa a Anthropic (`lib/fotos-segunda-opinion.ts`). Corregir los dos textos antes de mandarlos al abogado.
+- [ ] **→ 9s** · **Mandar al abogado los 14 borradores de `docs/legal/us` y `us-pa` junto con la lista** (la lista lo promete; el paso 9-2.1 del tablero
+      solo nombra la lista).
+- [ ] **→ 9s** · **Licencias de Transporte y Fiestas con abogado** (PUC de PA, USDOT/MC, CDL, limosina y party bus): lista por tipo sin verificar; hoy el
+      servidor bloquea reservar sin la autorización válida (`lib/viajes.ts`). Pregunta A-42.
+- [ ] **→ 9s** · **Mercados y tiendas: qué productos son exentos y cuáles pagan 6 %** (hoy el negocio marca 6 % o exento por producto, sin regla por
+      sección). Pregunta C-05.
+- [ ] **→ 9o** · **Las llaves de terceros que necesita el servidor no tienen camino por el formulario seguro (23 nov):** lo que guarda el formulario es un
+      secreto de red que Claude no lee, y `scripts/produccion/sellar.sh` necesita el valor. Construir el camino por el llavero del Super Admin
+      (Integraciones › Llaves) para Stripe, Telnyx, WhatsApp, SES y Anthropic; la variable de entorno queda de respaldo. Decisión en REVISION.
+

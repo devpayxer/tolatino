@@ -6275,7 +6275,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Google y Firebase (el D-U-N-S tarda) → abogado → contador → agente DMCA → Stripe → Amazon SES → Anthropic → proveedor de producción → token de GitHub.
 - **Cuatro cosas que el repo no sabe y tú sí:** dónde está registrado `tolatino.com`; si To'Latino ya existe como empresa (LLC) y tiene D-U-N-S;
   quién es el abogado y quién el contador; y los precios y plazos de casi todos (el repo solo trae Apple $99 al año y Google $25).
-- Las dos listas para el abogado y el contador, y la batería de preguntas de El Compa, que varios documentos citaban y no existían, se están escribiendo.
+- **Las dos listas ya están:** `docs/legal/para-el-abogado.md` (50 preguntas; 34 bloquean abrir) y `docs/legal/para-el-contador.md` (12; 9 bloquean),
+  en español y en inglés. Se reenvían tal cual, junto con los 14 textos legales en borrador. Marqué «una parte» las que afectan a una sola función,
+  para que decidas si abres sin ella; si prefieres que todas bloqueen (decisión A), se cambia. La batería de preguntas de El Compa se está escribiendo.
+- **Un texto que quedó viejo:** Privacidad e Inteligencia artificial dicen que la revisión de fotos no sale de nuestros servidores; desde tu decisión
+  AJ la foto dudosa va reducida a Anthropic. Lo corrijo antes de que lo vea el abogado.
 
 ## Cómo llegan las llaves de terceros al servidor (23 nov) — hueco encontrado, una decisión tuya
 - **Qué pasa:** el plan decía que guardas cada llave en el formulario seguro y yo la cifro para el servidor. Comprobado hoy: lo que guarda ese
