@@ -2553,10 +2553,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       solo entrega fotos; el video lo sirve nginx desde el almacén. **Fotos que se suben: sin cambio** (~91 MB por foto de 12 MB, 4 a la vez ~330 MB;
       sharp necesita la imagen entera y solo él pone ~34 MB): ver la línea de abajo. Guardián `mediosEnFlujo` (al revés `alreves9tflujo`),
       prueba con dobles `medios9tflujo`._
-- [ ] **→ 9t** · **Fotos que se suben: tope de subidas a la vez por proceso** (de `memoria-medios.mjs`, 21 nov): cada foto de 12 MB cuesta
+- [x] **→ 9t** · **Fotos que se suben: tope de subidas a la vez por proceso** (de `memoria-medios.mjs`, 21 nov): cada foto de 12 MB cuesta
       ~91 MB a la app (~57 MB son copias del formulario: `leerFormulario` junta las partes, las une, `formData()` y `arrayBuffer()`; ~34 MB es
       sharp). Con 4 a la vez ~330 MB; con 10, ~0,9 GB en un proceso. Decidir con la carga de 9b si hace falta un turno por proceso (esperar unos
       segundos o 503 «prueba en un momento») o quitar las copias de `leerFormulario` (pasarle a sharp la parte del archivo sin `formData`).
+      **✓ 22 nov:** las cinco rutas de fotos pasan por `lib/subida.ts conFotoSubida`: lugar para 16 por proceso antes de leer el cuerpo, la foto llega al disco por partes, turno de 2 para abrirla y hacer variantes, y sin lugar 503 con `Retry-After` y el aviso «Estamos preparando otras fotos en este momento. Prueba en un momento.». Con 50 a la vez el pico pasa de ~2,3 GB a ~0,8 GB y ya no crece con la ráfaga; lo guardado es idéntico (sha de maestra y variantes). Guardián `subidaConTope` (`alreves9tsubida`, 45); prueba `sub9t2` (30 a la vez, ninguna 500, `/api/salud` responde durante la ráfaga).
 - [ ] **→ 9t** · **Fotos privadas: el navegador no las vuelve a pedir con If-None-Match** porque salen con `private, no-store` (no se guardan
       en el disco del teléfono o de una computadora compartida). El ETag y el 304 ya están (sirven a quien manda If-None-Match); pasar a
       `private, no-cache` ahorraría bajarlas otra vez pero las deja en el disco del aparato: decisión de privacidad del fundador, no se aflojó.
@@ -2750,6 +2751,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9t** · **Armar el archivo de «Descargar mis datos» de una cuenta grande pide ~1,3 GB de pico (22 nov):** ya no es el ZIP (va a disco) sino lo que
       deja cada parte de 20.000 filas (JSON con sangría, CSV y compresión): partes más chicas o escribir el JSON por partes. «Exportar sus datos» del
       equipo (`acciones-usuarios.ts`) sigue armando el ZIP en memoria y lo devuelve en base64. La ruta pone `content-length` y el navegador lo recibe vacío: mirar por qué.
+      **22 nov, a medias (sigue abierta):** cursor de a 2.000 filas y cada parte sale fila por fila al flujo de compresión; el archivo es idéntico byte a byte (`zip9tpartes`). En el servidor el armado pasa de +809 a +564 MB (texto normal) y de +804 a +705 MB (texto al azar). Queda: no tener en memoria las filas de la parte (cambia los archivos de dentro: decisión del fundador), «Exportar sus datos» del equipo (arma en memoria y devuelve base64) y el `content-length` vacío en el navegador.
 - [x] **→ 9u** · **Lo que la auditoría del archivo dejó anotado (22 nov):** (1) migración propuesta, sin escribir: `support_messages` con `check (sender = 'user'
       or user_id is null)`, para que un mensaje del equipo no pueda entrar nunca al archivo de una persona (hoy no hay fuga; `nota9u2` lo comprueba en toda
       la base); (2) salen en el archivo de la persona `tickets.door_name` (el nombre del portero, otra persona) y `media.rev_llave` (la ruta interna de la copia
@@ -2792,3 +2794,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **Aceptar un código de equipo y «Publica tu negocio» ignoran en silencio una foto que no se adjunta (22 nov):** `lib/equipo-invitacion.ts` y
       `app/(app)/publica/acciones.ts` contestan `ok` sin ella. Pedirles lo mismo que a `fotosAgregar` (rechazo con mensaje, todo o nada) y sumarlas al
       guardián `fotosAdjuntarTodoONada`.
+- [ ] **→ 9t** · **Tope de subidas de fotos, lo que queda (22 nov):** (1) pasar `FOTOS_A_LA_VEZ`, `FOTOS_DENTRO` y `FOTOS_ESPERA_MS` a Configuración (migración);
+      (2) con 2 turnos en 4 núcleos, 5 fotos a la vez tardan ~0,5 s más que antes: decidir el número con la carga; (3) una fila de «subidas rechazadas» en
+      Sistema › Salud (hoy se ven como errores del servidor, grupo «Subida de fotos llena»); (4) el 503 temprano en Safari mientras el teléfono todavía manda
+      la foto, sin probar en un teléfono; (5) `carpetaVideo` se usa también para fotos: renombrarla; (6) OK del fundador al texto del aviso (REVISION);
+      (7) `rev9u`, `beta8f` y `sop7b` con este cambio solo corrieron en el CI; `/api/repartidor/foto` la cubre solo el guardián.

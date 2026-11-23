@@ -6254,3 +6254,13 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **«Descargar mis datos»:** ya no trae el texto de búsqueda de la puerta de un boleto (incluía el nombre que escribió el negocio) ni una ruta interna.
 - **Pendiente que verás en rojo en la corrida nocturna:** en iPad, un nombre de negocio larguísimo no se corta con puntos suspensivos dentro de la
   tarjeta. Es de la tarjeta Vitrina (su segunda ronda está parada hasta que digas).
+
+## Lo que falta para abrir · tercera tanda (22–23 nov)
+- **Un texto nuevo que necesita tu OK:** cuando el servidor está ocupado con muchas fotos a la vez, quien sube una ve «Estamos preparando otras fotos
+  en este momento. Prueba en un momento.» (inglés: «We are processing other photos right now. Try again in a moment.»). Es la frase que ya usamos para
+  los videos, con «fotos». Antes no había tope: una ráfaga podía dejar el servidor sin memoria para todos.
+- **Cambiar el logo:** si la foto nueva no se puede usar, el negocio conserva el logo que tenía (antes se quedaba sin logo).
+- **Una foto privada cuyo archivo falta** da «no existe» en vez de error, y no deja en la auditoría un «vio la foto» de algo que nadie vio.
+- **Llamar:** cada toque lleva su propio identificador y la base no deja contarlo dos veces aunque el teléfono cambie de red.
+- **«Descargar mis datos»:** el archivo de una cuenta grande es idéntico al de antes y pide menos memoria al armarse. Para bajar más habría que cambiar
+  cómo van los archivos de dentro: decisión tuya, sin prisa.
