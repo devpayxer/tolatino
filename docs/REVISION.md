@@ -6402,3 +6402,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Seguridad, sin nada que mirar:** las direcciones de simulador de Stripe, SMS y WhatsApp solo valen en el sandbox y apuntando a la propia máquina;
   en producción se ignoran aunque alguien las ponga.
 
+## Capturas aprobadas de la ficha, renovadas (23 nov)
+- La cabecera nueva (aprobada por el fundador) cambió la ficha en los 9 dispositivos (1.7–3.6 % distinta, solo la franja de la cabecera y las pestañas).
+  Las 9 capturas de `pruebas/visual/ficha/` se renovaron desde la corrida 45163327041 (`aprobar=si`), vistas una a una en teléfono y escritorio. Las demás
+  pantallas no se tocaron.
+
