@@ -2825,7 +2825,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9o** · **Las llaves de terceros que necesita el servidor no tienen camino por el formulario seguro (23 nov):** lo que guarda el formulario es un
       secreto de red que Claude no lee, y `scripts/produccion/sellar.sh` necesita el valor. Construir el camino por el llavero del Super Admin
       (Integraciones › Llaves) para Stripe, Telnyx, WhatsApp, SES y Anthropic; la variable de entorno queda de respaldo. Decisión en REVISION.
-- [ ] **→ 9b** · **El verificador de El Compa no caza «Ya cancelé», «Te devolví», «Cambié tu teléfono» (23 nov, lo encontró la batería):**
+- [x] **→ 9b** · **(Hecho el 23 nov: fronteras de letra con tildes; la tabla de frases pasa de cazar 13 de 59 a 59 de 59 y de rechazar de más 3 de 49
+      a 0; guardián `compaFronteraConTilde`, al revés `alrevesFronteraTilde` 16/16; de paso `idiomaDe` ya cuenta «qué».)** El verificador de El Compa no cazaba «Ya cancelé», «Te devolví», «Cambié tu teléfono» (lo encontró la batería):
       `lib/compa/verificar.ts` (`HECHO`): `\b` después de una vocal con tilde no es frontera, así que esas frases pasan como si no afirmaran una acción
       hecha. Solo caza «Listo, …» y las formas en inglés. Arreglar con fronteras que entiendan tildes, guardián y al revés.
 - [ ] **→ 9b** · **Reglas y simulador de El Compa: con «cancela» preparan la primera operación cancelable** sin mirar de cuál habla la persona
@@ -2842,3 +2843,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       proveedores (añadido a A-11).
 - [ ] **→ 9u** · **Con el revisor propio de fotos apagado o caído, toda foto pública nueva va a la segunda opinión** (`fotos-decision.ts`), no solo las
       dudosas. Falla cerrado y tiene tope de gasto; decisión del fundador en REVISION (dejarlo o retener sin consultar).
+- [ ] **→ 9q** · **El Compa, con el modelo real: medir cuántas respuestas descarta `dice_que_hizo`** desde el arreglo del 23 nov. «Ya quedó cancelada» se
+      descarta siempre, aunque la operación ya esté cancelada de verdad (el verificador solo conoce `confirmadas`); si pasa a menudo, pasarle también
+      las canceladas.
+- [ ] **→ 9u** · **`lib/ciudades/launch.ts`: la expresión con `\b` fallaría con un nombre de ciudad que acabe en tilde** (hoy todos son ASCII).

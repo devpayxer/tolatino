@@ -6302,7 +6302,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - Ya existe: 175 casos en español e inglés (vecinos, dueños, clientes que escriben a un negocio y el copiloto del equipo), con revisión automática
   de cada respuesta. Sin el modelo real saca 70 %, que es lo esperado; la meta de 95 % se mide el día que haya llave de Anthropic (unas 350 llamadas).
 - **Encontró un fallo real:** el verificador que impide a El Compa decir «ya lo hice» sin haberlo hecho no reconocía tres frases en español con tilde
-  («Ya cancelé», «Te devolví», «Cambié tu teléfono»). Se está arreglando.
+  («Ya cancelé», «Te devolví», «Cambié tu teléfono»). **Arreglado el 23 nov.** Qué mirar: pídele a El Compa que cancele una reserva pendiente;
+  tiene que preparar la cancelación y pedirte que confirmes, nunca decir que ya la canceló.
 - **Una decisión tuya, sin prisa:** si alguien escribe en español «contesta solo en inglés», hoy El Compa contesta en el idioma de la pregunta.
 
 ## Privacidad, Inteligencia artificial y Cookies al día (23 nov) — versiones nuevas en borrador, tres decisiones tuyas
