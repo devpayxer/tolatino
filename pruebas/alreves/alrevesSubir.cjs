@@ -58,7 +58,8 @@ const casos = [
   [S, 'if (completa) {', 'if (false) {', 'toca .github/ y la corrida es una dirigida → FALTA'],
   // 23 nov · La vía rápida de diseño (decisión AL).
   [S, '  /^apps\\/web\\/public\\/paginas\\/[^/]+\\.webp$/,\n', '  /^apps\\/web\\/public\\/paginas\\/[^/]+\\.webp$/,\n  /^apps\\/web\\/lib\\/.*\\.(tsx|ts)$/,\n', 'la lista blanca de diseño cubre apps/web/lib/ficha.tsx'],
-  [S, '  /^apps\\/web\\/lib\\//, /^apps\\/web\\/app\\/api\\//, ', '  /^apps\\/web\\/app\\/api\\//, ', 'la vía rápida de diseño deja pasar apps/web/lib/ficha.tsx'],
+  [S, '/(^|\\/)(page|layout|template|', '/(^|\\/)(zzpage|zzlayout|template|', 'la vía rápida de diseño deja pasar apps/web/app/x/page.tsx'],
+  [S, '/(^|\\/)(acciones[^/]*|route)\\.[jt]sx?$/,', '/(^|\\/)(zzacciones|zzroute)\\.[jt]sx?$/,', 'la vía rápida de diseño deja pasar apps/web/app/x/route.tsx'],
   [S, '    return { locales: ["tipos", "build", "guardianes", "textos"], corrida: "despues", mainPrimero: false };', '    return { locales: ["tipos", "guardianes", "textos"], corrida: "despues", mainPrimero: false };', 'solo diseño exige build local además de tipos, guardianes y textos'],
   [S, '  build: ["pnpm", ["--filter", "@tolatino/web", "build"]],', '  build: ["pnpm", ["exec", "tsc", "--noEmit"]],', 'solo diseño exige build local: PASOS_LOCALES.build es el mismo comando'],
   [S, '  if (!noDiseno) { const v = VIGILADAS.find((k) => cl.has(k)); if (v) noDiseno', '  if (!noDiseno) { const v = VIGILADAS.find((k) => cl.has(k) && false); if (v) noDiseno', 'una entrega con una clase vigilada sale por la vía rápida de diseño (sensible por centavos)'],
