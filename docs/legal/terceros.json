@@ -105,14 +105,6 @@
       "privacidad": { "es": ["servicio de avisos de tu navegador"], "en": ["your browser's notification service"] }
     },
     {
-      "id": "pexels",
-      "nombre": "Pexels",
-      "hosts": ["pexels.com"],
-      "senales": ["images\\.pexels\\.com"],
-      "recibe": { "es": ["El navegador de quien abre una página de categoría con portada de Pexels le pide la foto directamente: Pexels ve su dirección de internet y su navegador."], "en": ["The browser of whoever opens a category page with a Pexels cover requests the photo directly: Pexels sees their internet address and browser."] },
-      "privacidad": { "es": ["Pexels"], "en": ["Pexels"] }
-    },
-    {
       "id": "cloudflare",
       "nombre": "Cloudflare",
       "hosts": ["cloudflare.com"],
@@ -125,6 +117,7 @@
     { "hosts": ["w3.org", "schema.org", "sitemaps.org", "schemas.android.com", "hyperelliptic.org", "nayuki.io", "wikipedia.org"], "motivo": "Espacios de nombres y referencias dentro de formatos (XML, JSON-LD, comentarios de bibliotecas): ninguna petición con datos." },
     { "hosts": ["github.com", "githubusercontent.com", "vercel.com", "hetzner.cloud"], "motivo": "Publicación de las apps y paneles de administración del equipo (enlaces y la tubería de tiendas): no llevan datos de las personas que usan To'Latino." },
     { "hosts": ["pa.gov", "irs.gov", "treasury.gov", "justice.gov", "nmlsconsumeraccess.org", "atanet.org", "padisciplinaryboard.org", "copyright.gov"], "motivo": "Enlaces a registros oficiales que la persona abre por su cuenta (licencias, DMCA): no mandamos nada." },
-    { "hosts": ["tolatino.com"], "motivo": "Dominios propios de To'Latino." }
+    { "hosts": ["tolatino.com"], "motivo": "Dominios propios de To'Latino." },
+    { "hosts": ["pexels.com"], "motivo": "Solo el sandbox de pruebas: la semilla de ejemplo trae fotos de negocios de Pexels y la CSP del sandbox las deja pasar (solo con TOLATINO_ENTORNO=pruebas, lib/csp.ts); las ve el equipo, nunca visitantes. Producción no le pide nada: las portadas de las categorías son archivos propios (apps/web/public/paginas) y la CSP de producción no lista hosts de fotos (guardián sinFotosAjenasEnProduccion)." }
   ]
 }

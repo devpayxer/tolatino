@@ -7,6 +7,7 @@ To'Latino usa solo las cookies que necesita para funcionar. No hay cookies de pu
 ## Lo que cambió
 - Primera versión, con la lista real de las cookies de To'Latino.
 - Corregido: en la pantalla de pagar y en algunas portadas tu navegador pide cosas a Stripe y a Pexels.
+- Corregido (23 nov): las portadas de las categorías ya no vienen de Pexels; son fotos de To'Latino. Solo Stripe, al pagar.
 
 ## Las cookies de To'Latino
 Todas son propias (solo las lee To'Latino) y ninguna sirve para anuncios.
@@ -26,8 +27,8 @@ boletos para entrar sin señal. Se quedan en tu teléfono o tu computadora y no 
 
 ## Otras empresas en tu navegador
 To'Latino no carga publicidad ni herramientas de seguimiento de otras empresas. Lo que sí carga tu navegador de otras empresas: en la pantalla de
-pagar con tarjeta, el formulario de Stripe (js.stripe.com); y en las portadas de algunas categorías, fotos de Pexels (images.pexels.com). Esas
-empresas ven tu navegador y tu dirección de internet. [pendiente: qué cookies guarda Stripe en la pantalla de pagar, a confirmar con Stripe y el
+pagar con tarjeta, el formulario de Stripe (js.stripe.com). Esa
+empresa ve tu navegador y tu dirección de internet. Las fotos de las portadas de las categorías son de To'Latino y salen de nuestros servidores. [pendiente: qué cookies guarda Stripe en la pantalla de pagar, a confirmar con Stripe y el
 abogado.] Si un día cambiara lo de la publicidad y el seguimiento, esta página cambiaría primero y te lo
 pediríamos antes. [pendiente: confirmar con el abogado que, con solo cookies necesarias, no hace falta aviso de consentimiento según las leyes
 de privacidad de los estados donde abre To'Latino.]

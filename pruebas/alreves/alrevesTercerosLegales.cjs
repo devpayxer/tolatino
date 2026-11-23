@@ -25,7 +25,7 @@ const casos = [
   [IE, "una\n  versión reducida de la foto (hasta 640 píxeles por lado", "una\n  versión de la foto (hasta 640 píxeles por lado", 'IA ES sin «reducida»'],
   // 10-12 · La lista: una señal que ya no encuentra nada (guardián ciego), una empresa sin su host, una empresa repetida
   [J, '"senales": ["api\\\\.anthropic\\\\.com", "ANTHROPIC_API_KEY"]', '"senales": ["zzNoExisteEnElCodigo"]', 'lista: señal de Anthropic que no existe'],
-  [J, '"hosts": ["pexels.com"]', '"hosts": []', 'lista: Pexels sin su host (la portada de next.config.ts)'],
+  [J, '"hosts": ["stripe.com"]', '"hosts": []', 'lista: Stripe sin su host (la CSP de lib/csp.ts)'],
   [J, '"id": "telnyx",', '"id": "stripe",', 'lista: una empresa repetida'],
 ];
 const crear = [

@@ -7,6 +7,7 @@ What data To'Latino keeps, why, who it is shared with, how long it is kept and w
 ## What changed
 - First version: it comes from the data inventory and the map of what is exported and deleted.
 - Corrected: doubtful photos go downsized to Anthropic; Pexels, Cloudflare and what goes to Stripe are named.
+- Corrected (23 Nov): category covers no longer come from Pexels; they are To'Latino photos. Pexels no longer receives data.
 
 ## What we do not do
 - We do not track you across apps or websites. We do not use the phone's advertising ID.
@@ -59,8 +60,6 @@ The full list, item by item, is below in «The data we use and why».
   - Apple and Google: phone notifications (the text of the notice; those about health, children, Support, sanctions and your account go only as
     «You have a new notice in To'Latino»), tickets in Wallet (the event's name, place and date and the ticket's code, without your name or phone)
     and, on the web, your browser's notification service.
-  - Pexels: the covers of some category pages are Pexels photos that your browser requests directly from Pexels, which sees your internet
-    address and your browser. [pending: the team decides whether they are replaced with our own photos before opening.]
   - Cloudflare: [pending: the production site will sit behind Cloudflare, which everything you send and receive passes through; to be confirmed when it goes live.]
   - [pending: the production server provider, chosen before opening.]
 - **What is not sent to another company:** the «See translation» translator, the first photo review, maps, address lookup and analytics run on
