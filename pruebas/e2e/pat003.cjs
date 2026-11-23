@@ -10,7 +10,8 @@
 // 0175 (17 nov): el organizador no suma vistas a su propio patrocinio; «Terminar» del Super Admin devuelve lo que no se usó; un evento cancelado
 //   devuelve los días que no se usaron (una fila en el libro, por la pasarela, avisado); 8 · un evento oculto o con Eventos apagado PAUSA su
 //   patrocinio (no sale, no cuenta, EN PAUSA en el panel y el Super Admin) y al volver sigue alargado lo que duró la pausa; cancelado en pausa,
-//   la pausa no cuenta como usada; 9 · 3-D Secure al comprar: la hoja del banco y un solo cobro.
+//   la pausa no cuenta como usada; 9 · 3-D Secure al comprar: la hoja del banco y un solo cobro; 10 · el mes renovado de un evento no pierde su día
+//   (31 ene → 28 feb → 31 mar → 30 abr con fechas fijas, y una cadena ya corrida que sigue en el 28: lo comprado no se recalcula hacia atrás).
 // Precondiciones propias: lo vivo de Eventos en Hazleton queda terminado (estados, nada se borra); precios y puestos de fábrica se restauran.
 const ENT = require('../lib/entorno.cjs');
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
@@ -323,6 +324,40 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     ok(sql(`select count(*) || '|' || min(amount_cents) from sponsorship_payments where kind = 'evento' and ref_id = ${SH}`) === '1|1700', 'un solo cobro en el libro ($17.00)');
     ok(sql(`select status || '|' || captured_cents from sim_intents where id = (select pi from sponsorship_payments where kind = 'evento' and ref_id = ${SH})`) === 'succeeded|1700', 'capturado una vez, verificado');
     ok(await espera(async () => (await texto(pd)).includes('Tu evento sale en Patrocinados')), 'el panel: «Tu evento sale en Patrocinados»');
+    // 23 nov · El mes que se renueva no pierde su día, también en el patrocinio de un EVENTO (lib/patrocinio.ts › fechasPeriodo con la cadena de
+    // event_sponsorships, LA regla de lib/periodo-pro.ts): el mismo día del mes siguiente, o su último día; manda el día en que empezó el primer
+    // mes de la cadena. Antes: 31 ene → 28 feb → 28 mar → 28 abr (interval '1 month'). Es la misma prueba que «7» de pat002, para event_sponsorships.
+    // Fechas FIJAS de 2026 (en el pasado: el barrido las renueva en el acto). Dos puestos; dos eventos ocupan desde el 30 abr 2026 (hasta mañana: no
+    // vencen y el barrido no los toca), así la cadena se renueva exactamente dos veces y la tercera no encuentra puesto.
+    console.log('10 · El mes renovado de un evento no pierde su día: 31 ene → 28 feb → 31 mar → 30 abr');
+    terminarVivos(); tarjeta(DUENO);   // la 4242 de siempre (la sección 9 dejó otra), que es la tarjeta de las cadenas
+    ok(HOY > '2026-05-31', `las fechas fijas de esta parte ya pasaron (hoy en la ciudad: ${HOY})`);
+    const PUESTOS0 = sql(`select cfg_int('patrocinio_evt_puestos')`);
+    ponerCfg('patrocinio_evt_puestos', 2);
+    const MES = Number(sql(`select cfg_int('patrocinio_evt_mes_cents')`));
+    const NY = (d) => `'${d} 00:00 America/New_York'::timestamptz`;
+    const insM = (ev, st, a, z) => sql(`with x as (insert into event_sponsorships (event_id, business_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, ended_at, end_kind)
+      values (${ev}, '${NEG}', 'hzl', ${a}, ${z}, 'month', '${st}', ${MES}, '${D0}', '${PM}', ${st === 'activo'}, ${st === 'terminado' ? 'now()' : 'null'}, ${st === 'terminado' ? "'vencio'" : 'null'}) returning id) select id from x`);
+    const EM = evento('Cadena mensual que empezó el 31', 40), EV = evento('Cadena mensual que ya venía corrida', 41), L1 = evento('Puesto ocupado uno', 42), L2 = evento('Puesto ocupado dos', 43);
+    for (const l of [L1, L2]) sql(`insert into event_sponsorships (event_id, business_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id)
+      values (${l}, '${NEG}', 'hzl', ${NY('2026-04-30')}, now() + interval '1 day', 'month', 'activo', ${MES}, '${D0}')`);
+    // Un evento: su primer mes empezó el 31 ene 2026. Otro evento: una cadena que YA venía corrida de antes (31 ene → 28 feb → 28 mar), nada hacia atrás.
+    const M1 = insM(EM, 'activo', NY('2026-01-31'), NY('2026-02-28'));
+    insM(EV, 'terminado', NY('2026-01-31'), NY('2026-02-28'));
+    const V2 = insM(EV, 'activo', NY('2026-02-28'), NY('2026-03-28'));
+    // Un barrido renueva una generación (lo vencido al empezar): tres pasadas = dos renovaciones y la tercera sin puesto.
+    for (let i = 0; i < 3; i++) await barrer();
+    const per = (id) => sql(`select to_char(starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || ' → ' || to_char(ends_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') from event_sponsorships where id = ${id}`);
+    const sig = (id) => sql(`select coalesce((select id::text from event_sponsorships where renewed_from = ${id}), '')`);
+    const M2 = sig(M1), M3 = M2 && sig(M2);
+    ok(!!M2 && per(M2) === '2026-02-28 00:00 → 2026-03-31 00:00', `1.ª renovación: 28 feb → 31 mar (el día del ancla, no 28 mar): ${M2 && per(M2)}`);
+    ok(!!M3 && per(M3) === '2026-03-31 00:00 → 2026-04-30 00:00', `2.ª renovación: 31 mar → 30 abr (abril no tiene 31: su último día): ${M3 && per(M3)}`);
+    ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'evento' and ref_id in (${M2 || 0}, ${M3 || 0})`) === `2|${MES}|renovacion`, `dos cobros de renovación del mes ($${(MES / 100).toFixed(2)}), uno por período`);
+    ok(M3 && sql(`select status || '|' || coalesce(renew_note, '') from event_sponsorships where id = ${M3}`) === 'terminado|no quedaba puesto' && sig(M3) === '', 'la tercera no encuentra puesto: termina sin cobrar');
+    const V3 = sig(V2);
+    ok(!!V3 && per(V3) === '2026-03-28 00:00 → 2026-04-28 00:00', `una cadena que ya venía corrida sigue con su día (28 mar → 28 abr): lo comprado no se recalcula hacia atrás: ${V3 && per(V3)}`);
+    terminarVivos(); ponerCfg('patrocinio_evt_puestos', Number(PUESTOS0));
+
     ok(!err.length, 'sin errores en las páginas: ' + (err.join(' · ') || 'ninguno'));
     console.log(`\npat003 · ${n} comprobaciones en verde`);
   } finally {
