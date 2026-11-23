@@ -604,7 +604,8 @@ export const SISTEMA_BORRADOR = [
 ].join("\n");
 
 const EN_P = /\b(the|you|your|do|does|what|when|where|how|open|close|hours|have|is|are|can|please|thanks|thank|hi|hello|today|tomorrow)\b/gi;
-const ES_P = /\b(el|la|los|las|que|qué|cuándo|cuando|dónde|donde|cómo|como|tienen|abren|hola|gracias|por|para|es|hay|mañana|hoy|tiene|cuánto|cuanto)\b/gi;
+// Fronteras de letra, no \b: «qué» termina en una letra que para \b no lo es y no contaba nunca (guardián compaFronteraConTilde).
+const ES_P = /(?<![\p{L}\p{N}])(el|la|los|las|que|qué|cuándo|cuando|dónde|donde|cómo|como|tienen|abren|hola|gracias|por|para|es|hay|mañana|hoy|tiene|cuánto|cuanto)(?![\p{L}\p{N}])/giu;
 /* El idioma del cliente: el de su mensaje; si no se sabe, el de su cuenta. */
 export const idiomaDe = (t: string, def: Lang): Lang => { const e = (t.match(EN_P) ?? []).length, s = (t.match(ES_P) ?? []).length; return e > s ? "en" : s > e ? "es" : def; };
 type Auto = { texto: string; pasar: boolean; motor: Motor; fuente: { slug: string; titulo: Bi } | "pagina" | null; porque: string };

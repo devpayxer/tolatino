@@ -37,7 +37,72 @@ const CORREO = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g;
 const MONTO = /\$\s?\d[\d,]*(?:\.\d{1,2})?/g;
 const PCT = /\b\d{1,3}(?:[.,]\d+)?\s?%/g;
 const PLAZO = /\b\d{1,4}\s?(?:h\b|horas?\b|hrs?\b|d[ií]as?\b|days?\b|hours?\b|min(?:utos?|utes?)?\b|semanas?\b|weeks?\b|meses\b|months?\b)/gi;
-const HECHO = /\b(?:ya\s+)?(?:cancel[eé]|he cancelado|anul[eé]|devolv[ií]|he devuelto|reembols[eé]|cambi[eé]|he cambiado|confirm[eé]|reserv[eé]|ped[ií] por ti|te devolv[ií]|te reembols[eé]|borr[eé]|elimin[eé])\b|\bI(?:'ve| have)?\s+(?:already\s+)?(?:cancell?ed|refunded|changed|booked|confirmed|deleted|removed)\b|\b(?:done|listo)[,.]\s/i;
+/* «Ya lo hice» (dice_que_hizo). Fronteras de LETRA, nunca \b: en JavaScript \b solo conoce a-z, 0-9 y _, así que tras «cancelé», «devolví» o
+   «cambié» no hay frontera y la forma no casaba nunca (23 nov: «Ya cancelé tu solicitud», «Te devolví el dinero» y «Cambié tu teléfono»
+   pasaban). Guardián compaFronteraConTilde: ninguna expresión de lib/compa con \b pegado a una letra con tilde o ñ, y CASOS_HECHO (abajo)
+   corre contra este código. Caza la primera persona (pretérito con tilde; sin tilde solo tras «ya», porque «que la cancele» es un deseo),
+   «he cancelado», «acabo de cancelar», «hice la devolución», «ya quedó cancelada», «ya está hecho», «Listo,» / «Hecho,» y el inglés.
+   Deja: lo que hace otro («el negocio canceló», «fue cancelada por el negocio»), lo que se ofrece («puedo cancelarla si confirmas»), lo negado
+   («no cancelé nada») y lo condicionado («cuando confirmes, ya queda cancelada»). */
+const LI = "(?<![\\p{L}\\p{N}])", LD = "(?![\\p{L}\\p{N}])";                              // frontera de letra (con tilde y ñ), a la izquierda y a la derecha
+const PRON = "(?:(?:te|le|les|lo|la|los|las|se|me)\\s+){0,2}";
+const NEGADO = `(?<!${LI}(?:no|nunca|jamás|jamas|todavía no|todavia no|aún no|aun no)\\s+${PRON})`;
+const CONDICION = `(?<!${LI}(?:cuando|cuándo|en cuanto|apenas|una vez que|después de que|despues de que|al confirmar|si|once|when|after|if)${LD}[^.!?]{0,40})`;
+// Lo que NO es una afirmación de El Compa: una pregunta («¿Me devuelven todo lo que pagué?», «Can I delete a photo I already sent?»: así
+// se escriben las preguntas frecuentes de la ayuda, con la voz de la persona) y lo que va entre comillas (el nombre de un botón: «Ya lo mandé»).
+const FUERA = `(?<!¿[^¿?.!]*)(?<!(?:^|[.!?:*]\\s*)(?:can|could|do|does|did|is|are|am|was|were|will|would|should|what|when|where|why|how|which|who)${LD}[^.!?]*)(?<!«[^»]*)(?<!“[^”]*)`;
+const YO_CON_TILDE = "cancelé|anulé|reembolsé|cambié|confirmé|reservé|borré|eliminé|actualicé|modifiqué|envié|mandé|procesé|cobré|pagué|agendé|programé|aparté|bloqueé|desbloqueé|devolví";
+const YO_SIN_TILDE = "cancele|anule|reembolse|cambie|confirme|reserve|borre|elimine|actualice|modifique|envie|mande|procese|cobre|pague|agende|programe|aparte|devolvi|hice";
+const INFINITIVO = "(?:cancelar|anular|devolver|reembolsar|cambiar|confirmar|reservar|borrar|eliminar|actualizar|modificar|enviar|mandar|procesar|cobrar|pagar|agendar|programar|hacer)(?:te|le|les|lo|la|los|las|se|me)?";
+const PARTICIPIO = "cancelado|anulado|devuelto|reembolsado|cambiado|confirmado|reservado|borrado|eliminado|actualizado|modificado|enviado|mandado|procesado|cobrado|pagado|agendado|programado|hecho";
+const QUEDO = "cancelad[oa]s?|anulad[oa]s?|devuelt[oa]s?|reembolsad[oa]s?|cambiad[oa]s?|actualizad[oa]s?|borrad[oa]s?|eliminad[oa]s?|modificad[oa]s?|procesad[oa]s?|hech[oa]s?";
+const TRAMITE = "devoluci[oó]n|cancelaci[oó]n|reembolso|cambio|pedido|reserva|reservaci[oó]n|pago|cobro|cita|solicitud";
+const HECHO = new RegExp(`${FUERA}(?:${[
+  `${NEGADO}${LI}(?:${YO_CON_TILDE})${LD}(?!\\s+(?:de|mi|mis)${LD})`,  // «cancelé», «te devolví» (no «cambié de teléfono»: la voz de la persona)
+  `${LI}ya\\s+${PRON}(?:${YO_SIN_TILDE})${LD}`,                                                // «ya cancele» (sin tilde), «ya lo hice»
+  `${NEGADO}${LI}(?:hice\\s+(?:la|el|tu|su|un|una)\\s+(?:${TRAMITE})|(?:lo|la)\\s+hice\\s+por\\s+ti|ped[ií]\\s+por\\s+ti)${LD}`,
+  `${NEGADO}${LI}he\\s+(?:ya\\s+)?(?:${PARTICIPIO})${LD}`,                                     // «he cancelado», «te he devuelto»
+  `${LI}acabo\\s+de\\s+${INFINITIVO}${LD}`,                                                    // «acabo de cancelarla»
+  `${CONDICION}${LI}ya\\s+(?:qued[oó]|queda)\\s+(?:${QUEDO})${LD}`,                            // «ya quedó cancelada»
+  `${CONDICION}${LI}ya\\s+(?:est[aá]|qued[oó]|queda)\\s+hech[oa]s?${LD}`,                      // «ya está hecho»
+  `(?:^|[.!?:;]\\s*)hecho[,.!:](?=\\s|$)`,                                                    // «Hecho, …»
+  `\\bI(?:'ve| have)?\\s+(?:(?:already|just|went ahead and)\\s+)*(?:cancell?ed|refunded|changed|booked|confirmed|deleted|removed|updated|sent|processed|issued|modified|charged|made the (?:refund|change|cancellation))\\b`,
+  `(?:^|[.!?]\\s+)(?:it'?s|it is|that'?s|that is|all|everything(?:'s| is))\\s+(?:already\\s+|all\\s+)?done(?=\\s*(?:[.!]|$))|${CONDICION}\\balready done\\b`,  // «It's done.» al cerrar la frase (no «Once you confirm, it's done», no «It's done: we ask…»)
+  `\\b(?:is|are|has been|have been)\\s+now\\s+(?:cancell?ed|refunded|changed|updated|deleted|processed)\\b`,
+  `${CONDICION}\\b(?:done|listo)[,.]\\s`,                                                      // «Listo, …» (no «si todavía no está listo, …»)
+].join("|")})`, "iu");
+/* La tabla de HECHO: lo que verificar() y verificarCopiloto() DEBEN rechazar con «dice_que_hizo» y lo que NO deben rechazar por eso. La corre el
+   guardián compaFronteraConTilde contra este archivo real; quitar una forma, la bandera u o volver al \b la pone en rojo. Solo se añade. */
+export const CASOS_HECHO = {
+  caza: {
+    es: ["Ya cancelé tu solicitud.", "Cancelé tu solicitud de la mesa.", "Te devolví el dinero.", "Cambié tu teléfono.", "Ya cancele tu solicitud.", "He cancelado tu reserva.",
+      "Ya quedó cancelada tu solicitud.", "Ya quedó cancelado tu pedido.", "Hice la devolución.", "Ya hice la devolución de tu pago.", "Ya está hecho.", "Actualicé tu ciudad.",
+      "Borré tu cuenta.", "Envié tu mensaje al negocio.", "Ya envié el aviso.", "Eliminé la reseña.", "Anulé el pedido.", "Reembolsé el cargo.", "Confirmé tu reserva.",
+      "Reservé la mesa para ti.", "Te reembolsé lo de tu pedido.", "Ya te devolví lo de tu pedido.", "Listo, ya está.", "Hecho, tu cita quedó cancelada.", "Ya lo cancelé.",
+      "Ya la cancelé.", "Lo cambié por ti.", "Acabo de cancelar tu solicitud.", "Acabo de cancelarla.", "Ya procesé el reembolso.", "Ya he devuelto el dinero.", "Ya cambié el número.",
+      "Ya actualicé tus datos.", "Ya modifiqué tu dirección.", "Ya mandé el mensaje.", "Pedí por ti el pedido.", "Cancelé", "Devolví todo.", "YA CANCELÉ TU SOLICITUD.",
+      "Te he devuelto el pago.", "Ya lo hice.", "Te agendé la cita.", "Ya devolvi tu dinero.", "Ya cancelé tu solicitud, ¿algo más?", "Cambié tu número de teléfono."],
+    en: ["I cancelled your request.", "I've cancelled your request.", "I have refunded your order.", "I changed your phone number.", "Done, your request is cancelled.",
+      "I already updated your city.", "I sent your message to the business.", "I deleted your review.", "I just cancelled it.", "It's done.", "I've processed your refund.",
+      "I went ahead and cancelled your booking.", "Your request is now cancelled.", "That's already done."],
+  },
+  deja: {
+    es: ["Puedo cancelarla si confirmas.", "Si quieres, la cancelo cuando confirmes.", "El negocio canceló tu cita.", "Tu cita fue cancelada por el negocio.",
+      "El negocio ya canceló tu cita.", "Para cancelar, toca Cancelar solicitud.", "Puedes cambiar tu teléfono en Cuenta.", "Cuando confirmes, se cancela.",
+      "Te preparé la cancelación: confirma abajo.", "La devolución la decide el negocio.", "Cancela desde Mis reservas.", "Puedes pedir una devolución desde la operación.",
+      "¿Quieres que la cancele?", "¿Quieres que cancele la reserva? Toca Confirmar.", "Si lo cambias, te llega un código.", "El dueño envió un mensaje.", "Tu pedido fue enviado.",
+      "Te envío al panel.", "Toca Confirmar para cancelar.", "No puedo cancelar por ti; toca el botón.", "La cancelación queda lista cuando confirmes.",
+      "No cancelé nada: solo preparé la cancelación.", "Todavía no la cancelé: falta que confirmes.", "Cuando confirmes, ya queda cancelada.", "Ya le pasé tu caso con el resumen.",
+      "Le pasé tu mensaje a El Fogón y te contesta cuando abra.", "Ya estoy revisando tu caso y te escribo en cuanto tenga la respuesta.", "Tu solicitud está cancelada.",
+      "Si ya pagaste, el negocio te lo devuelve.", "Te preparé la cancelación de tu solicitud en El Fogón. Como todavía no está confirmada, no pagas nada.",
+      "¿Me devuelven todo lo que pagué? A la tarjeta vuelve, como mucho, el depósito que pagaste en la app.", "Cambié de teléfono. Entra con tu mismo número en el teléfono nuevo.",
+      "Toca «Ya lo mandé» y vuelve a revisión.", "Si la devolución ya quedó hecha, la alerta es solo informativa.", "¿Puedo borrar una foto que ya mandé? No: en Mensajes nada se borra."],
+    en: ["You can cancel it if you confirm.", "The business cancelled your appointment.", "Tap Confirm to cancel.", "I can change it once you confirm.",
+      "Your request was cancelled by the business.", "Once you confirm, it's done.", "I prepared the cancellation; confirm below.", "I haven't cancelled anything yet.",
+      "I passed your message to El Fogón and they will reply when they open.", "I already passed your case on with a summary.",
+      "Can I delete a photo I already sent? No: nothing is deleted in Messages.", "When am I charged? On the day of your first visit.", "It's done: we ask for your review.", "If the refund is already done, the alert is informational only."],
+  },
+} as const;
 const PERSONA = /\bsoy (?:una persona|un humano|humano|humana|el due[ñn]o|la due[ñn]a|del equipo)\b|\bI(?:'m| am) (?:a (?:real )?(?:person|human)|the owner|human)\b/i;
 const CONF = /confirmad[oa]s?\b|\bconfirmed\b/gi;
 const NEG = /\b(?:no|not|isn'?t|aren'?t|sin|todav[ií]a no|a[uú]n no|yet|hasta que|until|antes de que|before)\b[^.!?]{0,25}$/i;

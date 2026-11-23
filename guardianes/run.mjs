@@ -5109,6 +5109,119 @@ const guardianes = {
     for (const k of ["SISTEMA_AUTO", "SISTEMA_BORRADOR", "SISTEMA_COPILOTO"]) if (!new RegExp(`export const ${k} = \\[`).test(c) || new RegExp(`${k}\\s*=.*(query|valor|process\\.env|nota)`).test(c)) falla(G, C, 0, `${k} es fijo y vive en el código del servidor`);
   },
 
+  /* 23 nov · Fronteras con tilde. En JavaScript \b solo conoce a-z, 0-9 y _: pegado a una letra con tilde o ñ («cancelé\b», «qué\b») no hay
+     frontera y esa forma no casa NUNCA (el verificador de salida dejaba pasar «Ya cancelé tu solicitud», «Te devolví el dinero», «Cambié tu
+     teléfono»). En apps/web/lib/compa/**: (1) ninguna expresión regular lleva \b junto a una letra no ASCII (la letra, una clase que la tenga, o
+     la primera/última letra posible de un grupo), con las constantes de texto del archivo resueltas (un `${LI}` dentro de new RegExp se lee);
+     (2) una expresión con \p{…} lleva la bandera u (sin ella \p{L} es el texto «p{L}» y la frontera deja de serlo); (3) la tabla CASOS_HECHO de
+     verificar.ts corre contra el archivo REAL: lo que caza lo rechazan verificar() y verificarCopiloto() con «dice_que_hizo», lo que deja no lo
+     rechaza ninguno por eso, con mínimos en español e inglés; (4) idiomaDe cuenta «qué». Al revés: alrevesFronteraTilde. */
+  compaFronteraConTilde() {
+    const G = "compaFronteraConTilde", V = "apps/web/lib/compa/verificar.ts", C = "apps/web/lib/compa/conversacion.ts";
+    const req = createRequire(import.meta.url), ts = req("typescript");
+    const NA = (ch) => ch.codePointAt(0) > 127 && /\p{L}/u.test(ch);
+    // Mini analizador de una expresión: los \b cuya letra vecina (posible) no es ASCII.
+    const analizar = (src) => {
+      let i = 0; const malos = [];
+      const atomo = () => {
+        const ch = src[i];
+        if (ch === "\\") {
+          const d = src[i + 1];
+          if (d === "b" || d === "B") { i += 2; return { b: d === "b", cero: true }; }
+          if (d === "p" || d === "P") { const f = src.indexOf("}", i); const s = src.slice(i, f + 1); i = f + 1; const na = d === "p" && /\{(L|Letter|Script)/.test(s); return { pri: na, ult: na }; }
+          if (d === "u" || d === "x") { const larga = src[i + 2] === "{", f = larga ? src.indexOf("}", i) : i + (d === "u" ? 6 : 4); const c = String.fromCodePoint(parseInt(src.slice(i + (larga ? 3 : 2), f), 16)); i = larga ? f + 1 : f; return { pri: NA(c), ult: NA(c) }; }
+          i += 2; return {};
+        }
+        if (ch === "[") {
+          i++; const neg = src[i] === "^"; let s = "";
+          while (i < src.length && src[i] !== "]") { if (src[i] === "\\") { s += src.slice(i, i + 2); i += 2; } else s += src[i++]; }
+          i++; const na = !neg && ([...s].some(NA) || /\\p\{(L|Letter|Script)/.test(s)); return { pri: na, ult: na };
+        }
+        if (ch === "(") {
+          i++; let mira = false;
+          if (src[i] === "?") { if (src[i + 1] === ":") i += 2; else if (src[i + 1] === "=" || src[i + 1] === "!") { i += 2; mira = true; } else if (src[i + 1] === "<" && (src[i + 2] === "=" || src[i + 2] === "!")) { i += 3; mira = true; } else if (src[i + 1] === "<") i = src.indexOf(">", i) + 1; }
+          const g = alternancia(); i++;
+          return mira ? { cero: true } : g;
+        }
+        if (ch === "^" || ch === "$") { i++; return { cero: true }; }
+        i++; return { pri: NA(ch), ult: NA(ch) };
+      };
+      const cuant = (a) => {
+        const ch = src[i]; let min = 1;
+        if (ch === "?" || ch === "*") { min = 0; i++; } else if (ch === "+") i++;
+        else if (ch === "{" && /^\{\d+(,\d*)?\}/.test(src.slice(i))) { min = Number(/^\{(\d+)/.exec(src.slice(i))[1]); i = src.indexOf("}", i) + 1; }
+        else return a;
+        if (src[i] === "?") i++;
+        return { ...a, nulo: a.nulo || min === 0 };
+      };
+      const secuencia = () => {
+        const it = [];
+        while (i < src.length && src[i] !== "|" && src[i] !== ")") it.push(cuant(atomo()));
+        for (const x of it) if (x.cero) { x.nulo = true; x.pri = x.ult = false; }
+        it.forEach((x, k) => {
+          if (!x.b) return;
+          for (let j = k - 1; j >= 0; j--) { if (it[j].ult) { malos.push("antes"); break; } if (!it[j].nulo) break; }
+          for (let j = k + 1; j < it.length; j++) { if (it[j].pri) { malos.push("después"); break; } if (!it[j].nulo) break; }
+        });
+        let pri = false, ult = false;
+        for (const x of it) { pri = pri || !!x.pri; if (!x.nulo) break; }
+        for (const x of [...it].reverse()) { ult = ult || !!x.ult; if (!x.nulo) break; }
+        return { pri, ult, nulo: it.every((x) => x.nulo) };
+      };
+      const alternancia = () => { const a = [secuencia()]; while (src[i] === "|") { i++; a.push(secuencia()); } return { pri: a.some((x) => x.pri), ult: a.some((x) => x.ult), nulo: a.some((x) => x.nulo) }; };
+      alternancia();
+      return malos;
+    };
+    const compa = archivos.filter((x) => /^apps\/web\/lib\/compa\/.*\.tsx?$/.test(x));
+    if (!compa.includes(V)) return falla(G, V, 0, "falta el verificador de salida");
+    for (const f of compa) {
+      const sf = ts.createSourceFile(f, readFileSync(f, "utf8"), ts.ScriptTarget.Latest, true);
+      const consts = new Map();
+      const recoger = (n) => { if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) consts.set(n.name.text, n.initializer); ts.forEachChild(n, recoger); };
+      recoger(sf);
+      const texto = (n, hondo = 0) => {
+        if (hondo > 8) return "\u0001";
+        if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) return n.text;
+        if (ts.isTemplateExpression(n)) return n.head.text + n.templateSpans.map((s) => texto(s.expression, hondo + 1) + s.literal.text).join("");
+        if (ts.isIdentifier(n) && consts.has(n.text)) return texto(consts.get(n.text), hondo + 1);
+        if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken) return texto(n.left, hondo + 1) + texto(n.right, hondo + 1);
+        if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === "join" && ts.isArrayLiteralExpression(n.expression.expression)) {
+          const sep = n.arguments[0] && ts.isStringLiteral(n.arguments[0]) ? n.arguments[0].text : ",";
+          return n.expression.expression.elements.map((e) => texto(e, hondo + 1)).join(sep);
+        }
+        return "\u0001";
+      };
+      const revisar = (n, src, flags) => {
+        const linea = sf.getLineAndCharacterOfPosition(n.getStart()).line + 1;
+        let malos; try { malos = analizar(src); } catch (e) { return falla(G, f, linea, `no pude leer la expresión: ${String(e.message).slice(0, 60)}`); }
+        if (malos.length) falla(G, f, linea, `\\b pegado a una letra con tilde o ñ (${malos[0]}): «${src.slice(0, 70)}…» — usa (?<![\\p{L}\\p{N}]) y (?![\\p{L}\\p{N}]) con la bandera u`);
+        if (/\\[pP]\{/.test(src) && !/[uv]/.test(flags)) falla(G, f, linea, `usa \\p{…} sin la bandera u (sin ella \\p{L} es el texto «p{L}»): «${src.slice(0, 70)}…»`);
+      };
+      const ver = (n) => {
+        if (n.kind === ts.SyntaxKind.RegularExpressionLiteral) { const t = n.getText(), k = t.lastIndexOf("/"); revisar(n, t.slice(1, k), t.slice(k + 1)); }
+        else if ((ts.isNewExpression(n) || ts.isCallExpression(n)) && ts.isIdentifier(n.expression) && n.expression.text === "RegExp" && n.arguments?.length) revisar(n, texto(n.arguments[0]), n.arguments[1] ? texto(n.arguments[1]) : "");
+        ts.forEachChild(n, ver);
+      };
+      ver(sf);
+    }
+    // (3) La tabla del verificador contra el archivo real.
+    try {
+      const v = req("../pruebas/lib/ts-servidor.cjs").cargarApp(V);
+      const T = v.CASOS_HECHO;
+      if (!T || !T.caza || !T.deja) return falla(G, V, 0, "falta la tabla CASOS_HECHO (lo que el verificador caza y lo que deja)");
+      for (const [k, l, n] of [["caza", "es", 30], ["caza", "en", 10], ["deja", "es", 20], ["deja", "en", 8]]) if ((T[k]?.[l] ?? []).length < n) falla(G, V, 0, `CASOS_HECHO.${k}.${l}: ${(T[k]?.[l] ?? []).length} frases y pide al menos ${n}`);
+      const ctx = { fuentes: ["f"], conCuenta: true, confirmadas: false, texto: "", permitidos: [], maxFrases: 3 };
+      const cctx = { fuentes: [], macros: [], confirmadas: false, maxBorrador: 600, puedeDevolver: false, publico: "", caso: "", internas: [] };
+      const motivos = (t) => { const a = v.verificar({ respuesta: t, tipo: "respuesta", fuente: "f", accion: { tipo: "ninguna", ref: "", pantalla: "" }, persona: "ninguno", chips: [] }, ctx), b = v.verificarCopiloto({ resumen: "Resumen del caso.", borrador: t, siguiente: "", macro: "", fuente: "", sugerir_devolver: false }, cctx); return [a.ok ? "" : a.motivo, b.ok ? "" : b.motivo]; };
+      for (const t of [...(T.caza.es ?? []), ...(T.caza.en ?? [])]) { const [a, b] = motivos(t); if (a !== "dice_que_hizo" || b !== "dice_que_hizo") falla(G, V, 0, `el verificador deja pasar «${t}» (verificar: ${a || "pasa"} · copiloto: ${b || "pasa"})`); }
+      for (const t of [...(T.deja.es ?? []), ...(T.deja.en ?? [])]) { const [a, b] = motivos(t); if (a === "dice_que_hizo" || b === "dice_que_hizo") falla(G, V, 0, `el verificador rechaza de más «${t}» (dice_que_hizo: es legítima)`); }
+    } catch (e) { falla(G, V, 0, `no pude correr CASOS_HECHO contra el verificador: ${String(e.message).slice(0, 100)}`); }
+    // (4) El idioma del cliente cuenta las palabras con tilde.
+    const es = /\nconst ES_P = (\/.*\/[a-z]*);/.exec(sinComent(C))?.[1];
+    let n = -1; try { n = es ? ("¿Qué? ¿Cuándo?".match(new Function(`return ${es};`)()) ?? []).length : -1; } catch { n = -1; }
+    if (n !== 2) falla(G, C, 0, `idiomaDe no cuenta «qué» (ES_P contó ${n} de 2 en «¿Qué? ¿Cuándo?»)`);
+  },
+
   /* 7c. Los interruptores se leen en UN lugar (lib/compa/interruptores.ts: feature_flags compa.* y compa_pauses), en cada turno y otra vez en gastar();
      una bandera que falta = apagado; en producción El Compa no se enciende antes de la fase 9 (candado). */
   compaInterruptores() {
