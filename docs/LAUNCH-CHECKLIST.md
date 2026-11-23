@@ -2918,3 +2918,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       guardar, columna `subscriptions.period_anchor` (migración 0215, no aplicada). Sin ver: el anual servido, y si el sandbox tiene alguna suscripción
       con la fecha ya corrida (sigue con su día de hoy: nada se recalcula hacia atrás).
 
+## Cabecera y pestañas nuevas de la ficha Pro (23 nov, pedido y aprobado por el fundador)
+- [x] **→ 9u** · **Cabecera según sus capturas:** nombre + palomita del sello, fila de datos, estado en su color; pestañas con icono (pieza tipada
+      `packages/ui/src/core/PestanasFicha.tsx`), la activa en el color de acción; en el teléfono «Contactar ˅» abre una hoja con Llamar, Escribir y Cómo
+      llegar; en escritorio Guardar, Compartir y Llamar con texto. Guardián `botonesQueCaben` reescrito (alreves19caben 16/16), punta a punta `fic9cab` (91).
+- [ ] **→ 9q** · **Ficha Pro en Safari y en un iPhone SE real:** «Contactar» con letra grande, la hoja y las pestañas que se deslizan (todo se vio en
+      Chromium emulado). Sin barrer: el resto de las ~120 pruebas que visitan `/n/`, un nombre de una sola palabra enorme, la hoja con lector de pantalla.
+- [ ] **→ 9u** · **La ficha Free (`Ficha.tsx`) no sigue la cabecera nueva** (tira de tres celdas y botón grande «Llamar»): igualarla es decisión del
+      fundador (REVISION).
+- [ ] **→ 9u** · **Estado «Cerrado hoy · hoy · abre mañana 9 AM»: «hoy» repetido** (`lib/ficha` `estadoCorto` + `estadoResto`).
+- [ ] **→ 9u** · **`Button` portado no pasa `aria-haspopup`/`aria-expanded`** (en «Contactar» se ponen con un `ref`): arreglarlo en `scripts/portar-sistema.mjs`.
+
