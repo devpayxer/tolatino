@@ -41,9 +41,11 @@ export const reglas = (ciudad: string): Bi[] => [
 const TEL = /(\d[\s().-]*){10}|wa\.me\/|api\.whatsapp\.com/i;
 const NUMEROS = /\b\d{3}-\d{2}-\d{4}\b|\b\d{9}\b|\bA[\s-]?\d{8,9}\b|\b[A-Z]{3}\d{10}\b/;
 // Número de casa + nombre de calle (1–3 palabras, sin «y / la / de…») + tipo de calle; o «calle X 123».
-const SIN = "(?!(?:y|e|o|and|or|la|el|los|las|de|del|con|a|al|en|por|para|the|at|on|of|to)\\b)";
+// 23 nov · «sin y / la / de…» con frontera de LETRA, nunca \b: con \b, «a» de «Añasco», «el» de «Elías» u «o» de «Oñate» contaban como palabra
+// suelta (en JavaScript \b no ve la ñ ni la tilde) y «123 Añasco St» pasaba sin rechazo. Bandera u en DIRECCION. Guardián fronteraConTildeEnDatos.
+const SIN = "(?!(?:y|e|o|and|or|la|el|los|las|de|del|con|a|al|en|por|para|the|at|on|of|to)(?![\\p{L}\\p{N}]))";
 const CALLE = "(?:st|street|ave|avenue|av|rd|road|blvd|boulevard|dr|drive|ln|lane|ct|court|pl|place|way|ter|terrace|hwy|highway|pike|cir|circle)";
-const DIRECCION = new RegExp(`\\b\\d{1,5}\\s+(?:[nsew]\\.?\\s+)?(?:${SIN}[\\wÁÉÍÓÚÑáéíóúñü'.-]+\\s+){1,3}${CALLE}\\b`, "i");
+const DIRECCION = new RegExp(`\\b\\d{1,5}\\s+(?:[nsew]\\.?\\s+)?(?:${SIN}[\\wÁÉÍÓÚÑáéíóúñü'.-]+\\s+){1,3}${CALLE}\\b`, "iu");
 const DIRECCION_ES = /\b(?:calle|avenida|ave\.?|av\.)\s+[A-Za-zÁÉÍÓÚÑáéíóúñü][\wÁÉÍÓÚÑáéíóúñü .'-]{0,30}?\s#?\d{1,5}\b|\b(?:n[uú]mero|no\.|#)\s?\d{1,5}\s+(?:de\s+la\s+)?(?:calle|avenida)\b/i;
 export const EMERGENCIA = /\b(emergencia|incendio|se est[aá] quemando|disparos?|balacera|tiroteo|no respira|infarto|sobredosis|convulsi\w+|me (?:est[aá]n )?(?:robando|atacando|siguiendo)|emergency|on fire|shooting|not breathing|overdose|heart attack)\b/i;
 

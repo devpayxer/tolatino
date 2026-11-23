@@ -5224,6 +5224,146 @@ const guardianes = {
     if (n !== 2) falla(G, C, 0, `idiomaDe no cuenta «qué» (ES_P contó ${n} de 2 en «¿Qué? ¿Cuándo?»)`);
   },
 
+  /* ◆ Encargo K (23 nov) · inicio: fronteraConTildeEnDatos y almacenPrivadoSinQuinientos. */
+
+  /* 23 nov · fronteraConTildeEnDatos. La clase de compaFronteraConTilde, en TODO apps/web/lib y apps/web/app (no solo El Compa) y con lo que viene de
+     DATOS: en JavaScript \b solo conoce a-z, 0-9 y _, así que junto a una letra con tilde o ñ no hay frontera. Si la expresión se arma con un nombre de
+     ciudad, negocio, categoría o persona («\b(${nombres})\b», lib/ciudades/launch.ts hasta el 23 nov), «Bogotá.» o «Ángeles» no casan nunca y «Cata»
+     casa dentro de «Cataño». (1) Ninguna expresión regular (literal o new RegExp) lleva \b junto a una letra no ASCII posible: la letra, una clase que
+     la tenga, la primera/última letra de un grupo, o un trozo que no se puede leer en el archivo (un dato: cuenta como letra con tilde); las constantes
+     de texto del archivo se resuelven. (2) Una expresión con \p{…} lleva la bandera u. (3) La tabla CASOS_CIUDAD (abajo: nombres con tilde, ñ, diéresis,
+     guion y mayúsculas, y los de ahora en ASCII) corre contra nombraA de launch.ts, la función REAL que usa «Comprobar» (pendientesLaunch). Al revés:
+     alrevesFronteraDatos. */
+  fronteraConTildeEnDatos() {
+    const G = "fronteraConTildeEnDatos", LA = "apps/web/lib/ciudades/launch.ts";
+    const req = createRequire(import.meta.url), ts = req("typescript");
+    const DATO = ""; // un trozo que no se lee en el archivo: viene de datos y puede traer tilde o ñ
+    const NA = (ch) => ch === DATO || (ch.codePointAt(0) > 127 && /\p{L}/u.test(ch));
+    const analizar = (src) => {
+      let i = 0; const malos = [];
+      const atomo = () => {
+        const ch = src[i];
+        if (ch === "\\") {
+          const d = src[i + 1];
+          if (d === "b" || d === "B") { i += 2; return { b: d === "b", cero: true }; }
+          if (d === "p" || d === "P") { const f = src.indexOf("}", i); const s = src.slice(i, f + 1); i = f + 1; const na = d === "p" && /\{(L|Letter|Script)/.test(s); return { pri: na, ult: na }; }
+          if (d === "u" || d === "x") { const larga = src[i + 2] === "{", f = larga ? src.indexOf("}", i) : i + (d === "u" ? 6 : 4); const c = String.fromCodePoint(parseInt(src.slice(i + (larga ? 3 : 2), f), 16)); i = larga ? f + 1 : f; return { pri: NA(c), ult: NA(c) }; }
+          i += 2; return {};
+        }
+        if (ch === "[") {
+          i++; const neg = src[i] === "^"; let s = "";
+          while (i < src.length && src[i] !== "]") { if (src[i] === "\\") { s += src.slice(i, i + 2); i += 2; } else s += src[i++]; }
+          i++; const na = !neg && ([...s].some(NA) || /\\p\{(L|Letter|Script)/.test(s)); return { pri: na, ult: na };
+        }
+        if (ch === "(") {
+          i++; let mira = false;
+          if (src[i] === "?") { if (src[i + 1] === ":") i += 2; else if (src[i + 1] === "=" || src[i + 1] === "!") { i += 2; mira = true; } else if (src[i + 1] === "<" && (src[i + 2] === "=" || src[i + 2] === "!")) { i += 3; mira = true; } else if (src[i + 1] === "<") i = src.indexOf(">", i) + 1; }
+          const adelante = mira && src[i - 2] !== "<" && src[i - 3] !== "<", g = alternancia(); i++;
+          // (?=…\b) / (?!…\b): la letra que sigue a ese \b es la que toma lo que viene DESPUÉS de la mirada (no consume): se revisa contra eso.
+          return mira ? { cero: true, bFin: adelante && g.bFin } : g;
+        }
+        if (ch === "^" || ch === "$") { i++; return { cero: true }; }
+        i++; return { pri: NA(ch), ult: NA(ch) };
+      };
+      const cuant = (a) => {
+        const ch = src[i]; let min = 1;
+        if (ch === "?" || ch === "*") { min = 0; i++; } else if (ch === "+") i++;
+        else if (ch === "{" && /^\{\d+(,\d*)?\}/.test(src.slice(i))) { min = Number(/^\{(\d+)/.exec(src.slice(i))[1]); i = src.indexOf("}", i) + 1; }
+        else return a;
+        if (src[i] === "?") i++;
+        return { ...a, nulo: a.nulo || min === 0 };
+      };
+      const secuencia = () => {
+        const it = [];
+        while (i < src.length && src[i] !== "|" && src[i] !== ")") it.push(cuant(atomo()));
+        for (const x of it) if (x.cero) { x.nulo = true; x.pri = x.ult = false; }
+        it.forEach((x, k) => {
+          if (!x.b) return;
+          for (let j = k - 1; j >= 0; j--) { if (it[j].ult) { malos.push("antes"); break; } if (!it[j].nulo) break; }
+          for (let j = k + 1; j < it.length; j++) { if (it[j].pri) { malos.push("después"); break; } if (!it[j].nulo) break; }
+        });
+        it.forEach((x, k) => { if (x.bFin) for (let j = k + 1; j < it.length; j++) { if (it[j].pri) { malos.push("después, tras una mirada adelante"); break; } if (!it[j].nulo) break; } });
+        let pri = false, ult = false;
+        for (const x of it) { pri = pri || !!x.pri; if (!x.nulo) break; }
+        for (const x of [...it].reverse()) { ult = ult || !!x.ult; if (!x.nulo) break; }
+        return { pri, ult, nulo: it.every((x) => x.nulo), bFin: !!it.length && !!it[it.length - 1].b };
+      };
+      const alternancia = () => { const a = [secuencia()]; while (src[i] === "|") { i++; a.push(secuencia()); } return { pri: a.some((x) => x.pri), ult: a.some((x) => x.ult), nulo: a.some((x) => x.nulo), bFin: a.some((x) => x.bFin) }; };
+      alternancia();
+      return malos;
+    };
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
+      const fuente = readFileSync(f, "utf8");
+      if (!/\\b|\\p\{|RegExp\(/.test(fuente)) continue;
+      const sf = ts.createSourceFile(f, fuente, ts.ScriptTarget.Latest, true, f.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+      const consts = new Map();
+      const recoger = (n) => { if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) consts.set(n.name.text, n.initializer); ts.forEachChild(n, recoger); };
+      recoger(sf);
+      const texto = (n, hondo = 0) => {
+        if (hondo > 8) return DATO;
+        if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) return n.text;
+        if (ts.isTemplateExpression(n)) return n.head.text + n.templateSpans.map((s) => texto(s.expression, hondo + 1) + s.literal.text).join("");
+        if (ts.isIdentifier(n) && consts.has(n.text)) return texto(consts.get(n.text), hondo + 1);
+        if (ts.isParenthesizedExpression(n)) return texto(n.expression, hondo + 1);
+        if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken) return texto(n.left, hondo + 1) + texto(n.right, hondo + 1);
+        if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === "join" && ts.isArrayLiteralExpression(n.expression.expression)) {
+          const sep = n.arguments[0] && ts.isStringLiteral(n.arguments[0]) ? n.arguments[0].text : ",";
+          return n.expression.expression.elements.map((e) => texto(e, hondo + 1)).join(sep);
+        }
+        return DATO;
+      };
+      const revisar = (n, src, flags) => {
+        const linea = sf.getLineAndCharacterOfPosition(n.getStart()).line + 1;
+        let malos; try { malos = analizar(src); } catch (e) { return falla(G, f, linea, `no pude leer la expresión: ${String(e.message).slice(0, 60)}`); }
+        if (malos.length) falla(G, f, linea, `\\b pegado a una letra con tilde o ñ, o a un dato que puede traerla (${malos[0]}): «${src.replaceAll(DATO, "${dato}").slice(0, 70)}…» — usa (?<![\\p{L}\\p{N}]) y (?![\\p{L}\\p{N}]) con la bandera u`);
+        if (/\\[pP]\{/.test(src) && !/[uv]/.test(flags)) falla(G, f, linea, `usa \\p{…} sin la bandera u (sin ella \\p{L} es el texto «p{L}»): «${src.slice(0, 70)}…»`);
+      };
+      const ver = (n) => {
+        if (n.kind === ts.SyntaxKind.RegularExpressionLiteral) { const t = n.getText(), k = t.lastIndexOf("/"); revisar(n, t.slice(1, k), t.slice(k + 1)); }
+        else if ((ts.isNewExpression(n) || ts.isCallExpression(n)) && ts.isIdentifier(n.expression) && n.expression.text === "RegExp" && n.arguments?.length) revisar(n, texto(n.arguments[0]), n.arguments[1] ? texto(n.arguments[1]) : "");
+        ts.forEachChild(n, ver);
+      };
+      ver(sf);
+    }
+    // (3) La tabla contra la función real de «Comprobar». Cada caso: [nombres de la ciudad, línea, ¿la nombra?].
+    const CASOS_CIUDAD = [
+      [["Bayamón"], "Falta el permiso de Bayamón.", true], [["Bayamón"], "BAYAMÓN: falta el permiso", true], [["Bayamón"], "Bayamónes del norte", false],
+      [["Ángeles"], "Abrir en Ángeles cuando haya dueños", true], [["Ángeles"], "Losángeles", false],
+      [["Peñuelas"], "(Peñuelas) sin repartidores", true], [["Peñuelas"], "Peñuelasco", false], [["Cataño"], "Cataño, Bayamón y Guaynabo", true],
+      [["Cata"], "Abrir Cataño primero", false], [["Mayagüez"], "En Mayagüez falta el contador.", true], [["San Germán"], "San Germán: la portada", true],
+      [["San Germán"], "San Germánico", false], [["Moca"], "Mocaña", false], [["Moca"], "Moca.", true],
+      [["Wilkes-Barre", "Wilkes Barre"], "Wilkes-Barre: los mapas", true], [["Wilkes-Barre", "Wilkes Barre"], "wilkes barre sin fotos", true],
+      [["Hazleton"], "Hazleton y Allentown", true], [["Reading"], "Readingsville", false], [["Reading"], "Reading.", true], [["Scranton"], "Scrantoné", false],
+      [["Allentown"], "Allentownñ", false], [["Bogotá"], "Abrir Bogotá.", true], [["Bogotá"], "Bogotáes", false], [["Ñ"], "Zona Ñ, sin repartidor", true],
+      [[], "Cualquier línea, la que sea", false], [[""], "Cualquier línea, la que sea", false], [["  "], "Cualquier línea, la que sea", false],
+    ];
+    try {
+      const L = req("../pruebas/lib/ts-servidor.cjs").cargarApp(LA);
+      if (typeof L.nombraA !== "function") return falla(G, LA, 0, "falta nombraA (la expresión que decide si una línea nombra a la ciudad)");
+      for (const [n, t, espera] of CASOS_CIUDAD) {
+        let sale; try { sale = L.nombraA(n).test(t); } catch (e) { sale = `error: ${String(e.message).slice(0, 60)}`; }
+        if (sale !== espera) falla(G, LA, 0, `nombraA(${JSON.stringify(n)}) con «${t}»: ${sale} y debía ser ${espera}`);
+      }
+    } catch (e) { falla(G, LA, 0, `no pude correr CASOS_CIUDAD contra launch.ts: ${String(e.message).slice(0, 100)}`); }
+    if (!/const re = nombraA\(nombres\);/.test(sinComent(LA))) falla(G, LA, 0, "pendientesLaunch no usa nombraA (la expresión que la tabla comprueba)");
+    // (4) La misma clase en el filtro de Comunidad (lo que nunca se publica): una dirección exacta con ñ o tilde en el nombre de la calle se rechaza
+    // igual que una en ASCII; sin número de casa, o con una palabra suelta («la», «de»), pasa como antes. Contra revisarTexto REAL.
+    const CF = "apps/web/lib/comunidad-filtro.ts";
+    const CASOS_DIRECCION = [
+      ["Vivo en 123 Añasco St", true], ["Queda en 123 Oñate Ave", true], ["Está en 45 Elías Dr", true], ["Paso por 12 Eñe Rd", true], ["Vive en 8 Ángel St", true],
+      ["Es en 77 Peña Blanca Rd", true], ["En 123 Main St", true], ["En 900 Alder St", true], ["Por la calle Añasco, sin número", false],
+      ["Tengo 3 hijos y 2 perros", false], ["Somos 12 de la Avenue", false], ["El barrio de la Añasco está tranquilo", false],
+    ];
+    try {
+      const F = req("../pruebas/lib/ts-servidor.cjs").cargarApp(CF);
+      for (const [t, rechaza] of CASOS_DIRECCION) {
+        const r = F.revisarTexto(t), es = !!r && /direcciones exactas/.test(r.msg?.es ?? "");
+        if (es !== rechaza) falla(G, CF, 0, `revisarTexto(«${t}»): ${es ? "la rechaza como dirección" : "la deja pasar"} y debía ${rechaza ? "rechazarla (una dirección exacta con ñ o tilde)" : "dejarla pasar"}`);
+      }
+    } catch (e) { falla(G, CF, 0, `no pude correr CASOS_DIRECCION contra comunidad-filtro.ts: ${String(e.message).slice(0, 100)}`); }
+  },
+  /* ◆ Encargo K (23 nov) · fin. */
+
   /* 23 nov · compaEligeLaOperacion. La clase «El Compa toma la PRIMERA operación de la lista sin mirar de cuál habla la persona»: los dos motores sin
      modelo (reglas fijas y simulador) preparaban «cancelar» o «abrir» sobre `ops.find(cancelable)` / `ops[0]`: quien decía «cancela mi cita con la
      barbería» y tenía además un pedido veía «¿Cancelar tu pedido?» (la batería: vec-036, vec-040, vec-042). Ahora una sola función (elegirOperacion, en

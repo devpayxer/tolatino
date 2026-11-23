@@ -2851,7 +2851,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9q** · **El Compa, con el modelo real: medir cuántas respuestas descarta `dice_que_hizo`** desde el arreglo del 23 nov. «Ya quedó cancelada» se
       descarta siempre, aunque la operación ya esté cancelada de verdad (el verificador solo conoce `confirmadas`); si pasa a menudo, pasarle también
       las canceladas.
-- [ ] **→ 9u** · **`lib/ciudades/launch.ts`: la expresión con `\b` fallaría con un nombre de ciudad que acabe en tilde** (hoy todos son ASCII).
+- [x] **→ 9u** · **(Hecho el 23 nov: `nombraA` con fronteras de letra y bandera u —el guion ya no se escapa, una lista vacía no casa con todo—; la misma clase en el filtro de Comunidad: «123 Añasco St», «45 Elías Dr» pasaban sin rechazo; guardián `fronteraConTildeEnDatos` en todo `apps/web/lib` y `app` con los datos que no se leen en el archivo y las tablas `CASOS_CIUDAD` y `CASOS_DIRECCION` contra el código real, al revés `alrevesFronteraDatos` 16/16.)** `lib/ciudades/launch.ts`: la expresión con `\b` fallaría con un nombre de ciudad que acabe en tilde (hoy todos son ASCII).
 - [ ] **→ Paquete 9-1** · **`TELNYX_API_KEY` de producción: el círculo SMS y llavero (23 nov).** A producción solo se entra por SMS, y poner una llave
       en el llavero también pide un código por SMS: sin Telnyx no se entra, y sin entrar no se pone Telnyx. La del primer día tiene que llegar por el
       sobre sellado (variable de entorno, que manda sobre el llavero); `TELNYX_FROM` y `TELNYX_PUBLIC_KEY` no son secretas. Decisión del fundador en
