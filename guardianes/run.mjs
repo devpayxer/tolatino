@@ -10748,26 +10748,44 @@ const guardianes = {
     // 22 nov · Turno de fotos (LAUNCH «Fotos que se suben: tope de subidas a la vez por proceso»). Medido: 50 fotos de 11,5 MB a la vez llevaban un
     // proceso de ~0,5 GB a ~2,3 GB en cualquiera de las rutas de fotos (cada foto juntada y copiada en memoria; sharp sin límite de cuántas a la vez).
     // (a) La pieza común, conFotoSubida: lugar ANTES de leer el cuerpo (sin lugar: 503 al instante), la foto al disco (recibirArchivo), turno de
-    //     FOTOS_A_LA_VEZ antes de abrirla (sin turno a tiempo: el mismo 503), todo suelto en un finally; 503 con Retry-After y «Prueba en un momento.»;
+    //     fotos_a_la_vez antes de abrirla (sin turno a tiempo: el mismo 503), todo suelto en un finally; 503 con Retry-After y «Prueba en un momento.»;
     //     el rechazo queda en los errores del servidor (Sistema › Salud), con freno.
-    const cf = cuerpoFn(l, "conFotoSubida"), tf = cuerpoFn(l, "turnoFoto");
+    // 23 nov · Los tres topes son claves de Configuración (0212): se leen con valores() (la copia que el aviso olvida, sin consulta por subida), con
+    //     los de fábrica si la Configuración no responde a tiempo; el estado vive en globalThis (uno por proceso, no uno por capa de Next).
+    const cf = cuerpoFn(l, "conFotoSubida"), tf = cuerpoFn(l, "turnoFoto"), tp = cuerpoFn(l, "topesFotos"), ps = cuerpoFn(l, "pasar");
     if (!cf) falla(G, L, 0, "falta conFotoSubida (la pieza común de las subidas de fotos, con lugar y turno)");
     else {
-      const iLugar = cf.indexOf("if (dentro >= FOTOS_DENTRO) { avisarLleno(ruta, \"lugar\"); return fotosOcupado(); }"), iMas = cf.indexOf("dentro++;"), iRec = cf.indexOf("await recibirArchivo(req, {"),
-        iTurno = cf.indexOf("soltar = await turnoFoto(FOTOS_ESPERA_MS);"), iSin = cf.indexOf("if (!soltar) { avisarLleno(ruta, \"turno\"); return fotosOcupado(); }"), iHacer = cf.indexOf("return await hacer(f);"), iFin = cf.indexOf("} finally {");
+      const iTope = cf.indexOf("const t = await topesFotos();"), iLugar = cf.indexOf("if (E.dentro >= t.dentro) { avisarLleno(ruta, \"lugar\"); return fotosOcupado(); }"), iMas = cf.indexOf("E.dentro++;"), iRec = cf.indexOf("await recibirArchivo(req, {"),
+        iTurno = cf.indexOf("soltar = await turnoFoto(t.aLaVez, t.esperaS * 1000);"), iSin = cf.indexOf("if (!soltar) { avisarLleno(ruta, \"turno\"); return fotosOcupado(); }"), iHacer = cf.indexOf("return await hacer(f);"), iFin = cf.indexOf("} finally {");
+      if (iTope < 0 || iLugar < iTope) falla(G, L, 0, "conFotoSubida lee los topes vigentes (topesFotos, de Configuración) antes de mirar el lugar");
       if (iLugar < 0 || iMas < iLugar || iRec < iMas) falla(G, L, 0, "conFotoSubida toma el lugar ANTES de leer el cuerpo (sin lugar: fotosOcupado, sin leer nada)");
       if (iTurno < iRec || iSin < iTurno || iHacer < iSin) falla(G, L, 0, "conFotoSubida espera el turno (turnoFoto) después de recibir la foto y antes de abrirla (hacer); sin turno, fotosOcupado");
-      if (iFin < iHacer || !/\} finally \{\s*soltar\?\.\(\);\s*dentro--;\s*if \(dir\) await borrarCarpetaSubida\(dir\);\s*\}/.test(cf)) falla(G, L, 0, "conFotoSubida suelta el turno y el lugar y borra la carpeta temporal en un finally");
+      if (iFin < iHacer || !/\} finally \{\s*soltar\?\.\(\);\s*E\.dentro--;\s*if \(dir\) await borrarCarpetaSubida\(dir\);\s*\}/.test(cf)) falla(G, L, 0, "conFotoSubida suelta el turno y el lugar y borra la carpeta temporal en un finally");
       if (/\.(arrayBuffer|formData|blob)\(\)|Buffer\.concat|leerFormulario\(/.test(cf)) falla(G, L, 0, "conFotoSubida junta la foto en memoria: va al disco por partes (recibirArchivo)");
     }
-    if (!/if \(activas < FOTOS_A_LA_VEZ\) \{ activas\+\+; return Promise\.resolve\(soltador\(\)\); \}/.test(tf) || !/enCola\.push\(paso\);/.test(tf) || !/listo\(null\); \}, espera\);/.test(tf) || !/while \(enCola\.length\) if \(enCola\.shift\(\)!\(\)\) return;\s*activas--;/.test(tf))
-      falla(G, L, 0, "turnoFoto: como mucho FOTOS_A_LA_VEZ a la vez; el resto espera en la cola con plazo (null si no llega) y al soltar el turno pasa al siguiente");
-    const cte = /export const FOTOS_A_LA_VEZ = (\d+), FOTOS_DENTRO = (\d+), FOTOS_ESPERA_MS = ([\d_]+), AVISO_LLENO_MS = ([\d_]+);/.exec(l);
-    if (!cte || +cte[1] < 1 || +cte[1] > 4 || +cte[2] <= +cte[1] || +cte[2] > 32 || +cte[3].replace(/_/g, "") > 60_000 || +cte[4].replace(/_/g, "") < 1000) falla(G, L, 0, "los topes de fotos: 1–4 a la vez por proceso, más lugar que turnos (≤ 32), espera ≤ 60 s y aviso con freno");
+    if (!/if \(E\.activas < aLaVez && !E\.enCola\.length\) \{ E\.activas\+\+; return Promise\.resolve\(soltador\(\)\); \}/.test(tf) || !/E\.enCola\.push\(paso\);/.test(tf) || !/listo\(null\); \}, espera\);/.test(tf) || !/suelto = true;\s*E\.activas--;\s*pasar\(\);/.test(tf)
+      || !/while \(E\.activas < E\.tope\.aLaVez && E\.enCola\.length\) if \(E\.enCola\.shift\(\)!\(\)\) E\.activas\+\+;/.test(ps))
+      falla(G, L, 0, "turnoFoto: como mucho fotos_a_la_vez a la vez; el resto espera en la cola con plazo (null si no llega) y al soltar el turno pasa al siguiente (pasar, con el tope vigente)");
+    if (!/const G = globalThis as typeof globalThis & \{ __tlSubidaFotos\?: EstadoFotos \};/.test(l) || !/const E: EstadoFotos = \(G\.__tlSubidaFotos \?\?= \{/.test(l) || /^let /m.test(l))
+      falla(G, L, 0, "el lugar, el turno y los rechazos viven en globalThis (uno por proceso, no uno por capa de Next) y no en variables del módulo");
+    // Los topes, de Configuración: valores() (la copia de lib/config.ts; ninguna consulta propia por subida), con plazo y con los de fábrica si falla.
+    if (!/valores\("fotos_a_la_vez", "fotos_dentro", "fotos_espera_s"\)/.test(tp) || !/setTimeout\(\(\) => listo\(null\), CONFIG_ESPERA_MS\)/.test(tp) || !/\} catch \{\s*E\.tope = \{ \.\.\.FOTOS_DEF, deConfig: false \};/.test(tp) || !/: \{ \.\.\.FOTOS_DEF, deConfig: false \};/.test(tp.replace(/\} catch[\s\S]*/, "")))
+      falla(G, L, 0, "topesFotos lee los tres topes de Configuración (valores) con plazo (CONFIG_ESPERA_MS) y, si no responde, usa los de fábrica (FOTOS_DEF): nunca sin tope ni cerrado");
+    if (/\bdb\(\)|\.query\(|from "\.\/db"/.test(l)) falla(G, L, 0, "lib/subida.ts consulta la base por su cuenta: los topes se leen con valores() de lib/config.ts (la copia del proceso, sin consulta por subida)");
+    const def = /export const FOTOS_DEF = \{ aLaVez: (\d+), dentro: (\d+), esperaS: (\d+) \} as const;/.exec(l), cte = /export const AVISO_LLENO_MS = ([\d_]+), CONFIG_ESPERA_MS = ([\d_]+);/.exec(l);
+    const cat = Object.fromEntries(catalogoConfig().filter((x) => /^fotos_(a_la_vez|dentro|espera_s)$/.test(x.k)).map((x) => [x.k, x])), av = cat.fotos_a_la_vez, dn = cat.fotos_dentro, es = cat.fotos_espera_s;
+    if (!av || !dn || !es) falla(G, L, 0, "los tres topes de fotos (fotos_a_la_vez, fotos_dentro, fotos_espera_s) son claves de Configuración (config_keys, 0212)");
+    else {
+      if (!def || +def[1] !== av.d || +def[2] !== dn.d || +def[3] !== es.d) falla(G, L, 0, `los de fábrica del código (FOTOS_DEF) son los de Configuración (${av.d}, ${dn.d}, ${es.d} en ${av.f})`);
+      if (av.a < 1 || av.b > 4 || dn.a <= av.b || dn.b > 32 || es.a < 5 || es.b > 60) falla(G, av.f, 0, "los límites de los topes de fotos: 1–4 a la vez por proceso, siempre más lugar que el turno más alto (≤ 32) y espera de 5 a 60 s (un valor absurdo no tumba ni cierra las subidas)");
+      const m = readFileSync(av.f, "utf8");
+      for (const k of ["fotos_a_la_vez", "fotos_dentro", "fotos_espera_s"]) if (!new RegExp(`\\('${k}', \\d+, \\d+, \\d+, '[^']*', 'apps',`).test(m)) falla(G, av.f, 0, `«${k}» se gestiona en Configuración › Apps (con los otros topes del servidor)`);
+    }
+    if (!cte || +cte[1].replace(/_/g, "") < 1000 || +cte[2].replace(/_/g, "") > 2000) falla(G, L, 0, "el aviso a los errores con freno (AVISO_LLENO_MS ≥ 1 s) y la Configuración con plazo corto (CONFIG_ESPERA_MS ≤ 2 s)");
     if (!/status: 503, headers: \{ "Retry-After": "\d+" \}/.test(cuerpoFn(l, "fotosOcupado") || l.slice(l.indexOf("export const fotosOcupado"), l.indexOf("export const fotosOcupado") + 600)) || !/Prueba en un momento\./.test(l) || !/Try again in a moment\./.test(l))
       falla(G, L, 0, "sin lugar o sin turno: 503 con Retry-After y «Prueba en un momento.» / «Try again in a moment.»");
     const al = cuerpoFn(l, "avisarLleno");
-    if (!/if \(Date\.now\(\) - ultimoAviso < AVISO_LLENO_MS\) return;/.test(al) || !/recibirErrorServidor\(e, ruta\)/.test(al)) falla(G, L, 0, "un rechazo por estar lleno queda en los errores del servidor (Sistema › Salud), como mucho uno cada AVISO_LLENO_MS");
+    if (!/if \(Date\.now\(\) - E\.ultimoAviso < AVISO_LLENO_MS\) return;/.test(al) || !/recibirErrorServidor\(e, ruta\)/.test(al)) falla(G, L, 0, "un rechazo por estar lleno queda en los errores del servidor (Sistema › Salud), como mucho uno cada AVISO_LLENO_MS");
     // (b) Por clase: TODA ruta que recibe un archivo pasa por una pieza con turno. Fotos (abre con sharp): conFotoSubida, y sharp abre el archivo
     //     del disco (f.ruta) dentro de ella. El video: recibirArchivo + turnoVideo (mediosEnFlujo). Sin turno, solo lo de SIN_TURNO (archivo chico y
     //     sin abrir: la llave del llavero, 64 KB, solo un Admin con código; al disco no va porque es un secreto).

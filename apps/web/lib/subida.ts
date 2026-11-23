@@ -135,40 +135,74 @@ function tipoDeParte(cab: string): string {
    nuevo por ruta, fotos de 11,5 MB): 50 a la vez llevaban el proceso de ~0,5 GB a ~2,3 GB en cualquiera de las rutas de fotos, porque cada foto se
    juntaba en memoria y se copiaba (partes, Buffer.concat, formData(), arrayBuffer()) y nada limitaba cuántas abría sharp a la vez. Ahora TODAS las
    rutas que reciben una foto (/api/medios, mensajes, ayuda, reclamo, repartidor) pasan por aquí (guardián subidaConTope):
-   - Lugar (FOTOS_DENTRO por proceso: llegando, esperando o procesándose). Se toma ANTES de leer el cuerpo; sin lugar, 503 + Retry-After al
+   - Lugar (fotos_dentro por proceso: llegando, esperando o procesándose). Se toma ANTES de leer el cuerpo; sin lugar, 503 + Retry-After al
      instante (quien sube no manda 12 MB para nada) y no se escribe nada al disco.
    - La foto llega al DISCO por partes (recibirArchivo, con el tope mientras llega) y sharp la abre desde el archivo: ninguna copia del archivo en
      la memoria de la app. Los campos de texto del formulario (destino, para) se leen de paso, con tope (TEXTO_MAX).
    - `antes` (opcional): lo que la ruta decide con el formulario ya leído y sin abrir la foto (topes, permisos, tipo); no gasta turno.
-   - Turno (FOTOS_A_LA_VEZ por proceso): abrir, enderezar, reducir, revisar, guardar y variantes. Ya en el disco, la foto espera su turno hasta
-     FOTOS_ESPERA_MS; si no llega, el mismo 503. sharp nunca abre más de FOTOS_A_LA_VEZ fotos subidas a la vez en un proceso.
+   - Turno (fotos_a_la_vez por proceso): abrir, enderezar, reducir, revisar, guardar y variantes. Ya en el disco, la foto espera su turno hasta
+     fotos_espera_s; si no llega, el mismo 503. sharp nunca abre más de fotos_a_la_vez fotos subidas a la vez en un proceso.
    - La carpeta temporal (la misma de los videos: lib/video-negocio.ts carpetaSubida, que barre las de más de una hora que dejó un proceso caído)
      se borra y el lugar y el turno se sueltan en un finally (también si algo falla).
-   - Cada rechazo por estar lleno queda en los errores del servidor (Sistema › Salud cuenta los del servidor; Sistema › Apps muestra su grupo
-     «Subida de fotos llena»): como mucho uno cada AVISO_LLENO_MS por proceso, para no cargar la base justo cuando el servidor está lleno.
-   Valores fijos en código, como VIDEO_A_LA_VEZ (lib/video-negocio.ts); pasarlos a Configuración pide una migración (propuesta en LAUNCH).
-   Prueba: pruebas/e2e/sub9t2.cjs (30 a la vez). */
-export const FOTOS_A_LA_VEZ = 2, FOTOS_DENTRO = 16, FOTOS_ESPERA_MS = 30_000, AVISO_LLENO_MS = 10_000;
-let dentro = 0, activas = 0, ultimoAviso = 0;
-const enCola: (() => boolean)[] = [];
+   - Cada rechazo por estar lleno se cuenta (Sistema › Salud, «Subidas de fotos · este proceso»: en curso, en espera, el tope vigente y los rechazos
+     de la última hora) y queda en los errores del servidor (Sistema › Apps, grupo «Subida de fotos llena»): como mucho uno cada AVISO_LLENO_MS por
+     proceso, para no cargar la base justo cuando el servidor está lleno.
+   23 nov (LAUNCH «Tope de subidas de fotos, lo que queda», punto 1) · Los tres números son claves de Configuración (0212, Configuración › Apps, con sus
+   límites: 1–4 a la vez, 6–32 de lugar, 5–60 s de espera). Se leen con valores() de lib/config.ts: la copia del proceso que el aviso de la base olvida
+   al momento (cacheConAviso), así un cambio en el Super Admin vale desde la siguiente subida y una subida no hace ninguna consulta de más (la copia se
+   lee una vez cada 15 s o tras un cambio, no por foto). Si Configuración no responde (o tarda más de CONFIG_ESPERA_MS), los de fábrica de FOTOS_DEF,
+   iguales a los de 0212: nunca «sin tope» ni «cerrado». Si el turno baja con fotos dentro, las que ya tienen turno terminan y la siguiente entra cuando
+   haya menos que el tope nuevo; si sube, las que esperan entran al momento (pasar()).
+   El estado vive en globalThis (como lib/cambios-config.ts): Next carga este módulo una vez por capa y el tope es UNO por proceso; Sistema › Salud
+   (otra capa) lee el mismo estado.
+   Prueba: pruebas/e2e/sub9t2.cjs (30 a la vez; el tope cambiado en Configuración se respeta en la ráfaga siguiente, sin reiniciar). */
+export const FOTOS_DEF = { aLaVez: 2, dentro: 16, esperaS: 30 } as const;
+export const AVISO_LLENO_MS = 10_000, CONFIG_ESPERA_MS = 1_000;
+export type TopesFotos = { aLaVez: number; dentro: number; esperaS: number; deConfig: boolean };
+type EstadoFotos = { dentro: number; activas: number; enCola: (() => boolean)[]; ultimoAviso: number; tope: TopesFotos; rechazos: [number, number][]; ultimoRechazo: number | null };
+const G = globalThis as typeof globalThis & { __tlSubidaFotos?: EstadoFotos };
+const E: EstadoFotos = (G.__tlSubidaFotos ??= { dentro: 0, activas: 0, enCola: [], ultimoAviso: 0, tope: { ...FOTOS_DEF, deConfig: false }, rechazos: [], ultimoRechazo: null });
 
-/* Un turno de FOTOS_A_LA_VEZ: libre al instante, o en la cola hasta `espera` ms (null si no llegó). Al soltarlo pasa directo al primero de la cola. */
-function turnoFoto(espera: number): Promise<(() => void) | null> {
+/* Los topes vigentes: de Configuración (la copia del proceso; sin consulta si está al día) o, si no responde a tiempo, los de fábrica. */
+export async function topesFotos(): Promise<TopesFotos> {
+  let reloj: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const v = await Promise.race([
+      // Import diferido: lib/config.ts trae la base y el Super Admin; quien solo usa leerFormulario/recibirArchivo (y las pruebas sin servidor) no lo carga.
+      import("./config").then((c) => c.valores("fotos_a_la_vez", "fotos_dentro", "fotos_espera_s")),
+      new Promise<null>((listo) => { reloj = setTimeout(() => listo(null), CONFIG_ESPERA_MS); }),
+    ]);
+    E.tope = v ? { aLaVez: v.fotos_a_la_vez, dentro: v.fotos_dentro, esperaS: v.fotos_espera_s, deConfig: true } : { ...FOTOS_DEF, deConfig: false };
+  } catch {
+    E.tope = { ...FOTOS_DEF, deConfig: false };
+  } finally {
+    clearTimeout(reloj);
+  }
+  return E.tope;
+}
+
+/* Mientras haya turno libre (según el tope vigente), pasa al primero de la cola. */
+function pasar() {
+  while (E.activas < E.tope.aLaVez && E.enCola.length) if (E.enCola.shift()!()) E.activas++;
+}
+
+/* Un turno de fotos_a_la_vez: libre al instante, o en la cola hasta `espera` ms (null si no llegó). Al soltarlo pasa al primero de la cola. */
+function turnoFoto(aLaVez: number, espera: number): Promise<(() => void) | null> {
   const soltador = () => {
     let suelto = false;
     return () => {
       if (suelto) return;
       suelto = true;
-      while (enCola.length) if (enCola.shift()!()) return;
-      activas--;
+      E.activas--;
+      pasar();
     };
   };
-  if (activas < FOTOS_A_LA_VEZ) { activas++; return Promise.resolve(soltador()); }
+  if (E.activas < aLaVez && !E.enCola.length) { E.activas++; return Promise.resolve(soltador()); }
   return new Promise((listo) => {
     let hecho = false;
     const paso = () => { if (hecho) return false; hecho = true; clearTimeout(reloj); listo(soltador()); return true; };
-    const reloj = setTimeout(() => { if (hecho) return; hecho = true; const i = enCola.indexOf(paso); if (i >= 0) enCola.splice(i, 1); listo(null); }, espera);
-    enCola.push(paso);
+    const reloj = setTimeout(() => { if (hecho) return; hecho = true; const i = E.enCola.indexOf(paso); if (i >= 0) E.enCola.splice(i, 1); listo(null); }, espera);
+    E.enCola.push(paso);
   });
 }
 
@@ -177,11 +211,28 @@ export const fotosOcupado = () => NextResponse.json({ ok: false, mensaje: { es: 
   { status: 503, headers: { "Retry-After": "15" } });
 
 function avisarLleno(ruta: string, por: "lugar" | "turno") {
-  if (Date.now() - ultimoAviso < AVISO_LLENO_MS) return;
-  ultimoAviso = Date.now();
+  // Se cuenta cada rechazo para Sistema › Salud (solo para mostrar, de ESTE proceso: no es un tope): tramos de 10 s [desde, cuántos] de la última
+  // hora (360 como mucho); a los errores del servidor va como mucho uno cada AVISO_LLENO_MS.
+  const ahora = Date.now(), ult = E.rechazos[E.rechazos.length - 1];
+  if (ult && ahora - ult[0] < 10_000) ult[1]++; else E.rechazos.push([ahora, 1]);
+  while (E.rechazos.length && ahora - E.rechazos[0]![0] > 3_600_000) E.rechazos.shift();
+  E.ultimoRechazo = ahora;
+  if (Date.now() - E.ultimoAviso < AVISO_LLENO_MS) return;
+  E.ultimoAviso = Date.now();
   const e = new Error(`Subida de fotos llena: ${por === "lugar" ? "sin lugar en el proceso" : "sin turno a tiempo"}`);
   e.stack = e.message;
   void import("./errores/ingesta").then((x) => x.recibirErrorServidor(e, ruta)).catch(() => undefined);
+}
+
+/* Sistema › Salud · las subidas de fotos de ESTE proceso: en curso (con turno), en espera (en la cola del turno), llegando (con lugar, todavía sin
+   turno ni cola), el tope vigente y los rechazos (lugar o turno) de los últimos 10 minutos y de la última hora. */
+export type EstadoSubidas = { enCurso: number; enEspera: number; llegando: number; tope: TopesFotos; rechazos10: number; rechazosHora: number; ultimoRechazo: string | null };
+export async function estadoSubidas(): Promise<EstadoSubidas> {
+  const tope = await topesFotos(), ahora = Date.now();
+  let rechazos10 = 0, rechazosHora = 0;
+  for (const [t, n] of E.rechazos) { if (ahora - t <= 3_600_000) rechazosHora += n; if (ahora - t <= 600_000) rechazos10 += n; }
+  return { enCurso: E.activas, enEspera: E.enCola.length, llegando: Math.max(0, E.dentro - E.activas - E.enCola.length), tope, rechazos10, rechazosHora,
+    ultimoRechazo: E.ultimoRechazo == null ? null : new Date(E.ultimoRechazo).toISOString() };
 }
 
 export type FotoLlegada = { ruta: string; bytes: number; tipo: string; textos: Record<string, string> };
@@ -192,8 +243,10 @@ export type OpcionesFoto = {
 };
 export async function conFotoSubida(req: Request, o: OpcionesFoto, hacer: (f: FotoLlegada) => Promise<Response>): Promise<Response> {
   const ruta = new URL(req.url).pathname;
-  if (dentro >= FOTOS_DENTRO) { avisarLleno(ruta, "lugar"); return fotosOcupado(); }
-  dentro++;
+  const t = await topesFotos();
+  pasar();
+  if (E.dentro >= t.dentro) { avisarLleno(ruta, "lugar"); return fotosOcupado(); }
+  E.dentro++;
   let soltar: (() => void) | null = null, dir = "";
   try {
     dir = await carpetaSubida();
@@ -203,12 +256,12 @@ export async function conFotoSubida(req: Request, o: OpcionesFoto, hacer: (f: Fo
     const f: FotoLlegada = { ruta: archivo, bytes: rec.bytes, tipo: rec.tipo, textos: rec.textos };
     const corta = o.antes ? await o.antes(f) : null;
     if (corta) return corta;
-    soltar = await turnoFoto(FOTOS_ESPERA_MS);
+    soltar = await turnoFoto(t.aLaVez, t.esperaS * 1000);
     if (!soltar) { avisarLleno(ruta, "turno"); return fotosOcupado(); }
     return await hacer(f);
   } finally {
     soltar?.();
-    dentro--;
+    E.dentro--;
     if (dir) await borrarCarpetaSubida(dir);
   }
 }

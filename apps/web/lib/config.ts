@@ -110,7 +110,9 @@ export type ClaveConfig =
   // 9n · Límites del plan Free/Pro por módulo (0179; Catálogo › Módulos y Free/Pro y Configuración › Negocios)
   | "free_items" | "free_fotos" | "pro_fotos" | "free_equipo"
   // 9t · «Avísame si se libera» de una mesa: cuántos minutos se guarda la mesa que se libera (0180; Configuración › Avisos)
-  | "rsv_espera_min";
+  | "rsv_espera_min"
+  // 9t · Fotos que se suben: a la vez, lugar y espera del turno por proceso (0212; Configuración › Apps; los lee lib/subida.ts)
+  | "fotos_a_la_vez" | "fotos_dentro" | "fotos_espera_s";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
