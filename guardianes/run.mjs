@@ -7624,6 +7624,125 @@ const guardianes = {
     if (!existsSync("apps/web/lib/fecha-local.ts") || !/timeZone: zona/.test(readFileSync("apps/web/lib/fecha-local.ts", "utf8"))) falla(G, "apps/web/lib/fecha-local.ts", 0, "hoyEn tiene que formatear en la zona que recibe");
   },
 
+  /* 23 nov · Un mes (o un año) no se suma con Date#setMonth / setFullYear (ni sus UTC) ni con new Date(y, m + n, d) / Date.UTC(y, m + n, d) con el
+     día de una fecha: un 29, 30 o 31 el mes DESBORDA (31 ene + 1 mes = 3 mar, se salta febrero; 31 mar → 1 may; el anual desde el 29 feb → 1 mar) y
+     la fecha queda corrida para siempre; en la hora del proceso, además, el cambio de horario mueve la hora. Pasaba en el cobro de Pro
+     (lib/suscripcion.ts: registrarPeriodo y completarRenovacion). Tampoco setDate en la hora del proceso (setUTCDate al mediodía, sí). LA regla del
+     período de Pro vive en lib/periodo-pro.ts (finDePeriodo: el mismo día del mes siguiente; si ese mes no lo tiene, su último día; el día del
+     ANCLA; la hora del ancla en la zona de la ciudad) y aquí se ejecuta su tabla contra el archivo real, con el proceso en tres zonas. Excepciones:
+     la lista cerrada EXC (ninguna es dinero que pueda desbordar). Al revés: alrevesPeriodoPro. */
+  periodoProSinDesborde() {
+    const G = "periodoProSinDesborde", P = "apps/web/lib/periodo-pro.ts", S = "apps/web/lib/suscripcion.ts";
+    const EXC = [
+      ["apps/web/lib/tabla.ts", /^\s*const siguiente = new Date\(`\$\{M\.actual\}T12:00:00Z`\); siguiente\.setUTCMonth\(siguiente\.getUTCMonth\(\) \+ 1\);$/,
+        "Tabla del Barrio: el mes que sigue a M.actual, que es siempre un día 1 (date_trunc('month')): no desborda y no es dinero"],
+      ["apps/web/lib/planes.ts", /^const mesSiguiente = \(s: string, dia: number\) => \{ const d = s2d\(s\); return d2s\(new Date\(Date\.UTC\(d\.getUTCFullYear\(\), d\.getUTCMonth\(\) \+ 1, dia, 12\)\)\); \};$/,
+        "Planes del hogar: charge_day va de 1 a 28 (la base lo impone), nunca desborda"],
+    ];
+    const exento = (f, l) => EXC.some(([x, re]) => x === f && re.test(l));
+    // Los argumentos de primer nivel de cada new Date( / Date.UTC( de una línea.
+    const llamadas = (l) => {
+      const out = [];
+      for (const m of l.matchAll(/\b(?:new Date|Date\.UTC)\(/g)) {
+        let i = m.index + m[0].length, prof = 0, cur = "";
+        const args = [];
+        for (; i < l.length; i++) {
+          const ch = l[i];
+          if (ch === "(" || ch === "[" || ch === "{") prof++;
+          else if (ch === ")" || ch === "]" || ch === "}") { if (prof === 0) break; prof--; }
+          if (ch === "," && prof === 0) { args.push(cur.trim()); cur = ""; } else cur += ch;
+        }
+        args.push(cur.trim());
+        out.push(args);
+      }
+      return out;
+    };
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f)) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        if (exento(f, l)) return;
+        if (/\.set(?:UTC)?(?:Month|FullYear)\(/.test(l)) falla(G, f, i + 1, "suma de meses o años con setMonth/setFullYear: el 29, 30 o 31 desborda al mes de después (31 ene + 1 mes = 3 mar). Usa finDePeriodo (lib/periodo-pro.ts) o la base (interval '1 month' recorta al fin de mes)");
+        if (/\.setDate\(/.test(l)) falla(G, f, i + 1, "setDate en la hora del proceso: el cambio de horario mueve la hora (y el día cerca de la medianoche). Suma días con setUTCDate sobre el mediodía UTC o en la base");
+        for (const a of llamadas(l)) if (a.length >= 3 && /[\w)\]!]\s*\+(?!\+)/.test(a[1]) && !/^[01]$/.test(a[2]))
+          falla(G, f, i + 1, `fecha armada con el mes + algo y el día «${a[2].slice(0, 30)}»: el 29, 30 o 31 desborda al mes de después. Usa finDePeriodo (lib/periodo-pro.ts), diaQueToca o el día 0/1`);
+      });
+    }
+    // El cobro de Pro usa LA regla en los dos sitios, con el ancla de la racha y la zona de la ciudad.
+    if (!existsSync(S) || !existsSync(P)) return falla(G, existsSync(S) ? P : S, 0, "falta el cobro de Pro o su regla del período");
+    const s = sinComent(S);
+    if (!/^import \{ finDePeriodo \} from "\.\/periodo-pro";$/m.test(s)) falla(G, S, 0, "el cobro de Pro no importa finDePeriodo de lib/periodo-pro.ts");
+    const fd = /async function finDelPeriodo\(([\s\S]*?)\n\}/.exec(s)?.[1] ?? "";
+    if (!fd) falla(G, S, 0, "falta finDelPeriodo (el fin del período con el ancla de la racha y la zona de la ciudad)");
+    else {
+      if (!/select ci\.timezone from businesses b join cities ci on ci\.id = b\.city_id where b\.id = \$1/.test(fd)) falla(G, S, 0, "finDelPeriodo: la zona es la de la ciudad del negocio (cities.timezone)");
+      if (!/min\(z\.period_start\)[\s\S]*z\.status = 'done'[\s\S]*z\.created_at > coalesce\(\(select s\.ended_at from subscriptions s where s\.business_id = \$1\)/.test(fd)) falla(G, S, 0, "finDelPeriodo: el ancla es el inicio del primer cobro hecho de la racha (después del último paso a Free): sin ella, 31 ene → 28 feb → 28 mar (deriva)");
+      if (!/finDePeriodo\(desde, ciclo === "year" \? "year" : "month", r\?\.tz \|\| "America\/New_York", r\?\.ancla \?\? null\)/.test(fd)) falla(G, S, 0, "finDelPeriodo tiene que pasar a finDePeriodo el ciclo, la zona de la ciudad y el ancla");
+    }
+    const usos = [...s.matchAll(/await finDelPeriodo\(c, (?:s\.business_id|negocio), (?:a\.desde|desde), (?:a\.cycle|s\.cycle)\)/g)].length;
+    if (usos !== 2) falla(G, S, 0, `el fin del período de Pro se calcula con finDelPeriodo en registrarPeriodo y en completarRenovacion (hay ${usos} de 2)`);
+    if (/current_period_end = \$2/.test(s) && /hasta\.toISOString\(\)/.test(s)) falla(G, S, 0, "el fin del período de Pro sale de un Date armado a mano (hasta.toISOString()): tiene que salir de finDelPeriodo");
+    // La tabla, contra el archivo real (transpilado), con el proceso en tres zonas: el resultado no depende de la hora del servidor.
+    let F;
+    try {
+      const ts = createRequire(import.meta.url)("typescript");
+      const js = ts.transpileModule(readFileSync(P, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+      const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("periodo-pro.ts es pura: sin importaciones"); });
+      F = mod.exports.finDePeriodo;
+      if (typeof F !== "function") return falla(G, P, 0, "periodo-pro.ts no exporta finDePeriodo");
+    } catch (e) { return falla(G, P, 0, `no pude cargar periodo-pro.ts: ${String(e?.message ?? e).slice(0, 120)}`); }
+    // [desde (UTC), ciclo, ancla (UTC) | null, esperado (UTC), qué]. Hora de pared: las 10:00 de Nueva York (EST −5, EDT −4; 2026: 8 mar y 1 nov).
+    const Z = "America/New_York", T = [
+      ["2026-01-28T15:00:00.000Z", "month", null, "2026-02-28T15:00:00.000Z", "28 ene → 28 feb"],
+      ["2026-01-29T15:00:00.000Z", "month", null, "2026-02-28T15:00:00.000Z", "29 ene → 28 feb (no bisiesto)"],
+      ["2026-01-30T15:00:00.000Z", "month", null, "2026-02-28T15:00:00.000Z", "30 ene → 28 feb"],
+      ["2026-01-31T15:00:00.000Z", "month", null, "2026-02-28T15:00:00.000Z", "31 ene → 28 feb (antes: 3 mar)"],
+      ["2028-01-29T15:00:00.000Z", "month", null, "2028-02-29T15:00:00.000Z", "29 ene → 29 feb (bisiesto)"],
+      ["2028-01-31T15:00:00.000Z", "month", null, "2028-02-29T15:00:00.000Z", "31 ene → 29 feb (bisiesto)"],
+      ["2026-02-28T15:00:00.000Z", "month", null, "2026-03-28T14:00:00.000Z", "28 feb sin ancla → 28 mar (las 10, ya en EDT)"],
+      ["2026-02-28T15:00:00.000Z", "month", "2026-01-31T15:00:00.000Z", "2026-03-31T14:00:00.000Z", "28 feb con ancla 31 → 31 mar"],
+      ["2026-02-28T15:00:00.000Z", "month", "2026-01-30T15:00:00.000Z", "2026-03-30T14:00:00.000Z", "28 feb con ancla 30 → 30 mar"],
+      ["2026-02-28T15:00:00.000Z", "month", "2026-01-29T15:00:00.000Z", "2026-03-29T14:00:00.000Z", "28 feb con ancla 29 → 29 mar"],
+      ["2026-03-31T14:00:00.000Z", "month", null, "2026-04-30T14:00:00.000Z", "31 mar → 30 abr (antes: 1 may)"],
+      ["2026-04-30T14:00:00.000Z", "month", null, "2026-05-30T14:00:00.000Z", "30 abr sin ancla → 30 may"],
+      ["2026-04-30T14:00:00.000Z", "month", "2026-03-31T14:00:00.000Z", "2026-05-31T14:00:00.000Z", "30 abr con ancla 31 → 31 may"],
+      ["2026-05-31T14:00:00.000Z", "month", null, "2026-06-30T14:00:00.000Z", "31 may → 30 jun"],
+      ["2026-08-31T14:00:00.000Z", "month", null, "2026-09-30T14:00:00.000Z", "31 ago → 30 sep"],
+      ["2026-10-31T14:00:00.000Z", "month", null, "2026-11-30T15:00:00.000Z", "31 oct → 30 nov (antes: 1 dic), las 10 ya en EST"],
+      ["2026-12-31T15:00:00.000Z", "month", null, "2027-01-31T15:00:00.000Z", "31 dic → 31 ene del año siguiente"],
+      ["2026-02-15T15:00:00.000Z", "month", null, "2026-03-15T14:00:00.000Z", "cambio de horario de marzo: las 10 siguen siendo las 10"],
+      ["2026-10-15T14:00:00.000Z", "month", null, "2026-11-15T15:00:00.000Z", "cambio de horario de noviembre: las 10 siguen siendo las 10"],
+      ["2026-02-08T07:30:00.000Z", "month", null, "2026-03-08T07:30:00.000Z", "las 2:30 del 8 mar no existen: las 3:30"],
+      ["2026-03-08T07:30:00.000Z", "month", "2026-02-08T07:30:00.000Z", "2026-04-08T06:30:00.000Z", "y el mes siguiente vuelven las 2:30 del ancla"],
+      ["2026-10-01T05:30:00.000Z", "month", null, "2026-11-01T05:30:00.000Z", "la 1:30 del 1 nov existe dos veces: la primera"],
+      ["2026-01-31T03:00:00.000Z", "month", null, "2026-03-01T03:00:00.000Z", "el día es el de la ciudad: 30 ene 10 PM → 28 feb 10 PM (no el día de UTC)"],
+      ["2028-02-29T15:00:00.000Z", "year", null, "2029-02-28T15:00:00.000Z", "anual desde el 29 feb → 28 feb (antes: 1 mar)"],
+      ["2029-02-28T15:00:00.000Z", "year", "2028-02-29T15:00:00.000Z", "2030-02-28T15:00:00.000Z", "anual con ancla 29 feb, año no bisiesto → 28 feb"],
+      ["2031-02-28T15:00:00.000Z", "year", "2028-02-29T15:00:00.000Z", "2032-02-29T15:00:00.000Z", "anual con ancla 29 feb → vuelve al 29 en el bisiesto"],
+      ["2026-01-31T15:00:00.000Z", "year", null, "2027-01-31T15:00:00.000Z", "anual desde el 31 ene → 31 ene"],
+      ["2026-03-03T15:00:00.000Z", "month", "2026-01-31T15:00:00.000Z", "2026-04-03T14:00:00.000Z", "una fecha ya corrida (3 mar) sigue con su día: nada hacia atrás, nadie gana días"],
+      ["2026-02-28T15:00:00.000Z", "month", "2026-03-31T14:00:00.000Z", "2026-03-28T14:00:00.000Z", "un ancla posterior al inicio no cuenta"],
+      ["2026-01-31T15:00:00.123Z", "month", null, "2026-02-28T15:00:00.123Z", "los milisegundos del ancla se guardan (la llave del cobro siguiente)"],
+    ];
+    const tzAntes = process.env.TZ;
+    try {
+      for (const tz of ["UTC", "Asia/Tokyo", Z]) {
+        process.env.TZ = tz;
+        for (const [d, c, a, e, que] of T) {
+          let r; try { r = new Date(F(Date.parse(d), c, Z, a ? Date.parse(a) : null)).toISOString(); } catch (x) { r = `error: ${String(x?.message ?? x).slice(0, 60)}`; }
+          if (r !== e) falla(G, P, 0, `finDePeriodo(${d}, ${c}${a ? `, ancla ${a}` : ""}) con el proceso en ${tz} da ${r} y debe dar ${e} (${que})`);
+        }
+        // Doce renovaciones seguidas desde un 31: no deriva (28 feb → 31 mar, no 28 mar) y al año vuelve al 31 ene a las 10.
+        const ancla = Date.parse("2026-01-31T15:00:00.000Z"), esp = ["2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31", "2026-06-30", "2026-07-31", "2026-08-31", "2026-09-30", "2026-10-31", "2026-11-30", "2026-12-31", "2027-01-31"];
+        let t = ancla;
+        for (let k = 0; k < 12; k++) {
+          t = F(t, "month", Z, ancla);
+          const dia = new Intl.DateTimeFormat("en-CA", { timeZone: Z, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(t)), hora = new Intl.DateTimeFormat("en-US", { timeZone: Z, hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).format(new Date(t));
+          if (dia !== esp[k] || hora !== "10:00") { falla(G, P, 0, `renovación ${k + 1} desde el 31 ene (proceso en ${tz}): ${dia} ${hora} y debe ser ${esp[k]} 10:00 (el ancla se pierde o la hora se mueve)`); break; }
+        }
+      }
+    } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+  },
+
   /* 9b-1 · Una prueba comprueba algo. 13 pruebas de las fases 1–2 (an1n, ciudad, ciudad2, ciudad3, lic, mapa, menu2a, menu2a-adm, menu2a-f, nov1,
      publica, rev1, usr1l) solo imprimían lo que veían («precio guardado: 1250», «errores: […]») y la corrida las contaba en verde con «0 ✓»: un
      error en la página o un precio mal guardado no las ponía en rojo. Ahora cada una lo comprueba (ok(…) → «  ✓ …»), correr.mjs pone en rojo la

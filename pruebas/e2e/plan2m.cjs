@@ -63,6 +63,22 @@ const restaurar = () => { try { sql(`delete from subscriptions where business_id
   ok(sub("status||'|'||failed_attempts") === 'past_due|1' && stats() === 'pro' && notif('pro_failed') === '1', 'cobro fallido: intento 1 de 3, sigue Pro y le avisa');
   for (const n of [2, 3]) { sql(`update subscriptions set next_attempt_at = now() - interval '1 minute' where business_id = '${BIZ}'`); await d.goto(B + P + '/cobros/plan'); await d.waitForTimeout(500); }
   ok(sub("status") === 'ended' && stats() === 'free', 'al tercer intento: Free (nada se borra)');
+  // 6b · 23 nov · El fin del período con LA regla (lib/periodo-pro.ts), servido: un período que empieza un 31 a las 10:00 de la ciudad termina el último
+  // día del mes siguiente a las 10:00 y el siguiente vuelve al 31 (el ancla, no el día recortado). Antes (setMonth): 31 ene → 3 mar. Fechas fijas en
+  // un año que este negocio no usó: no depende del día en que corra la prueba, y como un cobro no se borra, otra corrida en la misma base toma otro año.
+  const bueno = sql(`select stripe_pm_id from payment_methods where user_id = ${PEDRO} and last4 = '4242' and status = 'active' limit 1`);
+  const Y = +sql(`select max(y) from generate_series(1990, 2025) y where not exists (select 1 from subscription_charges z where z.business_id = '${BIZ}' and extract(year from z.period_start at time zone 'America/New_York') = y)`);
+  const feb = new Date(Date.UTC(Y, 2, 0)).getUTCDate(), L = (s) => `'${s} America/New_York'::timestamptz`;
+  const P1 = `${Y}-01-31 10:00:00`, P2 = `${Y}-02-${feb} 10:00:00`, P3 = `${Y}-03-31 10:00:00`;
+  const finDe = (ini) => sql(`select to_char((e.note->>'hasta')::timestamptz at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI:SS') from subscription_charges z join subscription_events e on e.idem_key = z.idem_key and e.kind = 'charged'
+                               where z.business_id = '${BIZ}' and z.status = 'done' and z.period_start = ${L(ini)}`);
+  sql(`update subscriptions set status = 'active', cycle = 'month', card_pm = '${bueno}', failed_attempts = 0, next_attempt_at = null, current_period_end = ${L(P1)} where business_id = '${BIZ}' and status = 'ended'`);
+  for (let i = 0; i < 20 && !finDe(P2); i++) { await d.goto(B + P + '/cobros/plan'); await d.getByText(/Próximo cobro:/).first().waitFor(); }
+  ok(finDe(P1) === P2, `el período que empieza el 31 ene ${Y} a las 10:00 termina el ${P2} (último día de febrero; antes, 3 mar): «${finDe(P1)}»`);
+  ok(finDe(P2) === P3, `el siguiente vuelve al 31: ${P3} (el ancla, no el ${feb}; a las 10:00 aunque cambie el horario): «${finDe(P2)}»`);
+  // Se para la cadena (el resto de la prueba no cobra períodos viejos): sin cobro en camino, el próximo, en un mes.
+  for (let i = 0; i < 20 && sql(`select count(*) from subscription_charges where business_id = '${BIZ}' and status = 'pending'`) !== '0'; i++) await d.waitForTimeout(500);
+  sql(`update subscriptions set current_period_end = now() + interval '1 month' where business_id = '${BIZ}'`);
   // 7 · Los «Ver Pro» del panel llevan a Tu plan
   await d.goto(B + P + '/vendes/jobs'); ok(true, 'Jobs (Pro) abre');
   ok(err.length === 0, 'sin errores: ' + err.join(' | ')); restaurar(); await b.close(); console.log('OK');

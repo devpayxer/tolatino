@@ -2893,7 +2893,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9b** · **`plan4f` fallaba sola según el día del mes (23 nov):** pedía que el próximo cobro cayera «más de 27 días después de hoy», y con el día de
       cobro al principio del mes y hoy al final (un 23 con cobro el 7) cae a 14 días. Ahora comprueba la regla de verdad: el día de cobro del plan, en
       el mes siguiente. Era de la prueba, no de la app. Otras pruebas con fechas relativas al día de hoy pueden tener el mismo defecto: sin barrer.
-- [ ] **→ 9t** · **Pro: el período mensual se suma con `setMonth` (`lib/suscripcion.ts`, dos sitios) (23 nov, auditoría del calendario):** un 29, 30 o 31
+- [x] **→ 9t** · **(Hecho el 23 nov: `lib/periodo-pro.ts` `finDePeriodo` —mismo día del mes siguiente o su último día, con el día del ANCLA de la racha y la
+      hora en la zona de la ciudad—; guardián `periodoProSinDesborde` con 30 casos y 12 renovaciones desde un 31, al revés `alrevesPeriodoPro` 13/13, `plan2m` con
+      un período que empieza un 31 ene.)** Pro: el período mensual se sumaba con `setMonth` (`lib/suscripcion.ts`, dos sitios): un 29, 30 o 31
       desborda (31 ene → 3 mar, 31 mar → 1 may) y el cobro queda corrido para siempre; el cambio de horario mueve la hora. Arreglándose (Opus): una sola
       regla (mismo día del mes siguiente o su último día, sin derivar), función pura con tabla, guardián y punta a punta con un período que empieza un 31.
 - [x] **→ 9b** · **`evt6e` fallaba sola de 0:00 a 0:59 de cada martes (23 nov):** terminaba la fecha «hace 1 h» y la liquidación ya era de hoy; ahora la
@@ -2910,4 +2912,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       lista «prohibida» de producción, no la ejecución** (las dos nuevas sí se ignoran fuera de pruebas y si no son locales). Darles la misma regla.
 - [ ] **→ 9q** · **Batería de El Compa con el modelo real:** si se corre con `TOLATINO_ENTORNO=pruebas` y `ANTHROPIC_API_BASE` puestos iría al simulador
       (404). Correrla sin esa variable. Y `prov9v` dura ~135 s: su estimación en `pruebas/reparto.json` dice 60.
+- [ ] **→ 9t** · **Patrocinio mensual renovado: el día se corre hacia atrás** (`lib/patrocinio.ts` encadena `interval '1 month'` desde el fin anterior:
+      31 ene → 28 feb → 28 mar). No desborda, pero pierde el día. Decidir si usa el ancla como Pro (`lib/periodo-pro.ts`).
+- [ ] **→ 9t** · **Pro: el ancla del período sale de `subscription_charges`** (el primer cobro hecho de la racha, una consulta por cobro). Si se quiere
+      guardar, columna `subscriptions.period_anchor` (migración 0215, no aplicada). Sin ver: el anual servido, y si el sandbox tiene alguna suscripción
+      con la fecha ya corrida (sigue con su día de hoy: nada se recalcula hacia atrás).
 
