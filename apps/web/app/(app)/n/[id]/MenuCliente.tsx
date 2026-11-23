@@ -128,6 +128,41 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
     setToast({ msg, undo }); clearTimeout(tt.current); tt.current = setTimeout(() => setToast(null), undo ? 4000 : 1800);
   }, []);
 
+  // 23 nov (fundador) · La categoría marcada sigue a la página: al bajar por el menú se enciende la categoría que estás viendo y la tira de
+  // categorías se desliza sola para enseñarla (como las apps de pedidos). Tocar una categoría manda durante el salto (saltando) para que no parpadee.
+  const saltando = useRef(0);
+  useEffect(() => {
+    if (!m) return;
+    let pend = 0;
+    const ver = () => {
+      pend = 0;
+      if (Date.now() < saltando.current) return;
+      const desk = window.innerWidth >= 1024, barra = desk ? null : document.querySelector<HTMLElement>("[data-mchips]");
+      if (!desk && !barra) return;
+      const linea = desk ? 150 : barra!.getBoundingClientRect().bottom + 16;
+      let k: string | null = null;
+      for (const el of document.querySelectorAll<HTMLElement>(`[data-msec^="${desk ? "d-" : "m-"}"]`)) {
+        const r = el.getBoundingClientRect();
+        if (!r.height) continue;
+        if (r.top <= linea) k = el.dataset.msec!.slice(2); else break;
+      }
+      // Al fondo de la página manda la última sección aunque su título no llegue a la línea.
+      if (k && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) { const t = [...document.querySelectorAll<HTMLElement>(`[data-msec^="${desk ? "d-" : "m-"}"]`)].filter((e) => e.getBoundingClientRect().height); k = t[t.length - 1]?.dataset.msec!.slice(2) ?? k; }
+      if (k) setCat((c) => (c === k ? c : k));
+    };
+    const alMover = () => { if (!pend) pend = requestAnimationFrame(ver); };
+    window.addEventListener("scroll", alMover, { passive: true });
+    return () => { window.removeEventListener("scroll", alMover); if (pend) cancelAnimationFrame(pend); };
+  }, [m]);
+  // La categoría marcada siempre se ve en su tira: se mueve solo la tira (scrollLeft), nunca la página.
+  useEffect(() => {
+    if (!cat) return;
+    const chip = document.querySelector<HTMLElement>(`[data-mchips] [data-chip="${CSS.escape(cat)}"]`), tira = chip?.parentElement;
+    if (!chip || !tira) return;
+    const t = tira.getBoundingClientRect(), b = chip.getBoundingClientRect(), margen = 20;
+    if (b.left < t.left + margen) tira.scrollTo({ left: tira.scrollLeft + b.left - t.left - margen, behavior: "smooth" });
+    else if (b.right > t.right - margen) tira.scrollTo({ left: tira.scrollLeft + b.right - t.right + margen, behavior: "smooth" });
+  }, [cat]);
   if (!m) return null;
   const est = m.estado, canOrd = est.canOrd;
   const modo = modoDe(m, modoG), dl = modo === "delivery";
@@ -197,7 +232,7 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
   const cats = m.secs.map((s) => ({ k: s.id, title: s.name, note: s.note, items: s.items.map((id) => card(m.items[id]!)) }));
   const catSel = cat ?? (pop.length ? "pop" : cats[0]?.k ?? "");
   const jump = (k: string, desk: boolean) => {
-    setCat(k);
+    setCat(k); saltando.current = Date.now() + 900;
     setTimeout(() => {
       const el = document.querySelector(`[data-msec="${desk ? "d-" : "m-"}${k}"]`);
       // 23 nov · En el teléfono la sección queda justo debajo de la barra de categorías, esté donde esté pegada (ficha Free: bajo la cabecera; ficha nueva: bajo el nombre y las pestañas).
@@ -368,7 +403,7 @@ export function MenuMovil({ mn, card = false }: { mn: Mn; card?: boolean }) {
       {mn.canOrd && <div className="px-5 pt-4"><Modo mn={mn} /></div>}
       {/* 23 nov · En la ficha nueva (card) arriba ya hay pegados el nombre (44) y las pestañas (50): las categorías se pegan debajo, no detrás. */}
       <div data-mchips="" className={`sticky z-[15] mt-3 border-b border-ink/[.07] bg-white py-[11px] ${card ? "top-[151px]" : "top-[57px]"}`}>
-        <div className="hs flex gap-2 overflow-x-auto px-5">{mn.chips.map((c) => <Chip key={c.k} variant={c.on ? "selected" : "filter"} onClick={c.onClick}>{c.l}</Chip>)}</div>
+        <div className="hs flex gap-2 overflow-x-auto px-5">{mn.chips.map((c) => <span key={c.k} data-chip={c.k} className="flex flex-none"><Chip variant={c.on ? "selected" : "filter"} onClick={c.onClick}>{c.l}</Chip></span>)}</div>
       </div>
       {mn.pop.length > 0 && (
         <div data-msec="m-pop" className="pt-[18px]">

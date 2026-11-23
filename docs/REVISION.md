@@ -6435,4 +6435,6 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   camino de siempre. Si deja fuera demasiados retoques reales, se afina.
 - **Tanda del 23 nov (3):** la banda del carrito («1 artículo · total») se salía por la derecha cuando el texto era largo («ABRE A LAS 11:00 AM ·
   PROGRAMA TU PEDIDO») y el total quedaba cortado; ahora mide el ancho de la pantalla. Qué mirar: agregar un plato con el negocio cerrado.
+- **Tanda del 23 nov (4):** en el menú, la categoría marcada sigue a la página: al bajar se enciende la categoría que se está viendo y la tira de
+  categorías se desliza sola para enseñarla; al tocar una categoría sigue saltando a su sección. Qué mirar: Sabor Dominicano › Menú, bajar despacio.
 
