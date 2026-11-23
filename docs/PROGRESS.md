@@ -20,6 +20,13 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **23 nov (09:30 UTC) · `main` = `pruebas` = 5b46445, sandbox comprobado por la herramienta de subida.** Servido desde la entrada de abajo: pruebas de
+  calendario corregidas (`evt6e`, `din9t3`–`6`, `plan4f`) con sus guardianes; «Probar» de SES y del modelo con simulador (`SES_API_BASE`,
+  `ANTHROPIC_API_BASE`, solo pruebas y solo locales); el período de Pro sin desbordar el mes (`lib/periodo-pro.ts`, ancla de la racha). **En marcha:** la
+  cabecera y las pestañas nuevas de la ficha Pro, pedidas por el fundador con capturas de referencia (rama local `cabecera-ficha`, copia
+  `.claude/worktrees/cab`, servida en :3120; pieza `packages/ui/src/core/PestanasFicha.tsx`; en el teléfono «Contactar» abre una hoja con Llamar,
+  Escribir y Cómo llegar). Un encargo (Sonnet) adapta guardianes y pruebas; falta el visto bueno del fundador al diseño antes de subirla. La ficha
+  Free no se tocó. **Sigue después:** los pendientes de calendario y de Pro anotados en LAUNCH, y lo que queda de la tarea 195.
 - **23 nov (06:50 UTC) · `main` = `pruebas` = d233e75, sandbox comprobado por la herramienta de subida.** Servido desde la entrada de abajo: llaves de
   proveedores por Super Admin › Integraciones › Proveedores (0213; lector `lib/llaves-proveedores.ts`; la de Telnyx del primer día sigue pendiente de
   decisión, REVISION); las 647 fotos de las páginas de categoría propias y la CSP de producción sin hosts de fotos; El Compa sin modelo elige la
