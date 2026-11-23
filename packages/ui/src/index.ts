@@ -3,6 +3,7 @@
 export { Wordmark } from "./core/Wordmark";
 export { Esq, EsqTexto, EsqCirculo, EsqZona } from "./core/Esqueleto";
 export { Foto, type FotoProps } from "./core/Foto";
+export { PestanasFicha, type PestanasFichaProps, type PestanaFicha } from "./core/PestanasFicha";
 export { TarjetaVitrina, FilaFree, TarjetaVitrinaEsqueleto, FilaFreeEsqueleto, CATALOGO_TIPADAS, type TarjetaVitrinaProps, type FilaFreeProps, type VitrinaChip } from "./core/Vitrina";
 export { ANCHOS_FOTO, fotoSrc, fotoFondo, fotoCss, fotoSrcSet } from "./foto";
 export * from "./ds/index";

@@ -1,0 +1,67 @@
+"use client";
+import type { CSSProperties, KeyboardEvent } from "react";
+import { Icon as IconDS } from "../ds/index";
+
+/* Pestañas de la ficha del negocio (23 nov, referencia del fundador): icono + palabra, grandes, y la activa en el color de acción con su raya.
+   Pieza tipada que reemplaza a Tabs (variant mono) y DesktopTabs en la ficha; las portadas no se editan a mano.
+   · movil: una fila que se desliza de lado (role=tablist / tab, flechas del teclado).
+   · escritorio: la misma fila y, a la derecha, el estado del negocio («Abierto · cierra 8 PM») cuando la tira queda pegada arriba.
+   Cada pestaña mide 44 de alto o más (objetivosTactiles). Colores = tokens. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Icon = IconDS as any;
+
+export type PestanaFicha = { id: string; label: string; icon?: string | null };
+export type PestanasFichaProps = {
+  items: PestanaFicha[];
+  active: string;
+  onChange: (id: string) => void;
+  modo: "movil" | "escritorio";
+  /** Escritorio: el estado a la derecha (punto + texto), en el color del estado. */
+  aside?: { label: string; dot: string; color: string } | null;
+  asideWidth?: number;
+  gap?: number;
+  style?: CSSProperties;
+};
+
+const flechas = (e: KeyboardEvent<HTMLDivElement>) => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End") return;
+  const todas = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("[data-pestana]"));
+  const i = todas.indexOf(document.activeElement as HTMLElement);
+  if (i < 0) return;
+  e.preventDefault();
+  const j = e.key === "Home" ? 0 : e.key === "End" ? todas.length - 1 : (i + (e.key === "ArrowRight" ? 1 : -1) + todas.length) % todas.length;
+  todas[j]?.focus();
+};
+
+export function PestanasFicha({ items, active, onChange, modo, aside, asideWidth = 372, gap = 48, style }: PestanasFichaProps) {
+  const desk = modo === "escritorio";
+  const fila = (
+    <div role={desk ? undefined : "tablist"} onKeyDown={flechas}
+      style={{ display: "flex", gap: desk ? 30 : 22, overflowX: "auto", scrollbarWidth: "none", padding: desk ? 0 : "0 20px", minWidth: 0 }}>
+      {items.map((t) => {
+        const on = t.id === active, fg = on ? "var(--tl-action)" : "rgba(11,14,18,.75)";
+        return (
+          <button key={t.id} type="button" data-pestana="" role={desk ? undefined : "tab"} aria-selected={desk ? undefined : on} aria-current={desk && on ? "page" : undefined}
+            tabIndex={desk || on ? 0 : -1} onClick={() => onChange(t.id)}
+            style={{ flex: "none", display: "flex", alignItems: "center", gap: desk ? 9 : 8, minHeight: desk ? 56 : 50, padding: desk ? "16px 0 14px" : "13px 0 11px", marginBottom: -1,
+              background: "none", border: 0, borderBottom: `2.5px solid ${on ? "var(--tl-action)" : "transparent"}`, cursor: "pointer", whiteSpace: "nowrap", color: fg,
+              font: `800 ${desk ? 17 : 16}px/1 Manrope, system-ui, sans-serif`, letterSpacing: "-.015em" }}>
+            {t.icon ? <Icon name={t.icon} size={desk ? 19 : 18} strokeWidth={2} color={fg} /> : null}
+            <span>{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+  if (!desk) return <div data-pieza="pestanas-ficha" style={{ background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.1)", ...style }}>{fila}</div>;
+  return (
+    <div data-pieza="pestanas-ficha" style={{ background: "var(--tl-white)", ...style }}>
+      <div style={{ display: "grid", gridTemplateColumns: `minmax(0,1fr) ${asideWidth}px`, gap, borderBottom: "1px solid rgba(11,14,18,.1)" }}>
+        {fila}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, font: "800 13.5px/1 Manrope, system-ui, sans-serif", color: aside?.color, whiteSpace: "nowrap", minWidth: 0 }}>
+          {aside ? <><span style={{ width: 8, height: 8, borderRadius: 99, background: aside.dot, flex: "none" }} /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{aside.label}</span></> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
