@@ -6,6 +6,8 @@ const fs = require('fs'), path = require('path');
 const RAIZ = path.resolve(__dirname, '..', '..');
 const ts = require(path.join(RAIZ, 'node_modules', 'typescript'));
 const WEB = path.join(RAIZ, 'apps', 'web');
+const delEntorno = (n) => (process.env[n] ?? '').trim() || null;
+const DOBLE_LLAVES = { llaveYa: delEntorno, llave: async (n) => delEntorno(n), olvidarLlaves() {}, prepararLlaves: async () => {} };
 function cargar(rel, stubs = {}) {
   const archivo = path.join(RAIZ, rel);
   const fuente = fs.readFileSync(archivo, 'utf8').replace(/^import "server-only";\n/m, '');
@@ -14,6 +16,9 @@ function cargar(rel, stubs = {}) {
     if (m in stubs) return stubs[m];
     // 9t9 · El ayudante de los barridos (un elemento malo no detiene a los demás) no tiene importaciones: se carga el real, sin stub.
     if (m === './barrido-uno') return cargar('apps/web/lib/barrido-uno.ts');
+    // 23 nov · El lector de las llaves de proveedores (lib/llaves-proveedores.ts: el entorno y, si no, el llavero de la base). Sin base, su doble lee
+    // SOLO el entorno, que es lo que manda también en el servidor; quien quiera otra cosa lo pasa en stubs.
+    if (/(^|\/)llaves-proveedores$/.test(m)) return DOBLE_LLAVES;
     if (m.startsWith('.')) throw new Error(`${rel} importa ${m}: pásalo en stubs`);
     return require(require.resolve(m, { paths: [WEB] }));
   };
