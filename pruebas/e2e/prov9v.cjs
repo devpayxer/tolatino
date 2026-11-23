@@ -196,7 +196,7 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
   const ultima = (kind) => sql(`select fingerprint || '|' || source || '|' || ok::text || '|' || result from store_secret_checks where kind = '${kind}' order by id desc limit 1`).split('|');
   const claves = [];
   const ciclo = async ({ prov, nombre, paso: pk, fila, tipos, clave, faltan, otra, tambien }) => {
-    const nK1 = tambien ? 2 : 1; // el token y el ID de WhatsApp se anotan cada uno con SU «Probar» (hallazgo: el de uno no cuenta para el otro)
+    const nK1 = tambien ? 2 : 1; // en WhatsApp la prueba pulsa «Probar» en el token y también en el ID de la cuenta: dos llamadas al simulador
     const K1 = clave(), K2 = clave(), n0 = SIM.llamadas(prov).length;
     claves.push(K1, K2);
     let P = await paso(pk);
@@ -206,6 +206,8 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
     P = await paso(pk);
     ok(/PENDIENTE/.test(P) && P.includes('Las llaves están; falta que «Probar» salga bien con la que se usa hoy.'), `${pk} con las llaves y sin probar: pendiente («falta que «Probar» salga bien»)`);
     await probarUI(pa, fila, SIRVE);
+    // 23 nov · Las que se prueban juntas: UNA pulsación en el token anota también el ID de la cuenta, con su huella (antes «Lo que te toca» pedía dos).
+    if (tambien) ok(ultima(tambien).join('|') === `${sha(otra.waba)}|llavero|true|sirve`, `${nombre}: con una sola prueba queda anotado también el ID de la cuenta`);
     if (tambien) { await probarUI(pa, tambien, SIRVE); ok(ultima(tambien).join('|') === `${sha(otra.waba)}|llavero|true|sirve`, `${nombre}: el ID de la cuenta también se prueba aparte y sirve`); }
     await pa.screenshot({ path: `${OUT}q-${prov}-sirve-1360.png`, fullPage: true });
     ok(ultima(fila).join('|') === `${sha(K1)}|llavero|true|sirve`, `${nombre}: la pantalla dijo «La llave sirve» y quedó anotado: huella de la llave en uso, de dónde vino, sirvió, «sirve»`);
@@ -223,7 +225,7 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
     await pa.screenshot({ path: `${OUT}q-${prov}-rechazada-1360.png`, fullPage: true });
     ok(ultima(fila).join('|') === `${sha(K2)}|llavero|false|rechazada`, `${nombre}: la pantalla dijo «no aceptó la llave» y quedó anotado «rechazada» con la huella de la NUEVA`);
     ok(SIM.llamadas(prov, sha(K2)).length === 1 && SIM.llamadas(prov, sha(K2))[0].estado === 401 && SIM.llamadas(prov, sha(K1)).length === nK1 && SIM.llamadas(prov).length === n0 + nK1 + 1, `${nombre}: el simulador vio la llamada con la llave NUEVA (401) y no volvió a ver la anterior`);
-    ok(sql(`select count(*) from audit_entries where action = 'llavero.probar' and at >= '${T0}' and after->>'huella' in ('${sha(K1).slice(0, 16)}', '${sha(K2).slice(0, 16)}')`) === '2', `${nombre}: la auditoría tiene las dos pruebas, con huella`);
+    ok(sql(`select count(*) from audit_entries where action = 'llavero.probar' and at >= '${T0}' and after->>'huella' in ('${sha(K1).slice(0, 16)}', '${sha(K2).slice(0, 16)}')`) === (tambien ? '3' : '2'), `${nombre}: la auditoría tiene las pruebas de las dos llaves, con huella${tambien ? ' (la del ID de la cuenta anota también el token: 3)' : ''}`);
     S = await salud();
     ok(/la prueba falló \(rechazada\)/.test(S), `${nombre}: Salud dice «la prueba falló (rechazada)»`);
     P = await paso(pk);
