@@ -23,6 +23,8 @@ import { filas as filasMapa, leer as leerMapa, problemas as problemasMapa, semil
 // 9e · Las páginas legales: el guardián lee docs/legal/ con el MISMO código que el indexador (forma, pares ES/EN, sha256).
 import { paginasLegales } from "../scripts/legal/indexar.mjs";
 import { BORRADOR as BORRADOR_LEGAL, CLAVES as CLAVES_LEGALES } from "../scripts/legal/forma.mjs";
+// 23 nov · Los terceros que reciben datos: la lista cerrada (docs/legal/terceros.json) contra el código y los textos.
+import { revisarTerceros } from "../scripts/legal/terceros.mjs";
 // 9f · Las cadenas de la interfaz: el guardián usa el MISMO extractor que genera apps/web/lib/cms-cadenas.json.
 import { cadenasDelCodigo, comoJson as cmsComoJson, comoJsonE2 as cmsComoJsonE2, SALIDA as CMS_SALIDA, SALIDA_E2 as CMS_SALIDA_E2 } from "../scripts/cms/extraer.mjs";
 // 9f-3 · Las definiciones de E2 de las pantallas: el guardián las revisa con el MISMO código que el codemod que las convierte.
@@ -15395,6 +15397,17 @@ const guardianes = {
         for (const r of j.resultados) if (/(?:\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\b\d{9,}\b/i.test(`${r.texto ?? ""} ${r.pregunta ?? ""}`)) { falla(G, C, 0, `el JSON de la corrida deja ver un dato personal o un id sin tapar (${r.id} ${r.lang})`); break; }
       }
     }
+  },
+
+  /* 23 nov · tercerosDeclarados: la clase «un texto dice que un dato no sale y el código lo manda» (Privacidad e Inteligencia artificial decían que
+     la revisión de fotos no salía a otra empresa; desde la decisión AJ la segunda opinión manda una versión reducida a Anthropic). docs/legal/terceros.json
+     es la lista CERRADA de las empresas que reciben datos y qué reciben; scripts/legal/terceros.mjs la compara con el código (todo host que el producto
+     usa está en la lista o en «sinDatos» con su motivo; cada señal de la lista existe en el código, o el guardián estaría ciego), con Privacidad e
+     Inteligencia artificial en ES y EN (nombran lo que sale y a quién) y con todo texto del producto (legal, ayuda, cadenas): ninguno dice «no sale / no va a
+     otra empresa» de un dato de la lista sin decir la excepción, ni promete retención cero mientras la lista diga «pendiente». Quitar o aflojar una
+     entrada es decisión del fundador. Al revés: pruebas/alreves/alrevesTercerosLegales.cjs. */
+  tercerosDeclarados() {
+    for (const e of revisarTerceros()) falla("tercerosDeclarados", e.f, e.linea, e.msg);
   },
 
 };

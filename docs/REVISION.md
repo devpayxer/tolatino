@@ -6305,3 +6305,16 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   («Ya cancelé», «Te devolví», «Cambié tu teléfono»). Se está arreglando.
 - **Una decisión tuya, sin prisa:** si alguien escribe en español «contesta solo en inglés», hoy El Compa contesta en el idioma de la pregunta.
 
+## Privacidad, Inteligencia artificial y Cookies al día (23 nov) — versiones nuevas en borrador, tres decisiones tuyas
+- **Qué cambió:** los tres textos decían que la revisión de fotos no salía de nuestros servidores. Ahora dicen qué recibe cada empresa (Anthropic,
+  Stripe, Telnyx, Meta, Amazon, Apple y Google, Pexels, Cloudflare) y qué no. Las fichas de ayuda que repetían la frase vieja también.
+- **Qué mirar:** /privacidad, /ia y /cookies en español e inglés. **Publicar las versiones nuevas es tuyo** (Super Admin › páginas legales); hasta
+  entonces la vigente es la vieja.
+- **Decisión 1:** con el revisor propio de fotos apagado o caído, toda foto pública nueva va a Anthropic (no solo las dudosas). Si Anthropic no
+  responde, la foto no se publica. ¿Lo dejamos así o, sin revisor propio, se retiene sin consultar a nadie?
+- **Decisión 2:** tu decisión AJ dice «las fotos privadas nunca salen de casa». Hay una excepción que ya existía: la foto de la entrega va a Stripe
+  como evidencia cuando un banco disputa un cobro. Propongo dejar la frase como «nunca van a la segunda opinión; la de la entrega puede ir a Stripe en
+  una disputa». Dime si la cambio en DECISIONES.
+- **Decisión 3 (la tomo si no dices otra cosa):** las 17 fotos de portada de las categorías se piden a Pexels desde el navegador de cada visitante,
+  también en producción. Las paso a fotos servidas por nosotros.
+

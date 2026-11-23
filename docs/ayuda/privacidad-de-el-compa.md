@@ -1,7 +1,7 @@
 # Privacidad de El Compa · El Compa privacy
 
 _Pantallas: El Compa (el asistente de IA de To'Latino) en Soporte y en la ayuda de cada operación; lo que aquí se explica vale en la app y en la
-web. Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
+web. Versión: 23 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **El Compa es una IA** y lo dice siempre. Contesta con el Centro de ayuda de To'Latino y con **tus** pedidos, citas y reservaciones. Puede
@@ -10,8 +10,9 @@ web. Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
   más.
 - **Qué nunca ve:** datos de otra persona, tus mensajes con otros vecinos, tu teléfono, tu dirección, tu tarjeta, tus citas de salud o con
   profesionales, las inscripciones (y los datos de tus niños) ni nada que guardaste como privado.
-- **Lo que escribes se tapa:** números de tarjeta, códigos de seguridad, número de seguro social, códigos de verificación, contraseñas y cuentas
-  de banco quedan «[tapado]» antes de guardarse y antes de pasar a la IA. Nunca te los pedimos.
+- **Lo que escribes se tapa:** números de tarjeta, códigos de seguridad, número de seguro social, número A de inmigración, códigos de
+  verificación, contraseñas y cuentas de banco quedan «[tapado]» antes de guardarse y antes de pasar a la IA. Nunca te los pedimos. Lo demás
+  que escribas (un nombre, un teléfono, una dirección) no se tapa.
 
 ## Cómo se usa
 1. Escríbele con tus palabras. Para contestarte, El Compa usa solo la ayuda y tus operaciones.
@@ -55,8 +56,9 @@ web. Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
   the total). Nothing more.
 - **What it never sees:** another person's data, your messages with other neighbors, your phone, your address, your card, your health or
   professional appointments, enrollments (and your kids' data) or anything you saved as private.
-- **What you write is covered:** card numbers, security codes, Social Security numbers, verification codes, passwords and bank accounts become
-  «[tapado]» before being saved and before going to the AI. We never ask you for them.
+- **What you write is covered:** card numbers, security codes, Social Security numbers, immigration A-numbers, verification codes, passwords and
+  bank accounts become «[tapado]» before being saved and before going to the AI. We never ask you for them. Anything else you write (a name, a
+  phone number, an address) is not covered.
 
 ### How to use it
 1. Write to it in your own words. To answer you, El Compa uses only the help and your operations.

@@ -1,11 +1,12 @@
 # Privacy policy
 
-_Clave: privacidad. Jurisdicción: us. Idioma: en. Fecha del texto: 14 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
+_Clave: privacidad. Jurisdicción: us. Idioma: en. Fecha del texto: 23 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
 
 What data To'Latino keeps, why, who it is shared with, how long it is kept and what you can do with it. Further down, each piece of data and what happens to it when you delete your account come from the real list of what we keep.
 
 ## What changed
 - First version: it comes from the data inventory and the map of what is exported and deleted.
+- Corrected: doubtful photos go downsized to Anthropic; Pexels, Cloudflare and what goes to Stripe are named.
 
 ## What we do not do
 - We do not track you across apps or websites. We do not use the phone's advertising ID.
@@ -41,15 +42,37 @@ The full list, item by item, is below in «The data we use and why».
 - **The business** you deal with gets only what it needs to serve you (your name, what you ordered and, for a delivery, your address and your
   phone for that delivery).
 - **The services that work for To'Latino**, only with what their part needs:
-  - Stripe: card payments and payouts to businesses.
+  - Stripe: card payments and payouts to businesses. On the payment screen, your browser loads Stripe's form (js.stripe.com): Stripe sees your
+    browser and your internet address. If a bank disputes a charge, the evidence for that order goes to Stripe: the receipt, the conversation
+    with the business (without phone numbers) and the delivery record, with the delivery address and, if there is one, the delivery photo.
   - Telnyx: text messages (your sign-in code and SMS notifications).
   - Meta (WhatsApp): only if you turn on «Talk to El Compa by WhatsApp and SMS».
   - Amazon Web Services (SES): email, if you add your email.
-  - Anthropic: El Compa, the AI assistant. What you write arrives already masked (no cards, social security, codes or passwords).
-  - Apple and Google: phone notifications and tickets in Wallet.
+  - Anthropic (AI provider, in the US):
+    - El Compa: what you write arrives already masked (no cards, social security, A-numbers, verification codes, passwords or bank accounts),
+      with your first name, your language, your city and your recent transactions. Anything else you write (a name, a phone number, an address)
+      is not masked. More in [Artificial intelligence](/ia).
+    - A business's auto-replies, if it turned them on: the customer's message, already masked, and the business page.
+    - Support drafts: your case, masked and without phone numbers or emails.
+    - Photos that will be shown in public and that the first review could not clear: a downsized version of the photo. Explained below.
+    - [pending: how long Anthropic keeps what it receives and whether zero retention is contracted; to be confirmed when the production account is opened, with the lawyer.]
+  - Apple and Google: phone notifications (the text of the notice; those about health, children, Support, sanctions and your account go only as
+    «You have a new notice in To'Latino»), tickets in Wallet (the event's name, place and date and the ticket's code, without your name or phone)
+    and, on the web, your browser's notification service.
+  - Pexels: the covers of some category pages are Pexels photos that your browser requests directly from Pexels, which sees your internet
+    address and your browser. [pending: the team decides whether they are replaced with our own photos before opening.]
+  - Cloudflare: [pending: the production site will sit behind Cloudflare, which everything you send and receive passes through; to be confirmed when it goes live.]
   - [pending: the production server provider, chosen before opening.]
-- **What never leaves To'Latino:** photos, the «See translation» translator, photo review, maps, address lookup and analytics run on
-  To'Latino's own servers, with no third parties.
+- **What is not sent to another company:** the «See translation» translator, the first photo review, maps, address lookup and analytics run on
+  To'Latino's servers. Your photos are stored on To'Latino's servers.
+- **Review of photos shown in public:** it is done first by a To'Latino model, on To'Latino's servers. Only if that model doubts a photo (or,
+  while it is off or not answering, any new public photo), a downsized version of the photo goes to Anthropic for a second opinion: up to 640
+  pixels per side, without the camera's data and without anything about who uploaded it, their business or their city. Faces and text are not
+  blurred. If Anthropic does not answer, the photo stays under review and is not published. A verified business with 10 or more visible photos
+  and none removed in 90 days publishes its doubtful photos without that second opinion.
+- **Private photos** (Messages, help, delivery, claims, appointments, requests, trips) are not sent to Anthropic: only To'Latino's model looks at
+  them. The delivery photo can go to Stripe if a bank disputes the charge (above).
+- **«Directions»:** if you tap it, the address of the place goes to your phone's maps app (on a computer, to Google Maps in your browser).
 - **If the law requires it:** [pending: how we respond to a legal order, to be written with the lawyer.]
 
 ## How long it is kept

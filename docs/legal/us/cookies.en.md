@@ -1,11 +1,12 @@
 # Cookies
 
-_Clave: cookies. Jurisdicción: us. Idioma: en. Fecha del texto: 14 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
+_Clave: cookies. Jurisdicción: us. Idioma: en. Fecha del texto: 23 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
 
-To'Latino uses only the cookies it needs to work. There are no advertising or third-party cookies, so we do not ask you to accept cookies when you arrive.
+To'Latino uses only the cookies it needs to work. There are no advertising cookies, so we do not ask you to accept cookies when you arrive.
 
 ## What changed
 - First version, with the real list of To'Latino's cookies.
+- Corrected: on the payment screen and on some covers your browser requests things from Stripe and Pexels.
 
 ## To'Latino's cookies
 They are all our own (only To'Latino reads them) and none is used for ads.
@@ -23,8 +24,11 @@ They are all our own (only To'Latino reads them) and none is used for ads.
 Besides cookies, To'Latino keeps things in your browser that save you steps: your cart, the «List your business» draft and your tickets to get
 in with no signal. They stay on your phone or computer and are not sent to anyone.
 
-## No third-party cookies
-To'Latino does not load advertising or tracking tools from other companies. If that ever changed, this page would change first and we would
+## Other companies in your browser
+To'Latino does not load advertising or tracking tools from other companies. What your browser does load from other companies: on the card
+payment screen, Stripe's form (js.stripe.com); and on the covers of some categories, photos from Pexels (images.pexels.com). Those companies
+see your browser and your internet address. [pending: which cookies Stripe stores on the payment screen, to be confirmed with Stripe and the
+lawyer.] If advertising or tracking ever changed, this page would change first and we would
 ask you before. [pending: confirm with the lawyer that, with only necessary cookies, no consent notice is needed under the privacy laws of the
 states where To'Latino opens.]
 

@@ -2813,7 +2813,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9s** · **`docs/legal/para-el-abogado.md` (50 preguntas, 34 bloquean abrir) y `para-el-contador.md` (12, 9 bloquean), ES y EN:** cada línea
       abierta del abogado y del contador tiene su pregunta; la tabla «pregunta → línea» está al final de cada documento.
 - [ ] **→ 9s** · **Cerrar las líneas del abogado y del contador** con esa tabla cuando lleguen las respuestas.
-- [ ] **→ 9s** · **Privacidad e Inteligencia artificial dicen que la revisión de fotos no sale de nuestros servidores:** desde la decisión AJ la segunda
+- [x] **→ 9s** · **(Hecho el 23 nov: Privacidad, IA y Cookies corregidos, lista cerrada `docs/legal/terceros.json`, guardián `tercerosDeclarados`,
+      al revés `alrevesTercerosLegales` 17/17; las versiones nuevas quedan en borrador hasta que el fundador las publique.)** Privacidad e Inteligencia artificial decían que la revisión de fotos no sale de nuestros servidores: desde la decisión AJ la segunda
       opinión manda la imagen reducida de la foto dudosa a Anthropic (`lib/fotos-segunda-opinion.ts`). Corregir los dos textos antes de mandarlos al abogado.
 - [ ] **→ 9s** · **Mandar al abogado los 14 borradores de `docs/legal/us` y `us-pa` junto con la lista** (la lista lo promete; el paso 9-2.1 del tablero
       solo nombra la lista).
@@ -2831,3 +2832,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (`modelo-reglas.ts`, `modelo-simulador.ts`; casos `vec-036` y `vec-042` de la batería). La acción pide confirmación, pero propone la equivocada.
 - [ ] **→ 9q** · **La batería reproduce el camino de `conversacion.ts`, no lo llama** (`scripts/compa/bateria/motor.mjs`): un cambio en el orden de pasos
       del servidor no se vería solo. Y la búsqueda de ayuda de Postgres no corre en la batería (mide al modelo, no a la búsqueda).
+- [ ] **→ 9s** · **Lo que sigue [pendiente] en Privacidad, IA y Cookies (23 nov):** cuánto conserva Anthropic lo que recibe y si se contrata retención cero
+      (el guardián prohíbe afirmarla mientras `terceros.json` diga «pendiente»), las cookies de Stripe en la pantalla de pagar, Cloudflare y el proveedor
+      de servidores. Preguntas A-04 y A-11.
+- [ ] **→ 9u** · **Las portadas de las categorías vienen de Pexels también en producción (23 nov):** `packages/db/seeds/paginas.sql` (17
+      direcciones de images.pexels.com) lo aplica `migrar.sh` en todo entorno; el navegador de cada visitante se las pide a Pexels. La línea «Fotos de
+      ejemplo del sandbox» (11 nov) decía que eran solo de la semilla de pruebas: no era cierto para estas 17. Pasarlas a fotos servidas por nosotros.
+- [ ] **→ 9s** · **Google Play, «no se comparte con terceros»** (`SistemaAppsTiendas.tsx`): confirmar con el abogado si vale con Anthropic y Stripe como
+      proveedores (añadido a A-11).
+- [ ] **→ 9u** · **Con el revisor propio de fotos apagado o caído, toda foto pública nueva va a la segunda opinión** (`fotos-decision.ts`), no solo las
+      dudosas. Falla cerrado y tiene tope de gasto; decisión del fundador en REVISION (dejarlo o retener sin consultar).

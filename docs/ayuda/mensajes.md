@@ -2,7 +2,7 @@
 
 _Pantallas: Mi cuenta › **Mensajes** (`/cuenta/mensajes`) y la conversación (`/cuenta/mensajes/{negocio}`); botón **Mensaje** en la página del
 negocio, **Escribir al negocio** en tu pedido y tu reservación; Panel › **Mensajes** (`/panel/{negocio}/mensajes`) y «Mensajes sin responder» en Hoy;
-Super Admin › Colas › **Mensajes reportados** y **Medios** (fotos en revisión). Versión: 19 nov 2026. Audiencia: vecino. Tema: cuenta._
+Super Admin › Colas › **Mensajes reportados** y **Medios** (fotos en revisión). Versión: 23 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **Vecino:** le escribes a cualquier negocio que ya está en To'Latino (tiene dueño). Una conversación por negocio; si
@@ -54,7 +54,7 @@ Super Admin › Colas › **Mensajes reportados** y **Medios** (fotos en revisi�
   miniatura con **Quitar foto** hasta que envías. Una foto por mensaje; puedes mandarla sola o con texto.
 - **Privada:** la foto solo la ven tú y el negocio (quien tenga Mensajes en su panel). No es pública, no sale en buscadores ni en la página del
   negocio, y la dirección no le sirve a nadie más. Antes de guardarla le quitamos los datos de la cámara (como el lugar donde se tomó).
-- **Revisión:** toda foto pasa por nuestro revisor automático (propio, no de terceros). Si está bien, se ve al instante. Si el revisor la marca o
+- **Revisión:** toda foto pasa por nuestro revisor automático, un modelo propio en servidores de To'Latino: como es privada, nunca va a la segunda opinión de un proveedor de IA que usamos con las fotos públicas. Si está bien, se ve al instante. Si el revisor la marca o
   no responde, queda **en revisión**: tú la ves con **EN REVISIÓN** y la otra persona ve «Foto en revisión» hasta que alguien de To'Latino la
   revise (solo esa foto, nunca el resto de la conversación; cada vez que la miran queda anotado). Si está bien, aparece sola y a la otra
   persona le llega el aviso de la foto (una vez), aunque no tenga la conversación abierta; si no, sale
@@ -140,7 +140,7 @@ promete nada; la IA solo ve la página del negocio y esta conversación.
   **Remove photo** until you send. One photo per message; you can send it alone or with text.
 - **Private:** only you and the business (whoever has Messages in their dashboard) see the photo. It is not public, it does not show in search
   engines or on the business page, and the link does not work for anyone else. Before saving it we remove the camera data (like where it was taken).
-- **Review:** every photo goes through our automatic reviewer (our own, not a third party). If it is fine, it shows right away. If the reviewer
+- **Review:** every photo goes through our automatic reviewer, our own model on To'Latino's servers: since it is private, it never goes to the second opinion from an AI provider that we use with public photos. If it is fine, it shows right away. If the reviewer
   flags it or does not answer, it goes **under review**: you see it with **UNDER REVIEW** and the other person sees "Photo under review" until
   someone at To'Latino reviews it (only that photo, never the rest of the conversation; every view is logged). If it is fine, it shows by itself
   and the other person gets the photo notification (once), even without the conversation open;
