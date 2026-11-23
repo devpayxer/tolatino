@@ -3327,3 +3327,9 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   17/17. Cazó además (y quedó arreglado): «To’Latino» encima de «ES» a 320 (ya pasaba con letra grande), «Abierto ahora» de Inicio 303 px en
   275, «Compartir» de Comunidad fuera de su fila a 320 con letra grande, «Mercados»/«Doctores» fuera de su cuadro a 320. Pendiente (LAUNCH,
   nueva línea): el escritorio (24 px AA) y las pantallas fuera de las clave.
+
+## 23 nov (23:40 UTC) · Anfitriones parte 2: noticias por RSS (migración 0216)
+Hecho por Opus en su copia, revisado y endurecido por Fable (corte real del tiempo límite, texto acotado antes de limpiar). Local: tipos, guardianes
+(sin fallos), textos, `alrevesNoticias` 24/24, `alrevesAnfitriones` 23/23; punta a punta del encargo 5/5 dos veces. Trae migración: sube con la
+confirmación completa del CI (`alcance=todo`) y la vista previa se pausa sola hasta que el sandbox la tenga. Pendiente: fuentes reales verificadas con
+red, `pedirReal` contra un medio de verdad, respuesta del abogado (A-51). Detalle en REVISION y LAUNCH.

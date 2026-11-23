@@ -14,6 +14,9 @@
    - IA      GET /v1/models                       200 { data: [{ type: "model", id, display_name, created_at }], has_more, first_id, last_id }
              · 401 { type: "error", error: { type: "authentication_error" } } · sin anthropic-version: 400 · /v1/messages NO se simula: 404 (el motor de
              pruebas de El Compa es lib/compa/modelo-simulador.ts).
+   - RSS     (AO 5b, las fuentes de noticias de los anfitriones; NOTICIAS_RSS_BASE) GET /__dns/<servidor> → { direcciones: [...] } de la tabla que la prueba
+             le dio con `dns` (404 si no está: como un nombre que no existe) · GET /fuente/<servidor><ruta> → lo que la prueba le dio con `fuente` (estado,
+             tipo, cuerpo, redirección, gzip o «bytes»: un cuerpo de ese tamaño, para el tope). Nunca sale a internet: solo contesta lo que se le dio.
    Solo contesta con 200 a la llave que la prueba le dio con `aceptar`; cualquier otra, 401 (o el código de su especificación). Lo que se le dio vive SOLO en la
    memoria de este proceso. Registra cada llamada con la HUELLA (sha256) de lo que llegó firmado, nunca el valor, para que la prueba compare huellas sin imprimir
    la llave. Sin dependencias. Se usa desde la prueba de punta a punta (prov9v): `const sim = await require('.../proveedores-sim/sim.cjs').iniciar({ stripe: 4410, … })`. */
@@ -98,7 +101,25 @@ async function iniciar(puertos, host = '127.0.0.1') {
     else { est = 200; cuerpo = { data: [{ type: 'model', id: 'modelo-del-simulador', display_name: 'Modelo del simulador', created_at: '2026-01-01T00:00:00Z' }], has_more: false, first_id: 'modelo-del-simulador', last_id: 'modelo-del-simulador' }; }
     anota('anthropic', req, k, est); fin(res, est, cuerpo);
   };
-  const servidores = Object.entries({ stripe, telnyx, meta, ses: sesSim, anthropic }).filter(([p]) => puertos[p] !== undefined).map(([p, f]) => [p, http.createServer(f)]);
+  // AO 5b · Las fuentes de noticias de mentira y su DNS (solo lo que la prueba dio; lo demás, 404).
+  const dnsTabla = new Map(), fuentes = new Map();
+  const rss = (req, res) => {
+    const u = new URL(req.url, 'http://x');
+    const d = /^\/__dns\/([^/]+)$/.exec(u.pathname);
+    if (d) { const ips = dnsTabla.get(decodeURIComponent(d[1]).toLowerCase()); anota('rss', req, null, ips ? 200 : 404); return ips ? fin(res, 200, { direcciones: ips }) : fin(res, 404, { error: 'NXDOMAIN' }); }
+    const f = /^\/fuente\/([^/]+)(\/.*)?$/.exec(u.pathname);
+    const x = f ? fuentes.get(`${f[1].toLowerCase()}${f[2] || '/'}${u.search}`) : null;
+    if (!x) { anota('rss', req, null, 404); res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('no'); }
+    x.llamadas++;
+    const est = x.estado ?? 200; anota('rss', req, null, est);
+    if (x.ubicacion) { res.writeHead(est, { location: x.ubicacion }); return res.end(); }
+    if (x.bytes) { res.writeHead(est, { 'content-type': x.tipo ?? 'application/rss+xml' }); const trozo = Buffer.alloc(64 * 1024, 0x20); let n = 0;
+      const sigue = () => { while (n < x.bytes) { n += trozo.length; if (!res.write(trozo)) return res.once('drain', sigue); } res.end(); }; res.on('error', () => {}); return sigue(); }
+    const cuerpo = Buffer.from(String(x.cuerpo ?? ''), 'utf8');
+    if (x.gzip) { res.writeHead(est, { 'content-type': x.tipo ?? 'application/rss+xml', 'content-encoding': 'gzip' }); return res.end(require('zlib').gzipSync(cuerpo)); }
+    res.writeHead(est, { 'content-type': x.tipo ?? 'application/rss+xml; charset=utf-8' }); res.end(cuerpo);
+  };
+  const servidores = Object.entries({ stripe, telnyx, meta, ses: sesSim, anthropic, rss }).filter(([p]) => puertos[p] !== undefined).map(([p, f]) => [p, http.createServer(f)]);
   await Promise.all(servidores.map(([p, s]) => new Promise((ok, mal) => { s.once('error', mal); s.listen(puertos[p], host, ok); })));
   return {
     /* Esta llave sirve (prov: stripe | telnyx | meta | ses | anthropic). Para Meta, `extra.waba` es el ID de la cuenta de negocio que existe. Para SES, `valor`
@@ -108,6 +129,10 @@ async function iniciar(puertos, host = '127.0.0.1') {
       buenas[prov].add(huella(valor)); if (prov === 'meta' && extra.waba) wabas.add(String(extra.waba));
     },
     retirar(prov, valor) { if (prov === 'ses') ses.delete(huella(valor)); else buenas[prov].delete(huella(valor)); },
+    /* AO 5b · RSS: `dns(servidor, [direcciones])` es lo que contesta su DNS; `fuente(servidor, ruta, { estado, tipo, cuerpo, ubicacion, gzip, bytes })` lo
+       que contesta esa ruta (devuelve la fila: `llamadas` cuenta cuántas veces se pidió). */
+    dns(h, ips) { dnsTabla.set(String(h).toLowerCase(), ips.map(String)); },
+    fuente(h, ruta, r) { const x = { ...r, llamadas: 0 }; fuentes.set(`${String(h).toLowerCase()}${ruta}`, x); return x; },
     registro,
     /* Las llamadas de un proveedor, de la más vieja a la más nueva; con `h` (huella sha256 hex), solo las firmadas con esa llave (en SES, la huella del ID que
        llegó en la credencial: el secreto nunca viaja). */

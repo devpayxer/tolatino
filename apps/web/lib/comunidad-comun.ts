@@ -52,9 +52,15 @@ export type Pub = {
   autor: Autor; lugar: Bi; invitado: boolean; mi: number | null;
   negocio: { id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean; para: string[] } | null;
   fotos: string[]; revision: number;
+  // AO 5b · La fuente de una nota de una voz de la casa (Yadira, Rafelito): el medio, el enlace https y su dominio (lo que se pinta).
+  fuente: { url: string; medio: string; dominio: string } | null;
   encuesta: { opts: { l: string; n: number; pc: number }[]; mio: number | null; total: number; cierra: string; cerrada: boolean; ver: boolean } | null;
   up: number; dn: number; score: number; miVoto: number; guardada: boolean; comentarios: number;
 };
+/* El dominio de un enlace de fuente (sin «www.»): lo que se pinta junto al medio. */
+export function dominioDe(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
+}
 export type Filtros = { tab: "todo" | "sig"; kind: keyof typeof TIPO | null; dist: 0 | 5 | 10 | 30; orden: "top" | "new" };
 export const FILTROS0: Filtros = { tab: "todo", kind: null, dist: 0, orden: "top" };
 export function leerFiltros(sp: Record<string, string | undefined>): Filtros {

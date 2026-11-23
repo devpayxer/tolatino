@@ -26,6 +26,7 @@ import type { HoyAdmin as DatosHoy } from "@/lib/admin-contenido";
 import type { CuentaOficial } from "@/lib/oficial";
 import { AnfitrionesAdmin } from "./AnfitrionesAdmin";
 import type { AnfAdm } from "@/lib/anfitriones";
+import type { FuentesAdm } from "@/lib/anfitriones-fuentes";
 import { useAhora } from "@/lib/ahora";
 import { useE } from "./idioma-admin";
 import { marcaAnfitrion } from "@/lib/comunidad-comun";
@@ -43,7 +44,7 @@ type Lote = { total: number; hechos: number; fallos: { texto: string; motivo: st
 const TIPOS_L = (E: EF): [FilaCont["k"], string][] => [["pub", E("Publicaciones", "Posts")], ["ccm", E("Comentarios de vecinos", "Neighbor comments")], ["rev", E("Reseñas", "Reviews")], ["nov", E("Novedades", "Updates")], ["cm", E("Comentarios de novedades", "Update comments")], ["vac", E("Vacantes", "Jobs")]];
 
 export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = null, hoy = null, oficial = null, escribeOficial = false, anf = null, tab }: {
-  d: ListaCont; f: FiltrosCont; porPagina: number; puede: boolean; puedeCom: boolean; editaCom: boolean; auto?: AutoMod | null; hoy?: DatosHoy | null; oficial?: CuentaOficial | null; escribeOficial?: boolean; anf?: AnfAdm | null; tab: string;
+  d: ListaCont; f: FiltrosCont; porPagina: number; puede: boolean; puedeCom: boolean; editaCom: boolean; auto?: AutoMod | null; hoy?: DatosHoy | null; oficial?: CuentaOficial | null; escribeOficial?: boolean; anf?: (AnfAdm & { noticias: FuentesAdm }) | null; tab: string;
 }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, E = useE();

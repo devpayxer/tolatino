@@ -21,7 +21,8 @@ export type MensajeModelo = { de: "persona" | "compa"; texto: string };
 export type Entrada = {
   /* AJ · «foto»: la segunda opinión de las fotos públicas (lib/fotos-segunda-opinion.ts), por esta misma interfaz, con su propio tope. */
   /* AO · «anfitrion»: la respuesta de una voz de la casa en la Comunidad (lib/compa/anfitriones.ts), por esta misma interfaz, con su propio tope. */
-  uso: Uso | "foto" | "anfitrion"; modelo: string; lang: Lang; sistema: string;
+  /* AO 5b · «anfitrion_noticia»: el resumen de una nota de una fuente (lib/compa/noticias.ts), SOLO con su título y su descripción; mismo tope propio. */
+  uso: Uso | "foto" | "anfitrion" | "anfitrion_noticia"; modelo: string; lang: Lang; sistema: string;
   datos: Record<string, unknown>; trozos: TrozoModelo[]; mensajes: MensajeModelo[];
   maxTokens: number; esperaMs: number;
   esquema?: Record<string, unknown>;   // 7g · el esquema de salida del uso (sin él, ESQUEMA: vecino, panel y respuestas automáticas)

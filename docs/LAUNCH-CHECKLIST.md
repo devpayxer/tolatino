@@ -2960,7 +2960,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9u** · **(Hecho el 23 nov)** Primera parte: migración 0215 (tipo de cuenta `host`, lo que la base le niega, catálogo de las 8 voces, tipos,
       pregunta del día, control por ciudad, registro y tope de costo), motor en el barrido, marca «Anfitrión/Anfitriona» en todo sitio de autor, Super Admin
       › Contenido › Anfitriones, ayuda ES/EN, línea en la política de IA. Seis guardianes, `alrevesAnfitriones` 22/22, punta a punta `anfAO`.
-- [ ] **→ 9u** · **5b · Noticias por RSS** (RD y países latinos): `com_host_sources`/`com_host_news` con la guarda de red del plan (`docs/diseno/plan/anfitriones.md`) y su simulador.
+- [x] **5b · Noticias por RSS** (RD y países latinos) — hecho el 23 nov (Opus; revisión de seguridad de Fable): migración 0216, lector con guarda de red
+      (`lib/noticias-lector.ts`), motor en el barrido, caja «Fuente» en la publicación, Super Admin › Contenido › Anfitriones › Fuentes de noticias con «Probar».
+      Guardianes `noticiasLectorSoloBarrido`, `noticiasLectorSeguro`, `noticiasXmlSinEntidades`, `noticiasApagadasDeFabrica`; `alrevesNoticias` 24/24; punta a punta `anfNot`.
+- [ ] **→ 9u** · 5b · Cargar en el sandbox las fuentes reales, apagadas, después de verificarlas con red (candidatas sin verificar en REVISION). Producción
+      sin fuentes hasta la respuesta del abogado (pregunta A-51 de `docs/legal/para-el-abogado.md`: citar titular + resumen corto con enlace).
+- [ ] **→ 9u** · 5b · Probar `pedirReal` contra un medio de verdad en el sandbox (TLS, gzip, IPv6) antes de encender una fuente: aquí solo corrió contra el simulador.
+- [ ] **→ 9u** · 5b · Respetar `Retry-After` y revisar los términos de uso de cada RSS antes de encenderlo.
+- [ ] **→ 9u** · 5b · El enlace de una nota se acepta si es del dominio base de la fuente: en un alojamiento compartido (medio.wordpress.com) eso admite
+      cualquier subdominio del alojador. Al dar de alta una fuente así, exigir el servidor exacto.
+- [ ] **→ 9u** · 5b · `anfNot` y `anfAO` sin parte asignada en `pruebas/reparto.json` (se asignan en la próxima medición del reparto).
 - [ ] **→ 9u** · **Avatares ilustrados de las 8 voces** (hoy iniciales): el fundador elige entre opciones de Creattie.
 - [ ] **→ 9q** · **Las respuestas con el modelo real nunca se han visto:** en pruebas siempre responde el simulador o una plantilla. Verlas con una llave real antes de encender en producción.
 - [ ] **→ 9u** · **Las voces cuentan contra el límite diario de una persona** (`com_lim_publicaciones`): con 5 ciudades encendidas una voz puede chocar; decidir si llevan límite propio.

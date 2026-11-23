@@ -37,8 +37,8 @@ Bloquea abrir: «sí» = sin su respuesta no abrimos con esa parte encendida y a
 | Licor, vida nocturna, iglesias y transporte | 3 (A-40 – A-42) | 1 |
 | Mensajes de texto y WhatsApp | 2 (A-43 – A-44) | 2 |
 | Inteligencia artificial | 3 (A-45 – A-47) | 1 |
-| Licencias de software y propiedad intelectual | 3 (A-48 – A-50) | 2 |
-| **Total** | **50** | **34** |
+| Licencias de software y propiedad intelectual | 4 (A-48 – A-51) | 2 |
+| **Total** | **51** | **34** |
 
 ## Las preguntas
 
@@ -766,6 +766,20 @@ _Para nosotros: LAUNCH «5d · Licencia del modelo de fotos»._
 
 _Para nosotros: pregunta nueva de este documento, sin línea en LAUNCH todavía._
 
+#### A-51 · Citar titulares de medios y resumirlos con enlace
+
+**La pregunta.** ¿Podemos mostrar en la Comunidad el titular de una nota de un medio (de República Dominicana y otros países latinos), un resumen propio de dos o tres líneas hecho con ayuda automática a partir del título y la descripción que el medio publica en su RSS, el nombre del medio y el enlace a la nota? ¿Cabe en el uso legítimo (fair use) de EE. UU. y respeta los derechos de los medios, o hace falta permiso o licencia de cada uno? ¿Importa lo que digan los términos de uso del RSS de cada medio?
+
+**Qué hace hoy To'Latino.** Dos cuentas de la casa, siempre marcadas «Anfitrión/Anfitriona» (Yadira y Rafelito), publican notas de fuentes RSS o Atom que el equipo da de alta una por una en el Super Admin. Cada nota lleva el nombre del medio y el enlace a su página (se abre aparte; el artículo se lee en el medio). Nunca copiamos el artículo ni sus fotos: solo el título y un resumen corto hecho con el título y la descripción del RSS; si el resumen no se puede hacer, sale el titular entre comillas. No se publican notas de política partidista, de sucesos violentos ni sobre menores. A los medios no les mandamos ningún dato: solo leemos su RSS público. En producción no hay ninguna fuente dada de alta.
+
+**Qué asumimos.** Que un titular, un resumen corto propio y el enlace caben en el uso legítimo y que leer un RSS público para eso está permitido, salvo que los términos de un medio lo prohíban.
+
+**Qué cambiaría según la respuesta.** Qué medios damos de alta (solo con permiso, o los que lo permiten en sus términos), si el resumen se quita y sale solo el titular, y qué aviso o atribución lleva cada nota.
+
+**Bloquea abrir: no.**
+
+_Para nosotros: pregunta nueva de este documento (anfitriones del barrio, noticias por RSS), sin línea en LAUNCH todavía._
+
 ## Lo que ya decidió el fundador y no se pregunta
 
 Lo siguiente ya está decidido; no hace falta que lo cuestione, salvo que su respuesta a alguna pregunta lo contradiga (entonces dígalo).
@@ -838,6 +852,7 @@ Para nosotros: cuando lleguen las respuestas, cada línea de la lista de pendien
 | A-48 · LibreTranslate (AGPL-3.0) y los modelos de traducción | «5h · Abogado: LibreTranslate es AGPL-3.0» |
 | A-49 · Modelo de revisión de fotos (NudeNet y pesos entrenados con YOLOv8) | «5d · Licencia del modelo de fotos» |
 | A-50 · Las demás piezas de código abierto | (sin línea: pregunta nueva) |
+| A-51 · Citar titulares de medios y resumirlos con enlace | (sin línea: pregunta nueva) |
 
 
 ## English
@@ -877,8 +892,8 @@ Blocks opening: "yes" = without your answer we do not open with that part turned
 | Alcohol, nightlife, churches and transportation | 3 (A-40 – A-42) | 1 |
 | Text messages and WhatsApp | 2 (A-43 – A-44) | 2 |
 | Artificial intelligence | 3 (A-45 – A-47) | 1 |
-| Software licenses and intellectual property | 3 (A-48 – A-50) | 2 |
-| **Total** | **50** | **34** |
+| Software licenses and intellectual property | 4 (A-48 – A-51) | 2 |
+| **Total** | **51** | **34** |
 
 ### The questions
 
@@ -1606,6 +1621,20 @@ _For us: LAUNCH "5d · Licencia del modelo de fotos" (in Spanish, as in our chec
 
 _For us: a new question in this document, with no LAUNCH line yet._
 
+##### A-51 · Quoting outlets' headlines and summarizing them with a link
+
+**The question.** May we show in the Community the headline of an outlet's news item (from the Dominican Republic and other Latin countries), our own two-to-three-line summary written with automated help from the title and description the outlet publishes in its RSS, the outlet's name and the link to the item? Does this fit U.S. fair use and respect the outlets' rights, or do we need permission or a license from each one? Do the terms of use of each outlet's RSS matter?
+
+**What To'Latino does today.** Two house accounts, always marked "Host" (Yadira and Rafelito), post items from RSS or Atom sources the team adds one by one in the Super Admin. Each post carries the outlet's name and the link to its page (it opens separately; the article is read at the outlet). We never copy the article or its photos: only the title and a short summary made from the RSS title and description; when the summary cannot be made, the headline appears in quotes. Partisan politics, violent incidents and items about minors are not posted. We send no data to the outlets: we only read their public RSS. Production has no sources added.
+
+**What we assume.** That a headline, a short summary of our own and the link fit fair use and that reading a public RSS for this is allowed, unless an outlet's terms forbid it.
+
+**What would change depending on the answer.** Which outlets we add (only with permission, or those whose terms allow it), whether the summary is dropped and only the headline shows, and what notice or attribution each post carries.
+
+**Blocks opening: no.**
+
+_For us: a new question in this document (neighborhood hosts, news by RSS), with no LAUNCH line yet._
+
 ### What the founder has already decided and is not asked
 
 The following is already decided; you need not question it, unless your answer to a question contradicts it (then please say so).
@@ -1678,3 +1707,4 @@ For us: when the answers arrive, each line of our pending list (LAUNCH) is close
 | A-48 · LibreTranslate (AGPL-3.0) and the translation models | «5h · Abogado: LibreTranslate es AGPL-3.0» |
 | A-49 · Photo-review model (NudeNet and weights trained with YOLOv8) | «5d · Licencia del modelo de fotos» |
 | A-50 · The other open-source components | (no line: new question) |
+| A-51 · Quoting outlets' headlines and summarizing them with a link | (no line: new question) |

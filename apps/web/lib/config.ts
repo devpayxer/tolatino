@@ -115,7 +115,9 @@ export type ClaveConfig =
   | "fotos_a_la_vez" | "fotos_dentro" | "fotos_espera_s"
   // AO · Anfitriones del barrio (0215)
   | "anf_espera_min" | "anf_idas_max" | "anf_nuevo_dias" | "anf_t1_hasta" | "anf_t1_pub" | "anf_t1_resp" | "anf_t2_hasta" | "anf_t2_pub" | "anf_t2_resp"
-  | "anf_t3_hasta" | "anf_t3_pub" | "anf_t3_resp" | "anf_tope_mes_cents" | "anf_pausa";
+  | "anf_t3_hasta" | "anf_t3_pub" | "anf_t3_resp" | "anf_tope_mes_cents" | "anf_pausa"
+  // AO 5b · Noticias de las voces (0216)
+  | "anf_fuentes_por_pasada" | "anf_fuente_cada_min" | "anf_noticia_horas" | "anf_noticias_retener_dias";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

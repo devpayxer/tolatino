@@ -113,6 +113,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // AO · Anfitriones del barrio: las voces de la casa publican lo propio de la app y responden lo que nadie contestó, con los cupos de su ciudad.
         // Nada de lo que hace un vecino espera esto (corre aquí, aparte); si el modelo falla o se pasó el tope, no se publica. Y las reservas de su tope
         // que nunca volvieron (proceso caído) se sueltan.
+        // AO 5b · Antes, las fuentes de noticias: el lector seguro lee las que ya les toca (tope por pasada, espera por fuente y respaldo si fallan) y
+        // vacía por retención lo que no se publicó. Lo publica después la tarea de los anfitriones, dentro del cupo de cada ciudad.
+        ["anfitrionesFuentes", async () => (await import("./compa/noticias")).barrerFuentes()],
         ["anfitriones", async () => (await import("./compa/anfitriones")).barrerAnfitriones()],
         ["anfitrionesReservas", async () => { await db().query(`select anf_soltar_reservas(10)`); }],
         // 7f · Respuestas automáticas que se quedaron esperando (el proceso que contestaba se cayó: su reclamo vence a los 90 s). Si El Compa ya no

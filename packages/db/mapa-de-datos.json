@@ -215,6 +215,8 @@
     "com_host_kinds": { "equipo": ["updated_by"] },
     "com_host_questions": { "equipo": ["created_by"] },
     "com_host_cities": { "equipo": ["updated_by"] },
+    "com_host_sources": { "equipo": ["created_by", "updated_by"] },
+    "com_host_source_reads": { "equipo": ["by_user"] },
     "night_posts": { "equipo": ["by"] },
     "noche_settings": { "equipo": ["updated_by"] },
     "notif_templates": { "equipo": ["edited_by"] },

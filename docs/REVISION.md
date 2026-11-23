@@ -6457,6 +6457,22 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   guardan y ya no vuelven al subir o bajar con el dedo ni al cambiar de pestaña. Lo único que devuelve al Resumen con su cabecera es la flecha de antes
   del nombre. Qué mirar: tocar «Servicios», subir con el dedo hasta el tope (no debe aparecer la portada), y luego la flecha.
 
+## Anfitriones · noticias de RD y de los países latinos (23 nov, hecho por Opus, revisado por Fable)
+- **Qué mirar:** Super Admin › Contenido › Anfitriones › «Fuentes de noticias»: agregar una fuente (nace apagada), «Probar», encenderla; con el tipo
+  «Noticias» encendido y la ciudad con cupo, sale la nota de Yadira (noticias) o Rafelito (deportes) con la caja «Fuente» y «Leer en el medio». Teléfono y escritorio.
+- **Lo que no se pudo hacer aquí:** este entorno no sale a internet, así que no se verificó ninguna dirección y el sandbox no trae fuentes. Candidatas SIN
+  verificar: diariolibre.com/rss/portada.xml, listindiario.com/rss/portada.xml, hoy.com.do/feed/, eldia.com.do/feed/, n.com.do/feed/,
+  elnuevodiario.com.do/feed/, feeds.bbci.co.uk/mundo/rss.xml, rss.dw.com/xml/rss-sp-all, france24.com/es/rss, cnnespanol.cnn.com/feed/,
+  elnuevodia.com (RSS de Arc), mlb.com/feeds/news/rss.xml (deportes, inglés). Se prueban desde el propio Super Admin con «Probar».
+- **Decisiones del fundador:** (1) qué medios quiere; (2) los filtros son estrictos a propósito (política, violencia, menores, y palabras como «gobierno»
+  descartan la nota): habrá muchas descartadas, siempre con su motivo a la vista; se aflojan solo si él lo pide; (3) no encender fuentes en producción hasta
+  que el abogado conteste la pregunta A-51 (citar titular y resumen con enlace).
+- **Se eligió lo más seguro:** todo nace apagado; sin modelo o sin cupo de costo, la nota sale con el titular entre comillas; el resumen con una cifra que
+  la fuente no dice se desecha.
+- **Arreglo de paso:** en escritorio, «Quien publica» decía RECLUTA para una voz; ahora dice ANFITRIONA (con guardián y caso al revés).
+- **Revisión de Fable, dos endurecimientos:** el tiempo límite de 5 s ahora corta la conexión de verdad (antes una fuente que goteaba podía dejarla abierta) y
+  el texto de una fuente se acota antes de limpiarlo (un texto enorme no puede costar tiempo de más).
+
 ## Vista previa y despliegue más corto (23 nov)
 - **Vista previa:** `http://2.31.196.167:8081/` (misma dirección del sandbox, otro puerto). Es la app real con el cambio que se está haciendo, con la marca
   «VISTA PREVIA» arriba; abre más lento que el sandbox. Qué mirar: abrirla en el teléfono cuando se avise que está encendida.

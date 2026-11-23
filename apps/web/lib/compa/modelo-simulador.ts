@@ -72,6 +72,15 @@ export const simulador: Modelo = {
       return sal({ texto: es ? `Buena pregunta, vecino. Aquí ${voz} pendiente: ¿alguien del barrio sabe y le echa una mano?` : `Good question, neighbor. ${voz} here: does anyone in the neighborhood know and can lend a hand?`, negocio: "" });
     }
 
+    // AO 5b · El resumen de una nota (lib/compa/noticias.ts). Determinista y SIN inventar: repite el título de los datos (lo único que sabe).
+    // Guionado por el título: «simular-error» → error del proveedor · «simular-cifra» → un resumen con una cifra que la fuente no trae (se descarta y sale la plantilla).
+    if (e.uso === "anfitrion_noticia") {
+      const D = e.datos as { TITULO?: unknown; MEDIO?: unknown }, tit = String(D.TITULO ?? "").trim();
+      if (/simular-error/i.test(tit)) throw new ErrorModelo("error", false, "simulador: error del proveedor");
+      if (/simular-cifra/i.test(tit)) return sal({ resumen: `Según ${String(D.MEDIO ?? "")}, hubo 9999 personas en ${tit}.` });
+      return sal({ resumen: `${tit.replace(/[.!?]+$/, "")}.` });
+    }
+
     // Fallas guionadas (solo el simulador las entiende).
     if (t.includes("simular-lento")) { await dormir(e.esperaMs + 3000); return sal({ ...base, respuesta: es ? "Tarde." : "Late." }); }
     if (t.includes("simular-error")) throw new ErrorModelo("error", false, "simulador: error del proveedor");

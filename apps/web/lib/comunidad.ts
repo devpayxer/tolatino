@@ -4,7 +4,7 @@ import { db, tx } from "./db";
 import { centroSQL, type Punto } from "./punto";
 import { DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, diasEncuesta, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
 import { cfgSql, valor } from "./config";
-import { porcentajes, type Anf, type Autor, type Filtros, type Pub } from "./comunidad-comun";
+import { dominioDe, porcentajes, type Anf, type Autor, type Filtros, type Pub } from "./comunidad-comun";
 import { efectoSancion, limiteDia, noPuede, revisarAlEscribir, revisarFotosCom } from "./moderacion";
 import { detectarIdioma, idiomaTexto } from "./traductor";
 
@@ -79,7 +79,8 @@ export const COLS = (centro: string | null) => `
   b.id as biz_id, b.name as biz_name, coalesce(bs.verified, false) as biz_ver, bs.rating_avg::float8 as biz_rating, bs.review_count as biz_reviews, sc.name as biz_sub,
   coalesce(b.logo_url, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)) as biz_foto,
   (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'visible') as fotos,
-  (select count(*)::int from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'review') as revision`;
+  (select count(*)::int from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'review') as revision,
+  p.source_url as fuente_url, p.source_name as fuente_medio`;
 export const JOINS = `
   left join zones z on z.city_id = p.city_id and z.id = p.zone_id
   left join cities gc on gc.id = p.guest_from_city_id
@@ -94,6 +95,7 @@ export type Fila = {
   para: string[]; opts: string[] | null; conteo: number[]; cierra: string | null; cerrada: boolean; up: number; dn: number; score: number; cms: number;
   hot_t: string; cur_new: string; cur_top: string; zona: Bi | null; invitado: string | null; ciudad_nombre: string; oficial: Bi | null; mi: number | null;
   biz_id: string | null; biz_name: string | null; biz_ver: boolean; biz_rating: number | null; biz_reviews: number | null; biz_sub: Bi | null; biz_foto: string | null; fotos: string[]; revision: number;
+  fuente_url: string | null; fuente_medio: string | null;
 };
 
 /* Votos, guardados y voto de encuesta de quien mira, para una página entera (una consulta). */
@@ -129,6 +131,7 @@ export async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
       autor: a, lugar, invitado: !!f.invitado, mi: f.mi,
       negocio: f.biz_id ? { id: f.biz_id, nombre: f.biz_name!, meta: { es: meta("es"), en: meta("en") }, foto: f.biz_foto, verificado: f.biz_ver, para: f.para ?? [] } : null,
       fotos: f.fotos ?? [], revision: mia ? f.revision ?? 0 : 0,
+      fuente: f.fuente_url && f.fuente_medio ? { url: f.fuente_url, medio: f.fuente_medio, dominio: dominioDe(f.fuente_url) } : null,
       encuesta: f.opts ? encuesta(f.opts, f.conteo, p.o, f.cierra!, f.cerrada) : null,
       up: f.up, dn: f.dn, score: f.score, miVoto: p.v, guardada: p.s, comentarios: f.cms,
     };
@@ -273,7 +276,9 @@ async function ponerFotos(c: PoolClient, userId: string, post: string, fotos: st
 }
 
 export type Entrada = Borrador;
-export async function publicar(userId: string, ciudad: string, p: Entrada): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
+/* AO 5b · `extra.fuente`: el enlace a la fuente de una nota de una voz de la casa (solo lo pasa lib/compa/noticias.ts; la acción de los vecinos nunca,
+   y la base lo rechaza si quien publica no es una voz: com_posts_fuente_anfitrion). */
+export async function publicar(userId: string, ciudad: string, p: Entrada, extra: { fuente?: { url: string; medio: string } } = {}): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
   const f = revisarPublicacion(p, diasEncuesta(await valor("com_encuesta_dias_max")));
   if (f) return { ok: false, msg: f.msg, campo: f.campo };
   // 5h · El idioma del texto (para «Ver traducción»): el traductor propio lo detecta antes de abrir la transacción; si no, el de la app.
@@ -300,10 +305,11 @@ export async function publicar(userId: string, ciudad: string, p: Entrada): Prom
     const topic = p.kind === "pregunta" ? p.topic || "otro" : p.topic || null;
     const para = p.kind === "recomendacion" ? (p.para ?? []).map((x) => x.trim()).filter(Boolean) : [];
     const r = (await c.query<{ id: string }>(
-      `insert into com_posts (city_id, author_kind, author_user_id, kind, topic, body, lang, business_id, looking_for, poll_options, poll_ends_at, health_notice)
-       values ($1, 'user', $2, $3, $4, $5, $6, $7, $8, $9, case when $10::int is null then null else now() + make_interval(days => $10::int) end, $11)
+      `insert into com_posts (city_id, author_kind, author_user_id, kind, topic, body, lang, business_id, looking_for, poll_options, poll_ends_at, health_notice, source_url, source_name)
+       values ($1, 'user', $2, $3, $4, $5, $6, $7, $8, $9, case when $10::int is null then null else now() + make_interval(days => $10::int) end, $11, $12, $13)
        returning id::text`,
-      [ciudad, userId, p.kind, topic, body, idiomaTexto(det, u.lang), negocio, para, opts, p.kind === "encuesta" ? Number(p.dias) : null, pareceEmergencia(body)])).rows[0]!;
+      [ciudad, userId, p.kind, topic, body, idiomaTexto(det, u.lang), negocio, para, opts, p.kind === "encuesta" ? Number(p.dias) : null, pareceEmergencia(body),
+        extra.fuente?.url ?? null, extra.fuente ? extra.fuente.medio : null])).rows[0]!;
     if (p.kind !== "encuesta" && !(await ponerFotos(c, userId, r.id, p.fotos ?? []))) throw new FotosAjenas();
     // 5d · Las reglas que marcan (nunca ocultan solas): listas, parecidos repetidos, dónde vive alguien; autolesión → línea del 988.
     const rv = await revisarAlEscribir(c, { kind: "com_post", id: r.id, autor: userId, ciudad, texto: [body, ...para, ...(opts ?? [])].join(" \n") });

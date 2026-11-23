@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { staff } from "@/lib/admin";
 import { ciudadCambiar, pausarTodos, preguntaAgregar, preguntaRetirar, tipoCambiar, vozCambiar, type ResAnf } from "@/lib/anfitriones";
+import { fuenteEstado, fuenteGuardar, probarFuente } from "@/lib/anfitriones-fuentes";
 import type { ResAdm } from "./acciones-colas";
 
 const fin = (r: ResAnf): ResAdm => { if (r.ok) revalidatePath("/admin/contenido"); return r.ok ? { ok: true, mensaje: r.mensaje } : { ok: false, mensaje: r.mensaje ?? "No se pudo." }; };
@@ -38,4 +39,22 @@ export async function anfPausa(pausa: boolean, motivo: string): Promise<ResAdm> 
   const s = await staff();
   if (!s) return sinRol;
   return fin(await pausarTodos(s, pausa === true, String(motivo ?? "")));
+}
+
+/* 5b · Fuentes de noticias: alta o edición (la URL con las reglas del lector), encender, apagar o retirar, y «Probar» (una lectura). */
+export async function anfFuente(id: string | null, d: { nombre: string; url: string; pais: string; tema: string; lang: string; veto: string }, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s) return sinRol;
+  const t = (x: unknown, n: number) => String(x ?? "").slice(0, n);
+  return fin(await fuenteGuardar(s, id == null ? null : t(id, 20), { nombre: t(d?.nombre, 80), url: t(d?.url, 600), pais: t(d?.pais, 4), tema: t(d?.tema, 20), lang: t(d?.lang, 4), veto: t(d?.veto, 1500) }, String(motivo ?? "")));
+}
+export async function anfFuenteEstado(id: string, estado: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s) return sinRol;
+  return fin(await fuenteEstado(s, String(id ?? "").slice(0, 20), String(estado ?? ""), String(motivo ?? "")));
+}
+export async function anfFuenteProbar(id: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s) return sinRol;
+  return fin(await probarFuente(s, String(id ?? "").slice(0, 20)));
 }

@@ -74,6 +74,8 @@ VARS+=(STRIPE_API_BASE=http://127.0.0.1:$P_PROVSTRIPE TELNYX_API_BASE=http://127
 # Y las de SES y del proveedor de IA: tampoco cambian el modo. El correo sigue en «pruebas» (no sale) salvo TOLATINO_CORREO_MODO=ses (lib/correo/index.ts) y
 # El Compa elige su motor por la llave y TOLATINO_COMPA_MOTOR (lib/compa/modelo.ts), no por la dirección. Además, la app las ignora fuera de TOLATINO_ENTORNO=pruebas.
 VARS+=(SES_API_BASE=http://127.0.0.1:$P_PROVSES ANTHROPIC_API_BASE=http://127.0.0.1:$P_PROVANTHROPIC)
+# AO 5b · Las fuentes de noticias de los anfitriones (lib/noticias-lector.ts): en pruebas, el DNS y la descarga van al simulador; nunca sale a internet.
+VARS+=(NOTICIAS_RSS_BASE=http://127.0.0.1:$P_PROVRSS)
 if [ "$PERFIL" = basico ]; then
   VARS+=(HOSTNAME=127.0.0.1)
 else

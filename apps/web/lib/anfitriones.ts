@@ -103,7 +103,6 @@ export async function tipoCambiar(s: Staff, key: string, active: boolean, motivo
   const m = limpio(motivo);
   if (m.length < 3) return no("Escribe el motivo.");
   if (!(TIPOS_ANF as string[]).includes(key)) return no("Ese tipo no existe.");
-  if (key === "noticias" && active) return no("Las noticias por fuentes todavía no están construidas.");
   return tx(async (c): Promise<ResAnf> => {
     const x = (await c.query<{ active: boolean }>(`select active from com_host_kinds where key = $1 for update`, [key])).rows[0];
     if (!x) return no("Ese tipo no existe.");

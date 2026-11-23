@@ -11,6 +11,8 @@ import { ESQUEMA_ANF, delicado, filtroAnfitrion, pautaAnfitrion, plantilla, tema
 import { ErrorModelo, modelo, motorActivo, type Motor, type Salida } from "./modelo";
 import { modeloDe } from "./tope";
 import { tapar } from "./tapar";
+import { anotarUso, gastar } from "./anfitriones-tope";
+import { publicarNoticia } from "./noticias";
 
 /* AO · El motor de los anfitriones del barrio (docs/diseno/plan/anfitriones.md). Lo llama SOLO el barrido central (guardián anfitrionesSoloBarrido):
    nada de lo que hace un vecino espera a una voz. Si algo falla (el modelo, el tope, la moderación), simplemente no se publica y queda en el registro.
@@ -86,14 +88,16 @@ async function fuente(k: TipoAnf, c: Ciudad): Promise<{ ref: string; dato: DatoA
         order by q.id offset (($1::date - date '2026-01-01') % greatest(1, (select count(*) from com_host_questions where status = 'active' and lang = 'es'))) limit 1`, [c.dia])).rows[0];
     return x ? { ref: `dia:${c.dia}`, dato: { tipo: "pregunta_dia", pregunta: x.body } } : null;
   }
-  return null; // noticias: 5b, fuera de esta parte
+  return null; // noticias: publicarNoticia() (lib/compa/noticias.ts)
 }
 
-async function publicarPropio(c: Ciudad, n: number, V: Map<string, Voz>): Promise<number> {
-  const tipos = (await db().query<{ key: TipoAnf; voz: string }>(`select key, host_user_id::text as voz from com_host_kinds where active and key <> 'noticias' order by sort, key`)).rows;
+async function publicarPropio(c: Ciudad, n: number, V: Map<string, Voz>, usadas: Set<string>): Promise<number> {
+  const tipos = (await db().query<{ key: TipoAnf; voz: string }>(`select key, host_user_id::text as voz from com_host_kinds where active order by sort, key`)).rows;
   let hechas = 0;
   for (const t of tipos) {
     if (hechas >= n) break;
+    // 5b · Noticias: la voz es la de cada fuente (Yadira o Rafelito), no la del tipo; lib/compa/noticias.ts elige la nota y la publica con su enlace.
+    if (t.key === "noticias") { if (await publicarNoticia(c, V, usadas, motorAnfitriones())) hechas++; continue; }
     const voz = V.get(t.voz);
     if (!voz) continue; // la voz de ese tipo está apagada
     const f = await fuente(t.key, c);
@@ -153,17 +157,6 @@ function leerSalida(j: unknown, refs: Map<string, string>): { texto: string; neg
   return { texto: x.texto.replace(/\s+/g, " ").trim(), negocio: ref ? refs.get(ref)! : null };
 }
 
-/* El tope propio, con la misma forma que El Compa (guardián compaPorElTope): gastar() reserva el máximo ANTES de llamar (anf_reservar contra
-   anf_tope_mes_cents); anotarUso() liquida DESPUÉS con los tokens que devolvió (anf_anotar), en el camino del error y en el de la respuesta. */
-async function gastar(modeloId: string): Promise<string | null> {
-  return (await db().query<{ id: string | null }>(`select anf_reservar($1, $2, $3)::text as id`, [modeloId, ENTRADA_MAX, SALIDA_MAX])).rows[0]?.id ?? null;
-}
-async function anotarUso(a: { reserva: string; modelo: string; tokens?: { entrada: number; salida: number }; cobrarReservado?: boolean }): Promise<number> {
-  const t = a.tokens ?? { entrada: 0, salida: 0 };
-  return Number((await db().query<{ c: string }>(`select anf_anotar($1::uuid, $2, $3, $4, $5)::text as c`,
-    [a.reserva, a.modelo, Math.max(0, Math.round(t.entrada)), Math.max(0, Math.round(t.salida)), !!a.cobrarReservado])).rows[0]?.c ?? 0);
-}
-
 /* Una respuesta de una voz (exportada solo para que el guardián del tope la encuentre; la llama barrerAnfitriones). */
 export async function responderUno(c: Ciudad, x: Cand, V: Map<string, Voz>, porSlug: Map<string, Voz>): Promise<boolean> {
   const base = { ciudad: c.id, kind: "respuesta" as const, ref: x.ref, dia: c.dia };
@@ -182,7 +175,7 @@ export async function responderUno(c: Ciudad, x: Cand, V: Map<string, Voz>, porS
   if (!m) return anotar({ ...base, voz: voz.id, motor, motivo: "motor", detalle: "sin modelo (reglas)" }).then(() => false);
   const modeloId = motor === "simulador" ? "simulador" : await modeloDe("neighbor");
   if (!modeloId) return anotar({ ...base, voz: voz.id, motor, motivo: "motor", detalle: "sin modelo activo" }).then(() => false);
-  const reserva = await gastar(modeloId);
+  const reserva = await gastar(modeloId, ENTRADA_MAX, SALIDA_MAX);
   if (!reserva) return anotar({ ...base, voz: voz.id, motor, modelo: modeloId, motivo: "tope" }).then(() => false);
   // Negocios de la app que la voz puede nombrar (del tema, en la ciudad; refs, nunca ids crudos).
   const busca = tema === "comida" ? "comida | restaurante" : tema === "musica" ? "musica | fiesta" : null;
@@ -226,10 +219,11 @@ export async function barrerAnfitriones(): Promise<{ ciudades: number; publicada
   const C = (await db().query<Ciudad>(
     `select hc.city_id as id, c.name, hc.mode, hc.manual_posts as mp, hc.manual_replies as mr, (now() at time zone coalesce(c.timezone, 'America/New_York'))::date::text as dia
        from com_host_cities hc join cities c on c.id = hc.city_id where hc.mode in ('auto', 'manual') and c.status = 'on' order by hc.city_id`)).rows;
+  const usadas = new Set<string>(); // 5b · una misma nota no va a dos ciudades en la misma pasada (se reparte)
   for (const c of C) {
     out.ciudades++;
     const q = await cupoCiudad(c.id, c.mode, { pub: c.mp, resp: c.mr }, c.dia);
-    if (q.pub > q.usadasPub) out.publicadas += await publicarPropio(c, q.pub - q.usadasPub, V);
+    if (q.pub > q.usadasPub) out.publicadas += await publicarPropio(c, q.pub - q.usadasPub, V, usadas);
     let quedan = q.resp - q.usadasResp;
     if (quedan <= 0) continue;
     for (const x of await candidatos(c, quedan)) {

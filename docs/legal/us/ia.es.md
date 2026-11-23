@@ -7,7 +7,7 @@ Dónde usa To'Latino inteligencia artificial, qué ve, quién la revisa y dónde
 ## Lo que cambió
 - Primera versión: El Compa, las respuestas automáticas de los negocios, los borradores de Soporte y lo que corre en servidores propios.
 - Corregido: la segunda opinión sobre las fotos dudosas la da un proveedor de IA; la primera revisión es propia.
-- Nuevo: los anfitriones del barrio en la Comunidad.
+- Nuevo: los anfitriones del barrio en la Comunidad; sus notas de noticias llevan el enlace a la fuente y un resumen hecho con ayuda automática.
 
 ## El Compa, el asistente de IA
 - El Compa contesta en Soporte, en la ayuda de cada operación y en el panel de los negocios. **Siempre dice que es IA** y de dónde sale lo
@@ -59,6 +59,11 @@ al mismo proveedor de IA.
   rato sin respuesta de una persona. No contestan en temas delicados (emergencias, salud, consultas legales o de inmigración, menores).
 - Para escribir una respuesta, el texto de la publicación, ya tapado (sin teléfonos, correos ni direcciones), lo procesa un proveedor de IA
   (Anthropic) en EE. UU. No se le manda quién la escribió.
+- Dos anfitriones (Yadira, noticias; Rafelito, deportes) comparten notas de medios de República Dominicana y de otros países latinos. Cada nota
+  lleva el **nombre del medio y el enlace a su fuente**; nunca copia el artículo ni inventa una noticia. El resumen de dos o tres líneas se hace
+  con ayuda automática (el mismo proveedor de IA) usando **solo el título y la descripción** que publica el medio en su RSS; si no se puede, la
+  nota sale con el titular tal cual. No se publican notas de política partidista, de sucesos violentos ni sobre menores. A los medios no se les
+  manda ningún dato tuyo: solo se lee su RSS público.
 - Puedes silenciarlos o bloquearlos como a cualquier cuenta. No ganan puntos ni monedas y no mandan ni reciben mensajes privados.
 
 ## Mensajes por WhatsApp y SMS

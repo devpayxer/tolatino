@@ -11288,6 +11288,17 @@ const guardianes = {
     if (lista.STRIPE_FILES_BASE?.origen !== "prohibida") falla(G, SJ, 0, "STRIPE_FILES_BASE tiene que estar «prohibida» (la dirección de un simulador no puede existir en producción)");
     const REGLA_ENT = 'if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;';
     const REGLA_DIR = 'if (!/^https?:$/.test(u.protocol) || !["127.0.0.1", "localhost"].includes(u.hostname) || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return null;';
+    // AO 5b · NOTICIAS_RSS_BASE (las fuentes de noticias de mentira): servir.sh la pasa con su puerto, PROHIBIDA en producción, y solo el lector la lee,
+    // por origenDePruebas (una vez, en resolverDeFuentes y leerFuente).
+    if (!/^VARS\+=\(NOTICIAS_RSS_BASE=http:\/\/127\.0\.0\.1:\$P_PROVRSS\)$/m.test(sv)) falla(G, SV, 0, "servir.sh ya no le pasa NOTICIAS_RSS_BASE=http://127.0.0.1:$P_PROVRSS al servidor de pruebas: las fuentes de noticias no tendrían simulador");
+    if (lista.NOTICIAS_RSS_BASE?.origen !== "prohibida") falla(G, SJ, 0, "NOTICIAS_RSS_BASE tiene que estar «prohibida» (la dirección de un simulador no puede existir en producción)");
+    if (!/\bprovRss: \d{4}\b/.test(nominal)) falla(G, PU, 0, "falta el puerto «provRss» en la tabla NOMINAL de puertos.cjs");
+    for (const f of codigo) {
+      if (!/^(apps|packages)\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(f) || !/\bNOTICIAS_RSS_BASE\b/.test(sinComent(f))) continue;
+      const t = sinComent(f), todas = (t.match(/\bNOTICIAS_RSS_BASE\b/g) ?? []).length, dentro = (t.match(/origenDePruebas\(process\.env\.NOTICIAS_RSS_BASE\)/g) ?? []).length;
+      if (f !== "apps/web/lib/noticias-lector.ts") falla(G, f, 0, "lee NOTICIAS_RSS_BASE: solo lib/noticias-lector.ts");
+      else if (!dentro || todas !== dentro) falla(G, f, 0, `NOTICIAS_RSS_BASE se lee sin pasar por origenDePruebas (${dentro} de ${todas})`);
+    }
     if (!existsSync(OP)) falla(G, OP, 0, "falta LA regla de las direcciones de simulador (lib/origen-pruebas.ts)");
     else {
       const t = sinComent(OP), cuerpo = (/^export function origenDePruebas\(v: string \| undefined\): URL \| null \{([\s\S]*?)\n\}/m.exec(t) ?? [])[1] ?? "";
@@ -16221,9 +16232,9 @@ const guardianes = {
     const co = leer("pruebas/correr.mjs");
     if (!/"\.\/lib\/puertos\.cjs"\)\.resolver\(process\.env\)/.test(co) || !/SERVIDOR\.url/.test(co)) falla(G, "pruebas/correr.mjs", 0, "el corredor pregunta la salud en la dirección de pruebas/lib/puertos.cjs (PRUEBAS_URL), no en una escrita");
     /* Los simuladores y servicios de las pruebas (push 4401–4403, App Store Connect 4404, Wallet 4405/4406, GitHub 4407, Play 4408, «SNS» 4409, moderación 8790, video 8791,
-       traductor de mentira 5098/5099, lecturas de «Probar» 4410–4414) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
+       traductor de mentira 5098/5099, lecturas de «Probar» 4410–4414, fuentes de noticias 4415) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
     const nom = [...(/const NOMINAL = \{([\s\S]*?)\n\};/.exec(pu)?.[1] ?? "").matchAll(/\b([A-Za-z]+): (\d{4})\b/g)].filter((m) => m[1] !== "servidor").map((m) => m[2]);
-    if (nom.length < 18) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 18): sin ella el guardián no puede vigilar los puertos escritos a mano`);
+    if (nom.length < 19) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 19): sin ella el guardián no puede vigilar los puertos escritos a mano`);
     else {
       const N = nom.join("|"), PS = [`(127\\.0\\.0\\.1|localhost|0\\.0\\.0\\.0):(${N})\\b`, `(puerto|Puerto|PUERTO|PORT)\\s*[:=,(]\\s*['"]?(${N})\\b`, `listen\\(\\s*(${N})\\b`, `['"](${N})['"]`, `\\|\\|\\s*(${N})\\b`].map((x) => new RegExp(x));
       for (const f of archivos) {
@@ -16635,7 +16646,8 @@ const guardianes = {
     const H = "apps/web/lib/comunidad-hilo.ts";
     if (existsSync(H) && (sinComent(H).match(/\{ nombre: nombreConMarca\(yo\.nombre, yo\.anfitrion\)/g) ?? []).length < 2) falla(G, H, 0, "el aviso de un comentario o de «Me sirvió» pinta el nombre sin la marca de anfitrión");
     // Por clase: cada pantalla que pinta a un autor de la Comunidad usa marcaAnfitrion().
-    const SITIOS = ["apps/web/app/(app)/comunidad/Tarjeta.tsx", "apps/web/app/(app)/comunidad/p/[id]/Hilo.tsx", "apps/web/app/(app)/comunidad/v/[id]/Vecino.tsx",
+    // 5b · Publicacion.tsx: el lado «Quien publica» del escritorio pintaba el rango (Recluta) de una voz en vez de su marca (cazado en las capturas).
+    const SITIOS = ["apps/web/app/(app)/comunidad/Tarjeta.tsx", "apps/web/app/(app)/comunidad/p/[id]/Hilo.tsx", "apps/web/app/(app)/comunidad/p/[id]/Publicacion.tsx", "apps/web/app/(app)/comunidad/v/[id]/Vecino.tsx",
       "apps/web/app/(app)/cuenta/vecinos/Vecinos.tsx", "apps/web/app/(app)/buscar/Buscar.tsx", "apps/web/app/admin/Contenido.tsx", "apps/web/app/admin/HiloAdmin.tsx"];
     for (const f of SITIOS) if (!existsSync(f)) falla(G, f, 0, "falta un sitio que pinta autores de la Comunidad");
     for (const x of codigo) {
@@ -16648,7 +16660,8 @@ const guardianes = {
     // Cada sitio conocido pinta la marca donde va (no basta con calcularla).
     const DONDE = { "apps/web/app/(app)/comunidad/Tarjeta.tsx": /rk = anf \? \{ label: anf, shield: null \}/, "apps/web/app/(app)/buscar/Buscar.tsx": /\{x\.anfitrion \? <span data-anfitrion="1"[^>]*>\{marcaAnfitrion\(x\.anfitrion, es\)/,
       "apps/web/app/(app)/cuenta/vecinos/Vecinos.tsx": /sub = \[anf \? anf\.toUpperCase\(\)/, "apps/web/app/admin/Contenido.tsx": /tag: x\.hidden \? E\("OCULTO", "HIDDEN"\) : x\.anf \? marcaAnfitrion\(x\.anf, !EN\)/,
-      "apps/web/app/admin/HiloAdmin.tsx": /rank=\{c\.anf \? \{ label: marcaAnfitrion\(c\.anf, !en\)/ };
+      "apps/web/app/admin/HiloAdmin.tsx": /rank=\{c\.anf \? \{ label: marcaAnfitrion\(c\.anf, !en\)/,
+      "apps/web/app/(app)/comunidad/p/[id]/Publicacion.tsx": /\$\{\(marcaAnfitrion\(a\.anfitrion, es\) \?\? \(es \? rango\(a\.rango\)\.es : rango\(a\.rango\)\.en\)\)\.toUpperCase\(\)\}/ };
     for (const [f, re] of Object.entries(DONDE)) if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "este sitio calcula la marca de anfitrión pero no la pinta junto al nombre");
     // El perfil de una voz: el texto fijo y sin «Mensaje».
     const V = "apps/web/app/(app)/comunidad/v/[id]/Vecino.tsx";
@@ -16734,6 +16747,134 @@ const guardianes = {
     for (const k of ["DATOS", "PRECIO", "ENLACE", "POLITICA", "RECOMIENDA"]) if (!new RegExp(`\\b${k}\\.test\\(`).test(fa)) falla(G, F, 0, `filtroAnfitrion() no aplica ${k}`);
     const de = cuerpoFn(f, "delicado");
     for (const k of ["EMERGENCIA", "CRISIS", "SALUD", "LEGAL", "MENORES"]) if (!new RegExp(`\\b${k}\\.test\\(`).test(de)) falla(G, F, 0, `delicado() no mira ${k}`);
+  },
+
+
+  /* ── AO 5b · Noticias de las voces de la casa (RSS/Atom) ── */
+  /* AO 5b. El lector de fuentes es la única llamada de red a un servidor ajeno: lo llaman SOLO el barrido central (lib/compa/noticias.ts, barrerFuentes,
+     que solo corre como tarea del barrido) y «Probar» del Super Admin (lib/anfitriones-fuentes.ts, probarFuente, que solo llama la acción del admin).
+     Nadie más importa el lector ni el motor de las noticias. Al revés: pruebas/alreves/alrevesNoticias.cjs. */
+  noticiasLectorSoloBarrido() {
+    const G = "noticiasLectorSoloBarrido", L = "apps/web/lib/noticias-lector.ts", N = "apps/web/lib/compa/noticias.ts", AF = "apps/web/lib/anfitriones-fuentes.ts", BR = "apps/web/lib/barrido.ts", AC = "apps/web/app/admin/acciones-anfitriones.ts", MO = "apps/web/lib/compa/anfitriones.ts";
+    for (const f of [L, N, AF, BR, AC, MO]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de las noticias de las voces");
+    for (const x of codigo) {
+      if (!/^apps\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(x)) continue;
+      const t = sinComent(x).replace(/import\s+type\s+\{[^}]*\}\s+from\s+"[^"]+";/g, "");
+      if (x !== N && x !== AF && /(?:from |import\()"(?:@\/lib\/|\.\.?\/(?:\.\.\/)*)noticias-lector"/.test(t)) falla(G, x, 0, "importa el lector de fuentes: solo el barrido (compa/noticias.ts) y «Probar» (anfitriones-fuentes.ts)");
+      if (x !== L && x !== N && x !== AF && /\bleerFuente\(/.test(t)) falla(G, x, 0, "llama a leerFuente(): solo barrerFuentes() y probarFuente()");
+      if (x !== BR && x !== MO && /(?:from |import\()"(?:@\/lib\/compa\/|\.\.?\/(?:\.\.\/)*compa\/|\.\/)noticias"/.test(t)) falla(G, x, 0, "importa el motor de las noticias: solo el barrido central y el motor de los anfitriones");
+      if (x !== N && x !== BR && /\bbarrerFuentes\(/.test(t)) falla(G, x, 0, "barrerFuentes() solo la corre el barrido central");
+      if (x !== AF && x !== AC && /\bprobarFuente\(/.test(t)) falla(G, x, 0, "probarFuente() solo la llama la acción del Super Admin (con su permiso)");
+    }
+    const n = sinComent(N), af = sinComent(AF);
+    const llamadasN = [...n.matchAll(/\bleerFuente\(/g)].length, enBarrer = [...cuerpoFn(n, "barrerFuentes").matchAll(/\bleerFuente\(/g)].length;
+    if (!llamadasN || llamadasN !== enBarrer) falla(G, N, 0, "leerFuente() solo dentro de barrerFuentes()");
+    if (/\bleerFuente\([^)]*probar/.test(n)) falla(G, N, 0, "el barrido lee solo fuentes encendidas (sin «probar»)");
+    const llamadasA = [...af.matchAll(/\bleerFuente\(/g)].length, enProbar = [...cuerpoFn(af, "probarFuente").matchAll(/\bleerFuente\(/g)].length;
+    if (!llamadasA || llamadasA !== enProbar) falla(G, AF, 0, "leerFuente() solo dentro de probarFuente()");
+    if (!/if \(!deTodas\(s\)\) return no\(/.test(cuerpoFn(af, "probarFuente"))) falla(G, AF, 0, "«Probar» exige cont:editar con todas las ciudades");
+    if (!/\["anfitrionesFuentes", async \(\) => \(await import\("\.\/compa\/noticias"\)\)\.barrerFuentes\(\)\]/.test(sinComent(BR))) falla(G, BR, 0, "el barrido central corre las fuentes como una tarea aparte");
+    if (!/const s = await staff\(\);\n\s+if \(!s\) return sinRol;\n\s+return fin\(await probarFuente\(s,/.test(sinComent(AC))) falla(G, AC, 0, "la acción de «Probar» pide la sesión del equipo antes de leer");
+  },
+
+  /* AO 5b. Las reglas del lector, en el código y EJECUTADAS contra el código real (lib/noticias-comun.ts no importa nada): solo https y el servidor de la
+     fila; DNS sin direcciones privadas (la tabla de casos: 127.0.0.1, 10.x, 172.16–31, 192.168.x, 169.254.x, 100.64.x, 0.0.0.0, ::1, fc00::/7, fe80::/10,
+     ::ffff:127.0.0.1, nombres que resuelven a privadas…); conexión a la IP comprobada (lookup fijo) y comprobación del socket; redirecciones solo al
+     mismo servidor por https (máx. 2); tiempo ≤ 5 s y tamaño ≤ 1 MB; tipo XML/RSS/Atom; ninguna otra salida de red en el archivo. */
+  noticiasLectorSeguro() {
+    const G = "noticiasLectorSeguro", L = "apps/web/lib/noticias-lector.ts", C = "apps/web/lib/noticias-comun.ts";
+    if (!existsSync(L) || !existsSync(C)) return falla(G, L, 0, "falta el lector o lib/noticias-comun.ts");
+    const t = sinComent(L), lf = cuerpoFn(t, "leerFuente"), pr = cuerpoFn(t, "pedirReal");
+    if (!/from com_host_sources where id = \$1::bigint and \(status = 'on' or \(\$2 and status <> 'retired'\)\)/.test(lf)) falla(G, L, 0, "leerFuente() lee solo una fuente de la tabla, por su id (encendida, o no retirada para «Probar»)");
+    if (!/if \(!v\.ok \|\| v\.host !== f\.host\)/.test(lf)) falla(G, L, 0, "la URL pasa por urlFuente() y su servidor es el de la fila");
+    if (!/if \(u\.protocol !== "https:" \|\| u\.hostname\.toLowerCase\(\) !== f\.host \|\| u\.port \|\| u\.username \|\| u\.password\) throw new Rechazo\(/.test(lf)) falla(G, L, 0, "cada salto (y cada redirección) es https al MISMO servidor, sin puerto ni usuario");
+    const iR = lf.search(/const r = await resolverSeguro\(u\.hostname, resolver\);/), iP = lf.search(/pedirReal\(u, r\.ip, quedan, corte\.signal\)/);
+    if (iR < 0 || iP < 0 || iR > iP) falla(G, L, 0, "se resuelve y comprueba el DNS ANTES de cada petición y se conecta a esa IP");
+    if (!/if \(saltos >= LECTOR_MAX_REDIRECCIONES \|\| !res\.ubicacion\) throw new Rechazo\(/.test(lf)) falla(G, L, 0, "tope de redirecciones");
+    if (!/if \(!TIPOS_OK\.test\(res\.tipo\)\) throw new Rechazo\(/.test(lf)) falla(G, L, 0, "solo tipo de contenido XML/RSS/Atom");
+    if (!/notasDe\(leerXml\(/.test(lf)) falla(G, L, 0, "el XML pasa por el lector propio (leerXml) y notasDe()");
+    const k = /export const LECTOR_TIEMPO_MS = (\d+), LECTOR_MAX_BYTES = 1024 \* (\d+), LECTOR_MAX_REDIRECCIONES = (\d+);/.exec(t);
+    if (!k || Number(k[1]) > 5000 || Number(k[2]) > 1024 || Number(k[3]) > 2) falla(G, L, 0, "tiempo ≤ 5 s, tamaño ≤ 1 MB y ≤ 2 redirecciones");
+    if (!/lookup: \(\(_h: string, o: \{ all\?: boolean \}, cb:[^\n]*cb\(null, \[\{ address: ip, family: familia \}\]\) : cb\(null, ip, familia\)\)\)/.test(pr) || !/servername: u\.hostname/.test(pr)) falla(G, L, 0, "pedirReal() conecta a la IP comprobada (lookup fijo, contra DNS rebinding) con el nombre para TLS");
+    if (!/ipPrivada\(real\.replace/.test(pr) || !/s\.once\("connect"/.test(pr)) falla(G, L, 0, "pedirReal() vuelve a comprobar la dirección real del socket");
+    if (!/if \(n > limite\) \{ res\.destroy\(\)/.test(cuerpoFn(t, "cuerpo"))) falla(G, L, 0, "el tope de tamaño corta el flujo");
+    if (/\bfetch\(|\bhttps?\.get\(\s*["'`]|axios|undici/.test(t.replace(cuerpoFn(t, "resolverDe"), ""))) falla(G, L, 0, "otra salida de red en el lector (todo va por pedirReal o el simulador)");
+    if ((t.match(/\bhttps\.request\(/g) ?? []).length !== 1 || !/https\.request\(/.test(pr)) falla(G, L, 0, "una sola llamada https.request, en pedirReal()");
+    if ((t.match(/\bhttp\.request\(/g) ?? []).length !== 1 || !/http\.request\(\{ host: sim\.hostname/.test(cuerpoFn(t, "pedirSimulador"))) falla(G, L, 0, "http (sin s) solo hacia el simulador de pruebas");
+    if (!/sim \? pedirSimulador\(sim, u, quedan, corte\.signal\) : pedirReal\(u, r\.ip, quedan, corte\.signal\)/.test(lf)) falla(G, L, 0, "el simulador solo con NOTICIAS_RSS_BASE válida (origenDePruebas)");
+    // El tiempo límite es TOTAL y corta de verdad: una fuente que gotea un byte cada tanto no deja una conexión abierta (la señal llega a la petición).
+    if (!/const reloj = setTimeout\(\(\) => corte\.abort\(\), quedan\);/.test(lf) || !/family: familia, signal,/.test(pr) || !/method: "GET", signal, headers/.test(cuerpoFn(t, "pedirSimulador"))) falla(G, L, 0, "el tiempo límite total corta la petición (AbortController hasta https.request)");
+    // La tabla, contra el código real.
+    let M;
+    try {
+      const ts = createRequire(import.meta.url)("typescript");
+      const js = ts.transpileModule(readFileSync(C, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+      const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("sin importaciones"); });
+      M = mod.exports;
+    } catch (e) { return falla(G, C, 0, `no pude ejecutar noticias-comun.ts: ${String(e?.message ?? e).slice(0, 120)}`); }
+    const PRIV = ["127.0.0.1", "127.1.2.3", "10.0.0.5", "10.255.255.255", "172.16.0.1", "172.31.255.254", "192.168.1.1", "169.254.169.254", "169.254.0.1", "100.64.0.1", "100.127.255.255",
+      "0.0.0.0", "0.1.2.3", "255.255.255.255", "224.0.0.1", "240.0.0.1", "192.0.2.1", "198.51.100.7", "203.0.113.9", "198.18.0.1", "::1", "::", "fc00::1", "fd12:3456::1", "fe80::1",
+      "febf::1", "fec0::1", "ff02::1", "::ffff:127.0.0.1", "::ffff:10.0.0.1", "::ffff:8.8.8.8", "::ffff:7f00:1", "64:ff9b::a00:1", "2001:db8::1", "2002:7f00:1::1", "2001::1", "[::1]", "fe80::1%eth0", "no-es-ip", "1.2.3", "01.2.3.4", ""];
+    const PUB = ["8.8.8.8", "93.184.215.14", "172.15.255.255", "172.32.0.1", "100.63.255.255", "100.128.0.1", "1.1.1.1", "2606:4700:4700::1111", "2a00:1450:4001::200e"];
+    for (const ip of PRIV) if (M.ipPrivada(ip) !== true) falla(G, C, 0, `ipPrivada("${ip}") debe rechazarla`);
+    for (const ip of PUB) if (M.ipPrivada(ip) !== false) falla(G, C, 0, `ipPrivada("${ip}") es pública y debe aceptarla`);
+    for (const [u, bien] of [["https://diario.com.do/rss", true], ["http://diario.com.do/rss", false], ["https://127.0.0.1/rss", false], ["https://[::1]/rss", false], ["https://2130706433/rss", false],
+      ["https://0x7f.1/rss", false], ["https://localhost/rss", false], ["https://metadata.google.internal/x", false], ["https://u:c@diario.com/rss", false], ["https://diario.com:8443/rss", false],
+      ["https://intranet.local/rss", false], ["file:///etc/passwd", false], ["https://diario/rss", false]])
+      if (M.urlFuente(u).ok !== bien) falla(G, C, 0, `urlFuente("${u}") debe ${bien ? "aceptarse" : "rechazarse"}`);
+    // Nombres que resuelven a privadas: resolverSeguro() decide con direccionesSeguras() (síncrona, aquí con su tabla).
+    if (!/return direccionesSeguras\(ips\);/.test(cuerpoFn(readFileSync(C, "utf8"), "resolverSeguro"))) falla(G, C, 0, "resolverSeguro() decide con direccionesSeguras()");
+    for (const [ips, bien] of [[["93.184.215.14"], true], [["10.0.0.5"], false], [["93.184.215.14", "127.0.0.1"], false], [["::ffff:192.168.0.1"], false], [["2606:4700::1", "fd00::1"], false], [[], false]])
+      if (M.direccionesSeguras(ips).ok !== bien) falla(G, C, 0, `un servidor que resuelve a ${JSON.stringify(ips)} debe ${bien ? "aceptarse" : "rechazarse"}`);
+  },
+
+  /* AO 5b. El XML de una fuente se lee SIN DTD ni entidades (XXE), con tope de elementos, y su texto es dato no confiable (sin HTML, acotado). Ejecutado
+     contra el código real. Y el filtro de temas: política partidista, sucesos violentos y menores se descartan con su motivo. */
+  noticiasXmlSinEntidades() {
+    const G = "noticiasXmlSinEntidades", C = "apps/web/lib/noticias-comun.ts";
+    if (!existsSync(C)) return falla(G, C, 0, "falta lib/noticias-comun.ts");
+    const t = sinComent(C);
+    if (!/if \(\/<!DOCTYPE\/i\.test\(s\) \|\| \/<!ENTITY\/i\.test\(s\)\) throw new XmlNoSirve\(/.test(cuerpoFn(t, "leerXml"))) falla(G, C, 0, "leerXml() rechaza DOCTYPE y ENTITY");
+    let M;
+    try {
+      const ts = createRequire(import.meta.url)("typescript");
+      const js = ts.transpileModule(readFileSync(C, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+      const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("sin importaciones"); });
+      M = mod.exports;
+    } catch (e) { return falla(G, C, 0, `no pude ejecutar noticias-comun.ts: ${String(e?.message ?? e).slice(0, 120)}`); }
+    const lanza = (x) => { try { M.leerXml(x); return false; } catch { return true; } };
+    if (!lanza('<?xml version="1.0"?><!DOCTYPE r [<!ENTITY x SYSTEM "file:///etc/passwd">]><rss><channel><item><title>&x;</title></item></channel></rss>')) falla(G, C, 0, "un XML con entidad externa se lee");
+    if (!lanza('<!doctype rss><rss/>')) falla(G, C, 0, "un XML con DOCTYPE se lee");
+    if (!lanza('<rss><!ENTITY a "b"></rss>')) falla(G, C, 0, "un XML con ENTITY suelta se lee");
+    if (!lanza(`<rss><channel>${"<item><title>x</title></item>".repeat(15000)}</channel></rss>`)) falla(G, C, 0, "sin tope de elementos");
+    if (!lanza(`${"<a>".repeat(200)}${"</a>".repeat(200)}`)) falla(G, C, 0, "sin tope de profundidad");
+    try {
+      const r = M.notasDe(M.leerXml('<rss version="2.0"><channel><item><title>Hola &amp; adi&#243;s &xxe;</title><link>https://www.diario.com.do/n/1?utm_source=x#a</link><description><![CDATA[<script>alert(1)</script><b>Texto</b> &nbsp;limpio]]></description></item><item><title>Otro</title><link>https://otro-sitio.com/x</link></item></channel></rss>'), "rss.diario.com.do");
+      const [a, b] = r.notas;
+      if (a?.titulo !== "Hola & adiós &xxe;" || a?.enlace !== "https://www.diario.com.do/n/1" || a?.descripcion !== "Texto limpio") falla(G, C, 0, `la nota no sale limpia: ${JSON.stringify(a)}`);
+      if (b?.enlace !== null) falla(G, C, 0, "un enlace a otro medio se acepta");
+    } catch (e) { falla(G, C, 0, `un RSS normal no se lee: ${String(e?.message ?? e).slice(0, 100)}`); }
+    for (const [x, m] of [["Elecciones: el candidato habla", "politica"], ["Tiroteo en la avenida", "violencia"], ["Niños de la escuela ganan premio", "menores"], ["Llega la temporada de mangos", null]])
+      if ((M.vetoNoticia(x)?.motivo ?? null) !== m) falla(G, C, 0, `vetoNoticia("${x}") debe dar ${m}`);
+  },
+
+  /* AO 5b. Las fuentes nacen apagadas y en producción vacías: ninguna migración inserta ni enciende fuentes ni enciende el tipo «noticias»; la semilla del
+     sandbox (si trae fuentes) las deja apagadas. Una publicación con enlace solo puede ser de una voz (la base). */
+  noticiasApagadasDeFabrica() {
+    const G = "noticiasApagadasDeFabrica", M = "packages/db/migrations/0216_anfitriones_noticias.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de las noticias");
+    const m = readFileSync(M, "utf8");
+    if (!/create table if not exists com_host_sources \([\s\S]*?\n  status\s+text not null default 'off'/.test(m)) falla(G, M, 0, "las fuentes nacen apagadas");
+    if (!/if new\.source_url is not null and \(new\.author_user_id is null or not anf_es\(new\.author_user_id\)\) then\s+raise exception 'anfitrion_fuente/.test(m)) falla(G, M, 0, "solo una voz de la casa publica con enlace a una fuente");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y >= "0216")) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/--.*$/gm, "");
+      if (/insert into com_host_sources\b|update com_host_sources set[^;]*status = 'on'|update com_host_kinds set[^;]*active = true/i.test(t)) falla(G, `packages/db/migrations/${x}`, 0, "una migración da de alta o enciende fuentes de noticias (corre también en producción)");
+    }
+    const SD = "infra/pruebas/semilla";
+    if (existsSync(SD)) for (const x of readdirSync(SD).filter((y) => y.endsWith(".sql"))) {
+      const t = readFileSync(`${SD}/${x}`, "utf8").replace(/--.*$/gm, "");
+      if (/com_host_sources/.test(t) && (/'on'/.test(t) || /update com_host_sources/i.test(t))) falla(G, `${SD}/${x}`, 0, "la semilla del sandbox deja las fuentes APAGADAS (las enciende el fundador)");
+    }
   },
 
 };

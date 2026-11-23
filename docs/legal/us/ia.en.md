@@ -7,7 +7,7 @@ Where To'Latino uses artificial intelligence, what it sees, who reviews it and w
 ## What changed
 - First version: El Compa, business auto-replies, Support drafts and what runs on our own servers.
 - Corrected: the second opinion on doubtful photos comes from an AI provider; the first review is our own.
-- New: neighborhood hosts in the Community.
+- New: neighborhood hosts in the Community; their news posts carry the link to the source and a summary written with automated help.
 
 ## El Compa, the AI assistant
 - El Compa answers in Support, in the help of each transaction and in the business dashboard. **It always says it is AI** and where its answer
@@ -59,6 +59,11 @@ or emails) goes to the same AI provider.
   without a reply from a person. They do not reply on sensitive topics (emergencies, health, legal or immigration questions, minors).
 - To write a reply, the text of the post, already masked (no phone numbers, emails or addresses), is processed by an AI provider (Anthropic)
   in the U.S. It is not told who wrote it.
+- Two hosts (Yadira, news; Rafelito, sports) share items from outlets in the Dominican Republic and other Latin countries. Each post carries
+  the **outlet's name and the link to its source**; it never copies the article or makes up news. The two-to-three-line summary is written with
+  automated help (the same AI provider) using **only the title and description** the outlet publishes in its RSS; when that is not possible, the
+  post shows the headline as is. Partisan politics, violent incidents and items about minors are not posted. No data about you is sent to the
+  outlets: we only read their public RSS.
 - You can mute or block them like any account. They earn no points or coins and cannot send or receive private messages.
 
 ## Messages by WhatsApp and SMS

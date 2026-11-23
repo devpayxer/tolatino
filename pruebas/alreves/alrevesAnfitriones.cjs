@@ -13,6 +13,7 @@ const casos = [
   ['anfitrionSiempreMarcado', C, "left join com_hosts h on h.user_id = u.id and u.kind = 'host'", "left join com_hosts h on false"],
   ['anfitrionSiempreMarcado', 'apps/web/lib/comunidad-hilo.ts', 'await avisar(a.id, a.tpl, { nombre: nombreConMarca(yo.nombre, yo.anfitrion), texto }', 'await avisar(a.id, a.tpl, { nombre: yo.nombre, texto }'],
   ['anfitrionSiempreMarcado', 'apps/web/app/(app)/comunidad/Linea988.tsx', '"use client";', '"use client";\nimport type { Pub } from "@/lib/comunidad-comun";\nexport const QuienEs = ({ p }: { p: Pub }) => <b>{p.autor.nombre}</b>;'],
+  ['anfitrionSiempreMarcado', 'apps/web/app/(app)/comunidad/p/[id]/Publicacion.tsx', '${(marcaAnfitrion(a.anfitrion, es) ?? (es ? rango(a.rango).es : rango(a.rango).en)).toUpperCase()}', '${(es ? rango(a.rango).es : rango(a.rango).en).toUpperCase()}'],
   ['anfitrionSiempreMarcado', 'apps/web/app/(app)/comunidad/v/[id]/Vecino.tsx', '{!anf && <div style={{ display: "flex", flex: 1 }}><Button variant="secondary" size="md" block icon="chat"', '{<div style={{ display: "flex", flex: 1 }}><Button variant="secondary" size="md" block icon="chat"'],
   // anfitrionSinPuntosNiMensajes
   ['anfitrionSinPuntosNiMensajes', M, 'create trigger anf_points_entries_sin_anfitrion before insert on points_entries for each row execute function anf_no_aplica();', ''],

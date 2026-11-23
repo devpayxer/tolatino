@@ -6,11 +6,13 @@
    lugar o por qué se descartó). Los números (espera, tramos, tope) viven en Sistema › Configuración › Comunidad. El servidor decide todo. */
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { AnfAdm } from "@/lib/anfitriones";
+import type { FuentesAdm } from "@/lib/anfitriones-fuentes";
+import { PAIS_L } from "@/lib/noticias-comun";
 import { MARCA_ANF } from "@/lib/comunidad-comun";
 import { TEMA_L, TIPO_ANF_L, type TipoAnf } from "@/lib/anfitriones-comun";
-import { anfCiudad, anfPausa, anfPregunta, anfPreguntaRetirar, anfTipo, anfVoz } from "./acciones-anfitriones";
+import { anfCiudad, anfFuente, anfFuenteEstado, anfFuenteProbar, anfPausa, anfPregunta, anfPreguntaRetirar, anfTipo, anfVoz } from "./acciones-anfitriones";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useE } from "./idioma-admin";
@@ -22,14 +24,51 @@ const MOTIVO: Record<string, [string, string]> = {
   limite: ["Límite del día de la voz", "The voice's daily limit"], error: ["Error", "Error"], voz_apagada: ["Voz apagada", "Voice off"],
 };
 
-export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm; edita: boolean; arriba: Bloque[] }) {
+/* 5b · El motivo de una nota descartada. */
+const MOTIVO_NOTA: Record<string, [string, string]> = {
+  politica: ["Política partidista", "Partisan politics"], violencia: ["Suceso violento", "Violent incident"], menores: ["Menores", "Minors"], delicado: ["Tema delicado", "Sensitive topic"],
+  palabra: ["Palabra de la fuente", "Source's blocked word"], vieja: ["Ya no es reciente", "No longer recent"], enlace: ["Sin enlace del medio", "No link from the outlet"], filtro: ["El filtro de las voces la frenó", "Blocked by the hosts' filter"],
+};
+type Forma = { id: string | null; nombre: string; url: string; pais: string; lang: string; veto: string };
+
+export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias: FuentesAdm }; edita: boolean; arriba: Bloque[] }) {
   const router = useRouter(), desk = useAncho() >= 1024, E = useE(), en = E("", "x") === "x";
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
+  // 5b · La ficha de una fuente (alta o edición) y el resultado de la última «Probar» (se queda a la vista, no solo en el aviso).
+  const [forma, setForma] = useState<Forma | null>(null), fRef = useRef<Forma | null>(null);
+  const [prueba, setPrueba] = useState<{ id: string; ok: boolean; t: string } | null>(null), [probando, setProbando] = useState<string | null>(null);
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setForma(null); router.refresh(); };
   const L = (x: { es: string; en: string }) => (en ? x.en : x.es);
   const marca = (g: "m" | "f") => L(MARCA_ANF[g]);
   const nombreVoz = (id: string) => d.voces.find((v) => v.id === id)?.nombre ?? "—";
   const MODO: Record<string, string> = { auto: E("Automático", "Automatic"), manual: E("Manual", "Manual"), off: E("Apagado", "Off") };
+
+  // 5b · La ficha de una fuente: los campos y, debajo, la confirmación con el tema (y su voz) y el motivo (todo queda en la auditoría).
+  if (forma) {
+    fRef.current = forma;
+    const campo = (k: keyof Forma) => (v: string) => setForma((x) => (x ? { ...x, [k]: v } : x));
+    const actual = forma.id ? d.noticias.fuentes.find((f) => f.id === forma.id) : null;
+    const cf: Confirmar = {
+      titulo: forma.id ? E("Guardar la fuente", "Save the source") : E("Fuente nueva", "New source"),
+      sub: E("La dirección se revisa con las reglas del lector: solo https, un servidor con nombre y que no resuelva a una dirección privada. Una fuente nueva queda apagada.", "The address is checked with the reader's rules: https only, a named server that does not resolve to a private address. A new source starts off."),
+      elegir: { label: E("TEMA Y VOZ", "TOPIC AND VOICE"), items: [{ k: "noticias", l: E("Noticias · Yadira", "News · Yadira") }, { k: "deportes", l: E("Deportes · Rafelito", "Sports · Rafelito") }], ini: actual?.tema ?? "noticias" },
+      plantillas: forma.id ? [E("Ajuste de la fuente", "Source adjustment")] : [E("Fuente nueva", "New source")], ini: forma.id ? undefined : E("Fuente nueva", "New source"),
+      cta: E("Guardar", "Save"), nota: "interna",
+      hacer: (m, tema) => { const f = fRef.current!; return anfFuente(f.id, { nombre: f.nombre, url: f.url, pais: f.pais, tema: tema ?? "", lang: f.lang, veto: f.veto }, m); },
+    };
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }} data-screen-label="ADM-CONT · Anfitriones · fuente">
+        <PanelBloques bloques={[{ type: "head", eye: E("CONTENIDO · ANFITRIONES · FUENTES", "CONTENT · HOSTS · SOURCES"), t: forma.id ? forma.nombre : E("Fuente nueva", "New source"), onBack: () => setForma(null), h1: desk ? 26 : 22 },
+          { type: "field", k: E("MEDIO", "OUTLET"), val: forma.nombre, onChange: campo("nombre"), ph: E("Nombre del medio", "Outlet name"), max: 60 },
+          { type: "field", k: E("DIRECCIÓN DEL RSS O ATOM", "RSS OR ATOM ADDRESS"), val: forma.url, onChange: campo("url"), ph: "https://", max: 500, im: "url", help: E("La dirección pública del RSS o Atom del medio. Nunca se copia el artículo: la nota lleva el enlace.", "The outlet's public RSS or Atom address. The article is never copied: the post carries the link.") },
+          { type: "field", k: E("PAÍS (DOS LETRAS)", "COUNTRY (TWO LETTERS)"), val: forma.pais, onChange: campo("pais"), ph: "DO", max: 2, help: PAIS_L[forma.pais.toUpperCase()] ?? E("DO, PR, MX, CO, VE, CU…", "DO, PR, MX, CO, VE, CU…") },
+          { type: "field", k: E("IDIOMA (ES O EN)", "LANGUAGE (ES OR EN)"), val: forma.lang, onChange: campo("lang"), ph: "es", max: 2 },
+          { type: "field", k: E("PALABRAS QUE DESCARTAN UNA NOTA", "WORDS THAT DISCARD A NEWS ITEM"), val: forma.veto, onChange: campo("veto"), area: true, rows: 2, max: 1200, ph: E("separadas por comas", "separated by commas"),
+            help: E("Además de lo que nunca se publica: política partidista, sucesos violentos, menores y temas delicados.", "On top of what is never posted: partisan politics, violent incidents, minors and sensitive topics.") }]} />
+        <ConfirmarMotivo c={cf} desk={desk} onBack={() => setForma(null)} onDone={hecho} />
+        <Toast t={toast} desk={desk} />
+      </div>);
+  }
 
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
@@ -79,6 +118,23 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm; edita: boole
     nota: "interna", hacer: (m, modo, valor) => { const [a, b] = valor.split("/").map((x) => Number(x.trim())); return anfCiudad(c.id, modo ?? c.mode, a ?? 0, b ?? 0, m); },
   });
 
+  // 5b · Fuentes: encender o apagar, retirar (no vuelve) y «Probar» (una lectura, con el resultado a la vista).
+  const N = d.noticias;
+  const fecha = (iso: string) => new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso));
+  const fuenteTg = (f: FuentesAdm["fuentes"][number]) => setConf({
+    titulo: f.status === "on" ? E(`Apagar «${f.nombre}»`, `Turn off «${f.nombre}»`) : E(`Encender «${f.nombre}»`, `Turn on «${f.nombre}»`),
+    sub: f.status === "on" ? E("Deja de leerse. Lo ya publicado se queda, con su enlace.", "It stops being read. What was posted stays, with its link.") : E(`La lee el barrido y ${f.vozNombre} publica sus notas, con el enlace, dentro del cupo de cada ciudad. Antes de encender se revisa otra vez la dirección.`, `The sweep reads it and ${f.vozNombre} posts its news, with the link, within each city's quota. The address is checked again before turning on.`),
+    peligro: f.status === "on", plantillas: [E("Prueba en el sandbox", "Sandbox test"), E("La fuente falla", "The source fails")],
+    nota: "interna", hacer: (m) => anfFuenteEstado(f.id, f.status === "on" ? "off" : "on", m),
+  });
+  const fuenteFuera = (f: FuentesAdm["fuentes"][number]) => setConf({
+    titulo: E(`Retirar «${f.nombre}»`, `Retire «${f.nombre}»`), sub: E("Una fuente retirada no vuelve (se da de alta otra). Lo ya publicado se queda.", "A retired source does not come back (add a new one). What was posted stays."),
+    peligro: true, plantillas: [E("Ya no sirve", "No longer useful"), E("El medio cerró su RSS", "The outlet closed its RSS")], nota: "interna", hacer: (m) => anfFuenteEstado(f.id, "retired", m),
+  });
+  const probar = (f: FuentesAdm["fuentes"][number]) => { if (probando) return; setProbando(f.id); anfFuenteProbar(f.id).then((r) => {
+    setProbando(null); setPrueba({ id: f.id, ok: r.ok, t: r.mensaje ?? "" }); setToast(r.mensaje ?? ""); router.refresh();
+  }, () => { setProbando(null); setToast(E("No se pudo probar ahora.", "Could not test right now.")); }); };
+
   const enc = d.ciudades.filter((c) => c.mode !== "off").length, pubs = d.voces.reduce((a, v) => a + v.pubs7, 0), resp = d.voces.reduce((a, v) => a + v.resp7, 0);
   const pct = d.gasto.tope > 0 ? Math.min(100, Math.floor((d.gasto.gastado / d.gasto.tope) * 100)) : 100;
   const B: Bloque[] = [
@@ -98,9 +154,9 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm; edita: boole
       ...(edita ? { tgOn: v.active, onTg: () => vozTg(v), acts: [{ l: E("Cómo habla", "How it talks"), v: "secondary", onClick: () => vozEstilo(v) }] } : {}) })) },
     { type: "group", k: E("QUÉ PUBLICAN", "WHAT THEY POST") },
     { type: "rows", items: d.tipos.map((t) => ({ key: t.key, icon: t.key === "empleos" ? "brief" : t.key === "eventos" ? "calendar" : t.key === "negocio_nuevo" ? "store" : t.key === "noticias" ? "news" : "help",
-      t: L(TIPO_ANF_L[t.key as TipoAnf]), s: t.key === "noticias" ? E("Fuentes RSS: todavía no está construido.", "RSS sources: not built yet.") : E(`Lo publica ${nombreVoz(t.voz)} · datos de la app, sin IA`, `${nombreVoz(t.voz)} posts it · app data, no AI`),
+      t: L(TIPO_ANF_L[t.key as TipoAnf]), s: t.key === "noticias" ? E(`Yadira y Rafelito, desde las fuentes de abajo (${N.fuentes.filter((f) => f.status === "on").length} encendidas) · resumen con ayuda automática y el enlace al medio`, `Yadira and Rafelito, from the sources below (${N.fuentes.filter((f) => f.status === "on").length} on) · summary with automated help and the link to the outlet`) : E(`Lo publica ${nombreVoz(t.voz)} · datos de la app, sin IA`, `${nombreVoz(t.voz)} posts it · app data, no AI`),
       tag: t.active ? E("ENCENDIDO", "ON") : E("APAGADO", "OFF"), tone: t.active ? "action" : "neutral",
-      ...(edita && t.key !== "noticias" ? { tgOn: t.active, onTg: () => tipoTg(t) } : {}) })) },
+      ...(edita ? { tgOn: t.active, onTg: () => tipoTg(t) } : {}) })) },
     { type: "group", k: E("PREGUNTA DEL DÍA", "QUESTION OF THE DAY"), ...(edita ? { link: E("Agregar", "Add"), onLink: preguntaNueva } : {}) },
     { type: "rows", items: d.preguntas.map((q) => ({ key: q.id, icon: "help", t: q.body, s: nombreVoz(q.voz), dim: q.status !== "active",
       tag: q.status === "active" ? undefined : E("RETIRADA", "RETIRED"), ...(edita && q.status === "active" ? { acts: [{ l: E("Retirar", "Retire"), v: "secondary", onClick: () => preguntaFuera(q) }] } : {}) })) },
@@ -109,6 +165,31 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm; edita: boole
       s: E(`Actividad real en 7 días: ${c.actividad} · Cupo de hoy: ${c.pub} publicaciones y ${c.resp} respuestas · Usadas: ${c.usadasPub} y ${c.usadasResp}`, `Real activity in 7 days: ${c.actividad} · Today's quota: ${c.pub} posts and ${c.resp} replies · Used: ${c.usadasPub} and ${c.usadasResp}`),
       tag: c.mode === "off" ? E("APAGADO", "OFF") : c.pub + c.resp === 0 ? E("CUPO EN CERO", "QUOTA AT ZERO") : MODO[c.mode]!.toUpperCase(), tone: c.mode === "off" ? "neutral" : "action",
       ...(edita ? { acts: [{ l: E("Cambiar", "Change"), v: "secondary", onClick: () => ciudad(c) }] } : {}) })) },
+    // 5b · Fuentes de noticias: las cifras de 7 días, cada fuente con su estado, su último error y «Probar», y las últimas notas leídas con su motivo.
+    { type: "group", k: E("FUENTES DE NOTICIAS", "NEWS SOURCES"), ...(edita ? { link: E("Agregar fuente", "Add source"), onLink: () => setForma({ id: null, nombre: "", url: "https://", pais: "DO", lang: "es", veto: "" }) } : {}) },
+    { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+      { k: E("LEÍDAS · 7 DÍAS", "READ · 7 DAYS"), v: String(N.cifras.leidas) }, { k: E("PUBLICADAS · 7 DÍAS", "POSTED · 7 DAYS"), v: String(N.cifras.publicadas) },
+      { k: E("DESCARTADAS · 7 DÍAS", "DISCARDED · 7 DAYS"), v: String(N.cifras.descartadas) },
+      { k: E("FALLOS DE LECTURA · 7 DÍAS", "READ FAILURES · 7 DAYS"), v: String(N.cifras.fallos), bg: N.cifras.fallos ? "var(--tl-ink)" : undefined, fg: N.cifras.fallos ? "var(--tl-white)" : undefined },
+    ] },
+    ...(prueba ? [{ type: "note" as const, tone: prueba.ok ? ("ok" as const) : ("danger" as const), icon: prueba.ok ? "check" : "ban", t: `${N.fuentes.find((f) => f.id === prueba.id)?.nombre ?? ""} · ${prueba.t}` }] : []),
+    ...(N.fuentes.length ? [{ type: "rows" as const, items: N.fuentes.map((f) => ({ key: f.id, icon: "news", t: `${f.nombre} · ${f.tema === "deportes" ? E("Deportes", "Sports") : E("Noticias", "News")} · ${f.vozNombre}`,
+      s: `${f.host} · ${f.pais} · ${f.lang.toUpperCase()} · ${E(`${f.leidas7} ${f.leidas7 === 1 ? "lectura" : "lecturas"}, ${f.nuevas7} ${f.nuevas7 === 1 ? "nota nueva" : "notas nuevas"} y ${f.fallos7} ${f.fallos7 === 1 ? "fallo" : "fallos"} en 7 días`, `${f.leidas7} ${f.leidas7 === 1 ? "read" : "reads"}, ${f.nuevas7} new ${f.nuevas7 === 1 ? "item" : "items"} and ${f.fallos7} ${f.fallos7 === 1 ? "failure" : "failures"} in 7 days`)}`,
+      m: f.error && f.fails ? E(`Falló ${f.fails} ${f.fails === 1 ? "vez" : "veces seguidas"}: ${f.error}`, `Failed ${f.fails} ${f.fails === 1 ? "time" : "times in a row"}: ${f.error}`) : f.ultimaOk ? E(`Última lectura bien: ${fecha(f.ultimaOk)}`, `Last good read: ${fecha(f.ultimaOk)}`) : E("Todavía no se ha leído.", "Not read yet."),
+      mFg: f.error && f.fails ? "var(--tl-danger)" : undefined, dim: f.status === "retired",
+      tag: f.status === "on" ? E("ENCENDIDA", "ON") : f.status === "off" ? E("APAGADA", "OFF") : E("RETIRADA", "RETIRED"), tone: f.status === "on" ? (f.fails ? "danger" : "action") : "neutral",
+      ...(edita && f.status !== "retired" ? { tgOn: f.status === "on", onTg: () => fuenteTg(f), acts: [
+        { l: probando === f.id ? E("Probando…", "Testing…") : E("Probar", "Test"), v: "secondary", off: !!probando, onClick: () => probar(f) },
+        { l: E("Editar", "Edit"), v: "secondary", onClick: () => setForma({ id: f.id, nombre: f.nombre, url: f.url, pais: f.pais, lang: f.lang, veto: f.veto.join(", ") }) },
+        { l: E("Retirar", "Retire"), v: "secondary", onClick: () => fuenteFuera(f) }] } : {}) })) }]
+      : [{ type: "empty" as const, icon: "news", t: E("Sin fuentes", "No sources"), s: E("En producción las fuentes nacen vacías. Agrega el RSS o Atom de un medio, pruébalo y enciéndelo.", "In production sources start empty. Add an outlet's RSS or Atom, test it and turn it on.") }]),
+    { type: "group", k: E("ÚLTIMAS NOTAS LEÍDAS", "LATEST NEWS ITEMS READ") },
+    ...(N.notas.length ? [{ type: "rows" as const, items: N.notas.map((n) => ({ key: n.id, icon: n.status === "publicada" ? "check" : n.status === "descartada" ? "ban" : "news",
+      t: n.titulo ?? E("(vaciada por retención)", "(cleared by retention)"), dim: n.vaciada,
+      s: `${n.fuente} · ${n.status === "publicada" ? E("Publicada", "Posted") : n.status === "nueva" ? E("Nueva", "New") : `${E("Descartada", "Discarded")}: ${MOTIVO_NOTA[n.reason ?? ""] ? (en ? MOTIVO_NOTA[n.reason!]![1] : MOTIVO_NOTA[n.reason!]![0]) : n.reason}`}${n.detail ? ` (${n.detail})` : ""}`,
+      m: fecha(n.at), tag: n.status === "publicada" ? E("PUBLICADA", "POSTED") : n.status === "nueva" ? E("NUEVA", "NEW") : E("DESCARTADA", "DISCARDED"), tone: n.status === "descartada" ? "neutral" : "action",
+      ...(n.post ? { chev: true, onClick: () => router.push(`/admin/contenido/hilo/${n.post}`) } : {}) })) }]
+      : [{ type: "empty" as const, icon: "news", t: E("Todavía nada", "Nothing yet"), s: E("Lo que lean las fuentes encendidas sale aquí con su estado y el motivo si se descartó.", "What the sources that are on read shows here with its status and the reason if discarded.") }]),
     { type: "note", tone: "info", icon: "info", t: E("Los minutos de espera, las respuestas por hilo, los tramos y el tope de costo están en Sistema › Configuración › Comunidad.", "Wait minutes, replies per thread, tiers and the cost cap are in System › Settings › Community."),
       cta: E("Abrir", "Open"), onCta: () => router.push("/admin/sistema/configuracion") },
     { type: "group", k: E("REGISTRO · ÚLTIMAS 50", "LOG · LAST 50") },

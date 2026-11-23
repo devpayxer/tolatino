@@ -68,7 +68,8 @@ const ENLACE = /https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|co|us|do|mx|pr)\
 const POLITICA = /\b(trump|biden|harris|abinader|leonel|republican\w*|democrat\w*|elecciones?|election|votar por|vote for|partido|politic\w*|izquierda|derecha|religi\w*|iglesia|church|dios|god|jesus|cristo|biblia|bible|ateo|evangel\w*|catolic\w*|catholic)\b/;
 const RECOMIENDA = /\b(recomiendo|te recomiendo|les recomiendo|vayan a|ve a|el mejor lugar|la mejor|i recommend|go to)\b/;
 export type FalloFiltro = "datos" | "precio" | "enlace" | "politica" | "negocio" | "largo" | null;
-export function filtroAnfitrion(texto: string, o: { negocioDeLaApp?: boolean; enlaces?: string[] } = {}): FalloFiltro {
+/* 5b · `deportes`: en una nota de deportes, «partido» es un juego (el filtro de temas de las noticias ya descartó el partido político). */
+export function filtroAnfitrion(texto: string, o: { negocioDeLaApp?: boolean; enlaces?: string[]; deportes?: boolean } = {}): FalloFiltro {
   const t = String(texto ?? "").trim();
   if (t.length < 10 || t.length > 600) return "largo";
   if (DATOS.test(t)) return "datos";
@@ -76,7 +77,7 @@ export function filtroAnfitrion(texto: string, o: { negocioDeLaApp?: boolean; en
   const sinPermitidos = (o.enlaces ?? []).reduce((x, e) => x.split(e).join(" "), t);
   if (ENLACE.test(sinPermitidos)) return "enlace";
   const n = norm(t);
-  if (POLITICA.test(n)) return "politica";
+  if (POLITICA.test(o.deportes ? n.replace(/\bpartidos?\b(?! (politic|de gobierno|de oposicion|oficialista))/g, "juego") : n)) return "politica";
   if (RECOMIENDA.test(n) && !o.negocioDeLaApp) return "negocio";
   return null;
 }

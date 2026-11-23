@@ -81,6 +81,20 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
           <span style={{ flex: "none", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)" }}>{E2("Ver", "View")}</span>
         </div>
       )}
+      {p.fuente && (
+        /* AO 5b · La fuente de una nota de una voz de la casa: la misma caja Papel del negocio recomendado (3b), con el medio y su dominio. Enlace de
+           fuera: pestaña nueva, sin pasarle nada (noopener noreferrer) ni recomendarlo a los buscadores (nofollow). Solo la base deja ponerlo a una voz. */
+        <a data-screen-label="Publicación · fuente" href={p.fuente.url} target="_blank" rel="noopener noreferrer nofollow" onClick={(e) => e.stopPropagation()}
+          style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, background: "var(--tl-paper)", textDecoration: "none", color: "var(--tl-ink)" }}>
+          <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--tl-white)", display: "grid", placeItems: "center", flex: "none" }}><Icon name="news" size={18} color="var(--tl-ink)" /></span>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+            <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}>{E2("FUENTE", "SOURCE")}</span>
+            <span style={{ minWidth: 0, font: "700 15px/1.25 Sora,sans-serif", letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.fuente.medio}</span>
+            <span style={{ font: "500 12.5px/1.3 Manrope,sans-serif", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.fuente.dominio}</span>
+          </div>
+          <span style={{ flex: "none", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)" }}>{E2("Leer en el medio", "Read at the source")}</span>
+        </a>
+      )}
       {enc && (
         <div data-screen-label="Publicación · encuesta" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
           {enc.opts.map((o, i) => {
