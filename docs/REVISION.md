@@ -6362,3 +6362,14 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - En WhatsApp había que pulsar «Probar» dos veces (token e ID de la cuenta); ahora una sola prueba vale para los dos.
 - En el sandbox, «Lo que te toca» nunca marca hecho un proveedor: dice «Las llaves están y probadas, pero este entorno usa el simulador». Es a propósito.
 
+## Cabecera de la ficha: tres versiones para elegir (23 nov) — propuesta, nada en la app todavía — una decisión tuya
+- **Qué pediste:** la parte de arriba de la ficha (sellos, categoría, nombre, datos, horario y los botones Llamar / Escribir / Cómo llegar) no se ve
+  bien en el teléfono; tres versiones que se vean muy bien en teléfono y escritorio.
+- **Dónde verlas:** https://claude.ai/artifact/P69oLqUyttAMJwo6cMf9Es (la de hoy y las tres, con el botón Teléfono / Escritorio). **A · Una sola
+  lectura:** lo mismo, ordenado; el nombre manda, la calificación se lee como frase, horario y dirección son renglones que se tocan, un botón
+  principal; sin piezas nuevas. **B · Sobre la foto:** el nombre grande encima de la portada, una tira con tres datos y tres teclas de acción; dos
+  piezas nuevas. **C · Tarjeta que flota:** una tarjeta blanca sobre la foto con logo, datos, franja de horario y acciones; en escritorio pasa a la
+  columna derecha; una pieza nueva y pide logo del negocio.
+- **Decide tú:** cuál va, o qué mezclar. Mi recomendación es la B. La que elijas se construye con el sistema de diseño y te mando la captura real
+  (abierto y cerrado, nombre largo, sin foto) antes de conectarla.
+
