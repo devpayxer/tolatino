@@ -2908,7 +2908,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       ciudad en otra zona los rompería de noche y ningún guardián lo vigila.
 - [ ] **→ 9q** · **SES: el envío firmado (`POST /v2/email/outbound-emails`) no se ha visto contra algo que compruebe la firma** (el simulador solo simula
       la lectura de «Probar»); la forma de la respuesta de `GetAccount` del simulador es de memoria (la documentación no se pudo abrir): cotejarla.
-- [ ] **→ 9o** · **Las direcciones de simulador viejas (`STRIPE_API_BASE`, `STRIPE_FILES_BASE`, `TELNYX_API_BASE`, `WHATSAPP_API_BASE`) solo las frena la
+- [x] **→ 9o** · **(Hecho el 23 nov: las seis pasan por `lib/origen-pruebas.ts`; `proveedoresSimuladorAislado`, `alrevesllaves` 76/76, `prueba-firma-ses` en ejecución.)** **Las direcciones de simulador viejas (`STRIPE_API_BASE`, `STRIPE_FILES_BASE`, `TELNYX_API_BASE`, `WHATSAPP_API_BASE`) solo las frena la
       lista «prohibida» de producción, no la ejecución** (las dos nuevas sí se ignoran fuera de pruebas y si no son locales). Darles la misma regla.
 - [ ] **→ 9q** · **Batería de El Compa con el modelo real:** si se corre con `TOLATINO_ENTORNO=pruebas` y `ANTHROPIC_API_BASE` puestos iría al simulador
       (404). Correrla sin esa variable. Y `prov9v` dura ~135 s: su estimación en `pruebas/reparto.json` dice 60.
@@ -2928,4 +2928,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       fundador (REVISION).
 - [ ] **→ 9u** · **Estado «Cerrado hoy · hoy · abre mañana 9 AM»: «hoy» repetido** (`lib/ficha` `estadoCorto` + `estadoResto`).
 - [ ] **→ 9u** · **`Button` portado no pasa `aria-haspopup`/`aria-expanded`** (en «Contactar» se ponen con un `ref`): arreglarlo en `scripts/portar-sistema.mjs`.
+
+## El mes del patrocinio no pierde su día (23 nov)
+- [x] **→ 9o** · **(Hecho el 23 nov)** El mes de un patrocinio renovado no pierde su día: `fechasPeriodo` usa `finDePeriodo` con el ancla de la cadena
+      (31 ene → 28 feb → 31 mar). Sin migración. Guardián `patrocinioMesSinDeriva`, al revés `alrevesPatrocinioMes` 16/16, `pat002` §7.
+- [ ] **→ 9o** · **Una punta a punta de la cadena mensual de un patrocinio de evento** (hoy la cubren el guardián y las al revés).
+- [ ] **→ 9o** · **«Renovar otro mes» con un fin a más de 60 días: la pantalla no enseña las fechas** (`consultarPuestos` rechaza más allá de
+      `patrocinio_dias_adelante`), aunque el cobro sí se hace. Ya pasaba antes de este cambio.
 

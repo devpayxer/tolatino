@@ -1,5 +1,6 @@
 import "server-only";
 import { llave, llaveYa } from "../llaves-proveedores";
+import { origenDePruebas } from "../origen-pruebas";
 import { bloques, ErrorModelo, ESQUEMA, type Entrada, type Modelo, type Salida, type UsoTokens } from "./modelo";
 
 /* 7c · El Compa con Claude (Anthropic Messages API). ÚNICO archivo que habla con el proveedor, nombra su dirección y lee la clave
@@ -16,15 +17,8 @@ const URL_API = "https://api.anthropic.com/v1/messages";
 const VERSION_API = "2026-10-21";
 /* 23 nov · ANTHROPIC_API_BASE (la dirección del simulador de las pruebas, que pasa pruebas/servir/servir.sh) cambia SOLO el
    origen (esquema, servidor y puerto) de TODAS las llamadas de este archivo (mensajes y modelos), nunca la ruta ni las cabeceras. Se ignora salvo con
-   TOLATINO_ENTORNO=pruebas y una dirección local (127.0.0.1 / localhost, sin ruta): en producción no tiene efecto aunque alguien la ponga (además está
+   TOLATINO_ENTORNO=pruebas y una dirección local (127.0.0.1 / localhost, sin ruta; LA regla vive en lib/origen-pruebas.ts): en producción no tiene efecto aunque alguien la ponga (además está
    PROHIBIDA en infra/comun/secretos.json; guardián proveedoresSimuladorAislado). No cambia el motor: eso lo decide modelo.ts por la llave. */
-function origenDePruebas(v: string | undefined): URL | null {
-  if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;
-  let u: URL;
-  try { u = new URL(v); } catch { return null; }
-  if (!/^https?:$/.test(u.protocol) || !["127.0.0.1", "localhost"].includes(u.hostname) || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return null;
-  return u;
-}
 const API = new URL(URL_API);
 export const direccionApi = (ruta: string): string => (origenDePruebas(process.env.ANTHROPIC_API_BASE)?.origin ?? API.origin) + ruta;
 const RUTA_MENSAJES = API.pathname, RUTA_MODELOS = API.pathname.replace(/\/messages$/, "/models?limit=1");

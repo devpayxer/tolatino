@@ -9,7 +9,9 @@ mkdirSync(join(T, "node_modules/server-only"), { recursive: true });
 writeFileSync(join(T, "node_modules/server-only/index.js"), "module.exports = {};");
 // 23 nov · El lector de las llaves (lib/llaves-proveedores.ts) no entra en esta prueba (solo la firma): un doble que lee el entorno, junto a ses.ts.
 writeFileSync(join(T, "llaves-proveedores.ts"), 'export const llaveYa = (n: string): string | null => (process.env[n] ?? "").trim() || null;\nexport const llave = async (n: string): Promise<string | null> => llaveYa(n);\n');
-writeFileSync(join(T, "ses.ts"), readFileSync("apps/web/lib/correo/ses.ts", "utf8").replace('from "../llaves-proveedores"', 'from "./llaves-proveedores"'));
+// 23 nov · LA regla de las direcciones de pruebas (lib/origen-pruebas.ts) va real, junto a ses.ts.
+writeFileSync(join(T, "origen-pruebas.ts"), readFileSync("apps/web/lib/origen-pruebas.ts", "utf8"));
+writeFileSync(join(T, "ses.ts"), readFileSync("apps/web/lib/correo/ses.ts", "utf8").replace('from "../llaves-proveedores"', 'from "./llaves-proveedores"').replace('from "../origen-pruebas"', 'from "./origen-pruebas"'));
 // tsc emite aunque «server-only» no tipe aquí; lo que se prueba es la firma real.
 try { execSync(`npx tsc --outDir ${T}/out --module commonjs --target es2022 --moduleResolution node --skipLibCheck --types node --rootDir ${T} ${T}/ses.ts`, { stdio: "pipe", cwd: "apps/web" }); } catch { /* errores de tipos del entorno de prueba */ }
 const { createRequire } = await import("node:module");
@@ -79,4 +81,43 @@ try {
   });
   comprueba(!JSON.stringify(sim.registro).includes(SEC) && !JSON.stringify(sim.registro).includes(IA), "el simulador anotó huellas, nunca una llave");
 } finally { await sim.cerrar(); }
+
+/* 23 nov (2) · Las cuatro direcciones viejas (STRIPE_API_BASE, STRIPE_FILES_BASE en pagos/stripe.ts; TELNYX_API_BASE, WHATSAPP_API_BASE en
+   compa/canales-proveedor.ts) con LA MISMA regla (lib/origen-pruebas.ts), EN EJECUCIÓN: fuera de pruebas, o hacia un servidor que no es local, o con
+   ruta, usuario, consulta o ancla, los cobros, los SMS y WhatsApp van al proveedor real; solo en pruebas y local van al simulador, con la ruta intacta.
+   Sin llamar a nadie: fetch se intercepta y solo se anota a dónde iba. */
+const ST = TS.cargar("apps/web/lib/pagos/stripe.ts"), CP = TS.cargar("apps/web/lib/compa/canales-proveedor.ts");
+const fetchReal = globalThis.fetch, vistas = [];
+globalThis.fetch = async (u) => { vistas.push(new URL(String(u))); return new Response('{"id":"file_prueba"}', { status: 200, headers: { "content-type": "application/json" } }); };
+const LOCAL = "http://127.0.0.1:4411";
+const llamar = async () => {
+  vistas.length = 0;
+  await ST.stripe("POST", "/v1/payment_intents", { amount: 100 }, { idem: "k1" });
+  await ST.probarStripe();
+  await ST.stripeArchivo({ cuerpo: Buffer.from("x"), nombre: "a.png", tipo: "image/png", idem: "k2" });
+  await CP.mandar("telnyx", "+15705550100", "+15705550101", "hola");
+  await CP.mandar("whatsapp", "1234567", "+15705550101", "hola");
+  await CP.probarTelnyx(); await CP.probarMeta();
+  return vistas.map((u) => `${u.origin}${u.pathname}`);
+};
+const REALES = ["https://api.stripe.com/v1/payment_intents", "https://api.stripe.com/v1/balance", "https://files.stripe.com/v1/files", "https://api.telnyx.com/v2/messages",
+  "https://graph.facebook.com/v23.0/1234567/messages", "https://api.telnyx.com/v2/balance", "https://graph.facebook.com/v23.0/9876543"];
+try {
+  for (const [ent, dir, que] of [
+    ["produccion", LOCAL, "en producción, con las cuatro puestas"], ["ensayo", LOCAL, "en el ensayo"], ["local", LOCAL, "con TOLATINO_ENTORNO=local"], [undefined, LOCAL, "sin TOLATINO_ENTORNO"],
+    ["pruebas", "https://pagos.example.com", "en pruebas, hacia un servidor que no es local"], ["pruebas", `${LOCAL}/v1`, "en pruebas, con una ruta"],
+    ["pruebas", "http://u:c@127.0.0.1:4411", "en pruebas, con usuario en la dirección"], ["pruebas", `${LOCAL}/?x=1`, "en pruebas, con consulta"], ["pruebas", `${LOCAL}/#a`, "en pruebas, con ancla"],
+  ]) {
+    await conEntorno({ TOLATINO_ENTORNO: ent, STRIPE_API_BASE: dir, STRIPE_FILES_BASE: dir, TELNYX_API_BASE: dir, WHATSAPP_API_BASE: dir, STRIPE_SECRET_KEY: "sk_test_prueba",
+      TELNYX_API_KEY: "KEY_PRUEBA", TOLATINO_SMS_MODO: "telnyx", WHATSAPP_TOKEN: "EAAPRUEBA", WHATSAPP_WABA_ID: "9876543" }, async () => {
+      const r = await llamar();
+      comprueba(JSON.stringify(r) === JSON.stringify(REALES), `${que}: Stripe (cobro, Probar, archivos), Telnyx y WhatsApp van al proveedor real (${[...new Set(r.map((x) => new URL(x).host))].join(", ")})`);
+    });
+  }
+  await conEntorno({ TOLATINO_ENTORNO: "pruebas", STRIPE_API_BASE: LOCAL, STRIPE_FILES_BASE: undefined, TELNYX_API_BASE: LOCAL, WHATSAPP_API_BASE: `${LOCAL}/`, STRIPE_SECRET_KEY: "sk_test_prueba",
+    TELNYX_API_KEY: "KEY_PRUEBA", TOLATINO_SMS_MODO: "telnyx", WHATSAPP_TOKEN: "EAAPRUEBA", WHATSAPP_WABA_ID: "9876543" }, async () => {
+    const r = await llamar();
+    comprueba(JSON.stringify(r) === JSON.stringify(REALES.map((x) => LOCAL + new URL(x).pathname)), `en pruebas, hacia el simulador local: las siete llamadas a ${LOCAL}, la ruta intacta (los archivos de Stripe, sin STRIPE_FILES_BASE, por STRIPE_API_BASE)`);
+  });
+} finally { globalThis.fetch = fetchReal; }
 if (fallos) { console.error(`✗ ${fallos} comprobación(es) de las direcciones de pruebas`); process.exit(1); }

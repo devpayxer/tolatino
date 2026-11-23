@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, createHmac } from "node:crypto";
 import { llave, llaveYa } from "../llaves-proveedores";
+import { origenDePruebas } from "../origen-pruebas";
 
 /* Envío por Amazon SES v2 (PLAN §8: «Correo · envío por SES»). Sin SDK: la firma AWS Signature V4 se hace aquí (se prueba
    contra el vector oficial de AWS en scripts/prueba-firma-ses.mjs). Las llaves (SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY) las da
@@ -27,15 +28,8 @@ export function firmarV4(x: { method: string; host: string; path: string; query?
 /* 23 nov · A dónde van las llamadas de este archivo (enviar y probar). En producción, siempre email.<región>.amazonaws.com por https. SES_API_BASE (la
    dirección del simulador de las pruebas, que pasa pruebas/servir/servir.sh) cambia SOLO el origen (esquema, servidor y puerto),
    nunca la ruta ni las cabeceras, y la firma SigV4 se hace para ESE servidor (SigV4 firma la cabecera host: firmar un host y llamar a otro = 403).
-   Se ignora salvo con TOLATINO_ENTORNO=pruebas y una dirección local (127.0.0.1 / localhost, sin ruta): en producción no tiene efecto aunque alguien
-   la ponga (además está PROHIBIDA en infra/comun/secretos.json; guardián proveedoresSimuladorAislado). */
-function origenDePruebas(v: string | undefined): URL | null {
-  if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;
-  let u: URL;
-  try { u = new URL(v); } catch { return null; }
-  if (!/^https?:$/.test(u.protocol) || !["127.0.0.1", "localhost"].includes(u.hostname) || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return null;
-  return u;
-}
+   Se ignora salvo con TOLATINO_ENTORNO=pruebas y una dirección local (127.0.0.1 / localhost, sin ruta): LA regla vive en lib/origen-pruebas.ts
+   (además está PROHIBIDA en infra/comun/secretos.json; guardián proveedoresSimuladorAislado). */
 export function destinoSes(region: string): { origen: string; host: string } {
   const p = origenDePruebas(process.env.SES_API_BASE), real = `email.${region}.amazonaws.com`;
   return p ? { origen: p.origin, host: p.host } : { origen: `https://${real}`, host: real };

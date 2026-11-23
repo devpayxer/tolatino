@@ -18,6 +18,9 @@ function cargar(rel, stubs = {}) {
     if (m === './barrido-uno') return cargar('apps/web/lib/barrido-uno.ts');
     // 23 nov · La regla del fin del período de Pro (lib/periodo-pro.ts) es pura y sin importaciones: se carga la real, sin stub.
     if (m === './periodo-pro') return cargar('apps/web/lib/periodo-pro.ts');
+    // 23 nov · LA regla de las direcciones de simulador (lib/origen-pruebas.ts) no tiene importaciones: se carga la real, sin stub (un doble podría
+    // dejar pasar una dirección que en el servidor se ignora).
+    if (/(^|\/)origen-pruebas$/.test(m)) return cargar('apps/web/lib/origen-pruebas.ts');
     // 23 nov · El lector de las llaves de proveedores (lib/llaves-proveedores.ts: el entorno y, si no, el llavero de la base). Sin base, su doble lee
     // SOLO el entorno, que es lo que manda también en el servidor; quien quiera otra cosa lo pasa en stubs.
     if (/(^|\/)llaves-proveedores$/.test(m)) return DOBLE_LLAVES;

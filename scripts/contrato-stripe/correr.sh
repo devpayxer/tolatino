@@ -8,6 +8,8 @@ T="$(mktemp -d)"
 trap 'rm -rf -- "$T"' EXIT
 mkdir -p "$T/src/pagos" "$T/node_modules/server-only"
 cp "$RAIZ/apps/web/lib/pagos/stripe.ts" "$RAIZ/apps/web/lib/pagos/pasarela.ts" "$T/src/pagos/"
+# 23 nov · LA regla de las direcciones de simulador, real: STRIPE_API_BASE solo vale con TOLATINO_ENTORNO=pruebas y local (stripe-mock en 127.0.0.1).
+cp "$RAIZ/apps/web/lib/origen-pruebas.ts" "$T/src/"
 echo 'module.exports = {};' > "$T/node_modules/server-only/index.js"
 # 9k (L817) · Un doble de la base para lo que la pasarela lee y escribe en modo Stripe: el cliente de Stripe de una persona (users.stripe_customer_id).
 # Cualquier otra consulta falla en voz alta: el contrato no tapa lo que no conoce.
@@ -36,4 +38,4 @@ mkdir -p "$T/src/tiendas" && printf 'export const pagoBloqueado = async (): Prom
 # tsc emite aunque los reemplazos no tipen perfecto; el código bajo prueba es el real.
 (cd "$RAIZ/apps/web" && npx tsc --outDir "$T/out" --module commonjs --target es2022 --moduleResolution node --esModuleInterop --skipLibCheck --types node --rootDir "$T/src" "$T/src/pagos/pasarela.ts" > /dev/null) || true
 test -f "$T/out/pagos/pasarela.js"
-CONTRATO_OUT="$T/out" NODE_PATH="$T/node_modules" node "$RAIZ/scripts/contrato-stripe/prueba.cjs"
+CONTRATO_OUT="$T/out" NODE_PATH="$T/node_modules" TOLATINO_ENTORNO=pruebas node "$RAIZ/scripts/contrato-stripe/prueba.cjs"

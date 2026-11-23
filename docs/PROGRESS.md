@@ -20,6 +20,7 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **23 nov (11:00 UTC) · `main` = `pruebas` = f0ed252, servido.** Cabecera y pestañas nuevas de la ficha Pro (pedidas y aprobadas por el fundador: pieza `PestanasFicha`, «Contactar» con flecha y hoja en el teléfono; hecho por Sonnet, revisado por Fable; corrida 45154506856, 0 inestables). **En la rama, con CI completo corriendo:** el mes del patrocinio con ancla (`fechasPeriodo` + `finDePeriodo`, sin migración) y las seis direcciones de simulador por `lib/origen-pruebas.ts` (hecho por Opus, revisado por Fable). Sigue: subirlo en verde; después Task #195 (lo construible de LAUNCH).
 - **23 nov (09:30 UTC) · `main` = `pruebas` = 5b46445, sandbox comprobado por la herramienta de subida.** Servido desde la entrada de abajo: pruebas de
   calendario corregidas (`evt6e`, `din9t3`–`6`, `plan4f`) con sus guardianes; «Probar» de SES y del modelo con simulador (`SES_API_BASE`,
   `ANTHROPIC_API_BASE`, solo pruebas y solo locales); el período de Pro sin desbordar el mes (`lib/periodo-pro.ts`, ancla de la racha). **En marcha:** la

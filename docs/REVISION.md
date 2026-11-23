@@ -6383,7 +6383,7 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   último día si el mes es corto, y vuelve a su día después (31 ene → 28 feb → 31 mar). La hora no se mueve con el cambio de horario. La ficha de ayuda
   «Plan Pro» lo explica («Tu día de cobro»). Qué mirar: Tu plan de un negocio; el texto no cambia, solo la fecha.
 
-## Cabecera y pestañas nuevas de la ficha (23 nov) — diseño APROBADO por el fundador el 23 nov («sí, me gusta así»); se sube al sandbox cuando sus pruebas estén en verde
+## Cabecera y pestañas nuevas de la ficha (23 nov) — diseño APROBADO por el fundador el 23 nov («sí, me gusta así»); SERVIDA en el sandbox el 23 nov, con «Contactar» y flecha hacia abajo en vez del teléfono (su segundo pedido)
 - **Qué pediste:** los encabezados de la ficha como en tus imágenes: el menú más prominente y con color, mejor distribución; y, en el teléfono, un
   menú que despliegue los contactos.
 - **Qué hay (te mandé las capturas reales por el chat):** nombre con la palomita del sello, una fila de datos (calificación, reseñas, categoría,
@@ -6393,4 +6393,12 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   datos (sigue en la sección de ubicación); en el teléfono ya no hay tres botones sueltos en la cabecera.
 - **Quedó así mientras no digas otra cosa:** el escritorio conserva Guardar, Compartir y Llamar como botones con texto (sin menú «Contactar»), y la
   ficha Free no se tocó. Si quieres el menú también en escritorio, o la Free igual que la Pro, dímelo.
+
+## Patrocinio «1 mes»: termina el mismo día del mes siguiente (23 nov)
+- **Qué cambió:** un patrocinio mensual que se renueva ya no pierde su día. Si empezó un 31: 31 ene → 28 feb → 31 mar → 30 abr (antes se quedaba
+  en el 28 para siempre). Lo ya comprado conserva sus fechas. La semana no cambió.
+- **Qué mirar:** Panel › Cobros y plan › Patrocinio, «Renovar otro mes» en un patrocinio que empezó a fin de mes: el fin es el mismo día (o el último
+  del mes).
+- **Seguridad, sin nada que mirar:** las direcciones de simulador de Stripe, SMS y WhatsApp solo valen en el sandbox y apuntando a la propia máquina;
+  en producción se ignoran aunque alguien las ponga.
 
