@@ -6423,3 +6423,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   visible debajo de las pestañas, y al tocar una categoría su título queda justo debajo.
 - **Pendiente de su decisión:** si en computadora también debe salir el nombre al pegarse las pestañas (hoy sale el estado).
 
+## Ajustes de diseño en tandas (decisión AN, 23 nov)
+- El fundador manda sus ajustes en lista con capturas; van juntos y suben por la vía rápida. Las pruebas de los retoques visuales se escriben al cierre de
+  la ronda. **Pendiente al cierre de esta ronda:** pruebas del nombre pegado, de la tira de pestañas y de las categorías del menú (hay un avance guardado
+  fuera del repo por el orquestador), y las de las tandas que sigan.
+
