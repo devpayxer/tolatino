@@ -6407,3 +6407,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Las 9 capturas de `pruebas/visual/ficha/` se renovaron desde la corrida 45163327041 (`aprobar=si`), vistas una a una en teléfono y escritorio. Las demás
   pantallas no se tocaron.
 
+## Cabecera de la ficha: tres retoques después de verla servida (23 nov)
+- **El estado cerrado ya no repite palabras:** se leía «Cerrado hoy · hoy · abre mañana 9 AM» y «Cerrado temporalmente · temporalmente»; ahora cada
+  palabra sale una vez (ES y EN, también en la ficha Free). Guardián `estadoSinRepetir`.
+- **El punto del estado va pegado al texto:** con un estado largo en un teléfono angosto el punto quedaba solo en una línea. Qué mirar: un negocio
+  cerrado en el teléfono; el punto rojo va delante de «Cerrado».
+- **«Contactar» dice al lector de pantalla que abre una hoja** (el botón del sistema de diseño ya deja pasar esos atributos).
+- Las capturas aprobadas de la ficha se renovaron dos veces: la primera mezcló tres de una corrida vieja (error del orquestador, corregido).
+

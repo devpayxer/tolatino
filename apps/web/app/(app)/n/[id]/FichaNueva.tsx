@@ -461,7 +461,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
           <div className="font-mono text-[10.5px] font-bold leading-[1.5] tracking-[0.07em] text-ink/60">{datos(metaL)}</div>
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 flex-wrap items-center gap-2 text-[13.5px] font-bold" data-estado={abierto ? "abierto" : "cerrado"} style={{ color: stFg }}>
-              <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold">{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
+              <span className="min-w-0 font-extrabold"><span className="mr-2 inline-block size-2 rounded-full align-middle" style={{ background: stDot, marginTop: -2 }} />{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
             </div>
             {/* 23 nov · Llamar, Escribir y Cómo llegar viven en un menú que se despliega (pedido del fundador): un solo botón en la cabecera. */}
             {contactos.length ? <div className="flex-none" data-pieza="contactar-ficha"><Button variant="secondary" size="sm" aria-haspopup="dialog" aria-expanded={contacto} onClick={() => setContacto(true)}>{E2("Contactar", "Contact")}<Icon name="chevronDown" size={16} strokeWidth={1.9} /></Button></div> : null}
