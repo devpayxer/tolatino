@@ -696,7 +696,7 @@ export function MenuCapas({ mn, nombre }: { mn: Mn; nombre: string }) {
   return (
     <>
       {mn.has && !mn.cartOpen && !mn.sh && (
-        <div data-screen-label="Ficha · barra del pedido" className="fixed inset-x-3.5 bottom-[22px] z-30 grid lg:hidden">
+        <div data-screen-label="Ficha · barra del pedido" className="fixed inset-x-3.5 bottom-[22px] z-30 grid grid-cols-[minmax(0,1fr)] lg:hidden">{/* 23 nov · minmax(0,1fr): con un texto largo («ABRE A LAS 11:00 AM · PROGRAMA TU PEDIDO») la banda medía lo que su texto y se salía por la derecha (el total quedaba cortado). */}
           <OrderBar label={mn.countL} sub={mn.etaCaps} total={mn.total} onClick={mn.openCart} />
         </div>
       )}

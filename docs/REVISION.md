@@ -6433,4 +6433,6 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **La herramienta de subida ya tiene la vía rápida de diseño** (hecha por Opus, revisada por Fable): se activa sola cuando esta versión esté en `main`.
   Muy estricta a propósito (no entran `page.tsx`, `lib/`, ni rutas con palabras como pago, cuenta, equipo, panel, admin): lo que no entra va por el
   camino de siempre. Si deja fuera demasiados retoques reales, se afina.
+- **Tanda del 23 nov (3):** la banda del carrito («1 artículo · total») se salía por la derecha cuando el texto era largo («ABRE A LAS 11:00 AM ·
+  PROGRAMA TU PEDIDO») y el total quedaba cortado; ahora mide el ancho de la pantalla. Qué mirar: agregar un plato con el negocio cerrado.
 
