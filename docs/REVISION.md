@@ -6415,3 +6415,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **«Contactar» dice al lector de pantalla que abre una hoja** (el botón del sistema de diseño ya deja pasar esos atributos).
 - Las capturas aprobadas de la ficha se renovaron dos veces: la primera mezcló tres de una corrida vieja (error del orquestador, corregido).
 
+## Ficha en el teléfono: tres ajustes pedidos por el fundador con captura (23 nov)
+- **Nombre al pegarse el menú:** al bajar, encima de las pestañas pegadas sale el nombre del negocio con su sello. Qué mirar: en cualquier negocio Pro,
+  bajar en Menú, Equipo o Reseñas.
+- **Las pestañas solo se mueven de lado.** Qué mirar: arrastrarlas con el dedo en diagonal o hacia arriba; no deben moverse más que a los lados.
+- **Categorías del menú debajo de las pestañas** (antes quedaban detrás). Qué mirar: en Sabor Dominicano › Menú, bajar: «Populares, Almuerzo…» queda
+  visible debajo de las pestañas, y al tocar una categoría su título queda justo debajo.
+- **Pendiente de su decisión:** si en computadora también debe salir el nombre al pegarse las pestañas (hoy sale el estado).
+

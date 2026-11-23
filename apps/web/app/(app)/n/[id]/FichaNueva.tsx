@@ -230,8 +230,17 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     setTabS(id);
     // La pestaña activa siempre se ve: si ya bajaste más allá de las pestañas, la página sube hasta ellas.
     const el = tabsRef.current;
-    if (el) { const top = el.getBoundingClientRect().top + window.scrollY - CAB_MOVIL; if (window.scrollY > top) window.scrollTo({ top }); }
+    if (el) { const top = el.getBoundingClientRect().top + window.scrollY - CAB_MOVIL - NOMBRE_MOVIL; if (window.scrollY > top) window.scrollTo({ top }); }
   };
+  // 23 nov (pedido del fundador) · Cuando las pestañas quedan pegadas arriba, encima sale el nombre del negocio: bajando por el menú o las reseñas ya
+  // no se ve la cabecera y no se sabía de quién era la página. La franja no ocupa sitio (no mueve la página): se pinta sobre el hueco que las pestañas
+  // dejan al pegarse NOMBRE_MOVIL más abajo.
+  const [pegadaM, setPegadaM] = useState(false);
+  useEffect(() => {
+    const ver = () => { const el = tabsRef.current; setPegadaM(!!el && el.getBoundingClientRect().top <= CAB_MOVIL + NOMBRE_MOVIL + 1); };
+    ver(); window.addEventListener("scroll", ver, { passive: true }); window.addEventListener("resize", ver);
+    return () => { window.removeEventListener("scroll", ver); window.removeEventListener("resize", ver); };
+  }, []);
 
   // ── Acciones del encabezado ──
   const avisar = (m: string) => { setAviso(m); setTimeout(() => setAviso(null), 2200); };
@@ -440,6 +449,12 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       {/* ═════════ Teléfono ═════════ */}
       {modo === "m" ? (
       <div className="pb-[116px] lg:hidden" data-screen-label="App · Ficha">
+        <div className="sticky z-[21] h-0" style={{ top: CAB_MOVIL }} data-pieza="nombre-pegado" data-visible={pegadaM ? "si" : "no"} aria-hidden={!pegadaM}>
+          <div className="absolute inset-x-0 top-0 flex items-center bg-white px-5 transition-opacity duration-150" style={{ height: NOMBRE_MOVIL, opacity: pegadaM ? 1 : 0, pointerEvents: pegadaM ? "auto" : "none" }}>
+            <span className="min-w-0 truncate text-[16px] font-extrabold tracking-[-0.02em] text-ink" style={{ fontFamily: "Manrope, system-ui, sans-serif" }}>{f.nombre}</span>
+            {sello ? <span className="flex-none">{sello}</span> : null}
+          </div>
+        </div>
         <div className="relative h-[330px]">
           {f.video ? <div className="absolute inset-0 overflow-hidden" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} chipPos={{ left: 20, bottom: 16 }} /></div> : (
           <button type="button" aria-label={t.photosAll} onClick={verFotos} className="absolute inset-0 block">{f.hero ? <span className="block size-full bg-photo-bg-2" style={{ background: `center/cover ${fotoFondo(f.hero, 540)}` }} /> : <Placeholder height="100%" />}</button>
@@ -480,7 +495,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             </div>
           </Hoja>
         ) : null}
-        <div ref={tabsRef} className="sticky z-20 bg-white" style={{ top: CAB_MOVIL }}><PestanasFicha modo="movil" items={tabs} active={tab} onChange={setTab} /></div>
+        <div ref={tabsRef} className="sticky z-20 bg-white" style={{ top: CAB_MOVIL + NOMBRE_MOVIL }}><PestanasFicha modo="movil" items={tabs} active={tab} onChange={setTab} /></div>
         <div className="min-h-[640px]">
           {tab === "res" && (
             <div className="flex flex-col gap-6 px-5 pt-5" data-screen-label="Ficha · resumen">
@@ -662,7 +677,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 }
 
 /* Alturas de la cabecera de la app (AppShell): las pestañas se pegan justo debajo. */
-const CAB_MOVIL = 57, CAB_DESK = 121;
+const CAB_MOVIL = 57, CAB_DESK = 121, NOMBRE_MOVIL = 40;
 
 /* ── La reserva (Belleza): 1 servicio y con quién → 2 día y hora → Booking (/cita) para Detalles y Revisa y envía ── */
 type Bk = { who: string | null; svc: string | null; opts: Record<string, number>; i: number; h: number | null; step: 1 | 2 };

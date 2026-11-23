@@ -200,7 +200,10 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
     setCat(k);
     setTimeout(() => {
       const el = document.querySelector(`[data-msec="${desk ? "d-" : "m-"}${k}"]`);
-      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - (desk ? 140 : 120), behavior: "smooth" });
+      // 23 nov · En el teléfono la sección queda justo debajo de la barra de categorías, esté donde esté pegada (ficha Free: bajo la cabecera; ficha nueva: bajo el nombre y las pestañas).
+      const barra = desk ? null : document.querySelector<HTMLElement>("[data-mchips]");
+      const hueco = desk ? 140 : barra ? (parseFloat(getComputedStyle(barra).top) || 57) + barra.offsetHeight + 8 : 120;
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - hueco, behavior: "smooth" });
     }, 0);
   };
   const chips = (pop.length ? [{ k: "pop", l: E2("Populares", "Popular") }] : []).concat(m.secs.map((s) => ({ k: s.id, l: s.name })))
@@ -363,7 +366,8 @@ export function MenuMovil({ mn, card = false }: { mn: Mn; card?: boolean }) {
     <div data-screen-label="Ficha · menú" className="lg:hidden">
       <Cerrado mn={mn} className="mx-5 mt-4" />
       {mn.canOrd && <div className="px-5 pt-4"><Modo mn={mn} /></div>}
-      <div className="sticky top-[57px] z-[15] mt-3 border-b border-ink/[.07] bg-white py-[11px]">
+      {/* 23 nov · En la ficha nueva (card) arriba ya hay pegados el nombre (40) y las pestañas (50): las categorías se pegan debajo, no detrás. */}
+      <div data-mchips="" className={`sticky z-[15] mt-3 border-b border-ink/[.07] bg-white py-[11px] ${card ? "top-[147px]" : "top-[57px]"}`}>
         <div className="hs flex gap-2 overflow-x-auto px-5">{mn.chips.map((c) => <Chip key={c.k} variant={c.on ? "selected" : "filter"} onClick={c.onClick}>{c.l}</Chip>)}</div>
       </div>
       {mn.pop.length > 0 && (

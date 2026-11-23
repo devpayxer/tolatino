@@ -2936,3 +2936,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9o** · **«Renovar otro mes» con un fin a más de 60 días: la pantalla no enseña las fechas** (`consultarPuestos` rechaza más allá de
       `patrocinio_dias_adelante`), aunque el cobro sí se hace. Ya pasaba antes de este cambio.
 
+## Ficha Pro en el teléfono: nombre pegado, pestañas solo de lado, categorías debajo (23 nov, pedido del fundador)
+- [x] **→ 9u** · **(Hecho el 23 nov, vía rápida de diseño)** Al pegarse las pestañas sale encima el nombre del negocio (con su sello); la tira de pestañas
+      solo se mueve de lado; las categorías del menú se pegan debajo de las pestañas (antes quedaban detrás) y tocar una deja su sección justo debajo.
+      Visto servido en local a 390 px (medidas: nombre 57–97, pestañas 97–147, categorías 147–214).
+- [ ] **→ 9u** · **Sus pruebas de punta a punta y al revés** (vía rápida AL: corren después): en `fic9cab`, el nombre pegado visible solo al bajar, la tira
+      sin desplazamiento vertical, y la barra de categorías debajo de las pestañas en Menú; guardián para que ninguna barra pegada dentro de una pestaña
+      de la ficha nueva use `top` menor que el de las pestañas.
+- [ ] **→ 9u** · **En escritorio, al pegarse las pestañas no sale el nombre** (sale el estado a la derecha): decisión del fundador si también lo quiere.
+- [ ] **→ 9q** · **Verlo en un iPhone real con Safari** (el arrastre de la tira con el dedo solo se midió en Chromium emulado).
+

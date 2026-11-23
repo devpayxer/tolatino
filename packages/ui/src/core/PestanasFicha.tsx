@@ -6,7 +6,9 @@ import { Icon as IconDS } from "../ds/index";
    Pieza tipada que reemplaza a Tabs (variant mono) y DesktopTabs en la ficha; las portadas no se editan a mano.
    · movil: una fila que se desliza de lado (role=tablist / tab, flechas del teclado).
    · escritorio: la misma fila y, a la derecha, el estado del negocio («Abierto · cierra 8 PM») cuando la tira queda pegada arriba.
-   Cada pestaña mide 44 de alto o más (objetivosTactiles). Colores = tokens. */
+   Cada pestaña mide 44 de alto o más (objetivosTactiles). Colores = tokens.
+   23 nov (fundador, en su teléfono) · La tira solo se mueve de lado: overflow-y hidden (sobraba 1 px de alto y el dedo la movía en cualquier dirección)
+   y overscroll-behavior-x contain (al llegar al borde no arrastra la página). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icon = IconDS as any;
 
@@ -49,7 +51,7 @@ export function PestanasFicha({ items, active, onChange, modo, aside, asideWidth
   useEffect(() => { const t = tira.current; if (t) verEnTira(t, t.querySelector<HTMLElement>('[data-pestana][aria-selected="true"],[data-pestana][aria-current="page"]')); }, [active]);
   const fila = (
     <div ref={tira} role={desk ? undefined : "tablist"} onKeyDown={flechas}
-      style={{ display: "flex", gap: desk ? 30 : 22, overflowX: "auto", scrollbarWidth: "none", padding: desk ? 0 : "0 20px", minWidth: 0 }}>
+      style={{ display: "flex", gap: desk ? 30 : 22, overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain", scrollbarWidth: "none", padding: desk ? 0 : "0 20px", minWidth: 0 }}>
       {items.map((t) => {
         const on = t.id === active, fg = on ? "var(--tl-action)" : "rgba(11,14,18,.75)";
         return (
