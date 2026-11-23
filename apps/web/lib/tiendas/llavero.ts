@@ -275,9 +275,12 @@ export async function leerProveedores(vistas: Set<string>): Promise<Map<TipoProv
     if (!vistas.has(f.id)) nuevas.push({ id: f.id, ok });
   }
   if (nuevas.length) {
-    await db().query(`insert into store_secret_reads (secret_id, by, purpose, ok) select unnest($1::bigint[]), 'servidor', 'proveedores: la app la carga en memoria', unnest($2::boolean[])`,
-      [nuevas.map((x) => x.id), nuevas.map((x) => x.ok)]);
+    // Se marca ANTES de escribir: dos cargas a la vez (la de quien guardó y la del aviso de la base) no anotan la misma apertura dos veces.
     for (const x of nuevas) vistas.add(x.id);
+    try {
+      await db().query(`insert into store_secret_reads (secret_id, by, purpose, ok) select unnest($1::bigint[]), 'servidor', 'proveedores: la app la carga en memoria', unnest($2::boolean[])`,
+        [nuevas.map((x) => x.id), nuevas.map((x) => x.ok)]);
+    } catch (e) { for (const x of nuevas) vistas.delete(x.id); throw e; }
   }
   return out;
 }
