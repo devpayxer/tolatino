@@ -14,6 +14,7 @@ export const CODIGO_EQ = /^[A-Za-z0-9_-]{8}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const limpioArea = (s: unknown, max: number) => (typeof s === "string" ? s.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, max) : "");
 const TOPE_MALOS = 8;
+class FotoNoAdjunta extends Error {} // lanzada dentro de la transacción: deshace todo el pedido (el código no se gasta)
 
 export type InvitacionVista = { negocio: { id: string; nombre: string }; rol: string | null; rolEn: string | null; nombre: string; dueno: string | null; renta: boolean; vence: string };
 
@@ -48,7 +49,8 @@ export async function aceptarEquipo(userId: string, tel: string, codigo: string,
   if ((await intentosMalos(userId)) >= TOPE_MALOS) return no("Muchos intentos. Espera una hora o pídele al negocio una invitación nueva.", "Too many tries. Wait an hour or ask the business for a new invite.");
   const langs = Array.isArray(x?.langs) ? [...new Set(x.langs.filter((l) => ["es", "en", "pt"].includes(l)))] : ["es"];
   const bio = { es: limpioArea(x?.bio?.[0], 280), en: limpioArea(x?.bio?.[1], 280) };
-  const r = await tx(async (c) => {
+  let r;
+  try { r = await tx(async (c) => {
     // El mismo candado de siempre: dos teléfonos con el mismo código nunca aceptan los dos (la fila se bloquea y el segundo ya no la encuentra).
     const m = (await c.query<Fila>(`${SEL} and m.status = 'invited' for update of m`, [k])).rows[0];
     if (!m) { await anotarMalo(userId, c); return no("Ese código no existe o ya se usó. Pídele al negocio una invitación nueva.", "That code does not exist or was already used. Ask the business for a new invite."); }
@@ -57,9 +59,11 @@ export async function aceptarEquipo(userId: string, tel: string, codigo: string,
     if ((await c.query(`select 1 from business_members where business_id = $1 and user_id = $2 and status = 'active' and id <> $3::uuid`, [m.business_id, userId, m.id])).rowCount)
       return no("Ya estás en el equipo de este negocio.", "You are already on this business’s team.");
     let photo: string | null = null;
-    if (typeof x?.photo === "string" && UUID.test(x.photo)) {
+    if (typeof x?.photo === "string" && x.photo) {
       // La foto que la persona acaba de subir (/api/medios, suya) pasa a su perfil del equipo.
-      photo = (await c.query<{ url: string }>(`update media set owner_kind = 'member', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`, [m.id, x.photo, userId])).rows[0]?.url ?? null;
+      if (UUID.test(x.photo)) photo = (await c.query<{ url: string }>(`update media set owner_kind = 'member', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' and not rev_sin_c2 and not private returning url`, [m.id, x.photo, userId])).rows[0]?.url ?? null;
+      // Todo o nada: si la foto no se puede adjuntar (no es suya, no está visible, es privada o está en revisión) no se acepta nada y el código sigue vivo.
+      if (!photo) throw new FotoNoAdjunta();
     }
     await c.query(
       `update business_members set status = 'active', user_id = $2, invite_code = null, invite_expires_at = null, show_on_page = true, same_as_business_hours = true,
@@ -68,7 +72,7 @@ export async function aceptarEquipo(userId: string, tel: string, codigo: string,
     await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after, meta) values ('user', $1, 'equipo.aceptar_codigo', 'business', $2, $3, '{}'::jsonb, $4::jsonb)`,
       [userId, m.business_id, m.city, JSON.stringify({ member: m.id })]);
     return { ok: true as const, negocio: { id: m.business_id, nombre: m.negocio }, nombre: m.nombre, member: m.id, city: m.city };
-  });
+  }); } catch (e) { if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist."); throw e; }
   if (!r.ok) return r;
   // El dueño se entera (su campana y, si lo tiene encendido, su aviso): Lo que te avisamos › Equipo.
   const { avisarNegocio } = await import("./avisos");

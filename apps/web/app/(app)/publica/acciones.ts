@@ -113,6 +113,7 @@ export type RespPublicar =
   | { ok: true; negocio: { id: string; nombre: string; minutos: number; hasta: string; items: number; fotos: number } }
   | { ok: false; mensaje: { es: string; en: string }; paso?: string; campo?: "promo" };
 
+class FotoNoAdjunta extends Error {} // lanzada dentro de la transacción: deshace todo el pedido (ni negocio ni plan ni nada)
 export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   const no = (es: string, en: string, paso?: string, campo?: "promo"): RespPublicar => ({ ok: false, mensaje: { es, en }, paso, ...(campo ? { campo } : {}) });
   if (!(await mismoOrigen())) return no("No permitido.", "Not allowed.");
@@ -136,10 +137,15 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   for (const p of SEQ) if (!okPaso(p, d)) return no("Falta algo en este paso.", "Something is missing in this step.", p);
   const op = opOf(d), dv = derive(d), o = ownDe(d), its = itemsDe(d);
   // Fotos: tienen que ser de esta persona, subidas por ella y visibles.
-  const fotos = [d.cover, ...(d.gallery || [])].filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x)).slice(0, 13);
+  const pedidas = [...new Set([d.cover, ...(Array.isArray(d.gallery) ? d.gallery : [])].filter((x): x is string => typeof x === "string" && x !== ""))];
+  const fotos = pedidas.filter((x) => /^[0-9a-f-]{36}$/.test(x));
   if (!fotos.length || fotos[0] !== d.cover) return no("Falta tu foto.", "Your photo is missing.", "F1");
+  // Todo o nada: una foto que no es un id, o de más (el tope son 13), no se descarta en silencio.
+  if (fotos.length !== pedidas.length || fotos.length > 13) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");
   const mias = (await db().query<{ id: string }>(`select id::text from media where id = any($1::uuid[]) and owner_kind = 'user' and owner_id = $2 and status = 'visible' and not rev_sin_c2 and not private`, [fotos, me.id])).rows.map((r) => r.id);
   if (!mias.includes(d.cover!)) return no("Vuelve a subir tu foto.", "Upload your photo again.", "F1");
+  // Todo o nada: si alguna de las otras no se puede adjuntar (no es suya, no está visible, es privada o está en revisión) no se publica nada; la persona queda en este paso con lo demás.
+  if (mias.length !== fotos.length) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");
   const subs = (await db().query<{ id: string; es: string }>(`select id, name->>'es' as es from subcategorias_vivas where category_id = $1`, [d.cat])).rows;
   const subIds = d.subs.map((s) => subs.find((x) => NN(x.es) === NN(s))?.id).filter((x): x is string => !!x);
   // 9h · El código (si lo trae): sus días de prueba; el de un promotor no vale para su propia cuenta ni para alguien de su mismo dispositivo (antiabuso 5d).
@@ -162,7 +168,8 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   const nombreYo = [me.first_name, me.last_name].filter(Boolean).join(" ") || me.nick || "Dueño";
   const minutos = d.t0 ? Math.max(1, Math.round((Date.now() - Number(d.t0)) / 60000)) : 0;
   const acepta = await contextoAceptar();
-  const id = await tx(async (c) => {
+  let id: string;
+  try { id = await tx(async (c) => {
     let slug = base;
     for (let i = 2; (await c.query(`select 1 from businesses where id = $1`, [slug])).rowCount; i++) slug = `${base}-${i}`;
     await c.query(
@@ -183,7 +190,7 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
       else { const s = (await sugerir(d.addr, { lat: loc.c.lat, lng: loc.c.lng, estado: loc.c.state }, 1))[0]; if (s && s.calidad !== "calle" && s.estado === loc.c.state) pt = { lat: s.lat, lng: s.lng }; }
       if (pt) await c.query(`update businesses set geo = st_setsrid(st_point($2::float8, $3::float8), 4326)::geography where id = $1`, [slug, pt.lng, pt.lat]);
     }
-    await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
+    await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, fotos.length]);
     // La prueba Pro (Cobros y plan): 30 días (o 60 con HZL30). El día 30 sigue con tarjeta o pasa a Free (lib/suscripcion.ts).
     await c.query(`insert into subscriptions (business_id, status, trial_started_at, trial_ends_at, promo_code, payer_user_id) values ($1, 'trial', now(), $2, $3, $4)`,
       [slug, fin.toISOString(), promoOk ? promo!.code : null, me.id]);
@@ -224,9 +231,11 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
       await c.query(`insert into business_hours (business_id, weekday, open, ranges) values ($1, $2, $3, $4::jsonb)`,
         [slug, (i + 1) % 7, !!x.on, JSON.stringify(x.on ? [[hhmm(x.a), hhmm(x.b)]] : [])]);
     }
-    const orden = fotos.filter((f) => mias.includes(f));
-    for (let i = 0; i < orden.length; i++)
-      await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible' and not rev_sin_c2 and not private`, [slug, i, orden[i], me.id]);
+    // Las fotos pasan de la persona al negocio; se cuentan contra las pedidas y, si una no se adjunta (cambió entre la revisión y ahora), se deshace todo.
+    let puestas = 0;
+    for (let i = 0; i < fotos.length; i++)
+      puestas += (await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible' and not rev_sin_c2 and not private`, [slug, i, fotos[i], me.id])).rowCount ?? 0;
+    if (puestas !== fotos.length) throw new FotoNoAdjunta();
     if (op === "rento" && d.join)
       await c.query(`insert into business_members (business_id, user_id, kind, display_name, status, phone) select $1, $2, 'renter', $3, 'requested', $4 where exists (select 1 from businesses where id = $1 and status = 'active')`, [d.join, me.id, d.name, tel]);
     await c.query(
@@ -234,11 +243,11 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
        on conflict (user_id) do update set step = 'H1', answers = excluded.answers, promo_code = excluded.promo_code, completed_at = now(), business_id = excluded.business_id`,
       [me.id, JSON.stringify({ ...d, cover: null, gallery: [] }), promoOk ? promo!.code : null, slug]);
     return slug;
-  });
+  }); } catch (e) { if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1"); throw e; }
   await evento("publicar_negocio", { ref: id, ciudad: loc.ciudad, userId: me.id, props: { cat: d.cat } });
   // 9n-2 · Quien pidió rentar un espacio: el dueño se entera (Lo que te avisamos › Equipo) para aceptarlo o no desde Tu página › Equipo.
   if (op === "rento" && d.join) await (await import("@/lib/avisos")).avisarNegocio(d.join, "biz_equipo_pide", { nombre: d.name }, { href: `/panel/${d.join}/pagina/equipo`, ref: ["business", d.join] });
-  return { ok: true, negocio: { id, nombre: d.name, minutos, hasta, items: productos.length, fotos: mias.length } };
+  return { ok: true, negocio: { id, nombre: d.name, minutos, hasta, items: productos.length, fotos: fotos.length } };
 }
 
 /* Código de promotor (F1): lo valida el servidor (promo_codes, 9h). El de un promotor no vale para su propia cuenta. */

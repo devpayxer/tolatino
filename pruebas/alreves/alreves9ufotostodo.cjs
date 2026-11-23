@@ -6,6 +6,7 @@ const fs = require('fs'), path = require('path'), { execSync } = require('child_
 const R = ENT.RAIZ;
 const G = 'fotosAdjuntarTodoONada';
 const A = 'apps/web/app/panel/acciones.ts', Q = 'apps/web/app/panel/acciones-equipo.ts', E = 'apps/web/lib/evt.ts';
+const I = 'apps/web/lib/equipo-invitacion.ts', PB = 'apps/web/app/(app)/publica/acciones.ts'; // 23 nov · aceptar el código de equipo y Publica tu negocio
 const casos = [
   // Galería y portada: no comparar, no lanzar, no decirlo, no quitar repetidas, adjuntar sin contar.
   [A, '    if (puestas !== lista.length) throw new FotoNoAdjunta();\n', ''],
@@ -33,6 +34,28 @@ const casos = [
   [E, '[...new Set(d.fotos.map((f) => f.id))]', 'd.fotos.map((f) => f.id)'],
   // Por clase: una función nueva que pasa fotos al negocio sin leer el resultado.
   [A, 'export async function fotosOrden(', 'export async function fotosNuevas(id: string, x: string) {\n  await tx(async (c) => {\n    await c.query(`update media set owner_kind = \'business\', owner_id = $1 where id = $2::uuid and owner_kind = \'user\' and status = \'visible\' and not rev_sin_c2 and not private`, [id, x]);\n  });\n}\nexport async function fotosOrden('],
+  // Aceptar el código de equipo (23 nov): no lanzar, decir ok, otro texto, ignorar lo que no es un id, el rechazo fuera de la transacción.
+  [I, '      if (!photo) throw new FotoNoAdjunta();\n', ''],
+  [I, 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist.");', 'if (e instanceof FotoNoAdjunta) return { ok: true, negocio: { id: "", nombre: "" } };'],
+  [I, 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe.", "That photo doesn’t exist.");', 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.");'],
+  [I, 'if (typeof x?.photo === "string" && x.photo) {', 'if (typeof x?.photo === "string" && UUID.test(x.photo)) {'],
+  [I, '  try { r = await tx(', '  { r = await tx('],
+  // Publica tu negocio: la revisión (cuenta), el tope y los ids malos, el conteo dentro de la transacción, el rechazo y el texto.
+  [PB, '  if (mias.length !== fotos.length) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");\n', ''],
+  [PB, 'if (mias.length !== fotos.length) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");', 'if (mias.length < 1) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");'],
+  [PB, 'if (mias.length !== fotos.length) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");', 'if (mias.length !== fotos.length) return no("Vuelve a subir tu foto.", "Upload your photo again.", "F1");'],
+  [PB, 'if (mias.length !== fotos.length) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");', 'if (mias.length !== fotos.length) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.");'],
+  [PB, '  if (fotos.length !== pedidas.length || fotos.length > 13) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1");\n', ''],
+  [PB, 'const fotos = pedidas.filter((x) => /^[0-9a-f-]{36}$/.test(x));', 'const fotos = pedidas.filter((x) => /^[0-9a-f-]{36}$/.test(x)).slice(0, 13);'],
+  [PB, '    if (puestas !== fotos.length) throw new FotoNoAdjunta();\n', ''],
+  [PB, 'if (puestas !== fotos.length) throw new FotoNoAdjunta();', 'if (puestas > fotos.length) throw new FotoNoAdjunta();'],
+  [PB, "      puestas += (await c.query(`update media set owner_kind = 'business'", "      await c.query(`update media set owner_kind = 'business'"],
+  [PB, 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1"); throw e; }', 'if (e instanceof FotoNoAdjunta) return { ok: true, negocio: { id: "", nombre: "", minutos: 0, hasta: "", items: 0, fotos: 0 } }; throw e; }'],
+  [PB, 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1"); throw e; }', 'if (e instanceof FotoNoAdjunta) return no("Falta tu foto.", "Your photo is missing.", "F1"); throw e; }'],
+  [PB, 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "F1"); throw e; }', 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); throw e; }'],
+  [PB, '    for (let i = 0; i < fotos.length; i++)\n', '    const orden = fotos.filter((f) => mias.includes(f));\n    for (let i = 0; i < orden.length; i++)\n'],
+  // Por clase: una función nueva de Publica que pasa fotos al negocio sin leer el resultado.
+  [PB, 'class FotoNoAdjunta extends Error {}', 'async function pasarFotos(c: import("pg").PoolClient, slug: string, f: string[], u: string) {\n  await c.query(`update media set owner_kind = \'business\', owner_id = $1 where id = $2::uuid and owner_kind = \'user\' and status = \'visible\' and not rev_sin_c2 and not private`, [slug, f[0], u]);\n}\nclass FotoNoAdjunta extends Error {}'],
 ];
 let bien = 0, total = 0;
 const correr = () => {
