@@ -3,6 +3,9 @@
 // solo la huella vuelve (HTML, RSC, respuestas, auditoría, base cifrada), el LECTOR la entrega a una pantalla de cobro (la llave pública de Stripe en
 // el pago de un viaje) sin una consulta por petición, rotar (la nueva se usa al instante; la anterior, retirada), «Probar» (anotado con la huella,
 // nunca el valor), retirar (deja de usarse), Salud dice de dónde viene cada una, y cualquier otro rol → 403. Teléfono 390 y escritorio 1360.
+// 23 nov (§11) · «Probar» contra su contraparte (scripts/proveedores-sim: Stripe, Telnyx y Meta; el servidor las llama por STRIPE_API_BASE, TELNYX_API_BASE y
+// WHATSAPP_API_BASE de servir.sh): la llave buena SIRVE, la mala es RECHAZADA, el simulador vio la llamada firmada con ESA llave (huellas, nunca el valor),
+// Salud dice «probada» / «la prueba falló» y «Lo que te toca» sigue pendiente (este entorno usa el simulador). SES y Anthropic no tienen contraparte (LAUNCH).
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto');
 const S = ENT.S, OUT = S + '/cap/', B = ENT.B;
@@ -17,6 +20,7 @@ const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
 const KINDS = "('stripe_secret_key','stripe_publishable_key','stripe_webhook_secret','telnyx_api_key','telnyx_public_key','telnyx_from','whatsapp_app_secret','whatsapp_verify_token','whatsapp_token','whatsapp_waba_id','ses_access_key_id','ses_secret_access_key','correo_sns_tema','anthropic_api_key')";
 const limpiar = () => sql(`set session_replication_role = replica; delete from store_secret_reads where secret_id in (select id from store_secrets where kind in ${KINDS}); delete from store_secrets where kind in ${KINDS}; delete from store_secret_checks`);
+const SIMPROV = require('../../scripts/proveedores-sim/sim.cjs');
 const sha = (s) => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
 const corta = (h) => `${h.slice(0, 16).replace(/(.{4})(?=.)/g, '$1 ')} … ${h.slice(-4)}`;
 const al = (n) => crypto.randomBytes(n).toString('base64').replace(/[^A-Za-z0-9]/g, '').padEnd(n, 'x').slice(0, n);
@@ -27,6 +31,8 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
   const T0 = sql(`select now()::text`);
   limpiar();
   process.on('exit', () => { try { limpiar(); } catch { /* sin base */ } });
+  // Las contrapartes de «Probar» (el servidor las llama por las tres direcciones de servir.sh). Sin llaves aceptadas: todo lo que llegue es 401.
+  const SIM = await SIMPROV.iniciar({ stripe: ENT.P.provStripe, telnyx: ENT.P.provTelnyx, meta: ENT.P.provMeta });
   const SVC = sql(`select id from items where business_id = '${V}' and name->>'es' = 'Hazleton → Washington Heights' and removed_at is null order by id limit 1`);
   ok(/^\d+$/.test(SVC), `el viaje de ${V} para ver la llave pública en el pago (${SVC})`);
   const br = await chromium.launch(), errs = [];
@@ -165,6 +171,97 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
   T = await texto(px);
   ok(!T.includes('STRIPE · COBROS CON TARJETA'), 'Soporte: no ve la pestaña Proveedores');
   await px.context().close();
+
+  console.log('11 · Probar contra su contraparte: sirve, rechazada, la huella que vio el proveedor, Salud y «Lo que te toca»');
+  const pegarApi = async (tipo, valor, motivo) => { // lo mismo que la pantalla (código al teléfono + la llave + el motivo), sin pasar por los campos
+    sql(`delete from otp_codes where purpose in ('login', 'llavero')`);
+    const c = await pa.evaluate(async () => (await fetch('/api/admin/llavero/codigo', { method: 'POST' })).json());
+    const r = await pa.evaluate(async ([tipo, codigo, motivo, valor]) => { const f = new FormData(); f.set('tipo', tipo); f.set('codigo', codigo); f.set('motivo', motivo); f.set('valor', valor); return (await fetch('/api/admin/llavero', { method: 'POST', body: f })).json(); }, [tipo, c.codigoPrueba, motivo, valor]);
+    ok(r.ok === true && r.huella === sha(valor), `${tipo}: guardada, la huella que vuelve es la de lo pegado`);
+  };
+  const ORDEN = ['telnyx_api_key', 'stripe_secret_key', 'whatsapp_token', 'whatsapp_waba_id']; // las filas con «Probar», en el orden de la pantalla
+  const probarUI = async (pg, tipo, esperado) => {
+    await pg.goto(B + '/admin/sistema/integraciones?tab=proveedores'); await pg.getByText(/STRIPE · COBROS CON TARJETA · \d DE 3/).waitFor({ timeout: 20000 });
+    const vivas = sql(`select kind from store_secrets where retired_at is null`).split('\n');
+    await pg.getByText('Probar', { exact: true }).nth(ORDEN.filter((k) => vivas.includes(k)).indexOf(tipo)).click();
+    await pg.getByText(esperado).first().waitFor({ timeout: 20000 });
+  };
+  const SIRVE = 'La llave sirve: el proveedor contestó.', RECHAZA = 'El proveedor no aceptó la llave: está revocada o se copió mal.';
+  const paso = async (k) => { // lo que dice «Lo que te toca» de ese paso: de su número al siguiente
+    await pa.goto(B + '/admin/sistema/apps?v=toca'); await pa.getByText(new RegExp(`${k.replace('.', '\\.')} · `)).first().waitFor({ timeout: 20000 });
+    const T = await texto(pa), i = T.indexOf(`${k} · `), j = T.slice(i + 6).search(/9-\d\.\d · /);
+    return T.slice(i, j < 0 ? i + 700 : i + 6 + j);
+  };
+  const salud = async () => { await pa.goto(B + '/admin/sistema/salud'); await pa.getByText('PROVEEDORES · SUS LLAVES (SIN VALORES)').waitFor({ timeout: 20000 }); return texto(pa); };
+  const ultima = (kind) => sql(`select fingerprint || '|' || source || '|' || ok::text || '|' || result from store_secret_checks where kind = '${kind}' order by id desc limit 1`).split('|');
+  const claves = [];
+  const ciclo = async ({ prov, nombre, paso: pk, fila, tipos, clave, faltan, otra, tambien }) => {
+    const nK1 = tambien ? 2 : 1; // el token y el ID de WhatsApp se anotan cada uno con SU «Probar» (hallazgo: el de uno no cuenta para el otro)
+    const K1 = clave(), K2 = clave(), n0 = SIM.llamadas(prov).length;
+    claves.push(K1, K2);
+    let P = await paso(pk);
+    ok(/PENDIENTE/.test(P) && !/HECHO/.test(P) && P.includes(faltan), `${pk} antes de poner las llaves: pendiente («${faltan}»)`);
+    for (const [tipo, v] of tipos) await pegarApi(tipo, v, `${nombre} de prueba 9v`);
+    await pegarApi(fila, K1, `${nombre} de prueba 9v`); SIM.aceptar(prov, K1, otra);
+    P = await paso(pk);
+    ok(/PENDIENTE/.test(P) && P.includes('Las llaves están; falta que «Probar» salga bien con la que se usa hoy.'), `${pk} con las llaves y sin probar: pendiente («falta que «Probar» salga bien»)`);
+    await probarUI(pa, fila, SIRVE);
+    if (tambien) { await probarUI(pa, tambien, SIRVE); ok(ultima(tambien).join('|') === `${sha(otra.waba)}|llavero|true|sirve`, `${nombre}: el ID de la cuenta también se prueba aparte y sirve`); }
+    await pa.screenshot({ path: `${OUT}q-${prov}-sirve-1360.png`, fullPage: true });
+    ok(ultima(fila).join('|') === `${sha(K1)}|llavero|true|sirve`, `${nombre}: la pantalla dijo «La llave sirve» y quedó anotado: huella de la llave en uso, de dónde vino, sirvió, «sirve»`);
+    ok(SIM.llamadas(prov, sha(K1)).length === nK1 && SIM.llamadas(prov, sha(K1)).every((x) => x.estado === 200) && SIM.llamadas(prov).length === n0 + nK1, `${nombre}: el simulador recibió ${nK1} llamada(s), firmadas con la llave pegada (misma huella), y contestó 200`);
+    ok((await texto(pa)).includes('probada'), `${nombre}: la fila dice «probada»`);
+    let S = await salud();
+    ok(/probada/.test(S) && !/la prueba falló/.test(S), `${nombre}: Salud dice «probada»`);
+    await pa.screenshot({ path: `${OUT}q-${prov}-salud-1360.png`, fullPage: true });
+    P = await paso(pk);
+    ok(/PENDIENTE/.test(P) && P.includes('Las llaves están y probadas, pero este entorno usa el simulador.'), `${pk} con la prueba bien: sigue pendiente y dice que este entorno usa el simulador`);
+    await pa.screenshot({ path: `${OUT}q-${prov}-toca-1360.png`, fullPage: true });
+    // Rotar a una llave que el proveedor no conoce
+    await pegarApi(fila, K2, `Rotación de ${nombre} de prueba 9v`);
+    await probarUI(pa, fila, RECHAZA);
+    await pa.screenshot({ path: `${OUT}q-${prov}-rechazada-1360.png`, fullPage: true });
+    ok(ultima(fila).join('|') === `${sha(K2)}|llavero|false|rechazada`, `${nombre}: la pantalla dijo «no aceptó la llave» y quedó anotado «rechazada» con la huella de la NUEVA`);
+    ok(SIM.llamadas(prov, sha(K2)).length === 1 && SIM.llamadas(prov, sha(K2))[0].estado === 401 && SIM.llamadas(prov, sha(K1)).length === nK1 && SIM.llamadas(prov).length === n0 + nK1 + 1, `${nombre}: el simulador vio la llamada con la llave NUEVA (401) y no volvió a ver la anterior`);
+    ok(sql(`select count(*) from audit_entries where action = 'llavero.probar' and at >= '${T0}' and after->>'huella' in ('${sha(K1).slice(0, 16)}', '${sha(K2).slice(0, 16)}')`) === '2', `${nombre}: la auditoría tiene las dos pruebas, con huella`);
+    S = await salud();
+    ok(/la prueba falló \(rechazada\)/.test(S), `${nombre}: Salud dice «la prueba falló (rechazada)»`);
+    P = await paso(pk);
+    ok(/PENDIENTE/.test(P) && !/HECHO/.test(P) && P.includes('Las llaves están; falta que «Probar» salga bien con la que se usa hoy.'), `${pk} con la prueba fallida: pendiente («falta que «Probar» salga bien»)`);
+    return { K1, K2 };
+  };
+  const retirarTodo = (kinds) => sql(`update store_secrets set retired_at = now(), retired_by = uploaded_by, retired_reason = 'fin de la prueba 9v' where kind in (${kinds.map((k) => `'${k}'`).join(',')}) and retired_at is null`);
+  // La llave de Telnyx de la sección 6 (TK): el simulador no la conocía → «rechazada», con la huella de lo que llegó
+  ok(ultima('telnyx_api_key')[3] === 'rechazada' && SIM.llamadas('telnyx', sha(TK)).length === 1 && SIM.llamadas('telnyx', sha(TK))[0].estado === 401, 'la llave de la sección 6, que el simulador no conocía: «rechazada», y el simulador vio su huella (401)');
+  await ciclo({ prov: 'telnyx', nombre: 'Telnyx', paso: '9-1.2', fila: 'telnyx_api_key', tipos: [['telnyx_from', '+15705550100']], clave: () => 'KEY' + al(48), faltan: 'Faltan 1 de 3 llaves' });
+  retirarTodo(['telnyx_api_key', 'telnyx_from']);
+  await ciclo({ prov: 'stripe', nombre: 'Stripe', paso: '9-1.1', fila: 'stripe_secret_key', tipos: [['stripe_publishable_key', 'pk_test_' + al(40)]], clave: () => 'sk_test_' + al(40), faltan: 'Faltan 2 de 3 llaves' });
+  retirarTodo(['stripe_secret_key', 'stripe_publishable_key']);
+  const WABA = String(100000000000000 + Math.floor(Math.random() * 899999999999999));
+  const META = await ciclo({ prov: 'meta', nombre: 'WhatsApp', paso: '9-1.3', fila: 'whatsapp_token', tipos: [['whatsapp_waba_id', WABA]], clave: () => 'EA' + al(60), faltan: 'Faltan 2 de 4 llaves', otra: { waba: WABA }, tambien: 'whatsapp_waba_id' });
+  // Meta: el token es bueno pero el ID de la cuenta no existe → el proveedor contesta 400 (código 100): «contestó con un error», no «rechazó la llave»
+  SIM.aceptar('meta', META.K2); await pegarApi('whatsapp_waba_id', String(Number(WABA) + 1), 'ID de otra cuenta 9v');
+  await probarUI(pa, 'whatsapp_token', 'El proveedor contestó con un error (HTTP 400).');
+  ok(ultima('whatsapp_token')[3] === 'http_400' && ultima('whatsapp_token')[2] === 'false', 'WhatsApp: token bueno e ID que no existe → «http_400» (el proveedor contestó con un error), no «rechazada»');
+  retirarTodo(['whatsapp_token', 'whatsapp_waba_id']);
+
+  console.log('   · Nada se escapó: ni una llave de la sección en la pantalla, las respuestas, el registro del servidor ni lo que anotó el simulador');
+  const todas = [...claves, TK, WABA];
+  const reg = (() => { try { return fs.readFileSync(S + '/server.log', 'utf8'); } catch { return ''; } })();
+  const donde = todas.map((k, i) => `#${i}: ${respuestas.filter((x) => x.includes(k)).length} respuestas, ${reg.includes(k) ? 'server.log' : '-'}, ${k !== WABA && JSON.stringify(SIM.registro).includes(k) ? 'simulador' : '-'}`).filter((x) => !/: 0 respuestas, -, -$/.test(x));
+  ok(!donde.length, `ninguna de las ${todas.length} llaves aparece en las respuestas (${respuestas.length}), en server.log (${reg.length} bytes) ni en el registro del simulador (${SIM.registro.length} llamadas, solo huellas)${donde.length ? ' — ' + donde.join(' | ') : ''}`);
+  ok(sql(`select count(*) from audit_entries where at >= '${T0}' and (${todas.map((k) => `coalesce(after::text, '') || coalesce(before::text, '') || coalesce(reason, '') like '%${k}%'`).join(' or ')})`) === '0', 'ni en la auditoría');
+  ok(sql(`select count(*) from store_secret_checks where ${todas.map((k) => `result like '%${k.slice(0, 12)}%'`).join(' or ')}`) === '0', 'ni en lo anotado por «Probar»');
+  const S2 = await salud();
+  ok(!/[1-9]\d* del llavero/.test(S2), 'retiradas al final, el servidor ya no usa ninguna del llavero (Salud)');
+  const p2 = await pagina('tel2', 390, IOS); await entrar(p2, ADM);
+  await p2.goto(B + '/admin/sistema/apps?v=toca'); await p2.getByText(/9-1\.1 · /).first().waitFor({ timeout: 20000 });
+  ok(await p2.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'a 390: «Lo que te toca» sin desborde horizontal');
+  await p2.screenshot({ path: `${OUT}q-toca-390.png`, fullPage: true });
+  await p2.goto(B + '/admin/sistema/salud'); await p2.getByText('PROVEEDORES · SUS LLAVES (SIN VALORES)').waitFor({ timeout: 20000 });
+  await p2.screenshot({ path: `${OUT}q-salud-390.png`, fullPage: true });
+  await p2.context().close();
+  await SIM.cerrar();
 
   ok(!errs.length, `sin errores de la página${errs.length ? ': ' + errs.join(' | ') : ''}`);
   await br.close();

@@ -10686,6 +10686,32 @@ const guardianes = {
     for (const x of prov) if (!chk.slice(0, chk.indexOf(";")).includes(`'${x}'`)) falla(G, "packages/db/migrations", 0, `store_secrets no acepta el tipo «${x}» (su check, en la última migración que lo cambia)`);
   },
 
+  /* 23 nov · proveedoresSimuladorAislado: la contraparte de «Probar» (scripts/proveedores-sim: Stripe, Telnyx y Meta) solo existe en las pruebas. (1) servir.sh le pasa
+     al servidor de pruebas las tres direcciones (STRIPE_API_BASE, TELNYX_API_BASE, WHATSAPP_API_BASE) con SUS puertos (P_PROVSTRIPE, P_PROVTELNYX, P_PROVMETA); sin ellas
+     «Probar» dice «sin conexión» y nadie lo ve; (2) las tres están PROHIBIDAS en infra/comun/secretos.json (en producción no pueden existir: «Probar» llamaría a un
+     simulador y diría que una llave sirve); (3) los puertos salen de pruebas/lib/puertos.cjs (se desplazan con el servidor); (4) el simulador solo escucha en
+     127.0.0.1, no lee el entorno y no escribe el valor de ninguna llave (solo su huella); (5) nada de la app, los paquetes ni la infraestructura lo nombra, y prov9v
+     lo usa. Al revés: pruebas/alreves/alrevesllaves.cjs. */
+  proveedoresSimuladorAislado() {
+    const G = "proveedoresSimuladorAislado", SV = "pruebas/servir/servir.sh", SJ = "infra/comun/secretos.json", PU = "pruebas/lib/puertos.cjs", SIM = "scripts/proveedores-sim/sim.cjs", E2E = "pruebas/e2e/prov9v.cjs";
+    for (const f of [SV, SJ, PU, SIM, E2E]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de la contraparte de «Probar»");
+    const sv = readFileSync(SV, "utf8"), pu = readFileSync(PU, "utf8"), sim = readFileSync(SIM, "utf8");
+    let lista = {}; try { lista = JSON.parse(readFileSync(SJ, "utf8")); } catch { return falla(G, SJ, 0, "no se lee"); }
+    const nominal = (/const NOMINAL = \{([\s\S]*?)\n\};/.exec(pu) ?? [])[1] ?? "";
+    for (const [v, p, n] of [["STRIPE_API_BASE", "P_PROVSTRIPE", "provStripe"], ["TELNYX_API_BASE", "P_PROVTELNYX", "provTelnyx"], ["WHATSAPP_API_BASE", "P_PROVMETA", "provMeta"]]) {
+      if (!new RegExp(`^VARS\\+=\\(.*\\b${v}=http://127\\.0\\.0\\.1:\\$${p}\\b`, "m").test(sv)) falla(G, SV, 0, `servir.sh ya no le pasa ${v}=http://127.0.0.1:$${p} al servidor de pruebas: «Probar» saldría «sin conexión»`);
+      if (lista[v]?.origen !== "prohibida") falla(G, SJ, 0, `${v} tiene que estar «prohibida» (la dirección de un simulador no puede existir en producción)`);
+      if (!new RegExp(`\\b${n}: \\d{4}\\b`).test(nominal)) falla(G, PU, 0, `falta el puerto «${n}» en la tabla NOMINAL de puertos.cjs`);
+    }
+    if (/process\.env|\b0\.0\.0\.0\b/.test(sim) || !/host = '127\.0\.0\.1'/.test(sim)) falla(G, SIM, 0, "el simulador solo escucha en 127.0.0.1 y no lee el entorno");
+    if (!/registro\.push\(\{ prov, metodo: req\.method, ruta: req\.url\.split\('\?'\)\[0\], huella: h \? huella\(h\) : null, estado \}\)/.test(sim)) falla(G, SIM, 0, "el registro del simulador guarda solo la HUELLA de lo que llegó firmado, nunca el valor");
+    for (const f of archivos) {
+      if (!/^(apps|packages|infra|services)\//.test(f)) continue;
+      if (/proveedores-sim/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "nombra scripts/proveedores-sim: ese simulador es solo de las pruebas");
+    }
+    if (!/proveedores-sim\/sim\.cjs/.test(readFileSync(E2E, "utf8"))) falla(G, E2E, 0, "prov9v ya no usa la contraparte de «Probar»");
+  },
+
   /* 23 nov · llaveProveedorUnSoloLector: las llaves de los proveedores (cada tipo de PROVEEDORES en apps/web/lib/tiendas/llavero.ts, en MAYÚSCULAS: la
      variable) se leen SOLO por apps/web/lib/llaves-proveedores.ts (el entorno de respaldo o el llavero). Ningún otro archivo de la app ni de los paquetes
      toca process.env.<LLAVE> (ni process.env["<LLAVE>"], ni con un alias de process.env, ni desestructurando). El lector: la variable primero, el llavero
@@ -15482,9 +15508,9 @@ const guardianes = {
     const co = leer("pruebas/correr.mjs");
     if (!/"\.\/lib\/puertos\.cjs"\)\.resolver\(process\.env\)/.test(co) || !/SERVIDOR\.url/.test(co)) falla(G, "pruebas/correr.mjs", 0, "el corredor pregunta la salud en la dirección de pruebas/lib/puertos.cjs (PRUEBAS_URL), no en una escrita");
     /* Los simuladores y servicios de las pruebas (push 4401–4403, App Store Connect 4404, Wallet 4405/4406, GitHub 4407, Play 4408, «SNS» 4409, moderación 8790, video 8791,
-       traductor de mentira 5098/5099) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
+       traductor de mentira 5098/5099, lecturas de «Probar» 4410–4412) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
     const nom = [...(/const NOMINAL = \{([\s\S]*?)\n\};/.exec(pu)?.[1] ?? "").matchAll(/\b([A-Za-z]+): (\d{4})\b/g)].filter((m) => m[1] !== "servidor").map((m) => m[2]);
-    if (nom.length < 13) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 13): sin ella el guardián no puede vigilar los puertos escritos a mano`);
+    if (nom.length < 16) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 16): sin ella el guardián no puede vigilar los puertos escritos a mano`);
     else {
       const N = nom.join("|"), PS = [`(127\\.0\\.0\\.1|localhost|0\\.0\\.0\\.0):(${N})\\b`, `(puerto|Puerto|PUERTO|PORT)\\s*[:=,(]\\s*['"]?(${N})\\b`, `listen\\(\\s*(${N})\\b`, `['"](${N})['"]`, `\\|\\|\\s*(${N})\\b`].map((x) => new RegExp(x));
       for (const f of archivos) {

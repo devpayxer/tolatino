@@ -18,6 +18,7 @@ const NOMINAL = {
   google: 4405, pases: 4406,              // 8g · Google Wallet + OAuth + AIA (4405) y APNs de pases con TLS (4406)
   github: 4407, play: 4408,               // 8h · GitHub (JWKS + workflow_dispatch) y Google Play
   sns: 4409,                              // 9l · el certificado de «SNS» del correo entrante
+  provStripe: 4410, provTelnyx: 4411, provMeta: 4412,   // 23 nov · las lecturas de «Probar» de Stripe, Telnyx y Meta (scripts/proveedores-sim; los usa prov9v)
   moderacion: 8790, video: 8791,          // 5d / C-001 · servicios propios (moderación de imágenes y video)
   traductorDm: 5098, traductor: 5099,     // 5h / 9t · el traductor de mentira (dm9t · com5h y msg9t)
 };
