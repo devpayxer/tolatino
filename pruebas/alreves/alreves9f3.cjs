@@ -20,7 +20,7 @@ const casos = [
   ['e2PorElCms', LAY, [['<EdicionesE2 v={ed.v} l={ed.l}><AhoraProvider', '<AhoraProvider'], ['</AhoraProvider></EdicionesE2>', '</AhoraProvider><EdicionesE2 v={ed.v} l={ed.l}>{null}</EdicionesE2>']]],
   ['e2PorElCms', LAY, [['const ed = await edicionesE2();', 'const ed = { v: "", l: [] as const };']]],
   ['e2PorElCms', PROV, [['if (typeof window !== "undefined") ponerEdicionesE2(v, l);', 'useEffect(() => ponerEdicionesE2(v, l), [v, l]);']]],
-  ['e2PorElCms', INS, [['await Promise.race([edicionesE2(), ', 'void edicionesE2; await Promise.race([']]],
+  ['e2PorElCms', INS, [['Promise.all([edicionesE2(), prepararLlaves()])', 'Promise.all([prepararLlaves()])']]],
   ['e2PorElCms', AD, [['and s.id <> all($5::text[])', 'and $5::text[] is not null']]],
   ['e2PorElCms', TC, [['+ (x.lugares && x.lugares.n > 1 ? E(` Cambia en los', '+ (x.lugares && x.lugares.n > 99 ? E(` Cambia en los']]],
   // cadenaConLlave (trinquete 0): una definición que vuelve a la forma vieja (flecha y useCallback); el catálogo de E2 que no es el del código

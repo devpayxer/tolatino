@@ -5,7 +5,10 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs" && process.env.NEXT_PHASE !== "phase-production-build" && !!process.env.DATABASE_URL) {
     try {
       const { edicionesE2 } = await import("./lib/cms");
-      await Promise.race([edicionesE2(), new Promise((r) => { const t = setTimeout(r, 3000); (t as unknown as { unref?: () => void }).unref?.(); })]);
+      // 23 nov · Las llaves de los proveedores que viven en el llavero (lib/llaves-proveedores.ts) quedan en memoria antes de la primera petición: los
+      // «¿hay proveedor?» síncronos (pasarela, SMS, correo, El Compa) las ven desde el principio. Mismo tope de 3 s; sin base, el respaldo es el entorno.
+      const { prepararLlaves } = await import("./lib/llaves-proveedores");
+      await Promise.race([Promise.all([edicionesE2(), prepararLlaves()]), new Promise((r) => { const t = setTimeout(r, 3000); (t as unknown as { unref?: () => void }).unref?.(); })]);
     } catch {
       /* la primera página la vuelve a pedir */
     }

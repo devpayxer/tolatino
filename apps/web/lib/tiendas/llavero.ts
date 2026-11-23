@@ -28,10 +28,92 @@ export const TIPOS = {
   pass_type_csr: { es: "Apple Wallet · solicitud del certificado (llave)", en: "Apple Wallet · certificate request (key)", ext: [], forma: "generada" },
   // 8h · El token del fundador para «Pedir un build» (lanza el flujo de las tiendas; permiso «Actions: write» solo en este repositorio).
   github_token: { es: "GitHub · token para pedir builds", en: "GitHub · token to request builds", ext: [".txt"], forma: "token" },
+  // 23 nov · Las llaves de TEXTO de los proveedores del servidor de la app (se pegan, no se suben). Las usa SOLO lib/llaves-proveedores.ts.
+  stripe_secret_key: { es: "Stripe · llave secreta", en: "Stripe · secret key", ext: [], forma: "texto" },
+  stripe_publishable_key: { es: "Stripe · llave pública", en: "Stripe · publishable key", ext: [], forma: "texto" },
+  stripe_webhook_secret: { es: "Stripe · firma de los avisos (webhook)", en: "Stripe · webhook signing secret", ext: [], forma: "texto" },
+  telnyx_api_key: { es: "Telnyx · llave de la API", en: "Telnyx · API key", ext: [], forma: "texto" },
+  telnyx_public_key: { es: "Telnyx · llave pública de los avisos", en: "Telnyx · webhook public key", ext: [], forma: "texto" },
+  telnyx_from: { es: "Telnyx · número que manda los SMS", en: "Telnyx · sending number", ext: [], forma: "texto" },
+  whatsapp_app_secret: { es: "WhatsApp · secreto de la app", en: "WhatsApp · app secret", ext: [], forma: "texto" },
+  whatsapp_verify_token: { es: "WhatsApp · palabra de verificación de los avisos", en: "WhatsApp · webhook verify token", ext: [], forma: "texto" },
+  whatsapp_token: { es: "WhatsApp · token permanente", en: "WhatsApp · permanent token", ext: [], forma: "texto" },
+  whatsapp_waba_id: { es: "WhatsApp · ID de la cuenta de negocio", en: "WhatsApp · business account ID", ext: [], forma: "texto" },
+  ses_access_key_id: { es: "Amazon SES · ID de la llave de acceso", en: "Amazon SES · access key ID", ext: [], forma: "texto" },
+  ses_secret_access_key: { es: "Amazon SES · llave secreta de acceso", en: "Amazon SES · secret access key", ext: [], forma: "texto" },
+  correo_sns_tema: { es: "Amazon SNS · tema del correo que entra", en: "Amazon SNS · inbound email topic", ext: [], forma: "texto" },
+  anthropic_api_key: { es: "Anthropic · llave de la API (El Compa)", en: "Anthropic · API key (El Compa)", ext: [], forma: "texto" },
 } as const;
 export type TipoLlave = keyof typeof TIPOS;
 export const esTipo = (k: unknown): k is TipoLlave => typeof k === "string" && Object.hasOwn(TIPOS, k);
 export const MAX_BYTES = 64 * 1024;
+
+/* 23 nov · Las llaves de los PROVEEDORES (docs/REVISION.md «Cómo llegan las llaves de terceros al servidor»): cada tipo de texto con su variable del
+   entorno (el tipo en MAYÚSCULAS: stripe_secret_key → STRIPE_SECRET_KEY; la que el sobre sellado sigue pudiendo traer, de respaldo) y su proveedor. El fundador las pega en Integraciones › Llaves; el
+   valor se cifra aquí como cualquier llave y solo lib/llaves-proveedores.ts lo vuelve a abrir (en la memoria del proceso). La lista cerrada de
+   infra/comun/secretos.json dice lo mismo («llavero»: el tipo) y el guardián secretoConDueno comprueba que coincidan. */
+export type Proveedor = "stripe" | "telnyx" | "whatsapp" | "ses" | "anthropic";
+export const PROVEEDORES = {
+  stripe_secret_key: { prov: "stripe" },
+  stripe_publishable_key: { prov: "stripe" },
+  stripe_webhook_secret: { prov: "stripe" },
+  telnyx_api_key: { prov: "telnyx" },
+  telnyx_public_key: { prov: "telnyx" },
+  telnyx_from: { prov: "telnyx" },
+  whatsapp_app_secret: { prov: "whatsapp" },
+  whatsapp_verify_token: { prov: "whatsapp" },
+  whatsapp_token: { prov: "whatsapp" },
+  whatsapp_waba_id: { prov: "whatsapp" },
+  ses_access_key_id: { prov: "ses" },
+  ses_secret_access_key: { prov: "ses" },
+  correo_sns_tema: { prov: "ses" },
+  anthropic_api_key: { prov: "anthropic" },
+} as const satisfies Partial<Record<TipoLlave, { prov: Proveedor }>>;
+export type TipoProveedor = keyof typeof PROVEEDORES;
+export const esTipoProveedor = (k: unknown): k is TipoProveedor => typeof k === "string" && Object.hasOwn(PROVEEDORES, k);
+export const MAX_TEXTO = 4096;
+type Bi = { es: string; en: string };
+const mal = (es: string, en: string) => ({ ok: false as const, msg: { es, en } });
+
+/* La forma de una llave de texto, revisada en el SERVIDOR antes de cifrarla. Las de Stripe dicen si son de prueba o reales: en producción no entra una
+   de prueba y en pruebas (o local) no entra una real. Nada de la respuesta repite el valor. */
+export function revisarTexto(tipo: TipoProveedor, crudo: string, entorno: string): { ok: true; valor: string; meta: Meta } | { ok: false; msg: Bi } {
+  const v = String(crudo ?? "").trim();
+  if (!v) return mal("Pega la llave.", "Paste the key.");
+  if (v.length > MAX_TEXTO) return mal("Es demasiado larga para ser esa llave.", "It is too long to be that key.");
+  if (/[\s\u0000-\u001F\u007F]/.test(v)) return mal("La llave no lleva espacios ni saltos de línea: cópiala otra vez, completa.", "The key has no spaces or line breaks: copy it again, whole.");
+  const prod = entorno === "produccion", meta: Meta = {};
+  const stripe = (pref: string, nombre: Bi): { ok: false; msg: Bi } | null => {
+    const m = new RegExp(`^(${pref})_(test|live)_[A-Za-z0-9]{10,247}$`).exec(v);
+    if (!m) return mal(`No es una ${nombre.es} de Stripe (empieza con ${pref.split("|").map((p) => `${p}_`).join(" o ")}).`, `It is not a Stripe ${nombre.en} (it starts with ${pref.split("|").map((p) => `${p}_`).join(" or ")}).`);
+    if (prod && m[2] === "test") return mal("Es una llave de PRUEBA de Stripe: en producción va la real (live).", "It is a Stripe TEST key: production needs the live one.");
+    if (!prod && m[2] === "live") return mal("Es una llave REAL de Stripe: en el sandbox va la de prueba (test).", "It is a LIVE Stripe key: the sandbox needs the test one.");
+    meta.modo = m[2] === "live" ? "real" : "prueba";
+    return null;
+  };
+  let e: { ok: false; msg: Bi } | null = null;
+  switch (tipo) {
+    case "stripe_secret_key": e = stripe("sk|rk", { es: "llave secreta", en: "secret key" }); break;
+    case "stripe_publishable_key": e = stripe("pk", { es: "llave pública", en: "publishable key" }); break;
+    case "stripe_webhook_secret": if (!/^whsec_[A-Za-z0-9+/=]{20,200}$/.test(v)) e = mal("No es la firma de los avisos de Stripe (empieza con whsec_).", "It is not the Stripe webhook signing secret (it starts with whsec_)."); break;
+    case "telnyx_api_key": if (!/^KEY[A-Za-z0-9_-]{20,200}$/.test(v)) e = mal("No es una llave de la API de Telnyx (empieza con KEY).", "It is not a Telnyx API key (it starts with KEY)."); break;
+    case "telnyx_public_key": {
+      const b = /^[A-Za-z0-9+/]{43}=$/.test(v) ? Buffer.from(v, "base64") : null;
+      if (!b || b.length !== 32) e = mal("No es la llave pública de Telnyx (44 caracteres, la de «Public key» en la configuración de la cuenta).", "It is not the Telnyx public key (44 characters, the «Public key» in the account settings).");
+      break;
+    }
+    case "telnyx_from": if (!/^\+1\d{10}$/.test(v)) e = mal("El número va con +1 y sus 10 dígitos (por ejemplo +15705550100).", "The number goes with +1 and its 10 digits (for example +15705550100)."); break;
+    case "whatsapp_app_secret": if (!/^[a-f0-9]{32,64}$/i.test(v)) e = mal("No es el secreto de la app de Meta (32 letras y números, en la configuración básica de la app).", "It is not the Meta app secret (32 letters and numbers, in the app's basic settings)."); break;
+    case "whatsapp_verify_token": if (!/^[A-Za-z0-9._~-]{16,128}$/.test(v)) e = mal("La palabra de verificación lleva de 16 a 128 letras, números, punto, guion o guion bajo.", "The verify token takes 16 to 128 letters, numbers, dot, dash or underscore."); break;
+    case "whatsapp_token": if (!/^EA[A-Za-z0-9]{40,1000}$/.test(v)) e = mal("No es un token de Meta (empieza con EA).", "It is not a Meta token (it starts with EA)."); break;
+    case "whatsapp_waba_id": if (!/^\d{6,20}$/.test(v)) e = mal("El ID de la cuenta de negocio son solo números.", "The business account ID is only numbers."); break;
+    case "ses_access_key_id": if (!/^AKIA[A-Z0-9]{16}$/.test(v)) e = mal("No es el ID de una llave de acceso de AWS (AKIA y 16 letras o números).", "It is not an AWS access key ID (AKIA and 16 letters or numbers)."); break;
+    case "ses_secret_access_key": if (!/^[A-Za-z0-9/+]{40}$/.test(v)) e = mal("No es una llave secreta de AWS (40 caracteres).", "It is not an AWS secret key (40 characters)."); break;
+    case "correo_sns_tema": if (!/^arn:aws:sns:[a-z]{2}(-[a-z]+)+-\d:\d{12}:[A-Za-z0-9_-]{1,256}$/.test(v)) e = mal("No es el ARN de un tema de SNS (arn:aws:sns:región:cuenta:nombre).", "It is not an SNS topic ARN (arn:aws:sns:region:account:name)."); break;
+    case "anthropic_api_key": if (!/^sk-ant-[A-Za-z0-9_-]{20,300}$/.test(v)) e = mal("No es una llave de la API de Anthropic (empieza con sk-ant-).", "It is not an Anthropic API key (it starts with sk-ant-)."); break;
+  }
+  return e ?? { ok: true, valor: v, meta };
+}
 
 /* La llave que envuelve: del entorno (secretos del servidor). En ningún entorno se inventa una. */
 function kek(tipo: string): Buffer | null {
@@ -79,6 +161,7 @@ type Meta = Record<string, string>;
 export function revisarArchivo(tipo: TipoLlave, nombre: string, b: Buffer, extra: Meta): { ok: true; meta: Meta } | { ok: false; msg: string } {
   const t = TIPOS[tipo], ext = (/\.[a-z0-9]+$/i.exec(nombre)?.[0] ?? "").toLowerCase();
   if (t.forma === "generada") return { ok: false, msg: "Esta llave no se sube: la genera el servidor." };
+  if (t.forma === "texto") return { ok: false, msg: "Esta llave no es un archivo: se pega." };
   if (!b.length || b.length > MAX_BYTES) return { ok: false, msg: "El archivo está vacío o es demasiado grande (64 KB)." };
   if (!(t.ext as readonly string[]).includes(ext)) return { ok: false, msg: `Ese tipo de llave es un archivo ${t.ext.join(" o ")}.` };
   const meta: Meta = {};
@@ -174,4 +257,52 @@ export async function listar(): Promise<FilaLlave[]> {
        from store_secrets s left join users u on u.id = s.uploaded_by
       where s.retired_at is null or s.retired_at > now() - interval '180 days'
       order by s.kind, s.version desc limit 100`)).rows;
+}
+
+/* 23 nov · Las llaves vivas de los PROVEEDORES, abiertas para lib/llaves-proveedores.ts (el ÚNICO que las pide; guardián llaveProveedorUnSoloLector).
+   Una consulta para todas; cada sobre se abre y su huella se comprueba. La lectura se anota (store_secret_reads, solo inserción) la PRIMERA vez que
+   ESTE proceso abre esa versión (`vistas`, que guarda quien llama): volver a cargar la misma versión tras un aviso no llena la tabla. */
+export type LlaveAbierta = { valor: string; huella: string; version: number; id: string };
+export async function leerProveedores(vistas: Set<string>): Promise<Map<TipoProveedor, LlaveAbierta>> {
+  const filas = (await db().query<{ id: string; kind: TipoProveedor; version: number; blob_enc: Buffer; fingerprint: string }>(
+    `select id::text, kind, version, blob_enc, fingerprint from store_secrets where kind = any($1::text[]) and retired_at is null`, [Object.keys(PROVEEDORES)])).rows;
+  const out = new Map<TipoProveedor, LlaveAbierta>(), nuevas: { id: string; ok: boolean }[] = [];
+  for (const f of filas) {
+    if (!esTipoProveedor(f.kind)) continue;
+    const b = abrir(f.kind, f.blob_enc), ok = !!b && huellaDe(b) === f.fingerprint;
+    if (ok && b) out.set(f.kind, { valor: b.toString("utf8"), huella: f.fingerprint, version: f.version, id: f.id });
+    b?.fill(0);
+    if (!vistas.has(f.id)) nuevas.push({ id: f.id, ok });
+  }
+  if (nuevas.length) {
+    await db().query(`insert into store_secret_reads (secret_id, by, purpose, ok) select unnest($1::bigint[]), 'servidor', 'proveedores: la app la carga en memoria', unnest($2::boolean[])`,
+      [nuevas.map((x) => x.id), nuevas.map((x) => x.ok)]);
+    for (const x of nuevas) vistas.add(x.id);
+  }
+  return out;
+}
+
+/* Guardar una llave de texto (dentro de la transacción de quien la pone, que ya revisó el permiso y el código). Lo mismo que guardar(): sobre cifrado,
+   una viva por tipo (la nueva retira la anterior con motivo), rotación anotada y auditoría con la huella corta. */
+export async function guardarTexto(c: PoolClient, x: { tipo: TipoProveedor; valor: string; meta: Meta; actor: string; motivo: string }): Promise<{ huella: string; version: number; id: string }> {
+  const b = Buffer.from(x.valor, "utf8");
+  try { return await guardar(c, { tipo: x.tipo, contenido: b, meta: x.meta, vence: null, actor: x.actor, motivo: x.motivo }); }
+  finally { b.fill(0); }
+}
+
+/* «Probar»: cada resultado, SOLO inserción (tipo, huella, de dónde la tomó el servidor, si sirvió, un código corto); nunca el valor. Y la auditoría. */
+export async function anotarPrueba(x: { tipo: TipoProveedor; huella: string; origen: "llavero" | "entorno"; ok: boolean; resultado: string; actor: string }): Promise<void> {
+  const res = x.resultado.replace(/[^a-z0-9_]/g, "_").slice(0, 40).padEnd(2, "_");
+  await tx(async (c) => {
+    await c.query(`insert into store_secret_checks (kind, fingerprint, source, ok, result, by) values ($1, $2, $3, $4, $5, $6)`, [x.tipo, x.huella, x.origen, x.ok, res, x.actor]);
+    await auditar(c, { actor: x.actor, action: "llavero.probar", targetKind: "store_secret", targetId: null,
+      after: { llave: TIPOS[x.tipo].es, huella: x.huella.slice(0, 16), origen: x.origen, resultado: res, sirve: x.ok } });
+  });
+}
+/* La última prueba de cada tipo de proveedor (con la huella que se probó): «Lo que te toca» y la pantalla la comparan con la huella que se usa hoy. */
+export type UltimaPrueba = { kind: TipoProveedor; huella: string; origen: "llavero" | "entorno"; ok: boolean; resultado: string; at: string };
+export async function ultimasPruebas(): Promise<UltimaPrueba[]> {
+  return (await db().query<UltimaPrueba>(
+    `select distinct on (kind) kind, fingerprint as huella, source as origen, ok, result as resultado, ${ISO("at")} as at
+       from store_secret_checks where kind = any($1::text[]) order by kind, at desc`, [Object.keys(PROVEEDORES)])).rows;
 }
