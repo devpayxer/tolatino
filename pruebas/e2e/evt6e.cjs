@@ -160,7 +160,11 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
 
     // ── 5 · La liquidación del martes (reloj movido): nunca antes; neto exacto; una sola vez ──
     terminar(A.F, 0);
-    sql(`update event_dates set starts_at = now() - interval '4 hours', doors_at = now() - interval '5 hours', ends_at = now() - interval '1 hour' where id = ${A.F}`);
+    // 23 nov (auditoría de calendario) · La fecha termina hace 1 h SIN pasar de la medianoche de hoy en Hazleton: la regla es «el martes estrictamente después del
+    // día local en que termina» (evt_pago_dia). Con «ahora − 1 h» a secas, en la hora después de la medianoche de un martes la fecha terminó el lunes, su martes
+    // ES hoy y pay_on > hoy / evt_liq_antes fallaban solos (208 de los 35 040 cuartos de hora de un año, todos los martes de 0:00 a 0:59).
+    const FIN = `greatest(now() - interval '1 hour', date_trunc('day', now() at time zone 'America/New_York') at time zone 'America/New_York')`;
+    sql(`update event_dates set starts_at = ${FIN} - interval '3 hours', doors_at = ${FIN} - interval '4 hours', ends_at = ${FIN} where id = ${A.F}`);
     barrido();
     ok(liq(A.F).startsWith('pending|') && sql(`select pay_on > (now() at time zone 'America/New_York')::date from event_settlements where event_date_id = ${A.F}`) === 't', 'la fecha terminó hace 1 h: su liquidación espera al martes (pendiente, nada transferido)');
     ok(/evt_liq_antes/.test(sqlErr(`update event_settlements set status = 'paying' where event_date_id = ${A.F}`)), 'la base no deja pagar antes del martes (evt_liq_antes), aunque alguien lo intente a mano');
