@@ -89,13 +89,15 @@ export const DISENO = Object.freeze([
   /^packages\/ui\/src\/.*\.(tsx|ts|js|css|svg)$/,
   /^apps\/web\/app\/(?!api\/).*\.(tsx|css)$/,
   /^apps\/web\/public\/paginas\/[^/]+\.webp$/,
+  // El catálogo GENERADO de las cadenas ES/EN de las pantallas (scripts/cms/extraer.mjs): cambia con cualquier texto nuevo y el guardián cadenaConLlave exige que sea el que sale del código.
+  /^apps\/web\/lib\/cms-cadenas-e2\.json$/,
   /^docs\/ayuda\/.*\.md$/,
   /^docs\/LAUNCH-CHECKLIST\.md$/,
   /^pruebas\/visual\/.*\.png$/,
 ]);
 // Lo que nunca es diseño aunque la lista blanca lo cubriera (cinturón y tirantes: el guardián prueba las dos).
 export const NUNCA_DISENO = Object.freeze([
-  /^apps\/web\/lib\//, /^apps\/web\/app\/api\//, /(^|\/)(acciones[^/]*|route)\.[jt]sx?$/,
+  /^apps\/web\/lib\/(?!cms-cadenas-e2\.json$)/, /^apps\/web\/app\/api\//, /(^|\/)(acciones[^/]*|route)\.[jt]sx?$/,
   /(^|\/)(page|layout|template|default|loading|error|global-error|not-found|forbidden|unauthorized|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.[jt]sx?$/,
   /(^|\/)(middleware|instrumentation[^/]*|next\.config)\.[mc]?[jt]s$/,
   /^packages\/db\//, /(^|\/)migraciones?\//, /\.sql$/, /^scripts\//, /^infra\//, /^\.github\//, /^guardianes\//, /^services\//, /^semgrep\//,

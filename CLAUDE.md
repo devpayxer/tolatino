@@ -92,9 +92,14 @@ condiciones» al fundador → confirmación completa + OK → `produccion` avanz
   avance y al siguiente bloque (AB).
 - Cada bloque sube con la **revisión rápida** en verde: tipos, build, guardianes, al revés y sus pruebas de punta a punta, por CI dirigido.
   No espera la confirmación completa; lo que esta cace después se arregla en el bloque siguiente y se anota en REVISION (AD, AF).
-- **Vía rápida de diseño:** lo que es solo de cómo se ve (pieza del sistema de diseño, pantalla, textos, estilos y los datos de lectura que esa
-  pantalla pinta) sube con tipos + build + guardianes en verde y visto servido; sus pruebas de punta a punta y al revés corren después, y lo
-  que falte va a LAUNCH en el momento. No aplica a dinero, permisos, datos personales ni migraciones (AL).
+- **Vía rápida de diseño:** lo que es solo de cómo se ve (piezas del sistema de diseño, componentes de pantalla, textos, estilos) sube con
+  `node scripts/ci/subir.mjs --subir` sin corrida previa del CI: la herramienta decide si la entrega es de diseño (lista blanca cerrada + señales;
+  cualquier duda = camino normal), corre tipos + build + guardianes + textos y empuja; la punta a punta y «al revés» corren después, en la
+  corrida de `main`. No aplica a dinero, permisos, datos personales, migraciones, `lib/`, `page.tsx` ni al propio CI (AL, AN).
+- **Ajustes del fundador (AN):** llegan de uno en uno o en tanda, con captura. Se hacen viéndolos en vivo (servidor de desarrollo), el fundador
+  recibe la captura real en minutos y suben por la vía rápida; si llega otro mientras uno sube, van juntos. Las pruebas, el guardián y el
+  «al revés» de un retoque visual se escriben una vez, al cierre de la ronda; un fallo real (no de gusto) deja su guardián en el momento. Una
+  línea por tanda en REVISION.
 - Captura primero: en cuanto una pieza se ve, el fundador recibe la captura real (teléfono y escritorio). Se entrega por partes, y el trabajo
   grande se reparte en hasta 4 encargos en paralelo, cada uno con su base y su puerto (AL, regla 14).
 

@@ -6427,4 +6427,10 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - El fundador manda sus ajustes en lista con capturas; van juntos y suben por la vía rápida. Las pruebas de los retoques visuales se escriben al cierre de
   la ronda. **Pendiente al cierre de esta ronda:** pruebas del nombre pegado, de la tira de pestañas y de las categorías del menú (hay un avance guardado
   fuera del repo por el orquestador), y las de las tandas que sigan.
+- **Tanda del 23 nov (2):** en la ficha del teléfono, tocar cualquier pestaña sube la página y deja el menú fijo arriba con el nombre; así se queda al
+  cambiar de pestaña. Antes del nombre hay una flecha de regreso que devuelve a la cabecera. Qué mirar: cualquier negocio Pro, tocar «Equipo» o «Menú»
+  desde arriba, y luego la flecha.
+- **La herramienta de subida ya tiene la vía rápida de diseño** (hecha por Opus, revisada por Fable): se activa sola cuando esta versión esté en `main`.
+  Muy estricta a propósito (no entran `page.tsx`, `lib/`, ni rutas con palabras como pago, cuenta, equipo, panel, admin): lo que no entra va por el
+  camino de siempre. Si deja fuera demasiados retoques reales, se afina.
 
