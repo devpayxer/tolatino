@@ -453,7 +453,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         <div className="sticky z-[21] h-0" style={{ top: CAB_MOVIL }} data-pieza="nombre-pegado" data-visible={pegadaM ? "si" : "no"} aria-hidden={!pegadaM}>
           <div className="absolute inset-x-0 top-0 flex items-center bg-white pl-2 pr-5 transition-opacity duration-150" style={{ height: NOMBRE_MOVIL, opacity: pegadaM ? 1 : 0, pointerEvents: pegadaM ? "auto" : "none" }}>
             <button type="button" data-pieza="volver-arriba" tabIndex={pegadaM ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="inline-flex size-11 flex-none items-center justify-center text-ink"><Icon name="chevronLeft" size={20} /></button>
-            <span className="min-w-0 truncate text-[16px] font-extrabold tracking-[-0.02em] text-ink" style={{ fontFamily: "Manrope, system-ui, sans-serif" }}>{f.nombre}</span>
+            <span className="min-w-0 truncate font-display text-[18px] font-extrabold leading-none tracking-[-0.04em] text-ink">{f.nombre}</span>
             {sello ? <span className="flex-none">{sello}</span> : null}
           </div>
         </div>

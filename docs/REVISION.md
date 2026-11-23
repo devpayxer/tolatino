@@ -6437,4 +6437,5 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   PROGRAMA TU PEDIDO») y el total quedaba cortado; ahora mide el ancho de la pantalla. Qué mirar: agregar un plato con el negocio cerrado.
 - **Tanda del 23 nov (4):** en el menú, la categoría marcada sigue a la página: al bajar se enciende la categoría que se está viendo y la tira de
   categorías se desliza sola para enseñarla; al tocar una categoría sigue saltando a su sección. Qué mirar: Sabor Dominicano › Menú, bajar despacio.
+- **Tanda del 23 nov (5):** el nombre del negocio pegado sobre las pestañas va en la letra gruesa del título (la misma de la cabecera), más grande.
 
