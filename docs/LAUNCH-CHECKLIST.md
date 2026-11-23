@@ -2892,4 +2892,15 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9b** · **`plan4f` fallaba sola según el día del mes (23 nov):** pedía que el próximo cobro cayera «más de 27 días después de hoy», y con el día de
       cobro al principio del mes y hoy al final (un 23 con cobro el 7) cae a 14 días. Ahora comprueba la regla de verdad: el día de cobro del plan, en
       el mes siguiente. Era de la prueba, no de la app. Otras pruebas con fechas relativas al día de hoy pueden tener el mismo defecto: sin barrer.
+- [ ] **→ 9t** · **Pro: el período mensual se suma con `setMonth` (`lib/suscripcion.ts`, dos sitios) (23 nov, auditoría del calendario):** un 29, 30 o 31
+      desborda (31 ene → 3 mar, 31 mar → 1 may) y el cobro queda corrido para siempre; el cambio de horario mueve la hora. Arreglándose (Opus): una sola
+      regla (mismo día del mes siguiente o su último día, sin derivar), función pura con tabla, guardián y punta a punta con un período que empieza un 31.
+- [x] **→ 9b** · **`evt6e` fallaba sola de 0:00 a 0:59 de cada martes (23 nov):** terminaba la fecha «hace 1 h» y la liquidación ya era de hoy; ahora la
+      fecha no pasa de la medianoche local. `din9t3`–`din9t6` usaban el día de Greenwich como «hoy» (latente): usan `pruebas/lib/hoy-ciudad.cjs`.
+      Guardianes `hoyDeLaPruebaEnLaCiudad` y `liquidacionDelMartesSinReloj`, al revés `alrevescalendario23` 7/7.
+- [ ] **→ 9b** · **Pruebas de calendario sin poder decidir (23 nov):** `compa7f`, `compa7h`, `msg2p` (el día de la semana de «hoy» se recalcula en cada
+      sentencia: si pasa la medianoche a mitad de la prueba, cambia), `din9t6`/`din9t8` (fechas «creado» fijas del 20 nov: mirar si alguna ventana relativa
+      a `now()` las deja fuera con el tiempo) y `adm7i` (`priced_at` fijo). El resto de las e2e se barrió por patrones y muestreo, no entero.
+- [ ] **→ 9o** · **`current_date` y `now()::date` valen mientras la base corra en `America/New_York`** (así está en los compose de pruebas y producción); una
+      ciudad en otra zona los rompería de noche y ningún guardián lo vigila.
 

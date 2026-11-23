@@ -6373,3 +6373,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Decide tú:** cuál va, o qué mezclar. Mi recomendación es la B. La que elijas se construye con el sistema de diseño y te mando la captura real
   (abierto y cerrado, nombre largo, sin foto) antes de conectarla.
 
+## Fechas: un fallo real en el cobro de Pro y tres pruebas que fallaban solas (23 nov)
+- **Lo que pasó:** una corrida salió roja por una prueba de planes que solo falla ciertos días del mes. Barriendo las demás salieron dos más (la
+  liquidación del martes, entre las 0:00 y la 1:00 de cada martes; y cuatro de dinero que usaban la fecha de Greenwich). Las tres eran de la prueba y
+  están corregidas, con dos guardianes.
+- **El fallo de la app:** el cobro mensual de Pro sumaba el mes de una forma que se desborda los días 29, 30 y 31: quien empieza un 31 de enero sería
+  cobrado el 3 de marzo, y la fecha queda corrida. Nadie está afectado (no hemos abierto). Se está arreglando: mismo día del mes siguiente, o el último
+  día si el mes es corto.
+

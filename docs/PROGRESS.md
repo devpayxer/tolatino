@@ -20,6 +20,13 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **23 nov (06:50 UTC) · `main` = `pruebas` = d233e75, sandbox comprobado por la herramienta de subida.** Servido desde la entrada de abajo: llaves de
+  proveedores por Super Admin › Integraciones › Proveedores (0213; lector `lib/llaves-proveedores.ts`; la de Telnyx del primer día sigue pendiente de
+  decisión, REVISION); las 647 fotos de las páginas de categoría propias y la CSP de producción sin hosts de fotos; El Compa sin modelo elige la
+  operación de la que se habla (`elegirOperacion`); portada de categoría desde Catálogo (0214); «Probar» con simulador para Stripe, Telnyx y
+  WhatsApp (`scripts/proveedores-sim`). **En marcha:** P, «Probar» de SES y Anthropic con simulador (Opus); M2, el período mensual de Pro sin desbordar
+  el mes (Opus; 0215 reservada si hace falta ancla). **Descartado por el fundador:** las tres versiones de la cabecera de la ficha (no retomar).
+  **Sigue después:** los (c) de calendario de LAUNCH, mosaicos de categoría desde el Super Admin, y lo que queda de la tarea 195.
 - **23 nov (03:40 UTC) · `main` = `pruebas` = 45496f2, sandbox comprobado por la herramienta de subida.** Servido hoy, en cuatro subidas: la tercera
   tanda (0211: toque único, logo todo o nada, archivo privado ausente, tope de subidas); fotos todo o nada al aceptar un código de equipo y en Publica;
   `docs/legal/para-el-abogado.md` (50 preguntas) y `para-el-contador.md` (12); `docs/PAQUETE-TERCEROS.md`; el tope de subidas en Configuración ›
