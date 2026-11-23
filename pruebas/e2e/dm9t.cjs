@@ -41,6 +41,9 @@ const subirCrudo = (p, tipo, n, para = 'dm') => p.evaluate(async ([tipo, n, para
 // Cuentas NUEVAS de esta prueba (teléfonos 555 libres): con las fijas (Marisol, Héctor) la conversación que deja esta prueba le prendía a com5c
 // el «Mensaje» de B → C (quien ya te escribió puede recibir respuesta). Precondición propia: nadie más las usa.
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
+// 23 nov · La foto simulada también está en el almacén: desde el 22 nov un archivo ausente da 404 (igual que «no tienes permiso»), así que «pasó el
+// permiso» se comprueba viendo la foto (200), no con «no es 404» (que antes pasaba con el 500 del archivo ausente).
+const { ponerEnAlmacen } = require('../lib/almacen-poner.cjs');
 const A = telLibre(); let BB = telLibre(); while (BB === A) BB = telLibre(); let X = telLibre(); while (X === A || X === BB) X = telLibre();
 const ADM = '5705550199';
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
@@ -165,7 +168,7 @@ const limpiar = () => {
     // ── F · Fotos ──
     // ── F1 · La foto simulada (local y CI) ──
     console.log('  · F1 · fotos: la fila como la deja la subida; lo demás, el servidor de verdad');
-    const F1 = fotoSimulada(RA); SIMULADAS.add(F1);
+    const F1 = fotoSimulada(RA); SIMULADAS.add(F1); if (!SIN_ALMACEN) await ponerEnAlmacen(sql, F1, JPG);
     await subidaSimulada(a, F1);
     await a.goto(B + '/comunidad/mensajes/' + RB); await a.getByLabel('Tu mensaje').waitFor();
     ok(!!(await vis(a.getByRole('button', { name: 'Agregar una foto' }))), 'el composer ofrece «Agregar una foto»');
@@ -185,7 +188,7 @@ const limpiar = () => {
     ok(await contiene(a, 'EN REVISIÓN') && await a.locator('[data-msg-foto="si"]').count() >= 1, 'A ve su propia foto con «EN REVISIÓN»');
     await a.screenshot({ path: OUT + 'd9t-4-revision-m.png', fullPage: false });
     const U1 = `/api/mensajes/foto/${F1}`;
-    ok((await traerFoto(a, U1)).st !== 404, 'la dirección privada deja pasar a quien la mandó');
+    ok((SIN_ALMACEN || (await traerFoto(a, U1)).st === 200), 'la dirección privada deja pasar a quien la mandó');
     await bp.goto(B + '/comunidad/mensajes/' + RA); await bp.getByText(CON_FOTO).first().waitFor();
     ok(await contiene(bp, 'Photo under review') && await bp.locator('[data-msg-foto="espera"]').count() >= 1, 'B (en inglés) ve «Photo under review», sin la foto');
     await bp.screenshot({ path: OUT + 'd9t-5-revision-otro-m.png', fullPage: false });
@@ -204,7 +207,7 @@ const limpiar = () => {
     ok(await espera(() => sql(`select status from media where id = '${F1}'`) === 'visible'), 'aprobada: la foto queda visible');
     ok(sql(`select status from queue_items where id = ${Q1}`) === 'decided' && sql(`select count(*) from audit_entries where action = 'mensajes.foto.aprobar' and target_id = '${F1}'`) === '1', 'el caso se cierra y la decisión queda en la auditoría');
     ok(await espera(async () => (await bp.locator('[data-msg-foto="si"]').count()) >= 1, 15000), 'la pantalla abierta de B la muestra en vivo');
-    ok((await traerFoto(bp, U1)).st !== 404, 'ahora B la puede ver');
+    ok((SIN_ALMACEN || (await traerFoto(bp, U1)).st === 200), 'ahora B la puede ver');
     ok(await espera(() => avB() === nB0 + 1) && /Foto/.test(sql(`select body from notifications where user_id = '${RB}' and tpl = 'dm_message' order by id desc limit 1`)), 'aprobada: B recibe el aviso de la foto (una vez)');
     ok((await traerFoto(x, U1)).st === 404, 'y nadie más');
     await bp.screenshot({ path: OUT + 'd9t-7-foto-otro-m.png', fullPage: false });
@@ -250,11 +253,11 @@ const limpiar = () => {
     // Con un bloqueo de por medio la conversación no existe para ninguno de los dos: tampoco su foto ni «Ver traducción».
     sql(`insert into user_blocks (user_id, target_user_id, kind) values ('${RA}', '${RB}', 'block')`);
     ok((await traerFoto(bp, U1)).st === 404, 'con el bloqueo, B ya no ve la foto de A');
-    ok((await traerFoto(a, U1)).st !== 404, 'quien la subió sí');
+    ok((SIN_ALMACEN || (await traerFoto(a, U1)).st === 200), 'quien la subió sí');
     const rb = await bp.evaluate(async (q) => { const h = { ...q.h }; delete h['content-length']; delete h.cookie; delete h.host; delete h.origin; delete h.referer; return (await fetch(q.url, { method: 'POST', headers: h, body: q.body })).text(); }, accion);
     ok(/no_esta/.test(rb), 'ni le traduce nada de esa conversación');
     sql(`update user_blocks set removed_at = now() where user_id = '${RA}' and target_user_id = '${RB}' and kind = 'block' and removed_at is null`);
-    ok((await traerFoto(bp, U1)).st !== 404, 'Deshacer el bloqueo la devuelve');
+    ok((SIN_ALMACEN || (await traerFoto(bp, U1)).st === 200), 'Deshacer el bloqueo la devuelve');
 
     // La foto de otra persona, o una de más de 24 h, no se manda.
     const deA = fotoSimulada(RA); SIMULADAS.add(deA);
