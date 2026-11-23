@@ -14173,7 +14173,8 @@ const guardianes = {
      Comunidad, reseñas y novedades «Una de las fotos ya no está» para varias) y deshace TODO el pedido (se lanza dentro de la transacción: nada más se
      guarda, y la foto del equipo no queda vacía). Antes contestaban ok y no la adjuntaban (el filtro de fotosRevisionPrivacidad no cambia). Por clase: en
      esos tres archivos, un «update media … set owner_kind = 'business' | 'member' | 'event'» que nadie lee (sin guardar su resultado) falla. Al revés:
-     alreves9ufotostodo; punta a punta: ayu4m (el atajo: ahora espera el rechazo). */
+     alreves9ufotostodo; punta a punta: ayu4m (el atajo: ahora espera el rechazo). 23 nov: también aceptar el código de equipo (lib/equipo-invitacion.ts: «Esa foto
+     no existe», el código no se gasta) y Publica tu negocio (publicar: «Una de las fotos ya no está», todo o nada, la persona queda en F1); punta a punta: pan9n2 y publica. */
   fotosAdjuntarTodoONada() {
     const G = "fotosAdjuntarTodoONada", A = "apps/web/app/panel/acciones.ts", Q = "apps/web/app/panel/acciones-equipo.ts", E = "apps/web/lib/evt.ts";
     for (const x of [A, Q, E]) if (!existsSync(x)) return falla(G, x, 0, "falta el archivo que adjunta fotos por id");
@@ -14196,8 +14197,21 @@ const guardianes = {
     // Eventos: lo mismo con la lista de fotos del evento.
     if (!/\(puestas\.rowCount \?\? 0\) !== ids\.length\) throw new FotosAjenasEvt\(\);/.test(e) || !/\[\.\.\.new Set\(d\.fotos\.map/.test(e)) falla(G, E, 0, "lineupYFotos: compara las fotos adjuntadas con las pedidas y lanza dentro de la transacción");
     if (!/err instanceof FotosAjenasEvt\) return /.test(e) || !VARIAS.test(e)) falla(G, E, 0, "eventos: una foto que no se puede adjuntar se rechaza con «Una de las fotos ya no está. Súbela otra vez.», nunca ok");
+    // Aceptar la invitación del equipo (23 nov): la foto que no se adjunta rechaza con «Esa foto no existe.» y deshace TODO (el código no se gasta; antes aceptaba sin ella).
+    const I = "apps/web/lib/equipo-invitacion.ts", PB = "apps/web/app/(app)/publica/acciones.ts";
+    for (const x of [I, PB]) if (!existsSync(x)) return falla(G, x, 0, "falta el archivo que adjunta fotos por id");
+    const i = sinComent(I), pb = sinComent(PB);
+    if (!/if \(!photo\) throw new FotoNoAdjunta\(\);/.test(i) || /UUID\.test\(x\.photo\)\) \{/.test(i)) falla(G, I, 0, "aceptarEquipo: la foto pedida que no se puede adjuntar (o que ni es un id) lanza dentro de la transacción; nunca se acepta sin ella");
+    if (!/try \{ r = await tx\(/.test(i) || !/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return /.test(i) || !UNA.test(i)) falla(G, I, 0, "aceptarEquipo: una foto que no se puede adjuntar se rechaza con «Esa foto no existe.» (como perfil, logo y equipo) y deshace todo: el código no se gasta");
+    // Publica tu negocio (23 nov): las fotos pedidas = las adjuntadas, en la revisión y dentro de la transacción (no se crea nada a medias); la persona queda en F1.
+    const pu = cuerpoFn(pb, "publicar");
+    if (!/if \(mias\.length !== fotos\.length\) return no\("Una de las fotos ya no está\. Súbela otra vez\.", "One of the photos is gone\. Upload it again\.", "F1"\);/.test(pu)) falla(G, PB, 0, "publicar: si una foto de la galería no pasa el filtro se rechaza con «Una de las fotos ya no está. Súbela otra vez.» en F1; nunca se publica sin ella");
+    if (!/fotos\.length !== pedidas\.length \|\| fotos\.length > 13\) return no\("Una de las fotos ya no está/.test(pu) || /\.slice\(0, 13\)/.test(pu)) falla(G, PB, 0, "publicar: una foto que no es un id, o de más del tope, se rechaza (no se descarta en silencio con slice)");
+    if (!/puestas \+= \(await c\.query\(`update media set owner_kind = 'business'/.test(pu) || !/\.rowCount \?\? 0/.test(pu) || !/if \(puestas !== fotos\.length\) throw new FotoNoAdjunta\(\);/.test(pu)) falla(G, PB, 0, "publicar: cuenta las fotos que de verdad pasó al negocio y, si son menos que las pedidas, lanza dentro de la transacción (no se crea el negocio)");
+    if (!/try \{ id = await tx\(/.test(pu) || !/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return no\("Una de las fotos ya no está\. Súbela otra vez\.", "One of the photos is gone\. Upload it again\.", "F1"\); throw e; \}/.test(pu)) falla(G, PB, 0, "publicar: la foto que no se adjunta en la transacción se rechaza con «Una de las fotos ya no está» y deja a la persona en F1");
+    if (/const orden = fotos\.filter/.test(pu)) falla(G, PB, 0, "publicar: vuelve el filtro que descarta en silencio las fotos que no se adjuntan");
     // Por clase: un update media a negocio / equipo / evento cuyo resultado nadie lee ignora en silencio lo que no adjuntó.
-    for (const [x, t] of [[A, a], [Q, q], [E, e]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event|logo)'/gm))
+    for (const [x, t] of [[A, a], [Q, q], [E, e], [I, i], [PB, pb]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event|logo)'/gm))
       falla(G, x, t.slice(0, m.index).split("\n").length + 1, "un update media a negocio / equipo / evento sin leer su resultado: si no adjunta la foto no se entera nadie (usa rowCount o returning y rechaza)");
   },
 

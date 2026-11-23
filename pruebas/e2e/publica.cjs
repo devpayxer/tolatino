@@ -6,6 +6,7 @@ const { telefonoLibre } = require('../lib/telefono-libre.cjs'); // 9b-2 · uno s
 const TEL = telefonoLibre('5705556'); const TEL2 = telefonoLibre('5705556', (Number(TEL.slice(-3)) + 1) % 1000);
 const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/';
 const { medios } = require('../lib/negocio-nuevo.cjs'); // 9b-1 · el puerto de Garage de ESTA corrida (antes 3902 fijo)
+const sqlx = (q) => require('child_process').execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -qAt -v ON_ERROR_STOP=1`, { input: q, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), span:has-text("Seguir"), div[role=button]:has-text("Seguir")').last(); await b.click(); await p.waitForTimeout(700); };
 (async () => {
   const b = await chromium.launch(); const err = [];
@@ -60,6 +61,31 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   ok(await p.locator('[aria-label="Quitar foto"]').count() === 2, 'las dos fotos reales subieron');
   await p.waitForTimeout(1200);
   await p.screenshot({ path: OUT + 'p5-f1.png' });
+  // 23 nov · Todo o nada con las fotos: una de la galería deja de poder usarse entre subirla y tocar «Publicar» (queda en revisión). El servidor rechaza con su mensaje,
+  // NO crea nada a medias (ni negocio, ni plan, ni miembro), el borrador sigue en F1 con lo demás, y al cambiar esa foto por una buena se publica.
+  {
+    const U = sqlx(`select id from users where phone = '+1${TEL}'`);
+    let gal = ''; for (let k = 0; k < 60 && !gal; k++) { gal = sqlx(`select answers->'gallery'->>0 from onboarding_drafts where user_id = '${U}'`); if (!gal) await p.waitForTimeout(250); }
+    ok(/^[0-9a-f-]{36}$/.test(gal) && sqlx(`select (owner_kind = 'user' and status = 'visible')::text from media where id = '${gal}'`) === 'true', 'la foto de la galería es de la persona y está visible (el borrador la guarda)');
+    sqlx(`update media set rev_sin_c2 = true where id = '${gal}'`);
+    await p.locator('text=/^Publicar · /').last().click();
+    await p.getByText('Una de las fotos ya no está. Súbela otra vez.').first().waitFor({ timeout: 10000 });
+    ok(true, 'foto que ya no se puede usar: «Una de las fotos ya no está. Súbela otra vez.» (no se publica)');
+    await p.screenshot({ path: OUT + 'p5b-foto-rechazada-393.png' });
+    await p.setViewportSize({ width: 1360, height: 900 }); await p.waitForTimeout(500);
+    await p.locator('text=/^Publicar · /').last().click();
+    await p.getByText('Una de las fotos ya no está. Súbela otra vez.').first().waitFor({ timeout: 10000 });
+    await p.screenshot({ path: OUT + 'p5b-foto-rechazada-1360.png' });
+    await p.setViewportSize({ width: 393, height: 852 }); await p.waitForTimeout(400);
+    const nada = sqlx(`select (select count(*) from businesses where owner_user_id = '${U}') || '|' || (select count(*) from subscriptions where payer_user_id = '${U}') || '|' || (select count(*) from business_members where user_id = '${U}') || '|' || (select count(*) from media where owner_kind = 'business' and uploaded_by = '${U}')`);
+    ok(nada === '0|0|0|0', `rechazada la foto: no se creó nada a medias (negocios, plan, miembros y fotos del negocio: ${nada})`);
+    ok(sqlx(`select (completed_at is null and business_id is null and step = 'F1')::text from onboarding_drafts where user_id = '${U}'`) === 'true' && sqlx(`select (jsonb_array_length(answers->'gallery') = 1 and answers->>'cover' is not null and answers->>'name' like 'Barbería%')::text from onboarding_drafts where user_id = '${U}'`) === 'true', 'rechazada la foto: el borrador sigue en F1 con su portada, su galería y lo demás');
+    ok(sqlx(`select count(*) from media where owner_kind = 'user' and owner_id = '${U}' and status = 'visible'`) === '2', 'rechazada la foto: las dos fotos siguen de la persona (la portada tampoco pasó al negocio)');
+    // Reintentar: quita la que no sirve (la de la galería) y sube otra buena.
+    await p.locator('[aria-label="Quitar foto"]').nth(1).click(); await p.waitForTimeout(500);
+    await p.locator('input[type=file]').nth(1).setInputFiles(FP + 'galeria.png');
+    await p.waitForFunction(() => document.querySelectorAll('[aria-label="Quitar foto"]').length === 2, null, { timeout: 20000 }); await p.waitForTimeout(1200);
+  }
   await p.locator('text=/^Publicar · /').last().click();
   await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });
   await p.waitForTimeout(800);

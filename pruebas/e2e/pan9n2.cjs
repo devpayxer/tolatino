@@ -83,6 +83,29 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     await i.goto(B + '/e/' + COD);
     ok(await texto(i, /te invitó a Sabor Dominicano/) && await texto(i, /Entras como Caja y mostrador/), 'la invitada ve «te invitó a Sabor Dominicano · Entras como Caja y mostrador»');
     await sinScroll(i, '/e/código 390');
+    // 23 nov · Todo o nada con la foto: la invitada sube la suya y, entre subirla y tocar «Aceptar», deja de poder usarse (la foto se vuelve privada). El servidor la
+    // rechaza con su mensaje, NO acepta nada a medias (sigue «invited», sin cuenta ni foto ni aviso al dueño) y el código NO se gasta; al volver con una foto buena entra.
+    const MIO = () => sql(`select id from media where owner_kind = 'user' and owner_id = '${IU}' and status = 'visible' and not private and not rev_sin_c2 limit 1`);
+    const subirMia = async () => { const [fc] = await Promise.all([i.waitForEvent('filechooser'), clic(i.getByText('Subir foto', { exact: true }))]); await fc.setFiles(ENT.rec('fotos') + '/portada.jpg'); await i.getByText(/1\/1/).first().waitFor({ timeout: 20000 }); };
+    await subirMia();
+    let MALA = ''; for (let k = 0; k < 60 && !MALA; k++) { MALA = MIO(); if (!MALA) await dormir(250); }
+    ok(/^[0-9a-f-]{36}$/.test(MALA), 'la invitada subió su foto (queda suya y visible)');
+    sql(`update media set private = true where id = '${MALA}'`);
+    await clic(i.getByRole('button', { name: /Aceptar y entrar al equipo/ }));
+    ok(await texto(i, /Esa foto no existe\./), 'foto que ya no se puede usar: «Esa foto no existe.» (no se acepta)');
+    const MID_I = sql(`select id from business_members where business_id = '${BIZ}' and phone = '+1${INV}'`);
+    const SIGUE = () => sql(`select status || '|' || coalesce(invite_code, 'NULO') || '|' || coalesce(user_id::text, 'SIN') || '|' || coalesce(photo_url, 'SIN') from business_members where id = '${MID_I}'`);
+    ok(SIGUE() === `invited|${COD}|SIN|SIN`, `rechazada la foto: el miembro sigue invitado, con su código, sin cuenta ni foto (${SIGUE()})`);
+    ok(sql(`select count(*) from audit_entries where action = 'equipo.aceptar_codigo' and meta->>'member' = '${MID_I}'`) === '0' && sql(`select count(*) from notifications where user_id = '${DU}' and tpl = 'biz_equipo_acepto' and body like '%Ines Equipo${ID}%'`) === '0', 'rechazada la foto: sin auditoría de aceptar ni aviso al dueño');
+    ok(sql(`select owner_kind || '|' || private::text from media where id = '${MALA}'`) === 'user|true', 'rechazada la foto: sigue de quien la subió (no pasó al equipo)');
+    ok(sql(`select count(*) from audit_entries where actor_id = '${IU}' and action = 'equipo.codigo_malo'`) === '0', 'una foto mala no cuenta como código malo');
+    await i.screenshot({ path: OUT + 'pan9n2-1-foto-rechazada-390.png', fullPage: true });
+    await i.setViewportSize({ width: 1360, height: 900 }); await dormir(400);
+    await i.screenshot({ path: OUT + 'pan9n2-1-foto-rechazada-1360.png', fullPage: true });
+    await i.setViewportSize({ width: 390, height: 844 });
+    await i.goto(B + '/e/' + COD);
+    ok(await texto(i, /te invitó a Sabor Dominicano/), 'el código sigue vivo: la invitación se vuelve a abrir');
+    await subirMia();
     await llenar(i.getByPlaceholder(/Cuenta cómo empezaste/), 'Llevo cinco años en la caja. Me gusta atender con calma.');
     await clic(i.getByText('English', { exact: true }));
     await i.screenshot({ path: OUT + 'pan9n2-1-aceptar-390.png', fullPage: true });
@@ -90,6 +113,7 @@ const lang = async (p, l) => { await p.context().addCookies([{ name: 'tl_lang', 
     ok(await texto(i, /Ya eres parte del equipo de Sabor Dominicano/), 'aceptar: «Ya eres parte del equipo»');
     const m = sql(`select status || '|' || coalesce(invite_code, 'NULO') || '|' || (user_id = '${IU}')::text || '|' || array_to_string(languages, ',') || '|' || (bio->>'es' like 'Llevo cinco años%')::text from business_members where business_id = '${BIZ}' and phone = '+1${INV}'`);
     ok(m === 'active|NULO|true|es,en|true', `el miembro queda activo, con su cuenta, sin código y con sus idiomas y palabras (${m})`);
+    ok(sql(`select (photo_url is not null and photo_url <> '')::text from business_members where id = '${MID_I}'`) === 'true' && sql(`select count(*) from media where owner_kind = 'member' and owner_id = '${MID_I}' and status = 'visible'`) === '1', 'con una foto buena, la foto pasa al perfil del equipo');
     ok(sql(`select count(*) from notifications where user_id = '${DU}' and tpl = 'biz_equipo_acepto' and body like '%Ines Equipo${ID}%'`) === '1', 'el dueño recibe «aceptó tu invitación»');
     // El código ya se usó: no sirve otra vez (ni para la misma persona).
     const i2Ctx = await b.newContext(M), i2 = await i2Ctx.newPage(); await entrar(i2, INV);
