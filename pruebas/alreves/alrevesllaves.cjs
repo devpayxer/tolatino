@@ -9,12 +9,12 @@ const LP = 'apps/web/lib/llaves-proveedores.ts', LV = 'apps/web/lib/tiendas/llav
   WH = 'apps/web/app/api/stripe/webhook/route.ts', MC = 'apps/web/lib/compa/modelo-claude.ts', SES = 'apps/web/lib/correo/ses.ts', RT = 'apps/web/app/api/admin/llavero/route.ts',
   UIF = 'apps/web/app/admin/IntegracionesProveedores.tsx', PG = 'apps/web/app/admin/sistema/integraciones/page.tsx', BQ = 'packages/ui/src/panel/Bloques.tsx',
   SV = 'pruebas/servir/servir.sh', PU = 'pruebas/lib/puertos.cjs', SIM = 'scripts/proveedores-sim/sim.cjs', E2E = 'pruebas/e2e/prov9v.cjs',
-  INS = 'apps/web/instrumentation.ts', MIG = 'packages/db/migrations/0213_llavero_proveedores.sql', SJ = 'infra/comun/secretos.json', PQ = 'apps/web/lib/tiendas/paquete.ts';
+  INS = 'apps/web/instrumentation.ts', OP = 'apps/web/lib/origen-pruebas.ts', MIG = 'packages/db/migrations/0213_llavero_proveedores.sql', SJ = 'infra/comun/secretos.json', PQ = 'apps/web/lib/tiendas/paquete.ts';
 // [guardián, archivo, [[buscar, poner], …]]
 const casos = [
   // llaveProveedorUnSoloLector: process.env a mano; el entorno ya no manda; la copia sin releer; el arranque no las carga; store_secrets sin aviso; el
   // lector consulta la base por su cuenta; el estado en una variable del módulo
-  ['llaveProveedorUnSoloLector', ST, [['  const key = await llave("STRIPE_SECRET_KEY");\n  if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);\n  const base = (process.env.STRIPE_API_BASE || "https://api.stripe.com")', '  const key = process.env.STRIPE_SECRET_KEY;\n  if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);\n  const base = (process.env.STRIPE_API_BASE || "https://api.stripe.com")']]],
+  ['llaveProveedorUnSoloLector', ST, [['  const key = await llave("STRIPE_SECRET_KEY");\n  if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);\n  const base = API();', '  const key = process.env.STRIPE_SECRET_KEY;\n  if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);\n  const base = API();']]],
   ['llaveProveedorUnSoloLector', CP, [['  const n = llaveYa("TELNYX_FROM") ?? "";', '  const n = process.env["TELNYX_FROM"] ?? "";']]],
   ['llaveProveedorUnSoloLector', LP, [['  const v = delEntorno(n);\n  if (v) return v;\n  if (!sinBase() && (E.cargada', '  if (!sinBase() && (E.cargada']]],
   ['llaveProveedorUnSoloLector', LP, [['    releer: true,\n', '']]],
@@ -64,10 +64,23 @@ const casos = [
   ['proveedoresSimuladorAislado', SJ, [['  "SES_API_BASE": { "origen": "prohibida" },\n', '']]],
   ['proveedoresSimuladorAislado', SJ, [['"ANTHROPIC_API_BASE": { "origen": "prohibida" }', '"ANTHROPIC_API_BASE": { "origen": "config" }']]],
   ['proveedoresSimuladorAislado', PU, [['provSes: 4413, ', '']]],
-  ['proveedoresSimuladorAislado', SES, [['  if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;', '  if (!v) return null;']]],
-  ['proveedoresSimuladorAislado', MC, [['  if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;', '  if (process.env.TOLATINO_ENTORNO === "local" || !v) return null;']]],
-  ['proveedoresSimuladorAislado', SES, [['!["127.0.0.1", "localhost"].includes(u.hostname) || ', '']]],
-  ['proveedoresSimuladorAislado', MC, [[' || u.pathname !== "/"', '']]],
+  // 23 nov (2) · LA regla vive en UN archivo (lib/origen-pruebas.ts) para las seis direcciones: sin la regla del entorno, al revés, sin «local», sin la ruta,
+  // con una importación.
+  ['proveedoresSimuladorAislado', OP, [['  if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;', '  if (!v) return null;']]],
+  ['proveedoresSimuladorAislado', OP, [['  if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;', '  if (process.env.TOLATINO_ENTORNO === "local" || !v) return null;']]],
+  ['proveedoresSimuladorAislado', OP, [['!["127.0.0.1", "localhost"].includes(u.hostname) || ', '']]],
+  ['proveedoresSimuladorAislado', OP, [[' || u.pathname !== "/"', '']]],
+  ['proveedoresSimuladorAislado', OP, [['import "server-only";\n', 'import "server-only";\nimport { db } from "./db";\nexport const sinUso = db;\n']]],
+  // Las cuatro viejas (Stripe, Telnyx, WhatsApp): leídas tal cual (sin la regla), la ruta entera en vez del origen, una dirección a mano, sin importar la regla.
+  ['proveedoresSimuladorAislado', ST, [['const API = () => origenDePruebas(process.env.STRIPE_API_BASE)?.origin ?? "https://api.stripe.com";', 'const API = () => (process.env.STRIPE_API_BASE || "https://api.stripe.com").replace(/\\/$/, "");']]],
+  ['proveedoresSimuladorAislado', ST, [['(origenDePruebas(process.env.STRIPE_FILES_BASE) ?? origenDePruebas(process.env.STRIPE_API_BASE))?.origin', '(process.env.STRIPE_FILES_BASE ? new URL(process.env.STRIPE_FILES_BASE) : origenDePruebas(process.env.STRIPE_API_BASE))?.origin']]],
+  ['proveedoresSimuladorAislado', ST, [['  const base = API();\n  try {', '  const base = "https://api.stripe.com";\n  try {']]],
+  ['proveedoresSimuladorAislado', ST, [['try { r = await fetch(`${base}/v1/files`', 'try { r = await fetch(`https://files.example.com/v1/files`']]],
+  ['proveedoresSimuladorAislado', CP, [['const API_TELNYX = () => origenDePruebas(process.env.TELNYX_API_BASE)?.origin ?? "https://api.telnyx.com";', 'const API_TELNYX = () => (process.env.TELNYX_API_BASE || "https://api.telnyx.com").replace(/\\/$/, "");']]],
+  ['proveedoresSimuladorAislado', CP, [['origenDePruebas(process.env.WHATSAPP_API_BASE)?.origin ?? "https://graph.facebook.com"', 'origenDePruebas(process.env.WHATSAPP_API_BASE)?.href.replace(/\\/$/, "") ?? "https://graph.facebook.com"']]],
+  ['proveedoresSimuladorAislado', CP, [['leerCon(`${API_TELNYX()}/v2/balance`, key)', 'leerCon(`https://api.telnyx.com/v2/balance`, key)']]],
+  ['proveedoresSimuladorAislado', CP, [['import { origenDePruebas } from "../origen-pruebas";\n', 'function origenDePruebas(v: string | undefined): URL | null { return v ? new URL(v) : null; }\n']]],
+  ['proveedoresSimuladorAislado', SJ, [['"STRIPE_FILES_BASE": { "origen": "prohibida" }', '"STRIPE_FILES_BASE": { "origen": "config" }']]],
   ['proveedoresSimuladorAislado', MC, [['(origenDePruebas(process.env.ANTHROPIC_API_BASE)?.origin ?? API.origin) + ruta', '(origenDePruebas(process.env.ANTHROPIC_API_BASE)?.href.replace(/\\/$/, "") ?? API.origin) + ruta']]],
   ['proveedoresSimuladorAislado', SES, [['return p ? { origen: p.origin, host: p.host }', 'return p ? { origen: p.href.replace(/\\/$/, ""), host: p.host }']]],
   ['proveedoresSimuladorAislado', SES, [['firmarV4({ method: "GET", host: d.host,', 'firmarV4({ method: "GET", host: `email.${region}.amazonaws.com`,']]],
@@ -83,7 +96,10 @@ const crear = [
   // proveedoresSimuladorAislado: la app nombrando el simulador de las pruebas
   ['proveedoresSimuladorAislado', 'apps/web/lib/zzsim1.ts', 'import "server-only";\n// ver scripts/proveedores-sim/sim.cjs\nexport const s = 1;\n', /proveedores-sim/],
   // proveedoresSimuladorAislado: otro archivo de la app que lee la dirección de pruebas del modelo (sin la regla del entorno)
-  ['proveedoresSimuladorAislado', 'apps/web/lib/zzsim2.ts', 'import "server-only";\nexport const base = () => process.env.ANTHROPIC_API_BASE ?? "";\n', /lee la dirección de pruebas/],
+  ['proveedoresSimuladorAislado', 'apps/web/lib/zzsim2.ts', 'import "server-only";\nexport const base = () => process.env.ANTHROPIC_API_BASE ?? "";\n', /lee ANTHROPIC_API_BASE/],
+  // 23 nov (2) · otro archivo que lee una de las viejas (aunque sea por la regla); otra copia de la regla
+  ['proveedoresSimuladorAislado', 'apps/web/lib/zzsim3.ts', 'import "server-only";\nimport { origenDePruebas } from "./origen-pruebas";\nexport const t = () => origenDePruebas(process.env.TELNYX_API_BASE)?.origin ?? "";\n', /lee TELNYX_API_BASE/],
+  ['proveedoresSimuladorAislado', 'apps/web/lib/zzsim4.ts', 'import "server-only";\nexport function origenDePruebas(v: string | undefined): URL | null { return v ? new URL(v) : null; }\n', /otra copia de origenDePruebas/],
   // llaveProveedorUnSoloLector: desestructurar de process.env; un alias de process.env; abrir las llaves fuera del lector
   ['llaveProveedorUnSoloLector', 'apps/web/lib/zzllaves1.ts', 'import "server-only";\nconst { TELNYX_API_KEY } = process.env;\nexport const x = TELNYX_API_KEY ?? "";\n', /desestructura/],
   ['llaveProveedorUnSoloLector', 'apps/web/lib/zzllaves2.ts', 'import "server-only";\nconst e = process.env;\nexport const y = () => e.SES_SECRET_ACCESS_KEY ?? "";\n', /alias de process\.env/],

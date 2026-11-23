@@ -66,7 +66,7 @@ async function periodo(c: PoolClient | null, e: EvtPat, dur: DurE, desde: "hoy" 
     // Termina cuando termina el evento (b); se muestra el día del evento (una noche que pasa de la medianoche sigue siendo «hasta el evento»).
     return { a: r.a, b: e.fin, dia: sd, hasta: e.dia, precio: P.week * semanas, semanas };
   }
-  const f = await fechasPeriodo(c, e.ciudad, desde, dur);
+  const f = await fechasPeriodo(c, e.ciudad, desde, dur, { tabla: "event_sponsorships", negocio: e.negocio, evento: e.id });
   if (!f) return null;
   const h = (await q<{ hasta: string }>(`select (($1::timestamptz) at time zone $2)::date::text as hasta`, [f.b, e.tz])).rows[0]!;
   return { a: f.a, b: f.b, dia: f.dia, hasta: h.hasta, precio: dur === "week" ? P.week : P.month, semanas: null };
@@ -412,7 +412,7 @@ async function vencerUnoEvt(id: string): Promise<VencidoE | null> {
     const P = await preciosEvento();
     let motivo: Bi | null = null;
     if (!mandada && (!e || !vivoEvt(e) || (e.dia && e.dia < s.fin))) motivo = { es: "el evento ya pasó", en: "the event is over" };
-    const f = motivo || s.duration === "until_event" ? null : (await fechasPeriodo(c, s.city_id, s.fin, s.duration))!;
+    const f = motivo || s.duration === "until_event" ? null : (await fechasPeriodo(c, s.city_id, s.fin, s.duration, { tabla: "event_sponsorships", negocio: s.business_id, evento: s.event_id }))!;
     if (f && !mandada && (await c.query<{ n: number }>(`select patrocinio_evt_a_la_vez($1, $2::timestamptz, $3::timestamptz, $4::bigint) as n`, [s.city_id, f.a, f.b, id])).rows[0]!.n >= P.puestos) motivo = { es: "no quedaba puesto", en: "there was no slot left" };
     const tarjeta = motivo ? null : mandada ? { pm: camino!.pm } : s.card_pm ? await tarjetaDe(s.payer_user_id, s.card_pm) : null;
     if (!motivo && !tarjeta) motivo = { es: "la tarjeta ya no está guardada", en: "the card is no longer saved" };

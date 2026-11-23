@@ -28,6 +28,8 @@ function cargarReal(rel, reales = []) {
     // El lector de llaves de la app (lib/llaves-proveedores.ts) lee el entorno y, si no, el llavero de la base. La batería corre sin base: su doble lee
     // SOLO el entorno (un doble mudo diría que hay llave siempre y el corredor llamaría al modelo real sin ella).
     if (base === "apps/web/lib/llaves-proveedores") { stubs[`${base}.ts`] = DOBLE_LLAVES; continue; }
+    // 23 nov · LA regla de las direcciones de simulador (lib/origen-pruebas.ts, sin importaciones) va REAL: un doble mudo diría que hay dirección siempre.
+    if (base === "apps/web/lib/origen-pruebas") continue;
     stubs[`${base}.ts`] = mudo(); stubs[`${base}.tsx`] = mudo();
   }
   return TS.cargarApp(rel, stubs);

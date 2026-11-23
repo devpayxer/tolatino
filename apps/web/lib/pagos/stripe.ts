@@ -1,11 +1,18 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { llave } from "../llaves-proveedores";
+import { origenDePruebas } from "../origen-pruebas";
 
 /* Cliente de la API de Stripe, sin SDK: pocas llamadas, todas con versión fija, clave idempotente en lo que mueve dinero
    y errores traducidos. La clave la da lib/llaves-proveedores.ts (el entorno o el llavero; STRIPE_SECRET_KEY); STRIPE_API_BASE permite
    apuntar a stripe-mock en las pruebas de contrato. Nunca se registra la clave ni el cuerpo de una tarjeta. */
 const VERSION = "2024-06-20";
+/* 23 nov · A dónde van las llamadas: en producción, siempre api.stripe.com / files.stripe.com por https. STRIPE_API_BASE y STRIPE_FILES_BASE (el
+   simulador de «Probar» de servir.sh, stripe-mock del contrato) cambian SOLO el origen y solo pasan por LA regla de lib/origen-pruebas.ts
+   (TOLATINO_ENTORNO=pruebas y una dirección local, sin ruta): en producción no tienen efecto aunque alguien las ponga, y los cobros con la llave real
+   no pueden salir a otra dirección. Guardián proveedoresSimuladorAislado. */
+const API = () => origenDePruebas(process.env.STRIPE_API_BASE)?.origin ?? "https://api.stripe.com";
+const API_ARCHIVOS = () => (origenDePruebas(process.env.STRIPE_FILES_BASE) ?? origenDePruebas(process.env.STRIPE_API_BASE))?.origin ?? "https://files.stripe.com";
 export class ErrorStripe extends Error {
   /* 9k · `intento`: el PaymentIntent que Stripe devuelve con el error (fuera de sesión, «authentication_required»: hay que traer al dueño a confirmarlo). */
   constructor(public tipo: string, public codigo: string | null, public rechazo: string | null, mensaje: string, public estado: number, public intento: { id: string; client_secret?: string; status?: string } | null = null) { super(mensaje); }
@@ -28,7 +35,7 @@ export function formulario(p: Params, prefijo = ""): string[] {
 export async function stripe<T>(metodo: "GET" | "POST", ruta: string, p?: Params, o: { idem?: string; cuenta?: string } = {}): Promise<T> {
   const key = await llave("STRIPE_SECRET_KEY");
   if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);
-  const base = (process.env.STRIPE_API_BASE || "https://api.stripe.com").replace(/\/$/, "");
+  const base = API();
   const cuerpo = p ? formulario(p).join("&") : "";
   const url = metodo === "GET" && cuerpo ? `${base}${ruta}?${cuerpo}` : `${base}${ruta}`;
   const h: Record<string, string> = { authorization: `Bearer ${key}`, "stripe-version": VERSION, "content-type": "application/x-www-form-urlencoded" };
@@ -51,7 +58,7 @@ export async function stripe<T>(metodo: "GET" | "POST", ruta: string, p?: Params
 export async function stripeArchivo(x: { cuerpo: Buffer; nombre: string; tipo: string; idem: string }): Promise<{ id: string }> {
   const key = await llave("STRIPE_SECRET_KEY");
   if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);
-  const base = (process.env.STRIPE_FILES_BASE || process.env.STRIPE_API_BASE || "https://files.stripe.com").replace(/\/$/, "");
+  const base = API_ARCHIVOS();
   const f = new FormData();
   f.append("purpose", "dispute_evidence");
   f.append("file", new Blob([new Uint8Array(x.cuerpo)], { type: x.tipo }), x.nombre);
@@ -68,7 +75,7 @@ export async function stripeArchivo(x: { cuerpo: Buffer; nombre: string; tipo: s
 export async function probarStripe(): Promise<{ ok: boolean; resultado: string }> {
   const key = await llave("STRIPE_SECRET_KEY");
   if (!key) return { ok: false, resultado: "falta" };
-  const base = (process.env.STRIPE_API_BASE || "https://api.stripe.com").replace(/\/$/, "");
+  const base = API();
   try {
     const r = await fetch(`${base}/v1/balance`, { headers: { authorization: `Bearer ${key}`, "stripe-version": VERSION }, signal: AbortSignal.timeout(8000) });
     return r.ok ? { ok: true, resultado: "sirve" } : { ok: false, resultado: r.status === 401 ? "rechazada" : r.status === 403 ? "sin_permiso" : `http_${r.status}` };

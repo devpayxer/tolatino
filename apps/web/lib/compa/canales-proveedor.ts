@@ -1,6 +1,7 @@
 import "server-only";
 import { createHmac, createPublicKey, timingSafeEqual, verify } from "node:crypto";
 import { llave as llaveDe, llaveYa } from "../llaves-proveedores";
+import { origenDePruebas } from "../origen-pruebas";
 
 /* 7h · Los proveedores de WhatsApp y SMS de El Compa (fase7-compa.md §3 «Canales WhatsApp y SMS»; guardián canalConFirma). El ÚNICO archivo de
    El Compa que habla con Telnyx (SMS) o con Meta (WhatsApp Cloud API) y lee sus secretos del entorno. Todo lo demás (identidad, turno, bajas,
@@ -147,8 +148,11 @@ export function hayLlaves(p: Proveedor): boolean {
   return p === "telnyx" ? !!(llaveYa("TELNYX_API_KEY") && process.env.TOLATINO_SMS_MODO === "telnyx") : !!llaveYa("WHATSAPP_TOKEN");
 }
 
-const API_TELNYX = () => (process.env.TELNYX_API_BASE || "https://api.telnyx.com").replace(/\/$/, "");
-const API_META = () => (process.env.WHATSAPP_API_BASE || "https://graph.facebook.com").replace(/\/$/, "");
+/* 23 nov · TELNYX_API_BASE y WHATSAPP_API_BASE (el simulador de «Probar», el servidor del contrato) cambian SOLO el origen y solo por LA regla de
+   lib/origen-pruebas.ts (TOLATINO_ENTORNO=pruebas y una dirección local, sin ruta): en producción los SMS y WhatsApp, con la llave real en la cabecera,
+   van siempre al proveedor. Guardián proveedoresSimuladorAislado. */
+const API_TELNYX = () => origenDePruebas(process.env.TELNYX_API_BASE)?.origin ?? "https://api.telnyx.com";
+const API_META = () => origenDePruebas(process.env.WHATSAPP_API_BASE)?.origin ?? "https://graph.facebook.com";
 const VERSION_META = "v23.0";
 export type Envio = { ok: true; id: string | null } | { ok: false; error: string };
 

@@ -9,6 +9,7 @@ import { COLUMNAS, CTE, DESDE, FOTOS, condiciones, conFotos, type ConFotosJ, typ
 import type { Punto } from "./punto";
 import type { Tarjeta } from "./tarjeta";
 import { llave } from "./llaves-proveedores";
+import { finDePeriodo } from "./periodo-pro";
 
 /* C-002 · Patrocinados (canvas tolatino-master+, entrega/cambios.md C-002; migración 0173). Una sola caja para comprar un patrocinio, que usan
    los negocios (aquí) y los eventos (lib/patrocinio-evento.ts, C-003):
@@ -39,16 +40,43 @@ export const CLAVE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 /* ── Lo común (negocios y eventos) ── */
 
 /* Las fechas de un período en la zona de la ciudad: hoy = desde ahora; otra fecha = desde la medianoche de ese día. Termina a la medianoche del día
-   que cumple (7 días o 1 mes). «hasta el evento» lo arma lib/patrocinio-evento.ts. */
-export async function fechasPeriodo(c: PoolClient | null, ciudad: string, desde: "hoy" | string, dur: "week" | "month"): Promise<{ a: string; b: string; tz: string; dia: string } | null> {
+   que cumple. «hasta el evento» lo arma lib/patrocinio-evento.ts.
+   - 1 semana: 7 días de calendario (de medianoche a medianoche de la ciudad; con el cambio de horario son 167 o 169 horas, la misma hora de pared).
+   - 1 mes (23 nov): LA regla del período de Pro (lib/periodo-pro.ts, finDePeriodo): termina el mismo día del mes siguiente; si ese mes no lo tiene, su
+     último día; el día que manda es el del ANCLA, el día en que empezó el primer mes de esta cadena. Antes se sumaba interval '1 month' al día
+     anterior y el día se corría para siempre: 31 ene → 28 feb → 28 mar → 28 abr; ahora 31 ene → 28 feb → 31 mar → 30 abr → 31 may.
+     La CADENA de un mes que empieza otro día (no «hoy»): el patrocinio mensual del mismo negocio (en la misma categoría, o del mismo evento) que termina
+     ese día, sin cancelar ni terminar antes (vivo, o terminado al vencer), y así hacia atrás; el ancla es el día en que empezó el primero. Así lo ven
+     igual la renovación sola, «Renovar otro mes» y la pantalla que muestra las fechas antes de pagar. Lo ya comprado no se recalcula: si el inicio no
+     cuadra con el ancla (una cadena que ya venía corrida de antes del 23 nov), manda el inicio (finDePeriodo). */
+export type Cadena = { tabla: "sponsorships"; negocio: string; categoria: string } | { tabla: "event_sponsorships"; negocio: string; evento: string };
+const MESES_CADENA = 240;
+export async function fechasPeriodo(c: PoolClient | null, ciudad: string, desde: "hoy" | string, dur: "week" | "month", cadena: Cadena | null = null): Promise<{ a: string; b: string; tz: string; dia: string } | null> {
   const q = (c ?? db()).query.bind(c ?? db()) as PoolClient["query"];
-  const r = (await q<{ a: string; b: string; tz: string; dia: string; hoy: string }>(
+  const r = (await q<{ a: string; b: string | null; tz: string; dia: string; hoy: string; m0: number }>(
     `with z as (select timezone as tz, (now() at time zone timezone)::date as hoy from cities where id = $1),
           d as (select tz, hoy, case when $2::text = 'hoy' then hoy else $2::date end as dia from z)
      select to_char((case when $2::text = 'hoy' then now() else (dia::timestamp at time zone tz) end) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as a,
-            to_char((((dia + case when $3 = 'week' then interval '7 days' else interval '1 month' end)::date)::timestamp at time zone tz) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as b,
+            case when $3 = 'week' then to_char((((dia + 7)::timestamp) at time zone tz) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') end as b,
+            (extract(epoch from (dia::timestamp at time zone tz)) * 1000)::float8 as m0,
             tz, dia::text as dia, hoy::text as hoy from d`, [ciudad, desde === "hoy" ? "hoy" : desde, dur])).rows[0];
-  return r ?? null;
+  if (!r) return null;
+  if (dur === "week") return { a: r.a, b: r.b!, tz: r.tz, dia: r.dia };
+  let ancla: number | null = null;
+  if (cadena && desde !== "hoy") {
+    const ev = cadena.tabla === "event_sponsorships", T = ev ? "event_sponsorships" : "sponsorships", K = ev ? "event_id = $2::bigint" : "category_id = $2";
+    const vale = (x: string) => `${x}.duration = 'month' and (${x}.status in ('activo', 'reservado') or (${x}.status = 'terminado' and ${x}.end_kind = 'vencio'))`;
+    ancla = (await q<{ ancla: number | null }>(
+      `with recursive r(ini, n) as (
+         select s.starts_at, 1 from ${T} s where s.business_id = $1 and s.${K} and ${vale("s")} and (s.ends_at at time zone $3)::date = $4::date
+         union all
+         select p.starts_at, r.n + 1 from r join ${T} p on p.business_id = $1 and p.${K} and ${vale("p")}
+            and (p.ends_at at time zone $3)::date = (r.ini at time zone $3)::date and p.starts_at < r.ini
+         where r.n < ${MESES_CADENA})
+       select (extract(epoch from (((min(ini) at time zone $3)::date)::timestamp at time zone $3)) * 1000)::float8 as ancla from r`,
+      [cadena.negocio, ev ? cadena.evento : cadena.categoria, r.tz, r.dia])).rows[0]?.ancla ?? null;
+  }
+  return { a: r.a, b: new Date(finDePeriodo(Number(r.m0), "month", r.tz, ancla)).toISOString(), tz: r.tz, dia: r.dia };
 }
 
 /* La tarjeta guardada de quien paga (solo las suyas, vivas). */
@@ -391,7 +419,7 @@ export async function consultarPuestos(negocio: string, dur: "week" | "month", d
   const P = await preciosNegocio();
   const d = (await db().query<{ hoy: string; max: string }>(`select (now() at time zone $1)::date::text as hoy, ((now() at time zone $1)::date + $2::int)::text as max`, [n.tz, P.diasAdelante])).rows[0]!;
   if (desde !== "hoy" && (desde < d.hoy || desde > d.max)) return null;
-  const f = await fechasPeriodo(null, n.city_id, desde === d.hoy ? "hoy" : desde, dur);
+  const f = await fechasPeriodo(null, n.city_id, desde === d.hoy ? "hoy" : desde, dur, { tabla: "sponsorships", negocio, categoria: n.category_id });
   if (!f) return null;
   const l = await puestosLibres(n.city_id, n.category_id, f.a, f.b, P.puestos, dur);
   const fin = (await db().query<{ hasta: string; libre: string | null }>(`select ($1::timestamptz at time zone $2)::date::text as hasta, ($3::timestamptz at time zone $2)::date::text as libre`, [f.b, n.tz, l.libre])).rows[0]!;
@@ -426,7 +454,7 @@ export async function comprarPatrocinio(negocio: string, quien: string, x: Compr
     if (!v) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
     desde = v.dia; renovarDe = String(x.renovarDe);
   }
-  const f = await fechasPeriodo(null, n.city_id, desde, x.dur);
+  const f = await fechasPeriodo(null, n.city_id, desde, x.dur, { tabla: "sponsorships", negocio, categoria: n.category_id });
   if (!f) return no("Vuelve a intentarlo.", "Try again.");
   const hoy = (await db().query<{ hoy: string; max: string }>(`select (now() at time zone $1)::date::text as hoy, ((now() at time zone $1)::date + $2::int)::text as max`, [n.tz, P.diasAdelante])).rows[0]!;
   if (f.dia < hoy.hoy) return no("Elige hoy o un día que viene.", "Choose today or an upcoming day.");
@@ -686,7 +714,7 @@ async function vencerUno(id: string): Promise<Vencido | null> {
       }
     }
     await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`pat:${s.city_id}:${s.category_id}`]);
-    const P = await preciosNegocio(), f = (await fechasPeriodo(c, s.city_id, s.fin, s.duration))!;
+    const P = await preciosNegocio(), f = (await fechasPeriodo(c, s.city_id, s.fin, s.duration, { tabla: "sponsorships", negocio: s.business_id, categoria: s.category_id }))!;
     const vivos = (await c.query<{ n: number }>(`select patrocinio_a_la_vez($1, $2, $3::timestamptz, $4::timestamptz, $5::bigint) as n`, [s.city_id, s.category_id, f.a, f.b, id])).rows[0]!.n;
     const tarjeta = mandada ? { pm: camino!.pm } : s.card_pm ? await tarjetaDe(s.payer_user_id, s.card_pm) : null;
     let motivo: Bi | null = null;
