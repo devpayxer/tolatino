@@ -312,7 +312,7 @@ let OP = null;
     terminarVivos('NEG-FOOD');
     ok(hoyCiudad() > '2026-05-31', `las fechas fijas de esta parte ya pasaron (hoy en la ciudad: ${hoyCiudad()})`);
     ponerCfg('patrocinio_puestos', 2);
-    const MES = Number(sql(`select value::text from platform_config where key = 'patrocinio_mes_cents'`));
+    const MES = Number(sql(`select cfg_int('patrocinio_mes_cents')`));
     const NY = (d) => `'${d} 00:00 America/New_York'::timestamptz`;
     const insM = (biz, st, a, z) => sql(`with x as (insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, ended_at, end_kind)
       values ('${biz}', 'NEG-FOOD', 'hzl', ${a}, ${z}, 'month', '${st}', ${MES}, '${D0}', '${PM}', ${st === 'activo'}, ${st === 'terminado' ? 'now()' : 'null'}, ${st === 'terminado' ? "'vencio'" : 'null'}) returning id) select id from x`);
@@ -322,7 +322,8 @@ let OP = null;
     const M1 = insM(BIZ, 'activo', NY('2026-01-31'), NY('2026-02-28'));
     insM(F[1], 'terminado', NY('2026-01-31'), NY('2026-02-28'));
     const V2 = insM(F[1], 'activo', NY('2026-02-28'), NY('2026-03-28'));
-    await barrer();
+    // Un barrido renueva una generación (lo vencido al empezar): tres pasadas = dos renovaciones y la tercera sin puesto.
+    for (let i = 0; i < 3; i++) await barrer();
     const per = (id) => sql(`select to_char(starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || ' → ' || to_char(ends_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') from sponsorships where id = ${id}`);
     const sig = (id) => sql(`select coalesce((select id::text from sponsorships where renewed_from = ${id}), '')`);
     const M2 = sig(M1), M3 = M2 && sig(M2);
