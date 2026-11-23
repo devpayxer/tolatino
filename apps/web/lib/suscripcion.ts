@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import { db, tx, type AlGuardar } from "./db";
 import { pasarela } from "./pagos/pasarela";
 import { PRECIO_PRO } from "./plan";
+import { finDePeriodo } from "./periodo-pro";
 
 /* Plan Pro de un negocio (prototipo pro-trial.js · «Prueba Pro y día 30»). El servidor decide y escribe el derivado
    business_stats_cache.plan; la ficha y el panel solo lo leen.
@@ -228,27 +229,42 @@ async function alertaCobroViejo(negocio: string, a: Intencion, doble = false) {
     es: `Cobro de Pro de ${money(a.monto)} sin respuesta de Stripe en ${HORAS_LLAVE} h (${a.n} intentos, ${a.err ?? "sin motivo"}): no se cobra otra vez. Mira en Stripe si se cobró.`,
     en: `Pro charge of ${money(a.monto)} with no answer from Stripe in ${HORAS_LLAVE} h (${a.n} attempts, ${a.err ?? "no reason"}): it is not charged again. Check in Stripe whether it was charged.` } }).catch(() => undefined);
 }
+/* 23 nov · El fin del período que empieza en `desde`, con LA regla de lib/periodo-pro.ts (el mismo día del mes siguiente; si ese mes no lo tiene,
+   su último día; el día del ANCLA, en la zona de la ciudad). Antes: Date#setMonth en la hora del proceso (31 ene → 3 mar, y la fecha corrida para
+   siempre). El ancla es el inicio del primer período pagado de esta racha de Pro, sacado de lo que ya guarda la base (sin columna nueva): el cobro
+   hecho (subscription_charges 'done') de inicio más antiguo entre los creados después del último paso a Free (subscriptions.ended_at). Si no hay
+   ninguno, este período es el primero (fin de la prueba o «Volver a Pro») y es su propia ancla. Guardián periodoProSinDesborde. */
+async function finDelPeriodo(c: PoolClient, negocio: string, desde: number, ciclo: string): Promise<string> {
+  const r = (await c.query<{ tz: string; ancla: number | null }>(
+    `select coalesce((select ci.timezone from businesses b join cities ci on ci.id = b.city_id where b.id = $1), 'America/New_York') as tz,
+            (select (extract(epoch from min(z.period_start)) * 1000)::float8 from subscription_charges z
+              where z.business_id = $1 and z.status = 'done' and z.period_start <= $2::timestamptz
+                and z.created_at > coalesce((select s.ended_at from subscriptions s where s.business_id = $1), '-infinity'::timestamptz)) as ancla`,
+    [negocio, new Date(desde).toISOString()])).rows[0];
+  return new Date(finDePeriodo(desde, ciclo === "year" ? "year" : "month", r?.tz || "America/New_York", r?.ancla ?? null)).toISOString();
+}
 /* El período cobrado (paso 3): la intención 'done' (una vez: quien llegue segundo, otra pestaña o el barrido, no aplica ni avisa nada), Pro activo
    hasta la fecha y el evento, en UNA transacción; después el aviso y el recibo.
    21 nov (9t2) · Con el estado que se leyó en el `where` (y mirando rowCount): «Volver a Pro» va fuera del candado del plan, y una cortesía, «Anular»
    u otro cambio hecho en ese segundo no se pisa. Si cambió, el cobro (que ya salió) queda en el historial con el estado que encontró y el equipo de
    dinero recibe la alerta para decidir si se devuelve; al dueño no se le dice «cobrado» ni se le manda recibo de un período que no se aplicó. */
 async function registrarPeriodo(s: Fila, a: Intencion, pi: string) {
-  const hasta = new Date(a.desde); hasta.setMonth(hasta.getMonth() + (a.cycle === "year" ? 12 : 1));
+  let hasta = "";
   const h = await tx(async (c) => {
     if (!(await c.query(`update subscription_charges set status = 'done', stripe_pi = $2, last_error = null where id = $1::bigint and status = 'pending'`, [a.id, pi])).rowCount) return null;
+    hasta = await finDelPeriodo(c, s.business_id, a.desde, a.cycle);
     // 9t5 · El cobro que encontró la consulta a la pasarela: la auditoría lo dice (origen «consulta a la pasarela»), en esta transacción.
     if ((await c.query(`select 1 from gateway_checks where subject_kind = 'subscription_charges' and subject_id = $1::bigint and result = 'hecho' and stripe_id = $2 limit 1`, [a.id, pi])).rowCount)
       await (await import("./consulta-pasarela")).auditarCierre(c, "subscription_charges", a.id, null, { estado: "hecho", pi, negocio: s.business_id });
     const u = await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1 and status = $3`,
-      [s.business_id, hasta.toISOString(), s.status]);
+      [s.business_id, hasta, s.status]);
     if (!u.rowCount) {
       const ahora = (await c.query<{ st: string | null }>(`select status as st from subscriptions where business_id = $1`, [s.business_id])).rows[0]?.st ?? "sin plan";
-      await evento(s.business_id, "charged", { monto: a.monto, note: { pi, hasta: hasta.toISOString(), no_aplicado: ahora, esperaba: s.status }, idem: a.idem }, c);
+      await evento(s.business_id, "charged", { monto: a.monto, note: { pi, hasta, no_aplicado: ahora, esperaba: s.status }, idem: a.idem }, c);
       return { aplicado: false, ahora };
     }
     await plan(c, s.business_id, "pro");
-    await evento(s.business_id, "charged", { monto: a.monto, note: { pi, hasta: hasta.toISOString() }, idem: a.idem }, c);
+    await evento(s.business_id, "charged", { monto: a.monto, note: { pi, hasta }, idem: a.idem }, c);
     // «Volver a Pro» desde Free: la vuelta queda en el historial con el cobro (la cierre la acción o el barrido).
     if (s.status === "ended") await evento(s.business_id, "back_to_pro", { actor: a.payer }, c);
     return { aplicado: true, ahora: "active" };
@@ -263,7 +279,7 @@ async function registrarPeriodo(s: Fila, a: Intencion, pi: string) {
   }
   const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [a.pm])).rows[0];
   await avisarDueño(s.business_id, "pro_charged", { monto: money(a.monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
-  await (await import("./correo/recibos")).reciboPro(s.business_id, a.payer, a.monto, hasta.toISOString(), t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", a.idem); // 2q
+  await (await import("./correo/recibos")).reciboPro(s.business_id, a.payer, a.monto, hasta, t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", a.idem); // 2q
 }
 /* Barrido: los cobros de Pro que quedaron en camino (Stripe no contestó, o el proceso murió entre la intención y el cierre; también los de «Volver a
    Pro», que procesar no mira) se terminan con su llave, con el candado del plan, dentro de HORAS_LLAVE; los más viejos, la alerta (una vez). */
@@ -344,19 +360,19 @@ export async function completarRenovacion(negocio: string, pi: string, candado =
     if (s.status === "ended" && !a.desde_free) return null;
     const vuelve = s.status === "ended" && a.desde_free;
     const desde = vuelve ? Date.parse(a.creada) : Date.parse(s.current_period_end ?? s.trial_ends_at ?? new Date().toISOString());
-    const hasta = new Date(desde); hasta.setMonth(hasta.getMonth() + (s.cycle === "year" ? 12 : 1));
+    const hasta = await finDelPeriodo(c, negocio, desde, s.cycle);
     // La llave del cobro es la del evento: si ya se anotó, no se anota ni se avisa otra vez.
     const ev = await c.query(`insert into subscription_events (business_id, kind, amount_cents, note, actor_id, idem_key) values ($1, 'charged', $2, $3::jsonb, null, $4) on conflict (idem_key) do nothing`,
-      [negocio, a.monto, JSON.stringify({ pi, hasta: hasta.toISOString(), verificado: true }), a.idem]);
+      [negocio, a.monto, JSON.stringify({ pi, hasta, verificado: true }), a.idem]);
     if (!ev.rowCount) return null;
     // 9t3 · La intención de ese cobro (esperaba al banco) queda hecha en la misma transacción (salvo que el período ya tenga otro cobro hecho).
     await c.query(`update subscription_charges z set status = 'done', stripe_pi = coalesce(z.stripe_pi, $2::text) where z.idem_key = $1 and z.status in ('action', 'pending')
                      and not exists (select 1 from subscription_charges y where y.business_id = z.business_id and y.period_start = z.period_start and y.status = 'done')`, [a.idem, pi]);
     await c.query(`update subscriptions set status = 'active', current_period_end = $2, failed_attempts = 0, next_attempt_at = null, trial_choice = case when status = 'trial' then 'card' else trial_choice end, updated_at = now() where business_id = $1`,
-      [negocio, hasta.toISOString()]);
+      [negocio, hasta]);
     await plan(c, negocio, "pro");
     if (s.status === "ended" && a.desde_free) await c.query(`insert into subscription_events (business_id, kind, actor_id, note) values ($1, 'back_to_pro', $2, '{"verificado":true}'::jsonb)`, [negocio, s.payer_user_id]);
-    return { monto: a.monto, hasta: hasta.toISOString(), pm: s.card_pm, payer: s.payer_user_id, idem: a.idem };
+    return { monto: a.monto, hasta, pm: s.card_pm, payer: s.payer_user_id, idem: a.idem };
   });
   if (!hecho) return;
   const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [hecho.pm])).rows[0];
