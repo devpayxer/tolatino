@@ -3,9 +3,11 @@
 // solo la huella vuelve (HTML, RSC, respuestas, auditoría, base cifrada), el LECTOR la entrega a una pantalla de cobro (la llave pública de Stripe en
 // el pago de un viaje) sin una consulta por petición, rotar (la nueva se usa al instante; la anterior, retirada), «Probar» (anotado con la huella,
 // nunca el valor), retirar (deja de usarse), Salud dice de dónde viene cada una, y cualquier otro rol → 403. Teléfono 390 y escritorio 1360.
-// 23 nov (§11) · «Probar» contra su contraparte (scripts/proveedores-sim: Stripe, Telnyx y Meta; el servidor las llama por STRIPE_API_BASE, TELNYX_API_BASE y
-// WHATSAPP_API_BASE de servir.sh): la llave buena SIRVE, la mala es RECHAZADA, el simulador vio la llamada firmada con ESA llave (huellas, nunca el valor),
-// Salud dice «probada» / «la prueba falló» y «Lo que te toca» sigue pendiente (este entorno usa el simulador). SES y Anthropic no tienen contraparte (LAUNCH).
+// 23 nov (§11) · «Probar» contra su contraparte (scripts/proveedores-sim: Stripe, Telnyx, Meta, SES y el modelo; el servidor las llama por STRIPE_API_BASE,
+// TELNYX_API_BASE, WHATSAPP_API_BASE, SES_API_BASE y ANTHROPIC_API_BASE de servir.sh): la llave buena SIRVE, la mala es RECHAZADA, el simulador vio la llamada
+// firmada con ESA llave (huellas, nunca el valor; en SES el simulador RECALCULA la firma SigV4 con la llave secreta esperada), Salud dice «probada» / «la prueba
+// falló» y «Lo que te toca» sigue pendiente (este entorno usa el simulador). En SES el par se prueba junto: «Probar» en una anota las dos, cada una con SU huella,
+// y una llave secreta que no es la del ID = «rechazada» (la firma no cuadra).
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const crypto = require('crypto');
 const S = ENT.S, OUT = S + '/cap/', B = ENT.B;
@@ -32,7 +34,7 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
   limpiar();
   process.on('exit', () => { try { limpiar(); } catch { /* sin base */ } });
   // Las contrapartes de «Probar» (el servidor las llama por las tres direcciones de servir.sh). Sin llaves aceptadas: todo lo que llegue es 401.
-  const SIM = await SIMPROV.iniciar({ stripe: ENT.P.provStripe, telnyx: ENT.P.provTelnyx, meta: ENT.P.provMeta });
+  const SIM = await SIMPROV.iniciar({ stripe: ENT.P.provStripe, telnyx: ENT.P.provTelnyx, meta: ENT.P.provMeta, ses: ENT.P.provSes, anthropic: ENT.P.provAnthropic });
   const SVC = sql(`select id from items where business_id = '${V}' and name->>'es' = 'Hazleton → Washington Heights' and removed_at is null order by id limit 1`);
   ok(/^\d+$/.test(SVC), `el viaje de ${V} para ver la llave pública en el pago (${SVC})`);
   const br = await chromium.launch(), errs = [];
@@ -179,7 +181,7 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
     const r = await pa.evaluate(async ([tipo, codigo, motivo, valor]) => { const f = new FormData(); f.set('tipo', tipo); f.set('codigo', codigo); f.set('motivo', motivo); f.set('valor', valor); return (await fetch('/api/admin/llavero', { method: 'POST', body: f })).json(); }, [tipo, c.codigoPrueba, motivo, valor]);
     ok(r.ok === true && r.huella === sha(valor), `${tipo}: guardada, la huella que vuelve es la de lo pegado`);
   };
-  const ORDEN = ['telnyx_api_key', 'stripe_secret_key', 'whatsapp_token', 'whatsapp_waba_id']; // las filas con «Probar», en el orden de la pantalla
+  const ORDEN = ['telnyx_api_key', 'stripe_secret_key', 'ses_access_key_id', 'ses_secret_access_key', 'whatsapp_token', 'whatsapp_waba_id', 'anthropic_api_key']; // las filas con «Probar», en el orden de la pantalla
   const probarUI = async (pg, tipo, esperado) => {
     await pg.goto(B + '/admin/sistema/integraciones?tab=proveedores'); await pg.getByText(/STRIPE · COBROS CON TARJETA · \d DE 3/).waitFor({ timeout: 20000 });
     const vivas = sql(`select kind from store_secrets where retired_at is null`).split('\n');
@@ -195,8 +197,10 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
   const salud = async () => { await pa.goto(B + '/admin/sistema/salud'); await pa.getByText('PROVEEDORES · SUS LLAVES (SIN VALORES)').waitFor({ timeout: 20000 }); return texto(pa); };
   const ultima = (kind) => sql(`select fingerprint || '|' || source || '|' || ok::text || '|' || result from store_secret_checks where kind = '${kind}' order by id desc limit 1`).split('|');
   const claves = [];
-  const ciclo = async ({ prov, nombre, paso: pk, fila, tipos, clave, faltan, otra, tambien }) => {
-    const nK1 = tambien ? 2 : 1; // en WhatsApp la prueba pulsa «Probar» en el token y también en el ID de la cuenta: dos llamadas al simulador
+  // tambien / vTambien / nTambien: la compañera que se prueba con la misma llamada (el ID de la cuenta de WhatsApp; la llave secreta de SES), su valor y su nombre.
+  // rechazo: lo que contesta el proveedor a una llave que no conoce (401; SES, 403).
+  const ciclo = async ({ prov, nombre, paso: pk, fila, tipos, clave, faltan, otra, tambien, vTambien, nTambien, rechazo = 401 }) => {
+    const nK1 = tambien ? 2 : 1; // en WhatsApp y SES la prueba pulsa «Probar» en una y también en su compañera: dos llamadas al simulador
     const K1 = clave(), K2 = clave(), n0 = SIM.llamadas(prov).length;
     claves.push(K1, K2);
     let P = await paso(pk);
@@ -207,8 +211,8 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
     ok(/PENDIENTE/.test(P) && P.includes('Las llaves están; falta que «Probar» salga bien con la que se usa hoy.'), `${pk} con las llaves y sin probar: pendiente («falta que «Probar» salga bien»)`);
     await probarUI(pa, fila, SIRVE);
     // 23 nov · Las que se prueban juntas: UNA pulsación en el token anota también el ID de la cuenta, con su huella (antes «Lo que te toca» pedía dos).
-    if (tambien) ok(ultima(tambien).join('|') === `${sha(otra.waba)}|llavero|true|sirve`, `${nombre}: con una sola prueba queda anotado también el ID de la cuenta`);
-    if (tambien) { await probarUI(pa, tambien, SIRVE); ok(ultima(tambien).join('|') === `${sha(otra.waba)}|llavero|true|sirve`, `${nombre}: el ID de la cuenta también se prueba aparte y sirve`); }
+    if (tambien) ok(ultima(tambien).join('|') === `${sha(vTambien)}|llavero|true|sirve`, `${nombre}: con una sola prueba queda anotada también ${nTambien}, con SU huella`);
+    if (tambien) { await probarUI(pa, tambien, SIRVE); ok(ultima(tambien).join('|') === `${sha(vTambien)}|llavero|true|sirve` && ultima(fila).join('|') === `${sha(K1)}|llavero|true|sirve`, `${nombre}: ${nTambien} también se prueba aparte, sirve y anota a su compañera`); }
     await pa.screenshot({ path: `${OUT}q-${prov}-sirve-1360.png`, fullPage: true });
     ok(ultima(fila).join('|') === `${sha(K1)}|llavero|true|sirve`, `${nombre}: la pantalla dijo «La llave sirve» y quedó anotado: huella de la llave en uso, de dónde vino, sirvió, «sirve»`);
     ok(SIM.llamadas(prov, sha(K1)).length === nK1 && SIM.llamadas(prov, sha(K1)).every((x) => x.estado === 200) && SIM.llamadas(prov).length === n0 + nK1, `${nombre}: el simulador recibió ${nK1} llamada(s), firmadas con la llave pegada (misma huella), y contestó 200`);
@@ -224,8 +228,8 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
     await probarUI(pa, fila, RECHAZA);
     await pa.screenshot({ path: `${OUT}q-${prov}-rechazada-1360.png`, fullPage: true });
     ok(ultima(fila).join('|') === `${sha(K2)}|llavero|false|rechazada`, `${nombre}: la pantalla dijo «no aceptó la llave» y quedó anotado «rechazada» con la huella de la NUEVA`);
-    ok(SIM.llamadas(prov, sha(K2)).length === 1 && SIM.llamadas(prov, sha(K2))[0].estado === 401 && SIM.llamadas(prov, sha(K1)).length === nK1 && SIM.llamadas(prov).length === n0 + nK1 + 1, `${nombre}: el simulador vio la llamada con la llave NUEVA (401) y no volvió a ver la anterior`);
-    ok(sql(`select count(*) from audit_entries where action = 'llavero.probar' and at >= '${T0}' and after->>'huella' in ('${sha(K1).slice(0, 16)}', '${sha(K2).slice(0, 16)}')`) === (tambien ? '3' : '2'), `${nombre}: la auditoría tiene las pruebas de las dos llaves, con huella${tambien ? ' (la del ID de la cuenta anota también el token: 3)' : ''}`);
+    ok(SIM.llamadas(prov, sha(K2)).length === 1 && SIM.llamadas(prov, sha(K2))[0].estado === rechazo && SIM.llamadas(prov, sha(K1)).length === nK1 && SIM.llamadas(prov).length === n0 + nK1 + 1, `${nombre}: el simulador vio la llamada con la llave NUEVA (${rechazo}) y no volvió a ver la anterior`);
+    ok(sql(`select count(*) from audit_entries where action = 'llavero.probar' and at >= '${T0}' and after->>'huella' in ('${sha(K1).slice(0, 16)}', '${sha(K2).slice(0, 16)}')`) === (tambien ? '3' : '2'), `${nombre}: la auditoría tiene las pruebas de las dos llaves, con huella${tambien ? ` (la de ${nTambien} anota también la otra: 3)` : ''}`);
     S = await salud();
     ok(/la prueba falló \(rechazada\)/.test(S), `${nombre}: Salud dice «la prueba falló (rechazada)»`);
     P = await paso(pk);
@@ -240,12 +244,35 @@ const lecturasTabla = () => Number(sql(`select pg_stat_force_next_flush(); selec
   await ciclo({ prov: 'stripe', nombre: 'Stripe', paso: '9-1.1', fila: 'stripe_secret_key', tipos: [['stripe_publishable_key', 'pk_test_' + al(40)]], clave: () => 'sk_test_' + al(40), faltan: 'Faltan 2 de 3 llaves' });
   retirarTodo(['stripe_secret_key', 'stripe_publishable_key']);
   const WABA = String(100000000000000 + Math.floor(Math.random() * 899999999999999));
-  const META = await ciclo({ prov: 'meta', nombre: 'WhatsApp', paso: '9-1.3', fila: 'whatsapp_token', tipos: [['whatsapp_waba_id', WABA]], clave: () => 'EA' + al(60), faltan: 'Faltan 2 de 4 llaves', otra: { waba: WABA }, tambien: 'whatsapp_waba_id' });
+  const META = await ciclo({ prov: 'meta', nombre: 'WhatsApp', paso: '9-1.3', fila: 'whatsapp_token', tipos: [['whatsapp_waba_id', WABA]], clave: () => 'EA' + al(60), faltan: 'Faltan 2 de 4 llaves', otra: { waba: WABA }, tambien: 'whatsapp_waba_id', vTambien: WABA, nTambien: 'el ID de la cuenta' });
   // Meta: el token es bueno pero el ID de la cuenta no existe → el proveedor contesta 400 (código 100): «contestó con un error», no «rechazó la llave»
   SIM.aceptar('meta', META.K2); await pegarApi('whatsapp_waba_id', String(Number(WABA) + 1), 'ID de otra cuenta 9v');
   await probarUI(pa, 'whatsapp_token', 'El proveedor contestó con un error (HTTP 400).');
   ok(ultima('whatsapp_token')[3] === 'http_400' && ultima('whatsapp_token')[2] === 'false', 'WhatsApp: token bueno e ID que no existe → «http_400» (el proveedor contestó con un error), no «rechazada»');
   retirarTodo(['whatsapp_token', 'whatsapp_waba_id']);
+  // SES: el ID de la llave de acceso y su llave secreta. El simulador conoce el par (aceptar con el secreto) y RECALCULA la firma; el tema de SNS llega por el
+  // entorno del servidor de pruebas (servir.sh completo), así que faltan 2 de 3.
+  const SEC = al(40), sesId = () => 'AKIA' + al(16).toUpperCase();
+  claves.push(SEC);
+  const SESK = await ciclo({ prov: 'ses', nombre: 'SES', paso: '9-1.4', fila: 'ses_access_key_id', tipos: [['ses_secret_access_key', SEC]], clave: sesId, faltan: 'Faltan 2 de 3 llaves', otra: { secreto: SEC }, tambien: 'ses_secret_access_key', vTambien: SEC, nTambien: 'la llave secreta', rechazo: 403 });
+  // La firma: el ID nuevo (K2) ya existe para el simulador con SU secreto, que es el pegado → «sirve». Después se rota SOLO la llave secreta a otra: el ID sigue
+  // siendo uno que el proveedor conoce, pero la firma ya no cuadra → «rechazada» (SignatureDoesNotMatch). Se pulsa «Probar» en la llave secreta: quedan
+  // anotadas las dos, cada una con SU huella.
+  SIM.aceptar('ses', SESK.K2, { secreto: SEC });
+  await probarUI(pa, 'ses_access_key_id', SIRVE);
+  ok(ultima('ses_access_key_id').join('|') === `${sha(SESK.K2)}|llavero|true|sirve` && ultima('ses_secret_access_key').join('|') === `${sha(SEC)}|llavero|true|sirve` && SIM.llamadas('ses', sha(SESK.K2)).at(-1).estado === 200,
+    'SES: el ID nuevo con su llave secreta → «sirve» (el simulador recalculó la firma: 200); anotadas las dos con su huella');
+  const SEC2 = al(40); claves.push(SEC2);
+  await pegarApi('ses_secret_access_key', SEC2, 'Rotación de la llave secreta de SES de prueba 9v');
+  const nS = SIM.llamadas('ses', sha(SESK.K2)).length;
+  await probarUI(pa, 'ses_secret_access_key', RECHAZA);
+  await pa.screenshot({ path: `${OUT}q-ses-firma-1360.png`, fullPage: true });
+  ok(ultima('ses_secret_access_key').join('|') === `${sha(SEC2)}|llavero|false|rechazada` && ultima('ses_access_key_id').join('|') === `${sha(SESK.K2)}|llavero|false|rechazada`, 'SES: otra llave secreta para el mismo ID → «rechazada»; «Probar» en la secreta anotó también el ID, cada una con SU huella');
+  ok(SIM.llamadas('ses', sha(SESK.K2)).length === nS + 1 && SIM.llamadas('ses', sha(SESK.K2)).at(-1).estado === 403, 'SES: el simulador vio ESE ID con una firma que no cuadra (403)');
+  retirarTodo(['ses_access_key_id', 'ses_secret_access_key']);
+  // El modelo: GET /v1/models con la cabecera de la llave; la llave mala → 401.
+  await ciclo({ prov: 'anthropic', nombre: 'Anthropic', paso: '9-1.5', fila: 'anthropic_api_key', tipos: [], clave: () => 'sk-' + 'ant-' + al(48), faltan: 'Faltan 1 de 1 llaves' });
+  retirarTodo(['anthropic_api_key']);
 
   console.log('   · Nada se escapó: ni una llave de la sección en la pantalla, las respuestas, el registro del servidor ni lo que anotó el simulador');
   const todas = [...claves, TK, WABA];

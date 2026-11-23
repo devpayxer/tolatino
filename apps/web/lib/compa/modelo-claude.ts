@@ -14,6 +14,20 @@ import { bloques, ErrorModelo, ESQUEMA, type Entrada, type Modelo, type Salida, 
    - La clave nunca se escribe en un registro ni en un error: los errores dicen solo el estado HTTP y el tipo. */
 const URL_API = "https://api.anthropic.com/v1/messages";
 const VERSION_API = "2026-10-21";
+/* 23 nov · ANTHROPIC_API_BASE (la dirección del simulador de las pruebas, que pasa pruebas/servir/servir.sh) cambia SOLO el
+   origen (esquema, servidor y puerto) de TODAS las llamadas de este archivo (mensajes y modelos), nunca la ruta ni las cabeceras. Se ignora salvo con
+   TOLATINO_ENTORNO=pruebas y una dirección local (127.0.0.1 / localhost, sin ruta): en producción no tiene efecto aunque alguien la ponga (además está
+   PROHIBIDA en infra/comun/secretos.json; guardián proveedoresSimuladorAislado). No cambia el motor: eso lo decide modelo.ts por la llave. */
+function origenDePruebas(v: string | undefined): URL | null {
+  if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;
+  let u: URL;
+  try { u = new URL(v); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol) || !["127.0.0.1", "localhost"].includes(u.hostname) || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return null;
+  return u;
+}
+const API = new URL(URL_API);
+export const direccionApi = (ruta: string): string => (origenDePruebas(process.env.ANTHROPIC_API_BASE)?.origin ?? API.origin) + ruta;
+const RUTA_MENSAJES = API.pathname, RUTA_MODELOS = API.pathname.replace(/\/messages$/, "/models?limit=1");
 
 type Respuesta = {
   stop_reason?: string; content?: { type: string; text?: string }[];
@@ -43,7 +57,7 @@ export const claude: Modelo = {
     };
     let r: Response;
     try {
-      r = await fetch(URL_API, {
+      r = await fetch(direccionApi(RUTA_MENSAJES), {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": clave, "anthropic-version": VERSION_API },
         body: JSON.stringify(cuerpo),
@@ -76,7 +90,7 @@ export async function probarClave(): Promise<{ ok: boolean; resultado: string }>
   const clave = await llave("ANTHROPIC_API_KEY");
   if (!clave) return { ok: false, resultado: "falta" };
   try {
-    const r = await fetch(URL_API.replace(/\/messages$/, "/models?limit=1"), { headers: { "x-api-key": clave, "anthropic-version": VERSION_API }, signal: AbortSignal.timeout(8000), cache: "no-store" });
+    const r = await fetch(direccionApi(RUTA_MODELOS), { headers: { "x-api-key": clave, "anthropic-version": VERSION_API }, signal: AbortSignal.timeout(8000), cache: "no-store" });
     return r.ok ? { ok: true, resultado: "sirve" } : { ok: false, resultado: r.status === 401 ? "rechazada" : r.status === 403 ? "sin_permiso" : `http_${r.status}` };
   } catch { return { ok: false, resultado: "sin_conexion" }; }
 }
