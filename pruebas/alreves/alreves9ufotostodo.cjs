@@ -6,6 +6,7 @@ const fs = require('fs'), path = require('path'), { execSync } = require('child_
 const R = ENT.RAIZ;
 const G = 'fotosAdjuntarTodoONada';
 const A = 'apps/web/app/panel/acciones.ts', Q = 'apps/web/app/panel/acciones-equipo.ts', E = 'apps/web/lib/evt.ts';
+const CT = 'apps/web/app/admin/acciones-catalogo.ts'; // 23 nov · la portada de una categoría (Super Admin › Catálogo)
 const I = 'apps/web/lib/equipo-invitacion.ts', PB = 'apps/web/app/(app)/publica/acciones.ts'; // 23 nov · aceptar el código de equipo y Publica tu negocio
 const casos = [
   // Galería y portada: no comparar, no lanzar, no decirlo, no quitar repetidas, adjuntar sin contar.
@@ -56,6 +57,14 @@ const casos = [
   [PB, '    for (let i = 0; i < fotos.length; i++)\n', '    const orden = fotos.filter((f) => mias.includes(f));\n    for (let i = 0; i < orden.length; i++)\n'],
   // Por clase: una función nueva de Publica que pasa fotos al negocio sin leer el resultado.
   [PB, 'class FotoNoAdjunta extends Error {}', 'async function pasarFotos(c: import("pg").PoolClient, slug: string, f: string[], u: string) {\n  await c.query(`update media set owner_kind = \'business\', owner_id = $1 where id = $2::uuid and owner_kind = \'user\' and status = \'visible\' and not rev_sin_c2 and not private`, [slug, f[0], u]);\n}\nclass FotoNoAdjunta extends Error {}'],
+  // Portada de una categoría (Catálogo): no lanzar, decir ok, otro texto, adjuntar sin leer el resultado, adjuntar una que no es suya, ya no pública o no visible.
+  [CT, '      if (!f) throw new FotoNoAdjunta();\n', ''],
+  [CT, 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe."); throw e; }', 'if (e instanceof FotoNoAdjunta) return { ok: true }; throw e; }'],
+  [CT, 'if (e instanceof FotoNoAdjunta) return no("Esa foto no existe."); throw e; }', 'if (e instanceof FotoNoAdjunta) return no("Una de las fotos ya no está. Súbela otra vez."); throw e; }'],
+  [CT, "      const f = (await c.query<{ url: string }>(\n        `update media set owner_kind = 'category'", "      await c.query(\n        `update media set owner_kind = 'category'"],
+  [CT, "and uploaded_by = $3 and owner_id = $3::text\n            and status = 'visible' and not rev_sin_c2 and not private and purged_at is null", "and uploaded_by = $3 and owner_id = $3::text\n            and status = 'visible' and not rev_sin_c2 and purged_at is null"],
+  [CT, "where id = $2::uuid and owner_kind = 'user' and uploaded_by = $3 and owner_id = $3::text\n            and status = 'visible'", "where id = $2::uuid and owner_kind = 'user'\n            and status = 'visible'"],
+  [CT, "and purged_at is null and url like '/medios/n/%' returning url`", "and purged_at is null returning url`"],
 ];
 let bien = 0, total = 0;
 const correr = () => {
