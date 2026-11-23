@@ -9,7 +9,7 @@
    - SES     GET /v2/email/account                200 GetAccount (SendQuota, SendingEnabled, ProductionAccessEnabled, EnforcementStatus…)
              · 403 { message } con x-amzn-ErrorType: UnrecognizedClientException (ID que no conoce) o SignatureDoesNotMatch (firma que no cuadra).
              La firma SigV4 se RECALCULA aquí con la llave secreta que la prueba dio para ESE ID (método, ruta, consulta, las cabeceras firmadas tal como
-             llegaron —host incluido—, el hash del cuerpo, la fecha y el alcance región/ses): una firma hecha con otra llave o para otro host no pasa.
+             llegaron —host incluido, en orden y sin repetir—, el hash del cuerpo, la fecha y el alcance región/ses): una firma hecha con otra llave o para otro host no pasa.
              (Los campos de GetAccount, de memoria de la referencia de la API v2 de SES: no se pudo leer en línea el 23 nov; la app solo lee el estado HTTP.)
    - IA      GET /v1/models                       200 { data: [{ type: "model", id, display_name, created_at }], has_more, first_id, last_id }
              · 401 { type: "error", error: { type: "authentication_error" } } · sin anthropic-version: 400 · /v1/messages NO se simula: 404 (el motor de
@@ -80,7 +80,7 @@ async function iniciar(puertos, host = '127.0.0.1') {
     else if (!f || !ses.has(huella(f.id))) { est = 403; tipo = 'UnrecognizedClientException'; cuerpoR = { message: 'The security token included in the request is invalid.' }; }
     else {
       const fecha = String(req.headers['x-amz-date'] ?? ''), firmados = f.firmados.split(';');
-      const valida = f.servicio === 'ses' && /^\d{8}T\d{6}Z$/.test(fecha) && fecha.slice(0, 8) === f.dia && firmados.includes('host') && firmados.includes('x-amz-date')
+      const valida = f.servicio === 'ses' && /^\d{8}T\d{6}Z$/.test(fecha) && fecha.slice(0, 8) === f.dia && firmados.includes('host') && firmados.includes('x-amz-date') && f.firmados === [...new Set(firmados)].sort().join(';')
         && igual(firmaSigV4(req, u, cuerpo, f, ses.get(huella(f.id))), f.firma);
       if (!valida) { est = 403; tipo = 'SignatureDoesNotMatch'; cuerpoR = { message: 'The request signature we calculated does not match the signature you provided. Check your AWS Secret Access Key and signing method. Consult the service documentation for details.' }; }
       else { est = 200; cuerpoR = { DedicatedIpAutoWarmupEnabled: false, EnforcementStatus: 'HEALTHY', ProductionAccessEnabled: false, SendingEnabled: true,
