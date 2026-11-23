@@ -6445,3 +6445,7 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Comunidad:** el filtro de direcciones dejaba pasar calles con ñ o tilde («123 Añasco St», «45 Elías Dr»); ahora las rechaza como a las demás.
 - **Ciudades:** los nombres con tilde, ñ o guion se reconocen enteros (lista de lanzamiento por ciudad).
 
+## Anfitriones del barrio (decisión AO, 23 nov) — aprobado el concepto, los ocho personajes y la marca «Anfitrión/Anfitriona»
+- Se construye como bloque aparte. **Pendiente del fundador cuando esté en el sandbox:** ver cómo habla cada voz, elegir los avatares ilustrados (opciones
+  de su cuenta de Creattie, sin gastar descargas hasta que elija), y fijar cuánto publican al día y el costo mensual tope de IA.
+
