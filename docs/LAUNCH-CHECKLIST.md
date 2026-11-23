@@ -2856,7 +2856,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       en el llavero también pide un código por SMS: sin Telnyx no se entra, y sin entrar no se pone Telnyx. La del primer día tiene que llegar por el
       sobre sellado (variable de entorno, que manda sobre el llavero); `TELNYX_FROM` y `TELNYX_PUBLIC_KEY` no son secretas. Decisión del fundador en
       REVISION. Después se pasa al llavero y se quita el sobre.
-- [ ] **→ 9q** · **«Probar» de una llave contra su simulador:** el servidor local de pruebas no tiene `STRIPE_API_BASE` ni `TELNYX_API_BASE` de
+- [x] **→ 9q** · **(Hecho el 23 nov para Stripe, Telnyx y WhatsApp: `scripts/proveedores-sim/sim.cjs`, `servir.sh` pasa sus tres direcciones, guardián
+      `proveedoresSimuladorAislado`, `alrevesllaves` 44/44, `prov9v` ve «sirve» y «rechazada» con la huella del lado del simulador.)** «Probar» de una llave contra su simulador: el servidor local de pruebas no tiene `STRIPE_API_BASE` ni `TELNYX_API_BASE` de
       simuladores; en `prov9v` «Probar» sale `sin_conexion`. Ponerlas en `pruebas/servir/servir.sh`. Tampoco se comprobó en un servidor real que «Lo que
       te toca» 9-1.x se marque solo, la regla de HTTPS en producción ni la precedencia del entorno sobre el llavero.
 - [ ] **→ 9u** · **Campo oculto en el sistema de diseño (23 nov):** el `field` de `PanelBloques` aprendió `oculto` (mismo aspecto, tipo contraseña) para
@@ -2882,3 +2883,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       fundador en REVISION si se sube). El inglés del Catálogo no se vio servido; los mensajes del servidor de Catálogo son solo en español, como los demás.
 - [ ] **→ 9q** · **El Compa por SMS/WhatsApp con varias candidatas:** pregunta cuál y, si se describen igual, dice el número de cada una; quien contesta
       solo con el número («R-1042») sin «cancela» no se probó.
+- [ ] **→ 9q** · **«Probar» de SES y Anthropic sin contraparte en pruebas:** `ses.ts` y `modelo-claude.ts` tienen la dirección fija; hace falta una variable
+      de dirección solo fuera de producción (en la lista «prohibida», con guardián) y sus rutas en `scripts/proveedores-sim`.
+- [ ] **→ 9q** · **Meta: confirmar con la cuenta real qué contesta un token inválido.** La especificación fijada dice 401 con código 190; si la API real
+      da 400 con 190, «Probar» diría «contestó con un error» y no «rechazó la llave» (`canales-proveedor.ts`, `leerCon`).
+- [ ] **→ 9q** · **«Lo que te toca» 9-1.x no se marca solo en el sandbox** (regla correcta: «este entorno usa el simulador»). Falta verlo en un servidor
+      real. Una prueba conjunta (token e ID de WhatsApp; el par de SES) ya anota las dos llaves (23 nov; el de SES sin ver servido).
