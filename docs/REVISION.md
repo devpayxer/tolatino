@@ -6379,6 +6379,7 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   liquidación del martes, entre las 0:00 y la 1:00 de cada martes; y cuatro de dinero que usaban la fecha de Greenwich). Las tres eran de la prueba y
   están corregidas, con dos guardianes.
 - **El fallo de la app:** el cobro mensual de Pro sumaba el mes de una forma que se desborda los días 29, 30 y 31: quien empieza un 31 de enero sería
-  cobrado el 3 de marzo, y la fecha queda corrida. Nadie está afectado (no hemos abierto). Se está arreglando: mismo día del mes siguiente, o el último
-  día si el mes es corto.
+  cobrado el 3 de marzo, y la fecha queda corrida. Nadie está afectado (no hemos abierto). **Arreglado el 23 nov:** mismo día del mes siguiente, o el
+  último día si el mes es corto, y vuelve a su día después (31 ene → 28 feb → 31 mar). La hora no se mueve con el cambio de horario. La ficha de ayuda
+  «Plan Pro» lo explica («Tu día de cobro»). Qué mirar: Tu plan de un negocio; el texto no cambia, solo la fecha.
 
