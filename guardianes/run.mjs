@@ -10774,7 +10774,7 @@ const guardianes = {
       if (!/^(apps|packages)\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(f) || f.includes("node_modules") || [SES, MC, PQ].includes(f)) continue;
       if (/\b(SES|ANTHROPIC)_API_BASE\b/.test(sinComent(f))) falla(G, f, 0, "lee la dirección de pruebas de SES o del modelo: solo su archivo (ses.ts, modelo-claude.ts) y la regla de «simulador» de paquete.ts");
     }
-    if (existsSync(PQ) && !/ses: e\.TOLATINO_CORREO_MODO === "pruebas" \|\| !!e\.SES_API_BASE, anthropic: !!e\.ANTHROPIC_API_BASE,/.test(readFileSync(PQ, "utf8"))) falla(G, PQ, 0, "«Lo que te toca» tiene que saber que SES y el modelo usan el simulador cuando su dirección de pruebas está puesta");
+    if (existsSync(PQ) && !/ses: modoCorreo\(\) === "pruebas" \|\| !!e\.SES_API_BASE, anthropic: !!e\.ANTHROPIC_API_BASE,/.test(readFileSync(PQ, "utf8"))) falla(G, PQ, 0, "«Lo que te toca» tiene que saber que SES y el modelo usan el simulador cuando su dirección de pruebas está puesta");
     if (!/&& igual\(firmaSigV4\(req, u, cuerpo, f, ses\.get\(huella\(f\.id\)\)\), f\.firma\)/.test(sim) || !/hmac\(hmac\(hmac\(hmac\(`AWS4\$\{secreto\}`, f\.dia\), f\.region\), f\.servicio\), 'aws4_request'\)/.test(sim)) falla(G, SIM, 0, "el simulador de SES tiene que RECALCULAR la firma SigV4 con la llave secreta esperada y compararla (si no, cualquier firma «sirve»)");
     // Las cabeceras firmadas, en orden y sin repetir (como AWS): si no, una app que firma en otro orden «sirve» en el simulador y en AWS da 403.
     if (!/&& f\.firmados === \[\.\.\.new Set\(firmados\)\]\.sort\(\)\.join\(';'\)/.test(sim)) falla(G, SIM, 0, "el simulador de SES exige las cabeceras firmadas en orden y sin repetir (SignedHeaders), como AWS");

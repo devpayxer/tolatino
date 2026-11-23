@@ -6,6 +6,7 @@ import { db, tx } from "../db";
 import APPS from "../../../mobile/apps.json";
 import * as asc from "./asc";
 import { URL_ASC } from "./direcciones";
+import { modoCorreo } from "../correo";
 import { origenes } from "../llaves-proveedores";
 import { leer, ultimasPruebas, type TipoProveedor } from "./llavero";
 
@@ -165,9 +166,10 @@ const NECESITA: Record<Prov, TipoProveedor[]> = {
 const PROBADAS: TipoProveedor[] = ["stripe_secret_key", "telnyx_api_key", "whatsapp_token", "whatsapp_waba_id", "ses_access_key_id", "anthropic_api_key"];
 function estadoProveedor(orig: Awaited<ReturnType<typeof origenes>>, pruebas: Awaited<ReturnType<typeof ultimasPruebas>>) {
   const e = process.env;
+  // El correo: fuera de producción el modo de fábrica YA es «pruebas» (lib/correo modoCorreo), aunque nadie ponga la variable: el sandbox no manda correos.
   const simulador: Record<Prov, boolean> = {
     stripe: !!e.STRIPE_API_BASE || !!e.TOLATINO_PAGOS_SIMULADOR, telnyx: e.TOLATINO_SMS_MODO !== "telnyx" || !!e.TELNYX_API_BASE,
-    whatsapp: !!e.WHATSAPP_API_BASE, ses: e.TOLATINO_CORREO_MODO === "pruebas" || !!e.SES_API_BASE, anthropic: !!e.ANTHROPIC_API_BASE,
+    whatsapp: !!e.WHATSAPP_API_BASE, ses: modoCorreo() === "pruebas" || !!e.SES_API_BASE, anthropic: !!e.ANTHROPIC_API_BASE,
   };
   return (k: Prov): { ok: boolean; por: Bi } => {
     const faltan = NECESITA[k].filter((t) => !orig.find((o) => o.tipo === t)?.origen);

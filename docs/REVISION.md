@@ -6358,7 +6358,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 
 ## «Probar» una llave, visto de verdad en pruebas (23 nov)
 - El botón «Probar» de Integraciones › Proveedores ya se comprobó contra un simulador de Stripe, Telnyx y WhatsApp: con la llave buena dice «La llave
-  sirve: el proveedor contestó.»; con otra, «El proveedor no aceptó la llave…»; Salud lo refleja. Amazon SES y Anthropic todavía no tienen simulador.
+  sirve: el proveedor contestó.»; con otra, «El proveedor no aceptó la llave…»; Salud lo refleja. Desde el 23 nov también Amazon SES (el simulador comprueba la firma de verdad) y
+  Anthropic. En SES, probar el identificador o la llave secreta anota las dos.
 - En WhatsApp había que pulsar «Probar» dos veces (token e ID de la cuenta); ahora una sola prueba vale para los dos.
 - En el sandbox, «Lo que te toca» nunca marca hecho un proveedor: dice «Las llaves están y probadas, pero este entorno usa el simulador». Es a propósito.
 

@@ -2883,7 +2883,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       fundador en REVISION si se sube). El inglés del Catálogo no se vio servido; los mensajes del servidor de Catálogo son solo en español, como los demás.
 - [ ] **→ 9q** · **El Compa por SMS/WhatsApp con varias candidatas:** pregunta cuál y, si se describen igual, dice el número de cada una; quien contesta
       solo con el número («R-1042») sin «cancela» no se probó.
-- [ ] **→ 9q** · **«Probar» de SES y Anthropic sin contraparte en pruebas:** `ses.ts` y `modelo-claude.ts` tienen la dirección fija; hace falta una variable
+- [x] **→ 9q** · **(Hecho el 23 nov: `SES_API_BASE` y `ANTHROPIC_API_BASE`, solo con `TOLATINO_ENTORNO=pruebas` y solo a 127.0.0.1/localhost; el simulador
+      de SES recalcula la firma SigV4; `prov9v` 123 ✓, `alrevesllaves` 64.)** «Probar» de SES y Anthropic sin contraparte en pruebas: `ses.ts` y `modelo-claude.ts` tienen la dirección fija; hace falta una variable
       de dirección solo fuera de producción (en la lista «prohibida», con guardián) y sus rutas en `scripts/proveedores-sim`.
 - [ ] **→ 9q** · **Meta: confirmar con la cuenta real qué contesta un token inválido.** La especificación fijada dice 401 con código 190; si la API real
       da 400 con 190, «Probar» diría «contestó con un error» y no «rechazó la llave» (`canales-proveedor.ts`, `leerCon`).
@@ -2903,4 +2904,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       a `now()` las deja fuera con el tiempo) y `adm7i` (`priced_at` fijo). El resto de las e2e se barrió por patrones y muestreo, no entero.
 - [ ] **→ 9o** · **`current_date` y `now()::date` valen mientras la base corra en `America/New_York`** (así está en los compose de pruebas y producción); una
       ciudad en otra zona los rompería de noche y ningún guardián lo vigila.
+- [ ] **→ 9q** · **SES: el envío firmado (`POST /v2/email/outbound-emails`) no se ha visto contra algo que compruebe la firma** (el simulador solo simula
+      la lectura de «Probar»); la forma de la respuesta de `GetAccount` del simulador es de memoria (la documentación no se pudo abrir): cotejarla.
+- [ ] **→ 9o** · **Las direcciones de simulador viejas (`STRIPE_API_BASE`, `STRIPE_FILES_BASE`, `TELNYX_API_BASE`, `WHATSAPP_API_BASE`) solo las frena la
+      lista «prohibida» de producción, no la ejecución** (las dos nuevas sí se ignoran fuera de pruebas y si no son locales). Darles la misma regla.
+- [ ] **→ 9q** · **Batería de El Compa con el modelo real:** si se corre con `TOLATINO_ENTORNO=pruebas` y `ANTHROPIC_API_BASE` puestos iría al simulador
+      (404). Correrla sin esa variable. Y `prov9v` dura ~135 s: su estimación en `pruebas/reparto.json` dice 60.
 

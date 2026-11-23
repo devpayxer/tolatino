@@ -5,7 +5,7 @@ import { anotarPrueba, type TipoProveedor } from "./tiendas/llavero";
 /* 23 nov · «Probar» de Integraciones › Llaves: comprueba la llave que el servidor USA HOY (la del entorno o la del llavero, por el lector) contra su
    proveedor, con la llamada de solo lectura más barata, que vive en el archivo de cada proveedor (el único que le habla):
    Stripe GET /v1/balance · Telnyx GET /v2/balance · Meta GET /{waba}?fields=id (el token y el ID juntos) · SES GET /v2/email/account (el par) · Anthropic
-   GET /v1/models. En el sandbox va a la dirección de su simulador si el entorno la tiene (STRIPE_API_BASE, TELNYX_API_BASE, WHATSAPP_API_BASE) y,
+   GET /v1/models. En el sandbox va a la dirección de su simulador si el entorno la tiene (STRIPE_API_BASE, TELNYX_API_BASE, WHATSAPP_API_BASE, SES_API_BASE, ANTHROPIC_API_BASE) y,
    si no, al proveedor con la llave de PRUEBA (el llavero no deja poner una real en pruebas). El resultado se anota (store_secret_checks y la auditoría:
    tipo, huella, origen, si sirvió y un código), nunca el valor.
    Las que NO se prueban (no hay una llamada de solo lectura que las use sin mandar nada): la llave pública y la firma de los avisos de Stripe, la llave
