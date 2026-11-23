@@ -1,6 +1,6 @@
 # Super Admin: Catálogo · Super Admin: Catalog
 
-_Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 18 nov
+_Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 23 nov
 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
@@ -27,6 +27,13 @@ _Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo 
     día abierto o cerrado, abre y cierra de media en media hora; «Copiar a los días abiertos») y los **ejemplos** que salen
     dentro del campo del nombre del negocio y del nombre de un ítem propio. Iglesias no lleva plantilla: su horario sale de
     los cultos que el negocio elige. Los negocios que ya publicaron no cambian.
+  - **Portada de la página:** la foto grande de arriba en la página de la categoría (`/c/<categoría>`). En la ficha de la categoría, «PORTADA DE LA
+    PÁGINA» muestra la que se ve hoy (**del equipo** o **de fábrica**). **Cambiar foto** abre la galería del teléfono (o el selector del escritorio):
+    la foto sube por la misma ruta de cualquier foto pública y pasa por la **misma revisión automática** (si queda en revisión o se rechaza, la hoja
+    de aviso lo dice y no se puede poner). Cuando sube, sale como **NUEVA** junto a la actual: **Poner de portada** pide el motivo y la deja en la
+    página al momento, en todas las ciudades; **Descartar** la suelta sin cambiar nada. **Volver a la de fábrica** (solo si hay una del equipo)
+    pide el motivo y la página vuelve a la foto original. Es solo la portada: los mosaicos de la página (países, «Qué necesitas», capítulos) no se
+    cambian desde aquí. Lo de fábrica no se pierde: una semilla nueva no pisa la del equipo.
 - **Sinónimos:** lo que el vecino escribe (izquierda) se busca también como lo de la derecha. Agregar (formato
   `palabra → sinónimo1, sinónimo2`, sin acentos), apagar y encender. Buscar los usa en menos de un minuto.
 - **Búsquedas sin oferta:** lo que los vecinos buscaron y no existe en tus ciudades, contando a quienes pidieron
@@ -65,6 +72,11 @@ _Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo 
 | Reanudar en Negocios 360° un módulo apagado en toda la ciudad | No se puede para un solo negocio: «se enciende en Catálogo › Módulos». |
 | Un negocio se muda a una ciudad con un módulo apagado | Recibe la pausa de esa ciudad; la de su ciudad anterior se le quita. |
 | Un límite fuera de su rango | «Entre X y Y.» (cada límite tiene su mínimo y su máximo). |
+| Elegir una foto para la portada y que no pase la revisión | Queda en revisión o se rechaza (la hoja de aviso dice por qué y se puede pedir revisión): no hay portada nueva y la de hoy no cambia. |
+| La foto elegida ya no se puede poner (la subió otra persona, pasó a privada o a revisión, o ya es portada de otra categoría) | «Esa foto no existe.» No cambia nada y no queda renglón en la auditoría; sube la foto otra vez. |
+| Poner una portada nueva | La foto de antes queda guardada como reemplazada (nada se borra) y la página muestra la nueva al momento, sin esperar. |
+| Volver a la de fábrica cuando ya está la de fábrica | «Ya tiene la portada de fábrica.» |
+| Cargar la semilla de nuevo | La portada del equipo se queda: la semilla nunca toca lo que el equipo cambió. |
 | Lo que trae el sistema | Las semillas nunca vuelven a encender lo que el equipo apagó ni pisan lo que agregó. |
 
 Todo queda en el historial de cada pestaña y en la auditoría. Nada se borra.
@@ -75,6 +87,15 @@ Todo queda en el historial de cada pestaña y en la auditoría. Nada se borra.
 
 **¿Por qué Buscar tarda hasta un minuto?** Guarda los sinónimos y las subcategorías de cada ciudad en memoria 60 segundos
 para responder rápido. La página de la categoría y Negocios cambian al momento.
+
+**¿La portada nueva se ve en todas las ciudades?** Sí, al momento: la página de la categoría no guarda copia. Es la misma foto para todas las
+ciudades.
+
+**¿Qué foto conviene?** Una horizontal, nítida y sin letras: se recorta al centro (más alta en teléfono, más ancha en escritorio). Pesa hasta 12 MB; el
+servidor la prepara en varios tamaños.
+
+**¿Por qué no puedo cambiar los mosaicos?** Hoy solo la portada se cambia desde aquí; los mosaicos salen de fábrica y se arreglan con una
+actualización del sistema.
 
 **¿Cambiar la plantilla de horario cambia el horario de los negocios?** No. Es el horario con el que empieza quien publica;
 cada negocio cambia el suyo en su panel.
@@ -104,6 +125,13 @@ cada negocio cambia el suyo en su panel.
   - **List your business:** the **hours template** someone listing a business in this category starts with (each day open or closed, opening and closing
     in half hours; «Copy to open days») and the **examples** shown inside the business name field and the own-item name field. Churches have no
     template: their hours come from the services the business picks. Businesses already listed do not change.
+  - **Page cover photo:** the large photo at the top of the category page (`/c/<category>`). In the category's detail, «PAGE COVER PHOTO» shows the one
+    in use today (**team** or **default**). **Change photo** opens the phone gallery (or the desktop picker): the photo uploads through the same route as
+    any public photo and goes through the **same automatic review** (if it ends up under review or is rejected, the notice sheet says so and it can't
+    be used). Once uploaded, it shows as **NEW** next to the current one: **Use as cover** asks for the reason and puts it on the page right away, in
+    every city; **Discard** drops it without changing anything. **Go back to the default** (only when a team photo is set) asks for the reason and the page
+    goes back to the original photo. It is the cover only: the page tiles (countries, «What do you need», chapters) can't be changed from here. The default
+    is never lost: a new seed doesn't overwrite the team's photo.
 - **Synonyms:** what the neighbor types (left) is also searched as what is on the right. Add (format `word → synonym1, synonym2`, no accents), turn off and
   turn on. Search uses them in under a minute.
 - **Searches without supply:** what neighbors searched for that does not exist in your cities, counting those who asked «Notify me» (30 days). It is the
@@ -140,6 +168,11 @@ cada negocio cambia el suyo en su panel.
 | Resuming in Business 360° a module that is off in the whole city | Not possible for a single business: «turn it on in Catalog › Modules». |
 | A business moves to a city with a module off | It gets that city's pause; its previous city's pause is removed. |
 | A limit out of range | «Between X and Y.» (each limit has its minimum and maximum). |
+| Choosing a cover photo that doesn't pass the review | It stays under review or is rejected (the notice sheet says why and a review can be requested): there is no new cover and today's doesn't change. |
+| The chosen photo can no longer be used (someone else uploaded it, it became private or under review, or it is already another category's cover) | «That photo doesn’t exist.» (shown as «Esa foto no existe.») Nothing changes and no audit row is written; upload the photo again. |
+| Setting a new cover | The previous photo is kept as replaced (nothing is deleted) and the page shows the new one right away, no waiting. |
+| Going back to the default when the default is already on | «Ya tiene la portada de fábrica.» (it already has the default cover) |
+| Loading the seed again | The team's cover stays: the seed never touches what the team changed. |
 | What the system brings | Seeds never turn back on what the team turned off and never overwrite what the team added. |
 
 Everything is recorded in each tab's history and in the audit log. Nothing is deleted.
@@ -150,6 +183,13 @@ category; a removed or merged one stops showing.
 
 **Why does Search take up to a minute?** It keeps synonyms and each city's subcategories in memory for 60 seconds to answer fast. The category page and
 Businesses change right away.
+
+**Does the new cover show in every city?** Yes, right away: the category page keeps no copy. It is the same photo in every city.
+
+**Which photo works best?** A wide, sharp one without lettering: it is cropped to the center (taller on phones, wider on desktop). Up to 12 MB; the server
+prepares it in several sizes.
+
+**Why can't I change the tiles?** Today only the cover can be changed from here; the tiles come from the default and are fixed with a system update.
 
 **Does changing the hours template change businesses' hours?** No. It is the schedule someone listing starts with; each business changes its own in its panel.
 
