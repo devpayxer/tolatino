@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { tx } from "@/lib/db";
+import { mismoOrigen } from "@/lib/cuenta";
 import { LIMITES_PLAN, MODULOS_POR_CIUDAD, type DiaPlantilla } from "@/lib/admin-catalogo";
 import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import type { ResAdm } from "./acciones-colas";
@@ -14,7 +15,8 @@ import type { ResAdm } from "./acciones-colas";
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
 const limpio = (m: unknown, max = 500) => (typeof m === "string" ? m.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, max) : "");
 const sinAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const CAT = /^NEG-[A-Z]+$/, SUB = /^NEG-[A-Z]+-\d{2,3}$/;
+const CAT = /^NEG-[A-Z]+$/, SUB = /^NEG-[A-Z]+-\d{2,3}$/, UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+class FotoNoAdjunta extends Error {} // lanzada dentro de la transacción: deshace todo el pedido (ni la portada ni la auditoría)
 const listo = () => { revalidatePath("/admin/catalogo"); };
 
 async function hacer(fn: (c: PoolClient, s: Staff) => Promise<string | null>, ok: string): Promise<ResAdm> {
@@ -254,6 +256,55 @@ export async function catEjemplo(cat: string, campo: string, texto: string, moti
       before: { categoria: k.es, ejemplo: `${campo === "ph_nombre" ? "Nombre del negocio" : "Ítem propio"}: ${k.v ? `${k.v.es} / ${k.v.en}` : "—"}` }, after: { ejemplo: `${t.es} / ${t.en}` }, reason: m });
     return null;
   }, "Ejemplo guardado. Sale en Publica tu negocio desde ahora.");
+}
+
+/* Portada de la página de una categoría (Catálogo › la categoría › «Portada de la página»): la foto de /c/<categoría>. La foto la sube un Admin por la misma
+   ruta de las fotos públicas (/api/medios: pasa por la revisión automática, decisión AJ; una retenida o rechazada no devuelve id y no llega aquí). Aquí se
+   PONE: todo o nada dentro de una transacción. La foto pedida tiene que ser de quien la pone, visible, pública y de nuestro almacén (/medios/n/…); si no se
+   puede adjuntar (no es suya, ya pasó a privada o a revisión, ya se usó) se lanza y se deshace TODO («Esa foto no existe.», nunca ok sin ella: guardián
+   fotosAdjuntarTodoONada). La foto pasa a ser DE LA CATEGORÍA (media.owner_kind 'category', 0214); la anterior queda «removed/replaced» (nada se borra).
+   categories.page_admin solo lleva la clave «hero» (lo demás de la página sigue de fábrica; la semilla nunca lo toca) y SOLO se escribe aquí (guardián
+   portadaCategoriaDelEquipo). La página lee sin memoria (force-dynamic): el cambio se ve en la siguiente carga. */
+export async function catPortada(cat: string, mediaId: string, motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  if (typeof mediaId !== "string" || !UUID.test(mediaId)) return no("Esa foto no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  if (!(await mismoOrigen())) return no("No permitido.");
+  try {
+    return await hacer(async (c, s) => {
+      const k = (await c.query<{ es: string; fab: string | null; ya: string | null }>(
+        `select name->>'es' as es, page->>'hero' as fab, page_admin->>'hero' as ya from categories where id = $1 and page ? 'title' for update`, [cat])).rows[0];
+      if (!k) return "Esa categoría no existe.";
+      const f = (await c.query<{ url: string }>(
+        `update media set owner_kind = 'category', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and uploaded_by = $3 and owner_id = $3::text
+            and status = 'visible' and not rev_sin_c2 and not private and purged_at is null and url like '/medios/n/%' returning url`, [cat, mediaId, s.id])).rows[0];
+      if (!f) throw new FotoNoAdjunta();
+      await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [cat, mediaId, s.id]);
+      await c.query(`update categories set page_admin = jsonb_set(coalesce(page_admin, '{}'::jsonb), '{hero}', to_jsonb($2::text)), updated_at = now() where id = $1`, [cat, f.url]);
+      await auditar(c, { actor: s.id, action: "catalogo.cat.portada", targetKind: "category", targetId: cat,
+        before: { categoria: k.es, portada: k.ya ? `foto del equipo · ${k.ya}` : "de fábrica" }, after: { portada: `foto del equipo · ${f.url}` }, reason: m });
+      return null;
+    }, "Portada cambiada. Ya se ve en la página de la categoría.");
+  } catch (e) { if (e instanceof FotoNoAdjunta) return no("Esa foto no existe."); throw e; }
+}
+
+/* Volver a la portada de fábrica: quita la clave «hero» de page_admin (la página vuelve a categories.page) y deja la foto del equipo «removed/replaced». */
+export async function catPortadaFabrica(cat: string, motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  if (!(await mismoOrigen())) return no("No permitido.");
+  return hacer(async (c, s) => {
+    const k = (await c.query<{ es: string; ya: string | null }>(`select name->>'es' as es, page_admin->>'hero' as ya from categories where id = $1 for update`, [cat])).rows[0];
+    if (!k) return "Esa categoría no existe.";
+    if (!k.ya) return "Ya tiene la portada de fábrica.";
+    await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [cat, s.id]);
+    await c.query(`update categories set page_admin = coalesce(page_admin, '{}'::jsonb) - 'hero', updated_at = now() where id = $1`, [cat]);
+    await auditar(c, { actor: s.id, action: "catalogo.cat.portada_fabrica", targetKind: "category", targetId: cat,
+      before: { categoria: k.es, portada: `foto del equipo · ${k.ya}` }, after: { portada: "de fábrica" }, reason: m });
+    return null;
+  }, "Vuelve la portada de fábrica.");
 }
 
 /* Límites Free/Pro por módulo: son valores de Configuración (lib/config.ts, cambiarConfig: límites, auditoría antes → después en la misma
