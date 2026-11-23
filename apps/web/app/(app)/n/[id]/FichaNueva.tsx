@@ -596,7 +596,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             igual que en el teléfono. A PRUEBA: si el fundador no lo quiere, se quita esta franja y NOMBRE_DESK vuelve a 0 (REVISION). */}
         <div className="sticky z-[21] h-0" style={{ top: CAB_DESK }} data-pieza="nombre-pegado-desk" data-visible={pegada ? "si" : "no"} aria-hidden={!pegada}>
           <div className="absolute inset-x-0 top-0 flex items-center bg-white transition-opacity duration-150" style={{ height: NOMBRE_DESK, opacity: pegada ? 1 : 0, pointerEvents: pegada ? "auto" : "none" }}>
-            <button type="button" data-pieza="volver-arriba" tabIndex={pegada ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="-ml-3 inline-flex size-11 flex-none items-center justify-center text-ink"><Icon name="chevronLeft" size={20} /></button>
+            <button type="button" data-pieza="volver-arriba" tabIndex={pegada ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="inline-flex size-11 flex-none items-center justify-start text-ink"><Icon name="chevronLeft" size={20} /></button>
             <span className="min-w-0 truncate font-display text-[22px] font-extrabold leading-none tracking-[-0.04em] text-ink">{f.nombre}</span>
             {sello ? <span className="flex-none">{sello}</span> : null}
           </div>
