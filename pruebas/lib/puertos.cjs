@@ -19,6 +19,7 @@ const NOMINAL = {
   github: 4407, play: 4408,               // 8h · GitHub (JWKS + workflow_dispatch) y Google Play
   sns: 4409,                              // 9l · el certificado de «SNS» del correo entrante
   provStripe: 4410, provTelnyx: 4411, provMeta: 4412,   // 23 nov · las lecturas de «Probar» de Stripe, Telnyx y Meta (scripts/proveedores-sim; los usa prov9v)
+  provSes: 4413, provAnthropic: 4414,     // 23 nov · y las de SES (firma SigV4 recalculada) y del proveedor de IA (solo /v1/models)
   moderacion: 8790, video: 8791,          // 5d / C-001 · servicios propios (moderación de imágenes y video)
   traductorDm: 5098, traductor: 5099,     // 5h / 9t · el traductor de mentira (dm9t · com5h y msg9t)
 };

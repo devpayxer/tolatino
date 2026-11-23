@@ -71,6 +71,9 @@ VARS=(PORT=$PUERTO MEDIOS_S3_URL=http://127.0.0.1:${PRUEBAS_S3_PUERTO:-3900} TOL
 # Estas tres solo cambian A DÓNDE llama el servidor cuando hay una llave: el modo (cobro simulado, SMS de pruebas, WhatsApp simulado) lo deciden las llaves y
 # TOLATINO_SMS_MODO, no estas direcciones. PROHIBIDAS en producción (infra/comun/secretos.json; guardián proveedoresSimuladorAislado).
 VARS+=(STRIPE_API_BASE=http://127.0.0.1:$P_PROVSTRIPE TELNYX_API_BASE=http://127.0.0.1:$P_PROVTELNYX WHATSAPP_API_BASE=http://127.0.0.1:$P_PROVMETA)
+# Y las de SES y del proveedor de IA: tampoco cambian el modo. El correo sigue en «pruebas» (no sale) salvo TOLATINO_CORREO_MODO=ses (lib/correo/index.ts) y
+# El Compa elige su motor por la llave y TOLATINO_COMPA_MOTOR (lib/compa/modelo.ts), no por la dirección. Además, la app las ignora fuera de TOLATINO_ENTORNO=pruebas.
+VARS+=(SES_API_BASE=http://127.0.0.1:$P_PROVSES ANTHROPIC_API_BASE=http://127.0.0.1:$P_PROVANTHROPIC)
 if [ "$PERFIL" = basico ]; then
   VARS+=(HOSTNAME=127.0.0.1)
 else

@@ -167,7 +167,7 @@ function estadoProveedor(orig: Awaited<ReturnType<typeof origenes>>, pruebas: Aw
   const e = process.env;
   const simulador: Record<Prov, boolean> = {
     stripe: !!e.STRIPE_API_BASE || !!e.TOLATINO_PAGOS_SIMULADOR, telnyx: e.TOLATINO_SMS_MODO !== "telnyx" || !!e.TELNYX_API_BASE,
-    whatsapp: !!e.WHATSAPP_API_BASE, ses: e.TOLATINO_CORREO_MODO === "pruebas", anthropic: false,
+    whatsapp: !!e.WHATSAPP_API_BASE, ses: e.TOLATINO_CORREO_MODO === "pruebas" || !!e.SES_API_BASE, anthropic: !!e.ANTHROPIC_API_BASE,
   };
   return (k: Prov): { ok: boolean; por: Bi } => {
     const faltan = NECESITA[k].filter((t) => !orig.find((o) => o.tipo === t)?.origen);
