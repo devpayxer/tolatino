@@ -10,7 +10,7 @@ const casos = [
   [G, X, 'from reviews r join users u on u.id = r.user_id where r.business_id = $1 order by r.created_at desc, r.id`', 'from reviews r join users u on u.id = r.user_id where r.business_id = $1 order by r.created_at desc, r.id limit 20000`'],
   [G, X, 'await c.query(`declare ${cur} no scroll cursor for ${q.sql}`, q.args);', 'await c.query(q.sql, q.args);'],
   [G, X, 'const r = await c.query<Fila>(`fetch forward ${tam} from ${cur}`);', 'const r = await c.query<Fila>(`select * from ${cur}`);'],
-  [G, X, 'z.agregar(`${q.nombre}-${s.partes}.csv`', 'z.agregar(`${q.nombre}.csv`'],
+  [G, X, 'await poner(`${q.nombre}-${s.partes}.json`, `${q.nombre}-${s.partes}.csv`, t);', 'await poner(`${q.nombre}.json`, `${q.nombre}.csv`, t);'],
   [G, X, '${v.partes > 1 ?', '${v.partes > 99 && false ?'],
   [G, X, 'const PARTE = 20_000', 'const PARTE = 2_000_000'],
   [G, 'pruebas/e2e/exp9t.cjs', 'ids.size === N', 'ids.size >= 0'],

@@ -28,7 +28,7 @@ const casos = [
   [P, 'pruebas/e2e/rev9u.cjs', "'una foto privada (Mensajes) jamás llega a la segunda opinión'", "'una foto de Mensajes'"],
   // AJ · Destino «privado» (la foto va solo a un negocio o al equipo): la ruta que no lo lee, esPublica que no mira la marca (sin fila o con fila),
   //     la subida que la manda igual a la segunda opinión, el barrido que la vuelve a mandar, una pantalla privada que sube sin «privado».
-  [P, RUTA, '  const sinC2 = form?.get("destino") === "privado";', '  const sinC2 = false;'],
+  [P, RUTA, '    const sinC2 = f.textos.destino === "privado";', '    const sinC2 = false;'],
   [P, SO, 'if (f.privada || f.sinC2 || (DUENOS_PRIVADOS', 'if (f.privada || (DUENOS_PRIVADOS'],
   [P, SO, 'if (!r || r.private || r.rev_sin_c2 || (DUENOS_PRIVADOS', 'if (!r || r.private || (DUENOS_PRIVADOS'],
   [P, F, '  if (x.sinC2) return { id: x.id,', '  if (false) return { id: x.id,'],

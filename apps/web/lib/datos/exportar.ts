@@ -34,6 +34,8 @@ const no = (es: string, en: string): ResExp => ({ ok: false, msg: { es, en } });
    TOPE_PARTES es solo un freno contra un archivo desbocado (2 000 000 de filas en un archivo: ninguna cuenta real llega); si se alcanza, el LEEME
    lo dice con el número exacto que quedó fuera y el equipo lo ve en Usuarios 360° (sections). */
 const PARTE = 20_000, TOPE_PARTES = 100;
+/* 22 nov · Del cursor se lee de TANDA en TANDA (las partes siguen siendo de PARTE): la base no entrega 20 000 filas crudas de una vez. */
+const TANDA = 2_000;
 type Fila = Record<string, unknown>;
 /* tabla: la de un «select *» (las notas y motivos de esa tabla salen según NOTAS de lib/datos/mapa.ts; 9u-2). */
 export type Consulta = { nombre: string; sql: string; args: unknown[]; fuera: Set<string>; tabla?: string };
@@ -52,10 +54,26 @@ function limpiar(f: Fila, fuera: Set<string>, tabla?: string): Fila {
   }
   return o;
 }
-const aCsv = (filas: Fila[]) => {
-  const cab = [...new Set(filas.flatMap((f) => Object.keys(f)))];
-  return [cab, ...filas.map((f) => cab.map((k) => f[k]))].map((l) => l.map(celda).join(",")).join("\r\n");
-};
+/* 22 nov · El JSON y el CSV de una parte salen fila por fila (al flujo de compresión, zipPorPartes().agregarPorPartes) y no como un solo texto: con
+   una cuenta de 400 000 avisos, armar el archivo pedía ~0,8 GB más al proceso (cada parte de 20 000 filas en un JSON con sangría, su Buffer, el CSV
+   como tabla y su texto, y la copia comprimida). El texto es el mismo, carácter por carácter, que JSON.stringify(filas, null, 2) y que el CSV
+   de antes (cabecera = las columnas de todas las filas de la parte, en el orden en que aparecen; filas separadas por \r\n). */
+function* jsonPorFilas(filas: Fila[]): Generator<string> {
+  if (!filas.length) { yield "[]"; return; }
+  // De a GRUPO filas: JSON.stringify de un grupo es «[\n» + sus filas con su sangría + «\n]»; sin esos bordes, los grupos unidos con «,\n» dan
+  // el mismo texto que el arreglo entero.
+  yield "[\n";
+  for (let i = 0; i < filas.length; i += GRUPO) yield (i ? ",\n" : "") + JSON.stringify(filas.slice(i, i + GRUPO), null, 2).slice(2, -2);
+  yield "\n]";
+}
+const GRUPO = 500;
+function* csvPorFilas(filas: Fila[]): Generator<string> {
+  const vistas = new Set<string>();
+  for (const f of filas) for (const k of Object.keys(f)) vistas.add(k);
+  const cab = [...vistas];
+  yield cab.map(celda).join(",");
+  for (const f of filas) yield "\r\n" + cab.map((k) => celda(f[k])).join(",");
+}
 
 /* El archivo de una persona, por el mapa: las consultas (nombre → SQL). Solo sus filas; sin las columnas de otra persona. */
 export async function datosDeCuenta(cuenta: string, c?: PoolClient): Promise<Consulta[]> {
@@ -157,20 +175,34 @@ const LEEME = (negocio: boolean, archivos: Map<string, Seccion>) => [
 export async function armarZip(consultas: Consulta[], negocio: boolean, c?: PoolClient, salida?: (b: Buffer) => void): Promise<{ zip: Buffer; secciones: Map<string, Seccion> }> {
   const hacer = async (c: PoolClient) => {
     const z = zipPorPartes(salida), secciones = new Map<string, Seccion>();
+    const poner = async (json: string, csv: string, filas: Fila[]) => {
+      await z.agregarPorPartes(json, () => jsonPorFilas(filas));
+      await z.agregarPorPartes(csv, () => csvPorFilas(filas));
+    };
     let i = 0;
     for (const q of consultas) {
-      const s: Seccion = { filas: 0, partes: 0, fuera: 0 }, crudas: Fila[][] = [];
-      // La primera parte se guarda hasta saber si hay segunda (una sola parte se llama sin número: lo que bajaron siempre).
-      for await (const t of porPartes(c, q, i++)) {
-        if (s.partes >= TOPE_PARTES) { s.fuera += t.length; continue; }
+      const s: Seccion = { filas: 0, partes: 0, fuera: 0 };
+      // 22 nov · Del cursor se leen tandas de TANDA filas que se juntan en partes de PARTE (las mismas partes de siempre). La primera parte espera
+      // hasta saber si hay otra (una sola parte se llama sin número: lo que bajaron siempre); en cuanto llega la primera fila de la segunda, sale
+      // como «-1» y se suelta: en memoria hay una sola parte a la vez.
+      let p1: Fila[] | null = null, actual: Fila[] = [];
+      const cerrar = async (t: Fila[]) => {
+        if (s.partes >= TOPE_PARTES) { s.fuera += t.length; return; }
         s.partes++; s.filas += t.length;
-        if (s.partes === 1) { crudas.push(t); continue; }
-        if (s.partes === 2) { const p1 = crudas.pop()!; z.agregar(`${q.nombre}-1.json`, Buffer.from(JSON.stringify(p1, null, 2), "utf8")); z.agregar(`${q.nombre}-1.csv`, Buffer.from(aCsv(p1), "utf8")); }
-        z.agregar(`${q.nombre}-${s.partes}.json`, Buffer.from(JSON.stringify(t, null, 2), "utf8"));
-        z.agregar(`${q.nombre}-${s.partes}.csv`, Buffer.from(aCsv(t), "utf8"));
+        if (s.partes === 1) { p1 = t; return; }
+        await poner(`${q.nombre}-${s.partes}.json`, `${q.nombre}-${s.partes}.csv`, t);
+      };
+      for await (const tanda of porPartes(c, q, i++, TANDA)) {
+        const espera = p1 as Fila[] | null;
+        if (espera && s.partes === 1) { await poner(`${q.nombre}-1.json`, `${q.nombre}-1.csv`, espera); p1 = null; }
+        for (const f of tanda) {
+          actual.push(f);
+          if (actual.length === PARTE) { await cerrar(actual); actual = []; }
+        }
       }
-      const p1 = crudas.pop() ?? [];
-      if (s.partes <= 1) { z.agregar(`${q.nombre}.json`, Buffer.from(JSON.stringify(p1, null, 2), "utf8")); z.agregar(`${q.nombre}.csv`, Buffer.from(aCsv(p1), "utf8")); }
+      if (actual.length) await cerrar(actual);
+      if (s.partes <= 1) await poner(`${q.nombre}.json`, `${q.nombre}.csv`, (p1 as Fila[] | null) ?? []);
+      p1 = null; actual = [];
       secciones.set(q.nombre, s);
     }
     z.agregar("LEEME.txt", Buffer.from(LEEME(negocio, secciones), "utf8"));

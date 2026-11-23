@@ -30,6 +30,15 @@ const casos = [
   // zipPorPartes con salida guarda igual los trozos.
   [G, Z, 'if (salida) { salida(l); salida(nb); salida(cuerpo); } else locales.push(l, nb, cuerpo);', 'if (salida) { salida(l); salida(nb); salida(cuerpo); } locales.push(l, nb, cuerpo);'],
   // Las pruebas dejan de comparar lo bajado con lo guardado.
+  // 22 nov · Armar sin el pico: el cursor de a TANDA, cada parte fila por fila al flujo de compresión, la parte 1 suelta en cuanto hay otra.
+  [G, X, 'const TANDA = 2_000;', 'const TANDA = 20_000;'],
+  [G, X, 'for await (const tanda of porPartes(c, q, i++, TANDA))', 'for await (const tanda of porPartes(c, q, i++))'],
+  [G, X, 'await z.agregarPorPartes(json, () => jsonPorFilas(filas));', 'z.agregar(json, Buffer.from(JSON.stringify(filas, null, 2), "utf8"));'],
+  [G, X, 'await z.agregarPorPartes(csv, () => csvPorFilas(filas));', 'await z.agregarPorPartes(csv, () => [[...csvPorFilas(filas)].join("")]);'],
+  [G, X, 'if (espera && s.partes === 1) { await poner(`${q.nombre}-1.json`, `${q.nombre}-1.csv`, espera); p1 = null; }', 'if (espera && s.partes === 99) { await poner(`${q.nombre}-1.json`, `${q.nombre}-1.csv`, espera); p1 = null; }'],
+  [G, X, 'JSON.stringify(filas.slice(i, i + GRUPO), null, 2).slice(2, -2)', 'JSON.stringify(filas, null, 2).slice(2, -2)'],
+  [G, Z, 'const nb = Buffer.from(nombre, "utf8"), comp: Buffer[] = [], d = createDeflateRaw({ level: 9 });', 'const nb = Buffer.from(nombre, "utf8"), comp: Buffer[] = [], d = createDeflateRaw({ level: 1 });'],
+  [G, Z, '      for (const b of enBuffers(trozos())) {\n        crc = crc32(b, crc); largo += b.length;', '      for (const b of [Buffer.concat([...enBuffers(trozos())])]) {\n        crc = crc32(b, crc); largo += b.length;'],
   [G, 'pruebas/e2e/datos9d.cjs', 'idéntico byte a byte al guardado', 'parecido al guardado'],
   [G, 'pruebas/e2e/exp9t.cjs', "select sha256 from data_exports", "select media_key from data_exports"],
 ];
