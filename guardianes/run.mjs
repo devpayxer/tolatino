@@ -36,6 +36,11 @@ if (!solo || /^(cadenaConLlave|lineaFijaBloqueada|cmsConLimite|cuentaBorradaBili
 // 22 nov (tanda 6a) · La herramienta de subida, para subidaConHerramienta (si no carga, el guardián lo dice; no tumba a los demás).
 let SUBIR = null;
 if (!solo || solo === "subidaConHerramienta") { try { SUBIR = await import("../scripts/ci/subir.mjs"); } catch (e) { SUBIR = { error: String(e?.message ?? e) }; } }
+// 22 nov · La batería de El Compa (scripts/compa/bateria), para bateriaCompaFija (si no carga, el guardián lo dice; no tumba a los demás).
+import { spawnSync as lanzar } from "node:child_process";
+import { tmpdir as carpetaTemporal } from "node:os";
+let BATERIA = null;
+if (!solo || solo === "bateriaCompaFija") { try { BATERIA = { K: await import("../scripts/compa/bateria/casos.mjs"), A: await import("../scripts/compa/bateria/ayuda.mjs"), M: await import("../scripts/compa/bateria/motor.mjs"), C: await import("../scripts/compa/bateria/correr.mjs") }; } catch (e) { BATERIA = { error: String(e?.message ?? e) }; } }
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
@@ -15312,6 +15317,84 @@ const guardianes = {
     const s = readFileSync(S, "utf8");
     if (!/require\('\.\.\/lib\/consultas-sitios\.cjs'\)/.test(s) || !/prepare q as \$\{q\.sql\}/.test(s) || !/comparar\(fueraPorArchivo\(ss\), acept\)/.test(s)) falla(G, S, 0, "sql9u prepara todo lo que enumera consultas-sitios.cjs y compara lo que queda fuera con la lista aceptada");
     if (!/"sql9u"/.test(readFileSync("pruebas/reparto.json", "utf8"))) falla(G, "pruebas/reparto.json", 0, "sql9u está en el reparto de las pruebas de punta a punta");
+  },
+
+  /* 22 nov · Batería de El Compa (fase7-compa.md §7 «Calidad del modelo real»; scripts/compa/bateria/): ≥ 150 casos ES/EN con revisión determinista y
+     meta ≥ 95 %, para correrla contra el modelo real el día que haya llave. Cinco líneas de LAUNCH la citan (batería base, 7e, 7f, 7g, 7i): sin ella,
+     «la calidad del modelo» es una frase. Lo que se teme: que la batería se encoja (menos de 150 casos o menos de lo pedido por audiencia), que un caso
+     pierda su idioma (todo caso lleva es y en), que cite una ficha que no existe o que su audiencia no lee (sería un caso imposible), que lleve un dato
+     personal real (teléfonos de prueba solo +1570555 + 4 dígitos; tarjeta y seguro social solo los de prueba), que una acción esperada no esté en la
+     lista cerrada o sobre una operación que el escenario no tiene, que un código del panel no exista en compa_panel_guide, que el corredor llame al
+     modelo real sin la variable TOLATINO_BATERIA_MOTOR=claude escrita a propósito (el motor de fábrica es el simulador; --motor nunca pide el real),
+     que reintente en silencio o pase del tope de llamadas, que imprima la clave o una respuesta con un dato personal sin tapar, que lleve escrito un
+     identificador de modelo (salen de Configuración), que nombre la llave o el proveedor (solo lib/compa/modelo-claude.ts), que deje de usar el
+     código real de lib/compa (los sistemas fijos, el verificador, tapar), y que la revisión deje de cazar lo malo o de dejar pasar lo bueno (sus
+     casos propios). Al revés: alrevesBateriaCompa. */
+  bateriaCompaFija() {
+    const G = "bateriaCompaFija", D = "scripts/compa/bateria", C = `${D}/correr.mjs`, R = `${D}/revision.mjs`, RC = `${D}/revision-casos.mjs`, K = `${D}/casos.mjs`, M = `${D}/motor.mjs`, A = `${D}/ayuda.mjs`, E = `${D}/casos/escenarios.json`;
+    for (const f of [C, R, RC, K, M, A, E]) if (!existsSync(f)) return falla(G, f, 0, "falta (la batería del modelo real de El Compa)");
+    if (!BATERIA || BATERIA.error) return falla(G, K, 0, `no carga: ${String(BATERIA?.error ?? "sin cargar").slice(0, 200)}`);
+    const aqui = process.cwd();
+    // 1. Los casos: cuántos, cuántos por audiencia, ES y EN, fichas que existen y que su audiencia lee, nada personal real, acciones de la lista.
+    let datos;
+    try { datos = BATERIA.K.cargarCasos(); datos.idx = BATERIA.A.cargarIndice(aqui); } catch (e) { return falla(G, `${D}/casos`, 0, `los casos no se leen: ${String(e?.message ?? e).slice(0, 200)}`); }
+    for (const p of BATERIA.K.validar(datos.casos, datos.escenarios, datos.idx)) falla(G, `${D}/casos`, 0, p);
+    if (datos.idx.size < 150) falla(G, "docs/ayuda", 0, `el índice de la ayuda trae ${datos.idx.size} fichas y el guardián esperaba más de 150: la batería ya no ve la ayuda`);
+    // 2. Los códigos del panel que usan los escenarios existen en la guía de El Compa (migraciones de compa_panel_guide).
+    const sql = ["0120_compa_panel.sql", "0143_vecino.sql", "0173_patrocinios.sql"].map((n) => readFileSync(`packages/db/migrations/${n}`, "utf8")).join("\n");
+    for (const s of datos.escenarios.panel_secciones ?? []) if (!sql.includes(`('${s.codigo}',`)) falla(G, E, 0, `la sección «${s.codigo}» no existe en compa_panel_guide (migraciones 0120/0143/0173)`);
+    // 3. Ni la llave, ni el proveedor, ni un identificador de modelo escritos en la batería (los modelos salen de Configuración y la llave solo la lee modelo-claude.ts).
+    const llave = ["ANTHROPIC", "API", "KEY"].join("_");
+    for (const f of archivos.filter((x) => x.startsWith(`${D}/`) && /\.(mjs|json)$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (t.includes(llave) || /api\.anthropic\.com|@anthropic-ai\/sdk/.test(t)) falla(G, f, 0, "la batería no nombra la llave ni el proveedor: solo lib/compa/modelo-claude.ts (el corredor usa su hayClave y su responder)");
+      if (/\bclaude-(haiku|sonnet|opus)-\d/i.test(t)) falla(G, f, 0, "un identificador de modelo escrito en el código: salen de Configuración (compa_models) por variable de entorno");
+    }
+    // 4. El modelo real solo con la variable escrita a propósito; el motor de fábrica es el simulador; --motor nunca pide el real.
+    const c = sinComent(C), m = sinComent(M);
+    if (!/process\.env\.TOLATINO_BATERIA_MOTOR \?\? "simulador"|env\.TOLATINO_BATERIA_MOTOR \?\? "simulador"/.test(c)) falla(G, C, 0, "el motor de fábrica es el simulador (TOLATINO_BATERIA_MOTOR ?? \"simulador\")");
+    const mp = BATERIA.C.motorPedido;
+    if (typeof mp !== "function" || mp({}).motor !== "simulador" || mp({ TOLATINO_BATERIA_MOTOR: "claude" }).motor !== "claude" || !mp({}, "claude").error || mp({}, "reglas").motor !== "reglas") falla(G, C, 0, "motorPedido: sin la variable es el simulador; el real solo con TOLATINO_BATERIA_MOTOR=claude; --motor claude se rechaza");
+    const sano = { ...process.env };
+    for (const k of [llave, "TOLATINO_BATERIA_MOTOR", "TOLATINO_BATERIA_MODELO", "TOLATINO_BATERIA_MODELO_COPILOTO", "TOLATINO_BATERIA_TOPE_LLAMADAS", "TOLATINO_ENTORNO"]) delete sano[k];
+    const falsa = "no-es-una-llave-es-una-prueba";
+    const p1 = lanzar(process.execPath, [C, "--plan"], { env: { ...sano, [llave]: falsa }, encoding: "utf8", timeout: 120_000 });
+    if (p1.status !== 0 || !/^Motor: simulador /m.test(p1.stdout ?? "")) falla(G, C, 0, `con una llave en el entorno y sin la variable, el corredor tiene que elegir el simulador y no llamar a nada (--plan): salió ${p1.status} «${String(p1.stdout ?? p1.stderr).slice(0, 120)}»`);
+    const p2 = lanzar(process.execPath, [C, "--plan"], { env: { ...sano, [llave]: falsa, TOLATINO_BATERIA_MOTOR: "claude" }, encoding: "utf8", timeout: 120_000 });
+    if (p2.status !== 5) falla(G, C, 0, `el motor real sin los identificadores de los modelos sale con 5 antes de llamar a nada (salió ${p2.status})`);
+    const p3 = lanzar(process.execPath, [C, "--plan"], { env: { ...sano, TOLATINO_BATERIA_MOTOR: "claude" }, encoding: "utf8", timeout: 120_000 });
+    if (p3.status !== 3 || /no-es-una-llave/.test(`${p3.stdout}${p3.stderr}`)) falla(G, C, 0, `el motor real sin llave sale con 3 y lo dice, sin fallar a medias (salió ${p3.status})`);
+    // 5. Tope de llamadas y ningún reintento: una sola llamada al proveedor por pregunta, dentro de crearMotor, después del tope.
+    const cuerpo = /o\.responder = async \(entrada\) => \{([\s\S]*?)\n  \};/.exec(m)?.[1] ?? "";
+    if (!/if \(nombre === "claude" && o\.llamadas >= o\.max\) throw new TopeDeLlamadas\(/.test(cuerpo) || !/o\.llamadas\+\+;/.test(cuerpo)) falla(G, M, 0, "cada llamada al modelo real cuenta y no pasa del tope (--max-llamadas / TOLATINO_BATERIA_TOPE_LLAMADAS)");
+    if (/\b(for|while)\b|\bretry\b|catch/.test(cuerpo) || (cuerpo.match(/base\.responder\(/g) ?? []).length !== 1) falla(G, M, 0, "sin reintentos silenciosos: una sola llamada al proveedor por pregunta y ningún bucle ni captura alrededor");
+    if (!/TOLATINO_BATERIA_TOPE_LLAMADAS/.test(c) || !/--max-llamadas/.test(c) || !/parar = e\.message/.test(c) || !/SALIDA\.TOPE/.test(c)) falla(G, C, 0, "al llegar al tope la corrida para, lo dice y sale con 6 (lo que no corrió no cuenta como acierto)");
+    // 6. Nunca imprime una respuesta con un dato personal sin tapar.
+    if (!/texto: taparParaImprimir\(s\.texto\)/.test(c) || !/taparParaImprimir\(String\(r\.pregunta/.test(c)) falla(G, C, 0, "lo que se imprime y se guarda de una respuesta y de una pregunta pasa por taparParaImprimir");
+    if (/console\.(log|error)\([^)]*\b(salida|s)\.crudo\b|crudo:/.test(c)) falla(G, C, 0, "el corredor nunca imprime ni guarda la respuesta cruda del modelo");
+    // 7. El código real de lib/compa: los sistemas fijos de cada uso, tapar y el verificador (no una copia).
+    try {
+      const mod = BATERIA.M.modulos();
+      for (const n of ["SISTEMA_VECINO", "SISTEMA_PANEL", "SISTEMA_AUTO", "SISTEMA_BORRADOR", "SISTEMA_COPILOTO"]) if (typeof mod.conv?.[n] !== "string" || mod.conv[n].length < 300) falla(G, M, 0, `no cargo ${n} de lib/compa/conversacion.ts: la batería tiene que usar el sistema fijo de verdad`);
+      if (typeof mod.v?.verificar !== "function" || typeof mod.t?.tapar !== "function" || typeof mod.r?.detectar !== "function" || typeof mod.acc?.validarAccion !== "function") falla(G, M, 0, "la batería usa verificar, tapar, detectar y validarAccion de lib/compa (no una copia)");
+    } catch (e) { falla(G, M, 0, `el motor de la batería no carga el código de lib/compa: ${String(e?.message ?? e).slice(0, 200)}`); }
+    // 8. La revisión: sus casos propios (buenas y malas) en verde.
+    const p4 = lanzar(process.execPath, [C, "--casos"], { env: sano, encoding: "utf8", timeout: 120_000 });
+    const fin = /(\d+)\/(\d+) casos de la revisión/.exec(p4.stdout ?? "");
+    if (p4.status !== 0 || !fin || fin[1] !== fin[2] || Number(fin[2]) < 90) falla(G, RC, 0, `los casos de la revisión no pasan: ${String(p4.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 4).map((l) => l.trim()).join(" · ").slice(0, 400) || `salió ${p4.status} ${String(p4.stderr).slice(0, 160)}`}`);
+    // 9. El corredor corre de verdad contra las reglas (sin red, sin clave): toda pregunta corre, nada personal sale en el JSON.
+    const json = `${carpetaTemporal()}/guardian-bateria-${process.pid}.json`;
+    const p5 = lanzar(process.execPath, [C, "--json", json], { env: { ...sano, TOLATINO_BATERIA_MOTOR: "reglas" }, encoding: "utf8", timeout: 300_000 });
+    if (p5.status !== 0 && p5.status !== 1) falla(G, C, 0, `el corredor contra las reglas sale con 0 o 1 (salió ${p5.status}): ${String(p5.stderr || p5.stdout).slice(0, 200)}`);
+    else {
+      let j = null; try { j = JSON.parse(readFileSync(json, "utf8")); } catch { /* abajo */ }
+      if (!j) falla(G, C, 0, "el corredor escribe su JSON con todo");
+      else {
+        if (j.resultados.length !== datos.casos.length * 2 || j.sin_correr) falla(G, C, 0, `cada caso corre en español y en inglés: ${j.resultados.length} resultados para ${datos.casos.length} casos (${j.sin_correr} sin correr)`);
+        if (!(j.total?.ok > 0) || !Object.keys(j.por_audiencia ?? {}).length) falla(G, C, 0, "el corredor saca el porcentaje total y por audiencia");
+        for (const r of j.resultados) if (/(?:\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\b\d{9,}\b/i.test(`${r.texto ?? ""} ${r.pregunta ?? ""}`)) { falla(G, C, 0, `el JSON de la corrida deja ver un dato personal o un id sin tapar (${r.id} ${r.lang})`); break; }
+      }
+    }
   },
 
 };
