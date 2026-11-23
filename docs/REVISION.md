@@ -6344,3 +6344,15 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   - «Te abro tu cita en X.» / «Opening your appointment at X.»
 - **Una decisión tuya, sin prisa:** «la cita de mi mamá» o «de mi hijo» no cuenta como de otra persona (pudo reservarla quien escribe).
 
+## Cambiar la portada de una categoría desde el Super Admin (23 nov · migración 0214)
+- **Qué mirar:** Super Admin › Catálogo › una categoría › «Portada de la página». Cambiar foto desde el teléfono, «Poner de portada» con motivo, abrir
+  la página de la categoría y ver la foto nueva; después «Volver a la de fábrica». Con un rol de solo lectura dice «Tu rol no edita el catálogo.».
+- **Una cosa para ti:** en el teléfono esa sección queda al final de la ficha de la categoría, después de toda la lista de subcategorías. Dime si la
+  quieres más arriba.
+- Solo se cambia la portada; los mosaicos de dentro (y los 7 que salen en gris) todavía no. Queda anotado.
+
+## El Compa, dos ajustes después de verlo servido (23 nov)
+- Si varias operaciones coinciden con lo que dices pero solo una se puede cancelar todavía, propone esa (las pasadas o ya confirmadas no cuentan).
+- Si dos se describen igual (mismo negocio y misma hora), las nombra con su número: «…tu reservación de mesa en Sabor Dominicano (mar 24 nov, 19:00),
+  R-1042 y …, R-1043». Por SMS y WhatsApp contestas con el número y te llega el enlace de esa.
+

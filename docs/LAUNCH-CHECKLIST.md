@@ -2861,7 +2861,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       te toca» 9-1.x se marque solo, la regla de HTTPS en producción ni la precedencia del entorno sobre el llavero.
 - [ ] **→ 9u** · **Campo oculto en el sistema de diseño (23 nov):** el `field` de `PanelBloques` aprendió `oculto` (mismo aspecto, tipo contraseña) para
       pegar llaves. Falta el OK del fundador a la pieza (REVISION).
-- [ ] **→ 9u** · **Cambiar una portada de categoría desde el Super Admin (regla 8):** `categories.page_admin` se lee pero nada lo escribe; falta la pantalla
+- [x] **→ 9u** · **(Hecho el 23 nov, migración 0214: Catálogo › categoría › «Portada de la página», todo o nada, auditado; guardián
+      `portadaCategoriaDelEquipo`, al revés `alrevesPortadaCategoria` 24/24, punta a punta `cat9n3`.)** Cambiar una portada de categoría desde el Super Admin (regla 8): `categories.page_admin` se lee pero nada lo escribe; falta la pantalla
       en Catálogo (subir al almacén y guardar en `page_admin`).
 - [ ] **→ 9u** · **7 mosaicos de categoría sin foto:** las fotos 1388944, 48246, 3284980, 35562107, 16537217, 31512997 y 52495 ya no existen en su origen;
       salen en gris (como ya salían) hasta elegir otra propia.
@@ -2873,3 +2874,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9q** · **El Compa elige la operación: sin ver servido** (`compa7c`/`compa7d` corren en el CI, pero la pantalla con dos operaciones y las
       respuestas nuevas no se miró en teléfono). «La de mañana/hoy» no está conectado (nadie pasa `hoy`). «Cancel…» sigue disparándose por prefijo. Los
       textos nuevos esperan el OK del fundador (REVISION).
+- [ ] **→ 9u** · **Mosaicos de las páginas de categoría desde el Super Admin:** hoy solo la portada. Para los mosaicos (incluidos los 7 en gris) hace falta
+      ampliar el check de `page_admin` (0214 solo admite `hero`), una pantalla por mosaico, la mezcla por mosaico en `categoriaPorSlug` y su guardián.
+- [ ] **→ 9u** · **0214: `media_owner_kind_check` queda NOT VALID a propósito** (validarlo recorre `media` con candado); si se quiere validar, en su propia
+      migración fuera de hora pico. Sin probar: aplicada → revertida → aplicada, y dos Admin a la vez (hay `for update`, no prueba de carrera).
+- [ ] **→ 9u** · **Portada de categoría en el teléfono: la sección queda al final de la ficha**, después de toda la lista de subcategorías (decisión del
+      fundador en REVISION si se sube). El inglés del Catálogo no se vio servido; los mensajes del servidor de Catálogo son solo en español, como los demás.
+- [ ] **→ 9q** · **El Compa por SMS/WhatsApp con varias candidatas:** pregunta cuál y, si se describen igual, dice el número de cada una; quien contesta
+      solo con el número («R-1042») sin «cancela» no se probó.
