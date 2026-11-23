@@ -5,12 +5,13 @@
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { catCiudad, catEjemplo, catHorario, filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, limiteCambiar, modCiudad, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, subFusionar, subMover, subNombre, subSeparar, topeCargoDealer } from "./acciones-catalogo";
+import { useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
+import { catCiudad, catEjemplo, catHorario, catPortada, catPortadaFabrica, filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, limiteCambiar, modCiudad, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, subFusionar, subMover, subNombre, subSeparar, topeCargoDealer } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar, type NotaPara } from "./Colas";
 import { useAhora } from "@/lib/ahora";
 import { useE } from "./idioma-admin";
+import { subirFoto } from "@/lib/subir-foto";
 
 import { tec } from "@/lib/tec";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ type Limite = { key: string; mods: string[]; label: Bi; help: Bi | null; unidad:
 export type DatosCatalogo = {
   tab: string; puede: boolean;
   cats?: { id: string; es: string; icon: string; op_kind: string | null; line: string | null; subs: number; off: number; negocios: number; pro: number; filtros: number; filtros_off: number }[];
-  cat?: { id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number;
+  cat?: { id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number; slug: string; hero_fab: string | null; hero_admin: string | null;
     subs: { id: string; es: string; en: string; status: string; n: number; equipo: boolean; reason: string | null; into_id: string | null; into_es: string | null }[];
     negocios: { id: string; name: string; plan: string; verified: boolean; cover: string | null }[]; rapidos: string[]; historial: Hist;
     // 9n · activa por ciudad, «Publica tu negocio» (plantilla de horario y ejemplos) y las categorías a donde se puede mover una subcategoría
@@ -51,6 +52,7 @@ const VERBO = (E: EF): Record<string, string> => ({
   "catalogo.cat.ciudad_apagar": E("apagó la categoría en una ciudad", "turned off the category in a city"), "catalogo.cat.ciudad_encender": E("encendió la categoría en una ciudad", "turned on the category in a city"),
   "catalogo.modulo.ciudad_apagar": E("apagó el módulo en una ciudad", "turned off the module in a city"), "catalogo.modulo.ciudad_encender": E("encendió el módulo en una ciudad", "turned on the module in a city"),
   "catalogo.cat.horario": E("cambió la plantilla de horario", "changed the hours template"), "catalogo.cat.ejemplo": E("cambió un ejemplo de Publica tu negocio", "changed a List your business example"),
+  "catalogo.cat.portada": E("cambió la portada de la página", "changed the page cover photo"), "catalogo.cat.portada_fabrica": E("volvió a la portada de fábrica", "went back to the default cover photo"),
   "config.cambiar": E("cambió un límite del plan", "changed a plan limit"),
   "catalogo.filtro.apagar": E("apagó un filtro", "turned off a filter"), "catalogo.filtro.encender": E("encendió un filtro", "turned on a filter"), "autos.cargo.tope": E("cambió el tope del cargo del dealer", "changed the dealer fee cap"),
 });
@@ -64,11 +66,14 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
   const [pend, start] = useTransition();
+  // Portada de la página de una categoría: la foto elegida (ya subida y revisada, todavía sin poner) y si está subiendo.
+  const fotoIn = useRef<HTMLInputElement>(null);
+  const [nueva, setNueva] = useState<{ id: string; url: string } | null>(null), [sube, setSube] = useState(false);
   const [q, setQ] = useState(d.sin?.q ?? "");
   // 9n · La plantilla de horario que se está editando (null = la guardada) y el día abierto.
   const [hor, setHor] = useState<DiaP[] | null>(null), [diaAb, setDiaAb] = useState(-1);
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } router.push(`${path}${u.size ? `?${u}` : ""}`, { scroll: false }); };
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setHor(null); setDiaAb(-1); router.refresh(); };
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setHor(null); setDiaAb(-1); setNueva(null); router.refresh(); };
   const sinPermiso = () => setToast(E("Tu rol no edita el catálogo.", "Your role can’t edit the catalog."));
   const nNeg = (n: number) => `${n} ${n === 1 ? E("negocio", "business") : E("negocios", "businesses")}`;
   // 9n · Una ciudad con su interruptor (categoría o módulo activos por ciudad): apagar dice a cuántos negocios afecta y pide motivo.
@@ -86,6 +91,15 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
     acts: admin ? [{ l: E("Cambiar", "Change"), icon: "edit", onClick: () => setConf({ titulo: en ? l.label.en : l.label.es, sub: E(`Entre ${l.min} y ${l.max}. De fábrica: ${l.def}. Aplica al momento en todas las ciudades.`, `Between ${l.min} and ${l.max}. Default: ${l.def}. Applies right away in every city.`), cta: E("Guardar", "Save"),
       valor: { k: E("VALOR NUEVO", "NEW VALUE"), ini: String(l.v), max: 4 }, nota: "interna", hacer: (m, _e, v) => limiteCambiar(l.key, v, m) }) }] : undefined,
   });
+  // La foto sube por la ruta de las fotos públicas (revisión automática, AJ): si queda en revisión o se rechaza, la hoja de AvisoFoto lo dice y aquí no hay id.
+  const elegirPortada = async (f: File | undefined) => {
+    if (!f || sube) return;
+    setSube(true);
+    const r = await subirFoto(f);
+    setSube(false);
+    if (r.ok && r.id && r.url) setNueva({ id: r.id, url: r.url });
+    else if (!r.estado) setToast(r.mensaje ? E(r.mensaje.es, r.mensaje.en) : E("No se pudo subir la foto. Prueba otra vez.", "The photo could not be uploaded. Try again."));
+  };
   const run = (f: () => Promise<ResAdm>) => start(async () => { const r = await f(); if (r.ok) hecho(r); else setToast(r.mensaje); });
   const historial = (h: Hist): ReactNode => h.length
     ? <A.AuditLog rows={h.slice(0, 8).map((x) => ({ who: x.quien ?? E("Equipo", "Team"), initials: (x.quien ?? "E").slice(0, 1), action: verbo[x.action] ?? x.action, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora, E) }))} />
@@ -150,6 +164,23 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
         <PanelBloques bloques={[{ type: "group", k: E("ACTIVA POR CIUDAD", "ON BY CITY") }, { type: "rows", cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: c.ciudades.map((x) =>
           filaCiudad(x, { es: c.es, en: cN }, nNeg(x.negocios), { es: "dejan de salir en la página de la categoría, en Negocios y en Buscar, y nadie publica uno nuevo de esta categoría ahí. Sus fichas se conservan.", en: "they stop showing on the category page, in Businesses and in Search, and no one can list a new one of this category there. Their listings are kept." },
             (encender, m) => catCiudad(c.id, x.id, encender, m))) }]} />
+        {c.title ? <>
+          <PanelBloques bloques={[{ type: "group", k: E("PORTADA DE LA PÁGINA", "PAGE COVER PHOTO") },
+            { type: "note", tone: "info", icon: "image", t: E(`Es la foto grande de arriba en la página de ${c.es} (/c/${c.slug}). Se ve al momento en todas las ciudades. Elige una foto horizontal: se recorta al centro. La foto pasa por la misma revisión de las fotos públicas. Los mosaicos de la página no se cambian desde aquí.`, `It is the large photo at the top of the ${cN} page (/c/${c.slug}). It shows right away in every city. Pick a wide photo: it is cropped to the center. The photo goes through the same review as any public photo. The page tiles can’t be changed from here.`) },
+            { type: "photos", cols: desk ? 4 : 2, items: [
+              ...(nueva ? [{ key: "nueva", bg: `url("${nueva.url}")`, on: true, tag: E("NUEVA", "NEW") }] : []),
+              ...((c.hero_admin ?? c.hero_fab) ? [{ key: "actual", bg: `url("${c.hero_admin ?? c.hero_fab}")`, tag: c.hero_admin ? E("ACTUAL · DEL EQUIPO", "CURRENT · TEAM") : E("ACTUAL · DE FÁBRICA", "CURRENT · DEFAULT") }] : []),
+              ...(c.hero_admin && c.hero_fab ? [{ key: "fabrica", bg: `url("${c.hero_fab}")`, tag: E("DE FÁBRICA", "DEFAULT") }] : []),
+            ], addL: sube ? E("Subiendo…", "Uploading…") : E("Cambiar foto", "Change photo"), onAdd: !d.puede ? sinPermiso : sube ? () => undefined : () => fotoIn.current?.click() },
+            nueva && d.puede ? { type: "acts", items: [
+              { l: E("Poner de portada", "Use as cover"), v: "action", icon: "check", off: pend, onClick: () => setConf({ titulo: E(`Portada de ${c.es}`, `Cover photo of ${cN}`), sub: E("Se ve al momento en la página pública de la categoría, en todas las ciudades. La foto de antes no se borra: «Volver a la de fábrica» devuelve la original.", "It shows right away on the public category page, in every city. The old photo isn’t deleted: “Go back to the default” brings back the original."), cta: E("Poner de portada", "Use as cover"), nota: "interna", hacer: (m) => catPortada(c.id, nueva.id, m) }) },
+              { l: E("Descartar", "Discard"), icon: "close", onClick: () => setNueva(null) }] } as Bloque : null,
+            !nueva && d.puede && c.hero_admin ? { type: "acts", items: [
+              { l: E("Volver a la de fábrica", "Go back to the default"), icon: "chevronLeft", off: pend, onClick: () => setConf({ titulo: E(`¿Por qué vuelve la portada de fábrica en ${c.es}?`, `Why is the default cover photo coming back in ${cN}?`), sub: E("La página pública vuelve a la foto de fábrica al momento. La foto del equipo no se borra.", "The public page goes back to the default photo right away. The team photo isn’t deleted."), cta: E("Volver a la de fábrica", "Go back to the default"), nota: "interna", hacer: (m) => catPortadaFabrica(c.id, m) }) }] } as Bloque : null,
+            { type: "acts", items: [{ l: E("Ver la página de la categoría", "View the category page"), icon: "search", onClick: () => window.open(`/c/${c.slug}`, "_blank") }] },
+          ].filter(Boolean) as Bloque[]} />
+          <input ref={fotoIn} type="file" accept="image/*" hidden aria-label={E("Elegir la foto de portada", "Choose the cover photo")} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void elegirPortada(f); }} />
+        </> : null}
         <PanelBloques bloques={[{ type: "group", k: E("PUBLICA TU NEGOCIO", "LIST YOUR BUSINESS") }]} />
         {H ? <>
           <PanelBloques bloques={[{ type: "note", tone: "info", icon: "clock", t: E("Plantilla de horario: con esto empieza quien publica un negocio de esta categoría (lo cambia en su paso «¿Cuándo abres?»). Los que ya publicaron no cambian.", "Hours template: someone listing a business in this category starts with these hours (they can change them in “When are you open?”). Businesses already listed don’t change.") },

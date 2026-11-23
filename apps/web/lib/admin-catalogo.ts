@@ -27,9 +27,10 @@ export type OnbCategoria = { horario?: DiaPlantilla[] | null; ph_nombre?: Bi; ph
 
 export async function categoriaAdmin(id: string) {
   if (!/^NEG-[A-Z]+$/.test(id)) return null;
-  const c = (await db().query<{ id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number; onb: OnbCategoria; off: string[] }>(
+  const c = (await db().query<{ id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number; onb: OnbCategoria; off: string[]; hero_fab: string | null; hero_admin: string | null; corto: string }>(
     `select id, name->>'es' as es, name->>'en' as en, icon, op_kind, fixed_line as line, page->'title'->>'es' as title,
-            coalesce(jsonb_array_length(page->'chapters'), 0) as capitulos, onb, off_cities as off from categories where id = $1`, [id])).rows[0];
+            coalesce(jsonb_array_length(page->'chapters'), 0) as capitulos, onb, off_cities as off,
+            page->>'hero' as hero_fab, page_admin->>'hero' as hero_admin, short->>'es' as corto from categories where id = $1`, [id])).rows[0];
   if (!c) return null;
   const [subs, negocios, rapidos, hist, ciudades, otras] = await Promise.all([
     // 9n · Las fusionadas salen con el nombre de la que las recibió (Separar las devuelve).
@@ -52,7 +53,7 @@ export async function categoriaAdmin(id: string) {
          from cities ci order by ci.sort, ci.id`, [id]),
     db().query<{ id: string; es: string; en: string }>(`select id, name->>'es' as es, name->>'en' as en from categories where id <> $1 order by sort`, [id]),
   ]);
-  return { ...c, subs: subs.rows, negocios: negocios.rows, rapidos: rapidos.rows.map((x) => x.label), historial: hist,
+  return { ...c, slug: slugCat(c.corto), subs: subs.rows, negocios: negocios.rows, rapidos: rapidos.rows.map((x) => x.label), historial: hist,
     ciudades: ciudades.rows.map((x) => ({ ...x, on: !c.off.includes(x.id) })), otras: otras.rows };
 }
 

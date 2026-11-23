@@ -14506,9 +14506,67 @@ const guardianes = {
     if (!/puestas \+= \(await c\.query\(`update media set owner_kind = 'business'/.test(pu) || !/\.rowCount \?\? 0/.test(pu) || !/if \(puestas !== fotos\.length\) throw new FotoNoAdjunta\(\);/.test(pu)) falla(G, PB, 0, "publicar: cuenta las fotos que de verdad pasó al negocio y, si son menos que las pedidas, lanza dentro de la transacción (no se crea el negocio)");
     if (!/try \{ id = await tx\(/.test(pu) || !/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return no\("Una de las fotos ya no está\. Súbela otra vez\.", "One of the photos is gone\. Upload it again\.", "F1"\); throw e; \}/.test(pu)) falla(G, PB, 0, "publicar: la foto que no se adjunta en la transacción se rechaza con «Una de las fotos ya no está» y deja a la persona en F1");
     if (/const orden = fotos\.filter/.test(pu)) falla(G, PB, 0, "publicar: vuelve el filtro que descarta en silencio las fotos que no se adjuntan");
+    // Portada de una categoría (23 nov, Super Admin › Catálogo): la foto que no se puede adjuntar (no es de quien la pone, ya no está visible, pasó a privada o a revisión)
+    // lanza dentro de la transacción y deshace TODO (ni page_admin ni la auditoría), y se rechaza con «Esa foto no existe.»; nunca ok sin ella.
+    const CT = "apps/web/app/admin/acciones-catalogo.ts";
+    if (!existsSync(CT)) return falla(G, CT, 0, "falta el archivo de las acciones del Catálogo");
+    const ct = sinComent(CT), cp = cuerpoFn(ct, "catPortada");
+    if (!/class FotoNoAdjunta extends Error/.test(ct)) falla(G, CT, 0, "catPortada: falta la clase que se lanza dentro de la transacción (FotoNoAdjunta)");
+    if (!/\(await c\.query<\{ url: string \}>\(\s*`update media set owner_kind = 'category', owner_id = \$1, sort = 0 where id = \$2::uuid and owner_kind = 'user' and uploaded_by = \$3 and owner_id = \$3::text\s+and status = 'visible' and not rev_sin_c2 and not private and purged_at is null and url like '\/medios\/n\/%' returning url`/.test(cp)) falla(G, CT, 0, "catPortada: la foto se adjunta solo si es de quien la pone, visible, pública y de nuestro almacén (y pasa a ser de la categoría: una foto no es portada de dos)");
+    const iThrow = cp.indexOf("if (!f) throw new FotoNoAdjunta();"), iPA = cp.indexOf("update categories set page_admin"), iAud = cp.indexOf("await auditar(");
+    if (iThrow < 0 || iPA < iThrow || iAud < iThrow) falla(G, CT, 0, "catPortada: si la foto no se adjunta, lanza dentro de la transacción ANTES de escribir page_admin y la auditoría (todo o nada)");
+    if (!/catch \(e\) \{ if \(e instanceof FotoNoAdjunta\) return no\("Esa foto no existe\."\); throw e; \}/.test(cp)) falla(G, CT, 0, "catPortada: la foto que no se puede adjuntar se rechaza con «Esa foto no existe.» (como perfil y logo), nunca ok");
     // Por clase: un update media a negocio / equipo / evento cuyo resultado nadie lee ignora en silencio lo que no adjuntó.
-    for (const [x, t] of [[A, a], [Q, q], [E, e], [I, i], [PB, pb]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event|logo)'/gm))
+    for (const [x, t] of [[A, a], [Q, q], [E, e], [I, i], [PB, pb], [CT, ct]]) for (const m of t.matchAll(/^[ \t]*await [a-z]+\.query\(\s*`update media(?: [a-z])? set owner_kind = '(?:business|member|event|logo|category)'/gm))
       falla(G, x, t.slice(0, m.index).split("\n").length + 1, "un update media a negocio / equipo / evento sin leer su resultado: si no adjunta la foto no se entera nadie (usa rowCount o returning y rechaza)");
+  },
+
+  /* portadaCategoriaDelEquipo (23 nov): la portada de /c/<categoría> la puede cambiar el Super Admin (Catálogo › la categoría › «Portada de la página»): categories.page_admin solo lo
+     escribe esa acción (catPortada y catPortadaFabrica, apps/web/app/admin/acciones-catalogo.ts) y solo la clave «hero»; la semilla nunca lo toca. Cada una: sesión de Admin con el permiso
+     del Catálogo (hacer), mismo origen, motivo obligatorio, la categoría bloqueada (for update) y su renglón de auditoría con antes → después y motivo en la MISMA transacción (hacer). La
+     portada puesta es siempre una foto de NUESTRO almacén: la acción recibe el id de una foto subida (nunca una dirección), escribe la dirección que devolvió la base y la base lo impone
+     (categories_page_admin_portada_propia, 0214: solo «hero» y /medios/n/<uuid>.jpg). La pantalla solo manda el id de la foto que subió por la ruta de las fotos públicas (revisión automática).
+     Al revés: alrevesPortadaCategoria; punta a punta: cat9n3. La parte de todo o nada (foto que no se adjunta) la mira fotosAdjuntarTodoONada. */
+  portadaCategoriaDelEquipo() {
+    const G = "portadaCategoriaDelEquipo", CT = "apps/web/app/admin/acciones-catalogo.ts", UI = "apps/web/app/admin/Catalogo.tsx", MG = "packages/db/migrations/0214_portada_de_categoria.sql";
+    for (const x of [CT, UI, MG]) if (!existsSync(x)) return falla(G, x, 0, "falta un archivo de la portada de la categoría");
+    // 1 · Nadie más escribe page_admin (código de la app, scripts y semillas; las migraciones ya aplicadas y las pruebas no se miran).
+    for (const f of archivos) {
+      if (f === CT || /^packages\/db\/migrations\//.test(f) || !/\.(tsx?|mjs|cjs|js|sql|sh)$/.test(f) || !/^(apps|packages|scripts|services|infra)\//.test(f)) continue;
+      const t = /\.sql$/.test(f) ? readFileSync(f, "utf8").split("\n").map((l) => l.replace(/--.*$/, "")).join("\n") : sinComent(f);
+      for (const m of t.matchAll(/\bpage_admin\b\s*=(?!=)/g)) falla(G, f, t.slice(0, m.index).split("\n").length, "categories.page_admin solo lo escribe catPortada / catPortadaFabrica (Super Admin › Catálogo): un segundo camino se salta el permiso, el motivo y la auditoría");
+      if (/^packages\/db\/seeds\//.test(f) && /\bpage_admin\b/.test(t)) falla(G, f, 0, "la semilla nunca toca page_admin (lo del equipo no se pisa con una semilla nueva)");
+    }
+    const ct = sinComent(CT), cp = cuerpoFn(ct, "catPortada"), cf = cuerpoFn(ct, "catPortadaFabrica");
+    if (!cp || !cf) return falla(G, CT, 0, "faltan catPortada y catPortadaFabrica");
+    const resto = ct.replace(cp, "").replace(cf, "");
+    for (const m of resto.matchAll(/\bpage_admin\b\s*=(?!=)/g)) falla(G, CT, resto.slice(0, m.index).split("\n").length, "page_admin se escribe SOLO dentro de catPortada y catPortadaFabrica");
+    // 2 · Cada una: Admin con el permiso, mismo origen, motivo, categoría bloqueada, auditoría con antes/después/motivo, todo dentro de hacer (la transacción).
+    for (const [n, c, acc] of [["catPortada", cp, "catalogo.cat.portada"], ["catPortadaFabrica", cf, "catalogo.cat.portada_fabrica"]]) {
+      if (!/if \(!\(await mismoOrigen\(\)\)\) return no\("No permitido\."\);/.test(c)) falla(G, CT, 0, `${n}: pide el mismo origen (mismoOrigen) antes de tocar nada`);
+      if (!/const m = limpio\(motivo\);\n\s*if \(!m\) return no\("Escribe el motivo\."\);/.test(c)) falla(G, CT, 0, `${n}: el motivo es obligatorio`);
+      if (!/return (?:await )?hacer\(async \(c, s\) => \{/.test(c)) falla(G, CT, 0, `${n}: todo va dentro de hacer (sesión de Admin con el permiso del Catálogo y una transacción)`);
+      if (!/from categories where id = \$1[^`]*for update`/.test(c)) falla(G, CT, 0, `${n}: bloquea la categoría (for update) antes de leer y escribir (dos Admin a la vez no se pisan)`);
+      const iH = c.indexOf("hacer(async"), iW = c.search(/\bpage_admin\b\s*=(?!=)/), iA = c.indexOf("await auditar(c, {");
+      if (iW < iH || iA < iW) falla(G, CT, 0, `${n}: escribe page_admin dentro de hacer y deja su auditoría DESPUÉS, en la misma transacción`);
+      const au = c.slice(iA, c.indexOf("});", iA));
+      if (!au.includes(`action: "${acc}"`) || !/targetKind: "category", targetId: cat/.test(au) || !/before: \{/.test(au) || !/after: \{/.test(au) || !/reason: m/.test(au)) falla(G, CT, 0, `${n}: la auditoría lleva la acción «${acc}», la categoría, antes, después y el motivo`);
+    }
+    const hc = (/async function hacer\([\s\S]*?\n\}/.exec(ct) ?? [""])[0];
+    if (!/!s\.puede\("cat", "editar"\)/.test(hc) || !/await tx\(\(c\) => fn\(c, s\)\)/.test(hc)) falla(G, CT, 0, "hacer: exige cat:editar y corre la acción dentro de una transacción");
+    // 3 · La portada es una foto del almacén propio: la acción recibe un id (nunca una dirección), escribe la dirección que devolvió la base y la base lo impone.
+    if (!/export async function catPortada\(cat: string, mediaId: string, motivo: string\): Promise<ResAdm>/.test(ct) || !/!UUID\.test\(mediaId\)/.test(cp)) falla(G, CT, 0, "catPortada recibe el id de una foto subida (un uuid), nunca una dirección");
+    if (!/jsonb_set\(coalesce\(page_admin, '\{\}'::jsonb\), '\{hero\}', to_jsonb\(\$2::text\)\)[^`]*`, \[cat, f\.url\]/.test(cp)) falla(G, CT, 0, "catPortada escribe en page_admin solo la clave «hero» con la dirección que devolvió la base (f.url), nunca lo que mandó la pantalla");
+    if (!/page_admin = coalesce\(page_admin, '\{\}'::jsonb\) - 'hero'/.test(cf)) falla(G, CT, 0, "catPortadaFabrica quita solo la clave «hero» de page_admin (lo demás de la página sigue de fábrica)");
+    const mg = readFileSync(MG, "utf8").split("\n").map((l) => l.replace(/--.*$/, "")).join("\n");
+    if (!/add constraint categories_page_admin_portada_propia check \(\s*jsonb_typeof\(page_admin\) = 'object' and \(page_admin - 'hero'\) = '\{\}'::jsonb\s*and \(not \(page_admin \? 'hero'\) or page_admin->>'hero' ~ '\^\/medios\/n\/\[0-9a-f\]\{8\}/.test(mg)) falla(G, MG, 0, "la base impone que page_admin solo lleve «hero» y una foto de /medios/n/ (0214: categories_page_admin_portada_propia)");
+    if (/delete\s+from\s+media/i.test(ct)) falla(G, CT, 0, "el Catálogo nunca borra una foto (nada se borra: «removed/replaced»)");
+    if (!/update media set owner_kind = 'category', owner_id = \$1/.test(cp) || !/set status = 'removed', removed_reason = 'replaced'/.test(cp) || !/set status = 'removed', removed_reason = 'replaced'/.test(cf)) falla(G, CT, 0, "la portada pasa a ser de la categoría y la foto anterior (o la devuelta a la de fábrica) queda «removed/replaced»: nada se borra");
+    // 4 · La pantalla: solo manda el id de la foto que subió por la ruta de las fotos públicas.
+    const ui = sinComent(UI);
+    if (!/import \{ subirFoto \} from "@\/lib\/subir-foto";/.test(ui) || !/await subirFoto\(f\)/.test(ui)) falla(G, UI, 0, "la portada se sube por subirFoto (la ruta de las fotos públicas, con su revisión automática)");
+    if (!/hacer: \(m\) => catPortada\(c\.id, nueva\.id, m\)/.test(ui) || /catPortada\([^)]*(?:url|valor|\bv\b)/.test(ui)) falla(G, UI, 0, "la pantalla manda a catPortada el ID de la foto subida (nunca una dirección ni un texto escrito)");
+    if (!/hacer: \(m\) => catPortadaFabrica\(c\.id, m\)/.test(ui)) falla(G, UI, 0, "la pantalla ofrece «Volver a la de fábrica» con su motivo");
   },
 
   /* fotosRevisionPrivacidad: a la segunda opinión (Claude con visión) solo van fotos destinadas a lo público. lib/fotos-segunda-opinion.ts lo
@@ -14565,7 +14623,8 @@ const guardianes = {
     const PUB_FOTO = ["apps/web/app/e/[code]/AceptarEquipo.tsx", "apps/web/app/(app)/cuenta/perfil/Perfil.tsx", "apps/web/app/(app)/eventos/publicar/Publicar.tsx",
       "apps/web/app/(app)/comunidad/nuevo/Nuevo.tsx", "apps/web/app/(app)/n/[id]/resena/Escribir.tsx", "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/EventosPanel.tsx",
       "apps/web/app/panel/Autos.tsx", "apps/web/app/panel/Servicios.tsx", "apps/web/app/panel/Oficios.tsx", "apps/web/app/panel/Menu.tsx", "apps/web/app/panel/NovedadesPanel.tsx",
-      "apps/web/app/panel/RentaArticulo.tsx", "apps/web/app/panel/Inmuebles.tsx", "apps/web/app/panel/Panel.tsx", "apps/web/app/(app)/publica/PasosFH.tsx"];
+      "apps/web/app/panel/RentaArticulo.tsx", "apps/web/app/panel/Inmuebles.tsx", "apps/web/app/panel/Panel.tsx", "apps/web/app/(app)/publica/PasosFH.tsx",
+      "apps/web/app/admin/Catalogo.tsx"]; // 23 nov · la portada de una categoría: foto pública (Super Admin › Catálogo)
     for (const x of codigo) {
       if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue;
       const t = sinComent(x), llamadas = [...t.matchAll(/\bsubirFoto\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g)], directo = /fetch\("\/api\/medios"/.test(t);
