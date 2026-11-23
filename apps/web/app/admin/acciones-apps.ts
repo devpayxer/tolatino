@@ -4,7 +4,8 @@
 import { revalidatePath } from "next/cache";
 import { staff } from "@/lib/admin";
 import { cambiarBuild, pausarApp } from "@/lib/app-nativa";
-import { comprobar, retirar } from "@/lib/tiendas/llavero";
+import { olvidarLlaves } from "@/lib/llaves-proveedores";
+import { comprobar, esTipoProveedor, retirar } from "@/lib/tiendas/llavero";
 import { cambiarConfig } from "@/lib/config";
 import { cambiarCanal, pushPrueba } from "@/lib/push/admin";
 import type { ResAdm } from "./acciones-colas";
@@ -38,8 +39,20 @@ export async function llaveRetirar(id: string, motivo: string): Promise<ResAdm> 
   if (m.length < 3) return { ok: false, mensaje: "Escribe el motivo." };
   const r = await retirar(String(id), s.id, m);
   if (!r.ok) return { ok: false, mensaje: r.msg };
+  olvidarLlaves(); // una llave de proveedor retirada deja de usarse al instante en este proceso (los demás, por el aviso de la base)
   revalidatePath("/admin/sistema/integraciones");
   return { ok: true, mensaje: r.msg };
+}
+
+/* 23 nov · «Probar» una llave de proveedor (la que el servidor usa hoy) contra su tercero: solo un Admin con integ:ver, como «Comprobar». Devuelve
+   un código (la pantalla lo dice en ES/EN); nunca el valor. Queda anotado (store_secret_checks y la auditoría). */
+export async function llaveProbar(tipo: string): Promise<{ ok: boolean; resultado: string }> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("integ", "ver")) return { ok: false, resultado: "sin_permiso_admin" };
+  if (!esTipoProveedor(tipo)) return { ok: false, resultado: "no_existe" };
+  const r = await (await import("@/lib/llaves-probar")).probarLlave(tipo, s.id);
+  revalidatePath("/admin/sistema/integraciones");
+  return { ok: r.ok, resultado: r.resultado };
 }
 
 export async function llaveComprobar(id: string): Promise<ResAdm> {

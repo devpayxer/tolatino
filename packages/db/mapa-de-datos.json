@@ -306,7 +306,8 @@
     "staff_holidays": { "equipo": [ "created_by", "removed_by" ] },
     "business_notif_prefs": { "reglas": [ { "col": "updated_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
     "special_hours": { "reglas": [ { "col": "created_by", "accion": "guardar", "porque": "negocio", "fusion": "no" } ] },
-    "subcategory_merges": { "equipo": ["created_by", "undone_by"] }
+    "subcategory_merges": { "equipo": ["created_by", "undone_by"] },
+    "store_secret_checks": { "equipo": ["by"] }
   },
   "internas": {
     "$fuente": "22 nov · Columnas que NO salen en «Descargar mis datos» aunque la fila sea de la persona: lo que dice de OTRA persona o de cómo está armado por dentro el servicio. tabla.columna → ve (por qué no sale). La lee apps/web/lib/datos/mapa.ts (columnaInterna) y limpiar() de lib/datos/exportar.ts las quita de cada archivo (JSON y CSV); guardián notaInternaFueraDelArchivo; la prueba contra la base, nota9u2. Aquí no entran las notas (van en «notas») ni lo que nunca sale por su nombre (NUNCA_SE_EXPORTA).",

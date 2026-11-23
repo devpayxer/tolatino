@@ -58,6 +58,18 @@ export function SistemaSalud({ d, l, editar }: { d: DatosSalud; l: L; editar: bo
     ibg: rechSu ? "rgba(138,90,0,.12)" : "rgba(0,168,143,.12)", t: E(`Fotos que se suben · ${su.enCurso} preparándose · ${su.enEspera} en espera`, `Photo uploads · ${su.enCurso} processing · ${su.enEspera} waiting`),
     s: `${su.llegando ? `${su.llegando} ${E("llegando", "arriving")} · ` : ""}${E(`Tope: ${su.tope.aLaVez} a la vez, ${su.tope.dentro} de lugar, espera ${su.tope.esperaS} s`, `Cap: ${su.tope.aLaVez} at once, room for ${su.tope.dentro}, ${su.tope.esperaS} s wait`)}${su.tope.deConfig ? "" : E(" (de fábrica: Configuración no respondió)", " (default: Settings did not respond)")} · ${E(`${su.rechazos10} rechazadas en 10 min · ${su.rechazosHora} en la última hora`, `${su.rechazos10} rejected in 10 min · ${su.rechazosHora} in the last hour`)}${su.ultimoRechazo ? ` · ${E("la última", "last one")} ${cuando(su.ultimoRechazo)}` : ""} · ${E("Revisar si hubo rechazos en los últimos 10 minutos. Solo este proceso del servidor.", "Check if any were rejected in the last 10 minutes. This server process only.")}`,
     tag: rechSu ? E("REVISAR", "CHECK") : E("BIEN", "HEALTHY"), tone: rechSu ? "danger" : "signal", onClick: () => router.push("/admin/sistema/configuracion"), chev: true }] });
+  // 23 nov · Las llaves de cada proveedor: cuántas están, de dónde las toma el servidor (el llavero de Integraciones › Llaves o el entorno) y la última
+  // prueba de la que se usa hoy. Nunca un valor. El detalle y «Probar», en Integraciones › Llaves.
+  const NOM_PROV: Record<string, string> = { stripe: "Stripe", telnyx: E("Telnyx (SMS)", "Telnyx (SMS)"), whatsapp: "WhatsApp (Meta)", ses: E("Amazon SES (correo)", "Amazon SES (email)"), anthropic: E("Anthropic (El Compa)", "Anthropic (El Compa)") };
+  B.push({ type: "rows", k: E("PROVEEDORES · SUS LLAVES (SIN VALORES)", "PROVIDERS · THEIR KEYS (NO VALUES)"), cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, items: d.proveedores.map((p) => {
+    const tiene = p.total - p.faltan.length, completo = !p.faltan.length;
+    const de = [p.llavero ? E(`${p.llavero} del llavero`, `${p.llavero} from the keychain`) : null, p.entorno ? E(`${p.entorno} del entorno`, `${p.entorno} from the environment`) : null].filter(Boolean).join(" · ");
+    const pr = p.prueba ? (p.prueba.ok ? E(`probada ${cuando(p.prueba.at)}`, `tested ${cuando(p.prueba.at)}`) : E(`la prueba falló (${p.prueba.resultado})`, `the test failed (${p.prueba.resultado})`)) : null;
+    return { key: `prov-${p.prov}`, icon: completo ? "key" : "lock", t: NOM_PROV[p.prov] ?? p.prov,
+      s: [E(`${tiene} de ${p.total} llaves`, `${tiene} of ${p.total} keys`), de || null, p.sombra ? E("el entorno manda sobre el llavero", "the environment overrides the keychain") : null, pr].filter(Boolean).join(" · "),
+      tag: completo ? (p.prueba && !p.prueba.ok ? E("REVISAR", "CHECK") : E("COMPLETO", "COMPLETE")) : tiene ? E("INCOMPLETO", "INCOMPLETE") : E("SIN LLAVES", "NO KEYS"),
+      tone: completo ? (p.prueba && !p.prueba.ok ? "danger" : "signal") : "neutral", onClick: () => router.push("/admin/sistema/integraciones?tab=proveedores"), chev: true };
+  }) });
   // 9j-2 · Web Vitals de teléfonos reales (RUM): por pantalla y perfil, % de mediciones buenas de LCP, INP y CLS en 7 días. Bien si ≥ 75 % buenas
   // (el criterio de Google); revisar si más de 25 % malas. Sin personas: solo cifras por ruta y día (web_vitals_dia).
   if (d.vitales) {

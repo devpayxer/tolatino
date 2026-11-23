@@ -8,6 +8,7 @@ import { vencerCitas } from "@/lib/citas-flujo";
 import { Estado } from "./Estado";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { misTarjetas } from "@/lib/cobros";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu cita · To'Latino" };
@@ -21,7 +22,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!c) notFound();
   // 4d: si el negocio cobra con tarjeta, el cliente elige con cuál se retiene lo que aprueba.
   const modo = pasarela.modo();
-  const pago = c.est?.dinero.tarjeta && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  const pago = c.est?.dinero.tarjeta && modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) } : null;
   // 8c · El momento útil para ofrecer los avisos en este teléfono (una vez; nunca al abrir la app por primera vez).
   return <><Estado c={c} yo={[u.first_name, u.last_name].filter(Boolean).join(" ")} es={lang === "es"} cambio={sp.cambio === "1"} pago={pago} /><MomentoAvisos es={lang === "es"} /></>;
 }

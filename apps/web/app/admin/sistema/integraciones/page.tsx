@@ -1,6 +1,7 @@
 import { requerir } from "@/lib/admin";
-import { listar, llaveroListo, TIPOS } from "@/lib/tiendas/llavero";
+import { esTipoProveedor, listar, llaveroListo, PROVEEDORES, TIPOS } from "@/lib/tiendas/llavero";
 import { Integraciones } from "../../Integraciones";
+import { IntegracionesProveedores } from "../../IntegracionesProveedores";
 import { IntegracionesPush } from "../../IntegracionesPush";
 import { IntegracionesWallet } from "../../IntegracionesWallet";
 
@@ -16,9 +17,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   if (sp.tab === "push") return <IntegracionesPush d={await (await import("@/lib/push/admin")).estadoPush()} admin={admin} />;
   // 8g · ?tab=wallet: el certificado del pase de Apple (con su vencimiento y la solicitud), la cuenta de Google Wallet y las cifras.
   if (sp.tab === "wallet") return <IntegracionesWallet d={await (await import("@/lib/pases/admin")).estadoWallet()} admin={admin} listo={llaveroListo()} />;
+  // 23 nov · ?tab=proveedores: las llaves de TEXTO de Stripe, Telnyx, WhatsApp, SES y Anthropic (se pegan): de dónde las toma el servidor (el llavero o
+  // el entorno), su huella, su última prueba y «Probar». Nunca el valor (lib/llaves-proveedores.ts › origenes).
+  if (sp.tab === "proveedores") {
+    const [filas, orig, pruebas, { SE_PRUEBA }] = await Promise.all([listar(), (await import("@/lib/llaves-proveedores")).origenes(), (await import("@/lib/tiendas/llavero")).ultimasPruebas(), import("@/lib/llaves-probar")]);
+    const tipos = Object.entries(PROVEEDORES).map(([k, v]) => ({ k, es: TIPOS[k as keyof typeof PROVEEDORES].es, en: TIPOS[k as keyof typeof PROVEEDORES].en, prov: v.prov, prueba: SE_PRUEBA.has(k as keyof typeof PROVEEDORES) }));
+    return <IntegracionesProveedores filas={filas.filter((f) => esTipoProveedor(f.kind))} tipos={tipos} origenes={orig.map((o) => ({ tipo: o.tipo, origen: o.origen, huella: o.huella, sombra: o.sombra }))}
+      pruebas={pruebas} admin={admin} listo={llaveroListo()} produccion={process.env.TOLATINO_ENTORNO === "produccion"} />;
+  }
   // 8h · Cada lectura del CI (por OIDC, con su run) y cada intento contra la tubería, debajo de las llaves.
   const [filas, ci] = await Promise.all([listar(), (await import("@/lib/tiendas/tuberia")).lecturasCi()]);
   // La llave de la solicitud del certificado del pase la genera el servidor (Wallet): no es un archivo que se suba.
-  const tipos = Object.entries(TIPOS).filter(([, v]) => v.forma !== "generada").map(([k, v]) => ({ k, es: v.es, en: v.en, ext: [...v.ext] }));
-  return <Integraciones filas={filas.filter((f) => f.kind !== "pass_type_csr" || !!f.retirada)} tipos={tipos} admin={admin} listo={llaveroListo()} subir={typeof sp.subir === "string" ? sp.subir : null} ci={ci} />;
+  const tipos = Object.entries(TIPOS).filter(([, v]) => v.forma !== "generada" && v.forma !== "texto").map(([k, v]) => ({ k, es: v.es, en: v.en, ext: [...v.ext] }));
+  return <Integraciones filas={filas.filter((f) => (f.kind !== "pass_type_csr" || !!f.retirada) && !esTipoProveedor(f.kind))} tipos={tipos} admin={admin} listo={llaveroListo()} subir={typeof sp.subir === "string" ? sp.subir : null} ci={ci} />;
 }

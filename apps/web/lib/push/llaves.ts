@@ -43,13 +43,13 @@ export function llaveVapid(): Vapid {
 }
 export const origenVapid = () => (process.env.VAPID_PRIVADA && process.env.VAPID_PRIVADA.length > 40 ? "entorno" : "derivada");
 
-/* Las llaves de las tiendas: se mira en cada vuelta qué llave viva hay (su huella, sin abrir el sobre) y el sobre solo se vuelve a abrir si cambió
-   (se subió, se reemplazó o se retiró) o cada 10 minutos. Cada apertura queda anotada en store_secret_reads. */
-let tienda: { at: number; k: string; apns: CredApns | null; fcm: CuentaServicio | null } | null = null;
-export async function llavesTienda(): Promise<{ apns: CredApns | null; fcm: CuentaServicio | null }> {
+/* Las llaves de las tiendas, abiertas en la memoria del proceso con cacheConAviso. 23 nov: store_secrets avisa por NOTIFY (0213), así que subir, reemplazar
+   o retirar una llave se nota al momento en todos los procesos (antes: una consulta de huellas en cada vuelta de la cola). 10 min de respaldo. Cada
+   apertura queda anotada en store_secret_reads. */
+const TIENDA = cacheConAviso<[], { apns: CredApns | null; fcm: CuentaServicio | null }>({ ttlMs: 10 * 60_000, juntar: true, cargar: cargarTienda });
+export const llavesTienda = (): Promise<{ apns: CredApns | null; fcm: CuentaServicio | null }> => TIENDA.leer();
+async function cargarTienda(): Promise<{ apns: CredApns | null; fcm: CuentaServicio | null }> {
   const meta = (await db().query<{ kind: string; meta: Record<string, string>; fp: string }>(`select kind, meta, fingerprint as fp from store_secrets where kind in ('apns_key', 'fcm_service_account') and retired_at is null`).catch(() => ({ rows: [] }))).rows;
-  const k = meta.map((x) => `${x.kind}:${x.fp}:${JSON.stringify(x.meta)}`).sort().join("|");
-  if (tienda && tienda.k === k && Date.now() - tienda.at < 10 * 60_000) return tienda;
   const m = new Map(meta.map((x) => [x.kind, x.meta]));
   let apns: CredApns | null = null, fcm: CuentaServicio | null = null;
   const ma = m.get("apns_key");
@@ -61,10 +61,9 @@ export async function llavesTienda(): Promise<{ apns: CredApns | null; fcm: Cuen
     const b = await leer("fcm_service_account", "push · FCM").catch(() => null);
     try { const j = b ? JSON.parse(b.toString("utf8")) as CuentaServicio : null; if (j?.client_email && j.private_key && j.project_id) fcm = { ...j, token_uri: TOKEN_URI }; } catch { /* archivo dañado */ }
   }
-  tienda = { at: Date.now(), k, apns, fcm };
-  return tienda;
+  return { apns, fcm };
 }
-export const olvidarLlavesTienda = () => { tienda = null; };
+export const olvidarLlavesTienda = () => TIENDA.olvidar();
 /* ¿Hay cuenta de servicio de FCM subida? Sin abrir el sobre (no cuenta como lectura): solo si existe una viva. */
 export async function fcmListo(): Promise<boolean> {
   return !!(await db().query(`select 1 from store_secrets where kind = 'fcm_service_account' and retired_at is null`).catch(() => ({ rowCount: 0 }))).rowCount;

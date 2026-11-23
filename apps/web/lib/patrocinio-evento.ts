@@ -5,6 +5,7 @@ import { db, tx } from "./db";
 import { pasarela } from "./pagos/pasarela";
 import { CLAVE, DEVOLUCION, anotarPago, capturarCobro, cobrar, devolucionEstado, devolverPatrocinio, devolverPendientes, errorDePuestos, fechasPeriodo, money, soltarRetenido, tarjetaDe, type Bi, type Cobro, type PatAdm, type Recibo, type ResPat } from "./patrocinio";
 import type { TarjetaEvt } from "./evt-publico";
+import { llave } from "./llaves-proveedores";
 
 /* C-003 · Patrocinados de la página de Eventos (canvas tolatino-master+, entrega/cambios.md C-003; migración 0174). Usa la misma caja que el
    patrocinio de un negocio (lib/patrocinio.ts: cobrar, el libro, la tarjeta, errorDePuestos, fechasPeriodo):
@@ -260,7 +261,7 @@ export async function patEvtPanel(negocio: string, evento: string, userId: strin
     evento: { id: e.id, slug: e.slug, titulo: e.titulo, ciudad: e.ciudad, ciudadN: e.ciudadN, tz: e.tz, dia: e.dia, vivo: vivoE, entry: e.entry },
     precios: P, libres: { week: lw, month: lm, until_event: lu }, hoy: e.hoy, previa, vivo, siguiente,
     pasados: filas.rows.filter((x) => x.estado === "terminado" || x.estado === "cancelado").slice(0, 10), recibos: rec.rows, espera: !!esp.rowCount, tarjetas: tj,
-    modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null,
+    modo: pasarela.modo(), pk: await llave("STRIPE_PUBLISHABLE_KEY"),
   };
 }
 /* Para la ficha del evento en el panel: si tiene un patrocinio vivo (el botón dice «Patrocinio» en vez de «Patrocinar»). */

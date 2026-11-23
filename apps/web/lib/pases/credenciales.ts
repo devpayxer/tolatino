@@ -28,12 +28,13 @@ export const HOSTS_AIA = (): string[] => ["certs.apple.com", "www.apple.com", ..
 export const TIPO_PASE_DEF = "pass.com.tolatino.boletos";
 
 export type CredApple = CredPase & { llavePem: string; certPem: string; vence: string | null };
-let cache: { at: number; k: string; apple: CredApple | null; google: CredGoogle | null } | null = null;
-export async function credenciales(): Promise<{ apple: CredApple | null; google: CredGoogle | null }> {
+/* 23 nov · Las credenciales abiertas, en la memoria del proceso con cacheConAviso: store_secrets avisa por NOTIFY (0213), así que subir, reemplazar o
+   retirar el certificado o la cuenta se nota al momento en todos los procesos (antes: una consulta de huellas en cada llamada). 10 min de respaldo. */
+const CRED = cacheConAviso<[], { apple: CredApple | null; google: CredGoogle | null }>({ ttlMs: 10 * 60_000, juntar: true, cargar: cargarCredenciales });
+export const credenciales = (): Promise<{ apple: CredApple | null; google: CredGoogle | null }> => CRED.leer();
+async function cargarCredenciales(): Promise<{ apple: CredApple | null; google: CredGoogle | null }> {
   const meta = (await db().query<{ kind: string; meta: Record<string, string>; fp: string }>(
     `select kind, meta, fingerprint as fp from store_secrets where kind in ('pass_type_cert', 'google_wallet_sa') and retired_at is null`).catch(() => ({ rows: [] }))).rows;
-  const k = meta.map((x) => `${x.kind}:${x.fp}:${JSON.stringify(x.meta)}`).sort().join("|");
-  if (cache && cache.k === k && Date.now() - cache.at < 10 * 60_000) return cache;
   const m = new Map(meta.map((x) => [x.kind, x.meta]));
   let apple: CredApple | null = null, google: CredGoogle | null = null;
   const ma = m.get("pass_type_cert");
@@ -50,10 +51,9 @@ export async function credenciales(): Promise<{ apple: CredApple | null; google:
     const b = await leer("google_wallet_sa", "wallet · Google").catch(() => null);
     try { const j = b ? (JSON.parse(b.toString("utf8")) as CuentaServicio & { private_key_id?: string }) : null; if (j?.client_email && j.private_key) google = { sa: { ...j, token_uri: TOKEN_URI }, emisor: mg.emisor }; } catch { /* archivo dañado */ }
   }
-  cache = { at: Date.now(), k, apple, google };
-  return cache;
+  return { apple, google };
 }
-export const olvidarCredenciales = () => { cache = null; };
+export const olvidarCredenciales = () => CRED.olvidar();
 
 /* ¿Hay certificado / cuenta de Google? Sin abrir el sobre (no es una lectura). */
 export async function listos(): Promise<{ apple: boolean; google: boolean }> {

@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { rentaVista } from "@/lib/rentas";
 import { RentaEstado } from "./RentaEstado";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu renta · To'Latino" };
@@ -17,6 +18,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   const r = await rentaVista(u.id, num);
   if (!r) notFound();
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  const pago = modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) } : null;
   return <RentaEstado r={r} es={lang === "es"} pago={pago} />;
 }

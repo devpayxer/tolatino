@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { opcionesMercado } from "@/lib/mercado";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { PedidoMercado } from "./PedidoMercado";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu pedido del mercado · To'Latino" };
@@ -18,6 +19,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const o = await opcionesMercado(id, u?.id ?? null);
   if (!o) redirect(`/n/${id}`);
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" && o.tarjeta ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" && o.tarjeta ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   return <PedidoMercado o={o} es={lang === "es"} yo={!!u} pago={pago} />;
 }

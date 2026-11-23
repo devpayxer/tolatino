@@ -38,6 +38,7 @@ import { herramientaRetail, rubroRetail } from "@/lib/retail";
 import { faltaAceptar } from "@/lib/legal";
 import { articulosRentaPanel } from "@/lib/rentas";
 import { HojaTerminos } from "../../../(app)/HojaTerminos";
+import { llave } from "@/lib/llaves-proveedores";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra.
@@ -182,7 +183,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const patRes = cobraPanel && ((ruta.sec === "pag" && !ruta.sub) || ruta.sec === "pay") ? await (await import("@/lib/patrocinio")).patResumen(d.id) : null;
   const plan = ruta.sec === "pay" && ruta.sub === "plan" ? await (async () => {
     const S = await import("@/lib/suscripcion"), { pasarela } = await import("@/lib/pagos/pasarela"), { misTarjetas } = await import("@/lib/cobros");
-    return { plan: await S.planDe(d.id), recibos: await S.recibosPro(d.id), modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: acc.soloVer ? [] : await misTarjetas(acc.yo.id) }; // 9n-23 · las tarjetas son del dueño: no se muestran las de quien mira
+    return { plan: await S.planDe(d.id), recibos: await S.recibosPro(d.id), modo: pasarela.modo(), pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: acc.soloVer ? [] : await misTarjetas(acc.yo.id) }; // 9n-23 · las tarjetas son del dueño: no se muestran las de quien mira
   })() : undefined;
   // Repartidores: Entrega (Tus repartidores, cuadre) y el detalle de un pedido de delivery (despacho).
   // 9n · El mercado también: Entrega (sus repartidores) y el detalle de un envío del mercado (ofrecer, asignar).

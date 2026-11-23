@@ -1,8 +1,9 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { llave } from "../llaves-proveedores";
 
 /* Cliente de la API de Stripe, sin SDK: pocas llamadas, todas con versión fija, clave idempotente en lo que mueve dinero
-   y errores traducidos. La clave vive solo en el entorno del servidor (STRIPE_SECRET_KEY); STRIPE_API_BASE permite
+   y errores traducidos. La clave la da lib/llaves-proveedores.ts (el entorno o el llavero; STRIPE_SECRET_KEY); STRIPE_API_BASE permite
    apuntar a stripe-mock en las pruebas de contrato. Nunca se registra la clave ni el cuerpo de una tarjeta. */
 const VERSION = "2024-06-20";
 export class ErrorStripe extends Error {
@@ -25,7 +26,7 @@ export function formulario(p: Params, prefijo = ""): string[] {
 }
 
 export async function stripe<T>(metodo: "GET" | "POST", ruta: string, p?: Params, o: { idem?: string; cuenta?: string } = {}): Promise<T> {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = await llave("STRIPE_SECRET_KEY");
   if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);
   const base = (process.env.STRIPE_API_BASE || "https://api.stripe.com").replace(/\/$/, "");
   const cuerpo = p ? formulario(p).join("&") : "";
@@ -48,7 +49,7 @@ export async function stripe<T>(metodo: "GET" | "POST", ruta: string, p?: Params
 /* 9k · Subir un archivo (evidencia de una disputa) por la API de archivos de Stripe: multipart a files.stripe.com (STRIPE_FILES_BASE; en el contrato,
    el mismo stripe-mock). Idempotente por `idem`. Devuelve el id «file_…». Nunca se registra el contenido. */
 export async function stripeArchivo(x: { cuerpo: Buffer; nombre: string; tipo: string; idem: string }): Promise<{ id: string }> {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = await llave("STRIPE_SECRET_KEY");
   if (!key) throw new ErrorStripe("config", null, null, "Falta STRIPE_SECRET_KEY", 0);
   const base = (process.env.STRIPE_FILES_BASE || process.env.STRIPE_API_BASE || "https://files.stripe.com").replace(/\/$/, "");
   const f = new FormData();
@@ -60,6 +61,18 @@ export async function stripeArchivo(x: { cuerpo: Buffer; nombre: string; tipo: s
   const j = (await r.json().catch(() => ({}))) as { id?: string; error?: { type?: string; code?: string; message?: string } };
   if (!r.ok || !j.id) throw new ErrorStripe(j.error?.type ?? "api_error", j.error?.code ?? null, null, j.error?.message ?? `HTTP ${r.status}`, r.status);
   return { id: j.id };
+}
+
+/* 23 nov · «Probar» de Integraciones › Llaves: la llamada de solo lectura más barata (GET /v1/balance) con ESA llave. No mueve nada ni devuelve el
+   valor: solo si sirvió y un código corto. */
+export async function probarStripe(): Promise<{ ok: boolean; resultado: string }> {
+  const key = await llave("STRIPE_SECRET_KEY");
+  if (!key) return { ok: false, resultado: "falta" };
+  const base = (process.env.STRIPE_API_BASE || "https://api.stripe.com").replace(/\/$/, "");
+  try {
+    const r = await fetch(`${base}/v1/balance`, { headers: { authorization: `Bearer ${key}`, "stripe-version": VERSION }, signal: AbortSignal.timeout(8000) });
+    return r.ok ? { ok: true, resultado: "sirve" } : { ok: false, resultado: r.status === 401 ? "rechazada" : r.status === 403 ? "sin_permiso" : `http_${r.status}` };
+  } catch { return { ok: false, resultado: "sin_conexion" }; }
 }
 
 /* Firma del webhook (Stripe-Signature: t=…,v1=…): HMAC-SHA256 de «t.cuerpo» con el secreto del endpoint, en tiempo

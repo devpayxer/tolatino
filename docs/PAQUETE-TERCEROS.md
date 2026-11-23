@@ -21,9 +21,9 @@ El repo ya prevé tres sitios. Nunca el chat.
   - *Secreto de red* (el formulario seguro): la plataforma lo pone sola en cada llamada a ese servicio y Claude nunca ve el valor. Así está hoy el
     token del servidor de pruebas. Sirve para lo que Claude llama por API (Cloudflare, el proveedor de producción, GitHub).
   - *Variable de entorno*: Claude sí la lee. Es lo que `scripts/produccion/sellar.sh` necesita para cifrar una llave para un servidor.
-  - **Hueco abierto:** las llaves que debe tener el SERVIDOR (Stripe, Telnyx, WhatsApp, SES, Anthropic) no pueden llegar por el formulario seguro,
-    porque Claude no las ve y no puede sellarlas. El camino se está cerrando (REVISION, «Cómo llegan las llaves de terceros al servidor»); hasta
-    entonces no guardes ninguna de esas llaves: abre las cuentas y deja las llaves para el final.
+  - **Las llaves que debe tener el SERVIDOR** (Stripe, Telnyx, WhatsApp, SES, Anthropic) NO van aquí: las pegas tú en Super Admin › Sistema ›
+    Integraciones › Proveedores (sitio B). Donde un bloque de abajo diga «sitio A» para una de esas llaves, léelo como «sitio B, pestaña Proveedores».
+    La única excepción es `TELNYX_API_KEY` de producción el primer día (REVISION, «Cómo llegan las llaves de terceros al servidor»).
 - **B. Llavero del Super Admin: Sistema › Integraciones › Llaves.** Para archivos que Apple y Google entregan al dueño de la cuenta (fase8-apps.md §10; paquete.ts 8-2). Se sube con «Subir archivo» desde la app Archivos del teléfono. Tipos que el sistema reconoce: asc_api_key, apns_key, play_service_account, fcm_service_account, github_token, pass_type_cert.
 - **C. GitHub, entornos «ensayo» y «produccion».** Los pone Claude con `gh secret set` desde los secretos de su entorno (LAUNCH 1797 y 1799; sellar.sh recuperacion). Tú solo das el token en el sitio A.
 - El tablero de seguimiento ya existe: Super Admin › Sistema › Apps › «Lo que te toca» (apps/web/lib/tiendas/paquete.ts, función loQueTeToca), con los pasos 8-0 a 9-5, su estado y el botón que abre la consola de cada tercero. Marca solo lo que el sistema no puede ver. Los pasos de este paquete coinciden con él; si algo difiere, manda el tablero (es código) y se anota.

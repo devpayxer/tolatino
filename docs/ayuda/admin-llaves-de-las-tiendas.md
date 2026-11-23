@@ -1,7 +1,9 @@
 # Super Admin: Llaves de las tiendas · Super Admin: Store keys
 
 _Pantallas: **Super Admin › Sistema › Integraciones** (`/admin/sistema/integraciones`; la lista «Llaves de las tiendas»; subir, reemplazar,
-comprobar y retirar). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
+comprobar y retirar) y su pestaña **Proveedores** (`/admin/sistema/integraciones?tab=proveedores`; poner, rotar, probar y retirar las llaves de
+Stripe, Telnyx, WhatsApp, Amazon SES y Anthropic). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. Versión: 23 nov 2026. Audiencia:
+equipo. Tema: equipo._
 
 ## Qué hace
 - Guarda las **llaves que Apple y Google entregan solo al dueño de la cuenta**: la llave de la API de App Store Connect, la llave de avisos de
@@ -47,6 +49,48 @@ comprobar y retirar). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. 
   nueva en la consola de Apple o Google y súbela aquí.
 - **¿Por qué me vuelve a pedir el código?** Porque una llave de tienda da acceso a publicar apps: se confirma que eres tú en ese momento.
 - **¿Dónde está cifrada?** En la base del servidor, en un sobre: una llave al azar cifra el archivo y esa llave va cifrada con la del entorno.
+
+## Las llaves de los proveedores (pestaña Proveedores)
+- **Qué son:** las llaves con las que el servidor cobra con tarjeta (Stripe), manda los SMS y el código para entrar (Telnyx), habla por WhatsApp
+  (Meta), manda y recibe correo (Amazon SES y su tema de SNS) y usa El Compa (Anthropic). Catorce, agrupadas por proveedor. **No son archivos: se
+  pegan.** Las pones tú, desde tu teléfono; nunca pasan por el chat ni por Claude.
+- **Cómo se pone una:** en su fila, **Poner la llave** (o **Rotar** si ya hay una) → **Mandar el código** (6 números a tu teléfono) → escribe el
+  código → **pega la llave** (el campo no muestra lo que pegas; abajo dice cuántos caracteres llegaron) → el **motivo** → **Guardar en el llavero**.
+  Sale «… versión N guardada · SHA-256 …». La llave se cifra en el servidor y **no se vuelve a mostrar**: solo su huella corta, la versión, quién y
+  cuándo. En Stripe se ve además si es **real** o **de prueba**.
+- **Probar:** llama al proveedor con la lectura más barata que no manda nada (Stripe: el saldo; Telnyx: el saldo; WhatsApp: la cuenta de negocio
+  con el token; Amazon SES: la cuenta, con las dos llaves; Anthropic: la lista de modelos) y dice si sirve. Queda anotado (qué llave por su huella,
+  si sirvió, quién y cuándo; nunca la llave). Las que **no se prueban** con una llamada: la llave pública y la firma de los avisos de Stripe, la
+  llave pública de los avisos de Telnyx, el número que manda los SMS, el secreto de la app y la palabra de verificación de WhatsApp, y el tema de
+  SNS: se comprueban solas con el primer aviso firmado que llega.
+- **Rotar:** pon la nueva; la anterior queda retirada sola («Reemplazada por la versión N») y el registro de las dos queda. El servidor usa la nueva
+  **al instante**, en todos sus procesos.
+- **Retirar:** con motivo. El servidor deja de usarla al instante. Si era la única de ese proveedor, lo que la usa se apaga con cuidado: la tarjeta
+  queda apagada, los SMS esperan «sin proveedor» y se mandan cuando vuelva una llave, El Compa contesta con sus reglas fijas.
+- **«ENTORNO»:** esa llave llega también por el entorno del servidor (el sobre sellado de respaldo). Mientras exista, el servidor usa **esa** y
+  no la del llavero; la pantalla lo dice. Para que mande la del llavero, Claude quita la del entorno en el siguiente despliegue.
+- **En producción, Telnyx va primero:** el código para entrar (y el de confirmar una llave) sale por SMS. Las llaves de Telnyx del primer día
+  llegan por el sobre sellado; desde ahí, las demás se ponen aquí.
+- **Sistema › Salud** dice, por proveedor, cuántas llaves tiene, de dónde las toma el servidor y su última prueba. **Lo que te toca** marca solo los
+  pasos 9-1.x cuando sus llaves están y la prueba de la que se usa hoy salió bien.
+
+| Caso | Qué pasa |
+|---|---|
+| La llave no tiene la forma de ese tipo | Por ejemplo «No es una llave de la API de Telnyx (empieza con KEY).» No se guarda y no se repite lo pegado. |
+| Lleva espacios o saltos de línea | «La llave no lleva espacios ni saltos de línea: cópiala otra vez, completa.» |
+| Una llave **de prueba** de Stripe en producción | «Es una llave de PRUEBA de Stripe: en producción va la real (live).» No se guarda. |
+| Una llave **real** de Stripe en el sandbox | «Es una llave REAL de Stripe: en el sandbox va la de prueba (test).» No se guarda. |
+| Probar: el proveedor no la acepta | «El proveedor no aceptó la llave: está revocada o se copió mal.» La fila dice REVISAR. |
+| Probar: no tiene permiso | «La llave entra, pero no tiene permiso para esa lectura.» Revisa sus permisos en el proveedor. |
+| Probar: el proveedor no contesta | «El proveedor no contestó. Prueba otra vez en un momento.» |
+| Probar el ID de WhatsApp sin el token (o al revés) | Pide la otra: se prueban juntas. Lo mismo con las dos llaves de Amazon SES. |
+| En producción, la página sin HTTPS | «Las llaves solo se guardan por HTTPS.» No se guarda nada. |
+| Soporte, Finanzas o cualquier otro rol | No ven la sección; si intentan guardar o probar, el servidor contesta que no. |
+
+- **¿Puedo ver una llave que puse?** No. Nadie puede. Si dudas de cuál está, compara la huella corta con la del sitio del proveedor (si la muestra)
+  o pon otra.
+- **¿Por qué no la mando por el chat a Claude?** Porque el chat no es un lugar para secretos. Aquí se cifra en el servidor y solo el servidor la usa.
+- **Probé y dice que sirve, ¿ya está en uso?** Sí: «Probar» usa exactamente la llave que el servidor usa en ese momento.
 
 ## English
 
@@ -94,3 +138,46 @@ comprobar y retirar). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. 
 - **Why does it ask me for the code again?** Because a store key gives access to publish apps: it confirms it is you at that moment.
 - **Where is it encrypted?** In the server's database, in an envelope: a random key encrypts the file and that key is encrypted with the
   environment's key.
+
+### The provider keys (Providers tab)
+- **What they are:** the keys the server uses to charge cards (Stripe), send texts and the sign-in code (Telnyx), talk on WhatsApp (Meta), send and
+  receive email (Amazon SES and its SNS topic) and run El Compa (Anthropic). Fourteen, grouped by provider. **They are not files: you paste them.**
+  You set them yourself, from your phone; they never go through the chat or through Claude.
+- **How to set one:** on its row, **Set the key** (or **Rotate** if there is one) → **Send the code** (6 digits to your phone) → type the code →
+  **paste the key** (the field does not show what you paste; below it says how many characters arrived) → the **reason** → **Save to the
+  keychain**. You see «… version N saved · SHA-256 …». The key is encrypted on the server and **never shown again**: only its short fingerprint,
+  version, who and when. For Stripe you also see whether it is **live** or **test**.
+- **Test:** calls the provider with the cheapest read that sends nothing (Stripe: the balance; Telnyx: the balance; WhatsApp: the business account
+  with the token; Amazon SES: the account, with both keys; Anthropic: the model list) and says whether it works. It is logged (which key by its
+  fingerprint, whether it worked, who and when; never the key). The ones **not tested** with a call: Stripe's publishable key and webhook signing
+  secret, Telnyx's webhook public key, the sending number, WhatsApp's app secret and verify token, and the SNS topic: they prove themselves with the
+  first signed notice that arrives.
+- **Rotate:** set the new one; the old one is retired on its own («Replaced by version N») and the record of both stays. The server uses the new
+  one **at once**, in all its processes.
+- **Withdraw:** with a reason. The server stops using it at once. If it was that provider's only key, what uses it switches off carefully: cards
+  stay off, texts wait as «no provider» and go out when a key is back, El Compa answers with its fixed rules.
+- **«ENVIRONMENT»:** that key also arrives through the server environment (the backup sealed envelope). While it exists, the server uses **that**
+  one and not the keychain's; the screen says so. For the keychain's to rule, Claude removes the environment one in the next deploy.
+- **In production, Telnyx goes first:** the sign-in code (and the code to confirm a key) is sent by SMS. The first day's Telnyx keys arrive by the
+  sealed envelope; from then on, the rest are set here.
+- **System › Health** shows, per provider, how many keys it has, where the server takes them from and its last test. **What you need to do**
+  marks the 9-1.x steps on its own when their keys are there and the test of the one in use today passed.
+
+| Case | What happens |
+|---|---|
+| The key does not have that kind's shape | For example «It is not a Telnyx API key (it starts with KEY).» Not saved, and what you pasted is not echoed. |
+| It has spaces or line breaks | «The key has no spaces or line breaks: copy it again, whole.» |
+| A Stripe **test** key in production | «It is a Stripe TEST key: production needs the live one.» Not saved. |
+| A **live** Stripe key in the sandbox | «It is a LIVE Stripe key: the sandbox needs the test one.» Not saved. |
+| Test: the provider rejects it | «The provider did not accept the key: it is revoked or was copied wrong.» The row says CHECK. |
+| Test: no permission | «The key gets in, but it lacks permission for that read.» Check its permissions at the provider. |
+| Test: the provider does not answer | «The provider did not answer. Try again in a moment.» |
+| Testing the WhatsApp ID without the token (or the other way round) | It asks for the other one: they are tested together. Same with the two Amazon SES keys. |
+| In production, the page without HTTPS | «Keys are only saved over HTTPS.» Nothing is saved. |
+| Support, Finance or any other role | They do not see the section; if they try to save or test, the server says no. |
+
+- **Can I see a key I set?** No. No one can. If you are unsure which one is there, compare the short fingerprint with the provider's site (if it
+  shows one) or set another.
+- **Why not send it to Claude in the chat?** Because the chat is not a place for secrets. Here it is encrypted on the server and only the server
+  uses it.
+- **I tested and it works: is it in use?** Yes: «Test» uses exactly the key the server is using at that moment.

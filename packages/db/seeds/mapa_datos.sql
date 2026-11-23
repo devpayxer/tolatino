@@ -385,7 +385,8 @@ insert into data_map (tabla, columna, rol, accion, set_sql, pendiente_sql, donde
   ('business_notif_prefs', 'updated_by', 'persona', 'guardar', null, null, null, '{"es":"Es del negocio (su historial y sus cifras), sin tus datos.","en":"It belongs to the business (its history and numbers), without your data."}'::jsonb, null, 'no', null, false, 3810),
   ('special_hours', 'created_by', 'persona', 'guardar', null, null, null, '{"es":"Es del negocio (su historial y sus cifras), sin tus datos.","en":"It belongs to the business (its history and numbers), without your data."}'::jsonb, null, 'no', null, false, 3820),
   ('subcategory_merges', 'created_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3830),
-  ('subcategory_merges', 'undone_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3840)
+  ('subcategory_merges', 'undone_by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3840),
+  ('store_secret_checks', 'by', 'equipo', 'guardar', null, null, null, '{"es":"Lo hizo una persona del equipo de To''Latino.","en":"Done by a person on the To''Latino team."}'::jsonb, null, 'no', null, false, 3850)
 on conflict (tabla, columna) do update set rol = excluded.rol, accion = excluded.accion, set_sql = excluded.set_sql, pendiente_sql = excluded.pendiente_sql, donde_sql = excluded.donde_sql,
   porque = excluded.porque, exporta = excluded.exporta, fusion = excluded.fusion, fn = excluded.fn, derivados = excluded.derivados, orden = excluded.orden;
 -- Lo que salió del mapa sale de la tabla (es configuración: el mapa es la fuente).
@@ -773,6 +774,7 @@ delete from data_map d where not exists (select 1 from (values
   ('business_notif_prefs', 'updated_by'),
   ('special_hours', 'created_by'),
   ('subcategory_merges', 'created_by'),
-  ('subcategory_merges', 'undone_by')
+  ('subcategory_merges', 'undone_by'),
+  ('store_secret_checks', 'by')
 ) v (tabla, columna) where v.tabla = d.tabla and v.columna = d.columna);
 commit;

@@ -6288,8 +6288,15 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Dos caminos:** (1) guardarlas como variable de entorno: funciona hoy sin construir nada, pero cualquier sesión de ese entorno puede leerlas.
   (2) Que las pongas tú directo en Super Admin › Sistema › Integraciones › Llaves (como ya haces con las de Apple y Google): nunca pasan por mí ni
   quedan legibles; pide el dominio con HTTPS primero y construir esa parte.
-- **Lo que hago mientras no digas otra cosa:** construyo el camino 2 (el más seguro; el 1 queda como respaldo) y no te pido ninguna llave hasta que
-  esté. Abrir las cuentas y esperar aprobaciones no depende de esto.
+- **Hecho el 23 nov (migración 0213):** el camino 2 ya existe. Super Admin › Sistema › Integraciones › **Proveedores**: eliges la llave, te llega
+  un código al teléfono, la pegas (el campo no muestra lo pegado) y desde ahí solo se ve su huella. Rotar es pegar otra; retirar pide motivo;
+  «Probar» la comprueba contra el proveedor. Sistema › Salud dice qué proveedor tiene sus llaves completas. Qué mirar: esa pestaña en teléfono y
+  escritorio; pega una llave pública de PRUEBA de Stripe (entra, sale «de prueba»); una real se rechaza en el sandbox.
+- **Una pieza del sistema de diseño cambió y necesita tu OK:** el campo de texto aprendió a ocultar lo escrito (se ve igual que los demás).
+- **Una decisión tuya, la única llave que no puede ir por ahí:** a producción se entra con un código por SMS, y el SMS necesita la llave de Telnyx.
+  Sin esa llave no puedes entrar a pegarla. Para el primer día, esa sola llave tiene que llegar por el otro camino: la guardas una vez como variable
+  de entorno, yo la cifro para el servidor y la borras. Después se pasa al llavero. Si prefieres otra puerta de entrada para el primer día (por
+  ejemplo un código de arranque de un solo uso), se construye, pero toca el inicio de sesión y lo quiero con tu OK.
 
 ## Tope de subidas de fotos en Configuración y en Salud (23 nov · migración 0212)
 - **Qué mirar:** Sistema › Salud › «Subidas de fotos · este proceso» dice BIEN con «Tope: 2 a la vez, 16 de lugar, espera 30 s»; después de muchas

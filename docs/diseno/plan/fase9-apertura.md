@@ -293,6 +293,10 @@ cuentas que crean las pruebas (LAUNCH L1239, L1265): se crean en la semilla mism
   filtros, licencias, inventario de datos). **Nunca** `infra/pruebas/semilla/`.
 
 ### 3.3 Secretos de terceros: el sobre sellado (§6 #5)
+- **Corrección del 23 nov:** lo que guarda el formulario seguro es un secreto de red que Claude no puede leer, así que no se puede sellar. Las llaves
+  de los proveedores las pega el fundador en **Super Admin › Sistema › Integraciones › Proveedores** (llavero cifrado, lector único
+  `lib/llaves-proveedores.ts`, migración 0213). El sobre sellado queda de respaldo y, si existe, manda. Solo `TELNYX_API_KEY` del primer día llega
+  sellada (a producción se entra por SMS). Lo que sigue describe el sobre, que no cambia.
 - **El problema:** las llaves de Stripe, Telnyx, SES, Meta y Anthropic llegan a los **secretos del entorno de Claude Code** por el formulario seguro
   (regla 1), pero hoy **no tienen camino al servidor** (LAUNCH L994; el compose ni las nombra).
 - **Decisión:** cada servidor genera al nacer un par **X25519** (formato `age`, BSD-3) y publica solo la llave pública en `/estado/llave.txt`. Claude,

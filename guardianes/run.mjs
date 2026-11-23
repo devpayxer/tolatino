@@ -5253,7 +5253,9 @@ const guardianes = {
     // AJ · Y la segunda opinión de las fotos públicas (lib/fotos-segunda-opinion.ts): usa el MISMO modelo y la misma forma de tope, con tiempo
     // límite corto y fallo cerrado (si no contesta, la foto queda retenida; nada más de la subida espera). Quién la importa lo cuida
     // fotosRevisionPrivacidad.
-    const PERMITIDO = /^apps\/web\/(lib\/compa\/|lib\/fotos-segunda-opinion\.ts$|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|acciones-copiloto\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$|usuarios\/\[id\]\/page\.tsx$|sistema\/configuracion\/page\.tsx$|acciones-config\.ts$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
+    // 23 nov · Y «Probar» la llave de Anthropic (lib/llaves-probar.ts): solo la llama Integraciones › Llaves del Super Admin (llaveProbar), con su GET
+    // /v1/models de solo lectura en modelo-claude.ts; nada de un pedido, pago, boleto, puerta, panel o cuenta la importa (guardián llaveProveedorSinFuga).
+    const PERMITIDO = /^apps\/web\/(lib\/compa\/|lib\/fotos-segunda-opinion\.ts$|lib\/llaves-probar\.ts$|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|acciones-copiloto\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$|usuarios\/\[id\]\/page\.tsx$|sistema\/configuracion\/page\.tsx$|acciones-config\.ts$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || PERMITIDO.test(x)) continue;
       const t = sinComent(x);
@@ -9917,7 +9919,8 @@ const guardianes = {
     if (!/if \(!f\.ok\) return no\(401\);/.test(post)) falla(G, R, 0, "firma mala = 401 y nada se guarda");
     if (/console\.(log|info|warn|error)/.test(sinComent(R) + sinComent(E))) falla(G, E, 0, "el correo que entra no va al registro del servidor");
     const e = sinComent(E), fs = cuerpoFn(e, "firmaSns"), uv = cuerpoFn(e, "urlCertificadoValida"), hp = cuerpoFn(e, "hostsPrueba"), rc = cuerpoFn(e, "recibirCorreo");
-    if (!/const tema = process\.env\.CORREO_SNS_TEMA \?\? "";/.test(fs) || !/return \{ ok: false, motivo: "sin_secreto" \}/.test(fs) || !/if \(m\.TopicArn !== tema\) return \{ ok: false, motivo: "tema" \};/.test(fs)) falla(G, E, 0, "solo el tema propio (CORREO_SNS_TEMA); sin él, nada entra");
+    // 23 nov · El tema lo da el lector de las llaves (el entorno o el llavero; lib/llaves-proveedores.ts): la regla es la misma.
+    if (!/const tema = \(await llave\("CORREO_SNS_TEMA"\)\) \?\? "";/.test(fs) || !/return \{ ok: false, motivo: "sin_secreto" \}/.test(fs) || !/if \(m\.TopicArn !== tema\) return \{ ok: false, motivo: "tema" \};/.test(fs)) falla(G, E, 0, "solo el tema propio (CORREO_SNS_TEMA); sin él, nada entra");
     if (!/createVerify\(ver\)\.update\(cad, "utf8"\)\.verify\(pem, Buffer\.from\(m\.Signature, "base64"\)\)/.test(fs) || !/"RSA-SHA256"/.test(fs) || !/Math\.abs\(Date\.now\(\) - t\) > 3_600_000/.test(fs)) falla(G, E, 0, "la firma RSA de SNS sobre su cadena canónica y la hora dentro de una hora");
     if (!/const HOST_SNS = \/\^sns\\\.\[a-z0-9-\]\+\\\.amazonaws\\\.com\$\/;/.test(e) || !/x\.protocol === "https:" && \(x\.port === "" \|\| x\.port === "443"\) && HOST_SNS\.test\(x\.hostname\)/.test(uv)) falla(G, E, 0, "el certificado solo de https://sns.<región>.amazonaws.com");
     if (!/if \(ENTORNO === "produccion"\) return \[\];/.test(hp) || !/\^\(127\\\.0\\\.0\\\.1\|localhost\):\\d\{2,5\}\$/.test(hp)) falla(G, E, 0, "los hosts de prueba solo fuera de producción y solo localhost");
@@ -10608,7 +10611,94 @@ const guardianes = {
     }
     for (const [k, v] of Object.entries(lista)) if (v.recuperacion && !["servidor", "base", "app"].includes(v.origen)) falla(G, L, 0, `${k} va al sobre de recuperación pero no nace en un servidor`);
     for (const k of ["DATOS_SECRET", "QR_LLAVE_PRIVADA", "VAPID_PRIVADA", "AUTH_SECRET", "LLAVERO_SECRET", "RESPALDO_LLAVE"]) if (!lista[k]?.recuperacion) falla(G, L, 0, `${k} tiene que ir en el sobre de recuperación (sin ella una máquina reconstruida no lee lo de antes: L458, L775)`);
+    // 23 nov · «llavero»: la llave de un proveedor que también puede llegar por el llavero del Super Admin. Solo con origen «sellado» para la app (el sobre
+    // sigue de respaldo y sellar.sh / sellado.sh la siguen viendo), con el tipo que es la variable en minúsculas, y la MISMA lista que el lector
+    // (PROVEEDORES de apps/web/lib/tiendas/llavero.ts): ni una de más ni una de menos, y cada tipo lo acepta la base (el último check de store_secrets).
+    const LV = "apps/web/lib/tiendas/llavero.ts", prov = new Set([...((/export const PROVEEDORES = \{([\s\S]*?)\n\} as const/.exec(existsSync(LV) ? readFileSync(LV, "utf8") : "") ?? [])[1] ?? "").matchAll(/^\s+([a-z_]+): \{ prov: "/gm)].map((m) => m[1]));
+    if (prov.size < 10) falla(G, LV, 0, `no leo la lista PROVEEDORES del llavero (${prov.size})`);
+    const conLlavero = Object.entries(lista).filter(([k, v]) => !k.startsWith("_") && v.llavero !== undefined);
+    for (const [k, v] of conLlavero) {
+      if (v.origen !== "sellado" || v.maquina !== "app") falla(G, L, 0, `${k}: «llavero» solo va con origen «sellado» para la máquina «app»`);
+      if (v.llavero !== k.toLowerCase()) falla(G, L, 0, `${k}: su tipo del llavero es «${k.toLowerCase()}», no «${v.llavero}»`);
+      if (!prov.has(v.llavero)) falla(G, L, 0, `${k}: el llavero (PROVEEDORES) no conoce «${v.llavero}»`);
+    }
+    for (const x of prov) if (!conLlavero.some(([, v]) => v.llavero === x)) falla(G, L, 0, `${x.toUpperCase()}: el lector la busca en el llavero y la lista cerrada no lo dice («llavero»: "${x}")`);
+    const chk = readdirSync("packages/db/migrations").filter((f) => f.endsWith(".sql")).sort().map((f) => readFileSync(`packages/db/migrations/${f}`, "utf8")).join("\n").split("add constraint store_secrets_kind_check").pop() ?? "";
+    for (const x of prov) if (!chk.slice(0, chk.indexOf(";")).includes(`'${x}'`)) falla(G, "packages/db/migrations", 0, `store_secrets no acepta el tipo «${x}» (su check, en la última migración que lo cambia)`);
   },
+
+  /* 23 nov · llaveProveedorUnSoloLector: las llaves de los proveedores (cada tipo de PROVEEDORES en apps/web/lib/tiendas/llavero.ts, en MAYÚSCULAS: la
+     variable) se leen SOLO por apps/web/lib/llaves-proveedores.ts (el entorno de respaldo o el llavero). Ningún otro archivo de la app ni de los paquetes
+     toca process.env.<LLAVE> (ni process.env["<LLAVE>"], ni con un alias de process.env, ni desestructurando). El lector: la variable primero, el llavero
+     en la memoria del proceso con cacheConAviso (releer), estado en globalThis, ninguna consulta por petición (llaveYa no espera ni consulta); solo él
+     llama a leerProveedores(); store_secrets avisa por NOTIFY (0213); el arranque las carga. Al revés: alrevesLlavesProveedor. */
+  llaveProveedorUnSoloLector() {
+    const G = "llaveProveedorUnSoloLector", LV = "apps/web/lib/tiendas/llavero.ts", LP = "apps/web/lib/llaves-proveedores.ts", INS = "apps/web/instrumentation.ts";
+    for (const f of [LV, LP, INS]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del lector de las llaves de los proveedores");
+    const prov = [...((/export const PROVEEDORES = \{([\s\S]*?)\n\} as const/.exec(readFileSync(LV, "utf8")) ?? [])[1] ?? "").matchAll(/^\s+([a-z_]+): \{ prov: "/gm)].map((m) => m[1].toUpperCase());
+    if (prov.length < 10) return falla(G, LV, 0, `no leo la lista PROVEEDORES (${prov.length})`);
+    const N = prov.join("|");
+    const directo = new RegExp(`process\\.env(?:\\.(?:${N})\\b|\\[\\s*["'\`](?:${N})["'\`]\\s*\\])`), desest = new RegExp(`\\{[^}]*\\b(?:${N})\\b[^}]*\\}\\s*=\\s*process\\.env\\b`);
+    for (const f of codigo) {
+      if (!/^(apps|packages)\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(f) || f.includes("node_modules") || f === LP) continue;
+      const t = sinComent(f);
+      if (directo.test(t)) falla(G, f, t.slice(0, directo.exec(t).index).split("\n").length, `lee una llave de proveedor del entorno a mano (${directo.exec(t)[0]}): pasa por lib/llaves-proveedores.ts (llave / llaveYa)`);
+      if (desest.test(t)) falla(G, f, 0, "desestructura una llave de proveedor de process.env: pasa por lib/llaves-proveedores.ts");
+      for (const m of t.matchAll(/\b(?:const|let|var)\s+(\w+)\s*=\s*process\.env\b(?!\.)/g)) if (new RegExp(`\\b${m[1]}(?:\\.(?:${N})\\b|\\[\\s*["'\`](?:${N}))`).test(t)) falla(G, f, 0, `lee una llave de proveedor con un alias de process.env (${m[1]}): pasa por lib/llaves-proveedores.ts`);
+      if (/\bleerProveedores\(/.test(t) && f !== LV) falla(G, f, 0, "solo el lector (lib/llaves-proveedores.ts) abre las llaves de los proveedores (leerProveedores)");
+    }
+    const p = sinComent(LP);
+    if (!/const delEntorno = \(n: NombreLlave\): string \| null => \{ const v = \(process\.env\[n\] \?\? ""\)\.trim\(\); return v \? v : null; \};/.test(p)) falla(G, LP, 0, "la variable del entorno se lee en un solo lugar (delEntorno)");
+    const ya = cuerpoFn(p, "llaveYa"), ll = cuerpoFn(p, "llave");
+    if (!/const v = delEntorno\(n\);\n\s+if \(v\) return v;/.test(ya) || !/const v = delEntorno\(n\);\n\s+if \(v\) return v;/.test(ll)) falla(G, LP, 0, "la variable del entorno (el sobre sellado) manda sobre el llavero");
+    if (/await |db\(\)|\.query\(/.test(ya)) falla(G, LP, 0, "llaveYa no espera ni consulta la base (lee la copia del proceso)");
+    if (/db\(\)|\.query\(|from "\.\/db"/.test(p)) falla(G, LP, 0, "el lector no consulta la base por su cuenta: la carga es una sola, por cacheConAviso");
+    if (!/cacheConAviso<\[\], Map<TipoProveedor, LlaveAbierta>>\(\{/.test(p) || !/releer: true/.test(p) || !/juntar: true/.test(p) || !/siFalla: \(\) => E\.valores/.test(p)) falla(G, LP, 0, "la copia del proceso es una de cacheConAviso (se olvida y se vuelve a leer con el aviso; si la base falla, se queda lo que había)");
+    if (!/const G = globalThis as typeof globalThis & \{ __tlLlavesProveedor\?: Estado \};/.test(p) || /^let /m.test(p)) falla(G, LP, 0, "el estado del lector vive en globalThis (una copia por proceso, no una por capa de Next)");
+    if (!/prepararLlaves\(\)/.test(sinComent(INS))) falla(G, INS, 0, "el arranque carga las llaves del llavero antes de la primera petición (prepararLlaves)");
+    const migs = readdirSync("packages/db/migrations").filter((f) => f.endsWith(".sql")).map((f) => readFileSync(`packages/db/migrations/${f}`, "utf8")).join("\n");
+    if (!/create trigger store_secrets_avisa after insert or update on store_secrets for each statement execute function config_avisar\(\);/.test(migs)) falla(G, "packages/db/migrations", 0, "store_secrets avisa por NOTIFY (tl_config) cuando una llave se pone, se rota o se retira");
+  },
+
+  /* 23 nov · llaveProveedorSinFuga: el VALOR de una llave de proveedor nunca llega a un registro (console.*), a un error (throw), a la auditoría, a una
+     respuesta ni a una pantalla. Por clase: en cada archivo que pide una llave al lector (llave / llaveYa), la variable que la recibe no aparece en
+     console.*, throw, auditar(, NextResponse/Response.json(, ni como msg/mensaje/error/motivo/detalle/resultado. Y el resto del camino: la ruta del llavero
+     no devuelve lo pegado (valor, crudo, contenido); revisarTexto solo guarda en meta el modo de Stripe y sus mensajes no repiten la llave; el lector no
+     escribe ni lanza y origenes() no lleva el valor; la pantalla pega la llave en el campo «oculto» y lo borra al guardar; la página le pasa solo tipo,
+     origen, huella y sombra. Al revés: alrevesLlavesProveedor. */
+  llaveProveedorSinFuga() {
+    const G = "llaveProveedorSinFuga", LP = "apps/web/lib/llaves-proveedores.ts", LV = "apps/web/lib/tiendas/llavero.ts", RT = "apps/web/app/api/admin/llavero/route.ts",
+      UIF = "apps/web/app/admin/IntegracionesProveedores.tsx", PG = "apps/web/app/admin/sistema/integraciones/page.tsx", BQ = "packages/ui/src/panel/Bloques.tsx";
+    for (const f of [LP, LV, RT, UIF, PG, BQ]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del camino de las llaves de los proveedores");
+    const SALIDA = (v) => new RegExp(`console\\.\\w+\\([^;]*\\b${v}\\b|throw new \\w+\\([^;]*\\b${v}\\b|auditar\\([^;]*\\b${v}\\b|(?:NextResponse|Response)\\.json\\([^;]*\\b${v}\\b|\\b(?:msg|mensaje|error|motivo|detalle|detail|resultado|reason)\\s*:\\s*[^,}\\n]*\\b${v}\\b`);
+    // Lo que está DENTRO de una cadena no es la variable («sin clave», motivo: "tema"): se tapa, salvo lo que va en ${…} de una plantilla.
+    const sinCadenas = (s) => s.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, (x) => " ".repeat(x.length)).replace(/`(?:[^`\\]|\\.)*`/g, (x) => x.replace(/\$\{[^}]*\}|[^\n]/g, (y) => (y.length > 1 ? y : " ")));
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === LP) continue;
+      const t = sinComent(f);
+      if (!/from ["'](?:@\/lib\/|\.\.?\/(?:\.\.\/)*)llaves-proveedores["']/.test(t)) continue;
+      const vars = new Set([...t.matchAll(/\b(\w+)\s*=\s*\(?\s*(?:await\s+)?(?:llave|llaveYa|llaveDe)\(\s*["'][A-Z_]+["']\s*\)/g)].map((m) => m[1]));
+      const tq = sinCadenas(t);
+      for (const v of vars) { const m = SALIDA(v).exec(tq); if (m) falla(G, f, t.slice(0, m.index).split("\n").length, `el valor de una llave de proveedor (${v}) sale a un registro, un error, la auditoría o una respuesta`); }
+      for (const m of t.matchAll(/(?:console\.\w+|throw new \w+|auditar|(?:NextResponse|Response)\.json)\([^;]*\b(?:llave|llaveYa|llaveDe)\(\s*["'][A-Z_]+["']/g)) falla(G, f, t.slice(0, m.index).split("\n").length, "el valor de una llave de proveedor va directo a un registro, un error, la auditoría o una respuesta");
+    }
+    const p = sinComent(LP);
+    if (/console\.|throw /.test(p)) falla(G, LP, 0, "el lector no escribe en el registro ni lanza (nada de una llave sale de aquí por un error)");
+    if (/\bvalor\b/.test(cuerpoFn(p, "origenes"))) falla(G, LP, 0, "origenes() (lo que ven las pantallas) no lleva el valor de ninguna llave");
+    const r = sinComent(RT);
+    for (const m of r.matchAll(/(?:NextResponse|Response)\.json\(([^;]*)/g)) if (/\b(valor|crudo|contenido)\b|\bb\.toString/.test(m[1])) falla(G, RT, r.slice(0, m.index).split("\n").length, "la respuesta del llavero no devuelve lo que se pegó o subió (solo huella y versión)");
+    if (/console\./.test(r)) falla(G, RT, 0, "la ruta del llavero no escribe en el registro");
+    const rv = cuerpoFn(sinComent(LV), "revisarTexto");
+    if (!rv) falla(G, LV, 0, "falta revisarTexto (la forma de una llave de texto, en el servidor)");
+    for (const m of rv.matchAll(/\bmeta\.(\w+)\s*=/g)) if (m[1] !== "modo") falla(G, LV, 0, `revisarTexto guarda «${m[1]}» en meta (meta sale en la pantalla y la auditoría: solo el modo de Stripe)`);
+    if (/\$\{v\}|\$\{crudo\}/.test(rv)) falla(G, LV, 0, "un mensaje de revisarTexto repite la llave");
+    const u = sinComent(UIF);
+    if (!/onChange: setValor, ph: [^\n]*oculto: true/.test(u)) falla(G, UIF, 0, "la llave se pega en el campo «oculto» (no se muestra lo escrito)");
+    if (!/setValor\(""\);/.test(u)) falla(G, UIF, 0, "al guardar, la pantalla borra lo pegado");
+    if (!/origenes=\{orig\.map\(\(o\) => \(\{ tipo: o\.tipo, origen: o\.origen, huella: o\.huella, sombra: o\.sombra \}\)\)\}/.test(sinComent(PG))) falla(G, PG, 0, "la página le pasa a la pantalla solo tipo, origen, huella y sombra de cada llave");
+    if (!/b\.oculto \? \{ type: "password", autoComplete: "off"/.test(sinComent(BQ))) falla(G, BQ, 0, "el campo «oculto» del sistema de diseño es de tipo contraseña y sin autocompletar");
+  },
+
 
   /* 9o · respaldoRestaurado: no es «respaldo verificado» de palabra. La restauración de prueba corre cada semana (temporizador de la réplica), restaura a
      un punto en el tiempo en un contenedor DESECHABLE, corre migrar.sh --verificar y las consultas de control, anota restore_drills con su RTO y su

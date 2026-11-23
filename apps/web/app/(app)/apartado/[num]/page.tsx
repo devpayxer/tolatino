@@ -6,6 +6,7 @@ import { apartadoVista } from "@/lib/apartados";
 import { misTarjetas } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { ApartadoEstado } from "./ApartadoEstado";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu apartado · To'Latino" };
@@ -18,6 +19,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!x) notFound();
   // Layaway (4r): para «Pagar $X» hace falta la tarjeta (se paga con la persona presente).
   const modo = pasarela.modo();
-  const pago = x.plan && (x.plan.st === "active" || x.plan.st === "late") && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  const pago = x.plan && (x.plan.st === "active" || x.plan.st === "late") && modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) } : null;
   return <ApartadoEstado x={x} es={lang === "es"} pago={pago} />;
 }

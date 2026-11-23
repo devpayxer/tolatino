@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { bookingNoche } from "@/lib/noche-reservas";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { ReservarNoche } from "./Reservar";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Lista y mesas · To'Latino" };
@@ -19,7 +20,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!b) notFound();
   if (!b.booking) redirect(`/n/${id}?tab=svc`);
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" && b.dep > 0 ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" && b.dep > 0 ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   const p = sp.p && /^\d{1,2}$/.test(sp.p) ? Number(sp.p) : 2;
   return <ReservarNoche b={b} es={lang === "es"} pago={pago} yo={!!u} pax0={p} />;
 }

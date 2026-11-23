@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { opcionesRenta } from "@/lib/rentas";
 import { Rentar } from "./Rentar";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Rentar · To'Latino" };
@@ -17,6 +18,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const o = typeof sp.a === "string" ? await opcionesRenta(id, sp.a) : null;
   if (!o) redirect(`/n/${id}?tab=shop`);
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   return <Rentar o={o} es={lang === "es"} yo={!!u} pago={pago} />;
 }

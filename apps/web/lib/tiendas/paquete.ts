@@ -1,11 +1,13 @@
 import "server-only";
 import { auditar, type Staff } from "../admin";
 import { CLAVES_APP, defApp } from "../app-nativa-comun";
+import { cacheConAviso } from "../cache-aviso";
 import { db, tx } from "../db";
 import APPS from "../../../mobile/apps.json";
 import * as asc from "./asc";
 import { URL_ASC } from "./direcciones";
-import { leer } from "./llavero";
+import { origenes } from "../llaves-proveedores";
+import { leer, ultimasPruebas, type TipoProveedor } from "./llavero";
 
 /* 8i · Sistema › Apps › «Lo que te toca»: los pasos del fundador de fase8-apps.md §10 (Paquetes 8-0 a 8-3), cada uno con su estado y el botón
    que abre la consola del tercero. El estado sale del SISTEMA donde se puede (el dominio contesta por HTTPS, la llave está en el llavero, la app
@@ -28,10 +30,11 @@ async function dominioHttps(): Promise<{ ok: boolean; motivo: string }> {
   sondeo = { at: Date.now(), ...r };
   return r;
 }
-let appsAsc: { at: number; n: number } | null = null;
-/* Cuántas de las cuatro apps existen ya en App Store Connect (solo con la llave de la API; 10 min de caché). */
-async function appsEnAsc(): Promise<number | null> {
-  if (appsAsc && Date.now() - appsAsc.at < 600_000) return appsAsc.n;
+/* Cuántas de las cuatro apps existen ya en App Store Connect (solo con la llave de la API; 10 min de caché, que se olvida cuando cambia el llavero:
+   store_secrets avisa por NOTIFY desde 0213). */
+const ASC = cacheConAviso<[], number | null>({ ttlMs: 600_000, juntar: true, cargar: contarAppsAsc });
+const appsEnAsc = () => ASC.leer();
+async function contarAppsAsc(): Promise<number | null> {
   const m = (await db().query<{ meta: Record<string, string> }>(`select meta from store_secrets where kind = 'asc_api_key' and retired_at is null`)).rows[0]?.meta;
   if (!m?.id_llave || !m.emisor) return null;
   const b = await leer("asc_api_key", "lo que te toca · apps en App Store Connect").catch(() => null);
@@ -39,17 +42,19 @@ async function appsEnAsc(): Promise<number | null> {
   const cred = { llavePem: b.toString("utf8"), idLlave: m.id_llave, emisor: m.emisor };
   let n = 0;
   for (const k of CLAVES_APP) if (await asc.appPorBundle(URL_ASC(), cred, defApp(k).ios).catch(() => null)) n++;
-  appsAsc = { at: Date.now(), n };
   return n;
 }
 
 export async function loQueTeToca(): Promise<Paquete[]> {
-  const [ll, marcas, https, nAsc] = await Promise.all([
+  const [ll, marcas, https, nAsc, orig, pruebas] = await Promise.all([
     db().query<{ kind: string; meta: Record<string, string> }>(`select kind, meta from store_secrets where retired_at is null`),
     db().query<{ step: string; state: string; at: string }>(`select distinct on (step) step, state, ${ISO("at")} as at from founder_steps order by step, at desc`),
     dominioHttps(),
     appsEnAsc().catch(() => null),
+    origenes(),
+    ultimasPruebas(),
   ]);
+  const proveedor = estadoProveedor(orig, pruebas);
   const tiene = (k: string) => ll.rows.some((x) => x.kind === k), meta = (k: string) => ll.rows.find((x) => x.kind === k)?.meta ?? {};
   const marca = (k: string) => marcas.rows.find((x) => x.step === k);
   // Un paso del sistema: hecho si el sistema lo ve; si no, lo que el fundador marcó (o pendiente).
@@ -108,12 +113,12 @@ export async function loQueTeToca(): Promise<Paquete[]> {
     ] },
     // 9j · Los paquetes de la Fase 9 (fase9-apertura.md §10): cada uno con su paso a paso; el sistema marca lo que puede ver (la llave real de cada
     // proveedor en los secretos del entorno, sin mostrarla; el equipo con su segundo factor). Lo demás lo marca el fundador.
-    { k: "9-1", t: { es: "Paquete 9-1 · Pagos y mensajes", en: "Package 9-1 · Payments and messages" }, s: { es: "Stripe, Telnyx, WhatsApp, Amazon SES y Anthropic. Las llaves van al formulario seguro de los secretos del entorno, nunca al chat.", en: "Stripe, Telnyx, WhatsApp, Amazon SES and Anthropic. Keys go to the environment's secure secrets form, never the chat." }, pasos: [
+    { k: "9-1", t: { es: "Paquete 9-1 · Pagos y mensajes", en: "Package 9-1 · Payments and messages" }, s: { es: "Stripe, Telnyx, WhatsApp, Amazon SES y Anthropic. Cada llave la pegas tú en Sistema › Integraciones › Llaves y tocas «Probar»: se cifra en el servidor y nunca pasa por el chat. Telnyx va primero en producción (el código para entrar sale por SMS).", en: "Stripe, Telnyx, WhatsApp, Amazon SES and Anthropic. You paste each key in System › Integrations › Keys and tap «Test»: it is encrypted on the server and never goes through the chat. Telnyx goes first in production (the sign-in code is sent by SMS)." }, pasos: [
       P("9-1.1", { es: "Stripe: cuenta de la empresa y Connect", en: "Stripe: company account and Connect" }, { es: "Verificación del negocio y del dueño, banco de la plataforma, perfil de Connect (mercado, Express); primero en modo prueba, después en vivo.", en: "Business and owner verification, platform bank, Connect profile (marketplace, Express); test mode first, then live." }, "https://dashboard.stripe.com/register", proveedor("stripe")),
       P("9-1.2", { es: "Telnyx: número y registro 10DLC", en: "Telnyx: number and 10DLC registration" }, { es: "La cuenta, el número de To'Latino y el registro de la marca y las campañas (los textos los dejamos listos para tocar «Enviar»).", en: "The account, To'Latino's number and the brand and campaign registration (we leave the texts ready to tap «Submit»)." }, "https://portal.telnyx.com/", proveedor("telnyx")),
-      P("9-1.3", { es: "Meta: WhatsApp Business verificado", en: "Meta: verified WhatsApp Business" }, { es: "El número, la app y el token permanente. Las plantillas las manda Claude por la API.", en: "The number, the app and the permanent token. Claude submits the templates through the API." }, "https://business.facebook.com/"),
+      P("9-1.3", { es: "Meta: WhatsApp Business verificado", en: "Meta: verified WhatsApp Business" }, { es: "El número, la app y el token permanente. Las plantillas las manda Claude por la API.", en: "The number, the app and the permanent token. Claude submits the templates through the API." }, "https://business.facebook.com/", proveedor("whatsapp")),
       P("9-1.4", { es: "Amazon SES: salir del modo de prueba", en: "Amazon SES: leave the sandbox" }, { es: "La cuenta y el formulario de AWS (el texto del uso lo dejamos listo). El DNS lo pone Claude por Cloudflare.", en: "The account and the AWS form (we leave the use-case text ready). Claude sets the DNS through Cloudflare." }, "https://console.aws.amazon.com/ses/", proveedor("ses")),
-      P("9-1.5", { es: "Anthropic: cuenta, facturación y retención cero", en: "Anthropic: account, billing and zero retention" }, { es: "Para El Compa en producción, con el tope de gasto de PLAN §8.", en: "For El Compa in production, with the spending cap in PLAN §8." }, "https://console.anthropic.com/"),
+      P("9-1.5", { es: "Anthropic: cuenta, facturación y retención cero", en: "Anthropic: account, billing and zero retention" }, { es: "Para El Compa en producción, con el tope de gasto de PLAN §8.", en: "For El Compa in production, with the spending cap in PLAN §8." }, "https://console.anthropic.com/", proveedor("anthropic")),
     ] },
     { k: "9-2", t: { es: "Paquete 9-2 · Abogado y contador", en: "Package 9-2 · Lawyer and accountant" }, s: { es: "Sin su revisión no se publica nada legal en producción ni se abre (su costo es decisión tuya: no está en PLAN §8).", en: "Without their review nothing legal is published in production and nothing opens (their cost is your decision: it is not in PLAN §8)." }, pasos: [
       P("9-2.1", { es: "Contratar un abogado de Pennsylvania", en: "Hire a Pennsylvania lawyer" }, { es: "Una consulta con la lista que generamos (docs/legal/para-el-abogado.md).", en: "One consultation with the list we generate (docs/legal/para-el-abogado.md)." }, null),
@@ -147,16 +152,34 @@ export async function loQueTeToca(): Promise<Paquete[]> {
   return out;
 }
 
-/* 9j · Lo que el sistema puede ver de los proveedores del Paquete 9-1: que la llave REAL está en los secretos del entorno (nunca cuál es) y que no
-   apunta a un simulador. En el sandbox de hoy dicen «pendiente»: se usan los simuladores. WhatsApp y Anthropic los marca el fundador: sus llaves solo las leen
-   lib/compa/canales-proveedor.ts y lib/compa/modelo-claude.ts (guardianes canalConFirma, compaSoloServidor y compaSinRutaCritica). */
-function proveedor(k: "stripe" | "telnyx" | "ses"): { ok: boolean; por: Bi } {
-  const e = process.env, hay = (x: string | undefined) => (x ?? "").trim().length >= 8;
-  const ok = k === "stripe" ? (e.STRIPE_SECRET_KEY ?? "").startsWith("sk_") && !e.STRIPE_API_BASE && !e.TOLATINO_PAGOS_SIMULADOR
-    : k === "telnyx" ? e.TOLATINO_SMS_MODO === "telnyx" && hay(e.TELNYX_API_KEY) && !e.TELNYX_API_BASE
-      : hay(e.SES_ACCESS_KEY_ID) && hay(e.SES_SECRET_ACCESS_KEY) && e.TOLATINO_CORREO_MODO !== "pruebas";
-  return ok ? { ok, por: { es: "La llave real está en los secretos del entorno.", en: "The real key is in the environment secrets." } }
-    : { ok, por: { es: "Se ve hecho cuando la llave real llegue a los secretos del entorno (hoy: el simulador).", en: "Shows done when the real key reaches the environment secrets (today: the simulator)." } };
+/* 9j · 23 nov · Lo que el sistema puede ver de los proveedores del Paquete 9-1: cada llave que el proveedor necesita está (en el llavero o en el entorno,
+   por el lector: nunca cuál es), la última «Probar» de ESA huella salió bien (las que se prueban) y nada apunta a un simulador. Sin valores. */
+type Prov = "stripe" | "telnyx" | "whatsapp" | "ses" | "anthropic";
+const NECESITA: Record<Prov, TipoProveedor[]> = {
+  stripe: ["stripe_secret_key", "stripe_publishable_key", "stripe_webhook_secret"],
+  telnyx: ["telnyx_api_key", "telnyx_public_key", "telnyx_from"],
+  whatsapp: ["whatsapp_token", "whatsapp_waba_id", "whatsapp_app_secret", "whatsapp_verify_token"],
+  ses: ["ses_access_key_id", "ses_secret_access_key", "correo_sns_tema"],
+  anthropic: ["anthropic_api_key"],
+};
+const PROBADAS: TipoProveedor[] = ["stripe_secret_key", "telnyx_api_key", "whatsapp_token", "whatsapp_waba_id", "ses_access_key_id", "anthropic_api_key"];
+function estadoProveedor(orig: Awaited<ReturnType<typeof origenes>>, pruebas: Awaited<ReturnType<typeof ultimasPruebas>>) {
+  const e = process.env;
+  const simulador: Record<Prov, boolean> = {
+    stripe: !!e.STRIPE_API_BASE || !!e.TOLATINO_PAGOS_SIMULADOR, telnyx: e.TOLATINO_SMS_MODO !== "telnyx" || !!e.TELNYX_API_BASE,
+    whatsapp: !!e.WHATSAPP_API_BASE, ses: e.TOLATINO_CORREO_MODO === "pruebas", anthropic: false,
+  };
+  return (k: Prov): { ok: boolean; por: Bi } => {
+    const faltan = NECESITA[k].filter((t) => !orig.find((o) => o.tipo === t)?.origen);
+    const sinProbar = NECESITA[k].filter((t) => PROBADAS.includes(t) && !faltan.includes(t)).filter((t) => {
+      const h = orig.find((o) => o.tipo === t)?.huella, p = pruebas.find((x) => x.kind === t);
+      return !p || !p.ok || p.huella !== h;
+    });
+    if (faltan.length) return { ok: false, por: { es: `Faltan ${faltan.length} de ${NECESITA[k].length} llaves en Sistema › Integraciones › Llaves.`, en: `${faltan.length} of ${NECESITA[k].length} keys missing in System › Integrations › Keys.` } };
+    if (sinProbar.length) return { ok: false, por: { es: "Las llaves están; falta que «Probar» salga bien con la que se usa hoy.", en: "The keys are there; «Test» still has to pass with the one in use today." } };
+    if (simulador[k]) return { ok: false, por: { es: "Las llaves están y probadas, pero este entorno usa el simulador.", en: "The keys are there and tested, but this environment uses the simulator." } };
+    return { ok: true, por: { es: "Las llaves están y la prueba con el proveedor salió bien.", en: "The keys are there and the test with the provider passed." } };
+  };
 }
 
 /* El fundador marca un paso que el sistema no puede ver (o lo vuelve a pendiente). Solo un Admin, con nota opcional y auditoría. */

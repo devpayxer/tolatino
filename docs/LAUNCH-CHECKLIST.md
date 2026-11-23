@@ -2822,7 +2822,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       servidor bloquea reservar sin la autorización válida (`lib/viajes.ts`). Pregunta A-42.
 - [ ] **→ 9s** · **Mercados y tiendas: qué productos son exentos y cuáles pagan 6 %** (hoy el negocio marca 6 % o exento por producto, sin regla por
       sección). Pregunta C-05.
-- [ ] **→ 9o** · **Las llaves de terceros que necesita el servidor no tienen camino por el formulario seguro (23 nov):** lo que guarda el formulario es un
+- [x] **→ 9o** · **(Hecho el 23 nov, migración 0213: Super Admin › Sistema › Integraciones › Proveedores; lector único `lib/llaves-proveedores.ts` —el
+      entorno manda, si no el llavero—; «Probar»; Salud; guardianes `llaveProveedorUnSoloLector` y `llaveProveedorSinFuga`, `alrevesllaves` 32/32, punta a
+      punta `prov9v`.)** Las llaves de terceros que necesita el servidor no tenían camino por el formulario seguro: lo que guarda el formulario es un
       secreto de red que Claude no lee, y `scripts/produccion/sellar.sh` necesita el valor. Construir el camino por el llavero del Super Admin
       (Integraciones › Llaves) para Stripe, Telnyx, WhatsApp, SES y Anthropic; la variable de entorno queda de respaldo. Decisión en REVISION.
 - [x] **→ 9b** · **(Hecho el 23 nov: fronteras de letra con tildes; la tabla de frases pasa de cazar 13 de 59 a 59 de 59 y de rechazar de más 3 de 49
@@ -2847,3 +2849,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       descarta siempre, aunque la operación ya esté cancelada de verdad (el verificador solo conoce `confirmadas`); si pasa a menudo, pasarle también
       las canceladas.
 - [ ] **→ 9u** · **`lib/ciudades/launch.ts`: la expresión con `\b` fallaría con un nombre de ciudad que acabe en tilde** (hoy todos son ASCII).
+- [ ] **→ Paquete 9-1** · **`TELNYX_API_KEY` de producción: el círculo SMS y llavero (23 nov).** A producción solo se entra por SMS, y poner una llave
+      en el llavero también pide un código por SMS: sin Telnyx no se entra, y sin entrar no se pone Telnyx. La del primer día tiene que llegar por el
+      sobre sellado (variable de entorno, que manda sobre el llavero); `TELNYX_FROM` y `TELNYX_PUBLIC_KEY` no son secretas. Decisión del fundador en
+      REVISION. Después se pasa al llavero y se quita el sobre.
+- [ ] **→ 9q** · **«Probar» de una llave contra su simulador:** el servidor local de pruebas no tiene `STRIPE_API_BASE` ni `TELNYX_API_BASE` de
+      simuladores; en `prov9v` «Probar» sale `sin_conexion`. Ponerlas en `pruebas/servir/servir.sh`. Tampoco se comprobó en un servidor real que «Lo que
+      te toca» 9-1.x se marque solo, la regla de HTTPS en producción ni la precedencia del entorno sobre el llavero.
+- [ ] **→ 9u** · **Campo oculto en el sistema de diseño (23 nov):** el `field` de `PanelBloques` aprendió `oculto` (mismo aspecto, tipo contraseña) para
+      pegar llaves. Falta el OK del fundador a la pieza (REVISION).

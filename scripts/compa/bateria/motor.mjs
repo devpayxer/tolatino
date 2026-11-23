@@ -18,11 +18,16 @@ const LIB = "apps/web/lib/compa";
 /* Todo lo que el archivo importa y no es del núcleo de El Compa (la base, la sesión, los módulos de cobros…) se cambia por un objeto mudo: estos
    archivos solo lo usan DENTRO de funciones que la batería no llama. Si un archivo del núcleo se importa a sí mismo mal, falla fuerte (no mudo). */
 const mudo = () => new Proxy(function () {}, { get: (_t, k) => (k === "__esModule" ? false : mudo()), apply: () => mudo() });
+const delEntorno = (n) => (process.env[n] ?? "").trim() || null;
+const DOBLE_LLAVES = { llaveYa: delEntorno, llave: async (n) => delEntorno(n) };
 function cargarReal(rel, reales = []) {
   const src = readFileSync(join(RAIZ, rel), "utf8"), stubs = {};
   for (const m of src.matchAll(/from "(\.{1,2}\/[^"]+)"/g)) {
     const base = posix.join(posix.dirname(rel), m[1]);
     if (reales.some((r) => base === `${LIB}/${r}`)) continue;
+    // El lector de llaves de la app (lib/llaves-proveedores.ts) lee el entorno y, si no, el llavero de la base. La batería corre sin base: su doble lee
+    // SOLO el entorno (un doble mudo diría que hay llave siempre y el corredor llamaría al modelo real sin ella).
+    if (base === "apps/web/lib/llaves-proveedores") { stubs[`${base}.ts`] = DOBLE_LLAVES; continue; }
     stubs[`${base}.ts`] = mudo(); stubs[`${base}.tsx`] = mudo();
   }
   return TS.cargarApp(rel, stubs);

@@ -1,5 +1,6 @@
 import "server-only";
 import { createHmac, createPublicKey, timingSafeEqual, verify } from "node:crypto";
+import { llave as llaveDe, llaveYa } from "../llaves-proveedores";
 
 /* 7h · Los proveedores de WhatsApp y SMS de El Compa (fase7-compa.md §3 «Canales WhatsApp y SMS»; guardián canalConFirma). El ÚNICO archivo de
    El Compa que habla con Telnyx (SMS) o con Meta (WhatsApp Cloud API) y lee sus secretos del entorno. Todo lo demás (identidad, turno, bajas,
@@ -9,7 +10,8 @@ import { createHmac, createPublicKey, timingSafeEqual, verify } from "node:crypt
      el secreto de la app (WHATSAPP_APP_SECRET) en X-Hub-Signature-256: se compara en tiempo constante; su hora va en cada mensaje (24 h, la
      ventana de WhatsApp). Sin secreto en el entorno, nada entra (nunca «sin firma = vale»).
    - Salida: POST /v2/messages de Telnyx y POST /{version}/{phone_number_id}/messages de Meta, con el texto plano. En el sandbox no hay llaves:
-     contesta el simulador (canales.ts) y nada sale. Las llaves van a los secretos del entorno, nunca al repo ni al chat. */
+     contesta el simulador (canales.ts) y nada sale. Las llaves las da lib/llaves-proveedores.ts (el entorno o el llavero de Integraciones › Llaves),
+     nunca el repo ni el chat. Las comprobaciones síncronas leen la copia del proceso (llaveYa); lo que llama al proveedor espera la llave (llave). */
 export type Proveedor = "telnyx" | "whatsapp";
 export type Entrante = { proveedor: Proveedor | "sim"; canal: "sms" | "whatsapp"; id: string; de: string; para: string; texto: string; media: boolean; hora: Date | null };
 export type Firma = { ok: true } | { ok: false; motivo: "firma" | "hora" | "sin_secreto" };
@@ -19,7 +21,7 @@ const SPKI_ED25519 = Buffer.from("302a300506032b6570032100", "hex");
 
 /* Telnyx: Ed25519 sobre «timestamp|cuerpo». `ahora` y `ventana` en segundos. */
 export function firmaTelnyx(cuerpo: Buffer, firma: string | null, hora: string | null, ahora: number, ventana: number): Firma {
-  const llave = process.env.TELNYX_PUBLIC_KEY ?? "";
+  const llave = llaveYa("TELNYX_PUBLIC_KEY") ?? "";
   if (!llave) return { ok: false, motivo: "sin_secreto" };
   if (!firma || !hora || !/^\d{9,11}$/.test(hora)) return { ok: false, motivo: "firma" };
   let ok = false;
@@ -37,7 +39,7 @@ export function firmaTelnyx(cuerpo: Buffer, firma: string | null, hora: string |
 
 /* Meta (WhatsApp Cloud API): HMAC-SHA256 del cuerpo con el secreto de la app; «sha256=<hex>»; comparación en tiempo constante. */
 export function firmaWhatsApp(cuerpo: Buffer, firma: string | null): Firma {
-  const secreto = process.env.WHATSAPP_APP_SECRET ?? "";
+  const secreto = llaveYa("WHATSAPP_APP_SECRET") ?? "";
   if (!secreto) return { ok: false, motivo: "sin_secreto" };
   const m = /^sha256=([a-f0-9]{64})$/.exec(String(firma ?? "").trim());
   if (!m) return { ok: false, motivo: "firma" };
@@ -47,7 +49,7 @@ export function firmaWhatsApp(cuerpo: Buffer, firma: string | null): Firma {
 
 /* La verificación del webhook de Meta (GET con hub.verify_token): en tiempo constante; devuelve el reto o null. */
 export function retoWhatsApp(modo: string | null, token: string | null, reto: string | null): string | null {
-  const esperado = process.env.WHATSAPP_VERIFY_TOKEN ?? "";
+  const esperado = llaveYa("WHATSAPP_VERIFY_TOKEN") ?? "";
   if (esperado.length < 16 || modo !== "subscribe" || !token || !reto || !/^[A-Za-z0-9_-]{1,100}$/.test(reto)) return null;
   const a = Buffer.from(token), b = Buffer.from(esperado);
   return a.length === b.length && timingSafeEqual(a, b) ? reto : null;
@@ -136,13 +138,13 @@ export function leerPlantillasWhatsApp(j: unknown): EstadoPlantilla[] {
 export const SMS_PERMANENTES = new Set(["40300", "40310", "40311", "sim_invalido"]);
 /* El número de To'Latino que manda los avisos y los códigos por SMS (TELNYX_FROM). */
 export function numeroSms(): string | null {
-  const n = process.env.TELNYX_FROM ?? "";
+  const n = llaveYa("TELNYX_FROM") ?? "";
   return /^\+1\d{10}$/.test(n) ? n : null;
 }
 
 /* ¿Hay llaves para mandar de verdad? (sin ellas: el simulador en el sandbox, nada en producción). */
 export function hayLlaves(p: Proveedor): boolean {
-  return p === "telnyx" ? !!(process.env.TELNYX_API_KEY && process.env.TOLATINO_SMS_MODO === "telnyx") : !!process.env.WHATSAPP_TOKEN;
+  return p === "telnyx" ? !!(llaveYa("TELNYX_API_KEY") && process.env.TOLATINO_SMS_MODO === "telnyx") : !!llaveYa("WHATSAPP_TOKEN");
 }
 
 const API_TELNYX = () => (process.env.TELNYX_API_BASE || "https://api.telnyx.com").replace(/\/$/, "");
@@ -154,7 +156,7 @@ export type Envio = { ok: true; id: string | null } | { ok: false; error: string
 export async function mandar(p: Proveedor, de: string, para: string, texto: string): Promise<Envio> {
   try {
     if (p === "telnyx") {
-      const key = process.env.TELNYX_API_KEY;
+      const key = await llaveDe("TELNYX_API_KEY");
       if (!key) return { ok: false, error: "sin_llave" };
       const r = await fetch(`${API_TELNYX()}/v2/messages`, { method: "POST", signal: AbortSignal.timeout(8000),
         headers: { authorization: `Bearer ${key}`, "content-type": "application/json", accept: "application/json" },
@@ -162,7 +164,7 @@ export async function mandar(p: Proveedor, de: string, para: string, texto: stri
       const j = (await r.json().catch(() => null)) as { data?: { id?: string } } | null;
       return r.ok ? { ok: true, id: j?.data?.id ?? null } : { ok: false, error: `telnyx_${r.status}` };
     }
-    const token = process.env.WHATSAPP_TOKEN;
+    const token = await llaveDe("WHATSAPP_TOKEN");
     if (!token) return { ok: false, error: "sin_llave" };
     if (!/^\d{6,20}$/.test(de)) return { ok: false, error: "numero" };
     const r = await fetch(`${API_META()}/${VERSION_META}/${de}/messages`, { method: "POST", signal: AbortSignal.timeout(8000),
@@ -179,7 +181,7 @@ export async function mandar(p: Proveedor, de: string, para: string, texto: stri
    ({{1}}, {{2}}…). Nunca lanza. */
 export async function mandarPlantilla(de: string, para: string, nombre: string, idioma: string, vars: string[]): Promise<Envio> {
   try {
-    const token = process.env.WHATSAPP_TOKEN;
+    const token = await llaveDe("WHATSAPP_TOKEN");
     if (!token) return { ok: false, error: "sin_llave" };
     if (!/^\d{6,20}$/.test(de) || !/^[a-z0-9_]{3,60}$/.test(nombre) || !/^(es|en_US)$/.test(idioma)) return { ok: false, error: "datos" };
     const r = await fetch(`${API_META()}/${VERSION_META}/${de}/messages`, { method: "POST", signal: AbortSignal.timeout(8000),
@@ -194,11 +196,11 @@ export async function mandarPlantilla(de: string, para: string, nombre: string, 
 /* 9l · Mandar una plantilla a Meta para que la apruebe (POST /{waba_id}/message_templates). Sin WHATSAPP_TOKEN o sin WHATSAPP_WABA_ID no hay a dónde
    (en el sandbox la marca el simulador). El resultado (aprobada o rechazada) llega por el webhook `message_template_status_update`. */
 export function wabaListo(): boolean {
-  return !!(process.env.WHATSAPP_TOKEN && /^\d{6,20}$/.test(process.env.WHATSAPP_WABA_ID ?? ""));
+  return !!(llaveYa("WHATSAPP_TOKEN") && /^\d{6,20}$/.test(llaveYa("WHATSAPP_WABA_ID") ?? ""));
 }
 export async function crearPlantillaMeta(x: { nombre: string; idioma: string; categoria: string; cuerpo: string; ejemplo: string[] }): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
   try {
-    const token = process.env.WHATSAPP_TOKEN, waba = process.env.WHATSAPP_WABA_ID ?? "";
+    const token = await llaveDe("WHATSAPP_TOKEN"), waba = (await llaveDe("WHATSAPP_WABA_ID")) ?? "";
     if (!token || !/^\d{6,20}$/.test(waba)) return { ok: false, error: "sin_llave" };
     const componentes = x.categoria === "AUTHENTICATION"
       ? [{ type: "BODY", add_security_recommendation: true }, { type: "FOOTER", code_expiration_minutes: 10 }, { type: "BUTTONS", buttons: [{ type: "OTP", otp_type: "COPY_CODE" }] }]
@@ -209,4 +211,25 @@ export async function crearPlantillaMeta(x: { nombre: string; idioma: string; ca
     const j = (await r.json().catch(() => null)) as { id?: string } | null;
     return r.ok ? { ok: true, id: j?.id ?? null } : { ok: false, error: `meta_${r.status}` };
   } catch { return { ok: false, error: "red" }; }
+}
+
+/* 23 nov · «Probar» de Integraciones › Llaves: la llamada de solo lectura más barata con ESA llave. Telnyx: GET /v2/balance. Meta (el token y el ID de la
+   cuenta de negocio, juntos): GET /{versión}/{WABA-ID}?fields=id con el token, la lectura de la especificación publicada que usa los dos. Nada se manda a
+   nadie; nunca devuelve el valor. */
+export type Prueba = { ok: boolean; resultado: string };
+async function leerCon(url: string, token: string): Promise<Prueba> {
+  try {
+    const r = await fetch(url, { headers: { authorization: `Bearer ${token}`, accept: "application/json" }, signal: AbortSignal.timeout(8000) });
+    return r.ok ? { ok: true, resultado: "sirve" } : { ok: false, resultado: r.status === 401 ? "rechazada" : r.status === 403 ? "sin_permiso" : `http_${r.status}` };
+  } catch { return { ok: false, resultado: "sin_conexion" }; }
+}
+export async function probarTelnyx(): Promise<Prueba> {
+  const key = await llaveDe("TELNYX_API_KEY");
+  return key ? leerCon(`${API_TELNYX()}/v2/balance`, key) : { ok: false, resultado: "falta" };
+}
+export async function probarMeta(): Promise<Prueba> {
+  const token = await llaveDe("WHATSAPP_TOKEN"), waba = (await llaveDe("WHATSAPP_WABA_ID")) ?? "";
+  if (!token) return { ok: false, resultado: "falta_token" };
+  if (!/^\d{6,20}$/.test(waba)) return { ok: false, resultado: "falta_waba" };
+  return leerCon(`${API_META()}/${VERSION_META}/${waba}?fields=id`, token);
 }

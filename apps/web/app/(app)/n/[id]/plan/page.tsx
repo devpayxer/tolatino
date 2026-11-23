@@ -7,6 +7,7 @@ import { oficiosPublico } from "@/lib/oficios-publico";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { opcionesPlan } from "@/lib/planes";
 import { Plan } from "./Plan";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Empezar el plan · To'Latino" };
@@ -21,6 +22,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const o = s && s.k === "plan" ? await opcionesPlan(id, s.id) : null;
   if (!op.can || op.rubro !== "hogar" || !s || !o) redirect(`/n/${id}?tab=svc`);
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   return <Plan op={op} svcId={s.id} o={o} es={lang === "es"} yo={!!u} pago={pago} />;
 }

@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { planVista } from "@/lib/planes";
 import { PlanEstado } from "./PlanEstado";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu plan · To'Latino" };
@@ -17,6 +18,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   const p = await planVista(u.id, num);
   if (!p) notFound();
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  const pago = modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) } : null;
   return <PlanEstado p={p} es={lang === "es"} pago={pago} />;
 }

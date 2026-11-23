@@ -4,6 +4,7 @@ import { cifrar, huella } from "../cifrado";
 import { tapar } from "../compa/tapar";
 import { db } from "../db";
 import { ENTORNO } from "../entorno";
+import { llave } from "../llaves-proveedores";
 
 /* 9l · El correo que entra a Soporte (L977, L1131, §6 #23; guardián correoEntranteFirmado). Amazon SES recibe el correo en la dirección de Soporte y lo
    publica en un tema de SNS que llama a /api/correo/entrada. SOLO entra lo que Amazon firma y aprueba:
@@ -62,7 +63,7 @@ export function cadenaSns(m: Sns): string | null {
 }
 /* 1 · La firma de SNS (antes de leer el mensaje de SES). */
 export async function firmaSns(m: Sns): Promise<{ ok: true } | { ok: false; motivo: "firma" | "tema" | "hora" | "sin_secreto" }> {
-  const tema = process.env.CORREO_SNS_TEMA ?? "";
+  const tema = (await llave("CORREO_SNS_TEMA")) ?? ""; // el entorno o el llavero (lib/llaves-proveedores.ts)
   if (!/^arn:aws:sns:[a-z0-9-]+:\d{12}:[A-Za-z0-9_-]{1,256}$/.test(tema)) return { ok: false, motivo: "sin_secreto" };
   if (m.TopicArn !== tema) return { ok: false, motivo: "tema" };
   const cad = cadenaSns(m), ver = m.SignatureVersion === "2" ? "RSA-SHA256" : m.SignatureVersion === "1" ? "RSA-SHA1" : null;

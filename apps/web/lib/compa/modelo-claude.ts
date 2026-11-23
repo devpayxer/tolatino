@@ -1,8 +1,9 @@
 import "server-only";
+import { llave, llaveYa } from "../llaves-proveedores";
 import { bloques, ErrorModelo, ESQUEMA, type Entrada, type Modelo, type Salida, type UsoTokens } from "./modelo";
 
 /* 7c · El Compa con Claude (Anthropic Messages API). ÚNICO archivo que habla con el proveedor, nombra su dirección y lee la clave
-   (guardianes compaUnSoloProveedor y compaSoloServidor). Sin SDK, como lib/pagos/stripe.ts: una petición fija, versión de la API fija y nada
+   (guardianes compaUnSoloProveedor y compaSoloServidor); la clave se la da lib/llaves-proveedores.ts (el entorno o el llavero). Sin SDK, como lib/pagos/stripe.ts: una petición fija, versión de la API fija y nada
    más que lo que aquí se escribe (ninguna dependencia nueva).
    - Salida con esquema JSON (output_config.format) y esfuerzo bajo (respuestas cortas: cuesta menos y contesta antes).
    - Sin herramientas, sin búsqueda web, sin memoria entre llamadas: el modelo solo ve lo que manda esta petición.
@@ -21,12 +22,12 @@ type Respuesta = {
 };
 
 /* ¿Hay llave? (sin decir cuál). */
-export const hayClave = () => !!process.env.ANTHROPIC_API_KEY;
+export const hayClave = () => !!llaveYa("ANTHROPIC_API_KEY");
 
 export const claude: Modelo = {
   motor: "claude",
   async responder(e: Entrada): Promise<Salida> {
-    const clave = process.env.ANTHROPIC_API_KEY;
+    const clave = await llave("ANTHROPIC_API_KEY");
     if (!clave) throw new ErrorModelo("error", false, "sin clave");
     const cuerpo = {
       model: e.modelo,
@@ -69,3 +70,13 @@ export const claude: Modelo = {
     return { json, tokens, motor: "claude", modelo: e.modelo };
   },
 };
+
+/* 23 nov · «Probar» de Integraciones › Llaves: GET /v1/models (solo lectura, no gasta tokens) con ESA clave. Nunca devuelve el valor. */
+export async function probarClave(): Promise<{ ok: boolean; resultado: string }> {
+  const clave = await llave("ANTHROPIC_API_KEY");
+  if (!clave) return { ok: false, resultado: "falta" };
+  try {
+    const r = await fetch(URL_API.replace(/\/messages$/, "/models?limit=1"), { headers: { "x-api-key": clave, "anthropic-version": VERSION_API }, signal: AbortSignal.timeout(8000), cache: "no-store" });
+    return r.ok ? { ok: true, resultado: "sirve" } : { ok: false, resultado: r.status === 401 ? "rechazada" : r.status === 403 ? "sin_permiso" : `http_${r.status}` };
+  } catch { return { ok: false, resultado: "sin_conexion" }; }
+}
