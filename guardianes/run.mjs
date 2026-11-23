@@ -16037,6 +16037,82 @@ const guardianes = {
     }
   },
 
+
+  /* 23 nov · estadoSinRepetir. En la cabecera de la ficha Pro el estado se leía «Cerrado hoy · hoy · abre mañana 9 AM»: la ficha parte el texto de estado()
+     en la palabra (estadoCorto) y lo que sigue (estadoResto), y quitaba solo «Abierto|Cerrado|Open|Closed», no «Cerrado hoy» ni «Cerrado temporalmente»
+     («Cerrado temporalmente · temporalmente»). La partición vive en restoDelEstado (lib/tarjeta.ts, pura) y la ficha la usa. Aquí se corre el archivo real
+     (transpilado) contra una tabla con su texto exacto y contra una rejilla (ES y EN × normal, cerrado hoy, cerrado temporal × horarios × horas) donde
+     nunca se repite una palabra ni queda un « · » colgando. Al revés (alrevesEstadoSinRepetir). */
+  estadoSinRepetir() {
+    const G = "estadoSinRepetir", T = "apps/web/lib/tarjeta.ts", F = "apps/web/lib/ficha.ts";
+    if (!existsSync(T) || !existsSync(F)) return falla(G, T, 0, "falta lib/tarjeta.ts o lib/ficha.ts");
+    const f = sinComent(F);
+    if (!/const nota = restoDelEstado\(st\.text, estadoCorto\);/.test(f) || !/\bestadoCorto, estadoNota: nota\.toUpperCase\(\), estadoResto: nota \? `· \$\{nota\}` : ""/.test(f))
+      falla(G, F, 0, "la ficha parte el estado con restoDelEstado(st.text, estadoCorto) y entrega estadoCorto y estadoResto (no con una expresión que quite «Abierto|Cerrado» a mano)");
+    if (/st\.text\.replace\(/.test(f)) falla(G, F, 0, "el estado de la ficha se parte con replace sobre st.text: «Cerrado hoy» queda «hoy · …» (usa restoDelEstado)");
+    if (!existsSync("pruebas/e2e/fic9cab.cjs") || !/ESTADO_SIN_REPETIR/.test(readFileSync("pruebas/e2e/fic9cab.cjs", "utf8")) || !/const sinRepetir = /.test(readFileSync("pruebas/e2e/fic9cab.cjs", "utf8")))
+      falla(G, "pruebas/e2e/fic9cab.cjs", 0, "fic9cab mira en la cabecera servida que «Cerrado hoy» y «Cerrado temporalmente» no repiten su palabra (ESTADO_SIN_REPETIR · sinRepetir)");
+    let M;
+    try {
+      const ts = createRequire(import.meta.url)("typescript");
+      const js = ts.transpileModule(readFileSync(T, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+      const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("tarjeta.ts solo importa tipos"); });
+      M = mod.exports;
+      if (typeof M.restoDelEstado !== "function" || typeof M.estado !== "function") return falla(G, T, 0, "tarjeta.ts no exporta estado y restoDelEstado");
+    } catch (e) { return falla(G, T, 0, `no pude cargar tarjeta.ts: ${String(e?.message ?? e).slice(0, 120)}`); }
+    // Lo mismo que arma ficha.ts: la palabra corta según las banderas, y el resto.
+    const corto = (es, o) => (o.temp ? (es ? "Cerrado temporalmente" : "Temporarily closed") : o.hoy ? (es ? "Cerrado hoy" : "Closed today") : o.abierto ? (es ? "Abierto" : "Open") : (es ? "Cerrado" : "Closed"));
+    const partir = (es, o) => {
+      const dias = o.dias.map(([weekday, ranges]) => ({ weekday, open: ranges.length > 0, ranges }));
+      const st = M.estado(dias, { dow: o.dow ?? 2, hm: o.hm ?? "10:00" }, o.abierto, es ? "es" : "en", o.nota ?? null, !!o.hoy, !!o.temp);
+      const c = corto(es, o);
+      return { c, r: M.restoDelEstado(st.text, c), texto: st.text };
+    };
+    const SEM = [[0, []], [1, [["09:00", "17:00"]]], [2, [["09:00", "17:00"]]], [3, [["09:00", "17:00"]]], [4, [["09:00", "17:00"]]], [5, [["09:00", "17:00"]]], [6, []]];
+    // [qué, idioma, opciones, palabra, resto esperados]. Martes (dow 2), 9 a 5, cerrado sáb y dom.
+    const TABLA = [
+      ["cerrado hoy, abre mañana", "es", { dias: SEM, hoy: true }, "Cerrado hoy", "abre mañana 9 AM"],
+      ["cerrado hoy, abre mañana", "en", { dias: SEM, hoy: true }, "Closed today", "opens tomorrow 9 AM"],
+      ["cerrado hoy, abre otro día (viernes → lunes)", "es", { dias: SEM, hoy: true, dow: 5 }, "Cerrado hoy", "abre lun 9 AM"],
+      ["cerrado hoy, no abre ningún día", "es", { dias: [[0, []]], hoy: true }, "Cerrado hoy", ""],
+      ["cerrado hoy, no abre ningún día", "en", { dias: [[0, []]], hoy: true }, "Closed today", ""],
+      ["cerrado temporalmente", "es", { dias: SEM, temp: true }, "Cerrado temporalmente", ""],
+      ["cerrado temporalmente", "en", { dias: SEM, temp: true }, "Temporarily closed", ""],
+      ["abre hoy más tarde", "es", { dias: SEM, hm: "06:00" }, "Cerrado", "abre 9 AM"],
+      ["abre hoy más tarde", "en", { dias: SEM, hm: "06:00" }, "Closed", "opens 9 AM"],
+      ["cerró; abre mañana", "es", { dias: SEM, hm: "20:00" }, "Cerrado", "abre mañana 9 AM"],
+      ["cerró; abre mañana", "en", { dias: SEM, hm: "20:00" }, "Closed", "opens tomorrow 9 AM"],
+      ["cerró; abre el lunes", "es", { dias: SEM, hm: "20:00", dow: 5 }, "Cerrado", "abre lun 9 AM"],
+      ["abierto hasta las 5", "es", { dias: SEM, abierto: true }, "Abierto", "hasta 5 PM"],
+      ["abierto hasta las 5", "en", { dias: SEM, abierto: true }, "Open", "until 5 PM"],
+      ["abierto 24 horas", "es", { dias: [[2, [["00:00", "00:00"]]]], abierto: true }, "Abierto", "24 horas"],
+      ["abierto 24 horas", "en", { dias: [[2, [["00:00", "00:00"]]]], abierto: true }, "Open", "24 hours"],
+      ["abierto sin horario", "es", { dias: [], abierto: true }, "Abierto", ""],
+      ["cerrado sin horario", "es", { dias: [] }, "Cerrado", ""],
+      ["cerrado sin horario", "en", { dias: [] }, "Closed", ""],
+      ["día especial: su nota manda (abierto)", "es", { dias: SEM, abierto: true, nota: { es: "hasta las 2 AM por la fiesta", en: "until 2 AM for the party" } }, "Abierto", "Hasta las 2 AM por la fiesta"],
+      ["una nota que empieza igual pero no es la palabra se queda entera", "es", { dias: SEM, abierto: true, nota: { es: "abiertos los domingos", en: "x" } }, "Abierto", "Abiertos los domingos"],
+      ["una nota con la palabra al inicio la pierde", "es", { dias: SEM, abierto: true, nota: { es: "abierto hasta tarde", en: "x" } }, "Abierto", "hasta tarde"],
+    ];
+    for (const [que, idioma, o, c, r] of TABLA) {
+      const x = partir(idioma === "es", { abierto: false, ...o });
+      if (x.c !== c || x.r !== r) falla(G, T, 0, `${que} (${idioma}): la cabecera dice «${x.c}${x.r ? ` · ${x.r}` : ""}» y debe decir «${c}${r ? ` · ${r}` : ""}» (texto de estado(): «${x.texto}»)`);
+    }
+    // Rejilla: sea cual sea el estado, el resto no repite la palabra de adelante ni deja un « · » colgando.
+    const HORARIOS = { semana: SEM, "24h": [[0, [["00:00", "00:00"]]], [1, [["00:00", "00:00"]]], [2, [["00:00", "00:00"]]], [3, [["00:00", "00:00"]]], [4, [["00:00", "00:00"]]], [5, [["00:00", "00:00"]]], [6, [["00:00", "00:00"]]]], noche: [[2, [["20:00", "02:00"]]], [3, [["20:00", "02:00"]]]], sin: [], solodomingo: [[0, [["10:00", "14:00"]]]], partido: [[2, [["08:00", "12:00"], ["15:00", "19:00"]]], [3, [["08:00", "12:00"]]]] };
+    outer: for (const es of [true, false]) for (const [h, dias] of Object.entries(HORARIOS)) for (const mod of ["normal", "hoy", "temp"]) for (const abierto of [false, true]) for (const hm of ["00:30", "06:00", "10:00", "13:00", "16:00", "21:00", "23:59"]) for (const dow of [0, 2, 5, 6]) {
+      const o = { dias, abierto, dow, hm, hoy: mod === "hoy", temp: mod === "temp" };
+      const x = partir(es, o), pals = x.c.toLowerCase().split(/\s+/), compuesto = `${x.c}${x.r ? ` · ${x.r}` : ""}`;
+      const dónde = `${es ? "es" : "en"} · horario ${h} · ${mod} · ${abierto ? "abierto" : "cerrado"} · dow ${dow} · ${hm}`;
+      let malo = "";
+      if (/^[\s·]|[\s·]$/.test(x.r)) malo = "el resto empieza o termina con « · » o espacio";
+      else if (/·\s*·/.test(compuesto)) malo = "dos « · » seguidos";
+      else if (x.r && pals.some((p) => new RegExp(`(^|\\s)${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`, "i").test(x.r.toLowerCase().split(/\s*·\s*/)[0].split(/\s+/).slice(0, 1).join(" ")))) malo = `el resto repite una palabra de «${x.c}»`;
+      else if (/\b(\p{L}+)[\s·]+\1\b/iu.test(compuesto)) malo = "una palabra seguida de sí misma";
+      if (malo) { falla(G, T, 0, `${malo}: «${compuesto}» (${dónde}; estado(): «${x.texto}»)`); break outer; }
+    }
+  },
+
 };
 
 

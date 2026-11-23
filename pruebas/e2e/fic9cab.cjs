@@ -40,7 +40,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
   // Abierto todo el día de hoy (un horario especial propio) o cerrado hoy (closed_on): el estado no depende de la hora en que corre la prueba.
   const abierto = (id) => { cambiar(id, 'closed_on = null, temp_closed_until = null'); sql(`delete from special_hours where business_id = '${id}' and label->>'es' = 'fic9cab'`); const h = hoyLocal();
     sql(`insert into special_hours (business_id, kind, date_from, date_to, closed, ranges, label, status) values ('${id}', 'own', '${h}', '${h}', false, '[["00:00","00:00"]]'::jsonb, '{"es":"fic9cab","en":"fic9cab"}'::jsonb, 'active')`); };
-  const cerrado = (id) => { sql(`delete from special_hours where business_id = '${id}' and label->>'es' = 'fic9cab'`); cambiar(id, `closed_on = '${hoyLocal()}'`); };
+  const cerrado = (id) => { sql(`delete from special_hours where business_id = '${id}' and label->>'es' = 'fic9cab'`); cambiar(id, `closed_on = '${hoyLocal()}', temp_closed_until = null`); };
   const tomas = (id, kind) => Number(sql(`select count(*) from contact_taps where business_id = '${id}' and kind = '${kind}' and source = 'ficha'`));
   // El servidor cuenta un toque por persona (o red) y negocio cada 10 min, sin distinguir el tipo: se «envejecen» los anteriores para medir cada uno.
   const envejecer = () => sql(`update contact_taps set at = at - interval '3 hours' where at > now() - interval '3 hours'`);
@@ -127,6 +127,14 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     ok(!(await botonesQueNoCaben(m)).length && !(await botonesFueraDeLaVentana(m)).length, 'abierto: nada se sale');
     cerrado(TODO); await abrirFicha(m, TODO);
     ok(await est.getAttribute('data-estado') === 'cerrado' && /^Cerrado/.test((await est.innerText()).trim()), `cerrado: «${(await est.innerText()).trim()}»`);
+    // ESTADO_SIN_REPETIR · «Cerrado hoy · hoy · abre mañana 9 AM» (23 nov): la palabra de adelante no vuelve en lo que sigue, ni queda un « · » colgando.
+    const sinRepetir = (t) => !/(^|[\s·])(\p{L}+)[\s·]+\2([\s·]|$)/iu.test(t) && !/^[\s·]|[\s·]$|·\s*·/.test(t);
+    const tCerrado = (await est.innerText()).replace(/\s+/g, ' ').trim();
+    ok(/^Cerrado hoy( · abre (mañana|\w{3}) \d{1,2}(:\d\d)? [AP]M)?$/.test(tCerrado) && sinRepetir(tCerrado), `cerrado hoy: la palabra no se repite («${tCerrado}»)`);
+    cambiar(TODO, `closed_on = null, temp_closed_until = now() + interval '2 days'`); await abrirFicha(m, TODO);
+    const tTemp = (await est.innerText()).replace(/\s+/g, ' ').trim();
+    ok(tTemp === 'Cerrado temporalmente' && sinRepetir(tTemp), `cerrado temporalmente: sin «temporalmente» repetido («${tTemp}»)`);
+    cerrado(TODO); await abrirFicha(m, TODO);
     const colC = await est.evaluate((e) => getComputedStyle(e).color);
     ok(colA !== colC, `el estado cambia de color (${colA} → ${colC})`);
     ok(await btnContactar(m).count() === 1 && !(await botonesFueraDeLaVentana(m)).length, 'cerrado: «Contactar» sigue ahí y cabe');
