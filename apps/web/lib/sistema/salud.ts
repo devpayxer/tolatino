@@ -4,6 +4,7 @@ import { auditar, type Staff } from "../admin";
 import { estadoEscucha, type EstadoEscucha } from "../cambios-config";
 import { db, tx } from "../db";
 import { ENTORNO } from "../entorno";
+import { estadoSubidas, type EstadoSubidas } from "../subida";
 
 /* 9j · Super Admin › Sistema › Salud (prototipo secSys «health»; ADM-SYS «errores, latencia, colas de trabajos, estado de servicios; mantenimiento
    programado»; fase9-apertura.md §3.5). En el sandbox lee el sandbox: lo que mide el barrido cada 5 minutos (health_checks: la base, el barrido, la
@@ -61,6 +62,8 @@ export type DatosSalud = {
   vitales: Array<import("../vitales").FilaVital> | null;
   // 22 nov · La escucha de los cambios de ESTE proceso (una por proceso, lib/cambios-config.ts): viva, desde cuándo, el último aviso.
   escucha: EstadoEscucha;
+  // 23 nov · Las subidas de fotos de ESTE proceso (lib/subida.ts conFotoSubida): en curso, en espera, el tope vigente y los rechazos de la última hora.
+  subidas: EstadoSubidas;
 };
 
 /* 9o · Las máquinas de producción según Prometheus (la réplica, por la red privada): CPU, memoria y disco de cada una. 2 s como mucho; si no contesta,
@@ -122,6 +125,7 @@ export async function saludAdmin(): Promise<DatosSalud> {
   return {
     disponibilidad: k.rows[0]?.disp ?? null, p95: k.rows[0]?.p95 ?? null, errores: e.rows[0] ?? { web: 0, apps: 0, servidor: 0 }, trabajosConError: j.rows,
     servicios: s.rows, llaves: ll.rows, mantenimiento: m.rows, despliegues: dep, entorno: ENTORNO, maquinas: maq, vitales: vit, escucha: estadoEscucha(),
+    subidas: await estadoSubidas(),
   };
 }
 

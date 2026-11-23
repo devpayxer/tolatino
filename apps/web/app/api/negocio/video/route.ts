@@ -8,7 +8,7 @@ import { valor } from "@/lib/config";
 import { guardarArchivo, guardarObjeto, mediosListos, urlPublica } from "@/lib/medios";
 import { recibirArchivo } from "@/lib/subida";
 import { accesoPanel } from "@/lib/panel";
-import { borrarCarpetaVideo, carpetaVideo, procesarVideo, turnoVideo, videoListo } from "@/lib/video-negocio";
+import { borrarCarpetaSubida, carpetaSubida, procesarVideo, turnoVideo, videoListo } from "@/lib/video-negocio";
 
 /* C-001 · Subir el video de presentación (Panel › Tu página › Fotos · «Video de presentación · Pro»). Solo un miembro con acceso a «Tu
    página» de un negocio Pro, desde el mismo sitio. El servidor decide todo: el servicio propio (ffmpeg) lo recorta a video_max_s segundos,
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   if (!turno) return ocupado();
   let dir = "";
   try {
-    dir = await carpetaVideo();
+    dir = await carpetaSubida();
     const rec = await recibirArchivo(req, { campo: "video", tope: MAX, ruta: join(dir, "entrada") });
     if (!rec.ok && rec.motivo === "grande") return err(413, "El video pesa demasiado (máximo 120 MB).", "The video is too large (120 MB max).");
     if (!rec.ok) return err(400, "No llegó el video.", "The video did not arrive.");
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ok: true, id: fila.id, segundos: p.segundos, src: urlPublica(cv), poster: urlPublica(cp) });
   } finally {
-    if (dir) await borrarCarpetaVideo(dir);
+    if (dir) await borrarCarpetaSubida(dir);
     await turno();
   }
 }
