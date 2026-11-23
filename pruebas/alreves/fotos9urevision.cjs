@@ -184,7 +184,9 @@ const es = (d, estado, capa, motivo) => d.estado === estado && (capa === undefin
   ok(r5.estado === 'sin_respuesta' && lento, `tiempo límite: un modelo que tarda → sin_respuesta en ${Date.now() - t0} ms`);
 
   console.log('el simulador (guion de rev9u por el alto de la imagen)');
-  const Sim = cargar('apps/web/lib/compa/modelo-simulador.ts', { '../entorno': { ENTORNO: 'pruebas' }, './modelo': { bloques: () => ['b'], ErrorModelo: modeloStub.ErrorModelo } });
+  const Sim = cargar('apps/web/lib/compa/modelo-simulador.ts', { '../entorno': { ENTORNO: 'pruebas' }, './modelo': { bloques: () => ['b'], ErrorModelo: modeloStub.ErrorModelo },
+    // Las fotos no pasan por «cancela…» ni «abre mi…»: el simulador solo las importa de modelo-reglas (la elección de la operación).
+    './modelo-reglas': { quiereCancelar: () => false, quiereAbrir: () => false, respuestaCancelar: () => null, respuestaAbrir: () => null } });
   Sim.olvidarRecibidos();
   const pide = async (alto) => { const b = await jpg(402, alto); try { return (await Sim.simulador.responder({ uso: 'foto', modelo: 'simulador', lang: 'es', sistema: 'p', datos: {}, trozos: [], mensajes: [{ de: 'persona', texto: 'x' }], maxTokens: 60, esperaMs: 200, imagen: { tipo: 'image/jpeg', base64: b.toString('base64') } })).json; } catch (e) { return { error: e.tipo }; } };
   const v = {};
