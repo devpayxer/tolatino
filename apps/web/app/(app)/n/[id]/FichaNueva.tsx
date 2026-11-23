@@ -24,6 +24,7 @@ import type { TarjetaEvt } from "@/lib/evt-publico";
 import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { MiniMapa } from "@/app/_dir/MiniMapa";
+import { Hoja } from "../../eventos/Despues";
 import { useAncho } from "@/app/_ancho/Ancho";
 import { guardarNegocio } from "../../acciones";
 import { contarToque } from "@/lib/contar-toque";
@@ -256,6 +257,12 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     f.subsLinea ? f.subsLinea.split(" · ")[0]!.toUpperCase() : null, f.dist !== "—" ? f.dist.toUpperCase() : null].filter(Boolean) as string[];
   // 23 nov · Cabecera según la referencia del fundador: nombre + sello (la palomita), una fila de datos y el estado; la dirección vive en Ubicación.
   const metaD = [...metaL, f.ciudad ? f.ciudad.toUpperCase() : null].filter(Boolean) as string[];
+  const [contacto, setContacto] = useState(false);
+  const contactos = [
+    llamar ? { k: "llamar", icon: "phone", t: E2("Llamar", "Call"), s: f.telefono ?? "", go: llamar } : null,
+    escribir ? { k: "escribir", icon: "chat", t: E2("Escribir", "Message"), s: E2("Un mensaje por To'Latino", "A message on To'Latino"), go: escribir } : null,
+    llegar ? { k: "llegar", icon: "pin", t: E2("Cómo llegar", "Directions"), s: f.direccion ?? f.zona ?? "", go: llegar } : null,
+  ].filter(Boolean) as { k: string; icon: string; t: string; s: string; go: () => void }[];
   const sello = f.verificado ? <span role="img" aria-label={E2("Sello To'Latino", "To'Latino seal")} title={E2("Sello To'Latino", "To'Latino seal")} className="ml-2 inline-flex align-middle text-action"><Icon name="verified" size={22} strokeWidth={2.4} /></span> : null;
   const datos = (xs: string[]) => xs.map((x, i) => <span key={i}>{i ? " · " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>);
 
@@ -451,23 +458,32 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         <div className="flex flex-col gap-2 px-5 pb-3 pt-5" data-pieza="cabecera-ficha">
           <h1 className="text-balance font-display text-[29px] font-extrabold leading-[1.05] tracking-[-0.045em]">{f.nombre}{sello}</h1>
           <div className="font-mono text-[10.5px] font-bold leading-[1.5] tracking-[0.07em] text-ink/60">{datos(metaL)}</div>
-          <div className="flex flex-wrap items-center gap-2 text-[13.5px] font-bold" data-estado={abierto ? "abierto" : "cerrado"} style={{ color: stFg }}>
-            <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold">{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-[13.5px] font-bold" data-estado={abierto ? "abierto" : "cerrado"} style={{ color: stFg }}>
+              <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold">{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
+            </div>
+            {/* 23 nov · Llamar, Escribir y Cómo llegar viven en un menú que se despliega (pedido del fundador): un solo botón en la cabecera. */}
+            {contactos.length ? <div className="flex-none" data-pieza="contactar-ficha"><Button variant="secondary" size="sm" icon="phone" aria-haspopup="dialog" onClick={() => setContacto(true)}>{E2("Contactar", "Contact")}</Button></div> : null}
           </div>
         </div>
+        {contacto ? (
+          <Hoja titulo={E2(`Contactar a ${f.nombre}`, `Contact ${f.nombre}`)} label="Ficha · contactar" es={es} onClose={() => setContacto(false)}>
+            <div className="mt-3 flex flex-col">
+              {contactos.map((c, i) => (
+                <button key={c.k} type="button" onClick={() => { setContacto(false); c.go(); }} className={`flex min-h-[64px] items-center gap-3.5 py-3 text-left ${i ? "border-t border-ink/[.08]" : ""}`}>
+                  <span className="grid size-11 flex-none place-items-center rounded-[14px] bg-ink/[.05]"><Icon name={c.icon} size={20} /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-[15.5px] font-extrabold">{c.t}</span>{c.s ? <span className="block truncate text-[13px] font-medium text-ink/60">{c.s}</span> : null}</span>
+                  <Icon name="chevronRight" size={18} color="rgba(11,14,18,.6)" />
+                </button>
+              ))}
+            </div>
+          </Hoja>
+        ) : null}
         <div ref={tabsRef} className="sticky z-20 bg-white" style={{ top: CAB_MOVIL }}><PestanasFicha modo="movil" items={tabs} active={tab} onChange={setTab} /></div>
         <div className="min-h-[640px]">
           {tab === "res" && (
             <div className="flex flex-col gap-6 px-5 pt-5" data-screen-label="Ficha · resumen">
               <div className="flex flex-col gap-3">
-                {[llamar, escribir, llegar].some(Boolean) ? (
-                  /* Cada botón toma lo que dice y lo que sobra se reparte; si no caben los tres, el último baja (nunca se sale). Guardián botonesQueCaben. */
-                  <div data-pieza="acciones-ficha" className="flex flex-wrap gap-2">
-                    {llamar ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="phone" block onClick={llamar}>{E2("Llamar", "Call")}</Button></div> : null}
-                    {escribir ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}
-                    {llegar ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="pin" block onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button></div> : null}
-                  </div>
-                ) : null}
                 {miCita}
                 <div className="grid"><TodayCard eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>
                 {oferta}
