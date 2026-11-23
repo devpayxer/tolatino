@@ -1,0 +1,130 @@
+{
+  "nota": "Lista CERRADA de las empresas que reciben datos de To'Latino o de quien lo usa, y qué reciben (hechos del código, no derecho). La lee el guardián tercerosDeclarados (scripts/legal/terceros.mjs): (1) todo cliente de otra empresa que exista en el código (por sus hosts) tiene que estar aquí, o en «sinDatos» con su motivo; (2) Privacidad (y, donde dice «ia», Inteligencia artificial) nombra a cada una en español y en inglés; (3) ninguna página legal ni ficha de ayuda dice que un dato «no sale» o «no va a otra empresa» si aquí dice que sí sale (los «temas»). Añadir una empresa o cambiar lo que recibe es una decisión del fundador: se escribe aquí, en Privacidad y en docs/legal/para-el-abogado.md. Quitar o aflojar una entrada también.",
+  "terceros": [
+    {
+      "id": "anthropic",
+      "nombre": "Anthropic",
+      "hosts": ["anthropic.com"],
+      "senales": ["api\\.anthropic\\.com", "ANTHROPIC_API_KEY"],
+      "recibe": {
+        "es": [
+          "El Compa: lo que escribe la persona, ya tapado (tarjetas, seguro social, número A, códigos, contraseñas, cuentas de banco), con su nombre de pila, idioma, ciudad y operaciones recientes. Lo demás que escriba no se tapa.",
+          "Respuestas automáticas de un negocio que las encendió: el mensaje del cliente (tapado) y la página del negocio.",
+          "Borradores de Soporte: el caso, tapado y sin teléfonos ni correos.",
+          "Fotos que se van a ver en público: una versión reducida (hasta 640 px, JPEG, sin metadatos), solo si la primera revisión duda o no pudo mirarla; sin quién la subió, negocio ni ciudad. No se difuminan caras ni textos."
+        ],
+        "en": [
+          "El Compa: what the person writes, already masked (cards, social security, A-number, codes, passwords, bank accounts), with their first name, language, city and recent transactions. Anything else they write is not masked.",
+          "A business's auto-replies, if it turned them on: the customer's message (masked) and the business page.",
+          "Support drafts: the case, masked and without phone numbers or emails.",
+          "Photos that will be shown in public: a downsized version (up to 640 px, JPEG, no metadata), only if the first review doubts it or could not look at it; without who uploaded it, business or city. Faces and text are not blurred."
+        ]
+      },
+      "no_recibe": {
+        "es": ["Fotos privadas (Mensajes, ayuda, entrega, reclamos, citas, solicitudes, viajes).", "Teléfonos ni correos de Soporte."],
+        "en": ["Private photos (Messages, help, delivery, claims, appointments, requests, trips).", "Phone numbers or emails from Support."]
+      },
+      "retencion": "pendiente",
+      "privacidad": { "es": ["Anthropic", "reducida", "640", "no se difuminan", "retención cero"], "en": ["Anthropic", "downsized", "640", "not blurred", "zero retention"] },
+      "ia": { "es": ["Anthropic", "reducida", "640", "no se difuminan", "retención cero"], "en": ["Anthropic", "downsized", "640", "not blurred", "zero retention"] },
+      "temas": [
+        { "datos": "fotos", "patron": "\\bfotos?\\b|\\bphotos?\\b|\\bim[aá]genes\\b|\\bimages?\\b", "salvo": "Anthropic|segunda opini[oó]n|second opinion|primera revisi[oó]n|first (photo )?review|privad[ao]s?|private" }
+      ]
+    },
+    {
+      "id": "stripe",
+      "nombre": "Stripe",
+      "hosts": ["stripe.com"],
+      "senales": ["api\\.stripe\\.com", "js\\.stripe\\.com", "STRIPE_SECRET_KEY"],
+      "recibe": {
+        "es": [
+          "El número de la tarjeta lo escribe la persona en el formulario de Stripe, que carga su navegador (js.stripe.com); To'Latino no lo recibe.",
+          "Cobros, devoluciones y pagos a los negocios (Stripe Connect).",
+          "En una disputa de un banco: el recibo, la conversación con el negocio (sin teléfonos), la constancia de entrega (con la dirección) y, si la hay, la foto de la entrega."
+        ],
+        "en": [
+          "The card number is typed by the person into Stripe's form, which their browser loads (js.stripe.com); To'Latino does not receive it.",
+          "Charges, refunds and payouts to businesses (Stripe Connect).",
+          "In a bank dispute: the receipt, the conversation with the business (without phone numbers), the delivery record (with the address) and, if there is one, the delivery photo."
+        ]
+      },
+      "privacidad": { "es": ["Stripe", "disputa", "foto de la entrega"], "en": ["Stripe", "disputes", "delivery photo"] },
+      "temas": [
+        { "datos": "foto de la entrega", "patron": "fotos? de (la )?entrega|delivery photos?|photos? of the delivery", "salvo": "Stripe" }
+      ]
+    },
+    {
+      "id": "telnyx",
+      "nombre": "Telnyx",
+      "hosts": ["telnyx.com"],
+      "senales": ["api\\.telnyx\\.com", "TELNYX_"],
+      "recibe": { "es": ["El teléfono y el texto de cada SMS: el código de entrada, los avisos por SMS y las respuestas de El Compa por SMS."], "en": ["The phone number and text of each SMS: the sign-in code, SMS notifications and El Compa's replies by SMS."] },
+      "privacidad": { "es": ["Telnyx"], "en": ["Telnyx"] }
+    },
+    {
+      "id": "meta",
+      "nombre": "Meta",
+      "hosts": ["facebook.com", "wa.me"],
+      "senales": ["graph\\.facebook\\.com", "WHATSAPP_"],
+      "recibe": { "es": ["Solo si la persona enciende «Hablar con El Compa por WhatsApp y SMS»: el teléfono y el texto de los mensajes de WhatsApp con El Compa."], "en": ["Only if the person turns on «Talk to El Compa by WhatsApp and SMS»: the phone number and text of the WhatsApp messages with El Compa."] },
+      "privacidad": { "es": ["Meta", "WhatsApp"], "en": ["Meta", "WhatsApp"] }
+    },
+    {
+      "id": "ses",
+      "nombre": "Amazon Web Services (SES)",
+      "hosts": ["amazonaws.com", "amazon.com"],
+      "senales": ["amazonaws\\.com", "SES_ACCESS_KEY_ID"],
+      "recibe": { "es": ["El correo de la persona, el asunto y el texto de cada correo que To'Latino le manda (recibos, confirmaciones, campañas de un negocio con su baja)."], "en": ["The person's email address, subject and text of each email To'Latino sends them (receipts, confirmations, a business's campaigns with their unsubscribe)."] },
+      "privacidad": { "es": ["Amazon Web Services", "SES"], "en": ["Amazon Web Services", "SES"] }
+    },
+    {
+      "id": "apple-google",
+      "nombre": "Apple y Google",
+      "hosts": ["apple.com", "google.com", "googleapis.com"],
+      "senales": ["push\\.apple\\.com", "fcm\\.googleapis\\.com", "walletobjects\\.googleapis\\.com"],
+      "recibe": {
+        "es": [
+          "Avisos al teléfono (APNs, FCM): el texto del aviso; los de salud, niños, Soporte, sanciones y cuenta salen solo como «Tienes un aviso nuevo en To'Latino».",
+          "Boletos en Wallet: nombre, lugar y fecha del evento y el código del boleto, sin nombre ni teléfono de la persona.",
+          "«Cómo llegar»: la dirección del lugar, en la app de mapas del teléfono (en una computadora, Google Maps en el navegador), solo si la persona lo toca."
+        ],
+        "en": [
+          "Phone notifications (APNs, FCM): the text of the notice; those about health, children, Support, sanctions and the account go only as «You have a new notice in To'Latino».",
+          "Tickets in Wallet: the event's name, place and date and the ticket's code, without the person's name or phone.",
+          "«Directions»: the address of the place, in the phone's maps app (on a computer, Google Maps in the browser), only if the person taps it."
+        ]
+      },
+      "privacidad": { "es": ["Apple y Google", "Wallet", "Cómo llegar"], "en": ["Apple and Google", "Wallet", "Directions"] }
+    },
+    {
+      "id": "navegador-avisos",
+      "nombre": "El servicio de avisos del navegador",
+      "hosts": [],
+      "senales": ["enviarWebPush"],
+      "recibe": { "es": ["Avisos en la web (Web Push): el texto del aviso, por el servicio de avisos del navegador de la persona."], "en": ["Web notifications (Web Push): the text of the notice, through the person's browser's notification service."] },
+      "privacidad": { "es": ["servicio de avisos de tu navegador"], "en": ["your browser's notification service"] }
+    },
+    {
+      "id": "pexels",
+      "nombre": "Pexels",
+      "hosts": ["pexels.com"],
+      "senales": ["images\\.pexels\\.com"],
+      "recibe": { "es": ["El navegador de quien abre una página de categoría con portada de Pexels le pide la foto directamente: Pexels ve su dirección de internet y su navegador."], "en": ["The browser of whoever opens a category page with a Pexels cover requests the photo directly: Pexels sees their internet address and browser."] },
+      "privacidad": { "es": ["Pexels"], "en": ["Pexels"] }
+    },
+    {
+      "id": "cloudflare",
+      "nombre": "Cloudflare",
+      "hosts": ["cloudflare.com"],
+      "senales": ["cloudflare\\.com"],
+      "recibe": { "es": ["En producción, todo lo que la persona envía y recibe del sitio pasa por Cloudflare (DNS, CDN, protección). Todavía no encendido."], "en": ["In production, everything the person sends to and receives from the site passes through Cloudflare (DNS, CDN, protection). Not turned on yet."] },
+      "privacidad": { "es": ["Cloudflare"], "en": ["Cloudflare"] }
+    }
+  ],
+  "sinDatos": [
+    { "hosts": ["w3.org", "schema.org", "sitemaps.org", "schemas.android.com", "hyperelliptic.org", "nayuki.io", "wikipedia.org"], "motivo": "Espacios de nombres y referencias dentro de formatos (XML, JSON-LD, comentarios de bibliotecas): ninguna petición con datos." },
+    { "hosts": ["github.com", "githubusercontent.com", "vercel.com", "hetzner.cloud"], "motivo": "Publicación de las apps y paneles de administración del equipo (enlaces y la tubería de tiendas): no llevan datos de las personas que usan To'Latino." },
+    { "hosts": ["pa.gov", "irs.gov", "treasury.gov", "justice.gov", "nmlsconsumeraccess.org", "atanet.org", "padisciplinaryboard.org", "copyright.gov"], "motivo": "Enlaces a registros oficiales que la persona abre por su cuenta (licencias, DMCA): no mandamos nada." },
+    { "hosts": ["tolatino.com"], "motivo": "Dominios propios de To'Latino." }
+  ]
+}

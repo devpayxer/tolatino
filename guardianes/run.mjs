@@ -23,6 +23,8 @@ import { filas as filasMapa, leer as leerMapa, problemas as problemasMapa, semil
 // 9e · Las páginas legales: el guardián lee docs/legal/ con el MISMO código que el indexador (forma, pares ES/EN, sha256).
 import { paginasLegales } from "../scripts/legal/indexar.mjs";
 import { BORRADOR as BORRADOR_LEGAL, CLAVES as CLAVES_LEGALES } from "../scripts/legal/forma.mjs";
+// 23 nov · Los terceros que reciben datos: la lista cerrada (docs/legal/terceros.json) contra el código y los textos.
+import { revisarTerceros } from "../scripts/legal/terceros.mjs";
 // 9f · Las cadenas de la interfaz: el guardián usa el MISMO extractor que genera apps/web/lib/cms-cadenas.json.
 import { cadenasDelCodigo, comoJson as cmsComoJson, comoJsonE2 as cmsComoJsonE2, SALIDA as CMS_SALIDA, SALIDA_E2 as CMS_SALIDA_E2 } from "../scripts/cms/extraer.mjs";
 // 9f-3 · Las definiciones de E2 de las pantallas: el guardián las revisa con el MISMO código que el codemod que las convierte.
@@ -15285,6 +15287,17 @@ const guardianes = {
     const s = readFileSync(S, "utf8");
     if (!/require\('\.\.\/lib\/consultas-sitios\.cjs'\)/.test(s) || !/prepare q as \$\{q\.sql\}/.test(s) || !/comparar\(fueraPorArchivo\(ss\), acept\)/.test(s)) falla(G, S, 0, "sql9u prepara todo lo que enumera consultas-sitios.cjs y compara lo que queda fuera con la lista aceptada");
     if (!/"sql9u"/.test(readFileSync("pruebas/reparto.json", "utf8"))) falla(G, "pruebas/reparto.json", 0, "sql9u está en el reparto de las pruebas de punta a punta");
+  },
+
+  /* 23 nov · tercerosDeclarados: la clase «un texto dice que un dato no sale y el código lo manda» (Privacidad e Inteligencia artificial decían que
+     la revisión de fotos no salía a otra empresa; desde la decisión AJ la segunda opinión manda una versión reducida a Anthropic). docs/legal/terceros.json
+     es la lista CERRADA de las empresas que reciben datos y qué reciben; scripts/legal/terceros.mjs la compara con el código (todo host que el producto
+     usa está en la lista o en «sinDatos» con su motivo; cada señal de la lista existe en el código, o el guardián estaría ciego), con Privacidad e
+     Inteligencia artificial en ES y EN (nombran lo que sale y a quién) y con todo texto del producto (legal, ayuda, cadenas): ninguno dice «no sale / no va a
+     otra empresa» de un dato de la lista sin decir la excepción, ni promete retención cero mientras la lista diga «pendiente». Quitar o aflojar una
+     entrada es decisión del fundador. Al revés: pruebas/alreves/alrevesTercerosLegales.cjs. */
+  tercerosDeclarados() {
+    for (const e of revisarTerceros()) falla("tercerosDeclarados", e.f, e.linea, e.msg);
   },
 
 };
