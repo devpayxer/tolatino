@@ -6383,7 +6383,7 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   último día si el mes es corto, y vuelve a su día después (31 ene → 28 feb → 31 mar). La hora no se mueve con el cambio de horario. La ficha de ayuda
   «Plan Pro» lo explica («Tu día de cobro»). Qué mirar: Tu plan de un negocio; el texto no cambia, solo la fecha.
 
-## Cabecera y pestañas nuevas de la ficha (23 nov) — hecha según tus capturas, SIN subir todavía — falta tu visto bueno
+## Cabecera y pestañas nuevas de la ficha (23 nov) — diseño APROBADO por el fundador el 23 nov («sí, me gusta así»); se sube al sandbox cuando sus pruebas estén en verde
 - **Qué pediste:** los encabezados de la ficha como en tus imágenes: el menú más prominente y con color, mejor distribución; y, en el teléfono, un
   menú que despliegue los contactos.
 - **Qué hay (te mandé las capturas reales por el chat):** nombre con la palomita del sello, una fila de datos (calificación, reseñas, categoría,
@@ -6391,5 +6391,6 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Guardar, Compartir y Llamar con texto a la derecha. En el teléfono, un botón «Contactar» que abre una hoja con Llamar, Escribir y Cómo llegar.
 - **Lo que cambia respecto a hoy y conviene que confirmes:** se van las pastillas PRO y Sello (queda la palomita); la dirección sale de la fila de
   datos (sigue en la sección de ubicación); en el teléfono ya no hay tres botones sueltos en la cabecera.
-- **Decide tú:** si va así; si en escritorio también quieres el menú «Contactar»; y si la ficha Free (que no toqué) debe verse igual.
+- **Quedó así mientras no digas otra cosa:** el escritorio conserva Guardar, Compartir y Llamar como botones con texto (sin menú «Contactar»), y la
+  ficha Free no se tocó. Si quieres el menú también en escritorio, o la Free igual que la Pro, dímelo.
 
