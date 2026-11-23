@@ -66,5 +66,8 @@ RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
   [ -s /var/www/estado/sync.txt ] && echo "<p>$(sed 's/&/\&amp;/g;s/</\&lt;/g' /var/www/estado/sync.txt)</p>"
   # 22 nov · Lo que el último despliegue anotó sin cortar (semilla, nginx: deploy.sh · aviso): a la vista, no solo en el registro.
   [ -s /var/www/estado/avisos.txt ] && echo "<p><b>Avisos del último despliegue:</b><br>$(sed 's/&/\&amp;/g;s/</\&lt;/g;s/$/<br>/' /var/www/estado/avisos.txt)</p>"
-  echo "<p><a href='/'>Abrir la app</a> · <a href='/api/salud'>Salud</a> · <a href='/estado/diag.txt'>Diagnóstico</a> · <a href='/estado/tramos.txt'>Tramos</a></p><h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
+  echo "<p><a href='/'>Abrir la app</a> · <a href='/api/salud'>Salud</a> · <a href='/estado/diag.txt'>Diagnóstico</a> · <a href='/estado/tramos.txt'>Tramos</a></p>"
+  # 23 nov · El sitio de vista previa (infra/pruebas/vista-previa/): el puerto 8081 de esta misma dirección, y su estado.
+  echo "<p><b>Vista previa:</b> <a href='http://$(hostname -I 2>/dev/null | awk '{print $1}'):8081/'>puerto 8081</a> · <a href='/estado/vista.txt'>Estado de la vista previa</a></p>"
+  echo "<h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
   tail -n 25 "$LOG" | sed 's/&/\&amp;/g;s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html

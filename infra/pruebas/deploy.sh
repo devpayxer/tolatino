@@ -43,6 +43,15 @@ case "$SYNC_R" in
   1) echo "tolatino-sync: el del commit $COMMIT NO es bash válido; sigue el anterior ($(date -Is))" > /var/www/estado/sync.txt ;;
   *) echo "tolatino-sync: el del commit $COMMIT no se pudo instalar (¿disco lleno?); sigue el anterior ($(date -Is))" > /var/www/estado/sync.txt ;;
 esac
+# 1b) 23 nov · tolatino-sync cada 20 s y a su hora. Antes: cada 60 s con la precisión por omisión de systemd (AccuracySec=1min), así que un push esperaba
+#     hasta ~2 min a que el servidor se enterara. Cada vuelta sin cambios es un «git fetch» y nada más (el candado impide que dos se pisen). El temporizador
+#     nació con el cloud-init (que ya trae esto para una máquina nueva); aquí se ajusta la viva con un añadido de systemd, solo si cambió. Nunca corta.
+SYNC_DROPIN=/etc/systemd/system/tolatino-sync.timer.d/intervalo.conf
+SYNC_TIMER=$'[Timer]\nOnUnitActiveSec=\nOnUnitActiveSec=20\nAccuracySec=1s'
+if [ "$(cat "$SYNC_DROPIN" 2>/dev/null || true)" != "$SYNC_TIMER" ]; then
+  { mkdir -p "${SYNC_DROPIN%/*}" && printf '%s\n' "$SYNC_TIMER" > "$SYNC_DROPIN" && systemctl daemon-reload && systemctl restart tolatino-sync.timer \
+    && log "tolatino-sync: cada 20 s (AccuracySec=1s)"; } || log "tolatino-sync: no se pudo ajustar el temporizador (sigue el de antes)"
+fi
 
 # 2) Secretos del sandbox: se generan una sola vez en el servidor, nunca viven en el repo.
 mkdir -p /etc/tolatino
@@ -135,6 +144,9 @@ if [ -n "$HUELLA" ] && [ -n "$IMAGEN_ANTES" ] && [ "$(cat /var/lib/tolatino/imag
   log "imagen: no cambió lo que entra en ella (huella ${HUELLA:0:12}): se reutiliza ${IMAGEN_ANTES:7:12}"
 else
   log "imagen: se construye (commit $COMMIT, huella ${HUELLA:-sin huella})"
+  # 23 nov · La vista previa (next dev, hasta 2,5 GB) se para mientras se construye: el build es el pico de memoria del servidor (cx33, 8 GB). La vuelve
+  # a levantar encender.sh en 3i (si el build falla, en el reintento).
+  docker stop tolatino-pruebas-vista-previa-1 >/dev/null 2>&1 || true
   if ! "${COMPOSE[@]}" build web; then
     diag "la imagen no se pudo construir"
     log "la imagen no se pudo construir: la app sigue con lo de antes"
@@ -224,6 +236,12 @@ fi
 # 3h) 9m · Retiros del fabricante (NHTSA, datos públicos): una vez al mes, aparte y sin esperar (el script no hace nada si tiene menos de 30 días).
 if ! systemctl is-active --quiet tolatino-retiros; then
   systemd-run --unit tolatino-retiros --collect bash "$REPO/infra/retiros/generar.sh" /var/lib/tolatino/retiros "${COMPOSE[@]}" || true
+fi
+# 3i) 23 nov · Sitio de vista previa (SOLO el sandbox; infra/pruebas/vista-previa/): la web en modo desarrollo sobre la rama de vista.conf, en el puerto
+#     8081, para ver un ajuste de pantalla sin construir la imagen. Aparte y sin esperar (como la moderación): encender.sh la enciende o la apaga según
+#     el interruptor de vista.conf (VISTA_ENCENDIDA) y, si falla, la app no se entera. Nunca migra ni siembra (guardián vistaPreviaAcotada).
+if ! systemctl is-active --quiet tolatino-vista; then
+  systemd-run --unit tolatino-vista --collect bash "$REPO/infra/pruebas/vista-previa/encender.sh" "$REPO" "${COMPOSE[@]}" || true
 fi
 
 tramo nginx

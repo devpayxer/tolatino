@@ -136,6 +136,56 @@ services:
       start_period: 90s
       retries: 3
 
+  # 23 nov · Sitio de vista previa (SOLO el sandbox; guardián vistaPreviaAcotada): la web en modo desarrollo (next dev) sobre una copia APARTE de la
+  # rama de vista-previa/vista.conf (VISTA_RAMA), para ver un ajuste de pantalla en 1-2 minutos sin construir la imagen. nginx la sirve en el puerto
+  # 8081 con la marca «VISTA PREVIA». Perfil propio: la enciende o la apaga APARTE vista-previa/encender.sh (deploy.sh con systemd-run … || true); el
+  # «up» de la app no la toca y la app no depende de ella. Nunca migra ni siembra: su usuario de la base (tolatino_vista) solo lee y escribe filas, y
+  # vista.sh se detiene (página de pausa) si la rama trae una migración que la base no tiene. El bucle (vista.sh) se monta de solo lectura desde ESTA
+  # copia (la de «pruebas»), nunca desde la rama que sigue. Acotada para no tumbar el sandbox (cx33, 8 GB): 2,5 GB (next dev con webpack: 1,7 GB
+  # con la portada, medido) y 1,5 CPU como mucho, la primera que el kernel mata si falta memoria (oom_score_adj), sin privilegios (usuario node, sin
+  # capacidades) y como mucho 5 reinicios seguidos. deploy.sh la para mientras construye la imagen (el pico de memoria del servidor).
+  vista-previa:
+    build:
+      context: ../../infra/pruebas/vista-previa
+    image: tolatino/vista-previa:pruebas
+    profiles: ["vista"]
+    restart: on-failure:5
+    init: true
+    stop_grace_period: 10s
+    user: "1000:1000"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2560m
+    memswap_limit: 2560m
+    cpus: 1.5
+    pids_limit: 1024
+    oom_score_adj: 900
+    env_file: vista-previa/vista.conf
+    environment:
+      TOLATINO_ENTORNO: pruebas
+      TOLATINO_SMS_MODO: pruebas
+      NEXT_TELEMETRY_DISABLED: "1"
+      NODE_OPTIONS: --max-old-space-size=1792
+      DATABASE_URL: postgres://tolatino_vista:${VISTA_DB_PASSWORD:-}@db:5432/tolatino
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      DATOS_SECRET: ${DATOS_SECRET:-}
+      QR_LLAVE_PRIVADA: ${QR_LLAVE_PRIVADA:-}
+      VAPID_PRIVADA: ${VAPID_PRIVADA:-}
+      MEDIOS_S3_URL: http://medios:3900
+      MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}
+      MEDIOS_SECRET: ${MEDIOS_SECRET:-}
+      MODERACION_IMG_URL: http://moderacion-img:8790
+      VIDEO_URL: http://video:8791
+      TRADUCTOR_URL: http://traductor:5000
+      PASSKEY_RP_ID: ${PASSKEY_RP_ID:-pruebas.tolatino.com}
+      PASSKEY_ORIGENES: ${PASSKEY_ORIGENES:-https://pruebas.tolatino.com}
+    volumes:
+      - /var/lib/tolatino/vista:/vista
+      - ./vista-previa/vista.sh:/opt/vista/vista.sh:ro
+    ports:
+      - "127.0.0.1:3010:3010"
+    networks: [default, interna]
+
   # Barrido central (0078): cada minuto llama a la app por la red interna para vencer, liberar y avisar aunque nadie abra una
   # página. Usa la misma imagen de la app (nada nuevo que bajar) y el token del entorno (lo crea deploy.sh).
   barrido:
