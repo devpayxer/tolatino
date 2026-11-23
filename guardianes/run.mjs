@@ -10955,15 +10955,62 @@ const guardianes = {
       if (lista[v]?.origen !== "prohibida") falla(G, SJ, 0, `${v} tiene que estar «prohibida» (la dirección de un simulador no puede existir en producción)`);
       if (!new RegExp(`\\b${n}: \\d{4}\\b`).test(nominal)) falla(G, PU, 0, `falta el puerto «${n}» en la tabla NOMINAL de puertos.cjs`);
     }
+    // 23 nov (2) · Las seis direcciones con LA MISMA regla, en UN archivo (lib/origen-pruebas.ts): antes las cuatro viejas (STRIPE_API_BASE, STRIPE_FILES_BASE,
+    // TELNYX_API_BASE, WHATSAPP_API_BASE) solo las frenaba la lista prohibida y, puestas en producción, los cobros, los SMS y WhatsApp —con la llave real en la
+    // cabecera— habrían ido a esa dirección. (11) origen-pruebas.ts exporta origenDePruebas con las dos reglas, sin importaciones, y nadie más la define (una
+    // sola copia); su tabla se ejecuta aquí contra el archivo real; (12) cada lectura de las seis variables en apps/ y packages/ va DENTRO de
+    // origenDePruebas(…) (salvo la regla de «simulador» de paquete.ts, que solo pregunta si está puesta) y solo en su archivo; (13) Stripe y los canales toman
+    // solo el origen y cada fetch va por esa dirección o la real, nunca otra escrita a mano.
+    const OP = "apps/web/lib/origen-pruebas.ts", ST = "apps/web/lib/pagos/stripe.ts", CP = "apps/web/lib/compa/canales-proveedor.ts";
+    const VARS6 = ["STRIPE_API_BASE", "STRIPE_FILES_BASE", "TELNYX_API_BASE", "WHATSAPP_API_BASE", "SES_API_BASE", "ANTHROPIC_API_BASE"];
+    const DUENOS = { STRIPE_API_BASE: [ST], STRIPE_FILES_BASE: [ST], TELNYX_API_BASE: [CP], WHATSAPP_API_BASE: [CP], SES_API_BASE: [SES], ANTHROPIC_API_BASE: [MC] };
+    if (lista.STRIPE_FILES_BASE?.origen !== "prohibida") falla(G, SJ, 0, "STRIPE_FILES_BASE tiene que estar «prohibida» (la dirección de un simulador no puede existir en producción)");
     const REGLA_ENT = 'if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;';
     const REGLA_DIR = 'if (!/^https?:$/.test(u.protocol) || !["127.0.0.1", "localhost"].includes(u.hostname) || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return null;';
+    if (!existsSync(OP)) falla(G, OP, 0, "falta LA regla de las direcciones de simulador (lib/origen-pruebas.ts)");
+    else {
+      const t = sinComent(OP), cuerpo = (/^export function origenDePruebas\(v: string \| undefined\): URL \| null \{([\s\S]*?)\n\}/m.exec(t) ?? [])[1] ?? "";
+      if (!cuerpo.includes(REGLA_ENT)) falla(G, OP, 0, "origenDePruebas tiene que ignorar la dirección salvo con TOLATINO_ENTORNO=pruebas (en producción no puede tener efecto)");
+      if (!cuerpo.includes(REGLA_DIR)) falla(G, OP, 0, "origenDePruebas acepta solo una dirección local (127.0.0.1 / localhost) sin usuario, ruta, consulta ni ancla");
+      if ((t.match(/^import /gm) ?? []).length !== 1 || !/^import "server-only";$/m.test(t)) falla(G, OP, 0, "origen-pruebas.ts no importa nada (solo server-only): los cargadores de las pruebas sin servidor lo cargan real");
+      // La tabla, contra el archivo real.
+      try {
+        const ts = createRequire(import.meta.url)("typescript");
+        const js = ts.transpileModule(readFileSync(OP, "utf8").replace(/^import "server-only";\n/m, ""), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+        const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("sin importaciones"); });
+        const O = mod.exports.origenDePruebas, antes = process.env.TOLATINO_ENTORNO;
+        try {
+          for (const [ent, v, esp] of [["pruebas", "http://127.0.0.1:4410", "http://127.0.0.1:4410"], ["pruebas", "http://localhost:12111/", "http://localhost:12111"],
+            ["produccion", "http://127.0.0.1:4410", null], ["ensayo", "http://127.0.0.1:4410", null], ["local", "http://127.0.0.1:4410", null], [undefined, "http://127.0.0.1:4410", null],
+            ["pruebas", "https://api.example.com", null], ["pruebas", "http://127.0.0.1:4410/v1", null], ["pruebas", "http://u:c@127.0.0.1:4410", null],
+            ["pruebas", "http://127.0.0.1:4410/?x=1", null], ["pruebas", "http://127.0.0.1:4410/#a", null], ["pruebas", "ftp://127.0.0.1:4410", null], ["pruebas", "http://127.0.0.1.example.com", null]]) {
+            if (ent === undefined) delete process.env.TOLATINO_ENTORNO; else process.env.TOLATINO_ENTORNO = ent;
+            const r = O(v)?.origin ?? null;
+            if (r !== esp) falla(G, OP, 0, `origenDePruebas(${v}) con TOLATINO_ENTORNO=${ent ?? "(sin)"} da ${r} y debe dar ${esp}`);
+          }
+        } finally { if (antes === undefined) delete process.env.TOLATINO_ENTORNO; else process.env.TOLATINO_ENTORNO = antes; }
+      } catch (e) { falla(G, OP, 0, `no pude ejecutar origen-pruebas.ts: ${String(e?.message ?? e).slice(0, 120)}`); }
+    }
+    for (const f of codigo) {
+      if (!/^(apps|packages)\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(f) || f.includes("node_modules")) continue;
+      const t = sinComent(f);
+      if (f !== OP && /\bfunction origenDePruebas\b|\borigenDePruebas\s*=\s*\(/.test(t)) falla(G, f, 0, "otra copia de origenDePruebas: LA regla vive en lib/origen-pruebas.ts (una sola copia)");
+      if (f === PQ) continue;
+      for (const v of VARS6) {
+        if (!new RegExp(`\\b${v}\\b`).test(t)) continue;
+        if (!DUENOS[v].includes(f)) { falla(G, f, 0, `lee ${v}: solo su archivo (${DUENOS[v].join(", ")}), por origenDePruebas, y la regla de «simulador» de paquete.ts`); continue; }
+        const todas = (t.match(new RegExp(`\\b${v}\\b`, "g")) ?? []).length, dentro = (t.match(new RegExp(`origenDePruebas\\(process\\.env\\.${v}\\)`, "g")) ?? []).length;
+        if (!dentro || todas !== dentro) falla(G, f, 0, `${v} se lee sin pasar por origenDePruebas (${dentro} de ${todas}): fuera de TOLATINO_ENTORNO=pruebas o con una dirección no local tendría efecto`);
+      }
+    }
     for (const [f, v, lee, fetchBien] of [[SES, "SES_API_BASE", /const p = origenDePruebas\(process\.env\.SES_API_BASE\), real = `email\.\$\{region\}\.amazonaws\.com`;\n\s+return p \? \{ origen: p\.origin, host: p\.host \} : \{ origen: `https:\/\/\$\{real\}`, host: real \};/, /^fetch\(`\$\{d\.origen\}\$\{path\}`/],
-      [MC, "ANTHROPIC_API_BASE", /\(origenDePruebas\(process\.env\.ANTHROPIC_API_BASE\)\?\.origin \?\? API\.origin\) \+ ruta/, /^fetch\(direccionApi\(RUTA_(MENSAJES|MODELOS)\),/]]) {
+      [MC, "ANTHROPIC_API_BASE", /\(origenDePruebas\(process\.env\.ANTHROPIC_API_BASE\)\?\.origin \?\? API\.origin\) \+ ruta/, /^fetch\(direccionApi\(RUTA_(MENSAJES|MODELOS)\),/],
+      [ST, "STRIPE_API_BASE", /^const API = \(\) => origenDePruebas\(process\.env\.STRIPE_API_BASE\)\?\.origin \?\? "https:\/\/api\.stripe\.com";\nconst API_ARCHIVOS = \(\) => \(origenDePruebas\(process\.env\.STRIPE_FILES_BASE\) \?\? origenDePruebas\(process\.env\.STRIPE_API_BASE\)\)\?\.origin \?\? "https:\/\/files\.stripe\.com";$/m, /^fetch\((?:url, |`\$\{base\}\/v1\/(?:files|balance)`, )/],
+      [CP, "TELNYX_API_BASE", /^const API_TELNYX = \(\) => origenDePruebas\(process\.env\.TELNYX_API_BASE\)\?\.origin \?\? "https:\/\/api\.telnyx\.com";\nconst API_META = \(\) => origenDePruebas\(process\.env\.WHATSAPP_API_BASE\)\?\.origin \?\? "https:\/\/graph\.facebook\.com";$/m, /^fetch\((?:`\$\{API_(?:TELNYX|META)\(\)\}\/|url, )/]]) {
       if (!existsSync(f)) { falla(G, f, 0, "falta"); continue; }
-      const t = sinComent(f), cuerpo = (/function origenDePruebas\(v: string \| undefined\): URL \| null \{([\s\S]*?)\n\}/.exec(t) ?? [])[1] ?? "";
-      if (!cuerpo.includes(REGLA_ENT)) falla(G, f, 0, `${v}: origenDePruebas tiene que ignorarla salvo con TOLATINO_ENTORNO=pruebas (en producción no puede tener efecto)`);
-      if (!cuerpo.includes(REGLA_DIR)) falla(G, f, 0, `${v}: origenDePruebas acepta solo una dirección local (127.0.0.1 / localhost) sin usuario, ruta, consulta ni ancla`);
-      if ((t.match(/process\.env\.(SES|ANTHROPIC)_API_BASE/g) ?? []).length !== 1 || !lee.test(t)) falla(G, f, 0, `${v} se lee UNA vez, por origenDePruebas, y se toma solo su origen (nunca la ruta ni el valor tal cual)`);
+      const t = sinComent(f);
+      if (!/^import \{ origenDePruebas \} from "\.\.\/origen-pruebas";$/m.test(t)) falla(G, f, 0, `${v}: el archivo usa LA regla de lib/origen-pruebas.ts (import { origenDePruebas } from "../origen-pruebas")`);
+      if (!lee.test(t)) falla(G, f, 0, `${v} se lee por origenDePruebas y se toma solo su origen (nunca la ruta ni el valor tal cual)`);
       const llamadas = [...t.matchAll(/\bfetch\(/g)].map((m) => t.slice(m.index, m.index + 60));
       if (!llamadas.length || llamadas.some((c) => !fetchBien.test(c))) falla(G, f, 0, `toda llamada de este archivo va por la dirección elegida (con ${v} en pruebas, al simulador): ${llamadas.find((c) => !fetchBien.test(c)) ?? "ninguna"}`);
       if (f === SES) {
@@ -10971,10 +11018,16 @@ const guardianes = {
         if (firmas.length < 2 || firmas.some((x) => !/\bhost: d\.host\b/.test(x))) falla(G, f, 0, "SigV4 firma la cabecera host: cada firma de SES se hace para el host de la dirección que se usa (d.host); firmar uno y llamar a otro = 403");
         if (/https:\/\/\$\{host\}/.test(t)) falla(G, f, 0, "una dirección de SES escrita a mano (https://${host}): todo pasa por destinoSes");
       }
-    }
-    for (const f of codigo) {
-      if (!/^(apps|packages)\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(f) || f.includes("node_modules") || [SES, MC, PQ].includes(f)) continue;
-      if (/\b(SES|ANTHROPIC)_API_BASE\b/.test(sinComent(f))) falla(G, f, 0, "lee la dirección de pruebas de SES o del modelo: solo su archivo (ses.ts, modelo-claude.ts) y la regla de «simulador» de paquete.ts");
+      if (f === ST) {
+        const bases = [...t.matchAll(/const base = ([^;]+);/g)].map((m) => m[1]);
+        if (bases.length !== 3 || bases.some((b) => !/^API(?:_ARCHIVOS)?\(\)$/.test(b))) falla(G, f, 0, `cada llamada a Stripe toma su dirección de API() o API_ARCHIVOS(): ${bases.find((b) => !/^API(?:_ARCHIVOS)?\(\)$/.test(b)) ?? `${bases.length} de 3`}`);
+        if ((t.match(/https:\/\/(?:api|files)\.stripe\.com/g) ?? []).length !== 2) falla(G, f, 0, "una dirección de Stripe escrita a mano fuera de API()/API_ARCHIVOS()");
+      }
+      if (f === CP) {
+        if ((t.match(/https:\/\/(?:api\.telnyx\.com|graph\.facebook\.com)/g) ?? []).length !== 2) falla(G, f, 0, "una dirección de Telnyx o Meta escrita a mano fuera de API_TELNYX()/API_META()");
+        const urls = [...t.matchAll(/\bleerCon\(([^,]+),/g)].map((m) => m[1]).filter((u) => u !== "url: string");
+        if (!urls.length || urls.some((u) => !/^`\$\{API_(?:TELNYX|META)\(\)\}\//.test(u))) falla(G, f, 0, "«Probar» de Telnyx y Meta va por API_TELNYX()/API_META()");
+      }
     }
     if (existsSync(PQ) && !/ses: modoCorreo\(\) === "pruebas" \|\| !!e\.SES_API_BASE, anthropic: !!e\.ANTHROPIC_API_BASE,/.test(readFileSync(PQ, "utf8"))) falla(G, PQ, 0, "«Lo que te toca» tiene que saber que SES y el modelo usan el simulador cuando su dirección de pruebas está puesta");
     if (!/&& igual\(firmaSigV4\(req, u, cuerpo, f, ses\.get\(huella\(f\.id\)\)\), f\.firma\)/.test(sim) || !/hmac\(hmac\(hmac\(hmac\(`AWS4\$\{secreto\}`, f\.dia\), f\.region\), f\.servicio\), 'aws4_request'\)/.test(sim)) falla(G, SIM, 0, "el simulador de SES tiene que RECALCULAR la firma SigV4 con la llave secreta esperada y compararla (si no, cualquier firma «sirve»)");
