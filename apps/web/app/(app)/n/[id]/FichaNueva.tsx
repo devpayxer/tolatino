@@ -228,20 +228,23 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const setTab = (id: string) => {
     setTabS(id);
-    // 23 nov (fundador) · Tocar una pestaña sube la página hasta dejarlas pegadas arriba (con el nombre encima) y así se queda al cambiar de pestaña;
-    // lo único que devuelve a la cabecera es la flecha de regreso que va antes del nombre (o subir con el dedo).
-    const el = tabsRef.current;
-    if (el) { const top = el.getBoundingClientRect().top + window.scrollY - CAB_MOVIL - NOMBRE_MOVIL; if (Math.abs(window.scrollY - top) > 1) window.scrollTo({ top, behavior: window.scrollY > top ? "auto" : "smooth" }); }
+    // 23 nov (fundador, segunda vuelta) · Tocar una pestaña FIJA el menú arriba con el nombre encima: la portada y la cabecera se guardan y ya no
+    // vuelven al subir o bajar con el dedo ni al cambiar de pestaña. Lo único que devuelve al resumen con su cabecera es la flecha de antes del nombre.
+    setFijado(true);
+    window.scrollTo({ top: 0 });
   };
+  const [fijado, setFijado] = useState(false);
+  const soltar = () => { setFijado(false); setTabS("res"); window.scrollTo({ top: 0 }); };
   // 23 nov (pedido del fundador) · Cuando las pestañas quedan pegadas arriba, encima sale el nombre del negocio: bajando por el menú o las reseñas ya
   // no se ve la cabecera y no se sabía de quién era la página. La franja no ocupa sitio (no mueve la página): se pinta sobre el hueco que las pestañas
   // dejan al pegarse NOMBRE_MOVIL más abajo.
   const [pegadaM, setPegadaM] = useState(false);
+  const visM = pegadaM || fijado; // fijado: el nombre se ve siempre, también arriba del todo
   useEffect(() => {
     const ver = () => { const el = tabsRef.current; setPegadaM(!!el && el.getBoundingClientRect().top <= CAB_MOVIL + NOMBRE_MOVIL + 1); };
     ver(); window.addEventListener("scroll", ver, { passive: true }); window.addEventListener("resize", ver);
     return () => { window.removeEventListener("scroll", ver); window.removeEventListener("resize", ver); };
-  }, []);
+  }, [fijado]);
 
   // ── Acciones del encabezado ──
   const avisar = (m: string) => { setAviso(m); setTimeout(() => setAviso(null), 2200); };
@@ -450,14 +453,15 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       {/* ═════════ Teléfono ═════════ */}
       {modo === "m" ? (
       <div className="pb-[116px] lg:hidden" data-screen-label="App · Ficha">
-        <div className="sticky z-[21] h-0" style={{ top: CAB_MOVIL }} data-pieza="nombre-pegado" data-visible={pegadaM ? "si" : "no"} aria-hidden={!pegadaM}>
-          <div className="absolute inset-x-0 top-0 flex items-center bg-white pl-2 pr-5 transition-opacity duration-150" style={{ height: NOMBRE_MOVIL, opacity: pegadaM ? 1 : 0, pointerEvents: pegadaM ? "auto" : "none" }}>
-            <button type="button" data-pieza="volver-arriba" tabIndex={pegadaM ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="inline-flex size-11 flex-none items-center justify-center text-ink"><Icon name="chevronLeft" size={20} /></button>
+        <div className="sticky z-[21] h-0" style={{ top: CAB_MOVIL }} data-pieza="nombre-pegado" data-fijado={fijado ? "si" : "no"} data-visible={visM ? "si" : "no"} aria-hidden={!visM}>
+          <div className="absolute inset-x-0 top-0 flex items-center bg-white pl-2 pr-5 transition-opacity duration-150" style={{ height: NOMBRE_MOVIL, opacity: visM ? 1 : 0, pointerEvents: visM ? "auto" : "none" }}>
+            <button type="button" data-pieza="volver-arriba" tabIndex={visM ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => (fijado ? soltar() : window.scrollTo({ top: 0, behavior: "smooth" }))} className="inline-flex size-11 flex-none items-center justify-center text-ink"><Icon name="chevronLeft" size={20} /></button>
             <span className="min-w-0 truncate font-display text-[18px] font-extrabold leading-none tracking-[-0.04em] text-ink">{f.nombre}</span>
             {sello ? <span className="flex-none">{sello}</span> : null}
           </div>
         </div>
-        <div className="relative h-[330px]">
+        {fijado ? <div style={{ height: NOMBRE_MOVIL }} /> : null}
+        <div className={fijado ? "hidden" : "relative h-[330px]"}>
           {f.video ? <div className="absolute inset-0 overflow-hidden" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} chipPos={{ left: 20, bottom: 16 }} /></div> : (
           <button type="button" aria-label={t.photosAll} onClick={verFotos} className="absolute inset-0 block">{f.hero ? <span className="block size-full bg-photo-bg-2" style={{ background: `center/cover ${fotoFondo(f.hero, 540)}` }} /> : <Placeholder height="100%" />}</button>
           )}
@@ -473,7 +477,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             </button>
           ) : null}
         </div>
-        <div className="flex flex-col gap-2 px-5 pb-3 pt-5" data-pieza="cabecera-ficha">
+        <div className={fijado ? "hidden" : "flex flex-col gap-2 px-5 pb-3 pt-5"} data-pieza="cabecera-ficha">
           <h1 className="text-balance font-display text-[29px] font-extrabold leading-[1.05] tracking-[-0.045em]">{f.nombre}{sello}</h1>
           <div className="font-mono text-[10.5px] font-bold leading-[1.5] tracking-[0.07em] text-ink/60">{datos(metaL)}</div>
           <div className="flex items-center justify-between gap-3">

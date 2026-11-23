@@ -6453,4 +6453,7 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **A PRUEBA, decisión pendiente del fundador («quiero verlo y probarlo antes de decidir»):** en COMPUTADORA, al pegarse las pestañas sale encima el
   nombre del negocio con la flecha de regreso (como en el teléfono). Si no lo quiere, se quita la franja y `NOMBRE_DESK` vuelve a 0 en `FichaNueva.tsx`.
   De paso: el índice de categorías del menú en computadora quedaba detrás de las pestañas; ahora se pega debajo y marca la categoría que se está viendo.
+- **Tanda del 23 nov (7), corrección del fundador:** en el teléfono, tocar una pestaña FIJA el menú arriba con el nombre: la portada y la cabecera se
+  guardan y ya no vuelven al subir o bajar con el dedo ni al cambiar de pestaña. Lo único que devuelve al Resumen con su cabecera es la flecha de antes
+  del nombre. Qué mirar: tocar «Servicios», subir con el dedo hasta el tope (no debe aparecer la portada), y luego la flecha.
 
