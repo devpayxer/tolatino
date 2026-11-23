@@ -7,6 +7,7 @@ To'Latino uses only the cookies it needs to work. There are no advertising cooki
 ## What changed
 - First version, with the real list of To'Latino's cookies.
 - Corrected: on the payment screen and on some covers your browser requests things from Stripe and Pexels.
+- Corrected (23 Nov): category covers no longer come from Pexels; they are To'Latino photos. Only Stripe, when you pay.
 
 ## To'Latino's cookies
 They are all our own (only To'Latino reads them) and none is used for ads.
@@ -26,8 +27,8 @@ in with no signal. They stay on your phone or computer and are not sent to anyon
 
 ## Other companies in your browser
 To'Latino does not load advertising or tracking tools from other companies. What your browser does load from other companies: on the card
-payment screen, Stripe's form (js.stripe.com); and on the covers of some categories, photos from Pexels (images.pexels.com). Those companies
-see your browser and your internet address. [pending: which cookies Stripe stores on the payment screen, to be confirmed with Stripe and the
+payment screen, Stripe's form (js.stripe.com). That company
+sees your browser and your internet address. The photos on the category covers are To'Latino's and come from our own servers. [pending: which cookies Stripe stores on the payment screen, to be confirmed with Stripe and the
 lawyer.] If advertising or tracking ever changed, this page would change first and we would
 ask you before. [pending: confirm with the lawyer that, with only necessary cookies, no consent notice is needed under the privacy laws of the
 states where To'Latino opens.]

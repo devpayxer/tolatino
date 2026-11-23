@@ -20,7 +20,9 @@ export async function categorias(lang: Lang, ciudad: string | null): Promise<Cat
   return r.rows.map((c) => ({ id: c.id, label: c.short, name: c.name, icon: c.icon, slug: slugCat(c.es) }));
 }
 
-/* Una foto de Pexels al tamaño que pide la tarjeta (el prototipo usa h=350). */
+/* La foto de un negocio al tamaño que pide la tarjeta. Solo las fotos de ejemplo de la semilla del sandbox son de Pexels (se piden con h=350, como el prototipo; la CSP
+   de producción no las deja pasar y producción no las tiene); las de un negocio real son nuestras y pasan sin cambio. Las portadas de las páginas de categoría son
+   archivos propios (/paginas/…): tampoco se tocan. */
 export const foto = (url: string | null, h = 350) => (url && url.includes("images.pexels.com") ? `${url.split("?")[0]}?auto=compress&cs=tinysrgb&h=${h}` : url);
 
 export type Fila = { id: string; name: string; meta: string; verified: boolean; slot: string | null; image: string | null };

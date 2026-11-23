@@ -15613,6 +15613,72 @@ const guardianes = {
     for (const e of revisarTerceros()) falla("tercerosDeclarados", e.f, e.linea, e.msg);
   },
 
+  /* 23 nov · sinFotosAjenasEnProduccion: la clase «una página del producto le pide una foto a otra empresa». La semilla de las páginas de categoría
+     (packages/db/seeds/paginas.sql, que migrar.sh aplica en TODO entorno, producción incluida) traía 647 fotos de images.pexels.com: el navegador de
+     cada visitante se las habría pedido a Pexels (su dirección de internet y su navegador a un tercero) y la página habría dependido de que Pexels
+     respondiera. Ahora son archivos propios (apps/web/public/paginas, WebP con la huella en el nombre). Cinco reglas, todo sale del repo:
+     1. Ninguna semilla, migración, código que corre en producción (app, lib, middleware, next.config, public, packages/ui, services, infra/produccion)
+        ni la taxonomía de la que sale la semilla trae una dirección http(s):// de IMAGEN de un host ajeno (por extensión de imagen o por host de fotos
+        conocido). Los enlaces a registros oficiales y los dominios propios no cuentan.
+     2. La CSP de producción no deja pasar fotos de otra empresa: todo «img-src» del código de producción lista solo 'self', data:, blob: y *.stripe.com
+        (lo único que añade lib/csp.ts es el host del sandbox, y solo dentro de `${sandbox ? … : ""}`).
+     3. Ese host del sandbox solo llega a la cabecera si el proceso es el sandbox: esSandbox() compara con «pruebas» y el middleware pasa `true` solo detrás de esSandbox().
+     4. Cada /paginas/<archivo> que nombra la taxonomía o la semilla existe en apps/web/public/paginas, y las dos son iguales (la semilla sale de la taxonomía).
+     5. Cada archivo de apps/web/public/paginas es WebP, pesa a lo más 160 KB y lleva en el nombre los 8 primeros caracteres de su sha256 (next.config.ts lo sirve
+        «immutable» por un año: si el contenido cambiara bajo la misma dirección, nadie lo vería).
+     Al revés: pruebas/alreves/alrevesSinFotosAjenas.cjs. */
+  sinFotosAjenasEnProduccion() {
+    const G = "sinFotosAjenasEnProduccion";
+    const EXT_IMG = "jpe?g|png|webp|gif|avif|bmp|heic|tiff?|ico";
+    const IMG_URL = new RegExp(`https?://([a-z0-9][a-z0-9.-]*\\.[a-z]{2,})(?::\\d+)?/[^\\s"'\`)<>\\\\]*?\\.(?:${EXT_IMG})(?![a-z0-9])`, "gi");
+    const HOST_FOTOS = /https?:\/\/(?:[a-z0-9-]+\.)*(?:pexels\.com|unsplash\.com|imgur\.com|pixabay\.com|staticflickr\.com|flickr\.com|googleusercontent\.com|cloudinary\.com|imgix\.net|ctfassets\.net|wikimedia\.org|giphy\.com|gravatar\.com|picsum\.photos|placehold\.co|placeholder\.com|loremflickr\.com)\b/gi;
+    const PROPIO = /(?:^|\.)(?:tolatino\.com|w3\.org)$/i;
+    const EN_PROD = (f) => /^(apps\/web\/(app|lib|components)\/|apps\/web\/(middleware|next\.config|instrumentation[\w-]*)\.ts$|apps\/web\/public\/(?!medios\/|paginas\/)|packages\/ui\/src\/|services\/|infra\/produccion\/|packages\/db\/(seeds|migrations)\/|packages\/taxonomy\/)/.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|html?|json|sql|sh|ya?ml|conf|webmanifest|txt)$/.test(f);
+    const sinComentario = (f) => (f.endsWith(".sql") ? readFileSync(f, "utf8").replace(/^\s*--.*$/gm, "") : /\.(tsx?|jsx?|mjs|cjs|css)$/.test(f) ? sinComent(f) : readFileSync(f, "utf8"));
+    // 1 · Direcciones de imagen de otra empresa.
+    for (const f of archivos.filter(EN_PROD)) {
+      const t = sinComentario(f), vistos = new Set();
+      const dice = (host, i) => { if (PROPIO.test(host) || vistos.has(host + i)) return; vistos.add(host + i); falla(G, f, t.slice(0, i).split("\n").length, `una dirección de imagen de «${host}» (otra empresa): lo que llega a producción sirve sus fotos desde nuestro origen (apps/web/public/paginas o el almacén de fotos)`); };
+      for (const m of t.matchAll(IMG_URL)) dice(m[1].toLowerCase(), m.index);
+      for (const m of t.matchAll(HOST_FOTOS)) if (!/lib\/csp\.ts$/.test(f)) dice(m[0].replace(/^https?:\/\//i, "").toLowerCase(), m.index);
+    }
+    // 2 y 3 · La CSP.
+    const CSPTS = "apps/web/lib/csp.ts", MW = "apps/web/middleware.ts";
+    // Sin los comentarios que empiezan una línea (sinComent() se come «https://*.stripe.com» como si «/*» abriera un comentario).
+    const quitar = (f) => readFileSync(f, "utf8").replace(/^\s*\/\*[\s\S]*?\*\//gm, (x) => x.replace(/[^\n]/g, " ")).replace(/^\s*\/\/.*$/gm, "");
+    for (const f of archivos.filter((x) => EN_PROD(x) && /\.(tsx?|mjs|cjs|conf|ya?ml|sh)$/.test(x))) {
+      // Sin los comentarios que empiezan una línea (sinComent() se come «https://*.stripe.com» como si «/*» abriera un comentario).
+      const t = quitar(f);
+      const sinPuerta = t.replace(/\$\{sandbox \? `[^`]*` : ""\}/g, f === CSPTS ? " " : " «el-host-del-sandbox-fuera-de-lib/csp.ts» ");
+      for (const m of sinPuerta.matchAll(/img-src([^;"`\n]*)/g)) {
+        const resto = m[1].replace(/\$\{[^}]*\}/g, " ");
+        for (const tok of resto.split(/\s+/).filter(Boolean)) if (!/^('self'|data:|blob:|https:\/\/\*\.stripe\.com)$/.test(tok)) falla(G, f, sinPuerta.slice(0, m.index).split("\n").length, `img-src deja pasar «${tok}»: la CSP de producción no admite fotos de otra empresa (solo 'self', data:, blob: y *.stripe.com)`);
+      }
+    }
+    if (!existsSync(CSPTS) || !existsSync(MW)) falla(G, CSPTS, 0, "falta lib/csp.ts o middleware.ts: la CSP del sandbox sale de ahí");
+    else {
+      const c = quitar(CSPTS), w = quitar(MW), n = readFileSync("apps/web/next.config.ts", "utf8");
+      if (!/export const esSandbox = \(entorno: string \| undefined\) => entorno === "pruebas";/.test(c)) falla(G, CSPTS, 0, "esSandbox tiene que ser exactamente «entorno === \"pruebas\"» (cerrado por defecto: producción, ensayo, local y sin valor no son el sandbox)");
+      if (!/\$\{sandbox \? ` \$\{IMG_SANDBOX\}` : ""\}/.test(c)) falla(G, CSPTS, 0, "el host del sandbox solo entra a img-src dentro de ${sandbox ? … : \"\"}");
+      for (const m of w.matchAll(/cspProduccion\(([^)]*)\)/g)) if (/\btrue\b|sandbox/i.test(m[1]) && !/esSandbox\(process\.env\.TOLATINO_ENTORNO\)[^;]*cspProduccion\(/.test(w)) falla(G, MW, 0, "el middleware pide la CSP del sandbox sin estar detrás de esSandbox(process.env.TOLATINO_ENTORNO)");
+      if (!/cspProduccion\(process\.env\.NODE_ENV !== "production"\)/.test(n)) falla(G, "apps/web/next.config.ts", 0, "la CSP de next.config.ts tiene que ser la de producción: cspProduccion(dev) sin el sandbox");
+      if (!/Cache-Control", value: "public, max-age=31536000, immutable"/.test(n) || !/source: "\/paginas\/:archivo"/.test(n)) falla(G, "apps/web/next.config.ts", 0, "las fotos de /paginas llevan su Cache-Control immutable (la huella va en el nombre)");
+    }
+    // 4 · Lo que nombran la taxonomía y la semilla existe (y las dos coinciden).
+    const DIR = "apps/web/public/paginas", nombres = (f) => (existsSync(f) ? [...readFileSync(f, "utf8").matchAll(/\/paginas\/([^"'\\\s)]+)/g)].map((m) => m[1]) : []);
+    const enTax = new Set(nombres("packages/taxonomy/paginas.json")), enSql = new Set(nombres("packages/db/seeds/paginas.sql"));
+    for (const [f, s] of [["packages/taxonomy/paginas.json", enTax], ["packages/db/seeds/paginas.sql", enSql]]) for (const n of s) if (!existsSync(`${DIR}/${n}`)) falla(G, f, 0, `nombra /paginas/${n} y ese archivo no está en ${DIR}`);
+    if (enTax.size !== enSql.size || [...enTax].some((n) => !enSql.has(n))) falla(G, "packages/db/seeds/paginas.sql", 0, "la semilla no sale de la taxonomía (distintas fotos): corre node scripts/catalogo/generar-paginas-sql.mjs");
+    // 5 · Los archivos.
+    if (existsSync(DIR)) for (const n of readdirSync(DIR)) {
+      const ruta = `${DIR}/${n}`, b = leerDisco(ruta), m = /^[a-z0-9-]+\.([0-9a-f]{8})\.webp$/.exec(n);
+      if (!m) { falla(G, ruta, 0, "el nombre es <página>.<8 de huella>.webp"); continue; }
+      if (b.length < 12 || b.toString("latin1", 0, 4) !== "RIFF" || b.toString("latin1", 8, 12) !== "WEBP") falla(G, ruta, 0, "no es un WebP");
+      if (b.length > 160 * 1024) falla(G, ruta, 0, `pesa ${(b.length / 1024).toFixed(0)} KB (el tope es 160 KB): la portada es lo primero que se ve`);
+      if (createHash("sha256").update(b).digest("hex").slice(0, 8) !== m[1]) falla(G, ruta, 0, "la huella del nombre no es la del contenido (se sirve «immutable» por un año: el contenido no puede cambiar bajo la misma dirección)");
+    }
+  },
+
 };
 
 

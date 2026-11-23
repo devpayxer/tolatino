@@ -77,7 +77,6 @@ const window = {};
   const PRICE = 14.99, FREE_LIMIT = 10, TRIAL = 30, FREE_PHOTOS = 3, FREE_ITEMS = 5;
   /* Free (decisión del usuario, 3 nov): una sola página con lo básico. Solo el módulo principal de ítems (hasta FREE_ITEMS) y pedidos o citas en línea con tope al mes; lo demás es Pro. */
   const mainMod = c => c === 'NEG-FOOD' ? 'menu' : ['NEG-TIENDA', 'NEG-MERC'].includes(c) ? 'shop' : 'svc', freeOk = (c, k) => k === mainMod(c) || k === 'pedidos' || k === 'citas';
-  const P = (id, h) => 'https://images.pexels.com/photos/' + id + '/pexels-photo-' + id + '.jpeg?auto=compress&cs=tinysrgb&h=' + (h || 350);
   const cat = c => CATS.find(x => x[0] === c) || null;
   const freeCount = c => { const k = cat(c); const G = k && window[k[4]]; const B = G && (G.B || G.biz || []); const n = Array.isArray(B) ? B.filter(b => !b.pro).length : 0; return n || 8; };
   const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -89,7 +88,7 @@ const window = {};
     'NEG-SALUD': ['svc', 'citas', 'shop'], 'NEG-PRO': ['svc', 'citas', 'cot'], 'NEG-TIENDA': ['shop', 'pedidos', 'svc', 'citas', 'renta'], 'NEG-TRANS': ['svc', 'citas', 'cot', 'renta'],
     'NEG-EDU': ['svc', 'citas', 'shop'], 'NEG-NINOS': ['svc', 'citas', 'shop'], 'NEG-DEPORTE': ['svc', 'citas', 'shop'], 'NEG-FE': ['svc', 'citas'], 'NEG-INMUEBLE': ['svc', 'citas'], 'NEG-DEALER': ['svc', 'citas', 'cot'] };
   const allow = c => ALLOW[c] ? ALLOW[c].concat(ALLOW0) : Object.keys(MOD), allowed = (c, k) => allow(c).includes(k);
-  window.TLOnbNeg = { ALLOW, allow, allowed, FREE_ITEMS, mainMod, freeOk, SUBS, PHOTOS, CATS, MOD, CFG, AMEN, LANGS, OPS, PAY, TPL, ADDR, HOLI, IMPORT, PRICE, FREE_LIMIT, TRIAL, FREE_PHOTOS, P, cat, freeCount, norm, search };
+  window.TLOnbNeg = { ALLOW, allow, allowed, FREE_ITEMS, mainMod, freeOk, SUBS, PHOTOS, CATS, MOD, CFG, AMEN, LANGS, OPS, PAY, TPL, ADDR, HOLI, IMPORT, PRICE, FREE_LIMIT, TRIAL, FREE_PHOTOS, cat, freeCount, norm, search };
 })();
 
 /* Publica tu negocio v2 · 1a «Pasos guiados» (elegida por el usuario, 3 nov). Lo propio de cada una de las 17 categorías:

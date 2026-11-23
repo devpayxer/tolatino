@@ -7,6 +7,7 @@ Qué datos guarda To'Latino, para qué, con quién se comparten, cuánto tiempo 
 ## Lo que cambió
 - Primera versión: sale del inventario de datos y del mapa de lo que se exporta y se borra.
 - Corregido: las fotos dudosas se mandan reducidas a Anthropic; se nombran Pexels, Cloudflare y lo que va a Stripe.
+- Corregido (23 nov): las portadas de las categorías ya no vienen de Pexels; son fotos de To'Latino. Pexels ya no recibe datos.
 
 ## Lo que no hacemos
 - No te rastreamos entre apps ni sitios. No usamos el identificador de publicidad del teléfono.
@@ -59,8 +60,6 @@ La lista completa, dato por dato, está abajo en «Los datos que usamos y para q
   - Apple y Google: los avisos al teléfono (el texto del aviso; los de salud, niños, Soporte, sanciones y cuenta salen solo como «Tienes un aviso
     nuevo en To'Latino»), los boletos en Wallet (el nombre, el lugar y la fecha del evento y el código del boleto, sin tu nombre ni tu teléfono) y,
     en la web, el servicio de avisos de tu navegador.
-  - Pexels: las portadas de algunas páginas de categoría son fotos de Pexels que tu navegador pide directamente a Pexels, que ve tu dirección de
-    internet y tu navegador. [pendiente: el equipo decide si se pasan a fotos propias antes de abrir.]
   - Cloudflare: [pendiente: el sitio de producción irá detrás de Cloudflare, por donde pasa lo que envías y recibes; se confirma al encenderlo.]
   - [pendiente: el proveedor de los servidores de producción, que se elige antes de abrir.]
 - **Lo que no se manda a otra empresa:** el traductor de «Ver traducción», la primera revisión de las fotos, los mapas, la ubicación de las

@@ -1,28 +1,9 @@
 import type { NextConfig } from "next";
 import path from "node:path";
+import { cspProduccion } from "./lib/csp";
 
-/* 8a · Content-Security-Policy propia (fase8-apps.md §3.1 «Seguridad del WebView»; antes no había): lo que carga cada página sale de nuestro
-   origen, salvo Stripe (la hoja de la tarjeta: js.stripe.com y sus marcos) y las fotos de ejemplo del sandbox (Pexels). Nadie nos mete en
-   un marco (frame-ancestors 'none', además de X-Frame-Options), las conexiones solo van a nuestro servidor y a la API de Stripe, sin
-   plugins ni <base> ajeno. Next pone sus datos en <script> en línea: 'unsafe-inline' para scripts y estilos (sin nonces, las páginas
-   estáticas —las islas sin señal— siguen estáticas). En `next dev` se suma 'unsafe-eval' (lo pide el modo de desarrollo, nunca el build). */
-const DEV = process.env.NODE_ENV !== "production";
-const CSP = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://js.stripe.com${DEV ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://images.pexels.com https://*.stripe.com",
-  "font-src 'self' data:",
-  `connect-src 'self' https://api.stripe.com${DEV ? " ws: wss:" : ""}`,
-  "frame-src https://js.stripe.com https://hooks.stripe.com",
-  "worker-src 'self' blob:",
-  "media-src 'self' blob:",
-  "manifest-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-].join("; ");
+/* 8a · Content-Security-Policy propia: la receta vive en lib/csp.ts (23 nov: sin fotos de otras empresas; el sandbox suma las de su semilla en middleware.ts). */
+const CSP = cspProduccion(process.env.NODE_ENV !== "production");
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -41,6 +22,8 @@ const nextConfig: NextConfig = {
   headers: async () => [
     // 6h · Los service workers propios: siempre la última versión, y el de la Puerta con alcance /puerta (el archivo vive en /puerta/).
     { source: "/puerta/sw.js", headers: [{ key: "Service-Worker-Allowed", value: "/puerta" }, { key: "Cache-Control", value: "no-cache" }] },
+    // 23 nov · Las fotos de las páginas de categoría (public/paginas): el nombre lleva la huella del contenido, así que nunca cambian bajo la misma dirección.
+    { source: "/paginas/:archivo", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
     { source: "/sw-boletos.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
     // 8c · El service worker de los avisos (alcance «/»): siempre el último.
     { source: "/sw-push.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
