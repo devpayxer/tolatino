@@ -29,7 +29,7 @@ const casos = [
   [G, FP, '    if (c.salud && !(await e.vidrio(c.ref))) continue;\n', ''],
   [G, FP, '  if (!ES_UUID.test(id) || !quien.userId) return { ok: false };', '  if (!ES_UUID.test(id)) return { ok: false };'],
   // (d) La ruta: 403, con caché, sin nosniff, el equipo sin auditar, la variante sin el permiso.
-  [G, RV, 'const no = () => new NextResponse(null, { status: 404 });', 'const no = () => new NextResponse(null, { status: 403 });'],
+  [G, RV, 'const no = () => new NextResponse(null, { status: 404, headers: { "cache-control": "private, no-store" } });', 'const no = () => new NextResponse(null, { status: 403, headers: { "cache-control": "private, no-store" } });'],
   [G, RV, '"cache-control": "private, no-store"', '"cache-control": "public, max-age=31536000, immutable"'],
   [G, RV, '"x-content-type-options": "nosniff", ', ''],
   [G, RV, 'tx((c) => auditar(c, { actor: p.staff, action: "fotos.privada.ver"', 'tx((c) => auditar(c, { actor: p.staff, action: "foto.ver"'],
@@ -73,7 +73,7 @@ const casos = [
   [G, 'apps/web/app/api/mensajes/foto/[id]/route.ts', '  if (!m) return fotoDeVecinos(req, id);\n', '  if (!m) return fotoDeVecinos(req, id);\n  if (req.nextUrl.searchParams.get("w")) return servir(req, m.url, m.var_widths);\n', 'F3b: la foto de un mensaje'],
   [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', '  if (!m) return no();\n  const me = await yo();', '  if (!m) return no();\n  if (req.nextUrl.searchParams.get("w")) return entregarPrivado(req, llavesAEntregar(req, m.url, m.var_widths), { "cache-control": "private, no-store" });\n  const me = await yo();', 'F3b: la variante se elige DESPUÉS'],
   [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', '  if (!ok) return no();\n', '', 'F3b: la variante se elige DESPUÉS'],
-  [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', '  if (!r || !r.url.startsWith("privado/")) return new NextResponse(null, { status: 404 });\n', '', 'F3b: la variante se elige DESPUÉS'],
+  [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', '  if (!r || !r.url.startsWith("privado/")) return no();\n', '', 'F3b: la variante se elige DESPUÉS'],
   // Variante por otra ruta (otro permiso).
   [G, 'apps/web/app/api/medios/revision/[id]/route.ts', 'export const dynamic', 'import { llaveVarianteDe } from "@/lib/fotos-privadas";\nexport const deOtra = (id: string) => llaveVarianteDe(`privado/m/${id}.jpg`, 320);\nexport const dynamic', 'F3b: sirve la variante de una foto privada por otra ruta'],
   // Variante con cabecera pública, sin Vary, o con la llave armada a mano.
@@ -115,7 +115,7 @@ const casos = [
   [G, 'apps/web/app/api/ayuda/foto/[id]/route.ts', '      ver = () => tx((c) => auditar(c, { actor: s.id, action: "ayuda.foto.ver"', '      await tx((c) => auditar(c, { actor: s.id, action: "ayuda.foto.ver"', 'deja el renglón de «vio la foto» ANTES de entregar'],
   [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', 'entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));', 'entregarPrivado(req, llaves, cab, no).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no));', 'F3b: la ruta entrega las llaves'],
   [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', '      ver = () => tx((c) => auditar(c, { actor: s.id, action: "entrega.foto.ver"', '      await tx((c) => auditar(c, { actor: s.id, action: "entrega.foto.ver"', 'deja el renglón de «vio la foto» ANTES de entregar'],
-  [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', 'const no = () => new NextResponse(null, { status: 404 });', 'const no = () => new NextResponse(null, { status: 404, headers: { "x-otro": "1" } });', 'no tiene su 404 único'],
+  [G, 'apps/web/app/api/entrega/foto/[id]/route.ts', 'const no = () => new NextResponse(null, { status: 404, headers: { "cache-control": "private, no-store" } });', 'const no = () => new NextResponse(null, { status: 404, headers: { "x-otro": "1" } });', 'no tiene su 404 único'],
   [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', 'entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, llaves.slice(-1), cab, no, ver));', 'entregarPrivado(req, llaves, cab).catch(() => entregarPrivado(req, llaves.slice(-1), cab));', 'F3b: la ruta entrega las llaves'],
   [G, 'apps/web/app/api/admin/reclamo/[id]/route.ts', '  const ver = () => tx((c) => auditar(c, { actor: s.id, action: "reclamo.documento.ver"', '  await tx((c) => auditar(c, { actor: s.id, action: "reclamo.documento.ver"', 'deja el renglón de «vio la foto» ANTES de entregar'],
   [G, 'apps/web/lib/entrega-privada.ts', '    if (alEntregar) { try { await alEntregar(); } catch (e) { if (a.estado === 200) void a.cuerpo.cancel().catch(() => undefined); throw e; } }\n', '', 'entregarPrivado: el renglón del equipo (alEntregar)'],

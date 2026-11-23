@@ -163,6 +163,7 @@ const traerVar = (p, u, accept = 'image/avif,image/webp,image/apng,image/*,*/*;q
     for (const [quien, ruta] of [[m, U], [m, `${U}?w=320`], [doc, U], [doc, `${U}?w=320`], [adm, U], [adm, `${U}?w=320`]]) fal.push(await traerVar(quien, ruta));
     ok(claves.length >= 2 && sql(`select (purged_at is null) || '|' || status from media where id = '${fm[0]}'`) === 'true|visible' && sin.st === 404 && fal.every((x) => x.st === 404 && x.cc === sin.cc && x.ct === sin.ct && x.vary === sin.vary),
       `el archivo no está pero la fila vive: 404 al paciente, al consultorio y a To’Latino, entera y variante (${fal.map((x) => x.st).join('/')}), con las cabeceras de «no tienes permiso»`);
+    ok([sin, ...fal].every((x) => x.cc === 'private, no-store'), `archivo ausente: el 404 es privado y sin caché (${[sin, ...fal].map((x) => x.cc).join(' / ')})`); // 23 nov · nunca se guarda
     ok(au() === n0, 'archivo ausente: To’Latino no deja renglón de «vio la foto» (nadie vio nada)');
   }
   // Aviso al consultorio: neutro (sin nombre del paciente).

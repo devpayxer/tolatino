@@ -15,7 +15,9 @@ import { ayudaDeSalud, vidrioVigente } from "@/lib/sistema/vidrio";
    su negocio, y el equipo con Soporte › ver en esa ciudad (auditado). El negocio de una operación NUNCA ve la foto de un caso con To'Latino.
    Nunca se cachea. Lo demás: 404 (no se dice si existe). */
 export const dynamic = "force-dynamic";
-const no = () => new NextResponse(null, { status: 404 });
+// 23 nov · El MISMO 404 para «no tienes permiso», «no existe» y «el archivo no está en el almacén», y nunca se guarda (private, no-store): un
+// navegador o Cloudflare no siguen dando 404 cuando el archivo vuelve. Guardián almacenPrivadoSinQuinientos.
+const no = () => new NextResponse(null, { status: 404, headers: { "cache-control": "private, no-store" } });
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();

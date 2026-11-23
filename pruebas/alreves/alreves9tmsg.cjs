@@ -23,7 +23,7 @@ const casos = [
   ['fotoMensajePrivada', VE, 'ok = !!(await accesoPanel(m.biz, "msg"))', 'ok = !!(await accesoPanel(m.biz))'],
   ['fotoMensajePrivada', VE, '        ver = () => tx((c) => auditar(c, { actor: s.id, action: "mensajes.foto.ver",', '        void tx; void auditar; void (async (c: unknown) => ({ c, actor: s.id, action: "mensajes.foto.ver",'],
   ['fotoMensajePrivada', VE, 'if (caso && colas.includes(caso.q as (typeof colas)[number])) {', 'if (caso) { void colas;'],
-  ['fotoMensajePrivada', VE, '"cache-control": "private, no-store"', '"cache-control": "public, max-age=3600"'],
+  ['fotoMensajePrivada', VE, 'const cab = { "cache-control": "private, no-store"', 'const cab = { "cache-control": "public, max-age=3600"'], // 23 nov: el de la entrega (cab), no el del 404
   // · lib/mensajes.ts: tomar la foto de otra persona, sin marcar la que está en revisión, la dirección a quien no la puede ver, sin atarla en el envío
   ['fotoMensajePrivada', ME, "and owner_id = 'pendiente' and uploaded_by = $2 and private", "and owner_id = 'pendiente' and private and $2::uuid is not null"],
   ['fotoMensajePrivada', ME, '  if (fo.status !== "review") return;\n', '  if (fo.status !== "review" || true) return;\n'],

@@ -278,6 +278,18 @@ const ok = (x, m) => { if (x) { n++; console.log('  ✓', m); } else { malas++; 
     // La purga de una cuenta (lib/datos/purgar.ts) saca cada foto por clavesVariantes: conoce las variantes de las cuatro familias.
     ok(['m', 'a', 'e', 'r'].every((f) => { const id = randomUUID(), k = V.clavesVariantes(`privado/${f}/${id}.jpg`, 900, [320, 640, 900]); return ANCH.every((w) => k.includes(`privado/${f}/${id}.w${w}.webp`)) && k.every((x) => x.startsWith(`privado/${f}/${id}.w`)); }),
       'F3b: clavesVariantes (la purga de una cuenta) lista las variantes de Mensajes, ayuda, entrega y reclamo, al lado de su maestra');
+    { // 23 nov · La carrera de la purga de una cuenta con el barrido: la fila no sabe el ancho de la maestra (w nulo) y el barrido ya guardó sus
+      // variantes (y ya miró que la maestra sigue) pero todavía no anotó var_widths. La de 900 (el ancho de la maestra, anchosDe) no estaba entre las
+      // que la purga conocía y quedaba huérfana: ahora fotosFuera lee el ancho de la maestra antes de borrarla (guardián almacenPrivadoSinQuinientos).
+      const PG = cargar('apps/web/lib/datos/purgar.ts', { '../db': base, './mapa': {}, '../mensajes-vecinos': {}, '../medios': medios, '../fotos-variantes': V, '../fotos-privadas': F });
+      const quien = await usuario('Purga'), id = randomUUID(), llave = `privado/m/${id}.jpg`, anchos = V.anchosDe(900);
+      await foto({ id, kind: 'chat', owner: 'pendiente', url: llave, privada: true, sinC2: false, subio: quien });
+      G.set(llave, JPG);
+      for (const w of anchos) G.set(`privado/m/${id}.w${w}.webp`, Buffer.from('variante'));
+      const w0 = (await q1(`select w from media where id = $1::uuid`, [id])).w, n = await PG.fotosFuera(quien, null), quedan = anchos.filter((w) => G.has(`privado/m/${id}.w${w}.webp`));
+      ok(w0 === null && anchos.includes(900) && n === 1 && !G.has(llave) && !quedan.length,
+        `la purga de una cuenta con el ancho nulo no deja huérfana la variante que el barrido estaba guardando (anchos ${anchos.join(', ')}; quedan: ${quedan.join(', ') || 'ninguna'})`);
+    }
     await F.borrarConVariantes(priv.a.llave, 900, [320, 640, 900]);
     ok(!G.has(priv.a.llave) && !ANCH.some((w) => G.has(`privado/a/${priv.a.id}.w${w}.webp`)) && borradas.indexOf(priv.a.llave) < borradas.indexOf(`privado/a/${priv.a.id}.w320.webp`), 'F3b: borrarConVariantes saca la maestra primero y después sus variantes');
 

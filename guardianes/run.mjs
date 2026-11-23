@@ -5224,6 +5224,206 @@ const guardianes = {
     if (n !== 2) falla(G, C, 0, `idiomaDe no cuenta «qué» (ES_P contó ${n} de 2 en «¿Qué? ¿Cuándo?»)`);
   },
 
+  /* ◆ Encargo K (23 nov) · inicio: fronteraConTildeEnDatos y almacenPrivadoSinQuinientos. */
+
+  /* 23 nov · fronteraConTildeEnDatos. La clase de compaFronteraConTilde, en TODO apps/web/lib y apps/web/app (no solo El Compa) y con lo que viene de
+     DATOS: en JavaScript \b solo conoce a-z, 0-9 y _, así que junto a una letra con tilde o ñ no hay frontera. Si la expresión se arma con un nombre de
+     ciudad, negocio, categoría o persona («\b(${nombres})\b», lib/ciudades/launch.ts hasta el 23 nov), «Bogotá.» o «Ángeles» no casan nunca y «Cata»
+     casa dentro de «Cataño». (1) Ninguna expresión regular (literal o new RegExp) lleva \b junto a una letra no ASCII posible: la letra, una clase que
+     la tenga, la primera/última letra de un grupo, o un trozo que no se puede leer en el archivo (un dato: cuenta como letra con tilde); las constantes
+     de texto del archivo se resuelven. (2) Una expresión con \p{…} lleva la bandera u. (3) La tabla CASOS_CIUDAD (abajo: nombres con tilde, ñ, diéresis,
+     guion y mayúsculas, y los de ahora en ASCII) corre contra nombraA de launch.ts, la función REAL que usa «Comprobar» (pendientesLaunch). Al revés:
+     alrevesFronteraDatos. */
+  fronteraConTildeEnDatos() {
+    const G = "fronteraConTildeEnDatos", LA = "apps/web/lib/ciudades/launch.ts";
+    const req = createRequire(import.meta.url), ts = req("typescript");
+    const DATO = ""; // un trozo que no se lee en el archivo: viene de datos y puede traer tilde o ñ
+    const NA = (ch) => ch === DATO || (ch.codePointAt(0) > 127 && /\p{L}/u.test(ch));
+    const analizar = (src) => {
+      let i = 0; const malos = [];
+      const atomo = () => {
+        const ch = src[i];
+        if (ch === "\\") {
+          const d = src[i + 1];
+          if (d === "b" || d === "B") { i += 2; return { b: d === "b", cero: true }; }
+          if (d === "p" || d === "P") { const f = src.indexOf("}", i); const s = src.slice(i, f + 1); i = f + 1; const na = d === "p" && /\{(L|Letter|Script)/.test(s); return { pri: na, ult: na }; }
+          if (d === "u" || d === "x") { const larga = src[i + 2] === "{", f = larga ? src.indexOf("}", i) : i + (d === "u" ? 6 : 4); const c = String.fromCodePoint(parseInt(src.slice(i + (larga ? 3 : 2), f), 16)); i = larga ? f + 1 : f; return { pri: NA(c), ult: NA(c) }; }
+          i += 2; return {};
+        }
+        if (ch === "[") {
+          i++; const neg = src[i] === "^"; let s = "";
+          while (i < src.length && src[i] !== "]") { if (src[i] === "\\") { s += src.slice(i, i + 2); i += 2; } else s += src[i++]; }
+          i++; const na = !neg && ([...s].some(NA) || /\\p\{(L|Letter|Script)/.test(s)); return { pri: na, ult: na };
+        }
+        if (ch === "(") {
+          i++; let mira = false;
+          if (src[i] === "?") { if (src[i + 1] === ":") i += 2; else if (src[i + 1] === "=" || src[i + 1] === "!") { i += 2; mira = true; } else if (src[i + 1] === "<" && (src[i + 2] === "=" || src[i + 2] === "!")) { i += 3; mira = true; } else if (src[i + 1] === "<") i = src.indexOf(">", i) + 1; }
+          const adelante = mira && src[i - 2] !== "<" && src[i - 3] !== "<", g = alternancia(); i++;
+          // (?=…\b) / (?!…\b): la letra que sigue a ese \b es la que toma lo que viene DESPUÉS de la mirada (no consume): se revisa contra eso.
+          return mira ? { cero: true, bFin: adelante && g.bFin } : g;
+        }
+        if (ch === "^" || ch === "$") { i++; return { cero: true }; }
+        i++; return { pri: NA(ch), ult: NA(ch) };
+      };
+      const cuant = (a) => {
+        const ch = src[i]; let min = 1;
+        if (ch === "?" || ch === "*") { min = 0; i++; } else if (ch === "+") i++;
+        else if (ch === "{" && /^\{\d+(,\d*)?\}/.test(src.slice(i))) { min = Number(/^\{(\d+)/.exec(src.slice(i))[1]); i = src.indexOf("}", i) + 1; }
+        else return a;
+        if (src[i] === "?") i++;
+        return { ...a, nulo: a.nulo || min === 0 };
+      };
+      const secuencia = () => {
+        const it = [];
+        while (i < src.length && src[i] !== "|" && src[i] !== ")") it.push(cuant(atomo()));
+        for (const x of it) if (x.cero) { x.nulo = true; x.pri = x.ult = false; }
+        it.forEach((x, k) => {
+          if (!x.b) return;
+          for (let j = k - 1; j >= 0; j--) { if (it[j].ult) { malos.push("antes"); break; } if (!it[j].nulo) break; }
+          for (let j = k + 1; j < it.length; j++) { if (it[j].pri) { malos.push("después"); break; } if (!it[j].nulo) break; }
+        });
+        it.forEach((x, k) => { if (x.bFin) for (let j = k + 1; j < it.length; j++) { if (it[j].pri) { malos.push("después, tras una mirada adelante"); break; } if (!it[j].nulo) break; } });
+        let pri = false, ult = false;
+        for (const x of it) { pri = pri || !!x.pri; if (!x.nulo) break; }
+        for (const x of [...it].reverse()) { ult = ult || !!x.ult; if (!x.nulo) break; }
+        return { pri, ult, nulo: it.every((x) => x.nulo), bFin: !!it.length && !!it[it.length - 1].b };
+      };
+      const alternancia = () => { const a = [secuencia()]; while (src[i] === "|") { i++; a.push(secuencia()); } return { pri: a.some((x) => x.pri), ult: a.some((x) => x.ult), nulo: a.some((x) => x.nulo), bFin: a.some((x) => x.bFin) }; };
+      alternancia();
+      return malos;
+    };
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
+      const fuente = readFileSync(f, "utf8");
+      if (!/\\b|\\p\{|RegExp\(/.test(fuente)) continue;
+      const sf = ts.createSourceFile(f, fuente, ts.ScriptTarget.Latest, true, f.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+      const consts = new Map();
+      const recoger = (n) => { if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) consts.set(n.name.text, n.initializer); ts.forEachChild(n, recoger); };
+      recoger(sf);
+      const texto = (n, hondo = 0) => {
+        if (hondo > 8) return DATO;
+        if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) return n.text;
+        if (ts.isTemplateExpression(n)) return n.head.text + n.templateSpans.map((s) => texto(s.expression, hondo + 1) + s.literal.text).join("");
+        if (ts.isIdentifier(n) && consts.has(n.text)) return texto(consts.get(n.text), hondo + 1);
+        if (ts.isParenthesizedExpression(n)) return texto(n.expression, hondo + 1);
+        if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken) return texto(n.left, hondo + 1) + texto(n.right, hondo + 1);
+        if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === "join" && ts.isArrayLiteralExpression(n.expression.expression)) {
+          const sep = n.arguments[0] && ts.isStringLiteral(n.arguments[0]) ? n.arguments[0].text : ",";
+          return n.expression.expression.elements.map((e) => texto(e, hondo + 1)).join(sep);
+        }
+        return DATO;
+      };
+      const revisar = (n, src, flags) => {
+        const linea = sf.getLineAndCharacterOfPosition(n.getStart()).line + 1;
+        let malos; try { malos = analizar(src); } catch (e) { return falla(G, f, linea, `no pude leer la expresión: ${String(e.message).slice(0, 60)}`); }
+        if (malos.length) falla(G, f, linea, `\\b pegado a una letra con tilde o ñ, o a un dato que puede traerla (${malos[0]}): «${src.replaceAll(DATO, "${dato}").slice(0, 70)}…» — usa (?<![\\p{L}\\p{N}]) y (?![\\p{L}\\p{N}]) con la bandera u`);
+        if (/\\[pP]\{/.test(src) && !/[uv]/.test(flags)) falla(G, f, linea, `usa \\p{…} sin la bandera u (sin ella \\p{L} es el texto «p{L}»): «${src.slice(0, 70)}…»`);
+      };
+      const ver = (n) => {
+        if (n.kind === ts.SyntaxKind.RegularExpressionLiteral) { const t = n.getText(), k = t.lastIndexOf("/"); revisar(n, t.slice(1, k), t.slice(k + 1)); }
+        else if ((ts.isNewExpression(n) || ts.isCallExpression(n)) && ts.isIdentifier(n.expression) && n.expression.text === "RegExp" && n.arguments?.length) revisar(n, texto(n.arguments[0]), n.arguments[1] ? texto(n.arguments[1]) : "");
+        ts.forEachChild(n, ver);
+      };
+      ver(sf);
+    }
+    // (3) La tabla contra la función real de «Comprobar». Cada caso: [nombres de la ciudad, línea, ¿la nombra?].
+    const CASOS_CIUDAD = [
+      [["Bayamón"], "Falta el permiso de Bayamón.", true], [["Bayamón"], "BAYAMÓN: falta el permiso", true], [["Bayamón"], "Bayamónes del norte", false],
+      [["Ángeles"], "Abrir en Ángeles cuando haya dueños", true], [["Ángeles"], "Losángeles", false],
+      [["Peñuelas"], "(Peñuelas) sin repartidores", true], [["Peñuelas"], "Peñuelasco", false], [["Cataño"], "Cataño, Bayamón y Guaynabo", true],
+      [["Cata"], "Abrir Cataño primero", false], [["Mayagüez"], "En Mayagüez falta el contador.", true], [["San Germán"], "San Germán: la portada", true],
+      [["San Germán"], "San Germánico", false], [["Moca"], "Mocaña", false], [["Moca"], "Moca.", true],
+      [["Wilkes-Barre", "Wilkes Barre"], "Wilkes-Barre: los mapas", true], [["Wilkes-Barre", "Wilkes Barre"], "wilkes barre sin fotos", true],
+      [["Hazleton"], "Hazleton y Allentown", true], [["Reading"], "Readingsville", false], [["Reading"], "Reading.", true], [["Scranton"], "Scrantoné", false],
+      [["Allentown"], "Allentownñ", false], [["Bogotá"], "Abrir Bogotá.", true], [["Bogotá"], "Bogotáes", false], [["Ñ"], "Zona Ñ, sin repartidor", true],
+      [[], "Cualquier línea, la que sea", false], [[""], "Cualquier línea, la que sea", false], [["  "], "Cualquier línea, la que sea", false],
+    ];
+    try {
+      const L = req("../pruebas/lib/ts-servidor.cjs").cargarApp(LA);
+      if (typeof L.nombraA !== "function") return falla(G, LA, 0, "falta nombraA (la expresión que decide si una línea nombra a la ciudad)");
+      for (const [n, t, espera] of CASOS_CIUDAD) {
+        let sale; try { sale = L.nombraA(n).test(t); } catch (e) { sale = `error: ${String(e.message).slice(0, 60)}`; }
+        if (sale !== espera) falla(G, LA, 0, `nombraA(${JSON.stringify(n)}) con «${t}»: ${sale} y debía ser ${espera}`);
+      }
+    } catch (e) { falla(G, LA, 0, `no pude correr CASOS_CIUDAD contra launch.ts: ${String(e.message).slice(0, 100)}`); }
+    if (!/const re = nombraA\(nombres\);/.test(sinComent(LA))) falla(G, LA, 0, "pendientesLaunch no usa nombraA (la expresión que la tabla comprueba)");
+    // (4) La misma clase en el filtro de Comunidad (lo que nunca se publica): una dirección exacta con ñ o tilde en el nombre de la calle se rechaza
+    // igual que una en ASCII; sin número de casa, o con una palabra suelta («la», «de»), pasa como antes. Contra revisarTexto REAL.
+    const CF = "apps/web/lib/comunidad-filtro.ts";
+    const CASOS_DIRECCION = [
+      ["Vivo en 123 Añasco St", true], ["Queda en 123 Oñate Ave", true], ["Está en 45 Elías Dr", true], ["Paso por 12 Eñe Rd", true], ["Vive en 8 Ángel St", true],
+      ["Es en 77 Peña Blanca Rd", true], ["En 123 Main St", true], ["En 900 Alder St", true], ["Por la calle Añasco, sin número", false],
+      ["Tengo 3 hijos y 2 perros", false], ["Somos 12 de la Avenue", false], ["El barrio de la Añasco está tranquilo", false],
+    ];
+    try {
+      const F = req("../pruebas/lib/ts-servidor.cjs").cargarApp(CF);
+      for (const [t, rechaza] of CASOS_DIRECCION) {
+        const r = F.revisarTexto(t), es = !!r && /direcciones exactas/.test(r.msg?.es ?? "");
+        if (es !== rechaza) falla(G, CF, 0, `revisarTexto(«${t}»): ${es ? "la rechaza como dirección" : "la deja pasar"} y debía ${rechaza ? "rechazarla (una dirección exacta con ñ o tilde)" : "dejarla pasar"}`);
+      }
+    } catch (e) { falla(G, CF, 0, `no pude correr CASOS_DIRECCION contra comunidad-filtro.ts: ${String(e.message).slice(0, 100)}`); }
+  },
+  /* 23 nov · almacenPrivadoSinQuinientos. La clase «la fila vive y el archivo no está en el almacén privado» en TODAS las rutas que sirven algo privado
+     del almacén (no solo las cinco que arregló fotosPrivadasConPermiso (15)): (1) cada ruta (route.ts de app) que lee del almacén privado (entregarPrivado,
+     abrirObjeto, leerObjeto, o lib/datos/exportar bajarExportacion) está en RUTAS con lo que contesta sin archivo; una ruta nueva que lea del almacén
+     falla hasta que se anote (y se le dé su 404 y su prueba). (2) Ninguna ruta lee el almacén por su cuenta: todo pasa por entregarPrivado (o por una
+     función de lib que mira el «no está»); cada llamada a abrirObjeto mira su null. (3) Las rutas de fotos privadas: TODO 404 es el mismo `no` (el de
+     «no tienes permiso», «no existe» y «el archivo no está»: no dice quién puede), con «private, no-store» (nunca se guarda el fallo como si fuera la
+     foto: Cloudflare o un navegador volverían a dar 404 cuando el archivo vuelva) y cada entrega, también la de respaldo, pasa ese `no` como siFalta.
+     La de revisión contesta 410 «ya no está» a quien sí puede verla (21 nov), también privado. (4) La carrera de la purga de una cuenta: una foto con
+     ancho nulo (w) cuyas variantes el barrido está guardando en ese momento dejaba la del ancho de la maestra huérfana; fotosFuera lee el ancho de
+     la maestra ANTES de borrarla. (5) Las pruebas de punta a punta miran «private, no-store» en el 404 del archivo ausente, y fot9uprivadas la carrera.
+     Al revés: alrevesAlmacenPrivado. */
+  almacenPrivadoSinQuinientos() {
+    const G = "almacenPrivadoSinQuinientos", NO = 'const no = () => new NextResponse(null, { status: 404, headers: { "cache-control": "private, no-store" } });';
+    const RUTAS = {
+      "apps/web/app/api/mensajes/foto/[id]/route.ts": "foto", "apps/web/app/api/ayuda/foto/[id]/route.ts": "foto", "apps/web/app/api/entrega/foto/[id]/route.ts": "foto",
+      "apps/web/app/api/admin/reclamo/[id]/route.ts": "foto", "apps/web/app/api/medios/privada/[id]/route.ts": "foto", "apps/web/app/api/medios/revision/[id]/route.ts": "revision",
+      "apps/web/app/api/datos/archivo/[id]/route.ts": "exportacion",
+    };
+    const LEE = /\bentregarPrivado\(|\babrirObjeto\(|\bleerObjeto\(|\bbajarExportacion\(/;
+    for (const x of archivos) {
+      if (!/^apps\/web\/app\/.*route\.ts$/.test(x)) continue;
+      const t = sinComent(x);
+      if (/\babrirObjeto\(|\bleerObjeto\(/.test(t)) falla(G, x, 0, "la ruta lee el almacén por su cuenta: un objeto que falta lanzaría (500); usa entregarPrivado con su 404 (siFalta) o una función de lib que mire el «no está»");
+      if (LEE.test(t) && !RUTAS[x]) falla(G, x, 0, "ruta nueva que sirve del almacén privado: anótala en RUTAS de este guardián con lo que contesta si el archivo falta (el 404 de «no tienes permiso», nunca 500) y su prueba de punta a punta");
+    }
+    for (const [f, tipo] of Object.entries(RUTAS)) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta una ruta del almacén privado"); continue; }
+      const t = sinComent(f);
+      if (tipo === "exportacion") continue; // (2) abajo: bajarExportacion
+      if (!t.includes(NO)) falla(G, f, 0, "el 404 de la ruta (no) no es privado: «private, no-store» (el de «no tienes permiso» y el del archivo ausente son el mismo y nunca se guardan)");
+      const otros = [...t.matchAll(/status: 40[34]\b/g)].length;
+      if (otros !== 1) falla(G, f, 0, `la ruta arma ${otros} respuestas 403/404 a mano: todo «no» pasa por el mismo \`no\` (una distinta diría que la foto existe)`);
+      const ent = [...t.matchAll(/entregarPrivado\(req, [\s\S]*?\);(?=\n)/g)].map((m) => m[0].replace(/\s+/g, " "));
+      if (!ent.length) falla(G, f, 0, "la ruta ya no entrega por entregarPrivado");
+      for (const e of ent) for (const llamada of e.split(/\.catch\(\(\) => /)) {
+        if (!/^entregarPrivado\(/.test(llamada)) { if (!/^no\(\)\)/.test(llamada)) falla(G, f, 0, "el respaldo de la entrega no es entregarPrivado ni no()"); continue; }
+        const bien = tipo === "revision" ? /, \(\) => new NextResponse\(null, \{ status: 410, headers: \{ "cache-control": "private, no-store" \} \}\)\)/.test(llamada) : /, cab, no, ver\)/.test(llamada);
+        if (!bien) falla(G, f, 0, `una entrega sin su respuesta de «archivo ausente» (${tipo === "revision" ? "410 privado" : "no"}): si el objeto falta daría 500 — ${llamada.slice(0, 90)}`);
+      }
+    }
+    // (2) Cada abrirObjeto mira su null (404 del almacén → null).
+    for (const x of codigo) {
+      if (!/^apps\/web\/lib\/.*\.ts$/.test(x) || x === "apps/web/lib/medios.ts") continue;
+      const t = sinComent(x);
+      for (const m of t.matchAll(/const (\w+) = await abrirObjeto\(/g)) if (!new RegExp(`\\n\\s*if \\(!${m[1]}\\b`).test(t.slice(m.index, m.index + 400))) falla(G, x, t.slice(0, m.index).split("\n").length, `abrirObjeto sin mirar su null (el objeto no está): «${m[1]}» se usaría vacío y daría 500`);
+    }
+    const ex = cuerpoFn(sinComent("apps/web/lib/datos/exportar.ts"), "bajarExportacion");
+    if (!/if \(!a \|\| a\.estado !== 200\) return \{ ok: false, status: 410 \};/.test(ex)) falla(G, "apps/web/lib/datos/exportar.ts", 0, "bajarExportacion: el archivo que ya no está en el almacén contesta 410 sin gastar el uso (nunca 500)");
+    // (4) La carrera de la purga de una cuenta.
+    const PU = "apps/web/lib/datos/purgar.ts", ff = cuerpoFn(sinComent(PU), "fotosFuera");
+    const ic = ff.indexOf("if (!clave) continue;"), iw = ff.indexOf("if (f.w == null && clavesVariantes(clave).length) f.w = await anchoDeMaestra(clave);"), ib = ff.indexOf("await borrarObjeto(clave);");
+    if (ic < 0 || iw < ic || ib < iw || !ff.includes("for (const v of clavesVariantes(clave, f.w, f.var_widths)) await borrarObjeto(v);"))
+      falla(G, PU, 0, "fotosFuera: con el ancho nulo, lee el ancho de la maestra ANTES de borrarla y saca también la variante de ese ancho (si no, la que el barrido guarda en ese momento queda huérfana)");
+    const av = cuerpoFn(sinComent("apps/web/lib/fotos-variantes.ts"), "anchoDeMaestra");
+    if (!/try \{ return \(await sharp\(await leerObjeto\(clave\), \{ limitInputPixels: 50_000_000 \}\)\.metadata\(\)\)\.width \?\? null; \} catch \{ return null; \}/.test(av)) falla(G, "apps/web/lib/fotos-variantes.ts", 0, "anchoDeMaestra lee el ancho real de la maestra y nunca lanza (sin maestra o ilegible: null)");
+    // (5) Las pruebas.
+    for (const [p, k] of [["pruebas/e2e/msg9t.cjs", "archivo ausente: el 404 es privado y sin caché"], ["pruebas/e2e/ayu4m.cjs", "archivo ausente: el 404 es privado y sin caché"], ["pruebas/e2e/neg9n.cjs", "archivo ausente: el 404 es privado y sin caché"],
+      ["pruebas/e2e/rec1j.cjs", "archivo ausente: el 404 es privado y sin caché"], ["pruebas/e2e/rev9u.cjs", "F3 · archivo ausente con la fila viva"], ["pruebas/e2e/fot9uprivadas.cjs", "la purga de una cuenta con el ancho nulo no deja huérfana la variante que el barrido estaba guardando"]])
+      if (!existsSync(p) || !readFileSync(p, "utf8").includes(k)) falla(G, p, 0, `la prueba de punta a punta dejó de revisar «${k}»`);
+  },
+  /* ◆ Encargo K (23 nov) · fin. */
+
   /* 23 nov · compaEligeLaOperacion. La clase «El Compa toma la PRIMERA operación de la lista sin mirar de cuál habla la persona»: los dos motores sin
      modelo (reglas fijas y simulador) preparaban «cancelar» o «abrir» sobre `ops.find(cancelable)` / `ops[0]`: quien decía «cancela mi cita con la
      barbería» y tenía además un pedido veía «¿Cancelar tu pedido?» (la batería: vec-036, vec-040, vec-042). Ahora una sola función (elegirOperacion, en
@@ -11533,7 +11733,7 @@ const guardianes = {
       if (/\bleerObjeto\(/.test(t)) falla(G, f, 0, "una ruta lee un objeto del almacén entero (leerObjeto) para entregarlo: va por entregarPrivado (en flujo, ETag, después del permiso)");
       for (const x of t.matchAll(/entregarPrivado\(req, [^\n]*/g)) {
         const antes = t.slice(0, x.index);
-        if (!/(if \(!(?:ok|p\.ok)\) return no\(\);|return new NextResponse\(null, \{ status: 404 \}\);)/.test(antes)) falla(G, f, antes.split("\n").length, "entrega un objeto privado sin antes contestar 404 a quien no tiene permiso");
+        if (!/(if \(!(?:ok|p\.ok)\) return no\(\);|if \(!r \|\| !r\.url\.startsWith\("privado\/"\)\) return no\(\);|return new NextResponse\(null, \{ status: 404 \}\);)/.test(antes)) falla(G, f, antes.split("\n").length, "entrega un objeto privado sin antes contestar 404 a quien no tiene permiso");
         if (!/"cache-control": "private, no-store"/.test(x[0]) && !/const cab = \{ "cache-control": "private, no-store"/.test(antes)) falla(G, f, antes.split("\n").length, "un objeto privado sale con caché «private, no-store» (escrita en la ruta)");
       }
       if (/entregarPrivado\(/.test(t) && /["']public\b/.test(t)) falla(G, f, 0, "una ruta que entrega objetos privados con caché «public»");
@@ -11873,7 +12073,7 @@ const guardianes = {
     // 19 nov · Solo en GET (la rama del chat con negocios): la de vecinos (fotoDeVecinos) tiene las suyas y no puede tapar que falten aquí.
     const vg = cuerpoFn(v, "GET");
     if (!/colas\.includes\(/.test(vg) || !/auditar\(c, \{ actor: s\.id, action: "mensajes\.foto\.ver"/.test(vg) || !/s\.cities\.length/.test(vg)) falla(G, VE, 0, "el equipo la ve solo con caso abierto en su cola y ciudad, y queda en la auditoría");
-    if (!/"cache-control": "private, no-store"/.test(v) || /\/medios\//.test(v)) falla(G, VE, 0, "la foto de un mensaje nunca se cachea ni se sirve pública");
+    if (!/const cab = \{ "cache-control": "private, no-store"/.test(v) || /\/medios\//.test(v)) falla(G, VE, 0, "la foto de un mensaje nunca se cachea ni se sirve pública"); // 23 nov: la de la entrega (cab); el 404 también es privado
     const m = sinComent(ME);
     if (!/owner_id = 'pendiente' and uploaded_by = \$2 and private[\s\S]{0,160}for update/.test(cuerpoFn(m, "tomarFoto"))) falla(G, ME, 0, "tomarFoto: solo la foto que subió esa persona, sin usar, bloqueada en la transacción");
     if (!/if \(fo\.status !== "review"\) return;[\s\S]{0,120}marcar\(c, \{ kind: "media"/.test(cuerpoFn(m, "ponerFoto"))) falla(G, ME, 0, "ponerFoto: la foto en revisión abre su caso (cola «medios»)");
@@ -15108,7 +15308,7 @@ const guardianes = {
     if (!/where q\.status = 'open' and \(/.test(pf) || !/if \(!e\.colas\.includes\(c\.cola\) \|\| \(e\.ciudades\.length && !\(c\.ciudad && e\.ciudades\.includes\(c\.ciudad\)\)\)\) continue;/.test(pf) || !/if \(c\.salud && !\(await e\.vidrio\(c\.ref\)\)\) continue;/.test(pf))
       falla(G, FP, 0, "el equipo: solo con un caso ABIERTO de esa operación, en una cola que ve, en su ciudad (y el vidrio roto en una ayuda de Salud)");
     // (5) La ruta: 404 a quien no puede, sin caché, nosniff, el equipo auditado en su transacción; la variante con el mismo permiso.
-    if (!/const no = \(\) => new NextResponse\(null, \{ status: 404 \}\);/.test(rv) || /status: 403/.test(rv) || !/const p = await permisoFotoPrivada\(db\(\), id, \{ userId: me\.id, equipo \}\);\s*if \(!p\.ok\) return no\(\);/.test(rv)
+    if (!/const no = \(\) => new NextResponse\(null, \{ status: 404, headers: \{ "cache-control": "private, no-store" \} \}\);/.test(rv) || /status: 403/.test(rv) || !/const p = await permisoFotoPrivada\(db\(\), id, \{ userId: me\.id, equipo \}\);\s*if \(!p\.ok\) return no\(\);/.test(rv)
       || !/"cache-control": "private, no-store", "x-content-type-options": "nosniff"/.test(rv) || /public|max-age|s-maxage|immutable/.test(rv.replace(/private, no-store/, ""))
       || !/const ver = p\.por === "equipo"\s*\? \(\) => tx\(\(c\) => auditar\(c, \{ actor: p\.staff, action: "fotos\.privada\.ver"/.test(rv) || !rv.includes("return entregarPrivado(req, llaves, cab, no, ver).catch(() => entregarPrivado(req, [maestra], cab, no, ver)).catch(() => no());") || !/\{ clave: llaveVariantePrivada\(id, a\), tipo: "image\/webp" \}/.test(rv) || !/const maestra = \{ clave: p\.llave, tipo: "image\/jpeg" \};/.test(rv))
       falla(G, RV, 0, "la ruta de una foto privada: el permiso de permisoFotoPrivada (404 a quien no puede, nunca 403), private, no-store, nosniff, el equipo auditado, y la variante con el mismo permiso");
@@ -15171,7 +15371,7 @@ const guardianes = {
       falla(G, FV, 0, "F3b: clavesVariantes conoce las variantes de TODAS las privadas (o, a, m, e, r): si no, la purga de una cuenta las deja");
     // El valor: la línea que cierra el permiso de cada ruta (la variante se elige después de ella); la de Mensajes, por sus dos caminos (servir).
     const VER = { "apps/web/app/api/mensajes/foto/[id]/route.ts": "msg", "apps/web/app/api/ayuda/foto/[id]/route.ts": "if (!ok) return no();", "apps/web/app/api/entrega/foto/[id]/route.ts": "if (!ok) return no();",
-      "apps/web/app/api/admin/reclamo/[id]/route.ts": 'if (!r || !r.url.startsWith("privado/")) return new NextResponse(null, { status: 404 });' };
+      "apps/web/app/api/admin/reclamo/[id]/route.ts": 'if (!r || !r.url.startsWith("privado/")) return no();' };
     const CAB = 'const cab = { "cache-control": "private, no-store", "x-content-type-options": "nosniff", "content-disposition": "inline", vary: "Accept, Cookie" };';
     for (const [f, tipo] of Object.entries(VER)) {
       if (!existsSync(f)) { falla(G, f, 0, "F3b: falta la ruta de una foto privada"); continue; }
@@ -15213,7 +15413,7 @@ const guardianes = {
     for (const f of [RV, ...Object.keys(VER)]) {
       const t = existsSync(f) ? sinComent(f) : "";
       if (/await tx\(\(c\) => auditar\(c, \{[^\n]*"[\w.]+\.ver"/.test(t)) falla(G, f, 0, "deja el renglón de «vio la foto» ANTES de entregar: si el archivo falta quedaría el renglón de algo que nadie vio (va en `ver`, que entregarPrivado llama al abrir el objeto)");
-      if (!/const no = \(\) => new NextResponse\(null, \{ status: 404 \}\);/.test(t)) falla(G, f, 0, "la ruta no tiene su 404 único (no): el de un archivo ausente debe ser el mismo que el de «no tienes permiso»");
+      if (!/const no = \(\) => new NextResponse\(null, \{ status: 404, headers: \{ "cache-control": "private, no-store" \} \}\);/.test(t)) falla(G, f, 0, "la ruta no tiene su 404 único (no): el de un archivo ausente debe ser el mismo que el de «no tienes permiso»");
       for (const x of t.matchAll(/entregarPrivado\(req, [^\n]*/g)) if (!/, cab, no, ver\)/.test(x[0])) falla(G, f, t.slice(0, x.index).split("\n").length, "entregarPrivado sin `no` y `ver`: un archivo ausente daría 500 (o dejaría el renglón de quien vio la foto)");
     }
     const ent = sinComent("apps/web/lib/entrega-privada.ts"), epr = cuerpoFn(ent, "entregarPrivado");

@@ -43,7 +43,7 @@ export async function purgarVencidas(max = 5): Promise<ResPurga[]> {
 
 /* Las fotos de la persona fuera del almacenamiento ANTES de la transacción (el archivo; la fila la vacía el mapa). Las del negocio no: el negocio
    sigue (sin reclamar) con sus fotos. */
-async function fotosFuera(cuenta: string, donde: string | null): Promise<number> {
+export async function fotosFuera(cuenta: string, donde: string | null): Promise<number> {
   const F = (await db().query<{ url: string; w: number | null; var_widths: number[] | null; rev_llave: string | null }>(
     // nosemgrep: tolatino-sql-con-texto-interpolado — fragmentos de data_map: solo los escribe la semilla, validados por scripts/datos/mapa.mjs y mapa(); nombres por ident()
     `select x.url, x.w, x.var_widths, x.rev_llave from media x
@@ -57,13 +57,17 @@ async function fotosFuera(cuenta: string, donde: string | null): Promise<number>
   // Fotos a la medida: con la maestra salen sus variantes WebP (n/<uuid>.w<ancho>.webp), todas las que pueden existir. Primero la maestra y
   // después las variantes: si el barrido las está generando en ese momento, al terminar ve que la maestra ya no está y las saca él
   // (lib/fotos-variantes.ts guardarVariantes). Guardián fotosConVariantes.
-  const { clavesVariantes } = await import("../fotos-variantes");
+  // 23 nov · La carrera con el barrido: si la fila no sabe el ancho de la maestra (w nulo) y el barrido está guardando sus variantes en este momento
+  // (ya miró que la maestra sigue), la del ancho de la maestra no estaba en la lista y quedaba huérfana. Se lee el ancho ANTES de borrar la maestra
+  // (anchoDeMaestra; sin maestra, null y quedan las fijas). Guardián almacenPrivadoSinQuinientos; prueba fot9uprivadas.
+  const { clavesVariantes, anchoDeMaestra } = await import("../fotos-variantes");
   // F3 · media.url puede ser /medios/<llave>, una llave privado/… o la ruta con permiso de una foto de destino privado (/api/medios/privada/<uuid> →
   // privado/o/<uuid>.jpg, con sus variantes privadas): llaveDeUrl da la llave de cada una.
   const { llaveDeUrl } = await import("../fotos-privadas");
   for (const f of F) {
     const clave = llaveDeUrl(f.url);
     if (!clave) continue;
+    if (f.w == null && clavesVariantes(clave).length) f.w = await anchoDeMaestra(clave);
     await borrarObjeto(clave);
     for (const v of clavesVariantes(clave, f.w, f.var_widths)) await borrarObjeto(v);
     // Revisión automática (decisión AJ): una foto retenida, rechazada u oculta vive en la llave privada (privado/rev/<uuid>.jpg): sale también.

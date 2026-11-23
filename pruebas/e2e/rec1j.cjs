@@ -75,6 +75,7 @@ const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p
     const claves = await quitarDelAlmacen(sql, DOC), n1 = aud(), sin = await traerVar(q, U), fal = [await traerVar(a, U), await traerVar(a, U + '?w=320'), await traerVar(a, U + '?w=1080')];
     ok(claves.length >= 2 && sql(`select (purged_at is null) || '|' || status from media where id = '${DOC}'`) === 'true|visible' && sin.st === 404 && fal.every((x) => x.st === 404 && x.cc === sin.cc && x.ct === sin.ct && x.vary === sin.vary) && aud() === n1,
       `el archivo no está pero la fila vive: 404 al equipo (${fal.map((x) => x.st).join('/')}) con las cabeceras de «no tienes permiso», sin renglón en la auditoría (${claves.length} archivos sacados)`);
+    ok([sin, ...fal].every((x) => x.cc === 'private, no-store'), `archivo ausente: el 404 es privado y sin caché (${[sin, ...fal].map((x) => x.cc).join(' / ')})`); // 23 nov · nunca se guarda
     sql(`update media set status = 'removed', removed_reason = 'Documento del reclamo (retención)', url = 'privado/borrada', purged_at = now() where id = (select doc_media from claims where id = '${cl}')`);
     const a0 = aud(), pe = await traerVar(a, U), pv = await traerVar(a, U + '?w=320');
     ok(pe.st === 404 && pv.st === 404 && aud() === a0, `el documento purgado da 404 al equipo (entera ${pe.st}, variante ${pv.st}), sin renglón en la auditoría`);

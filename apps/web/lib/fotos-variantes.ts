@@ -54,6 +54,12 @@ export function clavesVariantes(claveMaestra: string, ancho?: number | null, hec
   return [...ws].sort((a, b) => a - b).map((w) => (m ? claveVariante(m[1]!, w) : `privado/${p![1]}/${p![2]}.w${w}.webp`));
 }
 
+/* 23 nov · El ancho REAL de una maestra (pública o privada), para la purga de una cuenta cuando la fila no lo tiene (w nulo): la variante de ese
+   ancho (anchosDe) solo se conoce leyendo la foto. Nunca lanza: sin maestra o ilegible, null. Guardián almacenPrivadoSinQuinientos. */
+export async function anchoDeMaestra(clave: string): Promise<number | null> {
+  try { return (await sharp(await leerObjeto(clave), { limitInputPixels: 50_000_000 }).metadata()).width ?? null; } catch { return null; }
+}
+
 type Resultado = "ok" | "ilegible" | "sin_maestra" | "fallo";
 /* Genera, guarda (caché de un año: guardarObjeto la pone a toda llave pública) y anota en la fila (o filas: el original y una copia). Nunca
    lanza. Después de guardar se confirma que la maestra sigue: si la purga de la cuenta la sacó mientras tanto, las variantes también salen

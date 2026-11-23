@@ -20,6 +20,15 @@ export function pendientesLaunch(nombres: string[]): { leida: boolean; total: nu
     for (let j = i + 1; j < L.length && /^\s+\S/.test(L[j]!) && !/^\s*- \[/.test(L[j]!); j++) t += " " + L[j]!.trim();
     items.push({ linea: i + 1, texto: t.replace(/^- \[ \]\s*/, "").replace(/\s+/g, " ") });
   }
-  const re = new RegExp(`\\b(${nombres.map((n) => n.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")).join("|")})\\b`, "i");
+  const re = nombraA(nombres);
   return { leida: true, total: items.length, deLaCiudad: items.filter((x) => re.test(x.texto)).map((x) => ({ linea: x.linea, texto: x.texto.slice(0, 200) })) };
+}
+
+/* 23 nov · La línea nombra a la ciudad si su nombre aparece ENTERO: fronteras de LETRA, nunca \b. En JavaScript \b solo conoce a-z, 0-9 y _: junto
+   a una letra con tilde o ñ no hay frontera, así que «Bogotá.» o «Ángeles» no casarían nunca (y un nombre casaría dentro de otra palabra que sigue con tilde o ñ: «Cata» dentro de «Cataño»). Con
+   la bandera u, (?<![\p{L}\p{N}]) y (?![\p{L}\p{N}]) ven la tilde y la ñ, y la i compara mayúsculas con tilde («BAYAMÓN»). El guion no se escapa
+   (con u, «\-» fuera de una clase es un error). Sin nombres, nada casa. Guardián fronteraConTildeEnDatos (su tabla corre contra esta función). */
+export function nombraA(nombres: string[]): RegExp {
+  const alt = nombres.map((n) => n.trim()).filter(Boolean).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return alt.length ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${alt.join("|")})(?![\\p{L}\\p{N}])`, "iu") : /(?!)/;
 }
