@@ -11,7 +11,7 @@ const casos = [
   [G, L, 'if (dentro >= FOTOS_DENTRO) { avisarLleno(ruta, "lugar"); return fotosOcupado(); }\n', ''],
   [G, L, '    soltar = await turnoFoto(FOTOS_ESPERA_MS);\n    if (!soltar) { avisarLleno(ruta, "turno"); return fotosOcupado(); }\n    return await hacer(f);', '    return await hacer(f);'],
   [G, L, '    soltar?.();\n', ''],
-  [G, L, '    if (dir) await borrarCarpetaVideo(dir);\n', ''],
+  [G, L, '    if (dir) await borrarCarpetaSubida(dir);\n', ''],
   [G, L, 'const rec = await recibirArchivo(req, {', 'void (await new Response(req.body).arrayBuffer()); const rec = await recibirArchivo(req, {'],
   [G, L, 'export const FOTOS_A_LA_VEZ = 2,', 'export const FOTOS_A_LA_VEZ = 50,'],
   [G, L, 'FOTOS_DENTRO = 16,', 'FOTOS_DENTRO = 1000,'],

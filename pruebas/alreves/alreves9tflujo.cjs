@@ -13,7 +13,7 @@ const casos = [
   [VR, '    const rec = await recibirArchivo(req, {', '    const crudo = Buffer.from(await req.arrayBuffer());\n    const rec = await recibirArchivo(req, {', 'lee el cuerpo entero en memoria'],
   [VR, '  if (!turno) return ocupado();\n', '', 'se toma ANTES de leer el cuerpo'],
   [VR, 'headers: { "Retry-After": "30" }', 'headers: {}', '503 con Retry-After'],
-  [VR, '    if (dir) await borrarCarpetaVideo(dir);\n    await turno();\n', '    if (dir) await borrarCarpetaVideo(dir);\n', 'se suelta en un finally'],
+  [VR, '    if (dir) await borrarCarpetaSubida(dir);\n    await turno();\n', '    if (dir) await borrarCarpetaSubida(dir);\n', 'se suelta en un finally'],
   [S, '            if (escritos + hasta > o.tope) { await tirarResto(); return no("grande"); }\n', '', 'mira el tope ANTES de escribir'],
   [V, 'accept: "application/x-tolatino-video"', 'accept: "application/json"', 'procesarVideo manda el video desde el disco'],
   [V, '  if (enEsteProceso >= VIDEO_A_LA_VEZ_PROCESO) return null;\n', '', 'turnoVideo: tope por proceso'],

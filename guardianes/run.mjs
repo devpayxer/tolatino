@@ -10757,7 +10757,7 @@ const guardianes = {
         iTurno = cf.indexOf("soltar = await turnoFoto(FOTOS_ESPERA_MS);"), iSin = cf.indexOf("if (!soltar) { avisarLleno(ruta, \"turno\"); return fotosOcupado(); }"), iHacer = cf.indexOf("return await hacer(f);"), iFin = cf.indexOf("} finally {");
       if (iLugar < 0 || iMas < iLugar || iRec < iMas) falla(G, L, 0, "conFotoSubida toma el lugar ANTES de leer el cuerpo (sin lugar: fotosOcupado, sin leer nada)");
       if (iTurno < iRec || iSin < iTurno || iHacer < iSin) falla(G, L, 0, "conFotoSubida espera el turno (turnoFoto) después de recibir la foto y antes de abrirla (hacer); sin turno, fotosOcupado");
-      if (iFin < iHacer || !/\} finally \{\s*soltar\?\.\(\);\s*dentro--;\s*if \(dir\) await borrarCarpetaVideo\(dir\);\s*\}/.test(cf)) falla(G, L, 0, "conFotoSubida suelta el turno y el lugar y borra la carpeta temporal en un finally");
+      if (iFin < iHacer || !/\} finally \{\s*soltar\?\.\(\);\s*dentro--;\s*if \(dir\) await borrarCarpetaSubida\(dir\);\s*\}/.test(cf)) falla(G, L, 0, "conFotoSubida suelta el turno y el lugar y borra la carpeta temporal en un finally");
       if (/\.(arrayBuffer|formData|blob)\(\)|Buffer\.concat|leerFormulario\(/.test(cf)) falla(G, L, 0, "conFotoSubida junta la foto en memoria: va al disco por partes (recibirArchivo)");
     }
     if (!/if \(activas < FOTOS_A_LA_VEZ\) \{ activas\+\+; return Promise\.resolve\(soltador\(\)\); \}/.test(tf) || !/enCola\.push\(paso\);/.test(tf) || !/listo\(null\); \}, espera\);/.test(tf) || !/while \(enCola\.length\) if \(enCola\.shift\(\)!\(\)\) return;\s*activas--;/.test(tf))
@@ -10822,7 +10822,7 @@ const guardianes = {
     const iT = r.indexOf("const turno = await turnoVideo();"), iR = r.indexOf("await recibirArchivo(req, { campo: \"video\", tope: MAX,");
     if (iT < 0 || iR < 0 || iT > iR || !/if \(!turno\) return ocupado\(\);/.test(r)) falla(G, R, 0, "el cupo de videos a la vez se toma ANTES de leer el cuerpo (turnoVideo) y sin lugar contesta ocupado()");
     if (!/status: 503, headers: \{ "Retry-After": "\d+" \}/.test(r) || !/Prueba en un momento\./.test(r) || !/Try again in a moment\./.test(r)) falla(G, R, 0, "con el cupo lleno: 503 con Retry-After y «Prueba en un momento.» / «Try again in a moment.»");
-    if (!/\} finally \{\s*if \(dir\) await borrarCarpetaVideo\(dir\);\s*await turno\(\);\s*\}/.test(r)) falla(G, R, 0, "la carpeta temporal se borra y el turno se suelta en un finally (también cuando algo falla)");
+    if (!/\} finally \{\s*if \(dir\) await borrarCarpetaSubida\(dir\);\s*await turno\(\);\s*\}/.test(r)) falla(G, R, 0, "la carpeta temporal se borra y el turno se suelta en un finally (también cuando algo falla)");
     // (2) recibirArchivo: el tope antes de escribir.
     const rf = cuerpoFn(sinComent(S), "recibirArchivo");
     const iTope = rf.indexOf("if (escritos + hasta > o.tope)"), iW = rf.indexOf("await fh.write(");

@@ -99,10 +99,12 @@ export async function turnoVideo(): Promise<(() => Promise<void>) | null> {
   };
 }
 
-/* 9t · La carpeta temporal de UNA subida (entrada y salida del video). Quien la pide la borra en su finally (pase lo que pase). Si un proceso se
-   cayó a mitad, su carpeta queda: cada carpeta nueva barre antes las de más de una hora (los videos de nadie no se acumulan en el disco). */
+/* 9t · La carpeta temporal de UNA subida (entrada y salida del video; la foto de lib/subida.ts conFotoSubida). Quien la pide la borra en su finally
+   (pase lo que pase). Si un proceso se cayó a mitad, su carpeta queda: cada carpeta nueva barre antes las de más de una hora (los archivos de nadie
+   no se acumulan en el disco). 23 nov: carpetaVideo / borrarCarpetaVideo pasan a carpetaSubida / borrarCarpetaSubida (las usan videos y fotos); el
+   prefijo sigue siendo el de siempre, así una carpeta que dejó un proceso de antes se barre igual. */
 const PREFIJO_TMP = "tl-video-";
-export async function carpetaVideo(): Promise<string> {
+export async function carpetaSubida(): Promise<string> {
   const raiz = tmpdir();
   try {
     const hace1h = Date.now() - 3_600_000;
@@ -114,7 +116,7 @@ export async function carpetaVideo(): Promise<string> {
   } catch { /* sin permiso para listar: sigue */ }
   return mkdtemp(join(raiz, PREFIJO_TMP));
 }
-export async function borrarCarpetaVideo(dir: string): Promise<void> {
+export async function borrarCarpetaSubida(dir: string): Promise<void> {
   if (!dir.includes(PREFIJO_TMP)) return;
   await rm(dir, { recursive: true, force: true }).catch(() => undefined);
 }

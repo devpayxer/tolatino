@@ -2,7 +2,7 @@ import "server-only";
 import { open } from "node:fs/promises";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
-import { borrarCarpetaVideo, carpetaVideo } from "./video-negocio";
+import { borrarCarpetaSubida, carpetaSubida } from "./video-negocio";
 
 /* 9t (19 nov) · Leer un formulario de subida CON TOPE. Un navegador que no avisa el tamaño (Safari en iPad/iPhone manda el cuerpo sin
    content-length) llegaba entero hasta req.formData(): un archivo de más se leía completo en memoria y salía «No llegó la foto» (400) en vez de
@@ -142,7 +142,7 @@ function tipoDeParte(cab: string): string {
    - `antes` (opcional): lo que la ruta decide con el formulario ya leído y sin abrir la foto (topes, permisos, tipo); no gasta turno.
    - Turno (FOTOS_A_LA_VEZ por proceso): abrir, enderezar, reducir, revisar, guardar y variantes. Ya en el disco, la foto espera su turno hasta
      FOTOS_ESPERA_MS; si no llega, el mismo 503. sharp nunca abre más de FOTOS_A_LA_VEZ fotos subidas a la vez en un proceso.
-   - La carpeta temporal (la misma de los videos: lib/video-negocio.ts carpetaVideo, que barre las de más de una hora que dejó un proceso caído)
+   - La carpeta temporal (la misma de los videos: lib/video-negocio.ts carpetaSubida, que barre las de más de una hora que dejó un proceso caído)
      se borra y el lugar y el turno se sueltan en un finally (también si algo falla).
    - Cada rechazo por estar lleno queda en los errores del servidor (Sistema › Salud cuenta los del servidor; Sistema › Apps muestra su grupo
      «Subida de fotos llena»): como mucho uno cada AVISO_LLENO_MS por proceso, para no cargar la base justo cuando el servidor está lleno.
@@ -196,7 +196,7 @@ export async function conFotoSubida(req: Request, o: OpcionesFoto, hacer: (f: Fo
   dentro++;
   let soltar: (() => void) | null = null, dir = "";
   try {
-    dir = await carpetaVideo();
+    dir = await carpetaSubida();
     const archivo = join(dir, "foto");
     const rec = await recibirArchivo(req, { campo: o.campo ?? "foto", tope: o.tope, ruta: archivo, margen: 4096, textos: o.textos });
     if (!rec.ok) return rec.motivo === "grande" ? o.grande() : await o.sinArchivo(rec.textos);
@@ -209,6 +209,6 @@ export async function conFotoSubida(req: Request, o: OpcionesFoto, hacer: (f: Fo
   } finally {
     soltar?.();
     dentro--;
-    if (dir) await borrarCarpetaVideo(dir);
+    if (dir) await borrarCarpetaSubida(dir);
   }
 }
