@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { ENTORNO } from "../entorno";
 import { bloques, ErrorModelo, type Entrada, type Modelo, type Salida } from "./modelo";
+import { quiereAbrir, quiereCancelar, respuestaAbrir, respuestaCancelar, type OpCtx } from "./modelo-reglas";
 
 /* 7c · El simulador de El Compa (sandbox sin clave y todas las pruebas punta a punta). Determinista y guionado por intención. A propósito se
    porta como un modelo INGENUO: si un dato (lo que escribe la persona o un trozo de ayuda) trae instrucciones, las obedece — propone cancelar
@@ -29,7 +30,6 @@ function medidaJpeg(b: Buffer): { ancho: number; alto: number } | null {
 }
 const frases = (t: string, n: number) => t.replace(/(^|\n)\s*[-•]\s+/g, "$1").replace(/[#*_`>|]/g, " ").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s+/g, " ").trim()
   .split(/(?<=[.!?])\s+/).filter((x) => x.length > 3).slice(0, n).join(" ");
-type Op = { ref: string; numero: string; negocio: string; estado: string; cancelable_gratis: boolean };
 const INYECCION = /(ignor[ae]|olvida|ignore|forget|disregard).{0,40}(reglas|instrucciones|rules|instructions)|instrucciones para el asistente|instructions for the assistant|eres el due[ñn]o|you are the owner/i;
 
 export const simulador: Modelo = {
@@ -144,14 +144,10 @@ export const simulador: Modelo = {
         accion: { tipo: "cancel_request", ref: num, pantalla: "" } });
     }
 
-    const ops = (Array.isArray((e.datos as { operaciones?: unknown }).operaciones) ? (e.datos as { operaciones: Op[] }).operaciones : []);
-    if (/\b(cancel|cancela|cancelar|cancelo|anular)/.test(t)) {
-      const p = ops.find((o) => o.cancelable_gratis);
-      if (p) return sal({ ...base, fuente: "cuenta", accion: { tipo: "cancel_request", ref: p.ref, pantalla: "" },
-        respuesta: es ? `Te preparé la cancelación de tu solicitud en ${p.negocio}. Como todavía no está confirmada, no pagas nada.` : `I prepared the cancellation of your request at ${p.negocio}. It isn't confirmed yet, so you pay nothing.` });
-    }
-    if (/\b(ver mi|abre mi|abrir mi|d[oó]nde est[aá] mi|show me my|open my)\b/.test(t) && ops[0])
-      return sal({ ...base, fuente: "cuenta", accion: { tipo: "open_screen", ref: ops[0].ref, pantalla: "operacion" }, respuesta: es ? `Te abro ${ops[0].numero}.` : `Opening ${ops[0].numero}.` });
+    // La operación de la que habla la persona (elegirOperacion, la misma de las reglas fijas): nunca la primera de la lista. Lo demás sigue ingenuo.
+    const ops = (Array.isArray((e.datos as { operaciones?: unknown }).operaciones) ? (e.datos as { operaciones: OpCtx[] }).operaciones : []);
+    const hecho = quiereCancelar(texto) ? respuestaCancelar({ texto, lang: e.lang, ops }) : quiereAbrir(texto) ? respuestaAbrir({ texto, lang: e.lang, ops }) : null;
+    if (hecho) return sal({ ...base, ...hecho });
     if (f0) return sal({ ...base, fuente: f0.fuente, respuesta: frases(f0.texto, 2) || f0.titulo });
     return sal({ ...base, tipo: "no_se", persona: "no_sabe", respuesta: es ? "No tengo ese dato. Si quieres, te paso con una persona." : "I don't have that information. If you want, I'll pass you to a person.",
       chips: es ? ["Con una persona"] : ["Talk to a person"] });
