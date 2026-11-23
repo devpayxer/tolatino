@@ -183,7 +183,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     if (dv) return X(dv, { resumen: (d) => <DlResumen v={dv} desk={d} onAll={irCat} />, tab: (d) => <DlTab v={dv} desk={d} />, riel: <DlRiel v={dv} />, barra: <DlBarra v={dv} />, capas: <DlHoja v={dv} />, pick: (id) => dv.abrir(id), hoy: deTd(dv.td, f.hoy.sub || dv.linea) });
     if (me) return { resumen: (d) => <MeResumen v={me} desk={d} onAll={irCat} />, tab: (d) => <MeMenu v={me} desk={d} />, riel: <MeRiel v={me} onCta={irCat} />, barra: me.mio && me.tot.n ? <MeOrderBar v={me} /> : <MeBarra v={me} onCta={irCat} />, capas: <MeHoja v={me} />,
       top: me.top.slice(0, 3).map((x) => ({ id: x.id, name: me.nm(x.name), meta: me.precio(x).s, price: me.precio(x).l })), n: me.secs.reduce((a, g) => a + g.items.length, 0), pick: (id) => me.abrir(id), hoy: deRiel(me.riel) };
-    if (mn) return { tab: (d) => (d ? <MenuDesk mn={mn} unaColumna={false} /> : <MenuMovil mn={mn} card />), riel: <PedidoTarjeta mn={mn} />,
+    if (mn) return { tab: (d) => (d ? <MenuDesk mn={mn} unaColumna={false} pegaEn={CAB_DESK + NOMBRE_DESK + 76} /> : <MenuMovil mn={mn} card />), riel: <PedidoTarjeta mn={mn} />,
       barra: !mn.has ? (
         <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[calc(22px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px] lg:hidden">
           <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Desde", "From")} ${(mn.m.desde / 100).toFixed(2)}</div><div className="mt-1 truncate font-mono text-[9px] font-bold tracking-[0.08em] text-open-text">{mn.etaCaps}</div></div>
@@ -422,13 +422,13 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const [flechas, setFlechas] = useState({ l: false, r: false });
   const tiraRef = useRef<HTMLDivElement>(null);
   const tira = () => tiraRef.current ? ([...tiraRef.current.querySelectorAll("div")].find((x) => getComputedStyle(x).overflowX === "auto") ?? null) : null;
-  const ir = (id: string) => { const el = document.getElementById(`sec-${id}`); setActiva(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - CAB_DESK - 64, behavior: "smooth" }); };
+  const ir = (id: string) => { const el = document.getElementById(`sec-${id}`); setActiva(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - CAB_DESK - NOMBRE_DESK - 64, behavior: "smooth" }); };
   const mirar = useCallback(() => {
     if (window.innerWidth < 1024) return;
     let a = "res";
-    for (const x of tabs) { const el = document.getElementById(`sec-${x.id}`); if (el && el.getBoundingClientRect().top < CAB_DESK + 120) a = x.id; }
+    for (const x of tabs) { const el = document.getElementById(`sec-${x.id}`); if (el && el.getBoundingClientRect().top < CAB_DESK + NOMBRE_DESK + 120) a = x.id; }
     setActiva(a);
-    const tb = tiraRef.current; setPegada(!!tb && tb.getBoundingClientRect().top <= CAB_DESK + 1);
+    const tb = tiraRef.current; setPegada(!!tb && tb.getBoundingClientRect().top <= CAB_DESK + NOMBRE_DESK + 1);
     const st = tira(); if (st) setFlechas({ l: st.scrollLeft > 4, r: st.scrollLeft + st.clientWidth < st.scrollWidth - 4 });
   }, [tabs.map((x) => x.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
   // Llegas con ?tab=… en la computadora: la página baja hasta esa sección.
@@ -588,6 +588,15 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       {/* ═════════ Computadora ═════════ */}
       {modo === "d" ? (
       <div className="mx-auto hidden max-w-[1240px] px-8 pb-14 lg:block" data-screen-label="APP-NEG-LISTING · desktop">
+        {/* 23 nov (fundador: «verlo y probarlo antes de decidir») · En computadora, al pegarse las pestañas sale encima el nombre con la flecha de regreso,
+            igual que en el teléfono. A PRUEBA: si el fundador no lo quiere, se quita esta franja y NOMBRE_DESK vuelve a 0 (REVISION). */}
+        <div className="sticky z-[21] h-0" style={{ top: CAB_DESK }} data-pieza="nombre-pegado-desk" data-visible={pegada ? "si" : "no"} aria-hidden={!pegada}>
+          <div className="absolute inset-x-0 top-0 flex items-center bg-white transition-opacity duration-150" style={{ height: NOMBRE_DESK, opacity: pegada ? 1 : 0, pointerEvents: pegada ? "auto" : "none" }}>
+            <button type="button" data-pieza="volver-arriba" tabIndex={pegada ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="-ml-3 inline-flex size-11 flex-none items-center justify-center text-ink"><Icon name="chevronLeft" size={20} /></button>
+            <span className="min-w-0 truncate font-display text-[22px] font-extrabold leading-none tracking-[-0.04em] text-ink">{f.nombre}</span>
+            {sello ? <span className="flex-none">{sello}</span> : null}
+          </div>
+        </div>
         <button type="button" onClick={() => router.back()} className="inline-flex min-h-11 items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
         <div className="h-3" />
         <div className="relative grid h-[448px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-rows-2 gap-2 overflow-hidden rounded-[22px]">
@@ -611,7 +620,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             {llamar ? <Button variant="secondary" size="sm" icon="phone" onClick={llamar}>{E2("Llamar", "Call")}</Button> : null}
           </div>
         </div>
-        <div ref={tiraRef} className="sticky z-20" style={{ top: CAB_DESK }}>
+        <div ref={tiraRef} className="sticky z-20" style={{ top: CAB_DESK + NOMBRE_DESK }}>
           <PestanasFicha modo="escritorio" items={tabs} active={activa} onChange={ir} aside={pegada ? { label: `${f.estadoCorto}${resto ? ` · ${resto}` : ""}`.slice(0, 40), dot: stDot, color: stFg } : null} />
           {flechas.l ? <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[76px] items-center bg-[linear-gradient(90deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronLeft" size={34} label={E2("Anteriores", "Previous")} onClick={() => tira()?.scrollBy({ left: -320, behavior: "smooth" })} /></span></div> : null}
           {flechas.r ? <div className="pointer-events-none absolute inset-y-0 right-[420px] flex w-[76px] items-center justify-end bg-[linear-gradient(270deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronRight" size={34} label={E2("Más", "More")} onClick={() => tira()?.scrollBy({ left: 320, behavior: "smooth" })} /></span></div> : null}
@@ -657,7 +666,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             {f.faqs.length || dep ? seccion("faq", E2("Antes de ir", "Before you go"), <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-4">{antes}</div>) : null}
             {f.relacionados.length ? seccion("rel", E2("Relacionados", "Related"), <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-2.5">{relacionados}</div>) : null}
           </div>
-          <aside className="sticky min-w-0 self-start" style={{ top: CAB_DESK + 78 }}>
+          <aside className="sticky min-w-0 self-start" style={{ top: CAB_DESK + NOMBRE_DESK + 78 }}>
             {sv ? <TarjetaCita v={sv} cfg={cfg} es={es} dsk={dsk} setDsk={setDsk} pulso={pulso} staffBook={staffBook} grupos={grupos} onVer={() => ir("cat")} /> : rv && (activa === "rsv" || rv.sel != null || !vende?.riel) ? <RsvRiel v={rv} /> : vende?.riel ?? null}
             {escribir || llegar ? (
               <div className="mt-3 flex gap-2">
@@ -679,7 +688,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 }
 
 /* Alturas de la cabecera de la app (AppShell): las pestañas se pegan justo debajo. */
-const CAB_MOVIL = 57, CAB_DESK = 121, NOMBRE_MOVIL = 44;
+const CAB_MOVIL = 57, CAB_DESK = 121, NOMBRE_MOVIL = 44, NOMBRE_DESK = 52;
 
 /* ── La reserva (Belleza): 1 servicio y con quién → 2 día y hora → Booking (/cita) para Detalles y Revisa y envía ── */
 type Bk = { who: string | null; svc: string | null; opts: Record<string, number>; i: number; h: number | null; step: 1 | 2 };

@@ -6448,4 +6448,9 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 ## Anfitriones del barrio (decisión AO, 23 nov) — aprobado el concepto, los ocho personajes y la marca «Anfitrión/Anfitriona»
 - Se construye como bloque aparte. **Pendiente del fundador cuando esté en el sandbox:** ver cómo habla cada voz, elegir los avatares ilustrados (opciones
   de su cuenta de Creattie, sin gastar descargas hasta que elija), y fijar cuánto publican al día y el costo mensual tope de IA.
+- **Tanda del 23 nov (6):** en el menú, la categoría de turno va al CENTRO de su tira con un deslizamiento suave (frena al final) y el cambio de color
+  es gradual. Qué mirar: Sabor Dominicano › Menú, bajar despacio y rápido.
+- **A PRUEBA, decisión pendiente del fundador («quiero verlo y probarlo antes de decidir»):** en COMPUTADORA, al pegarse las pestañas sale encima el
+  nombre del negocio con la flecha de regreso (como en el teléfono). Si no lo quiere, se quita la franja y `NOMBRE_DESK` vuelve a 0 en `FichaNueva.tsx`.
+  De paso: el índice de categorías del menú en computadora quedaba detrás de las pestañas; ahora se pega debajo y marca la categoría que se está viendo.
 

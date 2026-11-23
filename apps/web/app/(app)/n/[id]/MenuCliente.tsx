@@ -154,14 +154,22 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
     window.addEventListener("scroll", alMover, { passive: true });
     return () => { window.removeEventListener("scroll", alMover); if (pend) cancelAnimationFrame(pend); };
   }, [m]);
-  // La categoría marcada siempre se ve en su tira: se mueve solo la tira (scrollLeft), nunca la página.
+  // 23 nov (fundador: «la de turno centrada, y efectos menos bruscos») · La categoría marcada va al CENTRO de su tira con un deslizamiento propio
+  // (350 ms, frena al final; si llega otra antes de terminar, sigue desde donde va, sin saltos). Se mueve solo la tira (scrollLeft), nunca la página.
+  const anim = useRef(0);
   useEffect(() => {
     if (!cat) return;
     const chip = document.querySelector<HTMLElement>(`[data-mchips] [data-chip="${CSS.escape(cat)}"]`), tira = chip?.parentElement;
     if (!chip || !tira) return;
-    const t = tira.getBoundingClientRect(), b = chip.getBoundingClientRect(), margen = 20;
-    if (b.left < t.left + margen) tira.scrollTo({ left: tira.scrollLeft + b.left - t.left - margen, behavior: "smooth" });
-    else if (b.right > t.right - margen) tira.scrollTo({ left: tira.scrollLeft + b.right - t.right + margen, behavior: "smooth" });
+    const t = tira.getBoundingClientRect(), b = chip.getBoundingClientRect();
+    const de = tira.scrollLeft, a = Math.max(0, Math.min(tira.scrollWidth - tira.clientWidth, de + (b.left + b.width / 2) - (t.left + t.width / 2)));
+    cancelAnimationFrame(anim.current);
+    if (Math.abs(a - de) < 1) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { tira.scrollLeft = a; return; }
+    const t0 = performance.now(), dur = 350;
+    const paso = (ahora: number) => { const p = Math.min(1, (ahora - t0) / dur), e = 1 - Math.pow(1 - p, 3); tira.scrollLeft = de + (a - de) * e; if (p < 1) anim.current = requestAnimationFrame(paso); };
+    anim.current = requestAnimationFrame(paso);
+    return () => cancelAnimationFrame(anim.current);
   }, [cat]);
   if (!m) return null;
   const est = m.estado, canOrd = est.canOrd;
@@ -403,7 +411,7 @@ export function MenuMovil({ mn, card = false }: { mn: Mn; card?: boolean }) {
       {mn.canOrd && <div className="px-5 pt-4"><Modo mn={mn} /></div>}
       {/* 23 nov · En la ficha nueva (card) arriba ya hay pegados el nombre (44) y las pestañas (50): las categorías se pegan debajo, no detrás. */}
       <div data-mchips="" className={`sticky z-[15] mt-3 border-b border-ink/[.07] bg-white py-[11px] ${card ? "top-[151px]" : "top-[57px]"}`}>
-        <div className="hs flex gap-2 overflow-x-auto px-5">{mn.chips.map((c) => <span key={c.k} data-chip={c.k} className="flex flex-none"><Chip variant={c.on ? "selected" : "filter"} onClick={c.onClick}>{c.l}</Chip></span>)}</div>
+        <div className="hs flex gap-2 overflow-x-auto px-5">{mn.chips.map((c) => <span key={c.k} data-chip={c.k} className="flex flex-none [&>*]:transition-colors [&>*]:duration-300 [&>*]:ease-out"><Chip variant={c.on ? "selected" : "filter"} onClick={c.onClick}>{c.l}</Chip></span>)}</div>
       </div>
       {mn.pop.length > 0 && (
         <div data-msec="m-pop" className="pt-[18px]">
@@ -481,12 +489,12 @@ function Totales({ mn, plano }: { mn: Mn; plano?: boolean }) {
 }
 
 /* Ficha · menú · desktop: índice de categorías a la izquierda y los platos en tarjetas. */
-export function MenuDesk({ mn, unaColumna }: { mn: Mn; unaColumna: boolean }) {
+export function MenuDesk({ mn, unaColumna, pegaEn = 20 }: { mn: Mn; unaColumna: boolean; pegaEn?: number }) {
   return (
     <div className="hidden lg:block">
       <Cerrado mn={mn} className="mt-6" />
       <div data-screen-label="Ficha · menú · desktop" className="grid grid-cols-[170px_minmax(0,1fr)] items-start gap-8 pt-6">
-        <div className="sticky top-5 flex flex-col">
+        <div className="sticky flex flex-col" style={{ top: pegaEn }}>{/* 23 nov · En la ficha nueva el índice se pega debajo del nombre y las pestañas (pegaEn), no detrás. */}
           {mn.chips.map((c) => (
             <button key={c.k} type="button" onClick={c.onDesk} className="py-2.5 pl-3.5 text-left text-[13.5px]"
               style={{ borderLeft: `2.5px solid ${c.on ? "var(--tl-ink)" : "transparent"}`, fontWeight: c.on ? 800 : 600, color: c.on ? "var(--tl-ink)" : "rgba(11,14,18,.6)" }}>{c.l}</button>
