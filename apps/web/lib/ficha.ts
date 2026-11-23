@@ -4,7 +4,7 @@ import { centroSQL, PUNTO_PUBLICO, type Punto } from "./punto";
 import { db } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
-import { estado, hora12 } from "./tarjeta";
+import { estado, hora12, restoDelEstado } from "./tarjeta";
 import { licenciasDe, tarjetaLey } from "./licencias";
 import { videosVivos, type VideoVivo } from "./video-negocio";
 import { historiasDeNegocios } from "./hoy";
@@ -100,7 +100,8 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
   const pro = b.plan === "pro", n = b.reviews, dias = horas.rows, ahora = { dow: b.dow, hm: b.hm };
   const urls = fotos.rows.map((x) => x.url);
   const st = estado(dias, ahora, b.open, lang, (b.attrs.tarjeta as { status?: Bi } | undefined)?.status ?? null, b.cerrado_hoy, b.cerrado_temp);
-  const nota = st.text.replace(/^(Abierto|Cerrado|Open|Closed)( · )?/, "");
+  const estadoCorto = b.cerrado_temp ? L("Cerrado temporalmente", "Temporarily closed") : b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open ? L("Abierto", "Open") : L("Cerrado", "Closed");
+  const nota = restoDelEstado(st.text, estadoCorto);
   const iniciales = b.name.split(" ").filter((w) => w.length > 2).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const fecha = `${DIA_LARGO[lang][b.dow]} ${es ? `${b.dia} ${MES.es[b.mes - 1]}` : `${MES.en[b.mes - 1]} ${b.dia}`}`;
   const hoyCorto = `${DIA_CORTO[lang][b.dow]} ${es ? `${b.dia} ${MES.es[b.mes - 1]}` : `${MES.en[b.mes - 1]} ${b.dia}`}`;
@@ -177,7 +178,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     s1Sub: n >= 5 ? `${n} ${L("RESEÑAS", "REVIEWS")}` : n > 0 ? L("RESEÑAS", "REVIEWS") : "EN TO'LATINO",
     metaD: `${n >= 5 ? `★ ${b.rating?.toFixed(1)} (${n} ${L("RESEÑAS", "REVIEWS")})` : n > 0 ? `${n} ${L("RESEÑAS", "REVIEWS")}` : L("NUEVO EN TO'LATINO", "NEW ON TO'LATINO")} · ${b.mi ?? "—"} MI · ${b.ciudad.toUpperCase()}`,
     estado: st.text, // C-006 · el estado junto al nombre dice el porqué cuando no es el horario de siempre (cierre temporal o día especial).
-    estadoCorto: b.cerrado_temp ? L("Cerrado temporalmente", "Temporarily closed") : b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"), estadoNota: nota.toUpperCase(), estadoResto: nota ? `· ${nota}` : "",
+    estadoCorto, estadoNota: nota.toUpperCase(), estadoResto: nota ? `· ${nota}` : "",
     dist: b.mi != null ? `${b.mi} mi` : "—", ciudad: b.ciudad.toUpperCase(),
     oferta: pro ? tj.offer?.[lang] ?? null : null,
     sobre: b.about?.[lang] || b.about?.es || null, desde: b.founded ? L(`EN ${b.ciudad.toUpperCase()} DESDE ${b.founded}`, `IN ${b.ciudad.toUpperCase()} SINCE ${b.founded}`) : null,

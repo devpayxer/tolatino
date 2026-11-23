@@ -634,6 +634,14 @@ for (const src of archivos) {
     t = t.replace("  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: disabled ? undefined : onClick,\n    style: {",
       "  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: disabled ? undefined : onClick,\n    role: \"button\",\n    tabIndex: disabled ? -1 : 0,\n    \"aria-disabled\": disabled ? true : undefined,\n    onKeyDown: disabled || !onClick ? undefined : e => {\n      if (e.key === 'Enter' || e.key === ' ') {\n        e.preventDefault();\n        onClick(e);\n      }\n    },\n    style: {");
     if (t === antes || !t.includes('role: "button"')) throw new Error("parche Button: el origen cambió, revisar");
+    // 23 nov · El botón no pasaba aria-haspopup, aria-expanded ni data-*: «Contactar» (ficha) los ponía a mano con un ref. Ahora deja pasar los atributos
+    // aria-* y data-* (solo esos: ni onClick, ni role, ni style) para que lectores de pantalla y pruebas los lean donde se usa el botón.
+    const sig = "  disabled,\n  onClick,\n  children,\n  style\n}) {\n  const v = V[disabled ? 'disabled' : variant];\n";
+    if (!t.includes(sig)) throw new Error("parche Button (aria/data): el origen cambió, revisar");
+    t = t.replace(sig, "  disabled,\n  onClick,\n  children,\n  style,\n  ...resto\n}) {\n  const v = V[disabled ? 'disabled' : variant];\n  const extra = {};\n  for (const k in resto) if (/^(aria|data)-/.test(k)) extra[k] = resto[k];\n");
+    const ky = "        onClick(e);\n      }\n    },\n    style: {\n      ...S[size],";
+    if (!t.includes(ky)) throw new Error("parche Button (aria/data): el origen cambió, revisar");
+    t = t.replace(ky, "        onClick(e);\n      }\n    },\n    ...extra,\n    style: {\n      ...S[size],");
   }
 
   // IconButton: igual que Button (6 nov, 2p: corazón, compartir y mensaje de la ficha eran <div> mudos). Rol, foco, teclado,

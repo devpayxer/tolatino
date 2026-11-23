@@ -47,6 +47,16 @@ export function estado(dias: Dia[], ahora: { dow: number; hm: string }, abierto:
   return { open: false, text: es ? "Cerrado" : "Closed" };
 }
 
+/* 23 nov · La cabecera de la ficha parte el estado en dos: la palabra (estadoCorto: «Cerrado hoy») y lo que sigue (estadoResto: «abre mañana 9 AM»).
+   El resto es el texto de estado() SIN esa palabra ni sus « · » de los bordes. Antes se quitaba solo «Abierto|Cerrado|Open|Closed», y «Cerrado hoy ·
+   abre mañana 9 AM» quedaba «hoy · abre…» (se leía «Cerrado hoy · hoy · abre…»), y «Cerrado temporalmente» se leía «Cerrado temporalmente ·
+   temporalmente». La palabra solo se quita entera (no «Abiertos los…»). Función pura; la vigila el guardián estadoSinRepetir. */
+export function restoDelEstado(texto: string, corto: string) {
+  const t = texto.trim(), n = corto.length;
+  const resto = n > 0 && t.slice(0, n).toLowerCase() === corto.toLowerCase() && /^(\s|·|$)/.test(t.slice(n)) ? t.slice(n) : t;
+  return resto.replace(/^[\s·]+|[\s·]+$/g, "");
+}
+
 /* Familia de la categoría para el botón principal (prototipo cardItem: b.edu, b.trans, b.tienda…). */
 const EDU = new Set(["NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"]);
 const CITA = new Set(["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA"]);

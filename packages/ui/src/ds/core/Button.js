@@ -73,9 +73,12 @@ function Button({
   disabled,
   onClick,
   children,
-  style
+  style,
+  ...resto
 }) {
   const v = V[disabled ? 'disabled' : variant];
+  const extra = {};
+  for (const k in resto) if (/^(aria|data)-/.test(k)) extra[k] = resto[k];
   return /*#__PURE__*/React.createElement("div", {
     onClick: disabled ? undefined : onClick,
     role: "button",
@@ -87,6 +90,7 @@ function Button({
         onClick(e);
       }
     },
+    ...extra,
     style: {
       ...S[size],
       ...v,

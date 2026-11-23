@@ -2926,13 +2926,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Chromium emulado). Sin barrer: el resto de las ~120 pruebas que visitan `/n/`, un nombre de una sola palabra enorme, la hoja con lector de pantalla.
 - [ ] **→ 9u** · **La ficha Free (`Ficha.tsx`) no sigue la cabecera nueva** (tira de tres celdas y botón grande «Llamar»): igualarla es decisión del
       fundador (REVISION).
-- [ ] **→ 9u** · **Estado «Cerrado hoy · hoy · abre mañana 9 AM»: «hoy» repetido** (`lib/ficha` `estadoCorto` + `estadoResto`).
-- [ ] **→ 9u** · **`Button` portado no pasa `aria-haspopup`/`aria-expanded`** (en «Contactar» se ponen con un `ref`): arreglarlo en `scripts/portar-sistema.mjs`.
+- [x] **→ 9u** · **Estado «Cerrado hoy · hoy · abre mañana 9 AM»: «hoy» repetido** (`lib/ficha` `estadoCorto` + `estadoResto`). (Hecho el 23 nov: la causa era que la ficha quitaba solo «Abierto|Cerrado|Open|Closed» del texto de `estado()`; también leía «Cerrado temporalmente · temporalmente». Ahora lo parte `restoDelEstado` en `lib/tarjeta.ts` (ES y EN); guardián `estadoSinRepetir` con tabla y rejilla, su al revés `alrevesEstadoSinRepetir`, y `fic9cab` mira la cabecera servida.)
+- [x] **→ 9u** · **`Button` portado no pasa `aria-haspopup`/`aria-expanded`** (en «Contactar» se ponen con un `ref`): arreglarlo en `scripts/portar-sistema.mjs`. (Hecho el 23 nov: el parche del Button deja pasar los atributos `aria-*` y `data-*`; regenerado, solo cambia `core/Button.js`; «Contactar» los pone como props y `fic9cab` sigue mirando aria-haspopup y aria-expanded.)
 
 ## El mes del patrocinio no pierde su día (23 nov)
 - [x] **→ 9o** · **(Hecho el 23 nov)** El mes de un patrocinio renovado no pierde su día: `fechasPeriodo` usa `finDePeriodo` con el ancla de la cadena
       (31 ene → 28 feb → 31 mar). Sin migración. Guardián `patrocinioMesSinDeriva`, al revés `alrevesPatrocinioMes` 16/16, `pat002` §7.
-- [ ] **→ 9o** · **Una punta a punta de la cadena mensual de un patrocinio de evento** (hoy la cubren el guardián y las al revés).
+- [x] **→ 9o** · **Una punta a punta de la cadena mensual de un patrocinio de evento** (hoy la cubren el guardián y las al revés). (Hecho el 23 nov: `pat003` sección 10, con fechas fijas: 31 ene → 28 feb → 31 mar → 30 abr, dos cobros, la tercera sin puesto, y una cadena ya corrida que sigue en el 28. Sin cambios en `lib/patrocinio*.ts`.)
 - [ ] **→ 9o** · **«Renovar otro mes» con un fin a más de 60 días: la pantalla no enseña las fechas** (`consultarPuestos` rechaza más allá de
       `patrocinio_dias_adelante`), aunque el cobro sí se hace. Ya pasaba antes de este cambio.
 
