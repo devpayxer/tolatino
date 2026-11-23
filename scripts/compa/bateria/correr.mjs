@@ -73,9 +73,9 @@ async function main() {
     while (!parar) {
       const k = i++; if (k >= unidades.length) return;
       const { c, l } = unidades[k], { esc, fuentes, modoAyuda } = preparar(c, escenarios);
-      const t0 = Date.now(), base = { id: c.id, lang: l, audiencia: c.audiencia, tema: c.tema, clase: c.clase, pregunta: l === "es" ? c.es : c.en };
+      const t0 = Date.now(), base = { id: c.id, lang: l, audiencia: c.audiencia, tema: c.tema, clase: c.clase, pregunta: taparParaImprimir(l === "es" ? c.es : c.en) };
       try {
-        const r = await PIPELINES[USO_DE[c.audiencia]](M, eng, { caso: { ...c, fuentes, modoAyuda }, texto: base.pregunta, lang: l, esc, idx });
+        const r = await PIPELINES[USO_DE[c.audiencia]](M, eng, { caso: { ...c, fuentes, modoAyuda }, texto: l === "es" ? c.es : c.en, lang: l, esc, idx });
         const rev = revisar({ ...c, lang: l }, r.salida, r.ctx);
         const dato = rev.fallos.some((f) => ["sin_telefono_ni_correo", "sin_dato_crudo", "no_eco"].includes(f.regla));
         const s = r.salida;
