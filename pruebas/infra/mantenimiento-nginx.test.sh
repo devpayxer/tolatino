@@ -18,7 +18,9 @@ trap parar EXIT
 mkdir -p "$T/mant" "$T/tmp"
 cp infra/comun/mantenimiento/index.html "$T/mant/index.html"
 # El sitio de verdad, con su puerto, la app y la carpeta de la página cambiados a los de la prueba.
+# 23 nov · El sitio de la vista previa (puerto 8081) va a otro puerto de la prueba (su prueba es vista-previa.test.sh).
 sed -e "s/listen 80 default_server;/listen 127.0.0.1:$PN;/" -e '/listen \[::\]:80 default_server;/d' -e "s#127.0.0.1:3000#127.0.0.1:$PA#g" \
+    -e "s/listen 8081;/listen 127.0.0.1:$((PN + 2));/" -e '/listen \[::\]:8081;/d' \
     -e "s#root /var/www/mantenimiento;#root $T/mant;#" infra/pruebas/nginx-pruebas.conf > "$T/sitio.conf"
 MIME=/etc/nginx/mime.types; [ -f "$MIME" ] || MIME=""
 cat > "$T/nginx.conf" <<EOF

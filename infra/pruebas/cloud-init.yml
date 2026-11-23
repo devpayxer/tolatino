@@ -1,7 +1,8 @@
 #cloud-config
 # 9o · El nacimiento del SANDBOX (tolatino-pruebas-1), en el repo para poder reconstruirlo por la API del proveedor sin tocar nada a mano
 # (fase9-apertura.md §3.2: «y el del sandbox también, que hoy no está»). Es lo que PROGRESS dice que instaló el cloud-init del 5 nov: git, nginx, docker y
-# compose, fail2ban, actualizaciones automáticas (reinicio 04:30), usuario deploy y tolatino-sync cada 60 s contra la rama «pruebas». NO se aplica a la
+# compose, fail2ban, actualizaciones automáticas (reinicio 04:30), usuario deploy y tolatino-sync cada 60 s contra la rama «pruebas»
+# (23 nov: cada 20 s y AccuracySec=1s; deploy.sh ajusta igual la máquina viva con un añadido de systemd). NO se aplica a la
 # máquina viva: solo al reconstruirla (scripts/produccion/maquinas.sh reconstruir-sandbox). La primera corrida de tolatino-sync instala la versión
 # del repo (infra/pruebas/tolatino-sync, con candado) y deploy.sh hace el resto. Sin llave SSH.
 package_update: true
@@ -41,10 +42,11 @@ write_files:
   - path: /etc/systemd/system/tolatino-sync.timer
     content: |
       [Unit]
-      Description=To'Latino · cada 60 s
+      Description=To'Latino · cada 20 s
       [Timer]
       OnBootSec=30
-      OnUnitActiveSec=60
+      OnUnitActiveSec=20
+      AccuracySec=1s
       [Install]
       WantedBy=timers.target
 runcmd:

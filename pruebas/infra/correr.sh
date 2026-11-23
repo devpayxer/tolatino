@@ -38,6 +38,7 @@ seccion "fotos a la medida: el respaldo de las variantes en nginx (sandbox y pro
 seccion "la imagen de la app: su huella (huella-imagen.test.sh)"; bash pruebas/infra/huella-imagen.test.sh || mal=1
 seccion "la imagen de la app: lo que BuildKit de verdad manda (contexto-imagen.test.sh)"; bash pruebas/infra/contexto-imagen.test.sh || mal=1
 seccion "la página de mantenimiento con el nginx del sandbox (mantenimiento-nginx.test.sh)"; bash pruebas/infra/mantenimiento-nginx.test.sh || mal=1
+seccion "el sitio de vista previa del sandbox: compose, su bucle y su nginx (vista-previa.test.sh)"; bash pruebas/infra/vista-previa.test.sh || mal=1
 # 22 nov · Primero el aislamiento (aislar.sh): las que corren un deploy.sh o un tolatino-sync de verdad como root no corren si no está (un revisor
 # corrió una sin él y desplegó de verdad en su máquina).
 AISLADO=0

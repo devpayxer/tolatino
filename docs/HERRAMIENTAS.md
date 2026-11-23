@@ -93,3 +93,11 @@ SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/a�
   aquí tipos, **build de la web**, guardianes y textos, empuja sin esperar la dirigida y al final dice dónde corren DESPUÉS la punta a punta y
   «al revés» (la corrida del push a main), con la lista de pruebas que la dirigida habría propuesto. `--sin-via-rapida` fuerza el camino normal.
   No cambia producción ni la confirmación completa.
+- **23 nov 2026 · #32 Vista previa por rama, hecha propia (sitio de vista previa del sandbox):** en vez de Vercel, el mismo servidor de pruebas
+  corre la web en modo desarrollo (`next dev`, webpack) sobre una copia aparte de UNA rama de trabajo (`infra/pruebas/vista-previa/vista.conf`:
+  `VISTA_RAMA` y el interruptor `VISTA_ENCENDIDA`). Un cambio de pantalla empujado a esa rama se ve en **~15 s** en `http://<IP del sandbox>:8081/`
+  (medido en local: 13 s hasta la copia, 3 s de recompilación), con la marca «VISTA PREVIA» (la pieza Tag del sistema) y noindex, sin construir
+  imagen. Misma base y almacén del sandbox, con su propio usuario de la base que solo lee y escribe filas; **nunca migra ni siembra**: si la rama
+  trae una migración que la base no tiene, se pausa (página de pausa ES/EN) hasta que `pruebas` la despliegue. Acotada (2,5 GB, 1,5 CPU, la
+  primera que mata el kernel; se para mientras el sandbox construye su imagen). Estado en `/estado/vista.txt`. Solo del sandbox (guardián
+  `vistaPreviaAcotada`); nada de ella en producción. Costo: $0. Sin proveedor.

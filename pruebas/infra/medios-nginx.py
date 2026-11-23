@@ -19,6 +19,8 @@ ESPERADAS = ["^~ /medios/privado/", "/medios/", r"~ ^/medios/n/[0-9a-f-]+\.w[0-9
 def bloques(texto):
     """Las ubicaciones del primer server {…}, con su texto completo (llaves balanceadas; ignora comentarios y comillas)."""
     sin_coment = "\n".join(re.sub(r"(^|\s)#.*$", "", l) for l in texto.split("\n"))
+    # 23 nov · Solo el primer server (lo que ya decía): el del sitio de vista previa del sandbox (puerto 8081) repite «/medios/» hacia el primero.
+    sin_coment = re.split(r"\n\s*server\s*\{", sin_coment, maxsplit=1)[0] if re.match(r"\s*server\s*\{", sin_coment) else sin_coment
     out, i = [], 0
     for m in re.finditer(r"(?m)^\s*location\s+([^{]+?)\s*\{", sin_coment):
         if m.start() < i:
