@@ -75,6 +75,7 @@ const casos = [
   ['proveedoresSimuladorAislado', MC, [['fetch(direccionApi(RUTA_MODELOS),', 'fetch(URL_API.replace(/\\/messages$/, "/models?limit=1"),']]],
   ['proveedoresSimuladorAislado', PQ, [['anthropic: !!e.ANTHROPIC_API_BASE,', 'anthropic: false,']]],
   ['proveedoresSimuladorAislado', SIM, [['&& igual(firmaSigV4(req, u, cuerpo, f, ses.get(huella(f.id))), f.firma)', '&& f.firma.length === 64']]],
+  ['proveedoresSimuladorAislado', SIM, [[" && f.firmados === [...new Set(firmados)].sort().join(';')", '']]],
   ['proveedoresSimuladorAislado', SIM, [['else if (!k || !buenas.anthropic.has(huella(k))) { est = 401;', 'else if (!k) { est = 401;']]],
   ['proveedoresSimuladorAislado', SIM, [["u.pathname !== '/v1/models') { est = 404;", "!['/v1/models', '/v1/messages'].includes(u.pathname)) { est = 404;"]]],
 ];

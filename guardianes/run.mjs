@@ -10746,6 +10746,8 @@ const guardianes = {
     }
     if (existsSync(PQ) && !/ses: e\.TOLATINO_CORREO_MODO === "pruebas" \|\| !!e\.SES_API_BASE, anthropic: !!e\.ANTHROPIC_API_BASE,/.test(readFileSync(PQ, "utf8"))) falla(G, PQ, 0, "«Lo que te toca» tiene que saber que SES y el modelo usan el simulador cuando su dirección de pruebas está puesta");
     if (!/&& igual\(firmaSigV4\(req, u, cuerpo, f, ses\.get\(huella\(f\.id\)\)\), f\.firma\)/.test(sim) || !/hmac\(hmac\(hmac\(hmac\(`AWS4\$\{secreto\}`, f\.dia\), f\.region\), f\.servicio\), 'aws4_request'\)/.test(sim)) falla(G, SIM, 0, "el simulador de SES tiene que RECALCULAR la firma SigV4 con la llave secreta esperada y compararla (si no, cualquier firma «sirve»)");
+    // Las cabeceras firmadas, en orden y sin repetir (como AWS): si no, una app que firma en otro orden «sirve» en el simulador y en AWS da 403.
+    if (!/&& f\.firmados === \[\.\.\.new Set\(firmados\)\]\.sort\(\)\.join\(';'\)/.test(sim)) falla(G, SIM, 0, "el simulador de SES exige las cabeceras firmadas en orden y sin repetir (SignedHeaders), como AWS");
     if (!/else if \(!k \|\| !buenas\.anthropic\.has\(huella\(k\)\)\) \{ est = 401;/.test(sim) || !/u\.pathname !== '\/v1\/models'\) \{ est = 404;/.test(sim)) falla(G, SIM, 0, "el simulador del modelo contesta 401 a una llave que no se le dio y solo simula GET /v1/models (los mensajes: modelo-simulador.ts)");
   },
 
