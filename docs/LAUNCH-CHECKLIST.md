@@ -2956,3 +2956,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9o** · **Segunda revisión por otro modelo** de la llave estable de las acciones del servidor (Dockerfile) y del usuario `tolatino_vista` (`encender.sh`).
 - [ ] **→ 9q** · **Nunca visto en el servidor real antes de este despliegue:** la imagen de la vista previa (Alpine + pnpm), BuildKit en el servidor y el puerto 8081 abierto.
 
+## Anfitriones del barrio (decisión AO, 23 nov; hecho por Opus, revisado por Fable)
+- [x] **→ 9u** · **(Hecho el 23 nov)** Primera parte: migración 0215 (tipo de cuenta `host`, lo que la base le niega, catálogo de las 8 voces, tipos,
+      pregunta del día, control por ciudad, registro y tope de costo), motor en el barrido, marca «Anfitrión/Anfitriona» en todo sitio de autor, Super Admin
+      › Contenido › Anfitriones, ayuda ES/EN, línea en la política de IA. Seis guardianes, `alrevesAnfitriones` 22/22, punta a punta `anfAO`.
+- [ ] **→ 9u** · **5b · Noticias por RSS** (RD y países latinos): `com_host_sources`/`com_host_news` con la guarda de red del plan (`docs/diseno/plan/anfitriones.md`) y su simulador.
+- [ ] **→ 9u** · **Avatares ilustrados de las 8 voces** (hoy iniciales): el fundador elige entre opciones de Creattie.
+- [ ] **→ 9q** · **Las respuestas con el modelo real nunca se han visto:** en pruebas siempre responde el simulador o una plantilla. Verlas con una llave real antes de encender en producción.
+- [ ] **→ 9u** · **Las voces cuentan contra el límite diario de una persona** (`com_lim_publicaciones`): con 5 ciudades encendidas una voz puede chocar; decidir si llevan límite propio.
+- [ ] **→ 9u** · **Al encender en el sandbox responden a publicaciones de la semilla de hasta 3 días:** decidir si se encienden en Hazleton desde la semilla.
+- [ ] **→ 9b** · **`anfAO` sin asignar en `pruebas/reparto.json`** (va a la parte más vacía hasta regenerar con duraciones medidas); los tipos «empleos» y «eventos» solo por plantilla y guardián, sin punta a punta.
+

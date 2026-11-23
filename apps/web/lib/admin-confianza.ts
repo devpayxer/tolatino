@@ -17,6 +17,8 @@ import { SANCIONES, type Sancion } from "./sanciones";
    privacidad (solo lectura). Y los casos de la Comunidad para Colas (casoComunidad, casoPersona). Todo por ciudad de quien mira
    (staff.cities; vacío = todas). Nada se borra. */
 const N = (u: string) => `coalesce(nullif(trim(coalesce(${u}.first_name, '') || ' ' || coalesce(${u}.last_name, '')), ''), 'Vecino')`;
+/* AO · El autor de algo de la Comunidad en una cola: una voz de la casa lleva su marca junto al nombre (ES / EN). */
+const NA = (u: string) => `${N(u)} || coalesce((select case h.gender when 'f' then ' · Anfitriona / Host' else ' · Anfitrión / Host' end from com_hosts h where h.user_id = ${u}.id and ${u}.kind = 'host'), '')`;
 const CIUDAD = (col: string, i: number) => `(cardinality($${i}::text[]) = 0 or ${col} = any($${i}::text[]))`;
 
 /* ── Colas: una publicación o un comentario de la Comunidad (sigue visible mientras se decide, salvo auto-ocultado) ── */
@@ -24,10 +26,10 @@ export async function casoComunidad(kind: "com_post" | "com_comment", id: string
   if (!/^\d{1,18}$/.test(id)) return null;
   const x = (await db().query<{ id: string; body: string; status: string; hidden_by: string | null; hidden_reason: string | null; autor: string; quien: string; ciudad: string; post: string; at: string; fotos: string[] }>(
     kind === "com_post"
-      ? `select p.id::text, p.body, p.status, p.hidden_by, p.hidden_reason, p.author_user_id::text as autor, ${N("u")} as quien, p.city_id as ciudad, p.id::text as post, p.created_at as at,
+      ? `select p.id::text, p.body, p.status, p.hidden_by, p.hidden_reason, p.author_user_id::text as autor, ${NA("u")} as quien, p.city_id as ciudad, p.id::text as post, p.created_at as at,
                 coalesce((select array_agg(m.url order by m.sort) from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'visible'), '{}') as fotos
            from com_posts p join users u on u.id = p.author_user_id where p.id = $1::bigint`
-      : `select c.id::text, c.body, c.status, c.hidden_by, c.hidden_reason, c.author_user_id::text as autor, ${N("u")} as quien, c.city_id as ciudad, c.post_id::text as post, c.created_at as at, '{}'::text[] as fotos
+      : `select c.id::text, c.body, c.status, c.hidden_by, c.hidden_reason, c.author_user_id::text as autor, ${NA("u")} as quien, c.city_id as ciudad, c.post_id::text as post, c.created_at as at, '{}'::text[] as fotos
            from com_comments c join users u on u.id = c.author_user_id where c.id = $1::bigint`, [id])).rows[0];
   if (!x) return null;
   const [R, F, H] = await Promise.all([

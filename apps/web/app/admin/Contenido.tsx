@@ -24,8 +24,11 @@ import type { AutoMod } from "@/lib/admin-confianza";
 import { HoyAdmin, OficialAdmin } from "./HoyAdmin";
 import type { HoyAdmin as DatosHoy } from "@/lib/admin-contenido";
 import type { CuentaOficial } from "@/lib/oficial";
+import { AnfitrionesAdmin } from "./AnfitrionesAdmin";
+import type { AnfAdm } from "@/lib/anfitriones";
 import { useAhora } from "@/lib/ahora";
 import { useE } from "./idioma-admin";
+import { marcaAnfitrion } from "@/lib/comunidad-comun";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminList" | "Pager" | "Icon" | "BatchProgress", ComponentType<any>>;
@@ -39,8 +42,8 @@ const hace = (iso: string, ahora: number, E: EF) => { const h = (ahora - new Dat
 type Lote = { total: number; hechos: number; fallos: { texto: string; motivo: string }[]; fin: boolean } | null;
 const TIPOS_L = (E: EF): [FilaCont["k"], string][] => [["pub", E("Publicaciones", "Posts")], ["ccm", E("Comentarios de vecinos", "Neighbor comments")], ["rev", E("Reseñas", "Reviews")], ["nov", E("Novedades", "Updates")], ["cm", E("Comentarios de novedades", "Update comments")], ["vac", E("Vacantes", "Jobs")]];
 
-export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = null, hoy = null, oficial = null, escribeOficial = false, tab }: {
-  d: ListaCont; f: FiltrosCont; porPagina: number; puede: boolean; puedeCom: boolean; editaCom: boolean; auto?: AutoMod | null; hoy?: DatosHoy | null; oficial?: CuentaOficial | null; escribeOficial?: boolean; tab: string;
+export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = null, hoy = null, oficial = null, escribeOficial = false, anf = null, tab }: {
+  d: ListaCont; f: FiltrosCont; porPagina: number; puede: boolean; puedeCom: boolean; editaCom: boolean; auto?: AutoMod | null; hoy?: DatosHoy | null; oficial?: CuentaOficial | null; escribeOficial?: boolean; anf?: AnfAdm | null; tab: string;
 }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, E = useE();
@@ -101,11 +104,12 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
       { k: E("PUBLICACIONES", "POSTS"), v: String(c.pub), s: E(`${c.ccm} comentarios · ${c.rev} reseñas`, `${c.ccm} comments · ${c.rev} reviews`) }, { k: E("REPORTES ABIERTOS", "OPEN REPORTS"), v: String(c.rep), s: c.rep ? "SLA 24 h" : E("al día", "up to date"), bg: c.rep ? "var(--tl-ink)" : undefined, fg: c.rep ? "var(--tl-white)" : undefined, onClick: c.rep ? () => router.push("/admin/colas?cola=rep") : undefined },
       { k: E("HOY EN EL BARRIO", "TODAY IN THE NEIGHBORHOOD"), v: String(c.hoy), s: E("avisos de 24 h", "24 h posts"), onClick: () => router.push("/admin/contenido?tab=hoy") }, { k: E("OCULTOS", "HIDDEN"), v: String(c.hid), s: E("restaurables", "restorable") },
     ] },
-    { type: "tabs", items: ([["all", E("Todo", "All")], ["pub", E("Publicaciones", "Posts")], ["ccm", E("Comentarios", "Comments")], ["hoy", E("Hoy en el barrio", "Today in the neighborhood")], ["rev", E("Reseñas", "Reviews")], ["auto", E("Auto-moderación", "Auto-moderation")], ["off", E("Cuenta oficial", "Official account")]] as const).map(([k, l]) => ({ l, on: tab === k, onClick: () => router.push(k === "all" ? "/admin/contenido" : `/admin/contenido?tab=${k}`) })) },
+    { type: "tabs", items: ([["all", E("Todo", "All")], ["pub", E("Publicaciones", "Posts")], ["ccm", E("Comentarios", "Comments")], ["hoy", E("Hoy en el barrio", "Today in the neighborhood")], ["rev", E("Reseñas", "Reviews")], ["auto", E("Auto-moderación", "Auto-moderation")], ["off", E("Cuenta oficial", "Official account")], ["anf", E("Anfitriones", "Hosts")]] as const).map(([k, l]) => ({ l, on: tab === k, onClick: () => router.push(k === "all" ? "/admin/contenido" : `/admin/contenido?tab=${k}`) })) },
   ];
   if (auto) return <AutoModeracion d={auto} edita={editaCom} arriba={bloques} />;
   if (hoy) return <HoyAdmin d={hoy} puede={puedeCom} arriba={bloques} />;
   if (oficial) return <OficialAdmin d={oficial} escribe={escribeOficial} arriba={bloques} />;
+  if (anf) return <AnfitrionesAdmin d={anf} edita={editaCom} arriba={bloques} />;
   const chip = (l: string, on: boolean, p: Record<string, string | null>) => ({ l, v: on ? "selected" : "filter", onClick: () => ir(p) });
   const despues: Bloque[] = [
     ...(f.tab === "all" ? [{ type: "chips" as const, k: E("TIPO", "TYPE"), items: [chip(E("Todos", "All"), !f.tipo, { tipo: null }), ...TIPOS_L(E).map(([k, l]) => chip(l, f.tipo === k, { tipo: f.tipo === k ? null : k }))] }] : []),
@@ -115,6 +119,8 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
     { type: "chips", k: E("RANGO DEL AUTOR", "AUTHOR RANK"), items: [chip(E("Cualquiera", "Any"), !f.rango, { rk: null }), ...[4, 7, 9].map((n) => chip(E(`${n} o más`, `${n} or more`), f.rango === n, { rk: f.rango === n ? null : String(n) }))] },
     ...(f.autor ? [{ type: "note" as const, tone: "info" as const, icon: "users", t: E("Solo lo de una persona (desde Usuarios 360°).", "Only one person’s (from Users 360°)."), cta: E("Quitar", "Remove"), onCta: () => ir({ autor: null }) }] : []),
   ];
+  // AO · Una voz de la casa: su marca junto al nombre en la lista.
+  const quien = (x: FilaCont) => (x.anf ? `${x.who} · ${marcaAnfitrion(x.anf, !EN)}` : x.who);
   const verHilo = (x: FilaCont) => router.push(x.k === "ccm" ? `/admin/contenido/hilo/${x.extra}?c=${x.id}` : `/admin/contenido/hilo/${x.id}`);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -132,10 +138,10 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
       {!d.filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "chat", t: E("Nada aquí", "Nothing here"), s: E("Nada coincide con ese filtro.", "Nothing matches that filter.") }]} />
         : <A.AdminList rows={d.filas.map((x) => ({
           icon: TIPO[x.k][1], title: x.text || E("(sin texto)", "(no text)"),
-          sub: x.k === "ccm" ? `${TIPO.ccm[0]} · ${x.who}${x.rango && x.rango >= 4 ? ` · ${E("rango", "rank")} ${x.rango}` : ""}${x.bname ? ` · ${E("recomienda", "recommends")} ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at, ahora, E)}${x.hidden && x.why ? ` · ${E("Oculto", "Hidden")}: ${x.why}` : ""}`
-            : x.k === "pub" ? `${PB[x.extra ?? ""] ?? PB.publicacion} · ${x.who}${x.oficial ? "" : x.rango && x.rango >= 4 ? ` · ${E("rango", "rank")} ${x.rango}` : ""}${x.inv ? E(" · invitado", " · guest") : ""}${x.bname ? ` · ${E("recomienda", "recommends")} ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at, ahora, E)}${x.pin ? E(" · Fijada", " · Pinned") : ""}${x.lock ? E(" · Comentarios bloqueados", " · Comments locked") : ""}${x.hidden && x.why ? ` · ${E("Oculta", "Hidden")}: ${x.why}` : ""}`
+          sub: x.k === "ccm" ? `${TIPO.ccm[0]} · ${quien(x)}${!x.anf && x.rango && x.rango >= 4 ? ` · ${E("rango", "rank")} ${x.rango}` : ""}${x.bname ? ` · ${E("recomienda", "recommends")} ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at, ahora, E)}${x.hidden && x.why ? ` · ${E("Oculto", "Hidden")}: ${x.why}` : ""}`
+            : x.k === "pub" ? `${PB[x.extra ?? ""] ?? PB.publicacion} · ${quien(x)}${x.oficial || x.anf ? "" : x.rango && x.rango >= 4 ? ` · ${E("rango", "rank")} ${x.rango}` : ""}${x.inv ? E(" · invitado", " · guest") : ""}${x.bname ? ` · ${E("recomienda", "recommends")} ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at, ahora, E)}${x.pin ? E(" · Fijada", " · Pinned") : ""}${x.lock ? E(" · Comentarios bloqueados", " · Comments locked") : ""}${x.hidden && x.why ? ` · ${E("Oculta", "Hidden")}: ${x.why}` : ""}`
             : `${TIPO[x.k][0]} · ${x.who}${x.who !== x.bname ? ` · ${x.bname}` : ""}${x.k === "rev" && x.extra ? ` · ${x.extra} ★` : x.k === "vac" && x.extra ? ` · ${x.extra}` : x.k === "cm" && x.extra ? ` · ${E("en", "on")} «${x.extra}»` : ""} · ${x.ciudad} · ${x.k === "vac" ? E(`${x.up} solicitudes`, `${x.up} applications`) : `+${x.up}${x.dn ? ` / −${x.dn}` : ""}`} · ${hace(x.at, ahora, E)}${x.hidden && x.why ? ` · ${E("Oculto", "Hidden")}: ${x.why}` : ""}`,
-          tag: x.hidden ? E("OCULTO", "HIDDEN") : x.oficial ? E("CUENTA OFICIAL", "OFFICIAL ACCOUNT") : x.rep ? E(`REPORTADO · ${x.rep}`, `REPORTED · ${x.rep}`) : undefined, tone: x.hidden ? "danger" : "action",
+          tag: x.hidden ? E("OCULTO", "HIDDEN") : x.anf ? marcaAnfitrion(x.anf, !EN)!.toUpperCase() : x.oficial ? E("CUENTA OFICIAL", "OFFICIAL ACCOUNT") : x.rep ? E(`REPORTADO · ${x.rep}`, `REPORTED · ${x.rep}`) : undefined, tone: x.hidden ? "danger" : "action",
           actions: x.k === "ccm" ? [
             ...(puedeCom ? [x.hidden ? { label: E("Restaurar", "Restore"), variant: "secondary", onClick: () => void accion(x, false) } : { label: E("Ocultar", "Hide"), variant: "danger", onClick: () => void accion(x, true) }] : []),
             { label: E("Ver hilo", "View thread"), variant: "secondary", onClick: () => verHilo(x) },

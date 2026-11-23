@@ -8,7 +8,7 @@ import { PanelBloques } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import type { CmAdm, HiloAdmin as H } from "@/lib/admin-contenido";
-import { rango } from "@/lib/comunidad-comun";
+import { marcaAnfitrion, rango } from "@/lib/comunidad-comun";
 import { TEMAS } from "@/lib/comunidad-filtro";
 import { cmComOcultar, pubOcultar } from "./acciones-comunidad";
 import type { ResAdm } from "./acciones-colas";
@@ -47,7 +47,7 @@ export function HiloAdmin({ h, marcado, puede }: { h: H; marcado: string | null;
     return (
       <div key={c.id} id={`c${c.id}`} {...(foco ? { "data-adm-focus": "1" } : {})} style={{ marginLeft: c.parent ? (desk ? 44 : 22) : 0, borderRadius: 20, outline: foco ? "2px solid var(--tl-action)" : "none", outlineOffset: 2, opacity: oc ? 0.75 : 1 }}>
         <D.CommentCard screenLabel="Contenido · hilo · comentario" bg={foco ? "rgba(75,55,245,.05)" : oc ? "rgba(192,57,43,.04)" : "var(--tl-white)"}
-          initials={c.who.slice(0, 1)} avatarColor="var(--tl-desk)" name={c.who} rank={rk(c.rango, en)} time={`${fecha(c.at, en)}${c.parent ? E(" · RESPUESTA", " · REPLY") : ""}`}
+          initials={c.who.slice(0, 1)} avatarColor="var(--tl-desk)" name={c.who} rank={c.anf ? { label: marcaAnfitrion(c.anf, !en)!.toUpperCase(), tone: "ink" } : rk(c.rango, en)} time={`${fecha(c.at, en)}${c.parent ? E(" · RESPUESTA", " · REPLY") : ""}`}
           body={c.body} business={c.biz ? { name: c.biz } : undefined} actions={{ lang: en ? "EN" : "ES", vote: { score: `+${c.up} / −${c.dn}` } }}>
           <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {foco ? <span style={{ font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".12em", color: "var(--tl-action)" }}>{E("COMENTARIO DE ORIGEN", "SOURCE COMMENT")}</span> : null}
@@ -68,7 +68,7 @@ export function HiloAdmin({ h, marcado, puede }: { h: H; marcado: string | null;
       {p.rep ? <D.AdminNote tone="warn" icon="warning" cta={E("Ir al reporte", "Go to the report")} onCta={() => router.push("/admin/colas?cola=rep")}>{E(`Tiene ${p.rep} ${p.rep === 1 ? "reporte abierto" : "reportes abiertos"}. Decídelo en la cola para que el motivo y la apelación sigan el flujo completo.`, `It has ${p.rep} open ${p.rep === 1 ? "report" : "reports"}. Decide it in the queue so the reason and the appeal follow the full flow.`)}</D.AdminNote> : null}
       <div style={{ opacity: oculta ? 0.75 : 1 }}>
         <D.PostCard card screenLabel="Contenido · hilo · publicación" avatarColor={p.oficial ? "var(--tl-ink)" : "var(--tl-desk)"} initials={<span style={{ color: p.oficial ? "var(--tl-white)" : "var(--tl-ink)" }}>{p.who.slice(0, 1)}</span>}
-          name={p.who} rank={p.oficial ? { label: E("Cuenta oficial", "Official account"), shield: null } : p.rango >= 4 ? { label: en ? rango(p.rango).en : rango(p.rango).es, shield: p.rango >= 9 ? "gold" : "gray" } : null}
+          name={p.who} rank={p.anf ? { label: marcaAnfitrion(p.anf, !en)!, shield: null } : p.oficial ? { label: E("Cuenta oficial", "Official account"), shield: null } : p.rango >= 4 ? { label: en ? rango(p.rango).en : rango(p.rango).es, shield: p.rango >= 9 ? "gold" : "gray" } : null}
           time={fecha(p.at, en)} place={p.inv ? E(`Invitado · de ${p.inv}`, `Guest · from ${p.inv}`) : p.ciudad} placeColor={p.inv ? "var(--tl-pro-ink)" : undefined}
           tags={[{ label: TP[p.kind] ?? E("PUBLICACIÓN", "POST"), tone: "neutral" }, ...(tema ? [{ label: tema.toUpperCase(), tone: "neutral" }] : [])]} body={p.body} vote={{ score: p.score, labels: en ? { up: "Upvote", down: "Downvote", comments: "Comments", save: "Save", share: "Share" } : undefined }}>
           {p.fotos.length ? <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `repeat(${Math.min(2, p.fotos.length)},minmax(0,1fr))`, gap: 6, borderRadius: 14, overflow: "hidden" }}>

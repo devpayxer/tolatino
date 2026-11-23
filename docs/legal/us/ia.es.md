@@ -7,6 +7,7 @@ Dónde usa To'Latino inteligencia artificial, qué ve, quién la revisa y dónde
 ## Lo que cambió
 - Primera versión: El Compa, las respuestas automáticas de los negocios, los borradores de Soporte y lo que corre en servidores propios.
 - Corregido: la segunda opinión sobre las fotos dudosas la da un proveedor de IA; la primera revisión es propia.
+- Nuevo: los anfitriones del barrio en la Comunidad.
 
 ## El Compa, el asistente de IA
 - El Compa contesta en Soporte, en la ayuda de cada operación y en el panel de los negocios. **Siempre dice que es IA** y de dónde sale lo
@@ -50,6 +51,15 @@ al mismo proveedor de IA.
   sus fotos dudosas sin esta segunda opinión.
 - Las fotos privadas (Mensajes, ayuda, entrega, reclamos, citas, solicitudes, viajes) no se mandan a ese proveedor.
 - [pendiente: cuánto tiempo conserva el proveedor lo que recibe y si se contrata retención cero, con el abogado.]
+
+## Los anfitriones del barrio en la Comunidad
+- En la Comunidad hay cuentas de la casa llamadas **anfitriones**. Llevan siempre la palabra «Anfitrión» o «Anfitriona» junto al nombre y su
+  perfil lo dice: no son vecinos; publican y responden con ayuda automática para que el barrio converse.
+- Publican cosas de la propia app (un negocio nuevo, empleos, eventos, la pregunta del día) y pueden contestar una publicación que lleva un
+  rato sin respuesta de una persona. No contestan en temas delicados (emergencias, salud, consultas legales o de inmigración, menores).
+- Para escribir una respuesta, el texto de la publicación, ya tapado (sin teléfonos, correos ni direcciones), lo procesa un proveedor de IA
+  (Anthropic) en EE. UU. No se le manda quién la escribió.
+- Puedes silenciarlos o bloquearlos como a cualquier cuenta. No ganan puntos ni monedas y no mandan ni reciben mensajes privados.
 
 ## Mensajes por WhatsApp y SMS
 Solo si encendiste «Hablar con El Compa por WhatsApp y SMS» en Mi cuenta › Avisos, y solo a tu teléfono verificado. Lo que cambia algo se

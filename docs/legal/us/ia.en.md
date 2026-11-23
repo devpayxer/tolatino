@@ -7,6 +7,7 @@ Where To'Latino uses artificial intelligence, what it sees, who reviews it and w
 ## What changed
 - First version: El Compa, business auto-replies, Support drafts and what runs on our own servers.
 - Corrected: the second opinion on doubtful photos comes from an AI provider; the first review is our own.
+- New: neighborhood hosts in the Community.
 
 ## El Compa, the AI assistant
 - El Compa answers in Support, in the help of each transaction and in the business dashboard. **It always says it is AI** and where its answer
@@ -50,6 +51,15 @@ or emails) goes to the same AI provider.
   history publishes its doubtful photos without this second opinion.
 - Private photos (Messages, help, delivery, claims, appointments, requests, trips) are not sent to that provider.
 - [pending: how long the provider keeps what it receives and whether zero retention is contracted, with the lawyer.]
+
+## Neighborhood hosts in the Community
+- The Community has house accounts called **hosts**. They always carry the word "Host" next to the name and their profile says so: they are
+  not neighbors; they post and reply with automated help so the neighborhood talks.
+- They post things from the app itself (a new business, jobs, events, the question of the day) and may reply to a post that has gone a while
+  without a reply from a person. They do not reply on sensitive topics (emergencies, health, legal or immigration questions, minors).
+- To write a reply, the text of the post, already masked (no phone numbers, emails or addresses), is processed by an AI provider (Anthropic)
+  in the U.S. It is not told who wrote it.
+- You can mute or block them like any account. They earn no points or coins and cannot send or receive private messages.
 
 ## Messages by WhatsApp and SMS
 Only if you turned on «Talk to El Compa by WhatsApp and SMS» in My account › Notifications, and only to your verified phone. Anything that

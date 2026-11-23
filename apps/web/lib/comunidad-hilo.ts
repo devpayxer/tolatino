@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { avisar, avisarMuchos } from "./avisos";
 import { db, tx } from "./db";
 import { revisarComentario } from "./comunidad-filtro";
-import { porcentajes, type Pub } from "./comunidad-comun";
+import { nombreConMarca, porcentajes, type Anf, type Pub } from "./comunidad-comun";
 import { ID, ISO, autores, corto, encuesta, esSuNegocio, no, quien, sinBloqueos, type Res } from "./comunidad";
 import { efectoSancion, limiteDia, noPuede, revisarAlEscribir } from "./moderacion";
 import { detectarIdioma, idiomaTexto } from "./traductor";
@@ -23,14 +23,14 @@ type Bi = { es: string; en: string };
 export type OrdenHilo = "top" | "new";
 export const POR_PAGINA_HILO = 20, POR_PAGINA_RESP = 50, DESTACAR_DESDE = 5, UMBRAL_VOTOS = 10;
 
-export type AutorCm = { id: string; nombre: string; ini: string; foto: string | null; rango: number };
+export type AutorCm = { id: string; nombre: string; ini: string; foto: string | null; rango: number; anfitrion: Anf }; // AO · la marca de una voz de la casa
 export type NegocioCm = { id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean };
 export type Cm = {
   id: string; autor: AutorCm; body: string; lang: "es" | "en"; at: string; up: number; dn: number; score: number; miVoto: number; mia: boolean;
   estado: "visible" | "hidden" | "deleted"; negocio: NegocioCm | null; mejor: boolean;
-  respuestas: number; caras: { ini: string; foto: string | null }[]; replyTo: { id: string; nombre: string } | null;
+  respuestas: number; caras: { ini: string; foto: string | null }[]; replyTo: { id: string; nombre: string; anfitrion: Anf } | null;
 };
-export type Rec = { negocio: NegocioCm; votos: number; recomiendan: number; pct: number; comentario: string; quien: string; miVoto: number; mia: boolean };
+export type Rec = { negocio: NegocioCm; votos: number; recomiendan: number; pct: number; comentario: string; quien: string; quienAnf: Anf; miVoto: number; mia: boolean };
 export type Hilo = {
   raices: Cm[]; mas: string | null; destacada: Cm | null; kicker: "mejor" | "top" | null; recs: Rec[]; recsTodos: Rec[];
   puedeMarcar: boolean; resuelta: boolean; cerrados: boolean;
@@ -72,10 +72,10 @@ async function armarCm(filas: FilaCm[], viewer: string, mejor: string | null): P
   return filas.map((f) => {
     const a = A(f.autor), vivo = f.status === "visible";
     return {
-      id: f.id, autor: { id: a.id!, nombre: a.nombre, ini: a.ini, foto: a.foto, rango: a.rango }, body: vivo ? f.body : "", lang: f.lang, at: f.at,
+      id: f.id, autor: { id: a.id!, nombre: a.nombre, ini: a.ini, foto: a.foto, rango: a.rango, anfitrion: a.anfitrion ?? null }, body: vivo ? f.body : "", lang: f.lang, at: f.at,
       up: f.up, dn: f.dn, score: f.score, miVoto: V.get(f.id) ?? 0, mia: f.autor === viewer, estado: f.status, negocio: vivo ? negocioDe(f) : null, mejor: !!mejor && f.id === mejor,
       respuestas: f.vivas ?? 0, caras: (f.caras ?? []).map((u) => { const x = A(u); return { ini: x.ini, foto: x.foto }; }),
-      replyTo: f.reply_to && f.reply_to !== f.parent && RT.get(f.reply_to) ? { id: f.reply_to, nombre: A2(RT.get(f.reply_to)!).nombre } : null,
+      replyTo: f.reply_to && f.reply_to !== f.parent && RT.get(f.reply_to) ? { id: f.reply_to, nombre: A2(RT.get(f.reply_to)!).nombre, anfitrion: A2(RT.get(f.reply_to)!).anfitrion ?? null } : null,
     };
   });
 }
@@ -145,7 +145,7 @@ export async function hilo(postId: string, viewer: string, cursor: string | null
   if (!destacada && primera && top && raices.length > 1 && raices[0]!.estado === "visible" && raices[0]!.up >= DESTACAR_DESDE) { destacada = raices[0]!; kicker = "top"; raices = raices.slice(1); }
   // Recomendados en este hilo (17c): el negocio de la destacada no se repite; el % sale de los votos de los que quedan.
   const AR = await autores(R.rows.map((x) => x.autor));
-  const recsTodos: Rec[] = R.rows.map((x) => ({ negocio: negocioDe(x)!, votos: x.votos, recomiendan: x.recomiendan, pct: 0, comentario: x.id, quien: AR(x.autor).nombre, miVoto: x.mi ?? 0, mia: x.autor === viewer }));
+  const recsTodos: Rec[] = R.rows.map((x) => ({ negocio: negocioDe(x)!, votos: x.votos, recomiendan: x.recomiendan, pct: 0, comentario: x.id, quien: AR(x.autor).nombre, quienAnf: AR(x.autor).anfitrion ?? null, miVoto: x.mi ?? 0, mia: x.autor === viewer }));
   const recs = recsTodos.filter((x) => !(destacada?.negocio && destacada.negocio.id === x.negocio.id));
   const pc = porcentajes(recs.map((x) => x.votos));
   recs.forEach((x, i) => { x.pct = pc[i]!; });
@@ -244,7 +244,7 @@ export async function comentar(userId: string, postId: string, e: EntradaCm): Pr
   if (!r.ok || !("avisos" in r)) return r;
   // Después de guardar (los avisos nunca rompen el comentario).
   const yo = (await autores([userId]))(userId), texto = (e.body.trim() || "").slice(0, 80) || "—";
-  for (const a of r.avisos) await avisar(a.id, a.tpl, { nombre: yo.nombre, texto }, { href: `/comunidad/p/${r.post}#c${r.id}`, ref: ["com_comment", r.id], actor: userId });
+  for (const a of r.avisos) await avisar(a.id, a.tpl, { nombre: nombreConMarca(yo.nombre, yo.anfitrion), texto }, { href: `/comunidad/p/${r.post}#c${r.id}`, ref: ["com_comment", r.id], actor: userId });
   return { ok: true, id: r.id, crisis: r.crisis };
 }
 
@@ -315,7 +315,7 @@ export async function meSirvio(userId: string, postId: string, commentId: string
     const ya = (await db().query(`select 1 from notifications where user_id = $1 and tpl = 'com_best' and ref_kind = 'com_comment' and ref_id = $2`, [r.autor, r.mejor])).rowCount;
     if (!ya) {
       const yo = (await autores([userId]))(userId);
-      await avisar(r.autor, "com_best", { nombre: yo.nombre, texto: r.body.slice(0, 60) }, { href: `/comunidad/p/${postId}#c${r.mejor}`, ref: ["com_comment", r.mejor], actor: userId });
+      await avisar(r.autor, "com_best", { nombre: nombreConMarca(yo.nombre, yo.anfitrion), texto: r.body.slice(0, 60) }, { href: `/comunidad/p/${postId}#c${r.mejor}`, ref: ["com_comment", r.mejor], actor: userId });
     }
   }
   return { ok: true, mejor: r.mejor };

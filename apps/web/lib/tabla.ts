@@ -46,7 +46,7 @@ export async function tabla(viewer: string, ciudad: string, mes: Mes, tab: Pesta
       `select mb.user_id::text as id, u.first_name, u.last_name, u.photo_url, coalesce(cp.rank_level, 1) as rango, z.name as zona, mb.${col} as v,
               exists (select 1 from user_blocks ub where ub.removed_at is null and ub.kind = 'block' and ((ub.user_id = $3::uuid and ub.target_user_id = mb.user_id) or (ub.user_id = mb.user_id and ub.target_user_id = $3::uuid))) as oculto
          from monthly_boards mb join users u on u.id = mb.user_id left join community_profiles cp on cp.user_id = mb.user_id left join zones z on z.city_id = u.home_city_id and z.id = u.zone_id
-        where ${w.join(" and ")} order by mb.${col} desc, mb.user_id limit ${POR_PAGINA_TABLA + 1}`, v),
+        where u.kind = 'person' and ${w.join(" and ")} order by mb.${col} desc, mb.user_id limit ${POR_PAGINA_TABLA + 1}`, v), // AO · una voz de la casa nunca sale en la Tabla (la base tampoco la deja entrar)
     // Mi lugar: los que van delante (con el mismo orden de la tabla) + 1. 9t: «los de más puntos» es la suma del histograma que mantiene la base
     // (monthly_board_hist, 0188: cuántos tienen cada valor), no una cuenta del índice (86 ms con 580 mil vecinos en una ciudad); los del mismo
     // valor antes en el orden se siguen contando en el índice de la Tabla.

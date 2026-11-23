@@ -12,8 +12,10 @@ import { enviarSms } from "./sms";
    encola en la misma vuelta, sin red; lo manda el trabajador). Las mismas reglas: lo apagado no va, de noche solo lo crítico (y la solicitud
    al negocio). El SMS sigue el sms_mode de la plantilla: «siempre» (solo el grupo crit, como hoy), «sin_push» (solo si la persona no tiene
    ningún teléfono con avisos para esa plantilla, o el push no llegó: queda «respaldo» y lo suelta smsRespaldo) o «nunca». Guardián smsSoloRespaldo. */
-type Vars = Record<string, string | number>;
-const llenar = (t: string, v: Vars) => t.replace(/\{(\w+)\}/g, (_, k: string) => (v[k] != null ? String(v[k]) : `{${k}}`));
+/* AO · Un valor puede venir en los dos idiomas ({ es, en }): sale el de quien lo recibe (la marca «Anfitriona» · «Host» junto al nombre de una voz). */
+type Vars = Record<string, string | number | { es: string; en: string }>;
+const llenar = (t: string, v: Vars) => t.replace(/\{(\w+)\}/g, (_, k: string) => { const x = v[k]; return x == null ? `{${k}}` : typeof x === "object" ? x.es : String(x); });
+const porIdioma = (v: Vars, es: boolean): Vars => Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === "object" && x ? (es ? x.es : x.en) : x]));
 
 /* 9l · El SMS de un aviso sale por EL ÚNICO CAMINO (lib/sms: sms_outbox con reintentos y estado de entrega; guardián smsConReintento). Aquí solo se
    arma el texto («To'Latino: …» y, si la plantilla lo pide, el enlace de seguimiento) y se anota el SMS en su aviso. En el sandbox el aviso sigue
@@ -47,6 +49,7 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
          from notif_templates tp, users u left join cities c on c.id = u.home_city_id where tp.key = $1 and u.id = $2`, [tpl, userId, await canales()])).rows[0];
     if (!r) return;
     // 6j · El título también lleva las variables («Tus boletos para {evento}» salía con la llave escrita): guardián avisoTituloLleno.
+    v = porIdioma(v, r.lang !== "en"); // AO · los valores en dos idiomas, en el de quien lo recibe
     const es = r.lang !== "en", title = llenar(es ? r.title.es : r.title.en, v).slice(0, 120), body = llenar(es ? r.body.es : r.body.en, v).slice(0, 480);
     const apagado = r.pref ? r.prefs?.[r.pref] === false : false, quiet = r.grp !== "crit" && tpl !== "biz_req" && r.silencio && r.prefs?.quiet !== false;
     // 5i · Grupo Comunidad (Mi cuenta › Avisos): apagado = no llega (no tiene SMS); «Un resumen al día» = se guarda para el resumen
@@ -103,7 +106,7 @@ export async function avisarTelefono(tel: string, tpl: string, v: Vars, o: { hre
          from notif_templates t where t.key = $1`, [tpl, o.city ?? null])).rows[0];
     if (!t?.sms) return;
     const { cifrar, huella } = await import("./cifrado");
-    const body = llenar(o.en ? t.body.en : t.body.es, v).slice(0, 480);
+    const body = llenar(o.en ? t.body.en : t.body.es, porIdioma(v, !o.en)).slice(0, 480);
     const st0 = t.grp !== "crit" && t.silencio ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
     const st = st0 !== "silencio" && (await enBajaSms(tel)) ? "baja" : st0;   // 7h · STOP al número de To'Latino
     const id = (await db().query<{ id: string }>(`insert into phone_messages (phone_enc, phone_hash, city_id, tpl, body, ref_kind, ref_id, sms_status) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id::text`,

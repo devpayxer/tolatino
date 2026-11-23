@@ -31,7 +31,21 @@ export function hace(iso: string, es: boolean, ahora = Date.now()) {
   return `${Math.round(h / 24)} ${es ? "días" : "days"}`;
 }
 
-export type Autor = { id: string | null; nombre: string; ini: string; foto: string | null; rango: number; oficial: boolean };
+/* AO · Anfitriones del barrio: voces de la casa (users.kind = 'host', persona en com_hosts). SIEMPRE marcadas junto al nombre, en toda superficie
+   que pinta al autor de algo de la Comunidad (guardián anfitrionSiempreMarcado): `anfitrion` = la marca de la voz ('m' Anfitrión · 'f' Anfitriona;
+   «Host» en inglés) o null si es una persona. Nunca se pinta su rango: en su lugar va la marca. */
+export type Anf = "m" | "f" | null;
+export const MARCA_ANF: Record<"m" | "f", Bi> = { m: { es: "Anfitrión", en: "Host" }, f: { es: "Anfitriona", en: "Host" } };
+export const marcaAnfitrion = (a: Anf | undefined, es: boolean): string | null => (a ? (es ? MARCA_ANF[a].es : MARCA_ANF[a].en) : null);
+/* El nombre con su marca, para un texto corrido (avisos, la lista del Super Admin): «Doña Milagros · Anfitriona». */
+export const nombreConMarca = (nombre: string, a: Anf | undefined): Bi =>
+  a ? { es: `${nombre} · ${MARCA_ANF[a].es}`, en: `${nombre} · ${MARCA_ANF[a].en}` } : { es: nombre, en: nombre };
+/* Lo que dice el perfil de una voz (fijo; no lo cambia nadie). */
+export const PERFIL_ANF: Bi = {
+  es: "Es una voz de la casa de To'Latino: publica y responde con ayuda automática para que el barrio converse. No es un vecino. Puedes silenciarla o bloquearla como a cualquiera.",
+  en: "This is a To'Latino house voice: it posts and replies with automated help so the neighborhood gets talking. It is not a neighbor. You can mute or block it like anyone else.",
+};
+export type Autor = { id: string | null; nombre: string; ini: string; foto: string | null; rango: number; oficial: boolean; anfitrion?: Anf };
 export type Pub = {
   id: string; kind: keyof typeof TIPO; topic: string | null; body: string; lang: "es" | "en"; at: string; editada: boolean; mia: boolean; editarHasta: string | null;
   fijada: boolean; salud: boolean; resuelta: boolean; cerrados: boolean; estado: "visible" | "hidden" | "deleted"; motivo: string | null;

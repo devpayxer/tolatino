@@ -4,7 +4,7 @@ import { db, tx } from "./db";
 import { centroSQL, type Punto } from "./punto";
 import { DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, diasEncuesta, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
 import { cfgSql, valor } from "./config";
-import { porcentajes, type Autor, type Filtros, type Pub } from "./comunidad-comun";
+import { porcentajes, type Anf, type Autor, type Filtros, type Pub } from "./comunidad-comun";
 import { efectoSancion, limiteDia, noPuede, revisarAlEscribir, revisarFotosCom } from "./moderacion";
 import { detectarIdioma, idiomaTexto } from "./traductor";
 
@@ -57,12 +57,13 @@ export const corto = (f: string | null, l: string | null) => `${(f ?? "").trim()
 export async function autores(ids: string[]) {
   const ahora = Date.now(), faltan = [...new Set(ids)].filter((id) => !(cache.get(id) && ahora - cache.get(id)!.at < 60_000));
   if (faltan.length) {
-    const r = await db().query<{ id: string; first_name: string | null; last_name: string | null; photo_url: string | null; rango: number; ciudad: string | null }>(
-      `select u.id::text, u.first_name, u.last_name, u.photo_url, coalesce(cp.rank_level, 1) as rango, u.home_city_id as ciudad
-         from users u left join community_profiles cp on cp.user_id = u.id where u.id = any($1::uuid[])`, [faltan]);
-    for (const x of r.rows) { const n = corto(x.first_name, x.last_name); cache.set(x.id, { at: ahora, a: { id: x.id, nombre: n, ini: ini(n), foto: x.photo_url, rango: x.rango, oficial: false, ciudad: x.ciudad } }); }
+    // AO · La marca de un anfitrión sale de la base con el autor (com_hosts.gender), nunca de su nombre.
+    const r = await db().query<{ id: string; first_name: string | null; last_name: string | null; photo_url: string | null; rango: number; ciudad: string | null; anf: Anf }>(
+      `select u.id::text, u.first_name, u.last_name, u.photo_url, coalesce(cp.rank_level, 1) as rango, u.home_city_id as ciudad, h.gender as anf
+         from users u left join community_profiles cp on cp.user_id = u.id left join com_hosts h on h.user_id = u.id and u.kind = 'host' where u.id = any($1::uuid[])`, [faltan]);
+    for (const x of r.rows) { const n = corto(x.first_name, x.last_name); cache.set(x.id, { at: ahora, a: { id: x.id, nombre: n, ini: ini(n), foto: x.photo_url, rango: x.anf ? 1 : x.rango, oficial: false, anfitrion: x.anf ?? null, ciudad: x.ciudad } }); }
   }
-  return (id: string) => cache.get(id)?.a ?? { id, nombre: "Vecino", ini: "V", foto: null, rango: 1, oficial: false, ciudad: null };
+  return (id: string) => cache.get(id)?.a ?? { id, nombre: "Vecino", ini: "V", foto: null, rango: 1, oficial: false, anfitrion: null, ciudad: null };
 }
 
 /* Columnas de una publicación para la pantalla (una fila; negocio, barrio, invitado y fotos en la misma consulta). */

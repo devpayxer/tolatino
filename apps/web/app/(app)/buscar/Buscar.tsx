@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { Tarjeta } from "@/lib/tarjeta";
 import { avisameBusqueda } from "../acciones";
 import { LINEA_FIJA } from "@/lib/comunidad-filtro";
+import { marcaAnfitrion } from "@/lib/comunidad-comun";
 import { vacantesAvisame, vecinosMas } from "./acciones";
 import { useVoz } from "./voz";
 import type { FilaVecino } from "./vecinos";
@@ -127,7 +128,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     <button key={x.id} type="button" onClick={() => router.push(`/comunidad/p/${x.id}`)} className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-3.5 text-left">
       <span className="flex items-center gap-[9px]">
         <span className="grid size-7 flex-none place-items-center rounded-full bg-desk bg-cover bg-center text-[10px] font-extrabold" style={x.foto ? { backgroundImage: fotoFondo(x.foto, 28) } : undefined}>{x.foto ? "" : x.ini}</span>
-        <span className="text-[13px] font-bold">{x.who}{x.oficial ? <span className="ml-1.5 font-mono text-[9.5px] font-bold tracking-[0.08em] text-action">{E2("CUENTA OFICIAL", "OFFICIAL")}</span> : null}</span>
+        <span className="text-[13px] font-bold">{x.who}{x.anfitrion ? <span data-anfitrion="1" className="ml-1.5 font-mono text-[9.5px] font-bold tracking-[0.08em] text-action">{marcaAnfitrion(x.anfitrion, es)!.toUpperCase()}</span> : x.oficial ? <span className="ml-1.5 font-mono text-[9.5px] font-bold tracking-[0.08em] text-action">{E2("CUENTA OFICIAL", "OFFICIAL")}</span> : null}</span>
         <span className="font-mono text-[10px] font-semibold text-ink/60">{x.when}</span>
       </span>
       <span className="text-[13.5px] font-medium leading-[1.55] text-ink/80" style={{ display: "-webkit-box", WebkitLineClamp: lineas, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{x.parts[0]}<span className="font-extrabold text-ink">{x.parts[1]}</span>{x.parts[2]}</span>

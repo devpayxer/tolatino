@@ -16612,6 +16612,130 @@ const guardianes = {
     }
   },
 
+
+  /* ── AO · Anfitriones del barrio (las voces de la casa) ── */
+  /* AO. Una voz de la casa SIEMPRE lleva su marca junto al nombre, en todo sitio que pinta al autor de algo de la Comunidad. La marca sale de la
+     base (com_hosts.gender), nunca de un nombre: autores() la trae con el autor; el perfil, las listas, Buscar, el Super Admin y las colas también.
+     Por clase: un archivo de la app que pinta a un autor de la Comunidad (el nombre de un Autor, un AutorCm, una Persona, un HalladoVecino, la fila
+     de Contenido o el hilo del admin) tiene que pasar por marcaAnfitrion(); los sitios conocidos se nombran para que ninguno se caiga de la lista. */
+  anfitrionSiempreMarcado() {
+    const G = "anfitrionSiempreMarcado", CC = "apps/web/lib/comunidad-comun.ts", C = "apps/web/lib/comunidad.ts";
+    if (!existsSync(CC) || !existsSync(C)) return falla(G, CC, 0, "falta lib/comunidad-comun.ts o lib/comunidad.ts");
+    const cc = sinComent(CC);
+    if (!/export const MARCA_ANF: Record<"m" \| "f", Bi> = \{ m: \{ es: "Anfitrión", en: "Host" \}, f: \{ es: "Anfitriona", en: "Host" \} \};/.test(cc)) falla(G, CC, 0, "la marca es «Anfitrión» / «Anfitriona» (ES) y «Host» (EN), decidida por el fundador");
+    if (!/export type Autor = \{[^}]*\banfitrion\?: Anf\b/.test(cc)) falla(G, CC, 0, "el Autor de la Comunidad lleva su marca de anfitrión");
+    const au = cuerpoFn(sinComent(C), "autores");
+    if (!/left join com_hosts h on h\.user_id = u\.id and u\.kind = 'host'/.test(au) || !/anfitrion: x\.anf \?\? null/.test(au)) falla(G, C, 0, "autores() trae la marca de la base (com_hosts) con cada autor");
+    // Lo que arma un autor en el servidor trae la marca de la base.
+    const LIB = { "apps/web/lib/comunidad-hilo.ts": /anfitrion: a\.anfitrion \?\? null/, "apps/web/lib/vecinos.ts": /from com_hosts h where h\.user_id = \$\{u\}\.id and \$\{u\}\.kind = 'host'\) as anf/,
+      "apps/web/lib/comunidad-portada.ts": /anfitrion: a\?\.anfitrion \?\? null/, "apps/web/lib/admin-contenido.ts": /select h\.gender from com_hosts h where h\.user_id::text = y\.uid\) as anf/,
+      "apps/web/lib/admin-confianza.ts": /\$\{NA\("u"\)\} as quien/ };
+    for (const [f, re] of Object.entries(LIB)) if (!existsSync(f) || !re.test(sinComent(f))) falla(G, f, 0, "este sitio arma un autor de la Comunidad sin su marca de anfitrión (com_hosts)");
+    // Los avisos llevan la marca junto al nombre de quien los provoca (en el idioma de quien los recibe).
+    const H = "apps/web/lib/comunidad-hilo.ts";
+    if (existsSync(H) && (sinComent(H).match(/\{ nombre: nombreConMarca\(yo\.nombre, yo\.anfitrion\)/g) ?? []).length < 2) falla(G, H, 0, "el aviso de un comentario o de «Me sirvió» pinta el nombre sin la marca de anfitrión");
+    // Por clase: cada pantalla que pinta a un autor de la Comunidad usa marcaAnfitrion().
+    const SITIOS = ["apps/web/app/(app)/comunidad/Tarjeta.tsx", "apps/web/app/(app)/comunidad/p/[id]/Hilo.tsx", "apps/web/app/(app)/comunidad/v/[id]/Vecino.tsx",
+      "apps/web/app/(app)/cuenta/vecinos/Vecinos.tsx", "apps/web/app/(app)/buscar/Buscar.tsx", "apps/web/app/admin/Contenido.tsx", "apps/web/app/admin/HiloAdmin.tsx"];
+    for (const f of SITIOS) if (!existsSync(f)) falla(G, f, 0, "falta un sitio que pinta autores de la Comunidad");
+    for (const x of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue;
+      const t = sinComent(x);
+      const pinta = SITIOS.includes(x) || /\b(?:c|p|r|x|a|pub|T)\.autor\.nombre\b|\bname=\{(?:c|p)\.who\}|\$\{x\.who\}|\{x\.who\}/.test(t);
+      const deComunidad = SITIOS.includes(x) || /from "@\/lib\/(comunidad|comunidad-comun|comunidad-hilo|vecinos|comunidad-portada|admin-contenido)"|from "\.\/vecinos"|\bPub\b|\bCm\b/.test(t);
+      if (pinta && deComunidad && !/\bmarcaAnfitrion\(/.test(t)) falla(G, x, 0, "pinta al autor de algo de la Comunidad sin marcaAnfitrion(): una voz de la casa saldría como un vecino común");
+    }
+    // Cada sitio conocido pinta la marca donde va (no basta con calcularla).
+    const DONDE = { "apps/web/app/(app)/comunidad/Tarjeta.tsx": /rk = anf \? \{ label: anf, shield: null \}/, "apps/web/app/(app)/buscar/Buscar.tsx": /\{x\.anfitrion \? <span data-anfitrion="1"[^>]*>\{marcaAnfitrion\(x\.anfitrion, es\)/,
+      "apps/web/app/(app)/cuenta/vecinos/Vecinos.tsx": /sub = \[anf \? anf\.toUpperCase\(\)/, "apps/web/app/admin/Contenido.tsx": /tag: x\.hidden \? E\("OCULTO", "HIDDEN"\) : x\.anf \? marcaAnfitrion\(x\.anf, !EN\)/,
+      "apps/web/app/admin/HiloAdmin.tsx": /rank=\{c\.anf \? \{ label: marcaAnfitrion\(c\.anf, !en\)/ };
+    for (const [f, re] of Object.entries(DONDE)) if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "este sitio calcula la marca de anfitrión pero no la pinta junto al nombre");
+    // El perfil de una voz: el texto fijo y sin «Mensaje».
+    const V = "apps/web/app/(app)/comunidad/v/[id]/Vecino.tsx";
+    if (existsSync(V)) { const v = sinComent(V); if (!/\{anf && <div data-screen-label="APP-COM-VECINO · voz de la casa"[^>]*>\{es \? PERFIL_ANF\.es : PERFIL_ANF\.en\}/.test(v) || !/\{!anf && <div style=\{\{ display: "flex", flex: 1 \}\}><Button variant="secondary" size="md" block icon="chat"/.test(v)) falla(G, V, 0, "el perfil de una voz dice que es una voz de la casa y no ofrece «Mensaje»"); }
+  },
+
+  /* AO. Un anfitrión no gana puntos, monedas, rangos ni sale en la Tabla, no manda ni recibe mensajes privados y nunca entra: lo cierra la base
+     (triggers «anf_» que corren antes que los demás) y lo repite el servidor donde la persona lo vería (Tabla, Mensajes, el perfil). */
+  anfitrionSinPuntosNiMensajes() {
+    const G = "anfitrionSinPuntosNiMensajes", M = "packages/db/migrations/0215_anfitriones.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de los anfitriones");
+    const m = readFileSync(M, "utf8");
+    if (!/check \(kind <> 'host' or \(phone is null and email is null and phone_verified_at is null and not founder\)\)/.test(m)) falla(G, M, 0, "un anfitrión no tiene teléfono ni correo (nunca entra)");
+    if (!/if new\.kind is distinct from old\.kind then raise exception/.test(m)) falla(G, M, 0, "el tipo de una cuenta no cambia");
+    for (const t of ["sessions", "staff_members", "points_entries", "coin_entries", "monthly_boards", "user_badges", "dm_threads"])
+      if (!new RegExp(`create trigger anf_${t}_sin_anfitrion before insert on ${t} for each row execute function anf_no_aplica\\(\\);`).test(m)) falla(G, M, 0, `${t}: la base debe rechazar a un anfitrión (trigger anf_${t}_sin_anfitrion)`);
+    if (!/if anf_es\(u\) or \(v is not null and anf_es\(v\)\) then\s+raise exception 'anfitrion_no_aplica/.test(m)) falla(G, M, 0, "anf_no_aplica() rechaza a un anfitrión");
+    if (!/if anf_es\(new\.user_id\) then new\.rank_level := 1; end if;/.test(m)) falla(G, M, 0, "el rango de un anfitrión queda en 1");
+    const T = "apps/web/lib/tabla.ts", MV = "apps/web/lib/mensajes-vecinos.ts", VE = "apps/web/lib/vecinos.ts";
+    if (existsSync(T) && !/where u\.kind = 'person' and \$\{w\.join\(" and "\)\} order by mb\.\$\{col\} desc/.test(sinComent(T))) falla(G, T, 0, "la Tabla del Barrio no deja fuera a las voces de la casa");
+    if (existsSync(MV) && !/kind = 'host'`, \[\[viewer, o\.id\]\]\)\)\.rowCount\) return no\("Las voces de la casa no reciben mensajes\."/.test(sinComent(MV))) falla(G, MV, 0, "Mensajes deja escribirle a una voz de la casa");
+    if (existsSync(VE) && !/puedeEscribir: !yo && !r\.anf && /.test(sinComent(VE))) falla(G, VE, 0, "el perfil de una voz ofrece escribirle");
+  },
+
+  /* AO. El motor de los anfitriones: fuera de producción SIEMPRE el simulador (o las reglas), nunca el proveedor real, aunque haya llave en el sandbox. */
+  anfitrionesNuncaProveedorEnPruebas() {
+    const G = "anfitrionesNuncaProveedorEnPruebas", A = "apps/web/lib/compa/anfitriones.ts";
+    if (!existsSync(A)) return falla(G, A, 0, "falta el motor de los anfitriones");
+    const t = sinComent(A), mf = cuerpoFn(t, "motorAnfitriones"), r = cuerpoFn(t, "responderUno");
+    if (!/if \(ENTORNO !== "produccion"\) return m === "reglas" \? "reglas" : "simulador";/.test(mf)) falla(G, A, 0, "motorAnfitriones(): fuera de producción nunca el proveedor real");
+    if (!/const motor = motorAnfitriones\(\), m = await modelo\(motor\);/.test(r) || /motorActivo\(\)/.test(r)) falla(G, A, 0, "responderUno() elige el motor con motorAnfitriones() (nunca motorActivo() directo)");
+    if (!/const modeloId = motor === "simulador" \? "simulador" : await modeloDe\("neighbor"\);/.test(r)) falla(G, A, 0, "con el simulador, el modelo es «simulador»");
+  },
+
+  /* AO. Los anfitriones nunca están en la ruta de nadie: el motor solo lo llama el barrido central (aparte, con su tarea), y ninguna pantalla ni acción
+     lo importa. El Super Admin lee y escribe por lib/anfitriones.ts, que no toca el modelo. */
+  anfitrionesSoloBarrido() {
+    const G = "anfitrionesSoloBarrido", BR = "apps/web/lib/barrido.ts", AD = "apps/web/lib/anfitriones.ts", MO = "apps/web/lib/compa/anfitriones.ts";
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === BR || x === MO) continue;
+      const t = sinComent(x).replace(/import\s+type\s+\{[^}]*\}\s+from\s+"[^"]+";/g, "");
+      if (/(?:from |import\()"(?:@\/lib\/compa\/|\.\.?\/(?:\.\.\/)*compa\/|\.\/)anfitriones"/.test(t) || /\bbarrerAnfitriones\(|\bresponderUno\(/.test(t)) falla(G, x, 0, "solo el barrido central llama al motor de los anfitriones");
+    }
+    if (existsSync(BR) && !/\["anfitriones", async \(\) => \(await import\("\.\/compa\/anfitriones"\)\)\.barrerAnfitriones\(\)\]/.test(sinComent(BR))) falla(G, BR, 0, "el barrido central corre a los anfitriones como una tarea aparte");
+    if (existsSync(AD) && /from "\.\/compa\//.test(sinComent(AD))) falla(G, AD, 0, "lib/anfitriones.ts (el Super Admin) no toca El Compa ni el modelo");
+  },
+
+  /* AO. Apagados de fábrica (también en producción): las voces, los tipos de publicación y las ciudades nacen apagados, la pausa en 0, y ninguna
+     migración los enciende. Encenderlos es del Super Admin (auditado) o de una prueba en su base. */
+  anfitrionesApagadosDeFabrica() {
+    const G = "anfitrionesApagadosDeFabrica", M = "packages/db/migrations/0215_anfitriones.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de los anfitriones");
+    const m = readFileSync(M, "utf8");
+    if (!/create table if not exists com_hosts \([\s\S]*?\n  active\s+boolean not null default false,/.test(m)) falla(G, M, 0, "las voces nacen apagadas");
+    if (!/create table if not exists com_host_kinds \([\s\S]*?\n  active\s+boolean not null default false,/.test(m)) falla(G, M, 0, "los tipos de publicación nacen apagados");
+    if (!/create table if not exists com_host_cities \([\s\S]*?\n  mode\s+text not null default 'off'/.test(m)) falla(G, M, 0, "las ciudades nacen con los anfitriones apagados");
+    if (!/\('anf_pausa', 0, 1, 0,/.test(m)) falla(G, M, 0, "«Pausar a todos» de fábrica en 0 y entre 0 y 1");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y >= "0215")) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/--.*$/gm, "");
+      if (/update com_hosts set[^;]*active = true|update com_host_kinds set[^;]*active = true|update com_host_cities set[^;]*mode = '(auto|manual)'|insert into com_host_cities[^;]*'(auto|manual)'/i.test(t)
+        || /insert into com_hosts \([^)]*\bactive\b/.test(t) || /insert into com_host_kinds \([^)]*\bactive\b/.test(t)) falla(G, `packages/db/migrations/${x}`, 0, "una migración enciende a los anfitriones (corre también en producción)");
+    }
+  },
+
+  /* AO. Todo lo que escribe una voz pasa por la MISMA puerta que un vecino (publicar() y comentar(): filtro, sanción, límites y moderación al
+     escribir), más el filtro propio (sin datos, precios, enlaces, política ni religión, ni un negocio que no venga de la app) y el silencio en
+     los temas delicados ANTES de gastar en el modelo. El motor no escribe en com_posts ni en com_comments por su cuenta. */
+  anfitrionFiltroPropio() {
+    const G = "anfitrionFiltroPropio", A = "apps/web/lib/compa/anfitriones.ts", F = "apps/web/lib/anfitriones-comun.ts";
+    if (!existsSync(A) || !existsSync(F)) return falla(G, A, 0, "falta el motor o lib/anfitriones-comun.ts");
+    const t = sinComent(A), r = cuerpoFn(t, "responderUno"), p = cuerpoFn(t, "publicarPropio");
+    if (/insert into com_(posts|comments)|update com_(posts|comments)/.test(t)) falla(G, A, 0, "el motor escribe en la Comunidad por su cuenta (debe pasar por publicar() y comentar())");
+    const iD = r.search(/const d = delicado\(x\.body/), iG = r.search(/await gastar\(/), iF = r.search(/const f = filtroAnfitrion\(s\.texto/), iC = r.search(/await comentar\(voz\.id, x\.post/);
+    if (iD < 0 || iG < 0 || iD > iG) falla(G, A, 0, "responderUno(): el tema delicado se mira ANTES de gastar en el modelo");
+    if (iF < 0 || iC < 0 || iF > iC) falla(G, A, 0, "responderUno(): el filtro propio va antes de comentar()");
+    if (!/if \(ref && !refs\.has\(ref\)\) return null;/.test(cuerpoFn(t, "leerSalida"))) falla(G, A, 0, "leerSalida(): un negocio que no vino de la app se descarta");
+    const iP = p.search(/const fallo = filtroAnfitrion\(pl\.body\)/), iW = p.search(/await publicar\(voz\.id, c\.id/);
+    if (iP < 0 || iW < 0 || iP > iW) falla(G, A, 0, "publicarPropio(): el filtro propio va antes de publicar()");
+    const f = sinComent(F);
+    for (const [k, re] of [["DATOS", /const DATOS = /], ["PRECIO", /const PRECIO = /], ["ENLACE", /const ENLACE = /], ["POLITICA", /const POLITICA = /], ["RECOMIENDA", /const RECOMIENDA = /], ["LEGAL", /const LEGAL = /], ["SALUD", /const SALUD = /], ["CRISIS", /const CRISIS = /], ["MENORES", /const MENORES = /]])
+      if (!re.test(f)) falla(G, F, 0, `falta la lista ${k} del filtro propio o de los temas delicados`);
+    const fa = cuerpoFn(f, "filtroAnfitrion");
+    for (const k of ["DATOS", "PRECIO", "ENLACE", "POLITICA", "RECOMIENDA"]) if (!new RegExp(`\\b${k}\\.test\\(`).test(fa)) falla(G, F, 0, `filtroAnfitrion() no aplica ${k}`);
+    const de = cuerpoFn(f, "delicado");
+    for (const k of ["EMERGENCIA", "CRISIS", "SALUD", "LEGAL", "MENORES"]) if (!new RegExp(`\\b${k}\\.test\\(`).test(de)) falla(G, F, 0, `delicado() no mira ${k}`);
+  },
+
 };
 
 

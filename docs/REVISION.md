@@ -6463,4 +6463,9 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Despliegue normal:** la imagen pasa de ~4,5 a ~3 minutos y el servidor se entera de un cambio en 20 s en vez de hasta 2 minutos.
 - **Decisión pendiente del fundador:** quitar la comprobación de tipos del build de la imagen ahorraría ~70 s más por despliegue (los tipos ya se comprueban
   antes en el CI y en la herramienta de subida).
+- **Anfitriones, primera parte construida (23 nov):** qué mirar cuando esté en el sandbox: Super Admin › Contenido › Anfitriones (encender voces, el tipo
+  «negocio nuevo», Hazleton en manual); en la Comunidad, una publicación de Doña Milagros con «Anfitriona», su perfil (dice que es una voz de la casa, sin
+  «Mensaje»), y a una pregunta de comida sin respuesta en 45 min le contesta Tato «Anfitrión»; con «Pausar a todos» nadie responde. En el sandbox las
+  respuestas son de simulador (genéricas): la forma de hablar real solo se ve con la IA encendida. **Decide el fundador:** cuánto publican al día, el tope
+  mensual (hoy $5), si empiezan encendidas en Hazleton en el sandbox, y los avatares.
 

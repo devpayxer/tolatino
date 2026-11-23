@@ -6,7 +6,7 @@
 import * as UI from "@tolatino/ui";
 import { useState, type ComponentType } from "react";
 import { LINEA911 } from "@/lib/comunidad-filtro";
-import { hace, rango, type Pub } from "@/lib/comunidad-comun";
+import { hace, marcaAnfitrion, rango, type Pub } from "@/lib/comunidad-comun";
 import { Avatar, MONO } from "./Marco";
 import type { Tr } from "../Traducir";
 
@@ -30,7 +30,8 @@ export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSav
 }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const [ix, setIx] = useState(0);
-  const a = p.autor, rk = a.oficial ? { label: E2("Cuenta oficial", "Official account"), shield: null } : a.rango >= 4 ? { label: es ? rango(a.rango).es : rango(a.rango).en, shield: a.rango >= 9 ? "gold" : "gray" } : null;
+  // AO · Una voz de la casa lleva SIEMPRE su marca junto al nombre (en el lugar del rango, que nunca se le pinta).
+  const a = p.autor, anf = marcaAnfitrion(a.anfitrion, es), rk = anf ? { label: anf, shield: null } : a.oficial ? { label: E2("Cuenta oficial", "Official account"), shield: null } : a.rango >= 4 ? { label: es ? rango(a.rango).es : rango(a.rango).en, shield: a.rango >= 9 ? "gold" : "gray" } : null;
   const lugar = (es ? p.lugar.es : p.lugar.en) + (p.mi != null ? ` · ${p.mi} mi` : "");
   const enc = p.encuesta, ver = !!enc && enc.ver;
   // 5h · «Ver traducción» bajo el texto si está en el otro idioma (nunca en lo propio).

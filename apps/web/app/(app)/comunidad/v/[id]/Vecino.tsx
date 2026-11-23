@@ -7,7 +7,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import { MAX_APODO, MAX_BIO } from "@/lib/comunidad-filtro";
-import { rango, type Pub } from "@/lib/comunidad-comun";
+import { marcaAnfitrion, PERFIL_ANF, rango, type Anf, type Pub } from "@/lib/comunidad-comun";
 import type { Vecino as V } from "@/lib/vecinos";
 import { vecPerfil, vecPublicaciones, vecSeguir, comReportar } from "../../acciones";
 import { abrirReporte } from "../../Reportar";
@@ -28,7 +28,7 @@ type R = { ok: boolean; msg?: Bi; entrar?: boolean };
 const CARD = { borderRadius: 20, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" } as const;
 const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
-export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCom; ciudad: string; v: V | null; bloqueado: { id: string; nombre: string } | null }) {
+export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCom; ciudad: string; v: V | null; bloqueado: { id: string; nombre: string; anfitrion?: Anf } | null }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024, tr = useTraducir(es);
   const vec = useVecinoAcciones(es, ui);
@@ -43,7 +43,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
     return (
       <Marco es={es} yo={yo} ui={ui} code="APP-COM-VECINO" titulo={bloqueado ? bloqueado.nombre : E2("Vecino", "Neighbor")} sub={ciudad.toUpperCase()} back="/comunidad">
         <div data-screen-label="APP-COM-VECINO · no está" style={{ ...CARD, margin: margen, maxWidth: 720, padding: 18 }}>
-          <div style={{ font: "800 18px/1.25 Sora,sans-serif", letterSpacing: "-.02em" }}>{bloqueado ? E2(`Bloqueaste a ${bloqueado.nombre}`, `You blocked ${bloqueado.nombre}`) : E2("No encontramos a este vecino", "We could not find this neighbor")}</div>
+          <div style={{ font: "800 18px/1.25 Sora,sans-serif", letterSpacing: "-.02em" }}>{bloqueado ? E2(`Bloqueaste a ${bloqueado.nombre}`, `You blocked ${bloqueado.nombre}`) + (marcaAnfitrion(bloqueado.anfitrion, es) ? ` · ${marcaAnfitrion(bloqueado.anfitrion, es)}` : "") : E2("No encontramos a este vecino", "We could not find this neighbor")}</div>
           <div style={{ marginTop: 6, font: "500 13.5px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.62)", textWrap: "pretty" }}>
             {bloqueado ? E2("No ves lo que publica y no te puede escribir. No le avisamos.", "You don't see their posts and they can't message you. We didn't tell them.") : E2("Puede que ya no esté en la Comunidad.", "They may no longer be in the Community.")}
           </div>
@@ -56,7 +56,8 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
     );
   }
 
-  const rk = rango(v.rango);
+  // AO · Una voz de la casa: su marca en lugar del rango, el texto fijo de su perfil y sin mensajes.
+  const anf = marcaAnfitrion(v.anfitrion, es), rk = anf ? { es: anf, en: anf } : rango(v.rango);
   const seguir = async () => {
     if (busy) return; setBusy(true);
     const r = await vecSeguir(v.id, !sigo).catch(() => red); setBusy(false);
@@ -90,13 +91,14 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 style={{ margin: 0, font: "800 22px/1.15 Sora,sans-serif", letterSpacing: "-.03em" }}>{v.nombre}</h2>
               {v.apodo && <div style={{ marginTop: 3, font: "600 13px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Le dicen «${v.apodo}»`, `Goes by «${v.apodo}»`)}</div>}
-              <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              {anf ? <div data-anfitrion="1" style={{ marginTop: 8, display: "flex" }}><Tag tone="action">{anf.toUpperCase()}</Tag></div> : <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <span style={{ width: 24, height: 24, borderRadius: 7, background: "rgba(75,55,245,.1)", display: "inline-grid", placeItems: "center", font: "800 11px/1 Sora,sans-serif", color: "var(--tl-action)" }}>{v.rango}</span>
                 <span style={{ font: `700 10px ${MONO}`, letterSpacing: ".12em", color: "var(--tl-action)" }}>{(es ? rk.es : rk.en).toUpperCase()}</span>
-              </div>
+              </div>}
             </div>
           </div>
-          {v.bio && <div style={{ marginTop: 12, font: "500 13.5px/1.55 Manrope,sans-serif", color: "rgba(11,14,18,.75)", textWrap: "pretty", whiteSpace: "pre-wrap" }}>{v.bio}</div>}
+          {anf && <div data-screen-label="APP-COM-VECINO · voz de la casa" style={{ marginTop: 12, font: "500 13.5px/1.55 Manrope,sans-serif", color: "rgba(11,14,18,.75)", textWrap: "pretty" }}>{es ? PERFIL_ANF.es : PERFIL_ANF.en}</div>}
+          {!anf && v.bio && <div style={{ marginTop: 12, font: "500 13.5px/1.55 Manrope,sans-serif", color: "rgba(11,14,18,.75)", textWrap: "pretty", whiteSpace: "pre-wrap" }}>{v.bio}</div>}
           {meta && <div style={{ marginTop: 10, font: `600 9.5px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.6)" }}>{meta}</div>}
           {v.fundador && <div style={{ marginTop: 10, display: "flex" }}><Tag tone="action">{v.yo ? E2(`FUNDADORES · #${v.fundador.toLocaleString("en-US")}`, `FOUNDERS · #${v.fundador.toLocaleString("en-US")}`) : E2(`FUNDADOR DE ${(v.ciudad ?? ciudad).split(",")[0]!.toUpperCase()}`, `${(v.ciudad ?? ciudad).split(",")[0]!.toUpperCase()} FOUNDER`)}</Tag></div>}
           {stats && (
@@ -113,10 +115,10 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
             <>
               <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
                 <div style={{ display: "flex", flex: 1 }}><Button variant={sigo ? "secondary" : "primary"} size="md" block icon="users" disabled={busy} onClick={seguir}>{sigo ? E2("Siguiendo", "Following") : E2("Seguir", "Follow")}</Button></div>
-                <div style={{ display: "flex", flex: 1 }}><Button variant="secondary" size="md" block icon="chat" disabled={!v.puedeEscribir} onClick={() => router.push(`/comunidad/mensajes/${v.id}`)}>{E2("Mensaje", "Message")}</Button></div>
+                {!anf && <div style={{ display: "flex", flex: 1 }}><Button variant="secondary" size="md" block icon="chat" disabled={!v.puedeEscribir} onClick={() => router.push(`/comunidad/mensajes/${v.id}`)}>{E2("Mensaje", "Message")}</Button></div>}
                 <IconButton icon="chevronDown" size={40} label={E2("Opciones", "Options")} onClick={menu} />
               </div>
-              {!v.puedeEscribir && <div style={{ marginTop: 8, font: "500 11.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Solo puedes escribirle si ${primero(v.nombre)} te sigue.`, `You can only message ${primero(v.nombre)} if they follow you.`)}</div>}
+              {!v.puedeEscribir && !anf && <div style={{ marginTop: 8, font: "500 11.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{E2(`Solo puedes escribirle si ${primero(v.nombre)} te sigue.`, `You can only message ${primero(v.nombre)} if they follow you.`)}</div>}
             </>
           )}
         </div>

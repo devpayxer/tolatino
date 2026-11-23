@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { ISO, autores, sinBloqueos, SELLO_OFICIAL } from "./comunidad";
+import type { Anf } from "./comunidad-comun";
 
 /* Lo de la Comunidad que sale fuera de la Comunidad (fase5-comunidad.md §4 5e): Negocios › «Recomendados por vecinos», Inicio ›
    Comunidad (la pregunta de la cuenta oficial) y Buscar › Vecinos. Lo público solo muestra negocios y la cuenta oficial (nunca a un
@@ -51,7 +52,7 @@ export async function oficialDeLaSemana(ciudad: string): Promise<OficialPortada 
 
 /* Buscar › Vecinos: publicaciones de la ciudad que dicen lo que se buscó (índice GIN de tsv), ordenadas por los votos (hot), 10 por página
    con cursor (hot, id). Solo con cuenta: sin `viewer` no se lee nada. Sin lo de quien bloqueó o silenció, ni lo que la persona reportó. */
-export type HalladoVecino = { id: string; who: string; foto: string | null; ini: string; oficial: boolean; at: string; body: string; score: number; cms: number };
+export type HalladoVecino = { id: string; who: string; foto: string | null; ini: string; oficial: boolean; anfitrion: Anf; at: string; body: string; score: number; cms: number };
 export const VECINOS_POR_PAGINA = 10;
 export async function buscarVecinos(viewer: string, ciudad: string, consulta: string, cursor: string | null, n = VECINOS_POR_PAGINA): Promise<{ items: HalladoVecino[]; mas: string | null; total: number }> {
   if (!viewer || !consulta) return { items: [], mas: null, total: 0 };
@@ -71,7 +72,7 @@ export async function buscarVecinos(viewer: string, ciudad: string, consulta: st
   const filas = L.rows.slice(0, lim), A = await autores(filas.map((f) => f.autor).filter((x): x is string => !!x));
   return {
     items: filas.map((f) => { const a = f.autor ? A(f.autor) : null;
-      return { id: f.id, who: a ? a.nombre : f.oficial?.es ?? "To'Latino", foto: a ? a.foto : SELLO_OFICIAL, ini: a ? a.ini : "TL", oficial: !a, at: f.at, body: f.body, score: f.score, cms: f.cms }; }),
+      return { id: f.id, who: a ? a.nombre : f.oficial?.es ?? "To'Latino", foto: a ? a.foto : SELLO_OFICIAL, ini: a ? a.ini : "TL", oficial: !a, anfitrion: a?.anfitrion ?? null, at: f.at, body: f.body, score: f.score, cms: f.cms }; }),
     mas: L.rows.length > lim ? filas.at(-1)!.cur : null, total: T.rows[0]?.n ?? 0,
   };
 }

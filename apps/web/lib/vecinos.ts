@@ -5,7 +5,7 @@ import { db, tx } from "./db";
 import { insignias } from "./puntos";
 import { acreditar, avisarMonedas, saldo } from "./monedas";
 import { MAX_APODO, revisarPerfil, revisarTexto } from "./comunidad-filtro";
-import type { Pub } from "./comunidad-comun";
+import type { Anf, Pub } from "./comunidad-comun";
 import { COLS, ISO, JOINS, UUID, armar, corto, enComunidad, ini, no, sinBloqueo, sinBloqueos, type Fila, type Res } from "./comunidad";
 import { numeroVecino } from "./direcciones";
 import { meEscribio } from "./mensajes-vecinos";
@@ -44,10 +44,11 @@ export type Vecino = {
   yoSigo: boolean; meSigue: boolean; silenciado: boolean; puedeEscribir: boolean; pubs: Pub[]; mas: string | null;
   insignias: { k: string; t: Bi; s: Bi }[]; puntos: number; // 5f
   monedas: number | null; // 5g · solo en mi propio perfil (las monedas de otra persona no se muestran)
+  anfitrion: Anf; // AO · una voz de la casa: su marca junto al nombre y el texto fijo de su perfil; no recibe mensajes
 };
 type FilaVec = {
   id: string; first_name: string | null; last_name: string | null; nick: string | null; photo_url: string | null; rango: number; bio: string | null; since_year: number | null;
-  hide_counts: boolean; seg: number; sig: number; pubs: number; zona: Bi | null; ciudad: string | null; yo_sigo: boolean; me_sigue: boolean; silenciado: boolean;
+  hide_counts: boolean; seg: number; sig: number; pubs: number; zona: Bi | null; ciudad: string | null; yo_sigo: boolean; me_sigue: boolean; silenciado: boolean; anf: Anf;
 };
 /* `id` = la persona o «yo». null = no existe para quien mira (o hay un bloqueo: la misma respuesta). */
 export async function perfilVecino(viewer: string, id: string, cursor: string | null = null): Promise<Vecino | null> {
@@ -59,7 +60,8 @@ export async function perfilVecino(viewer: string, id: string, cursor: string | 
             coalesce(cp.followers_n, 0) as seg, coalesce(cp.following_n, 0) as sig, coalesce(cp.posts_n, 0) as pubs, z.name as zona, c.name || ', ' || c.state as ciudad,
             exists (select 1 from follows f where f.follower_user_id = $1 and f.target_kind = 'user' and f.target_id = u.id::text) as yo_sigo,
             exists (select 1 from follows f where f.follower_user_id = u.id and f.target_kind = 'user' and f.target_id = $1::uuid::text) as me_sigue,
-            exists (select 1 from user_blocks b where b.user_id = $1 and b.target_user_id = u.id and b.kind = 'mute' and b.removed_at is null) as silenciado
+            exists (select 1 from user_blocks b where b.user_id = $1 and b.target_user_id = u.id and b.kind = 'mute' and b.removed_at is null) as silenciado,
+            (select h.gender from com_hosts h where h.user_id = u.id and u.kind = 'host') as anf
        from users u left join community_profiles cp on cp.user_id = u.id left join zones z on z.city_id = u.home_city_id and z.id = u.zone_id left join cities c on c.id = u.home_city_id
       where u.id = $2 and ${VISIBLE("u", "$1")}`, [viewer, quien])).rows[0];
   if (!r) return null;
@@ -70,8 +72,8 @@ export async function perfilVecino(viewer: string, id: string, cursor: string | 
     id: r.id, yo, nombre: n, apodo: r.nick, ini: ini(n), foto: r.photo_url, rango: r.rango, zona: r.zona, ciudad: r.ciudad, desde: r.since_year,
     fundador: num?.founder ? num.n : null, bio: r.bio, ocultar: r.hide_counts,
     cuentas: r.hide_counts && !yo ? null : { seguidores: r.seg, siguiendo: r.sig, publicaciones: r.pubs },
-    yoSigo: r.yo_sigo, meSigue: r.me_sigue, silenciado: r.silenciado, puedeEscribir: !yo && (r.me_sigue || escribio), pubs, mas,
-    insignias: ins, puntos: pts.rows[0]!.p, monedas: yo ? pts.rows[0]!.m : null,
+    yoSigo: r.yo_sigo, meSigue: r.me_sigue, silenciado: r.silenciado, puedeEscribir: !yo && !r.anf && (r.me_sigue || escribio), pubs, mas, anfitrion: r.anf ?? null,
+    insignias: r.anf ? [] : ins, puntos: r.anf ? 0 : pts.rows[0]!.p, monedas: yo ? pts.rows[0]!.m : null,
   };
 }
 
@@ -138,15 +140,16 @@ export async function deshacer(userId: string, target: string, kind: "block" | "
 }
 
 /* ── Listas de Mi cuenta (cursor por (created_at, id)) ── */
-export type Persona = { id: string; nombre: string; ini: string; foto: string | null; rango: number; lugar: string; yoSigo: boolean; meSigue: boolean; at: string };
-type FilaP = { id: string; first_name: string | null; last_name: string | null; photo_url: string | null; rango: number; zona: Bi | null; ciudad: string | null; yo_sigo: boolean; me_sigue: boolean; at: string; cur: string };
+export type Persona = { id: string; nombre: string; ini: string; foto: string | null; rango: number; lugar: string; yoSigo: boolean; meSigue: boolean; at: string; anfitrion: Anf };
+type FilaP = { id: string; first_name: string | null; last_name: string | null; photo_url: string | null; rango: number; zona: Bi | null; ciudad: string | null; yo_sigo: boolean; me_sigue: boolean; at: string; cur: string; anf: Anf };
 const PERSONA = (u: string) => `${u}.id::text, ${u}.first_name, ${u}.last_name, ${u}.photo_url, coalesce(pc.rank_level, 1) as rango, pz.name as zona, pci.name || ', ' || pci.state as ciudad,
   exists (select 1 from follows a where a.follower_user_id = $1 and a.target_kind = 'user' and a.target_id = ${u}.id::text) as yo_sigo,
-  exists (select 1 from follows b where b.follower_user_id = ${u}.id and b.target_kind = 'user' and b.target_id = $1::uuid::text) as me_sigue`;
+  exists (select 1 from follows b where b.follower_user_id = ${u}.id and b.target_kind = 'user' and b.target_id = $1::uuid::text) as me_sigue,
+  (select h.gender from com_hosts h where h.user_id = ${u}.id and ${u}.kind = 'host') as anf`;
 const PJOIN = (u: string) => `left join community_profiles pc on pc.user_id = ${u}.id left join zones pz on pz.city_id = ${u}.home_city_id and pz.id = ${u}.zone_id left join cities pci on pci.id = ${u}.home_city_id`;
 const persona = (x: FilaP, es: boolean): Persona => {
   const n = corto(x.first_name, x.last_name);
-  return { id: x.id, nombre: n, ini: ini(n), foto: x.photo_url, rango: x.rango, lugar: [x.zona ? (es ? x.zona.es : x.zona.en) : null, x.ciudad].filter(Boolean).join(" · "), yoSigo: x.yo_sigo, meSigue: x.me_sigue, at: x.at };
+  return { id: x.id, nombre: n, ini: ini(n), foto: x.photo_url, rango: x.rango, lugar: [x.zona ? (es ? x.zona.es : x.zona.en) : null, x.ciudad].filter(Boolean).join(" · "), yoSigo: x.yo_sigo, meSigue: x.me_sigue, at: x.at, anfitrion: x.anf ?? null };
 };
 const CUR = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z\|[0-9a-f-]{36}$/;
 /* A quién sigues: en cualquier ciudad, con su ciudad a la vista. */
@@ -298,8 +301,8 @@ export type DatosBienvenida = Awaited<ReturnType<typeof datosBienvenida>>;
    bloqueó (a la persona bloqueada nunca se le dice nada). */
 export async function bloqueoMio(viewer: string, id: string) {
   if (!UUID.test(id)) return null;
-  const r = (await db().query<{ f: string | null; l: string | null }>(
-    `select u.first_name as f, u.last_name as l from user_blocks b join users u on u.id = b.target_user_id
+  const r = (await db().query<{ f: string | null; l: string | null; anf: Anf }>(
+    `select u.first_name as f, u.last_name as l, (select h.gender from com_hosts h where h.user_id = u.id and u.kind = 'host') as anf from user_blocks b join users u on u.id = b.target_user_id
       where b.user_id = $1 and b.target_user_id = $2 and b.kind = 'block' and b.removed_at is null limit 1`, [viewer, id])).rows[0];
-  return r ? { id, nombre: corto(r.f, r.l) } : null;
+  return r ? { id, nombre: corto(r.f, r.l), anfitrion: r.anf ?? null } : null;
 }

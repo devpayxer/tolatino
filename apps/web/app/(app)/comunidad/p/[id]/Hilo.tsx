@@ -10,7 +10,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { MAX_COMENTARIO } from "@/lib/comunidad-filtro";
-import { hace, rango, type Pub } from "@/lib/comunidad-comun";
+import { hace, marcaAnfitrion, rango, type Pub } from "@/lib/comunidad-comun";
 import type { Cm, Hilo as H, NegocioCm, OrdenHilo, Rec } from "@/lib/comunidad-hilo";
 import { MONO, type ComUi, type YoCom } from "../../Marco";
 import { comBorrarCm, comComentar, comHilo, comMeSirvio, comNegocios, comRespuestas, comVotarCm, comReportar } from "../../acciones";
@@ -155,7 +155,8 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: Y
   /* Lo que el sistema de diseño necesita de cada comentario. */
   const quien = (c: Cm) => ({
     avatar: fondo(c.autor.foto, 38), avatarColor: "var(--tl-desk)", initials: c.autor.foto ? undefined : c.autor.ini, name: c.mia ? `${c.autor.nombre}${E2(" · tú", " · you")}` : c.autor.nombre,
-    rank: c.autor.rango >= 4 ? { label: (es ? rango(c.autor.rango).es : rango(c.autor.rango).en).toUpperCase(), tone: c.autor.rango >= 9 ? "ink" : "neutral" } : null,
+    // AO · La marca de una voz de la casa en el lugar del rango (nunca su rango).
+    rank: c.autor.anfitrion ? { label: marcaAnfitrion(c.autor.anfitrion, es)!.toUpperCase(), tone: "ink" } : c.autor.rango >= 4 ? { label: (es ? rango(c.autor.rango).es : rango(c.autor.rango).en).toUpperCase(), tone: c.autor.rango >= 9 ? "ink" : "neutral" } : null,
   });
   const voto = (c: Cm) => ({ score: String(c.score), onUp: () => void votar(c, 1), onDown: () => void votar(c, -1), upColor: c.miVoto === 1 ? "var(--tl-action)" : undefined, downColor: c.miVoto === -1 ? "var(--tl-danger)" : undefined, scoreColor: c.miVoto ? "var(--tl-action)" : "var(--tl-ink)" });
   const acciones = (c: Cm) => ({

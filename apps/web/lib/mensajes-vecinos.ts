@@ -164,6 +164,8 @@ export async function enviar(viewer: string, otroId: string, texto: unknown, ciu
     const o = await otraPersona(viewer, String(otroId ?? ""));
     if (!o) return NO_ESTA();
     if (!o.activa) return no("Esta cuenta no recibe mensajes ahora.", "This account is not taking messages now.");
+    // AO · Una voz de la casa (anfitrión) no manda ni recibe mensajes privados (la base también lo rechaza: dm_threads_sin_anfitrion).
+    if ((await c.query(`select 1 from users where id = any($1::uuid[]) and kind = 'host'`, [[viewer, o.id]])).rowCount) return no("Las voces de la casa no reciben mensajes.", "House voices don't take messages.");
     const r10 = (await c.query<{ n: number }>(`select count(*)::int as n from dm_messages where sender_user_id = $1 and created_at > now() - interval '10 minutes'`, [viewer])).rows[0]!.n;
     if (r10 >= 20) return no("Estás escribiendo muy rápido. Espera unos minutos.", "You are writing too fast. Wait a few minutes.");
     const [a, b] = viewer < o.id ? [viewer, o.id] : [o.id, viewer];

@@ -29,7 +29,8 @@ export function leerFiltrosCont(sp: Record<string, string | undefined>): Filtros
     rango: Number.isInteger(rango) && rango >= 2 && rango <= 10 ? rango : null, inv: sp.inv === "1", c: CURSOR.test(sp.c ?? "") ? sp.c! : null,
   };
 }
-export type FilaCont = { k: TipoCont; id: string; biz: string; bname: string; who: string; uid: string | null; rango: number | null; inv: boolean; oficial: boolean; ciudad: string;
+/* AO · anf: la marca de una voz de la casa (com_hosts.gender), para pintarla junto al nombre (guardián anfitrionSiempreMarcado). */
+export type FilaCont = { k: TipoCont; id: string; biz: string; bname: string; who: string; uid: string | null; rango: number | null; inv: boolean; oficial: boolean; ciudad: string; anf: "m" | "f" | null;
   text: string; extra: string | null; up: number; dn: number; at: string; hidden: boolean; why: string | null; rep: number; pin: boolean; lock: boolean; cur: string };
 
 const NOMBRE = (u: string) => `coalesce(nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), ''), ${u}.phone)`;
@@ -118,7 +119,7 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
   }
   const [L, cab, ciu] = await Promise.all([
     // nosemgrep: tolatino-sql-con-texto-interpolado — trozos de PARTES/REPORTE (fijos por tipo, tipo de la lista TIPOS); los filtros entran por add() como $n
-    trozos.length ? db().query<FilaCont>(`select y.k, y.id, y.biz, y.bname, y.who, y.uid, y.rango, y.inv, y.oficial, ci.name as ciudad, y.text, y.extra, y.up, y.dn, to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, y.hidden, y.why, y.rep, y.pin, y.lock,
+    trozos.length ? db().query<FilaCont>(`select y.k, y.id, y.biz, y.bname, y.who, y.uid, y.rango, y.inv, y.oficial, ci.name as ciudad, (select h.gender from com_hosts h where h.user_id::text = y.uid) as anf, y.text, y.extra, y.up, y.dn, to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, y.hidden, y.why, y.rep, y.pin, y.lock,
               (y.rep > 0)::int || '|' || to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || '|' || y.k || '|' || y.id as cur
          from (${trozos.join("\nunion all\n")}) y left join cities ci on ci.id = y.city_id order by (y.rep > 0)::int desc, y.at desc, y.k desc, y.id desc limit ${LIM}`, v) : Promise.resolve({ rows: [] as FilaCont[] }),
     // Las cifras de arriba: los totales del conteo por ciudad (el barrido lo rehace cada 10 min); reportes, ocultos, Hoy y el lote, al momento.
@@ -152,16 +153,16 @@ export type ListaCont = Awaited<ReturnType<typeof listaContenido>>;
 /* El hilo como en la Comunidad (MEM 700, threadDetail): la publicación con su autor, rango, tema, fotos, encuesta, negocio y votos, y todos
    sus comentarios (también los ocultos, marcados), las raíces por votos y sus respuestas debajo; el comentario de origen va marcado.
    El Super Admin ve siempre el original (sin traducción). Acotado a las ciudades de quien mira. */
-export type CmAdm = { id: string; parent: string | null; who: string; uid: string; rango: number; body: string; at: string; up: number; dn: number; score: number; status: string; why: string | null;
+export type CmAdm = { id: string; parent: string | null; who: string; uid: string; rango: number; anf: "m" | "f" | null; body: string; at: string; up: number; dn: number; score: number; status: string; why: string | null;
   biz: string | null; rep: number; hiddenBy: string | null };
 export async function hiloAdmin(s: Staff, id: string) {
   if (!/^\d{1,18}$/.test(id)) return null;
   const p = (await db().query<{ id: string; kind: string; topic: string | null; body: string; at: string; city_id: string; ciudad: string; status: string; why: string | null; hiddenBy: string | null;
-    oficial: boolean; who: string; uid: string | null; rango: number; inv: string | null; biz: string | null; opts: string[] | null; conteo: number[] | null; fotos: string[];
+    oficial: boolean; who: string; uid: string | null; rango: number; anf: "m" | "f" | null; inv: string | null; biz: string | null; opts: string[] | null; conteo: number[] | null; fotos: string[];
     up: number; dn: number; score: number; cms: number; rep: number; fijada: boolean; cerrados: boolean }>(
     `select p.id::text, p.kind, p.topic, p.body, to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, p.city_id, ci.name as ciudad, p.status, p.hidden_reason as why, p.hidden_by as "hiddenBy",
             p.author_kind = 'official' as oficial, case when p.author_kind = 'official' then coalesce(oa.name->>'es', 'Cuenta oficial') else ${NOMBRE("u")} end as who, u.id::text as uid,
-            coalesce(${RANGO("u.id")}, 1) as rango, gc.name as inv, b.name as biz, p.poll_options as opts, p.poll_counts as conteo,
+            coalesce(${RANGO("u.id")}, 1) as rango, (select h.gender from com_hosts h where h.user_id = u.id) as anf, gc.name as inv, b.name as biz, p.poll_options as opts, p.poll_counts as conteo,
             coalesce((select array_agg(m.url order by m.sort) from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'visible'), '{}') as fotos,
             p.up_n as up, p.down_n as dn, p.score, p.comments_n as cms,
             (select count(*)::int from content_reports x where x.target_kind = 'com_post' and x.target_id = p.id::text and x.status = 'open') as rep,
@@ -171,7 +172,7 @@ export async function hiloAdmin(s: Staff, id: string) {
       where p.id = $1::bigint and p.status <> 'deleted' and (cardinality($2::text[]) = 0 or p.city_id = any($2::text[]))`, [id, s.cities])).rows[0];
   if (!p) return null;
   const C = (await db().query<CmAdm>(
-    `select c.id::text, c.parent_id::text as parent, ${NOMBRE("u")} as who, u.id::text as uid, coalesce(${RANGO("u.id")}, 1) as rango, c.body,
+    `select c.id::text, c.parent_id::text as parent, ${NOMBRE("u")} as who, u.id::text as uid, coalesce(${RANGO("u.id")}, 1) as rango, (select h.gender from com_hosts h where h.user_id = u.id) as anf, c.body,
             to_char(c.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, c.up_n as up, c.down_n as dn, c.score, c.status, c.hidden_reason as why, b.name as biz,
             (select count(*)::int from content_reports x where x.target_kind = 'com_comment' and x.target_id = c.id::text and x.status = 'open') as rep, c.hidden_by as "hiddenBy"
        from com_comments c join users u on u.id = c.author_user_id left join businesses b on b.id = c.business_id

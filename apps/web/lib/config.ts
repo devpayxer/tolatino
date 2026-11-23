@@ -112,7 +112,10 @@ export type ClaveConfig =
   // 9t · «Avísame si se libera» de una mesa: cuántos minutos se guarda la mesa que se libera (0180; Configuración › Avisos)
   | "rsv_espera_min"
   // 9t · Fotos que se suben: a la vez, lugar y espera del turno por proceso (0212; Configuración › Apps; los lee lib/subida.ts)
-  | "fotos_a_la_vez" | "fotos_dentro" | "fotos_espera_s";
+  | "fotos_a_la_vez" | "fotos_dentro" | "fotos_espera_s"
+  // AO · Anfitriones del barrio (0215)
+  | "anf_espera_min" | "anf_idas_max" | "anf_nuevo_dias" | "anf_t1_hasta" | "anf_t1_pub" | "anf_t1_resp" | "anf_t2_hasta" | "anf_t2_pub" | "anf_t2_resp"
+  | "anf_t3_hasta" | "anf_t3_pub" | "anf_t3_resp" | "anf_tope_mes_cents" | "anf_pausa";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

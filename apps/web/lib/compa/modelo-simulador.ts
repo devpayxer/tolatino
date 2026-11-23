@@ -61,6 +61,17 @@ export const simulador: Modelo = {
       return sal({ veredicto: "publicar", motivo: "" });
     }
 
+    // AO · Una voz de la casa responde a un vecino (lib/compa/anfitriones.ts). Determinista: saluda por el tema y devuelve la pregunta al barrio.
+    // Guionado por lo que escribió el vecino: «simular-anf-precio» → una salida con precio (el filtro propio la frena) · «simular-anf-negocio» → un
+    // negocio que no vino de la app (se descarta) · «simular-error» y «simular-lento» como en las demás.
+    if (e.uso === "anfitrion") {
+      if (t.includes("simular-error")) throw new ErrorModelo("error", false, "simulador: error del proveedor");
+      if (t.includes("simular-anf-precio")) return sal({ texto: es ? "Eso lo consigues a $5 en cualquier lado." : "You can get that for $5 anywhere.", negocio: "" });
+      if (t.includes("simular-anf-negocio")) return sal({ texto: es ? "Pregunta en el negocio de la esquina." : "Ask at the corner shop.", negocio: "n99" });
+      const voz = String((e.datos as { voz?: unknown }).voz ?? "");
+      return sal({ texto: es ? `Buena pregunta, vecino. Aquí ${voz} pendiente: ¿alguien del barrio sabe y le echa una mano?` : `Good question, neighbor. ${voz} here: does anyone in the neighborhood know and can lend a hand?`, negocio: "" });
+    }
+
     // Fallas guionadas (solo el simulador las entiende).
     if (t.includes("simular-lento")) { await dormir(e.esperaMs + 3000); return sal({ ...base, respuesta: es ? "Tarde." : "Late." }); }
     if (t.includes("simular-error")) throw new ErrorModelo("error", false, "simulador: error del proveedor");

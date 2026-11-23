@@ -4,7 +4,7 @@
    de la lista (Dejar de seguir · Seguir también · Desbloquear / Quitar silencio, y volver a hacerlo: Deshacer). Por cursor. */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { fijarRangos, rango } from "@/lib/comunidad-comun";
+import { fijarRangos, marcaAnfitrion, rango } from "@/lib/comunidad-comun";
 import type { Persona, PersonaB } from "@/lib/vecinos";
 import { vecBloquear, vecDeshacer, vecSeguir, vecSilenciar } from "../../comunidad/acciones";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
@@ -35,7 +35,8 @@ export function Vecinos({ es, yo, l, d, menor, pagina, rangos }: { es: boolean; 
     ]} />;
   }
   const fila = (x: Item) => {
-    const rk = rango(x.rango), sub = [`${x.rango} · ${(es ? rk.es : rk.en).toUpperCase()}`, x.lugar.toUpperCase()].filter(Boolean).join(" · ");
+    // AO · Una voz de la casa: su marca en lugar del rango.
+    const rk = rango(x.rango), anf = marcaAnfitrion(x.anfitrion, es), sub = [anf ? anf.toUpperCase() : `${x.rango} · ${(es ? rk.es : rk.en).toUpperCase()}`, x.lugar.toUpperCase()].filter(Boolean).join(" · ");
     const n = primero(x.nombre);
     let acts: [string, string, () => void][] = [], tag: [string, string] | null = null;
     if (l === "siguiendo") acts = x.yoSigo
