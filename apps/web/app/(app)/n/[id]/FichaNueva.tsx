@@ -264,10 +264,6 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     escribir ? { k: "escribir", icon: "chat", t: E2("Escribir", "Message"), s: E2("Un mensaje por To'Latino", "A message on To'Latino"), go: escribir } : null,
     llegar ? { k: "llegar", icon: "pin", t: E2("Cómo llegar", "Directions"), s: f.direccion ?? f.zona ?? "", go: llegar } : null,
   ].filter(Boolean) as { k: string; icon: string; t: string; s: string; go: () => void }[];
-  // 23 nov · «Contactar» + flecha hacia abajo (se despliega). El botón del sistema de diseño (pieza portada, no se edita) no pasa aria-haspopup ni
-  // aria-expanded: se le ponen al botón de dentro para que el lector de pantalla diga que abre una hoja y si está abierta.
-  const contRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { const b = contRef.current?.querySelector('[role="button"]'); b?.setAttribute("aria-haspopup", "dialog"); b?.setAttribute("aria-expanded", String(contacto)); }, [contacto, contactos.length]);
   const sello = f.verificado ? <span role="img" aria-label={E2("Sello To'Latino", "To'Latino seal")} title={E2("Sello To'Latino", "To'Latino seal")} className="ml-2 inline-flex align-middle text-action"><Icon name="verified" size={22} strokeWidth={2.4} /></span> : null;
   const datos = (xs: string[]) => xs.map((x, i) => <span key={i}>{i ? " · " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>);
 
@@ -468,7 +464,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
               <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold">{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
             </div>
             {/* 23 nov · Llamar, Escribir y Cómo llegar viven en un menú que se despliega (pedido del fundador): un solo botón en la cabecera. */}
-            {contactos.length ? <div className="flex-none" data-pieza="contactar-ficha" ref={contRef}><Button variant="secondary" size="sm" onClick={() => setContacto(true)}>{E2("Contactar", "Contact")}<Icon name="chevronDown" size={16} strokeWidth={1.9} /></Button></div> : null}
+            {contactos.length ? <div className="flex-none" data-pieza="contactar-ficha"><Button variant="secondary" size="sm" aria-haspopup="dialog" aria-expanded={contacto} onClick={() => setContacto(true)}>{E2("Contactar", "Contact")}<Icon name="chevronDown" size={16} strokeWidth={1.9} /></Button></div> : null}
           </div>
         </div>
         {contacto ? (
