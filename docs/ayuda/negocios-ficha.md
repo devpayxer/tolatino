@@ -12,7 +12,7 @@ Los negocios **Pro** tienen portada grande, logo, el horario completo con lo que
 
 ## Cómo se usa
 1. Toca cualquier tarjeta de negocio (en Inicio, Negocios o una categoría).
-2. Arriba: **Llamar**, el corazón para **guardar** y **compartir**. Tocar la distancia abre el mapa del teléfono.
+2. Arriba, junto al estado («Abierto · cierra 8 PM»), en el teléfono está el botón **Contactar ˅**: abre una hoja con **Llamar** (con el teléfono), **Escribir** (un mensaje por To'Latino) y **Cómo llegar** (con la dirección; abre el mapa del teléfono). Solo salen los que el negocio tiene; si no tiene ninguno, no hay botón. Tocar uno cierra la hoja y hace eso; **Escape**, tocar el fondo o la **X** la cierran. En la computadora, **Guardar**, **Compartir** y **Llamar** son botones con texto a la derecha del nombre. La palomita junto al nombre es el **Sello To'Latino**.
 3. **Resumen**: el estado de hoy, la oferta del día si hay, las fotos, el horario y **Cómo llegar** →
    **Abrir en mapas**.
 4. **Relacionados** (si existe la pestaña): sucursales y negocios del mismo dueño, con lo que el negocio dice de
@@ -61,7 +61,7 @@ hours for the week.
 
 ### How to use it
 1. Tap any business card (on Home, Businesses or a category).
-2. At the top: **Call**, the heart to **save** and **share**. Tapping the distance opens the phone's map.
+2. At the top, next to the status («Open · closes 8 PM»), on the phone there is a **Contact ˅** button: it opens a sheet with **Call** (showing the phone number), **Message** (a message on To'Latino) and **Directions** (showing the address; opens the phone's map). Only the ones the business has appear; with none, there is no button. Tapping one closes the sheet and does that; **Escape**, tapping the background or the **X** closes it. On a computer, **Save**, **Share** and **Call** are buttons with text to the right of the name. The check mark next to the name is the **To'Latino seal**.
 3. **Summary**: today's status, the deal of the day if there is one, the photos, the hours and **Directions** → **Open in maps**.
 4. **Related** (if the tab exists): branches and businesses of the same owner, with what the business says about each one. **See branch** opens its page.
 

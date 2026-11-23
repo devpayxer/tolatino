@@ -27,7 +27,7 @@ const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, bl
   for (const x of [m, p]) { x.on('pageerror', e => err.push(e.message)); x.on('console', z => { if (z.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(z.text())) err.push('console ' + z.text()); }); }
   await entrar(m, '5705550122');
   // 1) desde la ficha: botón Mensaje
-  await m.goto(B + `/n/${BIZ}`); await clic(m.getByRole('button', { name: /^(Mensaje|Escribir)$/ })); /* C-006: la ficha nueva dice «Escribir» */
+  await m.goto(B + `/n/${BIZ}`); await clic(m.locator('[data-pieza="contactar-ficha"] [role="button"]')); await clic(m.locator('[data-screen-label="Ficha · contactar"]').getByRole('button', { name: /^Escribir/ })); /* 23 nov: en el teléfono «Escribir» vive en la hoja de «Contactar» (antes C-006: un botón suelto) */
   await m.waitForURL(/\/cuenta\/mensajes\/sabor-dominicano/); await m.getByPlaceholder(/Escribe a Sabor Dominicano/).waitFor();
   ok(true, 'la ficha abre la conversación');
   // 2) teléfono bloqueado

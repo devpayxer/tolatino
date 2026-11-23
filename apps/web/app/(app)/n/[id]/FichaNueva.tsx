@@ -12,6 +12,7 @@
    · Pestañas en este orden y solo si hay contenido: Resumen · lo que vende · equipo · Reseñas · Novedades · Eventos · Jobs ·
      Horario · Antes de ir · Relacionados. Un dato que falta se omite (nunca «undefined» ni «null»). */
 import * as UI from "@tolatino/ui";
+import { PestanasFicha } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type ComponentType, type ReactNode } from "react";
 import type { ficha } from "@/lib/ficha";
@@ -23,6 +24,7 @@ import type { TarjetaEvt } from "@/lib/evt-publico";
 import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { MiniMapa } from "@/app/_dir/MiniMapa";
+import { Hoja } from "../../eventos/Despues";
 import { useAncho } from "@/app/_ancho/Ancho";
 import { guardarNegocio } from "../../acciones";
 import { contarToque } from "@/lib/contar-toque";
@@ -68,10 +70,10 @@ import { VideoPortada } from "../../VideoNegocio";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
 
-type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
+type N = "Icon" | "Button" | "IconButton" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
   | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
   | "BusinessRow" | "OptionGroup";
-const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard, SectionHeader, ServiceRow, Placeholder, ReviewCard, StaffPicker,
+const { Icon, Button, IconButton, TodayCard, HoursPro, Tag, Chip, OwnerCard, SectionHeader, ServiceRow, Placeholder, ReviewCard, StaffPicker,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   DateStrip, TimeSlots, StepHeader, TotalBar, DepositNote, DepositOutcomes, Eyebrow, BusinessRow, OptionGroup } = UI as unknown as Record<N, ComponentType<any>>;
 
@@ -249,10 +251,25 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   // ── Encabezado (una sola vez el estado) ──
   const abierto = f.abierto, stFg = abierto ? "var(--tl-open-text)" : "var(--tl-danger)", stDot = abierto ? "var(--tl-open)" : "var(--tl-danger)";
   const resto = f.estadoResto.replace(/^·\s*/, ""), restoC = resto ? resto.charAt(0).toUpperCase() + resto.slice(1) : "";
-  const calle = (f.direccion ?? f.zona ?? "").split(",")[0]!.toUpperCase();
   const n = resenas?.n ?? 0, avg = resenas?.avg ?? null;
   const metaL = [n >= 5 && avg != null ? `★ ${avg.toFixed(1)} · ${n} ${E2("RESEÑAS", "REVIEWS")}` : n > 0 ? `${n} ${n === 1 ? E2("RESEÑA", "REVIEW") : E2("RESEÑAS", "REVIEWS")}` : E2("NUEVO EN TO'LATINO", "NEW ON TO'LATINO"),
-    f.dist !== "—" ? f.dist.toUpperCase() : null, calle || null].filter(Boolean) as string[];
+    f.subsLinea ? f.subsLinea.split(" · ")[0]!.toUpperCase() : null, f.dist !== "—" ? f.dist.toUpperCase() : null].filter(Boolean) as string[];
+  // 23 nov · Cabecera según la referencia del fundador: nombre + sello (la palomita), una fila de datos y el estado; la dirección vive en Ubicación.
+  const metaD = [...metaL, f.ciudad ? f.ciudad.toUpperCase() : null].filter(Boolean) as string[];
+  const [contacto, setContacto] = useState(false);
+  // El teléfono como se dice en EE. UU.: +15705550100 → (570) 555-0100; cualquier otro, tal cual.
+  const telBonito = (t: string) => { const m = /^\+?1?(\d{3})(\d{3})(\d{4})$/.exec(t.replace(/[\s().-]/g, "")); return m ? `(${m[1]}) ${m[2]}-${m[3]}` : t; };
+  const contactos = [
+    llamar ? { k: "llamar", icon: "phone", t: E2("Llamar", "Call"), s: telBonito(f.telefono ?? ""), go: llamar } : null,
+    escribir ? { k: "escribir", icon: "chat", t: E2("Escribir", "Message"), s: E2("Un mensaje por To'Latino", "A message on To'Latino"), go: escribir } : null,
+    llegar ? { k: "llegar", icon: "pin", t: E2("Cómo llegar", "Directions"), s: f.direccion ?? f.zona ?? "", go: llegar } : null,
+  ].filter(Boolean) as { k: string; icon: string; t: string; s: string; go: () => void }[];
+  // 23 nov · «Contactar» + flecha hacia abajo (se despliega). El botón del sistema de diseño (pieza portada, no se edita) no pasa aria-haspopup ni
+  // aria-expanded: se le ponen al botón de dentro para que el lector de pantalla diga que abre una hoja y si está abierta.
+  const contRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { const b = contRef.current?.querySelector('[role="button"]'); b?.setAttribute("aria-haspopup", "dialog"); b?.setAttribute("aria-expanded", String(contacto)); }, [contacto, contactos.length]);
+  const sello = f.verificado ? <span role="img" aria-label={E2("Sello To'Latino", "To'Latino seal")} title={E2("Sello To'Latino", "To'Latino seal")} className="ml-2 inline-flex align-middle text-action"><Icon name="verified" size={22} strokeWidth={2.4} /></span> : null;
+  const datos = (xs: string[]) => xs.map((x, i) => <span key={i}>{i ? " · " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>);
 
   // ── La tarjeta de hoy: lo que importa sin repetir el estado ni la barra (Belleza: cómo confirma, el depósito, el pago) ──
   const hoy = useMemo(() => {
@@ -443,26 +460,31 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             </button>
           ) : null}
         </div>
-        <div className="flex flex-col gap-2.5 px-5 pb-[18px] pt-5">
-          <div className="flex gap-1.5"><Chip variant="pro" style={CHIP_SM}>PRO</Chip>{f.verificado ? <Chip variant="verified" style={CHIP_SM}>{E2("Sello To'Latino", "To'Latino seal")}</Chip> : null}</div>
-          {f.subsLinea ? <div className="font-mono text-[10px] font-bold tracking-[0.12em] text-ink/60">{f.subsLinea.toUpperCase()}</div> : null}
-          <h1 className="text-balance font-display text-[29px] font-extrabold leading-[1.05] tracking-[-0.045em]">{f.nombre}</h1>
-          <div className="font-mono text-[10.5px] font-bold tracking-[0.07em] text-ink/60">{metaL.map((x, i) => <span key={i}>{i ? " · " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>)}</div>
-          <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-ink/70" data-estado={abierto ? "abierto" : "cerrado"}>
-            <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold" style={{ color: stFg }}>{f.estadoCorto}</span>{restoC ? <span>{restoC}</span> : null}
-          </div>
-          {[llamar, escribir, llegar].some(Boolean) ? (
-            /* 19 nov · Antes, tres columnas iguales: «Cómo llegar» (122 px) no cabía en su tercio (111 a 390) y se salía del margen; con letra
-               grande en el iPhone SE la página se movía de lado. Ahora cada botón toma lo que dice y lo que sobra se reparte; si no caben los
-               tres, el último baja a otra fila (nunca se sale). Guardián botonesQueCaben. */
-            <div data-pieza="acciones-ficha" className="mt-1.5 flex flex-wrap gap-2">
-              {llamar ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="phone" block onClick={llamar}>{E2("Llamar", "Call")}</Button></div> : null}
-              {escribir ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="chat" block onClick={escribir}>{E2("Escribir", "Message")}</Button></div> : null}
-              {llegar ? <div className="grid flex-[1_1_auto]"><Button variant="secondary" size="sm" icon="pin" block onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button></div> : null}
+        <div className="flex flex-col gap-2 px-5 pb-3 pt-5" data-pieza="cabecera-ficha">
+          <h1 className="text-balance font-display text-[29px] font-extrabold leading-[1.05] tracking-[-0.045em]">{f.nombre}{sello}</h1>
+          <div className="font-mono text-[10.5px] font-bold leading-[1.5] tracking-[0.07em] text-ink/60">{datos(metaL)}</div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-[13.5px] font-bold" data-estado={abierto ? "abierto" : "cerrado"} style={{ color: stFg }}>
+              <span className="size-2 flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold">{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
             </div>
-          ) : null}
+            {/* 23 nov · Llamar, Escribir y Cómo llegar viven en un menú que se despliega (pedido del fundador): un solo botón en la cabecera. */}
+            {contactos.length ? <div className="flex-none" data-pieza="contactar-ficha" ref={contRef}><Button variant="secondary" size="sm" onClick={() => setContacto(true)}>{E2("Contactar", "Contact")}<Icon name="chevronDown" size={16} strokeWidth={1.9} /></Button></div> : null}
+          </div>
         </div>
-        <div ref={tabsRef} className="sticky z-20 bg-white [&_[role=tab]]:uppercase" style={{ top: CAB_MOVIL }}><Tabs items={tabs} active={tab} onChange={setTab} /></div>
+        {contacto ? (
+          <Hoja titulo={E2(`Contactar a ${f.nombre}`, `Contact ${f.nombre}`)} label="Ficha · contactar" es={es} onClose={() => setContacto(false)}>
+            <div className="mt-3 flex flex-col">
+              {contactos.map((c, i) => (
+                <button key={c.k} type="button" onClick={() => { setContacto(false); c.go(); }} className={`flex min-h-[64px] items-center gap-3.5 py-3 text-left ${i ? "border-t border-ink/[.08]" : ""}`}>
+                  <span className="grid size-11 flex-none place-items-center rounded-[14px] bg-ink/[.05]"><Icon name={c.icon} size={20} /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-[15.5px] font-extrabold">{c.t}</span>{c.s ? <span className="block truncate text-[13px] font-medium text-ink/60">{c.s}</span> : null}</span>
+                  <Icon name="chevronRight" size={18} color="rgba(11,14,18,.6)" />
+                </button>
+              ))}
+            </div>
+          </Hoja>
+        ) : null}
+        <div ref={tabsRef} className="sticky z-20 bg-white" style={{ top: CAB_MOVIL }}><PestanasFicha modo="movil" items={tabs} active={tab} onChange={setTab} /></div>
         <div className="min-h-[640px]">
           {tab === "res" && (
             <div className="flex flex-col gap-6 px-5 pt-5" data-screen-label="Ficha · resumen">
@@ -554,9 +576,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       {modo === "d" ? (
       <div className="mx-auto hidden max-w-[1240px] px-8 pb-14 lg:block" data-screen-label="APP-NEG-LISTING · desktop">
         <button type="button" onClick={() => router.back()} className="inline-flex min-h-11 items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
-        <div className="flex flex-wrap items-center gap-2 pb-4 pt-2.5 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/60">
-          {[f.subsLinea.toUpperCase(), `${f.ciudad}, PA`].filter(Boolean).map((x, i) => <span key={i}>{i ? "· " : ""}{x}</span>)}
-        </div>
+        <div className="h-3" />
         <div className="relative grid h-[448px] grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] grid-rows-2 gap-2 overflow-hidden rounded-[22px]">
           {f.video ? <div className="relative row-span-2 min-w-0 overflow-hidden" data-portada-video=""><VideoPortada src={f.video.src} poster={f.video.poster} es={es} desk onClick={verFotos} /></div> : (
           <button type="button" aria-label={t.photosAll} onClick={verFotos} className="row-span-2 min-w-0">{f.hero ? <span className="block size-full" style={{ background: `center/cover ${fotoFondo(f.hero, 800)}` }} /> : <Placeholder height="100%" />}</button>
@@ -564,21 +584,22 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
           {[1, 2, 3, 4].map((k) => <button key={k} type="button" aria-label={t.photosAll} onClick={verFotos} className="min-w-0">{f.fotos[k] ? <span className="block size-full" style={{ background: `center/cover ${fotoFondo(f.fotos[k], 360)}` }} /> : <Placeholder height="100%" />}</button>)}
           {f.nFotos > 0 ? <button type="button" onClick={verFotos} className="absolute bottom-4 right-4 flex items-center gap-2 rounded-[13px] bg-white px-3.5 py-2.5 text-[13px] font-bold shadow-[var(--shadow-float)]"><Icon name="image" size={16} />{E2(`Ver las ${f.nFotos} fotos`, `See all ${f.nFotos} photos`)}</button> : null}
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-6 pb-[22px] pt-[26px]">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 pb-[14px] pt-[26px]" data-pieza="cabecera-ficha">
           <div className="min-w-0 flex-[1_1_420px]">
-            <div className="mb-3.5 flex flex-wrap gap-2"><Chip variant="pro">PRO</Chip>{f.verificado ? <Chip variant="verified">{E2("Sello To'Latino", "To'Latino seal")}</Chip> : null}</div>
-            <h1 className="text-balance font-display text-[clamp(32px,4.2vw,48px)] font-extrabold leading-[1.02] tracking-[-0.045em]">{f.nombre}</h1>
-            <div className="mt-3 flex flex-wrap gap-2 font-mono text-[11.5px] font-bold tracking-[0.08em] text-ink/60">{metaL.map((x, i) => <span key={i}>{i ? "· " : ""}{x.startsWith("★") ? <><span className="text-[var(--tl-pro)]">★</span>{x.slice(1)}</> : x}</span>)}</div>
-            <div className="mt-3 flex flex-wrap items-center gap-2.5 text-[14px] font-semibold text-ink/70"><span className="size-[9px] flex-none rounded-full" style={{ background: stDot }} /><span className="font-extrabold" style={{ color: stFg }}>{f.estadoCorto}</span>{restoC ? <span>{restoC}</span> : null}</div>
+            <h1 className="text-balance font-display text-[clamp(32px,3.6vw,44px)] font-extrabold leading-[1.04] tracking-[-0.045em]">{f.nombre}{sello}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="font-mono text-[11.5px] font-bold tracking-[0.08em] text-ink/60">{datos(metaD)}</span>
+              <span className="inline-flex items-center gap-2 text-[14px] font-extrabold" style={{ color: stFg }}><span className="size-2 flex-none rounded-full" style={{ background: stDot }} />{f.estadoCorto}{restoC ? ` · ${restoC.charAt(0).toLowerCase()}${restoC.slice(1)}` : ""}</span>
+            </div>
           </div>
-          <div className="flex flex-none gap-2">
-            <IconButton icon="heart" size={50} label={guardado ? t.saved : t.save} active={guardado} onClick={guardar} />
-            <IconButton icon="share" size={50} label={t.share} onClick={compartir} />
-            {llamar ? <IconButton icon="phone" size={50} label={E2("Llamar", "Call")} onClick={llamar} /> : null}
+          <div className="flex flex-none flex-wrap gap-2">
+            <Button variant="secondary" size="sm" icon="heart" onClick={guardar}>{guardado ? t.saved : t.save}</Button>
+            <Button variant="secondary" size="sm" icon="share" onClick={compartir}>{t.share}</Button>
+            {llamar ? <Button variant="secondary" size="sm" icon="phone" onClick={llamar}>{E2("Llamar", "Call")}</Button> : null}
           </div>
         </div>
-        <div ref={tiraRef} className="sticky z-20 [&_[role=tab]]:uppercase" style={{ top: CAB_DESK }}>
-          <DesktopTabs items={tabs} active={activa} onChange={ir} aside={pegada ? { label: `${f.estadoCorto} · ${resto}`.toUpperCase().slice(0, 40), dot: stDot } : null} />
+        <div ref={tiraRef} className="sticky z-20" style={{ top: CAB_DESK }}>
+          <PestanasFicha modo="escritorio" items={tabs} active={activa} onChange={ir} aside={pegada ? { label: `${f.estadoCorto}${resto ? ` · ${resto}` : ""}`.slice(0, 40), dot: stDot, color: stFg } : null} />
           {flechas.l ? <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[76px] items-center bg-[linear-gradient(90deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronLeft" size={34} label={E2("Anteriores", "Previous")} onClick={() => tira()?.scrollBy({ left: -320, behavior: "smooth" })} /></span></div> : null}
           {flechas.r ? <div className="pointer-events-none absolute inset-y-0 right-[420px] flex w-[76px] items-center justify-end bg-[linear-gradient(270deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronRight" size={34} label={E2("Más", "More")} onClick={() => tira()?.scrollBy({ left: 320, behavior: "smooth" })} /></span></div> : null}
         </div>
@@ -646,7 +667,6 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 
 /* Alturas de la cabecera de la app (AppShell): las pestañas se pegan justo debajo. */
 const CAB_MOVIL = 57, CAB_DESK = 121;
-const CHIP_SM = { padding: "5px 10px", fontSize: 11.5 };
 
 /* ── La reserva (Belleza): 1 servicio y con quién → 2 día y hora → Booking (/cita) para Detalles y Revisa y envía ── */
 type Bk = { who: string | null; svc: string | null; opts: Record<string, number>; i: number; h: number | null; step: 1 | 2 };

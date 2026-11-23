@@ -223,6 +223,16 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
         return out.join(' ; '); }) : '';
       if (ancho > 1) malas.push(`${u}: scroll de lado (+${ancho}) ${quien}`);
       const noCaben = await botonesQueNoCaben(w); if (noCaben.length) malas.push(`${u}: botones que no caben: ${noCaben.slice(0, 4).join(' ; ')}`);
+      // 23 nov · La ficha ya no tiene la fila de tres botones: con letra grande se mira «Contactar» y, abierta, su hoja (los tres renglones).
+      if (u === `/n/${BIZ}`) {
+        const cb = w.locator('[data-pieza="contactar-ficha"] [role="button"]');
+        if (await cb.count() !== 1) malas.push(`${u}: sin el botón «Contactar»`);
+        else { await cb.click(); const hj = w.locator('[data-screen-label="Ficha · contactar"]'); await hj.waitFor();
+          if (await hj.locator('button, [role=button]').filter({ hasText: /Llamar|Escribir|Cómo llegar/ }).count() !== 3) malas.push(`${u}: la hoja «Contactar» no tiene sus tres renglones`);
+          const nh = await botonesQueNoCaben(w); if (nh.length) malas.push(`${u}: la hoja «Contactar» abierta, botones que no caben: ${nh.slice(0, 4).join(' ; ')}`);
+          if (await w.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) > 1) malas.push(`${u}: la hoja «Contactar» mueve la página de lado`);
+          await w.keyboard.press('Escape'); await hj.waitFor({ state: 'detached' }); }
+      }
     }
     ok(!malas.length, `con letra grande, a 390: la letra desde el servidor y sin scroll de lado ni botones que se salgan de su caja en 6 pantallas${malas.length ? ' → ' + malas.join(' | ') : ''}`);
     await w.goto(B + '/buscar?q=mofongo'); await shot(w, '390-letra-buscar');
