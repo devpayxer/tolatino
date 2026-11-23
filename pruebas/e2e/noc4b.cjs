@@ -54,6 +54,11 @@ const barrer = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' 
   // DJ por fecha: sin local, «Pedir fecha».
   await p.goto(`${B}/n/dj-rafy-mejia`); await p.waitForLoadState('networkidle');
   ok(!!(await vis(p.getByText('Para tu fecha'))), 'DJ: «Para tu fecha»'); ok(!!(await vis(p.getByText('Por contrato'))) && !(await vis(p.getByText('Cómo llegar', { exact: true }))), 'DJ: «Por contrato», sin «Cómo llegar»');
+  // 23 nov · «Cómo llegar» ya no es un botón suelto en el teléfono: vive en la hoja de «Contactar». Un DJ por fecha (sin local) no lo ofrece ahí tampoco.
+  { const cb = await vis(p.locator('[data-pieza="contactar-ficha"] [role="button"]')); ok(!!cb, 'DJ: «Contactar» (tiene teléfono)'); await cb.click();
+    const hj = p.locator('[data-screen-label="Ficha · contactar"]'); await hj.waitFor();
+    ok(!!(await hj.getByText('Llamar', { exact: true }).count()) && !(await hj.getByText('Cómo llegar').count()), 'DJ: la hoja «Contactar» ofrece Llamar y no «Cómo llegar» (no hay local)');
+    await p.keyboard.press('Escape'); await hj.waitFor({ state: 'detached' }); }
   ok(!(await vis(p.getByText(/· COVER$/).first())), 'DJ: sin cover ni fila');
   ok(!!(await vis(p.getByRole('button', { name: 'Pedir fecha' }))), 'DJ: «Pedir fecha»');
   await p.screenshot({ path: OUT + 'n4b-dj-m.png', fullPage: true });

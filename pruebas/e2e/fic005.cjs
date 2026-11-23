@@ -37,7 +37,12 @@ const HORA = /^\d{1,2}:\d{2} (AM|PM)$/;
     const tabs = await m.getByRole('tab').allInnerTexts();
     ok(tabs.map((x) => x.trim().toUpperCase()).join('|').startsWith('RESUMEN|SERVICIOS|EQUIPO|RESEÑAS'), `pestañas en orden: ${tabs.map((x) => x.trim()).join(' · ')}`);
     ok(!/undefined|null|NaN/.test(await texto(m)), 'sin «undefined», «null» ni «NaN»');
-    const noCaben = await botonesQueNoCaben(m); ok(!noCaben.length, `390: ningún botón se sale de su caja (Llamar · Escribir · Cómo llegar)${noCaben.length ? ' → ' + noCaben.join(' ; ') : ''}`); // 19 nov
+    const noCaben = await botonesQueNoCaben(m); ok(!noCaben.length, `390: ningún botón se sale de su caja («Contactar», las pestañas)${noCaben.length ? ' → ' + noCaben.join(' ; ') : ''}`); // 19 nov
+    // 23 nov · La fila de tres botones se fue: «Contactar» abre una hoja con Llamar, Escribir y Cómo llegar; sus renglones también caben (pruebas/lib/caben.cjs).
+    await m.locator('[data-pieza="contactar-ficha"] [role="button"]').click(); const hojaC = m.locator('[data-screen-label="Ficha · contactar"]'); await hojaC.waitFor();
+    ok(await hojaC.locator('button, [role=button]').filter({ hasText: /Llamar|Escribir|Cómo llegar/ }).count() === 3, '«Contactar» abre la hoja con Llamar, Escribir y Cómo llegar');
+    const noCabenHoja = await botonesQueNoCaben(m); ok(!noCabenHoja.length, `390: con la hoja abierta, ningún renglón se sale de su caja${noCabenHoja.length ? ' → ' + noCabenHoja.join(' ; ') : ''}`);
+    await m.keyboard.press('Escape'); await hojaC.waitFor({ state: 'detached' });
     await m.screenshot({ path: OUT + 'fic005-resumen-390.png', fullPage: false });
     await m.getByRole('tab', { name: /Equipo/ }).click();
     const eq = m.locator('[data-screen-label="Ficha · equipo"]'); await eq.waitFor();
@@ -68,6 +73,8 @@ const HORA = /^\d{1,2}:\d{2} (AM|PM)$/;
     const cd = await b.newContext({ viewport: { width: 1360, height: 900 } }), d = await cd.newPage(); abiertas.push(cd);
     await d.goto(B + `/n/${PRO}`); await d.locator('[data-ficha="nueva"]').waitFor();
     for (const s of ['res', 'cat', 'staff', 'rev', 'hor']) ok(await d.locator(`#sec-${s}`).count() === 1, `sección ${s}`);
+    { const nc = await botonesQueNoCaben(d); ok(!nc.length, `1360: ningún botón se sale de su caja (Guardar · Compartir · Llamar con texto, las pestañas)${nc.length ? ' → ' + nc.join(' ; ') : ''}`); // 23 nov
+      ok(await d.locator('[data-pieza="cabecera-ficha"]').last().getByRole('button', { name: /^(Guardar|Guardado)$/ }).count() === 1, 'escritorio: «Guardar» con texto junto al nombre'); }
     const t = d.locator('[data-screen-label="Ficha · Booking · columna"]'); await t.waitFor();
     await d.mouse.wheel(0, 1600); await d.waitForTimeout(500);
     ok(await espera(async () => (await t.boundingBox())?.y < 400, 3000), 'la tarjeta de reservar se queda pegada a la derecha al bajar');

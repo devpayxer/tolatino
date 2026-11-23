@@ -11039,22 +11039,48 @@ const guardianes = {
     if (!/BASE="\$\{DIRECCIONES_ESPEJO:-https:\/\/www2\.census\.gov\/geo\/tiger\}"/.test(gen) || /googleapis|mapbox|hereapi|nominatim\.openstreetmap|photon\.komoot/.test(gen)) falla(G, "infra/direcciones/generar.sh", 0, "la carga baja datos públicos del Censo (y las fuentes de fuentes-oa.txt): nunca un servicio de geocodificación");
   },
 
-  /* 19 nov · botonesQueCaben: en la ficha Pro, «Llamar · Escribir · Cómo llegar» iban en tres columnas iguales (minmax(0,1fr)): «Cómo llegar»
-     (122 px) no cabía en su tercio (111 a 390) y se salía del margen; con letra grande en el iPhone SE la página se movía de lado. La fila se
-     acomoda (flex-wrap, cada botón con lo suyo) y las pruebas miran cada botón contra su caja (pruebas/lib/caben.cjs, en fic005 y bus9t).
-     Al revés (alreves19caben): la fila vuelve a columnas iguales, se quita el wrap, o las pruebas dejan de mirar. */
+  /* 23 nov · botonesQueCaben (reescrito). El 19 nov la fila «Llamar · Escribir · Cómo llegar» de la ficha Pro iba en tres columnas iguales y
+     «Cómo llegar» (122 px) se salía de su tercio a 390; con letra grande en el iPhone SE la página se movía de lado. Por decisión del fundador
+     (23 nov) esa fila ya no existe: en el teléfono hay un botón «Contactar» junto al estado que abre una hoja con tres renglones, y en el
+     escritorio Guardar, Compartir y Llamar son botones con texto a la derecha del nombre. La exigencia es la misma, sobre lo que ahora puede
+     desbordar: (1) la fila estado + «Contactar» (a 320 con letra grande y «Cerrado · abre el lunes a las 11 AM» el estado se parte en líneas
+     y el botón no se aprieta ni se sale: el estado es min-w-0 con flex-wrap y el botón flex-none); (2) los renglones de la hoja (una
+     dirección larga se corta con elipsis, nunca empuja el renglón: el texto es min-w-0 flex-1 y la línea de abajo truncate); (3) la fila
+     del escritorio (con un nombre largo a 1024 el nombre cede —min-w-0— y los botones bajan a otra línea —flex-wrap—, nunca se salen).
+     Las pruebas miran cada botón contra su caja y contra la ventana (pruebas/lib/caben.cjs, en fic005, bus9t y fic9cab).
+     Al revés (alreves19caben): se quita min-w-0, flex-wrap o truncate de cada una, vuelve la fila vieja, o las pruebas dejan de mirar. */
   botonesQueCaben() {
     const G = "botonesQueCaben", F = "apps/web/app/(app)/n/[id]/FichaNueva.tsx";
     const t = sinComent(F);
-    const m = t.match(/<div data-pieza="acciones-ficha" className="([^"]*)"/);
-    if (!m) falla(G, F, 0, "no encontré la fila de acciones de la ficha (data-pieza=\"acciones-ficha\")");
+    if (/data-pieza="acciones-ficha"/.test(t)) falla(G, F, 0, "volvió la fila «Llamar · Escribir · Cómo llegar» (el fundador la cambió el 23 nov por el botón «Contactar»)");
+    // (1) Teléfono: estado + «Contactar».
+    const est = t.match(/<div className="flex items-center justify-between gap-3">\s*<div className="([^"]*)" data-estado=/);
+    if (!est) falla(G, F, 0, "no encontré la fila estado + «Contactar» de la cabecera del teléfono (data-estado dentro de flex justify-between)");
+    else if (!/\bmin-w-0\b/.test(est[1]) || !/\bflex-wrap\b/.test(est[1])) falla(G, F, 0, "el estado de la cabecera (teléfono) cede y se parte en líneas (min-w-0 flex-wrap): si no, un estado largo empuja «Contactar» fuera");
+    if (!/<div className="flex-none" data-pieza="contactar-ficha"[^>]*>/.test(t)) falla(G, F, 0, "el botón «Contactar» no se aprieta (flex-none) y vive en data-pieza=\"contactar-ficha\"");
+    // (2) La hoja: renglones.
+    const reng = t.match(/<button key=\{c\.k\} type="button"[\s\S]*?className=\{`([^`]*)`\}>\s*<span[^>]*>.*?<\/span>\s*<span className="([^"]*)"><span className="block[^"]*">\{c\.t\}<\/span>\{c\.s \? <span className="([^"]*)">/s);
+    if (!reng) falla(G, F, 0, "no encontré los renglones de la hoja «Contactar» (título, subtítulo c.s)");
     else {
-      if (!/\bflex\b/.test(m[1]) || !/\bflex-wrap\b/.test(m[1])) falla(G, F, 0, "la fila Llamar · Escribir · Cómo llegar se acomoda (flex flex-wrap): en columnas iguales «Cómo llegar» se sale");
-      const fila = t.slice(m.index, m.index + 900);
-      if (/minmax\(0,\s*1fr\)/.test(fila)) falla(G, F, 0, "la fila de acciones no usa columnas iguales (minmax(0,1fr))");
-      if ((fila.match(/flex-\[1_1_auto\]/g) || []).length < 3) falla(G, F, 0, "cada botón de la fila toma lo que dice (flex-[1_1_auto])");
+      if (!/\bmin-h-\[64px\]/.test(reng[1])) falla(G, F, 0, "cada renglón de la hoja mide 64 px o más (se toca con el dedo)");
+      if (!/\bmin-w-0\b/.test(reng[2]) || !/\bflex-1\b/.test(reng[2])) falla(G, F, 0, "el texto del renglón cede (min-w-0 flex-1): una dirección larga empujaría el renglón fuera de la hoja");
+      if (!/\btruncate\b/.test(reng[3])) falla(G, F, 0, "la línea de abajo del renglón (teléfono, dirección) se corta con elipsis (truncate)");
     }
-    for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs"]) if (!/botonesQueNoCaben\(/.test(readFileSync(e, "utf8"))) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs)");
+    // (3) Escritorio: nombre + botones.
+    const desk = t.match(/<div className="([^"]*)" data-pieza="cabecera-ficha">\s*<div className="([^"]*)">\s*<h1[\s\S]*?<div className="([^"]*)">\s*<Button variant="secondary" size="sm" icon="heart"/);
+    if (!desk) falla(G, F, 0, "no encontré la cabecera del escritorio (nombre y botones Guardar · Compartir · Llamar con texto)");
+    else {
+      if (!/\bflex-wrap\b/.test(desk[1])) falla(G, F, 0, "la cabecera del escritorio baja los botones a otra línea si no caben (flex-wrap)");
+      if (!/\bmin-w-0\b/.test(desk[2])) falla(G, F, 0, "el nombre del escritorio cede (min-w-0): un nombre largo no empuja los botones fuera");
+      if (!/\bflex-wrap\b/.test(desk[3])) falla(G, F, 0, "los botones Guardar · Compartir · Llamar se acomodan (flex-wrap) y no se salen");
+    }
+    for (const e of ["pruebas/e2e/fic005.cjs", "pruebas/e2e/bus9t.cjs", "pruebas/e2e/fic9cab.cjs"]) {
+      if (!existsSync(e)) { falla(G, e, 0, "falta la prueba de la cabecera de la ficha"); continue; }
+      const te = readFileSync(e, "utf8");
+      if (!/require\('\.\.\/lib\/caben\.cjs'\)/.test(te) || !/await botonesQueNoCaben\(/.test(te)) falla(G, e, 0, "la prueba no mira que los botones quepan en su caja (pruebas/lib/caben.cjs: require + botonesQueNoCaben)");
+    }
+    if (existsSync("pruebas/e2e/fic9cab.cjs")) { const e = readFileSync("pruebas/e2e/fic9cab.cjs", "utf8");
+      if (!/ESTADO_LARGO/.test(e) || !/abrirHoja\(s\)/.test(e) || !/320/.test(e) || !/botonesFueraDeLaVentana\(/.test(e) || !/contenidoSeSale\(/.test(e)) falla(G, "pruebas/e2e/fic9cab.cjs", 0, "fic9cab mira a 320 con letra grande el estado largo, la hoja abierta y la ventana (ESTADO_LARGO · abrirHoja(s) · botonesFueraDeLaVentana · contenidoSeSale)"); }
     // 19 nov · El nombre del encabezado a 320 con letra grande se salía de su caja y tapaba el botón del idioma.
     if (!/@media \(max-width: 359px\) \{\s*\[data-letra="grande"\] \[aria-label="To’Latino"\] > span \{ font-size: 17px !important; \}/.test(readFileSync("apps/web/app/globals.css", "utf8")))
       falla(G, "apps/web/app/globals.css", 0, "a 320 con letra grande el nombre «To’Latino» baja a 17 px (si no, tapa el botón del idioma)");
