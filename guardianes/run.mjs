@@ -15765,6 +15765,8 @@ const guardianes = {
      partes (decisión AM) o desde otro sitio que su orden única, que la clase «despliegue» deje fuera algo que deploy.sh, compose o el trabajo
      «imagenes» leen de verdad (las rutas se sacan de esos archivos, no de una lista), que sus casos dejen de pasar (árbol, documentos, propuesta,
      main, conclusión de la API), y que ci.yml deje de decir de qué es cada corrida o imprima la evidencia sin que todo haya dado verde.
+     23 nov · Y la vía rápida de diseño (decisión AL): que su lista blanca se abra a lib/, api/, route, acciones, migraciones, scripts, infra o
+     .github; que deje de exigir el build de la web en local; que deje pasar una entrega con una clase vigilada; que calle que las pruebas corren después.
      Al revés: alrevesSubir. */
   subidaConHerramienta() {
     const G = "subidaConHerramienta", S = "scripts/ci/subir.mjs", A = "scripts/ci/alcance.mjs", Y = ".github/workflows/ci.yml", D = "infra/pruebas/deploy.sh", C = "infra/pruebas/docker-compose.yml";
@@ -15822,6 +15824,44 @@ const guardianes = {
       if (/EVIDENCIA/.test(ev)) falla(G, Y, 0, "el guion de la evidencia no lleva la palabra EVIDENCIA entera (el registro enseña el guion y se leería como la línea)");
       if (!ev.includes('test "$(git rev-parse HEAD)" = "$SHA"') || !ev.includes("ARBOL=\"$(git rev-parse 'HEAD^{tree}')\"") || !ev.includes('console.log(["EVID", "ENCIA"].join("") + " " + j);')) falla(G, Y, 0, "la evidencia lleva el commit comprobado, su árbol y una sola línea EVIDENCIA");
       if (!/ENTRADAS: \$\{\{ toJSON\(inputs\) \}\}/.test(ev)) falla(G, Y, 0, "la evidencia lleva todas las entradas (toJSON(inputs))");
+    }
+    // 7. 23 nov · La vía rápida de diseño (decisión AL). (a) La lista blanca no cubre nada de lib/, api/, route, acciones, page/layout, migraciones,
+    //    scripts, infra, .github, guardianes ni pruebas (cada regla de DISENO por separado, y además la función entera); (b) solo diseño exige el build
+    //    de la web en local además de tipos, guardianes y textos, con el mismo comando que el trabajo «web» de ci.yml; (c) una entrega con cualquier
+    //    clase vigilada (o .github/) nunca sale por la vía rápida; (d) --subir dice al final que la punta a punta y «al revés» corren DESPUÉS.
+    if (!Array.isArray(SUBIR.DISENO) || !SUBIR.DISENO.length || typeof SUBIR.esDiseno !== "function" || typeof SUBIR.combinar !== "function") falla(G, S, 0, "la vía rápida de diseño: faltan DISENO, esDiseno o combinar");
+    else {
+      const NUNCA = ["apps/web/lib/ficha.tsx", "apps/web/lib/x.css", "apps/web/app/api/x/Boton.tsx", "apps/web/app/x/route.tsx", "apps/web/app/x/route.ts", "apps/web/app/x/acciones.tsx", "apps/web/app/x/acciones-fiesta.ts",
+        "apps/web/app/x/page.tsx", "apps/web/app/layout.tsx", "apps/web/middleware.ts", "apps/web/next.config.ts", "packages/db/migraciones/0001_x.sql", "packages/ui/src/migraciones/x.sql", "scripts/ci/x.tsx", "scripts/x.css",
+        "infra/pruebas/x.css", ".github/workflows/x.css", "guardianes/x.tsx", "pruebas/e2e/x.png", "pruebas/alreves/x.png", "services/video/x.tsx"];
+      for (const re of SUBIR.DISENO) {
+        if (!(re instanceof RegExp) || !re.source.startsWith("^")) { falla(G, S, 0, `la lista blanca de diseño: cada regla va anclada al principio de la ruta (${String(re)})`); continue; }
+        const f = NUNCA.find((x) => re.test(x) && !/\/(route|page|layout|acciones[^/]*)\.[jt]sx?$/.test(x)) ?? null;
+        if (f) falla(G, S, 0, `la lista blanca de diseño cubre ${f} (${re.source}): nunca lib/, api/, migraciones, scripts, infra, .github, guardianes ni pruebas`);
+      }
+      for (const f of NUNCA) if (SUBIR.esDiseno(f)) falla(G, S, 0, `la vía rápida de diseño deja pasar ${f}: nunca lib/, api/, route, acciones, page/layout, migraciones, scripts, infra, .github, guardianes ni pruebas`);
+      const P = "packages/ui/src/core/PestanasFicha.tsx", F = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", rl = { [P]: ["<div />"], [F]: ["<div />"] };
+      const cd = SUBIR.clases([P, F], rl), ed = SUBIR.exigencias(cd);
+      if (!cd.diseno || ed.corrida !== "despues") falla(G, S, 0, "la vía rápida de diseño: dos piezas de diseño sin señales ya no salen por ella (corrida «despues»)");
+      if (!["tipos", "build", "guardianes", "textos"].every((k) => ed.locales?.includes(k))) falla(G, S, 0, `solo diseño exige build local además de tipos, guardianes y textos (pide ${JSON.stringify(ed.locales)})`);
+      const web = /\n  web:\n[\s\S]*?(?=\n  [a-z_-]+:\n|$)/.exec(y)?.[0] ?? "", b = SUBIR.PASOS_LOCALES?.build;
+      if (!Array.isArray(b) || !web.includes(`- run: ${b[0]} ${(b[1] ?? []).join(" ")}\n`)) falla(G, S, 0, `solo diseño exige build local: PASOS_LOCALES.build es el mismo comando que el trabajo «web» de ci.yml (${JSON.stringify(b)})`);
+      const vig = [
+        ["sensible por ruta", [P, "apps/web/app/admin/Tabla.tsx"], { ...rl, "apps/web/app/admin/Tabla.tsx": ["<div />"] }],
+        ["sensible por señal", [P, F], { ...rl, [F]: ['"use server";'] }],
+        ["sensible por centavos", [P, F], { ...rl, [P]: ["const total_centavos = 1;"] }],
+        ["herramientas", [P, "scripts/ci/subir.mjs"], { ...rl, "scripts/ci/subir.mjs": ["x"] }],
+        ["despliegue", [P, "infra/pruebas/deploy.sh"], { ...rl, "infra/pruebas/deploy.sh": ["x"] }],
+        ["la base", [P, "packages/db/migraciones/0001_x.sql"], { ...rl, "packages/db/migraciones/0001_x.sql": ["x"] }],
+        [".github", [P, ".github/workflows/ci.yml"], { ...rl, ".github/workflows/ci.yml": ["x"] }],
+        ["lib", [P, "apps/web/lib/ficha.ts"], { ...rl, "apps/web/lib/ficha.ts": ["x"] }],
+      ];
+      for (const [que, fs, r] of vig) { const x = SUBIR.clases(fs, r); if (x.diseno || SUBIR.exigencias(x).corrida === "despues") falla(G, S, 0, `una entrega con una clase vigilada sale por la vía rápida de diseño (${que})`); }
+      for (const k of ["sensible", "herramientas", "despliegue"]) if (SUBIR.exigencias({ ...cd, clases: ["diseno", k] }).corrida === "despues") falla(G, S, 0, `una entrega con una clase vigilada sale por la vía rápida de diseño (exigencias con «${k}»)`);
+      if (SUBIR.exigencias(cd, { sinViaRapida: true }).corrida === "despues") falla(G, S, 0, "--sin-via-rapida fuerza el camino normal");
+      if (SUBIR.combinar(cd, null).diseno || SUBIR.combinar(cd, { clases: [], motivos: [] }).diseno || SUBIR.combinar(cd, { ...cd, clases: ["sensible"], diseno: false, noDiseno: "x" }).diseno) falla(G, S, 0, "la vía rápida de diseño necesita que la cabeza y origin/main la den (manda lo más estricto)");
+      const cuerpo = /async function cmdSubir\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+      if (!s.includes("VÍA RÁPIDA DE DISEÑO (AL): las pruebas de punta a punta y al revés corren DESPUÉS, en la corrida de push de main") || (cuerpo.match(/avisoDespues\(/g) ?? []).length < 2) falla(G, S, 0, "--subir por la vía rápida dice al final que la punta a punta y «al revés» corren DESPUÉS (avisoDespues tras empujar)");
     }
   },
 

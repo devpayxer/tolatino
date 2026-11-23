@@ -83,3 +83,13 @@ SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/a�
   una sola línea agregada para exportarlo). Sin CDN ni dependencia en tiempo de ejecución; lo usa solo `lib/boletos-qr.ts` para la matriz del
   texto firmado (Ed25519 con `node:crypto`, sin librería). Verificado con jsQR (Apache-2.0, solo en las pruebas locales, no entra al repo).
   Costo: $0. Sin proveedor pago.
+- **23 nov 2026 · Herramienta de subida `scripts/ci/subir.mjs` (propia, $0):** `--plan` (sin red: clases de la entrega, dirigida propuesta y
+  qué falta), `--dirigida` (la lanza en partes y espera), `--subir` (árbol limpio y al día · tipos, guardianes y textos · evidencia del CI de ese
+  árbol · empuje sin forzar a main y pruebas · espera a que el sandbox lo sirva), `--casos` (los corre el guardián `subidaConHerramienta`).
+  **Vía rápida de diseño (decisión AL):** si todo lo que no es documento de trabajo cae en su lista blanca cerrada (`packages/ui/src`, los
+  componentes `.tsx` y `.css` de `apps/web/app` sin page/layout/route/acciones/api, las fotos de `public/paginas`, `docs/ayuda`, LAUNCH y las
+  capturas de `pruebas/visual`), sin clases vigiladas (herramientas, despliegue, sensible) ni señales en sus renglones (imports de lib/ o
+  acciones, await/fetch, cookies, redirecciones, «use server», centavos…), y lo dicen las listas de la rama Y las de origin/main, `--subir` corre
+  aquí tipos, **build de la web**, guardianes y textos, empuja sin esperar la dirigida y al final dice dónde corren DESPUÉS la punta a punta y
+  «al revés» (la corrida del push a main), con la lista de pruebas que la dirigida habría propuesto. `--sin-via-rapida` fuerza el camino normal.
+  No cambia producción ni la confirmación completa.

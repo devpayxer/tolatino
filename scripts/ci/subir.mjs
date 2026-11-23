@@ -10,10 +10,19 @@
      --subir [--ensayo]            a. árbol limpio y al día con origin/main · b. tipos, guardianes y textos sobre ese árbol · c. evidencia del CI
                                    para ESE árbol · d. empuja sin forzar (main primero si hay despliegue) · e. espera a que el sandbox lo sirva.
                                    Con --ensayo hace a–c y dice qué empujaría. Cada comprobación imprime «CORRIÓ: …» o «FALTA: …».
+       vía rápida de diseño        23 nov (decisión AL, aprobada por el fundador): si la entrega es SOLO de diseño (clase «diseno»: todo lo que no
+                                   es documento de trabajo cae en la lista blanca DISENO, nada en NUNCA_DISENO ni con una palabra de
+                                   PALABRAS_NO_DISENO en la ruta, sin clases vigiladas ni señales en sus renglones, y lo dicen las listas de la
+                                   cabeza Y las de origin/main), b. corre además el build de la web (el mismo comando que el trabajo «web» de
+                                   ci.yml), c. no se exige, y al final dice dónde corren DESPUÉS la punta a punta y «al revés» (la corrida del push
+                                   a main) con la lista de pruebas que la dirigida habría propuesto. No espera esa corrida. No cambia producción
+                                   ni la confirmación completa.
+     --subir --sin-via-rapida      fuerza el camino normal (con evidencia del CI) aunque la entrega sea de diseño.
      --casos                       los casos puros (sin red, sin tocar el repo); los corre el guardián subidaConHerramienta.
    Las clases solo SUMAN exigencias, nunca certifican: «sensible» es mejor esfuerzo (rutas + señales en los renglones cambiados) y lo que no
    caza sube como normal. La garantía que no depende de la clase es tipos + guardianes siempre y la evidencia del CI del mismo árbol.
-   Juzga con sus listas y con las de origin/main (si allí existe esta herramienta) y manda lo más estricto (la unión).
+   Juzga con sus listas y con las de origin/main (si allí existe esta herramienta) y manda lo más estricto (la unión). La única clase que afloja,
+   «diseno», exige que las dos la den: sin la herramienta de main, con una de main sin la vía rápida o con un error, no hay vía rápida.
    La evidencia es la línea «EVIDENCIA {json}» que imprime el trabajo final de ci.yml («la tubería») solo si todo lo pedido dio verde; la línea
    sola no vale: la conclusión de la corrida y de ese trabajo se leen de la API (como scripts/ci/corrida.mjs). Guardián subidaConHerramienta;
    al revés: alrevesSubir. */
@@ -65,6 +74,65 @@ export const AL_REVES_ENTERO = Object.freeze([/^guardianes\/run\.mjs$/, /^prueba
 const casa = (lista, f) => lista.some((re) => re.test(f));
 export const esDespliegue = (f) => casa(DESPLIEGUE, f);
 
+/* 23 nov · La vía rápida de diseño (decisión AL). Una entrega es «solo diseño» cuando TODOS sus archivos que no son documentos de trabajo caen en
+   la lista blanca DISENO, ninguno cae en NUNCA_DISENO ni lleva en su ruta una palabra de PALABRAS_NO_DISENO, la entrega no tiene ninguna clase
+   vigilada (herramientas, despliegue, sensible, con sus señales) y ningún renglón cambiado de esos archivos trae una SENAL_DISENO. Cualquier duda
+   (un archivo de código sin sus renglones, la herramienta de origin/main que no la da por diseño o no responde) = no es diseño. Guardián
+   subidaConHerramienta. Por qué cada pieza:
+   - packages/ui/src: las piezas del sistema de diseño (no leen datos ni hablan con el servidor).
+   - apps/web/app: solo componentes .tsx y estilos .css; NO page/layout/route ni ningún otro archivo especial de Next (page y layout leen datos y
+     deciden quién entra; AL deja pasar «los datos de lectura que esa pantalla pinta», pero esa lectura vive en page.tsx y en lib/, que quedan
+     fuera: lo más estrecho), NO acciones*, NO nada bajo app/api/ y NO un .ts (local.ts, yo.ts… son lógica).
+   - apps/web/public/paginas: las fotos de categoría (.webp con su huella).
+   - docs/ayuda (El Compa), docs/LAUNCH-CHECKLIST.md (lo que queda pendiente) y pruebas/visual/**.png (las capturas de referencia). */
+export const DISENO = Object.freeze([
+  /^packages\/ui\/src\/.*\.(tsx|ts|js|css|svg)$/,
+  /^apps\/web\/app\/(?!api\/).*\.(tsx|css)$/,
+  /^apps\/web\/public\/paginas\/[^/]+\.webp$/,
+  /^docs\/ayuda\/.*\.md$/,
+  /^docs\/LAUNCH-CHECKLIST\.md$/,
+  /^pruebas\/visual\/.*\.png$/,
+]);
+// Lo que nunca es diseño aunque la lista blanca lo cubriera (cinturón y tirantes: el guardián prueba las dos).
+export const NUNCA_DISENO = Object.freeze([
+  /^apps\/web\/lib\//, /^apps\/web\/app\/api\//, /(^|\/)(acciones[^/]*|route)\.[jt]sx?$/,
+  /(^|\/)(page|layout|template|default|loading|error|global-error|not-found|forbidden|unauthorized|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.[jt]sx?$/,
+  /(^|\/)(middleware|instrumentation[^/]*|next\.config)\.[mc]?[jt]s$/,
+  /^packages\/db\//, /(^|\/)migraciones?\//, /\.sql$/, /^scripts\//, /^infra\//, /^\.github\//, /^guardianes\//, /^services\//, /^semgrep\//,
+  /^pruebas\/(?!visual\/)/,
+]);
+// Una ruta con estas palabras (en cualquier carpeta o nombre, sin importar mayúsculas ni camelCase) toca dinero, cuenta, permisos o datos personales.
+export const PALABRAS_NO_DISENO = Object.freeze([
+  "pago", "pagos", "pagar", "cobro", "cobros", "cuenta", "cuentas", "equipo", "llave", "llaves", "tarjeta", "tarjetas", "cifrado", "admin", "panel",
+  "pay", "payment", "payments", "checkout", "billing", "wallet", "account", "staff", "auth", "login", "sesion", "permiso", "permisos", "rol", "roles",
+  "seguridad", "legal", "privado", "privacidad", "exportar", "sistema", "entrar", "acceso", "recuperar", "password", "contrasena", "verificar", "dinero",
+]);
+const PALABRAS_NO = new Set(PALABRAS_NO_DISENO);
+const palabrasDe = (f) => String(f).replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9ñ]+/).filter(Boolean);
+// Renglones que sacan un archivo de la lista blanca: algo que ya no es solo «cómo se ve» (leer o escribir datos, cambiar quién entra, red, secretos).
+export const SENALES_DISENO = Object.freeze([
+  [/(["'])use (server|client)\1/, "«use server/use client»"],
+  [/["'`][^"'`]*(@\/lib\/|\/lib\/|acciones|next\/headers|next\/server|server-only|@tolatino\/(?!ui\b))[^"'`]*["'`]/, "un import de lib/, acciones, la base o el servidor"],
+  [/\bawait\b|\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+(WebSocket|EventSource)\b/, "una espera o una llamada de red (await/fetch)"],
+  [/\b(cookies|headers|redirect|permanentRedirect|notFound|unauthorized|forbidden)\s*\(|document\.cookie|localStorage|sessionStorage/, "cookies, cabeceras, redirecciones o almacenamiento del navegador"],
+  [/\bprocess\.env\b|dangerouslySetInnerHTML|\beval\s*\(|new\s+Function\b|<script\b|next\/script/, "secretos, HTML crudo o guiones"],
+  [/\bformAction\b|\baction=\{/, "un formulario conectado a una acción"],
+  [/\bsql\s*`|\btx\s*\(/, "una consulta a la base"],
+  [/@import\b|url\(\s*["']?(https?:)?\/\//, "un recurso de fuera (estilos o fuentes de otro sitio)"],
+]);
+const SIN_RENGLONES = /\.(png|webp|md)$/;
+/** Por qué un archivo NO es de diseño ("" si lo es). */
+export function porQueNoDiseno(f) {
+  if (typeof f !== "string" || !f) return "un nombre de archivo vacío";
+  if (casa(NUNCA_DISENO, f)) return `${f} nunca es de diseño (lib/, api/, route, acciones, page/layout, migraciones, scripts, infra, .github, guardianes o pruebas)`;
+  if (!casa(DISENO, f)) return `${f} no está en la lista blanca de diseño`;
+  const p = palabrasDe(f).find((x) => PALABRAS_NO.has(x));
+  if (p) return `${f} lleva «${p}» en la ruta (dinero, cuenta, permisos o datos personales)`;
+  return "";
+}
+export const esDiseno = (f) => porQueNoDiseno(f) === "";
+const VIGILADAS = Object.freeze(["herramientas", "despliegue", "sensible"]);
+
 /** Las clases de una entrega (solo suman). renglones: { archivo: [renglones añadidos o quitados] }. */
 export function clases(archivos, renglones = {}) {
   const cl = new Set(), motivos = [];
@@ -87,12 +155,51 @@ export function clases(archivos, renglones = {}) {
   const otros = lista.filter((f) => !DOC.has(f)).length;
   const github = lista.some((f) => f.startsWith(".github/"));
   const alrevesEntero = lista.some((f) => casa(AL_REVES_ENTERO, f));
-  return { clases: [...cl].sort(), soloDocumentos, otros, github, alrevesEntero, motivos };
+  // La vía rápida de diseño (AL): el primer motivo que la saca basta, con su archivo.
+  let noDiseno = "";
+  const codigo = lista.filter((f) => !DOC.has(f));
+  if (!codigo.length) noDiseno = soloDocumentos ? "solo documentos de trabajo (van por su propio camino)" : "no hay archivos";
+  for (const f of codigo) { if (noDiseno) break; noDiseno = porQueNoDiseno(f); }
+  if (!noDiseno) { const v = VIGILADAS.find((k) => cl.has(k)); if (v) noDiseno = `la entrega es «${v}» (${motivos.find((m) => m.startsWith(v) || m.startsWith(`${v} por señal`)) ?? v})`; }
+  if (!noDiseno && github) noDiseno = "toca .github/";
+  for (const f of codigo) {
+    if (noDiseno) break;
+    if (SIN_RENGLONES.test(f)) continue;
+    const ls = renglones?.[f];
+    if (!Array.isArray(ls)) { noDiseno = `sin los renglones cambiados de ${f}: no se puede mirar`; break; }
+    for (const [re, que] of SENALES_DISENO) {
+      const l = ls.find((x) => re.test(String(x)));
+      if (l !== undefined) { noDiseno = `señal: ${que} en ${f} («${String(l).trim().slice(0, 80)}»)`; break; }
+    }
+  }
+  const diseno = !noDiseno;
+  if (diseno) { cl.add("diseno"); motivos.push(`diseno: ${codigo.slice(0, 6).join(", ")}${codigo.length > 6 ? ` (+${codigo.length - 6})` : ""}`); }
+  return { clases: [...cl].sort(), soloDocumentos, otros, github, alrevesEntero, motivos, diseno, noDiseno };
 }
 
-/** Lo que exige una entrega según sus clases. */
-export function exigencias(c) {
+/** Las clases de la cabeza (c) juzgadas también con las de origin/main (c2; null si no se pudo): manda lo más estricto. Las vigiladas se suman;
+    «diseno» (la única que AFLOJA) solo queda si las dos la dan y la unión no tiene ninguna vigilada. */
+export function combinar(c, c2, sinMain = "no pude juzgarla con las listas de origin/main") {
+  const union = [...new Set([...(c?.clases ?? []), ...(c2?.clases ?? [])])].filter((k) => k !== "diseno");
+  let noDiseno = "";
+  if (!c?.diseno) noDiseno = c?.noDiseno || "la cabeza no la da por diseño";
+  else if (!c2) noDiseno = `${sinMain} (cualquier duda = no es diseño)`;
+  else if (c2.diseno === undefined) noDiseno = "la herramienta de origin/main todavía no tiene la vía rápida de diseño: manda lo más estricto (camino normal)";
+  else if (!c2.diseno) noDiseno = `con las listas de origin/main no es diseño: ${c2.noDiseno || "sin motivo"}`;
+  else if (union.some((k) => VIGILADAS.includes(k)) || c.github || c2.github) noDiseno = `la entrega es «${union.find((k) => VIGILADAS.includes(k)) ?? "herramientas"}» con alguna de las dos listas`;
+  const diseno = !noDiseno;
+  return { ...c, clases: (diseno ? [...union, "diseno"] : union).sort(), soloDocumentos: !!(c?.soloDocumentos && (c2 ? c2.soloDocumentos : true)), github: !!(c?.github || c2?.github),
+    alrevesEntero: !!(c?.alrevesEntero || c2?.alrevesEntero), motivos: [...new Set([...(c?.motivos ?? []), ...(c2?.motivos ?? [])])].filter((m) => diseno || !m.startsWith("diseno:")),
+    diseno, noDiseno, disenoCabeza: !!c?.diseno };
+}
+
+/** Lo que exige una entrega según sus clases. sinViaRapida (--sin-via-rapida) fuerza el camino normal aunque sea de diseño. */
+export function exigencias(c, { sinViaRapida = false } = {}) {
   if (c.soloDocumentos) return { locales: ["guardianes"], corrida: "ninguna", mainPrimero: false };
+  // Vía rápida de diseño (AL): sin corrida previa, pero con el build de la web en local además de tipos, guardianes y textos. Las pruebas de punta
+  // a punta y al revés corren DESPUÉS, en la corrida del push a main. Nunca con una clase vigilada ni con .github/ (se vuelve a mirar aquí).
+  if (c.diseno === true && !sinViaRapida && !c.github && !c.clases.some((k) => VIGILADAS.includes(k)) && c.clases.includes("diseno"))
+    return { locales: ["tipos", "build", "guardianes", "textos"], corrida: "despues", mainPrimero: false };
   return { locales: ["tipos", "guardianes", "textos"], corrida: c.github ? "completa" : "dirigida", mainPrimero: c.clases.includes("despliegue") };
 }
 
@@ -295,23 +402,26 @@ async function deMain() {
   } catch { return null; } finally { rmSync(d, { recursive: true, force: true }); }
 }
 
-async function planear({ base, cabeza, mas }) {
+async function planear({ base, cabeza, mas, sinViaRapida = false }) {
   const head = git("rev-parse", "--verify", `${cabeza}^{commit}`).trim();
   const { archivos, renglones } = diffDe(base, head);
-  let c = clases(archivos, renglones);
+  const c0 = clases(archivos, renglones);
   const cat = catalogoEn(head), buscar = buscarEn(head);
   const esHead = head === git("rev-parse", "HEAD").trim();
   let d = dirigida({ archivos, catalogo: cat, buscar, mas, validar: esHead ? validarConCorredor : null });
   const m = await deMain();
+  let c2 = null, sinMain = "origin/main no tiene esta herramienta, o no pude cargar la suya";
   if (m?.clases && m?.dirigida) {
     try {
-      const c2 = m.clases(archivos, renglones), d2 = m.dirigida({ archivos, catalogo: cat, buscar, mas });
-      c = { ...c, clases: [...new Set([...c.clases, ...c2.clases])].sort(), soloDocumentos: c.soloDocumentos && c2.soloDocumentos, github: c.github || c2.github, alrevesEntero: c.alrevesEntero || c2.alrevesEntero, motivos: [...new Set([...c.motivos, ...c2.motivos])] };
+      c2 = m.clases(archivos, renglones);
+      const d2 = m.dirigida({ archivos, catalogo: cat, buscar, mas });
       for (const t of d2.pruebas) if (!d.pruebas.some((x) => x.nombre === t.nombre)) d.pruebas.push({ ...t, por: [...t.por, "lista de origin/main"] });
       d.alrevesEntero ||= d2.alrevesEntero;
-    } catch { /* la de main no responde: manda la de HEAD */ }
+    } catch (e) { c2 = null; sinMain = `la herramienta de origin/main falló (${String(e?.message ?? e).split("\n")[0].slice(0, 120)})`; }
   }
-  return { head, archivos, c, d, ex: exigencias(c), conMain: !!m, esHead };
+  // Sin la de main manda la de HEAD en todo, salvo la vía rápida de diseño: esa necesita que las dos la den (cualquier duda = no es diseño).
+  const c = combinar(c0, c2, sinMain);
+  return { head, archivos, c, d, ex: exigencias(c, { sinViaRapida }), conMain: !!c2, esHead, sinViaRapida };
 }
 
 function imprimirPlan({ base, rama, p }) {
@@ -321,8 +431,13 @@ function imprimirPlan({ base, rama, p }) {
   console.log(`clases: ${c.clases.join(", ") || "(ninguna de las vigiladas: código de producto)"}${c.soloDocumentos ? " · SOLO documentos de trabajo" : ""}`);
   for (const mo of c.motivos) console.log(`  · ${mo}`);
   console.log("  («sensible» es mejor esfuerzo: solo sube lo exigido y nunca certifica; lo que no caza sube como normal)");
+  if (c.soloDocumentos) console.log("vía rápida de diseño: no aplica (solo documentos de trabajo)");
+  else if (c.diseno && ex.corrida === "despues") console.log("VÍA RÁPIDA DE DISEÑO (AL): SÍ · todos los archivos que no son documentos de trabajo están en la lista blanca de diseño, sin clases vigiladas ni señales en sus renglones, juzgado con las listas de esta cabeza y con las de origin/main");
+  else if (c.diseno) console.log("vía rápida de diseño: NO · la entrega es de diseño, pero --sin-via-rapida fuerza el camino normal");
+  else console.log(`vía rápida de diseño: NO · ${c.noDiseno}${c.disenoCabeza ? " (con las listas de esta cabeza sí lo sería)" : ""}`);
   if (c.soloDocumentos) console.log("dirigida: no hace falta (solo documentos de trabajo)");
   else {
+    if (ex.corrida === "despues") console.log("  (la dirigida de abajo NO se exige antes de subir: es la lista de pruebas a mirar DESPUÉS, en la corrida del push a main)");
     console.log(`dirigida propuesta: ${d.pruebas.length} prueba(s)${d.alrevesEntero ? " · y «al revés» ENTERO (toca guardianes/run.mjs, pruebas/correr.mjs o pruebas/lib/)" : ""}`);
     for (const t of d.pruebas) console.log(`  · ${t.nombre} (${t.carril}: ${t.por.join(", ")})`);
     console.log("  («al revés» corre entero en toda dirigida: el trabajo «punta a punta · al revés · i/3» no mira «solo»)");
@@ -333,8 +448,8 @@ function imprimirPlan({ base, rama, p }) {
     else console.log(o ? `orden: ${comoTexto(o)}` : "orden: ninguna (nada del diff nombra una prueba: añade --mas \"…\")");
   }
   console.log("qué falta para subir:");
-  console.log(`  · local, sobre el árbol limpio: ${ex.locales.join(", ")}`);
-  console.log(`  · CI: ${ex.corrida === "ninguna" ? "nada (solo documentos)" : ex.corrida === "completa" ? "una corrida COMPLETA en verde de este árbol en la rama de trabajo" : "la dirigida de arriba en verde, de este árbol (o uno que difiera solo en documentos de trabajo)"}`);
+  console.log(`  · local, sobre el árbol limpio: ${ex.locales.map((k) => (k === "build" ? `build de la web (${PASOS_LOCALES.build[0]} ${PASOS_LOCALES.build[1].join(" ")})` : k)).join(", ")}`);
+  console.log(`  · CI: ${ex.corrida === "ninguna" ? "nada (solo documentos)" : ex.corrida === "despues" ? "nada ANTES de subir (vía rápida de diseño, AL): la punta a punta y «al revés» corren DESPUÉS, en la corrida del push a main; lo que cacen se arregla en el bloque siguiente" : ex.corrida === "completa" ? "una corrida COMPLETA en verde de este árbol en la rama de trabajo" : "la dirigida de arriba en verde, de este árbol (o uno que difiera solo en documentos de trabajo)"}`);
   if (c.clases.includes("sensible")) console.log("  · sensible: lo revisa un modelo distinto del que lo escribió (regla 14; esta herramienta no lo puede comprobar)");
   console.log(`  · empuje: ${ex.mainPrimero ? "main primero, esperar «verificación · imágenes» en verde, después pruebas" : "git push --atomic origin HEAD:main HEAD:pruebas"}`);
 }
@@ -399,7 +514,25 @@ async function cmdDirigida({ mas }) {
   return r.conclusion === "success" ? 0 : 1;
 }
 
-async function cmdSubir({ ensayo }) {
+/** Lo que la vía rápida de diseño imprime al final de un --subir que empujó: dónde corren las pruebas que no se esperaron. No espera esa corrida. */
+function avisoDespues({ repo, head, pruebas }) {
+  let url = "";
+  try { url = (api(`repos/${repo}/actions/workflows/ci.yml/runs?event=push&branch=main&head_sha=${head}&per_page=5`).workflow_runs ?? [])[0]?.html_url ?? ""; } catch { /* sin API: se dice cómo encontrarla */ }
+  const donde = url || `la del commit ${head.slice(0, 12)} en https://github.com/${repo}/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush (o: gh run list --repo ${repo} --workflow ci.yml --branch main --event push --commit ${head})`;
+  console.log(`VÍA RÁPIDA DE DISEÑO (AL): las pruebas de punta a punta y al revés corren DESPUÉS, en la corrida de push de main: ${donde}`);
+  console.log(`  pruebas que la dirigida habría propuesto (mirarlas en esa corrida): ${pruebas.map((t) => t.nombre).join(" ") || "(ninguna: nada del diff nombra una prueba)"} · y «al revés» entero`);
+  console.log("  esta herramienta NO espera esa corrida: lo que cace se arregla en el bloque siguiente y se anota en REVISION (AD, AL)");
+}
+
+// Las comprobaciones locales de --subir. «build» es el mismo comando que el trabajo «web» de ci.yml.
+export const PASOS_LOCALES = Object.freeze({
+  tipos: ["pnpm", ["exec", "turbo", "run", "typecheck", "--force"]],
+  build: ["pnpm", ["--filter", "@tolatino/web", "build"]],
+  guardianes: [process.execPath, ["guardianes/run.mjs"]],
+  textos: [process.execPath, ["pruebas/alreves/textos.cjs"]],
+});
+
+async function cmdSubir({ ensayo, sinViaRapida = false }) {
   const repo = REPO, rama = ramaActual();
   let falta = 0;
   const linea = (x) => { console.log(x.linea ?? x); if (x.ok === false) falta++; };
@@ -409,22 +542,25 @@ async function cmdSubir({ ensayo }) {
   console.log(`subir ${head.slice(0, 12)} (árbol ${arbolHead.slice(0, 12)}) desde ${rama}${ensayo ? " · ENSAYO: no se empuja nada" : ""}`);
   const base = comprobarBase({ limpio: !git("status", "--porcelain").trim(), mainEsAncestro: gitOk("merge-base", "--is-ancestor", "origin/main", "HEAD"), pruebasEsAncestro: gitOk("merge-base", "--is-ancestor", "origin/pruebas", "HEAD") });
   base.forEach(linea);
-  const p = await planear({ base: "origin/main", cabeza: "HEAD", mas: [] });
+  const p = await planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida });
+  const rapida = p.ex.corrida === "despues";
   console.log(`clases: ${p.c.clases.join(", ") || "(código de producto)"}${p.c.soloDocumentos ? " · SOLO documentos" : ""} · dirigida propuesta: ${p.d.pruebas.map((t) => t.nombre).join(" ") || "(vacía)"}${p.d.alrevesEntero ? " + al revés entero" : ""}`);
+  if (!p.c.soloDocumentos) console.log(rapida ? "VÍA RÁPIDA DE DISEÑO (AL): tipos, build, guardianes y textos aquí; la punta a punta y «al revés» corren DESPUÉS, en la corrida del push a main"
+    : `camino normal${p.c.diseno && sinViaRapida ? " (--sin-via-rapida)" : ` (vía rápida de diseño: no · ${p.c.noDiseno})`}`);
   for (const e of p.d.errores) linea({ ok: false, linea: `FALTA: ${e}` });
   // b.
   if (base.every((x) => x.ok)) {
-    const pasos = { tipos: ["pnpm", ["exec", "turbo", "run", "typecheck", "--force"]], guardianes: [process.execPath, ["guardianes/run.mjs"]], textos: [process.execPath, ["pruebas/alreves/textos.cjs"]] };
     for (const k of p.ex.locales) {
-      const [cmd, a] = pasos[k], t0 = Date.now();
+      const [cmd, a] = PASOS_LOCALES[k], t0 = Date.now();
       const r = spawnSync(cmd, a, { cwd: RAIZ, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, timeout: 30 * 60_000 });
       const ult = [r.stdout, r.stderr].map((x) => String(x ?? "").split("\n").filter((l) => l.trim()).slice(-1)[0] ?? "").find(Boolean) ?? "";
       linea(r.status === 0 ? { ok: true, linea: `CORRIÓ: ${k} en verde (${Math.round((Date.now() - t0) / 1000)} s) · ${ult.slice(0, 200)}` } : { ok: false, linea: `FALTA: ${k} en verde (salió con ${r.status}) · ${ult.slice(0, 300)}` });
     }
     if (git("status", "--porcelain").trim()) linea({ ok: false, linea: "FALTA: las comprobaciones dejaron el árbol cambiado" });
-  } else console.log("NO CORRIÓ: tipos, guardianes y textos (antes falta a.)");
+  } else console.log(`NO CORRIÓ: ${p.ex.locales.join(", ")} (antes falta a.)`);
   // c.
   if (p.ex.corrida === "ninguna") console.log("CORRIÓ: evidencia del CI no exigida (solo documentos de trabajo)");
+  else if (rapida) console.log("NO SE EXIGE: evidencia del CI antes de subir (vía rápida de diseño, AL): la punta a punta y «al revés» corren después, en la corrida del push a main");
   else {
     const runs = (api(`repos/${repo}/actions/workflows/ci.yml/runs?branch=${encodeURIComponent(rama)}&status=completed&per_page=30`).workflow_runs ?? []).filter((r) => r.conclusion === "success");
     let hallada = null; const motivos = [];
@@ -449,6 +585,7 @@ async function cmdSubir({ ensayo }) {
   if (falta || ensayo) {
     console.log(`${falta ? `no se sube: ${falta} cosa(s) FALTA` : "ensayo: todo está"} · empujaría, en este orden:`);
     for (const s of plan) console.log(`  · ${s.tipo === "push" ? "git " + s.args.join(" ") : s.tipo === "esperar-imagenes" ? "esperar «verificación · imágenes» en verde en la corrida de ese push a main" : "git ls-remote: main y pruebas en " + head.slice(0, 12)}`);
+    if (rapida) console.log("  · y al final diría dónde corren DESPUÉS la punta a punta y «al revés» (vía rápida de diseño, AL), sin esperarlas");
     return falta ? 1 : 0;
   }
   // d.
@@ -491,8 +628,13 @@ async function cmdSubir({ ensayo }) {
   }
   if (ult?.tramos) console.log(`  ${ult.tramos}`);
   for (const l of ult?.rutas ?? []) console.log(`  ${l}`);
-  if (!ult?.sirve) { console.log(`FALTA: en 12 min el sandbox no sirve ${head.slice(0, 12)} (sirve ${ult?.servido || "(nada)"}); no se deshace nada`); return 1; }
+  if (!ult?.sirve) {
+    console.log(`FALTA: en 12 min el sandbox no sirve ${head.slice(0, 12)} (sirve ${ult?.servido || "(nada)"}); no se deshace nada`);
+    if (rapida) avisoDespues({ repo, head, pruebas: p.d.pruebas });
+    return 1;
+  }
   console.log(`CORRIÓ: el sandbox sirve ${head.slice(0, 12)}`);
+  if (rapida) avisoDespues({ repo, head, pruebas: p.d.pruebas });
   return 0;
 }
 
@@ -527,6 +669,61 @@ function casos() {
   ok(clases(["apps/web/app/admin/layout.tsx"]).clases.includes("sensible") && clases(["apps/web/lib/pagos/stripe.ts"]).clases.includes("sensible") && clases(["scripts/ci/subir.mjs"]).clases.includes("sensible"), "admin, pagos y la propia herramienta son sensibles por ruta");
   c = clases([".github/workflows/ci.yml"]);
   ok(c.clases.includes("herramientas") && exigencias(c).corrida === "completa", "toca .github/ → herramientas y corrida COMPLETA (AM)");
+  // La vía rápida de diseño (AL).
+  const FN = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", PF = "packages/ui/src/core/PestanasFicha.tsx", LA = "docs/LAUNCH-CHECKLIST.md";
+  const rl = { [FN]: ["  const [pegadaM, setPegadaM] = useState(false);", '<div className="sticky z-[21] h-0" style={{ top: CAB_MOVIL }}>'], [PF]: ['style={{ overflowY: "hidden", overscrollBehaviorX: "contain" }}'], [LA]: ["- [ ] la franja del nombre"] };
+  const dis = (fs, r = rl, o) => { const x = clases(fs, r); return { x, e: exigencias(x, o) }; };
+  const esRapida = (e) => e.corrida === "despues" && !e.mainPrimero && ["tipos", "build", "guardianes", "textos"].every((k) => e.locales.includes(k));
+  let v = dis([FN, PF, LA]);
+  ok(v.x.diseno && v.x.clases.join() === "diseno" && esRapida(v.e), "FichaNueva.tsx + PestanasFicha.tsx + LAUNCH → diseño: sin corrida previa, locales con build, tipos, guardianes y textos");
+  v = dis([FN, PF, LA, D1]);
+  ok(v.x.diseno && esRapida(v.e), "lo mismo + un documento de trabajo → sigue siendo diseño");
+  v = dis([FN, PF, LA, "apps/web/lib/ficha.ts"], { ...rl, "apps/web/lib/ficha.ts": ["export const x = 1;"] });
+  ok(!v.x.diseno && v.e.corrida === "dirigida" && /apps\/web\/lib\/ficha\.ts/.test(v.x.noDiseno), `lo mismo + un archivo de apps/web/lib/ → dirigida (${v.x.noDiseno})`);
+  v = dis([FN, PF, LA], { ...rl, [FN]: [...rl[FN], '"use server";'] });
+  ok(!v.x.diseno && v.e.corrida === "dirigida" && v.x.clases.includes("sensible") && /use server/.test(v.x.noDiseno), "lo mismo + «use server» en un renglón → sensible y dirigida");
+  v = dis([FN, PF, LA], { ...rl, [FN]: [...rl[FN], 'import { borrar } from "./acciones";'] });
+  ok(!v.x.diseno && v.e.corrida === "dirigida" && /import/.test(v.x.noDiseno), "lo mismo + un import de acciones en un renglón → dirigida");
+  v = dis([FN, PF, LA], { ...rl, [FN]: [...rl[FN], "  const r = await fetch(url);"] });
+  ok(!v.x.diseno && v.e.corrida === "dirigida", "lo mismo + await/fetch en un renglón → dirigida");
+  v = dis([FN, PF, LA], { ...rl, [PF]: ["const total_centavos = a + b;"] });
+  ok(!v.x.diseno && v.e.corrida === "dirigida" && v.x.clases.includes("sensible"), "una pieza de packages/ui con «centavos» en un renglón → sensible y dirigida");
+  for (const f of ["apps/web/app/admin/Tabla.tsx", "apps/web/app/panel/[id]/Hoy.tsx", "apps/web/app/(app)/n/[id]/pagar/Pagar.tsx", "apps/web/app/(app)/n/[id]/Pagar.tsx", "packages/ui/src/ds/admin/AdminBar.js", "packages/ui/src/ds/booking/PaymentSummary.js"]) {
+    v = dis([f], { [f]: ["<div />"] });
+    if (v.x.diseno || v.e.corrida !== "dirigida") ok(false, `${f} (admin, panel o pagar en la ruta) → dirigida`);
+  }
+  v = dis(["apps/web/app/admin/Tabla.tsx"], { "apps/web/app/admin/Tabla.tsx": ["<div />"] });
+  ok(!v.x.diseno && v.x.clases.includes("sensible") && v.e.corrida === "dirigida" && !esRapida(dis(["apps/web/app/(app)/n/[id]/Pagar.tsx"], { "apps/web/app/(app)/n/[id]/Pagar.tsx": ["<div />"] }).e), "un .tsx bajo admin/panel/pagar (sensible por nombre, o «Pagar» con mayúscula) → dirigida");
+  for (const f of ["apps/web/app/(app)/n/[id]/route.ts", "apps/web/app/x/route.tsx", "apps/web/app/(app)/n/[id]/acciones.ts", "apps/web/app/x/acciones-fiesta.tsx", "apps/web/app/(app)/n/[id]/page.tsx", "apps/web/app/layout.tsx", "apps/web/app/x/loading.tsx", "apps/web/app/api/x/Boton.tsx", "apps/web/app/x/local.ts", "apps/web/middleware.ts", "apps/web/next.config.ts"]) {
+    v = dis([FN, f], { ...rl, [f]: ["<div />"] });
+    if (v.x.diseno || v.e.corrida !== "dirigida") ok(false, `${f} → dirigida`);
+  }
+  ok(!dis(["apps/web/app/(app)/n/[id]/route.ts"], { "apps/web/app/(app)/n/[id]/route.ts": ["x"] }).x.diseno && !dis(["apps/web/app/x/acciones.ts"], { "apps/web/app/x/acciones.ts": ["x"] }).x.diseno && !dis(["apps/web/app/(app)/n/[id]/page.tsx"], { "apps/web/app/(app)/n/[id]/page.tsx": ["x"] }).x.diseno, "route.ts, acciones.ts y page.tsx → dirigida (nunca diseño)");
+  v = dis(["packages/db/migraciones/0300_x.sql", FN], { ...rl, "packages/db/migraciones/0300_x.sql": ["select 1;"] });
+  ok(!v.x.diseno && v.e.corrida === "dirigida", "una migración → dirigida");
+  v = dis([".github/workflows/ci.yml", FN], { ...rl, ".github/workflows/ci.yml": ["x"] });
+  ok(!v.x.diseno && v.e.corrida === "completa", ".github/ con una pantalla → completa");
+  v = dis([D0, D1], {});
+  ok(!v.x.diseno && v.e.corrida === "ninguna" && v.e.locales.join() === "guardianes", "solo documentos → como hoy (sin corrida, solo guardianes)");
+  v = dis([FN, PF, LA], { [PF]: rl[PF] });
+  ok(!v.x.diseno && /sin los renglones/.test(v.x.noDiseno), "un archivo de código sin sus renglones → no es diseño (duda)");
+  v = dis([FN, PF, LA], rl, { sinViaRapida: true });
+  ok(v.x.diseno && v.e.corrida === "dirigida" && !v.e.locales.includes("build"), "--sin-via-rapida → dirigida aunque sea diseño");
+  // Con las listas de origin/main: manda lo más estricto.
+  const cH = clases([FN, PF, LA], rl);
+  const cMainEstricta = { ...cH, clases: ["sensible"], diseno: false, noDiseno: `${FN} no está en la lista blanca de diseño`, motivos: ["sensible: x"] };
+  let k = combinar(cH, cMainEstricta);
+  ok(!k.diseno && exigencias(k).corrida === "dirigida" && k.clases.includes("sensible") && /origin\/main/.test(k.noDiseno), "la lista de main más estricta que la de la cabeza → manda main (dirigida)");
+  k = combinar(cH, { clases: [], soloDocumentos: false, github: false, alrevesEntero: false, motivos: [] });
+  ok(!k.diseno && exigencias(k).corrida === "dirigida" && /todavía no tiene la vía rápida/.test(k.noDiseno), "main sin la vía rápida → camino normal");
+  k = combinar(cH, null);
+  ok(!k.diseno && exigencias(k).corrida === "dirigida", "sin poder juzgar con main (error o sin herramienta) → no es diseño");
+  k = combinar(cH, clases([FN, PF, LA], rl));
+  ok(k.diseno && esRapida(exigencias(k)), "cabeza y main la dan por diseño → vía rápida");
+  k = combinar(clases([FN, "apps/web/lib/x.ts"], { ...rl, "apps/web/lib/x.ts": ["x"] }), clases([FN, PF, LA], rl));
+  ok(!k.diseno && exigencias(k).corrida === "dirigida", "main más laxa que la cabeza → manda la cabeza (dirigida)");
+  ok(!exigencias({ ...cH, clases: ["diseno", "sensible"] }).locales.includes("build") && exigencias({ ...cH, clases: ["diseno", "sensible"] }).corrida === "dirigida" && exigencias({ ...cH, github: true }).corrida === "completa", "exigencias nunca da la vía rápida con una clase vigilada o .github/, aunque diga diseño");
+  ok(["apps/web/lib/x.tsx", "apps/web/app/api/x.tsx", "scripts/x.tsx", "infra/x.css", ".github/x.css", "guardianes/x.ts", "pruebas/e2e/x.png", "pruebas/alreves/x.png", "packages/db/x.ts"].every((f) => !esDiseno(f)) && [FN, PF, LA, "apps/web/app/globals.css", "apps/web/public/paginas/x.1a2b.webp", "docs/ayuda/es/pedir.md", "pruebas/visual/ficha/x.png"].every(esDiseno), "la lista blanca: lo de cómo se ve sí; lib, api, scripts, infra, .github, guardianes, pruebas y la base no");
   // La dirigida.
   const cat = catalogoDe(["pruebas/e2e/evt6c.cjs", "pruebas/e2e/adm7i.cjs", "pruebas/e2e/_ayuda.cjs", "pruebas/e2e/sub/x.cjs", "pruebas/alreves/alreves9vd.cjs", "pruebas/alreves/alrevesSubir.cjs"]);
   ok(cat.map((t) => t.nombre).join() === "evt6c,adm7i,alreves9vd,alrevesSubir", "el catálogo con la regla del corredor (sin «_», sin subcarpetas)");
@@ -608,12 +805,12 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     else if (flag("--plan")) {
       const base = opt("--base") ?? "origin/main", cabeza = opt("--cabeza") ?? "HEAD";
       let rama = "<rama>"; try { rama = ramaActual(); } catch { /* en main o sin rama: la orden lleva <rama> */ }
-      const p = await planear({ base, cabeza, mas });
+      const p = await planear({ base, cabeza, mas, sinViaRapida: flag("--sin-via-rapida") });
       imprimirPlan({ base, rama, p });
       codigo = p.d.errores.length ? 1 : 0;
     } else if (flag("--dirigida")) codigo = await cmdDirigida({ mas });
-    else if (flag("--subir")) codigo = await cmdSubir({ ensayo: flag("--ensayo") });
-    else console.log("Uso: node scripts/ci/subir.mjs --plan [--base origin/main] [--cabeza <commit>] [--mas \"a b\"] | --dirigida [--mas \"a b\"] | --subir [--ensayo] | --casos");
+    else if (flag("--subir")) codigo = await cmdSubir({ ensayo: flag("--ensayo"), sinViaRapida: flag("--sin-via-rapida") });
+    else console.log("Uso: node scripts/ci/subir.mjs --plan [--base origin/main] [--cabeza <commit>] [--mas \"a b\"] [--sin-via-rapida] | --dirigida [--mas \"a b\"] | --subir [--ensayo] [--sin-via-rapida] | --casos");
   } catch (e) {
     console.log(`${e instanceof SinGithub ? "FALTA: GitHub no responde" : "FALTA: error"} · ${String(e?.message ?? e).split("\n")[0].slice(0, 300)} · no se subió nada`);
     codigo = 3;

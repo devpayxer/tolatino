@@ -56,6 +56,16 @@ const casos = [
   [S, 'const soloDocumentos = veredicto(lista) === "documentos";', 'const soloDocumentos = lista.some((f) => DOC.has(f));', 'documentos + código → no es solo documentos'],
   [S, '  if (cl.includes("despliegue")) {\n', '  if (false) {\n', 'main primero, esperar imágenes, después pruebas'],
   [S, 'if (completa) {', 'if (false) {', 'toca .github/ y la corrida es una dirigida → FALTA'],
+  // 23 nov · La vía rápida de diseño (decisión AL).
+  [S, '  /^apps\\/web\\/public\\/paginas\\/[^/]+\\.webp$/,\n', '  /^apps\\/web\\/public\\/paginas\\/[^/]+\\.webp$/,\n  /^apps\\/web\\/lib\\/.*\\.(tsx|ts)$/,\n', 'la lista blanca de diseño cubre apps/web/lib/ficha.tsx'],
+  [S, '  /^apps\\/web\\/lib\\//, /^apps\\/web\\/app\\/api\\//, ', '  /^apps\\/web\\/app\\/api\\//, ', 'la vía rápida de diseño deja pasar apps/web/lib/ficha.tsx'],
+  [S, '    return { locales: ["tipos", "build", "guardianes", "textos"], corrida: "despues", mainPrimero: false };', '    return { locales: ["tipos", "guardianes", "textos"], corrida: "despues", mainPrimero: false };', 'solo diseño exige build local además de tipos, guardianes y textos'],
+  [S, '  build: ["pnpm", ["--filter", "@tolatino/web", "build"]],', '  build: ["pnpm", ["exec", "tsc", "--noEmit"]],', 'solo diseño exige build local: PASOS_LOCALES.build es el mismo comando'],
+  [S, '  if (!noDiseno) { const v = VIGILADAS.find((k) => cl.has(k)); if (v) noDiseno', '  if (!noDiseno) { const v = VIGILADAS.find((k) => cl.has(k) && false); if (v) noDiseno', 'una entrega con una clase vigilada sale por la vía rápida de diseño (sensible por centavos)'],
+  [S, '  if (c.diseno === true && !sinViaRapida && !c.github && !c.clases.some((k) => VIGILADAS.includes(k)) && c.clases.includes("diseno"))', '  if (c.diseno === true && !sinViaRapida && !c.github)', 'una entrega con una clase vigilada sale por la vía rápida de diseño (exigencias con «sensible»)'],
+  [S, '  else if (!c2) noDiseno = `${sinMain}', '  else if (true) noDiseno = "";\n  else if (!c2) noDiseno = `${sinMain}', 'la vía rápida de diseño necesita que la cabeza y origin/main la den'],
+  [S, 'console.log(`VÍA RÁPIDA DE DISEÑO (AL): las pruebas de punta a punta y al revés corren DESPUÉS, en la corrida de push de main: ${donde}`);', 'console.log(`subido: ${donde}`);', '--subir por la vía rápida dice al final que la punta a punta y «al revés» corren DESPUÉS'],
+  [S, '  if (rapida) avisoDespues({ repo, head, pruebas: p.d.pruebas });\n  return 0;', '  return 0;', '--subir por la vía rápida dice al final que la punta a punta y «al revés» corren DESPUÉS'],
   // ci.yml: cada corrida dice de qué es y la evidencia solo sale con todo en verde.
   [Y, "run-name: \"CI · ${{ github.event_name }} · ${{ github.ref_name }}${{ github.event_name == 'workflow_dispatch' && format(' · alcance={0} · partes={1} · solo=«{2}»', inputs.alcance, inputs.partes, inputs.solo) || '' }}\"\n", '', 'run-name: cada corrida dice evento, alcance, partes y «solo»'],
   [Y, '      - name: Evidencia de la corrida (solo con todo en verde; scripts/ci/subir.mjs la lee del registro de este trabajo)\n', '      - name: Evidencia de la corrida (solo con todo en verde; scripts/ci/subir.mjs la lee del registro de este trabajo)\n        if: always()\n', 'la evidencia solo sale con todo en verde'],
