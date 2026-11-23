@@ -133,6 +133,11 @@ const GENERICO = palabra("solicitud(?:es)?|operacion(?:es)?|requests?|operations
 export const quiereCancelar = (t: string) => /\b(cancel|cancela|cancelar|cancelo|anular|anula)/.test(plano(t));   // «cancélalo» también: sin tildes
 export const quiereAbrir = (t: string) => /\b(ver mi|abre mi|abrir mi|muestrame mi|donde esta mi|show me my|open my)\b/.test(plano(t));
 
+/* Una duda o una pregunta de política («¿Hasta cuándo puedo cancelar mis boletos?», «How do I cancel an appointment?») no es una orden: si no hay UNA
+   operación clara, no se pregunta cuál ni se dice «no la encontré»; sigue lo de siempre (la ayuda). */
+const CONSULTA = new RegExp(`[?¿]|^(?:como|cuando|cuanto|hasta cuando|puedo|se puede|que pasa|que pasaria|donde|por que|how|when|until when|can i|could i|what|where|why|do i|does|is it|are)${LD}|${LI}(?:quiero saber|necesito saber|me dices|dime si|tell me if|i want to know|let me know)${LD}`, "u");
+export const esConsulta = (t: string) => CONSULTA.test(plano(t));
+
 export function elegirOperacion(x: { texto: string; ops: OpCtx[]; hoy?: string }): Eleccion {
   const t = plano(x.texto);
   if (deOtraPersona(t)) return { k: "otra_persona" };
@@ -191,6 +196,7 @@ const deOtra = (es: boolean): Propuesta => ({ respuesta: OTRA_LINEA[es ? "es" : 
 export function respuestaCancelar(x: { texto: string; lang: Lang; ops: OpCtx[]; hoy?: string }): Propuesta | null {
   const es = x.lang === "es", e = elegirOperacion(x), canc = x.ops.filter((o) => o.cancelable_gratis);
   if (e.k === "otra_persona") return deOtra(es);
+  if (!x.ops.length || (e.k !== "una" && esConsulta(x.texto))) return null;
   if (e.k === "varias") return preguntar(e.ops, es, "cancelar", false);
   if (e.k === "ninguna") return canc.length ? preguntar(canc, es, "cancelar", true) : noEncontrada(es);
   const p = e.k === "una" ? (e.op.cancelable_gratis ? e.op : null) : canc.length === 1 ? canc[0]! : null;
@@ -203,6 +209,7 @@ export function respuestaCancelar(x: { texto: string; lang: Lang; ops: OpCtx[]; 
 export function respuestaAbrir(x: { texto: string; lang: Lang; ops: OpCtx[]; hoy?: string }): Propuesta | null {
   const es = x.lang === "es", e = elegirOperacion(x);
   if (e.k === "otra_persona") return deOtra(es);
+  if (!x.ops.length || (e.k !== "una" && esConsulta(x.texto))) return null;
   if (e.k === "varias") return preguntar(e.ops, es, "abrir", false);
   if (e.k === "ninguna") return x.ops.length ? preguntar(x.ops, es, "abrir", true) : noEncontrada(es);
   const o = e.k === "una" ? e.op : GENERICO.test(plano(x.texto)) && x.ops.length === 1 ? x.ops[0]! : null;
@@ -278,8 +285,13 @@ export const CASOS_ELEGIR: CasoElegir[] = [
   { ctx: "dos_pendientes", es: "Cancela mi pedido", en: "Cancel my order", elige: "ninguna", intencion: "cancelar", responde: "pregunta" },
   { ctx: "dos_pendientes", es: "Cancela mi inscripción", en: "Cancel my enrollment", elige: "ninguna", intencion: "cancelar", responde: "pregunta" },
   { ctx: "una_cita", es: "Cancela mi pedido", en: "Cancel my order", elige: "ninguna", intencion: "cancelar", responde: "pregunta" },
-  { ctx: "sin_operaciones", es: "Cancela mi cita", en: "Cancel my appointment", elige: "ninguna", intencion: "cancelar", responde: "pregunta" },
-  { ctx: "sin_operaciones", es: "Abre mi pedido", en: "Open my order", elige: "ninguna", intencion: "abrir", responde: "pregunta" },
+  { ctx: "sin_operaciones", es: "Cancela mi cita", en: "Cancel my appointment", elige: "ninguna", intencion: "cancelar", responde: "nada" },
+  { ctx: "sin_operaciones", es: "Abre mi pedido", en: "Open my order", elige: "ninguna", intencion: "abrir", responde: "nada" },
+  // Una duda o una pregunta de política no es una orden: sin UNA operación clara, sigue la ayuda.
+  { ctx: "cita_y_pedido", es: "¿Hasta cuándo puedo cancelar mis boletos?", en: "Until when can I cancel my tickets?", elige: "ninguna", intencion: "cancelar", responde: "nada" },
+  { ctx: "dos_citas", es: "¿Cómo cancelo una cita?", en: "How do I cancel an appointment?", elige: "varias:op1,op2", intencion: "cancelar", responde: "nada" },
+  { ctx: "dos_citas", es: "Quiero saber si puedo cancelar mi cita", en: "Tell me if I can cancel my appointment", elige: "varias:op1,op2", intencion: "cancelar", responde: "nada" },
+  { ctx: "una_cita", es: "¿Puedo cancelar mi cita con la barbería?", en: "Can I cancel my appointment with the barbershop?", elige: "una:op1", intencion: "cancelar", responde: "cancel_request:op1" },
   // La fecha: día de la semana, día del mes, «mañana» (solo con el día de hoy), y «por la mañana» no es una fecha.
   { ctx: "dos_pendientes", es: "Cancela la del sábado", en: "Cancel the one on Saturday", elige: "una:op2", intencion: "cancelar", responde: "cancel_request:op2" },
   { ctx: "dos_pendientes", es: "Cancela mi reservación del viernes", en: "Cancel my reservation on Friday", elige: "una:op1", intencion: "cancelar", responde: "cancel_request:op1" },
