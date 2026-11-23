@@ -53,7 +53,7 @@ export function Integraciones({ filas, tipos, admin, listo, subir: subirInicial 
     { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: E(p.l, p.en), on: p.k === "integ", onClick: () => (p.k === "integ" ? undefined : router.push(p.href)) })) },
     // 8c · Integraciones › Push (IntegracionesPush.tsx).
     { type: "chips", items: [{ l: E("Llaves de las tiendas", "Store keys"), v: "selected", onClick: () => undefined }, { l: "Push", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=push") },
-      { l: "Wallet", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=wallet") }] },
+      { l: "Wallet", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=wallet") }, { l: E("Proveedores", "Providers"), v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=proveedores") }] },
     listo ? { type: "note", tone: "info", icon: "lock", t: admin ? E("Para subir una llave te mandamos un código a tu teléfono. El archivo se cifra en el servidor y no se vuelve a mostrar.", "To upload a key we send a code to your phone. The file is encrypted on the server and never shown again.") : E("Solo un Admin sube o retira llaves.", "Only an Admin uploads or withdraws keys.") }
       : { type: "note", tone: "danger", icon: "warning", t: E("Falta la llave del llavero en los secretos del entorno: no se puede guardar ninguna llave.", "The keychain key is missing from the environment secrets: no key can be saved.") },
     { type: "group", k: E(`LLAVES DE LAS TIENDAS · ${vivas.size} DE ${tipos.length}`, `STORE KEYS · ${vivas.size} OF ${tipos.length}`) },

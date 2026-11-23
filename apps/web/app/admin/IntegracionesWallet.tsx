@@ -26,7 +26,7 @@ export function IntegracionesWallet({ d, admin, listo }: { d: EstadoWallet; admi
     { type: "head", eye: E("SUPER ADMIN · SISTEMA", "SUPER ADMIN · SYSTEM"), t: E("Integraciones", "Integrations"), s: E("El boleto en Apple Wallet y Google Wallet: el mismo QR firmado del boleto, y cada cambio del boleto llega solo al teléfono.", "The ticket in Apple Wallet and Google Wallet: the same signed ticket QR, and every ticket change reaches the phone on its own."), h1: desk ? 26 : 22 },
     { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: E(p.l, p.en), on: p.k === "integ", onClick: () => (p.k === "integ" ? undefined : router.push(p.href)) })) },
     { type: "chips", items: [{ l: E("Llaves de las tiendas", "Store keys"), v: "filter", onClick: () => router.push("/admin/sistema/integraciones") }, { l: "Push", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=push") },
-      { l: "Wallet", v: "selected", onClick: () => undefined }] },
+      { l: "Wallet", v: "selected", onClick: () => undefined }, { l: E("Proveedores", "Providers"), v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=proveedores") }] },
     { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: E("PASES EMITIDOS", "PASSES ISSUED"), v: String(d.cifras.apple + d.cifras.google), s: `Apple ${d.cifras.apple} · Google ${d.cifras.google} · ${E("anulados", "voided")} ${d.cifras.anulados}`, bg: "var(--tl-ink)", fg: "var(--tl-white)" },
       { k: E("TELÉFONOS QUE LOS SIGUEN", "PHONES FOLLOWING THEM"), v: String(d.cifras.telefonos), s: E("Apple Wallet (servicio web)", "Apple Wallet (web service)") },

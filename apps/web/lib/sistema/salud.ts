@@ -61,6 +61,8 @@ export type DatosSalud = {
   vitales: Array<import("../vitales").FilaVital> | null;
   // 22 nov · La escucha de los cambios de ESTE proceso (una por proceso, lib/cambios-config.ts): viva, desde cuándo, el último aviso.
   escucha: EstadoEscucha;
+  // 23 nov · Qué proveedor tiene sus llaves (del llavero o del entorno, por lib/llaves-proveedores.ts) y cuál no, con su última prueba. Nunca un valor.
+  proveedores: { prov: string; total: number; llavero: number; entorno: number; sombra: number; faltan: string[]; prueba: { ok: boolean; resultado: string; at: string } | null }[];
 };
 
 /* 9o · Las máquinas de producción según Prometheus (la réplica, por la red privada): CPU, memoria y disco de cada una. 2 s como mucho; si no contesta,
@@ -85,7 +87,7 @@ async function maquinasPrometheus(): Promise<DatosSalud["maquinas"]> {
 const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 
 export async function saludAdmin(): Promise<DatosSalud> {
-  const [k, s, e, j, ll, m, dep, maq, vit] = await Promise.all([
+  const [k, s, e, j, ll, m, dep, maq, vit, orig, pru] = await Promise.all([
     db().query<{ disp: number | null; p95: number | null }>(
       `select round(100.0 * count(*) filter (where ok) / nullif(count(*), 0), 2)::float as disp,
               (select percentile_disc(0.95) within group (order by latency_ms) from health_checks where service = 'base' and at > now() - interval '24 hours' and latency_ms is not null)::float as p95
@@ -118,10 +120,17 @@ export async function saludAdmin(): Promise<DatosSalud> {
     import("./despliegues").then((x) => x.ultimosDespliegues(5)).catch(() => null),
     maquinasPrometheus(),
     import("../vitales").then((x) => x.resumenVitales(7, 25)).catch(() => null),
+    import("../llaves-proveedores").then((x) => x.origenes()),
+    import("../tiendas/llavero").then((x) => x.ultimasPruebas()),
   ]);
+  const proveedores = (["stripe", "telnyx", "whatsapp", "ses", "anthropic"] as const).map((prov) => {
+    const L = orig.filter((o) => o.prov === prov), P = pru.filter((x) => L.some((o) => o.tipo === x.kind && o.huella === x.huella)).sort((a, b) => b.at.localeCompare(a.at))[0];
+    return { prov, total: L.length, llavero: L.filter((o) => o.origen === "llavero").length, entorno: L.filter((o) => o.origen === "entorno").length, sombra: L.filter((o) => o.sombra).length,
+      faltan: L.filter((o) => !o.origen).map((o) => o.tipo), prueba: P ? { ok: P.ok, resultado: P.resultado, at: P.at } : null };
+  });
   return {
     disponibilidad: k.rows[0]?.disp ?? null, p95: k.rows[0]?.p95 ?? null, errores: e.rows[0] ?? { web: 0, apps: 0, servidor: 0 }, trabajosConError: j.rows,
-    servicios: s.rows, llaves: ll.rows, mantenimiento: m.rows, despliegues: dep, entorno: ENTORNO, maquinas: maq, vitales: vit, escucha: estadoEscucha(),
+    servicios: s.rows, llaves: ll.rows, mantenimiento: m.rows, despliegues: dep, entorno: ENTORNO, maquinas: maq, vitales: vit, escucha: estadoEscucha(), proveedores,
   };
 }
 

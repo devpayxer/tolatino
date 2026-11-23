@@ -75,7 +75,7 @@ const casos = [
   ['llavesFueraDelRepo', M, "  if tg_op <> 'INSERT' then raise exception 'store_secret_reads es solo de inserción'; end if;", "  if tg_op = 'DELETE' then return old; end if;"],
   ['llavesFueraDelRepo', LL, '            (select count(*)::int from store_secret_reads r where r.secret_id = s.id) as lecturas,', '            s.blob_enc, (select count(*)::int from store_secret_reads r where r.secret_id = s.id) as lecturas,'],
   ['llavesFueraDelRepo', IOSGI, '*.p8\n', ''],
-  ['llavesFueraDelRepo', INT, 'import { listar, llaveroListo, TIPOS } from "@/lib/tiendas/llavero";', 'import { leer, listar, llaveroListo, TIPOS } from "@/lib/tiendas/llavero";'],
+  ['llavesFueraDelRepo', INT, 'import { esTipoProveedor, listar, llaveroListo, PROVEEDORES, TIPOS } from "@/lib/tiendas/llavero";', 'import { esTipoProveedor, leer, listar, llaveroListo, PROVEEDORES, TIPOS } from "@/lib/tiendas/llavero";'],
   // Guardianes de 6h ampliados (la garantía pasó al almacén)
   ['paqueteMinimo', AL, 'crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"])', 'crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, true, ["encrypt", "decrypt"])'],
   ['sinConexionSinDatosAjenos', BO, '  if (c !== m) { await ALM.vaciar("b"); if (c)', '  if (c !== m) { if (c)'],

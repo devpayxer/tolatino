@@ -70,7 +70,8 @@ export type Bloque =
   // 8i · Sin cta: el mismo aviso PRO, solo informativo (dentro de las apps de las tiendas no se ofrece comprar Pro).
   | { type: "lock"; t: string; s: string; cta?: string; onCta?: Fn }
   | { type: "kv"; cols?: number; items: { k: string; v: string; fg?: string }[] }
-  | { type: "field"; k: string; val: string; onChange: (v: string) => void; ph?: string; area?: boolean; rows?: number; count?: string; help?: string; lock?: boolean; pre?: string; suf?: string; im?: string; max?: number }
+  // 23 nov · oculto: el campo no muestra lo escrito (una llave que se pega); mismo aspecto, sin autocompletar, sin corrector y sin mayúscula automática.
+  | { type: "field"; k: string; val: string; onChange: (v: string) => void; ph?: string; area?: boolean; rows?: number; count?: string; help?: string; lock?: boolean; pre?: string; suf?: string; im?: string; max?: number; oculto?: boolean }
   /* 21 nov · srv: un paso que GUARDA EN EL SERVIDOR en cada toque (ver pasoSrv). Sin srv, onM/onP mandan (estado local de la pantalla). */
   | { type: "step"; t: string; s?: string; v: string; onM: Fn; onP: Fn; srv?: PasoSrv }
   | { type: "photos"; k?: string; count?: string; cols?: number; items: { bg: string; on?: boolean; tag?: string; onClick?: Fn; key?: string }[]; addL?: string; onAdd?: Fn; selActs?: Accion[] }
@@ -354,7 +355,8 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         {b.area ? <textarea aria-label={b.k} value={b.val} onChange={(e) => b.onChange(e.target.value.slice(0, b.max ?? 300))} placeholder={b.ph} rows={b.rows ?? 3} disabled={b.lock} style={{ width: "100%", boxSizing: "border-box", padding: "12px 15px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", outline: "none", resize: "none", background: bg, font: "500 14.5px/1.55 Manrope,sans-serif", color: "var(--tl-ink)" }} />
           : <span style={{ height: 50, padding: "0 15px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: bg, display: "flex", alignItems: "center", gap: 8, boxSizing: "border-box" }}>
               {b.pre ? <span style={{ font: "800 16px Sora,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.pre}</span> : null}
-              <input aria-label={b.k} value={b.val} onChange={(e) => b.onChange(e.target.value.slice(0, b.max ?? 80))} placeholder={b.ph} disabled={b.lock} inputMode={(b.im ?? "text") as "text"} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "700 15px Manrope,sans-serif", color: "var(--tl-ink)" }} />
+              <input aria-label={b.k} value={b.val} onChange={(e) => b.onChange(e.target.value.slice(0, b.max ?? 80))} placeholder={b.ph} disabled={b.lock} inputMode={(b.im ?? "text") as "text"}
+                {...(b.oculto ? { type: "password", autoComplete: "off", spellCheck: false, autoCapitalize: "off", autoCorrect: "off", "data-oculto": "1" } : {})} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "700 15px Manrope,sans-serif", color: "var(--tl-ink)" }} />
               {b.suf ? <span style={{ font: `700 11px ${MONO}`, color: "rgba(11,14,18,.6)" }}>{b.suf}</span> : null}
             </span>}
         {b.help ? <span style={{ font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.help}</span> : null}
