@@ -6439,3 +6439,9 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   categorías se desliza sola para enseñarla; al tocar una categoría sigue saltando a su sección. Qué mirar: Sabor Dominicano › Menú, bajar despacio.
 - **Tanda del 23 nov (5):** el nombre del negocio pegado sobre las pestañas va en la letra gruesa del título (la misma de la cabecera), más grande.
 
+## Fotos privadas y nombres con tilde (23 nov, hecho por Opus, revisado por Fable)
+- **Fotos privadas:** la respuesta «no encontrada» (sin permiso o sin archivo) ya no se guarda en caché; y borrar una cuenta ya no puede dejar suelta una
+  copia de una foto cuando la fila no sabía su ancho. Nada que mirar en el teléfono.
+- **Comunidad:** el filtro de direcciones dejaba pasar calles con ñ o tilde («123 Añasco St», «45 Elías Dr»); ahora las rechaza como a las demás.
+- **Ciudades:** los nombres con tilde, ñ o guion se reconocen enteros (lista de lanzamiento por ciudad).
+
