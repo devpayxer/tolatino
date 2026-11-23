@@ -197,7 +197,14 @@ export function respuestaCancelar(x: { texto: string; lang: Lang; ops: OpCtx[]; 
   const es = x.lang === "es", e = elegirOperacion(x), canc = x.ops.filter((o) => o.cancelable_gratis);
   if (e.k === "otra_persona") return deOtra(es);
   if (!x.ops.length || (e.k !== "una" && esConsulta(x.texto))) return null;
-  if (e.k === "varias") return preguntar(e.ops, es, "cancelar", false);
+  // Varias coinciden con lo dicho: lo que ya no se puede cancelar aquí (confirmada, pasada, pagada) no es candidata. Si queda UNA que sí, es esa
+  // (la persona la ve nombrada y confirma); si quedan varias, se pregunta entre ellas; si ninguna, entre todas (y sigue la ayuda de cada una).
+  if (e.k === "varias") {
+    const c = e.ops.filter((o) => o.cancelable_gratis);
+    if (c.length !== 1) return preguntar(c.length ? c : e.ops, es, "cancelar", false);
+    return { tipo: "respuesta", fuente: "cuenta", chips: [], accion: { tipo: "cancel_request", ref: c[0]!.ref, pantalla: "" },
+      respuesta: es ? `Te preparé la cancelación de tu solicitud en ${c[0]!.negocio}. Como todavía no está confirmada, no pagas nada.` : `I prepared the cancellation of your request at ${c[0]!.negocio}. It isn't confirmed yet, so you pay nothing.` };
+  }
   if (e.k === "ninguna") return canc.length ? preguntar(canc, es, "cancelar", true) : noEncontrada(es);
   const p = e.k === "una" ? (e.op.cancelable_gratis ? e.op : null) : canc.length === 1 ? canc[0]! : null;
   if (e.k === "sin_pista" && canc.length > 1) return preguntar(canc, es, "cancelar", false);
@@ -237,6 +244,9 @@ export const CONTEXTOS_ELEGIR: Record<string, OpTabla[]> = {
   una_cita: [{ kind: "appointment", numero: "C-2210", negocio: "Barbería Don Luis", tipo: T_CITA, cuando: "2026-11-28 10:30", cancelable: true }],
   boletos: [{ kind: "tickets", numero: "B-7731", negocio: "Fiesta Patronal", tipo: ["boletos", "tickets"], cuando: "2026-12-05 21:00", cancelable: false }],
   negocio_con_posesivo: [{ kind: "order", numero: "1500", negocio: "Tony's Pizza", tipo: T_PEDIDO, cuando: "2026-11-22 20:00", cancelable: false }],
+  una_pendiente_y_pasadas: [{ kind: "table", numero: "R-5001", negocio: "Sabor Dominicano", tipo: T_MESA, cuando: "2026-11-27 19:00", cancelable: true },
+    { kind: "night", numero: "N-5002", negocio: "La Terraza Night Club", tipo: ["noche", "night out"], cuando: "2026-11-21 22:00", cancelable: false },
+    { kind: "table", numero: "R-5003", negocio: "Sabor Dominicano", tipo: T_MESA, cuando: "2026-11-20 20:00", cancelable: false }],
   sin_operaciones: [],
   degradado: [{ kind: "", numero: "", negocio: "Sabor Dominicano", tipo: ["", ""], cuando: "", cancelable: true }, { kind: "", numero: "", negocio: "Barbería Don Luis", tipo: ["", ""], cuando: "", cancelable: true },
     { kind: "", numero: "", negocio: "El Fogón", tipo: ["", ""], cuando: "", cancelable: false }],
@@ -270,6 +280,7 @@ export const CASOS_ELEGIR: CasoElegir[] = [
   // Varias del mismo tipo: se pregunta cuál (y cada chip vuelve a elegir UNA).
   { ctx: "dos_citas", es: "Cancela mi cita", en: "Cancel my appointment", elige: "varias:op1,op2", intencion: "cancelar", responde: "pregunta" },
   { ctx: "dos_pendientes", es: "Cancela mi reserva", en: "Cancel my booking", elige: "varias:op1,op2", intencion: "cancelar", responde: "pregunta" },
+  { ctx: "una_pendiente_y_pasadas", es: "Cancela mi reservación por favor", en: "Cancel my reservation please", elige: "varias:op1,op2,op3", intencion: "cancelar", responde: "cancel_request:op1" },
   { ctx: "dos_citas", es: "Abre mi cita", en: "Open my appointment", elige: "varias:op1,op2", intencion: "abrir", responde: "pregunta" },
   // El negocio: una palabra de su nombre, entera; con tilde y ñ.
   { ctx: "dos_citas", es: "Cancela mi cita en el salón", en: "Cancel my appointment at the salon", elige: "una:op2", intencion: "cancelar", responde: "cancel_request:op2" },
