@@ -358,8 +358,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 ## Notificaciones (bloque 2j, 6 nov 2026)
 - [ ] **→ 9q** · **SMS de verdad:** con la clave de Telnyx (`TELNYX_API_KEY`, `TELNYX_FROM`) en los secretos del entorno de producción
-      y el registro 10DLC, los avisos salen solos (`lib/avisos.ts`). Hoy en el sandbox quedan «en modo pruebas». Sin
-      reintentos todavía: un SMS que falla queda «falló» en Envíos (agregar reintento con espera antes de la fase 9).
+      y el registro 10DLC, los avisos salen solos (`lib/avisos.ts`). Hoy en el sandbox quedan «en modo pruebas». El
+      reintento con espera ya existe (`lib/avisos.ts`, guardián `smsConReintento`): la línea sigue abierta solo por la clave real y el 10DLC.
 - [x] **Push en las apps** (Fase 8): el mismo aviso como push; la plantilla ya dice qué grupo es. **Hecho en 8c (11 nov):** Web Push de verdad; APNs y
       FCM contra simuladores hasta que estén las llaves (ver «Fase 8 · 8c»).
 - [x] **Anuncios in-app** (secNotif «Anuncios»): banner de un día en el home de la ciudad. Falta el banner en el inicio. _Hecho en 9f (14 nov): `announcements` (0136) con desde/hasta (31 días como máximo), para todos o solo vecinos con cuenta; el banner sale arriba del Inicio de la ciudad (InfoCard) y se crea y se retira en Super Admin › Textos y páginas › Home por ciudad (nada se borra; auditoría). Evidencia: cms9f (vivo, próximo, vencido, retirado y solo vecinos, en ES, EN y 390)._ La pestaña «Anuncios» de Notificaciones del diseño no se construyó: el banner se maneja desde Home por ciudad.
@@ -2791,9 +2791,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       elipsis, en una línea y dentro de la tarjeta» falla las dos veces en el ancho de iPad (WebKit; CI 45078878395) y pasa en iPhone SE y escritorio. Estaba
       tapada: la prueba fallaba antes, en el toque. Es de la tarjeta Vitrina (su segunda ronda está parada): ver con captura si es de la pieza o de la prueba.
       Mientras tanto la corrida nocturna de `anchos` sale roja por esto.
-- [ ] **→ 9u** · **Aceptar un código de equipo y «Publica tu negocio» ignoran en silencio una foto que no se adjunta (22 nov):** `lib/equipo-invitacion.ts` y
-      `app/(app)/publica/acciones.ts` contestan `ok` sin ella. Pedirles lo mismo que a `fotosAgregar` (rechazo con mensaje, todo o nada) y sumarlas al
-      guardián `fotosAdjuntarTodoONada`.
+- [x] **→ 9u** · **Aceptar un código de equipo y «Publica tu negocio» ya no ignoran una foto que no se adjunta (23 nov):** la invitación rechaza con
+      «Esa foto no existe.» y no gasta el código; Publica rechaza con «Una de las fotos ya no está. Súbela otra vez.» en F1 y no crea nada a medias. Todo
+      o nada dentro de la transacción; guardián `fotosAdjuntarTodoONada` (alreves9ufotostodo 40/40); punta a punta `pan9n2` y `publica`.
+- [ ] **→ 9u** · **Publica tu negocio: el aviso no dice cuál foto falla (23 nov):** el texto es el de varias fotos; decirlo por foto pide copy nuevo
+      (decisión del fundador, en REVISION).
 - [ ] **→ 9t** · **Tope de subidas de fotos, lo que queda (22 nov):** (1) pasar `FOTOS_A_LA_VEZ`, `FOTOS_DENTRO` y `FOTOS_ESPERA_MS` a Configuración (migración);
       (2) con 2 turnos en 4 núcleos, 5 fotos a la vez tardan ~0,5 s más que antes: decidir el número con la carga; (3) una fila de «subidas rechazadas» en
       Sistema › Salud (hoy se ven como errores del servidor, grupo «Subida de fotos llena»); (4) el 503 temprano en Safari mientras el teléfono todavía manda

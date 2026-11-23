@@ -13,7 +13,7 @@
 | 4 | Salud y velocidad | Web Vitals por pantalla, latencia de consultas, caídas, alertas | Datadog, New Relic, Grafana | **Propio sobre código abierto**: Grafana + Prometheus, Uptime Kuma, Web Vitals a nuestra base. Presupuesto de velocidad por pantalla vigilado por guardián (decisión R). _9o: Prometheus + Alertmanager + blackbox_exporter + node_exporter + postgres_exporter en la réplica, configurados como código (`infra/comun/monitoreo/`); el tablero es Sistema › Salud (sin Grafana) y blackbox hace lo de Uptime Kuma sin pantalla que se configura a mano (REVISION 9o)._ |
 | 5 | Logs y auditoría | historial inmutable de acciones + logs técnicos buscables | Datadog Logs, Elastic | **Propio**: `AuditEntry` (negocio) + Loki (técnico). |
 | 6 | Interruptores y A/B | encender por % o por ciudad sin desplegar; probar dos versiones | LaunchDarkly, Optimizely, Statsig | **Propio**: `FeatureFlag` + `PlatformConfig` con porcentaje y A/B; panel en `ADM-SYS`. |
-| 7 | Comunicación | push, SMS, WhatsApp, correo | — | Push **propio** (Web Push/FCM) con `NotificationTemplate`. **Se paga:** SMS (Twilio), WhatsApp (Meta API), envío de correo (Amazon SES); plantillas e historial propios. |
+| 7 | Comunicación | push, SMS, WhatsApp, correo | — | Push **propio** (Web Push/FCM) con `NotificationTemplate`. **Se paga:** SMS (Telnyx, decisión E), WhatsApp (Meta API), envío de correo (Amazon SES); plantillas e historial propios. |
 | 8 | Soporte y chat | tickets, macros, chat | Intercom, Zendesk | **Propio**: Soporte + El Compa ya diseñados. |
 | 9 | Pagos y fraude | cobros, retención, pagos al negocio; fraude | Stripe, Adyen | **Se paga** Stripe (Radar incluido). Reglas de fraude propias (cuentas repetidas, reseñas falsas, abuso de códigos) en `ADM-CONF`. |
 | 10 | Mapas, geo, direcciones, rutas | mapa, «cerca de mí», autocompletar, ruta del repartidor | Google Maps; Uber/Apple propio | **Propio sobre código abierto**: MapLibre + OpenStreetMap servidos por nosotros; PostGIS; Nominatim/Photon; OSRM/Valhalla para rutas. |
@@ -36,7 +36,7 @@ SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/a�
 | 18 | Pruebas visuales | captura automática de cada pantalla comparada con la aprobada; avisa si cambió el aspecto sin aprobación | Propio (Playwright + comparación). Guardián de «no se inventa UI». |
 | 19 | Guardián del triángulo | prueba que cada opción del panel se refleja en la página y en el admin | Propio. |
 | 20 | Guardián del dinero | conciliación diaria Stripe ↔ `WalletEntry`/`Payment`/`Payout`; cualquier centavo que no cuadre, reporte inmediato | Propio. |
-| 21 | Guardián de costos | vigila gasto en Supabase, Vercel, Twilio, WhatsApp, Claude; alerta si se dispara | Propio. |
+| 21 | Guardián de costos | vigila gasto en el servidor, Telnyx, WhatsApp, Claude; alerta si se dispara | Propio. |
 | 22 | Respaldos probados + recuperación a un punto en el tiempo + manual de incidentes | qué hacer si se cae; respaldos verificados | Propio. |
 | 23 | Modo sin conexión en Puerta y Repartidor | cola local y sincronización al volver la señal | Propio. |
 

@@ -40,6 +40,9 @@ Todo se guarda solo: si sales, vuelves a /publica (también desde otro teléfono
 
 **¿Me cobran algo hoy?** No. No pedimos tarjeta.
 
+**¿Qué pasa si una foto que subí ya no se puede usar?** Si la revisamos y no pasó, no se publica nada a medias: te avisamos, quedas en el paso de
+las fotos con todo lo demás guardado, cambias esa foto y publicas.
+
 **¿Puedo publicar otro negocio?** Sí. Entra a /publica: con tu negocio ya publicado, toca **Publicar otro negocio** y empiezas uno
 nuevo en blanco (el primero sigue igual y lo ves en tu panel). Hasta 5 negocios por cuenta; para más, escríbele a Soporte.
 
@@ -81,6 +84,9 @@ Everything saves by itself: if you leave, you go back to /publica (also from ano
 **Can I change everything later?** Yes, from your dashboard.
 
 **Am I charged anything today?** No. We don't ask for a card.
+
+**What if a photo I uploaded can no longer be used?** If we reviewed it and it did not pass, nothing is listed halfway: we tell you, you stay on the
+photos step with everything else kept, you swap that photo and list.
 
 **Can I list another business?** Yes. Go to /publica: with your business already listed, tap **List another business** and you start a new blank
 one (the first one stays as it is and you see it in your dashboard). Up to 5 businesses per account; for more, write to Support.

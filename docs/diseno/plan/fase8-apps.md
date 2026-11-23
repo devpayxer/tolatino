@@ -849,7 +849,7 @@ lo demás es gratis._
 
 **Paquete 8-0 · Dominio (antes de 8a; PLAN §9).** (1) Crear la cuenta de Cloudflare (plan gratis) y aceptar términos. (2) En el registrador de
 `tolatino.com`, cambiar los servidores de nombres a los dos que da Cloudflare (es el único paso en otra página; la lista de toques llega con capturas).
-(3) Crear un token de API de Cloudflare con permisos de DNS y SSL de esa zona y guardarlo en el **formulario seguro** de los secretos del entorno (nunca en
+(3) Crear un token de API de Cloudflare con permisos de DNS, ajustes, reglas (WAF), caché y certificado de origen de esa zona (los que usa `scripts/produccion/cloudflare.sh`) y guardarlo en el **formulario seguro** de los secretos del entorno (nunca en
 el chat). Claude hace lo demás (DNS de `pruebas`, HTTPS, reglas).
 
 **Paquete 8-1 · Cuentas (al empezar 8a; tardan días).** (1) **D-U-N-S** de la empresa (si no lo tiene): la herramienta gratuita de Apple para pedirlo

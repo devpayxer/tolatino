@@ -957,7 +957,7 @@ las sella para cada servidor (§3.3). Lo que un tercero exige al dueño en perso
 único que queda aquí. **Se piden todos al empezar 9a**, porque tardan._
 
 **Paquete 8-0 · Dominio (sigue pendiente de la Fase 8; desbloquea 9p, 9r, 9t).** Cuenta de Cloudflare (gratis); cambiar los servidores de nombres de
-`tolatino.com` en el registrador (el único paso en otra página; la lista de toques llega con capturas); token de la API de Cloudflare (DNS y SSL de la
+`tolatino.com` en el registrador (el único paso en otra página; la lista de toques llega con capturas); token de la API de Cloudflare (DNS, ajustes, reglas, caché y certificado de origen de la
 zona) en el formulario seguro. Claude hace lo demás.
 
 **Paquetes 8-1, 8-2 y 8-3 · Tiendas (siguen pendientes; desbloquean 9r y 9u).** Tal como `fase8-apps.md` §10: D-U-N-S, Apple Developer y Google Play

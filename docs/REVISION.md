@@ -25,7 +25,8 @@ El código está construido y probado contra simuladores. Lo que falta para abri
 1. **Alergias en el menú del cliente.** El panel las guarda por plato (picante, vegetariano, sin gluten…); el prototipo
    del cliente no las muestra. ¿Salen en la hoja del plato, como etiquetas, o no salen?
 2. **Pantalla para aceptar una invitación al equipo** (`/e/{código}`): no existe en el diseño.
-3. **Stripe para el bloque 2d (pago con tarjeta).** El código del 2d no se puede probar de verdad sin una cuenta de Stripe
+3. **Stripe para el bloque 2d (pago con tarjeta).** _(Reemplazada el 23 nov: esta propuesta vieja de pegar la clave en GitHub ya no vale; ver «Cómo
+   llegan las llaves de terceros al servidor», al final.)_ El código del 2d no se puede probar de verdad sin una cuenta de Stripe
    en modo prueba, y el servidor del sandbox hoy no tiene un camino seguro para recibir una clave de terceros (sin SSH y
    sin secretos en el repo). Propuesta (automática, la clave nunca pasa por el chat ni por Claude):
    - Tú, una vez, desde el teléfono: crear la cuenta de Stripe (modo prueba) y pegar la clave secreta de prueba en
@@ -6264,3 +6265,24 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Llamar:** cada toque lleva su propio identificador y la base no deja contarlo dos veces aunque el teléfono cambie de red.
 - **«Descargar mis datos»:** el archivo de una cuenta grande es idéntico al de antes y pide menos memoria al armarse. Para bajar más habría que cambiar
   cómo van los archivos de dentro: decisión tuya, sin prisa.
+- **Foto que deja de poder usarse entre subirla y enviar (23 nov):** al aceptar un código de equipo sale «Esa foto no existe.» y el código sigue
+  sirviendo; en Publica tu negocio sale «Una de las fotos ya no está. Súbela otra vez.», quedas en el paso de las fotos con lo demás guardado. Antes
+  entraban sin la foto y sin decir nada. El aviso de Publica no dice cuál foto es: si lo quieres por foto, hace falta un texto nuevo (decisión tuya).
+
+## Lo que solo tú puedes hacer con terceros, en un solo sitio (23 nov)
+- **El paquete completo está en `docs/PAQUETE-TERCEROS.md`:** doce terceros, cada uno con qué destraba, qué necesitas a mano, los pasos desde el
+  teléfono, qué sale de ahí y qué hago yo después. Orden recomendado: dominio y Cloudflare → Telnyx (el registro 10DLC tarda semanas) → Meta → Apple,
+  Google y Firebase (el D-U-N-S tarda) → abogado → contador → agente DMCA → Stripe → Amazon SES → Anthropic → proveedor de producción → token de GitHub.
+- **Cuatro cosas que el repo no sabe y tú sí:** dónde está registrado `tolatino.com`; si To'Latino ya existe como empresa (LLC) y tiene D-U-N-S;
+  quién es el abogado y quién el contador; y los precios y plazos de casi todos (el repo solo trae Apple $99 al año y Google $25).
+- Las dos listas para el abogado y el contador, y la batería de preguntas de El Compa, que varios documentos citaban y no existían, se están escribiendo.
+
+## Cómo llegan las llaves de terceros al servidor (23 nov) — hueco encontrado, una decisión tuya
+- **Qué pasa:** el plan decía que guardas cada llave en el formulario seguro y yo la cifro para el servidor. Comprobado hoy: lo que guarda ese
+  formulario yo no lo puedo leer (la plataforma lo usa por mí al llamar a ese servicio; así está el token del servidor de pruebas). Sirve para lo que
+  llamo yo (Cloudflare, el proveedor, GitHub), pero las llaves que necesita el servidor (Stripe, Telnyx, WhatsApp, SES, Anthropic) no tienen camino.
+- **Dos caminos:** (1) guardarlas como variable de entorno: funciona hoy sin construir nada, pero cualquier sesión de ese entorno puede leerlas.
+  (2) Que las pongas tú directo en Super Admin › Sistema › Integraciones › Llaves (como ya haces con las de Apple y Google): nunca pasan por mí ni
+  quedan legibles; pide el dominio con HTTPS primero y construir esa parte.
+- **Lo que hago mientras no digas otra cosa:** construyo el camino 2 (el más seguro; el 1 queda como respaldo) y no te pido ninguna llave hasta que
+  esté. Abrir las cuentas y esperar aprobaciones no depende de esto.

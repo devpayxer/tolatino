@@ -36,6 +36,8 @@ _Pantallas: Panel › Tu página › Equipo (`/panel/{negocio}/pagina/equipo`) y
 
 **¿Tengo que subir foto?** No es obligatorio, pero con foto la gente te reconoce.
 
+**¿Qué pasa si mi foto ya no se puede usar?** No se acepta nada a medias: te avisamos, el código no se gasta, cambias la foto y aceptas otra vez.
+
 ## English
 
 ### What it does
@@ -71,3 +73,5 @@ _Pantallas: Panel › Tu página › Equipo (`/panel/{negocio}/pagina/equipo`) y
 **What does a client see of me?** Your photo, your name, what you do and your words in «Who is behind it». The business sets your role and schedule.
 
 **Do I have to add a photo?** It is not required, but with a photo people recognize you.
+
+**What if my photo can no longer be used?** Nothing is accepted halfway: we tell you, the code is not used up, you swap the photo and accept again.
