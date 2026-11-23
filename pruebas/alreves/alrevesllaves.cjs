@@ -1,5 +1,6 @@
 // Prueba al revés de las llaves de los proveedores en el llavero (23 nov; docs/REVISION.md «Cómo llegan las llaves de terceros al servidor»): un solo
-// lector (llaveProveedorUnSoloLector), el valor nunca sale (llaveProveedorSinFuga) y la lista cerrada dice «llavero» (secretoConDueno). Se inyecta el
+// lector (llaveProveedorUnSoloLector), el valor nunca sale (llaveProveedorSinFuga), la lista cerrada dice «llavero» (secretoConDueno) y la contraparte de «Probar»
+// vive solo en las pruebas (proveedoresSimuladorAislado). Se inyecta el
 // defecto, el guardián debe fallar con SU mensaje ([nombre]); se restaura. «crear»: se crea el archivo, se corre y se borra.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -7,6 +8,7 @@ const R = ENT.RAIZ;
 const LP = 'apps/web/lib/llaves-proveedores.ts', LV = 'apps/web/lib/tiendas/llavero.ts', ST = 'apps/web/lib/pagos/stripe.ts', CP = 'apps/web/lib/compa/canales-proveedor.ts',
   WH = 'apps/web/app/api/stripe/webhook/route.ts', MC = 'apps/web/lib/compa/modelo-claude.ts', SES = 'apps/web/lib/correo/ses.ts', RT = 'apps/web/app/api/admin/llavero/route.ts',
   UIF = 'apps/web/app/admin/IntegracionesProveedores.tsx', PG = 'apps/web/app/admin/sistema/integraciones/page.tsx', BQ = 'packages/ui/src/panel/Bloques.tsx',
+  SV = 'pruebas/servir/servir.sh', PU = 'pruebas/lib/puertos.cjs', SIM = 'scripts/proveedores-sim/sim.cjs', E2E = 'pruebas/e2e/prov9v.cjs',
   INS = 'apps/web/instrumentation.ts', MIG = 'packages/db/migrations/0213_llavero_proveedores.sql', SJ = 'infra/comun/secretos.json';
 // [guardián, archivo, [[buscar, poner], …]]
 const casos = [
@@ -41,8 +43,22 @@ const casos = [
   ['secretoConDueno', SJ, [['"WHATSAPP_WABA_ID": { "origen": "sellado", "maquina": "app", "recuperacion": false, "llavero": "whatsapp_waba_id" }', '"WHATSAPP_WABA_ID": { "origen": "config", "llavero": "whatsapp_waba_id" }']]],
   ['secretoConDueno', SJ, [['"llavero": "ses_secret_access_key"', '"llavero": "ses_secret_key"']]],
   ['secretoConDueno', MIG, [["'correo_sns_tema', 'anthropic_api_key'));", "'correo_sns_tema'));"]]],
+  // proveedoresSimuladorAislado (la contraparte de «Probar»): servir.sh sin una de las tres direcciones; una dirección que ya no está «prohibida» en producción; un puerto que
+  // falta en la tabla; el simulador que escucha en todas las interfaces, que lee el entorno o que anota el valor de la llave en vez de su huella; prov9v que ya no lo usa
+  ['proveedoresSimuladorAislado', SV, [['TELNYX_API_BASE=http://127.0.0.1:$P_PROVTELNYX ', '']]],
+  ['proveedoresSimuladorAislado', SV, [[' WHATSAPP_API_BASE=http://127.0.0.1:$P_PROVMETA', '']]],
+  ['proveedoresSimuladorAislado', SV, [['STRIPE_API_BASE=http://127.0.0.1:$P_PROVSTRIPE', 'STRIPE_API_BASE=http://127.0.0.1:$PUERTO_FIJO']]],
+  ['proveedoresSimuladorAislado', SJ, [['"WHATSAPP_API_BASE": { "origen": "prohibida" }', '"WHATSAPP_API_BASE": { "origen": "config" }']]],
+  ['proveedoresSimuladorAislado', SJ, [['"STRIPE_API_BASE": { "origen": "prohibida" },\n', '']]],
+  ['proveedoresSimuladorAislado', PU, [['provTelnyx: 4411, ', '']]],
+  ['proveedoresSimuladorAislado', SIM, [["host = '127.0.0.1'", "host = '0.0.0.0'"]]],
+  ['proveedoresSimuladorAislado', SIM, [["async function iniciar(puertos, host", "const raiz = process.env.HOME;\nasync function iniciar(puertos, host"]]],
+  ['proveedoresSimuladorAislado', SIM, [['huella: h ? huella(h) : null, estado }', 'huella: h, estado }']]],
+  ['proveedoresSimuladorAislado', E2E, [["require('../../scripts/proveedores-sim/sim.cjs')", "require('../../scripts/contrato-tiendas/prueba.cjs')"]]],
 ];
 const crear = [
+  // proveedoresSimuladorAislado: la app nombrando el simulador de las pruebas
+  ['proveedoresSimuladorAislado', 'apps/web/lib/zzsim1.ts', 'import "server-only";\n// ver scripts/proveedores-sim/sim.cjs\nexport const s = 1;\n', /proveedores-sim/],
   // llaveProveedorUnSoloLector: desestructurar de process.env; un alias de process.env; abrir las llaves fuera del lector
   ['llaveProveedorUnSoloLector', 'apps/web/lib/zzllaves1.ts', 'import "server-only";\nconst { TELNYX_API_KEY } = process.env;\nexport const x = TELNYX_API_KEY ?? "";\n', /desestructura/],
   ['llaveProveedorUnSoloLector', 'apps/web/lib/zzllaves2.ts', 'import "server-only";\nconst e = process.env;\nexport const y = () => e.SES_SECRET_ACCESS_KEY ?? "";\n', /alias de process\.env/],
@@ -59,7 +75,7 @@ const informe = (g, que, [falla, out]) => { total++; console.log(`  ${falla ? '�
 const ok = (x, m) => { total++; if (x) bien++; console.log(`  ${x ? '✓' : '✗'} ${m}`); };
 
 // Antes de inyectar: los tres guardianes pasan limpios (si no, «falla» no probaría nada).
-for (const g of ['llaveProveedorUnSoloLector', 'llaveProveedorSinFuga', 'secretoConDueno']) ok(!correr(g)[0], `${g} pasa limpio antes de inyectar`);
+for (const g of ['llaveProveedorUnSoloLector', 'llaveProveedorSinFuga', 'secretoConDueno', 'proveedoresSimuladorAislado']) ok(!correr(g)[0], `${g} pasa limpio antes de inyectar`);
 
 for (const [g, f, cambios] of casos) {
   const ruta = path.join(R, f);

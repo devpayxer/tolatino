@@ -67,6 +67,10 @@ fi
 
 # ── El entorno del servidor: los secretos (de $SEC) + lo de cada perfil (solo direcciones locales; nada secreto) ──
 VARS=(PORT=$PUERTO MEDIOS_S3_URL=http://127.0.0.1:${PRUEBAS_S3_PUERTO:-3900} TOLATINO_ENTORNO=pruebas TOLATINO_SMS_MODO=pruebas)
+# 23 nov · Las lecturas de «Probar» (Integraciones › Proveedores) van al simulador de scripts/proveedores-sim (lo levanta prov9v); sin él, «Probar» dice «sin conexión».
+# Estas tres solo cambian A DÓNDE llama el servidor cuando hay una llave: el modo (cobro simulado, SMS de pruebas, WhatsApp simulado) lo deciden las llaves y
+# TOLATINO_SMS_MODO, no estas direcciones. PROHIBIDAS en producción (infra/comun/secretos.json; guardián proveedoresSimuladorAislado).
+VARS+=(STRIPE_API_BASE=http://127.0.0.1:$P_PROVSTRIPE TELNYX_API_BASE=http://127.0.0.1:$P_PROVTELNYX WHATSAPP_API_BASE=http://127.0.0.1:$P_PROVMETA)
 if [ "$PERFIL" = basico ]; then
   VARS+=(HOSTNAME=127.0.0.1)
 else
