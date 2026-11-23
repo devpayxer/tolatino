@@ -258,8 +258,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   // 23 nov · Cabecera según la referencia del fundador: nombre + sello (la palomita), una fila de datos y el estado; la dirección vive en Ubicación.
   const metaD = [...metaL, f.ciudad ? f.ciudad.toUpperCase() : null].filter(Boolean) as string[];
   const [contacto, setContacto] = useState(false);
+  // El teléfono como se dice en EE. UU.: +15705550100 → (570) 555-0100; cualquier otro, tal cual.
+  const telBonito = (t: string) => { const m = /^\+?1?(\d{3})(\d{3})(\d{4})$/.exec(t.replace(/[\s().-]/g, "")); return m ? `(${m[1]}) ${m[2]}-${m[3]}` : t; };
   const contactos = [
-    llamar ? { k: "llamar", icon: "phone", t: E2("Llamar", "Call"), s: f.telefono ?? "", go: llamar } : null,
+    llamar ? { k: "llamar", icon: "phone", t: E2("Llamar", "Call"), s: telBonito(f.telefono ?? ""), go: llamar } : null,
     escribir ? { k: "escribir", icon: "chat", t: E2("Escribir", "Message"), s: E2("Un mensaje por To'Latino", "A message on To'Latino"), go: escribir } : null,
     llegar ? { k: "llegar", icon: "pin", t: E2("Cómo llegar", "Directions"), s: f.direccion ?? f.zona ?? "", go: llegar } : null,
   ].filter(Boolean) as { k: string; icon: string; t: string; s: string; go: () => void }[];
