@@ -88,7 +88,7 @@ const window = {};
     'NEG-SALUD': ['svc', 'citas', 'shop'], 'NEG-PRO': ['svc', 'citas', 'cot'], 'NEG-TIENDA': ['shop', 'pedidos', 'svc', 'citas', 'renta'], 'NEG-TRANS': ['svc', 'citas', 'cot', 'renta'],
     'NEG-EDU': ['svc', 'citas', 'shop'], 'NEG-NINOS': ['svc', 'citas', 'shop'], 'NEG-DEPORTE': ['svc', 'citas', 'shop'], 'NEG-FE': ['svc', 'citas'], 'NEG-INMUEBLE': ['svc', 'citas'], 'NEG-DEALER': ['svc', 'citas', 'cot'] };
   const allow = c => ALLOW[c] ? ALLOW[c].concat(ALLOW0) : Object.keys(MOD), allowed = (c, k) => allow(c).includes(k);
-  window.TLOnbNeg = { ALLOW, allow, allowed, FREE_ITEMS, mainMod, freeOk, SUBS, PHOTOS, CATS, MOD, CFG, AMEN, LANGS, OPS, PAY, TPL, ADDR, HOLI, IMPORT, PRICE, FREE_LIMIT, TRIAL, FREE_PHOTOS, P, cat, freeCount, norm, search };
+  window.TLOnbNeg = { ALLOW, allow, allowed, FREE_ITEMS, mainMod, freeOk, SUBS, PHOTOS, CATS, MOD, CFG, AMEN, LANGS, OPS, PAY, TPL, ADDR, HOLI, IMPORT, PRICE, FREE_LIMIT, TRIAL, FREE_PHOTOS, cat, freeCount, norm, search };
 })();
 
 /* Publica tu negocio v2 · 1a «Pasos guiados» (elegida por el usuario, 3 nov). Lo propio de cada una de las 17 categorías:
