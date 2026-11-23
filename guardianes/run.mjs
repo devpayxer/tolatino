@@ -10710,6 +10710,43 @@ const guardianes = {
       if (/proveedores-sim/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "nombra scripts/proveedores-sim: ese simulador es solo de las pruebas");
     }
     if (!/proveedores-sim\/sim\.cjs/.test(readFileSync(E2E, "utf8"))) falla(G, E2E, 0, "prov9v ya no usa la contraparte de «Probar»");
+    // 23 nov · SES y el proveedor de IA (SES_API_BASE, ANTHROPIC_API_BASE). Su dirección vivía fija en el código; ahora la de pruebas cambia SOLO el origen
+    // de TODAS las llamadas de su archivo y, a diferencia de las tres de arriba (que solo frena la lista prohibida), se IGNORA en ejecución fuera de
+    // TOLATINO_ENTORNO=pruebas y si no es local o trae ruta. (6) servir.sh, prohibidas y puertos, como las otras; (7) cada archivo la lee UNA vez, por
+    // origenDePruebas con esas dos reglas, y toma solo .origin / .host; (8) cada fetch (y la firma SigV4 de SES, para ese host) pasa por ahí: ninguna dirección
+    // a mano; (9) nadie más la lee, salvo la regla de «simulador» de lib/tiendas/paquete.ts, que sí la conoce; (10) el simulador RECALCULA la firma de SES con
+    // la llave secreta esperada, mira la llave del modelo y no simula /v1/messages. Al revés: alrevesllaves.cjs; la prueba en ejecución:
+    // scripts/prueba-firma-ses/prueba.mjs.
+    const SES = "apps/web/lib/correo/ses.ts", MC = "apps/web/lib/compa/modelo-claude.ts", PQ = "apps/web/lib/tiendas/paquete.ts";
+    for (const [v, p, n] of [["SES_API_BASE", "P_PROVSES", "provSes"], ["ANTHROPIC_API_BASE", "P_PROVANTHROPIC", "provAnthropic"]]) {
+      if (!new RegExp(`^VARS\\+=\\(.*\\b${v}=http://127\\.0\\.0\\.1:\\$${p}\\b`, "m").test(sv)) falla(G, SV, 0, `servir.sh ya no le pasa ${v}=http://127.0.0.1:$${p} al servidor de pruebas: «Probar» de ese proveedor saldría «sin conexión»`);
+      if (lista[v]?.origen !== "prohibida") falla(G, SJ, 0, `${v} tiene que estar «prohibida» (la dirección de un simulador no puede existir en producción)`);
+      if (!new RegExp(`\\b${n}: \\d{4}\\b`).test(nominal)) falla(G, PU, 0, `falta el puerto «${n}» en la tabla NOMINAL de puertos.cjs`);
+    }
+    const REGLA_ENT = 'if (process.env.TOLATINO_ENTORNO !== "pruebas" || !v) return null;';
+    const REGLA_DIR = 'if (!/^https?:$/.test(u.protocol) || !["127.0.0.1", "localhost"].includes(u.hostname) || u.username || u.password || u.pathname !== "/" || u.search || u.hash) return null;';
+    for (const [f, v, lee, fetchBien] of [[SES, "SES_API_BASE", /const p = origenDePruebas\(process\.env\.SES_API_BASE\), real = `email\.\$\{region\}\.amazonaws\.com`;\n\s+return p \? \{ origen: p\.origin, host: p\.host \} : \{ origen: `https:\/\/\$\{real\}`, host: real \};/, /^fetch\(`\$\{d\.origen\}\$\{path\}`/],
+      [MC, "ANTHROPIC_API_BASE", /\(origenDePruebas\(process\.env\.ANTHROPIC_API_BASE\)\?\.origin \?\? API\.origin\) \+ ruta/, /^fetch\(direccionApi\(RUTA_(MENSAJES|MODELOS)\),/]]) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta"); continue; }
+      const t = sinComent(f), cuerpo = (/function origenDePruebas\(v: string \| undefined\): URL \| null \{([\s\S]*?)\n\}/.exec(t) ?? [])[1] ?? "";
+      if (!cuerpo.includes(REGLA_ENT)) falla(G, f, 0, `${v}: origenDePruebas tiene que ignorarla salvo con TOLATINO_ENTORNO=pruebas (en producción no puede tener efecto)`);
+      if (!cuerpo.includes(REGLA_DIR)) falla(G, f, 0, `${v}: origenDePruebas acepta solo una dirección local (127.0.0.1 / localhost) sin usuario, ruta, consulta ni ancla`);
+      if ((t.match(/process\.env\.(SES|ANTHROPIC)_API_BASE/g) ?? []).length !== 1 || !lee.test(t)) falla(G, f, 0, `${v} se lee UNA vez, por origenDePruebas, y se toma solo su origen (nunca la ruta ni el valor tal cual)`);
+      const llamadas = [...t.matchAll(/\bfetch\(/g)].map((m) => t.slice(m.index, m.index + 60));
+      if (!llamadas.length || llamadas.some((c) => !fetchBien.test(c))) falla(G, f, 0, `toda llamada de este archivo va por la dirección elegida (con ${v} en pruebas, al simulador): ${llamadas.find((c) => !fetchBien.test(c)) ?? "ninguna"}`);
+      if (f === SES) {
+        const firmas = [...t.matchAll(/firmarV4\(\{[^}]*\}/g)].map((m) => m[0]);
+        if (firmas.length < 2 || firmas.some((x) => !/\bhost: d\.host\b/.test(x))) falla(G, f, 0, "SigV4 firma la cabecera host: cada firma de SES se hace para el host de la dirección que se usa (d.host); firmar uno y llamar a otro = 403");
+        if (/https:\/\/\$\{host\}/.test(t)) falla(G, f, 0, "una dirección de SES escrita a mano (https://${host}): todo pasa por destinoSes");
+      }
+    }
+    for (const f of codigo) {
+      if (!/^(apps|packages)\/.*\.(tsx?|jsx?|mjs|cjs)$/.test(f) || f.includes("node_modules") || [SES, MC, PQ].includes(f)) continue;
+      if (/\b(SES|ANTHROPIC)_API_BASE\b/.test(sinComent(f))) falla(G, f, 0, "lee la dirección de pruebas de SES o del modelo: solo su archivo (ses.ts, modelo-claude.ts) y la regla de «simulador» de paquete.ts");
+    }
+    if (existsSync(PQ) && !/ses: e\.TOLATINO_CORREO_MODO === "pruebas" \|\| !!e\.SES_API_BASE, anthropic: !!e\.ANTHROPIC_API_BASE,/.test(readFileSync(PQ, "utf8"))) falla(G, PQ, 0, "«Lo que te toca» tiene que saber que SES y el modelo usan el simulador cuando su dirección de pruebas está puesta");
+    if (!/&& igual\(firmaSigV4\(req, u, cuerpo, f, ses\.get\(huella\(f\.id\)\)\), f\.firma\)/.test(sim) || !/hmac\(hmac\(hmac\(hmac\(`AWS4\$\{secreto\}`, f\.dia\), f\.region\), f\.servicio\), 'aws4_request'\)/.test(sim)) falla(G, SIM, 0, "el simulador de SES tiene que RECALCULAR la firma SigV4 con la llave secreta esperada y compararla (si no, cualquier firma «sirve»)");
+    if (!/else if \(!k \|\| !buenas\.anthropic\.has\(huella\(k\)\)\) \{ est = 401;/.test(sim) || !/u\.pathname !== '\/v1\/models'\) \{ est = 404;/.test(sim)) falla(G, SIM, 0, "el simulador del modelo contesta 401 a una llave que no se le dio y solo simula GET /v1/models (los mensajes: modelo-simulador.ts)");
   },
 
   /* 23 nov · llaveProveedorUnSoloLector: las llaves de los proveedores (cada tipo de PROVEEDORES en apps/web/lib/tiendas/llavero.ts, en MAYÚSCULAS: la
@@ -15508,9 +15545,9 @@ const guardianes = {
     const co = leer("pruebas/correr.mjs");
     if (!/"\.\/lib\/puertos\.cjs"\)\.resolver\(process\.env\)/.test(co) || !/SERVIDOR\.url/.test(co)) falla(G, "pruebas/correr.mjs", 0, "el corredor pregunta la salud en la dirección de pruebas/lib/puertos.cjs (PRUEBAS_URL), no en una escrita");
     /* Los simuladores y servicios de las pruebas (push 4401–4403, App Store Connect 4404, Wallet 4405/4406, GitHub 4407, Play 4408, «SNS» 4409, moderación 8790, video 8791,
-       traductor de mentira 5098/5099, lecturas de «Probar» 4410–4412) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
+       traductor de mentira 5098/5099, lecturas de «Probar» 4410–4414) se desplazan con el servidor (puertos.cjs: nominal + puerto − 3100): ninguna prueba, librería ni servir.sh los escribe a mano. */
     const nom = [...(/const NOMINAL = \{([\s\S]*?)\n\};/.exec(pu)?.[1] ?? "").matchAll(/\b([A-Za-z]+): (\d{4})\b/g)].filter((m) => m[1] !== "servidor").map((m) => m[2]);
-    if (nom.length < 16) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 16): sin ella el guardián no puede vigilar los puertos escritos a mano`);
+    if (nom.length < 18) falla(G, "pruebas/lib/puertos.cjs", 0, `la tabla NOMINAL de puertos de simuladores perdió entradas (${nom.length} de 18): sin ella el guardián no puede vigilar los puertos escritos a mano`);
     else {
       const N = nom.join("|"), PS = [`(127\\.0\\.0\\.1|localhost|0\\.0\\.0\\.0):(${N})\\b`, `(puerto|Puerto|PUERTO|PORT)\\s*[:=,(]\\s*['"]?(${N})\\b`, `listen\\(\\s*(${N})\\b`, `['"](${N})['"]`, `\\|\\|\\s*(${N})\\b`].map((x) => new RegExp(x));
       for (const f of archivos) {
