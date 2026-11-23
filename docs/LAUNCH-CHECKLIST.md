@@ -1048,6 +1048,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `lib/compa/modelo-claude.ts` y que `inference_geo` y el esfuerzo bajo se acepten para Haiku 5.5; medir p95 (meta ≤ 4 s) y el costo real por turno.
 - [ ] **→ 9q** · **Batería del modelo real** (`scripts/compa/bateria/`, ≥ 150 preguntas ES/EN con revisión determinista, meta ≥ 95 %) — gasta dinero, dentro del
       tope; con la llave.
+      **23 nov: la batería ya existe** (175 casos, 350 preguntas ES/EN: vecino 89, panel 35, cliente a negocio 34, copiloto 17; guardián
+      `bateriaCompaFija`, al revés `alrevesBateriaCompa`). Con las reglas da 69,7 % y con el simulador 66,9 % (lo esperado sin modelo). Falta correrla
+      con la llave (`TOLATINO_BATERIA_MOTOR=claude`, unas 350 llamadas, tope 400) y llegar a 95 %. Las líneas 7e, 7f y 7g ya tienen sus casos dentro.
 - [ ] **→ 9v** · **Encender en producción** (fase 9): poner `TOLATINO_COMPA=encendido` en el entorno de producción (candado de `lib/compa/interruptores.ts`).
       Sin eso, El Compa queda apagado aunque los interruptores digan otra cosa. El simulador no existe allí.
 - [x] **Purga por retención** (12 meses → solo cifras) y por cuenta borrada (D5, 30 días): la ayuda `privacidad-de-el-compa` ya lo promete; se
@@ -2801,6 +2804,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Sistema › Salud (hoy se ven como errores del servidor, grupo «Subida de fotos llena»); (4) el 503 temprano en Safari mientras el teléfono todavía manda
       la foto, sin probar en un teléfono; (5) `carpetaVideo` se usa también para fotos: renombrarla; (6) OK del fundador al texto del aviso (REVISION);
       (7) `rev9u`, `beta8f` y `sop7b` con este cambio solo corrieron en el CI; `/api/repartidor/foto` la cubre solo el guardián.
+      **23 nov:** (1) hecho, migración 0212, Configuración › Apps (`fotos_a_la_vez` 2 [1–4], `fotos_dentro` 16 [6–32], `fotos_espera_s` 30 [5–60]); sin
+      consulta de más por subida (medido: 8 sentencias por subida, ninguna a `config_keys`); si Configuración no responde, los de fábrica. (3) hecho, fila
+      en Sistema › Salud. (5) hecho, `carpetaSubida`. (2) medido: 5 a la vez tardan 2,85 / 2,07 / 2,26 s con turno 2 / 3 / 4 y el pico con 20 es 738 / 734 /
+      756 MB; se recomienda 3, decisión del fundador en REVISION. Siguen abiertos (2) la decisión, (4), (6) y (7).
 
 ## Abogado y contador: las dos listas (23 nov)
 - [x] **→ 9s** · **`docs/legal/para-el-abogado.md` (50 preguntas, 34 bloquean abrir) y `para-el-contador.md` (12, 9 bloquean), ES y EN:** cada línea
@@ -2817,4 +2824,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9o** · **Las llaves de terceros que necesita el servidor no tienen camino por el formulario seguro (23 nov):** lo que guarda el formulario es un
       secreto de red que Claude no lee, y `scripts/produccion/sellar.sh` necesita el valor. Construir el camino por el llavero del Super Admin
       (Integraciones › Llaves) para Stripe, Telnyx, WhatsApp, SES y Anthropic; la variable de entorno queda de respaldo. Decisión en REVISION.
-
+- [ ] **→ 9b** · **El verificador de El Compa no caza «Ya cancelé», «Te devolví», «Cambié tu teléfono» (23 nov, lo encontró la batería):**
+      `lib/compa/verificar.ts` (`HECHO`): `\b` después de una vocal con tilde no es frontera, así que esas frases pasan como si no afirmaran una acción
+      hecha. Solo caza «Listo, …» y las formas en inglés. Arreglar con fronteras que entiendan tildes, guardián y al revés.
+- [ ] **→ 9b** · **Reglas y simulador de El Compa: con «cancela» preparan la primera operación cancelable** sin mirar de cuál habla la persona
+      (`modelo-reglas.ts`, `modelo-simulador.ts`; casos `vec-036` y `vec-042` de la batería). La acción pide confirmación, pero propone la equivocada.
+- [ ] **→ 9q** · **La batería reproduce el camino de `conversacion.ts`, no lo llama** (`scripts/compa/bateria/motor.mjs`): un cambio en el orden de pasos
+      del servidor no se vería solo. Y la búsqueda de ayuda de Postgres no corre en la batería (mide al modelo, no a la búsqueda).

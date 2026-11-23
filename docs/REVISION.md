@@ -6290,3 +6290,18 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   quedan legibles; pide el dominio con HTTPS primero y construir esa parte.
 - **Lo que hago mientras no digas otra cosa:** construyo el camino 2 (el más seguro; el 1 queda como respaldo) y no te pido ninguna llave hasta que
   esté. Abrir las cuentas y esperar aprobaciones no depende de esto.
+
+## Tope de subidas de fotos en Configuración y en Salud (23 nov · migración 0212)
+- **Qué mirar:** Sistema › Salud › «Subidas de fotos · este proceso» dice BIEN con «Tope: 2 a la vez, 16 de lugar, espera 30 s»; después de muchas
+  fotos a la vez dice REVISAR con las rechazadas. Configuración › Apps trae las tres claves «Fotos que se suben · …»; cambiar una pide motivo y queda
+  en la auditoría, y vale desde la siguiente subida.
+- **Una decisión tuya:** cuántas fotos se preparan a la vez. Medido con 5 fotos juntas: 2,85 s con 2 (lo de hoy), 2,07 s con 3 y 2,26 s con 4; la
+  memoria casi no cambia. Recomiendo 3. Se cambia ahí mismo, sin despliegue.
+
+## Batería de preguntas de El Compa (23 nov)
+- Ya existe: 175 casos en español e inglés (vecinos, dueños, clientes que escriben a un negocio y el copiloto del equipo), con revisión automática
+  de cada respuesta. Sin el modelo real saca 70 %, que es lo esperado; la meta de 95 % se mide el día que haya llave de Anthropic (unas 350 llamadas).
+- **Encontró un fallo real:** el verificador que impide a El Compa decir «ya lo hice» sin haberlo hecho no reconocía tres frases en español con tilde
+  («Ya cancelé», «Te devolví», «Cambié tu teléfono»). Se está arreglando.
+- **Una decisión tuya, sin prisa:** si alguien escribe en español «contesta solo en inglés», hoy El Compa contesta en el idioma de la pregunta.
+

@@ -15,6 +15,9 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
   pantalla), en % de mediciones buenas. **BIEN** si 75 % o más son buenas en las tres; **REVISAR** si más de 25 % son malas en alguna. Solo cifras
   por día y pantalla (el nombre del negocio o el número de un pedido se vuelve «:x»): nunca quién, ni su teléfono, ni la dirección. Se apaga con el
   flag **app.vitals**.
+- **Subidas de fotos (Salud):** cuántas fotos está preparando este proceso del servidor, cuántas esperan turno, el tope vigente (de Configuración ›
+  Apps) y cuántas se rechazaron en los últimos 10 minutos y en la última hora. Dice REVISAR si hubo algún rechazo en los últimos 10 minutos: alguien
+  vio «Estamos preparando otras fotos en este momento. Prueba en un momento.». Es solo de este proceso; con varios servidores, cada uno cuenta las suyas.
 - **Cambios al instante (Salud):** si este servidor está escuchando los cambios que se guardan en el Super Admin (Configuración, interruptores,
   ciudades, textos), desde cuándo, el último aviso que recibió y cuántos. **VIVA:** lo que cambias se ve al momento. **REVISAR:** el servidor se
   está reconectando (cada 5 segundos) y un cambio puede tardar hasta 15 segundos en verse (60 las ciudades).
@@ -51,6 +54,7 @@ _Pantallas: **Super Admin › Sistema** con sus pestañas **Flags** (`/admin/sis
 | Una llave vence en 30 días | Cada Admin recibe un aviso (una vez por etapa). |
 | Una foto de Salud sin motivo | No se muestra (ni por la dirección de la foto). |
 | La escucha de cambios se cae | Salud dice **REVISAR** en «Cambios al instante»; los cambios tardan hasta 15 segundos (60 las ciudades) y se reconecta sola cada 5 segundos. |
+| Muchas fotos a la vez | Salud dice **REVISAR** en «Subidas de fotos»; la persona ve «Prueba en un momento.» y puede volver a intentar. Si se repite, sube el tope en Configuración › Apps o revisa la carga del servidor. |
 
 ## Preguntas frecuentes
 - **¿Puedo borrar un respaldo, un mantenimiento o un motivo?** No: nada de esto se borra; un mantenimiento se cancela.
@@ -77,6 +81,9 @@ producción (9t). Simbolizar los cierres nativos con los dSYM queda para cuando 
 - **Health:** how the platform is doing now. Database uptime and timing, errors in the last 24 hours (server, web and apps), one row per service (the
   database, the sweep jobs, the push queue, the disk and errors) with the latest measurement (every 5 minutes), sweep tasks with errors, keys and
   certificates that expire and **scheduled maintenance**.
+- **Photo uploads (Health):** how many photos this server process is preparing, how many wait their turn, the current cap (from Settings › Apps) and
+  how many were rejected in the last 10 minutes and the last hour. It says CHECK if any were rejected in the last 10 minutes: someone saw «We are
+  processing other photos right now. Try again in a moment.». It covers this process only; with several servers, each counts its own.
 - **Instant changes (Health):** whether this server is listening for changes saved in the Super Admin (Settings, flags, cities, texts), since when,
   the last notice it received and how many. **LIVE:** what you change shows at once. **CHECK:** the server is reconnecting (every 5 seconds) and a
   change can take up to 15 seconds to show (60 for cities).

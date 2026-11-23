@@ -116,6 +116,10 @@ también el inventario de datos de las tiendas (Sistema › Apps).
 Los **topes por minuto** de esta sección (errores por minuto y por teléfono, pedidos de Wallet por dirección) se cuentan **entre todos los
 servidores juntos**, y lo descartado por el tope de errores se cuenta en las últimas 24 horas (Sistema › Apps).
 
+**Fotos que se suben (Apps):** cuántas fotos prepara a la vez cada proceso del servidor (2; de 1 a 4), cuántas puede tener entre llegando, esperando
+y preparándose (16; de 6 a 32) y cuánto espera su turno una foto que ya llegó (30 s; de 5 a 60). Un cambio vale desde la siguiente subida, sin
+reiniciar. Si la configuración no responde, se usan los de fábrica: las subidas nunca quedan sin tope ni cerradas. Los rechazos se ven en Sistema › Salud.
+
 **English:** the **Apps** section shows each app's minimum and notice build per platform; they are changed in **System › Apps**, which also
 checks that the notice build stays above the minimum. Also in **Apps**: the **driver location during a delivery** (how often, minimum distance, **days kept** — 14 by default, max 90 —, whether the
 **customer sees the map** from pickup, the **impossible speed** and when a position is stale). A delivery route is opened in **Transactions ›
@@ -247,6 +251,10 @@ many times per day the listings can be uploaded as drafts to the stores (1–20,
 And **analytics**: how many **months each event is kept** (1–36, **13**, what the store listings say). After that time the sweep summarizes
 the month by day and city and drops the events one by one: the Analytics figures stay, what belongs to each person does not. If you change
 it, the stores' data inventory (System › Apps) changes too.
+
+**Photo uploads (Apps):** how many photos each server process prepares at once (2; 1 to 4), how many it can hold while arriving, waiting and being
+prepared (16; 6 to 32), and how long an arrived photo waits for its turn (30 s; 5 to 60). A change applies from the next upload, no restart. If
+settings don't respond, the defaults are used: uploads are never left uncapped or closed. Rejections show in System › Health.
 
 The **per-minute caps** of this section (errors per minute and per phone, Wallet requests per address) are counted **across all servers
 together**, and what the error cap discards is counted over the last 24 hours (System › Apps).
