@@ -20,6 +20,16 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **23 nov (03:40 UTC) · `main` = `pruebas` = 45496f2, sandbox comprobado por la herramienta de subida.** Servido hoy, en cuatro subidas: la tercera
+  tanda (0211: toque único, logo todo o nada, archivo privado ausente, tope de subidas); fotos todo o nada al aceptar un código de equipo y en Publica;
+  `docs/legal/para-el-abogado.md` (50 preguntas) y `para-el-contador.md` (12); `docs/PAQUETE-TERCEROS.md`; el tope de subidas en Configuración ›
+  Apps y su fila en Salud (0212); la batería de El Compa (`scripts/compa/bateria/`, 175 casos); Privacidad, IA y Cookies al día con la lista
+  cerrada `docs/legal/terceros.json` (guardián `tercerosDeclarados`; versiones nuevas en BORRADOR, las publica el fundador); el verificador de El
+  Compa con tildes (guardián `compaFronteraConTilde`). **En marcha (encargos en copias aparte):** V, las llaves de proveedores por el llavero del
+  Super Admin (Opus; migración 0213 reservada; el hueco está en REVISION «Cómo llegan las llaves de terceros al servidor»); X, las 17 portadas de
+  categoría fuera de Pexels (Sonnet; 0214 reservada si hace falta). **Sigue después:** lo que queda construible de LAUNCH (tarea 195: iPad de
+  `dlv2f4`/`pro4l2`, `push8c`/`cre9h` inestables, constructores de consultas como funciones puras, la carrera de purga con variantes), y «cancela» de
+  las reglas de El Compa (prepara la primera operación sin mirar cuál). Detenido hasta que el fundador lo pida: Vitrina 2ª ronda, barridos, Inicio.
 - **22 nov (23:10 UTC) · `main` = `pruebas` = 528a6c3, sandbox comprobado por la herramienta de subida.** Servido desde las 18:15 (dos tandas de
   encargos, cada uno con su base y su puerto): fotos privadas fuera de destinos públicos · «Descargar mis datos» en flujo y notas de 9u-2 · caché de
   Configuración con generación y una sola escucha (fila nueva en Sistema › Salud) · variantes de las privadas de Mensajes, ayuda, entrega y reclamo ·
