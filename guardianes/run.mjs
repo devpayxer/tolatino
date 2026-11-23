@@ -8619,6 +8619,36 @@ const guardianes = {
     }
   },
 
+  /* 23 nov (auditoría de la clase «la prueba pasa o falla según el día en que corre») · «Hoy» de una prueba que no se lo pregunta a la base es el día de la
+     ciudad, nunca el de Greenwich: `new Date().toISOString().slice(0, 10)` es UTC y de las 7 u 8 PM a la medianoche de Hazleton ya es «mañana» (el mismo
+     defecto que hoyEnLaCiudad vigila en la app; din9t4, din9t5 y din9t6 lo tenían en su doble de hoyEn). Se usa hoyCiudad() de pruebas/lib/hoy-ciudad.cjs.
+     Excepción con GUARDIAN-OK y su motivo en la misma línea. Al revés: alrevescalendario23. */
+  hoyDeLaPruebaEnLaCiudad() {
+    const G = "hoyDeLaPruebaEnLaCiudad", L = "pruebas/lib/hoy-ciudad.cjs";
+    if (!existsSync(L) || !/timeZone: zona/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "falta pruebas/lib/hoy-ciudad.cjs o ya no formatea en la zona que recibe (hoyCiudad)");
+    for (const d of ["e2e", "lib"]) for (const f of readdirSync(`pruebas/${d}`).filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/${d}/${y}`)) {
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/GUARDIAN-OK/.test(l) || /^\s*\/\//.test(l)) return;
+        if (/new Date\((?:Date\.now\(\)[^()]*)?\)\.toISOString\(\)\.(?:slice\(0, ?10\)|split\(['"]T['"]\)\[0\])/.test(l))
+          falla(G, f, i + 1, "«hoy» de la prueba en UTC (toISOString): de las 7 u 8 PM a la medianoche de Hazleton ya es mañana; usa hoyCiudad() de pruebas/lib/hoy-ciudad.cjs o la fecha que da la base (now() at time zone 'America/New_York')");
+      });
+    }
+  },
+
+  /* 23 nov (auditoría del calendario, evt6e) · La liquidación del organizador es «el martes estrictamente después del día LOCAL en que termina la fecha»
+     (evt_pago_dia). Una prueba que mira pay_on o evt_liq_antes y termina la fecha con `ends_at = now() - interval '1 hour'` a secas falla sola en la hora
+     que sigue a la medianoche de cada martes (la fecha terminó el lunes y su martes es hoy). La fecha que «terminó hace poco» no pasa de la medianoche de
+     hoy (greatest(now() - …, date_trunc('day', now() at time zone …))), o termina hace días. Al revés: alrevescalendario23. */
+  liquidacionDelMartesSinReloj() {
+    const G = "liquidacionDelMartesSinReloj";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      if (!/pay_on|evt_liq_antes/.test(t)) continue;
+      for (const m of t.matchAll(/update event_dates set[^`]*?\bends_at = now\(\) - interval '\d+ (?:seconds?|minutes?|hours?)'[^`]*/g))
+        if (!/date_trunc\('day'/.test(m[0])) falla(G, f, t.slice(0, m.index).split("\n").length, "termina una fecha de evento «hace unas horas» sin acotarla a la medianoche de hoy y la prueba mira pay_on / evt_liq_antes: en la hora después de la medianoche del martes la fecha terminó ayer y su martes es hoy (usa greatest(now() - interval '1 hour', date_trunc('day', now() at time zone 'America/New_York') at time zone 'America/New_York'))");
+    }
+  },
+
   /* 9b-3 · El punto de partida de una prueba es SU fila, no «la persona no tiene ninguna»: pre4e creaba la casa de 112 W Oak St solo si Marisol no
      tenía casa; barajada, fi4b le dejaba otra antes y el pre-estimado del Hogar no se podía enviar. Un insert de preparación cuyo «not exists» solo
      mira a la persona (user_id y removed_at) sobre la misma tabla falla. Al revés: alreves9b3. */
