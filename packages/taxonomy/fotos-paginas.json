@@ -1,0 +1,3205 @@
+{
+  "nota": "De dónde salió cada foto de packages/taxonomy/paginas.json: la llave es el id de la foto en Pexels (su página es /photo/<id>/ en pexels.com), el rol que decide su tamaño y el archivo propio que la sirve (apps/web/public/paginas). Lo escribe scripts/catalogo/fotos-paginas.mjs; no se edita a mano.",
+  "fotos": {
+    "87299": {
+      "archivo": "hogar-rep-destape-de-drenajes.38904a77.webp",
+      "rol": "mosaico",
+      "bytes": 10638
+    },
+    "96612": {
+      "archivo": "hogar-tec-camaras-y-alarmas.e6315ecc.webp",
+      "rol": "mosaico",
+      "bytes": 3862
+    },
+    "97079": {
+      "archivo": "auto-emer-cerrajero-y-llaves-de-auto.b046a3a0.webp",
+      "rol": "mosaico",
+      "bytes": 2982
+    },
+    "164634": {
+      "archivo": "dealer-dealer-agencia-de-autos-nuevos.505326c3.webp",
+      "rol": "mosaico",
+      "bytes": 11188
+    },
+    "164686": {
+      "archivo": "pro-din-contabilidad-y-libros.c6660ea4.webp",
+      "rol": "mosaico",
+      "bytes": 12336
+    },
+    "164829": {
+      "archivo": "noche-plan-n-karaoke.f8d5c51d.webp",
+      "rol": "mosaico",
+      "bytes": 3608
+    },
+    "186239": {
+      "archivo": "deporte-ligas-renta-de-canchas.45c968d6.webp",
+      "rol": "mosaico",
+      "bytes": 6876
+    },
+    "209726": {
+      "archivo": "edu-escuela-asesoria-universitaria-y-fafsa.91581fed.webp",
+      "rol": "mosaico",
+      "bytes": 8058
+    },
+    "210627": {
+      "archivo": "auto-lav-lavado-de-autos.25bab2d2.webp",
+      "rol": "mosaico",
+      "bytes": 13464
+    },
+    "276528": {
+      "archivo": "tienda-casa-muebleria.3e940b80.webp",
+      "rol": "mosaico",
+      "bytes": 6634
+    },
+    "395537": {
+      "archivo": "dealer-portada.0759760a.webp",
+      "rol": "portada",
+      "bytes": 66162
+    },
+    "543733": {
+      "archivo": "merc-fresco-quesos-y-lacteos.ad653b8b.webp",
+      "rol": "mosaico",
+      "bytes": 7682
+    },
+    "596710": {
+      "archivo": "hogar-emer-e-fuga.52bb29b0.webp",
+      "rol": "mosaico",
+      "bytes": 11128
+    },
+    "618923": {
+      "archivo": "salud-sint-n-embarazo.ac1b6bb7.webp",
+      "rol": "mosaico",
+      "bytes": 7390
+    },
+    "635928": {
+      "archivo": "fiesta-musica-renta-de-sonido.149fa0e0.webp",
+      "rol": "mosaico",
+      "bytes": 5680
+    },
+    "691125": {
+      "archivo": "tienda-fam-jugueteria.5af7122b.webp",
+      "rol": "mosaico",
+      "bytes": 9828
+    },
+    "701771": {
+      "archivo": "tienda-ropa-camisetas-personalizadas.a8f26f10.webp",
+      "rol": "mosaico",
+      "bytes": 8976
+    },
+    "713149": {
+      "archivo": "noche-show-comedia-y-espectaculos.70b07b35.webp",
+      "rol": "mosaico",
+      "bytes": 3722
+    },
+    "755049": {
+      "archivo": "ninos-cuidado-ninera-por-horas.5a06e719.webp",
+      "rol": "mosaico",
+      "bytes": 5554
+    },
+    "771317": {
+      "archivo": "edu-idioma-ged-y-preparatoria-abierta.ae0145a8.webp",
+      "rol": "mosaico",
+      "bytes": 4526
+    },
+    "792034": {
+      "archivo": "hogar-rep-cerrajero.67d7d2a7.webp",
+      "rol": "mosaico",
+      "bytes": 4980
+    },
+    "811572": {
+      "archivo": "fiesta-org-organizador-de-bodas.c6767962.webp",
+      "rol": "mosaico",
+      "bytes": 7590
+    },
+    "845451": {
+      "archivo": "tienda-tec-videojuegos.4a837521.webp",
+      "rol": "mosaico",
+      "bytes": 7806
+    },
+    "850715": {
+      "archivo": "fiesta-deco-iluminacion-y-sonido.291c89dd.webp",
+      "rol": "mosaico",
+      "bytes": 3254
+    },
+    "868110": {
+      "archivo": "merc-tiendas-mercado-de-agricultores.8c2fbe82.webp",
+      "rol": "mosaico",
+      "bytes": 14670
+    },
+    "1020372": {
+      "archivo": "tienda-ropa-tenis-y-ropa-urbana.a6ed2727.webp",
+      "rol": "mosaico",
+      "bytes": 5236
+    },
+    "1336211": {
+      "archivo": "fiesta-foto-fotografia-con-dron.fbcade07.webp",
+      "rol": "mosaico",
+      "bytes": 3582
+    },
+    "1376412": {
+      "archivo": "pro-tram-n-llc.25d31bb5.webp",
+      "rol": "mosaico",
+      "bytes": 8414
+    },
+    "1383908": {
+      "archivo": "merc-que-n-pan.498ec027.webp",
+      "rol": "mosaico",
+      "bytes": 14922
+    },
+    "1615548": {
+      "archivo": "auto-pie-yonke-deshuesadero.027609c4.webp",
+      "rol": "mosaico",
+      "bytes": 19752
+    },
+    "1625355": {
+      "archivo": "fiesta-musica-cantante.d0891eb0.webp",
+      "rol": "mosaico",
+      "bytes": 6468
+    },
+    "1640771": {
+      "archivo": "food-formato-comida-preparada-por-semana.10000e1c.webp",
+      "rol": "mosaico",
+      "bytes": 10472
+    },
+    "1682459": {
+      "archivo": "fiesta-tipo-e-baby.1be0b875.webp",
+      "rol": "mosaico",
+      "bytes": 11866
+    },
+    "1682462": {
+      "archivo": "fiesta-org-organizador-de-baby-shower.0d9ee542.webp",
+      "rol": "mosaico",
+      "bytes": 7608
+    },
+    "2188012": {
+      "archivo": "noche-plan-n-salsa.e928bc9e.webp",
+      "rol": "mosaico",
+      "bytes": 3558
+    },
+    "2337843": {
+      "archivo": "food-formato-comida-casera.f7d23303.webp",
+      "rol": "mosaico",
+      "bytes": 11194
+    },
+    "2339722": {
+      "archivo": "hogar-sint-s-fuga.f6f4e269.webp",
+      "rol": "mosaico",
+      "bytes": 4352
+    },
+    "2341366": {
+      "archivo": "merc-bebida-cerveza-y-vino.97cefff3.webp",
+      "rol": "mosaico",
+      "bytes": 5178
+    },
+    "2950108": {
+      "archivo": "edu-trabajo-curso-de-soldadura.343d5896.webp",
+      "rol": "mosaico",
+      "bytes": 9388
+    },
+    "3038343": {
+      "archivo": "ninos-que-n-verano.e605b007.webp",
+      "rol": "mosaico",
+      "bytes": 17518
+    },
+    "3065096": {
+      "archivo": "bell-cabello-peinado-de-novia-y-quinceanera.109bb82f.webp",
+      "rol": "mosaico",
+      "bytes": 6814
+    },
+    "3376765": {
+      "archivo": "fiesta-lugar-manteleria.c4efafa7.webp",
+      "rol": "mosaico",
+      "bytes": 14788
+    },
+    "3798037": {
+      "archivo": "auto-rep-escape-y-mofles.a4626e41.webp",
+      "rol": "mosaico",
+      "bytes": 6532
+    },
+    "3845129": {
+      "archivo": "salud-gen-clinica-sin-cita-y-urgencias.136af219.webp",
+      "rol": "mosaico",
+      "bytes": 3664
+    },
+    "3851579": {
+      "archivo": "noche-plan-n-deporte.bfc0b6b1.webp",
+      "rol": "mosaico",
+      "bytes": 7738
+    },
+    "3873002": {
+      "archivo": "deporte-que-n-baile.3c977ddb.webp",
+      "rol": "mosaico",
+      "bytes": 3988
+    },
+    "3935333": {
+      "archivo": "hogar-ext-entradas-de-concreto.2052231d.webp",
+      "rol": "mosaico",
+      "bytes": 12252
+    },
+    "3975055": {
+      "archivo": "merc-otros-tabaqueria.7ee07ff7.webp",
+      "rol": "mosaico",
+      "bytes": 7102
+    },
+    "3993136": {
+      "archivo": "bell-cabello-tinte-y-mechas.b41eec29.webp",
+      "rol": "mosaico",
+      "bytes": 7846
+    },
+    "4005325": {
+      "archivo": "ninos-jugar-area-de-juegos-techada.c72605f9.webp",
+      "rol": "mosaico",
+      "bytes": 9758
+    },
+    "4006962": {
+      "archivo": "pro-tram-n-acta.b0f37efe.webp",
+      "rol": "mosaico",
+      "bytes": 7350
+    },
+    "4030055": {
+      "archivo": "hogar-obra-gabinetes-y-cubiertas.2f9c139d.webp",
+      "rol": "mosaico",
+      "bytes": 8238
+    },
+    "4047146": {
+      "archivo": "salud-sint-n-analisis.20cc360f.webp",
+      "rol": "mosaico",
+      "bytes": 1768
+    },
+    "4090012": {
+      "archivo": "deporte-gym-zumba-y-baile-fitness.dbe4102b.webp",
+      "rol": "mosaico",
+      "bytes": 9890
+    },
+    "4107284": {
+      "archivo": "hogar-obra-alfombra-instalacion-y-limpieza.990a61bf.webp",
+      "rol": "mosaico",
+      "bytes": 6148
+    },
+    "4109233": {
+      "archivo": "food-platos-hamburguesas.af7e0fee.webp",
+      "rol": "mosaico",
+      "bytes": 3516
+    },
+    "4119844": {
+      "archivo": "hogar-ext-recubrimiento-exterior.87060ae1.webp",
+      "rol": "mosaico",
+      "bytes": 10060
+    },
+    "4173196": {
+      "archivo": "dealer-que-n-itin.62e9dfb2.webp",
+      "rol": "mosaico",
+      "bytes": 8460
+    },
+    "4177666": {
+      "archivo": "hogar-jar-piscinas-y-jacuzzis.74853dd9.webp",
+      "rol": "mosaico",
+      "bytes": 13674
+    },
+    "4239088": {
+      "archivo": "hogar-emer-e-tapado.700bdb59.webp",
+      "rol": "mosaico",
+      "bytes": 2934
+    },
+    "4427431": {
+      "archivo": "pro-inm-abogado-de-inmigracion.7bac625b.webp",
+      "rol": "mosaico",
+      "bytes": 7784
+    },
+    "4437148": {
+      "archivo": "merc-tiendas-abarrotes.7cf7a45d.webp",
+      "rol": "mosaico",
+      "bytes": 8882
+    },
+    "4458205": {
+      "archivo": "pro-otros-arquitectura.b46adda4.webp",
+      "rol": "mosaico",
+      "bytes": 4074
+    },
+    "4474052": {
+      "archivo": "salud-bien-clinica-de-perdida-de-peso.8e8966a9.webp",
+      "rol": "mosaico",
+      "bytes": 5816
+    },
+    "4480507": {
+      "archivo": "auto-carr-hojalateria-y-choques.eb47a6da.webp",
+      "rol": "mosaico",
+      "bytes": 7586
+    },
+    "4487484": {
+      "archivo": "trans-per-transporte-de-empleados.20953b80.webp",
+      "rol": "mosaico",
+      "bytes": 9216
+    },
+    "4488094": {
+      "archivo": "hogar-temp-t-hojas.bb19e932.webp",
+      "rol": "mosaico",
+      "bytes": 13224
+    },
+    "4489749": {
+      "archivo": "auto-sint-s-ruido.c7d56aed.webp",
+      "rol": "mosaico",
+      "bytes": 8962
+    },
+    "4489776": {
+      "archivo": "auto-rep-mecanico-general.82a8e376.webp",
+      "rol": "mosaico",
+      "bytes": 7852
+    },
+    "4506166": {
+      "archivo": "salud-mente-terapia-ocupacional.ab6f3ad4.webp",
+      "rol": "mosaico",
+      "bytes": 4642
+    },
+    "4691474": {
+      "archivo": "pro-din-reparacion-de-credito.694a801d.webp",
+      "rol": "mosaico",
+      "bytes": 5042
+    },
+    "4700400": {
+      "archivo": "hogar-rep-reparacion-de-electrodomesticos.b62422c5.webp",
+      "rol": "mosaico",
+      "bytes": 11168
+    },
+    "4705626": {
+      "archivo": "tienda-serv-reparacion-de-relojes-y-joyas.c9578572.webp",
+      "rol": "mosaico",
+      "bytes": 7274
+    },
+    "4705634": {
+      "archivo": "pro-crea-reparacion-de-computadoras.022d1f0d.webp",
+      "rol": "mosaico",
+      "bytes": 7004
+    },
+    "4819052": {
+      "archivo": "hogar-emer-e-calef.a70e990d.webp",
+      "rol": "mosaico",
+      "bytes": 3730
+    },
+    "4894608": {
+      "archivo": "hogar-jar-control-de-plagas.1080bc62.webp",
+      "rol": "mosaico",
+      "bytes": 18208
+    },
+    "4929677": {
+      "archivo": "bell-bien-nutricion-y-control-de-peso.0b7faa4a.webp",
+      "rol": "mosaico",
+      "bytes": 10844
+    },
+    "4958774": {
+      "archivo": "food-platos-tacos.83eecb46.webp",
+      "rol": "mosaico",
+      "bytes": 9540
+    },
+    "4968499": {
+      "archivo": "pro-din-pago-de-servicios.01596ca3.webp",
+      "rol": "mosaico",
+      "bytes": 7512
+    },
+    "4969842": {
+      "archivo": "bell-portada.3689ff3d.webp",
+      "rol": "portada",
+      "bytes": 48954
+    },
+    "4981812": {
+      "archivo": "hogar-obra-tablaroca-y-yeso.516b09dc.webp",
+      "rol": "mosaico",
+      "bytes": 2700
+    },
+    "5025644": {
+      "archivo": "trans-portada.3d278956.webp",
+      "rol": "portada",
+      "bytes": 39254
+    },
+    "5088186": {
+      "archivo": "edu-escuela-ayuda-con-tareas.aa07ad92.webp",
+      "rol": "mosaico",
+      "bytes": 5174
+    },
+    "5152595": {
+      "archivo": "fiesta-musica-bailarines-y-hora-loca.19a213e4.webp",
+      "rol": "mosaico",
+      "bytes": 4092
+    },
+    "5184676": {
+      "archivo": "deporte-ligas-liga-de-beisbol-y-softbol.00c4292d.webp",
+      "rol": "mosaico",
+      "bytes": 9916
+    },
+    "5192162": {
+      "archivo": "noche-bailar-after-hours.27818d7a.webp",
+      "rol": "mosaico",
+      "bytes": 11056
+    },
+    "5192307": {
+      "archivo": "noche-bailar-discoteca.547a8fb7.webp",
+      "rol": "mosaico",
+      "bytes": 4038
+    },
+    "5201993": {
+      "archivo": "salud-dent-optica-y-lentes.5a6eddef.webp",
+      "rol": "mosaico",
+      "bytes": 8830
+    },
+    "5207116": {
+      "archivo": "salud-esp-cardiologia.204b82fb.webp",
+      "rol": "mosaico",
+      "bytes": 3630
+    },
+    "5231321": {
+      "archivo": "salud-dent-aparatos-auditivos.1f09e2ea.webp",
+      "rol": "mosaico",
+      "bytes": 6588
+    },
+    "5234490": {
+      "archivo": "salud-gen-vacunas.40c6f611.webp",
+      "rol": "mosaico",
+      "bytes": 3232
+    },
+    "5268174": {
+      "archivo": "noche-org-dj-de-discoteca.98ee6b1d.webp",
+      "rol": "mosaico",
+      "bytes": 5818
+    },
+    "5278447": {
+      "archivo": "ninos-deporte-clases-de-natacion.f16b0d62.webp",
+      "rol": "mosaico",
+      "bytes": 5940
+    },
+    "5319373": {
+      "archivo": "deporte-otros-club-de-corredores.cc537eb6.webp",
+      "rol": "mosaico",
+      "bytes": 6780
+    },
+    "5332494": {
+      "archivo": "merc-pais-especias-y-granos.bf1ff76b.webp",
+      "rol": "mosaico",
+      "bytes": 15324
+    },
+    "5393592": {
+      "archivo": "pro-otros-diseno-de-interiores.b2f49201.webp",
+      "rol": "mosaico",
+      "bytes": 8552
+    },
+    "5425443": {
+      "archivo": "fiesta-foto-limosina-y-party-bus.d205f740.webp",
+      "rol": "mosaico",
+      "bytes": 7646
+    },
+    "5439379": {
+      "archivo": "pro-neg-recursos-humanos-y-cumplimiento.1808959d.webp",
+      "rol": "mosaico",
+      "bytes": 5730
+    },
+    "5439455": {
+      "archivo": "pro-neg-agencia-de-empleo.71cd18c9.webp",
+      "rol": "mosaico",
+      "bytes": 5362
+    },
+    "5463575": {
+      "archivo": "hogar-rep-aire-acondicionado-y-calefaccion.39f14517.webp",
+      "rol": "mosaico",
+      "bytes": 11190
+    },
+    "5484718": {
+      "archivo": "tienda-que-n-ferre.f8001c55.webp",
+      "rol": "mosaico",
+      "bytes": 5382
+    },
+    "5530263": {
+      "archivo": "noche-bar-cerveceria.d5470330.webp",
+      "rol": "mosaico",
+      "bytes": 7450
+    },
+    "5530484": {
+      "archivo": "edu-negocio-computacion-basica.8bc5312e.webp",
+      "rol": "mosaico",
+      "bytes": 9330
+    },
+    "5536373": {
+      "archivo": "fiesta-musica-trio-y-serenata.9a1ff86c.webp",
+      "rol": "mosaico",
+      "bytes": 13184
+    },
+    "5560039": {
+      "archivo": "fiesta-ninos-mago.a5c88271.webp",
+      "rol": "mosaico",
+      "bytes": 5010
+    },
+    "5560083": {
+      "archivo": "tienda-ropa-ropa-de-ninos.6bc9335a.webp",
+      "rol": "mosaico",
+      "bytes": 7608
+    },
+    "5572265": {
+      "archivo": "auto-mant-baterias-y-paso-de-corriente.64ecb399.webp",
+      "rol": "mosaico",
+      "bytes": 9994
+    },
+    "5583126": {
+      "archivo": "hogar-obra-pintura-interior.6aeaf2e1.webp",
+      "rol": "mosaico",
+      "bytes": 2006
+    },
+    "5624170": {
+      "archivo": "salud-sint-n-muela.ad6767e0.webp",
+      "rol": "mosaico",
+      "bytes": 4916
+    },
+    "5691531": {
+      "archivo": "hogar-ext-ventanas-y-puertas.aa077df2.webp",
+      "rol": "mosaico",
+      "bytes": 3350
+    },
+    "5715882": {
+      "archivo": "salud-dent-optometria.ad0ce812.webp",
+      "rol": "mosaico",
+      "bytes": 6330
+    },
+    "5716280": {
+      "archivo": "tienda-fam-manualidades-y-material-para-pinatas.1bff194e.webp",
+      "rol": "mosaico",
+      "bytes": 18908
+    },
+    "5750886": {
+      "archivo": "deporte-combate-gimnasio-de-boxeo.505b15e9.webp",
+      "rol": "mosaico",
+      "bytes": 4982
+    },
+    "5794033": {
+      "archivo": "salud-mente-quiropractico.2323cce6.webp",
+      "rol": "mosaico",
+      "bytes": 5364
+    },
+    "5802827": {
+      "archivo": "pro-otros-topografia.5224fd83.webp",
+      "rol": "mosaico",
+      "bytes": 16634
+    },
+    "5805491": {
+      "archivo": "hogar-limp-armado-de-muebles.c9addbf1.webp",
+      "rol": "mosaico",
+      "bytes": 6224
+    },
+    "5824134": {
+      "archivo": "fe-grupos-catecismo-y-preparacion-de-sacramentos.3c5c68a8.webp",
+      "rol": "mosaico",
+      "bytes": 3972
+    },
+    "5836619": {
+      "archivo": "food-platos-arepas.0a11ccac.webp",
+      "rol": "mosaico",
+      "bytes": 15662
+    },
+    "5849553": {
+      "archivo": "pro-seg-seguros-de-casa-y-renta.bc1b5194.webp",
+      "rol": "mosaico",
+      "bytes": 3722
+    },
+    "5864402": {
+      "archivo": "auto-veh-v-c.2a2fbb0e.webp",
+      "rol": "mosaico",
+      "bytes": 12874
+    },
+    "5878672": {
+      "archivo": "deporte-gym-entrenador-personal.06476b9e.webp",
+      "rol": "mosaico",
+      "bytes": 9746
+    },
+    "5905718": {
+      "archivo": "edu-que-n-compu.49858a2a.webp",
+      "rol": "mosaico",
+      "bytes": 7934
+    },
+    "5915409": {
+      "archivo": "salud-mujer-fertilidad.2fb8a56e.webp",
+      "rol": "mosaico",
+      "bytes": 3572
+    },
+    "5920681": {
+      "archivo": "food-formato-camion-de-comida.c8d8bf17.webp",
+      "rol": "mosaico",
+      "bytes": 8204
+    },
+    "5934226": {
+      "archivo": "edu-negocio-negocios-y-emprendimiento.f2650382.webp",
+      "rol": "mosaico",
+      "bytes": 5010
+    },
+    "5941784": {
+      "archivo": "bell-cabello-pelucas.0258b642.webp",
+      "rol": "mosaico",
+      "bytes": 2212
+    },
+    "5981144": {
+      "archivo": "food-platos-sandwiches-y-tortas.b96e08a1.webp",
+      "rol": "mosaico",
+      "bytes": 6972
+    },
+    "5996651": {
+      "archivo": "salud-esp-otorrinolaringologia.7dd1bbca.webp",
+      "rol": "mosaico",
+      "bytes": 4468
+    },
+    "6020432": {
+      "archivo": "hogar-tec-instalacion-de-tv-y-casa-inteligente.edbc9b2a.webp",
+      "rol": "mosaico",
+      "bytes": 2434
+    },
+    "6050399": {
+      "archivo": "tienda-ropa-ropa-formal-y-trajes.34aa0c1f.webp",
+      "rol": "mosaico",
+      "bytes": 8680
+    },
+    "6050428": {
+      "archivo": "tienda-acc-consignacion.7d4f961c.webp",
+      "rol": "mosaico",
+      "bytes": 11274
+    },
+    "6068971": {
+      "archivo": "tienda-acc-ropa-de-segunda.22ceeb0c.webp",
+      "rol": "mosaico",
+      "bytes": 11664
+    },
+    "6078311": {
+      "archivo": "deporte-ligas-futbol-rapido.1b798dfe.webp",
+      "rol": "mosaico",
+      "bytes": 4676
+    },
+    "6089487": {
+      "archivo": "bell-unas-lifting-de-pestanas.3df7a4a5.webp",
+      "rol": "mosaico",
+      "bytes": 6362
+    },
+    "6124239": {
+      "archivo": "hogar-ext-aislamiento.c2a175c3.webp",
+      "rol": "mosaico",
+      "bytes": 6158
+    },
+    "6129104": {
+      "archivo": "salud-esp-urologia.fea9f79b.webp",
+      "rol": "mosaico",
+      "bytes": 5540
+    },
+    "6129444": {
+      "archivo": "salud-portada.edf9f99a.webp",
+      "rol": "portada",
+      "bytes": 32208
+    },
+    "6129691": {
+      "archivo": "salud-bien-terapia-intravenosa-y-bienestar.f51923b0.webp",
+      "rol": "mosaico",
+      "bytes": 5254
+    },
+    "6140995": {
+      "archivo": "auto-sint-s-arranca.307f8fe6.webp",
+      "rol": "mosaico",
+      "bytes": 10178
+    },
+    "6169036": {
+      "archivo": "hogar-limp-servicio-de-empaque.83f2f75b.webp",
+      "rol": "mosaico",
+      "bytes": 2882
+    },
+    "6173811": {
+      "archivo": "noche-show-local-de-musica-en-vivo.539d8d84.webp",
+      "rol": "mosaico",
+      "bytes": 7314
+    },
+    "6185345": {
+      "archivo": "fiesta-lugar-escenario-y-pista.cdfeb60e.webp",
+      "rol": "mosaico",
+      "bytes": 8986
+    },
+    "6191128": {
+      "archivo": "salud-casa-equipo-medico.8ba4a509.webp",
+      "rol": "mosaico",
+      "bytes": 6832
+    },
+    "6218888": {
+      "archivo": "hogar-sint-s-drenaje.41ae2e62.webp",
+      "rol": "mosaico",
+      "bytes": 4430
+    },
+    "6238038": {
+      "archivo": "edu-escuela-tutoria-de-matematicas.c66c1b63.webp",
+      "rol": "mosaico",
+      "bytes": 7672
+    },
+    "6241298": {
+      "archivo": "noche-bar-bar-deportivo.e8c22b7e.webp",
+      "rol": "mosaico",
+      "bytes": 13936
+    },
+    "6255808": {
+      "archivo": "salud-mente-psiquiatria.19774a05.webp",
+      "rol": "mosaico",
+      "bytes": 5836
+    },
+    "6284889": {
+      "archivo": "food-bebidas-bartender-y-barra-movil.eade5cfa.webp",
+      "rol": "mosaico",
+      "bytes": 8830
+    },
+    "6310256": {
+      "archivo": "food-pais-mexicana.1e327a48.webp",
+      "rol": "mosaico",
+      "bytes": 4826
+    },
+    "6369302": {
+      "archivo": "food-platos-pollo-frito-y-alitas.be0869d3.webp",
+      "rol": "mosaico",
+      "bytes": 5128
+    },
+    "6419128": {
+      "archivo": "hogar-temp-t-tubos.f0d187b5.webp",
+      "rol": "mosaico",
+      "bytes": 11934
+    },
+    "6476797": {
+      "archivo": "pro-neg-formacion-de-empresa-y-llc.3bbecf2a.webp",
+      "rol": "mosaico",
+      "bytes": 9024
+    },
+    "6502305": {
+      "archivo": "salud-dent-protesis-e-implantes.330657c9.webp",
+      "rol": "mosaico",
+      "bytes": 1942
+    },
+    "6502823": {
+      "archivo": "edu-idioma-clases-de-ingles.a2200a87.webp",
+      "rol": "mosaico",
+      "bytes": 3776
+    },
+    "6509862": {
+      "archivo": "hogar-obra-soldadura-y-herreria.e937e435.webp",
+      "rol": "mosaico",
+      "bytes": 10554
+    },
+    "6519179": {
+      "archivo": "fiesta-tipo-e-empresa.fdd7edd2.webp",
+      "rol": "mosaico",
+      "bytes": 6816
+    },
+    "6563903": {
+      "archivo": "auto-veh-v-d.021de30c.webp",
+      "rol": "mosaico",
+      "bytes": 10514
+    },
+    "6628962": {
+      "archivo": "deporte-gym-gimnasio.7672f41e.webp",
+      "rol": "mosaico",
+      "bytes": 6378
+    },
+    "6636242": {
+      "archivo": "inmueble-que-n-cuarto.6ff1adc4.webp",
+      "rol": "mosaico",
+      "bytes": 3326
+    },
+    "6646847": {
+      "archivo": "fe-que-n-ayuda.85b702d6.webp",
+      "rol": "mosaico",
+      "bytes": 6066
+    },
+    "6714218": {
+      "archivo": "edu-que-n-baile.8b03e780.webp",
+      "rol": "mosaico",
+      "bytes": 8044
+    },
+    "6753262": {
+      "archivo": "salud-casa-enfermeria-a-domicilio.4cf50df0.webp",
+      "rol": "mosaico",
+      "bytes": 4726
+    },
+    "6753523": {
+      "archivo": "merc-fresco-frutas-y-verduras.f94049f6.webp",
+      "rol": "mosaico",
+      "bytes": 15962
+    },
+    "6754146": {
+      "archivo": "edu-trabajo-curso-de-asistente-medico.e5ad3762.webp",
+      "rol": "mosaico",
+      "bytes": 9048
+    },
+    "6755075": {
+      "archivo": "pro-crea-reparacion-de-celulares.6a6c2f86.webp",
+      "rol": "mosaico",
+      "bytes": 2648
+    },
+    "6764299": {
+      "archivo": "fiesta-deco-floreria.0f7712c5.webp",
+      "rol": "mosaico",
+      "bytes": 9652
+    },
+    "6823510": {
+      "archivo": "salud-esp-endocrinologia-y-diabetes.cae86bb3.webp",
+      "rol": "mosaico",
+      "bytes": 1988
+    },
+    "6835090": {
+      "archivo": "tienda-casa-electrodomesticos.ebde72c5.webp",
+      "rol": "mosaico",
+      "bytes": 6556
+    },
+    "6862296": {
+      "archivo": "hogar-temp-t-nieve.eedd36fb.webp",
+      "rol": "mosaico",
+      "bytes": 10708
+    },
+    "6863244": {
+      "archivo": "pro-tram-n-itin.c5339b79.webp",
+      "rol": "mosaico",
+      "bytes": 7762
+    },
+    "6863259": {
+      "archivo": "pro-din-solicitud-de-itin.e8cba910.webp",
+      "rol": "mosaico",
+      "bytes": 9026
+    },
+    "6863330": {
+      "archivo": "pro-din-preparacion-de-impuestos.a7524479.webp",
+      "rol": "mosaico",
+      "bytes": 4126
+    },
+    "6863337": {
+      "archivo": "pro-tram-n-taxes.6f4919a7.webp",
+      "rol": "mosaico",
+      "bytes": 5120
+    },
+    "6868621": {
+      "archivo": "pro-otros-mensajeria.2d846ddc.webp",
+      "rol": "mosaico",
+      "bytes": 6156
+    },
+    "6870295": {
+      "archivo": "auto-pie-revision-antes-de-comprar.4c3009bb.webp",
+      "rol": "mosaico",
+      "bytes": 8650
+    },
+    "6870311": {
+      "archivo": "auto-mant-llantas-y-rines.c130b3d2.webp",
+      "rol": "mosaico",
+      "bytes": 8834
+    },
+    "6870324": {
+      "archivo": "auto-sint-s-insp.5a178533.webp",
+      "rol": "mosaico",
+      "bytes": 9868
+    },
+    "6872580": {
+      "archivo": "auto-lav-lavado-a-domicilio.39e5c85e.webp",
+      "rol": "mosaico",
+      "bytes": 7232
+    },
+    "6873008": {
+      "archivo": "auto-lav-detallado-y-ceramico.da9d06cd.webp",
+      "rol": "mosaico",
+      "bytes": 6886
+    },
+    "6927356": {
+      "archivo": "pro-inm-ayuda-con-documentos-de-inmigracion.5ca79c4c.webp",
+      "rol": "mosaico",
+      "bytes": 8578
+    },
+    "6940962": {
+      "archivo": "edu-trabajo-escuela-de-cdl.511af14a.webp",
+      "rol": "mosaico",
+      "bytes": 9820
+    },
+    "6952498": {
+      "archivo": "hogar-jar-remocion-de-nieve.847beb0e.webp",
+      "rol": "mosaico",
+      "bytes": 6104
+    },
+    "6995379": {
+      "archivo": "salud-mente-adicciones-y-recuperacion.41a50f87.webp",
+      "rol": "mosaico",
+      "bytes": 7424
+    },
+    "7018493": {
+      "archivo": "auto-esp-diesel-y-camion-pesado.9b4f9a9d.webp",
+      "rol": "mosaico",
+      "bytes": 5866
+    },
+    "7020255": {
+      "archivo": "bell-piel-depilacion-con-cera.772e3af2.webp",
+      "rol": "mosaico",
+      "bytes": 4506
+    },
+    "7045594": {
+      "archivo": "ninos-deporte-artes-marciales-para-ninos.c2290844.webp",
+      "rol": "mosaico",
+      "bytes": 7010
+    },
+    "7054502": {
+      "archivo": "pro-legal-testamentos-y-sucesiones.40ec4b91.webp",
+      "rol": "mosaico",
+      "bytes": 5012
+    },
+    "7054510": {
+      "archivo": "pro-tram-n-notarizar.4cf82e1e.webp",
+      "rol": "mosaico",
+      "bytes": 3314
+    },
+    "7088480": {
+      "archivo": "salud-mujer-control-prenatal.d404ea06.webp",
+      "rol": "mosaico",
+      "bytes": 4790
+    },
+    "7089045": {
+      "archivo": "salud-mujer-ginecologia-y-obstetricia.a38a4cc7.webp",
+      "rol": "mosaico",
+      "bytes": 5616
+    },
+    "7108319": {
+      "archivo": "salud-gen-clinica-comunitaria-de-bajo-costo.e3c2e555.webp",
+      "rol": "mosaico",
+      "bytes": 7618
+    },
+    "7111490": {
+      "archivo": "pro-legal-bancarrota.6e680e5c.webp",
+      "rol": "mosaico",
+      "bytes": 2406
+    },
+    "7144172": {
+      "archivo": "dealer-dealer-compre-aqui-pague-aqui.bcc53048.webp",
+      "rol": "mosaico",
+      "bytes": 10158
+    },
+    "7144207": {
+      "archivo": "dealer-credito-financiamiento-con-itin.0b505221.webp",
+      "rol": "mosaico",
+      "bytes": 7318
+    },
+    "7156105": {
+      "archivo": "edu-que-n-ninos.3b1cc93e.webp",
+      "rol": "mosaico",
+      "bytes": 7166
+    },
+    "7176182": {
+      "archivo": "salud-mente-terapia-familiar-y-de-pareja.8443d353.webp",
+      "rol": "mosaico",
+      "bytes": 8494
+    },
+    "7180255": {
+      "archivo": "tienda-fam-articulos-de-fiesta.84c9a41c.webp",
+      "rol": "mosaico",
+      "bytes": 4308
+    },
+    "7195805": {
+      "archivo": "bell-cabello-salon-de-belleza.e56a3cdf.webp",
+      "rol": "mosaico",
+      "bytes": 11768
+    },
+    "7203849": {
+      "archivo": "trans-a-n-mudanza.aae5438c.webp",
+      "rol": "mosaico",
+      "bytes": 4582
+    },
+    "7298429": {
+      "archivo": "salud-esp-manejo-del-dolor.8ebca2a7.webp",
+      "rol": "mosaico",
+      "bytes": 5854
+    },
+    "7298431": {
+      "archivo": "salud-sint-n-dolor.b326d197.webp",
+      "rol": "mosaico",
+      "bytes": 6074
+    },
+    "7309202": {
+      "archivo": "trans-a-n-caja.e0ff02da.webp",
+      "rol": "mosaico",
+      "bytes": 2942
+    },
+    "7310136": {
+      "archivo": "pro-neg-licencias-y-permisos.6c1490a3.webp",
+      "rol": "mosaico",
+      "bytes": 7650
+    },
+    "7363085": {
+      "archivo": "merc-otros-entrega-a-domicilio-del-mercado.ae2c9c90.webp",
+      "rol": "mosaico",
+      "bytes": 7196
+    },
+    "7394268": {
+      "archivo": "fiesta-deco-tienda-de-articulos-de-fiesta.2863c827.webp",
+      "rol": "mosaico",
+      "bytes": 11316
+    },
+    "7402212": {
+      "archivo": "hogar-emer-e-luz.ab4d7bf8.webp",
+      "rol": "mosaico",
+      "bytes": 2778
+    },
+    "7409799": {
+      "archivo": "auto-carr-cristales-y-parabrisas.6a3c9a79.webp",
+      "rol": "mosaico",
+      "bytes": 2874
+    },
+    "7429770": {
+      "archivo": "deporte-otros-boliche.a53a966d.webp",
+      "rol": "mosaico",
+      "bytes": 9474
+    },
+    "7432343": {
+      "archivo": "bell-cabello-barba-y-arreglo-masculino.e655759a.webp",
+      "rol": "mosaico",
+      "bytes": 3438
+    },
+    "7434628": {
+      "archivo": "inmueble-portada.327c175b.webp",
+      "rol": "portada",
+      "bytes": 90126
+    },
+    "7446669": {
+      "archivo": "salud-esp-dermatologia.5d2a739d.webp",
+      "rol": "mosaico",
+      "bytes": 4822
+    },
+    "7446678": {
+      "archivo": "salud-bien-medicina-estetica.a82acd79.webp",
+      "rol": "mosaico",
+      "bytes": 5148
+    },
+    "7446755": {
+      "archivo": "salud-casa-cuidador-a-domicilio.303d4536.webp",
+      "rol": "mosaico",
+      "bytes": 5620
+    },
+    "7446915": {
+      "archivo": "edu-belleza-curso-de-unas.335af466.webp",
+      "rol": "mosaico",
+      "bytes": 5878
+    },
+    "7446985": {
+      "archivo": "salud-esp-ortopedia.f71f6277.webp",
+      "rol": "mosaico",
+      "bytes": 3762
+    },
+    "7447001": {
+      "archivo": "salud-mujer-pediatria.914f4459.webp",
+      "rol": "mosaico",
+      "bytes": 5638
+    },
+    "7464492": {
+      "archivo": "hogar-limp-mudanzas.d4535129.webp",
+      "rol": "mosaico",
+      "bytes": 6166
+    },
+    "7484795": {
+      "archivo": "tienda-casa-renta-de-herramienta.6a9fb760.webp",
+      "rol": "mosaico",
+      "bytes": 5780
+    },
+    "7518765": {
+      "archivo": "noche-bar-salon-de-hookah.1d4eac74.webp",
+      "rol": "mosaico",
+      "bytes": 12786
+    },
+    "7520989": {
+      "archivo": "edu-arte-clases-de-musica.6d5cf697.webp",
+      "rol": "mosaico",
+      "bytes": 8436
+    },
+    "7551677": {
+      "archivo": "salud-casa-cuidados-paliativos.97dc23bc.webp",
+      "rol": "mosaico",
+      "bytes": 3550
+    },
+    "7598137": {
+      "archivo": "tienda-casa-colchones.348d2a19.webp",
+      "rol": "mosaico",
+      "bytes": 4388
+    },
+    "7616651": {
+      "archivo": "hogar-sint-s-frio.70b898b0.webp",
+      "rol": "mosaico",
+      "bytes": 1494
+    },
+    "7640990": {
+      "archivo": "tienda-casa-materiales-de-construccion.634fdcf6.webp",
+      "rol": "mosaico",
+      "bytes": 6542
+    },
+    "7642122": {
+      "archivo": "inmueble-comprar-agente-bilingue.eefd5649.webp",
+      "rol": "mosaico",
+      "bytes": 6562
+    },
+    "7653116": {
+      "archivo": "salud-esp-neumologia.64a382d5.webp",
+      "rol": "mosaico",
+      "bytes": 6414
+    },
+    "7654131": {
+      "archivo": "pro-din-contador.f6b0fc0c.webp",
+      "rol": "mosaico",
+      "bytes": 7964
+    },
+    "7659870": {
+      "archivo": "salud-esp-oncologia.fc3fd9e8.webp",
+      "rol": "mosaico",
+      "bytes": 4396
+    },
+    "7659873": {
+      "archivo": "salud-esp-gastroenterologia.1f907825.webp",
+      "rol": "mosaico",
+      "bytes": 4030
+    },
+    "7665704": {
+      "archivo": "bell-cabello-especialista-en-rizos.1eee4b27.webp",
+      "rol": "mosaico",
+      "bytes": 4014
+    },
+    "7675023": {
+      "archivo": "pro-crea-diseno-grafico-y-logotipos.19d9178b.webp",
+      "rol": "mosaico",
+      "bytes": 10894
+    },
+    "7680553": {
+      "archivo": "merc-tiendas-tienda-de-a-dolar.9565552f.webp",
+      "rol": "mosaico",
+      "bytes": 2130
+    },
+    "7697358": {
+      "archivo": "bell-cabello-cortes-para-ninos.b6a4902f.webp",
+      "rol": "mosaico",
+      "bytes": 5042
+    },
+    "7697363": {
+      "archivo": "bell-para-w-n.76341f96.webp",
+      "rol": "mosaico",
+      "bytes": 6190
+    },
+    "7699511": {
+      "archivo": "salud-sint-n-ansiedad.7b743dac.webp",
+      "rol": "mosaico",
+      "bytes": 6052
+    },
+    "7715194": {
+      "archivo": "pro-legal-multas-de-transito-y-dui.43ea33a4.webp",
+      "rol": "mosaico",
+      "bytes": 10168
+    },
+    "7736045": {
+      "archivo": "pro-seg-seguros-de-auto.e51b587d.webp",
+      "rol": "mosaico",
+      "bytes": 5308
+    },
+    "7755521": {
+      "archivo": "bell-para-w-m.72fe895d.webp",
+      "rol": "mosaico",
+      "bytes": 5004
+    },
+    "7812842": {
+      "archivo": "hogar-jar-poda-y-remocion-de-arboles.476eb629.webp",
+      "rol": "mosaico",
+      "bytes": 17638
+    },
+    "7841454": {
+      "archivo": "pro-legal-divorcio-y-custodia.7b96dffe.webp",
+      "rol": "mosaico",
+      "bytes": 7954
+    },
+    "7841834": {
+      "archivo": "pro-tram-n-divorcio.6047af67.webp",
+      "rol": "mosaico",
+      "bytes": 7358
+    },
+    "7859953": {
+      "archivo": "hogar-portada.90bfaca5.webp",
+      "rol": "portada",
+      "bytes": 40352
+    },
+    "7873720": {
+      "archivo": "auto-veh-v-s.6136ef8e.webp",
+      "rol": "mosaico",
+      "bytes": 16214
+    },
+    "7876154": {
+      "archivo": "pro-legal-derecho-familiar.b306d9dc.webp",
+      "rol": "mosaico",
+      "bytes": 6516
+    },
+    "7876197": {
+      "archivo": "pro-portada.f0e7ea09.webp",
+      "rol": "portada",
+      "bytes": 31936
+    },
+    "7887036": {
+      "archivo": "noche-show-karaoke.59334b00.webp",
+      "rol": "mosaico",
+      "bytes": 5524
+    },
+    "7943248": {
+      "archivo": "salud-mente-terapia-del-habla.f71f0530.webp",
+      "rol": "mosaico",
+      "bytes": 4784
+    },
+    "7944234": {
+      "archivo": "fiesta-tipo-e-graduacion.21dc4a89.webp",
+      "rol": "mosaico",
+      "bytes": 15156
+    },
+    "8135275": {
+      "archivo": "tienda-casa-decoracion-del-hogar.4b89bb40.webp",
+      "rol": "mosaico",
+      "bytes": 6048
+    },
+    "8159018": {
+      "archivo": "fiesta-portada.f36905b9.webp",
+      "rol": "portada",
+      "bytes": 43406
+    },
+    "8201205": {
+      "archivo": "tienda-acc-accesorios-y-bolsos.7dd9765b.webp",
+      "rol": "mosaico",
+      "bytes": 7238
+    },
+    "8215113": {
+      "archivo": "food-bebidas-jugos-y-batidos.755ee13f.webp",
+      "rol": "mosaico",
+      "bytes": 8294
+    },
+    "8224633": {
+      "archivo": "salud-dent-dentista-infantil.b35c1ba4.webp",
+      "rol": "mosaico",
+      "bytes": 5388
+    },
+    "8250702": {
+      "archivo": "food-platos-bbq-y-asados.9992d06c.webp",
+      "rol": "mosaico",
+      "bytes": 10212
+    },
+    "8281148": {
+      "archivo": "noche-bailar-club-de-salsa-y-bachata.d23b0984.webp",
+      "rol": "mosaico",
+      "bytes": 5730
+    },
+    "8292879": {
+      "archivo": "inmueble-dinero-hipoteca-con-itin-o-sin-credito.c20cb749.webp",
+      "rol": "mosaico",
+      "bytes": 5238
+    },
+    "8293768": {
+      "archivo": "pro-din-prestamos.69adeac2.webp",
+      "rol": "mosaico",
+      "bytes": 4948
+    },
+    "8351649": {
+      "archivo": "merc-fresco-pescaderia.3698fae4.webp",
+      "rol": "mosaico",
+      "bytes": 10144
+    },
+    "8376207": {
+      "archivo": "salud-gen-telemedicina.2c9c3a4d.webp",
+      "rol": "mosaico",
+      "bytes": 5014
+    },
+    "8376285": {
+      "archivo": "salud-esp-podologia.3270bf14.webp",
+      "rol": "mosaico",
+      "bytes": 5602
+    },
+    "8385870": {
+      "archivo": "fiesta-ninos-entretenimiento-infantil.fdefd74c.webp",
+      "rol": "mosaico",
+      "bytes": 13874
+    },
+    "8386651": {
+      "archivo": "tienda-que-n-ropa.ff39f1ea.webp",
+      "rol": "mosaico",
+      "bytes": 9542
+    },
+    "8387807": {
+      "archivo": "tienda-portada.5c627390.webp",
+      "rol": "portada",
+      "bytes": 52376
+    },
+    "8388225": {
+      "archivo": "pro-otros-investigador-privado.2c9d4a6f.webp",
+      "rol": "mosaico",
+      "bytes": 5838
+    },
+    "8413334": {
+      "archivo": "salud-dent-dentista.b0086aa3.webp",
+      "rol": "mosaico",
+      "bytes": 5212
+    },
+    "8422170": {
+      "archivo": "ninos-cuidado-guarderia.7aa662de.webp",
+      "rol": "mosaico",
+      "bytes": 9054
+    },
+    "8436610": {
+      "archivo": "deporte-cuerpo-yoga.6ac4d38b.webp",
+      "rol": "mosaico",
+      "bytes": 8882
+    },
+    "8441812": {
+      "archivo": "pro-din-asesor-financiero.9a8d6358.webp",
+      "rol": "mosaico",
+      "bytes": 7676
+    },
+    "8447849": {
+      "archivo": "edu-que-n-oficio.abc08b63.webp",
+      "rol": "mosaico",
+      "bytes": 6562
+    },
+    "8456147": {
+      "archivo": "ninos-cuidado-cuidado-despues-de-la-escuela.a7b64b4f.webp",
+      "rol": "mosaico",
+      "bytes": 5604
+    },
+    "8459366": {
+      "archivo": "tienda-ropa-vestidos-de-quinceanera-y-novia.c6320804.webp",
+      "rol": "mosaico",
+      "bytes": 7380
+    },
+    "8459404": {
+      "archivo": "tienda-que-n-quince.85b6622f.webp",
+      "rol": "mosaico",
+      "bytes": 5338
+    },
+    "8460603": {
+      "archivo": "bell-piel-faciales-y-estetica.6b7c1000.webp",
+      "rol": "mosaico",
+      "bytes": 3582
+    },
+    "8469937": {
+      "archivo": "pro-legal-abogado-de-bienes-raices.78cf0a79.webp",
+      "rol": "mosaico",
+      "bytes": 10394
+    },
+    "8469940": {
+      "archivo": "inmueble-comprar-casas-en-venta.3716bd10.webp",
+      "rol": "mosaico",
+      "bytes": 6012
+    },
+    "8471699": {
+      "archivo": "food-platos-italiana-y-pizza.2289d13e.webp",
+      "rol": "mosaico",
+      "bytes": 13368
+    },
+    "8475171": {
+      "archivo": "pro-seg-seguros-comerciales.ff5a8f71.webp",
+      "rol": "mosaico",
+      "bytes": 5194
+    },
+    "8487408": {
+      "archivo": "edu-trabajo-seguridad-en-construccion-osha.77f3305a.webp",
+      "rol": "mosaico",
+      "bytes": 6750
+    },
+    "8511804": {
+      "archivo": "edu-arte-clases-de-cocina.212d1ae7.webp",
+      "rol": "mosaico",
+      "bytes": 5620
+    },
+    "8527653": {
+      "archivo": "salud-esp-clinica-del-sueno.bfb4f29a.webp",
+      "rol": "mosaico",
+      "bytes": 4556
+    },
+    "8552652": {
+      "archivo": "trans-per-shuttle-entre-ciudades.9e8dd820.webp",
+      "rol": "mosaico",
+      "bytes": 8558
+    },
+    "8563060": {
+      "archivo": "pro-tram-n-ciudadania.f97076fb.webp",
+      "rol": "mosaico",
+      "bytes": 7694
+    },
+    "8569166": {
+      "archivo": "trans-a-n-nyc.d4ced980.webp",
+      "rol": "mosaico",
+      "bytes": 4546
+    },
+    "8613100": {
+      "archivo": "ninos-cuidado-preescolar.278eb30b.webp",
+      "rol": "mosaico",
+      "bytes": 7992
+    },
+    "8696558": {
+      "archivo": "food-platos-pollo-asado.25f34c61.webp",
+      "rol": "mosaico",
+      "bytes": 7648
+    },
+    "8730057": {
+      "archivo": "inmueble-que-n-comprar.1210d86a.webp",
+      "rol": "mosaico",
+      "bytes": 9104
+    },
+    "8734409": {
+      "archivo": "tienda-tec-tienda-de-celulares-y-planes.cdbd3942.webp",
+      "rol": "mosaico",
+      "bytes": 10108
+    },
+    "8774643": {
+      "archivo": "tienda-serv-lavanderia.a276cc38.webp",
+      "rol": "mosaico",
+      "bytes": 9694
+    },
+    "8774650": {
+      "archivo": "tienda-serv-tintoreria.91a4aec7.webp",
+      "rol": "mosaico",
+      "bytes": 9856
+    },
+    "8847155": {
+      "archivo": "pro-inm-traduccion-e-interpretacion.b7d48b80.webp",
+      "rol": "mosaico",
+      "bytes": 5714
+    },
+    "8850749": {
+      "archivo": "edu-que-n-ciudadania.c042fd30.webp",
+      "rol": "mosaico",
+      "bytes": 3804
+    },
+    "8867547": {
+      "archivo": "edu-belleza-escuela-de-barberia.c22e4cb4.webp",
+      "rol": "mosaico",
+      "bytes": 6074
+    },
+    "8884251": {
+      "archivo": "fiesta-musica-banda-norteno.9251560b.webp",
+      "rol": "mosaico",
+      "bytes": 13790
+    },
+    "8961551": {
+      "archivo": "pro-legal-compensacion-laboral.ed749b98.webp",
+      "rol": "mosaico",
+      "bytes": 9856
+    },
+    "8963083": {
+      "archivo": "inmueble-rentar-casas-en-renta.8c9f31bb.webp",
+      "rol": "mosaico",
+      "bytes": 7876
+    },
+    "8985925": {
+      "archivo": "auto-mant-suspension-y-alineacion.840f97de.webp",
+      "rol": "mosaico",
+      "bytes": 5998
+    },
+    "8986036": {
+      "archivo": "auto-mant-inspeccion-estatal-y-emisiones.a00e0a89.webp",
+      "rol": "mosaico",
+      "bytes": 7878
+    },
+    "8986132": {
+      "archivo": "auto-portada.8192bcad.webp",
+      "rol": "portada",
+      "bytes": 41032
+    },
+    "8989470": {
+      "archivo": "trans-paq-repartidor-y-mensajeria.291e8b19.webp",
+      "rol": "mosaico",
+      "bytes": 5642
+    },
+    "9005458": {
+      "archivo": "fiesta-musica-dj.70892114.webp",
+      "rol": "mosaico",
+      "bytes": 7762
+    },
+    "9031968": {
+      "archivo": "hogar-sint-s-electro.58ffcb16.webp",
+      "rol": "mosaico",
+      "bytes": 6930
+    },
+    "9052803": {
+      "archivo": "pro-crea-diseno-web.7c4f38a5.webp",
+      "rol": "mosaico",
+      "bytes": 10464
+    },
+    "9064679": {
+      "archivo": "salud-mente-psicologia-y-consejeria.ab2a703f.webp",
+      "rol": "mosaico",
+      "bytes": 6574
+    },
+    "9257926": {
+      "archivo": "fiesta-org-coordinacion-de-ceremonia-religiosa.efa1cab6.webp",
+      "rol": "mosaico",
+      "bytes": 12856
+    },
+    "9303533": {
+      "archivo": "ninos-escuela-campamento-de-verano.f286a6d2.webp",
+      "rol": "mosaico",
+      "bytes": 15514
+    },
+    "9308434": {
+      "archivo": "inmueble-rentar-section-8-y-vivienda-accesible.14a27b28.webp",
+      "rol": "mosaico",
+      "bytes": 6998
+    },
+    "9402855": {
+      "archivo": "deporte-ligas-liga-de-futbol.2d2bd37d.webp",
+      "rol": "mosaico",
+      "bytes": 10940
+    },
+    "9518244": {
+      "archivo": "edu-trabajo-escuela-de-manejo.614a3eab.webp",
+      "rol": "mosaico",
+      "bytes": 7352
+    },
+    "9604953": {
+      "archivo": "auto-esp-audio-alarmas-y-accesorios.0ece31ae.webp",
+      "rol": "mosaico",
+      "bytes": 7202
+    },
+    "9616959": {
+      "archivo": "pro-otros-ingenieria.0cdaa661.webp",
+      "rol": "mosaico",
+      "bytes": 8828
+    },
+    "9629693": {
+      "archivo": "salud-gen-laboratorio-y-analisis.0508e7fd.webp",
+      "rol": "mosaico",
+      "bytes": 4954
+    },
+    "9648776": {
+      "archivo": "ninos-que-n-deporte.7109e8a8.webp",
+      "rol": "mosaico",
+      "bytes": 3118
+    },
+    "9694390": {
+      "archivo": "trans-paq-envios-a-latinoamerica.445d55f4.webp",
+      "rol": "mosaico",
+      "bytes": 12894
+    },
+    "9700895": {
+      "archivo": "food-platos-pupusas.413c02c2.webp",
+      "rol": "mosaico",
+      "bytes": 6096
+    },
+    "9735323": {
+      "archivo": "auto-mant-reparacion-de-rines.ba38212e.webp",
+      "rol": "mosaico",
+      "bytes": 10510
+    },
+    "9858904": {
+      "archivo": "pro-inm-apostilla-y-legalizacion.409c92d7.webp",
+      "rol": "mosaico",
+      "bytes": 5014
+    },
+    "9875439": {
+      "archivo": "hogar-rep-generadores.cfc50607.webp",
+      "rol": "mosaico",
+      "bytes": 16112
+    },
+    "9889066": {
+      "archivo": "fiesta-lugar-plantas-de-luz.2404535c.webp",
+      "rol": "mosaico",
+      "bytes": 13736
+    },
+    "10037055": {
+      "archivo": "fiesta-ninos-pinatas.1f0e5638.webp",
+      "rol": "mosaico",
+      "bytes": 14654
+    },
+    "10063279": {
+      "archivo": "noche-bailar-noche-urbana.306a2c05.webp",
+      "rol": "mosaico",
+      "bytes": 5248
+    },
+    "10123923": {
+      "archivo": "bell-unas-acrilico-y-gel.90451fc0.webp",
+      "rol": "mosaico",
+      "bytes": 3372
+    },
+    "10126661": {
+      "archivo": "auto-carr-vinilos-y-rotulado.619e5ee8.webp",
+      "rol": "mosaico",
+      "bytes": 4940
+    },
+    "10567236": {
+      "archivo": "hogar-limp-limpieza-comercial.56e69abb.webp",
+      "rol": "mosaico",
+      "bytes": 4206
+    },
+    "10834810": {
+      "archivo": "merc-tiendas-mayorista.cbb04a99.webp",
+      "rol": "mosaico",
+      "bytes": 11420
+    },
+    "10972100": {
+      "archivo": "salud-gen-imagenologia-y-rayos-x.868259fb.webp",
+      "rol": "mosaico",
+      "bytes": 5738
+    },
+    "11056184": {
+      "archivo": "hogar-temp-t-calef.6882fcd1.webp",
+      "rol": "mosaico",
+      "bytes": 2794
+    },
+    "11127339": {
+      "archivo": "hogar-obra-carpinteria.958ba188.webp",
+      "rol": "mosaico",
+      "bytes": 6492
+    },
+    "11210095": {
+      "archivo": "hogar-ext-chimeneas.7bf7cbe1.webp",
+      "rol": "mosaico",
+      "bytes": 6754
+    },
+    "11325915": {
+      "archivo": "merc-bebida-licoreria.09ed50b7.webp",
+      "rol": "mosaico",
+      "bytes": 13940
+    },
+    "11357903": {
+      "archivo": "trans-per-viajes-entre-estados.1b0f2b8a.webp",
+      "rol": "mosaico",
+      "bytes": 9240
+    },
+    "11608887": {
+      "archivo": "merc-tiendas-supermercado-latino.d837c8be.webp",
+      "rol": "mosaico",
+      "bytes": 13674
+    },
+    "11658756": {
+      "archivo": "auto-carr-reparacion-de-golpes-sin-pintura.ee2bc411.webp",
+      "rol": "mosaico",
+      "bytes": 8620
+    },
+    "11686671": {
+      "archivo": "merc-fresco-delicatessen-y-comida-lista.0a7487e1.webp",
+      "rol": "mosaico",
+      "bytes": 13840
+    },
+    "11698047": {
+      "archivo": "hogar-ext-canaletas.5394fe16.webp",
+      "rol": "mosaico",
+      "bytes": 8138
+    },
+    "11712500": {
+      "archivo": "fiesta-comida-pastel-y-postres-de-evento.49607622.webp",
+      "rol": "mosaico",
+      "bytes": 11212
+    },
+    "11781293": {
+      "archivo": "bell-piel-depilacion-laser.bbc96fc0.webp",
+      "rol": "mosaico",
+      "bytes": 3436
+    },
+    "11806489": {
+      "archivo": "hogar-obra-pisos-de-ceramica.d729d9c9.webp",
+      "rol": "mosaico",
+      "bytes": 7778
+    },
+    "11890959": {
+      "archivo": "auto-esp-motos-y-cuatrimotos.6381799c.webp",
+      "rol": "mosaico",
+      "bytes": 14612
+    },
+    "11956948": {
+      "archivo": "bell-unas-maquillaje-permanente.cf60a4fe.webp",
+      "rol": "mosaico",
+      "bytes": 2918
+    },
+    "12008048": {
+      "archivo": "pro-din-envio-de-dinero-y-remesas.d2764a1e.webp",
+      "rol": "mosaico",
+      "bytes": 6616
+    },
+    "12250460": {
+      "archivo": "deporte-gym-gimnasio-24-horas.c39ef0ef.webp",
+      "rol": "mosaico",
+      "bytes": 10816
+    },
+    "12253092": {
+      "archivo": "food-formato-catering.d57d3d0a.webp",
+      "rol": "mosaico",
+      "bytes": 5322
+    },
+    "12261167": {
+      "archivo": "food-pais-salvadorena.a7a5464a.webp",
+      "rol": "mosaico",
+      "bytes": 7470
+    },
+    "12271951": {
+      "archivo": "auto-rep-diagnostico-y-escaner.0a7c78bb.webp",
+      "rol": "mosaico",
+      "bytes": 5170
+    },
+    "12282441": {
+      "archivo": "merc-fresco-tortilleria.d70bb0e3.webp",
+      "rol": "mosaico",
+      "bytes": 10220
+    },
+    "12362298": {
+      "archivo": "merc-pais-productos-dominicanos.916dfdb4.webp",
+      "rol": "mosaico",
+      "bytes": 12028
+    },
+    "12460181": {
+      "archivo": "salud-esp-reumatologia.f4a24c60.webp",
+      "rol": "mosaico",
+      "bytes": 3716
+    },
+    "12688923": {
+      "archivo": "food-pais-argentina.15688a9f.webp",
+      "rol": "mosaico",
+      "bytes": 17322
+    },
+    "12700835": {
+      "archivo": "auto-esp-mantenimiento-de-flotas.61669410.webp",
+      "rol": "mosaico",
+      "bytes": 5626
+    },
+    "12811627": {
+      "archivo": "tienda-fam-bicicleteria.7d918847.webp",
+      "rol": "mosaico",
+      "bytes": 12600
+    },
+    "12934843": {
+      "archivo": "bell-piel-blanqueamiento-dental-cosmetico.dfa20335.webp",
+      "rol": "mosaico",
+      "bytes": 4436
+    },
+    "12939801": {
+      "archivo": "food-dulces-heladeria-y-paleteria.fe9f3a53.webp",
+      "rol": "mosaico",
+      "bytes": 9054
+    },
+    "12987481": {
+      "archivo": "food-bebidas-hielo-y-agua.0c287892.webp",
+      "rol": "mosaico",
+      "bytes": 4480
+    },
+    "13065690": {
+      "archivo": "auto-mant-cambio-de-aceite.fb4a8a0c.webp",
+      "rol": "mosaico",
+      "bytes": 9862
+    },
+    "13179883": {
+      "archivo": "deporte-ligas-liga-de-basquetbol.333044ea.webp",
+      "rol": "mosaico",
+      "bytes": 9620
+    },
+    "13230484": {
+      "archivo": "fiesta-musica-grupo-musical.00276a94.webp",
+      "rol": "mosaico",
+      "bytes": 6500
+    },
+    "13375022": {
+      "archivo": "fiesta-comida-meseros.8daff990.webp",
+      "rol": "mosaico",
+      "bytes": 4922
+    },
+    "13432042": {
+      "archivo": "food-formato-cocina-solo-para-entrega.07f7a615.webp",
+      "rol": "mosaico",
+      "bytes": 13276
+    },
+    "13434437": {
+      "archivo": "fiesta-tipo-e-boda.6c7cf32f.webp",
+      "rol": "mosaico",
+      "bytes": 10094
+    },
+    "13521541": {
+      "archivo": "fiesta-foto-fotografo.1e90bca5.webp",
+      "rol": "mosaico",
+      "bytes": 5288
+    },
+    "13601011": {
+      "archivo": "auto-esp-casas-rodantes-y-traileres.64f3a021.webp",
+      "rol": "mosaico",
+      "bytes": 3526
+    },
+    "13640378": {
+      "archivo": "food-pais-cubana.2f2a468b.webp",
+      "rol": "mosaico",
+      "bytes": 11478
+    },
+    "13787562": {
+      "archivo": "bell-bien-vitaminas-y-suplementos.57a1b9eb.webp",
+      "rol": "mosaico",
+      "bytes": 2022
+    },
+    "13865606": {
+      "archivo": "inmueble-que-n-local.50e618be.webp",
+      "rol": "mosaico",
+      "bytes": 4654
+    },
+    "13871905": {
+      "archivo": "salud-sint-n-vista.fc414bc1.webp",
+      "rol": "mosaico",
+      "bytes": 5586
+    },
+    "13884201": {
+      "archivo": "fiesta-foto-videografo.14323e28.webp",
+      "rol": "mosaico",
+      "bytes": 4728
+    },
+    "13907447": {
+      "archivo": "salud-esp-medicina-deportiva.01e3ccee.webp",
+      "rol": "mosaico",
+      "bytes": 11868
+    },
+    "13924513": {
+      "archivo": "fiesta-comida-mesa-de-dulces.7981121c.webp",
+      "rol": "mosaico",
+      "bytes": 7884
+    },
+    "14007415": {
+      "archivo": "noche-show-noches-tematicas.f1ae41bc.webp",
+      "rol": "mosaico",
+      "bytes": 5632
+    },
+    "14179987": {
+      "archivo": "food-platos-tamales.a82b80f7.webp",
+      "rol": "mosaico",
+      "bytes": 8240
+    },
+    "14346809": {
+      "archivo": "trans-per-camioneta-de-larga-distancia.d669eb55.webp",
+      "rol": "mosaico",
+      "bytes": 7872
+    },
+    "14357233": {
+      "archivo": "noche-plan-n-envivo.33f1cddc.webp",
+      "rol": "mosaico",
+      "bytes": 10900
+    },
+    "14364672": {
+      "archivo": "noche-bailar-noche-de-banda-y-norteno.7ed0b7bc.webp",
+      "rol": "mosaico",
+      "bytes": 4618
+    },
+    "14457430": {
+      "archivo": "fiesta-deco-decoracion-con-globos.3abb65c9.webp",
+      "rol": "mosaico",
+      "bytes": 8792
+    },
+    "14581440": {
+      "archivo": "fiesta-org-organizador-de-eventos.90e6b115.webp",
+      "rol": "mosaico",
+      "bytes": 8410
+    },
+    "14615063": {
+      "archivo": "tienda-fam-productos-de-belleza.44aa6e9d.webp",
+      "rol": "mosaico",
+      "bytes": 6296
+    },
+    "14615263": {
+      "archivo": "auto-carr-pintura-automotriz.720c49d6.webp",
+      "rol": "mosaico",
+      "bytes": 4554
+    },
+    "14623657": {
+      "archivo": "deporte-portada.df25d276.webp",
+      "rol": "portada",
+      "bytes": 105564
+    },
+    "14658819": {
+      "archivo": "edu-que-n-ged.75cc5d3b.webp",
+      "rol": "mosaico",
+      "bytes": 4676
+    },
+    "14739185": {
+      "archivo": "hogar-sint-s-roto.6a6a9729.webp",
+      "rol": "mosaico",
+      "bytes": 9508
+    },
+    "14786461": {
+      "archivo": "food-platos-mariscos.19aacf89.webp",
+      "rol": "mosaico",
+      "bytes": 4694
+    },
+    "14797864": {
+      "archivo": "salud-casa-farmacia.f3e4aa07.webp",
+      "rol": "mosaico",
+      "bytes": 9618
+    },
+    "14853183": {
+      "archivo": "tienda-que-n-belleza.cb9893d8.webp",
+      "rol": "mosaico",
+      "bytes": 13876
+    },
+    "14886033": {
+      "archivo": "fiesta-musica-maestro-de-ceremonias-y-animador.3f7fb0d4.webp",
+      "rol": "mosaico",
+      "bytes": 4136
+    },
+    "14897737": {
+      "archivo": "fiesta-org-organizador-de-quinceaneras.2a894b08.webp",
+      "rol": "mosaico",
+      "bytes": 7246
+    },
+    "14965464": {
+      "archivo": "hogar-limp-lavado-a-presion.13cb04b5.webp",
+      "rol": "mosaico",
+      "bytes": 6440
+    },
+    "15029499": {
+      "archivo": "food-platos-americana.f5298394.webp",
+      "rol": "mosaico",
+      "bytes": 5820
+    },
+    "15084344": {
+      "archivo": "trans-carga-camion-de-mudanza-con-chofer.60aa9bd6.webp",
+      "rol": "mosaico",
+      "bytes": 7244
+    },
+    "15135087": {
+      "archivo": "food-pais-colombiana.20df4059.webp",
+      "rol": "mosaico",
+      "bytes": 6126
+    },
+    "15145954": {
+      "archivo": "fiesta-musica-mariachi.a6435ffd.webp",
+      "rol": "mosaico",
+      "bytes": 8166
+    },
+    "15223424": {
+      "archivo": "auto-lav-tapiceria-automotriz.a2067a99.webp",
+      "rol": "mosaico",
+      "bytes": 9070
+    },
+    "15273807": {
+      "archivo": "noche-bar-lounge.e532655c.webp",
+      "rol": "mosaico",
+      "bytes": 8628
+    },
+    "15313106": {
+      "archivo": "fiesta-deco-invitaciones-e-impresion.0e04893e.webp",
+      "rol": "mosaico",
+      "bytes": 9408
+    },
+    "15319047": {
+      "archivo": "salud-bien-nutriologo.b6108d31.webp",
+      "rol": "mosaico",
+      "bytes": 7418
+    },
+    "15365722": {
+      "archivo": "merc-pais-productos-mexicanos.ae167c70.webp",
+      "rol": "mosaico",
+      "bytes": 14410
+    },
+    "15452106": {
+      "archivo": "pro-legal-fianzas.eb0306bb.webp",
+      "rol": "mosaico",
+      "bytes": 7288
+    },
+    "15458299": {
+      "archivo": "hogar-ext-cimientos-e-impermeabilizacion.8130e0cc.webp",
+      "rol": "mosaico",
+      "bytes": 11380
+    },
+    "15507425": {
+      "archivo": "bell-para-w-q.ae54c31d.webp",
+      "rol": "mosaico",
+      "bytes": 6204
+    },
+    "15530609": {
+      "archivo": "fiesta-lugar-montaje-en-patio.02245e34.webp",
+      "rol": "mosaico",
+      "bytes": 8288
+    },
+    "15621210": {
+      "archivo": "fiesta-lugar-salon-de-fiestas.fecfd2bd.webp",
+      "rol": "mosaico",
+      "bytes": 12938
+    },
+    "15633962": {
+      "archivo": "pro-din-cambio-de-cheques.d576ea73.webp",
+      "rol": "mosaico",
+      "bytes": 11462
+    },
+    "15635241": {
+      "archivo": "pro-crea-mercadeo-y-redes-sociales.7e06fc92.webp",
+      "rol": "mosaico",
+      "bytes": 5386
+    },
+    "15640157": {
+      "archivo": "food-platos-desayunos.2ca0fb7d.webp",
+      "rol": "mosaico",
+      "bytes": 9312
+    },
+    "15641348": {
+      "archivo": "fiesta-deco-pirotecnia-y-chispas-frias.e2432cd5.webp",
+      "rol": "mosaico",
+      "bytes": 14130
+    },
+    "15648191": {
+      "archivo": "ninos-cuidado-cuidado-infantil-en-casa.4b6bea01.webp",
+      "rol": "mosaico",
+      "bytes": 8634
+    },
+    "15750727": {
+      "archivo": "noche-bar-cocteleria.866b733a.webp",
+      "rol": "mosaico",
+      "bytes": 8620
+    },
+    "15774577": {
+      "archivo": "trans-per-chofer-privado.21d7ccc1.webp",
+      "rol": "mosaico",
+      "bytes": 9360
+    },
+    "15831830": {
+      "archivo": "salud-casa-farmacia-de-preparacion.ada3909c.webp",
+      "rol": "mosaico",
+      "bytes": 4346
+    },
+    "16063740": {
+      "archivo": "tienda-acc-joyeria.a7156bbb.webp",
+      "rol": "mosaico",
+      "bytes": 6386
+    },
+    "16064240": {
+      "archivo": "noche-bar-bar.f3932fc7.webp",
+      "rol": "mosaico",
+      "bytes": 8322
+    },
+    "16125869": {
+      "archivo": "noche-org-servicio-vip.26f3d7a2.webp",
+      "rol": "mosaico",
+      "bytes": 7966
+    },
+    "16164823": {
+      "archivo": "hogar-obra-pintura-exterior.a7ae8389.webp",
+      "rol": "mosaico",
+      "bytes": 11394
+    },
+    "16276491": {
+      "archivo": "merc-que-n-carne.8d2d875f.webp",
+      "rol": "mosaico",
+      "bytes": 5944
+    },
+    "16574941": {
+      "archivo": "bell-piel-tratamiento-de-acne-y-piel.81039b14.webp",
+      "rol": "mosaico",
+      "bytes": 2478
+    },
+    "16743486": {
+      "archivo": "food-pais-espanola.e6911bdf.webp",
+      "rol": "mosaico",
+      "bytes": 12700
+    },
+    "16936184": {
+      "archivo": "noche-bar-cantina.9617236c.webp",
+      "rol": "mosaico",
+      "bytes": 9442
+    },
+    "16985188": {
+      "archivo": "noche-org-local-para-fiestas-privadas.e575a4dc.webp",
+      "rol": "mosaico",
+      "bytes": 11364
+    },
+    "17036492": {
+      "archivo": "noche-juego-bar-de-juegos.89c99d67.webp",
+      "rol": "mosaico",
+      "bytes": 10902
+    },
+    "17039185": {
+      "archivo": "merc-portada.0e8627cd.webp",
+      "rol": "portada",
+      "bytes": 80298
+    },
+    "17041922": {
+      "archivo": "hogar-limp-limpieza-de-ventanas.d3af48d5.webp",
+      "rol": "mosaico",
+      "bytes": 7174
+    },
+    "17042289": {
+      "archivo": "bell-cabello-keratina-y-alisados.070a94b6.webp",
+      "rol": "mosaico",
+      "bytes": 6248
+    },
+    "17063686": {
+      "archivo": "hogar-rep-multiservicios.64564a2a.webp",
+      "rol": "mosaico",
+      "bytes": 10042
+    },
+    "17109241": {
+      "archivo": "merc-que-n-mayoreo.9572ba7f.webp",
+      "rol": "mosaico",
+      "bytes": 12490
+    },
+    "17294727": {
+      "archivo": "fiesta-deco-decoracion-y-centros-de-mesa.2b652f7f.webp",
+      "rol": "mosaico",
+      "bytes": 11930
+    },
+    "17377416": {
+      "archivo": "pro-neg-cumplimiento-cdl-y-dot.5b7e512d.webp",
+      "rol": "mosaico",
+      "bytes": 7948
+    },
+    "17429097": {
+      "archivo": "auto-emer-gruas.3174d3da.webp",
+      "rol": "mosaico",
+      "bytes": 12780
+    },
+    "17529847": {
+      "archivo": "pro-inm-oficiante-de-bodas-y-eventos.04b09ef2.webp",
+      "rol": "mosaico",
+      "bytes": 8364
+    },
+    "17612417": {
+      "archivo": "dealer-tipo-suvs.050a43e7.webp",
+      "rol": "mosaico",
+      "bytes": 6248
+    },
+    "17664540": {
+      "archivo": "fe-grupos-ministerio-juvenil.3c1fdc80.webp",
+      "rol": "mosaico",
+      "bytes": 13996
+    },
+    "17776621": {
+      "archivo": "auto-esp-preparacion-y-tuning.cb436486.webp",
+      "rol": "mosaico",
+      "bytes": 11900
+    },
+    "18026389": {
+      "archivo": "tienda-que-n-juguete.9954c75d.webp",
+      "rol": "mosaico",
+      "bytes": 17070
+    },
+    "18090300": {
+      "archivo": "trans-a-n-aeropuerto.ca7f5e47.webp",
+      "rol": "mosaico",
+      "bytes": 2078
+    },
+    "18265898": {
+      "archivo": "fiesta-org-chambelanes-y-coreografia.fd53914e.webp",
+      "rol": "mosaico",
+      "bytes": 7838
+    },
+    "18402583": {
+      "archivo": "edu-belleza-escuela-de-cosmetologia.898f9504.webp",
+      "rol": "mosaico",
+      "bytes": 3190
+    },
+    "18435546": {
+      "archivo": "ninos-que-n-escuela.52d648fa.webp",
+      "rol": "mosaico",
+      "bytes": 7016
+    },
+    "18450477": {
+      "archivo": "bell-piel-moldeamiento-corporal.9fef35ab.webp",
+      "rol": "mosaico",
+      "bytes": 2600
+    },
+    "18453953": {
+      "archivo": "fe-que-n-boda.d1904fae.webp",
+      "rol": "mosaico",
+      "bytes": 13694
+    },
+    "18459247": {
+      "archivo": "salud-casa-cuidado-de-adultos-mayores.77878dbf.webp",
+      "rol": "mosaico",
+      "bytes": 8558
+    },
+    "18506743": {
+      "archivo": "edu-que-n-ingles.e11ade67.webp",
+      "rol": "mosaico",
+      "bytes": 8644
+    },
+    "18613262": {
+      "archivo": "food-dulces-decoracion-de-pasteles.9ab30599.webp",
+      "rol": "mosaico",
+      "bytes": 8512
+    },
+    "18687845": {
+      "archivo": "pro-inm-notario-publico.2d84ae43.webp",
+      "rol": "mosaico",
+      "bytes": 7620
+    },
+    "18726333": {
+      "archivo": "tienda-ropa-zapateria.e85d4037.webp",
+      "rol": "mosaico",
+      "bytes": 9306
+    },
+    "18824031": {
+      "archivo": "food-platos-parrilla-y-carnes.ec1ab7bc.webp",
+      "rol": "mosaico",
+      "bytes": 9326
+    },
+    "18880006": {
+      "archivo": "pro-crea-fotografia-comercial.ee1d7a1b.webp",
+      "rol": "mosaico",
+      "bytes": 5438
+    },
+    "18882519": {
+      "archivo": "merc-fresco-carniceria.8e5119a3.webp",
+      "rol": "mosaico",
+      "bytes": 13798
+    },
+    "19073668": {
+      "archivo": "hogar-ext-terrazas-y-patios.4e1946c5.webp",
+      "rol": "mosaico",
+      "bytes": 12594
+    },
+    "19140178": {
+      "archivo": "bell-cabello-barbero-a-domicilio.71d1c462.webp",
+      "rol": "mosaico",
+      "bytes": 4088
+    },
+    "19147369": {
+      "archivo": "salud-dent-ortodoncia.409a6451.webp",
+      "rol": "mosaico",
+      "bytes": 8172
+    },
+    "19239905": {
+      "archivo": "inmueble-rentar-apartamentos-en-renta.e9809184.webp",
+      "rol": "mosaico",
+      "bytes": 7742
+    },
+    "19252265": {
+      "archivo": "food-bebidas-cafeteria.9aced8f0.webp",
+      "rol": "mosaico",
+      "bytes": 5436
+    },
+    "19357671": {
+      "archivo": "salud-mujer-planificacion-familiar.53ed471a.webp",
+      "rol": "mosaico",
+      "bytes": 5132
+    },
+    "19386204": {
+      "archivo": "salud-sint-n-fiebre.9956f917.webp",
+      "rol": "mosaico",
+      "bytes": 5556
+    },
+    "19623305": {
+      "archivo": "pro-crea-produccion-de-video.d32accd8.webp",
+      "rol": "mosaico",
+      "bytes": 7386
+    },
+    "19647374": {
+      "archivo": "food-platos-vegetariana-y-vegana.1998dbc7.webp",
+      "rol": "mosaico",
+      "bytes": 7390
+    },
+    "19666087": {
+      "archivo": "hogar-obra-remodelacion-de-bano.37b7a6fb.webp",
+      "rol": "mosaico",
+      "bytes": 11404
+    },
+    "19674106": {
+      "archivo": "fiesta-comida-barra-movil.dd04715e.webp",
+      "rol": "mosaico",
+      "bytes": 7398
+    },
+    "19789770": {
+      "archivo": "merc-que-n-pescado.91ba2deb.webp",
+      "rol": "mosaico",
+      "bytes": 6632
+    },
+    "19913305": {
+      "archivo": "fe-iglesias-misa-en-espanol.18a7e8fe.webp",
+      "rol": "mosaico",
+      "bytes": 10616
+    },
+    "19996404": {
+      "archivo": "food-bebidas-bebidas-especiales.00ab1ce9.webp",
+      "rol": "mosaico",
+      "bytes": 7618
+    },
+    "20036216": {
+      "archivo": "auto-carr-papel-ahumado.8c982fbe.webp",
+      "rol": "mosaico",
+      "bytes": 3014
+    },
+    "20082011": {
+      "archivo": "salud-mujer-partera-y-doula.721efd41.webp",
+      "rol": "mosaico",
+      "bytes": 8616
+    },
+    "20100299": {
+      "archivo": "salud-sint-n-chequeo.2a93ea73.webp",
+      "rol": "mosaico",
+      "bytes": 4858
+    },
+    "20186104": {
+      "archivo": "bell-unas-maquillista.b7b7b811.webp",
+      "rol": "mosaico",
+      "bytes": 4998
+    },
+    "20830475": {
+      "archivo": "bell-arte-tatuajes.399ed606.webp",
+      "rol": "mosaico",
+      "bytes": 7146
+    },
+    "20860622": {
+      "archivo": "salud-mente-terapia-fisica.a82070d5.webp",
+      "rol": "mosaico",
+      "bytes": 4008
+    },
+    "20885652": {
+      "archivo": "fiesta-foto-cabina-de-fotos.9a704ffe.webp",
+      "rol": "mosaico",
+      "bytes": 9110
+    },
+    "20993514": {
+      "archivo": "dealer-tipo-vans-y-minivans.57d13693.webp",
+      "rol": "mosaico",
+      "bytes": 8258
+    },
+    "21071800": {
+      "archivo": "merc-fresco-congelados.7f646a6d.webp",
+      "rol": "mosaico",
+      "bytes": 5140
+    },
+    "21831855": {
+      "archivo": "auto-rep-mecanico-a-domicilio.be5cf746.webp",
+      "rol": "mosaico",
+      "bytes": 9336
+    },
+    "23947761": {
+      "archivo": "food-pais-fusion-latina.39f45c15.webp",
+      "rol": "mosaico",
+      "bytes": 11184
+    },
+    "24023591": {
+      "archivo": "fe-grupos-estudio-biblico-y-celulas.c77965b4.webp",
+      "rol": "mosaico",
+      "bytes": 11034
+    },
+    "24023654": {
+      "archivo": "fe-portada.d12a67ec.webp",
+      "rol": "portada",
+      "bytes": 44074
+    },
+    "25461701": {
+      "archivo": "fiesta-lugar-banos-portatiles.73f171e9.webp",
+      "rol": "mosaico",
+      "bytes": 6330
+    },
+    "25596879": {
+      "archivo": "deporte-que-n-gym.c3273ad0.webp",
+      "rol": "mosaico",
+      "bytes": 4774
+    },
+    "26626726": {
+      "archivo": "noche-plan-n-tranquilo.8e3c89f6.webp",
+      "rol": "mosaico",
+      "bytes": 9862
+    },
+    "26698502": {
+      "archivo": "trans-per-viajes-locales.a9eb0408.webp",
+      "rol": "mosaico",
+      "bytes": 10856
+    },
+    "26794173": {
+      "archivo": "noche-plan-n-vip.4319f0c8.webp",
+      "rol": "mosaico",
+      "bytes": 5182
+    },
+    "27066158": {
+      "archivo": "merc-otros-vape-shop.ded37248.webp",
+      "rol": "mosaico",
+      "bytes": 9700
+    },
+    "27176670": {
+      "archivo": "hogar-limp-limpieza-de-casas.088eb6ed.webp",
+      "rol": "mosaico",
+      "bytes": 7052
+    },
+    "27176823": {
+      "archivo": "fiesta-org-fiestas-de-cumpleanos.6799e938.webp",
+      "rol": "mosaico",
+      "bytes": 9048
+    },
+    "27522902": {
+      "archivo": "inmueble-inquilino-administracion-de-propiedades.b163226c.webp",
+      "rol": "mosaico",
+      "bytes": 3376
+    },
+    "27556972": {
+      "archivo": "merc-que-n-comida.fa3a218a.webp",
+      "rol": "mosaico",
+      "bytes": 10796
+    },
+    "27781696": {
+      "archivo": "bell-bien-tienda-de-productos-de-belleza.18ee76b8.webp",
+      "rol": "mosaico",
+      "bytes": 5922
+    },
+    "28000271": {
+      "archivo": "hogar-tec-instalacion-de-internet-y-satelite.4ac29f9a.webp",
+      "rol": "mosaico",
+      "bytes": 5732
+    },
+    "28123708": {
+      "archivo": "salud-casa-transporte-medico.3d5ee5ba.webp",
+      "rol": "mosaico",
+      "bytes": 8482
+    },
+    "28153483": {
+      "archivo": "inmueble-comercial-local-comercial.d2d525e5.webp",
+      "rol": "mosaico",
+      "bytes": 10036
+    },
+    "28173101": {
+      "archivo": "fiesta-ninos-brincolines-e-inflables.eb634ae7.webp",
+      "rol": "mosaico",
+      "bytes": 15628
+    },
+    "28271086": {
+      "archivo": "tienda-que-n-tenis.7939fcdf.webp",
+      "rol": "mosaico",
+      "bytes": 11998
+    },
+    "28320476": {
+      "archivo": "ninos-portada.3f7443eb.webp",
+      "rol": "portada",
+      "bytes": 91474
+    },
+    "28490734": {
+      "archivo": "auto-rep-aire-acondicionado-y-calefaccion.a482719c.webp",
+      "rol": "mosaico",
+      "bytes": 5074
+    },
+    "28664111": {
+      "archivo": "fiesta-lugar-renta-de-carpas.c36ddd23.webp",
+      "rol": "mosaico",
+      "bytes": 2722
+    },
+    "28802187": {
+      "archivo": "tienda-otros-tienda-de-mascotas.e650c9da.webp",
+      "rol": "mosaico",
+      "bytes": 15218
+    },
+    "28852335": {
+      "archivo": "auto-rep-motor-y-reconstruccion.58ed18ac.webp",
+      "rol": "mosaico",
+      "bytes": 11110
+    },
+    "28937190": {
+      "archivo": "fiesta-lugar-renta-de-articulos-para-fiesta.f08d6bf6.webp",
+      "rol": "mosaico",
+      "bytes": 6374
+    },
+    "29086309": {
+      "archivo": "food-platos-buffet.da6065c8.webp",
+      "rol": "mosaico",
+      "bytes": 13102
+    },
+    "29181492": {
+      "archivo": "auto-rep-transmision.b5ef56eb.webp",
+      "rol": "mosaico",
+      "bytes": 8436
+    },
+    "29188618": {
+      "archivo": "food-pais-ecuatoriana.c9fed93e.webp",
+      "rol": "mosaico",
+      "bytes": 8430
+    },
+    "29249484": {
+      "archivo": "fiesta-deco-fondos-y-arcos.ba7612ea.webp",
+      "rol": "mosaico",
+      "bytes": 10536
+    },
+    "29271763": {
+      "archivo": "pro-legal-accidentes-y-lesiones.600198db.webp",
+      "rol": "mosaico",
+      "bytes": 13730
+    },
+    "29274508": {
+      "archivo": "tienda-ropa-uniformes-y-ropa-de-trabajo.daaada52.webp",
+      "rol": "mosaico",
+      "bytes": 12506
+    },
+    "29422233": {
+      "archivo": "fe-iglesias-iglesia-adventista.cc2297dd.webp",
+      "rol": "mosaico",
+      "bytes": 9802
+    },
+    "29524726": {
+      "archivo": "tienda-ropa-ropa-vaquera-botas-y-sombreros.afc63ac6.webp",
+      "rol": "mosaico",
+      "bytes": 14506
+    },
+    "29584744": {
+      "archivo": "hogar-limp-retiro-de-escombros-y-basura.23576133.webp",
+      "rol": "mosaico",
+      "bytes": 14456
+    },
+    "29765480": {
+      "archivo": "tienda-ropa-ropa-de-hombre.4b530a37.webp",
+      "rol": "mosaico",
+      "bytes": 12174
+    },
+    "29877719": {
+      "archivo": "bell-unas-unas-manicura-y-pedicura.bccde969.webp",
+      "rol": "mosaico",
+      "bytes": 4528
+    },
+    "30081237": {
+      "archivo": "hogar-obra-albanileria-y-concreto.dbed5c9a.webp",
+      "rol": "mosaico",
+      "bytes": 13796
+    },
+    "30195580": {
+      "archivo": "dealer-que-n-van.9e7881be.webp",
+      "rol": "mosaico",
+      "bytes": 4802
+    },
+    "30337930": {
+      "archivo": "salud-esp-nefrologia.df07df3b.webp",
+      "rol": "mosaico",
+      "bytes": 9750
+    },
+    "30425693": {
+      "archivo": "salud-esp-alergias-y-asma.5d4c1c65.webp",
+      "rol": "mosaico",
+      "bytes": 5156
+    },
+    "30509796": {
+      "archivo": "bell-unas-cejas-y-microblading.f4efb255.webp",
+      "rol": "mosaico",
+      "bytes": 2644
+    },
+    "30686254": {
+      "archivo": "tienda-acc-casa-de-empeno.b8f26164.webp",
+      "rol": "mosaico",
+      "bytes": 10548
+    },
+    "30697014": {
+      "archivo": "noche-portada.6ada6594.webp",
+      "rol": "portada",
+      "bytes": 25908
+    },
+    "30767623": {
+      "archivo": "noche-bar-bar-de-vinos.a0443e8e.webp",
+      "rol": "mosaico",
+      "bytes": 14242
+    },
+    "30884522": {
+      "archivo": "bell-bien-belleza-a-domicilio.aebfb6b5.webp",
+      "rol": "mosaico",
+      "bytes": 6502
+    },
+    "30892994": {
+      "archivo": "food-formato-chef-privado.1e4aac99.webp",
+      "rol": "mosaico",
+      "bytes": 7396
+    },
+    "30893342": {
+      "archivo": "merc-que-n-viveres.a50e592d.webp",
+      "rol": "mosaico",
+      "bytes": 5838
+    },
+    "30896215": {
+      "archivo": "bell-unas-extensiones-de-pestanas.78f85270.webp",
+      "rol": "mosaico",
+      "bytes": 5584
+    },
+    "31001378": {
+      "archivo": "merc-otros-botanica-y-hierbas.d129103b.webp",
+      "rol": "mosaico",
+      "bytes": 19478
+    },
+    "31015267": {
+      "archivo": "hogar-emer-e-cerrado.9afef836.webp",
+      "rol": "mosaico",
+      "bytes": 3132
+    },
+    "31075105": {
+      "archivo": "fiesta-ninos-pintacaritas.356b8587.webp",
+      "rol": "mosaico",
+      "bytes": 10108
+    },
+    "31115182": {
+      "archivo": "edu-idioma-preparacion-para-ciudadania.eaa90156.webp",
+      "rol": "mosaico",
+      "bytes": 2684
+    },
+    "31219464": {
+      "archivo": "deporte-que-n-boxeo.1d459307.webp",
+      "rol": "mosaico",
+      "bytes": 16652
+    },
+    "31424880": {
+      "archivo": "pro-din-broker-hipotecario.e47fc4d4.webp",
+      "rol": "mosaico",
+      "bytes": 3702
+    },
+    "31523404": {
+      "archivo": "food-formato-cocina-de-fin-de-semana.cf602967.webp",
+      "rol": "mosaico",
+      "bytes": 4114
+    },
+    "31567147": {
+      "archivo": "hogar-limp-tapiceria-y-reparacion-de-muebles.28f2141c.webp",
+      "rol": "mosaico",
+      "bytes": 8606
+    },
+    "31663643": {
+      "archivo": "inmueble-inquilino-ayuda-y-derechos-del-inquilino.682a56da.webp",
+      "rol": "mosaico",
+      "bytes": 4198
+    },
+    "31699476": {
+      "archivo": "merc-que-n-agua.9edddee8.webp",
+      "rol": "mosaico",
+      "bytes": 6846
+    },
+    "31701039": {
+      "archivo": "hogar-sint-s-luz.c09beff5.webp",
+      "rol": "mosaico",
+      "bytes": 6562
+    },
+    "32011828": {
+      "archivo": "hogar-rep-puertas-de-garaje.5188d79d.webp",
+      "rol": "mosaico",
+      "bytes": 5992
+    },
+    "32081456": {
+      "archivo": "pro-tram-n-pasaporte.4e64c851.webp",
+      "rol": "mosaico",
+      "bytes": 7920
+    },
+    "32274294": {
+      "archivo": "fiesta-tipo-e-quince.721051d3.webp",
+      "rol": "mosaico",
+      "bytes": 12136
+    },
+    "32291149": {
+      "archivo": "food-pais-hondurena.2e636154.webp",
+      "rol": "mosaico",
+      "bytes": 9054
+    },
+    "32394146": {
+      "archivo": "hogar-emer-e-tormenta.465f90ab.webp",
+      "rol": "mosaico",
+      "bytes": 13374
+    },
+    "32399568": {
+      "archivo": "noche-plan-n-reggaeton.a64730e1.webp",
+      "rol": "mosaico",
+      "bytes": 4506
+    },
+    "32497160": {
+      "archivo": "hogar-rep-electricista.9074a105.webp",
+      "rol": "mosaico",
+      "bytes": 7956
+    },
+    "32497161": {
+      "archivo": "hogar-rep-reparaciones-para-inspeccion.f4fbffe2.webp",
+      "rol": "mosaico",
+      "bytes": 8988
+    },
+    "32759035": {
+      "archivo": "hogar-jar-jardineria-y-paisajismo.2b9bbf30.webp",
+      "rol": "mosaico",
+      "bytes": 16140
+    },
+    "32767465": {
+      "archivo": "bell-piel-spa-y-sauna.883f56df.webp",
+      "rol": "mosaico",
+      "bytes": 9824
+    },
+    "33284506": {
+      "archivo": "pro-crea-bordado-y-serigrafia.69001585.webp",
+      "rol": "mosaico",
+      "bytes": 11038
+    },
+    "33395007": {
+      "archivo": "merc-tiendas-bodega-de-la-esquina.876b59de.webp",
+      "rol": "mosaico",
+      "bytes": 20642
+    },
+    "33395010": {
+      "archivo": "food-dulces-antojitos-y-dulces.a45efe8f.webp",
+      "rol": "mosaico",
+      "bytes": 19758
+    },
+    "33395015": {
+      "archivo": "food-pais-guatemalteca.72dcd87a.webp",
+      "rol": "mosaico",
+      "bytes": 8964
+    },
+    "33404248": {
+      "archivo": "hogar-ext-techos.b4c2f0af.webp",
+      "rol": "mosaico",
+      "bytes": 14434
+    },
+    "33494862": {
+      "archivo": "fiesta-ninos-juegos-y-renta-de-feria.135f7c1e.webp",
+      "rol": "mosaico",
+      "bytes": 16156
+    },
+    "33497885": {
+      "archivo": "pro-inm-tramites-de-consulado-y-pasaporte.13962b97.webp",
+      "rol": "mosaico",
+      "bytes": 5204
+    },
+    "33539203": {
+      "archivo": "fiesta-ninos-payasos.b6cd363a.webp",
+      "rol": "mosaico",
+      "bytes": 17098
+    },
+    "33674417": {
+      "archivo": "food-dulces-postres.c4ac0138.webp",
+      "rol": "mosaico",
+      "bytes": 3740
+    },
+    "33716854": {
+      "archivo": "bell-arte-borrado-de-tatuajes.24504e0c.webp",
+      "rol": "mosaico",
+      "bytes": 4042
+    },
+    "33749906": {
+      "archivo": "auto-sint-s-choque.370d6b20.webp",
+      "rol": "mosaico",
+      "bytes": 5370
+    },
+    "33815578": {
+      "archivo": "merc-que-n-queso.f24ccc9f.webp",
+      "rol": "mosaico",
+      "bytes": 7616
+    },
+    "33917296": {
+      "archivo": "food-pais-venezolana.fad56b7c.webp",
+      "rol": "mosaico",
+      "bytes": 6300
+    },
+    "34104787": {
+      "archivo": "edu-trabajo-primeros-auxilios-y-cpr.f691e8e8.webp",
+      "rol": "mosaico",
+      "bytes": 10130
+    },
+    "34195321": {
+      "archivo": "merc-pais-productos-centroamericanos.cd9e8544.webp",
+      "rol": "mosaico",
+      "bytes": 10252
+    },
+    "34204035": {
+      "archivo": "auto-sint-s-luz.08ab56a1.webp",
+      "rol": "mosaico",
+      "bytes": 3738
+    },
+    "34261459": {
+      "archivo": "auto-emer-auxilio-en-carretera.9e61daba.webp",
+      "rol": "mosaico",
+      "bytes": 10524
+    },
+    "34277923": {
+      "archivo": "auto-mant-frenos.5ab33323.webp",
+      "rol": "mosaico",
+      "bytes": 6598
+    },
+    "34328510": {
+      "archivo": "fe-iglesias-iglesia-evangelica.3dcc528e.webp",
+      "rol": "mosaico",
+      "bytes": 7598
+    },
+    "34351909": {
+      "archivo": "auto-rep-radiadores.c51e11c5.webp",
+      "rol": "mosaico",
+      "bytes": 7566
+    },
+    "34357798": {
+      "archivo": "merc-tiendas-tienda-de-conveniencia.ee648a41.webp",
+      "rol": "mosaico",
+      "bytes": 12204
+    },
+    "34369598": {
+      "archivo": "pro-inm-traduccion-certificada.85905b55.webp",
+      "rol": "mosaico",
+      "bytes": 5328
+    },
+    "34386337": {
+      "archivo": "auto-esp-levantamiento-y-off-road.b5a0dae5.webp",
+      "rol": "mosaico",
+      "bytes": 8246
+    },
+    "34442361": {
+      "archivo": "food-pais-brasilena.b56c79ef.webp",
+      "rol": "mosaico",
+      "bytes": 7962
+    },
+    "34462180": {
+      "archivo": "tienda-casa-tienda-de-pinturas.8a35aa7b.webp",
+      "rol": "mosaico",
+      "bytes": 16012
+    },
+    "34491716": {
+      "archivo": "pro-crea-imprenta-y-rotulos.7fd13421.webp",
+      "rol": "mosaico",
+      "bytes": 10126
+    },
+    "34516144": {
+      "archivo": "fe-que-n-jovenes.ea7c6992.webp",
+      "rol": "mosaico",
+      "bytes": 7684
+    },
+    "34539243": {
+      "archivo": "auto-pie-traslado-de-vehiculos.b7f0a4d0.webp",
+      "rol": "mosaico",
+      "bytes": 10994
+    },
+    "34611802": {
+      "archivo": "fe-grupos-alabanza-y-coro.215bfd24.webp",
+      "rol": "mosaico",
+      "bytes": 12698
+    },
+    "34641036": {
+      "archivo": "fiesta-foto-cabina-360.c2f44624.webp",
+      "rol": "mosaico",
+      "bytes": 3616
+    },
+    "34687846": {
+      "archivo": "hogar-sint-s-calor.7838723b.webp",
+      "rol": "mosaico",
+      "bytes": 9354
+    },
+    "34817073": {
+      "archivo": "pro-legal-defensa-penal.880c9eae.webp",
+      "rol": "mosaico",
+      "bytes": 10322
+    },
+    "34938439": {
+      "archivo": "hogar-sint-s-agua.3d677350.webp",
+      "rol": "mosaico",
+      "bytes": 7934
+    },
+    "34950807": {
+      "archivo": "auto-sint-s-calor.8bcc6746.webp",
+      "rol": "mosaico",
+      "bytes": 13092
+    },
+    "34952074": {
+      "archivo": "merc-otros-alimento-para-mascotas.363eb23e.webp",
+      "rol": "mosaico",
+      "bytes": 10658
+    },
+    "35005900": {
+      "archivo": "noche-bar-terraza.3dacb0ee.webp",
+      "rol": "mosaico",
+      "bytes": 9002
+    },
+    "35042459": {
+      "archivo": "fiesta-org-eventos-corporativos.2d39fe6b.webp",
+      "rol": "mosaico",
+      "bytes": 12836
+    },
+    "35183144": {
+      "archivo": "fe-iglesias-iglesia-bautista.79713927.webp",
+      "rol": "mosaico",
+      "bytes": 9674
+    },
+    "35202396": {
+      "archivo": "fiesta-ninos-personajes-y-botargas.e0c8730f.webp",
+      "rol": "mosaico",
+      "bytes": 9434
+    },
+    "35382770": {
+      "archivo": "bell-cabello-trenzas-y-extensiones.f0e63e08.webp",
+      "rol": "mosaico",
+      "bytes": 3564
+    },
+    "35493895": {
+      "archivo": "hogar-obra-terminado-de-sotano.2b5232dc.webp",
+      "rol": "mosaico",
+      "bytes": 4176
+    },
+    "35503906": {
+      "archivo": "auto-pie-repuestos-y-autopartes.b13ae371.webp",
+      "rol": "mosaico",
+      "bytes": 16442
+    },
+    "35544201": {
+      "archivo": "fe-iglesias-parroquia-catolica.4d3686b5.webp",
+      "rol": "mosaico",
+      "bytes": 10486
+    },
+    "35627348": {
+      "archivo": "dealer-dealer-lote-de-autos-usados.a27fd4b1.webp",
+      "rol": "mosaico",
+      "bytes": 21312
+    },
+    "35784044": {
+      "archivo": "pro-tram-n-accidente.6eb55201.webp",
+      "rol": "mosaico",
+      "bytes": 3714
+    },
+    "35831411": {
+      "archivo": "trans-per-traslados-medicos-y-de-adultos-mayores.37844739.webp",
+      "rol": "mosaico",
+      "bytes": 7478
+    },
+    "35837783": {
+      "archivo": "auto-veh-v-m.dd026795.webp",
+      "rol": "mosaico",
+      "bytes": 8540
+    },
+    "35985211": {
+      "archivo": "fiesta-lugar-renta-de-mesas-y-sillas.094ed1bc.webp",
+      "rol": "mosaico",
+      "bytes": 11498
+    },
+    "35993723": {
+      "archivo": "food-dulces-panaderia.72644226.webp",
+      "rol": "mosaico",
+      "bytes": 12796
+    },
+    "36035073": {
+      "archivo": "hogar-obra-remodelacion-completa.b5f835de.webp",
+      "rol": "mosaico",
+      "bytes": 3828
+    },
+    "36356352": {
+      "archivo": "tienda-fam-telas-y-merceria.5e6f846d.webp",
+      "rol": "mosaico",
+      "bytes": 8064
+    },
+    "36499384": {
+      "archivo": "merc-pais-productos-del-caribe.dab3248c.webp",
+      "rol": "mosaico",
+      "bytes": 8316
+    },
+    "36593691": {
+      "archivo": "bell-piel-masajes.548fbf9c.webp",
+      "rol": "mosaico",
+      "bytes": 4162
+    },
+    "36706459": {
+      "archivo": "pro-crea-desarrollo-de-software-y-apps.2f9994a1.webp",
+      "rol": "mosaico",
+      "bytes": 8050
+    },
+    "36729961": {
+      "archivo": "pro-seg-seguros-de-vida-y-salud.25b8247d.webp",
+      "rol": "mosaico",
+      "bytes": 8412
+    },
+    "36765718": {
+      "archivo": "pro-neg-consultoria-de-negocios.79d71072.webp",
+      "rol": "mosaico",
+      "bytes": 6920
+    },
+    "36871438": {
+      "archivo": "ninos-deporte-futbol-infantil.5d586687.webp",
+      "rol": "mosaico",
+      "bytes": 8140
+    },
+    "36883230": {
+      "archivo": "tienda-serv-sastreria-y-arreglos-de-ropa.fb069bf1.webp",
+      "rol": "mosaico",
+      "bytes": 5858
+    },
+    "36887057": {
+      "archivo": "tienda-fam-articulos-religiosos.92d86ab0.webp",
+      "rol": "mosaico",
+      "bytes": 11150
+    },
+    "36905236": {
+      "archivo": "food-platos-empanadas.cf6bb96d.webp",
+      "rol": "mosaico",
+      "bytes": 4560
+    },
+    "37078160": {
+      "archivo": "trans-per-traslado-al-aeropuerto.34b22063.webp",
+      "rol": "mosaico",
+      "bytes": 7582
+    },
+    "37124290": {
+      "archivo": "trans-carga-carga-y-flete.086ee199.webp",
+      "rol": "mosaico",
+      "bytes": 13812
+    },
+    "37177070": {
+      "archivo": "auto-rep-electrico-automotriz.8f5c3f1c.webp",
+      "rol": "mosaico",
+      "bytes": 4018
+    },
+    "37228289": {
+      "archivo": "food-pais-peruana.16a85e82.webp",
+      "rol": "mosaico",
+      "bytes": 8250
+    },
+    "37228442": {
+      "archivo": "food-dulces-reposteria-y-pasteles.605f9351.webp",
+      "rol": "mosaico",
+      "bytes": 11456
+    },
+    "37255841": {
+      "archivo": "food-formato-vendedor-ambulante.6ccf3bf9.webp",
+      "rol": "mosaico",
+      "bytes": 8912
+    },
+    "37357024": {
+      "archivo": "hogar-obra-remodelacion-de-cocina.82b72764.webp",
+      "rol": "mosaico",
+      "bytes": 4584
+    },
+    "37369025": {
+      "archivo": "inmueble-rentar-cuartos-en-renta.806d03df.webp",
+      "rol": "mosaico",
+      "bytes": 4586
+    },
+    "37489052": {
+      "archivo": "fe-que-n-misa.5cefba4e.webp",
+      "rol": "mosaico",
+      "bytes": 3978
+    },
+    "37516560": {
+      "archivo": "fiesta-comida-taquiza-y-parrillada.c395b9b5.webp",
+      "rol": "mosaico",
+      "bytes": 11232
+    },
+    "37601638": {
+      "archivo": "bell-arte-perforaciones.664fd4fd.webp",
+      "rol": "mosaico",
+      "bytes": 3938
+    },
+    "37605911": {
+      "archivo": "pro-crea-soporte-tecnico.961255c7.webp",
+      "rol": "mosaico",
+      "bytes": 7654
+    },
+    "37663515": {
+      "archivo": "food-bebidas-aguas-frescas-y-raspados.7942b9b5.webp",
+      "rol": "mosaico",
+      "bytes": 9994
+    },
+    "37758160": {
+      "archivo": "edu-portada.9ce7e63b.webp",
+      "rol": "portada",
+      "bytes": 33416
+    },
+    "37932298": {
+      "archivo": "ninos-que-n-bebe.40700750.webp",
+      "rol": "mosaico",
+      "bytes": 13354
+    },
+    "38021376": {
+      "archivo": "hogar-ext-paneles-solares.46b60bb5.webp",
+      "rol": "mosaico",
+      "bytes": 8986
+    },
+    "38330332": {
+      "archivo": "food-portada.49e82d6f.webp",
+      "rol": "portada",
+      "bytes": 79782
+    },
+    "38431059": {
+      "archivo": "fiesta-comida-fuente-de-chocolate.b0a0d1ba.webp",
+      "rol": "mosaico",
+      "bytes": 13876
+    },
+    "38473400": {
+      "archivo": "fiesta-tipo-e-cumple.462d0bb3.webp",
+      "rol": "mosaico",
+      "bytes": 11684
+    },
+    "38575493": {
+      "archivo": "tienda-casa-ferreteria.bfa324fe.webp",
+      "rol": "mosaico",
+      "bytes": 19556
+    },
+    "38691891": {
+      "archivo": "hogar-jar-riego.89b55c32.webp",
+      "rol": "mosaico",
+      "bytes": 8772
+    },
+    "38821137": {
+      "archivo": "bell-cabello-tratamiento-de-caida-de-cabello.edba9a31.webp",
+      "rol": "mosaico",
+      "bytes": 2222
+    },
+    "38843494": {
+      "archivo": "bell-bien-productos-naturales-y-herbales.24a356bc.webp",
+      "rol": "mosaico",
+      "bytes": 13468
+    },
+    "38855069": {
+      "archivo": "hogar-temp-t-ac.c8e8d53d.webp",
+      "rol": "mosaico",
+      "bytes": 12792
+    },
+    "38857366": {
+      "archivo": "salud-dent-cirugia-oral.e98f2860.webp",
+      "rol": "mosaico",
+      "bytes": 4352
+    },
+    "38865329": {
+      "archivo": "edu-arte-clases-de-costura.2c59154e.webp",
+      "rol": "mosaico",
+      "bytes": 7832
+    },
+    "38934819": {
+      "archivo": "merc-bebida-agua-e-hielo.bba73a66.webp",
+      "rol": "mosaico",
+      "bytes": 7362
+    },
+    "39009428": {
+      "archivo": "fe-iglesias-iglesia-pentecostal.0053dce9.webp",
+      "rol": "mosaico",
+      "bytes": 6054
+    },
+    "39011050": {
+      "archivo": "dealer-que-n-troca.b2014c03.webp",
+      "rol": "mosaico",
+      "bytes": 14328
+    },
+    "39122376": {
+      "archivo": "food-pais-dominicana.2f81ffe8.webp",
+      "rol": "mosaico",
+      "bytes": 5668
+    },
+    "39143744": {
+      "archivo": "food-pais-todas.88fe12fe.webp",
+      "rol": "mosaico",
+      "bytes": 11032
+    },
+    "39151698": {
+      "archivo": "hogar-obra-estructura-y-armazon.e1b1233f.webp",
+      "rol": "mosaico",
+      "bytes": 12266
+    },
+    "39192358": {
+      "archivo": "salud-gen-medicina-general.9268c322.webp",
+      "rol": "mosaico",
+      "bytes": 8866
+    },
+    "39192371": {
+      "archivo": "salud-esp-neurologia.7d1b8c99.webp",
+      "rol": "mosaico",
+      "bytes": 6030
+    },
+    "39217313": {
+      "archivo": "pro-din-nomina.71e890b5.webp",
+      "rol": "mosaico",
+      "bytes": 11868
+    },
+    "39333423": {
+      "archivo": "food-pais-puertorriquena.e598b156.webp",
+      "rol": "mosaico",
+      "bytes": 3396
+    },
+    "39356223": {
+      "archivo": "pro-tram-n-greencard.72245d76.webp",
+      "rol": "mosaico",
+      "bytes": 14282
+    },
+    "39423346": {
+      "archivo": "deporte-que-n-liga.ca4afaa4.webp",
+      "rol": "mosaico",
+      "bytes": 13768
+    },
+    "39559325": {
+      "archivo": "bell-para-w-h.2f5080ee.webp",
+      "rol": "mosaico",
+      "bytes": 2010
+    },
+    "39599597": {
+      "archivo": "food-platos-china-y-asiatica.0c35d63f.webp",
+      "rol": "mosaico",
+      "bytes": 5872
+    },
+    "39625998": {
+      "archivo": "hogar-jar-corte-de-cesped.30eafff6.webp",
+      "rol": "mosaico",
+      "bytes": 16488
+    },
+    "39775608": {
+      "archivo": "fiesta-foto-renta-de-vestidos-y-trajes.4bf1b3df.webp",
+      "rol": "mosaico",
+      "bytes": 8088
+    }
+  }
+}
