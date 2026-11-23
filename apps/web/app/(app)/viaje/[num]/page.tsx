@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { viajeVista } from "@/lib/viajes";
 import { ViajeEstado } from "./ViajeEstado";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu viaje · To'Latino" };
@@ -18,6 +19,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!x) notFound();
   // La mudanza con su precio cerrado: la tarjeta para aceptarlo.
   const modo = pasarela.modo();
-  const pago = x.k === "cotiza" && x.precio?.st === "sent" && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  const pago = x.k === "cotiza" && x.precio?.st === "sent" && modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) } : null;
   return <ViajeEstado x={x} es={lang === "es"} pago={pago} />;
 }

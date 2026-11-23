@@ -5,6 +5,7 @@ import { idioma } from "@/lib/idioma";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { verificacionDe } from "@/lib/pagos/verificacion";
 import { VerificarCobro } from "./VerificarCobro";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const metadata: Metadata = { title: "Confirmar el pago · To'Latino" };
 export const dynamic = "force-dynamic";
@@ -19,5 +20,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const v = await verificacionDe(u.id, pi);
   const modo = pasarela.modo();
   if (!v || modo === "apagado") notFound();
-  return <VerificarCobro es={lang === "es"} v={v} estado={v.estado} negocio={v.negocio} modo={modo} pk={process.env.STRIPE_PUBLISHABLE_KEY ?? null} />;
+  return <VerificarCobro es={lang === "es"} v={v} estado={v.estado} negocio={v.negocio} modo={modo} pk={await llave("STRIPE_PUBLISHABLE_KEY")} />;
 }

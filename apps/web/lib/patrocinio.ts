@@ -8,6 +8,7 @@ import { pasarela, type Verificar } from "./pagos/pasarela";
 import { COLUMNAS, CTE, DESDE, FOTOS, condiciones, conFotos, type ConFotosJ, type Regla, type Resultado } from "./categoria";
 import type { Punto } from "./punto";
 import type { Tarjeta } from "./tarjeta";
+import { llave } from "./llaves-proveedores";
 
 /* C-002 · Patrocinados (canvas tolatino-master+, entrega/cambios.md C-002; migración 0173). Una sola caja para comprar un patrocinio, que usan
    los negocios (aquí) y los eventos (lib/patrocinio-evento.ts, C-003):
@@ -594,7 +595,7 @@ export async function patPanel(negocio: string, userId: string, lang: "es" | "en
   const { status: _s, ...neg } = n;
   return { negocio: neg, precios: P, libres: { week: lw, month: lm }, hoy: hoy.rows[0]!.hoy, previa, vivo, siguiente,
     pasados: filas.rows.filter((x) => x.estado === "terminado" || x.estado === "cancelado").slice(0, 10), recibos: rec.rows, espera: !!esp.rowCount, tarjetas: tj,
-    modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null };
+    modo: pasarela.modo(), pk: await llave("STRIPE_PUBLISHABLE_KEY") };
 }
 /* Lo poco que pide «Tu página» del panel: si hay uno vivo y hasta cuándo. */
 export async function patResumen(negocio: string): Promise<{ hasta: string; estado: string } | null> {

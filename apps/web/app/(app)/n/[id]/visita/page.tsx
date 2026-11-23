@@ -7,6 +7,7 @@ import { oficiosPublico } from "@/lib/oficios-publico";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { preVigente } from "@/lib/solicitudes";
 import { Visita } from "./Visita";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Booking · To'Latino" };
@@ -26,7 +27,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const adds = [...new Set(String(sp.a ?? "").split(",").filter((x) => /^[0-5]$/.test(x)).map(Number))].filter((i) => !!s.a?.x?.[i]);
   const w = sp.w === "espera" || sp.w === "deja" ? sp.w : null, z = /^[0-2]$/.test(sp.z ?? "") ? Number(sp.z) : null;
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   // 4e: con un pre-estimado o presupuesto vigente (P-/Q-), la cita lo lleva; la nota sale de lo que mandaste.
   const pre = u && sp.pre ? await preVigente(u.id, sp.pre, id) : null;
   // 9n-4 · La visita de garantía a $0 (?warr=H-…): la pantalla no cobra ni pide tarjeta; el servidor vuelve a mirar que la garantía es suya y sigue libre.

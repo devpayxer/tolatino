@@ -1,9 +1,10 @@
 import "server-only";
 import { createHash, createHmac } from "node:crypto";
+import { llave, llaveYa } from "../llaves-proveedores";
 
 /* Envío por Amazon SES v2 (PLAN §8: «Correo · envío por SES»). Sin SDK: la firma AWS Signature V4 se hace aquí (se prueba
-   contra el vector oficial de AWS en scripts/prueba-firma-ses.mjs). Llaves en los secretos del entorno:
-   SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY, SES_REGION (us-east-1 por defecto) y CORREO_DE (el remitente verificado). */
+   contra el vector oficial de AWS en scripts/prueba-firma-ses.mjs). Las llaves (SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY) las da
+   lib/llaves-proveedores.ts (el entorno o el llavero); SES_REGION (us-east-1 por defecto) y CORREO_DE (el remitente verificado) son configuración. */
 const h = (s: string | Buffer) => createHash("sha256").update(s).digest("hex");
 const hmac = (k: string | Buffer, s: string) => createHmac("sha256", k).update(s).digest();
 
@@ -24,7 +25,7 @@ export function firmarV4(x: { method: string; host: string; path: string; query?
 }
 
 export function sesListo() {
-  return !!(process.env.SES_ACCESS_KEY_ID && process.env.SES_SECRET_ACCESS_KEY && process.env.CORREO_DE);
+  return !!(llaveYa("SES_ACCESS_KEY_ID") && llaveYa("SES_SECRET_ACCESS_KEY") && process.env.CORREO_DE);
 }
 export async function enviarSES(m: { to: string; subject: string; html: string; text: string; cabeceras?: Record<string, string> }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const region = process.env.SES_REGION || "us-east-1", host = `email.${region}.amazonaws.com`, path = "/v2/email/outbound-emails";
@@ -34,10 +35,24 @@ export async function enviarSES(m: { to: string; subject: string; html: string; 
     FromEmailAddress: process.env.CORREO_DE, Destination: { ToAddresses: [m.to] },
     Content: { Simple: { Subject: { Data: m.subject, Charset: "UTF-8" }, Body: { Html: { Data: m.html, Charset: "UTF-8" }, Text: { Data: m.text, Charset: "UTF-8" } }, ...(Headers ? { Headers } : {}) } },
   });
-  const f = firmarV4({ method: "POST", host, path, headers: { "content-type": "application/json" }, body, region, service: "ses", key: process.env.SES_ACCESS_KEY_ID!, secret: process.env.SES_SECRET_ACCESS_KEY!, date: new Date() });
+  const key = await llave("SES_ACCESS_KEY_ID"), secret = await llave("SES_SECRET_ACCESS_KEY");
+  if (!key || !secret) return { ok: false, error: "sin_llave" };
+  const f = firmarV4({ method: "POST", host, path, headers: { "content-type": "application/json" }, body, region, service: "ses", key, secret, date: new Date() });
   try {
     const r = await fetch(`https://${host}${path}`, { method: "POST", headers: { "content-type": "application/json", "x-amz-date": f.amzDate, authorization: f.authorization }, body, signal: AbortSignal.timeout(10_000) });
     const j = (await r.json().catch(() => ({}))) as { MessageId?: string; message?: string };
     return r.ok && j.MessageId ? { ok: true, id: j.MessageId } : { ok: false, error: `${r.status} ${j.message ?? ""}`.slice(0, 300) };
   } catch (e) { return { ok: false, error: String((e as Error).message ?? e).slice(0, 300) }; }
+}
+
+/* 23 nov · «Probar» de Integraciones › Llaves: GET /v2/email/account (solo lectura; dice si la cuenta salió del modo de prueba) firmado con ESE par. */
+export async function probarSes(): Promise<{ ok: boolean; resultado: string }> {
+  const key = await llave("SES_ACCESS_KEY_ID"), secret = await llave("SES_SECRET_ACCESS_KEY");
+  if (!key || !secret) return { ok: false, resultado: "falta_par" };
+  const region = process.env.SES_REGION || "us-east-1", host = `email.${region}.amazonaws.com`, path = "/v2/email/account";
+  const f = firmarV4({ method: "GET", host, path, headers: {}, body: "", region, service: "ses", key, secret, date: new Date() });
+  try {
+    const r = await fetch(`https://${host}${path}`, { headers: { "x-amz-date": f.amzDate, authorization: f.authorization }, signal: AbortSignal.timeout(8000) });
+    return r.ok ? { ok: true, resultado: "sirve" } : { ok: false, resultado: r.status === 403 ? "rechazada" : `http_${r.status}` };
+  } catch { return { ok: false, resultado: "sin_conexion" }; }
 }

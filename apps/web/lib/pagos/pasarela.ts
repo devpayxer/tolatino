@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { db, tx } from "../db";
 import { ENTORNO } from "../entorno";
+import { llaveYa } from "../llaves-proveedores";
 import { ErrorStripe, stripe, stripeArchivo } from "./stripe";
 /* 8i · Una cuenta de revisión de Apple o Google no paga con tarjeta: cada cobro con la tarjeta de la persona lo pregunta primero (guardián revisionAcotada). */
 const pagoRevision = async () => (await import("../tiendas/revision")).pagoBloqueado();
@@ -11,7 +12,7 @@ class SinSaldoSim extends Error {}
    de la app no sabe cuál corre. CANDADO: en producción el simulador no existe; sin clave, la tarjeta queda apagada. */
 export type ModoPago = "stripe" | "simulador" | "apagado";
 export function modoPago(): ModoPago {
-  if (process.env.STRIPE_SECRET_KEY) return "stripe";
+  if (llaveYa("STRIPE_SECRET_KEY")) return "stripe"; // el entorno o el llavero, sin consultar la base (lib/llaves-proveedores.ts)
   return ENTORNO === "produccion" ? "apagado" : "simulador";
 }
 if (ENTORNO === "produccion" && process.env.TOLATINO_PAGOS_SIMULADOR === "1") throw new Error("CANDADO: el simulador de pagos no puede existir en producción.");

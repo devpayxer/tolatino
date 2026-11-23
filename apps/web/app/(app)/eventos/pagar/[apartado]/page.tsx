@@ -6,6 +6,7 @@ import { pantallaPago } from "@/lib/boletos";
 import { idioma } from "@/lib/idioma";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { Pagar } from "./Pagar";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pagar boletos · To'Latino", robots: { index: false } };
@@ -19,5 +20,5 @@ export default async function Page({ params }: { params: Promise<{ apartado: str
   if (p.estado === "converted" && p.numero) redirect(`/eventos/orden/${p.numero}`);
   const modo = pasarela.modo();
   if (modo === "apagado") redirect(`/eventos/${p.evento.slug}?fecha=${p.fecha}`);
-  return <Pagar p={p} es={lang === "es"} pago={{ modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) }} />;
+  return <Pagar p={p} es={lang === "es"} pago={{ modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) }} />;
 }

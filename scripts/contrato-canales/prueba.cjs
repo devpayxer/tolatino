@@ -112,6 +112,17 @@ const cuerpoDe = (spec, ruta, metodo) => { const op = spec.paths[ruta]?.[metodo]
   const SECRETO_PRUEBA = crypto.randomBytes(16).toString('hex'); process.env.WHATSAPP_APP_SECRET = SECRETO_PRUEBA;   // al azar en cada corrida
   ok(P.firmaWhatsApp(cuerpo, 'sha256=' + crypto.createHmac('sha256', SECRETO_PRUEBA).update(cuerpo).digest('hex')).ok, 'Meta: X-Hub-Signature-256 = sha256=HMAC(secreto de la app, cuerpo)');
   ok(!P.firmaWhatsApp(cuerpo, 'sha256=' + crypto.createHmac('sha256', 'otro').update(cuerpo).digest('hex')).ok, 'Meta: con otro secreto → no');
+  // ── 23 nov · «Probar» de Integraciones › Llaves: lecturas de solo lectura que la especificación publica (nada se manda a nadie) ──
+  ok(!!TX.paths['/balance']?.get, 'Telnyx: la especificación publica GET /balance (en https://api.telnyx.com/v2)');
+  const pt = await P.probarTelnyx();
+  ok(pt.ok && pt.resultado === 'sirve' && ultimo.metodo === 'GET' && ultimo.ruta === '/v2/balance' && ultimo.h.authorization === 'Bearer KEY_PRUEBA' && ultimo.cuerpo === null, 'probarTelnyx: GET /v2/balance con Bearer y sin cuerpo');
+  const RW = '/{Version}/{WABA-ID}';
+  ok(!!META.paths[RW]?.get && (META.paths[RW].get.parameters ?? []).some((x) => (x.$ref ? ref(META, x.$ref) : x).name === 'fields'), 'Meta: la especificación publica GET /{Version}/{WABA-ID} con «fields»');
+  const pm = await P.probarMeta();
+  ok(pm.ok && ultimo.metodo === 'GET' && ultimo.ruta === '/v23.0/900800700600?fields=id' && ultimo.h.authorization === 'Bearer EAAPRUEBA' && ultimo.cuerpo === null, `probarMeta: GET ${ultimo.ruta} con Bearer y sin cuerpo`);
+  delete process.env.WHATSAPP_WABA_ID;
+  ok((await P.probarMeta()).resultado === 'falta_waba', 'probarMeta: sin el ID de la cuenta no se llama');
+  process.env.WHATSAPP_WABA_ID = '900800700600';
   srv.close();
   console.log('\ncontrato de los canales ✓');
 })().catch((e) => { console.error(e); process.exit(1); });

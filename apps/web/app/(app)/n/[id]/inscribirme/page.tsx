@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { bookingInsc } from "@/lib/inscripciones";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { Inscribirme } from "./Inscribirme";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Inscribirme · To'Latino" };
@@ -20,7 +21,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // Iglesias con Free recibe solicitudes (10 al mes, §6 #6; 4ie); Educación, Niños y Deporte, con Pro.
   if (b.free && b.rubro !== "fe") redirect(`/n/${id}?tab=svc`);
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" && b.mat > 0 ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" && b.mat > 0 ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   const g0 = sp.grupo && /^\d{1,18}$/.test(sp.grupo) ? sp.grupo : null, b0 = sp.banda && /^\d{1,18}$/.test(sp.banda) ? sp.banda : null;
   return <Inscribirme b={b} es={lang === "es"} pago={pago} yo={!!u} grupo0={g0} banda0={b0} />;
 }

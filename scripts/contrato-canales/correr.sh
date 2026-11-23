@@ -21,6 +21,9 @@ echo "$META_SHA256  $SPECS/meta.yaml" | sha256sum -c --quiet - || { echo "✗ la
 python3 -I -c 'import sys, json, yaml; json.dump(yaml.safe_load(open(sys.argv[1])), open(sys.argv[2], "w"))' "$SPECS/meta.yaml" "$T/meta.json"
 cp "$RAIZ/apps/web/lib/compa/canales-proveedor.ts" "$T/src/compa/"
 echo 'module.exports = {};' > "$T/node_modules/server-only/index.js"
+# 23 nov · El lector de las llaves de los proveedores (lib/llaves-proveedores.ts) en el contrato: SOLO el entorno (el llavero vive en la base, que el
+# contrato no tiene). Es el camino de respaldo del lector real: la variable del entorno manda.
+printf 'export const llaveYa = (n: string): string | null => (process.env[n] ?? "").trim() || null;\nexport const llave = async (n: string): Promise<string | null> => llaveYa(n);\n' > "$T/src/llaves-proveedores.ts"
 (cd "$RAIZ/apps/web" && npx tsc --outDir "$T/out" --module commonjs --target es2022 --moduleResolution node --esModuleInterop --skipLibCheck --types node --rootDir "$T/src" "$T/src/compa/canales-proveedor.ts" > /dev/null) || true
 test -f "$T/out/compa/canales-proveedor.js"
 CONTRATO_OUT="$T/out" TELNYX_SPEC="$SPECS/telnyx.json" META_SPEC="$T/meta.json" NODE_PATH="$T/node_modules" node "$RAIZ/scripts/contrato-canales/prueba.cjs"

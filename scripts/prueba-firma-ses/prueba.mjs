@@ -7,7 +7,9 @@ import { join } from "node:path";
 const T = mkdtempSync(join(tmpdir(), "firma-"));
 mkdirSync(join(T, "node_modules/server-only"), { recursive: true });
 writeFileSync(join(T, "node_modules/server-only/index.js"), "module.exports = {};");
-writeFileSync(join(T, "ses.ts"), readFileSync("apps/web/lib/correo/ses.ts", "utf8"));
+// 23 nov · El lector de las llaves (lib/llaves-proveedores.ts) no entra en esta prueba (solo la firma): un doble que lee el entorno, junto a ses.ts.
+writeFileSync(join(T, "llaves-proveedores.ts"), 'export const llaveYa = (n: string): string | null => (process.env[n] ?? "").trim() || null;\nexport const llave = async (n: string): Promise<string | null> => llaveYa(n);\n');
+writeFileSync(join(T, "ses.ts"), readFileSync("apps/web/lib/correo/ses.ts", "utf8").replace('from "../llaves-proveedores"', 'from "./llaves-proveedores"'));
 // tsc emite aunque «server-only» no tipe aquí; lo que se prueba es la firma real.
 try { execSync(`npx tsc --outDir ${T}/out --module commonjs --target es2022 --moduleResolution node --skipLibCheck --types node --rootDir ${T} ${T}/ses.ts`, { stdio: "pipe", cwd: "apps/web" }); } catch { /* errores de tipos del entorno de prueba */ }
 const { createRequire } = await import("node:module");

@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { bookingViaje } from "@/lib/viajes";
 import { ViajeBooking } from "./ViajeBooking";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Reservar · To'Latino" };
@@ -19,6 +20,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!b) notFound();
   if (!b.booking) redirect(`/n/${id}?tab=svc`);
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   return <ViajeBooking b={b} es={lang === "es"} pago={pago} yo={!!u} />;
 }

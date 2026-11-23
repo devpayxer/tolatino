@@ -8,6 +8,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db, tx } from "@/lib/db";
 import { cerrarDisputa, registrarDisputa } from "@/lib/disputas";
+import { llave } from "@/lib/llaves-proveedores";
 import { firmaValida } from "@/lib/pagos/stripe";
 
 /* Webhook de Stripe. Solo acepta eventos firmados con STRIPE_WEBHOOK_SECRET (y frescos); cada evento se guarda una vez
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
 type Ev = { id: string; type: string; account?: string; data: { object: Record<string, unknown> } };
 
 export async function POST(req: NextRequest) {
-  const secreto = process.env.STRIPE_WEBHOOK_SECRET;
+  const secreto = await llave("STRIPE_WEBHOOK_SECRET"); // el entorno o el llavero (lib/llaves-proveedores.ts)
   const cuerpo = await req.text();
   if (!secreto || !firmaValida(cuerpo, req.headers.get("stripe-signature"), secreto)) return new NextResponse("firma", { status: 400 });
   let ev: Ev;

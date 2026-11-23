@@ -27,6 +27,9 @@ export const tx = async <T,>(f: (c: { query: typeof q }) => Promise<T>) => f({ q
 export const __clientes = clientes;
 TS
 printf 'export const ENTORNO = "pruebas" as string;\n' > "$T/src/entorno.ts"
+# 23 nov · El lector de las llaves de los proveedores (lib/llaves-proveedores.ts) en el contrato: SOLO el entorno (el llavero vive en la base, que el
+# contrato no tiene). Es el camino de respaldo del lector real: la variable del entorno manda.
+printf 'export const llaveYa = (n: string): string | null => (process.env[n] ?? "").trim() || null;\nexport const llave = async (n: string): Promise<string | null> => llaveYa(n);\n' > "$T/src/llaves-proveedores.ts"
 # 8i · La pasarela pregunta antes de cobrar si quien paga es una cuenta de revisión (lib/tiendas/revision.ts, con la base y la sesión): en el
 # contrato no hay sesión, así que nadie lo es.
 mkdir -p "$T/src/tiendas" && printf 'export const pagoBloqueado = async (): Promise<{ es: string; en: string } | null> => null;\n' > "$T/src/tiendas/revision.ts"

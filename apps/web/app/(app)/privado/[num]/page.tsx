@@ -6,6 +6,7 @@ import { misTarjetas } from "@/lib/cobros";
 import { evpVista } from "@/lib/evento-privado";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { EstadoEvp } from "./EstadoEvp";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu evento privado · To'Latino" };
@@ -18,6 +19,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   const x = await evpVista(u.id, num);
   if (!x) notFound();
   const modo = pasarela.modo();
-  const pago = x.quote && x.quote.st === "sent" && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  const pago = x.quote && x.quote.st === "sent" && modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) } : null;
   return <EstadoEvp x={x} es={lang === "es"} pago={pago} />;
 }

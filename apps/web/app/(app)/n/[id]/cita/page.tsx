@@ -6,6 +6,7 @@ import { citasPublica, citaVista } from "@/lib/citas";
 import { misTarjetas } from "@/lib/cobros";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { Booking } from "./Booking";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Booking · To'Latino" };
@@ -31,7 +32,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const con = hacen.some((p) => p.id === sp.con) ? sp.con! : cp.model === "chair" ? null : "any";
   if (!con) redirect(`/n/${id}?tab=svc`);
   const modo = pasarela.modo();
-  const pago = u && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: [] } : null;
+  const pago = u && modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: await misTarjetas(u.id) } : modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: [] } : null;
   return (
     <Booking cp={cp} svcId={s.id} inicial={{ opts, adds, con, ...(cambiar ? {} : diaHora(sp.i, sp.h)) }} es={lang === "es"} pago={pago}
       yo={u?.first_name ? { nombre: [u.first_name, u.last_name].filter(Boolean).join(" "), tel: u.phone } : null}

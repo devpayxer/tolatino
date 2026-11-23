@@ -7,6 +7,7 @@ import { bookingFiesta } from "@/lib/fiestas-reservas";
 import { tuFechaDe } from "@/lib/fiestas-publico";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { BookingFiestaV } from "./Booking";
+import { llave } from "@/lib/llaves-proveedores";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Booking · To'Latino" };
@@ -21,7 +22,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!b.booking) redirect(`/n/${id}?tab=svc`);
   const fe = u ? await tuFechaDe(u.id) : null;
   const modo = pasarela.modo();
-  const pago = modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = modo !== "apagado" ? { modo, pk: await llave("STRIPE_PUBLISHABLE_KEY"), tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   const dia = sp.d && /^\d{4}-\d{2}-\d{2}$/.test(sp.d) ? sp.d : fe?.day ?? null;
   return <BookingFiestaV b={b} es={lang === "es"} pago={pago} yo={!!u} inicial={{ dia, e: fe?.e ?? "", g: fe?.g ?? null }} />;
 }
