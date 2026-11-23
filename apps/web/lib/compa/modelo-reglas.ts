@@ -184,7 +184,10 @@ function preguntar(ops: OpCtx[], es: boolean, verbo: "cancelar" | "abrir", noEnc
   const cual = verbo === "cancelar" ? (es ? "¿Cuál quieres cancelar?" : "Which one do you want to cancel?") : (es ? "¿Cuál quieres abrir?" : "Which one do you want to open?");
   if (ops.length === 1) return { respuesta: `${noEncontro ? `${aviso(es)} ` : ""}${es ? `¿Quieres ${verbo} ${describir(ops[0]!, es)}?` : `Do you want to ${verbo === "cancelar" ? "cancel" : "open"} ${describir(ops[0]!, es)}?`}`, tipo: "pregunta", fuente: "cuenta",
     accion: { tipo: "ninguna", ref: "", pantalla: "" }, chips: chipsDe(ops, es, verbo) };
-  const lista = ops.slice(0, 4).map((o) => describir(o, es)), mas = ops.length > 4 ? (es ? " y más" : " and more") : "";
+  // Dos que se describen igual (mismo tipo, negocio y hora) solo se distinguen por su número: se dice, para que la persona pueda nombrar una
+  // (por SMS y WhatsApp no hay botones).
+  const crudas = ops.slice(0, 4).map((o) => describir(o, es));
+  const lista = crudas.map((d, i) => (crudas.filter((x) => x === d).length > 1 && ops[i]!.numero ? `${d}, ${ops[i]!.numero}` : d)), mas = ops.length > 4 ? (es ? " y más" : " and more") : "";
   return { respuesta: `${noEncontro ? `${aviso(es)} ` : ""}${cual} ${es ? "Tienes" : "You have"} ${unir(lista, es)}${mas}.`, tipo: "pregunta", fuente: "cuenta", accion: { tipo: "ninguna", ref: "", pantalla: "" },
     chips: chipsDe(ops.slice(0, 4), es, verbo) };
 }

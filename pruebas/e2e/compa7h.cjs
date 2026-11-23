@@ -267,8 +267,17 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   const w1 = await wa(MARI, '¿cómo reservo una mesa?');
   ok(w1.res === 'respuesta' && w1.out[0].s === 'simulado' && /Más: http\S+\/ayuda\/reservar-mesa/.test(w1.out[0].b), 'WhatsApp de su cuenta → respuesta con la ayuda (simulada)');
   ok(sql(`select c.channel from compa_inbound i join compa_conversations c on c.id = i.conversation_id where i.id = ${w1.id}`) === 'whatsapp', 'en una conversación de WhatsApp');
-  const [opW] = reservaPendiente(MU);
-  const w2 = await wa(MARI, 'cancela mi reservación');
+  const [opW, numW] = reservaPendiente(MU);
+  // 23 nov · Marisol tiene DOS reservaciones de mesa pendientes en el mismo negocio (la de arriba, cuyo enlace descartó, y esta): El Compa ya no elige
+  // la primera; pregunta cuál y las nombra con su número (por WhatsApp no hay botones). Con el número, prepara ESA y manda el enlace.
+  const pendientesW = sql(`select string_agg(number, ',' order by id) from operations where user_id = '${MU}' and kind = 'table' and status = 'pending'`).split(',');
+  ok(pendientesW.length === 2 && pendientesW.includes(numW), `Marisol tiene dos reservaciones de mesa pendientes (${pendientesW.join(', ')})`);
+  const w2a = await wa(MARI, 'cancela mi reservación');
+  ok(w2a.res !== 'enlace' && w2a.out.every((x) => x.k !== 'enlace') && /¿Cuál quieres cancelar\?/.test(w2a.out[0]?.b ?? '') && pendientesW.every((n) => (w2a.out[0]?.b ?? '').includes(n)),
+    'con dos pendientes iguales no elige: pregunta cuál y dice el número de cada una (ningún enlace)');
+  ok(sql(`select count(*) from operations where id in (${opD}, ${opW}) and status = 'pending'`) === '2', 'y nada cambió');
+  const w2 = await wa(MARI, `cancela mi reservación ${numW}`);
+  ok(sql(`select a.operation_id from compa_actions a join compa_links l on l.action_id = a.id order by l.created_at desc limit 1`) === opW, 'con el número, el enlace es de ESA reservación');
   ok(w2.res === 'enlace' && w2.out[0].k === 'enlace' && sql(`select status from operations where id = ${opW}`) === 'pending', 'una acción por WhatsApp → enlace de un uso; nada cambia por mensaje');
   const wn = await wa(NADIE, 'hola'); ok(wn.res === 'fija', 'WhatsApp sin cuenta → la fija');
   const v1 = await interno({ op: 'canal_enviar', numero: nWA, telefono: YARI, texto: 'Hola' });
