@@ -2,7 +2,7 @@
 
 _Pantallas: **Panel › El Compa › Respuestas automáticas** (`/panel/{tu negocio}/compa`; DASH-COMPA), la fila **El Compa contesta por ti** y
 **Sugerir respuesta con El Compa** en Panel › **Mensajes** (`/panel/{tu negocio}/mensajes`). Solo Pro. Las ve y las cambia el dueño o quien lleva
-Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
+Mensajes en el equipo. Teléfono y escritorio. Versión: 23 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **El Compa contesta por ti** (Pro): cuando tu negocio está **cerrado** (según el horario de tu página, tus feriados y si cerraste por hoy), El
@@ -62,7 +62,8 @@ Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia:
 ## Preguntas frecuentes
 - **¿El Compa le contesta a mis clientes con mi nombre?** No. Siempre dice que es El Compa, el asistente de IA de tu negocio.
 - **¿Puede confirmar una reservación o un pedido?** No. Las reservaciones y los pedidos los confirmas tú desde tu panel.
-- **¿Qué ve la IA?** Solo tu página pública y la conversación con ese cliente (tapada). Nunca a otros clientes ni tus cobros.
+- **¿Qué ve la IA?** Solo tu página pública y la conversación con ese cliente (tapada). Nunca a otros clientes ni tus cobros. Eso va a un
+  proveedor de IA (Anthropic) en EE. UU. para contestar; los teléfonos que el cliente escriba en el mensaje no se tapan.
 - **¿Cuesta algo?** Es parte de Pro.
 - **¿Sugerir respuesta envía algo?** No. Solo escribe el borrador en tu campo.
 - **¿Cómo conecto mi WhatsApp?** Escríbele a Soporte: To'Latino conecta tu número de WhatsApp Business. Después lo enciendes en Por dónde.
@@ -128,7 +129,8 @@ Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia:
 ### FAQ
 - **Does El Compa reply to my customers under my name?** No. It always says it is El Compa, your business's AI assistant.
 - **Can it confirm a reservation or an order?** No. You confirm reservations and orders from your dashboard.
-- **What does the AI see?** Only your public page and the conversation with that customer (covered). Never other customers or your payouts.
+- **What does the AI see?** Only your public page and the conversation with that customer (covered). Never other customers or your payouts. That
+  goes to an AI provider (Anthropic) in the US to answer; phone numbers the customer writes in the message are not covered.
 - **Does it cost anything?** It is part of Pro.
 - **Does Suggest a reply send anything?** No. It only writes the draft in your field.
 - **How do I connect my WhatsApp?** Write to Support: To'Latino connects your WhatsApp Business number. Afterward you turn it on in Where.

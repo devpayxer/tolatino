@@ -1,10 +1,10 @@
 # Tus fotos: qué pasa al subirlas, «en revisión» y cómo pedir revisión · Your photos: what happens when you upload, «under review» and how to ask for a review
 
-_Pantallas: toda pantalla donde subes una foto que se verá en público (foto de perfil, reseñas, publicaciones de la Comunidad, eventos, novedades, Publica tu negocio y las fotos del panel), **Mi cuenta › Avisos de moderación** (`/cuenta/moderacion`; `?k=media&id=…` abre una foto) y el aviso de la campana. Teléfono, escritorio y las apps. Solo con cuenta. Versión: 21 nov 2026. Audiencia: vecino. Tema: cuenta._
+_Pantallas: toda pantalla donde subes una foto que se verá en público (foto de perfil, reseñas, publicaciones de la Comunidad, eventos, novedades, Publica tu negocio y las fotos del panel), **Mi cuenta › Avisos de moderación** (`/cuenta/moderacion`; `?k=media&id=…` abre una foto) y el aviso de la campana. Teléfono, escritorio y las apps. Solo con cuenta. Versión: 23 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **Cada foto que se va a ver en público se revisa sola, antes de verse.** Lo hace To'Latino en unos segundos, sin que nadie tenga que
-  mirarla: primero un modelo propio, y si hace falta, una segunda opinión. Casi todas las fotos normales (un local, comida, productos,
+  mirarla: primero un modelo propio, en servidores de To'Latino, y si duda, una segunda opinión de un proveedor de IA (Anthropic). Casi todas las fotos normales (un local, comida, productos,
   personas, un evento, un paisaje) **se publican al instante**.
 - **Al subirla, la pantalla te dice qué pasó:**
   - **«Listo, tu foto se publicó.»** Ya se ve.
@@ -42,7 +42,7 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 | Tu cuenta es nueva (menos de 7 días) | Puedes subir hasta 10 fotos por hora que se vean en público. Las de una cita, una solicitud, una mudanza o una «Ayuda con…» no cuentan para ese tope (sí para el de 60 fotos por hora de cualquier cuenta). |
 | La foto va solo a un negocio (una solicitud, una cita, un presupuesto, un viaje) | Si es dudosa queda EN REVISIÓN hasta que una persona la mire; puedes pedir revisión o subir otra. |
 | La foto va solo a un negocio y ya entró | **No tiene dirección pública**: la ven solo tú, el negocio que la recibe y, si abres un caso («Ayuda con…» o el daño de una renta), el equipo de To'Latino que lo atiende (queda registrado). Si alguien más abre el enlace, no ve nada. |
-| Fotos de Mensajes, ayuda, entrega o reclamos | Las revisa solo el modelo propio de To'Latino; no salen a ningún otro servicio. |
+| Fotos de Mensajes, ayuda, entrega o reclamos | Las revisa solo el modelo propio de To'Latino; no van a la segunda opinión. (Si un banco disputa un cobro, la foto de la entrega puede ir a Stripe como evidencia.) |
 | Muchas personas subiendo fotos a la vez | «Estamos preparando otras fotos en este momento. Prueba en un momento.» La foto no se guardó; vuelve a subirla en unos segundos. |
 
 ## Preguntas frecuentes
@@ -51,8 +51,10 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 - **¿Quién la ve mientras tanto?** Solo tú. No sale en tu página, ni en listas, ni en el menú.
 - **¿Alguien de To'Latino ve todas mis fotos?** No. Las revisa un sistema. Una persona solo ve una foto si tú pides revisión o si varias
   personas la reportan.
-- **¿Se manda mi foto a otra empresa?** Solo las fotos que van a verse en público y que son dudosas, reducidas y sin ningún dato tuyo
-  (ni nombre, ni negocio, ni ciudad). Las fotos privadas nunca salen.
+- **¿Se manda mi foto a otra empresa?** Solo las fotos que van a verse en público y que el modelo propio no pudo dar por buenas (las dudosas o,
+  si ese modelo está apagado o no responde, cualquier foto pública nueva). A Anthropic, un proveedor de IA en EE. UU., va una versión más
+  pequeña (hasta 640 píxeles por lado), sin los datos de la cámara y sin ningún dato tuyo (ni nombre, ni negocio, ni ciudad). No se
+  difuminan caras ni textos. Las fotos privadas no van a esa segunda opinión.
 - **¿Quién ve la foto de mi cita, solicitud, viaje o «Ayuda con…»?** Tú, el negocio que la recibe y, solo si hay un caso abierto sobre
   esa operación, la persona del equipo que lo atiende. No tiene una dirección pública: si alguien copia el enlace, no la puede ver.
 - **¿Me aplican una sanción por una foto rechazada?** No. Una foto rechazada solo no se publica.
@@ -66,7 +68,7 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 
 ### What it does
 - **Every photo that will be shown in public is reviewed automatically before it shows.** To'Latino does it in a few seconds, with no
-  one having to look at it: first our own model and, when needed, a second opinion. Almost all normal photos (a venue, food, products,
+  one having to look at it: first our own model, on To'Latino's servers, and, if it doubts, a second opinion from an AI provider (Anthropic). Almost all normal photos (a venue, food, products,
   people, an event, a landscape) **are published instantly**.
 - **When you upload one, the screen tells you what happened:**
   - **“Done, your photo was published.”** It shows now.
@@ -105,7 +107,7 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 | Your account is new (under 7 days) | You can upload up to 10 photos an hour that show in public. Photos for an appointment, a request, a move or a “Help with…” do not count toward that cap (they do count toward the 60-photos-an-hour cap of any account). |
 | The photo goes only to a business (a request, an appointment, a quote, a trip) | If doubtful it stays UNDER REVIEW until a person looks at it; you can ask for a review or upload another one. |
 | The photo goes only to a business and it went in | **It has no public address**: only you, the business that receives it and, if you open a case (“Help with…” or rental damage), the To'Latino team member handling it can see it (it is logged). If anyone else opens the link, they see nothing. |
-| Photos in Messages, help, delivery or claims | Only To'Latino's own model checks them; they never go to any other service. |
+| Photos in Messages, help, delivery or claims | Only To'Latino's own model checks them; they do not go to the second opinion. (If a bank disputes a charge, the delivery photo can go to Stripe as evidence.) |
 | Many people uploading photos at once | “We are processing other photos right now. Try again in a moment.” The photo was not saved; upload it again in a few seconds. |
 
 ### Frequently asked questions
@@ -114,8 +116,10 @@ _Pantallas: toda pantalla donde subes una foto que se verá en público (foto de
 - **Who sees it in the meantime?** Only you. It does not show on your page, in lists or in the menu.
 - **Does someone at To'Latino see all my photos?** No. A system reviews them. A person only sees a photo if you ask for a review or if
   several people report it.
-- **Is my photo sent to another company?** Only photos meant to be public that are doubtful, reduced in size and with none of your data
-  (no name, no business, no city). Private photos never leave.
+- **Is my photo sent to another company?** Only photos meant to be public that our own model could not clear (the doubtful ones or, if that
+  model is off or not answering, any new public photo). A smaller version (up to 640 pixels per side) goes to Anthropic, an AI provider in the
+  US, without the camera's data and without any data about you (no name, no business, no city). Faces and text are not blurred. Private photos
+  do not go to that second opinion.
 - **Who sees the photo of my appointment, request, trip or “Help with…”?** You, the business that receives it and, only if there is an
   open case about that operation, the team member handling it. It has no public address: if someone copies the link, they cannot see it.
 - **Am I sanctioned for a rejected photo?** No. A rejected photo is simply not published.

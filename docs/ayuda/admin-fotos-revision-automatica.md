@@ -1,6 +1,6 @@
 # Super Admin: revisión automática de las fotos públicas · Super Admin: automatic review of public photos
 
-_Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenido?tab=auto`, bloque «Fotos públicas · revisión automática»), **Colas › Medios marcados** y **Colas › Apelaciones** (una foto), **Analítica › Reportes** (el bloque «Fotos» del reporte diario) y el reporte diario al fundador (correo y push). Escritorio y teléfono. Versión: 20 nov 2026. Audiencia: equipo. Tema: equipo._
+_Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenido?tab=auto`, bloque «Fotos públicas · revisión automática»), **Colas › Medios marcados** y **Colas › Apelaciones** (una foto), **Analítica › Reportes** (el bloque «Fotos» del reporte diario) y el reporte diario al fundador (correo y push). Escritorio y teléfono. Versión: 23 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Toda foto que se va a ver en público se revisa sola, en cuatro capas, antes de verse.** A una persona del equipo solo le llegan las
@@ -17,7 +17,7 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
     sin la capa 2 (las claras se rechazan igual). Una cuenta de menos de 7 días sube hasta 10 fotos públicas por hora; las de una operación (destino privado) solo tienen el tope general de 60 por hora.
 - **Ante la duda se retiene; nunca se publica «por si acaso».** Si un modelo no responde, la capa está apagada o no hay presupuesto, la
   foto queda retenida y el barrido la vuelve a intentar.
-- **Nunca sale de casa una foto privada.** A la capa 2 solo van fotos destinadas a lo público. Mensajes, ayuda, entrega y reclamos usan
+- **Una foto privada nunca va a la capa 2.** A la capa 2 (Anthropic) solo van fotos destinadas a lo público, reducidas (hasta 640 px, sin metadatos) y sin quién las subió; también cualquier foto pública nueva mientras la capa 1 esté apagada o no responda. La foto de la entrega sí puede ir a Stripe como evidencia de una disputa. Mensajes, ayuda, entrega y reclamos usan
   solo el modelo propio; una foto que va solo a un negocio (solicitud, cita, estimado, viaje) que sale dudosa queda retenida y no se manda.
 - **Una foto que va solo a un negocio no tiene dirección pública** (desde el 21 nov): la ven quien la subió, el cliente y el negocio de esa
   operación, y el equipo **solo con un caso abierto** de esa operación en su cola y su ciudad («Ayuda con…» o el daño de una renta; en una
@@ -84,7 +84,7 @@ _Pantallas: Super Admin › **Contenido › Auto-moderación** (`/admin/contenid
     photos without layer 2 (clear ones are still rejected). An account under 7 days old uploads up to 10 public photos an hour; photos for an operation (private destination) only have the general cap of 60 an hour.
 - **When in doubt it is held; it is never published “just in case”.** If a model does not answer, a layer is off or there is no budget,
   the photo is held and the sweep retries.
-- **A private photo never leaves.** Only photos meant to be public go to layer 2. Messages, help, delivery and claims use only the own
+- **A private photo never goes to layer 2.** Only photos meant to be public go to layer 2 (Anthropic), downsized (up to 640 px, no metadata) and without who uploaded them; so does any new public photo while layer 1 is off or not answering. The delivery photo can go to Stripe as evidence in a dispute. Messages, help, delivery and claims use only the own
   model; a photo that goes only to a business (request, appointment, estimate, trip) that comes out doubtful is held and not sent.
 - **A photo that goes only to a business has no public address** (since Nov 21): it is seen by whoever uploaded it, the client and the
   business of that operation, and the team **only with an open case** about that operation in their queue and city (“Help with…” or rental

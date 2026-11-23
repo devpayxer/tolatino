@@ -2,7 +2,7 @@
 
 _Pantallas: **Reportar** (la hoja que sale desde ··· / ⌄ en una publicación, un comentario, el perfil de un vecino y una conversación), **Mi cuenta ›
 Avisos de moderación** (`/cuenta/moderacion`; `?k=…&id=…` abre uno) y **Publicar** cuando tienes una sanción. Teléfono y escritorio. Solo con cuenta.
-Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
+Versión: 23 nov 2026. Audiencia: vecino. Tema: comunidad._
 
 ## Qué hace
 - **Reportar** (3 pasos): **¿Por qué lo reportas?** (Venta, spam o cadena · Datos de otra persona · Insulto o acoso · Información falsa ·
@@ -25,7 +25,7 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
   Publicar (y el hilo y Mensajes) te dice **hasta cuándo y por qué**, con «Ver y apelar».
 - **Lo que las reglas revisan solas** (marcan para que una persona decida; nunca ocultan solas): textos muy parecidos repetidos (3 en 24 h),
   palabras de odio, estafas o de inmigración, señales de dónde vive alguien o placas, y fotos (un modelo propio revisa desnudez antes de
-  que la foto se vea). Los **teléfonos, correos y números privados** nunca se guardan: se rechazan al escribir.
+  que la foto se vea y, si duda, una segunda opinión de un proveedor de IA; ver «Tus fotos»). Los **teléfonos, correos y números privados** nunca se guardan: se rechazan al escribir.
 - **Auto-ocultar:** si **5 personas distintas** (de teléfonos distintos y con cuentas de más de 3 días) reportan lo mismo en 24 h, se oculta
   mientras lo revisamos, con aviso y Apelar. Varias cuentas desde un mismo teléfono cuentan como una sola persona.
 - **Límites del día** (iguales para todos, el día de tu ciudad): 10 publicaciones, 100 comentarios, 500 votos, 10 conversaciones nuevas y
@@ -83,7 +83,7 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
   Posting (and the thread and Messages) tells you **until when and why**, with «View and appeal».
 - **What the rules check on their own** (they flag it for a person to decide; they never hide anything on their own): very similar texts repeated (3 in 24 h),
   hate words, scams or immigration scams, signs of where someone lives or license plates, and photos (our own model checks for nudity before the photo is
-  seen). **Phone numbers, emails and private numbers** are never saved: they are rejected as you type.
+  seen and, if it doubts, a second opinion from an AI provider; see “Your photos”). **Phone numbers, emails and private numbers** are never saved: they are rejected as you type.
 - **Auto-hide:** if **5 different people** (from different phones and with accounts more than 3 days old) report the same thing in 24 h, it is hidden while we
   review it, with a notice and Appeal. Several accounts from one phone count as one person.
 - **Daily limits** (the same for everyone, by your city's day): 10 posts, 100 comments, 500 votes, 10 new conversations and 20 reports; half on your account's

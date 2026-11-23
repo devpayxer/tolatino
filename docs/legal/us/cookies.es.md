@@ -1,11 +1,12 @@
 # Cookies
 
-_Clave: cookies. Jurisdicción: us. Idioma: es. Fecha del texto: 14 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
+_Clave: cookies. Jurisdicción: us. Idioma: es. Fecha del texto: 23 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
 
-To'Latino usa solo las cookies que necesita para funcionar. No hay cookies de publicidad ni de terceros, por eso no te pedimos que aceptes cookies al entrar.
+To'Latino usa solo las cookies que necesita para funcionar. No hay cookies de publicidad; por eso no te pedimos que aceptes cookies al entrar.
 
 ## Lo que cambió
 - Primera versión, con la lista real de las cookies de To'Latino.
+- Corregido: en la pantalla de pagar y en algunas portadas tu navegador pide cosas a Stripe y a Pexels.
 
 ## Las cookies de To'Latino
 Todas son propias (solo las lee To'Latino) y ninguna sirve para anuncios.
@@ -23,8 +24,11 @@ Todas son propias (solo las lee To'Latino) y ninguna sirve para anuncios.
 Además de las cookies, To'Latino guarda en tu navegador cosas que te ahorran pasos: tu carrito, el borrador de «Publica tu negocio» y tus
 boletos para entrar sin señal. Se quedan en tu teléfono o tu computadora y no se mandan a nadie.
 
-## Sin cookies de terceros
-To'Latino no carga publicidad ni herramientas de seguimiento de otras empresas. Si un día eso cambiara, esta página cambiaría primero y te lo
+## Otras empresas en tu navegador
+To'Latino no carga publicidad ni herramientas de seguimiento de otras empresas. Lo que sí carga tu navegador de otras empresas: en la pantalla de
+pagar con tarjeta, el formulario de Stripe (js.stripe.com); y en las portadas de algunas categorías, fotos de Pexels (images.pexels.com). Esas
+empresas ven tu navegador y tu dirección de internet. [pendiente: qué cookies guarda Stripe en la pantalla de pagar, a confirmar con Stripe y el
+abogado.] Si un día cambiara lo de la publicidad y el seguimiento, esta página cambiaría primero y te lo
 pediríamos antes. [pendiente: confirmar con el abogado que, con solo cookies necesarias, no hace falta aviso de consentimiento según las leyes
 de privacidad de los estados donde abre To'Latino.]
 

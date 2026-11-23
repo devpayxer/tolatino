@@ -1,11 +1,12 @@
 # Artificial intelligence on To'Latino
 
-_Clave: ia. Jurisdicción: us. Idioma: en. Fecha del texto: 14 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
+_Clave: ia. Jurisdicción: us. Idioma: en. Fecha del texto: 23 nov 2026. Estado del texto: BORRADOR — pendiente de revisión legal._
 
 Where To'Latino uses artificial intelligence, what it sees, who reviews it and where it does not use it.
 
 ## What changed
 - First version: El Compa, business auto-replies, Support drafts and what runs on our own servers.
+- Corrected: the second opinion on doubtful photos comes from an AI provider; the first review is our own.
 
 ## El Compa, the AI assistant
 - El Compa answers in Support, in the help of each transaction and in the business dashboard. **It always says it is AI** and where its answer
@@ -18,8 +19,8 @@ Where To'Latino uses artificial intelligence, what it sees, who reviews it and w
 ## What it sees and where it goes
 - It sees your first name, your language, your city and your recent transactions. It does not see other people's data, your messages with
   other neighbors, your phone, your address, your card, your health appointments or your children's data.
-- Before being saved and before reaching the AI, card numbers, security codes, social security numbers, verification codes, passwords and
-  bank accounts are masked.
+- Before being saved and before reaching the AI, card numbers, security codes, social security numbers, immigration A-numbers, verification
+  codes, passwords and bank accounts are masked. Anything else you write (a name, a phone number, an address) is not masked.
 - The text, already masked, is processed by an AI provider (Anthropic) in the US to answer you. To'Latino does not use it for ads.
 - Conversations are kept for 12 months. Only team members with permission read them, and every time it is recorded who and when. The business
   never sees them.
@@ -32,12 +33,23 @@ Where To'Latino uses artificial intelligence, what it sees, who reviews it and w
 
 ## Support
 The team can ask El Compa for a draft reply to your case. The draft never reaches you on its own: a person on the team reads it, corrects it
-and sends it to you with their name. It never refunds money or decides your case.
+and sends it to you with their name. It never refunds money or decides your case. For the draft, your case (masked and without phone numbers
+or emails) goes to the same AI provider.
 
-## What does not use an AI provider
-- **See translation** uses our own translator running on To'Latino's servers.
-- **Photo review** in the Community uses our own model, on To'Latino's servers; it flags things for a person to decide.
-- Neither sends your text or your photos to another company.
+## What runs on To'Latino's servers
+- **See translation** uses our own translator running on To'Latino's servers. It does not send your text to another company.
+- **The first photo review** (Community, businesses and Messages) uses our own model, on To'Latino's servers; it measures nudity and leaves it
+  to another layer or a person to decide.
+
+## The second opinion on public photos
+- If our own model doubts a photo that will be shown in public (or, while it is off or not answering, any new public photo), a downsized
+  version of the photo (up to 640 pixels per side, without the camera's data) goes to an AI provider (Anthropic) in the US, with a fixed
+  guideline, to say whether it is published and, if not, for what reason. Who uploaded it, their business and their city are not sent. Faces
+  and text are not blurred.
+- If the provider does not answer, the photo stays under review: it is never published «just in case». A verified business with a clean
+  history publishes its doubtful photos without this second opinion.
+- Private photos (Messages, help, delivery, claims, appointments, requests, trips) are not sent to that provider.
+- [pending: how long the provider keeps what it receives and whether zero retention is contracted, with the lawyer.]
 
 ## Messages by WhatsApp and SMS
 Only if you turned on «Talk to El Compa by WhatsApp and SMS» in My account › Notifications, and only to your verified phone. Anything that
