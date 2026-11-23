@@ -51,6 +51,13 @@ export function SistemaSalud({ d, l, editar }: { d: DatosSalud; l: L; editar: bo
       ? `${E("Viva desde", "Live since")} ${cuando(ce.desde)} · ${ce.ultimoAviso ? `${E("último aviso", "last notice")} ${cuando(ce.ultimoAviso)} · ${ce.avisos} ${E("avisos", "notices")}` : E("sin avisos todavía", "no notices yet")}${ce.caidas ? ` · ${ce.caidas} ${E("caídas", "drops")}` : ""}`
       : E("Sin escucha: un cambio tarda hasta 15 s en verse (60 s las ciudades). Se vuelve a conectar cada 5 s.", "Not listening: a change takes up to 15 s to show (60 s for cities). It reconnects every 5 s."),
     tag: ce.viva ? E("VIVA", "LIVE") : E("REVISAR", "CHECK"), tone: ce.viva ? "signal" : "danger" }] });
+  // 23 nov · Las subidas de fotos de este proceso (lib/subida.ts conFotoSubida; el tope se cambia en Configuración › Apps). REVISAR si se rechazó alguna
+  // (sin lugar o sin turno a tiempo) en los últimos 10 minutos: alguien vio «Prueba en un momento.»; si se repite, subir el tope o mirar la carga.
+  const su = d.subidas, rechSu = su.rechazos10 > 0;
+  B.push({ type: "rows", k: E("SUBIDAS DE FOTOS · ESTE PROCESO", "PHOTO UPLOADS · THIS PROCESS"), items: [{ key: "subidas", icon: rechSu ? "warning" : "check",
+    ibg: rechSu ? "rgba(138,90,0,.12)" : "rgba(0,168,143,.12)", t: E(`Fotos que se suben · ${su.enCurso} preparándose · ${su.enEspera} en espera`, `Photo uploads · ${su.enCurso} processing · ${su.enEspera} waiting`),
+    s: `${su.llegando ? `${su.llegando} ${E("llegando", "arriving")} · ` : ""}${E(`Tope: ${su.tope.aLaVez} a la vez, ${su.tope.dentro} de lugar, espera ${su.tope.esperaS} s`, `Cap: ${su.tope.aLaVez} at once, room for ${su.tope.dentro}, ${su.tope.esperaS} s wait`)}${su.tope.deConfig ? "" : E(" (de fábrica: Configuración no respondió)", " (default: Settings did not respond)")} · ${E(`${su.rechazos10} rechazadas en 10 min · ${su.rechazosHora} en la última hora`, `${su.rechazos10} rejected in 10 min · ${su.rechazosHora} in the last hour`)}${su.ultimoRechazo ? ` · ${E("la última", "last one")} ${cuando(su.ultimoRechazo)}` : ""} · ${E("Revisar si hubo rechazos en los últimos 10 minutos. Solo este proceso del servidor.", "Check if any were rejected in the last 10 minutes. This server process only.")}`,
+    tag: rechSu ? E("REVISAR", "CHECK") : E("BIEN", "HEALTHY"), tone: rechSu ? "danger" : "signal", onClick: () => router.push("/admin/sistema/configuracion"), chev: true }] });
   // 9j-2 · Web Vitals de teléfonos reales (RUM): por pantalla y perfil, % de mediciones buenas de LCP, INP y CLS en 7 días. Bien si ≥ 75 % buenas
   // (el criterio de Google); revisar si más de 25 % malas. Sin personas: solo cifras por ruta y día (web_vitals_dia).
   if (d.vitales) {

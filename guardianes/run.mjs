@@ -10782,6 +10782,15 @@ const guardianes = {
       for (const k of ["fotos_a_la_vez", "fotos_dentro", "fotos_espera_s"]) if (!new RegExp(`\\('${k}', \\d+, \\d+, \\d+, '[^']*', 'apps',`).test(m)) falla(G, av.f, 0, `«${k}» se gestiona en Configuración › Apps (con los otros topes del servidor)`);
     }
     if (!cte || +cte[1].replace(/_/g, "") < 1000 || +cte[2].replace(/_/g, "") > 2000) falla(G, L, 0, "el aviso a los errores con freno (AVISO_LLENO_MS ≥ 1 s) y la Configuración con plazo corto (CONFIG_ESPERA_MS ≤ 2 s)");
+    // 23 nov · Los rechazos se ven (LAUNCH, punto 3): cada uno se cuenta ANTES del freno de los errores, y Sistema › Salud muestra las subidas de ESTE
+    //     proceso (estadoSubidas: en curso, en espera, el tope vigente, rechazos de 10 min y de la hora) con su regla: REVISAR si hubo rechazos en 10 min.
+    { const al2 = cuerpoFn(l, "avisarLleno"), iCuenta = al2.indexOf("E.rechazos.push([ahora, 1])"), iFreno = al2.indexOf("if (Date.now() - E.ultimoAviso < AVISO_LLENO_MS) return;");
+      if (iCuenta < 0 || iFreno < 0 || iCuenta > iFreno) falla(G, L, 0, "cada rechazo se cuenta para Sistema › Salud antes del freno de los errores (si no, Salud ve uno cada 10 s)");
+      const SA = "apps/web/lib/sistema/salud.ts", SP = "apps/web/app/admin/SistemaSalud.tsx";
+      if (!existsSync(SA) || !/subidas: await estadoSubidas\(\)/.test(sinComent(SA))) falla(G, SA, 0, "Sistema › Salud lee las subidas de fotos de este proceso (estadoSubidas)");
+      const sp = existsSync(SP) ? sinComent(SP) : "";
+      if (!/const su = d\.subidas, rechSu = su\.rechazos10 > 0;/.test(sp) || !/tag: rechSu \? E\("REVISAR", "CHECK"\) : E\("BIEN", "HEALTHY"\)/.test(sp) || !/su\.rechazosHora/.test(sp) || !/su\.tope\.aLaVez/.test(sp) || !/su\.enEspera/.test(sp) || !/Solo este proceso del servidor\./.test(sp))
+        falla(G, SP, 0, "la fila de Salud de las subidas de fotos: en curso, en espera, el tope vigente, rechazos de la hora, REVISAR si hubo rechazos en 10 min y que es de este proceso"); }
     if (!/status: 503, headers: \{ "Retry-After": "\d+" \}/.test(cuerpoFn(l, "fotosOcupado") || l.slice(l.indexOf("export const fotosOcupado"), l.indexOf("export const fotosOcupado") + 600)) || !/Prueba en un momento\./.test(l) || !/Try again in a moment\./.test(l))
       falla(G, L, 0, "sin lugar o sin turno: 503 con Retry-After y «Prueba en un momento.» / «Try again in a moment.»");
     const al = cuerpoFn(l, "avisarLleno");

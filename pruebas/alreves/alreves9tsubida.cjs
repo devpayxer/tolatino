@@ -8,6 +8,12 @@ const casos = [
   [G, 'apps/web/app/api/ayuda/foto/route.ts', 'return conFotoSubida(req, {', 'void (await req.formData().catch(() => null));\n  return conFotoSubida(req, {'],
   [G, 'apps/web/app/api/mensajes/foto/route.ts', 'grande: () => err(413,', 'grande: () => err(400,'],
   // 22 nov · Turno de fotos: la pieza común conFotoSubida (lugar antes de leer, la foto al disco, turno antes de abrirla, todo suelto en un finally).
+  // 23 nov · Los rechazos en Sistema › Salud (contados antes del freno; la fila con su regla).
+  [G, L, '  if (ult && ahora - ult[0] < 10_000) ult[1]++; else E.rechazos.push([ahora, 1]);\n', ''],
+  [G, 'apps/web/lib/sistema/salud.ts', '    subidas: await estadoSubidas(),\n', '    subidas: { enCurso: 0, enEspera: 0, llegando: 0, tope: { aLaVez: 2, dentro: 16, esperaS: 30, deConfig: true }, rechazos10: 0, rechazosHora: 0, ultimoRechazo: null },\n'],
+  [G, 'apps/web/app/admin/SistemaSalud.tsx', 'const su = d.subidas, rechSu = su.rechazos10 > 0;', 'const su = d.subidas, rechSu = su.rechazosHora > 100;'],
+  [G, 'apps/web/app/admin/SistemaSalud.tsx', 'tag: rechSu ? E("REVISAR", "CHECK") : E("BIEN", "HEALTHY")', 'tag: E("BIEN", "HEALTHY")'],
+  [G, 'apps/web/app/admin/SistemaSalud.tsx', ' Solo este proceso del servidor.', ''],
   [G, L, 'if (E.dentro >= t.dentro) { avisarLleno(ruta, "lugar"); return fotosOcupado(); }\n', ''],
   [G, L, '    soltar = await turnoFoto(t.aLaVez, t.esperaS * 1000);\n    if (!soltar) { avisarLleno(ruta, "turno"); return fotosOcupado(); }\n    return await hacer(f);', '    return await hacer(f);'],
   [G, L, '    soltar?.();\n', ''],
