@@ -122,7 +122,7 @@ export async function turnoVecino(M, eng, { caso, texto, lang, esc, idx, lineas 
   const accionDe = (r, p) => (p ? { tipo: r.accion.tipo, ref: r.accion.ref, pantalla: r.accion.pantalla } : NADA);
   const sal = (r, p, extra = {}) => ({ salida: { ...base, texto: r.respuesta, tipo: r.tipo, fuente: r.fuente, accion: accionDe(r, p), escalo: "", chips: r.chips, fija: false, accion_rechazada: r.accion.tipo !== "ninguna" && !p, ...extra }, ctx, trozos });
   const desdeReglas = (porque, crudo) => {
-    const ops = [...cx.refs.entries()].map(([ref, o]) => ({ ref, negocio: o.negocio, cancelable_gratis: o.cancelableGratis }));
+    const ops = cx.datos.operaciones;
     const v = M.v.verificar(M.mr.responderConReglas({ texto: t.texto, lang, ops, trozos }), vctx);
     const meta = { motor: "reglas", porque, crudo_rechazado: eng.nombre === "reglas" ? null : porque, crudo };
     if (!v.ok) return { salida: { ...base, ...meta, texto: L.noSe[lang], tipo: "no_se", fuente: "", accion: NADA, escalo: "", fija: true }, ctx, trozos };

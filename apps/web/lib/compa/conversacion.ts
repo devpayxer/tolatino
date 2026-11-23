@@ -12,7 +12,7 @@ import { contextoVecino, type ContextoVecino, type OpRef } from "./contexto-veci
 import { opVecino, razonesDe, type RazonK } from "./hoja";
 import { disponible, hiloApagado } from "./interruptores";
 import { ErrorModelo, ESQUEMA_COPILOTO, modelo, motorActivo, type Canal, type Lang, type MensajeModelo, type Motor, type Salida, type TrozoModelo, type Uso } from "./modelo";
-import { borradorCopilotoConReglas, responderAutoConReglas, responderConReglas, responderPanelConReglas } from "./modelo-reglas";
+import { borradorCopilotoConReglas, responderAutoConReglas, responderConReglas, responderPanelConReglas, type OpCtx } from "./modelo-reglas";
 import { pasarAPersona, type Motivo } from "./persona";
 import { detectar, detectarAuto, detectarPanel, LINEAS, LINEAS_AUTO } from "./reglas";
 import { AVISO_TAPADO, tapar } from "./tapar";
@@ -181,7 +181,8 @@ export async function turno(q: { userId: string }, x: { conversacion?: string | 
     texto: [ctx.texto, ...trozos.map((z) => `${z.titulo} ${z.seccion} ${z.texto}`), t.texto].join("\n") };
 
   const desdeReglas = async (porque: string): Promise<TurnoOk> => {
-    const ops = [...ctx.refs.entries()].map(([ref, o]) => ({ ref, negocio: o.negocio, cancelable_gratis: o.cancelableGratis }));
+    // Las mismas operaciones que ve el modelo (tipo, número, negocio ya tapado, cuándo): las reglas eligen de cuál se habla (elegirOperacion).
+    const ops = ctx.datos.operaciones as OpCtx[];
     const v = verificar(responderConReglas({ texto: t.texto, lang, ops, trozos }), vctx);
     if (!v.ok) return responder({ texto: LINEAS.noSe[lang], tipo: "no_se", fuente: "", chips: [], motor: "reglas", porque: `${porque}+reglas:${v.motivo}` });
     return responder({ texto: v.r.respuesta, tipo: v.r.tipo, fuente: v.r.fuente, titulo: titulos.get(v.r.fuente), chips: v.r.chips, motor: "reglas",

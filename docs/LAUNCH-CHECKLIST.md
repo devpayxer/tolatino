@@ -2831,14 +2831,17 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       a 0; guardián `compaFronteraConTilde`, al revés `alrevesFronteraTilde` 16/16; de paso `idiomaDe` ya cuenta «qué».)** El verificador de El Compa no cazaba «Ya cancelé», «Te devolví», «Cambié tu teléfono» (lo encontró la batería):
       `lib/compa/verificar.ts` (`HECHO`): `\b` después de una vocal con tilde no es frontera, así que esas frases pasan como si no afirmaran una acción
       hecha. Solo caza «Listo, …» y las formas en inglés. Arreglar con fronteras que entiendan tildes, guardián y al revés.
-- [ ] **→ 9b** · **Reglas y simulador de El Compa: con «cancela» preparan la primera operación cancelable** sin mirar de cuál habla la persona
+- [x] **→ 9b** · **(Hecho el 23 nov: `elegirOperacion` —referencia, negocio, tipo, fecha; varias → pregunta cuál; de otra persona → nada—, guardián
+      `compaEligeLaOperacion`, al revés `alrevesEligeOperacion` 24; batería con reglas 70,1 → 72,5 %.)** Reglas y simulador de El Compa: con «cancela» preparaban la primera operación cancelable sin mirar de cuál habla la persona
       (`modelo-reglas.ts`, `modelo-simulador.ts`; casos `vec-036` y `vec-042` de la batería). La acción pide confirmación, pero propone la equivocada.
 - [ ] **→ 9q** · **La batería reproduce el camino de `conversacion.ts`, no lo llama** (`scripts/compa/bateria/motor.mjs`): un cambio en el orden de pasos
       del servidor no se vería solo. Y la búsqueda de ayuda de Postgres no corre en la batería (mide al modelo, no a la búsqueda).
 - [ ] **→ 9s** · **Lo que sigue [pendiente] en Privacidad, IA y Cookies (23 nov):** cuánto conserva Anthropic lo que recibe y si se contrata retención cero
       (el guardián prohíbe afirmarla mientras `terceros.json` diga «pendiente»), las cookies de Stripe en la pantalla de pagar, Cloudflare y el proveedor
       de servidores. Preguntas A-04 y A-11.
-- [ ] **→ 9u** · **Las portadas de las categorías vienen de Pexels también en producción (23 nov):** `packages/db/seeds/paginas.sql` (17
+- [x] **→ 9u** · **(Hecho el 23 nov: no eran 17 sino 647 fotos de `packages/taxonomy/paginas.json`; ahora son WebP propios en `apps/web/public/paginas`
+      —5,8 MB—, la CSP de producción no lista hosts de fotos, el sandbox suma Pexels solo con `TOLATINO_ENTORNO=pruebas` por su semilla; guardián
+      `sinFotosAjenasEnProduccion`, al revés `alrevesSinFotosAjenas` 24/24.)** Las portadas de las categorías venían de Pexels también en producción: `packages/db/seeds/paginas.sql` (17
       direcciones de images.pexels.com) lo aplica `migrar.sh` en todo entorno; el navegador de cada visitante se las pide a Pexels. La línea «Fotos de
       ejemplo del sandbox» (11 nov) decía que eran solo de la semilla de pruebas: no era cierto para estas 17. Pasarlas a fotos servidas por nosotros.
 - [ ] **→ 9s** · **Google Play, «no se comparte con terceros»** (`SistemaAppsTiendas.tsx`): confirmar con el abogado si vale con Anthropic y Stripe como
@@ -2858,3 +2861,15 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       te toca» 9-1.x se marque solo, la regla de HTTPS en producción ni la precedencia del entorno sobre el llavero.
 - [ ] **→ 9u** · **Campo oculto en el sistema de diseño (23 nov):** el `field` de `PanelBloques` aprendió `oculto` (mismo aspecto, tipo contraseña) para
       pegar llaves. Falta el OK del fundador a la pieza (REVISION).
+- [ ] **→ 9u** · **Cambiar una portada de categoría desde el Super Admin (regla 8):** `categories.page_admin` se lee pero nada lo escribe; falta la pantalla
+      en Catálogo (subir al almacén y guardar en `page_admin`).
+- [ ] **→ 9u** · **7 mosaicos de categoría sin foto:** las fotos 1388944, 48246, 3284980, 35562107, 16537217, 31512997 y 52495 ya no existen en su origen;
+      salen en gris (como ya salían) hasta elegir otra propia.
+- [ ] **→ 9s** · **Licencia de las 640 fotos de las páginas de categoría:** vienen de Pexels (uso y redistribución sin atribución, según su licencia); la
+      página de la licencia no se pudo abrir desde la máquina de trabajo. `packages/taxonomy/fotos-paginas.json` guarda el id de origen de cada una.
+      Confirmar con el abogado (A-49/A-50) o cambiarlas por fotos propias.
+- [ ] **→ 9q** · **Portadas propias sin ver en un despliegue real** (imagen construida por `deploy.sh`, semilla reaplicada por `migrar.sh`): mirarlo en el
+      sandbox tras subir; y `/` y `/negocios` del sandbox siguen pidiendo a Pexels las fotos de ejemplo de su semilla (producción nace vacía).
+- [ ] **→ 9q** · **El Compa elige la operación: sin ver servido** (`compa7c`/`compa7d` corren en el CI, pero la pantalla con dos operaciones y las
+      respuestas nuevas no se miró en teléfono). «La de mañana/hoy» no está conectado (nadie pasa `hoy`). «Cancel…» sigue disparándose por prefijo. Los
+      textos nuevos esperan el OK del fundador (REVISION).

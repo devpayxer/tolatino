@@ -35,6 +35,7 @@ Audiencia: vecino. Tema: cuenta._
 | El negocio confirma tu solicitud mientras miras «Así queda» | Al confirmar ves «Ya cambió: … ya respondió» y no se cancela nada. |
 | Pasan más de 15 minutos sin confirmar | La preparación vence; pídeselo otra vez. |
 | Preguntas por los datos de otra persona | «No tengo ese dato»: El Compa solo ve lo tuyo. |
+| Tienes varias solicitudes y no dices cuál, o dices una que no es tuya | El Compa te pregunta cuál (con el negocio y la fecha); si es de otra persona, no prepara nada. |
 | Escribes una tarjeta, un código o una contraseña | Se tapa y ves «No compartas eso aquí. Nunca te lo pedimos.». |
 | Es dinero, tu cuenta o seguridad | No lo resuelve El Compa: pasa a una persona con el resumen. |
 | Escribes muchos mensajes seguidos | Te pide esperar y te ofrece «Con una persona». |
@@ -84,6 +85,7 @@ Audiencia: vecino. Tema: cuenta._
 | The business confirms your request while you look at «Here's how it ends up» | When you confirm you see «It already changed: … already replied» and nothing is canceled. |
 | More than 15 minutes pass without confirming | The preparation expires; ask for it again. |
 | You ask about another person's data | «I don't have that information»: El Compa only sees what is yours. |
+| You have several requests and don't say which, or you name one that isn't yours | El Compa asks which one (with the business and the date); if it belongs to someone else, it prepares nothing. |
 | You write a card, a code or a password | It is masked and you see «Don't share that here. We never ask for it.». |
 | It is money, your account or safety | El Compa does not resolve it: it goes to a person with the summary. |
 | You write many messages in a row | It asks you to wait and offers «Talk to a person». |

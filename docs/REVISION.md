@@ -6323,6 +6323,24 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Decisión 2:** tu decisión AJ dice «las fotos privadas nunca salen de casa». Hay una excepción que ya existía: la foto de la entrega va a Stripe
   como evidencia cuando un banco disputa un cobro. Propongo dejar la frase como «nunca van a la segunda opinión; la de la entrega puede ir a Stripe en
   una disputa». Dime si la cambio en DECISIONES.
-- **Decisión 3 (la tomo si no dices otra cosa):** las 17 fotos de portada de las categorías se piden a Pexels desde el navegador de cada visitante,
-  también en producción. Las paso a fotos servidas por nosotros.
+- **Decisión 3, hecha el 23 nov:** las fotos de las páginas de categoría (eran 647, no 17: portadas y mosaicos) ya son archivos nuestros; en
+  producción el navegador ya no puede pedir fotos a otra empresa. Qué mirar: una categoría en teléfono y escritorio; portada y mosaicos iguales que
+  antes (las portadas muy altas quedan recortadas al centro). Siete mosaicos salen en gris porque su foto ya no existe. Falta, y lo anoto: una
+  pantalla en el Super Admin para cambiar una portada.
+
+## El Compa, sin modelo: cancela la operación de la que hablas (23 nov) — textos nuevos que necesitan tu OK
+- **Qué cambió:** cuando el modelo no está o su respuesta se descarta, El Compa preparaba la primera operación de tu lista. Ahora mira cuál dices
+  (el negocio, el tipo, el número o la fecha). Si hay varias, pregunta cuál; si es de otra persona, no prepara nada. Nunca cancela solo: siempre pide
+  que confirmes.
+- **Qué mirar:** con una cita y un pedido pendientes, «cancela mi cita con la barbería» propone la cita; «cancela mi cita» con dos citas pregunta cuál.
+- **Textos nuevos (español / inglés), dime si alguno no te gusta:**
+  - «¿Cuál quieres cancelar? Tienes tu cita en Barbería Don Luis (sáb 28 nov, 10:30) y tu cita en Salón Gloria (lun 30 nov, 15:00).» / «Which one do
+    you want to cancel? You have your appointment at … and your appointment at ….»
+  - «¿Quieres cancelar tu cita en X (…)?» / «Do you want to cancel your appointment at X (…)?»
+  - «No encontré esa operación entre las tuyas. Dime cuál es o, si prefieres, te paso con una persona.» / «I couldn't find that one among yours.
+    Tell me which one, or if you prefer, I'll pass you to a person.»
+  - «No puedo preparar nada sobre lo de otra persona: es privado. Solo puedo ayudarte con tus propias solicitudes.» / «I can't prepare anything for
+    someone else's requests: that is private. I can only help with your own.»
+  - «Te abro tu cita en X.» / «Opening your appointment at X.»
+- **Una decisión tuya, sin prisa:** «la cita de mi mamá» o «de mi hijo» no cuenta como de otra persona (pudo reservarla quien escribe).
 
