@@ -3,7 +3,7 @@
 _Pantallas: la página de cada categoría (`/c/{categoría}`, la fila **Patrocinados** debajo de las pestañas); Panel › Cobros y plan ›
 **Patrocinio** (`/panel/{negocio}/cobros/patrocinio`; también desde Tu página); Super Admin › Crecimiento › **Patrocinios** y Sistema ›
 Configuración › Crecimiento. Eventos: la página de Eventos (`/eventos`, arriba de todo) y Panel › Eventos › el evento › **Patrocinar**
-(`/panel/{negocio}/eventos?det=evt:pat:{evento}`). Teléfono y escritorio. Free y Pro. Versión: 21 nov 2026. Audiencia: negocio. Tema:
+(`/panel/{negocio}/eventos?det=evt:pat:{evento}`). Teléfono y escritorio. Free y Pro. Versión: 23 nov 2026. Audiencia: negocio. Tema:
 panel._
 
 ## Qué hace
@@ -59,6 +59,10 @@ panel._
 
 ## Preguntas frecuentes
 - **¿Cuánto cuesta?** Lo ves en Panel › Cobros y plan › Patrocinio, antes de pagar: 1 semana o 1 mes. No hay otros cargos.
+- **¿Cuándo termina un mes?** El mismo día del mes siguiente, a las 12 de la noche (hora de tu ciudad); si ese mes no tiene ese día, su
+  último día. Si lo renuevas (solo o con «Renovar otro mes»), manda el día en que empezó tu primer mes: si empezaste un 31, termina el 28 de
+  febrero (29 en año bisiesto), el 31 de marzo, el 30 de abril, el 31 de mayo… Nunca pierdes tu día por un mes corto. Lo que ya compraste no
+  cambia de fechas. **1 semana** son 7 días: de las 12 de la noche de un día a las 12 de la noche del mismo día de la semana siguiente.
 - **¿Necesito ser Pro?** No. Free y Pro pueden patrocinar. Con Pro y video aprobado, tu tarjeta lleva el video.
 - **¿Salgo siempre primero?** No: los puestos rotan cada hora para que todos salgan al principio.
 - **¿Las vistas son personas?** Sí: una persona (o un teléfono sin cuenta) cuenta una vez por día. Los robots no cuentan, y tú y tu equipo
@@ -171,6 +175,10 @@ panel._
 ### FAQ
 - **How much does it cost?** You see it in Dashboard › Payouts and plan › Sponsorship, before paying: 1 week or 1 month. There are no
   other charges.
+- **When does a month end?** On the same day of the next month, at midnight (your city's time); if that month does not have that day, on its
+  last day. If you renew it (on its own or with «Renew another month»), the day your first month started is the one that counts: if you started
+  on the 31st, it ends on February 28 (29 in a leap year), March 31, April 30, May 31… A short month never takes your day away. What you
+  already bought keeps its dates. **1 week** is 7 days: from midnight of one day to midnight of the same weekday the next week.
 - **Do I need Pro?** No. Free and Pro can sponsor. With Pro and an approved video, your card shows the video.
 - **Am I always first?** No: slots rotate every hour so everybody shows at the start.
 - **Are views people?** Yes: a person (or a phone without an account) counts once per day. Robots do not count, and you and your team do

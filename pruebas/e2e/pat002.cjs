@@ -7,11 +7,13 @@
 // 0175 (17 nov): el dueño no suma vistas a su propio patrocinio; «Cancelar reserva» devuelve todo (una devolución en el libro, por la pasarela,
 // auditada y avisada; la base no deja otra ni cambiarla); «Terminar» del Super Admin devuelve lo que no se usó (encendido de entrada); 3-D Secure al
 // comprar: la hoja del banco, «No fui yo» no cobra, confirmar compra una sola vez; la renovación sola que pide verificar termina y avisa.
+// 23 nov: el mes renovado no pierde su día (31 ene → 28 feb → 31 mar → 30 abr, con fechas fijas) y una cadena ya corrida no se recalcula.
 // Precondiciones propias: lo vivo de Comida y Belleza en Hazleton queda terminado (estados, nada se borra); la tarjeta 4242 del dueño; los
 // precios y puestos de fábrica (se restauran al final); un vecino nuevo (teléfono libre) para las cifras.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, medios, negocioSinDueno, sql, tarjeta, telLibre } = require('../lib/negocio-nuevo.cjs');
+const { hoyCiudad } = require('../lib/hoy-ciudad.cjs');
 const B = ENT.B, OUT = ENT.OUT;
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
@@ -301,6 +303,36 @@ let OP = null;
     await barrer();
     ok(sql(`select status || '|' || renew_note from sponsorships where id = ${R5}`).startsWith('terminado|tu banco pide confirmar cada cobro') && sql(`select count(*) from sponsorships where renewed_from = ${R5}`) === '0', 'la renovación sola que pide verificar: termina, sin cobrar, con el motivo');
     ok(sql(`select href from notifications where tpl = 'biz_patrocinio_no_renovo' and user_id = '${D0}' and created_at > now() - interval '3 minutes' order by id desc limit 1`) === `/panel/${BIZ}/cobros/patrocinio`, 'su aviso lleva al panel para comprar otro y confirmarlo ahí');
+
+    // 23 nov · El mes que se renueva no pierde su día (lib/patrocinio.ts › fechasPeriodo con LA regla de Pro, lib/periodo-pro.ts): el mismo día del mes
+    // siguiente, o su último día; manda el día en que empezó el primer mes de la cadena. Antes: 31 ene → 28 feb → 28 mar → 28 abr (interval '1 month').
+    // Fechas FIJAS de 2026 (en el pasado: el barrido las renueva en el acto). Dos puestos; dos negocios ocupan desde el 30 abr 2026 (hasta mañana: no
+    // vencen y el barrido no los toca), así la cadena se renueva exactamente dos veces y la tercera no encuentra puesto.
+    console.log('7 · El mes renovado no pierde su día: 31 ene → 28 feb → 31 mar → 30 abr');
+    terminarVivos('NEG-FOOD');
+    ok(hoyCiudad() > '2026-05-31', `las fechas fijas de esta parte ya pasaron (hoy en la ciudad: ${hoyCiudad()})`);
+    ponerCfg('patrocinio_puestos', 2);
+    const MES = Number(sql(`select value::text from platform_config where key = 'patrocinio_mes_cents'`));
+    const NY = (d) => `'${d} 00:00 America/New_York'::timestamptz`;
+    const insM = (biz, st, a, z) => sql(`with x as (insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, ended_at, end_kind)
+      values ('${biz}', 'NEG-FOOD', 'hzl', ${a}, ${z}, 'month', '${st}', ${MES}, '${D0}', '${PM}', ${st === 'activo'}, ${st === 'terminado' ? 'now()' : 'null'}, ${st === 'terminado' ? "'vencio'" : 'null'}) returning id) select id from x`);
+    for (const f of [F[2], F[3]]) sql(`insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id)
+      values ('${f}', 'NEG-FOOD', 'hzl', ${NY('2026-04-30')}, now() + interval '1 day', 'month', 'activo', ${MES}, '${D0}')`);
+    // Sabor: su primer mes empezó el 31 ene 2026. Otro negocio: una cadena que YA venía corrida de antes (31 ene → 28 feb → 28 mar), nada hacia atrás.
+    const M1 = insM(BIZ, 'activo', NY('2026-01-31'), NY('2026-02-28'));
+    insM(F[1], 'terminado', NY('2026-01-31'), NY('2026-02-28'));
+    const V2 = insM(F[1], 'activo', NY('2026-02-28'), NY('2026-03-28'));
+    await barrer();
+    const per = (id) => sql(`select to_char(starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || ' → ' || to_char(ends_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') from sponsorships where id = ${id}`);
+    const sig = (id) => sql(`select coalesce((select id::text from sponsorships where renewed_from = ${id}), '')`);
+    const M2 = sig(M1), M3 = M2 && sig(M2);
+    ok(!!M2 && per(M2) === '2026-02-28 00:00 → 2026-03-31 00:00', `1.ª renovación: 28 feb → 31 mar (el día del ancla, no 28 mar): ${M2 && per(M2)}`);
+    ok(!!M3 && per(M3) === '2026-03-31 00:00 → 2026-04-30 00:00', `2.ª renovación: 31 mar → 30 abr (abril no tiene 31: su último día): ${M3 && per(M3)}`);
+    ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'negocio' and ref_id in (${M2 || 0}, ${M3 || 0})`) === `2|${MES}|renovacion`, `dos cobros de renovación del mes ($${(MES / 100).toFixed(2)}), uno por período`);
+    ok(M3 && sql(`select status || '|' || coalesce(renew_note, '') from sponsorships where id = ${M3}`) === 'terminado|no quedaba puesto' && sig(M3) === '', 'la tercera no encuentra puesto: termina sin cobrar');
+    const V3 = sig(V2);
+    ok(!!V3 && per(V3) === '2026-03-28 00:00 → 2026-04-28 00:00', `una cadena que ya venía corrida sigue con su día (28 mar → 28 abr): lo comprado no se recalcula hacia atrás: ${V3 && per(V3)}`);
+    terminarVivos('NEG-FOOD'); ponerCfg('patrocinio_puestos', 6);
     ok(!err.length, 'sin errores en las páginas: ' + (err.join(' · ') || 'ninguno'));
     console.log(`\npat002 · ${n} comprobaciones en verde`);
   } finally {

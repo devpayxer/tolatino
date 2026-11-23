@@ -7743,6 +7743,89 @@ const guardianes = {
     } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
   },
 
+  /* 23 nov · patrocinioMesSinDeriva: el mes de un patrocinio (lib/patrocinio.ts › fechasPeriodo; negocios y eventos) sale de LA regla de Pro
+     (lib/periodo-pro.ts › finDePeriodo: el mismo día del mes siguiente o su último día, el día del ANCLA = el día en que empezó el primer mes de la
+     cadena). Antes se encadenaba interval '1 month' desde el fin anterior: 31 ene → 28 feb → 28 mar → 28 abr, y el negocio que compró «del 31 al 31»
+     perdía días para siempre. (1) Nadie en apps/web/lib suma meses o años en SQL (interval 'N month(s)/year(s)', make_interval(months|years =>),
+     '1 month'::interval) para un período: restar (una ventana hacia atrás) no es un período; excepciones: la lista cerrada EXC, línea exacta (ninguna es
+     el fin de un período de dinero). (2) fechasPeriodo usa finDePeriodo con el ancla de la cadena (mensual, vivo o vencido al terminar, termina el día
+     en que empieza el siguiente) y cada llamada pasa su cadena. (3) La tabla del patrocinio (de medianoche a medianoche de la ciudad, 12 renovaciones
+     desde un 29, 30 y 31) contra periodo-pro.ts real. Al revés: alrevesPatrocinioMes. */
+  patrocinioMesSinDeriva() {
+    const G = "patrocinioMesSinDeriva", PT = "apps/web/lib/patrocinio.ts", PE = "apps/web/lib/patrocinio-evento.ts", P = "apps/web/lib/periodo-pro.ts";
+    const EXC = [
+      ["apps/web/lib/inmuebles.ts", /^\s*array\[\$\{HOY_SQL\}::text, \(date_trunc\('month', \$\{HOY_SQL\}\) \+ interval '1 month'\)::date::text, \(date_trunc\('month', \$\{HOY_SQL\}\) \+ interval '1 month 14 days'\)::date::text,$/,
+        "Inmuebles: atajos de «disponible desde» sobre date_trunc('month') (siempre un día 1): no desborda y no es dinero"],
+      ["apps/web/lib/inmuebles.ts", /^\s*\(date_trunc\('month', \$\{HOY_SQL\}\) \+ interval '2 months'\)::date::text\] as fechas$/, "Inmuebles: el mismo atajo (el día 1 de dentro de dos meses)"],
+      [PT, /^\s*where patrocinio_a_la_vez\(\$1, \$2, x\.t, x\.t \+ case when \$6 = 'week' then interval '7 days' else interval '1 month' end, null\) < \$5\) as libre`,$/,
+        "puestosLibres: el aviso de «desde cuándo se libera un puesto» (una estimación para la pantalla; al pagar, fechasPeriodo y la base lo vuelven a revisar con candado)"],
+      [PE, /^\s*where patrocinio_evt_a_la_vez\(\$1, x\.t, case when \$5 = 'until_event' then greatest\(\$3::timestamptz, x\.t \+ interval '1 hour'\) when \$5 = 'month' then x\.t \+ interval '1 month' else x\.t \+ interval '7 days' end, null\) < \$4\) as libre`,$/,
+        "puestos de Eventos: la misma estimación de «desde cuándo se libera un puesto»"],
+    ];
+    const MES = /\binterval\s*'\s*\d+\s*(?:mons?|months?|years?|y)\b|make_interval\(\s*(?:years|months)\s*=>|'\s*\d+\s*(?:mons?|months?|years?)\s*'::interval/i;
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/.*\.tsx?$/.test(f)) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        if (!MES.test(l) || EXC.some(([x, re]) => x === f && re.test(l))) return;
+        // Solo una ventana hacia atrás (now() - interval '1 year'): cada mes/año de la línea va restado.
+        const usos = [...l.matchAll(new RegExp(MES.source, "gi"))];
+        if (usos.every((m) => /-\s*$/.test(l.slice(0, m.index)))) return;
+        falla(G, f, i + 1, "suma meses o años en SQL: encadenado desde el fin anterior, el día se corre para siempre (31 ene → 28 feb → 28 mar). El fin de un período de dinero sale de finDePeriodo (lib/periodo-pro.ts) con su ancla; si no es un período de dinero, va a la lista cerrada de excepciones con su porqué");
+      });
+    }
+    for (const f of [PT, PE, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del período del patrocinio");
+    const t = sinComent(PT), te = sinComent(PE);
+    if (!/^import \{ finDePeriodo \} from "\.\/periodo-pro";$/m.test(t)) falla(G, PT, 0, "el patrocinio no importa finDePeriodo de lib/periodo-pro.ts (LA regla del mes)");
+    const fp = /export async function fechasPeriodo\(([\s\S]*?)\n\}/.exec(t)?.[1] ?? "";
+    if (!fp) falla(G, PT, 0, "falta fechasPeriodo");
+    else {
+      if (!/b: new Date\(finDePeriodo\(Number\(r\.m0\), "month", r\.tz, ancla\)\)\.toISOString\(\)/.test(fp)) falla(G, PT, 0, "fechasPeriodo: el fin del mes sale de finDePeriodo, desde la medianoche del día que empieza, en la zona de la ciudad y con el ancla de la cadena");
+      if (!/if \(dur === "week"\) return \{ a: r\.a, b: r\.b!, tz: r\.tz, dia: r\.dia \};/.test(fp) || !/case when \$3 = 'week' then to_char\(\(\(\(dia \+ 7\)::timestamp\) at time zone tz\) at time zone 'UTC'/.test(fp)) falla(G, PT, 0, "fechasPeriodo: la semana son 7 días de calendario de medianoche a medianoche de la ciudad");
+      const cad = [/\$\{x\}\.duration = 'month'/, /\$\{x\}\.status in \('activo', 'reservado'\) or \(\$\{x\}\.status = 'terminado' and \$\{x\}\.end_kind = 'vencio'\)/,
+        /\(s\.ends_at at time zone \$3\)::date = \$4::date/, /\(p\.ends_at at time zone \$3\)::date = \(r\.ini at time zone \$3\)::date and p\.starts_at < r\.ini/, /min\(ini\)/, /if \(cadena && desde !== "hoy"\)/];
+      if (cad.some((re) => !re.test(fp))) falla(G, PT, 0, `fechasPeriodo: el ancla es el inicio del primer mes de la cadena (mensual; vivo o vencido al terminar, no cancelado ni terminado antes; termina el día en que empieza el siguiente): ${cad.find((re) => !re.test(fp))}`);
+    }
+    for (const [f, s, n] of [[PT, t, 3], [PE, te, 2]]) {
+      const ll = [...s.matchAll(/\bfechasPeriodo\(([^\n]*)/g)].filter((m) => !/^c: PoolClient/.test(m[1]));
+      const bien = ll.filter((m) => /, \{ tabla: "(?:event_)?sponsorships", negocio(?::|,)/.test(m[1])).length;
+      if (ll.length !== n || bien !== n) falla(G, f, 0, `cada fechasPeriodo pasa su cadena (negocio y categoría, o evento) para encontrar el ancla del mes (${bien} de ${ll.length}; se esperan ${n})`);
+    }
+    // La tabla del patrocinio contra periodo-pro.ts real: de medianoche a medianoche de la ciudad, con el proceso en tres zonas.
+    let F;
+    try {
+      const ts = createRequire(import.meta.url)("typescript");
+      const js = ts.transpileModule(readFileSync(P, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+      const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("periodo-pro.ts es pura"); });
+      F = mod.exports.finDePeriodo;
+    } catch (e) { return falla(G, P, 0, `no pude cargar periodo-pro.ts: ${String(e?.message ?? e).slice(0, 120)}`); }
+    const Z = "America/New_York", medianoche = (d) => { const [y, m, dd] = d.split("-").map(Number); for (const h of [4, 5]) { const t0 = Date.UTC(y, m - 1, dd, h); if (new Intl.DateTimeFormat("en-US", { timeZone: Z, hourCycle: "h23", hour: "2-digit" }).format(new Date(t0)) === "00") return t0; } return NaN; };
+    const dia = (t) => new Intl.DateTimeFormat("en-CA", { timeZone: Z, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(t));
+    const hora = (t) => new Intl.DateTimeFormat("en-US", { timeZone: Z, hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).format(new Date(t));
+    const ESP = {
+      "2026-01-29": ["2026-02-28", "2026-03-29", "2026-04-29", "2026-05-29", "2026-06-29", "2026-07-29", "2026-08-29", "2026-09-29", "2026-10-29", "2026-11-29", "2026-12-29", "2027-01-29"],
+      "2026-01-30": ["2026-02-28", "2026-03-30", "2026-04-30", "2026-05-30", "2026-06-30", "2026-07-30", "2026-08-30", "2026-09-30", "2026-10-30", "2026-11-30", "2026-12-30", "2027-01-30"],
+      "2026-01-31": ["2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31", "2026-06-30", "2026-07-31", "2026-08-31", "2026-09-30", "2026-10-31", "2026-11-30", "2026-12-31", "2027-01-31"],
+      "2027-12-31": ["2028-01-31", "2028-02-29", "2028-03-31", "2028-04-30", "2028-05-31", "2028-06-30", "2028-07-31", "2028-08-31", "2028-09-30", "2028-10-31", "2028-11-30", "2028-12-31"],
+    };
+    const tzAntes = process.env.TZ;
+    try {
+      for (const tz of ["UTC", "Asia/Tokyo", Z]) {
+        process.env.TZ = tz;
+        for (const [ini, esp] of Object.entries(ESP)) {
+          const ancla = medianoche(ini);
+          let t = ancla;
+          for (let k = 0; k < esp.length; k++) {
+            t = F(t, "month", Z, ancla);
+            if (dia(t) !== esp[k] || hora(t) !== "00:00") { falla(G, P, 0, `patrocinio mensual desde el ${ini}, renovación ${k + 1} (proceso en ${tz}): ${dia(t)} ${hora(t)} y debe ser ${esp[k]} 00:00 (medianoche de la ciudad)`); break; }
+          }
+        }
+        // Sin ancla (lo ya corrido de antes del 23 nov): sigue con su día, nada hacia atrás.
+        const r = F(medianoche("2026-03-28"), "month", Z, medianoche("2026-01-31"));
+        if (dia(r) !== "2026-04-28" || hora(r) !== "00:00") falla(G, P, 0, `una cadena ya corrida (28 mar, ancla 31 ene) debe seguir con su día: ${dia(r)} ${hora(r)} y debe ser 2026-04-28 00:00`);
+      }
+    } finally { if (tzAntes === undefined) delete process.env.TZ; else process.env.TZ = tzAntes; }
+  },
+
   /* 9b-1 · Una prueba comprueba algo. 13 pruebas de las fases 1–2 (an1n, ciudad, ciudad2, ciudad3, lic, mapa, menu2a, menu2a-adm, menu2a-f, nov1,
      publica, rev1, usr1l) solo imprimían lo que veían («precio guardado: 1250», «errores: […]») y la corrida las contaba en verde con «0 ✓»: un
      error en la página o un precio mal guardado no las ponía en rojo. Ahora cada una lo comprueba (ok(…) → «  ✓ …»), correr.mjs pone en rojo la
