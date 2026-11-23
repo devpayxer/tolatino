@@ -130,8 +130,8 @@ function cuandoCorto(cuando: string, es: boolean): string {
 }
 
 const GENERICO = palabra("solicitud(?:es)?|operacion(?:es)?|requests?|operations?");
-export const quiereCancelar = (t: string) => /\b(cancel|cancela|cancelar|cancelo|anular)/.test(t.toLowerCase());
-export const quiereAbrir = (t: string) => /\b(ver mi|abre mi|abrir mi|d[oó]nde est[aá] mi|show me my|open my)\b/.test(t.toLowerCase());
+export const quiereCancelar = (t: string) => /\b(cancel|cancela|cancelar|cancelo|anular|anula)/.test(plano(t));   // «cancélalo» también: sin tildes
+export const quiereAbrir = (t: string) => /\b(ver mi|abre mi|abrir mi|muestrame mi|donde esta mi|show me my|open my)\b/.test(plano(t));
 
 export function elegirOperacion(x: { texto: string; ops: OpCtx[]; hoy?: string }): Eleccion {
   const t = plano(x.texto);
@@ -292,7 +292,7 @@ export const CASOS_ELEGIR: CasoElegir[] = [
   // Otra persona: ninguna acción.
   { ctx: "dos_pendientes", es: "Cancela la cita de mi vecino Pedro en la barbería", en: "Cancel my neighbor Pedro's appointment at the barbershop", elige: "otra", intencion: "cancelar", responde: "no_se" },
   { ctx: "cita_y_pedido", es: "Cancela la cita de mi amiga", en: "Cancel my friend's appointment", elige: "otra", intencion: "cancelar", responde: "no_se" },
-  { ctx: "cita_y_pedido", es: "Abre el pedido de otra persona", en: "Open someone else's order", elige: "otra", intencion: "abrir", responde: "no_se" },
+  { ctx: "cita_y_pedido", es: "Abre mi pedido de mi vecino", en: "Open my neighbor's order", elige: "otra", intencion: "abrir", responde: "no_se" },
   { ctx: "dos_pendientes", es: "Cancela la cita de alguien más", en: "Cancel Maria's appointment", elige: "otra", intencion: "cancelar", responde: "no_se" },
   // Degradado: sin tipo ni número, el negocio sigue sirviendo.
   { ctx: "degradado", es: "Cancela mi cita con la barbería", en: "Cancel my appointment with the barbershop", elige: "una:op2", intencion: "cancelar", responde: "cancel_request:op2" },

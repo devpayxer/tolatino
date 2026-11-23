@@ -5224,6 +5224,65 @@ const guardianes = {
     if (n !== 2) falla(G, C, 0, `idiomaDe no cuenta «qué» (ES_P contó ${n} de 2 en «¿Qué? ¿Cuándo?»)`);
   },
 
+  /* 23 nov · compaEligeLaOperacion. La clase «El Compa toma la PRIMERA operación de la lista sin mirar de cuál habla la persona»: los dos motores sin
+     modelo (reglas fijas y simulador) preparaban «cancelar» o «abrir» sobre `ops.find(cancelable)` / `ops[0]`: quien decía «cancela mi cita con la
+     barbería» y tenía además un pedido veía «¿Cancelar tu pedido?» (la batería: vec-036, vec-040, vec-042). Ahora una sola función (elegirOperacion, en
+     modelo-reglas.ts) decide por referencia, tipo, negocio y fecha, y el simulador comparte su elección. Este guardián: (1) en modelo-reglas.ts (fuera del
+     bloque de la elección) y en modelo-simulador.ts ninguna acción sobre una operación toma la primera de la lista (`ops[0]`, `.at(0)`, `ops.find(`,
+     `.filter(…)[0]`); (2) responderConReglas y el simulador pasan por respuestaCancelar / respuestaAbrir, y estas por elegirOperacion; (3) la tabla
+     CASOS_ELEGIR (frase + contexto → operación esperada / pregunta / nada, ES y EN, con mínimos) corre contra el archivo REAL: lo que elige, lo que
+     responde, que cada respuesta pasa por verificar() y que cada chip, al tocarlo, vuelve a elegir UNA operación. Al revés: alrevesEligeOperacion. */
+  compaEligeLaOperacion() {
+    const G = "compaEligeLaOperacion", R = "apps/web/lib/compa/modelo-reglas.ts", S = "apps/web/lib/compa/modelo-simulador.ts", VF = "apps/web/lib/compa/verificar.ts";
+    for (const f of [R, S, VF]) if (!existsSync(f)) return falla(G, f, 0, "falta (El Compa sin modelo)");
+    const bruto = (f) => readFileSync(f, "utf8");
+    const limpio = (t) => t.replace(/\/\*(?=["'`])/g, "/_").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+    const ini = bruto(R).indexOf("// ◆ elegir:inicio"), fin = bruto(R).indexOf("// ◆ elegir:fin");
+    if (ini < 0 || fin < ini) return falla(G, R, 0, "faltan las marcas «◆ elegir:inicio» y «◆ elegir:fin» que delimitan la función de elección");
+    const bloque = limpio(bruto(R).slice(ini, fin)), reglasFuera = limpio(bruto(R).slice(0, ini) + bruto(R).slice(fin)), sim = limpio(bruto(S));
+    // (1) Ninguna acción sobre una operación toma la primera de la lista.
+    const PRIMERA = [[/\bops\s*\[\s*0\s*\]/, "ops[0]"], [/\bops\s*\.at\(\s*0\s*\)/, "ops.at(0)"], [/\bops\s*\.find\(/, "ops.find(…)"], [/\bops\s*\.filter\([^)]*\)\s*\[\s*0\s*\]/, "ops.filter(…)[0]"],
+      [/\.find\(\s*\(?\s*\w+\s*\)?\s*=>\s*\w+\.cancelable_gratis\s*\)/, "find(cancelable_gratis)"], [/\bx\.ops\s*\[\s*0\s*\]/, "x.ops[0]"], [/\bdatos\.operaciones\s*\[\s*0\s*\]/, "datos.operaciones[0]"]];
+    for (const [f, t] of [[R, reglasFuera], [S, sim]]) for (const [re, q] of PRIMERA) if (re.test(t)) falla(G, f, 0, `toma la primera operación de la lista sin elegir cuál (${q}): pasa por respuestaCancelar / respuestaAbrir (elegirOperacion)`);
+    // (2) Quién llama a quién.
+    const fn = (t, n) => { const i = t.indexOf(`export function ${n}(`); return i < 0 ? "" : t.slice(i, t.indexOf("\n}\n", i) + 3); };
+    const conReglas = fn(reglasFuera, "responderConReglas");
+    if (!/respuestaCancelar\(/.test(conReglas) || !/respuestaAbrir\(/.test(conReglas) || !/quiereCancelar\(/.test(conReglas)) falla(G, R, 0, "responderConReglas no pasa por respuestaCancelar / respuestaAbrir para «cancela…» y «abre mi…»");
+    if (!/respuestaCancelar\(/.test(sim) || !/respuestaAbrir\(/.test(sim) || !/from "\.\/modelo-reglas"/.test(sim)) falla(G, S, 0, "el simulador no comparte la elección con las reglas: «cancela…» y «abre mi…» pasan por respuestaCancelar / respuestaAbrir de modelo-reglas.ts");
+    for (const n of ["respuestaCancelar", "respuestaAbrir"]) if (!/\belegirOperacion\(/.test(fn(bloque, n))) falla(G, R, 0, `${n} no pasa por elegirOperacion`);
+    for (const [re, q] of [[/if \(deOtraPersona\(t\)\) return \{ k: "otra_persona" \};/, "la operación de otra persona"], [/numeroDicho\(/, "la referencia escrita"], [/negocioDicho\(/, "el nombre del negocio"], [/enFecha\(/, "la fecha"], [/delGrupo\(/, "el tipo"]])
+      if (!re.test(fn(bloque, "elegirOperacion"))) falla(G, R, 0, `elegirOperacion no mira ${q}`);
+    // (3) La tabla contra el archivo real.
+    let M, V;
+    try { const L = createRequire(import.meta.url)("../pruebas/lib/ts-servidor.cjs"); M = L.cargarApp(R); V = L.cargarApp(VF); } catch (e) { return falla(G, R, 0, `no carga para correr la tabla: ${String(e.message).slice(0, 160)}`); }
+    const T = M.CASOS_ELEGIR;
+    if (!Array.isArray(T) || typeof M.elegirOperacion !== "function" || typeof M.opsDeTabla !== "function") return falla(G, R, 0, "falta la tabla CASOS_ELEGIR o la función elegirOperacion");
+    if (T.length < 50) falla(G, R, 0, `CASOS_ELEGIR: ${T.length} casos y se piden al menos 50 (solo se añade)`);
+    for (const k of ["una", "varias", "ninguna", "sin_pista", "otra"]) if (!T.some((c) => c.elige === k || c.elige.startsWith(`${k}:`))) falla(G, R, 0, `CASOS_ELEGIR no tiene ningún caso de «${k}»`);
+    for (const k of ["cancel_request", "open_screen", "pregunta", "no_se", "nada"]) if (!T.some((c) => (c.responde ?? "").startsWith(k))) falla(G, R, 0, `CASOS_ELEGIR no tiene ningún caso que responda «${k}»`);
+    const fmt = (e) => (e.k === "una" ? `una:${e.op.ref}` : e.k === "varias" ? `varias:${e.ops.map((o) => o.ref).join(",")}` : e.k === "otra_persona" ? "otra" : e.k);
+    for (const c of T) for (const lang of ["es", "en"]) {
+      const ops = M.opsDeTabla(c.ctx, lang), texto = c[lang], q = `«${texto}» (${c.ctx}, ${lang})`;
+      if (!texto) { falla(G, R, 0, `caso sin ${lang}: ${c.es}`); continue; }
+      let e; try { e = fmt(M.elegirOperacion({ texto, ops, hoy: c.hoy })); } catch (x) { falla(G, R, 0, `${q}: la elección revienta (${String(x.message).slice(0, 80)})`); continue; }
+      if (e !== c.elige) falla(G, R, 0, `${q}: elige «${e}» y la tabla esperaba «${c.elige}»`);
+      if (!c.intencion) continue;
+      const r = (c.intencion === "cancelar" ? M.respuestaCancelar : M.respuestaAbrir)({ texto, lang, ops, hoy: c.hoy });
+      if (!(c.intencion === "cancelar" ? M.quiereCancelar : M.quiereAbrir)(texto)) falla(G, R, 0, `${q}: no se reconoce como «${c.intencion}»`);
+      const resp = !r ? "nada" : r.accion.tipo !== "ninguna" ? `${r.accion.tipo}:${r.accion.ref}` : r.tipo;
+      if (resp !== c.responde) falla(G, R, 0, `${q}: responde «${resp}» y la tabla esperaba «${c.responde}»`);
+      if (!r) continue;
+      const ctx = { fuentes: [], conCuenta: ops.length > 0, confirmadas: true, texto: `${JSON.stringify(ops)} ${texto}`, permitidos: [], maxFrases: 3 };
+      const v = V.verificar({ respuesta: r.respuesta, tipo: r.tipo, fuente: r.fuente, accion: r.accion, persona: "ninguno", chips: r.chips }, ctx);
+      if (!v.ok) falla(G, R, 0, `${q}: el verificador rechaza su respuesta (${v.motivo}): «${r.respuesta.slice(0, 80)}»`);
+      if (/[\u{1F300}-\u{1FAFF}]/u.test(r.respuesta) || /\b(?:op\d+|[0-9a-f]{8}-[0-9a-f]{4}-)/.test(r.respuesta)) falla(G, R, 0, `${q}: la respuesta trae un emoji o un id crudo`);
+      for (const chip of r.chips) {
+        const e2 = M.elegirOperacion({ texto: chip, ops }), quiere = (c.intencion === "cancelar" ? M.quiereCancelar : M.quiereAbrir)(chip);
+        if (e2.k !== "una" || !quiere) falla(G, R, 0, `${q}: el chip «${chip}» no vuelve a elegir UNA operación (${fmt(e2)}${quiere ? "" : ", y no se reconoce como la acción"})`);
+      }
+    }
+  },
+
   /* 7c. Los interruptores se leen en UN lugar (lib/compa/interruptores.ts: feature_flags compa.* y compa_pauses), en cada turno y otra vez en gastar();
      una bandera que falta = apagado; en producción El Compa no se enciende antes de la fase 9 (candado). */
   compaInterruptores() {
