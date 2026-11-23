@@ -2889,3 +2889,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       da 400 con 190, «Probar» diría «contestó con un error» y no «rechazó la llave» (`canales-proveedor.ts`, `leerCon`).
 - [ ] **→ 9q** · **«Lo que te toca» 9-1.x no se marca solo en el sandbox** (regla correcta: «este entorno usa el simulador»). Falta verlo en un servidor
       real. Una prueba conjunta (token e ID de WhatsApp; el par de SES) ya anota las dos llaves (23 nov; el de SES sin ver servido).
+- [x] **→ 9b** · **`plan4f` fallaba sola según el día del mes (23 nov):** pedía que el próximo cobro cayera «más de 27 días después de hoy», y con el día de
+      cobro al principio del mes y hoy al final (un 23 con cobro el 7) cae a 14 días. Ahora comprueba la regla de verdad: el día de cobro del plan, en
+      el mes siguiente. Era de la prueba, no de la app. Otras pruebas con fechas relativas al día de hoy pueden tener el mismo defecto: sin barrer.
+

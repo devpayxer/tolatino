@@ -47,7 +47,11 @@ const hoy = () => sql(`select (now() at time zone 'America/New_York')::date`);
   sql(`update plan_subscriptions set next_charge_on = '${hoy()}' where operation_id = (select id from operations where number = '${P}')`);
   await m.goto(B + `/plan/${P}`); await m.getByText('COBRO 1').waitFor();
   ok(sql(`select p.kind || '|' || p.status || '|' || p.amount_cents || '|' || p.fee_cents from payments p join operations o on o.id = p.operation_id where o.number = '${P}'`) === 'plan|captured|14900|1192', 'cobrado $149 con la comisión del plan (8 %)');
-  ok(sql(`select s.next_charge_on > '${hoy()}'::date + 27 from plan_subscriptions s join operations o on o.id = s.operation_id where o.number = '${P}'`) === 't', 'el próximo cobro, el mes siguiente');
+  // 23 nov · El próximo cobro es el DÍA DE COBRO del plan en el mes siguiente al período cobrado (mesSiguiente en lib/planes.ts). Antes se pedía «más de
+  // 27 días después de hoy»: como la prueba adelanta el período a hoy, con el día de cobro al principio del mes y hoy al final (un 23 con cobro el 7)
+  // el mes siguiente cae a 14 días y la prueba fallaba sola por el calendario.
+  ok(sql(`select to_char(s.next_charge_on, 'YYYY-MM') = to_char('${hoy()}'::date + interval '1 month', 'YYYY-MM') and extract(day from s.next_charge_on)::int = s.charge_day and s.next_charge_on > '${hoy()}'::date
+          from plan_subscriptions s join operations o on o.id = s.operation_id where o.number = '${P}'`) === 't', 'el próximo cobro, el mes siguiente, en el día de cobro del plan');
   await m.goto(B + `/plan/${P}`); await m.waitForTimeout(400);
   ok(sql(`select count(*) from payments p join operations o on o.id = p.operation_id where o.number = '${P}'`) === '1', 'mirar otra vez no cobra dos veces');
   ok(sql(`select count(*) from notifications where tpl = 'plan_cobro' and ref_id = '${P}'`) === '1', 'aviso: cobro de tu plan');
