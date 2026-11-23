@@ -366,8 +366,8 @@ export function MenuMovil({ mn, card = false }: { mn: Mn; card?: boolean }) {
     <div data-screen-label="Ficha · menú" className="lg:hidden">
       <Cerrado mn={mn} className="mx-5 mt-4" />
       {mn.canOrd && <div className="px-5 pt-4"><Modo mn={mn} /></div>}
-      {/* 23 nov · En la ficha nueva (card) arriba ya hay pegados el nombre (40) y las pestañas (50): las categorías se pegan debajo, no detrás. */}
-      <div data-mchips="" className={`sticky z-[15] mt-3 border-b border-ink/[.07] bg-white py-[11px] ${card ? "top-[147px]" : "top-[57px]"}`}>
+      {/* 23 nov · En la ficha nueva (card) arriba ya hay pegados el nombre (44) y las pestañas (50): las categorías se pegan debajo, no detrás. */}
+      <div data-mchips="" className={`sticky z-[15] mt-3 border-b border-ink/[.07] bg-white py-[11px] ${card ? "top-[151px]" : "top-[57px]"}`}>
         <div className="hs flex gap-2 overflow-x-auto px-5">{mn.chips.map((c) => <Chip key={c.k} variant={c.on ? "selected" : "filter"} onClick={c.onClick}>{c.l}</Chip>)}</div>
       </div>
       {mn.pop.length > 0 && (

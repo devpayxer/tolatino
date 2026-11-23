@@ -228,9 +228,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const setTab = (id: string) => {
     setTabS(id);
-    // La pestaña activa siempre se ve: si ya bajaste más allá de las pestañas, la página sube hasta ellas.
+    // 23 nov (fundador) · Tocar una pestaña sube la página hasta dejarlas pegadas arriba (con el nombre encima) y así se queda al cambiar de pestaña;
+    // lo único que devuelve a la cabecera es la flecha de regreso que va antes del nombre (o subir con el dedo).
     const el = tabsRef.current;
-    if (el) { const top = el.getBoundingClientRect().top + window.scrollY - CAB_MOVIL - NOMBRE_MOVIL; if (window.scrollY > top) window.scrollTo({ top }); }
+    if (el) { const top = el.getBoundingClientRect().top + window.scrollY - CAB_MOVIL - NOMBRE_MOVIL; if (Math.abs(window.scrollY - top) > 1) window.scrollTo({ top, behavior: window.scrollY > top ? "auto" : "smooth" }); }
   };
   // 23 nov (pedido del fundador) · Cuando las pestañas quedan pegadas arriba, encima sale el nombre del negocio: bajando por el menú o las reseñas ya
   // no se ve la cabecera y no se sabía de quién era la página. La franja no ocupa sitio (no mueve la página): se pinta sobre el hueco que las pestañas
@@ -450,7 +451,8 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
       {modo === "m" ? (
       <div className="pb-[116px] lg:hidden" data-screen-label="App · Ficha">
         <div className="sticky z-[21] h-0" style={{ top: CAB_MOVIL }} data-pieza="nombre-pegado" data-visible={pegadaM ? "si" : "no"} aria-hidden={!pegadaM}>
-          <div className="absolute inset-x-0 top-0 flex items-center bg-white px-5 transition-opacity duration-150" style={{ height: NOMBRE_MOVIL, opacity: pegadaM ? 1 : 0, pointerEvents: pegadaM ? "auto" : "none" }}>
+          <div className="absolute inset-x-0 top-0 flex items-center bg-white pl-2 pr-5 transition-opacity duration-150" style={{ height: NOMBRE_MOVIL, opacity: pegadaM ? 1 : 0, pointerEvents: pegadaM ? "auto" : "none" }}>
+            <button type="button" data-pieza="volver-arriba" tabIndex={pegadaM ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="inline-flex size-11 flex-none items-center justify-center text-ink"><Icon name="chevronLeft" size={20} /></button>
             <span className="min-w-0 truncate text-[16px] font-extrabold tracking-[-0.02em] text-ink" style={{ fontFamily: "Manrope, system-ui, sans-serif" }}>{f.nombre}</span>
             {sello ? <span className="flex-none">{sello}</span> : null}
           </div>
@@ -496,7 +498,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
           </Hoja>
         ) : null}
         <div ref={tabsRef} className="sticky z-20 bg-white" style={{ top: CAB_MOVIL + NOMBRE_MOVIL }}><PestanasFicha modo="movil" items={tabs} active={tab} onChange={setTab} /></div>
-        <div className="min-h-[640px]">
+        <div className="min-h-[640px]" style={{ minHeight: `calc(100dvh - ${CAB_MOVIL + NOMBRE_MOVIL + 50}px)` }}>
           {tab === "res" && (
             <div className="flex flex-col gap-6 px-5 pt-5" data-screen-label="Ficha · resumen">
               <div className="flex flex-col gap-3">
@@ -677,7 +679,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
 }
 
 /* Alturas de la cabecera de la app (AppShell): las pestañas se pegan justo debajo. */
-const CAB_MOVIL = 57, CAB_DESK = 121, NOMBRE_MOVIL = 40;
+const CAB_MOVIL = 57, CAB_DESK = 121, NOMBRE_MOVIL = 44;
 
 /* ── La reserva (Belleza): 1 servicio y con quién → 2 día y hora → Booking (/cita) para Detalles y Revisa y envía ── */
 type Bk = { who: string | null; svc: string | null; opts: Record<string, number>; i: number; h: number | null; step: 1 | 2 };
