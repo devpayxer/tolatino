@@ -2946,3 +2946,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · **En escritorio, al pegarse las pestañas no sale el nombre** (sale el estado a la derecha): decisión del fundador si también lo quiere.
 - [ ] **→ 9q** · **Verlo en un iPhone real con Safari** (el arrastre de la tira con el dedo solo se midió en Chromium emulado).
 
+## Vista previa y despliegue más corto (23 nov, aprobado por el fundador; hecho por Opus, revisado por Fable)
+- [x] **→ 9u** · **(Hecho el 23 nov)** Imagen del sandbox con caché (269 → 181 s con un `.tsx` cambiado, medido en local) y sincronía cada 20 s; sitio de
+      vista previa en el puerto 8081 que sigue la rama de trabajo con `next dev`, usuario de base solo de filas, pausa sola por migraciones, límites de
+      memoria. Guardianes `despliegueCorto` y `vistaPreviaAcotada`, `alrevesDespliegue` 113/113, `pruebas/infra` en verde.
+- [ ] **→ 9u** · **Vista previa: salud en Super Admin › Sistema › Salud** (hoy solo `/estado/vista.txt`).
+- [ ] **→ 9u** · **Tipos dentro de `next build` (~70 s por despliegue, ya corren en el CI):** decidir si se quitan del build de la imagen (decisión del fundador:
+      es aflojar una comprobación del despliegue).
+- [ ] **→ 9o** · **Segunda revisión por otro modelo** de la llave estable de las acciones del servidor (Dockerfile) y del usuario `tolatino_vista` (`encender.sh`).
+- [ ] **→ 9q** · **Nunca visto en el servidor real antes de este despliegue:** la imagen de la vista previa (Alpine + pnpm), BuildKit en el servidor y el puerto 8081 abierto.
+

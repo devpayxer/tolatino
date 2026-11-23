@@ -6457,3 +6457,10 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   guardan y ya no vuelven al subir o bajar con el dedo ni al cambiar de pestaña. Lo único que devuelve al Resumen con su cabecera es la flecha de antes
   del nombre. Qué mirar: tocar «Servicios», subir con el dedo hasta el tope (no debe aparecer la portada), y luego la flecha.
 
+## Vista previa y despliegue más corto (23 nov)
+- **Vista previa:** `http://2.31.196.167:8081/` (misma dirección del sandbox, otro puerto). Es la app real con el cambio que se está haciendo, con la marca
+  «VISTA PREVIA» arriba; abre más lento que el sandbox. Qué mirar: abrirla en el teléfono cuando se avise que está encendida.
+- **Despliegue normal:** la imagen pasa de ~4,5 a ~3 minutos y el servidor se entera de un cambio en 20 s en vez de hasta 2 minutos.
+- **Decisión pendiente del fundador:** quitar la comprobación de tipos del build de la imagen ahorraría ~70 s más por despliegue (los tipos ya se comprueban
+  antes en el CI y en la herramienta de subida).
+
