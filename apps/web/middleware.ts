@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { destinoEnApp, leerRotulo } from "./lib/app-nativa-comun";
+import { cspProduccion, esSandbox } from "./lib/csp";
 
 /* Identificador del dispositivo (cookie tl_dev, la misma de lib/cuenta.ts): se crea en la primera visita para que la
    analítica propia cuente visitantes y días activos sin cuenta. Aleatorio, solo lo lee el servidor; nada personal. */
@@ -30,7 +31,7 @@ function cascara(req: NextRequest): NextResponse | null {
   r.headers.set("cache-control", "no-store");
   return r;
 }
-export function middleware(req: NextRequest) {
+function principal(req: NextRequest) {
   const fuera = cascara(req);
   if (fuera) return fuera;
   if (UUID.test(req.cookies.get("tl_dev")?.value ?? "")) return llaveBoletos(req, NextResponse.next());
@@ -40,5 +41,12 @@ export function middleware(req: NextRequest) {
   const res = NextResponse.next({ request: { headers: h } });
   res.cookies.set("tl_dev", id, { path: "/", maxAge: 5 * 365 * 86400, sameSite: "lax", httpOnly: true, secure: req.headers.get("x-forwarded-proto") === "https" });
   return llaveBoletos(req, res);
+}
+/* 23 nov · Solo el sandbox (TOLATINO_ENTORNO=pruebas, leído en ejecución: la imagen es la misma que en producción) añade a la CSP el host de las fotos de ejemplo
+   de su semilla; en producción la CSP de next.config.ts no deja pasar ninguna foto de otra empresa. Pone la cabecera completa, no una segunda. */
+export function middleware(req: NextRequest) {
+  const res = principal(req);
+  if (esSandbox(process.env.TOLATINO_ENTORNO) && !res.headers.has("location")) res.headers.set("Content-Security-Policy", cspProduccion(process.env.NODE_ENV !== "production", true));
+  return res;
 }
 export const config = { matcher: ["/((?!_next/|api/|medios/|assets/|favicon|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt|xml|json|js|css|woff2?)$).*)"] };
