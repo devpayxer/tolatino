@@ -10,6 +10,7 @@ import { contarVistas } from "@/lib/patrocinio";
 import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../PantallaPronto";
 import { Eventos } from "./Eventos";
+import { PieWeb } from "../_legal/PieWeb";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Eventos · To'Latino", description: "Fiestas, shows, clases, cultos y eventos de la comunidad cerca de ti, día por día." };
@@ -43,6 +44,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
   const [y, m, d] = dia.split("-").map(Number), dow = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
   const titulo = dia === hoy ? E("Esta noche", "Tonight") : dia === sumarDias(hoy, 1) ? E("Mañana", "Tomorrow")
     : `${es ? WL[dow]![0] : WL[dow]![1]} ${d}${dia.slice(0, 7) !== hoy.slice(0, 7) ? ` ${es ? MS[m! - 1]![0] : MS[m! - 1]![1]}` : ""}`;
-  return <Eventos es={es} ciudad={loc.c.name} estado={loc.c.state} dia={dia} hoy={hoy} fin={sumarDias(hoy, fin)} conEventos={conEventos} titulo={titulo} t={t}
-    generos={G.map((g) => ({ k: g.key, l: es ? g.label.es : g.label.en || g.label.es }))} lista={lista} historias={historias} spon={spon} dest={dest} mios={misRsvp} bol={misBol} />;
+  return (<><Eventos es={es} ciudad={loc.c.name} estado={loc.c.state} dia={dia} hoy={hoy} fin={sumarDias(hoy, fin)} conEventos={conEventos} titulo={titulo} t={t}
+    generos={G.map((g) => ({ k: g.key, l: es ? g.label.es : g.label.en || g.label.es }))} lista={lista} historias={historias} spon={spon} dest={dest} mios={misRsvp} bol={misBol} /><PieWeb /></>);
 }

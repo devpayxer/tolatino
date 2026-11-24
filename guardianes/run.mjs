@@ -9814,9 +9814,15 @@ const guardianes = {
     if (!existsSync(M)) return falla(G, M, 0, "falta la migración del CMS");
     if (!/insert into feature_flags \(key, enabled, note, updated_by\) values \('web\.pie_todas', false,/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "el interruptor web.pie_todas nace apagado");
     if (!existsSync(W) || !/if \(!\(await pieEnTodas\(\)\)\) return null;/.test(sinComent(W))) falla(G, W, 0, "PieWeb no pinta nada mientras el interruptor esté apagado");
-    for (const f of ["apps/web/app/(app)/page.tsx", "apps/web/app/(app)/buscar/page.tsx", "apps/web/app/(app)/n/[id]/page.tsx"]) if (!/<PieWeb \/>/.test(sinComent(f))) falla(G, f, 0, "esta pantalla lleva <PieWeb />");
+    // 24 nov (fundador, decisión AT): el pie en TODAS las pantallas públicas, encendido por la migración 0218 (con su auditoría; se apaga desde el Super Admin).
+    for (const f of ["apps/web/app/(app)/page.tsx", "apps/web/app/(app)/buscar/page.tsx", "apps/web/app/(app)/n/[id]/page.tsx", "apps/web/app/(app)/negocios/page.tsx",
+      "apps/web/app/(app)/comunidad/page.tsx", "apps/web/app/(app)/eventos/page.tsx", "apps/web/app/(app)/c/[slug]/page.tsx"]) if (!/<PieWeb \/>/.test(sinComent(f))) falla(G, f, 0, "esta pantalla lleva <PieWeb />");
+    if ((sinComent("apps/web/app/(app)/comunidad/page.tsx").match(/<PieWeb \/>/g) ?? []).length < 2) falla(G, "apps/web/app/(app)/comunidad/page.tsx", 0, "Comunidad lleva el pie también para quien entra sin cuenta (Invitado)");
+    const M2 = "packages/db/migrations/0218_pie_encendido.sql";
+    if (!existsSync(M2) || !/insert into audit_entries[\s\S]*'cms\.pie'[\s\S]*'web\.pie_todas'/.test(readFileSync(M2, "utf8")) || !/updated_by = 'migración 0136'/.test(readFileSync(M2, "utf8")))
+      falla(G, M2, 0, "el pie se enciende con su auditoría y solo si nadie lo cambió desde el Super Admin");
     for (const f of codigo) {
-      if (!/^(apps|packages|scripts)\/.*\.(tsx?|mjs|cjs|sql)$/.test(f) || f === AD || f === M) continue;
+      if (!/^(apps|packages|scripts)\/.*\.(tsx?|mjs|cjs|sql)$/.test(f) || f === AD || f === M || f === "packages/db/migrations/0218_pie_encendido.sql") continue;
       for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) if (/web\.pie_todas/.test(q) && /\b(update|insert into|delete from)\b/i.test(q)) falla(G, f, 0, "el interruptor del pie lo cambia solo lib/cms-admin.ts (con motivo y auditoría)");
     }
     if (!/cms\.pie/.test(sinComent(AD)) || !/s\.puede\("cms", "aprobar"\)/.test((sinComent(AD).match(/export async function fijarPie[\s\S]*?\n}/) ?? [""])[0])) falla(G, AD, 0, "encender el pie pide cms:aprobar y deja su auditoría");

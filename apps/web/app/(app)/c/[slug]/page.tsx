@@ -16,6 +16,7 @@ import { after } from "next/server";
 import { contexto, evento } from "@/lib/eventos";
 import { contarVistas, vitrinaCategoria } from "@/lib/patrocinio";
 import type { Tarjeta } from "@/lib/tarjeta";
+import { PieWeb } from "../../_legal/PieWeb";
 
 export const dynamic = "force-dynamic";
 
@@ -123,5 +124,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     },
     tarjetas, semillas, patrocinados, sponTitulo: t.spon,
   };
-  return <Categoria v={vista} />;
+  return (<><Categoria v={vista} /><PieWeb /></>);
 }

@@ -6536,3 +6536,6 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   puede renovar (página no publicada, ciudad sin abrir), FECHAS dice «—» y «Pagar» queda apagado **sin decir por qué: falta decidir ese texto**.
 - **Para decidir:** en Eventos ya se puede pagar una renovación más allá del tope de días por adelantado (el servidor ya lo permitía); y una foto
   «en revisión» se reemplaza igual que una visible, en la portada y en los mosaicos.
+- **El pie de la web encendido (decisión AT; hecho por Opus):** en Inicio, Negocios, Comunidad, Eventos, categorías, Buscar y la ficha, teléfono y
+  computadora. Se apaga o enciende en Super Admin › Textos y páginas › Páginas (con motivo; queda en el historial). Qué mirar: el final de cada página.
+- **vec9m (la prueba) tocaba el primer «Pescado frito» de la ficha:** con Novedades antes del Menú, era el de una novedad; ahora toca el del menú.

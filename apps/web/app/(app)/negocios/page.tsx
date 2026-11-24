@@ -11,6 +11,7 @@ import { hoyEnElBarrio } from "@/lib/hoy";
 import { recomendadosPorVecinos } from "@/lib/comunidad-portada";
 import { PantallaPronto } from "../PantallaPronto";
 import { Negocios } from "./Negocios";
+import { PieWeb } from "../_legal/PieWeb";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Negocios · To'Latino" };
@@ -32,7 +33,7 @@ export default async function Page() {
   const [tDest, tNue] = await Promise.all([armarTarjetas(CIUDAD, dest, lang, u?.id ?? null), armarTarjetas(CIUDAD, nue, lang, u?.id ?? null)]);
   const c = ciudad?.name ?? "", l = ciudad ? `${ciudad.name.toUpperCase()}, ${ciudad.state}` : "";
   const I = t.intents;
-  return (
+  return (<>
     <Negocios
       titulo={t.negTitle.replace("{c}", c)}
       sub={t.negSub.replace("{l}", l)}
@@ -53,5 +54,6 @@ export default async function Page() {
         forBiz: t.forBiz, publishTitle: t.publishTitle, publishBody: t.publishBody, publishCta: t.publishCta,
       }}
     />
-  );
+    <PieWeb />
+  </>);
 }
