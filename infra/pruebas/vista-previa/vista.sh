@@ -73,7 +73,10 @@ arrancar_dev() {
 # 23 nov · En modo desarrollo cada página se compila la PRIMERA vez que alguien la pide (medido por el fundador en su teléfono: la portada se quedó
 # cargando más de un minuto y parecía que seguía en pausa). Al arrancar, el propio bucle pide las pantallas principales, una tras otra, para que
 # ya estén compiladas cuando él llegue. Solo lecturas (GET) a 127.0.0.1; si algo falla no pasa nada. VISTA_CALENTAR=0 lo apaga (las pruebas).
-RUTAS_CALIENTES=${VISTA_RUTAS:-"/ /negocios /n/sabor-dominicano /n/barberia-el-primo /comunidad /eventos /buscar /cuenta /panel /admin"}
+# 24 nov · Solo tres. Con diez, next dev se quedaba sin memoria al terminar de compilarlas (tope de 1,8 GB del contenedor) y el bucle lo volvía a
+# arrancar cada ~76 s, una y otra vez (visto en /estado/vista.txt: «ya compiladas: 6» y «arrancado» en fila): el fundador veía la página de
+# mantenimiento la mitad del tiempo. Las demás se compilan cuando alguien las pide.
+RUTAS_CALIENTES=${VISTA_RUTAS:-"/ /negocios /n/sabor-dominicano"}
 calentar() {
   [ "${VISTA_CALENTAR:-1}" = 1 ] || return 0
   local t0=$SECONDS n=0 r
@@ -142,8 +145,6 @@ vuelta() {
     git -C "$REPO" reset -q --hard "$nuevo" && git -C "$REPO" clean -qfd || { log "reset falló"; return 0; }
     echo "$nuevo" > "$COMMIT_F"
     log "al día con $RAMA: ${nuevo:0:7}"
-    # 24 nov · Con un cambio nuevo, las pantallas principales se vuelven a compilar ANTES de que alguien las pida (si next dev sigue vivo; si no, lo hace al arrancar).
-    if dev_vivo; then calentar & fi
   fi
   # 3) Dependencias solo si cambió el lockfile.
   if [ "$(cat "$INSTALADO_F" 2>/dev/null)" != "$(sha256sum "$REPO/pnpm-lock.yaml" 2>/dev/null | cut -d' ' -f1)" ]; then
