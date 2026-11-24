@@ -9141,6 +9141,12 @@ const guardianes = {
         const fija = [...t.slice(0, vp).matchAll(/update delivery_settings set ([^`]*?)\bwhere\b/g)].some((m) => ["delivery", "pay_cash_delivery", "pay_cash_pickup", "pay_card"].every((c) => new RegExp(`(?<![a-z_])${c} ?= ?(true|false)\\b`).test(m[1])));
         if (!fija) falla(G, f, t.slice(0, vp).split("\n").length, "guarda Pedidos en línea sin fijar cómo se entrega y cómo se paga (update delivery_settings set delivery, pay_cash_delivery, pay_cash_pickup y pay_card, en una sola orden y antes de ir): otra prueba pudo dejar delivery encendido sin forma de pago y «Guardar» queda apagado");
       }
+      // 24 nov (CI 45431535443, parte 1/8) · Un «Agregar» del menú de la ficha se toca por el NOMBRE de su plato, nunca por su lugar: los primeros
+      // botones son «Populares», que cambian con los pedidos de las pruebas de antes (tras pagos2d y pedidos2c los diez primeros de fic9cab tenían
+      // opciones y ninguno llevaba al carrito). Por lugar (.first(), .nth(i)) sobre todo «Ficha · menú», sin acotar a una fila con su nombre: falla.
+      for (const [k, l] of t.split("\n").entries())
+        if (/Ficha · menú/.test(l) && /name: 'Agregar' \}\)\s*;?\s*$|name: 'Agregar' \}\)\.(first\(\)|nth\()/.test(l) && !/filter\(|data-msec|fila\(/.test(l))
+          falla(G, f, k + 1, "toca «Agregar» del menú por su lugar: los primeros son «Populares» y cambian con los pedidos de otras pruebas; toca el de una fila con el nombre del plato (filter({ has: getByText(nombre) }) en [data-msec^=\"m-\"])");
     }
   },
 

@@ -6554,7 +6554,10 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   todo lo de abajo se corrió; (3) `fic9cab` falla en la parte 1/8 detrás de otras pruebas de Sabor Dominicano (sola pasa).
 - **Arreglos:** (1) blanco al 62 % (el tono de los enlaces del pie, 7,7:1) en el sistema portado; el guardián `contrasteTexto` ahora caza también
   el texto claro por debajo de AA (y su al revés). (2) la captura compara barra, menú y cifras y tapa desde «Últimas acciones» (lo escriben las
-  migraciones y la analítica), como «Abierto ahora» en Inicio; guardián `tuberiaVisual` + al revés. (3) en curso.
+  migraciones y la analítica), como «Abierto ahora» en Inicio; guardián `tuberiaVisual` + al revés. (3) `fic9cab` probaba los diez primeros
+  «Agregar» del menú buscando un plato sin opciones; los primeros son «Populares», que cambian con los pedidos de las pruebas de antes (en la parte
+  1/8, tras `pagos2d` y `pedidos2c`, los diez tenían opciones). Reproducido aquí con la app construida; ahora toca un plato sin opciones que dice la
+  base, en su categoría. Guardián `precondicionPropia` (un «Agregar» del menú se toca por el nombre del plato, nunca por su lugar) + al revés.
 - **Para que no se repita:** con AV, la herramienta no deja subir código por la vía rápida con `main` en rojo y avisa en cada subida.
 
 ## El proceso de construcción, revisado otra vez (24 nov; medido por Opus) — PARA DECIDIR: el punto 4

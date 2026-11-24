@@ -417,15 +417,21 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
 
     // 8.7 · La banda del carrito cabe en la pantalla, a 390, a 320 y con el negocio cerrado (su texto más largo).
     await abrirTel(q, MENU); await pestana(q, /^Men/).click(); await espera(async () => await fijado(q) === 'si');
-    let con = false;
-    for (let i = 0; i < 10 && !con; i++) {
-      const bs = q.locator('[data-screen-label="Ficha · menú"]').getByRole('button', { name: 'Agregar' });
-      if (i >= await bs.count()) break;
-      await bs.nth(i).scrollIntoViewIfNeeded(); await bs.nth(i).click();
-      con = await espera(async () => await q.locator(SEL_BANDA).isVisible(), 1500);
-      if (!con && await q.locator('[data-screen-label="Menú · plato y opciones"]').count()) { await q.keyboard.press('Escape'); await q.locator('[data-screen-label="Menú · plato y opciones"]').waitFor({ state: 'detached' }).catch(() => {}); }
+    // Un plato SIN opciones que dice la base, tocado en su categoría. Antes se probaban los 10 primeros «Agregar» y los primeros son «Populares», que
+    // cambian con los pedidos de las pruebas de antes: en la parte 1/8 del CI 45431535443 (tras pagos2d y pedidos2c) los diez tenían opciones y
+    // ninguno llevaba al carrito (precondición propia: la prueba no depende de lo que dejaron otras).
+    const sinOpciones = sql(`select i.name->>'es' from items i where i.business_id = '${MENU}' and i.status = 'live' and not i.sold_out and coalesce(array_length(i.group_ids, 1), 0) = 0 order by i.sort, i.id`).split('\n').filter(Boolean);
+    ok(sinOpciones.length > 0, `precondición: ${MENU} tiene platos sin opciones a la venta (${sinOpciones.slice(0, 3).join(', ')}…)`);
+    let con = false, cual = '';
+    for (const nombre of sinOpciones) {
+      const fila = q.locator('[data-screen-label="Ficha · menú"] [data-msec^="m-"] > div').filter({ has: q.getByText(nombre, { exact: true }) });
+      const bt = fila.getByRole('button', { name: 'Agregar' }).first();
+      if (!(await bt.count()) || !(await bt.isEnabled())) continue;
+      await bt.scrollIntoViewIfNeeded(); await bt.click();
+      con = await espera(async () => await q.locator(SEL_BANDA).isVisible(), 4000); cual = nombre;
+      if (con) break;
     }
-    ok(con, 'se agregó un plato sin opciones y sale la banda del carrito');
+    ok(con, `se agregó un plato sin opciones (${cual || 'ninguno tenía «Agregar»'}) y sale la banda del carrito`);
     const cabe = async (p, ancho) => { const r = await rect(p, SEL_BANDA); return { r, dentro: r.left >= 0 && r.right <= ancho, sinLado: (await p.evaluate(() => document.documentElement.scrollWidth)) <= ancho }; };
     let bd = await cabe(q, 390);
     ok(bd.dentro && bd.sinLado, `390: la banda del carrito cabe (${Math.round(bd.r.left)}–${Math.round(bd.r.right)} de 390) y la página no se mueve de lado`);

@@ -43,6 +43,8 @@ const casos = [
   // … (20 nov, barajada 331738974) pedidos2c vuelve a fijar solo auto_accept y prep_min antes de guardar Pedidos en línea (neg9n le dejaba delivery sin forma de pago
   // y «Guardar» quedaba apagado); pagos2d deja de fijar cómo se entrega; dlv2f3 deja de fijar cómo se paga el pickup y la tarjeta
   ['precondicionPropia', 'pruebas/e2e/pedidos2c.cjs', "pickup=true, delivery=false, pay_cash_pickup=true, pay_cash_delivery=false, pay_card=false, who='team', external_app=null, auto_accept=false, prep_min=20", "auto_accept=false, prep_min=20"],
+  // 24 nov · fic9cab vuelve a tocar «Agregar» por su lugar en todo el menú (los primeros son «Populares» y cambian con los pedidos de otras pruebas).
+  ['precondicionPropia', 'pruebas/e2e/fic9cab.cjs', "const bt = fila.getByRole('button', { name: 'Agregar' }).first();", "const bt = q.locator('[data-screen-label=\"Ficha · menú\"]').getByRole('button', { name: 'Agregar' }).first();"],
   ['precondicionPropia', 'pruebas/e2e/pagos2d.cjs', "pickup=true, delivery=false, pay_cash_delivery=false, auto_accept=false", "auto_accept=false"],
   ['precondicionPropia', 'pruebas/e2e/dlv2f3.cjs', "pay_cash_pickup=true, pay_card=false, who='team'", "who='team'"],
   // toqueEsperaLaPantalla (20 nov, «dos veces seguidas» parte 2/4): pq4e vuelve a contar los negocios en cuanto cambia la URL, sin esperar la pantalla
