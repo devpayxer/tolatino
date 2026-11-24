@@ -4,9 +4,13 @@
 //  (2) Al revés: cada caso rompe una regla a propósito (en la herramienta, en ci.yml o en deploy.sh) y el guardián tiene que fallar con SU
 //      mensaje; después se restaura y los guardianes quedan limpios. Las reglas de lógica (árbol, documentos, propuesta, main, conclusión de la
 //      API, nombres) las caza el guardián corriendo los casos: cada defecto tiene que tumbar el caso que lo vigila.
+// 24 nov (decisión AU) · Y el repaso corto tras una roja: la línea RESULTADOS de pruebas/correr.mjs, lo que exige la cadena R1 roja + R2 repaso,
+//      el repaso siempre en partes y la puerta de producción (corrida.mjs, promover.sh) que no acepta cadenas.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync, spawnSync } = require('child_process');
 const R = ENT.RAIZ, G = 'subidaConHerramienta', S = 'scripts/ci/subir.mjs', Y = '.github/workflows/ci.yml', D = 'infra/pruebas/deploy.sh';
+// 24 nov (decisión AU) · El repaso: la línea RESULTADOS del corredor y la puerta de producción, que no acepta cadenas.
+const CO = 'pruebas/correr.mjs', CR = 'scripts/ci/corrida.mjs', PR = 'scripts/produccion/promover.sh';
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 // Los nombres de la lista de documentos de trabajo, sacados de alcance.mjs (escritos aquí, ciSoloDocumentos diría que esta prueba los lee).
 const DOCS = [...(/export const DOCUMENTOS = Object\.freeze\(\[([\s\S]*?)\]\);/.exec(fs.readFileSync(path.join(R, 'scripts/ci/alcance.mjs'), 'utf8'))?.[1] ?? '').matchAll(/"([^"]+)"/g)].map((m) => m[1]);
@@ -74,6 +78,30 @@ const casos = [
   [Y, 'console.log(["EVID", "ENCIA"].join("") + " " + j);', 'console.log("EVIDENCIA " + j);', 'no lleva la palabra EVIDENCIA entera'],
   [Y, '          test "$(git rev-parse HEAD)" = "$SHA"\n', '', 'la evidencia lleva el commit comprobado'],
   [Y, '          ENTRADAS: ${{ toJSON(inputs) }}\n', '          ENTRADAS: "{}"\n', 'la evidencia lleva todas las entradas'],
+  // 24 nov · El repaso corto tras una roja (decisión AU). La línea RESULTADOS de pruebas/correr.mjs.
+  [CO, 'console.log(`RESULTADOS ${JSON.stringify({ pedidas, verdes, rojas, inestables: inest, completa,', 'console.log(`RESULTADO ${JSON.stringify({ pedidas, verdes, rojas, inestables: inest, completa,', 'pruebas/correr.mjs imprime la línea RESULTADOS {pedidas'],
+  [CO, '  lineaResultados({ detenida: true });\n  vigia.alParar();\n', '  vigia.alParar();\n', 'también cuando se detiene por una señal'],
+  [CO, 'const completa = !detenida && !delCarril.length && pedidas.every((n) => hechas.has(n));', 'const completa = true;', 'completa solo si todas las pedidas corrieron hasta su resultado'],
+  [CO, '{ const pedidas = new Set(sel.map((t) => t.nombre)); lineaResultados(', '{ const pedidas = new Set(sel.map((t) => t.nombre)); void (', 'la línea RESULTADOS es la última de la corrida'],
+  // La cadena R1 roja + R2 repaso: lo que exige.
+  [S, 'const sinRojas = rojas.filter((t) => !enR2(t));', 'const sinRojas = [];', 'la cadena exige que R2 repita las rojas de R1'],
+  [S, 'const sinA = propuestaDesdeA.filter((t) => !enR2(t.nombre));', 'const sinA = [];', 'R2 ⊇ propuesta(A..HEAD)'],
+  [S, 'const sinCubrir = propuestaTotal.filter(', 'const sinCubrir = [].filter(', 'cubran la propuesta de la entrega'],
+  [S, 'if (completa) return no("la entrega toca .github/: la cadena', 'if (false) return no("la entrega toca .github/: la cadena', 'la cadena no vale si la entrega toca .github/'],
+  [S, 'if (aEsAncestro !== true) return no(', 'if (false) return no(', 'la cadena exige que el commit de R1 sea ancestro de HEAD'],
+  [S, 'if (!x.ok) return no(`«${n}» (${j.conclusion', 'if (!x.ok) continue;\n      if (false) return no(`«${n}» (${j.conclusion', 'un trabajo de pruebas rojo sin RESULTADOS'],
+  [S, 'if (!x.r.completa) return no(', 'if (false) return no(', 'RESULTADOS con completa:false'],
+  [S, 'if (run.status !== "completed" || run.conclusion !== "failure") return no(`terminó', 'if (run.status !== "completed") return no(`terminó', 'R1 en verde'],
+  [S, '    if (!rama || run.head_branch !== rama) return no(`de la rama ${run.head_branch}, no de ${rama}`);\n    if (run.event !== "workflow_dispatch")', '    if (run.event !== "workflow_dispatch")', 'R1 de otra rama'],
+  [S, 'const v = evaluarCorrida({ run: r2?.run, trabajos: r2?.trabajos, registro: r2?.registro, rama, repo, arbolHead, arbolDeRun,', 'const v = evaluarCorrida({ run: r2?.run, trabajos: r2?.trabajos, registro: r2?.registro, rama, repo, arbolHead: arbolDeRun, arbolDeRun,', 'R2 de otro árbol'],
+  [S, '      q.rojas.forEach((t) => extra.add(t));\n    }\n    const rojas', '    }\n    const rojas', 'una roja del repaso rojo intermedio'],
+  [S, 'if (!hallada && p.ex.corrida === "dirigida" && candidatas.length) {', 'if (!hallada && p.ex.corrida !== "ninguna" && candidatas.length) {', 'la evidencia encadenada solo en el camino de la dirigida'],
+  // El repaso, siempre en partes.
+  [S, '  if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }\n  return lanzarYEsperar({ repo, rama, head, o });', '  if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }\n  return lanzarYEsperar({ repo, rama, head, o: o.map((x) => (x.startsWith("partes=") ? "partes=1" : x)) });', 'el repaso va siempre en partes'],
+  // Producción no acepta cadenas.
+  [CR, 'export const ENTRADAS_ENTERAS = /^entradas: alcance=todo · solo=«» · aprobar=no · medir=no$/;', 'export const ENTRADAS_ENTERAS = /^entradas: alcance=todo · solo=«[^»]*» · aprobar=no · medir=no$/;', 'corridaDeProduccion acepta una corrida con «solo»'],
+  [CR, 'const CARRILES = Object.freeze(', 'export const DE_REPASO = "RESULTADOS";\nconst CARRILES = Object.freeze(', 'scripts/ci/corrida.mjs no lee la herramienta de subida'],
+  [PR, 'node "$(dirname "$0")/../ci/corrida.mjs" --produccion "$C" ||', 'node "$(dirname "$0")/../ci/subir.mjs" --casos >/dev/null && node "$(dirname "$0")/../ci/corrida.mjs" --produccion "$C" ||', 'promover.sh solo pregunta a corrida.mjs --produccion'],
 ];
 const correr = () => {
   try { execSync(`node guardianes/run.mjs --solo ${G}`, { cwd: R, stdio: 'pipe' }); return []; }

@@ -282,6 +282,23 @@ process.on("exit", () => { for (const f of candados) try { unlinkSync(f); } catc
    primera salida queda en <nombre>.intento1.out y la lista va al final, al resumen y al resumen del trabajo en GitHub). Falla otra vez → roja.
    Con TOPE_INESTABLES ya anotadas no se repite ninguna más (algo de fondo: sale roja). Las pruebas al revés no se repiten nunca. */
 const REINTENTAR = flag("--reintentar"), TOPE_INESTABLES = 3, inestables = [];
+/* 24 nov (decisión AU, «repaso corto tras una roja») · La línea RESULTADOS: el resultado de la corrida legible por máquina, UNA línea y la ÚLTIMA
+   de la corrida (después de las colas de las rojas); si se detiene por una señal, también, con completa:false, justo antes de devolver el árbol
+   (alrevesSeguro vigila que alParar vaya pegado a la salida). scripts/ci/subir.mjs la lee del registro de cada trabajo de pruebas de una
+   dirigida roja para el repaso (--repaso) y para la evidencia encadenada de --subir. Campos: pedidas (la selección), verdes y rojas (solo las
+   pedidas que corrieron HASTA su resultado; la roja gana si un nombre sale dos veces), inestables (verdes que fallaron una vez), completa (todas
+   las pedidas corrieron hasta su resultado, ningún fallo del carril —la pasada de guardianes o la huella del árbol— y no se detuvo) y, si los
+   hubo, delCarril (esos fallos, que no son pruebas). Una prueba que no corrió (carril cortado) no está ni en verdes ni en rojas. Guardián
+   subidaConHerramienta; al revés: alrevesSubir. */
+const hechas = new Map();
+const anotar = (t, r) => { if (hechas.get(t.nombre) !== false) hechas.set(t.nombre, !!r?.ok); };
+function lineaResultados({ delCarril = [], detenida = false } = {}) {
+  const pedidas = [...new Set(sel.map((t) => t.nombre))];
+  const verdes = pedidas.filter((n) => hechas.get(n) === true), rojas = pedidas.filter((n) => hechas.get(n) === false);
+  const inest = [...new Set(inestables.map((r) => r.nombre))].filter((n) => hechas.get(n) === true);
+  const completa = !detenida && !delCarril.length && pedidas.every((n) => hechas.has(n));
+  console.log(`RESULTADOS ${JSON.stringify({ pedidas, verdes, rojas, inestables: inest, completa, ...(delCarril.length ? { delCarril } : {}) })}`);
+}
 const carril = async (ts) => {
   const rs = [];
   for (const t of ts) {
@@ -299,6 +316,7 @@ const carril = async (ts) => {
       if (r2.ok) { r2.inestable = { error: r.error, salida: primera }; inestables.push(r2); console.log(`  ~ INESTABLE ${t.nombre}: falló una vez (${String(r.error).slice(0, 200)}) y pasó al repetirla`); r = r2; }
       else r = { ...r2, error: `${r2.error} · dos veces seguidas (la primera: ${String(r.error).slice(0, 140)})` };
     }
+    anotar(t, r);
     rs.push(r);
   }
   if (ts.some((t) => t.carril === "alreves")) await vigia.terminar(rs);
@@ -311,6 +329,7 @@ for (const [sen, cod] of [["SIGINT", 130], ["SIGTERM", 143]]) process.on(sen, as
   console.log(`\n✗ ${sen}: se detiene la corrida; antes, el árbol vuelve a como estaba`);
   const p = enCurso;
   if (p) { matarGrupo(p, "SIGTERM"); await Promise.race([new Promise((ok) => p.once("close", ok)), new Promise((ok) => setTimeout(ok, 5000))]); if (enCurso) matarGrupo(p, "SIGKILL"); await new Promise((ok) => setTimeout(ok, 300)); }
+  lineaResultados({ detenida: true });
   vigia.alParar();
   process.exit(cod);
 });
@@ -339,4 +358,6 @@ try {
 if (mal.length) { console.log(`En rojo (${mal.length}):`); for (const r of mal) console.log(`  ✗ ${r.nombre} (código ${r.codigo}) · ${r.error}\n    ${r.salida}`); }
 /* 9b-2 · En el CI no hay a dónde mirar después (el almacén de artefactos no siempre se puede bajar): la cola de cada roja va al registro. */
 if (mal.length && process.env.CI) for (const r of mal) { try { const t = readFileSync(r.salida, "utf8").trimEnd().split("\n").slice(-50); console.log(`\n── cola de ${r.nombre} ──\n${t.map((l) => l.slice(0, 2000)).join("\n")}`); } catch { /* sin salida */ } }
+// La última línea de la corrida (decisión AU): después de las colas, para que ninguna línea de una prueba quede detrás de ella.
+{ const pedidas = new Set(sel.map((t) => t.nombre)); lineaResultados({ delCarril: [...new Set(mal.filter((r) => !pedidas.has(r.nombre)).map((r) => r.nombre))] }); }
 process.exit(mal.length ? 1 : 0);
