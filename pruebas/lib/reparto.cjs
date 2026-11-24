@@ -8,11 +8,21 @@
 // - las pruebas unidas por `requiere` (en cualquier sentido, por cadenas) van en la MISMA parte y en orden topológico: el requisito antes;
 // - una prueba nueva sin asignar va a la parte de su requisito o de quien la pide si lo hay; si no, a la parte más vacía (con 60 s supuestos), al
 //   final, sin mover a ninguna otra; el guardián repartoAsignado avisa hasta que se regenere;
-// - correr.mjs usa la asignación solo si n coincide con la del archivo y la selección es la punta a punta entera sin barajar; si no, por posición.
+// - correr.mjs usa la asignación solo si n coincide con la del archivo y la selección es la punta a punta entera sin barajar.
+// 24 nov · Una selección que NO es la punta a punta entera (una dirigida, «solo»; --saltar, --desde) ya no va por posición (k mod n): por tiempo
+// (repartirPorTiempo, LPT con las duraciones de pruebas/reparto.json; una sin medir cuenta NUEVA_SEG). Lo unido por `requiere` va junto y el
+// requisito antes, como en la asignación; un requisito que no está en la selección no se agrega (la prueba lo corre por dentro), pero su tiempo
+// cuenta y une a quienes lo comparten. La dirigida de 283 pruebas del 24 nov (45422260550) iba en 4 partes por posición de 26 a 40 min.
+// - Las suites al revés no se requieren entre sí (cada una deja el árbol idéntico, lo vigila el corredor): su carril también va por tiempo, con
+//   las duraciones medidas de pruebas/reparto-alreves.json (parteAlReves). Al barajar, siempre por posición (es el detector de dependencias).
 const fs = require('fs'), path = require('path');
 
 const ARCHIVO = 'pruebas/reparto.json';
+const ARCHIVO_ALREVES = 'pruebas/reparto-alreves.json';
 const NUEVA_SEG = 60;
+// Las suites al revés sin medir que se toleran antes de pedir volver a medir (node scripts/ci/repartir.mjs --alreves …): se agregan más a menudo
+// que las de punta a punta y cada una cuenta NUEVA_SEG.
+const ALREVES_SIN_MEDIR = 10;
 const ADM = /^(adm|ana|tx)\d/;
 
 /** Las pruebas de punta a punta en el orden de `correr.mjs --grupo fase1,…,fase9,varios` (por fase; adm/ana/tx al final de su fase). */
@@ -126,6 +136,75 @@ function parteDe(R, reparto, sel, i, n) {
   return ordenTopologico(orden.filter((x) => parte.get(x) === i - 1), E, pos);
 }
 
+/**
+ * 24 nov · El reparto por TIEMPO de una selección (función pura: no lee nada). LPT: cada grupo, del más largo al más corto, a la parte más vacía
+ * (empate: la de menor número; entre grupos iguales, el que va antes en `orden`). Un grupo es lo que une `requiere` (en cualquier sentido, también a
+ * través de un requisito que no está en la selección); su tiempo, el de sus pruebas seleccionadas más el de los requisitos que no están (correrán por
+ * dentro, salvo los de «siempre», que ya van en su duración medida). Dentro de cada parte, el orden de `orden` corregido para que cada requisito vaya antes (también a través de uno que no está).
+ *   sel: los nombres (sin repetir; uno repetido cuenta una vez) · n: las partes · seg: { nombre: segundos } (sin medir: NUEVA_SEG)
+ *   aristas: [[quien pide, requisito, siempre], …] · orden: el orden global (el catálogo); lo que no está en él va al final, en el orden de sel.
+ * → { partes: n listas, cargas: segundos estimados de cada parte }
+ */
+function repartirPorTiempo({ sel, n, seg = {}, aristas: E = [], orden = [] }) {
+  if (!(Number.isInteger(n) && n >= 1)) throw new Error('n tiene que ser un entero ≥ 1');
+  const lista = [...new Set(sel)], enSel = new Set(lista);
+  const pos = new Map(orden.map((x, k) => [x, k]));
+  lista.forEach((x, k) => { if (!pos.has(x)) pos.set(x, orden.length + k); });
+  const dur = (x) => { const v = Number(seg?.[x]); return Number.isFinite(v) && v >= 0 ? v : NUEVA_SEG; };
+  const nodos = [...new Set([...lista, ...E.flatMap(([a, b]) => [a, b])])];
+  // Lo que corre por dentro y no está medido en quien lo pide: un requisito sin «siempre» (con «siempre» ya va dentro de su duración medida).
+  const pide = new Map(); for (const [a, b, siempre] of E) if (!siempre) { if (!pide.has(a)) pide.set(a, []); pide.get(a).push(b); }
+  const fuera = (xs) => { const v = new Set(), pila = [...xs]; while (pila.length) for (const y of pide.get(pila.pop()) ?? []) if (!v.has(y)) { v.add(y); pila.push(y); } return [...v].filter((y) => !enSel.has(y)); };
+  const grupos = componentes(nodos, E).map((ns) => ns.filter((x) => enSel.has(x)).length ? ns : null).filter(Boolean).map((ns) => {
+    const s = ns.filter((x) => enSel.has(x));
+    return { ns, d: s.reduce((t, x) => t + dur(x), 0) + fuera(s).reduce((t, x) => t + dur(x), 0), p: Math.min(...s.map((x) => pos.get(x))) };
+  });
+  const cargas = Array(n).fill(0), donde = new Map();
+  for (const g of grupos.sort((a, b) => b.d - a.d || a.p - b.p)) { const i = masVacia(cargas); cargas[i] += g.d; for (const x of g.ns) donde.set(x, i); }
+  const partes = Array.from({ length: n }, (_, i) => ordenTopologico(nodos.filter((x) => donde.get(x) === i), E, pos).filter((x) => enSel.has(x)));
+  return { partes, cargas: cargas.map((c) => Math.round(c)) };
+}
+
+/** ¿La selección es la punta a punta entera (todas las de pruebas/e2e, cada una)? */
+function esEntera(R, sel) {
+  const orden = catalogo(R), s = new Set(sel);
+  return s.size === orden.length && sel.length === orden.length && orden.every((x) => s.has(x));
+}
+
+/** Lo que corre la parte i de n de una selección de punta a punta que NO es la entera: por tiempo (repartirPorTiempo), con las duraciones del
+ *  reparto guardado y los `requiere` escritos en pruebas/e2e. null si i no está entre 1 y n. */
+function parteSubconjunto(R, reparto, sel, i, n) {
+  if (!(Number.isInteger(n) && n >= 1 && i >= 1 && i <= n)) return null;
+  return repartirPorTiempo({ sel, n, seg: reparto?.seg ?? {}, aristas: aristas(R).aristas, orden: catalogo(R) }).partes[i - 1];
+}
+
+function leerAlReves(R) {
+  const f = path.join(R, ARCHIVO_ALREVES);
+  if (!fs.existsSync(f)) return null;
+  return JSON.parse(fs.readFileSync(f, 'utf8'));
+}
+
+/** Lo que corre la parte i de n del carril «al revés» (sel: sus suites, en el orden del catálogo): por tiempo, con pruebas/reparto-alreves.json. */
+function parteAlReves(R, sel, i, n) {
+  if (!(Number.isInteger(n) && n >= 1 && i >= 1 && i <= n)) return null;
+  return repartirPorTiempo({ sel, n, seg: leerAlReves(R)?.seg ?? {}, orden: sel }).partes[i - 1];
+}
+
+/** Lo que el guardián dirigidaEnPartes comprueba de pruebas/reparto-alreves.json: [{ falla, msg }]. alreves: las suites del catálogo. */
+function comprobarAlReves(d, alreves) {
+  const out = [], mal = (msg) => out.push({ falla: true, msg }), aviso = (msg) => out.push({ falla: false, msg });
+  if (!d || typeof d !== 'object' || !d.seg || typeof d.seg !== 'object') { mal(`falta ${ARCHIVO_ALREVES} con «seg» (node scripts/ci/repartir.mjs --alreves --duraciones …)`); return out; }
+  const existe = new Set(alreves);
+  for (const [x, v] of Object.entries(d.seg)) {
+    if (!existe.has(x)) mal(`${x} tiene duración en ${ARCHIVO_ALREVES} y ya no es una suite al revés: volver a medir (node scripts/ci/repartir.mjs --alreves …)`);
+    if (!(Number.isFinite(v) && v >= 0)) mal(`${x}: su duración en ${ARCHIVO_ALREVES} no es un número de segundos`);
+  }
+  const sin = alreves.filter((x) => !(x in d.seg));
+  if (sin.length > ALREVES_SIN_MEDIR) mal(`${sin.length} suites al revés sin medir (más de ${ALREVES_SIN_MEDIR}): volver a medir ${ARCHIVO_ALREVES} (${sin.slice(0, 8).join(' ')}…)`);
+  else if (sin.length) aviso(`${sin.length} suite(s) al revés sin medir (cuentan ${NUEVA_SEG} s hasta volver a medir): ${sin.join(' ')}`);
+  return out;
+}
+
 /** Lo que el guardián repartoAsignado comprueba: [{ falla: bool, msg }]. nCi: las partes de la regresión en ci.yml. */
 function comprobar(R, reparto, nCi) {
   const out = [], mal = (msg) => out.push({ falla: true, msg }), aviso = (msg) => out.push({ falla: false, msg });
@@ -151,4 +230,5 @@ function comprobar(R, reparto, nCi) {
   return out;
 }
 
-module.exports = { ARCHIVO, NUEVA_SEG, catalogo, aristas, componentes, ordenTopologico, generar, leer, parteDe, comprobar };
+module.exports = { ARCHIVO, ARCHIVO_ALREVES, NUEVA_SEG, ALREVES_SIN_MEDIR, catalogo, aristas, componentes, ordenTopologico, generar, leer, parteDe, comprobar,
+  repartirPorTiempo, esEntera, parteSubconjunto, leerAlReves, parteAlReves, comprobarAlReves };

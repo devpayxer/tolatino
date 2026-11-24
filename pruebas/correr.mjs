@@ -16,7 +16,11 @@
      --reintentar         decisión AG (20 nov) · una prueba de punta a punta que falla se repite UNA vez: si pasa, queda como INESTABLE (en
                           verde, pero listada al final y en el resumen para arreglarla); si falla otra vez, es roja. Más de 3 inestables en
                           una corrida ya no se repiten: es algo de fondo y la corrida sale roja. Las pruebas al revés no se repiten.
-     --parte <i>/<n>      9b-2 · solo la parte i de n de la selección (reparto por posición, el mismo en cada corrida): un grupo grande, en n trabajos
+     --parte <i>/<n>      9b-2 · solo la parte i de n de la selección, la misma en cada corrida: un grupo grande, en n trabajos. La punta a punta
+                          entera, por la asignación de pruebas/reparto.json (con su n); cualquier otra selección de punta a punta (una dirigida)
+                          o el carril al revés, por tiempo (LPT con las duraciones medidas, 24 nov); al barajar o mezclando carriles, por posición
+     --sin-alreves        24 nov · deja fuera de la selección las pruebas al revés (en el CI las corre su carril, «punta a punta · al revés»,
+                          entero): «punta a punta · todas las fases» de una dirigida corre solo las de punta a punta de «solo»
      --tiempo <min>       tiempo máximo por prueba (25 por defecto)
      --barajar [semilla]  9b-1 · las corre en otro orden (al azar, o el de esa semilla para repetirlo): saca a la luz las que dependen del orden.
                           Las al revés siguen primero; las de punta a punta, todas mezcladas (sin fases). La semilla se imprime al empezar.
@@ -88,15 +92,29 @@ if (flag("--barajar")) {
 }
 if (opt("--desde")) { const i = sel.findIndex((t) => t.nombre === opt("--desde")); if (i < 0) { console.error(`--desde: ${opt("--desde")} no está en la selección`); process.exit(2); } sel = sel.slice(i); }
 if (opt("--saltar")) { const fuera = new Set(opt("--saltar").split(",")); sel = sel.filter((t) => !fuera.has(t.nombre)); }
+/* 24 nov · Una dirigida corría sus pruebas al revés DOS veces: en el carril «al revés» (entero) y otra vez aquí, en las partes de «todas las
+   fases» (45422260550: 43 de sus 283). Con --sin-alreves (ci.yml, «regresion» y «anchos») quedan solo las de punta a punta. Guardián dirigidaEnPartes. */
+if (flag("--sin-alreves")) {
+  const fuera = sel.filter((t) => t.carril === "alreves");
+  sel = sel.filter((t) => t.carril !== "alreves");
+  if (fuera.length) console.log(`--sin-alreves · ${fuera.length} prueba(s) al revés fuera de esta selección (las corre su carril, «punta a punta · al revés», entero): ${fuera.map((t) => t.nombre).join(" ")}`);
+}
 if (opt("--parte")) {
   const m = /^(\d+)\/(\d+)$/.exec(opt("--parte") ?? ""); if (!m || +m[1] < 1 || +m[1] > +m[2]) { console.error("--parte <i>/<n> (1 ≤ i ≤ n)"); process.exit(2); }
   /* 22 nov · Revisión del CI (B3) · Con la punta a punta entera, sin barajar y con la n de pruebas/reparto.json, la parte sale de la ASIGNACIÓN
-     guardada (por duración, con cada requisito en la misma parte y antes de quien lo pide; pruebas/lib/reparto.cjs). Si no (otra n, «solo»,
-     --saltar, --barajar, al revés), por posición como siempre. Guardián repartoAsignado. */
-  const RP = createRequire(import.meta.url)("./lib/reparto.cjs"), e2e = sel.filter((t) => t.carril === "e2e");
-  const asignada = flag("--barajar") || e2e.length !== sel.length ? null : RP.parteDe(RAIZ, RP.leer(RAIZ), e2e.map((t) => t.nombre), +m[1], +m[2]);
-  if (asignada) { sel = asignada.map((n) => catalogo.find((t) => t.nombre === n)); console.log(`--parte ${m[1]}/${m[2]} · por la asignación de ${RP.ARCHIVO} (${sel.length} pruebas)`); }
-  else sel = sel.filter((_, k) => k % +m[2] === +m[1] - 1);
+     guardada (por duración, con cada requisito en la misma parte y antes de quien lo pide; pruebas/lib/reparto.cjs). Guardián repartoAsignado.
+     24 nov · Cualquier otra selección de punta a punta (una dirigida, «solo»; --saltar, --desde) va por TIEMPO (LPT con las duraciones de
+     pruebas/reparto.json, los requisitos juntos y antes): por posición, la dirigida de 283 pruebas tuvo partes de 26 a 40 min. El carril al revés,
+     por tiempo con pruebas/reparto-alreves.json (guardián dirigidaEnPartes). Por posición quedan: --barajar (el detector de dependencias de orden),
+     la punta a punta entera con otra n y una selección que mezcla carriles (solo a mano). */
+  const RP = createRequire(import.meta.url)("./lib/reparto.cjs"), i = +m[1], n = +m[2], nombres = sel.map((t) => t.nombre);
+  const carril = sel.length && sel.every((t) => t.carril === sel[0].carril) ? sel[0].carril : null;
+  let parte = null, como = "";
+  if (!flag("--barajar") && carril === "e2e" && RP.esEntera(RAIZ, nombres)) { parte = RP.parteDe(RAIZ, RP.leer(RAIZ), nombres, i, n); como = `por la asignación de ${RP.ARCHIVO}`; }
+  else if (!flag("--barajar") && carril === "e2e") { parte = RP.parteSubconjunto(RAIZ, RP.leer(RAIZ), nombres, i, n); como = `por tiempo (LPT con las duraciones de ${RP.ARCHIVO})`; }
+  else if (!flag("--barajar") && carril === "alreves") { parte = RP.parteAlReves(RAIZ, nombres, i, n); como = `por tiempo (LPT con las duraciones de ${RP.ARCHIVO_ALREVES})`; }
+  if (parte) { sel = parte.map((x) => catalogo.find((t) => t.nombre === x)); console.log(`--parte ${i}/${n} · ${como} (${sel.length} pruebas)`); }
+  else sel = sel.filter((_, k) => k % n === i - 1);
 }
 const TIEMPO = Number(opt("--tiempo") ?? 25) * 60_000;
 /* 22 nov · Revisión del CI (B2) · --comprobar: solo resuelve la selección (un nombre que no existe ya salió con 2 arriba) y sale, sin correr nada,

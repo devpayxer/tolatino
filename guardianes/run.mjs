@@ -8727,9 +8727,9 @@ const guardianes = {
     if (!/- cron: "\d+ \d+ \* \* \*"\n\s+- cron: "\d+ \d+ \* \* \*"/.test(y)) falla(G, Y, 0, "el CI se programa a dos horas distintas del día");
     const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "", al = /\n  alreves:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
     if (!rg.includes("'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios'")) falla(G, Y, 0, "la regresión no corre «--grupo fase1,…,varios» (toda la punta a punta en el orden de las fases)");
-    // 22 nov (tanda 4) · «al revés» en su trabajo, en 3 partes fijas (su --parte i/3 y su nombre «· i/3»; «partes» no lo cambia).
-    if (!al.includes("\n        parte: [1, 2, 3]\n") || (al.match(/--parte /g) ?? []).length !== 1 || !al.includes("run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n") || !al.includes("    name: punta a punta · al revés · ${{ matrix.parte }}/3\n"))
-      falla(G, Y, 0, "«alreves»: las pruebas al revés corren en su trabajo, en 3 partes (--grupo alreves --parte i/3, nombre «· i/3»)");
+    // 22 nov (tanda 4) · «al revés» en su trabajo, en partes fijas (su --parte i/n y su nombre «· i/n»; «partes» no lo cambia). 24 nov · En 6.
+    if (!al.includes("\n        parte: [1, 2, 3, 4, 5, 6]\n") || (al.match(/--parte /g) ?? []).length !== 1 || !al.includes("run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/6\n") || !al.includes("    name: punta a punta · al revés · ${{ matrix.parte }}/6\n"))
+      falla(G, Y, 0, "«alreves»: las pruebas al revés corren en su trabajo, en 6 partes (--grupo alreves --parte i/6, nombre «· i/6»)");
     // 20 nov · Reparto en partes (input «partes»): cada carril largo (regresión, confirmación, anchos) en n trabajos con base nueva, por posición
     // (--parte i/n). Se permite porque cada prueba prepara sus datos (precondicionPropia); lo que se teme es un reparto a medias: una parte que no
     // corre (la matriz sin la parte o un --parte fijo) o un carril que se reparte y otro no.
@@ -8861,7 +8861,7 @@ const guardianes = {
       const run = (x = {}) => ({ id: 1, head_sha: SH, event: "push", head_branch: "main", path: ".github/workflows/ci.yml", repository: { full_name: RP }, head_repository: { full_name: RP }, status: "completed", conclusion: "success", ...x });
       const j = (name, conclusion = "success", status = "completed") => ({ name, status, conclusion });
       const base = () => [j("alcance (todo o solo documentos)"), j("verificación · señal rápida (tipos · guardianes · textos)"), j("verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)"), j("verificación · imágenes y producción como código"), j("verificación · base real (migraciones · ayuda · legales · cadenas · semilla)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
-        ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...disp.map((d) => j(`dispositivo · ${d}`)),
+        ...[1, 2, 3, 4, 5, 6].map((i) => j(`punta a punta · al revés · ${i}/6`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...disp.map((d) => j(`dispositivo · ${d}`)),
         j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
       const sin = (re) => base().filter((x) => !re.test(x.name)), con = (re, c, st) => base().map((x) => (re.test(x.name) ? j(x.name, c, st) : x));
       const CC = [
@@ -8870,8 +8870,8 @@ const guardianes = {
         ["un push de solo documentos (web, regresión y dispositivos saltados)", run(), base().map((x) => (/^(web|punta a punta · (al|todas)|dispositivo) /.test(x.name) ? j(x.name, "skipped") : x)), false],
         ["regresión saltada", run(), con(/^punta a punta · todas las fases/, "skipped"), false],
         ["otro carril de punta a punta saltado (solo confirmación y anchos pueden faltar)", run(), [...base(), j("punta a punta · otro carril", "skipped")], false],
-        ["falta una parte de «al revés»", run(), sin(/^punta a punta · al revés · 3\/3$/), false],
-        ["una parte repetida en lugar de otra", run(), base().map((x) => (x.name === "punta a punta · al revés · 3/3" ? j("punta a punta · al revés · 2/3") : x)), false],
+        ["falta una parte de «al revés»", run(), sin(/^punta a punta · al revés · 6\/6$/), false],
+        ["una parte repetida en lugar de otra", run(), base().map((x) => (x.name === "punta a punta · al revés · 6/6" ? j("punta a punta · al revés · 5/6") : x)), false],
         ["una parte roja", run(), con(/^punta a punta · todas las fases · 2\/8$/, "failure"), false],
         ["falta una de las 8 partes de «todas las fases»", run(), sin(/^punta a punta · todas las fases · 8\/8$/), false],
         ["falta un dispositivo", run(), sin(/^dispositivo · galaxy$/), false],
@@ -11082,7 +11082,7 @@ const guardianes = {
       const ent = (t = "entradas: alcance=todo · solo=«» · aprobar=no · medir=no") => [{ name: "Run actions/checkout@v4" }, { name: "Run node scripts/ci/alcance.mjs || echo \"alcance=todo\" >> \"$GITHUB_OUTPUT\"" }, { name: t }];
       const DSP = ["iphone-se", "iphone-15", "iphone-15-pro-max", "pixel", "galaxy", "ipad", "escritorio-1024", "escritorio-1280", "escritorio-1440"];
       const base = (e) => [j("alcance (todo o solo documentos)", "success", ent(e)), j("verificación · señal rápida (tipos · guardianes · textos)"), j("verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)"), j("verificación · imágenes y producción como código"), j("verificación · base real (migraciones · ayuda · legales · cadenas · semilla)"), j("tipos · build · guardianes"), j("seguridad · Semgrep (reglas propias) · dependencias"), j("web · build una vez para todos los grupos"),
-        ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...DSP.map((d) => j(`dispositivo · ${d}`)),
+        ...[1, 2, 3, 4, 5, 6].map((i) => j(`punta a punta · al revés · ${i}/6`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)), ...DSP.map((d) => j(`dispositivo · ${d}`)),
         j("confirmación · ${{ matrix.nombre }}", "skipped"), j("punta a punta · ancho ${{ matrix.id }}", "skipped"), j("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)")];
       const conConf = () => [...base().filter((x) => !/^(punta a punta · todas las fases|confirmación)/.test(x.name)), ...[1, 2, 3, 4, 5, 6, 7, 8].flatMap((i) => [j(`confirmación · dos veces seguidas · ${i}/8`), j(`confirmación · barajada · ${i}/8`)])];
       const CP = [
@@ -11103,7 +11103,7 @@ const guardianes = {
         ["corrida roja", run({ conclusion: "failure" }), base(), false],
         ["falta un dispositivo", run(), base().filter((x) => x.name !== "dispositivo · pixel"), false],
         ["un trabajo de la verificación saltado (contratos)", run(), base().map((x) => (/^verificación · contratos/.test(x.name) ? j(x.name, "skipped") : x)), false],
-        ["una parte de «al revés» saltada", run(), base().map((x) => (x.name === "punta a punta · al revés · 2/3" ? j(x.name, "skipped") : x)), false],
+        ["una parte de «al revés» saltada", run(), base().map((x) => (x.name === "punta a punta · al revés · 2/6" ? j(x.name, "skipped") : x)), false],
         ["confirmar=si con la barajada incompleta", run({ event: "workflow_dispatch" }), conConf().filter((x) => x.name !== "confirmación · barajada · 8/8"), false],
         ["sin trabajos", run(), [], false],
       ];
@@ -12661,17 +12661,33 @@ const guardianes = {
      por ese carril: 32,4 h de espera del 18 al 22 nov); «partes» sigue mandando en la punta a punta. (2) Los nombres de «solo» se validan en
      «cambios», ANTES de arrancar los carriles (pruebas/correr.mjs --comprobar: un nombre que no existe sale con 2 sin correr nada). Lo que se teme:
      volver a «al revés» en un solo trabajo, validar después de preparar las máquinas, o un --comprobar que corra pruebas o acepte un nombre
-     inexistente. Al revés: alrevesDirigida. */
+     inexistente. Al revés: alrevesDirigida.
+     24 nov · Más rápida, nunca más floja (decisión AM): (3) la dirigida va en 8 partes (PARTES_DIRIGIDA de scripts/ci/subir.mjs; ci.yml acepta 8);
+     (4) «todas las fases» (y «anchos») corren solo las de punta a punta de «solo» (--sin-alreves: las al revés las corre su carril entero; 43 de las
+     283 de 45422260550 corrían dos veces) y el corredor lo cumple de verdad; (5) «al revés» va en 6 partes POR TIEMPO (pruebas/reparto-alreves.json,
+     medido de los registros): cada suite en una parte y una sola, la parte la de la biblioteca, y ninguna pasa de 4/3 del óptimo posible (la cota de
+     LPT; por posición, la más larga tenía 417 s contra una cota de 308); el archivo de duraciones al día (una suite que ya no existe, rojo; más de
+     10 sin medir, rojo). */
   dirigidaEnPartes() {
     const G = "dirigidaEnPartes", Y = ".github/workflows/ci.yml", C = "pruebas/correr.mjs";
     if (!existsSync(Y) || !existsSync(C)) return falla(G, Y, 0, "falta ci.yml o el corredor");
     const y = readFileSync(Y, "utf8"), job = (n) => new RegExp(`\\n  ${n}:\\n[\\s\\S]*?(?=\\n  [a-z]+:\\n|$)`).exec(y)?.[0] ?? "";
-    const rg = job("regresion"), al = job("alreves"), ca = job("cambios");
-    // 22 nov (tanda 4) · «al revés» en su propio trabajo, con 3 partes fijas: ni «partes» ni «solo» lo cambian (una dirigida corre «al revés» entero,
-    // decisiones AD/AF). Su nombre «· i/3» es el que scripts/ci/corrida.mjs cuenta.
-    if (!al.includes("\n      matrix:\n        parte: [1, 2, 3]\n") || /inputs\.(partes|solo)/.test(al)) falla(G, Y, 0, "«alreves»: 3 partes fijas (matrix parte: [1, 2, 3]); ni «partes» ni «solo» lo cambian");
-    if (!al.includes("run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n")) falla(G, Y, 0, "«alreves»: corre --grupo alreves --parte i/3 (entero, también en una dirigida)");
-    if (!al.includes("    name: punta a punta · al revés · ${{ matrix.parte }}/3\n")) falla(G, Y, 0, "«alreves»: el nombre de cada parte es «· i/3» (scripts/ci/corrida.mjs cuenta las partes por el nombre)");
+    const rg = job("regresion"), al = job("alreves"), ca = job("cambios"), an = job("anchos");
+    // 22 nov (tanda 4) · «al revés» en su propio trabajo, con partes fijas: ni «partes» ni «solo» lo cambian (una dirigida corre «al revés» entero,
+    // decisiones AD/AF). Su nombre «· i/n» es el que scripts/ci/corrida.mjs cuenta. 24 nov · En 6 (antes 3).
+    if (!al.includes("\n      matrix:\n        parte: [1, 2, 3, 4, 5, 6]\n") || /inputs\.(partes|solo)/.test(al)) falla(G, Y, 0, "«alreves»: 6 partes fijas (matrix parte: [1, 2, 3, 4, 5, 6]); ni «partes» ni «solo» lo cambian");
+    if (!al.includes("run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/6\n")) falla(G, Y, 0, "«alreves»: corre --grupo alreves --parte i/6 (entero, también en una dirigida)");
+    if (!al.includes("    name: punta a punta · al revés · ${{ matrix.parte }}/6\n")) falla(G, Y, 0, "«alreves»: el nombre de cada parte es «· i/6» (scripts/ci/corrida.mjs cuenta las partes por el nombre)");
+    // 24 nov · La dirigida en 8 partes (la orden la arma subir.mjs con PARTES_DIRIGIDA; ci.yml tiene que aceptarla).
+    { const S = "scripts/ci/subir.mjs", sub = existsSync(S) ? sinComent(S) : "";
+      if (!/^export const PARTES_DIRIGIDA = 8;$/m.test(sub)) falla(G, S, 0, "la dirigida va en 8 partes (export const PARTES_DIRIGIDA = 8), repartidas por tiempo");
+      if (!/\n      partes:\n[\s\S]*?options: \[[^\]]*"8"[^\]]*\]/.test(y)) falla(G, Y, 0, "el input «partes» de ci.yml acepta 8 (la dirigida va en 8)"); }
+    // 24 nov · «todas las fases» y «anchos» corren solo las de punta a punta: las al revés de «solo» no se repiten fuera de su carril.
+    const SA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar --sin-alreves\n";
+    for (const [k, t] of [["regresion", rg], ["anchos", an]]) {
+      if (t.split(SA).length - 1 !== 1 || (t.match(/--sin-alreves/g) ?? []).length !== 1) falla(G, Y, 0, `«${k}»: su corrida lleva --sin-alreves (las al revés de «solo» las corre su carril entero, no se repiten aquí)`);
+      if (/contains\(inputs\.solo, 'alreves'\)|apt-get install -y -q age\b/.test(t)) falla(G, Y, 0, `«${k}»: sin el paso de age para pruebas al revés (aquí ya no corre ninguna)`);
+    }
     if (!/\n      - name: Las pruebas de «solo» existen \(antes de arrancar los carriles\)\n        env: \{ SOLO: "\$\{\{ inputs\.solo \}\}" \}\n        run: \|\n          if \[ -n "\$SOLO" \]; then node pruebas\/correr\.mjs --comprobar \$SOLO; fi\n/.test(ca))
       falla(G, Y, 0, "«cambios» valida los nombres de «solo» con pruebas/correr.mjs --comprobar antes de que arranque ningún carril");
     if (!/needs: \[cambios, web\]/.test(rg) || !/needs: \[cambios, web\]/.test(al)) falla(G, Y, 0, "«regresion» y «alreves» esperan a «cambios» (si un nombre de «solo» no existe, no arrancan)");
@@ -12680,13 +12696,35 @@ const guardianes = {
     if (una && vivo(una) !== 0) falla(G, C, 0, `--comprobar ${una} (una prueba que existe) no sale con 0`);
     if (vivo(`${una ?? "x"} zz-no-existe-esta-prueba`) !== 2) falla(G, C, 0, "--comprobar con un nombre que no existe tiene que salir con 2");
     if (!/if \(flag\("--comprobar"\)\) \{ console\.log\(`✓ --comprobar: [^`]*`\); process\.exit\(sel\.length \? 0 : 2\); \}/.test(sinComent(C))) falla(G, C, 0, "--comprobar solo resuelve la selección y sale (sin correr nada, sin servidor, sin candado)");
+    // 24 nov · --sin-alreves de verdad: de una selección mezclada quedan solo las de punta a punta.
+    const lista = (a) => { try { return (/existen: (.*)$/m.exec(execSync(`node ${C} ${a} --comprobar`, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 30_000 }))?.[1] ?? "").trim().split(" ").filter(Boolean); } catch { return null; } };
+    const e2eUna = archivos.find((f) => /^pruebas\/e2e\/[a-z][^/_]*\.cjs$/.test(f))?.split("/").pop().replace(/\.cjs$/, "");
+    if (una && e2eUna) { const v = lista(`${una} ${e2eUna} --sin-alreves`); if (!v || v.join(" ") !== e2eUna) falla(G, C, 0, `--sin-alreves deja fuera las pruebas al revés de la selección (con ${una} ${e2eUna} corre: ${(v ?? ["(no corrió)"]).join(" ")})`); }
+    // 24 nov · «al revés» en 6 partes por tiempo: cada suite una vez, la parte de la biblioteca, ninguna por encima de la cota de LPT.
+    let RP = null; try { RP = createRequire(import.meta.url)("../pruebas/lib/reparto.cjs"); } catch (e) { return falla(G, "pruebas/lib/reparto.cjs", 0, `no carga: ${String(e?.message ?? e).slice(0, 160)}`); }
+    const AR = RP.ARCHIVO_ALREVES ?? "pruebas/reparto-alreves.json";
+    let dur = null; try { dur = JSON.parse(readFileSync(AR, "utf8")); } catch (e) { falla(G, AR, 0, `falta o no se deja leer (las duraciones del carril «al revés»: node scripts/ci/repartir.mjs --alreves --duraciones …): ${String(e?.message ?? e).slice(0, 120)}`); }
+    const todas = lista("--grupo alreves");
+    if (!todas?.length) return falla(G, C, 0, "--grupo alreves --comprobar no da la lista de las suites al revés");
+    if (dur) for (const x of RP.comprobarAlReves?.(dur, todas) ?? [{ falla: true, msg: "falta comprobarAlReves en pruebas/lib/reparto.cjs" }]) { if (x.falla) falla(G, AR, 0, x.msg); else avisos.push(`[${G}] ${AR} — ${x.msg}`); }
+    const segAl = (x) => { const v = Number(dur?.seg?.[x]); return Number.isFinite(v) && v >= 0 ? v : 60; };
+    const partes = [1, 2, 3, 4, 5, 6].map((i) => lista(`--grupo alreves --parte ${i}/6`));
+    if (partes.some((v) => !v)) return falla(G, C, 0, "--grupo alreves --parte i/6 --comprobar no corre (una parte vacía o rota)");
+    const juntas = partes.flat();
+    if (juntas.length !== todas.length || new Set(juntas).size !== todas.length || todas.some((x) => !juntas.includes(x))) falla(G, C, 0, `las 6 partes de «al revés» corren ${juntas.length} suites (${new Set(juntas).size} distintas) de ${todas.length}: cada una, una vez`);
+    partes.forEach((v, k) => { const esp = RP.parteAlReves?.(process.cwd(), todas, k + 1, 6); if (JSON.stringify(v) !== JSON.stringify(esp)) falla(G, C, 0, `--grupo alreves --parte ${k + 1}/6 no corre la parte ${k + 1} del reparto por tiempo (${AR}): corre ${v.slice(0, 5).join(" ")}…`); });
+    const tot = todas.reduce((t, x) => t + segAl(x), 0), mayor = Math.max(...todas.map(segAl)), cota = Math.ceil((4 / 3) * Math.max(tot / 6, mayor)), cargas = partes.map((v) => v.reduce((t, x) => t + segAl(x), 0));
+    if (Math.max(...cargas) > cota) falla(G, C, 0, `«al revés» no va por tiempo: la parte más larga suma ${Math.max(...cargas)} s y LPT nunca pasa de ${cota} s (4/3 de máx(media ${Math.round(tot / 6)} s, la suite más larga ${mayor} s)); partes: ${cargas.join(" ")}`);
   },
 
   /* 22 nov · Revisión del CI (B3) · repartoAsignado: la punta a punta va en partes por una ASIGNACIÓN guardada (pruebas/reparto.json, la escribe
      scripts/ci/repartir.mjs desde duraciones medidas; reglas en pruebas/lib/reparto.cjs). Lo que se teme: una prueba en dos partes o en ninguna, una
      que ya no existe, las que se requieren en partes distintas o el requisito DESPUÉS de quien lo pide (lo corre por dentro, o falla en una base
      nueva), un reparto para otra n que la de ci.yml, un corredor que deje de usar la asignación (o la use al barajar), y que regenerar mueva a
-     todos. Una prueba nueva sin asignar es un aviso (va a la parte más vacía o a la de su requisito) hasta 5; más, rojo. Al revés: alrevesReparto. */
+     todos. Una prueba nueva sin asignar es un aviso (va a la parte más vacía o a la de su requisito) hasta 5; más, rojo. Al revés: alrevesReparto.
+     24 nov · Y una selección que NO es la punta a punta entera (una dirigida) va POR TIEMPO (pruebas/lib/reparto.cjs, parteSubconjunto: LPT con las
+     duraciones del reparto), no por posición: cada prueba una vez, la parte de la biblioteca, cada requisito en la misma parte y antes, ninguna
+     parte por encima de 4/3 del óptimo posible (la cota de LPT) y, al barajar, por posición. */
   repartoAsignado() {
     const G = "repartoAsignado", A = "pruebas/reparto.json", L = "pruebas/lib/reparto.cjs", S = "scripts/ci/repartir.mjs", C = "pruebas/correr.mjs", Y = ".github/workflows/ci.yml";
     for (const f of [A, L, S, C, Y]) if (!existsSync(f)) return falla(G, f, 0, "falta (el reparto de la punta a punta en partes)");
@@ -12716,6 +12754,33 @@ const guardianes = {
       if (!b || JSON.stringify(b) === JSON.stringify(RP.parteDe(process.cwd(), rep, cat, 1, n))) falla(G, C, 0, "--barajar no puede usar la asignación (es el detector de dependencias de orden: reparte al azar)");
       const otra = corre(`${GR} --parte 1/${n + 1}`), posOtra = cat.filter((_, k) => k % (n + 1) === 0);
       if (!otra || JSON.stringify(otra) !== JSON.stringify(posOtra)) falla(G, C, 0, `con otra n (--parte 1/${n + 1}) el corredor reparte por posición`);
+    }
+    // 24 nov · Una dirigida (una selección que no es la punta a punta entera), por tiempo. La muestra: una de cada tres del catálogo más sus
+    // requisitos (cerrada: ningún requisito corre por dentro, así el tiempo de cada parte es el de sus pruebas), en 8 partes como la dirigida.
+    {
+      const E = RP.aristas(process.cwd()).aristas, m = new Set(cat.filter((_, k) => k % 3 === 0)), N = 8;
+      for (let otra = true; otra;) { otra = false; for (const [a, b] of E) if (m.has(a) && !m.has(b) && cat.includes(b)) { m.add(b); otra = true; } }
+      const sub = cat.filter((x) => m.has(x)), sg = (x) => { const v = Number(rep?.seg?.[x]); return Number.isFinite(v) && v >= 0 ? v : RP.NUEVA_SEG; };
+      const ps = [];
+      for (let i = 1; i <= N; i++) {
+        const v = corre(`${sub.join(" ")} --parte ${i}/${N}`), esp = typeof RP.parteSubconjunto === "function" ? RP.parteSubconjunto(process.cwd(), rep, sub, i, N) : null;
+        if (!v || JSON.stringify(v) !== JSON.stringify(esp)) { falla(G, C, 0, `una dirigida (una selección que no es la punta a punta entera) no va por tiempo: --parte ${i}/${N} no corre la parte ${i} de parteSubconjunto (corre: ${(v ?? ["(no corrió)"]).slice(0, 6).join(" ")}…)`); break; }
+        ps.push(v);
+      }
+      if (ps.length === N) {
+        const juntas = ps.flat();
+        if (juntas.length !== sub.length || new Set(juntas).size !== sub.length) falla(G, C, 0, `las ${N} partes de una dirigida corren ${juntas.length} pruebas (${new Set(juntas).size} distintas) de ${sub.length}: cada una, una vez`);
+        const dondeEsta = new Map(); ps.forEach((v, k) => v.forEach((x, j) => dondeEsta.set(x, [k, j])));
+        for (const [a, b] of E) { const pa = dondeEsta.get(a), pb = dondeEsta.get(b); if (!pa || !pb) continue;
+          if (pa[0] !== pb[0]) falla(G, C, 0, `una dirigida: ${a} requiere ${b} y van en partes distintas (${pa[0] + 1} y ${pb[0] + 1})`);
+          else if (pb[1] > pa[1]) falla(G, C, 0, `una dirigida: ${a} requiere ${b} y ${b} corre DESPUÉS en la parte ${pa[0] + 1}`); }
+        // La cota de LPT: nunca más de 4/3 del óptimo, y el óptimo nunca baja de la media ni del grupo (unido por requiere) más largo.
+        const grupos = RP.componentes(cat, E).map((g) => g.filter((x) => m.has(x)).reduce((t, x) => t + sg(x), 0));
+        const tot = sub.reduce((t, x) => t + sg(x), 0), cota = Math.ceil((4 / 3) * Math.max(tot / N, ...grupos)), cargas = ps.map((v) => v.reduce((t, x) => t + sg(x), 0));
+        if (Math.max(...cargas) > cota) falla(G, C, 0, `una dirigida no va por tiempo: su parte más larga suma ${Math.max(...cargas)} s y LPT nunca pasa de ${cota} s (partes: ${cargas.join(" ")})`);
+        const bj = corre(`${sub.join(" ")} --parte 1/${N} --barajar 7`);
+        if (!bj || JSON.stringify(bj) === JSON.stringify(ps[0])) falla(G, C, 0, "una dirigida barajada no puede ir por tiempo (--barajar es el detector de dependencias de orden: reparte al azar)");
+      }
     }
     // Generar: LPT con afinidad, orden topológico, estable (regenerar no mueve a nadie), nuevas sin mover a otras (casos sobre catálogos de mentira).
     try { execSync(`node ${S} --casos`, { stdio: "pipe", timeout: 60_000 }); } catch (e) { falla(G, S, 0, `los casos del reparto no pasan: ${String(e.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 3).join(" · ").slice(0, 300)}`); }
@@ -16609,12 +16674,15 @@ const guardianes = {
         "    difNombres: (a, b) => git(\"diff\", \"--no-renames\", \"--name-only\", \"-z\", a, b).split(\"\\0\").filter(Boolean),",
         "    esAncestro: (sha) => gitOk(\"merge-base\", \"--is-ancestor\", sha, \"HEAD\"),",
         "    planear: (base, mas) => m(`p${base}\\0${mas.join(\" \")}`, () => planear({ base, cabeza: \"HEAD\", mas })),",
+        // 24 nov · Las suites al revés del catálogo de un commit (git ls-tree en ese commit): analizarDirigida las da por cubiertas con su carril.
+        "    alreves: (sha) => m(`a${sha}`, () => catalogoEn(sha).filter((t) => t.carril === \"alreves\").map((t) => t.nombre)),",
         "  };",
         "}",
       ].join("\n");
       const tc = /\nconst tenerCommit = [^\n]*\n/.exec(s)?.[0] ?? "", ti = /\nfunction trabajosDeIntento\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
       if (io !== IO_REAL || tc !== '\nconst tenerCommit = (sha) => SHA40.test(sha ?? "") && (gitOk("cat-file", "-e", `${sha}^{commit}`) || gitOk("fetch", "-q", "origin", sha));\n'
-        || !ti.includes("api(`repos/${repo}/actions/runs/${id}/attempts/${n}/jobs?per_page=100`)") || !ti.includes("d.total_count !== d.jobs.length) throw"))
+        || !ti.includes("api(`repos/${repo}/actions/runs/${id}/attempts/${n}/jobs?per_page=100`)") || !ti.includes("d.total_count !== d.jobs.length) throw")
+        || !s.includes('function catalogoEn(cabeza) {\n  return catalogoDe(git("ls-tree", "--name-only", "-z", cabeza, "pruebas/e2e/", "pruebas/alreves/").split("\\0").filter(Boolean));\n}'))
         falla(G, S, 0, "ioReal pregunta de verdad, entera y sin retoques: git merge-base --is-ancestor, git diff --name-only, todas las corridas de la rama (de cualquier evento y estado), los trabajos de cada intento, el commit y el plan");
       // Los motivos de la cadena se ven aparte en el FALTA de --subir (detrás de los de las corridas verdes no se veían).
       if (!cuerpoD.includes("if (!hallada && !cadena) for (const m of motivosCadena.slice(0, 4)) io.decir(`  cadena ${m}`);"))
@@ -16676,6 +16744,8 @@ const guardianes = {
       }
       for (const f of NUNCAC) if (SUBIR.esCodigo(f)) falla(G, S, 0, `la vía rápida de código deja pasar ${f}: nunca la base, migraciones, .sql, infra, services, scripts, semgrep, .github, guardianes, dependencias, .env, lib/ (salvo LIB_CODIGO), acciones, route, public salvo imágenes y fuentes, la configuración de la app, herramientas de prueba ni lo sensible`);
       if (!SUBIR.HERRAMIENTAS?.some((re) => re.test("pruebas/alreves/textos.cjs"))) falla(G, S, 0, "pruebas/alreves/textos.cjs es una herramienta (HERRAMIENTAS): decide si las al revés siguen vivas en cada subida");
+      // 24 nov · Y las duraciones del carril «al revés»: deciden qué suites corre cada una de sus partes.
+      if (!SUBIR.HERRAMIENTAS?.some((re) => re.test("pruebas/reparto-alreves.json"))) falla(G, S, 0, "pruebas/reparto-alreves.json es una herramienta (HERRAMIENTAS): decide qué suites corre cada parte de «al revés»");
       const APP = "apps/web/app/(app)/eventos/Lista.tsx", P = "apps/web/app/(app)/eventos/page.tsx", PRU = "pruebas/e2e/evt6c.cjs";
       for (const f of [APP, P, "packages/ui/src/core/PestanasFicha.tsx", PRU, "pruebas/alreves/alreves9vd.cjs", "apps/web/public/paginas/x.webp", "apps/web/public/fuentes/x.woff2"]) if (!SUBIR.esCodigo(f)) falla(G, S, 0, `la lista blanca de código ya no cubre ${f}: el guardián no ve lo que vigila`);
       // LIB_CODIGO: cerrada, corta y cada módulo inofensivo en el archivo ENTERO (con las reglas de aquí, no con las de la herramienta).

@@ -53,7 +53,7 @@ on:
         options: ["no", "si"]
         default: "no"
       partes:
-        description: "En cuántos trabajos paralelos se reparte cada carril largo de punta a punta (cada parte en su base nueva; cada prueba prepara sus datos; con 8, por la asignación de pruebas/reparto.json); «al revés» va siempre en 3"
+        description: "En cuántos trabajos paralelos se reparte cada carril largo de punta a punta (cada parte en su base nueva; cada prueba prepara sus datos; la punta a punta entera con 8, por la asignación de pruebas/reparto.json; una dirigida, por tiempo); «al revés» va siempre en 6"
         type: choice
         options: ["1", "4", "8"]
         default: "8"
@@ -345,12 +345,15 @@ jobs:
   # vez dentro de cada parte. Las pruebas se heredan datos (las de la fase 4 dependen de las de la 2, com5g del plan que deja free2b…): repartidas en
   # trabajos con base propia fallaron 30 de 199 en la primera corrida (13 nov) por eso; desde el 20 nov cada prueba prepara sus datos
   # (precondicionPropia) y lo que una necesita de otra va con requiere (en la misma parte y antes, por pruebas/reparto.json).
-  # 22 nov · Revisión del CI (tanda 4) · «al revés» en su propio trabajo y en 3 partes: medido el 22 nov (45008066438), sus 134 suites suman 872 s
-  # en serie bajo el corredor (árbol idéntico) más dos pasadas reales de 20–33 s por parte; en 3 partes, unos 9 min por trabajo, lejos de los ~18
-  # de la punta a punta en 8. Por posición: por duración ganaría ~1 min en un carril que no marca el final (no compensa una asignación más).
-  # «partes» no lo cambia. Guardián dirigidaEnPartes.
+  # 22 nov · Revisión del CI (tanda 4) · «al revés» en su propio trabajo; «partes» no lo cambia. Guardián dirigidaEnPartes.
+  # 24 nov · En 6 partes y POR TIEMPO (antes 3, por posición). Medido el 24 nov (45422260550, 45448250803, 45453498666): 165 suites, 1385 s en
+  # serie bajo el corredor, una sola de 194 s (alrevesBateriaCompa); cada parte suma ~3 min de preparación, la pasada real del inicio (~45 s) y la
+  # del final (~45 s). En 3 por posición la parte más larga tenía 603 s de suites y el trabajo 15 min: marcaba el final de toda dirigida chica
+  # (16–21 min). En 6 por tiempo (pruebas/reparto-alreves.json, la escribe scripts/ci/repartir.mjs --alreves desde los registros) cada parte suma
+  # ~231 s: unos 8,5 min por trabajo (en 6 por posición la más larga tendría 417 s). Cada parte sigue con su pasada real al principio y al final y
+  # su árbol idéntico (guardianes alrevesArbolIdentico y alrevesPasadaFinal).
   alreves:
-    name: punta a punta · al revés · ${{ matrix.parte }}/3
+    name: punta a punta · al revés · ${{ matrix.parte }}/6
     needs: [cambios, web]
     if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
@@ -361,7 +364,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        parte: [1, 2, 3]
+        parte: [1, 2, 3, 4, 5, 6]
     steps:
       # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>».
       - uses: actions/checkout@v4
@@ -376,7 +379,7 @@ jobs:
       - name: age para las pruebas al revés de 9o
         run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de al revés en base nueva
-        run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3
+        run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/6
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -402,20 +405,31 @@ jobs:
   # 22 nov · Revisión del CI (tanda 4) · La punta a punta en 8 partes por defecto (push, programada y a mano), cada una con la parte que le da
   # pruebas/reparto.json (por duración: ~14 min de pruebas cada una, en vez de 27–36 por posición en 4). Con confirmar=si (y sin «solo») no corre
   # aquí: sería repetir la primera pasada de «confirmación · dos veces seguidas» (el mismo comando en base nueva). Guardián repartoAsignado.
+  # 24 nov · Una dirigida (solo=…) corre aquí SOLO sus pruebas de punta a punta (--sin-alreves): las al revés que nombre ya las corre entero el
+  # carril «al revés» (antes corrían dos veces: 43 de las 283 de 45422260550). Y sus partes van por TIEMPO (LPT con las duraciones de
+  # pruebas/reparto.json, cada requisito junto y antes), no por posición: aquella dirigida tuvo 4 partes de 26 a 40 min y tardó 46 min. Si «solo» trae
+  # la punta a punta entera, va por la asignación guardada como un push. La dirigida va en 8 partes (scripts/ci/subir.mjs, PARTES_DIRIGIDA).
+  # Guardianes dirigidaEnPartes y repartoAsignado.
+  # Cuántos trabajos coinciden (GitHub da unas 20 máquinas a la vez): tras la verificación (7 trabajos de 1–7 min, el más largo «imágenes»,
+  # luego la compuerta de 5 s), en un push a main corren a la vez «al revés» 6 + «todas las fases» 8 + dispositivos 3 (max-parallel) + «imágenes»
+  # o la compuerta 1 = 18; en una dirigida, 6 + 8 + 1 = 15 (sin dispositivos). Con confirmar=si, la confirmación 12 (max-parallel) + 6 + 3 + 1 =
+  # 22 mientras corre «al revés» (~8,5 min) y 16 después; la programada (anchos, 4 a la vez) suma 4 a lo de un push (22). En esos ratos, y con dos
+  # corridas a la vez (un push y una dirigida: 18 + 15), GitHub pone en cola lo que sobra.
+  # Camino crítico esperado: push a main ~22 min (lo marca la parte más larga de «todas las fases», ~15 min de pruebas + 3 de preparación tras
+  # ~3,5 de build; «al revés» ~8,5 min ya no lo toca); dirigida chica (6 pruebas) ~12 min (lo marca «al revés»: 3,5 + 8,5); la de 283 de
+  # 45422260550, ~22 min como un push (era la punta a punta entera por la asignación más las al revés, que ya no se repiten).
   regresion:
     name: punta a punta · todas las fases${{ (inputs.partes || '8') != '1' && format(' · {0}/{1}', matrix.parte, inputs.partes || '8') || '' }}
     needs: [cambios, web]
     if: ${{ needs.cambios.outputs.alcance != 'documentos' && (inputs.alcance || 'todo') != 'pantallas' && !(inputs.confirmar == 'si' && inputs.solo == '') }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
-    # Una dirigida (solo=…) puede nombrar pruebas al revés: corren aquí, sin repetir los textos (alrevesConSuTexto ya corrió).
-    env: { GUARDIANES_SIN_TEXTOS: "1" }
     strategy:
       fail-fast: false
       matrix:
         parte: ${{ fromJSON((inputs.partes || '8') == '8' && '[1,2,3,4,5,6,7,8]' || ((inputs.partes || '8') == '4' && '[1,2,3,4]' || '[1]')) }}
     steps:
-      # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>» (una dirigida puede nombrarlas).
+      # Historia completa, como siempre (24 nov: ya no corren aquí pruebas al revés, que leen versiones viejas con «git show <sha>»).
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: pnpm/action-setup@v4
@@ -424,12 +438,8 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
-      # 19 nov · alreves9o falló sin age en «todas las fases»: una dirigida (solo=…) que nombra pruebas al revés las corre aquí.
-      - name: age para las pruebas al revés de 9o
-        if: ${{ contains(inputs.solo, 'alreves') }}
-        run: sudo apt-get install -y -q age >/dev/null
       - name: Regresión de todas las fases en base nueva
-        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar
+        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar --sin-alreves
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true
@@ -460,8 +470,10 @@ jobs:
     if: ${{ inputs.confirmar == 'si' && (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
     timeout-minutes: 350
-    # 22 nov · Revisión del CI (tanda 4) · 2 × 8 partes = 16 trabajos más «al revés» (3) y los dispositivos (3 a la vez) pasarían del tope de 20
-    # trabajos a la vez de la cuenta: 12 a la vez (arranca primero «dos veces seguidas», lo más largo).
+    # 22 nov · Revisión del CI (tanda 4) · 2 × 8 partes = 16 trabajos más «al revés» y los dispositivos (3 a la vez) pasarían del tope de 20
+    # trabajos a la vez de la cuenta: 12 a la vez (arranca primero «dos veces seguidas», lo más largo). 24 nov · Con «al revés» en 6 (antes 3)
+    # coinciden 12 + 6 + 3 + 1 = 22 solo mientras corre «al revés» (~8,5 min): GitHub pone 2 en cola ese rato. Bajar a 10 costaría más (16
+    # trabajos de ~30 y ~15 min en 10 sitios: ~45 min en vez de ~30), así que se queda en 12.
     strategy:
       fail-fast: false
       max-parallel: 12
@@ -577,11 +589,9 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
-      - name: age (una dirigida que nombra pruebas al revés las corre también aquí)
-        if: ${{ contains(inputs.solo, 'alreves') }}
-        run: sudo apt-get install -y -q age >/dev/null
+      # 24 nov · Con «solo», solo las de punta a punta: las al revés no dependen del ancho y las corre su carril (guardián dirigidaEnPartes).
       - name: Toda la punta a punta en ${{ matrix.id }}, en base nueva
-        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar
+        run: node pruebas/correr.mjs ${{ inputs.solo != '' && inputs.solo || '--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }} --dispositivo ${{ matrix.id }} --parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar --sin-alreves
       - name: Subidas que llegaron sin archivo (si hubo; el servidor dice qué recibió)
         if: always()
         run: grep -h "\[subida\]" "$RUNNER_TEMP/salida/server.log" 2>/dev/null | tail -n 20 | cut -c1-300 || true

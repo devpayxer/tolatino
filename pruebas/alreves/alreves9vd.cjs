@@ -87,7 +87,7 @@ if (!soloTextos) {
     const trabajos = (x = {}) => {
       const j = (name, conclusion = 'success') => ({ name, status: 'completed', conclusion });
       let js = [j('alcance (todo o solo documentos)'), j('verificación · señal rápida (tipos · guardianes · textos)'), j('verificación · contratos (Stripe · WhatsApp y SMS · push · tiendas · OIDC · Wallet · SES)'), j('verificación · imágenes y producción como código'), j('verificación · base real (migraciones · ayuda · legales · cadenas · semilla)'), j('tipos · build · guardianes'), j('seguridad · Semgrep (reglas propias) · dependencias'), j('web · build una vez para todos los grupos'),
-        ...[1, 2, 3].map((i) => j(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)),
+        ...[1, 2, 3, 4, 5, 6].map((i) => j(`punta a punta · al revés · ${i}/6`)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => j(`punta a punta · todas las fases · ${i}/8`)),
         ...['iphone-se', 'iphone-15', 'iphone-15-pro-max', 'pixel', 'galaxy', 'ipad', 'escritorio-1024', 'escritorio-1280', 'escritorio-1440'].map((d) => j(`dispositivo · ${d}`)),
         j('confirmación · ${{ matrix.nombre }}', 'skipped'), j('punta a punta · ancho ${{ matrix.id }}', 'skipped'), j('la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corrió)')];
       if (x.saltados) js = js.map((t) => (x.saltados.test(t.name) ? j(t.name, 'skipped') : t));
@@ -125,7 +125,7 @@ if (!soloTextos) {
       ['la corrida del código todavía en curso', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { status: 'in_progress', conclusion: null })] } }, 'todo', c0],
       ['la corrida del código fue a su vez de solo documentos (carriles saltados) aunque salió verde', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { saltados: DOCS })] } }, 'todo', c0],
       ['la corrida del código saltó solo los dispositivos', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { saltados: /^dispositivo /, })] } }, 'todo', c0],
-      ['a la corrida del código le falta una parte de «al revés»', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { sin: /^punta a punta · al revés · 3\/3$/ })] } }, 'todo', c0],
+      ['a la corrida del código le falta una parte de «al revés»', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, {}, { sin: /^punta a punta · al revés · 6\/6$/ })] } }, 'todo', c0],
       ['la única corrida verde del código es de pull_request', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { event: 'pull_request' })] } }, 'todo', c0],
       ['la única corrida verde del código es a mano', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { event: 'workflow_dispatch' })] } }, 'todo', c0],
       ['la única corrida verde del código es de otra rama', { antes: c0, despues: c1, mundo: { [c0]: [corrida(c0, { head_branch: 'trabajo' })] } }, 'todo', c0],

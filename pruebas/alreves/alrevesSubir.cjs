@@ -48,7 +48,7 @@ const casos = [
   [S, 'args: ["push", "origin", "HEAD:pruebas"]', 'args: ["push", "origin", "HEAD:produccion"]', 'empuja a «HEAD:produccion»'],
   [S, '  // d.\n', '  // d.\n  spawnSync("git", ["push", "origin", "HEAD:main"], { cwd: RAIZ });\n', 'un push fuera de planDeEmpuje'],
   // La dirigida, siempre en partes y desde una sola orden.
-  [S, 'export const PARTES_DIRIGIDA = 4;', 'export const PARTES_DIRIGIDA = 1;', 'la dirigida va siempre en partes'],
+  [S, 'export const PARTES_DIRIGIDA = 8;', 'export const PARTES_DIRIGIDA = 1;', 'la dirigida va siempre en partes'],
   [S, '"-f", `partes=${PARTES_DIRIGIDA}`, ', '', 'la dirigida va siempre en partes'],
   [S, '  gh(...args);\n', '  gh(...args);\n  gh("workflow", "run", "ci.yml", "--repo", repo, "--ref", rama);\n', 'ci.yml se lanza desde un solo sitio'],
   // La clase «despliegue» cubre lo que leen deploy.sh, compose y el trabajo «imagenes».
@@ -132,8 +132,18 @@ const casos = [
   [S, '    propuestaTotal: p.d.pruebas, propuestaDesdeA, completa: p.ex.corrida === "completa" };', '    propuestaTotal: [], propuestaDesdeA, completa: p.ex.corrida === "completa" };', 'la propuesta de la entrega es la del plan'],
   [S, 'const aEsAncestro = tengo && (await io.esAncestro(A)) === true;', 'const aEsAncestro = true;', '«A es ancestro de HEAD» lo dice git'],
   [S, '  for (const r of intermediasDe(corridas, { r1, r2: r2.run, rama, repo })) intermedias.push(await cargarIntermedia(io, r));\n', '', 'las corridas no verdes entre R1 y R2 salen de la lista de la rama'],
-  [S, '  return { r1: await cargarCorrida(io, r1), r2, intermedias,', '  return { r1: { ...(await cargarCorrida(io, r1)), run: { ...r1, run_attempt: 1 } }, r2, intermedias,', 'R1 llega tal cual de la API'],
-  [S, '  return { r1: await cargarCorrida(io, r1), r2, intermedias,', '  return { r1: await (async () => { const c = await cargarCorrida(io, r1); return { ...c, trabajos: c.trabajos.filter((j) => !/al revés/.test(j.name)) }; })(), r2, intermedias,', 'R1 llega con todos sus trabajos'],
+  [S, '  return { r1: { ...(await cargarCorrida(io, r1)), alreves:', '  return { r1: { ...(await cargarCorrida(io, r1)), run: { ...r1, run_attempt: 1 }, alreves:', 'R1 llega tal cual de la API'],
+  [S, '  return { r1: { ...(await cargarCorrida(io, r1)), alreves:', '  return { r1: { ...(await (async () => { const c = await cargarCorrida(io, r1); return { ...c, trabajos: c.trabajos.filter((j) => !/al revés/.test(j.name)) }; })()), alreves:', 'R1 llega con todos sus trabajos'],
+  // 24 nov · «todas las fases» corre solo las de punta a punta de «solo» (--sin-alreves): una suite al revés de «solo» de R1 la cubre su carril si el
+  // catálogo del COMMIT de R1 dice que es al revés; sin él, o si alguna parte la corrió, no hay cadena ni repaso.
+  [S, '    const fuera = en.solo.filter((t) => !pedidas.has(t) && !alr.has(t));', '    const fuera = en.solo.filter((t) => !pedidas.has(t));', 'R1: una suite al revés de «solo» que ninguna parte pidió vale si el catálogo del commit de R1 dice que es al revés'],
+  [S, '    const fuera = en.solo.filter((t) => !pedidas.has(t) && !alr.has(t));', '    const fuera = [];', 'R1: un nombre de «solo» que no es al revés en el catálogo de R1 y no lo pidió ninguna parte → FALTA'],
+  [S, '    if (repetidas.length) return no(', '    if (false) return no(', 'R1: una suite al revés corrida en «todas las fases» (sin --sin-alreves) → FALTA'],
+  [S, '    const alr = new Set(Array.isArray(alreves) ? alreves : []);', '    const alr = new Set(Array.isArray(alreves) ? alreves : ["alreves9vd"]);', 'R1: sin el catálogo del commit de R1, un nombre de «solo» que no pidió ninguna parte → FALTA'],
+  [S, 'alreves: tengo ? await io.alreves(A) : null }, r2, intermedias,', 'alreves: null }, r2, intermedias,', 'cableado: una suite al revés en «solo» de R1 (no la corre «todas las fases») la reconoce el catálogo del commit de R1'],
+  [S, '  const a = analizarDirigida({ ...(await cargarCorrida(io, run)), rama, repo, alreves });', '  const a = analizarDirigida({ ...(await cargarCorrida(io, run)), rama, repo });', 'repaso: una suite al revés en «solo» de R1 la reconoce el catálogo de su commit'],
+  [S, '    alreves: (sha) => m(`a${sha}`, () => catalogoEn(sha).filter((t) => t.carril === "alreves").map((t) => t.nombre)),', '    alreves: (sha) => m(`a${sha}`, () => catalogoEn("HEAD").filter((t) => t.carril === "alreves").map((t) => t.nombre)),', 'ioReal pregunta de verdad, entera y sin retoques'],
+  [S, '/^pruebas\\/reparto-alreves\\.json$/, ', '', 'reparto-alreves.json es una herramienta'],
   [S, '  const arr = difDeArreglo(difAHead);\n  if (!arr.ok) return arr;\n  const corridas', '  const arr = difDeArreglo(difAHead);\n  if (false) return arr;\n  const corridas', 'repaso: .github/ cambiado entre A y HEAD → no hay repaso'],
   [S, 'if (p.ex.corrida !== "dirigida" || !candidatas.length) return', 'if (!candidatas.length) return', 'la evidencia encadenada solo en el camino de la dirigida'],
   [S, '    evidencia: (p) => buscarEvidencia({ p, rama, repo, arbolHead, io: ioReal(repo, rama) }),', '    evidencia: (p) => buscarEvidencia({ p, rama, repo, arbolHead, io: { ...ioReal(repo, rama), esAncestro: () => true } }),', 'la evidencia encadenada solo en el camino de la dirigida (nunca con .github/ ni en la vía rápida), desde buscarEvidencia con ioReal'],

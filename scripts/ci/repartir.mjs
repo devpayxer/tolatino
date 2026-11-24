@@ -6,6 +6,10 @@
          que salieron en verde. Sin --rebalancear (y con la misma n) NO mueve a ninguna prueba ya asignada: actualiza duraciones, pone las nuevas
          (en la parte de su requisito o en la más vacía), quita las que ya no existen y rehace el orden. --rebalancear reparte todo de nuevo (LPT con
          afinidad): solo en un commit propio, con su confirmación (dos veces seguidas + barajada), cuando la parte más larga pase un 10 % de la media.
+     node scripts/ci/repartir.mjs --alreves --duraciones a.log [b.log …] [--fuente "…"]
+         24 nov · escribe pruebas/reparto-alreves.json (las duraciones del carril «al revés», que se reparte por tiempo): a.log, el registro de un
+         trabajo «punta a punta · al revés · i/n» (las líneas «✓ <suite>  <n> ✓  <s> s» del corredor; las rojas no cuentan) o un resumen.json; con
+         varios, la media. Solo guarda duraciones (no hay asignación que conservar: las suites al revés no se requieren entre sí).
      node scripts/ci/repartir.mjs --comprobar      lo que mira el guardián repartoAsignado, y las cargas por parte
      node scripts/ci/repartir.mjs --casos          casos de prueba del reparto sobre catálogos de mentira (sin tocar el repo) */
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
@@ -19,11 +23,15 @@ const RP = createRequire(import.meta.url)("../../pruebas/lib/reparto.cjs");
 const args = process.argv.slice(2), opt = (k) => { const i = args.indexOf(k); return i < 0 ? null : args[i + 1]; }, flag = (k) => args.includes(k);
 const nCi = () => { try { return Number(/\n      partes:\n[\s\S]*?\n        default: "(\d+)"/.exec(readFileSync(join(RAIZ, ".github/workflows/ci.yml"), "utf8"))?.[1]) || undefined; } catch { return undefined; } };
 
+/** Las suites en verde de un registro del corredor (con o sin la hora que GitHub pone delante): «✓ <nombre>  <n> ✓  <s> s». Sin las pasadas reales. */
+const delRegistro = (texto) => texto.split(/\r?\n/).map((l) => /^(?:\S+Z )?✓ ([A-Za-z0-9_-]+) +\d+ ✓ +(\d+) s\b/.exec(l)).filter((m) => m && !/^guardianes-(inicio|final)$/.test(m[1])).map((m) => [m[1], Number(m[2])]);
+
 function duraciones(archivos) {
   const suma = new Map();
   for (const f of archivos) {
-    const d = JSON.parse(readFileSync(f, "utf8"));
-    const pares = Array.isArray(d?.res) ? d.res.filter((r) => r?.ok && Number.isFinite(r?.seg)).map((r) => [r.nombre, r.seg]) : Object.entries(d ?? {}).filter(([, s]) => Number.isFinite(s));
+    const t = readFileSync(f, "utf8");
+    let d = null; try { d = JSON.parse(t); } catch { /* un registro, no un JSON */ }
+    const pares = d === null ? delRegistro(t) : Array.isArray(d?.res) ? d.res.filter((r) => r?.ok && Number.isFinite(r?.seg)).map((r) => [r.nombre, r.seg]) : Object.entries(d ?? {}).filter(([, s]) => Number.isFinite(s));
     for (const [n, s] of pares) { const x = suma.get(n) ?? [0, 0]; suma.set(n, [x[0] + s, x[1] + 1]); }
   }
   return Object.fromEntries([...suma].map(([n, [s, k]]) => [n, s / k]));
@@ -49,6 +57,18 @@ if (flag("--regenerar")) {
   };
   writeFileSync(join(RAIZ, RP.ARCHIVO), JSON.stringify(salida, null, 1) + "\n");
   console.log(`✓ ${RP.ARCHIVO}: ${resumen(r)} · pruebas que cambiaron de parte: ${movidas}${previo ? "" : " (no había reparto)"}`);
+} else if (flag("--alreves")) {
+  const fuentes = []; const i = args.indexOf("--duraciones"); if (i >= 0) for (const a of args.slice(i + 1)) { if (a.startsWith("--")) break; fuentes.push(a); }
+  if (!fuentes.length) { console.error("--alreves --duraciones <registros o resumen.json…>"); process.exit(2); }
+  const d = duraciones(fuentes), previo = RP.leerAlReves(RAIZ);
+  const salida = {
+    nota: "Generado por scripts/ci/repartir.mjs --alreves (no se edita a mano). Duraciones del carril «al revés» (s): pruebas/correr.mjs --grupo alreves --parte i/n reparte por tiempo con ellas; guardián dirigidaEnPartes.",
+    fuente: opt("--fuente") ?? previo?.fuente ?? "",
+    seg: Object.fromEntries(Object.entries(d).sort(([a], [b]) => a.localeCompare(b)).map(([n, s]) => [n, Math.round(s)])),
+  };
+  writeFileSync(join(RAIZ, RP.ARCHIVO_ALREVES), JSON.stringify(salida, null, 1) + "\n");
+  const v = Object.values(salida.seg);
+  console.log(`✓ ${RP.ARCHIVO_ALREVES}: ${v.length} suites · ${v.reduce((a, b) => a + b, 0)} s en serie · la más larga ${Math.max(...v)} s`);
 } else if (flag("--comprobar")) {
   const rep = RP.leer(RAIZ), out = RP.comprobar(RAIZ, rep, nCi());
   for (const x of out) console.log(`${x.falla ? "✗" : "~"} ${x.msg}`);
@@ -112,10 +132,48 @@ if (flag("--regenerar")) {
     ok(mal(conA, /no existe/) === false && RP.comprobar(d, conA, 4).some((x) => x.falla && /corre en 4/.test(x.msg)), "caza un reparto para otra n que la de ci.yml");
     for (const x of ["i1y", "j1y", "k1y", "l1y", "m1y", "n1y"]) writeFileSync(join(d, "pruebas", "e2e", `${x}.cjs`), "\n");
     ok(mal(conA, /sin asignar \(más de 5\)/), "más de 5 pruebas sin asignar es rojo");
+    // 9. 24 nov · Por tiempo (repartirPorTiempo, la función pura de una dirigida y del carril al revés).
+    const T = (x) => RP.repartirPorTiempo(x), en = (r, x) => r.partes.findIndex((p) => p.includes(x));
+    let t = T({ sel: ["a", "b", "c", "d"], n: 2, seg: { a: 10, b: 9, c: 8, d: 7 }, orden: ["a", "b", "c", "d"] });
+    ok(JSON.stringify(t.cargas) === "[17,17]" && JSON.stringify(t.partes) === '[["a","d"],["b","c"]]', `por tiempo: LPT equilibra 10 9 8 7 en dos partes de 17 (${JSON.stringify(t.partes)})`);
+    t = T({ sel: ["x", "y", "z"], n: 2, seg: { x: 100 }, orden: ["x", "y", "z"] });
+    ok(JSON.stringify(t.cargas) === "[100,120]", `por tiempo: una sin medir cuenta ${RP.NUEVA_SEG} s (${t.cargas})`);
+    t = T({ sel: ["a", "b", "c", "d", "e", "f", "g"], n: 3, seg: { a: 50, b: 10, c: 10, d: 10, e: 10, f: 10, g: 10 }, orden: ["a", "b", "c", "d", "e", "f", "g"] });
+    ok(Math.max(...t.cargas) === 50 && t.partes.flat().sort().join() === "a,b,c,d,e,f,g", `por tiempo: no por posición (por posición, una parte tendría a, d y g = 70 s; aquí ${t.cargas})`);
+    t = T({ sel: ["a4", "b4", "c4", "z4"], n: 2, seg: { a4: 50, b4: 40, c4: 30, z4: 20 }, aristas: [["a4", "z4", false]], orden: ["a4", "b4", "c4", "z4"] });
+    ok(en(t, "a4") === en(t, "z4") && t.partes[en(t, "a4")].indexOf("z4") < t.partes[en(t, "a4")].indexOf("a4"), `por tiempo: el requisito va en la misma parte y antes aunque en el orden vaya después (${JSON.stringify(t.partes)})`);
+    t = T({ sel: ["a", "c", "q"], n: 2, seg: { a: 10, b: 100, c: 10, q: 115 }, aristas: [["a", "b", false], ["c", "b", false]], orden: ["a", "b", "c", "q"] });
+    ok(en(t, "a") === en(t, "c") && en(t, "q") !== en(t, "a") && JSON.stringify(t.cargas.slice().sort((x, y) => x - y)) === "[115,120]", `por tiempo: dos que piden el mismo requisito fuera de la selección van juntas y su tiempo cuenta una vez (${t.cargas})`);
+    t = T({ sel: ["a", "c"], n: 2, seg: { a: 10, b: 10, c: 10 }, aristas: [["a", "b", false], ["b", "c", false]], orden: ["a", "b", "c"] });
+    ok(en(t, "a") === en(t, "c") && t.partes[en(t, "a")].join() === "c,a", `por tiempo: una cadena a←b←c con b fuera: a y c juntas y c antes (${JSON.stringify(t.partes)})`);
+    t = T({ sel: ["a", "q"], n: 2, seg: { a: 10, b: 90, q: 50 }, aristas: [["a", "b", true]], orden: ["a", "b", "q"] });
+    ok(JSON.stringify(t.cargas.slice().sort((x, y) => x - y)) === "[10,50]", `por tiempo: un requisito «siempre» ya va en la duración medida de quien lo pide (no se suma otra vez: ${t.cargas})`);
+    t = T({ sel: ["a", "b"], n: 4, seg: { a: 1, b: 1 }, orden: ["a", "b"] });
+    ok(t.partes.length === 4 && t.partes.flat().sort().join() === "a,b" && t.partes.filter((p) => !p.length).length === 2, "por tiempo: menos pruebas que partes → partes vacías, cada prueba una vez");
+    const sel9 = ["k", "j", "i", "h", "g", "f", "e", "d", "c", "b"], seg9 = Object.fromEntries(sel9.map((x, k) => [x, 7 + ((k * 13) % 11)]));
+    ok(JSON.stringify(T({ sel: sel9, n: 3, seg: seg9, orden: sel9 })) === JSON.stringify(T({ sel: [...sel9], n: 3, seg: { ...seg9 }, orden: [...sel9] })), "por tiempo: la misma entrada da siempre el mismo reparto (cada parte del CI la calcula por su cuenta)");
+    let lanza = false; try { T({ sel: ["a"], n: 0 }); } catch { lanza = true; }
+    ok(lanza, "por tiempo: n tiene que ser un entero ≥ 1");
+    // 10. Con un catálogo: parteSubconjunto (con los requiere escritos), esEntera, parteAlReves y comprobarAlReves.
+    const d2 = arbol({ a1z: [["c1z"]], b1z: [], c1z: [], d1z: [], e1z: [] }); dirs.push(d2);
+    const rep2 = { seg: { a1z: 30, b1z: 25, c1z: 20, d1z: 5, e1z: 50 } };
+    const ps2 = [1, 2].map((i) => RP.parteSubconjunto(d2, rep2, ["a1z", "b1z", "c1z", "d1z"], i, 2));
+    ok(JSON.stringify(ps2) === JSON.stringify(T({ sel: ["a1z", "b1z", "c1z", "d1z"], n: 2, seg: rep2.seg, aristas: RP.aristas(d2).aristas, orden: RP.catalogo(d2) }).partes) && ps2[en({ partes: ps2 }, "a1z")].join().includes("c1z,a1z"), `parteSubconjunto: las partes por tiempo con los requiere del catálogo (${JSON.stringify(ps2)})`);
+    ok(RP.parteSubconjunto(d2, rep2, ["a1z"], 3, 2) === null && RP.parteSubconjunto(d2, rep2, ["a1z"], 0, 2) === null, "parteSubconjunto: i fuera de 1…n → null");
+    ok(RP.esEntera(d2, RP.catalogo(d2)) && !RP.esEntera(d2, RP.catalogo(d2).slice(1)) && !RP.esEntera(d2, [...RP.catalogo(d2).slice(1), "b1z"]), "esEntera: solo la punta a punta entera, cada una una vez");
+    writeFileSync(join(d2, RP.ARCHIVO_ALREVES), JSON.stringify({ seg: { r1: 90, r2: 30, r3: 30, r4: 30 } }));
+    const al2 = [1, 2].map((i) => RP.parteAlReves(d2, ["r1", "r2", "r3", "r4"], i, 2));
+    ok(JSON.stringify(al2) === '[["r1"],["r2","r3","r4"]]', `parteAlReves: por tiempo con ${RP.ARCHIVO_ALREVES} (${JSON.stringify(al2)}; por posición sería r1 r3 = 120 s)`);
+    const ca = (seg, al) => RP.comprobarAlReves({ seg }, al);
+    ok(!ca({ r1: 1, r2: 2 }, ["r1", "r2"]).length && ca({ r1: 1, r9: 2 }, ["r1"]).some((x) => x.falla && /r9.*ya no es una suite al revés/.test(x.msg)), "comprobarAlReves: una duración de una suite que ya no existe es rojo");
+    ok(ca({ r1: 1 }, ["r1", "r2"]).every((x) => !x.falla) && ca({ r1: 1 }, ["r1", "r2"]).length === 1, "comprobarAlReves: una suite sin medir es un aviso");
+    const once = Array.from({ length: RP.ALREVES_SIN_MEDIR + 1 }, (_, k) => `n${k}`);
+    ok(ca({ r1: 1 }, ["r1", ...once]).some((x) => x.falla && /sin medir \(más de/.test(x.msg)) && !ca({ r1: 1 }, ["r1", ...once.slice(1)]).some((x) => x.falla), `comprobarAlReves: más de ${RP.ALREVES_SIN_MEDIR} sin medir es rojo, ${RP.ALREVES_SIN_MEDIR} no`);
+    ok(RP.comprobarAlReves(null, ["r1"]).some((x) => x.falla) && ca({ r1: -1 }, ["r1"]).some((x) => x.falla), "comprobarAlReves: sin archivo, o una duración que no es un número de segundos, es rojo");
   } finally { for (const x of dirs) rmSync(x, { recursive: true, force: true }); }
   console.log(`\n${bien}/${total} casos del reparto`);
   process.exit(bien === total ? 0 : 1);
 } else {
-  console.log("Uso: node scripts/ci/repartir.mjs --regenerar --partes <n> --duraciones <archivos…> | --comprobar | --casos");
+  console.log("Uso: node scripts/ci/repartir.mjs --regenerar --partes <n> --duraciones <archivos…> | --alreves --duraciones <registros…> | --comprobar | --casos");
   process.exit(2);
 }

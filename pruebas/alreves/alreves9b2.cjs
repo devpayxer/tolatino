@@ -43,10 +43,11 @@ const casos = [
   // 22 nov · «cambios» también lleva ese permiso (pregunta por la corrida del código): el caso quita el de «tuberia», que va tras su «runs-on».
   ['tuberiaNoSeSalta', Y, '    if: always()\n    runs-on: ubuntu-latest\n    permissions: { contents: read, actions: read }\n', '    if: always()\n    runs-on: ubuntu-latest\n'],
   ['tuberiaNoSeSalta', Y, "'--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }}", "'--grupo fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios' }}"],
-  // 22 nov (tanda 4) · «al revés» en su trabajo: sin su grupo, con una parte menos, o con una parte fija.
-  ['tuberiaNoSeSalta', Y, 'run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n', 'run: node pruebas/correr.mjs --grupo alreves9b2 --parte ${{ matrix.parte }}/3\n'],
-  ['tuberiaNoSeSalta', Y, '\n        parte: [1, 2, 3]\n', '\n        parte: [1, 2]\n'],
-  ['tuberiaNoSeSalta', Y, 'run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/3\n', 'run: node pruebas/correr.mjs --grupo alreves --parte 1/3\n'],
+  // 22 nov (tanda 4) · «al revés» en su trabajo: sin su grupo, con una parte menos, o con una parte fija. 24 nov · En 6 partes.
+  ['tuberiaNoSeSalta', Y, 'run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/6\n', 'run: node pruebas/correr.mjs --grupo alreves9b2 --parte ${{ matrix.parte }}/6\n'],
+  ['tuberiaNoSeSalta', Y, '\n        parte: [1, 2, 3, 4, 5, 6]\n', '\n        parte: [1, 2, 3, 4, 5]\n'],
+  ['tuberiaNoSeSalta', Y, 'run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/6\n', 'run: node pruebas/correr.mjs --grupo alreves --parte 1/6\n'],
+  ['tuberiaNoSeSalta', Y, '    name: punta a punta · al revés · ${{ matrix.parte }}/6\n', '    name: punta a punta · al revés · ${{ matrix.parte }}/3\n'],
   // 22 nov (tanda 4) · el tope de trabajos a la vez de la confirmación y de los anchos.
   ['tuberiaNoSeSalta', Y, '      fail-fast: false\n      max-parallel: 12\n', '      fail-fast: false\n'],
   ['tuberiaNoSeSalta', Y, '      fail-fast: false\n      max-parallel: 4\n', '      fail-fast: false\n'],
