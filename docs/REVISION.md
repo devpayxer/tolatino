@@ -6557,6 +6557,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   «todas las fases» (13–18 min por parte): el reparto guardado era del 22 nov y la parte más larga iba 12 % sobre la media. **En marcha:**
   el reparto rebalanceado con lo medido hoy (c68a92a, 8 partes de ~13 min de pruebas cada una), con su confirmación (dos veces seguidas +
   barajada) en la rama; si sale en verde sube solo. La primera dirigida que llegue dirá el tiempo real de la grande y la chica. Qué mirar: nada.
+- **Más tarde (24 nov, 22:30 UTC; todo en `main` y servido):** el reparto rebalanceado subió (7ed9a08; confirmación 45482417517 en verde) y la
+  revisión completa de `main` bajó a **20,4 min**. La primera dirigida chica (3 pruebas) tardó 18 min: abría 8 partes, 5 vacías, y las de «al
+  revés» esperaron máquina; ahora una dirigida con 4 pruebas de punta a punta o menos abre 4 (dc80a67, revisado por Fable): **16,3 min**. Lo que
+  queda: «al revés» en sí (6–10 min por parte) más el build (3,5 min). Tres pruebas que, si cruzaban la medianoche, cerraban un día y abrían otro
+  (`compa7f`, `compa7h`, `msg2p`) arregladas con su guardián (f0c3258). Qué mirar: nada.
 
 ## `main` en rojo desde las 11:53 del 24 nov y nadie lo miró (arreglo en curso; Opus)
 - **Qué pasó:** la corrida de `main` corre DESPUÉS de cada subida (vía rápida o no) y nadie la estaba mirando. 11:53 (tras «Novedades después de

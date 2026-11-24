@@ -20,6 +20,9 @@ _Actualizado: 24 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 21 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **24 nov (22:30 UTC) · `main` = `pruebas` = dc80a67, servido.** Desde la entrada de abajo: reparto de la punta a punta rebalanceado (7ed9a08;
+  `main` completa en 20,4 min), las pruebas preguntan el día una vez (f0c3258) y la dirigida chica en 4 partes (dc80a67: 16,3 min). LAUNCH al día
+  con lo ya cumplido. **Sigue:** tarea 195 (lo construible de LAUNCH): `din9t6`/`din9t8`/`adm7i` (fechas fijas), consultas sin prueba.
 - **24 nov (20:50 UTC) · `main` = `pruebas` = 80181b0, sandbox comprobado y corrida de `main` en verde (45480560359, 24,5 min).** Subido hoy
   después del arreglo de `main`: el repaso corto tras una roja (AU, b61527a), la vía rápida de código APAGADA (AV, b7f2c2d; `main` verde
   45472900060) y el CI más rápido (80181b0: dirigida en 8 partes por tiempo, sin repetir «al revés», «al revés» en 6 por tiempo; corrida
