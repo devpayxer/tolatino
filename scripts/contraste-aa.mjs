@@ -10,6 +10,11 @@ import { join, relative } from "node:path";
 
 const RAIZ = new URL("..", import.meta.url).pathname;
 export const GRIS_AA = "rgba(11,14,18,.6)";
+/* 24 nov · Lo mismo al revés: texto CLARO sobre fondo oscuro. Blanco por debajo del 48 % sobre tinta (#0B0E12) no llega a 4,5:1 (al 42 %: 4,1:1;
+   lo cazó axe en el pie de la web: los títulos de las columnas y el ©). Pasa al 62 %, el tono que ya usan los enlaces del pie (7,7:1). Solo texto. */
+export const CLARO_AA = "rgba(255,255,255,.62)";
+const BAJO_CLARO = /rgba\(255,\s?255,\s?255,\s?0?\.(3[4-9]|4\d?)\)/g;
+const TW_CLARO = /(^|[\s"'`:])text-white\/(?:(35|40|45)(?![\d])|\[0?\.(3[4-9]|4\d?)\d?\])/g;
 const BAJO = /rgba\(11,\s?14,\s?18,\s?0?\.(34|4|42|45|5|55)\)/g;
 const NO_TEXTO = /shadow|border|background|outline|stroke|ring|divide|^bg$|^line|^fill-?soft$|^fill$/i;
 
@@ -29,7 +34,8 @@ function noEsTextoTw(antes) {
    La forma con corchetes se escapaba (17 nov, axe color-contrast en la ficha: text-ink/[.42] = 2,8:1). Solo texto: bg-ink/[.42], border-ink/[.08]… no casan. */
 const TW = /(^|[\s"'`:])text-ink\/(?:(40|45|50|55)(?![\d])|\[0?\.([45]|3[4-9]|4\d|5\d)\d?\])/g;
 export function contrasteLinea(l) {
-  return l.replace(BAJO, (m, _a, i) => (NO_TEXTO.test(propiedad(l.slice(0, i))) || noEsTextoTw(l.slice(0, i)) ? m : GRIS_AA)).replace(TW, "$1text-ink/60");
+  return l.replace(BAJO, (m, _a, i) => (NO_TEXTO.test(propiedad(l.slice(0, i))) || noEsTextoTw(l.slice(0, i)) ? m : GRIS_AA)).replace(TW, "$1text-ink/60")
+    .replace(BAJO_CLARO, (m, _a, i) => (NO_TEXTO.test(propiedad(l.slice(0, i))) || noEsTextoTw(l.slice(0, i)) ? m : CLARO_AA)).replace(TW_CLARO, "$1text-white/60");
 }
 export function contrasteTexto(t) { return t.split("\n").map(contrasteLinea).join("\n"); }
 

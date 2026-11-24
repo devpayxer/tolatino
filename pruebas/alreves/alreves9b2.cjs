@@ -8,6 +8,8 @@ const casos = [
   // tuberiaVisual: un dispositivo menos, una tolerancia aflojada, aprobar en cada corrida, una captura que falta
   ['tuberiaVisual', Y, 'galaxy, ipad, escritorio-1024, escritorio-1280, escritorio-1440]', 'galaxy, ipad, escritorio-1024, escritorio-1280]'],
   ['tuberiaVisual', 'pruebas/visual/comparar.cjs', 'MAXIMO = 0.005', 'MAXIMO = 0.5'],
+  // 24 nov · El Hoy del Super Admin deja de tapar la auditoría (lo que escribe una migración volvería a cambiar la captura aprobada).
+  ['tuberiaVisual', 'pruebas/visual/pantallas.json', '      "desde": "ÚLTIMAS ACCIONES DEL EQUIPO",\n', ''],
   // 22 nov (B5) · los dispositivos sin tope de trabajos a la vez, o juntados en un trabajo
   ['tuberiaVisual', Y, '      fail-fast: false\n      max-parallel: 3\n', '      fail-fast: false\n'],
   ['tuberiaVisual', Y, '      max-parallel: 3\n', '      max-parallel: 9\n'],

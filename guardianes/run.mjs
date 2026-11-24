@@ -1386,7 +1386,7 @@ const guardianes = {
       const enDs = f.startsWith("packages/ui/src/ds/");
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (contrasteLinea(l) !== l)
-          falla(G, f, i + 1, `texto gris por debajo de AA (ink al 34–59 %, también text-ink/[.42]): usa ${GRIS_AA} o text-ink/60 (node scripts/contraste-aa.mjs lo arregla${enDs ? "; en el sistema portado, node scripts/portar-sistema.mjs" : ""})`);
+          falla(G, f, i + 1, `texto por debajo de AA (gris: ink al 34–59 %, también text-ink/[.42]; claro sobre oscuro: blanco al 34–49 %, también text-white/40): usa ${GRIS_AA} o text-ink/60, o rgba(255,255,255,.62) o text-white/60 (node scripts/contraste-aa.mjs lo arregla${enDs ? "; en el sistema portado, node scripts/portar-sistema.mjs" : ""})`);
       });
     }
     // 17 nov · Atenuar con opacity una pieza que lleva texto lo deja bajo AA (la fila «no disponible» del menú: opacity .45 → 1,9–3,1:1). Se atenúa
@@ -8585,6 +8585,16 @@ const guardianes = {
     const pan = JSON.parse(readFileSync(PA, "utf8")).pantallas ?? [];
     if (pan.length < 6) falla(G, PA, 0, "el conjunto inicial son 6 pantallas clave (inicio, ficha, buscar, mi cuenta, panel hoy, admin hoy)");
     for (const x of pan) for (const id of IDS) if (!existsSync(`pruebas/visual/${x.id}/${id}.png`)) falla(G, `pruebas/visual/${x.id}/${id}.png`, 0, "falta la captura aprobada (se genera con la corrida aprobar=si, se aprueba en docs/REVISION.md y entra por commit)");
+    // 24 nov · Lo que escriben las migraciones (la auditoría) no puede cambiar una captura aprobada: con 0217 y 0218 la lista de «Últimas acciones» del
+    // Hoy del Super Admin creció y todo lo de abajo se corrió (CI 45431535443). Si la página de una pantalla enseña <Auditoria titulo="X">, la pantalla
+    // la tapa: «desde» o «titulos» con X.
+    const PAG = { "/admin": "apps/web/app/admin/page.tsx" };
+    for (const x of pan) {
+      const f = PAG[x.ruta];
+      if (!f || !existsSync(f)) continue;
+      for (const m of readFileSync(f, "utf8").matchAll(/<Auditoria\b[^>]*\btitulo="([^"]+)"/g))
+        if (x.desde !== m[1] && !(x.titulos ?? []).includes(m[1])) falla(G, PA, 0, `«${x.id}» enseña la auditoría («${m[1]}»): lo que escribe una migración cambiaría la captura aprobada; tápala con "desde" o "titulos"`);
+    }
   },
 
   tuberiaAccesibilidad() {

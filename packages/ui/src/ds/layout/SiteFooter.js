@@ -146,7 +146,7 @@ function SiteFooter({
     style: {
       font: '700 10px ' + mono,
       letterSpacing: '.18em',
-      color: 'rgba(255,255,255,.42)'
+      color: 'rgba(255,255,255,.62)'
     }
   }, f.title), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -274,7 +274,7 @@ function SiteFooter({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: 'rgba(255,255,255,.42)'
+      color: 'rgba(255,255,255,.62)'
     }
   }, "\xA9 ", new Date().getFullYear(), " TO\u2019LATINO"), legal.map(l => /*#__PURE__*/React.createElement("span", {
     key: l.label,

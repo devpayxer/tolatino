@@ -6546,6 +6546,17 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Servido el 24 nov (8c3bd59) y comprobado sobre el sandbox:** el pie con 44 px en Negocios, Comunidad y Eventos; «Arro» trae platos; «empanda»
   entiende Empanadas («zzzqqq» no trae nada, como debe). Qué mirar en el teléfono: Buscar «Arro» y «empanda»; el final de Negocios.
 
+## `main` en rojo desde las 11:53 del 24 nov y nadie lo miró (arreglo en curso; Opus)
+- **Qué pasó:** la corrida de `main` corre DESPUÉS de cada subida (vía rápida o no) y nadie la estaba mirando. 11:53 (tras «Novedades después de
+  Resumen»): `vec9m` roja (arreglada en el paquete siguiente). 15:57 (8c3bd59, buscador + pie): rojas en los 9 dispositivos y en una parte.
+- **Los fallos:** (1) axe: el texto claro del pie (títulos de columna y ©) al 42 % da 4,1:1, por debajo de AA, en Inicio y la ficha; (2) la captura
+  del Hoy del Super Admin en los tres escritorios: las migraciones 0217 y 0218 escriben en la auditoría, la lista «Últimas acciones» creció y
+  todo lo de abajo se corrió; (3) `fic9cab` falla en la parte 1/8 detrás de otras pruebas de Sabor Dominicano (sola pasa).
+- **Arreglos:** (1) blanco al 62 % (el tono de los enlaces del pie, 7,7:1) en el sistema portado; el guardián `contrasteTexto` ahora caza también
+  el texto claro por debajo de AA (y su al revés). (2) la captura compara barra, menú y cifras y tapa desde «Últimas acciones» (lo escriben las
+  migraciones y la analítica), como «Abierto ahora» en Inicio; guardián `tuberiaVisual` + al revés. (3) en curso.
+- **Para que no se repita:** con AV, la herramienta no deja subir código por la vía rápida con `main` en rojo y avisa en cada subida.
+
 ## El proceso de construcción, revisado otra vez (24 nov; medido por Opus) — PARA DECIDIR: el punto 4
 - **Medido en GitHub:** la revisión completa de `main` (las 238 pruebas, 8 partes repartidas por tiempo) tarda 21 min; la dirigida del paquete del
   buscador y el pie (283 pruebas elegidas porque tocaba `pruebas/lib/entorno.cjs`, que usan todas) tardó 46: 4 partes por orden (26–40 min cada una)

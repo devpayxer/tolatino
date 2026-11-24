@@ -37,7 +37,9 @@
     {
       "id": "admin-hoy",
       "ruta": "/admin",
-      "cuenta": "5705550199"
+      "cuenta": "5705550199",
+      "desde": "ÚLTIMAS ACCIONES DEL EQUIPO",
+      "desde_porque": "24 nov · La auditoría y «Ciudad viva» los escriben las migraciones y la analítica: con 0217 y 0218 la lista pasó de «Todavía no hay acciones» a dos filas y todo lo de abajo se corrió (2,6–3,9 % distinto en los tres escritorios, CI 45431535443). Se compara lo de arriba (barra, menú, cifras); lo de abajo se tapa en las dos imágenes, como «Abierto ahora» en Inicio. Guardián tuberiaVisual."
     }
   ]
 }

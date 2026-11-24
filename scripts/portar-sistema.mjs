@@ -116,9 +116,12 @@ function agregarProp(t, comp, name, es, en) {
    (5,1:1 sobre blanco, 5,0:1 sobre papel), el mismo gris de --tl-text-3. No toca sombras, bordes ni fondos (no son texto), ni el 30–35 %
    (deshabilitado, flechas decorativas: axe no los exige; el 34 % sí: las pestañas inactivas de BottomNav). Una sola regla para los 132 componentes: lo mismo al volver a portar. */
 export const GRIS_AA = "rgba(11,14,18,.6)";
+/* 24 nov · Y el texto CLARO sobre oscuro (blanco al 34–49 % → al 62 %, el de los enlaces del pie): el pie de la web tenía títulos y © al 42 % (4,1:1). */
+export const CLARO_AA = "rgba(255,255,255,.62)";
 function contraste(t) {
-  return t.split("\n").map((l) => l.replace(/rgba\(11,14,18,\.(34|4|42|45|5|55)\)/g, (m, a, i) =>
-    /(boxShadow|border\w*|background\w*|outline|stroke|fill|textShadow)\s*:/.test(l.slice(0, i)) ? m : GRIS_AA)).join("\n");
+  const noTexto = (l, i) => /(boxShadow|border\w*|background\w*|outline|stroke|fill|textShadow)\s*:/.test(l.slice(0, i));
+  return t.split("\n").map((l) => l.replace(/rgba\(11,14,18,\.(34|4|42|45|5|55)\)/g, (m, a, i) => noTexto(l, i) ? m : GRIS_AA)
+    .replace(/rgba\(255,255,255,\.(3[4-9]|4\d?)\)/g, (m, a, i) => noTexto(l, i) ? m : CLARO_AA)).join("\n");
 }
 
 function accesibilizar(t, rel) {

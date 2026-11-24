@@ -5,10 +5,15 @@
 // sinInteractivoAnidado: la fila de la ficha (Mercado, Pro) y la foto de PasosFH otra vez como role="button" que contiene su botón, y un archivo nuevo con un role="button" que contiene un <a>; al derecho, un button hermano de un <a> y un diálogo con botón no son un control anidado.
 // Se inyecta el defecto, el guardián debe fallar con SU mensaje ([contrasteTexto]); se restaura. «crear»: se crea el archivo, se corre y se borra.
 // También al derecho: una sombra o un borde con ink al 50 % no es texto (el guardián no debe saltar).
+// 24 nov · El claro sobre oscuro: los títulos y el © del pie de la web al 42 %, un text-white/40 en el Centro de ayuda y dos archivos nuevos (blanco
+// al 45 % y text-white/[.4]); al derecho, un fondo y un borde blancos al 40 % no son texto.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const casos = [
+  // 24 nov · Texto CLARO sobre oscuro: el pie de la web con los títulos de columna y el © otra vez al 42 % (axe color-contrast, 4,1:1).
+  ['contrasteTexto', 'packages/ui/src/ds/layout/SiteFooter.js', "      font: '700 10px ' + mono,\n      letterSpacing: '.18em',\n      color: 'rgba(255,255,255,.62)'", "      font: '700 10px ' + mono,\n      letterSpacing: '.18em',\n      color: 'rgba(255,255,255,.42)'"],
+  ['contrasteTexto', 'apps/web/app/(app)/ayuda/CentroAyuda.tsx', 'leading-normal text-white/75">', 'leading-normal text-white/40">'],
   ['contrasteTexto', 'packages/ui/src/ds/navigation/Tabs.js', "on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)';", "on ? 'var(--tl-ink)' : 'rgba(11,14,18,.42)';"],
   ['contrasteTexto', 'apps/web/app/admin/Colas.tsx', 'letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E("CASO", "CASE")}', 'letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E("CASO", "CASE")}'],
   ['contrasteTexto', 'apps/web/app/(app)/cuenta/boletos/[codigo]/Boleto.tsx', 'tracking-[0.16em] text-ink/60">{cuando}', 'tracking-[0.16em] text-ink/45">{cuando}'],
@@ -43,12 +48,15 @@ const casos = [
 const crear = [
   ['objetivoTactil', 'apps/web/app/admin/TactilAlReves.tsx', 'export const T = () => <button type="button" className="flex w-full py-0.5">x</button>;\n'],
   ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/FilaAnidadaAlReves.tsx', 'export const F = ({ a }: { a: () => void }) => <div role="button" tabIndex={0} onClick={a} className="flex"><span>fila</span><a href="/x">Cómo llegar</a></div>;\n'],
+  ['contrasteTexto', 'apps/web/app/admin/ClaroAlReves.tsx', 'export const W = () => <span style={{ color: "rgba(255,255,255,.45)" }}>claro</span>;\n'],
+  ['contrasteTexto', 'apps/web/app/admin/ClaroTwAlReves.tsx', 'export const W2 = () => <span className="text-white/[.4]">claro</span>;\n'],
   ['contrasteTexto', 'apps/web/app/admin/ContrasteAlReves.tsx', 'export const X = () => <span className="text-[rgba(11,14,18,.5)]">gris</span>;\n'],
   ['impuestoSoloNuevo', 'apps/web/lib/impuesto-al-reves.ts', 'export const x = "update tax_rules set parts_bp = 0";\n'],
   ['hojaAccesible', 'apps/web/app/admin/CapaAlReves.tsx', 'export const C = ({ c }: { c: () => void }) => <div onClick={c} className="fixed inset-0 bg-ink/50"><div>hoja</div></div>;\n'],
 ];
 const derecho = [
   ['objetivoTactil', 'apps/web/app/admin/TactilAlDerecho.tsx', 'export const U = () => <button type="button" className="flex min-h-6 w-full py-[3px]">x</button>;\n'],
+  ['contrasteTexto', 'apps/web/app/admin/ClaroAlDerecho.tsx', 'export const D = () => <div style={{ background: "rgba(255,255,255,.4)", border: "1px solid rgba(255,255,255,.42)" }} className="bg-white/40 border-white/[.42]" />;\n'],
   ['contrasteTexto', 'apps/web/app/admin/BracketAlDerecho.tsx', 'export const V = () => <div className="bg-ink/[.42] border-ink/[.45] shadow-ink/[.5]" />;\n'],
   ['sinInteractivoAnidado', 'apps/web/app/(app)/n/[id]/FilaHermanaAlDerecho.tsx', 'export const F = ({ a }: { a: () => void }) => <div className="flex"><button type="button" onClick={a}>fila</button><a href="/x">Cómo llegar</a><div role="dialog" tabIndex={-1} onClick={a}><button type="button">x</button></div></div>;\n'],
   ['contrasteTexto', 'apps/web/app/admin/ContrasteAlDerecho.tsx', 'export const Y = () => <div className="shadow-[0_8px_20px_rgba(11,14,18,.5)]" style={{ boxShadow: "0 2px 6px rgba(11,14,18,.45)", border: "1px solid rgba(11,14,18,.4)" }} />;\n'],
