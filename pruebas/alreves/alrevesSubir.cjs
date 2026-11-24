@@ -60,8 +60,9 @@ const casos = [
   [S, '  /^apps\\/web\\/public\\/paginas\\/[^/]+\\.webp$/,\n', '  /^apps\\/web\\/public\\/paginas\\/[^/]+\\.webp$/,\n  /^apps\\/web\\/lib\\/.*\\.(tsx|ts)$/,\n', 'la lista blanca de diseño cubre apps/web/lib/ficha.tsx'],
   [S, '/(^|\\/)(page|layout|template|', '/(^|\\/)(zzpage|zzlayout|template|', 'la vía rápida de diseño deja pasar apps/web/app/x/page.tsx'],
   [S, '/(^|\\/)(acciones[^/]*|route)\\.[jt]sx?$/,', '/(^|\\/)(zzacciones|zzroute)\\.[jt]sx?$/,', 'la vía rápida de diseño deja pasar apps/web/app/x/route.tsx'],
-  [S, '    return { locales: ["tipos", "build", "guardianes", "textos"], corrida: "despues", mainPrimero: false };', '    return { locales: ["tipos", "guardianes", "textos"], corrida: "despues", mainPrimero: false };', 'solo diseño exige build local además de tipos, guardianes y textos'],
-  [S, '  build: ["pnpm", ["--filter", "@tolatino/web", "build"]],', '  build: ["pnpm", ["exec", "tsc", "--noEmit"]],', 'solo diseño exige build local: PASOS_LOCALES.build es el mismo comando'],
+  [S, '    return { locales: ["tipos", "guardianes", "textos"], corrida: "despues", mainPrimero: false };', '    return { locales: ["tipos"], corrida: "despues", mainPrimero: false };', 'solo diseño: tipos, guardianes y textos aquí, siempre'],
+  // 24 nov (decisión AR) · Sin build local: si la imagen no se construye, deploy.sh tiene que salir antes de recrear la app.
+  [D, '    log "la imagen no se pudo construir: la app sigue con lo de antes"\n    exit 1\n', '    log "la imagen no se pudo construir: la app sigue con lo de antes"\n', 'el servidor es la compuerta'],
   [S, '  if (!noDiseno) { const v = VIGILADAS.find((k) => cl.has(k)); if (v) noDiseno', '  if (!noDiseno) { const v = VIGILADAS.find((k) => cl.has(k) && false); if (v) noDiseno', 'una entrega con una clase vigilada sale por la vía rápida de diseño (sensible por centavos)'],
   [S, '  if (c.diseno === true && !sinViaRapida && !c.github && !c.clases.some((k) => VIGILADAS.includes(k)) && c.clases.includes("diseno"))', '  if (c.diseno === true && !sinViaRapida && !c.github)', 'una entrega con una clase vigilada sale por la vía rápida de diseño (exigencias con «sensible»)'],
   [S, '  else if (!c2) noDiseno = `${sinMain}', '  else if (true) noDiseno = "";\n  else if (!c2) noDiseno = `${sinMain}', 'la vía rápida de diseño necesita que la cabeza y origin/main la den'],

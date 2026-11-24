@@ -6499,3 +6499,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   fundador: si decide quitar la barra del nombre, se borra con su mención en el guardián. Arreglo de paso: 18 px de ensanche con una oferta en vivo.
 - **Vista previa: quitada por decisión del fundador (AQ, 24 nov).** Apagada en esta tanda; el puerto 8081 cerrado; el código se retira en el bloque siguiente.
 - **Vista previa retirada del repo (AQ, 24 nov):** el despliegue quedó como antes de ella (se quedan la sincronía de 20 s y la caché de la imagen). Al desplegar, el servidor se limpia solo. Qué mirar: nada en la app.
+
+## Por qué tardaba un ajuste y qué se quitó (24 nov, decisión AR)
+- **Medido:** un ajuste por la vía rápida tardaba ~12 min bien hecho (comprobaciones aquí 5,3 min en serie + construir y desplegar 3,8–4,9 min + aviso hasta
+  2,5 min tarde); los de ese día tardaron de 30 min a 2 h porque Fable mezcló los ajustes con pruebas, infraestructura y encargos.
+- **Hecho:** comprobaciones a la vez (5,3 min → ~1 min), textos una sola vez, sin build local en la vía rápida (lo construye el servidor; si no construye, el
+  sandbox sigue con lo de antes), la imagen sin repetir los tipos, y el aviso del sandbox cada ~1 min. Regla: un ajuste sube solo.
+- **Qué mirar:** el próximo ajuste debería verse en el sandbox en ~5 min desde que está hecho. Turbopack: se trae el tiempo medido antes de decidir.
+

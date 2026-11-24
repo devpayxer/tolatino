@@ -13,8 +13,9 @@
        vía rápida de diseño        23 nov (decisión AL, aprobada por el fundador): si la entrega es SOLO de diseño (clase «diseno»: todo lo que no
                                    es documento de trabajo cae en la lista blanca DISENO, nada en NUNCA_DISENO ni con una palabra de
                                    PALABRAS_NO_DISENO en la ruta, sin clases vigiladas ni señales en sus renglones, y lo dicen las listas de la
-                                   cabeza Y las de origin/main), b. corre además el build de la web (el mismo comando que el trabajo «web» de
-                                   ci.yml), c. no se exige, y al final dice dónde corren DESPUÉS la punta a punta y «al revés» (la corrida del push
+                                   cabeza Y las de origin/main), b. tipos, guardianes y textos como siempre, SIN build local (decisión AR, 24 nov:
+                                   la app la construye el servidor y, si no construye, el sandbox sigue con lo de antes; el CI de main la vuelve a
+                                   construir), c. no se exige, y al final dice dónde corren DESPUÉS la punta a punta y «al revés» (la corrida del push
                                    a main) con la lista de pruebas que la dirigida habría propuesto. No espera esa corrida. No cambia producción
                                    ni la confirmación completa.
      --subir --sin-via-rapida      fuerza el camino normal (con evidencia del CI) aunque la entrega sea de diseño.
@@ -198,10 +199,12 @@ export function combinar(c, c2, sinMain = "no pude juzgarla con las listas de or
 /** Lo que exige una entrega según sus clases. sinViaRapida (--sin-via-rapida) fuerza el camino normal aunque sea de diseño. */
 export function exigencias(c, { sinViaRapida = false } = {}) {
   if (c.soloDocumentos) return { locales: ["guardianes"], corrida: "ninguna", mainPrimero: false };
-  // Vía rápida de diseño (AL): sin corrida previa, pero con el build de la web en local además de tipos, guardianes y textos. Las pruebas de punta
-  // a punta y al revés corren DESPUÉS, en la corrida del push a main. Nunca con una clase vigilada ni con .github/ (se vuelve a mirar aquí).
+  // Vía rápida de diseño (AL): sin corrida previa; tipos, guardianes y textos aquí. Sin build local (decisión AR, 24 nov): la app se construía tres
+  // veces (aquí 171 s, en el servidor y en el CI de main); la del servidor es la compuerta (deploy.sh sale ANTES de recrear si la imagen no se
+  // construye: el sandbox sigue con lo de antes) y la del CI la vuelve a mirar. Las pruebas de punta a punta y al revés corren DESPUÉS, en la
+  // corrida del push a main. Nunca con una clase vigilada ni con .github/ (se vuelve a mirar aquí).
   if (c.diseno === true && !sinViaRapida && !c.github && !c.clases.some((k) => VIGILADAS.includes(k)) && c.clases.includes("diseno"))
-    return { locales: ["tipos", "build", "guardianes", "textos"], corrida: "despues", mainPrimero: false };
+    return { locales: ["tipos", "guardianes", "textos"], corrida: "despues", mainPrimero: false };
   return { locales: ["tipos", "guardianes", "textos"], corrida: c.github ? "completa" : "dirigida", mainPrimero: c.clases.includes("despliegue") };
 }
 
@@ -526,14 +529,12 @@ function avisoDespues({ repo, head, pruebas }) {
   console.log("  esta herramienta NO espera esa corrida: lo que cace se arregla en el bloque siguiente y se anota en REVISION (AD, AL)");
 }
 
-// Las comprobaciones locales de --subir. «build» es el mismo comando que el trabajo «web» de ci.yml.
-// 24 nov (fundador: «un cambio pequeño tarda 30 min») · Corren A LA VEZ, no una detrás de otra: tipos ‖ guardianes ‖ textos, y el build cuando
-// terminan los tipos (los dos leen .next/types; tsc no puede leerlos mientras next build los escribe). Medido: en serie 5,3 min (tipos 10 s + build
-// 171 s + guardianes 100 s + textos 36 s); en paralelo, lo que tarda el más largo. Los guardianes no repiten la comprobación de los textos cuando
-// textos va en su propio paso (GUARDIANES_SIN_TEXTOS=1: el guardián alrevesConSuTexto corre textos.cjs entero, ~19 s, y textos lo vuelve a correr).
+// Las comprobaciones locales de --subir.
+// 24 nov (fundador: «un cambio pequeño tarda 30 min»; decisión AR) · Corren A LA VEZ, no una detrás de otra. Medido: en serie 5,3 min (tipos 10 s +
+// build 171 s + guardianes 100 s + textos 36 s); a la vez y sin el build (lo hace el servidor), 58 s. Los guardianes no repiten la comprobación de
+// los textos cuando textos va en su propio paso (GUARDIANES_SIN_TEXTOS=1: el guardián alrevesConSuTexto corre textos.cjs entero, ~19 s).
 export const PASOS_LOCALES = Object.freeze({
   tipos: ["pnpm", ["exec", "turbo", "run", "typecheck", "--force"]],
-  build: ["pnpm", ["--filter", "@tolatino/web", "build"]],
   guardianes: [process.execPath, ["guardianes/run.mjs"]],
   textos: [process.execPath, ["pruebas/alreves/textos.cjs"]],
 });
@@ -559,14 +560,13 @@ function correrPaso(k, env) {
 }
 /* Los pasos locales a la vez (ver PASOS_LOCALES). El orden de las líneas es el de la lista, como antes. */
 export async function correrLocales(locales, correr = correrPaso) {
+  const raros = locales.filter((k) => !PASOS_LOCALES[k]);
+  if (raros.length) throw new Error(`pasos locales desconocidos: ${raros.join(", ")}`);
   const conTextos = locales.includes("textos");
   // Sin heredar la variable: los guardianes que corren solos comprueban los textos aunque quien llama la tenga puesta (el guardián subidaConHerramienta
   // corre --casos desde dentro de unos guardianes que sí la tienen).
   const env = (k) => { const e = { ...process.env }; delete e.GUARDIANES_SIN_TEXTOS; if (k === "guardianes" && conTextos) e.GUARDIANES_SIN_TEXTOS = "1"; return e; };
-  const prom = new Map();
-  for (const k of locales) if (k !== "build") prom.set(k, correr(k, env(k)));
-  if (locales.includes("build")) prom.set("build", (prom.get("tipos") ?? Promise.resolve()).then(() => correr("build", env("build"))));
-  return Promise.all(locales.map((k) => prom.get(k)));
+  return Promise.all(locales.map((k) => correr(k, env(k))));
 }
 
 async function cmdSubir({ ensayo, sinViaRapida = false }) {
@@ -709,9 +709,9 @@ async function casos() {
   const FN = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", PF = "packages/ui/src/core/PestanasFicha.tsx", LA = "docs/LAUNCH-CHECKLIST.md";
   const rl = { [FN]: ["  const [pegadaM, setPegadaM] = useState(false);", '<div className="sticky z-[21] h-0" style={{ top: CAB_MOVIL }}>'], [PF]: ['style={{ overflowY: "hidden", overscrollBehaviorX: "contain" }}'], [LA]: ["- [ ] la franja del nombre"] };
   const dis = (fs, r = rl, o) => { const x = clases(fs, r); return { x, e: exigencias(x, o) }; };
-  const esRapida = (e) => e.corrida === "despues" && !e.mainPrimero && ["tipos", "build", "guardianes", "textos"].every((k) => e.locales.includes(k));
+  const esRapida = (e) => e.corrida === "despues" && !e.mainPrimero && ["tipos", "guardianes", "textos"].every((k) => e.locales.includes(k)) && !e.locales.includes("build");
   let v = dis([FN, PF, LA]);
-  ok(v.x.diseno && v.x.clases.join() === "diseno" && esRapida(v.e), "FichaNueva.tsx + PestanasFicha.tsx + LAUNCH → diseño: sin corrida previa, locales con build, tipos, guardianes y textos");
+  ok(v.x.diseno && v.x.clases.join() === "diseno" && esRapida(v.e), "FichaNueva.tsx + PestanasFicha.tsx + LAUNCH → diseño: sin corrida previa, tipos, guardianes y textos (sin build local: lo construye el servidor)");
   v = dis([FN, PF, LA, D1]);
   ok(v.x.diseno && esRapida(v.e), "lo mismo + un documento de trabajo → sigue siendo diseño");
   v = dis([FN, PF, LA, "apps/web/lib/ficha.ts"], { ...rl, "apps/web/lib/ficha.ts": ["export const x = 1;"] });
@@ -827,17 +827,19 @@ async function casos() {
   const es = estadoDelSandbox(`2026-11-22T14:00:00.1Z / 200 0.123s\n2026-11-22T14:00:00.2Z /api/salud 200 0.05s\n2026-11-22T14:00:01Z 2026-11-22T13:58:00+00:00 tramos (ok, commit c0daa9c): base 3 s · total 292 s\n2026-11-22T14:00:02Z {"ok":true,"commit":"c0daa9c"}`, H);
   ok(es.sirve && es.rutas.length === 2 && /tramos \(ok/.test(es.tramos), "el sandbox sirve el commit (salud, tramos y rutas)");
   ok(!estadoDelSandbox('{"ok":true,"commit":"ee13605"}', H).sirve && !estadoDelSandbox("", H).sirve, "el sandbox sirve otro commit, o no contesta → no");
-  // 24 nov · Los pasos locales a la vez: tipos, guardianes y textos arrancan juntos; el build espera a los tipos; las líneas salen en el orden de la
-  // lista; los guardianes no repiten textos cuando textos va en su propio paso (y sí cuando van solos, como en una entrega de solo documentos).
+  // 24 nov · Los pasos locales a la vez: tipos, guardianes y textos arrancan juntos (ninguno espera a otro); las líneas salen en el orden de la lista;
+  // los guardianes no repiten textos cuando textos va en su propio paso (y sí cuando van solos, como en una entrega de solo documentos).
   {
-    const arr = []; let soltarTipos = null;
-    const falso = (k, env) => new Promise((r) => { arr.push([k, env?.GUARDIANES_SIN_TEXTOS ?? ""]); if (k === "tipos") soltarTipos = () => r({ ok: true, linea: k }); else r({ ok: true, linea: k }); });
-    const prom = correrLocales(["tipos", "build", "guardianes", "textos"], falso);
-    ok(arr.map((x) => x[0]).join() === "tipos,guardianes,textos", `pasos locales: tipos, guardianes y textos arrancan a la vez; el build todavía no (${arr.map((x) => x[0]).join()})`);
-    soltarTipos?.();
+    const arr = []; const sueltos = [];
+    const falso = (k, env) => new Promise((r) => { arr.push([k, env?.GUARDIANES_SIN_TEXTOS ?? ""]); sueltos.push(() => r({ ok: true, linea: k })); });
+    const prom = correrLocales(["tipos", "guardianes", "textos"], falso);
+    ok(arr.map((x) => x[0]).join() === "tipos,guardianes,textos", `pasos locales: tipos, guardianes y textos arrancan a la vez (${arr.map((x) => x[0]).join()})`);
+    for (const f of sueltos.reverse()) f();
     const res = await prom;
-    ok(arr.map((x) => x[0]).join() === "tipos,guardianes,textos,build" && res.map((x) => x.linea).join() === "tipos,build,guardianes,textos", "pasos locales: el build arranca al terminar los tipos y las líneas salen en el orden de la lista");
+    ok(res.map((x) => x.linea).join() === "tipos,guardianes,textos", "pasos locales: las líneas salen en el orden de la lista aunque terminen en otro orden");
     ok(arr.find((x) => x[0] === "guardianes")?.[1] === "1", "pasos locales: con textos en su propio paso, los guardianes no lo repiten (GUARDIANES_SIN_TEXTOS=1)");
+    let raro = ""; try { await correrLocales(["build"], falso); } catch (e) { raro = String(e?.message ?? e); }
+    ok(/desconocidos: build/.test(raro), "pasos locales: el build ya no es un paso local (decisión AR): pedirlo es un error, no un paso que no corre");
     const solos = []; await correrLocales(["guardianes"], (k, env) => { solos.push(env?.GUARDIANES_SIN_TEXTOS ?? ""); return Promise.resolve({ ok: true, linea: k }); });
     ok(solos.join() === "", "pasos locales: guardianes solos (entrega de documentos) siguen comprobando los textos");
   }

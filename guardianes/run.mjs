@@ -16146,6 +16146,26 @@ const guardianes = {
      23 nov · Y la vía rápida de diseño (decisión AL): que su lista blanca se abra a lib/, api/, route, acciones, migraciones, scripts, infra o
      .github; que deje de exigir el build de la web en local; que deje pasar una entrega con una clase vigilada; que calle que las pruebas corren después.
      Al revés: alrevesSubir. */
+  /* 24 nov (decisión AR) · Los tipos no se repiten dentro del build de la imagen del despliegue (30–60 s cada vez): se revisan ANTES, en cada subida
+     («tipos» en todos los caminos de scripts/ci/subir.mjs) y en el CI de cada push (pnpm typecheck; el build del trabajo «web» también los revisa).
+     Lo que se teme: que la excepción se vuelva regla (next.config salta los tipos sin condición, o la variable aparece en el CI, en un script o en el
+     build normal) o que deje de haber tipos antes de la imagen. Al revés: alrevesDespliegue. */
+  tiposAntesDeLaImagen() {
+    const G = "tiposAntesDeLaImagen", N = "apps/web/next.config.ts", DF = "infra/pruebas/Dockerfile", Y = ".github/workflows/ci.yml", S = "scripts/ci/subir.mjs", V = "TOLATINO_TIPOS_YA_REVISADOS";
+    for (const f of [N, DF, Y, S]) if (!existsSync(f)) return falla(G, f, 0, "falta (lo que decide dónde se revisan los tipos)");
+    const n = sinComent(N);
+    if (!/\n  typescript: \{ ignoreBuildErrors: process\.env\.TOLATINO_TIPOS_YA_REVISADOS === "1" \},\n/.test(n) || (n.match(/ignoreBuildErrors/g) ?? []).length !== 1)
+      falla(G, N, 0, `los tipos se saltan en el build SOLO con ${V}=1 (la imagen del despliegue); cualquier otro build los revisa`);
+    for (const f of archivos) {
+      if ([DF, N, "guardianes/run.mjs"].includes(f) || f.startsWith("pruebas/alreves/") || f.startsWith("docs/") || !/\.(sh|ya?ml|json|mjs|cjs|js|ts|tsx|env|conf)$|Dockerfile$/.test(f)) continue;
+      if (readFileSync(f, "utf8").includes(V)) falla(G, f, 0, `${V} solo la pone la receta de la imagen (infra/pruebas/Dockerfile): aquí los tipos se revisan`);
+    }
+    if (!/\n\s+- run: pnpm typecheck\n/.test(readFileSync(Y, "utf8"))) falla(G, Y, 0, "el CI revisa los tipos en cada push (pnpm typecheck): sin eso, la imagen se construiría con tipos que nadie miró");
+    const sb = sinComent(S);
+    if (!/\n  tipos: \["pnpm", \["exec", "turbo", "run", "typecheck", "--force"\]\],\n/.test(sb) || (sb.match(/locales: \["tipos", "guardianes", "textos"\]/g) ?? []).length < 2)
+      falla(G, S, 0, "cada subida revisa los tipos aquí antes de empujar (vía rápida y camino normal: locales con «tipos»)");
+  },
+
   subidaConHerramienta() {
     const G = "subidaConHerramienta", S = "scripts/ci/subir.mjs", A = "scripts/ci/alcance.mjs", Y = ".github/workflows/ci.yml", D = "infra/pruebas/deploy.sh", C = "infra/pruebas/docker-compose.yml";
     for (const f of [S, A, Y, D, C]) if (!existsSync(f)) return falla(G, f, 0, "falta (la herramienta de subida o lo que lee)");
@@ -16221,9 +16241,11 @@ const guardianes = {
       const P = "packages/ui/src/core/PestanasFicha.tsx", F = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", rl = { [P]: ["<div />"], [F]: ["<div />"] };
       const cd = SUBIR.clases([P, F], rl), ed = SUBIR.exigencias(cd);
       if (!cd.diseno || ed.corrida !== "despues") falla(G, S, 0, "la vía rápida de diseño: dos piezas de diseño sin señales ya no salen por ella (corrida «despues»)");
-      if (!["tipos", "build", "guardianes", "textos"].every((k) => ed.locales?.includes(k))) falla(G, S, 0, `solo diseño exige build local además de tipos, guardianes y textos (pide ${JSON.stringify(ed.locales)})`);
-      const web = /\n  web:\n[\s\S]*?(?=\n  [a-z_-]+:\n|$)/.exec(y)?.[0] ?? "", b = SUBIR.PASOS_LOCALES?.build;
-      if (!Array.isArray(b) || !web.includes(`- run: ${b[0]} ${(b[1] ?? []).join(" ")}\n`)) falla(G, S, 0, `solo diseño exige build local: PASOS_LOCALES.build es el mismo comando que el trabajo «web» de ci.yml (${JSON.stringify(b)})`);
+      if (!["tipos", "guardianes", "textos"].every((k) => ed.locales?.includes(k))) falla(G, S, 0, `solo diseño: tipos, guardianes y textos aquí, siempre (pide ${JSON.stringify(ed.locales)})`);
+      // 24 nov (decisión AR) · Sin build local en la vía rápida: la compuerta es el build del servidor. Si la imagen no se construye, deploy.sh sale
+      // ANTES de recrear la app (el sandbox sigue sirviendo lo de antes); el CI de main la vuelve a construir.
+      const dep = readFileSync(D, "utf8"), iB = dep.indexOf('if ! "${COMPOSE[@]}" build web; then'), iF = iB < 0 ? -1 : dep.indexOf("\n  fi\n", iB), iU = dep.indexOf('"${COMPOSE[@]}" up -d --remove-orphans');
+      if (iB < 0 || iF < 0 || iU < 0 || !/\n\s+exit 1\n/.test(dep.slice(iB, iF + 1)) || !(iF < iU)) falla(G, D, 0, "sin build local en la vía rápida, el servidor es la compuerta: si la imagen no se construye, deploy.sh sale ANTES de recrear la app (el sandbox sigue con lo de antes)");
       const vig = [
         ["sensible por ruta", [P, "apps/web/app/admin/Tabla.tsx"], { ...rl, "apps/web/app/admin/Tabla.tsx": ["<div />"] }],
         ["sensible por señal", [P, F], { ...rl, [F]: ['"use server";'] }],

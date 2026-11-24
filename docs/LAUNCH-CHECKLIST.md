@@ -2953,8 +2953,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       vista previa en el puerto 8081 que sigue la rama de trabajo con `next dev`, usuario de base solo de filas, pausa sola por migraciones, límites de
       memoria. Guardianes `despliegueCorto` y `vistaPreviaAcotada`, `alrevesDespliegue` 113/113, `pruebas/infra` en verde.
 - [ ] **→ 9u** · **Vista previa: salud en Super Admin › Sistema › Salud** (hoy solo `/estado/vista.txt`).
-- [ ] **→ 9u** · **Tipos dentro de `next build` (~70 s por despliegue, ya corren en el CI):** decidir si se quitan del build de la imagen (decisión del fundador:
-      es aflojar una comprobación del despliegue).
+- [x] **Tipos dentro de `next build`:** resuelto el 24 nov (decisión AR): la imagen ya no los repite (`TOLATINO_TIPOS_YA_REVISADOS=1`, guardián `tiposAntesDeLaImagen`).
 - [ ] **→ 9o** · **Segunda revisión por otro modelo** de la llave estable de las acciones del servidor (Dockerfile) y del usuario `tolatino_vista` (`encender.sh`).
 - [ ] **→ 9q** · **Nunca visto en el servidor real antes de este despliegue:** la imagen de la vista previa (Alpine + pnpm), BuildKit en el servidor y el puerto 8081 abierto.
 
@@ -2986,4 +2985,6 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       usuario `tolatino_vista`, su imagen y el 8081); se quedan las de BuildKit y la llave estable del Dockerfile.
 - [ ] **→ 9u** · **Paso de limpieza de la vista previa (`deploy.sh` 3i):** su SQL (`drop owned by` / `drop role tolatino_vista`) no corrió contra un Postgres de
       verdad antes del despliegue. Ver una vez en el registro del sandbox «retirados los restos…» y después nada; retirar el paso cuando esté limpio.
-
+- [ ] **→ 9u** · **Turbopack (decisión AR, 24 nov):** medir `next build --turbopack` contra el build de hoy antes de decidir (el fundador pidió el tiempo medido).
+- [ ] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
+      `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa).

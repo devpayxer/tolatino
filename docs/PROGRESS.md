@@ -3339,3 +3339,10 @@ Servido en el sandbox: nada de esto todavía al escribir (la tanda entera va en 
 cursor (también en ventana estrecha), arreglo del bucle de reinicios de la vista previa (precalienta 3, página «arrancando», registro de reinicios, el flujo
 de estado mira el 8081), noticias (Retry-After, servidor exacto, «Probar» con desglose), pruebas de la ronda de la ficha y el arreglo de los 18 px.
 Siguiente: ver la vista previa estable sobre lo servido (`/estado/vista.txt` sin «arrancado» en fila), fuentes reales de noticias, avatares.
+
+## 24 nov (09:45 UTC) · Por qué tarda un ajuste (decisión AR)
+Medido el camino entero (local, CI, despliegue) y quitados los pasos repetidos con el OK del fundador: comprobaciones locales a la vez (58 s), textos una
+vez, sin build local en la vía rápida (compuerta: el build del servidor), la imagen sin tipos (guardián `tiposAntesDeLaImagen`), sondeo del sandbox cada
+25 s. Regla nueva en CLAUDE.md: un ajuste sube solo. Pendiente: medir Turbopack (el fundador quiere el tiempo antes de decidir) y la corrida nocturna de
+anchos (4 noches en rojo; encargo W).
+

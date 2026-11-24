@@ -11,6 +11,9 @@
 # («serverReferenceHashSalt»), así que la caché NUNCA servía (medido: 109 s de compilación con y sin caché). La llave vive en la MISMA caché de BuildKit
 # del servidor (nunca en el repo ni en la imagen más de lo que ya estaba: Next la escribe en el build), nace sola la primera vez y se renueva a los 14
 # días (como hace Next fuera de Docker). Con llave estable: 109 s → 50 s de compilación para un cambio de un .tsx. Si la caché se borra, nace otra.
+# 24 nov (decisión AR) · TOLATINO_TIPOS_YA_REVISADOS=1: el build de la imagen no vuelve a revisar los tipos (30–60 s menos por despliegue). Ya se
+# revisaron antes de llegar aquí: «tipos» en cada subida (scripts/ci/subir.mjs) y en el CI de cada push (pnpm typecheck y el build del trabajo «web»,
+# que sí los revisa). Producción construye con esta misma receta después de la confirmación completa. Guardián tiposAntesDeLaImagen.
 FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /repo
@@ -28,7 +31,7 @@ COPY . .
 RUN --mount=type=cache,id=tolatino-next,target=/repo/apps/web/.next/cache,sharing=locked \
     K=/repo/apps/web/.next/cache/tl-acciones.llave; \
     { [ -s "$K" ] && [ -z "$(find "$K" -mtime +13)" ]; } || head -c 32 /dev/urandom | base64 > "$K"; \
-    NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat "$K")" pnpm --filter @tolatino/web build
+    TOLATINO_TIPOS_YA_REVISADOS=1 NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat "$K")" pnpm --filter @tolatino/web build
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0

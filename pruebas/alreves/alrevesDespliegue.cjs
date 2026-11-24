@@ -117,6 +117,11 @@ const casos = [
   ['despliegueCorto', DF, 'FROM base AS deps\n', 'FROM base AS deps\nCOPY . .\n', 'la capa de dependencias copia solo los manifiestos'],
   ['despliegueCorto', DF, 'RUN --mount=type=cache,id=tolatino-next,target=/repo/apps/web/.next/cache,sharing=locked \\\n', 'RUN ', 'usa la caché de BuildKit en /repo/apps/web/.next/cache'],
   ['despliegueCorto', DF, 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat "$K")" pnpm', 'pnpm', 'la llave de las acciones del servidor, estable'],
+  // 24 nov (decisión AR) · tiposAntesDeLaImagen: los tipos se saltan solo en la imagen y se revisan antes en cada subida y en el CI.
+  ['tiposAntesDeLaImagen', 'apps/web/next.config.ts', 'ignoreBuildErrors: process.env.TOLATINO_TIPOS_YA_REVISADOS === "1"', 'ignoreBuildErrors: true', 'los tipos se saltan en el build SOLO con'],
+  ['tiposAntesDeLaImagen', 'infra/pruebas/zz-alreves-tipos.sh', null, 'export TOLATINO_TIPOS_YA_REVISADOS=1\n', 'solo la pone la receta de la imagen'],
+  ['tiposAntesDeLaImagen', '.github/workflows/ci.yml', '      - run: pnpm typecheck\n', '      - run: echo sin tipos\n', 'el CI revisa los tipos en cada push'],
+  ['tiposAntesDeLaImagen', 'scripts/ci/subir.mjs', '  tipos: ["pnpm", ["exec", "turbo", "run", "typecheck", "--force"]],\n', '  tipos: ["true", []],\n', 'cada subida revisa los tipos aquí'],
   ['despliegueCorto', DF, '-mtime +13', '-mtime +9999', 'la llave de las acciones del servidor, estable'],
   ['despliegueCorto', DF, 'ENV NEXT_TELEMETRY_DISABLED=1\nCOPY . .', 'ENV NEXT_TELEMETRY_DISABLED=1\nENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=abcdefghijklmnop\nCOPY . .', 'nunca va escrita en la receta'],
   ['despliegueCorto', 'infra/pruebas/zz-alreves.env', null, 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=abcdefghijklmnopqrstuvwxyz012345\n', 'escrita en el repo'],

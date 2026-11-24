@@ -94,12 +94,15 @@ condiciones» al fundador → confirmación completa + OK → `produccion` avanz
   No espera la confirmación completa; lo que esta cace después se arregla en el bloque siguiente y se anota en REVISION (AD, AF).
 - **Vía rápida de diseño:** lo que es solo de cómo se ve (piezas del sistema de diseño, componentes de pantalla, textos, estilos) sube con
   `node scripts/ci/subir.mjs --subir` sin corrida previa del CI: la herramienta decide si la entrega es de diseño (lista blanca cerrada + señales;
-  cualquier duda = camino normal), corre tipos + build + guardianes + textos y empuja; la punta a punta y «al revés» corren después, en la
-  corrida de `main`. No aplica a dinero, permisos, datos personales, migraciones, `lib/`, `page.tsx` ni al propio CI (AL, AN).
+  cualquier duda = camino normal), corre a la vez tipos + guardianes + textos (~1 min; sin build local: la app la construye el servidor y, si no
+  construye, el sandbox sigue con lo de antes) y empuja; la punta a punta y «al revés» corren después, en la corrida de `main`. No aplica a dinero,
+  permisos, datos personales, migraciones, `lib/`, `page.tsx` ni al propio CI (AL, AN, AR).
 - **Ajustes del fundador (AN):** llegan de uno en uno o en tanda, con captura. Se hacen viéndolos en vivo (servidor de desarrollo), el fundador
   recibe la captura real en minutos y suben por la vía rápida; si llega otro mientras uno sube, van juntos. Las pruebas, el guardián y el
   «al revés» de un retoque visual se escriben una vez, al cierre de la ronda; un fallo real (no de gusto) deja su guardián en el momento. Una
   línea por tanda en REVISION.
+- **Un ajuste sube solo (AR):** nunca en el mismo paquete que pruebas, guardianes, documentos, infraestructura o trabajo de un encargo (cualquiera
+  de esos lo saca de la vía rápida: de ~5 min a ~30). Mientras una subida espera, nadie más empuja a la rama de trabajo. Lo demás sube después.
 - **Teléfono y computadora (AP):** el fundador solo ve el teléfono. Cada ajuste se revisa también en computadora antes de subir: si aplica, se hace
   en los dos y van las dos capturas; si no aplica, se dice por qué en una línea.
 - Captura primero: en cuanto una pieza se ve, el fundador recibe la captura real (teléfono y escritorio). Se entrega por partes, y el trabajo

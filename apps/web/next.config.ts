@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   // 9i · El paso «Comprobar» del asistente de apertura lee las líneas pendientes de la LAUNCH-CHECKLIST que viaja con el build (lib/ciudades/launch.ts).
   outputFileTracingIncludes: { "/admin/ciudades": ["../../docs/LAUNCH-CHECKLIST.md"] },
   transpilePackages: ["@tolatino/ui"],
+  // 24 nov (decisión AR) · Solo la imagen (infra/pruebas/Dockerfile pone TOLATINO_TIPOS_YA_REVISADOS=1) se construye sin volver a revisar los tipos:
+  // ya se revisaron antes de llegar (tipos en cada subida y en el CI de cada push) y repetirlos costaba 30–60 s en cada despliegue. Cualquier otro build
+  // (el del CI, el local) los revisa. Guardián tiposAntesDeLaImagen.
+  typescript: { ignoreBuildErrors: process.env.TOLATINO_TIPOS_YA_REVISADOS === "1" },
   poweredByHeader: false,
   // 8f · Mapas de fuente del navegador para simbolizar los errores EN EL SERVIDOR (lib/errores/simbolizar.ts). Nunca se sirven: el paso que
   // sigue al build (scripts/mapas-privados.mjs) los saca de .next/static; nginx además niega *.map (guardián mapasPrivados).
