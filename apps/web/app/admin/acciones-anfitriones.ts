@@ -4,10 +4,16 @@
 import { revalidatePath } from "next/cache";
 import { staff } from "@/lib/admin";
 import { ciudadCambiar, pausarTodos, preguntaAgregar, preguntaRetirar, tipoCambiar, vozCambiar, type ResAnf } from "@/lib/anfitriones";
-import { fuenteEstado, fuenteGuardar, probarFuente } from "@/lib/anfitriones-fuentes";
+import { fuenteEstado, fuenteGuardar, probarFuente, type PruebaFuente } from "@/lib/anfitriones-fuentes";
 import type { ResAdm } from "./acciones-colas";
 
-const fin = (r: ResAnf): ResAdm => { if (r.ok) revalidatePath("/admin/contenido"); return r.ok ? { ok: true, mensaje: r.mensaje } : { ok: false, mensaje: r.mensaje ?? "No se pudo." }; };
+// «Probar» además devuelve su desglose (cuántas trajo, con enlace, entrarían y por qué se descartarían): solo números y nombres de alojador.
+type ConPrueba = { prueba?: PruebaFuente };
+const fin = (r: ResAnf & ConPrueba): ResAdm & ConPrueba => {
+  if (r.ok) revalidatePath("/admin/contenido");
+  const p = r.prueba ? { prueba: r.prueba } : {};
+  return r.ok ? { ok: true, mensaje: r.mensaje, ...p } : { ok: false, mensaje: r.mensaje ?? "No se pudo.", ...p };
+};
 const sinRol: ResAdm = { ok: false, mensaje: "Tu rol no puede hacer esto." };
 
 export async function anfVoz(id: string, p: { active?: boolean; style?: string }, motivo: string): Promise<ResAdm> {
@@ -53,7 +59,7 @@ export async function anfFuenteEstado(id: string, estado: string, motivo: string
   if (!s) return sinRol;
   return fin(await fuenteEstado(s, String(id ?? "").slice(0, 20), String(estado ?? ""), String(motivo ?? "")));
 }
-export async function anfFuenteProbar(id: string): Promise<ResAdm> {
+export async function anfFuenteProbar(id: string): Promise<ResAdm & ConPrueba> {
   const s = await staff();
   if (!s) return sinRol;
   return fin(await probarFuente(s, String(id ?? "").slice(0, 20)));

@@ -1,7 +1,9 @@
 import "server-only";
 import { auditar, type Staff } from "./admin";
+import { delicado } from "./anfitriones-comun";
+import { valores } from "./config";
 import { db, tx } from "./db";
-import { palabrasVeto, PAIS_L, resolverSeguro, urlFuente } from "./noticias-comun";
+import { alojadorCompartido, alojadorSoloFeeds, desgloseNotas, palabrasVeto, PAIS_L, resolverSeguro, urlFuente, type DesgloseNotas } from "./noticias-comun";
 import { leerFuente, resolverDeFuentes } from "./noticias-lector";
 
 /* AO 5b · Super Admin › Contenido › Anfitriones › Fuentes (regla 8): alta, edición, encender, apagar y retirar fuentes de noticias; «Probar» (UNA
@@ -107,19 +109,33 @@ export async function fuenteEstado(s: Staff, id: string, estado: string, motivo:
   });
 }
 
-/* «Probar»: UNA lectura por el lector seguro (también de una fuente apagada), sin guardar notas; queda en el registro de lecturas y en la auditoría.
-   Una por fuente cada 20 segundos (no es una forma de martillar a un medio). */
-export async function probarFuente(s: Staff, id: string): Promise<ResFuente & { notas?: number }> {
+/* «Probar»: UNA lectura por el lector seguro (también de una fuente apagada), SIN guardar notas; queda en el registro de lecturas y en la auditoría.
+   Una por fuente cada 20 segundos (no es una forma de martillar a un medio). Cuenta lo útil para decidir desde el teléfono (endurecimiento 5b-3):
+   cuántas trajo, cuántas con enlace válido del medio, cuántas entrarían y cuántas se descartarían por cada motivo, con la MISMA regla del barrido
+   (motivoNota). Si la fuente es un repartidor de feeds (feedburner…), lo dice: sus enlaces nunca casan. Si pide esperar (Retry-After), lo dice y
+   el barrido tampoco la lee antes (next_read_at). */
+export type PruebaFuente = { notas: number; desglose: DesgloseNotas | null; soloFeeds: string | null; compartido: string | null; esperarMin: number | null };
+export async function probarFuente(s: Staff, id: string): Promise<ResFuente & { notas?: number; prueba?: PruebaFuente }> {
   if (!deTodas(s)) return no("Tu rol no puede probar fuentes.");
   if (!ID.test(String(id))) return no("Esa fuente no existe.");
   if ((await db().query(`select 1 from com_host_source_reads where source_id = $1::bigint and via = 'probar' and at > now() - interval '20 seconds'`, [id])).rowCount) return no("Espera unos segundos antes de probarla otra vez.");
   const r = await leerFuente(id, { probar: true });
   if (!r.ok && /no existe|retirada/.test(r.error)) return no(r.error);
+  const f = (await db().query<{ host: string; veto_words: string[] }>(`select host, veto_words from com_host_sources where id = $1::bigint`, [id])).rows[0];
+  const soloFeeds = f ? alojadorSoloFeeds(f.host) : null, compartido = f ? alojadorCompartido(f.host) : null;
+  const desglose = r.ok ? desgloseNotas(r.notas, f?.veto_words ?? [], (await valores("anf_noticia_horas")).anf_noticia_horas, Date.now(), delicado) : null;
+  const esperarS = !r.ok && r.esperarS ? Math.min(86400, r.esperarS) : null;
   await tx(async (c) => {
     await c.query(`insert into com_host_source_reads (source_id, via, ok, items, error, ms, by_user) values ($1::bigint, 'probar', $2, $3, $4, $5, $6)`,
       [id, r.ok, r.ok ? Math.min(1000, r.notas.length) : 0, r.ok ? null : r.error, r.ms, s.id]);
-    await auditar(c, { actor: s.id, action: "anfitrion.fuente_probar", targetKind: "com_host_source", targetId: id, after: r.ok ? { notas: r.notas.length, formato: r.formato } : { error: r.error }, reason: "Probar" });
+    // La fuente pidió esperar: el barrido tampoco la lee antes (nunca adelanta una espera que ya tenía).
+    if (esperarS) await c.query(`update com_host_sources set next_read_at = greatest(next_read_at, now() + make_interval(secs => $2::int)) where id = $1::bigint`, [id, esperarS]);
+    await auditar(c, { actor: s.id, action: "anfitrion.fuente_probar", targetKind: "com_host_source", targetId: id,
+      after: r.ok ? { notas: r.notas.length, formato: r.formato, conEnlace: desglose!.conEnlace, entrarian: desglose!.entrarian, descartes: desglose!.motivos } : { error: r.error, ...(esperarS ? { esperarS } : {}) }, reason: "Probar" });
   });
-  return r.ok ? { ok: true, notas: r.notas.length, mensaje: r.notas.length === 1 ? "La fuente se leyó bien: trajo 1 nota." : `La fuente se leyó bien: trajo ${r.notas.length} notas.` }
-    : no(`No se pudo leer: ${r.error}`);
+  const prueba: PruebaFuente = { notas: r.ok ? r.notas.length : 0, desglose, soloFeeds, compartido, esperarMin: esperarS ? Math.ceil(esperarS / 60) : null };
+  if (!r.ok) return { ok: false, mensaje: esperarS ? `No se pudo leer: la fuente pide esperar ${prueba.esperarMin} min.` : `No se pudo leer: ${r.error}`, prueba };
+  const d = desglose!, desc = r.notas.length - d.entrarian;
+  return { ok: true, notas: r.notas.length, prueba,
+    mensaje: `${r.notas.length === 1 ? "La fuente se leyó bien: trajo 1 nota" : `La fuente se leyó bien: trajo ${r.notas.length} notas`}; ${d.conEnlace} con enlace del medio, ${d.entrarian} entrarían y ${desc} se descartarían.${soloFeeds ? ` Es un repartidor de feeds (${soloFeeds}): sus enlaces llevan a otro servidor y nunca se aceptan; usa el RSS del propio medio.` : ""}` };
 }

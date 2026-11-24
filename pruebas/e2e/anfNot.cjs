@@ -5,7 +5,10 @@
 // 3 Yadira publica UNA nota, con su marca «Anfitriona» y el enlace al medio (noopener, nofollow), por la puerta de siempre · 4 en la segunda
 // pasada no se repite ninguna nota y, con el cupo de la ciudad usado, no publica otra · 5 las fuentes malas (redirige a 127.0.0.1, entrega 5 MB,
 // XML con entidad externa, servidor que resuelve a 10.x) se rechazan sin tumbar el barrido, con el error a la vista y su espera creciente; la
-// de la IP privada nunca se pide · 6 un vecino no puede publicar con enlace (la base lo cierra). Deja todo como estaba.
+// de la IP privada nunca se pide · 6 un vecino no puede publicar con enlace (la base lo cierra) · 7 (endurecimientos) «Probar» cuenta lo útil
+// (con enlace del medio, entrarían, se descartarían por motivo) sin guardar nada; una fuente en un alojamiento compartido solo acepta enlaces de su
+// servidor exacto; un repartidor de feeds (feedburner) se explica; una fuente que contesta 429 con Retry-After no se vuelve a leer antes de lo que
+// pidió (y «Probar» lo dice), y un Retry-After absurdo se ignora (manda el respaldo normal). Deja todo como estaba.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process');
 const SIMPROV = require('../../scripts/proveedores-sim/sim.cjs');
@@ -25,7 +28,9 @@ const shot = async (p, n, full = false) => { await p.waitForTimeout(400); await 
 const ADM = '5705550199', VA = '5705550861';
 const YAD = '0a0f0000-0000-4000-8000-000000000003';
 const DOM = 'periodico-de-mentira.com', RUN = Date.now().toString(36);
-const H = { a: `www.${DOM}`, b: `redirige.${DOM}`, c: `grande.${DOM}`, d: `xxe.${DOM}`, e: `privada.${DOM}` };
+const H = { a: `www.${DOM}`, b: `redirige.${DOM}`, c: `grande.${DOM}`, d: `xxe.${DOM}`, e: `privada.${DOM}`, f: `espera.${DOM}`, g: `absurda.${DOM}` };
+// Endurecimientos: un medio en un alojamiento compartido y un repartidor de feeds (nunca salen a internet: el DNS y la descarga son del simulador).
+const WP = `medio-${RUN}.wordpress.com`, FBH = 'feeds.feedburner.com';
 const RUTA = `/rss-${RUN}.xml`;
 const item = (n, t, d) => `<item><title>${t}</title><link>https://${H.a}/n/${RUN}-${n}?utm_source=rss</link><pubDate>${new Date(Date.now() - n * 600000).toUTCString()}</pubDate><description><![CDATA[<p>${d}</p>]]></description></item>`;
 const rss = (items) => `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Periódico de Mentira</title><link>https://${H.a}/</link>${items.join('')}</channel></rss>`;
@@ -35,7 +40,7 @@ const ITEMS3 = [item(1, 'Abren un nuevo malecón en Santo Domingo con área para
 const fuenteSql = (nombre, h, estado = 'off') => sql(`insert into com_host_sources (name, url, host, country, topic, host_user_id, status) values ('${nombre}', 'https://${h}${RUTA}', '${h}', 'DO', 'noticias', '${YAD}', '${estado}') returning id`).split('\n')[0];
 let CITY_T = null;
 const limpiar = () => {
-  sql(`update com_host_sources set status = 'retired' where host like '%${DOM}' and status <> 'retired'`);
+  sql(`update com_host_sources set status = 'retired' where (host like '%${DOM}' or host like 'medio-%.wordpress.com' or host = '${FBH}') and status <> 'retired'`);
   sql(`update com_hosts set active = false`); sql(`update com_host_kinds set active = false`);
   sql(`update com_host_cities set mode = 'off', manual_posts = 0, manual_replies = 0`);
   sql(`update com_posts set status = 'deleted', deleted_at = coalesce(deleted_at, now()) where source_url like 'https://${H.a}/%' and status <> 'deleted'`);
@@ -58,6 +63,12 @@ const limpiar = () => {
   SIM.fuente(H.c, RUTA, { bytes: 5 * 1024 * 1024 });
   SIM.fuente(H.d, RUTA, { cuerpo: `<?xml version="1.0"?><!DOCTYPE rss [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><rss version="2.0"><channel><item><title>&xxe;</title><link>https://${H.d}/x</link></item></channel></rss>` });
   const FE = SIM.fuente(H.e, RUTA, { cuerpo: rss(ITEMS3) });
+  for (const h of [H.f, H.g, WP, FBH]) SIM.dns(h, ['93.184.215.14']);
+  const FF = SIM.fuente(H.f, RUTA, { estado: 429, reintentar: '7200', cuerpo: '' });   // pide esperar 2 horas
+  const FG = SIM.fuente(H.g, RUTA, { estado: 503, reintentar: '99999999', cuerpo: '' }); // un valor absurdo (más de 3 años): se ignora
+  const itemDe = (h, n, t) => `<item><title>${t}</title><link>https://${h}/2026/11/${RUN}-${n}/</link><pubDate>${new Date(Date.now() - n * 600000).toUTCString()}</pubDate></item>`;
+  SIM.fuente(WP, RUTA, { cuerpo: rss([itemDe(WP, 1, 'Feria de libros en el parque del barrio'), itemDe(`otro-${RUN}.wordpress.com`, 2, 'Nota de otro blog del mismo alojador')]) });
+  SIM.fuente(FBH, RUTA, { cuerpo: rss([itemDe(H.a, 1, 'Feria de libros en la plaza mayor')]) });
 
   // ── 1 · Alta desde el Super Admin y «Probar» ──
   const ad = await esc(); await entrar(ad, ADM);
@@ -79,6 +90,12 @@ const limpiar = () => {
   await ad.goto(B + '/admin/contenido?tab=anf'); await ad.getByText('Periódico de Mentira', { exact: false }).first().waitFor();
   await clic(ad.getByRole('button', { name: 'Probar' }));
   ok(await contiene(ad, 'La fuente se leyó bien') && (await texto(ad)).includes(' 3 notas'), '«Probar» hace una lectura y enseña cuántas notas trajo');
+  // Endurecimiento 3: cuenta lo útil sin guardar nada (3 con enlace del medio; el tiroteo se descartaría por suceso violento).
+  const tp = await texto(ad);
+  ok(tp.includes('trajo 3 notas; 3 con enlace del medio, 2 entrarían y 1 se descartaría') && tp.includes('CON ENLACE DEL MEDIO') && tp.includes('SE DESCARTARÍAN'),
+    '«Probar» cuenta cuántas tienen enlace del medio, cuántas entrarían y cuántas se descartarían');
+  ok(/Suceso violento Se descartaría al leerla \(no se guardó nada\) 1 NOTA/.test(tp), '«Probar» dice por qué motivo se descartaría cada una (1 por suceso violento)');
+  ok(sql(`select (after->>'conEnlace') || '|' || (after->>'entrarian') || '|' || (after->'descartes'->>'violencia') from audit_entries where action = 'anfitrion.fuente_probar' and target_id = '${A}' order by id desc limit 1`) === '3|2|1', 'el desglose de «Probar» queda en la auditoría');
   ok(FA.llamadas === 1 && sql(`select count(*) from com_host_news where source_id = ${A}`) === '0', '«Probar» lee una vez y no guarda notas');
   ok(sql(`select count(*) from com_host_source_reads where source_id = ${A} and via = 'probar' and ok`) === '1', 'la prueba queda en el registro de lecturas');
 
@@ -144,6 +161,36 @@ const limpiar = () => {
   await ad.getByText('FUENTES DE NOTICIAS', { exact: false }).first().scrollIntoViewIfNeeded(); await shot(ad, 'anfnot-fuentes-d.png');
   const adm = await tel(); await entrar(adm, ADM); await adm.goto(B + '/admin/contenido?tab=anf');
   await adm.getByText('FUENTES DE NOTICIAS', { exact: false }).first().waitFor(); await adm.getByText('FUENTES DE NOTICIAS', { exact: false }).first().scrollIntoViewIfNeeded(); await shot(adm, 'anfnot-fuentes-m.png');
+
+  // ── 7 · Endurecimientos: alojamiento compartido, repartidor de feeds, Retry-After ──
+  const filaProbar = (nombre) => ad.locator('div').filter({ hasText: nombre }).filter({ has: ad.getByRole('button', { name: 'Probar' }) }).last();
+  const probarFila = async (nombre) => {
+    await ad.goto(B + '/admin/contenido?tab=anf'); await ad.getByText(nombre, { exact: false }).first().waitFor();
+    await filaProbar(nombre).getByRole('button', { name: 'Probar' }).click();
+  };
+  const FWP = fuenteSql('Blog de Mentira', WP), FFB = fuenteSql('Repartidor de Mentira', FBH);
+  await probarFila('Blog de Mentira');
+  ok(await contiene(ad, 'trajo 2 notas; 1 con enlace del medio, 1 entraría y 1 se descartaría') && /Sin enlace del medio Se descartaría/.test(await texto(ad)),
+    'alojamiento compartido: el enlace a otro blog del mismo alojador (otro-….wordpress.com) no cuenta como del medio');
+  ok(sql(`select count(*) from com_host_news where source_id = ${FWP}`) === '0', '«Probar» no guardó ninguna nota');
+  await probarFila('Repartidor de Mentira');
+  ok(await contiene(ad, 'es un repartidor de feeds (feedburner.com)') && (await texto(ad)).includes('trajo 1 nota; 0 con enlace del medio'), 'un repartidor de feeds se explica claro (sus enlaces nunca casan)');
+  await shot(ad, 'anfnot-probar-feeds-d.png');
+  // Retry-After: el barrido lee la que pide esperar 2 horas y la del valor absurdo; ninguna otra toca (next_read_at en el futuro).
+  const FFid = fuenteSql('Espera de Mentira', H.f, 'on'), FGid = fuenteSql('Absurda de Mentira', H.g, 'on');
+  sql(`update com_host_sources set next_read_at = now() + interval '1 day' where status = 'on' and id not in (${FFid}, ${FGid})`);
+  await barrido();
+  const prox = (id) => Number(sql(`select round(extract(epoch from next_read_at - now()) / 60) from com_host_sources where id = ${id}`));
+  ok(FF.llamadas === 1 && /^1\|La fuente pide esperar 120 min \(contestó 429\)/.test(errDe(FFid)), `429 con Retry-After: el fallo dice cuánto pide esperar: ${errDe(FFid)}`);
+  ok(prox(FFid) >= 118 && prox(FFid) <= 121, `y el barrido no la vuelve a leer antes de 2 horas (en ${prox(FFid)} min; el respaldo normal sería 60)`);
+  ok(FG.llamadas === 1 && /^1\|La fuente contestó 503\./.test(errDe(FGid)) && prox(FGid) >= 58 && prox(FGid) <= 61, `un Retry-After absurdo se ignora: manda el respaldo normal (en ${prox(FGid)} min)`);
+  sql(`update com_host_sources set next_read_at = now() where id = ${FGid}`);
+  await barrido();
+  ok(FF.llamadas === 1 && FG.llamadas === 2, 'en la pasada siguiente la que pidió esperar no se lee (la otra sí)');
+  await probarFila('Espera de Mentira');
+  ok(await contiene(ad, 'No se pudo leer: la fuente pide esperar 120 min.'), '«Probar» enseña el motivo: la fuente pide esperar N min');
+  ok(FF.llamadas === 2 && prox(FFid) >= 118, '«Probar» leyó una vez y no adelantó la espera');
+  sql(`update com_host_sources set status = 'retired' where id in (${FFid}, ${FGid}, ${FWP}, ${FFB})`);
 
   // ── 6 · Un vecino no puede publicar con enlace (la base lo cierra) ──
   const VAID = sql(`select id from users where phone = '+1${VA}'`);

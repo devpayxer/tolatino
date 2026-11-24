@@ -6485,3 +6485,16 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   respuestas son de simulador (genéricas): la forma de hablar real solo se ve con la IA encendida. **Decide el fundador:** cuánto publican al día, el tope
   mensual (hoy $5), si empiezan encendidas en Hazleton en el sandbox, y los avatares.
 
+## Ajustes del 24 nov (menú de la ficha, vista previa, noticias)
+- **Menú de la ficha en computadora:** va de esquina a esquina; las flechas salen al pasar el cursor; el estado (Abierto/Cerrado) pasó a la derecha de la
+  barra del nombre pegado. **En ventana estrecha con ratón** (versión de teléfono) también salen las flechas al pasar el cursor; con el dedo, nunca.
+  Qué mirar: una ficha con muchas pestañas a pantalla completa y en una ventana estrecha. Decisión pendiente: si se quita la barra del nombre en
+  computadora, el estado necesita otro sitio.
+- **Vista previa en bucle (fallo de Fable):** el precalentado de diez pantallas del 23 nov la dejaba sin memoria y se reiniciaba cada ~76 s; el fundador veía
+  la página de mantenimiento. Ahora precalienta tres, mientras arranca muestra «La vista previa está arrancando…» (se recarga sola) y cada reinicio queda
+  escrito. La herramienta de estado del sandbox ya mira el puerto 8081.
+- **Noticias (Opus, revisado por Fable):** «Probar» dice cuántas notas trajo, cuántas con enlace del medio, cuántas entrarían y cuántas se descartarían por
+  motivo; se respeta la espera que pida un medio; en alojamientos compartidos el enlace tiene que ser del mismo servidor. Qué mirar: «Probar» en un medio.
+- **Pruebas de la ronda de la ficha (Sonnet, revisado por Fable):** `fic9cab` 8–10, guardián `fichaFijaSinTapar`. La parte 9 (escritorio) es la prueba del
+  fundador: si decide quitar la barra del nombre, se borra con su mención en el guardián. Arreglo de paso: 18 px de ensanche con una oferta en vivo.
+

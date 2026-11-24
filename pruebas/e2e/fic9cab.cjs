@@ -9,8 +9,14 @@
 //   5 · Nombre larguísimo (320, 390 y 1024): no se sale; la palomita queda en la última línea del nombre.
 //   6 · Pestañas con muchos elementos: se deslizan, la activa se ve, flechas del teclado en el teléfono.
 //   7 · Escritorio: botones con texto (cada uno hace lo suyo; «Llamar» cuenta UNA vez), la tira pegada con el estado a la derecha.
+//   8 · Teléfono (390), la ronda de ajustes del fundador (23 nov): el nombre se pega sobre las pestañas (arriba del todo no se ve), tocar una pestaña
+//       DEJA FIJADO el menú arriba (la portada y la cabecera no vuelven ni subiendo ni cambiando de pestaña; solo la flecha de antes del nombre lo
+//       suelta), nombre largo con puntos suspensivos y el sello a la vista, la tira de pestañas solo va de lado, la barra de categorías del menú queda
+//       DEBAJO de las pestañas, la categoría activa sigue al desplazamiento y queda centrada, y la banda del carrito cabe en la pantalla.
+//   9 · prueba en escritorio (decisión pendiente): la franja del nombre pegado (nombre-pegado-desk); si el fundador no la quiere, se borra solo esta parte.
 // Precondición propia: lo que se cambia en la base (teléfono, dirección, nombre, cierre de hoy, horario de hoy) vuelve como estaba al terminar.
 const ENT = require('../lib/entorno.cjs');
+const { hidratado } = require('../lib/hidratado.cjs');
 const { botonesQueNoCaben, botonesFueraDeLaVentana, contenidoSeSale } = require('../lib/caben.cjs');
 const { entrarComo, telLibre } = require('../lib/negocio-nuevo.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
@@ -21,12 +27,13 @@ let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; c
 const espera = async (f, ms = 8000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await f()) return true; } catch { /* sigue */ } await new Promise((r) => setTimeout(r, 200)); } return false; };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const TODO = 'barberia-el-primo', DOS = 'barberia-quisqueya'; // TODO: teléfono + mensajes + dirección · DOS: teléfono + dirección (sin dueño en To'Latino)
+const MENU = 'sabor-dominicano'; // Pro, con sello y un menú de varias categorías (partes 8 y 9)
 const LARGO = 'Barbería y Estética El Primo de la Calle Principal con Servicio a Domicilio'; // 80 letras o menos: el tope de la base (businesses_name_check)
 const CALLE_LARGA = '1234 Avenida Doctor Martín Luther King Junior Boulevard Norte, Edificio Comercial Plaza Hazleton Suite 4500, Hazleton, PA';
 const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
 
 (async () => {
-  const ids = [TODO, DOS];
+  const ids = [TODO, DOS, MENU];
   const orig = {};
   for (const id of ids) {
     const r = sql(`select coalesce(phone,'~'), works_from_home::text, coalesce(address,'~'), name, coalesce(closed_on::text,'~') from businesses where id = '${id}'`).split('|');
@@ -259,6 +266,226 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     const act = await pestD.locator('[data-pestana]').nth(1).click().then(() => true).catch(() => false);
     ok(act, 'escritorio: tocar otra pestaña');
     await d.screenshot({ path: OUT + 'cab9-1360-otra-pestana.png' });
+
+    console.log('8 · Teléfono (390): tocar una pestaña deja el menú fijado arriba; nombre encima, categorías debajo de las pestañas, carrito dentro');
+    // Ronda de ajustes del fundador (23 nov, en su teléfono). Medidas de FichaNueva: la cabecera de la app (CAB_MOVIL), la franja del nombre
+    // (NOMBRE_MOVIL) y el alto de las pestañas (PestanasFicha): lo pegado se apila 57 + 44 + 50 y lo de dentro de una pestaña se pega a los 151.
+    const FICHA_FIJA = { cab: 57, nombre: 44, pest: 50 }; const DEBAJO = FICHA_FIJA.cab + FICHA_FIJA.nombre + FICHA_FIJA.pest;
+    abierto(MENU);
+    // Con la oferta en vivo de la semilla puesta: el «Antes $x» (sr-only) de la tira de Populares ensanchaba la página 18 px (arreglado: la tira es relative).
+    ok(/^[1-9]/.test(sql(`select count(*) from business_posts where business_id = '${MENU}' and kind = 'oferta' and status = 'live'`)), 'el negocio de la prueba tiene una oferta en vivo (el caso que ensanchaba la página)');
+    const SEL_FRANJA = '[data-pieza="nombre-pegado"]', SEL_FILA = `${SEL_FRANJA} > div`, SEL_FLECHA = `${SEL_FRANJA} [data-pieza="volver-arriba"]`, SEL_NOMBRE = `${SEL_FILA} span.truncate`;
+    const SEL_PEST = '[data-screen-label="App · Ficha"] [data-pieza="pestanas-ficha"]', SEL_CAB = '[data-screen-label="App · Ficha"] [data-pieza="cabecera-ficha"]', SEL_PORTADA = '[data-screen-label="App · Ficha"] div.h-\\[330px\\]';
+    const SEL_TIRA = '[data-screen-label="App · Ficha"] [data-pieza="pestanas-ficha"] [role=tablist]', SEL_BANDA = '[data-screen-label="Ficha · barra del pedido"]';
+    const c8 = await ctx(390, 844, { hasTouch: true }), q = await c8.newPage(); mirar(q); await entrarComo(q, tel);
+    const rect = (p, sel) => p.locator(sel).first().evaluate((e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height, width: r.width }; });
+    // Quieto = la página ya no se mueve (dos lecturas seguidas iguales); espera por condición, nunca un tiempo fijo.
+    const quieto = async (p) => { let a = -1; await espera(async () => { const y = await p.evaluate(() => window.scrollY); const igual = y === a; a = y; return igual; }, 8000); };
+    const irA = async (p, y, suave = false) => { await p.evaluate(([y, s]) => window.scrollTo({ top: y, behavior: s ? 'smooth' : 'instant' }), [y, suave]); await quieto(p); };
+    const arriba = (p) => irA(p, 0);
+    // Baja hasta que las pestañas quedan pegadas (101) y `mas` píxeles más.
+    const bajar = async (p, mas = 200) => { await p.evaluate((m) => window.scrollTo({ top: Math.min(document.documentElement.scrollHeight - window.innerHeight, window.scrollY + document.querySelector('[data-screen-label="App · Ficha"] [data-pieza="pestanas-ficha"]').getBoundingClientRect().top - 101 + m), behavior: 'instant' }), mas); await quieto(p); };
+    // Lo pegado se ve de verdad: lo que hay en su centro es ella misma (nada pegado la tapa).
+    const sobre = (p, sel) => p.evaluate((s) => { const e = document.querySelector(s); if (!e) return false; const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.left + Math.min(r.width / 2, 60), r.top + r.height / 2); return !!t && e.contains(t); }, sel);
+    const abrirTel = async (p, id) => { await abrirFicha(p, id); await hidratado(p.getByRole('tab').first()); await arriba(p); };
+    const fijado = (p) => p.locator(SEL_FRANJA).getAttribute('data-fijado'), vista = (p) => p.locator(SEL_FRANJA).getAttribute('data-visible');
+    const opaca = (p) => p.locator(SEL_FILA).evaluate((e) => getComputedStyle(e).opacity);
+    const pestana = (p, re) => p.getByRole('tab', { name: re });
+    const cabVisible = async (p) => (await p.locator(SEL_CAB).isVisible()) || (await p.locator(SEL_PORTADA).count()) > 0;
+    const nombre = sql(`select name from businesses where id = '${MENU}'`);
+
+    // 8.1 · El nombre pegado: arriba del todo no se ve; al bajar sale sobre las pestañas, con su sello, en negrita; la flecha va antes del nombre.
+    await abrirTel(q, MENU);
+    ok(await fijado(q) === 'no' && await vista(q) === 'no' && await opaca(q) === '0', 'arriba del todo el nombre pegado NO se ve (data-visible="no", opacidad 0) y el menú no está fijado');
+    ok(await q.locator(SEL_CAB).isVisible() && await q.locator(SEL_PORTADA).count() === 1, 'arriba del todo se ven la portada y la cabecera');
+    await bajar(q);
+    ok(await espera(async () => await vista(q) === 'si' && await opaca(q) === '1'), 'al bajar hasta que las pestañas se pegan sale el nombre pegado (data-visible="si", opacidad 1)');
+    ok(await fijado(q) === 'no', 'bajar a mano no deja fijado el menú (data-fijado="no")');
+    const rf = await rect(q, SEL_FILA), rp = await rect(q, SEL_PEST);
+    ok(Math.abs(rf.top - FICHA_FIJA.cab) <= 1 && Math.abs(rf.height - FICHA_FIJA.nombre) <= 1, `el nombre pegado ocupa ${FICHA_FIJA.cab}–${FICHA_FIJA.cab + FICHA_FIJA.nombre} (${Math.round(rf.top)}–${Math.round(rf.bottom)})`);
+    ok(Math.abs(rp.top - rf.bottom) <= 1, `las pestañas quedan justo debajo del nombre, sin hueco ni montarse (${Math.round(rf.bottom)} y ${Math.round(rp.top)})`);
+    ok(await sobre(q, SEL_FILA) && await sobre(q, SEL_PEST), 'ni el nombre ni las pestañas quedan tapados por otra cosa pegada (elementFromPoint)');
+    ok((await q.locator(SEL_FILA).innerText()).replace(/\s+/g, ' ').trim() === nombre, `el nombre pegado dice el nombre del negocio («${nombre}»)`);
+    ok(await q.locator(SEL_NOMBRE).evaluate((e) => Number(getComputedStyle(e).fontWeight)) >= 700, 'el nombre pegado va en negrita');
+    ok(await q.locator(`${SEL_FILA} [role="img"]`).count() === 1 && /Sello To'Latino/.test(await q.locator(`${SEL_FILA} [role="img"]`).getAttribute('aria-label')), 'el nombre pegado lleva el sello de verificado');
+    const rfl = await rect(q, SEL_FLECHA), rnm = await rect(q, SEL_NOMBRE);
+    ok(rfl.right <= rnm.left + 1 && rfl.height >= 44, 'la flecha va antes del nombre y mide 44 de alto');
+    await q.screenshot({ path: OUT + 'cab9-390-nombre-pegado.png' });
+    await q.locator(SEL_FLECHA).click();
+    ok(await espera(async () => (await q.evaluate(() => window.scrollY)) === 0), 'sin fijar, la flecha sube suave hasta arriba');
+    ok(await fijado(q) === 'no' && await cabVisible(q) && await pestana(q, /^Resumen/).getAttribute('aria-selected') === 'true', 'sin fijar, la flecha no cambia nada más: sigue Resumen con la cabecera visible');
+
+    // 8.2 · Tocar una pestaña FIJA el menú: la portada y la cabecera se guardan y ni subir, ni bajar, ni cambiar de pestaña las trae de vuelta.
+    await pestana(q, /^Men/).click();
+    ok(await espera(async () => await fijado(q) === 'si'), 'tocar «Menú» deja fijado el menú arriba (data-fijado="si")');
+    ok(await espera(async () => (await q.evaluate(() => window.scrollY)) === 0), 'al fijar, la página queda arriba del todo');
+    ok(await q.locator(SEL_CAB).isHidden() && await q.locator(SEL_PORTADA).count() === 0, 'fijado: la portada y la cabecera (cabecera-ficha) quedan ocultas');
+    ok(await espera(async () => await vista(q) === 'si' && await opaca(q) === '1'), 'fijado: el nombre pegado se ve también arriba del todo');
+    await irA(q, 1200);
+    ok(await fijado(q) === 'si' && !(await cabVisible(q)), 'fijado: bajar no trae de vuelta la cabecera');
+    await arriba(q);
+    ok(await fijado(q) === 'si' && !(await cabVisible(q)) && await vista(q) === 'si', 'fijado: subir hasta arriba del todo tampoco');
+    await pestana(q, /^Reseñas/).click();
+    ok(await espera(async () => (await pestana(q, /^Reseñas/).getAttribute('aria-selected')) === 'true'), 'se cambia a «Reseñas»');
+    ok(await fijado(q) === 'si' && !(await cabVisible(q)), 'cambiar a otra pestaña lo mantiene fijado');
+    await irA(q, 600); await arriba(q);
+    ok(await fijado(q) === 'si' && !(await cabVisible(q)), 'fijado, también después de bajar y subir por Reseñas');
+    await q.locator(SEL_FLECHA).click();
+    ok(await espera(async () => await fijado(q) === 'no' && await cabVisible(q)), 'solo la flecha lo suelta: vuelve la cabecera (data-fijado="no")');
+    ok(await pestana(q, /^Resumen/).getAttribute('aria-selected') === 'true' && (await q.evaluate(() => window.scrollY)) === 0, 'la flecha devuelve a Resumen, arriba del todo');
+    ok(await espera(async () => await vista(q) === 'no' && await opaca(q) === '0'), 'soltado, arriba del todo el nombre pegado vuelve a no verse');
+
+    // 8.3 · La tira de pestañas solo se desplaza de lado: un arrastre vertical no la mueve de arriba abajo; uno horizontal sí la desliza.
+    await pestana(q, /^Men/).click(); await espera(async () => await fijado(q) === 'si');
+    await bajar(q, 300);
+    const ov = await q.locator(SEL_TIRA).evaluate((e) => { const s = getComputedStyle(e); return { y: s.overflowY, x: s.overflowX, o: s.overscrollBehaviorX }; });
+    ok(ov.y === 'hidden' && ov.x === 'auto' && ov.o === 'contain', `la tira de pestañas: overflow-y ${ov.y}, overflow-x ${ov.x}, overscroll-behavior-x ${ov.o}`);
+    const cdp8 = await c8.newCDPSession(q), tr = await rect(q, SEL_TIRA), ty = Math.round(tr.top + tr.height / 2);
+    // Un arrastre táctil de verdad: el dedo baja, se mueve en 10 pasos de 16 ms (marcas de tiempo del propio evento, sin esperar) y se levanta.
+    const arrastrar = async (de, a) => {
+      let t = Date.now() / 1000;
+      await cdp8.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: de[0], y: de[1] }], timestamp: t });
+      for (let i = 1; i <= 10; i++) { t += 0.016; await cdp8.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: Math.round(de[0] + (a[0] - de[0]) * i / 10), y: Math.round(de[1] + (a[1] - de[1]) * i / 10) }], timestamp: t }); }
+      t += 0.016; await cdp8.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [], timestamp: t });
+    };
+    // Primero de lado (el navegador de pruebas no sigue un segundo dedo pegado a un arrastre vertical: se mide en este orden).
+    const left = () => q.locator(SEL_TIRA).evaluate((e) => e.scrollLeft), top = () => q.locator(SEL_TIRA).evaluate((e) => e.scrollTop);
+    const x0 = await left();
+    await arrastrar([330, ty], [60, ty]);
+    ok(await espera(async () => (await left()) > x0 + 20), `un arrastre horizontal sí desliza la tira de lado (de ${x0} a ${await left()} de ${await q.locator(SEL_TIRA).evaluate((e) => e.scrollWidth - e.clientWidth)})`);
+    ok(await top() === 0, 'y la tira no se mueve de arriba abajo (scrollTop 0)');
+    let ult = -1; await espera(async () => { const v = await left(), igual = v === ult; ult = v; return igual; }, 6000); // que la tira termine de deslizarse (inercia)
+    const x1 = await left(), y1 = await q.evaluate(() => window.scrollY);
+    await arrastrar([200, ty], [200, ty - 120]);
+    ok(await espera(async () => (await q.evaluate(() => window.scrollY)) > y1 + 20), 'un arrastre vertical sobre la tira mueve la página, no la tira');
+    await quieto(q);
+    ok(await top() === 0 && await left() === x1, `la tira sigue donde estaba: scrollTop ${await top()} (0) y scrollLeft ${await left()} (${x1})`);
+
+    // 8.4 · La barra de categorías del menú queda pegada justo DEBAJO de las pestañas (nunca detrás), a cualquier altura de la página.
+    await arriba(q);
+    ok(await q.locator('[data-mchips] [data-chip]').count() >= 5, 'el menú de la prueba tiene cinco categorías o más (Populares incluida)');
+    for (const y of [700, 1500]) {
+      await irA(q, y);
+      const rp2 = await rect(q, SEL_PEST), rb = await rect(q, '[data-mchips]');
+      ok(Math.abs(rb.top - rp2.bottom) <= 1, `Menú (a ${y}): la barra de categorías queda pegada justo bajo las pestañas (${rb.top.toFixed(1)} = ${rp2.bottom.toFixed(1)})`);
+      ok(await sobre(q, '[data-mchips]') && await sobre(q, SEL_PEST) && await sobre(q, SEL_FILA), `Menú (a ${y}): ni la barra, ni las pestañas, ni el nombre quedan tapados`);
+    }
+    await q.screenshot({ path: OUT + 'cab9-390-menu-pegado.png' });
+
+    // 8.5 · La categoría activa sigue al desplazamiento y queda centrada en su tira.
+    const activa = (p) => p.evaluate(() => [...document.querySelectorAll('[data-mchips] [data-chip] [aria-pressed="true"]')].map((e) => e.parentElement.dataset.chip).join(','));
+    const descentrada = (p, k) => p.evaluate((k) => { const c = document.querySelector(`[data-mchips] [data-chip="${k}"]`), t = c.parentElement.getBoundingClientRect(), r = c.getBoundingClientRect(); return (r.left + r.width / 2) - (t.left + t.width / 2); }, k);
+    const bajoLaBarra = (p, k) => p.evaluate((k) => { const s = document.querySelector(`[data-msec="m-${k}"]`), b = document.querySelector('[data-mchips]').getBoundingClientRect(); return s.getBoundingClientRect().top - b.bottom; }, k);
+    // Desplaza (suave) hasta que la sección k cruza la línea de debajo de la barra, y espera por condición a que se encienda sola.
+    const llegar = async (k) => { await q.evaluate((k) => { const s = document.querySelector(`[data-msec="m-${k}"]`), b = document.querySelector('[data-mchips]').getBoundingClientRect(); window.scrollTo({ top: window.scrollY + s.getBoundingClientRect().top - b.bottom - 4, behavior: 'smooth' }); }, k); };
+    const claves = await q.evaluate(() => [...document.querySelectorAll('[data-msec^="m-"]')].map((e) => e.dataset.msec.slice(2)));
+    const medio = claves[Math.floor(claves.length / 2)];
+    await llegar(claves[1]);
+    ok(await espera(async () => await activa(q) === claves[1], 10000), `al llegar a su sección la categoría «${claves[1]}» se enciende sola (activa: ${await activa(q)})`);
+    await llegar(medio);
+    ok(await espera(async () => await activa(q) === medio, 10000), `al desplazar el menú la activa cambia sola a «${medio}» (activa: ${await activa(q)})`);
+    ok(await espera(async () => Math.abs(await descentrada(q, medio)) <= 12, 8000), `la categoría activa queda centrada en la tira (a ${Math.round(await descentrada(q, medio))} px del centro)`);
+    await llegar(claves[claves.length - 1]);
+    ok(await espera(async () => await activa(q) === claves[claves.length - 1], 10000), `y al llegar a la última («${claves[claves.length - 1]}») se enciende ella (activa: ${await activa(q)})`);
+    await llegar(claves[0]);
+    ok(await espera(async () => await activa(q) === claves[0], 10000), `subiendo, vuelve a encenderse «${claves[0]}» (activa: ${await activa(q)})`);
+    // Tocar una categoría: la sección queda justo bajo la barra, no detrás, y esa categoría queda activa.
+    await q.locator(`[data-mchips] [data-chip="${claves[2]}"] [role=button]`).click();
+    ok(await espera(async () => { const d = await bajoLaBarra(q, claves[2]); return d >= -1 && d <= 14 && await activa(q) === claves[2]; }, 10000), `tocar la categoría «${claves[2]}»: su sección queda bajo la barra de categorías y ella queda activa (${Math.round(await bajoLaBarra(q, claves[2]))} px bajo la barra)`);
+    ok(await q.evaluate(() => document.documentElement.scrollWidth) <= 390, 'el menú fijado no ensancha la página: no se mueve de lado (scrollWidth ≤ 390)');
+
+    // 8.6 · Un nombre larguísimo: la franja lo corta con puntos suspensivos y el sello se ve entero dentro de la pantalla.
+    cambiar(MENU, `name = ${lit(LARGO)}`);
+    await abrirTel(q, MENU); await pestana(q, /^Men/).click(); await espera(async () => await fijado(q) === 'si');
+    const larga = await q.locator(SEL_NOMBRE).evaluate((e) => ({ puntos: getComputedStyle(e).textOverflow === 'ellipsis', corta: e.scrollWidth > e.clientWidth, w: Number(getComputedStyle(e).fontWeight) }));
+    ok(larga.puntos && larga.corta && larga.w >= 700, 'nombre largo: en negrita y cortado con puntos suspensivos (text-overflow: ellipsis, no cabe entero)');
+    const rs = await rect(q, `${SEL_FILA} [role="img"]`), rfl2 = await rect(q, SEL_FILA), rn2 = await rect(q, SEL_NOMBRE);
+    ok(rs.left >= 0 && rs.right <= 390 && rs.right <= rfl2.right + 1, `nombre largo: el sello se ve entero dentro de la pantalla (${Math.round(rs.left)}–${Math.round(rs.right)} de 390)`);
+    ok(rn2.right <= rs.left + 1 && rn2.left >= 0, 'nombre largo: el nombre no se monta con el sello ni se sale por la izquierda');
+    ok(await q.evaluate(() => document.documentElement.scrollWidth) <= 390, 'nombre largo: la página no se mueve de lado (scrollWidth ≤ 390)');
+    await q.screenshot({ path: OUT + 'cab9-390-nombre-pegado-largo.png' });
+    cambiar(MENU, `name = ${lit(orig[MENU].nombre)}`);
+
+    // 8.7 · La banda del carrito cabe en la pantalla, a 390, a 320 y con el negocio cerrado (su texto más largo).
+    await abrirTel(q, MENU); await pestana(q, /^Men/).click(); await espera(async () => await fijado(q) === 'si');
+    let con = false;
+    for (let i = 0; i < 10 && !con; i++) {
+      const bs = q.locator('[data-screen-label="Ficha · menú"]').getByRole('button', { name: 'Agregar' });
+      if (i >= await bs.count()) break;
+      await bs.nth(i).scrollIntoViewIfNeeded(); await bs.nth(i).click();
+      con = await espera(async () => await q.locator(SEL_BANDA).isVisible(), 1500);
+      if (!con && await q.locator('[data-screen-label="Menú · plato y opciones"]').count()) { await q.keyboard.press('Escape'); await q.locator('[data-screen-label="Menú · plato y opciones"]').waitFor({ state: 'detached' }).catch(() => {}); }
+    }
+    ok(con, 'se agregó un plato sin opciones y sale la banda del carrito');
+    const cabe = async (p, ancho) => { const r = await rect(p, SEL_BANDA); return { r, dentro: r.left >= 0 && r.right <= ancho, sinLado: (await p.evaluate(() => document.documentElement.scrollWidth)) <= ancho }; };
+    let bd = await cabe(q, 390);
+    ok(bd.dentro && bd.sinLado, `390: la banda del carrito cabe (${Math.round(bd.r.left)}–${Math.round(bd.r.right)} de 390) y la página no se mueve de lado`);
+    await q.screenshot({ path: OUT + 'cab9-390-carrito.png' });
+    await q.setViewportSize({ width: 320, height: 640 });
+    ok(await espera(async () => (await q.evaluate(() => window.innerWidth)) === 320), 'la ventana pasa a 320');
+    bd = await cabe(q, 320);
+    ok(bd.dentro && bd.sinLado, `320: la banda del carrito cabe (${Math.round(bd.r.left)}–${Math.round(bd.r.right)} de 320) y la página no se mueve de lado`);
+    cerrado(MENU); await q.reload(); await hidratado(q.getByRole('tab').first());
+    ok(await espera(async () => await q.locator(SEL_BANDA).isVisible(), 8000), 'con el negocio cerrado la banda del carrito sigue ahí');
+    bd = await cabe(q, 320);
+    ok(bd.dentro && bd.sinLado, `320, cerrado: la banda del carrito cabe (${Math.round(bd.r.left)}–${Math.round(bd.r.right)} de 320) y la página no se mueve de lado`);
+    await q.screenshot({ path: OUT + 'cab9-320-carrito-cerrado.png' });
+    abierto(MENU);
+
+    console.log('9 · prueba en escritorio (decisión pendiente): la franja del nombre pegado a 1280');
+    // PRUEBA DEL FUNDADOR («verlo y probarlo antes de decidir», 23 nov): si decide quitar la franja del escritorio (nombre-pegado-desk), se borra
+    // solo este bloque (y su mención en el guardián fichaFijaSinTapar).
+    const cd9 = await b.newContext({ viewport: { width: 1280, height: 800 } }); abiertas.push(cd9); const z = await cd9.newPage(); mirar(z); await entrarComo(z, tel);
+    const SEL_DESK = '[data-pieza="nombre-pegado-desk"]', SEL_DFILA = `${SEL_DESK} > div`, SEL_DFLECHA = `${SEL_DESK} [data-pieza="volver-arriba"]`;
+    await abrirFicha(z, MENU); await hidratado(z.locator('[data-pieza="pestanas-ficha"] button').first());
+    ok(await z.locator(SEL_DESK).getAttribute('data-visible') === 'no', 'escritorio: arriba del todo el nombre pegado no se ve');
+    await irA(z, 1000);
+    ok(await espera(async () => await z.locator(SEL_DESK).getAttribute('data-visible') === 'si'), 'escritorio: al pegarse las pestañas aparece la barra con el nombre (nombre-pegado-desk)');
+    ok((await z.locator(`${SEL_DFILA} span.truncate`).innerText()).replace(/\s+/g, ' ').trim() === nombre, `escritorio: la barra dice el nombre del negocio («${nombre}»)`);
+    const dc = await rect(z, SEL_DFILA), df = await rect(z, SEL_DFLECHA);
+    ok(df.left >= dc.left - 0.5 && df.right <= dc.right + 0.5 && df.top >= dc.top - 0.5 && df.bottom <= dc.bottom + 0.5, `escritorio: la flecha queda dentro de su caja (${Math.round(df.left)}–${Math.round(df.right)} dentro de ${Math.round(dc.left)}–${Math.round(dc.right)})`);
+    // 24 nov · El estado Abierto/Cerrado vive en la barra del nombre, a su derecha y dentro de su caja (la tira ya no lo lleva).
+    const es9 = await rect(z, `${SEL_DESK} [data-pieza="estado-pegado"]`);
+    ok(/^(Abierto|Cerrado)/.test((await z.locator(`${SEL_DESK} [data-pieza="estado-pegado"]`).innerText()).trim()) && es9.right <= dc.right + 0.5 && es9.left >= dc.left, 'escritorio: el estado (Abierto/Cerrado) está en la barra del nombre, dentro de su caja');
+    ok(await z.locator('[data-pieza="pestanas-ficha"] [data-pieza="estado-pegado"]').count() === 0, 'escritorio: la tira de pestañas ya no lleva el estado');
+    // Las flechas de la tira: invisibles sin cursor encima; visibles con el cursor sobre la tira cuando las pestañas no caben. El desborde se fuerza con
+    // una hoja de estilo (no con style en línea: React lo pisa) y un evento resize.
+    const hoja9 = await z.evaluateHandle(() => { const st = document.createElement('style'); st.textContent = '[data-pestana]{margin-right:120px!important}'; document.head.appendChild(st); window.dispatchEvent(new Event('resize')); return st; });
+    const flecha9 = z.locator('[data-pieza="flecha-pestanas"]'), opac9 = () => flecha9.first().evaluate((e) => getComputedStyle(e).opacity);
+    ok(await espera(async () => (await flecha9.count()) >= 1), 'escritorio: con las pestañas desbordadas aparece la flecha de la tira (flecha-pestanas)');
+    await z.mouse.move(640, 700);
+    ok(await espera(async () => (await opac9()) === '0'), 'escritorio: sin el cursor encima, la flecha de la tira es invisible (opacidad 0)');
+    await z.locator('[data-pieza="pestanas-ficha"]').hover();
+    ok(await espera(async () => (await opac9()) === '1'), 'escritorio: con el cursor sobre la tira, la flecha se ve (opacidad 1)');
+    const fr9 = await rect(z, '[data-pieza="flecha-pestanas"] > span'), tr9 = await rect(z, '[data-pieza="pestanas-ficha"]');
+    ok(fr9.right <= tr9.right + 0.5 && fr9.left >= tr9.left - 0.5, 'escritorio: la flecha derecha queda dentro de la tira (pegada a su borde derecho)');
+    await z.mouse.move(640, 700);
+    ok(await espera(async () => (await opac9()) === '0'), 'escritorio: al sacar el cursor, la flecha vuelve a ocultarse');
+    await hoja9.evaluate((e) => { e.remove(); window.dispatchEvent(new Event('resize')); }); await hoja9.dispose();
+    await z.screenshot({ path: OUT + 'cab9-1280-nombre-pegado.png' });
+    await z.locator(SEL_DFLECHA).click();
+    ok(await espera(async () => (await z.evaluate(() => window.scrollY)) === 0 && await z.locator(SEL_DESK).getAttribute('data-visible') === 'no'), 'escritorio: la flecha sube hasta arriba y la barra deja de verse');
+
+    console.log('10 · Ventana estrecha con ratón (640): las flechas de la tira salen con el cursor cuando las pestañas no caben; con el dedo, nunca');
+    // 24 nov (fundador, en una ventana estrecha de su computadora): la versión de teléfono no tenía cómo mover la tira sin dedo.
+    const ce = await b.newContext({ viewport: { width: 640, height: 800 } }); abiertas.push(ce); const e10 = await ce.newPage(); mirar(e10);
+    await abrirFicha(e10, TODO);
+    const tira10 = e10.locator('[data-pieza="pestanas-ficha"]:visible'); await tira10.scrollIntoViewIfNeeded();
+    const med10 = () => e10.evaluate(() => { const t = [...document.querySelectorAll('[data-pieza="pestanas-ficha"]')].find((x) => x.offsetParent); const x = t.querySelector('[role=tablist]'); return { fl: [...t.querySelectorAll('[data-pieza="flecha-pestanas-movil"]')].map((f) => f.dataset.lado).join(','), sl: Math.round(x.scrollLeft), cabe: x.scrollWidth <= x.clientWidth + 4, pag: document.documentElement.scrollWidth }; });
+    const m10 = await med10();
+    ok(!m10.cabe && m10.fl === '', `640 sin cursor: las pestañas no caben y no hay flechas a la vista («${m10.fl}»)`);
+    const bx10 = await tira10.boundingBox(); await e10.mouse.move(bx10.x + 200, bx10.y + 25);
+    ok(await espera(async () => (await med10()).fl === 'r'), 'con el cursor sobre la tira sale la flecha de la derecha (a la izquierda no hay nada que ver todavía)');
+    await e10.locator('[data-pieza="flecha-pestanas-movil"][data-lado="r"] button').click();
+    ok(await espera(async () => { const x = await med10(); return x.sl > 0 && x.fl.includes('l'); }), 'la flecha derecha mueve la tira y entonces sale la de la izquierda');
+    ok((await med10()).pag <= 640, 'las flechas no ensanchan la página');
+    await e10.mouse.move(10, 700);
+    ok(await espera(async () => (await med10()).fl === ''), 'al sacar el cursor, las flechas se van');
+    const ct = await ctx(390, 800); const t10 = await ct.newPage(); mirar(t10); await abrirFicha(t10, TODO);
+    const tt = t10.locator('[data-pieza="pestanas-ficha"]:visible'); await tt.scrollIntoViewIfNeeded(); const bt10 = await tt.boundingBox();
+    await t10.touchscreen.tap(bt10.x + 300, bt10.y + 25);
+    ok(await espera(async () => await t10.locator('[data-pieza="pestanas-ficha"]:visible [data-pestana][aria-selected="true"]').count() === 1) && await t10.locator('[data-pieza="flecha-pestanas-movil"]').count() === 0, 'teléfono (dedo): tocar la tira no saca flechas');
+
     ok(err.length === 0, `sin errores en la página${err.length ? ': ' + err.join(' | ') : ''}`);
   } finally {
     for (const c of abiertas) await c.close().catch(() => {});

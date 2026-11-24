@@ -416,7 +416,9 @@ export function MenuMovil({ mn, card = false }: { mn: Mn; card?: boolean }) {
       {mn.pop.length > 0 && (
         <div data-msec="m-pop" className="pt-[18px]">
           <div className="px-5 font-display text-[18px] font-extrabold leading-none tracking-[-0.03em]">{mn.lbl.pop}</div>
-          <div className="hs mt-3 flex gap-2.5 overflow-x-auto px-5 pb-1.5">
+          {/* relative: el «Antes » solo para lectores (sr-only, position:absolute) de un plato en oferta queda DENTRO de la tira; sin esto contaba como
+              contenido de la página y la ensanchaba 18 px en el teléfono (cazado por fic9cab). */}
+          <div className="hs relative mt-3 flex gap-2.5 overflow-x-auto px-5 pb-1.5" data-pieza="tira-populares">
             {mn.pop.map((it) => <MenuTile lang={mn.es ? "ES" : "EN"} key={it.id} off={it.off} name={it.name} price={it.price} was={it.was} image={it.image} qty={it.qty} selected={it.selected} open={it.open} width={card ? 156 : 148} height={card ? 124 : 112} onOpen={it.onOpen} onPlus={it.onPlus} onMinus={it.onMinus} onExpand={it.onExp} />)}
           </div>
         </div>

@@ -8,8 +8,8 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { AnfAdm } from "@/lib/anfitriones";
-import type { FuentesAdm } from "@/lib/anfitriones-fuentes";
-import { PAIS_L } from "@/lib/noticias-comun";
+import type { FuentesAdm, PruebaFuente } from "@/lib/anfitriones-fuentes";
+import { MOTIVOS_NOTA, PAIS_L } from "@/lib/noticias-comun";
 import { MARCA_ANF } from "@/lib/comunidad-comun";
 import { TEMA_L, TIPO_ANF_L, type TipoAnf } from "@/lib/anfitriones-comun";
 import { anfCiudad, anfFuente, anfFuenteEstado, anfFuenteProbar, anfPausa, anfPregunta, anfPreguntaRetirar, anfTipo, anfVoz } from "./acciones-anfitriones";
@@ -36,7 +36,7 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   // 5b · La ficha de una fuente (alta o edición) y el resultado de la última «Probar» (se queda a la vista, no solo en el aviso).
   const [forma, setForma] = useState<Forma | null>(null), fRef = useRef<Forma | null>(null);
-  const [prueba, setPrueba] = useState<{ id: string; ok: boolean; t: string } | null>(null), [probando, setProbando] = useState<string | null>(null);
+  const [prueba, setPrueba] = useState<{ id: string; ok: boolean; t: string; p: PruebaFuente | null } | null>(null), [probando, setProbando] = useState<string | null>(null);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setForma(null); router.refresh(); };
   const L = (x: { es: string; en: string }) => (en ? x.en : x.es);
   const marca = (g: "m" | "f") => L(MARCA_ANF[g]);
@@ -132,8 +132,38 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
     peligro: true, plantillas: [E("Ya no sirve", "No longer useful"), E("El medio cerró su RSS", "The outlet closed its RSS")], nota: "interna", hacer: (m) => anfFuenteEstado(f.id, "retired", m),
   });
   const probar = (f: FuentesAdm["fuentes"][number]) => { if (probando) return; setProbando(f.id); anfFuenteProbar(f.id).then((r) => {
-    setProbando(null); setPrueba({ id: f.id, ok: r.ok, t: r.mensaje ?? "" }); setToast(r.mensaje ?? ""); router.refresh();
+    const p = r.prueba ?? null, t = (p && resumenPrueba(r.ok, p)) || r.mensaje || "";
+    setProbando(null); setPrueba({ id: f.id, ok: r.ok, t, p }); setToast(t); router.refresh();
   }, () => { setProbando(null); setToast(E("No se pudo probar ahora.", "Could not test right now.")); }); };
+
+  /* 5b · «Probar» cuenta lo útil (sin guardar nada): el resumen en una línea, las cuatro cifras y los motivos de descarte que tocaron, y los avisos
+     claros (repartidor de feeds, ningún enlace del medio, la fuente pide esperar). Todo sale de los números del servidor; aquí solo se escribe. */
+  const notasN = (n: number) => E(n === 1 ? "1 nota" : `${n} notas`, n === 1 ? "1 item" : `${n} items`);
+  function resumenPrueba(ok: boolean, p: PruebaFuente): string {
+    if (!ok) return p.esperarMin ? E(`No se pudo leer: la fuente pide esperar ${p.esperarMin} min.`, `Could not read: the source asks to wait ${p.esperarMin} min.`) : "";
+    const x = p.desglose!, desc = x.trajo - x.entrarian;
+    return E(`La fuente se leyó bien: trajo ${notasN(x.trajo)}; ${x.conEnlace} con enlace del medio, ${x.entrarian} ${x.entrarian === 1 ? "entraría" : "entrarían"} y ${desc} ${desc === 1 ? "se descartaría" : "se descartarían"}.`,
+      `The source read fine: it brought ${notasN(x.trajo)}; ${x.conEnlace} with the outlet's link, ${x.entrarian} would come in and ${desc} would be discarded.`);
+  }
+  const bloquesPrueba = (pr: NonNullable<typeof prueba>): Bloque[] => {
+    const p = pr.p, nombre = N.fuentes.find((f) => f.id === pr.id)?.nombre ?? "", host = N.fuentes.find((f) => f.id === pr.id)?.host ?? "";
+    const out: Bloque[] = [{ type: "note", tone: pr.ok ? "ok" : p?.esperarMin ? "warn" : "danger", icon: pr.ok ? "check" : "ban", t: `${nombre} · ${pr.t}` }];
+    if (!p) return out;
+    if (p.soloFeeds) out.push({ type: "note", tone: "warn", icon: "info", t: E(`${host} es un repartidor de feeds (${p.soloFeeds}): sus enlaces llevan a otro servidor y nunca se aceptan, así que no se publicaría ninguna nota. Usa el RSS del propio medio.`, `${host} is a feed relay (${p.soloFeeds}): its links point to another server and are never accepted, so no item would be posted. Use the outlet's own RSS.`) });
+    else if (p.desglose && p.desglose.trajo > 0 && p.desglose.conEnlace === 0) out.push({ type: "note", tone: "warn", icon: "info", t: p.compartido
+      ? E(`Ninguna nota trae un enlace de ${host}. En un alojamiento compartido (${p.compartido}) solo vale un enlace del mismo servidor exacto que la fuente.`, `No item links to ${host}. On shared hosting (${p.compartido}) only a link on the exact same server as the source counts.`)
+      : E(`Ninguna nota trae un enlace del propio medio (${host}): no se publicaría ninguna.`, `No item links to the outlet itself (${host}): none would be posted.`) });
+    if (!p.desglose) return out;
+    const x = p.desglose, desc = x.trajo - x.entrarian;
+    out.push({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+      { k: E("TRAJO", "BROUGHT"), v: String(x.trajo) }, { k: E("CON ENLACE DEL MEDIO", "WITH THE OUTLET'S LINK"), v: String(x.conEnlace) },
+      { k: E("ENTRARÍAN", "WOULD COME IN"), v: String(x.entrarian) }, { k: E("SE DESCARTARÍAN", "WOULD BE DISCARDED"), v: String(desc) },
+    ] });
+    const motivos = MOTIVOS_NOTA.filter((m) => x.motivos[m] > 0);
+    if (motivos.length) out.push({ type: "rows", items: motivos.map((m) => ({ key: `prueba-${m}`, icon: "ban", t: MOTIVO_NOTA[m] ? (en ? MOTIVO_NOTA[m]![1] : MOTIVO_NOTA[m]![0]) : m,
+      s: E("Se descartaría al leerla (no se guardó nada)", "Would be discarded when read (nothing was saved)"), tag: notasN(x.motivos[m]).toUpperCase(), tone: "neutral" })) });
+    return out;
+  };
 
   const enc = d.ciudades.filter((c) => c.mode !== "off").length, pubs = d.voces.reduce((a, v) => a + v.pubs7, 0), resp = d.voces.reduce((a, v) => a + v.resp7, 0);
   const pct = d.gasto.tope > 0 ? Math.min(100, Math.floor((d.gasto.gastado / d.gasto.tope) * 100)) : 100;
@@ -172,7 +202,7 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
       { k: E("DESCARTADAS · 7 DÍAS", "DISCARDED · 7 DAYS"), v: String(N.cifras.descartadas) },
       { k: E("FALLOS DE LECTURA · 7 DÍAS", "READ FAILURES · 7 DAYS"), v: String(N.cifras.fallos), bg: N.cifras.fallos ? "var(--tl-ink)" : undefined, fg: N.cifras.fallos ? "var(--tl-white)" : undefined },
     ] },
-    ...(prueba ? [{ type: "note" as const, tone: prueba.ok ? ("ok" as const) : ("danger" as const), icon: prueba.ok ? "check" : "ban", t: `${N.fuentes.find((f) => f.id === prueba.id)?.nombre ?? ""} · ${prueba.t}` }] : []),
+    ...(prueba ? bloquesPrueba(prueba) : []),
     ...(N.fuentes.length ? [{ type: "rows" as const, items: N.fuentes.map((f) => ({ key: f.id, icon: "news", t: `${f.nombre} · ${f.tema === "deportes" ? E("Deportes", "Sports") : E("Noticias", "News")} · ${f.vozNombre}`,
       s: `${f.host} · ${f.pais} · ${f.lang.toUpperCase()} · ${E(`${f.leidas7} ${f.leidas7 === 1 ? "lectura" : "lecturas"}, ${f.nuevas7} ${f.nuevas7 === 1 ? "nota nueva" : "notas nuevas"} y ${f.fallos7} ${f.fallos7 === 1 ? "fallo" : "fallos"} en 7 días`, `${f.leidas7} ${f.leidas7 === 1 ? "read" : "reads"}, ${f.nuevas7} new ${f.nuevas7 === 1 ? "item" : "items"} and ${f.fallos7} ${f.fallos7 === 1 ? "failure" : "failures"} in 7 days`)}`,
       m: f.error && f.fails ? E(`Falló ${f.fails} ${f.fails === 1 ? "vez" : "veces seguidas"}: ${f.error}`, `Failed ${f.fails} ${f.fails === 1 ? "time" : "times in a row"}: ${f.error}`) : f.ultimaOk ? E(`Última lectura bien: ${fecha(f.ultimaOk)}`, `Last good read: ${fecha(f.ultimaOk)}`) : E("Todavía no se ha leído.", "Not read yet."),

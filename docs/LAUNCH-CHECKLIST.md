@@ -2940,7 +2940,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9u** · **(Hecho el 23 nov, vía rápida de diseño)** Al pegarse las pestañas sale encima el nombre del negocio (con su sello); la tira de pestañas
       solo se mueve de lado; las categorías del menú se pegan debajo de las pestañas (antes quedaban detrás) y tocar una deja su sección justo debajo.
       Visto servido en local a 390 px (medidas: nombre 57–97, pestañas 97–147, categorías 147–214).
-- [ ] **→ 9u** · **Sus pruebas de punta a punta y al revés** (vía rápida AL: corren después): en `fic9cab`, el nombre pegado visible solo al bajar, la tira
+- [x] **Pruebas de la ronda de la ficha** — hechas el 24 nov (Sonnet, revisado por Fable): `fic9cab` partes 8, 9 y 10, guardián `fichaFijaSinTapar`, `alrevesFichaFija` 34/34.
+      De paso cazó y quedó arreglado: con una oferta en vivo, la tira de Populares ensanchaba la página 18 px en el teléfono.
+- [x] **(texto anterior)** · Sus pruebas de punta a punta y al revés (vía rápida AL: corren después): en `fic9cab`, el nombre pegado visible solo al bajar, la tira
       sin desplazamiento vertical, y la barra de categorías debajo de las pestañas en Menú; guardián para que ninguna barra pegada dentro de una pestaña
       de la ficha nueva use `top` menor que el de las pestañas.
 - [ ] **→ 9u** · **En escritorio, al pegarse las pestañas no sale el nombre** (sale el estado a la derecha): decisión del fundador si también lo quiere.
@@ -2966,13 +2968,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9u** · 5b · Cargar en el sandbox las fuentes reales, apagadas, después de verificarlas con red (candidatas sin verificar en REVISION). Producción
       sin fuentes hasta la respuesta del abogado (pregunta A-51 de `docs/legal/para-el-abogado.md`: citar titular + resumen corto con enlace).
 - [ ] **→ 9u** · 5b · Probar `pedirReal` contra un medio de verdad en el sandbox (TLS, gzip, IPv6) antes de encender una fuente: aquí solo corrió contra el simulador.
-- [ ] **→ 9u** · 5b · Respetar `Retry-After` y revisar los términos de uso de cada RSS antes de encenderlo.
-- [ ] **→ 9u** · 5b · El enlace de una nota se acepta si es del dominio base de la fuente: en un alojamiento compartido (medio.wordpress.com) eso admite
-      cualquier subdominio del alojador. Al dar de alta una fuente así, exigir el servidor exacto.
+- [x] 5b · `Retry-After` respetado (acotado a un día), servidor exacto en alojamientos compartidos y «Probar» con desglose — hecho el 24 nov (Opus, revisado por Fable).
+- [ ] **→ 9u** · 5b · Revisar los términos de uso de cada RSS antes de encenderlo; `Retry-After` solo probado contra el simulador; la lista de alojadores
+      compartidos es cerrada (revisarla cada trimestre) y `medium.com` admite cualquier artículo de medium.com.
 - [ ] **→ 9u** · 5b · `anfNot` y `anfAO` sin parte asignada en `pruebas/reparto.json` (se asignan en la próxima medición del reparto).
 - [ ] **→ 9u** · **Avatares ilustrados de las 8 voces** (hoy iniciales): el fundador elige entre opciones de Creattie.
 - [ ] **→ 9q** · **Las respuestas con el modelo real nunca se han visto:** en pruebas siempre responde el simulador o una plantilla. Verlas con una llave real antes de encender en producción.
 - [ ] **→ 9u** · **Las voces cuentan contra el límite diario de una persona** (`com_lim_publicaciones`): con 5 ciudades encendidas una voz puede chocar; decidir si llevan límite propio.
 - [ ] **→ 9u** · **Al encender en el sandbox responden a publicaciones de la semilla de hasta 3 días:** decidir si se encienden en Hazleton desde la semilla.
 - [ ] **→ 9b** · **`anfAO` sin asignar en `pruebas/reparto.json`** (va a la parte más vacía hasta regenerar con duraciones medidas); los tipos «empleos» y «eventos» solo por plantilla y guardián, sin punta a punta.
-
+- [ ] **→ 9u** · **Vista previa: next dev se queda sin memoria** (tope de 1,8 GB de montón, 2,5 GB del contenedor) al compilar unas seis pantallas seguidas: el 24 nov
+      entró en bucle de reinicios por precalentar diez. Ahora precalienta tres y el reinicio queda escrito en `/estado/vista.txt`. Si navegar siete u ocho
+      pantallas lo vuelve a tumbar: probar Turbopack o subir el tope (hoy lo fija el guardián `vistaPreviaAcotada`; decisión del fundador).
+- [ ] **→ 9q** · **Flechas de la tira en ventana estrecha:** vistas en Chromium con ratón; falta verlas en Safari y en una tableta con ratón.

@@ -16,7 +16,8 @@
              pruebas de El Compa es lib/compa/modelo-simulador.ts).
    - RSS     (AO 5b, las fuentes de noticias de los anfitriones; NOTICIAS_RSS_BASE) GET /__dns/<servidor> → { direcciones: [...] } de la tabla que la prueba
              le dio con `dns` (404 si no está: como un nombre que no existe) · GET /fuente/<servidor><ruta> → lo que la prueba le dio con `fuente` (estado,
-             tipo, cuerpo, redirección, gzip o «bytes»: un cuerpo de ese tamaño, para el tope). Nunca sale a internet: solo contesta lo que se le dio.
+             tipo, cuerpo, redirección, gzip, «bytes»: un cuerpo de ese tamaño, para el tope; o «reintentar»: la cabecera Retry-After, p. ej. estado 429
+             con reintentar '1800' o una fecha HTTP). Nunca sale a internet: solo contesta lo que se le dio.
    Solo contesta con 200 a la llave que la prueba le dio con `aceptar`; cualquier otra, 401 (o el código de su especificación). Lo que se le dio vive SOLO en la
    memoria de este proceso. Registra cada llamada con la HUELLA (sha256) de lo que llegó firmado, nunca el valor, para que la prueba compare huellas sin imprimir
    la llave. Sin dependencias. Se usa desde la prueba de punta a punta (prov9v): `const sim = await require('.../proveedores-sim/sim.cjs').iniciar({ stripe: 4410, … })`. */
@@ -117,7 +118,7 @@ async function iniciar(puertos, host = '127.0.0.1') {
       const sigue = () => { while (n < x.bytes) { n += trozo.length; if (!res.write(trozo)) return res.once('drain', sigue); } res.end(); }; res.on('error', () => {}); return sigue(); }
     const cuerpo = Buffer.from(String(x.cuerpo ?? ''), 'utf8');
     if (x.gzip) { res.writeHead(est, { 'content-type': x.tipo ?? 'application/rss+xml', 'content-encoding': 'gzip' }); return res.end(require('zlib').gzipSync(cuerpo)); }
-    res.writeHead(est, { 'content-type': x.tipo ?? 'application/rss+xml; charset=utf-8' }); res.end(cuerpo);
+    res.writeHead(est, { 'content-type': x.tipo ?? 'application/rss+xml; charset=utf-8', ...(x.reintentar !== undefined ? { 'retry-after': String(x.reintentar) } : {}) }); res.end(cuerpo);
   };
   const servidores = Object.entries({ stripe, telnyx, meta, ses: sesSim, anthropic, rss }).filter(([p]) => puertos[p] !== undefined).map(([p, f]) => [p, http.createServer(f)]);
   await Promise.all(servidores.map(([p, s]) => new Promise((ok, mal) => { s.once('error', mal); s.listen(puertos[p], host, ok); })));
@@ -129,8 +130,8 @@ async function iniciar(puertos, host = '127.0.0.1') {
       buenas[prov].add(huella(valor)); if (prov === 'meta' && extra.waba) wabas.add(String(extra.waba));
     },
     retirar(prov, valor) { if (prov === 'ses') ses.delete(huella(valor)); else buenas[prov].delete(huella(valor)); },
-    /* AO 5b · RSS: `dns(servidor, [direcciones])` es lo que contesta su DNS; `fuente(servidor, ruta, { estado, tipo, cuerpo, ubicacion, gzip, bytes })` lo
-       que contesta esa ruta (devuelve la fila: `llamadas` cuenta cuántas veces se pidió). */
+    /* AO 5b · RSS: `dns(servidor, [direcciones])` es lo que contesta su DNS; `fuente(servidor, ruta, { estado, tipo, cuerpo, ubicacion, gzip, bytes, reintentar })`
+       lo que contesta esa ruta (devuelve la fila: `llamadas` cuenta cuántas veces se pidió; se puede cambiar después, p. ej. x.estado = 200). */
     dns(h, ips) { dnsTabla.set(String(h).toLowerCase(), ips.map(String)); },
     fuente(h, ruta, r) { const x = { ...r, llamadas: 0 }; fuentes.set(`${String(h).toLowerCase()}${ruta}`, x); return x; },
     registro,

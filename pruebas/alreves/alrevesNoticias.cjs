@@ -3,7 +3,7 @@
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const L = 'apps/web/lib/noticias-lector.ts', C = 'apps/web/lib/noticias-comun.ts', N = 'apps/web/lib/compa/noticias.ts', M = 'packages/db/migrations/0216_anfitriones_noticias.sql';
+const L = 'apps/web/lib/noticias-lector.ts', C = 'apps/web/lib/noticias-comun.ts', N = 'apps/web/lib/compa/noticias.ts', M = 'packages/db/migrations/0216_anfitriones_noticias.sql', AF = 'apps/web/lib/anfitriones-fuentes.ts';
 const casos = [
   // noticiasLectorSoloBarrido: una pantalla que lee una fuente, el motor que lee fuera del barrido, el barrido sin su tarea, «Probar» sin permiso.
   ['noticiasLectorSoloBarrido', 'apps/web/app/(app)/comunidad/acciones.ts', '"use server";', '"use server";\nimport { leerFuente } from "@/lib/noticias-lector";\nexport async function leerYa(id: string) { return leerFuente(id); }'],
@@ -32,6 +32,31 @@ const casos = [
   ['noticiasApagadasDeFabrica', M, "  status        text not null default 'off' check (status in ('on', 'off', 'retired')),", "  status        text not null default 'on' check (status in ('on', 'off', 'retired')),"],
   ['noticiasApagadasDeFabrica', M, '-- ── Los números (Configuración › Comunidad) ──', "insert into com_host_sources (name, url, host, country, topic, host_user_id) values ('X', 'https://x.com/rss', 'x.com', 'DO', 'noticias', '0a0f0000-0000-4000-8000-000000000003');\n-- ── Los números (Configuración › Comunidad) ──"],
   ['noticiasApagadasDeFabrica', M, "  if new.source_url is not null and (new.author_user_id is null or not anf_es(new.author_user_id)) then", "  if false then"],
+  // noticiasRetryAfter: una descarga que no lee Retry-After, el lector que no lo devuelve, el barrido sin el mínimo ni el techo, «Probar» que no aplaza,
+  // y la función pura sin tope de absurdo, sin techo de un día o aceptando cualquier número.
+  ['noticiasRetryAfter', L, '      if (est === 429 || est === 503) { res.resume(); return ok(', '      if (false) { res.resume(); return ok('],
+  ['noticiasRetryAfter', L, '        if (espera) x.esperarS = espera;\n', ''],
+  ['noticiasRetryAfter', N, 'next_read_at = now() + greatest(make_interval(mins => least(1440, $3::int * power(2, least(fails + 1, 10))::int)), make_interval(secs => least(86400, $4::int)))', 'next_read_at = now() + make_interval(secs => $4::int)'],
+  ['noticiasRetryAfter', AF, '    if (esperarS) await c.query(`update com_host_sources set next_read_at = greatest(next_read_at, now() + make_interval(secs => $2::int)) where id = $1::bigint`, [id, esperarS]);\n', ''],
+  ['noticiasRetryAfter', C, '  if (!(s > 0) || s > RETRY_AFTER_ABSURDO_S) return null;', '  if (!(s > 0)) return null;'],
+  ['noticiasRetryAfter', C, '  return Math.min(s, RETRY_AFTER_MAX_S);', '  return s;'],
+  ['noticiasRetryAfter', C, '  if (/^\\d{1,9}$/.test(v)) s = Number(v);', '  if (Number.isFinite(Number(v))) s = Number(v);'],
+  // noticiasAlojadorExacto: el enlace de otro cliente del mismo alojador, el repartidor de feeds aceptado, un alojador fuera de la lista, blogspot de
+  // otro país y «Probar» sin el aviso del repartidor.
+  ['noticiasAlojadorExacto', C, '  if (alojadorCompartido(hf) && h !== hf) return null;\n', ''],
+  ['noticiasAlojadorExacto', C, '  if (alojadorSoloFeeds(hf)) return null;\n', ''],
+  ['noticiasAlojadorExacto', C, '"medium.com", "github.io", ', '"medium.com", '],
+  ['noticiasAlojadorExacto', C, ' ?? (/(^|\\.)blogspot\\.(com\\.)?[a-z]{2}$/.test(h) ? "blogspot" : null);', ' ?? null;'],
+  ['noticiasAlojadorExacto', AF, 'const soloFeeds = f ? alojadorSoloFeeds(f.host) : null,', 'const soloFeeds = null as string | null,'],
+  // noticiasProbarDesglose: «Probar» que guarda notas o ignora las palabras de la fuente, el barrido con su propia regla, un conteo mal hecho, un motivo
+  // que se pierde, la pantalla o la acción sin el desglose.
+  ['noticiasProbarDesglose', AF, '    // La fuente pidió esperar: el barrido', '    await c.query(`insert into com_host_news (source_id, fingerprint, status) values ($1::bigint, $2, \'nueva\')`, [id, "x"]);\n    // La fuente pidió esperar: el barrido'],
+  ['noticiasProbarDesglose', AF, 'desgloseNotas(r.notas, f?.veto_words ?? [], ', 'desgloseNotas(r.notas, [], '],
+  ['noticiasProbarDesglose', N, 'const m = motivoNota(n, f.veto_words, horas, Date.now(), delicado);', 'const m = motivoNota(n, [], horas, Date.now(), () => null);'],
+  ['noticiasProbarDesglose', C, '    if (n.enlace) conEnlace++;', '    conEnlace++;'],
+  ['noticiasProbarDesglose', C, '  if (d) return { motivo: "delicado", detalle: d };\n', ''],
+  ['noticiasProbarDesglose', 'apps/web/app/admin/AnfitrionesAdmin.tsx', '...(prueba ? bloquesPrueba(prueba) : [])', '...([] as Bloque[])'],
+  ['noticiasProbarDesglose', 'apps/web/app/admin/acciones-anfitriones.ts', 'const p = r.prueba ? { prueba: r.prueba } : {};', 'const p = {};'],
   // proveedoresSimuladorAislado: la variable de simulador de las noticias, permitida en producción o leída sin la regla.
   ['proveedoresSimuladorAislado', 'infra/comun/secretos.json', '  "NOTICIAS_RSS_BASE": { "origen": "prohibida" },\n', ''],
   ['proveedoresSimuladorAislado', L, 'export const resolverDeFuentes = (): Resolver => resolverDe(origenDePruebas(process.env.NOTICIAS_RSS_BASE));', 'export const resolverDeFuentes = (): Resolver => resolverDe(process.env.NOTICIAS_RSS_BASE ? new URL(process.env.NOTICIAS_RSS_BASE) : null);'],

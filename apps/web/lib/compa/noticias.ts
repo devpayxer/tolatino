@@ -5,7 +5,7 @@ import { valores } from "../config";
 import { publicar } from "../comunidad";
 import { MARCA_ANF } from "../comunidad-comun";
 import { delicado, filtroAnfitrion, type Tema } from "../anfitriones-comun";
-import { ESQUEMA_NOTICIA, pautaNoticia, plantillaResumen, resumenValido, textoNoticia, vetoNoticia, type NotaLeida } from "../noticias-comun";
+import { ESQUEMA_NOTICIA, motivoNota, pautaNoticia, plantillaResumen, resumenValido, textoNoticia, type NotaLeida } from "../noticias-comun";
 import { leerFuente } from "../noticias-lector";
 import { ErrorModelo, modelo, type Motor, type Salida } from "./modelo";
 import { modeloDe } from "./tope";
@@ -30,14 +30,11 @@ type FuenteBarrido = { id: string; name: string; host: string; topic: Tema; veto
 type Clasificada = { titulo: string | null; resumen: string | null; enlace: string | null; fecha: string | null; huella: string; estado: "nueva" | "descartada"; motivo: string | null; detalle: string | null };
 function clasificar(n: NotaLeida, f: FuenteBarrido, horas: number): Clasificada {
   const base = { titulo: n.titulo, resumen: n.descripcion || null, enlace: n.enlace, fecha: n.fecha };
-  if (!n.enlace) return { ...base, titulo: null, resumen: null, huella: huellaEnlace(`sin-enlace:${f.id}:${n.titulo}`), estado: "descartada", motivo: "enlace", detalle: n.enlaceCrudo.slice(0, 200) || "sin enlace" };
-  const huella = huellaEnlace(n.enlace);
-  if (n.fecha && Date.parse(n.fecha) < Date.now() - horas * 3600_000) return { ...base, huella, estado: "descartada", motivo: "vieja", detalle: n.fecha.slice(0, 10) };
-  const texto = `${n.titulo}. ${n.descripcion}`;
-  const v = vetoNoticia(texto, f.veto_words);
-  if (v) return { ...base, huella, estado: "descartada", motivo: v.motivo, detalle: v.detalle };
-  const d = delicado(texto);
-  if (d) return { ...base, huella, estado: "descartada", motivo: "delicado", detalle: d };
+  // La misma regla que cuenta «Probar» (motivoNota, en lib/noticias-comun.ts): lo que el Super Admin ve al probar es lo que el barrido hará.
+  const m = motivoNota(n, f.veto_words, horas, Date.now(), delicado);
+  if (m?.motivo === "enlace") return { ...base, titulo: null, resumen: null, huella: huellaEnlace(`sin-enlace:${f.id}:${n.titulo}`), estado: "descartada", motivo: "enlace", detalle: m.detalle };
+  const huella = huellaEnlace(n.enlace!);
+  if (m) return { ...base, huella, estado: "descartada", motivo: m.motivo, detalle: m.detalle };
   return { ...base, huella, estado: "nueva", motivo: null, detalle: null };
 }
 
@@ -78,9 +75,11 @@ export async function barrerFuentes(): Promise<{ vaciadas: number; leidas: numbe
       await db().query(`insert into com_host_source_reads (source_id, via, ok, items, new_items, ms) values ($1::bigint, 'barrido', true, $2, $3, $4)`, [f.id, Math.min(1000, r.notas.length), Math.min(1000, nuevas), r.ms]);
     } else {
       out.fallos++;
-      // Respaldo exponencial: cada fallo duplica la espera (cada_min · 2^fallos), hasta un día.
+      // Respaldo exponencial: cada fallo duplica la espera (cada_min · 2^fallos), hasta un día. Si la fuente pidió esperar (429/503 con Retry-After,
+      // ya acotado a un día por esperaRetryAfter), se respeta: nunca antes de lo que pidió ni antes del respaldo normal (greatest).
       await db().query(`update com_host_sources set fails = fails + 1, last_error = $2, last_error_at = now(),
-                          next_read_at = now() + make_interval(mins => least(1440, $3::int * power(2, least(fails + 1, 10))::int)) where id = $1::bigint`, [f.id, r.error.slice(0, 200), k.anf_fuente_cada_min]);
+                          next_read_at = now() + greatest(make_interval(mins => least(1440, $3::int * power(2, least(fails + 1, 10))::int)), make_interval(secs => least(86400, $4::int))) where id = $1::bigint`,
+        [f.id, r.error.slice(0, 200), k.anf_fuente_cada_min, r.esperarS ?? 0]);
       await db().query(`insert into com_host_source_reads (source_id, via, ok, error, ms) values ($1::bigint, 'barrido', false, $2, $3)`, [f.id, r.error.slice(0, 200), r.ms]);
     }
   }));

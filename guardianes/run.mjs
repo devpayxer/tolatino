@@ -11554,6 +11554,99 @@ const guardianes = {
       falla(G, "apps/web/app/globals.css", 0, "a 320 con letra grande el nombre «To’Latino» baja a 17 px (si no, tapa el botón del idioma)");
   },
 
+  /* 24 nov · fichaFijaSinTapar. Ronda de ajustes del fundador a la ficha Pro (23 nov): (1) bajando, las pestañas se pegan y encima sale una franja con
+     el nombre y el sello; (2) tocar una pestaña DEJA FIJADO el menú arriba (la portada y la cabecera se guardan y no vuelven ni subiendo ni cambiando
+     de pestaña): solo la flecha de antes del nombre lo suelta; (3) la tira de pestañas solo se mueve de lado; (4) la barra de categorías del menú se
+     pega DEBAJO de las pestañas, no detrás; (5) el nombre largo se corta con puntos suspensivos y el sello no se sale; (6) la banda del carrito cabe;
+     (7) a prueba en escritorio: la franja del nombre con su flecha dentro de la caja. La clase del fallo: ninguna barra sticky que viva dentro de una
+     pestaña del teléfono se pega por encima de las pestañas (CAB_MOVIL + NOMBRE_MOVIL + su alto). Todo se mira servido en fic9cab (partes 8 y 9);
+     al revés: alrevesFichaFija. */
+  fichaFijaSinTapar() {
+    const G = "fichaFijaSinTapar", F = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", P = "packages/ui/src/core/PestanasFicha.tsx", M = "apps/web/app/(app)/n/[id]/MenuCliente.tsx", E = "pruebas/e2e/fic9cab.cjs";
+    for (const x of [F, P, M, E]) if (!existsSync(x)) return falla(G, x, 0, "falta un archivo de la ficha Pro del teléfono o su prueba");
+    const f = sinComent(F), p = sinComent(P), m = sinComent(M);
+    // Las alturas: salen del propio código, no de este guardián.
+    const al = f.match(/const CAB_MOVIL = (\d+), CAB_DESK = (\d+), NOMBRE_MOVIL = (\d+), NOMBRE_DESK = (\d+);/), altoP = p.match(/minHeight: desk \? \d+ : (\d+)/);
+    if (!al || !altoP) return falla(G, F, 0, "no encontré CAB_MOVIL, CAB_DESK, NOMBRE_MOVIL y NOMBRE_DESK en FichaNueva (o el alto de las pestañas en PestanasFicha)");
+    const DEBAJO = Number(al[1]) + Number(al[3]) + Number(altoP[1]); // cabecera de la app + nombre + pestañas
+    // (3) La tira de pestañas solo se mueve de lado.
+    const tira = p.match(/style=\{\{\s*display: "flex", gap: desk[^}]*\}\}/);
+    if (!tira) falla(G, P, 0, "no encontré el estilo de la tira de pestañas (display flex, gap, overflowX…)");
+    else {
+      if (!/overflowY: "hidden"/.test(tira[0])) falla(G, P, 0, "la tira de pestañas perdió overflowY: \"hidden\": sobra 1 px de alto y el dedo la mueve hacia arriba y abajo (solo se mueve de lado)");
+      if (!/overscrollBehaviorX: "contain"/.test(tira[0])) falla(G, P, 0, "la tira de pestañas perdió overscrollBehaviorX: \"contain\": al llegar al borde el dedo arrastra la página");
+    }
+    // (1) La franja del nombre y las pestañas debajo.
+    const franja = f.match(/<div className="([^"]*)" style=\{\{ top: ([^}]*) \}\} data-pieza="nombre-pegado" data-fijado=\{fijado \? "si" : "no"\} data-visible=\{visM \? "si" : "no"\}[^>]*>(?:(?!nombre-pegado-desk)[\s\S])*?<span className="([^"]*)">\{f\.nombre\}<\/span>\s*\{sello \? <span className="([^"]*)">/);
+    if (!franja) falla(G, F, 0, "la ficha del teléfono ya no pinta la franja del nombre (data-pieza=\"nombre-pegado\" con data-fijado, data-visible, {f.nombre} y el sello)");
+    else {
+      if (!/\bsticky\b/.test(franja[1])) falla(G, F, 0, "la franja del nombre no es sticky: no se queda pegada al bajar");
+      if (franja[2].trim() !== "CAB_MOVIL") falla(G, F, 0, `la franja del nombre se pega en «${franja[2].trim()}» y debe ir en CAB_MOVIL (justo debajo de la cabecera de la app)`);
+      if (!/\bmin-w-0\b/.test(franja[3]) || !/\btruncate\b/.test(franja[3])) falla(G, F, 0, "el nombre de la franja se corta con puntos suspensivos (min-w-0 truncate): un nombre largo empujaría el sello fuera de la pantalla");
+      if (!/\bfont-extrabold\b/.test(franja[3])) falla(G, F, 0, "el nombre de la franja va en negrita (font-extrabold)");
+      if (!/\bflex-none\b/.test(franja[4])) falla(G, F, 0, "el sello de la franja no se aprieta (flex-none): con un nombre largo se saldría de la pantalla");
+    }
+    if (!/const visM = pegadaM \|\| fijado;/.test(f)) falla(G, F, 0, "el nombre pegado se ve cuando las pestañas están pegadas O el menú está fijado (visM = pegadaM || fijado): fijado, se ve también arriba del todo");
+    if (!/setPegadaM\(!!el && el\.getBoundingClientRect\(\)\.top <= CAB_MOVIL \+ NOMBRE_MOVIL \+ 1\)/.test(f)) falla(G, F, 0, "el nombre aparece cuando las pestañas llegan a CAB_MOVIL + NOMBRE_MOVIL (+ 1): ese cálculo cambió");
+    if (!/<div ref=\{tabsRef\} className="[^"]*\bsticky\b[^"]*" style=\{\{ top: CAB_MOVIL \+ NOMBRE_MOVIL \}\}>/.test(f)) falla(G, F, 0, "las pestañas del teléfono tienen que pegarse en CAB_MOVIL + NOMBRE_MOVIL (debajo del nombre): pegadas en CAB_MOVIL a secas se montan sobre él");
+    // (2) Fijado: solo setTab lo fija y solo soltar lo suelta.
+    const sets = [...f.matchAll(/setFijado\(([^)]*)\)/g)].map((x) => x[1]);
+    const cuerpoSetTab = (f.match(/const setTab = \(id: string\) => \{([\s\S]*?)\n  \};/) ?? [])[1] ?? "", cuerpoSoltar = (f.match(/const soltar = \(\) => \{([^\n]*)\};/) ?? [])[1] ?? "";
+    if (!/setFijado\(true\)/.test(cuerpoSetTab)) falla(G, F, 0, "setTab ya no fija el menú (setFijado(true)): tocar una pestaña tiene que dejarlo fijado arriba, con la portada y la cabecera guardadas");
+    if (!/setFijado\(false\)/.test(cuerpoSoltar)) falla(G, F, 0, "soltar ya no suelta el menú (setFijado(false)): la flecha de antes del nombre es lo único que devuelve a Resumen con la cabecera");
+    if (sets.length !== 2 || sets.filter((x) => x === "true").length !== 1 || sets.filter((x) => x === "false").length !== 1) falla(G, F, 0, `setFijado se llama ${sets.length} veces (${sets.join(", ")}): solo setTab lo fija (true) y solo soltar lo suelta (false); subir, bajar o cambiar de pestaña no lo sueltan`);
+    if (!/const \[fijado, setFijado\] = useState\(false\);/.test(f)) falla(G, F, 0, "fijado empieza en false (arriba del todo se ve la portada y la cabecera)");
+    if (!/className=\{fijado \? "hidden" : "relative h-\[330px\]"\}/.test(f)) falla(G, F, 0, "fijado, la portada del teléfono se oculta (className fijado ? \"hidden\")");
+    if (!/className=\{fijado \? "hidden" : "flex flex-col gap-2 px-5 pb-3 pt-5"\} data-pieza="cabecera-ficha"/.test(f)) falla(G, F, 0, "fijado, la cabecera (data-pieza=\"cabecera-ficha\") del teléfono se oculta (className fijado ? \"hidden\")");
+    if (!/data-pieza="volver-arriba"[^>]*onClick=\{\(\) => \(fijado \? soltar\(\) : window\.scrollTo\(\{ top: 0, behavior: "smooth" \}\)\)\}/.test(f)) falla(G, F, 0, "la flecha de antes del nombre (data-pieza=\"volver-arriba\") suelta el menú cuando está fijado (soltar()) y si no sube suave");
+    // (4) La clase del fallo: barras sticky dentro de las pestañas del teléfono.
+    const dir = "apps/web/app/(app)/n/[id]", mods = [...new Set([...f.matchAll(/from "\.\/([A-Za-z0-9_]+)"/g)].map((x) => `${dir}/${x[1]}.tsx`))].filter((x) => existsSync(x));
+    if (mods.length < 10) falla(G, F, 0, `solo encontré ${mods.length} componentes de pestañas importados con «./» en FichaNueva (hay más de 10): ¿cambió la forma de importarlos?`);
+    for (const mod of mods) {
+      const ls = sinComent(mod).split("\n");
+      ls.forEach((l, i) => {
+        if (!/\bsticky\b/.test(l) && !/position: ?"sticky"/.test(l)) return;
+        const tops = [], dentro = /card \? "top-\[(\d+)px\]"/.exec(l);
+        if (dentro) tops.push(Number(dentro[1])); // en la ficha nueva (card) manda este; el otro es la ficha Free
+        else for (const x of l.matchAll(/\btop-\[(\d+)px\]|\btop-(\d+)\b|\btop: ?(\d+)\b/g)) tops.push(x[1] ? Number(x[1]) : x[2] ? Number(x[2]) * 4 : Number(x[3]));
+        if (!tops.length || tops.every((t) => t >= DEBAJO)) return;
+        const previo = ls.slice(Math.max(0, i - 10), i + 1).join("\n");
+        if (/\blg:/.test(l) || /if \(desk\)|\bdesk \?/.test(previo) || /function \w*Desk\b/.test(previo)) return; // del escritorio: ahí las pestañas no son estas
+        falla(G, mod, i + 1, `barra sticky que se pega en top ${Math.min(...tops)} dentro de una pestaña del teléfono de la ficha nueva: las pestañas ocupan hasta ${DEBAJO} (${al[1]} cabecera + ${al[3]} nombre + ${altoP[1]} pestañas) y la barra queda tapada detrás de ellas. Pégala en top-[${DEBAJO}px] (en la ficha nueva) o ponla solo en el escritorio`);
+      });
+    }
+    // (5) La barra de categorías del menú: pegada debajo de las pestañas, centrada en la activa, y el salto cuenta con ella.
+    const chips = m.match(/data-mchips=""[^>]*\$\{card \? "top-\[(\d+)px\]" : "top-\[57px\]"\}/);
+    if (!chips) falla(G, M, 0, "la barra de categorías del menú (data-mchips) se pega en un top-[N px] con card (ficha nueva) y en top-[57px] sin card (ficha Free)");
+    else if (Number(chips[1]) !== DEBAJO) falla(G, M, 0, `la barra de categorías se pega en top-[${chips[1]}px] y debe ir en top-[${DEBAJO}px] (${al[1]} cabecera + ${al[3]} nombre + ${altoP[1]} pestañas): más arriba queda detrás de las pestañas, más abajo deja un hueco`);
+    if (!/document\.querySelector<HTMLElement>\("\[data-mchips\]"\)/.test(m) || !/parseFloat\(getComputedStyle\(barra\)\.top\)/.test(m)) falla(G, M, 0, "al tocar una categoría, el hueco se calcula leyendo la barra [data-mchips] (su top y su alto): con un número fijo el título queda detrás de ella");
+    if (!/const linea = desk \? 150 : barra!\.getBoundingClientRect\(\)\.bottom \+ 16;/.test(m) || !/if \(r\.top <= linea\) k = el\.dataset\.msec!\.slice\(2\)/.test(m) || !/setCat\(\(c\) => \(c === k \? c : k\)\)/.test(m)) falla(G, M, 0, "la categoría activa cambia sola al desplazar el menú: la sección que cruza la línea justo debajo de la barra (bottom + 16) es la activa");
+    if (!/de \+ \(b\.left \+ b\.width \/ 2\) - \(t\.left \+ t\.width \/ 2\)/.test(m)) falla(G, M, 0, "la categoría activa se centra en su tira (el centro del chip menos el centro de la tira)");
+    // (6) La banda del carrito cabe en la pantalla.
+    if (!/data-screen-label="Ficha · barra del pedido" className="fixed inset-x-3\.5 bottom-\[22px\] z-30 grid grid-cols-\[minmax\(0,1fr\)\] lg:hidden"/.test(m)) falla(G, M, 0, "la banda del carrito (barra del pedido) se queda dentro de la pantalla: fixed inset-x-3.5 con una sola columna minmax(0,1fr) (con un texto largo la banda medía lo que su texto y se salía por la derecha)");
+    if (!/<div className="hs relative mt-3 flex gap-2\.5 overflow-x-auto px-5 pb-1\.5" data-pieza="tira-populares">/.test(m)) falla(G, M, 0, "la tira de Populares es relative: el «Antes » para lectores (sr-only) de un plato en oferta queda dentro de la tira y no ensancha la página en el teléfono");
+    if (!/onPointerEnter=\{\(e\) => \{ if \(e\.pointerType === "mouse"\) \{ setEncima\(true\); medir\(\); \} \}\}/.test(p) || !/\{encima && fl\.r \? flecha\("r"\) : null\}/.test(p) || !/\{encima && fl\.l \? flecha\("l"\) : null\}/.test(p)) falla(G, P, 0, "en modo «movil» las flechas de la tira salen solo con el RATÓN encima (pointerType mouse) y solo del lado donde hay más pestañas");
+    // (7) Escritorio (a prueba): la franja del nombre y su flecha dentro de la caja.
+    const desk = f.match(/<div className="([^"]*)" style=\{\{ top: CAB_DESK \}\} data-pieza="nombre-pegado-desk"[^>]*>\s*<div className="([^"]*)"[^>]*>\s*<button type="button" data-pieza="volver-arriba"[\s\S]*?className="([^"]*)">/);
+    if (!desk) falla(G, F, 0, "no encontré la franja del nombre del escritorio (data-pieza=\"nombre-pegado-desk\" pegada en CAB_DESK, con su flecha volver-arriba)");
+    else {
+      if (!/\bsticky\b/.test(desk[1])) falla(G, F, 0, "la franja del nombre del escritorio no es sticky");
+      if (!/\babsolute\b/.test(desk[2]) || !/\binset-x-0\b/.test(desk[2])) falla(G, F, 0, "la caja del nombre del escritorio ocupa el ancho de la página (absolute inset-x-0)");
+      if (/(^|\s)-m[lrx]-/.test(desk[3]) || !/\bjustify-start\b/.test(desk[3])) falla(G, F, 0, "la flecha de la franja del escritorio queda dentro de su caja: sin margen negativo y con el icono pegado a la izquierda del botón (justify-start); con -ml o centrado salía 12 px fuera");
+    }
+    if (!/<div ref=\{tiraRef\} className="[^"]*\bsticky\b[^"]*" style=\{\{ top: CAB_DESK \+ NOMBRE_DESK \}\}>/.test(f)) falla(G, F, 0, "las pestañas del escritorio se pegan en CAB_DESK + NOMBRE_DESK (debajo de la franja del nombre)");
+    // 24 nov · Escritorio: la tira va de esquina a esquina, el estado vive en la barra del nombre y las flechas de la tira salen con el cursor.
+    if (!/aside === undefined\) return <div data-pieza="pestanas-ficha" data-ancho="completo"/.test(p) || /aside=\{/.test((f.match(/<PestanasFicha modo="escritorio"[^>]*\/>/) ?? [""])[0])) falla(G, P, 0, "en escritorio la tira de pestañas va de esquina a esquina (data-ancho=\"completo\", sin aside): el estado lo lleva la barra del nombre");
+    if (!/data-pieza="estado-pegado"/.test(f)) falla(G, F, 0, "la barra del nombre del escritorio lleva el estado Abierto/Cerrado (data-pieza=\"estado-pegado\")");
+    const flechasD = [...f.matchAll(/data-pieza="flecha-pestanas"/g)].length, ocultas = [...f.matchAll(/opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100 \[@media\(hover:none\)\]:opacity-100" data-pieza="flecha-pestanas"/g)].length;
+    if (flechasD !== 2 || ocultas !== 2) falla(G, F, 0, "las dos flechas de la tira del escritorio (data-pieza=\"flecha-pestanas\") salen invisibles y se muestran con el cursor encima (group-hover), con foco o sin cursor (hover:none)");
+    if (!/className="group sticky z-20" style=\{\{ top: CAB_DESK \+ NOMBRE_DESK \}\}/.test(f)) falla(G, F, 0, "la caja de la tira del escritorio es `group` (de ahí cuelga group-hover de las flechas)");
+    // La prueba servida.
+    const te = readFileSync(E, "utf8");
+    for (const [re, que] of [[/flecha-pestanas/, "las flechas de la tira que salen con el cursor"], [/estado-pegado/, "el estado en la barra del nombre"], [/FICHA_FIJA/, "la constante FICHA_FIJA (las alturas que mira)"], [/data-pieza="nombre-pegado"/, "el nombre pegado del teléfono"], [/data-fijado/, "el menú fijado"], [/volver-arriba/, "la flecha que lo suelta"], [/data-mchips/, "la barra de categorías pegada bajo las pestañas"], [/data-chip/, "la categoría activa que sigue al desplazamiento"], [/barra del pedido/, "la banda del carrito dentro de la pantalla"], [/nombre-pegado-desk/, "la franja del escritorio"], [/prueba en escritorio \(decisión pendiente\)/, "el bloque aparte del escritorio, rotulado «prueba en escritorio (decisión pendiente)»"]])
+      if (!re.test(te)) falla(G, E, 0, `fic9cab mira servido ${que}`);
+  },
+
   /* 9t (19 nov) · respondeAlToque: el fundador vio que el sitio «se queda como enganchado» al tocar un enlace (la página vieja quieta hasta
      que llega la nueva). La barra de navegación sale en el mismo toque (app/BarraNavegacion.tsx, montada en el layout raíz) también con
      router.push de un botón (el aviso de Next: instrumentation-client.ts → «tl:navega»), y la mueve el DOM directo (un setState dentro de la
@@ -16877,7 +16970,94 @@ const guardianes = {
     }
   },
 
+  /* AO 5b · endurecimiento 1. Retry-After: una fuente que contesta 429 o 503 con Retry-After (segundos o fecha HTTP) no se vuelve a leer antes de lo
+     que pidió, acotado: nunca antes del respaldo normal (greatest) y nunca más de un día; lo ilegible, lo pasado, cero o lo absurdo (> 30 días) se
+     ignora. Las dos descargas (la real y la del simulador) leen la cabecera; el barrido y «Probar» lo respetan. La tabla corre contra el código real.
+     Al revés: pruebas/alreves/alrevesNoticias.cjs. */
+  noticiasRetryAfter() {
+    const G = "noticiasRetryAfter", L = "apps/web/lib/noticias-lector.ts", N = "apps/web/lib/compa/noticias.ts", AF = "apps/web/lib/anfitriones-fuentes.ts", C = "apps/web/lib/noticias-comun.ts";
+    for (const f of [L, N, AF, C]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de las noticias");
+    const t = sinComent(L), lf = cuerpoFn(t, "leerFuente");
+    if ((t.match(/if \(est === 429 \|\| est === 503\) \{ res\.resume\(\); return ok\(\{[^\n]*reintentar: \(res\.headers\["retry-after"\] \?\? null\)/g) ?? []).length !== 2
+      || !/if \(est === 429 \|\| est === 503\)/.test(cuerpoFn(t, "pedirReal")) || !/if \(est === 429 \|\| est === 503\)/.test(cuerpoFn(t, "pedirSimulador"))) falla(G, L, 0, "las dos descargas (pedirReal y pedirSimulador) leen Retry-After en un 429 o 503");
+    if (!/if \(res\.estado === 429 \|\| res\.estado === 503\) \{[\s\S]{0,200}const espera = esperaRetryAfter\(res\.reintentar, Date\.now\(\)\);[\s\S]{0,300}if \(espera\) x\.esperarS = espera;\s*throw x;/.test(lf)) falla(G, L, 0, "leerFuente() pasa Retry-After por esperaRetryAfter() y lo devuelve (esperarS)");
+    if (!/\.\.\.\(e instanceof Rechazo && e\.esperarS \? \{ esperarS: e\.esperarS \} : \{\}\)/.test(lf)) falla(G, L, 0, "el resultado del lector lleva esperarS cuando la fuente pidió esperar");
+    const br = cuerpoFn(sinComent(N), "barrerFuentes");
+    if (!/next_read_at = now\(\) \+ greatest\(make_interval\(mins => least\(1440, \$3::int \* power\(2, least\(fails \+ 1, 10\)\)::int\)\), make_interval\(secs => least\(86400, \$4::int\)\)\)/.test(br) || !/r\.esperarS \?\? 0\]/.test(br)) falla(G, N, 0, "el barrido respeta Retry-After: greatest(respaldo normal, lo pedido con techo de un día)");
+    const pf = cuerpoFn(sinComent(AF), "probarFuente");
+    if (!/set next_read_at = greatest\(next_read_at, now\(\) \+ make_interval\(secs => \$2::int\)\)/.test(pf) || !/Math\.min\(86400, r\.esperarS\)/.test(pf)) falla(G, AF, 0, "«Probar» que recibe Retry-After también aplaza el barrido (sin adelantar una espera ni pasar de un día)");
+    if (!/esperarMin/.test(pf)) falla(G, AF, 0, "«Probar» enseña cuántos minutos pidió esperar la fuente");
+    const M = noticiasComunReal(G, C);
+    if (!M) return;
+    const ahora = Date.parse("2026-11-24T12:00:00Z"), http = (ms) => new Date(ms).toUTCString();
+    for (const [v, esp] of [["120", 120], [" 60 ", 60], ["86400", 86400], ["90000", 86400], ["2592000", 86400], ["2592001", null], ["9999999999", null], ["0", null], ["-5", null], ["60.5", null], ["1e3", null], ["abc", null], ["", null], [null, null], [["120"], null],
+      [http(ahora + 3600_000), 3600], [http(ahora + 2 * 86400_000), 86400], [http(ahora - 60_000), null], [http(ahora + 60 * 86400_000), null], ["Wed, 21 Oct 2015 07:28:00 GMT", null], ["wed, 25 nov 2026 12:00:00 gmt", null], ["2026-11-24T13:00:00Z", null]])
+      if (M.esperaRetryAfter(v, ahora) !== esp) falla(G, C, 0, `esperaRetryAfter(${JSON.stringify(v)}) debe dar ${esp} (da ${M.esperaRetryAfter(v, ahora)})`);
+  },
+
+  /* AO 5b · endurecimiento 2. En un alojamiento compartido (wordpress.com, blogspot, substack, medium, github.io, wixsite, weebly, tumblr…) el enlace
+     de una nota tiene que ser del MISMO servidor exacto que la fuente (no cualquier cliente del alojador); de un repartidor de feeds (feedburner…)
+     ningún enlace casa y «Probar» lo dice. Tabla contra el código real. Al revés: pruebas/alreves/alrevesNoticias.cjs. */
+  noticiasAlojadorExacto() {
+    const G = "noticiasAlojadorExacto", C = "apps/web/lib/noticias-comun.ts", AF = "apps/web/lib/anfitriones-fuentes.ts";
+    if (!existsSync(C) || !existsSync(AF)) return falla(G, C, 0, "falta lib/noticias-comun.ts o lib/anfitriones-fuentes.ts");
+    if (!/alojadorSoloFeeds\(f\.host\)/.test(cuerpoFn(sinComent(AF), "probarFuente"))) falla(G, AF, 0, "«Probar» avisa cuando la fuente es un repartidor de feeds");
+    const M = noticiasComunReal(G, C);
+    if (!M) return;
+    for (const a of ["wordpress.com", "blogspot.com", "substack.com", "medium.com", "github.io", "wixsite.com", "weebly.com", "tumblr.com"]) if (!M.ALOJADORES_COMPARTIDOS.includes(a)) falla(G, C, 0, `falta el alojador compartido ${a}`);
+    if (!M.ALOJADORES_SOLO_FEEDS.includes("feedburner.com")) falla(G, C, 0, "falta feedburner.com entre los repartidores de feeds");
+    for (const [l, h, bien] of [
+      ["https://medio.wordpress.com/2026/11/24/nota/", "medio.wordpress.com", true], ["https://otro.wordpress.com/x", "medio.wordpress.com", false], ["https://wordpress.com/x", "medio.wordpress.com", false],
+      ["https://a.b.wordpress.com/x", "b.wordpress.com", false], ["https://otro.blogspot.com/2026/x.html", "medio.blogspot.com", false], ["https://medio.blogspot.com/2026/x.html", "medio.blogspot.com", true],
+      ["https://otro.blogspot.mx/x", "medio.blogspot.mx", false], ["https://otro.blogspot.com.es/x", "medio.blogspot.com.es", false], ["https://otro.substack.com/p/x", "medio.substack.com", false],
+      ["https://medio.substack.com/p/x", "medio.substack.com", true], ["https://otro.github.io/x", "medio.github.io", false], ["https://otro.medium.com/x", "medium.com", false],
+      ["https://otro.wixsite.com/x", "medio.wixsite.com", false], ["https://otro.weebly.com/x", "medio.weebly.com", false], ["https://otro.tumblr.com/post/1", "medio.tumblr.com", false],
+      ["https://feeds.feedburner.com/medio", "feeds.feedburner.com", false], ["https://www.diario.com.do/n/1", "feeds.feedburner.com", false], ["https://feedproxy.google.com/~r/x", "feedproxy.google.com", false],
+      ["https://www.diario.com.do/n/1", "rss.diario.com.do", true], ["https://deportes.diario.com.do/n/1", "www.diario.com.do", true], ["https://otro.com/n/1", "www.diario.com.do", false]])
+      if ((M.enlaceNota(l, h) !== null) !== bien) falla(G, C, 0, `enlaceNota("${l}", fuente ${h}) debe ${bien ? "aceptarse" : "rechazarse"}`);
+    if (M.alojadorSoloFeeds("feeds.feedburner.com") !== "feedburner.com" || M.alojadorSoloFeeds("www.diario.com.do") !== null) falla(G, C, 0, "alojadorSoloFeeds() no reconoce a feedburner o marca a un medio propio");
+  },
+
+  /* AO 5b · endurecimiento 3. «Probar» cuenta lo útil SIN guardar nada: cuántas trajo, cuántas con enlace válido del medio, cuántas entrarían y cuántas
+     se descartarían por cada motivo (vieja, política, violencia, menores, delicado, palabra, sin enlace), con la MISMA regla que el barrido
+     (motivoNota en los dos). Tabla contra el código real. Al revés: pruebas/alreves/alrevesNoticias.cjs. */
+  noticiasProbarDesglose() {
+    const G = "noticiasProbarDesglose", C = "apps/web/lib/noticias-comun.ts", AF = "apps/web/lib/anfitriones-fuentes.ts", N = "apps/web/lib/compa/noticias.ts", UI = "apps/web/app/admin/AnfitrionesAdmin.tsx", AC = "apps/web/app/admin/acciones-anfitriones.ts";
+    for (const f of [C, AF, N, UI, AC]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de «Probar»");
+    const pf = cuerpoFn(sinComent(AF), "probarFuente");
+    if (!/desgloseNotas\(r\.notas, f\?\.veto_words \?\? \[\], \(await valores\("anf_noticia_horas"\)\)\.anf_noticia_horas, Date\.now\(\), delicado\)/.test(pf)) falla(G, AF, 0, "«Probar» cuenta con desgloseNotas() (las palabras de la fuente, las horas de «reciente» y los temas delicados)");
+    if (/com_host_news/.test(pf)) falla(G, AF, 0, "«Probar» no guarda notas (nada en com_host_news)");
+    const cl = cuerpoFn(sinComent(N), "clasificar");
+    if (!/const m = motivoNota\(n, f\.veto_words, horas, Date\.now\(\), delicado\);/.test(cl)) falla(G, N, 0, "el barrido clasifica con motivoNota() (la misma regla que cuenta «Probar»)");
+    if (/\bvetoNoticia\(|\bdelicado\(/.test(cl)) falla(G, N, 0, "el barrido no clasifica por su cuenta: solo motivoNota()");
+    if (!/const p = r\.prueba \? \{ prueba: r\.prueba \} : \{\};/.test(sinComent(AC))) falla(G, AC, 0, "la acción devuelve el desglose de «Probar»");
+    const ui = sinComent(UI);
+    if (!/\.\.\.\(prueba \? bloquesPrueba\(prueba\) : \[\]\)/.test(ui) || !/MOTIVOS_NOTA\.filter\(\(m\) => x\.motivos\[m\] > 0\)/.test(ui) || !/E\("CON ENLACE DEL MEDIO", "WITH THE OUTLET'S LINK"\)/.test(ui)) falla(G, UI, 0, "el Super Admin enseña el desglose de «Probar» (cifras y motivos)");
+    const M = noticiasComunReal(G, C);
+    if (!M) return;
+    const ahora = Date.parse("2026-11-24T12:00:00Z"), nota = (titulo, enlace, horasAtras = 1, descripcion = "") => ({ titulo, enlace, enlaceCrudo: enlace ?? "https://otro.com/x", fecha: new Date(ahora - horasAtras * 3600_000).toISOString(), descripcion });
+    const del = (t) => (/abogado/i.test(t) ? "legal" : null);
+    const d = M.desgloseNotas([
+      nota("Abren un malecón nuevo", "https://www.diario.com.do/n/1"), nota("Llega la temporada de mangos", "https://www.diario.com.do/n/2"),
+      nota("Sin enlace del medio", null), nota("Feria del libro", "https://www.diario.com.do/n/3", 100),
+      nota("El candidato habla en la plaza", "https://www.diario.com.do/n/4"), nota("Tiroteo en la avenida", "https://www.diario.com.do/n/5"),
+      nota("Premian a niños de la escuela", "https://www.diario.com.do/n/6"), nota("Consulta con un abogado gratis", "https://www.diario.com.do/n/7"),
+      nota("Se vende el estadio de pelota", "https://www.diario.com.do/n/8")], ["estadio"], 48, ahora, del);
+    const esp = { trajo: 9, conEnlace: 8, entrarian: 2, motivos: { enlace: 1, vieja: 1, politica: 1, violencia: 1, menores: 1, delicado: 1, palabra: 1 } };
+    if (JSON.stringify(d) !== JSON.stringify(esp)) falla(G, C, 0, `desgloseNotas() no cuenta bien: ${JSON.stringify(d)} (debe ${JSON.stringify(esp)})`);
+  },
+
 };
+
+/* AO 5b · lib/noticias-comun.ts real (no importa nada), para correr las tablas de casos de los guardianes de las noticias. */
+function noticiasComunReal(G, C) {
+  try {
+    const ts = createRequire(import.meta.url)("typescript");
+    const js = ts.transpileModule(readFileSync(C, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+    const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("sin importaciones"); });
+    return mod.exports;
+  } catch (e) { falla(G, C, 0, `no pude ejecutar noticias-comun.ts: ${String(e?.message ?? e).slice(0, 120)}`); return null; }
+}
 
 
 const lista = solo ? { [solo]: guardianes[solo] } : guardianes;

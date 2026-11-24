@@ -3328,8 +3328,14 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   275, «Compartir» de Comunidad fuera de su fila a 320 con letra grande, «Mercados»/«Doctores» fuera de su cuadro a 320. Pendiente (LAUNCH,
   nueva línea): el escritorio (24 px AA) y las pantallas fuera de las clave.
 
-## 23 nov (23:40 UTC) · Anfitriones parte 2: noticias por RSS (migración 0216)
+## 23 nov (22:55 UTC) · Anfitriones parte 2: noticias por RSS (migración 0216)
 Hecho por Opus en su copia, revisado y endurecido por Fable (corte real del tiempo límite, texto acotado antes de limpiar). Local: tipos, guardianes
 (sin fallos), textos, `alrevesNoticias` 24/24, `alrevesAnfitriones` 23/23; punta a punta del encargo 5/5 dos veces. Trae migración: sube con la
 confirmación completa del CI (`alcance=todo`) y la vista previa se pausa sola hasta que el sandbox la tenga. Pendiente: fuentes reales verificadas con
 red, `pedirReal` contra un medio de verdad, respuesta del abogado (A-51). Detalle en REVISION y LAUNCH.
+
+## 24 nov (03:00 UTC) · Menú de la ficha, vista previa estable, endurecimientos de noticias, pruebas de la ronda
+Servido en el sandbox: nada de esto todavía al escribir (la tanda entera va en una dirigida). Hecho: tira de pestañas de esquina a esquina y flechas con el
+cursor (también en ventana estrecha), arreglo del bucle de reinicios de la vista previa (precalienta 3, página «arrancando», registro de reinicios, el flujo
+de estado mira el 8081), noticias (Retry-After, servidor exacto, «Probar» con desglose), pruebas de la ronda de la ficha y el arreglo de los 18 px.
+Siguiente: ver la vista previa estable sobre lo servido (`/estado/vista.txt` sin «arrancado» en fila), fuentes reales de noticias, avatares.

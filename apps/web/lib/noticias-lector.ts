@@ -5,7 +5,7 @@ import https from "node:https";
 import { createGunzip } from "node:zlib";
 import { db } from "./db";
 import { origenDePruebas } from "./origen-pruebas";
-import { ipPrivada, leerXml, notasDe, resolverSeguro, urlFuente, XmlNoSirve, type NotaLeida, type Resolver } from "./noticias-comun";
+import { esperaRetryAfter, ipPrivada, leerXml, notasDe, resolverSeguro, urlFuente, XmlNoSirve, type NotaLeida, type Resolver } from "./noticias-comun";
 
 /* AO 5b · El lector de fuentes de noticias: la ÚNICA llamada de red a un servidor que no es nuestro ni de un proveedor contratado. Pieza de
    seguridad (guardián noticiasLectorSeguro; al revés en pruebas/alreves/alrevesNoticias.cjs). Lo llaman SOLO el barrido central (lib/compa/noticias.ts,
@@ -17,6 +17,7 @@ import { ipPrivada, leerXml, notasDe, resolverSeguro, urlFuente, XmlNoSirve, typ
    - Redirecciones: solo al MISMO servidor por https, hasta 2 (cada una vuelve a resolver y comprobar). A otro servidor o a http: se rechaza.
    - Tiempo límite 5 s en total; tamaño máximo 1 MB (también ya descomprimido) cortando el flujo; tipo de contenido XML, RSS o Atom.
    - XML con el lector propio (sin DTD ni entidades: XXE) y con tope de elementos; lo que sale es dato no confiable (limpio y acotado).
+   - 429 o 503 con Retry-After: devuelve cuánto pidió esperar (esperarS, acotado por esperaRetryAfter) para que el barrido no la vuelva a leer antes.
    En pruebas (TOLATINO_ENTORNO=pruebas y NOTICIAS_RSS_BASE local, por origenDePruebas; PROHIBIDA en producción en infra/comun/secretos.json) el DNS y
    la descarga van al servidor de mentira de las pruebas: NUNCA sale a internet. Las mismas reglas corren igual (DNS privado, redirección,
    tamaño, tipo, XML), salvo la comprobación del socket, que allí es el simulador local. */
@@ -24,10 +25,10 @@ import { ipPrivada, leerXml, notasDe, resolverSeguro, urlFuente, XmlNoSirve, typ
 export const LECTOR_TIEMPO_MS = 5000, LECTOR_MAX_BYTES = 1024 * 1024, LECTOR_MAX_REDIRECCIONES = 2;
 const TIPOS_OK = /^(application\/(rss\+xml|atom\+xml|rdf\+xml|xml)|text\/xml)\b/i;
 
-export type Lectura = { ok: true; notas: NotaLeida[]; formato: string; ms: number } | { ok: false; error: string; ms: number };
+export type Lectura = { ok: true; notas: NotaLeida[]; formato: string; ms: number } | { ok: false; error: string; ms: number; esperarS?: number };
 export type Fuente = { id: string; url: string; host: string; status: string };
-type Respuesta = { estado: number; ubicacion: string | null; tipo: string; cuerpo: Buffer };
-class Rechazo extends Error {}
+type Respuesta = { estado: number; ubicacion: string | null; tipo: string; cuerpo: Buffer; reintentar?: string | null };
+class Rechazo extends Error { esperarS?: number; }
 
 /* El DNS: el del sistema en producción; en pruebas, la tabla del simulador (nunca un DNS de verdad). */
 function resolverDe(sim: URL | null): Resolver {
@@ -69,6 +70,7 @@ function pedirReal(u: URL, ip: string, quedan: number, signal: AbortSignal): Pro
       if (!real || ipPrivada(real.replace(/^::ffff:(?=\d+\.)/, "")) || real.replace(/^::ffff:/, "") !== ip.replace(/^::ffff:/, "")) { res.destroy(); return mal(new Rechazo("La conexión no fue a la dirección comprobada: no se lee.")); }
       const est = res.statusCode ?? 0, loc = res.headers.location ?? null;
       if (est >= 300 && est < 400) { res.resume(); return ok({ estado: est, ubicacion: loc, tipo: "", cuerpo: Buffer.alloc(0) }); }
+      if (est === 429 || est === 503) { res.resume(); return ok({ estado: est, ubicacion: null, tipo: "", cuerpo: Buffer.alloc(0), reintentar: (res.headers["retry-after"] ?? null) as string | null }); }
       cuerpo(res, LECTOR_MAX_BYTES).then((b) => ok({ estado: est, ubicacion: null, tipo: String(res.headers["content-type"] ?? ""), cuerpo: b }), mal);
     });
     req.setTimeout(quedan, () => req.destroy(new Rechazo("La fuente tardó demasiado.")));
@@ -84,6 +86,7 @@ function pedirSimulador(sim: URL, u: URL, quedan: number, signal: AbortSignal): 
     const req = http.request({ host: sim.hostname, port: sim.port, path: `/fuente/${u.hostname}${u.pathname}${u.search}`, method: "GET", signal, headers: { "accept-encoding": "gzip" } }, (res) => {
       const est = res.statusCode ?? 0, loc = res.headers.location ?? null;
       if (est >= 300 && est < 400) { res.resume(); return ok({ estado: est, ubicacion: loc, tipo: "", cuerpo: Buffer.alloc(0) }); }
+      if (est === 429 || est === 503) { res.resume(); return ok({ estado: est, ubicacion: null, tipo: "", cuerpo: Buffer.alloc(0), reintentar: (res.headers["retry-after"] ?? null) as string | null }); }
       cuerpo(res, LECTOR_MAX_BYTES).then((b) => ok({ estado: est, ubicacion: null, tipo: String(res.headers["content-type"] ?? ""), cuerpo: b }), mal);
     });
     req.setTimeout(quedan, () => req.destroy(new Rechazo("La fuente tardó demasiado.")));
@@ -130,6 +133,13 @@ export async function leerFuente(id: string, o: { probar?: boolean } = {}): Prom
         u = sig;
         continue;
       }
+      if (res.estado === 429 || res.estado === 503) {
+        // La fuente pide esperar: se respeta lo que diga Retry-After (acotado; lo ilegible o absurdo se ignora y manda el respaldo normal).
+        const espera = esperaRetryAfter(res.reintentar, Date.now());
+        const x = new Rechazo(espera ? `La fuente pide esperar ${Math.ceil(espera / 60)} min (contestó ${res.estado}).` : `La fuente contestó ${res.estado}.`);
+        if (espera) x.esperarS = espera;
+        throw x;
+      }
       if (res.estado !== 200) throw new Rechazo(`La fuente contestó ${res.estado}.`);
       if (!TIPOS_OK.test(res.tipo)) throw new Rechazo("No es un RSS ni un Atom (tipo de contenido).");
       const { formato, notas } = notasDe(leerXml(res.cuerpo.toString("utf8")), f.host);
@@ -137,6 +147,6 @@ export async function leerFuente(id: string, o: { probar?: boolean } = {}): Prom
     }
   } catch (e) {
     const error = e instanceof Rechazo ? e.message : e instanceof XmlNoSirve ? `El XML no se lee: ${e.message}.` : "No se pudo leer la fuente.";
-    return { ok: false, error: error.slice(0, 200), ms: ms() };
+    return { ok: false, error: error.slice(0, 200), ms: ms(), ...(e instanceof Rechazo && e.esperarS ? { esperarS: e.esperarS } : {}) };
   }
 }

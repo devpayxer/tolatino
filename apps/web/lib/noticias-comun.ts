@@ -94,6 +94,38 @@ export function dominioBase(host: string): string {
   return p.slice(-2).join(".");
 }
 
+/* ── Alojamiento compartido (decisión AO, endurecimiento 5b-2) ──
+   En un alojador compartido el dominio base es de TODOS sus clientes: con una fuente en medio.wordpress.com, «del mismo dominio» admitiría
+   cualquier-otro.wordpress.com. Para estos, el enlace de una nota tiene que ser del MISMO servidor exacto que la fuente. Y un repartidor de feeds
+   (feedburner y similares) solo sirve el RSS de otro: sus enlaces llevan a otro servidor y nunca casan; «Probar» lo dice en vez de dar 0 sin razón. */
+export const ALOJADORES_COMPARTIDOS = ["wordpress.com", "blogspot.com", "blogger.com", "substack.com", "medium.com", "github.io", "gitlab.io", "wixsite.com", "weebly.com",
+  "tumblr.com", "squarespace.com", "webflow.io", "netlify.app", "vercel.app", "pages.dev", "herokuapp.com", "ghost.io", "beehiiv.com", "typepad.com", "jimdosite.com",
+  "over-blog.com", "livejournal.com", "google.com"] as const;
+export const ALOJADORES_SOLO_FEEDS = ["feedburner.com", "feedblitz.com", "feedproxy.google.com", "rss.app", "fetchrss.com"] as const;
+const sufijoDe = (h: string, lista: readonly string[]) => lista.find((x) => h === x || h.endsWith(`.${x}`)) ?? null;
+export function alojadorSoloFeeds(host: string): string | null { return sufijoDe(String(host ?? "").toLowerCase(), ALOJADORES_SOLO_FEEDS); }
+export function alojadorCompartido(host: string): string | null {
+  const h = String(host ?? "").toLowerCase();
+  return sufijoDe(h, ALOJADORES_COMPARTIDOS) ?? (/(^|\.)blogspot\.(com\.)?[a-z]{2}$/.test(h) ? "blogspot" : null);
+}
+
+/* ── Retry-After (endurecimiento 5b-1) ──
+   Lo que pide una fuente que contesta 429 o 503: segundos («120») o una fecha HTTP («Wed, 25 Nov 2026 10:00:00 GMT», IMF-fixdate). Devuelve los
+   segundos a esperar, con techo de un día; lo ilegible, lo que ya pasó, cero o lo absurdo (más de 30 días) se ignora (null: manda el respaldo normal).
+   El mínimo (nunca antes del respaldo normal) lo pone el barrido con greatest(). */
+export const RETRY_AFTER_MAX_S = 86400, RETRY_AFTER_ABSURDO_S = 30 * 86400;
+const FECHA_HTTP = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+export function esperaRetryAfter(valor: unknown, ahora: number): number | null {
+  const v = typeof valor === "string" ? valor.trim() : "";
+  if (!v || v.length > 40) return null;
+  let s: number;
+  if (/^\d{1,9}$/.test(v)) s = Number(v);
+  else if (FECHA_HTTP.test(v)) { const t = Date.parse(v); if (!Number.isFinite(t)) return null; s = Math.ceil((t - ahora) / 1000); }
+  else return null;
+  if (!(s > 0) || s > RETRY_AFTER_ABSURDO_S) return null;
+  return Math.min(s, RETRY_AFTER_MAX_S);
+}
+
 /* ── El lector de XML (sin DTD ni entidades externas) ── */
 export const XML_MAX_ELEMENTOS = 20000, XML_MAX_PROFUNDIDAD = 48;
 export type Nodo = { n: string; a: Record<string, string>; h: Nodo[]; t: string };
@@ -155,12 +187,15 @@ export function limpiarTexto(t: string, max: number): string {
   if (s.length > max) s = s.slice(0, max - 1).replace(/\s+\S*$/, "") + "…";
   return s;
 }
-/* Un enlace de una nota: https, del mismo medio que la fuente, sin usuario ni puerto; se normaliza para la huella (sin ancla ni utm_*). */
+/* Un enlace de una nota: https, del mismo medio que la fuente, sin usuario ni puerto; se normaliza para la huella (sin ancla ni utm_*). En un
+   alojador compartido, del MISMO servidor exacto; de un repartidor de feeds, ninguno. */
 export function enlaceNota(v: string, hostFuente: string): string | null {
   let u: URL;
   try { u = new URL(String(v ?? "").trim()); } catch { return null; }
   if (u.protocol !== "https:" || u.username || u.password || u.port) return null;
-  const h = u.hostname.toLowerCase(), base = dominioBase(hostFuente);
+  const hf = String(hostFuente ?? "").toLowerCase(), h = u.hostname.toLowerCase(), base = dominioBase(hf);
+  if (alojadorSoloFeeds(hf)) return null;
+  if (alojadorCompartido(hf) && h !== hf) return null;
   if (h !== base && !h.endsWith(`.${base}`)) return null;
   if (!/^[a-z0-9.-]+$/.test(h)) return null;
   u.hash = "";
@@ -211,6 +246,33 @@ export function vetoNoticia(texto: string, palabras: string[] = []): VetoNoticia
   for (const p of palabras) { const q = norm(p).trim(); if (q.length >= 3 && t.includes(q)) return { motivo: "palabra", detalle: q.slice(0, 60) }; }
   return null;
 }
+/* Por qué se descartaría una nota al leerla (o null: entraría «nueva»). La MISMA regla para el barrido (lib/compa/noticias.ts, que la guarda) y
+   para «Probar» (que solo cuenta, sin guardar). `delicado` llega de quien llama (lib/anfitriones-comun.ts): este archivo no importa nada. */
+export const MOTIVOS_NOTA = ["enlace", "vieja", "politica", "violencia", "menores", "delicado", "palabra"] as const;
+export type MotivoNota = (typeof MOTIVOS_NOTA)[number];
+export function motivoNota(n: NotaLeida, veto: string[], horas: number, ahora: number, delicadoDe: (t: string) => string | null): { motivo: MotivoNota; detalle: string } | null {
+  if (!n.enlace) return { motivo: "enlace", detalle: n.enlaceCrudo.slice(0, 200) || "sin enlace" };
+  if (n.fecha && Date.parse(n.fecha) < ahora - horas * 3600_000) return { motivo: "vieja", detalle: n.fecha.slice(0, 10) };
+  const texto = `${n.titulo}. ${n.descripcion}`;
+  const v = vetoNoticia(texto, veto);
+  if (v) return v;
+  const d = delicadoDe(texto);
+  if (d) return { motivo: "delicado", detalle: d };
+  return null;
+}
+/* «Probar» cuenta lo útil: cuántas trajo, cuántas con enlace del medio, cuántas entrarían nuevas y cuántas se descartarían por cada motivo. */
+export type DesgloseNotas = { trajo: number; conEnlace: number; entrarian: number; motivos: Record<MotivoNota, number> };
+export function desgloseNotas(notas: NotaLeida[], veto: string[], horas: number, ahora: number, delicadoDe: (t: string) => string | null): DesgloseNotas {
+  const motivos = Object.fromEntries(MOTIVOS_NOTA.map((m) => [m, 0])) as Record<MotivoNota, number>;
+  let conEnlace = 0, entrarian = 0;
+  for (const n of notas) {
+    if (n.enlace) conEnlace++;
+    const m = motivoNota(n, veto, horas, ahora, delicadoDe);
+    if (m) motivos[m.motivo]++; else entrarian++;
+  }
+  return { trajo: notas.length, conEnlace, entrarian, motivos };
+}
+
 /* Las palabras que descartan de una fuente: del campo del Super Admin (separadas por comas), limpias y acotadas. */
 export function palabrasVeto(v: string): string[] {
   return [...new Set(String(v ?? "").split(/[,\n]/).map((x) => x.replace(/[^\p{L}\p{N} '-]/gu, "").trim().toLowerCase()).filter((x) => x.length >= 3 && x.length <= 40))].slice(0, 30);
