@@ -6541,3 +6541,21 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **vec9m (la prueba) tocaba el primer «Pescado frito» de la ficha:** con Novedades antes del Menú, era el de una novedad; ahora toca el del menú.
 - **Los enlaces del pie medían 14–18 px de alto (fallo de accesibilidad que cazó la prueba al encender el pie):** ahora miden 24 como mínimo
   (parche en el script del sistema de diseño; guardián `pieObjetivos24`). Qué mirar: el pie se ve casi igual, con los renglones un poco más altos.
+- **En el teléfono, lo que se toca en el pie mide 44 px (lo cazó la prueba táctil a 390; hecho por Opus):** Términos, Privacidad, Soporte, los legales
+  de abajo y los botones de idioma y ciudad (medían 24 y 33). En la computadora sigue en 24, como antes. Guardián `pieObjetivos24` al día.
+- **Servido el 24 nov (8c3bd59) y comprobado sobre el sandbox:** el pie con 44 px en Negocios, Comunidad y Eventos; «Arro» trae platos; «empanda»
+  entiende Empanadas («zzzqqq» no trae nada, como debe). Qué mirar en el teléfono: Buscar «Arro» y «empanda»; el final de Negocios.
+
+## El proceso de construcción, revisado otra vez (24 nov; medido por Opus) — PARA DECIDIR: el punto 4
+- **Medido en GitHub:** la revisión completa de `main` (las 238 pruebas, 8 partes repartidas por tiempo) tarda 21 min; la dirigida del paquete del
+  buscador y el pie (283 pruebas elegidas porque tocaba `pruebas/lib/entorno.cjs`, que usan todas) tardó 46: 4 partes por orden (26–40 min cada una)
+  y las 38 pruebas al revés corrieron dos veces (en su carril y otra vez en las partes). Las dirigidas chicas tardan 16–21 min: manda el carril
+  «al revés» (3 partes, la más larga 16 min). El paquete pasó unas 4 h en revisiones: 3 rojas (~45 min cada una) y 3 canceladas. La mayoría de
+  las rojas eran pruebas que se podían correr aquí antes de subir (medidas del pie, `vec9m` tras mover Novedades).
+- **Se hace ya, sin cambiar reglas:** (1) antes de cada dirigida, correr aquí las pruebas de lo tocado; lo que toca las herramientas de prueba sube
+  en su propio paquete. (2) Dirigida repartida por tiempo medido en 12 partes, sin repetir «al revés», y «al revés» en 6 partes: calculado con los
+  tiempos de hoy, la grande ~15 min y la chica ~11 (se confirma midiendo; cambio del CI: corre entero en la rama y sube solo, AM). (3) El repaso
+  corto tras una roja (AU).
+- **Para decidir (punto 4):** que el código que no toca dinero, permisos, datos personales, migraciones, el servidor ni el CI suba al sandbox como
+  los ajustes (comprobaciones aquí con las pruebas de lo tocado, ~10 min; la revisión larga justo después en `main`; una roja se arregla antes que
+  nada). Producción no cambia: confirmación completa + OK. Cambia AF (lo que se exige antes del sandbox).
