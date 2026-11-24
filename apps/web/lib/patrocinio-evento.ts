@@ -99,6 +99,25 @@ export async function consultarPuestosEvento(negocio: string, evento: string, du
   const libre = l.libre ? (await db().query<{ d: string }>(`select ($1::timestamptz at time zone $2)::date::text as d`, [l.libre, e.tz])).rows[0]!.d : null;
   return { desde: f.dia, hasta: f.hasta, a: f.a, b: f.b, libres: l.libres, puestos: P.puestos, libre, max, precio: f.precio, semanas: f.semanas };
 }
+/* «Renovar otra semana / otro mes» de un evento (24 nov): las fechas y el precio del período que SE VA A COBRAR, calculados igual que en
+   comprarPatrocinioEvento con renovarDe (empieza el día en que termina el que tiene; si ese día es hoy, desde ahora; con la cadena del mes). Sin el
+   tope de patrocinio_dias_adelante, como al pagar una renovación (consultarPuestosEvento lo exige y con un fin a más de 60 días no devolvía nada).
+   Solo lectura: no cambia qué se cobra ni cuándo (guardián patrocinioRenovarFechas). */
+export async function consultarRenovacionEvento(negocio: string, evento: string, renovarDe: string, dur: "week" | "month"): Promise<ConsultaE> {
+  if (!ID.test(renovarDe)) return null;
+  const e = await eventoPat(null, evento, negocio);
+  if (!e || !vivoEvt(e)) return null;
+  const v = (await db().query<{ dia: string }>(`select (s.ends_at at time zone $3)::date::text as dia from event_sponsorships s where s.id = $1::bigint and s.event_id = $2::bigint and s.status in ('activo', 'reservado')`,
+    [renovarDe, evento, e.tz])).rows[0];
+  if (!v) return null;
+  const P = await preciosEvento();
+  const desde = v.dia === e.hoy ? "hoy" : v.dia;
+  const f = await periodo(null, e, dur, desde, P);
+  if (!f) return null;
+  const l = await puestosLibresEvt(e.ciudad, f.a, f.b, P.puestos, dur);
+  const libre = l.libre ? (await db().query<{ d: string }>(`select ($1::timestamptz at time zone $2)::date::text as d`, [l.libre, e.tz])).rows[0]!.d : null;
+  return { desde: f.dia, hasta: f.hasta, a: f.a, b: f.b, libres: l.libres, puestos: P.puestos, libre, max: maxInicio(e, P, dur), precio: f.precio, semanas: f.semanas };
+}
 /* El último día en que puede empezar: hasta patrocinio_dias_adelante y nunca después del evento («hasta el evento»: antes del día del evento). */
 const maxInicio = (e: EvtPat, P: PrecioEvt, dur: DurE) => { const m = sumar(e.hoy, P.diasAdelante), tope = dur === "until_event" ? sumar(e.dia!, -1) : e.dia!; return m < tope ? m : tope; };
 

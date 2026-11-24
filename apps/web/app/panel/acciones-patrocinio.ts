@@ -6,7 +6,7 @@
    no se compra ni se enciende la renovación (como Pro: compraDigitalAqui); terminar sí. Todo queda en la auditoría (lib/patrocinio.ts). */
 import { mismoOrigen } from "@/lib/cuenta";
 import { accesoPanel, type Acceso } from "@/lib/panel";
-import { avisameLibre, comprarPatrocinio, consultarPuestos, renovarSolo, terminarPorDueno, type ResPat } from "@/lib/patrocinio";
+import { avisameLibre, comprarPatrocinio, consultarPuestos, consultarRenovacion, renovarSolo, terminarPorDueno, type ResPat } from "@/lib/patrocinio";
 import type { Verificar } from "@/lib/pagos/pasarela";
 import type { Res } from "./acciones";
 
@@ -40,6 +40,13 @@ export async function patPuestos(id: string, dur: string, desde: string) {
   const a = await entrar(id);
   if (!a) return null;
   return consultarPuestos(a.negocio.id, dur === "month" ? "month" : "week", S(desde, 10));
+}
+
+/* «Renovar otra semana / otro mes»: las fechas del período que se va a cobrar (las calcula el servidor; solo lectura). */
+export async function patPuestosRenovar(id: string, sid: string, dur: string) {
+  const a = await entrar(id);
+  if (!a) return null;
+  return consultarRenovacion(a.negocio.id, S(sid, 18), dur === "month" ? "month" : "week");
 }
 
 export async function patAvisame(id: string): Promise<Res> {

@@ -34,13 +34,40 @@ export async function categoriaActivaEn(cat: string, ciudad: string) {
 }
 
 export async function categoriaPorSlug(slug: string) {
-  const r = await db().query<{ id: string; es: string; page: Pagina; page_admin: Partial<Pagina> }>(
-    `select id, short->>'es' as es, page, page_admin from categories where status = 'on' order by sort`);
+  const r = await db().query<{ id: string; es: string; page: Pagina; page_admin: Partial<Pagina>; tiles: Record<string, string> }>(
+    `select k.id, k.short->>'es' as es, k.page, k.page_admin - 'tiles' as page_admin, ${MOSAICOS_EQUIPO("k")} as tiles from categories k where k.status = 'on' order by k.sort`);
   const c = r.rows.find((x) => slugCat(x.es) === slug);
   if (!c || !c.page || !("title" in c.page)) return null;
   const vivas = new Set((await db().query<{ id: string }>(`select id from subcategorias_vivas where category_id = $1`, [c.id])).rows.map((x) => x.id));
-  return { id: c.id, page: sinApagadas({ ...c.page, ...c.page_admin } as Pagina, vivas) };
+  return { id: c.id, page: sinApagadas(conMosaicos({ ...c.page, ...c.page_admin } as Pagina, c.tiles), vivas) };
 }
+
+/* Mosaicos con foto del equipo (Super Admin › Catálogo › la categoría › «Mosaicos de la página», 0217). categories.page_admin.tiles guarda
+   { <clave del mosaico>: "/medios/n/<uuid>.jpg" }; aquí salen solo los que tienen su foto TODAVÍA visible, pública y sin purgar (media owner_kind
+   'category', owner_id '<categoría>/<clave>'): si la revisión la bajó después, vuelve la original. Va DENTRO de la consulta de la categoría (una
+   subconsulta por categoría, con media_owner_idx), nunca una consulta por mosaico. La página lee sin memoria (force-dynamic): se ve en la siguiente carga. */
+export const MOSAICOS_EQUIPO = (k: string) =>
+  `(select coalesce(jsonb_object_agg(t.key, t.value), '{}'::jsonb) from jsonb_each_text(coalesce(${k}.page_admin->'tiles', '{}'::jsonb)) t
+     where exists (select 1 from media m where m.owner_kind = 'category' and m.owner_id = ${k}.id || '/' || t.key and m.url = t.value
+                     and m.status = 'visible' and m.purged_at is null and not m.private))`;
+/* La foto de cada mosaico: la del equipo (aprobada y visible) → la original de la página → sin foto (el gris de siempre). */
+export function conMosaicos(p: Pagina, tiles: Record<string, string> | null | undefined): Pagina {
+  if (!tiles || !Object.keys(tiles).length) return p;
+  const t = (x: Mosaico): Mosaico => (Object.hasOwn(tiles, x.key) ? { ...x, photo: tiles[x.key]! } : x);
+  return { ...p, rows: p.rows.map((r) => (r.kind === "photo" ? { ...r, items: r.items.map(t), more: r.more.map(t) } : r)), chapters: p.chapters.map((g) => ({ ...g, items: g.items.map(t) })) };
+}
+/* Los mosaicos que muestran foto (filas de fotos y capítulos; las filas de chips y la lista de «Ver todas» no llevan foto), una vez por clave y en el
+   orden de la página: los que el Super Admin puede cambiar. `donde` = el título de la fila o del capítulo donde sale primero. */
+export type MosaicoFoto = { key: string; label: Bi; photo: string | null; donde: Bi };
+export function mosaicosConFoto(p: Pagina): MosaicoFoto[] {
+  const out = new Map<string, MosaicoFoto>();
+  const add = (x: Mosaico, donde: Bi) => { if (!out.has(x.key)) out.set(x.key, { key: x.key, label: x.label, photo: x.photo, donde }); };
+  for (const r of p.rows ?? []) if (r.kind === "photo") for (const x of r.items) add(x, r.title);
+  for (const g of p.chapters ?? []) for (const x of g.items) add(x, g.title);
+  return [...out.values()];
+}
+/* La clave de un mosaico tal como la guarda la base (0217: de 1 a 80 caracteres, sin caracteres de control). */
+export const claveMosaico = (x: unknown): x is string => typeof x === "string" && x.length >= 1 && x.length <= 80 && !/[\u0000-\u001F\u007F]/.test(x);
 
 /* Una subcategoría que el equipo quitó (Super Admin › Catálogo) no sale como mosaico ni como capítulo: la regla de
    cada mosaico pierde esa subcategoría y, si no le queda ninguna, el mosaico sale de la página. */

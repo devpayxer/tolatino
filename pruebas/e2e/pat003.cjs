@@ -11,7 +11,9 @@
 //   devuelve los días que no se usaron (una fila en el libro, por la pasarela, avisado); 8 · un evento oculto o con Eventos apagado PAUSA su
 //   patrocinio (no sale, no cuenta, EN PAUSA en el panel y el Super Admin) y al volver sigue alargado lo que duró la pausa; cancelado en pausa,
 //   la pausa no cuenta como usada; 9 · 3-D Secure al comprar: la hoja del banco y un solo cobro; 10 · el mes renovado de un evento no pierde su día
-//   (31 ene → 28 feb → 31 mar → 30 abr con fechas fijas, y una cadena ya corrida que sigue en el 28: lo comprado no se recalcula hacia atrás).
+//   (31 ene → 28 feb → 31 mar → 30 abr con fechas fijas, y una cadena ya corrida que sigue en el 28: lo comprado no se recalcula hacia atrás);
+//   11 (24 nov) · «Renovar otro mes» de un mes reservado que termina a más de patrocinio_dias_adelante: «Revisar y pagar» enseña las fechas que se van
+//   a cobrar (antes «—» y «Pagar» apagado) y lo que se cobra es exactamente eso (las fechas, el precio del mes, la renovación encadenada).
 // Precondiciones propias: lo vivo de Eventos en Hazleton queda terminado (estados, nada se borra); precios y puestos de fábrica se restauran.
 const ENT = require('../lib/entorno.cjs');
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
@@ -357,6 +359,35 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     const V3 = sig(V2);
     ok(!!V3 && per(V3) === '2026-03-28 00:00 → 2026-04-28 00:00', `una cadena que ya venía corrida sigue con su día (28 mar → 28 abr): lo comprado no se recalcula hacia atrás: ${V3 && per(V3)}`);
     terminarVivos(); ponerCfg('patrocinio_evt_puestos', Number(PUESTOS0));
+
+    console.log('11 · «Renovar otro mes» con un fin a más de 60 días: la pantalla enseña las fechas que se cobran');
+    await configLista();
+    tarjeta(DUENO);
+    // Un mes reservado que empieza dentro de los días adelante y termina después (el día 15 de un mes, entre 74 y 104 días de hoy), y su evento más tarde.
+    const ADEL = Number(sql(`select cfg_int('patrocinio_dias_adelante')`));
+    const HR = sql(`select (date_trunc('month', (now() at time zone 'America/New_York')::date + 90) + interval '14 days')::date::text`);
+    const S0 = sql(`select ('${HR}'::date - interval '1 month')::date::text`), HR2 = sql(`select ('${HR}'::date + interval '1 month')::date::text`);
+    ok(HR > D(ADEL) && S0 <= D(ADEL), `precondición: el mes reservado empieza dentro de los ${ADEL} días (${S0}) y termina después (${HR})`);
+    const LEJ = evento('Gala lejana que renueva', 150);
+    const R1 = insM(LEJ, 'reservado', NY(S0), NY(HR));
+    const fecha = (d) => { const [, m, x] = d.split('-').map(Number); return `${x} ${MS[m - 1]}`; };
+    await pd.goto(B + `/panel/${NEG}/eventos?det=evt:pat:${LEJ}`);
+    const ren = pd.getByRole('button', { name: /^Renovar otro mes · / });
+    ok(await espera(async () => (await ren.count()) === 1), 'el patrocinio reservado ofrece «Renovar otro mes»');
+    await ren.click();
+    ok(await espera(async () => (await texto(pd)).includes('Revisar y pagar')), 'Revisar y pagar');
+    const esperado = `${fecha(HR)} – ${fecha(HR2)} · 1 mes`;
+    ok(await espera(async () => (await texto(pd)).includes(esperado)), `FECHAS: las del período que se va a cobrar («${esperado}»), no «—»`);
+    const pagarR = pd.getByRole('button', { name: `Pagar $${(MES / 100).toFixed(2)}` });
+    ok(await pagarR.isEnabled(), `«Pagar $${(MES / 100).toFixed(2)}» (el precio del mes de Configuración) está encendido`);
+    await pd.screenshot({ path: OUT + 'pat003-renovar-lejos-1360.png', fullPage: true });
+    await pagarR.click();
+    ok(await espera(async () => sql(`select count(*) from event_sponsorships where renewed_from = ${R1}`) === '1'), 'el pago crea la renovación encadenada');
+    const R2 = sql(`select id from event_sponsorships where renewed_from = ${R1}`);
+    ok(sql(`select to_char(starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || ' → ' || to_char(ends_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || '|' || status || '|' || duration || '|' || price_cents from event_sponsorships where id = ${R2}`)
+      === `${HR} 00:00 → ${HR2} 00:00|reservado|month|${MES}`, 'lo cobrado es lo que enseñó la pantalla: las mismas fechas, 1 mes reservado, el precio del mes');
+    ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'evento' and ref_id = ${R2}`) === `1|${MES}|renovacion`, 'un solo cobro de renovación por el precio del mes');
+    terminarVivos();
 
     ok(!err.length, 'sin errores en las páginas: ' + (err.join(' · ') || 'ninguno'));
     console.log(`\npat003 · ${n} comprobaciones en verde`);

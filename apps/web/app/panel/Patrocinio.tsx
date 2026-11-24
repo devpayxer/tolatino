@@ -10,7 +10,7 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { Consulta, FilaPat, PatPanel } from "@/lib/patrocinio";
 import { TarjetaAlta } from "../(app)/c/[slug]/Patrocinados";
-import { patAvisame, patComprar, patPuestos, patRenovarSolo, patTerminar } from "./acciones-patrocinio";
+import { patAvisame, patComprar, patPuestos, patPuestosRenovar, patRenovarSolo, patTerminar } from "./acciones-patrocinio";
 import type { Ctx } from "./Panel";
 import type { Res } from "./acciones";
 import { uuid } from "@/lib/uuid";
@@ -105,7 +105,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
       const otra = !(sig && vivo), kk = v.dur === "month" ? "month" : "week";
       out.push({ type: "acts", items: [
         ...(otra ? [{ l: kk === "week" ? E2(`Renovar otra semana · ${$c(P.week)}`, `Renew another week · ${$c(P.week)}`) : E2(`Renovar otro mes · ${$c(P.month)}`, `Renew another month · ${$c(P.month)}`), v: "primary",
-          onClick: () => { const de = diaDe(v.hasta, tz); setUi({ patPaso: 2, patDur: kk, patDesde: de, patRenDe: v.id, patClave: clave(), patRen: false }); void patPuestos(d.id, kk, de).then((r) => setUi({ patLib: { k: `${kk}:${de}`, c: r } })); } }] : []),
+          onClick: () => { const de = diaDe(v.hasta, tz); setUi({ patPaso: 2, patDur: kk, patDesde: de, patRenDe: v.id, patClave: clave(), patRen: false }); void patPuestosRenovar(d.id, v.id, kk).then((r) => setUi({ patLib: { k: `${kk}:${de}`, c: r } })); } }] : []),
         { l: ui.patRecibo ? E2("Ocultar recibo", "Hide receipt") : E2("Ver recibo", "See receipt"), v: "secondary", onClick: () => setUi({ patRecibo: !ui.patRecibo }) },
         { l: act ? E2("Terminar antes", "End early") : E2("Cancelar reserva", "Cancel booking"), v: "secondary", onClick: () => setUi({ patTerminar: v.id }) },
       ] });

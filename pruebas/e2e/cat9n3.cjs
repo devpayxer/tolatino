@@ -9,7 +9,12 @@
 // 4. Una foto que pasa a privada entre subirla y guardar se rechaza («Esa foto no existe.») y no cambia nada (ni la portada, ni la auditoría, ni la foto).
 // 5. «Volver a la de fábrica» con motivo: la página vuelve a la de antes, la foto del equipo queda «removed/replaced» (nada se borra) y la auditoría lo dice.
 // 6. La base impone que page_admin solo lleve «hero» y una foto de nuestro almacén (nunca una dirección de afuera).
-// Precondición propia: la categoría de prueba con portada de fábrica; lo que una vuelta anterior dejó en page_admin vuelve como estaba. Al final, todo vuelve a de fábrica.
+// 8-11 (24 nov, 0217) · Los MOSAICOS de la página, en Fiestas: «Bautizo» sale en gris (su foto de origen ya no existe) y el Super Admin lo marca «SIN FOTO».
+//    Un Admin le pone una foto (misma ruta y revisión) con motivo: la base guarda solo esa clave en page_admin.tiles, la foto pasa a ser DE ESE MOSAICO
+//    (owner_id 'NEG-FIESTA/e:bautizo'), la auditoría lo dice, y la página pública (390 y 1360) pinta esa foto en ESE mosaico (los demás y la portada no
+//    cambian). Solo lectura no puede (pantalla y servidor). Una foto que pasa a privada se rechaza. Si la foto del equipo deja de ser pública, vuelve el
+//    gris sin tocar nada. «Volver a la original» lo devuelve al gris y page_admin queda vacío. La base no admite una dirección de afuera en «tiles».
+// Precondición propia: las categorías de prueba con portada y mosaicos de fábrica; lo que una vuelta anterior dejó en page_admin vuelve como estaba. Al final, todo vuelve a de fábrica.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, equipo, medios } = require('../lib/negocio-nuevo.cjs');
@@ -22,6 +27,13 @@ const t = (p, x) => p.getByText(x, { exact: true }).last();
 const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const shot = async (p, nombre) => { await p.waitForTimeout(500); await p.screenshot({ path: OUT + 'cat9n3-' + nombre, fullPage: true }); };
 const CAT = 'NEG-EDU', ADM = '5705550199', LUCIA = '5705550693';
+// Mosaicos (0217): la categoría y el mosaico que sale en gris, y otro con foto original.
+const FIE = 'NEG-FIESTA', MOS = 'e:bautizo', MOS_L = 'Bautizo', OTRO_L = 'Boda';
+const quitarMosaicos = () => { sql(`update media set status = 'removed', removed_reason = 'replaced', removed_at = now() where owner_kind = 'category' and owner_id like '${FIE}/%' and status = 'visible'`); sql(`update categories set page_admin = page_admin - 'tiles' where id = '${FIE}'`); };
+// El mosaico pintado en la página pública: el fondo del círculo del botón con ese nombre (fila de fotos).
+const mosaicoPintado = (p, label) => p.evaluate((l) => { const b = [...document.querySelectorAll('button')].find((x) => [...x.children].some((c) => c.tagName === 'SPAN' && c.textContent === l)); const e = b?.querySelector(':scope > span > span'); return e ? getComputedStyle(e).backgroundImage : null; }, label);
+// La fila de un mosaico en el Super Admin (la caja más adentro con su nombre y sus botones).
+const filaMos = (p, label) => p.locator('div').filter({ has: p.getByText(label, { exact: true }) }).filter({ has: p.getByRole('button', { name: /^(Cambiar|Poner en el mosaico|Volver a la original)$/ }) }).last();
 const TEL = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-US' }, ESC = { viewport: { width: 1360, height: 900 }, locale: 'es-US' };
 // La portada que pinta la página pública: el fondo de la caja de arriba (h-[150px] en teléfono, 210 en escritorio).
 const portadaPintada = (p) => p.evaluate(() => { const e = document.querySelector('div[class*="h-[150px]"]'); return e ? getComputedStyle(e).backgroundImage : null; });
@@ -36,6 +48,7 @@ const confirmar = async (p, motivo, cta) => { await p.locator('textarea').last()
   // Precondición propia: lo que una vuelta anterior dejó puesto vuelve a de fábrica (las fotos quedan «removed/replaced»: nada se borra).
   sql(`update media set status = 'removed', removed_reason = 'replaced', removed_at = now() where owner_kind = 'category' and owner_id = '${CAT}' and status = 'visible'`);
   sql(`update categories set page_admin = '{}'::jsonb where id = '${CAT}'`);
+  quitarMosaicos();
   ok(/^\/paginas\/.+\.(jpg|webp)$/.test(FAB), `precondición: la portada de fábrica de ${CAT} es un archivo propio (${FAB})`);
   const UANA = sql(`select id from users where phone = '+1${ADM}'`);
   const b = await chromium.launch(); const err = [], abiertas = [];
@@ -52,7 +65,7 @@ const confirmar = async (p, motivo, cta) => { await p.locator('textarea').last()
     await a.goto(B + '/admin/catalogo?c=' + CAT); await a.locator('text=PORTADA DE LA PÁGINA').first().waitFor();
     ok(await t(a, 'ACTUAL · DE FÁBRICA').isVisible(), 'la ficha de la categoría dice «ACTUAL · DE FÁBRICA»');
     ok(await a.getByText('Volver a la de fábrica', { exact: true }).count() === 0, 'sin portada del equipo no hay «Volver a la de fábrica»');
-    ok(await a.getByText('Los mosaicos de la página no se cambian desde aquí', { exact: false }).count() > 0, 'el aviso dice que los mosaicos no se cambian desde aquí');
+    ok(await a.getByText('Los mosaicos se cambian más abajo, en «Mosaicos de la página»', { exact: false }).count() > 0, 'el aviso de la portada dice que los mosaicos se cambian más abajo');
     await shot(a, 'admin-fabrica-1360.png');
 
     console.log('2 · Un Admin cambia la portada');
@@ -153,11 +166,106 @@ const confirmar = async (p, motivo, cta) => { await p.locator('textarea').last()
     ok(/categories_page_admin_portada_propia/.test(fallo), 'y page_admin no admite otra clave que «hero»');
     ok(sql(`select page_admin::text from categories where id = '${CAT}'`).replace(/\s/g, '') === '{}', 'page_admin sigue vacío');
 
+    console.log('8 · Mosaicos: «Bautizo» de Fiestas sale en gris y el Super Admin lo marca «SIN FOTO»');
+    const SFIE = slug(sql(`select short->>'es' from categories where id = '${FIE}'`)), HFIE = sql(`select page->>'hero' from categories where id = '${FIE}'`);
+    const ORIG_OTRO = sql(`select x->>'photo' from categories, jsonb_array_elements(page->'rows'->0->'items') x where id = '${FIE}' and x->>'key' = 'e:boda'`);
+    ok(sql(`select (x->>'photo') is null from categories, jsonb_array_elements(page->'rows'->0->'items') x where id = '${FIE}' and x->>'key' = '${MOS}'`) === 't', `precondición: «${MOS_L}» no tiene foto original (sale en gris)`);
+    const pub = async (p) => { await p.goto(B + '/c/' + SFIE); await p.getByText(MOS_L, { exact: true }).first().waitFor(); };
+    await pub(v);
+    ok(await mosaicoPintado(v, MOS_L) === 'none', `la página pública (390) pinta «${MOS_L}» en gris`);
+    ok(/\/paginas\//.test(await mosaicoPintado(v, OTRO_L) ?? ''), `y «${OTRO_L}» con su foto original`);
+    await shot(v, 'mos-publica-gris-390.png');
+    const audM = (accion) => Number(sql(`select count(*) from audit_entries where action = '${accion}' and target_id = '${FIE}' and reason like 'cat9n3 ${K} %'`));
+    await a.goto(B + '/admin/catalogo?c=' + FIE); await a.locator('text=MOSAICOS DE LA PÁGINA').first().waitFor();
+    ok(await a.getByText(/^SIN FOTO · \d+$/).count() === 1 && await filaMos(a, MOS_L).getByText('SIN FOTO', { exact: true }).isVisible(), `la ficha de ${FIE} separa los «SIN FOTO» y «${MOS_L}» está ahí`);
+    ok(await filaMos(a, MOS_L).getByRole('button', { name: 'Volver a la original' }).count() === 0, 'sin foto del equipo no hay «Volver a la original»');
+    await shot(a, 'mos-admin-gris-1360.png');
+
+    console.log('9 · Un Admin le pone foto al mosaico; la página la pinta ahí y solo ahí');
+    await elegirFoto(a, FOTO1, { ruta: /\/api\/medios$/, toque: (p) => filaMos(p, MOS_L).getByRole('button', { name: 'Cambiar' }), listo: (p) => filaMos(p, MOS_L).getByText('NUEVA', { exact: true }).waitFor({ timeout: 30000 }) });
+    const ID3 = sql(`select id from media where uploaded_by = '${UANA}' and owner_kind = 'user' and url like '/medios/n/%' and status = 'visible' order by created_at desc limit 1`);
+    ok(/^[0-9a-f-]{36}$/.test(ID3), `la foto del mosaico subió por la ruta de las fotos públicas (${ID3})`);
+    await filaMos(a, MOS_L).getByRole('button', { name: 'Poner en el mosaico' }).click();
+    await a.locator('text=/Se ve al momento en la página pública/').first().waitFor();
+    await confirmar(a, `cat9n3 ${K} mosaico`, 'Poner en el mosaico');
+    await a.locator('text=/Mosaico cambiado/').first().waitFor();
+    ok(sql(`select page_admin::text from categories where id = '${FIE}'`).replace(/\s/g, '') === `{"tiles":{"${MOS}":"/medios/n/${ID3}.jpg"}}`, 'page_admin lleva solo «tiles» con la clave de ese mosaico y la dirección propia');
+    ok(sql(`select owner_kind || '|' || owner_id || '|' || status from media where id = '${ID3}'`) === `category|${FIE}/${MOS}|visible`, 'la foto pasó a ser de ESE mosaico (owner_id <categoría>/<clave>)');
+    ok(audM('catalogo.cat.mosaico') === 1 && sql(`select (before::text like '%sin foto%' and before::text like '%${MOS_L}%' and after::text like '%${ID3}%')::text from audit_entries where action = 'catalogo.cat.mosaico' and target_id = '${FIE}' and reason like 'cat9n3 ${K} %'`) === 'true', 'la auditoría lleva el mosaico, antes (sin foto) → después (la foto) y el motivo');
+    ok(await filaMos(a, MOS_L).getByText('DEL EQUIPO', { exact: true }).isVisible() && await filaMos(a, MOS_L).getByRole('button', { name: 'Volver a la original' }).isVisible(), 'la fila dice «DEL EQUIPO» y ofrece «Volver a la original»');
+    ok(await a.getByText(/^SIN FOTO · \d+$/).count() === 0, 'y ya no hay mosaicos «SIN FOTO» en Fiestas');
+    await a.locator('text=cambió la foto de un mosaico').first().waitFor();
+    ok(true, 'el historial dice «cambió la foto de un mosaico»');
+    await shot(a, 'mos-admin-puesta-1360.png');
+    await pub(v);
+    const bgM = (await mosaicoPintado(v, MOS_L)) ?? '';
+    ok(bgM.includes(ID3) && /\.w(320|640|1080|1600)\.webp/.test(bgM), `la página pública (390) pinta la foto nueva en «${MOS_L}», a la medida (${bgM.slice(0, 80)})`);
+    const urlM = (/url\("([^"]+)"\)/.exec(bgM) ?? [])[1];
+    ok(urlM && await v.evaluate(async (u) => (await fetch(u)).status, urlM) === 200, 'la imagen servida responde 200');
+    ok((await mosaicoPintado(v, OTRO_L) ?? '').includes(ORIG_OTRO.replace(/\.webp$/, '')) && !(await mosaicoPintado(v, OTRO_L) ?? '').includes(ID3), `«${OTRO_L}» sigue con su original`);
+    ok(sql(`select page->>'hero' from categories where id = '${FIE}'`) === HFIE && sql(`select coalesce(page_admin->>'hero', '') from categories where id = '${FIE}'`) === '', 'la portada de Fiestas no cambió');
+    await shot(v, 'mos-publica-puesta-390.png');
+    await pub(ve);
+    ok(((await mosaicoPintado(ve, MOS_L)) ?? '').includes(ID3), 'y en escritorio (1360) también');
+    await shot(ve, 'mos-publica-puesta-1360.png');
+    await am.goto(B + '/admin/catalogo?c=' + FIE); await am.locator('text=MOSAICOS DE LA PÁGINA').first().waitFor();
+    ok(await filaMos(am, MOS_L).getByText('DEL EQUIPO', { exact: true }).isVisible(), 'en el teléfono (390) la fila también dice «DEL EQUIPO»');
+    await shot(am, 'mos-admin-puesta-390.png');
+
+    console.log('10 · Solo lectura no puede; una foto que pasa a privada se rechaza; la foto que deja de ser pública vuelve al gris');
+    await lu.goto(B + '/admin/catalogo?c=' + FIE); await lu.locator('text=MOSAICOS DE LA PÁGINA').first().waitFor();
+    ok(await filaMos(lu, MOS_L).getByRole('button', { name: 'Volver a la original' }).count() === 0, 'Solo lectura no ve «Volver a la original»');
+    const abreM = await Promise.all([lu.waitForEvent('filechooser', { timeout: 2500 }).then(() => true).catch(() => false), filaMos(lu, OTRO_L).getByRole('button', { name: 'Cambiar' }).click()]);
+    ok(abreM[0] === false, '«Cambiar» de un mosaico no abre el selector para Solo lectura');
+    await lu.locator('text=Tu rol no edita el catálogo.').first().waitFor();
+    ok(true, 'dice «Tu rol no edita el catálogo.»');
+    const miaM = llamadas.filter((x) => (x.body ?? '').includes(ID3)).pop();
+    ok(!!miaM, 'se capturó la llamada «Poner en el mosaico» de la pantalla');
+    const antesM = { t: sql(`select page_admin::text from categories where id = '${FIE}'`), aud: audM('catalogo.cat.mosaico') };
+    const HM = { 'next-action': miaM.h['next-action'], 'content-type': miaM.h['content-type'] ?? 'text/plain;charset=UTF-8', accept: 'text/x-component', origin: new URL(B).origin, referer: B + '/admin/catalogo?c=' + FIE };
+    if (miaM.h['next-router-state-tree']) HM['next-router-state-tree'] = miaM.h['next-router-state-tree'];
+    ok(/Tu rol no edita el catálogo\./.test(await (await lu.request.post(miaM.url, { headers: HM, data: miaM.body })).text()), 'la misma llamada con la sesión de Solo lectura la rechaza el servidor');
+    ok(sql(`select page_admin::text from categories where id = '${FIE}'`) === antesM.t && audM('catalogo.cat.mosaico') === antesM.aud, 'y no cambia nada');
+    await a.goto(B + '/admin/catalogo?c=' + FIE); await a.locator('text=MOSAICOS DE LA PÁGINA').first().waitFor();
+    await elegirFoto(a, FOTO2, { ruta: /\/api\/medios$/, toque: (p) => filaMos(p, OTRO_L).getByRole('button', { name: 'Cambiar' }), listo: (p) => filaMos(p, OTRO_L).getByText('NUEVA', { exact: true }).waitFor({ timeout: 30000 }) });
+    const ID4 = sql(`select id from media where uploaded_by = '${UANA}' and owner_kind = 'user' and url like '/medios/n/%' and status = 'visible' order by created_at desc limit 1`);
+    ok(/^[0-9a-f-]{36}$/.test(ID4) && ID4 !== ID3, `la foto para «${OTRO_L}» subió (${ID4})`);
+    sql(`update media set private = true where id = '${ID4}'`);
+    await filaMos(a, OTRO_L).getByRole('button', { name: 'Poner en el mosaico' }).click(); await a.locator('text=/Se ve al momento en la página pública/').first().waitFor();
+    await confirmar(a, `cat9n3 ${K} mosaico privada`, 'Poner en el mosaico');
+    await a.locator('text=Esa foto no existe.').first().waitFor();
+    ok(sql(`select page_admin::text from categories where id = '${FIE}'`) === antesM.t && audM('catalogo.cat.mosaico') === antesM.aud && sql(`select owner_kind || '|' || status from media where id = '${ID4}'`) === 'user|visible', 'el servidor la rechaza («Esa foto no existe.») y no cambia nada');
+    sql(`update media set status = 'removed', removed_reason = 'replaced', removed_at = now() where id = '${ID4}'`);
+    sql(`update media set private = true where id = '${ID3}'`);   // la foto del equipo deja de ser pública (como si la revisión la bajara)
+    await pub(v);
+    ok(await mosaicoPintado(v, MOS_L) === 'none', `si la foto del equipo deja de ser pública, «${MOS_L}» vuelve al gris sin que nadie toque nada`);
+    await a.goto(B + '/admin/catalogo?c=' + FIE); await a.locator('text=MOSAICOS DE LA PÁGINA').first().waitFor();
+    ok(await filaMos(a, MOS_L).getByText('SIN FOTO', { exact: true }).isVisible() && await filaMos(a, MOS_L).getByRole('button', { name: 'Volver a la original' }).isVisible(), 'el Super Admin lo muestra igual que la página («SIN FOTO») y deja «Volver a la original» para limpiarlo');
+    sql(`update media set private = false where id = '${ID3}'`);
+    await pub(v);
+    ok(((await mosaicoPintado(v, MOS_L)) ?? '').includes(ID3), 'y al volver a ser pública, se pinta otra vez');
+
+    console.log('11 · Volver a la original');
+    await a.goto(B + '/admin/catalogo?c=' + FIE); await a.locator('text=MOSAICOS DE LA PÁGINA').first().waitFor();
+    await filaMos(a, MOS_L).getByRole('button', { name: 'Volver a la original' }).click();
+    await a.locator('text=/no tiene foto original: vuelve a salir en gris/').first().waitFor();
+    await confirmar(a, `cat9n3 ${K} mosaico vuelta`, 'Volver a la original');
+    await a.locator('text=/Vuelve la foto original del mosaico/').first().waitFor();
+    ok(sql(`select page_admin::text from categories where id = '${FIE}'`).replace(/\s/g, '') === '{}', 'page_admin queda vacío (sin «tiles»)');
+    ok(sql(`select status || '|' || coalesce(removed_reason, '') from media where id = '${ID3}'`) === 'removed|replaced', 'la foto del equipo queda «removed/replaced»: nada se borra');
+    ok(audM('catalogo.cat.mosaico_original') === 1, 'la auditoría tiene su renglón con el motivo');
+    await pub(v);
+    ok(await mosaicoPintado(v, MOS_L) === 'none', `la página pública vuelve a pintar «${MOS_L}» en gris`);
+    let falloM = '';
+    try { sql(`update categories set page_admin = '{"tiles":{"${MOS}":"https://ejemplo.com/a.jpg"}}'::jsonb where id = '${FIE}'`); } catch (e) { falloM = String(e.stderr ?? e); }
+    ok(/categories_page_admin_portada_propia/.test(falloM), 'la base no admite una dirección de afuera en un mosaico (categories_page_admin_portada_propia)');
+
     ok(err.length === 0, 'sin errores de página ni de consola' + (err.length ? ': ' + err.slice(0, 3).join(' | ') : ''));
     console.log(`\n${n} comprobaciones en verde`);
   } finally {
     sql(`update media set status = 'removed', removed_reason = 'replaced', removed_at = now() where owner_kind = 'category' and owner_id = '${CAT}' and status = 'visible'`);
     sql(`update categories set page_admin = '{}'::jsonb where id = '${CAT}'`);
+    quitarMosaicos();
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close().catch(() => {});
   }

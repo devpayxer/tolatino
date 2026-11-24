@@ -10,6 +10,7 @@ import { tx } from "@/lib/db";
 import { mismoOrigen } from "@/lib/cuenta";
 import { LIMITES_PLAN, MODULOS_POR_CIUDAD, type DiaPlantilla } from "@/lib/admin-catalogo";
 import { recalcularFiltrosSP } from "@/lib/salud-pro";
+import { claveMosaico, mosaicosConFoto, type Pagina } from "@/lib/categoria";
 import type { ResAdm } from "./acciones-colas";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
@@ -305,6 +306,64 @@ export async function catPortadaFabrica(cat: string, motivo: string): Promise<Re
       before: { categoria: k.es, portada: `foto del equipo · ${k.ya}` }, after: { portada: "de fábrica" }, reason: m });
     return null;
   }, "Vuelve la portada de fábrica.");
+}
+
+/* Mosaicos de la página de una categoría (Catálogo › la categoría › «Mosaicos de la página», 0217): la foto de cada mosaico de subcategoría de
+   /c/<categoría> (filas de fotos y capítulos), incluidos los que salían en gris porque su foto de origen ya no existe. Mismas
+   garantías que la portada: la foto la sube un Admin por la ruta de las fotos públicas (revisión automática, AJ) y aquí se PONE, todo o nada; si no
+   se puede adjuntar (no es suya, pasó a privada o a revisión, ya se usó) se lanza y se deshace TODO («Esa foto no existe.»). La clave del mosaico
+   tiene que ser uno de los mosaicos con foto de ESTA página (la de ?sub=<clave>); la foto pasa a ser DE ESE MOSAICO (media.owner_kind 'category',
+   owner_id '<categoría>/<clave>': no la confunde la portada, que es owner_id = la categoría) y la anterior queda «removed/replaced». En
+   categories.page_admin solo se toca la clave de ese mosaico dentro de «tiles» (la base lo impone: 0217), SOLO aquí (guardián
+   mosaicosCategoriaDelEquipo). La página pinta la del equipo mientras siga visible; si no, la original; sin original, el gris. */
+export async function catMosaico(cat: string, clave: string, mediaId: string, motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  if (!claveMosaico(clave)) return no("Ese mosaico no existe.");
+  if (typeof mediaId !== "string" || !UUID.test(mediaId)) return no("Esa foto no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  if (!(await mismoOrigen())) return no("No permitido.");
+  try {
+    return await hacer(async (c, s) => {
+      const k = (await c.query<{ es: string; page: Pagina; ya: string | null }>(
+        `select name->>'es' as es, page, page_admin->'tiles'->>$2 as ya from categories where id = $1 and page ? 'title' for update`, [cat, clave])).rows[0];
+      if (!k) return "Esa categoría no existe.";
+      const t = mosaicosConFoto(k.page).find((x) => x.key === clave);
+      if (!t) return "Ese mosaico no existe.";
+      const f = (await c.query<{ url: string }>(
+        `update media set owner_kind = 'category', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and uploaded_by = $3 and owner_id = $3::text
+            and status = 'visible' and not rev_sin_c2 and not private and purged_at is null and url like '/medios/n/%' returning url`, [`${cat}/${clave}`, mediaId, s.id])).rows[0];
+      if (!f) throw new FotoNoAdjunta();
+      await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [`${cat}/${clave}`, mediaId, s.id]);
+      await c.query(`update categories set page_admin = jsonb_set(coalesce(page_admin, '{}'::jsonb), '{tiles}', coalesce(page_admin->'tiles', '{}'::jsonb) || jsonb_build_object($2::text, $3::text)), updated_at = now() where id = $1`, [cat, clave, f.url]);
+      await auditar(c, { actor: s.id, action: "catalogo.cat.mosaico", targetKind: "category", targetId: cat,
+        before: { categoria: k.es, mosaico: t.label.es, foto: k.ya ? `foto del equipo · ${k.ya}` : t.photo ? "la original" : "sin foto" }, after: { foto: `foto del equipo · ${f.url}` }, reason: m });
+      return null;
+    }, "Mosaico cambiado. Ya se ve en la página de la categoría.");
+  } catch (e) { if (e instanceof FotoNoAdjunta) return no("Esa foto no existe."); throw e; }
+}
+
+/* Volver a la foto original de un mosaico: quita SOLO la clave de ese mosaico de page_admin.tiles (sin mosaicos del equipo, la clave «tiles» se va
+   y page_admin queda como estaba) y deja su foto del equipo «removed/replaced». Sin original, el mosaico vuelve al gris. */
+export async function catMosaicoOriginal(cat: string, clave: string, motivo: string): Promise<ResAdm> {
+  if (typeof cat !== "string" || !CAT.test(cat)) return no("Esa categoría no existe.");
+  if (!claveMosaico(clave)) return no("Ese mosaico no existe.");
+  const m = limpio(motivo);
+  if (!m) return no("Escribe el motivo.");
+  if (!(await mismoOrigen())) return no("No permitido.");
+  return hacer(async (c, s) => {
+    const k = (await c.query<{ es: string; page: Pagina | null; ya: string | null }>(
+      `select name->>'es' as es, page, page_admin->'tiles'->>$2 as ya from categories where id = $1 for update`, [cat, clave])).rows[0];
+    if (!k) return "Esa categoría no existe.";
+    if (!k.ya) return "Ese mosaico ya tiene su foto original.";
+    const t = k.page && "title" in k.page ? mosaicosConFoto(k.page).find((x) => x.key === clave) : undefined;
+    await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [`${cat}/${clave}`, s.id]);
+    await c.query(`update categories set page_admin = case when (page_admin->'tiles') - $2::text = '{}'::jsonb then page_admin - 'tiles'
+                     else jsonb_set(page_admin, '{tiles}', (page_admin->'tiles') - $2::text) end, updated_at = now() where id = $1`, [cat, clave]);
+    await auditar(c, { actor: s.id, action: "catalogo.cat.mosaico_original", targetKind: "category", targetId: cat,
+      before: { categoria: k.es, mosaico: t?.label.es ?? clave, foto: `foto del equipo · ${k.ya}` }, after: { foto: t?.photo ? "la original" : "sin foto" }, reason: m });
+    return null;
+  }, "Vuelve la foto original del mosaico.");
 }
 
 /* Límites Free/Pro por módulo: son valores de Configuración (lib/config.ts, cambiarConfig: límites, auditoría antes → después en la misma

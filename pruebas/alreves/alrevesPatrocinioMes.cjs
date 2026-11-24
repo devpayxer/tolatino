@@ -14,6 +14,7 @@ const casos = [
   ['el mes pierde el ancla', PT, 'finDePeriodo(Number(r.m0), "month", r.tz, ancla)', 'finDePeriodo(Number(r.m0), "month", r.tz, null)'],
   ['la renovación sola no pasa su cadena', PT, 'f = (await fechasPeriodo(c, s.city_id, s.fin, s.duration, { tabla: "sponsorships", negocio: s.business_id, categoria: s.category_id }))!;', 'f = (await fechasPeriodo(c, s.city_id, s.fin, s.duration))!;'],
   ['comprar (y «Renovar otro mes») no pasa su cadena', PT, '  const f = await fechasPeriodo(null, n.city_id, desde, x.dur, { tabla: "sponsorships", negocio, categoria: n.category_id });', '  const f = await fechasPeriodo(null, n.city_id, desde, x.dur);'],
+  ['las fechas de «Renovar otro mes» no pasan su cadena', PT, '  const f = await fechasPeriodo(null, n.city_id, v.dia, dur, { tabla: "sponsorships", negocio, categoria: n.category_id });', '  const f = await fechasPeriodo(null, n.city_id, v.dia, dur);'],
   ['la pantalla de las fechas no pasa su cadena', PT, 'desde === d.hoy ? "hoy" : desde, dur, { tabla: "sponsorships", negocio, categoria: n.category_id });', 'desde === d.hoy ? "hoy" : desde, dur);'],
   ['la renovación de un evento no pasa su cadena', PE, '(await fechasPeriodo(c, s.city_id, s.fin, s.duration, { tabla: "event_sponsorships", negocio: s.business_id, evento: s.event_id }))!;', '(await fechasPeriodo(c, s.city_id, s.fin, s.duration))!;'],
   ['la cadena cuenta lo terminado antes', PT, "(${x}.status = 'terminado' and ${x}.end_kind = 'vencio')", "${x}.status = 'terminado'"],

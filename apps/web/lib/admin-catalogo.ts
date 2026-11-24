@@ -3,6 +3,7 @@ import type { Staff } from "./admin";
 import { catalogoConfig, cfgSql } from "./config";
 import { db } from "./db";
 import { slugCat } from "./directorio";
+import { MOSAICOS_EQUIPO, mosaicosConFoto, type Pagina } from "./categoria";
 
 /* ADM-CAT · Catálogo (Super Admin.dc.html secCat / catDetail / filtDetail): las 17 categorías con sus subcategorías,
    los sinónimos de Buscar, lo que se busca sin oferta, los filtros de cada categoría y los módulos. Todo sale de la
@@ -27,11 +28,19 @@ export type OnbCategoria = { horario?: DiaPlantilla[] | null; ph_nombre?: Bi; ph
 
 export async function categoriaAdmin(id: string) {
   if (!/^NEG-[A-Z]+$/.test(id)) return null;
-  const c = (await db().query<{ id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number; onb: OnbCategoria; off: string[]; hero_fab: string | null; hero_admin: string | null; corto: string }>(
-    `select id, name->>'es' as es, name->>'en' as en, icon, op_kind, fixed_line as line, page->'title'->>'es' as title,
-            coalesce(jsonb_array_length(page->'chapters'), 0) as capitulos, onb, off_cities as off,
-            page->>'hero' as hero_fab, page_admin->>'hero' as hero_admin, short->>'es' as corto from categories where id = $1`, [id])).rows[0];
+  const c = (await db().query<{ id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number; onb: OnbCategoria; off: string[]; hero_fab: string | null; hero_admin: string | null; corto: string;
+    page: Pagina | null; tiles_equipo: Record<string, string>; tiles_puestas: string[] }>(
+    `select k.id, k.name->>'es' as es, k.name->>'en' as en, k.icon, k.op_kind, k.fixed_line as line, k.page->'title'->>'es' as title,
+            coalesce(jsonb_array_length(k.page->'chapters'), 0) as capitulos, k.onb, k.off_cities as off,
+            k.page->>'hero' as hero_fab, k.page_admin->>'hero' as hero_admin, k.short->>'es' as corto,
+            case when k.page ? 'title' then k.page end as page, ${MOSAICOS_EQUIPO("k")} as tiles_equipo,
+            array(select jsonb_object_keys(coalesce(k.page_admin->'tiles', '{}'::jsonb))) as tiles_puestas
+       from categories k where k.id = $1`, [id])).rows[0];
   if (!c) return null;
+  /* 0217 · Mosaicos de la página: cada uno con su foto original, la del equipo que se ve (aprobada y visible: lo mismo que pinta la página) y si
+     tiene una puesta (aunque la revisión la haya bajado: así se puede volver a la original). */
+  const puestas = new Set(c.tiles_puestas);
+  const mosaicos = c.page ? mosaicosConFoto(c.page).map((x) => ({ key: x.key, es: x.label.es, en: x.label.en, donde: x.donde, fab: x.photo, equipo: c.tiles_equipo[x.key] ?? null, puesta: puestas.has(x.key) })) : [];
   const [subs, negocios, rapidos, hist, ciudades, otras] = await Promise.all([
     // 9n · Las fusionadas salen con el nombre de la que las recibió (Separar las devuelve).
     db().query<{ id: string; es: string; en: string; status: string; n: number; equipo: boolean; reason: string | null; into_id: string | null; into_es: string | null }>(
@@ -53,7 +62,8 @@ export async function categoriaAdmin(id: string) {
          from cities ci order by ci.sort, ci.id`, [id]),
     db().query<{ id: string; es: string; en: string }>(`select id, name->>'es' as es, name->>'en' as en from categories where id <> $1 order by sort`, [id]),
   ]);
-  return { ...c, slug: slugCat(c.corto), subs: subs.rows, negocios: negocios.rows, rapidos: rapidos.rows.map((x) => x.label), historial: hist,
+  const { page: _p, tiles_equipo: _te, tiles_puestas: _tp, ...base } = c;
+  return { ...base, slug: slugCat(c.corto), mosaicos, subs: subs.rows, negocios: negocios.rows, rapidos: rapidos.rows.map((x) => x.label), historial: hist,
     ciudades: ciudades.rows.map((x) => ({ ...x, on: !c.off.includes(x.id) })), otras: otras.rows };
 }
 
