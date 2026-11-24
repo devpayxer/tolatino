@@ -6520,3 +6520,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Novedades después de Resumen (pedido del fundador, 0c23669; hecho por Opus):** en las pestañas del teléfono y en las secciones de la computadora.
   Del pedido a servido ~24 min: la subida fueron 4 min; el resto, esperar una revisión del CI de otro paquete que ocupaba la rama (fallo de
   orquestación de Opus: ese paquete se apartó con un commit de reversión y el ajuste subió solo). Qué mirar: la ficha de un restaurante.
+
+## Mosaicos de categoría y «Renovar otro mes» (24 nov; hecho por Opus, revisado por Fable)
+- **Mosaicos desde el Super Admin (migración 0217):** Catálogo › una categoría › Mosaicos: cambiar la foto de un mosaico, verlo en su página de
+  categoría, «Volver a la original». Qué mirar: Fiestas, mosaico «Bautizo». La lista de mosaicos es larga (todas las subcategorías).
+- **«Renovar otro mes» con el fin lejos (más de 60 días):** la pantalla enseña las fechas y el monto que luego se cobran, en Negocios y Eventos. Si no se
+  puede renovar (página no publicada, ciudad sin abrir), FECHAS dice «—» y «Pagar» queda apagado **sin decir por qué: falta decidir ese texto**.
+- **Para decidir:** en Eventos ya se puede pagar una renovación más allá del tope de días por adelantado (el servidor ya lo permitía); y una foto
+  «en revisión» se reemplaza igual que una visible, en la portada y en los mosaicos.

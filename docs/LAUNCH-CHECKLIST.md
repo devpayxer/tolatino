@@ -2999,5 +2999,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       estaba. Falta barrer la clase: precondiciones `ok(... sql(select count ...))` sobre datos compartidos que otra prueba modifica.
 - [ ] **→ 9b** · **Mientras una dirigida ocupa la rama, un ajuste del fundador espera (24 nov):** se resolvió apartando el paquete con un commit de
       reversión. Mejor: lanzar las dirigidas largas solo cuando no hay ronda de ajustes, o que la herramienta suba un ajuste sobre `main` sin pasar por la rama.
+- [ ] **→ 9b** · **«Renovar otro mes»: el rechazo del servidor sin cobro** (página oculta) no lo ejercita `pat002` §8 (el botón apagado nunca llama a
+      `patComprar`); y «Renovar» no limpia `patLib` (`Patrocinio.tsx:108`, `PatrocinioEvento.tsx:81`): unos milisegundos «Pagar» usa las fechas de la consulta
+      anterior (el servidor recalcula; sin cobro indebido). Revisión de Fable, 24 nov.
+- [ ] **→ 9b** · **`cat9n3` sube 4 fotos por corrida:** la tercera corrida en una hora sobre la misma base choca con el tope de 10 fotos por hora (en CI la base es nueva).
 - [ ] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
       `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa).
