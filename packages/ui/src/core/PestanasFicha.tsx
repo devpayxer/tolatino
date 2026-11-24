@@ -68,6 +68,8 @@ export function PestanasFicha({ items, active, onChange, modo, aside, asideWidth
     </div>
   );
   if (!desk) return <div data-pieza="pestanas-ficha" style={{ background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.1)", ...style }}>{fila}</div>;
+  /* 24 nov (fundador) · Escritorio sin `aside`: la tira va de esquina a esquina (el estado del negocio lo lleva la barra del nombre). */
+  if (aside === undefined) return <div data-pieza="pestanas-ficha" data-ancho="completo" style={{ background: "var(--tl-white)", borderBottom: "1px solid rgba(11,14,18,.1)", ...style }}>{fila}</div>;
   return (
     <div data-pieza="pestanas-ficha" style={{ background: "var(--tl-white)", ...style }}>
       <div style={{ display: "grid", gridTemplateColumns: `minmax(0,1fr) ${asideWidth}px`, gap, borderBottom: "1px solid rgba(11,14,18,.1)" }}>

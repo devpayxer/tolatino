@@ -248,8 +248,11 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     ok(await pestD.locator('[data-pestana][aria-current="page"]').count() === 1, 'escritorio: una sola pestaña con aria-current="page"');
     await d.screenshot({ path: OUT + 'cab9-1360-arriba.png' });
     await d.mouse.wheel(0, 900); await d.waitForTimeout(700);
-    const aside = pestD.locator('span').filter({ hasText: /^(Abierto|Cerrado)/ });
-    ok(await espera(async () => (await aside.count()) === 1), `tira pegada arriba: el estado a la derecha («${(await aside.first().innerText().catch(() => '')).trim()}»)`);
+    // 24 nov (fundador) · La tira va de esquina a esquina; el estado pasa a la barra del nombre, a la derecha.
+    const aside = d.locator('[data-pieza="nombre-pegado-desk"] [data-pieza="estado-pegado"]').filter({ hasText: /^(Abierto|Cerrado)/ });
+    ok(await espera(async () => (await aside.count()) === 1 && await aside.isVisible()), `tira pegada arriba: el estado a la derecha de la barra del nombre («${(await aside.first().innerText().catch(() => '')).trim()}»)`);
+    const anchoT = await d.evaluate(() => { const t = document.querySelector('[data-pieza="pestanas-ficha"][data-ancho="completo"]'); if (!t) return null; const a = t.getBoundingClientRect(), c = t.parentElement.parentElement.getBoundingClientRect(), cs = getComputedStyle(t.parentElement.parentElement); return Math.abs(a.width - (c.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))); });
+    ok(anchoT !== null && anchoT <= 1, `escritorio: la tira de pestañas va de esquina a esquina del contenido (diferencia ${anchoT} px)`);
     const pb = await pestD.boundingBox(); ok(pb.y >= 0 && pb.y < 200, 'la tira queda pegada arriba al bajar');
     await d.screenshot({ path: OUT + 'cab9-1360-pegada.png' });
     await d.setViewportSize({ width: 1360, height: 900 });

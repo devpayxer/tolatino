@@ -599,6 +599,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             <button type="button" data-pieza="volver-arriba" tabIndex={pegada ? 0 : -1} aria-label={E2("Volver a la cabecera del negocio", "Back to the top of the business")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="inline-flex size-11 flex-none items-center justify-start text-ink"><Icon name="chevronLeft" size={20} /></button>
             <span className="min-w-0 truncate font-display text-[22px] font-extrabold leading-none tracking-[-0.04em] text-ink">{f.nombre}</span>
             {sello ? <span className="flex-none">{sello}</span> : null}
+            <span className="ml-auto flex flex-none items-center gap-2 whitespace-nowrap pl-6 text-[13.5px] font-extrabold leading-none" style={{ color: stFg }} data-pieza="estado-pegado"><span className="size-2 flex-none rounded-full" style={{ background: stDot }} />{`${f.estadoCorto}${resto ? ` · ${resto}` : ""}`.slice(0, 40)}</span>
           </div>
         </div>
         <button type="button" onClick={() => router.back()} className="inline-flex min-h-11 items-center gap-1.5 pt-[18px] text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} />{E2("Volver", "Back")}</button>
@@ -624,10 +625,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
             {llamar ? <Button variant="secondary" size="sm" icon="phone" onClick={llamar}>{E2("Llamar", "Call")}</Button> : null}
           </div>
         </div>
-        <div ref={tiraRef} className="sticky z-20" style={{ top: CAB_DESK + NOMBRE_DESK }}>
-          <PestanasFicha modo="escritorio" items={tabs} active={activa} onChange={ir} aside={pegada ? { label: `${f.estadoCorto}${resto ? ` · ${resto}` : ""}`.slice(0, 40), dot: stDot, color: stFg } : null} />
-          {flechas.l ? <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[76px] items-center bg-[linear-gradient(90deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronLeft" size={34} label={E2("Anteriores", "Previous")} onClick={() => tira()?.scrollBy({ left: -320, behavior: "smooth" })} /></span></div> : null}
-          {flechas.r ? <div className="pointer-events-none absolute inset-y-0 right-[420px] flex w-[76px] items-center justify-end bg-[linear-gradient(270deg,#fff_55%,rgba(255,255,255,0))]"><span className="pointer-events-auto"><IconButton icon="chevronRight" size={34} label={E2("Más", "More")} onClick={() => tira()?.scrollBy({ left: 320, behavior: "smooth" })} /></span></div> : null}
+        <div ref={tiraRef} className="group sticky z-20" style={{ top: CAB_DESK + NOMBRE_DESK }}>
+          <PestanasFicha modo="escritorio" items={tabs} active={activa} onChange={ir} />
+          {flechas.l ? <div className="pointer-events-none absolute inset-y-0 left-0 flex w-[76px] items-center bg-[linear-gradient(90deg,#fff_55%,rgba(255,255,255,0))] opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100" data-pieza="flecha-pestanas"><span className="pointer-events-auto"><IconButton icon="chevronLeft" size={34} label={E2("Anteriores", "Previous")} onClick={() => tira()?.scrollBy({ left: -320, behavior: "smooth" })} /></span></div> : null}
+          {flechas.r ? <div className="pointer-events-none absolute inset-y-0 right-0 flex w-[76px] items-center justify-end bg-[linear-gradient(270deg,#fff_55%,rgba(255,255,255,0))] opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100" data-pieza="flecha-pestanas"><span className="pointer-events-auto"><IconButton icon="chevronRight" size={34} label={E2("Más", "More")} onClick={() => tira()?.scrollBy({ left: 320, behavior: "smooth" })} /></span></div> : null}
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)_372px] items-start gap-12 pt-8">
           <div className="flex min-w-0 flex-col gap-16">
