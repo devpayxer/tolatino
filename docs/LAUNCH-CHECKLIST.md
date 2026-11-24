@@ -2985,6 +2985,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       usuario `tolatino_vista`, su imagen y el 8081); se quedan las de BuildKit y la llave estable del Dockerfile.
 - [ ] **→ 9u** · **Paso de limpieza de la vista previa (`deploy.sh` 3i):** su SQL (`drop owned by` / `drop role tolatino_vista`) no corrió contra un Postgres de
       verdad antes del despliegue. Ver una vez en el registro del sandbox «retirados los restos…» y después nada; retirar el paso cuando esté limpio.
-- [ ] **→ 9u** · **Turbopack (decisión AR, 24 nov):** medir `next build --turbopack` contra el build de hoy antes de decidir (el fundador pidió el tiempo medido).
+- [x] **Turbopack (decisión AR, 24 nov) — medido:** `next build --turbopack` (Next 15.5.29) se quedó sin memoria las 3 veces (pico ~11,5 GB, 337 s, en
+      una máquina de 16 GB); el build de hoy (webpack, sin repetir los tipos) tarda 117 s con ~3,6 GB. En el servidor del sandbox (8 GB) no cabe: se queda webpack.
+- [ ] **→ 9q** · **Buscar al momento en un iPhone de verdad (24 nov):** al tocar «Buscar en…» el teclado se abre en el mismo toque (campo puente) y lo
+      escrito pasa a la caja de Buscar. Comprobado en Chromium y en el sandbox servido (foco y texto); el teclado de iOS solo se ve en un iPhone: verlo en
+      Safari y en la app To'Latino (Capacitor). Guardián `buscarEscribeAlMomento`, al revés `alrevesBuscarAlMomento`, punta a punta `bus9t` (7).
+- [ ] **→ 9b** · **Corrida de anchos en WebKit de verdad:** `fic9cab`, `din9t10b` y `tarAK` con `anchoPropio`/`escritorioPropio` se comprobaron emulando
+      ipad e iphone-se en Chromium (aquí no hay WebKit); verlos en verde en la próxima corrida nocturna de anchos (4 noches en rojo hasta el 24 nov).
+- [ ] **→ 9b** · **Una prueba nueva que mide a un ancho concreto** usa `ENT.anchoPropio` (o `ENT.escritorioPropio` si necesita cursor); si vale a cualquier
+      ancho, mide contra `innerWidth`/`viewportSize()`. El guardián `anchoPropioRespetado` cubre din9t6b, din9t7b y din9t10b, no una prueba nueva con un ancho escrito.
 - [ ] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
       `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa).

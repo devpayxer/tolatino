@@ -151,7 +151,7 @@ const audit = (al, accion) => sql(`select count(*) from audit_entries where acti
     await clic(fm.getByRole('button', { name: 'Resolver a mano', exact: true }));
     await m.getByText('La devolución se hizo fuera de Stripe').first().waitFor();
     w = await ancho(m);
-    ok(w.inner === 390 && w.scroll <= 390 && w.body <= 390, `la hoja a 390: innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
+    ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la hoja a ${w.inner} (el ancho del teléfono): innerWidth ${w.inner}, scrollWidth ${w.scroll}, body ${w.body}`);
     await clic(m.getByText('Se le devolvió por transferencia bancaria; comprobante en el caso.', { exact: true }));
     await clic(m.getByRole('button', { name: 'Resolver a mano', exact: true }));
     await aviso(m, /Resuelta fuera de Stripe/);
