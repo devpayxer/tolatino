@@ -8,6 +8,8 @@
 //      el repaso siempre en partes y la puerta de producción (corrida.mjs, promover.sh) que no acepta cadenas. Tras la revisión de bc9a893: la
 //      cuenta de RESULTADOS en pruebas/lib/resultados.cjs (sus casos), el cableado de --subir y --repaso (buscarEvidencia, armarCadena,
 //      prepararRepaso, ioReal), el primer intento, los trabajos fijos, el arreglo sin herramientas y toda corrida no verde entre R1 y R2.
+// 24 nov (decisión AV) · Y la vía rápida de código: su lista blanca y sus exclusiones, main en rojo, el tope, las pruebas de lo tocado aquí (el
+//      servidor de este árbol, su base, --reintentar, RESULTADOS completa), las dos listas, lo local antes de --dirigida/--repaso y --vigilar.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync, spawnSync } = require('child_process');
 const R = ENT.RAIZ, G = 'subidaConHerramienta', S = 'scripts/ci/subir.mjs', Y = '.github/workflows/ci.yml', D = 'infra/pruebas/deploy.sh';
@@ -73,7 +75,7 @@ const casos = [
   [S, '  if (c.diseno === true && !sinViaRapida && !c.github && !c.clases.some((k) => VIGILADAS.includes(k)) && c.clases.includes("diseno"))', '  if (c.diseno === true && !sinViaRapida && !c.github)', 'una entrega con una clase vigilada sale por la vía rápida de diseño (exigencias con «sensible»)'],
   [S, '  else if (!c2) noDiseno = `${sinMain}', '  else if (true) noDiseno = "";\n  else if (!c2) noDiseno = `${sinMain}', 'la vía rápida de diseño necesita que la cabeza y origin/main la den'],
   [S, 'console.log(`VÍA RÁPIDA DE DISEÑO (AL): las pruebas de punta a punta y al revés corren DESPUÉS, en la corrida de push de main: ${donde}`);', 'console.log(`subido: ${donde}`);', '--subir por la vía rápida dice al final que la punta a punta y «al revés» corren DESPUÉS'],
-  [S, '  if (rapida) avisoDespues({ repo, head, pruebas: p.d.pruebas });\n  return 0;', '  return 0;', '--subir por la vía rápida dice al final que la punta a punta y «al revés» corren DESPUÉS'],
+  [S, '  if (rapida) avisoDespues({ repo, head, pruebas: p.d.pruebas, codigo: deCodigo });\n  // 24 nov (main', '  // 24 nov (main', '--subir por la vía rápida dice al final que la punta a punta y «al revés» corren DESPUÉS'],
   // ci.yml: cada corrida dice de qué es y la evidencia solo sale con todo en verde.
   [Y, "run-name: \"CI · ${{ github.event_name }} · ${{ github.ref_name }}${{ github.event_name == 'workflow_dispatch' && format(' · alcance={0} · partes={1} · solo=«{2}»', inputs.alcance, inputs.partes, inputs.solo) || '' }}\"\n", '', 'run-name: cada corrida dice evento, alcance, partes y «solo»'],
   [Y, '      - name: Evidencia de la corrida (solo con todo en verde; scripts/ci/subir.mjs la lee del registro de este trabajo)\n', '      - name: Evidencia de la corrida (solo con todo en verde; scripts/ci/subir.mjs la lee del registro de este trabajo)\n        if: always()\n', 'la evidencia solo sale con todo en verde'],
@@ -146,6 +148,39 @@ const casos = [
   [S, '  if (!dif.length || veredicto(dif) === "documentos") return "ya salió roja', '  if (!dif.length) return "ya salió roja', 'cadena: un repaso rojo entre R1 y R2 con el mismo árbol que HEAD (o solo documentos de diferencia)'],
   [S, '  c.difHead = SHA40.test(run?.head_sha ?? "") && (await io.tenerCommit(run.head_sha)) === true ? await io.difNombres(run.head_sha, "HEAD") : null;', '  c.difHead = ["apps/web/x.ts"];', 'cableado: lo que cambió entre una roja intermedia y HEAD sale de git'],
   [S, '    try { const t1 = await io.trabajosIntento(run.id, 1);', '    try { const t1 = await io.trabajos(run.id);', 'cableado: el primer intento de una intermedia que se volvió a correr sale de la API'],
+  // 24 nov · La vía rápida de código (decisión AV) y --vigilar: cada defecto, cazado con su mensaje.
+  [S, 'export const CODIGO = Object.freeze([/^apps\\/web\\//, ', 'export const CODIGO = Object.freeze([/^scripts\\//, /^apps\\/web\\//, ', 'la lista blanca de código cubre scripts/ci/x.mjs'],
+  [S, '  /(^|\\/)(package\\.json|pnpm-lock\\.yaml|pnpm-workspace\\.yaml|\\.npmrc)$/, /(^|\\/)\\.env[^/]*$/,\n', '  /(^|\\/)\\.env[^/]*$/,\n', 'la vía rápida de código deja pasar apps/web/app/x/package.json'],
+  [S, '  /(^|\\/)(package\\.json|pnpm-lock\\.yaml|pnpm-workspace\\.yaml|\\.npmrc)$/, /(^|\\/)\\.env[^/]*$/,\n', '  /(^|\\/)(package\\.json|pnpm-lock\\.yaml|pnpm-workspace\\.yaml|\\.npmrc)$/,\n', 'la vía rápida de código deja pasar apps/web/lib/.env'],
+  [S, '  /^apps\\/web\\/public\\/.*\\.[cm]?js$/, /^apps\\/web\\/public\\/\\.well-known\\//,\n', '  /^apps\\/web\\/public\\/\\.well-known\\//,\n', 'la vía rápida de código deja pasar apps/web/public/sw-push.js'],
+  [S, '  /^(apps\\/web|packages\\/ui)\\/[^/]+$/,\n', '', 'la vía rápida de código deja pasar apps/web/tsconfig.json'],
+  [S, '  if (p) return `${f} lleva «${p}» en la ruta (dinero, cuenta, permisos o datos personales)`;\n  return "";\n}\nexport const esCodigo', '  return "";\n}\nexport const esCodigo', 'la vía rápida de código deja pasar apps/web/lib/sesion.ts'],
+  [S, '  for (const f of codigo) { if (noCodigo) break; if (!SIN_RENGLONES.test(f) && !Array.isArray(renglones?.[f])) noCodigo', '  for (const f of codigo) { if (noCodigo || true) break; if (!SIN_RENGLONES.test(f) && !Array.isArray(renglones?.[f])) noCodigo', 'un archivo de código sin sus renglones → no código'],
+  [S, '  if (!noCodigo) { const v = VIGILADAS.find((k) => cl.has(k)); if (v) noCodigo', '  if (!noCodigo) { const v = VIGILADAS.find((k) => cl.has(k) && false); if (v) noCodigo', 'una escritura en los renglones → sensible, no código'],
+  [S, '  if (main?.estado !== "verde") return main?.estado === "rojo"', '  if (false) return main?.estado === "rojo"', 'con main en rojo (o sin saberlo), el código no sube por la vía rápida'],
+  [S, '  if (r.conclusion === "failure") return { estado: "rojo"', '  if (r.conclusion === "failure") return { estado: "verde"', 'con main en rojo (o sin saberlo), el código no sube por la vía rápida'],
+  [S, '  if (!local.ok) return `${local.motivo}: camino normal`;\n', '', 'código con más pruebas que el tope sale por la vía rápida'],
+  [S, 'export const TOPE_LOCAL = Object.freeze({ pruebas: 25, seg: 600,', 'export const TOPE_LOCAL = Object.freeze({ pruebas: 50, seg: 600,', 'el tope de las pruebas de lo tocado: ≤ 25 pruebas y ≤ 10 min'],
+  [S, '  if (c.diseno === true && !sinViaRapida && !c.github', '  if (c.diseno === true && !sinViaRapida && main?.estado !== "rojo" && !c.github', 'main en rojo no frena la vía rápida de diseño'],
+  [S, '    if (correr.length < tope.pruebas && total + mas <= tope.seg)', '    if (total + mas <= tope.seg)', 'recortar: nunca más de 25 pruebas aquí'],
+  [S, '  if (r.rojas.length) return no(`en rojo aquí:', '  if (false) return no(`en rojo aquí:', 'las pruebas de lo tocado exigen la línea RESULTADOS completa:true y sin rojas'],
+  [S, '  if (!r.completa) return no(`no todas corrieron hasta su resultado (completa:false)', '  if (false) return no(`no todas corrieron hasta su resultado (completa:false)', 'las pruebas de lo tocado exigen la línea RESULTADOS completa:true y sin rojas'],
+  [S, '  if (proc.cwd !== app) return no(', '  if (false) return no(', 'las pruebas locales corren contra el servidor de DESARROLLO de este árbol'],
+  [S, '  if (proc.nodeEnv !== "development") return no(', '  if (false) return no(', 'las pruebas locales corren contra el servidor de DESARROLLO de este árbol'],
+  [S, '  if (s.base?.migraciones !== migraciones) return no(', '  if (false) return no(', 'antes de las pruebas locales, /api/salud ok y tantas migraciones como trae HEAD'],
+  [S, '        await pruebasAqui({ pruebas: p.d.pruebas, cabeza: p.head, archivos: p.archivos, decir: linea });\n', '', 'mira main antes de decidir y corre las pruebas de lo tocado aquí'],
+  [S, '  const p = await planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida, main });', '  const p = await planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida, main: { estado: "verde" } });', 'mira main antes de decidir y corre las pruebas de lo tocado aquí'],
+  [S, '...nombres, "--reintentar"]', '...nombres]', 'correr con --reintentar'],
+  [S, '  else if (c2.codigo === undefined) noCodigo =', '  else if (false) noCodigo =', 'la herramienta de origin/main sin «codigo» → no hay vía rápida de código'],
+  [S, '  if (!(await antesDeLanzar({ archivos: p.archivos, head, sinLocal }))) return 1;\n', '', '--dirigida corre aquí las pruebas de lo tocado antes de lanzar nada'],
+  [S, '  if (!(await antesDeLanzar({ archivos: r.difAHead, head, primero: a.rojas, sinLocal }))) return 1;\n', '', '--repaso corre aquí las pruebas de lo tocado antes de lanzar nada'],
+  [S, 'if (sinLocal) { console.log("SALTADO: pruebas locales (--sin-local)"); return true; }', 'if (sinLocal) return true;', '--sin-local se dice'],
+  [S, '  if (!ok) { console.log("no se lanzó nada', '  if (false) { console.log("no se lanzó nada', 'y con una roja aquí no se lanza'],
+  [S, '  for (const f of archivos.filter((x) => /^(apps|packages)\\//.test(x))) {', '  for (const f of archivos) {', 'la parte directa antes de lanzar'],
+  [S, '  console.log(ordenVigilar(head));\n  return 0;\n}', '  return 0;\n}', '--subir termina imprimiendo la orden para vigilar la corrida de main'],
+  [S, '    else if (flag("--vigilar")) {', '    else if (flag("--vigilar-no")) {', '--vigilar existe'],
+  [S, '  if (run.conclusion === "success") return { ok: true, linea: `VERDE', '  if (run.conclusion !== "failure") return { ok: true, linea: `VERDE', '--vigilar: verde solo con success'],
+  [S, ' && r.head_sha === sha && r.repository?.full_name === repo)', ' && r.repository?.full_name === repo)', '--vigilar: la corrida de ci.yml del push a main de ESE commit'],
   // El repaso, siempre en partes.
   [S, '  if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }\n  return lanzarYEsperar({ repo, rama, head, o });', '  if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }\n  return lanzarYEsperar({ repo, rama, head, o: o.map((x) => (x.startsWith("partes=") ? "partes=1" : x)) });', 'el repaso va siempre en partes'],
   // Producción no acepta cadenas.

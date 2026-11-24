@@ -16477,7 +16477,7 @@ const guardianes = {
     }
     // 5. Los casos puros (árbol, documentos, propuesta, main, conclusión de la API, nombres, empuje).
     try { execSync(`node ${S} --casos`, { stdio: "pipe", timeout: 60_000 }); }
-    catch (e) { falla(G, S, 0, `los casos de subir.mjs no pasan: ${String(e.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 4).map((l) => l.trim()).join(" · ").slice(0, 400) || String(e.stderr ?? e.message).slice(0, 200)}`); }
+    catch (e) { falla(G, S, 0, `los casos de subir.mjs no pasan: ${String(e.stdout ?? "").split("\n").filter((l) => /^\s*✗/.test(l)).slice(0, 4).map((l) => l.trim()).join(" · ").slice(0, 400) || String(e.stderr ?? e.message).slice(0, 200)}`); }
     // 6. ci.yml: cada corrida dice de qué es, y la evidencia solo sale con todo en verde, en una línea que el guion no imita.
     if (!/^run-name: "CI · \$\{\{ github\.event_name \}\}[^\n]*inputs\.alcance[^\n]*inputs\.partes[^\n]*inputs\.solo[^\n]*"$/m.test(y)) falla(G, Y, 0, "run-name: cada corrida dice evento, alcance, partes y «solo»");
     const tu = /\n  tuberia:\n[\s\S]*$/.exec(y)?.[0] ?? "";
@@ -16635,6 +16635,77 @@ const guardianes = {
       if (!Array.isArray(d) || d.length !== 2 || d[0]?.ok !== true) falla(G, CR, 0, `no pude preguntar a corridaDeProduccion (--decidir-produccion) por una corrida entera de base: ${JSON.stringify(d?.[0] ?? d).slice(0, 160)}`);
       else if (d[1]?.ok !== false) falla(G, CR, 0, "producción no acepta cadenas ni dirigidas: corridaDeProduccion acepta una corrida con «solo»");
     }
+    // 9. 24 nov · La vía rápida de código (decisión AV) y --vigilar. (a) La lista blanca: ninguna regla de CODIGO, salvo las de apps/web y
+    //    packages/ui, cubre algo que nunca es código, y la función entera no deja pasar ninguna ruta de NUNCAC (la base, infra, services, scripts,
+    //    semgrep, .github, guardianes, dependencias, .env, el JS que sirve public, .well-known, la configuración de la app, las herramientas de
+    //    prueba, lo sensible y las palabras de la ruta). (b) Lo que exige: con main en rojo (o sin saberlo) no hay vía rápida de código y se dice
+    //    por qué; diseño sigue (AN); por encima del tope (≤ 25 pruebas, ≤ 10 min) o sin ninguna prueba, camino normal; si sale, tipos, guardianes,
+    //    textos Y las pruebas de lo tocado aquí, con --reintentar, contra el servidor de desarrollo de este árbol con su base al día, exigiendo
+    //    RESULTADOS completa sin rojas; --subir mira main antes de decidir y corre esas pruebas después de tipos/guardianes/textos y antes de
+    //    empujar. (c) Las dos listas: sin «codigo» en la de main, no. (d) --dirigida y --repaso corren lo local antes de lanzar; --sin-local se
+    //    dice. (e) --subir termina con la orden para vigilar la corrida de main, y --vigilar existe.
+    if (!Array.isArray(SUBIR.CODIGO) || typeof SUBIR.esCodigo !== "function" || typeof SUBIR.estimarLocal !== "function" || typeof SUBIR.estadoDeMain !== "function" || typeof SUBIR.evaluarLocal !== "function"
+      || typeof SUBIR.seleccionDirecta !== "function" || typeof SUBIR.evaluarServidor !== "function" || typeof SUBIR.evaluarSalud !== "function" || typeof SUBIR.ordenVigilar !== "function")
+      falla(G, S, 0, "la vía rápida de código (AV): faltan CODIGO, esCodigo, estimarLocal, estadoDeMain, evaluarLocal, seleccionDirecta, evaluarServidor, evaluarSalud u ordenVigilar");
+    else {
+      const NUNCAC = ["packages/db/migrations/0001_x.sql", "infra/pruebas/x.sh", "services/video/x.mjs", "scripts/ci/x.mjs", "scripts/x.ts", "semgrep/x.yml", ".github/workflows/x.yml", "guardianes/run.mjs",
+        "package.json", "apps/web/package.json", "apps/web/app/x/package.json", "packages/ui/src/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", "apps/web/app/.npmrc", ".env", "apps/web/.env.local", "apps/web/lib/.env",
+        "apps/web/public/sw-push.js", "apps/web/public/puerta/sw.js", "apps/web/public/x.mjs", "apps/web/public/.well-known/assetlinks.json", "apps/web/tsconfig.json", "apps/web/next.config.ts", "apps/web/middleware.ts",
+        "packages/ui/tsconfig.json", "packages/ui/package.json", "pruebas/lib/arbol.cjs", "pruebas/correr.mjs", "pruebas/reparto.json", "pruebas/servir/servir.sh", "pruebas/e2e/sub/x.cjs", "pruebas/alreves/x.mjs",
+        "apps/web/app/api/x/route.ts", "apps/web/lib/pagos/x.ts", "apps/web/app/admin/Tabla.tsx", "apps/web/lib/sesion.ts", "apps/mobile/x.ts"];
+      for (const re of SUBIR.CODIGO) {
+        if (!(re instanceof RegExp) || !re.source.startsWith("^")) { falla(G, S, 0, `la lista blanca de código: cada regla va anclada al principio de la ruta (${String(re)})`); continue; }
+        if (re.source === "^apps\\/web\\/" || re.source === "^packages\\/ui\\/") continue;
+        const f = NUNCAC.find((x) => re.test(x) && !/^(apps\/web|packages\/ui)\//.test(x)) ?? null;
+        if (f) falla(G, S, 0, `la lista blanca de código cubre ${f} (${re.source}): nunca la base, infra, services, scripts, semgrep, .github, guardianes, dependencias ni herramientas de prueba`);
+      }
+      for (const f of NUNCAC) if (SUBIR.esCodigo(f)) falla(G, S, 0, `la vía rápida de código deja pasar ${f}: nunca la base, infra, services, scripts, semgrep, .github, guardianes, dependencias, .env, el JS que se sirve tal cual, la configuración de la app, herramientas de prueba ni lo sensible`);
+      for (const f of ["apps/web/lib/eventos.ts", "apps/web/app/(app)/eventos/page.tsx", "packages/ui/src/core/PestanasFicha.tsx", "pruebas/e2e/evt6c.cjs", "pruebas/alreves/alreves9vd.cjs"]) if (!SUBIR.esCodigo(f)) falla(G, S, 0, `la lista blanca de código ya no cubre ${f}: el guardián no ve lo que vigila`);
+      const L = "apps/web/lib/eventos.ts", P = "apps/web/app/(app)/eventos/page.tsx", c0 = SUBIR.clases([L, P], { [L]: ["export const x = 1;"], [P]: ["const r = await leer();"] }), cc = SUBIR.combinar(c0, c0);
+      const RM = (id, conclusion) => ({ id, path: ".github/workflows/ci.yml", event: "push", head_branch: "main", status: "completed", conclusion, head_sha: "a".repeat(40), repository: { full_name: SUBIR.REPO } });
+      const VERDE = SUBIR.estadoDeMain([RM(2, "success")]), ROJO = SUBIR.estadoDeMain([RM(3, "failure")]), DUDA = SUBIR.estadoDeMain([]);
+      const LOK = SUBIR.estimarLocal([{ nombre: "evt6c", carril: "e2e" }], { evt6c: 10 }), sale = SUBIR.exigencias(cc, { main: VERDE, local: LOK });
+      if (!cc.codigo || !sale.pruebasAqui || sale.corrida !== "despues" || !["tipos", "guardianes", "textos"].every((k) => sale.locales?.includes(k))) falla(G, S, 0, "la vía rápida de código: una entrega de código con main en verde y sus pruebas dentro del tope sale con tipos, guardianes, textos y las pruebas de lo tocado aquí");
+      if (SUBIR.exigencias(cc, { main: ROJO, local: LOK }).pruebasAqui || SUBIR.exigencias(cc, { main: DUDA, local: LOK }).pruebasAqui || SUBIR.exigencias(cc, { local: LOK }).pruebasAqui) falla(G, S, 0, "con main en rojo (o sin saberlo), el código no sube por la vía rápida");
+      if (!/^main está en rojo \(corrida 3\): primero se arregla; esto va por el camino normal/.test(SUBIR.exigencias(cc, { main: ROJO, local: LOK }).noRapida ?? "")) falla(G, S, 0, "con main en rojo se dice «main está en rojo (corrida X): primero se arregla; esto va por el camino normal»");
+      const PD = "packages/ui/src/core/PestanasFicha.tsx", FD = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", cdis = SUBIR.clases([PD, FD], { [PD]: ["<div />"], [FD]: ["<div />"] });
+      if (SUBIR.exigencias(SUBIR.combinar(cdis, cdis), { main: ROJO }).corrida !== "despues") falla(G, S, 0, "main en rojo no frena la vía rápida de diseño (AN): solo se avisa");
+      const T = SUBIR.TOPE_LOCAL;
+      if (!(T?.pruebas <= 25 && T?.seg <= 600 && T?.sinMedir >= 60 && T?.factor >= 1.5)) falla(G, S, 0, `el tope de las pruebas de lo tocado: ≤ 25 pruebas y ≤ 10 min, 60 s la que no está medida, ×1,5 (${JSON.stringify(T)})`);
+      const tantas = (n) => Array.from({ length: n }, (_, i) => ({ nombre: `t${i}x`, carril: "e2e" }));
+      if (SUBIR.estimarLocal(tantas(26), {}).ok || SUBIR.estimarLocal(tantas(7), {}).ok || SUBIR.exigencias(cc, { main: VERDE, local: SUBIR.estimarLocal(tantas(26), {}) }).pruebasAqui) falla(G, S, 0, "código con más pruebas que el tope sale por la vía rápida");
+      if (SUBIR.exigencias(cc, { main: VERDE, local: SUBIR.estimarLocal([], {}) }).pruebasAqui) falla(G, S, 0, "código sin ninguna prueba de lo tocado sale por la vía rápida");
+      const RL = (x) => `RESULTADOS ${JSON.stringify({ pedidas: ["a1x"], verdes: ["a1x"], rojas: [], inestables: [], completa: true, ...x })}`;
+      // Cada exigencia por separado (con salida 0, para que el código de salida no tape la de RESULTADOS).
+      if (!SUBIR.evaluarLocal({ salida: RL(), codigo: 0, nombres: ["a1x"] }).ok || SUBIR.evaluarLocal({ salida: RL({ verdes: [], rojas: ["a1x"] }), codigo: 0, nombres: ["a1x"] }).ok
+        || SUBIR.evaluarLocal({ salida: RL({ verdes: [], completa: false }), codigo: 0, nombres: ["a1x"] }).ok || SUBIR.evaluarLocal({ salida: "", codigo: 0, nombres: ["a1x"] }).ok
+        || SUBIR.evaluarLocal({ salida: RL(), codigo: 1, nombres: ["a1x"] }).ok)
+        falla(G, S, 0, "las pruebas de lo tocado exigen la línea RESULTADOS completa:true y sin rojas");
+      if (SUBIR.evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/otro/apps/web", nodeEnv: "development" }, raiz: "/r" }).ok || SUBIR.evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/apps/web", nodeEnv: "production" }, raiz: "/r" }).ok
+        || !SUBIR.evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/apps/web", nodeEnv: "development" }, raiz: "/r" }).ok)
+        falla(G, S, 0, "las pruebas locales corren contra el servidor de DESARROLLO de este árbol (ni el de otra copia ni un build)");
+      if (SUBIR.evaluarSalud({ ok: true, base: { ok: true, migraciones: 1 } }, 2).ok || !SUBIR.evaluarSalud({ ok: true, base: { ok: true, migraciones: 2 } }, 2).ok || SUBIR.evaluarSalud({ ok: false, base: { ok: false } }, 2).ok)
+        falla(G, S, 0, "antes de las pruebas locales, /api/salud ok y tantas migraciones como trae HEAD");
+      if (SUBIR.combinar(c0, { ...c0, codigo: undefined }).codigo || SUBIR.combinar(c0, null).codigo || SUBIR.combinar(c0, { ...c0, codigo: false, noCodigo: "x" }).codigo) falla(G, S, 0, "la vía rápida de código necesita que la cabeza y origin/main la den (manda lo más estricto)");
+      const cat = [{ nombre: "a1x", archivo: "pruebas/e2e/a1x.cjs", carril: "e2e" }, { nombre: "b1x", archivo: "pruebas/e2e/b1x.cjs", carril: "e2e" }];
+      const dir = SUBIR.seleccionDirecta({ archivos: ["apps/web/lib/x.ts", "pruebas/lib/y.cjs"], catalogo: cat, buscar: (a) => (a === "lib/x.ts" ? ["pruebas/e2e/a1x.cjs"] : a === "lib/y.cjs" ? ["pruebas/e2e/b1x.cjs"] : []) }).map((t) => t.nombre).join();
+      if (dir !== "a1x") falla(G, S, 0, `la parte directa antes de lanzar: las cambiadas y las que nombran un archivo cambiado de apps/ o packages/, no el abanico (${dir})`);
+    }
+    const cuerpoSub = /async function cmdSubir\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", pa = /async function pruebasAqui\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", corr = /function correrCorredor\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    const iMain = cuerpoSub.indexOf("const main = leerMain(repo);"), iPlan = cuerpoSub.indexOf('await planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida, main })'), iLoc = cuerpoSub.indexOf("await correrLocales(p.ex.locales)");
+    const iPru = cuerpoSub.indexOf("await pruebasAqui({ pruebas: p.d.pruebas, cabeza: p.head, archivos: p.archivos, decir: linea })"), iPush = cuerpoSub.indexOf("for (const s of plan) {");
+    if (iMain < 0 || iPlan < iMain || iLoc < 0 || iPru < iLoc || iPush < iPru || !cuerpoSub.includes("if (deCodigo) {") || !cuerpoSub.includes('const rapida = p.ex.corrida === "despues", deCodigo = p.ex.pruebasAqui === true;'))
+      falla(G, S, 0, "--subir por la vía rápida de código: mira main antes de decidir y corre las pruebas de lo tocado aquí, después de tipos/guardianes/textos y antes de empujar");
+    if (!pa.includes("evaluarServidor({ url, proc: servidorEn(url), raiz })") || !pa.includes("evaluarSalud(await saludDe(url), migraciones)") || !pa.includes("await calentar(url, rutas)")
+      || !pa.includes("evaluarLocal({ salida: r.salida, codigo: r.codigo, nombres })") || !corr.includes('...nombres, "--reintentar"]'))
+      falla(G, S, 0, "las pruebas de lo tocado: el servidor de este árbol, su base al día, calentar, correr con --reintentar y RESULTADOS completa sin rojas");
+    const dg = /async function cmdDirigida\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", rp = /async function cmdRepaso\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", adl = /async function antesDeLanzar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    for (const [n, c] of [["--dirigida", dg], ["--repaso", rp]]) { const i = c.indexOf("await antesDeLanzar("), j = c.indexOf("lanzarYEsperar("); if (i < 0 || j < 0 || i > j) falla(G, S, 0, `${n} corre aquí las pruebas de lo tocado antes de lanzar nada (antesDeLanzar antes de lanzarYEsperar)`); }
+    if (!adl.includes('if (sinLocal) { console.log("SALTADO: pruebas locales (--sin-local)"); return true; }') || !adl.includes("const ok = await pruebasAqui({ pruebas: r.correr, cabeza: head, archivos });") || !/if \(!ok\) \{ console\.log\("no se lanzó nada[^\n]*return false; \}/.test(adl))
+      falla(G, S, 0, "--sin-local se dice («SALTADO: pruebas locales (--sin-local)»), y con una roja aquí no se lanza");
+    if (!/console\.log\(ordenVigilar\(head\)\);\n\s+return 0;\n\}$/.test(cuerpoSub) || !String(SUBIR.ordenVigilar?.("x") ?? "").startsWith("vigila la corrida de main: node scripts/ci/subir.mjs --vigilar x"))
+      falla(G, S, 0, "--subir termina imprimiendo la orden para vigilar la corrida de main («vigila la corrida de main: node scripts/ci/subir.mjs --vigilar <sha>»)");
+    if (!/else if \(flag\("--vigilar"\)\)/.test(s) || !/async function cmdVigilar\(/.test(s) || !/return v\.ok \? 0 : 1;\n\}/.test(s)) falla(G, S, 0, "--vigilar existe: espera la corrida de main de ese commit y sale 0 solo en verde");
   },
 
   /* 9vc (22 nov) · pruebasSinPuertoFijo, por clase (153 pruebas de pruebas/e2e llevaban http://localhost:3100 escrito: un agente con su servidor en otro puerto las
