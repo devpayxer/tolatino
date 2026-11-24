@@ -20,6 +20,7 @@ import { dinero } from "@/lib/evt-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import type { T } from "@/lib/textos";
 import { fotoFondo } from "@tolatino/ui";
+import { usarTeclado } from "./teclado";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "Tabs" | "SearchResultRow" | "UnderstoodBar" | "NotYetCard" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,6 +77,14 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const inRef = useRef<HTMLInputElement>(null);
   useEffect(() => setRec(leer()), []);
   useEffect(() => setQ(v.q), [v.q]);
+  // Llegando desde «Buscar»: la caja toma el foco (y el teclado ya abierto) sin volver a tocar. Va DESPUÉS de
+  // poner la búsqueda de la dirección: lo ya escrito en el puente no se pisa.
+  useEffect(() => {
+    const { tomar, evento } = usarTeclado(inRef, setQ);
+    tomar();
+    window.addEventListener(evento, tomar);
+    return () => window.removeEventListener(evento, tomar);
+  }, []);
 
   // Sugerencias en vivo (150 ms después de dejar de escribir), solo si lo escrito es distinto a lo ya buscado.
   useEffect(() => {
@@ -227,7 +236,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
       <Icon name="search" size={18} color="rgba(11,14,18,.6)" />
       <input ref={inRef} value={q} onChange={(e) => setQ(e.target.value.slice(0, 120))} onFocus={() => setFoco(true)} onBlur={() => setTimeout(() => setFoco(false), 150)}
         onKeyDown={(e) => { if (e.key === "Enter") buscar(q); if (e.key === "Escape") { setQ(v.q); inRef.current?.blur(); } }}
-        placeholder={placeholder} enterKeyHint="search" autoComplete="off" aria-label={t.search}
+        placeholder={placeholder} enterKeyHint="search" autoComplete="off" aria-label={t.search} data-foco="caja"
         className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-ink outline-none placeholder:text-ink/60" />
       {q ? (
         <button type="button" aria-label={t.clear} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-11 flex-none place-items-center"><span className="grid size-[30px] place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></span></button>

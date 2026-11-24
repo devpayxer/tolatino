@@ -9,6 +9,7 @@ import { cambiarIdioma } from "./acciones";
 import { CiudadSelector } from "./CiudadSelector";
 import { ProveedorBuscador, type BuscadorPagina } from "./BuscadorPagina";
 import { Desplegable, type AnclaBuscar } from "./buscar/Desplegable";
+import { abrirTeclado } from "./buscar/teclado";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { SiteHeader, BottomNav } = UI as unknown as Record<"SiteHeader" | "BottomNav", ComponentType<any>>;
@@ -95,7 +96,7 @@ function Marco({ lang, t, yo, ciudad, children, landing = false, letra = false, 
           onTab={ir}
           onHome={() => router.push("/")}
           onSearch={() => {
-            if (!desk || ruta.startsWith("/buscar")) { router.push(bp?.href ?? "/buscar"); return; }
+            if (!desk || ruta.startsWith("/buscar")) { abrirTeclado(bp?.ph ?? t.searchIn); router.push(bp?.href ?? "/buscar"); return; }
             const r = clicBuscar.current;
             setDrop(r ? { left: Math.max(16, Math.min(r.left, window.innerWidth - 780 - 16)), top: Math.max(8, r.top + r.height / 2 - 27), width: Math.max(r.width, 780) } : null);
           }}

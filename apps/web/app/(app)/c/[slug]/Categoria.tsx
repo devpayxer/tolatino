@@ -13,6 +13,7 @@ import { avisame } from "../../acciones";
 import { contarToqueSemilla } from "@/lib/contar-toque";
 import { TarjetaNegocio } from "../../TarjetaNegocio";
 import { usarBuscadorPagina } from "../../BuscadorPagina";
+import { abrirTeclado } from "../../buscar/teclado";
 import { Patrocinados, type Patrocinada } from "./Patrocinados";
 import type { Tarjeta } from "@/lib/tarjeta";
 
@@ -69,7 +70,7 @@ export function Categoria({ v }: { v: Vista }) {
   const ciclarOrden = () => ir({ orden: ordenes[(ordenes.indexOf(v.orden) + 1) % ordenes.length] });
   const limpiar = () => ir({ sub: null, filtros: [], orden: "rel" });
   const entrar = () => router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`);
-  const buscar = () => router.push(buscarHref);
+  const buscar = () => { abrirTeclado(v.buscarEn); router.push(buscarHref); };
 
   const pedirAviso = async () => {
     const r = await avisame(v.ciudad, v.cat, v.sub ?? "", v.filtros);

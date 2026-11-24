@@ -102,7 +102,10 @@
 /* 9c · Foco visible para quien usa el teclado (WCAG 2.4.7, 2.4.11). Solo con :focus-visible: con el ratón o el dedo no se ve nada
    distinto. Brand se lee sobre el papel, el blanco y la tinta (más de 3:1 en los tres); !important porque muchos controles
    del sistema traen `outline: none` en su estilo en línea. Un solo lugar: nada de anillos propios por pantalla. */
-:is(a, button, input, select, textarea, summary, [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="option"], [role="link"], [tabindex="0"]):focus-visible {
+/* La única excepción: el texto de una caja de búsqueda (data-foco="caja"). Un campo de texto siempre cuenta como «foco visible», también con
+   el dedo, y el anillo dibujaba un rectángulo dentro de la caja redonda. Ahí el foco lo muestra la caja entera (borde tinta en Buscar,
+   borde y halo de acción en el desplegable), que es lo que se ve con el teclado y con el dedo. */
+:is(a, button, input, select, textarea, summary, [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="option"], [role="link"], [tabindex="0"]):focus-visible:not([data-foco="caja"]) {
   outline: 2px solid var(--tl-brand) !important;
   outline-offset: 2px !important;
 }

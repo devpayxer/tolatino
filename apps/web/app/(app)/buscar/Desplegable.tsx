@@ -243,7 +243,7 @@ export function Desplegable({ lang, ancla, ciudad, lugar, ph, phTodo, cat, onClo
               {alcance.label}<Icon name="close" size={12} strokeWidth={2.4} color="var(--tl-white)" />
             </button>
           )}
-          <input ref={inRef} value={q} onChange={(e) => setQ(e.target.value.slice(0, 120))} onKeyDown={tecla} autoComplete="off" enterKeyHint="search" aria-label={E2("Buscar", "Search")}
+          <input ref={inRef} value={q} onChange={(e) => setQ(e.target.value.slice(0, 120))} onKeyDown={tecla} autoComplete="off" enterKeyHint="search" aria-label={E2("Buscar", "Search")} data-foco="caja"
             placeholder={alcance ? ph : phTodo}
             className="h-full min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-ink outline-none placeholder:text-ink/60" />
           {q && <button type="button" aria-label={E2("Borrar", "Clear")} onClick={() => { setQ(""); inRef.current?.focus(); }} className="grid size-[30px] flex-none place-items-center rounded-full bg-ink/[.07]"><Icon name="close" size={13} strokeWidth={2.2} /></button>}
