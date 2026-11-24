@@ -6512,5 +6512,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   escribe sin volver a tocar la caja, y el recuadro morado ya no sale dentro de las cajas de búsqueda (teléfono y escritorio). Tiempo medido: 15 min 48 s
   desde el pedido hasta servido; la subida, 5 min 4 s. Qué mirar en el iPhone: en Inicio, tocar la búsqueda y escribir enseguida; el teclado debe abrirse
   en el mismo toque (en los navegadores de prueba no hay teclado: no se pudo ver aquí).
+  El recuadro era el anillo de foco que toda la app pone a los campos (para quien usa teclado; en un campo de texto sale también con el dedo).
+  Se quitó solo en las dos cajas de búsqueda, que muestran el foco con su borde. Si lo ves en otra caja de texto (escribir una reseña, la ayuda,
+  entrar con el teléfono), dímelo y se quita igual ahí.
 - **La corrida nocturna de anchos (4 noches en rojo; hecho por Sonnet, revisado por Opus):** las pruebas que miden a un ancho concreto lo piden con
   `anchoPropio` y las que valen a cualquiera miden contra la ventana real; sin aflojar ninguna comprobación. Qué mirar: nada; la próxima corrida de anchos en verde.
