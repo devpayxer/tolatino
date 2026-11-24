@@ -10,10 +10,6 @@
 // - WebKit cancela las cargas de la página que se va al navegar y lo dice («Load failed», «… due to access control checks»); Chromium las
 //   cancela callado. Solo ESE ruido, y solo en los 3 s después de que la página empieza a navegar, no llega a los oyentes de la prueba.
 //   Cualquier otro error (o el mismo lejos de una navegación) llega igual.
-// - Una prueba que comprueba algo A un ancho concreto (320 del piso, 640 de una ventana estrecha, una lista de anchos) lo pide con
-//   anchoPropio(w, h) de pruebas/lib/entorno.cjs: el viewport lleva la marca ANCHO_PROPIO y aquí se respeta tal cual (el motor, el agente, la
-//   escala y el toque siguen siendo los del dispositivo; con escritorioPropio el contexto queda de escritorio con ratón). Lo que vale para cualquier ancho no lo pide: mide contra window.innerWidth /
-//   page.viewportSize() y corre al ancho del dispositivo (CI 45330028847: fic9cab, din9t10b y tarAK medían 320/390 a 375 y 834).
 const Module = require('module');
 const id = process.env.PRUEBAS_DISPOSITIVO;
 if (id) {
@@ -25,15 +21,7 @@ if (id) {
   const agenteDeStock = (ua) => deStock.has(ua);
   // forzado: el motor es Chromium porque la prueba lo necesita (no el del dispositivo): se pone el ancho, la escala y el toque, pero no el
   // agente de Safari (un Chromium que dice ser un iPad mentiría en la etiqueta del aviso, en Wallet…).
-  const ANCHO_PROPIO = Symbol.for('tolatino.anchoPropio');
   const adaptar = (o = {}, forzado = false) => {
-    if (o.viewport && o.viewport[ANCHO_PROPIO]) {
-      // El ancho y el alto son los que la prueba pidió (sin la marca, que Playwright no necesita); lo demás sale del dispositivo como siempre.
-      const { width, height } = o.viewport;
-      // 'escritorio' (escritorioPropio): el contexto queda como lo pidió la prueba, un escritorio con ratón, en el motor del dispositivo.
-      if (o.viewport[ANCHO_PROPIO] === 'escritorio') return { ...o, viewport: { width, height } };
-      return { ...adaptar({ ...o, viewport: { width, height } }, forzado), viewport: { width, height } };
-    }
     const w = o.viewport?.width ?? (o.userAgent ? 390 : 1280), esTel = w < 600, d = disp.desc;
     if (disp.tipo === 'telefono' && !esTel) return o;
     if (disp.tipo === 'escritorio' && esTel) return o;

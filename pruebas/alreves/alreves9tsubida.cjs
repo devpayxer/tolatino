@@ -1,4 +1,4 @@
-// Prueba al revés de los guardianes subidaConTope (19 nov; 22 nov: el turno de fotos, conFotoSubida), topeFotoSinNavegador, gotoDevuelveRespuesta y fotoComoPersona (20 nov) y anchoPropioRespetado (24 nov): toda subida lee el formulario con tope (lib/subida.ts) y contesta 413 al archivo grande,
+// Prueba al revés de los guardianes subidaConTope (19 nov; 22 nov: el turno de fotos, conFotoSubida), topeFotoSinNavegador, gotoDevuelveRespuesta y fotoComoPersona (20 nov): toda subida lee el formulario con tope (lib/subida.ts) y contesta 413 al archivo grande,
 // aunque el navegador no avise el tamaño. Se inyecta el defecto, el guardián debe fallar con SU mensaje ([subidaConTope]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -70,17 +70,6 @@ const casos = [
   ['topeFotoSinNavegador', 'pruebas/e2e/dm9t.cjs', "const st = await subirCrudoNode(a, B, '/api/mensajes/foto', Buffer.alloc(13 * 1024 * 1024, 7), 'image/jpeg', { para: 'dm' });", "const st = [await subirCrudo(a, 'image/jpeg', 13 * 1024 * 1024)];"],
   ['gotoDevuelveRespuesta', 'pruebas/lib/dispositivo-precarga.cjs', "if (soloRuido) return docResp && docResp.url().split('#')[0] === page.url().split('#')[0] ? docResp : null;", "if (soloRuido) return null;"],
   ['gotoDevuelveRespuesta', 'pruebas/lib/dispositivo-precarga.cjs', "if (r.request().isNavigationRequest() && r.frame() === page.mainFrame()) docResp = r;", "if (false) docResp = r;"],
-  // 24 nov (corrida de anchos 45330028847): anchoPropioRespetado.
-  ['anchoPropioRespetado', 'pruebas/lib/dispositivo-precarga.cjs', "if (o.viewport && o.viewport[ANCHO_PROPIO]) {", "if (false) {"],
-  ['anchoPropioRespetado', 'pruebas/lib/dispositivo-precarga.cjs', "viewport: { width, height } };\n    }\n    const w =", "viewport: o.viewport };\n    }\n    const w ="],
-  ['anchoPropioRespetado', 'pruebas/lib/entorno.cjs', "[Symbol.for('tolatino.anchoPropio')]: true", "[Symbol.for('otra')]: true"],
-  ['anchoPropioRespetado', 'pruebas/e2e/fic9cab.cjs', "const c3 = await ctx(320, 640, { hasTouch: true }, true),", "const c3 = await ctx(320, 640, { hasTouch: true }),"],
-  ['anchoPropioRespetado', 'pruebas/e2e/fic9cab.cjs', "viewport: ENT.escritorioPropio(640, 800)", "viewport: { width: 640, height: 800 }"],
-  ['anchoPropioRespetado', 'pruebas/lib/dispositivo-precarga.cjs', "if (o.viewport[ANCHO_PROPIO] === 'escritorio') return { ...o, viewport: { width, height } };", ""],
-  ['anchoPropioRespetado', 'pruebas/lib/entorno.cjs', "[Symbol.for('tolatino.anchoPropio')]: 'escritorio'", "[Symbol.for('tolatino.anchoPropio')]: true"],
-  ['anchoPropioRespetado', 'pruebas/e2e/fic9cab.cjs', "viewport: ENT.escritorioPropio(1280, 800)", "viewport: ENT.anchoPropio(1280, 800)"],
-  ['anchoPropioRespetado', 'pruebas/e2e/tarAK.cjs', "movil ? { viewport: ENT.anchoPropio(w, h),", "movil ? { viewport: { width: w, height: h },"],
-  ['anchoPropioRespetado', 'pruebas/e2e/din9t10b.cjs', "ok(w.inner === m.viewportSize().width && w.scroll <= w.inner && w.body <= w.inner, `la hoja a", "ok(w.inner === 390 && w.scroll <= w.inner && w.body <= w.inner, `la hoja a"],
   // 20 nov (CI dirigido 44707074106): fotoComoPersona.
   ['fotoComoPersona', 'pruebas/e2e/msg9t.cjs', "await m.goto(B + `/cuenta/mensajes/${BIZ}`); await elegirFoto(m, FOTO2);", "await m.goto(B + `/cuenta/mensajes/${BIZ}`); await m.locator('input[type=file]').setInputFiles(FOTO2);"],
   ['fotoComoPersona', 'pruebas/lib/elegir-foto.cjs', "await fc.setFiles(archivo);", "await p.locator('input[type=file]').setInputFiles(archivo);"],

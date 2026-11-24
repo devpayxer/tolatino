@@ -582,7 +582,7 @@ async function cmdSubir({ ensayo, sinViaRapida = false }) {
   const p = await planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida });
   const rapida = p.ex.corrida === "despues";
   console.log(`clases: ${p.c.clases.join(", ") || "(código de producto)"}${p.c.soloDocumentos ? " · SOLO documentos" : ""} · dirigida propuesta: ${p.d.pruebas.map((t) => t.nombre).join(" ") || "(vacía)"}${p.d.alrevesEntero ? " + al revés entero" : ""}`);
-  if (!p.c.soloDocumentos) console.log(rapida ? "VÍA RÁPIDA DE DISEÑO (AL): tipos, guardianes y textos aquí (sin build: la imagen la construye el servidor); la punta a punta y «al revés» corren DESPUÉS, en la corrida del push a main"
+  if (!p.c.soloDocumentos) console.log(rapida ? "VÍA RÁPIDA DE DISEÑO (AL): tipos, build, guardianes y textos aquí; la punta a punta y «al revés» corren DESPUÉS, en la corrida del push a main"
     : `camino normal${p.c.diseno && sinViaRapida ? " (--sin-via-rapida)" : ` (vía rápida de diseño: no · ${p.c.noDiseno})`}`);
   for (const e of p.d.errores) linea({ ok: false, linea: `FALTA: ${e}` });
   // b.

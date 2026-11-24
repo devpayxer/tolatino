@@ -31,20 +31,13 @@ const sec = (k) => process.env[k] || falta(k);
 // escritorio-1280, escritorio-1440; ver dispositivos.cjs). Sin variable: null = teléfono 390 y escritorio 1360 como siempre. Las pruebas no tienen que
 // leerlo: pruebas/lib/dispositivo-precarga.cjs (la pone correr.mjs --dispositivo) ya cambia cada contexto; esto es para las nuevas.
 const DISPOSITIVO = process.env.PRUEBAS_DISPOSITIVO || null;
-// Una prueba que comprueba algo A UN ANCHO (320 del piso, 640 de una ventana estrecha, una lista de anchos) pone su viewport con anchoPropio(w, h):
-// la precarga del dispositivo lo respeta en vez de cambiarlo al del dispositivo (375, 834…). Lo que vale para cualquier ancho NO lo usa: mide
-// contra window.innerWidth o page.viewportSize() y corre al ancho de cada dispositivo. Sin dispositivo, es el viewport de siempre.
-const anchoPropio = (width, height) => ({ width, height, [Symbol.for('tolatino.anchoPropio')]: true });
-// Lo mismo para una prueba que necesita un ESCRITORIO con ratón (pasar el cursor, hover): en una tableta o un teléfono el contexto sería táctil y sin
-// cursor. Va al ancho pedido, sin agente móvil, sin toque y sin escala del dispositivo; el motor (WebKit o Chromium) sigue siendo el del dispositivo.
-const escritorioPropio = (width, height) => ({ width, height, [Symbol.for('tolatino.anchoPropio')]: 'escritorio' });
 
 // 22 nov · La dirección del servidor de esta corrida (B) y los puertos de sus simuladores (P): salen de UNA variable, PRUEBAS_URL (pruebas/lib/puertos.cjs).
 // Sin variables: el servidor en :3100 y los puertos de siempre. Ninguna prueba escribe el puerto (guardián pruebasSinPuertoFijo).
 const PU = require('./puertos.cjs').resolver();
 
 module.exports = {
-  RAIZ, S, REC, SECRETOS, DISPOSITIVO, anchoPropio, escritorioPropio,
+  RAIZ, S, REC, SECRETOS, DISPOSITIVO,
   get DISP() { return DISPOSITIVO ? require('./dispositivos.cjs').de(DISPOSITIVO) : null; },
   OUT: path.join(S, 'cap') + '/',
   B: PU.url,

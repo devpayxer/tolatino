@@ -3343,10 +3343,6 @@ Siguiente: ver la vista previa estable sobre lo servido (`/estado/vista.txt` sin
 ## 24 nov (09:45 UTC) · Por qué tarda un ajuste (decisión AR)
 Medido el camino entero (local, CI, despliegue) y quitados los pasos repetidos con el OK del fundador: comprobaciones locales a la vez (58 s), textos una
 vez, sin build local en la vía rápida (compuerta: el build del servidor), la imagen sin tipos (guardián `tiposAntesDeLaImagen`), sondeo del sandbox cada
-25 s. Regla nueva en CLAUDE.md: un ajuste sube solo. Turbopack medido: no cabe en memoria (se queda webpack). La corrida nocturna de anchos arreglada
-(encargo W: `anchoPropio`/`escritorioPropio`, guardián `anchoPropioRespetado`).
-
-**24 nov · primer ajuste con el proceso nuevo:** Buscar al momento y sin el recuadro de foco (75c214a): 15 min 48 s del pedido a servido, la subida 5 min
-4 s. Guardián `buscarEscribeAlMomento` + al revés 16/16 + `bus9t` (7) en el paquete siguiente, aparte del ajuste (AR). Pendiente: OK del fundador al
-límite Free en Servicios y Tienda (F2); M3 (mosaicos + «Renovar otro mes», migración 0217) en revisión de Fable de sus arreglos.
+25 s. Regla nueva en CLAUDE.md: un ajuste sube solo. Pendiente: medir Turbopack (el fundador quiere el tiempo antes de decidir) y la corrida nocturna de
+anchos (4 noches en rojo; encargo W).
 

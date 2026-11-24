@@ -54,8 +54,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
 
   const b = await chromium.launch(); const abiertas = []; const err = [];
   const tel = telLibre();
-  // propio: la prueba comprueba a ESE ancho (320, la lista de anchos): la precarga del dispositivo no lo cambia (ENT.anchoPropio).
-  const ctx = async (w, h, extra = {}, propio = false) => { const c = await b.newContext({ ...devices['iPhone 13'], viewport: propio ? ENT.anchoPropio(w, h) : { width: w, height: h }, deviceScaleFactor: 2, ...extra }); abiertas.push(c); return c; };
+  const ctx = async (w, h, extra = {}) => { const c = await b.newContext({ ...devices['iPhone 13'], viewport: { width: w, height: h }, deviceScaleFactor: 2, ...extra }); abiertas.push(c); return c; };
   const mirar = (p) => { p.on('pageerror', (e) => err.push(e.message)); p.on('console', (z) => { if (z.type() === 'error' && !/Failed to load|404|pexels|ERR_|favicon/.test(z.text())) err.push('console ' + z.text()); }); };
   const abrirFicha = async (p, id, extra = '') => { await p.goto(B + `/n/${id}${extra}`); await p.locator('[data-ficha="nueva"]').waitFor(); await p.locator('[data-pieza="cabecera-ficha"]').first().waitFor(); };
   const btnContactar = (p) => p.locator('[data-pieza="contactar-ficha"] [role="button"]');
@@ -161,7 +160,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
 
     console.log('4 · 320 con letra grande');
     sql(`update users set big_text = true where phone = '+1${tel}'`);
-    const c3 = await ctx(320, 640, { hasTouch: true }, true), s = await c3.newPage(); mirar(s); await entrarComo(s, tel);
+    const c3 = await ctx(320, 640, { hasTouch: true }), s = await c3.newPage(); mirar(s); await entrarComo(s, tel);
     cambiar(TODO, `address = ${lit(CALLE_LARGA)}`); cerrado(TODO);
     await abrirFicha(s, TODO);
     ok(await s.locator('[data-letra="grande"]').count() > 0, 'la letra grande está puesta');
@@ -188,7 +187,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     cambiar(TODO, `name = ${lit(LARGO)}`);
     for (const [w, h, letra] of [[320, 640, true], [390, 844, false]]) {
       sql(`update users set big_text = ${letra} where phone = '+1${tel}'`);
-      const c = await ctx(w, h, { hasTouch: true }, true), p = await c.newPage(); mirar(p); await entrarComo(p, tel);
+      const c = await ctx(w, h, { hasTouch: true }), p = await c.newPage(); mirar(p); await entrarComo(p, tel);
       await abrirFicha(p, TODO);
       const h1 = p.locator('[data-pieza="cabecera-ficha"] h1'), se = h1.locator('[role="img"]');
       const r1 = await h1.boundingBox(), r2 = await se.boundingBox();
@@ -222,18 +221,17 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     ok(foco.ok, 'la pestaña con el foco se ve completa dentro de la tira (la tira se desliza sola)');
     await t6.keyboard.press('Enter');
     ok(await tabs.last().getAttribute('aria-selected') === 'true', 'Enter activa la última pestaña');
-    const anchoT6 = await t6.evaluate(() => window.innerWidth); // vale para cualquier ancho: contra el real de la ventana, no contra 390
-    const vis = await tabs.last().boundingBox(); ok(vis.x >= -1 && vis.x + vis.width <= anchoT6 + 1, `la activa se ve en pantalla (hasta ${Math.round(vis.x + vis.width)} de ${anchoT6})`);
+    const vis = await tabs.last().boundingBox(); ok(vis.x >= -1 && vis.x + vis.width <= 391, 'la activa se ve en pantalla');
     await t6.keyboard.press('Home'); ok(await t6.evaluate(() => document.activeElement.getAttribute('role')) === 'tab' && (await t6.evaluate(() => document.activeElement.textContent.trim())) === (await tabs.first().innerText()).trim(), 'Home: el foco vuelve a la primera');
     // Entrar por el enlace de la última pestaña: la activa tiene que verse aunque la tira se deslice (no basta con que sea la «activa»).
     await t6.goto(B + `/n/${mejor}?tab=rel`); await t6.getByRole('tab').first().waitFor();
     ok(/Relacionados/.test(await t6.locator('[role=tab][aria-selected=true]').innerText()), 'el enlace ?tab=rel abre «Relacionados» (la última pestaña)');
-    ok(await espera(async () => { const r = await t6.locator('[role=tab][aria-selected=true]').boundingBox(); return r && r.x >= -1 && r.x + r.width <= anchoT6 + 1; }, 4000), 'entrando por ?tab= de la última pestaña, la activa se ve (la tira se desliza hasta ella)');
+    ok(await espera(async () => { const r = await t6.locator('[role=tab][aria-selected=true]').boundingBox(); return r && r.x >= -1 && r.x + r.width <= 391; }, 4000), 'entrando por ?tab= de la última pestaña, la activa se ve (la tira se desliza hasta ella)');
     await t6.screenshot({ path: OUT + 'cab9-390-pestanas.png' });
 
     console.log('7 · Escritorio: botones con texto y la tira pegada');
     cambiar(TODO, `name = ${lit(LARGO)}`); abierto(TODO);
-    const cd = await b.newContext({ viewport: ENT.anchoPropio(1024, 800) }); abiertas.push(cd); const d = await cd.newPage(); mirar(d); await entrarComo(d, tel);
+    const cd = await b.newContext({ viewport: { width: 1024, height: 800 } }); abiertas.push(cd); const d = await cd.newPage(); mirar(d); await entrarComo(d, tel);
     await abrirFicha(d, TODO);
     const bt = (nom) => d.locator('[data-pieza="cabecera-ficha"]').last().getByRole('button', { name: nom });
     ok(await bt('Guardar').count() === 1 && await bt('Compartir').count() === 1 && await bt('Llamar').count() === 1, 'escritorio: Guardar, Compartir y Llamar con texto');
@@ -279,7 +277,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     const SEL_FRANJA = '[data-pieza="nombre-pegado"]', SEL_FILA = `${SEL_FRANJA} > div`, SEL_FLECHA = `${SEL_FRANJA} [data-pieza="volver-arriba"]`, SEL_NOMBRE = `${SEL_FILA} span.truncate`;
     const SEL_PEST = '[data-screen-label="App · Ficha"] [data-pieza="pestanas-ficha"]', SEL_CAB = '[data-screen-label="App · Ficha"] [data-pieza="cabecera-ficha"]', SEL_PORTADA = '[data-screen-label="App · Ficha"] div.h-\\[330px\\]';
     const SEL_TIRA = '[data-screen-label="App · Ficha"] [data-pieza="pestanas-ficha"] [role=tablist]', SEL_BANDA = '[data-screen-label="Ficha · barra del pedido"]';
-    const c8 = await ctx(390, 844, { hasTouch: true }, true), q = await c8.newPage(); mirar(q); await entrarComo(q, tel);
+    const c8 = await ctx(390, 844, { hasTouch: true }), q = await c8.newPage(); mirar(q); await entrarComo(q, tel);
     const rect = (p, sel) => p.locator(sel).first().evaluate((e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height, width: r.width }; });
     // Quieto = la página ya no se mueve (dos lecturas seguidas iguales); espera por condición, nunca un tiempo fijo.
     const quieto = async (p) => { let a = -1; await espera(async () => { const y = await p.evaluate(() => window.scrollY); const igual = y === a; a = y; return igual; }, 8000); };
@@ -437,7 +435,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     console.log('9 · prueba en escritorio (decisión pendiente): la franja del nombre pegado a 1280');
     // PRUEBA DEL FUNDADOR («verlo y probarlo antes de decidir», 23 nov): si decide quitar la franja del escritorio (nombre-pegado-desk), se borra
     // solo este bloque (y su mención en el guardián fichaFijaSinTapar).
-    const cd9 = await b.newContext({ viewport: ENT.escritorioPropio(1280, 800) }); abiertas.push(cd9); const z = await cd9.newPage(); mirar(z); await entrarComo(z, tel);
+    const cd9 = await b.newContext({ viewport: { width: 1280, height: 800 } }); abiertas.push(cd9); const z = await cd9.newPage(); mirar(z); await entrarComo(z, tel);
     const SEL_DESK = '[data-pieza="nombre-pegado-desk"]', SEL_DFILA = `${SEL_DESK} > div`, SEL_DFLECHA = `${SEL_DESK} [data-pieza="volver-arriba"]`;
     await abrirFicha(z, MENU); await hidratado(z.locator('[data-pieza="pestanas-ficha"] button').first());
     ok(await z.locator(SEL_DESK).getAttribute('data-visible') === 'no', 'escritorio: arriba del todo el nombre pegado no se ve');
@@ -470,7 +468,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
 
     console.log('10 · Ventana estrecha con ratón (640): las flechas de la tira salen con el cursor cuando las pestañas no caben; con el dedo, nunca');
     // 24 nov (fundador, en una ventana estrecha de su computadora): la versión de teléfono no tenía cómo mover la tira sin dedo.
-    const ce = await b.newContext({ viewport: ENT.escritorioPropio(640, 800) }); abiertas.push(ce); const e10 = await ce.newPage(); mirar(e10);
+    const ce = await b.newContext({ viewport: { width: 640, height: 800 } }); abiertas.push(ce); const e10 = await ce.newPage(); mirar(e10);
     await abrirFicha(e10, TODO);
     const tira10 = e10.locator('[data-pieza="pestanas-ficha"]:visible'); await tira10.scrollIntoViewIfNeeded();
     const med10 = () => e10.evaluate(() => { const t = [...document.querySelectorAll('[data-pieza="pestanas-ficha"]')].find((x) => x.offsetParent); const x = t.querySelector('[role=tablist]'); return { fl: [...t.querySelectorAll('[data-pieza="flecha-pestanas-movil"]')].map((f) => f.dataset.lado).join(','), sl: Math.round(x.scrollLeft), cabe: x.scrollWidth <= x.clientWidth + 4, pag: document.documentElement.scrollWidth }; });

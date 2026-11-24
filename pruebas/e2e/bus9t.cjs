@@ -339,32 +339,6 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     ok(await espera(async () => (await drop8.innerText()).includes('ESCRIBE COMO HABLAS')), 'con cuenta: el desplegable abre');
     ok(!(await e8.locator('[data-mic]').count()), 'con la voz apagada en Privacidad, sin micrófono');
     sql(`update users set voice_search = ${voz0} where phone = '+1${V1}'`);
-    // ── 7 · 24 nov · Tocar «Buscar» y escribir al momento (ajuste del fundador): el toque enfoca un campo puente (así iOS abre el teclado)
-    //    y la caja de Buscar recibe el foco y lo ya escrito; sin el rectángulo del anillo de foco dentro de la caja (guardián buscarEscribeAlMomento).
-    const c9 = await tel390(b); abiertas.push(c9);
-    const t9 = await c9.newPage(); mirar(t9, 'escribir-al-momento');
-    await t9.goto(B + '/'); await t9.waitForLoadState('networkidle').catch(() => {});
-    await t9.locator('[role=button]', { hasText: /^Buscar en/ }).first().tap();
-    ok(await t9.evaluate(() => document.activeElement?.id === 'tl-puente-teclado'), 'el toque en «Buscar en…» enfoca el campo puente en el mismo toque (así iOS abre el teclado)');
-    for (const ch of 'pollo') { await t9.keyboard.type(ch); await t9.waitForTimeout(60); }
-    await t9.waitForURL(/\/buscar/);
-    const caja9 = t9.locator('input[data-foco="caja"]');
-    ok(await espera(async () => (await caja9.inputValue()) === 'pollo' && caja9.evaluate((e) => e === document.activeElement)), 'en Buscar la caja tiene el foco y todo lo escrito («pollo»), sin volver a tocarla');
-    ok(await t9.evaluate(() => !document.getElementById('tl-puente-teclado')), 'el campo puente ya no está en la página');
-    const anillo9 = await caja9.evaluate((e) => ({ o: getComputedStyle(e).outlineStyle, b: getComputedStyle(e.parentElement).borderTopColor }));
-    ok(anillo9.o === 'none' && anillo9.b !== 'rgba(0, 0, 0, 0)', `sin el anillo dentro de la caja; el foco lo muestra el borde de la caja (${anillo9.o} · ${anillo9.b})`);
-    await shot(t9, '390-buscar-al-momento', false);
-    await t9.goto(B + '/c/comida'); await t9.waitForLoadState('networkidle').catch(() => {});
-    await t9.locator('[data-buscador-categoria]').first().tap();
-    await t9.waitForURL(/\/buscar\?cat=comida/);
-    ok(await espera(async () => t9.locator('input[data-foco="caja"]').evaluate((e) => e === document.activeElement)), 'desde la página de una categoría, la caja de Buscar llega con el foco');
-    const c10 = await desk(b); abiertas.push(c10);
-    const e10 = await c10.newPage(); mirar(e10, 'desplegable-sin-anillo');
-    await e10.goto(B + '/'); await e10.waitForLoadState('networkidle').catch(() => {});
-    await e10.getByText('Buscar negocios', { exact: false }).first().click();
-    const in10 = e10.locator('[data-screen-label="APP-BUSCAR · desplegable desktop"] input[data-foco="caja"]');
-    ok(await espera(async () => in10.evaluate((e) => e === document.activeElement)), 'escritorio: el desplegable abre con el foco en su caja');
-    ok(await in10.evaluate((e) => getComputedStyle(e).outlineStyle === 'none'), 'escritorio: sin el anillo dentro de la caja del desplegable');
     ok(!err.length, `sin errores de la página (${err.join(' | ')})`);
   } finally {
     for (const c of abiertas) await c.close().catch(() => {});

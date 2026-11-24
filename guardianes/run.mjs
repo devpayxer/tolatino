@@ -14046,27 +14046,6 @@ const guardianes = {
     if (/if \(soloRuido\) return null;/.test(s) || !/if \(soloRuido\) return docResp &&/.test(s) || !/r\.request\(\)\.isNavigationRequest\(\) && r\.frame\(\) === page\.mainFrame\(\)\) docResp = r;/.test(s))
       falla(G, F, 0, "el goto de WebKit que sigue sin «load» no devuelve la respuesta del documento (la prueba que mira su status cae)");
   },
-  /* 24 nov · anchoPropioRespetado (la corrida de anchos de cada noche, 4 noches en rojo: 45330028847): la precarga del dispositivo cambia CADA contexto
-     al ancho del dispositivo (375, 834…), y una prueba que comprueba algo A un ancho (320 del piso, 640, una lista de anchos, las tarjetas a 390) lo
-     medía en otro. Esa prueba pide su ancho con anchoPropio(w, h) (pruebas/lib/entorno.cjs: el viewport lleva la marca Symbol.for) y la precarga lo
-     respeta; lo que vale para cualquier ancho mide contra innerWidth / viewportSize(), nunca contra un número escrito. Lo que se teme: quitar la
-     marca o el respeto de la precarga, o que fic9cab / tarAK vuelvan a pedir su ancho a pelo. Al revés: alreves9tsubida. */
-  anchoPropioRespetado() {
-    const G = "anchoPropioRespetado", F = "pruebas/lib/dispositivo-precarga.cjs", E = "pruebas/lib/entorno.cjs";
-    const leer = (f) => (existsSync(f) ? readFileSync(f, "utf8") : "");
-    const p = leer(F), e = leer(E);
-    if (!/const escritorioPropio = \(width, height\) => \(\{ width, height, \[Symbol\.for\('tolatino\.anchoPropio'\)\]: 'escritorio' \}\);/.test(e) || !/DISPOSITIVO, anchoPropio, escritorioPropio,/.test(e) || !/if \(o\.viewport\[ANCHO_PROPIO\] === 'escritorio'\) return \{ \.\.\.o, viewport: \{ width, height \} \};/.test(p))
-      falla(G, F, 0, "escritorioPropio: la precarga deja el contexto de escritorio con ratón tal como lo pidió la prueba (sin toque ni agente móvil)");
-    if (!/const anchoPropio = \(width, height\) => \(\{ width, height, \[Symbol\.for\('tolatino\.anchoPropio'\)\]: true \}\);/.test(e) || !/DISPOSITIVO, anchoPropio, escritorioPropio,/.test(e))
-      falla(G, E, 0, "entorno.cjs debe exportar anchoPropio(width, height) con la marca Symbol.for('tolatino.anchoPropio') en el viewport");
-    if (!/const ANCHO_PROPIO = Symbol\.for\('tolatino\.anchoPropio'\);/.test(p) || !/if \(o\.viewport && o\.viewport\[ANCHO_PROPIO\]\) \{/.test(p) || !/return \{ \.\.\.adaptar\(\{ \.\.\.o, viewport: \{ width, height \} \}, forzado\), viewport: \{ width, height \} \};/.test(p))
-      falla(G, F, 0, "la precarga del dispositivo debe respetar el viewport marcado con anchoPropio (el ancho y el alto que la prueba pidió, sin cambiarlos al del dispositivo)");
-    const quien = { "pruebas/e2e/fic9cab.cjs": [/viewport: propio \? ENT\.anchoPropio\(w, h\)/, /ctx\(320, 640, \{ hasTouch: true \}, true\)/, /for \(const \[w, h, letra\] of \[\[320, 640, true\], \[390, 844, false\]\]\) \{[\s\S]{0,200}ctx\(w, h, \{ hasTouch: true \}, true\)/, /viewport: ENT\.escritorioPropio\(640, 800\)/, /viewport: ENT\.anchoPropio\(1024, 800\)/, /viewport: ENT\.escritorioPropio\(1280, 800\)/],
-      "pruebas/e2e/tarAK.cjs": [/movil \? \{ viewport: ENT\.anchoPropio\(w, h\), deviceScaleFactor: 2, isMobile: true, hasTouch: true \}/] };
-    for (const [f, res] of Object.entries(quien)) { const t = leer(f); for (const re of res) if (!re.test(t)) falla(G, f, 0, `la prueba debe pedir su ancho con ENT.anchoPropio (falta: ${re.source.slice(0, 60)})`); }
-    for (const f of ["pruebas/e2e/din9t6b.cjs", "pruebas/e2e/din9t7b.cjs", "pruebas/e2e/din9t10b.cjs"])
-      leer(f).split("\n").forEach((l, i) => { if (/\.inner === \d{3}\b/.test(l)) falla(G, f, i + 1, "mide el ancho de la ventana contra un número escrito: contra m.viewportSize().width (la precarga cambia el ancho del teléfono)"); });
-  },
   /* 9t · fotoComoPersona (20 nov, CI dirigido 44707074106, msg9t en el iPad y el iPhone SE): la prueba ponía la foto directo en el input escondido
      justo después de cargar el chat; en WebKit a veces antes de que la página respondiera, y la miniatura nunca salía. Una persona elige tocando
      «Agregar una foto» (que abre el selector): pruebas/lib/elegir-foto.cjs hace eso, vuelve a tocar si el selector no abrió y dice por qué no se
@@ -16171,47 +16150,6 @@ const guardianes = {
      («tipos» en todos los caminos de scripts/ci/subir.mjs) y en el CI de cada push (pnpm typecheck; el build del trabajo «web» también los revisa).
      Lo que se teme: que la excepción se vuelva regla (next.config salta los tipos sin condición, o la variable aparece en el CI, en un script o en el
      build normal) o que deje de haber tipos antes de la imagen. Al revés: alrevesDespliegue. */
-  /* 24 nov · Ajuste del fundador: al tocar «Buscar» se escribe al momento (sin volver a tocar la caja) y sin el rectángulo del anillo de foco
-     DENTRO de la caja redonda. iOS solo abre el teclado si el foco llega dentro del toque, y la caja vive en otra página: el toque enfoca un
-     campo puente (buscar/teclado.tsx) y la página de Buscar le pasa el foco a su caja con lo ya escrito. Lo que se cuida:
-     1. el puente: se enfoca en el mismo toque, mide 16 px (iOS no acerca la página), no se ve y se quita al perder el foco;
-     2. lo escrito en el puente llega a la caja un cuadro después (si no, la búsqueda de la dirección, que la página pone al montarse, lo
-        borra: pasó en la prueba local, con React en modo estricto);
-     3. cada toque que lleva a Buscar (la barra de arriba y el buscador de la página de categoría) llama abrirTeclado antes de navegar;
-     4. el anillo global de foco tiene UNA excepción, [data-foco="caja"], y solo la llevan cajas que muestran el foco enteras.
-     al revés: alrevesBuscarAlMomento · punta a punta: bus9t (7). */
-  buscarEscribeAlMomento() {
-    const G = "buscarEscribeAlMomento", T = "apps/web/app/(app)/buscar/teclado.tsx", BU = "apps/web/app/(app)/buscar/Buscar.tsx", AS = "apps/web/app/(app)/AppShell.tsx",
-      CA = "apps/web/app/(app)/c/[slug]/Categoria.tsx", DE = "apps/web/app/(app)/buscar/Desplegable.tsx", GL = "apps/web/app/globals.css";
-    for (const f of [T, BU, AS, CA, DE, GL]) if (!existsSync(f)) return falla(G, f, 0, "falta (el toque que abre el teclado o la caja que lo recibe)");
-    const t = sinComent(T);
-    if (!/document\.body\.appendChild\(el\);\s*el\.focus\(\{ preventScroll: true \}\);/.test(t)) falla(G, T, 0, "el puente se enfoca en el mismo toque (appendChild y focus seguidos, sin esperar): fuera del toque iOS no abre el teclado");
-    if (!/font-size:16px/.test(t) || !/opacity:0/.test(t) || !/pointer-events:none/.test(t)) falla(G, T, 0, "el puente mide 16 px (con menos, iOS acerca la página al enfocarlo), no se ve y no recibe toques");
-    if (!/el\.addEventListener\("blur", \(\) => el\.remove\(\), \{ once: true \}\)/.test(t)) falla(G, T, 0, "el puente se quita solo al perder el foco (si la navegación no llega, no queda un campo invisible enfocado)");
-    if (!/requestAnimationFrame\(\(\) => poner\(\(actual\) => \(escrito \+ actual\)\.slice\(0, 120\)\)\)/.test(t))
-      falla(G, T, 0, "lo escrito en el puente pasa a la caja un cuadro después y delante de lo tecleado en ese instante: si no, la búsqueda de la dirección que la página pone al montarse lo borra");
-    // 3. Cada toque que lleva a Buscar abre el teclado antes de navegar.
-    for (const [f, re] of [[AS, /router\.push\(bp\?\.href \?\? "\/buscar"\)/], [CA, /router\.push\(buscarHref\)/]]) {
-      const lineas = readFileSync(f, "utf8").split("\n"), i = lineas.findIndex((l) => re.test(l));
-      if (i < 0) falla(G, f, 0, "no encuentro el toque que lleva a Buscar (si cambió, este guardián se actualiza con él)");
-      else if (!/abrirTeclado\([^;]*\);\s*router\.push\(/.test(lineas[i])) falla(G, f, i + 1, "el toque que lleva a Buscar llama abrirTeclado(…) justo antes de navegar: sin eso hay que volver a tocar la caja para escribir");
-    }
-    const bu = sinComent(BU);
-    if (!/usarTeclado\(inRef, setQ\)/.test(bu) || !/window\.addEventListener\(evento, tomar\)/.test(bu)) falla(G, BU, 0, "la caja de Buscar toma el foco del puente al montarse y cada vez que se toca «Buscar» (usarTeclado(inRef, setQ) y su evento)");
-    // 4. El anillo global de foco: una sola excepción.
-    const gl = sinComent(GL);
-    if (!gl.includes(':focus-visible:not([data-foco="caja"]) {') || (gl.match(/:focus-visible:not\(/g) ?? []).length !== 1)
-      falla(G, GL, 0, 'el anillo de foco tiene una sola excepción, [data-foco="caja"] (el texto de una caja de búsqueda); cualquier otro control lo conserva');
-    const CAJAS = new Map([[BU, /\$\{foco \? "border-ink bg-white" : "border-transparent bg-paper"\}/], [DE, /border-\[1\.5px\] border-action bg-white[^"]*shadow-\[0_0_0_4px_rgba\(75,55,245,\.12\)\]/]]);
-    for (const f of archivos) {
-      if (!/^(apps|packages)\/.*\.(tsx|jsx|js|ts)$/.test(f) || !existsSync(f)) continue;
-      const s = readFileSync(f, "utf8");
-      if (!s.includes('data-foco="caja"')) continue;
-      if (!CAJAS.has(f)) falla(G, f, 0, 'data-foco="caja" le quita el anillo de foco a un campo: solo va en una caja que muestra el foco entera (Buscar, el desplegable); si es otra, se agrega aquí con la clase que lo muestra');
-      else if (!CAJAS.get(f).test(sinComent(f))) falla(G, f, 0, "esta caja de búsqueda muestra el foco entera (borde tinta en Buscar; borde y halo de acción en el desplegable): sin eso, quien usa el teclado no ve dónde está");
-    }
-  },
-
   tiposAntesDeLaImagen() {
     const G = "tiposAntesDeLaImagen", N = "apps/web/next.config.ts", DF = "infra/pruebas/Dockerfile", Y = ".github/workflows/ci.yml", S = "scripts/ci/subir.mjs", V = "TOLATINO_TIPOS_YA_REVISADOS";
     for (const f of [N, DF, Y, S]) if (!existsSync(f)) return falla(G, f, 0, "falta (lo que decide dónde se revisan los tipos)");
