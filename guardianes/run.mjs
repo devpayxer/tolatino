@@ -16591,9 +16591,32 @@ const guardianes = {
         falla(G, S, 0, "la evidencia encadenada solo en el camino de la dirigida (nunca con .github/ ni en la vía rápida), desde buscarEvidencia con ioReal: cmdSubir no arma nada a mano");
       if (!cuerpoR.includes("await prepararRepaso({ id, rama, repo, mas, io: ioReal(repo, rama) })") || /analizarDirigida\(|intermediasDe\(|difDeArreglo\(|listaDelRepaso\(|planear\(/.test(cuerpoR))
         falla(G, S, 0, "--repaso prepara R1, el arreglo y la lista con prepararRepaso e ioReal: cmdRepaso no arma nada a mano");
-      if (!io.includes('esAncestro: (sha) => gitOk("merge-base", "--is-ancestor", sha, "HEAD"),') || !io.includes('difNombres: (a, b) => git("diff", "--no-renames", "--name-only", "-z", a, b)')
-        || !io.includes("/runs?branch=${encodeURIComponent(rama)}&per_page=100`)") || !io.includes("tenerCommit: (sha) => tenerCommit(sha),") || !io.includes('planear: (base, mas) => m(`p${base}\\0${mas.join(" ")}`, () => planear({ base, cabeza: "HEAD", mas })),'))
-        falla(G, S, 0, "ioReal pregunta de verdad: git merge-base --is-ancestor, git diff --name-only, todas las corridas de la rama (de cualquier evento y estado), el commit y el plan");
+      // 24 nov (revisión de bfa43c3) · ioReal es la frontera con lo de verdad: se compara ENTERA, renglón a renglón (un «.filter(…)» añadido al final
+      // de difNombres pasaba mirando trozos). Cambiarla es cambiar también esta lista. Y lo que ella llama (tenerCommit, los trabajos de un intento).
+      const IO_REAL = [
+        "export function ioReal(repo, rama) {",
+        "  const memo = new Map(), m = (k, f) => { if (!memo.has(k)) memo.set(k, f()); return memo.get(k); };",
+        "  return {",
+        "    corrida: (id) => m(`c${id}`, () => api(`repos/${repo}/actions/runs/${id}`)),",
+        "    corridas: () => m(\"todas\", () => api(`repos/${repo}/actions/workflows/ci.yml/runs?branch=${encodeURIComponent(rama)}&per_page=100`).workflow_runs ?? []),",
+        "    trabajos: (id) => m(`t${id}`, () => trabajosDe(repo, id)),",
+        "    trabajosIntento: (id, n) => m(`t${id}/${n}`, () => trabajosDeIntento(repo, id, n)),",
+        "    registro: (id) => m(`r${id}`, () => registroDe(repo, id)),",
+        "    tenerCommit: (sha) => tenerCommit(sha),",
+        "    arbol: (sha) => git(\"rev-parse\", `${sha}^{tree}`).trim(),",
+        "    difNombres: (a, b) => git(\"diff\", \"--no-renames\", \"--name-only\", \"-z\", a, b).split(\"\\0\").filter(Boolean),",
+        "    esAncestro: (sha) => gitOk(\"merge-base\", \"--is-ancestor\", sha, \"HEAD\"),",
+        "    planear: (base, mas) => m(`p${base}\\0${mas.join(\" \")}`, () => planear({ base, cabeza: \"HEAD\", mas })),",
+        "  };",
+        "}",
+      ].join("\n");
+      const tc = /\nconst tenerCommit = [^\n]*\n/.exec(s)?.[0] ?? "", ti = /\nfunction trabajosDeIntento\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+      if (io !== IO_REAL || tc !== '\nconst tenerCommit = (sha) => SHA40.test(sha ?? "") && (gitOk("cat-file", "-e", `${sha}^{commit}`) || gitOk("fetch", "-q", "origin", sha));\n'
+        || !ti.includes("api(`repos/${repo}/actions/runs/${id}/attempts/${n}/jobs?per_page=100`)") || !ti.includes("d.total_count !== d.jobs.length) throw"))
+        falla(G, S, 0, "ioReal pregunta de verdad, entera y sin retoques: git merge-base --is-ancestor, git diff --name-only, todas las corridas de la rama (de cualquier evento y estado), los trabajos de cada intento, el commit y el plan");
+      // Los motivos de la cadena se ven aparte en el FALTA de --subir (detrás de los de las corridas verdes no se veían).
+      if (!cuerpoS.includes("if (!hallada && !cadena) for (const m of motivosCadena.slice(0, 4)) console.log(`  cadena ${m}`);"))
+        falla(G, S, 0, "--subir enseña aparte los motivos de la cadena cuando no hay evidencia (detrás de los de las corridas verdes no se veían)");
     }
     const rep = /async function cmdRepaso\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", lan = /async function lanzarYEsperar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
     if (!rep || !lan || !rep.includes("const o = ordenDirigida({ rama, nombres, repo });") || !rep.includes("return lanzarYEsperar({ repo, rama, head, o });") || /partes/.test(rep) || /partes/.test(lan)
