@@ -2341,9 +2341,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (`compa_pauses.reason` → Panel › El Compa; su texto secundario decía «Queda en el historial») y apagar un módulo en una ciudad
       (`modules_off.reason` → el panel de cada negocio; apagar una categoría sigue «interna»). Las cuatro quedaron en el guardián `notaDiceAQuien` y en
       `alreves9u` (12 casos). Lo demás que encontró la revisión es la línea siguiente.
-- [ ] **→ 9b** · **153 pruebas de `pruebas/e2e/` llevan `http://localhost:3100` fijo** en vez de la dirección del entorno (`ENT.B` / `PRUEBAS_URL`): un
+- [x] **→ 9b** · **153 pruebas de `pruebas/e2e/` llevan `http://localhost:3100` fijo** en vez de la dirección del entorno (`ENT.B` / `PRUEBAS_URL`): un
       agente con su servidor en otro puerto las manda sin querer al servidor de `:3100` (pasó con `rec1j`, `rec2` y `sop7b` en 9u-2; fallaron por
-      tiempo antes de escribir nada). Pasarlas todas a la dirección del entorno, con guardián. (22 nov)
+      tiempo antes de escribir nada). Pasarlas todas a la dirección del entorno, con guardián. (22 nov) _Hecho (comprobado el 24 nov): ninguna
+      prueba de `pruebas/e2e/` lleva `localhost:3100`; las vigila el guardián `pruebasSinPuertoFijo`._
 - [ ] **→ 9u** · **Notas con otro nombre y datos que viajan sin pintarse, lo que quedó de 9u-2 (22 nov):** (1) la clasificación de 9u-2 va por NOMBRE de
       columna (`reason`, `note`, `motivo`, `nota`…): una nota del equipo guardada en una columna con otro nombre (`detail`, `comment`, un `jsonb`)
       no la ve; repasar las tablas exportadas por quién escribe cada columna de texto. (2) `lib/panel.ts` (hacia la línea 208) manda `adm.reason`
@@ -2728,7 +2729,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       con `partes=4`; (3) `cms9f3` salió INESTABLE en la corrida 45015746411 (error de hidratación 418 de React en `/privacidad`, teléfono EN): es de
       la clase «la página pinta distinto en servidor y cliente»: mirar la causa; (4) `com5d` deja encendido el puerto 8790; (5) `compa7d` elige sus
       requisitos con un nombre que no está escrito en el código (anotado en `dinamicos` del reparto); (6) ver servida una corrida con
-      `confirmar=si` (12 trabajos de confirmación a la vez) y los anchos en 8 partes, 4 a la vez.
+      `confirmar=si` (12 trabajos de confirmación a la vez) y los anchos en 8 partes, 4 a la vez. _(1) hecho el 24 nov (c68a92a, rebalanceado: la más
+      larga iba 12 % sobre la media; confirmación 45482417517 en verde, dos seguidas 24–31 min y barajada 12–21 min por parte). (3) `cms9f3` no se
+      repitió en las 24 partes de tres corridas del 24 nov (sin inestables ni error 418). (6) la confirmación del 24 nov corrió con `confirmar=si`._
 - [ ] **→ 9o** · **Tanda 5 de la revisión del CI (despliegue del sandbox, 22 nov), lo que queda:** (1) ver servido en `/estado/` tras el push a
       `pruebas`: «deploy.sh OK», la línea de tramos, el tramo de migraciones en pocos segundos, y en una segunda subida sin cambios de la app «imagen:
       no cambió… se reutiliza»; la página de mantenimiento (503) durante el cambio; el primer despliegue lo hace todavía el `tolatino-sync` viejo;
@@ -2904,6 +2907,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9b** · **Pruebas de calendario sin poder decidir (23 nov):** `compa7f`, `compa7h`, `msg2p` (el día de la semana de «hoy» se recalcula en cada
       sentencia: si pasa la medianoche a mitad de la prueba, cambia), `din9t6`/`din9t8` (fechas «creado» fijas del 20 nov: mirar si alguna ventana relativa
       a `now()` las deja fuera con el tiempo) y `adm7i` (`priced_at` fijo). El resto de las e2e se barrió por patrones y muestreo, no entero.
+      _Hecho en parte (24 nov): `compa7f`, `compa7h` y `msg2p` preguntan el día una vez (cerrar y reabrir tocan el mismo día); guardián
+      `hoyDeLaPruebaEnLaCiudad` (el día recalculado en cada orden) y su al revés en `alrevescalendario23`. Quedan `din9t6`/`din9t8` y `adm7i`._
 - [ ] **→ 9o** · **`current_date` y `now()::date` valen mientras la base corra en `America/New_York`** (así está en los compose de pruebas y producción); una
       ciudad en otra zona los rompería de noche y ningún guardián lo vigila.
 - [ ] **→ 9q** · **SES: el envío firmado (`POST /v2/email/outbound-emails`) no se ha visto contra algo que compruebe la firma** (el simulador solo simula
@@ -2975,7 +2980,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9q** · **Las respuestas con el modelo real nunca se han visto:** en pruebas siempre responde el simulador o una plantilla. Verlas con una llave real antes de encender en producción.
 - [ ] **→ 9u** · **Las voces cuentan contra el límite diario de una persona** (`com_lim_publicaciones`): con 5 ciudades encendidas una voz puede chocar; decidir si llevan límite propio.
 - [ ] **→ 9u** · **Al encender en el sandbox responden a publicaciones de la semilla de hasta 3 días:** decidir si se encienden en Hazleton desde la semilla.
-- [ ] **→ 9b** · **`anfAO` sin asignar en `pruebas/reparto.json`** (va a la parte más vacía hasta regenerar con duraciones medidas); los tipos «empleos» y «eventos» solo por plantilla y guardián, sin punta a punta.
+- [x] **→ 9b** · **`anfAO` sin asignar en `pruebas/reparto.json`** (va a la parte más vacía hasta regenerar con duraciones medidas); los tipos «empleos» y «eventos» solo por plantilla y guardián, sin punta a punta. _Hecho la asignación (24 nov, c68a92a: reparto rebalanceado con
+      lo medido; `anfAO` y `anfNot` en su parte). Los tipos «empleos» y «eventos» sin punta a punta siguen igual: se anotan en 9u si hacen falta._
 - [ ] **→ 9u** · **Vista previa: next dev se queda sin memoria** (tope de 1,8 GB de montón, 2,5 GB del contenedor) al compilar unas seis pantallas seguidas: el 24 nov
       entró en bucle de reinicios por precalentar diez. Ahora precalienta tres y el reinicio queda escrito en `/estado/vista.txt`. Si navegar siete u ocho
       pantallas lo vuelve a tumbar: probar Turbopack o subir el tope (hoy lo fija el guardián `vistaPreviaAcotada`; decisión del fundador).
@@ -3003,11 +3009,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `patComprar`); y «Renovar» no limpia `patLib` (`Patrocinio.tsx:108`, `PatrocinioEvento.tsx:81`): unos milisegundos «Pagar» usa las fechas de la consulta
       anterior (el servidor recalcula; sin cobro indebido). Revisión de Fable, 24 nov.
 - [ ] **→ 9b** · **`cat9n3` sube 4 fotos por corrida:** la tercera corrida en una hora sobre la misma base choca con el tope de 10 fotos por hora (en CI la base es nueva).
-- [ ] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
-      `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa).
+- [x] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
+      `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa). _Ya estaba (comprobado el 24 nov):
+      la señal rápida solo corre `pnpm guardianes`, que lleva los textos dentro (`alrevesConSuTexto`); no hay paso propio de textos._
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
-- [ ] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`).
+- [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,
+      45472900060 y 45475257746 dejan su línea, `completa:true` y sin inestables._
 - [ ] **→ 9b** · Una parte CANCELADA a propósito: si GitHub le hace llegar la señal al corredor, deja `RESULTADOS` con `completa:false`; si no llega, esa R1 se queda
   sin repaso (fallo seguro: toca la dirigida entera) y «sumar las rojas de una cancelada» no ocurre nunca. Decidir si hace falta reenviar la señal en ci.yml.
 

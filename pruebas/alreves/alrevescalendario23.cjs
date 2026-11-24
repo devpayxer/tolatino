@@ -9,6 +9,9 @@ const casos = [
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/din9t4.cjs', "hoyEn: (z, d) => hoyCiudad(z, d)", "hoyEn: () => new Date().toISOString().slice(0, 10)"],
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/din9t5.cjs', "hoyEn: (z, d) => hoyCiudad(z, d)", "hoyEn: () => new Date(Date.now()).toISOString().split('T')[0]"],
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/lib/hoy-ciudad.cjs', "{ timeZone: zona,", "{ timeZone: 'UTC',"],
+  // 24 nov · compa7f vuelve a guardar el día como texto SQL (se recalcula en cada orden); msg2p reabre con el día recalculado
+  ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/compa7f.cjs', "const HOY = sql(`select extract(dow from now() at time zone 'America/New_York')::int`);", "const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;"],
+  ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/msg2p.cjs', "and module = '' and weekday = ${HOY}`); if (compaAntes", "and module = '' and weekday = extract(dow from now() at time zone 'America/New_York')::int`); if (compaAntes"],
   // liquidacionDelMartesSinReloj: evt6e vuelve a terminar la fecha «hace 1 h» a secas
   ['liquidacionDelMartesSinReloj', 'pruebas/e2e/evt6e.cjs', "ends_at = ${FIN} where id = ${A.F}`);", "ends_at = now() - interval '1 hour' where id = ${A.F}`);"],
 ];

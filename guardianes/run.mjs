@@ -9105,6 +9105,11 @@ const guardianes = {
         if (/GUARDIAN-OK/.test(l) || /^\s*\/\//.test(l)) return;
         if (/new Date\((?:Date\.now\(\)[^()]*)?\)\.toISOString\(\)\.(?:slice\(0, ?10\)|split\(['"]T['"]\)\[0\])/.test(l))
           falla(G, f, i + 1, "«hoy» de la prueba en UTC (toISOString): de las 7 u 8 PM a la medianoche de Hazleton ya es mañana; usa hoyCiudad() de pruebas/lib/hoy-ciudad.cjs o la fecha que da la base (now() at time zone 'America/New_York')");
+        // 24 nov (LAUNCH «pruebas de calendario sin poder decidir») · El día de la semana se pregunta UNA vez (sql(`select extract(dow from now() …`)) y se
+        // usa el número: escrito dentro de cada orden (o guardado como texto SQL y repetido) se recalcula en cada una, y si la prueba cruza la medianoche
+        // cierra un día y reabre otro (compa7f, compa7h y msg2p lo tenían).
+        if (d === "e2e" && /extract\(dow from now\(\)/.test(l) && !/sql\(`select extract\(dow from now\(\)/.test(l))
+          falla(G, f, i + 1, "el día de la semana de hoy se recalcula en cada orden (extract(dow from now() …) dentro de la orden o como texto repetido): si la prueba cruza la medianoche cierra un día y reabre otro; pregúntalo una vez (const HOY = sql(`select extract(dow from now() at time zone 'America/New_York')::int`)) y usa el número");
       });
     }
   },

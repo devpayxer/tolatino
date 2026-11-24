@@ -22,7 +22,9 @@ const flag = (k, on) => sql(`update feature_flags set enabled = ${on} where key 
 const { norm } = require('../lib/sin-reloj.cjs'); // 9b-3 · sin la hora, el saludo ni el día (la foto de antes y la de después)
 const NEG = 'sabor-dominicano', FREE = 'locales-centro', DUENO = '5705550133', MARI = '5705550122', HECTOR = '5705550288', ROSA = '5705550691', JUAN = '5705550444', YESE = '5705550433', ADM = '5705550199';
 const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
-const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
+// 24 nov · El día de la semana se pregunta UNA vez a la base (de Hazleton) y se usa ese número: recalcularlo en cada orden cerraba un día y,
+// si la prueba cruzaba la medianoche, reabría otro (la base quedaba con un día cerrado para las pruebas siguientes). Guardián hoyDeLaPruebaEnLaCiudad.
+const HOY = sql(`select extract(dow from now() at time zone 'America/New_York')::int`);
 const cerrar = () => sql(`update business_hours set open = false where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
 const abrirTodoElDia = () => sql(`update business_hours set open = true, ranges = '[["00:00","00:00"]]' where business_id = '${NEG}' and module = '' and weekday = ${HOY}`);
 const horarioDeSiempre = () => sql(`update business_hours set open = true, ranges = '[["11:00","21:00"]]' where business_id = '${NEG}' and module = ''`);

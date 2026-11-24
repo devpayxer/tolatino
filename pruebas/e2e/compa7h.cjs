@@ -54,7 +54,9 @@ const reservaPendiente = (u) => sql(`with o as (insert into operations (number, 
 const sms = async (de, t, o) => { const b = smsCuerpo(de, t, o); ok(await telnyx(b) === 200, `SMS firmado de ···${de.slice(-4)}: «${t.slice(0, 40)}» → 200`); const [id, , res] = await hecha(b); return { id, res, out: salidas(id), b }; };
 const wa = async (de, t, o) => { const b = waCuerpo(de, t, o); ok(await whatsapp(b) === 200, `WhatsApp firmado de ···${de.slice(-4)}: «${t.slice(0, 40)}» → 200`); const [id, , res] = await hecha(b); return { id, res, out: salidas(id), b }; };
 const interno = (body) => fetch(B + '/api/interno/compa', { method: 'POST', headers: { 'content-type': 'application/json', 'x-barrido-token': TOK }, body: JSON.stringify(body) }).then((r) => r.json());
-const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
+// 24 nov · El día de la semana se pregunta UNA vez a la base (de Hazleton) y se usa ese número: recalcularlo en cada orden cerraba un día y,
+// si la prueba cruzaba la medianoche, reabría otro (la base quedaba con un día cerrado para las pruebas siguientes). Guardián hoyDeLaPruebaEnLaCiudad.
+const HOY = sql(`select extract(dow from now() at time zone 'America/New_York')::int`);
 
 (async () => {
   // 9b-3 · Barajada, otras pruebas le dejaban a Marisol lleno el tope de mensajes de El Compa (20 por hora) y su SMS de noche salía como «límite».
