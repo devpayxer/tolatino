@@ -25,7 +25,8 @@ function Tag({
 }
 function Link({
   l,
-  size = 13
+  size = 13,
+  alto = 24
 }) {
   return /*#__PURE__*/React.createElement("div", {
     onClick: l.onClick,
@@ -33,7 +34,7 @@ function Link({
     style: {
       display: 'flex',
       alignItems: 'center',
-      minHeight: 24,
+      minHeight: alto,
       gap: 8,
       font: '500 ' + size + 'px/1.4 Manrope,sans-serif',
       color: 'rgba(255,255,255,.72)',
@@ -177,7 +178,7 @@ function SiteFooter({
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      minHeight: 24,
+      minHeight: 44,
       font: '700 13px Manrope,sans-serif',
       cursor: 'pointer'
     }
@@ -223,9 +224,12 @@ function SiteFooter({
   }, f.links.map((l, j) => /*#__PURE__*/React.createElement(Link, {
     key: j,
     l: l,
-    size: 13.5
+    size: 13.5,
+    alto: 44
   }))) : null)));
   const pill = {
+    minHeight: acc ? 44 : undefined,
+    boxSizing: 'border-box',
     padding: '8px 12px',
     borderRadius: 11,
     border: '1px solid rgba(255,255,255,.16)',
@@ -279,7 +283,7 @@ function SiteFooter({
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      minHeight: 24,
+      minHeight: acc ? 44 : 24,
       color: 'rgba(255,255,255,.62)',
       cursor: 'pointer'
     }

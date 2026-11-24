@@ -35,10 +35,13 @@ const casos = [
   ['cuentaBorradaBilingue', PED, 'v: nombreVisible(x.who, es) }', 'v: x.who }'],
   ['cuentaBorradaBilingue', MAPA, `"first_name": "'Cuenta borrada'"`, `"first_name": "'Usuario borrado'"`],
   // pieSinCapturas: el pie nace encendido, PieWeb no mira el interruptor, el Inicio no lleva el pie
-  // pieObjetivos24 (24 nov): los enlaces del pie vuelven a medir 14–18 px de alto
-  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "      alignItems: 'center',\n      minHeight: 24,\n      gap: 8,", "      alignItems: 'center',\n      gap: 8,"],
-  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "      minHeight: 24,\n      font: '700 13px Manrope,sans-serif',", "      font: '700 13px Manrope,sans-serif',"],
-  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "      minHeight: 24,\n      color: 'rgba(255,255,255,.62)',", "      color: 'rgba(255,255,255,.62)',"],
+  // pieObjetivos24 (24 nov): lo que se toca en el pie vuelve a medir menos de 24 px (escritorio) o de 44 (teléfono)
+  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "      alignItems: 'center',\n      minHeight: alto,\n      gap: 8,", "      alignItems: 'center',\n      gap: 8,"],
+  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "  size = 13,\n  alto = 24\n}) {", "  size = 13,\n  alto = 14\n}) {"],
+  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "    size: 13.5,\n    alto: 44\n", "    size: 13.5,\n    alto: 24\n"],
+  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "      minHeight: 44,\n      font: '700 13px Manrope,sans-serif',", "      minHeight: 24,\n      font: '700 13px Manrope,sans-serif',"],
+  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "      minHeight: acc ? 44 : 24,\n      color: 'rgba(255,255,255,.62)',", "      minHeight: 24,\n      color: 'rgba(255,255,255,.62)',"],
+  ['pieObjetivos24', 'packages/ui/src/ds/layout/SiteFooter.js', "    minHeight: acc ? 44 : undefined,\n    boxSizing: 'border-box',\n", ""],
   ['pieSinCapturas', M, "values ('web.pie_todas', false,", "values ('web.pie_todas', true,"],
   ['pieSinCapturas', PIE, 'if (!(await pieEnTodas())) return null;', ''],
   ['pieSinCapturas', PG, '    <PieWeb />\n', ''],

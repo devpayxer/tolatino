@@ -16384,12 +16384,16 @@ const guardianes = {
     const G = "pieObjetivos24", F = "packages/ui/src/ds/layout/SiteFooter.js";
     if (!existsSync(F)) return falla(G, F, 0, "falta la pieza del pie");
     const t = readFileSync(F, "utf8");
+    // Escritorio: 24 px (WCAG 2.2 AA 2.5.8). Teléfono (acordeón): 44 px, la regla táctil de toda la app (a11y9c › tactil44).
     const casos = [
-      [/display: 'flex',\s*alignItems: 'center',\s*minHeight: 24,\s*gap: 8,\s*font: '500 ' \+ size/, "los enlaces de las columnas"],
-      [/display: 'inline-flex',\s*alignItems: 'center',\s*minHeight: 24,\s*font: '700 13px Manrope,sans-serif'/, "los enlaces rápidos del teléfono"],
-      [/display: 'inline-flex',\s*alignItems: 'center',\s*minHeight: 24,\s*color: 'rgba\(255,255,255,\.62\)'/, "los enlaces legales de abajo"],
+      [/size = 13,\s*alto = 24\s*\}\) \{/, "los enlaces de las columnas (24 en el escritorio)"],
+      [/display: 'flex',\s*alignItems: 'center',\s*minHeight: alto,\s*gap: 8,\s*font: '500 ' \+ size/, "los enlaces de las columnas"],
+      [/l: l,\s*size: 13\.5,\s*alto: 44\s*\}/, "los enlaces del acordeón del teléfono (44)"],
+      [/display: 'inline-flex',\s*alignItems: 'center',\s*minHeight: 44,\s*font: '700 13px Manrope,sans-serif'/, "los enlaces rápidos del teléfono (44)"],
+      [/display: 'inline-flex',\s*alignItems: 'center',\s*minHeight: acc \? 44 : 24,\s*color: 'rgba\(255,255,255,\.62\)'/, "los enlaces legales de abajo (44 en el teléfono, 24 en el escritorio)"],
+      [/const pill = \{\s*minHeight: acc \? 44 : undefined,\s*boxSizing: 'border-box',/, "el idioma y la ciudad del teléfono (44)"],
     ];
-    for (const [re, que] of casos) if (!re.test(t)) falla(G, F, 0, `${que} del pie miden 24 px de alto como mínimo (WCAG 2.2 AA 2.5.8): minHeight: 24 con display flex`);
+    for (const [re, que] of casos) if (!re.test(t)) falla(G, F, 0, `${que}: lo que se toca en el pie mide 44 px en el teléfono y 24 en el escritorio como mínimo (minHeight con display flex)`);
   },
 
   tiposAntesDeLaImagen() {
