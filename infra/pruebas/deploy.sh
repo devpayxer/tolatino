@@ -144,9 +144,6 @@ if [ -n "$HUELLA" ] && [ -n "$IMAGEN_ANTES" ] && [ "$(cat /var/lib/tolatino/imag
   log "imagen: no cambió lo que entra en ella (huella ${HUELLA:0:12}): se reutiliza ${IMAGEN_ANTES:7:12}"
 else
   log "imagen: se construye (commit $COMMIT, huella ${HUELLA:-sin huella})"
-  # 23 nov · La vista previa (next dev, hasta 2,5 GB) se para mientras se construye: el build es el pico de memoria del servidor (cx33, 8 GB). La vuelve
-  # a levantar encender.sh en 3i (si el build falla, en el reintento).
-  docker stop tolatino-pruebas-vista-previa-1 >/dev/null 2>&1 || true
   if ! "${COMPOSE[@]}" build web; then
     diag "la imagen no se pudo construir"
     log "la imagen no se pudo construir: la app sigue con lo de antes"
@@ -237,12 +234,42 @@ fi
 if ! systemctl is-active --quiet tolatino-retiros; then
   systemd-run --unit tolatino-retiros --collect bash "$REPO/infra/retiros/generar.sh" /var/lib/tolatino/retiros "${COMPOSE[@]}" || true
 fi
-# 3i) 23 nov · Sitio de vista previa (SOLO el sandbox; infra/pruebas/vista-previa/): la web en modo desarrollo sobre la rama de vista.conf, en el puerto
-#     8081, para ver un ajuste de pantalla sin construir la imagen. Aparte y sin esperar (como la moderación): encender.sh la enciende o la apaga según
-#     el interruptor de vista.conf (VISTA_ENCENDIDA) y, si falla, la app no se entera. Nunca migra ni siembra (guardián vistaPreviaAcotada).
-if ! systemctl is-active --quiet tolatino-vista; then
-  systemd-run --unit tolatino-vista --collect bash "$REPO/infra/pruebas/vista-previa/encender.sh" "$REPO" "${COMPOSE[@]}" || true
-fi
+# 3i) 24 nov · Retiro del sitio de vista previa (decisión AQ: estuvo del 23 al 24 nov y se quitó del repo). Deja el servidor limpio sin SSH: el
+#     contenedor y su imagen, sus carpetas, su contraseña y su usuario de la base. Idempotente y corto: cada orden tolera que lo suyo ya no exista y,
+#     cuando no queda nada, no anota nada. Nunca corta el despliegue: un fallo es una línea en el registro (no un aviso) y se reintenta en el siguiente.
+#     El usuario de la base: es una operación sobre la base de PRUEBAS, NO una migración (ese usuario no nació de una migración: lo creó el guion del
+#     sitio en este servidor, y en producción nunca existió). Solo toca a tolatino_vista: corta sus sesiones, le quita los privilegios por omisión que le
+#     dio «tolatino», «drop owned by» (no era dueño de nada: solo pierde sus permisos sobre tablas, secuencias, funciones y la base) y se borra el rol.
+#     Guardián vistaPreviaRetirada.
+retirar_vista_previa() {
+  local c i r quedaba=0
+  systemctl stop tolatino-vista >/dev/null 2>&1 || true
+  # shellcheck disable=SC2046  # (los identificadores de Docker no llevan espacios)
+  for c in tolatino-pruebas-vista-previa-1 $(docker ps -aq --filter label=com.docker.compose.service=vista-previa 2>/dev/null); do
+    docker container inspect "$c" >/dev/null 2>&1 && { quedaba=1; docker rm -f "$c" >/dev/null 2>&1 || true; }
+  done
+  for i in $(docker image ls -q tolatino/vista-previa 2>/dev/null | sort -u); do quedaba=1; docker image rm -f "$i" >/dev/null 2>&1 || true; done
+  for c in /var/lib/tolatino/vista /var/www/vista /etc/tolatino/vista.env; do if [ -e "$c" ]; then quedaba=1; rm -rf "$c"; fi; done
+  r=$("${PSQL[@]}" <<'SQL'
+select 'existia' from pg_roles where rolname = 'tolatino_vista';
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'tolatino_vista') then
+    perform pg_terminate_backend(pid) from pg_stat_activity where usename = 'tolatino_vista';
+    alter default privileges for role tolatino in schema public revoke all on tables from tolatino_vista;
+    alter default privileges for role tolatino in schema public revoke all on sequences from tolatino_vista;
+    drop owned by tolatino_vista;
+    drop role tolatino_vista;
+  end if;
+end $$;
+select count(*) from pg_roles where rolname = 'tolatino_vista';
+SQL
+  ) || return 1
+  case "$r" in existia*) quedaba=1 ;; esac
+  [ "$quedaba" = 0 ] || log "vista previa: retirados los restos del servidor (contenedor, imagen, carpetas, usuario de la base)"
+  [ "${r##*$'\n'}" = 0 ]
+}
+retirar_vista_previa || log "vista previa: no se pudo retirar todo (se reintenta en el próximo despliegue; la app no se entera)"
 
 tramo nginx
 # 4) nginx: la app en /, la página de estado del servidor en /estado y, mientras la app cambia de contenedor o no contesta, la página de mantenimiento

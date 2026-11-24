@@ -35,8 +35,7 @@ for f in COMPOSE:
         for var in sorted(set(re.findall(r"\$\{([A-Z_][A-Z0-9_]*)", texto))):
             if var not in LISTA: falla(f"{f}: ${{{var}}} no está en infra/comun/secretos.json (cada variable tiene dueño)")
             elif LISTA[var].get("origen") == "prohibida": falla(f"{f}: ${{{var}}} está prohibida en producción")
-        # 23 nov · El sitio de vista previa (next dev sobre una rama de trabajo) es solo del sandbox: nunca en un compose de producción ni del ensayo.
-        for prohibida in ("TOLATINO_SMS_MODO: pruebas", "SIMULADOR", "semilla", "vista-previa", "tolatino_vista", "next dev"):
+        for prohibida in ("TOLATINO_SMS_MODO: pruebas", "SIMULADOR", "semilla", "next dev"):
             if prohibida in texto: falla(f"{f}: «{prohibida}» en un compose de producción")
     print(f"  ✓ {f}: {len(servicios)} servicios")
 

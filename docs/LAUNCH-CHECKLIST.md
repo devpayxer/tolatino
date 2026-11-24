@@ -2981,3 +2981,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       entró en bucle de reinicios por precalentar diez. Ahora precalienta tres y el reinicio queda escrito en `/estado/vista.txt`. Si navegar siete u ocho
       pantallas lo vuelve a tumbar: probar Turbopack o subir el tope (hoy lo fija el guardián `vistaPreviaAcotada`; decisión del fundador).
 - [ ] **→ 9q** · **Flechas de la tira en ventana estrecha:** vistas en Chromium con ratón; falta verlas en Safari y en una tableta con ratón.
+- [x] **Vista previa retirada del repo (AQ, 24 nov; Opus, revisado por Fable):** fuera su código, su servicio y el puerto 8081; `vistaPreviaAcotada` se
+      sustituye por `vistaPreviaRetirada`. Quedan obsoletas las líneas de arriba sobre la vista previa (salud en Super Admin, memoria de next dev, el
+      usuario `tolatino_vista`, su imagen y el 8081); se quedan las de BuildKit y la llave estable del Dockerfile.
+- [ ] **→ 9u** · **Paso de limpieza de la vista previa (`deploy.sh` 3i):** su SQL (`drop owned by` / `drop role tolatino_vista`) no corrió contra un Postgres de
+      verdad antes del despliegue. Ver una vez en el registro del sandbox «retirados los restos…» y después nada; retirar el paso cuando esté limpio.
+

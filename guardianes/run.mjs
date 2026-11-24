@@ -485,9 +485,7 @@ const guardianes = {
      con «privado/». */
   documentosPrivados() {
     const ng = "infra/pruebas/nginx-pruebas.conf";
-    // 23 nov · En el sitio del sandbox (el primero): el de la vista previa (puerto 8081) repite la línea y no puede taparla si falta aquí.
-    const ngt = existsSync(ng) ? readFileSync(ng, "utf8") : "", ng80 = ngt.includes("\nserver {\n    listen 8081;") ? ngt.slice(0, ngt.indexOf("\nserver {\n    listen 8081;")) : ngt;
-    if (existsSync(ng) && !/^\s*location \^~ \/medios\/privado\/ \{ return 404; \}/m.test(ng80)) falla("documentosPrivados", ng, 0, "falta el bloqueo de /medios/privado/");
+    if (existsSync(ng) && !/^\s*location \^~ \/medios\/privado\/ \{ return 404; \}/m.test(readFileSync(ng, "utf8"))) falla("documentosPrivados", ng, 0, "falta el bloqueo de /medios/privado/");
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/urlPublica\([^)]*privado|["'`]\/medios\/privado/.test(l)) falla("documentosPrivados", f, i + 1, "un documento privado no se sirve por /medios"); });
@@ -3291,8 +3289,7 @@ const guardianes = {
     if (/https?:\/\//.test(d)) falla(G, TD, 0, "lib/traductor.ts no lleva direcciones escritas a mano");
     for (const m of d.matchAll(/fetch\(([^,)]*)/g)) if (!/^b \+ /.test(m[1])) falla(G, TD, 0, `fetch(${m[1]}) no usa la base de TRADUCTOR_URL`);
     if (existsSync(TR) && (/fetch\(/.test(sinComent(TR)) || !/from "\.\/traductor"/.test(sinComent(TR)))) falla(G, TR, 0, "lib/traduccion.ts traduce solo con lib/traductor.ts (sin fetch propio)");
-    // 23 nov · En el bloque de la app (web): la vista previa repite la línea y no puede taparla si falta aquí.
-    if (existsSync(C) && !/\n      TRADUCTOR_URL: http:\/\/traductor:5000\n/.test((/\n  web:\n([\s\S]*?)\n  [a-z][\w-]*:\n/.exec(readFileSync(C, "utf8")) ?? [])[1] + "\n")) falla(G, C, 0, "la app apunta TRADUCTOR_URL al servicio interno (http://traductor:5000)");
+    if (existsSync(C) && !/\n      TRADUCTOR_URL: http:\/\/traductor:5000\n/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "la app apunta TRADUCTOR_URL al servicio interno (http://traductor:5000)");
   },
 
   /* 5h. El traductor va en su propio perfil del compose y deploy.sh lo enciende APARTE con `|| true` (lección de 5d: un servicio que no
@@ -6806,9 +6803,7 @@ const guardianes = {
     const build = JSON.parse(readFileSync(P, "utf8")).scripts?.build ?? "";
     if (!/^next build && node \.\.\/\.\.\/scripts\/mapas-privados\.mjs \.$/.test(build)) falla(G, P, 0, "el build saca los mapas de lo que se sirve (next build && node ../../scripts/mapas-privados.mjs .)");
     if (!existsSync(S) || !/renameSync\(p, q\)/.test(readFileSync(S, "utf8")) || !/if \(quedan\.length\)[^\n]*process\.exit\(1\)/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "mapas-privados mueve los .map y falla si queda alguno");
-    // 23 nov · En el sitio del sandbox (el primero): el de la vista previa (puerto 8081) repite la línea y no puede taparla si falta aquí.
-    const xs = existsSync(X) ? readFileSync(X, "utf8") : "", x80 = xs.includes("\nserver {\n    listen 8081;") ? xs.slice(0, xs.indexOf("\nserver {\n    listen 8081;")) : xs;
-    if (!existsSync(X) || !/location ~\* \\\.map\$ \{ return 404; \}/.test(x80)) falla(G, X, 0, "nginx niega *.map");
+    if (!existsSync(X) || !/location ~\* \\\.map\$ \{ return 404; \}/.test(readFileSync(X, "utf8"))) falla(G, X, 0, "nginx niega *.map");
     if (existsSync(I) && !/filter: \(s\) => !s\.endsWith\("\.map"\)/.test(readFileSync(I, "utf8"))) falla(G, I, 0, "las islas no copian mapas a la app");
     if (existsSync(Z)) { const z = sinComent(Z); if (!/path\.join\(process\.cwd\(\), "\.next", "mapas"\)/.test(z) || !/if \(f\.startsWith\(raiz \+ path\.sep\)\)/.test(z) || !/rel\.includes\("\.\."\)/.test(z)) falla(G, Z, 0, "simbolizar lee de .next/mapas, con la ruta comprobada (sin «..», dentro de la carpeta)"); }
     for (const f of archivos) if (/^apps\/web\/public\/.*\.map$/.test(f)) falla(G, f, 0, "un mapa de fuente en public/ se serviría");
@@ -10831,8 +10826,7 @@ const guardianes = {
       const g = /\n    stop_grace_period: (\d+)s\n/.exec("\n" + b);
       if (!/\n    init: true\n/.test("\n" + b) || !g || Number(g[1]) > 3) falla(G, Y, 0, `«${s}» para en el acto: init: true y stop_grace_period de 3 s o menos (sin init, Docker espera 10 s en cada despliegue)`);
     }
-    // 23 nov · Solo el sitio del sandbox (el primero): el de la vista previa (puerto 8081) repite estas líneas y no puede taparlas si faltan aquí.
-    const n0 = readFileSync(N, "utf8").replace(/#.*$/gm, ""), n = n0.includes("\nserver {\n    listen 8081;") ? n0.slice(0, n0.indexOf("\nserver {\n    listen 8081;")) : n0;
+    const n = readFileSync(N, "utf8").replace(/#.*$/gm, "");
     if (!/\n    server_tokens off;\n/.test(n) || !/\n    error_page 502 504 =503 \/mantenimiento\.html;\n/.test(n) || !/location = \/mantenimiento\.html \{\n\s+root \/var\/www\/mantenimiento;\n\s+try_files \/index\.html =503;\n\s+internal;/.test(n))
       falla(G, N, 0, "nginx del sandbox: server_tokens off y la página de mantenimiento (503) para 502/504, en vez de «502 Bad Gateway · nginx/1.x»");
     if (!/\ninstall -m 0644 "\$REPO\/infra\/comun\/mantenimiento\/index\.html" \/var\/www\/mantenimiento\/index\.html /.test(d)) falla(G, D, 0, "deploy.sh instala la página de mantenimiento (la de producción) antes de cambiar");
@@ -10898,94 +10892,53 @@ const guardianes = {
     if (!/\n      OnUnitActiveSec=20\n      AccuracySec=1s\n/.test(ci)) falla(G, CI, 0, "el cloud-init del sandbox nace con tolatino-sync cada 20 s y AccuracySec=1s");
   },
 
-  /* 23 nov · vistaPreviaAcotada: el sitio de vista previa del sandbox (infra/pruebas/vista-previa/: next dev sobre la rama de vista.conf, puerto 8081)
-     no puede migrar, sembrar, tumbar el sandbox ni existir en producción. (1) Su servicio va en su propio perfil del compose, acotado (memoria ≤ 2,5 GB sin
-     swap, ≤ 1,5 CPU, ≤ 5 reinicios, la primera que mata el kernel, sin privilegios ni capacidades), solo en 127.0.0.1, con TOLATINO_ENTORNO=pruebas,
-     el usuario de la base tolatino_vista, sin los tokens de salida (barrido, IA, WhatsApp, SMS, cuentas de revisión) y con su bucle montado de solo
-     lectura desde la copia de «pruebas»; la app no depende de él. (2) Una sola rama, escrita una sola vez (vista.conf) y nunca «produccion». (3) El bucle
-     nunca migra ni siembra, de la base solo lee (select) y comprueba las migraciones ANTES de tocar la copia. (4) tolatino_vista solo filas (sin
-     superusuario, sin crear). (5) deploy.sh la lanza aparte (systemd-run … || true), la para mientras construye la imagen (el pico de memoria) y el «up» de la app no la toca. (6) nginx: noindex, las mismas rutas
-     cerradas, pausa y apagado, y no más abierta que el sandbox; la página de pausa y la marca salen del sistema de diseño. (7) Nada de ella en producción,
-     el paquete común, el ensayo ni scripts/produccion. (8) Su prueba corre. Al revés: alrevesDespliegue. */
-  vistaPreviaAcotada() {
-    const G = "vistaPreviaAcotada", C = "infra/pruebas/docker-compose.yml", V = "infra/pruebas/vista-previa/vista.sh", E = "infra/pruebas/vista-previa/encender.sh",
-      F = "infra/pruebas/vista-previa/vista.conf", N = "infra/pruebas/nginx-pruebas.conf", D = "infra/pruebas/deploy.sh", T = "pruebas/infra/correr.sh";
-    for (const f of [V, E, F]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del sitio de vista previa");
-    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
-    // (1) El servicio.
-    const y = readFileSync(C, "utf8");
-    const s = (/\n  vista-previa:\n((?:    .*\n|\s*#.*\n|\s*\n)+?)(?=  [a-z][\w-]*:\n|\S)/.exec(y) ?? [])[1] ?? "";
-    if (!s) falla(G, C, 0, "falta el servicio vista-previa en el compose del sandbox");
-    else {
-      const v = (k) => (new RegExp(`\\n    ${k}: (.+)\\n`).exec("\n" + s) ?? [])[1]?.trim() ?? "";
-      const mb = (x) => { const m = /^(\d+(?:\.\d+)?)([mg])$/i.exec(x); return m ? Number(m[1]) * (m[2].toLowerCase() === "g" ? 1024 : 1) : Infinity; };
-      if (v("profiles") !== '["vista"]') falla(G, C, 0, "vista-previa va en su propio perfil (profiles: [\"vista\"]): el «up» de la app no la enciende");
-      if (mb(v("mem_limit")) > 2560 || v("memswap_limit") !== v("mem_limit")) falla(G, C, 0, "vista-previa con memoria acotada: mem_limit de 2,5 GB o menos y memswap_limit igual (sin swap)");
-      if (!(Number(v("cpus")) > 0 && Number(v("cpus")) <= 1.5)) falla(G, C, 0, "vista-previa con CPU acotada (cpus de 1.5 o menos)");
-      const re = /^on-failure:(\d+)$/.exec(v("restart"));
-      if (!re || Number(re[1]) > 5) falla(G, C, 0, "vista-previa con reinicio acotado (restart: on-failure:N, N de 5 o menos)");
-      if (!(Number(v("oom_score_adj")) >= 500)) falla(G, C, 0, "vista-previa es la primera que mata el kernel si falta memoria (oom_score_adj de 500 o más)");
-      if (v("user") !== '"1000:1000"' || v("cap_drop") !== "[ALL]" || !/no-new-privileges:true/.test(v("security_opt"))) falla(G, C, 0, "vista-previa sin privilegios: user \"1000:1000\", cap_drop [ALL] y no-new-privileges");
-      for (const m of s.matchAll(/\n      - "([^"]+)"/g)) if (/^\d/.test(m[1]) && !m[1].startsWith("127.0.0.1:")) falla(G, C, 0, `vista-previa publica ${m[1]}: solo en 127.0.0.1 (se llega por nginx)`);
-      if (!/\n      TOLATINO_ENTORNO: pruebas\n/.test(s) || !/\n      TOLATINO_SMS_MODO: pruebas\n/.test(s)) falla(G, C, 0, "vista-previa con TOLATINO_ENTORNO y TOLATINO_SMS_MODO de pruebas");
-      if (!/\n      DATABASE_URL: postgres:\/\/tolatino_vista:/.test(s)) falla(G, C, 0, "vista-previa entra a la base con tolatino_vista (solo filas), nunca con el dueño");
-      const fuera = /\b(BARRIDO_TOKEN|ANTHROPIC_API_KEY|WHATSAPP_[A-Z_]+|TELNYX_[A-Z_]+|REVISION_CODIGO_[A-Z_]+|CORREO_SNS_TEMA|POSTGRES_PASSWORD)\b/.exec(s.replace(/#.*$/gm, ""));
-      if (fuera) falla(G, C, 0, `vista-previa no recibe ${fuera[1]} (nada que salga a terceros ni la llave del dueño de la base)`);
-      if (!/\n      - \.\/vista-previa\/vista\.sh:\/opt\/vista\/vista\.sh:ro\n/.test(s) || v("env_file") !== "vista-previa/vista.conf") falla(G, C, 0, "el bucle de vista-previa se monta de solo lectura desde la copia de «pruebas» (./vista-previa/vista.sh:…:ro) y la rama sale de vista-previa/vista.conf");
-    }
-    for (const [n, b] of [...y.matchAll(/\n  ([a-z][\w-]*):\n((?:    .*\n|\s*#.*\n|\s*\n)+)/g)].map((m) => [m[1], m[2]])) if (n !== "vista-previa" && /vista-previa|vista_previa/.test(b.replace(/#.*$/gm, ""))) falla(G, C, 0, `«${n}» no depende de la vista previa`);
-    // (2) Una sola rama, una sola vez.
-    const conf = sinC(readFileSync(F, "utf8")).split("\n").filter((l) => l.trim());
-    const rama = (/^VISTA_RAMA=(.*)$/.exec(conf.find((l) => l.startsWith("VISTA_RAMA=")) ?? "") ?? [])[1] ?? "";
-    if (conf.length !== 2 || !conf.some((l) => /^VISTA_ENCENDIDA=[01]$/.test(l)) || !/^[A-Za-z0-9._/-]+$/.test(rama) || rama === "produccion" || rama.includes(".."))
-      falla(G, F, 0, "vista.conf lleva solo VISTA_ENCENDIDA=0|1 y VISTA_RAMA=<una rama válida que no es produccion>");
-    if (rama) for (const f of archivos) if (f !== F && /^(infra|scripts\/produccion)\//.test(f) && readFileSync(f, "utf8").includes(rama)) falla(G, f, 0, `la rama de la vista previa (${rama}) se escribe solo en vista.conf`);
-    // (3) El bucle.
-    const vs = sinC(readFileSync(V, "utf8"));
-    if (/migrar\.sh|semilla|SEMILLA|seed/i.test(vs)) falla(G, V, 0, "el bucle de la vista previa nunca migra ni siembra");
-    for (const l of vs.split("\n")) if (/\bpsql\b/.test(l) && (/\b(insert|update|delete|create|alter|drop|truncate|grant|revoke|copy)\b/i.test(l) || !/-c "select /.test(l))) falla(G, V, 0, "de la base el bucle solo lee (un «select» a schema_migrations)");
-    if (!/^RAMA=\$\{VISTA_RAMA:-\}$/m.test(vs) || (vs.match(/^\s*RAMA=/gm) ?? []).length !== 1 || !/\n  ''\|produccion\|/.test(vs)) falla(G, V, 0, "el bucle sigue una sola rama, la de VISTA_RAMA, y se niega con «produccion» o vacía");
-    const iP = vs.indexOf('p=$(pendientes "$nuevo")'), iR = vs.indexOf("reset -q --hard"), iPar = vs.indexOf('    parar_dev\n    return 0\n  fi');
-    if (iP < 0 || iR < 0 || iP > iR || iPar < 0 || iPar > iR) falla(G, V, 0, "el bucle comprueba las migraciones de la rama ANTES de tocar la copia y, si faltan en la base, para next dev y no la toca");
-    if (!/git clone -q --no-checkout/.test(vs)) falla(G, V, 0, "la primera copia sale sin checkout (los archivos solo se ponen después de comprobar las migraciones)");
-    // (4) El usuario de la base.
-    const es = readFileSync(E, "utf8");
-    if (!/alter role tolatino_vista login nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls/.test(es) || /grant all|with grant option|grant create|\b(superuser|createdb|createrole|bypassrls)\b/i.test(sinC(es).replace(/\bno(superuser|createdb|createrole|bypassrls)\b/gi, "")))
-      falla(G, E, 0, "tolatino_vista solo filas: nosuperuser, nocreatedb, nocreaterole, nobypassrls; ni «grant all», ni crear");
-    for (const m of es.matchAll(/^grant ([^;]+) on all tables in schema public to tolatino_vista;$/gm)) if (m[1] !== "select, insert, update, delete") falla(G, E, 0, `tolatino_vista en las tablas: solo select, insert, update, delete (no «${m[1]}»)`);
-    if (/migrar\.sh|semilla/i.test(sinC(es))) falla(G, E, 0, "encender.sh nunca migra ni siembra");
-    if (!/"\$\{CV\[@\]\}" up -d --no-deps --build vista-previa/.test(es) || !/CV=\("\$\{COMPOSE\[@\]\}" --env-file "\$ENV_VISTA" --profile vista\)/.test(es)) falla(G, E, 0, "encender.sh levanta solo vista-previa (up --no-deps, con su perfil): no toca la base ni la app");
-    // (5) deploy.sh.
-    const d = sinC(readFileSync(D, "utf8"));
-    if (!/\n  systemd-run --unit tolatino-vista --collect bash "\$REPO\/infra\/pruebas\/vista-previa\/encender\.sh" "\$REPO" "\$\{COMPOSE\[@\]\}" \|\| true\n/.test(d)) falla(G, D, 0, "deploy.sh lanza la vista previa APARTE (systemd-run … encender.sh … || true): si falla, la app no se entera");
-    const PARA = "  docker stop tolatino-pruebas-vista-previa-1 >/dev/null 2>&1 || true";
-    for (const l of d.split("\n")) if (/vista/i.test(l) && !/tolatino-vista|vista-previa\/encender\.sh/.test(l) && l !== PARA) falla(G, D, 0, `deploy.sh no toca la vista previa fuera de encender.sh (y de pararla antes de construir): «${l.trim().slice(0, 80)}»`);
-    const iPara = d.indexOf("\n" + PARA + "\n"), iBuildW = d.indexOf('  if ! "${COMPOSE[@]}" build web; then');
-    if (iPara < 0 || iBuildW < 0 || iPara > iBuildW) falla(G, D, 0, "deploy.sh para la vista previa ANTES de construir la imagen (el build es el pico de memoria del servidor; encender.sh la vuelve a levantar)");
-    if (/--profile vista/.test(d)) falla(G, D, 0, "el «up» de la app nunca lleva el perfil «vista»");
-    // (6) nginx.
-    const n = readFileSync(N, "utf8").replace(/#.*$/gm, "");
-    const sv = (/\nserver \{\n    listen 8081;\n([\s\S]*?)\n\}\n?$/.exec(n) ?? [])[1] ?? "";
-    if (!sv) falla(G, N, 0, "falta el sitio de la vista previa (server en el puerto 8081, al final)");
-    else {
-      for (const [re, que] of [[/\n    add_header X-Robots-Tag "noindex, nofollow" always;\n/, "noindex"], [/location \^~ \/api\/interno\/ \{ return 404; \}/, "/api/interno cerrado"],
-        [/location \^~ \/medios\/privado\/ \{ return 404; \}/, "/medios/privado cerrado"], [/location ~\* \\\.map\$ \{ return 404; \}/, "los .map cerrados"],
-        [/if \(-f \/var\/lib\/tolatino\/vista\/control\/pausa\) \{ return 503; \}/, "la pausa (503)"], [/if \(-f \/var\/lib\/tolatino\/vista\/control\/apagada\) \{ return 404; \}/, "apagada (404)"],
-        [/error_page 503 \/vista-pausa\.html;/, "la página de pausa"], [/error_page 502 504 =503 \/vista-arrancando\.html;/, "la página «arrancando» cuando next dev no contesta (no la de mantenimiento)"], [/proxy_pass http:\/\/127\.0\.0\.1:3010;/, "la vista previa solo por 127.0.0.1:3010"], [/server_tokens off;/, "server_tokens off"]])
-        if (!re.test(sv)) falla(G, N, 0, `el sitio de la vista previa: falta ${que}`);
-      const principal = n.slice(0, n.indexOf("\nserver {\n    listen 8081;"));
-      for (const x of principal.match(/^\s*(auth_basic[^;]*|allow [^;]*|deny [^;]*|satisfy [^;]*);/gm) ?? []) if (!/deny all/.test(x) && !sv.includes(x.trim())) falla(G, N, 0, `la vista previa no puede ser más abierta que el sandbox: falta «${x.trim()}»`);
-      if (/auth_basic\s+off|allow all/.test(sv)) falla(G, N, 0, "la vista previa no abre lo que el sandbox cierra");
-    }
-    try { execSync("node infra/pruebas/vista-previa/pagina.mjs --revisar", { stdio: "pipe" }); } catch { falla(G, "infra/pruebas/vista-previa/pausa.html", 0, "la página de pausa o la marca «VISTA PREVIA» no son las que salen del sistema de diseño (node infra/pruebas/vista-previa/pagina.mjs)"); }
-    // (7) Nada en producción.
+  /* 24 nov · vistaPreviaRetirada: el sitio de vista previa del sandbox (23-24 nov) se retiró por decisión del fundador (AQ: «todo se ha vuelto lento»)
+     y no vuelve por la puerta de atrás. (1) No queda su carpeta (infra/pruebas/vista-previa/). (2) En la infraestructura (infra/ y scripts/produccion/)
+     ninguna línea, ni comentada, con su puerto (8081), el de su servidor (3010) o un servidor de desarrollo («next dev»); y nada que la nombre
+     (vista-previa, tolatino_vista, VISTA_*) fuera del paso de limpieza de deploy.sh. (3) Ese paso existe y deja el servidor limpio sin SSH: quita el
+     contenedor y la imagen, las tres rutas, y el usuario de la base solo si existe («drop owned by» + «drop role» de tolatino_vista y de nadie más);
+     se llama UNA vez, después de tener la base (PSQL) y antes de nginx, y nunca corta el despliegue («|| log», sin aviso ni exit). Al revés:
+     alrevesDespliegue. */
+  vistaPreviaRetirada() {
+    const G = "vistaPreviaRetirada", D = "infra/pruebas/deploy.sh";
+    // (1) La carpeta.
+    if (existsSync("infra/pruebas/vista-previa") || archivos.some((f) => f.startsWith("infra/pruebas/vista-previa/"))) falla(G, "infra/pruebas/vista-previa", 0, "el sitio de vista previa se retiró (decisión AQ): su carpeta no vuelve");
+    // (2) La infraestructura.
+    const d = existsSync(D) ? readFileSync(D, "utf8") : "";
+    const iPaso = d.indexOf("\n# 3i) 24 nov · Retiro del sitio de vista previa"), iLlamada = d.indexOf("\nretirar_vista_previa || log \"");
+    const lPaso = iPaso < 0 ? -1 : d.slice(0, iPaso + 1).split("\n").length, lFin = iLlamada < 0 ? -1 : d.slice(0, iLlamada + 1).split("\n").length;
     for (const f of archivos) {
-      if (!/^(infra\/(produccion|comun|ensayo)\/|scripts\/produccion\/)/.test(f)) continue;
-      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (!/^\s*(#|\/\/|\*)/.test(l) && /vista-previa|vista_previa|tolatino_vista|tolatino-vista|VISTA_(RAMA|ENCENDIDA|DB)|\b8081\b|next dev/.test(l.replace(/#.*$/, ""))) falla(G, f, i + 1, "la vista previa es solo del sandbox: nada de ella en producción, el paquete común, el ensayo ni scripts/produccion"); });
+      if (!/^(infra|scripts\/produccion)\//.test(f) || /\.(png|jpe?g|webp|gif|ico|woff2?|age|gz|zip|mbtiles|pdf)$/i.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/\b8081\b|\b3010\b|next dev/.test(l)) falla(G, f, i + 1, "la vista previa se retiró (AQ): ni su puerto (8081), ni el de su servidor (3010), ni un «next dev» en la infraestructura");
+        else if (/vista-previa|vista_previa|tolatino_vista|tolatino-vista|VISTA_[A-Z]/.test(l) && !(f === D && lPaso > 0 && i + 1 >= lPaso && i + 1 <= lFin))
+          falla(G, f, i + 1, "la vista previa se retiró (AQ): solo la nombra el paso de limpieza de deploy.sh (3i)");
+      });
     }
-    if (!/"vista-previa"/.test(readFileSync("pruebas/infra/compose.py", "utf8"))) falla(G, "pruebas/infra/compose.py", 0, "la revisión de los compose prohíbe la vista previa en los de producción");
-    // (8) Su prueba.
-    if (!/seccion "[^"]*"; bash pruebas\/infra\/vista-previa\.test\.sh \|\| mal=1/.test(readFileSync(T, "utf8")) || !existsSync("pruebas/infra/vista-previa.test.sh")) falla(G, T, 0, "las pruebas de infra no corren pruebas/infra/vista-previa.test.sh");
+    // (3) El paso de limpieza.
+    const cuerpo = (/\nretirar_vista_previa\(\) \{\n([\s\S]*?)\n\}\n/.exec(d) ?? [])[1] ?? "";
+    if (!cuerpo || iPaso < 0) return falla(G, D, 0, "falta el paso de limpieza de la vista previa (3i · retirar_vista_previa): el servidor tiene que quedar limpio sin SSH");
+    for (const [re, que] of [
+      [/for c in tolatino-pruebas-vista-previa-1 \$\(docker ps -aq --filter label=com\.docker\.compose\.service=vista-previa 2>\/dev\/null\); do/, "el contenedor (por su nombre y por su servicio)"],
+      [/docker rm -f "\$c"/, "docker rm -f del contenedor"],
+      [/for i in \$\(docker image ls -q tolatino\/vista-previa 2>\/dev\/null \| sort -u\); do [^\n]*docker image rm -f "\$i"/, "la imagen tolatino/vista-previa:*"],
+      [/for c in \/var\/lib\/tolatino\/vista \/var\/www\/vista \/etc\/tolatino\/vista\.env; do if \[ -e "\$c" \]; then quedaba=1; rm -rf "\$c"; fi; done/, "las tres rutas (/var/lib/tolatino/vista, /var/www/vista, /etc/tolatino/vista.env)"],
+      [/\n  if exists \(select 1 from pg_roles where rolname = 'tolatino_vista'\) then\n/, "el usuario de la base, solo si existe"],
+      [/\n    drop owned by tolatino_vista;\n    drop role tolatino_vista;\n/, "«drop owned by» y «drop role» de tolatino_vista"],
+      [/\nselect count\(\*\) from pg_roles where rolname = 'tolatino_vista';\n/, "la comprobación de que el usuario ya no existe"]])
+      if (!re.test(cuerpo)) falla(G, D, 0, `el paso de limpieza de la vista previa: falta ${que}`);
+    for (const l of cuerpo.split("\n")) {
+      if (/^\s*#/.test(l)) continue;
+      if (/\b(drop|revoke|alter|truncate|delete|create|grant)\b/i.test(l) && !/^\s*(drop owned by tolatino_vista;|drop role tolatino_vista;|alter default privileges for role tolatino in schema public revoke all on (tables|sequences) from tolatino_vista;)$/.test(l))
+        falla(G, D, 0, `el paso de limpieza solo toca a tolatino_vista: «${l.trim().slice(0, 90)}»`);
+      if (/\brm -[a-z]*r/.test(l) && !/^  for c in \/var\/lib\/tolatino\/vista \/var\/www\/vista \/etc\/tolatino\/vista\.env; do/.test(l)) falla(G, D, 0, `el paso de limpieza solo borra sus tres rutas: «${l.trim().slice(0, 90)}»`);
+      if (/\b(aviso|exit)\b/.test(l)) falla(G, D, 0, "el paso de limpieza nunca corta el despliegue (ni aviso ni exit: devuelve y se anota con log)");
+    }
+    const llamadas = d.split("\n").filter((l) => /^\s*retirar_vista_previa\b(?!\(\))/.test(l));
+    if (llamadas.length !== 1 || llamadas[0] !== 'retirar_vista_previa || log "vista previa: no se pudo retirar todo (se reintenta en el próximo despliegue; la app no se entera)"')
+      falla(G, D, 0, "el paso de limpieza se llama una sola vez y con «|| log …»: si falla, el despliegue sigue");
+    const iPsql = d.indexOf("\nPSQL=("), iNginx = d.indexOf("\ntramo nginx\n");
+    if (iPsql < 0 || iNginx < 0 || !(iPsql < iLlamada && iLlamada < iNginx)) falla(G, D, 0, "el paso de limpieza va después de tener la base (PSQL) y antes de nginx");
   },
 
   /* 22 nov · pruebasInfraAisladas: una prueba de infra que corre un guion de despliegue de verdad como root (deploy.sh, tolatino-sync, la recuperación)
@@ -11771,9 +11724,7 @@ const guardianes = {
     // (4) nginx: la variante real un año; la que falta o sin WebP, la maestra con 60 s; la caché del almacén escondida.
     const bloque = (t, cab) => { const i = t.indexOf(cab); return i < 0 ? "" : t.slice(i, t.indexOf("\n    }", i)); };
     for (const N of ["infra/pruebas/nginx-pruebas.conf", "infra/produccion/nginx-produccion.conf"]) {
-      const t0 = existsSync(N) ? readFileSync(N, "utf8").replace(/#.*$/gm, "") : "";
-      // 23 nov · Solo el primer sitio: el de la vista previa del sandbox (puerto 8081) repite el bloqueo y no puede taparlo si falta en el principal.
-      const t = t0.includes("\nserver {\n    listen 8081;") ? t0.slice(0, t0.indexOf("\nserver {\n    listen 8081;")) : t0;
+      const t = existsSync(N) ? readFileSync(N, "utf8").replace(/#.*$/gm, "") : "";
       if (!/^\s*location \^~ \/medios\/privado\/ \{ return 404; \}/m.test(t)) falla(G, N, 0, "falta el bloqueo de /medios/privado/");
       const vb = bloque(t, "location ~ ^/medios/n/[0-9a-f-]+\\.w[0-9]+\\.webp$ {");
       const que = [["error_page 404 = @tl_maestra;", "si la variante no existe, la maestra"], ["error_page 418 = @tl_maestra_sin_webp;", "sin WebP, la maestra"], ["proxy_intercept_errors on;", "el 404 del almacén va al respaldo"],

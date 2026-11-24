@@ -27,7 +27,7 @@
    sola no vale: la conclusión de la corrida y de ese trabajo se leen de la API (como scripts/ci/corrida.mjs). Guardián subidaConHerramienta;
    al revés: alrevesSubir. */
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -454,11 +454,6 @@ function imprimirPlan({ base, rama, p }) {
   console.log(`  · CI: ${ex.corrida === "ninguna" ? "nada (solo documentos)" : ex.corrida === "despues" ? "nada ANTES de subir (vía rápida de diseño, AL): la punta a punta y «al revés» corren DESPUÉS, en la corrida del push a main; lo que cacen se arregla en el bloque siguiente" : ex.corrida === "completa" ? "una corrida COMPLETA en verde de este árbol en la rama de trabajo" : "la dirigida de arriba en verde, de este árbol (o uno que difiera solo en documentos de trabajo)"}`);
   if (c.clases.includes("sensible")) console.log("  · sensible: lo revisa un modelo distinto del que lo escribió (regla 14; esta herramienta no lo puede comprobar)");
   console.log(`  · empuje: ${ex.mainPrimero ? "main primero, esperar «verificación · imágenes» en verde, después pruebas" : "git push --atomic origin HEAD:main HEAD:pruebas"}`);
-  // 23 nov · El sitio de vista previa del sandbox (infra/pruebas/vista-previa/vista.conf). Solo un recordatorio: no cambia ninguna regla de subida.
-  try {
-    const vc = readFileSync("infra/pruebas/vista-previa/vista.conf", "utf8"), vr = (/^VISTA_RAMA=(.+)$/m.exec(vc) ?? [])[1];
-    if (vr) console.log(`vista previa: ${/^VISTA_ENCENDIDA=1$/m.test(vc) ? `http://2.31.196.167:8081/ sigue «${vr}»${rama === vr ? " (esta rama): lo empujado a ella se ve allí en ~15 s, sin subir (estado: /estado/vista.txt)" : ""}` : "apagada (vista.conf)"}`);
-  } catch { /* sin vista previa */ }
 }
 
 const ramaActual = () => {

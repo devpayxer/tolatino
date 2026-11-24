@@ -6498,3 +6498,4 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Pruebas de la ronda de la ficha (Sonnet, revisado por Fable):** `fic9cab` 8–10, guardián `fichaFijaSinTapar`. La parte 9 (escritorio) es la prueba del
   fundador: si decide quitar la barra del nombre, se borra con su mención en el guardián. Arreglo de paso: 18 px de ensanche con una oferta en vivo.
 - **Vista previa: quitada por decisión del fundador (AQ, 24 nov).** Apagada en esta tanda; el puerto 8081 cerrado; el código se retira en el bloque siguiente.
+- **Vista previa retirada del repo (AQ, 24 nov):** el despliegue quedó como antes de ella (se quedan la sincronía de 20 s y la caché de la imagen). Al desplegar, el servidor se limpia solo. Qué mirar: nada en la app.

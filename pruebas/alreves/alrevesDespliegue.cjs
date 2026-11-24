@@ -22,8 +22,9 @@
 //   aislar_exige; correr.sh corre las que despliegan aunque el aislamiento no pase.
 //   despliegueCorto (23 nov) · la imagen sin la caché de pnpm o de .next, «COPY . .» antes de instalar, sin la llave estable (o sin renovarla), la llave
 //   escrita en la receta o en el repo, deploy.sh con --no-cache, tolatino-sync de vuelta a 60 s (en la máquina viva o en el cloud-init).
-//   vistaPreviaAcotada (23 nov) · el sitio de vista previa: ver los casos (perfil, límites, privilegios, base, tokens, rama, bucle, usuario de la base,
-//   deploy.sh, nginx, producción, prueba).
+//   vistaPreviaRetirada (24 nov) · vuelve la carpeta del sitio de vista previa, su puerto (8081), el de su servidor (3010) o un «next dev» en la
+//   infraestructura, algo que la nombra fuera del paso de limpieza; el paso de limpieza sin el contenedor, la imagen, una ruta o «drop owned by», con un
+//   «drop»/«rm -rf» de más, con exit, sin comprobar que el usuario existe, llamado sin «|| log» o después de nginx.
 // «crear» (el texto a cambiar es null): se crea el archivo, se corre el guardián y se quita.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -33,7 +34,6 @@ const NUEVA = 'packages/db/migrations/0999_alreves_despliegue.sql';
 const N = 'infra/pruebas/nginx-pruebas.conf', O = 'pruebas/infra/orden-despliegue.test.sh';
 const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh';
 const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
-const VS = 'infra/pruebas/vista-previa/vista.sh', EN = 'infra/pruebas/vista-previa/encender.sh', VC = 'infra/pruebas/vista-previa/vista.conf';
 const casos = [
   ['sandboxSeArreglaSolo', D, 'SYNC_R=0; instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?',
     'SYNC_R=0; install -m 0755 "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?', 'nunca con un install directo'],
@@ -110,7 +110,8 @@ const casos = [
   ['pruebasInfraAisladas', AI, 'AISLAR_RUTAS="/opt /etc/tolatino', 'AISLAR_RUTAS="/etc/tolatino', 'faltan: /opt'],
   ['pruebasInfraAisladas', SP, 'aislar_exige "$T/trabajo/infra/pruebas/tolatino-sync" TOLATINO_SYNC_REPO TOLATINO_SYNC_DIR || exit 1\n', '', 'aislar_exige comprueba que lee TOLATINO_SYNC_REPO'],
   ['pruebasInfraAisladas', O, 'AISLAR_VISIBLES="$T" aislado \'', 'unshare -m --propagation private bash -c \'', 'nada de «unshare» suelto'],
-  ['pruebasInfraAisladas', C, 'if [ "$AISLADO" = 1 ]; then', 'if [ "$(id -u)" = 0 ]; then', 'aislar.test.sh primero'],  // 23 nov · despliegueCorto: la imagen pierde una de sus cachés (o la llave estable que hace servir la de webpack), la llave queda escrita, deploy.sh
+  ['pruebasInfraAisladas', C, 'if [ "$AISLADO" = 1 ]; then', 'if [ "$(id -u)" = 0 ]; then', 'aislar.test.sh primero'],
+  // 23 nov · despliegueCorto: la imagen pierde una de sus cachés (o la llave estable que hace servir la de webpack), la llave queda escrita, deploy.sh
   // construye sin caché, tolatino-sync vuelve a 60 s.
   ['despliegueCorto', DF, 'RUN --mount=type=cache,id=tolatino-pnpm,target=/pnpm/store,sharing=locked \\\n    pnpm install --frozen-lockfile --store-dir /pnpm/store\n', 'RUN pnpm install --frozen-lockfile\n', 'la capa de dependencias copia solo los manifiestos'],
   ['despliegueCorto', DF, 'FROM base AS deps\n', 'FROM base AS deps\nCOPY . .\n', 'la capa de dependencias copia solo los manifiestos'],
@@ -122,44 +123,23 @@ const casos = [
   ['despliegueCorto', D, '  if ! "${COMPOSE[@]}" build web; then', '  if ! "${COMPOSE[@]}" build web --no-cache; then', 'sin --no-cache'],
   ['despliegueCorto', D, 'OnUnitActiveSec=20\\nAccuracySec=1s', 'OnUnitActiveSec=60', 'cada 20 s con AccuracySec=1s'],
   ['despliegueCorto', 'infra/pruebas/cloud-init.yml', '      OnUnitActiveSec=20\n      AccuracySec=1s\n', '      OnUnitActiveSec=60\n', 'el cloud-init del sandbox nace'],
-  // 23 nov · vistaPreviaAcotada: el sitio de vista previa sin perfil, sin límites, con privilegios, abierto, con el dueño de la base o los tokens de
-  // salida, con su bucle de la rama; la rama escrita en otro sitio o «produccion»; el bucle que migra, escribe, toca la copia antes de comprobar, clona
-  // con checkout o no se niega; el usuario de la base con más que filas; deploy.sh que la espera o la mete en el «up»; nginx sin noindex, sin pausa,
-  // más abierto que el sandbox o con otra marca; algo de ella en producción; la prueba que no corre.
-  ['vistaPreviaAcotada', Y, '    profiles: ["vista"]\n    restart: on-failure:5', '    restart: on-failure:5', 'su propio perfil'],
-  ['vistaPreviaAcotada', Y, '    mem_limit: 2560m\n    memswap_limit', '    mem_limit: 6g\n    memswap_limit', 'memoria acotada'],
-  ['vistaPreviaAcotada', Y, '    memswap_limit: 2560m\n', '', 'memoria acotada'],
-  ['vistaPreviaAcotada', D, '  docker stop tolatino-pruebas-vista-previa-1 >/dev/null 2>&1 || true\n', '', 'para la vista previa ANTES de construir'],
-  ['vistaPreviaAcotada', Y, '    cpus: 1.5\n    pids_limit', '    cpus: 4\n    pids_limit', 'CPU acotada'],
-  ['vistaPreviaAcotada', Y, 'restart: on-failure:5', 'restart: unless-stopped', 'reinicio acotado'],
-  ['vistaPreviaAcotada', Y, '    oom_score_adj: 900\n', '', 'la primera que mata el kernel'],
-  ['vistaPreviaAcotada', Y, '    cap_drop: [ALL]\n', '', 'sin privilegios'],
-  ['vistaPreviaAcotada', Y, '      - "127.0.0.1:3010:3010"', '      - "3010:3010"', 'solo en 127.0.0.1'],
-  ['vistaPreviaAcotada', Y, 'DATABASE_URL: postgres://tolatino_vista:${VISTA_DB_PASSWORD:-}@db', 'DATABASE_URL: postgres://tolatino:${VISTA_DB_PASSWORD:-}@db', 'entra a la base con tolatino_vista'],
-  ['vistaPreviaAcotada', Y, '      TOLATINO_SMS_MODO: pruebas\n      NEXT_TELEMETRY_DISABLED', '      TOLATINO_SMS_MODO: pruebas\n      ANTHROPIC_API_KEY: ""\n      NEXT_TELEMETRY_DISABLED', 'no recibe ANTHROPIC_API_KEY'],
-  ['vistaPreviaAcotada', Y, '      - ./vista-previa/vista.sh:/opt/vista/vista.sh:ro\n', '      - /var/lib/tolatino/vista/repo/infra/pruebas/vista-previa/vista.sh:/opt/vista/vista.sh:ro\n', 'se monta de solo lectura desde la copia'],
-  ['vistaPreviaAcotada', Y, '    depends_on:\n      db:\n        condition: service_healthy\n', '    depends_on:\n      db:\n        condition: service_healthy\n      vista-previa:\n        condition: service_started\n', '«web» no depende de la vista previa'],
-  ['vistaPreviaAcotada', VC, 'VISTA_RAMA=claude/vibrant-franklin-krutwa', 'VISTA_RAMA=produccion', 'vista.conf lleva solo'],
-  ['vistaPreviaAcotada', 'infra/pruebas/zz-alreves-rama.sh', null, 'git fetch origin claude/vibrant-franklin-krutwa\n', 'se escribe solo en vista.conf'],
-  ['vistaPreviaAcotada', VS, '  # 4) next dev arriba', '  bash "$REPO/packages/db/migrar.sh" docker compose\n  # 4) next dev arriba', 'nunca migra ni siembra'],
-  ['vistaPreviaAcotada', VS, '-c "select name || \' \' || sha256 from schema_migrations"', '-c "insert into schema_migrations select 1"', 'solo lee'],
-  ['vistaPreviaAcotada', VS, 'p=$(pendientes "$nuevo"); r=$?', 'p=""; r=0', 'ANTES de tocar la copia'],
-  ['vistaPreviaAcotada', VS, "  ''|produccion|-*|*..*)", "  ''|-*|*..*)", 'se niega con «produccion»'],
-  ['vistaPreviaAcotada', VS, 'git clone -q --no-checkout', 'git clone -q', 'sin checkout'],
-  ['vistaPreviaAcotada', EN, 'nosuperuser nocreatedb nocreaterole noinherit', 'superuser nocreatedb nocreaterole noinherit', 'solo filas'],
-  ['vistaPreviaAcotada', EN, 'grant select, insert, update, delete on all tables in schema public to tolatino_vista;', 'grant all on all tables in schema public to tolatino_vista;', 'solo filas'],
-  ['vistaPreviaAcotada', EN, 'up -d --no-deps --build vista-previa', 'up -d --build vista-previa', 'levanta solo vista-previa'],
-  ['vistaPreviaAcotada', D, 'encender.sh" "$REPO" "${COMPOSE[@]}" || true', 'encender.sh" "$REPO" "${COMPOSE[@]}"', 'lanza la vista previa APARTE'],
-  ['vistaPreviaAcotada', D, '"${COMPOSE[@]}" up -d --remove-orphans; then', '"${COMPOSE[@]}" --profile vista up -d --remove-orphans; then', 'nunca lleva el perfil «vista»'],
-  ['vistaPreviaAcotada', N, '    server_tokens off;\n    add_header X-Robots-Tag "noindex, nofollow" always;\n    error_page 502 504 =503 /vista-arrancando.html;\n    error_page 503', '    server_tokens off;\n    error_page 502 504 =503 /vista-arrancando.html;\n    error_page 503', 'falta noindex'],
-  ['vistaPreviaAcotada', N, '    error_page 502 504 =503 /vista-arrancando.html;\n    error_page 503 /vista-pausa.html;', '    error_page 502 504 =503 /mantenimiento.html;\n    error_page 503 /vista-pausa.html;', 'arrancando'],
-  ['vistaPreviaAcotada', N, 'if (-f /var/lib/tolatino/vista/control/pausa) { return 503; }', '', 'falta la pausa'],
-  ['vistaPreviaAcotada', N, 'proxy_pass http://127.0.0.1:3010;', 'proxy_pass http://10.0.0.9:3010;', 'solo por 127.0.0.1:3010'],
-  ['vistaPreviaAcotada', N, '    server_tokens off;\n\n    # 22 nov', '    server_tokens off;\n    auth_basic "sandbox";\n\n    # 22 nov', 'no puede ser más abierta que el sandbox'],
-  ['vistaPreviaAcotada', N, 'VISTA PREVIA · PREVIEW</a></body>', 'PREVIEW</a></body>', 'no son las que salen del sistema de diseño'],
-  ['vistaPreviaAcotada', 'infra/produccion/zz-alreves.sh', null, 'docker compose --profile vista up -d vista-previa\n', 'solo del sandbox'],
-  ['vistaPreviaAcotada', 'pruebas/infra/compose.py', '"vista-previa", "tolatino_vista", ', '', 'prohíbe la vista previa'],
-  ['vistaPreviaAcotada', C, 'seccion "el sitio de vista previa del sandbox: compose, su bucle y su nginx (vista-previa.test.sh)"; bash pruebas/infra/vista-previa.test.sh || mal=1\n', '', 'no corren pruebas/infra/vista-previa.test.sh'],
+  // 24 nov · vistaPreviaRetirada: la vista previa vuelve por la puerta de atrás o el paso de limpieza de deploy.sh deja de limpiar, toca de más o corta.
+  ['vistaPreviaRetirada', 'infra/pruebas/vista-previa', null, 'VISTA_ENCENDIDA=1\n', 'su carpeta no vuelve'],
+  ['vistaPreviaRetirada', N, '    listen 80 default_server;\n', '    listen 80 default_server;\n    listen 8081;\n', 'ni su puerto (8081)'],
+  ['vistaPreviaRetirada', 'infra/pruebas/zz-alreves-dev.sh', null, 'pnpm --filter @tolatino/web exec next dev -p 3000\n', 'ni un «next dev»'],
+  ['vistaPreviaRetirada', 'infra/pruebas/zz-alreves-puerto.yml', null, 'ports: ["127.0.0.1:3010:3010"]\n', 'ni el de su servidor (3010)'],
+  ['vistaPreviaRetirada', 'infra/produccion/zz-alreves.yml', null, 'image: tolatino/vista-previa:pruebas\n', 'solo la nombra el paso de limpieza'],
+  ['vistaPreviaRetirada', D, '\ntramo nginx\n', '\ntramo nginx\ndocker stop tolatino-pruebas-vista-previa-1 || true\n', 'solo la nombra el paso de limpieza'],
+  ['vistaPreviaRetirada', D, 'docker rm -f "$c"', 'docker stop "$c"', 'docker rm -f del contenedor'],
+  ['vistaPreviaRetirada', D, ' do quedaba=1; docker image rm -f "$i" >/dev/null 2>&1 || true; done', ' do quedaba=1; done', 'la imagen tolatino/vista-previa'],
+  ['vistaPreviaRetirada', D, ' /var/www/vista /etc/tolatino/vista.env; do', ' /etc/tolatino/vista.env; do', 'las tres rutas'],
+  ['vistaPreviaRetirada', D, '  case "$r" in existia*)', '  rm -rf /var/lib/tolatino\n  case "$r" in existia*)', 'solo borra sus tres rutas'],
+  ['vistaPreviaRetirada', D, "  if exists (select 1 from pg_roles where rolname = 'tolatino_vista') then\n", '  if true then\n', 'solo si existe'],
+  ['vistaPreviaRetirada', D, '    drop owned by tolatino_vista;\n', '', '«drop owned by» y «drop role»'],
+  ['vistaPreviaRetirada', D, '    drop role tolatino_vista;\n', '    drop role tolatino_vista;\n    drop role tolatino;\n', 'solo toca a tolatino_vista'],
+  ['vistaPreviaRetirada', D, '  ) || return 1\n', '  ) || exit 1\n', 'nunca corta el despliegue'],
+  ['vistaPreviaRetirada', D, '\nretirar_vista_previa || log "vista previa: no se pudo retirar todo (se reintenta en el próximo despliegue; la app no se entera)"\n', '\nretirar_vista_previa\n', 'se llama una sola vez y con «|| log …»'],
+  ['vistaPreviaRetirada', D, '\nretirar_vista_previa || log "vista previa: no se pudo retirar todo (se reintenta en el próximo despliegue; la app no se entera)"\n\ntramo nginx\n', '\n\ntramo nginx\nretirar_vista_previa || log "vista previa: no se pudo retirar todo (se reintenta en el próximo despliegue; la app no se entera)"\n', 'antes de nginx'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 let bien = 0, total = 0;
