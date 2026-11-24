@@ -20,6 +20,9 @@ const casos = [
   [C, "  sel = nombres.map((n) => catalogo.find((t) => t.nombre === n.replace(/\\.(cjs|mjs|sh)$/, \"\")) ?? (console.error(`no existe: ${n}`), process.exit(2)));", "  sel = nombres.map((n) => catalogo.find((t) => t.nombre === n.replace(/\\.(cjs|mjs|sh)$/, \"\"))).filter(Boolean);"],
   // 24 nov · La dirigida en 8 partes.
   ['scripts/ci/subir.mjs', 'export const PARTES_DIRIGIDA = 8;', 'export const PARTES_DIRIGIDA = 4;', 'la dirigida va en 8 partes'],
+  // 24 nov · La dirigida chica en 4: ci.yml deja de aceptar 4, o su matriz deja de abrir 4 partes
+  [Y, '        options: ["1", "4", "8"]\n', '        options: ["1", "8"]\n', 'acepta 4 (la dirigida chica va en 4)'],
+  [Y, "(inputs.partes || '8') == '4' && '[1,2,3,4]'", "(inputs.partes || '8') == '4' && '[1]'", 'abre [1,2,3,4] con partes=4'],
   [Y, '        options: ["1", "4", "8"]\n', '        options: ["1", "4"]\n', 'acepta 8'],
   // 24 nov · Las al revés de «solo» no se repiten en «todas las fases» ni en «anchos».
   [Y, "--parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar --sin-alreves\n      - name: Subidas", "--parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar\n      - name: Subidas", '«regresion»: su corrida lleva --sin-alreves'],

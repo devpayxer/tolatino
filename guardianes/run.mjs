@@ -12667,7 +12667,8 @@ const guardianes = {
      «cambios», ANTES de arrancar los carriles (pruebas/correr.mjs --comprobar: un nombre que no existe sale con 2 sin correr nada). Lo que se teme:
      volver a «al revés» en un solo trabajo, validar después de preparar las máquinas, o un --comprobar que corra pruebas o acepte un nombre
      inexistente. Al revés: alrevesDirigida.
-     24 nov · Más rápida, nunca más floja (decisión AM): (3) la dirigida va en 8 partes (PARTES_DIRIGIDA de scripts/ci/subir.mjs; ci.yml acepta 8);
+     24 nov · Más rápida, nunca más floja (decisión AM): (3) la dirigida va en 8 partes (PARTES_DIRIGIDA de scripts/ci/subir.mjs; ci.yml acepta 8), y en 4 si lleva 4 o menos de punta a punta
+     (PARTES_DIRIGIDA_CHICA; ci.yml acepta 4 y su matriz abre 4);
      (4) «todas las fases» (y «anchos») corren solo las de punta a punta de «solo» (--sin-alreves: las al revés las corre su carril entero; 43 de las
      283 de 45422260550 corrían dos veces) y el corredor lo cumple de verdad; (5) «al revés» va en 6 partes POR TIEMPO (pruebas/reparto-alreves.json,
      medido de los registros): cada suite en una parte y una sola, la parte la de la biblioteca, y ninguna pasa de 4/3 del óptimo posible (la cota de
@@ -12683,10 +12684,15 @@ const guardianes = {
     if (!al.includes("\n      matrix:\n        parte: [1, 2, 3, 4, 5, 6]\n") || /inputs\.(partes|solo)/.test(al)) falla(G, Y, 0, "«alreves»: 6 partes fijas (matrix parte: [1, 2, 3, 4, 5, 6]); ni «partes» ni «solo» lo cambian");
     if (!al.includes("run: node pruebas/correr.mjs --grupo alreves --parte ${{ matrix.parte }}/6\n")) falla(G, Y, 0, "«alreves»: corre --grupo alreves --parte i/6 (entero, también en una dirigida)");
     if (!al.includes("    name: punta a punta · al revés · ${{ matrix.parte }}/6\n")) falla(G, Y, 0, "«alreves»: el nombre de cada parte es «· i/6» (scripts/ci/corrida.mjs cuenta las partes por el nombre)");
-    // 24 nov · La dirigida en 8 partes (la orden la arma subir.mjs con PARTES_DIRIGIDA; ci.yml tiene que aceptarla).
+    // 24 nov · La dirigida en 8 partes (la orden la arma subir.mjs con PARTES_DIRIGIDA; ci.yml tiene que aceptarla), y la chica (hasta 4 de punta a
+    // punta) en 4 (PARTES_DIRIGIDA_CHICA): ci.yml acepta "4" y la matriz de «todas las fases» abre [1,2,3,4] (sin eso, la chica no lanza o queda 1/4 sola).
     { const S = "scripts/ci/subir.mjs", sub = existsSync(S) ? sinComent(S) : "";
       if (!/^export const PARTES_DIRIGIDA = 8;$/m.test(sub)) falla(G, S, 0, "la dirigida va en 8 partes (export const PARTES_DIRIGIDA = 8), repartidas por tiempo");
-      if (!/\n      partes:\n[\s\S]*?options: \[[^\]]*"8"[^\]]*\]/.test(y)) falla(G, Y, 0, "el input «partes» de ci.yml acepta 8 (la dirigida va en 8)"); }
+      if (!/\n      partes:\n[\s\S]*?options: \[[^\]]*"8"[^\]]*\]/.test(y)) falla(G, Y, 0, "el input «partes» de ci.yml acepta 8 (la dirigida va en 8)");
+      if (/^export const PARTES_DIRIGIDA_CHICA = 4;$/m.test(sub)) {
+        if (!/\n      partes:\n[\s\S]*?options: \[[^\]]*"4"[^\]]*\]/.test(y)) falla(G, Y, 0, "el input «partes» de ci.yml acepta 4 (la dirigida chica va en 4)");
+        if (!rg.includes("(inputs.partes || '8') == '4' && '[1,2,3,4]'")) falla(G, Y, 0, "la matriz de «todas las fases» abre [1,2,3,4] con partes=4 (la dirigida chica)");
+      } }
     // 24 nov · «todas las fases» y «anchos» corren solo las de punta a punta: las al revés de «solo» no se repiten fuera de su carril.
     const SA = "--parte ${{ matrix.parte }}/${{ inputs.partes || '8' }} --reintentar --sin-alreves\n";
     for (const [k, t] of [["regresion", rg], ["anchos", an]]) {
