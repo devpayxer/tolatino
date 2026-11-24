@@ -9,7 +9,7 @@
    · Teléfono: cada pestaña cambia el contenido, la pestaña activa siempre se ve y abajo hay una barra con una sola acción.
    · Computadora: una sola página con secciones; las pestañas se quedan pegadas arriba (con flechas si no caben) y llevan a cada
      sección; la tarjeta de reservar se queda pegada a la derecha.
-   · Pestañas en este orden y solo si hay contenido: Resumen · lo que vende · equipo · Reseñas · Novedades · Eventos · Jobs ·
+   · Pestañas en este orden y solo si hay contenido: Resumen · Novedades · lo que vende · equipo · Reseñas · Eventos · Jobs ·
      Horario · Antes de ir · Relacionados. Un dato que falta se omite (nunca «undefined» ni «null»). */
 import * as UI from "@tolatino/ui";
 import { PestanasFicha } from "@tolatino/ui";
@@ -203,10 +203,10 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
   const tc = (x: string) => x.charAt(0) + x.slice(1).toLowerCase();
   const tabs = [
     { id: "res", label: E2("Resumen", "Overview"), icon: "home" },
+    ...(novedades?.posts.length ? [{ id: "nov", label: E2("Novedades", "Updates"), icon: "news" }] : []),
     ...((sv ? nItems : vende?.n) ? [{ id: "cat", label: tc(vende?.tabL ?? L(cfg.tab)), icon: cfg.icon }] : []),
     ...(verEquipo.length ? [{ id: "staff", label: tc(L(cfg.staffTab)), icon: "users" }] : []),
     { id: "rev", label: E2("Reseñas", "Reviews"), icon: "star" },
-    ...(novedades?.posts.length ? [{ id: "nov", label: E2("Novedades", "Updates"), icon: "news" }] : []),
     ...(tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? [{ id: "shop", label: f.cat === "NEG-TRANS" ? E2("Renta", "Rent") : E2("Tienda", "Shop"), icon: "bag" }] : []),
     ...(rv ? [{ id: "rsv", label: E2("Reservar", "Reserve"), icon: "calendar" }] : []),
     ...(eventos.length ? [{ id: "evt", label: E2("Eventos", "Events"), icon: "ticket" }] : []),
@@ -633,6 +633,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
         <div className="grid grid-cols-[minmax(0,1fr)_372px] items-start gap-12 pt-8">
           <div className="flex min-w-0 flex-col gap-16">
             {seccion("res", null, <div className="flex flex-col gap-4">{miCita}{dueno(true)}<div className="grid"><TodayCard desktop eyebrow={hoy.eyebrow} title={hoy.title} cols={hoy.cols} /></div>{oferta}{rv ? <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } ir("rsv"); }} /> : null}{ley}{vende?.resumen ? vende.resumen(true) : null}{esTuyo}</div>)}
+            {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={(id) => { ir("cat"); if (id && me) setTimeout(() => me.abrir(id), 60); }} /></div>) : null}
             {!sv && vende ? seccion("cat", vende.tabL ?? L(cfg.title), <div>{vende.tab(true)}</div>) : null}
             {sv && nItems ? seccion("cat", L(cfg.title), (
               <div data-screen-label="Ficha · servicios · desktop" className="flex flex-col gap-[18px]">
@@ -662,7 +663,6 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
               </div>
             )) : null}
             {rs ? seccion("rev", E2("Reseñas", "Reviews"), <ResTab v={rs} desk onMenu={() => ir("cat")} />, <button type="button" onClick={rs.escribir} className="inline-flex min-h-11 items-center text-[13.5px] font-bold text-action">{rs.r.tengo ? E2("Ver tu reseña", "See your review") : E2("Escribir reseña", "Write a review")}</button>) : null}
-            {novedades?.posts.length ? seccion("nov", E2("Novedades", "Updates"), <div className="max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => ir("hor")} onItem={(id) => { ir("cat"); if (id && me) setTimeout(() => me.abrir(id), 60); }} /></div>) : null}
             {tienda && f.cat !== "NEG-TIENDA" && (tienda.L.length || tienda.V.length) ? seccion("shop", E2("Tienda", "Shop"), <TiendaTab L={tienda.L} V={tienda.V} mia={tienda.mia} auto={f.cat === "NEG-AUTO"} horas={tienda.horas} plan={tienda.plan ?? null} negocio={f.id} es={es} guardados={tienda.g} sesion={sesion} abrirInicial={productoInicial} />) : null}
             {rv ? seccion("rsv", E2("Reservar mesa", "Reserve a table"), <div className="max-w-[620px]"><RsvTab v={rv} desk /></div>) : null}
             {eventos.length ? seccion("evt", E2("Eventos", "Events"), <EventosTab eventos={eventos} es={es} />) : null}
