@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
+_Actualizado: 24 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 21 nov 2026 (media mañana). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -20,6 +20,14 @@ _Actualizado: 21 nov 2026 (media mañana: ver el primer punto de «Estado»). An
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **24 nov (17:15 UTC) · `main` = `pruebas` = 8c3bd59 servido, pero la corrida de `main` en rojo** (CI 45431535443, y ya 45388380005 a las 11:53;
+  nadie la miraba): contraste del texto claro del pie (axe), captura del Hoy del Super Admin (la auditoría que escriben 0217/0218) y `fic9cab`
+  dependiente del orden («Populares»). Arreglos en la rama (7c0b4c2, cae03ec), el repaso apartado (fbe0ebd) y corrida completa 45443313213 en
+  la rama. Servido hoy: el buscador completa la palabra y entiende faltas (AS), el pie encendido con 44 px en el teléfono (AT), Novedades después
+  de Resumen. Decisiones AU (repaso corto tras una roja) y AV (el código no sensible sube por la vía rápida; `main` en rojo lo bloquea).
+  **En marcha:** el repaso (bc9a893 + bfa43c3, revisado por Fable dos veces; tercera tanda de arreglos en el agente) y AV + `--vigilar` (agente
+  Opus). **Sigue:** subir el arreglo de `main` y vigilar su corrida; volver el repaso con su dirigida (mirar las líneas RESULTADOS reales); AV;
+  el CI más rápido (#207: dirigida repartida por tiempo, sin repetir «al revés», «al revés» en más partes).
 - **23 nov (18:15 UTC) · `main` = `pruebas` = 3e91eed, sandbox comprobado (corrida completa 45229505720 en verde).** Hoy, por pedido del fundador: decisiones AN (ajustes de diseño por la vía rápida, pruebas al cierre de la ronda), AO (Anfitriones del barrio) y AP (lo del teléfono también en computadora). Servido: vía rápida de diseño en `scripts/ci/subir.mjs`; vista previa en `http://2.31.196.167:8081/` (sigue la rama de trabajo; el cortafuegos de Hetzner 11974241 ya deja pasar el 8081; se pausa sola con migraciones pendientes) y despliegue más corto (imagen 256 → 208 s en el segundo despliegue); Anfitriones parte 1 (migración 0215, apagados); fotos privadas sin caché del 404 y fronteras con tilde; ronda de ajustes de la ficha (nombre pegado con flecha, menú fijo al tocar una pestaña, categorías que siguen y se centran, banda del carrito, nombre fijo en computadora A PRUEBA). **Pendiente al cierre de la ronda:** pruebas de los retoques de la ficha (REVISION). **Sigue:** Anfitriones parte 2 (noticias RSS, avatares), y Task #195.
 - **23 nov (12:45 UTC) · `main` = `pruebas` = c7c6052, sandbox comprobado por la herramienta de subida (corrida completa 45172437618 en verde).** Servido: el mes del patrocinio con ancla (Opus), las seis direcciones de simulador por `lib/origen-pruebas.ts` (Opus), el estado de la ficha sin palabras repetidas + `Button` con `aria-*`/`data-*` + punta a punta de la cadena mensual de evento en `pat003` (Sonnet), el punto del estado pegado a su texto y las 9 capturas aprobadas de la ficha renovadas (Fable). Sigue: Task #195 (lo construible que queda en LAUNCH).
 - **23 nov (11:00 UTC) · `main` = `pruebas` = f0ed252, servido.** Cabecera y pestañas nuevas de la ficha Pro (pedidas y aprobadas por el fundador: pieza `PestanasFicha`, «Contactar» con flecha y hoja en el teléfono; hecho por Sonnet, revisado por Fable; corrida 45154506856, 0 inestables). **En la rama, con CI completo corriendo:** el mes del patrocinio con ancla (`fechasPeriodo` + `finDePeriodo`, sin migración) y las seis direcciones de simulador por `lib/origen-pruebas.ts` (hecho por Opus, revisado por Fable). Sigue: subirlo en verde; después Task #195 (lo construible de LAUNCH).
