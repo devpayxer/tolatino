@@ -560,7 +560,9 @@ function correrPaso(k, env) {
 /* Los pasos locales a la vez (ver PASOS_LOCALES). El orden de las líneas es el de la lista, como antes. */
 export async function correrLocales(locales, correr = correrPaso) {
   const conTextos = locales.includes("textos");
-  const env = (k) => (k === "guardianes" && conTextos ? { ...process.env, GUARDIANES_SIN_TEXTOS: "1" } : process.env);
+  // Sin heredar la variable: los guardianes que corren solos comprueban los textos aunque quien llama la tenga puesta (el guardián subidaConHerramienta
+  // corre --casos desde dentro de unos guardianes que sí la tienen).
+  const env = (k) => { const e = { ...process.env }; delete e.GUARDIANES_SIN_TEXTOS; if (k === "guardianes" && conTextos) e.GUARDIANES_SIN_TEXTOS = "1"; return e; };
   const prom = new Map();
   for (const k of locales) if (k !== "build") prom.set(k, correr(k, env(k)));
   if (locales.includes("build")) prom.set("build", (prom.get("tipos") ?? Promise.resolve()).then(() => correr("build", env("build"))));
