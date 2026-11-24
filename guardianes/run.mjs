@@ -16318,7 +16318,10 @@ const guardianes = {
      .github; que deje de exigir el build de la web en local; que deje pasar una entrega con una clase vigilada; que calle que las pruebas corren después.
      24 nov · Y el repaso corto tras una roja (decisión AU): que pruebas/correr.mjs deje de imprimir su línea RESULTADOS (al final y al detenerse);
      que la evidencia encadenada (R1 roja + R2 repaso) deje de exigir R2 ⊇ rojas(R1) ∪ propuesta(A..HEAD) o valga con .github/; que el repaso
-     salga sin partes; y que producción (corrida.mjs, promover.sh) acepte una cadena o una corrida con «solo».
+     salga sin partes; y que producción (corrida.mjs, promover.sh) acepte una cadena o una corrida con «solo». Tras la revisión de bc9a893
+     (Fable): que la cuenta de RESULTADOS (pruebas/lib/resultados.cjs, sus casos se ejecutan aquí) o su cableado en el corredor mientan; que
+     cmdSubir o cmdRepaso armen la cadena a mano en vez de buscarEvidencia/prepararRepaso con ioReal; que la cadena valga sin arreglo, con
+     herramientas cambiadas entre A y HEAD, o con una evidencia de otro intento.
      Al revés: alrevesSubir. */
   /* 24 nov (decisión AR) · Los tipos no se repiten dentro del build de la imagen del despliegue (30–60 s cada vez): se revisan ANTES, en cada subida
      («tipos» en todos los caminos de scripts/ci/subir.mjs) y en el CI de cada push (pnpm typecheck; el build del trabajo «web» también los revisa).
@@ -16528,32 +16531,42 @@ const guardianes = {
       const cuerpo = /async function cmdSubir\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
       if (!s.includes("VÍA RÁPIDA DE DISEÑO (AL): las pruebas de punta a punta y al revés corren DESPUÉS, en la corrida de push de main") || (cuerpo.match(/avisoDespues\(/g) ?? []).length < 2) falla(G, S, 0, "--subir por la vía rápida dice al final que la punta a punta y «al revés» corren DESPUÉS (avisoDespues tras empujar)");
     }
-    // 8. 24 nov · El repaso corto tras una roja (decisión AU). (a) pruebas/correr.mjs imprime UNA línea RESULTADOS, la última, al final de cada corrida
-    //    y también cuando se detiene por una señal (completa:false); (b) la cadena R1 roja + R2 repaso exige R2 ⊇ rojas(R1) ∪ propuesta(A..HEAD),
-    //    que las verdes de R1 y R2 cubran la entrega, y no vale con .github/ (ni fuera del camino de la dirigida); (c) el repaso va siempre en partes:
-    //    su orden es la de ordenDirigida y se lanza sin tocar; (d) producción no acepta cadenas: corrida.mjs y promover.sh no leen nada de esto y
-    //    corridaDeProduccion rechaza una corrida con «solo».
-    const CO = "pruebas/correr.mjs", CR = "scripts/ci/corrida.mjs", PR = "scripts/produccion/promover.sh";
-    for (const f of [CO, CR, PR]) if (!existsSync(f)) return falla(G, f, 0, "falta (lo que lee el repaso o la puerta de producción)");
+    // 8. 24 nov · El repaso corto tras una roja (decisión AU), con lo que pidió la revisión de bc9a893 (lo más estricto). (a) La línea RESULTADOS: la
+    //    cuenta vive en pruebas/lib/resultados.cjs y sus casos se EJECUTAN aquí; pruebas/correr.mjs solo la llama (anota cada prueba con
+    //    RESULTADOS.anotar, ninguna otra escritura en «hechas», la imprime la última, también al detenerse, y tras el reintento no sigue si se
+    //    está parando); (b) la cadena R1 roja + R2 repaso exige R2 ⊇ rojas(R1) ∪ propuesta(A..HEAD), que las verdes de R1 y R2 cubran la entrega,
+    //    R1 ancestro de HEAD, sus RESULTADOS, un arreglo sin herramientas entre A y HEAD, y no vale con .github/; (c) el cableado: cmdSubir y cmdRepaso
+    //    no arman nada a mano (buscarEvidencia y prepararRepaso, con la API y git de ioReal; los casos las prueban con un io de mentira); (d) el
+    //    repaso va siempre en partes; (e) producción no acepta cadenas: corrida.mjs y promover.sh no leen nada de esto y corridaDeProduccion
+    //    rechaza una corrida con «solo».
+    const CO = "pruebas/correr.mjs", RL = "pruebas/lib/resultados.cjs", CR = "scripts/ci/corrida.mjs", PR = "scripts/produccion/promover.sh";
+    for (const f of [CO, RL, CR, PR]) if (!existsSync(f)) return falla(G, f, 0, "falta (lo que lee el repaso o la puerta de producción)");
     const co = sinComent(CO);
-    if (!co.includes("console.log(`RESULTADOS ${JSON.stringify({ pedidas, verdes, rojas, inestables: inest, completa,")) falla(G, CO, 0, "pruebas/correr.mjs imprime la línea RESULTADOS {pedidas, verdes, rojas, inestables, completa} (el repaso la lee del registro de cada parte)");
-    if (!/const completa = !detenida && !delCarril\.length && pedidas\.every\(\(n\) => hechas\.has\(n\)\);/.test(co) || !/\n\s+anotar\(t, r\);\n\s+rs\.push\(r\);/.test(co)) falla(G, CO, 0, "RESULTADOS: completa solo si todas las pedidas corrieron hasta su resultado (anotar cada una) sin fallos del carril ni señal");
+    if (!co.includes('const RESULTADOS = createRequire(import.meta.url)("./lib/resultados.cjs");')
+      || !co.includes("console.log(RESULTADOS.linea({ pedidas: sel.map((t) => t.nombre), hechas, inestables: inestables.map((r) => r.nombre), delCarril, detenida: detenida || parando }));"))
+      falla(G, CO, 0, "pruebas/correr.mjs imprime la línea RESULTADOS con pruebas/lib/resultados.cjs (todas las pedidas, las inestables, el carril y completa:false si se está parando)");
+    if (!/\n\s+RESULTADOS\.anotar\(hechas, t\.nombre, r\.ok\);\n\s+rs\.push\(r\);/.test(co) || /hechas\.(set|delete|clear)\(/.test(co) || (co.match(/RESULTADOS\.anotar\(/g) ?? []).length !== 1)
+      falla(G, CO, 0, "pruebas/correr.mjs anota cada prueba que corrió con RESULTADOS.anotar(hechas, t.nombre, r.ok) y con nada más (la roja gana; ninguna se da por verde)");
+    if (!/const r2 = await correrUna\(t\);\n\s+if \(parando\) await new Promise\(\(\) => \{\}\);/.test(co)) falla(G, CO, 0, "tras el reintento de una prueba, si la corrida se está parando no se anota ni se sigue (como tras el primer intento)");
     if (!/process\.on\(sen, async \(\) => \{[\s\S]*?lineaResultados\(\{ detenida: true \}\);\s*vigia\.alParar\(\);\s*process\.exit\(cod\);/.test(co)) falla(G, CO, 0, "pruebas/correr.mjs imprime la línea RESULTADOS también cuando se detiene por una señal (completa:false)");
     const iCola = co.lastIndexOf("── cola de ${r.nombre} ──"), iRes = co.indexOf("lineaResultados({ delCarril:");
     if (iCola < 0 || iRes < iCola || !/lineaResultados\(\{ delCarril: [^\n]*\n\s*process\.exit\(mal\.length \? 1 : 0\);\s*$/.test(co)) falla(G, CO, 0, "la línea RESULTADOS es la última de la corrida: después de las colas de las rojas y justo antes de salir");
-    if (typeof SUBIR.evaluarCadena !== "function" || typeof SUBIR.resultadosDelRegistro !== "function" || typeof SUBIR.analizarDirigida !== "function") falla(G, S, 0, "el repaso: faltan evaluarCadena, analizarDirigida o resultadosDelRegistro");
+    try { execSync(`node ${RL} --casos`, { stdio: "pipe", timeout: 30_000 }); }
+    catch (e) { falla(G, RL, 0, `los casos de la línea RESULTADOS no pasan: ${String(e.stdout ?? "").split("\n").filter((l) => /✗/.test(l)).slice(0, 4).map((l) => l.trim()).join(" · ").slice(0, 400) || String(e.stderr ?? e.message).slice(0, 200)}`); }
+    if (typeof SUBIR.evaluarCadena !== "function" || typeof SUBIR.resultadosDelRegistro !== "function" || typeof SUBIR.analizarDirigida !== "function" || typeof SUBIR.buscarEvidencia !== "function" || typeof SUBIR.prepararRepaso !== "function") falla(G, S, 0, "el repaso: faltan evaluarCadena, analizarDirigida, resultadosDelRegistro, buscarEvidencia o prepararRepaso");
     else {
       const sh = (c) => c.repeat(40), RP = SUBIR.REPO, ra = "r/x", arbol = sh("d");
       const J = (id, name, conclusion = "success", extra = {}) => ({ id, name, status: "completed", conclusion, ...extra });
+      const fijos = (n) => ["alcance (todo o solo documentos)", "verificación · señal rápida (x)", "verificación · contratos (x)", "verificación · imágenes y x", "verificación · base real (x)", "tipos · build · guardianes", "seguridad · x", "web · x"].map((x, i) => J(n + i, x));
       const resL = (o) => `2026-11-24T10:00:00.1Z RESULTADOS ${JSON.stringify({ inestables: [], completa: true, ...o })}`;
       const run1 = { id: 10, head_sha: sh("a"), event: "workflow_dispatch", head_branch: ra, path: ".github/workflows/ci.yml", repository: { full_name: RP }, head_repository: { full_name: RP }, status: "completed", conclusion: "failure", run_attempt: 1 };
-      const js1 = [J(1, "alcance (todo o solo documentos)", "success", { steps: [{ name: "entradas: alcance=regresion · solo=«b1x c1x» · aprobar=no · medir=no" }] }), J(2, "punta a punta · todas las fases · 1/2", "failure"), J(3, "punta a punta · todas las fases · 2/2")];
+      const js1 = [...fijos(100).slice(1), J(1, "alcance (todo o solo documentos)", "success", { steps: [{ name: "entradas: alcance=regresion · solo=«b1x c1x» · aprobar=no · medir=no" }] }), J(2, "punta a punta · todas las fases · 1/2", "failure"), J(3, "punta a punta · todas las fases · 2/2"), J(4, "la tubería (x)", "failure")];
       const r1 = { run: run1, trabajos: js1, registros: { 2: resL({ pedidas: ["b1x"], verdes: [], rojas: ["b1x"] }), 3: resL({ pedidas: ["c1x"], verdes: ["c1x"], rojas: [] }) } };
       const run2 = { ...run1, id: 20, head_sha: sh("e"), conclusion: "success" };
-      const js2 = [J(11, "punta a punta · al revés · 1/1"), J(12, "punta a punta · todas las fases · 1/1"), J(13, "la tubería (x)")];
+      const js2 = [...fijos(200), J(11, "punta a punta · al revés · 1/1"), J(12, "punta a punta · todas las fases · 1/1"), J(13, "la tubería (x)")];
       const ev2 = (solo) => `EVIDENCIA ${JSON.stringify({ corrida: 20, intento: 1, sha: sh("e"), arbol, evento: "workflow_dispatch", rama: ra, entradas: { alcance: "regresion", solo: solo.join(" ") }, solo })}`;
       const TOT = [{ nombre: "b1x", carril: "e2e" }, { nombre: "c1x", carril: "e2e" }, { nombre: "d1x", carril: "e2e" }];
-      const cad = (solo2, x = {}) => SUBIR.evaluarCadena({ r1, r2: { run: run2, trabajos: js2, registro: ev2(solo2) }, rama: ra, repo: RP, arbolHead: arbol, arbolDeRun: arbol, difRunHead: [], aEsAncestro: true, propuestaTotal: TOT, propuestaDesdeA: [{ nombre: "d1x", carril: "e2e" }], ...x });
+      const cad = (solo2, x = {}) => SUBIR.evaluarCadena({ r1, r2: { run: run2, trabajos: js2, registro: ev2(solo2) }, rama: ra, repo: RP, arbolHead: arbol, arbolDeRun: arbol, difRunHead: [], aEsAncestro: true, difAHead: ["apps/web/lib/d1x.ts"], propuestaTotal: TOT, propuestaDesdeA: [{ nombre: "d1x", carril: "e2e" }], ...x });
       const base = cad(["b1x", "d1x"]);
       if (!base.ok) falla(G, S, 0, `la cadena R1 roja + R2 repaso no vale ni en el caso de base (${String(base.motivo).slice(0, 160)}): el guardián ya no ve lo que vigila`);
       // Cada exigencia por separado: sin la prueba en la propuesta de la entrega (llegó por --mas), para que la cobertura total no la tape.
@@ -16562,9 +16575,25 @@ const guardianes = {
       if (cad(["b1x", "d1x"], { propuestaTotal: [...TOT, { nombre: "e1x", carril: "e2e" }] }).ok) falla(G, S, 0, "la cadena exige que las verdes de R1 y R2 cubran la propuesta de la entrega (origin/main..HEAD)");
       if (cad(["b1x", "d1x"], { completa: true }).ok) falla(G, S, 0, "la cadena no vale si la entrega toca .github/ (hace falta la corrida COMPLETA)");
       if (cad(["b1x", "d1x"], { aEsAncestro: false }).ok) falla(G, S, 0, "la cadena exige que el commit de R1 sea ancestro de HEAD");
-      if (cad(["b1x", "d1x"], { r1: { ...r1, registros: { 3: r1.registros[3] } } }).ok) falla(G, S, 0, "la cadena exige la línea RESULTADOS de cada trabajo de pruebas de R1 (un trabajo rojo sin ella: no se sabe qué falló)");
-      const cuerpoS = /async function cmdSubir\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
-      if (!/if \(!hallada && p\.ex\.corrida === "dirigida" && candidatas\.length\)/.test(cuerpoS) || (cuerpoS.match(/evaluarCadena\(/g) ?? []).length !== 1) falla(G, S, 0, "la evidencia encadenada solo en el camino de la dirigida (nunca con .github/ ni en la vía rápida), desde un solo sitio de --subir");
+      const sinRes = cad(["b1x", "d1x"], { r1: { ...r1, registros: { 3: r1.registros[3] } } });
+      if (sinRes.ok || !/rojo\): sin la línea RESULTADOS/.test(sinRes.motivo)) falla(G, S, 0, `la cadena exige la línea RESULTADOS de cada trabajo de pruebas de R1 (un trabajo rojo sin ella: no se sabe qué falló; dijo: ${sinRes.ok ? "vale" : String(sinRes.motivo).slice(0, 120)})`);
+      const conH = cad(["b1x", "d1x"], { difAHead: [".github/workflows/ci.yml", "apps/web/lib/d1x.ts"] });
+      if (conH.ok || !/herramientas del CI/.test(conH.motivo)) falla(G, S, 0, "la cadena no vale con herramientas del CI (.github/ incluido) cambiadas entre A y HEAD");
+      const sinArreglo = cad(["b1x", "d1x"], { difAHead: [] });
+      if (sinArreglo.ok || !/sin arreglo no hay repaso/.test(sinArreglo.motivo)) falla(G, S, 0, "la cadena no vale sin arreglo entre A y HEAD (una roja dos veces es roja, AG)");
+      const otroIntento = cad(["b1x", "d1x"], { r2: { run: { ...run2, run_attempt: 2 }, trabajos: js2, registro: ev2(["b1x", "d1x"]) } });
+      if (otroIntento.ok || !/intento 2/.test(otroIntento.motivo)) falla(G, S, 0, "la evidencia (y R2) solo valen del primer intento (AG)");
+      // (c) El cableado: cmdSubir y cmdRepaso no arman la cadena ni el repaso a mano; ioReal pregunta de verdad.
+      const cuerpoS = /async function cmdSubir\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", cuerpoR = /async function cmdRepaso\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+      const io = /export function ioReal\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", be = /export async function buscarEvidencia\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+      if (!cuerpoS.includes("await buscarEvidencia({ p, rama, repo, arbolHead, io: ioReal(repo, rama) })") || /evaluarCadena\(|armarCadena\(|evaluarCorrida\(/.test(cuerpoS)
+        || !be.includes('if (p.ex.corrida !== "dirigida" || !candidatas.length) return') || (be.match(/evaluarCadena\(await armarCadena\(\{ r1, r2, corridas, p, rama, repo, arbolHead, io \}\)\)/g) ?? []).length !== 1)
+        falla(G, S, 0, "la evidencia encadenada solo en el camino de la dirigida (nunca con .github/ ni en la vía rápida), desde buscarEvidencia con ioReal: cmdSubir no arma nada a mano");
+      if (!cuerpoR.includes("await prepararRepaso({ id, rama, repo, mas, io: ioReal(repo, rama) })") || /analizarDirigida\(|intermediasDe\(|difDeArreglo\(|listaDelRepaso\(|planear\(/.test(cuerpoR))
+        falla(G, S, 0, "--repaso prepara R1, el arreglo y la lista con prepararRepaso e ioReal: cmdRepaso no arma nada a mano");
+      if (!io.includes('esAncestro: (sha) => gitOk("merge-base", "--is-ancestor", sha, "HEAD"),') || !io.includes('difNombres: (a, b) => git("diff", "--no-renames", "--name-only", "-z", a, b)')
+        || !io.includes("/runs?branch=${encodeURIComponent(rama)}&per_page=100`)") || !io.includes("tenerCommit: (sha) => tenerCommit(sha),") || !io.includes('planear: (base, mas) => m(`p${base}\\0${mas.join(" ")}`, () => planear({ base, cabeza: "HEAD", mas })),'))
+        falla(G, S, 0, "ioReal pregunta de verdad: git merge-base --is-ancestor, git diff --name-only, todas las corridas de la rama (de cualquier evento y estado), el commit y el plan");
     }
     const rep = /async function cmdRepaso\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", lan = /async function lanzarYEsperar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
     if (!rep || !lan || !rep.includes("const o = ordenDirigida({ rama, nombres, repo });") || !rep.includes("return lanzarYEsperar({ repo, rama, head, o });") || /partes/.test(rep) || /partes/.test(lan)

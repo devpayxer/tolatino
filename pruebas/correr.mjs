@@ -285,19 +285,14 @@ const REINTENTAR = flag("--reintentar"), TOPE_INESTABLES = 3, inestables = [];
 /* 24 nov (decisión AU, «repaso corto tras una roja») · La línea RESULTADOS: el resultado de la corrida legible por máquina, UNA línea y la ÚLTIMA
    de la corrida (después de las colas de las rojas); si se detiene por una señal, también, con completa:false, justo antes de devolver el árbol
    (alrevesSeguro vigila que alParar vaya pegado a la salida). scripts/ci/subir.mjs la lee del registro de cada trabajo de pruebas de una
-   dirigida roja para el repaso (--repaso) y para la evidencia encadenada de --subir. Campos: pedidas (la selección), verdes y rojas (solo las
-   pedidas que corrieron HASTA su resultado; la roja gana si un nombre sale dos veces), inestables (verdes que fallaron una vez), completa (todas
-   las pedidas corrieron hasta su resultado, ningún fallo del carril —la pasada de guardianes o la huella del árbol— y no se detuvo) y, si los
-   hubo, delCarril (esos fallos, que no son pruebas). Una prueba que no corrió (carril cortado) no está ni en verdes ni en rojas. Guardián
-   subidaConHerramienta; al revés: alrevesSubir. */
+   dirigida roja para el repaso (--repaso) y para la evidencia encadenada de --subir. La cuenta (qué es verde, rojo, inestable y cuándo es
+   completa) vive en pruebas/lib/resultados.cjs con sus casos ejecutables; aquí solo se anota cada prueba que corrió HASTA su resultado y se
+   imprime. Mientras se está parando (señal) nada más se anota y la línea dice completa:false. Guardián subidaConHerramienta; al revés:
+   alrevesSubir. */
+const RESULTADOS = createRequire(import.meta.url)("./lib/resultados.cjs");
 const hechas = new Map();
-const anotar = (t, r) => { if (hechas.get(t.nombre) !== false) hechas.set(t.nombre, !!r?.ok); };
 function lineaResultados({ delCarril = [], detenida = false } = {}) {
-  const pedidas = [...new Set(sel.map((t) => t.nombre))];
-  const verdes = pedidas.filter((n) => hechas.get(n) === true), rojas = pedidas.filter((n) => hechas.get(n) === false);
-  const inest = [...new Set(inestables.map((r) => r.nombre))].filter((n) => hechas.get(n) === true);
-  const completa = !detenida && !delCarril.length && pedidas.every((n) => hechas.has(n));
-  console.log(`RESULTADOS ${JSON.stringify({ pedidas, verdes, rojas, inestables: inest, completa, ...(delCarril.length ? { delCarril } : {}) })}`);
+  console.log(RESULTADOS.linea({ pedidas: sel.map((t) => t.nombre), hechas, inestables: inestables.map((r) => r.nombre), delCarril, detenida: detenida || parando }));
 }
 const carril = async (ts) => {
   const rs = [];
@@ -313,10 +308,11 @@ const carril = async (ts) => {
       try { renameSync(r.salida, primera); } catch { /* sin salida */ }
       console.log(`  ↻ ${t.nombre}: se repite una vez`);
       const r2 = await correrUna(t);
+      if (parando) await new Promise(() => {});
       if (r2.ok) { r2.inestable = { error: r.error, salida: primera }; inestables.push(r2); console.log(`  ~ INESTABLE ${t.nombre}: falló una vez (${String(r.error).slice(0, 200)}) y pasó al repetirla`); r = r2; }
       else r = { ...r2, error: `${r2.error} · dos veces seguidas (la primera: ${String(r.error).slice(0, 140)})` };
     }
-    anotar(t, r);
+    RESULTADOS.anotar(hechas, t.nombre, r.ok);
     rs.push(r);
   }
   if (ts.some((t) => t.carril === "alreves")) await vigia.terminar(rs);

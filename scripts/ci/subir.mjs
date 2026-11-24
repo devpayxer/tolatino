@@ -21,20 +21,28 @@
      --subir --sin-via-rapida      fuerza el camino normal (con evidencia del CI) aunque la entrega sea de diseño.
      --repaso <id> [--mas "a b"] [--ensayo]
                                    24 nov (decisión AU, «repaso corto tras una roja»): tras una dirigida roja R1 (commit A) y con el arreglo en HEAD,
-                                   lanza SOLO rojas(R1) ∪ inestables(R1) ∪ rojas de las dirigidas rojas posteriores a R1 en la rama ∪ dirigida(diff A..HEAD)
-                                   ∪ --mas ∪ las de punta a punta de la propuesta de la entrega que no salieron en verde en R1, validadas con
-                                   pruebas/correr.mjs --comprobar, con la MISMA orden que la dirigida (ordenDirigida, en partes) y esperando igual.
-                                   R1: ci.yml de este repo, de esta rama, a mano, alcance=regresion con «solo», primer intento, terminada en rojo,
-                                   A ancestro de HEAD; cada parte de «todas las fases» completa (verde o roja) con su línea RESULTADOS (la imprime
-                                   pruebas/correr.mjs) y completa:true; anchos, confirmación y dispositivos saltados; al menos una roja con nombre.
-                                   Si no, dice que toca la dirigida entera. Las rojas de trabajos que no miran «solo» (verificación, seguridad, web,
-                                   «al revés») no lo impiden: corren enteros en cualquier corrida y R2 los vuelve a pasar. Con --ensayo no lanza.
+                                   lanza SOLO rojas(R1) ∪ inestables(R1) ∪ rojas e inestables de las corridas no verdes posteriores a R1 en la rama
+                                   ∪ dirigida(diff A..HEAD) ∪ --mas ∪ las de punta a punta de la propuesta de la entrega que no salieron en verde en
+                                   R1, validadas con pruebas/correr.mjs --comprobar, con la MISMA orden que la dirigida (ordenDirigida, en partes) y
+                                   esperando igual. R1: ci.yml de este repo, de esta rama, a mano, alcance=regresion con «solo», primer intento,
+                                   terminada en rojo SOLO por pruebas con nombre (todo lo que no es «todas las fases» ni «la tubería», en verde; los
+                                   trabajos fijos, presentes; anchos, confirmación y dispositivos, saltados), A ancestro de HEAD; cada parte de «todas
+                                   las fases» completa (verde o roja) con su línea RESULTADOS (pruebas/correr.mjs con pruebas/lib/resultados.cjs) y
+                                   completa:true; al menos una roja con nombre. Entre A y HEAD tiene que haber arreglo (más que documentos de trabajo:
+                                   una roja dos veces es roja, AG) y nada de HERRAMIENTAS (.github/ incluido). Cada corrida de la rama posterior a R1
+                                   que no terminó en verde (de cualquier evento) tiene que haber terminado y traer RESULTADOS en cada parte que corrió.
+                                   Si no, dice que toca la dirigida entera. Con --ensayo no lanza.
        evidencia encadenada        --subir acepta, además de una corrida verde que cubra la propuesta, la cadena de UN eslabón R1 (dirigida roja de la
                                    rama, las condiciones de --repaso) + R2 (corrida verde de este árbol con todo lo que se le exige a una corrida:
-                                   árbol, EVIDENCIA, «al revés» entero, tubería y trabajos en verde) tal que R2.solo ⊇ rojas e inestables de R1 y de
-                                   las dirigidas rojas entre R1 y R2 ∪ propuesta(A..HEAD), y verdes(R1) ∪ R2.solo ⊇ propuesta(origin/main..HEAD)
-                                   (evaluarCadena). Con .github/ no vale (corrida COMPLETA). No cambia producción: corrida.mjs y promover.sh siguen
-                                   exigiendo la corrida entera.
+                                   primer intento, árbol, EVIDENCIA, trabajos fijos, «al revés» entero, tubería y trabajos en verde) tal que R2.solo ⊇
+                                   rojas e inestables de R1 y de las corridas no verdes entre R1 y R2 ∪ propuesta(A..HEAD), y verdes(R1) ∪ R2.solo ⊇
+                                   propuesta(origin/main..HEAD) (evaluarCadena). Con .github/ en la entrega no vale (corrida COMPLETA). El cableado
+                                   (qué corridas, qué commit, qué propuesta) vive en buscarEvidencia y prepararRepaso con la API y git inyectados
+                                   (ioReal), y los casos lo prueban entero. No cambia producción: corrida.mjs y promover.sh siguen exigiendo la
+                                   corrida entera.
+     toda evidencia                24 nov (revisión de bc9a893): solo vale el PRIMER intento de una corrida (y su línea EVIDENCIA): volver a correr a
+                                   mano lo que falló es otro reintento, contra AG. Y los trabajos fijos (alcance, la verificación, tipos · build ·
+                                   guardianes, seguridad, web) tienen que estar y en verde, ni saltados ni ausentes.
      --casos                       los casos puros (sin red, sin tocar el repo); los corre el guardián subidaConHerramienta.
    Las clases solo SUMAN exigencias, nunca certifican: «sensible» es mejor esfuerzo (rutas + señales en los renglones cambiados) y lo que no
    caza sube como normal. La garantía que no depende de la clase es tipos + guardianes siempre y la evidencia del CI del mismo árbol.
@@ -292,8 +300,25 @@ export function evidenciaDelRegistro(texto) {
   return { ok: true, ev };
 }
 
+/* 24 nov (revisión de bc9a893) · Los trabajos que corren en TODA corrida de ci.yml que no sea un push de solo documentos (los de scripts/ci/corrida.mjs,
+   FIJOS, sin la tubería, que se mira aparte): en una evidencia tienen que estar, uno cada uno, y en verde. Saltado o ausente no vale. */
+export const FIJOS_EVIDENCIA = Object.freeze([
+  ["alcance", /^alcance \(/], ["verificación · señal rápida", /^verificación · señal rápida /], ["verificación · contratos", /^verificación · contratos /],
+  ["verificación · imágenes", /^verificación · imágenes /], ["verificación · base real", /^verificación · base real /],
+  ["tipos · build · guardianes", /^tipos · build · guardianes$/], ["seguridad", /^seguridad · /], ["web", /^web · /],
+]);
+/** "" si cada trabajo fijo está, uno, y en verde; si no, por qué. */
+export function faltaFijo(trabajos) {
+  for (const [que, re] of FIJOS_EVIDENCIA) {
+    const k = (trabajos ?? []).filter((j) => re.test(nombreJ(j)));
+    if (k.length !== 1 || !verde(k[0])) return `«${que}»: ${k.length} trabajo(s)${k.length === 1 ? `, terminó ${k[0]?.status}/${k[0]?.conclusion}` : ""}; tiene que haber uno, en verde (ni saltado ni ausente)`;
+  }
+  return "";
+}
+
 /** ¿Esta corrida es evidencia para subir el árbol de HEAD? Todo lo que decide sale de la API (corrida y trabajos) y de git; la línea EVIDENCIA
-    solo dice el árbol y lo que se pidió, y se cruza con la API. */
+    solo dice el árbol y lo que se pidió, y se cruza con la API. Solo vale el PRIMER intento: volver a correr a mano lo que falló es otro
+    reintento, y va contra AG (una prueba se repite una vez, dentro de la corrida). */
 export function evaluarCorrida({ run, trabajos, registro, rama, repo = REPO, arbolHead, arbolDeRun, difRunHead, propuesta = [], completa = false }) {
   try {
     if (!run || typeof run !== "object") return no("corrida vacía");
@@ -302,15 +327,19 @@ export function evaluarCorrida({ run, trabajos, registro, rama, repo = REPO, arb
     if (!rama || run.head_branch !== rama) return no(`de la rama ${run.head_branch}, no de ${rama}`);
     if (!["workflow_dispatch", "push"].includes(run.event)) return no(`evento ${run.event}`);
     if (run.status !== "completed" || run.conclusion !== "success") return no(`la corrida terminó ${run.status}/${run.conclusion}`);
+    if (run.run_attempt !== 1) return no(`es el intento ${run.run_attempt} de la corrida: solo vale el primero (volver a correr lo que falló es otro reintento, AG)`);
     if (!Array.isArray(trabajos) || !trabajos.length) return no("sin trabajos");
     const tub = trabajos.filter((j) => /^la tubería /.test(nombreJ(j)));
     if (tub.length !== 1) return no(`«la tubería»: ${tub.length} trabajo(s); tiene que haber uno`);
     if (!verde(tub[0])) return no(`«la tubería» terminó ${tub[0]?.status}/${tub[0]?.conclusion}: su línea EVIDENCIA no vale`);
     const malo = trabajos.find((j) => !(verde(j) || (j?.status === "completed" && j?.conclusion === "skipped")));
     if (malo) return no(`«${nombreJ(malo).slice(0, 80)}» terminó ${malo?.status}/${malo?.conclusion}`);
+    const fijo = faltaFijo(trabajos);
+    if (fijo) return no(fijo);
     const e = evidenciaDelRegistro(registro);
     if (!e.ok) return e;
     const ev = e.ev;
+    if (Number(ev.intento) !== 1) return no(`la línea EVIDENCIA es del intento ${ev.intento}: solo vale el primero (AG)`);
     if (String(ev.corrida) !== String(run.id)) return no(`la línea EVIDENCIA es de la corrida ${ev.corrida}, no de ${run.id}`);
     if (ev.sha !== run.head_sha) return no("la línea EVIDENCIA es de otro commit que la corrida");
     if (!SHA40.test(arbolDeRun ?? "") || ev.arbol !== arbolDeRun) return no("el árbol de la línea EVIDENCIA no es el del commit de la corrida");
@@ -340,9 +369,14 @@ export function evaluarCorrida({ run, trabajos, registro, rama, repo = REPO, arb
 /* Qué trabajos de ci.yml miran «solo» (comprobado en ci.yml el 24 nov): «punta a punta · todas las fases» (regresion) y «punta a punta · ancho»
    (anchos). «confirmación» y «dispositivo» corren pruebas/correr.mjs con la regresión entera o con disp9b, sin mirar «solo», y en una dirigida
    (alcance=regresion, sin confirmar ni anchos) quedan SALTADOS los tres; si en R1 corrió alguno, R1 no es una dirigida de esta herramienta y no
-   hay repaso (lo más estricto: sus rojas no se repetirían en el mismo ancho ni con la misma pasada). Los demás (alcance, la verificación, tipos ·
-   build · guardianes, seguridad, web y «al revés», que corre --grupo alreves entero) no miran «solo»: corren enteros en cualquier corrida de ci.yml
-   y R2 los vuelve a pasar en verde, así que sus rojas en R1 no impiden el repaso. */
+   hay repaso. Los demás (alcance, la verificación, tipos · build · guardianes, seguridad, web y «al revés», que corre --grupo alreves entero) no
+   miran «solo».
+   24 nov (revisión de bc9a893, lo más estricto) · R1 tiene que haber fallado SOLO por pruebas con nombre (la letra de AU): todo lo que no es «todas
+   las fases» ni «la tubería» terminó en verde en R1 (y anchos, confirmación y dispositivos, saltados). Sin arreglo no hay repaso: entre A y HEAD
+   tiene que cambiar algo más que documentos de trabajo (una roja dos veces es roja, AG), y nada de HERRAMIENTAS (.github/, scripts/ci, el corredor,
+   pruebas/lib, guardianes, el reparto): con eso, dirigida entera. Cuenta toda corrida de la rama entre R1 y R2 que no terminó en verde (roja,
+   cancelada o fuera de tiempo, de cualquier evento): sus rojas e inestables se suman; una que no terminó, o una parte suya que corrió sin su línea
+   RESULTADOS, y no hay cadena. */
 export const TRABAJO_REGRESION = "punta a punta · todas las fases";
 const OTROS_DE_PRUEBAS = /^(punta a punta · ancho|confirmación|dispositivo) /;
 const esDeRegresion = (j) => nombreJ(j) === TRABAJO_REGRESION || nombreJ(j).startsWith(`${TRABAJO_REGRESION} · `);
@@ -399,6 +433,10 @@ export function analizarDirigida({ run, trabajos, registros = {}, rama, repo = R
     if (en.alcance !== "regresion" || en.vacio) return no(`no es una dirigida (alcance=${en.alcance}${en.vacio ? ", sin «solo»" : ""}; una dirigida es alcance=regresion con «solo»)`);
     const otro = trabajos.find((j) => OTROS_DE_PRUEBAS.test(nombreJ(j)) && !saltado(j));
     if (otro) return no(`corrió «${nombreJ(otro).slice(0, 60)}»: en una dirigida solo corren pruebas en «${TRABAJO_REGRESION}» (anchos, confirmación y dispositivos saltados)`);
+    const ajeno = trabajos.find((j) => !esDeRegresion(j) && !/^la tubería /.test(nombreJ(j)) && !OTROS_DE_PRUEBAS.test(nombreJ(j)) && !verde(j));
+    if (ajeno) return no(`no falló solo por pruebas con nombre: «${nombreJ(ajeno).slice(0, 60)}» terminó ${ajeno?.status}/${ajeno?.conclusion} (todo lo que no es «${TRABAJO_REGRESION}» ni «la tubería» tiene que estar en verde; AU)`);
+    const fijo = faltaFijo(trabajos);
+    if (fijo) return no(`no falló solo por pruebas con nombre: ${fijo}`);
     const reg = trabajos.filter(esDeRegresion);
     const forma = carrilCompleto(reg.map((j) => ({ ...j, status: "completed", conclusion: "success" })), TRABAJO_REGRESION);
     if (!forma.ok) return no(`los trabajos de pruebas: ${forma.motivo}`);
@@ -423,16 +461,20 @@ export function analizarDirigida({ run, trabajos, registros = {}, rama, repo = R
   }
 }
 
-/** Una corrida ROJA de la rama entre R1 y R2 (un repaso que también salió rojo, u otra dirigida): sus rojas (y sus inestables) se suman a las que R2
-    tiene que repetir. Todo trabajo de pruebas que corrió tiene que traer RESULTADOS; si no, no se sabe qué falló (= dirigida entera). */
+/** Una corrida de la rama entre R1 y R2 que no terminó en verde (un repaso que también salió rojo, otra dirigida, una cancelada…): sus rojas y sus
+    inestables se suman a las que R2 tiene que repetir. Una que no terminó no vale (no se sabe qué va a decir). Cada trabajo de pruebas que corrió
+    (no saltado) tiene que traer RESULTADOS (de una parte cancelada también: el corredor la deja al detenerse); uno ROJO sin ninguna roja con nombre
+    no dice qué falló. Si no, no hay cadena (= dirigida entera). */
 export function rojasDeIntermedia({ run, trabajos, registros = {} } = {}) {
   try {
+    if (run?.status !== "completed") return no(`la corrida ${run?.id} todavía no terminó (${run?.status}): no se sabe qué va a decir`);
     if (!Array.isArray(trabajos) || !trabajos.length) return no("sin trabajos");
     const rojas = new Set();
     for (const j of trabajos.filter(esTrabajoDePruebas)) {
       if (saltado(j)) continue;
       const x = resultadosDelRegistro(registros?.[j.id]);
       if (!x.ok) return no(`«${nombreJ(j).slice(0, 80)}» terminó ${j?.status}/${j?.conclusion} y ${x.motivo}: no se sabe qué prueba falló`);
+      if (j?.conclusion === "failure" && !x.r.rojas.length) return no(`«${nombreJ(j).slice(0, 80)}» rojo sin ninguna prueba roja con nombre en RESULTADOS: no se sabe qué falló`);
       x.r.rojas.forEach((t) => rojas.add(t)); x.r.inestables.forEach((t) => rojas.add(t));
     }
     return { ok: true, id: run?.id, rojas: [...rojas] };
@@ -441,11 +483,21 @@ export function rojasDeIntermedia({ run, trabajos, registros = {} } = {}) {
   }
 }
 
-/** Las corridas de la rama que cuentan como «entre R1 y R2»: ci.yml de este repo, a mano, rojas, posteriores a R1 (y anteriores a R2 si la hay).
-    Más estricto que «los repasos de R1»: cualquier dirigida roja posterior suma sus rojas, sea o no un repaso de R1. */
+/** Las corridas de la rama que cuentan como «entre R1 y R2»: ci.yml de este repo y de esta rama, de CUALQUIER evento, posteriores a R1 (y anteriores
+    a R2 si la hay), que no terminaron en verde: rojas, canceladas, fuera de tiempo… y las que todavía no terminaron (quien las use las rehúsa). */
 export function intermediasDe(corridas, { r1, r2 = null, rama, repo = REPO }) {
-  return (corridas ?? []).filter((r) => r && r.path === ".github/workflows/ci.yml" && r.repository?.full_name === repo && r.head_branch === rama && r.event === "workflow_dispatch"
-    && r.status === "completed" && r.conclusion === "failure" && Number(r.id) > Number(r1?.id) && (r2 === null || Number(r.id) < Number(r2?.id)));
+  return (corridas ?? []).filter((r) => r && r.path === ".github/workflows/ci.yml" && r.repository?.full_name === repo && r.head_branch === rama
+    && !(r.status === "completed" && r.conclusion === "success") && Number(r.id) > Number(r1?.id) && (r2 === null || Number(r.id) < Number(r2?.id)));
+}
+
+/** Lo que cambió entre A (el commit de R1) y HEAD: sin arreglo no hay repaso (vacío o solo documentos de trabajo: una roja dos veces es roja, AG) y
+    con HERRAMIENTAS (.github/, scripts/ci, el corredor, pruebas/lib, guardianes, el reparto) tampoco: dirigida entera. */
+export function difDeArreglo(dif) {
+  if (!Array.isArray(dif)) return no("sin la lista de lo que cambió entre A y HEAD");
+  const h = dif.filter((f) => casa(HERRAMIENTAS, f));
+  if (h.length) return no(`entre A y HEAD cambiaron herramientas del CI (${h.slice(0, 4).join(", ")}${h.length > 4 ? "…" : ""}): no hay repaso ni cadena, toca la dirigida entera`);
+  if (!dif.length || veredicto(dif) === "documentos") return no("sin arreglo no hay repaso: entre A y HEAD solo cambian documentos de trabajo, o nada (una roja dos veces es roja, AG)");
+  return { ok: true };
 }
 
 /** La lista del repaso: rojas e inestables de R1 y de las rojas posteriores, la propuesta desde A (diff A..HEAD, con --mas) y, para que la cadena
@@ -462,16 +514,19 @@ export function listaDelRepaso({ r1, extra = [], desdeA = [], total = [] }) {
 }
 
 /** ¿La cadena R1 (dirigida roja) + R2 (repaso en verde) es evidencia para subir el árbol de HEAD? (decisión AU). Un solo eslabón: las verdes de R1
-    y lo que corrió R2; nada de una corrida anterior a R1. R2 pasa TODO lo que evaluarCorrida le exige a una corrida (árbol, EVIDENCIA, «al revés»
-    entero, tubería y trabajos en verde) y además: R2 ⊇ rojas e inestables de R1 y de las rojas entre R1 y R2 ∪ propuesta(A..HEAD), y
-    verdes(R1) ∪ R2 ⊇ propuesta(origin/main..HEAD) (las de «al revés» las cubre su carril entero en R2, como hoy). Con .github/ cambiado, no vale. */
-export function evaluarCadena({ r1, r2, intermedias = [], rama, repo = REPO, arbolHead, arbolDeRun, difRunHead, aEsAncestro = false, propuestaTotal = [], propuestaDesdeA = [], completa = false }) {
+    y lo que corrió R2; nada de una corrida anterior a R1. R2 pasa TODO lo que evaluarCorrida le exige a una corrida (primer intento, árbol,
+    EVIDENCIA, trabajos fijos, «al revés» entero, tubería y trabajos en verde) y además: R2 ⊇ rojas e inestables de R1 y de las corridas no verdes
+    entre R1 y R2 ∪ propuesta(A..HEAD), y verdes(R1) ∪ R2 ⊇ propuesta(origin/main..HEAD) (las de «al revés» las cubre su carril entero en R2, como
+    hoy). No vale con .github/ cambiado en la entrega (completa), ni sin arreglo o con herramientas cambiadas entre A y HEAD (difAHead). */
+export function evaluarCadena({ r1, r2, intermedias = [], rama, repo = REPO, arbolHead, arbolDeRun, difRunHead, aEsAncestro = false, difAHead = null, propuestaTotal = [], propuestaDesdeA = [], completa = false }) {
   try {
     if (completa) return no("la entrega toca .github/: la cadena roja + repaso no vale, hace falta una corrida COMPLETA (decisión AM)");
     const a = analizarDirigida({ ...r1, rama, repo });
     if (!a.ok) return no(`R1: ${a.motivo}`);
     if (!a.rojas.length) return no("R1 no tiene ninguna prueba roja con nombre");
     if (aEsAncestro !== true) return no(`el commit de R1 (${String(a.sha).slice(0, 12)}) no es ancestro de HEAD`);
+    const arr = difDeArreglo(difAHead);
+    if (!arr.ok) return arr;
     const v = evaluarCorrida({ run: r2?.run, trabajos: r2?.trabajos, registro: r2?.registro, rama, repo, arbolHead, arbolDeRun, difRunHead, propuesta: [], completa: false });
     if (!v.ok) return no(`R2: ${v.motivo}`);
     if (!(Number(r2.run.id) > Number(a.id))) return no("R2 no es posterior a R1");
@@ -482,12 +537,12 @@ export function evaluarCadena({ r1, r2, intermedias = [], rama, repo = REPO, arb
     const extra = new Set();
     for (const x of intermediasDe(intermedias.map((i) => i?.run), { r1: { id: a.id }, r2: r2.run, rama, repo })) {
       const q = rojasDeIntermedia(intermedias.find((i) => i?.run === x));
-      if (!q.ok) return no(`la corrida ${x.id}, roja entre R1 y R2: ${q.motivo}`);
+      if (!q.ok) return no(`la corrida ${x.id}, no verde entre R1 y R2: ${q.motivo}`);
       q.rojas.forEach((t) => extra.add(t));
     }
     const rojas = [...new Set([...a.rojas, ...a.inestables, ...extra])];
     const sinRojas = rojas.filter((t) => !enR2(t));
-    if (sinRojas.length) return no(`R2 no repite las rojas de R1 (y de las rojas posteriores): falta ${sinRojas.slice(0, 8).join(" ")}`);
+    if (sinRojas.length) return no(`R2 no repite las rojas de R1 (y de las corridas no verdes posteriores): falta ${sinRojas.slice(0, 8).join(" ")}`);
     const sinA = propuestaDesdeA.filter((t) => !enR2(t.nombre));
     if (sinA.length) return no(`R2 no corre la propuesta desde el commit de R1 (A..HEAD): falta ${sinA.slice(0, 8).map((t) => t.nombre).join(" ")}`);
     const verdesR1 = new Set(a.verdes.filter((t) => !extra.has(t)));
@@ -497,6 +552,96 @@ export function evaluarCadena({ r1, r2, intermedias = [], rama, repo = REPO, arb
   } catch (err) {
     return no(`error: ${String(err?.message ?? err).slice(0, 160)}`);
   }
+}
+
+/* ── El cableado de la cadena y del repaso, con lo de verdad inyectado ───────────────────────────────────────────────────────────────────── */
+/* 24 nov (revisión de bc9a893) · Lo que cmdSubir y cmdRepaso armaban a mano (qué corridas, qué commit, qué propuesta, qué intermedias) vive aquí,
+   con la API y git detrás de «io»: ioReal en lo de verdad y uno de mentira en los casos. Así los casos prueban el cableado entero y no solo las
+   funciones puras: dejar sin la propuesta desde A o sin la de la entrega, dar por ancestro lo que no lo es, olvidar una corrida intermedia,
+   maquillar R1 o saltarse lo de las herramientas entre A y HEAD tumba un caso (guardián subidaConHerramienta; al revés: alrevesSubir).
+   io: corrida(id) · corridas() (todas las de ci.yml de la rama, de cualquier evento y estado, la más nueva primero) · trabajos(id) ·
+       registro(idTrabajo) · tenerCommit(sha) · arbol(sha) · difNombres(a, b) (git diff --name-only a b) · esAncestro(sha) (de HEAD) ·
+       planear(base, mas) (las clases y la dirigida propuesta desde «base» hasta HEAD). */
+export async function cargarCorrida(io, run) {
+  const trabajos = await io.trabajos(run.id), registros = {};
+  for (const j of trabajos.filter((x) => esTrabajoDePruebas(x) && !saltado(x))) { try { registros[j.id] = await io.registro(j.id); } catch { /* sin registro: RESULTADOS dirá que falta */ } }
+  return { run, trabajos, registros };
+}
+
+/** Los argumentos de evaluarCadena para R1 (una corrida roja de la lista, tal cual) y R2 (una candidata ya leída: { run, trabajos, registro,
+    arbolDeRun, difRunHead }), sacados de io y de nada más. */
+export async function armarCadena({ r1, r2, corridas, p, rama, repo = REPO, arbolHead, io }) {
+  const A = r1?.head_sha;
+  const tengo = SHA40.test(A ?? "") && (await io.tenerCommit(A)) === true;
+  const aEsAncestro = tengo && (await io.esAncestro(A)) === true;
+  const difAHead = tengo ? await io.difNombres(A, "HEAD") : null;
+  const propuestaDesdeA = aEsAncestro ? (await io.planear(A, [])).d.pruebas : [];
+  const intermedias = [];
+  for (const r of intermediasDe(corridas, { r1, r2: r2.run, rama, repo })) intermedias.push(await cargarCorrida(io, r));
+  return { r1: await cargarCorrida(io, r1), r2, intermedias, rama, repo, arbolHead, arbolDeRun: r2.arbolDeRun, difRunHead: r2.difRunHead, aEsAncestro, difAHead,
+    propuestaTotal: p.d.pruebas, propuestaDesdeA, completa: p.ex.corrida === "completa" };
+}
+
+/** c. de --subir: la evidencia del CI para el árbol de HEAD. Una corrida verde que lo cubra (evaluarCorrida) o, si no, la cadena de un eslabón
+    (evaluarCadena; solo en el camino de la dirigida: nunca con .github/ ni en la vía rápida). → { hallada, cadena, motivos, motivosCadena }. */
+export async function buscarEvidencia({ p, rama, repo = REPO, arbolHead, io }) {
+  const corridas = (await io.corridas()) ?? [];
+  const motivos = [], motivosCadena = [], candidatas = [];
+  for (const r of corridas.filter((x) => x?.status === "completed" && x?.conclusion === "success").slice(0, 30)) {
+    if (!SHA40.test(r.head_sha ?? "")) continue;
+    if ((await io.tenerCommit(r.head_sha)) !== true) { motivos.push(`${r.id}: no tengo su commit`); continue; }
+    const arbolDeRun = await io.arbol(r.head_sha);
+    const difRunHead = await io.difNombres(r.head_sha, "HEAD");
+    if (arbolDeRun !== arbolHead && veredicto(difRunHead) !== "documentos") { motivos.push(`${r.id}: otro árbol`); continue; }
+    const trabajos = await io.trabajos(r.id), tub = trabajos.filter((j) => /^la tubería /.test(nombreJ(j)));
+    let registro = "";
+    if (tub.length === 1) { try { registro = await io.registro(tub[0].id); } catch { motivos.push(`${r.id}: no pude leer el registro de «la tubería»`); continue; } }
+    const v = evaluarCorrida({ run: r, trabajos, registro, rama, repo, arbolHead, arbolDeRun, difRunHead, propuesta: p.d.pruebas, completa: p.ex.corrida === "completa" });
+    if (v.ok) return { hallada: r, cadena: null, motivos, motivosCadena };
+    motivos.push(`${r.id}: ${v.motivo}`);
+    candidatas.push({ run: r, trabajos, registro, arbolDeRun, difRunHead });
+  }
+  if (p.ex.corrida !== "dirigida" || !candidatas.length) return { hallada: null, cadena: null, motivos, motivosCadena };
+  const rojas = corridas.filter((r) => r?.event === "workflow_dispatch" && r?.status === "completed" && r?.conclusion === "failure");
+  for (const r2 of candidatas) {
+    for (const r1 of rojas.filter((r) => Number(r.id) < Number(r2.run.id)).slice(0, 5)) {
+      const v = evaluarCadena(await armarCadena({ r1, r2, corridas, p, rama, repo, arbolHead, io }));
+      if (v.ok) return { hallada: null, cadena: { r1, r2: r2.run, v }, motivos, motivosCadena };
+      motivosCadena.push(`${r1.id}→${r2.run.id}: ${v.motivo}`);
+    }
+  }
+  return { hallada: null, cadena: null, motivos, motivosCadena };
+}
+
+/** Lo que --repaso necesita antes de lanzar nada: R1 (por su número) con todas sus condiciones, el arreglo entre A y HEAD (sin herramientas), las
+    corridas no verdes posteriores y la lista (listaDelRepaso). → { ok: false, motivo } o { ok: true, run, a, A, difAHead, extra, posteriores, pt,
+    pa, lista }. */
+export async function prepararRepaso({ id, rama, repo = REPO, mas = [], io }) {
+  if (!/^\d+$/.test(String(id ?? ""))) return no("--repaso <id de la corrida roja> (el número de la corrida de la dirigida que salió roja)");
+  const run = await io.corrida(id);
+  const a = analizarDirigida({ ...(await cargarCorrida(io, run)), rama, repo });
+  if (!a.ok) return no(`la corrida ${id} no vale para un repaso: ${a.motivo}`);
+  if (!a.rojas.length) return no(`la corrida ${id} no tiene ninguna prueba roja con nombre`);
+  const A = a.sha;
+  if ((await io.tenerCommit(A)) !== true) return no(`no tengo el commit ${A.slice(0, 12)} de la corrida ${id}`);
+  if ((await io.esAncestro(A)) !== true) return no(`el commit de R1 (${A.slice(0, 12)}) no es ancestro de HEAD (¿rebase?)`);
+  const difAHead = await io.difNombres(A, "HEAD");
+  const arr = difDeArreglo(difAHead);
+  if (!arr.ok) return arr;
+  const corridas = (await io.corridas()) ?? [];
+  if (!corridas.some((r) => r?.id === a.id)) return no(`la corrida ${id} no está entre las ${corridas.length} últimas corridas de ${rama}: no puedo ver todas las posteriores`);
+  const extra = new Set(), posteriores = intermediasDe(corridas, { r1: { id: a.id }, rama, repo });
+  for (const r of posteriores) {
+    const q = rojasDeIntermedia(await cargarCorrida(io, r));
+    if (!q.ok) return no(`la corrida ${r.id}, posterior a R1 y no verde: ${q.motivo}`);
+    q.rojas.forEach((t) => extra.add(t));
+  }
+  const pt = await io.planear("origin/main", []);
+  if (pt.ex.corrida === "completa") return no("la entrega toca .github/: la cadena roja + repaso no vale, hace falta una corrida COMPLETA (decisión AM)");
+  const pa = await io.planear(A, mas);
+  const errores = [...(pa.d.errores ?? []), ...(pt.d.errores ?? [])];
+  if (errores.length) return no(errores.join(" · "));
+  return { ok: true, run, a, A, difAHead, extra: [...extra], posteriores, pt, pa, lista: listaDelRepaso({ r1: a, extra: [...extra], desdeA: pa.d.pruebas, total: pt.d.pruebas }) };
 }
 
 /** a. El árbol y la base. */
@@ -703,14 +848,24 @@ async function lanzarYEsperar({ repo, rama, head, o }) {
   return r.conclusion === "success" ? 0 : 1;
 }
 
-/* El repaso (decisión AU): una corrida con sus trabajos y los registros de sus trabajos de pruebas que corrieron (para leer RESULTADOS). */
-function cargarCorrida(repo, run) {
-  const trabajos = trabajosDe(repo, run.id), registros = {};
-  for (const j of trabajos.filter((x) => esTrabajoDePruebas(x) && !saltado(x))) { try { registros[j.id] = registroDe(repo, j.id); } catch { /* sin registro: RESULTADOS dirá que falta */ } }
-  return { run, trabajos, registros };
-}
-const corridasDeLaRama = (repo, rama) => api(`repos/${repo}/actions/workflows/ci.yml/runs?branch=${encodeURIComponent(rama)}&event=workflow_dispatch&status=completed&per_page=50`).workflow_runs ?? [];
 const tenerCommit = (sha) => SHA40.test(sha ?? "") && (gitOk("cat-file", "-e", `${sha}^{commit}`) || gitOk("fetch", "-q", "origin", sha));
+
+/** La API y git de verdad para buscarEvidencia y prepararRepaso (con memoria: la misma corrida, el mismo registro o la misma propuesta no se piden
+    dos veces). Lo único que cmdSubir y cmdRepaso les pasan. */
+export function ioReal(repo, rama) {
+  const memo = new Map(), m = (k, f) => { if (!memo.has(k)) memo.set(k, f()); return memo.get(k); };
+  return {
+    corrida: (id) => m(`c${id}`, () => api(`repos/${repo}/actions/runs/${id}`)),
+    corridas: () => m("todas", () => api(`repos/${repo}/actions/workflows/ci.yml/runs?branch=${encodeURIComponent(rama)}&per_page=100`).workflow_runs ?? []),
+    trabajos: (id) => m(`t${id}`, () => trabajosDe(repo, id)),
+    registro: (id) => m(`r${id}`, () => registroDe(repo, id)),
+    tenerCommit: (sha) => tenerCommit(sha),
+    arbol: (sha) => git("rev-parse", `${sha}^{tree}`).trim(),
+    difNombres: (a, b) => git("diff", "--no-renames", "--name-only", "-z", a, b).split("\0").filter(Boolean),
+    esAncestro: (sha) => gitOk("merge-base", "--is-ancestor", sha, "HEAD"),
+    planear: (base, mas) => m(`p${base}\0${mas.join(" ")}`, () => planear({ base, cabeza: "HEAD", mas })),
+  };
+}
 
 async function cmdRepaso({ id, mas, ensayo }) {
   const repo = REPO, rama = ramaActual(), head = git("rev-parse", "HEAD").trim();
@@ -721,34 +876,16 @@ async function cmdRepaso({ id, mas, ensayo }) {
   try { remota = git("ls-remote", "origin", `refs/heads/${rama}`).split(/\s/)[0]; } catch (e) { throw new SinGithub(`git ls-remote falló: ${String(e?.message ?? e).split("\n")[0]}`); }
   if (remota !== head) { console.log(`FALTA: la rama remota ${rama} está en ${remota.slice(0, 12) || "(no existe)"}, no en ${head.slice(0, 12)}: empújala tú (aquí no se empuja)`); return 1; }
   try { git("fetch", "-q", "origin", "main"); } catch (e) { throw new SinGithub(`git fetch falló: ${String(e?.message ?? e).split("\n")[0]}`); }
-  // R1: la dirigida roja, con lo que dicen la API y la línea RESULTADOS de cada parte.
-  const run = api(`repos/${repo}/actions/runs/${id}`);
-  const a = analizarDirigida({ ...cargarCorrida(repo, run), rama, repo });
-  if (!a.ok) { console.log(`FALTA: la corrida ${id} no vale para un repaso: ${a.motivo} · ${entera}`); return 1; }
-  if (!a.rojas.length) { console.log(`FALTA: la corrida ${id} no tiene ninguna prueba roja con nombre (lo rojo fue de un trabajo que no es de pruebas) · ${entera}`); return 1; }
-  const A = a.sha;
-  if (!tenerCommit(A)) { console.log(`FALTA: no tengo el commit ${A.slice(0, 12)} de la corrida ${id}`); return 1; }
-  if (!gitOk("merge-base", "--is-ancestor", A, "HEAD")) { console.log(`FALTA: el commit de R1 (${A.slice(0, 12)}) no es ancestro de HEAD (¿rebase?) · ${entera}`); return 1; }
-  // Las dirigidas rojas posteriores a R1 en la rama (repasos que también salieron rojos, u otras): sus rojas se suman.
-  const deLaRama = corridasDeLaRama(repo, rama);
-  if (!deLaRama.some((r) => r.id === a.id)) { console.log(`FALTA: la corrida ${id} no está entre las ${deLaRama.length} últimas corridas a mano de ${rama}: no puedo ver todas las posteriores · ${entera}`); return 1; }
-  const extra = new Set(), posteriores = intermediasDe(deLaRama, { r1: { id: a.id }, rama, repo });
-  for (const r of posteriores) {
-    const q = rojasDeIntermedia(cargarCorrida(repo, r));
-    if (!q.ok) { console.log(`FALTA: la corrida ${r.id}, roja después de R1: ${q.motivo} · ${entera}`); return 1; }
-    q.rojas.forEach((t) => extra.add(t));
-  }
-  const pt = await planear({ base: "origin/main", cabeza: "HEAD", mas: [] });
-  if (pt.ex.corrida === "completa") { console.log("FALTA: la entrega toca .github/: la cadena roja + repaso no vale, hace falta una corrida COMPLETA (decisión AM)"); return 1; }
-  const pa = await planear({ base: A, cabeza: "HEAD", mas });
-  if (pa.d.errores.length || pt.d.errores.length) { for (const e of [...pa.d.errores, ...pt.d.errores]) console.log(`✗ ${e}`); console.log("no se lanzó nada"); return 1; }
-  const lista = listaDelRepaso({ r1: a, extra: [...extra], desdeA: pa.d.pruebas, total: pt.d.pruebas }), nombres = lista.map((t) => t.nombre);
+  // R1, el arreglo entre A y HEAD, las corridas no verdes posteriores y la lista: todo en prepararRepaso (probado con un io de mentira en los casos).
+  const r = await prepararRepaso({ id, rama, repo, mas, io: ioReal(repo, rama) });
+  if (!r.ok) { console.log(`FALTA: ${r.motivo} · ${entera}`); return 1; }
+  const { run, a, A, extra, posteriores, pt, lista } = r, nombres = lista.map((t) => t.nombre);
   const v = validarConCorredor(nombres);
   if (!v.ok) { console.log(`FALTA: los nombres del repaso no pasan pruebas/correr.mjs --comprobar: ${v.motivo}`); return 1; }
   const o = ordenDirigida({ rama, nombres, repo });
   if (!o) { console.log("FALTA: el repaso está vacío"); return 1; }
   console.log(`repaso (decisión AU) · R1 = corrida ${a.id}${run.html_url ? ` (${run.html_url})` : ""} · A = ${A.slice(0, 12)} · HEAD = ${head.slice(0, 12)}`);
-  console.log(`  rojas de R1: ${a.rojas.join(" ")}${a.inestables.length ? ` · inestables de R1: ${a.inestables.join(" ")}` : ""}${extra.size ? ` · rojas de corridas posteriores (${posteriores.map((r) => r.id).join(", ")}): ${[...extra].join(" ")}` : ""}`);
+  console.log(`  rojas de R1: ${a.rojas.join(" ")}${a.inestables.length ? ` · inestables de R1: ${a.inestables.join(" ")}` : ""}${extra.length ? ` · rojas de corridas no verdes posteriores (${posteriores.map((x) => x.id).join(", ")}): ${extra.join(" ")}` : ""}`);
   console.log(`  ${nombres.length} prueba(s) en vez de ${pt.d.pruebas.length} (la dirigida entera de esta cabeza); «al revés» corre entero como siempre:`);
   for (const t of lista) console.log(`  · ${t.nombre} (${t.por.join("; ")})`);
   if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }
@@ -832,46 +969,14 @@ async function cmdSubir({ ensayo, sinViaRapida = false }) {
   if (p.ex.corrida === "ninguna") console.log("CORRIÓ: evidencia del CI no exigida (solo documentos de trabajo)");
   else if (rapida) console.log("NO SE EXIGE: evidencia del CI antes de subir (vía rápida de diseño, AL): la punta a punta y «al revés» corren después, en la corrida del push a main");
   else {
-    const runs = (api(`repos/${repo}/actions/workflows/ci.yml/runs?branch=${encodeURIComponent(rama)}&status=completed&per_page=30`).workflow_runs ?? []).filter((r) => r.conclusion === "success");
-    let hallada = null, cadena = null; const motivos = [], candidatas = [];
-    for (const r of runs) {
-      if (!SHA40.test(r.head_sha ?? "")) continue;
-      if (!gitOk("cat-file", "-e", `${r.head_sha}^{commit}`) && !gitOk("fetch", "-q", "origin", r.head_sha)) { motivos.push(`${r.id}: no tengo su commit`); continue; }
-      const arbolDeRun = git("rev-parse", `${r.head_sha}^{tree}`).trim();
-      const difRunHead = git("diff", "--no-renames", "--name-only", "-z", r.head_sha, "HEAD").split("\0").filter(Boolean);
-      if (arbolDeRun !== arbolHead && veredicto(difRunHead) !== "documentos") { motivos.push(`${r.id}: otro árbol`); continue; }
-      const js = trabajosDe(repo, r.id), tub = js.filter((j) => /^la tubería /.test(nombreJ(j)));
-      let registro = "";
-      if (tub.length === 1) { try { registro = registroDe(repo, tub[0].id); } catch (e) { motivos.push(`${r.id}: no pude leer el registro de «la tubería»`); continue; } }
-      const v = evaluarCorrida({ run: r, trabajos: js, registro, rama, repo, arbolHead, arbolDeRun, difRunHead, propuesta: p.d.pruebas, completa: p.ex.corrida === "completa" });
-      if (v.ok) { hallada = r; break; }
-      motivos.push(`${r.id}: ${v.motivo}`);
-      candidatas.push({ run: r, trabajos: js, registro, arbolDeRun, difRunHead });
-    }
-    // 24 nov (decisión AU) · La evidencia encadenada: una dirigida roja R1 de esta rama + un repaso R2 en verde de este árbol (evaluarCadena). Nunca
-    // con .github/ (corrida completa) ni en la vía rápida. Un solo eslabón: R1 se busca entre las rojas anteriores a R2; R2 es la candidata.
-    if (!hallada && p.ex.corrida === "dirigida" && candidatas.length) {
-      const rojas = intermediasDe(corridasDeLaRama(repo, rama), { r1: { id: 0 }, rama, repo });
-      const cargadas = new Map(), carga = (r) => { if (!cargadas.has(r.id)) cargadas.set(r.id, cargarCorrida(repo, r)); return cargadas.get(r.id); };
-      const desde = new Map();
-      for (const c2 of candidatas) {
-        for (const r1 of rojas.filter((r) => Number(r.id) < Number(c2.run.id)).slice(0, 5)) {
-          const A = r1.head_sha;
-          if (!tenerCommit(A)) { motivos.push(`cadena ${r1.id}→${c2.run.id}: no tengo el commit de R1`); continue; }
-          const aEsAncestro = gitOk("merge-base", "--is-ancestor", A, "HEAD");
-          if (aEsAncestro && !desde.has(A)) desde.set(A, (await planear({ base: A, cabeza: "HEAD", mas: [] })).d.pruebas);
-          const intermedias = intermediasDe(rojas, { r1, r2: c2.run, rama, repo }).map(carga);
-          const v = evaluarCadena({ r1: carga(r1), r2: c2, intermedias, rama, repo, arbolHead, arbolDeRun: c2.arbolDeRun, difRunHead: c2.difRunHead, aEsAncestro,
-            propuestaTotal: p.d.pruebas, propuestaDesdeA: desde.get(A) ?? [], completa: false });
-          if (v.ok) { cadena = { r1, r2: c2.run, v }; break; }
-          motivos.push(`cadena ${r1.id}→${c2.run.id}: ${v.motivo}`);
-        }
-        if (cadena) break;
-      }
-    }
+    // La corrida verde que cubra la propuesta o, en el camino de la dirigida, la cadena R1 roja + R2 repaso (decisión AU): todo en buscarEvidencia,
+    // con la API y git de verdad (ioReal); los casos la prueban con un io de mentira.
+    const { hallada, cadena, motivos, motivosCadena } = await buscarEvidencia({ p, rama, repo, arbolHead, io: ioReal(repo, rama) });
     linea(hallada ? { ok: true, linea: `CORRIÓ: evidencia del CI · corrida ${hallada.id} (${hallada.event}, ${hallada.head_sha.slice(0, 12)}) en verde, de este árbol${hallada.head_sha === head ? "" : " salvo documentos de trabajo"}` }
       : cadena ? { ok: true, linea: `CORRIÓ: evidencia del CI encadenada (decisión AU) · R1 = dirigida ${cadena.r1.id} roja (${cadena.r1.head_sha.slice(0, 12)}; rojas: ${cadena.v.rojas.join(" ")}) + R2 = repaso ${cadena.r2.id} en verde, de este árbol${cadena.r2.head_sha === head ? "" : " salvo documentos de trabajo"}` }
-      : { ok: false, linea: `FALTA: evidencia del CI para este árbol (${p.ex.corrida === "completa" ? "corrida COMPLETA" : "la dirigida propuesta, o una dirigida roja + su repaso en verde"} en ${rama}) · ${motivos.slice(0, 4).join(" · ") || "ninguna corrida en verde en la rama"}` });
+      : { ok: false, linea: `FALTA: evidencia del CI para este árbol (${p.ex.corrida === "completa" ? "corrida COMPLETA" : "la dirigida propuesta, o una dirigida roja + su repaso en verde"} en ${rama}) · ${motivos.slice(0, 3).join(" · ") || "ninguna corrida en verde en la rama"}` });
+    // Los motivos de la cadena, aparte: detrás de los de las corridas verdes no se veían.
+    if (!hallada && !cadena) for (const m of motivosCadena.slice(0, 4)) console.log(`  cadena ${m}`);
   }
   const remotaRama = (() => { try { return git("ls-remote", "origin", `refs/heads/${rama}`).split(/\s/)[0]; } catch { return ""; } })();
   const plan = planDeEmpuje({ clases: p.c.clases, rama, remotaRama, head });
@@ -1041,21 +1146,24 @@ async function casos() {
   ok(o.join(" ") === `workflow run ci.yml --repo ${REP} --ref ${rama} -f alcance=regresion -f partes=${PARTES_DIRIGIDA} -f solo=evt6c adm7i` && PARTES_DIRIGIDA >= 4, "la orden de la dirigida: siempre alcance=regresion y en partes");
   ok(ordenDirigida({ rama, nombres: [] }) === null, "sin pruebas no hay orden (la dirigida vacía no lanza la regresión entera)");
   // La evidencia.
-  const J = (name, conclusion = "success") => ({ name, status: "completed", conclusion });
+  const NO = (v, re) => !v.ok && re.test(v.motivo);
+  const m = (v) => (v.ok ? "vale" : v.motivo);
+  let jid = 500;
+  const J = (name, conclusion = "success") => ({ id: jid++, name, status: "completed", conclusion });
   const trabajos = (x = {}) => {
     let js = [J("alcance (todo o solo documentos)"), J("verificación · señal rápida (tipos · guardianes · textos)"), J("verificación · contratos (Stripe)"), J("verificación · imágenes y producción como código"), J("verificación · base real (migraciones)"), J("tipos · build · guardianes"), J("seguridad · Semgrep"), J("web · build una vez para todos los grupos"),
       ...[1, 2, 3].map((i) => J(`punta a punta · al revés · ${i}/3`)), ...[1, 2, 3, 4].map((i) => J(`punta a punta · todas las fases · ${i}/4`)),
       J("dispositivo · ${{ matrix.id }}", "skipped"), J("confirmación · ${{ matrix.nombre }}", "skipped"), J("punta a punta · ancho ${{ matrix.id }}", "skipped"), J("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corr...")];
     if (x.completa) js = [...js.filter((j) => !/^(dispositivo|punta a punta · todas)/.test(j.name)), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => J(`punta a punta · todas las fases · ${i}/8`)), ...["iphone-se", "iphone-15", "iphone-15-pro-max", "pixel", "galaxy", "ipad", "escritorio-1024", "escritorio-1280", "escritorio-1440"].map((n) => J(`dispositivo · ${n}`))];
-    if (x.rojo) js = js.map((j) => (x.rojo.test(j.name) ? J(j.name, "failure") : j));
-    if (x.saltado) js = js.map((j) => (x.saltado.test(j.name) ? J(j.name, "skipped") : j));
+    if (x.rojo) js = js.map((j) => (x.rojo.test(j.name) ? { ...j, conclusion: "failure" } : j));
+    if (x.saltado) js = js.map((j) => (x.saltado.test(j.name) ? { ...j, conclusion: "skipped" } : j));
     if (x.sin) js = js.filter((j) => !x.sin.test(j.name));
     return js;
   };
   const SHA_RUN = s(3), ARBOL = s(4);
-  const run = (x = {}) => ({ id: 77, head_sha: SHA_RUN, event: "workflow_dispatch", head_branch: rama, path: ".github/workflows/ci.yml", repository: { full_name: REP }, head_repository: { full_name: REP }, status: "completed", conclusion: "success", ...x });
+  const run = (x = {}) => ({ id: 77, head_sha: SHA_RUN, event: "workflow_dispatch", head_branch: rama, path: ".github/workflows/ci.yml", repository: { full_name: REP }, head_repository: { full_name: REP }, status: "completed", conclusion: "success", run_attempt: 1, ...x });
   const ev = (x = {}) => ({ corrida: 77, intento: 1, sha: SHA_RUN, arbol: ARBOL, evento: "workflow_dispatch", rama: rama, entradas: { alcance: "regresion", partes: "4", solo: "evt6c alreves9vd" }, solo: ["evt6c", "alreves9vd"], ...x });
-  const reg = (e = ev()) => `\uFEFF2026-11-22T14:05:07.0021101Z Current runner version\n2026-11-22T14:05:14.8774810Z [36;1m    console.log(["EVID", "ENCIA"].join("") + " " + j);[0m\n2026-11-22T14:05:15.1Z EVIDENCIA ${JSON.stringify(e)}\n2026-11-22T14:05:15.2Z ##[group]Run actions/upload-artifact@v4`;
+  const reg = (e = ev()) => `﻿2026-11-22T14:05:07.0021101Z Current runner version\n2026-11-22T14:05:14.8774810Z [36;1m    console.log(["EVID", "ENCIA"].join("") + " " + j);[0m\n2026-11-22T14:05:15.1Z EVIDENCIA ${JSON.stringify(e)}\n2026-11-22T14:05:15.2Z ##[group]Run actions/upload-artifact@v4`;
   const prop = [{ nombre: "evt6c", carril: "e2e" }, { nombre: "alreves9vd", carril: "alreves" }];
   const E = (x = {}) => evaluarCorrida({ run: run(), trabajos: trabajos(), registro: reg(), rama: rama, repo: REP, arbolHead: ARBOL, arbolDeRun: ARBOL, difRunHead: [], propuesta: prop, ...x });
   ok(E().ok, "corrida verde de este árbol con la dirigida propuesta → vale");
@@ -1076,29 +1184,36 @@ async function casos() {
   ok(E({ completa: true, trabajos: trabajos({ completa: true }), registro: reg(ev({ solo: "todas", entradas: { alcance: "todo", partes: "8", solo: "" } })) }).ok, "toca .github/ y hay una corrida completa en verde de ese árbol → vale");
   ok(!E({ completa: true, trabajos: trabajos({ completa: true, sin: /^dispositivo · galaxy/ }), registro: reg(ev({ solo: "todas", entradas: { alcance: "todo", partes: "8", solo: "" } })) }).ok, "corrida «completa» a la que le falta un dispositivo → FALTA");
   ok(evidenciaDelRegistro(reg()).ok && !evidenciaDelRegistro('EVIDENCIA {"sha":"x"}').ok && !evidenciaDelRegistro(reg(ev({ solo: ["--grupo"] }))).ok, "la línea EVIDENCIA se lee con la hora delante y se rechaza si le falta algo");
+  // 24 nov (revisión de bc9a893) · Primer intento siempre, y los trabajos fijos presentes y en verde.
+  ok(NO(E({ run: run({ run_attempt: 2 }) }), /intento 2/) && NO(E({ run: run({ run_attempt: undefined }) }), /intento/), "evidencia de un segundo intento de la corrida (volver a correr lo que falló) → FALTA (AG)");
+  ok(NO(E({ registro: reg(ev({ intento: 2 })) }), /EVIDENCIA es del intento 2/) && NO(E({ registro: reg(ev({ intento: undefined })) }), /intento/), "una línea EVIDENCIA de otro intento → FALTA (AG)");
+  for (const [que, re] of FIJOS_EVIDENCIA) {
+    if (!NO(E({ trabajos: trabajos({ sin: re }) }), /tiene que haber uno, en verde/) || !NO(E({ trabajos: trabajos({ saltado: re }) }), /tiene que haber uno, en verde/)) ok(false, `evidencia sin «${que}», o con «${que}» saltado → FALTA`);
+  }
+  ok(FIJOS_EVIDENCIA.length >= 8 && NO(E({ trabajos: trabajos({ saltado: /^tipos · build · guardianes$/ }) }), /«tipos · build · guardianes»: 1 trabajo\(s\), terminó completed\/skipped/), "los trabajos fijos (tipos · build · guardianes, seguridad, la verificación, web) tienen que estar y en verde: ni saltados ni ausentes");
   // 24 nov (decisión AU) · El repaso corto tras una roja y la evidencia encadenada R1 (dirigida roja) + R2 (repaso en verde).
   {
     const SHA_A = s(7), ENT = (solo, fin = " · aprobar=no · medir=no") => `entradas: alcance=regresion · solo=«${solo}»${fin}`;
-    let jid = 1000;
     const JJ = (name, conclusion = "success", extra = {}) => ({ id: jid++, name, status: "completed", conclusion, ...extra });
     const RES = (x) => `﻿2026-11-24T10:00:00.1Z 4/4 en verde\n2026-11-24T10:00:00.2Z RESULTADOS ${JSON.stringify({ inestables: [], completa: true, ...x })}`;
     const BASE1 = { 1: { pedidas: ["evt6c"], verdes: ["evt6c"], rojas: [] }, 2: { pedidas: ["adm7i"], verdes: [], rojas: ["adm7i"] }, 3: { pedidas: ["com5g"], verdes: ["com5g"], rojas: [] }, 4: { pedidas: ["rec1j"], verdes: ["rec1j"], rojas: [] } };
-    // Una dirigida de 4 partes (alcance=regresion): «al revés» entero, dispositivos, confirmación y anchos saltados; por defecto la parte 2 (adm7i) roja.
+    // Una dirigida de 4 partes (alcance=regresion): los trabajos fijos y «al revés» en verde, dispositivos, confirmación y anchos saltados; por defecto
+    // la parte 2 (adm7i) roja y la tubería roja.
     const dirig = ({ id = 70, sha = SHA_A, solo = "evt6c adm7i com5g rec1j", partes = BASE1, run: rx = {}, entradas, alrevesRojo = false, cambiar = (js) => js, sinRegistro = [], registro = {} } = {}) => {
       const regs = {};
       const js = [JJ("alcance (todo o solo documentos)", "success", { steps: [{ name: "Las pruebas de «solo» existen (antes de arrancar los carriles)" }, { name: entradas ?? ENT(solo) }] }),
-        JJ("verificación · señal rápida (tipos · guardianes · textos)"), JJ("tipos · build · guardianes"), JJ("seguridad · Semgrep"), JJ("web · build una vez para todos los grupos"),
+        JJ("verificación · señal rápida (tipos · guardianes · textos)"), JJ("verificación · contratos (Stripe)"), JJ("verificación · imágenes y producción como código"), JJ("verificación · base real (migraciones)"),
+        JJ("tipos · build · guardianes"), JJ("seguridad · Semgrep"), JJ("web · build una vez para todos los grupos"),
         ...[1, 2, 3].map((i) => JJ(`punta a punta · al revés · ${i}/3`, alrevesRojo && i === 1 ? "failure" : "success")),
         ...[1, 2, 3, 4].map((i) => { const p = partes[i] ?? { pedidas: [], verdes: [], rojas: [] }; const j = JJ(`punta a punta · todas las fases · ${i}/4`, p.conclusion ?? (p.rojas?.length ? "failure" : "success")); if (!sinRegistro.includes(i)) regs[j.id] = registro[i] ?? RES({ pedidas: p.pedidas, verdes: p.verdes, rojas: p.rojas, ...(p.r ?? {}) }); return j; }),
         JJ("dispositivo · ${{ matrix.id }}", "skipped"), JJ("confirmación · ${{ matrix.nombre }}", "skipped"), JJ("punta a punta · ancho ${{ matrix.id }}", "skipped"), JJ("la tubería (verde si todo lo que esta corrida pide salió en verde; el resumen dice qué no corr...", "failure")];
       return { run: { id, head_sha: sha, event: "workflow_dispatch", head_branch: rama, path: ".github/workflows/ci.yml", repository: { full_name: REP }, head_repository: { full_name: REP }, status: "completed", conclusion: "failure", run_attempt: 1, ...rx }, trabajos: cambiar(js), registros: regs };
     };
-    const R2 = (solo = ["adm7i", "evt6c"], x = {}) => ({ run: run(x.run ?? {}), trabajos: x.trabajos ?? trabajos(), registro: reg(ev({ solo, entradas: { alcance: "regresion", partes: "4", solo: solo.join(" ") }, ...(x.ev ?? {}) })) });
+    const R2 = (solo = ["adm7i", "evt6c"], x = {}) => ({ run: run(x.run ?? {}), trabajos: x.trabajos ?? trabajos(), registro: reg(ev({ solo, entradas: { alcance: "regresion", partes: "4", solo: solo.join(" ") }, ...(x.ev ?? {}) })), arbolDeRun: ARBOL, difRunHead: [] });
     const TOT = [{ nombre: "evt6c", carril: "e2e" }, { nombre: "adm7i", carril: "e2e" }, { nombre: "com5g", carril: "e2e" }, { nombre: "rec1j", carril: "e2e" }, { nombre: "alreves9vd", carril: "alreves" }];
     const DA = [{ nombre: "evt6c", carril: "e2e", por: ["nombra lib/eventos.ts"] }];
-    const C = (x = {}) => evaluarCadena({ r1: dirig(), r2: R2(), intermedias: [], rama, repo: REP, arbolHead: ARBOL, arbolDeRun: ARBOL, difRunHead: [], aEsAncestro: true, propuestaTotal: TOT, propuestaDesdeA: DA, completa: false, ...x });
-    const NO = (v, re) => !v.ok && re.test(v.motivo);
-    const m = (v) => (v.ok ? "vale" : v.motivo);
+    const ARREGLO = ["apps/web/lib/eventos.ts"];
+    const C = (x = {}) => evaluarCadena({ r1: dirig(), r2: R2(), intermedias: [], rama, repo: REP, arbolHead: ARBOL, arbolDeRun: ARBOL, difRunHead: [], aEsAncestro: true, difAHead: ARREGLO, propuestaTotal: TOT, propuestaDesdeA: DA, completa: false, ...x });
     ok(C().ok, `cadena: dirigida roja R1 + repaso R2 en verde con las rojas de R1 y la propuesta desde A (las verdes de R1 cubren el resto) → vale (${m(C())})`);
     const a0 = analizarDirigida({ ...dirig(), rama, repo: REP });
     ok(a0.ok && a0.rojas.join() === "adm7i" && a0.verdes.sort().join() === "com5g,evt6c,rec1j" && a0.solo.length === 4, "R1: de los registros de sus partes salen lo pedido, las verdes y las rojas");
@@ -1113,10 +1228,14 @@ async function casos() {
     ok(NO(C({ r1: dirig({ cambiar: (js) => js.filter((j) => !/todas las fases · 3\/4/.test(j.name)) }) }), /parte/), "cadena: a R1 le falta una parte de la punta a punta → FALTA");
     ok(NO(C({ r1: dirig({ registro: { 2: RES({ pedidas: ["adm7i"], verdes: [], rojas: ["adm7i"] }) + "\n" + RES({ pedidas: ["adm7i"], verdes: ["adm7i"], rojas: [] }) } }) }), /2 líneas RESULTADOS/), "cadena: dos líneas RESULTADOS en un registro → FALTA");
     ok(NO(C({ r1: dirig({ partes: { ...BASE1, 2: { ...BASE1[2], rojas: [], verdes: ["adm7i"], conclusion: "failure" } } }) }), /sin ninguna prueba roja con nombre/), "cadena: un trabajo de pruebas rojo sin ninguna roja en RESULTADOS → FALTA");
+    ok(NO(C({ r1: dirig({ partes: { ...BASE1, 1: { pedidas: ["evt6c"], verdes: [], rojas: ["evt6c"], conclusion: "success" } } }) }), /en verde con rojas en RESULTADOS/), "cadena: una parte VERDE de R1 cuyo RESULTADOS trae rojas → FALTA (no es coherente)");
     ok(NO(C({ r1: dirig({ entradas: "entradas: alcance=todo · solo=«evt6c adm7i com5g rec1j» · aprobar=no · medir=no" }) }), /no es una dirigida/) && NO(C({ r1: dirig({ entradas: ENT("") }) }), /no es una dirigida/), "cadena: R1 con alcance=todo o sin «solo» → no es una dirigida");
     ok(NO(C({ r1: dirig({ cambiar: (js) => js.map((j) => (/^dispositivo/.test(j.name) ? { ...j, name: "dispositivo · pixel", conclusion: "failure" } : j)) }) }), /corrió «dispositivo/), "cadena: en R1 corrió un dispositivo (no es una dirigida de esta herramienta) → FALTA");
     ok(C({ r1: dirig({ entradas: ENT("evt6c adm7i com5g re", "") }) }).ok && NO(C({ r1: dirig({ entradas: ENT("evt6c adm7i com5g zz9otra") }) }), /no es «solo»/), "cadena: «solo» de las entradas cortado vale (sin el último nombre); uno que no coincide con lo pedido → FALTA");
-    ok(C({ r1: dirig({ alrevesRojo: true }) }).ok && NO(C({ r1: dirig({ alrevesRojo: true, partes: { ...BASE1, 2: { pedidas: ["adm7i"], verdes: ["adm7i"], rojas: [] } } }) }), /ninguna prueba roja con nombre/), "cadena: «al revés» rojo en R1 no impide el repaso (corre entero en R2); si solo hubo rojas de esos trabajos, no hay repaso");
+    // 24 nov (revisión de bc9a893) · R1 falló SOLO por pruebas con nombre: lo demás, en verde (la letra de AU).
+    ok(NO(C({ r1: dirig({ alrevesRojo: true }) }), /no falló solo por pruebas con nombre: «punta a punta · al revés · 1\/3»/), "cadena: «al revés» rojo en R1 → no hay repaso (R1 tiene que haber fallado solo por pruebas con nombre)");
+    ok(NO(C({ r1: dirig({ cambiar: (js) => js.map((j) => (/^verificación · contratos/.test(j.name) ? { ...j, conclusion: "failure" } : j)) }) }), /no falló solo por pruebas con nombre/)
+      && NO(C({ r1: dirig({ cambiar: (js) => js.filter((j) => !/^seguridad /.test(j.name)) }) }), /no falló solo por pruebas con nombre: «seguridad»: 0 trabajo/), "cadena: en R1 un trabajo que no es de pruebas rojo, o un trabajo fijo que falta → FALTA");
     ok(NO(C({ r2: R2(["evt6c"]) }), /no repite las rojas de R1.*adm7i/), "cadena: R2 que no incluye una roja de R1 → FALTA");
     ok(NO(C({ r1: dirig({ partes: { ...BASE1, 3: { pedidas: ["com5g"], verdes: [], rojas: ["com5g"] } } }) }), /no repite las rojas.*com5g/), "cadena: una prueba roja en R1 que no está en R2 no cuenta como cubierta → FALTA");
     ok(NO(C({ r1: dirig({ partes: { ...BASE1, 1: { ...BASE1[1], r: { inestables: ["evt6c"] } } } }), r2: R2(["adm7i"]), propuestaDesdeA: [] }), /no repite las rojas.*evt6c/), "cadena: una inestable de R1 también tiene que repetirse en R2 (más estricto que «rojas»)");
@@ -1124,16 +1243,31 @@ async function casos() {
     ok(NO(C({ propuestaTotal: [...TOT, { nombre: "pag9x", carril: "e2e" }] }), /no se cubre la propuesta de la entrega.*pag9x/), "cadena: una prueba de la propuesta de la entrega que no salió en verde en R1 ni corrió en R2 → FALTA");
     ok(NO(C({ arbolHead: s(5), difRunHead: ["apps/web/lib/eventos.ts"] }), /R2: es de otro árbol/), "cadena: R2 de otro árbol → FALTA");
     ok(NO(C({ r2: R2(undefined, { trabajos: trabajos({ rojo: /^la tubería / }) }) }), /R2:/) && NO(C({ r2: R2(undefined, { run: { conclusion: "failure" } }) }), /R2:/) && NO(C({ r2: R2(undefined, { trabajos: trabajos({ sin: /^punta a punta · al revés · 2\/3/ }) }) }), /al revés/), "cadena: R2 que no pasa lo de siempre (corrida o tubería no verde, «al revés» no entero) → FALTA");
+    ok(NO(C({ r2: R2(undefined, { trabajos: trabajos({ sin: /^punta a punta · todas las fases · 2\/4/ }) }) }), /R2: la punta a punta no corrió entera/), "cadena: a R2 le falta una parte de «todas las fases» → FALTA (sus pruebas no corrieron todas)");
+    ok(NO(C({ r2: R2(undefined, { run: { run_attempt: 2 } }) }), /R2: es el intento 2/) && NO(C({ r2: R2(undefined, { ev: { intento: 2 } }) }), /R2: la línea EVIDENCIA es del intento 2/), "cadena: R2 de un segundo intento (la corrida o su EVIDENCIA) → FALTA (AG)");
     ok(NO(C({ r2: R2(undefined, { run: { id: 60 } , ev: { corrida: 60 } }) }), /no es posterior a R1/), "cadena: R2 anterior a R1 → FALTA");
     ok(NO(C({ completa: true }), /\.github/), "cadena: la entrega toca .github/ (completa) → la cadena no vale");
+    // Lo que cambió entre A y HEAD: sin arreglo no hay repaso, y con herramientas del CI tampoco.
+    ok(NO(C({ difAHead: [".github/workflows/ci.yml", "apps/web/lib/eventos.ts"] }), /herramientas del CI/) && NO(C({ difAHead: ["guardianes/run.mjs", "apps/web/lib/eventos.ts"] }), /herramientas del CI/)
+      && NO(C({ difAHead: ["pruebas/lib/arbol.cjs"] }), /herramientas del CI/) && NO(C({ difAHead: ["scripts/ci/subir.mjs"] }), /herramientas del CI/), "cadena: .github/ (o cualquier herramienta del CI: guardianes, pruebas/lib, scripts/ci) cambiado entre A y HEAD → la cadena no vale");
+    ok(NO(C({ difAHead: [] }), /sin arreglo no hay repaso/) && NO(C({ difAHead: [D0, D1] }), /sin arreglo no hay repaso/) && NO(C({ difAHead: null }), /sin la lista/), "cadena: sin arreglo (A y HEAD con el mismo árbol, o solo documentos de trabajo) → no vale: una roja dos veces es roja (AG)");
     // Un solo eslabón: R0 (dirigida grande, roja) → Rm (repaso rojo) → R2. Con R0 como R1 y Rm como intermedia, vale si R2 repite las rojas de Rm;
     // con Rm como R1 (repaso de repaso) las verdes de R0 no cuentan y la entrega no queda cubierta.
-    const Rm = (rojas = ["adm7i"]) => dirig({ id: 72, solo: "adm7i com5g", partes: { 1: { pedidas: ["adm7i"], verdes: rojas.includes("adm7i") ? [] : ["adm7i"], rojas: rojas.filter((x) => x === "adm7i") }, 2: { pedidas: ["com5g"], verdes: rojas.includes("com5g") ? [] : ["com5g"], rojas: rojas.filter((x) => x === "com5g") } } });
+    const Rm = (rojas = ["adm7i"], x = {}) => dirig({ id: 72, solo: "adm7i com5g", partes: { 1: { pedidas: ["adm7i"], verdes: rojas.includes("adm7i") ? [] : ["adm7i"], rojas: rojas.filter((y) => y === "adm7i") }, 2: { pedidas: ["com5g"], verdes: rojas.includes("com5g") ? [] : ["com5g"], rojas: rojas.filter((y) => y === "com5g") } }, ...x });
     ok(C({ intermedias: [Rm()] }).ok, `cadena: R1 → repaso rojo → R2 que repite las rojas de los dos → vale (${m(C({ intermedias: [Rm()] }))})`);
     ok(NO(C({ intermedias: [Rm(["com5g"])] }), /no repite las rojas.*com5g/), "cadena: una roja del repaso rojo intermedio que no está en R2 → FALTA");
     ok(NO(C({ r1: Rm(), intermedias: [] }), /no se cubre la propuesta de la entrega/), "cadena de dos eslabones (repaso de repaso: R1 = el repaso rojo) → las verdes de la dirigida anterior no cuentan → FALTA");
-    ok(NO(C({ intermedias: [dirig({ id: 73, solo: "adm7i", partes: { 1: { pedidas: ["adm7i"], verdes: [], rojas: ["adm7i"] } }, sinRegistro: [1] })] }), /roja entre R1 y R2.*no se sabe/), "cadena: una corrida roja entre R1 y R2 sin RESULTADOS en un trabajo de pruebas → FALTA");
+    ok(NO(C({ intermedias: [dirig({ id: 73, solo: "adm7i", partes: { 1: { pedidas: ["adm7i"], verdes: [], rojas: ["adm7i"] } }, sinRegistro: [1] })] }), /no verde entre R1 y R2.*no se sabe/), "cadena: una corrida roja entre R1 y R2 sin RESULTADOS en un trabajo de pruebas → FALTA");
     ok(C({ intermedias: [dirig({ id: 73, run: { head_branch: "otra" }, solo: "adm7i com5g", partes: { 1: { pedidas: ["com5g"], verdes: [], rojas: ["com5g"] } } })] }).ok && C({ intermedias: [dirig({ id: 80, partes: { 1: { pedidas: ["com5g"], verdes: [], rojas: ["com5g"] } } })] }).ok, "cadena: una roja de otra rama, o posterior a R2, no se suma");
+    // 24 nov (revisión de bc9a893) · Cuenta TODA corrida de la rama entre R1 y R2 que no terminó en verde, de cualquier evento.
+    const una = (id, parte, x = {}) => dirig({ id, solo: parte.pedidas.join(" "), partes: { 1: parte }, ...x });
+    ok(NO(C({ intermedias: [una(73, { pedidas: ["com5g", "rec1j"], verdes: [], rojas: ["com5g"], conclusion: "cancelled", r: { completa: false } }, { run: { conclusion: "cancelled" } })] }), /no repite las rojas.*com5g/), "cadena: una corrida CANCELADA entre R1 y R2 suma las rojas de sus partes con RESULTADOS → R2 sin ellas, FALTA");
+    ok(NO(C({ intermedias: [una(73, { pedidas: ["com5g"], verdes: [], rojas: [], conclusion: "cancelled" }, { run: { conclusion: "cancelled" }, sinRegistro: [1] })] }), /no verde entre R1 y R2.*no se sabe/), "cadena: una parte que corrió en una cancelada y no trae RESULTADOS → FALTA");
+    ok(NO(C({ intermedias: [una(73, { pedidas: ["com5g"], verdes: [], rojas: ["com5g"] }, { run: { event: "pull_request" } })] }), /no repite las rojas.*com5g/) && NO(C({ intermedias: [una(73, { pedidas: ["com5g"], verdes: [], rojas: ["com5g"] }, { run: { conclusion: "timed_out" } })] }), /no repite las rojas.*com5g/), "cadena: una corrida roja de otro evento (pull_request) o fuera de tiempo entre R1 y R2 también suma sus rojas");
+    ok(NO(C({ intermedias: [una(73, { pedidas: ["com5g"], verdes: ["com5g"], rojas: [] }, { run: { status: "in_progress", conclusion: null } })] }), /todavía no terminó/), "cadena: una corrida de la rama entre R1 y R2 que todavía no terminó → FALTA (no se sabe qué va a decir)");
+    ok(NO(C({ intermedias: [una(73, { pedidas: ["com5g", "rec1j"], verdes: ["com5g", "rec1j"], rojas: [], r: { inestables: ["rec1j"] } }, { run: { conclusion: "cancelled" } })] }), /no repite las rojas.*rec1j/), "cadena: las inestables de una corrida intermedia también tienen que repetirse en R2");
+    ok(NO(C({ intermedias: [una(73, { pedidas: ["com5g"], verdes: ["com5g"], rojas: [], conclusion: "failure" })] }), /rojo sin ninguna prueba roja con nombre/), "cadena: una parte ROJA de una intermedia sin ninguna roja en RESULTADOS → FALTA (no se sabe qué falló)");
+    ok(intermediasDe([{ id: 71, path: ".github/workflows/ci.yml", repository: { full_name: REP }, head_branch: rama, event: "schedule", status: "completed", conclusion: "success" }, { id: 72, path: ".github/workflows/ci.yml", repository: { full_name: REP }, head_branch: rama, event: "schedule", status: "completed", conclusion: "startup_failure" }], { r1: { id: 70 }, r2: { id: 77 }, rama, repo: REP }).map((r) => r.id).join() === "72", "las intermedias: toda corrida de la rama entre R1 y R2 que no terminó en verde (cualquier conclusión y evento); las verdes no");
     // La lista del repaso y la cadena casan: lo que lanza --repaso es lo que --subir acepta.
     const L = listaDelRepaso({ r1: a0, extra: ["zz1x"], desdeA: DA, total: [...TOT, { nombre: "pag9x", carril: "e2e" }] });
     ok(L.map((t) => t.nombre).join() === "adm7i,zz1x,evt6c,pag9x" && L.find((t) => t.nombre === "pag9x").por.join().includes("no salió en verde en R1"), `la lista del repaso: rojas, rojas posteriores, propuesta desde A y lo de la entrega que no salió en verde en R1 (${L.map((t) => t.nombre).join(" ")})`);
@@ -1143,6 +1277,77 @@ async function casos() {
       && !resultadosDelRegistro(RES({ pedidas: ["a1x"], verdes: [], rojas: [] })).ok && resultadosDelRegistro(RES({ pedidas: ["a1x"], verdes: [], rojas: [], completa: false })).ok && !resultadosDelRegistro(RES({ pedidas: ["--x"], verdes: [], rojas: [] })).ok,
     "la línea RESULTADOS se lee con la hora delante y se rechaza si no es coherente (una prueba verde y roja, completa sin resultado, un nombre raro)");
     ok(esTrabajoDePruebas({ name: "punta a punta · todas las fases · 2/4" }) && esTrabajoDePruebas({ name: "punta a punta · ancho iphone-se · 1/8" }) && !esTrabajoDePruebas({ name: "punta a punta · al revés · 1/3" }) && !esTrabajoDePruebas({ name: "tipos · build · guardianes" }), "trabajos de pruebas: los que miran «solo» (todas las fases, anchos) y los que en una dirigida quedan saltados; «al revés» y la verificación no");
+    // 24 nov (revisión de bc9a893) · El cableado de cmdSubir y cmdRepaso (buscarEvidencia, armarCadena, prepararRepaso) con un io de mentira: lo que
+    // la API y git dirían, y nada más. Cada caso cambia UNA respuesta del io y la cadena o el repaso tienen que darse cuenta.
+    const mundo = ({ cargas, ancestro = true, difA = ARREGLO, desdeA = DA, total = TOT, sinCommit = [] }) => {
+      const porId = new Map(cargas.map((c) => [Number(c.run.id), c])), regs = {};
+      for (const c of cargas) {
+        Object.assign(regs, c.registros ?? {});
+        const tub = c.trabajos.find((j) => /^la tubería /.test(j.name));
+        if (c.registro !== undefined && tub) regs[tub.id] = c.registro;
+      }
+      const corridas = [...cargas].map((c) => c.run).sort((a, b) => Number(b.id) - Number(a.id));
+      return {
+        llamadas: [],
+        corrida(id) { return porId.get(Number(id))?.run; },
+        corridas() { return corridas; },
+        trabajos(id) { return porId.get(Number(id))?.trabajos ?? []; },
+        registro(id) { if (!(id in regs)) throw new Error("sin registro"); return regs[id]; },
+        tenerCommit(sha) { return !sinCommit.includes(sha); },
+        arbol(sha) { return sha === SHA_RUN ? ARBOL : s(9); },
+        difNombres(a) { return a === SHA_A ? difA : []; },
+        esAncestro() { return ancestro; },
+        planear(base, mas = []) { this.llamadas.push(base); return { d: { pruebas: base === "origin/main" ? total : base === SHA_A ? [...desdeA, ...mas.map((n) => ({ nombre: n, carril: "e2e", por: ["--mas"] }))] : [], errores: [] }, ex: { corrida: "dirigida" } }; },
+      };
+    };
+    const plan = (x = {}) => ({ d: { pruebas: x.total ?? TOT }, ex: { corrida: x.corrida ?? "dirigida" } });
+    const B = async (x = {}) => buscarEvidencia({ p: plan(x), rama, repo: REP, arbolHead: ARBOL, io: mundo({ cargas: [dirig(), R2()], ...x }) });
+    let b = await B();
+    ok(!b.hallada && b.cadena?.r1.id === 70 && b.cadena?.r2.id === 77, `cableado: --subir encuentra la cadena R1 (70) + R2 (77) con lo que dicen la API y git (${b.cadena ? "vale" : b.motivosCadena.join(" · ")})`);
+    b = await B({ desdeA: [...DA, { nombre: "zz1x", carril: "e2e", por: ["nombra lib/zz.ts"] }] });
+    ok(!b.cadena && /propuesta desde el commit de R1 \(A\.\.HEAD\).*zz1x/.test(b.motivosCadena.join()), "cableado: la propuesta desde A sale de io.planear(A) (una prueba de A..HEAD que R2 no corrió → no hay cadena)");
+    b = await B({ total: [...TOT, { nombre: "pag9x", carril: "e2e" }] });
+    ok(!b.cadena && /no se cubre la propuesta de la entrega.*pag9x/.test(b.motivosCadena.join()), "cableado: la propuesta de la entrega es la del plan (una prueba que ni salió en verde en R1 ni corrió en R2 → no hay cadena)");
+    b = await B({ ancestro: false });
+    ok(!b.cadena && /no es ancestro de HEAD/.test(b.motivosCadena.join()), "cableado: «A es ancestro de HEAD» lo dice git (io.esAncestro), no se da por hecho");
+    b = await B({ sinCommit: [SHA_A] });
+    ok(!b.cadena && /no es ancestro de HEAD/.test(b.motivosCadena.join()), "cableado: sin el commit de R1 no hay cadena");
+    b = await B({ cargas: [dirig(), R2(), Rm(["com5g"], { id: 73 })] });
+    ok(!b.cadena && /no repite las rojas.*com5g/.test(b.motivosCadena.join()), "cableado: las corridas no verdes entre R1 y R2 salen de la lista de la rama (una roja intermedia con una prueba que R2 no repitió → no hay cadena)");
+    b = await B({ cargas: [dirig(), R2(), una(73, { pedidas: ["com5g"], verdes: [], rojas: ["com5g"], conclusion: "cancelled" }, { run: { conclusion: "cancelled", event: "pull_request" } })] });
+    ok(!b.cadena && /no repite las rojas.*com5g/.test(b.motivosCadena.join()), "cableado: una cancelada de otro evento entre R1 y R2 también cuenta");
+    b = await B({ cargas: [dirig({ run: { run_attempt: 2 } }), R2()] });
+    ok(!b.cadena && /intento 2/.test(b.motivosCadena.join()), "cableado: R1 llega tal cual de la API (un segundo intento no se maquilla)");
+    b = await B({ cargas: [dirig({ alrevesRojo: true }), R2()] });
+    ok(!b.cadena && /no falló solo por pruebas con nombre/.test(b.motivosCadena.join()), "cableado: R1 llega con todos sus trabajos (uno rojo que no es de pruebas no se esconde)");
+    b = await B({ cargas: [dirig({ run: { conclusion: "cancelled" } }), R2()] });
+    ok(!b.cadena && !b.motivosCadena.length, "cableado: una cancelada no es candidata a R1 (solo las dirigidas rojas)");
+    b = await B({ difA: [".github/workflows/ci.yml", "apps/web/lib/eventos.ts"] });
+    ok(!b.cadena && /herramientas del CI/.test(b.motivosCadena.join()), "cableado: lo que cambió entre A y HEAD sale de git (io.difNombres): con .github/ no hay cadena");
+    b = await B({ corrida: "completa" });
+    ok(!b.cadena && !b.motivosCadena.length, "cableado: si la entrega toca .github/ (corrida COMPLETA) ni se busca la cadena");
+    // --repaso: prepararRepaso con el mismo io.
+    const PR = async (x = {}, id = 70, mas = []) => prepararRepaso({ id, rama, repo: REP, mas, io: mundo({ cargas: [dirig(), R2()], ...x }) });
+    let q = await PR();
+    ok(q.ok && q.lista.map((t) => t.nombre).join() === "adm7i,evt6c" && q.A === SHA_A, `repaso: R1 70, A y la lista (rojas de R1 + desde A) salen del io (${q.ok ? q.lista.map((t) => t.nombre).join(" ") : q.motivo})`);
+    q = await PR({ difA: [".github/workflows/ci.yml", "apps/web/lib/eventos.ts"] });
+    ok(NO(q, /herramientas del CI/), "repaso: .github/ cambiado entre A y HEAD → no hay repaso (dirigida entera)");
+    q = await PR({ difA: ["pruebas/correr.mjs", "apps/web/lib/eventos.ts"] });
+    ok(NO(q, /herramientas del CI/), "repaso: una herramienta del CI (el corredor) cambiada entre A y HEAD → no hay repaso");
+    q = await PR({ difA: [] });
+    ok(NO(q, /sin arreglo no hay repaso/), "repaso: sin arreglo (el mismo árbol que R1) → no hay repaso (una roja dos veces es roja, AG)");
+    q = await PR({ ancestro: false });
+    ok(NO(q, /no es ancestro de HEAD/), "repaso: el commit de R1 no es ancestro de HEAD → no hay repaso");
+    q = await PR({ cargas: [dirig(), una(73, { pedidas: ["com5g"], verdes: [], rojas: ["com5g"] })] });
+    ok(q.ok && q.lista.map((t) => t.nombre).join() === "adm7i,com5g,evt6c" && q.extra.join() === "com5g", "repaso: las rojas de una corrida no verde posterior a R1 entran en la lista");
+    q = await PR({ cargas: [dirig(), una(73, { pedidas: ["com5g"], verdes: ["com5g"], rojas: [] }, { run: { status: "in_progress", conclusion: null } })] });
+    ok(NO(q, /todavía no terminó/), "repaso: una corrida de la rama posterior a R1 que no terminó → espera (no hay repaso)");
+    q = await PR({ cargas: [dirig({ alrevesRojo: true })] });
+    ok(NO(q, /no falló solo por pruebas con nombre/), "repaso: R1 que no falló solo por pruebas con nombre → no hay repaso");
+    q = await PR({}, "x1");
+    ok(NO(q, /--repaso <id/), "repaso: un id que no es un número → no hay repaso");
+    q = await PR({}, 70, ["zz2x"]);
+    ok(q.ok && q.lista.some((t) => t.nombre === "zz2x"), "repaso: --mas entra en la lista (propuesta desde A)");
   }
   // La base.
   const b = (x) => comprobarBase({ limpio: true, mainEsAncestro: true, pruebasEsAncestro: true, ...x });

@@ -5,12 +5,14 @@
 //      mensaje; después se restaura y los guardianes quedan limpios. Las reglas de lógica (árbol, documentos, propuesta, main, conclusión de la
 //      API, nombres) las caza el guardián corriendo los casos: cada defecto tiene que tumbar el caso que lo vigila.
 // 24 nov (decisión AU) · Y el repaso corto tras una roja: la línea RESULTADOS de pruebas/correr.mjs, lo que exige la cadena R1 roja + R2 repaso,
-//      el repaso siempre en partes y la puerta de producción (corrida.mjs, promover.sh) que no acepta cadenas.
+//      el repaso siempre en partes y la puerta de producción (corrida.mjs, promover.sh) que no acepta cadenas. Tras la revisión de bc9a893: la
+//      cuenta de RESULTADOS en pruebas/lib/resultados.cjs (sus casos), el cableado de --subir y --repaso (buscarEvidencia, armarCadena,
+//      prepararRepaso, ioReal), el primer intento, los trabajos fijos, el arreglo sin herramientas y toda corrida no verde entre R1 y R2.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync, spawnSync } = require('child_process');
 const R = ENT.RAIZ, G = 'subidaConHerramienta', S = 'scripts/ci/subir.mjs', Y = '.github/workflows/ci.yml', D = 'infra/pruebas/deploy.sh';
 // 24 nov (decisión AU) · El repaso: la línea RESULTADOS del corredor y la puerta de producción, que no acepta cadenas.
-const CO = 'pruebas/correr.mjs', CR = 'scripts/ci/corrida.mjs', PR = 'scripts/produccion/promover.sh';
+const CO = 'pruebas/correr.mjs', RL = 'pruebas/lib/resultados.cjs', CR = 'scripts/ci/corrida.mjs', PR = 'scripts/produccion/promover.sh';
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 // Los nombres de la lista de documentos de trabajo, sacados de alcance.mjs (escritos aquí, ciSoloDocumentos diría que esta prueba los lee).
 const DOCS = [...(/export const DOCUMENTOS = Object\.freeze\(\[([\s\S]*?)\]\);/.exec(fs.readFileSync(path.join(R, 'scripts/ci/alcance.mjs'), 'utf8'))?.[1] ?? '').matchAll(/"([^"]+)"/g)].map((m) => m[1]);
@@ -78,24 +80,57 @@ const casos = [
   [Y, 'console.log(["EVID", "ENCIA"].join("") + " " + j);', 'console.log("EVIDENCIA " + j);', 'no lleva la palabra EVIDENCIA entera'],
   [Y, '          test "$(git rev-parse HEAD)" = "$SHA"\n', '', 'la evidencia lleva el commit comprobado'],
   [Y, '          ENTRADAS: ${{ toJSON(inputs) }}\n', '          ENTRADAS: "{}"\n', 'la evidencia lleva todas las entradas'],
-  // 24 nov · El repaso corto tras una roja (decisión AU). La línea RESULTADOS de pruebas/correr.mjs.
-  [CO, 'console.log(`RESULTADOS ${JSON.stringify({ pedidas, verdes, rojas, inestables: inest, completa,', 'console.log(`RESULTADO ${JSON.stringify({ pedidas, verdes, rojas, inestables: inest, completa,', 'pruebas/correr.mjs imprime la línea RESULTADOS {pedidas'],
+  // 24 nov · El repaso corto tras una roja (decisión AU). La línea RESULTADOS: el corredor solo la llama…
+  [CO, 'console.log(RESULTADOS.linea({ pedidas: sel.map((t) => t.nombre), hechas,', 'console.log(RESULTADOS.linea({ pedidas: sel.map((t) => t.nombre).slice(0, 1), hechas,', 'imprime la línea RESULTADOS con pruebas/lib/resultados.cjs'],
+  [CO, 'delCarril, detenida: detenida || parando }));', 'delCarril, detenida }));', 'completa:false si se está parando'],
   [CO, '  lineaResultados({ detenida: true });\n  vigia.alParar();\n', '  vigia.alParar();\n', 'también cuando se detiene por una señal'],
-  [CO, 'const completa = !detenida && !delCarril.length && pedidas.every((n) => hechas.has(n));', 'const completa = true;', 'completa solo si todas las pedidas corrieron hasta su resultado'],
   [CO, '{ const pedidas = new Set(sel.map((t) => t.nombre)); lineaResultados(', '{ const pedidas = new Set(sel.map((t) => t.nombre)); void (', 'la línea RESULTADOS es la última de la corrida'],
+  [CO, '    RESULTADOS.anotar(hechas, t.nombre, r.ok);\n', '    hechas.set(t.nombre, true);\n', 'anota cada prueba que corrió con RESULTADOS.anotar'],
+  [CO, '    RESULTADOS.anotar(hechas, t.nombre, r.ok);\n', '    RESULTADOS.anotar(hechas, t.nombre, true);\n', 'anota cada prueba que corrió con RESULTADOS.anotar'],
+  [CO, '      const r2 = await correrUna(t);\n      if (parando) await new Promise(() => {});\n', '      const r2 = await correrUna(t);\n', 'tras el reintento de una prueba, si la corrida se está parando'],
+  // …y la cuenta vive en pruebas/lib/resultados.cjs, con sus casos ejecutables (el guardián los corre).
+  [RL, 'const verdes = ps.filter((n) => hechas.get(n) === true);', 'const verdes = ps.filter((n) => hechas.get(n) !== false);', 'una pedida que no corrió: ni verde ni roja'],
+  [RL, 'const rojas = ps.filter((n) => hechas.get(n) === false);', 'const rojas = ps.filter((n) => hechas.get(n) === false).slice(0, 1);', 'varias rojas: se dicen todas'],
+  [RL, '  if (hechas.get(nombre) !== false) hechas.set(nombre, !!ok);', '  hechas.set(nombre, !!ok);', 'la roja gana'],
+  [RL, 'const completa = !detenida && !carril.length && ps.every((n) => hechas.has(n));', 'const completa = !carril.length && ps.every((n) => hechas.has(n));', 'detenida por una señal: completa:false'],
+  [RL, 'const completa = !detenida && !carril.length && ps.every((n) => hechas.has(n));', 'const completa = !detenida && !carril.length;', 'una pedida que no corrió: ni verde ni roja, y completa:false'],
   // La cadena R1 roja + R2 repaso: lo que exige.
   [S, 'const sinRojas = rojas.filter((t) => !enR2(t));', 'const sinRojas = [];', 'la cadena exige que R2 repita las rojas de R1'],
   [S, 'const sinA = propuestaDesdeA.filter((t) => !enR2(t.nombre));', 'const sinA = [];', 'R2 ⊇ propuesta(A..HEAD)'],
   [S, 'const sinCubrir = propuestaTotal.filter(', 'const sinCubrir = [].filter(', 'cubran la propuesta de la entrega'],
   [S, 'if (completa) return no("la entrega toca .github/: la cadena', 'if (false) return no("la entrega toca .github/: la cadena', 'la cadena no vale si la entrega toca .github/'],
   [S, 'if (aEsAncestro !== true) return no(', 'if (false) return no(', 'la cadena exige que el commit de R1 sea ancestro de HEAD'],
-  [S, 'if (!x.ok) return no(`«${n}» (${j.conclusion', 'if (!x.ok) continue;\n      if (false) return no(`«${n}» (${j.conclusion', 'un trabajo de pruebas rojo sin RESULTADOS'],
+  [S, 'if (!x.ok) return no(`«${n}» (${j.conclusion', 'if (!x.ok) continue;\n      if (false) return no(`«${n}» (${j.conclusion', 'la cadena exige la línea RESULTADOS de cada trabajo de pruebas de R1'],
   [S, 'if (!x.r.completa) return no(', 'if (false) return no(', 'RESULTADOS con completa:false'],
+  [S, 'if (j.conclusion === "success" && x.r.rojas.length) return no(', 'if (false) return no(', 'una parte VERDE de R1 cuyo RESULTADOS trae rojas'],
   [S, 'if (run.status !== "completed" || run.conclusion !== "failure") return no(`terminó', 'if (run.status !== "completed") return no(`terminó', 'R1 en verde'],
   [S, '    if (!rama || run.head_branch !== rama) return no(`de la rama ${run.head_branch}, no de ${rama}`);\n    if (run.event !== "workflow_dispatch")', '    if (run.event !== "workflow_dispatch")', 'R1 de otra rama'],
+  [S, '    if (ajeno) return no(', '    if (false) return no(', '«al revés» rojo en R1 → no hay repaso'],
   [S, 'const v = evaluarCorrida({ run: r2?.run, trabajos: r2?.trabajos, registro: r2?.registro, rama, repo, arbolHead, arbolDeRun,', 'const v = evaluarCorrida({ run: r2?.run, trabajos: r2?.trabajos, registro: r2?.registro, rama, repo, arbolHead: arbolDeRun, arbolDeRun,', 'R2 de otro árbol'],
+  [S, '    if (!regOk) return no("R2: la punta a punta no corrió entera");', '    if (false) return no("R2: la punta a punta no corrió entera");', 'a R2 le falta una parte de «todas las fases»'],
   [S, '      q.rojas.forEach((t) => extra.add(t));\n    }\n    const rojas', '    }\n    const rojas', 'una roja del repaso rojo intermedio'],
-  [S, 'if (!hallada && p.ex.corrida === "dirigida" && candidatas.length) {', 'if (!hallada && p.ex.corrida !== "ninguna" && candidatas.length) {', 'la evidencia encadenada solo en el camino de la dirigida'],
+  // 24 nov (revisión de bc9a893) · Primer intento, trabajos fijos, arreglo sin herramientas entre A y HEAD, y toda corrida no verde entre R1 y R2.
+  [S, '    if (run.run_attempt !== 1) return no(`es el intento', '    if (false) return no(`es el intento', 'la evidencia (y R2) solo valen del primer intento'],
+  [S, '    if (Number(ev.intento) !== 1) return no(', '    if (false) return no(', 'una línea EVIDENCIA de otro intento'],
+  [S, '    const fijo = faltaFijo(trabajos);\n    if (fijo) return no(fijo);\n', '', 'evidencia sin «alcance», o con «alcance» saltado'],
+  [S, '    if (!arr.ok) return arr;\n    const v = evaluarCorrida(', '    if (false) return arr;\n    const v = evaluarCorrida(', 'la cadena no vale con herramientas del CI'],
+  [S, '  if (!dif.length || veredicto(dif) === "documentos") return no("sin arreglo', '  if (false) return no("sin arreglo', 'la cadena no vale sin arreglo entre A y HEAD'],
+  [S, '    && !(r.status === "completed" && r.conclusion === "success") && Number(r.id) > Number(r1?.id)', '    && r.status === "completed" && r.conclusion === "failure" && Number(r.id) > Number(r1?.id)', 'una corrida CANCELADA entre R1 y R2 suma las rojas'],
+  [S, '  return (corridas ?? []).filter((r) => r && r.path === ".github/workflows/ci.yml" && r.repository?.full_name === repo && r.head_branch === rama\n', '  return (corridas ?? []).filter((r) => r && r.path === ".github/workflows/ci.yml" && r.repository?.full_name === repo && r.head_branch === rama && r.event === "workflow_dispatch"\n', 'una corrida roja de otro evento (pull_request)'],
+  [S, '    if (run?.status !== "completed") return no(`la corrida ${run?.id} todavía no terminó', '    if (false) return no(`la corrida ${run?.id} todavía no terminó', 'que todavía no terminó → FALTA'],
+  [S, 'x.r.rojas.forEach((t) => rojas.add(t)); x.r.inestables.forEach((t) => rojas.add(t));', 'x.r.rojas.forEach((t) => rojas.add(t));', 'las inestables de una corrida intermedia también tienen que repetirse en R2'],
+  [S, '      if (j?.conclusion === "failure" && !x.r.rojas.length) return no(', '      if (false) return no(', 'una parte ROJA de una intermedia sin ninguna roja'],
+  // El cableado (lo que antes armaban cmdSubir y cmdRepaso a mano): cada mutación tumba su caso.
+  [S, 'const propuestaDesdeA = aEsAncestro ? (await io.planear(A, [])).d.pruebas : [];', 'const propuestaDesdeA = [];', 'la propuesta desde A sale de io.planear(A)'],
+  [S, '    propuestaTotal: p.d.pruebas, propuestaDesdeA, completa: p.ex.corrida === "completa" };', '    propuestaTotal: [], propuestaDesdeA, completa: p.ex.corrida === "completa" };', 'la propuesta de la entrega es la del plan'],
+  [S, 'const aEsAncestro = tengo && (await io.esAncestro(A)) === true;', 'const aEsAncestro = true;', '«A es ancestro de HEAD» lo dice git'],
+  [S, '  for (const r of intermediasDe(corridas, { r1, r2: r2.run, rama, repo })) intermedias.push(await cargarCorrida(io, r));\n', '', 'las corridas no verdes entre R1 y R2 salen de la lista de la rama'],
+  [S, '  return { r1: await cargarCorrida(io, r1), r2, intermedias,', '  return { r1: { ...(await cargarCorrida(io, r1)), run: { ...r1, run_attempt: 1 } }, r2, intermedias,', 'R1 llega tal cual de la API'],
+  [S, '  return { r1: await cargarCorrida(io, r1), r2, intermedias,', '  return { r1: await (async () => { const c = await cargarCorrida(io, r1); return { ...c, trabajos: c.trabajos.filter((j) => !/al revés/.test(j.name)) }; })(), r2, intermedias,', 'R1 llega con todos sus trabajos'],
+  [S, '  const arr = difDeArreglo(difAHead);\n  if (!arr.ok) return arr;\n  const corridas', '  const arr = difDeArreglo(difAHead);\n  if (false) return arr;\n  const corridas', 'repaso: .github/ cambiado entre A y HEAD → no hay repaso'],
+  [S, 'if (p.ex.corrida !== "dirigida" || !candidatas.length) return', 'if (!candidatas.length) return', 'la evidencia encadenada solo en el camino de la dirigida'],
+  [S, '    const { hallada, cadena, motivos, motivosCadena } = await buscarEvidencia({ p, rama, repo, arbolHead, io: ioReal(repo, rama) });', '    const { hallada, cadena, motivos, motivosCadena } = await buscarEvidencia({ p, rama, repo, arbolHead, io: { ...ioReal(repo, rama), esAncestro: () => true } });', 'la evidencia encadenada solo en el camino de la dirigida (nunca con .github/ ni en la vía rápida), desde buscarEvidencia con ioReal'],
+  [S, '    esAncestro: (sha) => gitOk("merge-base", "--is-ancestor", sha, "HEAD"),', '    esAncestro: (sha) => true,', 'ioReal pregunta de verdad'],
   // El repaso, siempre en partes.
   [S, '  if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }\n  return lanzarYEsperar({ repo, rama, head, o });', '  if (ensayo) { console.log(`ensayo: lanzaría ${comoTexto(o)}`); return 0; }\n  return lanzarYEsperar({ repo, rama, head, o: o.map((x) => (x.startsWith("partes=") ? "partes=1" : x)) });', 'el repaso va siempre en partes'],
   // Producción no acepta cadenas.
