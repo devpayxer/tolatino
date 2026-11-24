@@ -2904,11 +2904,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9b** · **`evt6e` fallaba sola de 0:00 a 0:59 de cada martes (23 nov):** terminaba la fecha «hace 1 h» y la liquidación ya era de hoy; ahora la
       fecha no pasa de la medianoche local. `din9t3`–`din9t6` usaban el día de Greenwich como «hoy» (latente): usan `pruebas/lib/hoy-ciudad.cjs`.
       Guardianes `hoyDeLaPruebaEnLaCiudad` y `liquidacionDelMartesSinReloj`, al revés `alrevescalendario23` 7/7.
-- [ ] **→ 9b** · **Pruebas de calendario sin poder decidir (23 nov):** `compa7f`, `compa7h`, `msg2p` (el día de la semana de «hoy» se recalcula en cada
+- [x] **→ 9b** · **Pruebas de calendario sin poder decidir (23 nov):** `compa7f`, `compa7h`, `msg2p` (el día de la semana de «hoy» se recalcula en cada
       sentencia: si pasa la medianoche a mitad de la prueba, cambia), `din9t6`/`din9t8` (fechas «creado» fijas del 20 nov: mirar si alguna ventana relativa
       a `now()` las deja fuera con el tiempo) y `adm7i` (`priced_at` fijo). El resto de las e2e se barrió por patrones y muestreo, no entero.
       _Hecho en parte (24 nov): `compa7f`, `compa7h` y `msg2p` preguntan el día una vez (cerrar y reabrir tocan el mismo día); guardián
-      `hoyDeLaPruebaEnLaCiudad` (el día recalculado en cada orden) y su al revés en `alrevescalendario23`. Quedan `din9t6`/`din9t8` y `adm7i`._
+      `hoyDeLaPruebaEnLaCiudad` (el día recalculado en cada orden) y su al revés en `alrevescalendario23`. `din9t6`/`din9t8` y `adm7i`,
+      mirados el 24 nov: sus fechas fijas («creado» de la pasarela de mentira, `priced_at`) solo ordenan (`lib/consulta-pasarela.ts`,
+      `lib/dinero-alertas.ts`, `lib/compa/admin-compa.ts`); ninguna ventana relativa a `now()` las mira, así que no caducan._
 - [ ] **→ 9o** · **`current_date` y `now()::date` valen mientras la base corra en `America/New_York`** (así está en los compose de pruebas y producción); una
       ciudad en otra zona los rompería de noche y ningún guardián lo vigila.
 - [ ] **→ 9q** · **SES: el envío firmado (`POST /v2/email/outbound-emails`) no se ha visto contra algo que compruebe la firma** (el simulador solo simula
