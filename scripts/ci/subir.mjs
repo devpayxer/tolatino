@@ -26,7 +26,7 @@
    La evidencia es la línea «EVIDENCIA {json}» que imprime el trabajo final de ci.yml («la tubería») solo si todo lo pedido dio verde; la línea
    sola no vale: la conclusión de la corrida y de ese trabajo se leen de la API (como scripts/ci/corrida.mjs). Guardián subidaConHerramienta;
    al revés: alrevesSubir. */
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -527,12 +527,45 @@ function avisoDespues({ repo, head, pruebas }) {
 }
 
 // Las comprobaciones locales de --subir. «build» es el mismo comando que el trabajo «web» de ci.yml.
+// 24 nov (fundador: «un cambio pequeño tarda 30 min») · Corren A LA VEZ, no una detrás de otra: tipos ‖ guardianes ‖ textos, y el build cuando
+// terminan los tipos (los dos leen .next/types; tsc no puede leerlos mientras next build los escribe). Medido: en serie 5,3 min (tipos 10 s + build
+// 171 s + guardianes 100 s + textos 36 s); en paralelo, lo que tarda el más largo. Los guardianes no repiten la comprobación de los textos cuando
+// textos va en su propio paso (GUARDIANES_SIN_TEXTOS=1: el guardián alrevesConSuTexto corre textos.cjs entero, ~19 s, y textos lo vuelve a correr).
 export const PASOS_LOCALES = Object.freeze({
   tipos: ["pnpm", ["exec", "turbo", "run", "typecheck", "--force"]],
   build: ["pnpm", ["--filter", "@tolatino/web", "build"]],
   guardianes: [process.execPath, ["guardianes/run.mjs"]],
   textos: [process.execPath, ["pruebas/alreves/textos.cjs"]],
 });
+
+/* Un paso local, sin bloquear (para correr varios a la vez). Devuelve la misma línea «CORRIÓ/FALTA» de siempre, con su tiempo. */
+function correrPaso(k, env) {
+  const [cmd, a] = PASOS_LOCALES[k], t0 = Date.now(), MAX = 256 * 1024;
+  return new Promise((listo) => {
+    let out = "", err = "", fin = false;
+    const termina = (status, extra = "") => {
+      if (fin) return; fin = true; clearTimeout(reloj);
+      const ult = [out, err].map((x) => String(x ?? "").split("\n").filter((l) => l.trim()).slice(-1)[0] ?? "").find(Boolean) ?? extra;
+      listo(status === 0 ? { ok: true, linea: `CORRIÓ: ${k} en verde (${Math.round((Date.now() - t0) / 1000)} s) · ${ult.slice(0, 200)}` }
+        : { ok: false, linea: `FALTA: ${k} en verde (salió con ${status}) · ${ult.slice(0, 300)}` });
+    };
+    const ch = spawn(cmd, a, { cwd: RAIZ, env, stdio: ["ignore", "pipe", "pipe"] });
+    const reloj = setTimeout(() => { ch.kill("SIGTERM"); termina(null, "pasó de 30 min"); }, 30 * 60_000);
+    ch.stdout.on("data", (d) => { out = (out + d).slice(-MAX); });
+    ch.stderr.on("data", (d) => { err = (err + d).slice(-MAX); });
+    ch.on("error", (e) => termina(null, String(e?.message ?? e)));
+    ch.on("close", (status) => termina(status));
+  });
+}
+/* Los pasos locales a la vez (ver PASOS_LOCALES). El orden de las líneas es el de la lista, como antes. */
+export async function correrLocales(locales, correr = correrPaso) {
+  const conTextos = locales.includes("textos");
+  const env = (k) => (k === "guardianes" && conTextos ? { ...process.env, GUARDIANES_SIN_TEXTOS: "1" } : process.env);
+  const prom = new Map();
+  for (const k of locales) if (k !== "build") prom.set(k, correr(k, env(k)));
+  if (locales.includes("build")) prom.set("build", (prom.get("tipos") ?? Promise.resolve()).then(() => correr("build", env("build"))));
+  return Promise.all(locales.map((k) => prom.get(k)));
+}
 
 async function cmdSubir({ ensayo, sinViaRapida = false }) {
   const repo = REPO, rama = ramaActual();
@@ -552,12 +585,9 @@ async function cmdSubir({ ensayo, sinViaRapida = false }) {
   for (const e of p.d.errores) linea({ ok: false, linea: `FALTA: ${e}` });
   // b.
   if (base.every((x) => x.ok)) {
-    for (const k of p.ex.locales) {
-      const [cmd, a] = PASOS_LOCALES[k], t0 = Date.now();
-      const r = spawnSync(cmd, a, { cwd: RAIZ, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, timeout: 30 * 60_000 });
-      const ult = [r.stdout, r.stderr].map((x) => String(x ?? "").split("\n").filter((l) => l.trim()).slice(-1)[0] ?? "").find(Boolean) ?? "";
-      linea(r.status === 0 ? { ok: true, linea: `CORRIÓ: ${k} en verde (${Math.round((Date.now() - t0) / 1000)} s) · ${ult.slice(0, 200)}` } : { ok: false, linea: `FALTA: ${k} en verde (salió con ${r.status}) · ${ult.slice(0, 300)}` });
-    }
+    const t0 = Date.now();
+    for (const x of await correrLocales(p.ex.locales)) linea(x);
+    console.log(`  (comprobaciones locales a la vez: ${Math.round((Date.now() - t0) / 1000)} s en total)`);
     if (git("status", "--porcelain").trim()) linea({ ok: false, linea: "FALTA: las comprobaciones dejaron el árbol cambiado" });
   } else console.log(`NO CORRIÓ: ${p.ex.locales.join(", ")} (antes falta a.)`);
   // c.
@@ -625,8 +655,10 @@ async function cmdSubir({ ensayo, sinViaRapida = false }) {
     const mirar = trabajosDe(repo, r.id).find((j) => j.name === "mirar");
     ult = estadoDelSandbox(mirar ? registroDe(repo, mirar.id) : "", head);
     if (ult.sirve) break;
-    console.log(`  el sandbox sirve ${ult.servido || "(nada)"} todavía · otra mirada en 90 s`);
-    await esperar(90_000);
+    // 24 nov · Antes 90 s entre miradas: el aviso llegaba hasta 2,5 min después de que el sandbox ya lo servía. Cada mirada ya tarda ~35 s (arranca una
+    // corrida de estado-sandbox), así que con el sondeo de 25 s se mira más o menos cada minuto.
+    console.log(`  el sandbox sirve ${ult.servido || "(nada)"} todavía · otra mirada en ${SONDEO_MS / 1000} s`);
+    await esperar(SONDEO_MS);
   }
   if (ult?.tramos) console.log(`  ${ult.tramos}`);
   for (const l of ult?.rutas ?? []) console.log(`  ${l}`);
@@ -641,7 +673,7 @@ async function cmdSubir({ ensayo, sinViaRapida = false }) {
 }
 
 /* ── Casos ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
-function casos() {
+async function casos() {
   let bien = 0, total = 0;
   const ok = (c, que) => { total++; if (c) bien++; console.log(`  ${c ? "✓" : "✗"} ${que}`); };
   const [D0, D1] = DOCUMENTOS;
@@ -793,6 +825,20 @@ function casos() {
   const es = estadoDelSandbox(`2026-11-22T14:00:00.1Z / 200 0.123s\n2026-11-22T14:00:00.2Z /api/salud 200 0.05s\n2026-11-22T14:00:01Z 2026-11-22T13:58:00+00:00 tramos (ok, commit c0daa9c): base 3 s · total 292 s\n2026-11-22T14:00:02Z {"ok":true,"commit":"c0daa9c"}`, H);
   ok(es.sirve && es.rutas.length === 2 && /tramos \(ok/.test(es.tramos), "el sandbox sirve el commit (salud, tramos y rutas)");
   ok(!estadoDelSandbox('{"ok":true,"commit":"ee13605"}', H).sirve && !estadoDelSandbox("", H).sirve, "el sandbox sirve otro commit, o no contesta → no");
+  // 24 nov · Los pasos locales a la vez: tipos, guardianes y textos arrancan juntos; el build espera a los tipos; las líneas salen en el orden de la
+  // lista; los guardianes no repiten textos cuando textos va en su propio paso (y sí cuando van solos, como en una entrega de solo documentos).
+  {
+    const arr = []; let soltarTipos = null;
+    const falso = (k, env) => new Promise((r) => { arr.push([k, env?.GUARDIANES_SIN_TEXTOS ?? ""]); if (k === "tipos") soltarTipos = () => r({ ok: true, linea: k }); else r({ ok: true, linea: k }); });
+    const prom = correrLocales(["tipos", "build", "guardianes", "textos"], falso);
+    ok(arr.map((x) => x[0]).join() === "tipos,guardianes,textos", `pasos locales: tipos, guardianes y textos arrancan a la vez; el build todavía no (${arr.map((x) => x[0]).join()})`);
+    soltarTipos?.();
+    const res = await prom;
+    ok(arr.map((x) => x[0]).join() === "tipos,guardianes,textos,build" && res.map((x) => x.linea).join() === "tipos,build,guardianes,textos", "pasos locales: el build arranca al terminar los tipos y las líneas salen en el orden de la lista");
+    ok(arr.find((x) => x[0] === "guardianes")?.[1] === "1", "pasos locales: con textos en su propio paso, los guardianes no lo repiten (GUARDIANES_SIN_TEXTOS=1)");
+    const solos = []; await correrLocales(["guardianes"], (k, env) => { solos.push(env?.GUARDIANES_SIN_TEXTOS ?? ""); return Promise.resolve({ ok: true, linea: k }); });
+    ok(solos.join() === "", "pasos locales: guardianes solos (entrega de documentos) siguen comprobando los textos");
+  }
   console.log(`\n${bien}/${total} casos de subir`);
   return bien === total;
 }
@@ -803,7 +849,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   const mas = (opt("--mas") ?? "").split(/\s+/).filter(Boolean);
   let codigo = 2;
   try {
-    if (flag("--casos")) codigo = casos() ? 0 : 1;
+    if (flag("--casos")) codigo = (await casos()) ? 0 : 1;
     else if (flag("--plan")) {
       const base = opt("--base") ?? "origin/main", cabeza = opt("--cabeza") ?? "HEAD";
       let rama = "<rama>"; try { rama = ramaActual(); } catch { /* en main o sin rama: la orden lleva <rama> */ }
