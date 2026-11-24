@@ -38,16 +38,6 @@ jobs:
           for p in / /api/salud /negocios /admin /estado/; do
             curl -s -o /dev/null -m 30 -w "$p %{http_code} %{time_total}s\n" "http://2.31.196.167$p" || echo "$p sin respuesta"
           done
-      # 24 nov · La vista previa (puerto 8081): qué contesta de verdad (código, tiempo y título) y su registro entero. El fundador veía la página de
-      # mantenimiento y desde el entorno de trabajo no se llega a ese puerto.
-      - name: Vista previa (puerto 8081)
-        run: |
-          for p in / /negocios /n/barberia-el-primo; do
-            h=$(curl -s -m 120 -w '\n%{http_code} %{time_total}s' "http://2.31.196.167:8081$p" || true)
-            echo "8081$p $(echo "$h" | tail -1) · $(echo "$h" | grep -o '<title>[^<]*' | head -1 | sed 's/<title>//') · $(echo "$h" | grep -oE 'Estamos haciendo un cambio|La vista previa está [a-z]+|data-vista-previa' | head -1)"
-          done
-          echo "--- /estado/vista.txt"
-          curl -s -m 30 http://2.31.196.167/estado/vista.txt | tail -45 | cut -c1-300
       - name: Rutas pedidas
         if: inputs.rutas != ''
         env: { RUTAS: "${{ inputs.rutas }}", GALLETA: "${{ inputs.cookie }}", TEXTO: "${{ inputs.texto }}" }

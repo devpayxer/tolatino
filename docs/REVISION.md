@@ -6497,4 +6497,4 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   motivo; se respeta la espera que pida un medio; en alojamientos compartidos el enlace tiene que ser del mismo servidor. Qué mirar: «Probar» en un medio.
 - **Pruebas de la ronda de la ficha (Sonnet, revisado por Fable):** `fic9cab` 8–10, guardián `fichaFijaSinTapar`. La parte 9 (escritorio) es la prueba del
   fundador: si decide quitar la barra del nombre, se borra con su mención en el guardián. Arreglo de paso: 18 px de ensanche con una oferta en vivo.
-
+- **Vista previa: quitada por decisión del fundador (AQ, 24 nov).** Apagada en esta tanda; el puerto 8081 cerrado; el código se retira en el bloque siguiente.

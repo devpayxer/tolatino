@@ -102,9 +102,6 @@ condiciones» al fundador → confirmación completa + OK → `produccion` avanz
   línea por tanda en REVISION.
 - **Teléfono y computadora (AP):** el fundador solo ve el teléfono. Cada ajuste se revisa también en computadora antes de subir: si aplica, se hace
   en los dos y van las dos capturas; si no aplica, se dice por qué en una línea.
-- **Vista previa:** `http://2.31.196.167:8081/` sigue la rama de trabajo en vivo (modo desarrollo, sin construir imagen; se pausa sola si la rama
-  trae migraciones que la base no tiene). Sirve para que el fundador pruebe un cambio de pantalla en uno o dos minutos; lo aprobado sube al sandbox
-  normal por el camino de siempre. Interruptor y rama: `infra/pruebas/vista-previa/vista.conf`. Solo existe en pruebas.
 - Captura primero: en cuanto una pieza se ve, el fundador recibe la captura real (teléfono y escritorio). Se entrega por partes, y el trabajo
   grande se reparte en hasta 4 encargos en paralelo, cada uno con su base y su puerto (AL, regla 14).
 
