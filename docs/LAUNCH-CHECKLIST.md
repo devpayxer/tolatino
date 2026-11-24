@@ -3005,3 +3005,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9b** · **`cat9n3` sube 4 fotos por corrida:** la tercera corrida en una hora sobre la misma base choca con el tope de 10 fotos por hora (en CI la base es nueva).
 - [ ] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
       `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa).
+
+## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
+- [ ] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`).
+- [ ] **→ 9b** · Una parte CANCELADA a propósito: si GitHub le hace llegar la señal al corredor, deja `RESULTADOS` con `completa:false`; si no llega, esa R1 se queda
+  sin repaso (fallo seguro: toca la dirigida entera) y «sumar las rojas de una cancelada» no ocurre nunca. Decidir si hace falta reenviar la señal en ci.yml.
+
