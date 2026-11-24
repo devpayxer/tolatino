@@ -6517,3 +6517,6 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   entrar con el teléfono), dímelo y se quita igual ahí.
 - **La corrida nocturna de anchos (4 noches en rojo; hecho por Sonnet, revisado por Opus):** las pruebas que miden a un ancho concreto lo piden con
   `anchoPropio` y las que valen a cualquiera miden contra la ventana real; sin aflojar ninguna comprobación. Qué mirar: nada; la próxima corrida de anchos en verde.
+- **Novedades después de Resumen (pedido del fundador, 0c23669; hecho por Opus):** en las pestañas del teléfono y en las secciones de la computadora.
+  Del pedido a servido ~24 min: la subida fueron 4 min; el resto, esperar una revisión del CI de otro paquete que ocupaba la rama (fallo de
+  orquestación de Opus: ese paquete se apartó con un commit de reversión y el ajuste subió solo). Qué mirar: la ficha de un restaurante.

@@ -2994,5 +2994,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       ipad e iphone-se en Chromium (aquí no hay WebKit); verlos en verde en la próxima corrida nocturna de anchos (4 noches en rojo hasta el 24 nov).
 - [ ] **→ 9b** · **Una prueba nueva que mide a un ancho concreto** usa `ENT.anchoPropio` (o `ENT.escritorioPropio` si necesita cursor); si vale a cualquier
       ancho, mide contra `innerWidth`/`viewportSize()`. El guardián `anchoPropioRespetado` cubre din9t6b, din9t7b y din9t10b, no una prueba nueva con un ancho escrito.
+- [ ] **→ 9b** · **Pruebas que dan por hecho un dato de la semilla que otra prueba cambia (24 nov):** `fic9cab` exigía la oferta en vivo de
+      sabor-dominicano y `a11y9c` la apaga sin devolverla; en una dirigida con otro reparto cayó dos veces. Ahora fic9cab pone la suya y la deja como
+      estaba. Falta barrer la clase: precondiciones `ok(... sql(select count ...))` sobre datos compartidos que otra prueba modifica.
+- [ ] **→ 9b** · **Mientras una dirigida ocupa la rama, un ajuste del fundador espera (24 nov):** se resolvió apartando el paquete con un commit de
+      reversión. Mejor: lanzar las dirigidas largas solo cuando no hay ronda de ajustes, o que la herramienta suba un ajuste sobre `main` sin pasar por la rama.
 - [ ] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
       `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa).

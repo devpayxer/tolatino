@@ -42,7 +42,9 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
   }
   const fijar = (id, o) => sql(`update businesses set phone = ${lit(o.tel === '~' ? null : o.tel)}, works_from_home = ${o.casa}, address = ${lit(o.dir === '~' ? null : o.dir)}, name = ${lit(o.nombre)}, closed_on = ${o.cierre === '~' ? 'null' : lit(o.cierre)} where id = '${id}'`);
   const cambiar = (id, set) => sql(`update businesses set ${set} where id = '${id}'`);
-  const restaurar = () => { for (const id of ids) fijar(id, orig[id]); sql(`delete from special_hours where label->>'es' = 'fic9cab'`); };
+  let ofertaPuesta = '';
+  const restaurar = () => { for (const id of ids) fijar(id, orig[id]); sql(`delete from special_hours where label->>'es' = 'fic9cab'`);
+    if (ofertaPuesta) { const [oid, est, st, fin] = ofertaPuesta.split('|'); sql(`update business_posts set status = '${est}', stopped_at = ${st ? `'${st}'` : 'null'}, ends_at = ${fin ? `'${fin}'` : 'null'} where id = ${oid}`); } };
   const hoyLocal = () => sql(`select (now() at time zone 'America/New_York')::date`);
   // Abierto todo el día de hoy (un horario especial propio) o cerrado hoy (closed_on): el estado no depende de la hora en que corre la prueba.
   const abierto = (id) => { cambiar(id, 'closed_on = null, temp_closed_until = null'); sql(`delete from special_hours where business_id = '${id}' and label->>'es' = 'fic9cab'`); const h = hoyLocal();
@@ -275,6 +277,11 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     const FICHA_FIJA = { cab: 57, nombre: 44, pest: 50 }; const DEBAJO = FICHA_FIJA.cab + FICHA_FIJA.nombre + FICHA_FIJA.pest;
     abierto(MENU);
     // Con la oferta en vivo de la semilla puesta: el «Antes $x» (sr-only) de la tira de Populares ensanchaba la página 18 px (arreglado: la tira es relative).
+    // La oferta es de la semilla y otras pruebas la apagan (a11y9c): la prueba pone en vivo la suya y la deja como estaba al terminar (restaurar).
+    if (!/^[1-9]/.test(sql(`select count(*) from business_posts where business_id = '${MENU}' and kind = 'oferta' and status = 'live'`))) {
+      ofertaPuesta = sql(`select id || '|' || status || '|' || coalesce(stopped_at::text, '') || '|' || coalesce(ends_at::text, '') from business_posts where business_id = '${MENU}' and kind = 'oferta' order by id limit 1`);
+      if (ofertaPuesta) sql(`update business_posts set status = 'live', stopped_at = null, ends_at = null where id = ${ofertaPuesta.split('|')[0]}`);
+    }
     ok(/^[1-9]/.test(sql(`select count(*) from business_posts where business_id = '${MENU}' and kind = 'oferta' and status = 'live'`)), 'el negocio de la prueba tiene una oferta en vivo (el caso que ensanchaba la página)');
     const SEL_FRANJA = '[data-pieza="nombre-pegado"]', SEL_FILA = `${SEL_FRANJA} > div`, SEL_FLECHA = `${SEL_FRANJA} [data-pieza="volver-arriba"]`, SEL_NOMBRE = `${SEL_FILA} span.truncate`;
     const SEL_PEST = '[data-screen-label="App · Ficha"] [data-pieza="pestanas-ficha"]', SEL_CAB = '[data-screen-label="App · Ficha"] [data-pieza="cabecera-ficha"]', SEL_PORTADA = '[data-screen-label="App · Ficha"] div.h-\\[330px\\]';
