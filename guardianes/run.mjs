@@ -14046,6 +14046,27 @@ const guardianes = {
     if (/if \(soloRuido\) return null;/.test(s) || !/if \(soloRuido\) return docResp &&/.test(s) || !/r\.request\(\)\.isNavigationRequest\(\) && r\.frame\(\) === page\.mainFrame\(\)\) docResp = r;/.test(s))
       falla(G, F, 0, "el goto de WebKit que sigue sin «load» no devuelve la respuesta del documento (la prueba que mira su status cae)");
   },
+  /* 24 nov · anchoPropioRespetado (la corrida de anchos de cada noche, 4 noches en rojo: 45330028847): la precarga del dispositivo cambia CADA contexto
+     al ancho del dispositivo (375, 834…), y una prueba que comprueba algo A un ancho (320 del piso, 640, una lista de anchos, las tarjetas a 390) lo
+     medía en otro. Esa prueba pide su ancho con anchoPropio(w, h) (pruebas/lib/entorno.cjs: el viewport lleva la marca Symbol.for) y la precarga lo
+     respeta; lo que vale para cualquier ancho mide contra innerWidth / viewportSize(), nunca contra un número escrito. Lo que se teme: quitar la
+     marca o el respeto de la precarga, o que fic9cab / tarAK vuelvan a pedir su ancho a pelo. Al revés: alreves9tsubida. */
+  anchoPropioRespetado() {
+    const G = "anchoPropioRespetado", F = "pruebas/lib/dispositivo-precarga.cjs", E = "pruebas/lib/entorno.cjs";
+    const leer = (f) => (existsSync(f) ? readFileSync(f, "utf8") : "");
+    const p = leer(F), e = leer(E);
+    if (!/const escritorioPropio = \(width, height\) => \(\{ width, height, \[Symbol\.for\('tolatino\.anchoPropio'\)\]: 'escritorio' \}\);/.test(e) || !/DISPOSITIVO, anchoPropio, escritorioPropio,/.test(e) || !/if \(o\.viewport\[ANCHO_PROPIO\] === 'escritorio'\) return \{ \.\.\.o, viewport: \{ width, height \} \};/.test(p))
+      falla(G, F, 0, "escritorioPropio: la precarga deja el contexto de escritorio con ratón tal como lo pidió la prueba (sin toque ni agente móvil)");
+    if (!/const anchoPropio = \(width, height\) => \(\{ width, height, \[Symbol\.for\('tolatino\.anchoPropio'\)\]: true \}\);/.test(e) || !/DISPOSITIVO, anchoPropio, escritorioPropio,/.test(e))
+      falla(G, E, 0, "entorno.cjs debe exportar anchoPropio(width, height) con la marca Symbol.for('tolatino.anchoPropio') en el viewport");
+    if (!/const ANCHO_PROPIO = Symbol\.for\('tolatino\.anchoPropio'\);/.test(p) || !/if \(o\.viewport && o\.viewport\[ANCHO_PROPIO\]\) \{/.test(p) || !/return \{ \.\.\.adaptar\(\{ \.\.\.o, viewport: \{ width, height \} \}, forzado\), viewport: \{ width, height \} \};/.test(p))
+      falla(G, F, 0, "la precarga del dispositivo debe respetar el viewport marcado con anchoPropio (el ancho y el alto que la prueba pidió, sin cambiarlos al del dispositivo)");
+    const quien = { "pruebas/e2e/fic9cab.cjs": [/viewport: propio \? ENT\.anchoPropio\(w, h\)/, /ctx\(320, 640, \{ hasTouch: true \}, true\)/, /for \(const \[w, h, letra\] of \[\[320, 640, true\], \[390, 844, false\]\]\) \{[\s\S]{0,200}ctx\(w, h, \{ hasTouch: true \}, true\)/, /viewport: ENT\.escritorioPropio\(640, 800\)/, /viewport: ENT\.anchoPropio\(1024, 800\)/, /viewport: ENT\.escritorioPropio\(1280, 800\)/],
+      "pruebas/e2e/tarAK.cjs": [/movil \? \{ viewport: ENT\.anchoPropio\(w, h\), deviceScaleFactor: 2, isMobile: true, hasTouch: true \}/] };
+    for (const [f, res] of Object.entries(quien)) { const t = leer(f); for (const re of res) if (!re.test(t)) falla(G, f, 0, `la prueba debe pedir su ancho con ENT.anchoPropio (falta: ${re.source.slice(0, 60)})`); }
+    for (const f of ["pruebas/e2e/din9t6b.cjs", "pruebas/e2e/din9t7b.cjs", "pruebas/e2e/din9t10b.cjs"])
+      leer(f).split("\n").forEach((l, i) => { if (/\.inner === \d{3}\b/.test(l)) falla(G, f, i + 1, "mide el ancho de la ventana contra un número escrito: contra m.viewportSize().width (la precarga cambia el ancho del teléfono)"); });
+  },
   /* 9t · fotoComoPersona (20 nov, CI dirigido 44707074106, msg9t en el iPad y el iPhone SE): la prueba ponía la foto directo en el input escondido
      justo después de cargar el chat; en WebKit a veces antes de que la página respondiera, y la miniatura nunca salía. Una persona elige tocando
      «Agregar una foto» (que abre el selector): pruebas/lib/elegir-foto.cjs hace eso, vuelve a tocar si el selector no abrió y dice por qué no se

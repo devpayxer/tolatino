@@ -37,7 +37,9 @@ const cerca = (a, b, tol = 1.5) => Math.abs(a - b) <= tol;
   const sinOferta = { tarjeta: { eta: { es: 'Pickup 20 min', en: 'Pickup 20 min' } } };
   const POST = [];
   const b = await chromium.launch(); const abiertas = []; const err = [];
-  const ctxDe = async (w, h, movil) => { const c = await b.newContext(movil ? { viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } : { viewport: { width: w, height: h } }); abiertas.push(c); await medios(c); return c; };
+  // Las tarjetas del teléfono se comprueban A 390 (y a cada ancho de su lista): ENT.anchoPropio, que la precarga del dispositivo no cambia
+  // (con 834 el nombre larguísimo cabe y no se corta; CI 45330028847). Las de escritorio siguen al ancho del dispositivo.
+  const ctxDe = async (w, h, movil) => { const c = await b.newContext(movil ? { viewport: ENT.anchoPropio(w, h), deviceScaleFactor: 2, isMobile: true, hasTouch: true } : { viewport: { width: w, height: h } }); abiertas.push(c); await medios(c); return c; };
   const pagina = async (c) => { const p = await c.newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); return p; };
   try {
     // ── Los datos ──
