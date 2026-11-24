@@ -35,11 +35,23 @@
                                    tiene que decir completa:true sin rojas (las inestables se dicen). Más que el tope, o ninguna prueba, = camino
                                    normal, y se dice por qué. La punta a punta entera y «al revés» corren DESPUÉS, en la corrida del push a main.
                                    Con main en rojo, diseño sigue subiendo (AN), pero toda subida lo avisa.
-     --subir --sin-via-rapida      fuerza el camino normal (con evidencia del CI) aunque la entrega sea de diseño o de código.
+                                   Revisión de 31e2974 (código sensible la ganaba; ante cualquier duda, camino normal): apps/web/lib FUERA salvo
+                                   LIB_CODIGO (nombre.ts y plazo-txt.ts, solo texto); nunca acciones*, route, .sql, migraciones, packages/ui/scripts,
+                                   lo de public que no es imagen o fuente, un enlace simbólico o un submódulo; las señales se miran en el archivo
+                                   ENTERO de la cabeza (también partidas en varios renglones; y truncate, merge into, stripe., refunds); quitar una
+                                   comprobación (redirect, notFound, throw, permisos, CSP) la saca; de pruebas/, solo pruebas NUEVAS (textos.cjs es
+                                   herramienta); si toca apps/web o packages/ui, al menos una de punta a punta; el servidor (next dev en /proc, por
+                                   dirección y puerto, y su orden o la de quien lo lanzó) y su base se miran siempre; un reloj para el corredor al
+                                   pasar del tope (FALTA); y main en verde es la corrida MÁS NUEVA de main (push o programada), terminada, en su primer
+                                   intento y de origin/main (o un ancestro que difiere solo en documentos). La salud se compara por la cuenta de
+                                   migraciones (/api/salud no da el nombre de la última y cambiarla toca app/api).
+   --subir --sin-via-rapida      fuerza el camino normal (con evidencia del CI) aunque la entrega sea de diseño o de código.
        al final                    24 nov · imprime la orden exacta para vigilar la corrida de main de lo subido («vigila la corrida de main: node
                                    scripts/ci/subir.mjs --vigilar <sha>»); no la espera.
      --vigilar [<sha>]             espera la corrida de ci.yml del push a main de ese commit (sin sha, el de origin/main), sondeando como --dirigida,
                                    y dice verde o rojo; en rojo, por cada trabajo rojo, sus líneas ✗ y FALLÓ. Sale 0 en verde y 1 si no.
+                                   Dice el intento (verde en otro que el primero no es verde, AG); si la canceló un push más nuevo, dice
+                                   «reemplazada por X» y vigila la que cubre el commit; avisa si no corrieron los carriles largos.
      --local [--base origin/main] [--mas "a b"]
                                    las pruebas de lo tocado aquí, como las correría la vía rápida de código, sin subir ni lanzar nada.
      --dirigida/--repaso --sin-local
@@ -84,6 +96,7 @@
    al revés: alrevesSubir. */
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync } from "node:fs";
+import { EventEmitter } from "node:events";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -104,7 +117,8 @@ const nombreJ = (j) => String(j?.name ?? "");
 const verde = (j) => j?.status === "completed" && j?.conclusion === "success";
 
 /* ── Las listas ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
-export const HERRAMIENTAS = Object.freeze([/^\.github\//, /^scripts\/ci\//, /^pruebas\/correr\.mjs$/, /^pruebas\/lib\//, /^guardianes\//, /^pruebas\/reparto\.json$/]);
+// 24 nov (revisión de 31e2974) · pruebas/alreves/textos.cjs también: corre en cada subida (el paso «textos») y decide si las al revés siguen vivas.
+export const HERRAMIENTAS = Object.freeze([/^\.github\//, /^scripts\/ci\//, /^pruebas\/correr\.mjs$/, /^pruebas\/lib\//, /^guardianes\//, /^pruebas\/reparto\.json$/, /^pruebas\/alreves\/textos\.cjs$/]);
 // Lo que leen de verdad infra/pruebas/deploy.sh (sus «$REPO/…», migrar.sh, los demos, los servicios que compose construye) y el trabajo
 // «imagenes» de ci.yml (las dos imágenes con su contexto y su .dockerignore, y pruebas/infra/correr.sh). El guardián subidaConHerramienta saca esas
 // rutas del repo y exige que cada una caiga aquí.
@@ -126,6 +140,9 @@ export const SENALES = Object.freeze([
   [/\b(insert\s+into|update\s+[\w."]+\s+set|delete\s+from|upsert)\b|\.(insert|update|delete|upsert)\s*\(/i, "una escritura (insert/update/delete)"],
   [/\b(grant|revoke)\b|security\s+definer|row\s+level\s+security/i, "permisos de la base (grant/revoke)"],
   [/centavos|\bcents\b|_cents\b/i, "centavos"],
+  // 24 nov (revisión de 31e2974) · Lo que borra o mueve dinero aunque no diga «delete» ni «centavos». El «truncate» de SQL, no la clase de Tailwind
+  // (className="truncate …" sacaba de diseño a media app): en mayúsculas, con «table» o dentro de un sql`…`.
+  [/\bTRUNCATE\b|\btruncate\s+table\b|\bsql\s*`[^`]*\btruncate\b|\b(merge|MERGE)\s+(into|INTO)\b|\bstripe\.|\brefunds\b/, "truncate, merge into o Stripe (stripe., refunds)"],
 ]);
 export const AL_REVES_ENTERO = Object.freeze([/^guardianes\/run\.mjs$/, /^pruebas\/correr\.mjs$/, /^pruebas\/lib\//]);
 const casa = (lista, f) => lista.some((re) => re.test(f));
@@ -207,19 +224,48 @@ const VIGILADAS = Object.freeze(["herramientas", "despliegue", "sensible"]);
    - Nunca: la base, infra, services, scripts, semgrep, .github y guardianes; las dependencias (package.json, pnpm-lock.yaml, pnpm-workspace.yaml,
      .npmrc: la cadena de suministro); los .env*; lo que el navegador ejecuta tal cual desde apps/web/public (cualquier .js/.mjs/.cjs: los
      service workers) y .well-known (los enlaces de las apps); y la configuración de la raíz de apps/web y de packages/ui (tsconfig, postcss,
-     next.config, middleware, instrumentation…). Guardián subidaConHerramienta (sección 9); al revés: alrevesSubir. */
+     next.config, middleware, instrumentation…). Guardián subidaConHerramienta (sección 9); al revés: alrevesSubir.
+   24 nov (revisión de 31e2974: quitar la comprobación del canje en lib/cupones.ts o abrir frame-ancestors en lib/csp.ts ganaba «codigo») · Más
+   estrecho, y ante cualquier duda camino normal:
+   - apps/web/lib/ FUERA, salvo la lista cerrada LIB_CODIGO (módulos de solo texto que el guardián comprueba inofensivos en el archivo ENTERO).
+   - Nunca acciones*, route, .sql, migraciones, packages/ui/scripts, ni nada de apps/web/public que no sea una imagen o una fuente (png, jpg,
+     webp, avif, woff2; el svg no: puede llevar guion), ni un enlace simbólico (modo 120000) o un submódulo.
+   - Las señales (SENALES) se miran en el archivo ENTERO de la cabeza, no solo en los renglones (una escritura partida en varios renglones
+     también), y un renglón QUITADO que era una comprobación (SENALES_QUITADAS) la saca.
+   - De pruebas/e2e y pruebas/alreves, solo archivos NUEVOS (A): cambiar o borrar una prueba que ya existe es camino normal. */
 export const CODIGO = Object.freeze([/^apps\/web\//, /^packages\/ui\//, /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/, /^pruebas\/alreves\/[^/]+\.cjs$/, ...DISENO]);
+// Los módulos de apps/web/lib que sí pueden ir por la vía rápida de código: solo texto, sin imports, sin red, sin base, sin secretos (guardián
+// subidaConHerramienta, sobre el archivo entero; y clases() vuelve a mirar SENALES_LIB en la cabeza de cada entrega).
+export const LIB_CODIGO = Object.freeze(["apps/web/lib/nombre.ts", "apps/web/lib/plazo-txt.ts"]);
+const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export const NUNCA_CODIGO = Object.freeze([
   /^\.github\//, /^packages\/db\//, /^infra\//, /^services\//, /^scripts\//, /^semgrep\//, /^guardianes\//,
   /(^|\/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|\.npmrc)$/, /(^|\/)\.env[^/]*$/,
-  /^apps\/web\/public\/.*\.[cm]?js$/, /^apps\/web\/public\/\.well-known\//,
+  /^apps\/web\/public\/(?!.*\.(png|jpe?g|webp|avif|woff2)$)/,
+  new RegExp(`^apps\\/web\\/lib\\/(?!(${LIB_CODIGO.map((f) => escRe(f.slice("apps/web/lib/".length))).join("|") || "(?!)"})$)`),
+  /(^|\/)(acciones[^/]*|route)\.[jt]sx?$/, /\.sql$/, /(^|\/)migraciones?\//,
+  /^packages\/ui\/scripts\//,
   /^(apps\/web|packages\/ui)\/[^/]+$/,
   /^pruebas\/(?!(e2e\/[^/]+\.(cjs|mjs)|alreves\/[^/]+\.cjs|visual\/.*\.png)$)/,
 ]);
+// Lo que un módulo de LIB_CODIGO no puede llevar en ningún renglón (además de SENALES).
+export const SENALES_LIB = Object.freeze([
+  [/(["'])use (server|client)\1/, "«use server/use client»"],
+  [/\bimport\b|\brequire\s*\(/, "un import"],
+  [/\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource/, "una llamada de red"],
+  [/\b(cookies|headers)\s*\(|document\.cookie/, "cookies o cabeceras"],
+  [/\bcrypto\b|\bstripe\b|\bsms\b|\btwilio\b|process\.env|\beval\s*\(|new\s+Function\b/i, "crypto, Stripe, SMS, secretos o eval"],
+  [/\bsql\s*`|\btx\s*\(|\bawait\b/, "una consulta o una espera"],
+]);
+// Un renglón QUITADO con esto era una comprobación (quién entra, permisos, un límite): quitarla va por el camino normal.
+export const SENALES_QUITADAS = Object.freeze([
+  [/\b(redirect|permanentRedirect|notFound|unauthorized|forbidden)\s*\(|\bthrow\b|\bexigir\w*|\bpermiso|\bpuede\w*\s*\(|\brol(es)?\b|\bsesion\b|frame-ancestors|Content-Security-Policy/i, "una comprobación (redirect, notFound, throw, permisos, sesión o CSP)"],
+]);
+const MODOS_BIEN = new Set(["100644", "100755", "000000"]);
 /** Por qué un archivo NO es de la vía rápida de código ("" si lo es). */
 export function porQueNoCodigo(f) {
   if (typeof f !== "string" || !f) return "un nombre de archivo vacío";
-  if (casa(NUNCA_CODIGO, f)) return `${f} nunca es de la vía rápida de código (la base, infra, services, scripts, semgrep, .github, guardianes, dependencias, .env, el JS que se sirve tal cual o la configuración de la app)`;
+  if (casa(NUNCA_CODIGO, f)) return `${f} nunca es de la vía rápida de código (la base, migraciones, .sql, infra, services, scripts, semgrep, .github, guardianes, dependencias, .env, lib/ fuera de LIB_CODIGO, acciones, route, lo de public que no es imagen ni fuente o la configuración de la app)`;
   for (const [k, re] of [["herramientas", HERRAMIENTAS], ["despliegue", DESPLIEGUE], ["sensible", SENSIBLE]]) if (casa(re, f)) return `${f} es «${k}»`;
   if (!casa(CODIGO, f)) return `${f} no está en la lista blanca de código`;
   const p = palabrasDe(f).find((x) => PALABRAS_NO.has(x));
@@ -228,8 +274,10 @@ export function porQueNoCodigo(f) {
 }
 export const esCodigo = (f) => porQueNoCodigo(f) === "";
 
-/** Las clases de una entrega (solo suman). renglones: { archivo: [renglones añadidos o quitados] }. */
-export function clases(archivos, renglones = {}) {
+/** Las clases de una entrega (solo suman). renglones: { archivo: [renglones añadidos o quitados] }. info (para la vía rápida de código; sin él no
+    hay «codigo»): { estados: { archivo: "A"|"M"|"D"… } (git diff --name-status), modos: { archivo: [antes, después] } (git diff --raw),
+    textos: { archivo: el archivo entero en la cabeza }, quitados: { archivo: [renglones quitados] } }. */
+export function clases(archivos, renglones = {}, info = null) {
   const cl = new Set(), motivos = [];
   const lista = Array.isArray(archivos) ? archivos.filter((f) => typeof f === "string" && f) : [];
   const soloDocumentos = veredicto(lista) === "documentos";
@@ -277,9 +325,40 @@ export function clases(archivos, renglones = {}) {
   if (!noCodigo) { const v = VIGILADAS.find((k) => cl.has(k)); if (v) noCodigo = `la entrega es «${v}» (${motivos.find((m) => m.startsWith(v) || m.startsWith(`${v} por señal`)) ?? v})`; }
   if (!noCodigo && github) noCodigo = "toca .github/";
   for (const f of codigo) { if (noCodigo) break; if (!SIN_RENGLONES.test(f) && !Array.isArray(renglones?.[f])) noCodigo = `sin los renglones cambiados de ${f}: no se puede mirar`; }
+  if (!noCodigo) noCodigo = porQueNoCodigoEntero(codigo, renglones, info);
   const deCodigo = !noCodigo;
   if (deCodigo && !diseno) { cl.add("codigo"); motivos.push(`codigo: ${codigo.slice(0, 6).join(", ")}${codigo.length > 6 ? ` (+${codigo.length - 6})` : ""}`); }
   return { clases: [...cl].sort(), soloDocumentos, otros, github, alrevesEntero, motivos, diseno, noDiseno, codigo: deCodigo, noCodigo };
+}
+
+/** Lo que la vía rápida de código mira más allá de las rutas (revisión de 31e2974): el estado y el modo de cada archivo (solo pruebas NUEVAS; ningún
+    enlace simbólico ni submódulo), las señales en el archivo ENTERO de la cabeza (y en los renglones juntos: una escritura partida en varios),
+    SENALES_LIB en los módulos de LIB_CODIGO y los renglones quitados que eran una comprobación. Sin esa información, no ("" si vale). */
+export function porQueNoCodigoEntero(codigo, renglones, info) {
+  if (!info || typeof info !== "object") return "sin el estado, el modo y el archivo entero de cada archivo: no se puede mirar (cualquier duda = camino normal)";
+  for (const f of codigo) {
+    const est = String(info.estados?.[f] ?? "");
+    if (!/^[AMD]$/.test(est)) return `sin el estado de ${f} en git diff --name-status (${est || "ninguno"}): no se puede mirar`;
+    const md = info.modos?.[f];
+    if (!Array.isArray(md) || md.length !== 2) return `sin el modo de ${f} en git diff --raw: no se puede mirar`;
+    if (md.some((x) => !MODOS_BIEN.has(String(x)))) return `${f} es un enlace simbólico o un submódulo (modo ${md.join(" → ")}): nunca es de la vía rápida de código`;
+    if (/^pruebas\/(e2e|alreves)\//.test(f) && est !== "A") return `${f} ${est === "D" ? "borra" : "cambia"} una prueba que ya existe: solo las pruebas NUEVAS viajan por la vía rápida de código`;
+    if (SIN_RENGLONES.test(f) || /^pruebas\//.test(f)) continue;
+    const entero = est === "D" ? "" : info.textos?.[f];
+    if (typeof entero !== "string") return `sin el archivo entero de ${f} en la cabeza: no se puede mirar`;
+    const juntos = (renglones?.[f] ?? []).join("\n");
+    const senales = LIB_CODIGO.includes(f) ? [...SENALES, ...SENALES_LIB] : SENALES;
+    for (const [re, que] of senales) {
+      for (const [donde, t] of [["el archivo entero", entero], ["los renglones cambiados", juntos]]) {
+        const m = re.exec(t);
+        if (m) return `señal: ${que} en ${donde} de ${f} («${m[0].replace(/\s+/g, " ").slice(0, 80)}»)`;
+      }
+    }
+    if (!Array.isArray(info.quitados?.[f])) return `sin los renglones quitados de ${f}: no se puede mirar`;
+    const q = info.quitados[f].map(String);
+    for (const [re, que] of SENALES_QUITADAS) { const l = q.find((x) => re.test(x)); if (l !== undefined) return `quita ${que} en ${f} («${l.trim().slice(0, 80)}»)`; }
+  }
+  return "";
 }
 
 /** Las clases de la cabeza (c) juzgadas también con las de origin/main (c2; null si no se pudo): manda lo más estricto. Las vigiladas se suman;
@@ -335,15 +414,22 @@ export function frenoDeCodigo({ main, local }) {
   return "";
 }
 
-/** El estado de main: la última corrida TERMINADA de ci.yml de un push a main (la API la da primero; aquí se ordena igual por si acaso). «verde»
-    solo con success; «rojo» con failure; cualquier otra cosa (cancelada, fuera de tiempo, ninguna, la API sin responder) es «duda». */
-export function estadoDeMain(corridas, repo = REPO) {
+/** El estado de main (revisión de 31e2974: lo más estricto). La corrida MÁS NUEVA de ci.yml en main de un push o de la programada, terminada o no
+    (se piden sin status=completed). «rojo» si terminó en failure (también la programada). «verde» solo si terminó en success, en su PRIMER intento
+    (AG) y de origin/main o de un ancestro que difiere solo en documentos de trabajo (cubre(sha), que da quien llama; sin él, solo el mismo sha).
+    Cualquier otra cosa (sin terminar, cancelada, otro intento, de otro commit, ninguna, la API sin responder) es «duda». */
+export function estadoDeMain(corridas, { repo = REPO, shaMain = null, cubre = null } = {}) {
   const r = (Array.isArray(corridas) ? [...corridas] : []).sort((a, b) => Number(b?.id) - Number(a?.id))
-    .find((x) => x && x.path === ".github/workflows/ci.yml" && x.event === "push" && x.head_branch === "main" && x.status === "completed" && x.repository?.full_name === repo);
-  if (!r) return { estado: "duda", motivo: "no encuentro una corrida terminada de ci.yml de un push a main" };
-  if (r.conclusion === "success") return { estado: "verde", id: r.id, sha: r.head_sha };
-  if (r.conclusion === "failure") return { estado: "rojo", id: r.id, sha: r.head_sha, motivo: `main está en rojo (corrida ${r.id})` };
-  return { estado: "duda", id: r.id, sha: r.head_sha, motivo: `la última corrida terminada de main (${r.id}) terminó ${r.conclusion}` };
+    .find((x) => x && x.path === ".github/workflows/ci.yml" && (x.event === "push" || x.event === "schedule") && x.head_branch === "main" && x.repository?.full_name === repo);
+  if (!r) return { estado: "duda", motivo: "no encuentro ninguna corrida de ci.yml de main (push o programada)" };
+  const de = `${r.event === "schedule" ? "la programada" : "la del push"} ${r.id}, ${String(r.head_sha).slice(0, 12)}`;
+  if (r.status !== "completed") return { estado: "duda", id: r.id, sha: r.head_sha, motivo: `la corrida más nueva de main (${de}) no terminó (${r.status})` };
+  if (r.conclusion === "failure") return { estado: "rojo", id: r.id, sha: r.head_sha, motivo: `main está en rojo (corrida ${r.id}${r.event === "schedule" ? ", la programada" : ""})` };
+  if (r.conclusion !== "success") return { estado: "duda", id: r.id, sha: r.head_sha, motivo: `la corrida más nueva de main (${de}) terminó ${r.conclusion}` };
+  if (Number(r.run_attempt) !== 1) return { estado: "duda", id: r.id, sha: r.head_sha, motivo: `la corrida más nueva de main (${de}) salió verde en el intento ${r.run_attempt ?? "?"}: solo vale el primero (AG)` };
+  const vale = typeof cubre === "function" ? (() => { try { return cubre(r.head_sha) === true; } catch { return false; } })() : !!shaMain && r.head_sha === shaMain;
+  if (!vale) return { estado: "duda", id: r.id, sha: r.head_sha, motivo: `la corrida verde más nueva de main (${de}) no es de origin/main${shaMain ? ` (${String(shaMain).slice(0, 12)})` : ""} ni de un ancestro que difiera solo en documentos de trabajo` };
+  return { estado: "verde", id: r.id, sha: r.head_sha };
 }
 
 /* Las pruebas de lo tocado, aquí (AV): el tope. Con pruebas/reparto.json › seg (lo medido en el CI), una prueba sin medir cuenta 60 s, todo por
@@ -353,11 +439,15 @@ const segDe = (t, seg, tope) => Math.round((Number.isFinite(seg?.[t.nombre]) ? s
 
 /** ¿Las pruebas de lo tocado (la misma selección que la dirigida) caben en el tope? → { ok, motivo, n, seg, lista: [{ nombre, carril, por, s }] }.
     Sin ninguna, no (una entrega de código sin ninguna prueba de lo tocado va por el camino normal: cualquier duda). */
-export function estimarLocal(pruebas, seg = {}, tope = TOPE_LOCAL) {
+export function estimarLocal(pruebas, seg = {}, tope = TOPE_LOCAL, archivos = []) {
   const lista = (pruebas ?? []).map((t) => ({ nombre: t.nombre, carril: t.carril, por: t.por ?? [], s: segDe(t, seg, tope) }));
   const total = lista.reduce((a, t) => a + t.s, 0) + (lista.some((t) => t.carril === "alreves") ? tope.carrilAlReves : 0);
+  // Revisión de 31e2974 · Si la entrega toca la app (apps/web) o sus piezas (packages/ui), al menos una prueba de punta a punta las mira de verdad;
+  // con solo al revés (que miran guardianes) no se sabe si la pantalla sirve.
+  const app = (archivos ?? []).find((f) => /^(apps\/web|packages\/ui)\//.test(String(f)));
   let motivo = "";
   if (!lista.length) motivo = "ninguna prueba nombra lo tocado: no hay pruebas de lo tocado que correr aquí (la prueba nueva puede viajar con su código)";
+  else if (app && !lista.some((t) => t.carril === "e2e")) motivo = `toca ${app} y ninguna prueba de punta a punta lo nombra (solo al revés): no se sabe si la app sirve`;
   else if (lista.length > tope.pruebas || total > tope.seg) motivo = `${lista.length} prueba(s), ~${Math.ceil(total / 60)} min: más que el tope (${tope.pruebas} pruebas y ${tope.seg / 60} min en el servidor de desarrollo)`;
   return { ok: !motivo, motivo, n: lista.length, seg: total, lista };
 }
@@ -399,10 +489,18 @@ export function evaluarServidor({ url, proc, raiz }) {
   const app = join(raiz, "apps", "web");
   if (proc.cwd !== app) return no(`${url} lo sirve el proceso ${proc.pid} desde ${proc.cwd || "(no se ve)"}, no este árbol (${app}): levanta «next dev» desde aquí, o pon PRUEBAS_URL en el tuyo`);
   if (proc.nodeEnv !== "development") return no(`${url} no es el servidor de desarrollo (NODE_ENV=${proc.nodeEnv ?? "sin poner"}): un build puede ser de otro árbol; levanta «next dev» desde este árbol`);
+  // Revisión de 31e2974 · Y su orden: «next dev» en él o en quien lo lanzó (next-server lo arranca «next dev»); nunca «next start» ni standalone.
+  const cad = Array.isArray(proc.cadena) ? proc.cadena.map(String) : [];
+  const mala = cad.find((c) => NEXT_NO_DEV.test(c));
+  if (mala !== undefined) return no(`${url} lo sirve un build («${mala.slice(0, 80)}»), no «next dev»: levanta «next dev» desde este árbol`);
+  if (!cad.some((c) => NEXT_DEV.test(c))) return no(`${url}: ni el proceso ${proc.pid} ni quien lo lanzó es «next dev» (${cad.map((c) => `«${c.slice(0, 50)}»`).join(" ← ") || "sin su orden"})`);
   return { ok: true };
 }
+const NEXT_DEV = /(^|[\s/])next(\.js)?\s+dev(\s|$)/, NEXT_NO_DEV = /(^|[\s/])next(\.js)?\s+start(\s|$)|standalone|(^|[\s/])server\.js(\s|$)/;
 
-/** ¿La salud del servidor dice que su base es la de este árbol? ok:true y tantas migraciones aplicadas como trae HEAD. */
+/** ¿La salud del servidor dice que su base es la de este árbol? ok:true y tantas migraciones aplicadas como trae HEAD.
+    (Revisión de 31e2974: lo justo sería comparar la ÚLTIMA migración aplicada por su nombre, pero /api/salud hoy solo da la cuenta de
+    schema_migrations y cambiarla toca app/api (sensible): se compara la cuenta y queda anotado.) */
 export function evaluarSalud(s, migraciones) {
   if (!s || typeof s !== "object") return no("/api/salud no respondió JSON");
   if (s.ok !== true || s.base?.ok !== true) return no(`/api/salud no dice ok (${s.base?.error ?? s.error ?? "ok:false"})`);
@@ -967,18 +1065,40 @@ function trabajosDeIntento(repo, id, n) {
   return d.jobs;
 }
 
-function diffDe(base, cabeza) {
-  const archivos = git("diff", "--no-renames", "--name-only", "-z", `${base}...${cabeza}`).split("\0").filter(Boolean);
-  const renglones = {};
-  let f = null, hunk = false;
-  for (const l of git("diff", "--no-renames", "--no-color", "-U0", `${base}...${cabeza}`).split("\n")) {
-    if (l.startsWith("diff --git ")) { f = null; hunk = false; continue; }
-    if (!hunk && l.startsWith("+++ ")) { f = l === "+++ /dev/null" ? f : l.slice(6); if (f) renglones[f] ??= []; continue; }
-    if (!hunk && l.startsWith("--- ")) { if (l !== "--- /dev/null") { f = l.slice(6); renglones[f] ??= []; } continue; }
-    if (l.startsWith("@@")) { hunk = true; continue; }
-    if (hunk && f && (l.startsWith("+") || l.startsWith("-"))) renglones[f].push(l.slice(1));
+/** git diff --raw --no-renames -z → { archivos, estados: { f: "A"|"M"|"D"… }, modos: { f: [antes, después] } } (revisión de 31e2974: el estado
+    dice si una prueba es nueva y el modo, si es un enlace simbólico o un submódulo). Puro (los casos lo prueban). */
+export function parsearRaw(texto) {
+  const p = String(texto ?? "").split("\0"), archivos = [], estados = {}, modos = {};
+  for (let i = 0; i + 1 < p.length; i += 2) {
+    const m = /^:(\d{6}) (\d{6}) [0-9a-f]+ [0-9a-f]+ ([A-Z])\d*$/.exec(p[i].replace(/^\n/, ""));
+    if (!m || !p[i + 1]) continue;
+    archivos.push(p[i + 1]); estados[p[i + 1]] = m[3]; modos[p[i + 1]] = [m[1], m[2]];
   }
-  return { archivos, renglones };
+  return { archivos, estados, modos };
+}
+/** git diff -U0 → { renglones: { f: añadidos y quitados }, quitados: { f: solo los quitados } }. Puro. */
+export function parsearDiff(texto) {
+  const renglones = {}, quitados = {};
+  let f = null, hunk = false;
+  for (const l of String(texto ?? "").split("\n")) {
+    if (l.startsWith("diff --git ")) { f = null; hunk = false; continue; }
+    if (!hunk && l.startsWith("+++ ")) { f = l === "+++ /dev/null" ? f : l.slice(6); if (f) { renglones[f] ??= []; quitados[f] ??= []; } continue; }
+    if (!hunk && l.startsWith("--- ")) { if (l !== "--- /dev/null") { f = l.slice(6); renglones[f] ??= []; quitados[f] ??= []; } continue; }
+    if (l.startsWith("@@")) { hunk = true; continue; }
+    if (hunk && f && (l.startsWith("+") || l.startsWith("-"))) { renglones[f].push(l.slice(1)); if (l.startsWith("-")) quitados[f].push(l.slice(1)); }
+  }
+  return { renglones, quitados };
+}
+function diffDe(base, cabeza) {
+  const { archivos, estados, modos } = parsearRaw(git("diff", "--no-renames", "--raw", "-z", `${base}...${cabeza}`));
+  const { renglones, quitados } = parsearDiff(git("diff", "--no-renames", "--no-color", "-U0", `${base}...${cabeza}`));
+  // El archivo entero de la cabeza de lo que se mira (no los documentos, las imágenes ni lo borrado): las señales de la vía rápida de código.
+  const textos = {};
+  for (const f of archivos) {
+    if (DOC.has(f) || SIN_RENGLONES.test(f) || estados[f] === "D" || !/^(apps|packages)\//.test(f)) continue;
+    try { textos[f] = git("show", `${cabeza}:${f}`); } catch { /* sin él: clases() dice que no se puede mirar */ }
+  }
+  return { archivos, renglones, info: { estados, modos, textos, quitados } };
 }
 
 function catalogoEn(cabeza) {
@@ -995,28 +1115,48 @@ const validarConCorredor = (nombres) => {
 };
 
 /** Las listas de origin/main (si allí existe esta herramienta): manda la unión con las de HEAD (lo más estricto). */
-async function deMain() {
-  if (!gitOk("cat-file", "-e", "origin/main:scripts/ci/subir.mjs")) return null;
+/** La herramienta de origin/main (si allí existe), cargada desde SU texto (nunca la de la cabeza): manda la unión con las listas de HEAD (lo más
+    estricto). show(ruta) da el texto de origin/main (git show; inyectable para los casos); sin la herramienta, o si no carga, null. */
+export async function deMain({ show = (f) => git("show", `origin/main:${f}`) } = {}) {
+  let fuente = null;
+  try { fuente = show("scripts/ci/subir.mjs"); } catch { return null; }
+  if (typeof fuente !== "string" || !fuente) return null;
   const d = mkdtempSync(join(tmpdir(), "subir-main-"));
   try {
     mkdirSync(join(d, "scripts", "ci"), { recursive: true });
-    for (const f of ["subir.mjs", "alcance.mjs", "corrida.mjs"]) { try { writeFileSync(join(d, "scripts", "ci", f), git("show", `origin/main:scripts/ci/${f}`)); } catch { /* falta: el import dirá */ } }
+    writeFileSync(join(d, "scripts", "ci", "subir.mjs"), fuente);
+    for (const f of ["alcance.mjs", "corrida.mjs"]) { try { writeFileSync(join(d, "scripts", "ci", f), show(`scripts/ci/${f}`)); } catch { /* falta: el import dirá */ } }
     return await import(pathToFileURL(join(d, "scripts", "ci", "subir.mjs")).href);
   } catch { return null; } finally { rmSync(d, { recursive: true, force: true }); }
 }
 
-async function planear({ base, cabeza, mas, sinViaRapida = false, main = null }) {
-  const head = git("rev-parse", "--verify", `${cabeza}^{commit}`).trim();
-  const { archivos, renglones } = diffDe(base, head);
-  const c0 = clases(archivos, renglones);
-  const cat = catalogoEn(head), buscar = buscarEn(head);
-  const esHead = head === git("rev-parse", "HEAD").trim();
-  let d = dirigida({ archivos, catalogo: cat, buscar, mas, validar: esHead ? validarConCorredor : null });
-  const m = await deMain();
+/** Lo que planear lee de git (inyectable: los casos lo prueban con uno de mentira). */
+export function ioPlan() {
+  return {
+    head: (cabeza) => git("rev-parse", "--verify", `${cabeza}^{commit}`).trim(),
+    diff: (base, head) => diffDe(base, head),
+    catalogo: (head) => catalogoEn(head),
+    buscar: (head) => buscarEn(head),
+    esHead: (head) => head === git("rev-parse", "HEAD").trim(),
+    validar: validarConCorredor,
+    deMain: () => deMain(),
+    duraciones: (head) => duracionesEn(head),
+  };
+}
+
+export async function planear({ base, cabeza, mas, sinViaRapida = false, main = null, io = ioPlan() }) {
+  const head = io.head(cabeza);
+  const { archivos, renglones, info } = io.diff(base, head);
+  const c0 = clases(archivos, renglones, info);
+  const cat = io.catalogo(head), buscar = io.buscar(head);
+  const esHead = io.esHead(head);
+  let d = dirigida({ archivos, catalogo: cat, buscar, mas, validar: esHead ? io.validar : null });
+  let m = null;
+  try { m = await io.deMain(); } catch { m = null; }
   let c2 = null, sinMain = "origin/main no tiene esta herramienta, o no pude cargar la suya";
   if (m?.clases && m?.dirigida) {
     try {
-      c2 = m.clases(archivos, renglones);
+      c2 = m.clases(archivos, renglones, info);
       const d2 = m.dirigida({ archivos, catalogo: cat, buscar, mas });
       for (const t of d2.pruebas) if (!d.pruebas.some((x) => x.nombre === t.nombre)) d.pruebas.push({ ...t, por: [...t.por, "lista de origin/main"] });
       d.alrevesEntero ||= d2.alrevesEntero;
@@ -1025,7 +1165,7 @@ async function planear({ base, cabeza, mas, sinViaRapida = false, main = null })
   // Sin la de main manda la de HEAD en todo, salvo las vías rápidas de diseño y de código: esas necesitan que las dos la den (cualquier duda = no).
   const c = combinar(c0, c2, sinMain);
   // Las pruebas de lo tocado (AV) son la misma selección que la dirigida; su tope, con lo medido en el CI (pruebas/reparto.json de esta cabeza).
-  const local = estimarLocal(d.pruebas, duracionesEn(head));
+  const local = estimarLocal(d.pruebas, io.duraciones(head), TOPE_LOCAL, archivos);
   return { head, archivos, c, d, local, main, ex: exigencias(c, { sinViaRapida, main, local }), exSiMainVerde: exigencias(c, { sinViaRapida, main: { estado: "verde" }, local }), conMain: !!c2, esHead, sinViaRapida };
 }
 
@@ -1080,33 +1220,52 @@ export function urlLocal(env = process.env) {
   return String(env.PRUEBAS_URL ?? "").trim() || SERVIDOR_LOCAL;
 }
 
-/** Quién escucha en el puerto de «url» en ESTA máquina (Linux: /proc): su pid, su carpeta y su NODE_ENV. Sin poder verlo, no (cualquier duda). */
-function servidorEn(url) {
+/* Las direcciones (en el hexadecimal de /proc/net/tcp y tcp6) que sirven a cada nombre de esta máquina: la de escucha tiene que ser esa o la de
+   todas (revisión de 31e2974: el puerto solo no basta; otro proceso puede escuchar ese puerto en otra dirección). */
+const V4 = ["00000000", "0100007F", "00000000000000000000000000000000", "0000000000000000FFFF00000100007F"], V6 = ["00000000000000000000000000000000", "00000000000000000000000001000000"];
+const DIRECCIONES = Object.freeze({ "127.0.0.1": V4, "[::1]": V6, localhost: [...new Set([...V4, ...V6])] });
+const FS_REAL = Object.freeze({
+  leer: (f) => readFileSync(f, "utf8"),
+  enlace: (f) => readlinkSync(f),
+  lista: (d) => readdirSync(d),
+});
+/** Quién escucha en la dirección y el puerto de «url» en ESTA máquina (Linux: /proc): su pid, su carpeta, su NODE_ENV y la orden de él y de quienes
+    lo lanzaron (cadena, hasta 6). fsio inyectable (los casos le dan un /proc de mentira). Sin poder verlo, no (cualquier duda). */
+export function servidorEn(url, fsio = FS_REAL) {
   let u;
   try { u = new URL(url); } catch { return no(`${url} no es una dirección`); }
-  if (!["127.0.0.1", "localhost", "[::1]"].includes(u.hostname)) return no(`${u.hostname} no es esta máquina: no puedo ver qué código sirve`);
+  const dirs = DIRECCIONES[u.hostname];
+  if (!dirs) return no(`${u.hostname} no es esta máquina: no puedo ver qué código sirve`);
   const puerto = Number(u.port), hex = puerto.toString(16).toUpperCase().padStart(4, "0"), inodos = new Set();
+  if (!Number.isInteger(puerto) || puerto < 1) return no(`${url} no lleva puerto`);
   for (const f of ["/proc/net/tcp", "/proc/net/tcp6"]) {
     let t = "";
-    try { t = readFileSync(f, "utf8"); } catch { continue; }
-    for (const l of t.split("\n").slice(1)) { const c = l.trim().split(/\s+/); if (c.length > 9 && c[1].endsWith(`:${hex}`) && c[3] === "0A") inodos.add(c[9]); }
+    try { t = fsio.leer(f); } catch { continue; }
+    for (const l of String(t).split("\n").slice(1)) {
+      const c = l.trim().split(/\s+/);
+      if (c.length > 9 && c[3] === "0A" && dirs.some((x) => c[1].toUpperCase() === `${x}:${hex}`)) inodos.add(c[9]);
+    }
   }
-  if (!inodos.size) return no(`nadie escucha en el puerto ${puerto} (o esta máquina no deja verlo)`);
-  for (const pid of readdirSync("/proc").filter((x) => /^\d+$/.test(x))) {
+  if (!inodos.size) return no(`nadie escucha en ${u.hostname}:${puerto} (o esta máquina no deja verlo)`);
+  const orden = (pid) => { try { return String(fsio.leer(`/proc/${pid}/cmdline`)).split("\0").filter(Boolean).join(" "); } catch { return ""; } };
+  const padre = (pid) => { try { return /^PPid:\s*(\d+)/m.exec(String(fsio.leer(`/proc/${pid}/status`)))?.[1] ?? null; } catch { return null; } };
+  for (const pid of fsio.lista("/proc").filter((x) => /^\d+$/.test(x))) {
     let fds = [];
-    try { fds = readdirSync(`/proc/${pid}/fd`); } catch { continue; }
+    try { fds = fsio.lista(`/proc/${pid}/fd`); } catch { continue; }
     for (const fd of fds) {
       let l = "";
-      try { l = readlinkSync(`/proc/${pid}/fd/${fd}`); } catch { continue; }
+      try { l = fsio.enlace(`/proc/${pid}/fd/${fd}`); } catch { continue; }
       const m = /^socket:\[(\d+)\]$/.exec(l);
       if (!m || !inodos.has(m[1])) continue;
       let cwd = "", env = "";
-      try { cwd = readlinkSync(`/proc/${pid}/cwd`); } catch { /* sin permiso: cwd vacío y no vale */ }
-      try { env = readFileSync(`/proc/${pid}/environ`, "utf8"); } catch { /* sin permiso */ }
-      return { ok: true, pid: Number(pid), cwd, nodeEnv: env.split("\0").find((x) => x.startsWith("NODE_ENV="))?.slice(9) ?? null };
+      try { cwd = fsio.enlace(`/proc/${pid}/cwd`); } catch { /* sin permiso: cwd vacío y no vale */ }
+      try { env = String(fsio.leer(`/proc/${pid}/environ`)); } catch { /* sin permiso */ }
+      const cadena = [];
+      for (let p = pid, i = 0; p && p !== "0" && i < 6; p = padre(p), i++) { cadena.push(orden(p)); if (p === "1") break; }
+      return { ok: true, pid: Number(pid), cwd, nodeEnv: env.split("\0").find((x) => x.startsWith("NODE_ENV="))?.slice(9) ?? null, cadena };
     }
   }
-  return no(`no encuentro el proceso que escucha en el puerto ${puerto}`);
+  return no(`no encuentro el proceso que escucha en ${u.hostname}:${puerto}`);
 }
 
 async function saludDe(url) {
@@ -1129,54 +1288,88 @@ async function calentar(url, rutas) {
 
 /* pruebas/correr.mjs <nombres> --reintentar, con PRUEBAS_URL apuntando al servidor (manda una: si la sesión trae también la otra variable del puerto y no
    coincide, el corredor lo dice y sale, y esto queda en FALTA). Su salida se va viendo. */
-function correrCorredor({ nombres, url }) {
+/* Revisión de 31e2974 · El tope se hace cumplir: un reloj de TOPE_LOCAL.seg × 1,5 (lo calentado ya corrió antes); si salta, SIGINT (el corredor
+   imprime su RESULTADOS con completa:false), pasado:true y FALTA (camino normal). lanzar inyectable (los casos le dan un hijo de mentira). */
+export const topeCorredorMs = (tope = TOPE_LOCAL) => Math.round(tope.seg * tope.factor * 1000);
+export function correrCorredor({ nombres, url, topeMs = topeCorredorMs(), lanzar = spawn, eco = (l) => console.log(`    ${l}`) }) {
   return new Promise((listo) => {
     const env = { ...process.env, PRUEBAS_URL: url };
-    const ch = spawn(process.execPath, [join(RAIZ, "pruebas/correr.mjs"), ...nombres, "--reintentar"], { cwd: RAIZ, env, stdio: ["ignore", "pipe", "pipe"] });
-    let salida = "", resto = "";
-    const ver = (d) => { salida = (salida + d).slice(-8 * 1024 * 1024); const ls = (resto + d).split("\n"); resto = ls.pop(); for (const l of ls) console.log(`    ${l}`); };
-    ch.stdout.on("data", ver); ch.stderr.on("data", ver);
-    const reloj = setTimeout(() => ch.kill("SIGINT"), 45 * 60_000);
-    ch.on("error", (e) => { clearTimeout(reloj); listo({ codigo: null, salida: `${salida}\n${String(e?.message ?? e)}` }); });
-    ch.on("close", (codigo) => { clearTimeout(reloj); if (resto) console.log(`    ${resto}`); listo({ codigo, salida }); });
+    const ch = lanzar(process.execPath, [join(RAIZ, "pruebas/correr.mjs"), ...nombres, "--reintentar"], { cwd: RAIZ, env, stdio: ["ignore", "pipe", "pipe"] });
+    let salida = "", resto = "", pasado = false, fin = false;
+    const ver = (d) => { salida = (salida + d).slice(-8 * 1024 * 1024); const ls = (resto + d).split("\n"); resto = ls.pop(); for (const l of ls) eco(l); };
+    ch.stdout?.on("data", ver); ch.stderr?.on("data", ver);
+    const reloj = setTimeout(() => { pasado = true; ch.kill("SIGINT"); }, topeMs);
+    const termina = (x) => { if (fin) return; fin = true; clearTimeout(reloj); if (resto) eco(resto); listo({ ...x, pasado }); };
+    ch.on("error", (e) => termina({ codigo: null, salida: `${salida}\n${String(e?.message ?? e)}` }));
+    ch.on("close", (codigo) => termina({ codigo, salida }));
   });
 }
 
 /** Las pruebas de lo tocado, aquí: el servidor de desarrollo de ESTE árbol con su base al día (si hay alguna de punta a punta), calentar, correr con
     --reintentar y exigir la línea RESULTADOS completa:true sin rojas. Nunca se salta en silencio: cada paso dice su «CORRIÓ: …» o su «FALTA: …» en el
     momento (decir; --subir le pasa la suya, que cuenta las FALTA). → true si todo salió bien. */
-async function pruebasAqui({ pruebas, cabeza = "HEAD", archivos = [], decir = (x) => console.log(x.linea) }) {
-  const url = urlLocal(), t0 = Date.now(), di = (ok, linea) => { decir({ ok, linea }); return ok; };
-  const e2e = pruebas.filter((t) => t.carril === "e2e"), nombres = [...e2e, ...pruebas.filter((t) => t.carril !== "e2e")].map((t) => t.nombre);
-  if (!nombres.length) return di(false, "FALTA: pruebas de lo tocado: ninguna que correr");
-  if (e2e.length) {
-    try { createRequire(import.meta.url)("../../pruebas/lib/puertos.cjs").resolver({ PRUEBAS_URL: url }); } catch (e) { return di(false, `FALTA: pruebas de lo tocado: ${String(e?.message ?? e)}`); }
-    let raiz = RAIZ;
-    try { raiz = realpathSync(RAIZ); } catch { /* la de siempre */ }
-    const sv = evaluarServidor({ url, proc: servidorEn(url), raiz });
-    if (!sv.ok) return di(false, `FALTA: pruebas de lo tocado: ${sv.motivo}`);
-    const migraciones = contarMigraciones(git("ls-tree", "--name-only", "-z", cabeza, "packages/db/migrations/").split("\0").filter(Boolean));
-    const sa = evaluarSalud(await saludDe(url), migraciones);
-    if (!sa.ok) return di(false, `FALTA: pruebas de lo tocado: el servidor de ${url}: ${sa.motivo}`);
-    di(true, `CORRIÓ: el servidor de ${url} es el de desarrollo de este árbol y su base tiene las ${migraciones} migraciones de HEAD`);
-    const paginas = git("ls-tree", "-r", "--name-only", "-z", cabeza, "apps/web/app/").split("\0").filter(Boolean);
-    const textos = e2e.map((t) => { try { return readFileSync(join(RAIZ, t.archivo), "utf8"); } catch { return ""; } });
-    const rutas = rutasACalentar({ textos, paginas, cambiados: archivos });
-    const c = await calentar(url, rutas);
-    di(true, `CORRIÓ: calentado el servidor de desarrollo: ${c.hechas} de ${rutas.length} ruta(s) en ${c.s} s${c.lentas.length ? ` (sin respuesta en 2 min: ${c.lentas.join(" ")}; la prueba repite una vez si hace falta)` : ""}`);
-  }
-  console.log(`  pruebas de lo tocado aquí: pruebas/correr.mjs ${nombres.join(" ")} --reintentar (PRUEBAS_URL=${url})`);
-  const r = await correrCorredor({ nombres, url });
-  const v = evaluarLocal({ salida: r.salida, codigo: r.codigo, nombres });
-  const s = Math.round((Date.now() - t0) / 1000);
-  if (!v.ok) return di(false, `FALTA: pruebas de lo tocado aquí (${nombres.length}) en verde: ${v.motivo} (${s} s)`);
-  return di(true, `CORRIÓ: pruebas de lo tocado aquí (${nombres.length}): ${nombres.join(" ")} en ${s} s${v.inestables.length ? ` · INESTABLES (fallaron una vez y pasaron al repetirlas; se arreglan igual): ${v.inestables.join(" ")}` : ""}`);
+/** Lo que pruebasAqui lee y lanza de verdad (inyectable: los casos le dan uno de mentira, como buscarEvidencia con ioReal). */
+export function ioPruebas() {
+  return {
+    url: () => urlLocal(),
+    puertos: (url) => createRequire(import.meta.url)("../../pruebas/lib/puertos.cjs").resolver({ PRUEBAS_URL: url }),
+    raiz: () => { try { return realpathSync(RAIZ); } catch { return RAIZ; } },
+    servidor: (url) => servidorEn(url),
+    migraciones: (cabeza) => contarMigraciones(git("ls-tree", "--name-only", "-z", cabeza, "packages/db/migrations/").split("\0").filter(Boolean)),
+    salud: (url) => saludDe(url),
+    paginas: (cabeza) => git("ls-tree", "-r", "--name-only", "-z", cabeza, "apps/web/app/").split("\0").filter(Boolean),
+    texto: (archivo) => { try { return readFileSync(join(RAIZ, archivo), "utf8"); } catch { return ""; } },
+    calentar: (url, rutas) => calentar(url, rutas),
+    correr: (o) => correrCorredor(o),
+    eco: (l) => console.log(l),
+    ahora: () => Date.now(),
+  };
 }
 
-/** El estado de main para la vía rápida de código (AV): la última corrida terminada de ci.yml de un push a main. Sin la API, duda. */
-function leerMain(repo) {
-  try { return estadoDeMain(api(`repos/${repo}/actions/workflows/ci.yml/runs?branch=main&event=push&status=completed&per_page=5`).workflow_runs ?? [], repo); }
-  catch (e) { return { estado: "duda", motivo: `no pude preguntar a la API por main (${String(e?.message ?? e).split("\n")[0].slice(0, 120)})` }; }
+/** Las pruebas de lo tocado, aquí: el servidor de desarrollo de ESTE árbol con su base al día (siempre, también si solo corren al revés: revisión de
+    31e2974), calentar, correr con --reintentar dentro del tope y exigir la línea RESULTADOS completa:true sin rojas. Nunca se salta en silencio: cada
+    paso dice su «CORRIÓ: …» o su «FALTA: …» en el momento (decir; --subir le pasa la suya, que cuenta las FALTA). → true si todo salió bien. */
+export async function pruebasAqui({ pruebas, cabeza = "HEAD", archivos = [], decir = (x) => console.log(x.linea), io = ioPruebas() }) {
+  const url = io.url(), t0 = io.ahora(), di = (ok, linea) => { decir({ ok, linea }); return ok; };
+  const e2e = (pruebas ?? []).filter((t) => t.carril === "e2e"), nombres = [...e2e, ...(pruebas ?? []).filter((t) => t.carril !== "e2e")].map((t) => t.nombre);
+  if (!nombres.length || nombres.some((n) => !NOMBRE_PRUEBA.test(String(n ?? "")))) return di(false, "FALTA: pruebas de lo tocado: ninguna que correr (o un nombre vacío)");
+  try { io.puertos(url); } catch (e) { return di(false, `FALTA: pruebas de lo tocado: ${String(e?.message ?? e)}`); }
+  const sv = evaluarServidor({ url, proc: io.servidor(url), raiz: io.raiz() });
+  if (!sv.ok) return di(false, `FALTA: pruebas de lo tocado: ${sv.motivo}`);
+  const migraciones = io.migraciones(cabeza);
+  const sa = evaluarSalud(await io.salud(url), migraciones);
+  if (!sa.ok) return di(false, `FALTA: pruebas de lo tocado: el servidor de ${url}: ${sa.motivo}`);
+  di(true, `CORRIÓ: el servidor de ${url} es el de desarrollo de este árbol y su base tiene las ${migraciones} migraciones de HEAD (por la cuenta: /api/salud no da el nombre de la última)`);
+  const textos = e2e.map((t) => io.texto(t.archivo));
+  const rutas = rutasACalentar({ textos, paginas: io.paginas(cabeza), cambiados: archivos });
+  const c = await io.calentar(url, rutas);
+  di(true, `CORRIÓ: calentado el servidor de desarrollo: ${c.hechas} de ${rutas.length} ruta(s) en ${c.s} s${c.lentas.length ? ` (sin respuesta en 2 min: ${c.lentas.join(" ")}; la prueba repite una vez si hace falta)` : ""}`);
+  const topeMs = topeCorredorMs();
+  io.eco(`  pruebas de lo tocado aquí: pruebas/correr.mjs ${nombres.join(" ")} --reintentar (PRUEBAS_URL=${url}; tope ${Math.round(topeMs / 60_000)} min)`);
+  const r = await io.correr({ nombres, url, topeMs });
+  const s = Math.round((io.ahora() - t0) / 1000);
+  if (r?.pasado) return di(false, `FALTA: pruebas de lo tocado aquí: pasaron del tope (${Math.round(topeMs / 60_000)} min, ${s} s en total con lo calentado): se pararon; esto va por el camino normal (--sin-via-rapida)`);
+  const v = evaluarLocal({ salida: r?.salida, codigo: r?.codigo, nombres });
+  if (!v.ok) return di(false, `FALTA: pruebas de lo tocado aquí (${nombres.length}) en verde: ${v.motivo} (${s} s)`);
+  const inest = Array.isArray(v.inestables) ? v.inestables : [];
+  return di(true, `CORRIÓ: pruebas de lo tocado aquí (${nombres.length}): ${nombres.join(" ")} en ${s} s${inest.length ? ` · INESTABLES (fallaron una vez y pasaron al repetirlas; se arreglan igual): ${inest.join(" ")}` : ""}`);
+}
+
+/** El estado de main para la vía rápida de código (AV; revisión de 31e2974: lo más estricto): las corridas de ci.yml en main SIN filtrar por estado ni
+    evento (la API da las más nuevas primero; estadoDeMain se queda con las de push y la programada) y cubre(sha): origin/main, o un ancestro suyo que
+    difiere solo en documentos de trabajo. Sin la API, duda. io inyectable (los casos). */
+export function leerMain(repo, io = { api, git }) {
+  try {
+    const shaMain = io.git("rev-parse", "origin/main").trim();
+    const cubre = (sha) => {
+      if (sha === shaMain) return true;
+      if (!SHA40.test(String(sha ?? ""))) return false;
+      try { io.git("merge-base", "--is-ancestor", sha, shaMain); } catch { return false; }
+      const dif = io.git("diff", "--no-renames", "--name-only", "-z", sha, shaMain).split("\0").filter(Boolean);
+      return dif.length > 0 && dif.every((f) => DOC.has(f));
+    };
+    return estadoDeMain(io.api(`repos/${repo}/actions/workflows/ci.yml/runs?branch=main&per_page=20`).workflow_runs ?? [], { repo, shaMain, cubre });
+  } catch (e) { return { estado: "duda", motivo: `no pude preguntar a la API (o a git) por main (${String(e?.message ?? e).split("\n")[0].slice(0, 120)})` }; }
 }
 
 /** Antes de lanzar una dirigida o un repaso (AU, AV): la parte DIRECTA de la selección corre aquí, dentro del tope (primero las rojas de R1, luego las
@@ -1186,7 +1379,7 @@ async function antesDeLanzar({ archivos, head, primero = [], sinLocal = false })
   if (sinLocal) { console.log("SALTADO: pruebas locales (--sin-local)"); return true; }
   const sel = seleccionDirecta({ archivos, catalogo: catalogoEn(head), buscar: buscarEn(head), primero });
   const r = recortarLocal(sel, duracionesEn(head), { primero });
-  if (!r.correr.length) { console.log(`CORRIÓ: pruebas locales · ninguna directa (ni cambiada, ni que nombre un archivo cambiado de apps/ o packages/${primero.length ? ", ni roja en R1" : ""}): todo queda para el CI`); return true; }
+  if (!r.correr.length) { console.log(`NO HAY: pruebas locales · ninguna directa (ni cambiada, ni que nombre un archivo cambiado de apps/ o packages/${primero.length ? ", ni roja en R1" : ""}): todo queda para el CI`); return true; }
   console.log(`pruebas locales antes de lanzar (AV): ${r.correr.length} de ${sel.length}, ~${Math.ceil(r.seg / 60)} min${r.soloCI.length ? ` · quedan solo para el CI (tope ${TOPE_LOCAL.pruebas} pruebas y ${TOPE_LOCAL.seg / 60} min): ${r.soloCI.map((t) => t.nombre).join(" ")}` : ""}`);
   const ok = await pruebasAqui({ pruebas: r.correr, cabeza: head, archivos });
   if (!ok) { console.log("no se lanzó nada: con una roja aquí, o sin poder correrlas, no se lanza (arréglalo; --sin-local solo si de verdad hay que saltarlo, y se dice)"); return false; }
@@ -1359,58 +1552,80 @@ export async function correrLocales(locales, correr = correrPaso) {
   return Promise.all(locales.map((k) => correr(k, env(k))));
 }
 
-async function cmdSubir({ ensayo, sinViaRapida = false }) {
-  const repo = REPO, rama = ramaActual();
+/** a. (lo que ya miró quien llama), b. y c. de --subir y la decisión de empujar, con un io inyectable (revisión de 31e2974: el cableado se prueba
+    con un io de mentira, como buscarEvidencia con ioReal). Cada paso dice su línea; toda FALTA (y una prueba de lo tocado que NO CORRIÓ) cuenta.
+    → { falta, empujar, p, rapida, deCodigo, main }: empujar solo sin ninguna FALTA y fuera del ensayo. */
+export async function decidirSubida({ io, ensayo = false, sinViaRapida = false }) {
   let falta = 0;
-  const linea = (x) => { console.log(x.linea ?? x); if (x.ok === false) falta++; };
-  // a.
-  try { git("fetch", "-q", "origin", "main", "pruebas"); } catch (e) { throw new SinGithub(`git fetch falló: ${String(e?.message ?? e).split("\n")[0]}`); }
-  const head = git("rev-parse", "HEAD").trim(), arbolHead = git("rev-parse", "HEAD^{tree}").trim();
-  console.log(`subir ${head.slice(0, 12)} (árbol ${arbolHead.slice(0, 12)}) desde ${rama}${ensayo ? " · ENSAYO: no se empuja nada" : ""}`);
-  const base = comprobarBase({ limpio: !git("status", "--porcelain").trim(), mainEsAncestro: gitOk("merge-base", "--is-ancestor", "origin/main", "HEAD"), pruebasEsAncestro: gitOk("merge-base", "--is-ancestor", "origin/pruebas", "HEAD") });
+  const linea = (x) => { io.decir(x.linea ?? x); if (x.ok === false) falta++; };
+  const base = io.base();
   base.forEach(linea);
   // AV · El estado de main ANTES de decidir: con main en rojo (o sin saberlo) el código no sale por la vía rápida; diseño sí, avisando.
-  const main = leerMain(repo);
-  const p = await planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida, main });
+  const main = await io.main();
+  const p = await io.planear({ sinViaRapida, main });
   const rapida = p.ex.corrida === "despues", deCodigo = p.ex.pruebasAqui === true;
-  console.log(`clases: ${p.c.clases.join(", ") || "(código de producto)"}${p.c.soloDocumentos ? " · SOLO documentos" : ""} · dirigida propuesta: ${p.d.pruebas.map((t) => t.nombre).join(" ") || "(vacía)"}${p.d.alrevesEntero ? " + al revés entero" : ""}`);
-  if (main.estado !== "verde") console.log(`AVISO: ${main.estado === "rojo" ? main.motivo : `no sé si main está en verde (${main.motivo})`}: lo de main va primero (AV)${rapida && !deCodigo ? "; la vía rápida de diseño sigue (AN)" : ""}`);
-  if (!p.c.soloDocumentos) console.log(deCodigo ? `VÍA RÁPIDA DE CÓDIGO (AV): tipos, guardianes y textos y las pruebas de lo tocado aquí (${p.local.n}, ~${Math.ceil(p.local.seg / 60)} min: ${p.local.lista.map((t) => t.nombre).join(" ")}); la punta a punta entera y «al revés» corren DESPUÉS, en la corrida del push a main`
+  io.decir(`clases: ${p.c.clases.join(", ") || "(código de producto)"}${p.c.soloDocumentos ? " · SOLO documentos" : ""} · dirigida propuesta: ${p.d.pruebas.map((t) => t.nombre).join(" ") || "(vacía)"}${p.d.alrevesEntero ? " + al revés entero" : ""}`);
+  if (main?.estado !== "verde") io.decir(`AVISO: ${main?.estado === "rojo" ? main.motivo : `no sé si main está en verde (${main?.motivo ?? "sin mirar"})`}: lo de main va primero (AV)${rapida && !deCodigo ? "; la vía rápida de diseño sigue (AN)" : ""}`);
+  if (!p.c.soloDocumentos) io.decir(deCodigo ? `VÍA RÁPIDA DE CÓDIGO (AV): tipos, guardianes y textos y las pruebas de lo tocado aquí (${p.local.n}, ~${Math.ceil(p.local.seg / 60)} min: ${p.local.lista.map((t) => t.nombre).join(" ")}); la punta a punta entera y «al revés» corren DESPUÉS, en la corrida del push a main`
     : rapida ? "VÍA RÁPIDA DE DISEÑO (AL): tipos, guardianes y textos aquí (sin build: la imagen la construye el servidor); la punta a punta y «al revés» corren DESPUÉS, en la corrida del push a main"
     : `camino normal${p.c.diseno && sinViaRapida ? " (--sin-via-rapida)" : ` (vía rápida de diseño: no · ${p.c.noDiseno}; de código: no · ${p.ex.noRapida || p.c.noCodigo || "sin motivo"})`}`);
   for (const e of p.d.errores) linea({ ok: false, linea: `FALTA: ${e}` });
   // b.
   if (base.every((x) => x.ok)) {
     const t0 = Date.now();
-    for (const x of await correrLocales(p.ex.locales)) linea(x);
-    console.log(`  (comprobaciones locales a la vez: ${Math.round((Date.now() - t0) / 1000)} s en total)`);
-    if (git("status", "--porcelain").trim()) linea({ ok: false, linea: "FALTA: las comprobaciones dejaron el árbol cambiado" });
+    for (const x of await io.locales(p.ex.locales)) linea(x);
+    io.decir(`  (comprobaciones locales a la vez: ${Math.round((Date.now() - t0) / 1000)} s en total)`);
+    if (!io.limpio()) linea({ ok: false, linea: "FALTA: las comprobaciones dejaron el árbol cambiado" });
     // AV · Las pruebas de lo tocado, aquí, DESPUÉS de tipos, guardianes y textos (las al revés cambian archivos: nunca a la vez que los guardianes).
     if (deCodigo) {
-      if (falta) console.log("NO CORRIÓ: las pruebas de lo tocado (antes falta lo de arriba)");
+      if (falta) linea({ ok: false, linea: "NO CORRIÓ: las pruebas de lo tocado (antes falta lo de arriba)" });
       else {
-        await pruebasAqui({ pruebas: p.d.pruebas, cabeza: p.head, archivos: p.archivos, decir: linea });
-        if (git("status", "--porcelain").trim()) linea({ ok: false, linea: "FALTA: las pruebas de lo tocado dejaron el árbol cambiado" });
+        const antes = falta;
+        const bien = await pruebasAqui({ pruebas: p.d.pruebas, cabeza: p.head, archivos: p.archivos, decir: linea, io: io.pruebas });
+        if (!bien && falta === antes) linea({ ok: false, linea: "FALTA: las pruebas de lo tocado no salieron bien" });
+        if (!io.limpio()) linea({ ok: false, linea: "FALTA: las pruebas de lo tocado dejaron el árbol cambiado" });
       }
     }
-  } else console.log(`NO CORRIÓ: ${p.ex.locales.join(", ")}${deCodigo ? " y las pruebas de lo tocado" : ""} (antes falta a.)`);
+  } else linea({ ok: false, linea: `NO CORRIÓ: ${p.ex.locales.join(", ")}${deCodigo ? " y las pruebas de lo tocado" : ""} (antes falta a.)` });
   // c.
-  if (p.ex.corrida === "ninguna") console.log("CORRIÓ: evidencia del CI no exigida (solo documentos de trabajo)");
-  else if (rapida && deCodigo) console.log("NO SE EXIGE: evidencia del CI antes de subir (vía rápida de código, AV): las pruebas de lo tocado corrieron aquí; la punta a punta entera y «al revés» corren después, en la corrida del push a main");
-  else if (rapida) console.log("NO SE EXIGE: evidencia del CI antes de subir (vía rápida de diseño, AL): la punta a punta y «al revés» corren después, en la corrida del push a main");
+  if (p.ex.corrida === "ninguna") io.decir("CORRIÓ: evidencia del CI no exigida (solo documentos de trabajo)");
+  else if (rapida && deCodigo) io.decir("NO SE EXIGE: evidencia del CI antes de subir (vía rápida de código, AV): las pruebas de lo tocado corrieron aquí; la punta a punta entera y «al revés» corren después, en la corrida del push a main");
+  else if (rapida) io.decir("NO SE EXIGE: evidencia del CI antes de subir (vía rápida de diseño, AL): la punta a punta y «al revés» corren después, en la corrida del push a main");
   else {
-    // La corrida verde que cubra la propuesta o, en el camino de la dirigida, la cadena R1 roja + R2 repaso (decisión AU): todo en buscarEvidencia,
-    // con la API y git de verdad (ioReal); los casos la prueban con un io de mentira.
-    const { hallada, cadena, motivos, motivosCadena } = await buscarEvidencia({ p, rama, repo, arbolHead, io: ioReal(repo, rama) });
-    linea(hallada ? { ok: true, linea: `CORRIÓ: evidencia del CI · corrida ${hallada.id} (${hallada.event}, ${hallada.head_sha.slice(0, 12)}) en verde, de este árbol${hallada.head_sha === head ? "" : " salvo documentos de trabajo"}` }
-      : cadena ? { ok: true, linea: `CORRIÓ: evidencia del CI encadenada (decisión AU) · R1 = dirigida ${cadena.r1.id} roja (${cadena.r1.head_sha.slice(0, 12)}; rojas: ${cadena.v.rojas.join(" ")}) + R2 = repaso ${cadena.r2.id} en verde, de este árbol${cadena.r2.head_sha === head ? "" : " salvo documentos de trabajo"}` }
-      : { ok: false, linea: `FALTA: evidencia del CI para este árbol (${p.ex.corrida === "completa" ? "corrida COMPLETA" : "la dirigida propuesta, o una dirigida roja + su repaso en verde"} en ${rama}) · ${motivos.slice(0, 3).join(" · ") || "ninguna corrida en verde en la rama"}` });
+    // La corrida verde que cubra la propuesta o, en el camino de la dirigida, la cadena R1 roja + R2 repaso (decisión AU): todo en buscarEvidencia
+    // (io.evidencia, con la API y git de verdad de ioReal en --subir); los casos la prueban con un io de mentira.
+    const { hallada, cadena, motivos, motivosCadena } = await io.evidencia(p);
+    linea(hallada ? { ok: true, linea: `CORRIÓ: evidencia del CI · corrida ${hallada.id} (${hallada.event}, ${hallada.head_sha.slice(0, 12)}) en verde, de este árbol${hallada.head_sha === p.head ? "" : " salvo documentos de trabajo"}` }
+      : cadena ? { ok: true, linea: `CORRIÓ: evidencia del CI encadenada (decisión AU) · R1 = dirigida ${cadena.r1.id} roja (${cadena.r1.head_sha.slice(0, 12)}; rojas: ${cadena.v.rojas.join(" ")}) + R2 = repaso ${cadena.r2.id} en verde, de este árbol${cadena.r2.head_sha === p.head ? "" : " salvo documentos de trabajo"}` }
+      : { ok: false, linea: `FALTA: evidencia del CI para este árbol (${p.ex.corrida === "completa" ? "corrida COMPLETA" : "la dirigida propuesta, o una dirigida roja + su repaso en verde"} en ${io.rama}) · ${motivos.slice(0, 3).join(" · ") || "ninguna corrida en verde en la rama"}` });
     // Los motivos de la cadena, aparte: detrás de los de las corridas verdes no se veían.
-    if (!hallada && !cadena) for (const m of motivosCadena.slice(0, 4)) console.log(`  cadena ${m}`);
+    if (!hallada && !cadena) for (const m of motivosCadena.slice(0, 4)) io.decir(`  cadena ${m}`);
   }
+  return { falta, empujar: !(falta || ensayo), p, rapida, deCodigo, main };
+}
+
+async function cmdSubir({ ensayo, sinViaRapida = false }) {
+  const repo = REPO, rama = ramaActual();
+  // a.
+  try { git("fetch", "-q", "origin", "main", "pruebas"); } catch (e) { throw new SinGithub(`git fetch falló: ${String(e?.message ?? e).split("\n")[0]}`); }
+  const head = git("rev-parse", "HEAD").trim(), arbolHead = git("rev-parse", "HEAD^{tree}").trim();
+  console.log(`subir ${head.slice(0, 12)} (árbol ${arbolHead.slice(0, 12)}) desde ${rama}${ensayo ? " · ENSAYO: no se empuja nada" : ""}`);
+  // a., b. y c. con lo de verdad: git, la API (main y la evidencia con ioReal), las comprobaciones locales y las pruebas de lo tocado.
+  const d = await decidirSubida({ ensayo, sinViaRapida, io: {
+    rama,
+    decir: (l) => console.log(l),
+    base: () => comprobarBase({ limpio: !git("status", "--porcelain").trim(), mainEsAncestro: gitOk("merge-base", "--is-ancestor", "origin/main", "HEAD"), pruebasEsAncestro: gitOk("merge-base", "--is-ancestor", "origin/pruebas", "HEAD") }),
+    main: () => leerMain(repo),
+    planear: (o) => planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida: o.sinViaRapida, main: o.main }),
+    locales: (ls) => correrLocales(ls),
+    limpio: () => !git("status", "--porcelain").trim(),
+    pruebas: ioPruebas(),
+    evidencia: (p) => buscarEvidencia({ p, rama, repo, arbolHead, io: ioReal(repo, rama) }),
+  } });
+  const { falta, p, rapida, deCodigo } = d;
   const remotaRama = (() => { try { return git("ls-remote", "origin", `refs/heads/${rama}`).split(/\s/)[0]; } catch { return ""; } })();
   const plan = planDeEmpuje({ clases: p.c.clases, rama, remotaRama, head });
-  if (falta || ensayo) {
+  if (!d.empujar) {
     console.log(`${falta ? `no se sube: ${falta} cosa(s) FALTA` : "ensayo: todo está"} · empujaría, en este orden:`);
     for (const s of plan) console.log(`  · ${s.tipo === "push" ? "git " + s.args.join(" ") : s.tipo === "esperar-imagenes" ? "esperar «verificación · imágenes» en verde en la corrida de ese push a main" : "git ls-remote: main y pruebas en " + head.slice(0, 12)}`);
     if (rapida) console.log(`  · y al final diría dónde corren DESPUÉS la punta a punta y «al revés» (vía rápida de ${deCodigo ? "código, AV" : "diseño, AL"}), sin esperarlas`);
@@ -1504,8 +1719,69 @@ export function fallosDelRegistro(texto, n = 30) {
 export function veredictoDeMain(run, trabajos = []) {
   if (!run || run.status !== "completed") return { ok: false, linea: `la corrida de main no terminó (${run?.status ?? "sin corrida"})` };
   const rojos = trabajos.filter((j) => j?.conclusion && !["success", "skipped"].includes(j.conclusion));
-  if (run.conclusion === "success") return { ok: true, linea: `VERDE: la corrida ${run.id} de main (${String(run.head_sha).slice(0, 12)}) terminó en verde`, rojos };
-  return { ok: false, linea: `ROJO: la corrida ${run.id} de main (${String(run.head_sha).slice(0, 12)}) terminó ${run.conclusion}${rojos.length ? `; trabajos rojos: ${rojos.map((j) => nombreJ(j)).join(" · ")}` : ""}`, rojos };
+  const de = `la corrida ${run.id} de main (${String(run.head_sha).slice(0, 12)}, intento ${run.run_attempt ?? "?"})`;
+  // Revisión de 31e2974 · Solo el primer intento cuenta (AG): un verde al volverla a correr no es verde.
+  if (run.conclusion === "success" && Number(run.run_attempt) === 1) return { ok: true, linea: `VERDE: ${de} terminó en verde`, rojos };
+  if (run.conclusion === "success") return { ok: false, linea: `NO VALE: ${de} terminó en verde, pero no en su primer intento: solo vale el primero (AG)`, rojos };
+  return { ok: false, linea: `ROJO: ${de} terminó ${run.conclusion}${rojos.length ? `; trabajos rojos: ${rojos.map((j) => nombreJ(j)).join(" · ")}` : ""}`, rojos };
+}
+/** Un push de solo documentos de trabajo no corre los carriles largos (punta a punta, al revés, dispositivos): su verde no dice nada de ellos. */
+export function avisoSoloDocumentos(trabajos = []) {
+  const largos = (trabajos ?? []).filter((j) => /^(punta a punta|dispositivo) /.test(nombreJ(j)));
+  if (largos.some((j) => j?.conclusion && j.conclusion !== "skipped")) return "";
+  return "AVISO: en esta corrida no corrieron los carriles largos (punta a punta, al revés, dispositivos): ¿un push de solo documentos de trabajo? Su verde no dice nada de ellos; lo de main lo dice la corrida de main del último cambio de código";
+}
+/** La corrida que reemplazó a una cancelada (la concurrencia de ci.yml cancela la de main cuando llega otro push) y que cubre el commit: la siguiente
+    corrida de ci.yml de un push a main, más nueva, cuyo commit desciende del vigilado. esAncestro(a, b): ¿a es ancestro de b? */
+export function reemplazoDe(corridas, cancelada, sha, esAncestro, repo = REPO) {
+  return (Array.isArray(corridas) ? corridas : []).filter((r) => r && r.path === ".github/workflows/ci.yml" && r.event === "push" && r.head_branch === "main" && r.repository?.full_name === repo && Number(r.id) > Number(cancelada.id))
+    .sort((a, b) => Number(a.id) - Number(b.id)).find((r) => { try { return r.head_sha === sha || esAncestro(sha, r.head_sha) === true; } catch { return false; } }) ?? null;
+}
+
+/** --vigilar con un io inyectable (los casos le dan uno de mentira): la corrida del push a main de ESE commit; se espera a que TERMINE (sondeo propio);
+    si la canceló un push más nuevo, se dice «reemplazada por X» y se vigila la que cubre el commit; se dice el intento; se avisa si no corrieron los
+    carriles largos. → { ok } (ok solo en verde, en el primer intento). io: { corridasDe(sha), corridasMain(), corrida(id), trabajos(id), registro(id),
+    esAncestro(a, b), esperar(), decir(l) }. */
+export async function vigilar({ sha, io, repo = REPO, vueltas = { aparecer: 48, terminar: 600, reemplazo: 24, reemplazos: 5 } }) {
+  io.decir(`vigilo la corrida de ci.yml del push a main de ${sha.slice(0, 12)} · sondeo cada ${SONDEO_MS / 1000} s`);
+  let run = null;
+  for (let i = 0; i < vueltas.aparecer && !run; i++) {
+    run = elegirCorridaDeMain(await io.corridasDe(sha), sha, repo);
+    if (!run) await io.esperar();
+  }
+  if (!run) { io.decir(`FALTA: no apareció ninguna corrida de ci.yml del push a main de ${sha.slice(0, 12)} (¿se empujó a main?)`); return { ok: false }; }
+  for (let n = 0; ; n++) {
+    io.decir(`corrida ${run.id} (intento ${run.run_attempt ?? "?"}, commit ${String(run.head_sha).slice(0, 12)}): ${run.html_url ?? ""}`);
+    let fin = null, fallos = 0;
+    for (let i = 0; i < vueltas.terminar && !fin; i++) {
+      let r = null;
+      try { r = await io.corrida(run.id); fallos = 0; } catch (e) { if (++fallos >= 4) throw new SinGithub(`la API no responde (${String(e?.message ?? e).split("\n")[0].slice(0, 120)})`); }
+      if (r?.status === "completed") fin = r;
+      else await io.esperar();
+    }
+    if (!fin) { io.decir(`FALTA: la corrida ${run.id} no terminó mientras la vigilaba: vuelve a vigilarla`); return { ok: false }; }
+    run = fin;
+    if (run.conclusion !== "cancelled" || n >= vueltas.reemplazos) break;
+    let sig = null;
+    for (let i = 0; i < vueltas.reemplazo && !sig; i++) {
+      sig = reemplazoDe(await io.corridasMain(), run, sha, io.esAncestro, repo);
+      if (!sig) await io.esperar();
+    }
+    if (!sig) { io.decir(`la corrida ${run.id} se canceló y no encuentro la que la reemplazó cubriendo ${sha.slice(0, 12)}`); break; }
+    io.decir(`la corrida ${run.id} se canceló: reemplazada por ${sig.id} (commit ${String(sig.head_sha).slice(0, 12)}, que incluye ${sha.slice(0, 12)}); vigilo esa`);
+    run = sig;
+  }
+  const js = await io.trabajos(run.id);
+  for (const j of js) io.decir(`  ${verde(j) ? "verde " : j.conclusion === "skipped" ? "saltado" : "ROJO  "} ${nombreJ(j)}${j.conclusion && !["success", "skipped"].includes(j.conclusion) ? ` (${j.conclusion})` : ""}`);
+  const v = veredictoDeMain(run, js);
+  io.decir(v.linea);
+  const aviso = avisoSoloDocumentos(js);
+  if (aviso) io.decir(aviso);
+  for (const j of v.rojos ?? []) {
+    io.decir(`\n── ${nombreJ(j)} · lo que falló:`);
+    try { for (const l of fallosDelRegistro(await io.registro(j.id))) io.decir(`  ${l.slice(0, 300)}`); } catch (e) { io.decir(`  (no pude leer el registro: ${String(e?.message ?? e).split("\n")[0]})`); }
+  }
+  return { ok: v.ok };
 }
 
 async function cmdVigilar({ sha }) {
@@ -1513,23 +1789,16 @@ async function cmdVigilar({ sha }) {
   let objetivo = sha;
   if (!objetivo) { try { git("fetch", "-q", "origin", "main"); } catch (e) { throw new SinGithub(`git fetch falló: ${String(e?.message ?? e).split("\n")[0]}`); } objetivo = "origin/main"; }
   try { objetivo = git("rev-parse", "--verify", `${objetivo}^{commit}`).trim(); } catch { if (!SHA40.test(String(objetivo))) { console.log(`FALTA: «${sha}» no es un commit`); return 1; } }
-  console.log(`vigilo la corrida de ci.yml del push a main de ${objetivo.slice(0, 12)} · sondeo cada ${SONDEO_MS / 1000} s`);
-  let run = null;
-  for (let i = 0; i < 48 && !run; i++) {
-    run = elegirCorridaDeMain(api(`repos/${repo}/actions/workflows/ci.yml/runs?event=push&branch=main&head_sha=${objetivo}&per_page=10`).workflow_runs ?? [], objetivo, repo);
-    if (!run) await esperar(SONDEO_MS);
-  }
-  if (!run) { console.log(`FALTA: en 20 min no apareció ninguna corrida de ci.yml del push a main de ${objetivo.slice(0, 12)} (¿se empujó a main?)`); return 1; }
-  console.log(`corrida ${run.id}: ${run.html_url ?? ""}`);
-  const r = await esperarCorrida(repo, run.id, 240);
-  const js = trabajosDe(repo, r.id);
-  for (const j of js) console.log(`  ${verde(j) ? "verde " : j.conclusion === "skipped" ? "saltado" : "ROJO  "} ${nombreJ(j)}${j.conclusion && !["success", "skipped"].includes(j.conclusion) ? ` (${j.conclusion})` : ""}`);
-  const v = veredictoDeMain(r, js);
-  console.log(v.linea);
-  for (const j of v.rojos ?? []) {
-    console.log(`\n── ${nombreJ(j)} · lo que falló:`);
-    try { for (const l of fallosDelRegistro(registroDe(repo, j.id))) console.log(`  ${l.slice(0, 300)}`); } catch (e) { console.log(`  (no pude leer el registro: ${String(e?.message ?? e).split("\n")[0]})`); }
-  }
+  const v = await vigilar({ sha: objetivo, repo, io: {
+    corridasDe: (x) => api(`repos/${repo}/actions/workflows/ci.yml/runs?event=push&branch=main&head_sha=${x}&per_page=10`).workflow_runs ?? [],
+    corridasMain: () => api(`repos/${repo}/actions/workflows/ci.yml/runs?event=push&branch=main&per_page=20`).workflow_runs ?? [],
+    corrida: (id) => api(`repos/${repo}/actions/runs/${id}`),
+    trabajos: (id) => trabajosDe(repo, id),
+    registro: (id) => registroDe(repo, id),
+    esAncestro: (a, b) => tenerCommit(b) && gitOk("merge-base", "--is-ancestor", a, b),
+    esperar: () => esperar(SONDEO_MS),
+    decir: (l) => console.log(l),
+  } });
   return v.ok ? 0 : 1;
 }
 
@@ -1874,51 +2143,85 @@ async function casos() {
     q = await PR({ cargas: [dirig(), reint()], intentos: { 73: prim(["com5g"]) } });
     ok(q.ok && q.extra.join() === "com5g", "repaso: las rojas del primer intento de una corrida posterior que se volvió a correr entran en la lista");
   }
-  // 24 nov · La vía rápida de código (decisión AV) y --vigilar.
+  // 24 nov · La vía rápida de código (decisión AV), con la revisión de 31e2974 (lo más estricto), y --vigilar.
   {
-    const LIB = "apps/web/lib/eventos.ts", PAG = "apps/web/app/(app)/eventos/page.tsx", PRU = "pruebas/e2e/evt6c.cjs";
-    const rc = { [LIB]: ["export const x = 1;"], [PAG]: ["const r = await leer();"], [PRU]: ["ok(true, 'x');"] };
-    const cod = (fs, r = rc) => clases(fs, r);
-    let x = cod([LIB, PAG, PRU, D0]);
-    ok(x.codigo && !x.diseno && x.clases.join() === "codigo,documentos", `código (lib, una página que lee con await y la prueba que viaja con él) + un documento → «codigo» (${x.clases.join()})`);
-    x = clases([FN, PF, LA], rl);
+    const APP = "apps/web/app/(app)/eventos/Lista.tsx", PAG = "apps/web/app/(app)/eventos/page.tsx", PRU = "pruebas/e2e/evt6c.cjs";
+    const rc = { [APP]: ["export const x = 1;"], [PAG]: ["const r = await leer();"], [PRU]: ["ok(true, 'x');"] };
+    // La información de mentira de git: las pruebas NUEVAS (A), lo demás cambiado (M), modos normales, el archivo entero = sus renglones, nada quitado.
+    const inf = (fs, r = rc, y = {}) => {
+      const b = { estados: Object.fromEntries(fs.map((f) => [f, /^pruebas\//.test(f) ? "A" : "M"])), modos: Object.fromEntries(fs.map((f) => [f, ["100644", "100644"]])),
+        textos: Object.fromEntries(fs.map((f) => [f, (r[f] ?? []).join("\n")])), quitados: Object.fromEntries(fs.map((f) => [f, []])) };
+      return Object.fromEntries(Object.entries(b).map(([k, v]) => [k, { ...v, ...(y[k] ?? {}) }]));
+    };
+    const cod = (fs, r = rc, y = {}) => clases(fs, r, inf(fs, r, y));
+    let x = cod([APP, PAG, PRU, D0]);
+    ok(x.codigo && !x.diseno && x.clases.join() === "codigo,documentos", `código (un componente, una página que lee con await y la prueba NUEVA que viaja con él) + un documento → «codigo» (${x.clases.join()} ${x.noCodigo})`);
+    x = clases([FN, PF, LA], rl, inf([FN, PF, LA], rl));
     ok(x.diseno && x.clases.join() === "diseno" && x.codigo === true, "una entrega de diseño sigue siendo «diseno» (aunque también cabría en código)");
-    // Las exclusiones, un archivo por cada una.
+    // Las exclusiones, un archivo por cada una (revisión de 31e2974: lib/ fuera, acciones, route, .sql, migraciones, public que no es imagen ni fuente,
+    // packages/ui/scripts y textos.cjs).
     const fuera = [
       ["packages/db/migrations/0300_x.sql", /nunca es de la vía rápida de código/], ["infra/pruebas/x.sh", /nunca/], ["services/video/x.mjs", /nunca/], ["scripts/x.mjs", /nunca/], ["semgrep/x.yml", /nunca/],
       [".github/workflows/x.yml", /nunca/], ["guardianes/run.mjs", /nunca/], ["package.json", /nunca/], ["apps/web/app/x/package.json", /nunca/], ["pnpm-lock.yaml", /nunca/], [".npmrc", /nunca/],
       ["apps/web/lib/.env", /nunca/], ["apps/web/.env.local", /nunca/], ["apps/web/public/sw-push.js", /nunca/], ["apps/web/public/puerta/lector.js", /nunca/], ["apps/web/public/.well-known/assetlinks.json", /nunca/],
-      ["apps/web/tsconfig.json", /nunca/], ["apps/web/next.config.ts", /nunca/], ["apps/web/middleware.ts", /nunca/], ["packages/ui/package.json", /nunca/], ["packages/ui/tsconfig.json", /nunca/],
-      ["pruebas/lib/arbol.cjs", /nunca/], ["pruebas/correr.mjs", /nunca/], ["pruebas/reparto.json", /nunca/], ["pruebas/e2e/sub/x.cjs", /nunca/], ["pruebas/alreves/x.mjs", /nunca/],
-      ["apps/web/app/api/x/route.ts", /es «sensible»/], ["apps/web/lib/pagos/x.ts", /es «sensible»/], ["apps/web/app/admin/Tabla.tsx", /es «sensible»/],
-      ["apps/web/lib/sesion.ts", /lleva «sesion»/], ["apps/web/app/(app)/privacidad/Ajustes.tsx", /lleva «privacidad»/], ["apps/mobile/x.ts", /no está en la lista blanca/], ["packages/config/x.ts", /no está en la lista blanca/],
+      ["apps/web/public/icono.svg", /nunca/], ["apps/web/public/x.html", /nunca/], ["apps/web/public/datos.json", /nunca/],
+      ["apps/web/tsconfig.json", /nunca/], ["apps/web/next.config.ts", /nunca/], ["apps/web/middleware.ts", /nunca/], ["packages/ui/package.json", /nunca/], ["packages/ui/tsconfig.json", /nunca/], ["packages/ui/scripts/generar.mjs", /nunca/],
+      ["apps/web/lib/cupones.ts", /nunca/], ["apps/web/lib/csp.ts", /nunca/], ["apps/web/lib/eventos.ts", /nunca/], ["apps/web/lib/pagos/x.ts", /nunca/], ["apps/web/lib/sesion.ts", /nunca/],
+      ["apps/web/app/(app)/buscar/acciones.ts", /nunca/], ["apps/web/app/x/acciones-fiesta.tsx", /nunca/], ["apps/web/app/api/x/route.ts", /nunca/], ["apps/web/app/x/route.tsx", /nunca/],
+      ["packages/ui/src/migraciones/x.ts", /nunca/], ["apps/web/app/x/consulta.sql", /nunca/],
+      ["pruebas/lib/arbol.cjs", /nunca/], ["pruebas/correr.mjs", /nunca/], ["pruebas/reparto.json", /nunca/], ["pruebas/e2e/sub/x.cjs", /nunca/], ["pruebas/alreves/x.mjs", /nunca/], ["pruebas/alreves/textos.cjs", /es «herramientas»/],
+      ["apps/web/app/admin/Tabla.tsx", /es «sensible»/], ["apps/web/app/(app)/privacidad/Ajustes.tsx", /lleva «privacidad»/], ["apps/mobile/x.ts", /no está en la lista blanca/], ["packages/config/x.ts", /no está en la lista blanca/],
     ];
-    for (const [f, re] of fuera) { const y = cod([LIB, f], { ...rc, [f]: ["x"] }); if (y.codigo || esCodigo(f) || !re.test(porQueNoCodigo(f))) ok(false, `${f} → no es de la vía rápida de código (${porQueNoCodigo(f) || "lo es"})`); }
-    ok(fuera.length >= 30 && fuera.every(([f]) => !esCodigo(f)) && [LIB, PAG, PRU, "pruebas/alreves/alrevesBuscarCumple.cjs", "packages/ui/src/ds/layout/SiteFooter.js", "apps/web/app/(app)/buscar/acciones.ts"].every(esCodigo),
-      `la lista blanca de código y cada exclusión, un archivo (${fuera.length} rutas fuera: la base, infra, services, scripts, semgrep, .github, guardianes, dependencias, .env, JS servido tal cual, configuración, herramientas de prueba, sensibles y palabras)`);
-    x = cod([LIB], { [LIB]: ["await sql`update eventos set x = 1`"] });
+    for (const [f, re] of fuera) { const y = cod([APP, f], { ...rc, [f]: ["x"] }); if (y.codigo || esCodigo(f) || !re.test(porQueNoCodigo(f))) ok(false, `${f} → no es de la vía rápida de código (${porQueNoCodigo(f) || "lo es"})`); }
+    const dentro = [APP, PAG, PRU, "pruebas/alreves/alrevesBuscarCumple.cjs", "packages/ui/src/ds/layout/SiteFooter.js", "apps/web/public/paginas/x.1a2b.webp", "apps/web/public/fuentes/x.woff2", "apps/web/public/logo.png", ...LIB_CODIGO];
+    ok(fuera.length >= 45 && fuera.every(([f]) => !esCodigo(f)) && dentro.every(esCodigo) && LIB_CODIGO.length <= 3,
+      `la lista blanca de código y cada exclusión, un archivo (${fuera.length} rutas fuera; dentro solo app, piezas, pruebas sueltas, imágenes y fuentes de public y LIB_CODIGO: ${LIB_CODIGO.join(" ")})`);
+    // Las señales en el archivo ENTERO de la cabeza (aunque el renglón cambiado sea inocente), también partidas en varios renglones.
+    const entero = (t) => cod([APP], { [APP]: ["const x = 1;"] }, { textos: { [APP]: `const x = 1;\n${t}` } });
+    x = entero("await sql`\n  insert\n    into pedidos (a) values (1)`;");
+    ok(!x.codigo && /archivo entero/.test(x.noCodigo) && /escritura/.test(x.noCodigo), `una escritura partida en varios renglones del archivo entero (no de lo cambiado) → no código (${x.noCodigo})`);
+    const senales = ["await sql`update pedidos\n set estado = 'x'`", "await sql`delete\nfrom cupones`", "truncate table pedidos", "merge into saldos s using x", "await stripe.refunds.create({})", "\"use server\";", "const t = monto_centavos;"];
+    ok([...senales, "await sql`\n  TRUNCATE pedidos`"].every((t) => !entero(t).codigo), "las señales del archivo entero: update/delete en varios renglones, truncate, merge into, stripe., refunds, «use server» y centavos → no código");
+    ok(entero('<span className="min-w-0 truncate">x</span>').codigo && clases([PF], { [PF]: ['<span className="truncate">x</span>'] }).diseno, "la clase «truncate» de Tailwind no es el TRUNCATE de SQL (ni saca de diseño ni de código)");
+    x = cod([LIB_CODIGO[0]], { [LIB_CODIGO[0]]: ["export const a = 1;"] }, { textos: { [LIB_CODIGO[0]]: "export const a = 1;\nexport const b = () => fetch(\"https://x.y\");" } });
+    ok(!x.codigo && /llamada de red/.test(x.noCodigo) && cod([LIB_CODIGO[0]], { [LIB_CODIGO[0]]: ["export const a = 1;"] }).codigo, `un módulo de LIB_CODIGO con fetch (o import, cookies, crypto, Stripe, SMS…) en el archivo entero → no código; solo texto → código (${x.noCodigo})`);
+    // El estado y el modo de git: solo pruebas NUEVAS; nunca un enlace simbólico ni un submódulo; sin esa información, no.
+    x = cod([APP, PRU], rc, { estados: { [PRU]: "M" } });
+    ok(!x.codigo && /cambia una prueba que ya existe/.test(x.noCodigo) && /borra una prueba/.test(cod([APP, PRU], rc, { estados: { [PRU]: "D" } }).noCodigo), "cambiar o borrar una prueba que ya existe → camino normal (solo las pruebas NUEVAS viajan con su código)");
+    x = cod([APP], rc, { modos: { [APP]: ["000000", "120000"] } });
+    ok(!x.codigo && /enlace simbólico/.test(x.noCodigo) && !cod([APP], rc, { modos: { [APP]: ["100644", "160000"] } }).codigo, "un enlace simbólico (modo 120000) o un submódulo (160000) → nunca código");
+    ok(!clases([APP], rc).codigo && /sin el estado, el modo/.test(clases([APP], rc).noCodigo) && /sin el archivo entero/.test(clases([APP], rc, { ...inf([APP]), textos: {} }).noCodigo), "sin el estado, el modo o el archivo entero de git → no código (cualquier duda)");
+    x = cod([PAG], rc, { quitados: { [PAG]: ['  if (!yo) redirect("/entrar");'] } });
+    ok(!x.codigo && /quita una comprobación/.test(x.noCodigo), `quitar una comprobación (redirect, notFound, throw, permisos, CSP) → camino normal (${x.noCodigo})`);
+    x = cod([APP], { [APP]: ["await sql`update eventos set x = 1`"] });
     ok(!x.codigo && x.clases.includes("sensible"), "una escritura en los renglones → sensible, no código");
-    x = cod([LIB], { [LIB]: ['"use server";'] });
+    x = cod([APP], { [APP]: ['"use server";'] });
     ok(!x.codigo && x.clases.includes("sensible"), "«use server» en los renglones → sensible, no código");
-    x = cod([LIB, PAG], { [LIB]: ["x"] });
+    x = cod([APP, PAG], { [APP]: ["x"] });
     ok(!x.codigo && /sin los renglones cambiados de apps\/web\/app/.test(x.noCodigo), "un archivo de código sin sus renglones → no código (duda)");
     x = cod([PRU], { [PRU]: ["sql(`update t set a = 1`)"] });
-    ok(x.codigo && x.clases.join() === "codigo", "una prueba con SQL que escribe (a propósito) sigue siendo código");
+    ok(x.codigo && x.clases.join() === "codigo", "una prueba nueva con SQL que escribe (a propósito) sigue siendo código");
+    // git diff --raw y -U0, leídos (puros).
+    const raw = parsearRaw(":100644 100644 abc1234 def5678 M\0apps/web/app/x.tsx\0:000000 120000 0000000 abc1234 A\0apps/web/app/e.tsx\0:100644 000000 abc1234 0000000 D\0pruebas/e2e/v.cjs\0");
+    ok(raw.archivos.join() === "apps/web/app/x.tsx,apps/web/app/e.tsx,pruebas/e2e/v.cjs" && raw.estados["apps/web/app/e.tsx"] === "A" && raw.estados["pruebas/e2e/v.cjs"] === "D" && raw.modos["apps/web/app/e.tsx"].join() === "000000,120000", "git diff --raw: los archivos, su estado (A/M/D) y su modo (el del enlace simbólico también)");
+    const dif = parsearDiff("diff --git a/apps/web/app/x.tsx b/apps/web/app/x.tsx\n--- a/apps/web/app/x.tsx\n+++ b/apps/web/app/x.tsx\n@@ -1,2 +1 @@\n-\"use server\";\n-if (!yo) redirect(\"/entrar\");\n+const x = 1;\n");
+    ok(dif.renglones["apps/web/app/x.tsx"].join("|") === "\"use server\";|if (!yo) redirect(\"/entrar\");|const x = 1;" && dif.quitados["apps/web/app/x.tsx"].length === 2, "git diff -U0: los renglones añadidos Y los quitados (quitar «use server» o una comprobación también cuenta)");
     // Las dos listas (la cabeza y origin/main), con la regla de «diseno».
-    const c1 = cod([LIB, PAG, PRU]), cc = combinar(c1, c1);
+    const c1 = cod([APP, PAG, PRU]), cc = combinar(c1, c1);
     ok(cc.codigo && cc.clases.join() === "codigo", "cabeza y main la dan por código → «codigo»");
     let k = combinar(c1, { ...c1, codigo: undefined, noCodigo: undefined });
     ok(!k.codigo && /todavía no tiene la vía rápida de código/.test(k.noCodigo) && !k.clases.includes("codigo"), "la herramienta de origin/main sin «codigo» → no hay vía rápida de código");
     ok(!combinar(c1, null).codigo && !combinar(c1, { ...c1, codigo: false, noCodigo: "x", clases: ["sensible"] }).codigo && !combinar({ ...c1, codigo: false, noCodigo: "y" }, c1).codigo, "sin poder juzgarla con main, o una de las dos listas más estricta → no código");
-    const cDis = clases([FN, PF, LA], rl);
+    const cDis = clases([FN, PF, LA], rl, inf([FN, PF, LA], rl));
     k = combinar(cDis, { ...cDis, diseno: false, noDiseno: "x", clases: [] });
     ok(k.codigo && !k.diseno && k.clases.join() === "codigo", "diseño en la cabeza pero no en main, y código en las dos → código (con sus pruebas locales)");
     // Lo que exige: main en verde, el tope y las pruebas de lo tocado.
-    const RM = (id, conclusion, y = {}) => ({ id, path: ".github/workflows/ci.yml", head_branch: "main", status: "completed", conclusion, head_sha: s(id), repository: { full_name: REP }, ...y, event: y.event ?? "push" });
-    const VERDE = estadoDeMain([RM(9002, "success")], REP), ROJO = estadoDeMain([RM(9001, "failure")], REP), DUDA = estadoDeMain([], REP);
-    const LOK = estimarLocal([{ nombre: "evt6c", carril: "e2e" }], { evt6c: 20 });
+    const RM = (id, conclusion, y = {}) => ({ id, path: ".github/workflows/ci.yml", head_branch: "main", status: "completed", conclusion, run_attempt: 1, head_sha: s(id), repository: { full_name: REP }, ...y, event: y.event ?? "push" });
+    const EM = (rs, y = {}) => estadoDeMain(rs, { repo: REP, ...y });
+    const VERDE = EM([RM(9002, "success")], { shaMain: s(9002) }), ROJO = EM([RM(9001, "failure")]), DUDA = EM([]);
+    const LOK = estimarLocal([{ nombre: "evt6c", carril: "e2e" }], { evt6c: 20 }, TOPE_LOCAL, [APP]);
     let e = exigencias(cc, { main: VERDE, local: LOK });
-    ok(e.pruebasAqui && e.corrida === "despues" && !e.mainPrimero && ["tipos", "guardianes", "textos"].every((y) => e.locales.includes(y)), "código con main en verde y las pruebas dentro del tope → vía rápida de código: tipos, guardianes, textos y las pruebas de lo tocado aquí");
+    ok(VERDE.estado === "verde" && e.pruebasAqui && e.corrida === "despues" && !e.mainPrimero && ["tipos", "guardianes", "textos"].every((y) => e.locales.includes(y)), "código con main en verde y las pruebas dentro del tope → vía rápida de código: tipos, guardianes, textos y las pruebas de lo tocado aquí");
     e = exigencias(cc, { main: ROJO, local: LOK });
     ok(!e.pruebasAqui && e.corrida === "dirigida" && /^main está en rojo \(corrida 9001\): primero se arregla; esto va por el camino normal/.test(e.noRapida), "con main en rojo el código no sube por la vía rápida («main está en rojo (corrida X): primero se arregla»)");
     e = exigencias(cc, { main: DUDA, local: LOK });
@@ -1931,8 +2234,10 @@ async function casos() {
     ok(!e.pruebasAqui && /^26 prueba\(s\), ~\d+ min: más que el tope/.test(e.noRapida), `más pruebas que el tope → camino normal, diciendo por qué (${e.noRapida})`);
     e = exigencias(cc, { main: VERDE, local: estimarLocal([], {}) });
     ok(!e.pruebasAqui && /ninguna prueba nombra lo tocado/.test(e.noRapida), "código sin ninguna prueba de lo tocado → camino normal (cualquier duda)");
+    let L = estimarLocal([{ nombre: "alrevesX", carril: "alreves" }], {}, TOPE_LOCAL, [APP, "pruebas/alreves/alrevesX.cjs"]);
+    ok(!L.ok && /ninguna prueba de punta a punta lo nombra/.test(L.motivo) && estimarLocal([{ nombre: "alrevesX", carril: "alreves" }], {}, TOPE_LOCAL, ["pruebas/alreves/alrevesX.cjs"]).ok, "si toca apps/web o packages/ui, al menos una prueba de punta a punta (solo al revés → camino normal)");
     // El tope.
-    let L = estimarLocal(muchas(7), {});
+    L = estimarLocal(muchas(7), {});
     ok(!L.ok && L.seg === 630 && /7 prueba\(s\), ~11 min: más que el tope/.test(L.motivo), "7 pruebas sin medir: 7 × 60 s × 1,5 = 630 s, más de 10 min → fuera del tope");
     L = estimarLocal(muchas(6), {});
     ok(L.ok && L.seg === 540, "6 pruebas sin medir: 540 s → dentro del tope");
@@ -1940,10 +2245,25 @@ async function casos() {
     ok(!L.ok && L.seg === 861, "lo medido en el CI (pruebas/reparto.json): (328 + 246) s × 1,5 = 861 s → fuera del tope");
     L = estimarLocal([{ nombre: "a1x", carril: "e2e" }, { nombre: "alrevesX", carril: "alreves" }], { a1x: 10 });
     ok(L.ok && L.seg === 15 + 90 + 150, "una al revés suma sus dos pasadas reales de guardianes (150 s)");
-    ok(!estimarLocal(muchas(26), Object.fromEntries(muchas(26).map((t) => [t.nombre, 1]))).ok && TOPE_LOCAL.pruebas === 25 && TOPE_LOCAL.seg === 600 && TOPE_LOCAL.sinMedir === 60 && TOPE_LOCAL.factor === 1.5, "el tope: 25 pruebas y 10 min (60 s la que no está medida, ×1,5); 26 cortas no caben");
-    // El estado de main.
-    ok(estadoDeMain([RM(9000, "success"), RM(9001, "failure")], REP).estado === "rojo" && estadoDeMain([RM(9002, "success"), RM(9001, "failure")], REP).estado === "verde", "main: manda la última corrida terminada de un push a main (la de id más alto), en cualquier orden");
-    ok(estadoDeMain([RM(9003, "cancelled")], REP).estado === "duda" && estadoDeMain([RM(9004, "failure", { event: "workflow_dispatch" }), RM(9005, "failure", { head_branch: "x" }), RM(9006, "failure", { repository: { full_name: "x/y" } })], REP).estado === "duda", "main: cancelada, o solo corridas de otro evento, rama o repo → duda");
+    ok(!estimarLocal(muchas(26), Object.fromEntries(muchas(26).map((t) => [t.nombre, 1]))).ok && TOPE_LOCAL.pruebas === 25 && TOPE_LOCAL.seg === 600 && TOPE_LOCAL.sinMedir === 60 && TOPE_LOCAL.factor === 1.5 && topeCorredorMs() === 900_000, "el tope: 25 pruebas y 10 min (60 s la que no está medida, ×1,5); 26 cortas no caben; el corredor se para a los 15 min");
+    // El estado de main (revisión de 31e2974: lo más estricto).
+    ok(EM([RM(9000, "success"), RM(9001, "failure")], { shaMain: s(9000) }).estado === "rojo" && EM([RM(9002, "success"), RM(9001, "failure")], { shaMain: s(9002) }).estado === "verde", "main: manda la corrida más nueva de main (la de id más alto), en cualquier orden");
+    ok(EM([RM(9002, "success"), RM(9003, null, { status: "in_progress" })], { shaMain: s(9002) }).estado === "duda", "main: la más nueva sin terminar → duda (aunque la anterior esté en verde)");
+    ok(EM([RM(9002, "success"), RM(9003, "failure", { event: "schedule" })], { shaMain: s(9002) }).estado === "rojo", "main: la programada más nueva en rojo → rojo");
+    ok(/intento 2/.test(EM([RM(9002, "success", { run_attempt: 2 })], { shaMain: s(9002) }).motivo) && EM([RM(9002, "success", { run_attempt: 2 })], { shaMain: s(9002) }).estado === "duda", "main: verde en el intento 2 → no es verde (solo vale el primero, AG)");
+    ok(EM([RM(9002, "success")], { shaMain: s(1) }).estado === "duda" && EM([RM(9002, "success")], { cubre: (x) => x === s(9002) }).estado === "verde" && EM([RM(9002, "success")]).estado === "duda", "main: la verde de otro commit → duda; de un ancestro que difiere solo en documentos (cubre) → verde");
+    ok(EM([RM(9003, "cancelled")], { shaMain: s(9003) }).estado === "duda" && EM([RM(9004, "failure", { event: "workflow_dispatch" }), RM(9005, "failure", { head_branch: "x" }), RM(9006, "failure", { repository: { full_name: "x/y" } })]).estado === "duda", "main: cancelada, o solo corridas de otro evento, rama o repo → duda");
+    // leerMain, con la API y git de mentira.
+    {
+      const sM = s(7), urls = [];
+      const gitF = (dif) => (...a) => (a[0] === "rev-parse" ? `${sM}\n` : a[0] === "merge-base" ? "" : a[0] === "diff" ? dif : "");
+      const apiF = (rs) => (u) => { urls.push(u); return { workflow_runs: rs }; };
+      let m = leerMain(REP, { api: apiF([RM(50, "success", { head_sha: sM })]), git: gitF("") });
+      ok(m.estado === "verde" && /[?&]branch=main(&|$)/.test(urls[0]) && !/status=|event=/.test(urls[0]), `leerMain: pide las corridas de main sin filtrar estado ni evento (${urls[0]}) y la verde de origin/main vale`);
+      m = leerMain(REP, { api: () => { throw new Error("sin red"); }, git: gitF("") });
+      ok(m.estado === "duda" && /no pude preguntar/.test(m.motivo), "leerMain: la API sin responder → duda (nunca verde)");
+      ok(leerMain(REP, { api: apiF([RM(50, "success", { head_sha: s(6) })]), git: gitF(`${D0}\0`) }).estado === "verde" && leerMain(REP, { api: apiF([RM(50, "success", { head_sha: s(6) })]), git: gitF("apps/web/app/x.tsx\0") }).estado === "duda", "leerMain: la verde de un ancestro de origin/main que difiere solo en documentos vale; si difiere en código, duda");
+    }
     // La parte directa (antes de --dirigida y --repaso) contra el abanico de la dirigida.
     const catD = catalogoDe(["pruebas/e2e/evt6c.cjs", "pruebas/e2e/adm7i.cjs", "pruebas/e2e/rec1j.cjs", "pruebas/e2e/com5g.cjs", "pruebas/alreves/alreves9vd.cjs"]);
     const busD = (a) => ({ "lib/eventos.ts": ["pruebas/e2e/evt6c.cjs"], "lib/arbol.cjs": ["pruebas/e2e/com5g.cjs", "pruebas/alreves/alreves9vd.cjs"], "guardianes/run.mjs": ["pruebas/e2e/adm7i.cjs"] })[a] ?? [];
@@ -1959,11 +2279,28 @@ async function casos() {
     R = recortarLocal(muchas(30), Object.fromEntries(muchas(30).map((t) => [t.nombre, 1])));
     ok(R.correr.length === 25 && R.soloCI.length === 5, "recortar: nunca más de 25 pruebas aquí");
     // El servidor de las pruebas locales y su base.
-    const raiz = "/r/t";
-    ok(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development" }, raiz }).ok, "el servidor de desarrollo de este árbol → vale");
-    ok(NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/otro/apps/web", nodeEnv: "development" }, raiz }), /no este árbol/), "el servidor de desarrollo de OTRA copia → FALTA (sus pruebas no dirían nada de este árbol)");
-    ok(NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "production" }, raiz }), /no es el servidor de desarrollo/) && NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: null }, raiz }), /no es el servidor de desarrollo/), "un build (servir.sh, next start) → FALTA");
-    ok(NO(evaluarServidor({ url: "u", proc: { ok: false, motivo: "nadie escucha en el puerto 3199" }, raiz }), /nadie escucha/), "nadie en el puerto → FALTA");
+    const raiz = "/r/t", DEV = ["next-server (v15.5.29)", "node ./node_modules/.bin/../next/dist/bin/next dev -p 3199"];
+    ok(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development", cadena: DEV }, raiz }).ok, "el servidor de desarrollo de este árbol → vale");
+    ok(NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/otro/apps/web", nodeEnv: "development", cadena: DEV }, raiz }), /no este árbol/), "el servidor de desarrollo de OTRA copia → FALTA (sus pruebas no dirían nada de este árbol)");
+    ok(NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "production", cadena: DEV }, raiz }), /no es el servidor de desarrollo/) && NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: null, cadena: DEV }, raiz }), /no es el servidor de desarrollo/), "un build (servir.sh, next start) → FALTA");
+    ok(NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development", cadena: ["next-server (v15)", "node next start -p 3199"] }, raiz }), /un build/) && NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development", cadena: ["node .next/standalone/server.js"] }, raiz }), /un build/)
+      && NO(evaluarServidor({ url: "u", proc: { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development", cadena: ["node otro.js"] }, raiz }), /ni el proceso 1 ni quien lo lanzó es «next dev»/), "su orden (o la de quien lo lanzó) tiene que ser «next dev»: «next start», standalone u otra cosa con NODE_ENV=development → FALTA");
+    ok(NO(evaluarServidor({ url: "u", proc: { ok: false, motivo: "nadie escucha en 127.0.0.1:3199" }, raiz }), /nadie escucha/), "nadie en el puerto → FALTA");
+    // servidorEn, con un /proc de mentira (como el de verdad: next-server escucha y lo lanzó «next dev»).
+    {
+      const tcp = (dir) => `  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n   0: ${dir}:0C7F 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 555 1 0000000000000000 100 0 0 10 0\n`;
+      const proc = (y = {}) => {
+        const a = { "/proc/net/tcp": tcp("0100007F"), "/proc/4892/cmdline": "next-server (v15.5.29)\0", "/proc/4892/status": "Name:\tnext-server\nPPid:\t28096\n", "/proc/4892/environ": "A=1\0NODE_ENV=development\0",
+          "/proc/28096/cmdline": "node\0./node_modules/.bin/../next/dist/bin/next\0dev\0-p\u00003199\0", "/proc/28096/status": "PPid:\t1\n", "/proc/1/cmdline": "init\0", "/proc/1/status": "PPid:\t0\n", ...(y.a ?? {}) };
+        const en = { "/proc/4892/fd/21": "socket:[555]", "/proc/4892/cwd": "/r/t/apps/web", ...(y.en ?? {}) }, di = { "/proc": ["1", "4892", "28096", "self"], "/proc/4892/fd": ["0", "21"], "/proc/28096/fd": [], "/proc/1/fd": [] };
+        const de = (o) => (f) => { if (!(f in o)) throw new Error(`no existe ${f}`); return o[f]; };
+        return { leer: de(a), enlace: de(en), lista: de(di) };
+      };
+      const v1 = servidorEn("http://127.0.0.1:3199", proc());
+      ok(v1.ok && v1.pid === 4892 && v1.cwd === "/r/t/apps/web" && v1.nodeEnv === "development" && evaluarServidor({ url: "u", proc: v1, raiz }).ok, `servidorEn: quien escucha en 127.0.0.1:3199, su carpeta, su NODE_ENV y su orden con la de quien lo lanzó (${(v1.cadena ?? []).join(" ← ")})`);
+      ok(!servidorEn("http://127.0.0.1:3299", proc()).ok && !servidorEn("http://127.0.0.1:3199", proc({ a: { "/proc/net/tcp": tcp("0A0B0C0D") } })).ok && !servidorEn("http://[::1]:3199", proc()).ok && !servidorEn("http://10.0.0.2:3199", proc()).ok, "servidorEn: nadie en ese puerto, o escucha en otra dirección (ni la de todas ni la de esta máquina) → no");
+      ok(servidorEn("http://localhost:3199", proc({ a: { "/proc/net/tcp": tcp("00000000") } })).ok && !evaluarServidor({ url: "u", proc: servidorEn("http://127.0.0.1:3199", proc({ a: { "/proc/28096/cmdline": "node\0next\0start\0" } })), raiz }).ok, "servidorEn: la dirección de todas vale; con «next start» detrás, evaluarServidor dice que no");
+    }
     const SAL = (y = {}) => ({ ok: true, base: { ok: true, migraciones: 217, ...y } });
     ok(evaluarSalud(SAL(), 217).ok && NO(evaluarSalud(SAL(), 218), /217 migraciones y HEAD trae 218/) && NO(evaluarSalud({ ok: false, base: { ok: false, error: "sin base" } }, 217), /no dice ok/) && NO(evaluarSalud(null, 217), /no respondió/) && NO(evaluarSalud(SAL(), 0), /no sé cuántas/), "la salud: ok y las migraciones de HEAD; si no, FALTA con el motivo");
     ok(contarMigraciones(["packages/db/migrations/0001_a.sql", "packages/db/migrations/x.txt", "packages/db/migrar.sh", "packages/db/migrations/sub/0002.sql"]) === 1, "las migraciones de HEAD: los .sql de packages/db/migrations");
@@ -1977,14 +2314,117 @@ async function casos() {
     ok(NO(evaluarLocal({ salida: RL1({ verdes: ["a1x"], completa: false }), codigo: 130, nombres: ["a1x", "b1x"] }), /completa:false/), "completa:false (no corrieron todas) → FALTA");
     ok(NO(evaluarLocal({ salida: "nada", codigo: 0, nombres: ["a1x"] }), /no dejó su línea RESULTADOS/) && NO(evaluarLocal({ salida: RL1(), codigo: 0, nombres: ["a1x", "b1x", "c1x"] }), /no es de las pruebas pedidas/) && NO(evaluarLocal({ salida: RL1(), codigo: 1, nombres: ["a1x", "b1x"] }), /salió con 1/), "sin la línea RESULTADOS, de otras pruebas, o un código de salida que no es 0 → FALTA");
     ok(evaluarLocal({ salida: RL1({ inestables: ["b1x"] }), codigo: 0, nombres: ["a1x", "b1x"] }).inestables.join() === "b1x", "las inestables se dicen (en verde)");
+    // El cableado, con un io de mentira (revisión de 31e2974): pruebasAqui, correrCorredor, deMain, planear, decidirSubida y vigilar.
+    const RLV = (y) => `RESULTADOS ${JSON.stringify({ pedidas: ["evt6c"], verdes: ["evt6c"], rojas: [], inestables: [], completa: true, ...y })}`;
+    const ioQ = (y = {}) => {
+      const reg = { correr: [], migr: [] };
+      return { reg, io: { url: () => "http://127.0.0.1:3199", puertos: () => true, raiz: () => raiz, servidor: () => ({ ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development", cadena: DEV }),
+        migraciones: (ref) => { reg.migr.push(ref); return ref === s(3) ? 217 : 216; }, salud: async () => SAL(), paginas: () => [], texto: () => "", calentar: async () => ({ hechas: 1, lentas: [], s: 1 }),
+        correr: async (o) => { reg.correr.push(o); return { codigo: 0, salida: RLV(), pasado: false }; }, eco: () => {}, ahora: () => 0, ...y } };
+    };
+    const PA = async (y = {}, pruebas = [{ nombre: "evt6c", carril: "e2e", archivo: PRU }]) => { const q = ioQ(y), dichas = []; const bien = await pruebasAqui({ pruebas, cabeza: s(3), archivos: [APP], decir: (z) => dichas.push(z), io: q.io }); return { bien, dichas, reg: q.reg }; };
+    const falto = (q, re) => !q.bien && q.dichas.some((z) => z.ok === false && /^FALTA/.test(z.linea) && re.test(z.linea)) && !q.dichas.some((z) => z.ok && /pruebas de lo tocado aquí \(/.test(z.linea));
+    let q = await PA();
+    ok(q.bien && q.reg.correr.length === 1 && q.reg.correr[0].nombres.join() === "evt6c" && q.reg.correr[0].url === "http://127.0.0.1:3199" && q.reg.correr[0].topeMs === topeCorredorMs() && q.reg.migr.join() === s(3) && q.dichas.every((z) => z.ok), "pruebasAqui: el servidor de este árbol, las migraciones de LA CABEZA, calentar y correr con el tope → CORRIÓ");
+    q = await PA({ servidor: () => ({ ok: true, pid: 9, cwd: "/otra/copia/apps/web", nodeEnv: "development", cadena: DEV }) });
+    ok(falto(q, /no este árbol/) && !q.reg.correr.length, "pruebasAqui: el servidor de OTRA copia → FALTA y no corre nada");
+    q = await PA({ salud: async () => SAL({ migraciones: 216 }) });
+    ok(falto(q, /216 migraciones y HEAD trae 217/) && !q.reg.correr.length, "pruebasAqui: la base del servidor con otras migraciones → FALTA y no corre nada");
+    q = await PA({ correr: async () => ({ codigo: 1, salida: RLV({ verdes: [], rojas: ["evt6c"] }), pasado: false }) });
+    ok(falto(q, /en rojo aquí: evt6c/), "pruebasAqui: RESULTADOS en rojo → FALTA (nunca CORRIÓ)");
+    q = await PA({ correr: async () => ({ codigo: 130, salida: RLV({ completa: false }), pasado: true }) });
+    ok(falto(q, /pasaron del tope/), "pruebasAqui: el corredor pasó del tope → FALTA (camino normal)");
+    q = await PA({}, []);
+    ok(falto(q, /ninguna que correr/) && !q.reg.correr.length && falto(await PA({}, [{ nombre: "", carril: "e2e" }]), /ninguna que correr/), "pruebasAqui: sin nombres (o un nombre vacío) → FALTA, nunca CORRIÓ");
+    q = await PA({ servidor: () => ({ ok: true, pid: 9, cwd: "/otra/copia/apps/web", nodeEnv: "development", cadena: DEV }) }, [{ nombre: "alrevesX", carril: "alreves", archivo: "pruebas/alreves/alrevesX.cjs" }]);
+    ok(falto(q, /no este árbol/), "pruebasAqui: el servidor y su base se miran SIEMPRE (también si solo corren al revés)");
+    {
+      const hijo = () => { const h = new EventEmitter(); h.stdout = new EventEmitter(); h.stderr = new EventEmitter(); h.kill = (sig) => { h.matado = sig; setImmediate(() => h.emit("close", null)); }; return h; };
+      let visto = null, h2 = null;
+      const r1 = await correrCorredor({ nombres: ["evt6c"], url: "http://127.0.0.1:3299", topeMs: 5000, eco: () => {}, lanzar: (cmd, args, o) => { visto = { args, env: o.env }; const h = hijo(); setImmediate(() => { h.stdout.emit("data", `${RLV()}\n`); h.emit("close", 0); }); return h; } });
+      ok(r1.codigo === 0 && !r1.pasado && /RESULTADOS/.test(r1.salida) && visto?.env?.PRUEBAS_URL === "http://127.0.0.1:3299" && visto.args.includes("--reintentar") && visto.args.includes("evt6c"), "correrCorredor: lanza pruebas/correr.mjs con --reintentar y PRUEBAS_URL del servidor");
+      const r2 = await correrCorredor({ nombres: ["evt6c"], url: "u", topeMs: 20, eco: () => {}, lanzar: () => (h2 = hijo()) });
+      ok(r2.pasado === true && h2?.matado === "SIGINT", "correrCorredor: al pasar del tope lo para (SIGINT) y lo dice (pasado)");
+    }
+    {
+      const m = await deMain({ show: (f) => (f === "scripts/ci/subir.mjs" ? 'export const marca = "de origin/main"; export const clases = () => ({});' : "") });
+      ok(m?.marca === "de origin/main" && (await deMain({ show: () => { throw new Error("no está"); } })) === null, "deMain: carga la herramienta de origin/main (su texto, nunca la de la cabeza); sin ella, null");
+    }
+    {
+      const ioP = (dm) => ({ head: () => s(3), diff: () => ({ archivos: [APP, PRU], renglones: rc, info: inf([APP, PRU]) }), catalogo: () => catalogoDe([PRU]), buscar: () => () => [PRU], esHead: () => false, validar: null, deMain: dm, duraciones: () => ({ evt6c: 20 }) });
+      const pl = (dm) => planear({ base: "origin/main", cabeza: "HEAD", mas: [], main: VERDE, io: ioP(dm) });
+      let p = await pl(async () => ({ clases, dirigida }));
+      ok(p.c.codigo && p.ex.pruebasAqui && p.d.pruebas.map((t) => t.nombre).join() === "evt6c" && p.local.ok, `planear: con la herramienta de origin/main que también la da por código → vía rápida de código (${p.c.noCodigo || "sí"})`);
+      p = await pl(async () => null);
+      ok(!p.c.codigo && !p.ex.pruebasAqui, "planear: sin la herramienta de origin/main → no «codigo»");
+      p = await pl(async () => ({ clases: () => { throw new Error("rota"); }, dirigida }));
+      ok(!p.c.codigo && /falló \(rota\)/.test(p.c.noCodigo), "planear: la herramienta de origin/main falla → no «codigo» (nunca se juzga con la de la cabeza)");
+      p = await pl(async () => { throw new Error("no carga"); });
+      ok(!p.c.codigo && !p.ex.pruebasAqui, "planear: deMain lanza → no «codigo»");
+    }
+    {
+      const pCod = { head: s(3), archivos: [APP, PRU], c: { clases: ["codigo"], soloDocumentos: false, noDiseno: "x", diseno: false }, d: { pruebas: [{ nombre: "evt6c", carril: "e2e", archivo: PRU }], errores: [], alrevesEntero: false },
+        local: { n: 1, seg: 30, lista: [{ nombre: "evt6c" }] }, ex: { locales: ["tipos", "guardianes", "textos"], corrida: "despues", pruebasAqui: true } };
+      const pDir = { ...pCod, c: { ...pCod.c, clases: [] }, ex: { locales: ["tipos", "guardianes", "textos"], corrida: "dirigida" } };
+      const DS = async (y = {}, ensayo = false) => {
+        const dichas = [], q = ioQ(y.pruebas ?? {}), limpios = [...(y.limpios ?? [])], ev = { n: 0 };
+        const io = { rama, decir: (l) => dichas.push(String(l)), base: () => y.base ?? [{ ok: true, linea: "CORRIÓ: a." }], main: async () => VERDE, planear: async () => y.p ?? pCod,
+          locales: async (ls) => ls.map((k) => ({ ok: y.rojo !== k, linea: `${y.rojo === k ? "FALTA" : "CORRIÓ"}: ${k}` })), limpio: () => (limpios.length ? limpios.shift() : true), pruebas: q.io,
+          evidencia: async () => { ev.n++; return y.ev ?? { hallada: null, cadena: null, motivos: [], motivosCadena: [] }; } };
+        const r = await decidirSubida({ io, ensayo }); return { r, dichas, corrio: q.reg.correr.length, ev: ev.n };
+      };
+      let d = await DS();
+      ok(d.r.empujar && d.r.falta === 0 && d.corrio === 1 && d.ev === 0, "decidirSubida: código con todo en verde → corre las pruebas de lo tocado aquí y empuja (sin pedir evidencia)");
+      d = await DS({}, true);
+      ok(!d.r.empujar && d.r.falta === 0 && d.corrio === 1, "decidirSubida: el ensayo no empuja nunca");
+      d = await DS({ rojo: "guardianes" });
+      ok(!d.r.empujar && d.corrio === 0 && d.dichas.some((l) => /^NO CORRIÓ: las pruebas de lo tocado/.test(l)) && d.r.falta >= 2, "decidirSubida: una comprobación local roja → las pruebas de lo tocado NO CORRIERON (cuenta como FALTA) y no se empuja");
+      d = await DS({ pruebas: { servidor: () => ({ ok: true, pid: 9, cwd: "/otra/copia/apps/web", nodeEnv: "development", cadena: DEV }) } });
+      ok(!d.r.empujar && d.r.falta >= 1 && d.dichas.some((l) => /^FALTA: pruebas de lo tocado: .*no este árbol/.test(l)), "decidirSubida: el servidor de otro árbol → FALTA y no se empuja");
+      d = await DS({ pruebas: { correr: async () => ({ codigo: 1, salida: RLV({ verdes: [], rojas: ["evt6c"] }), pasado: false }) } });
+      ok(!d.r.empujar && d.r.falta >= 1, "decidirSubida: RESULTADOS en rojo → no se empuja");
+      d = await DS({ limpios: [true, false] });
+      ok(!d.r.empujar && d.dichas.some((l) => /las pruebas de lo tocado dejaron el árbol cambiado/.test(l)), "decidirSubida: las pruebas dejan el árbol cambiado → FALTA y no se empuja");
+      d = await DS({ limpios: [false] });
+      ok(!d.r.empujar && d.corrio === 0 && d.dichas.some((l) => /las comprobaciones dejaron el árbol cambiado/.test(l)), "decidirSubida: las comprobaciones dejan el árbol cambiado → FALTA y no se empuja");
+      d = await DS({ base: [{ ok: false, linea: "FALTA: ponerse al día" }] });
+      ok(!d.r.empujar && d.corrio === 0, "decidirSubida: a. en rojo → no corre nada y no se empuja");
+      d = await DS({ p: pDir });
+      ok(!d.r.empujar && d.ev === 1 && d.corrio === 0 && d.dichas.some((l) => /^FALTA: evidencia del CI/.test(l)), "decidirSubida: camino normal sin evidencia del CI → no se empuja");
+      d = await DS({ p: pDir, ev: { hallada: { id: 77, event: "workflow_dispatch", head_sha: s(3) }, cadena: null, motivos: [], motivosCadena: [] } });
+      ok(d.r.empujar && d.ev === 1, "decidirSubida: camino normal con la corrida verde de este árbol → se empuja");
+    }
     // --vigilar.
-    const sh = s(10), RV = (id, y = {}) => ({ id, path: ".github/workflows/ci.yml", head_branch: "main", head_sha: sh, status: "completed", conclusion: "success", repository: { full_name: REP }, ...y, event: y.event ?? "push" });
+    const sh = s(10), RV = (id, y = {}) => ({ id, path: ".github/workflows/ci.yml", head_branch: "main", head_sha: sh, status: "completed", conclusion: "success", run_attempt: 1, repository: { full_name: REP }, ...y, event: y.event ?? "push" });
     ok(elegirCorridaDeMain([RV(9, { head_sha: s(11) }), RV(10, { event: "workflow_dispatch" }), RV(7), RV(8)], sh, REP)?.id === 8 && elegirCorridaDeMain([RV(5, { head_branch: "pruebas" }), RV(6, { path: ".github/workflows/otro.yml" })], sh, REP) === null, "--vigilar: la corrida de ci.yml del push a main de ESE commit (la más nueva); otra rama, otro evento u otro flujo no");
     const rojo = veredictoDeMain(RV(8, { conclusion: "failure" }), [{ name: "tipos · build · guardianes", conclusion: "failure" }, { name: "web · x", conclusion: "success" }, { name: "dispositivo · x", conclusion: "skipped" }]);
-    ok(veredictoDeMain(RV(8), [{ name: "a", conclusion: "success" }]).ok && !rojo.ok && /^ROJO: .*tipos · build · guardianes$/.test(rojo.linea) && rojo.rojos.length === 1 && !veredictoDeMain(RV(8, { conclusion: "cancelled" })).ok && !veredictoDeMain(RV(8, { status: "in_progress", conclusion: null })).ok, "--vigilar: verde solo con success (sale 0); roja, cancelada o sin terminar → 1, con los trabajos rojos");
+    ok(veredictoDeMain(RV(8), [{ name: "a", conclusion: "success" }]).ok && !rojo.ok && /^ROJO: .*tipos · build · guardianes$/.test(rojo.linea) && rojo.rojos.length === 1 && !veredictoDeMain(RV(8, { conclusion: "cancelled" })).ok && !veredictoDeMain(RV(8, { status: "in_progress", conclusion: null })).ok && !veredictoDeMain(RV(8, { status: "in_progress", conclusion: "success" })).ok, "--vigilar: verde solo con success (sale 0); roja, cancelada o sin terminar → 1, con los trabajos rojos");
+    ok(!veredictoDeMain(RV(8, { run_attempt: 2 })).ok && /NO VALE: .*intento 2/.test(veredictoDeMain(RV(8, { run_attempt: 2 })).linea) && /intento 1/.test(veredictoDeMain(RV(8)).linea), "--vigilar: dice el intento; verde en el intento 2 no es verde (AG)");
     const fa = fallosDelRegistro("2026-11-24T10:00:00.1Z ##[group]Run node pruebas/correr.mjs\n2026-11-24T10:00:00.2Z [36;1m  echo ✗ no[0m\n2026-11-24T10:00:01Z ✗ adm7i            12 ✓    30 s  · ASSERT x\n2026-11-24T10:00:02Z [guardianes] FALLÓ: algo\n2026-11-24T10:00:03Z ##[error]Process completed with exit code 1.");
     ok(fa.length === 3 && /^✗ adm7i/.test(fa[0]) && /FALLÓ/.test(fa[1]) && /^##\[error\]/.test(fa[2]) && fallosDelRegistro("2026-11-24T10:00:01Z a\n2026-11-24T10:00:02Z b").join() === "a,b", `--vigilar: de cada trabajo rojo, sus líneas ✗ y FALLÓ sin el guion que enseña GitHub (o, si no hay, sus últimas líneas útiles)`);
     ok(ordenVigilar(sh) === `vigila la corrida de main: node scripts/ci/subir.mjs --vigilar ${sh}`, "--subir termina con la orden exacta para vigilar la corrida de main (no la espera)");
+    {
+      const LARGO = [{ name: "punta a punta · todas las fases · 1/8", status: "completed", conclusion: "success" }];
+      const VG = async ({ lista = [RV(10)], estados = {}, main = [], trabajos = LARGO, anc = () => false } = {}) => {
+        const dichas = [], cola = Object.fromEntries(Object.entries(estados).map(([k, v]) => [k, [...v]]));
+        const io = { corridasDe: async () => lista, corridasMain: async () => main, corrida: async (id) => { const c = cola[id] ?? [lista.find((r) => r.id === Number(id)) ?? null]; return c.length > 1 ? c.shift() : c[0]; },
+          trabajos: async () => trabajos, registro: async () => "", esAncestro: anc, esperar: async () => {}, decir: (l) => dichas.push(String(l)) };
+        const v = await vigilar({ sha: sh, io, repo: REP, vueltas: { aparecer: 3, terminar: 10, reemplazo: 3, reemplazos: 3 } });
+        return { v, dichas };
+      };
+      let g = await VG({ lista: [RV(10, { status: "in_progress", conclusion: null })], estados: { 10: [RV(10, { status: "in_progress", conclusion: null }), RV(10)] } });
+      ok(g.v.ok && g.dichas.some((l) => /^VERDE: la corrida 10 .*intento 1/.test(l)), "--vigilar: espera a que la corrida TERMINE (sin terminar no hay veredicto) y dice el intento");
+      g = await VG({ lista: [RV(20, { head_sha: s(11), conclusion: "failure" }), RV(10)] });
+      ok(g.v.ok && g.dichas.some((l) => /^corrida 10 /.test(l)) && !g.dichas.some((l) => /^corrida 20 /.test(l)), "--vigilar: la corrida de ESE commit, no la última de main");
+      g = await VG({ lista: [RV(10, { run_attempt: 2 })] });
+      ok(!g.v.ok, "--vigilar: verde en el intento 2 → sale 1");
+      g = await VG({ lista: [RV(10, { conclusion: "cancelled" })], main: [RV(9, { head_sha: s(12) }), RV(11, { head_sha: s(12) })], estados: { 11: [RV(11, { head_sha: s(12) })] }, anc: (a, b) => a === sh && b === s(12) });
+      ok(g.v.ok && g.dichas.some((l) => /se canceló: reemplazada por 11 \(commit /.test(l)), "--vigilar: una corrida cancelada porque llegó otro push dice «reemplazada por X» y vigila la que cubre el commit");
+      g = await VG({ lista: [RV(10, { conclusion: "cancelled" })], main: [RV(11, { head_sha: s(12) })] });
+      ok(!g.v.ok && g.dichas.some((l) => /no encuentro la que la reemplazó/.test(l)), "--vigilar: cancelada sin otra que cubra el commit → sale 1");
+      g = await VG({ trabajos: [{ name: "punta a punta · todas las fases · 1/8", status: "completed", conclusion: "skipped" }, { name: "web · x", status: "completed", conclusion: "success" }] });
+      ok(g.v.ok && g.dichas.some((l) => /^AVISO: en esta corrida no corrieron los carriles largos/.test(l)) && !(await VG()).dichas.some((l) => /^AVISO/.test(l)), "--vigilar: avisa si no corrieron los carriles largos (un push de solo documentos)");
+    }
   }
   // La base.
   const b = (x) => comprobarBase({ limpio: true, mainEsAncestro: true, pruebasEsAncestro: true, ...x });
@@ -2036,7 +2476,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     else if (flag("--vigilar")) { const v = opt("--vigilar"); codigo = await cmdVigilar({ sha: v && !v.startsWith("--") ? v : null }); }
     else console.log("Uso: node scripts/ci/subir.mjs --plan [--base origin/main] [--cabeza <commit>] [--mas \"a b\"] [--sin-via-rapida] | --dirigida [--mas \"a b\"] [--sin-local] | --repaso <id-corrida-roja> [--mas \"a b\"] [--ensayo] [--sin-local] | --subir [--ensayo] [--sin-via-rapida] | --local [--base origin/main] [--mas \"a b\"] | --vigilar [<sha>] | --casos");
   } catch (e) {
-    console.log(`${e instanceof SinGithub ? "FALTA: GitHub no responde" : "FALTA: error"} · ${String(e?.message ?? e).split("\n")[0].slice(0, 300)} · no se subió nada`);
+    // Revisión de 31e2974 · Lo que no se hizo depende de la orden: --vigilar no sube nada (lo que se subió, subido está; la corrida no se sabe).
+    const queda = flag("--vigilar") ? "no sé cómo terminó la corrida de main: vuelve a vigilarla" : flag("--subir") ? "no se subió nada" : flag("--dirigida") || flag("--repaso") ? "mira en GitHub si se lanzó algo" : "no se hizo nada";
+    console.log(`${e instanceof SinGithub ? "FALTA: GitHub no responde" : "FALTA: error"} · ${String(e?.message ?? e).split("\n")[0].slice(0, 300)} · ${queda}`);
     codigo = 3;
   }
   process.exit(codigo);
