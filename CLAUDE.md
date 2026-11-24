@@ -98,8 +98,8 @@ condiciones» al fundador → confirmación completa + OK → `produccion` avanz
   CI: la herramienta decide (lista blanca + señales, con su lista y la de `main`; cualquier duda = camino normal), corre a la vez tipos + guardianes
   + textos (~1 min; sin build local: la app la construye el servidor y, si no construye, el sandbox sigue con lo de antes) y, si es código, las
   pruebas de lo tocado aquí (tope ~10 min; si son más, camino normal); empuja; la punta a punta entera y «al revés» corren después, en la corrida
-  de `main`. Con `main` en rojo no sube código por esta vía: primero se arregla. (El código entra por esta vía cuando la herramienta con AV esté
-  subida; hasta entonces, camino normal.)
+  de `main`. Con `main` en rojo no sube código por esta vía: primero se arregla. **Hoy la parte de código está APAGADA** (AV, 24 nov tarde:
+  no se pudo hacer segura con alcance útil): el código va por el camino normal; la vía rápida es solo de diseño.
 - **Ajustes del fundador (AN):** llegan de uno en uno o en tanda, con captura. Se hacen viéndolos en vivo (servidor de desarrollo), el fundador
   recibe la captura real en minutos y suben por la vía rápida; si llega otro mientras uno sube, van juntos. Las pruebas, el guardián y el
   «al revés» de un retoque visual se escriben una vez, al cierre de la ronda; un fallo real (no de gusto) deja su guardián en el momento. Una

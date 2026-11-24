@@ -6546,6 +6546,13 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Servido el 24 nov (8c3bd59) y comprobado sobre el sandbox:** el pie con 44 px en Negocios, Comunidad y Eventos; «Arro» trae platos; «empanda»
   entiende Empanadas («zzzqqq» no trae nada, como debe). Qué mirar en el teléfono: Buscar «Arro» y «empanda»; el final de Negocios.
 
+## Lo que quedó del proceso nuevo (24 nov, tarde)
+- **Arriba:** main otra vez en verde (f669372, corrida completa con los 9 dispositivos); el repaso corto tras una roja (AU) subido en b61527a y
+  visto en real (cada parte deja su línea RESULTADOS). **Apagada:** la vía rápida de código (AV): Fable la revisó dos veces y siempre se colaba
+  código sensible (una página nueva que lee teléfonos y correos, un permiso cambiado en una página); con reglas seguras no habría servido para
+  ninguno de los últimos 40 cambios. Se quedan el bloqueo con main en rojo, la vigilancia de la corrida de main y las pruebas de lo tocado
+  antes de cada revisión. **En marcha:** el CI más rápido (reparto por tiempo, 8 partes, sin repetir «al revés», «al revés» en 6). Qué mirar: nada.
+
 ## `main` en rojo desde las 11:53 del 24 nov y nadie lo miró (arreglo en curso; Opus)
 - **Qué pasó:** la corrida de `main` corre DESPUÉS de cada subida (vía rápida o no) y nadie la estaba mirando. 11:53 (tras «Novedades después de
   Resumen»): `vec9m` roja (arreglada en el paquete siguiente). 15:57 (8c3bd59, buscador + pie): rojas en los 9 dispositivos y en una parte.
