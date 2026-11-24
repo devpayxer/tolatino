@@ -15,6 +15,11 @@ import { fileURLToPath } from "node:url";
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 export const SALIDA = "infra/pruebas/vista-previa/pausa.html";
+/* 24 nov · La de «arrancando»: lo que nginx sirve (503) mientras next dev no contesta (acaba de arrancar o de reiniciarse). Antes salía la de
+   mantenimiento del sitio («Volvemos en unos minutos») y el fundador no sabía si estaba roto. Se recarga sola cada 8 s (meta refresh, sin JavaScript). */
+export const SALIDA_ARRANCANDO = "infra/pruebas/vista-previa/arrancando.html";
+const ES_ARR = "La vista previa está arrancando con el último cambio. Esta página se recarga sola en unos segundos.";
+const EN_ARR = "The preview is starting with the latest change. This page reloads itself in a few seconds.";
 export const NGINX = "infra/pruebas/nginx-pruebas.conf";
 const ES = "La vista previa está en pausa: este cambio trae cambios de base y se ve en el sandbox normal.";
 const EN = "The preview is paused: this change brings database changes and can be seen on the regular sandbox.";
@@ -26,7 +31,7 @@ function tokens() {
 }
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export function pagina() {
+export function pagina(arrancando = false) {
   const tok = tokens();
   const simbolo = (/const SIMBOLO = "([^"]+)"/.exec(leer("packages/ui/src/core/Wordmark.tsx")) ?? [])[1];
   if (!simbolo) throw new Error("falta el símbolo de Wordmark.tsx");
@@ -35,7 +40,7 @@ export function pagina() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex">${arrancando ? `\n<meta http-equiv="refresh" content="8">` : ""}
 <title>To'Latino · vista previa</title>
 <style>
 :root{--tl-ink:${tok("tl-ink")};--tl-paper:${tok("tl-paper")};--tl-brand:${tok("tl-brand")};--tl-line:${tok("tl-line")};--font-display:${tok("font-display")};--font-body:${tok("font-body")}}
@@ -51,8 +56,8 @@ p[lang=en]{font-size:16px;font-weight:500;padding-top:16px;border-top:1px solid 
 <body>
 <main>
 <span class="marca" role="img" aria-label="To'Latino"><svg width="32" height="32" viewBox="0 0 482 482" aria-hidden="true"><path fill="${tok("tl-brand")}" d="${simbolo}"/></svg><span>To&rsquo;</span><b>Latino</b></span>
-<p>${esc(ES)}</p>
-<p lang="en">${esc(EN)}</p>
+<p>${esc(arrancando ? ES_ARR : ES)}</p>
+<p lang="en">${esc(arrancando ? EN_ARR : EN)}</p>
 </main>
 </body>
 </html>
@@ -78,13 +83,15 @@ export function marca() {
 export const lineaNginx = () => `        sub_filter '</body>' '${marca()}</body>';`;
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const html = pagina(), f = join(RAIZ, SALIDA);
+  const html = pagina(), f = join(RAIZ, SALIDA), htmlA = pagina(true), fA = join(RAIZ, SALIDA_ARRANCANDO);
   if (process.argv.includes("--revisar")) {
     let mal = 0, actual = "";
     try { actual = readFileSync(f, "utf8"); } catch { /* no existe */ }
     if (actual !== html) { console.error(`✗ ${SALIDA} no es la que sale del sistema de diseño: node infra/pruebas/vista-previa/pagina.mjs`); mal = 1; }
+    let actualA = ""; try { actualA = readFileSync(fA, "utf8"); } catch { /* no existe */ }
+    if (actualA !== htmlA) { console.error(`✗ ${SALIDA_ARRANCANDO} no es la que sale del sistema de diseño: node infra/pruebas/vista-previa/pagina.mjs`); mal = 1; }
     if (!leer(NGINX).split("\n").includes(lineaNginx())) { console.error(`✗ ${NGINX} no lleva la marca «VISTA PREVIA» que sale de la pieza Tag (línea esperada:\n${lineaNginx()})`); mal = 1; }
     if (!mal) console.log(`✓ ${SALIDA} y la marca de nginx al día`);
     process.exit(mal);
-  } else { writeFileSync(f, html); console.log(`✓ ${SALIDA}`); console.log(`línea de nginx:\n${lineaNginx()}`); }
+  } else { writeFileSync(f, html); writeFileSync(fA, htmlA); console.log(`✓ ${SALIDA} · ${SALIDA_ARRANCANDO}`); console.log(`línea de nginx:\n${lineaNginx()}`); }
 }

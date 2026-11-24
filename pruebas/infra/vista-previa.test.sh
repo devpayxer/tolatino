@@ -94,7 +94,7 @@ echo "vista previa · nginx del sandbox:"
 if command -v nginx >/dev/null && command -v python3 >/dev/null; then
   PN=$((20000 + RANDOM % 15000)); PV=$((PN + 1)); PA=$((PN + 2)); PP=$((PN + 3))
   mkdir -p "$T/ng/tmp" "$T/ng/mant" "$T/ng/www" "$T/ng/control"
-  cp infra/comun/mantenimiento/index.html "$T/ng/mant/index.html"; cp infra/pruebas/vista-previa/pausa.html "$T/ng/www/pausa.html"
+  cp infra/comun/mantenimiento/index.html "$T/ng/mant/index.html"; cp infra/pruebas/vista-previa/pausa.html "$T/ng/www/pausa.html"; cp infra/pruebas/vista-previa/arrancando.html "$T/ng/www/arrancando.html"
   sed -e "s/listen 80 default_server;/listen 127.0.0.1:$PN;/" -e '/listen \[::\]:80 default_server;/d' -e "s/listen 8081;/listen 127.0.0.1:$PV;/" -e '/listen \[::\]:8081;/d' \
       -e "s#127.0.0.1:3010#127.0.0.1:$PA#g" -e "s#127.0.0.1:3902#127.0.0.1:$PA#g" -e "s#http://127.0.0.1:80;#http://127.0.0.1:$PN;#g" \
       -e "s#root /var/www/mantenimiento;#root $T/ng/mant;#" -e "s#root /var/www/vista;#root $T/ng/www;#" -e "s#/var/lib/tolatino/vista/control/#$T/ng/control/#g" \
@@ -115,7 +115,7 @@ EOF
     NG=1
     pide() { curl -s -D "$T/cab" -o "$T/cuerpo" -w '%{http_code}' "http://127.0.0.1:$PV$1"; }
     for _ in $(seq 1 50); do curl -s -o /dev/null "http://127.0.0.1:$PV/" && break; sleep 0.1; done
-    ok "next dev no contesta: la página de mantenimiento (503)" "$(pide /negocios):$(grep -c 'Volvemos' "$T/cuerpo")" "503:1"
+    ok "next dev no contesta: la página «arrancando» (503), que se recarga sola, y no la de mantenimiento" "$(pide /negocios):$(grep -c 'La vista previa está arrancando' "$T/cuerpo"):$(grep -c 'http-equiv="refresh"' "$T/cuerpo"):$(grep -c 'Volvemos' "$T/cuerpo")" "503:1:1:0"
     # Una «app» que contesta HTML (con </body>), y en /n/x.jpg una «foto» (hace de almacén de medios a través del sitio del puerto 80).
     cat > "$T/app.py" <<'EOF'
 import http.server, sys

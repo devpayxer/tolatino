@@ -18,6 +18,7 @@ ENC=$(sed -n 's/^VISTA_ENCENDIDA=\([01]\)$/\1/p' "$CONF" | tail -1)
 install -d -m 0755 -o 1000 -g 1000 "$V" "$V/control"
 install -d -m 0755 /var/www/vista
 install -m 0644 "$REPO/infra/pruebas/vista-previa/pausa.html" /var/www/vista/pausa.html || log "no se pudo instalar la página de pausa"
+install -m 0644 "$REPO/infra/pruebas/vista-previa/arrancando.html" /var/www/vista/arrancando.html || log "no se pudo instalar la página de arranque"
 [ -f "$ENV_VISTA" ] || ( umask 077; echo "VISTA_DB_PASSWORD=$(openssl rand -hex 24)" > "$ENV_VISTA" )
 chmod 600 "$ENV_VISTA"
 CV=("${COMPOSE[@]}" --env-file "$ENV_VISTA" --profile vista)

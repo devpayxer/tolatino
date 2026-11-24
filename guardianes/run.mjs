@@ -10971,7 +10971,7 @@ const guardianes = {
       for (const [re, que] of [[/\n    add_header X-Robots-Tag "noindex, nofollow" always;\n/, "noindex"], [/location \^~ \/api\/interno\/ \{ return 404; \}/, "/api/interno cerrado"],
         [/location \^~ \/medios\/privado\/ \{ return 404; \}/, "/medios/privado cerrado"], [/location ~\* \\\.map\$ \{ return 404; \}/, "los .map cerrados"],
         [/if \(-f \/var\/lib\/tolatino\/vista\/control\/pausa\) \{ return 503; \}/, "la pausa (503)"], [/if \(-f \/var\/lib\/tolatino\/vista\/control\/apagada\) \{ return 404; \}/, "apagada (404)"],
-        [/error_page 503 \/vista-pausa\.html;/, "la página de pausa"], [/proxy_pass http:\/\/127\.0\.0\.1:3010;/, "la vista previa solo por 127.0.0.1:3010"], [/server_tokens off;/, "server_tokens off"]])
+        [/error_page 503 \/vista-pausa\.html;/, "la página de pausa"], [/error_page 502 504 =503 \/vista-arrancando\.html;/, "la página «arrancando» cuando next dev no contesta (no la de mantenimiento)"], [/proxy_pass http:\/\/127\.0\.0\.1:3010;/, "la vista previa solo por 127.0.0.1:3010"], [/server_tokens off;/, "server_tokens off"]])
         if (!re.test(sv)) falla(G, N, 0, `el sitio de la vista previa: falta ${que}`);
       const principal = n.slice(0, n.indexOf("\nserver {\n    listen 8081;"));
       for (const x of principal.match(/^\s*(auth_basic[^;]*|allow [^;]*|deny [^;]*|satisfy [^;]*);/gm) ?? []) if (!/deny all/.test(x) && !sv.includes(x.trim())) falla(G, N, 0, `la vista previa no puede ser más abierta que el sandbox: falta «${x.trim()}»`);

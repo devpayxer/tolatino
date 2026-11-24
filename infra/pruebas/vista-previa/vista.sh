@@ -142,6 +142,8 @@ vuelta() {
     git -C "$REPO" reset -q --hard "$nuevo" && git -C "$REPO" clean -qfd || { log "reset falló"; return 0; }
     echo "$nuevo" > "$COMMIT_F"
     log "al día con $RAMA: ${nuevo:0:7}"
+    # 24 nov · Con un cambio nuevo, las pantallas principales se vuelven a compilar ANTES de que alguien las pida (si next dev sigue vivo; si no, lo hace al arrancar).
+    if dev_vivo; then calentar & fi
   fi
   # 3) Dependencias solo si cambió el lockfile.
   if [ "$(cat "$INSTALADO_F" 2>/dev/null)" != "$(sha256sum "$REPO/pnpm-lock.yaml" 2>/dev/null | cut -d' ' -f1)" ]; then
@@ -149,7 +151,11 @@ vuelta() {
     instalar_deps || return 0
   fi
   # 4) next dev arriba (recarga solo los archivos que cambian).
-  dev_vivo || arrancar_dev
+  if ! dev_vivo; then
+    # 24 nov · Si había un next dev y ya no está, queda dicho (con la última línea de su registro): un reinicio que nadie pidió se ve en /estado/vista.txt.
+    [ -f "$PID_F" ] && log "next dev ya no estaba vivo (se vuelve a arrancar): $(tail -n 1 "$CONTROL/dev.log" 2>/dev/null | cut -c1-160)"
+    arrancar_dev
+  fi
 }
 
 estado() {
