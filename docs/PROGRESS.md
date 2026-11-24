@@ -20,6 +20,11 @@ _Actualizado: 24 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 21 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **24 nov (20:50 UTC) · `main` = `pruebas` = 80181b0, sandbox comprobado y corrida de `main` en verde (45480560359, 24,5 min).** Subido hoy
+  después del arreglo de `main`: el repaso corto tras una roja (AU, b61527a), la vía rápida de código APAGADA (AV, b7f2c2d; `main` verde
+  45472900060) y el CI más rápido (80181b0: dirigida en 8 partes por tiempo, sin repetir «al revés», «al revés» en 6 por tiempo; corrida
+  completa en la rama 45475257746 verde). **En marcha:** reparto de la punta a punta rebalanceado (c68a92a) con su confirmación en la rama;
+  sube solo si sale verde. **Sigue:** medir la primera dirigida con el CI nuevo; tarea 195 (lo construible de LAUNCH).
 - **24 nov (17:15 UTC) · `main` = `pruebas` = 8c3bd59 servido, pero la corrida de `main` en rojo** (CI 45431535443, y ya 45388380005 a las 11:53;
   nadie la miraba): contraste del texto claro del pie (axe), captura del Hoy del Super Admin (la auditoría que escriben 0217/0218) y `fic9cab`
   dependiente del orden («Populares»). Arreglos en la rama (7c0b4c2, cae03ec), el repaso apartado (fbe0ebd) y corrida completa 45443313213 en

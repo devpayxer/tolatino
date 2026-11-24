@@ -6551,7 +6551,12 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   visto en real (cada parte deja su línea RESULTADOS). **Apagada:** la vía rápida de código (AV): Fable la revisó dos veces y siempre se colaba
   código sensible (una página nueva que lee teléfonos y correos, un permiso cambiado en una página); con reglas seguras no habría servido para
   ninguno de los últimos 40 cambios. Se quedan el bloqueo con main en rojo, la vigilancia de la corrida de main y las pruebas de lo tocado
-  antes de cada revisión. **En marcha:** el CI más rápido (reparto por tiempo, 8 partes, sin repetir «al revés», «al revés» en 6). Qué mirar: nada.
+  antes de cada revisión. **Subido (80181b0, 24 nov 20:20 UTC):** el CI más rápido: la dirigida se reparte por tiempo en 8 partes, sin repetir
+  «al revés», y «al revés» va en 6 partes por tiempo. Medido en GitHub: corrida completa en la rama 26,8 min y la de `main` 24,5 (las dos
+  compartiendo máquinas con otra corrida); cada parte de «al revés» tarda ahora 6–10 min (antes la más larga 15–16). Lo que manda ahora es
+  «todas las fases» (13–18 min por parte): el reparto guardado era del 22 nov y la parte más larga iba 12 % sobre la media. **En marcha:**
+  el reparto rebalanceado con lo medido hoy (c68a92a, 8 partes de ~13 min de pruebas cada una), con su confirmación (dos veces seguidas +
+  barajada) en la rama; si sale en verde sube solo. La primera dirigida que llegue dirá el tiempo real de la grande y la chica. Qué mirar: nada.
 
 ## `main` en rojo desde las 11:53 del 24 nov y nadie lo miró (arreglo en curso; Opus)
 - **Qué pasó:** la corrida de `main` corre DESPUÉS de cada subida (vía rápida o no) y nadie la estaba mirando. 11:53 (tras «Novedades después de
