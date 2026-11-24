@@ -6,7 +6,7 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { catCiudad, catEjemplo, catHorario, catPortada, catPortadaFabrica, filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, limiteCambiar, modCiudad, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, subFusionar, subMover, subNombre, subSeparar, topeCargoDealer } from "./acciones-catalogo";
+import { catCiudad, catEjemplo, catHorario, catMosaico, catMosaicoOriginal, catPortada, catPortadaFabrica, filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, limiteCambiar, modCiudad, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, subFusionar, subMover, subNombre, subSeparar, topeCargoDealer } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar, type NotaPara } from "./Colas";
 import { useAhora } from "@/lib/ahora";
@@ -25,6 +25,8 @@ export type DatosCatalogo = {
   tab: string; puede: boolean;
   cats?: { id: string; es: string; icon: string; op_kind: string | null; line: string | null; subs: number; off: number; negocios: number; pro: number; filtros: number; filtros_off: number }[];
   cat?: { id: string; es: string; en: string; icon: string; op_kind: string | null; line: { es: string; en: string } | null; title: string | null; capitulos: number; slug: string; hero_fab: string | null; hero_admin: string | null;
+    // 0217 · Mosaicos de la página: la foto original (fab), la del equipo que se ve (equipo) y si tiene una puesta (puesta: «Volver a la original»).
+    mosaicos: { key: string; es: string; en: string; donde: Bi; fab: string | null; equipo: string | null; puesta: boolean }[];
     subs: { id: string; es: string; en: string; status: string; n: number; equipo: boolean; reason: string | null; into_id: string | null; into_es: string | null }[];
     negocios: { id: string; name: string; plan: string; verified: boolean; cover: string | null }[]; rapidos: string[]; historial: Hist;
     // 9n · activa por ciudad, «Publica tu negocio» (plantilla de horario y ejemplos) y las categorías a donde se puede mover una subcategoría
@@ -53,6 +55,7 @@ const VERBO = (E: EF): Record<string, string> => ({
   "catalogo.modulo.ciudad_apagar": E("apagó el módulo en una ciudad", "turned off the module in a city"), "catalogo.modulo.ciudad_encender": E("encendió el módulo en una ciudad", "turned on the module in a city"),
   "catalogo.cat.horario": E("cambió la plantilla de horario", "changed the hours template"), "catalogo.cat.ejemplo": E("cambió un ejemplo de Publica tu negocio", "changed a List your business example"),
   "catalogo.cat.portada": E("cambió la portada de la página", "changed the page cover photo"), "catalogo.cat.portada_fabrica": E("volvió a la portada de fábrica", "went back to the default cover photo"),
+  "catalogo.cat.mosaico": E("cambió la foto de un mosaico", "changed a tile photo"), "catalogo.cat.mosaico_original": E("volvió a la foto original de un mosaico", "went back to a tile’s original photo"),
   "config.cambiar": E("cambió un límite del plan", "changed a plan limit"),
   "catalogo.filtro.apagar": E("apagó un filtro", "turned off a filter"), "catalogo.filtro.encender": E("encendió un filtro", "turned on a filter"), "autos.cargo.tope": E("cambió el tope del cargo del dealer", "changed the dealer fee cap"),
 });
@@ -69,11 +72,14 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
   // Portada de la página de una categoría: la foto elegida (ya subida y revisada, todavía sin poner) y si está subiendo.
   const fotoIn = useRef<HTMLInputElement>(null);
   const [nueva, setNueva] = useState<{ id: string; url: string } | null>(null), [sube, setSube] = useState(false);
+  // 0217 · Mosaicos de la página: para qué mosaico se eligió la foto, la foto nueva (subida y revisada, sin poner) y cuál está subiendo.
+  const mosIn = useRef<HTMLInputElement>(null), mosPara = useRef<string | null>(null);
+  const [nuevaMos, setNuevaMos] = useState<{ key: string; id: string; url: string } | null>(null), [subeMos, setSubeMos] = useState<string | null>(null);
   const [q, setQ] = useState(d.sin?.q ?? "");
   // 9n · La plantilla de horario que se está editando (null = la guardada) y el día abierto.
   const [hor, setHor] = useState<DiaP[] | null>(null), [diaAb, setDiaAb] = useState(-1);
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } router.push(`${path}${u.size ? `?${u}` : ""}`, { scroll: false }); };
-  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setHor(null); setDiaAb(-1); setNueva(null); router.refresh(); };
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setHor(null); setDiaAb(-1); setNueva(null); setNuevaMos(null); router.refresh(); };
   const sinPermiso = () => setToast(E("Tu rol no edita el catálogo.", "Your role can’t edit the catalog."));
   const nNeg = (n: number) => `${n} ${n === 1 ? E("negocio", "business") : E("negocios", "businesses")}`;
   // 9n · Una ciudad con su interruptor (categoría o módulo activos por ciudad): apagar dice a cuántos negocios afecta y pide motivo.
@@ -98,6 +104,16 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
     const r = await subirFoto(f);
     setSube(false);
     if (r.ok && r.id && r.url) setNueva({ id: r.id, url: r.url });
+    else if (!r.estado) setToast(r.mensaje ? E(r.mensaje.es, r.mensaje.en) : E("No se pudo subir la foto. Prueba otra vez.", "The photo could not be uploaded. Try again."));
+  };
+  // La foto de un mosaico sube por la misma ruta (misma revisión); si queda en revisión o se rechaza, AvisoFoto lo dice y no hay id.
+  const elegirMosaico = async (f: File | undefined) => {
+    const key = mosPara.current;
+    if (!f || !key || subeMos) return;
+    setSubeMos(key);
+    const r = await subirFoto(f);
+    setSubeMos(null);
+    if (r.ok && r.id && r.url) setNuevaMos({ key, id: r.id, url: r.url });
     else if (!r.estado) setToast(r.mensaje ? E(r.mensaje.es, r.mensaje.en) : E("No se pudo subir la foto. Prueba otra vez.", "The photo could not be uploaded. Try again."));
   };
   const run = (f: () => Promise<ResAdm>) => start(async () => { const r = await f(); if (r.ok) hecho(r); else setToast(r.mensaje); });
@@ -166,7 +182,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
             (encender, m) => catCiudad(c.id, x.id, encender, m))) }]} />
         {c.title ? <>
           <PanelBloques bloques={[{ type: "group", k: E("PORTADA DE LA PÁGINA", "PAGE COVER PHOTO") },
-            { type: "note", tone: "info", icon: "image", t: E(`Es la foto grande de arriba en la página de ${c.es} (/c/${c.slug}). Se ve al momento en todas las ciudades. Elige una foto horizontal: se recorta al centro. La foto pasa por la misma revisión de las fotos públicas. Los mosaicos de la página no se cambian desde aquí.`, `It is the large photo at the top of the ${cN} page (/c/${c.slug}). It shows right away in every city. Pick a wide photo: it is cropped to the center. The photo goes through the same review as any public photo. The page tiles can’t be changed from here.`) },
+            { type: "note", tone: "info", icon: "image", t: E(`Es la foto grande de arriba en la página de ${c.es} (/c/${c.slug}). Se ve al momento en todas las ciudades. Elige una foto horizontal: se recorta al centro. La foto pasa por la misma revisión de las fotos públicas. Los mosaicos se cambian más abajo, en «Mosaicos de la página».`, `It is the large photo at the top of the ${cN} page (/c/${c.slug}). It shows right away in every city. Pick a wide photo: it is cropped to the center. The photo goes through the same review as any public photo. The tiles are changed below, in “Page tiles”.`) },
             { type: "photos", cols: desk ? 4 : 2, items: [
               ...(nueva ? [{ key: "nueva", bg: `url("${nueva.url}")`, on: true, tag: E("NUEVA", "NEW") }] : []),
               ...((c.hero_admin ?? c.hero_fab) ? [{ key: "actual", bg: `url("${c.hero_admin ?? c.hero_fab}")`, tag: c.hero_admin ? E("ACTUAL · DEL EQUIPO", "CURRENT · TEAM") : E("ACTUAL · DE FÁBRICA", "CURRENT · DEFAULT") }] : []),
@@ -180,6 +196,26 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
             { type: "acts", items: [{ l: E("Ver la página de la categoría", "View the category page"), icon: "search", onClick: () => window.open(`/c/${c.slug}`, "_blank") }] },
           ].filter(Boolean) as Bloque[]} />
           <input ref={fotoIn} type="file" accept="image/*" hidden aria-label={E("Elegir la foto de portada", "Choose the cover photo")} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void elegirPortada(f); }} />
+          {c.mosaicos.length ? <>
+            <PanelBloques bloques={[{ type: "group", k: `${E("MOSAICOS DE LA PÁGINA", "PAGE TILES")} · ${c.mosaicos.length}` },
+              { type: "note", tone: "info", icon: "image", t: E(`Son las fotos de cada subcategoría en la página de ${c.es}: las filas de fotos y los capítulos. Se ven al momento en todas las ciudades. Elige una foto cuadrada: se recorta al centro. Pasa por la misma revisión de las fotos públicas. «Volver a la original» devuelve la foto de fábrica; un mosaico sin foto sale en gris.`, `These are the photos of each subcategory on the ${cN} page: the photo rows and the chapters. They show right away in every city. Pick a square photo: it is cropped to the center. It goes through the same review as any public photo. “Go back to the original” brings back the default photo; a tile with no photo shows in gray.`) },
+            ]} />
+            {[{ k: E("SIN FOTO", "NO PHOTO"), items: c.mosaicos.filter((x) => !x.equipo && !x.fab) }, { k: E("CON FOTO", "WITH A PHOTO"), items: c.mosaicos.filter((x) => x.equipo || x.fab) }].filter((g) => g.items.length).map((g) =>
+              <PanelBloques key={g.k} bloques={[{ type: "rows", k: `${g.k} · ${g.items.length}`, cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: g.items.map((x) => {
+                const nv = nuevaMos?.key === x.key ? nuevaMos : null, actual = nv?.url ?? x.equipo ?? x.fab, xN = en ? x.en || x.es : x.es;
+                return {
+                  key: x.key, t: xN, img: actual ? `url("${actual}")` : undefined, imgIni: actual ? undefined : "\u00a0",
+                  s: `${en ? x.donde.en || x.donde.es : x.donde.es} · ${nv ? E("foto nueva, sin poner todavía", "new photo, not set yet") : x.equipo ? E("foto del equipo", "team photo") : x.fab ? E("foto original", "original photo") : E("sale en gris", "shows in gray")}`,
+                  tag: nv ? E("NUEVA", "NEW") : x.equipo ? E("DEL EQUIPO", "TEAM") : x.fab ? null : E("SIN FOTO", "NO PHOTO"), tone: nv || x.equipo ? "action" : "danger",
+                  acts: nv && d.puede ? [
+                    { l: E("Poner en el mosaico", "Use on the tile"), v: "action", icon: "check", off: pend, onClick: () => setConf({ titulo: E(`Mosaico «${x.es}» de ${c.es}`, `“${xN}” tile of ${cN}`), sub: E("Se ve al momento en la página pública de la categoría, en todas las ciudades. La foto de antes no se borra: «Volver a la original» devuelve la original.", "It shows right away on the public category page, in every city. The old photo isn’t deleted: “Go back to the original” brings back the original."), cta: E("Poner en el mosaico", "Use on the tile"), nota: "interna", hacer: (m) => catMosaico(c.id, x.key, nv.id, m) }) },
+                    { l: E("Descartar", "Discard"), icon: "close", onClick: () => setNuevaMos(null) }]
+                  : [{ l: subeMos === x.key ? E("Subiendo…", "Uploading…") : E("Cambiar", "Change"), icon: "image", off: !!subeMos, onClick: !d.puede ? sinPermiso : () => { mosPara.current = x.key; mosIn.current?.click(); } },
+                    ...(d.puede && x.puesta ? [{ l: E("Volver a la original", "Go back to the original"), icon: "chevronLeft", off: pend, onClick: () => setConf({ titulo: E(`¿Por qué vuelve la foto original de «${x.es}» en ${c.es}?`, `Why is the original photo of “${xN}” coming back in ${cN}?`), sub: x.fab ? E("La página pública vuelve a la foto original al momento. La foto del equipo no se borra.", "The public page goes back to the original photo right away. The team photo isn’t deleted.") : E("Este mosaico no tiene foto original: vuelve a salir en gris. La foto del equipo no se borra.", "This tile has no original photo: it shows in gray again. The team photo isn’t deleted."), cta: E("Volver a la original", "Go back to the original"), nota: "interna", hacer: (m) => catMosaicoOriginal(c.id, x.key, m) }) }] : [])],
+                };
+              }) }]} />)}
+            <input ref={mosIn} type="file" accept="image/*" hidden aria-label={E("Elegir la foto del mosaico", "Choose the tile photo")} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void elegirMosaico(f); }} />
+          </> : null}
         </> : null}
         <PanelBloques bloques={[{ type: "group", k: E("PUBLICA TU NEGOCIO", "LIST YOUR BUSINESS") }]} />
         {H ? <>

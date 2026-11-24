@@ -10,7 +10,7 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { Consulta, FilaPat, PatPanel } from "@/lib/patrocinio";
 import { TarjetaAlta } from "../(app)/c/[slug]/Patrocinados";
-import { patAvisame, patComprar, patPuestos, patRenovarSolo, patTerminar } from "./acciones-patrocinio";
+import { patAvisame, patComprar, patPuestos, patPuestosRenovar, patRenovarSolo, patTerminar } from "./acciones-patrocinio";
 import type { Ctx } from "./Panel";
 import type { Res } from "./acciones";
 import { uuid } from "@/lib/uuid";
@@ -105,7 +105,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
       const otra = !(sig && vivo), kk = v.dur === "month" ? "month" : "week";
       out.push({ type: "acts", items: [
         ...(otra ? [{ l: kk === "week" ? E2(`Renovar otra semana · ${$c(P.week)}`, `Renew another week · ${$c(P.week)}`) : E2(`Renovar otro mes · ${$c(P.month)}`, `Renew another month · ${$c(P.month)}`), v: "primary",
-          onClick: () => { const de = diaDe(v.hasta, tz); setUi({ patPaso: 2, patDur: kk, patDesde: de, patRenDe: v.id, patClave: clave(), patRen: false }); void patPuestos(d.id, kk, de).then((r) => setUi({ patLib: { k: `${kk}:${de}`, c: r } })); } }] : []),
+          onClick: () => { const de = diaDe(v.hasta, tz); setUi({ patPaso: 2, patDur: kk, patDesde: de, patRenDe: v.id, patClave: clave(), patRen: false }); void patPuestosRenovar(d.id, v.id, kk).then((r) => setUi({ patLib: { k: `${kk}:${de}`, c: r } })); } }] : []),
         { l: ui.patRecibo ? E2("Ocultar recibo", "Hide receipt") : E2("Ver recibo", "See receipt"), v: "secondary", onClick: () => setUi({ patRecibo: !ui.patRecibo }) },
         { l: act ? E2("Terminar antes", "End early") : E2("Cancelar reserva", "Cancel booking"), v: "secondary", onClick: () => setUi({ patTerminar: v.id }) },
       ] });
@@ -170,7 +170,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
   if (x.modo === "simulador") out.push({ type: "note", tone: "info", icon: "info", t: E2("Sandbox: el cobro va contra el simulador de To’Latino. Ninguna tarjeta real se cobra.", "Sandbox: the charge runs against To’Latino’s simulator. No real card is charged.") });
   out.push({ type: "kv", cols: 2, items: [
     { k: E2("DÓNDE", "WHERE"), v: donde },
-    { k: E2("FECHAS", "DATES"), v: q ? `${rango(q.desde, q.hasta, es)} · ${dur === "week" ? E2("7 días", "7 days") : E2("1 mes", "1 month")}` : desdeSel !== "hoy" ? dia(desdeSel, es) : "—" },
+    { k: E2("FECHAS", "DATES"), v: q ? `${rango(q.desde, q.hasta, es)} · ${dur === "week" ? E2("7 días", "7 days") : E2("1 mes", "1 month")}` : desdeSel !== "hoy" && !renDe ? dia(desdeSel, es) : "—" },
     { k: E2("SE MUESTRA", "SHOWS"), v: muestra },
     { k: "TOTAL", v: $(precio(dur)) },
   ] });
@@ -183,7 +183,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
     async () => { const r = await patComprar(d.id, compra); if (!r.ok && c.ver(r, pagar)) return { ok: true, verificando: true } as Res; return r; },
     (r: { estado?: string; verificando?: boolean }) => r?.verificando ? undefined : r?.estado === "reservado" ? E2("Listo. Tu puesto quedó reservado.", "Done. Your slot is booked.") : E2("Listo. Ya sales en Patrocinados.", "Done. You now show in Sponsored."),
     (r: { verificando?: boolean }) => { if (!r?.verificando) setUi({ patPaso: 0, patDesde: "hoy", patLib: null, patRenDe: null, patClave: null }); });
-  out.push({ type: "acts", items: [{ l: E2(`Pagar ${$(precio(dur))}`, `Pay ${$(precio(dur))}`), v: "action", off: !pm || c.pending || (!!q && q.libres === 0 && !renDe), onClick: pagar }] });
+  out.push({ type: "acts", items: [{ l: E2(`Pagar ${$(precio(dur))}`, `Pay ${$(precio(dur))}`), v: "action", off: !pm || c.pending || (!!renDe && !q) || (!!q && q.libres === 0 && !renDe), onClick: pagar }] });
   return out;
 }
 

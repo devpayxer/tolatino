@@ -426,6 +426,32 @@ export async function consultarPuestos(negocio: string, dur: "week" | "month", d
   return { desde: f.dia, hasta: fin.hasta, a: f.a, b: f.b, libres: l.libres, puestos: P.puestos, libre: fin.libre, max: d.max };
 }
 
+/* «Renovar otra semana / otro mes» (24 nov): la pantalla de pagar enseña las fechas del período que SE VA A COBRAR, calculadas igual que en
+   comprarPatrocinio con renovarDe: el patrocinio vivo o reservado de este negocio, el día en que termina (zona de la ciudad) y fechasPeriodo con la
+   misma cadena del mes. Sin el tope de patrocinio_dias_adelante, como al pagar una renovación (consultarPuestos lo exige y con un fin a más de 60
+   días no devolvía nada: la pantalla no enseñaba las fechas aunque el cobro sí se hacía). Solo lectura: no cambia qué se cobra ni cuándo; al
+   pagar se vuelve a calcular todo (guardián patrocinioRenovarFechas). */
+export async function consultarRenovacion(negocio: string, renovarDe: string, dur: "week" | "month"): Promise<Consulta> {
+  if (!/^\d{1,18}$/.test(renovarDe)) return null;
+  const n = await negocioPat(null, negocio);
+  if (!n || n.status !== "active" || !n.ciudad_on) return null;
+  const v = (await db().query<{ dia: string }>(
+    `select (s.ends_at at time zone $3)::date::text as dia from sponsorships s
+      where s.id = $1::bigint and s.business_id = $2 and s.status in ('activo', 'reservado')`, [renovarDe, negocio, n.tz])).rows[0];
+  if (!v) return null;
+  const P = await preciosNegocio();
+  const f = await fechasPeriodo(null, n.city_id, v.dia, dur, { tabla: "sponsorships", negocio, categoria: n.category_id });
+  if (!f) return null;
+  const l = await puestosLibres(n.city_id, n.category_id, f.a, f.b, P.puestos, dur);
+  const fin = (await db().query<{ hasta: string; libre: string | null; max: string; hoy: string }>(
+    `select ($1::timestamptz at time zone $2)::date::text as hasta, ($3::timestamptz at time zone $2)::date::text as libre, ((now() at time zone $2)::date + $4::int)::text as max,
+            (now() at time zone $2)::date::text as hoy`,
+    [f.b, n.tz, l.libre, P.diasAdelante])).rows[0]!;
+  // Lo mismo que rechaza el cobro de una renovación (comprarPatrocinio): un período que empieza antes de hoy no se paga.
+  if (f.dia < fin.hoy) return null;
+  return { desde: f.dia, hasta: fin.hasta, a: f.a, b: f.b, libres: l.libres, puestos: P.puestos, libre: fin.libre, max: fin.max };
+}
+
 type NegPat = { id: string; name: string; city_id: string; category_id: string; status: string; ciudad_on: boolean; tz: string };
 async function negocioPat(c: PoolClient | null, id: string) {
   return (await (c ?? db()).query<NegPat>(

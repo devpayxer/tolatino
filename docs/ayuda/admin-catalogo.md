@@ -1,6 +1,6 @@
 # Super Admin: Catálogo · Super Admin: Catalog
 
-_Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 23 nov
+_Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 24 nov
 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
@@ -32,8 +32,14 @@ _Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo 
     la foto sube por la misma ruta de cualquier foto pública y pasa por la **misma revisión automática** (si queda en revisión o se rechaza, la hoja
     de aviso lo dice y no se puede poner). Cuando sube, sale como **NUEVA** junto a la actual: **Poner de portada** pide el motivo y la deja en la
     página al momento, en todas las ciudades; **Descartar** la suelta sin cambiar nada. **Volver a la de fábrica** (solo si hay una del equipo)
-    pide el motivo y la página vuelve a la foto original. Es solo la portada: los mosaicos de la página (países, «Qué necesitas», capítulos) no se
-    cambian desde aquí. Lo de fábrica no se pierde: una semilla nueva no pisa la del equipo.
+    pide el motivo y la página vuelve a la foto original. Lo de fábrica no se pierde: una semilla nueva no pisa la del equipo.
+  - **Mosaicos de la página:** las fotos redondas o cuadradas de cada subcategoría en la página de la categoría (las filas de fotos como países o
+    «Qué necesitas» y los capítulos). En la ficha de la categoría, «MOSAICOS DE LA PÁGINA» tiene una fila por mosaico con su foto de hoy
+    (**del equipo** o **original**); arriba, aparte, los que salen **SIN FOTO** (en gris: su foto original ya no existe). **Cambiar** abre la galería o el
+    selector y la foto pasa por la **misma revisión automática** que la portada. Cuando sube, la fila la muestra como **NUEVA**: **Poner en el mosaico**
+    pide el motivo y la deja en la página al momento, en todas las ciudades; **Descartar** la suelta. **Volver a la original** (solo si hay una del
+    equipo) pide el motivo y el mosaico vuelve a su foto original (o al gris, si no tenía). Si más tarde la revisión baja la foto del equipo, el mosaico
+    vuelve solo a la original. Las filas de chips y la lista de «Ver todas» (sin foto) no salen aquí. Una semilla nueva no pisa los mosaicos del equipo.
 - **Sinónimos:** lo que el vecino escribe (izquierda) se busca también como lo de la derecha. Agregar (formato
   `palabra → sinónimo1, sinónimo2`, sin acentos), apagar y encender. Buscar los usa en menos de un minuto.
 - **Búsquedas sin oferta:** lo que los vecinos buscaron y no existe en tus ciudades, contando a quienes pidieron
@@ -77,6 +83,11 @@ _Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo 
 | Poner una portada nueva | La foto de antes queda guardada como reemplazada (nada se borra) y la página muestra la nueva al momento, sin esperar. |
 | Volver a la de fábrica cuando ya está la de fábrica | «Ya tiene la portada de fábrica.» |
 | Cargar la semilla de nuevo | La portada del equipo se queda: la semilla nunca toca lo que el equipo cambió. |
+| Poner la foto de un mosaico | La foto de antes de ese mosaico queda guardada como reemplazada (nada se borra); los demás mosaicos y la portada no cambian. La página la muestra al momento. |
+| La foto elegida para un mosaico ya no se puede poner (la subió otra persona, pasó a privada o a revisión, o ya es de otro mosaico o de una portada) | «Esa foto no existe.» No cambia nada y no queda renglón en la auditoría. |
+| Un mosaico que ya no existe en la página (lo quitó una actualización) | «Ese mosaico no existe.» Si tenía foto del equipo, deja de salir aquí y en la página. |
+| Volver a la original cuando el mosaico ya tiene la original | «Ese mosaico ya tiene su foto original.» |
+| La revisión baja después la foto de un mosaico | El mosaico vuelve a su foto original (o al gris) sin que nadie haga nada; «Volver a la original» deja todo limpio. |
 | Lo que trae el sistema | Las semillas nunca vuelven a encender lo que el equipo apagó ni pisan lo que agregó. |
 
 Todo queda en el historial de cada pestaña y en la auditoría. Nada se borra.
@@ -94,8 +105,8 @@ ciudades.
 **¿Qué foto conviene?** Una horizontal, nítida y sin letras: se recorta al centro (más alta en teléfono, más ancha en escritorio). Pesa hasta 12 MB; el
 servidor la prepara en varios tamaños.
 
-**¿Por qué no puedo cambiar los mosaicos?** Hoy solo la portada se cambia desde aquí; los mosaicos salen de fábrica y se arreglan con una
-actualización del sistema.
+**¿Cómo arreglo un mosaico en gris?** En «MOSAICOS DE LA PÁGINA», los que salen **SIN FOTO** van arriba: **Cambiar**, elige una foto cuadrada (se
+recorta al centro) y **Poner en el mosaico** con el motivo. **Volver a la original** lo devuelve al gris.
 
 **¿Cambiar la plantilla de horario cambia el horario de los negocios?** No. Es el horario con el que empieza quien publica;
 cada negocio cambia el suyo en su panel.
@@ -130,8 +141,14 @@ cada negocio cambia el suyo en su panel.
     any public photo and goes through the **same automatic review** (if it ends up under review or is rejected, the notice sheet says so and it can't
     be used). Once uploaded, it shows as **NEW** next to the current one: **Use as cover** asks for the reason and puts it on the page right away, in
     every city; **Discard** drops it without changing anything. **Go back to the default** (only when a team photo is set) asks for the reason and the page
-    goes back to the original photo. It is the cover only: the page tiles (countries, «What do you need», chapters) can't be changed from here. The default
-    is never lost: a new seed doesn't overwrite the team's photo.
+    goes back to the original photo. The default is never lost: a new seed doesn't overwrite the team's photo.
+  - **Page tiles:** the round or square photos of each subcategory on the category page (photo rows such as countries or «What do you need» and
+    the chapters). In the category's detail, «PAGE TILES» has one row per tile with today's photo (**team** or **original**); first, on their
+    own, the ones with **NO PHOTO** (gray: their original photo no longer exists). **Change** opens the gallery or the picker and the photo goes through
+    the **same automatic review** as the cover. Once uploaded, the row shows it as **NEW**: **Use on the tile** asks for the reason and puts it on the
+    page right away, in every city; **Discard** drops it. **Go back to the original** (only when a team photo is set) asks for the reason and the tile goes
+    back to its original photo (or to gray, if it had none). If the review later takes the team photo down, the tile goes back to the original by
+    itself. Chip rows and the «See all» list (no photo) are not listed. A new seed doesn't overwrite the team's tiles.
 - **Synonyms:** what the neighbor types (left) is also searched as what is on the right. Add (format `word → synonym1, synonym2`, no accents), turn off and
   turn on. Search uses them in under a minute.
 - **Searches without supply:** what neighbors searched for that does not exist in your cities, counting those who asked «Notify me» (30 days). It is the
@@ -173,6 +190,11 @@ cada negocio cambia el suyo en su panel.
 | Setting a new cover | The previous photo is kept as replaced (nothing is deleted) and the page shows the new one right away, no waiting. |
 | Going back to the default when the default is already on | «Ya tiene la portada de fábrica.» (it already has the default cover) |
 | Loading the seed again | The team's cover stays: the seed never touches what the team changed. |
+| Setting a tile photo | That tile's previous photo is kept as replaced (nothing is deleted); the other tiles and the cover don't change. The page shows it right away. |
+| The photo chosen for a tile can no longer be used (someone else uploaded it, it became private or under review, or it already belongs to another tile or a cover) | «That photo doesn’t exist.» (shown as «Esa foto no existe.») Nothing changes and no audit row is written. |
+| A tile that no longer exists on the page (a system update removed it) | «Ese mosaico no existe.» (that tile doesn't exist) If it had a team photo, it stops showing here and on the page. |
+| Going back to the original when the tile already has it | «Ese mosaico ya tiene su foto original.» (that tile already has its original photo) |
+| The review later takes a tile photo down | The tile goes back to its original photo (or to gray) without anyone doing anything; «Go back to the original» cleans it up. |
 | What the system brings | Seeds never turn back on what the team turned off and never overwrite what the team added. |
 
 Everything is recorded in each tab's history and in the audit log. Nothing is deleted.
@@ -189,7 +211,8 @@ Businesses change right away.
 **Which photo works best?** A wide, sharp one without lettering: it is cropped to the center (taller on phones, wider on desktop). Up to 12 MB; the server
 prepares it in several sizes.
 
-**Why can't I change the tiles?** Today only the cover can be changed from here; the tiles come from the default and are fixed with a system update.
+**How do I fix a gray tile?** In «PAGE TILES», the ones with **NO PHOTO** come first: **Change**, pick a square photo (it is cropped to the center) and
+**Use on the tile** with the reason. **Go back to the original** returns it to gray.
 
 **Does changing the hours template change businesses' hours?** No. It is the schedule someone listing starts with; each business changes its own in its panel.
 

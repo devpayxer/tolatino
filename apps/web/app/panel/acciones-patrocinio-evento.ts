@@ -7,7 +7,7 @@
    terminar sí. Todo queda en la auditoría (lib/patrocinio-evento.ts). */
 import { mismoOrigen } from "@/lib/cuenta";
 import { accesoPanel, type Acceso } from "@/lib/panel";
-import { avisameLibreEvento, comprarPatrocinioEvento, consultarPuestosEvento, renovarSoloEvento, terminarPorDuenoEvento, type DurE } from "@/lib/patrocinio-evento";
+import { avisameLibreEvento, comprarPatrocinioEvento, consultarPuestosEvento, consultarRenovacionEvento, renovarSoloEvento, terminarPorDuenoEvento, type DurE } from "@/lib/patrocinio-evento";
 import type { ResPat } from "@/lib/patrocinio";
 import type { Verificar } from "@/lib/pagos/pasarela";
 import type { Res } from "./acciones";
@@ -47,6 +47,13 @@ export async function pevPuestos(id: string, evento: string, dur: string, desde:
   if (!a) return null;
   const d = durDe(dur);
   return d ? consultarPuestosEvento(a.negocio.id, evento, d, S(desde, 10)) : null;
+}
+
+/* «Renovar otra semana / otro mes»: las fechas y el precio del período que se va a cobrar (los calcula el servidor; solo lectura). */
+export async function pevPuestosRenovar(id: string, evento: string, sid: string, dur: string) {
+  const a = await entrar(id, evento);
+  if (!a) return null;
+  return consultarRenovacionEvento(a.negocio.id, evento, S(sid, 18), dur === "month" ? "month" : "week");
 }
 
 export async function pevAvisame(id: string, evento: string): Promise<Res> {
