@@ -46,7 +46,7 @@ export type Grupo = { w: string; a: string[]; corregida?: string };
 export type Entendido = { intenciones: { k: string; frase: string; label: { es: string; en: string }; tipo: string }[]; grupos: Grupo[]; palabras: string[] };
 
 /* Entender la búsqueda. `vivo` = mientras se escribe: la última palabra cuenta como prefijo. */
-export async function entender(q: string, vivo = false): Promise<Entendido> {
+export async function entender(q: string, vivo = false, o: { corregir?: boolean } = {}): Promise<Entendido> {
   const D = await diccionario();
   let n = ` ${N(q).replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim()} `;
   for (const [a, b] of D.frases) n = n.split(` ${a} `).join(` ${b} `);
@@ -67,22 +67,30 @@ export async function entender(q: string, vivo = false): Promise<Entendido> {
     for (const x of D.syn.get(w) ?? D.syn.get(s) ?? []) if (!a.includes(x)) a.push(x);
     return { w, a };
   });
-  // Errores de escritura: palabra de 5+ letras que no es prefijo de nada del vocabulario → la más parecida. 9t · El vocabulario suma los platos y
-  // servicios (search_vocab_platos, 0180): «mofngo» → mofongo.
-  const dudosas = grupos.filter((g) => g.w.length >= 5);
+  // Errores de escritura: palabra de 4+ letras que no es prefijo de nada del vocabulario → la más parecida. 9t · El vocabulario suma los platos y
+  // servicios (search_vocab_platos, 0180): «mofngo» → mofongo. 24 nov (pedido del fundador: «como Amazon o DoorDash»): además del parecido por
+  // trigramas, la distancia de edición (una letra de más, de menos o cambiada; dos en palabras de 6+), así «aroz» → arroz, «pizaa» → pizza,
+  // «empanda» → empanada. Gana la de menos cambios y, entre iguales, la más parecida. Guardián buscarEntiendeFaltas.
+  const dudosas = grupos.filter((g) => g.w.length >= 4);
   if (dudosas.length) {
     const r = await db().query<{ w: string; pre: string | null; fix: string | null }>(
       `select w, coalesce((select word from search_vocab v where v.word like w || '%' limit 1), (select word from search_vocab_platos v where v.word like w || '%' limit 1)) as pre,
-              (select word from (select word from search_vocab v where v.word % w union all select word from search_vocab_platos v where v.word % w) v
-                where similarity(v.word, w) >= 0.4 order by similarity(v.word, w) desc limit 1) as fix
+              (select word from (select word from search_vocab union select word from search_vocab_platos) v
+                where char_length(v.word) between char_length(w) - 2 and char_length(w) + 2
+                  and (similarity(v.word, w) >= 0.4 or levenshtein_less_equal(v.word, w, 2) <= case when char_length(w) <= 5 then 1 else 2 end)
+                order by levenshtein_less_equal(v.word, w, 3), similarity(v.word, w) desc, v.word limit 1) as fix
          from unnest($1::text[]) w`, [dudosas.map((g) => g.w)]);
     for (const x of r.rows) {
       const g = grupos.find((y) => y.w === x.w);
-      if (g && !x.pre && x.fix && !g.a.includes(x.fix)) { g.a.push(x.fix); g.corregida = x.fix; }
+      if (g && !x.pre && x.fix && !g.a.includes(x.fix)) { g.corregida = x.fix; if (o.corregir !== false) g.a.push(x.fix); }
     }
   }
   return { intenciones, grupos, palabras };
 }
+
+/* 24 nov · La misma búsqueda con las faltas corregidas («aroz» → arroz): la página de resultados la usa solo si ni la palabra exacta ni completarla
+   trajeron nada (una palabra a medias como «arro» no se «corrige» a «arco» antes de completarse a arroz). */
+export const conCorrecciones = (E: Entendido): Entendido => ({ ...E, grupos: E.grupos.map((g) => (g.corregida && !g.a.includes(g.corregida) ? { ...g, a: [...g.a, g.corregida] } : g)) });
 
 /* Una palabra → término de tsquery (todo ya viene normalizado a [a-z0-9]). */
 const termino = (a: string, prefijo: boolean) => {

@@ -360,6 +360,9 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     await caja9.press('Enter');
     await t9.waitForURL(/q=Arro/);
     ok(await espera(async () => { const tx = await t9.locator('[data-pantalla="APP-BUSCAR"]').innerText(); return !tx.includes('No encontramos') && /Coquí Boricua/.test(tx); }), 'al buscar «Arro» salen los negocios con arroz (la búsqueda completa la última palabra, como la sugerencia)');
+    // Una falta de escritura se entiende (pedido del fundador: «como Amazon o DoorDash»): «empanda» → empanada.
+    await t9.goto(B + '/buscar?q=empanda'); await t9.waitForLoadState('networkidle').catch(() => {});
+    ok(!(await t9.locator('[data-pantalla="APP-BUSCAR"]').innerText()).includes('No encontramos'), 'al buscar «empanda» (con una falta) salen resultados de empanada');
     await t9.goto(B + '/c/comida'); await t9.waitForLoadState('networkidle').catch(() => {});
     await t9.locator('[data-buscador-categoria]').first().tap();
     await t9.waitForURL(/\/buscar\?cat=comida/);

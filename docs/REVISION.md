@@ -6525,6 +6525,9 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   palabra cuenta como inicio de palabra; al buscar se exigía entera. Ahora, si la búsqueda exacta no trae nada, se completa la última palabra igual que
   la sugerencia (negocios, platos, eventos y vecinos). Guardián `buscarCumpleLaSugerencia`, al revés 8/8, `bus9t` con el caso «Arro». Qué mirar: escribir
   «Arro» y darle Buscar.
+- **Faltas de escritura (pedido del fundador, decisión AS):** además, se corrigen palabras con una letra cambiada, de más o de menos: «aroz» → arroz,
+  «pizaa» → pizza, «empanda» → empanada (antes solo palabras de 5+ letras muy parecidas). Orden: exacta, completar, corregir. Qué mirar: buscar con
+  una falta.
 
 ## Mosaicos de categoría y «Renovar otro mes» (24 nov; hecho por Opus, revisado por Fable)
 - **Mosaicos desde el Super Admin (migración 0217):** Catálogo › una categoría › Mosaicos: cambiar la foto de un mosaico, verlo en su página de

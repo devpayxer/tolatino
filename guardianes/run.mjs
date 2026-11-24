@@ -16349,13 +16349,27 @@ const guardianes = {
     const a = sinComent(A);
     if (!/negocios\(E, \{[^}]*vivo: true \}\)/.test(a) || !/platos\(E, \{[^}]*vivo: true[^}]*\}\)/.test(a)) falla(G, A, 0, "la sugerencia cuenta con la última palabra como inicio (vivo: true en negocios y platos)");
     const p = sinComent(P);
-    if (!/const buscarTodo = \(vivo: boolean\) => Promise\.all\(\[/.test(p)) return falla(G, P, 0, "los resultados se buscan con una sola función buscarTodo(vivo) (exacta y, si no trae nada, completando la última palabra)");
+    if (!/const buscarTodo = \(E: Entendido, vivo: boolean\) => Promise\.all\(\[/.test(p)) return falla(G, P, 0, "los resultados se buscan con una sola función buscarTodo(E, vivo) (exacta, completando la última palabra y con las faltas corregidas)");
     const cuerpo = p.slice(p.indexOf("const buscarTodo"), p.indexOf("]);", p.indexOf("const buscarTodo")));
     for (const [re, que] of [[/negocios\(E, \{[^}]*\bvivo \}\)/, "negocios"], [/platos\(E, \{[^}]*\bvivo \}\)/, "platos"], [/buscarEventos\(tsq\(E\.grupos, true, vivo\)/, "eventos"], [/buscarVecinos\([^)]*tsq\(E\.grupos, true, vivo\)/, "vecinos"]])
       if (!re.test(cuerpo)) falla(G, P, 0, `buscarTodo pasa «vivo» a ${que}: si no, al completar la palabra esa sección sigue vacía`);
-    if (!/let \[r, C, V, EV, PL\] = await buscarTodo\(false\);/.test(p) || !/if \(E\.grupos\.length && r\.total === 0 && cuentaPlatos\(PL\) === 0\) \{\s*const x = await buscarTodo\(true\);/.test(p))
-      falla(G, P, 0, "primero la búsqueda exacta y, si no trae negocios ni platos, otra vez completando la última palabra (como la sugerencia): nunca «No encontramos» después de prometer resultados");
+    if (!/const E0: Entendido = await entender\(q, false, \{ corregir: false \}\);/.test(p) || !/let \[r, C, V, EV, PL\] = await buscarTodo\(E, false\);/.test(p)
+      || !/const intentos: \[Entendido, boolean\]\[\] = \[\[E0, true\], \.\.\.\(Ec\.grupos\.some\(\(g, i\) => g !== E0\.grupos\[i\]\) \? \[\[Ec, false\], \[Ec, true\]\]/.test(p)
+      || !/if \(!E0\.grupos\.length \|\| !vacio\(\)\) break;\s*const x = await buscarTodo\(Ei, vivo\);/.test(p))
+      falla(G, P, 0, "en este orden: la palabra exacta (sin corregir), completarla y, solo si nada trae, con las faltas corregidas; para en el primero que trae algo. Nunca «No encontramos» después de prometer resultados, y «arro» no se vuelve «arco» antes de completarse");
     if (!/vivo: completada \}\)/.test(p) || !/textoRazon\(b\.name, RZ\.get\(b\.id\), E, es, \{ vivo: completada \}\)/.test(p)) falla(G, P, 0, "la razón de cada negocio («Tiene …») se calcula igual que la búsqueda que lo trajo (vivo: completada)");
+  },
+
+  /* 24 nov · Pedido del fundador («como Amazon o DoorDash»): una palabra con una falta se entiende. Palabras de 4+ letras, parecido por trigramas O
+     distancia de edición (1 cambio hasta 5 letras, 2 desde 6), gana la de menos cambios. al revés: alrevesBuscarCumple · punta a punta: bus9t (7). */
+  buscarEntiendeFaltas() {
+    const G = "buscarEntiendeFaltas", B = "apps/web/lib/buscar.ts";
+    if (!existsSync(B)) return falla(G, B, 0, "falta el motor de búsqueda");
+    const b = sinComent(B);
+    if (!/const dudosas = grupos\.filter\(\(g\) => g\.w\.length >= 4\);/.test(b)) falla(G, B, 0, "se corrigen las palabras de 4 letras o más («aroz» → arroz); con 5 se escapaban las cortas");
+    if (!/levenshtein_less_equal\(v\.word, w, 2\) <= case when char_length\(w\) <= 5 then 1 else 2 end/.test(b)) falla(G, B, 0, "una falta se reconoce también por distancia de edición (1 cambio hasta 5 letras, 2 desde 6), no solo por trigramas");
+    if (!/order by levenshtein_less_equal\(v\.word, w, 3\), similarity\(v\.word, w\) desc/.test(b)) falla(G, B, 0, "gana la palabra con menos cambios y, entre iguales, la más parecida");
+    if (!/char_length\(v\.word\) between char_length\(w\) - 2 and char_length\(w\) \+ 2/.test(b)) falla(G, B, 0, "solo se comparan palabras de largo parecido (±2): así la corrección no recorre todo el vocabulario");
   },
 
   tiposAntesDeLaImagen() {

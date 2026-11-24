@@ -5,7 +5,7 @@ import { textosT } from "@/lib/cms";
 import { categorias } from "@/lib/directorio";
 import { nombresSub } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
-import { dominante, ejemplos, entender, negocios, N, registrar, resaltar, sugerirCatalogo, tendencias, tsq, type Entendido } from "@/lib/buscar";
+import { conCorrecciones, dominante, ejemplos, entender, negocios, N, registrar, resaltar, sugerirCatalogo, tendencias, tsq, type Entendido } from "@/lib/buscar";
 import { buscarVecinos } from "@/lib/comunidad-portada";
 import { filaVecino } from "./vecinos";
 import { platos, porQue } from "@/lib/buscar-platos";
@@ -73,10 +73,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   }
 
   // ── Resultados ──
-  const E: Entendido = await entender(q);
-  for (const k of extra) if (!E.intenciones.some((i) => i.k === k)) {
+  const E0: Entendido = await entender(q, false, { corregir: false });
+  for (const k of extra) if (!E0.intenciones.some((i) => i.k === k)) {
     const it = DATOS.intenciones.find((i) => i.key === k);
-    if (it) E.intenciones.push({ k, frase: "", label: it.label, tipo: it.tipo });
+    if (it) E0.intenciones.push({ k, frase: "", label: it.label, tipo: it.tipo });
   }
   const limite = tab === "biz" ? 10 : 5;
   // 9m · Vacantes en Buscar (L311) y si ya pidió «Avísame de nuevas vacantes» en esta ciudad.
@@ -86,7 +86,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   // 24 nov (fallo visto por el fundador): mientras se escribe, la última palabra cuenta como inicio («arro» → arroz) y la sugerencia promete
   // «38 negocios»; al buscar se exigía la palabra entera y salía «No encontramos». Si la búsqueda exacta no trae nada, se completa la última
   // palabra igual que la sugerencia: el resultado nunca dice menos de lo que la sugerencia prometió (guardián buscarCumpleLaSugerencia).
-  const buscarTodo = (vivo: boolean) => Promise.all([
+  const buscarTodo = (E: Entendido, vivo: boolean) => Promise.all([
     negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite, vivo }),
     sugerirCatalogo(E, CIUDAD, catSel?.id ?? null),
     u && E.grupos.length && !catSel ? buscarVecinos(u.id, CIUDAD, tsq(E.grupos, true, vivo), tab === "vec" ? String(sp.vc ?? "") || null : null, tab === "vec" ? 10 : 2) : null,
@@ -94,18 +94,24 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     platos(E, { punto: loc, cat: catSel?.id ?? null, filtro: icCat, orden: ioPrecio ? "price" : "rel", limite: tab === "itm" ? 40 : 4, userId: u?.id ?? null, vivo }),
   ]);
   const cuentaPlatos = (p: { cats: Record<string, number> }) => Object.values(p.cats).reduce((a, b) => a + b, 0);
-  let [r, C, V, EV, PL] = await buscarTodo(false);
-  let completada = false;
-  if (E.grupos.length && r.total === 0 && cuentaPlatos(PL) === 0) {
-    const x = await buscarTodo(true);
-    if (x[0].total || cuentaPlatos(x[4])) { [r, C, V, EV, PL] = x; completada = true; }
+  // En este orden (como Amazon o DoorDash): la palabra exacta; si nada, completar la última; si nada, corregir las faltas («aroz» → arroz), exacta y
+  // completando. Gana el primer intento que trae algo.
+  let E = E0, completada = false;
+  let [r, C, V, EV, PL] = await buscarTodo(E, false);
+  const vacio = () => r.total === 0 && cuentaPlatos(PL) === 0;
+  const Ec = conCorrecciones(E0);
+  const intentos: [Entendido, boolean][] = [[E0, true], ...(Ec.grupos.some((g, i) => g !== E0.grupos[i]) ? [[Ec, false], [Ec, true]] as [Entendido, boolean][] : [])];
+  for (const [Ei, vivo] of intentos) {
+    if (!E0.grupos.length || !vacio()) break;
+    const x = await buscarTodo(Ei, vivo);
+    if (x[0].total || cuentaPlatos(x[4])) { [r, C, V, EV, PL] = x; E = Ei; completada = vivo; }
   }
   const vaciaPrimero = !!C.vacias[0] && (!C.subs[0] || C.vacias[0].score > C.subs[0].score);
   const dom = catSel?.id ?? dominante(r.items, C.subs, C.vacias, C.cats, vaciaPrimero);
   // 9t · Un plato o servicio también es un resultado: «mofongo» no está en el nombre de ningún negocio, pero sí en su menú.
   const nPlatos = cuentaPlatos(PL);
   const nada = r.total === 0 && nPlatos === 0;
-  const dym = nada && E.grupos.some((g) => g.corregida) ? E.palabras.map((w) => E.grupos.find((g) => g.w === w)?.corregida ?? w).join(" ") : null;
+  const dym = nada && E0.grupos.some((g) => g.corregida) ? E0.palabras.map((w) => E0.grupos.find((g) => g.w === w)?.corregida ?? w).join(" ") : null;
   if (q && pagina === 0 && tab === "all") {
     await registrar(CIUDAD, u?.id ?? null, q, E, dom, r.total + nPlatos);
     const ctx = await contexto();
