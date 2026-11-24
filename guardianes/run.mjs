@@ -8148,6 +8148,11 @@ const guardianes = {
       const t = sinComent(f);
       if (!bien.test(t) || mal.test(t)) falla(G, f, 0, "«Renovar otra semana / otro mes» pide las fechas a la consulta de la renovación (la de elegir fecha rechaza más allá de patrocinio_dias_adelante)");
     }
+    // «Pagar» de una renovación se apaga mientras la consulta no devolvió fechas (cargando, o null: lo que el cobro rechazaría): nunca se enciende para
+    // algo que el servidor va a rechazar.
+    for (const [f, re] of [[U, /\{ l: E2\(`Pagar \$\{\$\(precio\(dur\)\)\}`, `Pay \$\{\$\(precio\(dur\)\)\}`\), v: "action", off: !pm \|\| c\.pending \|\| \(!!renDe && !q\) \|\|/],
+      [UE, /\{ l: E2\(`Pagar \$\{\$\(total\)\}`, `Pay \$\{\$\(total\)\}`\), v: "action", off: !pm \|\| !q \|\| c\.pending \|\|/]])
+      if (!re.test(sinComent(f))) falla(G, f, 0, "«Pagar» de «Renovar otro mes» se apaga mientras la consulta de la renovación no devolvió fechas (sin ellas el servidor rechaza el cobro)");
   },
 
   /* C-002 · Patrocinados: la vitrina de la página de categoría solo muestra patrocinios ACTIVOS, pagados, de ESA categoría y ESA ciudad, vivos en

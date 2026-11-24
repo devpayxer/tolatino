@@ -44,6 +44,9 @@ const casos = [
   // 4 · La pantalla: «Renovar otro mes» vuelve a pedir la consulta de elegir fecha.
   [U, 'void patPuestosRenovar(d.id, v.id, kk).then', 'void patPuestos(d.id, kk, de).then'],
   [UE, 'void pevPuestosRenovar(d.id, eventoId, v.id, kk).then', 'void pevPuestos(d.id, eventoId, kk, de).then'],
+  // 5 · «Pagar» encendido sin fechas de la consulta (cargando o null): el servidor lo rechazaría.
+  [U, 'v: "action", off: !pm || c.pending || (!!renDe && !q) || (!!q && q.libres === 0 && !renDe), onClick: pagar', 'v: "action", off: !pm || c.pending || (!!q && q.libres === 0 && !renDe), onClick: pagar'],
+  [UE, 'v: "action", off: !pm || !q || c.pending || (q.libres === 0 && !renDe), onClick: pagar', 'v: "action", off: !pm || c.pending || (!!q && q.libres === 0 && !renDe), onClick: pagar'],
 ];
 let bien = 0, total = 0;
 const correr = () => {

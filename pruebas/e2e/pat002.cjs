@@ -8,6 +8,8 @@
 // auditada y avisada; la base no deja otra ni cambiarla); «Terminar» del Super Admin devuelve lo que no se usó (encendido de entrada); 3-D Secure al
 // comprar: la hoja del banco, «No fui yo» no cobra, confirmar compra una sola vez; la renovación sola que pide verificar termina y avisa.
 // 23 nov: el mes renovado no pierde su día (31 ene → 28 feb → 31 mar → 30 abr, con fechas fijas) y una cadena ya corrida no se recalcula.
+// 24 nov · 8: «Renovar otro mes» de un mes reservado que termina a más de patrocinio_dias_adelante: «Revisar y pagar» enseña las fechas y el monto que
+//   se cobran y lo cobrado es eso (un solo cobro). Si la consulta no da fechas (la página dejó de estar publicada), «Pagar» queda apagado y no se cobra.
 // Precondiciones propias: lo vivo de Comida y Belleza en Hazleton queda terminado (estados, nada se borra); la tarjeta 4242 del dueño; los
 // precios y puestos de fábrica (se restauran al final); un vecino nuevo (teléfono libre) para las cifras.
 const ENT = require('../lib/entorno.cjs');
@@ -334,6 +336,56 @@ let OP = null;
     const V3 = sig(V2);
     ok(!!V3 && per(V3) === '2026-03-28 00:00 → 2026-04-28 00:00', `una cadena que ya venía corrida sigue con su día (28 mar → 28 abr): lo comprado no se recalcula hacia atrás: ${V3 && per(V3)}`);
     terminarVivos('NEG-FOOD'); ponerCfg('patrocinio_puestos', 6);
+
+    console.log('8 · «Renovar otro mes» con un fin a más de 60 días: las fechas que se cobran; sin ellas, «Pagar» apagado');
+    tarjeta(DUENO);
+    const ADELZ = Number(sql(`select cfg_int('patrocinio_dias_adelante')`)), HOYZ = hoyCiudad();
+    const HZ = sql(`select (date_trunc('month', ${HOY} + 90) + interval '14 days')::date::text`);
+    const SZ0 = sql(`select ('${HZ}'::date - interval '1 month')::date::text`), HZ2 = sql(`select ('${HZ}'::date + interval '1 month')::date::text`), LIMZ = sql(`select (${HOY} + ${ADELZ})::text`);
+    ok(HZ > LIMZ && SZ0 <= LIMZ && SZ0 > HOYZ, `precondición: el mes reservado empieza dentro de los ${ADELZ} días (${SZ0}) y termina después (${HZ})`);
+    const RZ1 = insM(BIZ, 'reservado', NY(SZ0), NY(HZ));
+    const MSZ = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'], fechaZ = (d) => { const [, m, x] = d.split('-').map(Number); return `${x} ${MSZ[m - 1]}`; };
+    const cobrosZ = () => sql(`select count(*) from sponsorship_payments where kind = 'negocio' and business_id = '${BIZ}'`);
+    // antes(): lo que pasa entre cargar la pantalla y tocar «Renovar otro mes» (la consulta corre al tocar).
+    const abrirRenovarZ = async (p, antes = () => {}) => {
+      await p.goto(B + `/panel/${BIZ}/cobros/patrocinio`);
+      const ren = p.getByRole('button', { name: /^Renovar otro mes · / });
+      ok(await espera(async () => (await ren.count()) === 1), 'el mes reservado ofrece «Renovar otro mes»');
+      antes();
+      await ren.click();
+      ok(await espera(async () => (await texto(p)).includes('Revisar y pagar')), 'Revisar y pagar');
+    };
+    const pagarZ = (p) => p.getByRole('button', { name: `Pagar $${(MES / 100).toFixed(2)}` });
+    // Sin fechas: la página deja de estar publicada con la pantalla ya abierta (lo que el cobro rechaza): «Pagar» apagado y ningún cobro.
+    const ocultar = () => sql(`update businesses set status = 'hidden' where id = '${BIZ}'`);
+    const antesZ = cobrosZ();
+    try {
+      for (const [w, h] of [[390, 844], [1280, 900]]) {
+        const pnZ = await nueva(w, h, DUENO);
+        await abrirRenovarZ(pnZ, ocultar);
+        await pnZ.waitForTimeout(2500);   // la consulta ya contestó (null)
+        ok(/FECHAS\s*—/.test(await pnZ.innerText('body')), `${w}: FECHAS dice «—» (la consulta no devolvió fechas)`);
+        ok(await pagarZ(pnZ).isDisabled(), `${w}: «Pagar» está apagado`);
+        await pagarZ(pnZ).click({ force: true }).catch(() => {});
+        await pnZ.screenshot({ path: OUT + `pat002-renovar-apagado-${w}.png`, fullPage: w < 600 });
+        sql(`update businesses set status = 'active' where id = '${BIZ}'`);
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+      ok(cobrosZ() === antesZ && sql(`select count(*) from sponsorships where renewed_from = ${RZ1}`) === '0', 'ningún cobro ni renovación');
+    } finally { sql(`update businesses set status = 'active' where id = '${BIZ}'`); }
+    // Publicada: las fechas que se van a cobrar y lo cobrado es exactamente eso.
+    await abrirRenovarZ(pd);
+    const esperadoZ = `${fechaZ(HZ)} – ${fechaZ(HZ2)} · 1 mes`;
+    ok(await espera(async () => (await texto(pd)).includes(esperadoZ)), `FECHAS: las del período que se va a cobrar («${esperadoZ}»)`);
+    ok(await pagarZ(pd).isEnabled(), `«Pagar $${(MES / 100).toFixed(2)}» (el precio del mes de Configuración) está encendido`);
+    await pd.screenshot({ path: OUT + 'pat002-renovar-lejos-1360.png', fullPage: true });
+    await pagarZ(pd).click();
+    ok(await espera(async () => sql(`select count(*) from sponsorships where renewed_from = ${RZ1}`) === '1'), 'el pago crea la renovación encadenada');
+    const RZ2 = sql(`select id from sponsorships where renewed_from = ${RZ1}`);
+    ok(sql(`select to_char(starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || ' → ' || to_char(ends_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || '|' || status || '|' || duration || '|' || price_cents from sponsorships where id = ${RZ2}`)
+      === `${HZ} 00:00 → ${HZ2} 00:00|reservado|month|${MES}`, 'lo cobrado es lo que enseñó la pantalla: las mismas fechas, 1 mes reservado, el precio del mes');
+    ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'negocio' and ref_id = ${RZ2}`) === `1|${MES}|renovacion` && Number(cobrosZ()) === Number(antesZ) + 1, 'un solo cobro de renovación por el precio del mes');
+    terminarVivos('NEG-FOOD');
     ok(!err.length, 'sin errores en las páginas: ' + (err.join(' · ') || 'ninguno'));
     console.log(`\npat002 · ${n} comprobaciones en verde`);
   } finally {
