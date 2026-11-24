@@ -90,13 +90,16 @@ condiciones» al fundador → confirmación completa + OK → `produccion` avanz
 - No se para hasta terminar todo. Una decisión pendiente no detiene el trabajo: se elige lo más seguro y reversible, se construye y se anota en
   REVISION; lo de terceros (Stripe, SMS, correo) se deja listo y probado contra simuladores. Sin resúmenes a mitad de camino: una línea de
   avance y al siguiente bloque (AB).
-- Cada bloque sube con la **revisión rápida** en verde: tipos, build, guardianes, al revés y sus pruebas de punta a punta, por CI dirigido.
-  No espera la confirmación completa; lo que esta cace después se arregla en el bloque siguiente y se anota en REVISION (AD, AF).
-- **Vía rápida de diseño:** lo que es solo de cómo se ve (piezas del sistema de diseño, componentes de pantalla, textos, estilos) sube con
-  `node scripts/ci/subir.mjs --subir` sin corrida previa del CI: la herramienta decide si la entrega es de diseño (lista blanca cerrada + señales;
-  cualquier duda = camino normal), corre a la vez tipos + guardianes + textos (~1 min; sin build local: la app la construye el servidor y, si no
-  construye, el sandbox sigue con lo de antes) y empuja; la punta a punta y «al revés» corren después, en la corrida de `main`. No aplica a dinero,
-  permisos, datos personales, migraciones, `lib/`, `page.tsx` ni al propio CI (AL, AN, AR).
+- **Lo sensible sube con la revisión rápida del CI (AF, AV):** lo que toca dinero, permisos, datos personales, migraciones, el despliegue o el CI
+  (herramientas de prueba y guardianes incluidos) sube con la **revisión rápida** en verde: tipos, build, guardianes, al revés y sus pruebas de
+  punta a punta, por CI dirigido. Antes de lanzarla, las pruebas de lo tocado corren aquí; tras una roja, `--repaso` corre solo las rojas y lo
+  tocado desde esa corrida (AU). Nada espera la confirmación completa; lo que esta cace después se arregla antes que nada y se anota en REVISION.
+- **Vía rápida (diseño y código no sensible; AL, AN, AR, AV):** todo lo demás sube con `node scripts/ci/subir.mjs --subir` sin corrida previa del
+  CI: la herramienta decide (lista blanca + señales, con su lista y la de `main`; cualquier duda = camino normal), corre a la vez tipos + guardianes
+  + textos (~1 min; sin build local: la app la construye el servidor y, si no construye, el sandbox sigue con lo de antes) y, si es código, las
+  pruebas de lo tocado aquí (tope ~10 min; si son más, camino normal); empuja; la punta a punta entera y «al revés» corren después, en la corrida
+  de `main`. Con `main` en rojo no sube código por esta vía: primero se arregla. (El código entra por esta vía cuando la herramienta con AV esté
+  subida; hasta entonces, camino normal.)
 - **Ajustes del fundador (AN):** llegan de uno en uno o en tanda, con captura. Se hacen viéndolos en vivo (servidor de desarrollo), el fundador
   recibe la captura real en minutos y suben por la vía rápida; si llega otro mientras uno sube, van juntos. Las pruebas, el guardián y el
   «al revés» de un retoque visual se escriben una vez, al cierre de la ronda; un fallo real (no de gusto) deja su guardián en el momento. Una
