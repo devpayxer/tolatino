@@ -33,6 +33,7 @@ function Link({
     style: {
       display: 'flex',
       alignItems: 'center',
+      minHeight: 24,
       gap: 8,
       font: '500 ' + size + 'px/1.4 Manrope,sans-serif',
       color: 'rgba(255,255,255,.72)',
@@ -174,6 +175,9 @@ function SiteFooter({
     onClick: l.onClick,
     ...__ds_scope.__btn(l.onClick, undefined, undefined),
     style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      minHeight: 24,
       font: '700 13px Manrope,sans-serif',
       cursor: 'pointer'
     }
@@ -273,6 +277,9 @@ function SiteFooter({
     onClick: l.onClick,
     ...__ds_scope.__btn(l.onClick, undefined, undefined),
     style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      minHeight: 24,
       color: 'rgba(255,255,255,.62)',
       cursor: 'pointer'
     }

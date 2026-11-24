@@ -140,7 +140,8 @@ const desk = (b, extra = {}) => b.newContext({ viewport: { width: 1360, height: 
     const volverHoras = abiertoTodoElDia(BIZ); process.on('exit', volverHoras);
     await pd.goto(B + `/n/${BIZ}?tab=menu`); await pd.evaluate(() => { localStorage.removeItem('tl-carrito-v1'); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); }); await pd.reload();
     // 24 nov · En la computadora Novedades va antes del Menú (pedido del fundador) y una novedad nombra el plato: se toca el del menú (#sec-cat).
-    await (await hidratado(pd.locator('#sec-cat').locator('text="Pescado frito" >> visible=true').first())).click();
+    const menuSec = pd.locator('#sec-cat');
+    await (await hidratado(vis(menuSec, 'Pescado frito'))).click();
     const hayLleva = await espera(async () => (await pd.locator('[data-bloque="lleva"]').count()) > 0);
     // 19 nov · Falló en los cuatro anchos (antes solo en la barajada): si falla, dice si la hoja abrió, qué etiquetas tiene el plato y la hora.
     const diag = hayLleva ? '' : ` (etiquetas: ${sql(`select tags::text || ' · ' || avail || ' · ' || status from items where business_id = '${BIZ}' and name->>'es' = 'Pescado frito'`)}; hora NY: ${sql(`select to_char(now() at time zone 'America/New_York', 'HH24:MI')`)}; ventana: ${await pd.locator('[role="dialog"]').count()}; página: «${(await pd.innerText('body')).replace(/\s+/g, ' ').slice(0, 260)}»)`;

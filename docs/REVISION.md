@@ -6539,3 +6539,5 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **El pie de la web encendido (decisión AT; hecho por Opus):** en Inicio, Negocios, Comunidad, Eventos, categorías, Buscar y la ficha, teléfono y
   computadora. Se apaga o enciende en Super Admin › Textos y páginas › Páginas (con motivo; queda en el historial). Qué mirar: el final de cada página.
 - **vec9m (la prueba) tocaba el primer «Pescado frito» de la ficha:** con Novedades antes del Menú, era el de una novedad; ahora toca el del menú.
+- **Los enlaces del pie medían 14–18 px de alto (fallo de accesibilidad que cazó la prueba al encender el pie):** ahora miden 24 como mínimo
+  (parche en el script del sistema de diseño; guardián `pieObjetivos24`). Qué mirar: el pie se ve casi igual, con los renglones un poco más altos.

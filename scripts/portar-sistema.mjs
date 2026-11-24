@@ -230,6 +230,13 @@ function parchesAccesibilidad(t, rel) {
    Lo mide y lo exige pruebas/e2e/a11y9c.cjs (pruebas/lib/tactil.cjs) a 390 y a 320 con letra grande; guardián objetivosTactiles. */
 const T44 = 44, T24 = 24; // T24: el mínimo de WCAG 2.2 AA 2.5.8 en el escritorio (con el ratón)
 const TACTIL = {
+  // 24 nov (a11y9c, con el pie encendido en todas las pantallas, decisión AT): los enlaces del pie medían 14–18 de alto; ninguno baja de 24 (AA 2.5.8).
+  // Guardián pieObjetivos24.
+  "layout/SiteFooter.js": [
+    ["      display: 'flex',\n      alignItems: 'center',\n      gap: 8,\n      font: '500 ' + size", "      display: 'flex',\n      alignItems: 'center',\n      minHeight: 24,\n      gap: 8,\n      font: '500 ' + size"],
+    ["    style: {\n      font: '700 13px Manrope,sans-serif',\n      cursor: 'pointer'\n    }", "    style: {\n      display: 'inline-flex',\n      alignItems: 'center',\n      minHeight: 24,\n      font: '700 13px Manrope,sans-serif',\n      cursor: 'pointer'\n    }"],
+    ["    style: {\n      color: 'rgba(255,255,255,.62)',\n      cursor: 'pointer'\n    }", "    style: {\n      display: 'inline-flex',\n      alignItems: 'center',\n      minHeight: 24,\n      color: 'rgba(255,255,255,.62)',\n      cursor: 'pointer'\n    }"],
+  ],
   // 20 nov (confirmación 44637101290): «Volver» y «Salir» de la bienvenida (Entrar › Comunidad) medían 36 × 36.
   // 20 nov · Reseñas: «Útil» (32 de alto), «Editar» y «Reportar» (texto de 12 px: 17 de alto) a 44 — se tocan en el teléfono (la pestaña Reseñas)
   // y en el escritorio no bajan de 24 (AA 2.5.8).

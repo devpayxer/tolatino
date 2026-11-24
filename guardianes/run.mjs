@@ -16378,6 +16378,20 @@ const guardianes = {
     if (!/char_length\(v\.word\) between char_length\(w\) - 2 and char_length\(w\) \+ 2/.test(b)) falla(G, B, 0, "solo se comparan palabras de largo parecido (±2): así la corrección no recorre todo el vocabulario");
   },
 
+  /* 24 nov · Al encender el pie en todas las pantallas (decisión AT), a11y9c cazó sus enlaces de 14–18 px de alto (WCAG 2.2 AA 2.5.8 pide 24):
+     los enlaces de las columnas, los rápidos del teléfono y los legales de abajo miden 24 como mínimo. al revés: alreves9f. */
+  pieObjetivos24() {
+    const G = "pieObjetivos24", F = "packages/ui/src/ds/layout/SiteFooter.js";
+    if (!existsSync(F)) return falla(G, F, 0, "falta la pieza del pie");
+    const t = readFileSync(F, "utf8");
+    const casos = [
+      [/display: 'flex',\s*alignItems: 'center',\s*minHeight: 24,\s*gap: 8,\s*font: '500 ' \+ size/, "los enlaces de las columnas"],
+      [/display: 'inline-flex',\s*alignItems: 'center',\s*minHeight: 24,\s*font: '700 13px Manrope,sans-serif'/, "los enlaces rápidos del teléfono"],
+      [/display: 'inline-flex',\s*alignItems: 'center',\s*minHeight: 24,\s*color: 'rgba\(255,255,255,\.62\)'/, "los enlaces legales de abajo"],
+    ];
+    for (const [re, que] of casos) if (!re.test(t)) falla(G, F, 0, `${que} del pie miden 24 px de alto como mínimo (WCAG 2.2 AA 2.5.8): minHeight: 24 con display flex`);
+  },
+
   tiposAntesDeLaImagen() {
     const G = "tiposAntesDeLaImagen", N = "apps/web/next.config.ts", DF = "infra/pruebas/Dockerfile", Y = ".github/workflows/ci.yml", S = "scripts/ci/subir.mjs", V = "TOLATINO_TIPOS_YA_REVISADOS";
     for (const f of [N, DF, Y, S]) if (!existsSync(f)) return falla(G, f, 0, "falta (lo que decide dónde se revisan los tipos)");
