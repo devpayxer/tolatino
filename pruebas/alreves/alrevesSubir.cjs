@@ -13,6 +13,8 @@
 // 24 nov (revisión de 31e2974: código sensible ganaba «codigo») · lib/ fuera salvo LIB_CODIGO, acciones, route, .sql, migraciones, public salvo
 //      imágenes y fuentes, enlaces, solo pruebas nuevas, las señales en el archivo entero, main en verde estricto, el tope con reloj, y el
 //      cableado con un io de mentira (pruebasAqui, correrCorredor, deMain, planear, decidirSubida, vigilar): cada mutación de la revisión, cazada.
+// 24 nov (revisión de 6eb4c17) · La vía rápida de código APAGADA (encenderla, cazado), el servidor solo con alguna de punta a punta, sin servidor
+//      de este árbol SALTADO y se lanza, «corrieron aquí» solo en verde, y el push rojo + la programada verde del mismo commit no es verde.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync, spawnSync } = require('child_process');
 const R = ENT.RAIZ, G = 'subidaConHerramienta', S = 'scripts/ci/subir.mjs', Y = '.github/workflows/ci.yml', D = 'infra/pruebas/deploy.sh';
@@ -206,13 +208,15 @@ const casos = [
   [S, '  if (s.base?.migraciones !== migraciones) return no(', '  if (false) return no(', 'antes de las pruebas locales, /api/salud ok y tantas migraciones como trae HEAD'],
   [S, 'export function servidorEn(url, fsio = FS_REAL) {\n', 'export function servidorEn(url, fsio = FS_REAL) {\n  if (url) return { ok: true, pid: 1, cwd: "/r/t/apps/web", nodeEnv: "development", cadena: ["next dev"] };\n', 'servidorEn: nadie en ese puerto'],
   [S, 'dirs.some((x) => c[1].toUpperCase() === `${x}:${hex}`)', 'c[1].toUpperCase().endsWith(`:${hex}`)', 'servidorEn: nadie en ese puerto, o escucha en otra dirección'],
-  [S, '  if (!sv.ok) return di(false, `FALTA: pruebas de lo tocado: ${sv.motivo}`);\n', '', 'pruebasAqui: el servidor de OTRA copia → FALTA y no corre nada'],
-  [S, '  if (!sa.ok) return di(false,', '  if (false) return di(false,', 'pruebasAqui: la base del servidor con otras migraciones → FALTA'],
+  [S, '  if (!sv.ok) return sv;\n', '', 'pruebasAqui: el servidor de OTRA copia → FALTA y no corre nada'],
+  [S, '  if (!sa.ok) return no(`el servidor de', '  if (false) return no(`el servidor de', 'pruebasAqui: la base del servidor con otras migraciones → FALTA'],
   [S, '  const migraciones = io.migraciones(cabeza);', '  const migraciones = io.migraciones("HEAD");', 'pruebasAqui: el servidor de este árbol, las migraciones de LA CABEZA'],
   [S, '  if (!v.ok) return di(false, `FALTA: pruebas de lo tocado aquí (${nombres.length}) en verde', '  if (false) return di(false, `FALTA: pruebas de lo tocado aquí (${nombres.length}) en verde', 'pruebasAqui: RESULTADOS en rojo → FALTA'],
   [S, 'di = (ok, linea) => { decir({ ok, linea }); return ok; };', 'di = (ok, linea) => { decir({ ok: true, linea }); return ok; };', 'pruebasAqui: el servidor de OTRA copia → FALTA y no corre nada'],
   [S, '  if (!nombres.length || nombres.some((n) => !NOMBRE_PRUEBA.test(String(n ?? "")))) return di(false,', '  if (false) return di(false,', 'pruebasAqui: sin nombres (o un nombre vacío)'],
-  [S, '  const sv = evaluarServidor({ url, proc: io.servidor(url), raiz: io.raiz() });', '  const sv = e2e.length ? evaluarServidor({ url, proc: io.servidor(url), raiz: io.raiz() }) : { ok: true };', 'pruebasAqui: el servidor y su base se miran SIEMPRE'],
+  // Revisión de 6eb4c17 · El servidor solo con alguna de punta a punta (las al revés no lo usan), en los dos sentidos.
+  [S, '  if (e2e.length) {\n    const sl = await servidorListo({ cabeza, io });', '  if (true) {\n    const sl = await servidorListo({ cabeza, io });', 'pruebasAqui: solo al revés → ni servidor ni salud'],
+  [S, '  if (e2e.length) {\n    const sl = await servidorListo({ cabeza, io });', '  if (false) {\n    const sl = await servidorListo({ cabeza, io });', 'pruebasAqui: con alguna de punta a punta, el servidor de este árbol y su base se miran'],
   [S, 'const env = { ...process.env, PRUEBAS_URL: url };', 'const env = { ...process.env };', 'correrCorredor: lanza pruebas/correr.mjs con --reintentar y PRUEBAS_URL'],
   [S, '...nombres, "--reintentar"]', '...nombres]', 'correr con --reintentar'],
   // deMain y planear: nunca se juzga con la herramienta de la cabeza.
@@ -230,14 +234,32 @@ const casos = [
   [S, '    if (!io.limpio()) linea({ ok: false, linea: "FALTA: las comprobaciones dejaron el árbol cambiado" });\n', '', 'decidirSubida: las comprobaciones dejan el árbol cambiado'],
   [S, '        const bien = await pruebasAqui({ pruebas: p.d.pruebas, cabeza: p.head, archivos: p.archivos, decir: linea, io: io.pruebas });', '        const bien = true;', 'mira main antes de decidir y corre las pruebas de lo tocado aquí'],
   [S, '    planear: (o) => planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida: o.sinViaRapida, main: o.main }),', '    planear: (o) => planear({ base: "origin/main", cabeza: "HEAD", mas: [], sinViaRapida: o.sinViaRapida, main: { estado: "verde" } }),', 'mira main antes de decidir y corre las pruebas de lo tocado aquí'],
-  [S, '    limpio: () => !git("status", "--porcelain").trim(),', '    limpio: () => true,', 'mira main antes de decidir y corre las pruebas de lo tocado aquí'],
-  [S, '    salud: (url) => saludDe(url),', '    salud: async () => ({ ok: true, base: { ok: true, migraciones: 1 } }),', 'las pruebas de lo tocado: el servidor de este árbol, su base al día'],
+  [S, '    locales: (ls) => correrLocales(ls),\n    limpio: () => !git("status", "--porcelain").trim(),', '    locales: (ls) => correrLocales(ls),\n    limpio: () => true,', 'mira main antes de decidir y corre las pruebas de lo tocado aquí'],
+  [S, '    pruebas: ioPruebas(),\n    limpio: () => !git("status", "--porcelain").trim(),', '    pruebas: ioPruebas(),\n    limpio: () => true,', 'antes de lanzar, las de punta a punta solo con el servidor de desarrollo de este árbol'],
+  [S, '    salud: (url) => saludDe(url),', '    salud: async () => ({ ok: true, base: { ok: true, migraciones: 1 } }),', 'las pruebas de lo tocado: el servidor de este árbol y su base al día'],
   // --dirigida y --repaso.
   [S, '  if (!(await antesDeLanzar({ archivos: p.archivos, head, sinLocal }))) return 1;\n', '', '--dirigida corre aquí las pruebas de lo tocado antes de lanzar nada'],
   [S, '  if (!(await antesDeLanzar({ archivos: r.difAHead, head, primero: a.rojas, sinLocal }))) return 1;\n', '', '--repaso corre aquí las pruebas de lo tocado antes de lanzar nada'],
-  [S, 'if (sinLocal) { console.log("SALTADO: pruebas locales (--sin-local)"); return true; }', 'if (sinLocal) return true;', '--sin-local se dice'],
-  [S, '  if (!ok) { console.log("no se lanzó nada', '  if (false) { console.log("no se lanzó nada', 'y con una roja aquí no se lanza'],
-  [S, 'if (!r.correr.length) { console.log(`NO HAY: pruebas locales', 'if (!r.correr.length) { console.log(`CORRIÓ: pruebas locales', 'si no hay ninguna prueba directa se dice «NO HAY»'],
+  [S, 'if (sinLocal) { io.decir("SALTADO: pruebas locales (--sin-local)"); return true; }', 'if (sinLocal) return true;', '--sin-local se dice'],
+  [S, '  if (!ok) { io.decir("no se lanzó nada', '  if (false) { io.decir("no se lanzó nada', 'y con una roja aquí no se lanza'],
+  [S, '  if (!ok) { io.decir("no se lanzó nada', '  if (!ok && false) { io.decir("no se lanzó nada', 'antes de lanzar: con el servidor de este árbol y la e2e en rojo → no se lanza nada'],
+  [S, 'if (!r.correr.length) { io.decir(`NO HAY: pruebas locales', 'if (!r.correr.length) { io.decir(`CORRIÓ: pruebas locales', 'si no hay ninguna prueba directa se dice «NO HAY»'],
+  // Revisión de 6eb4c17 · Sin servidor de este árbol: las de punta a punta se saltan (dicho) y se lanza; las al revés corren igual.
+  [S, '      if (!correr.length) return true;', '      if (!correr.length) return false;', 'antes de lanzar: una e2e directa sin el servidor de este árbol'],
+  [S, '  if (correr.some((t) => t.carril === "e2e")) {', '  if (false) {', 'antes de lanzar: una e2e directa sin el servidor de este árbol'],
+  [S, '      correr = correr.filter((t) => t.carril !== "e2e");', '      correr = [];', 'antes de lanzar: sin servidor, la e2e se salta (dicho) y la al revés corre igual'],
+  [S, '    const sl = await servidorListo({ cabeza: head, io: io.pruebas });\n    if (!sl.ok) {', '    const sl = await servidorListo({ cabeza: head, io: io.pruebas });\n    if (false) {', 'antes de lanzar: una e2e directa sin el servidor de este árbol'],
+  // La vía rápida de código, APAGADA (AV, 24 nov): encenderla necesita una decisión nueva del fundador.
+  [S, 'export const VIA_RAPIDA_CODIGO = false;', 'export const VIA_RAPIDA_CODIGO = true;', 'la vía rápida de código está APAGADA'],
+  [S, 'noRapida = viaRapidaCodigo !== true ? APAGADA_CODIGO : sinViaRapida', 'noRapida = sinViaRapida', 'la vía rápida de código está APAGADA'],
+  [S, 'local = null, viaRapidaCodigo = VIA_RAPIDA_CODIGO } = {}) {', 'local = null, viaRapidaCodigo = true } = {}) {', 'la vía rápida de código está APAGADA'],
+  [S, '  if (deCodigo && viaRapidaCodigo !== true) linea(', '  if (false) linea(', 'decidirSubida: con la vía rápida de código APAGADA'],
+  [S, 'sinViaRapida = false, viaRapidaCodigo = VIA_RAPIDA_CODIGO }) {', 'sinViaRapida = false, viaRapidaCodigo = true }) {', 'decidirSubida: con la vía rápida de código APAGADA'],
+  [S, '  if (!VIA_RAPIDA_CODIGO) { if (!c.soloDocumentos) console.log(`${APAGADA_CODIGO}', '  if (false) { if (!c.soloDocumentos) console.log(`${APAGADA_CODIGO}', 'la vía rápida de código está APAGADA'],
+  // «corrieron aquí» solo en verde; un push rojo + una programada verde del mismo commit no es verde.
+  [S, '        verdesAqui = bien === true && falta === antes;', '        verdesAqui = true;', '«las pruebas de lo tocado corrieron aquí» solo si corrieron en verde'],
+  [S, '  else if (rapida && deCodigo) io.decir(verdesAqui ? ', '  else if (rapida && deCodigo) io.decir(true ? ', '«las pruebas de lo tocado corrieron aquí» solo si corrieron en verde'],
+  [S, '  if (roja) return { estado: "duda"', '  if (false) return { estado: "duda"', 'un push rojo con una programada verde más nueva del MISMO commit'],
   [S, '  for (const f of archivos.filter((x) => /^(apps|packages)\\//.test(x))) {', '  for (const f of archivos) {', 'la parte directa antes de lanzar'],
   // --vigilar.
   [S, '  console.log(ordenVigilar(head));\n  return 0;\n}', '  return 0;\n}', '--subir termina imprimiendo la orden para vigilar la corrida de main'],

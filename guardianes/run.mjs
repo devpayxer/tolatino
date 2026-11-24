@@ -16653,6 +16653,9 @@ const guardianes = {
     //    (g) Toca la app → al menos una de punta a punta; el servidor y su base se miran siempre; el tope se hace cumplir (reloj en correrCorredor).
     //    (h) main en verde, lo más estricto: la más nueva (push o programada) terminada, primer intento, de origin/main. (i) El cableado
     //    (pruebasAqui, planear, decidirSubida, vigilar) con un io inyectable: lo prueban los casos; aquí, que lo de verdad sea lo de verdad.
+    //    (j) Revisión de 6eb4c17: la vía rápida de código queda APAGADA (VIA_RAPIDA_CODIGO = false; encenderla necesita una decisión nueva del
+    //    fundador); su lógica se sigue mirando con viaRapidaCodigo: true. El servidor solo con alguna de punta a punta; antes de --dirigida y
+    //    --repaso, sin servidor de este árbol se dice SALTADO y se lanza. Un push rojo + una programada verde del mismo commit no es verde.
     if (!Array.isArray(SUBIR.CODIGO) || typeof SUBIR.esCodigo !== "function" || typeof SUBIR.estimarLocal !== "function" || typeof SUBIR.estadoDeMain !== "function" || typeof SUBIR.evaluarLocal !== "function"
       || typeof SUBIR.seleccionDirecta !== "function" || typeof SUBIR.evaluarServidor !== "function" || typeof SUBIR.evaluarSalud !== "function" || typeof SUBIR.ordenVigilar !== "function"
       || !Array.isArray(SUBIR.LIB_CODIGO) || typeof SUBIR.leerMain !== "function" || typeof SUBIR.decidirSubida !== "function" || typeof SUBIR.vigilar !== "function" || typeof SUBIR.pruebasAqui !== "function")
@@ -16707,19 +16710,28 @@ const guardianes = {
       if (VERDE.estado !== "verde" || EM([RM(2, "success"), RM(3, null, { status: "in_progress" })]).estado === "verde" || EM([RM(2, "success", { run_attempt: 2 })]).estado === "verde"
         || EM([RM(2, "success", { head_sha: "b".repeat(40) })]).estado === "verde" || EM([RM(2, "success"), RM(3, "failure", { event: "schedule" })]).estado !== "rojo" || SUBIR.estadoDeMain([RM(2, "success")]).estado === "verde")
         falla(G, S, 0, "main en verde solo con la corrida más nueva de main (push o programada) terminada en success, en su primer intento y de origin/main (sin terminar, otro intento u otro commit = duda; la programada en rojo = rojo)");
+      if (EM([RM(2, "failure"), RM(3, "success", { event: "schedule" })]).estado === "verde") falla(G, S, 0, "un push rojo con una programada verde más nueva del MISMO commit no es verde (AG: otra pasada en verde no lo borra)");
+      // Revisión de 6eb4c17 · La vía rápida de código queda APAGADA (AV, 24 nov): encenderla necesita una decisión nueva del fundador. La lógica de
+      // abajo se sigue mirando con viaRapidaCodigo: true (por si un día se enciende).
+      const LOK0 = SUBIR.estimarLocal([{ nombre: "evt6c", carril: "e2e" }], { evt6c: 10 }, SUBIR.TOPE_LOCAL, [APP]), apag = SUBIR.exigencias(cc, { main: VERDE, local: LOK0 });
+      const exi = /export function exigencias\([^\n]*/.exec(s)?.[0] ?? "", dec = /export async function decidirSubida\([^\n]*/.exec(s)?.[0] ?? "", plan = /function imprimirPlan\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+      if (SUBIR.VIA_RAPIDA_CODIGO !== false || apag.pruebasAqui || apag.corrida !== "dirigida" || apag.noRapida !== SUBIR.APAGADA_CODIGO || !/^vía rápida de código: APAGADA \(AV, 24 nov\)/.test(SUBIR.APAGADA_CODIGO ?? "")
+        || !exi.includes("viaRapidaCodigo = VIA_RAPIDA_CODIGO }") || !dec.includes("viaRapidaCodigo = VIA_RAPIDA_CODIGO }") || !/noRapida = viaRapidaCodigo !== true \? APAGADA_CODIGO :/.test(s)
+        || !s.includes("if (deCodigo && viaRapidaCodigo !== true) linea({ ok: false, linea: `FALTA: ${APAGADA_CODIGO}") || !plan.includes("if (!VIA_RAPIDA_CODIGO) { if (!c.soloDocumentos) console.log(`${APAGADA_CODIGO}"))
+        falla(G, S, 0, "la vía rápida de código está APAGADA (VIA_RAPIDA_CODIGO = false, AV 24 nov): exigencias y --subir nunca la dan y --plan dice «vía rápida de código: APAGADA (AV, 24 nov)»; encenderla necesita una decisión nueva del fundador");
       { const urls = []; const lm = SUBIR.leerMain(SUBIR.REPO, { api: (u) => { urls.push(u); throw new Error("sin red"); }, git: () => "a".repeat(40) });
         if (lm.estado === "verde" || !/[?&]branch=main(&|$)/.test(urls[0] ?? "") || /status=|event=/.test(urls[0] ?? "")) falla(G, S, 0, "leerMain pide las corridas de main (branch=main) sin filtrar estado ni evento, y sin la API nunca da verde"); }
-      const LOK = SUBIR.estimarLocal([{ nombre: "evt6c", carril: "e2e" }], { evt6c: 10 }, SUBIR.TOPE_LOCAL, [APP]), sale = SUBIR.exigencias(cc, { main: VERDE, local: LOK });
+      const LOK = SUBIR.estimarLocal([{ nombre: "evt6c", carril: "e2e" }], { evt6c: 10 }, SUBIR.TOPE_LOCAL, [APP]), sale = SUBIR.exigencias(cc, { viaRapidaCodigo: true, main: VERDE, local: LOK });
       if (!cc.codigo || !sale.pruebasAqui || sale.corrida !== "despues" || !["tipos", "guardianes", "textos"].every((k) => sale.locales?.includes(k))) falla(G, S, 0, "la vía rápida de código: una entrega de código con main en verde y sus pruebas dentro del tope sale con tipos, guardianes, textos y las pruebas de lo tocado aquí");
-      if (SUBIR.exigencias(cc, { main: ROJO, local: LOK }).pruebasAqui || SUBIR.exigencias(cc, { main: DUDA, local: LOK }).pruebasAqui || SUBIR.exigencias(cc, { local: LOK }).pruebasAqui) falla(G, S, 0, "con main en rojo (o sin saberlo), el código no sube por la vía rápida");
-      if (!/^main está en rojo \(corrida 3\): primero se arregla; esto va por el camino normal/.test(SUBIR.exigencias(cc, { main: ROJO, local: LOK }).noRapida ?? "")) falla(G, S, 0, "con main en rojo se dice «main está en rojo (corrida X): primero se arregla; esto va por el camino normal»");
+      if (SUBIR.exigencias(cc, { viaRapidaCodigo: true, main: ROJO, local: LOK }).pruebasAqui || SUBIR.exigencias(cc, { viaRapidaCodigo: true, main: DUDA, local: LOK }).pruebasAqui || SUBIR.exigencias(cc, { viaRapidaCodigo: true,local: LOK }).pruebasAqui) falla(G, S, 0, "con main en rojo (o sin saberlo), el código no sube por la vía rápida");
+      if (!/^main está en rojo \(corrida 3\): primero se arregla; esto va por el camino normal/.test(SUBIR.exigencias(cc, { viaRapidaCodigo: true, main: ROJO, local: LOK }).noRapida ?? "")) falla(G, S, 0, "con main en rojo se dice «main está en rojo (corrida X): primero se arregla; esto va por el camino normal»");
       const PD = "packages/ui/src/core/PestanasFicha.tsx", FD = "apps/web/app/(app)/n/[id]/FichaNueva.tsx", cdis = SUBIR.clases([PD, FD], { [PD]: ["<div />"], [FD]: ["<div />"] });
       if (SUBIR.exigencias(SUBIR.combinar(cdis, cdis), { main: ROJO }).corrida !== "despues") falla(G, S, 0, "main en rojo no frena la vía rápida de diseño (AN): solo se avisa");
       const T = SUBIR.TOPE_LOCAL;
       if (!(T?.pruebas <= 25 && T?.seg <= 600 && T?.sinMedir >= 60 && T?.factor >= 1.5)) falla(G, S, 0, `el tope de las pruebas de lo tocado: ≤ 25 pruebas y ≤ 10 min, 60 s la que no está medida, ×1,5 (${JSON.stringify(T)})`);
       const tantas = (n) => Array.from({ length: n }, (_, i) => ({ nombre: `t${i}x`, carril: "e2e" }));
-      if (SUBIR.estimarLocal(tantas(26), {}).ok || SUBIR.estimarLocal(tantas(7), {}).ok || SUBIR.exigencias(cc, { main: VERDE, local: SUBIR.estimarLocal(tantas(26), {}) }).pruebasAqui) falla(G, S, 0, "código con más pruebas que el tope sale por la vía rápida");
-      if (SUBIR.exigencias(cc, { main: VERDE, local: SUBIR.estimarLocal([], {}) }).pruebasAqui) falla(G, S, 0, "código sin ninguna prueba de lo tocado sale por la vía rápida");
+      if (SUBIR.estimarLocal(tantas(26), {}).ok || SUBIR.estimarLocal(tantas(7), {}).ok || SUBIR.exigencias(cc, { viaRapidaCodigo: true, main: VERDE, local: SUBIR.estimarLocal(tantas(26), {}) }).pruebasAqui) falla(G, S, 0, "código con más pruebas que el tope sale por la vía rápida");
+      if (SUBIR.exigencias(cc, { viaRapidaCodigo: true, main: VERDE, local: SUBIR.estimarLocal([], {}) }).pruebasAqui) falla(G, S, 0, "código sin ninguna prueba de lo tocado sale por la vía rápida");
       if (SUBIR.estimarLocal([{ nombre: "alrevesX", carril: "alreves" }], {}, T, [APP]).ok) falla(G, S, 0, "una entrega que toca apps/web o packages/ui sale por la vía rápida sin ninguna prueba de punta a punta");
       const RL = (x) => `RESULTADOS ${JSON.stringify({ pedidas: ["a1x"], verdes: ["a1x"], rojas: [], inestables: [], completa: true, ...x })}`;
       // Cada exigencia por separado (con salida 0, para que el código de salida no tape la de RESULTADOS).
@@ -16752,16 +16764,27 @@ const guardianes = {
       || !cuerpoSub.includes("    pruebas: ioPruebas(),\n") || !cuerpoSub.includes('    limpio: () => !git("status", "--porcelain").trim(),\n') || !cuerpoSub.includes("    locales: (ls) => correrLocales(ls),\n")
       || !(cuerpoSub.indexOf("const d = await decidirSubida({ ensayo, sinViaRapida, io: {") >= 0 && cuerpoSub.indexOf("if (!d.empujar) {") > cuerpoSub.indexOf("const d = await decidirSubida(") && cuerpoSub.indexOf("for (const s of plan) {") > cuerpoSub.indexOf("if (!d.empujar) {")))
       falla(G, S, 0, "--subir por la vía rápida de código: mira main antes de decidir y corre las pruebas de lo tocado aquí, después de tipos/guardianes/textos y antes de empujar");
-    if (!pa.includes("evaluarServidor({ url, proc: io.servidor(url), raiz: io.raiz() })") || !pa.includes("evaluarSalud(await io.salud(url), migraciones)") || !pa.includes("const migraciones = io.migraciones(cabeza);") || !pa.includes("await io.calentar(url, rutas)")
-      || !pa.includes("evaluarLocal({ salida: r?.salida, codigo: r?.codigo, nombres })") || !pa.includes("await io.correr({ nombres, url, topeMs })") || !pa.includes("if (r?.pasado) return di(false,") || /if \(e2e\.length\)/.test(pa)
+    // Revisión de 6eb4c17 · El servidor y su base, en servidorListo, solo si hay alguna de punta a punta (las al revés no lo usan).
+    const sl = /export async function servidorListo\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    if (!sl.includes("evaluarServidor({ url, proc: io.servidor(url), raiz: io.raiz() })") || !sl.includes("evaluarSalud(await io.salud(url), migraciones)") || !sl.includes("const migraciones = io.migraciones(cabeza);")
+      || !pa.includes("  if (e2e.length) {\n    const sl = await servidorListo({ cabeza, io });\n    if (!sl.ok) return di(false,") || !pa.includes("await io.calentar(url, rutas)")
+      || !pa.includes("evaluarLocal({ salida: r?.salida, codigo: r?.codigo, nombres })") || !pa.includes("await io.correr({ nombres, url, topeMs })") || !pa.includes("if (r?.pasado) return di(false,")
       || !corr.includes('...nombres, "--reintentar"]') || !corr.includes("const env = { ...process.env, PRUEBAS_URL: url };") || !corr.includes('setTimeout(() => { pasado = true; ch.kill("SIGINT"); }, topeMs)') || !/topeMs = topeCorredorMs\(\), lanzar = spawn/.test(corr)
       || !["    servidor: (url) => servidorEn(url),\n", "    salud: (url) => saludDe(url),\n", "    correr: (o) => correrCorredor(o),\n", "    calentar: (url, rutas) => calentar(url, rutas),\n", '    migraciones: (cabeza) => contarMigraciones(git("ls-tree", "--name-only", "-z", cabeza, "packages/db/migrations/").split("\\0").filter(Boolean)),\n'].every((l) => iop.includes(l)))
-      falla(G, S, 0, "las pruebas de lo tocado: el servidor de este árbol, su base al día (siempre), calentar, correr con --reintentar dentro del tope y RESULTADOS completa sin rojas");
+      falla(G, S, 0, "las pruebas de lo tocado: el servidor de este árbol y su base al día (con alguna de punta a punta), calentar, correr con --reintentar dentro del tope y RESULTADOS completa sin rojas");
     const dg = /async function cmdDirigida\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", rp = /async function cmdRepaso\([\s\S]*?\n\}/.exec(s)?.[0] ?? "", adl = /async function antesDeLanzar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
     for (const [n, c] of [["--dirigida", dg], ["--repaso", rp]]) { const i = c.indexOf("await antesDeLanzar("), j = c.indexOf("lanzarYEsperar("); if (i < 0 || j < 0 || i > j) falla(G, S, 0, `${n} corre aquí las pruebas de lo tocado antes de lanzar nada (antesDeLanzar antes de lanzarYEsperar)`); }
-    if (!adl.includes('if (sinLocal) { console.log("SALTADO: pruebas locales (--sin-local)"); return true; }') || !adl.includes("const ok = await pruebasAqui({ pruebas: r.correr, cabeza: head, archivos });") || !/if \(!ok\) \{ console\.log\("no se lanzó nada[^\n]*return false; \}/.test(adl))
+    if (!adl.includes('if (sinLocal) { io.decir("SALTADO: pruebas locales (--sin-local)"); return true; }') || !adl.includes("const ok = await pruebasAqui({ pruebas: correr, cabeza: head, archivos, decir: (x) => io.decir(x.linea), io: io.pruebas });")
+      || !/if \(!ok\) \{ io\.decir\("no se lanzó nada[^\n]*return false; \}/.test(adl) || !/if \(!io\.limpio\(\)\) \{ io\.decir\("FALTA: las pruebas locales dejaron el árbol cambiado[^\n]*return false; \}/.test(adl))
       falla(G, S, 0, "--sin-local se dice («SALTADO: pruebas locales (--sin-local)»), y con una roja aquí no se lanza");
-    if (!adl.includes("if (!r.correr.length) { console.log(`NO HAY: pruebas locales")) falla(G, S, 0, "antes de lanzar, si no hay ninguna prueba directa se dice «NO HAY» (nunca «CORRIÓ» de algo que no corrió)");
+    // Sin servidor de este árbol, las de punta a punta se saltan (dicho) y se lanza; las al revés corren igual. ioLanzar: lo de verdad.
+    const iol = /export function ioLanzar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
+    if (!adl.includes("const sl = await servidorListo({ cabeza: head, io: io.pruebas });") || !adl.includes("io.decir(`SALTADO: pruebas locales (sin servidor de desarrollo de este árbol):")
+      || !["    catalogo: (head) => catalogoEn(head),\n", "    buscar: (head) => buscarEn(head),\n", "    pruebas: ioPruebas(),\n", '    limpio: () => !git("status", "--porcelain").trim(),\n'].every((l) => iol.includes(l)))
+      falla(G, S, 0, "antes de lanzar, las de punta a punta solo con el servidor de desarrollo de este árbol; sin él se dice «SALTADO: pruebas locales (sin servidor de desarrollo de este árbol)» y se lanza");
+    if (!adl.includes("if (!r.correr.length) { io.decir(`NO HAY: pruebas locales")) falla(G, S, 0, "antes de lanzar, si no hay ninguna prueba directa se dice «NO HAY» (nunca «CORRIÓ» de algo que no corrió)");
+    if (!s.includes("verdesAqui = bien === true && falta === antes;") || !s.includes('else if (rapida && deCodigo) io.decir(verdesAqui ? "NO SE EXIGE: evidencia del CI antes de subir (vía rápida de código, AV): las pruebas de lo tocado corrieron aquí en verde'))
+      falla(G, S, 0, "«las pruebas de lo tocado corrieron aquí» solo si corrieron en verde");
     if (!/console\.log\(ordenVigilar\(head\)\);\n\s+return 0;\n\}$/.test(cuerpoSub) || !String(SUBIR.ordenVigilar?.("x") ?? "").startsWith("vigila la corrida de main: node scripts/ci/subir.mjs --vigilar x"))
       falla(G, S, 0, "--subir termina imprimiendo la orden para vigilar la corrida de main («vigila la corrida de main: node scripts/ci/subir.mjs --vigilar <sha>»)");
     const cv = /async function cmdVigilar\([\s\S]*?\n\}/.exec(s)?.[0] ?? "";
