@@ -476,7 +476,7 @@ const ESTADO_LARGO = "Cerrado · abre el lunes a las 11 AM";
     ok(!m10.cabe && m10.fl === '', `640 sin cursor: las pestañas no caben y no hay flechas a la vista («${m10.fl}»)`);
     const bx10 = await tira10.boundingBox(); await e10.mouse.move(bx10.x + 200, bx10.y + 25);
     ok(await espera(async () => (await med10()).fl === 'r'), 'con el cursor sobre la tira sale la flecha de la derecha (a la izquierda no hay nada que ver todavía)');
-    await e10.locator('[data-pieza="flecha-pestanas-movil"][data-lado="r"] button').click();
+    await e10.locator('[data-pieza="flecha-pestanas-movil"][data-lado="r"] [role=button]').click();
     ok(await espera(async () => { const x = await med10(); return x.sl > 0 && x.fl.includes('l'); }), 'la flecha derecha mueve la tira y entonces sale la de la izquierda');
     ok((await med10()).pag <= 640, 'las flechas no ensanchan la página');
     await e10.mouse.move(10, 700);
