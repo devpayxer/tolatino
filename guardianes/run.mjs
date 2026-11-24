@@ -16529,9 +16529,12 @@ const guardianes = {
     if (pe.some((p) => p.args?.some((a) => a.startsWith("-") && a !== "--atomic"))) falla(G, S, 0, "planDeEmpuje: un push con una opción que no es --atomic");
     // 3. La dirigida, siempre en partes y desde una sola orden.
     if (!(SUBIR.PARTES_DIRIGIDA >= 4)) falla(G, S, 0, `la dirigida va siempre en partes: PARTES_DIRIGIDA ≥ 4 (decisión AM), no ${SUBIR.PARTES_DIRIGIDA}`);
-    const o = SUBIR.ordenDirigida?.({ rama: "r", nombres: ["a1x"] }) ?? [];
-    if (!o.includes(`partes=${SUBIR.PARTES_DIRIGIDA}`) || !o.includes("alcance=regresion") || o.slice(0, 3).join(" ") !== "workflow run ci.yml")
-      falla(G, S, 0, "la dirigida va siempre en partes: ordenDirigida lleva alcance=regresion y partes=PARTES_DIRIGIDA");
+    // 24 nov · Con 4 o menos de punta a punta va en PARTES_DIRIGIDA_CHICA (4): sigue en partes; con más, en PARTES_DIRIGIDA. Nunca menos de 4.
+    if (!(SUBIR.PARTES_DIRIGIDA_CHICA >= 4)) falla(G, S, 0, `la dirigida va siempre en partes: PARTES_DIRIGIDA_CHICA ≥ 4 (decisión AM), no ${SUBIR.PARTES_DIRIGIDA_CHICA}`);
+    const todas = () => true, o = SUBIR.ordenDirigida?.({ rama: "r", nombres: ["a1x"], esE2e: todas }) ?? [];
+    const o5 = SUBIR.ordenDirigida?.({ rama: "r", nombres: ["a1x", "a2x", "a3x", "a4x", "a5x"], esE2e: todas }) ?? [], o0 = SUBIR.ordenDirigida?.({ rama: "r", nombres: ["a1x", "a2x", "a3x", "a4x", "a5x"], esE2e: () => false }) ?? [];
+    if (!o.includes(`partes=${SUBIR.PARTES_DIRIGIDA_CHICA}`) || !o0.includes(`partes=${SUBIR.PARTES_DIRIGIDA_CHICA}`) || !o5.includes(`partes=${SUBIR.PARTES_DIRIGIDA}`) || !o.includes("alcance=regresion") || o.slice(0, 3).join(" ") !== "workflow run ci.yml")
+      falla(G, S, 0, "la dirigida va siempre en partes: ordenDirigida lleva alcance=regresion y partes=PARTES_DIRIGIDA_CHICA (hasta 4 de punta a punta) o PARTES_DIRIGIDA (más)");
     if ((s.match(/["']workflow["'],\s*["']run["'],\s*["']ci\.yml["']/g) ?? []).length !== 1) falla(G, S, 0, "ci.yml se lanza desde un solo sitio (ordenDirigida)");
     // 4. La clase «despliegue» cubre lo que leen deploy.sh (sus «$REPO/…»), compose (contexto y receta de cada build) y el trabajo «imagenes».
     const y = readFileSync(Y, "utf8"), img = /\n  imagenes:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";

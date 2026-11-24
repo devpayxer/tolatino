@@ -49,7 +49,11 @@ const casos = [
   [S, '  // d.\n', '  // d.\n  spawnSync("git", ["push", "origin", "HEAD:main"], { cwd: RAIZ });\n', 'un push fuera de planDeEmpuje'],
   // La dirigida, siempre en partes y desde una sola orden.
   [S, 'export const PARTES_DIRIGIDA = 8;', 'export const PARTES_DIRIGIDA = 1;', 'la dirigida va siempre en partes'],
-  [S, '"-f", `partes=${PARTES_DIRIGIDA}`, ', '', 'la dirigida va siempre en partes'],
+  [S, '"-f", `partes=${partes}`, ', '', 'la dirigida va siempre en partes'],
+  // 24 nov · La dirigida chica (hasta 4 de punta a punta) en 4: nunca en 1, nunca contando las al revés, y con más de 4 en PARTES_DIRIGIDA
+  [S, 'export const PARTES_DIRIGIDA_CHICA = 4;', 'export const PARTES_DIRIGIDA_CHICA = 1;', 'la dirigida va siempre en partes'],
+  [S, '(e2e <= PARTES_DIRIGIDA_CHICA ? PARTES_DIRIGIDA_CHICA : PARTES_DIRIGIDA)', '(e2e <= PARTES_DIRIGIDA_CHICA ? PARTES_DIRIGIDA_CHICA : PARTES_DIRIGIDA_CHICA)', 'la dirigida va siempre en partes'],
+  [S, 'const partes = partesDirigida(nombres.filter((n) => esE2e(n)).length);', 'const partes = partesDirigida(nombres.length);', 'la dirigida va siempre en partes'],
   [S, '  gh(...args);\n', '  gh(...args);\n  gh("workflow", "run", "ci.yml", "--repo", repo, "--ref", rama);\n', 'ci.yml se lanza desde un solo sitio'],
   // La clase «despliegue» cubre lo que leen deploy.sh, compose y el trabajo «imagenes».
   [S, '/^\\.dockerignore$/, ', '', 'la clase despliegue no cubre .dockerignore'],

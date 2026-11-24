@@ -100,7 +100,7 @@
    sola no vale: la conclusión de la corrida y de ese trabajo se leen de la API (como scripts/ci/corrida.mjs). Guardián subidaConHerramienta;
    al revés: alrevesSubir. */
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -115,6 +115,13 @@ export const REPO = "devpayxer/tolatino";
 // 24 nov · En 8, repartidas POR TIEMPO (pruebas/correr.mjs, LPT con pruebas/reparto.json): en 4 por posición, la de 283 pruebas de 45422260550 tuvo
 // partes de 26 a 40 min. Guardián dirigidaEnPartes.
 export const PARTES_DIRIGIDA = 8;
+// 24 nov (medido: dirigida 45491710105, 3 pruebas de punta a punta, 18 min) · Con 4 o menos de punta a punta, 8 partes dejaban 5 vacías que ocupan
+// máquinas: las de «al revés» esperaron 4 min en cola y son el camino crítico. Hasta 4, van en PARTES_DIRIGIDA_CHICA (4: sigue en partes, decisión
+// AM, y ci.yml solo acepta 1, 4 u 8). Las al revés no cuentan: corren enteras en su carril de 6. Guardián subidaConHerramienta.
+export const PARTES_DIRIGIDA_CHICA = 4;
+/** Cuántas partes pide la dirigida: 4 si lleva 4 o menos de punta a punta, si no PARTES_DIRIGIDA. */
+export const partesDirigida = (e2e) => (e2e <= PARTES_DIRIGIDA_CHICA ? PARTES_DIRIGIDA_CHICA : PARTES_DIRIGIDA);
+const esE2eDelRepo = (n) => existsSync(join(RAIZ, "pruebas", "e2e", `${n}.cjs`));
 export const SONDEO_MS = 25_000;
 const DOC = new Set(DOCUMENTOS);
 const SHA40 = /^[0-9a-f]{40}$/;
@@ -617,10 +624,12 @@ export function dirigida({ archivos, catalogo, buscar = () => [], mas = [], vali
   return { pruebas, alrevesEntero, errores };
 }
 
-/** La orden de la dirigida (argumentos de gh). Siempre alcance=regresion y partes=PARTES_DIRIGIDA. Sin nombres, no hay orden. */
-export function ordenDirigida({ rama, nombres, repo = REPO }) {
+/** La orden de la dirigida (argumentos de gh). Siempre alcance=regresion y en partes: partesDirigida(cuántas de punta a punta lleva; esE2e dice cuál
+    lo es, por omisión la que tiene su archivo en pruebas/e2e). Sin nombres, no hay orden. */
+export function ordenDirigida({ rama, nombres, repo = REPO, esE2e = esE2eDelRepo }) {
   if (!rama || !Array.isArray(nombres) || !nombres.length || nombres.some((n) => !NOMBRE_PRUEBA.test(n))) return null;
-  return ["workflow", "run", "ci.yml", "--repo", repo, "--ref", rama, "-f", "alcance=regresion", "-f", `partes=${PARTES_DIRIGIDA}`, "-f", `solo=${nombres.join(" ")}`];
+  const partes = partesDirigida(nombres.filter((n) => esE2e(n)).length);
+  return ["workflow", "run", "ci.yml", "--repo", repo, "--ref", rama, "-f", "alcance=regresion", "-f", `partes=${partes}`, "-f", `solo=${nombres.join(" ")}`];
 }
 const comoTexto = (args) => "gh " + args.map((a) => (/^[\w./=:@-]+$/.test(a) ? a : `'${a.replace(/'/g, "'\\''")}'`)).join(" ");
 
@@ -1978,7 +1987,12 @@ async function casos() {
   ok(dirigida({ archivos: ["a.ts"], catalogo: cat, buscar, mas: ["--grupo"] }).errores.length === 1, "un --mas con forma de opción no pasa");
   ok(dirigida({ archivos: [], catalogo: cat, mas: ["adm7i"] }).pruebas.length === 1 && dirigida({ archivos: ["apps/web/lib/eventos.ts"], catalogo: cat, buscar, mas: ["adm7i"] }).pruebas.length === 2, "--mas suma, nunca resta");
   const o = ordenDirigida({ rama, nombres: ["evt6c", "adm7i"] });
-  ok(o.join(" ") === `workflow run ci.yml --repo ${REP} --ref ${rama} -f alcance=regresion -f partes=${PARTES_DIRIGIDA} -f solo=evt6c adm7i` && PARTES_DIRIGIDA >= 4, "la orden de la dirigida: siempre alcance=regresion y en partes");
+  ok(o.join(" ") === `workflow run ci.yml --repo ${REP} --ref ${rama} -f alcance=regresion -f partes=${PARTES_DIRIGIDA_CHICA} -f solo=evt6c adm7i` && PARTES_DIRIGIDA_CHICA >= 4, "la orden de la dirigida: siempre alcance=regresion y en partes (2 de punta a punta: 4)");
+  { const cinco = ["evt6c", "adm7i", "com5g", "rec1j", "pagos2d"], e = (n) => !/^alreves/.test(n);
+    ok(ordenDirigida({ rama, nombres: cinco, esE2e: e }).includes(`partes=${PARTES_DIRIGIDA}`), "5 de punta a punta: PARTES_DIRIGIDA (8)");
+    ok(ordenDirigida({ rama, nombres: ["evt6c", "alreves9a", "alreves9b", "alreves9c", "alreves9d", "alreves9e"], esE2e: e }).includes(`partes=${PARTES_DIRIGIDA_CHICA}`), "las al revés no cuentan para las partes (corren en su carril de 6)");
+    ok(ordenDirigida({ rama, nombres: ["alreves9a"], esE2e: e }).includes(`partes=${PARTES_DIRIGIDA_CHICA}`), "sin ninguna de punta a punta: sigue en partes (4), nunca 1");
+    ok([0, 1, 4, 5, 99].every((k) => [PARTES_DIRIGIDA_CHICA, PARTES_DIRIGIDA].includes(partesDirigida(k)) && partesDirigida(k) >= 4), "partesDirigida da siempre 4 u 8"); }
   ok(ordenDirigida({ rama, nombres: [] }) === null, "sin pruebas no hay orden (la dirigida vacía no lanza la regresión entera)");
   // La evidencia.
   const NO = (v, re) => !v.ok && re.test(v.motivo);
