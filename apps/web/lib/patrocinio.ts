@@ -434,7 +434,7 @@ export async function consultarPuestos(negocio: string, dur: "week" | "month", d
 export async function consultarRenovacion(negocio: string, renovarDe: string, dur: "week" | "month"): Promise<Consulta> {
   if (!/^\d{1,18}$/.test(renovarDe)) return null;
   const n = await negocioPat(null, negocio);
-  if (!n) return null;
+  if (!n || n.status !== "active" || !n.ciudad_on) return null;
   const v = (await db().query<{ dia: string }>(
     `select (s.ends_at at time zone $3)::date::text as dia from sponsorships s
       where s.id = $1::bigint and s.business_id = $2 and s.status in ('activo', 'reservado')`, [renovarDe, negocio, n.tz])).rows[0];
@@ -443,9 +443,12 @@ export async function consultarRenovacion(negocio: string, renovarDe: string, du
   const f = await fechasPeriodo(null, n.city_id, v.dia, dur, { tabla: "sponsorships", negocio, categoria: n.category_id });
   if (!f) return null;
   const l = await puestosLibres(n.city_id, n.category_id, f.a, f.b, P.puestos, dur);
-  const fin = (await db().query<{ hasta: string; libre: string | null; max: string }>(
-    `select ($1::timestamptz at time zone $2)::date::text as hasta, ($3::timestamptz at time zone $2)::date::text as libre, ((now() at time zone $2)::date + $4::int)::text as max`,
+  const fin = (await db().query<{ hasta: string; libre: string | null; max: string; hoy: string }>(
+    `select ($1::timestamptz at time zone $2)::date::text as hasta, ($3::timestamptz at time zone $2)::date::text as libre, ((now() at time zone $2)::date + $4::int)::text as max,
+            (now() at time zone $2)::date::text as hoy`,
     [f.b, n.tz, l.libre, P.diasAdelante])).rows[0]!;
+  // Lo mismo que rechaza el cobro de una renovación (comprarPatrocinio): un período que empieza antes de hoy no se paga.
+  if (f.dia < fin.hoy) return null;
   return { desde: f.dia, hasta: fin.hasta, a: f.a, b: f.b, libres: l.libres, puestos: P.puestos, libre: fin.libre, max: fin.max };
 }
 

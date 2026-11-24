@@ -25,10 +25,13 @@ const casos = [
   [CT, '      const t = mosaicosConFoto(k.page).find((x) => x.key === clave);\n      if (!t) return "Ese mosaico no existe.";', '      const t = mosaicosConFoto(k.page).find((x) => x.key === clave) ?? { label: { es: clave, en: clave }, photo: null };'],
   [CT, "owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and uploaded_by = $3 and owner_id = $3::text\n            and status = 'visible' and not rev_sin_c2 and not private and purged_at is null and url like '/medios/n/%' returning url`, [`${cat}/${clave}`", "owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and uploaded_by = $3 and owner_id = $3::text\n            and status = 'visible' and not rev_sin_c2 and not private and purged_at is null and url like '/medios/n/%' returning url`, [cat"],
   [CT, "and not rev_sin_c2 and not private and purged_at is null and url like '/medios/n/%' returning url`, [`${cat}/${clave}`, mediaId, s.id])).rows[0];", "and purged_at is null returning url`, [`${cat}/${clave}`, mediaId, s.id])).rows[0];"],
-  [CT, '      if (!f) throw new FotoNoAdjunta();\n      await c.query(`update media set status = \'removed\', removed_reason = \'replaced\', removed_by = $3, removed_at = now() where owner_kind = \'category\' and owner_id = $1 and status = \'visible\' and id <> $2::uuid`, [`${cat}/${clave}`', '      if (!f) return "Esa foto no existe.";\n      await c.query(`update media set status = \'removed\', removed_reason = \'replaced\', removed_by = $3, removed_at = now() where owner_kind = \'category\' and owner_id = $1 and status = \'visible\' and id <> $2::uuid`, [`${cat}/${clave}`'],
+  [CT, '      if (!f) throw new FotoNoAdjunta();\n      await c.query(`update media set status = \'removed\', removed_reason = \'replaced\', removed_by = $3, removed_at = now() where owner_kind = \'category\' and owner_id = $1 and status in (\'visible\', \'review\') and id <> $2::uuid`, [`${cat}/${clave}`', '      if (!f) return "Esa foto no existe.";\n      await c.query(`update media set status = \'removed\', removed_reason = \'replaced\', removed_by = $3, removed_at = now() where owner_kind = \'category\' and owner_id = $1 and status in (\'visible\', \'review\') and id <> $2::uuid`, [`${cat}/${clave}`'],
   [CT, "jsonb_build_object($2::text, $3::text)), updated_at = now() where id = $1`, [cat, clave, f.url]);", "jsonb_build_object($2::text, $3::text)), updated_at = now() where id = $1`, [cat, clave, mediaId]);"],
-  [CT, "status = 'visible' and id <> $2::uuid`, [`${cat}/${clave}`, mediaId, s.id]);", "status = 'visible' and id <> $2::uuid`, [cat, mediaId, s.id]);"],
-  [CT, "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [`${cat}/${clave}`, s.id]);", "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id like $1 || '%' and status = 'visible'`, [cat, s.id]);"],
+  [CT, "status in ('visible', 'review') and id <> $2::uuid`, [`${cat}/${clave}`, mediaId, s.id]);", "status in ('visible', 'review') and id <> $2::uuid`, [cat, mediaId, s.id]);"],
+  // La foto que deja el mosaico en revisión por reportes («review») también queda «removed/replaced».
+  [CT, "status in ('visible', 'review') and id <> $2::uuid`, [`${cat}/${clave}`, mediaId, s.id]);", "status = 'visible' and id <> $2::uuid`, [`${cat}/${clave}`, mediaId, s.id]);"],
+  [CT, "owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review')`, [`${cat}/${clave}`, s.id]);", "owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [`${cat}/${clave}`, s.id]);"],
+  [CT, "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review')`, [`${cat}/${clave}`, s.id]);", "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id like $1 || '%' and status in ('visible', 'review')`, [cat, s.id]);"],
   [CT, "then page_admin - 'tiles'\n                     else jsonb_set(page_admin, '{tiles}', (page_admin->'tiles') - $2::text) end", "then page_admin - 'tiles'\n                     else page_admin - 'tiles' end"],
   [CT, '    if (!k.ya) return "Ese mosaico ya tiene su foto original.";\n', ''],
   // 3 · La base: sin el check de «tiles», o con una dirección de afuera, o sin transacción.
@@ -38,13 +41,16 @@ const casos = [
   [MG, "(page_admin - 'hero' - 'tiles') = '{}'::jsonb", "true"],
   [MG, "\ncommit;\n", "\n"],
   // 4 · La página: sin la mezcla, con la foto que la revisión bajó, o con una consulta por mosaico.
-  [CA, 'conMosaicos({ ...c.page, ...c.page_admin } as Pagina, c.tiles)', '({ ...c.page, ...c.page_admin } as Pagina)'],
+  [CA, 'conMosaicos({ ...c.page, ...c.page_admin } as Pagina, mt.rows[0]?.tiles)', '({ ...c.page, ...c.page_admin } as Pagina)'],
+  // Escala: los mosaicos de las 17 categorías en la consulta de todas (y se descartan 16).
+  [CA, "`select k.id, k.short->>'es' as es, k.page, k.page_admin - 'tiles' as page_admin from categories k where k.status = 'on' order by k.sort`", "`select k.id, k.short->>'es' as es, k.page, k.page_admin - 'tiles' as page_admin, ${MOSAICOS_EQUIPO(\"k\")} as tiles from categories k where k.status = 'on' order by k.sort`"],
+  [CA, "`select ${MOSAICOS_EQUIPO(\"k\")} as tiles from categories k where k.id = $1`, [c.id]", "`select ${MOSAICOS_EQUIPO(\"k\")} as tiles from categories k where k.status = 'on'`, []"],
   [CA, "and m.status = 'visible' and m.purged_at is null and not m.private))`;", "and m.purged_at is null))`;"],
   [CA, "and m.status = 'visible' and m.purged_at is null and not m.private))`;", "and m.status = 'visible' and m.purged_at is null))`;"],
   [CA, "m.owner_id = ${k}.id || '/' || t.key and m.url = t.value", "m.owner_id like ${k}.id || '%'"],
   [CA, '  const t = (x: Mosaico): Mosaico => (Object.hasOwn(tiles, x.key) ? { ...x, photo: tiles[x.key]! } : x);', '  const t = (x: Mosaico): Mosaico => x;\n  void db().query("select 1");'],
   [CA, "k.page_admin - 'tiles' as page_admin", "k.page_admin"],
-  [AC, '${MOSAICOS_EQUIPO("k")} as tiles_equipo', "coalesce(k.page_admin->'tiles', '{}'::jsonb) as tiles_equipo"],
+  [AC, '${MOSAICOS_EQUIPO(\"k\")} as tiles_equipo', "coalesce(k.page_admin->'tiles', '{}'::jsonb) as tiles_equipo"],
   // 5 · La pantalla: sube por la ruta de las fotos públicas y manda el id; «Volver a la original».
   [UI, 'hacer: (m) => catMosaico(c.id, x.key, nv.id, m)', 'hacer: (m) => catMosaico(c.id, x.key, nv.url, m)'],
   [UI, '    const r = await subirFoto(f);\n    setSubeMos(null);', '    const r = await subirFotoPrivada(f);\n    setSubeMos(null);'],

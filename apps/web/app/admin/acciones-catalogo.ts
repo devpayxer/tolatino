@@ -281,7 +281,7 @@ export async function catPortada(cat: string, mediaId: string, motivo: string): 
         `update media set owner_kind = 'category', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and uploaded_by = $3 and owner_id = $3::text
             and status = 'visible' and not rev_sin_c2 and not private and purged_at is null and url like '/medios/n/%' returning url`, [cat, mediaId, s.id])).rows[0];
       if (!f) throw new FotoNoAdjunta();
-      await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [cat, mediaId, s.id]);
+      await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review') and id <> $2::uuid`, [cat, mediaId, s.id]);
       await c.query(`update categories set page_admin = jsonb_set(coalesce(page_admin, '{}'::jsonb), '{hero}', to_jsonb($2::text)), updated_at = now() where id = $1`, [cat, f.url]);
       await auditar(c, { actor: s.id, action: "catalogo.cat.portada", targetKind: "category", targetId: cat,
         before: { categoria: k.es, portada: k.ya ? `foto del equipo · ${k.ya}` : "de fábrica" }, after: { portada: `foto del equipo · ${f.url}` }, reason: m });
@@ -300,7 +300,7 @@ export async function catPortadaFabrica(cat: string, motivo: string): Promise<Re
     const k = (await c.query<{ es: string; ya: string | null }>(`select name->>'es' as es, page_admin->>'hero' as ya from categories where id = $1 for update`, [cat])).rows[0];
     if (!k) return "Esa categoría no existe.";
     if (!k.ya) return "Ya tiene la portada de fábrica.";
-    await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [cat, s.id]);
+    await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review')`, [cat, s.id]);
     await c.query(`update categories set page_admin = coalesce(page_admin, '{}'::jsonb) - 'hero', updated_at = now() where id = $1`, [cat]);
     await auditar(c, { actor: s.id, action: "catalogo.cat.portada_fabrica", targetKind: "category", targetId: cat,
       before: { categoria: k.es, portada: `foto del equipo · ${k.ya}` }, after: { portada: "de fábrica" }, reason: m });
@@ -334,7 +334,7 @@ export async function catMosaico(cat: string, clave: string, mediaId: string, mo
         `update media set owner_kind = 'category', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and uploaded_by = $3 and owner_id = $3::text
             and status = 'visible' and not rev_sin_c2 and not private and purged_at is null and url like '/medios/n/%' returning url`, [`${cat}/${clave}`, mediaId, s.id])).rows[0];
       if (!f) throw new FotoNoAdjunta();
-      await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [`${cat}/${clave}`, mediaId, s.id]);
+      await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review') and id <> $2::uuid`, [`${cat}/${clave}`, mediaId, s.id]);
       await c.query(`update categories set page_admin = jsonb_set(coalesce(page_admin, '{}'::jsonb), '{tiles}', coalesce(page_admin->'tiles', '{}'::jsonb) || jsonb_build_object($2::text, $3::text)), updated_at = now() where id = $1`, [cat, clave, f.url]);
       await auditar(c, { actor: s.id, action: "catalogo.cat.mosaico", targetKind: "category", targetId: cat,
         before: { categoria: k.es, mosaico: t.label.es, foto: k.ya ? `foto del equipo · ${k.ya}` : t.photo ? "la original" : "sin foto" }, after: { foto: `foto del equipo · ${f.url}` }, reason: m });
@@ -357,7 +357,7 @@ export async function catMosaicoOriginal(cat: string, clave: string, motivo: str
     if (!k) return "Esa categoría no existe.";
     if (!k.ya) return "Ese mosaico ya tiene su foto original.";
     const t = k.page && "title" in k.page ? mosaicosConFoto(k.page).find((x) => x.key === clave) : undefined;
-    await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [`${cat}/${clave}`, s.id]);
+    await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review')`, [`${cat}/${clave}`, s.id]);
     await c.query(`update categories set page_admin = case when (page_admin->'tiles') - $2::text = '{}'::jsonb then page_admin - 'tiles'
                      else jsonb_set(page_admin, '{tiles}', (page_admin->'tiles') - $2::text) end, updated_at = now() where id = $1`, [cat, clave]);
     await auditar(c, { actor: s.id, action: "catalogo.cat.mosaico_original", targetKind: "category", targetId: cat,

@@ -8121,10 +8121,23 @@ const guardianes = {
     if (!/const desde = v\.dia === e\.hoy \? "hoy" : v\.dia;/.test(ce) || !/const f = await periodo\(null, e, dur, desde, P\);/.test(ce)
       || !/if \(desde !== "hoy" && desde === e\.hoy\) desde = "hoy";/.test(cpe) || !/const f = await periodo\(null, e, x\.dur, desde, P\);/.test(cpe))
       falla(G, LE, 0, "consultarRenovacionEvento calcula las fechas y el precio como el cobro: periodo() desde el día en que termina (hoy = desde ahora)");
-    // Sin el tope de días adelante y solo lectura.
+    // La consulta dice «no» (null) EXACTAMENTE cuando el cobro de la renovación dice «no»: si no, «Pagar» se enciende para algo que el servidor rechaza.
+    if (!/if \(!n \|\| n\.status !== "active" \|\| !n\.ciudad_on\) return null;/.test(cr) || !/if \(f\.dia < fin\.hoy\) return null;/.test(cr)
+      || !/if \(!n \|\| n\.status !== "active"\) return no\(/.test(cp) || !/if \(!n\.ciudad_on\) return no\(/.test(cp) || !/if \(f\.dia < hoy\.hoy\) return no\(/.test(cp))
+      falla(G, L, 0, "consultarRenovacion rechaza lo mismo que el cobro de la renovación: página no publicada, ciudad sin abrir, un período que empieza antes de hoy");
+    if (!/if \(!e \|\| !vivoEvt\(e\) \|\| !e\.ciudadOn\) return null;/.test(ce) || !/if \(f\.dia < e\.hoy \|\| f\.dia > e\.dia!\) return null;/.test(ce)
+      || !/if \(!vivoEvt\(e\)\) return no\(/.test(cpe) || !/if \(!e\.ciudadOn\) return no\(/.test(cpe) || !/if \(f\.dia < e\.hoy\) return no\(/.test(cpe) || !/if \(renovarDe && f\.dia > e\.dia!\) return no\(/.test(cpe))
+      falla(G, LE, 0, "consultarRenovacionEvento rechaza lo mismo que el cobro de la renovación: evento no vivo, ciudad sin abrir, empieza antes de hoy o después del evento");
+    // Sin el tope de días adelante (ninguna comparación con max ni maxInicio) y solo lectura: una lista CERRADA de llamadas en el cuerpo de las dos
+    // consultas, y cada consulta a la base es un select.
+    const PERMITIDAS = new Set(["if", "test", "negocioPat", "eventoPat", "vivoEvt", "preciosNegocio", "preciosEvento", "fechasPeriodo", "periodo", "puestosLibres", "puestosLibresEvt", "maxInicio", "db", "query", "consultarRenovacion", "consultarRenovacionEvento"]);
+    const CMP = /\b(?:max|maxInicio)\b\s*(?:\([^)]*\)\s*)?(?:[<>]=?|[!=]==?)|(?:[<>]=?|[!=]==?)\s*[\w.]*\b(?:max|maxInicio)\b/;
     for (const [f, c] of [[L, cr], [LE, ce]]) {
-      if (/consultarPuestos(?:Evento)?\(|[<>]=?\s*[\w.]*max\b|[<>]=?\s*maxInicio\(/.test(c)) falla(G, f, 0, "la consulta de la renovación no aplica el tope de patrocinio_dias_adelante (el cobro de una renovación no lo tiene): con un fin a más de 60 días dejaría la pantalla sin fechas");
-      if (/\b(insert into|update|delete from)\b|\bcobrar\(|\btx\(/i.test(c)) falla(G, f, 0, "la consulta de la renovación es solo lectura (no cobra ni escribe)");
+      const sinSql = c.replace(/`[^`]*`/g, "``");
+      if (/consultarPuestos(?:Evento)?\(/.test(c) || CMP.test(sinSql)) falla(G, f, 0, "la consulta de la renovación no aplica el tope de patrocinio_dias_adelante (el cobro de una renovación no lo tiene): con un fin a más de 60 días dejaría la pantalla sin fechas");
+      const otras = [...sinSql.matchAll(/\b([A-Za-z_$][\w$]*)\s*(?:<[^()]*?>)?\s*\(/g)].map((m) => m[1]).filter((x) => !PERMITIDAS.has(x));
+      const sqls = [...c.matchAll(/`([^`]*)`/g)].map((m) => m[1]).filter((q) => !/^\s*select\b/i.test(q) && !/^\^/.test(q));
+      if (otras.length || sqls.length || /\b(insert into|update|delete from)\b/i.test(c)) falla(G, f, 0, `la consulta de la renovación es solo lectura: solo llama a lo de la lista cerrada y a la base solo con select${otras.length ? ` (llama a ${[...new Set(otras)].join(", ")})` : ""}`);
     }
     // Las acciones: Cobros del panel (entrar) y la consulta de la renovación.
     const a = sinComent(A), ae = sinComent(AE), pr = cuerpoFn(a, "patPuestosRenovar"), pre = cuerpoFn(ae, "pevPuestosRenovar");
@@ -15361,6 +15374,8 @@ const guardianes = {
     if (!/add constraint categories_page_admin_portada_propia check \(\s*jsonb_typeof\(page_admin\) = 'object' and \(page_admin - 'hero'\) = '\{\}'::jsonb\s*and \(not \(page_admin \? 'hero'\) or page_admin->>'hero' ~ '\^\/medios\/n\/\[0-9a-f\]\{8\}/.test(mg)) falla(G, MG, 0, "la base impone que page_admin solo lleve «hero» y una foto de /medios/n/ (0214: categories_page_admin_portada_propia)");
     if (/delete\s+from\s+media/i.test(ct)) falla(G, CT, 0, "el Catálogo nunca borra una foto (nada se borra: «removed/replaced»)");
     if (!/update media set owner_kind = 'category', owner_id = \$1/.test(cp) || !/set status = 'removed', removed_reason = 'replaced'/.test(cp) || !/set status = 'removed', removed_reason = 'replaced'/.test(cf)) falla(G, CT, 0, "la portada pasa a ser de la categoría y la foto anterior (o la devuelta a la de fábrica) queda «removed/replaced»: nada se borra");
+    // 24 nov · También la que está en revisión por reportes («review»): si no, queda viva sin dueño y al aprobarse vuelve a la página.
+    for (const [n, c] of [["catPortada", cp], ["catPortadaFabrica", cf]]) if (!/set status = 'removed', removed_reason = 'replaced', removed_by = \$\d, removed_at = now\(\) where owner_kind = 'category' and owner_id = \$1 and status in \('visible', 'review'\)/.test(c)) falla(G, CT, 0, `${n}: la foto que deja la portada queda «removed/replaced» esté visible o en revisión (status in ('visible', 'review'))`);
     // 4 · La pantalla: solo manda el id de la foto que subió por la ruta de las fotos públicas.
     const ui = sinComent(UI);
     // 24 nov · Mirado en elegirPortada: la de los mosaicos (elegirMosaico) también llama a subirFoto y no debe tapar una portada que no lo haga.
@@ -15396,7 +15411,7 @@ const guardianes = {
       if (iW < iH || iA < iW) falla(G, CT, 0, `${n}: escribe page_admin dentro de hacer y deja su auditoría DESPUÉS, en la misma transacción`);
       const au = iA < 0 ? "" : c.slice(iA, c.indexOf("});", iA));
       if (!au.includes(`action: "${acc}"`) || !/targetKind: "category", targetId: cat/.test(au) || !/before: \{/.test(au) || !/after: \{/.test(au) || !/reason: m/.test(au)) falla(G, CT, 0, `${n}: la auditoría lleva la acción «${acc}», la categoría, antes, después y el motivo`);
-      if (!/update media set status = 'removed', removed_reason = 'replaced', removed_by = \$\d, removed_at = now\(\) where owner_kind = 'category' and owner_id = \$1 and status = 'visible'[^`]*`, \[`\$\{cat\}\/\$\{clave\}`, /.test(c)) falla(G, CT, 0, `${n}: la foto que deja el mosaico queda «removed/replaced» (nada se borra), y solo la de ESE mosaico (owner_id '<categoría>/<clave>')`);
+      if (!/update media set status = 'removed', removed_reason = 'replaced', removed_by = \$\d, removed_at = now\(\) where owner_kind = 'category' and owner_id = \$1 and status in \('visible', 'review'\)[^`]*`, \[`\$\{cat\}\/\$\{clave\}`, /.test(c)) falla(G, CT, 0, `${n}: la foto que deja el mosaico queda «removed/replaced» (nada se borra) esté visible o en revisión, y solo la de ESE mosaico (owner_id '<categoría>/<clave>')`);
     }
     // 2 · catMosaico: un mosaico con foto de ESTA página, una foto subida (id) que se adjunta todo o nada, y en page_admin solo SU clave con la dirección que devolvió la base.
     if (!/export async function catMosaico\(cat: string, clave: string, mediaId: string, motivo: string\): Promise<ResAdm>/.test(ct) || !/!UUID\.test\(mediaId\)/.test(cm)) falla(G, CT, 0, "catMosaico recibe el id de una foto subida (un uuid), nunca una dirección");
@@ -15416,7 +15431,7 @@ const guardianes = {
       || !/!\(@\.key like_regex "\^\[\^\[:cntrl:\]\]\{1,80\}\$"\)/.test(mg) || !/jsonb_typeof\(page_admin->'tiles'\) = 'object'/.test(mg)) falla(G, MG, 0, "la base impone que page_admin.tiles sea un objeto con solo fotos de /medios/n/ y claves de 1 a 80 caracteres sin control (0217)");
     // 4 · La página: la mezcla por mosaico en la MISMA consulta (sin N+1) y solo con la foto todavía visible, pública y sin purgar.
     const ca = sinComent(CA), ps = cuerpoFn(ca, "categoriaPorSlug"), me = (/export const MOSAICOS_EQUIPO = [\s\S]*?\)\)`;/.exec(ca) ?? [""])[0];
-    if (!/\$\{MOSAICOS_EQUIPO\("k"\)\} as tiles from categories k/.test(ps) || !/conMosaicos\(\{ \.\.\.c\.page, \.\.\.c\.page_admin \} as Pagina, c\.tiles\)/.test(ps) || !/k\.page_admin - 'tiles' as page_admin/.test(ps)) falla(G, CA, 0, "categoriaPorSlug mezcla los mosaicos del equipo en la MISMA consulta de la categoría (MOSAICOS_EQUIPO) con conMosaicos; «tiles» no entra a la página tal cual");
+    if (!/`select \$\{MOSAICOS_EQUIPO\("k"\)\} as tiles from categories k where k\.id = \$1`, \[c\.id\]/.test(ps) || (ps.match(/MOSAICOS_EQUIPO\(/g) ?? []).length !== 1 || !/conMosaicos\(\{ \.\.\.c\.page, \.\.\.c\.page_admin \} as Pagina, mt\.rows\[0\]\?\.tiles\)/.test(ps) || !/k\.page_admin - 'tiles' as page_admin/.test(ps)) falla(G, CA, 0, "categoriaPorSlug calcula los mosaicos del equipo (MOSAICOS_EQUIPO) solo de la categoría elegida, en UNA consulta (no para las 17), y los mezcla con conMosaicos; «tiles» no entra a la página tal cual");
     if (!/m\.owner_kind = 'category' and m\.owner_id = \$\{k\}\.id \|\| '\/' \|\| t\.key and m\.url = t\.value/.test(me) || !/m\.status = 'visible' and m\.purged_at is null and not m\.private\)\)`;/.test(me)) falla(G, CA, 0, "MOSAICOS_EQUIPO: solo la foto de ESE mosaico que sigue visible, pública y sin purgar (si la revisión la bajó, vuelve la original)");
     const cmo = cuerpoFn(ca, "conMosaicos");
     if (!cmo || /\b(db|query|await)\b/.test(cmo) || !/photo: tiles\[x\.key\]!/.test(cmo)) falla(G, CA, 0, "conMosaicos solo reparte lo que trajo la consulta (sin una consulta por mosaico): la del equipo → la original → gris");

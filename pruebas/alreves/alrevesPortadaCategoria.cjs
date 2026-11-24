@@ -31,8 +31,11 @@ const casos = [
   [CT, "page_admin = coalesce(page_admin, '{}'::jsonb) - 'hero'", "page_admin = '{}'::jsonb"],
   [MG, "(page_admin - 'hero') = '{}'::jsonb", "true"],
   [MG, "'^/medios/n/[0-9a-f]{8}", "'^[a-z:/]+/[0-9a-f]{8}"],
-  [CT, "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [cat, s.id]);", "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [cat, s.id]);\n    await c.query(`delete from media where owner_kind = 'category' and owner_id = $1`, [cat]);"],
+  [CT, "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review')`, [cat, s.id]);", "removed_reason = 'replaced', removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review')`, [cat, s.id]);\n    await c.query(`delete from media where owner_kind = 'category' and owner_id = $1`, [cat]);"],
   [CT, "owner_kind = 'category', owner_id = $1, sort = 0", "owner_kind = 'user', owner_id = $1, sort = 0"],
+  // 24 nov · La foto que deja la portada en revisión por reportes («review») también queda «removed/replaced» (si no, al aprobarse vuelve sin dueño).
+  [CT, "removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review') and id <> $2::uuid`, [cat, mediaId, s.id]);", "removed_by = $3, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible' and id <> $2::uuid`, [cat, mediaId, s.id]);"],
+  [CT, "removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status in ('visible', 'review')`, [cat, s.id]);", "removed_by = $2, removed_at = now() where owner_kind = 'category' and owner_id = $1 and status = 'visible'`, [cat, s.id]);"],
   // 4 · La pantalla: sube por la ruta de las fotos públicas y manda solo el id.
   [UI, 'hacer: (m) => catPortada(c.id, nueva.id, m)', 'hacer: (m) => catPortada(c.id, nueva.url, m)'],
   [UI, 'const r = await subirFoto(f);', 'const r = await subirFotoPrivada(f);'],

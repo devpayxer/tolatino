@@ -21,9 +21,23 @@ const casos = [
   // 2 · Eventos: otro patrocinio, sin «hoy», otra duración en el cobro, con el tope.
   [LE, "  const v = (await db().query<{ dia: string }>(`select (s.ends_at at time zone $3)::date::text as dia from event_sponsorships s where s.id = $1::bigint and s.event_id = $2::bigint and s.status in ('activo', 'reservado')`,\n    [renovarDe, evento, e.tz])).rows[0];", "  const v = (await db().query<{ dia: string }>(`select (s.ends_at at time zone $3)::date::text as dia from event_sponsorships s where s.id = $1::bigint and s.status in ('activo', 'reservado')`,\n    [renovarDe, evento, e.tz])).rows[0];"],
   [LE, '  const desde = v.dia === e.hoy ? "hoy" : v.dia;', '  const desde = v.dia;'],
-  [LE, '  const f = await periodo(null, e, dur, desde, P);\n  if (!f) return null;\n  const l = await puestosLibresEvt(', '  const f = await periodo(null, e, "week", desde, P);\n  if (!f) return null;\n  const l = await puestosLibresEvt('],
+  [LE, '  const f = await periodo(null, e, dur, desde, P);\n  if (!f) return null;\n', '  const f = await periodo(null, e, "week", desde, P);\n  if (!f) return null;\n'],
   [LE, '  const desde = v.dia === e.hoy ? "hoy" : v.dia;', '  const desde = v.dia === e.hoy ? "hoy" : v.dia;\n  if (desde !== "hoy" && desde > maxInicio(e, P, dur)) return null;'],
   [LE, '  if (desde !== "hoy" && desde === e.hoy) desde = "hoy";', ''],
+  // 1b · La consulta dice «no» con las mismas condiciones que el cobro (24 nov): si no, «Pagar» se enciende para algo que el servidor rechaza.
+  [L, '  if (!n || n.status !== "active" || !n.ciudad_on) return null;\n  const v = (await db().query<{ dia: string }>(', '  if (!n) return null;\n  const v = (await db().query<{ dia: string }>('],
+  [L, '  if (f.dia < fin.hoy) return null;\n', ''],
+  [LE, '  if (!e || !vivoEvt(e) || !e.ciudadOn) return null;\n  const v = (await db()', '  if (!e || !vivoEvt(e)) return null;\n  const v = (await db()'],
+  [LE, '  if (f.dia < e.hoy || f.dia > e.dia!) return null;', '  if (f.dia < e.hoy) return null;'],
+  [LE, '  if (renovarDe && f.dia > e.dia!) return no(', '  if (renovarDe && f.dia > e.dia! && false) return no('],
+  // 1c · El tope, escrito al revés (max a la izquierda), y llamadas fuera de la lista cerrada (cobrar, renovar, capturar, anotar) o una consulta que no es select.
+  [L, '  if (f.dia < fin.hoy) return null;', '  if (f.dia < fin.hoy) return null;\n  if (fin.max < f.dia) return null;'],
+  [LE, '  if (f.dia < e.hoy || f.dia > e.dia!) return null;', '  if (f.dia < e.hoy || f.dia > e.dia!) return null;\n  if (maxInicio(e, P, dur) < f.dia) return null;'],
+  [L, '  if (f.dia < fin.hoy) return null;', '  if (f.dia < fin.hoy) return null;\n  void comprarPatrocinio(negocio, negocio, { dur, desde: v.dia, pm: "", renovar: false, clave: "", renovarDe });'],
+  [L, '  if (f.dia < fin.hoy) return null;', '  if (f.dia < fin.hoy) return null;\n  void renovarSolo(negocio, negocio, renovarDe, true);'],
+  [LE, '  if (f.dia < e.hoy || f.dia > e.dia!) return null;', '  if (f.dia < e.hoy || f.dia > e.dia!) return null;\n  void capturarCobro(null as never, 0);'],
+  [LE, '  if (f.dia < e.hoy || f.dia > e.dia!) return null;', '  if (f.dia < e.hoy || f.dia > e.dia!) return null;\n  void anotarPago(null as never, null as never);'],
+  [LE, '  if (f.dia < e.hoy || f.dia > e.dia!) return null;\n  const l = await puestosLibresEvt(e.ciudad, f.a, f.b, P.puestos, dur);\n  const libre = l.libre ? (await db().query<{ d: string }>(`select ($1::timestamptz', '  if (f.dia < e.hoy || f.dia > e.dia!) return null;\n  const l = await puestosLibresEvt(e.ciudad, f.a, f.b, P.puestos, dur);\n  const libre = l.libre ? (await db().query<{ d: string }>(`with x as (update event_sponsorships set auto_renew = auto_renew where false returning 1) select ($1::timestamptz'],
   // 3 · Las acciones: sin entrar(), o con la consulta de elegir fecha.
   [A, '  const a = await entrar(id);\n  if (!a) return null;\n  return consultarRenovacion(a.negocio.id, ', '  const a = { negocio: { id } };\n  return consultarRenovacion(a.negocio.id, '],
   [AE, '  const a = await entrar(id, evento);\n  if (!a) return null;\n  return consultarRenovacionEvento(a.negocio.id, evento, ', '  const a = await entrar(id, evento);\n  if (!a) return null;\n  return consultarPuestosEvento(a.negocio.id, evento, '],

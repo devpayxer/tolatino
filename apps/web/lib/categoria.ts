@@ -34,12 +34,17 @@ export async function categoriaActivaEn(cat: string, ciudad: string) {
 }
 
 export async function categoriaPorSlug(slug: string) {
-  const r = await db().query<{ id: string; es: string; page: Pagina; page_admin: Partial<Pagina>; tiles: Record<string, string> }>(
-    `select k.id, k.short->>'es' as es, k.page, k.page_admin - 'tiles' as page_admin, ${MOSAICOS_EQUIPO("k")} as tiles from categories k where k.status = 'on' order by k.sort`);
+  const r = await db().query<{ id: string; es: string; page: Pagina; page_admin: Partial<Pagina> }>(
+    `select k.id, k.short->>'es' as es, k.page, k.page_admin - 'tiles' as page_admin from categories k where k.status = 'on' order by k.sort`);
   const c = r.rows.find((x) => slugCat(x.es) === slug);
   if (!c || !c.page || !("title" in c.page)) return null;
-  const vivas = new Set((await db().query<{ id: string }>(`select id from subcategorias_vivas where category_id = $1`, [c.id])).rows.map((x) => x.id));
-  return { id: c.id, page: sinApagadas(conMosaicos({ ...c.page, ...c.page_admin } as Pagina, c.tiles), vivas) };
+  // Los mosaicos del equipo, solo de ESTA categoría (una consulta, a la par de las subcategorías vivas; nunca una por mosaico).
+  const [sv, mt] = await Promise.all([
+    db().query<{ id: string }>(`select id from subcategorias_vivas where category_id = $1`, [c.id]),
+    db().query<{ tiles: Record<string, string> }>(`select ${MOSAICOS_EQUIPO("k")} as tiles from categories k where k.id = $1`, [c.id]),
+  ]);
+  const vivas = new Set(sv.rows.map((x) => x.id));
+  return { id: c.id, page: sinApagadas(conMosaicos({ ...c.page, ...c.page_admin } as Pagina, mt.rows[0]?.tiles), vivas) };
 }
 
 /* Mosaicos con foto del equipo (Super Admin › Catálogo › la categoría › «Mosaicos de la página», 0217). categories.page_admin.tiles guarda

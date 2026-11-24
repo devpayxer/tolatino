@@ -106,7 +106,7 @@ export async function consultarPuestosEvento(negocio: string, evento: string, du
 export async function consultarRenovacionEvento(negocio: string, evento: string, renovarDe: string, dur: "week" | "month"): Promise<ConsultaE> {
   if (!ID.test(renovarDe)) return null;
   const e = await eventoPat(null, evento, negocio);
-  if (!e || !vivoEvt(e)) return null;
+  if (!e || !vivoEvt(e) || !e.ciudadOn) return null;
   const v = (await db().query<{ dia: string }>(`select (s.ends_at at time zone $3)::date::text as dia from event_sponsorships s where s.id = $1::bigint and s.event_id = $2::bigint and s.status in ('activo', 'reservado')`,
     [renovarDe, evento, e.tz])).rows[0];
   if (!v) return null;
@@ -114,6 +114,8 @@ export async function consultarRenovacionEvento(negocio: string, evento: string,
   const desde = v.dia === e.hoy ? "hoy" : v.dia;
   const f = await periodo(null, e, dur, desde, P);
   if (!f) return null;
+  // Lo mismo que rechaza el cobro de una renovación (comprarPatrocinioEvento): empieza antes de hoy, o después del evento.
+  if (f.dia < e.hoy || f.dia > e.dia!) return null;
   const l = await puestosLibresEvt(e.ciudad, f.a, f.b, P.puestos, dur);
   const libre = l.libre ? (await db().query<{ d: string }>(`select ($1::timestamptz at time zone $2)::date::text as d`, [l.libre, e.tz])).rows[0]!.d : null;
   return { desde: f.dia, hasta: f.hasta, a: f.a, b: f.b, libres: l.libres, puestos: P.puestos, libre, max: maxInicio(e, P, dur), precio: f.precio, semanas: f.semanas };
