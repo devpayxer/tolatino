@@ -83,17 +83,27 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const [VAC, alertaVac] = await Promise.all([(await import("@/lib/jobs")).vacantesBuscar(CIUDAD, q, 3), u ? (await import("@/lib/alertas")).tieneAlertaVacantes(u.id, CIUDAD) : Promise.resolve(false)]);
   // 9t · Platos y servicios (prototipo it / il): 4 en «Todo»; en su pestaña hasta 40, con el filtro por categoría (ic) y «Precio más bajo» (io).
   const icCat = tab === "itm" ? cats.find((c) => c.slug === sp.ic)?.id ?? null : null, ioPrecio = tab === "itm" && sp.io === "price";
-  const [r, C, V, EV, PL] = await Promise.all([
-    negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite }),
+  // 24 nov (fallo visto por el fundador): mientras se escribe, la última palabra cuenta como inicio («arro» → arroz) y la sugerencia promete
+  // «38 negocios»; al buscar se exigía la palabra entera y salía «No encontramos». Si la búsqueda exacta no trae nada, se completa la última
+  // palabra igual que la sugerencia: el resultado nunca dice menos de lo que la sugerencia prometió (guardián buscarCumpleLaSugerencia).
+  const buscarTodo = (vivo: boolean) => Promise.all([
+    negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite, vivo }),
     sugerirCatalogo(E, CIUDAD, catSel?.id ?? null),
-    u && E.grupos.length && !catSel ? buscarVecinos(u.id, CIUDAD, tsq(E.grupos, true), tab === "vec" ? String(sp.vc ?? "") || null : null, tab === "vec" ? 10 : 2) : null,
-    E.grupos.length && !catSel ? buscarEventos(tsq(E.grupos, true), loc, tab === "evt" ? ef : "all", u?.id ?? null, es, tab === "evt" ? 40 : 4) : null,
-    platos(E, { punto: loc, cat: catSel?.id ?? null, filtro: icCat, orden: ioPrecio ? "price" : "rel", limite: tab === "itm" ? 40 : 4, userId: u?.id ?? null }),
+    u && E.grupos.length && !catSel ? buscarVecinos(u.id, CIUDAD, tsq(E.grupos, true, vivo), tab === "vec" ? String(sp.vc ?? "") || null : null, tab === "vec" ? 10 : 2) : null,
+    E.grupos.length && !catSel ? buscarEventos(tsq(E.grupos, true, vivo), loc, tab === "evt" ? ef : "all", u?.id ?? null, es, tab === "evt" ? 40 : 4) : null,
+    platos(E, { punto: loc, cat: catSel?.id ?? null, filtro: icCat, orden: ioPrecio ? "price" : "rel", limite: tab === "itm" ? 40 : 4, userId: u?.id ?? null, vivo }),
   ]);
+  const cuentaPlatos = (p: { cats: Record<string, number> }) => Object.values(p.cats).reduce((a, b) => a + b, 0);
+  let [r, C, V, EV, PL] = await buscarTodo(false);
+  let completada = false;
+  if (E.grupos.length && r.total === 0 && cuentaPlatos(PL) === 0) {
+    const x = await buscarTodo(true);
+    if (x[0].total || cuentaPlatos(x[4])) { [r, C, V, EV, PL] = x; completada = true; }
+  }
   const vaciaPrimero = !!C.vacias[0] && (!C.subs[0] || C.vacias[0].score > C.subs[0].score);
   const dom = catSel?.id ?? dominante(r.items, C.subs, C.vacias, C.cats, vaciaPrimero);
   // 9t · Un plato o servicio también es un resultado: «mofongo» no está en el nombre de ningún negocio, pero sí en su menú.
-  const nPlatos = Object.values(PL.cats).reduce((a, b) => a + b, 0);
+  const nPlatos = cuentaPlatos(PL);
   const nada = r.total === 0 && nPlatos === 0;
   const dym = nada && E.grupos.some((g) => g.corregida) ? E.palabras.map((w) => E.grupos.find((g) => g.w === w)?.corregida ?? w).join(" ") : null;
   if (q && pagina === 0 && tab === "all") {
@@ -106,9 +116,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     armarTarjetas(CIUDAD, r.items, lang, u?.id ?? null),
     nombresSub([...new Set(r.items.flatMap((x) => x.subs.slice(0, 1)))], lang),
     // 9t-2 · La razón de cada negocio que encajó por lo que vende («Tiene Mofongo de chicharrón · $12»): una consulta para toda la página.
-    porQue(E, { punto: loc, ids: r.items.map((x) => x.id), userId: u?.id ?? null }),
+    porQue(E, { punto: loc, ids: r.items.map((x) => x.id), userId: u?.id ?? null, vivo: completada }),
   ]);
-  const razon = new Map(r.items.map((b) => [b.id, textoRazon(b.name, RZ.get(b.id), E, es)]));
+  const razon = new Map(r.items.map((b) => [b.id, textoRazon(b.name, RZ.get(b.id), E, es, { vivo: completada })]));
   // En la tarjeta, la razón es el primer chip (prototipo card: variante «verified»), hasta 3 chips como siempre.
   const tarjetas = tarjetas0.map((t) => { const w = razon.get(t.id); return w ? { ...t, chips: [{ variant: "verified", label: w }, ...t.chips].slice(0, 3) } : t; });
   const catDe = (id: string) => cats.find((c) => c.id === id);

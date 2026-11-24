@@ -354,6 +354,12 @@ const nombres = (r) => (r.filas || []).filter((x) => x.kind === 'item').map((x) 
     const anillo9 = await caja9.evaluate((e) => ({ o: getComputedStyle(e).outlineStyle, b: getComputedStyle(e.parentElement).borderTopColor }));
     ok(anillo9.o === 'none' && anillo9.b !== 'rgba(0, 0, 0, 0)', `sin el anillo dentro de la caja; el foco lo muestra el borde de la caja (${anillo9.o} · ${anillo9.b})`);
     await shot(t9, '390-buscar-al-momento', false);
+    // 24 nov · Lo que la sugerencia promete, la búsqueda lo cumple: «Arro» (palabra a medias) trae los negocios con arroz, no «No encontramos».
+    await caja9.fill('Arro');
+    ok(await espera(async () => /Buscar «Arro»/.test(await t9.locator('[data-screen-label="APP-BUSCAR · sugerencias"]').innerText().catch(() => ''))), 'escribiendo «Arro», la sugerencia ofrece buscarlo');
+    await caja9.press('Enter');
+    await t9.waitForURL(/q=Arro/);
+    ok(await espera(async () => { const tx = await t9.locator('[data-pantalla="APP-BUSCAR"]').innerText(); return !tx.includes('No encontramos') && /Coquí Boricua/.test(tx); }), 'al buscar «Arro» salen los negocios con arroz (la búsqueda completa la última palabra, como la sugerencia)');
     await t9.goto(B + '/c/comida'); await t9.waitForLoadState('networkidle').catch(() => {});
     await t9.locator('[data-buscador-categoria]').first().tap();
     await t9.waitForURL(/\/buscar\?cat=comida/);

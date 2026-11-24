@@ -6521,6 +6521,11 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Del pedido a servido ~24 min: la subida fueron 4 min; el resto, esperar una revisión del CI de otro paquete que ocupaba la rama (fallo de
   orquestación de Opus: ese paquete se apartó con un commit de reversión y el ajuste subió solo). Qué mirar: la ficha de un restaurante.
 
+- **«Arro» prometía resultados y al buscar salía «No encontramos» (fallo visto por el fundador; arreglado por Opus):** mientras se escribe, la última
+  palabra cuenta como inicio de palabra; al buscar se exigía entera. Ahora, si la búsqueda exacta no trae nada, se completa la última palabra igual que
+  la sugerencia (negocios, platos, eventos y vecinos). Guardián `buscarCumpleLaSugerencia`, al revés 8/8, `bus9t` con el caso «Arro». Qué mirar: escribir
+  «Arro» y darle Buscar.
+
 ## Mosaicos de categoría y «Renovar otro mes» (24 nov; hecho por Opus, revisado por Fable)
 - **Mosaicos desde el Super Admin (migración 0217):** Catálogo › una categoría › Mosaicos: cambiar la foto de un mosaico, verlo en su página de
   categoría, «Volver a la original». Qué mirar: Fiestas, mosaico «Bautizo». La lista de mosaicos es larga (todas las subcategorías).

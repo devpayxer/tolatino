@@ -16340,6 +16340,24 @@ const guardianes = {
     }
   },
 
+  /* 24 nov · Fallo visto por el fundador: escribiendo «Arro» la sugerencia prometía «38 negocios · 216 platos» (la última palabra cuenta como
+     inicio mientras se escribe) y al darle Buscar salía «No encontramos» (se exigía la palabra entera). La página de resultados, si la búsqueda
+     exacta no trae nada, completa la última palabra igual que la sugerencia. al revés: alrevesBuscarCumple · punta a punta: bus9t (7). */
+  buscarCumpleLaSugerencia() {
+    const G = "buscarCumpleLaSugerencia", P = "apps/web/app/(app)/buscar/page.tsx", A = "apps/web/app/api/buscar/route.ts";
+    for (const f of [P, A]) if (!existsSync(f)) return falla(G, f, 0, "falta (la sugerencia o la página de resultados)");
+    const a = sinComent(A);
+    if (!/negocios\(E, \{[^}]*vivo: true \}\)/.test(a) || !/platos\(E, \{[^}]*vivo: true[^}]*\}\)/.test(a)) falla(G, A, 0, "la sugerencia cuenta con la última palabra como inicio (vivo: true en negocios y platos)");
+    const p = sinComent(P);
+    if (!/const buscarTodo = \(vivo: boolean\) => Promise\.all\(\[/.test(p)) return falla(G, P, 0, "los resultados se buscan con una sola función buscarTodo(vivo) (exacta y, si no trae nada, completando la última palabra)");
+    const cuerpo = p.slice(p.indexOf("const buscarTodo"), p.indexOf("]);", p.indexOf("const buscarTodo")));
+    for (const [re, que] of [[/negocios\(E, \{[^}]*\bvivo \}\)/, "negocios"], [/platos\(E, \{[^}]*\bvivo \}\)/, "platos"], [/buscarEventos\(tsq\(E\.grupos, true, vivo\)/, "eventos"], [/buscarVecinos\([^)]*tsq\(E\.grupos, true, vivo\)/, "vecinos"]])
+      if (!re.test(cuerpo)) falla(G, P, 0, `buscarTodo pasa «vivo» a ${que}: si no, al completar la palabra esa sección sigue vacía`);
+    if (!/let \[r, C, V, EV, PL\] = await buscarTodo\(false\);/.test(p) || !/if \(E\.grupos\.length && r\.total === 0 && cuentaPlatos\(PL\) === 0\) \{\s*const x = await buscarTodo\(true\);/.test(p))
+      falla(G, P, 0, "primero la búsqueda exacta y, si no trae negocios ni platos, otra vez completando la última palabra (como la sugerencia): nunca «No encontramos» después de prometer resultados");
+    if (!/vivo: completada \}\)/.test(p) || !/textoRazon\(b\.name, RZ\.get\(b\.id\), E, es, \{ vivo: completada \}\)/.test(p)) falla(G, P, 0, "la razón de cada negocio («Tiene …») se calcula igual que la búsqueda que lo trajo (vivo: completada)");
+  },
+
   tiposAntesDeLaImagen() {
     const G = "tiposAntesDeLaImagen", N = "apps/web/next.config.ts", DF = "infra/pruebas/Dockerfile", Y = ".github/workflows/ci.yml", S = "scripts/ci/subir.mjs", V = "TOLATINO_TIPOS_YA_REVISADOS";
     for (const f of [N, DF, Y, S]) if (!existsSync(f)) return falla(G, f, 0, "falta (lo que decide dónde se revisan los tipos)");
