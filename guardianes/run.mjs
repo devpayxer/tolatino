@@ -17864,7 +17864,7 @@ const guardianes = {
       if (/E2\("(Cancelada|Cancelado|Salida cancelada|Grupo cancelado): [^"]*recibe/.test(u)) falla(G, U, 0, "el panel vuelve a decir que reciben su dinero con lo decidido");
     }
     { const AN = "apps/web/lib/admin-notif.ts", an = existsSync(AN) ? sinComent(AN) : "";
-      if (!/\bdinero: \{ es: "[^"]+", en: "[^"]+" \}/.test(an)) falla(G, AN, 0, "MUESTRA no llena {dinero} (ES/EN): «Probar en mi teléfono» saldría con la llave escrita"); }
+      if (!/\bdinero: \{ es: ("[^"]+"|`[^`]+`), en: ("[^"]+"|`[^`]+`) \}/.test(an)) falla(G, AN, 0, "MUESTRA no llena {dinero} (ES/EN): «Probar en mi teléfono» saldría con la llave escrita"); }
     // (10) 25 nov (cuarta tanda) · Cancela QUIEN PAGÓ (viaje, noche, fiesta, inscripción, evento privado) y el restaurante cancela un evento privado: lo mismo.
     // Pasaba: {dev} se llenaba con lo decidido («Te devolvemos $X», «Te devolvemos todo»), sin mirar a la pasarela; el evento privado del restaurante decía
     // «Te devolvemos el depósito completo» y el panel «el cliente recibe su depósito completo»; el barrido del evento privado volvía a mandar cada minuto la
@@ -18565,12 +18565,22 @@ const guardianes = {
           const ob = objeto(t, i);
           if (ob) revisar(f, t.slice(0, m.index).split("\n").length, `una llamada a ${nom}`, ob);
         }
-        // Lo que la base lee en un idioma: el servicio de la cita ({svc,es}) sin {svc,en}, y el día DD/MM sin su MM/DD, en la misma consulta.
-        for (const m of t.matchAll(/`((?:[^`\\]|\\.)*)`/g)) {
-          const q = m[1], l = t.slice(0, m.index).split("\n").length;
-          if (/\{svc,es\}/.test(q) && !/\{svc,en\}/.test(q) && /\b(select|returning)\b/i.test(q) && /\bas (servicio|svc)\b/.test(q)) falla(G, f, l, "una consulta lee el servicio de la cita solo en español ({svc,es}): lee también {svc,en} y mándalo como { es, en }");
-          if (/'(FM)?DD\/(FM)?MM'/.test(q) && !/'(FM)?MM\/(FM)?DD'/.test(q)) falla(G, f, l, "una consulta da el día como DD/MM sin su MM/DD: el aviso en inglés lleva mes/día ({ es, en })");
-        }
+      }
+    }
+    // 25 nov (revisión de 8d7d0c1) · Lo que la base lee en un idioma, en TODO archivo de lib/ que llame a avisar o avisarNegocio (no solo los que tienen avisarNeg o
+    // avisarCliente: avisarCitaNueva, avisarCitaSalud, avisarCitaPro, avisarMesa…): el servicio de la cita ({svc,es}) sin {svc,en} y el día como DD/MM sin su MM/DD
+    // en la misma consulta. Cada consulta con falla se cuenta UNA vez, aunque el archivo tenga varios ayudantes. Una consulta de PANTALLA (devuelve la fecha ISO «as ymd», p. ej. citas › miaCita)
+    // no es un aviso: no se mira.
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/[^/]+\.ts$/.test(x))) {
+      const t = sinComent(f);
+      if (!/\bavisar(Negocio)?\(/.test(t)) continue;
+      // « con Ana» armado en español (un valor que EMPIEZA con « con ${…}») sin su « with ${…}» en el mismo archivo: al dueño en inglés le llega «Cita con …».
+      const conEs = /`\s*con \$\{/.exec(t);
+      if (conEs && !/`\s*with \$\{/.test(t)) falla(G, f, t.slice(0, conEs.index).split("\n").length, "un valor « con ${…}» va solo en español: va { es: ` con ${…}`, en: ` with ${…}` }");
+      for (const m of t.matchAll(/`((?:[^`\\]|\\.)*)`/g)) {
+        const q = m[1], l = t.slice(0, m.index).split("\n").length;
+        if (/\{svc,es\}/.test(q) && !/\{svc,en\}/.test(q) && /\b(select|returning)\b/i.test(q) && /\bas (servicio|svc|s)\b/.test(q) && !/\bas ymd\b/.test(q)) falla(G, f, l, "una consulta lee el servicio de la cita solo en español ({svc,es}): lee también {svc,en} (con respaldo al español) y mándalo como { es, en }");
+        if (/'(FM)?DD\/(FM)?MM'/.test(q) && !/'(FM)?MM\/(FM)?DD'/.test(q)) falla(G, f, l, "una consulta da el día como DD/MM sin su MM/DD: el aviso en inglés lleva mes/día ({ es, en })");
       }
     }
     if (defs.avisarNeg < 5) falla(G, "apps/web/lib", 0, `esperaba los avisarNeg de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs.avisarNeg}`);
@@ -18587,14 +18597,30 @@ const guardianes = {
     let n = 0;
     for (const f of archivos.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && !x.includes("/node_modules/"))) {
       const t = sinComent(f);
-      if (!t.includes("FractionDigits")) continue;
-      for (const m of t.matchAll(/\$\$\{[^\n]*?toLocaleString\(\s*(?:"[^"]*"|'[^']*')\s*,\s*(\{[^}]*\})/g)) {
-        n++;
+      if (!t.includes("FractionDigits") && !t.includes("toFixed(1)")) continue;
+      // toLocaleString y Intl.NumberFormat con «$» delante (o con style: "currency"), con su { … } de opciones.
+      for (const m of t.matchAll(/(?:\$\$\{[^\n]*?(?:toLocaleString|Intl\.NumberFormat)\(|Intl\.NumberFormat\()\s*(?:"[^"]*"|'[^']*')\s*,\s*(\{[^}]*\})/g)) {
         const o = m[1];
-        if (/maximumFractionDigits:\s*[1-9]/.test(o) && !/minimumFractionDigits/.test(o)) falla(G, f, t.slice(0, m.index).split("\n").length, "un formateador de dinero con maximumFractionDigits y sin minimumFractionDigits deja «$52.5»: usa lib/dinero-comun › usd (sin centavos si son .00, dos decimales si no)");
+        if (!/^\$\$\{/.test(m[0]) && !/currency/.test(o)) continue;
+        n++;
+        if (/maximumFractionDigits:\s*[1-9]/.test(o) && !/minimumFractionDigits/.test(o)) falla(G, f, t.slice(0, m.index).split("\n").length, "un formateador de dinero (toLocaleString o Intl.NumberFormat) con maximumFractionDigits y sin minimumFractionDigits deja «$52.5»: usa lib/dinero-comun › usd (sin centavos si son .00, dos decimales si no)");
       }
+      // Un decimal fijo en el dinero: «$${(c / 100).toFixed(1)}» deja «$52.5» (y «$45.0»).
+      for (const m of t.matchAll(/\$\$\{[^\n}]*\.toFixed\(1\)/g)) falla(G, f, t.slice(0, m.index).split("\n").length, "un texto de dinero con toFixed(1) deja «$52.5» o «$45.0»: usa lib/dinero-comun › usd (sin centavos si son .00, dos decimales si no)");
     }
     if (n < 5) falla(G, "apps/web", 0, `esperaba al menos 5 formateadores de dinero con toLocaleString; hallé ${n}`);
+    // 25 nov (revisión de 8d7d0c1) · La regla misma, corrida de verdad (lib/dinero-comun.ts real): «$45», «$52.50», el signo delante del «$»; el cero negativo, undefined y NaN dan «$0».
+    { const DC = "apps/web/lib/dinero-comun.ts";
+      try {
+        const ts = createRequire(import.meta.url)("typescript");
+        const js = ts.transpileModule(readFileSync(DC, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+        const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("sin importaciones"); });
+        const usd = mod.exports.usd;
+        for (const [v, esp] of [[4500, "$45"], [5250, "$52.50"], [5205, "$52.05"], [123456, "$1,234.56"], [0, "$0"], [-4500, "-$45"], [-5250, "-$52.50"], [-0, "$0"], [-0.4, "$0"], [undefined, "$0"], [NaN, "$0"], [null, "$0"]]) {
+          const r = usd(v);
+          if (r !== esp) falla(G, DC, 0, `usd(${String(v)}) da «${r}» y debe dar «${esp}»`);
+        }
+      } catch (e) { falla(G, DC, 0, `no pude ejecutar dinero-comun.ts: ${String(e?.message ?? e).slice(0, 120)}`); } }
   },
 
 };

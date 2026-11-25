@@ -8,6 +8,7 @@ import { valor } from "./config";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
 import { cobrarOperacion, comision, devolucionesDe, registrarRetencion } from "./cobros";
+import { usd } from "./dinero-comun";
 
 /* Citas (Fase 3 · 3b). Lo que el cliente ve en la ficha (pestaña Servicios, hoja del servicio) y el Booking: el motor de
    disponibilidad y el envío. Fuente: prototipo neg-bell-book.js (priceOf, slotsFor, bookVals, submit) con los conflictos
@@ -439,18 +440,21 @@ export async function alertaDe(userId: string, negocio: string, con: string, i: 
 
 /* Avisos al enviar: al negocio (solicitud o cita confirmada) y al cliente si quedó confirmada. */
 export async function avisarCitaNueva(numero: string, cliente: string) {
-  const o = (await db().query<{ biz: string; uid: string; negocio: string; st: string; svc: string; dia: string; hora: string; con: string | null; cualquiera: boolean; resp: number; dep: number }>(
+  const o = (await db().query<{ biz: string; uid: string; negocio: string; st: string; svc: string; svc_en: string; dia: string; dia_en: string; hora: string; con: string | null; cualquiera: boolean; resp: number; dep: number }>(
     `select o.business_id as biz, o.user_id::text as uid, b.name as negocio, o.status as st, coalesce(o.details #>> '{svc,es}', '') as svc,
-            to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora, m.display_name as con,
+            coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as svc_en,
+            to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMMM/FMDD') as dia_en, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora, m.display_name as con,
             coalesce((o.details->>'cualquiera')::boolean, false) as cualquiera, coalesce(case when b.svc_model = 'chair' then m.chair_response_min end, p.response_min, 30) as resp, o.deposit_cents as dep
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id left join business_members m on m.id = o.member_id
        left join booking_policies p on p.business_id = o.business_id where o.number = $1 and o.kind = 'appointment'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   if (!o) return;
   const { avisar, avisarNegocio } = await import("./avisos");
-  const con = o.con ? ` con ${o.con.split(" ")[0]}` : "";
+  /* 25 nov (revisión de 8d7d0c1) · El primer aviso de la cita sale en el idioma de quien lo recibe: servicio, día (MM/DD en inglés), « con Ana» / « with Ana» y el depósito con usd. */
+  const con = o.con ? { es: ` con ${o.con.split(" ")[0]}`, en: ` with ${o.con.split(" ")[0]}` } : { es: "", en: "" };
+  const dia = { es: o.dia, en: o.dia_en };
   const href = `/panel/${o.biz}/hoy?det=cita:${numero}`;
-  await avisarNegocio(o.biz, o.st === "confirmed" ? "biz_cita_ok" : "biz_cita", { cliente, servicio: o.svc, dia: o.dia, hora: o.hora, con, min: o.resp }, { href, ref: ["appointment", numero] });
-  if (o.st === "confirmed") await avisar(o.uid, o.dep > 0 ? "cita_ok_dep" : "cita_ok", { negocio: o.negocio, dia: o.dia, hora: o.hora, dep: `$${(o.dep / 100).toFixed(2)}` }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
+  await avisarNegocio(o.biz, o.st === "confirmed" ? "biz_cita_ok" : "biz_cita", { cliente, servicio: { es: o.svc, en: o.svc_en }, dia, hora: o.hora, con, min: o.resp }, { href, ref: ["appointment", numero] });
+  if (o.st === "confirmed") await avisar(o.uid, o.dep > 0 ? "cita_ok_dep" : "cita_ok", { negocio: o.negocio, dia, hora: o.hora, dep: usd(o.dep) }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }
 
 /* ── La cita (APP-NEG-CITA): solo la ve quien la pidió. ── */

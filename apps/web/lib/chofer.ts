@@ -21,10 +21,10 @@ export async function choferesDe(negocio: string): Promise<Chofer[]> {
 /* Panel › la salida › Chofer. null lo quita. */
 export async function asignarChofer(negocio: string, run: string, driverId: string | null, actorId: string): Promise<ResC> {
   if (!ID.test(run) || (driverId !== null && !ID.test(driverId))) return no("Esa salida no existe.", "That departure does not exist.");
-  let aviso: { uid: string; vars: Record<string, string> } | null = null;
+  let aviso: { uid: string; vars: Record<string, string | { es: string; en: string }> } | null = null;
   const r = await tx(async (c): Promise<ResC> => {
-    const R = (await c.query<{ st: string; dia: string; m: number; svc: Bi; negocio: string }>(
-      `select r.status as st, to_char(r.run_at at time zone ci.timezone, 'DD/MM') as dia, (extract(hour from r.run_at at time zone ci.timezone) * 60 + extract(minute from r.run_at at time zone ci.timezone))::int as m,
+    const R = (await c.query<{ st: string; dia: string; dia_en: string; m: number; svc: Bi; negocio: string }>(
+      `select r.status as st, to_char(r.run_at at time zone ci.timezone, 'DD/MM') as dia, to_char(r.run_at at time zone ci.timezone, 'MM/DD') as dia_en, (extract(hour from r.run_at at time zone ci.timezone) * 60 + extract(minute from r.run_at at time zone ci.timezone))::int as m,
               i.name as svc, b.name as negocio
          from trip_runs r join cities ci on ci.id = r.city_id join items i on i.id = r.item_id join businesses b on b.id = r.business_id where r.id = $1::bigint and r.business_id = $2 for update of r`, [run, negocio])).rows[0];
     if (!R) return no("Esa salida no existe.", "That departure does not exist.");
@@ -38,10 +38,10 @@ export async function asignarChofer(negocio: string, run: string, driverId: stri
     await c.query(`update trip_runs set driver_id = $2::bigint, updated_at = now() where id = $1::bigint`, [run, driverId]);
     await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) select 'user', $1, 'viaje.chofer', 'trip_run', $2::text, city_id, null, $3::jsonb from trip_runs where id = $4::bigint`,
       [actorId, run, JSON.stringify({ chofer: driverId }), run]);
-    if (uid) aviso = { uid, vars: { negocio: R.negocio, dia: R.dia, hora: horaL(R.m), servicio: R.svc?.es ?? "" } };
+    if (uid) aviso = { uid, vars: { negocio: R.negocio, dia: { es: R.dia, en: R.dia_en }, hora: horaL(R.m), servicio: { es: R.svc?.es ?? "", en: R.svc?.en || R.svc?.es || "" } } };
     return { ok: true };
   });
-  if (r.ok && aviso) { const a = aviso as { uid: string; vars: Record<string, string> }; await (await import("./avisos")).avisar(a.uid, "chofer_salida", a.vars, { href: "/repartidor?t=salidas" }).catch(() => undefined); }
+  if (r.ok && aviso) { const a = aviso as { uid: string; vars: Record<string, string | { es: string; en: string }> }; await (await import("./avisos")).avisar(a.uid, "chofer_salida", a.vars, { href: "/repartidor?t=salidas" }).catch(() => undefined); }
   return r;
 }
 

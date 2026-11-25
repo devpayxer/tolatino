@@ -185,10 +185,24 @@ const casos = [
   ["avisoNegUnIdioma", "visita (cliente): el artículo con .es", 'apps/web/lib/visitas-inm.ts', "cuando: cuandoL(o), dir: \"\", item: itemL(o), motivo: \"\"", "cuando: cuandoL(o), dir: \"\", item: (o.det.item as Bi)?.es ?? \"\", motivo: \"\""],
   ["avisoNegUnIdioma", "visita (cliente): la dirección en español", 'apps/web/lib/visitas-inm.ts', "{ dir: d ? { es: ` Dirección: ${d}.`, en: ` Address: ${d}.` } : o.det.at_home ? { es: \" Te recogen en tu casa.\", en: \" They pick you up at home.\" } : \"\" }", "{ dir: d ? ` Dirección: ${d}.` : o.det.at_home ? \" Te recogen en tu casa.\" : \"\" }"],
   ["avisoNegUnIdioma", "cita: el servicio leído solo en español", 'apps/web/lib/citas-flujo.ts', "coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as servicio_en", "'' as servicio_en"],
-  ["dineroUnDecimal", "la regla común sin sus dos decimales fijos", 'apps/web/lib/dinero-comun.ts', "minimumFractionDigits: r % 100 ? 2 : 0, maximumFractionDigits: 2", "maximumFractionDigits: 2"],
+  ["dineroUnDecimal", "la regla común sin sus dos decimales fijos", 'apps/web/lib/dinero-comun.ts', "minimumFractionDigits: a % 100 ? 2 : 0, maximumFractionDigits: 2", "maximumFractionDigits: 2"],
   ["dineroUnDecimal", "la fiesta deja «$52.5»", 'apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx', "import { usd as dinero } from \"@/lib/dinero-comun\";", "const dinero = (c: number) => `$${(c / 100).toLocaleString(\"en-US\", { maximumFractionDigits: 2 })}`;"],
   ["dineroUnDecimal", "el aviso de la fiesta deja «$52.5»", 'apps/web/lib/fiestas-reservas.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${(c / 100).toLocaleString(\"en-US\", { maximumFractionDigits: 2 })}`;"],
   ["dineroUnDecimal", "los envíos dejan «$52.5»", 'apps/web/lib/envios.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${(c / 100).toLocaleString(\"en-US\", { maximumFractionDigits: 2 })}`;"],
+  // (revisión de 8d7d0c1) · El primer aviso de la cita y sus hermanos en el idioma de quien los recibe; la regla del dinero con su signo y su cero.
+  ["avisoNegUnIdioma", "cita nueva: el servicio solo en español", 'apps/web/lib/citas.ts', "coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as svc_en,", "'' as svc_en,"],
+  ["avisoNegUnIdioma", "cita nueva: « con Ana» solo en español", 'apps/web/lib/citas.ts', "{ es: ` con ${o.con.split(\" \")[0]}`, en: ` with ${o.con.split(\" \")[0]}` }", "` con ${o.con.split(\" \")[0]}`"],
+  ["avisoNegUnIdioma", "cita nueva: el día sin su MM/DD", 'apps/web/lib/citas.ts', "to_char(o.scheduled_at at time zone c.timezone, 'FMMM/FMDD') as dia_en, to_char", "to_char"],
+  ["avisoNegUnIdioma", "cita de salud: el día sin su MM/DD", 'apps/web/lib/citas-salud.ts', "'FMMM/FMDD') as dia_en, ", "'FMDD/FMMM') as dia_en, "],
+  ["avisoNegUnIdioma", "cita de oficina: « con Ana» en español", 'apps/web/lib/citas-pro.ts', "{ es: ` con ${primerNombre(o.con)}`, en: ` with ${primerNombre(o.con)}` }", "` con ${primerNombre(o.con)}`"],
+  ["avisoNegUnIdioma", "mesa: el día sin su MM/DD", 'apps/web/lib/avisos.ts', "'FMMM/FMDD') as dia_en, ", "'FMDD/FMMM') as dia_en, "],
+  ["avisoNegUnIdioma", "chofer: el día solo DD/MM", 'apps/web/lib/chofer.ts', "'MM/DD') as dia_en,", "'DD/MM') as dia_en,"],
+  ["avisoNegUnIdioma", "solicitudes: el servicio de la pregunta solo en español", 'apps/web/lib/solicitudes.ts', "coalesce(nullif(form#>>'{svc,en}', ''), form#>>'{svc,es}', '') as e", "form#>>'{svc,es}' as e"],
+  ["avisoNegUnIdioma", "solicitudes: reenviar lee el servicio solo en español", 'apps/web/lib/solicitudes.ts', "coalesce(nullif(r.form#>>'{svc,en}', ''), r.form#>>'{svc,es}', '') as svc_en,", ""],
+  ["dineroUnDecimal", "el dinero con Intl.NumberFormat deja «$52.5»", 'apps/web/lib/envios.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${new Intl.NumberFormat(\"en-US\", { maximumFractionDigits: 2 }).format(c / 100)}`;"],
+  ["dineroUnDecimal", "el dinero con toFixed(1)", 'apps/web/lib/envios.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${(c / 100).toFixed(1)}`;"],
+  ["dineroUnDecimal", "usd sin el signo delante del «$»", 'apps/web/lib/dinero-comun.ts', "`${r < 0 ? \"-\" : \"\"}$${(a / 100)", "`$${(r / 100)"],
+  ["dineroUnDecimal", "usd deja «-$0» o NaN", 'apps/web/lib/dinero-comun.ts', "Math.round(Number(c) || 0)", "Math.round(c)"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

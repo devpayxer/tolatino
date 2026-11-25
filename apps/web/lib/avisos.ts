@@ -228,8 +228,8 @@ export async function avisarEntregado(opId: string) {
   await avisar(o.uid, o.merc ? "merc_entregado" : "ord_entregado", { negocio: o.negocio, num: o.num }, { href: o.merc ? `/mercado/${o.num}` : `/pedido/${o.num}`, ref: ["order", o.num] });
 }
 export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rsv_no" | "rsv_chg_ok" | "rsv_chg_no" | "rsv_hoy", alt?: string) {
-  const o = (await db().query<{ uid: string; negocio: string; dia: string; hora: string; sms: boolean }>(
-    `select o.user_id::text as uid, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
+  const o = (await db().query<{ uid: string; negocio: string; dia: string; dia_en: string; hora: string; sms: boolean }>(
+    `select o.user_id::text as uid, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMMM/FMDD') as dia_en, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
             coalesce((o.details->>'sms')::boolean, true) as sms
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'table'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   let a = alt ?? "";
@@ -238,7 +238,7 @@ export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rs
     if (p?.at) { const [h, m] = p.at.split(":").map(Number); a = `${(h! % 12) || 12}:${String(m ?? 0).padStart(2, "0")} ${h! < 12 ? "AM" : "PM"}`; }
   }
   // 9l · «Avísame por SMS cuando confirmen y el día de la reservación» (Detalles): sin esa marca, el aviso llega a la app y por push, sin SMS.
-  if (o) await avisar(o.uid, tpl, { negocio: o.negocio, dia: o.dia, hora: o.hora, alt: a }, { href: `/reserva/${numero}`, ref: ["table", numero], sinSms: !o.sms });
+  if (o) await avisar(o.uid, tpl, { negocio: o.negocio, dia: { es: o.dia, en: o.dia_en }, hora: o.hora, alt: a }, { href: `/reserva/${numero}`, ref: ["table", numero], sinSms: !o.sms });
 }
 
 /* 5c · Bloquear es mutuo e invisible también en la bandeja: un aviso que provocó alguien con quien hay un bloqueo (en cualquier

@@ -1,3 +1,4 @@
+import { usd } from "./dinero-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 /* 6a · Eventos: lo común al cliente y al servidor (fase6-eventos.md §4 6a; prototipo TLEvP en dash2-evt.js y evEdit / evMiss del
    Panel v2). El formato (noche · comida · clase · fe · comunidad) vive en la base (event_formats) y llega aquí como FormatoEvt: el
@@ -65,7 +66,7 @@ export function diaCorto(iso: string, es: boolean) {
   return es ? `${DS[w]![0]} ${d} ${MS[m! - 1]![0]}` : `${DS[w]![1]} ${MS[m! - 1]![1]} ${d}`;
 }
 export const mesCorto = (iso: string, es: boolean) => { const m = Number(iso.slice(5, 7)); return (es ? MS[m - 1]![0] : MS[m - 1]![1]).toUpperCase(); };
-export const dinero = (c: number) => { const p = (Number(c) || 0) / 100; return "$" + (p % 1 ? p.toFixed(2) : String(p)); };
+export const dinero = usd;
 export const sumarDias = (iso: string, n: number) => { const [y, m, d] = iso.split("-").map(Number); const x = new Date(Date.UTC(y!, m! - 1, d! + n)); return x.toISOString().slice(0, 10); };
 
 /* Un evento nuevo de un formato (TLEvP.fresh): el día es pasado mañana en la ciudad. */

@@ -10,13 +10,13 @@ import { LINEA_TRANS, metaTrans, precioTrans, type SvcTrans } from "@/lib/transp
 import type { TransPublico } from "@/lib/trans-publico";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
+import { usd } from "@/lib/dinero-comun";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
-import { usd as usd } from "@/lib/dinero-comun";
 const SALE: Record<string, [string, string]> = { sab: ["Sábado", "Saturday"], mie: ["Miércoles", "Wednesday"], "15d": ["Cada 15 días", "Every 2 weeks"] };
 
 export function useViaje(tp: TransPublico | null, es: boolean, pro: boolean) {

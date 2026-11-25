@@ -3108,7 +3108,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (`maximumFractionDigits` sin `minimumFractionDigits`: n/[id]/Viaje y Salud, panel/FiestasReservas, envios, salud-compat, pro-comun). Guardián dineroUnDecimal (con su
       al revés). Puesta al día en las e2e que leían «$45.00» de esos avisos (din9v3, din9v4, din9v5, din9w, din9x, din9y, fie4v, tra4y). Queda, sin ser el mismo error (siempre
       dos decimales, nunca «$X.5»): los `toFixed(2)` de mercado, cobros (alertas del equipo), apartados y otras pantallas del cliente («$45.00» donde otras dicen «$45»);
-      pasarlos a `usd` cuando se toque cada pantalla. (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
+      pasarlos a `usd` cuando se toque cada pantalla. _Hecho (25 nov, revisión de 8d7d0c1):_ el primer aviso de la cita (citas › avisarCitaNueva: servicio con `{svc,en}`, día MM/DD, « con Ana» / « with Ana» y el
+      depósito con `usd`) y sus hermanos (citas-salud, citas-pro, avisos › avisarMesa, chofer › asignarChofer, solicitudes › `svc` de la pregunta) salen como Bi; avisoNegUnIdioma mira ahora
+      TODO archivo de lib/ que llame a avisar o avisarNegocio (consulta con `{svc,es}` sin `{svc,en}`, `DD/MM` sin `MM/DD`, « con ${…}» sin su « with ${…}») y cada fallo sale una sola vez.
+      La muestra de «Probar en mi teléfono» (admin-notif) dice `usd(4500)`; Pedido y MercadoEstado (y lib/pedidos) usan `usd` («$15», no «$15.00»); usdN, usdI, evt-comun › dinero y oficios-texto › money
+      llaman a `usd` (evt-comun › dinero ahora pone el separador de miles: «$1,000»). `usd`: el signo delante del «$» («-$45»), «-0», undefined y NaN dan «$0»; dineroUnDecimal corre `usd` de verdad y mira
+      también Intl.NumberFormat con «$» y toFixed(1). Al revés: alrevesDineroDiceLoQuePaso (137/137). Quedan los `toFixed(2)` de otras pantallas y avisos (planes, apartados, rentas, layaway, cobros…): a `usd` cuando se toque cada una.
+      (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
       (g) _Hecho (25 nov, din9x):_ `pasarela.liberar` ya no da ok ante `payment_intent_unexpected_state`: mira el intento (cancelado = soltada; cobrado =
       `{ ok: false, cobrado }`; sin respuesta = no), y el simulador igual con sim_intents. liberarOperacion anota «captured» con lo que Stripe capturó y
       dice «cobrada»; soltarRetencion abre hold_stuck `cobrada:<cobro>`, que no se cierra sola; los avisos y el panel lo dicen (devolucion-cancelar:

@@ -17,11 +17,11 @@ import { MapaVivo } from "@/app/_ruta/MapaVivo";
 import type { ModoTarjeta } from "../../pago/MetodoPago";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
+import { usd as money } from "@/lib/dinero-comun";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 
@@ -122,7 +122,7 @@ export function MercadoEstado({ v, es, pago = null, ruta = false }: { v: Mercado
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0"><div className={`text-[13.5px] font-bold ${l.st === "out" ? "text-ink/60 line-through" : ""}`}>{nm(l.name)}{l.subOf ? E2(" · cambio con tu OK", " · swap with your OK") : ""}</div>
               <div className="mt-0.5 text-[12px] font-medium text-ink/60">{l.st === "out" ? E2("No había · no se cobra", "Out · not charged") : l.peso ? (l.lbReal != null ? E2(`Pediste ${l.lb} lb · pesó ${l.lbReal} lb`, `You asked ${l.lb} lb · weighed ${l.lbReal} lb`) : E2(`${l.lb} lb · estimado`, `${l.lb} lb · estimate`)) : `× ${l.q}`}{l.ops.length ? ` · ${l.ops.join(" · ")}` : ""}</div></div>
-            <div className="text-right text-[13.5px] font-bold">{l.st === "out" ? "$0.00" : money(pesado ? l.final : l.est)}</div>
+            <div className="text-right text-[13.5px] font-bold">{l.st === "out" ? "$0" : money(pesado ? l.final : l.est)}</div>
           </div>
           {l.foto && <button type="button" onClick={() => setFoto(foto === l.foto ? null : l.foto)} className="mt-2 flex min-h-11 items-center gap-2 text-[12px] font-bold text-action"><Icon name="image" size={14} color="var(--tl-action)" />{E2("Foto de la balanza", "Scale photo")}</button>}
           {foto && foto === l.foto && <span className="mt-2 block h-[200px] w-full rounded-[14px] bg-photo-bg" style={{ backgroundImage: fotoFondo(l.foto, 540), backgroundSize: "cover", backgroundPosition: "center" }} />}

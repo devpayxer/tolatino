@@ -139,12 +139,12 @@ export async function enviarCitaSalud(userId: string, negocio: string, f: CitaSa
 
 /* Avisos al enviar (neutros: sin consultorio ni servicio). */
 export async function avisarCitaSalud(numero: string) {
-  const o = (await db().query<{ biz: string; uid: string; st: string; dia: string; hora: string; resp: number }>(
-    `select o.business_id as biz, o.user_id::text as uid, o.status as st, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
+  const o = (await db().query<{ biz: string; uid: string; st: string; dia: string; dia_en: string; hora: string; resp: number }>(
+    `select o.business_id as biz, o.user_id::text as uid, o.status as st, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMMM/FMDD') as dia_en, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
             coalesce(p.response_min, 30) as resp
        from operations o join cities c on c.id = o.city_id left join booking_policies p on p.business_id = o.business_id where o.number = $1 and o.kind = 'appointment'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   if (!o) return;
   const { avisar, avisarNegocio } = await import("./avisos");
-  await avisarNegocio(o.biz, "biz_sal_cita", { dia: o.dia, hora: o.hora, min: o.resp }, { href: `/panel/${o.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
-  if (o.st === "confirmed") await avisar(o.uid, "sal_cita_ok", { dia: o.dia, hora: o.hora }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
+  await avisarNegocio(o.biz, "biz_sal_cita", { dia: { es: o.dia, en: o.dia_en }, hora: o.hora, min: o.resp }, { href: `/panel/${o.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
+  if (o.st === "confirmed") await avisar(o.uid, "sal_cita_ok", { dia: { es: o.dia, en: o.dia_en }, hora: o.hora }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }

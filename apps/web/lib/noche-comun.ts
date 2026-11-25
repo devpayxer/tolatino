@@ -1,3 +1,4 @@
+import { usd } from "./dinero-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 /* Noche · «Esta noche» (4na · fase4-noche.md §2, §4na y §5 · dash2-cat.js blocksC L387–396, summary L322, apply L283–286):
    tipos y textos que comparten el servidor, el panel, la ficha y el Super Admin (sin acceso a la base).
@@ -37,7 +38,7 @@ export function hNoche(m: number): string {
   const t = (720 + m) % 1440, h = Math.floor(t / 60), mm = t % 60;
   return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`;
 }
-export const usdN = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: c % 100 ? 2 : 0, minimumFractionDigits: c % 100 ? 2 : 0 })}`;
+export const usdN = usd;
 
 /* La línea de la tarjeta del buscador (eta, L39–40): «Hoy: cover $10 · $15 después de las 11 PM · 21+» / «Mañana: sin cover · 21+». */
 export function etaNoche(e: EstaNoche, es: boolean): string {

@@ -3,6 +3,7 @@
    curso (grupo con fecha de inicio, semanas, horas y cupo; la matrícula aparta el cupo y se descuenta del total) · mes · semana ·
    clase · hora. Solo la matrícula de un curso pasa por la app (4ee); lo demás se paga en el lugar. El vocabulario cambia por
    rubro (VOC, neg-edu-flow.js L13–19) para que Iglesias, Bienes Raíces y Venta de Autos lo reusen después. */
+import { usd } from "./dinero-comun";
 export type Bi = { es: string; en: string };
 export type RubroInsc = "edu" | "ninos" | "dep" | "fe";
 export type KindInsc = "curso" | "mes" | "semana" | "clase" | "hora";
@@ -34,7 +35,7 @@ export type GrupoH = { id: string; label: Bi; inicio: string; fin: string | null
 export type CursoH = { id: string; name: Bi; k: KindInsc; cents: number; mat: number; plan: number; g1: boolean; sem: number | null; hrs: number | null; cert: Bi | null; oficial: boolean; grupos: GrupoH[]; vende: boolean };
 export type HerrEdu = { hoy: string; how: { presencial: boolean; linea: boolean; hibrido: boolean; esp: boolean }; cursos: CursoH[]; abiertos: number; libres: number; gratis: number };
 
-export const usdI = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: c % 100 ? 2 : 0, minimumFractionDigits: c % 100 ? 2 : 0 })}`;
+export const usdI = usd;
 const MES_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], MES_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /* «12 oct» / «Oct 12» (fecha del calendario, sin hora: nunca pasa por la zona del navegador). */
 export function fechaCorta(ymd: string, es: boolean) {

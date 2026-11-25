@@ -1,4 +1,5 @@
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { usd } from "./dinero-comun";
 /* ¿Aceptan tu seguro y cuánto pagas? (neg-salud-listing.js compat / priceFor · plan fase4-salud-pro.md §4i). Sin acceso a la
    base: la usa el servidor (ficha, tarjeta de Buscar, Booking) y el cliente para un seguro «solo esta visita» de quien no
    entró. Nunca bloquea: si no lo aceptan, dice el precio sin seguro. To'Latino no da consejo médico. */
@@ -16,7 +17,6 @@ export function nombreSeguro(x: SeguroRef, cat: CatSeguro[], es: boolean): strin
   return p && x.kind !== "chip" ? `${n.replace(/ \(.*\)$/, "")} · ${es ? p.name.es : p.name.en}` : n.replace(/ \(.*\)$/, "");
 }
 export const aceptan = (c: Clinica, x: SeguroRef) => x.kind !== "none" && (x.kind === "priv" ? !!x.insurer && c.ins.includes(x.insurer) : c.ins.includes(x.kind));
-import { usd as usd } from "./dinero-comun";
 
 export type Compat = { ok: boolean; sinSeguro: boolean; t: string };
 export function compat(c: Clinica, x: SeguroRef | null, cat: CatSeguro[], es: boolean): Compat | null {

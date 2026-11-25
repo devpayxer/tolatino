@@ -70,7 +70,7 @@ const casos = [
   // La acción de la noche deja de pasar lo que pasó.
   ['acción de la noche sin devolucion', 'apps/web/app/panel/acciones-noche.ts', 'return rDev(await cancelarNocheNegocio(', 'return r2(await cancelarNocheNegocio('],
   // «Probar en mi teléfono» sin {dinero}.
-  ['muestra sin dinero', 'apps/web/lib/admin-notif.ts', '  dinero: { es: "Te devolvimos $45.00', '  dineroX: { es: "Te devolvimos $45.00'],
+  ['muestra sin dinero', 'apps/web/lib/admin-notif.ts', '  dinero: { es: `Te devolvimos ${usd(4500)}', '  dineroX: { es: `Te devolvimos ${usd(4500)}'],
   // 25 nov (cuarta tanda) · Cancela QUIEN PAGÓ (viaje, noche, fiesta, inscripción, evento privado) y el restaurante cancela un evento privado.
   // El viaje vuelve a llenar {dev} con lo decidido.
   ['viaje_cx con lo decidido', 'apps/web/lib/viajes.ts', 'await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, ', 'await avisarCliente(numero, "viaje_cx", { dev: " Te devolvemos todo.", x: dineroAlCancelarCliente(d, '],

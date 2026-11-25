@@ -91,14 +91,15 @@ export async function enviarCitaPro(userId: string, negocio: string, f: CitaProI
 
 /* Avisos al enviar: al negocio sin el trámite; al cliente, si quedó confirmada (puede llevar la oficina, nunca el trámite). */
 export async function avisarCitaPro(numero: string, cliente: string) {
-  const o = (await db().query<{ biz: string; uid: string; negocio: string; st: string; dia: string; hora: string; con: string | null; resp: number }>(
-    `select o.business_id as biz, o.user_id::text as uid, b.name as negocio, o.status as st, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia,
+  const o = (await db().query<{ biz: string; uid: string; negocio: string; st: string; dia: string; dia_en: string; hora: string; con: string | null; resp: number }>(
+    `select o.business_id as biz, o.user_id::text as uid, b.name as negocio, o.status as st, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMMM/FMDD') as dia_en,
             to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora, m.display_name as con, coalesce(p.response_min, 30) as resp
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id left join business_members m on m.id = o.member_id
        left join booking_policies p on p.business_id = o.business_id where o.number = $1 and o.kind = 'appointment'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   if (!o) return;
   const { avisar, avisarNegocio } = await import("./avisos");
   const { primerNombre } = await import("./nombre");
-  await avisarNegocio(o.biz, "biz_pro_cita", { cliente, dia: o.dia, hora: o.hora, con: o.con ? ` con ${primerNombre(o.con)}` : "", min: o.resp }, { href: `/panel/${o.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
-  if (o.st === "confirmed") await avisar(o.uid, "cita_ok", { negocio: o.negocio, dia: o.dia, hora: o.hora }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
+  const dia = { es: o.dia, en: o.dia_en };
+  await avisarNegocio(o.biz, "biz_pro_cita", { cliente, dia, hora: o.hora, con: o.con ? { es: ` con ${primerNombre(o.con)}`, en: ` with ${primerNombre(o.con)}` } : { es: "", en: "" }, min: o.resp }, { href: `/panel/${o.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
+  if (o.st === "confirmed") await avisar(o.uid, "cita_ok", { negocio: o.negocio, dia, hora: o.hora }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }

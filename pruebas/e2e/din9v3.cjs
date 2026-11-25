@@ -132,7 +132,7 @@ const texto = async (p) => (await p.locator('body').innerText()).replace(/\s+/g,
     for (const tpl of ['viaje_cancelada', 'bol_devuelto']) {
       const r = await accion(ad, 'plantillaProbar', [tpl]);
       const t = ult(tpl);
-      ok(r.j?.ok === true && t.includes('Te devolvimos $45.00 a tu tarjeta') && !t.includes('{dinero}'), `«Probar en mi teléfono» (${tpl}) sale con {dinero} lleno: ${t}`);
+      ok(r.j?.ok === true && t.includes('Te devolvimos $45 a tu tarjeta') && !t.includes('{dinero}'), `«Probar en mi teléfono» (${tpl}) sale con {dinero} lleno: ${t}`);
     }
     ok(ult('bol_devuelto').startsWith('Tus boletos: la devolución | '), 'el título de bol_devuelto ya no dice «Te devolvieron tus boletos»');
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));

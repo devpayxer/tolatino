@@ -1,9 +1,10 @@
+import { usd } from "./dinero-comun";
 /* Lo que ve el cliente de un servicio de Auto u Hogar: precio y detalle (diseño TLASvc.priceL / metaL y TLHogarBook.priceL /
    metaOf). Lo usan el panel («Así lo ve el cliente»), la ficha y el Booking. Sin server-only: sirve en los dos lados. */
 import type { Attrs } from "./oficios";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 type S = { k: string; cents: number; dur: number | null; a: Attrs };
-const money = (c: number) => { const d = (Number(c) || 0) / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
+const money = usd;
 const UNIT: Record<string, [string, string]> = { pie2: ["pie²", "sq ft"], cuarto: ["cuarto", "room"], salida: ["salida", "vent"] };
 const WL: Record<string, [string, string]> = { espera: ["Esperas", "You wait"], deja: ["Lo dejas", "Drop off"], ambos: ["Esperas o lo dejas", "Wait or drop off"], dom: ["A domicilio", "Mobile"], call: ["Llamas", "You call"] };
 export function precioL(s: Pick<S, "k" | "cents" | "a">, es: boolean) {

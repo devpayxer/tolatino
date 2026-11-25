@@ -1,6 +1,7 @@
 import "server-only";
 import type { Staff } from "./admin";
 import { db } from "./db";
+import { usd } from "./dinero-comun";
 
 /* ADM-NOTIF · Notificaciones (Super Admin.dc.html secNotif): plantillas por evento (ES/EN, editables con auditoría), los
    envíos de tus ciudades con su estado de SMS, y las reglas. Las cifras salen de `notifications`, nunca inventadas. */
@@ -73,4 +74,4 @@ export const MUESTRA: Record<string, string | { es: string; en: string }> = { re
   // 9l · Avisos y canales
   ultimos: "0123", enlace: "https://tolatino.com/soporte", ciudad: "Hazleton", vistas: "120", ops: "14", resenas: "3", n: "2", item: "Flan de leche", estrellas: "5", rol: "barbero",
   // 9v · Lo que pasó con el dinero (0219, 0220): la prueba no sale con «{dinero}» escrito; en el idioma de quien la recibe.
-  dinero: { es: "Te devolvimos $45.00 a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.", en: "We refunded $45.00 to your card; your bank shows it in 3–5 business days." } };
+  dinero: { es: `Te devolvimos ${usd(4500)} a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.`, en: `We refunded ${usd(4500)} to your card; your bank shows it in 3–5 business days.` } };

@@ -73,7 +73,7 @@ export async function pedirPre(userId: string, f: PreIn): Promise<Res<{ numero: 
   if (!fotos.length) return no("Agrega al menos una foto o video.", "Add at least one photo or video.");
   if (fotos.length > 6) return no("Hasta 6 fotos.", "Up to 6 photos.");
   const cuando = CUANDO.includes(String(f.cuando)) ? String(f.cuando) : "sem";
-  let numero = "", biz = "", svcN = "";
+  let numero = "", biz = "", svcN: { es: string; en: string } = { es: "", en: "" };
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select number from service_requests where user_id = $1 and form->>'clave' = $2`, [userId, f.clave])).rows[0];
     if (ya) return { ok: true, numero: ya.number };
@@ -105,7 +105,7 @@ export async function pedirPre(userId: string, f: PreIn): Promise<Res<{ numero: 
     await c.query(`insert into request_targets (request_id, business_id, item_id) values ($1::bigint, $2, $3::bigint)`, [id, f.negocio, s.id]);
     const ok = await c.query(`update media set owner_kind = 'request', owner_id = $1, sort = array_position($3::uuid[], id) where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [id, userId, fotos]);
     if (ok.rowCount !== fotos.length) { await c.query("rollback"); return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
-    biz = f.negocio; svcN = s.name.es;
+    biz = f.negocio; svcN = { es: s.name.es, en: s.name.en || s.name.es };
     return { ok: true, numero };
   });
   if (r.ok && biz) {
@@ -172,8 +172,8 @@ export async function responderSolicitud(negocio: string, numero: string, actorI
 export async function solicitudCliente(userId: string, numero: string, que: "cancelar" | "reenviar"): Promise<Res> {
   if (!NUM.test(numero)) return no("Esa solicitud no existe.", "That request does not exist.");
   await vencerSolicitudes({ userId });
-  const r = await tx(async (c): Promise<Res & { biz?: string[]; mode?: string; svc?: string; cl?: string }> => {
-    const s = (await c.query<{ id: string; st: string; mode: string; svc: string; cl: string }>(`select r.id::text, r.status as st, r.mode, coalesce(r.form#>>'{svc,es}', '') as svc, coalesce(nullif(u.first_name, ''), 'Un cliente') as cl
+  const r = await tx(async (c): Promise<Res & { biz?: string[]; mode?: string; svc?: { es: string; en: string }; cl?: string }> => {
+    const s = (await c.query<{ id: string; st: string; mode: string; svc: string; svc_en: string; cl: string }>(`select r.id::text, r.status as st, r.mode, coalesce(r.form#>>'{svc,es}', '') as svc, coalesce(nullif(r.form#>>'{svc,en}', ''), r.form#>>'{svc,es}', '') as svc_en, coalesce(nullif(u.first_name, ''), 'Un cliente') as cl
       from service_requests r join users u on u.id = r.user_id where r.user_id = $1 and r.number = $2 for update of r`, [userId, numero])).rows[0];
     if (!s) return no("Esa solicitud no existe.", "That request does not exist.");
     if (que === "cancelar") {
@@ -185,9 +185,9 @@ export async function solicitudCliente(userId: string, numero: string, que: "can
     if (!(s.st === "expired" || (s.mode === "em" && s.st === "nobody"))) return no("Solo se manda otra vez lo que venció.", "Only an expired request can be sent again.");
     await c.query(`update service_requests set status = 'sent', respond_by = now() + case when mode = 'pq' then make_interval(hours => ${cfgSql("sol_pq_h")}) when mode = 'em' then make_interval(mins => ${cfgSql("sol_em_min")}) else make_interval(hours => ${cfgSql("sol_pre_h")}) end, updated_at = now() where id = $1::bigint`, [s.id]);
     const B = (await c.query<{ b: string }>(`update request_targets set status = 'sent', notified_at = now() where request_id = $1::bigint and status = 'expired' returning business_id as b`, [s.id])).rows.map((x) => x.b);
-    return { ok: true, biz: B, mode: s.mode, svc: s.svc, cl: s.cl };
+    return { ok: true, biz: B, mode: s.mode, svc: { es: s.svc, en: s.svc_en }, cl: s.cl };
   });
-  if (r.ok && "biz" in r && r.biz?.length) for (const b of r.biz) await (await import("./avisos")).avisarNegocio(b, r.mode === "pq" ? "biz_pq" : r.mode === "em" ? "biz_em" : "biz_preest", { cliente: r.cl ?? "", svc: r.svc ?? "", que: r.svc ?? "", mi: "—", ...(r.mode === "pq" ? await plazoPq() : {}) }, { href: `/panel/${b}/hoy?det=sol:${numero}`, ref: ["request", numero] });
+  if (r.ok && "biz" in r && r.biz?.length) for (const b of r.biz) await (await import("./avisos")).avisarNegocio(b, r.mode === "pq" ? "biz_pq" : r.mode === "em" ? "biz_em" : "biz_preest", { cliente: r.cl ?? "", svc: r.svc ?? { es: "", en: "" }, que: r.svc ?? { es: "", en: "" }, mi: "—", ...(r.mode === "pq" ? await plazoPq() : {}) }, { href: `/panel/${b}/hoy?det=sol:${numero}`, ref: ["request", numero] });
   return r.ok ? { ok: true } : r;
 }
 
@@ -364,8 +364,8 @@ export async function pedirPq(userId: string, f: PqIn): Promise<Res<{ numero: st
   });
   if (r.ok && numero) {
     const cl = (await db().query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "";
-    const svc = (await db().query<{ s: string }>(`select form#>>'{svc,es}' as s from service_requests where number = $1`, [numero])).rows[0]?.s ?? "";
-    for (const x of elegidos) await (await import("./avisos")).avisarNegocio(x!.id, "biz_pq", { cliente: cl, svc, ...(await plazoPq()) }, { href: `/panel/${x!.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
+    const svc = (await db().query<{ s: string; e: string }>(`select form#>>'{svc,es}' as s, coalesce(nullif(form#>>'{svc,en}', ''), form#>>'{svc,es}', '') as e from service_requests where number = $1`, [numero])).rows[0];
+    for (const x of elegidos) await (await import("./avisos")).avisarNegocio(x!.id, "biz_pq", { cliente: cl, svc: { es: svc?.s ?? "", en: svc?.e ?? "" }, ...(await plazoPq()) }, { href: `/panel/${x!.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
   }
   return r;
 }
