@@ -6546,6 +6546,16 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Servido el 24 nov (8c3bd59) y comprobado sobre el sandbox:** el pie con 44 px en Negocios, Comunidad y Eventos; «Arro» trae platos; «empanda»
   entiende Empanadas («zzzqqq» no trae nada, como debe). Qué mirar en el teléfono: Buscar «Arro» y «empanda»; el final de Negocios.
 
+## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
+- **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).
+  Un encargo de Opus cubrió las del dinero (`cobros`, `suscripcion`, `revision-pasarela`) con la prueba nueva `din9u` y encontró el fallo: con el
+  Pro en cobro fallido, cambiar a una tarjeta que el banco rechaza decía «Listo: ya tienes Pro. Te mandamos el recibo» y seguía sin pagar.
+- **Ahora:** la pantalla dice lo que quedó de verdad: Pro solo si se cobró; «el banco rechazó» (y si era el último intento, «pasó a Free», nada se
+  borra); «tu banco pide confirmar» (llega el aviso con el enlace); «se está procesando» si el cobro automático estaba en marcha. «Reintentar cobro»
+  del Super Admin dice lo mismo. Revisado por Fable (pidió los dos últimos casos); guardián `cobradoSoloSiQuedo`; ayuda ES/EN al día.
+- **Qué mirar (teléfono, en el sandbox):** un negocio Pro en cobro fallido › Cobros y plan › Tu plan › Cambiar tarjeta › la 0002: debe decir que el
+  banco rechazó el cobro, no «ya tienes Pro». Con la 4242: «ya tienes Pro».
+
 ## Lo que quedó del proceso nuevo (24 nov, tarde)
 - **Arriba:** main otra vez en verde (f669372, corrida completa con los 9 dispositivos); el repaso corto tras una roja (AU) subido en b61527a y
   visto en real (cada parte deja su línea RESULTADOS). **Apagada:** la vía rápida de código (AV): Fable la revisó dos veces y siempre se colaba
