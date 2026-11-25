@@ -6590,6 +6590,10 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Tras la revisión de 00ac9b7: si la captura tarde sí salió, la regla (la mitad y la devolución del resto; el depósito del evento privado) se aplica la
   vea quien la vea, con una sola alerta que dice lo aplicado; lo que Stripe ya no deja cobrar avisa al equipo y no se reintenta sin fin; los avisos del
   viaje dicen los montos con centavos («$22.50»).
+  Tras la revisión de 483a3af: si el barrido es quien encuentra cobrada la retención de una cancelación tarde, el cliente y el negocio reciben otra vez el
+  aviso de la cancelación con lo que se cobró y se devolvió («La retención sí se había cobrado…»), una sola vez; la alerta «ya no se deja cobrar» solo sale
+  de pedidos aceptados y se cierra sola cuando la retención se suelta. **Qué mirar:** nada en pantalla (es raro de provocar); el aviso repetido de la
+  cancelación, si alguna vez llega, dice lo cobrado.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

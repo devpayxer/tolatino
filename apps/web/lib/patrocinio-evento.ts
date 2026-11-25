@@ -174,8 +174,8 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
         `insert into event_sponsorships (event_id, business_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
          values ($1::bigint, $2, $3, $4::timestamptz, $5::timestamptz, $6, $7, $8, $9, $10, $11, $12::bigint) returning id::text`,
         [evento, negocio, e.ciudad, f.a, f.b, x.dur, empiezaHoy ? "activo" : "reservado", centavos, quien, card.pm, renovar, renovarDe])).rows[0]!.id;
-      await capturarCobro(p, centavos);
-      await anotarPago(c, { ...cobro, ref: id, pi: p.pi, marca: p.marca, l4: p.l4 });
+      const cobrado = await capturarCobro(p, centavos);
+      await anotarPago(c, { ...cobro, centavos: cobrado, ref: id, pi: p.pi, marca: p.marca, l4: p.l4 });
       await c.query(`update sponsorship_waits set status = 'compro' where kind = 'evento' and business_id = $1 and status = 'espera'`, [negocio]);
       await auditarEvento(c, quien, evento, e.ciudad, renovarDe ? "patrocinio_evento.renovar" : "patrocinio_evento.comprar",
         { patrocinio: id, negocio, duracion: x.dur, desde: f.a, hasta: f.b, monto: money(centavos), semanas: f.semanas, renovar_solo: renovar, estado: empiezaHoy ? "activo" : "reservado" });

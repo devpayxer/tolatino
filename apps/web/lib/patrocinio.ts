@@ -139,10 +139,14 @@ export async function terminarRenovacionSuelta(a: import("./cobro-fuera").Intenc
 /* Capturar lo retenido de una compra en sesión, ya guardado el patrocinio (en la misma transacción): si no se puede, la transacción se deshace
    (SinCaptura) y lo retenido se suelta: nada queda guardado sin cobrar ni cobrado sin guardar. */
 export class SinCaptura extends Error { constructor(public pi: string) { super("patrocinio_captura"); } }
-export async function capturarCobro(p: Extract<Cobrado, { ok: true }>, centavos: number) {
-  if (!p.retenido) return;
+/* 25 nov (revisión de 483a3af) · Devuelve lo cobrado: lo que Stripe capturó de verdad si el intento YA estaba capturado (r.cobrado: un reintento o una
+   respuesta perdida), o lo pedido. Quien llama anota eso en el libro (anotarPago), como cobros › cobrarOperacion: la devolución de lo no usado nunca pasa
+   de lo anotado (patrocinio_devolucion_del_libro). Lo cobrado fuera de sesión ya se anotaba con su monto. Guardián liberarMira. */
+export async function capturarCobro(p: Extract<Cobrado, { ok: true }>, centavos: number): Promise<number> {
+  if (!p.retenido) return centavos;
   const r = await pasarela.capturarPlataforma(p.pi, centavos);
   if (!r.ok) throw new SinCaptura(p.pi);
+  return r.cobrado ?? centavos;
 }
 /* Si la transacción se deshizo con algo retenido (no se pudo capturar, o la base dijo que ya no cabe), lo retenido se suelta: no se cobra nada. */
 export async function soltarRetenido(pi: string | null, e: unknown): Promise<ResPat | null> {
@@ -518,8 +522,8 @@ export async function comprarPatrocinio(negocio: string, quien: string, x: Compr
         `insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew, renewed_from)
          values ($1, $2, $3, $4::timestamptz, $5::timestamptz, $6, $7, $8, $9, $10, $11, $12::bigint) returning id::text`,
         [negocio, n.category_id, n.city_id, f.a, f.b, x.dur, empiezaHoy ? "activo" : "reservado", centavos, quien, card.pm, !!x.renovar, renovarDe])).rows[0]!.id;
-      await capturarCobro(p, centavos);
-      await anotarPago(c, { ...cobro, ref: id, pi: p.pi, marca: p.marca, l4: p.l4 });
+      const cobrado = await capturarCobro(p, centavos);
+      await anotarPago(c, { ...cobro, centavos: cobrado, ref: id, pi: p.pi, marca: p.marca, l4: p.l4 });
       await c.query(`update sponsorship_waits set status = 'compro' where kind = 'negocio' and business_id = $1 and status = 'espera'`, [negocio]);
       await auditarNegocio(c, quien, negocio, n.city_id, renovarDe ? "patrocinio.renovar" : "patrocinio.comprar",
         { patrocinio: id, duracion: x.dur, desde: f.a, hasta: f.b, monto: money(centavos), renovar_solo: !!x.renovar, estado: empiezaHoy ? "activo" : "reservado" });

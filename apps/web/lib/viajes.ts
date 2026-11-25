@@ -1,8 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, usdTxt, type DevCuenta, type Soltada } from "./devolucion-cancelar";
+import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, reclamarAvisoCobro, registrarRetencion, soltarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, usdTxt, type DevCancelar, type DevCuenta, type ReglaTarde, type Soltada } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { valor } from "./config";
@@ -377,8 +377,11 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
         // 25 nov (LAUNCH g) · La captura tarde SÍ había salido (al soltar, Stripe la encontró cobrada y la base ya la dice cobrada, con su alerta cobrada:): la
         // regla de la cancelación tarde ya se aplicó con lo cobrado (cobros › reglaTardeConLoCobrado: se queda la mitad y se pide la devolución del resto,
         // con la llave vcx-<número>), y se dice eso; nunca «No se cobró nada».
+        // 25 nov (revisión de 483a3af) · regla también llega cuando el barrido ganó la carrera (devolverAlCancelar la relee: cobros › reglaTardeLeida).
         const { mitad, d } = x.d.e === "cobrada" && x.d.regla ? { mitad: x.d.regla.queda, d: x.d.regla.dev ?? { e: "nada" as const, monto: 0 } } : x;
-        const seCobro = mitad === cobra ? { es: `Se cobró la mitad: ${money(mitad)}.`, en: `Half was charged: ${money(mitad)}.` } : { es: `Se cobró lo que quedaba: ${money(mitad)}.`, en: `What was left was charged: ${money(mitad)}.` };
+        // El aviso que dice lo cobrado va una vez: si el barrido ya lo dijo (aplicó la regla primero), no se repite (cobros › reclamarAvisoCobro).
+        if ((mitad > 0 || x.d.e === "cobrada") && !(await reclamarAvisoCobro(o.id))) return;
+        const seCobro =mitad === cobra ? { es: `Se cobró la mitad: ${money(mitad)}.`, en: `Half was charged: ${money(mitad)}.` } : { es: `Se cobró lo que quedaba: ${money(mitad)}.`, en: `What was left was charged: ${money(mitad)}.` };
         await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : undefined) });
         await avisarNeg(numero, "biz_viaje_cx", { dep: mitad ? { es: ` ${seCobro.es}`, en: ` ${seCobro.en}` } : "" });
       };
@@ -411,6 +414,20 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
   return r.ok && retenida ? { ok: true, retenida: true } : r;
+}
+
+/* 25 nov (revisión de 483a3af) · La cancelación tarde cuya retención resultó cobrada DESPUÉS (el barrido la encontró cobrada y aplicó la regla: cobros ›
+   soltarRetencion › avisarTardeCobrada, que ya reclamó el aviso): a quien pagó le habíamos dicho «No se cobró nada, pero la retención todavía no se
+   soltó». Su aviso de la cancelación (viaje_cx) y el del negocio (biz_viaje_cx) otra vez, con lo aplicado: se cobró la mitad (o lo que quedaba) y lo que
+   pasó con la devolución del resto. */
+export async function avisarViajeTardeCobrado(numero: string, regla: ReglaTarde) {
+  const o = await leer(db(), "o.number = $1", [numero]);
+  if (!o) return;
+  const cobra = Math.floor(o.tot / 2), mitad = regla.queda, d: DevCancelar = regla.dev ?? { e: "nada", monto: 0 };
+  const ya = { es: "La retención sí se había cobrado.", en: "The hold had in fact been charged." };
+  const seCobro = mitad === cobra ? { es: `${ya.es} Se cobró la mitad: ${money(mitad)}.`, en: `${ya.en} Half was charged: ${money(mitad)}.` } : { es: `${ya.es} Se cobró lo que quedaba: ${money(mitad)}.`, en: `${ya.en} What was left was charged: ${money(mitad)}.` };
+  await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : ya) });
+  await avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`, en: ` ${mitad ? seCobro.en : ya.en}` } });
 }
 
 /* ── La salida (Panel › Hoy › Salidas): va tarde · salió · llegó · el negocio la cancela (devolución completa a todos) ── */

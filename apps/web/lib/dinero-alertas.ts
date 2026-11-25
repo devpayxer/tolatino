@@ -297,7 +297,9 @@ export async function cerrarAlertasResueltas(): Promise<number> {
                      union all select z.status from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                      union all select z.status from hold_renewals z where a.kind = 'hold_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                      -- 9v · La retención que no se soltó al cancelar (cobros › devolverAlCancelar, sujeto 'liberar:<cobro>'): se cierra sola cuando el cobro deja de estar retenido.
-                     union all select case when z.status = 'held' then 'pending' else 'released' end from payments z where a.kind = 'hold_stuck' and a.subject_id ~ '^liberar:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     -- 25 nov (revisión de 483a3af) · Y lo aceptado que Stripe ya no dejaba cobrar (cobros › cobrarOperacion, sujeto 'cobrar:<cobro>'): igual, cuando el cobro
+                     -- deja de estar retenido (se soltó o se cobró). Las demás de hold_stuck con sujeto no: alguien mira en Stripe.
+                     union all select case when z.status = 'held' then 'pending' else 'released' end from payments z where a.kind = 'hold_stuck' and a.subject_id ~ '^(liberar|cobrar):[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select case when z.status = 'done' then 'refund_done' else 'pending' end from gateway_refunds z where a.kind = 'extra_refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                      union all select z.status from subscription_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^subscription_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select z.status from offsession_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^offsession_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint

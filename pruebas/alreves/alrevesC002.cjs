@@ -40,7 +40,7 @@ const casos = [
   [L, '  if (x.enSesion) {', '  if (false) {'],
   [L, ', usuario: { id: x.payer, negocio: x.negocio, ciudad: x.ciudad } });', ' });'],
   [L, 'meta: { business_id: negocio, category_id: n.category_id }, enSesion: true };', 'meta: { business_id: negocio, category_id: n.category_id } };'],
-  [L, '      await capturarCobro(p, centavos);\n', ''],
+  [L, '      const cobrado = await capturarCobro(p, centavos);\n', '      const cobrado = centavos;\n'],
   [L, 'pasarela.capturarPlataforma(p.pi, centavos)', 'pasarela.capturarPlataforma(p.pi, 1500)'],
   // Devolver: dos veces (otra llave), más de lo cobrado, sin la fila del libro (o repitiéndola), sin auditoría.
   // 9t8 (0207) · La intención la anota la base al terminar (sponsorship_refunds): otra llave cada vez, más de lo cobrado, sin «una por patrocinio»; el cierre

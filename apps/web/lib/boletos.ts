@@ -511,7 +511,7 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
       await anularPorCobro(op, pi, cap.codigo ?? "error");
       return { ok: false, msg: { es: "Tu banco no completó el cobro. No se cobró nada.", en: "Your bank did not complete the charge. Nothing was charged." }, tarjeta: true };
     }
-    await marcarCobrado(op);
+    await marcarCobrado(op, cap.cobrado);
     await despuesDeVender(op).catch(() => undefined);
     return { ok: true, numero };
   } catch (e) {
@@ -526,9 +526,13 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
     c.release();
   }
 }
-async function marcarCobrado(op: string) {
+/* 25 nov (revisión de 483a3af) · cobrado: lo que Stripe capturó de verdad cuando el intento YA estaba capturado (pasarela.capturarPlataforma: un reintento o
+   una respuesta perdida). Se anota eso, como cobros › cobrarOperacion, y la comisión nunca pasa de lo cobrado (la liquidación del organizador sale de
+   payments: evt_liq_calc; las devoluciones, del tope refunds_tope). Sin cobrado, lo pedido (el total de la orden). Guardián liberarMira. */
+async function marcarCobrado(op: string, cobrado?: number) {
   await tx(async (c) => {
-    const u = await c.query(`update payments set status = 'captured', captured_at = now(), failure_code = null, updated_at = now() where operation_id = $1::bigint and kind = 'full' and status = 'held'`, [op]);
+    const u = await c.query(`update payments set status = 'captured', amount_cents = coalesce($2::int, amount_cents), fee_cents = least(fee_cents, coalesce($2::int, amount_cents)), captured_at = now(), failure_code = null, updated_at = now()
+                              where operation_id = $1::bigint and kind = 'full' and status = 'held'`, [op, cobrado ?? null]);
     if (!u.rowCount) return;
     await c.query(`update operations set pay_status = 'captured' where id = $1::bigint`, [op]);
     await c.query(`insert into operation_events (operation_id, kind, actor, note) select $1::bigint, 'payment_captured', 'system', jsonb_build_object('es', 'Se cobraron ' || to_char(amount_cents / 100.0, 'FM999990.00') || ' dólares', 'en', to_char(amount_cents / 100.0, 'FM999990.00') || ' dollars charged') from payments where operation_id = $1::bigint and kind = 'full'`, [op]);
@@ -565,7 +569,7 @@ export async function repararBoletos(): Promise<number> {
   await (await import("./barrido-uno")).cadaUno("boletosReparar", L, (x) => `op ${x.op}`, async (x) => {
     if (!x.ok) { await anularPorCobro(x.op, x.pi, "orden_cancelada"); return; }
     const r = await pasarela.capturarPlataforma(x.pi, x.total);
-    if (r.ok) { await marcarCobrado(x.op); await despuesDeVender(x.op).catch(() => undefined); } else await anularPorCobro(x.op, x.pi, r.codigo ?? "error");
+    if (r.ok) { await marcarCobrado(x.op, r.cobrado); await despuesDeVender(x.op).catch(() => undefined); } else await anularPorCobro(x.op, x.pi, r.codigo ?? "error");
   });
   return L.length;
 }

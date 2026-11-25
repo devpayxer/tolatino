@@ -133,7 +133,8 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
     // dentro de las 23 h, y con ellas en la base contar todas las llamadas daba rojo sin que esta devolución hubiera vuelto a la pasarela.
     await BO.barrerDevolucionesBoletos(); await BO.barrerDevolucionesBoletos();
     const r = await BO.ejecutarDevolucion(rf);
-    ok(!P.porLlave.has(k) && !r && (await q1(`select status from refunds where id = $1::bigint`, [rf])).status === 'pending', 'boletos: una devolución de hace más de 23 h no vuelve a la pasarela (ni el barrido ni otra llamada)');
+    // (revisión de 483a3af) · Con la llave renovada también (llaveDe: `${k}-r1`, …): ninguna llamada cuya llave empiece por la suya.
+    ok(![...P.porLlave.keys()].some((x) => x.startsWith(k)) && !r &&(await q1(`select status from refunds where id = $1::bigint`, [rf])).status === 'pending', 'boletos: una devolución de hace más de 23 h no vuelve a la pasarela (ni el barrido ni otra llamada)');
     ok(await alertasDe('refund_stuck', rf) === 1, 'boletos: el equipo de dinero recibe UNA alerta');
     const c2 = await cobro(X), k2 = `t9u-bol-${crypto.randomUUID()}`;
     const rf2 = await devBoletos(c2, 700, k2);

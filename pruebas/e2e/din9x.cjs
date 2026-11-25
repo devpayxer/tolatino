@@ -15,6 +15,11 @@
 //      el depósito se queda (perdio). Un aceptado cuyo intento Stripe canceló: alerta cobrar:<cobro> una vez y el barrido no lo reintenta.
 //      Y la pasarela real ante Stripe (con un Stripe de mentira): unexpected_state se mira (cancelado = soltada; cobrado = { cobrado }; sin respuesta = no);
 //      cobrar ante unexpected_state: cancelado = no se cobró, cobrado = con lo que Stripe capturó; el simulador no reescribe lo ya capturado.
+//      (revisión de 483a3af) Cuando el barrido aplica la regla, quien pagó y el negocio reciben UN aviso con lo aplicado (avisoCobro); el aceptado con el
+//      código terminal pero sin su alerta se reintenta hasta que la alerta exista; la captura tarde de una cancelada no alerta cobrar:; cobrar: se cierra
+//      sola cuando el cobro deja de estar retenido.
+//   4. «cobrada» por relectura (el barrido ganó la carrera): devolverAlCancelar dice la regla que aplicó (la mitad; la devolución hecha o en camino) y
+//      cobroMitad vuelve a decir la mitad, sin mover dinero otra vez.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), la salida, los cobros y el simulador.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs');
@@ -134,7 +139,13 @@ const notas = (suj) => sql(`select count(*) from money_alert_notes n join money_
   const pasarelaCon = (stripe) => cargar('apps/web/lib/pagos/pasarela.ts', { '../db': D, '../entorno': { ENTORNO: 'pruebas' }, './stripe': { ErrorStripe, stripe, stripeArchivo: async () => { throw new Error('sin Stripe'); } },
     '../tiendas/revision': { pagoBloqueado: async () => null } });
   const PS = pasarelaCon(async () => { throw new Error('sin Stripe'); }), PM = pasarelaCon(stripeMentira);
+  // (revisión de 483a3af) · Los avisos de la cancelación tarde que el barrido manda cuando aplica la regla (cobros › avisarTardeCobrada): se anotan aquí;
+  // el reclamo de una vez (details.avisoCobro) es el real, en la base.
+  const AV = [];
+  const viajesM = { avisarViajeTardeCobrado: async (num, regla) => { AV.push(['v', num, regla]); } };
+  const evpM = { avisarEvpTardeCobrado: async (num, queda, cobrado) => { AV.push(['e', num, queda, cobrado]); } };
   const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': PS, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertasM,
+    './viajes': viajesM, './evento-privado': evpM,
     './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': K, './devolucion-consulta': DC,
     './mercado': { repararMercado: async () => undefined }, './apartados': { repararApartados: async () => undefined }, './estimados': { repararEstimados: async () => undefined } });
   try {
@@ -152,6 +163,10 @@ const notas = (suj) => sql(`select count(*) from money_alert_notes n join money_
     ok(sql(`select count(*) from money_alerts where kind = 'hold_stuck' and subject_id like 'captura:%' and detail->>'es' like '${A.num}%'`) === '1', 'sin cobro: no anota nada y no tira');
     sql(`update payments set status = 'released', released_at = now() where id = ${pa}`);
     sql(`update sim_intents set status = 'canceled' where id = (select stripe_payment_intent from payments where id = ${pa})`);
+    // (revisión de 483a3af) · El barrido de alertas de cada minuto (barrerAlertasDinero) no se llama aquí: anotaría y cerraría alertas de otras pruebas en la
+    // base compartida. Su ÚNICO camino que cierra alertas es cerrarAlertasResueltas (al final de barrerAlertasDinero; lo demás solo anota refund_stuck,
+    // transfer_reversal_stuck, dispute_due y payout_failed, nunca hold_stuck), y es el que se llama aquí, con lo de esta prueba ya soltado. El guardián
+    // liberarMira lo vigila: barrerAlertasDinero no cierra nada por su cuenta y cerrarAlertasResueltas no mira ni captura: ni cobrada:.
     await alertasM.cerrarAlertasResueltas();
     ok(notas(`captura:${pa}`) === '0' && alertas(`captura:${pa}`) === '1', 'el barrido de alertas no la cierra (ni con el cobro ya soltado): alguien mira en Stripe');
 
@@ -170,7 +185,23 @@ const notas = (suj) => sql(`select count(*) from money_alert_notes n join money_
     retenido(E.op, U.id, BR, 10000, { st: 'succeeded', cap: 10000 }); sql(`update payments set kind = 'deposit' where operation_id = ${E.op}`); const pe = pidDe(E.num);
     // Uno aceptado cuyo intento Stripe ya canceló: no se cobra, alerta una vez y el barrido no lo reintenta.
     const N = operacion('confirmed'); retenido(N.op, U.id, BR, 3000, { st: 'canceled' }); const pn = pidDe(N.num);
+    // (revisión de 483a3af) · Uno aceptado con el código terminal ya escrito pero SIN su alerta (alertar había fallado): el barrido lo vuelve a intentar y alerta.
+    const M = operacion('confirmed'); retenido(M.op, U.id, BR, 3000, { st: 'canceled' }); const pm = pidDe(M.num);
+    sql(`update payments set failure_code = 'canceled' where id = ${pm}`);
+    // La captura tarde de una cancelación (la operación ya cancelada) que Stripe ya no deja cobrar: no alerta cobrar: (la retención se suelta acto seguido).
+    const L = operacion('cancelled'); retenido(L.op, U.id, BR, 3000, { st: 'canceled' }); const pl = pidDe(L.num);
+    const capL = await cobros.cobrarOperacion(L.op);
+    ok(capL && capL.ok === false && capL.codigo === 'canceled' && alertas(`cobrar:${pl}`) === '0', `la captura tarde de una cancelada que ya no se deja cobrar: sin alerta cobrar: (${JSON.stringify(capL)})`);
     await cobros.repararPagos(BR);
+    ok(alertas(`cobrar:${pm}`) === '1' && pago(M.num) === 'held|3000|0', 'el aceptado con el código terminal y sin alerta: el barrido lo reintenta y la alerta cobrar: queda anotada');
+    ok(pago(L.num) === 'released|3000|0', `la cancelada con la captura tarde que no salió: el barrido la suelta (${pago(L.num)})`);
+    // El barrido aplicó la regla de la cancelación tarde (T, E): quien pagó y el negocio reciben el aviso con lo aplicado, una vez; sin regla (C, X), nada.
+    const avT = AV.filter((x) => x[1] === T.num), avE = AV.filter((x) => x[1] === E.num);
+    ok(avT.length === 1 && avT[0][0] === 'v' && avT[0][2].queda === 1500 && avT[0][2].dev?.e === 'hecha' && avT[0][2].dev.monto === 1500 && sql(`select details->>'avisoCobro' from operations where id = ${T.op}`) === 'true',
+      `viaje tarde ya cobrado, por el barrido: UN aviso con lo aplicado (la mitad y lo devuelto) y el reclamo anotado (${JSON.stringify(avT)})`);
+    ok(avE.length === 1 && avE[0][0] === 'e' && avE[0][2] === 10000 && avE[0][3] === 10000 && sql(`select details->>'avisoCobro' from operations where id = ${E.op}`) === 'true',
+      `evento privado tarde ya cobrado, por el barrido: UN aviso con lo que se quedó (${JSON.stringify(avE)})`);
+    ok(!AV.some((x) => [C.num, X.num, N.num, M.num, L.num].includes(x[1])), 'sin regla aplicada (no era la cancelación tarde de quien pagó): ningún aviso');
     ok(pago(C.num) === 'captured|2500|0' && sql(`select pay_status from operations where id = ${C.op}`) === 'captured', `la que Stripe ya había cobrado queda cobrada con lo que se cobró ($25), nunca 'released' (${pago(C.num)})`);
     ok(sql(`select status from sim_intents where id = '${piC}'`) === 'succeeded', 'el simulador sigue cobrado (no se canceló lo cobrado)');
     ok(alertas(`cobrada:${pc}`) === '1' && alertas(`liberar:${pc}`) === '0' && detalle(`cobrada:${pc}`).includes('Revisa en Stripe si ese cobro correspondía'), 'UNA alerta hold_stuck cobrada:<cobro> (y ninguna liberar:)');
@@ -185,11 +216,39 @@ const notas = (suj) => sql(`select count(*) from money_alert_notes n join money_
     await alertasM.cerrarAlertasResueltas();
     ok(alertas(`cobrada:${pc}`) === '1' && notas(`cobrada:${pc}`) === '0' && pago(C.num) === 'captured|2500|0', 'otro barrido: ni otra alerta ni se cierra sola; el cobro sigue igual');
     ok(sql(`select count(*) from refunds where idem_key = 'vcx-${T.num}'`) === '1' && pago(T.num) === 'partially_refunded|3000|1500', 'ni otra devolución del viaje tarde');
+    ok(AV.filter((x) => x[1] === T.num || x[1] === E.num).length === 2 && notas(`cobrar:${pn}`) === '0', 'ni otro aviso; la alerta cobrar: del que sigue retenido sigue abierta');
     // El aceptado que Stripe ya no deja cobrar queda fuera del barrido: aunque el intento volviera a poder cobrarse, nadie lo reintenta solo.
     sql(`update sim_intents set status = 'requires_capture' where id = (select stripe_payment_intent from payments where id = ${pn})`);
     await cobros.repararPagos(BR);
     ok(pago(N.num) === 'held|3000|0' && alertas(`cobrar:${pn}`) === '1', 'el barrido no lo reintenta (ni abre otra alerta)');
     sql(`update sim_intents set status = 'canceled' where id = (select stripe_payment_intent from payments where id = ${pn})`);
+    // (revisión de 483a3af) · La alerta cobrar: se cierra sola cuando el cobro deja de estar retenido (como liberar:): aquí, el equipo lo soltó.
+    sql(`update payments set status = 'released', released_at = now() where id = ${pn}`);
+    await alertasM.cerrarAlertasResueltas();
+    ok(notas(`cobrar:${pn}`) === '1' && sql(`select n.action from money_alert_notes n join money_alerts a on a.id = n.alert_id where a.kind = 'hold_stuck' and a.subject_id = 'cobrar:${pn}'`) === 'resuelta_sola', 'cobrar: se cierra sola cuando el cobro ya no está retenido');
+
+    console.log('4 · «cobrada» por relectura: el barrido ganó la carrera y aplicó la regla; la cancelación dice lo que aplicó');
+    {
+      // Un viaje que quien pagó canceló tarde; el barrido ya lo encontró cobrado ($30), aplicó la regla (devolvió $15 con vcx-<número>) y la cancelación, que
+      // había leído el cobro retenido, dejó cobroMitad en 0. Su devolverAlCancelar (pay 'held', como lo llama la cancelación) ya no encuentra nada retenido.
+      const R = operacion('cancelled'); sql(`update operations set cancelled_by = 'user', cancel_reason = 'tarde', cancelled_at = now(), details = details || '{"cobroMitad":0}'::jsonb where id = ${R.op}`);
+      retenido(R.op, U.id, BR, 3000, { st: 'succeeded', cap: 3000 }); const pr = pidDe(R.num);
+      sql(`update payments set status = 'partially_refunded', refunded_cents = 1500, captured_at = now() where id = ${pr}`);
+      sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) values (${pr}, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', 'done', 'vcx-${R.num}', now())`);
+      const dr = await cobros.devolverAlCancelar({ id: R.op, pay: 'held', pid: pr, amount: 3000, refunded: 0 }, { actorId: U.id, motivo: 'Cancelación tarde (no se sabe si la captura salió)', idem: `vcx-${R.num}`, por: 'policy', seQueda: 0 });
+      ok(dr.e === 'cobrada' && dr.regla?.queda === 1500 && dr.regla?.dev?.e === 'hecha' && dr.regla.dev.monto === 1500, `devolverAlCancelar dice la regla que aplicó el barrido: la mitad y lo devuelto (${JSON.stringify(dr)})`);
+      ok(sql(`select details->>'cobroMitad' from operations where id = ${R.op}`) === '1500' && sql(`select count(*) from refunds where payment_id = ${pr}`) === '1' && pago(R.num) === 'partially_refunded|3000|1500',
+        'cobroMitad vuelve a decir la mitad; nada se movió otra vez (ni otra devolución)');
+      // Con la devolución todavía en camino (otro viaje igual, cobrado y con la devolución pendiente): dice «en camino». Esa devolución la termina el barrido
+      // de devoluciones del servidor con el simulador (el intento está cobrado), como cualquier otra.
+      const R2 = operacion('cancelled'); sql(`update operations set cancelled_by = 'user', cancel_reason = 'tarde', cancelled_at = now(), details = details || '{"cobroMitad":0}'::jsonb where id = ${R2.op}`);
+      retenido(R2.op, U.id, BR, 3000, { st: 'succeeded', cap: 3000 }); const pr2 = pidDe(R2.num);
+      sql(`update payments set status = 'captured', captured_at = now() where id = ${pr2}`);
+      sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key) values (${pr2}, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', 'pending', 'vcx-${R2.num}')`);
+      const dp = await cobros.devolverAlCancelar({ id: R2.op, pay: 'held', pid: pr2, amount: 3000, refunded: 0 }, { actorId: U.id, motivo: 'x', idem: `vcx-${R2.num}`, por: 'policy', seQueda: 0 });
+      ok(dp.e === 'cobrada' && dp.regla?.queda === 1500 && dp.regla?.dev?.e === 'en_camino' && dp.regla.dev.monto === 1500 && sql(`select details->>'cobroMitad' from operations where id = ${R2.op}`) === '1500',
+        `con la devolución en camino: «en camino» y cobroMitad la mitad (${JSON.stringify(dp)})`);
+    }
     // La pasarela real ante Stripe: unexpected_state se mira.
     ST.estado = 'succeeded'; const l1 = await PM.pasarela.liberar('pi_9x_mentira');
     ST.estado = 'canceled'; const l2 = await PM.pasarela.liberar('pi_9x_mentira');

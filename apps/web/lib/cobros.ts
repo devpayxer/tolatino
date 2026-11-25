@@ -79,7 +79,9 @@ export async function cobrarOperacion(opId: string): Promise<{ ok: true } | { ok
     const codigo = r.codigo ?? "error";
     await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1`, [p.id, codigo]);
     // 25 nov · Un intento que Stripe ya no deja cobrar (cancelado, vencido): no se cobró ni se va a poder; el barrido ya no lo reintenta (repararPagos) y
-    // el equipo de dinero lo sabe, una vez por cobro (hold_stuck cobrar:<cobro>, no se cierra sola).
+    // el equipo de dinero lo sabe, una vez por cobro (hold_stuck cobrar:<cobro>; se cierra sola cuando el cobro deja de estar retenido).
+    // 25 nov (revisión de 483a3af) · Solo de lo aceptado (alertarNoSeCobra mira la operación): la captura tarde de una cancelación (viaje, evento privado)
+    // que ya no se deja cobrar no es un problema, la retención se suelta acto seguido. Y el barrido lo deja de reintentar solo con su alerta anotada.
     if (CAPTURA_TERMINAL.has(codigo)) await alertarNoSeCobra(opId, p.id, p.amount, codigo);
     return { ok: false, codigo };
   }
@@ -95,11 +97,17 @@ export async function cobrarOperacion(opId: string): Promise<{ ok: true } | { ok
 }
 /* 25 nov · Lo que Stripe contesta a una captura cuando el intento ya no se deja cobrar (nunca más: cancelado, sin tarjeta, la autorización venció). */
 export const CAPTURA_TERMINAL = new Set(["canceled", "requires_payment_method", "charge_expired_for_capture", "no_existe"]);
+/* 25 nov (revisión de 483a3af) · Solo si la operación sigue aceptada (confirmed o done): la captura tarde de una cancelación pasa por aquí con la operación
+   ya cancelada, y su retención se suelta acto seguido (decir «resuélvelo» de eso confundía). Si la alerta no se anota, queda en el registro (nunca se traga)
+   y repararPagos lo sigue reintentando: lo excluye solo con la alerta cobrar:<cobro> anotada. Guardián liberarMira. */
 async function alertarNoSeCobra(opId: string, pid: string, amt: number, codigo: string) {
-  const o = (await db().query<{ num: string; biz: string | null; city: string | null }>(`select o.number as num, o.business_id as biz, o.city_id as city from operations o where o.id = $1::bigint`, [opId])).rows[0];
-  await (await import("./dinero-alertas")).alertar("hold_stuck", `cobrar:${pid}`, { monto: amt, negocio: o?.biz ?? null, ciudad: o?.city ?? null, detalle: {
-    es: `${o?.num ?? opId}: lo retenido (${money(amt)}) ya no se deja cobrar (Stripe: ${codigo}). No se cobró nada y el barrido ya no lo reintenta: resuélvelo con el negocio y la persona.`,
-    en: `${o?.num ?? opId}: the hold (${money(amt)}) can no longer be charged (Stripe: ${codigo}). Nothing was charged and the sweep no longer retries it: sort it out with the business and the person.` } }).catch(() => undefined);
+  try {
+    const o = (await db().query<{ num: string; st: string; biz: string | null; city: string | null }>(`select o.number as num, o.status as st, o.business_id as biz, o.city_id as city from operations o where o.id = $1::bigint`, [opId])).rows[0];
+    if (!o || !["confirmed", "done"].includes(o.st)) return;
+    await (await import("./dinero-alertas")).alertar("hold_stuck", `cobrar:${pid}`, { monto: amt, negocio: o.biz, ciudad: o.city, detalle: {
+      es: `${o.num}: lo retenido (${money(amt)}) ya no se deja cobrar (Stripe: ${codigo}). No se cobró nada y el barrido ya no lo reintenta: resuélvelo con el negocio y la persona.`,
+      en: `${o.num}: the hold (${money(amt)}) can no longer be charged (Stripe: ${codigo}). Nothing was charged and the sweep no longer retries it: sort it out with the business and the person.` } });
+  } catch (e) { console.error(`[cobrar] operación ${opId}: la alerta cobrar:${pid} no se anotó (el barrido lo reintenta): ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
 }
 /* 25 nov · Lo que la pasarela contesta a una captura SIN decir si salió (sin respuesta, error de Stripe, en curso): no se sabe si se cobró. Cualquier
    otro código es un «no» claro (cancelado, vencido, sin clave): no se cobró. */
@@ -174,14 +182,55 @@ async function reglaTardeConLoCobrado(opId: string): Promise<import("./devolucio
   }
   return null;
 }
+/* 25 nov (revisión de 483a3af) · «cobrada» por relectura (devolverAlCancelar): otro (el barrido) soltó primero, encontró la retención cobrada y aplicó la
+   regla (reglaTardeConLoCobrado). Aquí se LEE lo que aplicó, sin volver a mover dinero: viaje → lo que se queda (lo que queda cobrado sin contar la
+   devolución de la cancelación, hasta la mitad: la misma cuenta que reglaTardeConLoCobrado) y lo que pasó con la devolución de la llave vcx-<número>
+   (hecha · en camino · fallida; sin fila todavía: null, su aviso pay_refund sale al cerrarla); evento privado → lo que queda cobrado. cobroMitad se vuelve
+   a escribir con lo que se queda: la cancelación que perdió la carrera lo había dejado en 0 (leyó el cobro retenido). Cualquier otra cosa: null. */
+async function reglaTardeLeida(opId: string): Promise<import("./devolucion-cancelar").ReglaTarde | null> {
+  const o = (await db().query<{ kind: string; st: string; cr: string | null; by: string | null; tot: number; amt: number; ref: number; pst: string; vcx: number; rst: string | null; ramt: number | null; rmano: boolean | null }>(
+    `select o.kind, o.status as st, o.cancel_reason as cr, o.cancelled_by as by, o.total_cents as tot, p.amount_cents as amt, p.refunded_cents as ref, p.status as pst,
+            coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'done' and split_part(r.idem_key, '~fallida-', 1) = 'vcx-' || o.number), 0)::int as vcx,
+            d.st as rst, d.amt as ramt, d.mano as rmano
+       from operations o join payments p on p.operation_id = o.id and p.kind in ('full', 'deposit')
+       left join lateral (select r.status as st, r.amount_cents as amt, r.manual_at is not null as mano from refunds r
+                           where r.payment_id = p.id and split_part(r.idem_key, '~fallida-', 1) = 'vcx-' || o.number order by r.id desc limit 1) d on true
+      where o.id = $1::bigint order by p.id desc limit 1`, [opId])).rows[0];
+  if (!o || o.st !== "cancelled" || o.by !== "user" || o.cr !== "tarde" || !["captured", "partially_refunded"].includes(o.pst)) return null;
+  if (o.kind === "private_event") return { queda: Math.max(0, o.amt - o.ref), dev: null };
+  if (o.kind !== "trip") return null;
+  const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));
+  await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int) where id = $1::bigint`, [opId, queda]);
+  const m = o.ramt ?? 0;
+  const dev: import("./devolucion-cancelar").DevCancelar | null = !o.rst ? null : o.rst === "done" || o.rmano ? { e: "hecha", monto: m } : o.rst === "pending" ? { e: "en_camino", monto: m } : { e: "fallida", monto: m };
+  return { queda, dev };
+}
+/* 25 nov (revisión de 483a3af) · El aviso que dice lo cobrado de una cancelación tarde (lo que se queda el negocio), UNA vez por operación: lo reclama quien
+   lo va a mandar (la cancelación misma, o el barrido que aplicó la regla después); el que llega segundo no lo manda. Lo que no dice lo cobrado («No se
+   cobró nada, pero la retención todavía no se soltó») no lo reclama: después de ese, el barrido todavía dice lo que pasó. */
+export async function reclamarAvisoCobro(opId: string): Promise<boolean> {
+  return !!(await db().query(`update operations set details = details || '{"avisoCobro":true}'::jsonb where id = $1::bigint and not coalesce((details->>'avisoCobro')::boolean, false)`, [opId])).rowCount;
+}
+/* 25 nov (revisión de 483a3af) · La regla de la cancelación tarde la aplicó el BARRIDO (repararPagos: la retención resultó cobrada después de que la
+   cancelación avisara «No se cobró nada, pero la retención todavía no se soltó»): quien pagó y el negocio reciben su aviso de la cancelación otra vez, con
+   lo aplicado (viaje: viaje_cx y biz_viaje_cx; evento privado: evp_cancelado y evp_biz_cx; las plantillas y los campos de siempre). Una vez por operación
+   (reclamarAvisoCobro). Nunca tira: lo que falla queda en el registro. Guardián liberarMira. */
+async function avisarTardeCobrada(opId: string, num: string, kind: string, cobrado: number, regla: import("./devolucion-cancelar").ReglaTarde) {
+  try {
+    if (kind !== "trip" && kind !== "private_event") return;
+    if (!(await reclamarAvisoCobro(opId))) return;
+    if (kind === "trip") await (await import("./viajes")).avisarViajeTardeCobrado(num, regla);
+    else await (await import("./evento-privado")).avisarEvpTardeCobrado(num, regla.queda, cobrado);
+  } catch (e) { console.error(`[cobrada] ${num}: el aviso de lo que aplicó el barrido no salió: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+}
 /* 25 nov (regla 13, LAUNCH g) · «cobrada»: Stripe ya la había cobrado (liberarOperacion la anotó 'captured' con su monto real). UNA alerta hold_stuck por
    cobro con sujeto cobrada:<cobro>, que NO se cierra sola (cerrarAlertasResueltas solo mira liberar:): alguien mira en Stripe si ese cobro correspondía y,
    si no, lo devuelve. Quien avisa lo dice (devolucion-cancelar › soltadaO / dineroAlCancelar). */
 export async function soltarRetencion(opId: string, motivo: Msg): Promise<import("./devolucion-cancelar").Soltada> {
   const l = await liberarOperacion(opId);
   if (l === "cobrada") {
-    const c = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; num: string }>(
-      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city, o.number as num from payments y join operations o on o.id = y.operation_id
+    const c = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; num: string; kind: string }>(
+      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city, o.number as num, o.kind from payments y join operations o on o.id = y.operation_id
         where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') and y.status in ('captured', 'partially_refunded', 'refunded') order by y.id desc limit 1`, [opId])).rows[0];
     if (!c) return { e: "nada", monto: 0 };
     // La cancelación tarde de quien pagó (viaje, evento privado) sigue su regla con lo cobrado (reglaTardeConLoCobrado); lo demás lo decide el equipo.
@@ -195,6 +244,8 @@ export async function soltarRetencion(opId: string, motivo: Msg): Promise<import
       en: `${yaEs.en} The late cancellation was applied: ${money(regla.queda)} was kept${devT.en}. Check in Stripe that it matches; do not refund anything else.` }
       : { es: `${yaEs.es} Revisa en Stripe si ese cobro correspondía: si no, devuélveselo al cliente.`, en: `${yaEs.en} Check in Stripe whether that charge was due: if not, refund the client.` };
     await (await import("./dinero-alertas")).alertar("hold_stuck", `cobrada:${c.id}`, { monto: c.amt, negocio: c.biz, ciudad: c.city, detalle }).catch(() => undefined);
+    // 25 nov (revisión de 483a3af) · La regla la aplicó el barrido: a quien pagó le habíamos dicho «No se cobró nada…»; el aviso dice lo aplicado (una vez).
+    if (regla && motivo === SWEEP) await avisarTardeCobrada(opId, c.num, c.kind, c.amt, regla);
     return { e: "cobrada", monto: c.amt, ...(regla ? { regla } : {}) };
   }
   if (l !== "fallo") return { e: l, monto: 0 };
@@ -248,12 +299,15 @@ export const SWEEP: Msg = { es: "El barrido de pagos", en: "The payments sweep" 
    retenido de uno aceptado → cobrar. Una solicitud con otra hora propuesta (change_proposed) sigue VIVA: su retención no se
    toca (4v: se liberaba el depósito mientras el cliente decidía; guardián reparaVivas). Barato: índice por negocio y solo los retenidos.
    25 nov · Uno aceptado cuyo intento Stripe ya no deja cobrar (failure_code en CAPTURA_TERMINAL: tiene su alerta cobrar:) no se reintenta: antes se
-   reintentaba sin fin y, con el límite de 20, dejaba sin barrer a los nuevos. Guardián liberarMira. */
+   reintentaba sin fin y, con el límite de 20, dejaba sin barrer a los nuevos. Guardián liberarMira.
+   25 nov (revisión de 483a3af) · Solo si su alerta cobrar:<cobro> quedó anotada: si alertar fallaba, el código terminal ya estaba escrito y el cobro quedaba
+   retenido para siempre sin que nadie lo supiera; así el barrido lo vuelve a intentar (y a alertar) hasta que la alerta exista. */
 export async function repararPagos(negocio: string) {
   if (soloLectura()) return; // 9n-23 · la vista del equipo (solo lectura) no cobra ni libera nada al mirar: lo hace el barrido de cada minuto
   const L = (await db().query<{ op: string; st: string }>(
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and not (o.status in ('confirmed', 'done') and coalesce(p.failure_code, '') = any($2::text[]))
+      where p.business_id = $1 and not (o.status in ('confirmed', 'done') and coalesce(p.failure_code, '') = any($2::text[])
+                                         and exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'cobrar:' || p.id::text))
         and p.status = 'held' and o.status not in ('pending', 'change_proposed') and o.kind not in ('market_order', 'hold', 'tickets')
       order by p.held_at nulls first, p.id limit 20`, [negocio, [...CAPTURA_TERMINAL]])).rows;
   // 9t9 · Cada cobro y cada paso por su cuenta (lib/barrido-uno.ts), lo más viejo primero: uno que falla no deja a los demás (ni al mercado, la tienda o
@@ -507,7 +561,11 @@ export async function devolverAlCancelar(o: { id: string; pay: string | null; pi
     const y = (await db().query<{ st: string; amt: number; ref: number }>(`select status as st, coalesce(nullif(held_cents, 0), amount_cents) as amt, refunded_cents as ref from payments where operation_id = $1::bigint and kind in ('full', 'deposit') order by id desc limit 1`, [o.id])).rows[0];
     if (!y) return { e: "nada", monto: 0 };
     if (y.st === "released") return y.amt > 0 ? { e: "liberada", monto: y.amt } : { e: "nada", monto: 0 };
-    if (y.st === "captured" || y.st === "partially_refunded") return { e: "cobrada", monto: Math.max(0, y.amt - y.ref) };
+    // 25 nov (revisión de 483a3af) · Si el barrido ganó la carrera y aplicó la regla de la cancelación tarde, se dice lo que aplicó (reglaTardeLeida).
+    if (y.st === "captured" || y.st === "partially_refunded") {
+      const regla = await reglaTardeLeida(o.id).catch((e) => { console.error(`[cobrada] operación ${o.id}: la regla aplicada no se pudo leer: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return null; });
+      return { e: "cobrada", monto: Math.max(0, y.amt - y.ref), ...(regla ? { regla } : {}) };
+    }
     if (y.st === "held") return { e: "retenida", monto: y.amt };
     return { e: "nada", monto: 0 };
   }

@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion } from "./cobros";
+import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, reclamarAvisoCobro, registrarRetencion } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { valores } from "./config";
 import { db, tx } from "./db";
@@ -489,11 +489,11 @@ export async function rechazarCambioEvp(userId: string, numero: string): Promise
    camino · fallida, que alerta al equipo · liberada · retenida · nada), nunca «Te devolvemos $X en 3 a 5 días hábiles» con lo decidido. */
 export async function cancelarEvp(userId: string, numero: string): Promise<Res<{ devuelto: number; perdio: boolean; devolucion?: DevCancelar["e"] }>> {
   if (!NUM_EP.test(numero)) return no("Esa solicitud no existe.", "That request does not exist.");
-  let pago: { dev: number; perdio: boolean; held: boolean; dep: number; queda: number; pst: string | null; refunded: number } | null = null, biz = "";
+  let pago: { dev: number; perdio: boolean; held: boolean; dep: number; queda: number; pst: string | null; refunded: number } | null = null, biz = "", opId = "";
   const r = await tx(async (c): Promise<Res<{ devuelto: number; perdio: boolean }>> => {
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
     if (!o || !["pending", "change_proposed", "confirmed"].includes(o.status) || (o.status === "confirmed" && o.past)) return no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.");
-    biz = o.biz;
+    biz = o.biz; opId = o.id;
     if (o.status !== "confirmed") {
       await c.query(`update operations set status = 'cancelled', status_detail = null, cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'solicitud', respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "cancelled", "user", userId);
@@ -557,6 +557,9 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
   // Tarde con el cobro ya devuelto entero o la retención ya soltada: nada se queda y nada se mueve ahora; el aviso dice lo que ya había pasado (te
   // devolvimos / se soltó la retención), nunca «No se cobró nada» de un depósito que sí se cobró y se devolvió.
   if (!quedo && (!d || d.e === "nada")) d = P.pst === "refunded" && P.refunded > 0 ? { e: "hecha", monto: P.refunded } : P.pst === "released" && P.dep > 0 ? { e: "liberada", monto: P.dep } : d;
+  // 25 nov (revisión de 483a3af) · El aviso que dice lo que se quedó va una vez: si el barrido ya lo dijo (encontró la retención cobrada y aplicó la regla
+  // primero), no se repite (cobros › reclamarAvisoCobro).
+  if (quedo && !(await reclamarAvisoCobro(opId))) return { ok: true, devuelto: 0, perdio: true, devolucion: "nada" };
   // Lo que se queda es lo que quedaba (una devolución parcial previa ya salió): «Lo que quedaba del depósito ($X)» cuando no es el depósito entero.
   const entero = P.queda === P.dep;
   await avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, quedo ? (entero ? { es: `El depósito de ${dinero(P.queda)} se queda con el restaurante.`, en: `The ${dinero(P.queda)} deposit stays with the restaurant.` }
@@ -572,6 +575,19 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
     : { es: " No se había cobrado nada.", en: " Nothing had been charged." };
   await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: depNeg }).catch(() => undefined);
   return { ok: true, devuelto: d?.e === "hecha" ? d.monto : 0, perdio: quedo, devolucion: quedo ? "nada" : d?.e ?? "nada" };
+}
+/* 25 nov (revisión de 483a3af) · La cancelación tarde cuya retención resultó cobrada DESPUÉS (el barrido la encontró cobrada y aplicó la regla: cobros ›
+   soltarRetencion › avisarTardeCobrada, que ya reclamó el aviso; perdio vuelve a true): a quien pagó le habíamos dicho «No se cobró nada, pero la retención
+   todavía no se soltó». Su aviso de la cancelación (evp_cancelado) y el del restaurante (evp_biz_cx) otra vez, con lo que se quedó: lo que quedaba cobrado
+   (queda; «el depósito» si es todo lo cobrado). Nada se devuelve. */
+export async function avisarEvpTardeCobrado(numero: string, queda: number, cobrado: number) {
+  const d: DevCancelar | null = null, entero = queda === cobrado, ya = { es: "La retención sí se había cobrado.", en: "The hold had in fact been charged." };
+  const cli: Bi = !queda ? ya : entero ? { es: `${ya.es} El depósito de ${dinero(queda)} se queda con el restaurante.`, en: `${ya.en} The ${dinero(queda)} deposit stays with the restaurant.` }
+    : { es: `${ya.es} Lo que quedaba del depósito (${dinero(queda)}) se queda con el restaurante.`, en: `${ya.en} What was left of the deposit (${dinero(queda)}) stays with the restaurant.` };
+  await avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, cli) });
+  const neg: Bi = !queda ? { es: ` ${ya.es}`, en: ` ${ya.en}` } : entero ? { es: ` ${ya.es} El depósito de ${dinero(queda)} se queda contigo.`, en: ` ${ya.en} The ${dinero(queda)} deposit stays with you.` }
+    : { es: ` ${ya.es} Lo que quedaba del depósito (${dinero(queda)}) se queda contigo.`, en: ` ${ya.en} What was left of the deposit (${dinero(queda)}) stays with you.` };
+  await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: neg });
 }
 
 /* ── El barrido (cada minuto y al abrir la pantalla): sin respuesta, propuesta vencida, cambio vencido, recordatorio del día antes,

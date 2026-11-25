@@ -3108,15 +3108,31 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       cobro antes de decir «liberada» (nunca «$0»); el monto de los avisos del viaje con dos decimales (usdTxt: antes «$22.5» y «$22.50» en el mismo aviso).
       din9u (2) ya no «revive» un intento cancelado (en Stripe no vuelve): usa la captura sin respuesta del sandbox (0404); din9t2 (2) cuenta las llamadas de
       SU llave (el barrido manda también las devoluciones de boletos pendientes de otras corridas).
+      Revisión de 483a3af (hecho): la alerta cobrar:<cobro> es la llave para que el barrido deje de reintentar (sin ella, si alertar fallaba, quedaba
+      retenido para siempre sin alerta; ahora el error va al registro y el barrido reintenta hasta anotarla), sale solo de lo aceptado (la captura tarde de
+      una cancelada ya no dice «resuélvelo» de una retención que se suelta acto seguido) y se cierra sola cuando el cobro deja de estar retenido, como
+      liberar:; cuando el BARRIDO aplica la regla de la cancelación tarde, quien pagó y el negocio reciben su aviso de la cancelación con lo aplicado
+      (viaje_cx / biz_viaje_cx, evp_cancelado / evp_biz_cx, «La retención sí se había cobrado…», ES/EN), una vez por operación (details.avisoCobro: lo
+      reclama quien lo manda, también la cancelación misma); la «cobrada» por relectura (el barrido ganó la carrera) lleva la regla que aplicó
+      (reglaTardeLeida: la mitad y la devolución vcx-; cobroMitad vuelve a decir la mitad, que la cancelación había dejado en 0); liquidarMercado resta lo
+      anotado (no lo pedido) y boletos y patrocinios anotan lo que Stripe capturó de verdad (capturarPlataforma › cobrado). din9t2 (2) ve también la llave
+      renovada (-r1); din9x dice por qué basta cerrarAlertasResueltas (el guardián liberarMira vigila que barrerAlertasDinero no cierre por su cuenta).
+      Sin migración (las plantillas ya tenían {dinero} y {dep}).
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
       verificacion › vencidas, suscripcion, rentas) ya no dan por soltado lo cobrado, pero tampoco lo anotan cobrado ni alertan: lo reintentan sin fin
-      en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). Y quien llama a capturarPlataforma (boletos, patrocinio) no anota
-      el monto que viene en `cobrado` cuando el intento ya estaba capturado con otro (hoy da por cobrado lo pedido). (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
+      en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). _Hecho en la revisión de 483a3af: quien llama a capturarPlataforma
+      (boletos, patrocinios) anota lo que Stripe capturó._ Si ese monto difiere de lo pedido (alguien capturó otro desde Stripe), los boletos o el
+      patrocinio quedan emitidos por el precio y cobrados por menos: nadie lo avisa; decidir si alerta al equipo. (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
       «No hay cupo» del panel, las de pedidos, citas, noche, fiesta, inscripción, viaje y apartado) solo distingue «retenida»; ante «cobrada» dice lo de
       siempre: el aviso sí lo dice bien (soltadaO). (3) _Hecho en la revisión: el aceptado que Stripe ya no deja cobrar alerta y sale del barrido._
       Queda decidir qué se hace con él (¿se cancela el pedido? ¿se le pide otra tarjeta?): hoy lo resuelve el equipo a mano desde su alerta. (4) La
       cobrada de una cancelación A TIEMPO (Stripe ya lo había cobrado) no se devuelve sola: la alerta pide revisarlo; decidir si la regla «devolver todo»
-      se aplica sola como la tarde.
+      se aplica sola como la tarde. (5) El aviso que manda el barrido al aplicar la regla repite la plantilla de la cancelación («Cancelaste tu viaje…» con
+      «La retención sí se había cobrado…»): sirve, pero una plantilla propia («Lo que pasó con tu viaje cancelado») se leería mejor; si se hace, migración
+      nueva. Y si el aviso falla después de reclamarlo (details.avisoCobro), no se repite: queda en el registro. (6) La carrera entre la cancelación y el
+      barrido sigue posible en lo que no es aviso: la cancelación que leyó el cobro retenido escribe cobroMitad 0 antes de que devolverAlCancelar lo
+      corrija (un instante); y si la relectura llega antes de que el barrido anote la devolución vcx-, la regla sale sin devolución (dev null) y el aviso
+      solo dice lo cobrado (la devolución avisa sola al cerrarse, pay_refund).
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,
