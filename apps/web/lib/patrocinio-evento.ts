@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { valores } from "./config";
 import { db, tx } from "./db";
 import { pasarela } from "./pagos/pasarela";
-import { CLAVE, DEVOLUCION, anotarPago, capturarCobro, cobrar, devolucionEstado, devolverPatrocinio, devolverPendientes, errorDePuestos, fechasPeriodo, money, soltarRetenido, tarjetaDe, type Bi, type Cobro, type PatAdm, type Recibo, type ResPat } from "./patrocinio";
+import { CLAVE, DEVOLUCION, anotarPago, capturarCobro, cobrar, devolucionEstado, devolverPatrocinio, devolverPendientes, devolverYDecir, errorDePuestos, fechasPeriodo, money, soltarRetenido, tarjetaDe, type Bi, type Cobro, type PatAdm, type Recibo, type ResPat } from "./patrocinio";
 import type { TarjetaEvt } from "./evt-publico";
 import { llave } from "./llaves-proveedores";
 
@@ -234,9 +234,7 @@ export async function terminarPorDuenoEvento(negocio: string, evento: string, qu
     return r;
   });
   if (!r.rowCount) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
-  const x = r.rows[0]!;
-  if (x.refund_cents) await devolverPatrocinio("evento", id);
-  return { ok: true, devuelto: x.refund_cents ?? 0 };
+  return devolverYDecir("evento", id, r.rows[0]!.refund_cents);
 }
 
 /* ── El panel (Eventos › el evento › Patrocinar) ── */

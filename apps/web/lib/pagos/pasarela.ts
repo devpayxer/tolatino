@@ -561,7 +561,9 @@ export const pasarela = {
   async buscarDevolucion(ref: string, medio: "refund" | "reversal", objeto: string): Promise<Consulta> {
     // 9t7 · También las devoluciones de un cobro (refunds:<id>: las de lib/cobros y las de boletos) y las reversiones al organizador
     // (event_settlement_reversals:<id>): la misma búsqueda por su dato, entre las de ESE cobro o ESA transferencia.
-    if (!REF_DEV.test(ref) || !/^(pi|tr)_[A-Za-z0-9_]{3,200}$/.test(objeto) || (medio === "refund") !== objeto.startsWith("pi_")) return { ok: false };
+    // 9v · Los ids que hace el simulador llevan su llave, con guiones (pi_sim_<apartado>-…-0 de los boletos, tr_sim_evt-liq-<fecha>): en el sandbox la consulta
+    // los acepta (antes contestaba «sin respuesta» siempre para una devolución de boletos); con Stripe, solo los suyos.
+    if (!REF_DEV.test(ref) || !(/^(pi|tr)_[A-Za-z0-9_]{3,200}$/.test(objeto) || (modoPago() === "simulador" && /^(pi|tr)_sim_[A-Za-z0-9_-]{3,200}$/.test(objeto))) || (medio === "refund") !== objeto.startsWith("pi_")) return { ok: false };
     if (modoPago() === "simulador") {
       if (process.env.TOLATINO_SIM_CONSULTA === "caida") return { ok: false };
       try {

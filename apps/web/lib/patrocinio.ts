@@ -31,7 +31,9 @@ import { finDePeriodo } from "./periodo-pro";
 
 export type Bi = { es: string; en: string };
 export type Dur = "week" | "month" | "until_event";
-export type ResPat = { ok: true; id?: string; estado?: "activo" | "reservado"; msg?: Bi; devuelto?: number } | { ok: false; msg: Bi; sinPuestos?: boolean; verificar?: Verificar };
+/* 9v · devuelto: lo que la pasarela YA devolvió (0 si no salió). devolucion + aDevolver: lo que pasó con la que no salió (en camino: el barrido la termina; fallida:
+   Stripe dijo que no y la tiene el equipo de dinero). La pantalla nunca dice «te devolvemos» con lo decidido: lo dice con esto (guardián devueltoSoloSiSalio). */
+export type ResPat = { ok: true; id?: string; estado?: "activo" | "reservado"; msg?: Bi; devuelto?: number; devolucion?: "en_camino" | "fallida"; aDevolver?: number } | { ok: false; msg: Bi; sinPuestos?: boolean; verificar?: Verificar };
 const no = (es: string, en: string): ResPat => ({ ok: false, msg: { es, en } });
 export const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
@@ -193,6 +195,14 @@ export async function devolverPatrocinio(kind: "negocio" | "evento", id: string)
 export async function devolucionEstado(kind: "negocio" | "evento", id: string): Promise<"done" | "pending" | "failed" | null> {
   const r = await intencionDelPatrocinio(kind, id);
   return r?.st ?? null;
+}
+/* 9v · «Cancelar reserva» del dueño (negocio o evento): la devolución que decidió la base se manda y la respuesta dice lo que PASÓ (antes devolvía lo decidido y
+   la pantalla decía «Te devolvemos $15.00 a tu tarjeta» aunque Stripe la hubiera rechazado). */
+export async function devolverYDecir(kind: "negocio" | "evento", id: string, decidido: number | null): Promise<ResPat> {
+  if (!decidido) return { ok: true, devuelto: 0 };
+  const dev = await devolverPatrocinio(kind, id);
+  if (dev) return { ok: true, devuelto: dev };
+  return { ok: true, devuelto: 0, aDevolver: decidido, devolucion: (await devolucionEstado(kind, id)) === "failed" ? "fallida" : "en_camino" };
 }
 /* El barrido: la misma llave mientras Stripe la recuerda (HORAS_LLAVE); pasado eso, la pregunta a la pasarela (9t8, barrerDevolucionesPat). */
 export async function devolverPendientes(kind: "negocio" | "evento"): Promise<number> {
@@ -561,9 +571,7 @@ export async function terminarPorDueno(negocio: string, quien: string, id: strin
     return r;
   });
   if (!r.rowCount) return no("Ese patrocinio ya terminó.", "That sponsorship already ended.");
-  const x = r.rows[0]!;
-  if (x.refund_cents) await devolverPatrocinio("negocio", id);
-  return { ok: true, devuelto: x.refund_cents ?? 0 };
+  return devolverYDecir("negocio", id, r.rows[0]!.refund_cents);
 }
 
 /* ── La vitrina de la página de categoría ── */

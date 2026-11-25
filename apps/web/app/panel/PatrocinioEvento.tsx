@@ -72,7 +72,10 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
     if (ui.peTerminar === v.id) {
       out.push({ type: "note", tone: "danger", icon: "warning", t: act ? E2("Tu evento deja de salir en Patrocinados ahora mismo. Lo pagado no se devuelve.", "Your event stops showing in Sponsored right now. What you paid is not refunded.") : E2(`Se cancela la reserva y te devolvemos los ${$(v.precio)} completos a tu tarjeta.`, `The booking is canceled and we refund the full ${$(v.precio)} to your card.`) });
       out.push({ type: "acts", items: [{ l: act ? E2("Sí, terminar", "Yes, end it") : E2("Sí, cancelar", "Yes, cancel"), v: "danger", off: c.pending, onClick: () => c.run(() => pevTerminar(d.id, eventoId, v.id),
-        (r: { devuelto?: number }) => r?.devuelto ? E2(`Reserva cancelada. Te devolvemos ${$(r.devuelto)} a tu tarjeta.`, `Booking canceled. We are refunding ${$(r.devuelto)} to your card.`) : E2("Patrocinio terminado.", "Sponsorship ended."), () => setUi({ peTerminar: null })) },
+        (r: { devuelto?: number; devolucion?: "en_camino" | "fallida"; aDevolver?: number }) => r?.devuelto ? E2(`Reserva cancelada. Te devolvemos ${$(r.devuelto)} a tu tarjeta.`, `Booking canceled. We are refunding ${$(r.devuelto)} to your card.`)
+          : r?.devolucion === "fallida" ? E2(`Reserva cancelada. La devolución de ${$(r.aDevolver ?? 0)} no salió: el equipo de To’Latino ya tiene el aviso para hacerla.`, `Booking canceled. The ${$(r.aDevolver ?? 0)} refund did not go through: the To’Latino team already has the alert to make it.`)
+          : r?.devolucion === "en_camino" ? E2(`Reserva cancelada. La devolución de ${$(r.aDevolver ?? 0)} va en camino: te avisamos cuando salga.`, `Booking canceled. The ${$(r.aDevolver ?? 0)} refund is on its way: we will let you know when it goes out.`)
+          : E2("Patrocinio terminado.", "Sponsorship ended."), () => setUi({ peTerminar: null })) },
         { l: E2("No", "No"), v: "secondary", onClick: () => setUi({ peTerminar: null }) }] });
     } else {
       const otra = !(sig && vivo) && !hastaEv && !!Ev.dia && diaDe(v.hasta, tz) <= Ev.dia, kk: DurE = v.dur === "month" ? "month" : "week";

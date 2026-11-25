@@ -17639,6 +17639,41 @@ const guardianes = {
      va en la línea que leyó que el plan quedó activo (=== "active") o justo después de mirar el resultado del cobro (if (!r.ok) return …, con
      r = await cobrarPeriodo(…)); (2) después de correr el proceso del plan (await procesar(…) / await procesarYa(…)) en una acción, el primer
      «return { ok: true» lee el plan de la base (from subscriptions) y va en la línea que comprueba "active". Al revés: alrevesCobradoSoloSiQuedo. */
+  /* 25 nov (9v) · devueltoSoloSiSalio: un patrocinio dice «devuelto» (y el panel «Reserva cancelada. Te devolvemos $15.00 a tu tarjeta») SOLO con lo que la
+     pasarela devolvió. Pasaba: «Cancelar reserva» del dueño (negocio y evento) devolvía devuelto = refund_cents (lo DECIDIDO) aunque Stripe hubiera rechazado
+     la devolución (queda fallida, no se reintenta sola y la tiene el equipo de dinero): el dueño leía «te devolvemos» (din9v2). Regla: (1) en lib/patrocinio.ts
+     y lib/patrocinio-evento.ts cada «devuelto: X» de un resultado es 0 o una variable que guardó lo que devolvió devolverPatrocinio (= await
+     devolverPatrocinio(…), lo que de verdad salió); nunca refund_cents ni lo decidido; (2) las dos acciones del panel pasan devolucion y aDevolver, y las
+     dos pantallas dicen la fallida y la que va en camino. Al revés: alrevesDevueltoSoloSiSalio. */
+  devueltoSoloSiSalio() {
+    const G = "devueltoSoloSiSalio";
+    let vistos = 0;
+    for (const S of ["apps/web/lib/patrocinio.ts", "apps/web/lib/patrocinio-evento.ts"]) {
+      if (!existsSync(S)) { falla(G, S, 0, "falta el archivo (los patrocinios)"); continue; }
+      const t = sinComent(S), L = t.split("\n");
+      const salio = new Set(["0"]);
+      for (const m of t.matchAll(/\b(\w+)\s*=\s*(?:[\w.]+\s*\?\s*)?await devolverPatrocinio\(/g)) salio.add(m[1]);
+      L.forEach((l, i) => {
+        for (const m of l.matchAll(/\bdevuelto:\s*([^,}]+)/g)) {
+          const v = m[1].trim();
+          if (/^number\b/.test(v)) continue; // un tipo
+          vistos++;
+          if (!salio.has(v)) falla(G, S, i + 1, `«devuelto: ${v}» no es lo que devolvió la pasarela: va 0 o la variable de = await devolverPatrocinio(…) (nunca lo decidido, refund_cents)`);
+        }
+      });
+    }
+    if (vistos < 4) falla(G, "apps/web/lib/patrocinio.ts", 0, `esperaba al menos 4 «devuelto:» en los resultados de los patrocinios; hallé ${vistos} (¿cambió la forma? actualiza este guardián)`);
+    for (const A of ["apps/web/app/panel/acciones-patrocinio.ts", "apps/web/app/panel/acciones-patrocinio-evento.ts"]) {
+      if (!existsSync(A)) { falla(G, A, 0, "falta la acción del panel"); continue; }
+      if (!/devuelto: r\.devuelto, devolucion: r\.devolucion, aDevolver: r\.aDevolver/.test(sinComent(A))) falla(G, A, 0, "la acción no pasa devolucion y aDevolver: la pantalla no puede decir si la devolución no salió");
+    }
+    for (const U of ["apps/web/app/panel/Patrocinio.tsx", "apps/web/app/panel/PatrocinioEvento.tsx"]) {
+      if (!existsSync(U)) { falla(G, U, 0, "falta la pantalla"); continue; }
+      const u = sinComent(U);
+      if (!/r\?\.devolucion === "fallida" \? E2\(/.test(u) || !/r\?\.devolucion === "en_camino" \? E2\(/.test(u)) falla(G, U, 0, "«Cancelar reserva» no dice cuando la devolución no salió (fallida) o va en camino: diría «Patrocinio terminado» sin el dinero");
+    }
+  },
+
   cobradoSoloSiQuedo() {
     const G = "cobradoSoloSiQuedo", S = "apps/web/lib/suscripcion.ts";
     if (!existsSync(S)) return falla(G, S, 0, "falta lib/suscripcion.ts (el plan Pro)");

@@ -19,9 +19,9 @@ async function entrar(id: unknown): Promise<Acceso | null> {
 }
 const enLaWeb = async () => (await import("@/lib/tiendas/reglas")).compraDigitalAqui();
 /* 3-D Secure: `verificar` abre la hoja del banco en el panel (useVerificacion) y la pantalla vuelve a mandar lo mismo con la misma clave.
-   `devuelto`: lo que volvió a la tarjeta al cancelar una reserva (lo decidió la base). */
-type Sal = Res & { id?: string; estado?: string; sinPuestos?: boolean; verificar?: Verificar; devuelto?: number };
-const sal = (r: ResPat): Sal => (r.ok ? { ok: true, id: r.id, estado: r.estado, devuelto: r.devuelto } : { ok: false, mensaje: r.msg, sinPuestos: r.sinPuestos, ...(r.verificar ? { verificar: r.verificar } : {}) });
+   `devuelto`: lo que la pasarela ya devolvió al cancelar una reserva; si no salió, `devolucion` (en camino o fallida) y `aDevolver` (lo que decidió la base). */
+type Sal = Res & { id?: string; estado?: string; sinPuestos?: boolean; verificar?: Verificar; devuelto?: number; devolucion?: "en_camino" | "fallida"; aDevolver?: number };
+const sal = (r: ResPat): Sal => (r.ok ? { ok: true, id: r.id, estado: r.estado, devuelto: r.devuelto, devolucion: r.devolucion, aDevolver: r.aDevolver } : { ok: false, mensaje: r.msg, sinPuestos: r.sinPuestos, ...(r.verificar ? { verificar: r.verificar } : {}) });
 const S = (x: unknown, n: number) => String(x ?? "").slice(0, n);
 
 /* Pagar (o reservar). La pantalla manda qué duración, desde cuándo, qué tarjeta, si renueva solo y una clave por intento (un solo cobro por clave). */
