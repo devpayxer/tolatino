@@ -57,11 +57,16 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
     [E2("Listo para recoger", "Ready for pickup"), `${E2("Pasa por ", "Go to ")}${p.negocio.direccion ?? p.negocio.nombre}. ${p.pickupNote || E2("Di tu número de pedido.", "Give your order number.")}`],
     [E2("Recogido", "Picked up"), E2("Buen provecho.", "Enjoy your meal.")],
   ] as const;
+  // 9v (sexta tanda) · Lo que de verdad pasó con la tarjeta (el cobro, de la base): la retención que la pasarela no soltó todavía se dice así, nunca
+  // «No se cobró nada» a secas; lo cobrado y devuelto, también.
+  const sinCobro = p.pago?.estado === "held" ? E2(`No se cobró nada, pero la retención de ${p.pago.monto} todavía no se soltó de tu tarjeta: la seguimos soltando sola.`, `Nothing was charged, but the ${p.pago.monto} hold has not come off your card yet: we keep releasing it automatically.`)
+    : p.pago && ["captured", "partially_refunded", "refunded"].includes(p.pago.estado) ? (p.pago.devuelto ? E2(`Se cobraron ${p.pago.monto}; te devolvimos ${p.pago.devuelto}.`, `${p.pago.monto} was charged; we refunded ${p.pago.devuelto}.`) : E2(`Se cobraron ${p.pago.monto}.`, `${p.pago.monto} was charged.`))
+      : E2("No se cobró nada.", "Nothing was charged.");
   const V = cerrado
     ? { eyebrow: p.sinRespuesta || p.status === "expired" ? E2("SIN RESPUESTA", "NO REPLY") : p.status === "declined" ? E2("NO PUDO", "COULD NOT") : E2("CANCELADO", "CANCELLED"),
         title: p.sinRespuesta || p.status === "expired" ? E2("No contestaron a tiempo", "They did not reply in time") : p.status === "declined" ? E2("No pudieron tomar tu pedido", "They could not take your order") : E2("Pedido cancelado", "Order cancelled"),
         cxAt: p.tiempos.cancelled ?? "",
-        sub: p.sinRespuesta || p.status === "expired" ? E2(`${p.negocio.nombre} no aceptó tu pedido a tiempo. No se cobró nada.`, `${p.negocio.nombre} did not accept your order in time. Nothing was charged.`) : p.status === "declined" ? E2(`${p.negocio.nombre} no pudo aceptarlo. No se cobró nada.`, `${p.negocio.nombre} could not accept it. Nothing was charged.`) : E2("No se cobró nada.", "Nothing was charged."),
+        sub: `${p.sinRespuesta || p.status === "expired" ? E2(`${p.negocio.nombre} no aceptó tu pedido a tiempo. `, `${p.negocio.nombre} did not accept your order in time. `) : p.status === "declined" ? E2(`${p.negocio.nombre} no pudo aceptarlo. `, `${p.negocio.nombre} could not accept it. `) : ""}${sinCobro}`,
         hero: "bg-ink/5", ic: "close", fg: "var(--tl-ink)" }
     : { eyebrow: st === 0 ? E2("GRACIAS POR TU PEDIDO", "THANKS FOR YOUR ORDER") : fin ? E2("LISTO", "DONE") : E2("EN CURSO", "IN PROGRESS"), title: H[st]![0], sub: H[st]![1],
         hero: st === 0 ? "bg-signal/[.16]" : "bg-ink/5", ic: fin || st === 0 ? "check" : st === 3 ? "bag" : "clock", fg: st === 0 || fin ? "var(--tl-open-text)" : "var(--tl-ink)", cxAt: "" };
@@ -69,7 +74,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
   const eta = (cerrado ? V.cxAt : fin ? (dl ? p.tiempos.delivered : p.tiempos.picked_up) ?? p.listo : dl ? ENT?.llega ?? p.listo : p.programado ?? p.listo) ?? "";
   const g = p.pago, tj = g?.tarjeta ? ` · ${g.tarjeta.toUpperCase()}` : "";
   const money = g ? ({
-    held: E2(`RETENIDO ${g.monto}${tj} · SE COBRA AL ACEPTAR`, `HELD ${g.monto}${tj} · CHARGED WHEN ACCEPTED`),
+    held: cerrado ? E2(`RETENIDO ${g.monto}${tj} · SIN SOLTAR TODAVÍA`, `HELD ${g.monto}${tj} · NOT RELEASED YET`) : E2(`RETENIDO ${g.monto}${tj} · SE COBRA AL ACEPTAR`, `HELD ${g.monto}${tj} · CHARGED WHEN ACCEPTED`),
     captured: E2(`PAGADO ${g.monto}${tj}`, `PAID ${g.monto}${tj}`),
     released: E2(`LIBERADO · NO SE TE COBRÓ`, `RELEASED · YOU WERE NOT CHARGED`),
     refunded: E2(`DEVUELTO ${g.devuelto ?? g.monto}${tj}`, `REFUNDED ${g.devuelto ?? g.monto}${tj}`),

@@ -158,7 +158,15 @@ export async function avisarPedido(numero: string, tpl: "ord_ok" | "ord_no" | "o
   const o = (await db().query<{ uid: string; negocio: string; hora: string }>(
     `select o.user_id::text as uid, b.name as negocio, to_char(coalesce(o.ready_at, now()) at time zone c.timezone, 'FMHH12:MI AM') as hora
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'order'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
-  if (o) await avisar(o.uid, tpl, { negocio: o.negocio, num: numero, hora: o.hora }, { href: `/pedido/${numero}`, ref: ["order", numero] });
+  if (!o) return;
+  // 9v (sexta tanda) · {dinero} de ord_no (0223): lo que de verdad pasó con la retención de la tarjeta, leído del cobro DESPUÉS de soltarlo (pedidos ›
+  // cambiarPaso › soltarRetencion): la que la pasarela no soltó todavía se dice así (el equipo ya tiene la alerta hold_stuck), nunca «No se te cobró nada» a secas.
+  let dinero: Vars[string] = "";
+  if (tpl === "ord_no") {
+    const h = (await db().query<{ amt: number }>(`select p.held_cents as amt from payments p join operations o on o.id = p.operation_id where o.number = $1 and o.kind = 'order' and p.kind in ('full', 'deposit') and p.status = 'held' order by p.id limit 1`, [numero]).catch(() => ({ rows: [] as { amt: number }[] }))).rows[0];
+    dinero = h ? (await import("./devolucion-cancelar")).sinSoltarCliente(h.amt) : { es: " No se te cobró nada.", en: " You were not charged." };
+  }
+  await avisar(o.uid, tpl, { negocio: o.negocio, num: numero, hora: o.hora, dinero }, { href: `/pedido/${numero}`, ref: ["order", numero] });
 }
 /* 9l · «Tu pedido llegó» (L272): solo un pedido con entrega (stage delivered), una vez. Lo llaman el negocio (Hoy) y el repartidor al entregar.
    9n · También el envío del mercado que entrega el repartidor (merc_entregado, con su número M-… y su pantalla). */

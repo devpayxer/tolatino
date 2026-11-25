@@ -9,13 +9,14 @@ import { decidirTotal } from "@/lib/total-escrito";
    pidió; el servidor decide el depósito (devolver, liberar o se queda). */
 type Bi = { es: string; en: string };
 const QUE = new Set<QueCliente>(["cancelar", "aceptar", "nogracias", "tarde", "recibi", "sinseguro"]);
-export async function citaAccion(numero: string, que: QueCliente, extra?: number): Promise<{ ok: true } | { ok: false; msg: Bi }> {
+export async function citaAccion(numero: string, que: QueCliente, extra?: number): Promise<{ ok: true; retenida?: true } | { ok: false; msg: Bi }> {
   if (!(await mismoOrigen())) return { ok: false, msg: { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." } };
   const u = await yo();
   if (!u) return { ok: false, msg: { es: "Entra para seguir.", en: "Sign in to continue." } };
   if (!QUE.has(que)) return { ok: false, msg: { es: "Esa acción no existe.", en: "That action does not exist." } };
   const r = await citaCliente(u.id, String(numero ?? ""), que, Number(extra));
-  return r.ok ? { ok: true } : { ok: false, msg: r.msg };
+  // 9v (sexta tanda) · retenida: la retención que la pasarela no soltó todavía (cobros › soltarRetencion); la pantalla lo dice.
+  return r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, msg: r.msg };
 }
 
 /* Estimado línea por línea (4d): aprueba las líneas que quiere (se retiene solo eso) y responde «algo más». */

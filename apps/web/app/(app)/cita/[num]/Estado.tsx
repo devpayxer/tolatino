@@ -38,7 +38,8 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await citaAccion(c.numero, que, extra).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setHoja(null);
-    if (r.ok) { if (luego) return luego(); aviso(ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 9v (sexta tanda) · Cancelar o «No me sirve» con la retención que la pasarela no soltó todavía (retenida): se dice, nunca como si se hubiera soltado.
+    if (r.ok) { if (luego) return luego(); aviso("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   // Mientras espera respuesta, se mira cada 15 s (la respuesta también llega a Avisos).
   useEffect(() => { if (c.st !== "pend" && c.st !== "alt") return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [c.st, router]);
@@ -49,7 +50,16 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   const who1 = silla && c.con ? c.con.corto : c.negocio.nombre;
   const withL = c.con ? (silla ? `${c.con.nombre} · ${nm(c.silla).toLowerCase()} ${c.con.silla ?? ""}` : c.con.nombre) : c.negocio.nombre;
   const mins = c.resp >= 60 ? `${Math.round(c.resp / 60)} h` : `${c.resp} min`;
-  const dev = c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : E2("No se cobró nada.", "Nothing was charged.");
+  // 9v (sexta tanda) · Lo que de verdad pasó con el depósito, leído de la base (citaVista › pago, cobro, devuelto, devolucion): soltado o todavía retenido,
+  // devuelto, en camino o que no salió; nunca «Te devolvemos» sin mirar. Lo que se queda el negocio al cancelar tarde es lo que queda (menos lo devuelto).
+  const camino = c.devolucion.camino, fallida = c.devolucion.fallida, queda = Math.max(0, c.cobro - c.devuelto);
+  const pendT = [camino ? E2(`La devolución de ${dinero(camino)} va en camino a tu tarjeta.`, `The ${dinero(camino)} refund is on its way to your card.`) : "",
+    fallida ? E2(`La devolución de ${dinero(fallida)} no salió: escríbenos en Soporte y lo resolvemos.`, `The ${dinero(fallida)} refund did not go through: write to us in Support and we will sort it out.`) : ""].filter(Boolean).join(" ");
+  const dev = !c.dep || !c.pago ? E2("No se cobró nada.", "Nothing was charged.")
+    : c.pago === "held" ? E2(`No se cobró nada, pero la retención de ${dinero(c.cobro)} todavía no se soltó de tu tarjeta: la seguimos soltando sola.`, `Nothing was charged, but the ${dinero(c.cobro)} hold has not come off your card yet: we keep releasing it automatically.`)
+      : c.pago === "released" ? E2(`No se cobró nada: se soltó la retención de ${dinero(c.cobro)} de tu tarjeta.`, `Nothing was charged: the ${dinero(c.cobro)} hold came off your card.`)
+        : [c.devuelto ? E2(`Te devolvimos ${dinero(c.devuelto)} a tu tarjeta · 3 a 5 días hábiles.`, `We refunded ${dinero(c.devuelto)} to your card · 3 to 5 business days.`) : "", pendT].filter(Boolean).join(" ")
+          || E2(`El depósito de ${dinero(c.cobro)} sigue cobrado: escríbenos en Soporte y lo resolvemos.`, `The ${dinero(c.cobro)} deposit is still charged: write to us in Support and we will sort it out.`);
   const H: Record<CitaVista["st"], [string, string, string, string, string, string, string, string]> = {
     pend: ["clock", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("Solicitud enviada", "Request sent"), E2(`${who1} tiene ${c.exp} horas para contestar. Suele tardar ${mins}. Te avisamos en Avisos apenas responda.`, `${who1} has ${c.exp} hours to reply. Usually ${mins}. We notify you in Alerts as soon as they do.`), E2("PENDIENTE DE CONFIRMAR", "WAITING FOR CONFIRMATION"), "bg-pro/20", "var(--tl-pro-ink)"],
     ok: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita confirmada", "Booking confirmed"), `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}${E2(" con ", " with ")}${withL}.`, `${E2("CONFIRMADA POR ", "CONFIRMED BY ")}${silla ? who1 : E2("EL NEGOCIO", "THE BUSINESS")}`.toUpperCase(), "bg-signal/20", "var(--tl-open-text)"],
@@ -57,7 +67,8 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     no: ["close", "bg-danger/10", "var(--tl-danger)", E2("No pudo tomarla", "Could not take it"), `${E2(`${who1} no tiene otra hora que ofrecerte. `, `${who1} has no other time to offer. `)}${dev}`, E2("NO PUDO", "COULD NOT"), "bg-danger/10", "var(--tl-danger)"],
     exp: ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("Sin respuesta", "No reply"), `${E2(`${who1} no contestó en ${c.exp} horas. `, `${who1} did not reply in ${c.exp} hours. `)}${dev}`, E2("VENCIDA", "EXPIRED"), "bg-ink/[.06]", "rgba(11,14,18,.6)"],
     cx: ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", c.cxRazon === "alt_no" ? E2("No aceptaste la otra hora", "You declined the new time") : c.cxRazon === "alt_vencida" ? E2("Venció la otra hora", "The new time expired") : E2("Cita cancelada", "Booking cancelled"),
-      c.perdio ? E2(`Cancelaste con menos de ${c.cxh} h: el depósito de ${dinero(c.dep)} se queda con ${who1}.`, `Cancelled less than ${c.cxh} h before: the ${dinero(c.dep)} deposit stays with ${who1}.`)
+      c.perdio ? (queda === c.cobro ? E2(`Cancelaste con menos de ${c.cxh} h: el depósito de ${dinero(queda)} se queda con ${who1}.`, `Cancelled less than ${c.cxh} h before: the ${dinero(queda)} deposit stays with ${who1}.`)
+        : E2(`Cancelaste con menos de ${c.cxh} h: lo que quedaba del depósito (${dinero(queda)}) se quedó con ${who1}.`, `Cancelled less than ${c.cxh} h before: what was left of the deposit (${dinero(queda)}) stayed with ${who1}.`))
         : c.cxRazon === "alt_no" || c.cxRazon === "alt_vencida" ? `${E2("No hay cita. ", "No booking. ")}${dev}` : c.cxPor === "user" ? `${E2("Cancelaste a tiempo. ", "Cancelled in time. ")}${dev}` : dev, E2("CANCELADA", "CANCELLED"), "bg-ink/[.06]", "rgba(11,14,18,.6)"],
     done: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita terminada", "Appointment done"), `${cap(diaL)}${E2(" con ", " with ")}${withL}.${c.dep ? E2(` El depósito de ${dinero(c.dep)} se descontó del total.`, ` The ${dinero(c.dep)} deposit came off the total.`) : ""}`, E2("TERMINADA", "DONE"), "bg-signal/20", "var(--tl-open-text)"],
   };
@@ -143,8 +154,16 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   if (c.dep) {
     if (pend || alt) plata.push(["card", E2("Depósito cobrado", "Deposit charged"), dinero(c.dep), "var(--tl-pro-ink)", `${tarjeta}${E2(" · se devuelve si no se confirma", " · refunded if not confirmed")}`]);
     else if (ok || done) plata.push(["check", E2("Depósito pagado", "Deposit paid"), dinero(c.dep), "var(--tl-open-text)", `${tarjeta}${E2(" · se descuenta del total", " · taken off the total")}`]);
-    else if (c.perdio || c.pago === "captured") plata.push(["warning", `${E2("Se queda con ", "Kept by ")}${who1}`, dinero(c.dep), "var(--tl-danger)", E2("Cancelación tardía", "Late cancellation")]);
-    else plata.push(["check", E2("Depósito devuelto", "Deposit refunded"), dinero(c.dep), "var(--tl-open-text)", `${tarjeta}${E2(" · 1 a 5 días hábiles", " · 1 to 5 business days")}`]);
+    // 9v (sexta tanda) · Cada fila con lo que está en la base: nunca «Depósito devuelto» por una retención, ni «Se queda» por una devolución que no salió.
+    else if (c.perdio) plata.push(["warning", `${E2("Se queda con ", "Kept by ")}${who1}`, dinero(queda), "var(--tl-danger)", E2("Cancelación tardía", "Late cancellation")]);
+    else if (c.pago === "held") plata.push(["clock", E2("Depósito retenido", "Deposit held"), dinero(c.cobro), "var(--tl-pro-ink)", `${tarjeta}${E2(" · todavía no se soltó: la seguimos soltando sola", " · not released yet: we keep releasing it automatically")}`]);
+    else if (c.pago === "released") plata.push(["check", E2("Retención soltada", "Hold released"), dinero(c.cobro), "var(--tl-open-text)", `${tarjeta}${E2(" · no se cobró nada", " · nothing was charged")}`]);
+    else if (c.pago) {
+      if (c.devuelto) plata.push(["check", E2("Depósito devuelto", "Deposit refunded"), dinero(c.devuelto), "var(--tl-open-text)", `${tarjeta}${E2(" · 1 a 5 días hábiles", " · 1 to 5 business days")}`]);
+      if (camino) plata.push(["clock", E2("Devolución en camino", "Refund on its way"), dinero(camino), "var(--tl-pro-ink)", `${tarjeta}${E2(" · se manda sola", " · sent automatically")}`]);
+      if (fallida) plata.push(["warning", E2("La devolución no salió", "The refund did not go through"), dinero(fallida), "var(--tl-danger)", E2("Escríbenos en Soporte", "Write to us in Support")]);
+      if (!c.devuelto && !camino && !fallida) plata.push(["warning", E2("Depósito cobrado", "Deposit charged"), dinero(c.cobro), "var(--tl-danger)", E2("Escríbenos en Soporte", "Write to us in Support")]);
+    }
   }
   if (!dead && prof) plata.push(["store", E2("En la oficina", "At the office"), c.total ? dinero(c.total) : "$0", "var(--tl-ink)", c.paso === "hired" ? E2("Honorario − crédito + extras que aceptaste. Lo del gobierno, aparte, a la agencia. Nada se cobra en la app.", "Fee − credit + extras you accepted. The government fee goes separately to the agency. Nothing is charged in the app.") : E2("Antes de contratar te dan el total por escrito. Nada se cobró en la app.", "Before hiring you get the total in writing. Nothing was charged in the app.")]);
   else if (!dead && sal) plata.push(["store", E2("En la consulta", "At the visit"), nm(sal.precio).split(" · ")[0] ?? "", "var(--tl-ink)", E2("Copago o precio sin seguro. Nada se cobró en la app.", "Copay or uninsured price. Nothing was charged in the app.")]);

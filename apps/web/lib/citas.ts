@@ -7,7 +7,7 @@ import { db } from "./db";
 import { valor } from "./config";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
-import { cobrarOperacion, comision, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, registrarRetencion } from "./cobros";
 
 /* Citas (Fase 3 · 3b). Lo que el cliente ve en la ficha (pestaña Servicios, hoja del servicio) y el Booking: el motor de
    disponibilidad y el envío. Fuente: prototipo neg-bell-book.js (priceOf, slotsFor, bookVals, submit) con los conflictos
@@ -460,6 +460,9 @@ export type CitaVista = {
   svc: Bi; opts: { g: Bi; o: Bi; p: number }[]; adds: { name: Bi; cents: number }[]; ymd: string; i: number; m: number; dur: number; total: number; dep: number;
   para: "me" | "other" | "kid"; nombre: string | null; edad: string | null; nota: string | null; fotos: string[]; auto: boolean; resp: number; exp: number;
   enviada: number; contestada: number | null; tarjeta: string | null; pago: string | null; cxPor: string | null;
+  // 9v (sexta tanda) · El depósito como está en la base: cuánto se cobró (o retuvo), cuánto se devolvió y lo que de la devolución no está hecho (en camino o
+  // que no salió: cobros › devolucionesDe). La pantalla nunca dice «Te devolvemos» sin mirar.
+  cobro: number; devuelto: number; devolucion: { camino: number; fallida: number };
   svcId: string | null; optIdx: string; addIds: string[]; mid: string | null; late: number | null; perdio: boolean; cxRazon: string | null; mins: number;
   alt: { ymd: string; i: number; m: number; hasta: string } | null; chg: { ymd: string; i: number; m: number } | null; resena: boolean; cxh: number; tol: number;
   ayuda: { n: string; st: "open" | "answered" | "escalated" | "resolved" } | null; noshow: boolean;
@@ -478,7 +481,7 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     numero: string; status: string; biz: string; nombre: string; direccion: string | null; telefono: string | null; foto: string | null; model: CitasPublica["model"]; subs: string[];
     con: string | null; silla: number | null; cfoto: string | null; det: Record<string, unknown>; mid: string | null; razon: string | null; mins: number; resena: boolean;
     alt: { ymd: string; m: number } | null; alt_hasta: string | null; chg: { ymd: string; m: number } | null; ymd: string; hm: string; hoy: string; dur: number; total: number; dep: number; nota: string | null;
-    enviada: string; contestada: string | null; cxh: number; tol: number; brand: string | null; l4: string | null; pago: string | null; auto: boolean; resp: number; exp: number; cx: string | null; fotos: string[];
+    enviada: string; contestada: string | null; cxh: number; tol: number; brand: string | null; l4: string | null; pago: string | null; cobro: number | null; devuelto: number | null; auto: boolean; resp: number; exp: number; cx: string | null; fotos: string[];
     ayuda: { n: string; st: "open" | "answered" | "escalated" | "resolved" } | null; noshow: boolean; paso: string | null; oid: string; warr: { m: number | null; mi: number | null } | null; seg_hasta: string | null;
   }>(
     `select o.number as numero, o.status, b.id as biz, b.name as nombre, b.address as direccion, b.phone as telefono, b.logo_url as foto, b.svc_model as model, b.subcategory_ids as subs,
@@ -491,7 +494,7 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
             (o.scheduled_at at time zone c.timezone)::date::text as ymd, to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as hm, (now() at time zone c.timezone)::date::text as hoy,
             coalesce(o.duration_min, 30) as dur, o.total_cents as total, o.deposit_cents as dep, o.customer_note as nota,
             to_char(o.sent_at at time zone c.timezone, 'HH24:MI') as enviada, to_char(o.answered_at at time zone c.timezone, 'HH24:MI') as contestada,
-            p.card_brand as brand, p.card_last4 as l4, p.status as pago,
+            p.card_brand as brand, p.card_last4 as l4, p.status as pago, coalesce(nullif(p.amount_cents, 0), p.held_cents) as cobro, p.refunded_cents as devuelto,
             coalesce(case when b.svc_model = 'chair' then m.chair_auto end, bp.auto_approve, false) as auto,
             coalesce(case when b.svc_model = 'chair' then m.chair_response_min end, bp.response_min, 30) as resp, coalesce(bp.expires_h, 2) as exp, o.cancelled_by as cx, coalesce(bp.cancel_free_h, 2) as cxh, coalesce(bp.tolerance_min, 15) as tol,
             array(select x.url from media x where x.owner_kind = 'appointment' and x.owner_id = o.id::text and x.status = 'visible' order by x.sort) as fotos,
@@ -513,6 +516,7 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     svc: d.svc ?? { es: "", en: "" }, opts: d.opts ?? [], adds: d.adds ?? [], ymd: r.ymd, i: Math.round((Date.parse(r.ymd) - Date.parse(r.hoy)) / 864e5), m: hm2m(r.hm), dur: r.dur,
     total: r.total, dep: r.dep, para: d.para ?? "me", nombre: d.nombre ?? null, edad: d.edad ?? null, nota: r.nota, fotos: r.fotos ?? [], auto: r.auto, resp: r.resp, exp: r.exp,
     enviada: hm2m(r.enviada), contestada: r.contestada ? hm2m(r.contestada) : null, tarjeta: r.brand && r.l4 ? `${BR[r.brand] ?? r.brand} ·· ${r.l4}` : null, pago: r.pago, cxPor: r.cx,
+    cobro: r.cobro ?? r.dep, devuelto: r.devuelto ?? 0, devolucion: r.pago ? await devolucionesDe(r.oid) : { camino: 0, fallida: 0 },
     svcId: d.svcId ?? null, optIdx: Object.entries(d.sel ?? {}).map(([g, k]) => `${g}-${k}`).join(","), addIds: (d.adds ?? []).map((a) => a.id).filter((x): x is string => !!x), mid: r.mid,
     late: d.late ?? null, perdio: !!d.perdio, cxRazon: r.razon, mins: r.mins, resena: r.resena, cxh: r.cxh, tol: r.tol,
     alt: r.alt ? { ymd: r.alt.ymd, i: idx(r.alt.ymd), m: r.alt.m, hasta: r.alt_hasta ?? "" } : null, chg: r.chg ? { ymd: r.chg.ymd, i: idx(r.chg.ymd), m: r.chg.m } : null,

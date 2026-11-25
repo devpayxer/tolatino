@@ -217,9 +217,11 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
 
 /* ── Totales (siempre de la base) ── */
 /* 9n-4 · mas: lo que el peso real pasa lo retenido (sin el OK del cliente no se cobra ni se marca listo); extra: lo que se retuvo con ese OK. */
-export type Totales = { est: number; real: number; sub: number; tax: number; envio: number; ret: number; cobrado: number; liberado: number; tarjeta: string | null; pendiente: boolean; extra: number; mas: number };
+export type Totales = { est: number; real: number; sub: number; tax: number; envio: number; ret: number; cobrado: number; liberado: number; tarjeta: string | null; pendiente: boolean; extra: number; mas: number;
+  /* 9v (sexta tanda) · Lo que sigue retenido en la tarjeta y lo devuelto de lo cobrado (la pantalla de un pedido que no se dio dice lo que pasó). */
+  retenido: number; devuelto: number };
 async function totales(c: Q, opId: string): Promise<Totales> {
-  const r = (await c.query<{ est: number; sub: number; tax: number; envio: number; ret: number; xtra: number; cob: number; lib: number; tarjeta: string | null; pend: boolean }>(
+  const r = (await c.query<{ est: number; sub: number; tax: number; envio: number; ret: number; xtra: number; cob: number; lib: number; tarjeta: string | null; pend: boolean; sigue: number; dev: number }>(
     `select coalesce((o.details->>'est_cents')::int, o.total_cents) as est, coalesce(sum(l.final_cents), 0)::int as sub, coalesce(sum(round(l.final_cents * l.tax_pct / 100)), 0)::int as tax,
             coalesce(o.delivery_cents, 0) as envio,
             (select coalesce(sum(p.held_cents), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra')) as ret,
@@ -227,10 +229,12 @@ async function totales(c: Q, opId: string): Promise<Totales> {
             (select coalesce(sum(p.amount_cents), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra') and p.status in ('captured', 'partially_refunded', 'refunded')) as cob,
             (select coalesce(sum(case when p.status = 'released' then p.held_cents when p.status in ('captured', 'partially_refunded', 'refunded') then p.held_cents - p.amount_cents else 0 end), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra')) as lib,
             (select case when p.card_last4 is null then null else upper(coalesce(p.card_brand, '')) || ' ·· ' || p.card_last4 end from payments p where p.operation_id = o.id and p.kind = 'full' limit 1) as tarjeta,
-            exists (select 1 from payments p where p.operation_id = o.id and p.kind in ('full', 'extra') and p.status = 'held') as pend
+            exists (select 1 from payments p where p.operation_id = o.id and p.kind in ('full', 'extra') and p.status = 'held') as pend,
+            (select coalesce(sum(p.held_cents), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra') and p.status = 'held') as sigue,
+            (select coalesce(sum(p.refunded_cents), 0)::int from payments p where p.operation_id = o.id and p.kind in ('full', 'extra')) as dev
        from operations o left join operation_lines l on l.operation_id = o.id where o.id = $1::bigint group by o.id`, [opId])).rows[0]!;
   const real = r.sub + r.tax + r.envio;
-  return { est: r.est, real, sub: r.sub, tax: r.tax, envio: r.envio, ret: r.ret, cobrado: r.cob, liberado: r.lib, tarjeta: r.tarjeta, pendiente: r.pend, extra: r.xtra, mas: r.ret > 0 ? Math.max(0, real - r.ret) : 0 };
+  return { est: r.est, real, sub: r.sub, tax: r.tax, envio: r.envio, ret: r.ret, cobrado: r.cob, liberado: r.lib, tarjeta: r.tarjeta, pendiente: r.pend, extra: r.xtra, mas: r.ret > 0 ? Math.max(0, real - r.ret) : 0, retenido: r.sigue, devuelto: r.dev };
 }
 
 /* ── Cobrar lo real y liberar el resto (idempotente; repararMercado reintenta si la pasarela falla) ──

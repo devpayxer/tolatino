@@ -17921,11 +17921,11 @@ const guardianes = {
         });
       }
       const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
-      for (const k of ["biz_noche_cx", "biz_fiesta_cx", "biz_insc_cx", "biz_noche_alt_no", "biz_fiesta_alt_no", "viaje_no", "viaje_exp", "merc_no", "merc_exp", "apt_no"])
+      for (const k of ["biz_noche_cx", "biz_fiesta_cx", "biz_insc_cx", "biz_noche_alt_no", "biz_fiesta_alt_no", "viaje_no", "viaje_exp", "merc_no", "merc_exp", "apt_no", "biz_cita_cx", "ord_no"])
         if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'\\n`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó con la retención o la devolución) en español e inglés: seguiría diciendo lo decidido`);
       const MANDA = { "apps/web/lib/noche-reservas.ts": [["biz_noche_cx", "dineroAlNegocio(d"], ["biz_noche_alt_no", "soltadaO(s, "]], "apps/web/lib/fiestas-reservas.ts": [["biz_fiesta_cx", "dineroAlNegocio(d"], ["biz_fiesta_alt_no", "soltadaO(s, "]],
         "apps/web/lib/inscripciones.ts": [["biz_insc_cx", "dineroAlNegocio(d"]], "apps/web/lib/viajes.ts": [["viaje_no", "dineroSoltado(s)"], ["viaje_exp", "dineroSoltado(s)"]], "apps/web/lib/mercado.ts": [["merc_no", "dineroMerc(s)"], ["merc_exp", "dineroMerc(s)"]],
-        "apps/web/lib/apartados.ts": [["apt_no", "soltadaO(s, "]] };
+        "apps/web/lib/apartados.ts": [["apt_no", "soltadaO(s, "]], "apps/web/lib/citas-flujo.ts": [["biz_cita_cx", "dineroAlNegocio(d"]] };
       let mandados = 0;
       for (const [f, K] of Object.entries(MANDA)) {
         const L = existsSync(f) ? sinComent(f).split("\n") : [];
@@ -17937,20 +17937,51 @@ const guardianes = {
           if (!L[i].includes(`dinero: `) || !l2.includes(fn)) falla(G, f, i + 1, `el aviso «${k}» no lleva {dinero} con lo que pasó (${fn}…)`);
         }
       }
-      if (mandados < 10) falla(G, "apps/web/lib/noche-reservas.ts", 0, `esperaba los 10 avisos de 0222 con {dinero}; hallé ${mandados}`);
-      for (const [f, v] of [["apps/web/lib/noche-reservas.ts", "dep"], ["apps/web/lib/fiestas-reservas.ts", "dep"], ["apps/web/lib/inscripciones.ts", "mat"]]) {
+      if (mandados < 11) falla(G, "apps/web/lib/noche-reservas.ts", 0, `esperaba los 11 avisos de 0222 y 0223 con {dinero}; hallé ${mandados}`);
+      for (const [f, v] of [["apps/web/lib/noche-reservas.ts", "dep"], ["apps/web/lib/fiestas-reservas.ts", "dep"], ["apps/web/lib/inscripciones.ts", "mat"], ["apps/web/lib/citas-flujo.ts", "dep"]]) {
         const t = existsSync(f) ? sinComent(f) : "";
         if (!new RegExp(`const queda = Math\\.max\\(0, \\(o\\.amount \\?\\? o\\.${v}\\) - \\(o\\.refunded \\?\\? 0\\)\\);`).test(t)) falla(G, f, 0, "lo que se queda el negocio al cancelar tarde no descuenta lo ya devuelto (const queda = lo cobrado menos lo devuelto)");
         if (new RegExp(`(El depósito|La matrícula) de \\$\\{\\w+\\(o\\.${v}\\)\\} se (queda|quedó)`).test(t)) falla(G, f, 0, "el aviso dice que se queda el depósito entero (o.dep / o.mat) aunque ya hubo una devolución parcial: va queda");
       }
-      for (const f of ["apps/web/app/panel/NocheReservas.tsx", "apps/web/app/panel/FiestasReservas.tsx", "apps/web/app/panel/Inscripciones.tsx", "apps/web/app/panel/ViajesPanel.tsx", "apps/web/app/panel/MercadoPanel.tsx"])
+      for (const f of ["apps/web/app/panel/NocheReservas.tsx", "apps/web/app/panel/FiestasReservas.tsx", "apps/web/app/panel/Inscripciones.tsx", "apps/web/app/panel/ViajesPanel.tsx", "apps/web/app/panel/MercadoPanel.tsx", "apps/web/app/panel/Pedidos.tsx"])
         if (!/\(r\) => \(r\?\.retenida \? E2\(/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "el panel dice «se liberó» sin mirar si la retención se soltó (r?.retenida)");
-      for (const f of ["apps/web/app/panel/acciones-noche.ts", "apps/web/app/panel/acciones-fiesta.ts", "apps/web/app/panel/acciones-insc.ts", "apps/web/app/panel/acciones-viajes.ts", "apps/web/app/panel/acciones-mercado.ts"])
+      for (const f of ["apps/web/app/panel/acciones-noche.ts", "apps/web/app/panel/acciones-fiesta.ts", "apps/web/app/panel/acciones-insc.ts", "apps/web/app/panel/acciones-viajes.ts", "apps/web/app/panel/acciones-mercado.ts", "apps/web/app/panel/acciones-pedidos.ts"])
         if (!/const r2 = [^\n]*r\.retenida \? \{ ok: true, retenida: true \}/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "la acción del panel no pasa retenida: el panel diría «se liberó» sin saber");
       for (const f of ["apps/web/app/(app)/noche/[num]/NocheEstado.tsx", "apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx", "apps/web/app/(app)/insc/[num]/InscEstado.tsx", "apps/web/app/(app)/viaje/[num]/ViajeEstado.tsx"])
         if (!/setFlash\("retenida" in r && r\.retenida \? E2\(/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "«No me sirve» dice «se liberó» sin mirar si la retención se soltó (retenida)");
       const da = existsSync("apps/web/lib/dinero-alertas.ts") ? sinComent("apps/web/lib/dinero-alertas.ts") : "";
       if (/hold_stuck: \{ es: "una retención renovada sin respuesta"/.test(da)) falla(G, "apps/web/lib/dinero-alertas.ts", 0, "la alerta hold_stuck dice solo «retención renovada»: también es la retención que no se soltó"); }
+    // (12) 25 nov (sexta tanda) · La cita que cancela el cliente, y las pantallas del mercado, del apartado y del pedido que no se dio. Pasaba: la cancelación a
+    // tiempo de una cita devolvía con devolverPago tirando el resultado; la pantalla de la cita decía «Te devolvemos los $X del depósito» (también de una
+    // retención soltada, o de una devolución que Stripe rechazó, que además salía como «Se queda con …»); biz_cita_cx decía que el depósito entero se queda aunque
+    // ya hubiera una devolución parcial; el mercado («Liberamos los $X», «No se cobró nada»), el apartado («Se liberó lo retenido») y el pedido («No se cobró
+    // nada», ord_no «No se te cobró nada») lo decían fijo aunque la retención siguiera en la tarjeta; y las acciones de la cita, el apartado y el pedido
+    // devolvían retenida pero nadie la mostraba. Regla: (a) citas-flujo devuelve por devolverAlCancelar (nunca devolverPago); (b) la vista de la cita lee el
+    // cobro y lo que no está hecho (devolucionesDe) y la pantalla arma «dev» y las filas del dinero con eso; (c) mercado, apartado y pedido dicen lo de la
+    // tarjeta con lo que está en la base; (d) ord_no lleva {dinero} leído del cobro (avisarPedido); (e) la cita y el apartado muestran retenida.
+    { const CF = "apps/web/lib/citas-flujo.ts", cf = existsSync(CF) ? sinComent(CF) : "";
+      cf.split("\n").forEach((l, i) => { if (/\bdevolverPago\(/.test(l) && !/^import /.test(l)) falla(G, CF, i + 1, "la cita devuelve con devolverPago(…) tirando el resultado: va por devolverAlCancelar (lo que pasó, y el «no» alerta al equipo)"); });
+      if (!/\? await devolverAlCancelar\(o, \{ actorId: userId, [^\n]*idem: `cx-\$\{numero\}`, por: "policy" \}\)/.test(cuerpoFn(cf, "citaCliente")) || !/retenida = d\?\.e === "retenida";/.test(cuerpoFn(cf, "citaCliente")))
+        falla(G, CF, 0, "cancelar la cita no lee lo que pasó con el depósito (const d = … await devolverAlCancelar(o, …), retenida = d?.e === \"retenida\")");
+      const CV = "apps/web/lib/citas.ts", cv = existsSync(CV) ? sinComent(CV) : "";
+      if (!/devolucion: r\.pago \? await devolucionesDe\(r\.oid\)/.test(cv) || !/p\.refunded_cents as devuelto/.test(cv)) falla(G, CV, 0, "la vista de la cita no lee lo devuelto ni lo que no está hecho (devolucionesDe): la pantalla diría «Te devolvemos» sin mirar");
+      const CE = "apps/web/app/(app)/cita/[num]/Estado.tsx", ce = existsSync(CE) ? sinComent(CE) : "";
+      const devL = ce.split("\n").findIndex((l) => /^\s*const dev = /.test(l)), devT = devL < 0 ? "" : ce.split("\n").slice(devL, devL + 6).join("\n");
+      if (devL < 0 || /Te devolvemos/.test(devT) || !/c\.pago === "held" \?/.test(devT) || !/c\.pago === "released" \?/.test(devT) || !/c\.devuelto \?/.test(devT)) falla(G, CE, devL + 1, "la pantalla de la cita dice lo del depósito sin mirar la base («Te devolvemos …»): va lo que está (retenido, soltado, devuelto, en camino, no salió)");
+      if (/c\.perdio \|\| c\.pago === "captured"/.test(ce) || !/E2\("La devolución no salió", "The refund did not go through"\)/.test(ce)) falla(G, CE, 0, "las filas del dinero de la cita cuentan una devolución que no salió como «Se queda con …» (o no la dicen)");
+      if (!/aviso\("retenida" in r && r\.retenida \? E2\(/.test(ce)) falla(G, CE, 0, "cancelar la cita no dice cuando la retención no se soltó (retenida)");
+      for (const A of ["apps/web/app/(app)/cita/[num]/acciones.ts", "apps/web/app/(app)/apartado/[num]/acciones.ts"])
+        if (!/r\.ok \? \(r\.retenida \? \{ ok: true, retenida: true \} : \{ ok: true \}\)/.test(existsSync(A) ? sinComent(A) : "")) falla(G, A, 0, "la acción no pasa retenida: la pantalla no sabría que la retención no se soltó");
+      const AE = "apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx", ae = existsSync(AE) ? sinComent(AE) : "";
+      ae.split("\n").forEach((l, i) => { if (/E2\("Se liberó/.test(l) && !/soltado\(/.test(l)) falla(G, AE, i + 1, "el apartado dice «Se liberó» sin mirar el cobro (soltado(…), de x.pago)"); });
+      if (!/const soltado = \(es1: string, en1: string\) => pg\?\.st === "released" \? E2\(es1, en1\)/.test(ae) || !/setFlash\("retenida" in r && r\.retenida \? E2\(/.test(ae)) falla(G, AE, 0, "el apartado no mira el cobro (soltado) o no dice cuando la retención no se soltó (retenida)");
+      const ME = "apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx", me = existsSync(ME) ? sinComent(ME) : "";
+      if (!/: t\.retenido > 0 \? E2\(`No se cobró nada, pero la retención/.test(me)) falla(G, ME, 0, "el pedido del mercado que no se dio no mira si la retención sigue en la tarjeta (t.retenido)");
+      me.split("\n").forEach((l, i) => { if (/v\.st === "(declined|expired)" \?|E2\("CANCELADO", "CANCELLED"\)/.test(l) && /No se cobró nada|Liberamos/.test(l)) falla(G, ME, i + 1, "el pedido del mercado que no se dio dice «No se cobró nada» / «Liberamos» fijo: va noSeDio (lo que está en la base)"); });
+      const PE = "apps/web/app/(app)/pedido/[num]/Pedido.tsx", pe = existsSync(PE) ? sinComent(PE) : "";
+      if (!/const sinCobro = p\.pago\?\.estado === "held" \?/.test(pe) || /sub: [^\n]*No se cobró nada/.test(pe)) falla(G, PE, 0, "el pedido que no se dio dice «No se cobró nada» fijo: va sinCobro (el cobro de la base)");
+      const AV = "apps/web/lib/avisos.ts", av = existsSync(AV) ? sinComent(AV) : "", ap = cuerpoFn(av, "avisarPedido");
+      if (!/dinero = h \? \(await import\("\.\/devolucion-cancelar"\)\)\.sinSoltarCliente\(h\.amt\)/.test(ap) || !/hora: o\.hora, dinero \}/.test(ap)) falla(G, AV, 0, "ord_no no lleva {dinero} leído del cobro (la retención que no se soltó diría «No se te cobró nada» a secas)"); }
   },
 
   cobradoSoloSiQuedo() {

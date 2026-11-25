@@ -27,8 +27,16 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await apartadoAccion(x.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setConfirmar(false);
-    if (r.ok) { setFlash(ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 9v (sexta tanda) · Cancelar con la retención que la pasarela no soltó todavía (retenida): se dice, nunca como si se hubiera soltado.
+    if (r.ok) { setFlash("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
+  // 9v (sexta tanda) · Lo retenido (el envío o el abono) como está en la base (x.pago): «Se liberó» solo si de verdad se soltó; si sigue retenido, cobrado o
+  // devuelto, se dice eso.
+  const pg = x.pago;
+  const soltado = (es1: string, en1: string) => pg?.st === "released" ? E2(es1, en1)
+    : pg?.st === "held" ? E2(`No se cobró nada, pero la retención de ${dinero(pg.monto)} todavía no se soltó de tu tarjeta: la seguimos soltando sola.`, `Nothing was charged, but the ${dinero(pg.monto)} hold has not come off your card yet: we keep releasing it automatically.`)
+      : pg && ["captured", "partially_refunded", "refunded"].includes(pg.st) ? (pg.devuelto ? E2(`Se cobraron ${dinero(pg.monto)}; te devolvimos ${dinero(pg.devuelto)} a tu tarjeta.`, `${dinero(pg.monto)} was charged; we refunded ${dinero(pg.devuelto)} to your card.`) : E2(`Se cobraron ${dinero(pg.monto)}.`, `${dinero(pg.monto)} was charged.`))
+        : E2("No se cobró nada.", "Nothing was charged.");
   const fH = (iso: string) => { const d = new Date(iso), p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d), g = (t: string) => p.find((z) => z.type === t)?.value ?? "";
     const dd = new Date(Date.UTC(Number(g("year")), Number(g("month")) - 1, Number(g("day")), 12)); return es ? `${DIA.es[dd.getUTCDay()]} ${dd.getUTCDate()} de ${MO.es[dd.getUTCMonth()]} · ${hora(iso)}` : `${DIA.en[dd.getUTCDay()]}, ${MO.en[dd.getUTCMonth()]} ${dd.getUTCDate()} · ${hora(iso)}`; };
   const falta = x.lineas.find((l) => l.st === "out"), otra = falta?.otra ?? null, HH = x.horas;
@@ -53,9 +61,9 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
     H.confirmed = camino ? ["truck", "bg-signal/[.18]", "var(--tl-open-text)", E2("VA EN CAMINO", "ON ITS WAY"), E2(`Llega en ${x.dias} días`, `Arrives in ${x.dias} days`), E2(`Se cobraron ${cob}.`, `${cob} was charged.`)]
       : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("LO PREPARAN", "BEING PREPARED"), E2(`Lo envían en ${x.dias} días`, `Ships within ${x.dias} days`), E2(`Te avisamos cuando salga. Se cobra al enviarlo (hasta ${ret}).`, `We let you know when it ships. You are charged then (up to ${ret}).`)];
     H.done = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("ENTREGADO", "DELIVERED"), E2("Gracias por usar To'Latino", "Thanks for using To'Latino"), E2(`Pagaste ${cob}.`, `You paid ${cob}.`)];
-    H.declined = [H.declined[0], H.declined[1], H.declined[2], H.declined[3], H.declined[4], E2("Se liberó lo retenido en tu tarjeta. No se cobró nada.", "The hold on your card was released. Nothing was charged.")];
-    H.cancelled = [H.cancelled[0], H.cancelled[1], H.cancelled[2], H.cancelled[3], E2("Cancelaste el pedido", "You cancelled the order"), E2("Se liberó lo retenido. No se cobró nada.", "The hold was released. Nothing was charged.")];
-    if (x.detalle === "no_envio") H.expired = [H.expired[0], H.expired[1], H.expired[2], H.expired[3], E2("No lo enviaron a tiempo", "Not shipped in time"), E2("Se liberó lo retenido en tu tarjeta. No se cobró nada.", "The hold on your card was released. Nothing was charged.")];
+    H.declined = [H.declined[0], H.declined[1], H.declined[2], H.declined[3], H.declined[4], soltado("Se liberó lo retenido en tu tarjeta. No se cobró nada.", "The hold on your card was released. Nothing was charged.")];
+    H.cancelled = [H.cancelled[0], H.cancelled[1], H.cancelled[2], H.cancelled[3], E2("Cancelaste el pedido", "You cancelled the order"), soltado("Se liberó lo retenido. No se cobró nada.", "The hold was released. Nothing was charged.")];
+    if (x.detalle === "no_envio") H.expired = [H.expired[0], H.expired[1], H.expired[2], H.expired[3], E2("No lo enviaron a tiempo", "Not shipped in time"), soltado("Se liberó lo retenido en tu tarjeta. No se cobró nada.", "The hold on your card was released. Nothing was charged.")];
   }
   // Layaway (4r): plan por confirmar, vivo (pagos), atrasado, pagado (listo para recoger) y cancelado (lo devuelto).
   const P = x.plan, vivo = !!P && (P.st === "active" || P.st === "late");
@@ -76,8 +84,10 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
     if (P.st === "late") H.confirmed = ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("PAGO ATRASADO", "PAYMENT LATE"), E2(`Debes ${dinero(P.siguiente?.monto ?? 0)}`, `You owe ${dinero(P.siguiente?.monto ?? 0)}`), E2(`Págalo para no perder tu plan. Con ${14} días de atraso la tienda puede cancelarlo.`, `Pay it to keep your plan. At 14 days late the store can cancel it.`)];
     if (P.st === "paid" && x.st === "confirmed") H.confirmed = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("LISTO PARA RECOGER", "READY FOR PICKUP"), E2("Terminaste de pagar", "Fully paid"), E2(`Pagaste ${dinero(P.total)}. Pasa a recogerlo.`, `You paid ${dinero(P.total)}. Come pick it up.`)];
     if (P.st === "cancelled" && x.st === "cancelled") H.cancelled = ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("PLAN CANCELADO", "PLAN CANCELLED"), E2(`Cargo de ${dinero(P.cancelado?.cargo ?? 0)}`, `${dinero(P.cancelado?.cargo ?? 0)} fee`), E2(`Lo abonado menos ${P.cargo} % vuelve a ti: lo pagado en la app, a tu tarjeta; lo pagado en la tienda, te lo devuelve la tienda.`, `What you paid minus ${P.cargo}% comes back: app payments to your card; store payments from the store.`)];
-    if (x.st === "declined") H.declined = [H.declined[0], H.declined[1], H.declined[2], H.declined[3], H.declined[4], E2("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged.")];
+    if (x.st === "declined") H.declined = [H.declined[0], H.declined[1], H.declined[2], H.declined[3], H.declined[4], soltado("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged.")];
   }
+  // Cualquier otro cierre (vencido sin respuesta, cancelado) con algo en la tarjeta que no se soltó: lo que de verdad pasó, no «No se cobró nada» a secas.
+  if (pg && pg.st !== "released" && (x.st === "declined" || x.st === "expired" || x.st === "cancelled") && !(P && P.st === "cancelled")) { const z = H[x.st]; H[x.st] = [z[0], z[1], z[2], z[3], z[4], soltado("", "")]; }
   const h = H[x.st];
   const pos = ({ pending: 0, change_proposed: 0, confirmed: 1, done: 2 } as Record<string, number>)[x.st];
   const pos2 = x.ship ? ({ pending: 0, change_proposed: 0, confirmed: camino ? 2 : 1, done: 3 } as Record<string, number>)[x.st] : pos;

@@ -30,7 +30,7 @@ async function auditar(c: PoolClient, a: Acceso, action: string, before: unknown
 }
 
 /* Aceptar · Rechazar · Listo para recoger · Entregado. */
-export async function pedidoPaso(id: string, numero: string, paso: Paso): Promise<Res> {
+export async function pedidoPaso(id: string, numero: string, paso: Paso): Promise<Res & { retenida?: true }> {
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;
   if (!PASOS.has(paso)) return no("Esa acción no existe.", "That action does not exist.");
@@ -38,7 +38,9 @@ export async function pedidoPaso(id: string, numero: string, paso: Paso): Promis
   if (!r.ok) return { ok: false, mensaje: r.msg };
   const AV = { aceptar: "ord_ok", rechazar: "ord_no", listo: "ord_ready", encamino: "ord_way" } as const;
   if (paso in AV) await avisarPedido(String(numero), AV[paso as keyof typeof AV]);
-  return { ok: true };
+  // 9v (sexta tanda) · retenida: la pasarela no soltó todavía la retención de «Rechazar» (cobros › soltarRetencion): el panel no dice «se liberó».
+  const r2 = (r.retenida ? { ok: true, retenida: true } : { ok: true }) satisfies Res & { retenida?: true };
+  return r2;
 }
 
 /* 9n-2 · «Pedir reseña» (L248) en un pedido entregado: el cliente recibe «¿Cómo estuvo?» (campana y, si no abre la app, SMS). Una vez por pedido. */

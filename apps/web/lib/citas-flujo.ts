@@ -2,8 +2,8 @@ import "server-only";
 import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
-import { cobrarOperacion, devolverPago, soltarRetencion } from "./cobros";
-import { soltadaO, type Soltada } from "./devolucion-cancelar";
+import { cobrarOperacion, devolverAlCancelar, soltarRetencion } from "./cobros";
+import { dineroAlNegocio, soltadaO, type Soltada } from "./devolucion-cancelar";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
 import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } from "./citas";
 
@@ -64,13 +64,13 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const dev = extra.dev ?? "";
   await avisar(d.uid, tpl, { negocio: d.negocio, dia: d.dia, hora: d.hora, dep: money(d.dep), alt: d.alt_dia && d.alt_hora ? `${d.alt_dia} ${d.alt_hora}` : "", ...extra, dev }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }
-async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | number> = {}) {
+async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | number | Bi> = {}) {
   const d = await datos(numero);
   if (!d) return;
   if (d.rubro === "salud") { const t = SAL_N[tpl]; if (!t) return; tpl = t; }
   if (d.rubro === "pro" && PRO_N[tpl]) tpl = PRO_N[tpl]!;
   const { avisarNegocio } = await import("./avisos");
-  await avisarNegocio(d.biz, tpl, { cliente: d.cliente, servicio: d.servicio, dia: d.dia, hora: d.hora, dep: "", ...extra }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
+  await avisarNegocio(d.biz, tpl, { cliente: d.cliente, servicio: d.servicio, dia: d.dia, hora: d.hora, dep: "", dinero: "", ...extra }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
 }
 const devL = (dep: number) => (dep ? ` Te devolvemos ${money(dep)} del depósito.` : "");
 /* 9v (quinta tanda) · {dev} con lo que de verdad pasó con la retención (soltarRetencion): la que la pasarela no soltó todavía se dice así, nunca «Te devolvemos». */
@@ -330,16 +330,21 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
     }
     if (que === "cancelar") {
       if (!["pending", "change_proposed", "confirmed"].includes(o.status) || (o.detail && o.detail !== "seg")) return ya;
-      const conf = o.status === "confirmed", aTiempo = !conf || o.mins_to >= o.cxh * 60, pierde = conf && !aTiempo && o.dep > 0 && o.pay === "captured";
+      const conf = o.status === "confirmed", aTiempo = !conf || o.mins_to >= o.cxh * 60, pierde = conf && !aTiempo && o.dep > 0 && (o.pay === "captured" || o.pay === "partially_refunded");
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = $2, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ perdio: pierde })]);
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);
       await ev(c, o.id, "cancelled", por, userId, pierde ? { es: `Canceló con menos de ${o.cxh} h: el depósito se queda`, en: `Cancelled less than ${o.cxh} h before: deposit kept` } : undefined);
+      // 9v (sexta tanda) · Lo que de verdad pasó con el depósito (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida,
+      // que alerta hold_stuck · nada), nunca tirar lo que contestó la pasarela. Al negocio, {dinero} de biz_cita_cx (0223) con lo que pasó, y lo que se queda
+      // es lo que queda del depósito (una devolución parcial previa ya salió: queda = lo cobrado menos lo devuelto). La pantalla lo lee de la base (citaVista).
+      const queda = Math.max(0, (o.amount ?? o.dep) - (o.refunded ?? 0));
       despues = async () => {
-        // 9v (quinta tanda) · La retención se mira (soltarRetencion): la que no se soltó alerta hold_stuck al equipo; biz_cita_cx no habla de ella.
-        if (o.pay === "held") retenida = (await soltarRetencion(o.id, { es: "Cancelación de la cita (el cliente)", en: "Booking cancelled (the client)" })).e === "retenida";
-        else if (o.pay === "captured" && aTiempo && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "policy", actorId: userId, motivo: "Cancelación a tiempo", idem: `cx-${numero}` });
-        await avisarNeg(numero, "biz_cita_cx", { dep: pierde ? ` El depósito de ${money(o.dep)} se queda contigo.` : "" });
+        const d = o.pay === "held" || (aTiempo && (o.pay === "captured" || o.pay === "partially_refunded"))
+          ? await devolverAlCancelar(o, { actorId: userId, motivo: o.pay === "held" ? "Cancelación de la cita" : "Cancelación a tiempo", idem: `cx-${numero}`, por: "policy" }) : null;
+        retenida = d?.e === "retenida";
+        await avisarNeg(numero, "biz_cita_cx", { dinero: pierde ? (queda === o.dep ? { es: ` El depósito de ${money(queda)} se queda contigo.`, en: ` The ${money(queda)} deposit stays with you.` }
+          : { es: ` Lo que quedaba del depósito (${money(queda)}) se queda contigo.`, en: ` What was left of the deposit (${money(queda)}) stays with you.` }) : dineroAlNegocio(d ?? { e: "nada", monto: 0 }) });
         await horaLibre(numero);
       };
       return { ok: true };

@@ -9,6 +9,10 @@
 //      retenida, UNA alerta hold_stuck, noche_no lo dice (ES), el panel recibe retenida; nunca «Se liberó tu depósito».
 //   3. Noche · «No me sirve» desde el teléfono con la retención que no se suelta: la pantalla y biz_noche_alt_no lo dicen; cuando la retención vuelve a ser
 //      soltable, el panel (Hoy: el barrido repararPagos) la suelta y entonces sí llega «Liberamos» (pay_released).
+//   4. Cita · el cliente cancela (sexta tanda, 0223): a tiempo y devuelta → «Te devolvimos $20» (pantalla) y «Se le devolvieron $20.00» (biz_cita_cx); a tiempo y
+//      Stripe dice que no → «no salió» en los dos (nunca «Te devolvemos» ni «Se queda con»); tarde con una devolución parcial → lo que quedaba ($15).
+//   5. Apartado con envío y 6. mercado · cancelar con la retención que la pasarela no suelta: la acción lo dice (retenida), la pantalla también (nunca «Se
+//      liberó lo retenido» ni «Liberamos la retención»), sigue retenida y hay UNA alerta hold_stuck.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), su mesa y los cobros.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs');
@@ -123,6 +127,125 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     sql(`update payments set stripe_payment_intent = '${pi4}', simulated = true where operation_id = ${N4.op}`);
     await pd.goto(B + `/panel/${BN}/hoy`);
     ok(await espera(() => pago(N4.num) === 'released|0'), `y la de «No hay mesa» también (${pago(N4.num)})`);
+
+    // ── 4 · Cita · el cliente cancela (sexta tanda, 0223) ──
+    console.log('4 · Cita: el cliente cancela a tiempo (devuelta · Stripe dice que no) y tarde con una devolución parcial: base, pantalla y biz_cita_cx');
+    const BC = `d9v5c-${RUN}`;
+    sql(`insert into businesses (id, city_id, category_id, name, status) values ('${BC}', 'hzl', 'NEG-BELL', 'Barbería 9v5 ${RUN}', 'active')`);
+    sql(`insert into business_members (business_id, user_id, kind, display_name) values ('${BC}', '${DUENA.id}', 'owner', 'Dueña')`);
+    const MC = sql(`select id from business_members where business_id = '${BC}' and kind = 'owner'`);
+    sql(`insert into business_stats_cache (business_id, plan) values ('${BC}', 'pro') on conflict (business_id) do update set plan = 'pro'`);
+    sql(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, simulated) values ('${BC}', 'acct_sim_${BC}', 'enabled', true, true, true)`);
+    // Una cita confirmada con su depósito de $20 cobrado. horas: cuánto falta (con 2 h de cancelación gratis, 72 h es a tiempo y 1 h es tarde).
+    const cita = (nombre, { horas = 72, rechaza = false, parcial = 0 } = {}) => {
+      const U = persona(nombre), num = 'C-' + sql(`select nextval('operations_appt_seq')`);
+      const op = primero(sql(`insert into operations (number, kind, city_id, business_id, user_id, member_id, status, scheduled_at, duration_min, details, subtotal_cents, total_cents, deposit_cents, pay_mode, confirmed_at, answered_at, client_key, is_test)
+        values ('${num}', 'appointment', 'hzl', '${BC}', '${U.id}', '${MC}', 'confirmed', date_trunc('minute', now()) + interval '${horas} hours', 30,
+                '{"svc":{"es":"Corte 9v5","en":"Haircut 9v5"},"para":"me"}'::jsonb, 6000, 6000, 2000, 'app', now(), now(), gen_random_uuid(), true) returning id`));
+      const pi = `pi_sim_9v5c_${RUN}_${op}`;
+      sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, refunded_cents, card, capture_method) values ('${pi}', 2000, 0, 'acct_sim_${BC}', 'succeeded', 2000, ${rechaza ? 2000 : parcial}, 'pm_sim_visa_4242_9v5', 'manual')`);
+      const st = parcial ? 'partially_refunded' : 'captured';
+      sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, refunded_cents, fee_cents, status, card_brand, card_last4, held_at, captured_at, simulated)
+           values (${op}, '${U.id}', '${BC}', 'hzl', 'deposit', 'card', '${pi}', 2000, 2000, ${parcial}, 0, '${st}', 'visa', '4242', now(), now(), true)`);
+      if (parcial) sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) select id, ${parcial}, 'Ayuda con la cita', 'business', 'done', 'd9v5c-parcial-${RUN}-${op}', now() from payments where operation_id = ${op}`);
+      sql(`update operations set pay_status = '${st}' where id = ${op}`);
+      return { ...U, num, op };
+    };
+    const C1 = cita('Cita sale'), C2 = cita('Cita rechazo', { rechaza: true }), C3 = cita('Cita tarde', { horas: 1, parcial: 500 });
+    const vistas = {};
+    for (const C of [C1, C2, C3]) {
+      const m = await (await telefono(b)).newPage(); m.on('pageerror', (e) => err.push(e.message));
+      await entrarComo(m, C.tel); await m.goto(B + `/cita/${C.num}`);
+      const r = await accion(m, 'citaAccion', [C.num, 'cancelar']);
+      ok(r.j?.ok === true && !r.j?.retenida && sql(`select status || '|' || cancelled_by from operations where number = '${C.num}'`) === 'cancelled|user', `${C.num}: el cliente canceló (${JSON.stringify(r.j)})`);
+      await m.goto(B + `/cita/${C.num}`); await m.getByText('CANCELADA').first().waitFor();
+      vistas[C.num] = { m, t: await texto(m) };
+    }
+    ok(pago(C1.num) === 'refunded|2000' && pago(C2.num) === 'captured|0' && pago(C3.num) === 'partially_refunded|500', `la base: devuelta · sin devolver · nada más devuelto (${pago(C1.num)} · ${pago(C2.num)} · ${pago(C3.num)})`);
+    ok(sql(`select string_agg(r.status, ',' order by r.id) from refunds r join payments p on p.id = r.payment_id where p.operation_id = ${C2.op}`) === 'failed', 'la de Stripe que dijo que no queda «failed» en la base');
+    const t1 = vistas[C1.num].t, t2 = vistas[C2.num].t, t3 = vistas[C3.num].t;
+    ok(t1.includes('Cancelaste a tiempo. Te devolvimos $20 a tu tarjeta · 3 a 5 días hábiles.') && t1.includes('Depósito devuelto') && !/Te devolvemos/.test(t1), 'pantalla, la devuelta: «Te devolvimos $20 a tu tarjeta», nunca «Te devolvemos»');
+    ok(t2.includes('La devolución de $20 no salió: escríbenos en Soporte y lo resolvemos.') && t2.includes('La devolución no salió') && !/Te devolv|Se queda con/.test(t2), 'pantalla, la que Stripe no devolvió: «no salió», nunca «Te devolvemos» ni «Se queda con»');
+    await vistas[C2.num].m.screenshot({ path: OUT + 'd9v5-cita-devolucion-no-salio-m.png' });
+    ok(/lo que quedaba del depósito \(\$15\) se quedó con Barbería 9v5/.test(t3) && !/depósito de \$20 se queda/.test(t3), 'pantalla, tarde con devolución parcial: lo que quedaba ($15), no el depósito entero');
+    for (const C of [C1, C2, C3]) await vistas[C.num].m.context().close();
+    const k1 = aviso(C1.num, 'biz_cita_cx'), k2 = aviso(C2.num, 'biz_cita_cx'), k3 = aviso(C3.num, 'biz_cita_cx');
+    ok(k1.includes('canceló Corte 9v5') && k1.includes('Se le devolvieron $20.00 a su tarjeta.') && !/\{d/.test(k1), `al negocio, la devuelta: «Se le devolvieron $20.00» (${k1})`);
+    ok(k2.includes("La devolución de $20.00 no salió: el equipo de To'Latino ya tiene el aviso") && !/devolvieron|\{d/.test(k2), `al negocio, la que Stripe no devolvió: «no salió» (${k2})`);
+    ok(k3.includes('Lo que quedaba del depósito ($15.00) se queda contigo.') && !/\$20|\{d/.test(k3), `al negocio, tarde con devolución parcial: lo que queda ($15.00) (${k3})`);
+
+    // Una solicitud (pendiente) con el depósito solo retenido, que la pasarela no suelta: «Cancelar solicitud» desde el teléfono lo dice (retenida) y la
+    // pantalla también, nunca «Te devolvemos»; sigue retenida y UNA alerta hold_stuck; al negocio, que no se soltó todavía.
+    const C4 = persona('Cita atascada'), C4N = 'C-' + sql(`select nextval('operations_appt_seq')`);
+    const C4O = primero(sql(`insert into operations (number, kind, city_id, business_id, user_id, member_id, status, scheduled_at, duration_min, details, subtotal_cents, total_cents, deposit_cents, pay_mode, respond_by, client_key, is_test)
+      values ('${C4N}', 'appointment', 'hzl', '${BC}', '${C4.id}', '${MC}', 'pending', date_trunc('minute', now()) + interval '72 hours', 30,
+              '{"svc":{"es":"Corte 9v5","en":"Haircut 9v5"},"para":"me"}'::jsonb, 6000, 6000, 2000, 'app', now() + interval '2 hours', gen_random_uuid(), true) returning id`));
+    sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, refunded_cents, fee_cents, status, card_brand, card_last4, held_at, simulated)
+         values (${C4O}, '${C4.id}', '${BC}', 'hzl', 'deposit', 'card', 'pi_9v5atascada_${RUN}_${C4O}', 2000, 2000, 0, 0, 'held', 'visa', '4242', now(), false)`);
+    const m4 = await (await telefono(b)).newPage(); m4.on('pageerror', (e) => err.push(e.message));
+    await entrarComo(m4, C4.tel); await m4.goto(B + `/cita/${C4N}`);
+    await m4.getByRole('button', { name: 'Cancelar solicitud' }).first().click();
+    await m4.getByRole('button', { name: 'Sí, cancelar' }).first().click();
+    await m4.getByText('Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.').first().waitFor();
+    ok(sql(`select status from operations where number = '${C4N}'`) === 'cancelled' && pago(C4N) === 'held|0' && holdStuck(C4N) === '1', `${C4N}: cancelada, la retención sigue (${pago(C4N)}) y UNA alerta hold_stuck`);
+    await m4.getByText('No se cobró nada, pero la retención de $20 todavía no se soltó de tu tarjeta').first().waitFor();
+    const t4 = await texto(m4);
+    ok(!/Te devolv|Depósito devuelto/.test(t4) && t4.includes('Depósito retenido'), 'la pantalla de la cita: «la retención de $20 todavía no se soltó» y «Depósito retenido», nunca «Te devolvemos» ni «Depósito devuelto»');
+    await m4.screenshot({ path: OUT + 'd9v5-cita-retenida-m.png' });
+    await m4.context().close();
+    const k4 = aviso(C4N, 'biz_cita_cx');
+    ok(k4.includes('No se había cobrado nada, pero la retención de $20.00 de su tarjeta no se soltó todavía') && !/\{d/.test(k4), `al negocio, la retención que no se soltó (${k4})`);
+
+    // ── 5 · Apartado con envío · el cliente cancela y la retención no se suelta ──
+    console.log('5 · Apartado con envío: cancelar con una retención que la pasarela no suelta (pantalla, aviso en la pantalla, base)');
+    const BT = `d9v5t-${RUN}`;
+    sql(`insert into businesses (id, city_id, category_id, name, status) values ('${BT}', 'hzl', 'NEG-TIENDA', 'Tienda 9v5 ${RUN}', 'active')`);
+    sql(`insert into business_members (business_id, user_id, kind, display_name) values ('${BT}', '${DUENA.id}', 'owner', 'Dueña')`);
+    sql(`insert into business_stats_cache (business_id, plan) values ('${BT}', 'pro') on conflict (business_id) do update set plan = 'pro'`);
+    sql(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, simulated) values ('${BT}', 'acct_sim_${BT}', 'enabled', true, true, true)`);
+    const UA = persona('Apartado atascado'), AN = 'A-' + sql(`select nextval('hold_seq')`);
+    const AO = primero(sql(`insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, respond_by, details, subtotal_cents, delivery_cents, total_cents, pay_mode, client_key, is_test)
+      values ('${AN}', 'hold', 'hzl', '${BT}', '${UA.id}', 'pending', 'sent', 'delivery', now(), now() + interval '6 days', now() + interval '4 hours',
+              '{"sms":true,"como":"envio","ship":true,"to":{"label":"casa","street":"420 N Wyoming St"},"ship_days":"3-5","hold_hours":48}'::jsonb, 2500, 500, 3000, 'app', gen_random_uuid(), true) returning id`));
+    sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, refunded_cents, fee_cents, status, card_brand, card_last4, held_at, simulated)
+         values (${AO}, '${UA.id}', '${BT}', 'hzl', 'full', 'card', 'pi_9v5atascada_${RUN}_${AO}', 3000, 3000, 0, 0, 'held', 'visa', '4242', now(), false)`);
+    const ma = await (await telefono(b)).newPage(); ma.on('pageerror', (e) => err.push(e.message));
+    await entrarComo(ma, UA.tel); await ma.goto(B + `/apartado/${AN}`);
+    await ma.getByRole('button', { name: 'Cancelar', exact: true }).first().click();
+    await ma.getByRole('button', { name: 'Sí, cancelar' }).first().click();
+    await ma.getByText('Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.').first().waitFor();
+    ok(sql(`select status from operations where number = '${AN}'`) === 'cancelled' && pago(AN) === 'held|0' && holdStuck(AN) === '1', `${AN}: cancelado, la retención sigue en la tarjeta (${pago(AN)}) y UNA alerta hold_stuck`);
+    await ma.getByText('No se cobró nada, pero la retención de $30 todavía no se soltó de tu tarjeta').first().waitFor();
+    const ta = await texto(ma);
+    ok(!/Se liberó lo retenido/.test(ta), 'la pantalla del apartado: «la retención de $30 todavía no se soltó», nunca «Se liberó lo retenido»');
+    await ma.screenshot({ path: OUT + 'd9v5-apartado-retenida-m.png' });
+    await ma.context().close();
+
+    // ── 6 · Mercado · el cliente cancela y la retención no se suelta ──
+    console.log('6 · Mercado: cancelar con una retención que la pasarela no suelta (la acción y la pantalla lo dicen)');
+    const BM = `d9v5m-${RUN}`;
+    sql(`insert into businesses (id, city_id, category_id, name, status) values ('${BM}', 'hzl', 'NEG-MERC', 'Mercado 9v5 ${RUN}', 'active')`);
+    sql(`insert into business_members (business_id, user_id, kind, display_name) values ('${BM}', '${DUENA.id}', 'owner', 'Dueña')`);
+    sql(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, simulated) values ('${BM}', 'acct_sim_${BM}', 'enabled', true, true, true)`);
+    const UM = persona('Mercado atascado'), MN = 'M-' + sql(`select nextval('market_seq')`);
+    const MO = primero(sql(`insert into operations (number, kind, city_id, business_id, user_id, status, mode, scheduled_at, respond_by, details, subtotal_cents, total_cents, pay_mode, client_key, is_test)
+      values ('${MN}', 'market_order', 'hzl', '${BM}', '${UM.id}', 'pending', 'pickup', now() + interval '2 hours', now() + interval '10 minutes', '{"est_cents":2500}'::jsonb, 2500, 2500, 'app', gen_random_uuid(), true) returning id`));
+    sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, refunded_cents, fee_cents, status, card_brand, card_last4, held_at, simulated)
+         values (${MO}, '${UM.id}', '${BM}', 'hzl', 'full', 'card', 'pi_9v5atascada_${RUN}_${MO}', 2500, 2500, 0, 0, 'held', 'visa', '4242', now(), false)`);
+    const mm = await (await telefono(b)).newPage(); mm.on('pageerror', (e) => err.push(e.message));
+    await entrarComo(mm, UM.tel); await mm.goto(B + `/mercado/${MN}`);
+    const rm = await accion(mm, 'mercCancelar', [MN]);
+    ok(rm.j?.ok === true && rm.j?.retenida === true && sql(`select status from operations where number = '${MN}'`) === 'cancelled' && pago(MN) === 'held|0' && holdStuck(MN) === '1', `${MN}: cancelado, retenida y UNA alerta hold_stuck (${JSON.stringify(rm.j)})`);
+    await mm.goto(B + `/mercado/${MN}`); await mm.getByText('CANCELADO').first().waitFor();
+    const tm = await texto(mm);
+    ok(tm.includes('No se cobró nada, pero la retención de $25.00 todavía no se soltó de tu tarjeta') && !/Liberamos la retención/.test(tm), 'la pantalla del mercado: «la retención de $25.00 todavía no se soltó», nunca «Liberamos la retención»');
+    await mm.context().close();
+    // Precondiciones limpias para la próxima corrida: las dos retenciones atascadas vuelven a ser soltables (el barrido las suelta; nada queda reintentándose).
+    for (const [op, biz, amt] of [[AO, BT, 3000], [MO, BM, 2500], [C4O, BC, 2000]]) {
+      const pi = `pi_sim_9v5_${RUN}_${op}`;
+      sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, refunded_cents, card, capture_method) values ('${pi}', ${amt}, 0, 'acct_sim_${biz}', 'requires_capture', 0, 0, 'pm_sim_visa_4242_9v5', 'manual')`);
+      sql(`update payments set stripe_payment_intent = '${pi}', simulated = true where operation_id = ${op}`);
+    }
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   } finally { await b.close(); }
   console.log(`\nOK din9v5 (${n} ✓)`);

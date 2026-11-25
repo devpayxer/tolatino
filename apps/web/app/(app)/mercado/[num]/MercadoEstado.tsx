@@ -49,6 +49,12 @@ export function MercadoEstado({ v, es, pago = null, ruta = false }: { v: Mercado
     setOcupado(false);
     if (r.ok) { setFlash(r.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
+  // 9v (sexta tanda) · Un pedido que no se dio (no aceptaron, sin respuesta, cancelado) dice lo que de verdad pasó con la tarjeta (de la base: t.retenido,
+  // t.liberado, t.cobrado, t.devuelto): soltado, todavía retenido o cobrado y devuelto; nunca «No se cobró nada» ni «Liberamos» fijos.
+  const noSeDio = v.local ? E2("No se cobró nada.", "Nothing was charged.")
+    : t.retenido > 0 ? E2(`No se cobró nada, pero la retención de ${money(t.retenido)} todavía no se soltó de tu tarjeta: la seguimos soltando sola.`, `Nothing was charged, but the ${money(t.retenido)} hold has not come off your card yet: we keep releasing it automatically.`)
+      : t.cobrado > 0 ? (t.devuelto ? E2(`Se cobraron ${money(t.cobrado)}; te devolvimos ${money(t.devuelto)} a tu tarjeta.`, `${money(t.cobrado)} was charged; we refunded ${money(t.devuelto)} to your card.`) : E2(`Se cobraron ${money(t.cobrado)}.`, `${money(t.cobrado)} was charged.`))
+        : t.liberado > 0 ? E2(`Liberamos los ${money(t.liberado)}. No se cobró nada.`, `We released the ${money(t.liberado)}. Nothing was charged.`) : E2("No se cobró nada.", "Nothing was charged.");
   const H: [string, string, string, string, string] =
     v.st === "pending" ? ["clock", "var(--tl-action)", E2("PEDIDO ENVIADO", "ORDER SENT"), E2(`Esperando a ${v.negocio.nombre}`, `Waiting for ${v.negocio.nombre}`), v.local ? E2("Pagas en el mercado al recoger. Si no aceptan en 10 min, se cancela.", "You pay at the market at pickup. If they do not accept within 10 min, it is cancelled.") : E2(`Se retuvieron ${money(t.ret)}. Si no aceptan en 10 min, se libera.`, `${money(t.ret)} was held. If they do not accept within 10 min, it is released.`)]
       : v.st === "confirmed" && D === "preparando" ? ["bag", "var(--tl-action)", E2("PREPARANDO", "PREPARING"), E2("Están armando tu pedido", "Your order is being prepared"), E2("Te mandan la foto de la balanza de lo que va por peso.", "They send the scale photo for by-weight items.")]
@@ -58,9 +64,9 @@ export function MercadoEstado({ v, es, pago = null, ruta = false }: { v: Mercado
       : v.st === "confirmed" && D === "listo" ? ["check", "var(--tl-open-text)", E2("LISTO PARA RECOGER", "READY FOR PICKUP"), E2(`En el mostrador de ${v.negocio.nombre}`, `At the ${v.negocio.nombre} counter`), v.negocio.dir]
       : v.st === "confirmed" ? ["check", "var(--tl-open-text)", E2("COBRADO", "CHARGED"), `${E2("Pagaste ", "You paid ")}${money(t.cobrado)}`, E2("Te avisan cuando esté listo.", "They let you know when it is ready.")]
       : v.st === "done" ? ["check", "var(--tl-open-text)", del ? E2("ENTREGADO", "DELIVERED") : E2("RECOGIDO", "PICKED UP"), v.local ? `${E2("Total ", "Total ")}${money(t.real)}` : `${E2("Pagaste ", "You paid ")}${money(t.cobrado)}`, !v.local && t.liberado ? E2(`Se liberaron ${money(t.liberado)} · 3–5 días hábiles.`, `${money(t.liberado)} released · 3–5 business days.`) : ""]
-      : v.st === "declined" ? ["close", "var(--tl-danger)", E2("NO ACEPTARON", "NOT ACCEPTED"), E2("El mercado no puede hoy", "The market cannot today"), v.local ? E2("No se cobró nada.", "Nothing was charged.") : E2(`Liberamos los ${money(t.ret)}. No se cobró nada.`, `We released the ${money(t.ret)}. Nothing was charged.`)]
-      : v.st === "expired" ? ["clock", "var(--tl-danger)", E2("SIN RESPUESTA", "NO ANSWER"), E2("No aceptaron en 10 min", "Not accepted within 10 min"), E2("No se cobró nada.", "Nothing was charged.")]
-      : ["close", "rgba(11,14,18,.6)", E2("CANCELADO", "CANCELLED"), E2("Cancelaste tu pedido", "You cancelled your order"), v.local ? E2("No se cobró nada.", "Nothing was charged.") : E2("Liberamos la retención.", "We released the hold.")];
+      : v.st === "declined" ? ["close", "var(--tl-danger)", E2("NO ACEPTARON", "NOT ACCEPTED"), E2("El mercado no puede hoy", "The market cannot today"), noSeDio]
+      : v.st === "expired" ? ["clock", "var(--tl-danger)", E2("SIN RESPUESTA", "NO ANSWER"), E2("No aceptaron en 10 min", "Not accepted within 10 min"), noSeDio]
+      : ["close", "rgba(11,14,18,.6)", E2("CANCELADO", "CANCELLED"), E2("Cancelaste tu pedido", "You cancelled your order"), noSeDio];
   const pasos = [{ label: E2("Enviado", "Sent"), state: "done" }, { label: E2("Preparando", "Preparing"), state: v.st === "pending" ? "next" : D === "preparando" ? "current" : "done" },
     { label: E2("Pesado", "Weighed"), state: v.st === "pending" || D === "preparando" ? "next" : D === "pesado" ? "current" : "done" },
     { label: del ? E2("En camino", "On the way") : E2("Listo", "Ready"), state: D === "listo" || D === "camino" ? "current" : v.st === "done" ? "done" : "next" },

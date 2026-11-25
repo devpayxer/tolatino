@@ -230,6 +230,8 @@ export type ApartadoVista = { numero: string; st: St; detalle: string | null; bi
   dia: string; hora: number; sms: boolean; hasta: string; responde: string; nota: string | null; enviado: string; guardado: string | null; recogido: string | null; cxBy: string | null; horas: number;
   // Envío de la tienda (4q-2): a dónde, cuánto, en cuántos días, seguimiento, cuándo salió y el dinero (retenido / cobrado).
   ship: boolean; envio: number; to: string | null; dias: string; track: string | null; salio: string | null; etapa: string; retenido: number | null; cobrado: number | null; tarjeta: string | null;
+  // 9v (sexta tanda) · Lo retenido (el envío o el abono del plan) como está en la base: retenido, soltado, cobrado y devuelto. La pantalla nunca dice «Se liberó» sin mirar.
+  pago: { st: string; monto: number; devuelto: number } | null;
   plan: import("./layaway").PlanVista | null };
 async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { op: string; uid: string }) | null> {
   const x = (await db().query<ApartadoVista & { op: string; uid: string }>(
@@ -241,7 +243,8 @@ async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { 
             o.details->>'tracking' as track, o.details->>'shipped_at' as salio, o.stage as etapa,
             (select p.held_cents from payments p where p.operation_id = o.id and p.kind = 'full' order by p.id desc limit 1) as retenido,
             (select p.amount_cents from payments p where p.operation_id = o.id and p.kind = 'full' and p.status in ('captured', 'partially_refunded', 'refunded') order by p.id desc limit 1) as cobrado,
-            (select nullif(concat_ws(' ', upper(p.card_brand), p.card_last4), '') from payments p where p.operation_id = o.id and p.kind = 'full' order by p.id desc limit 1) as tarjeta
+            (select nullif(concat_ws(' ', upper(p.card_brand), p.card_last4), '') from payments p where p.operation_id = o.id and p.kind = 'full' order by p.id desc limit 1) as tarjeta,
+            (select jsonb_build_object('st', p.status, 'monto', case when p.status in ('captured', 'partially_refunded', 'refunded') then p.amount_cents else coalesce(p.held_cents, p.amount_cents) end, 'devuelto', p.refunded_cents) from payments p where p.operation_id = o.id and p.kind in ('full', 'deposit') order by p.id desc limit 1) as pago
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id where o.kind = 'hold' and ${where}`, args)).rows[0];
   if (!x) return null;
   x.lineas = (await db().query<LineaApartado>(`select l.id::text, l.item_id::text as item, l.name as n, l.qty, l.unit_price_cents as precio, l.line_total_cents as total, l.status as st, i.photos[1] as foto, l.variant_label as talla,

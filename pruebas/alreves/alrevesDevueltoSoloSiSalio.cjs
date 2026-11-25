@@ -1,7 +1,7 @@
 // Prueba al revés del guardián devueltoSoloSiSalio (25 nov, 9v): un patrocinio dice «devuelto» (el panel: «Reserva cancelada. Te devolvemos $15.00 a tu
 // tarjeta») solo con lo que la pasarela devolvió. Pasaba: «Cancelar reserva» del dueño devolvía lo decidido (refund_cents) aunque Stripe hubiera rechazado la
 // devolución (din9v2). Ampliado (25 nov, segunda tanda): boletos y eventos (cancelar, «Devolver» del panel, «Devolución total», el evento cancelado,
-// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Quinta: toda retención que se suelta (soltarRetencion) y los avisos al negocio (0222). Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
+// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Quinta: toda retención que se suelta (soltarRetencion) y los avisos al negocio (0222). Sexta: la cita que cancela el cliente y las pantallas del mercado, el apartado y el pedido (0223). Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -122,6 +122,40 @@ const casos = [
   ['fiesta no me sirve sin retenida', 'apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx', 'setFlash("retenida" in r && r.retenida ? E2(', 'setFlash(false ? E2('],
   // La alerta vuelve a llamarse solo «retención renovada».
   ['etiqueta hold_stuck renovada', 'apps/web/lib/dinero-alertas.ts', 'hold_stuck: { es: "una retención atascada (no se soltó o no se renovó)", en: "a stuck hold (not released or not renewed)" },', 'hold_stuck: { es: "una retención renovada sin respuesta", en: "a renewed hold with no answer" },'],
+  // 25 nov (sexta tanda) · La cita que cancela el cliente, y las pantallas del mercado, del apartado y del pedido que no se dio (0223).
+  // La cita vuelve a devolver con devolverPago tirando el resultado.
+  ['cita cancela con devolverPago', 'apps/web/lib/citas-flujo.ts', '? await devolverAlCancelar(o, { actorId: userId, motivo: o.pay === "held"', '? await devolverPago({ paymentId: o.pid!, centavos: o.amount!, por: "policy", actorId: userId, motivo: "x", idem: `cx-${numero}` }).then(() => null) ?? await devolverAlCancelar(o, { actorId: userId, motivo: o.pay === "held"'],
+  // Cancelar la cita deja de decir que la retención no se soltó.
+  ['cita sin retenida', 'apps/web/lib/citas-flujo.ts', 'retenida = d?.e === "retenida";', 'retenida = false;'],
+  // Al negocio, otra vez el depósito entero aunque ya hubo una devolución parcial.
+  ['cita se queda el depósito entero', 'apps/web/lib/citas-flujo.ts', 'const queda = Math.max(0, (o.amount ?? o.dep) - (o.refunded ?? 0));', 'const queda = o.dep;'],
+  // biz_cita_cx vuelve a {dep} con lo decidido.
+  ['biz_cita_cx sin {dinero}', 'apps/web/lib/citas-flujo.ts', 'await avisarNeg(numero, "biz_cita_cx", { dinero: pierde ?', 'await avisarNeg(numero, "biz_cita_cx", { dep: pierde ?'],
+  // Las plantillas de 0223 vuelven a lo de antes.
+  ['plantilla biz_cita_cx con {dep}', 'packages/db/migrations/0223_avisos_cita_y_pedido_lo_que_paso.sql', '{hora}.{dinero}","en":"{cliente} cancelled {servicio} on {dia} at {hora}.{dinero}"', '{hora}.{dep}","en":"{cliente} cancelled {servicio} on {dia} at {hora}.{dep}"'],
+  ['plantilla ord_no fija', 'packages/db/migrations/0223_avisos_cita_y_pedido_lo_que_paso.sql', '\'{"es":"{negocio} no pudo aceptar tu pedido #{num}.{dinero}","en":"{negocio} could not accept your order #{num}.{dinero}"}\'', '\'{"es":"{negocio} no pudo aceptar tu pedido #{num}. No se te cobró nada.","en":"{negocio} could not accept your order #{num}. You were not charged."}\''],
+  // La pantalla de la cita vuelve a «Te devolvemos» sin mirar.
+  ['cita dice te devolvemos', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '  const dev = !c.dep || !c.pago ? E2("No se cobró nada.", "Nothing was charged.")', '  const dev = c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, "") : E2("No se cobró nada.", "Nothing was charged.");\n  const dev0 = !c.dep || !c.pago ? E2("No se cobró nada.", "Nothing was charged.")'],
+  // La devolución que no salió vuelve a contarse como «Se queda con …».
+  ['cita la fallida como se queda', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '    else if (c.perdio) plata.push(', '    else if (c.perdio || c.pago === "captured") plata.push('],
+  // La pantalla de la cita calla la retención que no se soltó.
+  ['cita pantalla sin retenida', 'apps/web/app/(app)/cita/[num]/Estado.tsx', 'aviso("retenida" in r && r.retenida ? E2(', 'aviso(false ? E2('],
+  ['cita acción sin retenida', 'apps/web/app/(app)/cita/[num]/acciones.ts', 'return r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, msg: r.msg };', 'return r.ok ? { ok: true } : { ok: false, msg: r.msg };'],
+  // La vista de la cita deja de leer lo que no está hecho.
+  ['cita sin devolucionesDe', 'apps/web/lib/citas.ts', 'devolucion: r.pago ? await devolucionesDe(r.oid) : { camino: 0, fallida: 0 },', 'devolucion: { camino: 0, fallida: 0 },'],
+  // El apartado vuelve a «Se liberó» fijo, o soltado deja de mirar el cobro.
+  ['apartado se liberó fijo', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'soltado("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged.")', 'E2("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged.")'],
+  ['apartado soltado sin mirar', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'const soltado = (es1: string, en1: string) => pg?.st === "released" ? E2(es1, en1)', 'const soltado = (es1: string, en1: string) => true ? E2(es1, en1)'],
+  ['apartado acción sin retenida', 'apps/web/app/(app)/apartado/[num]/acciones.ts', 'return r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, msg: r.msg };', 'return r.ok ? { ok: true } : { ok: false, msg: r.msg };'],
+  ['apartado pantalla sin retenida', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'setFlash("retenida" in r && r.retenida ? E2(', 'setFlash(false ? E2('],
+  // El mercado vuelve a «No se cobró nada» fijo, o deja de mirar lo retenido.
+  ['mercado no aceptaron fijo', 'apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx', 'E2("El mercado no puede hoy", "The market cannot today"), noSeDio]', 'E2("El mercado no puede hoy", "The market cannot today"), E2("No se cobró nada.", "Nothing was charged.")]'],
+  ['mercado sin lo retenido', 'apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx', ': t.retenido > 0 ? E2(`No se cobró nada, pero la retención', ': false ? E2(`No se cobró nada, pero la retención'],
+  // El pedido que no se dio vuelve a «No se cobró nada» fijo; ord_no sin {dinero}; el panel y su acción sin retenida.
+  ['pedido no se cobró fijo', 'apps/web/app/(app)/pedido/[num]/Pedido.tsx', 'const sinCobro = p.pago?.estado === "held" ?', 'const sinCobro = false ?'],
+  ['ord_no sin {dinero}', 'apps/web/lib/avisos.ts', 'hora: o.hora, dinero }', 'hora: o.hora }'],
+  ['panel pedidos sin retenida', 'apps/web/app/panel/Pedidos.tsx', '(r) => (r?.retenida ? E2(', '(r) => (false ? E2('],
+  ['acción pedidos sin retenida', 'apps/web/app/panel/acciones-pedidos.ts', 'const r2 = (r.retenida ? { ok: true, retenida: true } : { ok: true })', 'const r2 = ({ ok: true })'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {
