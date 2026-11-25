@@ -3177,6 +3177,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       reparto.json: din9x 59, ninguna prueba cambió de parte). Guardián liberarMira (35–36); alrevesDineroDiceLoQuePaso 109/109.
       Queda (revisión de 51a794d): (a) la alerta completar: no se cierra sola (no hay estado que mirar): se marca resuelta a mano, como aviso: y reparar:.
       (b) «hecha» con lo devuelto toma refunded_cents del cobro entero: si al cobro se le había devuelto algo antes y por otro motivo, la cifra lo incluye.
+      Queda (revisión de 5255ce2, Fable; sin dinero mal movido): (M1) acotar el monto de «hecha» a lo que tocaba por la cancelación
+      (min(ref, lo pedido)) o decir «ya no falta nada por devolver: revisa que cuadre»; (M2) el texto de completar: y cobrada: debe decir «mira antes
+      en Stripe si la devolución vcx-<número> ya salió o va en camino» (ES/EN) para no devolver dos veces a mano; (M3) completar: afirma que cobrada:
+      «no lo dice» solo por nueva === false (si dos pasadas del barrido se pisan es redundante: confirmar el candado de una sola instancia);
+      (M4) si también falla el update que vuelve el tope atrás, queda en silencio salvo el registro (dos escrituras seguidas); (M5) din9x sin casos de
+      cobrada: que lanza al tope, de «hecha» por las dos ramas de reglaTardeConLoCobrado y del devuelto a mano parcial.
+      **INESTABLE (25 nov, local):** din9x cayó una vez en «devolverAlCancelar dice la regla que aplicó el barrido: la mitad y lo devuelto
+      ({"e":"cobrada","monto":1500})» y pasó dos veces seguidas después (101 ✓): una carrera de la prueba con el barrido; arreglar la prueba.
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
       barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
       ventana en ese tiempo no alerta. (d) Las alertas aviso: y reparar: no se cierran solas (no hay estado que mirar): se marcan resueltas a mano.
