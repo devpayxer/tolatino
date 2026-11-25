@@ -33,7 +33,8 @@ export async function bolPrevioCancelar(numero: string) {
   const u = await quien(); if (!u) return null;
   return (await import("@/lib/boletos-despues")).previoCancelar(u.id, String(numero), u.lang !== "en");
 }
-export async function bolCancelar(numero: string, codes: string[], clave: string): Promise<R<{ monto: number }>> {
+/* 9v · devolucion: lo que hizo la pasarela (hecha · en camino · fallida); la pantalla lo dice tal cual, nunca lo decidido. */
+export async function bolCancelar(numero: string, codes: string[], clave: string): Promise<R<{ monto: number; devolucion: "hecha" | "en_camino" | "fallida" }>> {
   const u = await quien(); if (!u) return { ok: false, msg: RED, entrar: true };
   return (await import("@/lib/boletos-despues")).cancelarBoletos(u.id, String(numero), codes, String(clave));
 }
@@ -59,7 +60,7 @@ export async function esperaSalir(fecha: string): Promise<R> {
 }
 /* 6e · El evento cambió de fecha u hora: «Me quedo con la nueva fecha» o «Devolución total» (solo quien pagó la orden, hasta el nuevo
    inicio). Lo que se devuelve (el 100 %) lo calcula el servidor; la pantalla solo dice qué eligió. */
-export async function bolElegirCambio(numero: string, eleccion: "keep" | "refund"): Promise<R<{ monto: number }>> {
+export async function bolElegirCambio(numero: string, eleccion: "keep" | "refund"): Promise<R<{ monto: number; devolucion?: "hecha" | "en_camino" | "fallida" }>> {
   const u = await quien(); if (!u) return { ok: false, msg: RED, entrar: true };
   return (await import("@/lib/evt-cambios")).elegirCambio(u.id, String(numero), eleccion === "refund" ? "refund" : "keep");
 }

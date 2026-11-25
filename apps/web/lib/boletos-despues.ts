@@ -348,6 +348,29 @@ export async function ejecutarDevolucion(refundId: string): Promise<boolean> {
   }
   return cerrarDevolucionBoletos(r.id, x.id ?? null);
 }
+/* 9v (25 nov) · Lo que la pasarela HIZO con una devolución de boletos, leído de la base después de mandarla (nunca lo decidido): «hecha» (Stripe la aceptó),
+   «en_camino» (no contestó o dijo que no: sigue pendiente y el barrido la manda otra vez sola con la misma llave) o «fallida» (la consulta, pasado un día,
+   la dio por fallida: la tiene el equipo de dinero con su alerta). Antes, cancelar, devolver desde el panel y «Devolución total» decían «te devolvemos» con
+   lo decidido sin mirar. Guardián devueltoSoloSiSalio. */
+export type EstadoDev = "hecha" | "en_camino" | "fallida";
+export async function estadoDevolucion(rf: string): Promise<EstadoDev> {
+  const st = (await db().query<{ st: string }>(`select status as st from refunds where id = $1::bigint`, [rf])).rows[0]?.st;
+  return st === "done" ? "hecha" : st === "failed" ? "fallida" : "en_camino";
+}
+export async function mandarDevolucion(rf: string): Promise<EstadoDev> {
+  return (await ejecutarDevolucion(rf)) ? "hecha" : estadoDevolucion(rf);
+}
+/* La misma llave ya hizo su devolución (doble toque o la red que repite): cuánto y en qué quedó. */
+async function yaPorLlave(idem: string): Promise<{ monto: number; devolucion: EstadoDev } | null> {
+  const y = (await db().query<{ id: string; amt: number }>(`select id::text, amount_cents as amt from refunds where idem_key = $1`, [idem])).rows[0];
+  return y ? { monto: y.amt, devolucion: await estadoDevolucion(y.id) } : null;
+}
+/* {dinero} de los avisos al comprador (bol_cancelado, bol_devuelto, evt_devolucion_total: 0219) con lo que pasó. */
+export function dineroDevolucion(e: EstadoDev, monto: number): Bi {
+  if (e === "hecha") return { es: `Te devolvimos ${dinero(monto)} a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.`, en: `We refunded ${dinero(monto)} to your card; your bank shows it in 3–5 business days.` };
+  if (e === "en_camino") return { es: `La devolución de ${dinero(monto)} a tu tarjeta va en camino: la seguimos mandando sola.`, en: `The ${dinero(monto)} refund to your card is on its way: we keep sending it automatically.` };
+  return { es: `La devolución de ${dinero(monto)} no salió: el equipo de To'Latino ya tiene el aviso para resolverlo contigo.`, en: `The ${dinero(monto)} refund did not go through: the To'Latino team already has the alert to sort it out with you.` };
+}
 /* El «sí» (de la pasarela al mandarla o de la consulta pasada la llave: 9t7), una vez: 'done', lo devuelto del libro, la operación y su evento; con la
    auditoría del cierre por la consulta en la misma transacción. */
 export async function cerrarDevolucionBoletos(refundId: string, stripeId: string | null, porConsulta = false): Promise<boolean> {
@@ -458,7 +481,7 @@ export async function anotarDevolucionTotal(c: Q, x: { op: string; por: "event_c
 }
 
 /* ── Cancelar mis boletos (el comprador) ── */
-export async function cancelarBoletos(userId: string, numero: string, codesRaw: unknown, clave: string): Promise<Res<{ monto: number; ya?: true }>> {
+export async function cancelarBoletos(userId: string, numero: string, codesRaw: unknown, clave: string): Promise<Res<{ monto: number; devolucion: EstadoDev; ya?: true }>> {
   if (!NUM_B.test(String(numero))) return falla("Esa orden no existe.", "That order does not exist.");
   if (!UUID.test(String(clave))) return falla("Prueba de nuevo.", "Try again.");
   const codes = [...new Set((Array.isArray(codesRaw) ? codesRaw : []).map((x) => String(x).toUpperCase()).filter((x) => CODIGO_BOL.test(x)))].slice(0, 40);
@@ -490,21 +513,22 @@ export async function cancelarBoletos(userId: string, numero: string, codesRaw: 
     });
   } catch (e) {
     if (e instanceof Error && /devolucion_de_mas|devolucion_sin_cobro/.test(e.message)) return falla("Esta orden ya no tiene tanto por devolver.", "This order no longer has that much to refund.");
-    if (e instanceof Error && (e as { code?: string }).code === "23505") return { ok: true, monto: 0, ya: true }; // la misma llave, a la vez
+    if (e instanceof Error && (e as { code?: string }).code === "23505") { const y = await yaPorLlave(idem); return { ok: true, monto: y?.monto ?? 0, devolucion: y?.devolucion ?? "en_camino", ya: true }; } // la misma llave, a la vez
     return atrapa(e);
   }
-  if (!hecho.rf) return { ok: true, monto: hecho.total, ya: true };
+  if (!hecho.rf) { const y = await yaPorLlave(idem); return { ok: true, monto: y?.monto ?? hecho.total, devolucion: y?.devolucion ?? "en_camino", ya: true }; }
   pasesPronto();
-  await ejecutarDevolucion(hecho.rf);
+  // 9v · Lo que dicen la pantalla y el aviso sale de lo que hizo la pasarela, no de lo decidido.
+  const devolucion = await mandarDevolucion(hecho.rf);
   const { avisar, avisarNegocio } = await import("./avisos");
-  await avisar(userId, "bol_cancelado", { evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), monto: dinero(hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
+  await avisar(userId, "bol_cancelado", { evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), monto: dinero(hecho.total), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
   await avisarNegocio(hecho.biz, "evt_devolucion", { evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), num: numero }, { href: `/panel/${hecho.biz}/eventos`, ref: ["tickets", numero] });
   await (await import("./espera")).ofrecer(hecho.fid).catch(() => 0);
-  return { ok: true, monto: hecho.total };
+  return { ok: true, monto: hecho.total, devolucion };
 }
 
 /* ── «Devolver» desde el panel (el organizador): total o por boleto, 100 %; nunca un boleto usado. ── */
-export async function devolverDesdePanel(negocio: string, actorId: string, numero: string, codesRaw: unknown, clave: string, alGuardar?: AlGuardar<{ monto: number }>): Promise<Res<{ monto: number }>> {
+export async function devolverDesdePanel(negocio: string, actorId: string, numero: string, codesRaw: unknown, clave: string, alGuardar?: AlGuardar<{ monto: number }>): Promise<Res<{ monto: number; devolucion: EstadoDev }>> {
   if (!NUM_B.test(String(numero))) return falla("Esa orden no existe.", "That order does not exist.");
   if (!UUID.test(String(clave))) return falla("Prueba de nuevo.", "Try again.");
   const codes = [...new Set((Array.isArray(codesRaw) ? codesRaw : []).map((x) => String(x).toUpperCase()).filter((x) => CODIGO_BOL.test(x)))].slice(0, 40);
@@ -536,17 +560,18 @@ export async function devolverDesdePanel(negocio: string, actorId: string, numer
     });
   } catch (e) {
     if (e instanceof Error && /devolucion_de_mas|devolucion_sin_cobro/.test(e.message)) return falla("Esta orden ya no tiene tanto por devolver.", "This order no longer has that much to refund.");
-    if (e instanceof Error && (e as { code?: string }).code === "23505") return { ok: true, monto: 0 };
+    if (e instanceof Error && (e as { code?: string }).code === "23505") { const y = await yaPorLlave(idem); return { ok: true, monto: y?.monto ?? 0, devolucion: y?.devolucion ?? "en_camino" }; }
     return atrapa(e);
   }
-  if (!hecho.rf) return { ok: true, monto: hecho.total };
+  if (!hecho.rf) { const y = await yaPorLlave(idem); return { ok: true, monto: y?.monto ?? hecho.total, devolucion: y?.devolucion ?? "en_camino" }; }
   pasesPronto();
-  await ejecutarDevolucion(hecho.rf);
+  // 9v · El aviso al comprador y el panel dicen lo que hizo la pasarela, no lo decidido.
+  const devolucion = await mandarDevolucion(hecho.rf);
   const { avisar } = await import("./avisos");
-  await avisar(hecho.uid, "bol_devuelto", { negocio: hecho.org, monto: dinero(hecho.total), evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
+  await avisar(hecho.uid, "bol_devuelto", { negocio: hecho.org, monto: dinero(hecho.total), evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
   for (const h of hecho.holders) await avisar(h, "bol_anulado", { codigo: "", evento: hecho.title.es, motivo: "El organizador devolvió este boleto a quien lo pagó" }, { href: "/cuenta/boletos", ref: ["tickets", numero] });
   await (await import("./espera")).ofrecer(hecho.fid).catch(() => 0);
-  return { ok: true, monto: hecho.total };
+  return { ok: true, monto: hecho.total, devolucion };
 }
 
 /* ── Cortesías (Panel › Dar cortesía, evCompDet): nombre, teléfono opcional, cuántas (1–10); el tipo de boleto del que salen. ── */

@@ -66,6 +66,9 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
   const terminar = (fid, dias = 8) => sql(`update event_dates set starts_at = now() - interval '${dias} days', doors_at = now() - interval '${dias} days' - interval '30 minutes', ends_at = now() - interval '${dias} days' + interval '3 hours', local_date = ((now() - interval '${dias} days') at time zone 'America/New_York')::date where id = ${fid}`);
   const pago = (num) => sql(`select p.status || '|' || p.amount_cents || '|' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${num}'`);
   const pi = (num) => sql(`select p.stripe_payment_intent from payments p join operations o on o.id = p.operation_id where o.number = '${num}'`);
+  // 9v · El dinero como lo escribe la app (lib/evt-comun dinero: $15 · $13.25) y el último aviso de una plantilla a una persona.
+  const din = (c) => { const x = Number(c) / 100; return '$' + (x % 1 ? x.toFixed(2) : String(x)); };
+  const avisoDe = (u, tpl, ref) => sql(`select body from notifications where user_id = '${u}' and tpl = '${tpl}'${ref ? ` and ref_id = '${ref}'` : ''} order by id desc limit 1`);
   const liq = (fid) => sql(`select status || '|' || coalesce(hold_kind, '') || '|' || net_cents || '|' || carry_cents || '|' || coalesce(transfer_id, '') from event_settlements where event_date_id = ${fid}`);
   // Lo del organizador calculado aparte (de los boletos, sin evt_liq_calc): precio − comisión de cada boleto pagado que sigue vivo.
   const netoBoletos = (fid) => Number(sql(`select coalesce(sum(price_cents - fee_cents), 0) from tickets where event_date_id = ${fid} and kind = 'paid' and status in ('valid', 'used')`));
@@ -145,8 +148,20 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     await p1.screenshot({ path: OUT + 'e6e-orden-movido-m.png', fullPage: true });
     await clic(btn(p1, 'Me quedo con la nueva fecha'));
     ok(await espera(() => sql(`select choice from ticket_choices where change_id = ${CH[0]} and operation_id = (select id from operations where number = '${OA1}')`) === 'keep'), 'C1: «Me quedo» (ticket_choices keep); sus boletos siguen');
+    // 9v · Stripe no responde al pedirla: la pantalla y el aviso dicen «va en camino» (nunca «te devolvimos»); el barrido la termina con la misma llave.
+    sql(`update sim_intents set status = 'requires_capture' where id = '${pi(OA2)}'`);
     await p2.goto(B + `/eventos/orden/${OA2}`); await clic(btn(p2, 'Devolución total'));
-    ok(await espera(() => pago(OA2) === 'refunded|1500|1500'), 'C2: «Devolución total» → $15 de vuelta (100 %, cargos incluidos)');
+    ok(await contiene(p2, 'La devolución de $15 va en camino a tu tarjeta'), 'C2: «Devolución total» con Stripe sin responder → «La devolución de $15 va en camino a tu tarjeta» (no «te devolvimos»)');
+    ok(sql(`select r.status from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${OA2}'`) === 'pending' && pago(OA2).endsWith('|1500|0'), '… la base: la devolución pendiente, nada devuelto todavía');
+    { const av = avisoDe(U2, 'evt_devolucion_total', OA2);
+      ok(av.includes('La devolución de $15 a tu tarjeta va en camino') && !/Te devolvimos|te devolvemos/.test(av), `el aviso «Te devolvemos todo» dice lo que pasó (en camino): «${av}»`); }
+    await p2.screenshot({ path: OUT + 'e6e-orden-devolucion-en-camino-m.png', fullPage: true });
+    sql(`update sim_intents set status = 'succeeded' where id = '${pi(OA2)}'`);
+    sql(`update refunds set created_at = created_at - interval '1 minute' where status = 'pending' and payment_id = (select p.id from payments p join operations o on o.id = p.operation_id where o.number = '${OA2}')`);
+    barrido();
+    ok(await espera(() => pago(OA2) === 'refunded|1500|1500'), 'C2: «Devolución total» → $15 de vuelta (100 %, cargos incluidos): el barrido la terminó');
+    await p2.goto(B + `/eventos/orden/${OA2}`);
+    ok(await contiene(p2, 'Pediste la devolución total por el cambio de fecha: $15') && await contiene(p2, 'Ya salió a tu tarjeta'), 'la orden: ya salió');
     ok(sql(`select r.initiated_by || '|' || r.status from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${OA2}'`) === 'event_moved|done'
       && sql(`select fee_waived_cents::text from ticket_refund_lines where operation_id = (select id from operations where number = '${OA2}')`) === sql(`select fee_cents::text from tickets where operation_id = (select id from operations where number = '${OA2}')`), 'la devolución es «event_moved» y la comisión de ese boleto no se cobra (fee_waived)');
     ok(sql(`select refunded_cents from sim_intents where id = '${pi(OA2)}'`) === '1500', 'el simulador devolvió exactamente $15');
@@ -253,14 +268,21 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     ok(sql(`select status || '|' || refunded_cents from event_cancellations where id = ${CX[0]}`) === `done|${OB.reduce((s, o) => s + Number(pago(o).split('|')[1]), 0)}`, 'la cancelación queda «done» con lo devuelto exacto');
     ok(pago(OB2).startsWith('captured|') && sql(`select count(*) from tickets where operation_id = (select id from operations where number = '${OB2}') and status = 'valid'`) === '1', 'la orden de la otra fecha no se tocó');
     ok(sql(`select count(distinct user_id) || '|' || count(*) || '|' || string_agg(distinct sms_status, ',') from notifications where tpl = 'evt_fecha_cancelada' and ref_id = '${CX[0]}'`) === '3|3|pruebas', 'a cada persona (3) le llega UN aviso «Se canceló una fecha» por SMS (crítico), aunque el barrido corrió varias veces');
+    // 9v · Al avisar, a los 3 les quedaba algo sin hacer (Stripe caído o la orden que el lote no tocó): «va en camino», nunca «te devolvimos … 3–5 días».
+    for (const u of [U1, U2, U3]) { const av = avisoDe(u, 'evt_fecha_cancelada', CX[0]);
+      ok(av.includes('Te devolvemos todo lo que pagaste, cargos incluidos: la devolución va en camino a tu tarjeta.') && !/Te devolvimos|3–5 días/.test(av), `el aviso dice lo que pasa con su dinero (en camino): «${av.slice(0, 160)}»`); }
     await p2.goto(B + `/eventos/orden/${OB[1]}`);
-    ok(await contiene(p2, 'Este evento fue cancelado por el organizador') && await contiene(p2, 'Se te devuelve todo') && await contiene(p2, 'El evento se canceló: te devolvemos'), 'la orden: «Este evento fue cancelado por el organizador · Se te devuelve todo…»');
+    const mB1 = pago(OB[1]).split('|')[1];
+    ok(await contiene(p2, 'Este evento fue cancelado por el organizador') && await contiene(p2, `Te devolvimos ${din(mB1)}, cargos incluidos`) && await contiene(p2, 'El evento se canceló: te devolvemos') && !(await texto(p2)).includes('Se te devuelve todo'),
+      `la orden (ya salió): «Este evento fue cancelado por el organizador · Te devolvimos ${din(mB1)}, cargos incluidos…»`);
     await p2.screenshot({ path: OUT + 'e6e-orden-cancelada-m.png', fullPage: true });
     // Todo el evento: la segunda fecha (el lote vuelve al de fábrica).
     sql(`delete from platform_config where key = 'evt_cancelar_lote'`);
     await pn.goto(B + `/panel/${NEG}/eventos?det=evt:${Bv.id}`);
     await clic(btn(pn, 'Cancelar evento')); await clic(btn(pn, 'Mal tiempo')); await clic(btn(pn, 'Sí, cancelar el evento'));
     ok(await espera(() => sql(`select status from events where id = ${Bv.id}`) === 'cancelled') && await espera(() => pago(OB2).startsWith('refunded|')), 'cancelar el evento: queda «cancelled» y la última orden se devuelve al 100 %');
+    { const cx2 = sql(`select max(id) from event_cancellations where event_id = ${Bv.id}`), av = await espera(() => !!avisoDe(U3, 'evt_cancelado', cx2)) && avisoDe(U3, 'evt_cancelado', cx2);
+      ok(av && av.includes(`Te devolvimos ${din(pago(OB2).split('|')[1])}, cargos incluidos`) && !/va en camino|Te devolvemos todo/.test(av), `C3 (su devolución salió en el acto): el aviso dice «Te devolvimos …»: «${String(av).slice(0, 160)}»`); }
     ok(await espera(() => sql(`select count(*) from queue_items where queue = 'evtcx' and subject_id = '${NEG}' and status = 'open'`) === '1'), 'Confianza: 2 cancelaciones con boletos en 90 días → UN caso «Organizadores que cancelan»');
     await p1.goto(B + `/eventos/${Bv.SLUG}`); ok(await contiene(p1, 'Evento cancelado') && await contiene(p1, 'Si compraste, te devolvemos todo'), 'el enlace del evento cancelado: «Evento cancelado · Si compraste, te devolvemos todo…»');
     await p1.screenshot({ path: OUT + 'e6e-ficha-cancelada-m.png', fullPage: true });

@@ -653,8 +653,10 @@ export async function ordenBoletos(userId: string, numero: string, es: boolean):
   const [B, V, D, A] = await Promise.all([
     db().query<FilaB>(`${SEL_B} where t.operation_id = $1::bigint and t.holder_user_id = $2 order by t.table_id nulls first, t.id`, [o.id, userId]),
     ventanas(o.fid),
-    db().query<{ monto: number; estado: string; por: string; at: string }>(`select r.amount_cents as monto, r.status as estado, r.initiated_by as por, to_char(r.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
-                                                                             from refunds r join payments p on p.id = r.payment_id where p.operation_id = $1::bigint order by r.id`, [o.id]),
+    // 9v · Una fallida que el equipo resolvió a mano (el dinero salió por fuera) cuenta como hecha; una que se volvió a hacer (retry_of) ya la cuenta la nueva.
+    db().query<{ monto: number; estado: string; por: string; at: string }>(`select r.amount_cents as monto, case when r.status = 'failed' and r.manual_at is not null then 'done' else r.status end as estado, r.initiated_by as por, to_char(r.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
+                                                                             from refunds r join payments p on p.id = r.payment_id where p.operation_id = $1::bigint
+                                                                              and not (r.status = 'failed' and exists (select 1 from refunds y where y.retry_of = r.id)) order by r.id`, [o.id]),
     db().query<{ n: string }>(`select number as n from help_requests where operation_id = $1::bigint and user_id = $2`, [o.id, userId]),
   ]);
   return {

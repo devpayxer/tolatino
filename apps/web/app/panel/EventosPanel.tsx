@@ -265,7 +265,9 @@ function devolverBloques(c: Ctx): Bloque[] {
       sel: x.estado === "valid" ? { on: D.sel.includes(x.code), onClick: () => c.setUi({ evDev: { ...D, sel: D.sel.includes(x.code) ? D.sel.filter((y) => y !== x.code) : [...D.sel, x.code] } }) } : undefined })) },
     { type: "note", tone: "warn", icon: "dollar", t: E2(`Le devolvemos ${dinero(total)} a su tarjeta (3–5 días hábiles) y esos boletos dejan de entrar. La comisión de To'Latino de esos boletos no se cobra. Si la orden queda sin boletos, también vuelven sus extras.`, `We refund ${dinero(total)} to their card (3–5 business days) and those tickets stop working. To'Latino's fee on those tickets is not charged. If the order has no tickets left, its extras are refunded too.`) },
     { type: "acts", items: [{ l: total > 0 ? E2(`Devolver ${dinero(total)}`, `Refund ${dinero(total)}`) : E2("Elige qué boletos", "Pick which tickets"), v: "danger", icon: "check", off: c.pending || !D.sel.length,
-        onClick: () => c.run(() => evtDevolver(c.d.id, D.num, D.sel, D.k), E2("Devuelto. Le avisamos y los boletos ya no entran.", "Refunded. We let them know and the tickets no longer get in."), () => c.setUi({ evDev: null })) },
+        onClick: () => c.run(() => evtDevolver(c.d.id, D.num, D.sel, D.k), (r: { monto?: number; devolucion?: string }) => r?.devolucion === "en_camino" ? E2(`Los boletos ya no entran. La devolución de ${dinero(r.monto ?? 0)} va en camino: se manda sola. Le avisamos.`, `The tickets no longer get in. The ${dinero(r.monto ?? 0)} refund is on its way: it is sent automatically. We let them know.`)
+          : r?.devolucion === "fallida" ? E2(`Los boletos ya no entran, pero la devolución de ${dinero(r.monto ?? 0)} no salió: el equipo de To'Latino ya tiene el aviso.`, `The tickets no longer get in, but the ${dinero(r.monto ?? 0)} refund did not go through: the To'Latino team already has the alert.`)
+          : E2("Devuelto. Le avisamos y los boletos ya no entran.", "Refunded. We let them know and the tickets no longer get in."), () => c.setUi({ evDev: null })) },
       { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => c.setUi({ evDev: null }) }] },
   ];
 }

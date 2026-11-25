@@ -1,7 +1,7 @@
 import "server-only";
 import { cfgSql, valores } from "./config";
 import type { Pool, PoolClient } from "pg";
-import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
 import { etiquetaGrupo, fechaCorta, horaInsc, rubroInsc, sumarDiasI, usdI, type Bi, type KindInsc, type RubroInsc } from "./inscripciones-comun";
 import { esCuidado, kindNinosDe, type KindNinos } from "./ninos-comun";
@@ -736,6 +736,8 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
 
 /* ── Vistas ── */
 export type InscVista = {
+  // 9v · Las devoluciones que no están hechas: en camino o que no salieron (cobros › devolucionesDe).
+  devolucion: { camino: number; fallida: number };
   numero: string; estado: string; detalle: string | null; rubro: RubroInsc; k: KindInsc; svc: Bi; grupo: Bi | null; inicio: string | null; fin: string | null; cuando: Bi;
   para: Para; nivel: Nivel | null; equipo: string | null; precio: number; mat: number; matLocal: number; pago: string | null; devuelto: number; plan: { cal: { n: number; cents: number; due: string }[]; pagadas: number[]; texto: Bi } | null;
   cert: Bi | null; oficial: boolean; certDado: boolean; contrato: number; salir: number; g1: boolean; vence: string | null; alt: { label: Bi; inicio: string } | null; perdio: boolean;
@@ -768,6 +770,7 @@ async function vista(o: Op, cliente: boolean): Promise<InscVista> {
     fin: (o.det.ends_on as string) ?? null, cuando: { es: cuandoInsc(o.det, true).replace(/^ · /, ""), en: cuandoInsc(o.det, false).replace(/^ · /, "") },
     para: o.det.for as Para, nivel: (o.det.level as Nivel) ?? null, equipo: (o.det.team_name as string) ?? null, precio: Number(o.det.price_cents ?? 0), mat: o.mat,
     matLocal: o.mat ? 0 : Number(o.det.mat_cents ?? 0), pago: o.pay, devuelto: o.refunded ?? 0,
+    devolucion: await devolucionesDe(o.id),
     plan: t ? { cal: t.schedule, pagadas, texto: t.text } : null, cert: (o.det.cert as Bi) ?? null, oficial: !!o.det.oficial, certDado: !!o.det.cert_given,
     contrato: Number(o.det.contract_m ?? 0), salir: Number(o.det.cancel_fee_cents ?? 0), g1: !!o.det.g1, vence: x.vence, alt: alt ? { label: alt.label, inicio: alt.starts_on } : null,
     perdio: !!o.det.perdio, cancelo: x.cxr, motivoNeg: x.mn, bajaPedida: o.detail === "cancel_req" ? o.cxReq : null,

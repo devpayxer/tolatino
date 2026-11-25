@@ -22,6 +22,9 @@ let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; c
 const primero = (s) => s.split('\n').find((l) => /^\d+$/.test(l));
 const uno = (q) => primero(sql(q));
 const RUN = crypto.randomBytes(4).toString('hex'), TAG = `[d9v ${RUN}]`;
+// 9v (segunda tanda) · El dinero como lo escribe la app (lib/evt-comun dinero: $15 · $13.25) y el último aviso de una plantilla sobre una orden.
+const din = (c) => { const x = Number(c) / 100; return '$' + (x % 1 ? x.toFixed(2) : String(x)); };
+const avisoDe = (op, tpl, ref) => sql(`select n.body from notifications n join operations o on o.user_id = n.user_id where o.id = ${op} and n.tpl = '${tpl}' and n.ref_id = '${ref}' order by n.id desc limit 1`);
 const telPropio = () => { for (let i = 0; i < 300; i++) { const t = '570555' + String(crypto.randomInt(10000)).padStart(4, '0'); if (!require('../lib/telefonos-fijos.cjs').esFijo(t) && sql(`select count(*) from users where phone = '+1${t}'`) === '0') return t; } throw new Error('no hay un teléfono 555 libre'); };
 const barrido = async () => { const r = await fetch(B + '/api/interno/barrido', { method: 'POST', headers: { 'x-barrido-token': ENT.TOK } }); return r.json(); };
 const webhook = async (ev) => {
@@ -202,6 +205,10 @@ const accion = async (p, nombre, args) => {
       ok(sql(`select count(*) from ticket_refund_lines where refund_id = ${rf} and line_id is not null`) === '1' && sql(`select amount_cents + fee_kept_cents from ticket_refund_lines where refund_id = ${rf} and line_id is not null`) === '3500', 'la devolución lleva su línea del extra (lo devuelto más su parte del cargo = $35.00)');
       ok(sql(`select status from refunds where id = ${rf}`) === 'done' && sql(`select count(*) from sim_refunds where id = (select stripe_refund_id from refunds where id = ${rf}) and amount_cents = ${r.j.monto}`) === '1', 'hecha por la pasarela, por ese monto');
       ok(sql(`select count(*) from tickets where operation_id = ${op} and status = 'refunded'`) === String(codes.length), 'los boletos quedan devueltos');
+      // 9v · Salió: la respuesta y el aviso dicen «Te devolvimos», con lo que la pasarela devolvió.
+      ok(r.j.devolucion === 'hecha', `la respuesta dice lo que hizo la pasarela: ${r.j.devolucion}`);
+      const av = avisoDe(op, 'bol_cancelado', OA);
+      ok(av.includes(`Te devolvimos ${din(r.j.monto)} a tu tarjeta`) && !/va en camino|Te devolvemos/.test(av), `el aviso «Cancelaste tus boletos» dice lo que pasó: «${av}»`);
     }
 
     // ── 9 · El organizador cancela: disputa abierta y una devolución que nunca llegó ──
@@ -218,6 +225,15 @@ const accion = async (p, nombre, args) => {
       sql(`update sim_intents set refunded_cents = captured_cents where id = '${piS}'`);
       const cd = await ctx(), pd = await cd.newPage();
       await entrarComo(pd, DUENO.tel); await pd.goto(B + `/panel/${BIZ}`);
+      // 9v · «Devolver» del panel cuando Stripe no acepta: el panel y el aviso dicen «va en camino», nunca «Devuelto» / «te devolvimos».
+      const OV = await compra(p2, PM2), opV = sql(`select id from operations where number = '${OV}'`), [, piV] = pago(OV);
+      sql(`update sim_intents set refunded_cents = captured_cents where id = '${piV}'`);
+      const codV = sql(`select string_agg(code, ',') from tickets where operation_id = ${opV}`).split(',');
+      const dv = await accion(pd, 'evtDevolver', [BIZ, OV, codV, crypto.randomUUID()]);
+      const rfV = sql(`select r.status || '|' || r.last_error from refunds r join payments p on p.id = r.payment_id where p.operation_id = ${opV}`);
+      ok(dv.j?.ok && dv.j.devolucion === 'en_camino' && rfV === 'pending|amount_too_large', `«Devolver» con Stripe diciendo que no: la respuesta dice en camino (${dv.j?.devolucion}) y la devolución sigue pendiente (${rfV})`);
+      { const av = avisoDe(opV, 'bol_devuelto', OV);
+        ok(av.includes(`La devolución de ${din(dv.j.monto)} a tu tarjeta va en camino`) && !/Te devolvimos|te devolvió/.test(av), `el aviso «Te devolvieron tus boletos» dice lo que pasó (en camino): «${av}»`); }
       const r = await accion(pd, 'evtCancelar', [BIZ, E1.id, 'event', null, 'clima', 'Tormenta']);
       ok(r.j?.ok, 'el dueño cancela el evento');
       await cd.close();
@@ -226,6 +242,14 @@ const accion = async (p, nombre, args) => {
       ok(sql(`select count(*) from refunds r join payments p on p.id = r.payment_id where p.operation_id = ${opD}`) === '0' && sql(`select count(*) from ticket_log where operation_id = ${opD} and kind = 'anulado'`) === '1', '… sin ninguna devolución y con su rastro «anulado»');
       const rf = sql(`select id from refunds where payment_id = ${pidS}`);
       ok(rf && sql(`select status || '|' || last_error || '|' || (gateway_ref is not null) from refunds where id = ${rf}`) === 'pending|amount_too_large|true', 'la de la segunda: Stripe dijo que no, sigue pendiente (anotada con su dato)');
+      // 9v · El aviso del evento cancelado dice lo que pasa con el dinero de CADA quien pagó (antes: «Te devolvemos todo» a todos).
+      const cx0 = sql(`select id from event_cancellations where event_id = ${E1.id}`);
+      { const aD = avisoDe(opD, 'evt_cancelado', cx0), aS = avisoDe(opS, 'evt_cancelado', cx0);
+        ok(aD.includes('Tu cobro está en disputa con tu banco: lo que vuelve lo decide esa disputa') && !/Te devolvemos|Te devolvimos/.test(aD), `la orden en disputa: el aviso no promete devolución, dice que lo decide la disputa: «${aD.slice(0, 200)}»`);
+        ok(aS.includes('la devolución va en camino a tu tarjeta') && !/Te devolvimos|3–5 días/.test(aS), `la que Stripe no aceptó: «va en camino», nunca «te devolvimos … 3–5 días»: «${aS.slice(0, 200)}»`); }
+      await p3.goto(B + `/eventos/orden/${OD}`);
+      ok(await (async () => { for (let i = 0; i < 40; i++) { const t = (await p3.innerText('body')).replace(/\s+/g, ' '); if (t.includes('Tu cobro está en disputa con tu banco')) return !/Se te devuelve todo|Te devolvemos/.test(t); await new Promise((z) => setTimeout(z, 250)); } return false; })(), 'la orden en disputa: «Tu cobro está en disputa con tu banco…» (no «Se te devuelve todo»)');
+      await p3.screenshot({ path: ENT.S + '/cap/d9v-orden-disputa-m.png', fullPage: true });
       const cx = sql(`select id from event_cancellations where event_id = ${E1.id}`), antes = Number(sql(`select refunded_cents from event_cancellations where id = ${cx}`)), monto = Number(sql(`select amount_cents from refunds where id = ${rf}`));
       // Un día después sin llegar a Stripe, y mientras tanto la persona abrió una disputa por ese cobro (el cobro cambió: no se vuelve a mandar).
       const DP2 = `dp_9v2_${RUN}`;
@@ -237,6 +261,12 @@ const accion = async (p, nombre, args) => {
       ok(sql(`select count(*) from operation_events where operation_id = ${opS} and kind = 'refund_failed'`) === '1', 'la orden lo dice (refund_failed)');
       ok(sql(`select count(*) from money_alerts where kind = 'refund_failed' and subject_id = '${rf}'`) === '1' && sql(`select count(*) from sim_refunds where payment_intent = '${piS}'`) === '0', 'UNA alerta al equipo de dinero y ninguna devolución en la pasarela');
       ok(sql(`select count(*) from tickets where operation_id = ${opS} and status = 'refunded'`) === '1', 'el boleto sigue devuelto (no entra): lo decide el equipo con la persona');
+      // 9v · La orden ya no dice «Se te devuelve todo» ni «Ya salió»: dice que no salió (y que está en disputa).
+      await p2.goto(B + `/eventos/orden/${OS}`);
+      { let t = ''; for (let i = 0; i < 40 && !t.includes('no salió'); i++) { t = (await p2.innerText('body')).replace(/\s+/g, ' '); if (!t.includes('no salió')) await new Promise((z) => setTimeout(z, 250)); }
+        ok(t.includes(`La devolución de ${din(monto)} no salió: el equipo de To'Latino ya tiene el aviso para resolverlo contigo.`) && t.includes('Tu cobro está en disputa con tu banco') && !/Se te devuelve todo|Ya salió a tu tarjeta|Va en camino a tu tarjeta|te devolvemos/.test(t),
+          `la orden con la devolución fallida: «no salió» (y la disputa), nunca «Se te devuelve todo» ni «Ya salió»: «${t.slice(t.indexOf('Este evento'), t.indexOf('Este evento') + 260)}» · prohibido hallado: ${(t.match(/.{0,60}(Se te devuelve todo|Ya salió a tu tarjeta|Va en camino a tu tarjeta|te devolvemos).{0,60}/) || ['ninguno'])[0]}`); }
+      await p2.screenshot({ path: ENT.S + '/cap/d9v-orden-fallida-m.png', fullPage: true });
       await barrido();
       ok(sql(`select count(*) from money_alerts where kind = 'refund_failed' and subject_id = '${rf}'`) === '1' && sql(`select count(*) from operation_events where operation_id = ${opS} and kind = 'refund_failed'`) === '1', 'otro barrido no cambia nada');
     }

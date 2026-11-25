@@ -141,7 +141,7 @@ export async function evtBoletosOrden(negocio: string, numero: string) {
   if (!a) return [];
   return (await import("@/lib/boletos-despues")).boletosOrdenPanel(a.negocio.id, String(numero));
 }
-export async function evtDevolver(negocio: string, numero: string, codes: string[], clave: string): Promise<Res & { monto?: number }> {
+export async function evtDevolver(negocio: string, numero: string, codes: string[], clave: string): Promise<Res & { monto?: number; devolucion?: "hecha" | "en_camino" | "fallida" }> {
   const a = await entrar(negocio);
   if (!a) return SIN_ACCESO;
   // Devolver dinero pide la parte de Cobros (el dueño siempre), como devolver un pedido.
@@ -149,7 +149,8 @@ export async function evtDevolver(negocio: string, numero: string, codes: string
   const r = await (await import("@/lib/boletos-despues")).devolverDesdePanel(a.negocio.id, a.yo.id, String(numero), Array.isArray(codes) ? codes : [], String(clave),
     (c, g) => auditar(c, a, "eventos.devolver", { orden: String(numero), boletos: (Array.isArray(codes) ? codes : []).length, monto: (g.monto / 100).toFixed(2) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
-  return { ok: true, monto: r.monto };
+  // 9v · Lo que hizo la pasarela (hecha, en camino o fallida): el panel no dice «Devuelto» si no salió.
+  return { ok: true, monto: r.monto, devolucion: r.devolucion };
 }
 export async function evtAvisarLista(negocio: string, eventoId: string): Promise<Res & { n?: number }> {
   const a = await entrar(negocio);

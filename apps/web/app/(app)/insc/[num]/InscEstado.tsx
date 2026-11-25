@@ -33,7 +33,11 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
   const B = x.negocio.nombre, V = VOC[x.rubro], matL = nm(V.mat), memb = x.k === "mes" || x.k === "semana", curso = x.k === "curso";
   const cuando = nm(x.cuando) || E2("Empiezas cuando te confirmen", "You start once confirmed");
   const liberado = x.pago === "released", devuelto = x.devuelto;
-  const devT = x.mat ? (liberado ? E2(`Se liberó tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `Your ${usdI(x.mat)} ${matL.toLowerCase()} was released.`) : devuelto ? E2(`Te devolvimos ${usdI(devuelto)} · 3 a 5 días.`, `We refunded ${usdI(devuelto)} · 3 to 5 days.`) : x.pago === "held" ? E2(`Se libera tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `Your ${usdI(x.mat)} ${matL.toLowerCase()} is released.`) : "") : E2("No se cobró nada.", "Nothing was charged.");
+  // 9v · Lo que no está hecho se dice como está (cobros › devolucionesDe): en camino o que no salió; nunca «te devolvemos todo» sin mirar.
+  const pendT = [x.devolucion.camino ? E2(`Te devolvemos ${usdI(x.devolucion.camino)}: va en camino a tu tarjeta.`, `We are refunding ${usdI(x.devolucion.camino)}: it is on its way to your card.`) : "",
+    x.devolucion.fallida ? E2(`La devolución de ${usdI(x.devolucion.fallida)} no salió: escríbenos en Soporte y lo resolvemos.`, `The ${usdI(x.devolucion.fallida)} refund did not go through: write to us in Support and we will sort it out.`) : ""].filter(Boolean).join(" ");
+  const devT0 = x.mat ? (liberado ? E2(`Se liberó tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `Your ${usdI(x.mat)} ${matL.toLowerCase()} was released.`) : devuelto ? E2(`Te devolvimos ${usdI(devuelto)} · 3 a 5 días.`, `We refunded ${usdI(devuelto)} · 3 to 5 days.`) : x.pago === "held" ? E2(`Se libera tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `Your ${usdI(x.mat)} ${matL.toLowerCase()} is released.`) : "") : E2("No se cobró nada.", "Nothing was charged.");
+  const devT = [devT0, pendT].filter(Boolean).join(" "), cobrado = x.pago === "captured" || x.pago === "partially_refunded";
   const certL = x.cert ? (x.oficial ? E2(`Certificado oficial: ${nm(x.cert)}`, `Official certificate: ${nm(x.cert)}`) : E2(`Constancia de la escuela: ${nm(x.cert)}`, `School certificate: ${nm(x.cert)}`)) : "";
   const G = "var(--tl-open-text)", grey = "rgba(11,14,18,.6)";
   const H: Record<string, [string, string, string, string, string, string]> = {
@@ -49,7 +53,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
     expired: ["clock", "bg-ink/[.06]", grey, E2("SIN RESPUESTA", "NO REPLY"), E2("No contestaron a tiempo", "No reply in time"), devT],
     cancelled: ["close", "bg-ink/[.06]", grey, E2("CANCELADA", "CANCELLED"),
       x.cancelo === "grupo" ? E2(`${B} canceló el grupo`, `${B} cancelled the group`) : x.cancelo === "negocio" ? E2(`${B} canceló tu inscripción`, `${B} cancelled your enrollment`) : x.cancelo === "baja" ? E2("Tu membresía quedó cancelada", "Your membership is cancelled") : E2("La cancelaste tú", "You cancelled it"),
-      x.motivoNeg ? `«${x.motivoNeg}». ${devT || E2("Te devolvemos todo.", "Full refund.")}` : x.perdio ? E2(`La ${matL.toLowerCase()} de ${usdI(x.mat)} se quedó con ${B}: ya había empezado.`, `${B} kept the ${usdI(x.mat)} ${matL.toLowerCase()}: it had already started.`) : x.cancelo === "baja" ? E2("Guarda este aviso como constancia.", "Keep this as proof.") : devT],
+      x.motivoNeg ? `«${x.motivoNeg}». ${devT || (cobrado ? E2("La devolución todavía no sale: escríbenos en Soporte y lo resolvemos.", "The refund has not gone out yet: write to us in Support and we will sort it out.") : E2("No se cobró nada.", "Nothing was charged."))}` : x.perdio ? E2(`La ${matL.toLowerCase()} de ${usdI(x.mat)} se quedó con ${B}: ya había empezado.`, `${B} kept the ${usdI(x.mat)} ${matL.toLowerCase()}: it had already started.`) : x.cancelo === "baja" ? E2("Guarda este aviso como constancia.", "Keep this as proof.") : devT],
     done: ["check", "bg-signal/[.18]", G, E2("TERMINADA", "FINISHED"), x.certDado ? E2("¡Felicidades!", "Congratulations!") : E2("Gracias por usar To’Latino", "Thanks for using To’Latino"), x.certDado ? certL : E2("Tu reseña ayuda a otros a elegir.", "Your review helps others choose.")],
   };
   const h = H[x.estado] ?? H.pending!;

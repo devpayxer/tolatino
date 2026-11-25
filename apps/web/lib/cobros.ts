@@ -264,6 +264,16 @@ export async function fallarDevolucionPago(r: { id: string; amt: number; idem: s
   return !!f;
 }
 
+/* 9v (25 nov) · Lo que de verdad pasa con las devoluciones de una operación, para que su pantalla no diga «Te devolvemos todo» sin mirar: en camino (pendiente:
+   Stripe no contestó y el barrido la sigue mandando con la misma llave) y fallida (Stripe dijo que no y nadie la volvió a hacer ni la resolvió a mano). Lo
+   hecho ya lo dice refunded_cents (devueltoDelLibro). Guardián devueltoSoloSiSalio. */
+export async function devolucionesDe(opId: string): Promise<{ camino: number; fallida: number }> {
+  return (await db().query<{ camino: number; fallida: number }>(
+    `select coalesce(sum(r.amount_cents) filter (where r.status = 'pending'), 0)::int as camino,
+            coalesce(sum(r.amount_cents) filter (where r.status = 'failed' and r.manual_at is null and not exists (select 1 from refunds y where y.retry_of = r.id)), 0)::int as fallida
+       from refunds r join payments p on p.id = r.payment_id where p.operation_id = $1::bigint`, [opId])).rows[0] ?? { camino: 0, fallida: 0 };
+}
+
 /* Lo devuelto de un cobro sale del libro (la suma de las devoluciones hechas), nunca de sumar otra vez: si el webhook charge.refunded ya lo había
    contado (greatest), no se cuenta dos veces. La usan el cierre de aquí y el de los boletos (lib/boletos-despues.ts). */
 export async function devueltoDelLibro(c: Q, pid: string): Promise<{ st: string; op: string }> {

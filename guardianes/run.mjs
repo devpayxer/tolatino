@@ -17644,7 +17644,15 @@ const guardianes = {
      la devolución (queda fallida, no se reintenta sola y la tiene el equipo de dinero): el dueño leía «te devolvemos» (din9v2). Regla: (1) en lib/patrocinio.ts
      y lib/patrocinio-evento.ts cada «devuelto: X» de un resultado es 0 o una variable que guardó lo que devolvió devolverPatrocinio (= await
      devolverPatrocinio(…), lo que de verdad salió); nunca refund_cents ni lo decidido; (2) las dos acciones del panel pasan devolucion y aDevolver, y las
-     dos pantallas dicen la fallida y la que va en camino. Al revés: alrevesDevueltoSoloSiSalio. */
+     dos pantallas dicen la fallida y la que va en camino. Al revés: alrevesDevueltoSoloSiSalio.
+     Ampliado (25 nov, segunda tanda, la misma clase en boletos y eventos): cancelar mis boletos, «Devolver» del panel y «Devolución total» tiraban lo que
+     devolvió ejecutarDevolucion y decían «Te devolvemos $X … 3–5 días» (pantalla y aviso) con lo decidido; el aviso del evento cancelado decía «Te devolvemos
+     todo» a cada orden pagada, también a la que está en disputa o no tiene nada que devolver (anotarDevolucionTotal no le devuelve nada); la orden contaba
+     una devolución fallida como «Ya salió»; viaje, noche, inscripción y fiesta decían «Te devolvemos todo» por defecto. Regla: (3) ejecutarDevolucion solo
+     en mandarDevolucion, el barrido y el lote de la cancelación; (4) los avisos bol_cancelado, bol_devuelto y evt_devolucion_total llevan
+     dinero: dineroDevolucion(devolucion, …) de const devolucion = await mandarDevolucion(hecho.rf) y sus plantillas usan {dinero} (0219); (5) las
+     respuestas llevan devolucion; (6) el evento cancelado dice dineroCancelacion (de la base: hecha, en camino, fallida, disputa, falta); (7) las pantallas
+     miran devolucion y la orden no cuenta la fallida; (8) las cuatro pantallas de reservas dicen x.devolucion (devolucionesDe). */
   devueltoSoloSiSalio() {
     const G = "devueltoSoloSiSalio";
     let vistos = 0;
@@ -17671,6 +17679,64 @@ const guardianes = {
       if (!existsSync(U)) { falla(G, U, 0, "falta la pantalla"); continue; }
       const u = sinComent(U);
       if (!/r\?\.devolucion === "fallida" \? E2\(/.test(u) || !/r\?\.devolucion === "en_camino" \? E2\(/.test(u)) falla(G, U, 0, "«Cancelar reserva» no dice cuando la devolución no salió (fallida) o va en camino: diría «Patrocinio terminado» sin el dinero");
+    }
+    // 25 nov (9v, segunda tanda) · Boletos y eventos: lo mismo en cancelar mis boletos, «Devolver» del panel, «Devolución total» y el evento cancelado.
+    const BD = "apps/web/lib/boletos-despues.ts", EC = "apps/web/lib/evt-cambios.ts";
+    const bd = existsSync(BD) ? sinComent(BD) : "", ec = existsSync(EC) ? sinComent(EC) : "";
+    if (!bd || !ec) falla(G, !bd ? BD : EC, 0, "falta el archivo (boletos y cambios del evento)");
+    else {
+      // (3) ejecutarDevolucion solo donde se lee lo que pasó: mandarDevolucion (hecha o lo que dice la base), el barrido y el lote de la cancelación (cuyo aviso
+      // lee la base: dineroCancelacion). Una llamada que tira el resultado y después avisa «te devolvemos» es el fallo.
+      const PERMITIDAS = [/return \(await ejecutarDevolucion\(rf\)\) \? "hecha" : estadoDevolucion\(rf\);/, /if \(await ejecutarDevolucion\(r\.id\)\) n\+\+;/, /if \(r\.rf\) await ejecutarDevolucion\(r\.rf\)\.catch\(\(\) => false\);/];
+      for (const [S, t] of [[BD, bd], [EC, ec]]) t.split("\n").forEach((l, i) => {
+        if (/await ejecutarDevolucion\(/.test(l) && !PERMITIDAS.some((re) => re.test(l))) falla(G, S, i + 1, "ejecutarDevolucion(…) con el resultado tirado: lo que se dice después sale de lo decidido. Usa const devolucion = await mandarDevolucion(rf) (hecha · en camino · fallida)");
+      });
+      if (!/export async function mandarDevolucion\(rf: string\): Promise<EstadoDev> \{\n\s*return \(await ejecutarDevolucion\(rf\)\) \? "hecha" : estadoDevolucion\(rf\);/.test(bd)) falla(G, BD, 0, "mandarDevolucion ya no dice «hecha» solo cuando la pasarela la hizo (y si no, lo que dice la base)");
+      if (!/st === "done" \? "hecha" : st === "failed" \? "fallida" : "en_camino"/.test(bd)) falla(G, BD, 0, "estadoDevolucion ya no lee el estado de la devolución en la base (done → hecha · failed → fallida · lo demás en camino)");
+      // (4) Los avisos de devolución de boletos llevan {dinero} con lo que pasó (dineroDevolucion de la devolucion que se mandó), y sus plantillas lo usan (0219).
+      let avisos = 0;
+      for (const [S, t] of [[BD, bd], [EC, ec]]) t.split("\n").forEach((l, i) => {
+        const m = /avisar\([^,]+, "(bol_cancelado|bol_devuelto|evt_devolucion_total)"/.exec(l);
+        if (!m) return;
+        avisos++;
+        if (!/dinero: dineroDevolucion\(devolucion, hecho\.total\)/.test(l)) falla(G, S, i + 1, `el aviso «${m[1]}» no lleva {dinero} con lo que pasó (dineroDevolucion(devolucion, …)): diría «te devolvemos» con lo decidido`);
+        const antes = t.split("\n").slice(Math.max(0, i - 6), i).join("\n");
+        if (!/const devolucion = await mandarDevolucion\(hecho\.rf\);/.test(antes)) falla(G, S, i + 1, `el aviso «${m[1]}» no sale de const devolucion = await mandarDevolucion(hecho.rf) justo antes`);
+      });
+      if (avisos < 3) falla(G, BD, 0, `esperaba los 3 avisos de devolución de boletos (bol_cancelado, bol_devuelto, evt_devolucion_total); hallé ${avisos}`);
+      const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+      for (const k of ["bol_cancelado", "bol_devuelto", "evt_devolucion_total"]) if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó) en español e inglés: seguiría diciendo «te devolvemos {monto}»`);
+      // (5) Las respuestas a la pantalla llevan lo que pasó: todo «return { ok: true, monto:» de boletos-despues dice devolucion; elegirCambio también.
+      bd.split("\n").forEach((l, i) => { if (/return \{ ok: true, monto:/.test(l) && !/devolucion/.test(l)) falla(G, BD, i + 1, "una respuesta con monto sin devolucion: la pantalla no sabe si salió y diría «te devolvemos»"); });
+      if (!/return \{ ok: true, monto: hecho\.total, devolucion \};/.test(ec)) falla(G, EC, 0, "«Devolución total» (elegirCambio) no responde con lo que pasó (devolucion)");
+      // (6) El evento cancelado: el aviso a quien pagó y su orden dicen lo que pasa con SU dinero (dineroCancelacion, de la base), nunca «te devolvemos todo» a todos.
+      if (!/const dinero: Bi = num && d \? dineroCancelacion\(d\)/.test(ec)) falla(G, EC, 0, "el aviso del evento cancelado no sale de dineroCancelacion (lo que de verdad pasa con el dinero de cada quien pagó)");
+      if (/Te devolvemos todo lo que pagaste, cargos incluidos, en 3–5 días hábiles/.test(ec)) falla(G, EC, 0, "el aviso del evento cancelado vuelve a prometer «Te devolvemos todo» a todos (también a quien está en disputa o no tiene nada que devolver)");
+      if (!/dinero: dev\?\.n \? dineroCancelacion\(dev\)/.test(ec)) falla(G, EC, 0, "la orden de un evento cancelado (cambioOrden) no dice lo que pasa con su dinero (dineroCancelacion)");
+      for (const k of ["DEV_CX(\"r.status = 'pending'\")", "DEV_CX(FALLIDA_ABIERTA)", "coalesce(bool_or(${DISPUTA}), false) as disputa", "not ${DISPUTA} and exists (select 1 from tickets t where t.operation_id = o.id and t.kind = 'paid' and t.status in ('valid', 'used'))"]) if (!ec.includes(k)) falla(G, EC, 0, `DINERO_CX ya no mira ${k}: el aviso del evento cancelado no sabría si va en camino, no salió, está en disputa o falta`);
+    }
+    // (7) Las pantallas del comprador y del panel: dicen la fallida y la que va en camino; ninguna «te devolvemos» fijo con lo decidido.
+    const PANT = [["apps/web/app/(app)/eventos/Despues.tsx", /r\.devolucion === "hecha" \? E2\(/, /Te devolvemos \$\{dinero\(r\.monto\)\}/],
+      ["apps/web/app/(app)/eventos/orden/[num]/Orden.tsx", /r\.devolucion === "hecha" \? E2\(/, /te devolvemos \$\{dinero\(r\.monto\)\} completo|Se te devuelve todo/],
+      ["apps/web/app/panel/EventosPanel.tsx", /r\?\.devolucion === "en_camino" \? E2\(/, /evtDevolver\([^)]*\), E2\("Devuelto\./]];
+    for (const [U, si, nunca] of PANT) {
+      if (!existsSync(U)) { falla(G, U, 0, "falta la pantalla"); continue; }
+      const u = sinComent(U);
+      if (!si.test(u)) falla(G, U, 0, "la pantalla no mira lo que pasó con la devolución (devolucion: hecha · en camino · fallida)");
+      if (nunca.test(u)) falla(G, U, 0, "la pantalla vuelve a decir «te devolvemos / devuelto» con lo decidido");
+    }
+    { const O = "apps/web/app/(app)/eventos/orden/[num]/Orden.tsx", o = existsSync(O) ? sinComent(O) : "";
+      if (!/vivas = o\.devoluciones\.filter\(\(d\) => d\.estado !== "failed"\)/.test(o) || !/fallidas > 0 && /.test(o)) falla(G, O, 0, "la orden cuenta una devolución fallida como devuelta («Ya salió a tu tarjeta») o no dice que no salió");
+      if (!/cambio\.cancelada\.dinero\.es/.test(o)) falla(G, O, 0, "la orden de un evento cancelado no dice lo que pasa con su dinero (cambio.cancelada.dinero, del servidor)");
+      if (!/const plazos = cancelada \|\| ev\.pasado \|\| cambio\?\.cancelada \? null/.test(o)) falla(G, O, 0, "la orden de un evento ya cancelado vuelve a mostrar la política «Si el evento se cancela, te devolvemos todo»"); }
+    // (8) Viaje, noche, inscripción y fiesta: lo que no está hecho se dice (en camino / no salió), de devolucionesDe; nunca «Te devolvemos todo» por defecto.
+    for (const [U, L] of [["apps/web/app/(app)/viaje/[num]/ViajeEstado.tsx", "apps/web/lib/viajes.ts"], ["apps/web/app/(app)/noche/[num]/NocheEstado.tsx", "apps/web/lib/noche-reservas.ts"],
+      ["apps/web/app/(app)/insc/[num]/InscEstado.tsx", "apps/web/lib/inscripciones.ts"], ["apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx", "apps/web/lib/fiestas-reservas.ts"]]) {
+      if (!existsSync(U) || !existsSync(L)) { falla(G, U, 0, "falta la pantalla o su vista"); continue; }
+      const u = sinComent(U);
+      if (/devT \|\| E2\("Te devolvemos/.test(u)) falla(G, U, 0, "«Te devolvemos todo» por defecto cuando no hay nada devuelto: lo dice sin mirar si va en camino, no salió o no se cobró");
+      if (!/x\.devolucion\.camino \? E2\(/.test(u) || !/x\.devolucion\.fallida \? E2\(/.test(u)) falla(G, U, 0, "la pantalla no dice la devolución en camino y la que no salió (x.devolucion)");
+      if (!/devolucion: await devolucionesDe\(o\.id\)/.test(sinComent(L))) falla(G, L, 0, "la vista no lee las devoluciones que no están hechas (devolucionesDe)");
     }
   },
 

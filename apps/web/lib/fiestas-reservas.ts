@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto, type Ctx } from "./citas";
-import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
 import { diaFiesta, EVT, sumarDias, type Bi, type SvcFiesta } from "./fiestas-comun";
@@ -458,6 +458,8 @@ export async function barrerFiestas(f: { negocio?: string; userId?: string; nume
 
 /* ── La fiesta del cliente (APP-NEG-FIESTA-CITA) ── */
 export type FiestaVista = {
+  // 9v · Las devoluciones que no están hechas: en camino o que no salieron (cobros › devolucionesDe).
+  devolucion: { camino: number; fallida: number };
   numero: string; status: string; detalle: string | null; negocio: { id: string; nombre: string; telefono: string | null; foto: string | null; direccion: string | null };
   svc: Bi; svcId: string; k: string; visita: boolean; ymd: string; m: number; dur: number; e: string | null; g: number | null; qty: number; horas: number | null; donde: { k: string; t: string; mi: number | null } | null;
   tot: number; dep: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null }; cancelDias: number; diasFaltan: number; pasada: boolean;
@@ -498,6 +500,7 @@ export async function fiestaVista(userId: string, numero: string): Promise<Fiest
     tot: o.tot, dep: o.dep, pago: { st: o.pst, devuelto: o.dev ?? 0, marca: o.marca, l4: o.l4 }, cancelDias: Number((det.terms as { cancel?: number } | undefined)?.cancel ?? 30),
     diasFaltan: o.days_to, pasada: o.past, alt: P.rows[0] ?? null, libres, motivoNeg: (det.motivoNeg as string | undefined) ?? null, perdio: !!det.perdio, inc: (det.inc as Bi[] | undefined) ?? [],
     nota: o.nota, linea: E.rows, resena: o.resena, acuerdo: W.rows[0] ?? null,
+    devolucion: await devolucionesDe(o.id),
   };
 }
 

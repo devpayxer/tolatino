@@ -50,7 +50,11 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   };
   const dL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return es ? `${DS.es[d.getUTCDay()]} ${d.getUTCDate()} ${MS.es[d.getUTCMonth()]}` : `${DS.en[d.getUTCDay()]} ${MS.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const B = x.negocio.nombre, cuando = `${dL(x.ymd)} · ${horaL(x.m)}`, st = x.pago.st, liberado = st === "released", dev = x.pago.devuelto;
-  const devT = liberado ? E2(`Liberamos los ${dinero(x.tot)} retenidos.`, `We released the ${dinero(x.tot)} hold.`) : dev ? E2(`Te devolvimos ${dinero(dev)}.`, `We refunded ${dinero(dev)}.`) : "";
+  // 9v · Lo que no está hecho se dice como está (cobros › devolucionesDe): en camino o que no salió; nunca «te devolvemos todo» sin mirar.
+  const pendT = [x.devolucion.camino ? E2(`Te devolvemos ${dinero(x.devolucion.camino)}: va en camino a tu tarjeta.`, `We are refunding ${dinero(x.devolucion.camino)}: it is on its way to your card.`) : "",
+    x.devolucion.fallida ? E2(`La devolución de ${dinero(x.devolucion.fallida)} no salió: escríbenos en Soporte y lo resolvemos.`, `The ${dinero(x.devolucion.fallida)} refund did not go through: write to us in Support and we will sort it out.`) : ""].filter(Boolean).join(" ");
+  const devT = [liberado ? E2(`Liberamos los ${dinero(x.tot)} retenidos.`, `We released the ${dinero(x.tot)} hold.`) : dev ? E2(`Te devolvimos ${dinero(dev)}.`, `We refunded ${dinero(dev)}.`) : "", pendT].filter(Boolean).join(" ");
+  const cobrado = st === "captured" || st === "partially_refunded";
   const camino = x.status === "confirmed" && x.detalle === "camino";
   const H: Record<string, [string, string, string, string, string, string]> = {
     pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, `${x.tot && st === "held" ? E2(`Se retuvieron ${dinero(x.tot)}. Si no confirman, se liberan.`, `${dinero(x.tot)} is held. If they do not confirm, it is released.`) : E2("Si no confirman, no se cobra nada.", "If they do not confirm, nothing is charged.")} ${linea}`],
@@ -61,7 +65,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
     declined: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO PUEDEN", "THEY CAN'T"), E2("No hay cupo", "No room"), devT || E2("No se cobró nada.", "Nothing was charged.")],
     expired: ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("SIN RESPUESTA", "NO REPLY"), E2("No contestaron a tiempo", "No reply in time"), devT || E2("No se cobró nada.", "Nothing was charged.")],
     cancelled: ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADO", "CANCELLED"), x.motivoNeg ? E2(`${B} canceló la salida`, `${B} cancelled the departure`) : E2("Cancelaste el viaje", "You cancelled the trip"),
-      x.motivoNeg ? `«${x.motivoNeg}». ${devT || E2("Te devolvemos todo.", "You get everything back.")}` : x.cobroMitad ? E2(`Se cobró la mitad: ${dinero(x.cobroMitad)}. ${devT}`, `Half was charged: ${dinero(x.cobroMitad)}. ${devT}`) : devT || E2("No se cobró nada.", "Nothing was charged.")],
+      x.motivoNeg ? `«${x.motivoNeg}». ${devT || (cobrado ? E2("La devolución todavía no sale: escríbenos en Soporte y lo resolvemos.", "The refund has not gone out yet: write to us in Support and we will sort it out.") : E2("No se cobró nada.", "Nothing was charged."))}` : x.cobroMitad ? E2(`Se cobró la mitad: ${dinero(x.cobroMitad)}. ${devT}`, `Half was charged: ${dinero(x.cobroMitad)}. ${devT}`) : devT || E2("No se cobró nada.", "Nothing was charged.")],
     done: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("LLEGASTE", "YOU ARRIVED"), cuando, E2(`Pagaste ${dinero(x.tot)}.`, `You paid ${dinero(x.tot)}.`)],
   };
   const cajaK = x.k === "caja", cotK = x.k === "cotiza", P = x.precio;

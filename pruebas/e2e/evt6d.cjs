@@ -260,13 +260,16 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     ok(!!cx, `el botón dice exactamente lo que vuelve: «Cancelar y devolver $${dl(esperado / 100)}»`);
     const stock0 = stockGen();
     await cx.evaluate((el) => { el.click(); el.click(); }); // doble toque
-    ok(await contiene(p1, `Te devolvemos $${dl(esperado / 100)}`), 'listo: «Te devolvemos … a tu tarjeta en 3–5 días hábiles»');
+    // 9v · Lo que dice sale de lo que hizo la pasarela (aquí la aceptó): «Te devolvimos», nunca lo decidido.
+    ok(await contiene(p1, `Te devolvimos $${dl(esperado / 100)} a tu tarjeta`), 'listo (Stripe la aceptó): «Te devolvimos … a tu tarjeta; tu banco lo muestra en 3–5 días hábiles»');
     ok(sql(`select count(*) from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${O1}'`) === '1', 'doble toque: una sola devolución');
     ok(sql(`select r.status || '|' || r.amount_cents || '|' || r.initiated_by from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${O1}'`) === `done|${esperado}|buyer`, `devolución hecha: $${dl(esperado / 100)}, la pidió el comprador`);
     ok(pago(O1) === `partially_refunded|12000|${esperado}` && sql(`select refunded_cents from sim_intents where id = (select stripe_payment_intent from payments p join operations o on o.id = p.operation_id where o.number = '${O1}')`) === String(esperado), 'el pago y el simulador devolvieron exactamente eso');
     ok(sql(`select status from tickets where code = '${T1[1]}'`) === 'refunded' && sql(`select amount_cents || '|' || fee_kept_cents from ticket_refund_lines where ticket_id = (select id from tickets where code = '${T1[1]}')`) === `${esperado}|${fee(T1[1])}`, 'el boleto queda «refunded»; la línea dice lo devuelto y el cargo que se queda To’Latino');
     ok(Number(stockGen().split('|')[0]) === Number(stock0.split('|')[0]) - 1, `la base soltó su lugar (vendidos ${stock0.split('|')[0]} → ${stockGen().split('|')[0]})`);
     ok(sql(`select count(*) from notifications where user_id = '${U1}' and tpl = 'bol_cancelado'`) >= '1' && sql(`select count(*) from notifications where tpl = 'evt_devolucion' and ref_id = '${O1}'`) >= '1', 'avisos: «Cancelaste tus boletos» al comprador y «Volvieron boletos a la venta» al negocio');
+    { const av = sql(`select body from notifications where user_id = '${U1}' and tpl = 'bol_cancelado' and ref_id = '${O1}' order by id desc limit 1`);
+      ok(av.includes(`Te devolvimos $${dl(esperado / 100)} a tu tarjeta`) && !/Te devolvemos|va en camino/.test(av), `el aviso dice lo que pasó (salió): «${av}»`); }
     const capCancelar = accion(new RegExp(`${O1}.*${T1[1]}`));
     ok(!!capCancelar && /"ya":true|ya/.test(await repetir(c1, capCancelar)) && sql(`select count(*) from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${O1}'`) === '1', 'la misma llamada otra vez (misma llave): no devuelve dos veces');
     ok(/no existe/.test(await repetir(c3, capCancelar, capCancelar.body.replace(/"[0-9a-f-]{36}"/, `"${crypto.randomUUID()}"`).replace(T1[1], T1[2]))), 'IDOR: C3 repite «Cancelar» con la orden de C1 → «Esa orden no existe»');
@@ -279,9 +282,16 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     const PI1 = sql(`select stripe_payment_intent from payments p join operations o on o.id = p.operation_id where o.number = '${O1}'`);
     sql(`update sim_intents set status = 'requires_capture' where id = '${PI1}'`); // el simulador no devuelve
     const capC2 = capCancelar.body.replace(/"[0-9a-f-]{36}"/, `"${crypto.randomUUID()}"`).replace(T1[1], T1[2]);
-    await repetir(c1, capCancelar, capC2);
+    const rC2 = await repetir(c1, capCancelar, capC2);
     const R2 = sql(`select r.id || '|' || r.status || '|' || r.attempts from refunds r where r.idem_key = 'bolcx-' || '${JSON.parse(capC2)[2]}'`).split('|');
     ok(R2[1] === 'pending' && R2[2] === '1' && sql(`select status from tickets where code = '${T1[2]}'`) === 'refunded', 'Stripe no respondió: el boleto ya no entra y la devolución queda «pendiente» (1 intento)');
+    // 9v · Ni la respuesta ni el aviso dicen «te devolvemos … 3–5 días»: va en camino (el barrido la sigue mandando sola); la orden lo dice igual.
+    ok(/"devolucion":"en_camino"/.test(rC2) && !/"devolucion":"hecha"/.test(rC2), 'la respuesta dice lo que pasó: en camino (no «hecha»)');
+    { const av = sql(`select body from notifications where user_id = '${U1}' and tpl = 'bol_cancelado' and ref_id = '${O1}' order by id desc limit 1`);
+      ok(av.includes(`La devolución de $${dl((1500 - fee(T1[2])) / 100)} a tu tarjeta va en camino`) && !/Te devolvimos|Te devolvemos/.test(av), `el aviso: «va en camino», nunca «te devolvimos»: «${av}»`); }
+    await p1.goto(B + `/eventos/orden/${O1}`);
+    ok(await contiene(p1, 'Va en camino a tu tarjeta') && !(await texto(p1)).includes('Ya salió a tu tarjeta'), 'la orden: «Va en camino a tu tarjeta» (no «Ya salió»)');
+    await p1.screenshot({ path: OUT + 'e6d-orden-en-camino-m.png', fullPage: true });
     ok(/pasa de lo cobrado|devolucion_de_mas/.test(sqlErr(`insert into refunds (payment_id, amount_cents, initiated_by, status, idem_key) select p.id, p.amount_cents, 'admin', 'pending', 'prueba-${RUN}' from payments p join operations o on o.id = p.operation_id where o.number = '${O1}'`)), 'la base: lo pendiente + lo hecho no pasa de lo cobrado');
     ok(/duplicate key|ticket_refund_lines_boleto_idx/.test(sqlErr(`insert into ticket_refund_lines (refund_id, operation_id, ticket_id, city_id, amount_cents) select ${R2[0]}, operation_id, id, city_id, 1 from tickets where code = '${T1[2]}'`)), 'la base: un boleto no se devuelve dos veces (índice único)');
     sql(`update refunds set created_at = now() - interval '2 minutes' where id = ${R2[0]}`);
@@ -309,6 +319,10 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     ok(await espera(() => pago(O3) === 'partially_refunded|3000|1500'), 'el organizador devolvió $15 (100 % del boleto) a la tarjeta');
     ok(sql(`select status from tickets where code = '${T3[0]}'`) === 'refunded' && sql(`select fee_kept_cents || '|' || fee_waived_cents from ticket_refund_lines where ticket_id = (select id from tickets where code = '${T3[0]}')`) === `0|${fee(T3[0])}`, 'la comisión de ese boleto no se cobra (fee_waived) y To’Latino no se queda nada');
     ok(sql(`select count(*) from notifications where user_id = '${U3}' and tpl = 'bol_devuelto'`) >= '1', 'el comprador recibe «Te devolvieron tus boletos»');
+    // 9v · Salió (Stripe la aceptó): el panel dice «Devuelto.» y el aviso «Te devolvimos $15».
+    ok(await contiene(pn, 'Devuelto. Le avisamos y los boletos ya no entran.'), 'el panel: «Devuelto. Le avisamos…» (la devolución salió)');
+    { const av = sql(`select body from notifications where user_id = '${U3}' and tpl = 'bol_devuelto' and ref_id = '${O3}' order by id desc limit 1`);
+      ok(av.includes('Te devolvimos $15 a tu tarjeta') && !/va en camino/.test(av), `el aviso al comprador dice lo que pasó: «${av}»`); }
     const capDev = accion(new RegExp(`${O3}.*${T3[0]}`));
     ok(/usado no se devuelve/.test(await repetir(cn, capDev, capDev.body.replace(T3[0], T3[1]).replace(/"[0-9a-f-]{36}"/, `"${crypto.randomUUID()}"`))), 'devolver un boleto usado → «Un boleto usado no se devuelve.»');
     ok(!/"ok":true/.test(await repetir(c3, capDev, capDev.body.replace(/"[0-9a-f-]{36}"/, `"${crypto.randomUUID()}"`))) && pago(O3) === 'partially_refunded|3000|1500', 'IDOR: un vecino repite «Devolver» del panel → sin acceso, nada cambia');

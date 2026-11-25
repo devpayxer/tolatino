@@ -4,7 +4,7 @@ import { cfgSql, valor } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
-import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
 import { diaNoche, hNoche, usdN, type Bi } from "./noche-comun";
@@ -493,6 +493,8 @@ export async function avisarCoverSube(negocio: string, antes: number) {
 
 /* ── Tu noche (APP-NEG-NOCHE-ESTADO) ── */
 export type NocheVista = {
+  // 9v · Las devoluciones que no están hechas: en camino o que no salieron (cobros › devolucionesDe).
+  devolucion: { camino: number; fallida: number };
   numero: string; status: string; detalle: string | null; k: "lista" | "mesa" | "vip"; negocio: { id: string; nombre: string; telefono: string | null; direccion: string | null; foto: string | null };
   svc: Bi; night: string; hoy: boolean; dow: number; llega: number; pax: number; occ: string | null; nota: string | null; code: string | null; puerta: { es: string; en: string };
   edad: number; hold: number; resp: number | null; corteBase: number; cut: number | null; nowN: number; dep: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null };
@@ -522,6 +524,7 @@ export async function nocheVista(userId: string, numero: string): Promise<NocheV
     code: o.status === "confirmed" ? o.code : null, puerta: { es: puertaTexto(d, true), en: puertaTexto(d, false) }, edad: Number(d.edad ?? 21), hold: Number(d.hold ?? await valor("noche_mesa_guardada_min")), resp: o.resp, corteBase: await valor("noche_corte_min"),
     cut: d.cut == null ? null : Number(d.cut), nowN: o.nowN, dep: o.dep, pago: { st: o.pst, devuelto: o.dev ?? 0, marca: o.marca, l4: o.l4 }, alt, motivoNeg: (d.motivoNeg as string) ?? null,
     perdio: !!d.perdio, inN: d.in_n == null ? null : Number(d.in_n), cover: Number(d.cover_cents ?? 0), resena, linea: L,
+    devolucion: await devolucionesDe(o.id),
   };
 }
 

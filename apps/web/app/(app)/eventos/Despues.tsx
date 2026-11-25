@@ -87,7 +87,10 @@ export function HojaCancelar({ es, numero, tz, onClose, onDone }: { es: boolean;
     setOcupado(true); setError("");
     const r = await bolCancelar(numero, sel, clave.current).catch(() => null);
     setOcupado(false);
-    if (r?.ok) { onDone(E2(`Listo. Te devolvemos ${dinero(r.monto)} a tu tarjeta en 3–5 días hábiles.`, `Done. We refund ${dinero(r.monto)} to your card in 3–5 business days.`)); return; }
+    // 9v · Lo que dice sale de lo que hizo la pasarela (r.devolucion), no de lo decidido.
+    if (r?.ok) { onDone(r.devolucion === "hecha" ? E2(`Listo. Te devolvimos ${dinero(r.monto)} a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.`, `Done. We refunded ${dinero(r.monto)} to your card; your bank shows it in 3–5 business days.`)
+      : r.devolucion === "fallida" ? E2(`Tus boletos quedaron cancelados, pero la devolución de ${dinero(r.monto)} no salió: el equipo de To'Latino ya tiene el aviso para resolverlo contigo.`, `Your tickets are cancelled, but the ${dinero(r.monto)} refund did not go through: the To'Latino team already has the alert to sort it out with you.`)
+      : E2(`Listo, tus boletos quedaron cancelados. La devolución de ${dinero(r.monto)} va en camino a tu tarjeta: la seguimos mandando sola.`, `Done, your tickets are cancelled. The ${dinero(r.monto)} refund is on its way to your card: we keep sending it automatically.`)); return; }
     setError(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again."));
   };
   return (

@@ -1,7 +1,7 @@
 import "server-only";
 import { pasesPronto } from "./pases/pronto";
 import type { PoolClient } from "pg";
-import { anotarDevolucionTotal, ejecutarDevolucion } from "./boletos-despues";
+import { anotarDevolucionTotal, dineroDevolucion, ejecutarDevolucion, estadoDevolucion, mandarDevolucion, type EstadoDev } from "./boletos-despues";
 import { cfgSql, valores } from "./config";
 import { db, tx, type AlGuardar } from "./db";
 import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
@@ -174,9 +174,9 @@ async function yaAvisados(tpl: string, refKind: string, refId: string): Promise<
 }
 
 /* ── «Me quedo con la nueva fecha» / «Devolución total» (quien pagó la orden, hasta el nuevo inicio; sin respuesta = se queda) ── */
-export async function elegirCambio(userId: string, numero: string, eleccion: "keep" | "refund"): Promise<Res<{ monto: number; ya?: true }>> {
+export async function elegirCambio(userId: string, numero: string, eleccion: "keep" | "refund", otraVez = false): Promise<Res<{ monto: number; devolucion?: EstadoDev; ya?: true }>> {
   if (!NUM_B.test(String(numero)) || !["keep", "refund"].includes(eleccion)) return falla("Esa orden no existe.", "That order does not exist.");
-  let hecho: { rf: string | null; total: number; fid: string; title: Bi; biz: string; holders: string[] } | null = null;
+  let hecho: { rf: string | null; ya?: string | null; total: number; fid: string; title: Bi; biz: string; holders: string[] } | null = null;
   try {
     hecho = await tx(async (c) => {
       const o = (await c.query<{ id: string; fid: string; city: string; biz: string; title: Bi; ch: string | null; abierto: boolean }>(
@@ -186,32 +186,36 @@ export async function elegirCambio(userId: string, numero: string, eleccion: "ke
            from operations o join event_dates d on d.id = (o.details->>'event_date_id')::bigint join events e on e.id = d.event_id
           where o.number = $1 and o.kind = 'tickets' and o.user_id = $2 and o.pay_mode = 'app' and o.status = 'confirmed' for update of o`, [numero, userId])).rows[0];
       if (!o || !o.ch) throw no("Esta orden no tiene un cambio de fecha que elegir.", "This order has no date change to choose on.");
-      const ya = (await c.query<{ choice: string; amt: number | null }>(`select x.choice, r.amount_cents as amt from ticket_choices x left join refunds r on r.id = x.refund_id where x.operation_id = $1::bigint and x.change_id = $2::bigint`, [o.id, o.ch])).rows[0];
-      if (ya) { if (ya.choice !== eleccion) throw no("Ya elegiste para este cambio.", "You already chose for this change."); return { rf: null, total: ya.amt ?? 0, fid: o.fid, title: o.title, biz: o.biz, holders: [] }; }
+      const ya = (await c.query<{ choice: string; amt: number | null; rid: string | null }>(`select x.choice, r.amount_cents as amt, r.id::text as rid from ticket_choices x left join refunds r on r.id = x.refund_id where x.operation_id = $1::bigint and x.change_id = $2::bigint`, [o.id, o.ch])).rows[0];
+      if (ya) { if (ya.choice !== eleccion) throw no("Ya elegiste para este cambio.", "You already chose for this change."); return { rf: null, ya: ya.rid, total: ya.amt ?? 0, fid: o.fid, title: o.title, biz: o.biz, holders: [] }; }
       if (!o.abierto) throw no("La fecha nueva ya empezó: tus boletos valen para esa fecha.", "The new date already started: your tickets are for that date.");
       if (eleccion === "keep") {
         await c.query(`insert into ticket_choices (operation_id, change_id, user_id, city_id, choice) values ($1::bigint, $2::bigint, $3, $4, 'keep')`, [o.id, o.ch, userId, o.city]);
         return { rf: null, total: 0, fid: o.fid, title: o.title, biz: o.biz, holders: [] };
       }
-      const r = await anotarDevolucionTotal(c, { op: o.id, por: "event_moved", actor: userId, byKind: "user", idem: `evtmv-${o.ch}-${o.id}`, motivo: "Cambió de fecha: devolución total", usados: false });
+      const idem = `evtmv-${o.ch}-${o.id}`;
+      const r = await anotarDevolucionTotal(c, { op: o.id, por: "event_moved", actor: userId, byKind: "user", idem, motivo: "Cambió de fecha: devolución total", usados: false });
       if (!r.rf && !r.ya) throw no("Ya no hay boletos que devolver en esta orden.", "There are no tickets left to refund in this order.");
       await c.query(`insert into ticket_choices (operation_id, change_id, user_id, city_id, choice, refund_id) values ($1::bigint, $2::bigint, $3, $4, 'refund', $5::bigint)`, [o.id, o.ch, userId, o.city, r.rf]);
-      return { rf: r.rf, total: r.total, fid: o.fid, title: o.title, biz: o.biz, holders: r.holders.filter((h) => h !== userId) };
+      const yaId = r.ya ? (await c.query<{ id: string }>(`select id::text from refunds where idem_key = $1`, [idem])).rows[0]?.id ?? null : null;
+      return { rf: r.rf, ya: yaId, total: r.total, fid: o.fid, title: o.title, biz: o.biz, holders: r.holders.filter((h) => h !== userId) };
     });
   } catch (e) {
-    if ((e as { code?: string }).code === "23505") return { ok: true, monto: 0, ya: true };
+    // Dos toques a la vez: la otra ya eligió; se lee lo que quedó (una vez).
+    if ((e as { code?: string }).code === "23505") return otraVez ? { ok: true, monto: 0, ya: true } : elegirCambio(userId, numero, eleccion, true);
     if (e instanceof Error && /devolucion_de_mas|devolucion_sin_cobro/.test(e.message)) return falla("Esta orden ya no tiene tanto por devolver.", "This order no longer has that much to refund.");
     return atrapa(e);
   }
-  if (!hecho.rf) return { ok: true, monto: hecho.total };
+  if (!hecho.rf) return { ok: true, monto: hecho.total, ...(hecho.ya ? { devolucion: await estadoDevolucion(hecho.ya) } : {}) };
   pasesPronto();
-  await ejecutarDevolucion(hecho.rf);
+  // 9v · La pantalla y el aviso dicen lo que hizo la pasarela, no lo decidido.
+  const devolucion = await mandarDevolucion(hecho.rf);
   const { avisar, avisarNegocio } = await import("./avisos");
-  await avisar(userId, "evt_devolucion_total", { evento: hecho.title.es, monto: dinero(hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
+  await avisar(userId, "evt_devolucion_total", { evento: hecho.title.es, monto: dinero(hecho.total), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
   for (const h of hecho.holders) await avisar(h, "bol_anulado", { codigo: "", evento: hecho.title.es, motivo: "Quien lo pagó pidió la devolución por el cambio de fecha" }, { href: "/cuenta/boletos", ref: ["tickets", numero] });
   await avisarNegocio(hecho.biz, "evt_devolucion", { evento: hecho.title.es, cuantos: "boletos", num: numero }, { href: `/panel/${hecho.biz}/eventos`, ref: ["tickets", numero] });
   await (await import("./espera")).ofrecer(hecho.fid).catch(() => 0);
-  return { ok: true, monto: hecho.total };
+  return { ok: true, monto: hecho.total, devolucion };
 }
 
 /* ── Cancelar una fecha o todo el evento ── */
@@ -313,8 +317,43 @@ export async function procesarCancelacion(cxId: string, lim: { ordenes: number; 
   return { ordenes: n, quedan: quedan.n, hecha };
 }
 
-/* Los avisos de una cancelación (SMS crítico), una vez por persona: quien pagó («te devolvemos todo»), quien tiene un boleto o una cortesía
-   («ya no entran») y quien va con RSVP. */
+/* 9v (25 nov) · El dinero de las órdenes pagadas de un evento cancelado, como de verdad quedó (de la base): hecha (Stripe la aceptó), en camino (pendiente: el
+   barrido la sigue mandando con la misma llave), fallida (no salió y nadie la volvió a hacer ni la resolvió a mano: la tiene el equipo de dinero), disputa
+   (el cobro está en disputa con el banco: anotarDevolucionTotal no lo devuelve, anula los boletos) y falta (una orden que el lote todavía no tocó: la
+   devolución total la hace el barrido). Lo usan el aviso de la cancelación y la orden del comprador. Antes el aviso decía «Te devolvemos todo» a todos,
+   también a quien no se le devolvía nada (disputa, sin cobro). Guardián devueltoSoloSiSalio. */
+export type DineroCx = { hecha: number; camino: number; fallida: number; disputa: boolean; falta: boolean };
+const ORDENES_PAGADAS = `o.kind = 'tickets' and o.pay_mode = 'app' and o.status = 'confirmed' and (o.details->>'event_date_id')::bigint = any($1::bigint[])`;
+const DISPUTA = `exists (select 1 from payments p join disputes d on d.payment_id = p.id where p.operation_id = o.id and p.kind = 'full' and d.status in ('needs_response', 'under_review', 'lost', 'accepted'))`;
+const DEV_CX = (st: string) => `(select coalesce(sum(r.amount_cents), 0) from refunds r join payments p on p.id = r.payment_id where p.operation_id = o.id and r.initiated_by = 'event_cancelled' and ${st})`;
+const FALLIDA_ABIERTA = `r.status = 'failed' and r.manual_at is null and not exists (select 1 from refunds y where y.retry_of = r.id)`;
+const DINERO_CX = `coalesce(sum(${DEV_CX(`(r.status = 'done' or (r.status = 'failed' and r.manual_at is not null))`)}), 0)::int as hecha, coalesce(sum(${DEV_CX("r.status = 'pending'")}), 0)::int as camino,
+                   coalesce(sum(${DEV_CX(FALLIDA_ABIERTA)}), 0)::int as fallida, coalesce(bool_or(${DISPUTA}), false) as disputa,
+                   coalesce(bool_or(not ${DISPUTA} and exists (select 1 from tickets t where t.operation_id = o.id and t.kind = 'paid' and t.status in ('valid', 'used'))), false) as falta`;
+export function dineroCancelacion(d: DineroCx): Bi {
+  const es: string[] = [], en: string[] = [];
+  const va = d.hecha + d.camino;
+  if (d.camino > 0 || d.falta) {
+    es.push(d.falta ? "Te devolvemos todo lo que pagaste, cargos incluidos: la devolución va en camino a tu tarjeta." : `Te devolvemos ${dinero(va)}, cargos incluidos: la devolución va en camino a tu tarjeta.`);
+    en.push(d.falta ? "We refund everything you paid, fees included: the refund is on its way to your card." : `We refund ${dinero(va)}, fees included: the refund is on its way to your card.`);
+  } else if (d.hecha > 0) {
+    es.push(`Te devolvimos ${dinero(d.hecha)}, cargos incluidos; tu banco lo muestra en 3–5 días hábiles.`);
+    en.push(`We refunded ${dinero(d.hecha)}, fees included; your bank shows it in 3–5 business days.`);
+  }
+  if (d.fallida > 0) {
+    es.push(`La devolución de ${dinero(d.fallida)} no salió: el equipo de To'Latino ya tiene el aviso para resolverlo contigo.`);
+    en.push(`The ${dinero(d.fallida)} refund did not go through: the To'Latino team already has the alert to sort it out with you.`);
+  }
+  if (d.disputa) {
+    es.push("Tu cobro está en disputa con tu banco: lo que vuelve lo decide esa disputa, no una devolución de To'Latino.");
+    en.push("Your charge is in a dispute with your bank: that dispute decides what comes back, not a To'Latino refund.");
+  }
+  if (!es.length) { es.push("No quedaba nada por devolverte de esta orden. Tus boletos ya no entran."); en.push("There was nothing left to refund on this order. Your tickets no longer get in."); }
+  else if (!d.fallida && !d.disputa) { es.push("No tienes que hacer nada."); en.push("Nothing to do on your end."); }
+  return { es: es.join(" "), en: en.join(" ") };
+}
+/* Los avisos de una cancelación (SMS crítico), una vez por persona: quien pagó (lo que de verdad pasa con su dinero: dineroCancelacion), quien tiene un
+   boleto o una cortesía («ya no entran») y quien va con RSVP. */
 export async function avisarCancelacion(cxId: string): Promise<number> {
   const cx = (await db().query<{ id: string; eid: string; fid: string | null; scope: string; reason: MotivoCx | "admin"; note: string | null; t: Bi; slug: string; ldate: string; h0: number; biz: string }>(
     `select x.id::text, x.event_id::text as eid, x.event_date_id::text as fid, x.scope, x.reason_key as reason, x.note, e.title as t, e.slug,
@@ -330,13 +369,17 @@ export async function avisarCancelacion(cxId: string): Promise<number> {
   const H = (await db().query<{ u: string }>(`select distinct holder_user_id::text as u from tickets where event_date_id = any($1::bigint[]) and holder_user_id is not null`, [fechas])).rows.map((x) => x.u);
   const R = (await db().query<{ u: string }>(`select distinct user_id::text as u from rsvps where event_date_id = any($1::bigint[]) and status = 'going'`, [fechas])).rows.map((x) => x.u);
   const pago = new Map(P.map((x) => [x.u, x.num]));
+  // 9v · Lo que pasa con el dinero de CADA quien pagó, leído de la base (nunca «te devolvemos todo» a ciegas): lo devuelto, lo que va en camino (pendiente, o
+  // la orden que el lote todavía no tocó: el barrido la sigue), lo que no salió, el cobro en disputa con el banco (no se devuelve aquí) y la orden sin nada que devolver.
+  const D = new Map((await db().query<DineroCx & { u: string }>(`select o.user_id::text as u, ${DINERO_CX} from operations o where o.kind = 'tickets' and ${ORDENES_PAGADAS} group by o.user_id`, [fechas])).rows.map((x) => [x.u, x]));
   const motivo = `${MOTIVOS_CX[cx.reason].es}${cx.note && cx.reason !== "admin" ? ` (${cx.note.slice(0, 80)})` : ""}`;
   const { avisar } = await import("./avisos");
   let n = 0;
   for (const u of new Set([...pago.keys(), ...H, ...R])) {
     if (ya.has(u)) continue;
-    const num = pago.get(u);
-    const dinero = num ? "Te devolvemos todo lo que pagaste, cargos incluidos, en 3–5 días hábiles. No tienes que hacer nada." : H.includes(u) ? "Tus boletos ya no entran. No tienes que hacer nada." : "Si ibas, no tienes que hacer nada.";
+    const num = pago.get(u), d = D.get(u);
+    const dinero: Bi = num && d ? dineroCancelacion(d) : H.includes(u) ? { es: "Tus boletos ya no entran. No tienes que hacer nada.", en: "Your tickets no longer get in. Nothing to do on your end." }
+      : { es: "Si ibas, no tienes que hacer nada.", en: "If you were going, nothing to do on your end." };
     const href = num ? `/eventos/orden/${num}` : `/eventos/${cx.slug}`;
     await avisar(u, tpl, { evento: cx.t.es, cuando: `${diaCorto(cx.ldate, true)} · ${hora(cx.h0)}`, motivo, dinero }, { href, ref: ["evt_cx", cx.id] });
     n++;
@@ -465,7 +508,7 @@ export async function cambiosPanel(negocio: string, eventoId: string): Promise<C
 
 /* ── Lo que ve el cliente: la orden (cancelada o con cambio de fecha y su elección) y la ficha (cambió de fecha, último aviso) ── */
 export type CambioOrden = {
-  cancelada: { motivo: string; monto: number; enCamino: boolean } | null;
+  cancelada: { motivo: string; dinero: Bi } | null;
   movido: { antes: string; ahora: string; puede: boolean; eleccion: "keep" | "refund" | null } | null;
   avisos: { t: string; at: string }[];
 };
@@ -485,11 +528,11 @@ export async function cambioOrden(userId: string, numero: string): Promise<Cambi
     db().query<{ t: string; at: string }>(`select text as t, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from event_notices where event_date_id = $1::bigint order by at desc limit 3`, [o.fid]),
   ]);
   const cancelada = o.dst === "cancelled" || o.est === "cancelled";
-  const dev = cancelada ? (await db().query<{ m: number; pend: boolean }>(
-    `select coalesce(sum(r.amount_cents), 0)::int as m, bool_or(r.status = 'pending') as pend from refunds r join payments p on p.id = r.payment_id where p.operation_id = $1::bigint and r.initiated_by = 'event_cancelled'`, [o.id])).rows[0] : null;
+  // 9v · Lo que de verdad pasa con su dinero (hecha, en camino, fallida, disputa, sin procesar todavía): la orden no promete «se te devuelve todo» a ciegas.
+  const dev = cancelada ? (await db().query<DineroCx & { n: number }>(`select count(*)::int as n, ${DINERO_CX} from operations o where o.id = $1::bigint and ${ORDENES_PAGADAS.replace("any($1::bigint[])", "any($2::bigint[])")}`, [o.id, [o.fid]])).rows[0] : null;
   const m = M.rows[0];
   return {
-    cancelada: cancelada ? { motivo: X.rows[0] ? MOTIVOS_CX[X.rows[0].reason].es : "", monto: dev?.m ?? 0, enCamino: !!dev?.pend } : null,
+    cancelada: cancelada ? { motivo: X.rows[0] ? MOTIVOS_CX[X.rows[0].reason].es : "", dinero: dev?.n ? dineroCancelacion(dev) : { es: "Tus boletos ya no entran. No tienes que hacer nada.", en: "Your tickets no longer get in. Nothing to do on your end." } } : null,
     movido: m && m.despues && !cancelada ? { antes: `${diaCorto(m.b.dia, true)} · ${hora(m.b.h0)}`, ahora: `${diaCorto(m.a.dia, true)} · ${hora(m.a.h0)}`, puede: o.abierto && !m.choice, eleccion: (m.choice as "keep" | "refund" | null) ?? null } : null,
     avisos: A.rows,
   };

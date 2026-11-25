@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { valor } from "./config";
@@ -520,6 +520,8 @@ async function avisarSinSalir(negocio?: string) {
 
 /* ── El viaje del cliente (APP-NEG-TRANS-ESTADO) ── */
 export type ViajeVista = {
+  // 9v · Las devoluciones que no están hechas: en camino o que no salieron (cobros › devolucionesDe).
+  devolucion: { camino: number; fallida: number };
   numero: string; status: string; detalle: string | null; negocio: { id: string; nombre: string; telefono: string | null; direccion: string | null }; svc: Bi; svcId: string; k: string;
   ymd: string; m: number; adults: number; kids: number; childSeat: boolean; bagsIncl: number; bagsExtra: number; inc: Bi[]; from: Bi | null; to: Bi | null; pickup: string | null;
   tot: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null }; horasFaltan: number; cobroMitad: number; motivoNeg: string | null;
@@ -545,6 +547,7 @@ export async function viajeVista(userId: string, numero: string): Promise<ViajeV
     inc: (d.inc as Bi[] | undefined) ?? [], from: (d.from as Bi | null) ?? null, to: (d.to as Bi | null) ?? null, pickup: (d.pickup as { t: string } | null)?.t ?? null,
     tot: o.tot, pago: { st: o.pay, devuelto: o.refunded ?? 0, marca: b?.marca ?? null, l4: b?.l4 ?? null }, horasFaltan: o.hours_to, cobroMitad: Number(d.cobroMitad ?? 0), motivoNeg: (d.motivoNeg as string | undefined) ?? null,
     alt: P.rows[0] ?? null, tarde: R.rows[0]?.m ?? null, linea: E.rows,
+    devolucion: await devolucionesDe(o.id),
     boxes: Number(d.boxes ?? 0), dest: d.k === "caja" ? await destinatarioDe(o.id) : null, rastreo: ((d.tracking as { code?: string } | undefined)?.code) ?? null,
     fotos: d.k === "cotiza" ? await fotosDe(o.id) : [], drop: (d.drop as string | undefined) ?? null, precio: d.k === "cotiza" ? await precioDe(o.id) : null,
   };
