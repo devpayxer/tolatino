@@ -65,7 +65,7 @@ const casos = [
   ['liberarMira', '«cobrada» sin tocar la fila', CO, '    if (tocada) return "cobrada";', '    return "cobrada";'],
   // (revisión de 621f214) · M4: el aviso que manda el barrido se pierde si el envío falla (avisar no dice si quedó, el reclamo no se devuelve, nadie lo
   // reintenta); el reintento repite el que ya llegó; la cancelación lo manda y el barrido lo repite; la alerta no dice si le llegó.
-  ['liberarMira', 'avisar dice que quedó aunque falle', 'apps/web/lib/avisos.ts', 'catch { /* un aviso nunca rompe la acción que lo dispara */ return false; }', 'catch { /* un aviso nunca rompe la acción que lo dispara */ return true; }'],
+  ['liberarMira', 'avisar dice que quedó aunque falle', 'apps/web/lib/avisos.ts', 'el aviso a ${userId} no quedó: ${String((e as Error)?.message ?? e).slice(0, 200)}`);\n    return false;', 'el aviso a ${userId} no quedó: ${String((e as Error)?.message ?? e).slice(0, 200)}`);\n    return true;'],
   ['liberarMira', 'el reclamo no se devuelve', CO, "jsonb_build_object('avisoCobro', false, 'avisoCobroFalta'", "jsonb_build_object('avisoCobro', true, 'avisoCobroFalta'"],
   ['liberarMira', 'el reintento manda también lo que ya llegó', VL, '  const cli = !partes.cli || (await avisoParte(', '  const cli = (await avisoParte('],
   ['liberarMira', 'evento privado: el reintento manda también lo que ya llegó', EP, '  const okNeg = !partes.neg || (await avisoParte(', '  const okNeg = (await avisoParte('],
@@ -85,7 +85,7 @@ const casos = [
   ['liberarMira', 'patrocinio del evento: otro monto sin alerta', 'apps/web/lib/patrocinio-evento.ts', 'alertarOtroMonto("event_sponsorships", om.id, centavos, om.cobrado,', 'alertarOtroMonto("sponsorships", om.id, centavos, om.cobrado,'],
   ['liberarMira', 'la alerta de otro monto también del mismo', 'apps/web/lib/dinero-alertas.ts', 'if (cobrado == null || cobrado === pedido) return;', 'if (cobrado == null) return;'],
   // Fuera del diff de 621f214: la cancelación tarde cobrada sin su regla (el proceso murió) nadie la encuentra, o se toca mientras sigue en curso.
-  ['liberarMira', 'la cobrada sin regla no se repara', CO, 'await cobradaConSuRegla(x.op, REPARA, "reparar");', 'void REPARA;'],
+  ['liberarMira', 'la cobrada sin regla no se repara', CO, 'await cobradaConSuRegla(x.op, REPARA, x.aplicada ? "completar" : "reparar");', 'void REPARA;'],
   ['liberarMira', 'el reparo no espera a la cancelación en curso', CO, " and o.cancelled_at < now() - interval '5 minutes'", ''],
   ['liberarMira', 'el reparo no mira el evento privado', CO, "else coalesce(o.details->>'perdio', '') = 'false' end", 'else false end'],
   ['barridoCompleto', 'el reparo fuera del barrido central', 'apps/web/lib/barrido.ts', '        ["cobradasTarde", () => cobros.barrerCobradasTarde()],\n', ''],
@@ -93,12 +93,23 @@ const casos = [
   // veces); el reintento de «neg» repite a los dueños que ya lo tienen; si una parte tira, se pierde la otra.
   ['liberarMira', 'avisar: el SMS que falla dice que no quedó', 'apps/web/lib/avisos.ts', '    try {\n      if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id,', '    {\n      if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id,'],
   ['liberarMira', 'avisar: el push que falla dice que no quedó', 'apps/web/lib/avisos.ts', '    try {\n      if (pst === "pendiente") await encolar([id]);\n    } catch (e) {', '    if (pst === "pendiente") await encolar([id]);\n    try {} catch (e) {'],
-  ['liberarMira', 'avisarNegocio repite a los dueños que ya lo tienen', 'apps/web/lib/avisos.ts', '      if (ya) continue;\n', ''],
-  ['liberarMira', 'avisarNegocio no anota al dueño que ya lo tiene', 'apps/web/lib/avisos.ts', '    if (llave) await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [llave])', '    if (llave) await db().query(`select $1`, [llave])'],
+  ['liberarMira', 'avisarNegocio no le pasa la llave a avisar', 'apps/web/lib/avisos.ts', 'for (const u of L) if ((await avisar(u.id, tpl, v, o)) === false) todos = false;', 'for (const u of L) if ((await avisar(u.id, tpl, v, { href: o.href, ref: o.ref })) === false) todos = false;'],
+  // (revisión de ae940a7) · unaVez en avisar: la marca aparte de la fila, o sin saltar a quien ya la tiene; el SMS sin anotar queda «fallo»; avisar se
+  // traga el «no quedó» sin registro; avisoParte que deja tirar; el aviso a quien pagó sin su llave; la regla sin su marca; la que quedó a medias no se completa.
+  ['liberarMira', 'avisar no salta a quien ya tiene la marca', 'apps/web/lib/avisos.ts', 'where $14::text is null or exists (select 1 from k) returning id::text`', 'returning id::text`'],
+  ['liberarMira', 'el SMS sin anotar queda «fallo»', 'apps/web/lib/avisos.ts', "origen aviso:${id}): ${String((e as Error)?.message ?? e).slice(0, 200)}`);\n    }", "origen aviso:${id}): ${String((e as Error)?.message ?? e).slice(0, 200)}`);\n      await db().query(`update notifications set sms_status = 'fallo' where id = $1::bigint`, [id]);\n    }"],
+  ['liberarMira', 'avisar se traga el «no quedó»', 'apps/web/lib/avisos.ts', '    console.error(`[avisos] ${tpl}: el aviso a ${userId} no quedó:', '    void (`[avisos] ${tpl}: el aviso a ${userId} no quedó:'],
+  ['liberarMira', 'viaje: el aviso a quien pagó sin su llave', VL, '}, `cobrada:viaje_cx:${numero}`)));', '})));'],
+  ['liberarMira', 'evento privado: el aviso a quien pagó sin su llave', EP, '}, `cobrada:evp_cancelado:${numero}`)));', '})));'],
+  ['liberarMira', 'viaje: avisoParte copiada aquí', VL, 'export async function avisarViajeTardeCobrado(', 'async function avisoParte(numero: string, tpl: string, f: () => Promise<boolean | undefined>): Promise<boolean> { return (await f()) !== false; }\nexport async function avisarViajeTardeCobrado('],
+  ['liberarMira', 'la regla sin su marca', CO, ", 'reglaCobradaAt', coalesce(details->'reglaCobradaAt', to_jsonb(now()))) where id = $1::bigint`, [opId, mitad]);", ") where id = $1::bigint`, [opId, mitad]);"],
+  ['liberarMira', 'la que quedó a medias no se completa', CO, 'await cobradaConSuRegla(x.op, REPARA, x.aplicada ? "completar" : "reparar");', 'await cobradaConSuRegla(x.op, REPARA, "reparar");'],
+  ['liberarMira', 'a medias: solo sin alerta (el aviso sin reclamar se pierde)', CO, " or (not coalesce((o.details->>'avisoCobro')::boolean, false) and not (o.details ? 'avisoCobroAt'))))", "))"],
+  ['liberarMira', 'la marca aparte de la fila', 'apps/web/lib/avisos.ts', 'with k as (insert into notif_once (key) select $14::text where $14::text is not null on conflict do nothing returning 1)\n       insert into notifications', 'insert into notifications'],
   ['liberarMira', 'viaje: el aviso al negocio sin su llave', VL, '}, `cobrada:biz_viaje_cx:${numero}`)));', '})));'],
   ['liberarMira', 'evento privado: el aviso al negocio sin su llave', EP, '{ dep: neg }, `cobrada:evp_biz_cx:${numero}`)));', '{ dep: neg })));'],
-  ['liberarMira', 'viaje: la parte que tira se lleva la otra', VL, '  try { return (await f()) !== false; } catch (e) { console.error(', '  try { return (await f()) !== false; } finally { console.error('],
-  ['liberarMira', 'evento privado: la parte que tira se lleva la otra', EP, '  try { return (await f()) !== false; } catch (e) { console.error(', '  try { return (await f()) !== false; } finally { console.error('],
+  ['liberarMira', 'la parte que tira se lleva la otra', 'apps/web/lib/avisos.ts', '  try { return (await f()) !== false; } catch (e) { console.error(', '  try { return (await f()) !== false; } finally { console.error('],
+  ['liberarMira', 'evento privado: avisoParte copiada aquí', EP, 'export async function avisarEvpTardeCobrado(', 'async function avisoParte(numero: string, tpl: string, f: () => Promise<boolean | undefined>): Promise<boolean> { return (await f()) !== false; }\nexport async function avisarEvpTardeCobrado('],
   // H5: el resultado del aviso pisa el reclamo de otro (sin mirar avisoCobroAt).
   ['liberarMira', 'el aviso que quedó pisa el reclamo de otro', CO, "where id = $1::bigint and details->>'avisoCobroAt' = $2::text`, [opId, c.at]);", "where id = $1::bigint`, [opId, c.at]);"],
   ['liberarMira', 'el reclamo devuelto pisa el de otro', CO, "        where id = $1::bigint and details->>'avisoCobroAt' = $2::text returning", "        where id = $1::bigint returning"],

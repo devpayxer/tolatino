@@ -6600,6 +6600,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Tras la revisión de efe56b9: ese aviso ya no se repite si el SMS falla después de llegar a la campana, ni a los dueños que ya lo tienen; los reintentos
   se espacian (1, 5, 15, 60 y 240 minutos) y, si se agotan, el equipo de dinero recibe una alerta para decírselo a la persona; el viaje cobrado días antes
   de cancelarse tarde también se arregla solo, y lo que lleve más de 7 días sin arreglarse avisa al equipo. **Qué mirar:** nada en pantalla.
+  Tras la revisión de ae940a7: a quien pagó tampoco se le repite ese aviso, y la cancelación que se cortó a mitad de aplicar su regla se completa sola
+  (con su aviso y la alerta al equipo). **Qué mirar:** nada en pantalla.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

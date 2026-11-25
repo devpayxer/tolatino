@@ -3146,9 +3146,18 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       exista la alerta cobrada:. din9x (sin correr aquí): DV acepta los dos textos válidos de la devolución y espera al libro; las alertas que abre la
       prueba se marcan resueltas al final (notaAlerta); H1 con los avisos reales (lib/avisos.ts con el SMS que falla y un dueño que no queda), H2 (cobrado
       hace 3 días, cancelado ahora; y fuera de la ventana) y H4 (agotado → aviso:).
+      Revisión de ae940a7 (hecho): din9x caía en la sección 6 por la PRUEBA, no por el código: el stub de push/cola › destino no usaba su parámetro de
+      canales ($3) y Postgres rechazaba la consulta de avisar («bind message supplies 3 parameters, but prepared statement requires 2»), que avisar se
+      tragaba en silencio (false sin fila). Ahora avisar deja el «no quedó» en el registro; el stub usa su parámetro. unaVez vive en avisar: la marca
+      <unaVez>:<persona> (notif_once) y la fila del aviso en la MISMA sentencia (si la marca estaba, ya lo tenía: true sin otra fila); la usan el aviso a
+      quien pagó (cobrada:viaje_cx / cobrada:evp_cancelado:<número>) y el de cada dueño. El SMS cuyo estado no se pudo anotar en su aviso ya no queda
+      «fallo» (lib/sms › enviarSms no lanza: lo que lanza es la base después, cuando el SMS pudo haber salido; queda en el registro y en sms_outbox).
+      La regla por lo cobrado deja su marca (details.reglaCobradaAt) antes de mover dinero y barrerCobradasTarde completa la que quedó a medias después de
+      empezarla (sin alerta cobrada:, o sin que nadie reclamara su aviso), con su texto («quedó a medias»). avisoParte en un solo sitio (avisos.ts). din9x
+      sin escapes «lo hizo el servidor» (lo que el barrido del servidor podría tomar se siembra reciente y se envejece justo antes de la pasada) y el
+      cierre de las alertas también en el finally; dos veces seguidas en verde contra un servidor del worktree en :3120 (50 s y 49 s; reparto.json: 50).
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
-      barrerPush lo recoge (si no, que lo encole el barrido). (b) Si el aviso a un dueño quedó y su anotación en notif_once falla, un reintento se lo
-      repetiría (queda en el registro). (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
+      barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
       ventana en ese tiempo no alerta. (d) Las alertas aviso: y reparar: no se cierran solas (no hay estado que mirar): se marcan resueltas a mano.
       (e) El reclamo atascado (el proceso murió con el reclamo tomado) se retoma a los 10 minutos y cuenta como intento, sin la espera creciente.
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,

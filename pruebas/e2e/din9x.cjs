@@ -37,6 +37,10 @@
 //   6. H1 con los avisos REALES (lib/avisos.ts): la fila que quedó con un SMS que falla dice que quedó y no se repite; el reintento del negocio no repite a
 //      la dueña que ya lo tiene, solo al dueño que faltaba (unaVez).
 //   Al final, las alertas hold_stuck que abrió la prueba (cobrada:, aviso:, reparar:, captura:) se marcan resueltas como lo haría el equipo (notaAlerta).
+//   (revisión de ae940a7) Las filas que el barrido de cada minuto del servidor podría tomar se siembran recientes y se envejecen justo antes de la pasada de
+//   la prueba (sin escapes «lo hizo el servidor»); la cancelación tarde que quedó a medias DESPUÉS de empezar la regla (reglaCobradaAt) se completa; la
+//   sección 6 usa el destino de push con su parámetro (el stub sin él hacía fallar la consulta de avisar: «false» sin fila) y el SMS cuyo estado no se
+//   anota en el aviso (lib/sms no lanza: lo que lanza es la base después) no lo deja «fallo»; el cierre de las alertas también corre en el finally.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), la salida, los cobros y el simulador.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs');
@@ -245,6 +249,17 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
     './viajes': viajesM, './evento-privado': evpM,
     './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': K, './devolucion-consulta': DC,
     './mercado': { repararMercado: async () => undefined }, './apartados': { repararApartados: async () => undefined }, './estimados': { repararEstimados: async () => undefined } });
+  // (revisión de efe56b9) · Las alertas hold_stuck que abrió esta prueba (cobrada:, aviso:, reparar:, captura:) no se quedan abiertas en la base compartida:
+  // el equipo las marca resueltas, con su nota (alertas › notaAlerta, como en Super Admin › Planes › Ingresos). Al final del try y en el finally.
+  let EQ = null;
+  const cerrarAlertas = async () => {
+    EQ = EQ ?? persona('Equipo');
+    const abiertas = () => sql(`select a.id from money_alerts a join payments p on p.id = case when a.subject_id ~ '^(cobrada|aviso|reparar|captura):[0-9]{1,18}$' then split_part(a.subject_id, ':', 2)::bigint end
+        where a.kind = 'hold_stuck' and p.business_id like 'd9x_-${RUN}' and not exists (select 1 from money_alert_notes n where n.alert_id = a.id and n.action in ('resuelta', 'resuelta_sola', 'resuelta_a_mano'))`).split('\n').filter((l) => /^\d+$/.test(l));
+    const L0 = abiertas(), malas = [];
+    for (const id of L0) { const r = await alertasM.notaAlerta({ id: EQ.id, cities: [] }, id, 'resuelta', 'Prueba din9x: revisado en Stripe, cuadra con lo aplicado.'); if (!r.ok) malas.push([id, r.msg]); }
+    return { n: L0.length, malas, quedan: abiertas().length };
+  };
   try {
     console.log('2 · alertarCapturaTarde: una fila por cobro, sin duplicar, que el barrido de alertas no cierra');
     const BR = `d9xr-${RUN}`; negocio(BR, `Van alerta ${RUN}`); const U = persona('Alerta');
@@ -435,16 +450,41 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       await cobros.soltarRetencion(G.op, cobros.SWEEP);
       sql(`update operations set details = details || jsonb_build_object('avisoCobroIntentos', ${cobros.AVISO_TARDE_INTENTOS}, 'avisoCobroAt', now() - interval '5 hours') where id = ${G.op} and details ? 'avisoCobroFalta' and coalesce((details->>'avisoCobro')::boolean, false) = false`);
       await cobros.barrerCobradasTarde({ negocio: BR });
-      const porServidorG = cuantos(G.num, 'viaje_cx') !== '0';
-      ok(porServidorG || (alertas(`aviso:${G.pid}`) === '1' && det(G.num, 'avisoCobroIntentos') === String(cobros.AVISO_TARDE_INTENTOS + 1)
+      // (revisión de ae940a7) · Sin escape: el reintento lo hizo esta pasada (el aviso de mentira que falla), nunca el servidor (ningún aviso real).
+      ok(alertas(`aviso:${G.pid}`) === '1' && det(G.num, 'avisoCobroIntentos') === String(cobros.AVISO_TARDE_INTENTOS + 1) && cuantos(G.num, 'viaje_cx') === '0'
         && detalle(`aviso:${G.pid}`).includes(`no le llegó a quien pagó después de ${cobros.AVISO_TARDE_INTENTOS} reintentos`) && detalle(`aviso:${G.pid}`).includes(`cobrada:${G.pid}`)
-        && sql(`select detail->>'en' from money_alerts where kind = 'hold_stuck' and subject_id = 'aviso:${G.pid}'`).includes('did not reach the payer')),
-        `agotado: UNA alerta aviso: que dice (ES/EN) a quién no le llegó y remite a cobrada: (${porServidorG ? 'lo mandó el servidor' : detalle(`aviso:${G.pid}`)})`);
+        && sql(`select detail->>'en' from money_alerts where kind = 'hold_stuck' and subject_id = 'aviso:${G.pid}'`).includes('did not reach the payer'),
+        `agotado: UNA alerta aviso: que dice (ES/EN) a quién no le llegó y remite a cobrada: (${detalle(`aviso:${G.pid}`)} · intentos ${det(G.num, 'avisoCobroIntentos')})`);
       const nG = AV.filter((x) => x[1] === G.num).length;
       sql(`update operations set details = details || jsonb_build_object('avisoCobroAt', now() - interval '5 hours') where id = ${G.op}`);
       await cobros.barrerCobradasTarde({ negocio: BR });
-      ok(AV.filter((x) => x[1] === G.num).length === nG && alertas(`aviso:${G.pid}`) === (porServidorG ? '0' : '1'), 'agotado: el barrido ya no lo manda ni abre otra alerta');
+      ok(AV.filter((x) => x[1] === G.num).length === nG && alertas(`aviso:${G.pid}`) === '1' && cuantos(G.num, 'viaje_cx') === '0', 'agotado: el barrido ya no lo manda ni abre otra alerta');
       FALLA_SIEMPRE.delete(G.num);
+
+      // (revisión de ae940a7) · A medias DESPUÉS de empezar la regla (reglaCobradaAt): la mitad ya devuelta con su llave, sin aviso ni alerta cobrada: (el
+      // proceso murió ahí). Se siembra reciente y se envejece justo antes de la pasada. El barrido la completa: ni otra devolución, el aviso y la alerta.
+      // Y la misma sin la marca (una cancelación de antes, o la normal que no pasó por la regla de lo cobrado): no se toca.
+      const envejecer = (x, min = 10) => sql(`with o as (update operations set cancelled_at = now() - make_interval(mins => ${min}),
+          details = case when details ? 'reglaCobradaAt' then details || jsonb_build_object('reglaCobradaAt', now() - make_interval(mins => ${min})) else details end where id = ${x.op} returning id)
+        update payments set captured_at = now() - make_interval(mins => ${min}), held_at = now() - make_interval(mins => ${min}) where id = ${x.pid}`);
+      const aMedias = (marca) => {
+        const x = tardeCobrada('trip', { retenido: false, hace: 0, detalles: JSON.stringify({ k: 'asiento', cobroMitad: 1500, ...(marca ? { reglaCobradaAt: new Date().toISOString() } : {}) }) });
+        sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) values (${x.pid}, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', 'done', 'vcx-${x.num}', now())`);
+        sql(`update payments set status = 'partially_refunded', refunded_cents = 1500 where id = ${x.pid}`);
+        sql(`update sim_intents set refunded_cents = 1500 where id = (select stripe_payment_intent from payments where id = ${x.pid})`);
+        return x;
+      };
+      const M3 = aMedias(true), M0 = aMedias(false);
+      envejecer(M3); envejecer(M0);
+      await cobros.barrerCobradasTarde({ negocio: BR });
+      const avM3 = AV.filter((x) => x[1] === M3.num);
+      ok(sql(`select count(*) from refunds where idem_key = 'vcx-${M3.num}'`) === '1' && pago(M3.num) === 'partially_refunded|3000|1500' && det(M3.num, 'cobroMitad') === '1500'
+        && avM3.length === 1 && avM3[0][2].queda === 1500 && avM3[0][2].dev?.e === 'hecha' && det(M3.num, 'avisoCobro') === 'true'
+        && alertas(`cobrada:${M3.pid}`) === '1' && detalle(`cobrada:${M3.pid}`).includes('la cancelación tarde quedó a medias') && detalle(`cobrada:${M3.pid}`).includes('se quedó $15.00 y se devolvieron $15.00'),
+        `a medias después de la regla: se completa (el aviso con lo aplicado y la alerta), sin otra devolución (${JSON.stringify(avM3.map((x) => x[2]))} · ${detalle(`cobrada:${M3.pid}`)})`);
+      ok(alertas(`cobrada:${M0.pid}`) === '0' && !AV.some((x) => x[1] === M0.num) && det(M0.num, 'avisoCobro') === '', 'la misma sin la marca de la regla: no se toca (ni aviso ni alerta)');
+      await cobros.barrerCobradasTarde({ negocio: BR });
+      ok(AV.filter((x) => x[1] === M3.num).length === 1 && alertas(`cobrada:${M3.pid}`) === '1' && sql(`select count(*) from refunds where idem_key = 'vcx-${M3.num}'`) === '1', 'otra pasada: nada más');
 
       // H2 (revisión de efe56b9) · Un viaje cobrado hace 3 días (al aceptarse) y cancelado tarde hace 10 minutos, con la devolución sin hacer: la ventana es la
       // de la cancelación (antes, la de captured_at de dos días: nunca lo veía).
@@ -463,39 +503,48 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       console.log('6 · H1: el aviso que quedó no se repite (los avisos reales: el SMS que falla después, el dueño que ya lo tiene)');
       {
         // lib/avisos.ts REAL: la base de verdad (salvo el aviso del dueño que «falla»: su fila no se anota), el SMS que siempre falla al salir, sin push.
+        // La base de verdad, salvo: la fila del aviso del dueño que «falla» (FALLA_U) y anotar el SMS en su aviso (lo único que lanza después de la fila:
+        // lib/sms › enviarSms nunca lanza). lib/sms de mentira: cuenta los SMS pedidos y contesta como el de verdad cuando no pudo ni anotarlo (null).
         const SMSF = { n: 0 }, FALLA_U = new Set();
-        const DF = { ...D, db: () => { const x = D.db(); return { query: (q, a) => (FALLA_U.has(a?.[0]) && /^\s*insert into notifications/.test(q) ? Promise.reject(new Error('la base no anotó el aviso')) : x.query(q, a)) }; } };
-        const avisosR = cargar('apps/web/lib/avisos.ts', { './db': DF, './entorno': { MODO_SMS: 'pruebas' }, './sms': { enviarSms: async () => { SMSF.n++; throw new Error('el proveedor de SMS no contesta'); } },
-          './push/cola': { canales: async () => [], destino: () => 'false', encolar: async () => 0, estadoPushSql: () => `'no'` },
+        const DF = { ...D, db: () => { const x = D.db(); return { query: (q, a) => (FALLA_U.has(a?.[0]) && /^\s*with k as \(insert into notif_once/.test(q) ? Promise.reject(new Error('la base no anotó el aviso'))
+          : /^update notifications set sms_id/.test(q) ? Promise.reject(new Error('la base no anotó el SMS en su aviso')) : x.query(q, a)) }; } };
+        // El push: el destino de verdad usa su parámetro de canales ($3); sin canales encendidos, ningún teléfono (el stub sin el parámetro rompía la consulta).
+        const avisosR = cargar('apps/web/lib/avisos.ts', { './db': DF, './entorno': { MODO_SMS: 'pruebas' }, './sms': { enviarSms: async () => { SMSF.n++; return null; } },
+          './push/cola': { canales: async () => [], destino: (u, app, can) => `t.user_id = ${u} and t.app = ${app} and t.provider = any(${can})`, encolar: async () => 0, estadoPushSql: () => `'no'` },
           './cifrado': { huella: (t) => crypto.createHash('sha256').update(String(t)).digest('hex'), cifrar: (t) => t }, './devolucion-cancelar': {} });
-        // Un aviso con SMS siempre (crit, sin push): la fila queda, el SMS falla después → quedó (true), el SMS queda «fallo».
+        // Un aviso con SMS siempre (crit, sin push): la fila queda, el SMS se pide y anotarlo en su aviso falla después → quedó (true), una fila, y su estado
+        // no pasa a «fallo» (el SMS pudo haber salido: lo dice sms_outbox).
         const P1 = persona('Aviso SMS'), refP = `H1-${RUN}`;
         const r1 = await avisosR.avisar(P1.id, 'cuenta_tel_cambio', { ultimos: '0000' }, { ref: ['trip', refP] });
         const filaP = () => sql(`select count(*) || '|' || coalesce(max(sms_status), '') from notifications where user_id = '${P1.id}' and tpl = 'cuenta_tel_cambio' and ref_id = '${refP}'`);
-        ok(r1 === true && SMSF.n === 1 && filaP() === '1|fallo', `la fila quedó y el SMS falló después: avisar dice que quedó y el SMS queda «fallo» (${r1} · ${filaP()} · ${SMSF.n} SMS)`);
+        ok(r1 === true && SMSF.n === 1 && filaP() === '1|pruebas', `la fila quedó y anotar el SMS falló después: avisar dice que quedó, una fila, sin «fallo» (${r1} · ${filaP()} · ${SMSF.n} SMS)`);
+        // unaVez: el mismo aviso con su llave dos veces, una fila (la segunda dice que quedó: ya lo tenía).
+        const kP = `prueba-una-vez:${RUN}`, rA = await avisosR.avisar(P1.id, 'cuenta_tel_cambio', { ultimos: '0001' }, { ref: ['trip', `${refP}-u`], unaVez: kP }), rB = await avisosR.avisar(P1.id, 'cuenta_tel_cambio', { ultimos: '0001' }, { ref: ['trip', `${refP}-u`], unaVez: kP });
+        ok(rA === true && rB === true && sql(`select count(*) from notifications where user_id = '${P1.id}' and ref_id = '${refP}-u'`) === '1' && sql(`select count(*) from notif_once where key = '${kP}:${P1.id}'`) === '1',
+          'unaVez: la marca y la fila en la misma sentencia; la segunda vez no anota otra fila y dice que quedó');
         // El barrido con esos avisos: quien pagó (el SMS falla) y los dos dueños del negocio (el segundo, la primera vez, no queda).
         const BH = `d9xh-${RUN}`; negocio(BH, `Van avisos ${RUN}`); const DUENO2 = persona('Dueño dos');
         sql(`insert into business_members (business_id, user_id, kind, display_name) values ('${BH}', '${DUENO2.id}', 'owner', 'Dueño dos')`);
         const viajesH = { avisarViajeTardeCobrado: async (num, regla, partes = { cli: true, neg: true }) => ({
-          cli: !partes.cli || (await avisosR.avisar(U.id, 'cuenta_tel_cambio', { ultimos: '0000' }, { ref: ['trip', num] })) !== false,
+          cli: !partes.cli || (await avisosR.avisar(U.id, 'cuenta_tel_cambio', { ultimos: '0000' }, { ref: ['trip', num], unaVez: `cobrada:prueba-cli:${num}` })) !== false,
           neg: !partes.neg || (await avisosR.avisarNegocio(BH, 'cuenta_tel_cambio', { ultimos: '0000' }, { ref: ['trip', num], unaVez: `cobrada:prueba:${num}` })) !== false }) };
         const cobrosH = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': PS, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertasM,
           './viajes': viajesH, './evento-privado': evpM, './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': K, './devolucion-consulta': DC,
           './mercado': { repararMercado: async () => undefined }, './apartados': { repararApartados: async () => undefined }, './estimados': { repararEstimados: async () => undefined } });
-        const H = tardeCobrada('trip', { retenido: false, hace: 10, biz: BH, detalles: '{"k":"asiento","cobroMitad":0}' });
+        // Reciente al sembrarla (el barrido del servidor no la toma: cobro y cancelación de menos de 5 minutos) y envejecida justo antes de la pasada.
+        const H = tardeCobrada('trip', { retenido: false, hace: 0, biz: BH, detalles: '{"k":"asiento","cobroMitad":0}' });
         const de = (uid) => sql(`select count(*) from notifications where user_id = '${uid}' and tpl = 'cuenta_tel_cambio' and ref_id = '${H.num}'`);
         FALLA_U.add(DUENO2.id);
+        envejecer(H);
         await cobrosH.barrerCobradasTarde({ negocio: BH });
-        // El barrido del servidor pudo tomarla antes (con los avisos de verdad del viaje): entonces no hay nada de esta prueba que mirar.
-        const porServidor = cuantos(H.num, 'viaje_cx') !== '0';
-        ok(porServidor || (de(U.id) === '1' && de(DUENA.id) === '1' && de(DUENO2.id) === '0' && sql(`select details->'avisoCobroFalta' from operations where id = ${H.op}`) === '["neg"]'),
-          `quien pagó tiene su aviso (su SMS falló: igual quedó, no falta); la dueña también; falta solo el del dueño que no quedó (${porServidor ? 'lo hizo el servidor' : `${de(U.id)}/${de(DUENA.id)}/${de(DUENO2.id)} · ${sql(`select details from operations where id = ${H.op}`)}`})`);
+        ok(cuantos(H.num, 'viaje_cx') === '0' && de(U.id) === '1' && de(DUENA.id) === '1' && de(DUENO2.id) === '0' && sql(`select details->'avisoCobroFalta' from operations where id = ${H.op}`) === '["neg"]',
+          `quien pagó tiene su aviso (anotar su SMS falló: igual quedó, no falta); la dueña también; falta solo el del dueño que no quedó (${de(U.id)}/${de(DUENA.id)}/${de(DUENO2.id)} · ${sql(`select details from operations where id = ${H.op}`)})`);
         FALLA_U.delete(DUENO2.id);
         sql(`update operations set details = details || jsonb_build_object('avisoCobroAt', now() - interval '2 minutes') where id = ${H.op} and coalesce((details->>'avisoCobro')::boolean, false) = false`);
         await cobrosH.barrerCobradasTarde({ negocio: BH });
         await cobrosH.barrerCobradasTarde({ negocio: BH });
-        ok(porServidor || (de(U.id) === '1' && de(DUENA.id) === '1' && de(DUENO2.id) === '1' && sql(`select (details ? 'avisoCobroFalta')::text from operations where id = ${H.op}`) === 'false'
-          && sql(`select count(*) from notif_once where key in ('cobrada:prueba:${H.num}:${DUENA.id}', 'cobrada:prueba:${H.num}:${DUENO2.id}')`) === '2'),
+        ok(cuantos(H.num, 'viaje_cx') === '0' && de(U.id) === '1' && de(DUENA.id) === '1' && de(DUENO2.id) === '1' && sql(`select (details ? 'avisoCobroFalta')::text from operations where id = ${H.op}`) === 'false'
+          && sql(`select count(*) from notif_once where key in ('cobrada:prueba:${H.num}:${DUENA.id}', 'cobrada:prueba:${H.num}:${DUENO2.id}', 'cobrada:prueba-cli:${H.num}:${U.id}')`) === '3',
           `el reintento le llegó solo al dueño que faltaba: ni quien pagó (su SMS falló) ni la dueña lo reciben otra vez (${de(U.id)}/${de(DUENA.id)}/${de(DUENO2.id)})`);
       }
     }
@@ -516,16 +565,12 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
     ok(cobros.capturaSinRespuesta({ ok: false, codigo: 'red' }) && cobros.capturaSinRespuesta({ ok: false, codigo: 'api_error' }) && !cobros.capturaSinRespuesta({ ok: false, codigo: 'canceled' }) && !cobros.capturaSinRespuesta({ ok: true }) && !cobros.capturaSinRespuesta(null),
       'capturaSinRespuesta: la red y el error de Stripe sí; un «no» claro, un «sí» o nada retenido, no');
 
-    // (revisión de efe56b9) · Las alertas hold_stuck que abrió esta prueba (cobrada:, aviso:, reparar:, captura:) no se quedan abiertas en la base compartida:
-    // el equipo las marca resueltas, con su nota (alertas › notaAlerta, como en Super Admin › Planes › Ingresos).
-    {
-      const EQ = persona('Equipo');
-      const abiertas = () => sql(`select a.id from money_alerts a join payments p on p.id = case when a.subject_id ~ '^(cobrada|aviso|reparar|captura):[0-9]{1,18}$' then split_part(a.subject_id, ':', 2)::bigint end
-          where a.kind = 'hold_stuck' and p.business_id like 'd9x_-${RUN}' and not exists (select 1 from money_alert_notes n where n.alert_id = a.id and n.action in ('resuelta', 'resuelta_sola', 'resuelta_a_mano'))`).split('\n').filter((l) => /^\d+$/.test(l));
-      const L0 = abiertas(), R = [];
-      for (const id of L0) R.push(await alertasM.notaAlerta({ id: EQ.id, cities: [] }, id, 'resuelta', 'Prueba din9x: revisado en Stripe, cuadra con lo aplicado.'));
-      ok(L0.length > 0 && R.every((r) => r.ok === true) && abiertas().length === 0, `las ${L0.length} alertas que abrió la prueba quedan resueltas por el equipo (${JSON.stringify(R.filter((r) => !r.ok))})`);
-    }
-  } finally { await D.db().end(); }
+    const c = await cerrarAlertas();
+    ok(c.n > 0 && c.malas.length === 0 && c.quedan === 0, `las ${c.n} alertas que abrió la prueba quedan resueltas por el equipo (${JSON.stringify(c.malas)})`);
+  } finally {
+    // (revisión de ae940a7) · También si algo falló antes: ninguna alerta de la prueba se queda abierta en la base compartida.
+    await cerrarAlertas().catch((e) => console.error('no se pudieron cerrar las alertas de la prueba:', e.message));
+    await D.db().end();
+  }
   console.log(`\nOK din9x (${n} ✓)`);
 })().catch((e) => { console.error(e); process.exit(1); });

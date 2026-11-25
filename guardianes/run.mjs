@@ -18296,22 +18296,31 @@ const guardianes = {
     // propio try/catch con registro (antes un SMS que fallaba decía «no quedó» y el barrido repetía el aviso hasta 5 veces). (21) avisarNegocio con unaVez
     // no repite el aviso a los dueños que ya lo tienen (notif_once <unaVez>:<dueño>); el reintento de «neg» va con su llave. (22) Cada parte del aviso de
     // lo aplicado (quien pagó, el negocio) por su cuenta (avisoParte: si una tira, la otra no se pierde).
+    // 25 nov (revisión de ae940a7) · (28) avisar no se traga en silencio el aviso que no quedó (registro); el SMS cuyo estado no se pudo anotar no se marca
+    // «fallo» (lib/sms no lanza: lo que lanza es la base después, cuando el SMS pudo haber salido). (29) unaVez en avisar: la marca <unaVez>:<persona>
+    // (notif_once) y la fila del aviso en la MISMA sentencia; la marca que ya estaba = ya lo tenía (true, sin otra fila). La usan el de quien pagó y el de
+    // cada dueño (avisarNegocio la pasa a avisar). (30) avisoParte en un solo sitio (avisos.ts).
     const AV = "apps/web/lib/avisos.ts", av = existsSync(AV) ? sinComent(AV) : "", avs = cuerpoFn(av, "avisar");
-    if (!/\): Promise<boolean \| undefined> \{\n  try \{/.test(avs) || !/if \(!r\) return false;/.test(avs) || !/\n    return true;\n  \} catch \{[^\n]*return false; \}/.test(avs)) falla(G, AV, 0, "avisar no dice si el aviso quedó (true si quedó; undefined si la persona lo apagó; false si no se pudo): quien reintenta no lo sabría");
-    if (!/ returning id::text`,[^\n]*\n[^\n]*\)\)\.rows\[0\]!\.id;\n(?:[ \t]*\n)*    try \{\n      if \(pst === "pendiente"\) await encolar\(\[id\]\);\n    \} catch \(e\) \{ console\.error\(/.test(avs)
-      || !/\n    try \{\n      if \(st === "pendiente" \|\| st === "pruebas"\) await salirSms\("notifications", id,[^\n]*\n    \} catch \(e\) \{\n      console\.error\(/.test(avs))
+    if (!/\): Promise<boolean \| undefined> \{\n  try \{/.test(avs) || !/if \(!r\) return false;/.test(avs) || !/\n    return true;\n  \} catch \(e\) \{\n[^\n]*\n    console\.error\([^\n]*\n    return false;\n  \}/.test(avs))
+      falla(G, AV, 0, "avisar no dice si el aviso quedó (true si quedó; undefined si la persona lo apagó; false si no se pudo, con su registro): quien reintenta no lo sabría");
+    if (!/ returning id::text`,\n[^\n]*\)\)\.rows\[0\]\?\.id;\n    if \(!id\) return true;[^\n]*\n(?:[ \t]*\n)*    try \{\n      if \(pst === "pendiente"\) await encolar\(\[id\]\);\n    \} catch \(e\) \{ console\.error\(/.test(avs)
+      || !/\n    try \{\n      if \(st === "pendiente" \|\| st === "pruebas"\) await salirSms\("notifications", id,[^\n]*\n    \} catch \(e\) \{\n      console\.error\([^\n]*\n    \}\n    return true;/.test(avs))
       falla(G, AV, 0, "avisar: el push o el SMS que fallan DESPUÉS de anotar el aviso lo dan por no quedado (cada uno va en su propio try/catch con registro y se devuelve true): el reintento repetiría el aviso que ya está en la campana");
+    if (/sms_status = 'fallo'/.test(avs)) falla(G, AV, 0, "avisar marca «fallo» el SMS cuando lo que lanzó fue anotarlo en su aviso (enviarSms no lanza): el SMS pudo haber salido");
+    if (!/with k as \(insert into notif_once \(key\) select \$14::text where \$14::text is not null on conflict do nothing returning 1\)\s*insert into notifications /.test(avs)
+      || !/where \$14::text is null or exists \(select 1 from k\) returning id::text`/.test(avs) || !/const llave = o\.unaVez \? `\$\{o\.unaVez\}:\$\{userId\}`/.test(avs))
+      falla(G, AV, 0, "avisar con unaVez no anota la marca <unaVez>:<persona> con la fila en la misma sentencia (o no salta a quien ya la tiene): el reintento le repetiría el aviso");
     const avn = cuerpoFn(av, "avisarNegocio");
-    if (!/if \(\(await avisar\(u\.id, tpl, v, oa\)\) === false\) \{ todos = false; continue; \}/.test(avn) || !/return todos;/.test(avn)) falla(G, AV, 0, "avisarNegocio no dice si el aviso de cada dueño quedó");
-    if (!/const ya = await db\(\)\.query\(`select 1 from notif_once where key = \$1`, \[llave\]\)/.test(avn) || !/if \(ya === null\) \{ todos = false; continue; \}\n      if \(ya\) continue;/.test(avn)
-      || !/insert into notif_once \(key\) values \(\$1\) on conflict do nothing/.test(avn.slice(avn.indexOf("await avisar(u.id"))))
-      falla(G, AV, 0, "avisarNegocio con unaVez no salta a los dueños que ya tienen el aviso (notif_once <unaVez>:<dueño>, anotado después de que quedó): el reintento de «neg» se lo repetiría");
+    if (!/if \(\(await avisar\(u\.id, tpl, v, o\)\) === false\) todos = false;/.test(avn) || !/return todos;/.test(avn) || !/o: \{ href\?: string; ref\?: \[string, string\]; unaVez\?: string \}/.test(avn))
+      falla(G, AV, 0, "avisarNegocio no dice si el aviso de cada dueño quedó, o no le pasa su llave (unaVez) a avisar: el reintento de «neg» se lo repetiría a los dueños que ya lo tienen");
+    if (!/\{\n  try \{ return \(await f\(\)\) !== false; \} catch \(e\) \{ console\.error\([^\n]*return false; \}\n\}/.test(cuerpoFn(av, "avisoParte")))
+      falla(G, AV, 0, "avisoParte no dice si la parte quedó o deja que tire: si el aviso del negocio tira, se pierde que el de quien pagó ya quedó (y el reintento se lo repite)");
     for (const [f, fn, a, b, ta, tb] of [["apps/web/lib/viajes.ts", "avisarViajeTardeCobrado", "avisarCliente(", "avisarNeg(", "viaje_cx", "biz_viaje_cx"], ["apps/web/lib/evento-privado.ts", "avisarEvpTardeCobrado", 'avisarEvp(numero, "cliente"', 'avisarEvp(numero, "negocio"', "evp_cancelado", "evp_biz_cx"]]) {
-      const t = existsSync(f) ? sinComent(f) : "", cu = cuerpoFn(t, fn), pa = cuerpoFn(t, "avisoParte");
+      const t = existsSync(f) ? sinComent(f) : "", cu = cuerpoFn(t, fn);
       if (!/partes: \{ cli: boolean; neg: boolean \} = \{ cli: true, neg: true \}\): Promise<\{ cli: boolean; neg: boolean \}>/.test(cu) || !cu.includes(`!partes.cli || (await avisoParte(numero, "${ta}", () => ${a}`) || !cu.includes(`!partes.neg || (await avisoParte(numero, "${tb}", () => ${b}`))
         falla(G, f, 0, `${fn} no manda solo lo que falta (partes), cada parte por su cuenta (avisoParte): el reintento repetiría el que ya llegó o perdería el que no`);
-      if (!/\{\n  try \{ return \(await f\(\)\) !== false; \} catch \(e\) \{ console\.error\([^\n]*return false; \}\n\}/.test(pa)) falla(G, f, 0, "avisoParte no dice si la parte quedó o deja que tire: si el aviso del negocio tira, se pierde que el de quien pagó ya quedó (y el reintento se lo repite)");
-      if (!new RegExp(`"${tb}", \\{[^\\n]*\\}, \`cobrada:${tb}:\\$\\{numero\\}\`\\)\\)\\);`).test(cu)) falla(G, f, 0, `${fn}: el aviso al negocio que se reintenta va sin su llave (unaVez cobrada:${tb}:<número>): el reintento se lo repetiría a los dueños que ya lo tienen`);
+      if (!/\{ avisoParte \} = await import\("\.\/avisos"\)/.test(cu) || /\nasync function avisoParte\(/.test(t)) falla(G, f, 0, `${fn}: avisoParte no es la de avisos.ts (una copia aquí se desviaría de la otra)`);
+      for (const tp of [ta, tb]) if (!new RegExp(`"${tp}", \\{[^\\n]*\\}, \`cobrada:${tp}:\\$\\{numero\\}\`\\)\\)\\);`).test(cu)) falla(G, f, 0, `${fn}: el aviso ${tp} que se reintenta va sin su llave (unaVez cobrada:${tp}:<número>): el reintento se lo repetiría a quien ya lo tiene`);
     }
     // (23) El resultado del aviso reclamado se escribe SOLO con el reclamo propio (avisoCobroAt igual al del reclamo); reclamarAvisoCobro (la cancelación) no
     // reclama lo que el barrido ya reclamó (aunque lo haya devuelto: la parte que llegó no se repite). (24) Los reintentos se espacian (AVISO_TARDE_ESPERA_MIN,
@@ -18369,8 +18378,15 @@ const guardianes = {
       || /p\.captured_at > now\(\)/.test(qL) || !/p\.captured_at < now\(\) - interval '5 minutes'/.test(qL)
       || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)/.test(qL)
       || !/not exists \(select 1 from refunds r where r\.payment_id = p\.id and split_part\(r\.idem_key, '~fallida-', 1\) = 'vcx-' \|\| o\.number\)/.test(qL)
-      || !/else coalesce\(o\.details->>'perdio', ''\) = 'false' end/.test(qL) || !/if \(!x\.fuera\) \{ await cobradaConSuRegla\(x\.op, REPARA, "reparar"\); return; \}/.test(bct))
+      || !/else coalesce\(o\.details->>'perdio', ''\) = 'false' end/.test(qL) || !/if \(!x\.fuera\) \{ await cobradaConSuRegla\(x\.op, REPARA, /.test(bct))
       falla(G, CO, 0, "barrerCobradasTarde no encuentra la cancelación tarde cobrada sin su regla por cuándo se canceló (o.cancelled_at; el cobro pudo ser días antes): quedaría cobrada entera, sin devolución, sin alerta y sin aviso");
+    // 25 nov (revisión de ae940a7) · (31) La regla por lo cobrado deja su marca (reglaCobradaAt) ANTES de mover dinero, y barrerCobradasTarde completa la que
+    // quedó a medias después de empezarla (sin alerta cobrada:, o sin que nadie reclamara su aviso): «completar».
+    const marca = /'reglaCobradaAt', coalesce\(details->'reglaCobradaAt', to_jsonb\(now\(\)\)\)/g;
+    if ((rtc.match(marca) ?? []).length < 2 || rtc.indexOf("reglaCobradaAt") > rtc.indexOf("await devolverAlCancelar(")) falla(G, CO, 0, "reglaTardeConLoCobrado no deja su marca (reglaCobradaAt) antes de mover dinero, en el viaje y en el evento privado: si el proceso muere después, nadie completa el aviso ni la alerta");
+    if (!/or \(coalesce\(\(o\.details->>'reglaCobradaAt'\)::timestamptz, 'infinity'::timestamptz\) < now\(\) - interval '5 minutes'\s*and \(not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)\s*or \(not coalesce\(\(o\.details->>'avisoCobro'\)::boolean, false\) and not \(o\.details \? 'avisoCobroAt'\)\)\)\)/.test(qL)
+      || !/await cobradaConSuRegla\(x\.op, REPARA, x\.aplicada \? "completar" : "reparar"\);/.test(bct))
+      falla(G, CO, 0, "barrerCobradasTarde no completa la cancelación tarde que quedó a medias después de empezar su regla (reglaCobradaAt sin alerta cobrada: o sin aviso reclamado)");
     if (!/o\.cancelled_at <= now\(\) - make_interval\(days => \$2::int\) as fuera/.test(qL) || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'reparar:' \|\| p\.id::text\)/.test(qL)
       || !/alertar\("hold_stuck", `reparar:\$\{x\.pid\}`/.test(bct))
       falla(G, CO, 0, "barrerCobradasTarde deja caer en silencio la cancelación tarde que sale de su ventana sin repararse (alerta hold_stuck reparar:<cobro>)");
