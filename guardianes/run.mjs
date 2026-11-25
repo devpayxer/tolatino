@@ -18664,15 +18664,48 @@ const guardianes = {
       }
       // La marca «/* pantalla */» es un comentario: sinComent la quita. Se mira en el texto con la marca puesta a salvo (el mismo recorte que sinComent, sin tocarla).
       const conMarca = readFileSync(f, "utf8").replace(/\/\*\s*pantalla\s*\*\//g, "\u0001PANTALLA\u0001").replace(/\/\*(?=["'`])/g, "/_").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+      // (revisión de 4691118) El nombre de respaldo en español que sale del SQL («coalesce(nullif(…first_name…), 'Cliente') as cliente») llega al aviso en español aunque lo lea quien está en inglés:
+      // en un archivo que avisa, el SQL deja el nombre vacío (nullif(…) sin coalesce) y el JS pone el respaldo { es: "Cliente", en: "Customer" }. Una consulta que es de una pantalla lo marca con /* pantalla */, pero
+      // la marca no se acepta a ciegas: (1) va en la CONSULTA (select / returning), nunca dentro de un ayudante que arma un trozo de SQL (QUIEN, NOMBRE…): ese ayudante no se marca y cada consulta que lo usa
+      // lleva su marca; (2) una consulta marcada que vive en un lector compartido (una función o constante que no se exporta, como leer, SEL, FILA, opDe) no puede darle ese alias a un aviso: si el archivo pasa
+      // «<fila>.<alias>» (la fila que sale de ese lector) dentro del objeto de un avisar*, falla: el lector deja el nombre vacío y la pantalla pone su respaldo.
+      const FALLBACK = /\bcoalesce\(\s*(?:nullif\((?:(?!\bas\b)[^`]){0,200}?first_name(?:(?!\bas\b)[^`]){0,200}?\)|[\w.]*first_name)\s*,\s*'[^']*[A-Za-zÁÉÍÓÚáéíóúñÑ][^']*'\s*\)/;
+      const ESCONSULTA = /\b(?:select|returning)\b|\bwith\s+\w+\s+as\s*\(/i, MARCA = /\u0001PANTALLA\u0001/;
+      const plantillas = [...conMarca.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map((m) => ({ q: m[1], i: m.index, l: conMarca.slice(0, m.index).split("\n").length }));
+      const ayudantes = new Set();   // nombres de ayudantes de SQL con nombre de respaldo
+      for (const p of plantillas) {
+        if (ESCONSULTA.test(p.q) || !FALLBACK.test(p.q)) continue;
+        const nom = /(?:\b(?:const|let)\s+(\w+)\s*(?::[^=\n]+)?=\s*(?:\([^)]*\)\s*(?::[^=\n]+?)?=>\s*)?|\bfunction\s+(\w+)\([^)]*\)[^{]*\{\s*return\s+)$/.exec(conMarca.slice(Math.max(0, p.i - 200), p.i));
+        if (!nom) continue;
+        ayudantes.add(nom[1] ?? nom[2]);
+        if (MARCA.test(p.q)) falla(G, f, p.l, `«/* pantalla */» dentro de ${nom[1] ?? nom[2]}, un ayudante que arma un trozo de SQL con un nombre de respaldo: la marca va en cada consulta de pantalla que lo usa, no en el ayudante (si no, también excusa a la consulta de un aviso)`);
+      }
+      for (const { q, i, l } of plantillas) {
+        if (!ESCONSULTA.test(q)) continue;
+        let alias = null, por = "";
+        const dir = FALLBACK.exec(q);
+        if (dir) alias = /\bas\s+"?(\w+)"?/.exec(q.slice(dir.index + dir[0].length))?.[1] ?? null;
+        else for (const h of ayudantes) { const u = new RegExp(`\\$\\{\\s*${h}\\b(?:\\([^)]*\\))?\\s*\\}\\s+as\\s+"?(\\w+)"?`).exec(q); if (u) { alias = u[1]; por = h; break; } }
+        if (!dir && !por) continue;
+        if (!MARCA.test(q)) { falla(G, f, l, "una consulta de un archivo que avisa da un nombre de respaldo en español (coalesce(nullif(…first_name…), 'Cliente')" + (por ? `, por el ayudante ${por}` : "") + "): si llega a un aviso, nullif(…) sin coalesce y el respaldo en el JS ?? { es: \"Cliente\", en: \"Customer\" }; si es solo de una pantalla, marca la consulta con /* pantalla */"); continue; }
+        // La consulta está marcada: ¿es de un lector compartido cuya fila llega a un aviso con ese alias?
+        if (!alias) continue;
+        const dec = [...conMarca.slice(0, i).matchAll(/^(export\s+)?(?:async\s+)?(?:function\s+(\w+)|const\s+(\w+)\s*=)/gm)].pop();
+        if (!dec || dec[1]) continue;   // exportada = una pantalla con nombre; solo el lector privado se comparte
+        const lector = dec[2] ?? dec[3], filas = new Set();
+        for (const r of t.matchAll(new RegExp(`\\b(?:const|let)\\s+(\\w+)\\s*=[^;]*?\\b${lector}\\b`, "g"))) filas.add(r[1]);
+        if (!filas.size) continue;
+        const uso = new RegExp(`\\b(${[...filas].join("|")})\\.${alias}\\b`);
+        for (const mm of t.matchAll(/(?<![\w$])(?<!function )(?:\w+\.)?avis[\wñÑ]*\(/g)) {
+          const a = argumentos(t, mm.index + mm[0].length - 1);
+          for (const ar of a) for (const ob of objetos(ar.s)) { const u = uso.exec(ob); if (u) falla(G, f, t.slice(0, mm.index).split("\n").length, `«/* pantalla */» en ${lector} (la consulta de la línea ${l}), que arma la fila de la que sale ${u[0]}, y esa fila llega a un aviso: un lector compartido no se marca; deja el nombre vacío (nullif sin coalesce) y pon el respaldo ?? { es: "Cliente", en: "Customer" } en el aviso y ?? "Cliente" en la pantalla`); }
+        }
+      }
       for (const m of conMarca.matchAll(/`((?:[^`\\]|\\.)*)`/g)) {
         const q = m[1], l = conMarca.slice(0, m.index).split("\n").length;
         // «/* pantalla */» dentro de la consulta: marca explícita de que es de una pantalla (no de un aviso) y no lleva el servicio en los dos idiomas.
         if (/\{svc,es\}/.test(q) && !/\{svc,en\}/.test(q) && /\b(select|returning)\b/i.test(q) && /\{svc,es\}[\s\S]{0,80}?\bas\s+\w+/.test(q) && !/\u0001PANTALLA\u0001/.test(q)) falla(G, f, l, "una consulta lee el servicio de la cita solo en español ({svc,es}): lee también {svc,en} (con respaldo al español) y mándalo como { es, en }");
         if (/'(FM)?DD\/(FM)?MM'/.test(q) && !/'(FM)?MM\/(FM)?DD'/.test(q)) falla(G, f, l, "una consulta da el día como DD/MM sin su MM/DD: el aviso en inglés lleva mes/día ({ es, en })");
-        // (revisión de e2c1e55) El nombre de respaldo en español que sale del SQL («coalesce(nullif(u.first_name, ''), 'Cliente') as cliente») llega al aviso en español aunque lo lea quien está en inglés:
-        // en un archivo que avisa, el SQL deja el nombre vacío (nullif(…) sin coalesce) y el JS pone el respaldo { es: "Cliente", en: "Customer" }. Una consulta de pantalla lo marca con /* pantalla */.
-        if (/\bcoalesce\(\s*(?:nullif\((?:(?!\bas\b)[^`]){0,200}?first_name(?:(?!\bas\b)[^`]){0,200}?\)|[\w.]*first_name)\s*,\s*'[^']*[A-Za-zÁÉÍÓÚáéíóúñÑ][^']*'\s*\)/.test(q) && !/\u0001PANTALLA\u0001/.test(q))
-          falla(G, f, l, "una consulta de un archivo que avisa da un nombre de respaldo en español (coalesce(nullif(…first_name…), 'Cliente')): si llega a un aviso, nullif(…) sin coalesce y el respaldo en el JS ?? { es: \"Cliente\", en: \"Customer\" }; si es solo de una pantalla, marca la consulta con /* pantalla */");
       }
     }
     // (revisión de b5edd4c) avisos › porIdioma respalda en los dos sentidos (el español vacío cae al inglés y al revés: nunca «» en un aviso) y avisarMuchos resuelve cada

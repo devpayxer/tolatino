@@ -792,7 +792,7 @@ async function unaRespuestaAuto(t: HiloAuto): Promise<string> {
     const { avisar } = await import("../avisos");
     const L = (await db().query<{ id: string }>(
       `select distinct user_id::text as id from business_members where business_id = $1 and status = 'active' and user_id is not null and (kind = 'owner' or 'all' = any(panel_access) or 'msg' = any(panel_access))`, [t.negocio])).rows;
-    for (const u of L) await avisar(u.id, "compa_te_paso", { cliente: t.quien ?? { es: "Un cliente", en: "A customer" }, texto: ultimo.slice(0, 80) }, { href: `/panel/${t.negocio}/mensajes?det=msg:${t.id}`, ref: ["chat", t.id] }).catch(() => undefined);
+    for (const u of L) await avisar(u.id, "compa_te_paso", { cliente: t.quien ?? { es: "un cliente", en: "a customer" }, texto: ultimo.slice(0, 80) }, { href: `/panel/${t.negocio}/mensajes?det=msg:${t.id}`, ref: ["chat", t.id] }).catch(() => undefined);
   }
   return otra ? "otra" : resp.pasar ? "paso" : "ok";
 }

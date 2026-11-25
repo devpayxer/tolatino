@@ -40,7 +40,7 @@ const atrapa = <T>(e: unknown): Res<T> => {
 const sha = (t: string) => createHash("sha256").update(t).digest("hex");
 // «Vecino» es el respaldo de lo que ve una pantalla (el panel y el boleto); el aviso (QUIEN_AV) deja el nombre vacío y el respaldo va en los dos idiomas.
 const QUIEN_AV = (u: string) => `nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), '')`;
-const QUIEN = (u: string) => `/* pantalla */ coalesce(nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), ''), 'Vecino')`;
+const QUIEN = (u: string) => `coalesce(nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), ''), 'Vecino')`;
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 const H0 = (d: string) => `(extract(hour from ${d}.starts_at at time zone ci.timezone) * 60 + extract(minute from ${d}.starts_at at time zone ci.timezone))::int`;
 /* La fecha sigue en pie: evento publicado o pausado, fecha programada y sin terminar. */
@@ -153,7 +153,7 @@ export async function verTransferencia(token: string, viewer: { id: string; phon
   if (!TOKEN.test(String(token))) return null;
   const x = (await db().query<{ kind: "transfer" | "comp"; st: string; vence: boolean; hasta: string; ph: string; from: string; claimed: string | null; nuevo: string | null; de: string; org: string;
     tn: Bi | null; mz: Bi | null; admits: number; cuantas: number; slug: string; fid: string; title: Bi; dia: string; h0: number; venue: string; img: string | null; dark: boolean; edad: number; tz: string; ok: boolean }>(
-    `select x.kind, x.status as st, x.expires_at <= now() as vence, ${ISO("x.expires_at")} as hasta, x.to_phone_hash as ph, x.from_user_id::text as "from", x.claimed_by::text as claimed,
+    `select /* pantalla */ x.kind, x.status as st, x.expires_at <= now() as vence, ${ISO("x.expires_at")} as hasta, x.to_phone_hash as ph, x.from_user_id::text as "from", x.claimed_by::text as claimed,
             (select n.code from tickets n where n.id = x.new_ticket_id) as nuevo, ${QUIEN("u")} as de, b.name as org,
             tt.name as tn, et.zone as mz, t.admits, case when x.kind = 'comp' then (select count(*)::int from tickets z where z.operation_id = x.operation_id and z.kind = 'comp' and z.status in ('valid', 'used')) else 1 end as cuantas,
             e.slug, d.id::text as fid, e.title, d.local_date::text as dia, ${H0("d")} as h0, case when e.venue_mode = 'other' then e.venue_name else b.name end as venue, f.dark, e.min_age as edad, ci.timezone as tz,
@@ -678,7 +678,7 @@ export async function despuesPanel(negocio: string, eventoId: string): Promise<D
          from operations o join tickets t on t.operation_id = o.id where o.kind = 'tickets' and o.pay_mode = 'none' and o.business_id = $2 and (o.details->>'event_id')::bigint = $1::bigint
         group by o.id order by o.id desc limit 60`, [eventoId, negocio]),
     db().query<{ num: string; quien: string; monto: number; boletos: number; por: "buyer" | "business"; estado: string; at: string }>(
-      `select o.number as num, ${QUIEN("u")} as quien, r.amount_cents as monto, (select count(*)::int from ticket_refund_lines l where l.refund_id = r.id and l.ticket_id is not null) as boletos,
+      `select /* pantalla */ o.number as num, ${QUIEN("u")} as quien, r.amount_cents as monto, (select count(*)::int from ticket_refund_lines l where l.refund_id = r.id and l.ticket_id is not null) as boletos,
               r.initiated_by as por, r.status as estado, ${ISO("r.created_at")} as at
          from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id join users u on u.id = o.user_id
         where o.kind = 'tickets' and o.business_id = $2 and (o.details->>'event_id')::bigint = $1::bigint order by r.id desc limit 60`, [eventoId, negocio]),
@@ -686,7 +686,7 @@ export async function despuesPanel(negocio: string, eventoId: string): Promise<D
       `select count(*) filter (where x.status = 'claimed')::int as hechas, count(*) filter (where x.status = 'pending')::int as pend from ticket_transfers x join tickets t on t.id = x.ticket_id
         where x.kind = 'transfer' and t.event_id = $1::bigint`, [eventoId]),
     db().query<{ num: string; orden: string; quien: string; motivo: string; estado: string; at: string }>(
-      `select h.number as num, o.number as orden, ${QUIEN("u")} as quien, h.reason as motivo, h.status as estado, ${ISO("h.created_at")} as at
+      `select /* pantalla */ h.number as num, o.number as orden, ${QUIEN("u")} as quien, h.reason as motivo, h.status as estado, ${ISO("h.created_at")} as at
          from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id
         where o.kind = 'tickets' and o.business_id = $2 and (o.details->>'event_id')::bigint = $1::bigint order by h.id desc limit 30`, [eventoId, negocio]),
     db().query<{ n: number }>(`select coalesce(sum(t.admits), 0)::int as n from tickets t join event_dates d on d.id = t.event_date_id where t.event_id = $1::bigint and t.kind = 'comp' and t.status in ('valid', 'used') and d.ends_at > now()`, [eventoId]),
@@ -700,7 +700,7 @@ export async function despuesPanel(negocio: string, eventoId: string): Promise<D
 export async function boletosOrdenPanel(negocio: string, numero: string): Promise<{ code: string; tipo: string; precio: number; estado: string; quien: string }[]> {
   if (!NUM_B.test(numero)) return [];
   return (await db().query<{ code: string; tipo: string; precio: number; estado: string; quien: string }>(
-    `select t.code, coalesce(tt.name->>'es', et.zone->>'es', '') as tipo, t.price_cents as precio, t.status as estado, ${QUIEN("u")} as quien
+    `select /* pantalla */ t.code, coalesce(tt.name->>'es', et.zone->>'es', '') as tipo, t.price_cents as precio, t.status as estado, ${QUIEN("u")} as quien
        from tickets t join operations o on o.id = t.operation_id left join users u on u.id = t.holder_user_id left join ticket_types tt on tt.id = t.ticket_type_id left join event_tables et on et.id = t.table_id
       where o.number = $1 and o.business_id = $2 and o.kind = 'tickets' and o.pay_mode = 'app' and t.status <> 'replaced' order by t.table_id nulls first, t.id`, [numero, negocio])).rows;
 }

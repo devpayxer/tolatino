@@ -233,11 +233,12 @@ export type ApartadoVista = { numero: string; st: St; detalle: string | null; bi
   // 9v (sexta tanda) · Lo retenido (el envío o el abono del plan) como está en la base: retenido, soltado, cobrado y devuelto. La pantalla nunca dice «Se liberó» sin mirar.
   pago: { st: string; monto: number; devuelto: number } | null;
   plan: import("./layaway").PlanVista | null };
-async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { op: string; uid: string }) | null> {
-  const x = (await db().query<ApartadoVista & { op: string; uid: string }>(
+type FilaApt = Omit<ApartadoVista, "cliente"> & { cliente: string | null; op: string; uid: string };
+async function leer(where: string, args: unknown[]): Promise<FilaApt | null> {
+  const x = (await db().query<FilaApt>(
     // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
-    `select /* pantalla */ o.id::text as op, o.user_id::text as uid, o.number as numero, o.status as st, o.status_detail as detalle, o.business_id as biz, b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, b.logo_url as foto,
-            coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
+    `select o.id::text as op, o.user_id::text as uid, o.number as numero, o.status as st, o.status_detail as detalle, o.business_id as biz, b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, b.logo_url as foto,
+            nullif(u.first_name, '') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
             o.details->>'dia' as dia, (o.details->>'hora')::int as hora, coalesce((o.details->>'sms')::boolean, true) as sms, o.ready_at as hasta, o.respond_by as responde, o.customer_note as nota, o.sent_at as enviado, o.confirmed_at as guardado, o.done_at as recogido, o.cancelled_by as "cxBy", coalesce((o.details->>'hold_hours')::int, 48) as horas,
             o.mode = 'delivery' as ship, coalesce(o.delivery_cents, 0) as envio, nullif(concat_ws(' · ', o.details->'to'->>'label', o.details->'to'->>'street'), '') as "to", coalesce(o.details->>'ship_days', '3-5') as dias,
             o.details->>'tracking' as track, o.details->>'shipped_at' as salio, o.stage as etapa,
@@ -261,7 +262,7 @@ export async function apartadoVista(userId: string, numero: string): Promise<Apa
   const x = await leer("o.number = $1 and o.user_id = $2", [numero, userId]);
   if (!x) return null;
   const { op: _o, uid: _u, ...v } = x;
-  return v;
+  return { ...v, cliente: x.cliente ?? "Cliente" };
 }
 export async function apartadoPanel(negocio: string, numero: string): Promise<ApartadoVista | null> {
   if (!NUM.test(String(numero))) return null;
@@ -269,7 +270,7 @@ export async function apartadoPanel(negocio: string, numero: string): Promise<Ap
   const x = await leer("o.number = $1 and o.business_id = $2", [numero, negocio]);
   if (!x) return null;
   const { op: _o, uid: _u, ...v } = x;
-  return v;
+  return { ...v, cliente: x.cliente ?? "Cliente" };
 }
 export type ApartadoFila = { numero: string; st: St; cliente: string; tot: number; n: number; dia: string; hora: number; hasta: string; responde: string; ship: boolean; etapa: string; plan: string | null };
 export async function apartadosNegocio(negocio: string): Promise<ApartadoFila[]> {

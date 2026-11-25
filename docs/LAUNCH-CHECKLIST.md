@@ -3275,3 +3275,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       con que El Compa pasa un mensaje (compa/conversacion, también «un cliente en WhatsApp/SMS»): el SQL deja el nombre vacío (`nullif(…)`) y el JS pone `?? { es: "Cliente", en: "Customer" }`. Las
       ~40 consultas de pantallas (listas del panel, colas y admin, constancia de una disputa) llevan `/* pantalla */`. (5) `avisarMuchos`: el idioma se lee de mil en mil y, si la consulta falla,
       cae al español (como la otra vía); `porIdioma(v.es, true)` quedó dentro del `try`. Al revés: 5 casos nuevos en alrevesDineroDiceLoQuePaso. Sin migración.
+      **Revisión de 4691118 (25 nov, hecho):** la marca `/* pantalla */` ya no se acepta a ciegas. (1) `apartados › leer` (lector compartido que arma `x` para la pantalla Y para los avisos) seguía
+      dando `coalesce(…, 'Cliente') as cliente` bajo la marca: el respaldo en español llegaba al aviso (`x.cliente ?? {…}` nunca usaba el respaldo bilingüe). Ahora `leer` deja el nombre vacío
+      (`nullif(u.first_name, '') || …`), la fila interna es `cliente: string | null`, el aviso pone `?? { es: "Cliente", en: "Customer" }` y la pantalla (apartadoVista / apartadoPanel) `?? "Cliente"`.
+      (2) El guardián: una consulta marcada que vive en un lector compartido (función o constante que NO se exporta: leer, SEL, FILA, opDe) falla si el mismo archivo pasa `<fila>.<alias>` (la fila
+      que sale de ese lector) dentro del objeto de un `avisar*`; y la marca dentro de un ayudante que arma un trozo de SQL (`QUIEN` en boletos-despues) falla: la marca va en cada consulta de pantalla
+      que lo usa (boletos-despues › verTransferencia, devoluciones, ayudas, boletosOrdenPanel), y una consulta que usa un ayudante con respaldo sin su marca también falla. Al revés: 4 casos nuevos
+      (175/175). (3) Se probó quitar la marca de acciones-colas (3) y acciones-negocios (1): el guardián las sigue pidiendo (el SQL da el respaldo y el archivo avisa), así que se quedan. (4) El respaldo
+      de El Compa («Un cliente») va en minúscula, como en la línea del canal: «un cliente» / «a customer». _Sigue sin verse:_ un lector que entrega la fila por otra función (sin `const x = … lector`)
+      o un alias renombrado en la consulta de pantalla. Sin migración.

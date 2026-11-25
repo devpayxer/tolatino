@@ -246,7 +246,13 @@ const casos = [
   ["avisoNegUnIdioma", "el avisar() propio del archivo: un texto en el cuarto argumento (envios)", 'apps/web/lib/envios.ts', 'tpl, { rastreo: code })', 'tpl, { rastreo: "Código " + code })'],
   ["avisoNegUnIdioma", "una variable que se llama tpl lleva texto (rentas)", 'apps/web/lib/rentas.ts', 'cliente: "To\'Latino", que: cobrar', 'tpl: "Ver la renta", cliente: "To\'Latino", que: cobrar'],
   ["avisoNegUnIdioma", "el nombre de respaldo «Cliente» sale del SQL a un aviso (envios)", 'apps/web/lib/envios.ts', "nullif(u.first_name, '') as cliente", "coalesce(nullif(u.first_name, ''), 'Cliente') as cliente"],
-  ["avisoNegUnIdioma", "el nombre de respaldo «Vecino» de un ayudante de SQL sale a un aviso (boletos-despues)", 'apps/web/lib/boletos-despues.ts', "const QUIEN = (u: string) => `/* pantalla */ coalesce(", "const QUIEN = (u: string) => `coalesce("],
+  // (revisión de 4691118) La marca «/* pantalla */» no se acepta a ciegas: el lector compartido de apartados (leer) deja el nombre vacío; la marca no va en un ayudante de SQL (QUIEN) sino en la consulta que lo usa.
+  ["avisoNegUnIdioma", "el lector compartido (apartados › leer) vuelve a dar el respaldo «Cliente» que llega a un aviso", 'apps/web/lib/apartados.ts', "nullif(u.first_name, '') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,\n            o.details->>'dia'",
+    "coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,\n            o.details->>'dia'"],
+  ["avisoNegUnIdioma", "el lector compartido (apartados › leer) con la marca «pantalla» puesta: su fila llega a un aviso", [['apps/web/lib/apartados.ts', "nullif(u.first_name, '') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,\n            o.details->>'dia'",
+    "coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,\n            o.details->>'dia'"], ['apps/web/lib/apartados.ts', '`select o.id::text as op, o.user_id::text as uid', '`select /* pantalla */ o.id::text as op, o.user_id::text as uid']]],
+  ["avisoNegUnIdioma", "la marca «pantalla» dentro de un ayudante de SQL (boletos-despues › QUIEN)", 'apps/web/lib/boletos-despues.ts', "const QUIEN = (u: string) => `coalesce(", "const QUIEN = (u: string) => `/* pantalla */ coalesce("],
+  ["avisoNegUnIdioma", "una consulta que usa el ayudante QUIEN sin su marca (boletos-despues › boletosOrdenPanel)", 'apps/web/lib/boletos-despues.ts', '`select /* pantalla */ t.code, coalesce(tt.name', '`select t.code, coalesce(tt.name'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {
