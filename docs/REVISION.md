@@ -6576,6 +6576,7 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   panel del evento privado dice lo que pasó con el depósito. **Decidido sin preguntar:** las tablas de política al reservar («Te devolvemos $X» antes
   de que exista un cobro) se dejaron como regla; si las quieres en «pedimos la devolución», es un cambio de texto (LAUNCH). **Qué mirar (teléfono):**
   una mesa con depósito › Cancelar: la hoja; una fiesta confirmada a más de 30 días › Cancelar la fecha: «Es gratis. Pedimos la devolución de…».
+  Tras la revisión: el evento privado cancelado tarde ya no dice «se queda con el restaurante» si no había nada cobrado, y dice lo que quedaba.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

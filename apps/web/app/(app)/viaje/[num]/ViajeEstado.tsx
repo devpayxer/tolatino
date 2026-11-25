@@ -62,7 +62,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   // suelta la retención (soltarRetencion). Tarde (menos de 24 h): se cobra la mitad (lo retenido se cobra primero) y se pide la devolución del resto. Nunca
   // «te devolvemos» antes de actuar: lo que pasó lo dice devT después.
   const pideCx = nm(pideAlCancelar(x.pago, dinero)), sinCargo = E2("No se cobra nada.", "Nothing is charged.");
-  const mitad = Math.floor(x.tot / 2), resto = Math.max(0, (retenido ? x.pago.monto : queda) - mitad);
+  const base = retenido ? x.pago.monto : queda, mitad = Math.min(Math.floor(x.tot / 2), base), resto = Math.max(0, base - mitad);
   const camino = x.status === "confirmed" && x.detalle === "camino";
   const H: Record<string, [string, string, string, string, string, string]> = {
     pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, `${retenido ? `${E2(`Se retuvieron ${dinero(x.pago.monto)}.`, `${dinero(x.pago.monto)} is held.`)}${nm(pideSoltarSi("confirman", x.pago, dinero))}` : cobrado ? "" : E2("Si no confirman, no se cobra nada.", "If they do not confirm, nothing is charged.")} ${linea}`.trim()],
@@ -112,7 +112,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.status) && !camino && x.detalle !== "recogida";
   const regla = x.status !== "confirmed" ? `${E2("Aún no confirman: es gratis.", "Not confirmed yet: it is free.")} ${pideCx || sinCargo}`
     : x.horasFaltan >= 24 ? `${E2("Faltan más de 24 horas: es gratis.", "More than 24 hours left: it is free.")} ${pideCx || sinCargo}`
-    : (retenido || cobrado) && mitad > 0 ? `${E2(`Faltan menos de 24 horas: se cobra la mitad (${dinero(mitad)}).`, `Less than 24 hours left: half is charged (${dinero(mitad)}).`)}${resto > 0 ? E2(` Pedimos la devolución del resto (${dinero(resto)}) a tu tarjeta; aquí ves cuando salga.`, ` We request a refund of the rest (${dinero(resto)}) to your card; you see here when it goes through.`) : ""}`
+    : (retenido || cobrado) && mitad > 0 ? `${mitad === Math.floor(x.tot / 2) ? E2(`Faltan menos de 24 horas: se cobra la mitad (${dinero(mitad)}).`, `Less than 24 hours left: half is charged (${dinero(mitad)}).`) : E2(`Faltan menos de 24 horas: se cobra lo que queda (${dinero(mitad)}).`, `Less than 24 hours left: what is left is charged (${dinero(mitad)}).`)}${resto > 0 ? E2(` Pedimos la devolución del resto (${dinero(resto)}) a tu tarjeta; aquí ves cuando salga.`, ` We request a refund of the rest (${dinero(resto)}) to your card; you see here when it goes through.`) : ""}`
     : `${E2("Faltan menos de 24 horas.", "Less than 24 hours left.")} ${pideCx || sinCargo}`;
   const llegar = () => abrirComoLlegar({ dir: x.from ? nm(x.from) : x.negocio.direccion ?? B });
   return (

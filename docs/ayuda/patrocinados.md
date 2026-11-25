@@ -45,7 +45,7 @@ panel._
 | Renovar solo encendido | Al terminar, se cobra el mismo plazo con tu tarjeta y sigue sin cortes. Te llega «Tu patrocinio se renovó». |
 | Renovar solo y la tarjeta no pasa (o ya no hay puesto) | Termina y te avisamos por qué: «Tu patrocinio no se renovó». Puedes comprar otro. |
 | Terminar antes (uno activo) | Dejas de salir al momento. **Lo pagado no se devuelve** (lo dice la pantalla antes de confirmar). |
-| Cancelar una reserva (no empezó) | No llega a empezar y **pedimos la devolución de todo** a tu tarjeta (así lo dice antes de confirmar; nunca «te devolvemos» antes de intentarlo). Cuando sale, te llega «Te devolvimos lo que no se usó». |
+| Cancelar una reserva (no empezó) | No llega a empezar y **pedimos la devolución de todo** a tu tarjeta (así lo dice antes de confirmar). Cuando sale, te llega «Te devolvimos lo que no se usó». |
 | Cancelas una reserva y la devolución no sale al momento | La pantalla dice lo que pasó de verdad: «te devolvimos» solo si salió; si Stripe no contestó, que está en camino (se reintenta sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino te la hace por otro medio. La reserva queda cancelada igual. |
 | To'Latino lo termina (reglas, quejas) | Te llega el aviso con el motivo y, salvo que el equipo diga lo contrario, **te devolvemos los días enteros que no se usaron**. |
 | Tu página deja de estar publicada | El patrocinio termina y el puesto queda libre (no se devuelve: si fue un error, escribe a Soporte). |
@@ -165,7 +165,7 @@ panel._
 | Auto-renew on | When it ends, the same length is charged to your card and it continues without a gap. You get «Your sponsorship renewed». |
 | Auto-renew and the card fails (or there is no slot) | It ends and we tell you why: «Your sponsorship did not renew». You can buy another. |
 | End early (an active one) | You stop showing right away. **What you paid is not refunded** (the screen says so before you confirm). |
-| Cancel a booking (not started) | It never starts and **we request a refund of all of it** to your card (that is what it says before you confirm; never «we refund» before trying). When it goes out, you get «We refunded what was not used». |
+| Cancel a booking (not started) | It never starts and **we request a refund of all of it** to your card (that is what it says before you confirm). When it goes out, you get «We refunded what was not used». |
 | You cancel a booking and the refund does not go out right away | The screen says what really happened: «we refunded» only if it went out; if Stripe did not answer, that it is on its way (it retries by itself); if the bank or Stripe do not accept it, that To'Latino's money team refunds you another way. The booking is cancelled anyway. |
 | To'Latino ends it (rules, complaints) | You get the notice with the reason and, unless the team says otherwise, **we refund the whole days that were not used**. |
 | Your page stops being live | The sponsorship ends and the slot opens up (no refund: if it was a mistake, contact Support). |

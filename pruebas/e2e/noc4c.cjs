@@ -80,7 +80,7 @@ async function reservar(p, svc, { pax = 2, card = true, horasMin = 1 } = {}) {
   sql(`update operations set details = details || jsonb_build_object('cut', (extract(epoch from (now() at time zone 'America/New_York') - (night_date + time '12:00')) / 60)::int + 60) where number = '${M1}'`);
   await cli.reload(); await cli.getByText('MESA CONFIRMADA').first().waitFor();
   await clic(cli.getByRole('button', { name: 'Cancelar la reserva' }));
-  ok(!!(await vis(cli.getByText(/te devolvemos \$50/))), 'la hoja dice la regla que aplica (antes del corte)');
+  ok(!!(await vis(cli.getByText(/es gratis\. Pedimos la devolución de \$50/))), 'la hoja dice la regla que aplica (antes del corte) y lo que se pedirá, nunca «te devolvemos» antes de actuar');
   await clic(cli.getByRole('button', { name: 'Sí, cancelar' }));
   ok(await espera(() => st(M1) === 'cancelled' && pay(M1) === 'refunded:5000:5000'), 'cancelar antes del corte → devolución completa');
 

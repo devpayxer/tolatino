@@ -220,7 +220,7 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
-  await avisar(o.uid, tpl, { negocio: o.negocio, noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), guarda: String(o.det.hold ?? await valor("noche_mesa_guardada_min")), dev: "", dep: "", puerta: "", ...extra }, { href: `/noche/${numero}`, ref: ["night", numero] });
+  await avisar(o.uid, tpl, { negocio: o.negocio, noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), guarda: String(o.det.hold ?? await valor("noche_mesa_guardada_min")), dev: "", dep: "", puerta: "", dinero: "", ...extra }, { href: `/noche/${numero}`, ref: ["night", numero] });
 }
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);

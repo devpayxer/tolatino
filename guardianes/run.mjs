@@ -18049,17 +18049,22 @@ const guardianes = {
     // lo que queda), y la rama tarde mira cobrado y dice queda (nunca el depósito entero); (i) «pedimos que se suelte» solo con lo retenido (pideSoltarSi, o
     // "held" en la misma línea); (j) los avisos de otra hora llevan {dinero} = pideSoltarSi("sirve", …) y sus plantillas lo usan (0224); (k) el evento privado:
     // «Depósito cobrado» solo si no está retenido y el panel dice lo que pasó (depCx, del cobro y devolucionesDe).
-    { const PROMETE = /[Tt]e devolvemos|\b[Ww]e refund\b|[Ll]iberamos todo|\b[Ww]e release everything|[Ss]e libera (tu|su|lo|el|todo)|[Ss]e liberan\b|[Ss]e le libera|(?<![Nn]o )se (le )?devuelve\b|\bis returned\b|\bcomes back\b|\bis (fully |being )?released\b|money is released|recibe su depósito/;
+    { const PROMETE = /[Tt]e devolvemos|\b[Ww]e refund\b|[Ll]iberamos todo|[Tt]e liberamos|\b[Ww]e release (everything|your)\b|deposit back\b|will be refunded|[Ss]e libera (tu|su|lo|el|todo)|[Ss]e liberan\b|[Ss]e le libera|(?<![Nn]o )se (le )?devuelve\b|\bis returned\b|\bcomes back\b|\bis (fully |being )?released\b|money is released|recibe su depósito/;
       const AP = "apps/web/app/(app)", PN = "apps/web/app/panel";
       const ANTES = { noche: `${AP}/noche/[num]/NocheEstado.tsx`, viaje: `${AP}/viaje/[num]/ViajeEstado.tsx`, fiesta: `${AP}/fiesta/[num]/FiestaEstado.tsx`, insc: `${AP}/insc/[num]/InscEstado.tsx`,
         evp: `${AP}/privado/[num]/EstadoEvp.tsx`, pat: `${PN}/Patrocinio.tsx`, pev: `${PN}/PatrocinioEvento.tsx`, citas: `${PN}/Citas.tsx`, pnoche: `${PN}/NocheReservas.tsx`,
         pfiesta: `${PN}/FiestasReservas.tsx`, pviaje: `${PN}/ViajesPanel.tsx`, pevp: `${PN}/EventoPrivado.tsx` };
+      // Antes de probar, se quitan de la línea solo los tramos eximidos (nunca la línea entera): el texto de ejemplo de un campo (ph: E2(…), «Ej.:»), lo
+      // que ya va en camino (devolucion.camino ? E2(…)) y lo que ya salió (r?.devuelto ? E2(…)).
+      const LIT = '(?:`[^`]*`|"[^"]*")', PAR = `E2\\(${LIT}\\s*,\\s*${LIT}\\)`;
+      const EXIME = [new RegExp(`ph: ${PAR}`, "g"), new RegExp(`devolucion\\.camino \\? \\[?${PAR}`, "g"), new RegExp(`r\\?\\.devuelto \\? ${PAR}`, "g"), /\[?"Ej\.:[^"]*", "e\.g\.[^"]*"\]?/g];
+      const sinEximir = (l) => EXIME.reduce((t, re) => t.replace(re, ""), l);
       const T = {};
       for (const [k, f] of Object.entries(ANTES)) {
         T[k] = existsSync(f) ? sinComent(f) : "";
         if (!T[k]) { falla(G, f, 0, "falta la pantalla (lo que se dice antes de actuar)"); continue; }
         T[k].split("\n").forEach((l, i) => {
-          if (PROMETE.test(l) && !/devolucion\.camino \?|r\?\.devuelto \?|Ej\.:/.test(l)) falla(G, f, i + 1, "promete el dinero antes de actuar («te devolvemos», «se libera», «se devuelve»…): va lo que se intentará según el cobro (pideAlCancelar / pideSoltarSi) y lo que pasó lo dice la pantalla después");
+          if (PROMETE.test(sinEximir(l))) falla(G, f, i + 1, "promete el dinero antes de actuar («te devolvemos», «se libera», «se devuelve»…): va lo que se intentará según el cobro (pideAlCancelar / pideSoltarSi) y lo que pasó lo dice la pantalla después");
           for (const m of l.matchAll(/pedimos que se suelte/g)) if (!/"held"|retenido/.test(l.slice(Math.max(0, m.index - 160), m.index))) falla(G, f, i + 1, "«pedimos que se suelte la retención» sin mirar justo antes que el cobro esté retenido (held): sin retención no se promete nada");
         });
       }
@@ -18088,9 +18093,35 @@ const guardianes = {
       for (const k of ["noche_alt", "fiesta_alt", "viaje_alt"])
         if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'\\n`).test(migA)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} en español e inglés: seguiría prometiendo «se libera tu depósito»`);
       // (k) El evento privado: «Depósito cobrado» solo si no está retenido; el panel dice lo que pasó (depCx).
-      if (T.evp && (!/if \(st === "confirmed" && ac\) nota = retenido \? \[/.test(T.evp) || !/conPago \? \(retenido \?/.test(T.evp))) falla(G, ANTES.evp, 0, "el evento privado dice «Depósito cobrado» sin mirar que el cobro siga retenido (la captura no salió)");
-      if (T.pevp && (!/const depCx = [^\n]*\n\s*: x\.pago\.st === "held" \?[^\n]*\n\s*: x\.devolucion\.fallida \?/.test(T.pevp) || /Se le devolvió el depósito completo\./.test(T.pevp))) falla(G, ANTES.pevp, 0, "el panel del evento privado dice «se le devolvió el depósito» sin mirar el cobro ni la devolución (depCx)");
-      if (!/devolucion: o\.status === "cancelled" \? await devolucionesDe\(o\.id\) : \{ camino: 0, fallida: 0 \},\n\s*\};\n\}/.test(cuerpoFn(existsSync("apps/web/lib/evento-privado.ts") ? sinComent("apps/web/lib/evento-privado.ts") : "", "evpPanel"))) falla(G, "apps/web/lib/evento-privado.ts", 0, "evpPanel no lee lo que no está hecho de la devolución (devolucionesDe)"); }
+      if (T.evp && (!/if \(st === "confirmed" && ac\) nota = cobrado \? \[`\$\{E2\([^)]*\)\}\$\{dinero\(queda\)\}/.test(T.evp) || !/^\s*: retenido \? \[/m.test(T.evp) || !/conPago \? \(cobrado \?/.test(T.evp))) falla(G, ANTES.evp, 0, "el evento privado dice «Depósito cobrado» sin mirar que el cobro siga retenido (la captura no salió)");
+      if (T.pevp && (!/const depCx = [^\n]*\n\s*: x\.pago\.st === "held" \?[^\n]*\n\s*: !cobradoVisto\(x\.pago\) && x\.pago\.st !== "refunded" \? E2\([^\n]*\n\s*: x\.devolucion\.fallida \?/.test(T.pevp) || /Se le devolvió el depósito completo\./.test(T.pevp))) falla(G, ANTES.pevp, 0, "el panel del evento privado dice «se le devolvió el depósito» sin mirar el cobro ni la devolución (depCx)");
+      if (!/devolucion: o\.status === "cancelled" \? await devolucionesDe\(o\.id\) : \{ camino: 0, fallida: 0 \},\n\s*cxr: o\.cxr,\n\s*\};\n\}/.test(cuerpoFn(existsSync("apps/web/lib/evento-privado.ts") ? sinComent("apps/web/lib/evento-privado.ts") : "", "evpPanel"))) falla(G, "apps/web/lib/evento-privado.ts", 0, "evpPanel no lee lo que no está hecho de la devolución (devolucionesDe)");
+      // (l) cancelarEvp: tarde se queda solo lo cobrado o retenido (perdio mira el cobro), lo que se queda es lo que quedaba (P.queda, nunca P.dep) y la
+      // nota del historial es neutra (lo que pasó con el dinero lo leen la pantalla y el panel). La pantalla y el panel: «se quedó / se queda» solo con
+      // perdio y lo que queda; «tarde» del panel sale de cancel_reason (cxr), nunca de perdio.
+      const EPL = "apps/web/lib/evento-privado.ts", cxE = cuerpoFn(existsSync(EPL) ? sinComent(EPL) : "", "cancelarEvp");
+      if (!/perdio = !aTiempo && \(cobrado > 0 \|\| held\);/.test(cxE) || !/queda: held \? o\.amount \?\? 0 : cobrado \}/.test(cxE)) falla(G, EPL, 0, "cancelarEvp marca que el restaurante se queda el depósito sin mirar el cobro (perdio = tarde y cobrado o retenido; queda = lo que quedaba)");
+      if (/se queda con el restaurante\.`|se queda contigo\.`/.test(cxE) && /dinero\(P\.dep\)/.test(cxE)) falla(G, EPL, 0, "los avisos de cancelarEvp dicen el depósito entero (P.dep): va lo que quedaba (P.queda)");
+      for (const m of cxE.matchAll(/await ev\(c, o\.id, "cancelled", "user", userId, ([^\n]*)\);/g)) if (/devuelve|refunded|se queda|keeps/.test(m[1])) falla(G, EPL, 0, "la nota del historial de cancelarEvp dice lo del dinero antes de que pase («se devuelve / se queda»): va neutra");
+      if (T.evp && !/: x\.perdio && queda > 0 \? \[queda === x\.pago\.monto \?/.test(T.evp)) falla(G, ANTES.evp, 0, "el evento cancelado dice «el depósito se quedó» sin mirar lo que quedaba (perdio y queda)");
+      if (T.pevp && (!/tardeCx = x\.cxr === "tarde"/.test(T.pevp) || !/: x\.perdio && quedaCx > 0 \? \(quedaCx === x\.pago\.monto \?/.test(T.pevp) || /x\.perdio \? E2\(`Canceló a menos/.test(T.pevp))) falla(G, ANTES.pevp, 0, "el panel del evento privado lee «tarde» de perdio o dice «se queda contigo» sin lo que quedaba (cxr, perdio y quedaCx)");
+      // (m) Los mensajes no(…) de las libs de estas operaciones: ninguno promete, y «pedimos que se suelte» solo con "held" justo antes.
+      for (const f of ["noche-reservas", "fiestas-reservas", "viajes", "inscripciones", "evento-privado", "citas-flujo"].map((x) => `apps/web/lib/${x}.ts`)) {
+        if (!existsSync(f)) continue;
+        sinComent(f).split("\n").forEach((l, i) => {
+          for (const m of l.matchAll(/\bno\(("[^"]*"|`[^`]*`)/g)) {
+            if (PROMETE.test(m[1])) falla(G, f, i + 1, "un mensaje no(…) promete el dinero antes de actuar: va lo que se pedirá según el cobro");
+            if (/pedimos que se suelte/.test(m[1]) && !/"held"/.test(l.slice(Math.max(0, m.index - 160), m.index))) falla(G, f, i + 1, "un mensaje no(…) dice «pedimos que se suelte» sin mirar justo antes que haya algo retenido");
+          }
+        });
+      }
+      // (n) Viaje tarde: lo que se queda nunca más de lo que queda cobrado (pantalla y servidor); noche sin llegar: lo devuelto o soltado antes de «No se cobró nada».
+      if (T.viaje && !/const base = retenido \? x\.pago\.monto : queda, mitad = Math\.min\(Math\.floor\(x\.tot \/ 2\), base\)/.test(T.viaje)) falla(G, ANTES.viaje, 0, "la hoja del viaje tarde dice «se cobra la mitad» sin mirar lo que queda cobrado (Math.min)");
+      const VL = "apps/web/lib/viajes.ts", vl = existsSync(VL) ? sinComent(VL) : "";
+      if (!/const mitad = cobra && p && \["captured", "partially_refunded"\]\.includes\(p\.status\) \? Math\.min\(cobra, Math\.max\(0, p\.amount - \(p\.refunded \?\? 0\)\)\) : 0;/.test(vl)) falla(G, VL, 0, "cancelar el viaje tarde «cobra la mitad» de un cobro ya devuelto (refunded) o más de lo que queda");
+      if (T.noche && !/: retenido \? E2\([^\n]*\) : devT \|\| E2\(/.test(T.noche)) falla(G, ANTES.noche, 0, "«No llegaste / sin identificación» dice «No se cobró nada» aunque se haya devuelto o soltado (va devT primero)");
+      for (const [f, re] of [["apps/web/lib/noche-reservas.ts", /puerta: "", dinero: "", \.\.\.extra \}/], ["apps/web/lib/fiestas-reservas.ts", /dev: "", dep: "", dinero: "", \.\.\.extra \}/], [VL, /dev: "", dinero: "", \.\.\.extra \}/]])
+        if (!re.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "avisarCliente no pone {dinero} vacío por defecto: una plantilla con {dinero} saldría con la llave cruda"); }
   },
 
   cobradoSoloSiQuedo() {

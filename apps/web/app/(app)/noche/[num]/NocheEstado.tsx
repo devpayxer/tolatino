@@ -43,9 +43,10 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
   // al cancelar a tiempo, lo retenido se pide soltar y de lo cobrado se pide la devolución de lo que queda (devolverAlCancelar); si no confirman o la otra hora no
   // te sirve, solo se suelta la retención (soltarRetencion). Nunca «te devolvemos el depósito» antes de actuar: lo que pasó lo dice devT después.
   const pideCx = nm(pideAlCancelar(x.pago, usdN)), sinCargo = E2("No se cobra nada.", "Nothing is charged.");
-  // Lo que se queda el local (tarde o sin llegar) es lo que queda de lo COBRADO; si solo estaba retenido, todavía no se cobró.
+  // Lo que se queda el local (tarde o sin llegar) es lo que queda de lo COBRADO; si solo estaba retenido, todavía no se cobró; si ya se devolvió o se
+  // soltó, lo que pasó (devT); nada de eso, «No se cobró nada».
   const quedoLocal = cobrado && queda > 0 ? (queda === dep ? E2(`El depósito de ${usdN(queda)} se quedó con el local.`, `The venue kept the ${usdN(queda)} deposit.`) : E2(`Lo que quedaba del depósito (${usdN(queda)}) se quedó con el local.`, `The venue kept what was left of the deposit (${usdN(queda)}).`))
-    : retenido ? E2(`El depósito de ${usdN(x.pago.monto)} sigue retenido en tu tarjeta: todavía no se cobró.`, `The ${usdN(x.pago.monto)} deposit is still held on your card: it has not been charged yet.`) : E2("No se cobró nada.", "Nothing was charged.");
+    : retenido ? E2(`El depósito de ${usdN(x.pago.monto)} sigue retenido en tu tarjeta: todavía no se cobró.`, `The ${usdN(x.pago.monto)} deposit is still held on your card: it has not been charged yet.`) : devT || E2("No se cobró nada.", "Nothing was charged.");
   const codeL = x.code ? E2(`Código ${x.code}`, `Code ${x.code}`) : "";
   const H: Record<string, [string, string, string, string, string, string]> = {
     pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, `${E2(`Confirman en menos de ${espL(x.resp, true)}.`, `They confirm within ${espL(x.resp, false)}.`)}${nm(pideSoltarSi("confirman", x.pago, usdN))}`],

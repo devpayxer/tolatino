@@ -45,7 +45,7 @@ En cada pasajero: Abordó / No llegó. Los asientos vendidos fuera de la app se 
 
 ## FAQ
 - **¿Me cobran al reservar?** No: se retiene. Se cobra cuando el negocio confirma. No, it is held.
-- **¿Puedo cancelar?** Sí, desde «Tu viaje». Con 24 h o más es gratis; con menos, se cobra la mitad. Antes de que confirmes, la hoja dice lo que vamos a **pedir** según tu tarjeta (que se suelte la retención, o la devolución de lo que queda); nunca «te devolvemos» antes de intentarlo. Lo que pasó de verdad lo ves después en la pantalla y en Avisos.
+- **¿Puedo cancelar?** Sí, desde «Tu viaje». Con 24 h o más es gratis; con menos, se cobra la mitad. Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos.
 - **¿Y si el negocio no sale?** Te devolvemos todo y ves el motivo.
 - **¿Cuántos asientos puedo reservar?** Hasta 14 por reserva.
 - **¿Dónde veo mis viajes?** Mi cuenta › Citas y reservas.
@@ -99,7 +99,7 @@ Arrived). On each passenger: Boarded / Did not show. Seats sold outside the app 
 
 ### FAQ
 - **Do you charge me when I book?** No: it is held. It is charged when the business confirms.
-- **Can I cancel?** Yes, from «Your trip». With 24 hours or more it is free; with less, half is charged. Before you confirm, the sheet says what we will **request** based on your card (that the hold comes off, or a refund of what is left); never «we refund» before trying. What really happened shows afterwards on the screen and in Notifications.
+- **Can I cancel?** Yes, from «Your trip». With 24 hours or more it is free; with less, half is charged. Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications.
 - **What if the business does not leave?** We refund everything and you see the reason.
 - **How many seats can I book?** Up to 14 per booking.
 - **Where do I see my trips?** My account › Appointments and bookings.

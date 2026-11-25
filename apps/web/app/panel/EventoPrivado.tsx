@@ -8,7 +8,7 @@
      depósito calculados) · Proponer otra fecha · No puedo (motivo); confirmado: lo acordado, el cambio que piden (mandar el cambio o «No puedo
      hacer el cambio») y «Cancelar el evento» (motivo; devolución completa); Mensajes, la ayuda y la línea de tiempo.
    Lo que se ve mientras se arma es solo para mirar: la base calcula el total, el impuesto y el depósito al mandarla. */
-import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
+import { cobradoVisto, quedaVisto, textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { AREAS_EVP, DURACIONES, HORAS_EVP, OCASIONES, PRESUPUESTOS, diaEvp, dinero, horaL, lbl, nm, vistaPrevia, type AjustesEvp, type ExtraEvp, type MenuEvp } from "@/lib/evento-privado-comun";
 import type { EvpPanelV, FilaEvp } from "@/lib/evento-privado";
@@ -159,12 +159,18 @@ export function evpDetalle(c: Ctx): Sec {
   // depósito completo» / «se le devuelve» sin mirar: soltado o todavía retenido, devuelto, en camino o que no salió.
   const depCx = !x.pago.monto ? "" : x.pago.st === "released" ? E2("No se había cobrado nada: se soltó la retención de su tarjeta.", "Nothing had been charged: the hold on their card was released.")
     : x.pago.st === "held" ? E2("No se había cobrado nada; la retención de su tarjeta todavía no se soltó: se sigue soltando sola.", "Nothing had been charged; the hold on their card has not come off yet: it keeps being released automatically.")
+    : !cobradoVisto(x.pago) && x.pago.st !== "refunded" ? E2("No se había cobrado nada.", "Nothing had been charged.")
     : x.devolucion.fallida ? E2(`La devolución de ${dinero(x.devolucion.fallida)} no salió: el equipo de To'Latino ya tiene el aviso y lo resuelve con el cliente.`, `The ${dinero(x.devolucion.fallida)} refund did not go through: the To'Latino team already has the alert and sorts it out with the client.`)
     : x.devolucion.camino ? E2(`La devolución de ${dinero(x.devolucion.camino)} va en camino: se manda sola.`, `The ${dinero(x.devolucion.camino)} refund is on its way: it is sent automatically.`)
     : x.pago.devuelto ? (x.pago.devuelto >= x.pago.monto ? E2(`Se le devolvió el depósito completo (${dinero(x.pago.devuelto)}).`, `The full deposit (${dinero(x.pago.devuelto)}) was refunded to them.`) : E2(`Se le devolvieron ${dinero(x.pago.devuelto)} del depósito.`, `${dinero(x.pago.devuelto)} of the deposit was refunded to them.`))
     : E2("La devolución del depósito todavía no sale.", "The deposit refund has not gone out yet.");
   if (x.motivoNeg) out.push({ type: "note", tone: "ink", icon: "close", t: `${E2(`Cancelaste: «${x.motivoNeg}».`, `You cancelled: “${x.motivoNeg}”.`)}${depCx ? ` ${depCx}` : ""}` });
-  if (x.st === "cancelled" && !x.motivoNeg && x.pago.monto) out.push({ type: "note", tone: x.perdio ? "ok" : "ink", icon: "dollar", t: x.perdio ? E2(`Canceló a menos de ${x.cancelH} h: el depósito se queda contigo.`, `Cancelled less than ${x.cancelH} h before: you keep the deposit.`) : `${E2("Canceló a tiempo.", "Cancelled in time.")} ${depCx}` });
+  // «Tarde» o «a tiempo» sale de cancel_reason (cxr), nunca de perdio; «se queda contigo» solo si perdio, y con lo que quedaba de lo cobrado.
+  const quedaCx = quedaVisto(x.pago), tardeCx = x.cxr === "tarde";
+  if (x.st === "cancelled" && !x.motivoNeg && x.pago.monto) out.push({ type: "note", tone: x.perdio && quedaCx > 0 ? "ok" : "ink", icon: "dollar", t: !tardeCx ? `${E2("Canceló a tiempo.", "Cancelled in time.")} ${depCx}`
+    : x.perdio && quedaCx > 0 ? (quedaCx === x.pago.monto ? E2(`Canceló a menos de ${x.cancelH} h: el depósito de ${dinero(quedaCx)} se queda contigo.`, `Cancelled less than ${x.cancelH} h before: you keep the ${dinero(quedaCx)} deposit.`)
+      : E2(`Canceló a menos de ${x.cancelH} h: lo que quedaba del depósito (${dinero(quedaCx)}) se queda contigo.`, `Cancelled less than ${x.cancelH} h before: you keep what was left of the deposit (${dinero(quedaCx)}).`))
+    : `${E2(`Canceló a menos de ${x.cancelH} h.`, `Cancelled less than ${x.cancelH} h before.`)} ${depCx}` });
 
   // El constructor de la propuesta (o del cambio)
   const B = ui.evpB as Draft | undefined;

@@ -31,7 +31,7 @@ eventos._
 | Tu tarjeta es rechazada | «No se cobró nada; la propuesta sigue». Prueba otra tarjeta. |
 | Tocas «Aceptar y pagar» dos veces | Se cobra **una sola vez**. |
 | Cancelas antes de confirmar | No se cobró nada; el restaurante recibe el aviso. |
-| Cancelas un evento confirmado con **72 h o más** de anticipación (el plazo que dice tu propuesta) | Es gratis: pedimos la **devolución del depósito** a tu tarjeta (o que se suelte la retención, si no se había cobrado); el banco tarda 3–5 días hábiles. Antes de que confirmes, la hoja dice lo que vamos a **pedir** según tu tarjeta (que se suelte la retención, o la devolución de lo que queda); nunca «te devolvemos» antes de intentarlo. Lo que pasó de verdad lo ves después en la pantalla y en Avisos. |
+| Cancelas un evento confirmado con **72 h o más** de anticipación (el plazo que dice tu propuesta) | Es gratis: pedimos la **devolución del depósito** a tu tarjeta (o que se suelte la retención, si no se había cobrado); el banco tarda 3–5 días hábiles. Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos. |
 | Cancelas con **menos de 72 h** | El depósito **se queda con el restaurante** (lo dice tu propuesta antes de aceptar). |
 | **El restaurante cancela** | Te devolvemos **todo el depósito**, siempre, y te dice el motivo. |
 | «No puedo» | NO PUDO con el motivo. No se cobró nada. «Probar otra fecha», «Reservar mesas aparte» u otros restaurantes. |
@@ -75,7 +75,7 @@ eventos._
 | Your card is declined | «Nothing was charged; the proposal stands». Try another card. |
 | You tap «Accept and pay» twice | You are charged **only once**. |
 | You cancel before confirming | Nothing was charged; the restaurant gets the notice. |
-| You cancel a confirmed event with **72 hours or more** of notice (the deadline your proposal states) | It is free: we request a **refund of the deposit** to your card (or that the hold comes off, if it was not charged); the bank takes 3–5 business days. Before you confirm, the sheet says what we will **request** based on your card (that the hold comes off, or a refund of what is left); never «we refund» before trying. What really happened shows afterwards on the screen and in Notifications. |
+| You cancel a confirmed event with **72 hours or more** of notice (the deadline your proposal states) | It is free: we request a **refund of the deposit** to your card (or that the hold comes off, if it was not charged); the bank takes 3–5 business days. Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications. |
 | You cancel with **less than 72 hours** | The deposit **stays with the restaurant** (your proposal says so before you accept). |
 | **The restaurant cancels** | We refund **the whole deposit**, always, and it tells you the reason. |
 | «I can't» | COULD NOT with the reason. Nothing was charged. «Try another date», «Book separate tables» or other restaurants. |

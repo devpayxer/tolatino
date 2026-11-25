@@ -220,7 +220,7 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
-  await avisar(o.uid, tpl, { negocio: o.negocio, dia: diaFiesta(o.ymd, true), hora: hora(o.m), dev: "", dep: "", ...extra }, { href: `/fiesta/${numero}`, ref: ["party", numero] });
+  await avisar(o.uid, tpl, { negocio: o.negocio, dia: diaFiesta(o.ymd, true), hora: hora(o.m), dev: "", dep: "", dinero: "", ...extra }, { href: `/fiesta/${numero}`, ref: ["party", numero] });
 }
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
@@ -378,7 +378,9 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
     if (o.dep > 0 && o.pay !== "held") return no("Tu depósito ya no está retenido. Elige «No me sirve» y pide la fecha otra vez.", "Your deposit is no longer held. Choose “Doesn’t work” and request the date again.");
     if (!vis) {
       const d = (await diasOcupados(o.biz, o.ymd, o.ymd, c))[0];
-      if (d?.ocupada) return no("Ese día ya se ocupó. Elige «No me sirve»: pedimos que se suelte la retención del depósito.", "That day is now booked. Choose “Doesn’t work”: we ask for the deposit hold to come off your card.");
+      // (aquí el depósito, si lo hay, sigue retenido: lo mira la línea de arriba) La frase de soltar solo si hay depósito.
+      if (d?.ocupada) return o.dep > 0 && o.pay === "held" ? no("Ese día ya se ocupó. Elige «No me sirve»: pedimos que se suelte la retención del depósito.", "That day is now booked. Choose “Doesn’t work”: we ask for the deposit hold to come off your card.")
+        : no("Ese día ya se ocupó. Elige «No me sirve».", "That day is now booked. Choose “Doesn’t work”.");
       await c.query(`insert into party_days (business_id, city_id, day, source, operation_id) values ($1, $2, $3::date, 'booking', $4::bigint)`, [o.biz, o.city, o.ymd, o.id]);
     }
     await c.query(`update operations set status = 'confirmed', scheduled_at = ($2::date + make_interval(mins => $3::int)) at time zone $4, confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id, o.ymd, p.m, o.tz]);

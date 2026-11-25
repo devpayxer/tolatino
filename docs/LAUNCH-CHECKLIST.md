@@ -3061,17 +3061,20 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       «se liberó» solo si había retención; noche «no llegaste / sin identificación / buena noche» y evento privado «Depósito cobrado» miran el cobro;
       patrocinio y patrocinio de evento «pedimos la devolución»; paneles de citas, mesas, fiestas y viajes «pedimos que se suelte» solo con retención;
       el panel del evento privado dice lo que pasó (depCx, con devolucionesDe). Migración 0224 (noche_alt, fiesta_alt y viaje_alt con {dinero}).
-      Guardián devueltoSoloSiSalio (13 ampliada), al revés 126/126; alreves9f3 39/39; alreves9n3 40/40; e2e ajustados: ins4e, fie4v, pat002._
+      Guardián devueltoSoloSiSalio (13 ampliada), al revés 126/126; alreves9f3 39/39; alreves9n3 40/40; e2e ajustados: ins4e, fie4v, pat002.
+      Tras la revisión (otro modelo, «no sube»): e2e noc4c, tra4y y evt6i al día; cancelarEvp marca perdio solo con cobro o retención, los avisos
+      dicen lo que quedaba y la nota del historial es neutra (sin migración: van por {dinero}/{dep}); evento privado «Depósito cobrado» solo cobrado; el
+      panel lee «tarde» de cancel_reason y dice «No se había cobrado nada»; noche sin llegar dice lo devuelto o soltado; viaje tarde nunca cobra más de
+      lo que queda (pantalla y servidor); {dinero} vacío por defecto; el guardián quita solo los tramos eximidos, caza más frases y los mensajes no(…);
+      ayuda sin jerga. Al revés 147/147._
 - [ ] **→ 9b** · **La familia de textos fijos que no llegan al CMS por ir en listas que después pasan a `E2(a, b)` (25 nov):** `Recuperar.tsx` DOCS,
       `MenuCliente.tsx` LLEVA, `panel/Cobros.tsx` pasos, `EventosCambios.tsx` IDEAS y MOTIVOS: el guardián nuevo de cadenaConLlave solo caza el ayudante
       `const f = (a: string, b: string) => … E2(a, b)` llamado con dos textos fijos.
 - [ ] **→ 9b** · **Lo que queda de «promete antes de actuar» (25 nov, visto al cerrar la línea de arriba):** (a) las tablas de política al reservar
       («Te devolvemos $X» en `n/[id]/noche/Reservar.tsx` ~148, `viaje/ViajeBooking.tsx` ~207, `fiesta/Booking.tsx` ~197; la FAQ de `n/[id]/page.tsx`
       ~192; `eventos/[slug]/page.tsx` ~72 «Si compraste, te devolvemos todo»; `panel/Inscripciones.tsx` ~58 y `EventosPanel.tsx` ~494) se dejaron: dicen
-      la regla antes de que exista un cobro, no lo que pasó; decidir si pasan a «pedimos la devolución» (REVISION). (b) `cancelarEvp` con el cobro ya
-      devuelto o soltado (released/refunded) y tarde marca perdio y el aviso evp_cancelado dice «se queda con el restaurante» sin que haya nada cobrado
-      (el servidor; la hoja ya no lo promete). (c) La duración de alrevesDevueltoSoloSiSalio en `pruebas/reparto-alreves.json` (28 s con 98 casos; ahora
-      126): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) din9v4/din9v5 sin caso de punta a punta de las hojas
+      la regla antes de que exista un cobro, no lo que pasó; decidir si pasan a «pedimos la devolución» (REVISION). (b) _hecho en la revisión: cancelarEvp._ (c) La duración de alrevesDevueltoSoloSiSalio en `pruebas/reparto-alreves.json` (28 s con 98 casos; ahora
+      147): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) din9v4/din9v5 sin caso de punta a punta de las hojas
       nuevas (retenido vs cobrado) ni del aviso de otra hora con y sin depósito.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real

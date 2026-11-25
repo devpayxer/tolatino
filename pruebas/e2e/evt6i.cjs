@@ -179,7 +179,7 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     // ── 7 · Cancelar a 73 h: devolución completa ──
     sql(`update operations set scheduled_at = now() + interval '73 hours' where number = '${E1}'`);
     await m.goto(B + `/privado/${E1}`); await clic(btn(m, 'Cancelar el evento'));
-    ok(await contiene(m, 'Faltan más de 72 h: te devolvemos $227.90'), 'cancelar a 73 h: «Faltan más de 72 h: te devolvemos $227.90»');
+    ok(await contiene(m, 'Faltan más de 72 h: es gratis. Pedimos la devolución de $227.90'), 'cancelar a 73 h: «Faltan más de 72 h: es gratis. Pedimos la devolución de $227.90» (nunca «te devolvemos» antes de actuar)');
     await m.screenshot({ path: OUT + 'e6i-cancelar-m.png', fullPage: true });
     await clic(btn(m, 'Sí, cancelar')); await contiene(m, 'CANCELADO');
     ok(await esperaV(() => pago(E1), 'refunded|22790|22790') === 'refunded|22790|22790' && sql(`select count(*) || '|' || sum(r.amount_cents) from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${E1}'`) === '1|22790', 'a 73 h: UNA devolución de $227.90 (todo lo cobrado)');

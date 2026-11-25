@@ -96,7 +96,7 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
 
   // ── 4. Cancelar con 24 h o más: devolución completa; los asientos vuelven ──
   await m.goto(B + `/viaje/${V1}`); await clic(m.getByRole('button', { name: 'Cancelar el viaje' }));
-  await m.getByText(/Faltan más de 24 horas: te devolvemos \$90/).first().waitFor(); await m.screenshot({ path: OUT + 'y7-cancelar-m.png', fullPage: true });
+  await m.getByText(/Faltan más de 24 horas: es gratis\. Pedimos la devolución de \$90/).first().waitFor(); await m.screenshot({ path: OUT + 'y7-cancelar-m.png', fullPage: true });
   await clic(m.getByRole('button', { name: 'Sí, cancelar' })); await m.getByText('CANCELADO').first().waitFor();
   ok(await esperaV(() => pay(V1), 'cancelled|refunded|9000|9000') === 'cancelled|refunded|9000|9000', 'cancelar ≥24 h: devolución completa');
   ok(run(R1) === '1|scheduled', 'los 2 asientos vuelven a la salida');
