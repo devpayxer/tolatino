@@ -1,7 +1,7 @@
 // Prueba al revés del guardián devueltoSoloSiSalio (25 nov, 9v): un patrocinio dice «devuelto» (el panel: «Reserva cancelada. Te devolvemos $15.00 a tu
 // tarjeta») solo con lo que la pasarela devolvió. Pasaba: «Cancelar reserva» del dueño devolvía lo decidido (refund_cents) aunque Stripe hubiera rechazado la
 // devolución (din9v2). Ampliado (25 nov, segunda tanda): boletos y eventos (cancelar, «Devolver» del panel, «Devolución total», el evento cancelado,
-// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Quinta: toda retención que se suelta (soltarRetencion) y los avisos al negocio (0222). Sexta: la cita que cancela el cliente y las pantallas del mercado, el apartado y el pedido (0223). Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
+// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Quinta: toda retención que se suelta (soltarRetencion) y los avisos al negocio (0222). Sexta: la cita que cancela el cliente y las pantallas del mercado, el apartado y el pedido (0223). Restos (regla 13): lo que se dice antes de actuar (hojas de la cita, «Te propone otra hora»), el cobro que no se hizo, la solicitud vencida del panel y ord_no cuando la consulta falla. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -144,8 +144,10 @@ const casos = [
   // La vista de la cita deja de leer lo que no está hecho.
   ['cita sin devolucionesDe', 'apps/web/lib/citas.ts', 'devolucion: r.pago ? await devolucionesDe(r.oid) : { camino: 0, fallida: 0 },', 'devolucion: { camino: 0, fallida: 0 },'],
   // El apartado vuelve a «Se liberó» fijo, o soltado deja de mirar el cobro.
-  ['apartado se liberó fijo', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'soltado("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged.")', 'E2("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged.")'],
-  ['apartado soltado sin mirar', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'const soltado = (es1: string, en1: string) => pg?.st === "released" ? E2(es1, en1)', 'const soltado = (es1: string, en1: string) => true ? E2(es1, en1)'],
+  ['apartado se liberó fijo', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'soltado(E2("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged."))', 'E2("Se liberó el abono retenido. No se cobró nada.", "The held down payment was released. Nothing was charged.")'],
+  // El mismo, con soltado("") delante en la línea (antes bastaba un soltado( cualquiera en la línea).
+  ['apartado se liberó junto a otro soltado', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'soltado(E2("Se liberó lo retenido. No se cobró nada.", "The hold was released. Nothing was charged."))', 'soltado("") + E2("Se liberó lo retenido. No se cobró nada.", "The hold was released. Nothing was charged.")'],
+  ['apartado soltado sin mirar', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'const soltado = (siSalio: string) => pg?.st === "released" ? siSalio', 'const soltado = (siSalio: string) => true ? siSalio'],
   ['apartado acción sin retenida', 'apps/web/app/(app)/apartado/[num]/acciones.ts', 'return r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, msg: r.msg };', 'return r.ok ? { ok: true } : { ok: false, msg: r.msg };'],
   ['apartado pantalla sin retenida', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'setFlash("retenida" in r && r.retenida ? E2(', 'setFlash(false ? E2('],
   // El mercado vuelve a «No se cobró nada» fijo, o deja de mirar lo retenido.
@@ -156,6 +158,22 @@ const casos = [
   ['ord_no sin {dinero}', 'apps/web/lib/avisos.ts', 'hora: o.hora, dinero }', 'hora: o.hora }'],
   ['panel pedidos sin retenida', 'apps/web/app/panel/Pedidos.tsx', '(r) => (r?.retenida ? E2(', '(r) => (false ? E2('],
   ['acción pedidos sin retenida', 'apps/web/app/panel/acciones-pedidos.ts', 'const r2 = (r.retenida ? { ok: true, retenida: true } : { ok: true })', 'const r2 = ({ ok: true })'],
+  // 25 nov (restos de la clase) · Lo que se dice ANTES de actuar y cuando no se pudo mirar (regla 13).
+  // La hoja de cancelar la solicitud vuelve a prometer «Te devolvemos los $X».
+  ['cita hoja promete te devolvemos', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '${E2("Es gratis. ", "It is free. ")}${pideCx}`\n    : aTiempo', '${E2("Es gratis. ", "It is free. ")}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, "") : ""}`\n    : aTiempo'],
+  // «Te propone otra hora» vuelve a «Si no te sirve, te devolvemos los $X».
+  ['cita otra hora promete', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '${pideAlt || E2("Decide abajo.", "Decide below.")}', '${c.dep ? E2(`Si no te sirve, te devolvemos los ${dinero(c.dep)}.`, "") : E2("Decide abajo.", "Decide below.")}'],
+  // La hoja dice lo de la retención sin mirar el cobro.
+  ['cita hoja sin mirar el cobro', 'apps/web/app/(app)/cita/[num]/Estado.tsx', 'const pideCx = !c.dep ? "" : c.pago === "held" ? E2(`Pedimos que se suelte', 'const pideCx = !c.dep ? "" : true ? E2(`Pedimos que se suelte'],
+  // Un cobro que no se hizo vuelve a «sigue cobrado» (sin su texto en dev, o sin su fila).
+  ['cita failed sin texto', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '        : c.pago === "failed" ? E2(`El cobro del depósito de ${dinero(c.cobro)} no se hizo: no se te cobró nada.`, `The ${dinero(c.cobro)} deposit charge did not go through: you were not charged.`)\n', ''],
+  ['cita failed sin fila', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '    if (c.pago === "failed") plata.push(', '    if (false) plata.push('],
+  // El panel de citas vuelve a «la solicitud venció y se devolvió el depósito» fijo, o vencidaPanel deja de mirar la retención.
+  ['panel cita vencida fija', 'apps/web/lib/citas-flujo.ts', '{ ok: false, msg: vencidaPanel(o) }', 'no("Pasó el tiempo para responder: la solicitud venció y se devolvió el depósito.", "The time to reply passed: the request expired and the deposit was returned.")'],
+  ['panel cita vencida sin la retención', 'apps/web/lib/citas-flujo.ts', 'if (o.pay === "held") { const t = sinSoltarNegocio(', 'if (false) { const t = sinSoltarNegocio('],
+  // ord_no vuelve a caer en «No se te cobró nada» si la consulta falla.
+  ['ord_no consulta fallida como vacía', 'apps/web/lib/avisos.ts', '.then((r) => r.rows, () => null)', '.then((r) => r.rows, () => [])'],
+  ['ord_no sin lo neutro', 'apps/web/lib/avisos.ts', 'dinero = !q ? neutro :', 'dinero = !q ? { es: " No se te cobró nada.", en: " You were not charged." } :'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

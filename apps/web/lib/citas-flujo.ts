@@ -3,7 +3,7 @@ import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { cobrarOperacion, devolverAlCancelar, soltarRetencion } from "./cobros";
-import { dineroAlNegocio, soltadaO, type Soltada } from "./devolucion-cancelar";
+import { dineroAlNegocio, sinSoltarNegocio, soltadaO, type Soltada } from "./devolucion-cancelar";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
 import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } from "./citas";
 
@@ -76,6 +76,19 @@ const devL = (dep: number) => (dep ? ` Te devolvemos ${money(dep)} del depósito
 /* 9v (quinta tanda) · {dev} con lo que de verdad pasó con la retención (soltarRetencion): la que la pasarela no soltó todavía se dice así, nunca «Te devolvemos». */
 const devS = (s: Soltada, dep: number) => (dep ? soltadaO(s, devL(dep)) : "");
 
+/* 25 nov (restos de la clase) · Lo que el panel le dice al negocio que llega tarde a responder una solicitud que ya venció: lo que está en la base con el
+   depósito (vencerCitas ya intentó soltar la retención: soltarRetencion), nunca «se devolvió el depósito» sin mirar. Guardián devueltoSoloSiSalio (13). */
+function vencidaPanel(o: Pick<Op, "dep" | "pay" | "amount" | "refunded">): Bi {
+  const base = { es: "Pasó el tiempo para responder: la solicitud venció.", en: "The time to reply passed: the request expired." };
+  if (!o.dep || !o.pay || o.pay === "failed") return base;
+  const m = money(o.amount ?? o.dep);
+  if (o.pay === "released") return { es: `${base.es} No se había cobrado nada: se soltó la retención de ${m} de su tarjeta.`, en: `${base.en} Nothing had been charged: the ${m} hold on their card was released.` };
+  if (o.pay === "held") { const t = sinSoltarNegocio(o.amount ?? o.dep); return { es: `${base.es}${t.es}`, en: `${base.en}${t.en}` }; }
+  if (o.pay === "refunded") return { es: `${base.es} Se le devolvieron ${m} a su tarjeta.`, en: `${base.en} ${m} was refunded to their card.` };
+  // Cobrado (o devuelto en parte): solo lo que está hecho.
+  if (o.pay === "partially_refunded" && o.refunded) return { es: `${base.es} Del depósito de ${m} se le devolvieron ${money(o.refunded)}; el resto sigue cobrado.`, en: `${base.en} Of the ${m} deposit, ${money(o.refunded)} was refunded; the rest is still charged.` };
+  return { es: `${base.es} El depósito de ${m} sigue cobrado.`, en: `${base.en} The ${m} deposit is still charged.` };
+}
 /* «Avísame si se libera una hora»: una cita de ese día se cayó; se avisa una vez a quien lo pidió (con esa persona o
    con cualquiera). */
 async function horaLibre(numero: string) {
@@ -193,7 +206,7 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
     }
     if (o.detail === "seg") { const h = await valor("sp_seguro_guardar_h"); return no(`El paciente está eligiendo qué hacer (hasta ${h} h).`, `The patient is choosing what to do (up to ${h} h).`); }
     if (paso === "confirmar" || paso === "nopuedo") {
-      if (o.status !== "pending") return o.status === "expired" ? no("Pasó el tiempo para responder: la solicitud venció y se devolvió el depósito.", "The time to reply passed: the request expired and the deposit was returned.") : ya;
+      if (o.status !== "pending") return o.status === "expired" ? { ok: false, msg: vencidaPanel(o) } : ya;
       const ok = paso === "confirmar";
       await c.query(`update operations set status = $2, answered_at = now(), confirmed_at = case when $2 = 'confirmed' then now() end, updated_at = now() where id = $1::bigint`, [o.id, ok ? "confirmed" : "declined"]);
       await ev(c, o.id, ok ? "accepted" : "declined", "member", actorId);

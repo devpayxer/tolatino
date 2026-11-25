@@ -9656,6 +9656,18 @@ const guardianes = {
       for (const m of t.matchAll(/\bcadena\(\s*["'`]([A-Z0-9-]+\.[A-Za-z0-9_.-]+)["'`]/g)) if (!llaves.has(m[1])) falla(G, f, 0, `la llave «${m[1]}» no está en el catálogo de cadenas`);
       for (const m of t.matchAll(/\bpantalla\(\s*["'`]([A-Z0-9-]+)["'`]/g)) if (![...llaves].some((k) => k.startsWith(m[1] + "."))) falla(G, f, 0, `la pantalla «${m[1]}» no tiene cadenas en el catálogo`);
     }
+    // 25 nov (restos de la clase «el dinero dice lo que pasó») · Un ayudante que recibe los dos idiomas y los pasa a E2(a, b) saca del catálogo los textos con
+    // que se le llama (el extractor solo ve E2("…", "…")): pasó con soltado(…) del apartado, y sus «Se liberó…» dejaron de editarse en Super Admin › Cadenas.
+    // Va ayudante(E2("…", "…")): el ayudante recibe el texto ya hecho. Al revés: alreves9f3.
+    const LITS = String.raw`(?:"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|\x60[^\x60$\\\n]*\x60)`;
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (!t.includes("E2(")) continue;
+      for (const m of t.matchAll(/\bconst ([A-Za-z_]\w*) = \(([A-Za-z_]\w*): string, ([A-Za-z_]\w*): string[^)]*\)[^;]{0,400}?\bE2\(\2, \3\)/g))
+        for (const k of t.matchAll(new RegExp(`\\b${m[1]}\\(\\s*(${LITS})\\s*,\\s*(${LITS})`, "g")))
+          if (/\p{L}/u.test(k[1] + k[2])) falla(G, f, t.slice(0, k.index).split("\n").length, `${m[1]}("…", "…") pasa dos textos fijos a un ayudante que llama E2(${m[2]}, ${m[3]}): se salen del CMS; va ${m[1]}(E2("…", "…")) (el ayudante recibe el texto hecho)`);
+    }
     const E2LIT = /\bE2\(\s*(["`'])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*(["`'])(?:(?!\2)[^\\\n]|\\.)*\2\s*\)/g;
     const MIGRADAS = ["apps/web/app/(app)/Inicio.tsx", "apps/web/app/(app)/page.tsx"];
     for (const f of MIGRADAS) {
@@ -17973,15 +17985,32 @@ const guardianes = {
       for (const A of ["apps/web/app/(app)/cita/[num]/acciones.ts", "apps/web/app/(app)/apartado/[num]/acciones.ts"])
         if (!/r\.ok \? \(r\.retenida \? \{ ok: true, retenida: true \} : \{ ok: true \}\)/.test(existsSync(A) ? sinComent(A) : "")) falla(G, A, 0, "la acción no pasa retenida: la pantalla no sabría que la retención no se soltó");
       const AE = "apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx", ae = existsSync(AE) ? sinComent(AE) : "";
-      ae.split("\n").forEach((l, i) => { if (/E2\("Se liberó/.test(l) && !/soltado\(/.test(l)) falla(G, AE, i + 1, "el apartado dice «Se liberó» sin mirar el cobro (soltado(…), de x.pago)"); });
-      if (!/const soltado = \(es1: string, en1: string\) => pg\?\.st === "released" \? E2\(es1, en1\)/.test(ae) || !/setFlash\("retenida" in r && r\.retenida \? E2\(/.test(ae)) falla(G, AE, 0, "el apartado no mira el cobro (soltado) o no dice cuando la retención no se soltó (retenida)");
+      ae.split("\n").forEach((l, i) => { if ((l.match(/E2\("Se liberó/g) ?? []).length !== (l.match(/soltado\(E2\("Se liberó/g) ?? []).length) falla(G, AE, i + 1, "el apartado dice «Se liberó» sin mirar el cobro (soltado(E2(…)), de x.pago)"); });
+      if (!/const soltado = \(siSalio: string\) => pg\?\.st === "released" \? siSalio\b/.test(ae) || !/setFlash\("retenida" in r && r\.retenida \? E2\(/.test(ae)) falla(G, AE, 0, "el apartado no mira el cobro (soltado) o no dice cuando la retención no se soltó (retenida)");
       const ME = "apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx", me = existsSync(ME) ? sinComent(ME) : "";
       if (!/: t\.retenido > 0 \? E2\(`No se cobró nada, pero la retención/.test(me)) falla(G, ME, 0, "el pedido del mercado que no se dio no mira si la retención sigue en la tarjeta (t.retenido)");
-      me.split("\n").forEach((l, i) => { if (/v\.st === "(declined|expired)" \?|E2\("CANCELADO", "CANCELLED"\)/.test(l) && /No se cobró nada|Liberamos/.test(l)) falla(G, ME, i + 1, "el pedido del mercado que no se dio dice «No se cobró nada» / «Liberamos» fijo: va noSeDio (lo que está en la base)"); });
+      me.split("\n").forEach((l, i) => { if (/v\.st === "(declined|expired)" \?|\("CANCELADO", "CANCELLED"\)/.test(l) && /No se cobró nada|Liberamos/.test(l)) falla(G, ME, i + 1, "el pedido del mercado que no se dio dice «No se cobró nada» / «Liberamos» fijo: va noSeDio (lo que está en la base)"); });
       const PE = "apps/web/app/(app)/pedido/[num]/Pedido.tsx", pe = existsSync(PE) ? sinComent(PE) : "";
       if (!/const sinCobro = p\.pago\?\.estado === "held" \?/.test(pe) || /sub: [^\n]*No se cobró nada/.test(pe)) falla(G, PE, 0, "el pedido que no se dio dice «No se cobró nada» fijo: va sinCobro (el cobro de la base)");
       const AV = "apps/web/lib/avisos.ts", av = existsSync(AV) ? sinComent(AV) : "", ap = cuerpoFn(av, "avisarPedido");
-      if (!/dinero = h \? \(await import\("\.\/devolucion-cancelar"\)\)\.sinSoltarCliente\(h\.amt\)/.test(ap) || !/hora: o\.hora, dinero \}/.test(ap)) falla(G, AV, 0, "ord_no no lleva {dinero} leído del cobro (la retención que no se soltó diría «No se te cobró nada» a secas)"); }
+      if (!/h\.st === "held" \? dc\.sinSoltarCliente\(h\.amt\)/.test(ap) || !/hora: o\.hora, dinero \}/.test(ap)) falla(G, AV, 0, "ord_no no lleva {dinero} leído del cobro (la retención que no se soltó diría «No se te cobró nada» a secas)");
+      // (13) 25 nov (restos de la clase) · Lo que se dice ANTES de actuar, y lo que se dice cuando no se pudo mirar. Pasaba: las hojas de confirmar de la cita
+      // («¿Cancelar?») y el estado «Te propone otra hora» decían «Te devolvemos los $X» antes de intentar nada (y con el depósito entero, también de una
+      // retención que solo se suelta); un cobro que no se hizo (failed) salía como «sigue cobrado»; el panel de citas decía «la solicitud venció y se
+      // devolvió el depósito» sin mirar; y ord_no caía en «No se te cobró nada» si la consulta del cobro fallaba. Regla: (a) la pantalla de la cita no dice
+      // «Te devolvemos» / «We refund» en ningún lado: lo que se va a intentar va en pideCx / pideAlt («Pedimos la devolución…», «pedimos que se suelte…»),
+      // armado con c.pago y lo que queda; (b) failed tiene su texto en «dev» y su fila; (c) el panel de citas arma lo de la solicitud vencida con el cobro
+      // (vencidaPanel), nunca «se devolvió el depósito» fijo; (d) avisarPedido lee el cobro con .then(…, () => null) y, si la consulta falla, dice lo neutro.
+      const ceL = ce.split("\n");
+      ceL.forEach((l, i) => { if (/[Tt]e devolvemos|\b[Ww]e refund (the|your)\b|se devuelve si no se confirma|refunded if not confirmed/.test(l)) falla(G, CE, i + 1, "la cita promete la devolución antes de actuar («Te devolvemos…»): va lo que se intentará (pideCx / pideAlt) y lo que pasó lo dice «dev»"); });
+      // (sin escribir pares E2("…", "…") aquí: el extractor del CMS le pondría candado a lo que un guardián nombra palabra por palabra)
+      if (!/const cxS = pend \? `\$\{E2\([^)]*\)\}\$\{pideCx\}`/.test(ce) || !/\$\{pideAlt \|\| E2\([^)]*\)\}/.test(ce)
+        || !/const pideCx = !c\.dep \? "" : c\.pago === "held" \? E2\(`Pedimos que se suelte/.test(ce) || !/cobrado && queda > 0 \? E2\(`Pedimos la devolución de \$\{dinero\(queda\)\}/.test(ce))
+        falla(G, CE, 0, "las hojas de confirmar o «Te propone otra hora» no dicen lo que se intentará según el cobro (pideCx / pideAlt con c.pago y queda)");
+      if (!/c\.pago === "failed" \? E2\(`El cobro del depósito de/.test(devT + "\n" + ceL.slice(devL, devL + 7).join("\n")) || !/if \(c\.pago === "failed"\) plata\.push\(/.test(ce)) falla(G, CE, 0, "un cobro que no se hizo (failed) sale como «sigue cobrado»: va su texto en dev y su fila");
+      if (/se devolvió el depósito|the deposit was returned/.test(cf) || !/o\.status === "expired" \? \{ ok: false, msg: vencidaPanel\(o\) \}/.test(cf) || !/if \(o\.pay === "held"\) \{ const t = sinSoltarNegocio\(/.test(cuerpoFn(cf, "vencidaPanel")))
+        falla(G, CF, 0, "el panel de citas dice lo de la solicitud vencida sin mirar el cobro («se devolvió el depósito»): va vencidaPanel(o)");
+      if (!/\.then\(\(r\) => r\.rows, \(\) => null\)/.test(ap) || !/dinero = !q \? neutro :/.test(ap)) falla(G, AV, 0, "ord_no cae en «No se te cobró nada» si la consulta del cobro falla: va el texto neutro"); }
   },
 
   cobradoSoloSiQuedo() {

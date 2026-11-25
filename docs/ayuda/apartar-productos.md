@@ -1,7 +1,7 @@
 # Apartar productos · Hold products
 
 _Pantallas: ficha › pestaña **Tienda** (la hoja del artículo y la barra «Tu apartado»), `/n/{negocio}/apartar`, tu apartado `/apartado/{A-…}`, Panel ›
-Hoy › «Apartados» y su detalle. En las Tiendas la pestaña se llama **Productos**. Versión: 7 nov 2026. Audiencia: vecino. Tema: pedidos._
+Hoy › «Apartados» y su detalle. En las Tiendas la pestaña se llama **Productos**. Versión: 25 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 En la Tienda de un taller o de un negocio del hogar (baterías, gomas, termostatos, calentadores…) puedes **apartar** lo que
@@ -48,7 +48,7 @@ en la caja) o *Envío a tu casa* (llega en los días que dice la tienda, con el 
 | No lo tienen | Te avisamos. No se cobra nada. Ese artículo queda «Agotado» en la Tienda hasta que la tienda lo corrija. |
 | No pasas a tiempo (24, 48 o 72 horas) | Vence y vuelve al estante (también la talla). No se cobra nada. |
 | Cancelas | Vuelve al estante y la tienda lo sabe. |
-| Con envío: la tienda no lo tiene, cancelas antes de que salga o no lo envía en 6 días | Se libera lo retenido en tu tarjeta. No se cobra nada. |
+| Con envío: la tienda no lo tiene, cancelas antes de que salga o no lo envía en 6 días | Se libera lo retenido en tu tarjeta. No se cobra nada. Si tu tarjeta no la soltó todavía, Tu apartado lo dice y la seguimos soltando sola. |
 | Con envío: tu banco pide una verificación extra | Por ahora no se puede con esa tarjeta: prueba otra o recógelo en la tienda. |
 | Ya tienes 3 apartados abiertos en esa tienda | No deja abrir otro hasta cerrar alguno. |
 | El artículo tiene una oferta en Novedades | En la Tienda sale con el precio de la oferta y el de siempre tachado; el apartado se guarda a ese precio y es el que pagas en la caja, aunque la oferta termine antes de que pases. |
@@ -111,7 +111,7 @@ register) or *Ship to your home* (it arrives in the days the store says, with th
 | They do not have it | We tell you. Nothing is charged. That item is marked "Sold out" in the Store until the store corrects it. |
 | You do not come by in time (24, 48 or 72 hours) | It expires and goes back on the shelf (the size too). Nothing is charged. |
 | You cancel | It goes back on the shelf and the store knows. |
-| With shipping: the store does not have it, you cancel before it leaves, or it is not shipped within 6 days | The hold on your card is released. Nothing is charged. |
+| With shipping: the store does not have it, you cancel before it leaves, or it is not shipped within 6 days | The hold on your card is released. Nothing is charged. If your card has not released it yet, Your hold says so and we keep releasing it automatically. |
 | With shipping: your bank asks for extra verification | For now it cannot be done with that card: try another or pick it up in store. |
 | You already have 3 open holds at that store | It does not let you open another until you close one. |
 | The item has a deal in Updates | The Shop shows the deal price with the usual one struck through; the hold is saved at that price and that is what you pay at the register, even if the deal ends before you come. |

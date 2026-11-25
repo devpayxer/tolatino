@@ -15,6 +15,8 @@ export type DevCancelar = { e: EstadoCancelar; monto: number };
 export type DevCuenta = { hechas: number; camino: number; fallidas: number; liberadas: number; retenidas: number };
 
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+/* El monto como lo dicen estos textos ($12.50), para quien arma su propio {dinero} (avisos › avisarPedido). */
+export const usdTxt = usd;
 
 /* {dinero} del aviso a quien pagó. */
 export function dineroAlCancelar(d: DevCancelar): Bi {

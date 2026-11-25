@@ -41,6 +41,9 @@ const crear = [
   ['e2PorElCms', 'apps/web/lib/zz9f3.ts', 'export const zz = (es: boolean, a1: string, b1: string) => {\n  const E2 = (a: string, b: string) => (es ? b : b);\n  return E2(a1, b1);\n};\n', /devuelve «b : b»/],
   ['e2PorElCms', 'apps/web/lib/zz9f3.ts', 'export function zz() { (globalThis as Record<string, unknown>).__tlEdicionesE2 = undefined; }\n', /solo lo toca lib\/dos-idiomas\.ts/],
   ['e2PorElCms', 'apps/web/lib/zz9f3.ts', 'export const zz = (es: boolean, a1: string, b1: string) => dosIdiomas(es, a1, b1);\n', /sin importarlo/],
+  // 25 nov · Un ayudante que recibe los dos idiomas y llama E2(a, b), llamado con dos textos fijos (como soltado(…) del apartado): sus textos se salen del CMS.
+  ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nexport function Zz({ es, ok }: { es: boolean; ok: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  const dice = (a1: string, b1: string) => (ok ? E2(a1, b1) : "");\n  return <p>{dice("Se liberó lo retenido", "The hold was released")}</p>;\n}\n', /pasa dos textos fijos a un ayudante que llama E2\(a1, b1\)/],
+  ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nexport function Zz({ es, ok }: { es: boolean; ok: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  const dice = (x: string, y: string) => ok ? E2(x, y) : "";\n  return <p>{dice(`Se liberó`, \'Released\')}</p>;\n}\n', /dice\("…", "…"\) pasa dos textos fijos/],
 ];
 let bien = 0, total = 0;
 const correr = (g, debe = null) => {

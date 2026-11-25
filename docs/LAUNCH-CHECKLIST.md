@@ -3041,11 +3041,22 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       fijo; `ApartadoEstado.tsx` ~56-58 y ~79 «Se liberó lo retenido» sin mirar; citas, apartados y pedidos devuelven `retenida` y ninguna
       pantalla lo usa. din9v5 cubre solo Noche (sin inglés ni cierre de la alerta).
       _Hecho (25 nov, 1f259a4, Opus; revisado por Fable): cita, mercado, apartados y pedidos; migración 0223; din9v5 a 37 ✓._
-- [ ] **→ 9b** · **Restos menores de la clase (25 nov, revisión de 1f259a4):** las hojas de confirmar de la cita prometen «Te devolvemos los $X»
+- [x] **→ 9b** · **Restos menores de la clase (25 nov, revisión de 1f259a4):** las hojas de confirmar de la cita prometen «Te devolvemos los $X»
       antes de actuar (`cita/[num]/Estado.tsx` ~232-233) y el estado «Te propone otra hora» (~66); el panel de citas dice «la solicitud venció y se
       devolvió el depósito» sin mirar (`citas-flujo.ts` ~196); `avisos.ts` ~166 cae en «No se te cobró nada» si la consulta falla; un cobro
       `failed` en la cita sale como «sigue cobrado»; los «Se liberó…» del apartado salieron del CMS (`cms-cadenas-e2.json`) y «CANCELADO» quedó
       bloqueado; `ord_no` y «Rechazar» de Pedidos sin e2e propio.
+      _Hecho (25 nov, Opus; en revisión): hojas y «otra hora» dicen lo que se pedirá (pideCx / pideAlt), failed con su texto y fila, vencidaPanel,
+      ord_no neutro si la consulta falla, soltado(E2(…)) y «CANCELADO» sin candado; guardián devueltoSoloSiSalio (13) y cadenaConLlave (ayudante que
+      saca textos del CMS), al revés 86/86 y alreves9f3 39/39; din9w (22 ✓) asignada; sin migración (ord_no ya tenía {dinero})._
+- [ ] **→ 9b** · **La misma clase «promete antes de actuar» en otras pantallas (25 nov, visto al cerrar los restos):** las hojas de cancelar dicen
+      «te devolvemos $X» antes de intentar nada en Noche (`NocheEstado.tsx` ~74 y los estados ~43/~47 «Si no confirman / no te sirve, te devolvemos
+      el depósito»), Viaje (`ViajeEstado.tsx` ~107), Fiesta (`FiestaEstado.tsx` ~62), Evento privado (`EstadoEvp.tsx` ~155/~219) y Patrocinio
+      (`panel/Patrocinio.tsx` ~100, `PatrocinioEvento.tsx` ~73); el panel de citas dice «si no respondes … vence y se devuelve el depósito»
+      (`panel/Citas.tsx` ~151, es una retención que se suelta). El guardián devueltoSoloSiSalio (13) solo cubre la cita: al arreglarlas, ampliar su
+      lista. Y la familia de textos fijos que no llegan al CMS por ir en listas que después pasan a `E2(a, b)` (`Recuperar.tsx` DOCS, `MenuCliente.tsx`
+      LLEVA, `panel/Cobros.tsx` pasos, `EventosCambios.tsx` IDEAS y MOTIVOS): el guardián nuevo de cadenaConLlave solo caza el ayudante
+      `const f = (a: string, b: string) => … E2(a, b)` llamado con dos textos fijos.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

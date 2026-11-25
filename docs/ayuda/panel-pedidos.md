@@ -2,7 +2,7 @@
 
 _Pantallas: `/panel/{negocio}/hoy` (Hoy), `/panel/{negocio}/clientes` (Clientes), `?det=ped:{número}` (detalle de un pedido) y
 `/panel/{negocio}/vendes/pedidos` (Lo que vendes › Pedidos en línea). Teléfono y escritorio. Comida y Bebidas: pickup con pago en el local y delivery
-con efectivo al entregar. Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
+con efectivo al entregar. Versión: 25 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Hoy:** cuatro cifras (esperan tu respuesta — en negro cuando hay alguno —, hoy en tu agenda, vendido hoy, vistas
@@ -25,7 +25,7 @@ con efectivo al entregar. Versión: 6 nov 2026. Audiencia: negocio. Tema: panel.
 | Caso | Qué pasa |
 |---|---|
 | Aceptas | El cliente ve «En la cocina» y a qué hora está listo. |
-| Rechazas | El cliente ve «No pudieron tomar tu pedido · no se cobró nada». El inventario vuelve. |
+| Rechazas | El cliente ve que no pudiste aceptarlo y lo que pasó con su tarjeta: no se cobró nada y se soltó la retención; si la tarjeta no la soltó todavía, lo dice (se sigue soltando sola y el equipo de To'Latino tiene el aviso), y tú lo ves igual al rechazar. El aviso que le llega dice lo mismo. El inventario vuelve. |
 | No respondes en 10 minutos | El pedido queda **SIN RESPUESTA**: sale de «Esperan», el cliente lo ve y el inventario vuelve. Ya no se puede aceptar. |
 | El cliente cancela antes de que aceptes | Sale como CANCELADO («Lo canceló el cliente»); el inventario vuelve. Después de aceptar ya no puede cancelar desde la app: te llama. |
 | Listo para recoger | El cliente ve «Listo para recoger · pasa con tu número de pedido». |
@@ -72,7 +72,7 @@ por SMS y en el teléfono llegan con las notificaciones.
 | Case | What happens |
 |---|---|
 | You accept | The customer sees «In the kitchen» and what time it is ready. |
-| You reject | The customer sees «They could not take your order · nothing was charged». The inventory comes back. |
+| You reject | The customer sees you could not accept it and what happened with their card: nothing was charged and the hold was released; if the card has not released it yet, it says so (it keeps being released automatically and the To'Latino team has the alert), and you see the same when you reject. The notification they get says the same. The inventory comes back. |
 | You do not respond in 10 minutes | The order is left **NO ANSWER**: it leaves «Awaiting», the customer sees it and the inventory comes back. It can no longer be accepted. |
 | The customer cancels before you accept | It shows as CANCELED («The customer canceled it»); the inventory comes back. After you accept they can no longer cancel from the app: they call you. |
 | Ready for pickup | The customer sees «Ready for pickup · come by with your order number». |

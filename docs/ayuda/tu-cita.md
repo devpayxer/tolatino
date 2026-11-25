@@ -1,7 +1,7 @@
 # Tu cita y Panel › Citas · Your booking and Panel › Bookings
 
 _Pantallas: **Tu cita** (`/cita/C-xxxx`), Mi cuenta › **Citas y reservas**; Panel › **Hoy** (esperan tu respuesta y la agenda de hoy), el **detalle de
-la cita** y **Clientes** (todas las citas con filtros). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
+la cita** y **Clientes** (todas las citas con filtros). Versión: 25 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **El negocio (o la silla) responde:** **Confirmar** (si hubo depósito, se cobra), **Otra hora** (el sistema propone la
@@ -27,12 +27,18 @@ la cita** y **Clientes** (todas las citas con filtros). Versión: 6 nov 2026. Au
 | Cancelas tarde o no llegas | Se queda con el negocio (o con la silla). |
 | Cambias la hora | Pasa a la nueva; si el negocio no acepta el cambio, sigues con tu cita actual. |
 | «Otra hora» sin horas libres en 14 días | El panel pide usar «No puedo». |
+| Antes de confirmar «Cancelar» o «No, gracias» | La hoja dice lo que se va a pedir, no lo que ya pasó: «Pedimos que se suelte la retención de $X» (si solo estaba retenido) o «Pedimos la devolución de $X» (lo que queda del depósito cobrado). |
+| Después | Tu cita dice lo que de verdad pasó: retención soltada, devuelto, devolución en camino, devolución que no salió (escríbenos en Soporte) o retención que la tarjeta no soltó todavía (la seguimos soltando sola). |
+| El cobro del depósito no se hizo | Tu cita dice «El depósito no se cobró»: no se te cobró nada. |
+| El negocio responde una solicitud que ya venció | El panel le dice lo que pasó con el depósito (se soltó la retención, o todavía no), nunca «se devolvió» sin mirar. |
 
 ## Preguntas frecuentes
 **¿Se puede confirmar sola una cita?** Solo si el negocio (o la silla) activó «confirmar al instante». Si no, hasta que
 responda el cliente ve «Solicitud enviada».
 **¿Quién ve mi teléfono?** El negocio lo ve cuando la cita está confirmada.
 **¿Se borra algo?** No: cada paso queda en el historial de la cita y en la auditoría del negocio.
+**¿Por qué la hoja de cancelar dice «Pedimos…» y no «Te devolvemos»?** Porque la devolución la hace el banco de tu tarjeta y puede tardar o no salir.
+Lo que pasó de verdad lo ves en Tu cita y en Avisos.
 
 ## English
 
@@ -60,9 +66,15 @@ responda el cliente ve «Solicitud enviada».
 | You cancel late or do not show | It stays with the business (or the chair). |
 | You change the time | It moves to the new one; if the business does not accept the change, you keep your current appointment. |
 | «Another time» with no free times in 14 days | The dashboard asks to use «I can't». |
+| Before you confirm «Cancel» or «No, thanks» | The sheet says what will be requested, not what already happened: «We ask for the $X hold to come off your card» (if it was only held) or «We request a refund of $X» (what is left of the charged deposit). |
+| Afterwards | Your appointment says what really happened: hold released, refunded, refund on its way, refund that did not go through (write to us in Support) or a hold the card has not released yet (we keep releasing it automatically). |
+| The deposit charge did not go through | Your appointment says «The deposit was not charged»: you were not charged. |
+| The business answers a request that already expired | The dashboard tells them what happened to the deposit (the hold was released, or not yet), never «it was refunded» without checking. |
 
 ### FAQ
 **Can an appointment confirm itself?** Only if the business (or the chair) turned on «confirm instantly». If not, until it responds the
 customer sees «Request sent».
 **Who sees my phone?** The business sees it when the appointment is confirmed.
 **Is anything deleted?** No: every step stays in the appointment's history and in the business's audit trail.
+**Why does the cancel sheet say «We request…» and not «We refund»?** Because the refund is made by your card's bank and it can take time or not go
+through. What really happened shows in Your appointment and in Notifications.

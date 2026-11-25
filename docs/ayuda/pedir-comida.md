@@ -1,7 +1,7 @@
 # Pedir comida · Ordering food
 
 _Pantallas: pestaña **Menú** de la página del negocio (`/n/{negocio}?tab=menu`), **Finalizar pedido** (`/n/{negocio}/pagar`) y **Tu pedido**
-(`/pedido/{número}`), teléfono y escritorio. Comida y Bebidas. Pickup y delivery, con tarjeta o pago en el local según el negocio. Versión: 14 nov 2026. Audiencia: vecino. Tema: pedidos._
+(`/pedido/{número}`), teléfono y escritorio. Comida y Bebidas. Pickup y delivery, con tarjeta o pago en el local según el negocio. Versión: 25 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **Menú (Pro):** pestaña con las categorías arriba (se pegan al bajar), **Populares**, y cada plato con foto, precio y
@@ -51,7 +51,7 @@ _Pantallas: pestaña **Menú** de la página del negocio (`/n/{negocio}?tab=menu
 | Tres pedidos esperando respuesta | No deja enviar otro hasta que contesten. |
 | Negocio Free | Una sola página: se ven 5 platos y se piden desde el Resumen, hasta 10 pedidos en línea al mes (lo fija To'Latino). Al llegar, la página muestra la lista y Llamar. |
 | El negocio no contesta en 10 minutos | El pedido queda **SIN RESPUESTA** y no se cobra nada. |
-| El negocio rechaza | «No pudieron tomar tu pedido · no se cobró nada». |
+| El negocio rechaza | Tu pedido y el aviso dicen lo que pasó con tu tarjeta: no se cobró nada y se soltó la retención; si tu tarjeta no la soltó todavía, lo dicen y la seguimos soltando sola. |
 | Ya lo aceptaron o está listo | Ya no se cancela desde la app: la pantalla de cancelar lo dice y ofrece volver al pedido. |
 | To'Latino pausó el Menú o los Pedidos en línea | Sin pestaña Menú, o se ve el menú sin poder pedir. |
 | Delivery: tu dirección queda fuera de la zona del negocio | «No llega a tu dirección · Tu dirección queda a N mi y el negocio lleva hasta 3 mi. Pide pickup.» Cambiando a Pickup se puede pedir. El servidor lo vuelve a medir al enviar. |
@@ -133,7 +133,7 @@ no la pantalla: si algo cambió mientras pagabas, te lo dice y el pedido no sale
 | Three orders waiting for a reply | It does not let you send another until they reply. |
 | Free business | A single page: 5 dishes show and are ordered from the Summary, up to 10 online orders a month (set by To'Latino). When it is reached, the page shows the list and Call. |
 | The business does not reply in 10 minutes | The order is left **UNANSWERED** and nothing is charged. |
-| The business rejects | «They could not take your order · nothing was charged». |
+| The business rejects | Your order and the notification say what happened with your card: nothing was charged and the hold was released; if your card has not released it yet, they say so and we keep releasing it automatically. |
 | It was already accepted or is ready | It can no longer be canceled from the app: the cancel screen says so and offers to go back to the order. |
 | To'Latino paused the Menu or Online orders | No Menu tab, or you see the menu without being able to order. |
 | Delivery: your address is outside the business's area | «It does not reach your address · Your address is N mi away and the business delivers up to 3 mi. Order pickup.» Switching to Pickup lets you order. The server measures it again when sending. |

@@ -161,10 +161,14 @@ export async function avisarPedido(numero: string, tpl: "ord_ok" | "ord_no" | "o
   if (!o) return;
   // 9v (sexta tanda) · {dinero} de ord_no (0223): lo que de verdad pasó con la retención de la tarjeta, leído del cobro DESPUÉS de soltarlo (pedidos ›
   // cambiarPaso › soltarRetencion): la que la pasarela no soltó todavía se dice así (el equipo ya tiene la alerta hold_stuck), nunca «No se te cobró nada» a secas.
+  // 25 nov (restos de la clase) · Se lee el estado del cobro (no solo «¿hay retención?»): si la consulta falla, un texto que no afirma nada del dinero (antes caía
+  // en «No se te cobró nada»); soltada, «no se te cobró nada» con lo que se soltó; cobrado o devuelto (no debería pasar en un pedido que no se aceptó), lo neutro.
   let dinero: Vars[string] = "";
   if (tpl === "ord_no") {
-    const h = (await db().query<{ amt: number }>(`select p.held_cents as amt from payments p join operations o on o.id = p.operation_id where o.number = $1 and o.kind = 'order' and p.kind in ('full', 'deposit') and p.status = 'held' order by p.id limit 1`, [numero]).catch(() => ({ rows: [] as { amt: number }[] }))).rows[0];
-    dinero = h ? (await import("./devolucion-cancelar")).sinSoltarCliente(h.amt) : { es: " No se te cobró nada.", en: " You were not charged." };
+    const q = await db().query<{ st: string; amt: number }>(`select p.status as st, coalesce(nullif(p.held_cents, 0), p.amount_cents) as amt from payments p join operations o on o.id = p.operation_id where o.number = $1 and o.kind = 'order' and p.kind in ('full', 'deposit') order by p.id limit 1`, [numero]).then((r) => r.rows, () => null);
+    const h = q?.[0], dc = await import("./devolucion-cancelar"), neutro = { es: " Mira en tu pedido lo que pasó con tu pago.", en: " Check your order to see what happened with your payment." };
+    dinero = !q ? neutro : !h || h.st === "failed" ? { es: " No se te cobró nada.", en: " You were not charged." } : h.st === "held" ? dc.sinSoltarCliente(h.amt)
+      : h.st === "released" ? { es: ` No se te cobró nada: se soltó la retención de ${dc.usdTxt(h.amt)} de tu tarjeta.`, en: ` You were not charged: the ${dc.usdTxt(h.amt)} hold came off your card.` } : neutro;
   }
   await avisar(o.uid, tpl, { negocio: o.negocio, num: numero, hora: o.hora, dinero }, { href: `/pedido/${numero}`, ref: ["order", numero] });
 }
