@@ -139,7 +139,9 @@ type Msg = { es: string; en: string };
 export type ResDevolucion = { ok: true } | { ok: false; msg: Msg; enCamino?: true };
 type InDevolver = { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string;
   /* 0209 · «Devolver otra vez» unos boletos: la devolución fallida de la que es (la base lo comprueba: refunds_otra_vez). */
-  otraVezDe?: string };
+  otraVezDe?: string;
+  /* 9v · Nadie mira una pantalla que la pueda repetir (el negocio canceló y el sistema devuelve: devolverAlCancelar): un «no» de Stripe alerta al equipo. */
+  nadieMira?: boolean };
 const STRIPE_NO: Msg = { es: "Stripe no pudo hacer la devolución. Prueba de nuevo en un momento.", en: "Stripe could not make the refund. Try again in a moment." };
 const enCamino = (n: number): Msg => ({ es: `Stripe no contestó. La devolución de ${money(n)} quedó en camino y se termina sola en unos minutos: no la repitas.`,
   en: `Stripe did not answer. The ${money(n)} refund is on its way and finishes by itself in a few minutes: do not repeat it.` });
@@ -192,7 +194,7 @@ const VIEJA: Msg = { es: "Esta devolución lleva más de un día sin respuesta d
 /* 9t7 (0206) · La llave que va a Stripe: la de la fila la primera vez; si la consulta dijo que nunca llegó y la llave volvió a valer (key_n), OTRA llave
    (Stripe pudo guardar la respuesta de la anterior): la misma intención, con sus líneas, su caso y su auditoría. */
 export const llaveDe = (idem: string, n: number) => (n > 0 ? `${idem}-r${n}` : idem);
-export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean; alCerrar?: AlCerrar } = {}): Promise<ResDevolucion> {
+export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean; alCerrar?: AlCerrar; nadieMira?: boolean } = {}): Promise<ResDevolucion> {
   const r = (await db().query<{ id: string; amt: number; idem: string; kn: number; st: string; mano: boolean; vieja: boolean; pi: string; plataforma: boolean; biz: string | null; city: string | null; por: string }>(
     `select r.id::text, r.amount_cents as amt, r.idem_key as idem, r.key_n as kn, r.status as st, r.manual_at is not null as mano, coalesce(r.key_from, r.created_at) <= now() - make_interval(hours => $2::int) as vieja,
             p.stripe_payment_intent as pi, p.transfer_group is not null as plataforma, r.initiated_by as por, p.business_id as biz, p.city_id as city
@@ -214,7 +216,7 @@ export async function ejecutarDevolucionPago(id: string, o: { barrido?: boolean;
     await db().query(`update refunds set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending' and manual_at is null`, [r.id, codigo]);
     return { ok: false, msg: enCamino(r.amt), enCamino: true };
   }
-  await fallarDevolucionPago(r, codigo, o.barrido || r.por === "policy" ? "stuck" : null);
+  await fallarDevolucionPago(r, codigo, o.barrido || o.nadieMira || r.por === "policy" ? "stuck" : null);
   return { ok: false, msg: STRIPE_NO };
 }
 /* El «no» de Stripe (al mandarla, o lo que dijo la consulta pasada la llave: 9t7), una vez: 'failed' libera el saldo (el tope cuenta solo lo pendiente y lo
@@ -334,7 +336,35 @@ export async function devolverPago(x: InDevolver, alGuardar?: AlGuardar<{ pago: 
   const a = await tx((c) => anotarDevolucionPago(c, x, alGuardar));
   if (!a.ok) return a;
   if (a.estado !== "pending") return { ok: true };
-  return ejecutarDevolucionPago(a.id);
+  return ejecutarDevolucionPago(a.id, { nadieMira: x.nadieMira });
+}
+
+/* 9v (25 nov, tercera tanda) · El NEGOCIO cancela (la salida de un viaje, una mesa de la noche, una inscripción o el grupo, una fecha de fiesta) y el sistema
+   devuelve todo lo cobrado. Antes se tiraba lo que devolvía devolverPago y el aviso decía «Te devolvemos todo» con lo decidido; y como la pide el negocio
+   (por 'business'), un «no» de Stripe no avisaba a nadie. Ahora nadie mira una pantalla que la repita (nadieMira: el «no» alerta al equipo de dinero, como
+   una política; sin respuesta, el barrido la sigue y alerta si falla) y lo que pasó se lee de la base por su llave: hecha · en camino · fallida. Si ni
+   siquiera se pudo anotar (otra devolución de ese cobro sigue en camino), también alerta. Lo retenido se libera; lo que no se cobró no se devuelve. Los
+   textos (aviso y panel): lib/devolucion-cancelar.ts. Guardián devueltoSoloSiSalio. */
+export async function devolverAlCancelar(o: { id: string; pay: string | null; pid: string | null; amount: number | null; refunded: number | null },
+  x: { actorId: string | null; motivo: string; idem: string }): Promise<import("./devolucion-cancelar").DevCancelar> {
+  if (o.pay === "held") { await liberarOperacion(o.id); return { e: "liberada", monto: o.amount ?? 0 }; }
+  if (!o.pid || !o.amount || !["captured", "partially_refunded", "refunded"].includes(o.pay ?? "")) return { e: "nada", monto: 0 };
+  const falta = o.amount - (o.refunded ?? 0);
+  if (falta <= 0) return { e: "hecha", monto: o.refunded ?? 0 };
+  const r = await devolverPago({ paymentId: o.pid, centavos: falta, por: "business", actorId: x.actorId, motivo: x.motivo, idem: x.idem, nadieMira: true });
+  if (r.ok) return { e: "hecha", monto: falta };
+  // Lo que quedó en la base con esa llave (una fallida guarda la suya con «~fallida-<id>»).
+  const f = (await db().query<{ st: string; amt: number; mano: boolean }>(
+    `select status as st, amount_cents as amt, manual_at is not null as mano from refunds where payment_id = $1::bigint and split_part(idem_key, '~fallida-', 1) = $2 order by id desc limit 1`, [o.pid, x.idem])).rows[0];
+  if (f && (f.st === "done" || f.mano)) return { e: "hecha", monto: f.amt };
+  if (f?.st === "pending") return { e: "en_camino", monto: f.amt };
+  if (!f) {
+    const p = (await db().query<{ biz: string | null; city: string | null }>(`select business_id as biz, city_id as city from payments where id = $1::bigint`, [o.pid])).rows[0];
+    await (await import("./dinero-alertas")).alertar("refund_stuck", `cancelacion:${x.idem}`.slice(0, 200), { monto: falta, negocio: p?.biz ?? null, ciudad: p?.city ?? null, detalle: {
+      es: `${x.motivo} (lo canceló el negocio): la devolución de ${money(falta)} no se pudo anotar (${r.msg.es}). El cliente no la recibió: revisa el cobro en Stripe y devuélvela.`,
+      en: `The business cancelled: the ${money(falta)} refund could not be recorded (${r.msg.en}). The client did not get it: check the charge in Stripe and refund it.` } }).catch(() => undefined);
+  }
+  return { e: "fallida", monto: f?.amt ?? falta };
 }
 
 /* Barrido: las devoluciones de un cobro (no de boletos: esas las termina barrerDevolucionesBoletos) que quedaron pendientes (el proceso murió

@@ -9,6 +9,7 @@ import { guardarNoche, herramientaNoche, recalcularFiltrosNoche } from "@/lib/no
 import { avisarCoverSube, cancelarNocheNegocio, marcarNoche, responderMesa, type MarcaMesa, type PasoMesa } from "@/lib/noche-reservas";
 import type { NocheIn } from "@/lib/noche-comun";
 import { accesoPanel } from "@/lib/panel";
+import type { DevCuenta } from "@/lib/devolucion-cancelar";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
@@ -47,6 +48,8 @@ export async function nocheFila(negocio: string, min: number): Promise<Res> {
 /* ── Mesas y lista (4nc): Confirmar · Otra hora · No hay mesa; la puerta (entraron, llegaron, no llegaron, sin identificación); el local
    cancela con motivo (devolución completa). Miembro activo con acceso a «Hoy y pedidos» (parte ord). El servidor decide todo. ── */
 const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
+// 9v · El negocio canceló: la acción también dice lo que pasó con cada devolución (hechas · en camino · no salieron), para que el panel no diga «todos reciben su dinero» sin mirar.
+const rDev = (r: { ok: true; devolucion?: DevCuenta } | { ok: false; msg: { es: string; en: string } }): Res & { devolucion?: DevCuenta } => (r.ok ? { ok: true, devolucion: r.devolucion } : { ok: false, mensaje: r.msg });
 async function entrar(id: unknown) { if (!(await mismoOrigen())) return null; return typeof id === "string" ? accesoPanel(id, "ord") : null; }
 export async function nocheResponder(id: string, numero: string, paso: PasoMesa, alt?: number): Promise<Res> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;
@@ -58,7 +61,7 @@ export async function nocheMarcar(id: string, numero: string, que: MarcaMesa | "
   if (!["llegaron", "nollegaron", "noid", "entraron"].includes(que)) return no("Ese paso no existe.", "That step does not exist.");
   return r2(await marcarNoche(a.negocio.id, String(numero ?? ""), que, a.yo.id, n == null ? undefined : Number(n)));
 }
-export async function nocheCancelarNeg(id: string, numero: string, motivo: string): Promise<Res> {
+export async function nocheCancelarNeg(id: string, numero: string, motivo: string): Promise<Res & { devolucion?: DevCuenta }> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;
-  return r2(await cancelarNocheNegocio(a.negocio.id, String(numero ?? ""), String(motivo ?? ""), a.yo.id));
+  return rDev(await cancelarNocheNegocio(a.negocio.id, String(numero ?? ""), String(motivo ?? ""), a.yo.id));
 }

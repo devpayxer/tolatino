@@ -65,10 +65,12 @@ export type DatosNotif = Awaited<ReturnType<typeof datosNotif>>;
 export const variables = (t: string) => [...new Set([...t.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!))];
 
 /* Valores de muestra para «Probar en mi teléfono». */
-export const MUESTRA: Record<string, string> = { resumen: "Hoy en la Comunidad: 3 respuestas y 1 seguidor nuevo.", negocio: "Sabor Dominicano", num: "1042", hora: "7:30 PM", dia: "14/11", alt: "8:00 PM", estado: "te van a llamar", puesto: "Cocinero", tipo: "pedido", cliente: "Marisol", min: "10", motivo: "lenguaje ofensivo",
+export const MUESTRA: Record<string, string | { es: string; en: string }> = { resumen: "Hoy en la Comunidad: 3 respuestas y 1 seguidor nuevo.", negocio: "Sabor Dominicano", num: "1042", hora: "7:30 PM", dia: "14/11", alt: "8:00 PM", estado: "te van a llamar", puesto: "Cocinero", tipo: "pedido", cliente: "Marisol", min: "10", motivo: "lenguaje ofensivo",
   // 6j · Eventos
   evento: "Noche de bachata", lugar: "La Terraza", que: "Entrada general: cupo de 100 a 120", pct: "90", vendidos: "90", total: "100", cuantos: "2 boletos", codigo: "TL-KQX-4821",
   // 7i · Soporte y El Compa
   cuando: "hoy antes de las 6 PM", quien: "Dayana", horas: "8", gastado: "$80.00", tope: "$100.00", texto: "¿Abren el domingo?",
   // 9l · Avisos y canales
-  ultimos: "0123", enlace: "https://tolatino.com/soporte", ciudad: "Hazleton", vistas: "120", ops: "14", resenas: "3", n: "2", item: "Flan de leche", estrellas: "5", rol: "barbero" };
+  ultimos: "0123", enlace: "https://tolatino.com/soporte", ciudad: "Hazleton", vistas: "120", ops: "14", resenas: "3", n: "2", item: "Flan de leche", estrellas: "5", rol: "barbero",
+  // 9v · Lo que pasó con el dinero (0219, 0220): la prueba no sale con «{dinero}» escrito; en el idioma de quien la recibe.
+  dinero: { es: "Te devolvimos $45.00 a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.", en: "We refunded $45.00 to your card; your bank shows it in 3–5 business days." } };

@@ -103,9 +103,10 @@ const esperaV = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f();
   // ── 7. El negocio cancela con motivo → devolución completa ──
   await h.goto(B + `/panel/${F}/hoy?det=fiesta:${F5}`); await clic(h.getByRole('button', { name: 'Cancelar la fecha' }));
   await (await vis(h.getByPlaceholder(/se nos dañó/))).fill('Se nos inundó el salón');
-  await clic(h.getByRole('button', { name: 'Sí, cancelar y devolver' })); await h.getByText(/Cancelada: el cliente recibe/).first().waitFor();
+  await clic(h.getByRole('button', { name: 'Sí, cancelar y devolver' })); await h.getByText('Cancelada. Le devolvimos todo. Le avisamos.').first().waitFor();
   ok(await esperaV(() => sql(`select o.cancelled_by || '|' || p.refunded_cents from operations o join payments p on p.operation_id = o.id where o.number = '${F5}'`), 'business|50000') === 'business|50000', 'el negocio cancela: devolución completa');
   await m.goto(B + `/fiesta/${F5}`); ok(await espera(m.getByText(/Se nos inundó el salón/)), 'el cliente ve el motivo');
+  ok(sql(`select body from notifications where tpl = 'fiesta_biz_cx' and ref_id = '${F5}' order by id desc limit 1`).includes('Te devolvimos $500.00 a tu tarjeta'), 'su aviso dice lo que pasó (9v): «Te devolvimos $500.00 a tu tarjeta»');
 
   // ── 8. Vence a las 24 h sin respuesta → se libera ──
   const F6 = await pedir(sab7, '6:00 PM', false);

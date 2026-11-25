@@ -1,7 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto, type Ctx } from "./citas";
-import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
 import { diaFiesta, EVT, sumarDias, type Bi, type SvcFiesta } from "./fiestas-comun";
@@ -215,7 +216,7 @@ async function leer(c: PoolClient | ReturnType<typeof db>, where: string, args: 
   return (await c.query<Op>(`${SEL} where o.kind = 'party' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 const hora = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
-async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {
+async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
@@ -379,12 +380,13 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
 }
 
 /* ── El negocio cancela una fecha confirmada (motivo obligatorio; devolución completa siempre) y «Terminó» ── */
-export async function cancelarFechaNegocio(negocio: string, numero: string, motivo: string, actorId: string): Promise<ResF> {
+export async function cancelarFechaNegocio(negocio: string, numero: string, motivo: string, actorId: string): Promise<ResF & { devolucion?: DevCuenta }> {
   const mot = String(motivo ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 200);
   if (!NUM_F.test(numero)) return no("Esa fiesta no existe.", "That party does not exist.");
   if (mot.length < 4) return no("Escribe el motivo: el cliente lo ve.", "Write the reason: the client sees it.");
   const o0 = await leer(db(), "o.business_id = $1 and o.number = $2", [negocio, numero]);
   if (!o0) return no("Esa fiesta no existe.", "That party does not exist.");
+  let devolucion = sinDevoluciones();
   let despues: (() => Promise<void>) | null = null;
   const r = await tx(async (c): Promise<ResF> => {
     await c.query(`select pg_advisory_xact_lock(hashtext('fiesta:' || $1 || ':' || $2))`, [negocio, o0.ymd]);
@@ -393,16 +395,18 @@ export async function cancelarFechaNegocio(negocio: string, numero: string, moti
     await c.query(`update operations set status = 'cancelled', cancelled_by = 'business', cancelled_at = now(), cancel_reason = 'negocio', details = details || $2::jsonb, updated_at = now() where id = $1::bigint`, [o.id, JSON.stringify({ motivoNeg: mot })]);
     await c.query(`update party_days set removed_at = now() where operation_id = $1::bigint and removed_at is null`, [o.id]);
     await ev(c, o.id, "cancelled", "member", actorId, { es: `Canceló el negocio: ${mot}`, en: `Cancelled by the business: ${mot}` });
+    // 9v · Lo que de verdad pasó con el depósito (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · nada), en el aviso
+    // ({dinero}) y en lo que ve el negocio; nunca «Te devolvemos el depósito completo» sin mirar.
     despues = async () => {
-      if (o.pay === "held") await liberarOperacion(o.id);
-      else if (o.pay === "captured" && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "business", actorId, motivo: "El negocio canceló la fecha", idem: `fbx-${numero}` });
-      await avisarCliente(numero, "fiesta_biz_cx", { motivo: mot });
+      const d = await devolverAlCancelar(o, { actorId, motivo: "El negocio canceló la fecha", idem: `fbx-${numero}` });
+      devolucion = contar(devolucion, d);
+      await avisarCliente(numero, "fiesta_biz_cx", { motivo: mot, dinero: dineroAlCancelar(d) });
       await recalcularFiltrosFiesta(db(), negocio);
     };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r;
+  return r.ok ? { ok: true, devolucion } : r;
 }
 export async function terminarFiesta(negocio: string, numero: string, actorId: string | null): Promise<ResF> {
   if (!NUM_F.test(numero)) return no("Esa fiesta no existe.", "That party does not exist.");

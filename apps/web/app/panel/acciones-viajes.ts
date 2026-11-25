@@ -7,11 +7,14 @@ import { accesoPanel } from "@/lib/panel";
 import { asignarChofer } from "@/lib/chofer";
 import { mandarPrecio, pasoEnvio } from "@/lib/envios";
 import { abordo, cancelarSalida, pasoSalida, pasoViaje, responderViaje } from "@/lib/viajes";
+import type { DevCuenta } from "@/lib/devolucion-cancelar";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
 const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
+// 9v · El negocio canceló: la acción también dice lo que pasó con cada devolución (hechas · en camino · no salieron), para que el panel no diga «todos reciben su dinero» sin mirar.
+const rDev = (r: { ok: true; devolucion?: DevCuenta } | { ok: false; msg: { es: string; en: string } }): Res & { devolucion?: DevCuenta } => (r.ok ? { ok: true, devolucion: r.devolucion } : { ok: false, mensaje: r.msg });
 async function entrar(id: unknown) {
   if (!(await mismoOrigen())) return null;
   if (typeof id !== "string") return null;
@@ -29,9 +32,9 @@ export async function viajeSalida(id: string, run: string, paso: "tarde" | "sali
   if (!["tarde", "salio", "llego"].includes(paso)) return no("Ese paso no existe.", "That step does not exist.");
   return r2(await pasoSalida(a.negocio.id, String(run ?? ""), paso, a.yo.id, min == null ? undefined : Number(min)));
 }
-export async function viajeCancelarSalida(id: string, run: string, motivo: string): Promise<Res> {
+export async function viajeCancelarSalida(id: string, run: string, motivo: string): Promise<Res & { devolucion?: DevCuenta }> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;
-  return r2(await cancelarSalida(a.negocio.id, String(run ?? ""), String(motivo ?? ""), a.yo.id));
+  return rDev(await cancelarSalida(a.negocio.id, String(run ?? ""), String(motivo ?? ""), a.yo.id));
 }
 export async function viajeAbordo(id: string, numero: string, si: boolean): Promise<Res> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;

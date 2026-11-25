@@ -1,7 +1,7 @@
 // Prueba al revés del guardián devueltoSoloSiSalio (25 nov, 9v): un patrocinio dice «devuelto» (el panel: «Reserva cancelada. Te devolvemos $15.00 a tu
 // tarjeta») solo con lo que la pasarela devolvió. Pasaba: «Cancelar reserva» del dueño devolvía lo decidido (refund_cents) aunque Stripe hubiera rechazado la
 // devolución (din9v2). Ampliado (25 nov, segunda tanda): boletos y eventos (cancelar, «Devolver» del panel, «Devolución total», el evento cancelado,
-// la orden) y las cuatro pantallas de reservas. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
+// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -43,6 +43,33 @@ const casos = [
   ['viaje te devolvemos todo por defecto', 'apps/web/app/(app)/viaje/[num]/ViajeEstado.tsx', '${devT || (cobrado ? ', '${devT || E2("Te devolvemos todo.", "You get everything back.") || (cobrado ? '],
   // Fiesta: la vista deja de leer lo que no está hecho.
   ['fiesta sin devolucionesDe', 'apps/web/lib/fiestas-reservas.ts', '    devolucion: await devolucionesDe(o.id),\n', '    devolucion: { camino: 0, fallida: 0 },\n'],
+  // 25 nov (tercera tanda) · El NEGOCIO cancela (viaje, noche, inscripción, fiesta): lo que pasó, y el «no» alerta al equipo.
+  // La noche vuelve a devolver con devolverPago por el negocio, tirando el resultado (y el aviso dice «hecha» sin mirar).
+  ['noche devuelve tirando el resultado', 'apps/web/lib/noche-reservas.ts', 'const d = await devolverAlCancelar(o, { actorId, motivo: "El local canceló", idem: `nbx-${numero}` });', 'await devolverPago({ paymentId: o.pid!, centavos: o.amount!, por: "business", actorId, motivo: "El local canceló", idem: `nbx-${numero}` }); const d = { e: "hecha" as const, monto: o.amount! };'],
+  // El aviso de la salida cancelada sin {dinero}.
+  ['viaje cancelado sin {dinero}', 'apps/web/lib/viajes.ts', 'await avisarCliente(o.num, "viaje_cancelada", { motivo: mot, dinero: dineroAlCancelar(d) });', 'await avisarCliente(o.num, "viaje_cancelada", { motivo: mot });'],
+  // La inscripción avisa sin lo que pasó.
+  ['inscripción sin {dinero}', 'apps/web/lib/inscripciones.ts', 'await avisarCliente(o.num, tpl, { motivo: mot, dinero: dineroAlCancelar(d) });', 'await avisarCliente(o.num, tpl, { motivo: mot });'],
+  // La devolución del negocio deja de alertar: sin nadieMira.
+  ['cancelación sin nadieMira', 'apps/web/lib/cobros.ts', 'idem: x.idem, nadieMira: true });', 'idem: x.idem });'],
+  // ejecutarDevolucionPago vuelve a alertar solo por política o barrido.
+  ['el «no» sin alerta', 'apps/web/lib/cobros.ts', 'o.barrido || o.nadieMira || r.por === "policy" ? "stuck" : null', 'o.barrido || r.por === "policy" ? "stuck" : null'],
+  // La que va en camino se da por hecha.
+  ['en camino como hecha', 'apps/web/lib/cobros.ts', 'if (f?.st === "pending") return { e: "en_camino"', 'if (f?.st === "pending") return { e: "hecha"'],
+  // La que ni siquiera se anotó no alerta a nadie.
+  ['sin anotar y sin alerta', 'apps/web/lib/cobros.ts', '  if (!f) {\n    const p = (await db()', '  if (false) {\n    const p = (await db()'],
+  // El texto «Te devolvimos» para la que va en camino.
+  ['en camino dice te devolvimos', 'apps/web/lib/devolucion-cancelar.ts', 'if (d.e === "en_camino") return { es: `La devolución de ${usd(d.monto)} a tu tarjeta va en camino', 'if (d.e === "en_camino") return { es: `Te devolvimos ${usd(d.monto)} a tu tarjeta'],
+  // La plantilla de la salida vuelve a «Te devolvemos todo».
+  ['plantilla del viaje sin {dinero}', 'packages/db/migrations/0220_avisos_cancelacion_negocio_lo_que_paso.sql', '{motivo}. {dinero}","en":"{negocio} cancelled the {dia} {hora} departure: {motivo}. {dinero}', '{motivo}. Te devolvemos todo.","en":"{negocio} cancelled the {dia} {hora} departure: {motivo}. You get everything back.'],
+  // El título vuelve a dar la devolución por hecha.
+  ['título te devolvieron', 'packages/db/migrations/0220_avisos_cancelacion_negocio_lo_que_paso.sql', '\'{"es":"Tus boletos: la devolución","en":"Your tickets: the refund"}\'', '\'{"es":"Te devolvieron tus boletos","en":"Your tickets were refunded"}\''],
+  // El panel vuelve a «todos reciben su dinero».
+  ['panel todos reciben su dinero', 'apps/web/app/panel/ViajesPanel.tsx', '(r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Salida cancelada.", "Departure cancelled.")} ${E2(t.es, t.en)}`; }', 'E2("Salida cancelada: todos reciben su dinero.", "Departure cancelled: everyone gets their money back.")'],
+  // La acción de la noche deja de pasar lo que pasó.
+  ['acción de la noche sin devolucion', 'apps/web/app/panel/acciones-noche.ts', 'return rDev(await cancelarNocheNegocio(', 'return r2(await cancelarNocheNegocio('],
+  // «Probar en mi teléfono» sin {dinero}.
+  ['muestra sin dinero', 'apps/web/lib/admin-notif.ts', '  dinero: { es: "Te devolvimos $45.00', '  dineroX: { es: "Te devolvimos $45.00'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

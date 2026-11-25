@@ -1,7 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { valor } from "./config";
@@ -239,7 +240,7 @@ async function leer(c: Q, where: string, args: unknown[], lock = false): Promise
   return (await c.query<Op>(`${SEL} where o.kind = 'trip' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 const diaL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return `${["dom", "lun", "mar", "mié", "jue", "vie", "sáb"][d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };
-async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {
+async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
@@ -409,7 +410,7 @@ export async function pasoSalida(negocio: string, run: string, paso: "tarde" | "
   if (r.ok && despues) await (despues as () => Promise<void>)();
   return r;
 }
-export async function cancelarSalida(negocio: string, run: string, motivo: string, actorId: string): Promise<ResV & { n?: number }> {
+export async function cancelarSalida(negocio: string, run: string, motivo: string, actorId: string): Promise<ResV & { n?: number; devolucion?: DevCuenta }> {
   const mot = String(motivo ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 200);
   if (!ID.test(run)) return no("Esa salida no existe.", "That departure does not exist.");
   if (mot.length < 4) return no("Escribe el motivo: los pasajeros lo ven.", "Write the reason: passengers see it.");
@@ -430,15 +431,16 @@ export async function cancelarSalida(negocio: string, run: string, motivo: strin
     return ok1;
   });
   if (!r.ok) return r;
+  // 9v · Lo que de verdad pasó con el dinero de cada pasajero (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · nada), en su
+  // aviso ({dinero}) y en lo que ve el negocio; nunca «todos reciben su dinero» sin mirar.
+  let devolucion = sinDevoluciones();
   for (const o of ops) {
-    if (o.pay === "held") await liberarOperacion(o.id);
-    else if (o.pay === "captured" || o.pay === "partially_refunded") {
-      const p = (await db().query<{ id: string; amount: number; refunded: number }>(`select id::text, amount_cents as amount, refunded_cents as refunded from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
-      if (p && p.amount > p.refunded) await devolverPago({ paymentId: p.id, centavos: p.amount - p.refunded, por: "business", actorId, motivo: "El negocio canceló la salida", idem: `vsx-${o.num}` });
-    }
-    await avisarCliente(o.num, "viaje_cancelada", { motivo: mot });
+    const p = (await db().query<{ id: string; amount: number; refunded: number }>(`select id::text, amount_cents as amount, refunded_cents as refunded from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
+    const d = await devolverAlCancelar({ id: o.id, pay: o.pay, pid: p?.id ?? null, amount: p?.amount ?? null, refunded: p?.refunded ?? null }, { actorId, motivo: "El negocio canceló la salida", idem: `vsx-${o.num}` });
+    devolucion = contar(devolucion, d);
+    await avisarCliente(o.num, "viaje_cancelada", { motivo: mot, dinero: dineroAlCancelar(d) });
   }
-  return { ok: true, n: ops.length };
+  return { ok: true, n: ops.length, devolucion };
 }
 /* Abordó / No llegó (por pasajero; el cobro no cambia). */
 export async function abordo(negocio: string, numero: string, si: boolean, actorId: string): Promise<ResV> {

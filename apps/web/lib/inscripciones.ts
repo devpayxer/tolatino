@@ -1,7 +1,8 @@
 import "server-only";
 import { cfgSql, valores } from "./config";
 import type { Pool, PoolClient } from "pg";
-import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { etiquetaGrupo, fechaCorta, horaInsc, rubroInsc, sumarDiasI, usdI, type Bi, type KindInsc, type RubroInsc } from "./inscripciones-comun";
 import { esCuidado, kindNinosDe, type KindNinos } from "./ninos-comun";
@@ -333,7 +334,7 @@ const svcAviso = (o: Op) => (o.det.neutro ? "una inscripción" : (o.det.svc as B
    NEUTRAS (insc_fen_*: sin el lugar, el servicio ni el motivo; guardián avisoFeNeutro). */
 const FE_TPL = ["insc_ok", "insc_alt", "insc_no", "insc_exp", "insc_cx", "insc_biz_cx", "insc_grupo_cx", "insc_empieza", "insc_done"];
 export const tplFe = (tpl: string, neutro: boolean) => (FE_TPL.includes(tpl) ? `${neutro ? "insc_fen_" : "insc_fe_"}${tpl.slice(5)}` : tpl);
-async function avisarCliente(numero: string, tpl0: string, extra: Record<string, string> = {}) {
+async function avisarCliente(numero: string, tpl0: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const tpl = o.det.rubro === "fe" ? tplFe(tpl0, !!o.det.neutro) : tpl0;
@@ -364,6 +365,13 @@ async function soltarCupo(c: PoolClient, det: Record<string, unknown>) {
 async function devolverMat(o: Op, por: "business" | "policy", actorId: string | null, motivo: string, idem: string) {
   if (o.pay === "held") await liberarOperacion(o.id);
   else if ((o.pay === "captured" || o.pay === "partially_refunded") && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por, actorId, motivo, idem });
+}
+/* 9v · El lugar cancela (una inscripción o el grupo que no abre): lo que de verdad pasó con la matrícula (devolverAlCancelar: hecha · en camino · fallida,
+   que alerta al equipo · liberada · nada), en el aviso ({dinero}) y en lo que ve el lugar; nunca «Te devolvemos todo» sin mirar. */
+async function devolverYAvisar(o: Op, tpl: "insc_biz_cx" | "insc_grupo_cx", mot: string, actorId: string, motivo: string, idem: string): Promise<DevCancelar> {
+  const d = await devolverAlCancelar(o, { actorId, motivo, idem });
+  await avisarCliente(o.num, tpl, { motivo: mot, dinero: dineroAlCancelar(d) });
+  return d;
 }
 const empezo = (o: Op) => o.detail === "started" || (!!o.det.starts_on && String(o.det.starts_on) <= o.hoy);
 type ResI = { ok: true } | { ok: false; msg: Bi };
@@ -521,10 +529,11 @@ export async function confirmarBaja(negocio: string, numero: string, actorId: st
 }
 
 /* ── El lugar cancela UNA inscripción (motivo obligatorio; devolución completa siempre) ── */
-export async function cancelarInscNegocio(negocio: string, numero: string, motivo: string, actorId: string): Promise<ResI> {
+export async function cancelarInscNegocio(negocio: string, numero: string, motivo: string, actorId: string): Promise<ResI & { devolucion?: DevCuenta }> {
   const mot = limpio(motivo, 200);
   if (!NUM_I.test(numero)) return no("Esa inscripción no existe.", "That enrollment does not exist.");
   if (mot.length < 4) return no("Escribe el motivo: la persona lo ve.", "Write the reason: the person sees it.");
+  let devolucion = sinDevoluciones();
   let despues: (() => Promise<void>) | null = null;
   const r = await tx(async (c): Promise<ResI> => {
     await lockN(c, negocio);
@@ -533,15 +542,15 @@ export async function cancelarInscNegocio(negocio: string, numero: string, motiv
     await c.query(`update operations set status = 'cancelled', cancelled_by = 'business', cancelled_at = now(), cancel_reason = 'negocio', details = details || $2::jsonb, updated_at = now() where id = $1::bigint`, [o.id, JSON.stringify({ motivoNeg: mot })]);
     await soltarCupo(c, o.det);
     await ev(c, o.id, "insc_biz_cx", "member", actorId, { es: `Canceló el lugar: ${mot}`, en: `Cancelled by the place: ${mot}` });
-    despues = async () => { await devolverMat(o, "business", actorId, "El lugar canceló", `ibx-${numero}`); await avisarCliente(numero, "insc_biz_cx", { motivo: mot }); };
+    despues = async () => { devolucion = contar(devolucion, await devolverYAvisar(o, "insc_biz_cx", mot, actorId, "El lugar canceló", `ibx-${numero}`)); };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r;
+  return r.ok ? { ok: true, devolucion } : r;
 }
 
 /* ── El grupo no abre: se cancela el grupo con motivo y se devuelve TODO a todos ── */
-export async function cancelarGrupo(negocio: string, grupo: string, motivo: string, actorId: string): Promise<ResI & { n?: number }> {
+export async function cancelarGrupo(negocio: string, grupo: string, motivo: string, actorId: string): Promise<ResI & { n?: number; devolucion?: DevCuenta }> {
   const mot = limpio(motivo, 200);
   if (!ID.test(grupo)) return no("Ese grupo no existe.", "That group does not exist.");
   if (mot.length < 4) return no("Escribe el motivo: cada persona inscrita lo ve.", "Write the reason: every enrolled person sees it.");
@@ -573,8 +582,9 @@ export async function cancelarGrupo(negocio: string, grupo: string, motivo: stri
     return { ok: true };
   });
   if (!r.ok) return r;
-  for (const o of L) { await devolverMat(o, "business", actorId, "El grupo no abrió", `igx-${o.num}`); await avisarCliente(o.num, "insc_grupo_cx", { motivo: mot }); }
-  return { ok: true, n: L.length };
+  let devolucion = sinDevoluciones();
+  for (const o of L) devolucion = contar(devolucion, await devolverYAvisar(o, "insc_grupo_cx", mot, actorId, "El grupo no abrió", `igx-${o.num}`));
+  return { ok: true, n: L.length, devolucion };
 }
 
 /* ── El lugar marca: empezó · terminó (con certificado) — una inscripción o todo el grupo ── */

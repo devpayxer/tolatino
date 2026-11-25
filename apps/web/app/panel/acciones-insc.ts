@@ -6,11 +6,14 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { cancelarGrupo, cancelarInscNegocio, confirmarBaja, marcarCuota, marcarGrupo, marcarInsc, ofrecerCupo, responderInsc, type PasoInsc } from "@/lib/inscripciones";
 import { accesoPanel } from "@/lib/panel";
+import type { DevCuenta } from "@/lib/devolucion-cancelar";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
 const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
+// 9v · El negocio canceló: la acción también dice lo que pasó con cada devolución (hechas · en camino · no salieron), para que el panel no diga «todos reciben su dinero» sin mirar.
+const rDev = (r: { ok: true; devolucion?: DevCuenta } | { ok: false; msg: { es: string; en: string } }): Res & { devolucion?: DevCuenta } => (r.ok ? { ok: true, devolucion: r.devolucion } : { ok: false, mensaje: r.msg });
 async function entrar(id: unknown) {
   if (!(await mismoOrigen())) return null;
   const a = typeof id === "string" ? await accesoPanel(id, "ord") : null;
@@ -31,13 +34,13 @@ export async function inscMarcarGrupo(id: string, grupo: string, que: "empezo" |
   if (!["empezo", "termino"].includes(que)) return no("Ese paso no existe.", "That step does not exist.");
   return r2(await marcarGrupo(a.negocio.id, String(grupo ?? ""), que, a.yo.id, cert === true));
 }
-export async function inscCancelarNeg(id: string, numero: string, motivo: string): Promise<Res> {
+export async function inscCancelarNeg(id: string, numero: string, motivo: string): Promise<Res & { devolucion?: DevCuenta }> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;
-  return r2(await cancelarInscNegocio(a.negocio.id, String(numero ?? ""), String(motivo ?? ""), a.yo.id));
+  return rDev(await cancelarInscNegocio(a.negocio.id, String(numero ?? ""), String(motivo ?? ""), a.yo.id));
 }
-export async function inscCancelarGrupo(id: string, grupo: string, motivo: string): Promise<Res> {
+export async function inscCancelarGrupo(id: string, grupo: string, motivo: string): Promise<Res & { devolucion?: DevCuenta }> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;
-  return r2(await cancelarGrupo(a.negocio.id, String(grupo ?? ""), String(motivo ?? ""), a.yo.id));
+  return rDev(await cancelarGrupo(a.negocio.id, String(grupo ?? ""), String(motivo ?? ""), a.yo.id));
 }
 export async function inscConfirmarBaja(id: string, numero: string): Promise<Res> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;

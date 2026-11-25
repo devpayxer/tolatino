@@ -4,6 +4,7 @@
    Terminó con «¿Entregaste el certificado?» · Cancelar el grupo con motivo = devolución a todos), Lista de espera (Ofrecer el cupo, insc_oferta_h horas),
    Activas. El detalle: para quién, nivel, grupo, matrícula y lo que se copió al enviar; los datos del niño SOLO aquí (cada vista queda en
    la auditoría); Confirmar (cobra la matrícula) · Otro grupo · No hay cupo; el plan por escrito con «Marcar pagada»; Cancelar con motivo. */
+import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { fechaCorta, usdI, VOC, type Bi } from "@/lib/inscripciones-comun";
 import { FRANJAS, diaVis } from "@/lib/visitas-inm-comun";
@@ -78,7 +79,7 @@ export function inscripcionesBloques(c: Ctx): Sec {
         out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Se cancela el grupo y cada inscrito recibe TODO lo que pagó (${g.inscritos} personas). Escribe el motivo: cada uno lo ve.`, `The group is cancelled and every enrolled person gets ALL they paid back (${g.inscritos} people). Write the reason: everyone sees it.`) });
         out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: no se completó el mínimo de alumnos", "E.g. not enough students signed up"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
         out.push({ type: "acts", items: [
-          { l: E2("Sí, cancelar y devolver a todos", "Yes, cancel and refund everyone"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => inscCancelarGrupo(c.d.id, g.id, mot), E2("Grupo cancelado: cada inscrito recibe todo lo que pagó.", "Group cancelled: everyone gets all they paid back."), () => c.setUi({ [k]: null, igr: null })) },
+          { l: E2("Sí, cancelar y devolver a todos", "Yes, cancel and refund everyone"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => inscCancelarGrupo(c.d.id, g.id, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Grupo cancelado.", "Group cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null, igr: null })) },
           { l: E2("No, volver", "No, go back"), v: "ghost", off: c.pending, onClick: () => c.setUi({ [k]: null }) }] });
       }
     }
@@ -142,7 +143,7 @@ export function inscDetalleBloques(c: Ctx): Sec {
       out.push({ type: "note", tone: "danger", icon: "warning", t: E2("Si cancelas, la persona recibe todo lo que pagó en la app y queda en tu historial. Escribe el motivo: la persona lo ve.", "If you cancel, they get back everything paid in the app and it stays on your record. Write the reason: they see it.") });
       out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: cambió el horario del maestro", "E.g. the teacher's schedule changed"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
       out.push({ type: "acts", items: [
-        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => inscCancelarNeg(c.d.id, x.numero, mot), E2("Cancelada: recibe todo lo que pagó.", "Cancelled: they get everything back."), () => c.setUi({ [k]: null })) },
+        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => inscCancelarNeg(c.d.id, x.numero, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Cancelada.", "Cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null })) },
         { l: E2("No, volver", "No, go back"), v: "ghost", off: c.pending, onClick: () => c.setUi({ [k]: null }) }] });
     }
   }

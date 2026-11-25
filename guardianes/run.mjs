@@ -14457,7 +14457,7 @@ const guardianes = {
     const an = cuerpoFn(cb, "anotarDevolucionPago"), ej = cuerpoFn(cb, "ejecutarDevolucionPago"), ce = cuerpoFn(cb, "cerrarDevolucionPago"), dp = cuerpoFn(cb, "devolverPago"), ba = cuerpoFn(cb, "barrerDevolucionesPago");
     if (!/insert into refunds \([^)]*\) values \([^)]*'pending'/.test(an) || /pasarela\./.test(an)) falla(G, CB, 0, "anotarDevolucionPago anota la devolución 'pending' (con su llave) y no llama a la pasarela");
     if (an.indexOf("for update") < 0 || an.indexOf("from refunds where payment_id") < 0 || an.indexOf("for update") > an.indexOf("from refunds where payment_id")) falla(G, CB, 0, "anotarDevolucionPago bloquea el cobro y suma lo pendiente DESPUÉS, en otra consulta (la que espera el candado ve lo que la otra anotó)");
-    if (!/const a = await tx\(\(c\) => anotarDevolucionPago\(c, x, alGuardar\)\);[\s\S]*return ejecutarDevolucionPago\(a\.id\);/.test(dp) || /pasarela\./.test(dp)) falla(G, CB, 0, "devolverPago: primero la intención en la base (anotarDevolucionPago, en su transacción) y después la pasarela (ejecutarDevolucionPago)");
+    if (!/const a = await tx\(\(c\) => anotarDevolucionPago\(c, x, alGuardar\)\);[\s\S]*return ejecutarDevolucionPago\(a\.id(?:, \{ nadieMira: x\.nadieMira \})?\);/.test(dp) || /pasarela\./.test(dp)) falla(G, CB, 0, "devolverPago: primero la intención en la base (anotarDevolucionPago, en su transacción) y después la pasarela (ejecutarDevolucionPago)");
     const sr = /const SIN_RESPUESTA = new Set\(\[([^\]]*)\]\)/.exec(cb)?.[1] ?? "";
     if (!["red", "api_error", "error"].every((k) => sr.includes(`"${k}"`))) falla(G, CB, 0, "sin respuesta de Stripe (red, api_error, error) la devolución no es un «no»: sigue pendiente");
     const bloque = /if \(SIN_RESPUESTA\.has\(codigo\)\) \{[\s\S]*?\n  \}/.exec(ej)?.[0] ?? "";
@@ -17738,6 +17738,66 @@ const guardianes = {
       if (!/x\.devolucion\.camino \? E2\(/.test(u) || !/x\.devolucion\.fallida \? E2\(/.test(u)) falla(G, U, 0, "la pantalla no dice la devolución en camino y la que no salió (x.devolucion)");
       if (!/devolucion: await devolucionesDe\(o\.id\)/.test(sinComent(L))) falla(G, L, 0, "la vista no lee las devoluciones que no están hechas (devolucionesDe)");
     }
+    // (9) 25 nov (tercera tanda) · El NEGOCIO cancela (salida de viaje, mesa de la noche, inscripción o grupo, fecha de fiesta): se tiraba lo que devolvía
+    // devolverPago, el aviso decía «Te devolvemos todo», el panel «todos reciben su dinero» y, con por: "business", un «no» de Stripe no alertaba a nadie.
+    // Regla: (a) en esos cuatro archivos el negocio nunca devuelve con devolverPago(… por: "business" …): va por devolverAlCancelar (cobros.ts), que manda con
+    // nadieMira (el «no» alerta al equipo), lee lo que quedó en la base por su llave y alerta si no se pudo anotar; (b) cada aviso viaje_cancelada,
+    // noche_biz_cx, fiesta_biz_cx, insc_biz_cx e insc_grupo_cx lleva dinero: dineroAlCancelar(d) de const d = await devolverAlCancelar(…) justo antes, y sus
+    // plantillas usan {dinero} (0220); (c) «Te devolvimos» solo con lo hecho (dineroAlCancelar); (d) las acciones del panel pasan devolucion y las pantallas
+    // dicen textoPanelCancelar (nunca «todos reciben su dinero»); (e) los títulos «Te devolvieron tus boletos» / «Te devolvemos todo» se cambiaron (0220) y
+    // «Probar en mi teléfono» llena {dinero} (MUESTRA).
+    { const CO = "apps/web/lib/cobros.ts", co = existsSync(CO) ? sinComent(CO) : "";
+      const ini = co.indexOf("export async function devolverAlCancelar("), fin = ini < 0 ? -1 : co.indexOf("\n}\n", ini), dac = ini < 0 ? "" : co.slice(ini, fin);
+      if (!dac) falla(G, CO, 0, "falta devolverAlCancelar (lo que pasó con el dinero cuando el negocio cancela)");
+      else {
+        if (!/por: "business"[^\n]*nadieMira: true/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no manda con nadieMira: true: un «no» de Stripe no alertaría a nadie (el negocio no la repite)");
+        if (!/if \(r\.ok\) return \{ e: "hecha"/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no dice «hecha» solo cuando devolverPago la hizo");
+        if (!/split_part\(idem_key, '~fallida-', 1\) = \$2/.test(dac) || !/f\?\.st === "pending"\) return \{ e: "en_camino"/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no lee de la base lo que quedó con su llave (en camino · fallida)");
+        if (!/if \(!f\) \{[\s\S]*alertar\("refund_stuck"/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no alerta al equipo cuando la devolución ni siquiera se pudo anotar");
+      }
+      if (!/o\.barrido \|\| o\.nadieMira \|\| r\.por === "policy" \? "stuck" : null/.test(co)) falla(G, CO, 0, "ejecutarDevolucionPago ya no alerta (stuck) cuando nadie mira la pantalla (nadieMira)");
+      if (!/return ejecutarDevolucionPago\(a\.id, \{ nadieMira: x\.nadieMira \}\)/.test(co)) falla(G, CO, 0, "devolverPago no pasa nadieMira a la pasarela: el «no» de una cancelación del negocio no alertaría"); }
+    { const DC = "apps/web/lib/devolucion-cancelar.ts", dc = existsSync(DC) ? sinComent(DC) : "";
+      if (!dc) falla(G, DC, 0, "falta lib/devolucion-cancelar.ts (los textos de lo que pasó al cancelar el negocio)");
+      else dc.split("\n").forEach((l, i) => { if (/Te devolvimos|We refunded/.test(l) && !/d\.e === "hecha"|x\.fallidas|x\.camino|return \{ es: "Le devolvimos todo/.test(l)) falla(G, DC, i + 1, "«Te devolvimos» sin mirar que la devolución esté hecha"); });
+      if (dc && !/if \(d\.e === "hecha"\) return \{ es: `Te devolvimos/.test(dc)) falla(G, DC, 0, "dineroAlCancelar no dice «Te devolvimos» solo con lo hecho"); }
+    const CX = { "apps/web/lib/viajes.ts": ["viaje_cancelada"], "apps/web/lib/noche-reservas.ts": ["noche_biz_cx"], "apps/web/lib/fiestas-reservas.ts": ["fiesta_biz_cx"], "apps/web/lib/inscripciones.ts": ["insc_biz_cx", "insc_grupo_cx"] };
+    let cx = 0;
+    for (const [S, K] of Object.entries(CX)) {
+      if (!existsSync(S)) { falla(G, S, 0, "falta el archivo (cancelación del negocio)"); continue; }
+      const t = sinComent(S), L = t.split("\n");
+      L.forEach((l, i) => {
+        if (/devolverPago\([^)]*por: "business"/.test(l)) falla(G, S, i + 1, "el negocio cancela y devuelve con devolverPago(… por: \"business\" …) tirando el resultado: va por devolverAlCancelar (lo que pasó, y el «no» alerta al equipo)");
+        for (const k of K) {
+          if (!l.includes(`"${k}"`) || /^\s*(const|async function|await ev\()/.test(l) || /await ev\(c, o\.id, "/.test(l)) continue;
+          if (/devolverYAvisar\(o, "/.test(l)) { cx++; continue; }
+          if (!/avisarCliente\(/.test(l)) continue;
+          cx++;
+          if (!/dinero: dineroAlCancelar\(d\)/.test(l)) falla(G, S, i + 1, `el aviso «${k}» no lleva {dinero} con lo que pasó (dineroAlCancelar(d)): diría «Te devolvemos todo» con lo decidido`);
+          if (!/const d = await devolverAlCancelar\(/.test(L.slice(Math.max(0, i - 4), i).join("\n"))) falla(G, S, i + 1, `el aviso «${k}» no sale de const d = await devolverAlCancelar(…) justo antes`);
+        }
+      });
+      if (S.endsWith("inscripciones.ts") && !/async function devolverYAvisar\([^)]*\): Promise<DevCancelar> \{\n\s*const d = await devolverAlCancelar\(o, [^\n]*\n\s*await avisarCliente\(o\.num, tpl, \{ motivo: mot, dinero: dineroAlCancelar\(d\) \}\);/.test(t)) falla(G, S, 0, "devolverYAvisar ya no avisa con lo que pasó (dineroAlCancelar de devolverAlCancelar)");
+    }
+    if (cx < 5) falla(G, "apps/web/lib/viajes.ts", 0, `esperaba los 5 avisos de cancelación del negocio (viaje_cancelada, noche_biz_cx, fiesta_biz_cx, insc_biz_cx, insc_grupo_cx) con lo que pasó; hallé ${cx}`);
+    { const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+      for (const k of ["viaje_cancelada", "noche_biz_cx", "fiesta_biz_cx", "insc_biz_cx", "insc_grupo_cx"]) if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó) en español e inglés: seguiría diciendo «Te devolvemos todo»`);
+      for (const k of ["bol_devuelto", "evt_devolucion_total"]) {
+        const m = new RegExp(`update notif_templates set title = '\\{"es":"([^"]*)","en":"([^"]*)"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'`).exec(mig);
+        if (!m || /devolv|refunded|refund everything/i.test(`${m[1]} ${m[2]}`.replace(/la devolución|the refund|Devolución total|Full refund/g, ""))) falla(G, "packages/db/migrations", 0, `el título de «${k}» sigue dando la devolución por hecha (cámbialo como 0220: neutro, ES/EN)`);
+      } }
+    for (const [A, f] of [["apps/web/app/panel/acciones-viajes.ts", "cancelarSalida"], ["apps/web/app/panel/acciones-noche.ts", "cancelarNocheNegocio"], ["apps/web/app/panel/acciones-fiesta.ts", "cancelarFechaNegocio"],
+      ["apps/web/app/panel/acciones-insc.ts", "cancelarInscNegocio"], ["apps/web/app/panel/acciones-insc.ts", "cancelarGrupo"]]) {
+      const a = existsSync(A) ? sinComent(A) : "";
+      if (!new RegExp(`return rDev\\(await ${f}\\(`).test(a) || !/ok: true, devolucion: r\.devolucion/.test(a)) falla(G, A, 0, `la acción de ${f} no pasa lo que pasó con la devolución (rDev → devolucion): el panel no sabría si salió`);
+    }
+    for (const [U, n] of [["apps/web/app/panel/ViajesPanel.tsx", 1], ["apps/web/app/panel/NocheReservas.tsx", 1], ["apps/web/app/panel/FiestasReservas.tsx", 1], ["apps/web/app/panel/Inscripciones.tsx", 2]]) {
+      const u = existsSync(U) ? sinComent(U) : "";
+      if ((u.match(/textoPanelCancelar\(r\?\.devolucion\)/g) ?? []).length < n) falla(G, U, 0, "«Sí, cancelar y devolver» no dice lo que pasó con la devolución (textoPanelCancelar): diría que todos reciben su dinero sin mirar");
+      if (/E2\("(Cancelada|Salida cancelada|Grupo cancelado): [^"]*recibe/.test(u)) falla(G, U, 0, "el panel vuelve a decir que reciben su dinero con lo decidido");
+    }
+    { const AN = "apps/web/lib/admin-notif.ts", an = existsSync(AN) ? sinComent(AN) : "";
+      if (!/\bdinero: \{ es: "[^"]+", en: "[^"]+" \}/.test(an)) falla(G, AN, 0, "MUESTRA no llena {dinero} (ES/EN): «Probar en mi teléfono» saldría con la llave escrita"); }
   },
 
   cobradoSoloSiQuedo() {

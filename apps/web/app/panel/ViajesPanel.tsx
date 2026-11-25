@@ -5,6 +5,7 @@
    Otra salida (las que tienen cupo) · No hay cupo; confirmado: Abordó / No llegó.
    4y-2: la caja (destinatario descifrado solo aquí; Recogida hecha → Salió del almacén con rastreo → Entregada) y la mudanza (sus
    fotos, recogida y destino; «Mandar el precio cerrado» con monto y qué incluye, vale 48 h; confirmada: Salió · Llegó). */
+import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaViaje, SalidaPanel, ViajePanelV } from "@/lib/viajes";
 import { viajeAbordo, viajeCancelarSalida, viajeChofer, viajeEnvio, viajePasoPriv, viajePrecio, viajeResponder, viajeSalida } from "./acciones-viajes";
@@ -72,7 +73,7 @@ export function salidaDetalle(c: Ctx, run: string): Sec {
       out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Cada pasajero (${n}) recibe todo su dinero de vuelta y queda en tu historial. Escribe el motivo: lo ven.`, `Every passenger (${n}) gets all their money back and it stays on your record. Write the reason: they see it.`) });
       out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: la van se dañó", "E.g. the van broke down"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
       out.push({ type: "acts", items: [
-        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => viajeCancelarSalida(c.d.id, run, mot), E2("Salida cancelada: todos reciben su dinero.", "Departure cancelled: everyone gets their money back."), () => c.setUi({ [k]: null })) },
+        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => viajeCancelarSalida(c.d.id, run, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Salida cancelada.", "Departure cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null })) },
         { l: E2("No, volver", "No, go back"), v: "ghost", off: c.pending, onClick: () => c.setUi({ [k]: null }) }] });
     }
   }

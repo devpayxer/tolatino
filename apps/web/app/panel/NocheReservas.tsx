@@ -5,6 +5,7 @@
    El detalle: personas, hora, ocasión, nota, depósito, lo de la puerta, cuántas mesas de ese tipo quedan esa noche; Confirmar (cobra el
    depósito) · Otra hora · No hay mesa; «Cancelar la mesa» con motivo (devolución completa). «Pasó la noche» no es un botón: el barrido
    cierra la noche a las 6 AM. */
+import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { hNoche, nocheCorta, usdN } from "@/lib/noche-comun";
@@ -102,7 +103,7 @@ export function nocheDetalle(c: Ctx): Sec {
       out.push({ type: "note", tone: "danger", icon: "warning", t: E2("Si cancelas, el cliente recibe todo su depósito y queda en tu historial. Escribe el motivo: el cliente lo ve.", "If you cancel, the client gets their full deposit back and it stays on your record. Write the reason: the client sees it.") });
       out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: evento privado esa noche", "E.g. private event that night"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
       out.push({ type: "acts", items: [
-        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => nocheCancelarNeg(c.d.id, x.numero, mot), E2("Cancelada: el cliente recibe todo su depósito.", "Cancelled: the client gets the full deposit back."), () => c.setUi({ [k]: null })) },
+        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => nocheCancelarNeg(c.d.id, x.numero, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Cancelada.", "Cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null })) },
         { l: E2("No, volver", "No, go back"), v: "ghost", off: c.pending, onClick: () => c.setUi({ [k]: null }) }] });
     }
   }

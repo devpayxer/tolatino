@@ -4,6 +4,7 @@
    el depósito, «Otra solicitud para ese día» si choca; Confirmar (ocupa el día y, si se llena, declina solas las demás) ·
    Otra hora · No puedo; confirmada: el acuerdo por escrito, «Cancelar la fecha» con motivo (devolución completa) y, pasada la
    fiesta, «Terminó». */
+import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { diaFiesta, EVT } from "@/lib/fiestas-comun";
 import type { FiestaPanelV, FilaFiesta } from "@/lib/fiestas-reservas";
@@ -75,7 +76,7 @@ export function fiestaDetalle(c: Ctx): Sec {
       out.push({ type: "note", tone: "danger", icon: "warning", t: E2("Si cancelas, el cliente recibe su depósito completo y queda en tu historial. Escribe el motivo: el cliente lo ve.", "If you cancel, the client gets the full deposit back and it stays on your record. Write the reason: the client sees it.") });
       out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: se nos dañó el aire del salón", "E.g. the venue A/C broke down"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
       out.push({ type: "acts", items: [
-        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => fiestaCancelarNeg(c.d.id, x.numero, mot), E2("Cancelada: el cliente recibe su depósito completo.", "Cancelled: the client gets the full deposit back."), () => c.setUi({ [k]: null })) },
+        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => fiestaCancelarNeg(c.d.id, x.numero, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Cancelada.", "Cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null })) },
         { l: E2("No, volver", "No, go back"), v: "ghost", off: c.pending, onClick: () => c.setUi({ [k]: null }) }] });
     }
   }

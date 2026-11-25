@@ -4,7 +4,8 @@ import { cfgSql, valor } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
-import { cobrarOperacion, comision, devolucionesDe, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
 import { diaNoche, hNoche, usdN, type Bi } from "./noche-comun";
@@ -215,7 +216,7 @@ async function leer(c: Q, where: string, args: unknown[], lock = false): Promise
   return (await c.query<Op>(`${SEL} where o.kind = 'night' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 const nocheL = (o: Pick<Op, "night" | "hoy">) => (o.night === o.hoy ? "esta noche" : `el ${diaNoche(new Date(`${o.night}T12:00:00Z`).getUTCDay(), true)}`);
-async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {
+async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
@@ -348,12 +349,13 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
 }
 
 /* ── El local cancela una mesa (motivo obligatorio; devolución completa siempre) ── */
-export async function cancelarNocheNegocio(negocio: string, numero: string, motivo: string, actorId: string): Promise<ResN> {
+export async function cancelarNocheNegocio(negocio: string, numero: string, motivo: string, actorId: string): Promise<ResN & { devolucion?: DevCuenta }> {
   const mot = String(motivo ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 200);
   if (!NUM_N.test(numero)) return no("Esa reserva no existe.", "That booking does not exist.");
   if (mot.length < 4) return no("Escribe el motivo: el cliente lo ve.", "Write the reason: the client sees it.");
   const o0 = await leer(db(), "o.business_id = $1 and o.number = $2", [negocio, numero]);
   if (!o0) return no("Esa reserva no existe.", "That booking does not exist.");
+  let devolucion = sinDevoluciones();
   let despues: (() => Promise<void>) | null = null;
   const r = await tx(async (c): Promise<ResN> => {
     await lock(c, o0);
@@ -363,15 +365,17 @@ export async function cancelarNocheNegocio(negocio: string, numero: string, moti
     await ev(c, o.id, "night_biz_cx", "member", actorId, { es: `Canceló el local: ${mot}`, en: `Cancelled by the venue: ${mot}` });
     // 4ne: una mesa confirmada que el local cancela cuenta para «Mesas no respetadas».
     if (o.det.k !== "lista") await vigilarNoche(c, negocio, "mesa");
+    // 9v · Lo que de verdad pasó con el depósito (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · nada), en el aviso
+    // ({dinero}) y en lo que ve el local; nunca «Te devolvemos todo» sin mirar.
     despues = async () => {
-      if (o.pay === "held") await liberarOperacion(o.id);
-      else if (o.pay === "captured" && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "business", actorId, motivo: "El local canceló", idem: `nbx-${numero}` });
-      await avisarCliente(numero, "noche_biz_cx", { motivo: mot });
+      const d = await devolverAlCancelar(o, { actorId, motivo: "El local canceló", idem: `nbx-${numero}` });
+      devolucion = contar(devolucion, d);
+      await avisarCliente(numero, "noche_biz_cx", { motivo: mot, dinero: dineroAlCancelar(d) });
     };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r;
+  return r.ok ? { ok: true, devolucion } : r;
 }
 
 /* ── La puerta: la lista entra (cuántos de cuántos) y la mesa llegó / no llegó / no entró sin identificación ── */
