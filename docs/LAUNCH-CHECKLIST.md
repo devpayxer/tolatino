@@ -2400,6 +2400,12 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       no edita en sitio) y comprueba una sola fila, la misma `id`, los datos nuevos y `is_default`; 18 ✓ dos veces. «Mi vehículo» no tiene camino
       de actualizar (solo inserta). (c) las hojas del Super Admin que ninguna prueba abre.
       **22 nov, avance (sigue abierta):** `pruebas/lib/consultas-sitios.cjs` clasifica los 6.111 sitios `.query` y `sql9u` prepara contra la base **5.720 textos** (antes 5.101): funciones de trozos con argumentos fijos, ternarios, objetos y listas cerradas, constantes importadas. **Cero rotas** (11 casos sembrados lo demuestran). Quedan **220 en 88 archivos** que el código arma en ejecución (123 condiciones con push/join, 59 trozos de datos del momento, 30 tabla o columna elegida, 8 otras): su número por archivo está en `pruebas/consultas-fuera.json` y el guardián `consultasSinComprobar` no lo deja crecer. **Pendiente:** (1) armadores de condiciones como funciones puras y `PREPARE` de sus combinaciones; (2) correr la regresión con `PRUEBAS_ANOTAR_SQL` y `consultas-medir.cjs` para la lista de no ejecutadas del Super Admin; (3) las hojas de confirmar del admin que ninguna prueba abre; (4) `db-analisis.ts` no anota.
+      **(2) hecho (25 nov, Opus):** la regresión entera de punta a punta corrida aquí con `PRUEBAS_ANOTAR_SQL` (235/240 en verde; las 5 rojas, solo
+      en local y verdes en el CI: `ayu4m` y `cfgcal9b` no hallan su acción en el manifiesto del build local, `sop7b`, `neg9n8` y `prov9v` dependen del
+      entorno o del orden en una sola base). De los **5.663 sitios con texto conocido se ejecutaron 4.966 (88 %); 697 no**, 296 del Super Admin. La
+      lista, por archivo y pantalla: `pruebas/consultas-no-ejecutadas.txt`. Las del dinero primero: `boletos.ts` 24, `revision-pasarela.ts` 19,
+      `suscripcion.ts` 17, `cobros.ts` 12, `boletos-despues.ts` 9, `evt-liquidacion.ts` 8, `patrocinio.ts` 7. Todas preparan (`sql9u`): no hay SQL
+      roto; lo que falta es una prueba que recorra su lógica.
 - [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
       veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
       `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).
