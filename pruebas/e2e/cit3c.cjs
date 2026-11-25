@@ -23,7 +23,10 @@ const limpiar = () => {
   sql(`update payments set status = 'released', released_at = now() where status = 'held' and operation_id in (select id from operations where user_id = ${MARISOL} and business_id = '${BIZ}')`);
   sql(`update change_proposals set status = 'expired' where status = 'open' and operation_id in (select id from operations where user_id = ${MARISOL} and business_id = '${BIZ}')`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and business_id = '${BIZ}' and status in ('pending', 'change_proposed', 'confirmed')`);
-  sql(`delete from notifications where ref_kind = 'appointment'`);
+  // Sus propios avisos de citas fuera, con lo que cuelga de ellos (push/digest de otra prueba que dejó un aparato suscrito, p. ej. push8c): si no, la llave
+  // foránea de push_outbox para la limpieza según el orden de las pruebas.
+  // (push_deliveries es solo de inserción: la limpieza de prueba va con session_replication_role = replica, como adm7i.)
+  sql(`set session_replication_role = replica; delete from push_deliveries where notification_id in (select id from notifications where ref_kind = 'appointment'); delete from push_outbox where notification_id in (select id from notifications where ref_kind = 'appointment'); delete from notif_digests where notification_id in (select id from notifications where ref_kind = 'appointment'); update notifications set digest_id = null where digest_id in (select id from notifications where ref_kind = 'appointment'); delete from notifications where ref_kind = 'appointment'`);
   sql(`update items set duration_min = 40, svc_opts = '[]'::jsonb, sell = true, status = 'live', hidden_reason = null where id = ${SV('Fade')}`);
   sql(`update business_members set chair_auto = false, chair_deposit_cents = 1000, chair_response_min = 15 where id = ${LUIS}`);
   sql(`update business_members set chair_auto = false, chair_deposit_cents = 0, chair_response_min = 30 where id = ${ANDY}`);
