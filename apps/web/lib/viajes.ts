@@ -253,13 +253,14 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
 }
 /* 25 nov (LAUNCH e) · Cada valor en los dos idiomas (el servicio, las personas, el día y lo que se cobró): avisos › avisar pone el del dueño que lo recibe.
    Antes salía en español también en un aviso en inglés. Guardián avisoNegUnIdioma. */
-async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
+/* 25 nov (revisión de efe56b9) · unaVez: el aviso que se reintenta no se repite a los dueños que ya lo tienen (avisos › avisarNegocio). */
+async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}, unaVez?: string) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return false;
   const { avisarNegocio } = await import("./avisos");
   const a = Number(o.det.adults ?? 1), k = Number(o.det.kids ?? 0), n = a + k, svc = o.det.svc as Bi | undefined;
   return avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaBi(o.ymd), hora: horaL(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "", personas: { es: `${n} ${n === 1 ? "persona" : "personas"}`, en: `${n} ${n === 1 ? "person" : "people"}` }, dep: "", ...extra },
-    { href: `/panel/${o.biz}/hoy?det=viaje:${numero}`, ref: ["trip", numero] });
+    { href: `/panel/${o.biz}/hoy?det=viaje:${numero}`, ref: ["trip", numero], ...(unaVez ? { unaVez } : {}) });
 }
 export async function avisarViajeNuevo(numero: string) {
   const k = (await db().query<{ k: string }>(`select details->>'k' as k from operations where number = $1 and kind = 'trip'`, [numero])).rows[0]?.k;
@@ -416,20 +417,28 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
   return r.ok && retenida ? { ok: true, retenida: true } : r;
 }
 
+/* 25 nov (revisión de efe56b9) · Una parte del aviso de lo que aplicó el barrido (quien pagó o el negocio), por su cuenta: dice si quedó y, si tira, va al
+   registro y cuenta como no quedó, sin llevarse la otra parte. Guardián liberarMira. */
+async function avisoParte(numero: string, tpl: string, f: () => Promise<boolean | undefined>): Promise<boolean> {
+  try { return (await f()) !== false; } catch (e) { console.error(`[cobrada] ${numero}: el aviso ${tpl} no salió: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return false; }
+}
+
 /* 25 nov (revisión de 483a3af) · La cancelación tarde cuya retención resultó cobrada DESPUÉS (el barrido la encontró cobrada y aplicó la regla: cobros ›
    soltarRetencion › avisarTardeCobrada, que ya reclamó el aviso): a quien pagó le habíamos dicho «No se cobró nada, pero la retención todavía no se
    soltó». Su aviso de la cancelación (viaje_cx) y el del negocio (biz_viaje_cx) otra vez, con lo aplicado: se cobró la mitad (o lo que quedaba) y lo que
    pasó con la devolución del resto.
    25 nov (revisión de 621f214) · partes: los avisos que faltan (el barrido de cobros › barrerCobradasTarde reintenta solo el que no quedó). Devuelve cuáles
-   quedaron (el que no se pidió cuenta como quedó): quien llama devuelve el reclamo si alguno no quedó. */
+   quedaron (el que no se pidió cuenta como quedó): quien llama devuelve el reclamo si alguno no quedó.
+   25 nov (revisión de efe56b9) · Cada parte por su cuenta (avisoParte): si la del negocio tira, la de quien pagó sigue contando como quedó (antes se perdía
+   y el reintento se la repetía); y el del negocio con su llave (unaVez): el reintento no se lo repite a los dueños que ya lo tienen. */
 export async function avisarViajeTardeCobrado(numero: string, regla: ReglaTarde, partes: { cli: boolean; neg: boolean } = { cli: true, neg: true }): Promise<{ cli: boolean; neg: boolean }> {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return { cli: !partes.cli, neg: !partes.neg };
   const cobra = Math.floor(o.tot / 2), mitad = regla.queda, d: DevCancelar = regla.dev ?? { e: "nada", monto: 0 };
   const ya = { es: "La retención sí se había cobrado.", en: "The hold had in fact been charged." };
   const seCobro = mitad === cobra ? { es: `${ya.es} Se cobró la mitad: ${money(mitad)}.`, en: `${ya.en} Half was charged: ${money(mitad)}.` } : { es: `${ya.es} Se cobró lo que quedaba: ${money(mitad)}.`, en: `${ya.en} What was left was charged: ${money(mitad)}.` };
-  const cli = !partes.cli || (await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : ya) })) !== false;
-  const neg = !partes.neg || (await avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`, en: ` ${mitad ? seCobro.en : ya.en}` } })) !== false;
+  const cli = !partes.cli || (await avisoParte(numero, "viaje_cx", () => avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : ya) })));
+  const neg = !partes.neg || (await avisoParte(numero, "biz_viaje_cx", () => avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`, en: ` ${mitad ? seCobro.en : ya.en}` } }, `cobrada:biz_viaje_cx:${numero}`)));
   return { cli, neg };
 }
 

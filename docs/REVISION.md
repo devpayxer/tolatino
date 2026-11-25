@@ -6597,6 +6597,9 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Tras la revisión de 621f214: ese aviso ya no se pierde si falla (se reintenta, solo lo que faltó, y la alerta del equipo dice si le llegó a quien
   pagó); si Stripe cobró otro monto que el pedido, el equipo de dinero recibe una alerta; y una cancelación tarde que quedó cobrada entera porque el
   servidor se cortó a mitad se arregla sola (se devuelve lo que toca, con su alerta y su aviso). **Qué mirar:** nada en pantalla (es raro de provocar).
+  Tras la revisión de efe56b9: ese aviso ya no se repite si el SMS falla después de llegar a la campana, ni a los dueños que ya lo tienen; los reintentos
+  se espacian (1, 5, 15, 60 y 240 minutos) y, si se agotan, el equipo de dinero recibe una alerta para decírselo a la persona; el viaje cobrado días antes
+  de cancelarse tarde también se arregla solo, y lo que lleve más de 7 días sin arreglarse avisa al equipo. **Qué mirar:** nada en pantalla.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

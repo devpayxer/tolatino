@@ -3132,6 +3132,25 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       regla, la alerta y el aviso. din9x (sin correr): carrera con el barrido del servidor comprobada por la base; los avisos reales (ES, EN, el negocio)
       por el panel de Hoy; la cancelación con el aviso ya reclamado no manda nada (viaje y evento privado); la devolución en camino de la prueba se
       termina en la prueba; el reparo y el reintento (sección 5).
+      Revisión de efe56b9 (hecho): (H1) avisos › avisar dice «quedó» en cuanto la fila está en la campana: el push y el SMS que fallan después van cada
+      uno en su try/catch con registro (el SMS queda «fallo»), y el barrido ya no repite el aviso por eso; avisarNegocio con unaVez anota en notif_once a
+      cada dueño que ya lo tiene (<unaVez>:<dueño>) y el reintento de «neg» solo va a los que faltan; cada parte del aviso de lo aplicado (quien pagó, el
+      negocio) va por su cuenta (avisoParte en viajes y evento-privado). (H2) barrerCobradasTarde parte de operations por o.cancelled_at (7 días; índice
+      parcial operations_cancelada_tarde_idx, migración 0225) y no por captured_at: el viaje cobrado al aceptarse días antes de cancelarse tarde ya se
+      repara; lo que sale de la ventana sin repararse (7 a 30 días) abre UNA alerta hold_stuck reparar:<cobro>, sin mover dinero solo. (H3) La mitad es
+      min(floor(tot/2), amt − ref) en la regla y en su relectura. (H4) Los reintentos del aviso esperan 1, 5, 15, 60 y 240 minutos
+      (AVISO_TARDE_ESPERA_MIN); agotados, o sin la regla para armar el aviso (reglaTardeLeida null), la alerta propia hold_stuck aviso:<cobro> (dice a
+      quién no le llegó y remite a cobrada:; sin migración), y la alerta cobrada: ya no pide «díselo tú»: remite a aviso:. (H5) El resultado del aviso se
+      escribe solo si avisoCobroAt sigue siendo el del reclamo; reclamarAvisoCobro (la cancelación) ya no reclama lo que el barrido reclamó (aunque lo
+      haya devuelto): a quien pagó no se le repite el que ya le llegó. (H6) El reintento se busca por la operación (avisoCobroFalta), sin depender de que
+      exista la alerta cobrada:. din9x (sin correr aquí): DV acepta los dos textos válidos de la devolución y espera al libro; las alertas que abre la
+      prueba se marcan resueltas al final (notaAlerta); H1 con los avisos reales (lib/avisos.ts con el SMS que falla y un dueño que no queda), H2 (cobrado
+      hace 3 días, cancelado ahora; y fuera de la ventana) y H4 (agotado → aviso:).
+      Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
+      barrerPush lo recoge (si no, que lo encole el barrido). (b) Si el aviso a un dueño quedó y su anotación en notif_once falla, un reintento se lo
+      repetiría (queda en el registro). (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
+      ventana en ese tiempo no alerta. (d) Las alertas aviso: y reparar: no se cierran solas (no hay estado que mirar): se marcan resueltas a mano.
+      (e) El reclamo atascado (el proceso murió con el reclamo tomado) se retoma a los 10 minutos y cuenta como intento, sin la espera creciente.
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
       verificacion › vencidas, suscripcion, rentas) ya no dan por soltado lo cobrado, pero tampoco lo anotan cobrado ni alertan: lo reintentan sin fin
       en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). _Hecho en la revisión de 483a3af: quien llama a capturarPlataforma
@@ -3149,10 +3168,8 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       barrido sigue posible en lo que no es aviso: la cancelación que leyó el cobro retenido escribe cobroMitad 0 antes de que devolverAlCancelar lo
       corrija (un instante); y si la relectura llega antes de que el barrido anote la devolución vcx-, la regla sale sin devolución (dev null) y el aviso
       solo dice lo cobrado (la devolución avisa sola al cerrarse, pay_refund).
-      (7) Revisión de 621f214, lo que queda: barrerCobradasTarde recorre cada minuto los cobros capturados de los últimos 2 días por el índice de
-      captured_at (payments_captura_idx) y filtra por la operación: a 1M+ son decenas de miles de filas por minuto; si pesa, un índice parcial (cancelación
-      tarde de quien pagó) con su migración. Lo que murió después de una captura de más de 2 días (el viaje cobrado al aceptarlo y cancelado tarde días
-      después, con el proceso muerto antes de la devolución) no lo encuentra. El aviso va antes de la alerta cobrada:: si el proceso muere entre los dos, la
+      (7) Revisión de 621f214, lo que queda: _hecho en la revisión de efe56b9: barrerCobradasTarde parte de operations por cancelled_at con su índice
+      parcial (0225) y encuentra el viaje cobrado días antes de cancelarse tarde; lo que sale de la ventana alerta (reparar:)._ El aviso va antes de la alerta cobrada:: si el proceso muere entre los dos, la
       regla y el aviso quedan y la alerta no (el reparo no la vuelve a abrir porque la regla ya está aplicada). Si dos barridos la encuentran cobrada a la vez, la
       alerta la anota el primero que llega: si es el que perdió el reclamo del aviso, no dice si el aviso llegó (details.avisoCobro sí lo dice). La alerta capturado: no se cierra sola (no hay
       «estado» que mirar): se marca resuelta a mano. alrevesDineroDiceLoQuePaso sin medir en el CI: su duración en pruebas/reparto-alreves.json es la del

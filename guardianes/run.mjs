@@ -18292,25 +18292,58 @@ const guardianes = {
     // cancelación y el barrido): la mitad sin la devolución vcx- ya hecha y, sin nada más que devolver, lo que pasó con la de la llave (nunca «nada»).
     // (18) Cada captura que anota otro monto que el pedido (r.cobrado) alerta al equipo de dinero (gateway_review capturado:<tabla>:<id>). (19) La
     // cancelación tarde cobrada sin su regla (el proceso murió) la encuentra barrerCobradasTarde y la aplica, con su alerta y su aviso.
+    // 25 nov (revisión de efe56b9) · (20) avisar dice true en cuanto la fila quedó en la campana: lo que falle después (encolar el push, el SMS) va en su
+    // propio try/catch con registro (antes un SMS que fallaba decía «no quedó» y el barrido repetía el aviso hasta 5 veces). (21) avisarNegocio con unaVez
+    // no repite el aviso a los dueños que ya lo tienen (notif_once <unaVez>:<dueño>); el reintento de «neg» va con su llave. (22) Cada parte del aviso de
+    // lo aplicado (quien pagó, el negocio) por su cuenta (avisoParte: si una tira, la otra no se pierde).
     const AV = "apps/web/lib/avisos.ts", av = existsSync(AV) ? sinComent(AV) : "", avs = cuerpoFn(av, "avisar");
     if (!/\): Promise<boolean \| undefined> \{\n  try \{/.test(avs) || !/if \(!r\) return false;/.test(avs) || !/\n    return true;\n  \} catch \{[^\n]*return false; \}/.test(avs)) falla(G, AV, 0, "avisar no dice si el aviso quedó (true si quedó; undefined si la persona lo apagó; false si no se pudo): quien reintenta no lo sabría");
-    if (!/if \(\(await avisar\(u\.id, tpl, v, o\)\) === false\) todos = false;/.test(cuerpoFn(av, "avisarNegocio")) || !/return todos;/.test(cuerpoFn(av, "avisarNegocio"))) falla(G, AV, 0, "avisarNegocio no dice si el aviso de cada dueño quedó");
-    for (const [f, fn, a, b] of [["apps/web/lib/viajes.ts", "avisarViajeTardeCobrado", "avisarCliente(", "avisarNeg("], ["apps/web/lib/evento-privado.ts", "avisarEvpTardeCobrado", 'avisarEvp(numero, "cliente"', 'avisarEvp(numero, "negocio"']]) {
-      const cu = cuerpoFn(existsSync(f) ? sinComent(f) : "", fn);
-      if (!/partes: \{ cli: boolean; neg: boolean \} = \{ cli: true, neg: true \}\): Promise<\{ cli: boolean; neg: boolean \}>/.test(cu) || !cu.includes(`!partes.cli || (await ${a}`) || !cu.includes(`!partes.neg || (await ${b}`) || (cu.match(/\)\) !== false;/g) ?? []).length < 2)
-        falla(G, f, 0, `${fn} no manda solo lo que falta (partes) o no dice qué aviso quedó ({ cli, neg }): el reintento repetiría el que ya llegó o perdería el que no`);
+    if (!/ returning id::text`,[^\n]*\n[^\n]*\)\)\.rows\[0\]!\.id;\n(?:[ \t]*\n)*    try \{\n      if \(pst === "pendiente"\) await encolar\(\[id\]\);\n    \} catch \(e\) \{ console\.error\(/.test(avs)
+      || !/\n    try \{\n      if \(st === "pendiente" \|\| st === "pruebas"\) await salirSms\("notifications", id,[^\n]*\n    \} catch \(e\) \{\n      console\.error\(/.test(avs))
+      falla(G, AV, 0, "avisar: el push o el SMS que fallan DESPUÉS de anotar el aviso lo dan por no quedado (cada uno va en su propio try/catch con registro y se devuelve true): el reintento repetiría el aviso que ya está en la campana");
+    const avn = cuerpoFn(av, "avisarNegocio");
+    if (!/if \(\(await avisar\(u\.id, tpl, v, oa\)\) === false\) \{ todos = false; continue; \}/.test(avn) || !/return todos;/.test(avn)) falla(G, AV, 0, "avisarNegocio no dice si el aviso de cada dueño quedó");
+    if (!/const ya = await db\(\)\.query\(`select 1 from notif_once where key = \$1`, \[llave\]\)/.test(avn) || !/if \(ya === null\) \{ todos = false; continue; \}\n      if \(ya\) continue;/.test(avn)
+      || !/insert into notif_once \(key\) values \(\$1\) on conflict do nothing/.test(avn.slice(avn.indexOf("await avisar(u.id"))))
+      falla(G, AV, 0, "avisarNegocio con unaVez no salta a los dueños que ya tienen el aviso (notif_once <unaVez>:<dueño>, anotado después de que quedó): el reintento de «neg» se lo repetiría");
+    for (const [f, fn, a, b, ta, tb] of [["apps/web/lib/viajes.ts", "avisarViajeTardeCobrado", "avisarCliente(", "avisarNeg(", "viaje_cx", "biz_viaje_cx"], ["apps/web/lib/evento-privado.ts", "avisarEvpTardeCobrado", 'avisarEvp(numero, "cliente"', 'avisarEvp(numero, "negocio"', "evp_cancelado", "evp_biz_cx"]]) {
+      const t = existsSync(f) ? sinComent(f) : "", cu = cuerpoFn(t, fn), pa = cuerpoFn(t, "avisoParte");
+      if (!/partes: \{ cli: boolean; neg: boolean \} = \{ cli: true, neg: true \}\): Promise<\{ cli: boolean; neg: boolean \}>/.test(cu) || !cu.includes(`!partes.cli || (await avisoParte(numero, "${ta}", () => ${a}`) || !cu.includes(`!partes.neg || (await avisoParte(numero, "${tb}", () => ${b}`))
+        falla(G, f, 0, `${fn} no manda solo lo que falta (partes), cada parte por su cuenta (avisoParte): el reintento repetiría el que ya llegó o perdería el que no`);
+      if (!/\{\n  try \{ return \(await f\(\)\) !== false; \} catch \(e\) \{ console\.error\([^\n]*return false; \}\n\}/.test(pa)) falla(G, f, 0, "avisoParte no dice si la parte quedó o deja que tire: si el aviso del negocio tira, se pierde que el de quien pagó ya quedó (y el reintento se lo repite)");
+      if (!new RegExp(`"${tb}", \\{[^\\n]*\\}, \`cobrada:${tb}:\\$\\{numero\\}\`\\)\\)\\);`).test(cu)) falla(G, f, 0, `${fn}: el aviso al negocio que se reintenta va sin su llave (unaVez cobrada:${tb}:<número>): el reintento se lo repetiría a los dueños que ya lo tienen`);
     }
-    if (!/if \(hecho\.cli && hecho\.neg\) await db\(\)\.query\(`update operations set details = details - 'avisoCobroFalta'/.test(atc)
-      || !/jsonb_build_object\('avisoCobro', false, 'avisoCobroFalta', \$2::jsonb, 'avisoCobroIntentos', coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) \+ 1\)/.test(atc))
-      falla(G, CO, 0, "avisarTardeCobrada: si el aviso no quedó, el reclamo no se devuelve (avisoCobro false con lo que falta): nadie lo reintenta");
-    if (!/details = \(details - 'avisoCobroFalta'\) \|\| '\{"avisoCobro":true\}'::jsonb/.test(cuerpoFn(co, "reclamarAvisoCobro"))) falla(G, CO, 0, "reclamarAvisoCobro (la cancelación manda los dos avisos) no quita lo que el barrido tenía pendiente: saldría dos veces");
+    // (23) El resultado del aviso reclamado se escribe SOLO con el reclamo propio (avisoCobroAt igual al del reclamo); reclamarAvisoCobro (la cancelación) no
+    // reclama lo que el barrido ya reclamó (aunque lo haya devuelto: la parte que llegó no se repite). (24) Los reintentos se espacian (AVISO_TARDE_ESPERA_MIN,
+    // creciente) y, agotados o sin la regla para armar el aviso, alerta propia aviso:<cobro>; la alerta cobrada: remite a ella (no dice «díselo tú» sin
+    // saberlo). (25) El reintento se busca por la operación (avisoCobroFalta), no por la alerta cobrada:.
+    const drc = cuerpoFn(co, "devolverReclamo");
+    if (!/await devolverReclamo\(opId, num, falta, hecho\);/.test(atc)
+      || !/update operations set details = details - 'avisoCobroFalta' where id = \$1::bigint and details->>'avisoCobroAt' = \$2::text`, \[opId, c\.at\]/.test(drc)
+      || !/jsonb_build_object\('avisoCobro', false, 'avisoCobroFalta', \$3::jsonb, 'avisoCobroIntentos', coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) \+ 1\)\s*where id = \$1::bigint and details->>'avisoCobroAt' = \$2::text/.test(drc))
+      falla(G, CO, 0, "avisarTardeCobrada › devolverReclamo: el resultado del aviso (nada pendiente, o el reclamo devuelto con lo que falta) no se escribe solo con el reclamo propio (avisoCobroAt igual): pisaría el de otro, o nadie lo reintenta");
+    if (!/details = details \|\| '\{"avisoCobro":true\}'::jsonb\s*where id = \$1::bigint and not coalesce\(\(details->>'avisoCobro'\)::boolean, false\) and not \(details \? 'avisoCobroAt'\)/.test(cuerpoFn(co, "reclamarAvisoCobro")))
+      falla(G, CO, 0, "reclamarAvisoCobro (la cancelación) reclama el aviso que el barrido ya reclamó y devolvió: le repetiría a quien pagó el que ya le llegó");
+    const esp = /\nexport const AVISO_TARDE_ESPERA_MIN = \[([\d, ]+)\];\nexport const AVISO_TARDE_INTENTOS = AVISO_TARDE_ESPERA_MIN\.length;/.exec(co), E = esp ? esp[1].split(",").map(Number) : [];
+    if (E.length < 3 || E.some((x, i) => i > 0 && !(x > E[i - 1]))) falla(G, CO, 0, "AVISO_TARDE_ESPERA_MIN no es una espera creciente (un reintento por espera; AVISO_TARDE_INTENTOS su largo): el aviso que no llegó se reintentaría cada minuto");
+    if (!/make_interval\(mins => coalesce\(\(\$4::int\[\]\)\[coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\)\], 0\)\)/.test(cuerpoFn(co, "reclamarAvisoTarde")) || !/details->>'avisoCobroAt' as at`, \[opId, retomar, AVISO_TARDE_INTENTOS, AVISO_TARDE_ESPERA_MIN\]/.test(cuerpoFn(co, "reclamarAvisoTarde")))
+      falla(G, CO, 0, "reclamarAvisoTarde no respeta la espera del reintento (AVISO_TARDE_ESPERA_MIN) o no devuelve su avisoCobroAt (la escritura del resultado no sabría si el reclamo sigue siendo suyo)");
+    if (!/const agotado = r\.n > AVISO_TARDE_INTENTOS;/.test(drc) || !/if \(agotado \|\| sinRegla\) await alertarAvisoTarde\(opId, num, quedan, sinRegla \? "sin_regla" : "agotado"\);/.test(drc)
+      || !/alertar\("hold_stuck", `aviso:\$\{p\.id\}`/.test(cuerpoFn(co, "alertarAvisoTarde")))
+      falla(G, CO, 0, "el aviso de lo aplicado que agota sus reintentos (o que ya no se puede armar) no abre su alerta aviso:<cobro>: nadie se lo dice a la persona");
+    if (/díselo tú/i.test(ccr) || !/se abre la alerta aviso:\$\{c\.id\}/.test(ccr)) falla(G, CO, 0, "cobradaConSuRegla: la alerta cobrada: le pide al equipo «díselo tú» sin saber si el aviso llegará: remite a la alerta aviso:<cobro>, que se abre solo si se agota");
     const iAv = ccr.indexOf("await avisarTardeCobrada("), iAl = ccr.indexOf('alertar("hold_stuck", `cobrada:');
     if (iAv < 0 || iAl < 0 || iAv > iAl || !/\$\{avT\.es\}`/.test(ccr) || !/NO le llegó a quien pagó/.test(ccr)) falla(G, CO, 0, "cobradaConSuRegla: la alerta cobrada: no dice si el aviso le llegó a quien pagó (el aviso va antes de la alerta)");
-    const bct = cuerpoFn(co, "barrerCobradasTarde");
-    if (!/await avisarTardeCobrada\(x\.op, x\.num, x\.kind, x\.amt, regla, true\)/.test(bct) || !/coalesce\(\(o\.details->>'avisoCobroIntentos'\)::int, 0\) < \$2::int/.test(bct) || !/o\.details \? 'avisoCobroFalta'/.test(bct))
-      falla(G, CO, 0, "barrerCobradasTarde no reintenta el aviso que no quedó (avisoCobroFalta, con su tope de intentos)");
-    const rtc = cuerpoFn(co, "reglaTardeConLoCobrado");
-    if (!/const mitad = Math\.min\(Math\.floor\(o\.tot \/ 2\), Math\.max\(0, o\.amt - \(o\.ref - o\.vcx\)\)\);/.test(rtc) || !/as vcx/.test(rtc)) falla(G, CO, 0, "reglaTardeConLoCobrado cuenta la devolución vcx- ya hecha como si no fuera de la cancelación: la segunda «cobrada» calcularía mal la mitad");
+    const bct = cuerpoFn(co, "barrerCobradasTarde"), qA = bct.slice(bct.indexOf("const A = "), bct.indexOf(".rows;", bct.indexOf("const A = ")));
+    if (!/await avisarTardeCobrada\(x\.op, x\.num, x\.kind, x\.amt, regla, true\)/.test(bct) || !/else await avisoSinRegla\(x\.op, x\.num\);/.test(bct) || !/if \(x\.agotado\) \{ await alertarAvisoTarde\(/.test(bct)
+      || !/from operations o join lateral/.test(qA) || !/o\.details \? 'avisoCobroFalta'/.test(qA) || /'cobrada:'|from money_alerts a\s+join/.test(qA)
+      || !/make_interval\(mins => coalesce\(\(\$3::int\[\]\)\[/.test(qA) || !/\[f\.negocio \?\? null, AVISO_TARDE_INTENTOS, AVISO_TARDE_ESPERA_MIN\]/.test(qA))
+      falla(G, CO, 0, "barrerCobradasTarde no reintenta el aviso que no quedó por la operación (avisoCobroFalta, sin depender de la alerta cobrada:), con su espera y, agotado o sin regla, su alerta aviso:");
+    // (26) La mitad es lo que de verdad queda cobrado, hasta la mitad del total: min(floor(tot/2), amt − ref), en la regla y en su relectura (antes contaba la
+    // devolución de la llave como no hecha: decía «se quedó la mitad» aunque se hubiera devuelto de más).
+    const rtc = cuerpoFn(co, "reglaTardeConLoCobrado"), rtl = cuerpoFn(co, "reglaTardeLeida");
+    if (!/const mitad = Math\.min\(Math\.floor\(o\.tot \/ 2\), Math\.max\(0, o\.amt - o\.ref\)\);/.test(rtc) || /\bo\.vcx\b|as vcx/.test(rtc)) falla(G, CO, 0, "reglaTardeConLoCobrado: la mitad no es min(floor(tot/2), amt − ref) (lo que de verdad queda cobrado, hasta la mitad)");
+    if (!/const queda = Math\.min\(Math\.floor\(o\.tot \/ 2\), Math\.max\(0, o\.amt - o\.ref\)\);/.test(rtl) || /\bo\.vcx\b|as vcx/.test(rtl)) falla(G, CO, 0, "reglaTardeLeida: lo que se queda no es min(floor(tot/2), amt − ref), la misma cuenta que la regla");
     if (!/if \(falta <= 0\) return x\.seQueda \? \(await devDeLaLlave\(o\.pid, x\.idem\)\) \?\? \{ e: "nada", monto: 0 \} :/.test(cuerpoFn(co, "devolverAlCancelar"))) falla(G, CO, 0, "devolverAlCancelar: sin nada más que devolver y algo que se queda dice «nada» aunque la devolución de su llave ya exista (el aviso diría «Se cobró la mitad» sin «te devolvimos»)");
     const da = sinComent(DA), aom = cuerpoFn(da, "alertarOtroMonto");
     if (!/if \(cobrado == null \|\| cobrado === pedido\) return;/.test(aom) || !/alertar\("gateway_review", `capturado:\$\{tabla\}:\$\{id\}`/.test(aom)) falla(G, DA, 0, "alertarOtroMonto no alerta (gateway_review capturado:<tabla>:<id>) cuando Stripe capturó otro monto que el pedido");
@@ -18329,11 +18362,20 @@ const guardianes = {
       const t = existsSync(f) ? sinComent(f) : "";
       if (!/otroMonto = \{ id, cobrado \};/.test(t) || !t.includes(`alertarOtroMonto("${tabla}", om.id, centavos, om.cobrado,`)) falla(G, f, 0, "el patrocinio anota lo que Stripe capturó sin alertar cuando es otro monto que el pedido (alertarOtroMonto, fuera de la transacción)");
     }
-    if (!/where p\.captured_at > now\(\) - interval '2 days' and p\.captured_at < now\(\) - interval '5 minutes'/.test(bct) || !/o\.cancelled_at < now\(\) - interval '5 minutes'/.test(bct)
-      || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)/.test(bct)
-      || !/not exists \(select 1 from refunds r where r\.payment_id = p\.id and split_part\(r\.idem_key, '~fallida-', 1\) = 'vcx-' \|\| o\.number\)/.test(bct)
-      || !/else coalesce\(o\.details->>'perdio', ''\) = 'false' end/.test(bct) || !/await cobradaConSuRegla\(x\.op, REPARA, "reparar"\);/.test(bct))
-      falla(G, CO, 0, "barrerCobradasTarde no encuentra la cancelación tarde cobrada sin su regla (el proceso murió a mitad): quedaría cobrada entera, sin devolución, sin alerta y sin aviso");
+    // 25 nov (revisión de efe56b9) · (27) La ventana es la de la CANCELACIÓN (o.cancelled_at, por el índice parcial de 0225), no la del cobro (un viaje se
+    // cobra días antes de cancelarse tarde: la de captured_at no lo veía); lo que sale de la ventana sin repararse abre su alerta reparar:<cobro>.
+    const qL = bct.slice(bct.indexOf("const L = "), bct.indexOf(".rows;", bct.indexOf("const L = ")));
+    if (!/from operations o join payments p on p\.operation_id = o\.id/.test(qL) || !/where o\.cancel_reason = 'tarde' and o\.kind in \('trip', 'private_event'\) and o\.cancelled_at > now\(\) - interval '30 days' and o\.cancelled_at < now\(\) - interval '5 minutes'/.test(qL)
+      || /p\.captured_at > now\(\)/.test(qL) || !/p\.captured_at < now\(\) - interval '5 minutes'/.test(qL)
+      || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)/.test(qL)
+      || !/not exists \(select 1 from refunds r where r\.payment_id = p\.id and split_part\(r\.idem_key, '~fallida-', 1\) = 'vcx-' \|\| o\.number\)/.test(qL)
+      || !/else coalesce\(o\.details->>'perdio', ''\) = 'false' end/.test(qL) || !/if \(!x\.fuera\) \{ await cobradaConSuRegla\(x\.op, REPARA, "reparar"\); return; \}/.test(bct))
+      falla(G, CO, 0, "barrerCobradasTarde no encuentra la cancelación tarde cobrada sin su regla por cuándo se canceló (o.cancelled_at; el cobro pudo ser días antes): quedaría cobrada entera, sin devolución, sin alerta y sin aviso");
+    if (!/o\.cancelled_at <= now\(\) - make_interval\(days => \$2::int\) as fuera/.test(qL) || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'reparar:' \|\| p\.id::text\)/.test(qL)
+      || !/alertar\("hold_stuck", `reparar:\$\{x\.pid\}`/.test(bct))
+      falla(G, CO, 0, "barrerCobradasTarde deja caer en silencio la cancelación tarde que sale de su ventana sin repararse (alerta hold_stuck reparar:<cobro>)");
+    if (!readdirSync("packages/db/migrations").some((m) => /\.sql$/.test(m) && /create index if not exists \w+ on operations \(cancelled_at\) where cancel_reason = 'tarde' and kind in \('trip', 'private_event'\);/.test(readFileSync(`packages/db/migrations/${m}`, "utf8"))))
+      falla(G, "packages/db/migrations", 0, "falta el índice parcial de las cancelaciones tarde por cancelled_at (where cancel_reason = 'tarde' and kind in ('trip', 'private_event')): el barrido de cada minuto recorrería operations entera");
     if (!/if \(tocada\) return "cobrada";/.test(lo)) falla(G, CO, 0, "liberarOperacion dice «cobrada» sin haber tocado la fila ni releerla");
     const cerrar = cuerpoFn(sinComent(DA), "cerrarAlertasResueltas");
     if (!cerrar) falla(G, DA, 0, "no encuentro cerrarAlertasResueltas");

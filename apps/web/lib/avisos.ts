@@ -73,8 +73,17 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
     const id = (await db().query<{ id: string }>(
       `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to, actor_user_id, held_digest, push_status) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) returning id::text`,
       [userId, r.city, tpl, title, body, o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st, r.sms ? r.phone : null, o.actor ?? null, guardado, pst])).rows[0]!.id;
-    if (pst === "pendiente") await encolar([id]);
-    if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id, r.phone, body, tpl, r.city, st === "pruebas", r.enlace ? o.href : null);
+    // 25 nov (revisión de efe56b9) · La fila ya quedó en la campana: el aviso QUEDÓ. Lo que falle después (encolar el push, el SMS) va al registro y a su
+    // estado, nunca a «no quedó»: quien reintenta lo que no quedó (cobros › barrerCobradasTarde) repetiría el aviso que la persona ya tiene. Guardián liberarMira.
+    try {
+      if (pst === "pendiente") await encolar([id]);
+    } catch (e) { console.error(`[avisos] ${tpl} ${id}: quedó en la campana, pero el push no se encoló: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+    try {
+      if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id, r.phone, body, tpl, r.city, st === "pruebas", r.enlace ? o.href : null);
+    } catch (e) {
+      console.error(`[avisos] ${tpl} ${id}: quedó en la campana, pero el SMS no salió: ${String((e as Error)?.message ?? e).slice(0, 200)}`);
+      await db().query(`update notifications set sms_status = 'fallo', sms_at = now() where id = $1::bigint and sms_id is null`, [id]).catch(() => undefined);
+    }
     return true;
   } catch { /* un aviso nunca rompe la acción que lo dispara */ return false; }
 }
@@ -151,15 +160,28 @@ export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en
 /* Los dueños activos de un negocio (para los avisos al negocio). */
 /* 25 nov (revisión de 621f214) · Dice si quedó (como avisar): el grupo apagado por el negocio cuenta como quedó; si la lista de dueños no se pudo leer o
    el aviso de alguno no quedó, false. */
-export async function avisarNegocio(negocio: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string] } = {}): Promise<boolean> {
+/* 25 nov (revisión de efe56b9) · unaVez: la llave de un aviso que se REINTENTA (cobros › barrerCobradasTarde vuelve a pedir el del negocio si alguno no
+   quedó): cada dueño que ya lo tiene queda anotado en notif_once (<unaVez>:<dueño>, solo inserción) y el reintento no se lo repite; solo va a los que faltan.
+   Si no se puede saber si un dueño ya lo tiene (la base falla), no se le manda y cuenta como no quedó (se reintenta). Guardián liberarMira. */
+export async function avisarNegocio(negocio: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; unaVez?: string } = {}): Promise<boolean> {
   // 9n · Panel › Más › Lo que te avisamos: el negocio apaga un grupo (pedidos, citas, reseñas…); lo que no tiene grupo (dinero, sanciones) siempre llega.
   const apagado = (await db().query(`select 1 from notif_templates t join business_notif_prefs p on p.pref = t.biz_pref and p.business_id = $1 where t.key = $2 and p.off`, [negocio, tpl]).catch(() => ({ rowCount: 0 }))).rowCount;
   if (apagado) return true;
   const q = await db().query<{ id: string }>(`select user_id::text as id from business_members where business_id = $1 and status = 'active' and kind = 'owner'`, [negocio]).catch(() => null);
   if (!q) return false;
-  const L = q.rows;
+  const L = q.rows, { unaVez, ...oa } = o;
   let todos = true;
-  for (const u of L) if ((await avisar(u.id, tpl, v, o)) === false) todos = false;
+  for (const u of L) {
+    const llave = unaVez ? `${unaVez}:${u.id}`.slice(0, 200) : null;
+    if (llave) {
+      const ya = await db().query(`select 1 from notif_once where key = $1`, [llave]).then((r) => !!r.rowCount, () => null);
+      if (ya === null) { todos = false; continue; }
+      if (ya) continue;
+    }
+    if ((await avisar(u.id, tpl, v, oa)) === false) { todos = false; continue; }
+    if (llave) await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [llave])
+      .catch((e) => console.error(`[avisos] ${tpl}: el aviso al dueño ${u.id} quedó, pero no se anotó (${llave}): un reintento se lo repetiría: ${String((e as Error)?.message ?? e).slice(0, 200)}`));
+  }
   return todos;
 }
 

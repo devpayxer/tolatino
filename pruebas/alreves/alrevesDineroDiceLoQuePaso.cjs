@@ -3,6 +3,9 @@
 // tiene la alerta cobrada:, que no se cierra sola); la captura tarde a la que Stripe no contestó alerta captura: como la que lanza; y el aviso al negocio no
 // mezcla idiomas. (revisión de 621f214) El aviso del barrido que no quedó se reintenta (solo lo que falta) y la alerta dice si llegó; la segunda «cobrada»
 // dice la mitad y la devolución de la llave; lo capturado distinto de lo pedido alerta; la cancelación tarde cobrada sin su regla la repara el barrido.
+// (revisión de efe56b9) El aviso que ya quedó no se repite (ni por el SMS que falla, ni a los dueños que ya lo tienen, ni por la parte que tira); el
+// resultado solo con el reclamo propio; reintentos espaciados y, agotados, su alerta aviso:; la mitad es lo que queda cobrado; la ventana es la de la
+// cancelación, con su índice, y lo que sale de ella alerta.
 // Se inyecta el defecto, el guardián debe fallar con SU renglón ([nombre]); se restaura.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -47,7 +50,7 @@ const casos = [
   ['liberarMira', 'el aviso del barrido sin reclamo', CO, '  if (!falta) return null;\n  let hecho', '  let hecho'],
   ['liberarMira', 'viaje: el aviso de lo cobrado sin reclamo', VL, '        if ((mitad > 0 || x.d.e === "cobrada") && !(await reclamarAvisoCobro(o.id))) return;\n', ''],
   ['liberarMira', 'evento privado: el aviso de lo cobrado sin reclamo', EP, '  if (quedo && !(await reclamarAvisoCobro(opId))) return { ok: true, devuelto: 0, perdio: true, devolucion: "nada" };\n', ''],
-  ['liberarMira', 'el aviso del viaje sin el del negocio', VL, '(await avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`', '(await avisarNeg(numero, "biz_viaje_x", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`'],
+  ['liberarMira', 'el aviso del viaje sin el del negocio', VL, 'avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`', 'avisarNeg(numero, "biz_viaje_x", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`'],
   // La «cobrada» por relectura sin la regla que aplicó el barrido.
   ['liberarMira', 'la relectura sin regla', CO, 'return { e: "cobrada", monto: Math.max(0, y.amt - y.ref), ...(regla ? { regla } : {}) };', 'return { e: "cobrada", monto: Math.max(0, y.amt - y.ref) };'],
   // barrerAlertasDinero cierra alertas por su cuenta (la prueba din9x da por hecho que solo por cerrarAlertasResueltas).
@@ -64,13 +67,15 @@ const casos = [
   // reintenta); el reintento repite el que ya llegó; la cancelación lo manda y el barrido lo repite; la alerta no dice si le llegó.
   ['liberarMira', 'avisar dice que quedó aunque falle', 'apps/web/lib/avisos.ts', 'catch { /* un aviso nunca rompe la acción que lo dispara */ return false; }', 'catch { /* un aviso nunca rompe la acción que lo dispara */ return true; }'],
   ['liberarMira', 'el reclamo no se devuelve', CO, "jsonb_build_object('avisoCobro', false, 'avisoCobroFalta'", "jsonb_build_object('avisoCobro', true, 'avisoCobroFalta'"],
-  ['liberarMira', 'el reintento manda también lo que ya llegó', VL, '  const cli = !partes.cli || (await avisarCliente(', '  const cli = (await avisarCliente('],
-  ['liberarMira', 'evento privado: el reintento manda también lo que ya llegó', EP, '  const okNeg = !partes.neg || (await avisarEvp(numero, "negocio"', '  const okNeg = (await avisarEvp(numero, "negocio"'],
-  ['liberarMira', 'la cancelación no quita lo pendiente del barrido', CO, "details = (details - 'avisoCobroFalta') || '{\"avisoCobro\":true}'::jsonb", "details = details || '{\"avisoCobro\":true}'::jsonb"],
+  ['liberarMira', 'el reintento manda también lo que ya llegó', VL, '  const cli = !partes.cli || (await avisoParte(', '  const cli = (await avisoParte('],
+  ['liberarMira', 'evento privado: el reintento manda también lo que ya llegó', EP, '  const okNeg = !partes.neg || (await avisoParte(', '  const okNeg = (await avisoParte('],
+  ['liberarMira', 'la cancelación repite lo que el barrido ya mandó', CO, " and not (details ? 'avisoCobroAt')`, [opId])).rowCount;", "`, [opId])).rowCount;"],
   ['liberarMira', 'la alerta cobrada: no dice si llegó el aviso', CO, '. Revisa en Stripe que cuadre; no devuelvas nada más.${avT.es}`', '. Revisa en Stripe que cuadre; no devuelvas nada más.`'],
   ['liberarMira', 'el barrido no reintenta el aviso', CO, 'if (regla) await avisarTardeCobrada(x.op, x.num, x.kind, x.amt, regla, true);', 'if (regla) void x;'],
-  // M6: la segunda «cobrada» (la cancelación y el barrido) calcula la mitad con la devolución de la cancelación y dice «nada» de la devolución.
-  ['liberarMira', 'la mitad con la devolución de la cancelación', CO, 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));', 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));'],
+  // M6: la segunda «cobrada» (la cancelación y el barrido): sin nada más que devolver dice «nada» de la devolución de la llave. (revisión de efe56b9) La mitad
+  // es lo que de verdad queda cobrado (min(floor(tot/2), amt − ref)); contar la de la llave como no hecha decía «la mitad» aunque se devolviera de más.
+  ['liberarMira', 'la mitad sin contar lo devuelto con la llave', CO, 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));', 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));'],
+  ['liberarMira', 'la relectura sin contar lo devuelto con la llave', CO, 'const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));', 'const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));'],
   ['liberarMira', 'sin nada que devolver dice «nada» aunque la de la llave exista', CO, 'if (falta <= 0) return x.seQueda ? (await devDeLaLlave(o.pid, x.idem)) ?? { e: "nada", monto: 0 } :', 'if (falta <= 0) return x.seQueda ? { e: "nada", monto: 0 } :'],
   // M5: lo capturado distinto de lo pedido sin alerta (cobros, mercado, boletos, patrocinios) o con alerta también del mismo monto.
   ['liberarMira', 'cobrarOperacion: otro monto sin alerta', CO, '  if (tocada) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, p.amount, r.cobrado);\n', ''],
@@ -84,6 +89,31 @@ const casos = [
   ['liberarMira', 'el reparo no espera a la cancelación en curso', CO, " and o.cancelled_at < now() - interval '5 minutes'", ''],
   ['liberarMira', 'el reparo no mira el evento privado', CO, "else coalesce(o.details->>'perdio', '') = 'false' end", 'else false end'],
   ['barridoCompleto', 'el reparo fuera del barrido central', 'apps/web/lib/barrido.ts', '        ["cobradasTarde", () => cobros.barrerCobradasTarde()],\n', ''],
+  // (revisión de efe56b9) · H1: el aviso que ya quedó en la campana se da por no quedado si después falla el SMS o el push (el reintento lo repetía hasta 5
+  // veces); el reintento de «neg» repite a los dueños que ya lo tienen; si una parte tira, se pierde la otra.
+  ['liberarMira', 'avisar: el SMS que falla dice que no quedó', 'apps/web/lib/avisos.ts', '    try {\n      if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id,', '    {\n      if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id,'],
+  ['liberarMira', 'avisar: el push que falla dice que no quedó', 'apps/web/lib/avisos.ts', '    try {\n      if (pst === "pendiente") await encolar([id]);\n    } catch (e) {', '    if (pst === "pendiente") await encolar([id]);\n    try {} catch (e) {'],
+  ['liberarMira', 'avisarNegocio repite a los dueños que ya lo tienen', 'apps/web/lib/avisos.ts', '      if (ya) continue;\n', ''],
+  ['liberarMira', 'avisarNegocio no anota al dueño que ya lo tiene', 'apps/web/lib/avisos.ts', '    if (llave) await db().query(`insert into notif_once (key) values ($1) on conflict do nothing`, [llave])', '    if (llave) await db().query(`select $1`, [llave])'],
+  ['liberarMira', 'viaje: el aviso al negocio sin su llave', VL, '}, `cobrada:biz_viaje_cx:${numero}`)));', '})));'],
+  ['liberarMira', 'evento privado: el aviso al negocio sin su llave', EP, '{ dep: neg }, `cobrada:evp_biz_cx:${numero}`)));', '{ dep: neg })));'],
+  ['liberarMira', 'viaje: la parte que tira se lleva la otra', VL, '  try { return (await f()) !== false; } catch (e) { console.error(', '  try { return (await f()) !== false; } finally { console.error('],
+  ['liberarMira', 'evento privado: la parte que tira se lleva la otra', EP, '  try { return (await f()) !== false; } catch (e) { console.error(', '  try { return (await f()) !== false; } finally { console.error('],
+  // H5: el resultado del aviso pisa el reclamo de otro (sin mirar avisoCobroAt).
+  ['liberarMira', 'el aviso que quedó pisa el reclamo de otro', CO, "where id = $1::bigint and details->>'avisoCobroAt' = $2::text`, [opId, c.at]);", "where id = $1::bigint`, [opId, c.at]);"],
+  ['liberarMira', 'el reclamo devuelto pisa el de otro', CO, "        where id = $1::bigint and details->>'avisoCobroAt' = $2::text returning", "        where id = $1::bigint returning"],
+  // H4: reintentos sin espera creciente; agotados o sin regla, sin alerta; la alerta cobrada: pide «díselo tú» sin saberlo.
+  ['liberarMira', 'los reintentos sin espera creciente', CO, 'export const AVISO_TARDE_ESPERA_MIN = [1, 5, 15, 60, 240];', 'export const AVISO_TARDE_ESPERA_MIN = [1, 1, 1, 1, 1];'],
+  ['liberarMira', 'el reclamo no espera', CO, "< now() - make_interval(mins => coalesce(($4::int[])[coalesce((details->>'avisoCobroIntentos')::int, 0)], 0)))", "< now())"],
+  ['liberarMira', 'agotado sin alerta aviso:', CO, 'if (agotado || sinRegla) await alertarAvisoTarde(', 'if (sinRegla) await alertarAvisoTarde('],
+  ['liberarMira', 'sin regla para armarlo, en silencio', CO, '    else await avisoSinRegla(x.op, x.num);', '    else void x;'],
+  ['liberarMira', 'la alerta cobrada: pide «díselo tú»', CO, 'si no llega, se abre la alerta aviso:${c.id}.`', 'si no llega, díselo tú.`'],
+  // H6: el reintento depende de que exista la alerta cobrada:.
+  ['liberarMira', 'el reintento depende de la alerta cobrada:', CO, "o.cancelled_at > now() - interval '30 days' and o.details ? 'avisoCobroFalta'", "o.cancelled_at > now() - interval '30 days' and o.details ? 'avisoCobroFalta' and exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'cobrada:' || p.id::text)"],
+  // H2: la ventana vuelve a ser la del cobro; lo que sale de la ventana cae en silencio; sin el índice parcial.
+  ['liberarMira', 'la ventana del cobro, no de la cancelación', CO, "where o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and o.cancelled_at > now() - interval '30 days' and o.cancelled_at < now() - interval '5 minutes'", "where o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and p.captured_at > now() - interval '2 days' and o.cancelled_at < now() - interval '5 minutes'"],
+  ['liberarMira', 'lo que sale de la ventana, en silencio', CO, 'await (await import("./dinero-alertas")).alertar("hold_stuck", `reparar:${x.pid}`', 'void ("hold_stuck", `reparar:${x.pid}`'],
+  ['liberarMira', 'sin el índice de las cancelaciones tarde', 'packages/db/migrations/0225_cancelada_tarde_por_su_cancelacion.sql', 'on operations (cancelled_at) where', 'on operations (captured_at) where'],
   // ── capturaTardeAlerta ──
   // El fallo del 25 nov: la captura tarde a la que Stripe no contestó suelta sin alerta.
   ['capturaTardeAlerta', 'viaje: sin alerta ante la red', VL, '        else if (capturaSinRespuesta(cap)) await alertarCapturaTarde(numero, x.p?.id ?? null, { codigo: cap.codigo }, x.d);\n', ''],
@@ -105,7 +135,7 @@ const casos = [
   ['avisoNegUnIdioma', 'viaje: «N personas» en español', VL, 'personas: { es: `${n} ${n === 1 ? "persona" : "personas"}`, en: `${n} ${n === 1 ? "person" : "people"}` }', 'personas: `${n} ${n === 1 ? "persona" : "personas"}`'],
   ['avisoNegUnIdioma', 'viaje: el servicio en español', VL, 'servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : ""', 'servicio: svc?.es ?? ""'],
   ['avisoNegUnIdioma', 'viaje: {dep} con seCobro.es', VL, '{ dep: mitad ? { es: ` ${seCobro.es}`, en: ` ${seCobro.en}` } : "" }', '{ dep: mitad ? ` ${seCobro.es}` : "" }'],
-  ['avisoNegUnIdioma', 'viaje: extra sin Bi', VL, 'async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {', 'async function avisarNeg(numero: string, tpl: string, extra: Record<string, string> = {}) {'],
+  ['avisoNegUnIdioma', 'viaje: extra sin Bi', VL, 'async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}, unaVez?: string) {', 'async function avisarNeg(numero: string, tpl: string, extra: Record<string, string> = {}, unaVez?: string) {'],
   // La misma clase en la noche, la fiesta, la inscripción y la visita.
   ['avisoNegUnIdioma', 'noche: el depósito en español', 'apps/web/lib/noche-reservas.ts', '{ dep: o.dep ? { es: ` Depósito ${usdN(o.dep)} retenido.`, en: ` ${usdN(o.dep)} deposit held.` } : "" }', '{ dep: o.dep ? ` Depósito ${usdN(o.dep)} retenido.` : "" }'],
   ['avisoNegUnIdioma', 'fiesta: «N invitados» en español', 'apps/web/lib/fiestas-reservas.ts', 'invitados: g ? { es: `${g} invitados`, en: `${g} guests` } : ""', 'invitados: g ? `${g} invitados` : ""'],

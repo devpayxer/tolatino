@@ -167,17 +167,17 @@ export async function liberarOperacion(opId: string): Promise<"liberada" | "nada
    cancelación (vcx-<número>: la misma devolución aunque la pida otro); evento privado → el depósito se queda con el restaurante (perdio). Lo llama
    soltarRetencion, la suelte quien la suelte (la cancelación misma o el barrido). Cualquier otra cosa: null (la alerta pide revisarlo). */
 /* 25 nov (revisión de 621f214) · Si la cancelación y el barrido la encuentran cobrada los dos, el segundo llega con la devolución vcx- del primero ya hecha:
-   la mitad se cuenta SIN esa devolución (vcx, como reglaTardeLeida) y devolverAlCancelar, sin nada más que devolver, dice lo que pasó con la de la llave
+   la mitad es lo que de verdad queda cobrado, hasta la mitad del total: min(floor(tot / 2), amt − ref), como reglaTardeLeida (revisión de efe56b9: contar
+   la de la llave como no hecha decía «se quedó la mitad» aunque se hubiera devuelto de más), y devolverAlCancelar, sin nada más que devolver, dice lo que pasó con la de la llave
    (hecha · en camino · fallida), nunca «nada»: el aviso diría «Se cobró la mitad» sin «te devolvimos». Guardián liberarMira. */
 async function reglaTardeConLoCobrado(opId: string): Promise<import("./devolucion-cancelar").ReglaTarde | null> {
-  const o = (await db().query<{ kind: string; num: string; st: string; cr: string | null; by: string | null; tot: number; uid: string; pid: string; amt: number; ref: number; pst: string; vcx: number }>(
+  const o = (await db().query<{ kind: string; num: string; st: string; cr: string | null; by: string | null; tot: number; uid: string; pid: string; amt: number; ref: number; pst: string }>(
     `select o.kind, o.number as num, o.status as st, o.cancel_reason as cr, o.cancelled_by as by, o.total_cents as tot, o.user_id::text as uid,
-            p.id::text as pid, p.amount_cents as amt, p.refunded_cents as ref, p.status as pst,
-            coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'done' and split_part(r.idem_key, '~fallida-', 1) = 'vcx-' || o.number), 0)::int as vcx
+            p.id::text as pid, p.amount_cents as amt, p.refunded_cents as ref, p.status as pst
        from operations o join payments p on p.operation_id = o.id and p.kind in ('full', 'deposit') where o.id = $1::bigint order by p.id desc limit 1`, [opId])).rows[0];
   if (!o || o.st !== "cancelled" || o.by !== "user" || o.cr !== "tarde" || !["captured", "partially_refunded"].includes(o.pst)) return null;
   if (o.kind === "trip") {
-    const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));
+    const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));
     await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int) where id = $1::bigint`, [opId, mitad]);
     const dev = await devolverAlCancelar({ id: opId, pay: o.pst, pid: o.pid, amount: o.amt, refunded: o.ref },
       { actorId: o.uid, motivo: "Cancelación tarde: se cobra la mitad", idem: `vcx-${o.num}`, por: "policy", seQueda: mitad });
@@ -190,14 +190,13 @@ async function reglaTardeConLoCobrado(opId: string): Promise<import("./devolucio
   return null;
 }
 /* 25 nov (revisión de 483a3af) · «cobrada» por relectura (devolverAlCancelar): otro (el barrido) soltó primero, encontró la retención cobrada y aplicó la
-   regla (reglaTardeConLoCobrado). Aquí se LEE lo que aplicó, sin volver a mover dinero: viaje → lo que se queda (lo que queda cobrado sin contar la
-   devolución de la cancelación, hasta la mitad: la misma cuenta que reglaTardeConLoCobrado) y lo que pasó con la devolución de la llave vcx-<número>
+   regla (reglaTardeConLoCobrado). Aquí se LEE lo que aplicó, sin volver a mover dinero: viaje → lo que se queda (lo que queda cobrado, amt − ref,
+   hasta la mitad del total: la misma cuenta que reglaTardeConLoCobrado) y lo que pasó con la devolución de la llave vcx-<número>
    (hecha · en camino · fallida; sin fila todavía: null, su aviso pay_refund sale al cerrarla); evento privado → lo que queda cobrado. cobroMitad se vuelve
    a escribir con lo que se queda: la cancelación que perdió la carrera lo había dejado en 0 (leyó el cobro retenido). Cualquier otra cosa: null. */
 async function reglaTardeLeida(opId: string): Promise<import("./devolucion-cancelar").ReglaTarde | null> {
-  const o = (await db().query<{ kind: string; st: string; cr: string | null; by: string | null; tot: number; amt: number; ref: number; pst: string; vcx: number; rst: string | null; ramt: number | null; rmano: boolean | null }>(
+  const o = (await db().query<{ kind: string; st: string; cr: string | null; by: string | null; tot: number; amt: number; ref: number; pst: string; rst: string | null; ramt: number | null; rmano: boolean | null }>(
     `select o.kind, o.status as st, o.cancel_reason as cr, o.cancelled_by as by, o.total_cents as tot, p.amount_cents as amt, p.refunded_cents as ref, p.status as pst,
-            coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'done' and split_part(r.idem_key, '~fallida-', 1) = 'vcx-' || o.number), 0)::int as vcx,
             d.st as rst, d.amt as ramt, d.mano as rmano
        from operations o join payments p on p.operation_id = o.id and p.kind in ('full', 'deposit')
        left join lateral (select r.status as st, r.amount_cents as amt, r.manual_at is not null as mano from refunds r
@@ -206,7 +205,7 @@ async function reglaTardeLeida(opId: string): Promise<import("./devolucion-cance
   if (!o || o.st !== "cancelled" || o.by !== "user" || o.cr !== "tarde" || !["captured", "partially_refunded"].includes(o.pst)) return null;
   if (o.kind === "private_event") return { queda: Math.max(0, o.amt - o.ref), dev: null };
   if (o.kind !== "trip") return null;
-  const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));
+  const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));
   await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int) where id = $1::bigint`, [opId, queda]);
   const m = o.ramt ?? 0;
   const dev: import("./devolucion-cancelar").DevCancelar | null = !o.rst ? null : o.rst === "done" || o.rmano ? { e: "hecha", monto: m } : o.rst === "pending" ? { e: "en_camino", monto: m } : { e: "fallida", monto: m };
@@ -215,34 +214,86 @@ async function reglaTardeLeida(opId: string): Promise<import("./devolucion-cance
 /* 25 nov (revisión de 483a3af) · El aviso que dice lo cobrado de una cancelación tarde (lo que se queda el negocio), UNA vez por operación: lo reclama quien
    lo va a mandar (la cancelación misma, o el barrido que aplicó la regla después); el que llega segundo no lo manda. Lo que no dice lo cobrado («No se
    cobró nada, pero la retención todavía no se soltó») no lo reclama: después de ese, el barrido todavía dice lo que pasó.
-   25 nov (revisión de 621f214) · La cancelación manda los dos avisos ella misma: lo que el barrido tenía pendiente de reintentar (avisoCobroFalta) deja de
-   estarlo (nunca dos veces). */
+   25 nov (revisión de efe56b9) · Solo si el barrido nunca lo reclamó (sin avisoCobroAt): si ya lo reclamó, el aviso es suyo aunque haya devuelto el reclamo
+   (avisoCobro false con lo que falta): la parte que ya llegó (quien pagó) no se repite y lo que falta lo reintenta él (barrerCobradasTarde). Antes la
+   cancelación que llegaba después de un reclamo devuelto mandaba los dos otra vez. */
 export async function reclamarAvisoCobro(opId: string): Promise<boolean> {
-  return !!(await db().query(`update operations set details = (details - 'avisoCobroFalta') || '{"avisoCobro":true}'::jsonb where id = $1::bigint and not coalesce((details->>'avisoCobro')::boolean, false)`, [opId])).rowCount;
+  return !!(await db().query(`update operations set details = details || '{"avisoCobro":true}'::jsonb
+     where id = $1::bigint and not coalesce((details->>'avisoCobro')::boolean, false) and not (details ? 'avisoCobroAt')`, [opId])).rowCount;
 }
-/* 25 nov (revisión de 621f214) · Cuántas veces el barrido reintenta el aviso de lo que aplicó (cada minuto); después queda en el registro y en la alerta
-   cobrada:, que ya dice que no salió. */
-export const AVISO_TARDE_INTENTOS = 5;
+/* 25 nov (revisión de efe56b9) · Cuánto espera el barrido antes de cada reintento del aviso de lo que aplicó (minutos, cada vez más: el que no llegó en un
+   minuto no llega por insistir cada minuto) y cuántos reintentos hay (uno por espera). Agotados, la alerta aviso:<cobro> (alertarAvisoTarde): el equipo de
+   dinero se lo dice a la persona. Guardián liberarMira. */
+export const AVISO_TARDE_ESPERA_MIN = [1, 5, 15, 60, 240];
+export const AVISO_TARDE_INTENTOS = AVISO_TARDE_ESPERA_MIN.length;
 /* 25 nov (revisión de 621f214) · El reclamo del aviso que manda el barrido, con lo que falta mandar (avisoCobroFalta: "cli" quien pagó, "neg" el negocio;
-   la primera vez, los dos) y cuándo se reclamó (avisoCobroAt). retomar (el reintento de barrerCobradasTarde): también uno reclamado hace más de 10 minutos
-   que sigue con algo pendiente (el proceso murió entre el reclamo y el envío). Devuelve lo que falta, o null si otro lo tiene. */
-async function reclamarAvisoTarde(opId: string, retomar: boolean): Promise<{ cli: boolean; neg: boolean } | null> {
-  const r = (await db().query<{ falta: unknown }>(
-    `update operations set details = details || jsonb_build_object('avisoCobro', true, 'avisoCobroAt', now(), 'avisoCobroFalta', coalesce(details->'avisoCobroFalta', '["cli","neg"]'::jsonb))
-      where id = $1::bigint and (not coalesce((details->>'avisoCobro')::boolean, false)
-             or ($2::boolean and details ? 'avisoCobroFalta' and coalesce((details->>'avisoCobroAt')::timestamptz, '-infinity'::timestamptz) < now() - interval '10 minutes'))
-      returning details->'avisoCobroFalta' as falta`, [opId, retomar])).rows[0];
+   la primera vez, los dos) y cuándo se reclamó (avisoCobroAt). Devuelve lo que falta, o null si otro lo tiene.
+   25 nov (revisión de efe56b9) · La primera vez, solo si nadie lo reclamó nunca (ni la cancelación ni el barrido). retomar (el reintento de
+   barrerCobradasTarde): el reclamo devuelto (avisoCobro false) con su espera cumplida (AVISO_TARDE_ESPERA_MIN[intentos]) y reintentos por delante, o el
+   reclamado hace más de 10 minutos que sigue con algo pendiente (el proceso murió entre el reclamo y el envío: cuenta como un intento). Devuelve también
+   avisoCobroAt tal como quedó: la escritura del resultado (devolverReclamo) solo se aplica si sigue igual (si otro lo retomó, el resultado es suyo). */
+type ReclamoAviso = { cli: boolean; neg: boolean; at: string };
+async function reclamarAvisoTarde(opId: string, retomar: boolean): Promise<ReclamoAviso | null> {
+  const r = (await db().query<{ falta: unknown; at: string }>(
+    `update operations set details = details || jsonb_build_object('avisoCobro', true, 'avisoCobroAt', clock_timestamp(), 'avisoCobroFalta', coalesce(details->'avisoCobroFalta', '["cli","neg"]'::jsonb),
+            'avisoCobroIntentos', coalesce((details->>'avisoCobroIntentos')::int, 0) + case when coalesce((details->>'avisoCobro')::boolean, false) then 1 else 0 end)
+      where id = $1::bigint and ((not coalesce((details->>'avisoCobro')::boolean, false) and not (details ? 'avisoCobroAt'))
+             or ($2::boolean and details ? 'avisoCobroFalta' and coalesce((details->>'avisoCobroIntentos')::int, 0) <= $3::int
+                 and ((not coalesce((details->>'avisoCobro')::boolean, false)
+                       and coalesce((details->>'avisoCobroAt')::timestamptz, '-infinity'::timestamptz) < now() - make_interval(mins => coalesce(($4::int[])[coalesce((details->>'avisoCobroIntentos')::int, 0)], 0)))
+                   or (coalesce((details->>'avisoCobro')::boolean, false) and coalesce((details->>'avisoCobroAt')::timestamptz, '-infinity'::timestamptz) < now() - interval '10 minutes'))))
+      returning details->'avisoCobroFalta' as falta, details->>'avisoCobroAt' as at`, [opId, retomar, AVISO_TARDE_INTENTOS, AVISO_TARDE_ESPERA_MIN])).rows[0];
   if (!r) return null;
   const f = Array.isArray(r.falta) ? r.falta : [];
-  return { cli: f.includes("cli"), neg: f.includes("neg") };
+  return { cli: f.includes("cli"), neg: f.includes("neg"), at: r.at };
+}
+/* 25 nov (revisión de efe56b9) · El resultado del aviso reclamado, SOLO si el reclamo sigue siendo el suyo (avisoCobroAt igual al del reclamo): todo quedó →
+   sin nada pendiente; algo no quedó → devuelve el reclamo (avisoCobro false) con lo que falta y un intento más. Agotados los reintentos (o sin la regla
+   para armar el aviso: sinRegla), la alerta aviso:<cobro>. Nunca tira. */
+async function devolverReclamo(opId: string, num: string, c: ReclamoAviso, hecho: { cli: boolean; neg: boolean }, sinRegla = false) {
+  try {
+    if (hecho.cli && hecho.neg) {
+      const u = await db().query(`update operations set details = details - 'avisoCobroFalta' where id = $1::bigint and details->>'avisoCobroAt' = $2::text`, [opId, c.at]);
+      if (!u.rowCount) console.error(`[cobrada] ${num}: el aviso de lo que aplicó el barrido quedó, pero otro retomó el reclamo mientras tanto (no se anotó)`);
+      return;
+    }
+    const quedan = [...(hecho.cli ? [] : ["cli"]), ...(hecho.neg ? [] : ["neg"])];
+    const r = (await db().query<{ n: number }>(
+      `update operations set details = details || jsonb_build_object('avisoCobro', false, 'avisoCobroFalta', $3::jsonb, 'avisoCobroIntentos', coalesce((details->>'avisoCobroIntentos')::int, 0) + 1)
+        where id = $1::bigint and details->>'avisoCobroAt' = $2::text returning (details->>'avisoCobroIntentos')::int as n`, [opId, c.at, JSON.stringify(quedan)])).rows[0];
+    if (!r) { console.error(`[cobrada] ${num}: el aviso de lo que aplicó el barrido no quedó (${quedan.join(", ")}) y otro retomó el reclamo mientras tanto`); return; }
+    const agotado = r.n > AVISO_TARDE_INTENTOS;
+    console.error(`[cobrada] ${num}: el aviso de lo que aplicó el barrido no quedó (${quedan.join(", ")}${sinRegla ? "; sin la regla para armarlo" : ""}): ${agotado ? "sin más reintentos (alerta aviso:)" : `el barrido lo vuelve a mandar en ${AVISO_TARDE_ESPERA_MIN[r.n - 1]} min`}`);
+    if (agotado || sinRegla) await alertarAvisoTarde(opId, num, quedan, sinRegla ? "sin_regla" : "agotado");
+  } catch (e) { console.error(`[cobrada] ${num}: lo que quedó del aviso no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+}
+/* 25 nov (revisión de efe56b9) · La alerta propia del aviso de lo aplicado que no llegó (hold_stuck aviso:<cobro>, una vez por cobro, no se cierra sola): los
+   reintentos se agotaron, o el aviso ya no se puede armar porque el cobro no está como lo dejó la regla (se devolvió o cambió después). Dice a quién no le
+   llegó y remite a la alerta cobrada:<cobro> (lo aplicado). Nunca tira: lo que falla queda en el registro y el barrido la vuelve a intentar
+   (barrerCobradasTarde: agotado sin su alerta). */
+async function alertarAvisoTarde(opId: string, num: string, quedan: string[], por: "agotado" | "sin_regla") {
+  try {
+    const p = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null }>(
+      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city from payments y where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') order by y.id desc limit 1`, [opId])).rows[0];
+    if (!p) return;
+    const cli = quedan.includes("cli"), neg = quedan.includes("neg");
+    const a: Msg = cli && neg ? { es: "ni a quien pagó ni al negocio", en: "neither the payer nor the business" } : cli ? { es: "a quien pagó", en: "the payer" } : { es: "al negocio", en: "the business" };
+    const detalle: Msg = por === "agotado" ? {
+      es: `${num}: el aviso con lo que aplicó el barrido en la cancelación tarde no le llegó ${a.es} después de ${AVISO_TARDE_INTENTOS} reintentos, y el barrido ya no lo manda. Díselo tú: lo aplicado está en la alerta cobrada:${p.id}.`,
+      en: `${num}: the notice with what the sweep applied to the late cancellation did not reach ${a.en} after ${AVISO_TARDE_INTENTOS} retries, and the sweep no longer sends it. Tell them yourself: what was applied is in the cobrada:${p.id} alert.` } : {
+      es: `${num}: el aviso con lo que aplicó el barrido en la cancelación tarde no se pudo armar: el cobro ya no está como lo dejó la regla (se devolvió o cambió después). No le llegó ${a.es}: revisa el cobro y díselo tú (lo aplicado: alerta cobrada:${p.id}).`,
+      en: `${num}: the notice with what the sweep applied to the late cancellation could not be built: the charge is no longer as the rule left it (refunded or changed later). It did not reach ${a.en}: check the charge and tell them yourself (what was applied: the cobrada:${p.id} alert).` };
+    await (await import("./dinero-alertas")).alertar("hold_stuck", `aviso:${p.id}`, { monto: p.amt, negocio: p.biz, ciudad: p.city, detalle });
+  } catch (e) { console.error(`[cobrada] ${num}: la alerta aviso: no se anotó (el barrido la vuelve a intentar): ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
 }
 /* 25 nov (revisión de 483a3af) · La regla de la cancelación tarde la aplicó el BARRIDO (repararPagos: la retención resultó cobrada después de que la
    cancelación avisara «No se cobró nada, pero la retención todavía no se soltó»): quien pagó y el negocio reciben su aviso de la cancelación otra vez, con
    lo aplicado (viaje: viaje_cx y biz_viaje_cx; evento privado: evp_cancelado y evp_biz_cx; las plantillas y los campos de siempre). Una vez por operación
    (el reclamo). Nunca tira: lo que falla queda en el registro. Guardián liberarMira.
    25 nov (revisión de 621f214) · El reclamo ya no se pierde si el envío falla: lo que no quedó (avisos › avisar dice si quedó) devuelve el reclamo
-   (avisoCobro false) con lo que falta (avisoCobroFalta) y su intento (avisoCobroIntentos); barrerCobradasTarde lo reintenta, solo lo que falta, hasta
-   AVISO_TARDE_INTENTOS veces. Devuelve lo que quedó ({ cli, neg }) para la alerta cobrada:, o null si no es de aquí (otro lo manda: la cancelación). */
+   (avisoCobro false) con lo que falta (avisoCobroFalta) y su intento (avisoCobroIntentos); barrerCobradasTarde lo reintenta, solo lo que falta. Devuelve lo
+   que quedó ({ cli, neg }) para la alerta cobrada:, o null si no es de aquí (otro lo manda: la cancelación).
+   25 nov (revisión de efe56b9) · El resultado se escribe solo con el reclamo propio (devolverReclamo), los reintentos se espacian y, agotados, alerta. */
 async function avisarTardeCobrada(opId: string, num: string, kind: string, cobrado: number, regla: import("./devolucion-cancelar").ReglaTarde, retomar = false): Promise<{ cli: boolean; neg: boolean } | null> {
   if (kind !== "trip" && kind !== "private_event") return null;
   const falta = await reclamarAvisoTarde(opId, retomar).catch((e) => { console.error(`[cobrada] ${num}: el aviso de lo que aplicó el barrido no se pudo reclamar: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return null; });
@@ -252,15 +303,14 @@ async function avisarTardeCobrada(opId: string, num: string, kind: string, cobra
     const s = kind === "trip" ? await (await import("./viajes")).avisarViajeTardeCobrado(num, regla, falta) : await (await import("./evento-privado")).avisarEvpTardeCobrado(num, regla.queda, cobrado, falta);
     hecho = { cli: hecho.cli || s.cli, neg: hecho.neg || s.neg };
   } catch (e) { console.error(`[cobrada] ${num}: el aviso de lo que aplicó el barrido no salió: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
-  try {
-    if (hecho.cli && hecho.neg) await db().query(`update operations set details = details - 'avisoCobroFalta' where id = $1::bigint`, [opId]);
-    else {
-      const quedan = [...(hecho.cli ? [] : ["cli"]), ...(hecho.neg ? [] : ["neg"])];
-      await db().query(`update operations set details = details || jsonb_build_object('avisoCobro', false, 'avisoCobroFalta', $2::jsonb, 'avisoCobroIntentos', coalesce((details->>'avisoCobroIntentos')::int, 0) + 1) where id = $1::bigint`, [opId, JSON.stringify(quedan)]);
-      console.error(`[cobrada] ${num}: el aviso de lo que aplicó el barrido no quedó (${quedan.join(", ")}): el barrido lo vuelve a mandar`);
-    }
-  } catch (e) { console.error(`[cobrada] ${num}: lo que quedó del aviso no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+  await devolverReclamo(opId, num, falta, hecho);
   return hecho;
+}
+/* 25 nov (revisión de efe56b9) · El reintento cuyo aviso ya no se puede armar (reglaTardeLeida: null, el cobro ya no está como lo dejó la regla): se reclama
+   como cualquier reintento, se devuelve con su intento y se abre la alerta aviso:<cobro> (antes se reintentaba cada minuto, en silencio). */
+async function avisoSinRegla(opId: string, num: string) {
+  const c = await reclamarAvisoTarde(opId, true).catch((e) => { console.error(`[cobrada] ${num}: el aviso sin regla no se pudo reclamar: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return null; });
+  if (c) await devolverReclamo(opId, num, c, { cli: !c.cli, neg: !c.neg }, true);
 }
 /* 25 nov (regla 13, LAUNCH g) · «cobrada»: Stripe ya la había cobrado (liberarOperacion la anotó 'captured' con su monto real). UNA alerta hold_stuck por
    cobro con sujeto cobrada:<cobro>, que NO se cierra sola (cerrarAlertasResueltas solo mira liberar:): alguien mira en Stripe si ese cobro correspondía y,
@@ -300,9 +350,13 @@ async function cobradaConSuRegla(opId: string, motivo: Msg, como: "soltar" | "ba
   // 25 nov (revisión de 483a3af) · La regla la aplicó un barrido: a quien pagó le habíamos dicho «No se cobró nada…» (o nada); el aviso dice lo aplicado (una vez).
   // 25 nov (revisión de 621f214) · Antes de la alerta, para que diga si le llegó (si no, el barrido lo reintenta: barrerCobradasTarde).
   const av = regla && como !== "soltar" ? await avisarTardeCobrada(opId, c.num, c.kind, c.amt, regla) : null;
+  // 25 nov (revisión de efe56b9) · Lo que no quedó lo reintenta el barrido, cada vez más espaciado; si se agotan, se abre la alerta aviso:<cobro> y ESA dice
+  // que hay que decírselo a la persona (esta no lo afirma sin saberlo).
+  const sigue: Msg = { es: `el barrido lo vuelve a mandar (hasta ${AVISO_TARDE_INTENTOS} veces, cada vez más espaciado); si no llega, se abre la alerta aviso:${c.id}.`,
+    en: `the sweep sends it again (up to ${AVISO_TARDE_INTENTOS} times, further apart each time); if it never arrives, the aviso:${c.id} alert opens.` };
   const avT: Msg = !av ? { es: "", en: "" } : av.cli && av.neg ? { es: " Quien pagó y el negocio ya tienen el aviso con lo aplicado.", en: " The payer and the business already have the notice with what was applied." }
-    : av.cli ? { es: " Quien pagó ya tiene el aviso con lo aplicado; el del negocio no quedó: el barrido lo vuelve a mandar.", en: " The payer already has the notice with what was applied; the business notice did not go out: the sweep sends it again." }
-    : { es: ` El aviso con lo aplicado NO le llegó a quien pagó: el barrido lo vuelve a mandar (hasta ${AVISO_TARDE_INTENTOS} veces); si no llega, díselo tú.`, en: ` The notice with what was applied did NOT reach the payer: the sweep sends it again (up to ${AVISO_TARDE_INTENTOS} times); if it never arrives, tell them yourself.` };
+    : av.cli ? { es: ` Quien pagó ya tiene el aviso con lo aplicado; el del negocio no quedó: ${sigue.es}`, en: ` The payer already has the notice with what was applied; the business notice did not go out: ${sigue.en}` }
+    : { es: ` El aviso con lo aplicado NO le llegó a quien pagó: ${sigue.es}`, en: ` The notice with what was applied did NOT reach the payer: ${sigue.en}` };
   const detalle: Msg = regla ? { es: `${yaEs.es} Se aplicó la cancelación tarde: se quedó ${money(regla.queda)}${devT.es}. Revisa en Stripe que cuadre; no devuelvas nada más.${avT.es}`,
     en: `${yaEs.en} The late cancellation was applied: ${money(regla.queda)} was kept${devT.en}. Check in Stripe that it matches; do not refund anything else.${avT.en}` }
     : { es: `${yaEs.es} Revisa en Stripe si ese cobro correspondía: si no, devuélveselo al cliente.`, en: `${yaEs.en} Check in Stripe whether that charge was due: if not, refund the client.` };
@@ -316,34 +370,53 @@ const REPARA: Msg = { es: "El barrido de cobros", en: "The charges sweep" };
    1) La cancelación tarde de quien pagó (viaje, evento privado) cuyo cobro quedó cobrado SIN su regla: el proceso murió entre que liberarOperacion (o la
       captura) lo anotó cobrado y que se aplicara la regla (viaje: sin la devolución vcx-<número> y con más de la mitad cobrada; evento privado: perdio en
       false), sin su alerta cobrada:. Se aplica la regla (idempotente por la llave vcx-), el aviso y la alerta, como si la soltara el barrido. Solo lo que
-      lleva más de 5 minutos cobrado y cancelado (la cancelación que sigue en curso termina antes), por el índice de captured_at (dos días).
-   2) El aviso de lo aplicado que no quedó (avisoCobroFalta; o reclamado hace más de 10 minutos sin terminar), hasta AVISO_TARDE_INTENTOS veces: solo lo
-      que falta (quien pagó, el negocio). f.negocio: solo ese negocio (la prueba din9x). Guardián liberarMira. */
+      lleva más de 5 minutos cobrado y cancelado (la cancelación que sigue en curso termina antes).
+   2) El aviso de lo aplicado que no quedó (avisoCobroFalta), solo lo que falta (quien pagó, el negocio). f.negocio: solo ese negocio (la prueba din9x).
+   25 nov (revisión de efe56b9) · La ventana es la de la CANCELACIÓN (o.cancelled_at, los últimos BARRIDO_TARDE_DIAS días), no la del cobro: un viaje se
+   cobra al aceptarse, días antes de cancelarse tarde, y la ventana de captured_at (dos días) no lo veía nunca. Índice parcial operations_cancelada_tarde_idx
+   (0225). Lo que sale de la ventana sin repararse no cae en silencio: UNA alerta hold_stuck reparar:<cobro> (hasta 30 días). El aviso (2) se busca por la
+   operación (avisoCobroFalta), no por su alerta cobrada: (si la alerta no se anotó, el aviso igual se reintenta), con su espera (AVISO_TARDE_ESPERA_MIN);
+   agotado sin su alerta aviso:, se vuelve a intentar la alerta; sin la regla para armarlo (reglaTardeLeida null), su alerta y su intento. Guardián
+   liberarMira. */
+export const BARRIDO_TARDE_DIAS = 7;
 export async function barrerCobradasTarde(f: { negocio?: string } = {}): Promise<number> {
   const B = new (await import("./barrido-uno")).Fallos("cobradasTarde");
-  const L = (await db().query<{ op: string }>(
-    `select o.id::text as op from payments p join operations o on o.id = p.operation_id
-      where p.captured_at > now() - interval '2 days' and p.captured_at < now() - interval '5 minutes' and p.kind in ('full', 'deposit') and p.status in ('captured', 'partially_refunded')
-        and o.kind in ('trip', 'private_event') and o.status = 'cancelled' and o.cancelled_by = 'user' and o.cancel_reason = 'tarde' and o.cancelled_at < now() - interval '5 minutes'
+  const L = (await db().query<{ op: string; num: string; pid: string; amt: number; biz: string | null; city: string | null; fuera: boolean }>(
+    `select o.id::text as op, o.number as num, p.id::text as pid, p.amount_cents as amt, p.business_id as biz, p.city_id as city, o.cancelled_at <= now() - make_interval(days => $2::int) as fuera
+       from operations o join payments p on p.operation_id = o.id
+      where o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and o.cancelled_at > now() - interval '30 days' and o.cancelled_at < now() - interval '5 minutes'
+        and o.status = 'cancelled' and o.cancelled_by = 'user'
+        and p.kind in ('full', 'deposit') and p.status in ('captured', 'partially_refunded') and p.captured_at < now() - interval '5 minutes'
         and ($1::text is null or p.business_id = $1::text)
         and not exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'cobrada:' || p.id::text)
+        and not exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'reparar:' || p.id::text)
         and case when o.kind = 'trip' then p.amount_cents - p.refunded_cents > o.total_cents / 2
                    and not exists (select 1 from refunds r where r.payment_id = p.id and split_part(r.idem_key, '~fallida-', 1) = 'vcx-' || o.number)
                    and not exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = 'cancelacion:vcx-' || o.number)
                  else coalesce(o.details->>'perdio', '') = 'false' end
-      order by p.captured_at, p.id limit 20`, [f.negocio ?? null])).rows;
-  await B.cada(L, (x) => `sin regla ${x.op}`, async (x) => { await cobradaConSuRegla(x.op, REPARA, "reparar"); });
-  const A = (await db().query<{ op: string; num: string; kind: string; amt: number }>(
-    `select o.id::text as op, o.number as num, o.kind, p.amount_cents as amt from money_alerts a
-       join payments p on p.id = case when a.subject_id ~ '^cobrada:[0-9]{1,18}$' then split_part(a.subject_id, ':', 2)::bigint end
-       join operations o on o.id = p.operation_id
-      where a.kind = 'hold_stuck' and a.subject_id like 'cobrada:%' and a.at > now() - interval '3 days' and o.kind in ('trip', 'private_event') and o.details ? 'avisoCobroFalta'
-        and ($1::text is null or p.business_id = $1::text) and coalesce((o.details->>'avisoCobroIntentos')::int, 0) < $2::int
-        and (not coalesce((o.details->>'avisoCobro')::boolean, false) or coalesce((o.details->>'avisoCobroAt')::timestamptz, '-infinity'::timestamptz) < now() - interval '10 minutes')
-      order by a.at, a.id limit 20`, [f.negocio ?? null, AVISO_TARDE_INTENTOS])).rows;
+      order by o.cancelled_at, o.id limit 20`, [f.negocio ?? null, BARRIDO_TARDE_DIAS])).rows;
+  await B.cada(L, (x) => `${x.fuera ? "fuera de la ventana" : "sin regla"} ${x.op}`, async (x) => {
+    if (!x.fuera) { await cobradaConSuRegla(x.op, REPARA, "reparar"); return; }
+    await (await import("./dinero-alertas")).alertar("hold_stuck", `reparar:${x.pid}`, { monto: x.amt, negocio: x.biz, ciudad: x.city, detalle: {
+      es: `${x.num}: la cancelación tarde quedó cobrada (${money(x.amt)}) sin aplicar su regla y lleva más de ${BARRIDO_TARDE_DIAS} días así: el barrido ya no la repara. Aplícala a mano (viaje: devuelve lo que pasa de la mitad; evento privado: el depósito se queda con el restaurante) y díselo a quien pagó y al negocio.`,
+      en: `${x.num}: the late cancellation was left charged (${money(x.amt)}) without its rule applied for more than ${BARRIDO_TARDE_DIAS} days: the sweep no longer repairs it. Apply it by hand (trip: refund what is over half; private event: the deposit stays with the restaurant) and tell the payer and the business.` } });
+  });
+  const A = (await db().query<{ op: string; num: string; kind: string; amt: number; agotado: boolean; falta: unknown }>(
+    `select o.id::text as op, o.number as num, o.kind, p.amount_cents as amt, coalesce((o.details->>'avisoCobroIntentos')::int, 0) > $2::int as agotado, o.details->'avisoCobroFalta' as falta
+       from operations o join lateral (select y.id, y.amount_cents from payments y where y.operation_id = o.id and y.kind in ('full', 'deposit') order by y.id desc limit 1) p on true
+      where o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and o.cancelled_at > now() - interval '30 days' and o.details ? 'avisoCobroFalta'
+        and ($1::text is null or o.business_id = $1::text)
+        and case when coalesce((o.details->>'avisoCobroIntentos')::int, 0) > $2::int
+                 then not exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'aviso:' || p.id::text)
+                 when coalesce((o.details->>'avisoCobro')::boolean, false)
+                 then coalesce((o.details->>'avisoCobroAt')::timestamptz, '-infinity'::timestamptz) < now() - interval '10 minutes'
+                 else coalesce((o.details->>'avisoCobroAt')::timestamptz, '-infinity'::timestamptz) < now() - make_interval(mins => coalesce(($3::int[])[coalesce((o.details->>'avisoCobroIntentos')::int, 0)], 0)) end
+      order by o.cancelled_at, o.id limit 20`, [f.negocio ?? null, AVISO_TARDE_INTENTOS, AVISO_TARDE_ESPERA_MIN])).rows;
   await B.cada(A, (x) => `aviso ${x.num}`, async (x) => {
+    if (x.agotado) { await alertarAvisoTarde(x.op, x.num, Array.isArray(x.falta) ? x.falta.map(String) : [], "agotado"); return; }
     const regla = await reglaTardeLeida(x.op);
     if (regla) await avisarTardeCobrada(x.op, x.num, x.kind, x.amt, regla, true);
+    else await avisoSinRegla(x.op, x.num);
   });
   B.fin();
   return L.length + A.length;

@@ -208,14 +208,15 @@ async function ev(c: Q, op: string, kind: string, actor: "user" | "member" | "sy
 }
 
 /* ── Avisos ── */
-async function avisarEvp(numero: string, quien: "cliente" | "negocio", tpl: string, extra: Record<string, string | Bi> = {}) {
+/* 25 nov (revisión de efe56b9) · unaVez (solo el del negocio): el aviso que se reintenta no se repite a los dueños que ya lo tienen (avisos › avisarNegocio). */
+async function avisarEvp(numero: string, quien: "cliente" | "negocio", tpl: string, extra: Record<string, string | Bi> = {}, unaVez?: string) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return false;
   const A = await import("./avisos"), cfg = await valores("evp_responder_h", "evp_propuesta_h");
   const vars = { negocio: o.negocio, cliente: o.cliente, dia: diaEvp(o.ymd, true), hora: horaL(o.m), personas: String(o.p), total: dinero(o.tot), dep: dinero(o.dep), resto: dinero(Math.max(0, o.tot - o.dep)),
     horas: String(quien === "negocio" ? cfg.evp_responder_h : cfg.evp_propuesta_h), dev: "", motivo: "", que: "", ...extra };
   if (quien === "cliente") return A.avisar(o.uid, tpl, vars, { href: `/privado/${numero}`, ref: ["private_event", numero] });
-  return A.avisarNegocio(o.biz, tpl, vars, { href: `/panel/${o.biz}/hoy?det=evp:${numero}`, ref: ["private_event", numero] });
+  return A.avisarNegocio(o.biz, tpl, vars, { href: `/panel/${o.biz}/hoy?det=evp:${numero}`, ref: ["private_event", numero], ...(unaVez ? { unaVez } : {}) });
 }
 export async function avisarEvpNueva(numero: string) { await avisarEvp(numero, "negocio", "evp_nueva"); }
 
@@ -576,20 +577,27 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
   await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: depNeg }).catch(() => undefined);
   return { ok: true, devuelto: d?.e === "hecha" ? d.monto : 0, perdio: quedo, devolucion: quedo ? "nada" : d?.e ?? "nada" };
 }
+/* 25 nov (revisión de efe56b9) · Una parte del aviso de lo que aplicó el barrido (quien pagó o el negocio), por su cuenta: dice si quedó y, si tira, va al
+   registro y cuenta como no quedó, sin llevarse la otra parte. Guardián liberarMira. */
+async function avisoParte(numero: string, tpl: string, f: () => Promise<boolean | undefined>): Promise<boolean> {
+  try { return (await f()) !== false; } catch (e) { console.error(`[cobrada] ${numero}: el aviso ${tpl} no salió: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return false; }
+}
+
 /* 25 nov (revisión de 483a3af) · La cancelación tarde cuya retención resultó cobrada DESPUÉS (el barrido la encontró cobrada y aplicó la regla: cobros ›
    soltarRetencion › avisarTardeCobrada, que ya reclamó el aviso; perdio vuelve a true): a quien pagó le habíamos dicho «No se cobró nada, pero la retención
    todavía no se soltó». Su aviso de la cancelación (evp_cancelado) y el del restaurante (evp_biz_cx) otra vez, con lo que se quedó: lo que quedaba cobrado
    (queda; «el depósito» si es todo lo cobrado). Nada se devuelve.
    25 nov (revisión de 621f214) · partes: los avisos que faltan (el barrido de cobros › barrerCobradasTarde reintenta solo el que no quedó). Devuelve cuáles
-   quedaron (el que no se pidió cuenta como quedó): quien llama devuelve el reclamo si alguno no quedó. */
+   quedaron (el que no se pidió cuenta como quedó): quien llama devuelve el reclamo si alguno no quedó.
+   25 nov (revisión de efe56b9) · Cada parte por su cuenta (avisoParte) y el del restaurante con su llave (unaVez), como el viaje. */
 export async function avisarEvpTardeCobrado(numero: string, queda: number, cobrado: number, partes: { cli: boolean; neg: boolean } = { cli: true, neg: true }): Promise<{ cli: boolean; neg: boolean }> {
   const d: DevCancelar | null = null, entero = queda === cobrado, ya = { es: "La retención sí se había cobrado.", en: "The hold had in fact been charged." };
   const cli: Bi = !queda ? ya : entero ? { es: `${ya.es} El depósito de ${dinero(queda)} se queda con el restaurante.`, en: `${ya.en} The ${dinero(queda)} deposit stays with the restaurant.` }
     : { es: `${ya.es} Lo que quedaba del depósito (${dinero(queda)}) se queda con el restaurante.`, en: `${ya.en} What was left of the deposit (${dinero(queda)}) stays with the restaurant.` };
-  const okCli = !partes.cli || (await avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, cli) })) !== false;
+  const okCli = !partes.cli || (await avisoParte(numero, "evp_cancelado", () => avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, cli) })));
   const neg: Bi = !queda ? { es: ` ${ya.es}`, en: ` ${ya.en}` } : entero ? { es: ` ${ya.es} El depósito de ${dinero(queda)} se queda contigo.`, en: ` ${ya.en} The ${dinero(queda)} deposit stays with you.` }
     : { es: ` ${ya.es} Lo que quedaba del depósito (${dinero(queda)}) se queda contigo.`, en: ` ${ya.en} What was left of the deposit (${dinero(queda)}) stays with you.` };
-  const okNeg = !partes.neg || (await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: neg })) !== false;
+  const okNeg = !partes.neg || (await avisoParte(numero, "evp_biz_cx", () => avisarEvp(numero, "negocio", "evp_biz_cx", { dep: neg }, `cobrada:evp_biz_cx:${numero}`)));
   return { cli: okCli, neg: okNeg };
 }
 
