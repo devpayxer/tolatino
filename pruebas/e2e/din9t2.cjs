@@ -161,10 +161,9 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
         await k.query(`insert into sponsorship_refunds (kind, ref_id, payment_id, business_id, city_id, pi, amount_cents, idem_key, status, sent_at, created_at)
                        select 'negocio', $1::bigint, p.id, $2, 'hzl', p.pi, 2000, 'pat-dev-negocio-' || $1, 'pending', now() - interval '2 days', now() - interval '2 days' from sponsorship_payments p where p.idem_key = $3`, [s.id, X.b, `pat-${RUN}-${s.id}`]);
       } finally { await k.query('set session_replication_role = default').catch(() => undefined); k.release(); }
-      const antes = P.llamadas;
       const d = await PAT.devolverPatrocinio('negocio', s.id);
       await PAT.devolverPendientes('negocio'); await PAT.devolverPendientes('negocio');
-      ok(d === 0 && P.llamadas === antes, 'patrocinio: terminado hace más de 23 h, la devolución no vuelve a la pasarela con la misma llave');
+      ok(d === 0 && ![...P.porLlave.keys()].some((x) => x.startsWith(`pat-dev-negocio-${s.id}`)), 'patrocinio: terminado hace más de 23 h, la devolución no vuelve a la pasarela con la misma llave'); // solo SUS llaves: devolverPendientes también manda las devoluciones pendientes de otras corridas
       const sr = (await q1(`select id::text from sponsorship_refunds where kind = 'negocio' and ref_id = $1::bigint`, [s.id])).id;
       PATSUJ = `sponsorship_refunds:${sr}`;
       ok(await alertasDe('refund_stuck', PATSUJ) === 1, 'patrocinio: el equipo de dinero recibe UNA alerta (la de su intención, sponsorship_refunds:<id>)');
