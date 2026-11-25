@@ -202,7 +202,7 @@ const casos = [
   ["dineroUnDecimal", "el dinero con Intl.NumberFormat deja «$52.5»", 'apps/web/lib/envios.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${new Intl.NumberFormat(\"en-US\", { maximumFractionDigits: 2 }).format(c / 100)}`;"],
   ["dineroUnDecimal", "el dinero con toFixed(1)", 'apps/web/lib/envios.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${(c / 100).toFixed(1)}`;"],
   ["dineroUnDecimal", "usd sin el signo delante del «$»", 'apps/web/lib/dinero-comun.ts', "`${r < 0 ? \"-\" : \"\"}$${(a / 100)", "`$${(r / 100)"],
-  ["dineroUnDecimal", "usd deja «-$0» o NaN", 'apps/web/lib/dinero-comun.ts', "Math.round(Number(c) || 0)", "Math.round(c)"],
+  ["dineroUnDecimal", "usd deja «-$0» o NaN", 'apps/web/lib/dinero-comun.ts', "Math.round(Number.isFinite(n) ? n : 0)", "Math.round(c)"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

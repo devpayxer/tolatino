@@ -3,7 +3,6 @@ import type { PoolClient } from "pg";
 import { cobrarOperacion, pagoDe, repararPagos, soltarRetencion, type PagoVista } from "./cobros";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import type { Lang } from "./idioma";
-import { usd as money } from "./dinero-comun";
 import { hora } from "./pedir";
 
 /* El ciclo de vida del pedido de Comida (Fase 2 · bloque 2c): el negocio acepta o rechaza en 10 minutos, lo marca listo

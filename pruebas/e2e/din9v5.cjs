@@ -238,7 +238,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(rm.j?.ok === true && rm.j?.retenida === true && sql(`select status from operations where number = '${MN}'`) === 'cancelled' && pago(MN) === 'held|0' && holdStuck(MN) === '1', `${MN}: cancelado, retenida y UNA alerta hold_stuck (${JSON.stringify(rm.j)})`);
     await mm.goto(B + `/mercado/${MN}`); await mm.getByText('CANCELADO').first().waitFor();
     const tm = await texto(mm);
-    ok(tm.includes('No se cobró nada, pero la retención de $25.00 todavía no se soltó de tu tarjeta') && !/Liberamos la retención/.test(tm), 'la pantalla del mercado: «la retención de $25.00 todavía no se soltó», nunca «Liberamos la retención»');
+    ok(tm.includes('No se cobró nada, pero la retención de $25 todavía no se soltó de tu tarjeta') && !/Liberamos la retención/.test(tm), 'la pantalla del mercado: «la retención de $25 todavía no se soltó», nunca «Liberamos la retención»');
     await mm.context().close();
     // Precondiciones limpias para la próxima corrida: las dos retenciones atascadas vuelven a ser soltables (el barrido las suelta; nada queda reintentándose).
     for (const [op, biz, amt] of [[AO, BT, 3000], [MO, BM, 2500], [C4O, BC, 2000]]) {

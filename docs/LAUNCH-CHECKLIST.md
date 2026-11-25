@@ -3111,7 +3111,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       pasarlos a `usd` cuando se toque cada pantalla. _Hecho (25 nov, revisión de 8d7d0c1):_ el primer aviso de la cita (citas › avisarCitaNueva: servicio con `{svc,en}`, día MM/DD, « con Ana» / « with Ana» y el
       depósito con `usd`) y sus hermanos (citas-salud, citas-pro, avisos › avisarMesa, chofer › asignarChofer, solicitudes › `svc` de la pregunta) salen como Bi; avisoNegUnIdioma mira ahora
       TODO archivo de lib/ que llame a avisar o avisarNegocio (consulta con `{svc,es}` sin `{svc,en}`, `DD/MM` sin `MM/DD`, « con ${…}» sin su « with ${…}») y cada fallo sale una sola vez.
-      La muestra de «Probar en mi teléfono» (admin-notif) dice `usd(4500)`; Pedido y MercadoEstado (y lib/pedidos) usan `usd` («$15», no «$15.00»); usdN, usdI, evt-comun › dinero y oficios-texto › money
+      La muestra de «Probar en mi teléfono» (admin-notif) dice `usd(4500)`; MercadoEstado usa `usd` («$15», no «$15.00»; la pantalla Pedido de comida toma sus montos de `lib/pedir.ts` ~501 con toFixed(2) y sigue con «$15.00»: queda en la lista de toFixed(2) pendientes, revisión de 0513611); usdN, usdI, evt-comun › dinero y oficios-texto › money
       llaman a `usd` (evt-comun › dinero ahora pone el separador de miles: «$1,000»). `usd`: el signo delante del «$» («-$45»), «-0», undefined y NaN dan «$0»; dineroUnDecimal corre `usd` de verdad y mira
       también Intl.NumberFormat con «$» y toFixed(1). Al revés: alrevesDineroDiceLoQuePaso (137/137). Quedan los `toFixed(2)` de otras pantallas y avisos (planes, apartados, rentas, layaway, cobros…): a `usd` cuando se toque cada una.
       (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
@@ -3244,3 +3244,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9b** · Una parte CANCELADA a propósito: si GitHub le hace llegar la señal al corredor, deja `RESULTADOS` con `completa:false`; si no llega, esa R1 se queda
   sin repaso (fallo seguro: toca la dirigida entera) y «sumar las rojas de una cancelada» no ocurre nunca. Decidir si hace falta reenviar la señal en ci.yml.
 
+- [ ] **→ 9b** · **Avisos en un solo idioma que el guardián todavía no ve (25 nov, revisión de 0513611, Fable):** `avisoNegUnIdioma` solo mira el primer
+      nivel de `apps/web/lib/` y, en las llamadas directas a `avisar`/`avisarNegocio`, solo tres patrones (`{svc,es}`, `DD/MM`, « con »); `revisar()`
+      sigue solo en los envoltorios. Quedan ~80 llamadas directas con un valor en un idioma (rentas ~20, apartados, boletos, boletos-despues,
+      evt-cambios, evt-liquidacion, espera, cupones, layaway, mercado, puerta, beta, disputas, admin/acciones-gam), `planes.ts` lee `{svc,es} as plan`,
+      la excepción `as ymd` es frágil y un solo « with » excusa todo el archivo. Arreglo: `revisar()` sobre el objeto de cada llamada directa con lista
+      de pendientes que solo baja, marca explícita en vez de `as ymd`, y los subdirectorios. Aparte: `citas.ts` › miaCita muestra el servicio solo en
+      español a un cliente en inglés.

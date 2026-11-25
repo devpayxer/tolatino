@@ -433,7 +433,7 @@ export async function pedirEm(userId: string, f: EmIn): Promise<Res<{ numero: st
     }
     return { ok: true, numero };
   });
-  if (r.ok && numero) for (const x of L) await (await import("./avisos")).avisarNegocio(x.id, "biz_em", { que: EMER[f.ek]![0], mi: x.millas != null ? String(x.millas) : "—" }, { href: `/panel/${x.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
+  if (r.ok && numero) for (const x of L) await (await import("./avisos")).avisarNegocio(x.id, "biz_em", { que: { es: EMER[f.ek]![0], en: EMER[f.ek]![1] }, mi: x.millas != null ? String(x.millas) : "—" }, { href: `/panel/${x.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
   return r;
 }
 
