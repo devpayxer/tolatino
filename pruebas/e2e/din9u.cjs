@@ -10,16 +10,18 @@
 //      «nunca llegó» y sale OTRA con otra llave (-r1), que se hace una vez; otra por más de lo que queda en ese cobro: Stripe dice que no, queda fallida con
 //      su código y el equipo recibe UNA alerta.
 //   4. Tu plan (el dueño, en el teléfono): la renovación pide verificar al banco (3-D Secure) y queda en cobro fallido; «Cambiar tarjeta» con una que el banco
-//      rechaza suelta la verificación vieja (vencida; su intención, fallida) y NO dice «ya tienes Pro»; con una buena se cobra y queda Pro; «Pasar a Free» y
-//      «Seguir con Pro» lo deshace.
-//   5. Super Admin › Planes: «Reintentar cobro» con una tarjeta que el banco rechaza (queda el intento y su auditoría, sigue en cobro fallido) y «Quitar
+//      rechaza suelta la verificación vieja (vencida; su intención, fallida) y NO dice «ya tienes Pro»; con una buena mientras otro tiene el candado del
+//      plan, «se está procesando» (tarjeta cambiada, ningún cobro intentado) y al soltarse se cobra y queda Pro; «Pasar a Free» y «Seguir con Pro» lo
+//      deshace; el tercer intento rechazado desde «Cambiar tarjeta» pasa a Free y lo dice.
+//   5. Super Admin › Planes: «Reintentar cobro» con una tarjeta que el banco rechaza (queda el intento y su auditoría, sigue en cobro fallido), con una de
+//      3-D Secure («pide confirmar»: el cobro de ahora en 'action' con su verificación pendiente) y «Quitar
 //      cortesía» (pasa a Free hoy, nada se borra).
 //   6. La devolución de lo que sobró que el simulador tiene DOS veces: el barrido abre la alerta gateway_review y el equipo elige cuál vale (la intención queda
 //      hecha con esa; lo que salió de más no se deshace con otra devolución).
 // Precondiciones propias (orden indiferente, corre dos veces seguidas): su persona (teléfono 555 libre), su negocio, sus cobros e intenciones del simulador, sus
 // casos y su plan. El admin es el de siempre (570-555-0199).
 const ENT = require('../lib/entorno.cjs');
-const { chromium } = require('playwright'); const crypto = require('crypto');
+const { chromium } = require('playwright'); const crypto = require('crypto'); const { spawn } = require('child_process');
 const { entrarComo, sql, tarjeta } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT, ADM = '5705550199', SEC = ENT.sec('STRIPE_WEBHOOK_SECRET');
 let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
@@ -202,10 +204,23 @@ let NUM = Number(String(Date.now()).slice(-8)) * 10 + 9;
     ok(sql(`select status from sim_intents where id = '${pi3}'`) === 'canceled', 'en el simulador, soltada');
     ok(sql(`select count(*) from subscription_charges where business_id = '${BIZ}' and status = 'done'`) === '0' && sql(`select plan from business_stats_cache where business_id = '${BIZ}'`) === 'pro', 'nada cobrado; sigue con Pro mientras quedan intentos');
     await d.screenshot({ path: OUT + 'd9u-plan-rechazada-m.png', fullPage: true });
-    // (b) Con una buena: se cobra ya y queda Pro.
+    // (b) Con una buena MIENTRAS otro tiene el candado del plan (el barrido cobrando): la tarjeta queda cambiada, no se intenta ningún cobro y la
+    //     pantalla dice «se está procesando» (ni «rechazó» ni «ya tienes Pro»). Al soltarse, Tu plan lo cobra con la buena y queda Pro.
     await d.goto(B + `/panel/${BIZ}/cobros/plan`); await d.getByText(/intento 2 de 3/).first().waitFor({ timeout: 20000 });
-    await usar('4242');
-    await d.getByText(/ya tienes Pro/).first().waitFor({ timeout: 20000 });
+    const cargos0 = sql(`select count(*) from subscription_charges where business_id = '${BIZ}'`), app = `din9u-candado-${RUN}`;
+    const libre = () => sql(`select pg_try_advisory_lock(hashtext('sub:${BIZ}'))`); // si está libre, lo toma y lo suelta al cerrar su sesión
+    const k = spawn('docker', ['exec', '-e', `PGAPPNAME=${app}`, ENT.DB, 'psql', '-U', 'tolatino', '-d', 'tolatino', '-qAt', '-c', `select pg_advisory_lock(hashtext('sub:${BIZ}')); select pg_sleep(120);`], { stdio: 'ignore' });
+    try {
+      ok(await espera(libre, 'f') === 'f', 'otra sesión tiene el candado del plan (como el barrido mientras cobra)');
+      await usar('4242');
+      await d.getByText(/El cobro se está procesando en este momento/).first().waitFor({ timeout: 20000 });
+      ok(!(await d.getByText(/ya tienes Pro|rechazó el cobro/).count()), 'la pantalla dice «se está procesando»: ni «ya tienes Pro» ni «rechazó»');
+      ok(subq("status || '|' || failed_attempts || '|' || card_pm") === `past_due|2|${buena}`, 'la tarjeta quedó cambiada y el cobro fallido no sube de intento (2 de 3)');
+      ok(sql(`select count(*) from subscription_charges where business_id = '${BIZ}'`) === cargos0, 'no se intentó ningún cobro (ninguna intención nueva)');
+      await d.screenshot({ path: OUT + 'd9u-plan-procesando-m.png', fullPage: true });
+    } finally { sql(`select pg_terminate_backend(pid) from pg_stat_activity where application_name = '${app}'`); k.kill(); }
+    ok(await espera(libre, 't') === 't', 'el candado se soltó');
+    await d.goto(B + `/panel/${BIZ}/cobros/plan`); await d.getByText(/Próximo cobro:/).first().waitFor({ timeout: 20000 });
     ok(subq("status || '|' || failed_attempts || '|' || card_pm || '|' || (current_period_end > now() + interval '27 days')") === `active|0|${buena}|true`, 'con la buena: cobrado, Pro por un mes y sin intentos fallidos');
     ok(sql(`select count(*) from subscription_charges where business_id = '${BIZ}' and status = 'done'`) === '1' && sql(`select count(*) from audit_entries where action = 'plan.seguir_pro' and target_id = '${BIZ}'`) === '2', 'un solo cobro hecho y cada cambio de tarjeta en la auditoría');
     // (c) Pasar a Free y deshacer («Seguir con Pro» mientras sigue el período).
@@ -215,6 +230,13 @@ let NUM = Number(String(Date.now()).slice(-8)) * 10 + 9;
     await clic(d.getByRole('button', { name: 'Seguir con Pro' })); await d.getByText(/Listo: sigues con Pro/).first().waitFor();
     ok(await espera(() => subq('status'), 'active') === 'active' && sql(`select count(*) from subscription_events where business_id = '${BIZ}' and kind = 'undo_free'`) === '1'
       && sql(`select count(*) from audit_entries where action = 'plan.deshacer' and target_id = '${BIZ}'`) === '1', '«Seguir con Pro» lo deshace: activo otra vez, su evento y su auditoría');
+    // (d) El último intento: con dos fallidos, «Cambiar tarjeta» a una que el banco rechaza → Free hoy (nada se borra) y la pantalla lo dice.
+    sql(`update subscriptions set status = 'past_due', card_pm = '${buena}', failed_attempts = 2, next_attempt_at = now() + interval '4 days', current_period_end = now() - interval '1 minute' where business_id = '${BIZ}'`);
+    await d.goto(B + `/panel/${BIZ}/cobros/plan`); await d.getByText(/intento 2 de 3/).first().waitFor({ timeout: 20000 });
+    await usar('0002');
+    await d.getByText(/rechazó el cobro y tu página pasó a Free/).first().waitFor({ timeout: 20000 });
+    ok(subq("status || '|' || (ended_at is not null) || '|' || card_pm") === `ended|true|${mala}` && sql(`select plan from business_stats_cache where business_id = '${BIZ}'`) === 'free', 'tercer intento rechazado desde «Cambiar tarjeta»: Free hoy y la pantalla lo dice');
+    ok(sql(`select count(*) from subscription_events where business_id = '${BIZ}' and kind = 'ended' and note->>'por' = 'cobro_fallido'`) === '1' && sql(`select count(*) from subscription_charges where business_id = '${BIZ}' and status = 'done'`) === '1', 'su evento «ended» (cobro fallido), una vez, y nada más cobrado');
     await cd.close();
 
     // ── 5 · Super Admin › Planes ──
@@ -233,6 +255,17 @@ let NUM = Number(String(Date.now()).slice(-8)) * 10 + 9;
       'la decisión («retry_admin») y su auditoría quedan aunque el banco diga que no');
     ok(sql(`select count(*) from subscription_charges where business_id = '${BIZ}' and status = 'pending'`) === '0', 'nada quedó en camino');
     await a.screenshot({ path: OUT + 'd9u-admin-reintentar-d.png' });
+    // Con la tarjeta de 3-D Secure: el banco pide confirmar el cobro de ahora (no «volvió a rechazarla»).
+    sql(`update subscriptions set status = 'past_due', card_pm = '${tresDS}', failed_attempts = 1, next_attempt_at = now() + interval '3 days', current_period_end = now() - interval '2 minutes' where business_id = '${BIZ}'`);
+    await a.goto(B + '/admin/planes?tab=subs&est=past_due'); await a.getByText(NEG, { exact: true }).first().waitFor({ timeout: 20000 });
+    await clic(fila('Reintentar cobro').getByText('Reintentar cobro', { exact: true }));
+    await clic(a.getByText('El banco ya lo autorizó.', { exact: true })); await clic(a.getByText('Reintentar', { exact: true }).last());
+    await a.getByText(/El banco pide confirmar el cobro/).first().waitFor({ timeout: 20000 });
+    ok(!(await a.getByText(/volvió a rechazarla/).count()), 'la pantalla dice que el banco pide confirmar (no «volvió a rechazarla»)');
+    const ult = sql(`select status || '|' || coalesce(stripe_pi, '') || '|' || pm from subscription_charges where business_id = '${BIZ}' order by id desc limit 1`).split('|');
+    ok(ult[0] === 'action' && /^pi_sim_/.test(ult[1]) && ult[2] === tresDS, `el cobro de ahora quedó esperando al banco ('action', ${ult[1]})`);
+    ok(sql(`select status || '|' || kind from payment_actions where pi = '${ult[1]}'`) === 'pendiente|renovacion', 'con su verificación pendiente a nombre del dueño');
+    ok(subq() === 'past_due|2' && sql(`select count(*) from subscription_events where business_id = '${BIZ}' and kind = 'retry_admin'`) === '2', 'cuenta como intento (2 de 3) y queda su «retry_admin»');
     sql(`update subscriptions set status = 'courtesy', courtesy_until = now() + interval '20 days', failed_attempts = 0, next_attempt_at = null where business_id = '${BIZ}'`);
     await a.goto(B + '/admin/planes?tab=subs&est=courtesy'); await a.getByText(NEG, { exact: true }).first().waitFor({ timeout: 20000 });
     await clic(fila('Quitar cortesía').getByText('Quitar cortesía', { exact: true }));

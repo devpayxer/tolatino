@@ -580,6 +580,8 @@ export async function quitarCortesia(negocio: string, actor: string, motivo: str
    (antes: tres escrituras sueltas, y la auditoría solo si el banco aceptaba, aparte y después). El cobro va fuera (procesar → la pasarela, con su
    llave idempotente y su candado por negocio); lo que el banco diga queda en subscription_events. */
 export async function reintentarCobro(negocio: string, actor: string, alGuardar?: AlGuardar): Promise<ResS> {
+  // Antes de la decisión (fuera de su transacción): «un intento de ahora» es uno creado desde aquí (auditoriaDelAdminConElCambio pide procesar justo después de la decisión).
+  const desde = (await db().query<{ t: Date }>(`select now() as t`)).rows[0]?.t ?? new Date();
   const pedido = await tx(async (c) => {
     const r = await c.query(`update subscriptions set next_attempt_at = now() where business_id = $1 and status = 'past_due' returning 1`, [negocio]);
     if (!r.rowCount) return false;
@@ -588,7 +590,6 @@ export async function reintentarCobro(negocio: string, actor: string, alGuardar?
     return true;
   });
   if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");
-  const desde = (await db().query<{ t: Date }>(`select now() as t`)).rows[0]?.t ?? new Date();
   await procesar(negocio);
   // 25 nov (9u, revisión de Fable) · Como en seguirConPro: «rechazó» solo con un intento de ahora (con el candado en manos del barrido no se intentó)
   // y si el banco pide confirmar, se dice eso (antes salía «volvió a rechazarla»).
