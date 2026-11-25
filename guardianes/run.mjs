@@ -922,7 +922,12 @@ const guardianes = {
       if (!/cobrarOperacion\(/.test(l) || /^import /.test(l)) return;
       if (!L.slice(Math.max(0, i - 8), i).some((x) => /status = 'confirmed'/.test(x))) falla("matriculaInscripcion", f, i + 1, "la matrícula solo se cobra en el mismo paso que deja la inscripción confirmada");
     });
-    if (!/async function devolverMat[\s\S]{0,400}o\.amount - \(o\.refunded \?\? 0\)/.test(L.join("\n"))) falla("matriculaInscripcion", f, 0, "la devolución de la matrícula tiene que ser exacta (todo lo cobrado menos lo ya devuelto)");
+    // 25 nov (9v, cuarta tanda) · La matrícula de vuelta al cancelar va por devolverAlCancelar (cobros.ts: lo cobrado menos lo ya devuelto, sin seQueda), que dice lo que pasó.
+    const cb = existsSync("apps/web/lib/cobros.ts") ? sinComent("apps/web/lib/cobros.ts") : "";
+    const exacta = /async function devolverMat[\s\S]{0,400}o\.amount - \(o\.refunded \?\? 0\)/.test(L.join("\n"))
+      || (/= pierde \? null : await devolverAlCancelar\(o, \{ actorId: userId, motivo: "Cancelación antes de empezar", idem: `icx-\$\{numero\}`, por: "policy" \}\)/.test(sinComent(f))
+        && /const falta = o\.amount - \(o\.refunded \?\? 0\) - Math\.max\(0, Math\.round\(x\.seQueda \?\? 0\)\);/.test(cb));
+    if (!exacta) falla("matriculaInscripcion", f, 0, "la devolución de la matrícula tiene que ser exacta (todo lo cobrado menos lo ya devuelto)");
   },
   gruposSinSobreventa() {
     for (const f of codigo) {
@@ -1684,7 +1689,8 @@ const guardianes = {
       const cuerpo = m[0];
       if (/cobrarOperacion\(/.test(cuerpo) && !/set status = 'confirmed'/.test(cuerpo)) falla("depositoNoche", L, 0, `«${m[1]}» cobra el depósito sin confirmar la mesa`);
     }
-    if (!/if \(o\.pay === "held"\) await liberarOperacion/.test(t)) falla("depositoNoche", L, 0, "cancelar libera lo retenido");
+    // 25 nov (9v, cuarta tanda) · Cancelar (el cliente o el local) va por devolverAlCancelar (cobros.ts), que suelta lo retenido y dice si se soltó.
+    if (!/if \(o\.pay === "held"\) await liberarOperacion/.test(t) && !/= pierde \? null : await devolverAlCancelar\(o, /.test(sinComent(L))) falla("depositoNoche", L, 0, "cancelar libera lo retenido");
     if (!/aTiempo = lista \|\| !conf \|\| o\.nowN < Number\(o\.det\.cut \?\? 360\)/.test(t)) falla("depositoNoche", L, 0, "el corte para cancelar se mide con la hora real de esa noche (det.cut)");
   },
   mesasSinSobreventa() {
@@ -4369,8 +4375,12 @@ const guardianes = {
     const G = "devolucionEvpAcotada", L = "apps/web/lib/evento-privado.ts";
     if (!existsSync(L)) return;
     const t = sinComent(L), m = cuerpoFn(t, "moverDinero"), cx = cuerpoFn(t, "cancelarEvp"), bx = cuerpoFn(t, "cancelarEvpNegocio"), v = cuerpoFn(t, "vencerEvp");
-    if (!/const cap = Math\.max\(0, \(o\.amount \?\? 0\) - \(o\.refunded \?\? 0\)\);/.test(m) || !/const n = Math\.min\(dev, cap\);/.test(m)) falla(G, L, 0, "moverDinero: nunca más de lo cobrado menos lo devuelto");
-    if (!/if \(yaHecha\) return;/.test(m) || !/\^evp\(bx\|cx\)-EP-/.test(m)) falla(G, L, 0, "moverDinero: una sola devolución por su llave fija");
+    // 25 nov (9v, cuarta tanda) · moverDinero devuelve por devolverAlCancelar (dice lo que pasó): lo que se devuelve es min(dev, cap) y el resto se queda (seQueda).
+    if (!/const cap = Math\.max\(0, \(o\.amount \?\? 0\) - \(o\.refunded \?\? 0\)\);/.test(m) || !/seQueda: Math\.max\(0, cap - Math\.min\(dev, cap\)\)/.test(m)) falla(G, L, 0, "moverDinero: nunca más de lo cobrado menos lo devuelto");
+    // Una ya anotada con su llave (hecha, en camino o FALLIDA: la fallida guarda la suya con «~fallida-<id>») no se vuelve a mandar: se dice lo que quedó.
+    if (!/split_part\(idem_key, '~fallida-', 1\) = \$2/.test(m) || !/  if \(ya\) return ya\.st/.test(m) || !/\^evp\(bx\|cx\)-EP-/.test(m)) falla(G, L, 0, "moverDinero: una sola devolución por su llave fija");
+    // El barrido no vuelve a mandar una devolución fallida (cada minuto, con una alerta nueva cada vez): la busca por su llave, también con «~fallida-<id>».
+    if (!/not exists \(select 1 from refunds r where r\.payment_id = p\.id and split_part\(r\.idem_key, '~fallida-', 1\) = o\.details->>'devIdem'\)/.test(v)) falla(G, L, 0, "el barrido vuelve a mandar una devolución que Stripe ya rechazó (busca la llave exacta: la fallida guarda la suya con «~fallida-<id>»)");
     if (!/devIdem: `evpcx-\$\{numero\}`/.test(cx) || !/devIdem: `evpbx-\$\{numero\}`/.test(bx)) falla(G, L, 0, "la llave de la devolución es fija por solicitud (evpcx- / evpbx-)");
     if (!/const ac = acuerdoDe\(await propuestas\(c, o\.id\)\), plazo = ac\?\.cancelH \?\? 72, aTiempo = o\.h_left >= plazo;/.test(cx) || !/const dev = aTiempo \? cobrado : 0/.test(cx)) falla(G, L, 0, "cancelar: el plazo es el de la propuesta aceptada y a tiempo se devuelve lo cobrado; tarde, nada");
     if (!/const dev = o\.pst === "captured" \|\| o\.pst === "partially_refunded" \? Math\.max\(0, \(o\.amount \?\? 0\) - \(o\.refunded \?\? 0\)\) : 0;/.test(bx)) falla(G, L, 0, "el restaurante cancela: se devuelve todo lo cobrado");
@@ -17750,7 +17760,8 @@ const guardianes = {
       const ini = co.indexOf("export async function devolverAlCancelar("), fin = ini < 0 ? -1 : co.indexOf("\n}\n", ini), dac = ini < 0 ? "" : co.slice(ini, fin);
       if (!dac) falla(G, CO, 0, "falta devolverAlCancelar (lo que pasó con el dinero cuando el negocio cancela)");
       else {
-        if (!/por: "business"[^\n]*nadieMira: true/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no manda con nadieMira: true: un «no» de Stripe no alertaría a nadie (el negocio no la repite)");
+        // (cuarta tanda) por: el negocio por defecto; "policy" cuando cancela quien pagó. Siempre con nadieMira: true.
+        if (!/const por = x\.por \?\? "business"/.test(dac) || !/devolverPago\(\{[^\n]*\bpor, [^\n]*nadieMira: true/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no manda con nadieMira: true: un «no» de Stripe no alertaría a nadie (el negocio no la repite)");
         if (!/if \(r\.ok\) return \{ e: "hecha"/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no dice «hecha» solo cuando devolverPago la hizo");
         if (!/split_part\(idem_key, '~fallida-', 1\) = \$2/.test(dac) || !/f\?\.st === "pending"\) return \{ e: "en_camino"/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no lee de la base lo que quedó con su llave (en camino · fallida)");
         if (!/if \(!f\) \{[\s\S]*alertar\("refund_stuck"/.test(dac)) falla(G, CO, 0, "devolverAlCancelar no alerta al equipo cuando la devolución ni siquiera se pudo anotar");
@@ -17787,17 +17798,62 @@ const guardianes = {
         if (!m || /devolv|refunded|refund everything/i.test(`${m[1]} ${m[2]}`.replace(/la devolución|the refund|Devolución total|Full refund/g, ""))) falla(G, "packages/db/migrations", 0, `el título de «${k}» sigue dando la devolución por hecha (cámbialo como 0220: neutro, ES/EN)`);
       } }
     for (const [A, f] of [["apps/web/app/panel/acciones-viajes.ts", "cancelarSalida"], ["apps/web/app/panel/acciones-noche.ts", "cancelarNocheNegocio"], ["apps/web/app/panel/acciones-fiesta.ts", "cancelarFechaNegocio"],
-      ["apps/web/app/panel/acciones-insc.ts", "cancelarInscNegocio"], ["apps/web/app/panel/acciones-insc.ts", "cancelarGrupo"]]) {
+      ["apps/web/app/panel/acciones-insc.ts", "cancelarInscNegocio"], ["apps/web/app/panel/acciones-insc.ts", "cancelarGrupo"], ["apps/web/app/panel/acciones-evento-privado.ts", "cancelarEvpNegocio"]]) {
       const a = existsSync(A) ? sinComent(A) : "";
       if (!new RegExp(`return rDev\\(await ${f}\\(`).test(a) || !/ok: true, devolucion: r\.devolucion/.test(a)) falla(G, A, 0, `la acción de ${f} no pasa lo que pasó con la devolución (rDev → devolucion): el panel no sabría si salió`);
     }
-    for (const [U, n] of [["apps/web/app/panel/ViajesPanel.tsx", 1], ["apps/web/app/panel/NocheReservas.tsx", 1], ["apps/web/app/panel/FiestasReservas.tsx", 1], ["apps/web/app/panel/Inscripciones.tsx", 2]]) {
+    for (const [U, n] of [["apps/web/app/panel/ViajesPanel.tsx", 1], ["apps/web/app/panel/NocheReservas.tsx", 1], ["apps/web/app/panel/FiestasReservas.tsx", 1], ["apps/web/app/panel/Inscripciones.tsx", 2], ["apps/web/app/panel/EventoPrivado.tsx", 1]]) {
       const u = existsSync(U) ? sinComent(U) : "";
       if ((u.match(/textoPanelCancelar\(r\?\.devolucion\)/g) ?? []).length < n) falla(G, U, 0, "«Sí, cancelar y devolver» no dice lo que pasó con la devolución (textoPanelCancelar): diría que todos reciben su dinero sin mirar");
-      if (/E2\("(Cancelada|Salida cancelada|Grupo cancelado): [^"]*recibe/.test(u)) falla(G, U, 0, "el panel vuelve a decir que reciben su dinero con lo decidido");
+      if (/E2\("(Cancelada|Cancelado|Salida cancelada|Grupo cancelado): [^"]*recibe/.test(u)) falla(G, U, 0, "el panel vuelve a decir que reciben su dinero con lo decidido");
     }
     { const AN = "apps/web/lib/admin-notif.ts", an = existsSync(AN) ? sinComent(AN) : "";
       if (!/\bdinero: \{ es: "[^"]+", en: "[^"]+" \}/.test(an)) falla(G, AN, 0, "MUESTRA no llena {dinero} (ES/EN): «Probar en mi teléfono» saldría con la llave escrita"); }
+    // (10) 25 nov (cuarta tanda) · Cancela QUIEN PAGÓ (viaje, noche, fiesta, inscripción, evento privado) y el restaurante cancela un evento privado: lo mismo.
+    // Pasaba: {dev} se llenaba con lo decidido («Te devolvemos $X», «Te devolvemos todo»), sin mirar a la pasarela; el evento privado del restaurante decía
+    // «Te devolvemos el depósito completo» y el panel «el cliente recibe su depósito completo»; el barrido del evento privado volvía a mandar cada minuto la
+    // devolución que Stripe rechazó; una retención que la pasarela no soltó se contaba como soltada (y el panel decía «Le devolvimos todo» con 1 hecha + 1
+    // solo retenida). Regla: (a) en esos cinco archivos ninguna devolución sale con devolverPago: todas por devolverAlCancelar (lo que pasó; el «no» alerta);
+    // (b) los avisos viaje_cx, noche_cx, fiesta_cx, insc_cx y evp_cancelado llevan dinero: dineroAlCancelarCliente(d, …) y evp_cancelado_negocio
+    // dinero: dineroAlCancelar(d), nunca dev con «Te devolvemos»; sus plantillas usan {dinero} (0221); (c) liberarOperacion dice «fallo» cuando la pasarela no
+    // soltó y devolverAlCancelar lo mira («retenida» + alerta hold_stuck); (d) el panel cuenta aparte lo soltado y lo retenido; (e) la pantalla del evento
+    // privado dice la fallida y la que va en camino (devolucionesDe).
+    { const CLI = { "apps/web/lib/viajes.ts": [["viaje_cx", "dineroAlCancelarCliente(d, "]], "apps/web/lib/noche-reservas.ts": [["noche_cx", "dineroAlCancelarCliente(d, "]],
+        "apps/web/lib/fiestas-reservas.ts": [["fiesta_cx", "dineroAlCancelarCliente(d, "]], "apps/web/lib/inscripciones.ts": [["insc_cx", "dineroAlCancelarCliente(d, "]],
+        "apps/web/lib/evento-privado.ts": [["evp_cancelado", "dineroAlCancelarCliente(d, "], ["evp_cancelado_negocio", "dineroAlCancelar(d)"]] };
+      let vistos = 0;
+      for (const [S, K] of Object.entries(CLI)) {
+        if (!existsSync(S)) { falla(G, S, 0, "falta el archivo (cancelación de quien pagó)"); continue; }
+        const t = sinComent(S), L = t.split("\n");
+        L.forEach((l, i) => {
+          if (/\bdevolverPago\(/.test(l) && !/^import /.test(l)) falla(G, S, i + 1, "una cancelación devuelve con devolverPago(…) tirando el resultado: va por devolverAlCancelar (lo que pasó, y el «no» alerta al equipo)");
+          for (const [k, fn] of K) {
+            if (!new RegExp(`(avisarCliente|avisarEvp)\\([^)]*"${k}"`).test(l)) continue;
+            vistos++;
+            if (!l.includes(`dinero: ${fn}`)) falla(G, S, i + 1, `el aviso «${k}» no lleva {dinero} con lo que pasó (${fn.replace(/, $/, ", …)")}): diría «Te devolvemos» con lo decidido`);
+            if (/\bdev: |Te devolvemos/.test(l)) falla(G, S, i + 1, `el aviso «${k}» vuelve a llenar {dev} con lo decidido («Te devolvemos …»)`);
+          }
+        });
+      }
+      if (vistos < 6) falla(G, "apps/web/lib/viajes.ts", 0, `esperaba los 6 avisos de cancelación de quien pagó y del evento privado (viaje_cx, noche_cx, fiesta_cx, insc_cx, evp_cancelado, evp_cancelado_negocio) con lo que pasó; hallé ${vistos}`);
+      const ep = existsSync("apps/web/lib/evento-privado.ts") ? sinComent("apps/web/lib/evento-privado.ts") : "";
+      if (!/const d = await moverDinero\(numero\)/.test(ep) || !/d = await moverDinero\(numero\)/.test(cuerpoFn(ep, "cancelarEvp"))) falla(G, "apps/web/lib/evento-privado.ts", 0, "el evento privado no lee lo que pasó con la devolución (moverDinero → devolverAlCancelar) antes de avisar");
+      if (!/return devolverAlCancelar\(\{ id: o\.id, pay: o\.pst,/.test(cuerpoFn(ep, "moverDinero"))) falla(G, "apps/web/lib/evento-privado.ts", 0, "moverDinero no devuelve por devolverAlCancelar (lo que pasó)");
+      const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+      for (const k of ["viaje_cx", "noche_cx", "fiesta_cx", "insc_cx", "evp_cancelado", "evp_cancelado_negocio"]) if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'\\n`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó) en español e inglés: seguiría diciendo lo decidido`);
+      const co = existsSync("apps/web/lib/cobros.ts") ? sinComent("apps/web/lib/cobros.ts") : "";
+      if (!/const r = await pasarela\.liberar\(p\.pi\)[^\n]*\n\s*if \(!r\.ok\) return "fallo";/.test(cuerpoFn(co, "liberarOperacion"))) falla(G, "apps/web/lib/cobros.ts", 0, "liberarOperacion no dice «fallo» cuando la pasarela no soltó la retención: se contaría como soltada");
+      const dac = cuerpoFn(co, "devolverAlCancelar");
+      if (!/const l = await liberarOperacion\(o\.id\);\n\s*if \(l !== "fallo"\) return \{ e: "liberada"/.test(dac) || !/if \(h\) await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(dac) || !/return \{ e: h \? "retenida" : "liberada"/.test(dac))
+        falla(G, "apps/web/lib/cobros.ts", 0, "devolverAlCancelar no mira si la retención se soltó: una que la pasarela no soltó diría «se suelta» sin alertar a nadie (hold_stuck)");
+      const dc = existsSync("apps/web/lib/devolucion-cancelar.ts") ? sinComent("apps/web/lib/devolucion-cancelar.ts") : "";
+      if (!/hechas: c\.hechas \+ \(d\.e === "hecha" \? 1 : 0\)/.test(dc) || !/liberadas: c\.liberadas \+ \(d\.e === "liberada" \? 1 : 0\), retenidas: c\.retenidas \+ \(d\.e === "retenida" \? 1 : 0\)/.test(dc)
+        || !/if \(x\.liberadas\) return \{ es: "No se había cobrado nada/.test(dc) || !/Retenciones \(no se había cobrado\)/.test(dc)) falla(G, "apps/web/lib/devolucion-cancelar.ts", 0, "el panel cuenta una retención soltada (o sin soltar) como devolución: diría «Le devolvimos todo» sin haber cobrado");
+      if (!/if \(d\.e === "retenida"\) return \{ es: `No se cobró nada, pero la retención/.test(dc)) falla(G, "apps/web/lib/devolucion-cancelar.ts", 0, "dineroAlCancelar no dice cuando la retención no se soltó todavía");
+      const EV = "apps/web/app/(app)/privado/[num]/EstadoEvp.tsx", evu = existsSync(EV) ? sinComent(EV) : "";
+      if (!/x\.devolucion\.fallida \? \[E2\(/.test(evu) || !/x\.devolucion\.camino \? \[E2\(/.test(evu)) falla(G, EV, 0, "la pantalla del evento privado no dice la devolución en camino y la que no salió (x.devolucion)");
+      if (/E2\("Te devolvemos ", "We refund "\)/.test(evu)) falla(G, EV, 0, "la pantalla del evento privado vuelve a «Te devolvemos» con lo decidido");
+      if (!/devolucion: o\.status === "cancelled" \? await devolucionesDe\(o\.id\)/.test(ep)) falla(G, "apps/web/lib/evento-privado.ts", 0, "la vista del evento privado no lee las devoluciones que no están hechas (devolucionesDe)"); }
   },
 
   cobradoSoloSiQuedo() {

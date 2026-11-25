@@ -7,6 +7,7 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { cancelarEvpNegocio, guardarAjustesEvp, noPuedoEvp, proponerEvp, type AjustesIn, type PropuestaIn } from "@/lib/evento-privado";
 import { accesoPanel } from "@/lib/panel";
+import type { DevCuenta } from "@/lib/devolucion-cancelar";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
@@ -27,7 +28,10 @@ export async function evpNoPuedo(id: string, numero: string, motivo: string): Pr
   const a = await entrar(id, "ord"); if (!a) return SIN_ACCESO;
   return r2(await noPuedoEvp(a.negocio.id, String(numero ?? ""), a.yo.id, String(motivo ?? "")));
 }
-export async function evpCancelarNeg(id: string, numero: string, motivo: string): Promise<Res> {
+// 9v · El restaurante canceló: la acción también dice lo que pasó con la devolución (hecha · en camino · no salió · retención soltada), para que el panel no
+// diga «el cliente recibe su depósito completo» sin mirar.
+const rDev = (r: { ok: true; devolucion?: DevCuenta } | { ok: false; msg: { es: string; en: string } }): Res & { devolucion?: DevCuenta } => (r.ok ? { ok: true, devolucion: r.devolucion } : { ok: false, mensaje: r.msg });
+export async function evpCancelarNeg(id: string, numero: string, motivo: string): Promise<Res & { devolucion?: DevCuenta }> {
   const a = await entrar(id, "ord"); if (!a) return SIN_ACCESO;
-  return r2(await cancelarEvpNegocio(a.negocio.id, String(numero ?? ""), a.yo.id, String(motivo ?? "")));
+  return rDev(await cancelarEvpNegocio(a.negocio.id, String(numero ?? ""), a.yo.id, String(motivo ?? "")));
 }

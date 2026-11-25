@@ -1,8 +1,8 @@
 import "server-only";
 import { cfgSql, valores } from "./config";
 import type { Pool, PoolClient } from "pg";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { etiquetaGrupo, fechaCorta, horaInsc, rubroInsc, sumarDiasI, usdI, type Bi, type KindInsc, type RubroInsc } from "./inscripciones-comun";
 import { esCuidado, kindNinosDe, type KindNinos } from "./ninos-comun";
@@ -361,11 +361,6 @@ async function soltarCupo(c: PoolClient, det: Record<string, unknown>) {
   if (det.group_id) await c.query(`update class_groups set seats_booked = greatest(0, seats_booked - 1), updated_at = now() where id = $1::bigint`, [String(det.group_id)]);
   if (det.band_id) await c.query(`update care_openings set openings = least(20, openings + 1), updated_at = now() where id = $1::bigint`, [String(det.band_id)]);
 }
-/* La matrícula de vuelta: si estaba retenida se libera; si ya se cobró, se devuelve completa. */
-async function devolverMat(o: Op, por: "business" | "policy", actorId: string | null, motivo: string, idem: string) {
-  if (o.pay === "held") await liberarOperacion(o.id);
-  else if ((o.pay === "captured" || o.pay === "partially_refunded") && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por, actorId, motivo, idem });
-}
 /* 9v · El lugar cancela (una inscripción o el grupo que no abre): lo que de verdad pasó con la matrícula (devolverAlCancelar: hecha · en camino · fallida,
    que alerta al equipo · liberada · nada), en el aviso ({dinero}) y en lo que ve el lugar; nunca «Te devolvemos todo» sin mirar. */
 async function devolverYAvisar(o: Op, tpl: "insc_biz_cx" | "insc_grupo_cx", mot: string, actorId: string, motivo: string, idem: string): Promise<DevCancelar> {
@@ -473,9 +468,11 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);
       await soltarCupoVivo(c, o);
       await ev(c, o.id, pierde ? "insc_cx_kept" : "insc_cx", "user", userId, pierde ? { es: "Canceló después de empezar: la matrícula se queda con la escuela", en: "Cancelled after starting: the school keeps the fee" } : undefined);
+      // 9v (cuarta tanda) · Lo que de verdad pasó con la matrícula (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida ·
+      // nada), en el aviso ({dinero}); nunca «Te devolvemos» sin mirar.
       despues = async () => {
-        if (!pierde) await devolverMat(o, "policy", userId, "Cancelación antes de empezar", `icx-${numero}`);
-        await avisarCliente(numero, "insc_cx", { dev: o.mat ? (pierde ? ` La matrícula de ${usdI(o.mat)} se quedó con ${o.negocio}.` : ` Te devolvemos ${usdI(o.mat)}.`) : "" });
+        const d = pierde ? null : await devolverAlCancelar(o, { actorId: userId, motivo: "Cancelación antes de empezar", idem: `icx-${numero}`, por: "policy" });
+        await avisarCliente(numero, "insc_cx", { dinero: dineroAlCancelarCliente(d, pierde ? { es: `La matrícula de ${usdI(o.mat)} se quedó con ${o.negocio}.`, en: `The ${usdI(o.mat)} fee stayed with ${o.negocio}.` } : undefined) });
         await avisarNeg(numero, "biz_insc_cx", { mat: pierde ? ` La matrícula de ${usdI(o.mat)} se queda contigo.` : o.mat ? ` Se le devuelve la matrícula de ${usdI(o.mat)}.` : "" });
       };
       return { ok: true };

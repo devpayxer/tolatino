@@ -166,8 +166,9 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   await reservar(y, dM, '7:00 PM', 1, false); const V7 = await enviar(y);
   await w.goto(B + `/panel/${V}/hoy?det=salida:${RM}`); await clic(w.getByRole('button', { name: 'Cancelar la salida' }));
   await (await vis(w.getByPlaceholder(/la van se dañó/))).fill('Se dañó la van');
-  // 9v · El panel dice lo que pasó con la devolución (la de V6 salió; V7 solo estaba retenido), no «todos reciben su dinero».
-  await clic(w.getByRole('button', { name: 'Sí, cancelar y devolver' })); await w.getByText('Salida cancelada. Le devolvimos todo. Le avisamos.').first().waitFor();
+  // 9v · El panel dice lo que pasó con la devolución (la de V6 salió; V7 solo estaba retenido), no «todos reciben su dinero». Cuarta tanda: la retención
+  // soltada va aparte (antes: «Le devolvimos todo», como si V7 hubiera pagado).
+  await clic(w.getByRole('button', { name: 'Sí, cancelar y devolver' })); await w.getByText('Salida cancelada. Devoluciones: 1 hecha. Retenciones (no se había cobrado): 1 soltada.').first().waitFor();
   ok(await esperaV(() => pay(V6), 'cancelled|refunded|4500|4500') === 'cancelled|refunded|4500|4500', `${V6} (confirmado): devolución completa`);
   ok(await esperaV(() => pay(V7).split('|').slice(0, 2).join('|'), 'cancelled|released') === 'cancelled|released', `${V7} (pendiente): liberado`);
   ok(run(RM) === '0|cancelled', 'la salida queda cancelada sin asientos');

@@ -26,8 +26,10 @@ const casos = [
   ['depositoDeLaPropuesta', AP, "export async function pedirEvpAccion(negocio: string, f: EvpIn)", "export async function pedirEvpAccion(negocio: string, f: EvpIn, totalCents: number)"],
   ['depositoDeLaPropuesta', PA, "export async function evpCancelarNeg(id: string, numero: string, motivo: string)", "export async function evpCancelarNeg(id: string, numero: string, motivo: string, devuelve: number)"],
   // devolucionEvpAcotada
-  ['devolucionEvpAcotada', L, "  const n = Math.min(dev, cap);", "  const n = dev;"],
-  ['devolucionEvpAcotada', L, "  if (yaHecha) return;\n", ''],
+  ['devolucionEvpAcotada', L, "seQueda: Math.max(0, cap - Math.min(dev, cap))", "seQueda: Math.max(0, cap - dev)"],
+  ['devolucionEvpAcotada', L, "  if (ya) return ya.st", "  if (false) return ya.st"],
+  // 25 nov (9v, cuarta tanda) · El barrido vuelve a mandar cada minuto la devolución que Stripe rechazó (buscaba la llave exacta).
+  ['devolucionEvpAcotada', L, "split_part(r.idem_key, '~fallida-', 1) = o.details->>'devIdem'", "r.idem_key = o.details->>'devIdem'"],
   ['devolucionEvpAcotada', L, "devIdem: `evpcx-${numero}`", "devIdem: `evpcx-${numero}-${Date.now()}`"],
   ['devolucionEvpAcotada', L, "devIdem: `evpbx-${numero}`", "devIdem: `evpbx-${crypto.randomUUID()}`"],
   ['devolucionEvpAcotada', L, "const ac = acuerdoDe(await propuestas(c, o.id)), plazo = ac?.cancelH ?? 72, aTiempo = o.h_left >= plazo;", "const ac = acuerdoDe(await propuestas(c, o.id)), plazo = (await valores(\"evp_cancelar_h\")).evp_cancelar_h, aTiempo = o.h_left >= plazo || !!ac;"],

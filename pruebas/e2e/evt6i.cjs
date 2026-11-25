@@ -213,7 +213,7 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     await hp.goto(B + `/panel/${SAB}/hoy?det=evp:${E3}`); await clic(btn(hp, 'Cancelar el evento'));
     await llenar(hp.getByLabel('MOTIVO'), 'Se nos dañó la cocina.');
     await hp.screenshot({ path: OUT + 'e6i-panel-cancelar-d.png', fullPage: true });
-    await clic(btn(hp, 'Sí, cancelar y devolver')); await contiene(hp, 'recibe su depósito completo');
+    await clic(btn(hp, 'Sí, cancelar y devolver')); await contiene(hp, 'Le devolvimos todo. Le avisamos.');
     ok(await esperaV(() => pago(E3), `refunded|${dep3}|${dep3}`) === `refunded|${dep3}|${dep3}` && sql(`select r.initiated_by from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${E3}'`) === 'business', 'el restaurante cancela a 20 h: devolución COMPLETA (initiated_by business)');
     { const esp = smsEsperado('evp_cancelado_negocio', `'${U2}'`); ok(await esperaV(() => sql(`select sms_status from notifications where user_id = '${U2}' and tpl = 'evp_cancelado_negocio' and ref_id = '${E3}'`), esp) === esp, 'aviso evp_cancelado_negocio con SMS'); }
     await m2.goto(B + `/privado/${E3}`); ok(await contiene(m2, 'canceló el evento') && await contiene(m2, 'Se nos dañó la cocina.'), 'cliente: «… canceló el evento» con el motivo');

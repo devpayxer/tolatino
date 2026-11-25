@@ -73,7 +73,8 @@ const texto = async (p) => (await p.locator('body').innerText()).replace(/\s+/g,
     await entrarComo(pd, DUENA.tel); await pd.goto(B + `/panel/${BV}`);
     const r1 = await accion(pd, 'viajeCancelarSalida', [BV, SAL, 'Se dañó la van']);
     ok(r1.j?.ok === true && sql(`select status from trip_runs where id = ${SAL}`) === 'cancelled', 'la salida queda cancelada');
-    ok(JSON.stringify(r1.j.devolucion) === JSON.stringify({ hechas: 1, camino: 0, fallidas: 1 }), `el panel sabe lo que pasó: 1 hecha y 1 que no salió (${JSON.stringify(r1.j.devolucion)})`);
+    // 9v (cuarta tanda) · La retención soltada se cuenta aparte (liberadas): el panel ya no la llama «devolución».
+    ok(JSON.stringify(r1.j.devolucion) === JSON.stringify({ hechas: 1, camino: 0, fallidas: 1, liberadas: 1, retenidas: 0 }), `el panel sabe lo que pasó: 1 hecha, 1 que no salió y 1 retención soltada (${JSON.stringify(r1.j.devolucion)})`);
     ok(devolucion(V1.num) === 'done' && pago(V1.num) === 'refunded|4500', `${V1.num}: la devolución salió (hecha, $45 devueltos)`);
     ok(devolucion(V2.num) === 'failed' && pago(V2.num) === 'captured|0', `${V2.num}: Stripe dijo que no: fallida y nada devuelto en el libro`);
     ok(alertas(V2.num) === '1' && alertas(V1.num) === '0', 'el «no» de Stripe le llega al equipo de dinero: UNA alerta (y ninguna por la que salió)');
@@ -110,7 +111,7 @@ const texto = async (p) => (await p.locator('body').innerText()).replace(/\s+/g,
     await pd.goto(B + `/panel/${BN}`);
     const n1 = await accion(pd, 'nocheCancelarNeg', [BN, N1.num, 'Se fue la luz']), n2 = await accion(pd, 'nocheCancelarNeg', [BN, N2.num, 'Se fue la luz']);
     ok(n1.j?.ok === true && n2.j?.ok === true && sql(`select string_agg(status, ',' order by id) from operations where number in ('${N1.num}', '${N2.num}')`) === 'cancelled,cancelled', 'las dos mesas quedan canceladas');
-    ok(JSON.stringify(n1.j.devolucion) === JSON.stringify({ hechas: 1, camino: 0, fallidas: 0 }) && JSON.stringify(n2.j.devolucion) === JSON.stringify({ hechas: 0, camino: 0, fallidas: 1 }), `el panel sabe lo que pasó con cada una (${JSON.stringify(n1.j.devolucion)} · ${JSON.stringify(n2.j.devolucion)})`);
+    ok(JSON.stringify(n1.j.devolucion) === JSON.stringify({ hechas: 1, camino: 0, fallidas: 0, liberadas: 0, retenidas: 0 }) && JSON.stringify(n2.j.devolucion) === JSON.stringify({ hechas: 0, camino: 0, fallidas: 1, liberadas: 0, retenidas: 0 }), `el panel sabe lo que pasó con cada una (${JSON.stringify(n1.j.devolucion)} · ${JSON.stringify(n2.j.devolucion)})`);
     ok(devolucion(N1.num) === 'done' && pago(N1.num) === 'refunded|4000', `${N1.num}: el depósito volvió (hecha, $40)`);
     ok(devolucion(N2.num) === 'failed' && pago(N2.num) === 'captured|0' && alertas(N2.num) === '1', `${N2.num}: Stripe dijo que no: fallida, nada devuelto y UNA alerta al equipo de dinero`);
     const b1 = aviso(N1.num, 'noche_biz_cx'), b2 = aviso(N2.num, 'noche_biz_cx');

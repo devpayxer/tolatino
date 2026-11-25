@@ -1,7 +1,7 @@
 // Prueba al revés del guardián devueltoSoloSiSalio (25 nov, 9v): un patrocinio dice «devuelto» (el panel: «Reserva cancelada. Te devolvemos $15.00 a tu
 // tarjeta») solo con lo que la pasarela devolvió. Pasaba: «Cancelar reserva» del dueño devolvía lo decidido (refund_cents) aunque Stripe hubiera rechazado la
 // devolución (din9v2). Ampliado (25 nov, segunda tanda): boletos y eventos (cancelar, «Devolver» del panel, «Devolución total», el evento cancelado,
-// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
+// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -70,6 +70,31 @@ const casos = [
   ['acción de la noche sin devolucion', 'apps/web/app/panel/acciones-noche.ts', 'return rDev(await cancelarNocheNegocio(', 'return r2(await cancelarNocheNegocio('],
   // «Probar en mi teléfono» sin {dinero}.
   ['muestra sin dinero', 'apps/web/lib/admin-notif.ts', '  dinero: { es: "Te devolvimos $45.00', '  dineroX: { es: "Te devolvimos $45.00'],
+  // 25 nov (cuarta tanda) · Cancela QUIEN PAGÓ (viaje, noche, fiesta, inscripción, evento privado) y el restaurante cancela un evento privado.
+  // El viaje vuelve a llenar {dev} con lo decidido.
+  ['viaje_cx con lo decidido', 'apps/web/lib/viajes.ts', 'await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, ', 'await avisarCliente(numero, "viaje_cx", { dev: " Te devolvemos todo.", x: dineroAlCancelarCliente(d, '],
+  // La noche vuelve a devolver con devolverPago tirando el resultado.
+  ['noche del cliente con devolverPago', 'apps/web/lib/noche-reservas.ts', 'const d = pierde ? null : await devolverAlCancelar(o, { actorId: userId, motivo: "Cancelación antes del corte", idem: `ncx-${numero}`, por: "policy" });', 'if (!pierde) await devolverPago({ paymentId: o.pid!, centavos: o.amount!, por: "policy", actorId: userId, motivo: "Cancelación antes del corte", idem: `ncx-${numero}` }); const d = null;'],
+  // El restaurante cancela el evento privado y el aviso vuelve a «Te devolvemos el depósito completo».
+  ['evento privado del restaurante sin {dinero}', 'apps/web/lib/evento-privado.ts', '"evp_cancelado_negocio", { motivo: mot, dinero: dineroAlCancelar(d) }', '"evp_cancelado_negocio", { motivo: mot }'],
+  // La plantilla de la fiesta vuelve a {dev}.
+  ['plantilla de la fiesta con {dev}', 'packages/db/migrations/0221_avisos_cancelacion_cliente_lo_que_paso.sql', '{"es":"Cancelaste tu fecha del {dia} con {negocio}. {dinero}","en":"You cancelled your date on {dia} with {negocio}. {dinero}"}', '{"es":"Cancelaste tu fecha del {dia} con {negocio}.{dev}","en":"You cancelled your date on {dia} with {negocio}.{dev}"}'],
+  // liberarOperacion da por soltada una retención que la pasarela no soltó.
+  ['retención no soltada como soltada', 'apps/web/lib/cobros.ts', '  if (!r.ok) return "fallo";', '  if (!r.ok) return "liberada";'],
+  // devolverAlCancelar no mira lo que dijo liberarOperacion.
+  ['cancelar no mira la retención', 'apps/web/lib/cobros.ts', '    if (l !== "fallo") return { e: "liberada"', '    if (l || true) return { e: "liberada"'],
+  // La retención que no se soltó no alerta a nadie.
+  ['retención sin alerta', 'apps/web/lib/cobros.ts', '    if (h) await (await import("./dinero-alertas")).alertar("hold_stuck", ', '    if (false) await (await import("./dinero-alertas")).alertar("hold_stuck", '],
+  // El panel cuenta la retención soltada como devolución hecha («Le devolvimos todo»).
+  ['soltada cuenta como hecha', 'apps/web/lib/devolucion-cancelar.ts', 'hechas: c.hechas + (d.e === "hecha" ? 1 : 0)', 'hechas: c.hechas + (d.e === "hecha" || d.e === "liberada" ? 1 : 0)'],
+  // El panel del evento privado vuelve a «el cliente recibe su depósito completo».
+  ['panel del evento privado promete', 'apps/web/app/panel/EventoPrivado.tsx', '(r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Cancelado.", "Cancelled.")} ${E2(t.es, t.en)}`; }', 'E2("Cancelado: el cliente recibe su depósito completo.", "Cancelled: the client gets the full deposit back.")'],
+  // La acción del evento privado deja de pasar lo que pasó.
+  ['acción del evento privado sin devolucion', 'apps/web/app/panel/acciones-evento-privado.ts', 'return rDev(await cancelarEvpNegocio(', 'return r2(await cancelarEvpNegocio('],
+  // La pantalla del evento privado calla la fallida.
+  ['evento privado calla la fallida', 'apps/web/app/(app)/privado/[num]/EstadoEvp.tsx', '    : x.devolucion.fallida ? [E2(', '    : false ? [E2('],
+  // La vista del evento privado deja de leer lo que no está hecho.
+  ['evento privado sin devolucionesDe', 'apps/web/lib/evento-privado.ts', 'devolucion: o.status === "cancelled" ? await devolucionesDe(o.id) : { camino: 0, fallida: 0 },', 'devolucion: { camino: 0, fallida: 0 },'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

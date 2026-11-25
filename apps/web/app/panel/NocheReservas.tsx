@@ -100,7 +100,7 @@ export function nocheDetalle(c: Ctx): Sec {
     const k = `ncx:${x.numero}`, mot = (ui[k] as string | undefined) ?? null;
     if (mot == null) out.push({ type: "acts", items: [{ l: E2("Cancelar la mesa", "Cancel the table"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.setUi({ [k]: "" }) }] });
     else {
-      out.push({ type: "note", tone: "danger", icon: "warning", t: E2("Si cancelas, el cliente recibe todo su depósito y queda en tu historial. Escribe el motivo: el cliente lo ve.", "If you cancel, the client gets their full deposit back and it stays on your record. Write the reason: the client sees it.") });
+      out.push({ type: "note", tone: "danger", icon: "warning", t: E2("Si cancelas, le mandamos al cliente la devolución completa de su depósito y te decimos si salió. Queda en tu historial. Escribe el motivo: el cliente lo ve.", "If you cancel, we send the client the full refund of their deposit and tell you whether it went through. It stays on your record. Write the reason: the client sees it.") });
       out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: evento privado esa noche", "E.g. private event that night"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
       out.push({ type: "acts", items: [
         { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => nocheCancelarNeg(c.d.id, x.numero, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Cancelada.", "Cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null })) },

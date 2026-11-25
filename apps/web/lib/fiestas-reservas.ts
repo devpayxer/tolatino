@@ -1,8 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto, type Ctx } from "./citas";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
 import { diaFiesta, EVT, sumarDias, type Bi, type SvcFiesta } from "./fiestas-comun";
@@ -335,10 +335,11 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);
       await c.query(`update party_days set removed_at = now() where operation_id = $1::bigint and removed_at is null`, [o.id]);
       await ev(c, o.id, "cancelled", "user", userId, pierde ? { es: `Canceló a menos de ${reglaDias} días: el depósito se queda con el negocio`, en: `Cancelled less than ${reglaDias} days before: the business keeps the deposit` } : undefined);
+      // 9v (cuarta tanda) · Lo que de verdad pasó con el depósito (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida ·
+      // nada), en el aviso ({dinero}); nunca «Te devolvemos» sin mirar.
       despues = async () => {
-        if (o.pay === "held") await liberarOperacion(o.id);
-        else if (o.pay === "captured" && aTiempo && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "policy", actorId: userId, motivo: "Cancelación a tiempo", idem: `fcx-${numero}` });
-        await avisarCliente(numero, "fiesta_cx", { dev: o.dep ? (pierde ? ` El depósito de ${money(o.dep)} se queda con ${o.negocio}.` : ` Te devolvemos ${money(o.dep)}.`) : "" });
+        const d = pierde ? null : await devolverAlCancelar(o, { actorId: userId, motivo: "Cancelación a tiempo", idem: `fcx-${numero}`, por: "policy" });
+        await avisarCliente(numero, "fiesta_cx", { dinero: dineroAlCancelarCliente(d, pierde ? { es: `El depósito de ${money(o.dep)} se queda con ${o.negocio}.`, en: `The ${money(o.dep)} deposit stays with ${o.negocio}.` } : undefined) });
         await avisarNeg(numero, "biz_fiesta_cx", { dep: pierde ? ` El depósito de ${money(o.dep)} se queda contigo.` : o.dep ? ` Se le devuelve el depósito de ${money(o.dep)}.` : "" });
         await recalcularFiltrosFiesta(db(), o.biz);
       };

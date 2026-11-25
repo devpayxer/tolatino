@@ -1,7 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { valores } from "./config";
 import { db, tx } from "./db";
 import { AREAS_EVP, DURACIONES, EXTRAS_FABRICA, HORAS_EVP, MENUS_FABRICA, NUM_EP, OCASIONES, PRESUPUESTOS, diaEvp, dinero, horaL, lbl, type AjustesEvp, type Bi, type ExtraEvp, type MenuEvp } from "./evento-privado-comun";
@@ -207,7 +208,7 @@ async function ev(c: Q, op: string, kind: string, actor: "user" | "member" | "sy
 }
 
 /* ── Avisos ── */
-async function avisarEvp(numero: string, quien: "cliente" | "negocio", tpl: string, extra: Record<string, string> = {}) {
+async function avisarEvp(numero: string, quien: "cliente" | "negocio", tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const A = await import("./avisos"), cfg = await valores("evp_responder_h", "evp_propuesta_h");
@@ -298,8 +299,10 @@ export async function noPuedoEvp(negocio: string, numero: string, actorId: strin
   if (r.ok && tpl) await avisarEvp(numero, "cliente", tpl, { motivo: mot }).catch(() => undefined);
   return r;
 }
-/* El restaurante cancela un evento confirmado: motivo obligatorio y devolución COMPLETA de lo cobrado (lo calcula el servidor). */
-export async function cancelarEvpNegocio(negocio: string, numero: string, actorId: string, motivo: string): Promise<Res> {
+/* El restaurante cancela un evento confirmado: motivo obligatorio y devolución COMPLETA de lo cobrado (lo calcula el servidor).
+   9v (25 nov, cuarta tanda) · El aviso (evp_cancelado_negocio, {dinero}: 0221) y lo que ve el restaurante dicen lo que PASÓ con el depósito (moverDinero →
+   devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida), nunca «Te devolvemos el depósito completo» sin mirar. */
+export async function cancelarEvpNegocio(negocio: string, numero: string, actorId: string, motivo: string): Promise<Res<{ devolucion?: DevCuenta }>> {
   const mot = limpio(motivo, 200);
   if (!NUM_EP.test(numero)) return no("Esa solicitud no existe.", "That request does not exist.");
   if (mot.length < 4) return no("Escribe el motivo: el cliente lo ve.", "Write the reason: the client sees it.");
@@ -314,23 +317,31 @@ export async function cancelarEvpNegocio(negocio: string, numero: string, actorI
     await ev(c, o.id, "cancelled", "member", actorId, { es: `Canceló el restaurante: ${mot}`, en: `Cancelled by the restaurant: ${mot}` });
     return { ok: true };
   });
-  if (r.ok && o) await moverDinero(numero).catch(() => undefined);
-  if (r.ok && o) await avisarEvp(numero, "cliente", "evp_cancelado_negocio", { motivo: mot, dep: dinero((o as Op).amount ?? (o as Op).dep) }).catch(() => undefined);
-  return r;
+  if (!r.ok || !o) return r;
+  const d = await moverDinero(numero).catch((): DevCancelar => ({ e: "fallida", monto: (o as Op | null)?.amount ?? 0 }));
+  await avisarEvp(numero, "cliente", "evp_cancelado_negocio", { motivo: mot, dinero: dineroAlCancelar(d) }).catch(() => undefined);
+  return { ok: true, devolucion: contar(sinDevoluciones(), d) };
 }
-/* Lo que una cancelación le debe a la tarjeta (con su llave: idempotente; si Stripe falla, el barrido lo vuelve a intentar). */
-async function moverDinero(numero: string) {
+/* Lo que una cancelación le debe a la tarjeta (con su llave: idempotente) y lo que PASÓ (devolverAlCancelar: hecha · en camino · fallida · liberada ·
+   retenida · nada). La llama la cancelación (del cliente o del restaurante) y el barrido: una devolución que quedó a medias (el proceso murió antes de
+   anotarla) se manda con la misma llave; una ya anotada (hecha, en camino o fallida) no se vuelve a mandar: se dice lo que quedó. Una fallida (Stripe dijo
+   que no) no se repite sola: la tiene el equipo de dinero (alerta de devolverAlCancelar). Antes el barrido buscaba la llave exacta y la fallida (que guarda
+   la suya con «~fallida-<id>») se volvía a mandar cada minuto, con una alerta nueva cada vez. */
+async function moverDinero(numero: string): Promise<DevCancelar> {
+  const nada: DevCancelar = { e: "nada", monto: 0 };
   const o = await leer(db(), "o.number = $1", [numero]);
-  if (!o || o.status !== "cancelled") return;
-  if (o.pst === "held") { await liberarOperacion(o.id); return; }
-  const dev = Number(o.det.dev ?? 0), idem = String(o.det.devIdem ?? "");
-  if (!(dev > 0) || !o.pid || !/^evp(bx|cx)-EP-\d+$/.test(idem)) return;
-  const yaHecha = (await db().query(`select 1 from refunds where idem_key = $1`, [idem])).rowCount;
-  if (yaHecha) return;
-  // Nunca más de lo cobrado menos lo devuelto (devolverPago lo vuelve a acotar).
+  if (!o || o.status !== "cancelled") return nada;
+  const neg = o.det.devPor === "business", idem = String(o.det.devIdem ?? "");
+  const x = { actorId: null, motivo: neg ? "El restaurante canceló el evento privado" : "Cancelación a tiempo del evento privado", idem, por: neg ? "business" as const : "policy" as const };
+  if (o.pst === "held") return devolverAlCancelar({ id: o.id, pay: "held", pid: o.pid, amount: o.amount, refunded: o.refunded }, x);
+  const dev = Number(o.det.dev ?? 0);
+  if (!(dev > 0) || !o.pid || !/^evp(bx|cx)-EP-\d+$/.test(idem)) return nada;
+  const ya = (await db().query<{ st: string; amt: number; mano: boolean }>(
+    `select status as st, amount_cents as amt, manual_at is not null as mano from refunds where payment_id = $1::bigint and split_part(idem_key, '~fallida-', 1) = $2 order by id desc limit 1`, [o.pid, idem])).rows[0];
+  if (ya) return ya.st === "done" || ya.mano ? { e: "hecha", monto: ya.amt } : ya.st === "pending" ? { e: "en_camino", monto: ya.amt } : { e: "fallida", monto: ya.amt };
+  // Nunca más de lo cobrado menos lo devuelto (devolverPago lo vuelve a acotar): se devuelve dev y el resto se queda.
   const cap = Math.max(0, (o.amount ?? 0) - (o.refunded ?? 0));
-  const n = Math.min(dev, cap);
-  if (n > 0) await devolverPago({ paymentId: o.pid, centavos: n, por: o.det.devPor === "business" ? "business" : "policy", actorId: null, motivo: o.det.devPor === "business" ? "El restaurante canceló el evento privado" : "Cancelación a tiempo del evento privado", idem });
+  return devolverAlCancelar({ id: o.id, pay: o.pst, pid: o.pid, amount: o.amount, refunded: o.refunded }, { ...x, seQueda: Math.max(0, cap - Math.min(dev, cap)) });
 }
 
 /* ── El cliente: aceptar y pagar el depósito, pedir un cambio, «No, gracias», aceptar un cambio, cancelar ── */
@@ -473,8 +484,10 @@ export async function rechazarCambioEvp(userId: string, numero: string): Promise
   return r;
 }
 /* Cancelar (cliente): sin confirmar → nada se cobró; confirmado y faltan el plazo de la propuesta aceptada o más → devolución completa del
-   depósito; menos → el depósito se queda con el restaurante. La regla y el monto los decide el servidor aquí, con la fila bloqueada. */
-export async function cancelarEvp(userId: string, numero: string): Promise<Res<{ devuelto: number; perdio: boolean }>> {
+   depósito; menos → el depósito se queda con el restaurante. La regla y el monto los decide el servidor aquí, con la fila bloqueada.
+   9v (25 nov, cuarta tanda) · El aviso (evp_cancelado, {dinero}: 0221) y la respuesta dicen lo que PASÓ (devuelto: lo que salió; devolucion: hecha · en
+   camino · fallida, que alerta al equipo · liberada · retenida · nada), nunca «Te devolvemos $X en 3 a 5 días hábiles» con lo decidido. */
+export async function cancelarEvp(userId: string, numero: string): Promise<Res<{ devuelto: number; perdio: boolean; devolucion?: DevCancelar["e"] }>> {
   if (!NUM_EP.test(numero)) return no("Esa solicitud no existe.", "That request does not exist.");
   let pago: { dev: number; perdio: boolean; held: boolean; dep: number } | null = null, biz = "";
   const r = await tx(async (c): Promise<Res<{ devuelto: number; perdio: boolean }>> => {
@@ -495,15 +508,34 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
     pago = { dev, perdio, held: o.pst === "held", dep: o.amount ?? 0 };
     return { ok: true, devuelto: dev, perdio };
   });
-  if (r.ok && pago) {
-    const P = pago as { dev: number; perdio: boolean; held: boolean; dep: number };
-    // Lo retenido (si la captura había fallado): a tiempo se libera; tarde se cobra (se queda con el restaurante).
-    if (P.held) { const o = await leer(db(), "o.number = $1", [numero]); if (o) { if (P.perdio) await cobrarOperacion(o.id); else await liberarOperacion(o.id); } }
-    else await moverDinero(numero).catch(() => undefined);
-    await avisarEvp(numero, "cliente", "evp_cancelado", { dev: P.perdio ? ` El depósito de ${dinero(P.dep)} se queda con el restaurante.` : P.dev ? ` Te devolvemos ${dinero(P.dev)} en 3 a 5 días hábiles.` : "" }).catch(() => undefined);
-    await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: P.perdio ? ` El depósito de ${dinero(P.dep)} se queda contigo.` : P.dev ? ` Se le devuelve el depósito de ${dinero(P.dev)}.` : "" }).catch(() => undefined);
-  } else if (r.ok && biz) await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: " No se había cobrado nada." }).catch(() => undefined);
-  return r;
+  if (!r.ok) return r;
+  if (!pago) {
+    if (biz) await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: " No se había cobrado nada." }).catch(() => undefined);
+    return { ...r, devolucion: "nada" };
+  }
+  const P = pago as { dev: number; perdio: boolean; held: boolean; dep: number };
+  let quedo = P.perdio, d: DevCancelar | null = null;
+  if (P.held && P.perdio) {
+    // Lo retenido (la captura había fallado) y tarde: se cobra (se queda con el restaurante). Si la captura tampoco sale, no se dice «se queda con el
+    // restaurante»: la retención se suelta (lo que haría el barrido con un evento cancelado) y se dice lo que pasó.
+    const o = await leer(db(), "o.number = $1", [numero]);
+    if (o) await cobrarOperacion(o.id);
+    const o2 = await leer(db(), "o.number = $1", [numero]);
+    if (o2?.pst === "held") {
+      quedo = false;
+      await db().query(`update operations set details = details || '{"perdio":false}'::jsonb where id = $1::bigint`, [o2.id]);
+      d = await devolverAlCancelar({ id: o2.id, pay: "held", pid: o2.pid, amount: o2.amount, refunded: o2.refunded }, { actorId: userId, motivo: "Cancelación tarde del evento privado (la captura no salió)", idem: `evpcx-${numero}`, por: "policy" });
+    }
+  } else if (!P.perdio) d = await moverDinero(numero).catch((): DevCancelar => ({ e: "fallida", monto: P.dev }));
+  await avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, quedo ? { es: `El depósito de ${dinero(P.dep)} se queda con el restaurante.`, en: `The ${dinero(P.dep)} deposit stays with the restaurant.` } : undefined) }).catch(() => undefined);
+  const depNeg: Bi = quedo ? { es: ` El depósito de ${dinero(P.dep)} se queda contigo.`, en: ` The ${dinero(P.dep)} deposit stays with you.` }
+    : !d || d.e === "nada" ? { es: "", en: "" }
+    : d.e === "hecha" ? { es: ` Se le devolvió el depósito de ${dinero(d.monto)}.`, en: ` The ${dinero(d.monto)} deposit was refunded to them.` }
+    : d.e === "en_camino" ? { es: ` La devolución del depósito de ${dinero(d.monto)} va en camino.`, en: ` The ${dinero(d.monto)} deposit refund is on its way.` }
+    : d.e === "fallida" ? { es: ` La devolución del depósito de ${dinero(d.monto)} no salió: el equipo de To'Latino lo resuelve con el cliente.`, en: ` The ${dinero(d.monto)} deposit refund did not go through: the To'Latino team sorts it out with the client.` }
+    : { es: " No se había cobrado nada.", en: " Nothing had been charged." };
+  await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: depNeg }).catch(() => undefined);
+  return { ok: true, devuelto: d?.e === "hecha" ? d.monto : 0, perdio: quedo, devolucion: quedo ? "nada" : d?.e ?? "nada" };
 }
 
 /* ── El barrido (cada minuto y al abrir la pantalla): sin respuesta, propuesta vencida, cambio vencido, recordatorio del día antes,
@@ -552,7 +584,7 @@ export async function vencerEvp(f: { negocio?: string; userId?: string; numero?:
   const debe = (await db().query<{ num: string }>(
     `select o.number as num from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit'
       where o.kind = 'private_event' and o.status = 'cancelled' and coalesce((o.details->>'dev')::int, 0) > 0 and p.status in ('captured', 'partially_refunded')
-        and not exists (select 1 from refunds r where r.idem_key = o.details->>'devIdem')${y} limit 50`, a)).rows;
+        and not exists (select 1 from refunds r where r.payment_id = p.id and split_part(r.idem_key, '~fallida-', 1) = o.details->>'devIdem')${y} limit 50`, a)).rows;
   for (const v of debe) await moverDinero(v.num).catch(() => undefined);
 }
 
@@ -564,6 +596,8 @@ export type EvpVista = {
   numero: string; status: string; detalle: string | null; negocio: { id: string; nombre: string; foto: string | null; direccion: string | null; telefono: string | null; lat: number | null; lng: number | null };
   pedido: { occ: string; personas: number; area: string; ymd: string; m: number; horas: number; menu: Bi & { k: string; cents: number | null }; bud: string; ext: (Bi & { k: string; cents: number | null })[]; nota: string | null };
   ymd: string; m: number; dur: number; p: number; quote: Quote | null; acuerdo: Quote | null; cambio: Quote | null; pago: { st: string | null; monto: number; devuelto: number; marca: string | null; l4: string | null };
+  /* 9v · Lo que de la devolución no está hecho (cobros › devolucionesDe): en camino o que no salió; la pantalla nunca dice «Te devolvemos» sin mirar. */
+  devolucion: { camino: number; fallida: number };
   cancelH: number; hLeft: number; pasada: boolean; motivoNo: string | null; motivoNeg: string | null; motivoCambioNo: string | null; perdio: boolean; asks: { kind: string; nota: string; at: number }[];
   linea: { at: number; kind: string; note: Bi | null }[]; resena: boolean; otros: { id: string; nombre: string; foto: string | null; cap: number }[]; yo: { nombre: string; tel4: string }; cambiosMax: number;
 };
@@ -594,6 +628,7 @@ export async function evpVista(userId: string, numero: string): Promise<EvpVista
     numero, status: o.status, detalle: o.detail, negocio: { id: o.biz, nombre: o.negocio, foto: bb.foto, direccion: bb.dir, telefono: bb.tel, lat: bb.lat, lng: bb.lng },
     pedido: { occ: String(d.occ ?? ""), personas: o.p, area: String(d.area ?? "salon"), ymd: o.ymd, m: o.m, horas: Number(d.horas ?? Math.round(o.dur / 60)), menu: menuDe(d), bud: String(d.bud ?? ""), ext: extrasDe(d), nota: o.nota },
     ymd: o.ymd, m: o.m, dur: o.dur, p: o.p, quote, acuerdo, cambio, pago: { st: o.pst, monto: o.amount ?? 0, devuelto: o.refunded ?? 0, marca: bb.marca, l4: bb.l4 },
+    devolucion: o.status === "cancelled" ? await devolucionesDe(o.id) : { camino: 0, fallida: 0 },
     cancelH: acuerdo?.cancelH ?? ult?.cancelH ?? cfg.evp_cancelar_h, hLeft: o.h_left, pasada: o.past, motivoNo: (d.motivoNo as string | undefined) ?? null, motivoNeg: (d.motivoNeg as string | undefined) ?? null,
     motivoCambioNo: (d.motivoCambioNo as string | undefined) ?? null, perdio: !!d.perdio, asks: A.rows, linea: E.rows, resena: bb.resena, otros, yo: u.rows[0] ?? { nombre: "", tel4: "" }, cambiosMax: cfg.evp_cambios_max,
   };

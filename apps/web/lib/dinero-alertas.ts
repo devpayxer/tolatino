@@ -295,6 +295,8 @@ export async function cerrarAlertasResueltas(): Promise<number> {
                      union all select z.status from offsession_charges z where a.kind = 'offsession_stuck' and z.idem_key = a.subject_id
                      union all select z.status from event_settlements z where a.kind = 'transfer_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                      union all select z.status from hold_renewals z where a.kind = 'hold_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
+                     -- 9v · La retención que no se soltó al cancelar (cobros › devolverAlCancelar, sujeto 'liberar:<cobro>'): se cierra sola cuando el cobro deja de estar retenido.
+                     union all select case when z.status = 'held' then 'pending' else 'released' end from payments z where a.kind = 'hold_stuck' and a.subject_id ~ '^liberar:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select case when z.status = 'done' then 'refund_done' else 'pending' end from gateway_refunds z where a.kind = 'extra_refund_stuck' and a.subject_id ~ '^[0-9]{1,18}$' and z.id = a.subject_id::bigint
                      union all select z.status from subscription_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^subscription_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select z.status from offsession_charges z where a.kind = 'gateway_review' and a.subject_id ~ '^offsession_charges:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
@@ -393,6 +395,7 @@ const CERRADA: Record<string, Bi> = {
   paid: { es: "Cerrada sola: la transferencia quedó hecha.", en: "Closed by itself: the transfer is done." },
   reversed: { es: "Cerrada sola: la transferencia quedó hecha (y después se revirtió).", en: "Closed by itself: the transfer is done (and was reversed later)." },
   dropped: { es: "Cerrada sola: la retención nueva ya no hacía falta y se soltó.", en: "Closed by itself: the new hold was no longer needed and was released." },
+  released: { es: "Cerrada sola: la retención ya no está en la tarjeta (se soltó o se cobró).", en: "Closed by itself: the hold is no longer on the card (released or charged)." },
   refund_done: { es: "Cerrada sola: la devolución quedó hecha.", en: "Closed by itself: the refund is done." },
   reversal_done: { es: "Cerrada sola: la reversión quedó hecha.", en: "Closed by itself: the reversal is done." },
   manual: { es: "Cerrada sola: se resolvió a mano desde su alerta.", en: "Closed by itself: it was resolved manually from its alert." },

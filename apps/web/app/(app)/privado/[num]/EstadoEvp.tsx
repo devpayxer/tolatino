@@ -105,9 +105,16 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
   if (st === "change_proposed" && rechazo) nota = [E2("Tu tarjeta fue rechazada. No se cobró nada.", "Your card was declined. Nothing was charged."), E2("Prueba otra vez o usa otra tarjeta. La propuesta sigue apartada.", "Try again or use another card. The proposal is still held."), "bad", "warning"];
   if (st === "confirmed" && ac) nota = [`${E2("Depósito cobrado: ", "Deposit charged: ")}${dinero(ac.dep)} · ${card}`, E2(`Resta ${dinero(Math.max(0, ac.tot - ac.dep))}: lo pagas en el local el día del evento.`, `${dinero(Math.max(0, ac.tot - ac.dep))} left: you pay it there on the event day.`), "ok", "check"];
   if (st === "declined" || st === "expired") nota = [E2("No se cobró nada.", "Nothing was charged."), "", "ink", "dollar"];
-  if (st === "cancelled") nota = pagado ? (x.perdio ? [`${E2("El depósito se quedó con ", "The deposit stayed with ")}${B}`, E2(`Cancelaste a menos de ${x.cancelH} h del evento.`, `You canceled less than ${x.cancelH} h before the event.`), "warn", "dollar"]
-    : [`${x.pago.devuelto ? E2("Te devolvimos ", "We refunded ") : E2("Te devolvemos ", "We refund ")}${dinero(x.pago.devuelto || x.pago.monto)}${E2(" a tu ", " to your ")}${card}`, E2("Llega en 3–5 días hábiles.", "It arrives in 3–5 business days."), "ink", "dollar"])
-    : [E2("No se cobró nada.", "Nothing was charged."), "", "ink", "dollar"];
+  // 9v (25 nov, cuarta tanda) · Lo que de verdad pasó con el depósito: lo devuelto (del libro), lo que va en camino y lo que no salió (devolucionesDe); lo
+  // solo retenido no se cobró. Nunca «Te devolvemos» con lo decidido.
+  const tuCard = x.pago.l4 ? `${E2("tu", "your")} ${card}` : card;
+  if (st === "cancelled") nota = !pagado ? [E2("No se cobró nada.", "Nothing was charged."), "", "ink", "dollar"]
+    : x.perdio ? [`${E2("El depósito se quedó con ", "The deposit stayed with ")}${B}`, E2(`Cancelaste a menos de ${x.cancelH} h del evento.`, `You canceled less than ${x.cancelH} h before the event.`), "warn", "dollar"]
+    : x.pago.st === "held" ? [E2("No se cobró nada.", "Nothing was charged."), E2(`La retención de ${dinero(x.pago.monto)} se suelta de ${tuCard}.`, `The ${dinero(x.pago.monto)} hold comes off ${tuCard}.`), "ink", "dollar"]
+    : x.devolucion.fallida ? [E2(`La devolución de ${dinero(x.devolucion.fallida)} no salió`, `The ${dinero(x.devolucion.fallida)} refund did not go through`), E2("Escríbenos en Soporte y lo resolvemos: el equipo de To'Latino ya tiene el aviso.", "Write to us in Support and we will sort it out: the To'Latino team already has the alert."), "bad", "warning"]
+    : x.devolucion.camino ? [E2(`Te devolvemos ${dinero(x.devolucion.camino)}: va en camino a ${tuCard}`, `We are refunding ${dinero(x.devolucion.camino)}: it is on its way to ${tuCard}`), E2("La seguimos mandando sola.", "We keep sending it automatically."), "ink", "dollar"]
+    : x.pago.devuelto ? [`${E2("Te devolvimos ", "We refunded ")}${dinero(x.pago.devuelto)}${E2(" a ", " to ")}${tuCard}`, E2("Llega en 3–5 días hábiles.", "It arrives in 3–5 business days."), "ink", "dollar"]
+    : [E2("La devolución todavía no sale", "The refund has not gone out yet"), E2("Escríbenos en Soporte y lo resolvemos.", "Write to us in Support and we will sort it out."), "warn", "dollar"];
   if (st === "done" && ac) nota = [`${E2("Depósito: ", "Deposit: ")}${dinero(ac.dep)} · ${E2("descontado del total", "taken off the total")}`, "", "ink", "dollar"];
   const NB = { ink: "bg-white border border-ink/[.08]", ok: "bg-signal/[.16]", warn: "bg-pro/[.14]", bad: "bg-danger/[.08]" } as const;
   const NF = { ink: "var(--tl-ink)", ok: "var(--tl-open-text)", warn: "var(--tl-pro-ink)", bad: "var(--tl-danger)" } as const;

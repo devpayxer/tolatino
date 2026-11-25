@@ -4,8 +4,8 @@ import { cfgSql, valor } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
 import { diaNoche, hNoche, usdN, type Bi } from "./noche-comun";
@@ -318,10 +318,12 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
         [o.id, lista ? "salio" : conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ perdio: pierde })]);
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);
       await ev(c, o.id, pierde ? "night_cx_kept" : "night_cx", "user", userId, pierde ? { es: "Canceló después del corte: el depósito se queda con el local", en: "Cancelled after the cutoff: the venue keeps the deposit" } : undefined);
+      // 9v (cuarta tanda) · Lo que de verdad pasó con el depósito (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida ·
+      // nada; lo retenido lo suelta devolverAlCancelar), en el aviso ({dinero}); nunca «Te devolvemos» sin mirar.
       despues = async () => {
-        if (o.pay === "held") await liberarOperacion(o.id);
-        else if (o.pay === "captured" && aTiempo && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "policy", actorId: userId, motivo: "Cancelación antes del corte", idem: `ncx-${numero}` });
-        await avisarCliente(numero, "noche_cx", { dev: lista ? " Saliste de la lista." : o.dep ? (pierde ? ` El depósito de ${usdN(o.dep)} se quedó con ${o.negocio}.` : ` Te devolvemos ${usdN(o.dep)}.`) : "" });
+        const d = pierde ? null : await devolverAlCancelar(o, { actorId: userId, motivo: "Cancelación antes del corte", idem: `ncx-${numero}`, por: "policy" });
+        await avisarCliente(numero, "noche_cx", { dinero: dineroAlCancelarCliente(d, lista ? { es: "Saliste de la lista.", en: "You left the list." }
+          : pierde ? { es: `El depósito de ${usdN(o.dep)} se quedó con ${o.negocio}.`, en: `The ${usdN(o.dep)} deposit stayed with ${o.negocio}.` } : undefined) });
         if (!lista) await avisarNeg(numero, "biz_noche_cx", { dep: pierde ? ` El depósito de ${usdN(o.dep)} se queda contigo.` : o.dep ? ` Se le devuelve el depósito de ${usdN(o.dep)}.` : "" });
       };
       return { ok: true };

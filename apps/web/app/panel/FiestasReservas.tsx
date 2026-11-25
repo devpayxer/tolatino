@@ -73,7 +73,7 @@ export function fiestaDetalle(c: Ctx): Sec {
     const k = `fcx:${x.numero}`, mot = (ui[k] as string | undefined) ?? null;
     if (mot == null) out.push({ type: "acts", items: [{ l: x.visita ? E2("Cancelar la visita", "Cancel the tour") : E2("Cancelar la fecha", "Cancel the date"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.setUi({ [k]: "" }) }] });
     else {
-      out.push({ type: "note", tone: "danger", icon: "warning", t: E2("Si cancelas, el cliente recibe su depósito completo y queda en tu historial. Escribe el motivo: el cliente lo ve.", "If you cancel, the client gets the full deposit back and it stays on your record. Write the reason: the client sees it.") });
+      out.push({ type: "note", tone: "danger", icon: "warning", t: E2("Si cancelas, le mandamos al cliente la devolución completa de su depósito y te decimos si salió. Queda en tu historial. Escribe el motivo: el cliente lo ve.", "If you cancel, we send the client the full refund of their deposit and tell you whether it went through. It stays on your record. Write the reason: the client sees it.") });
       out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: se nos dañó el aire del salón", "E.g. the venue A/C broke down"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
       out.push({ type: "acts", items: [
         { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => fiestaCancelarNeg(c.d.id, x.numero, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Cancelada.", "Cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null })) },

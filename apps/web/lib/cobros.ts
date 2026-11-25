@@ -82,14 +82,16 @@ export async function cobrarOperacion(opId: string) {
   });
 }
 
-/* Liberar lo retenido (el pedido no se dio). Avisa a la persona. */
-export async function liberarOperacion(opId: string) {
+/* Liberar lo retenido (el pedido no se dio). Avisa a la persona.
+   25 nov (9v, cuarta tanda) · Dice qué pasó: «liberada» (se soltó, aquí o ya lo había hecho otro), «nada» (no había nada retenido) o «fallo» (la pasarela
+   no la soltó: sigue retenida; el barrido, repararPagos, la vuelve a soltar). Quien tiene que decirle algo a la persona lo mira (devolverAlCancelar). */
+export async function liberarOperacion(opId: string): Promise<"liberada" | "nada" | "fallo"> {
   const p = (await db().query<{ id: string; pi: string; amount: number; uid: string; num: string; kind: string }>(
     `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.user_id::text as uid, o.number as num, o.kind from payments p join operations o on o.id = p.operation_id
       where p.operation_id = $1::bigint and p.kind in ('full', 'deposit') and p.status = 'held'`, [opId])).rows[0];
-  if (!p) return;
-  const r = await pasarela.liberar(p.pi);
-  if (!r.ok) return;
+  if (!p) return "nada";
+  const r = await pasarela.liberar(p.pi).catch(() => ({ ok: false }));
+  if (!r.ok) return "fallo";
   const hecho = await tx(async (c) => {
     const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1 and status = 'held'`, [p.id]);
     if (!u.rowCount) return false;
@@ -99,6 +101,7 @@ export async function liberarOperacion(opId: string) {
   });
   const R = refDe(p.kind, p.num);
   if (hecho) await (await import("./avisos")).avisar(p.uid, "pay_released", { monto: money(p.amount), num: R.num }, { href: R.href, ref: R.ref });
+  return "liberada";
 }
 
 /* Repara lo que quedó a medias (una llamada a la pasarela que falló): retenido de un pedido que ya no se da → liberar;
@@ -344,14 +347,28 @@ export async function devolverPago(x: InDevolver, alGuardar?: AlGuardar<{ pago: 
    (por 'business'), un «no» de Stripe no avisaba a nadie. Ahora nadie mira una pantalla que la repita (nadieMira: el «no» alerta al equipo de dinero, como
    una política; sin respuesta, el barrido la sigue y alerta si falla) y lo que pasó se lee de la base por su llave: hecha · en camino · fallida. Si ni
    siquiera se pudo anotar (otra devolución de ese cobro sigue en camino), también alerta. Lo retenido se libera; lo que no se cobró no se devuelve. Los
-   textos (aviso y panel): lib/devolucion-cancelar.ts. Guardián devueltoSoloSiSalio. */
+   textos (aviso y panel): lib/devolucion-cancelar.ts. Guardián devueltoSoloSiSalio.
+   25 nov (cuarta tanda) · También cuando cancela QUIEN PAGÓ (por la regla: por "policy") y el evento privado: por y seQueda (lo que el negocio se queda por la
+   regla, p. ej. la mitad de un viaje cancelado tarde; se devuelve el resto). Y la retención se mira: si la pasarela no la soltó, «retenida» y alerta
+   hold_stuck al equipo (una vez por cobro; el barrido la sigue soltando), como el resto de lo que nadie mira. */
 export async function devolverAlCancelar(o: { id: string; pay: string | null; pid: string | null; amount: number | null; refunded: number | null },
-  x: { actorId: string | null; motivo: string; idem: string }): Promise<import("./devolucion-cancelar").DevCancelar> {
-  if (o.pay === "held") { await liberarOperacion(o.id); return { e: "liberada", monto: o.amount ?? 0 }; }
+  x: { actorId: string | null; motivo: string; idem: string; por?: "business" | "policy"; seQueda?: number }): Promise<import("./devolucion-cancelar").DevCancelar> {
+  const por = x.por ?? "business", quien = por === "business" ? { es: "lo canceló el negocio", en: "The business cancelled" } : { es: "lo canceló el cliente", en: "The client cancelled" };
+  if (o.pay === "held") {
+    const l = await liberarOperacion(o.id);
+    if (l !== "fallo") return { e: "liberada", monto: o.amount ?? 0 };
+    // La pasarela no soltó la retención: sigue en la tarjeta (el barrido, repararPagos, la vuelve a soltar). El equipo de dinero lo sabe, una vez por cobro.
+    const h = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null }>(
+      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city from payments y where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') and y.status = 'held' order by y.id limit 1`, [o.id])).rows[0];
+    if (h) await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:${h.id}`, { monto: h.amt, negocio: h.biz, ciudad: h.city, detalle: {
+      es: `${x.motivo} (${quien.es}): no se pudo soltar la retención de ${money(h.amt)} (Stripe no la soltó). No se cobró nada; el barrido la sigue soltando: si no se suelta, suéltala desde Stripe.`,
+      en: `${quien.en}: the ${money(h.amt)} hold could not be released (Stripe did not release it). Nothing was charged; the sweep keeps releasing it: if it does not come off, release it from Stripe.` } }).catch(() => undefined);
+    return { e: h ? "retenida" : "liberada", monto: h?.amt ?? o.amount ?? 0 };
+  }
   if (!o.pid || !o.amount || !["captured", "partially_refunded", "refunded"].includes(o.pay ?? "")) return { e: "nada", monto: 0 };
-  const falta = o.amount - (o.refunded ?? 0);
-  if (falta <= 0) return { e: "hecha", monto: o.refunded ?? 0 };
-  const r = await devolverPago({ paymentId: o.pid, centavos: falta, por: "business", actorId: x.actorId, motivo: x.motivo, idem: x.idem, nadieMira: true });
+  const falta = o.amount - (o.refunded ?? 0) - Math.max(0, Math.round(x.seQueda ?? 0));
+  if (falta <= 0) return x.seQueda ? { e: "nada", monto: 0 } : { e: "hecha", monto: o.refunded ?? 0 };
+  const r = await devolverPago({ paymentId: o.pid, centavos: falta, por, actorId: x.actorId, motivo: x.motivo, idem: x.idem, nadieMira: true });
   if (r.ok) return { e: "hecha", monto: falta };
   // Lo que quedó en la base con esa llave (una fallida guarda la suya con «~fallida-<id>»).
   const f = (await db().query<{ st: string; amt: number; mano: boolean }>(
@@ -361,8 +378,8 @@ export async function devolverAlCancelar(o: { id: string; pay: string | null; pi
   if (!f) {
     const p = (await db().query<{ biz: string | null; city: string | null }>(`select business_id as biz, city_id as city from payments where id = $1::bigint`, [o.pid])).rows[0];
     await (await import("./dinero-alertas")).alertar("refund_stuck", `cancelacion:${x.idem}`.slice(0, 200), { monto: falta, negocio: p?.biz ?? null, ciudad: p?.city ?? null, detalle: {
-      es: `${x.motivo} (lo canceló el negocio): la devolución de ${money(falta)} no se pudo anotar (${r.msg.es}). El cliente no la recibió: revisa el cobro en Stripe y devuélvela.`,
-      en: `The business cancelled: the ${money(falta)} refund could not be recorded (${r.msg.en}). The client did not get it: check the charge in Stripe and refund it.` } }).catch(() => undefined);
+      es: `${x.motivo} (${quien.es}): la devolución de ${money(falta)} no se pudo anotar (${r.msg.es}). El cliente no la recibió: revisa el cobro en Stripe y devuélvela.`,
+      en: `${quien.en}: the ${money(falta)} refund could not be recorded (${r.msg.en}). The client did not get it: check the charge in Stripe and refund it.` } }).catch(() => undefined);
   }
   return { e: "fallida", monto: f?.amt ?? falta };
 }

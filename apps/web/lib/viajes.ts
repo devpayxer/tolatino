@@ -1,8 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, liberarOperacion, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { valor } from "./config";
@@ -333,18 +333,18 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = $2, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ cobroMitad: cobra })]);
       await ev(c, o.id, "cancelled", "user", userId, cobra ? { es: `Canceló a menos de 24 h: se cobra la mitad (${money(cobra)})`, en: `Cancelled less than 24 h before: half is charged (${money(cobra)})` } : undefined);
+      // 9v (cuarta tanda) · Lo que de verdad pasó con el dinero (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida ·
+      // nada), en el aviso ({dinero}); nunca «Te devolvemos todo» sin mirar. Tarde: se cobra la mitad (si la captura no sale, no se dice «Se cobró la mitad»:
+      // la retención se suelta, como haría el barrido con un viaje cancelado) y se devuelve el resto.
       despues = async () => {
-        if (!conf || (aTiempo && o.pay === "held")) await liberarOperacion(o.id);
-        else {
-          if (o.pay === "held") await cobrarOperacion(o.id); // confirmado sin capturar todavía: se cobra y se devuelve lo que toca
-          const p = (await db().query<{ id: string; amount: number; refunded: number; status: string }>(`select id::text, amount_cents as amount, refunded_cents as refunded, status from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
-          if (p && ["captured", "partially_refunded"].includes(p.status)) {
-            const dev = aTiempo ? p.amount - p.refunded : Math.max(0, p.amount - cobra - p.refunded);
-            if (dev > 0) await devolverPago({ paymentId: p.id, centavos: dev, por: "policy", actorId: userId, motivo: aTiempo ? "Cancelación a tiempo" : "Cancelación tarde: se cobra la mitad", idem: `vcx-${numero}` });
-          }
-        }
-        await avisarCliente(numero, "viaje_cx", { dev: cobra ? ` Se cobró la mitad: ${money(cobra)}.` : o.tot ? " Te devolvemos todo." : "" });
-        await avisarNeg(numero, "biz_viaje_cx", { dep: cobra ? ` Se cobró la mitad: ${money(cobra)}.` : "" });
+        if (conf && !aTiempo && o.pay === "held") await cobrarOperacion(o.id); // confirmado sin capturar todavía: se cobra y se devuelve lo que toca
+        const p = (await db().query<{ id: string; amount: number; refunded: number; status: string }>(`select id::text, amount_cents as amount, refunded_cents as refunded, status from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
+        const mitad = cobra && p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? cobra : 0;
+        if (cobra && !mitad) await db().query(`update operations set details = details || '{"cobroMitad":0}'::jsonb where id = $1::bigint`, [o.id]);
+        const d = await devolverAlCancelar({ id: o.id, pay: p?.status ?? o.pay, pid: p?.id ?? null, amount: p?.amount ?? null, refunded: p?.refunded ?? null },
+          { actorId: userId, motivo: mitad ? "Cancelación tarde: se cobra la mitad" : "Cancelación a tiempo", idem: `vcx-${numero}`, por: "policy", seQueda: mitad });
+        await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? { es: `Se cobró la mitad: ${money(mitad)}.`, en: `Half was charged: ${money(mitad)}.` } : undefined) });
+        await avisarNeg(numero, "biz_viaje_cx", { dep: mitad ? ` Se cobró la mitad: ${money(mitad)}.` : "" });
       };
       return ok1;
     }

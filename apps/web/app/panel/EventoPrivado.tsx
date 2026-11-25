@@ -8,6 +8,7 @@
      depósito calculados) · Proponer otra fecha · No puedo (motivo); confirmado: lo acordado, el cambio que piden (mandar el cambio o «No puedo
      hacer el cambio») y «Cancelar el evento» (motivo; devolución completa); Mensajes, la ayuda y la línea de tiempo.
    Lo que se ve mientras se arma es solo para mirar: la base calcula el total, el impuesto y el depósito al mandarla. */
+import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { AREAS_EVP, DURACIONES, HORAS_EVP, OCASIONES, PRESUPUESTOS, diaEvp, dinero, horaL, lbl, nm, vistaPrevia, type AjustesEvp, type ExtraEvp, type MenuEvp } from "@/lib/evento-privado-comun";
 import type { EvpPanelV, FilaEvp } from "@/lib/evento-privado";
@@ -212,10 +213,10 @@ export function evpDetalle(c: Ctx): Sec {
     const k = `evpCx:${x.numero}`, mot = (ui[k] as string | undefined) ?? null;
     if (mot == null) out.push({ type: "acts", items: [{ l: E2("Cancelar el evento", "Cancel the event"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.setUi({ [k]: "" }) }] });
     else {
-      out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Si cancelas, el cliente recibe su depósito completo (${dinero(x.pago.monto - x.pago.devuelto)}) y queda en tu historial. Escribe el motivo: el cliente lo ve.`, `If you cancel, the client gets the full deposit back (${dinero(x.pago.monto - x.pago.devuelto)}) and it stays on your record. Write the reason: the client sees it.`) });
+      out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Si cancelas, le mandamos al cliente la devolución completa de su depósito (${dinero(x.pago.monto - x.pago.devuelto)}) y te decimos si salió. Queda en tu historial. Escribe el motivo: el cliente lo ve.`, `If you cancel, we send the client the full refund of their deposit (${dinero(x.pago.monto - x.pago.devuelto)}) and tell you whether it went through. It stays on your record. Write the reason: the client sees it.`) });
       out.push({ type: "field", k: E2("MOTIVO", "REASON"), val: mot, max: 200, ph: E2("Ej.: se nos dañó la cocina", "E.g.: our kitchen broke down"), onChange: (v) => c.setUi({ [k]: v.slice(0, 200) }) });
       out.push({ type: "acts", items: [
-        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => evpCancelarNeg(c.d.id, x.numero, mot), E2("Cancelado: el cliente recibe su depósito completo.", "Cancelled: the client gets the full deposit back."), () => c.setUi({ [k]: null })) },
+        { l: E2("Sí, cancelar y devolver", "Yes, cancel and refund"), v: "primary", icon: "close", off: c.pending || mot.trim().length < 4, onClick: () => c.run(() => evpCancelarNeg(c.d.id, x.numero, mot), (r: { devolucion?: DevCuenta }) => { const t = textoPanelCancelar(r?.devolucion); return `${E2("Cancelado.", "Cancelled.")} ${E2(t.es, t.en)}`; }, () => c.setUi({ [k]: null })) },
         { l: E2("No, volver", "No, go back"), v: "ghost", off: c.pending, onClick: () => c.setUi({ [k]: null }) }] });
     }
   }
