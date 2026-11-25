@@ -3085,9 +3085,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       («Te devolvemos $X» en `n/[id]/noche/Reservar.tsx` ~148, `viaje/ViajeBooking.tsx` ~207, `fiesta/Booking.tsx` ~197; la FAQ de `n/[id]/page.tsx`
       ~192; `eventos/[slug]/page.tsx` ~72 «Si compraste, te devolvemos todo»; `panel/Inscripciones.tsx` ~58 y `EventosPanel.tsx` ~494) se dejaron: dicen
       la regla antes de que exista un cobro, no lo que pasó; decidir si pasan a «pedimos la devolución» (REVISION). (b) _hecho en la revisión: cancelarEvp._ (c) La duración de alrevesDevueltoSoloSiSalio en `pruebas/reparto-alreves.json` (28 s con 98 casos; ahora
-      160): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) din9v4/din9v5 sin caso de punta a punta de las hojas
-      nuevas (retenido vs cobrado) ni del aviso de otra hora con y sin depósito (el viaje tarde con devolución previa y el evento privado tarde con el
-      cobro devuelto o soltado ya tienen el suyo en tra4y 5b/5c y evt6i 8b: escritos el 25 nov, falta verlos correr en el CI). (e) _Hecho (25 nov, din9x):_ avisarNeg
+      160): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) _Hecho (25 nov, din9y):_ `pruebas/e2e/din9y.cjs` (98 ✓, ~25 s)
+      lee las hojas de cancelar de la noche (mesa y lista), la fiesta, la inscripción, el viaje y el evento privado con el cobro retenido, cobrado y con
+      devolución parcial, en ES y en EN, con el texto exacto de `pideAlCancelar` y el monto como lo formatea cada pantalla; y el aviso de otra hora
+      (noche_alt, fiesta_alt, viaje_alt) con la retención y sin depósito, por las acciones del panel. Queda lo que ya estaba: el viaje tarde con devolución
+      previa y el evento privado tarde con el cobro devuelto o soltado tienen el suyo en tra4y 5b/5c y evt6i 8b (escritos el 25 nov; falta verlos correr en
+      el CI). Visto al escribirla, sin tocar código: el {dia} de fiesta_alt sale en español también en el aviso en inglés (`fiestas-reservas.ts:223`,
+      `diaFiesta(…, true)`: la clase de los avisarCliente en un idioma, en (e)); el monto de viaje_alt sale «$45.00» (`viajes.ts:36`, usdTxt) y la hoja «$45»
+      (`ViajeEstado.tsx:25`); y el de la fiesta no pone centavos fijos (`FiestaEstado.tsx:18`, `fiestas-reservas.ts:26`): $52.50 sale «$52.5». (e) _Hecho (25 nov, din9x):_ avisarNeg
       de viajes.ts arma el aviso al negocio en los dos idiomas (servicio, personas, día y {dep} como Bi; avisos › avisar pone el del dueño), y el día y
       {alt} de los avisos al cliente del viaje también. La misma clase en los avisarNeg de la noche (servicio, personas, la noche, el depósito), la
       fiesta (día, servicio, invitados), la inscripción (servicio, grupo, matrícula, «vence») y la visita (qué, cuándo, el artículo, «vence», lo de en su
