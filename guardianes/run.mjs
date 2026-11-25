@@ -18392,8 +18392,8 @@ const guardianes = {
     // llave ya pedida LEE la regla (reglaTardeLeida, que dice fallida también sin fila). (33) «completar» sin regla: «Se completó» solo con regla, su texto
     // propio y su tope (COMPLETAR_INTENTOS, reglaCompletarIntentos), nunca cada minuto sin fin. (34) Anotar el SMS en su aviso se intenta dos veces.
     const iPrev = rtc.indexOf("const previa = await devDeLaLlave(o.pid, `vcx-${o.num}`);"), iDev = rtc.indexOf("await devolverAlCancelar(");
-    if (iPrev < 0 || iPrev > iDev || !/const previa = await devDeLaLlave\(o\.pid, `vcx-\$\{o\.num\}`\);\n\s*if \(previa\) return \{ queda: mitad, dev: previa \};/.test(rtc)
-      || !/select 1 from money_alerts where kind = 'refund_stuck' and subject_id = \$1`, \[`cancelacion:vcx-\$\{o\.num\}`\]\)\)\.rowCount\)\s*return \{ queda: mitad, dev: \{ e: "fallida",/.test(rtc))
+    if (iPrev < 0 || iPrev > iDev || !/const previa = await devDeLaLlave\(o\.pid, `vcx-\$\{o\.num\}`\);\n\s*if \(previa\) return \{ queda: mitad, dev: segunLoDevuelto\(previa, o\.amt - o\.ref - mitad, o\.ref\) \};/.test(rtc)
+      || !/select 1 from money_alerts where kind = 'refund_stuck' and subject_id = \$1`, \[`cancelacion:vcx-\$\{o\.num\}`\]\)\)\.rowCount\)\s*return \{ queda: mitad, dev: segunLoDevuelto\(\{ e: "fallida",/.test(rtc))
       falla(G, CO, 0, "reglaTardeConLoCobrado vuelve a pedir la devolución de su llave aunque ya se pidió (la fallida se renombra «~fallida-»; la que no se pudo anotar tiene refund_stuck): se devolvería dos veces");
     if (!/as atascada/.test(rtl) || !/!o\.rst \? \(o\.atascada \? \{ e: "fallida"/.test(rtl)) falla(G, CO, 0, "reglaTardeLeida no dice «fallida» de la devolución que no se pudo ni anotar (refund_stuck cancelacion:vcx-)");
     if (!/const regla = await \(pedida \? reglaTardeLeida\(opId\) : reglaTardeConLoCobrado\(opId\)\)/.test(ccr) || !/const pedida = como === "completar" && /.test(ccr)
@@ -18403,6 +18403,20 @@ const guardianes = {
       || !/if \(como === "completar" && !regla\) \{[\s\S]*?reglaCompletarIntentos[\s\S]*?if \(n < COMPLETAR_INTENTOS\) \{[^\n]*return \{ e: "cobrada", monto: c\.amt \}; \}/.test(ccr)
       || !/\[f\.negocio \?\? null, BARRIDO_TARDE_DIAS, COMPLETAR_INTENTOS\]/.test(bct))
       falla(G, CO, 0, "«completar» sin regla dice «Se completó» o vuelve cada minuto sin fin: «Se completó» solo con regla, «No se pudo completar» con su tope (COMPLETAR_INTENTOS)");
+    // 25 nov (revisión de 51a794d) · (35) «completar» que agota su tope sin regla con su alerta cobrada: ya abierta (alertar no la reescribe: «No se pudo
+    // completar» se perdía y el barrido ya no la elegía): su alerta propia completar:<cobro>; si no se anota, el tope vuelve un paso atrás. (36) La devolución
+    // que «no salió» se dice según lo que de verdad falta devolver (segunLoDevuelto): ya devuelta a mano, «hecha», nunca «no salió» ni «$0.00»; en la regla
+    // (las dos ramas) y en su relectura.
+    if (!/const nueva = await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `cobrada:\$\{c\.id\}`/.test(ccr) || !/^[^\n]*\n[^\n]*return null; \}\);\n/.test(ccr.slice(ccr.indexOf("const nueva = ")))
+      || !/if \(como === "completar" && !regla && nueva !== true\) \{\n\s*const dicha = nueva === false && await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `completar:\$\{c\.id\}`/.test(ccr)
+      || !/\.then\(\(\) => true, \(e\) => \{[^\n]*return false; \}\);\n\s*if \(!dicha\) await db\(\)\.query\(`update operations set details = details \|\| jsonb_build_object\('reglaCompletarIntentos', \$2::int\) where id = \$1::bigint`, \[opId, COMPLETAR_INTENTOS - 1\]\)/.test(ccr)
+      || !/No se pudo completar después de \$\{COMPLETAR_INTENTOS\} pasadas del barrido/.test(ccr))
+      falla(G, CO, 0, "«completar» que agota su tope sin regla con la alerta cobrada: ya abierta no abre su alerta completar:<cobro> (o no vuelve el tope atrás si no se anota): quien pagó y el negocio se quedan sin aviso y sin alerta");
+    const sld = cuerpoFn(co, "segunLoDevuelto");
+    if (!/if \(dev\.e !== "fallida"\) return dev;\n\s*if \(falta <= 0\) return ref > 0 \? \{ e: "hecha", monto: ref \} : \{ e: "nada", monto: 0 \};\n\s*return \{ e: "fallida", monto: dev\.monto > 0 \? Math\.min\(dev\.monto, falta\) : falta \};/.test(sld)
+      || (rtc.match(/segunLoDevuelto\([^\n]*, o\.amt - o\.ref - mitad, o\.ref\)/g) ?? []).length !== 2
+      || !/return \{ queda, dev: dev && segunLoDevuelto\(dev, o\.amt - o\.ref - queda, o\.ref\) \};/.test(rtl))
+      falla(G, CO, 0, "la devolución de la llave que «no salió» no se dice según lo que falta devolver (segunLoDevuelto): ya devuelta a mano, la alerta y el aviso dirían «no salió» (o «$0.00»)");
     if (!/\n  await anotar\(\)\.catch\(\(\) => anotar\(\)\);\n\}/.test(cuerpoFn(av, "salirSms"))) falla(G, AV, 0, "salirSms anota el SMS en su aviso una sola vez: si falla, el aviso queda «pendiente» sin su sms_id aunque el SMS haya salido");
     if (!/o\.cancelled_at <= now\(\) - make_interval\(days => \$2::int\) as fuera/.test(qL) || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'reparar:' \|\| p\.id::text\)/.test(qL)
       || !/alertar\("hold_stuck", `reparar:\$\{x\.pid\}`/.test(bct))
@@ -18412,7 +18426,7 @@ const guardianes = {
     if (!/if \(tocada\) return "cobrada";/.test(lo)) falla(G, CO, 0, "liberarOperacion dice «cobrada» sin haber tocado la fila ni releerla");
     const cerrar = cuerpoFn(sinComent(DA), "cerrarAlertasResueltas");
     if (!cerrar) falla(G, DA, 0, "no encuentro cerrarAlertasResueltas");
-    else if (/cobrada|captura/.test(cerrar)) falla(G, DA, 0, "cerrarAlertasResueltas cierra sola una alerta cobrada: o captura: (alguien tiene que mirar en Stripe)");
+    else if (/cobrada|captura|completar/.test(cerrar)) falla(G, DA, 0, "cerrarAlertasResueltas cierra sola una alerta cobrada:, captura: o completar: (alguien tiene que mirar en Stripe)");
     for (const f of archivos.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x))) {
       const t = sinComent(f), T = t.split("\n");
       T.forEach((l, i) => {

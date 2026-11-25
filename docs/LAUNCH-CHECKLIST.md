@@ -3166,6 +3166,17 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       lo cambiado: el envío de push no cambió); mirar por qué el simulador de APNs contesta «red» a veces.
       Queda (revisión de 90170a1): si las DOS veces falla anotar el SMS en su aviso, el aviso queda «pendiente» sin su sms_id para siempre (lib/sms ›
       reflejar solo lo encuentra por sms_id): que reflejar también lo enlace por su origen (aviso:<id>).
+      Revisión de 51a794d (hecho): «completar» que agota su tope sin regla con su alerta cobrada: ya abierta (la eligió el aviso sin reclamar) ya no se
+      pierde en silencio (alertar no reescribe la cobrada: y el barrido ya no la elegía): su alerta propia hold_stuck completar:<cobro>, que dice que no se
+      pudo completar y que ni quien pagó ni el negocio tienen el aviso; si esa (o la cobrada:) no se anota, el tope vuelve un paso atrás y la próxima pasada
+      la intenta. La devolución de la llave que «no salió» (su fila fallida, o sin fila con su refund_stuck) se dice según lo que de verdad falta devolver
+      (segunLoDevuelto): si el equipo ya la devolvió a mano, «hecha» con lo devuelto, nunca «no salió» ni «$0.00»; si falta algo, «no salió» con lo que
+      falta. El comentario de reglaTardeConLoCobrado ya no dice que la resuelta a mano pierde su llave (la conserva: manual_at en su fila). din9x: la
+      devolución que no se pudo anotar en la regla (soltar) y en su relectura («completar»), la ya devuelta a mano (sin fila y con la fila fallida), el tope
+      con «No se pudo completar», completar: con la cobrada: ya abierta y el tope que vuelve atrás; dos veces en verde en :3120 (101 ✓, 58 s y 59 s;
+      reparto.json: din9x 59, ninguna prueba cambió de parte). Guardián liberarMira (35–36); alrevesDineroDiceLoQuePaso 109/109.
+      Queda (revisión de 51a794d): (a) la alerta completar: no se cierra sola (no hay estado que mirar): se marca resuelta a mano, como aviso: y reparar:.
+      (b) «hecha» con lo devuelto toma refunded_cents del cobro entero: si al cobro se le había devuelto algo antes y por otro motivo, la cifra lo incluye.
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
       barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
       ventana en ese tiempo no alerta. (d) Las alertas aviso: y reparar: no se cierran solas (no hay estado que mirar): se marcan resueltas a mano.

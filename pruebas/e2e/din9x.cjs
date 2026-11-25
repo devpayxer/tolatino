@@ -43,6 +43,10 @@
 //   anota en el aviso (lib/sms no lanza: lo que lanza es la base después) no lo deja «fallo»; el cierre de las alertas también corre en el finally.
 //   (revisión de 90170a1) A medias con la marca: sin ninguna devolución todavía, la regla se aplica de verdad (UNA devolución); con la devolución de la llave
 //   ya fallida (renombrada «~fallida-»), ninguna fila nueva en refunds: se lee lo que pasó y la alerta lo dice.
+//   (revisión de 51a794d) La devolución que no se pudo ni anotar (refund_stuck cancelacion:vcx-, sin fila) en la regla y en su relectura: «no salió», sin
+//   pedir otra; la que el equipo ya devolvió a mano: «hecha», nunca «no salió» ni «$0.00». «completar» sin regla (la regla lanza): bajo el tope, nada;
+//   al tope, «No se pudo completar» en su alerta cobrada:; con la cobrada: ya abierta, su alerta propia completar:; si esa no se anota, el tope vuelve
+//   atrás y la próxima pasada la anota. Las refund_stuck de la prueba también se cierran al final.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), la salida, los cobros y el simulador.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs');
@@ -256,8 +260,10 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
   let EQ = null;
   const cerrarAlertas = async () => {
     EQ = EQ ?? persona('Equipo');
-    const abiertas = () => sql(`select a.id from money_alerts a join payments p on p.id = case when a.subject_id ~ '^(cobrada|aviso|reparar|captura):[0-9]{1,18}$' then split_part(a.subject_id, ':', 2)::bigint end
-        where a.kind = 'hold_stuck' and p.business_id like 'd9x_-${RUN}' and not exists (select 1 from money_alert_notes n where n.alert_id = a.id and n.action in ('resuelta', 'resuelta_sola', 'resuelta_a_mano'))`).split('\n').filter((l) => /^\d+$/.test(l));
+    // (revisión de 51a794d) · También completar: y las refund_stuck cancelacion:vcx-<número> que siembra la prueba (por el cobro de su operación).
+    const abiertas = () => sql(`select a.id from money_alerts a join payments p on p.id = case when a.kind = 'hold_stuck' and a.subject_id ~ '^(cobrada|aviso|reparar|captura|completar):[0-9]{1,18}$' then split_part(a.subject_id, ':', 2)::bigint
+          when a.kind = 'refund_stuck' and a.subject_id like 'cancelacion:vcx-%' then (select y.id from payments y join operations o on o.id = y.operation_id where o.number = substr(a.subject_id, 17) order by y.id desc limit 1) end
+        where a.kind in ('hold_stuck', 'refund_stuck') and p.business_id like 'd9x_-${RUN}' and not exists (select 1 from money_alert_notes n where n.alert_id = a.id and n.action in ('resuelta', 'resuelta_sola', 'resuelta_a_mano'))`).split('\n').filter((l) => /^\d+$/.test(l));
     const L0 = abiertas(), malas = [];
     for (const id of L0) { const r = await alertasM.notaAlerta({ id: EQ.id, cities: [] }, id, 'resuelta', 'Prueba din9x: revisado en Stripe, cuadra con lo aplicado.'); if (!r.ok) malas.push([id, r.msg]); }
     return { n: L0.length, malas, quedan: abiertas().length };
@@ -506,6 +512,90 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
         `a medias con la devolución fallida: ninguna fila nueva en refunds ni devolución en Stripe; la alerta y el aviso dicen que no salió (${pago(MF.num)} · ${detalle(`cobrada:${MF.pid}`)})`);
       await cobros.barrerCobradasTarde({ negocio: BR });
       ok(sql(`select count(*) from refunds where payment_id in (${MS.pid}, ${MF.pid})`) === '2' && alertas(`cobrada:${MS.pid}`) === '1' && alertas(`cobrada:${MF.pid}`) === '1', 'otra pasada: ni otra devolución ni otra alerta');
+
+      // (revisión de 51a794d) · La devolución de la llave que no se pudo ni anotar (refund_stuck cancelacion:vcx-<número>, sin fila en refunds): la regla
+      // (soltar: reglaTardeConLoCobrado) y su relectura («completar»: reglaTardeLeida) la dicen «no salió» con lo que faltaba, sin pedir otra.
+      const atascar = (x) => alertasM.alertar('refund_stuck', `cancelacion:vcx-${x.num}`, { monto: 1500, negocio: BR, ciudad: 'hzl', detalle: { es: `${x.num}: la devolución de $15.00 no se pudo anotar (prueba din9x).`, en: `${x.num}: the $15.00 refund could not be recorded (din9x test).` } });
+      const devueltoSim = (x) => sql(`select refunded_cents from sim_intents where id = (select stripe_payment_intent from payments where id = ${x.pid})`);
+      const RS = tardeCobrada('trip', { retenido: true, detalles: '{"k":"asiento","cobroMitad":0}' });
+      await atascar(RS);
+      const sRS = await cobros.soltarRetencion(RS.op, cobros.SWEEP), avRS = AV.filter((x) => x[1] === RS.num);
+      ok(sRS.e === 'cobrada' && sRS.regla?.queda === 1500 && sRS.regla?.dev?.e === 'fallida' && sRS.regla?.dev?.monto === 1500 && sql(`select count(*) from refunds where payment_id = ${RS.pid}`) === '0'
+        && pago(RS.num) === 'captured|3000|0' && devueltoSim(RS) === '0' && detalle(`cobrada:${RS.pid}`).includes('se quedó $15.00 y la devolución de $15.00 no salió (tiene su propia alerta)')
+        && avRS.length === 1 && avRS[0][2].dev?.e === 'fallida' && avRS[0][2].dev?.monto === 1500,
+        `la regla con la devolución que no se pudo anotar: ninguna fila en refunds ni devolución en Stripe; la alerta y el aviso dicen que no salió (${JSON.stringify(sRS.regla)} · ${detalle(`cobrada:${RS.pid}`)})`);
+      const RL = conMarca();
+      await atascar(RL);
+      envejecer(RL);
+      await cobros.barrerCobradasTarde({ negocio: BR });
+      const avRL = AV.filter((x) => x[1] === RL.num);
+      ok(sql(`select count(*) from refunds where payment_id = ${RL.pid}`) === '0' && pago(RL.num) === 'captured|3000|0' && devueltoSim(RL) === '0'
+        && detalle(`cobrada:${RL.pid}`).includes('quedó a medias') && detalle(`cobrada:${RL.pid}`).includes('se quedó $15.00 y la devolución de $15.00 no salió (tiene su propia alerta)')
+        && avRL.length === 1 && avRL[0][2].dev?.e === 'fallida' && avRL[0][2].dev?.monto === 1500,
+        `«completar» con la devolución que no se pudo anotar: la lee (ninguna fila en refunds) y dice que no salió (${detalle(`cobrada:${RL.pid}`)})`);
+      // Y la que el equipo ya devolvió a mano (su propia devolución, con otra llave): sin nada más que devolver, «hecha» con lo devuelto, nunca «no salió»
+      // ni «$0.00». Sin fila de la llave (refund_stuck) y con la fila de la llave fallida.
+      const aMano = (x) => {
+        sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) values (${x.pid}, 1500, 'Devuelta a mano por el equipo (prueba din9x)', 'admin', 'done', 'mano-${x.num}', now())`);
+        sql(`update payments set status = 'partially_refunded', refunded_cents = 1500 where id = ${x.pid}`);
+        sql(`update sim_intents set refunded_cents = 1500 where id = (select stripe_payment_intent from payments where id = ${x.pid})`);
+      };
+      const HS = conMarca(), HF = conMarca();
+      await atascar(HS); aMano(HS);
+      sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, last_error) values (${HF.pid}, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', 'failed', 'vcx-${HF.num}~fallida-1', 'stripe:expired_or_canceled_card')`); aMano(HF);
+      envejecer(HS); envejecer(HF);
+      await cobros.barrerCobradasTarde({ negocio: BR });
+      for (const x of [HS, HF]) {
+        const d = detalle(`cobrada:${x.pid}`), av = AV.filter((y) => y[1] === x.num);
+        ok(d.includes('se quedó $15.00 y se devolvieron $15.00') && !d.includes('no salió') && !d.includes('$0.00') && av.length === 1 && av[0][2].dev?.e === 'hecha' && av[0][2].dev?.monto === 1500
+          && sql(`select count(*) from refunds where payment_id = ${x.pid} and split_part(idem_key, '~fallida-', 1) = 'vcx-${x.num}' and status <> 'failed'`) === '0' && pago(x.num) === 'partially_refunded|3000|1500',
+          `${x === HS ? 'sin fila (refund_stuck)' : 'con la fila fallida'} y ya devuelta a mano: «hecha», ni «no salió» ni «$0.00», sin pedir otra (${d} · ${JSON.stringify(av.map((y) => y[2].dev))})`);
+      }
+
+      // (revisión de 51a794d) · «completar» sin regla: la regla LANZA (una base que no deja leerla, solo para estas operaciones: FALLA_REGLA; y alertas que
+      // no se anotan a pedido: FALLA_AL). Los primeros intentos se dan por hechos (reglaCompletarIntentos), como en H4.
+      const FALLA_REGLA = new Set(), FALLA_AL = new Set();
+      const DR = { ...D, db: () => { const x = D.db(); return { query: (q, a) => (FALLA_REGLA.has(String(a?.[0])) && /^\s*select o\.kind, o\.number as num, o\.status as st,/.test(q) ? Promise.reject(new Error('la base no dejó leer la regla')) : x.query(q, a)) }; } };
+      const alertasR = { ...alertasM, alertar: (k, suj, x) => (FALLA_AL.has(suj) ? Promise.reject(new Error('la base no anotó la alerta')) : alertasM.alertar(k, suj, x)) };
+      const cobrosR = cargar('apps/web/lib/cobros.ts', { './db': DR, './pagos/pasarela': PS, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertasR,
+        './viajes': viajesM, './evento-privado': evpM, './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': K, './devolucion-consulta': DC,
+        './mercado': { repararMercado: async () => undefined }, './apartados': { repararApartados: async () => undefined }, './estimados': { repararEstimados: async () => undefined } });
+      const intentos = (x, k) => sql(`update operations set details = details || jsonb_build_object('reglaCompletarIntentos', ${k}) where id = ${x.op}`);
+      const sinDinero = (x) => sql(`select count(*) from refunds where payment_id = ${x.pid}`) === '0' && pago(x.num) === 'captured|3000|0' && !AV.some((y) => y[1] === x.num) && det(x.num, 'avisoCobro') === '';
+      const enIngles = (suj) => sql(`select detail->>'en' from money_alerts where kind = 'hold_stuck' and subject_id = '${suj}'`);
+      // El tope sin alerta previa: bajo el tope, nada (el barrido lo vuelve a intentar); al tope, «No se pudo completar» en SU alerta cobrada:; después, nada.
+      const TA = conMarca(); intentos(TA, cobrosR.COMPLETAR_INTENTOS - 2); FALLA_REGLA.add(TA.op); envejecer(TA);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(det(TA.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS - 1) && alertas(`cobrada:${TA.pid}`) === '0' && alertas(`completar:${TA.pid}`) === '0' && sinDinero(TA),
+        `«completar» sin regla bajo el tope: ni alerta, ni dinero, ni aviso; el barrido lo vuelve a intentar (intento ${det(TA.num, 'reglaCompletarIntentos')})`);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(det(TA.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS) && alertas(`cobrada:${TA.pid}`) === '1' && detalle(`cobrada:${TA.pid}`).includes('quedó a medias')
+        && detalle(`cobrada:${TA.pid}`).includes('No se pudo completar: aplícala a mano') && !detalle(`cobrada:${TA.pid}`).includes('Se completó') && enIngles(`cobrada:${TA.pid}`).includes('It could not be completed: apply it by hand')
+        && alertas(`completar:${TA.pid}`) === '0' && sinDinero(TA),
+        `al tope: «No se pudo completar» en su alerta cobrada: (ES/EN), nunca «Se completó»; sin alerta completar: de más (${detalle(`cobrada:${TA.pid}`)})`);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(det(TA.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS) && alertas(`cobrada:${TA.pid}`) === '1' && alertas(`completar:${TA.pid}`) === '0', 'otra pasada al tope: el barrido ya no la elige');
+      // El caso de la revisión: la alerta cobrada: YA estaba (la anotó el proceso que se cortó antes del aviso) y nadie reclamó el aviso. Al tope, alertar no
+      // la reescribe: su alerta propia completar:<cobro> dice que no se pudo completar y que ni quien pagó ni el negocio tienen el aviso.
+      const previa = (x) => alertasM.alertar('hold_stuck', `cobrada:${x.pid}`, { monto: 3000, negocio: BR, ciudad: 'hzl', detalle: { es: `${x.num}: la alerta de antes (la anotó el proceso que se cortó).`, en: `${x.num}: the earlier alert.` } });
+      const TB = conMarca(); await previa(TB); intentos(TB, cobrosR.COMPLETAR_INTENTOS - 1); FALLA_REGLA.add(TB.op); envejecer(TB);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(det(TB.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS) && alertas(`cobrada:${TB.pid}`) === '1' && detalle(`cobrada:${TB.pid}`).includes('la alerta de antes')
+        && alertas(`completar:${TB.pid}`) === '1' && detalle(`completar:${TB.pid}`).includes(`No se pudo completar después de ${cobrosR.COMPLETAR_INTENTOS} pasadas del barrido y nadie mandó su aviso`)
+        && detalle(`completar:${TB.pid}`).includes(`la alerta cobrada:${TB.pid} ya estaba abierta`) && detalle(`completar:${TB.pid}`).includes('díselo a quien pagó y al negocio')
+        && enIngles(`completar:${TB.pid}`).includes(`It could not be completed after ${cobrosR.COMPLETAR_INTENTOS} sweep passes`) && sinDinero(TB),
+        `al tope con la alerta cobrada: ya abierta: UNA alerta completar: (ES/EN) que lo dice, sin tocar la de antes ni el dinero (${detalle(`completar:${TB.pid}`)})`);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`completar:${TB.pid}`) === '1' && alertas(`cobrada:${TB.pid}`) === '1' && det(TB.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS), 'otra pasada: ni otra alerta');
+      // Y si la alerta completar: no se anota: el tope vuelve un paso atrás y la próxima pasada la anota (nunca en silencio).
+      const TC = conMarca(); await previa(TC); intentos(TC, cobrosR.COMPLETAR_INTENTOS - 1); FALLA_REGLA.add(TC.op); FALLA_AL.add(`completar:${TC.pid}`); envejecer(TC);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`completar:${TC.pid}`) === '0' && det(TC.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS - 1) && sinDinero(TC),
+        `la alerta completar: que no se anotó: el tope vuelve un paso atrás (${det(TC.num, 'reglaCompletarIntentos')})`);
+      FALLA_AL.delete(`completar:${TC.pid}`);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`completar:${TC.pid}`) === '1' && det(TC.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS) && sinDinero(TC), 'la pasada siguiente la anota');
+      FALLA_REGLA.clear();
 
       // H2 (revisión de efe56b9) · Un viaje cobrado hace 3 días (al aceptarse) y cancelado tarde hace 10 minutos, con la devolución sin hacer: la ventana es la
       // de la cancelación (antes, la de captured_at de dos días: nunca lo veía).

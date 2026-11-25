@@ -5,7 +5,8 @@
 // dice la mitad y la devolución de la llave; lo capturado distinto de lo pedido alerta; la cancelación tarde cobrada sin su regla la repara el barrido.
 // (revisión de efe56b9) El aviso que ya quedó no se repite (ni por el SMS que falla, ni a los dueños que ya lo tienen, ni por la parte que tira); el
 // resultado solo con el reclamo propio; reintentos espaciados y, agotados, su alerta aviso:; la mitad es lo que queda cobrado; la ventana es la de la
-// cancelación, con su índice, y lo que sale de ella alerta.
+// cancelación, con su índice, y lo que sale de ella alerta. (revisión de 51a794d) «completar» al tope con su alerta cobrada: ya abierta abre completar:;
+// la devolución ya devuelta a mano no dice «no salió».
 // Se inyecta el defecto, el guardián debe fallar con SU renglón ([nombre]); se restaura.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -106,7 +107,7 @@ const casos = [
   ['liberarMira', 'la que quedó a medias no se completa', CO, 'await cobradaConSuRegla(x.op, REPARA, x.aplicada ? "completar" : "reparar");', 'await cobradaConSuRegla(x.op, REPARA, "reparar");'],
   // (revisión de 90170a1) · La regla vuelve a pedir la devolución de su llave que ya falló (renombrada «~fallida-») o que no se pudo anotar (refund_stuck):
   // se devolvería dos veces; «completar» con la llave ya pedida mueve dinero; «Se completó» sin regla; «completar» sin tope; el SMS se anota una sola vez.
-  ['liberarMira', 'la regla pide otra vez la devolución fallida', CO, '    if (previa) return { queda: mitad, dev: previa };', '    if (previa?.e === "hecha") return { queda: mitad, dev: previa };'],
+  ['liberarMira', 'la regla pide otra vez la devolución fallida', CO, '    if (previa) return { queda: mitad, dev: segunLoDevuelto(previa, o.amt - o.ref - mitad, o.ref) };', '    if (previa?.e === "hecha") return { queda: mitad, dev: previa };'],
   ['liberarMira', 'la regla pide otra vez la que no se pudo anotar', CO, "    if ((await db().query(`select 1 from money_alerts where kind = 'refund_stuck' and subject_id = $1`, [`cancelacion:vcx-${o.num}`])).rowCount)\n", '    if (false)\n'],
   ['liberarMira', 'la relectura no dice fallida sin fila', CO, '!o.rst ? (o.atascada ? { e: "fallida", monto: Math.max(0, o.amt - o.ref - queda) } : null)', '!o.rst ? null'],
   ['liberarMira', '«completar» con la llave pedida vuelve a aplicar la regla', CO, 'const regla = await (pedida ? reglaTardeLeida(opId) : reglaTardeConLoCobrado(opId))', 'const regla = await (pedida ? reglaTardeConLoCobrado(opId) : reglaTardeConLoCobrado(opId))'],
@@ -114,6 +115,15 @@ const casos = [
   ['liberarMira', '«completar» sin regla vuelve cada minuto', CO, '    if (n < COMPLETAR_INTENTOS) {', '    if (n < Infinity) {'],
   ['liberarMira', 'el barrido sin el tope de «completar»', CO, '[f.negocio ?? null, BARRIDO_TARDE_DIAS, COMPLETAR_INTENTOS]', '[f.negocio ?? null, BARRIDO_TARDE_DIAS, 1e9]'],
   ['liberarMira', 'el SMS se anota una sola vez', 'apps/web/lib/avisos.ts', '  await anotar().catch(() => anotar());', '  await anotar();'],
+  // (revisión de 51a794d) · «completar» al tope sin regla con su alerta cobrada: ya abierta: «No se pudo completar» se pierde (sin su alerta completar:, o
+  // sin volver el tope atrás si no se anota, o sin contar la cobrada: que lanzó); la devolución ya devuelta a mano dice «no salió» (o «$0.00»).
+  ['liberarMira', '«completar» al tope sin su alerta propia', CO, '    const dicha = nueva === false && await (await import("./dinero-alertas")).alertar("hold_stuck", `completar:${c.id}`', '    const dicha = nueva === false && await (await import("./dinero-alertas")).alertar("hold_stuck", `cobrada:${c.id}`'],
+  ['liberarMira', '«completar»: el tope no vuelve atrás', CO, '    if (!dicha) await db().query(', '    if (false) await db().query('],
+  ['liberarMira', '«completar»: la cobrada: que lanzó no cuenta', CO, 'if (como === "completar" && !regla && nueva !== true) {', 'if (como === "completar" && !regla && nueva === false) {'],
+  ['liberarMira', 'ya devuelta a mano dice «no salió»', CO, '  if (falta <= 0) return ref > 0 ? { e: "hecha", monto: ref } : { e: "nada", monto: 0 };\n', ''],
+  ['liberarMira', 'la regla sin fila no mira lo devuelto', CO, '      return { queda: mitad, dev: segunLoDevuelto({ e: "fallida", monto: Math.max(0, o.amt - o.ref - mitad) }, o.amt - o.ref - mitad, o.ref) };', '      return { queda: mitad, dev: { e: "fallida", monto: Math.max(0, o.amt - o.ref - mitad) } };'],
+  ['liberarMira', 'la relectura no mira lo devuelto', CO, 'return { queda, dev: dev && segunLoDevuelto(dev, o.amt - o.ref - queda, o.ref) };', 'return { queda, dev };'],
+  ['liberarMira', 'completar: se cierra sola', 'apps/web/lib/dinero-alertas.ts', "a.subject_id ~ '^(liberar|cobrar):[0-9]{1,18}$'", "a.subject_id ~ '^(liberar|cobrar|completar):[0-9]{1,18}$'"],
   ['liberarMira', 'a medias: solo sin alerta (el aviso sin reclamar se pierde)', CO, " or (coalesce((o.details->>'reglaCompletarIntentos')::int, 0) < $3::int and not coalesce((o.details->>'avisoCobro')::boolean, false) and not (o.details ? 'avisoCobroAt'))))", "))"],
   ['liberarMira', 'la marca aparte de la fila', 'apps/web/lib/avisos.ts', 'with k as (insert into notif_once (key) select $14::text where $14::text is not null on conflict do nothing returning 1)\n       insert into notifications', 'insert into notifications'],
   ['liberarMira', 'viaje: el aviso al negocio sin su llave', VL, '}, `cobrada:biz_viaje_cx:${numero}`)));', '})));'],
