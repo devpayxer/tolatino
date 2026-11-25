@@ -83,8 +83,8 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(devoluciones(V1.num) === 'done' && pago(V1.num) === 'refunded|4500' && alertas(V1.num) === '0', `${V1.num}: la devolución salió ($45 devueltos) y no hay alerta`);
     ok(devoluciones(V2.num) === 'failed' && pago(V2.num) === 'captured|0' && alertas(V2.num) === '1', `${V2.num}: Stripe dijo que no: fallida, nada devuelto y UNA alerta al equipo de dinero`);
     const a1 = aviso(V1.num, 'viaje_cx'), a2 = aviso(V2.num, 'viaje_cx');
-    ok(a1.includes('Cancelaste tu viaje') && a1.includes('Te devolvimos $45.00 a tu tarjeta') && !/Te devolvemos|\{d/.test(a1), `viaje_cx de quien recibió su dinero: «Te devolvimos $45.00» (${a1})`);
-    ok(a2.includes('La devolución de $45.00 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv|\{d/.test(a2), `viaje_cx de quien no lo recibió no dice «te devolvemos» (${a2})`);
+    ok(a1.includes('Cancelaste tu viaje') && a1.includes('Te devolvimos $45 a tu tarjeta') && !/Te devolvemos|\{d/.test(a1), `viaje_cx de quien recibió su dinero: «Te devolvimos $45» (${a1})`);
+    ok(a2.includes('La devolución de $45 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv|\{d/.test(a2), `viaje_cx de quien no lo recibió no dice «te devolvemos» (${a2})`);
     await V2.m.reload(); await V2.m.getByText('CANCELADO').first().waitFor();
     const t2 = await texto(V2.m);
     ok(t2.includes('La devolución de $45 no salió: escríbenos en Soporte y lo resolvemos.') && !/Te devolv/.test(t2), 'la pantalla del viaje de quien no lo recibió: «no salió»');
@@ -114,8 +114,8 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(devoluciones(E1.num) === 'done' && pago(E1.num) === 'refunded|10000' && alertas(E1.num) === '0', `${E1.num}: el depósito volvió ($100, hecha)`);
     ok(devoluciones(E2.num) === 'failed' && pago(E2.num) === 'captured|0' && alertas(E2.num) === '1', `${E2.num}: Stripe dijo que no: fallida, nada devuelto y UNA alerta`);
     const e1 = aviso(E1.num, 'evp_cancelado'), e2 = aviso(E2.num, 'evp_cancelado');
-    ok(e1.includes('Cancelaste tu evento privado') && e1.includes('Te devolvimos $100.00 a tu tarjeta') && !/Te devolvemos|\{d/.test(e1), `evp_cancelado de quien recibió su depósito (${e1})`);
-    ok(e2.includes('La devolución de $100.00 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv|\{d/.test(e2), `evp_cancelado de quien no lo recibió (${e2})`);
+    ok(e1.includes('Cancelaste tu evento privado') && e1.includes('Te devolvimos $100 a tu tarjeta') && !/Te devolvemos|\{d/.test(e1), `evp_cancelado de quien recibió su depósito (${e1})`);
+    ok(e2.includes('La devolución de $100 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv|\{d/.test(e2), `evp_cancelado de quien no lo recibió (${e2})`);
     await espera(async () => /Te devolvimos/.test(await texto(E1.m)));
     const s1 = await texto(E1.m);
     ok(/Te devolvimos \$100(\.00)? a tu Visa/.test(s1) && !/Te devolvemos/.test(s1), 'la pantalla de quien recibió su depósito: «Te devolvimos $100 a tu Visa ·· 4242»');
@@ -136,8 +136,8 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(devoluciones(E3.num) === 'failed' && pago(E3.num) === 'captured|0' && alertas(E3.num) === '1' && sql(`select r.initiated_by from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${E3.num}'`) === 'business', `${E3.num}: Stripe dijo que no: fallida (por el negocio) y UNA alerta al equipo de dinero`);
     ok(devoluciones(E4.num) === 'done' && pago(E4.num) === 'refunded|10000', `${E4.num}: el depósito volvió completo`);
     const e3 = aviso(E3.num, 'evp_cancelado_negocio'), e4 = aviso(E4.num, 'evp_cancelado_negocio');
-    ok(e3.includes('Se nos dañó la cocina. La devolución de $100.00 no salió') && !/Te devolv|\{d/.test(e3), `evp_cancelado_negocio sin la devolución: nunca «Te devolvemos el depósito completo» (${e3})`);
-    ok(e4.includes('Se nos dañó la cocina. Te devolvimos $100.00 a tu tarjeta') && !/Te devolvemos/.test(e4), `evp_cancelado_negocio con la devolución hecha (${e4})`);
+    ok(e3.includes('Se nos dañó la cocina. La devolución de $100 no salió') && !/Te devolv|\{d/.test(e3), `evp_cancelado_negocio sin la devolución: nunca «Te devolvemos el depósito completo» (${e3})`);
+    ok(e4.includes('Se nos dañó la cocina. Te devolvimos $100 a tu tarjeta') && !/Te devolvemos/.test(e4), `evp_cancelado_negocio con la devolución hecha (${e4})`);
     const m3 = await (await telefono(b)).newPage(); m3.on('pageerror', (e) => err.push(e.message));
     await entrarComo(m3, E3.tel); await m3.goto(B + `/privado/${E3.num}`); await m3.getByText('CANCELADO').first().waitFor();
     const s3 = await texto(m3);
@@ -170,7 +170,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(d1.e === 'retenida' && d1.monto === 4500 && d2.e === 'retenida' && pago(num) === 'held|0', `la pasarela no la soltó: «retenida» y el cobro sigue retenido (${d1.e}, ${pago(num)})`);
     ok(hs() === '1', 'UNA alerta hold_stuck al equipo de dinero (aunque se mire dos veces)');
     const t = DCX.dineroAlCancelar(d1), pr = DCX.textoPanelCancelar(DCX.contar(DCX.sinDevoluciones(), d1));
-    ok(t.es.startsWith('No se cobró nada, pero la retención de $45.00 todavía no se soltó de tu tarjeta') && !/se suelta de tu tarjeta\./.test(t.es) && t.en.includes('has not come off your card yet'), `el aviso lo dice (ES/EN): «${t.es}»`);
+    ok(t.es.startsWith('No se cobró nada, pero la retención de $45 todavía no se soltó de tu tarjeta') && !/se suelta de tu tarjeta\./.test(t.es) && t.en.includes('has not come off your card yet'), `el aviso lo dice (ES/EN): «${t.es}»`);
     ok(pr.es.includes('la retención de su tarjeta no se soltó todavía') && !/Le devolvimos/.test(pr.es), `el panel lo dice: «${pr.es}»`);
     suelta = true;
     const d3 = await cobros.devolverAlCancelar(o, x);

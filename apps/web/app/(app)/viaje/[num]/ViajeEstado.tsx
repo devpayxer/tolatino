@@ -22,7 +22,7 @@ import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
-const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
+import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const hora = (t: number | undefined) => (t ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : "");
 const DS = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };

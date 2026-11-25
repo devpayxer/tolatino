@@ -10423,7 +10423,7 @@ const guardianes = {
     if (!existsSync(C)) return;
     const f = cuerpoFn(sinComent(C), "recordatorios");
     if (/total_cents|deposit_cents|pay_mode|payments/.test(f)) falla(G, C, 0, "el recordatorio no mira el dinero (sale igual para una cita de $0)");
-    if (!/avisarCliente\(x\.number, "plan_visita", \{ franja: x\.franja \}\)/.test(f)) falla(G, C, 0, "la visita del plan recibe «Mañana es tu visita» con su franja");
+    if (!/avisarCliente\(x\.number, "plan_visita", \{ franja: \{ es: `\$\{x\.h1\} y las \$\{x\.h2\}`, en: `\$\{x\.h1\} and \$\{x\.h2\}` \} \}\)/.test(f)) falla(G, C, 0, "la visita del plan recibe «Mañana es tu visita» con su franja");
   },
 
   /* 9k · huellaDeTarjeta (L760, L938): la huella de la tarjeta (card.fingerprint) se guarda al guardar una tarjeta y en cada cobro; el máximo de boletos por
@@ -18499,8 +18499,11 @@ const guardianes = {
      viajes armaba servicio.es, «N personas» y {dep} con el texto en español aunque el dueño leyera en inglés (y la noche, la fiesta, la inscripción y la
      visita igual). Regla, lo que se puede ver sin correr: en cada «async function avisarNeg(» de lib/, extra admite Bi, y en el objeto de avisarNegocio(…)
      y en cada llamada avisarNeg(…, { … }) del archivo, ninguna propiedad toma un idioma (.es) ni lleva texto con palabras sin su par en inglés (en:).
-     Lo que una función o la base arma en un idioma (fechas, el servicio de la cita leído en SQL) no se ve aquí: va en LAUNCH. Al revés:
-     alrevesDineroDiceLoQuePaso. */
+     25 nov (LAUNCH «promete antes de actuar» d/e) · Y el aviso a quien lo recibe (avisarCliente de cada operación: viajes, noche, fiestas, inscripciones, visitas y
+     citas): lo mismo en su avisar(…, tpl, { … }) y en cada llamada avisarCliente(…, "tpl", { … }); más, en los dos: un valor con un ayudante de UN idioma
+     («diaFiesta(ymd, true)», «cuandoVis(…, true)»: la bandera de idioma fija en true) sin su par en:; y la consulta SQL del archivo que lee el servicio de la cita en
+     español ({svc,es}) sin {svc,en} o el día como DD/MM sin su MM/DD (pasaba: «sáb 16 ene is free», «26/11» al dueño en inglés). Lo que un ayudante de otro
+     archivo devuelve (itemL, cuandoL…) no se ve aquí: se vigila con su .es suelto. Al revés: alrevesDineroDiceLoQuePaso. */
   avisoNegUnIdioma() {
     const G = "avisoNegUnIdioma";
     // El objeto literal que empieza en t[i] («{»), contando llaves y saltando textos (con sus ${…}).
@@ -18530,36 +18533,68 @@ const guardianes = {
       return out.filter(Boolean);
     };
     // Texto con palabras en un valor: lo fijo de cada `…` (sin lo de ${…}) y cada "…" / '…', también los de dentro de un ${…} («${n} ${n === 1 ? "persona" : …}»).
-    const conPalabras = (v) => [...[...v.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map((m) => m[1].replace(/\$\{[^}]*\}/g, "")), ...[...v.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1] ?? m[2] ?? "")]
-      .some((x) => /[A-Za-zÁÉÍÓÚáéíóúñÑ]{2,}/.test(x));
+    // Los textos que no salen en el aviso: lo que se compara («=== "held"»), la llave de una configuración (valor("…")) y la clave de lo que pide soltar (pideSoltarSi("sirve", …)).
+    const sinLlaves = (v) => v.replace(/(?:===|!==|==|!=)\s*(?:"[^"]*"|'[^']*')/g, "").replace(/\b(?:valor|pideSoltarSi|pideAlCancelar)\(\s*(?:"[^"]*"|'[^']*')/g, "");
+    const conPalabras = (v0) => { const v = sinLlaves(v0); return [...[...v.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map((m) => m[1].replace(/\$\{[^}]*\}/g, "")), ...[...v.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1] ?? m[2] ?? "")]
+      .some((x) => /[A-Za-zÁÉÍÓÚáéíóúñÑ]{2,}/.test(x)); };
     const revisar = (f, ln, que, obj) => {
       for (const p of props(obj)) {
         if (p.startsWith("...")) continue;
         const k = /^(\w+)\s*:/.exec(p)?.[1] ?? p, v = p.slice(p.indexOf(":") + 1);
         if (/en:/.test(v)) continue;
-        if (/\.es\b/.test(v)) falla(G, f, ln, `${que}: {${k}} toma solo el español (.es): va { es, en } (avisos › avisar pone el del dueño)`);
+        if (/\.es\b/.test(v)) falla(G, f, ln, `${que}: {${k}} toma solo el español (.es): va { es, en } (avisos › avisar pone el del que lo recibe)`);
+        else if (/\b[A-Za-z]\w*\([^()]*,\s*true\)/.test(v)) falla(G, f, ln, `${que}: {${k}} usa un ayudante con el idioma fijo en español (…, true): va { es: …(…, true), en: …(…, false) }`);
         else if (conPalabras(v)) falla(G, f, ln, `${que}: {${k}} lleva texto en un solo idioma: va { es, en }`);
       }
     };
-    let defs = 0;
+    const defs = { avisarNeg: 0, avisarCliente: 0 };
     for (const f of archivos.filter((x) => /^apps\/web\/lib\/[^/]+\.ts$/.test(x))) {
       const t = sinComent(f);
-      const d = /\nasync function avisarNeg\(([^)]*)\) \{/.exec(t);
-      if (!d) continue;
-      defs++;
-      const ln = t.slice(0, d.index).split("\n").length + 1;
-      if (!/extra: Record<string, [^>]*\bBi\b[^>]*>/.test(d[1])) falla(G, f, ln, "avisarNeg: extra no admite Bi: quien llama solo puede pasar texto en un idioma");
-      const cu = cuerpoFn(t, "avisarNeg"), a = cu.indexOf("avisarNegocio(");
-      const o = a < 0 ? "" : objeto(cu, cu.indexOf("{", cu.indexOf(",", cu.indexOf(",", a) + 1)));
-      if (!o) { falla(G, f, ln, "avisarNeg: no encuentro el objeto de avisarNegocio(…, tpl, { … }): el guardián no lo puede mirar"); continue; }
-      revisar(f, ln, "avisarNeg", o);
-      for (const m of t.matchAll(/\bavisarNeg\((?=[^)\n]*?,\s*"[a-z_]+",\s*\{)/g)) {
-        const i = t.indexOf("{", t.indexOf('"', t.indexOf(",", m.index) + 1) + 1);
-        const ob = objeto(t, i);
-        if (ob) revisar(f, t.slice(0, m.index).split("\n").length, "una llamada a avisarNeg", ob);
+      for (const [nom, interna] of [["avisarNeg", "avisarNegocio("], ["avisarCliente", "avisar("]]) {
+        const d = new RegExp(`\\nasync function ${nom}\\(([^)]*)\\) \\{`).exec(t);
+        if (!d) continue;
+        defs[nom]++;
+        const ln = t.slice(0, d.index).split("\n").length + 1;
+        if (!/extra: Record<string, [^>]*\bBi\b[^>]*>/.test(d[1])) falla(G, f, ln, `${nom}: extra no admite Bi: quien llama solo puede pasar texto en un idioma`);
+        const cu = cuerpoFn(t, nom), a = cu.indexOf(interna);
+        const o = a < 0 ? "" : objeto(cu, cu.indexOf("{", cu.indexOf(",", cu.indexOf(",", a) + 1)));
+        if (!o) { falla(G, f, ln, `${nom}: no encuentro el objeto de ${interna}…, tpl, { … }): el guardián no lo puede mirar`); continue; }
+        revisar(f, ln, nom, o);
+        for (const m of t.matchAll(new RegExp(`\\b${nom}\\((?=[^)\\n]*?,\\s*"[a-z_]+",\\s*\\{)`, "g"))) {
+          const i = t.indexOf("{", t.indexOf('"', t.indexOf(",", m.index) + 1) + 1);
+          const ob = objeto(t, i);
+          if (ob) revisar(f, t.slice(0, m.index).split("\n").length, `una llamada a ${nom}`, ob);
+        }
+        // Lo que la base lee en un idioma: el servicio de la cita ({svc,es}) sin {svc,en}, y el día DD/MM sin su MM/DD, en la misma consulta.
+        for (const m of t.matchAll(/`((?:[^`\\]|\\.)*)`/g)) {
+          const q = m[1], l = t.slice(0, m.index).split("\n").length;
+          if (/\{svc,es\}/.test(q) && !/\{svc,en\}/.test(q) && /\b(select|returning)\b/i.test(q) && /\bas (servicio|svc)\b/.test(q)) falla(G, f, l, "una consulta lee el servicio de la cita solo en español ({svc,es}): lee también {svc,en} y mándalo como { es, en }");
+          if (/'(FM)?DD\/(FM)?MM'/.test(q) && !/'(FM)?MM\/(FM)?DD'/.test(q)) falla(G, f, l, "una consulta da el día como DD/MM sin su MM/DD: el aviso en inglés lleva mes/día ({ es, en })");
+        }
       }
     }
-    if (defs < 5) falla(G, "apps/web/lib", 0, `esperaba los avisarNeg de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs}`);
+    if (defs.avisarNeg < 5) falla(G, "apps/web/lib", 0, `esperaba los avisarNeg de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs.avisarNeg}`);
+    if (defs.avisarCliente < 6) falla(G, "apps/web/lib", 0, `esperaba los avisarCliente de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs.avisarCliente}`);
+  },
+
+  /* 25 nov (LAUNCH «promete antes de actuar» d/e) · dineroUnDecimal: un formateador de dinero con maximumFractionDigits y SIN minimumFractionDigits deja un solo
+     decimal: $52.50 sale «$52.5» (FiestaEstado, fiestas-reservas, envios, pro-comun…). La regla del dinero que ve el cliente es una sola (lib/dinero-comun › usd:
+     sin centavos si son .00, dos decimales si no). Aquí: en todo apps/web, un «${(…).toLocaleString("en-US", { maximumFractionDigits: N }» (N > 0) sin su
+     minimumFractionDigits. No mira los porcentajes (sin «$» delante) ni maximumFractionDigits: 0 (dólares enteros a propósito). Al revés:
+     alrevesDineroDiceLoQuePaso. */
+  dineroUnDecimal() {
+    const G = "dineroUnDecimal";
+    let n = 0;
+    for (const f of archivos.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && !x.includes("/node_modules/"))) {
+      const t = sinComent(f);
+      if (!t.includes("FractionDigits")) continue;
+      for (const m of t.matchAll(/\$\$\{[^\n]*?toLocaleString\(\s*(?:"[^"]*"|'[^']*')\s*,\s*(\{[^}]*\})/g)) {
+        n++;
+        const o = m[1];
+        if (/maximumFractionDigits:\s*[1-9]/.test(o) && !/minimumFractionDigits/.test(o)) falla(G, f, t.slice(0, m.index).split("\n").length, "un formateador de dinero con maximumFractionDigits y sin minimumFractionDigits deja «$52.5»: usa lib/dinero-comun › usd (sin centavos si son .00, dos decimales si no)");
+      }
+    }
+    if (n < 5) falla(G, "apps/web", 0, `esperaba al menos 5 formateadores de dinero con toLocaleString; hallé ${n}`);
   },
 
 };

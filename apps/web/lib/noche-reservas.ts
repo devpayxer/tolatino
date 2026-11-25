@@ -215,7 +215,8 @@ async function leer(c: Q, where: string, args: unknown[], lock = false): Promise
   // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
   return (await c.query<Op>(`${SEL} where o.kind = 'night' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
-const nocheL = (o: Pick<Op, "night" | "hoy">) => (o.night === o.hoy ? "esta noche" : `el ${diaNoche(new Date(`${o.night}T12:00:00Z`).getUTCDay(), true)}`);
+/* 25 nov (LAUNCH e) · La noche del aviso en los dos idiomas (avisos › avisar pone la de quien lo recibe: antes «el sábado» también en un aviso en inglés). */
+const nocheL = (o: Pick<Op, "night" | "hoy">): Bi => { const d = new Date(`${o.night}T12:00:00Z`).getUTCDay(); return o.night === o.hoy ? { es: "esta noche", en: "tonight" } : { es: `el ${diaNoche(d, true)}`, en: diaNoche(d, false) }; };
 async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
@@ -229,7 +230,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
-  const noche: Bi = { es: nocheL(o), en: o.night === o.hoy ? "tonight" : diaNoche(new Date(`${o.night}T12:00:00Z`).getUTCDay(), false) };
+  const noche = nocheL(o);
   await avisarNegocio(o.biz, tpl, { cliente: o.cliente, noche, hora: hNoche(Number(o.det.arrive)), servicio: bi(o.det.svc), personas: { es: `${o.pax} ${o.pax === 1 ? "persona" : "personas"}`, en: `${o.pax} ${o.pax === 1 ? "person" : "people"}` }, dep: "", min: "60", ...extra },
     { href: `/panel/${o.biz}/hoy?det=noche:${numero}`, ref: ["night", numero] });
 }
@@ -245,7 +246,7 @@ export function puertaTexto(det: Record<string, unknown>, es: boolean): string {
 export async function avisarNocheNueva(numero: string) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
-  if (o.det.k === "lista") await avisarCliente(numero, "noche_lista", { puerta: `${puertaTexto(o.det, true)}.` });
+  if (o.det.k === "lista") await avisarCliente(numero, "noche_lista", { puerta: { es: `${puertaTexto(o.det, true)}.`, en: `${puertaTexto(o.det, false)}.` } });
   else await avisarNeg(numero, "biz_noche_mesa", { dep: o.dep ? { es: ` Depósito ${usdN(o.dep)} retenido.`, en: ` ${usdN(o.dep)} deposit held.` } : "" });
 }
 async function ev(c: PoolClient, op: string, kind: string, actor: "user" | "member" | "system", actorId: string | null, note?: Bi) {
@@ -296,7 +297,7 @@ export async function responderMesa(negocio: string, numero: string, paso: PasoM
     }
     await c.query(`update operations set status = 'confirmed', answered_at = now(), confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
     await ev(c, o.id, "night_ok", "member", actorId);
-    despues = async () => { await cobrarOperacion(o.id); await avisarCliente(numero, "noche_ok", { dep: o.dep ? ` Depósito de ${usdN(o.dep)} cobrado; se descuenta de tu cuenta.` : "" }); };
+    despues = async () => { await cobrarOperacion(o.id); await avisarCliente(numero, "noche_ok", { dep: o.dep ? { es: ` Depósito de ${usdN(o.dep)} cobrado; se descuenta de tu cuenta.`, en: ` ${usdN(o.dep)} deposit charged; it comes off your bill.` } : "" }); };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
@@ -511,7 +512,7 @@ export async function avisarCoverSube(negocio: string, antes: number) {
     [negocio, VIVAS, h.hoy])).rows;
   for (const x of L) {
     const o = await leer(db(), "o.number = $1", [x.num]);
-    if (o) await avisarCliente(x.num, "noche_cover", { cover: usdN(h.prox.cover), puerta: `${puertaTexto(o.det, true)}.` });
+    if (o) await avisarCliente(x.num, "noche_cover", { cover: usdN(h.prox.cover), puerta: { es: `${puertaTexto(o.det, true)}.`, en: `${puertaTexto(o.det, false)}.` } });
   }
   return L.length;
 }

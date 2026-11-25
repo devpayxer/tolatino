@@ -6661,3 +6661,6 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Para decidir (punto 4):** que el código que no toca dinero, permisos, datos personales, migraciones, el servidor ni el CI suba al sandbox como
   los ajustes (comprobaciones aquí con las pruebas de lo tocado, ~10 min; la revisión larga justo después en `main`; una roja se arregla antes que
   nada). Producción no cambia: confirmación completa + OK. Cambia AF (lo que se exige antes del sandbox).
+
+## Avisos en el idioma de quien los recibe y el dinero con una sola regla (25 nov, 9y2; hecho por Opus, revisado por otro modelo)
+- El día, el servicio, la noche, la matrícula y lo demás que va dentro de un aviso ahora se manda en español e inglés y cada persona recibe el suyo (antes la fiesta en inglés decía «sáb 16 ene is free»); y el dinero que ve el cliente sale siempre «$45» / «$52.50» (nunca «$45.00» ni «$52.5»). Qué mirar: cambia el idioma de una cuenta de prueba a inglés, pide «otra hora» a una fiesta y a una cita desde el panel, y lee el aviso en la campana; mira también el monto en la hoja del viaje y en su aviso. Guardianes nuevos: dineroUnDecimal y avisoNegUnIdioma ampliado (avisarCliente). Sin migración.

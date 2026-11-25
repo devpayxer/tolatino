@@ -10,6 +10,7 @@
 /* 25 nov (regla 13, LAUNCH «el dinero dice lo que pasó» g) · Y «cobrada»: la retención que se iba a soltar ya estaba COBRADA en Stripe y la base no lo
    sabía (pasarela.liberar mira el intento; cobros › soltarRetencion la anota cobrada con su monto real y alerta al equipo de dinero, cobrada:<cobro>, sin
    cerrarse sola). Nunca «No se cobró nada» ni «se soltó» de ese dinero. */
+import { usd } from "./dinero-comun";
 type Bi = { es: string; en: string };
 export type EstadoCancelar = "hecha" | "en_camino" | "fallida" | "liberada" | "retenida" | "cobrada" | "nada";
 export type DevCancelar = { e: EstadoCancelar; monto: number; regla?: ReglaTarde };
@@ -20,8 +21,7 @@ export type ReglaTarde = { queda: number; dev: DevCancelar | null };
    retenciones (nada cobrado) se soltaron y cuántas no se soltaron todavía. cobradas: las retenciones que Stripe ya había cobrado (solo si hay alguna). */
 export type DevCuenta = { hechas: number; camino: number; fallidas: number; liberadas: number; retenidas: number; cobradas?: number };
 
-const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
-/* El monto como lo dicen estos textos ($12.50), para quien arma su propio {dinero} (avisos › avisarPedido). */
+/* El monto como lo dicen estos textos (dinero-comun › usd: «$12.50», «$45»), para quien arma su propio {dinero} (avisos › avisarPedido). */
 export const usdTxt = usd;
 
 /* {dinero} del aviso a quien pagó. */

@@ -80,9 +80,9 @@ const texto = async (p) => (await p.locator('body').innerText()).replace(/\s+/g,
     ok(alertas(V2.num) === '1' && alertas(V1.num) === '0', 'el «no» de Stripe le llega al equipo de dinero: UNA alerta (y ninguna por la que salió)');
     ok(pago(V3.num).startsWith('released|') && sql(`select status from sim_intents where id = 'pi_sim_9v3_${RUN}_${V3.op}'`) === 'canceled', `${V3.num}: solo retenido: se libera, no se devuelve nada`);
     const a1 = aviso(V1.num, 'viaje_cancelada'), a2 = aviso(V2.num, 'viaje_cancelada'), a3 = aviso(V3.num, 'viaje_cancelada');
-    ok(a1.includes('Se dañó la van. Te devolvimos $45.00 a tu tarjeta') && !/Te devolvemos todo/.test(a1), `el aviso de quien recibió su dinero: «Te devolvimos $45.00» (${a1})`);
-    ok(a2.includes('La devolución de $45.00 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv/.test(a2), `el aviso de quien no lo recibió no dice «te devolvemos» (${a2})`);
-    ok(a3.includes('No se cobró nada: la retención de $45.00 se suelta de tu tarjeta') && !/Te devolv/.test(a3), `el aviso de quien solo tenía la retención (${a3})`);
+    ok(a1.includes('Se dañó la van. Te devolvimos $45 a tu tarjeta') && !/Te devolvemos todo/.test(a1), `el aviso de quien recibió su dinero: «Te devolvimos $45» (${a1})`);
+    ok(a2.includes('La devolución de $45 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv/.test(a2), `el aviso de quien no lo recibió no dice «te devolvemos» (${a2})`);
+    ok(a3.includes('No se cobró nada: la retención de $45 se suelta de tu tarjeta') && !/Te devolv/.test(a3), `el aviso de quien solo tenía la retención (${a3})`);
     const m1 = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); m1.on('pageerror', (e) => err.push(e.message));
     await entrarComo(m1, V1.tel); await m1.goto(B + `/viaje/${V1.num}`); await m1.getByText('CANCELADO').first().waitFor();
     const t1 = await texto(m1);
@@ -115,8 +115,8 @@ const texto = async (p) => (await p.locator('body').innerText()).replace(/\s+/g,
     ok(devolucion(N1.num) === 'done' && pago(N1.num) === 'refunded|4000', `${N1.num}: el depósito volvió (hecha, $40)`);
     ok(devolucion(N2.num) === 'failed' && pago(N2.num) === 'captured|0' && alertas(N2.num) === '1', `${N2.num}: Stripe dijo que no: fallida, nada devuelto y UNA alerta al equipo de dinero`);
     const b1 = aviso(N1.num, 'noche_biz_cx'), b2 = aviso(N2.num, 'noche_biz_cx');
-    ok(b1.includes('Se fue la luz. Te devolvimos $40.00 a tu tarjeta') && !/Te devolvemos todo/.test(b1), `el aviso de la mesa devuelta (${b1})`);
-    ok(b2.includes('La devolución de $40.00 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv/.test(b2), `el aviso de la mesa que no se devolvió (${b2})`);
+    ok(b1.includes('Se fue la luz. Te devolvimos $40 a tu tarjeta') && !/Te devolvemos todo/.test(b1), `el aviso de la mesa devuelta (${b1})`);
+    ok(b2.includes('La devolución de $40 no salió: el equipo de To\'Latino ya tiene el aviso') && !/Te devolv/.test(b2), `el aviso de la mesa que no se devolvió (${b2})`);
     const m3 = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); m3.on('pageerror', (e) => err.push(e.message));
     await entrarComo(m3, N2.tel); await m3.goto(B + `/noche/${N2.num}`); await m3.getByText('CANCELADA').first().waitFor();
     const t3 = await texto(m3);

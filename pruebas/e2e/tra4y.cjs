@@ -212,7 +212,7 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   ok(await esperaV(() => pay(V7).split('|').slice(0, 2).join('|'), 'cancelled|released') === 'cancelled|released', `${V7} (pendiente): liberado`);
   ok(run(RM) === '0|cancelled', 'la salida queda cancelada sin asientos');
   await m.goto(B + `/viaje/${V6}`); ok(await espera(m.getByText(/Se dañó la van/)), 'el cliente ve el motivo');
-  ok(sql(`select body from notifications where tpl = 'viaje_cancelada' and ref_id = '${V6}' order by id desc limit 1`).includes('Te devolvimos $45.00 a tu tarjeta'), 'su aviso dice lo que pasó: «Te devolvimos $45.00 a tu tarjeta»');
+  ok(sql(`select body from notifications where tpl = 'viaje_cancelada' and ref_id = '${V6}' order by id desc limit 1`).includes('Te devolvimos $45 a tu tarjeta'), 'su aviso dice lo que pasó: «Te devolvimos $45 a tu tarjeta»');
 
   // ── 11. Vehículo completo: recogida en su dirección, precio cerrado $420 ──
   await m.goto(B + `/n/${V}/viaje?s=${PRIV}`); await m.getByText('¿DÓNDE TE RECOGEN?').first().waitFor();

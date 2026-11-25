@@ -24,7 +24,7 @@ type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "Payment
 const { Icon, Button, StepHeader, DateStrip, TimeSlots, PaymentSummary, DepositOutcomes, QtyStepper } = UI as unknown as Record<N, ComponentType<any>>;
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
-const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
+import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
 const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };

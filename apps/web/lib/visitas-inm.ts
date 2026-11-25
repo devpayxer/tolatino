@@ -267,8 +267,10 @@ async function soltar(c: PoolClient, grupo: unknown) {
 }
 const grupoVivo = (o: Op) => (o.status === "change_proposed" ? o.det.alt_group_id : o.det.group_id);
 const queDe = (o: Op) => (o.det.what as QueVis) ?? "visita";
-const itemL = (o: Op) => (o.det.item as Bi)?.es ?? "";
-const cuandoL = (o: Op) => cuandoVis(String(o.det.dia), Number(o.det.min), true);
+/* 25 nov (LAUNCH e) · Lo que dicen los avisos, en los dos idiomas (avisos › avisar pone el de quien lo recibe): el artículo y el día de la visita. */
+const itemL = (o: Op): Bi | string => { const it = o.det.item as Bi | undefined; return it?.es ? { es: it.es, en: it.en || it.es } : ""; };
+const cuandoBi = (dia: string, min: number): Bi => ({ es: cuandoVis(dia, min, true), en: cuandoVis(dia, min, false) });
+const cuandoL = (o: Op) => cuandoBi(String(o.det.dia), Number(o.det.min));
 /* La dirección que le llega al cliente al confirmar (Bienes Raíces: la de la propiedad; Autos: la del lote, o «en tu casa»). */
 async function direccionCliente(c: Q, o: Op): Promise<string | null> {
   const que = queDe(o);
@@ -280,7 +282,7 @@ async function direccionCliente(c: Q, o: Op): Promise<string | null> {
   if (o.det.at_home) return null;
   return (await c.query<{ d: string | null }>(`select case when works_from_home then null else address end as d from businesses where id = $1`, [o.biz])).rows[0]?.d ?? null;
 }
-async function avisarCliente(o: Op, tpl: string, extra: Record<string, string> = {}) {
+async function avisarCliente(o: Op, tpl: string, extra: Record<string, string | Bi> = {}) {
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, num: o.num, cuando: cuandoL(o), dir: "", item: itemL(o), motivo: "", hora: horaVis(Number(o.det.min)), ...extra }, { href: `/vis/${o.num}`, ref: ["visit", o.num], sinSms: o.det.sms === false });
 }
@@ -288,8 +290,8 @@ async function avisarCliente(o: Op, tpl: string, extra: Record<string, string> =
    (antes el servicio, las personas y el día salían en español también en un aviso en inglés). Guardián avisoNegUnIdioma. */
 async function avisarNeg(o: Op, tpl: string, extra: Record<string, string | Bi> = {}) {
   const { avisarNegocio } = await import("./avisos");
-  const q = QUE[queDe(o)].t, it = o.det.item as Bi | undefined;
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, num: o.num, cuando: { es: cuandoL(o), en: cuandoVis(String(o.det.dia), Number(o.det.min), false) }, item: it?.es ? { es: it.es, en: it.en || it.es } : "",
+  const q = QUE[queDe(o)].t;
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, num: o.num, cuando: cuandoL(o), item: itemL(o),
     que: { es: q.es.toLowerCase(), en: q.en.toLowerCase() }, extra: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=vis:${o.num}`, ref: ["visit", o.num] });
 }
 export async function avisarVisitaNueva(numero: string) {
@@ -341,13 +343,13 @@ export async function responderVisita(negocio: string, numero: string, paso: Pas
       await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = $2::timestamptz, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, t.rb, JSON.stringify({ alt_group_id: g, alt: { dia: h.dia, min: h.min } })]);
       await ev(c, o.id, "vis_alt", "member", actorId, { es: `Propusiste ${cuandoVis(h.dia, h.min, true)}`, en: `You proposed ${cuandoVis(h.dia, h.min, false)}` });
-      despues = async () => { await avisarCliente(o, "vis_alt", { cuando: cuandoVis(h.dia, h.min, true) }); };
+      despues = async () => { await avisarCliente(o, "vis_alt", { cuando: cuandoBi(h.dia, h.min) }); };
       return { ok: true };
     }
     await c.query(`update operations set status = 'confirmed', answered_at = now(), confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
     await ev(c, o.id, "vis_ok", "member", actorId);
     const d = await direccionCliente(c, o);
-    despues = async () => { await avisarCliente(o, "vis_ok", { dir: d ? ` Dirección: ${d}.` : o.det.at_home ? " Te recogen en tu casa." : "" }); };
+    despues = async () => { await avisarCliente(o, "vis_ok", { dir: d ? { es: ` Dirección: ${d}.`, en: ` Address: ${d}.` } : o.det.at_home ? { es: " Te recogen en tu casa.", en: " They pick you up at home." } : "" }); };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();

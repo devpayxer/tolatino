@@ -3096,9 +3096,19 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       de viajes.ts arma el aviso al negocio en los dos idiomas (servicio, personas, día y {dep} como Bi; avisos › avisar pone el del dueño), y el día y
       {alt} de los avisos al cliente del viaje también. La misma clase en los avisarNeg de la noche (servicio, personas, la noche, el depósito), la
       fiesta (día, servicio, invitados), la inscripción (servicio, grupo, matrícula, «vence») y la visita (qué, cuándo, el artículo, «vence», lo de en su
-      casa / da a cambio). Guardián avisoNegUnIdioma (lo que se ve sin correr: .es suelto o texto con palabras sin su en:, y extra sin Bi). Queda, porque
-      no se ve sin correr: el servicio y el día de la cita al negocio salen de SQL en español (citas-flujo › datos: `{svc,es}`, `DD/MM`), y los avisarCliente
-      de noche, fiesta, inscripción y visita usan helpers en un idioma (nocheL, diaFiesta(…, true), svcAviso, cuandoL, itemL): pasarlos a Bi. (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
+      casa / da a cambio). Guardián avisoNegUnIdioma (lo que se ve sin correr: .es suelto o texto con palabras sin su en:, y extra sin Bi). _Hecho (25 nov, 9y2):_ el servicio
+      y el día de la cita al negocio (citas-flujo › datos: `{svc,es}`/`{svc,en}`, `DD/MM` y `MM/DD`) y los avisarCliente de la noche (nocheL, la puerta y el depósito), la fiesta
+      (`diaFiesta`, el depósito), la inscripción (`cuandoInsc`, la matrícula, el certificado, la fecha de la baja, el «vence» de la oferta de la lista de espera), la visita
+      (itemL, cuandoL, la dirección) y la cita (el día, «otra hora», la franja del plan, el recordatorio) salen en los dos idiomas (Bi): avisos › avisar pone el de quien
+      lo recibe. svcAviso (sin uso) se quitó. El guardián avisoNegUnIdioma ahora mira también avisarCliente (definición y llamadas), el ayudante con el idioma fijo en
+      `true` y la consulta que lee `{svc,es}` sin `{svc,en}` o `DD/MM` sin `MM/DD`; al revés en alrevesDineroDiceLoQuePaso (+11 casos). Sin migración: las plantillas
+      guardadas no cambiaron (solo lo que se manda en las variables). Queda, porque no se ve sin correr: los avisos fuera de estas seis (solicitudes › `svc`,
+      planes › `plan`, chofer, anfitriones, canales) que arman un nombre o un día en un idioma; mirarlos con el mismo guardián cuando tengan su avisarCliente. (e2) _Hecho (25 nov, 9y2) · el dinero con UNA regla:_ `lib/dinero-comun.ts › usd` (sin centavos si son .00, dos decimales si no: «$45», «$52.50») la usan devolucion-cancelar (usdTxt: los avisos y el panel de lo que
+      pasó con el dinero), evento-privado-comun (dinero), viajes (money), ViajeEstado, ViajeBooking, FiestaEstado, fiestas-reservas, citas-flujo (money), y los que dejaban «$52.5»
+      (`maximumFractionDigits` sin `minimumFractionDigits`: n/[id]/Viaje y Salud, panel/FiestasReservas, envios, salud-compat, pro-comun). Guardián dineroUnDecimal (con su
+      al revés). Puesta al día en las e2e que leían «$45.00» de esos avisos (din9v3, din9v4, din9v5, din9w, din9x, din9y, fie4v, tra4y). Queda, sin ser el mismo error (siempre
+      dos decimales, nunca «$X.5»): los `toFixed(2)` de mercado, cobros (alertas del equipo), apartados y otras pantallas del cliente («$45.00» donde otras dicen «$45»);
+      pasarlos a `usd` cuando se toque cada pantalla. (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
       (g) _Hecho (25 nov, din9x):_ `pasarela.liberar` ya no da ok ante `payment_intent_unexpected_state`: mira el intento (cancelado = soltada; cobrado =
       `{ ok: false, cobrado }`; sin respuesta = no), y el simulador igual con sim_intents. liberarOperacion anota «captured» con lo que Stripe capturó y
       dice «cobrada»; soltarRetencion abre hold_stuck `cobrada:<cobro>`, que no se cierra sola; los avisos y el panel lo dicen (devolucion-cancelar:

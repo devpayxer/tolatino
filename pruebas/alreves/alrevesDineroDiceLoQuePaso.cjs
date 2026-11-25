@@ -1,4 +1,5 @@
-// Prueba al revés de los guardianes liberarMira, capturaTardeAlerta y avisoNegUnIdioma (25 nov, LAUNCH «el dinero dice lo que pasó», letras e y g):
+// Prueba al revés de los guardianes liberarMira, capturaTardeAlerta, avisoNegUnIdioma (también el aviso a quien lo recibe: avisarCliente) y dineroUnDecimal
+// (25 nov, LAUNCH «el dinero dice lo que pasó», letras e y g, y «promete antes de actuar» d/e):
 // soltar una retención que Stripe ya había cobrado no la deja «released» (pasarela.liberar mira el intento; el libro la anota cobrada y el equipo de dinero
 // tiene la alerta cobrada:, que no se cierra sola); la captura tarde a la que Stripe no contestó alerta captura: como la que lanza; y el aviso al negocio no
 // mezcla idiomas. (revisión de 621f214) El aviso del barrido que no quedó se reintenta (solo lo que falta) y la alerta dice si llegó; la segunda «cobrada»
@@ -172,6 +173,22 @@ const casos = [
   ['avisoNegUnIdioma', 'fiesta: «N invitados» en español', 'apps/web/lib/fiestas-reservas.ts', 'invitados: g ? { es: `${g} invitados`, en: `${g} guests` } : ""', 'invitados: g ? `${g} invitados` : ""'],
   ['avisoNegUnIdioma', 'inscripción: el grupo con .es', 'apps/web/lib/inscripciones.ts', 'await avisarNeg(numero, "biz_insc_alt_ok", { grupo: lb?.es ? { es: lb.es, en: lb.en || lb.es } : "" });', 'await avisarNeg(numero, "biz_insc_alt_ok", { grupo: lb?.es ?? "" });'],
   ['avisoNegUnIdioma', 'visita: {que} con .es', 'apps/web/lib/visitas-inm.ts', 'que: { es: q.es.toLowerCase(), en: q.en.toLowerCase() }', 'que: q.es.toLowerCase()'],
+  // (LAUNCH «promete antes de actuar» d/e) · El aviso a quien lo recibe en el idioma de quien lo recibe, y UNA regla para el dinero que ve el cliente.
+  ["avisoNegUnIdioma", "fiesta (cliente): el día con diaFiesta(…, true)", 'apps/web/lib/fiestas-reservas.ts', "dia: { es: diaFiesta(o.ymd, true), en: diaFiesta(o.ymd, false) }, hora: hora(o.m), dev: \"\", dep: \"\", dinero: \"\"", "dia: diaFiesta(o.ymd, true), hora: hora(o.m), dev: \"\", dep: \"\", dinero: \"\""],
+  ["avisoNegUnIdioma", "noche (cliente): la noche con .es", 'apps/web/lib/noche-reservas.ts', "noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), guarda:", "noche: nocheL(o).es, hora: hNoche(Number(o.det.arrive)), guarda:"],
+  ["avisoNegUnIdioma", "noche (cliente): la puerta en español", 'apps/web/lib/noche-reservas.ts', "await avisarCliente(numero, \"noche_lista\", { puerta: { es: `${puertaTexto(o.det, true)}.`, en: `${puertaTexto(o.det, false)}.` } });", "await avisarCliente(numero, \"noche_lista\", { puerta: `${puertaTexto(o.det, true)}.` });"],
+  ["avisoNegUnIdioma", "noche (cliente): el depósito cobrado en español", 'apps/web/lib/noche-reservas.ts', "dep: o.dep ? { es: ` Depósito de ${usdN(o.dep)} cobrado; se descuenta de tu cuenta.`, en: ` ${usdN(o.dep)} deposit charged; it comes off your bill.` } : \"\"", "dep: o.dep ? ` Depósito de ${usdN(o.dep)} cobrado; se descuenta de tu cuenta.` : \"\""],
+  ["avisoNegUnIdioma", "noche (cliente): extra sin Bi", 'apps/web/lib/noche-reservas.ts', "async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {", "async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {"],
+  ["avisoNegUnIdioma", "inscripción (cliente): «empieza el» con cuandoInsc(…, true)", 'apps/web/lib/inscripciones.ts', "cuando: { es: cuandoInsc(o.det, true), en: cuandoInsc(o.det, false) }", "cuando: cuandoInsc(o.det, true)"],
+  ["avisoNegUnIdioma", "inscripción (cliente): el certificado en español", 'apps/web/lib/inscripciones.ts', "{ cert: dio ? { es: ` ${o.det.oficial ? \"Tu certificado\" : \"Tu constancia\"} está listo. ¡Felicidades!`, en: ` Your ${o.det.oficial ? \"certificate\" : \"proof of completion\"} is ready. Congratulations!` } : \"\" }", "{ cert: dio ? ` ${o.det.oficial ? \"Tu certificado\" : \"Tu constancia\"} está listo. ¡Felicidades!` : \"\" }"],
+  ["avisoNegUnIdioma", "inscripción: «vence» de la oferta sin su mes/día", 'apps/web/lib/inscripciones.ts', "'FMMM/FMDD') as until_en", "'FMDD/FMMM') as until_en"],
+  ["avisoNegUnIdioma", "visita (cliente): el artículo con .es", 'apps/web/lib/visitas-inm.ts', "cuando: cuandoL(o), dir: \"\", item: itemL(o), motivo: \"\"", "cuando: cuandoL(o), dir: \"\", item: (o.det.item as Bi)?.es ?? \"\", motivo: \"\""],
+  ["avisoNegUnIdioma", "visita (cliente): la dirección en español", 'apps/web/lib/visitas-inm.ts', "{ dir: d ? { es: ` Dirección: ${d}.`, en: ` Address: ${d}.` } : o.det.at_home ? { es: \" Te recogen en tu casa.\", en: \" They pick you up at home.\" } : \"\" }", "{ dir: d ? ` Dirección: ${d}.` : o.det.at_home ? \" Te recogen en tu casa.\" : \"\" }"],
+  ["avisoNegUnIdioma", "cita: el servicio leído solo en español", 'apps/web/lib/citas-flujo.ts', "coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as servicio_en", "'' as servicio_en"],
+  ["dineroUnDecimal", "la regla común sin sus dos decimales fijos", 'apps/web/lib/dinero-comun.ts', "minimumFractionDigits: r % 100 ? 2 : 0, maximumFractionDigits: 2", "maximumFractionDigits: 2"],
+  ["dineroUnDecimal", "la fiesta deja «$52.5»", 'apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx', "import { usd as dinero } from \"@/lib/dinero-comun\";", "const dinero = (c: number) => `$${(c / 100).toLocaleString(\"en-US\", { maximumFractionDigits: 2 })}`;"],
+  ["dineroUnDecimal", "el aviso de la fiesta deja «$52.5»", 'apps/web/lib/fiestas-reservas.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${(c / 100).toLocaleString(\"en-US\", { maximumFractionDigits: 2 })}`;"],
+  ["dineroUnDecimal", "los envíos dejan «$52.5»", 'apps/web/lib/envios.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${(c / 100).toLocaleString(\"en-US\", { maximumFractionDigits: 2 })}`;"],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

@@ -1,5 +1,6 @@
 /* Evento privado (6i): lo que comparten el servidor y las pantallas (sin dinero que decida nada: los montos los calcula la base al
    mandar la propuesta; lo de aquí solo sirve para MOSTRAR mientras se arma). Listas del diseño evp-flow.js (OCC, BUD, horas). */
+import { usd } from "./dinero-comun";
 export type Bi = { es: string; en: string };
 export const NUM_EP = /^EP-\d{1,10}$/;
 
@@ -31,7 +32,7 @@ export const EXTRAS_FABRICA: ExtraEvp[] = [
   { k: "silla", es: "Acceso para silla de ruedas", en: "Wheelchair access", cents: 0 },
 ];
 
-export const dinero = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
+export const dinero = usd; // dinero-comun › usd: la regla única del dinero que ve el cliente
 export const horaL = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
 const DOW: [string, string][] = [["domingo", "Sunday"], ["lunes", "Monday"], ["martes", "Tuesday"], ["miércoles", "Wednesday"], ["jueves", "Thursday"], ["viernes", "Friday"], ["sábado", "Saturday"]];
 const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];

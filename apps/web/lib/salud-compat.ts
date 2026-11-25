@@ -16,7 +16,7 @@ export function nombreSeguro(x: SeguroRef, cat: CatSeguro[], es: boolean): strin
   return p && x.kind !== "chip" ? `${n.replace(/ \(.*\)$/, "")} · ${es ? p.name.es : p.name.en}` : n.replace(/ \(.*\)$/, "");
 }
 export const aceptan = (c: Clinica, x: SeguroRef) => x.kind !== "none" && (x.kind === "priv" ? !!x.insurer && c.ins.includes(x.insurer) : c.ins.includes(x.kind));
-const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd as usd } from "./dinero-comun";
 
 export type Compat = { ok: boolean; sinSeguro: boolean; t: string };
 export function compat(c: Clinica, x: SeguroRef | null, cat: CatSeguro[], es: boolean): Compat | null {

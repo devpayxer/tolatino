@@ -18,7 +18,7 @@ import { NUM_V, type Destino } from "./viajes";
 const no = (es: string, en: string, extra?: Record<string, true>) => ({ ok: false as const, msg: { es, en } as Bi, ...extra });
 const ok1 = { ok: true as const };
 type ResE = { ok: true } | { ok: false; msg: Bi; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
-const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd as money } from "./dinero-comun";
 
 type OpE = { id: string; num: string; biz: string; uid: string; status: string; detail: string | null; k: string; tot: number; pay: string | null; city: string };
 async function op(c: { query: ReturnType<typeof db>["query"] }, where: string, args: unknown[], lock = false): Promise<OpE | null> {

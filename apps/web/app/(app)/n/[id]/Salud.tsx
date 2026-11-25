@@ -20,7 +20,7 @@ const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
-const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd as usd } from "@/lib/dinero-comun";
 const TIPOS = [["medicaid", "Medicaid", "Medicaid"], ["medicare", "Medicare", "Medicare"], ["chip", "CHIP (niños)", "CHIP (kids)"], ["priv", "Seguro del trabajo o privado", "Employer or private"], ["none", "No tengo seguro", "No insurance"]] as const;
 const PARA = [["yo", "Para mí", "For me"], ["hijo", "Para mi hijo o hija", "For my child"], ["otro", "Para otra persona", "For someone else"]] as const;
 const LANG: Record<string, [string, string]> = { es: ["Español", "Spanish"], en: ["English", "English"], pt: ["Português", "Portuguese"], ht: ["Kreyòl", "Haitian Creole"] };

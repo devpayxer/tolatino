@@ -140,7 +140,7 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
     ok(d1.includes('Stripe no contestó a la captura tarde (red): no se sabe si salió') && d1.includes('Después la retención se soltó ($45.00)'), `la alerta dice lo que se sabe (${d1})`);
     ok(sql(`select details->>'cobroMitad' from operations where number = '${V1.num}'`) === '0', 'cobroMitad 0: no se cobró la mitad');
     const a1 = aviso(V1.num, 'viaje_cx');
-    ok(a1.includes('No se cobró nada: la retención de $45.00 se suelta de tu tarjeta.') && !/Se cobró la mitad/.test(a1), `viaje_cx: «No se cobró nada», nunca «Se cobró la mitad» (${a1})`);
+    ok(a1.includes('No se cobró nada: la retención de $45 se suelta de tu tarjeta.') && !/Se cobró la mitad/.test(a1), `viaje_cx: «No se cobró nada», nunca «Se cobró la mitad» (${a1})`);
     // 0408: la captura SÍ salió y la respuesta se perdió; al soltar, el simulador la encuentra cobrada.
     ok(sql(`select status || '|' || captured_cents || '|' || refunded_cents from sim_intents where id = '${V2.pi}'`) === 'succeeded|4500|2250', `${V2.num}: Stripe (el simulador) cobró $45 y devolvió $22.50 (${sql(`select status || '|' || captured_cents || '|' || refunded_cents from sim_intents where id = '${V2.pi}'`)})`);
     ok(pago(V2.num) === 'partially_refunded|4500|2250', `${V2.num}: el libro la dice cobrada (nunca 'released'): $45 cobrados, $22.50 devueltos (${pago(V2.num)})`);

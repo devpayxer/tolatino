@@ -15,7 +15,7 @@ import type { Ctx, Editor } from "./Panel";
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
 export type FiesPanel = { hoy?: FilaFiesta[]; det?: FiestaPanelV | null };
-const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd as money } from "@/lib/dinero-comun";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const restan = (ms: number | null) => { if (!ms) return null; const h = (ms - Date.now()) / 36e5; return h > 0 ? Math.max(1, Math.round(h)) : 0; };
 

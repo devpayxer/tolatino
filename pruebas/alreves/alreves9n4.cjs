@@ -89,7 +89,7 @@ const casos = [
   // … no corre en el barrido
   ['repartoSolo', BA, ', ["repartoSolo", async () => (await import("./repartidor-auto")).asignarSolos()]', ''],
   // recordatorioVisitaPlan: la visita del plan ya no dice su franja
-  ['recordatorioVisitaPlan', CF, 'if (k === "rec24" && x.plan && x.franja) await avisarCliente(x.number, "plan_visita", { franja: x.franja });', 'if (false) await avisarCliente(x.number, "plan_visita2", {});'],
+  ['recordatorioVisitaPlan', CF, 'if (k === "rec24" && x.plan && x.h1) await avisarCliente(x.number, "plan_visita", { franja: { es: `${x.h1} y las ${x.h2}`, en: `${x.h1} and ${x.h2}` } });', 'if (false) await avisarCliente(x.number, "plan_visita2", {});'],
   // … el recordatorio deja fuera las citas de $0
   ['recordatorioVisitaPlan', CF, "and not (o.details ? '${k}') and o.scheduled_at", "and o.total_cents > 0 and not (o.details ? '${k}') and o.scheduled_at"],
 ];

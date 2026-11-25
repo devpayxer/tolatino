@@ -329,7 +329,6 @@ export function cuandoInsc(det: Record<string, unknown>, es: boolean) {
   const lbl = dows.length || min != null ? etiquetaGrupo(dows, min, es) : "";
   return `${lbl ? ` · ${lbl}` : ""}${ini ? (es ? ` · empieza el ${fechaCorta(ini, true)}` : ` · starts ${fechaCorta(ini, false)}`) : ""}`;
 }
-const svcAviso = (o: Op) => (o.det.neutro ? "una inscripción" : (o.det.svc as Bi)?.es ?? "una inscripción");
 /* 4ie · Iglesias: las mismas plantillas con el habla de la iglesia (insc_fe_*) y, en consejería, capellanía, oración y recuperación,
    NEUTRAS (insc_fen_*: sin el lugar, el servicio ni el motivo; guardián avisoFeNeutro). */
 const FE_TPL = ["insc_ok", "insc_alt", "insc_no", "insc_exp", "insc_cx", "insc_biz_cx", "insc_grupo_cx", "insc_empieza", "insc_done"];
@@ -339,7 +338,8 @@ async function avisarCliente(numero: string, tpl0: string, extra: Record<string,
   if (!o) return;
   const tpl = o.det.rubro === "fe" ? tplFe(tpl0, !!o.det.neutro) : tpl0;
   const { avisar } = await import("./avisos");
-  await avisar(o.uid, tpl, { negocio: o.negocio, cuando: cuandoInsc(o.det, true), mat: "", dev: "", grupo: "", cert: "", ...extra }, { href: `/insc/${numero}`, ref: ["enrollment", numero], sinSms: o.det.sms === false });
+  // 25 nov (LAUNCH e) · Cada valor en los dos idiomas: avisos › avisar pone el de quien lo recibe (antes «empieza el 5 oct» también en un aviso en inglés).
+  await avisar(o.uid, tpl, { negocio: o.negocio, cuando: { es: cuandoInsc(o.det, true), en: cuandoInsc(o.det, false) }, mat: "", dev: "", grupo: "", cert: "", ...extra }, { href: `/insc/${numero}`, ref: ["enrollment", numero], sinSms: o.det.sms === false });
 }
 /* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · Cada valor del aviso al negocio en los dos idiomas: avisos › avisar pone el del dueño que lo recibe
    (antes el servicio, las personas y el día salían en español también en un aviso en inglés). Guardián avisoNegUnIdioma. */
@@ -410,7 +410,7 @@ export async function responderInsc(negocio: string, numero: string, paso: PasoI
         [o.id, JSON.stringify({ group_id: null, label, starts_on: fe, ends_on: null, start_min: franja[3], dows: [], franja: franja[0], from: o.det.starts_on }), actorId, rb]);
       await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = $2::timestamptz, updated_at = now() where id = $1::bigint`, [o.id, rb]);
       await ev(c, o.id, "insc_alt", "member", actorId, { es: `Propusiste ${label.es}`, en: `You proposed ${label.en}` });
-      despues = async () => { await avisarCliente(numero, "insc_alt", { grupo: label.es }); };
+      despues = async () => { await avisarCliente(numero, "insc_alt", { grupo: label }); };
       return { ok: true };
     }
     if (paso === "otro") {
@@ -431,13 +431,13 @@ export async function responderInsc(negocio: string, numero: string, paso: PasoI
       await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = $2::timestamptz, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, rb, JSON.stringify({ group_id: null, alt_group_id: g.id })]);
       await ev(c, o.id, "insc_alt", "member", actorId, { es: `Propusiste ${g.label.es}`, en: `You proposed ${g.label.en}` });
-      despues = async () => { await avisarCliente(numero, "insc_alt", { grupo: `${g.label.es} · empieza el ${fechaCorta(g.inicio, true)}`, mat: o.mat ? ` Tu matrícula sigue retenida.` : "" }); };
+      despues = async () => { await avisarCliente(numero, "insc_alt", { grupo: { es: `${g.label.es} · empieza el ${fechaCorta(g.inicio, true)}`, en: `${g.label.en || g.label.es} · starts ${fechaCorta(g.inicio, false)}` }, mat: o.mat ? { es: ` Tu matrícula sigue retenida.`, en: ` Your fee is still on hold.` } : "" }); };
       return { ok: true };
     }
     if (o.mat > 0 && o.pay !== "held") return no("La matrícula de esta inscripción ya no está retenida. Usa «No hay cupo»: la persona puede pedirla otra vez.", "This enrollment's fee is no longer held. Use “No openings”: the person can request again.");
     await c.query(`update operations set status = 'confirmed', answered_at = now(), confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
     await ev(c, o.id, "insc_ok", "member", actorId);
-    despues = async () => { await cobrarOperacion(o.id); await avisarCliente(numero, "insc_ok", { mat: o.mat ? ` Se cobró la matrícula de ${usdI(o.mat)}; se descuenta del total.` : "" }); };
+    despues = async () => { await cobrarOperacion(o.id); await avisarCliente(numero, "insc_ok", { mat: o.mat ? { es: ` Se cobró la matrícula de ${usdI(o.mat)}; se descuenta del total.`, en: ` The ${usdI(o.mat)} fee was charged; it comes off the total.` } : "" }); };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
@@ -533,7 +533,7 @@ export async function confirmarBaja(negocio: string, numero: string, actorId: st
     await c.query(`update operations set status = 'cancelled', status_detail = null, cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'baja', updated_at = now() where id = $1::bigint`, [o.id]);
     await soltarCupo(c, o.det);
     await ev(c, o.id, "insc_cancel_ok", actorId ? "member" : "system", actorId);
-    const fecha = fechaCorta(String(o.cxReq ?? new Date().toISOString()).slice(0, 10), true);
+    const dFecha = String(o.cxReq ?? new Date().toISOString()).slice(0, 10), fecha: Bi = { es: fechaCorta(dFecha, true), en: fechaCorta(dFecha, false) };
     despues = async () => { await avisarCliente(numero, "insc_cancelada", { fecha }); };
     return { ok: true };
   });
@@ -616,7 +616,7 @@ export async function marcarInsc(negocio: string, numero: string, que: "empezo" 
     const dio = cert === true && !!o.det.cert;
     await c.query(`update operations set status = 'done', done_at = now(), details = details || $2::jsonb, updated_at = now() where id = $1::bigint`, [o.id, JSON.stringify({ cert_given: dio })]);
     await ev(c, o.id, dio ? "insc_cert" : "insc_done", "member", actorId);
-    despues = async () => { await avisarCliente(numero, "insc_done", { cert: dio ? ` ${o.det.oficial ? "Tu certificado" : "Tu constancia"} está listo. ¡Felicidades!` : "" }); };
+    despues = async () => { await avisarCliente(numero, "insc_done", { cert: dio ? { es: ` ${o.det.oficial ? "Tu certificado" : "Tu constancia"} está listo. ¡Felicidades!`, en: ` Your ${o.det.oficial ? "certificate" : "proof of completion"} is ready. Congratulations!` } : "" }); };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
@@ -667,7 +667,7 @@ export async function salirEspera(userId: string, id: string): Promise<ResI> {
 /* Ofrecer el cupo libre a la persona de la lista: lo aparta insc_oferta_h horas. Lo hace el lugar, o el barrido con la siguiente cuando una oferta vence. */
 export async function ofrecerCupo(negocio: string, entrada: string, actorId: string | null): Promise<ResI> {
   if (!ID.test(entrada)) return no("Esa persona ya no está en la lista.", "That person is no longer on the list.");
-  let aviso: { uid: string; negocio: string; vence: string; href: string } | null = null;
+  let aviso: { uid: string; negocio: string; vence: Bi; href: string } | null = null;
   const r = await tx(async (c): Promise<ResI> => {
     await lockN(c, negocio);
     const w = (await c.query<{ id: string; uid: string; item: string; grupo: string | null; banda: string | null; status: string }>(
@@ -678,13 +678,13 @@ export async function ofrecerCupo(negocio: string, entrada: string, actorId: str
       : w.banda ? (await c.query<{ n: number }>(`select greatest(0, openings - (select count(*)::int from waitlist_entries z where z.band_id = o.id and z.status = 'offered' and z.offered_until > now()))::int as n from care_openings o where o.id = $1::bigint and o.removed_at is null`, [w.banda])).rows[0]?.n ?? 0
       : 1; // sin grupo (todavía no hay fechas): la oferta es para pedir el cupo cuando abra
     if (libres < 1) return no("No hay un cupo libre para ofrecer. Sube los cupos en Tu herramienta o espera a que se libere uno.", "There is no free spot to offer. Raise the spots in Your tool or wait for one to free up.");
-    const v = (await c.query<{ until: string; neg: string; tz: string }>(
+    const v = (await c.query<{ until: string; until_en: string; neg: string; tz: string }>(
       `update waitlist_entries w set status = 'offered', offered_until = now() + make_interval(hours => ${cfgSql("insc_oferta_h")}), offered_by = $2, updated_at = now() from businesses b join cities ci on ci.id = b.city_id
-        where w.id = $1::bigint and b.id = w.business_id returning to_char(w.offered_until at time zone ci.timezone, 'FMHH12:MI AM') || ' del ' || to_char(w.offered_until at time zone ci.timezone, 'FMDD/FMMM') as until, b.name as neg, ci.timezone as tz`, [w.id, actorId])).rows[0]!;
-    aviso = { uid: w.uid, negocio: v.neg, vence: v.until, href: `/n/${negocio}/inscribirme?svc=${w.item}${w.grupo ? `&grupo=${w.grupo}` : ""}${w.banda ? `&banda=${w.banda}` : ""}` };
+        where w.id = $1::bigint and b.id = w.business_id returning to_char(w.offered_until at time zone ci.timezone, 'FMHH12:MI AM') || ' del ' || to_char(w.offered_until at time zone ci.timezone, 'FMDD/FMMM') as until, to_char(w.offered_until at time zone ci.timezone, 'FMHH12:MI AM') || ' on ' || to_char(w.offered_until at time zone ci.timezone, 'FMMM/FMDD') as until_en, b.name as neg, ci.timezone as tz`, [w.id, actorId])).rows[0]!;
+    aviso = { uid: w.uid, negocio: v.neg, vence: { es: v.until, en: v.until_en }, href: `/n/${negocio}/inscribirme?svc=${w.item}${w.grupo ? `&grupo=${w.grupo}` : ""}${w.banda ? `&banda=${w.banda}` : ""}` };
     return { ok: true };
   });
-  if (r.ok && aviso) { const a = aviso as { uid: string; negocio: string; vence: string; href: string }; await (await import("./avisos")).avisar(a.uid, "insc_oferta", { negocio: a.negocio, vence: a.vence }, { href: a.href, ref: ["waitlist", entrada] }); }
+  if (r.ok && aviso) { const a = aviso as { uid: string; negocio: string; vence: Bi; href: string }; await (await import("./avisos")).avisar(a.uid, "insc_oferta", { negocio: a.negocio, vence: a.vence }, { href: a.href, ref: ["waitlist", entrada] }); }
   return r;
 }
 

@@ -83,7 +83,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(await espera(() => pago(P1.num) === 'released|0') && holdStuck(P1.num) === '0', `la retención se soltó (${pago(P1.num)}) y sin alerta hold_stuck`);
     ok(sql(`select status from sim_intents where id = 'pi_sim_9w_${RUN}_${P1.op}'`) === 'canceled', 'en la pasarela (simulador), la intención quedó cancelada: la retención salió de la tarjeta');
     const a1 = aviso(P1.num, 'ord_no');
-    ok(a1.includes(`no pudo aceptar tu pedido #${P1.num}. No se te cobró nada: se soltó la retención de $15.00 de tu tarjeta.`) && !/todavía no se soltó|\{d/.test(a1), `ord_no dice lo que pasó: «se soltó la retención de $15.00» (${a1})`);
+    ok(a1.includes(`no pudo aceptar tu pedido #${P1.num}. No se te cobró nada: se soltó la retención de $15 de tu tarjeta.`) && !/todavía no se soltó|\{d/.test(a1), `ord_no dice lo que pasó: «se soltó la retención de $15» (${a1})`);
     ok(sql(`select count(*) from notifications where tpl = 'pay_released' and ref_id = '${P1.num}'`) === '1', '«Liberamos …» (pay_released), una vez');
     const m1 = await (await telefono(b)).newPage(); m1.on('pageerror', (e) => err.push(e.message));
     await entrarComo(m1, P1.tel); await m1.goto(B + `/pedido/${P1.num}`);
@@ -102,7 +102,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(true, 'el panel: «La retención de su tarjeta no se soltó todavía: se sigue soltando sola.»');
     ok(sql(`select status from operations where number = '${P2.num}'`) === 'declined' && pago(P2.num) === 'held|0' && holdStuck(P2.num) === '1', `#${P2.num}: rechazado, la retención sigue (${pago(P2.num)}) y UNA alerta hold_stuck`);
     const a2 = aviso(P2.num, 'ord_no');
-    ok(a2.includes('No se cobró nada, pero la retención de $15.00 todavía no se soltó de tu tarjeta') && !/No se te cobró nada|se soltó la retención de|\{d/.test(a2), `ord_no: no se soltó todavía, nunca «No se te cobró nada» a secas (${a2})`);
+    ok(a2.includes('No se cobró nada, pero la retención de $15 todavía no se soltó de tu tarjeta') && !/No se te cobró nada|se soltó la retención de|\{d/.test(a2), `ord_no: no se soltó todavía, nunca «No se te cobró nada» a secas (${a2})`);
     ok(sql(`select count(*) from notifications where tpl = 'pay_released' and ref_id = '${P2.num}'`) === '0', 'sin «Liberamos …»: no se soltó');
     const m2 = await (await telefono(b)).newPage(); m2.on('pageerror', (e) => err.push(e.message));
     await entrarComo(m2, P2.tel); await m2.goto(B + `/pedido/${P2.num}`);
@@ -222,8 +222,8 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     await det5.getByRole('button', { name: 'Confirmar' }).first().waitFor();
     sql(`update operations set respond_by = now() - interval '1 minute' where id = ${C5.op}`);
     await det5.getByRole('button', { name: 'Confirmar' }).first().click();
-    await pd.getByText('Pasó el tiempo para responder: la solicitud venció. No se había cobrado nada: se soltó la retención de $20.00 de su tarjeta.').first().waitFor();
-    ok(!/se devolvió el depósito/.test(await texto(pd)), 'el panel, en pantalla: «venció. No se había cobrado nada: se soltó la retención de $20.00», nunca «se devolvió el depósito»');
+    await pd.getByText('Pasó el tiempo para responder: la solicitud venció. No se había cobrado nada: se soltó la retención de $20 de su tarjeta.').first().waitFor();
+    ok(!/se devolvió el depósito/.test(await texto(pd)), 'el panel, en pantalla: «venció. No se había cobrado nada: se soltó la retención de $20», nunca «se devolvió el depósito»');
     await pd.screenshot({ path: OUT + 'd9w-panel-cita-vencida-d.png' });
     ok(pago(C5.num) === 'released|0' && sql(`select status from operations where number = '${C5.num}'`) === 'expired', `la base: vencida y soltada (${pago(C5.num)})`);
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));

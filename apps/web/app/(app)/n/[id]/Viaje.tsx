@@ -16,7 +16,7 @@ type N = "Icon" | "Button";
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
-const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd as usd } from "@/lib/dinero-comun";
 const SALE: Record<string, [string, string]> = { sab: ["Sábado", "Saturday"], mie: ["Miércoles", "Wednesday"], "15d": ["Cada 15 días", "Every 2 weeks"] };
 
 export function useViaje(tp: TransPublico | null, es: boolean, pro: boolean) {

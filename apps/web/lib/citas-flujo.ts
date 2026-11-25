@@ -21,7 +21,7 @@ type Bi = { es: string; en: string };
 export type ResC = { ok: true; numero?: string; retenida?: true } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResC => ({ ok: false, msg: { es, en } });
 const NUM = /^C-\d{1,10}$/;
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 type Op = {
   id: string; number: string; status: string; detail: string | null; biz: string; uid: string; mid: string | null; ymd: string; hm: string; dur: number; buf: number; tz: string;
   dep: number; pay: string | null; pid: string | null; amount: number | null; refunded: number | null; cxh: number; exp: number; mins_to: number; det: Record<string, unknown>;
@@ -42,15 +42,19 @@ const ev = (c: Q, op: string, kind: string, actor: "user" | "member" | "system" 
 
 /* ── Avisos ── */
 async function datos(numero: string) {
-  return (await db().query<{ uid: string; biz: string; negocio: string; dia: string; hora: string; cliente: string; servicio: string; dep: number; pay: string | null; alt_dia: string | null; alt_hora: string | null; rubro: string | null }>(
-    `select o.details->>'rubro' as rubro, o.user_id::text as uid, o.business_id as biz, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
-            coalesce(u.first_name, '') as cliente, coalesce(o.details #>> '{svc,es}', '') as servicio, o.deposit_cents as dep, p.status as pay,
-            to_char((cp.proposed->>'ymd')::date, 'FMDD/FMMM') as alt_dia, case when cp.proposed ? 'm' then to_char(make_time(((cp.proposed->>'m')::int / 60), ((cp.proposed->>'m')::int % 60), 0), 'FMHH12:MI AM') end as alt_hora
+  return (await db().query<{ uid: string; biz: string; negocio: string; dia: string; dia_en: string; hora: string; cliente: string; servicio: string; servicio_en: string; dep: number; pay: string | null; alt_dia: string | null; alt_dia_en: string | null; alt_hora: string | null; rubro: string | null }>(
+    `select o.details->>'rubro' as rubro, o.user_id::text as uid, o.business_id as biz, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMMM/FMDD') as dia_en, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
+            coalesce(u.first_name, '') as cliente, coalesce(o.details #>> '{svc,es}', '') as servicio, coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as servicio_en, o.deposit_cents as dep, p.status as pay,
+            to_char((cp.proposed->>'ymd')::date, 'FMDD/FMMM') as alt_dia, to_char((cp.proposed->>'ymd')::date, 'FMMM/FMDD') as alt_dia_en, case when cp.proposed ? 'm' then to_char(make_time(((cp.proposed->>'m')::int / 60), ((cp.proposed->>'m')::int % 60), 0), 'FMHH12:MI AM') end as alt_hora
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id join users u on u.id = o.user_id
        left join payments p on p.operation_id = o.id and p.kind = 'deposit'
        left join lateral (select proposed from change_proposals where operation_id = o.id order by id desc limit 1) cp on true
       where o.number = $1 and o.kind = 'appointment'`, [numero]).catch(() => ({ rows: [] }))).rows[0] ?? null;
 }
+/* 25 nov (LAUNCH e) · El día, la hora propuesta y el servicio salen en los dos idiomas (avisos › avisar pone el de quien lo recibe): antes «26/11» (día/mes) y el
+   servicio en español también en un aviso en inglés. Guardián avisoUnIdioma. */
+const diaBi = (es: string, en: string): Bi => ({ es, en });
+const altBi = (d: { alt_dia: string | null; alt_dia_en: string | null; alt_hora: string | null }): Bi | string => (d.alt_dia && d.alt_hora ? { es: `${d.alt_dia} ${d.alt_hora}`, en: `${d.alt_dia_en} ${d.alt_hora}` } : "");
 /* Doctores (4j · §3): cada aviso tiene su versión neutra (sin consultorio, servicio ni paciente); el que no la tiene no sale. */
 const SAL_C: Record<string, string> = { cita_ok: "sal_cita_ok", cita_ok_dep: "sal_cita_ok", cita_no: "sal_cita_no", cita_alt: "sal_cita_alt", cita_exp: "sal_cita_exp", cita_rec: "sal_cita_rec", cita_alt_fin: "sal_cita_alt_fin" };
 const SAL_N: Record<string, string> = { biz_cita_cx: "biz_sal_cx", biz_cita_alt_ok: "biz_sal_alt_ok", biz_cita_tarde: "biz_sal_tarde" };
@@ -62,7 +66,7 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   if (d.rubro === "salud") { const t = SAL_C[tpl]; if (!t) return; tpl = t; }
   const { avisar } = await import("./avisos");
   const dev = extra.dev ?? "";
-  await avisar(d.uid, tpl, { negocio: d.negocio, dia: d.dia, hora: d.hora, dep: money(d.dep), alt: d.alt_dia && d.alt_hora ? `${d.alt_dia} ${d.alt_hora}` : "", ...extra, dev }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
+  await avisar(d.uid, tpl, { negocio: d.negocio, dia: diaBi(d.dia, d.dia_en), hora: d.hora, dep: money(d.dep), alt: altBi(d), ...extra, dev }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | number | Bi> = {}) {
   const d = await datos(numero);
@@ -70,7 +74,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   if (d.rubro === "salud") { const t = SAL_N[tpl]; if (!t) return; tpl = t; }
   if (d.rubro === "pro" && PRO_N[tpl]) tpl = PRO_N[tpl]!;
   const { avisarNegocio } = await import("./avisos");
-  await avisarNegocio(d.biz, tpl, { cliente: d.cliente, servicio: d.servicio, dia: d.dia, hora: d.hora, dep: "", dinero: "", ...extra }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
+  await avisarNegocio(d.biz, tpl, { cliente: d.cliente, servicio: d.servicio ? { es: d.servicio, en: d.servicio_en || d.servicio } : "", dia: diaBi(d.dia, d.dia_en), hora: d.hora, dep: "", dinero: "", ...extra }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
 }
 const devL = (dep: number) => (dep ? ` Te devolvemos ${money(dep)} del depósito.` : "");
 /* 9v (quinta tanda) · {dev} con lo que de verdad pasó con la retención (soltarRetencion): la que la pasarela no soltó todavía se dice así, nunca «Te devolvemos». */
@@ -102,7 +106,7 @@ async function horaLibre(numero: string) {
      returning id::text, user_id::text as uid`, [o.biz, o.ymd, o.mid])).rows;
   const { avisar } = await import("./avisos");
   const d = new Date(`${o.ymd}T12:00:00Z`);
-  for (const a of L) await avisar(a.uid, "cita_libre", { negocio: o.negocio, dia: `${d.getUTCDate()}/${d.getUTCMonth() + 1}` }, { href: `/n/${o.biz}?tab=svc`, ref: ["appointment", numero] });
+  for (const a of L) await avisar(a.uid, "cita_libre", { negocio: o.negocio, dia: { es: `${d.getUTCDate()}/${d.getUTCMonth() + 1}`, en: `${d.getUTCMonth() + 1}/${d.getUTCDate()}` } }, { href: `/n/${o.biz}?tab=svc`, ref: ["appointment", numero] });
 }
 
 /* ── Vencer lo que nadie contestó (se llama al mirar la cita, el panel o la ficha; barato: índices parciales) ── */
@@ -123,7 +127,7 @@ export async function vencerCitas(f: { negocio?: string; userId?: string; numero
   for (const x of seg) {
     await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'cancelled', 'system', $2::jsonb)`, [x.id, JSON.stringify({ es: "No eligió a tiempo: se liberó la hora", en: "Did not choose in time: the time was released" })]);
     const d = await datos(x.number);
-    if (d) { const { avisar } = await import("./avisos"); await avisar(d.uid, "sal_cita_seg_fin", { dia: d.dia }, { href: `/cita/${x.number}`, ref: ["appointment", x.number] }); }
+    if (d) { const { avisar } = await import("./avisos"); await avisar(d.uid, "sal_cita_seg_fin", { dia: diaBi(d.dia, d.dia_en) }, { href: `/cita/${x.number}`, ref: ["appointment", x.number] }); }
   }
   // «Otra hora» sin respuesta del cliente en 2 h (o al llegar la hora propuesta): no hay cita.
   const alt = (await db().query<{ id: string; number: string }>(
@@ -168,17 +172,17 @@ async function recordatorios() {
   for (const [k, desde, hasta, cuando] of [["rec24", "2 hours", "24 hours", { es: "mañana", en: "tomorrow" }], ["rec2", "0 minutes", "2 hours", { es: "hoy", en: "today" }]] as const) {
     // 9n-4 · La visita de un plan (una cita de $0 que paga el plan) también recibe el suyo: el de 24 h es «Mañana es tu visita» con la franja de
     // llegada (plan_visita). Que sea de $0 no la deja fuera (nada aquí mira el dinero).
-    const L = (await db().query<{ number: string; plan: boolean; franja: string | null }>(
+    const L = (await db().query<{ number: string; plan: boolean; h1: string; h2: string }>(
       `update operations o set details = o.details || jsonb_build_object('${k}', now()), updated_at = now()
         from cities ci
         where ci.id = o.city_id and o.kind = 'appointment' and o.status = 'confirmed' and coalesce(o.status_detail, '') = '' and coalesce((o.details->>'sms')::boolean, true)
           and not (o.details ? '${k}') and o.scheduled_at > now() + interval '${desde}' and o.scheduled_at <= now() + interval '${hasta}'
           and o.confirmed_at < now() - interval '10 minutes'
         returning o.number, coalesce(o.details->>'k', '') = 'plan' as plan,
-                  to_char(o.scheduled_at at time zone ci.timezone, 'FMHH12:MI AM') || ' y las ' || to_char((o.scheduled_at + make_interval(mins => greatest(30, coalesce(o.duration_min, 120)))) at time zone ci.timezone, 'FMHH12:MI AM') as franja`)).rows;
+                  to_char(o.scheduled_at at time zone ci.timezone, 'FMHH12:MI AM') as h1, to_char((o.scheduled_at + make_interval(mins => greatest(30, coalesce(o.duration_min, 120)))) at time zone ci.timezone, 'FMHH12:MI AM') as h2`)).rows;
     for (const x of L) {
-      if (k === "rec24" && x.plan && x.franja) await avisarCliente(x.number, "plan_visita", { franja: x.franja });
-      else await avisarCliente(x.number, "cita_rec", { cuando: cuando.es });
+      if (k === "rec24" && x.plan && x.h1) await avisarCliente(x.number, "plan_visita", { franja: { es: `${x.h1} y las ${x.h2}`, en: `${x.h1} and ${x.h2}` } });
+      else await avisarCliente(x.number, "cita_rec", { cuando });
     }
   }
 }
@@ -338,8 +342,8 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
         [o.id, sin, JSON.stringify({ es: L ? `${L} · SIN SEGURO` : "Gratis", en: L ? `${L} · UNINSURED` : "Free" })]);
       await ev(c, o.id, "accepted", "user", userId, { es: "Sigue con el precio sin seguro", en: "Continues at the uninsured price" });
       despues = async () => { const d = await datos(numero); if (!d) return; const { avisar, avisarNegocio } = await import("./avisos");
-        await avisarNegocio(d.biz, "biz_sal_seg_ok", { dia: d.dia, hora: d.hora }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
-        await avisar(d.uid, "sal_cita_ok", { dia: d.dia, hora: d.hora }, { href: `/cita/${numero}`, ref: ["appointment", numero] }); };
+        await avisarNegocio(d.biz, "biz_sal_seg_ok", { dia: diaBi(d.dia, d.dia_en), hora: d.hora }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
+        await avisar(d.uid, "sal_cita_ok", { dia: diaBi(d.dia, d.dia_en), hora: d.hora }, { href: `/cita/${numero}`, ref: ["appointment", numero] }); };
       return { ok: true };
     }
     if (que === "cancelar") {
@@ -409,7 +413,7 @@ export async function avisarCambioPedido(numero: string) {
     `select p.proposed->>'ymd' as ymd, (p.proposed->>'m')::int as m, greatest(1, ceil(extract(epoch from p.respond_by - now()) / 60))::int as min
        from change_proposals p join operations o on o.id = p.operation_id where o.number = $1 and p.side = 'customer' and p.status = 'open' order by p.id desc limit 1`, [numero])).rows[0];
   if (!p) return;
-  await avisarNeg(numero, "biz_cita_chg", { dia: `${Number(p.ymd.slice(8))}/${Number(p.ymd.slice(5, 7))}`, hora: horaL(p.m), min: p.min });
+  await avisarNeg(numero, "biz_cita_chg", { dia: { es: `${Number(p.ymd.slice(8))}/${Number(p.ymd.slice(5, 7))}`, en: `${Number(p.ymd.slice(5, 7))}/${Number(p.ymd.slice(8))}` }, hora: horaL(p.m), min: p.min });
 }
 
 /* Doctores · «No aceptan tu seguro» (neutro). */

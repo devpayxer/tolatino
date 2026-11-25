@@ -38,9 +38,9 @@ const loc = (c, min, max) => `$${(c / 100).toLocaleString('en-US', { minimumFrac
 const F = {
   noche: (c) => loc(c, c % 100 ? 2 : 0, c % 100 ? 2 : 0),            // noche-comun › usdN
   insc: (c) => loc(c, c % 100 ? 2 : 0, c % 100 ? 2 : 0),             // inscripciones-comun › usdI
-  fiesta: (c) => loc(c, 0, 2),                                        // FiestaEstado › dinero (y fiestas-reservas › money, el del aviso)
+  fiesta: (c) => loc(c, c % 100 ? 2 : 0, 2),                          // dinero-comun › usd (FiestaEstado › dinero y fiestas-reservas › money, el del aviso)
   viaje: (c) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString('en-US')}`; }, // ViajeEstado › dinero
-  viajeAviso: (c) => `$${(c / 100).toFixed(2)}`,                      // viajes › money = usdTxt (siempre con centavos)
+  viajeAviso: (c) => loc(c, c % 100 ? 2 : 0, 2),                      // viajes › money = usdTxt = dinero-comun › usd (sin centavos si son .00)
   privado: (c) => loc(c, c % 100 ? 2 : 0, 2),                         // evento-privado-comun › dinero
 };
 // Lo que dicen las hojas (texto exacto de devolucion-cancelar › pideAlCancelar).

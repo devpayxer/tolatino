@@ -23,7 +23,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, I
 export const NUM_F = /^F-\d{1,10}$/;
 export const HORAS_F = [600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 1200]; // 10 AM – 8 PM
 export const HORAS_V = [600, 660, 780, 840, 900, 960]; // visita al salón 10 AM – 4 PM
-const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd as money } from "./dinero-comun";
 const no = (es: string, en: string, extra?: Record<string, true>) => ({ ok: false as const, msg: { es, en } as Bi, ...extra });
 
 /* Lo que se cobra por lo elegido (el servidor; la pantalla muestra lo mismo con la misma función). */
@@ -220,7 +220,7 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
-  await avisar(o.uid, tpl, { negocio: o.negocio, dia: diaFiesta(o.ymd, true), hora: hora(o.m), dev: "", dep: "", dinero: "", ...extra }, { href: `/fiesta/${numero}`, ref: ["party", numero] });
+  await avisar(o.uid, tpl, { negocio: o.negocio, dia: { es: diaFiesta(o.ymd, true), en: diaFiesta(o.ymd, false) }, hora: hora(o.m), dev: "", dep: "", dinero: "", ...extra }, { href: `/fiesta/${numero}`, ref: ["party", numero] });
 }
 /* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · Cada valor del aviso al negocio en los dos idiomas: avisos › avisar pone el del dueño que lo recibe
    (antes el servicio, las personas y el día salían en español también en un aviso en inglés). Guardián avisoNegUnIdioma. */
@@ -312,7 +312,7 @@ export async function responderFecha(negocio: string, numero: string, paso: Paso
     }
     despues = async () => {
       await cobrarOperacion(o.id);
-      await avisarCliente(numero, vis ? "fiesta_visita_ok" : "fiesta_ok", { dep: o.dep ? ` Depósito de ${money(o.dep)} cobrado.` : "" });
+      await avisarCliente(numero, vis ? "fiesta_visita_ok" : "fiesta_ok", { dep: o.dep ? { es: ` Depósito de ${money(o.dep)} cobrado.`, en: ` ${money(o.dep)} deposit charged.` } : "" });
       for (const n of llenos) {
         const z = await leer(db(), "o.number = $1", [n]); if (!z) continue;
         const s = await soltarRetencion(z.id, { es: "Ese día se ocupó con otra fiesta", en: "That day was booked by another party" });

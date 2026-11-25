@@ -15,7 +15,7 @@ import { cobradoVisto, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/de
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
-const dinero = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const hora = (t: number | undefined) => (t ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : "");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

@@ -82,8 +82,8 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     }
     ok(pago(N1.num) === 'refunded|4000' && pago(N2.num) === 'captured|0' && pago(N3.num) === 'partially_refunded|1500', `la base: devuelta · sin devolver · nada más devuelto (${pago(N1.num)} · ${pago(N2.num)} · ${pago(N3.num)})`);
     const b1 = aviso(N1.num, 'biz_noche_cx'), b2 = aviso(N2.num, 'biz_noche_cx'), b3 = aviso(N3.num, 'biz_noche_cx');
-    ok(b1.includes('canceló su Mesa 9v5') && b1.includes('Se le devolvieron $40.00 a su tarjeta.') && !/Se le devuelve|\{d/.test(b1), `al local, la devuelta: «Se le devolvieron $40.00» (${b1})`);
-    ok(b2.includes("La devolución de $40.00 no salió: el equipo de To'Latino ya tiene el aviso") && !/Se le devuelve|devolvieron|\{d/.test(b2), `al local, la que Stripe no devolvió: «no salió», nunca «Se le devuelve» (${b2})`);
+    ok(b1.includes('canceló su Mesa 9v5') && b1.includes('Se le devolvieron $40 a su tarjeta.') && !/Se le devuelve|\{d/.test(b1), `al local, la devuelta: «Se le devolvieron $40» (${b1})`);
+    ok(b2.includes("La devolución de $40 no salió: el equipo de To'Latino ya tiene el aviso") && !/Se le devuelve|devolvieron|\{d/.test(b2), `al local, la que Stripe no devolvió: «no salió», nunca «Se le devuelve» (${b2})`);
     ok(/Lo que quedaba del depósito \(\$25(\.00)?\) se queda contigo\./.test(b3) && !/\$40|\{d/.test(b3), `al local, tarde con devolución parcial: lo que queda ($25), no el depósito entero (${b3})`);
     const c3 = aviso(N3.num, 'noche_cx');
     ok(/Lo que quedaba del depósito \(\$25(\.00)?\) se quedó con Noche 9v5/.test(c3) && !/\$40/.test(c3), `al cliente, lo mismo (${c3})`);
@@ -97,7 +97,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(r4.j?.ok === true && r4.j?.retenida === true && sql(`select status from operations where number = '${N4.num}'`) === 'declined', `el local dijo «No hay mesa» y el panel sabe que la retención no se soltó (${JSON.stringify(r4.j)})`);
     ok(pago(N4.num) === 'held|0' && holdStuck(N4.num) === '1', `la retención sigue en la tarjeta (${pago(N4.num)}) y el equipo de dinero tiene UNA alerta hold_stuck`);
     const a4 = aviso(N4.num, 'noche_no');
-    ok(a4.includes('No se cobró nada, pero la retención de $40.00 todavía no se soltó de tu tarjeta') && !/Se liberó/.test(a4), `noche_no lo dice, nunca «Se liberó tu depósito» (${a4})`);
+    ok(a4.includes('No se cobró nada, pero la retención de $40 todavía no se soltó de tu tarjeta') && !/Se liberó/.test(a4), `noche_no lo dice, nunca «Se liberó tu depósito» (${a4})`);
     ok(sql(`select count(*) from notifications where tpl = 'pay_released' and ref_id = '${N4.num}'`) === '0', 'sin «Liberamos …» (pay_released): no se soltó');
 
     // ── 3 · «No me sirve» desde el teléfono con la retención que no se suelta ──
@@ -113,7 +113,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     await m5.screenshot({ path: OUT + 'd9v5-noche-no-me-sirve-retenida-m.png' });
     ok(await espera(() => sql(`select status from operations where number = '${N5.num}'`) === 'cancelled') && pago(N5.num) === 'held|0' && holdStuck(N5.num) === '1', `${N5.num}: cancelada, la retención sigue y UNA alerta hold_stuck`);
     const a5 = aviso(N5.num, 'biz_noche_alt_no');
-    ok(a5.includes('no aceptó la otra hora. No se había cobrado nada, pero la retención de $40.00 de su tarjeta no se soltó todavía') && !/Se liberó su depósito/.test(a5), `biz_noche_alt_no lo dice, nunca «Se liberó su depósito» (${a5})`);
+    ok(a5.includes('no aceptó la otra hora. No se había cobrado nada, pero la retención de $40 de su tarjeta no se soltó todavía') && !/Se liberó su depósito/.test(a5), `biz_noche_alt_no lo dice, nunca «Se liberó su depósito» (${a5})`);
     // Cuando la retención vuelve a ser soltable (aquí: la del simulador), el panel (Hoy · repararPagos) la suelta y entonces sí llega «Liberamos».
     const pi5 = `pi_sim_9v5_${RUN}_${N5.op}`;
     sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, refunded_cents, card, capture_method) values ('${pi5}', 4000, 0, 'acct_sim_${BN}', 'requires_capture', 0, 0, 'pm_sim_visa_4242_9v5', 'manual')`);
@@ -170,9 +170,9 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(/lo que quedaba del depósito \(\$15\) se quedó con Barbería 9v5/.test(t3) && !/depósito de \$20 se queda/.test(t3), 'pantalla, tarde con devolución parcial: lo que quedaba ($15), no el depósito entero');
     for (const C of [C1, C2, C3]) await vistas[C.num].m.context().close();
     const k1 = aviso(C1.num, 'biz_cita_cx'), k2 = aviso(C2.num, 'biz_cita_cx'), k3 = aviso(C3.num, 'biz_cita_cx');
-    ok(k1.includes('canceló Corte 9v5') && k1.includes('Se le devolvieron $20.00 a su tarjeta.') && !/\{d/.test(k1), `al negocio, la devuelta: «Se le devolvieron $20.00» (${k1})`);
-    ok(k2.includes("La devolución de $20.00 no salió: el equipo de To'Latino ya tiene el aviso") && !/devolvieron|\{d/.test(k2), `al negocio, la que Stripe no devolvió: «no salió» (${k2})`);
-    ok(k3.includes('Lo que quedaba del depósito ($15.00) se queda contigo.') && !/\$20|\{d/.test(k3), `al negocio, tarde con devolución parcial: lo que queda ($15.00) (${k3})`);
+    ok(k1.includes('canceló Corte 9v5') && k1.includes('Se le devolvieron $20 a su tarjeta.') && !/\{d/.test(k1), `al negocio, la devuelta: «Se le devolvieron $20» (${k1})`);
+    ok(k2.includes("La devolución de $20 no salió: el equipo de To'Latino ya tiene el aviso") && !/devolvieron|\{d/.test(k2), `al negocio, la que Stripe no devolvió: «no salió» (${k2})`);
+    ok(k3.includes('Lo que quedaba del depósito ($15) se queda contigo.') && !/\$20|\{d/.test(k3), `al negocio, tarde con devolución parcial: lo que queda ($15) (${k3})`);
 
     // Una solicitud (pendiente) con el depósito solo retenido, que la pasarela no suelta: «Cancelar solicitud» desde el teléfono lo dice (retenida) y la
     // pantalla también, nunca «Te devolvemos»; sigue retenida y UNA alerta hold_stuck; al negocio, que no se soltó todavía.
@@ -194,7 +194,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     await m4.screenshot({ path: OUT + 'd9v5-cita-retenida-m.png' });
     await m4.context().close();
     const k4 = aviso(C4N, 'biz_cita_cx');
-    ok(k4.includes('No se había cobrado nada, pero la retención de $20.00 de su tarjeta no se soltó todavía') && !/\{d/.test(k4), `al negocio, la retención que no se soltó (${k4})`);
+    ok(k4.includes('No se había cobrado nada, pero la retención de $20 de su tarjeta no se soltó todavía') && !/\{d/.test(k4), `al negocio, la retención que no se soltó (${k4})`);
 
     // ── 5 · Apartado con envío · el cliente cancela y la retención no se suelta ──
     console.log('5 · Apartado con envío: cancelar con una retención que la pasarela no suelta (pantalla, aviso en la pantalla, base)');

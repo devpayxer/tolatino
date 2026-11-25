@@ -1,6 +1,7 @@
 import { dosIdiomas } from "@/lib/dos-idiomas";
 /* Profesionales · lo que comparten servidor y cliente (4k–4l). Sin acceso a la base. */
-export const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { usd } from "./dinero-comun";
+export { usd };
 const UNIT: Record<string, [string, string]> = { cheque: ["DEL CHEQUE", "OF THE CHECK"], fianza: ["DE LA FIANZA", "OF THE BOND"], carga: ["POR CARGA", "PER LOAD"], caso: ["DE LO QUE GANES", "OF WHAT YOU WIN"] };
 export type SvcPrecio = { k: string; cents: number; gov: number; mes: boolean; hrs: string | null; unit: string | null; cred: boolean };
 /* El precio de cada forma (priceFor): el total, nunca escondido. */
