@@ -3036,10 +3036,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9b** · **Lo que queda de la clase «el dinero dice lo decidido» (25 nov):** los avisos AL NEGOCIO `biz_noche_cx`, `biz_fiesta_cx` y
       `biz_insc_cx` dicen «Se le devuelve…» sin mirar; otras llamadas a `liberarOperacion` (vencidas, «No me sirve») no miran si soltó.
       _Hecho (25 nov, e2eebbe, Opus; revisado por Fable): migración 0222, cobros.soltarRetencion en todas las llamadas, din9v5._
-- [ ] **→ 9b** · **Lo último de la clase (25 nov, revisión de e2eebbe):** `citas-flujo.ts` ~341 llama a `devolverPago` al cancelar a tiempo sin
+- [x] **→ 9b** · **Lo último de la clase (25 nov, revisión de e2eebbe):** `citas-flujo.ts` ~341 llama a `devolverPago` al cancelar a tiempo sin
       mirar el resultado, ~342 dice el depósito entero y `cita/[num]/Estado.tsx` ~52 «Te devolvemos»; `MercadoEstado.tsx` ~61-63 «No se cobró nada»
       fijo; `ApartadoEstado.tsx` ~56-58 y ~79 «Se liberó lo retenido» sin mirar; citas, apartados y pedidos devuelven `retenida` y ninguna
       pantalla lo usa. din9v5 cubre solo Noche (sin inglés ni cierre de la alerta).
+      _Hecho (25 nov, 1f259a4, Opus; revisado por Fable): cita, mercado, apartados y pedidos; migración 0223; din9v5 a 37 ✓._
+- [ ] **→ 9b** · **Restos menores de la clase (25 nov, revisión de 1f259a4):** las hojas de confirmar de la cita prometen «Te devolvemos los $X»
+      antes de actuar (`cita/[num]/Estado.tsx` ~232-233) y el estado «Te propone otra hora» (~66); el panel de citas dice «la solicitud venció y se
+      devolvió el depósito» sin mirar (`citas-flujo.ts` ~196); `avisos.ts` ~166 cae en «No se te cobró nada» si la consulta falla; un cobro
+      `failed` en la cita sale como «sigue cobrado»; los «Se liberó…» del apartado salieron del CMS (`cms-cadenas-e2.json`) y «CANCELADO» quedó
+      bloqueado; `ord_no` y «Rechazar» de Pedidos sin e2e propio.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

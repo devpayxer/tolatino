@@ -20,6 +20,9 @@ _Actualizado: 24 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 21 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **25 nov (09:30 UTC) · `main` = `pruebas` = 1f259a4, servido.** La clase «el dinero dice lo decidido» cerrada en lo grande: además de lo de
+  abajo, cancela el cliente y evento privado (0221), avisos al negocio y retenciones con `soltarRetencion` (0222), citas, mercado, apartados y
+  pedidos (0223); `main` en rojo un rato por `evt6a` (fecha a fin de mes) arreglado con guardián (cac5d93). Restos menores en LAUNCH.
 - **25 nov (05:00 UTC) · `main` = `pruebas` = 12d75f9, servido.** Hoy: medí qué consultas no ejecuta ninguna prueba (88 % de 5.663;
   `pruebas/consultas-no-ejecutadas.txt`) y, al cubrir las del dinero, salió una clase de fallo: **el dinero decía lo decidido, no lo que pasó**.
   Arreglada por partes, cada una con guardián, al revés, e2e, ayuda y revisión de Fable: plan Pro (5805640), patrocinio (ca6a9c0), boletos y
