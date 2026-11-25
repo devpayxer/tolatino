@@ -28,6 +28,7 @@ panel. Versión: 23 nov 2026. Audiencia: vecino. Tema: negocios._
 | Pasas a Free y vuelves a Pro | Tu nuevo día de cobro es el día en que volviste. |
 | Llega el día 30 sin tarjeta o decidiste no seguir | Pasa a Free. Te llega «Tu página pasó a Free». Nada se borra. |
 | El cobro falla | Intento 1 de 3 (aviso); se reintenta a los 3 y 7 días. Al tercero, Free. Cambiar la tarjeta lo vuelve a intentar ya. |
+| Cambias la tarjeta con el cobro fallido | Se intenta cobrar ya con la nueva y la pantalla dice lo que pasó de verdad: «ya tienes Pro» solo si se cobró; si el banco la rechaza, lo dice (y cuenta el intento; si era el último, tu página pasa a Free, nada se borra); si tu banco pide confirmar, te llega el aviso con el enlace; si el cobro se está procesando en ese momento, lo verás en Tu plan en unos minutos. |
 | Pasas a Free con Pro pagado | Sigues con Pro hasta el fin del período; luego Free. Puedes deshacerlo antes. |
 | Volver a Pro con una tarjeta rechazada | No cambia nada: sigue Free y te dice por qué. |
 | Pro de cortesía (To'Latino) | Sin cobro hasta la fecha; luego Free. |
@@ -76,6 +77,7 @@ misma hoja.
 | You switch to Free and come back to Pro | Your new charge day is the day you came back. |
 | Day 30 arrives with no card or you decided not to keep it | It moves to Free. You get "Your page moved to Free." Nothing is deleted. |
 | The charge fails | Attempt 1 of 3 (notice); it is retried after 3 and 7 days. On the third, Free. Changing the card retries it right away. |
+| You change the card while the charge has failed | It tries to charge the new card right away and the screen says what really happened: «you have Pro» only if it was charged; if the bank declines, it says so (and the attempt counts; if it was the last one, your page switches to Free, nothing is deleted); if your bank asks to confirm, you get the notice with the link; if the charge is being processed right then, you will see it in Your plan in a few minutes. |
 | You switch to Free with Pro paid | You keep Pro until the end of the period; then Free. You can undo it before then. |
 | Back to Pro with a declined card | Nothing changes: it stays Free and it tells you why. |
 | Courtesy Pro (To'Latino) | No charge until the date; then Free. |

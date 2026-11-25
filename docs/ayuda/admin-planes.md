@@ -19,6 +19,8 @@ comisiones e impuestos). Versión: 15 nov 2026. Audiencia: equipo. Tema: equipo.
 | Extender una prueba que ya terminó | No deja: solo pruebas activas. |
 | Cortesía a un negocio en Free | Pasa a Pro hoy; al terminar vuelve a Free con su contenido guardado. |
 | Reintentar y el banco rechaza | Lo dice; sigue el conteo de intentos. |
+| Reintentar y el banco pide confirmar | Lo dice; al dueño le llega el aviso con el enlace para confirmar. Cuenta como intento. |
+| Reintentar mientras el cobro ya se está procesando | Dice que se está procesando: no se intenta dos veces; el resultado sale en unos minutos. |
 | Comisión fuera de 0–30 % | No deja. |
 | Negocio de otra ciudad | No aparece ni se puede tocar. |
 
@@ -75,6 +77,8 @@ or deleted — schedule a new one; past quotes and sales keep their percent.
 | Extending a trial that already ended | Not allowed: only active trials. |
 | Courtesy for a business on Free | It moves to Pro today; when it ends it goes back to Free with its content saved. |
 | Retrying and the bank declines | It says so; the attempt count continues. |
+| Retrying and the bank asks to confirm | It says so; the owner gets the notice with the link to confirm. It counts as an attempt. |
+| Retrying while the charge is already being processed | It says it is being processed: it is not tried twice; the result shows in a few minutes. |
 | Fee outside 0–30 % | Not allowed. |
 | Business in another city | It does not appear and cannot be touched. |
 
