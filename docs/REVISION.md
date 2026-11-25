@@ -6577,6 +6577,10 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   de que exista un cobro) se dejaron como regla; si las quieres en «pedimos la devolución», es un cambio de texto (LAUNCH). **Qué mirar (teléfono):**
   una mesa con depósito › Cancelar: la hoja; una fiesta confirmada a más de 30 días › Cancelar la fecha: «Es gratis. Pedimos la devolución de…».
   Tras la revisión: el evento privado cancelado tarde ya no dice «se queda con el restaurante» si no había nada cobrado, y dice lo que quedaba.
+  Segunda revisión (menores, 25 nov): el viaje cancelado tarde con una devolución previa dice «Se cobró lo que quedaba: $X» (pantalla, aviso y Super
+  Admin), y con todo devuelto no dice «Se cobró»; el evento privado tarde con el cobro ya devuelto o soltado no dice «se queda» (pantalla, aviso, panel,
+  Transacciones) y avisa lo que ya había pasado. **Qué mirar (teléfono):** «Tu viaje» de una cancelación tarde con devolución previa; la ayuda de noche,
+  viaje, fiesta e inscripción ya no promete «te devolvemos / se libera».
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

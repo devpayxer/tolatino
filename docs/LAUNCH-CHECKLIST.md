@@ -3066,7 +3066,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       dicen lo que quedaba y la nota del historial es neutra (sin migración: van por {dinero}/{dep}); evento privado «Depósito cobrado» solo cobrado; el
       panel lee «tarde» de cancel_reason y dice «No se había cobrado nada»; noche sin llegar dice lo devuelto o soltado; viaje tarde nunca cobra más de
       lo que queda (pantalla y servidor); {dinero} vacío por defecto; el guardián quita solo los tramos eximidos, caza más frases y los mensajes no(…);
-      ayuda sin jerga. Al revés 147/147._
+      ayuda sin jerga. Al revés 147/147.
+      Segunda revisión (menores): cancelarEvp con lo retenido tarde dice «se queda» solo con el cobro hecho en la base (captured / partially_refunded),
+      desmarca perdio en cualquier otro caso y cobrarOperacion va en try/catch (si lanza, se suelta la retención); tarde con el cobro ya devuelto o
+      soltado el aviso dice lo que ya había pasado (te devolvimos / se soltó), nunca «No se cobró nada»; Transacciones del Super Admin lee perdio solo
+      con algo cobrado (QUEDO en admin-tx); la nota del historial del viaje es neutra y cobrarOperacion del viaje va en try/catch; el viaje y el Super
+      Admin dicen «Se cobró lo que quedaba» cuando cobroMitad < la mitad; el guardián mira los dos literales del no(…) (también en varias líneas), quita
+      la exención ph: y cubre todo lo anterior; ayuda (noche, viaje, fiesta, inscripción) en «pedimos que se suelte / pedimos la devolución». Al revés
+      160/160. e2e nuevos en tra4y (5b lo que quedaba, 5c todo devuelto) y evt6i (8b devuelto y soltado), escritos sin correr._
 - [ ] **→ 9b** · **La familia de textos fijos que no llegan al CMS por ir en listas que después pasan a `E2(a, b)` (25 nov):** `Recuperar.tsx` DOCS,
       `MenuCliente.tsx` LLEVA, `panel/Cobros.tsx` pasos, `EventosCambios.tsx` IDEAS y MOTIVOS: el guardián nuevo de cadenaConLlave solo caza el ayudante
       `const f = (a: string, b: string) => … E2(a, b)` llamado con dos textos fijos.
@@ -3074,8 +3081,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       («Te devolvemos $X» en `n/[id]/noche/Reservar.tsx` ~148, `viaje/ViajeBooking.tsx` ~207, `fiesta/Booking.tsx` ~197; la FAQ de `n/[id]/page.tsx`
       ~192; `eventos/[slug]/page.tsx` ~72 «Si compraste, te devolvemos todo»; `panel/Inscripciones.tsx` ~58 y `EventosPanel.tsx` ~494) se dejaron: dicen
       la regla antes de que exista un cobro, no lo que pasó; decidir si pasan a «pedimos la devolución» (REVISION). (b) _hecho en la revisión: cancelarEvp._ (c) La duración de alrevesDevueltoSoloSiSalio en `pruebas/reparto-alreves.json` (28 s con 98 casos; ahora
-      147): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) din9v4/din9v5 sin caso de punta a punta de las hojas
-      nuevas (retenido vs cobrado) ni del aviso de otra hora con y sin depósito.
+      160): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) din9v4/din9v5 sin caso de punta a punta de las hojas
+      nuevas (retenido vs cobrado) ni del aviso de otra hora con y sin depósito (el viaje tarde con devolución previa y el evento privado tarde con el
+      cobro devuelto o soltado ya tienen el suyo en tra4y 5b/5c y evt6i 8b: escritos el 25 nov, falta verlos correr en el CI). (e) Visto en la segunda
+      revisión: avisarNeg de viajes.ts arma el aviso al negocio solo en español (servicio.es, «personas», {dep} = seCobro.es), también en inglés; pasarlo
+      a ES/EN como avisarEvp (Bi). (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

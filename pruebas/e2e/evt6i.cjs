@@ -2,7 +2,7 @@
 // ajustes del panel → Reservar «9+» → Pedir evento privado (3 pasos, nada se cobra; nota con teléfono rechazada) → el restaurante manda su
 // propuesta (la base calcula total, impuesto y depósito) → el cliente pide un cambio (va a Mensajes con el número) → propuesta nueva (la vieja ya
 // no se acepta: pantalla vieja y la base) → 0002 (no se cobra, la propuesta sigue) → 4242 con doble toque en dos pestañas (un solo cobro) →
-// cambio de un evento confirmado (sin cobro) → cancelar a 73 h (devuelto completo) · a 71 h (se queda con el restaurante) · el restaurante cancela
+// cambio de un evento confirmado (sin cobro) → cancelar a 73 h (devuelto completo) · a 71 h (se queda con el restaurante; con el cobro ya devuelto o soltado, nada se queda) · el restaurante cancela
 // (devolución completa) · propuesta vencida rechazada (pantalla y base) · «No puedo» y sin respuesta (barrido) · IDOR con otra cuenta y con el dueño
 // de otro negocio (cada llamada nueva repetida) · otro restaurante (El Fogón) que Sabor no ve · Super Admin › Transacciones › Evento privado ·
 // Mi cuenta · Configuración. Deja los datos como estaban (solicitudes de prueba cerradas, avisos y ajustes restaurados).
@@ -204,6 +204,35 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     await clic(btn(m, 'Sí, cancelar')); await contiene(m, 'CANCELADO');
     ok(await esperaV(() => pago(E2), `captured|${dep2}|0`) === `captured|${dep2}|0` && sql(`select (details->>'perdio') || '|' || cancel_reason from operations where number = '${E2}'`) === 'true|tarde', 'a 71 h: sin devolución, el depósito se queda con el restaurante');
     ok(await contiene(m, 'El depósito se quedó con Sabor Dominicano'), 'cliente: «El depósito se quedó con …»');
+
+    // ── 8b · 25 nov (regla 13) · Tarde con el cobro ya devuelto entero o la retención ya soltada: nada se queda con el restaurante ──
+    // El estado se prepara con SQL directo (como din9v4 / din9v5). Antes perdio quedaba en true (tarde y «había depósito») y el aviso, la pantalla, el
+    // panel y el Super Admin decían «se queda con el restaurante» de un dinero que ya había vuelto a la tarjeta.
+    const refundsDe = (num) => sql(`select count(*) from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${num}' and p.kind = 'deposit'`);
+    for (const [que, st] of [['devuelto', 'refunded'], ['soltado', 'released']]) {
+      const Ex = await confirmada(m, C1, U1, '');
+      const depX = Number(pago(Ex).split('|')[1]);
+      const deEse = `operation_id = (select id from operations where number = '${Ex}') and kind = 'deposit'`;
+      if (st === 'refunded') {
+        sql(`update payments set status = 'refunded', refunded_cents = amount_cents, updated_at = now() where ${deEse}`);
+        sql(`update sim_intents set refunded_cents = ${depX} where id = (select stripe_payment_intent from payments where ${deEse})`);
+        sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) select id, amount_cents, 'Ayuda con el evento', 'business', 'done', 'e6i-previa-${RUN}-${Ex}', now() from payments where ${deEse}`);
+      } else sql(`update payments set status = 'released', released_at = now(), updated_at = now() where ${deEse}`);
+      sql(`update operations set pay_status = '${st}', scheduled_at = now() + interval '71 hours' where number = '${Ex}'`);
+      const antes = pago(Ex), refAntes = refundsDe(Ex);
+      await m.goto(B + `/privado/${Ex}`); await clic(btn(m, 'Cancelar el evento'));
+      ok(!(await contiene(m, /se queda con Sabor Dominicano/, 3000)), `tarde con el cobro ${que}: la hoja no dice «se queda con …»`);
+      await clic(btn(m, 'Sí, cancelar')); await contiene(m, 'CANCELADO');
+      ok(await esperaV(() => sql(`select (details->>'perdio') || '|' || cancel_reason || '|' || status from operations where number = '${Ex}'`), 'false|tarde|cancelled') === 'false|tarde|cancelled', `tarde con el cobro ${que}: la base deja perdio=false (cancel_reason tarde)`);
+      ok(pago(Ex) === antes && refundsDe(Ex) === refAntes, `tarde con el cobro ${que}: nada se cobra ni se devuelve otra vez (${antes})`);
+      ok(!(await contiene(m, /se quedó con Sabor Dominicano/, 3000)) && await contiene(m, st === 'refunded' ? `Te devolvimos $${(depX / 100).toFixed(2)}` : 'No se cobró nada.'), `cliente: no dice «se quedó con …»; dice ${st === 'refunded' ? '«Te devolvimos …»' : '«No se cobró nada.»'}`);
+      const aviso = () => sql(`select coalesce(body::text, '') from notifications where user_id = '${U1}' and tpl = 'evp_cancelado' and ref_id = '${Ex}' order by id desc limit 1`);
+      ok(await espera(async () => !!aviso()) && !/se queda con el restaurante|stays with the restaurant/.test(aviso()), `su aviso no dice «se queda con el restaurante» (${aviso().slice(0, 120)})`);
+      ok(st !== 'refunded' || /Te devolvimos/.test(aviso()), 'con el cobro devuelto, su aviso dice «Te devolvimos …» (nunca «No se cobró nada»)');
+      await hp.goto(B + `/panel/${SAB}/hoy?det=evp:${Ex}`);
+      ok(!(await contiene(hp, /se queda contigo|you keep the/, 3000)), 'el panel no dice «se queda contigo»');
+      if (st === 'refunded') await m.screenshot({ path: OUT + 'e6i-tarde-ya-devuelto-m.png', fullPage: true });
+    }
 
     // ── 9 · El restaurante cancela: devolución completa (y la regla del cliente no aplica) ──
     const { ctx: c2, p: m2 } = await nuevo(C2, true);

@@ -489,7 +489,7 @@ export async function rechazarCambioEvp(userId: string, numero: string): Promise
    camino · fallida, que alerta al equipo · liberada · retenida · nada), nunca «Te devolvemos $X en 3 a 5 días hábiles» con lo decidido. */
 export async function cancelarEvp(userId: string, numero: string): Promise<Res<{ devuelto: number; perdio: boolean; devolucion?: DevCancelar["e"] }>> {
   if (!NUM_EP.test(numero)) return no("Esa solicitud no existe.", "That request does not exist.");
-  let pago: { dev: number; perdio: boolean; held: boolean; dep: number; queda: number } | null = null, biz = "";
+  let pago: { dev: number; perdio: boolean; held: boolean; dep: number; queda: number; pst: string | null; refunded: number } | null = null, biz = "";
   const r = await tx(async (c): Promise<Res<{ devuelto: number; perdio: boolean }>> => {
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
     if (!o || !["pending", "change_proposed", "confirmed"].includes(o.status) || (o.status === "confirmed" && o.past)) return no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.");
@@ -509,7 +509,7 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
       [o.id, aTiempo ? "a_tiempo" : "tarde", JSON.stringify({ perdio, dev, devIdem: `evpcx-${numero}`, devPor: "policy", plazo })]);
     // La nota del historial dice solo la regla (neutra): lo que pasó con el dinero lo dicen la pantalla y el panel (lo leen de la base).
     await ev(c, o.id, "cancelled", "user", userId, aTiempo ? { es: `Canceló con ${plazo} h o más`, en: `Cancelled ${plazo} h or more before` } : { es: `Canceló a menos de ${plazo} h`, en: `Cancelled less than ${plazo} h before` });
-    pago = { dev, perdio, held: o.pst === "held", dep: o.amount ?? 0, queda: held ? o.amount ?? 0 : cobrado };
+    pago = { dev, perdio, held: o.pst === "held", dep: o.amount ?? 0, queda: held ? o.amount ?? 0 : cobrado, pst: o.pst, refunded: o.refunded ?? 0 };
     return { ok: true, devuelto: dev, perdio };
   });
   if (!r.ok) return r;
@@ -517,20 +517,28 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
     if (biz) await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: " No se había cobrado nada." }).catch(() => undefined);
     return { ...r, devolucion: "nada" };
   }
-  const P = pago as { dev: number; perdio: boolean; held: boolean; dep: number; queda: number };
+  const P = pago as { dev: number; perdio: boolean; held: boolean; dep: number; queda: number; pst: string | null; refunded: number };
   let quedo = P.perdio, d: DevCancelar | null = null;
   if (P.held && P.perdio) {
     // Lo retenido (la captura había fallado) y tarde: se cobra (se queda con el restaurante). Si la captura tampoco sale, no se dice «se queda con el
     // restaurante»: la retención se suelta (lo que haría el barrido con un evento cancelado) y se dice lo que pasó.
+    // 25 nov (regla 13, revisión) · «Se queda» solo con el cobro hecho en la base (captured o partially_refunded); en cualquier otro caso perdio se desmarca.
+    // Si cobrarOperacion lanza (la pasarela no contestó), se mira la base igual: lo que sigue retenido se suelta y el aviso dice eso, nunca «se queda».
     const o = await leer(db(), "o.number = $1", [numero]);
-    if (o) await cobrarOperacion(o.id);
+    if (o) {
+      try { await cobrarOperacion(o.id); } catch { /* lo que pasó lo dice la base (o2) */ }
+    }
     const o2 = await leer(db(), "o.number = $1", [numero]);
-    if (o2?.pst === "held") {
-      quedo = false;
-      await db().query(`update operations set details = details || '{"perdio":false}'::jsonb where id = $1::bigint`, [o2.id]);
-      d = await devolverAlCancelar({ id: o2.id, pay: "held", pid: o2.pid, amount: o2.amount, refunded: o2.refunded }, { actorId: userId, motivo: "Cancelación tarde del evento privado (la captura no salió)", idem: `evpcx-${numero}`, por: "policy" });
+    quedo = o2?.pst === "captured" || o2?.pst === "partially_refunded";
+    if (!quedo) {
+      const id = o2?.id ?? o?.id;
+      if (id) await db().query(`update operations set details = details || '{"perdio":false}'::jsonb where id = $1::bigint`, [id]);
+      if (o2?.pst === "held") d = await devolverAlCancelar({ id: o2.id, pay: "held", pid: o2.pid, amount: o2.amount, refunded: o2.refunded }, { actorId: userId, motivo: "Cancelación tarde del evento privado (la captura no salió)", idem: `evpcx-${numero}`, por: "policy" });
     }
   } else if (!P.perdio) d = await moverDinero(numero).catch((): DevCancelar => ({ e: "fallida", monto: P.dev }));
+  // Tarde con el cobro ya devuelto entero o la retención ya soltada: nada se queda y nada se mueve ahora; el aviso dice lo que ya había pasado (te
+  // devolvimos / se soltó la retención), nunca «No se cobró nada» de un depósito que sí se cobró y se devolvió.
+  if (!quedo && (!d || d.e === "nada")) d = P.pst === "refunded" && P.refunded > 0 ? { e: "hecha", monto: P.refunded } : P.pst === "released" && P.dep > 0 ? { e: "liberada", monto: P.dep } : d;
   // Lo que se queda es lo que quedaba (una devolución parcial previa ya salió): «Lo que quedaba del depósito ($X)» cuando no es el depósito entero.
   const entero = P.queda === P.dep;
   await avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, quedo ? (entero ? { es: `El depósito de ${dinero(P.queda)} se queda con el restaurante.`, en: `The ${dinero(P.queda)} deposit stays with the restaurant.` }

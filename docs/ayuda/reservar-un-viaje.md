@@ -1,6 +1,6 @@
 # Reservar un viaje (Transporte) · Booking a trip (Transportation)
 
-_Pantallas: la página de un negocio de Transporte › Servicios › **Reservar** (`/n/{negocio}/viaje`) y tu viaje (`/viaje/{V-…}`). Versión: 10 nov 2026.
+_Pantallas: la página de un negocio de Transporte › Servicios › **Reservar** (`/n/{negocio}/viaje`) y tu viaje (`/viaje/{V-…}`). Versión: 25 nov 2026.
 Audiencia: vecino. Tema: citas._
 
 ## Qué hace
@@ -21,17 +21,17 @@ precio cerrado por fotos se piden llamando hasta que lleguen a la app.
 |---|---|
 | Reservas | Se **retiene** el total en tu tarjeta (no se cobra). |
 | El negocio confirma | Se **cobra** el total. |
-| No confirman a tiempo, no hay cupo o no te sirve la otra salida | Se **libera** completo. |
+| No confirman a tiempo, no hay cupo o no te sirve la otra salida | No se cobra nada: **pedimos** que se suelte la retención de tu tarjeta. |
 | Cancelas con 24 horas o más | Es gratis: **pedimos** que se suelte la retención o, si ya se cobró, la devolución de todo. La hoja lo dice antes de confirmar; lo que pasó, «Tu viaje» y Avisos. |
-| Cancelas con menos de 24 horas | Se **cobra la mitad** y pedimos la devolución del resto a tu tarjeta. |
-| El negocio cancela la salida | Te **devolvemos todo**, con el motivo. |
+| Cancelas con menos de 24 horas | Se **cobra la mitad** (o lo que quede, si ya hubo una devolución) y pedimos la devolución del resto a tu tarjeta. |
+| El negocio cancela la salida | **Pedimos** la devolución de todo lo cobrado (o que se suelte la retención), con el motivo. Lo que pasó lo ves en «Tu viaje» y en Avisos. |
 | No llegas a la salida | El cobro no cambia. |
 
 ## Qué pasa en cada caso
 - **Pendiente:** el negocio tiene 2 horas si sales hoy, 24 horas si es otro día. Tus asientos ya están apartados.
 - **Otra salida propuesta:** si tu salida no tiene cupo, el negocio te propone otra. «Aceptar esta salida» la confirma y la cobra;
-  «No me sirve» libera tu dinero.
-- **Sin respuesta:** si no contestan a tiempo, se libera solo.
+  «No me sirve»: pedimos que se suelte la retención de tu tarjeta.
+- **Sin respuesta:** si no contestan a tiempo, no se cobra nada y pedimos que se suelte la retención.
 - **Va tarde:** te avisamos la nueva hora en Avisos.
 - **En camino / Llegaste:** lo ves en «Tu viaje» y te pedimos tu reseña.
 - **La última plaza:** si dos personas reservan el último asiento a la vez, solo una lo consigue; a la otra se le dice que ya no
@@ -46,7 +46,7 @@ En cada pasajero: Abordó / No llegó. Los asientos vendidos fuera de la app se 
 ## FAQ
 - **¿Me cobran al reservar?** No: se retiene. Se cobra cuando el negocio confirma. No, it is held.
 - **¿Puedo cancelar?** Sí, desde «Tu viaje». Con 24 h o más es gratis; con menos, se cobra la mitad. Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos.
-- **¿Y si el negocio no sale?** Te devolvemos todo y ves el motivo.
+- **¿Y si el negocio no sale?** Pedimos la devolución de todo lo cobrado y ves el motivo; «Tu viaje» dice cuando sale.
 - **¿Cuántos asientos puedo reservar?** Hasta 14 por reserva.
 - **¿Dónde veo mis viajes?** Mi cuenta › Citas y reservas.
 
@@ -76,17 +76,17 @@ requested by phone until they are available in the app.
 |---|---|
 | You book | The total is **held** on your card (not charged). |
 | The business confirms | The total is **charged**. |
-| They do not confirm in time, there is no room or the other departure does not work for you | It is **released** in full. |
+| They do not confirm in time, there is no room or the other departure does not work for you | Nothing is charged: we **ask** for the hold to come off your card. |
 | You cancel with 24 hours or more | It is free: we **request** that the hold comes off or, if it was already charged, a refund of everything. The sheet says so before you confirm; what happened, «Your trip» and Notifications. |
-| You cancel with less than 24 hours | **Half is charged** and we request a refund of the rest to your card. |
-| The business cancels the departure | We **refund everything**, with the reason. |
+| You cancel with less than 24 hours | **Half is charged** (or what is left, if there was already a refund) and we request a refund of the rest to your card. |
+| The business cancels the departure | We **request** a refund of everything charged (or that the hold comes off), with the reason. What happened shows in «Your trip» and in Notifications. |
 | You do not make it to the departure | The charge does not change. |
 
 ### What happens in each case
 - **Pending:** the business has 2 hours if you leave today, 24 hours if it is another day. Your seats are already held.
 - **Another departure proposed:** if your departure has no room, the business proposes another. «Accept this departure» confirms it and
-  charges it; «Doesn’t work» releases your money.
-- **No answer:** if they do not reply in time, it is released automatically.
+  charges it; «Doesn’t work»: we ask for the hold to come off your card.
+- **No answer:** if they do not reply in time, nothing is charged and we ask for the hold to come off.
 - **Running late:** we tell you the new time in Notifications.
 - **On the way / You arrived:** you see it in «Your trip» and we ask for your review.
 - **The last seat:** if two people book the last seat at the same time, only one gets it; the other is told there are none left.
@@ -100,7 +100,7 @@ Arrived). On each passenger: Boarded / Did not show. Seats sold outside the app 
 ### FAQ
 - **Do you charge me when I book?** No: it is held. It is charged when the business confirms.
 - **Can I cancel?** Yes, from «Your trip». With 24 hours or more it is free; with less, half is charged. Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications.
-- **What if the business does not leave?** We refund everything and you see the reason.
+- **What if the business does not leave?** We request a refund of everything charged and you see the reason; «Your trip» shows when it goes through.
 - **How many seats can I book?** Up to 14 per booking.
 - **Where do I see my trips?** My account › Appointments and bookings.
 

@@ -18054,10 +18054,10 @@ const guardianes = {
       const ANTES = { noche: `${AP}/noche/[num]/NocheEstado.tsx`, viaje: `${AP}/viaje/[num]/ViajeEstado.tsx`, fiesta: `${AP}/fiesta/[num]/FiestaEstado.tsx`, insc: `${AP}/insc/[num]/InscEstado.tsx`,
         evp: `${AP}/privado/[num]/EstadoEvp.tsx`, pat: `${PN}/Patrocinio.tsx`, pev: `${PN}/PatrocinioEvento.tsx`, citas: `${PN}/Citas.tsx`, pnoche: `${PN}/NocheReservas.tsx`,
         pfiesta: `${PN}/FiestasReservas.tsx`, pviaje: `${PN}/ViajesPanel.tsx`, pevp: `${PN}/EventoPrivado.tsx` };
-      // Antes de probar, se quitan de la línea solo los tramos eximidos (nunca la línea entera): el texto de ejemplo de un campo (ph: E2(…), «Ej.:»), lo
-      // que ya va en camino (devolucion.camino ? E2(…)) y lo que ya salió (r?.devuelto ? E2(…)).
+      // Antes de probar, se quitan de la línea solo los tramos eximidos (nunca la línea entera): el ejemplo de respuesta («Ej.:»), lo que ya va en camino
+      // (devolucion.camino ? E2(…)) y lo que ya salió (r?.devuelto ? E2(…)). El texto de ejemplo de un campo (ph: E2(…)) ya no se exime: nadie lo usaba.
       const LIT = '(?:`[^`]*`|"[^"]*")', PAR = `E2\\(${LIT}\\s*,\\s*${LIT}\\)`;
-      const EXIME = [new RegExp(`ph: ${PAR}`, "g"), new RegExp(`devolucion\\.camino \\? \\[?${PAR}`, "g"), new RegExp(`r\\?\\.devuelto \\? ${PAR}`, "g"), /\[?"Ej\.:[^"]*", "e\.g\.[^"]*"\]?/g];
+      const EXIME = [new RegExp(`devolucion\\.camino \\? \\[?${PAR}`, "g"), new RegExp(`r\\?\\.devuelto \\? ${PAR}`, "g"), /\[?"Ej\.:[^"]*", "e\.g\.[^"]*"\]?/g];
       const sinEximir = (l) => EXIME.reduce((t, re) => t.replace(re, ""), l);
       const T = {};
       for (const [k, f] of Object.entries(ANTES)) {
@@ -18100,25 +18100,52 @@ const guardianes = {
       // nota del historial es neutra (lo que pasó con el dinero lo leen la pantalla y el panel). La pantalla y el panel: «se quedó / se queda» solo con
       // perdio y lo que queda; «tarde» del panel sale de cancel_reason (cxr), nunca de perdio.
       const EPL = "apps/web/lib/evento-privado.ts", cxE = cuerpoFn(existsSync(EPL) ? sinComent(EPL) : "", "cancelarEvp");
-      if (!/perdio = !aTiempo && \(cobrado > 0 \|\| held\);/.test(cxE) || !/queda: held \? o\.amount \?\? 0 : cobrado \}/.test(cxE)) falla(G, EPL, 0, "cancelarEvp marca que el restaurante se queda el depósito sin mirar el cobro (perdio = tarde y cobrado o retenido; queda = lo que quedaba)");
+      if (!/perdio = !aTiempo && \(cobrado > 0 \|\| held\);/.test(cxE) || !/queda: held \? o\.amount \?\? 0 : cobrado(?: \}|,)/.test(cxE)) falla(G, EPL, 0, "cancelarEvp marca que el restaurante se queda el depósito sin mirar el cobro (perdio = tarde y cobrado o retenido; queda = lo que quedaba)");
       if (/se queda con el restaurante\.`|se queda contigo\.`/.test(cxE) && /dinero\(P\.dep\)/.test(cxE)) falla(G, EPL, 0, "los avisos de cancelarEvp dicen el depósito entero (P.dep): va lo que quedaba (P.queda)");
-      for (const m of cxE.matchAll(/await ev\(c, o\.id, "cancelled", "user", userId, ([^\n]*)\);/g)) if (/devuelve|refunded|se queda|keeps/.test(m[1])) falla(G, EPL, 0, "la nota del historial de cancelarEvp dice lo del dinero antes de que pase («se devuelve / se queda»): va neutra");
+      // La nota del historial al cancelar quien pagó (evento privado y viaje) es neutra: nada de lo que pasará con el dinero («se devuelve», «se queda», «se
+      // cobra la mitad ($X)»), que todavía no pasó (la captura puede no salir, el cobro puede estar ya devuelto).
+      const NOTA_DINERO = /devuelve|refunded|se queda|keeps|se cobra|is charged|mitad|\bhalf\b|\$\{(money|dinero)\(/;
+      const notaNeutra = (f, cuerpo, fn) => {
+        const ms = [...cuerpo.matchAll(/await ev\(c, o\.id, "cancelled", "user", userId, ([^\n]*)\);/g)];
+        if (!ms.length) falla(G, f, 0, `no encuentro la nota del historial al cancelar en ${fn} (await ev(c, o.id, "cancelled", "user", userId, …)): el guardián no la puede mirar`);
+        for (const m of ms) if (NOTA_DINERO.test(m[1])) falla(G, f, 0, `la nota del historial de ${fn} dice lo del dinero antes de que pase («se devuelve / se queda / se cobra la mitad»): va neutra`);
+      };
+      notaNeutra(EPL, cxE, "cancelarEvp");
+      // Lo retenido que se cobra tarde: «se queda» solo con el cobro hecho en la base (o2), y si cobrarOperacion lanza, se mira la base igual (try/catch).
+      if (!/quedo = o2\?\.pst === "captured" \|\| o2\?\.pst === "partially_refunded";\n\s*if \(!quedo\) \{/.test(cxE) || !/try \{ await cobrarOperacion\(o\.id\); \} catch/.test(cxE))
+        falla(G, EPL, 0, "cancelarEvp dice que el restaurante se queda lo retenido sin mirar que el cobro salió (quedo = o2 captured o partially_refunded; try/catch en cobrarOperacion)");
+      if (!/if \(!quedo && \(!d \|\| d\.e === "nada"\)\) d = P\.pst === "refunded" && P\.refunded > 0 \? \{ e: "hecha", monto: P\.refunded \} : P\.pst === "released"/.test(cxE))
+        falla(G, EPL, 0, "cancelarEvp tarde con el cobro ya devuelto o soltado avisa «No se cobró nada»: va lo que ya había pasado (te devolvimos / se soltó)");
+      // El Super Admin (Transacciones): «se quedó con…» solo si perdio y queda algo cobrado (QUEDO), nunca perdio crudo.
+      const ATX = "apps/web/lib/admin-tx.ts", atx = existsSync(ATX) ? sinComent(ATX) : "";
+      if (/'perdio', coalesce\(\(o\.details->>'perdio'\)::boolean, false\)/.test(atx) || !/const QUEDO = `\(coalesce\(\(o\.details->>'perdio'\)::boolean, false\) and coalesce\(py\.status in \('captured', 'partially_refunded'\) and py\.amount_cents > coalesce\(py\.refunded_cents, 0\), false\)\)`;/.test(atx))
+        falla(G, ATX, 0, "Transacciones lee perdio crudo: diría «se quedó con el negocio» aunque el cobro no saliera o ya estuviera devuelto (QUEDO: perdio y queda algo cobrado)");
+      notaNeutra("apps/web/lib/viajes.ts", cuerpoFn(existsSync("apps/web/lib/viajes.ts") ? sinComent("apps/web/lib/viajes.ts") : "", "viajeCliente"), "viajeCliente");
       if (T.evp && !/: x\.perdio && queda > 0 \? \[queda === x\.pago\.monto \?/.test(T.evp)) falla(G, ANTES.evp, 0, "el evento cancelado dice «el depósito se quedó» sin mirar lo que quedaba (perdio y queda)");
       if (T.pevp && (!/tardeCx = x\.cxr === "tarde"/.test(T.pevp) || !/: x\.perdio && quedaCx > 0 \? \(quedaCx === x\.pago\.monto \?/.test(T.pevp) || /x\.perdio \? E2\(`Canceló a menos/.test(T.pevp))) falla(G, ANTES.pevp, 0, "el panel del evento privado lee «tarde» de perdio o dice «se queda contigo» sin lo que quedaba (cxr, perdio y quedaCx)");
-      // (m) Los mensajes no(…) de las libs de estas operaciones: ninguno promete, y «pedimos que se suelte» solo con "held" justo antes.
+      // (m) Los mensajes no(…) de las libs de estas operaciones: ninguno promete, y «pedimos que se suelte» solo con "held" justo antes. Se miran los DOS
+      // literales (ES y EN) sobre el archivo entero, aunque el no(…) ocupe varias líneas (antes solo el primero y solo en su línea).
+      const NO2 = new RegExp(`\\bno\\(\\s*(${LIT})(?:\\s*,\\s*(${LIT}))?`, "g");
       for (const f of ["noche-reservas", "fiestas-reservas", "viajes", "inscripciones", "evento-privado", "citas-flujo"].map((x) => `apps/web/lib/${x}.ts`)) {
         if (!existsSync(f)) continue;
-        sinComent(f).split("\n").forEach((l, i) => {
-          for (const m of l.matchAll(/\bno\(("[^"]*"|`[^`]*`)/g)) {
-            if (PROMETE.test(m[1])) falla(G, f, i + 1, "un mensaje no(…) promete el dinero antes de actuar: va lo que se pedirá según el cobro");
-            if (/pedimos que se suelte/.test(m[1]) && !/"held"/.test(l.slice(Math.max(0, m.index - 160), m.index))) falla(G, f, i + 1, "un mensaje no(…) dice «pedimos que se suelte» sin mirar justo antes que haya algo retenido");
+        const t = sinComent(f);
+        for (const m of t.matchAll(NO2)) {
+          const ln = t.slice(0, m.index).split("\n").length, antes = t.slice(Math.max(0, m.index - 160), m.index);
+          for (const lit of [m[1], m[2]].filter(Boolean)) {
+            if (PROMETE.test(lit)) falla(G, f, ln, "un mensaje no(…) promete el dinero antes de actuar (en español o en inglés): va lo que se pedirá según el cobro");
+            if (/pedimos que se suelte|hold to come off/.test(lit) && !/"held"/.test(antes)) falla(G, f, ln, "un mensaje no(…) dice «pedimos que se suelte» sin mirar justo antes que haya algo retenido");
           }
-        });
+        }
       }
       // (n) Viaje tarde: lo que se queda nunca más de lo que queda cobrado (pantalla y servidor); noche sin llegar: lo devuelto o soltado antes de «No se cobró nada».
       if (T.viaje && !/const base = retenido \? x\.pago\.monto : queda, mitad = Math\.min\(Math\.floor\(x\.tot \/ 2\), base\)/.test(T.viaje)) falla(G, ANTES.viaje, 0, "la hoja del viaje tarde dice «se cobra la mitad» sin mirar lo que queda cobrado (Math.min)");
       const VL = "apps/web/lib/viajes.ts", vl = existsSync(VL) ? sinComent(VL) : "";
       if (!/const mitad = cobra && p && \["captured", "partially_refunded"\]\.includes\(p\.status\) \? Math\.min\(cobra, Math\.max\(0, p\.amount - \(p\.refunded \?\? 0\)\)\) : 0;/.test(vl)) falla(G, VL, 0, "cancelar el viaje tarde «cobra la mitad» de un cobro ya devuelto (refunded) o más de lo que queda");
+      if (!/if \(conf && !aTiempo && o\.pay === "held"\) \{ try \{ await cobrarOperacion\(o\.id\); \} catch/.test(vl)) falla(G, VL, 0, "cancelar el viaje tarde no se protege si cobrarOperacion lanza: cobroMitad quedaría con la mitad sin cobro (try/catch y se lee la base)");
+      // Lo cobrado tarde cuando ya había una devolución parcial: «Se cobró lo que quedaba», nunca «la mitad» (pantalla y Super Admin).
+      if (T.viaje && !/x\.cobroMitad \? \(x\.cobroMitad < Math\.floor\(x\.tot \/ 2\) \? E2\(`Se cobró lo que quedaba: /.test(T.viaje)) falla(G, ANTES.viaje, 0, "el viaje cancelado dice «Se cobró la mitad» aunque lo cobrado fue menos (lo que quedaba)");
+      const TXA = "apps/web/app/admin/Transacciones.tsx";
+      if (!/x\.vi\.mitad \? ` · \$\{x\.vi\.mitad < Math\.floor\(x\.total \/ 2\) \? E\("se cobró lo que quedaba"/.test(existsSync(TXA) ? sinComent(TXA) : "")) falla(G, TXA, 0, "Transacciones dice «se cobró la mitad» del viaje aunque lo cobrado fue menos (lo que quedaba)");
       if (T.noche && !/: retenido \? E2\([^\n]*\) : devT \|\| E2\(/.test(T.noche)) falla(G, ANTES.noche, 0, "«No llegaste / sin identificación» dice «No se cobró nada» aunque se haya devuelto o soltado (va devT primero)");
       for (const [f, re] of [["apps/web/lib/noche-reservas.ts", /puerta: "", dinero: "", \.\.\.extra \}/], ["apps/web/lib/fiestas-reservas.ts", /dev: "", dep: "", dinero: "", \.\.\.extra \}/], [VL, /dev: "", dinero: "", \.\.\.extra \}/]])
         if (!re.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "avisarCliente no pone {dinero} vacío por defecto: una plantilla con {dinero} saldría con la llave cruda"); }

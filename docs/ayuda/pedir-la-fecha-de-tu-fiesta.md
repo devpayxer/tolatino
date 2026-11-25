@@ -1,7 +1,7 @@
 # Pedir la fecha de tu fiesta · Requesting your party date
 
 _Pantallas: la hoja del servicio › «Pedir la fecha», el Booking de Fiestas (3 pasos), «Tu fiesta» (F-…), Panel › Hoy › Fiestas que esperan tu
-respuesta y su detalle. Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
+respuesta y su detalle. Versión: 25 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 **La fecha no es tuya hasta que te la confirmen.**
@@ -17,20 +17,20 @@ respuesta y su detalle. Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
 
 **Para el negocio (Panel › Hoy):** «Fiestas que esperan tu respuesta» con qué celebran, invitados, dónde y el depósito.
 **Confirmar** ocupa el día en tu calendario, cobra el depósito y deja el acuerdo por escrito (el paquete como se pidió).
-**Otra hora** propone otra hora ese mismo día. **No puedo** libera el depósito. Pasada la fiesta: **Terminó**.
+**Otra hora** propone otra hora ese mismo día. **No puedo**: pedimos que se suelte la retención del depósito. Pasada la fiesta: **Terminó**.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|
 | El negocio confirma | La fecha es tuya; se cobra el depósito; tu fiesta muestra el acuerdo por escrito. |
-| Dos personas piden el mismo día | El negocio confirma una; si con eso el día se llena, las demás salen «No pudieron» y su depósito se libera solo. |
-| Te proponen otra hora | «Aceptar esta hora» confirma y cobra; «No me sirve» libera el depósito. Si no contestas en 24 h, se libera. |
-| No pueden | Se libera tu depósito y ves sus próximas fechas libres con «Pedir esta». |
-| No contestan en 24 h | «Sin respuesta»: se libera tu depósito. |
-| Cancelas antes de que confirmen | Se libera todo. |
+| Dos personas piden el mismo día | El negocio confirma una; si con eso el día se llena, las demás salen «No pudieron» y pedimos que se suelte la retención de su depósito. |
+| Te proponen otra hora | «Aceptar esta hora» confirma y cobra; «No me sirve»: pedimos que se suelte la retención del depósito. Si no contestas en 24 h, también. |
+| No pueden | Pedimos que se suelte la retención de tu depósito y ves sus próximas fechas libres con «Pedir esta». |
+| No contestan en 24 h | «Sin respuesta»: pedimos que se suelte la retención de tu depósito. |
+| Cancelas antes de que confirmen | No se cobra nada: pedimos que se suelte la retención. |
 | Cancelas confirmada y faltan los días de la regla del negocio (30 normalmente) o más | Es gratis: pedimos la devolución del depósito (o que se suelte la retención, si no se había cobrado). Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos. |
 | Cancelas confirmada y faltan menos | El depósito se queda con el negocio. |
-| El negocio cancela | Devolución completa siempre; ves su motivo. |
+| El negocio cancela | Pedimos la devolución completa (o que se suelte la retención, si no se había cobrado), siempre; ves su motivo. Lo que pasó lo ves en la pantalla y en Avisos. |
 | Visita al salón | Gratis, sin depósito; no aparta la fecha. |
 
 ## FAQ
@@ -54,20 +54,20 @@ respuesta y su detalle. Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
 
 **For the business (Dashboard › Today):** «Parties awaiting your answer» with what they are celebrating, guests, where and the deposit.
 **Confirm** takes the day on your calendar, charges the deposit and leaves the agreement in writing (the package as it was requested).
-**Another time** proposes another time that same day. **I can't** releases the deposit. After the party: **It finished**.
+**Another time** proposes another time that same day. **I can't**: we ask for the deposit hold to come off. After the party: **It finished**.
 
 ### What happens in each case
 | Case | What happens |
 |---|---|
 | The business confirms | The date is yours; the deposit is charged; your party shows the written agreement. |
-| Two people ask for the same day | The business confirms one; if that fills the day, the others show «They could not» and their deposit is released automatically. |
-| They propose another time | «Accept this time» confirms and charges; «Doesn’t work» releases the deposit. If you do not answer in 24 hours, it is released. |
-| They can't | Your deposit is released and you see their next free dates with «Request this one». |
-| They do not answer in 24 hours | «No answer»: your deposit is released. |
-| You cancel before they confirm | Everything is released. |
+| Two people ask for the same day | The business confirms one; if that fills the day, the others show «They could not» and we ask for the hold on their deposit to come off. |
+| They propose another time | «Accept this time» confirms and charges; «Doesn’t work»: we ask for the deposit hold to come off. If you do not answer in 24 hours, the same. |
+| They can't | We ask for the hold on your deposit to come off and you see their next free dates with «Request this one». |
+| They do not answer in 24 hours | «No answer»: we ask for the hold on your deposit to come off. |
+| You cancel before they confirm | Nothing is charged: we ask for the hold to come off. |
 | You cancel after confirmation and the number of days in the business's rule (normally 30) or more remain | It is free: we request a refund of the deposit (or that the hold comes off, if it was not charged). Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications. |
 | You cancel after confirmation and fewer remain | The deposit stays with the business. |
-| The business cancels | Full refund, always; you see their reason. |
+| The business cancels | We request a full refund (or that the hold comes off, if it was not charged), always; you see their reason. What happened shows on the screen and in Notifications. |
 | Hall visit | Free, no deposit; it does not hold the date. |
 
 ### FAQ

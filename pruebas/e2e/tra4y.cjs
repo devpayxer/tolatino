@@ -1,5 +1,5 @@
 // 4y-1 · Reservar un viaje: asiento (retener el total → confirmar = cobrar; los asientos se cuentan solos; la última plaza no se
-// vende dos veces) · cancelar ≥24 h (devolución completa) y <24 h (se cobra la mitad) · otra salida (aceptar / «No me sirve») ·
+// vende dos veces) · cancelar ≥24 h (devolución completa) y <24 h (se cobra la mitad; con una devolución previa, lo que quedaba o nada) · otra salida (aceptar / «No me sirve») ·
 // vence sin respuesta · la salida (va tarde, salió, llegó; Abordó) · el negocio cancela la salida (devolución a todos) · vehículo completo.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
@@ -111,6 +111,44 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   await clic(m.getByRole('button', { name: 'Sí, cancelar' })); await m.getByText('CANCELADO').first().waitFor();
   ok(await esperaV(() => pay(V2), 'cancelled|partially_refunded|4500|2250') === 'cancelled|partially_refunded|4500|2250', 'cancelar <24 h: se queda la mitad ($22.50), se devuelve el resto');
   ok(await espera(m.getByText(/Se cobró la mitad/)), 'el cliente ve «Se cobró la mitad»');
+
+  // ── 5b · 25 nov (regla 13) · Tarde con una devolución parcial previa: se cobra lo que quedaba, nunca «la mitad» ──
+  // El estado se prepara con SQL directo (como din9v4 / din9v5): del cobro de $45 ya se habían devuelto $30 (una ayuda); quedan $15 < la mitad ($22.50).
+  const previa = (num, cents) => {
+    const st = cents >= 4500 ? 'refunded' : 'partially_refunded';
+    sql(`update payments set refunded_cents = ${cents}, status = '${st}', updated_at = now() where operation_id = (select id from operations where number = '${num}') and kind = 'full'`);
+    sql(`update operations set pay_status = '${st}' where number = '${num}'`);
+    sql(`update sim_intents set refunded_cents = ${cents} where id = (select p.stripe_payment_intent from payments p join operations o on o.id = p.operation_id where o.number = '${num}' and p.kind = 'full')`);
+    sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) select p.id, ${cents}, 'Ayuda con el viaje', 'business', 'done', 'y4y-previa-${num}', now() from payments p join operations o on o.id = p.operation_id where o.number = '${num}' and p.kind = 'full'`);
+  };
+  const reembolsos = (num) => sql(`select count(*) || '|' || coalesce(sum(r.amount_cents), 0) from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${num}'`);
+  const avisoCx = (num) => sql(`select body from notifications where tpl = 'viaje_cx' and ref_id = '${num}' order by id desc limit 1`);
+  await reservar(m, d2, '7:00 PM', 1, false); const V2b = await enviar(m);
+  await w.goto(B + `/panel/${V}/hoy?det=viaje:${V2b}`); await clic(w.getByRole('button', { name: 'Confirmar', exact: true })); await w.getByText(/Confirmado/).first().waitFor();
+  await esperaV(() => pay(V2b), 'confirmed|captured|4500|0');
+  previa(V2b, 3000); sql(`update operations set scheduled_at = now() + interval '5 hours' where number = '${V2b}'`);
+  await m.goto(B + `/viaje/${V2b}`); await clic(m.getByRole('button', { name: 'Cancelar el viaje' }));
+  ok(await espera(m.getByText(/se cobra lo que queda \(\$15\.00\)/)) && !(await vis(m.getByText(/se cobra la mitad/))), 'tarde con $30 ya devueltos: la hoja dice «se cobra lo que queda ($15.00)», nunca «la mitad»');
+  await clic(m.getByRole('button', { name: 'Sí, cancelar' })); await m.getByText('CANCELADO').first().waitFor();
+  ok(await espera(m.getByText(/Se cobró lo que quedaba: \$15\.00/)) && !(await vis(m.getByText(/Se cobró la mitad/))), 'el cliente ve «Se cobró lo que quedaba: $15.00» (nunca «Se cobró la mitad»)');
+  ok(pay(V2b) === 'cancelled|partially_refunded|4500|3000' && reembolsos(V2b) === '1|3000', 'la base: nada más devuelto ni cobrado (solo la devolución previa)');
+  ok(sql(`select details->>'cobroMitad' from operations where number = '${V2b}'`) === '1500', 'cobroMitad = $15 (lo que quedaba), no $22.50');
+  ok(await esperaV(() => /Se cobró lo que quedaba: \$15\.00/.test(avisoCx(V2b)), true), 'su aviso dice «Se cobró lo que quedaba: $15.00»');
+  ok(sql(`select count(*) from operation_events e join operations o on o.id = e.operation_id where o.number = '${V2b}' and e.kind = 'cancelled' and e.note::text ~ 'mitad|half'`) === '0', 'la nota del historial es neutra (nada de «se cobra la mitad» antes de actuar)');
+  await m.screenshot({ path: OUT + 'y7b-tarde-lo-que-quedaba-m.png', fullPage: true });
+
+  // ── 5c · Tarde con el cobro ya devuelto entero: no se cobra nada ──
+  await reservar(m, d2, '7:00 PM', 1, false); const V2c = await enviar(m);
+  await w.goto(B + `/panel/${V}/hoy?det=viaje:${V2c}`); await clic(w.getByRole('button', { name: 'Confirmar', exact: true })); await w.getByText(/Confirmado/).first().waitFor();
+  await esperaV(() => pay(V2c), 'confirmed|captured|4500|0');
+  previa(V2c, 4500); sql(`update operations set scheduled_at = now() + interval '5 hours' where number = '${V2c}'`);
+  await m.goto(B + `/viaje/${V2c}`); await clic(m.getByRole('button', { name: 'Cancelar el viaje' }));
+  ok(await espera(m.getByText(/Faltan menos de 24 horas\. No se cobra nada\./)) && !(await vis(m.getByText(/se cobra la mitad|se cobra lo que queda/))), 'tarde con todo devuelto: la hoja dice «No se cobra nada.»');
+  await clic(m.getByRole('button', { name: 'Sí, cancelar' })); await m.getByText('CANCELADO').first().waitFor();
+  ok(!(await vis(m.getByText(/Se cobró la mitad|Se cobró lo que quedaba/))), 'el cliente no ve «Se cobró…»: no se cobró nada');
+  ok(pay(V2c) === 'cancelled|refunded|4500|4500' && reembolsos(V2c) === '1|4500', 'la base: nada cobrado ni devuelto de más');
+  ok(sql(`select details->>'cobroMitad' from operations where number = '${V2c}'`) === '0', 'cobroMitad = 0');
+  ok(await esperaV(() => { const a = avisoCx(V2c); return !!a && !/Se cobró/.test(a); }, true), 'su aviso no dice «Se cobró…»');
 
   // ── 6. Otra salida → «No me sirve» (se libera) ──
   await reservar(m, d2, '7:00 PM', 2, false); const V3 = await enviar(m);

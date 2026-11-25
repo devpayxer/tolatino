@@ -1,7 +1,7 @@
 # La lista de la noche y la mesa · Guest list and table
 
 _Pantallas: la página de un local de noche › Servicios › **Anotarme en la lista** y **Pedir mesa** (`/n/{negocio}/noche`), tu reserva (`/noche/{N-…}`)
-y la puerta. Versión: 10 nov 2026. Audiencia: vecino. Tema: citas._
+y la puerta. Versión: 25 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 En un local de noche puedes **anotarte en la lista** (gratis, queda al instante con tu código) o **pedir una mesa o VIP**
@@ -24,7 +24,7 @@ es consumo, no un cargo aparte. To'Latino **nunca cobra el cover, los tragos ni 
   - **Cancelas antes de las 6 PM** de esa noche (o 2 horas antes si llegas antes de las 8 PM): es gratis; pedimos que se suelte la retención o, si ya se cobró, la devolución de lo que queda. Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos. Después, el
     depósito se queda con el local.
   - **No llegas** (la mesa se guarda 30 min) o **no entras por no tener identificación**: el depósito se queda con el local.
-  - **El local cancela:** te devolvemos todo, siempre.
+  - **El local cancela:** pedimos la devolución de todo lo cobrado (o que se suelte la retención, si no se había cobrado), siempre. Lo que pasó lo ves en la pantalla y en Avisos.
 - **Si sube el cover** de esa noche, te avisamos; lo que ya mandaste no cambia.
 - A las **6 AM** se cierra la noche sola.
 - **Si se cancela y la devolución no sale al momento:** el aviso y la pantalla dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, que va en camino (se sigue mandando sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino ya tiene el aviso y lo resuelve contigo. Si solo se había retenido (no cobrado), se suelta.
@@ -63,7 +63,7 @@ charge. To'Latino **never charges the cover, drinks or the minimum**: those are 
   - **You cancel before 6 PM** that night (or 2 hours before if you arrive before 8 PM): it is free; we ask for the hold to come off or, if it was already charged, a refund of what is left. Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications. After that the deposit stays with
     the venue.
   - **You don't show up** (the table is held 30 min) or **can't get in without ID**: the deposit stays with the venue.
-  - **The venue cancels:** full refund, always.
+  - **The venue cancels:** we request a refund of everything charged (or that the hold comes off, if it was not charged), always. What happened shows on the screen and in Notifications.
 - **If tonight's cover goes up**, we let you know; what you already sent does not change. At **6 AM** the night closes on its own.
 - **If it is cancelled and the refund does not go out right away:** the notice and the screen say what really happened: «we refunded» only when it went out; if the bank is slow, that it is on its way (it keeps being sent by itself); if the bank or Stripe do not accept it, that To'Latino's money team already has the notice and resolves it with you. If it was only held (not charged), the hold is released.
 

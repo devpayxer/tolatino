@@ -336,12 +336,16 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = $2, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ cobroMitad: cobra })]);
-      await ev(c, o.id, "cancelled", "user", userId, cobra ? { es: `Canceló a menos de 24 h: se cobra la mitad (${money(cobra)})`, en: `Cancelled less than 24 h before: half is charged (${money(cobra)})` } : undefined);
+      // 25 nov (regla 13, revisión) · La nota del historial dice solo la regla (neutra), antes de actuar: lo que se cobró de verdad lo dicen cobroMitad (lo
+      // que quedaba cobrado), la pantalla y el aviso, después.
+      await ev(c, o.id, "cancelled", "user", userId, cobra ? { es: "Canceló a menos de 24 h", en: "Cancelled less than 24 h before" } : undefined);
       // 9v (cuarta tanda) · Lo que de verdad pasó con el dinero (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida ·
       // nada), en el aviso ({dinero}); nunca «Te devolvemos todo» sin mirar. Tarde: se cobra la mitad (si la captura no sale, no se dice «Se cobró la mitad»:
       // la retención se suelta, como haría el barrido con un viaje cancelado) y se devuelve el resto.
       despues = async () => {
-        if (conf && !aTiempo && o.pay === "held") await cobrarOperacion(o.id); // confirmado sin capturar todavía: se cobra y se devuelve lo que toca
+        // Confirmado sin capturar todavía: se cobra y se devuelve lo que toca. Si cobrarOperacion lanza, lo que pasó lo dice la base (p): sigue retenido →
+        // mitad 0 (cobroMitad 0) y la retención se suelta; nunca «Se cobró la mitad».
+        if (conf && !aTiempo && o.pay === "held") { try { await cobrarOperacion(o.id); } catch { /* se lee de la base abajo */ } }
         const p = (await db().query<{ id: string; amount: number; refunded: number; status: string }>(`select id::text, amount_cents as amount, refunded_cents as refunded, status from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
         // 25 nov (regla 13) · Lo que se queda el negocio sale de lo que QUEDA cobrado (menos lo ya devuelto), nunca más: un cobro ya devuelto entero no
         // «cobra la mitad». La pantalla lo dice igual antes de confirmar (ViajeEstado: Math.min(mitad, lo que queda)).

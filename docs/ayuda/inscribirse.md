@@ -1,7 +1,7 @@
 # Inscribirte en un curso, programa o membresía · Enrolling in a course, program or membership
 
 _Pantallas: la página del lugar › hoja del curso › «Inscribirme» / «Pedir cupo» (3 pasos); Tu inscripción (`/insc/I-…`); Mi cuenta › Citas y reservas.
-Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
+Versión: 25 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 Te inscribes desde el teléfono en un curso (inglés, CDL, barbería…), un programa de niños (guardería, after school, campamento) o
@@ -17,9 +17,9 @@ en el lugar** antes de enviar. El lugar confirma tu inscripción.
 
 ## Qué pasa en cada caso
 - **Matrícula de un curso:** hoy se **retiene** en tu tarjeta; se **cobra cuando el lugar confirma** y se descuenta del total.
-- **No hay cupo, no contestan a tiempo o te proponen otro grupo que no te sirve:** se libera completa. No se cobra nada.
+- **No hay cupo, no contestan a tiempo o te proponen otro grupo que no te sirve:** no se cobra nada; pedimos que se suelte la retención de la matrícula.
 - **Cancelas antes de empezar:** es gratis; pedimos la devolución de la matrícula (o que se suelte la retención, si no se había cobrado). **Después de empezar:** la matrícula se queda con la escuela. Antes de confirmar, la hoja te dice qué vamos a pedir con tu tarjeta; lo que pasó lo ves después en la pantalla y en Avisos.
-- **El grupo no abre o el lugar cancela:** te devolvemos todo, siempre, con el motivo.
+- **El grupo no abre o el lugar cancela:** pedimos la devolución de todo lo cobrado (o que se suelte la retención, si no se había cobrado), siempre, con el motivo. Lo que pasó lo ves en la pantalla y en Avisos.
 - **Mensualidad, semana de guardería, clase o pase:** se pagan **en el lugar**; la app no pide tarjeta ni cobra nada después.
 - **Membresía:** «Cancelar mi membresía» deja la baja **con fecha y hora** como constancia. El gimnasio la confirma o a las 72 horas queda
   cancelada sola. To'Latino nunca cobra penalidades.
@@ -36,7 +36,7 @@ habla en persona.
 **Los plazos de esta página** (cuántas horas para responder, cuánto se guarda un cupo, cuándo queda una baja, a los cuántos días se borra lo privado) son los de hoy: To'Latino los fija en su Configuración y la pantalla siempre dice el que vale en ese momento.
 
 ## FAQ
-- **¿Por qué me retienen la matrícula si no me han confirmado?** Para apartar tu cupo; si no te confirman, se libera completa.
+- **¿Por qué me retienen la matrícula si no me han confirmado?** Para apartar tu cupo; si no te confirman, no se cobra nada y pedimos que se suelte la retención.
 - **¿Puedo inscribir a dos hijos en el mismo grupo?** Sí, una inscripción por niño.
 - **¿Me pueden cobrar algo después?** No. Solo lo que ves al enviar.
 
@@ -56,10 +56,10 @@ sending. The place confirms your enrollment.
 
 ### What happens in each case
 - **A course's enrollment fee:** today it is **held** on your card; it is **charged when the place confirms** and deducted from the total.
-- **There is no spot, they don't reply in time or they offer you another group that doesn't work for you:** it is released in full. Nothing is
-  charged.
+- **There is no spot, they don't reply in time or they offer you another group that doesn't work for you:** nothing is charged; we ask for the hold on the enrollment fee
+  to come off.
 - **You cancel before it starts:** it is free; we request a refund of the enrollment fee (or that the hold comes off, if it was not charged). **After it starts:** the school keeps the enrollment fee. Before you confirm, the sheet tells you what we will request with your card; what happened shows afterwards on the screen and in Notifications.
-- **The group doesn't open or the place cancels:** we refund everything, always, with the reason.
+- **The group doesn't open or the place cancels:** we request a refund of everything charged (or that the hold comes off, if it was not charged), always, with the reason. What happened shows on the screen and in Notifications.
 - **Monthly fee, daycare week, class or pass:** they are paid **at the place**; the app doesn't ask for a card or charge anything later.
 - **Membership:** «Cancel my membership» records the cancellation **with date and time** as proof. The gym confirms it or after 72 hours it is
   canceled by itself. To'Latino never charges penalties.
@@ -77,6 +77,6 @@ medical data: that is discussed in person.
 data is deleted) are today's: To'Latino sets them in its Settings and the screen always shows the one in force at that moment.
 
 ### FAQ
-- **Why do you hold my enrollment fee if they haven't confirmed?** To set your spot aside; if they don't confirm, it is released in full.
+- **Why do you hold my enrollment fee if they haven't confirmed?** To set your spot aside; if they don't confirm, nothing is charged and we ask for the hold to come off.
 - **Can I enroll two children in the same group?** Yes, one enrollment per child.
 - **Can they charge me something later?** No. Only what you see when you send.

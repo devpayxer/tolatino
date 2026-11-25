@@ -57,6 +57,9 @@ function donde(s: Staff, f: FiltrosTx) {
   if (f.q) { v.push(`%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`); w.push(`(o.number ilike $${v.length} or b.name ilike $${v.length} or o.business_id ilike $${v.length} or u.phone ilike $${v.length} or coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '') ilike $${v.length})`); }
   return { w: w.join(" and "), v };
 }
+/* 25 nov (regla 13) · «Se quedó con el negocio» solo si perdio Y queda algo cobrado (captured o partially_refunded, menos lo devuelto): un perdio crudo
+   decía «se quedó» aunque la captura no hubiera salido o el cobro ya estuviera devuelto o soltado (lo mismo que mira admin-analitica › quedo). */
+const QUEDO = `(coalesce((o.details->>'perdio')::boolean, false) and coalesce(py.status in ('captured', 'partially_refunded') and py.amount_cents > coalesce(py.refunded_cents, 0), false))`;
 const DESDE = `from operations o join businesses b on b.id = o.business_id and o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') join users u on u.id = o.user_id`;
 export async function listaTx(s: Staff, f: FiltrosTx) {
   const { w, v } = donde(s, f);
@@ -77,22 +80,22 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               case when o.kind = 'market_order' then coalesce((o.details->>'est_cents')::int, o.total_cents) end as "mEst", case when o.kind = 'market_order' then py.held_cents end as "mRet",
               case when o.kind = 'hold' then (select string_agg(distinct l.variant_label, ', ') from operation_lines l where l.operation_id = o.id and l.variant_label is not null) end as tallas,
               case when o.kind = 'party' then jsonb_build_object('dia', to_char(o.scheduled_at at time zone 'America/New_York', 'YYYY-MM-DD'), 'g', (o.details->>'g')::int, 'v', (select max(t.version) from written_totals t where t.operation_id = o.id and t.status = 'accepted'),
-                'perdio', coalesce((o.details->>'perdio')::boolean, false), 'vis', coalesce((o.details->>'visit')::boolean, false)) end as fi,
+                'perdio', ${QUEDO}, 'vis', coalesce((o.details->>'visit')::boolean, false)) end as fi,
               case when o.kind = 'trip' then jsonb_build_object('k', o.details->>'k', 'dia', to_char(o.scheduled_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI'),
                 'n', case when o.details->>'k' = 'caja' then coalesce((o.details->>'boxes')::int, 1) else coalesce((o.details->>'adults')::int, 1) + coalesce((o.details->>'kids')::int, 0) end,
                 'mitad', coalesce((o.details->>'cobroMitad')::int, 0), 'salida', coalesce(o.cancel_reason = 'salida', false),
                 'precioV', (select max(t.version) from written_totals t where t.operation_id = o.id and t.status = 'accepted'), 'rastreo', o.details->'tracking'->>'code') end as vi,
               case when o.kind = 'night' then jsonb_build_object('k', o.details->>'k', 'noche', o.night_date::text, 'pax', coalesce(o.party_size, 1), 'inN', (o.details->>'in_n')::int,
-                'cierre', o.status_detail, 'perdio', coalesce((o.details->>'perdio')::boolean, false)) end as no,
+                'cierre', o.status_detail, 'perdio', ${QUEDO}) end as no,
               case when o.kind = 'enrollment' then jsonb_build_object('rub', o.details->>'rubro', 'k', o.details->>'k', 'grupo', o.details->'group'->>'es', 'inicio', o.details->>'starts_on',
                 'plan', coalesce((o.details->>'plan_n')::int, 0), 'cert', coalesce((o.details->>'cert_given')::boolean, false), 'cierre', coalesce(o.cancel_reason, o.status_detail),
-                'perdio', coalesce((o.details->>'perdio')::boolean, false), 'para', o.details->>'for') end as ins,
+                'perdio', ${QUEDO}, 'para', o.details->>'for') end as ins,
               case when o.kind = 'visit' then jsonb_build_object('rub', o.details->>'rubro', 'que', o.details->>'what', 'item', o.details->'item'->>'es', 'dia', o.details->>'dia', 'min', (o.details->>'min')::int,
                 'mudar', (o.details->>'move_in_cents')::int, 'otd', (o.details->>'otd_cents')::int, 'precio', (o.details->>'price_cents')::int, 'cierre', coalesce(o.status_detail, o.cancel_reason),
                 'casa', coalesce((o.details->>'at_home')::boolean, false), 'linea', (select string_agg(e.kind, ' > ' order by e.at, e.id) from operation_events e where e.operation_id = o.id)) end as vis,
               case when o.kind = 'private_event' then jsonb_build_object('dia', to_char(o.scheduled_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI'), 'pax', o.party_size,
                 'v', (select max(q.version) from private_event_quotes q join private_event_acceptances a on a.quote_id = q.id where q.operation_id = o.id), 'n', (select count(*)::int from private_event_quotes q where q.operation_id = o.id),
-                'cierre', coalesce(o.cancel_reason, o.status_detail), 'perdio', coalesce((o.details->>'perdio')::boolean, false), 'det', o.status_detail) end as ep,
+                'cierre', coalesce(o.cancel_reason, o.status_detail), 'perdio', ${QUEDO}, 'det', o.status_detail) end as ep,
               (select jsonb_build_object('st', lp.status, 'total', lp.total_cents, 'pagado', (select coalesce(sum(lpp.amount_cents), 0) from layaway_payments lpp where lpp.plan_id = lp.id and lpp.status in ('paid', 'waived'))) from layaway_plans lp where lp.operation_id = o.id) as lay,
               (select count(distinct l.estimate_id)::int from estimate_lines l where l.operation_id = o.id and not l.is_extra) as "estV",
               (select coalesce(sum(coalesce(l.final_cents, l.line_total_cents)), 0)::int from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') as "estAp",
