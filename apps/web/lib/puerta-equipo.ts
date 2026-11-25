@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { db, enTx, tx } from "./db";
 import { cifrar, huella } from "./cifrado";
 import { cfgSql } from "./config";
-import { cuandoBi, diaCorto, hora } from "./evt-comun";
+import { cuandoBi } from "./evt-comun";
 import { equipo, incidencias, resumenFecha, ultimos } from "./puerta";
 import type { Bi, Resumen } from "./puerta-comun";
 

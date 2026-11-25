@@ -95,7 +95,7 @@ export async function empezarPlan(userId: string, f: PlanIn, entorno: string): P
   if (!o.tarjeta) return no("Este negocio todavía no cobra planes en la app. Llámalo para empezar.", "This business does not charge plans in the app yet. Call them to start.");
   const dia = o.dias.find((d) => d.fechas.includes(f.fecha));
   if (!dia) return no("Elige la primera visita de las que se ofrecen.", "Pick one of the offered first visits.");
-  let numero = "", aviso: { negocio: string; plan: Bi; dia: string; cliente: string } | null = null;
+  let numero = "", aviso: { negocio: string; plan: Bi; dia: string; cliente: string | null } | null = null;
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select o.number from operations o where o.user_id = $1 and o.client_key = $2::uuid`, [userId, f.clave])).rows[0];
     if (ya) return { ok: true, numero: ya.number };
@@ -103,8 +103,8 @@ export async function empezarPlan(userId: string, f: PlanIn, entorno: string): P
     if ((await c.query(`select 1 from plan_subscriptions where user_id = $1 and item_id = $2::bigint and status <> 'cancelled'`, [userId, f.svc])).rowCount) return no("Ya tienes este plan.", "You already have this plan.");
     const own = (await c.query(`select 1 from payment_methods where user_id = $1 and stripe_pm_id = $2 and status = 'active'`, [userId, f.pm])).rowCount;
     if (!own && pasarela.modo() !== "simulador") return no("Esa tarjeta no es tuya.", "That card is not yours.", { tarjeta: true });
-    const x = (await c.query<{ name: Bi; cents: number; city: string; bname: string; cl: string; tz: string }>(
-      `select i.name, i.price_cents as cents, b.city_id as city, b.name as bname, coalesce(nullif(u.first_name, ''), 'Un cliente') as cl, ci.timezone as tz
+    const x = (await c.query<{ name: Bi; cents: number; city: string; bname: string; cl: string | null; tz: string }>(
+      `select i.name, i.price_cents as cents, b.city_id as city, b.name as bname, nullif(u.first_name, '') as cl, ci.timezone as tz
          from items i join businesses b on b.id = i.business_id join cities ci on ci.id = b.city_id, users u where i.id = $1::bigint and u.id = $2`, [f.svc, userId])).rows[0]!;
     const casa = (await c.query<{ id: string; dir: string; tenure: string; enZona: boolean }>(
       `select h.id::text, concat_ws(', ', a.street || coalesce(' ' || nullif(a.apt, ''), ''), a.zip) as dir, h.tenure,
@@ -130,9 +130,9 @@ export async function empezarPlan(userId: string, f: PlanIn, entorno: string): P
     return { ok: true, numero };
   });
   if (r.ok && aviso) {
-    const a = aviso as { negocio: string; plan: Bi; dia: string; cliente: string }, av = await import("./avisos"), diaL = diaMes(a.dia);
+    const a = aviso as { negocio: string; plan: Bi; dia: string; cliente: string | null }, av = await import("./avisos"), diaL = diaMes(a.dia);
     await av.avisar(userId, "plan_activo", { plan: a.plan, negocio: "", dia: diaL }, { href: `/plan/${r.numero}`, ref: ["plan", r.numero] });
-    await av.avisarNegocio(a.negocio, "biz_plan_nuevo", { cliente: a.cliente, plan: a.plan, dia: diaL }, { href: `/panel/${a.negocio}/hoy`, ref: ["plan", r.numero] });
+    await av.avisarNegocio(a.negocio, "biz_plan_nuevo", { cliente: a.cliente ?? { es: "Un cliente", en: "A customer" }, plan: a.plan, dia: diaL }, { href: `/panel/${a.negocio}/hoy`, ref: ["plan", r.numero] });
   }
   return r;
 }
@@ -313,11 +313,11 @@ async function rechazoPlan(subId: string, op: string, num: string, uid: string) 
 export async function planCliente(userId: string, numero: string, que: "saltar" | "pausar" | "reanudar" | "cancelar" | "tarjeta", pm?: string): Promise<Res> {
   if (!NUM.test(numero)) return no("Ese plan no existe.", "That plan does not exist.");
   await barrerPlanes({ numero });
-  let aviso: { tpl: string; v: Record<string, string | Bi>; biz: string; que: Bi; cl: string; plan: Bi } | null = null;
+  let aviso: { tpl: string; v: Record<string, string | Bi>; biz: string; que: Bi; cl: string | null; plan: Bi } | null = null;
   const r = await tx(async (c): Promise<Res> => {
-    const s0 = (await c.query<{ id: string; st: string; next: string | null; charge: string | null; dow: number; nth: number; meses: number[] | null; day: number; biz: string; city: string; plan: string; plan_en: string; cl: string }>(
+    const s0 = (await c.query<{ id: string; st: string; next: string | null; charge: string | null; dow: number; nth: number; meses: number[] | null; day: number; biz: string; city: string; plan: string; plan_en: string; cl: string | null }>(
       `select s.id::text, s.status as st, s.next_visit_on::text as next, s.next_charge_on::text as charge, s.dow, s.nth, s.visit_months as meses, s.charge_day as day, s.business_id as biz, s.city_id as city,
-              o.details#>>'{svc,es}' as plan, coalesce(nullif(o.details#>>'{svc,en}', ''), o.details#>>'{svc,es}') as plan_en, coalesce(nullif(u.first_name, ''), 'El cliente') as cl
+              o.details#>>'{svc,es}' as plan, coalesce(nullif(o.details#>>'{svc,en}', ''), o.details#>>'{svc,es}') as plan_en, nullif(u.first_name, '') as cl
          from plan_subscriptions s join operations o on o.id = s.operation_id join users u on u.id = s.user_id where s.user_id = $1 and o.number = $2 for update of s`, [userId, numero])).rows[0];
     if (!s0) return no("Ese plan no existe.", "That plan does not exist.");
     const s = { ...s0, plan: { es: s0.plan, en: s0.plan_en } as Bi };
@@ -356,9 +356,9 @@ export async function planCliente(userId: string, numero: string, que: "saltar" 
     return { ok: true };
   });
   if (r.ok && aviso) {
-    const a = aviso as { tpl: string; v: Record<string, string | Bi>; biz: string; que: Bi; cl: string; plan: Bi }, av = await import("./avisos");
+    const a = aviso as { tpl: string; v: Record<string, string | Bi>; biz: string; que: Bi; cl: string | null; plan: Bi }, av = await import("./avisos");
     if (a.tpl) await av.avisar(userId, a.tpl, a.v, { href: `/plan/${numero}`, ref: ["plan", numero] });
-    await av.avisarNegocio(a.biz, "biz_plan_cambio", { cliente: a.cl, que: a.que, plan: a.plan }, { ref: ["plan", numero] });
+    await av.avisarNegocio(a.biz, "biz_plan_cambio", { cliente: a.cl ?? { es: "El cliente", en: "The customer" }, que: a.que, plan: a.plan }, { ref: ["plan", numero] });
   }
   if (r.ok && (que === "tarjeta" || que === "reanudar")) await barrerPlanes({ numero });
   return r;

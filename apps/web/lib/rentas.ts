@@ -104,7 +104,7 @@ export async function apartarRenta(userId: string, f: RentaIn, entorno: string):
   if (!o) return no("Ese artículo ya no se renta.", "That item is no longer for rent.");
   if (!o.tarjeta) return no("Este negocio todavía no renta en la app. Llámalo para apartarla.", "This business does not take rentals in the app yet. Call them to hold it.");
   if (!o.dias.some((d) => d.f === f.recoger)) return no("Elige uno de los días para recoger.", "Pick one of the pickup days.");
-  let aviso: { art: Bi; nombre: string; cliente: string } | null = null;
+  let aviso: { art: Bi; nombre: string; cliente: string | Bi } | null = null;
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2::uuid`, [userId, f.clave])).rows[0];
     if (ya) return { ok: true, numero: ya.number };
@@ -119,7 +119,7 @@ export async function apartarRenta(userId: string, f: RentaIn, entorno: string):
     if (it.mode === "qty" && it.left < 1) return no("Ya no quedan para rentar. Mira otro día o llama al negocio.", "None left to rent. Try another day or call the business.");
     if ((await c.query(`select 1 from rentals where user_id = $1 and item_id = $2::bigint and status in ('held', 'out')`, [userId, f.item])).rowCount) return no("Ya tienes esta herramienta apartada o rentada.", "You already have this tool on hold or rented.");
     if (it.mode === "qty") await c.query(`update items set stock_left = stock_left - 1, updated_at = now() where id = $1::bigint`, [f.item]);
-    const cliente = (await c.query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "Un cliente";
+    const cliente = (await c.query<{ n: string }>(`select nullif(first_name, '') as n from users where id = $1`, [userId])).rows[0]?.n || { es: "Un cliente", en: "A customer" };
     const numero = `T-${(await c.query<{ n: string }>(`select nextval('rental_seq')::text as n`)).rows[0]!.n}`;
     const rent = costoRenta(it.p, dias), due = addD(f.recoger, dias);
     const det = { art: it.n, itemId: f.item, dias, recoger: f.recoger, devolver: due };
@@ -136,7 +136,7 @@ export async function apartarRenta(userId: string, f: RentaIn, entorno: string):
     return { ok: true, numero };
   });
   if (r.ok && aviso) {
-    const a = aviso as { art: Bi; nombre: string; cliente: string }, av = await import("./avisos"), dr = diaCorto(f.recoger);
+    const a = aviso as { art: Bi; nombre: string; cliente: string | Bi }, av = await import("./avisos"), dr = diaCorto(f.recoger);
     await av.avisar(userId, "renta_apartada", { articulo: a.art, negocio: a.nombre, dia: dr }, { href: `/renta/${r.numero}`, ref: ["renta", r.numero] });
     await av.avisarNegocio(f.negocio, "biz_renta", { cliente: a.cliente, que: { es: `apartó para recoger el ${dr.es}`, en: `put it on hold for pickup on ${dr.en}` }, articulo: a.art }, { href: `/panel/${f.negocio}/hoy?det=renta:${r.numero}`, ref: ["renta", r.numero] });
   }
@@ -573,7 +573,7 @@ export async function resolverDano(numero: string, cobrar: boolean, adminId: str
   await liquidarDeposito(x.rid);
   const av = await import("./avisos"), que: Bi = cobrar ? { es: `To'Latino revisó el daño: se descontaron ${money(x.c)} del depósito.`, en: `To'Latino reviewed the damage: ${money(x.c)} was deducted from the deposit.` } : { es: "To'Latino revisó el daño: no se descuenta. Se liberó tu depósito.", en: "To'Latino reviewed the damage: nothing is deducted. Your deposit was released." };
   await av.avisar(x.uid, "renta_devuelta", { articulo: x.n, que }, { href: `/renta/${numero}`, ref: ["renta", numero] });
-  await av.avisarNegocio(x.biz, "biz_renta", { cliente: { es: "To'Latino", en: "To'Latino" }, que: cobrar ? { es: "decidió descontar el daño", en: "decided to deduct the damage" } : { es: "decidió no descontar el daño", en: "decided not to deduct the damage" }, articulo: x.n }, { href: `/panel/${x.biz}/hoy?det=renta:${numero}`, ref: ["renta", numero] });
+  await av.avisarNegocio(x.biz, "biz_renta", { cliente: "To'Latino", que: cobrar ? { es: "decidió descontar el daño", en: "decided to deduct the damage" } : { es: "decidió no descontar el daño", en: "decided not to deduct the damage" }, articulo: x.n }, { href: `/panel/${x.biz}/hoy?det=renta:${numero}`, ref: ["renta", numero] });
   return { ok: true };
 }
 export async function numeroDeRenta(rid: string): Promise<string | null> {

@@ -120,7 +120,7 @@ export async function vencerCupones(): Promise<number> {
     const L = await tx(async (c) => (await c.query<{ persona: string; codigo: string; cupon: string; monedas: number }>(
       `select persona::text, codigo, cupon::text, monedas from cup_vencer(500)`)).rows);
     for (const x of L) {
-      const t = (await db().query<{ title: Bi; en: boolean }>(`select c.title, coalesce(u.lang, 'es') = 'en' as en from coupons c, users u where c.id = $1::bigint and u.id = $2::uuid`, [x.cupon, x.persona])).rows[0];
+      const t = (await db().query<{ title: Bi }>(`select c.title from coupons c where c.id = $1::bigint`, [x.cupon])).rows[0];
       await avisar(x.persona, "gam_monedas_vuelven", { codigo: x.codigo, cupon: t?.title ?? "", n: x.monedas }, { href: "/comunidad/monedas", ref: ["coupon_expired", x.codigo] });
     }
     n += L.length;

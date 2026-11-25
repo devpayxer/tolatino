@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { cfgSql, valores } from "./config";
 import { normalizarTelefono } from "./cuenta";
 import { db, tx, type AlGuardar } from "./db";
-import { bi, cuandoBi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
+import { bi, cuandoBi, dinero, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
 import { pasesPronto } from "./pases/pronto";
 

@@ -205,7 +205,7 @@ export async function sancionar(s: Staff, uid: string, kind: string, dias: numbe
     const { avisar, avisarNegocio } = await import("./avisos");
     const q = QUE[kind]!, hasta = kind === "suspension" ? ` por ${d} ${d === 1 ? "día" : "días"}` : "", hastaEn = kind === "suspension" ? ` for ${d} ${d === 1 ? "day" : "days"}` : "";
     await avisar(uid, "drv_sancion", { que: `${q[0]}${hasta}`, que_en: `${q[1]}${hastaEn}`, motivo: m }, { href: "/repartidor?t=perfil", actor: s.id }).catch(() => undefined);
-    for (const x of ("quitados" in r ? r.quitados ?? [] : [])) await avisarNegocio(x.biz, "biz_dlv_issue", { repartidor: { es: "To'Latino", en: "To'Latino" }, num: x.numero, motivo: { es: "el repartidor ya no reparte en To'Latino: asígnalo a otro", en: "the driver no longer delivers on To'Latino: assign it to someone else" } }, { href: `/panel/${x.biz}/hoy?det=ped:${x.numero}`, ref: ["order", x.numero] }).catch(() => undefined);
+    for (const x of ("quitados" in r ? r.quitados ?? [] : [])) await avisarNegocio(x.biz, "biz_dlv_issue", { repartidor: "To'Latino", num: x.numero, motivo: { es: "el repartidor ya no reparte en To'Latino: asígnalo a otro", en: "the driver no longer delivers on To'Latino: assign it to someone else" } }, { href: `/panel/${x.biz}/hoy?det=ped:${x.numero}`, ref: ["order", x.numero] }).catch(() => undefined);
   }
   return r.ok ? { ok: true, mensaje: r.mensaje } : r;
 }

@@ -3248,10 +3248,21 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       y en `apps/web/app/**/acciones*.ts`, y corre `revisar()` sobre el OBJETO de cada llamada directa a `avisar`, `avisarNegocio` y `avisarTelefono` (también `av.avisar(…)`) y sobre
       el `vars: { … }` / `v: { … }` de un aviso guardado para después: un `.es` suelto, un texto sin su par en inglés, `(…, true)`, el `[0]` de un par y el dinero armado a
       mano («$» + toFixed). La regla de « con ${…}» mira CADA aparición, la consulta `{svc,es}` acepta cualquier alias (`as plan`) y la excepción `as ymd` es ahora una marca
-      explícita en la consulta (`-- pantalla`); un par `{x}` + `{x_en}` (msg_equipo, ord_rep_msg, drv_sancion) lleva cada idioma en su variable y está bien. La lista de pendientes
-      (`PENDIENTES_UN_IDIOMA`, por archivo) solo puede bajar y hoy está vacía: se arreglaron las ~100 llamadas que halló (rentas, apartados, layaway, boletos, boletos-despues,
+      explícita en la consulta (`/* pantalla */`; el guardián la mira antes de que `sinComent` la quite); un par `{x}` + `{x_en}` (msg_equipo, ord_rep_msg, drv_sancion) lleva cada idioma en su variable y está bien. La lista de pendientes
+      (`PENDIENTES_UN_IDIOMA`, por archivo) hoy está vacía y el guardián exige que SIGA vacía (antes «solo baja»: una entrada nueva con su llamada mala pasaba): se arreglaron las ~100 llamadas que halló (rentas, apartados, layaway, boletos, boletos-despues,
       evt-cambios, evt-liquidacion, evt-avisos, evt-admin, espera, cupones, mercado, puerta, puerta-sync, puerta-equipo, beta, disputas, planes, patrocinio, patrocinio-evento,
       acciones-gam…). `citas.ts › miaCita` manda el servicio como { es, en } y la pantalla (Servicios.tsx) lo muestra en su idioma. avisos › porIdioma cae al español si el
       inglés viene vacío. Sin migración: nada de lo guardado cambió.
-      _Lo que el guardián sigue sin ver:_ un valor armado por un ayudante de otro archivo que devuelve un solo idioma (p. ej. `prometido(…, es)`, `horasTxt(…, true)` dentro de un par
-      `horas`/`hours`), y el ternario que mezcla un Bi con un texto suelto (basta un `en:` en el valor para que `revisar` lo dé por bueno). Se vigilan con el al revés y la revisión.
+      **Revisión de b5edd4c (25 nov, hecho):** (1) el guardián mira ahora todo ayudante `avis…(` cuyo cuerpo llame a `avisar…(` (avisarEvp, avisarDueño, avisarC, avisarEquipo…) en cada
+      llamada del archivo y en cualquier argumento, y las variables `const vars = { … }` / `aviso = { … }`; sale en Bi lo que se escapaba por ahí (evento-privado: el día, «No respondieron
+      a tiempo», «No se había cobrado nada»; suscripción: el día con «es-US» fijo y el respaldo «tarjeta»; mercado: el artículo y el sustituto; estimados: «liberado»; mensajes y planes:
+      «Un cliente» / «El cliente» ya no salen del SQL; también envios, apartados, rentas y solicitudes, que tenían el mismo nombre de respaldo en español). (2) `PENDIENTES_UN_IDIOMA` tiene que seguir vacía. (3) `revisar()` corre sobre
+      cada `{…}` de primer nivel del argumento: un objeto dentro de un ternario ya se mira (rentas › devolver, acciones-colas). (4) Un par `{x}` + `{x_en}` vale solo si la plantilla
+      en inglés de `packages/db/migrations` lee `{x_en}` (la de la llamada; sin plantilla a la vista, la de cualquiera). (5) Una ruta es solo un texto que empieza por «/» y lleva letras, cifras
+      y `-/?=&.:`; el nombre propio fijo `"To'Latino"` no se duplica en { es, en }; las propiedades `href` y `tpl` no son texto. (6) La marca de pantalla es `/* pantalla */`. (7) `porIdioma`
+      respalda en los dos sentidos (`es ? x.es || x.en : x.en || x.es`) y `avisarMuchos` resuelve los { es, en } de `v.es` y `v.en` por idioma (y, con SMS, una por una con las variables de su
+      idioma). Al revés: 17 casos nuevos en alrevesDineroDiceLoQuePaso (el harness acepta ahora varias ediciones por caso: «entrada nueva en pendientes + llamada mala»).
+      _Lo que el guardián sigue sin ver:_ un valor armado por un ayudante de OTRO archivo que devuelve un solo idioma (p. ej. `prometido(…, es)`, `horasTxt(…, true)` dentro de un par
+      `horas`/`hours`); un ayudante declarado como `const avisarX = async (…) =>` (solo se leen las `function`); un ternario que mezcla un Bi con un texto suelto DENTRO de una propiedad
+      (basta un `en:` en el valor para que `revisar` lo dé por bueno); lo que se arma en una variable con otro nombre que `vars`/`aviso`; los valores de `avisarMuchos` ({ es: {…}, en: {…} }:
+      no se revisa su contenido); y un nombre de respaldo en español que no es un texto en la llamada (un `?? "Un cliente"` en una variable que luego se pasa, sin `en:`). Se vigilan con el al revés y la revisión.

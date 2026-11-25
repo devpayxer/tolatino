@@ -617,7 +617,7 @@ export async function pesarLinea(negocio: string, numero: string, linea: string,
 /* «No hay»: se quita (no se cobra) o se propone un sustituto del mismo mercado que el cliente acepta en 10 min. */
 export async function noHay(negocio: string, numero: string, linea: string, sustituto: string | null, actorId: string): Promise<ResM> {
   if (!NUM.test(numero) || !ID.test(String(linea)) || (sustituto != null && !ID.test(String(sustituto)))) return no("Esa línea no existe.", "That line does not exist.");
-  let aviso: Record<string, string> | null = null;
+  let aviso: Record<string, Bi> | null = null;
   const r = await tx(async (c): Promise<ResM> => {
     const o = await opDe(c, numero, { negocio }, true);
     if (!o || o.status !== "confirmed" || !["preparando", "pesado"].includes(o.detail ?? "") || o.det.approved_at) return no("Este pedido ya no se puede cambiar.", "This order can no longer be changed.");
@@ -633,7 +633,7 @@ export async function noHay(negocio: string, numero: string, linea: string, sust
       await c.query(`insert into change_proposals (operation_id, kind, proposed, side, respond_by, created_by, line_id) values ($1::bigint, 'items', $2::jsonb, 'customer', now() + interval '10 minutes', $3, $4::bigint)`,
         [o.id, JSON.stringify({ item: sustituto, name: { es: s.name.es, en: s.name.en || s.name.es }, cents: s.cents, q: l.peso ? 1 : l.q, tax: s.tax, ...(lb != null ? { lb } : {}) }), actorId, linea]);
       await ev(c, o.id, "sub_proposed", "member", actorId, { es: `No hay ${l.name.es}: proponen ${s.name.es} (${money(s.cents)}${porLb}${lb != null ? ` · ${lb} lb` : ""})`, en: `Out of ${l.name.en || l.name.es}: proposing ${s.name.en || s.name.es} (${money(s.cents)}${porLb}${lb != null ? ` · ${lb} lb` : ""})` });
-      aviso = { articulo: l.name.es, sustituto: `${s.name.es} ${money(s.cents)}${porLb}` };
+      aviso = { articulo: { es: l.name.es, en: l.name.en || l.name.es }, sustituto: { es: `${s.name.es} ${money(s.cents)}${porLb}`, en: `${s.name.en || s.name.es} ${money(s.cents)}${porLb}` } };
     } else await ev(c, o.id, "line_out", "member", actorId, { es: `No hay ${l.name.es}: se quita y no se cobra`, en: `Out of ${l.name.en || l.name.es}: removed and not charged` });
     return { ok: true };
   });

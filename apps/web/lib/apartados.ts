@@ -129,7 +129,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
   if (conPlan && !regla) return no("Esta tienda no está tomando planes ahora.", "This store is not taking layaway right now.");
   const cob = await import("./cobros"), T = ship ? await cob.tarjetaDe(f.negocio) : null;  // envío o plan: con tarjeta
   if (ship && (!T?.on || !T.cuenta)) return no("Esta tienda no está cobrando con tarjeta ahora. Elige recogerlo en la tienda.", "This store is not taking cards right now. Choose pickup.");
-  let aviso: { cliente: string; n: number } | null = null, retenido: string | null = null;
+  let aviso: { cliente: string | { es: string; en: string }; n: number } | null = null, retenido: string | null = null;
   try {
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2::uuid`, [userId, f.clave])).rows[0];
@@ -205,13 +205,13 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
       else if (it.mode === "qty") await c.query(`update items set stock_left = stock_left - $2, updated_at = now() where id = $1::bigint`, [l.item, l.qty]);
     }
     await ev(c, op, "sent", "user", userId, conPlan ? { es: "Mandó el apartado en plan · aceptó el acuerdo · se retuvo el abono", en: "Sent the layaway hold · accepted the agreement · down payment held" } : ship ? { es: `Mandó el pedido con envío · se retuvieron ${money(tot + fee)}`, en: `Sent the order to ship · ${money(tot + fee)} held` } : { es: "Mandó el apartado", en: "Sent the hold" });
-    aviso = { cliente: (await c.query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "Un cliente", n: L.reduce((s, l) => s + l.qty, 0) };
+    aviso = { cliente: (await c.query<{ n: string }>(`select coalesce(nullif(first_name, ''), '') as n from users where id = $1`, [userId])).rows[0]?.n || { es: "Un cliente", en: "A customer" }, n: L.reduce((s, l) => s + l.qty, 0) };
     return { ok: true, numero };
   });
   // Lo retenido de un pedido que no se guardó (la base dijo que no) se libera en el acto.
   if (!r.ok && retenido) await (await import("./pagos/pasarela")).pasarela.liberar(retenido).catch(() => undefined);
   if (r.ok && aviso) {
-    const a = aviso as { cliente: string; n: number }, av = await import("./avisos"), n = `${a.n} ${a.n === 1 ? "artículo" : "artículos"}`, nEn = `${a.n} ${a.n === 1 ? "item" : "items"}`;
+    const a = aviso as { cliente: string | { es: string; en: string }; n: number }, av = await import("./avisos"), n = `${a.n} ${a.n === 1 ? "artículo" : "artículos"}`, nEn = `${a.n} ${a.n === 1 ? "item" : "items"}`;
     const d = ship ? null : s2d(f.dia);
     await av.avisarNegocio(f.negocio, "biz_apartado", { cliente: a.cliente, que: conPlan ? { es: `apartó ${n} en plan · confirma que lo tienes (se cobra el abono)`, en: `put ${nEn} on hold on a plan · confirm you have it (the down payment is charged)` } : d ? { es: `apartó ${n} para el ${DIA[d.getUTCDay()]} ${d.getUTCDate()} a las ${horaL(f.hora)} · confirma que lo tienes`, en: `put ${nEn} on hold for ${DIA_EN[d.getUTCDay()]} ${d.getUTCDate()} at ${horaL(f.hora)} · confirm you have it` } : { es: `pidió ${n} con envío · confirma que lo tienes`, en: `ordered ${nEn} with shipping · confirm you have it` } }, { href: `/panel/${f.negocio}/hoy?det=apt:${r.numero}`, ref: ["apartado", r.numero] });
   }

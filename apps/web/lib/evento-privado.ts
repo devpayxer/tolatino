@@ -213,7 +213,7 @@ async function avisarEvp(numero: string, quien: "cliente" | "negocio", tpl: stri
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return false;
   const A = await import("./avisos"), cfg = await valores("evp_responder_h", "evp_propuesta_h");
-  const vars = { negocio: o.negocio, cliente: o.cliente, dia: diaEvp(o.ymd, true), hora: horaL(o.m), personas: String(o.p), total: dinero(o.tot), dep: dinero(o.dep), resto: dinero(Math.max(0, o.tot - o.dep)),
+  const vars = { negocio: o.negocio, cliente: o.cliente, dia: { es: diaEvp(o.ymd, true), en: diaEvp(o.ymd, false) }, hora: horaL(o.m), personas: String(o.p), total: dinero(o.tot), dep: dinero(o.dep), resto: dinero(Math.max(0, o.tot - o.dep)),
     horas: String(quien === "negocio" ? cfg.evp_responder_h : cfg.evp_propuesta_h), dev: "", motivo: "", que: "", ...extra };
   if (quien === "cliente") return A.avisar(o.uid, tpl, vars, { href: `/privado/${numero}`, ref: ["private_event", numero], ...(unaVez ? { unaVez } : {}) });
   return A.avisarNegocio(o.biz, tpl, vars, { href: `/panel/${o.biz}/hoy?det=evp:${numero}`, ref: ["private_event", numero], ...(unaVez ? { unaVez } : {}) });
@@ -266,7 +266,7 @@ export async function proponerEvp(negocio: string, numero: string, actorId: stri
       const ult = (await db().query<{ ymd: string; m: number; p: number; tot: number; dep: number }>(
         `select (q.starts_at at time zone c.timezone)::date::text as ymd, (extract(hour from q.starts_at at time zone c.timezone) * 60 + extract(minute from q.starts_at at time zone c.timezone))::int as m, q.party_size as p, q.total_cents as tot, q.deposit_cents as dep
            from private_event_quotes q join cities c on c.id = q.city_id join operations o on o.id = q.operation_id where o.number = $1 order by q.version desc limit 1`, [numero])).rows[0];
-      if (ult) await avisarEvp(numero, "cliente", tpl, { dia: diaEvp(ult.ymd, true), hora: horaL(ult.m), personas: String(ult.p), total: dinero(ult.tot), dep: dinero(ult.dep) }).catch(() => undefined);
+      if (ult) await avisarEvp(numero, "cliente", tpl, { dia: { es: diaEvp(ult.ymd, true), en: diaEvp(ult.ymd, false) }, hora: horaL(ult.m), personas: String(ult.p), total: dinero(ult.tot), dep: dinero(ult.dep) }).catch(() => undefined);
     }
     return r;
   } catch (e) {
@@ -515,7 +515,7 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
   });
   if (!r.ok) return r;
   if (!pago) {
-    if (biz) await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: " No se había cobrado nada." }).catch(() => undefined);
+    if (biz) await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: { es: " No se había cobrado nada.", en: " Nothing had been charged." } }).catch(() => undefined);
     return { ...r, devolucion: "nada" };
   }
   const P = pago as { dev: number; perdio: boolean; held: boolean; dep: number; queda: number; pst: string | null; refunded: number };
@@ -609,8 +609,8 @@ export async function vencerEvp(f: { negocio?: string; userId?: string; numero?:
      returning o.id::text, o.number as num`, a)).rows;
   for (const v of sinResp) {
     await ev(db(), v.id, "expired", "system", null, { es: "No respondieron a tiempo", en: "No reply in time" });
-    await avisarEvp(v.num, "cliente", "evp_vence", { que: "No respondieron a tiempo." }).catch(() => undefined);
-    await avisarEvp(v.num, "negocio", "evp_biz_vence", { que: "No respondiste a tiempo." }).catch(() => undefined);
+    await avisarEvp(v.num, "cliente", "evp_vence", { que: { es: "No respondieron a tiempo.", en: "They did not reply in time." } }).catch(() => undefined);
+    await avisarEvp(v.num, "negocio", "evp_biz_vence", { que: { es: "No respondiste a tiempo.", en: "You did not reply in time." } }).catch(() => undefined);
   }
   const propVencida = (await db().query<{ id: string; num: string }>(
     `update operations o set status = 'expired', status_detail = 'propuesta_vencida', respond_by = null, updated_at = now()
@@ -618,8 +618,8 @@ export async function vencerEvp(f: { negocio?: string; userId?: string; numero?:
      returning o.id::text, o.number as num`, a)).rows;
   for (const v of propVencida) {
     await ev(db(), v.id, "expired", "system", null, { es: "La propuesta venció sin aceptarse", en: "The proposal expired without being accepted" });
-    await avisarEvp(v.num, "cliente", "evp_vence", { que: "La propuesta venció sin aceptarse." }).catch(() => undefined);
-    await avisarEvp(v.num, "negocio", "evp_biz_vence", { que: "Tu propuesta venció sin aceptarse." }).catch(() => undefined);
+    await avisarEvp(v.num, "cliente", "evp_vence", { que: { es: "La propuesta venció sin aceptarse.", en: "The proposal expired without being accepted." } }).catch(() => undefined);
+    await avisarEvp(v.num, "negocio", "evp_biz_vence", { que: { es: "Tu propuesta venció sin aceptarse.", en: "Your proposal expired without being accepted." } }).catch(() => undefined);
   }
   // Un cambio que nadie aceptó a tiempo: el evento sigue como se acordó.
   const cambioV = (await db().query<{ id: string }>(

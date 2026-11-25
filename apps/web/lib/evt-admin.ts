@@ -2,7 +2,7 @@ import "server-only";
 import { auditar, type Staff } from "./admin";
 import { avisarNegocio } from "./avisos";
 import { db, tx } from "./db";
-import { cuandoBi, diaCorto, hora, SENAL_L_UI, type Bi } from "./evt-comun";
+import { cuandoBi, SENAL_L_UI, type Bi } from "./evt-comun";
 
 /* 6j · Super Admin › Eventos y boletos completo (fase6-eventos.md §4 6j; admin-dashboard ADM-EVT L174–186, L74, L291):
    - Cupos y venta de UNA fecha en la ficha del evento: cada tipo de boleto, mesa y el aforo del día con lo vendido, apartado y lo que queda;

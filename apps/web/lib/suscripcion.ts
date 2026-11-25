@@ -57,7 +57,7 @@ async function evento(negocio: string, kind: string, extra: { monto?: number; no
   return !!(await (c ?? db()).query(`insert into subscription_events (business_id, kind, amount_cents, note, actor_id, idem_key) values ($1, $2, $3, $4::jsonb, $5, $6) on conflict (idem_key) do nothing`,
     [negocio, kind, extra.monto ?? null, extra.note === undefined ? null : JSON.stringify(extra.note), extra.actor ?? null, extra.idem ?? null])).rowCount;
 }
-async function avisarDueño(negocio: string, tpl: string, vars: Record<string, string>) {
+async function avisarDueño(negocio: string, tpl: string, vars: Record<string, string | { es: string; en: string }>) {
   await (await import("./avisos")).avisarNegocio(negocio, tpl, vars, { href: `/panel/${negocio}/cobros/plan` });
 }
 const nombre = async (negocio: string) => (await db().query<{ n: string }>(`select name as n from businesses where id = $1`, [negocio])).rows[0]?.n ?? "";
@@ -280,7 +280,7 @@ async function registrarPeriodo(s: Fila, a: Intencion, pi: string) {
     return;
   }
   const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [a.pm])).rows[0];
-  await avisarDueño(s.business_id, "pro_charged", { monto: money(a.monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
+  await avisarDueño(s.business_id, "pro_charged", { monto: money(a.monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : { es: "tarjeta", en: "card" } });
   await (await import("./correo/recibos")).reciboPro(s.business_id, a.payer, a.monto, hasta, t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", a.idem); // 2q
 }
 /* Barrido: los cobros de Pro que quedaron en camino (Stripe no contestó, o el proceso murió entre la intención y el cierre; también los de «Volver a
@@ -378,7 +378,7 @@ export async function completarRenovacion(negocio: string, pi: string, candado =
   });
   if (!hecho) return;
   const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [hecho.pm])).rows[0];
-  await avisarDueño(negocio, "pro_charged", { monto: money(hecho.monto), negocio: await nombre(negocio), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
+  await avisarDueño(negocio, "pro_charged", { monto: money(hecho.monto), negocio: await nombre(negocio), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : { es: "tarjeta", en: "card" } });
   await (await import("./correo/recibos")).reciboPro(negocio, hecho.payer, hecho.monto, hecho.hasta, t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", hecho.idem);
 }
 /* 9t2 · esperado: el estado que leyó el barrido (con el candado del plan). Una cortesía o «Anular» hechos en ese segundo (van sin ese candado) no se
@@ -425,7 +425,7 @@ export async function procesar(negocio?: string) {
     if (s.status === "trial" && Date.parse(s.trial_ends_at!) > Date.now()) {
       // Día 25 (quedan 5 o menos): un solo aviso.
       if (await evento(s.business_id, "notice_d25", { idem: `d25-${s.business_id}-${s.trial_ends_at}` }))
-        await avisarDueño(s.business_id, "pro_d25", { negocio: await nombre(s.business_id), dia: new Date(s.trial_ends_at!).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(/\./g, "") });
+        await avisarDueño(s.business_id, "pro_d25", { negocio: await nombre(s.business_id), dia: { es: new Date(s.trial_ends_at!).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(/\./g, ""), en: new Date(s.trial_ends_at!).toLocaleDateString("en-US", { day: "numeric", month: "short", timeZone: "America/New_York" }) } });
       return;
     }
     if (s.status === "trial") {

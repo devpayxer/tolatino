@@ -168,7 +168,7 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
   // tope, límites). Cualquier falla = no: todo sigue como antes.
   // 9n-7 · Con «Si no contestas en N min» o «Siempre, al instante» El Compa también contesta con el negocio abierto: el servidor decide el CUÁNDO.
   const compa = await (await import("./compa/respuesta-auto")).compaCuando(b.id, previo.rows[0]?.id ?? null, userId).catch(() => null);
-  const yo = (await db().query<{ nombre: string; lang: string }>(`select coalesce(nullif(trim(coalesce(first_name, '') || ' ' || left(coalesce(last_name, ''), 1)), ''), 'Un cliente') as nombre, coalesce(lang, 'es') as lang from users where id = $1`, [userId])).rows[0];
+  const yo = (await db().query<{ nombre: string | null; lang: string }>(`select nullif(trim(coalesce(first_name, '') || ' ' || left(coalesce(last_name, ''), 1)), '') as nombre, coalesce(lang, 'es') as lang from users where id = $1`, [userId])).rows[0];
   // 9t · El idioma del texto (para «Ver traducción»), ANTES de abrir la transacción: enviar nunca espera al traductor con la base tomada.
   const lang = L.t ? idiomaTexto(await detectarIdioma(L.t), yo?.lang) : null;
   const r = await tx(async (c) => {
@@ -203,7 +203,7 @@ export async function enviarCliente(userId: string, negocio: string, texto: unkn
   if (!r.ok) return r;
   if ("avisar" in r && r.avisar) {
     await db().query(`update chat_threads set biz_notified_at = now() where id = $1`, [r.id]);
-    await avisarEquipo(b.id, { cliente: yo?.nombre ?? "Un cliente", texto: corto(L.t || FOTO_TXT).slice(0, 80) }, r.id!).catch(() => undefined);
+    await avisarEquipo(b.id, { cliente: yo?.nombre ?? { es: "Un cliente", en: "A customer" }, texto: corto(L.t || FOTO_TXT).slice(0, 80) }, r.id!).catch(() => undefined);
   }
   return { ok: true, id: r.id, compa: compa === "ahora", tapado: L.tapado, revision: "revision" in r && !!r.revision };   // 9n-7 · «espera» no corre el turno ya: lo hace el barrido al vencer
 }
@@ -216,7 +216,7 @@ export async function ponerRespuestaFija(c: { query: (q: string, v: unknown[]) =
   await c.query(`update chat_threads set last_at = now(), last_from = 'auto', last_text = $2 where id = $1`, [threadId, corto(txt)]);
 }
 /* Avisa al dueño y a quien del equipo lleva Mensajes. */
-async function avisarEquipo(negocio: string, v: Record<string, string>, threadId: string) {
+async function avisarEquipo(negocio: string, v: Record<string, string | { es: string; en: string }>, threadId: string) {
   const { avisar } = await import("./avisos");
   const L = (await db().query<{ id: string }>(
     `select distinct user_id::text as id from business_members where business_id = $1 and status = 'active' and (kind = 'owner' or 'all' = any(panel_access) or 'msg' = any(panel_access))`, [negocio])).rows;
@@ -362,13 +362,13 @@ export async function reportarChat(userId: string, threadId: string, lado: "user
    Mensajes, msg_user al cliente) con «Foto · Photo», una vez (la decisión cierra el caso). Con la conversación bloqueada, nada. Fuera de la
    transacción de la decisión (como todo aviso). LAUNCH «Mensajes · lo que quedó de 9t» (4). */
 export async function avisarFotoAprobada(media: string): Promise<void> {
-  const x = (await db().query<{ tid: string; de: string; user: string; biz: string; negocio: string; cliente: string; bloqueado: boolean }>(
+  const x = (await db().query<{ tid: string; de: string; user: string; biz: string; negocio: string; cliente: string | null; bloqueado: boolean }>(
     `select t.id::text as tid, m.sender as de, t.user_id::text as user, t.business_id as biz, b.name as negocio, t.blocked_at is not null as bloqueado,
-            coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Un cliente') as cliente
+            nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as cliente
        from chat_messages m join chat_threads t on t.id = m.thread_id join businesses b on b.id = t.business_id join users u on u.id = t.user_id
       where m.media_id = $1::uuid`, [media])).rows[0];
   if (!x || x.bloqueado) return;
-  if (x.de === "user") await avisarEquipo(x.biz, { cliente: x.cliente, texto: FOTO_TXT }, x.tid);
+  if (x.de === "user") await avisarEquipo(x.biz, { cliente: x.cliente ?? { es: "Un cliente", en: "A customer" }, texto: FOTO_TXT }, x.tid);
   else if (x.de === "business") {
     const { avisar } = await import("./avisos");
     await avisar(x.user, "msg_user", { negocio: x.negocio, texto: FOTO_TXT }, { href: `/cuenta/mensajes/${x.biz}`, ref: ["chat", x.tid] });

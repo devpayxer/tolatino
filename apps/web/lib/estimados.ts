@@ -182,12 +182,12 @@ async function abrir(c: PoolClient, negocio: string, numero: string, porCliente:
 const YA = no("Esta cita ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");
 const negocioDe = async (numero: string, userId: string) => (await db().query<{ b: string }>(`select business_id as b from operations where number = $1 and user_id = $2 and kind = 'appointment'`, [numero, userId])).rows[0]?.b ?? null;
 
-async function avisarC(numero: string, tpl: string, v: Record<string, string>) {
+async function avisarC(numero: string, tpl: string, v: Record<string, string | { es: string; en: string }>) {
   const d = (await db().query<{ uid: string; negocio: string }>(`select o.user_id::text as uid, b.name as negocio from operations o join businesses b on b.id = o.business_id where o.number = $1`, [numero])).rows[0];
   if (!d) return;
   await (await import("./avisos")).avisar(d.uid, tpl, { negocio: d.negocio, num: numero, ...v }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }
-async function avisarN(numero: string, tpl: string, v: Record<string, string>) {
+async function avisarN(numero: string, tpl: string, v: Record<string, string | { es: string; en: string }>) {
   const d = (await db().query<{ biz: string; cliente: string }>(`select o.business_id as biz, coalesce(u.first_name, '') as cliente from operations o join users u on u.id = o.user_id where o.number = $1`, [numero])).rows[0];
   if (!d) return;
   await (await import("./avisos")).avisarNegocio(d.biz, tpl, { cliente: d.cliente, num: numero, ...v }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
@@ -386,7 +386,7 @@ export async function cobrarLiquidacion(opId: string): Promise<void> {
   }
   await db().query(`update operations set pay_status = (select case when bool_or(status = 'held') then 'held' when bool_or(status = 'captured') then 'captured' else pay_status end from payments where operation_id = $1::bigint) where id = $1::bigint`, [opId]);
   const num = P[0]!.num;
-  if (cob > 0) { await avisarC(num, "cita_pagada", { monto: money(cob), libre: lib > 0 ? ` · liberado ${money(lib)}` : "" }); await avisarN(num, "biz_cita_pagada", { monto: money(cob) }); }
+  if (cob > 0) { await avisarC(num, "cita_pagada", { monto: money(cob), libre: lib > 0 ? { es: ` · liberado ${money(lib)}`, en: ` · ${money(lib)} released` } : "" }); await avisarN(num, "biz_cita_pagada", { monto: money(cob) }); }
 }
 
 /* ── Retenciones de más de 7 días (la tarjeta suelta una autorización a los 7 días): a los 6 días y 20 horas se libera y se

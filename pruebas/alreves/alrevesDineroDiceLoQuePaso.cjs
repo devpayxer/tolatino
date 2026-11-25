@@ -216,7 +216,30 @@ const casos = [
   ["avisoNegUnIdioma", "avisarTelefono: «N entradas» en un idioma", 'apps/web/lib/boletos-despues.ts', 'cuantos: q === 1 ? { es: "1 entrada", en: "1 entry" } : { es: `${q} entradas`, en: `${q} entries` }', 'cuantos: q === 1 ? "1 entrada" : `${q} entradas`'],
   ["avisoNegUnIdioma", "llamada directa: el dinero armado a mano con toFixed (mercado)", 'apps/web/lib/mercado.ts', 'monto: money(cobrado), libre', 'monto: `$${(cobrado / 100).toFixed(2)}`, libre'],
   ["avisoNegUnIdioma", "« con ${…}» sin su « with ${…}» en CADA aparición (un « with» lejano no excusa a otro « con»)", 'apps/web/lib/citas.ts', '  const con = o.con ? { es: ` con ${o.con.split(" ")[0]}`', '  const conMal = ` con ${o.con}`;\n  /* ' + 'x'.repeat(300) + ' */\n  const con = o.con ? { es: ` con ${o.con.split(" ")[0]}`'],
-  ["avisoNegUnIdioma", "la lista de pendientes solo baja", 'guardianes/run.mjs', 'const PENDIENTES_UN_IDIOMA = {};', 'const PENDIENTES_UN_IDIOMA = { "apps/web/lib/rentas.ts": 3 };'],
+  // (revisión de b5edd4c) La lista de pendientes tiene que seguir VACÍA (antes «solo baja»: una entrada nueva con su llamada mala pasaba).
+  ["avisoNegUnIdioma", "la lista de pendientes tiene que seguir vacía", 'guardianes/run.mjs', 'const PENDIENTES_UN_IDIOMA = {};', 'const PENDIENTES_UN_IDIOMA = { "apps/web/lib/rentas.ts": 3 };'],
+  ["avisoNegUnIdioma", "entrada nueva en pendientes + una llamada mala (rentas)", [['guardianes/run.mjs', 'const PENDIENTES_UN_IDIOMA = {};', 'const PENDIENTES_UN_IDIOMA = { "apps/web/lib/rentas.ts": 1 };'], ['apps/web/lib/rentas.ts', 'que: { es: "ya no la necesita · volvió a la tienda", en: "no longer needs it · it is back at the shop" }', 'que: "ya no la necesita · volvió a la tienda"']]],
+  // Avisos que pasan por un ayudante o una variable que el guardián no miraba.
+  ["avisoNegUnIdioma", "ayudante avisarEvp: {que} en español", EP, '{ que: { es: "No respondieron a tiempo.", en: "They did not reply in time." } }', '{ que: "No respondieron a tiempo." }'],
+  ["avisoNegUnIdioma", "ayudante avisarEvp: {dep} en español", EP, '{ dep: { es: " No se había cobrado nada.", en: " Nothing had been charged." } }', '{ dep: " No se había cobrado nada." }'],
+  ["avisoNegUnIdioma", "const vars = { … }: el día con diaEvp(…, true)", EP, 'dia: { es: diaEvp(o.ymd, true), en: diaEvp(o.ymd, false) }, hora: horaL(o.m)', 'dia: diaEvp(o.ymd, true), hora: horaL(o.m)'],
+  ["avisoNegUnIdioma", "ayudante avisarDueño: el día con es-US fijo", 'apps/web/lib/suscripcion.ts', 'dia: { es: new Date(s.trial_ends_at!).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(/\\./g, ""), en: new Date(s.trial_ends_at!).toLocaleDateString("en-US", { day: "numeric", month: "short", timeZone: "America/New_York" }) }', 'dia: new Date(s.trial_ends_at!).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(/\\./g, "")'],
+  ["avisoNegUnIdioma", "ayudante avisarDueño: el respaldo «tarjeta»", 'apps/web/lib/suscripcion.ts', 'monto: money(a.monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : { es: "tarjeta", en: "card" } }', 'monto: money(a.monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" }'],
+  ["avisoNegUnIdioma", "aviso = { … }: el artículo con .es (mercado)", 'apps/web/lib/mercado.ts', 'articulo: { es: l.name.es, en: l.name.en || l.name.es }', 'articulo: l.name.es'],
+  ["avisoNegUnIdioma", "ayudante avisarC: «liberado» en español", 'apps/web/lib/estimados.ts', 'libre: lib > 0 ? { es: ` · liberado ${money(lib)}`, en: ` · ${money(lib)} released` } : ""', 'libre: lib > 0 ? ` · liberado ${money(lib)}` : ""'],
+  ["avisoNegUnIdioma", "ayudante avisarEquipo: «Un cliente»", 'apps/web/lib/mensajes.ts', 'cliente: yo?.nombre ?? { es: "Un cliente", en: "A customer" }', 'cliente: yo?.nombre ?? "Un cliente"'],
+  // Un objeto dentro de un ternario (la llamada no abre con «{»).
+  ["avisoNegUnIdioma", "objeto en un ternario (rentas): {que} en un idioma", 'apps/web/lib/rentas.ts', '{ articulo: x.n, que }, href)', '{ articulo: x.n, que: "Gracias por devolverla." }, href)'],
+  ["avisoNegUnIdioma", "objeto en un ternario (acciones-colas): {motivo} con texto fijo", 'apps/web/app/admin/acciones-colas.ts', '{ motivo: m.slice(0, 160) }, { href, ref: ["media", dr.media], sinSms: true }', '{ motivo: "Sin motivo: " + m.slice(0, 160) }, { href, ref: ["media", dr.media], sinSms: true }'],
+  // El par {x} + {x_en} solo vale si la plantilla en inglés lee {x_en}.
+  ["avisoNegUnIdioma", "par {x}+{x_en} que la plantilla en inglés no lee", 'apps/web/lib/repartidor-admin.ts', 'que: `${q[0]}${hasta}`, que_en: `${q[1]}${hastaEn}`, motivo: m', 'texto: `${q[0]}${hasta}`, texto_en: `${q[1]}${hastaEn}`, motivo: m'],
+  // Una ruta es solo lo que empieza por «/»; el nombre propio fijo es solo «To'Latino».
+  ["avisoNegUnIdioma", "un texto con «/» y sin espacios ya no pasa por ruta", 'apps/web/lib/apartados.ts', '"apt_falta", { negocio: x.bname, articulo: ln.n }', '"apt_falta", { negocio: x.bname, articulo: "pan/queso" }'],
+  ["avisoNegUnIdioma", "«To'Latino» fijo no excusa otras palabras", 'apps/web/lib/rentas.ts', 'cliente: "To\'Latino", que: cobrar', 'cliente: "To\'Latino decidió", que: cobrar'],
+  ["avisoNegUnIdioma", "«-- pantalla» ya no excusa la consulta (es /* pantalla */)", 'apps/web/lib/citas.ts', "coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as svc_en, (o.scheduled_at", "-- pantalla\n (o.scheduled_at"],
+  // porIdioma respalda en los dos sentidos; avisarMuchos resuelve cada Bi por idioma.
+  ["avisoNegUnIdioma", "porIdioma solo respalda el inglés vacío", 'apps/web/lib/avisos.ts', '(es ? x.es || x.en : x.en || x.es)', '(es ? x.es : x.en || x.es)'],
+  ["avisoNegUnIdioma", "avisarMuchos no resuelve los Bi del español", 'apps/web/lib/avisos.ts', 'const ves = porIdioma(v.es, true), ven = porIdioma(v.en, false);', 'const ves = v.es, ven = porIdioma(v.en, false);'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {
@@ -224,12 +247,21 @@ const correr = (g) => {
   catch (e) { const l = String(e.stderr).split('\n').find((x) => x.trim().startsWith(`[${g}]`)) ?? ''; return [!!l, l]; }
 };
 for (const [g, que, f, a, b] of casos) {
-  const ruta = path.join(R, f); total++;
-  if (!fs.existsSync(ruta)) { console.log(`  ✗ no existe ${f}`); continue; }
-  const orig = fs.readFileSync(ruta, 'utf8');
-  if (!orig.includes(a)) { console.log(`  ✗ no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
-  fs.writeFileSync(ruta, orig.replace(a, () => b));
-  let r; try { r = correr(g); } finally { fs.writeFileSync(ruta, orig); }
+  // f puede ser una lista de [archivo, texto, cambio]: varias ediciones a la vez (la entrada nueva en pendientes + su llamada mala).
+  const eds = Array.isArray(f) ? f : [[f, a, b]]; total++;
+  const origs = new Map(); let falta = false;
+  for (const [fx, ax] of eds) {
+    const ruta = path.join(R, fx);
+    if (!fs.existsSync(ruta)) { console.log(`  ✗ no existe ${fx}`); falta = true; break; }
+    const o = origs.get(ruta) ?? fs.readFileSync(ruta, 'utf8'); origs.set(ruta, o);
+    if (!o.includes(ax)) { console.log(`  ✗ no encontré el texto a cambiar en ${fx}: ${ax.slice(0, 70)}`); falta = true; break; }
+  }
+  if (falta) continue;
+  let r;
+  try {
+    for (const [fx, ax, bx] of eds) { const ruta = path.join(R, fx); fs.writeFileSync(ruta, fs.readFileSync(ruta, 'utf8').replace(ax, () => bx)); }
+    r = correr(g);
+  } finally { for (const [ruta, o] of origs) fs.writeFileSync(ruta, o); }
   console.log(`  ${r[0] ? '✓' : '✗'} ${g} al revés (${que})${r[1] ? ' → ' + r[1].trim().slice(0, 170) : ''}`); if (r[0]) bien++;
 }
 const limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });

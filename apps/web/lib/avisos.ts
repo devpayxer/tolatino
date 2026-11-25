@@ -15,7 +15,7 @@ import { enviarSms } from "./sms";
 /* AO · Un valor puede venir en los dos idiomas ({ es, en }): sale el de quien lo recibe (la marca «Anfitriona» · «Host» junto al nombre de una voz). */
 type Vars = Record<string, string | number | { es: string; en: string }>;
 const llenar = (t: string, v: Vars) => t.replace(/\{(\w+)\}/g, (_, k: string) => { const x = v[k]; return x == null ? `{${k}}` : typeof x === "object" ? x.es : String(x); });
-const porIdioma = (v: Vars, es: boolean): Vars => Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === "object" && x ? (es ? x.es : x.en || x.es) : x]));
+const porIdioma = (v: Vars, es: boolean): Vars => Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === "object" && x ? (es ? x.es || x.en : x.en || x.es) : x]));
 
 /* 9l · El SMS de un aviso sale por EL ÚNICO CAMINO (lib/sms: sms_outbox con reintentos y estado de entrega; guardián smsConReintento). Aquí solo se
    arma el texto («To'Latino: …» y, si la plantilla lo pide, el enlace de seguimiento) y se anota el SMS en su aviso. En el sandbox el aviso sigue
@@ -150,10 +150,17 @@ export async function avisarTelefono(tel: string, tpl: string, v: Vars, o: { hre
 export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en: Vars }, o: { href?: string; ref?: [string, string]; actor?: string | null } = {}) {
   const L = [...new Set(ids)].filter(Boolean);
   if (!L.length) return;
+  // Un valor { es, en } dentro de v.es o v.en sale en el idioma de quien lo recibe (v.es para quien lee en español, v.en para quien lee en inglés).
+  const ves = porIdioma(v.es, true), ven = porIdioma(v.en, false);
   try {
     const t = (await db().query<{ sms: boolean; grp: string; pref: string | null; title: { es: string; en: string }; body: { es: string; en: string } }>(`select sms, grp, pref, title, body from notif_templates where key = $1`, [tpl])).rows[0];
     if (!t) return;
-    if (t.sms) { for (const id of L) await avisar(id, tpl, v.es, o); return; }
+    if (t.sms) {
+      // Una por una (con SMS), cada quien con las variables de su idioma.
+      const en = new Set((await db().query<{ id: string }>(`select id::text from users where id = any($1::uuid[]) and lang = 'en'`, [L])).rows.map((r) => r.id));
+      for (const id of L) await avisar(id, tpl, en.has(id) ? ven : ves, o);
+      return;
+    }
     for (let i = 0; i < L.length; i += 1000) {
       // 5i · Grupo Comunidad: lo apagado no llega; con «Un resumen al día», se guarda para el resumen (como avisar()).
       // 6j · Grupo Eventos: lo apagado no llega (no hay resumen).
@@ -168,7 +175,7 @@ export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en
            from users u join notif_templates tp on tp.key = $2 left join cities ci on ci.id = u.home_city_id
           where u.id = any($1::uuid[]) and not ($11 and coalesce(u.notif_prefs->>$12, '') = 'false')
          returning id::text`,
-        [L.slice(i, i + 1000), tpl, llenar(t.title.es, v.es).slice(0, 120), llenar(t.title.en, v.en).slice(0, 120), llenar(t.body.es, v.es).slice(0, 480), llenar(t.body.en, v.en).slice(0, 480), o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, o.actor ?? null, com, t.pref ?? "", dig, await canales()])).rows;
+        [L.slice(i, i + 1000), tpl, llenar(t.title.es, ves).slice(0, 120), llenar(t.title.en, ven).slice(0, 120), llenar(t.body.es, ves).slice(0, 480), llenar(t.body.en, ven).slice(0, 480), o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, o.actor ?? null, com, t.pref ?? "", dig, await canales()])).rows;
       await encolar(ids.map((x) => x.id));
     }
   } catch { /* un aviso nunca rompe la acción que lo dispara */ }

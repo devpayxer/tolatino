@@ -7,7 +7,7 @@ const M = 'packages/db/migrations/0115_eventos_admin_config.sql', AV = 'apps/web
 const casos = [
   // avisoTituloLleno
   ['avisoTituloLleno', AV, 'title = llenar(es ? r.title.es : r.title.en, v).slice(0, 120)', 'title = es ? r.title.es : r.title.en'],
-  ['avisoTituloLleno', AV, 'llenar(t.title.es, v.es).slice(0, 120), llenar(t.title.en, v.en).slice(0, 120)', 't.title.es, t.title.en'],
+  ['avisoTituloLleno', AV, 'llenar(t.title.es, ves).slice(0, 120), llenar(t.title.en, ven).slice(0, 120)', 't.title.es, t.title.en'],
   // eventosCriticoSiempreLlega
   ['eventosCriticoSiempreLlega', M, " where key in ('bol_comprado', 'bol_reemitido',", " where key in ('bol_reemitido',"],
   ['eventosCriticoSiempreLlega', M, "where key in ('rsvp_ok', 'rsvp_vence',", "where key in ('bol_transfer_in', 'rsvp_ok', 'rsvp_vence',"],

@@ -109,7 +109,7 @@ export async function pedirPre(userId: string, f: PreIn): Promise<Res<{ numero: 
     return { ok: true, numero };
   });
   if (r.ok && biz) {
-    const cl = (await db().query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "";
+    const cl = (await db().query<{ n: string }>(`select nullif(first_name, '') as n from users where id = $1`, [userId])).rows[0]?.n || { es: "Un cliente", en: "A customer" };
     await (await import("./avisos")).avisarNegocio(biz, "biz_preest", { cliente: cl, svc: svcN }, { href: `/panel/${biz}/hoy?det=sol:${r.numero}`, ref: ["request", r.numero] });
   }
   return r;
@@ -173,7 +173,7 @@ export async function solicitudCliente(userId: string, numero: string, que: "can
   if (!NUM.test(numero)) return no("Esa solicitud no existe.", "That request does not exist.");
   await vencerSolicitudes({ userId });
   const r = await tx(async (c): Promise<Res & { biz?: string[]; mode?: string; svc?: { es: string; en: string }; cl?: string }> => {
-    const s = (await c.query<{ id: string; st: string; mode: string; svc: string; svc_en: string; cl: string }>(`select r.id::text, r.status as st, r.mode, coalesce(r.form#>>'{svc,es}', '') as svc, coalesce(nullif(r.form#>>'{svc,en}', ''), r.form#>>'{svc,es}', '') as svc_en, coalesce(nullif(u.first_name, ''), 'Un cliente') as cl
+    const s = (await c.query<{ id: string; st: string; mode: string; svc: string; svc_en: string; cl: string | null }>(`select r.id::text, r.status as st, r.mode, coalesce(r.form#>>'{svc,es}', '') as svc, coalesce(nullif(r.form#>>'{svc,en}', ''), r.form#>>'{svc,es}', '') as svc_en, nullif(u.first_name, '') as cl
       from service_requests r join users u on u.id = r.user_id where r.user_id = $1 and r.number = $2 for update of r`, [userId, numero])).rows[0];
     if (!s) return no("Esa solicitud no existe.", "That request does not exist.");
     if (que === "cancelar") {
@@ -185,9 +185,9 @@ export async function solicitudCliente(userId: string, numero: string, que: "can
     if (!(s.st === "expired" || (s.mode === "em" && s.st === "nobody"))) return no("Solo se manda otra vez lo que venció.", "Only an expired request can be sent again.");
     await c.query(`update service_requests set status = 'sent', respond_by = now() + case when mode = 'pq' then make_interval(hours => ${cfgSql("sol_pq_h")}) when mode = 'em' then make_interval(mins => ${cfgSql("sol_em_min")}) else make_interval(hours => ${cfgSql("sol_pre_h")}) end, updated_at = now() where id = $1::bigint`, [s.id]);
     const B = (await c.query<{ b: string }>(`update request_targets set status = 'sent', notified_at = now() where request_id = $1::bigint and status = 'expired' returning business_id as b`, [s.id])).rows.map((x) => x.b);
-    return { ok: true, biz: B, mode: s.mode, svc: { es: s.svc, en: s.svc_en }, cl: s.cl };
+    return { ok: true, biz: B, mode: s.mode, svc: { es: s.svc, en: s.svc_en }, cl: s.cl ?? undefined };
   });
-  if (r.ok && "biz" in r && r.biz?.length) for (const b of r.biz) await (await import("./avisos")).avisarNegocio(b, r.mode === "pq" ? "biz_pq" : r.mode === "em" ? "biz_em" : "biz_preest", { cliente: r.cl ?? "", svc: r.svc ?? { es: "", en: "" }, que: r.svc ?? { es: "", en: "" }, mi: "—", ...(r.mode === "pq" ? await plazoPq() : {}) }, { href: `/panel/${b}/hoy?det=sol:${numero}`, ref: ["request", numero] });
+  if (r.ok && "biz" in r && r.biz?.length) for (const b of r.biz) await (await import("./avisos")).avisarNegocio(b, r.mode === "pq" ? "biz_pq" : r.mode === "em" ? "biz_em" : "biz_preest", { cliente: r.cl ?? { es: "Un cliente", en: "A customer" }, svc: r.svc ?? { es: "", en: "" }, que: r.svc ?? { es: "", en: "" }, mi: "—", ...(r.mode === "pq" ? await plazoPq() : {}) }, { href: `/panel/${b}/hoy?det=sol:${numero}`, ref: ["request", numero] });
   return r.ok ? { ok: true } : r;
 }
 
@@ -287,9 +287,9 @@ export async function usarPre(c: PoolClient, userId: string, numero: string, neg
 }
 export async function ligarCita(numero: string, opNumero: string) {
   await db().query(`update service_requests set operation_id = (select id from operations where number = $2) where number = $1`, [numero, opNumero]);
-  const L = (await db().query<{ b: string; cl: string }>(`select t.business_id as b, coalesce(nullif(u.first_name, ''), 'El cliente') as cl from request_targets t join service_requests r on r.id = t.request_id join users u on u.id = r.user_id
+  const L = (await db().query<{ b: string; cl: string | null }>(`select t.business_id as b, nullif(u.first_name, '') as cl from request_targets t join service_requests r on r.id = t.request_id join users u on u.id = r.user_id
     where r.number = $1 and r.mode = 'pq' and t.status = 'closed'`, [numero])).rows;
-  for (const x of L) await (await import("./avisos")).avisarNegocio(x.b, "pq_cerrado", { cliente: x.cl, num: numero }, { ref: ["request", numero] });
+  for (const x of L) await (await import("./avisos")).avisarNegocio(x.b, "pq_cerrado", { cliente: x.cl ?? { es: "El cliente", en: "The customer" }, num: numero }, { ref: ["request", numero] });
 }
 
 /* Para el Booking: el pre-estimado o presupuesto vigente que la persona trae (solo lectura; usarPre lo confirma al enviar). */
@@ -363,7 +363,7 @@ export async function pedirPq(userId: string, f: PqIn): Promise<Res<{ numero: st
     return { ok: true, numero };
   });
   if (r.ok && numero) {
-    const cl = (await db().query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "";
+    const cl = (await db().query<{ n: string }>(`select nullif(first_name, '') as n from users where id = $1`, [userId])).rows[0]?.n || { es: "Un cliente", en: "A customer" };
     const svc = (await db().query<{ s: string; e: string }>(`select form#>>'{svc,es}' as s, coalesce(nullif(form#>>'{svc,en}', ''), form#>>'{svc,es}', '') as e from service_requests where number = $1`, [numero])).rows[0];
     for (const x of elegidos) await (await import("./avisos")).avisarNegocio(x!.id, "biz_pq", { cliente: cl, svc: { es: svc?.s ?? "", en: svc?.e ?? "" }, ...(await plazoPq()) }, { href: `/panel/${x!.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
   }
