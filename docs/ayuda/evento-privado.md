@@ -36,6 +36,7 @@ eventos._
 | **El restaurante cancela** | Te devolvemos **todo el depósito**, siempre, y te dice el motivo. |
 | «No puedo» | NO PUDO con el motivo. No se cobró nada. «Probar otra fecha», «Reservar mesas aparte» u otros restaurantes. |
 | Pasó el evento | Queda terminado; el depósito ya se descontó en el local. Puedes calificar o pedir ayuda (7 días). |
+| Se cancela y la devolución no sale al momento | El aviso y la pantalla dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, que va en camino (se sigue mandando sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino ya tiene el aviso y lo resuelve contigo. Si solo se había retenido (no cobrado), se suelta. |
 
 ## Preguntas frecuentes
 - **¿Cuándo me cobran?** Solo al aceptar una propuesta, y solo el depósito. Al pedir no se cobra nada.
@@ -79,6 +80,7 @@ eventos._
 | **The restaurant cancels** | We refund **the whole deposit**, always, and it tells you the reason. |
 | «I can't» | COULD NOT with the reason. Nothing was charged. «Try another date», «Book separate tables» or other restaurants. |
 | The event has passed | It is marked finished; the deposit was already deducted at the venue. You can rate it or ask for help (7 days). |
+| It is cancelled and the refund does not go out right away | The notice and the screen say what really happened: «we refunded» only when it went out; if the bank is slow, that it is on its way (it keeps being sent by itself); if the bank or Stripe do not accept it, that To'Latino's money team already has the notice and resolves it with you. If it was only held (not charged), the hold is released. |
 
 ### FAQ
 - **When do you charge me?** Only when you accept a proposal, and only the deposit. Nothing is charged when you request.

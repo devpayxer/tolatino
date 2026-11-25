@@ -26,6 +26,7 @@ en el lugar** antes de enviar. El lugar confirma tu inscripción.
 - **Plan de pagos:** las cuotas se pagan en la escuela; la escuela marca cada una como pagada y tú la ves en Tu inscripción.
 - **Lista de espera:** si se abre un cupo, te llega un aviso y te lo guardan **48 horas**.
 - **Primera clase gratis:** una vez por persona y lugar cada 90 días.
+- **Si se cancela y la devolución no sale al momento:** el aviso y la pantalla dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, que va en camino (se sigue mandando sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino ya tiene el aviso y lo resuelve contigo. Si solo se había retenido (no cobrado), se suelta.
 
 ## Datos de tu niño
 Solo su nombre de pila, la edad o el grado, la escuela si los recogen ahí y una nota corta, **cifrados**. Los ven tú y el lugar; **nunca**
@@ -65,6 +66,7 @@ sending. The place confirms your enrollment.
 - **Payment plan:** the installments are paid at the school; the school marks each one as paid and you see it in Your enrollment.
 - **Waitlist:** if a spot opens, you get a notice and they hold it for you for **48 hours**.
 - **First class free:** once per person and place every 90 days.
+- **If it is cancelled and the refund does not go out right away:** the notice and the screen say what really happened: «we refunded» only when it went out; if the bank is slow, that it is on its way (it keeps being sent by itself); if the bank or Stripe do not accept it, that To'Latino's money team already has the notice and resolves it with you. If it was only held (not charged), the hold is released.
 
 ### Your child's data
 Only their first name, age or grade, the school if they are picked up there and a short note, **encrypted**. You and the place see them; they

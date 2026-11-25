@@ -35,6 +35,7 @@ privados») y **el detalle de una solicitud** (`?det=evp:EP-…`). Para restaura
 | El cliente cancela con menos de 72 h | El depósito se queda contigo. |
 | Tú cancelas | Se le devuelve todo el depósito, siempre. |
 | Un día antes | Te llega «Mañana tienes un evento privado». |
+| Se cancela y la devolución no sale al momento | El aviso y la pantalla dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, que va en camino (se sigue mandando sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino ya tiene el aviso y lo resuelve contigo. Si solo se había retenido (no cobrado), se suelta. |
 
 ## Preguntas frecuentes
 - **¿Cuánto cobra To'Latino?** La comisión de eventos privados de Planes (hoy 8 % del depósito). Lo que se paga en el local es tuyo.
@@ -74,6 +75,7 @@ privados») y **el detalle de una solicitud** (`?det=evp:EP-…`). Para restaura
 | The client cancels less than 72 h ahead | The deposit stays with you. |
 | You cancel | The whole deposit is refunded, always. |
 | A day before | You get «Tomorrow you have a private event». |
+| It is cancelled and the refund does not go out right away | The notice and the screen say what really happened: «we refunded» only when it went out; if the bank is slow, that it is on its way (it keeps being sent by itself); if the bank or Stripe do not accept it, that To'Latino's money team already has the notice and resolves it with you. If it was only held (not charged), the hold is released. |
 
 ### FAQ
 - **How much does To'Latino charge?** The private events commission in Plans (today 8 % of the deposit). What is paid at the place is yours.

@@ -36,6 +36,7 @@ precio cerrado por fotos se piden llamando hasta que lleguen a la app.
 - **En camino / Llegaste:** lo ves en «Tu viaje» y te pedimos tu reseña.
 - **La última plaza:** si dos personas reservan el último asiento a la vez, solo una lo consigue; a la otra se le dice que ya no
   quedan.
+- **Si se cancela y la devolución no sale al momento:** el aviso y la pantalla dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, que va en camino (se sigue mandando sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino ya tiene el aviso y lo resuelve contigo. Si solo se había retenido (no cobrado), se suelta.
 
 ## Para el negocio
 Panel › Hoy: **Viajes que esperan tu respuesta** (Confirmar · Otra salida u otra hora · No hay cupo), **Salidas con pasajeros**
@@ -89,6 +90,7 @@ requested by phone until they are available in the app.
 - **Running late:** we tell you the new time in Notifications.
 - **On the way / You arrived:** you see it in «Your trip» and we ask for your review.
 - **The last seat:** if two people book the last seat at the same time, only one gets it; the other is told there are none left.
+- **If it is cancelled and the refund does not go out right away:** the notice and the screen say what really happened: «we refunded» only when it went out; if the bank is slow, that it is on its way (it keeps being sent by itself); if the bank or Stripe do not accept it, that To'Latino's money team already has the notice and resolves it with you. If it was only held (not charged), the hold is released.
 
 ### For the business
 Dashboard › Today: **Trips awaiting your answer** (Confirm · Another departure or time · No room), **Departures with passengers** (Running

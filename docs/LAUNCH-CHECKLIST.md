@@ -3027,10 +3027,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       cuatro pantallas de estado ya leen la base (01888de) pero no tienen prueba de punta a punta. Mismo arreglo que patrocinio y boletos.
       _Hecho (25 nov, ecbdfd4, Opus; revisado por Fable): cobros.devolverAlCancelar mira la devolución y una fallida avisa al equipo; migración 0220
       (avisos con {dinero} y títulos neutros); din9v3 (viaje y noche, hecha y fallida). Inscripción y grupo sin punta a punta; fiesta solo «hecha»._
-- [ ] **→ 9b** · **Misma clase, cuando cancela el cliente o el restaurante (25 nov, revisión de ecbdfd4):** los avisos `viaje_cx`, `noche_cx`,
+- [x] **→ 9b** · **Misma clase, cuando cancela el cliente o el restaurante (25 nov, revisión de ecbdfd4):** los avisos `viaje_cx`, `noche_cx`,
       `fiesta_cx` e `insc_cx` dicen la devolución decidida (`{dev}`, 0073/0075/0082/0088); evento privado: `evp_cancelado` y el panel
       («recibe su depósito completo», EventoPrivado.tsx ~215/218, FiestasReservas.tsx ~76). Con 1 hecha + 1 solo retenida el panel de
       cancelar dice «Le devolvimos todo». `liberarOperacion` en devolverAlCancelar no se mira. Mismo arreglo que 0219/0220.
+      _Hecho (25 nov, ae089df, Opus; en revisión por Fable): migración 0221, din9v4; además el barrido ya no reenvía cada minuto una devolución
+      rechazada y una retención que no se suelta da una sola alerta._
+- [ ] **→ 9b** · **Lo que queda de la clase «el dinero dice lo decidido» (25 nov):** los avisos AL NEGOCIO `biz_noche_cx`, `biz_fiesta_cx` y
+      `biz_insc_cx` dicen «Se le devuelve…» sin mirar; otras llamadas a `liberarOperacion` (vencidas, «No me sirve») no miran si soltó.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

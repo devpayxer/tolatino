@@ -27,6 +27,7 @@ es consumo, no un cargo aparte. To'Latino **nunca cobra el cover, los tragos ni 
   - **El local cancela:** te devolvemos todo, siempre.
 - **Si sube el cover** de esa noche, te avisamos; lo que ya mandaste no cambia.
 - A las **6 AM** se cierra la noche sola.
+- **Si se cancela y la devolución no sale al momento:** el aviso y la pantalla dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, que va en camino (se sigue mandando sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino ya tiene el aviso y lo resuelve contigo. Si solo se había retenido (no cobrado), se suelta.
 
 ## FAQ
 - **¿Cuántas mesas hay?** Las que el local dice tener de ese tipo; la app no promete una mesa que no hay. Si dos personas piden la
@@ -64,6 +65,7 @@ charge. To'Latino **never charges the cover, drinks or the minimum**: those are 
   - **You don't show up** (the table is held 30 min) or **can't get in without ID**: the deposit stays with the venue.
   - **The venue cancels:** full refund, always.
 - **If tonight's cover goes up**, we let you know; what you already sent does not change. At **6 AM** the night closes on its own.
+- **If it is cancelled and the refund does not go out right away:** the notice and the screen say what really happened: «we refunded» only when it went out; if the bank is slow, that it is on its way (it keeps being sent by itself); if the bank or Stripe do not accept it, that To'Latino's money team already has the notice and resolves it with you. If it was only held (not charged), the hold is released.
 
 ### At the door
 The venue's door staff can also check you in from **To'Latino Door** (Tonight's list): you say your name or 4-digit code and they mark how

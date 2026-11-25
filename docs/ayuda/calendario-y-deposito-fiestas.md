@@ -28,6 +28,7 @@ Para salones, decoradores, DJ, mariachis, fotógrafos, renta de mesas y sillas, 
 | Un servicio «por unidad» sin unidad | No se guarda hasta que escribas la unidad. |
 | Una «visita gratis» | Siempre $0. |
 | To'Latino oculta un servicio | Lo ves con el motivo; no sale en tu página. |
+| Se cancela y la devolución no sale al momento | El aviso y la pantalla dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, que va en camino (se sigue mandando sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino ya tiene el aviso y lo resuelve contigo. Si solo se había retenido (no cobrado), se suelta. |
 
 ## FAQ
 - **¿Cuándo se cobra el depósito?** Cuando confirmas la fecha. Antes solo se retiene.
@@ -59,6 +60,7 @@ For venues, decorators, DJs, mariachis, photographers, table and chair rentals, 
 | A "per unit" service with no unit | It is not saved until you write the unit. |
 | A "free visit" | Always $0. |
 | To'Latino hides a service | You see it with the reason; it does not show on your page. |
+| It is cancelled and the refund does not go out right away | The notice and the screen say what really happened: «we refunded» only when it went out; if the bank is slow, that it is on its way (it keeps being sent by itself); if the bank or Stripe do not accept it, that To'Latino's money team already has the notice and resolves it with you. If it was only held (not charged), the hold is released. |
 
 ### FAQ
 - **When is the deposit charged?** When you confirm the date. Before that it is only held.
