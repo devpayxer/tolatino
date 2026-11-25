@@ -25,10 +25,14 @@ const DE_SMS: Record<string, string> = { entregado: "entregado", enviado: "envia
 async function salirSms(tabla: "notifications" | "phone_messages", id: string, tel: string, body: string, tpl: string, ciudad: string | null, pruebas: boolean, href?: string | null): Promise<void> {
   const texto = `To'Latino: ${body}${href && /^\/[A-Za-z0-9/_?=&.%-]*$/.test(href) ? ` ${BASE_URL()}${href}` : ""}`;
   const r = await enviarSms({ tel, texto, tpl, origen: { kind: tabla === "notifications" ? "aviso" : "telefono", id }, ciudad });
-  // nosemgrep: tolatino-sql-con-texto-interpolado — tabla es «notifications» o «phone_messages»: función privada, las llamadas pasan el nombre fijo
-  if (pruebas) await db().query(`update ${tabla} set sms_id = $2::bigint where id = $1::bigint`, [id, r?.id ?? null]);
-  // nosemgrep: tolatino-sql-con-texto-interpolado — tabla es «notifications» o «phone_messages»: función privada, las llamadas pasan el nombre fijo
-  else await db().query(`update ${tabla} set sms_id = $2::bigint, sms_status = $3, sms_at = now() where id = $1::bigint`, [id, r?.id ?? null, r ? DE_SMS[r.estado] ?? "fallo" : "fallo"]);
+  // 25 nov (revisión de 90170a1) · Anotar el SMS en su aviso se intenta DOS veces: si falla, el aviso quedaría «pendiente» sin su sms_id (lib/sms solo lo
+  // refleja por sms_id) aunque el SMS haya salido. Si fallan las dos, lanza (avisar lo deja en el registro; LAUNCH).
+  const anotar = () => pruebas
+    // nosemgrep: tolatino-sql-con-texto-interpolado — tabla es «notifications» o «phone_messages»: función privada, las llamadas pasan el nombre fijo
+    ? db().query(`update ${tabla} set sms_id = $2::bigint where id = $1::bigint`, [id, r?.id ?? null])
+    // nosemgrep: tolatino-sql-con-texto-interpolado — tabla es «notifications» o «phone_messages»: función privada, las llamadas pasan el nombre fijo
+    : db().query(`update ${tabla} set sms_id = $2::bigint, sms_status = $3, sms_at = now() where id = $1::bigint`, [id, r?.id ?? null, r ? DE_SMS[r.estado] ?? "fallo" : "fallo"]);
+  await anotar().catch(() => anotar());
 }
 
 /* 7h · ¿Este teléfono pidió STOP al número de SMS de To'Latino? (compa_canal_consent; la última palabra manda). Ante la duda (la base falla), no se

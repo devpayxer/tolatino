@@ -61,7 +61,7 @@ const casos = [
   ['liberarMira', 'patrocinio anota lo pedido', 'apps/web/lib/patrocinio.ts', '  return r.cobrado ?? centavos;', '  return centavos;'],
   ['liberarMira', 'patrocinio-evento anota lo pedido', 'apps/web/lib/patrocinio-evento.ts', 'await anotarPago(c, { ...cobro, centavos: cobrado, ref: id,', 'await anotarPago(c, { ...cobro, ref: id,'],
   // La cobrada de una cancelación tarde sin su regla; «cobrada» sin haber tocado la fila.
-  ['liberarMira', 'la cobrada tarde sin su regla', CO, 'const regla = await reglaTardeConLoCobrado(opId).catch(', 'const regla = await Promise.resolve(null).catch('],
+  ['liberarMira', 'la cobrada tarde sin su regla', CO, 'const regla = await (pedida ? reglaTardeLeida(opId) : reglaTardeConLoCobrado(opId)).catch(', 'const regla = await Promise.resolve(null).catch('],
   ['liberarMira', '«cobrada» sin tocar la fila', CO, '    if (tocada) return "cobrada";', '    return "cobrada";'],
   // (revisión de 621f214) · M4: el aviso que manda el barrido se pierde si el envío falla (avisar no dice si quedó, el reclamo no se devuelve, nadie lo
   // reintenta); el reintento repite el que ya llegó; la cancelación lo manda y el barrido lo repite; la alerta no dice si le llegó.
@@ -104,7 +104,17 @@ const casos = [
   ['liberarMira', 'viaje: avisoParte copiada aquí', VL, 'export async function avisarViajeTardeCobrado(', 'async function avisoParte(numero: string, tpl: string, f: () => Promise<boolean | undefined>): Promise<boolean> { return (await f()) !== false; }\nexport async function avisarViajeTardeCobrado('],
   ['liberarMira', 'la regla sin su marca', CO, ", 'reglaCobradaAt', coalesce(details->'reglaCobradaAt', to_jsonb(now()))) where id = $1::bigint`, [opId, mitad]);", ") where id = $1::bigint`, [opId, mitad]);"],
   ['liberarMira', 'la que quedó a medias no se completa', CO, 'await cobradaConSuRegla(x.op, REPARA, x.aplicada ? "completar" : "reparar");', 'await cobradaConSuRegla(x.op, REPARA, "reparar");'],
-  ['liberarMira', 'a medias: solo sin alerta (el aviso sin reclamar se pierde)', CO, " or (not coalesce((o.details->>'avisoCobro')::boolean, false) and not (o.details ? 'avisoCobroAt'))))", "))"],
+  // (revisión de 90170a1) · La regla vuelve a pedir la devolución de su llave que ya falló (renombrada «~fallida-») o que no se pudo anotar (refund_stuck):
+  // se devolvería dos veces; «completar» con la llave ya pedida mueve dinero; «Se completó» sin regla; «completar» sin tope; el SMS se anota una sola vez.
+  ['liberarMira', 'la regla pide otra vez la devolución fallida', CO, '    if (previa) return { queda: mitad, dev: previa };', '    if (previa?.e === "hecha") return { queda: mitad, dev: previa };'],
+  ['liberarMira', 'la regla pide otra vez la que no se pudo anotar', CO, "    if ((await db().query(`select 1 from money_alerts where kind = 'refund_stuck' and subject_id = $1`, [`cancelacion:vcx-${o.num}`])).rowCount)\n", '    if (false)\n'],
+  ['liberarMira', 'la relectura no dice fallida sin fila', CO, '!o.rst ? (o.atascada ? { e: "fallida", monto: Math.max(0, o.amt - o.ref - queda) } : null)', '!o.rst ? null'],
+  ['liberarMira', '«completar» con la llave pedida vuelve a aplicar la regla', CO, 'const regla = await (pedida ? reglaTardeLeida(opId) : reglaTardeConLoCobrado(opId))', 'const regla = await (pedida ? reglaTardeConLoCobrado(opId) : reglaTardeConLoCobrado(opId))'],
+  ['liberarMira', '«Se completó» sin regla', CO, 'antes de su aviso o de esta alerta.${regla ? " Se completó." : ""}`', 'antes de su aviso o de esta alerta. Se completó.`'],
+  ['liberarMira', '«completar» sin regla vuelve cada minuto', CO, '    if (n < COMPLETAR_INTENTOS) {', '    if (n < Infinity) {'],
+  ['liberarMira', 'el barrido sin el tope de «completar»', CO, '[f.negocio ?? null, BARRIDO_TARDE_DIAS, COMPLETAR_INTENTOS]', '[f.negocio ?? null, BARRIDO_TARDE_DIAS, 1e9]'],
+  ['liberarMira', 'el SMS se anota una sola vez', 'apps/web/lib/avisos.ts', '  await anotar().catch(() => anotar());', '  await anotar();'],
+  ['liberarMira', 'a medias: solo sin alerta (el aviso sin reclamar se pierde)', CO, " or (coalesce((o.details->>'reglaCompletarIntentos')::int, 0) < $3::int and not coalesce((o.details->>'avisoCobro')::boolean, false) and not (o.details ? 'avisoCobroAt'))))", "))"],
   ['liberarMira', 'la marca aparte de la fila', 'apps/web/lib/avisos.ts', 'with k as (insert into notif_once (key) select $14::text where $14::text is not null on conflict do nothing returning 1)\n       insert into notifications', 'insert into notifications'],
   ['liberarMira', 'viaje: el aviso al negocio sin su llave', VL, '}, `cobrada:biz_viaje_cx:${numero}`)));', '})));'],
   ['liberarMira', 'evento privado: el aviso al negocio sin su llave', EP, '{ dep: neg }, `cobrada:evp_biz_cx:${numero}`)));', '{ dep: neg })));'],

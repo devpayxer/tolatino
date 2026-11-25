@@ -181,6 +181,14 @@ async function reglaTardeConLoCobrado(opId: string): Promise<import("./devolucio
     // 25 nov (revisión de ae940a7) · reglaCobradaAt: la marca de que la regla se empezó a aplicar por lo cobrado, ANTES de mover dinero: si el proceso muere
     // después (sin aviso ni alerta cobrada:), barrerCobradasTarde la encuentra por ella y la completa.
     await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int, 'reglaCobradaAt', coalesce(details->'reglaCobradaAt', to_jsonb(now()))) where id = $1::bigint`, [opId, mitad]);
+    // 25 nov (revisión de 90170a1) · Si la devolución de la llave ya se pidió, no se vuelve a pedir: la que FALLÓ se renombra «vcx-<número>~fallida-<id>»
+    // (devolverPago no la reconocería y mandaría otra), la resuelta a mano tampoco lleva la llave exacta, la hecha ya está en lo devuelto y la que va en
+    // camino la termina su barrido. La que ni se pudo anotar (refund_stuck cancelacion:vcx-<número>) la tiene el equipo de dinero en su alerta y la puede
+    // devolver a mano: pedirla otra vez la devolvería dos veces. Se dice como está, sin mover dinero. Guardián liberarMira.
+    const previa = await devDeLaLlave(o.pid, `vcx-${o.num}`);
+    if (previa) return { queda: mitad, dev: previa };
+    if ((await db().query(`select 1 from money_alerts where kind = 'refund_stuck' and subject_id = $1`, [`cancelacion:vcx-${o.num}`])).rowCount)
+      return { queda: mitad, dev: { e: "fallida", monto: Math.max(0, o.amt - o.ref - mitad) } };
     const dev = await devolverAlCancelar({ id: opId, pay: o.pst, pid: o.pid, amount: o.amt, refunded: o.ref },
       { actorId: o.uid, motivo: "Cancelación tarde: se cobra la mitad", idem: `vcx-${o.num}`, por: "policy", seQueda: mitad });
     return { queda: mitad, dev };
@@ -197,9 +205,10 @@ async function reglaTardeConLoCobrado(opId: string): Promise<import("./devolucio
    (hecha · en camino · fallida; sin fila todavía: null, su aviso pay_refund sale al cerrarla); evento privado → lo que queda cobrado. cobroMitad se vuelve
    a escribir con lo que se queda: la cancelación que perdió la carrera lo había dejado en 0 (leyó el cobro retenido). Cualquier otra cosa: null. */
 async function reglaTardeLeida(opId: string): Promise<import("./devolucion-cancelar").ReglaTarde | null> {
-  const o = (await db().query<{ kind: string; st: string; cr: string | null; by: string | null; tot: number; amt: number; ref: number; pst: string; rst: string | null; ramt: number | null; rmano: boolean | null }>(
+  const o = (await db().query<{ kind: string; st: string; cr: string | null; by: string | null; tot: number; amt: number; ref: number; pst: string; rst: string | null; ramt: number | null; rmano: boolean | null; atascada: boolean }>(
     `select o.kind, o.status as st, o.cancel_reason as cr, o.cancelled_by as by, o.total_cents as tot, p.amount_cents as amt, p.refunded_cents as ref, p.status as pst,
-            d.st as rst, d.amt as ramt, d.mano as rmano
+            d.st as rst, d.amt as ramt, d.mano as rmano,
+            exists (select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = 'cancelacion:vcx-' || o.number) as atascada
        from operations o join payments p on p.operation_id = o.id and p.kind in ('full', 'deposit')
        left join lateral (select r.status as st, r.amount_cents as amt, r.manual_at is not null as mano from refunds r
                            where r.payment_id = p.id and split_part(r.idem_key, '~fallida-', 1) = 'vcx-' || o.number order by r.id desc limit 1) d on true
@@ -210,7 +219,8 @@ async function reglaTardeLeida(opId: string): Promise<import("./devolucion-cance
   const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));
   await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int) where id = $1::bigint`, [opId, queda]);
   const m = o.ramt ?? 0;
-  const dev: import("./devolucion-cancelar").DevCancelar | null = !o.rst ? null : o.rst === "done" || o.rmano ? { e: "hecha", monto: m } : o.rst === "pending" ? { e: "en_camino", monto: m } : { e: "fallida", monto: m };
+  // 25 nov (revisión de 90170a1) · Sin fila pero con su refund_stuck (no se pudo ni anotar): fallida, con lo que faltaba devolver.
+  const dev: import("./devolucion-cancelar").DevCancelar | null = !o.rst ? (o.atascada ? { e: "fallida", monto: Math.max(0, o.amt - o.ref - queda) } : null) : o.rst === "done" || o.rmano ? { e: "hecha", monto: m } : o.rst === "pending" ? { e: "en_camino", monto: m } : { e: "fallida", monto: m };
   return { queda, dev };
 }
 /* 25 nov (revisión de 483a3af) · El aviso que dice lo cobrado de una cancelación tarde (lo que se queda el negocio), UNA vez por operación: lo reclama quien
@@ -342,10 +352,22 @@ async function cobradaConSuRegla(opId: string, motivo: Msg, como: "soltar" | "ba
     `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city, o.number as num, o.kind from payments y join operations o on o.id = y.operation_id
       where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') and y.status in ('captured', 'partially_refunded', 'refunded') order by y.id desc limit 1`, [opId])).rows[0];
   if (!c) return { e: "nada", monto: 0 };
-  const regla = await reglaTardeConLoCobrado(opId).catch((e) => { console.error(`[cobrada] ${c.num}: la regla de la cancelación tarde no se aplicó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return null; });
+  // 25 nov (revisión de 90170a1) · «completar» con la devolución de la llave ya pedida (su fila, aunque haya fallado, o su refund_stuck): se LEE lo aplicado
+  // (reglaTardeLeida), nunca se vuelve a pedir dinero.
+  const pedida = como === "completar" && !!(await db().query(
+    `select 1 from refunds r where r.payment_id = $1::bigint and split_part(r.idem_key, '~fallida-', 1) = $2
+      union all select 1 from money_alerts a where a.kind = 'refund_stuck' and a.subject_id = 'cancelacion:' || $2`, [c.id, `vcx-${c.num}`])).rowCount;
+  const regla = await (pedida ? reglaTardeLeida(opId) : reglaTardeConLoCobrado(opId)).catch((e) => { console.error(`[cobrada] ${c.num}: la regla de la cancelación tarde no se aplicó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return null; });
+  // 25 nov (revisión de 90170a1) · «completar» sin regla (devolvió null o lanzó): se reintenta hasta COMPLETAR_INTENTOS veces (reglaCompletarIntentos, una por
+  // pasada del barrido) y, agotadas, la alerta dice que no se pudo completar; nunca «Se completó». Antes volvía cada minuto sin fin.
+  if (como === "completar" && !regla) {
+    const n = (await db().query<{ n: number }>(`update operations set details = details || jsonb_build_object('reglaCompletarIntentos', coalesce((details->>'reglaCompletarIntentos')::int, 0) + 1)
+      where id = $1::bigint returning (details->>'reglaCompletarIntentos')::int as n`, [opId]).catch(() => ({ rows: [] as { n: number }[] }))).rows[0]?.n ?? COMPLETAR_INTENTOS;
+    if (n < COMPLETAR_INTENTOS) { console.error(`[cobrada] ${c.num}: la cancelación a medias no se pudo completar (intento ${n} de ${COMPLETAR_INTENTOS}): el barrido lo vuelve a intentar`); return { e: "cobrada", monto: c.amt }; }
+  }
   const yaEs: Msg = como === "completar"
-    ? { es: `${c.num} · ${motivo.es}: la cancelación tarde quedó a medias (${money(c.amt)} cobrados): el proceso se cortó mientras se aplicaba su regla, antes de su aviso o de esta alerta. Se completó.`,
-        en: `${c.num} · ${motivo.en}: the late cancellation was left halfway (${money(c.amt)} charged): the process stopped while its rule was being applied, before its notice or this alert. It was completed.` }
+    ? { es: `${c.num} · ${motivo.es}: la cancelación tarde quedó a medias (${money(c.amt)} cobrados): el proceso se cortó mientras se aplicaba su regla, antes de su aviso o de esta alerta.${regla ? " Se completó." : ""}`,
+        en: `${c.num} · ${motivo.en}: the late cancellation was left halfway (${money(c.amt)} charged): the process stopped while its rule was being applied, before its notice or this alert.${regla ? " It was completed." : ""}` }
     : como === "reparar"
     ? { es: `${c.num} · ${motivo.es}: la cancelación tarde quedó cobrada (${money(c.amt)}) sin aplicar su regla (el proceso se cortó a mitad).`,
         en: `${c.num} · ${motivo.en}: the late cancellation was left charged (${money(c.amt)}) without its rule applied (the process stopped halfway).` }
@@ -366,6 +388,8 @@ async function cobradaConSuRegla(opId: string, motivo: Msg, como: "soltar" | "ba
     : { es: ` El aviso con lo aplicado NO le llegó a quien pagó: ${sigue.es}`, en: ` The notice with what was applied did NOT reach the payer: ${sigue.en}` };
   const detalle: Msg = regla ? { es: `${yaEs.es} Se aplicó la cancelación tarde: se quedó ${money(regla.queda)}${devT.es}. Revisa en Stripe que cuadre; no devuelvas nada más.${avT.es}`,
     en: `${yaEs.en} The late cancellation was applied: ${money(regla.queda)} was kept${devT.en}. Check in Stripe that it matches; do not refund anything else.${avT.en}` }
+    : como === "completar" ? { es: `${yaEs.es} No se pudo completar: aplícala a mano (viaje: devuelve lo que pasa de la mitad; evento privado: el depósito se queda con el restaurante) y díselo a quien pagó y al negocio.`,
+        en: `${yaEs.en} It could not be completed: apply it by hand (trip: refund what is over half; private event: the deposit stays with the restaurant) and tell the payer and the business.` }
     : { es: `${yaEs.es} Revisa en Stripe si ese cobro correspondía: si no, devuélveselo al cliente.`, en: `${yaEs.en} Check in Stripe whether that charge was due: if not, refund the client.` };
   await (await import("./dinero-alertas")).alertar("hold_stuck", `cobrada:${c.id}`, { monto: c.amt, negocio: c.biz, ciudad: c.city, detalle })
     .catch((e) => { console.error(`[cobrada] ${c.num}: la alerta cobrada:${c.id} no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); });
@@ -373,6 +397,8 @@ async function cobradaConSuRegla(opId: string, motivo: Msg, como: "soltar" | "ba
 }
 /* 25 nov (revisión de 621f214) · El motivo de la alerta cobrada: cuando la encuentra barrerCobradasTarde (nadie la soltó: el proceso se cortó). */
 const REPARA: Msg = { es: "El barrido de cobros", en: "The charges sweep" };
+/* 25 nov (revisión de 90170a1) · Cuántas pasadas del barrido intenta completar una cancelación a medias sin regla antes de su alerta «no se pudo completar». */
+export const COMPLETAR_INTENTOS = 3;
 /* 25 nov (revisión de 621f214) · Lo que una cancelación tarde cobrada deja a medias, cada minuto (lib/barrido.ts):
    1) La cancelación tarde de quien pagó (viaje, evento privado) cuyo cobro quedó cobrado SIN su regla: el proceso murió entre que liberarOperacion (o la
       captura) lo anotó cobrado y que se aplicara la regla (viaje: sin la devolución vcx-<número> y con más de la mitad cobrada; evento privado: perdio en
@@ -407,8 +433,8 @@ export async function barrerCobradasTarde(f: { negocio?: string } = {}): Promise
                        else coalesce(o.details->>'perdio', '') = 'false' end)
           or (coalesce((o.details->>'reglaCobradaAt')::timestamptz, 'infinity'::timestamptz) < now() - interval '5 minutes'
               and (not exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'cobrada:' || p.id::text)
-                   or (not coalesce((o.details->>'avisoCobro')::boolean, false) and not (o.details ? 'avisoCobroAt')))))
-      order by o.cancelled_at, o.id limit 20`, [f.negocio ?? null, BARRIDO_TARDE_DIAS])).rows;
+                   or (coalesce((o.details->>'reglaCompletarIntentos')::int, 0) < $3::int and not coalesce((o.details->>'avisoCobro')::boolean, false) and not (o.details ? 'avisoCobroAt')))))
+      order by o.cancelled_at, o.id limit 20`, [f.negocio ?? null, BARRIDO_TARDE_DIAS, COMPLETAR_INTENTOS])).rows;
   await B.cada(L, (x) => `${x.fuera ? "fuera de la ventana" : x.aplicada ? "a medias" : "sin regla"} ${x.op}`, async (x) => {
     if (!x.fuera) { await cobradaConSuRegla(x.op, REPARA, x.aplicada ? "completar" : "reparar"); return; }
     const que: Msg = x.aplicada ? { es: "quedó a medias (su regla se empezó a aplicar, sin su aviso o su alerta)", en: "was left halfway (its rule was started, without its notice or its alert)" }

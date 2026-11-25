@@ -41,6 +41,8 @@
 //   la prueba (sin escapes «lo hizo el servidor»); la cancelación tarde que quedó a medias DESPUÉS de empezar la regla (reglaCobradaAt) se completa; la
 //   sección 6 usa el destino de push con su parámetro (el stub sin él hacía fallar la consulta de avisar: «false» sin fila) y el SMS cuyo estado no se
 //   anota en el aviso (lib/sms no lanza: lo que lanza es la base después) no lo deja «fallo»; el cierre de las alertas también corre en el finally.
+//   (revisión de 90170a1) A medias con la marca: sin ninguna devolución todavía, la regla se aplica de verdad (UNA devolución); con la devolución de la llave
+//   ya fallida (renombrada «~fallida-»), ninguna fila nueva en refunds: se lee lo que pasó y la alerta lo dice.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), la salida, los cobros y el simulador.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs');
@@ -485,6 +487,25 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       ok(alertas(`cobrada:${M0.pid}`) === '0' && !AV.some((x) => x[1] === M0.num) && det(M0.num, 'avisoCobro') === '', 'la misma sin la marca de la regla: no se toca (ni aviso ni alerta)');
       await cobros.barrerCobradasTarde({ negocio: BR });
       ok(AV.filter((x) => x[1] === M3.num).length === 1 && alertas(`cobrada:${M3.pid}`) === '1' && sql(`select count(*) from refunds where idem_key = 'vcx-${M3.num}'`) === '1', 'otra pasada: nada más');
+
+      // (revisión de 90170a1) · A medias con la marca y SIN ninguna devolución todavía (murió justo después de la marca): la regla se aplica de verdad, UNA
+      // devolución con la llave de la cancelación. Y con la devolución de su llave ya FALLIDA (Stripe la rechazó: su fila se renombra «vcx-<número>~fallida-<id>»
+      // y la tiene el equipo en su alerta): ninguna fila nueva en refunds, el simulador sin devolver nada, y la alerta dice que no salió.
+      const conMarca = () => tardeCobrada('trip', { retenido: false, hace: 0, detalles: JSON.stringify({ k: 'asiento', cobroMitad: 1500, reglaCobradaAt: new Date().toISOString() }) });
+      const MS = conMarca(), MF = conMarca();
+      sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, last_error) values (${MF.pid}, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', 'failed', 'vcx-${MF.num}~fallida-1', 'stripe:expired_or_canceled_card')`);
+      envejecer(MS); envejecer(MF);
+      await cobros.barrerCobradasTarde({ negocio: BR });
+      await espera(() => pago(MS.num) === 'partially_refunded|3000|1500');
+      ok(sql(`select count(*) from refunds where payment_id = ${MS.pid}`) === '1' && sql(`select count(*) from refunds where idem_key = 'vcx-${MS.num}' and status = 'done' and amount_cents = 1500`) === '1' && pago(MS.num) === 'partially_refunded|3000|1500'
+        && detalle(`cobrada:${MS.pid}`).includes('quedó a medias') && detalle(`cobrada:${MS.pid}`).includes('Se completó.') && detalle(`cobrada:${MS.pid}`).includes('se devolvieron $15.00'),
+        `a medias sin ninguna devolución: la regla se aplica de verdad, UNA devolución (${pago(MS.num)} · ${detalle(`cobrada:${MS.pid}`)})`);
+      const avMF = AV.filter((x) => x[1] === MF.num);
+      ok(sql(`select count(*) from refunds where payment_id = ${MF.pid}`) === '1' && pago(MF.num) === 'captured|3000|0' && sql(`select refunded_cents from sim_intents where id = (select stripe_payment_intent from payments where id = ${MF.pid})`) === '0'
+        && detalle(`cobrada:${MF.pid}`).includes('y la devolución de $15.00 no salió (tiene su propia alerta)') && avMF.length === 1 && avMF[0][2].dev?.e === 'fallida',
+        `a medias con la devolución fallida: ninguna fila nueva en refunds ni devolución en Stripe; la alerta y el aviso dicen que no salió (${pago(MF.num)} · ${detalle(`cobrada:${MF.pid}`)})`);
+      await cobros.barrerCobradasTarde({ negocio: BR });
+      ok(sql(`select count(*) from refunds where payment_id in (${MS.pid}, ${MF.pid})`) === '2' && alertas(`cobrada:${MS.pid}`) === '1' && alertas(`cobrada:${MF.pid}`) === '1', 'otra pasada: ni otra devolución ni otra alerta');
 
       // H2 (revisión de efe56b9) · Un viaje cobrado hace 3 días (al aceptarse) y cancelado tarde hace 10 minutos, con la devolución sin hacer: la ventana es la
       // de la cancelación (antes, la de captured_at de dos días: nunca lo veía).

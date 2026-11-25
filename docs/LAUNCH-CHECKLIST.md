@@ -3156,6 +3156,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       empezarla (sin alerta cobrada:, o sin que nadie reclamara su aviso), con su texto («quedó a medias»). avisoParte en un solo sitio (avisos.ts). din9x
       sin escapes «lo hizo el servidor» (lo que el barrido del servidor podría tomar se siembra reciente y se envejece justo antes de la pasada) y el
       cierre de las alertas también en el finally; dos veces seguidas en verde contra un servidor del worktree en :3120 (50 s y 49 s; reparto.json: 50).
+      Revisión de 90170a1 (hecho): la regla del viaje ya no vuelve a pedir la devolución de su llave si ya se pidió: la que falló se renombra
+      «vcx-<número>~fallida-<id>» y devolverPago mandaba otra (con la devolución a mano del equipo, el cliente la cobraba dos veces); la que no se pudo ni
+      anotar (refund_stuck cancelacion:vcx-) tampoco. «completar» con la llave ya pedida lee lo aplicado (reglaTardeLeida, que dice «fallida» también sin
+      fila). «completar» sin regla: «Se completó» solo con regla; si no, «No se pudo completar: aplícala a mano», con su tope (COMPLETAR_INTENTOS, 3 pasadas)
+      en vez de volver cada minuto. Anotar el SMS en su aviso se intenta dos veces. din9x: a medias sin ninguna devolución (la regla se aplica, UNA
+      devolución) y con la devolución fallida (ninguna fila nueva en refunds); dos veces en verde en :3120 (52 s y 48 s). avisos2j y push8c en :3120:
+      push8c cayó UNA vez en «dos teléfonos → dos push» (APNs «red» contra el simulador) y pasó al repetirla, sola y junto a avisos2j: INESTABLE (no toca
+      lo cambiado: el envío de push no cambió); mirar por qué el simulador de APNs contesta «red» a veces.
+      Queda (revisión de 90170a1): si las DOS veces falla anotar el SMS en su aviso, el aviso queda «pendiente» sin su sms_id para siempre (lib/sms ›
+      reflejar solo lo encuentra por sms_id): que reflejar también lo enlace por su origen (aviso:<id>).
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
       barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
       ventana en ese tiempo no alerta. (d) Las alertas aviso: y reparar: no se cierran solas (no hay estado que mirar): se marcan resueltas a mano.

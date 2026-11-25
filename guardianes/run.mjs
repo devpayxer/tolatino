@@ -18285,7 +18285,7 @@ const guardianes = {
       const t = existsSync(f) ? sinComent(f) : "";
       for (const m of t.matchAll(/(.*)capturarCobro\(p, centavos\);\n(.*)\n/g)) if (!/const cobrado = await $/.test(m[1]) || !/anotarPago\(c, \{ \.\.\.cobro, centavos: cobrado,/.test(m[2])) falla(G, f, t.slice(0, m.index).split("\n").length + 1, "el patrocinio anota lo pedido aunque Stripe ya hubiera capturado otro monto: va lo que devolvió capturarCobro");
     }
-    if (!/const regla = await reglaTardeConLoCobrado\(opId\)/.test(ccr) || !/Se aplicó la cancelación tarde: se quedó/.test(ccr)) falla(G, CO, 0, "soltarRetencion: la cobrada de una cancelación tarde no sigue su regla (cobradaConSuRegla › reglaTardeConLoCobrado) o la alerta no lo dice");
+    if (!/const regla = await \(pedida \? reglaTardeLeida\(opId\) : reglaTardeConLoCobrado\(opId\)\)/.test(ccr) || !/Se aplicó la cancelación tarde: se quedó/.test(ccr)) falla(G, CO, 0, "soltarRetencion: la cobrada de una cancelación tarde no sigue su regla (cobradaConSuRegla › reglaTardeConLoCobrado) o la alerta no lo dice");
     // 25 nov (revisión de 621f214) · (16) El aviso que manda el barrido no se pierde: avisos › avisar dice si quedó; lo que no quedó devuelve el reclamo con lo
     // que falta (avisoCobroFalta) y barrerCobradasTarde lo reintenta (solo lo que falta, hasta AVISO_TARDE_INTENTOS); la cancelación que lo manda ella misma
     // quita lo pendiente. La alerta cobrada: dice si el aviso le llegó a quien pagó (el aviso va ANTES de la alerta). (17) La cobrada por los dos (la
@@ -18384,9 +18384,26 @@ const guardianes = {
     // quedó a medias después de empezarla (sin alerta cobrada:, o sin que nadie reclamara su aviso): «completar».
     const marca = /'reglaCobradaAt', coalesce\(details->'reglaCobradaAt', to_jsonb\(now\(\)\)\)/g;
     if ((rtc.match(marca) ?? []).length < 2 || rtc.indexOf("reglaCobradaAt") > rtc.indexOf("await devolverAlCancelar(")) falla(G, CO, 0, "reglaTardeConLoCobrado no deja su marca (reglaCobradaAt) antes de mover dinero, en el viaje y en el evento privado: si el proceso muere después, nadie completa el aviso ni la alerta");
-    if (!/or \(coalesce\(\(o\.details->>'reglaCobradaAt'\)::timestamptz, 'infinity'::timestamptz\) < now\(\) - interval '5 minutes'\s*and \(not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)\s*or \(not coalesce\(\(o\.details->>'avisoCobro'\)::boolean, false\) and not \(o\.details \? 'avisoCobroAt'\)\)\)\)/.test(qL)
+    if (!/or \(coalesce\(\(o\.details->>'reglaCobradaAt'\)::timestamptz, 'infinity'::timestamptz\) < now\(\) - interval '5 minutes'\s*and \(not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)\s*or \(coalesce\(\(o\.details->>'reglaCompletarIntentos'\)::int, 0\) < \$3::int and not coalesce\(\(o\.details->>'avisoCobro'\)::boolean, false\) and not \(o\.details \? 'avisoCobroAt'\)\)\)\)/.test(qL)
       || !/await cobradaConSuRegla\(x\.op, REPARA, x\.aplicada \? "completar" : "reparar"\);/.test(bct))
       falla(G, CO, 0, "barrerCobradasTarde no completa la cancelación tarde que quedó a medias después de empezar su regla (reglaCobradaAt sin alerta cobrada: o sin aviso reclamado)");
+    // 25 nov (revisión de 90170a1) · (32) La regla del viaje no vuelve a pedir la devolución de su llave si ya se pidió (la fallida se renombra
+    // «~fallida-<id>» y devolverPago mandaría otra) ni la que no se pudo anotar (refund_stuck cancelacion:vcx-): la devolvería dos veces; «completar» con la
+    // llave ya pedida LEE la regla (reglaTardeLeida, que dice fallida también sin fila). (33) «completar» sin regla: «Se completó» solo con regla, su texto
+    // propio y su tope (COMPLETAR_INTENTOS, reglaCompletarIntentos), nunca cada minuto sin fin. (34) Anotar el SMS en su aviso se intenta dos veces.
+    const iPrev = rtc.indexOf("const previa = await devDeLaLlave(o.pid, `vcx-${o.num}`);"), iDev = rtc.indexOf("await devolverAlCancelar(");
+    if (iPrev < 0 || iPrev > iDev || !/const previa = await devDeLaLlave\(o\.pid, `vcx-\$\{o\.num\}`\);\n\s*if \(previa\) return \{ queda: mitad, dev: previa \};/.test(rtc)
+      || !/select 1 from money_alerts where kind = 'refund_stuck' and subject_id = \$1`, \[`cancelacion:vcx-\$\{o\.num\}`\]\)\)\.rowCount\)\s*return \{ queda: mitad, dev: \{ e: "fallida",/.test(rtc))
+      falla(G, CO, 0, "reglaTardeConLoCobrado vuelve a pedir la devolución de su llave aunque ya se pidió (la fallida se renombra «~fallida-»; la que no se pudo anotar tiene refund_stuck): se devolvería dos veces");
+    if (!/as atascada/.test(rtl) || !/!o\.rst \? \(o\.atascada \? \{ e: "fallida"/.test(rtl)) falla(G, CO, 0, "reglaTardeLeida no dice «fallida» de la devolución que no se pudo ni anotar (refund_stuck cancelacion:vcx-)");
+    if (!/const regla = await \(pedida \? reglaTardeLeida\(opId\) : reglaTardeConLoCobrado\(opId\)\)/.test(ccr) || !/const pedida = como === "completar" && /.test(ccr)
+      || !/split_part\(r\.idem_key, '~fallida-', 1\) = \$2\s*union all select 1 from money_alerts a where a\.kind = 'refund_stuck' and a\.subject_id = 'cancelacion:' \|\| \$2/.test(ccr))
+      falla(G, CO, 0, "cobradaConSuRegla «completar» con la devolución de la llave ya pedida no lee la regla (reglaTardeLeida): podría volver a pedir dinero");
+    if (/Se completó\.`|It was completed\.`/.test(ccr) || !/\$\{regla \? " Se completó\." : ""\}/.test(ccr) || !/No se pudo completar: aplícala a mano/.test(ccr)
+      || !/if \(como === "completar" && !regla\) \{[\s\S]*?reglaCompletarIntentos[\s\S]*?if \(n < COMPLETAR_INTENTOS\) \{[^\n]*return \{ e: "cobrada", monto: c\.amt \}; \}/.test(ccr)
+      || !/\[f\.negocio \?\? null, BARRIDO_TARDE_DIAS, COMPLETAR_INTENTOS\]/.test(bct))
+      falla(G, CO, 0, "«completar» sin regla dice «Se completó» o vuelve cada minuto sin fin: «Se completó» solo con regla, «No se pudo completar» con su tope (COMPLETAR_INTENTOS)");
+    if (!/\n  await anotar\(\)\.catch\(\(\) => anotar\(\)\);\n\}/.test(cuerpoFn(av, "salirSms"))) falla(G, AV, 0, "salirSms anota el SMS en su aviso una sola vez: si falla, el aviso queda «pendiente» sin su sms_id aunque el SMS haya salido");
     if (!/o\.cancelled_at <= now\(\) - make_interval\(days => \$2::int\) as fuera/.test(qL) || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'reparar:' \|\| p\.id::text\)/.test(qL)
       || !/alertar\("hold_stuck", `reparar:\$\{x\.pid\}`/.test(bct))
       falla(G, CO, 0, "barrerCobradasTarde deja caer en silencio la cancelación tarde que sale de su ventana sin repararse (alerta hold_stuck reparar:<cobro>)");

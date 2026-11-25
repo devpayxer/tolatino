@@ -6602,6 +6602,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   de cancelarse tarde también se arregla solo, y lo que lleve más de 7 días sin arreglarse avisa al equipo. **Qué mirar:** nada en pantalla.
   Tras la revisión de ae940a7: a quien pagó tampoco se le repite ese aviso, y la cancelación que se cortó a mitad de aplicar su regla se completa sola
   (con su aviso y la alerta al equipo). **Qué mirar:** nada en pantalla.
+  Tras la revisión de 90170a1: al completarla nunca se vuelve a pedir una devolución que ya falló (el equipo la tiene en su alerta); así no se devuelve
+  dos veces. **Qué mirar:** nada en pantalla.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).
