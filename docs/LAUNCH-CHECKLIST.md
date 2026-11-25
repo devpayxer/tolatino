@@ -3086,6 +3086,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       cobro devuelto o soltado ya tienen el suyo en tra4y 5b/5c y evt6i 8b: escritos el 25 nov, falta verlos correr en el CI). (e) Visto en la segunda
       revisión: avisarNeg de viajes.ts arma el aviso al negocio solo en español (servicio.es, «personas», {dep} = seCobro.es), también en inglés; pasarlo
       a ES/EN como avisarEvp (Bi). (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
+      (g) Misma clase, sin arreglar: `pasarela.liberar` (`apps/web/lib/pagos/pasarela.ts` ~302) da `ok: true` ante `payment_intent_unexpected_state`. Si el
+      intento ya estaba CAPTURADO en Stripe (la captura salió pero el libro no llegó a anotarla), liberarOperacion anota «released» con el dinero cobrado,
+      el aviso dice «se soltó» y la alerta hold_stuck (liberar:<cobro>) se cierra sola. Debe preguntar a la pasarela el estado del intento antes de dar por
+      soltado (succeeded → anotar captured y alertar; canceled → released). Las capturas tarde que lanzan (viaje, evento privado) ya dejan su alerta
+      hold_stuck captura:<cobro>, que no se cierra sola, pero el resto de quien suelta no.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

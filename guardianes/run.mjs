@@ -18116,6 +18116,12 @@ const guardianes = {
         falla(G, EPL, 0, "cancelarEvp dice que el restaurante se queda lo retenido sin mirar que el cobro salió (quedo = o2 captured o partially_refunded; try/catch en cobrarOperacion)");
       if (!/if \(!quedo && \(!d \|\| d\.e === "nada"\)\) d = P\.pst === "refunded" && P\.refunded > 0 \? \{ e: "hecha", monto: P\.refunded \} : P\.pst === "released"/.test(cxE))
         falla(G, EPL, 0, "cancelarEvp tarde con el cobro ya devuelto o soltado avisa «No se cobró nada»: va lo que ya había pasado (te devolvimos / se soltó)");
+      // La captura tarde que lanza deja rastro (registro y alerta al equipo de dinero), y la retención ya soltada por otro se dice soltada.
+      const cxV = cuerpoFn(existsSync("apps/web/lib/viajes.ts") ? sinComent("apps/web/lib/viajes.ts") : "", "viajeCliente");
+      for (const [f, cu, fn] of [[EPL, cxE, "cancelarEvp"], ["apps/web/lib/viajes.ts", cxV, "viajeCliente"]])
+        if (!/catch \(e\) \{ fallo = e/.test(cu) || !/if \(fallo(?: && o)?\) await alertarCapturaTarde\(o\.id, numero, fallo, d\);/.test(cu))
+          falla(G, f, 0, `${fn}: la captura tarde que lanza no deja rastro (catch sin fallo = e ni alertarCapturaTarde): nadie del equipo de dinero se entera`);
+      if (!/else if \(o2\?\.pst === "released"\) d = \{ e: "liberada", monto: P\.dep \};/.test(cxE)) falla(G, EPL, 0, "cancelarEvp: lo retenido que otro ya soltó no se dice soltado (o2 released → liberada)");
       // El Super Admin (Transacciones): «se quedó con…» solo si perdio y queda algo cobrado (QUEDO), nunca perdio crudo.
       const ATX = "apps/web/lib/admin-tx.ts", atx = existsSync(ATX) ? sinComent(ATX) : "";
       if (/'perdio', coalesce\(\(o\.details->>'perdio'\)::boolean, false\)/.test(atx) || !/const QUEDO = `\(coalesce\(\(o\.details->>'perdio'\)::boolean, false\) and coalesce\(py\.status in \('captured', 'partially_refunded'\) and py\.amount_cents > coalesce\(py\.refunded_cents, 0\), false\)\)`;/.test(atx))
@@ -18130,7 +18136,8 @@ const guardianes = {
         if (!existsSync(f)) continue;
         const t = sinComent(f);
         for (const m of t.matchAll(NO2)) {
-          const ln = t.slice(0, m.index).split("\n").length, antes = t.slice(Math.max(0, m.index - 160), m.index);
+          // La ventana de «held» es solo la sentencia del no(…): se corta en el último salto de línea o «;» anterior (un "held" de otra sentencia no vale).
+          const ln = t.slice(0, m.index).split("\n").length, ven = t.slice(Math.max(0, m.index - 160), m.index), antes = ven.slice(Math.max(ven.lastIndexOf("\n"), ven.lastIndexOf(";")) + 1);
           for (const lit of [m[1], m[2]].filter(Boolean)) {
             if (PROMETE.test(lit)) falla(G, f, ln, "un mensaje no(…) promete el dinero antes de actuar (en español o en inglés): va lo que se pedirá según el cobro");
             if (/pedimos que se suelte|hold to come off/.test(lit) && !/"held"/.test(antes)) falla(G, f, ln, "un mensaje no(…) dice «pedimos que se suelte» sin mirar justo antes que haya algo retenido");

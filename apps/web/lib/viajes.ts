@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
+import { alertarCapturaTarde, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta, type Soltada } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
@@ -345,14 +345,17 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
       despues = async () => {
         // Confirmado sin capturar todavía: se cobra y se devuelve lo que toca. Si cobrarOperacion lanza, lo que pasó lo dice la base (p): sigue retenido →
         // mitad 0 (cobroMitad 0) y la retención se suelta; nunca «Se cobró la mitad».
-        if (conf && !aTiempo && o.pay === "held") { try { await cobrarOperacion(o.id); } catch { /* se lee de la base abajo */ } }
+        // Si lanza, queda el rastro (registro y alerta al equipo de dinero: alertarCapturaTarde, después de soltar).
+        let fallo: unknown = null;
+        if (conf && !aTiempo && o.pay === "held") { try { await cobrarOperacion(o.id); } catch (e) { fallo = e ?? new Error("captura"); } }
         const p = (await db().query<{ id: string; amount: number; refunded: number; status: string }>(`select id::text, amount_cents as amount, refunded_cents as refunded, status from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
         // 25 nov (regla 13) · Lo que se queda el negocio sale de lo que QUEDA cobrado (menos lo ya devuelto), nunca más: un cobro ya devuelto entero no
         // «cobra la mitad». La pantalla lo dice igual antes de confirmar (ViajeEstado: Math.min(mitad, lo que queda)).
         const mitad = cobra && p && ["captured", "partially_refunded"].includes(p.status) ? Math.min(cobra, Math.max(0, p.amount - (p.refunded ?? 0))) : 0;
         if (cobra && mitad !== cobra) await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int) where id = $1::bigint`, [o.id, mitad]);
         const d = await devolverAlCancelar({ id: o.id, pay: p?.status ?? o.pay, pid: p?.id ?? null, amount: p?.amount ?? null, refunded: p?.refunded ?? null },
-          { actorId: userId, motivo: mitad ? "Cancelación tarde: se cobra la mitad" : "Cancelación a tiempo", idem: `vcx-${numero}`, por: "policy", seQueda: mitad });
+          { actorId: userId, motivo: mitad ? "Cancelación tarde: se cobra la mitad" : fallo ? "Cancelación tarde (la captura no salió)" : "Cancelación a tiempo", idem: `vcx-${numero}`, por: "policy", seQueda: mitad });
+        if (fallo) await alertarCapturaTarde(o.id, numero, fallo, d);
         const seCobro = mitad === cobra ? { es: `Se cobró la mitad: ${money(mitad)}.`, en: `Half was charged: ${money(mitad)}.` } : { es: `Se cobró lo que quedaba: ${money(mitad)}.`, en: `What was left was charged: ${money(mitad)}.` };
         await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : undefined) });
         await avisarNeg(numero, "biz_viaje_cx", { dep: mitad ? ` ${seCobro.es}` : "" });

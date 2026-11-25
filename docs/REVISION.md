@@ -6581,6 +6581,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   Admin), y con todo devuelto no dice «Se cobró»; el evento privado tarde con el cobro ya devuelto o soltado no dice «se queda» (pantalla, aviso, panel,
   Transacciones) y avisa lo que ya había pasado. **Qué mirar (teléfono):** «Tu viaje» de una cancelación tarde con devolución previa; la ayuda de noche,
   viaje, fiesta e inscripción ya no promete «te devolvemos / se libera».
+  Tras la revisión de 3538892: la captura tarde que falla (viaje, evento privado) queda en el registro y avisa al equipo de dinero (alerta de retención
+  atascada); e2e de tra4y y evt6i con los montos como los dice la pantalla.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

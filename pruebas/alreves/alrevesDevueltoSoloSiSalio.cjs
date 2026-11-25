@@ -244,7 +244,8 @@ const casos = [
   ['viaje: la mitad sin mirar lo que queda', VE, 'mitad = Math.min(Math.floor(x.tot / 2), base)', 'mitad = Math.floor(x.tot / 2)'],
   ['viajes.ts: «cobra la mitad» de un cobro devuelto', 'apps/web/lib/viajes.ts', '["captured", "partially_refunded"].includes(p.status) ? Math.min(cobra, Math.max(0, p.amount - (p.refunded ?? 0))) : 0;', '["captured", "partially_refunded", "refunded"].includes(p.status) ? cobra : 0;'],
   ['noche: sin llegar «No se cobró nada» aunque se devolvió', NE, ': devT || E2("No se cobró nada.", "Nothing was charged.");', ': E2("No se cobró nada.", "Nothing was charged.");'],
-  ['avisarCliente sin {dinero} por defecto', 'apps/web/lib/noche-reservas.ts', 'puerta: "", dinero: "", ...extra }', 'puerta: "", ...extra }'],  // (13, revisión de 07fe94a) · El no(…) en inglés y en varias líneas, sin la exención ph:, la nota del viaje neutra, cancelarEvp con el cobro de la base,
+  ['avisarCliente sin {dinero} por defecto', 'apps/web/lib/noche-reservas.ts', 'puerta: "", dinero: "", ...extra }', 'puerta: "", ...extra }'],
+  // (13, revisión de 07fe94a) · El no(…) en inglés y en varias líneas, sin la exención ph:, la nota del viaje neutra, cancelarEvp con el cobro de la base,
   // el Super Admin sin perdio crudo y «lo que quedaba» del viaje.
   ['no(…): la promesa solo en el literal en inglés', 'apps/web/lib/noche-reservas.ts', '"Your deposit is no longer held. Choose “Doesn’t work” and request the table again.")', '"Your deposit is no longer held. Choose “Doesn’t work” and we refund your deposit.")'],
   ['no(…) en varias líneas con la promesa', 'apps/web/lib/noche-reservas.ts', 'return no("Tu depósito ya no está retenido. Elige «No me sirve» y pide la mesa otra vez.", "', 'return no(\n      "Tu depósito ya no está retenido. Te devolvemos el depósito.",\n      "'],
@@ -253,12 +254,18 @@ const casos = [
   ['viaje: la nota «se cobra la mitad ($X)» antes de actuar', 'apps/web/lib/viajes.ts', '{ es: "Canceló a menos de 24 h", en: "Cancelled less than 24 h before" }', '{ es: `Canceló a menos de 24 h: se cobra la mitad (${money(cobra)})`, en: `Cancelled less than 24 h before: half is charged (${money(cobra)})` }'],
   ['viaje: la nota del historial que el guardián no encuentra', 'apps/web/lib/viajes.ts', 'await ev(c, o.id, "cancelled", "user", userId, cobra ?', 'await ev(c, o.id, "cancelled", "user", userId,\n        cobra ?'],
   ['cancelarEvp: «se queda» sin el cobro hecho', 'apps/web/lib/evento-privado.ts', 'quedo = o2?.pst === "captured" || o2?.pst === "partially_refunded";', 'quedo = o2?.pst !== "held";'],
-  ['cancelarEvp: cobrarOperacion sin try/catch', 'apps/web/lib/evento-privado.ts', 'try { await cobrarOperacion(o.id); } catch { /* lo que pasó lo dice la base (o2) */ }', 'await cobrarOperacion(o.id);'],
+  ['cancelarEvp: cobrarOperacion sin try/catch', 'apps/web/lib/evento-privado.ts', 'try { await cobrarOperacion(o.id); } catch (e) { fallo = e ?? new Error("captura"); }', 'await cobrarOperacion(o.id);'],
   ['Transacciones: perdio crudo', 'apps/web/lib/admin-tx.ts', "'perdio', ${QUEDO}) end as no", "'perdio', coalesce((o.details->>'perdio')::boolean, false)) end as no"],
   ['viaje: «Se cobró la mitad» con menos', VE, 'x.cobroMitad ? (x.cobroMitad < Math.floor(x.tot / 2) ?', 'x.cobroMitad ? (false ?'],
   ['Transacciones: «se cobró la mitad» con menos', 'apps/web/app/admin/Transacciones.tsx', 'x.vi.mitad < Math.floor(x.total / 2) ? E("se cobró lo que quedaba"', 'false ? E("se cobró lo que quedaba"'],
   ['cancelarEvp: tarde con el cobro ya devuelto avisa «No se cobró nada»', 'apps/web/lib/evento-privado.ts', '  if (!quedo && (!d || d.e === "nada")) d = P.pst === "refunded"', '  if (false) d = P.pst === "refunded"'],
-  ['viajes.ts: cobrarOperacion sin try/catch', 'apps/web/lib/viajes.ts', '{ try { await cobrarOperacion(o.id); } catch { /* se lee de la base abajo */ } }', 'await cobrarOperacion(o.id);'],
+  ['viajes.ts: cobrarOperacion sin try/catch', 'apps/web/lib/viajes.ts', '{ try { await cobrarOperacion(o.id); } catch (e) { fallo = e ?? new Error("captura"); } }', 'await cobrarOperacion(o.id);'],
+  // (13, segunda revisión) · La captura tarde que lanza deja rastro; lo ya soltado se dice soltado; la ventana de «held» del no(…) es su sentencia.
+  ['cancelarEvp: el catch de la captura sin rastro', 'apps/web/lib/evento-privado.ts', 'catch (e) { fallo = e ?? new Error("captura"); }', 'catch { /* nada */ }'],
+  ['cancelarEvp: sin alerta al equipo de dinero', 'apps/web/lib/evento-privado.ts', '    if (fallo && o) await alertarCapturaTarde(o.id, numero, fallo, d);', '    if (fallo && o) console.log(fallo);'],
+  ['viajes.ts: sin alerta al equipo de dinero', 'apps/web/lib/viajes.ts', '        if (fallo) await alertarCapturaTarde(o.id, numero, fallo, d);', '        if (fallo) console.log(fallo);'],
+  ['cancelarEvp: lo soltado por otro sin decirlo', 'apps/web/lib/evento-privado.ts', '      else if (o2?.pst === "released") d = { e: "liberada", monto: P.dep };', ''],
+  ['no(…): «held» de otra sentencia', 'apps/web/lib/fiestas-reservas.ts', '      if (d?.ocupada) return o.dep > 0 && o.pay === "held" ? no(', '      const conRetencion = o.pay === "held";\n      if (d?.ocupada) return o.dep > 0 ? no('],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

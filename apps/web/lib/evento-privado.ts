@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion } from "./cobros";
+import { alertarCapturaTarde, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { valores } from "./config";
 import { db, tx } from "./db";
@@ -524,9 +524,11 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
     // restaurante»: la retención se suelta (lo que haría el barrido con un evento cancelado) y se dice lo que pasó.
     // 25 nov (regla 13, revisión) · «Se queda» solo con el cobro hecho en la base (captured o partially_refunded); en cualquier otro caso perdio se desmarca.
     // Si cobrarOperacion lanza (la pasarela no contestó), se mira la base igual: lo que sigue retenido se suelta y el aviso dice eso, nunca «se queda».
+    // Si lanza, queda el rastro (registro y alerta al equipo de dinero: alertarCapturaTarde, después de soltar).
     const o = await leer(db(), "o.number = $1", [numero]);
+    let fallo: unknown = null;
     if (o) {
-      try { await cobrarOperacion(o.id); } catch { /* lo que pasó lo dice la base (o2) */ }
+      try { await cobrarOperacion(o.id); } catch (e) { fallo = e ?? new Error("captura"); }
     }
     const o2 = await leer(db(), "o.number = $1", [numero]);
     quedo = o2?.pst === "captured" || o2?.pst === "partially_refunded";
@@ -534,7 +536,10 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
       const id = o2?.id ?? o?.id;
       if (id) await db().query(`update operations set details = details || '{"perdio":false}'::jsonb where id = $1::bigint`, [id]);
       if (o2?.pst === "held") d = await devolverAlCancelar({ id: o2.id, pay: "held", pid: o2.pid, amount: o2.amount, refunded: o2.refunded }, { actorId: userId, motivo: "Cancelación tarde del evento privado (la captura no salió)", idem: `evpcx-${numero}`, por: "policy" });
+      // Ya soltada por otro (el barrido) mientras tanto: se dice que se soltó, nunca «No se cobró nada» a secas.
+      else if (o2?.pst === "released") d = { e: "liberada", monto: P.dep };
     }
+    if (fallo && o) await alertarCapturaTarde(o.id, numero, fallo, d);
   } else if (!P.perdio) d = await moverDinero(numero).catch((): DevCancelar => ({ e: "fallida", monto: P.dev }));
   // Tarde con el cobro ya devuelto entero o la retención ya soltada: nada se queda y nada se mueve ahora; el aviso dice lo que ya había pasado (te
   // devolvimos / se soltó la retención), nunca «No se cobró nada» de un depósito que sí se cobró y se devolvió.

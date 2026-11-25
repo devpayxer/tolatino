@@ -208,6 +208,8 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     // ── 8b · 25 nov (regla 13) · Tarde con el cobro ya devuelto entero o la retención ya soltada: nada se queda con el restaurante ──
     // El estado se prepara con SQL directo (como din9v4 / din9v5). Antes perdio quedaba en true (tarde y «había depósito») y el aviso, la pantalla, el
     // panel y el Super Admin decían «se queda con el restaurante» de un dinero que ya había vuelto a la tarjeta.
+    // El monto como lo formatea la pantalla (evento-privado-comun › dinero: sin «.00», con comas de miles).
+    const dineroE = (c) => `$${(c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
     const refundsDe = (num) => sql(`select count(*) from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${num}' and p.kind = 'deposit'`);
     for (const [que, st] of [['devuelto', 'refunded'], ['soltado', 'released']]) {
       const Ex = await confirmada(m, C1, U1, '');
@@ -221,11 +223,12 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
       sql(`update operations set pay_status = '${st}', scheduled_at = now() + interval '71 hours' where number = '${Ex}'`);
       const antes = pago(Ex), refAntes = refundsDe(Ex);
       await m.goto(B + `/privado/${Ex}`); await clic(btn(m, 'Cancelar el evento'));
-      ok(!(await contiene(m, /se queda con Sabor Dominicano/, 3000)), `tarde con el cobro ${que}: la hoja no dice «se queda con …»`);
+      // La hoja (cxS), no la tabla «Lo que acordaron» (que siempre dice la regla «Después: el depósito se queda con…»).
+      ok(!(await contiene(m, /Faltan menos de 72 h: (el depósito de|lo que queda del depósito|se cobra el depósito retenido)/, 3000)) && await contiene(m, /Faltan menos de 72 h\. No se cobra nada\./), `tarde con el cobro ${que}: la hoja dice «Faltan menos de 72 h. No se cobra nada.», nunca «se queda con …»`);
       await clic(btn(m, 'Sí, cancelar')); await contiene(m, 'CANCELADO');
       ok(await esperaV(() => sql(`select (details->>'perdio') || '|' || cancel_reason || '|' || status from operations where number = '${Ex}'`), 'false|tarde|cancelled') === 'false|tarde|cancelled', `tarde con el cobro ${que}: la base deja perdio=false (cancel_reason tarde)`);
       ok(pago(Ex) === antes && refundsDe(Ex) === refAntes, `tarde con el cobro ${que}: nada se cobra ni se devuelve otra vez (${antes})`);
-      ok(!(await contiene(m, /se quedó con Sabor Dominicano/, 3000)) && await contiene(m, st === 'refunded' ? `Te devolvimos $${(depX / 100).toFixed(2)}` : 'No se cobró nada.'), `cliente: no dice «se quedó con …»; dice ${st === 'refunded' ? '«Te devolvimos …»' : '«No se cobró nada.»'}`);
+      ok(!(await contiene(m, /(El depósito se quedó con|Lo que quedaba del depósito \([^)]*\) se quedó con) Sabor Dominicano/, 3000)) && await contiene(m, st === 'refunded' ? `Te devolvimos ${dineroE(depX)}` : 'No se cobró nada.'), `cliente: no dice «se quedó con …»; dice ${st === 'refunded' ? '«Te devolvimos …»' : '«No se cobró nada.»'}`);
       const aviso = () => sql(`select coalesce(body::text, '') from notifications where user_id = '${U1}' and tpl = 'evp_cancelado' and ref_id = '${Ex}' order by id desc limit 1`);
       ok(await espera(async () => !!aviso()) && !/se queda con el restaurante|stays with the restaurant/.test(aviso()), `su aviso no dice «se queda con el restaurante» (${aviso().slice(0, 120)})`);
       ok(st !== 'refunded' || /Te devolvimos/.test(aviso()), 'con el cobro devuelto, su aviso dice «Te devolvimos …» (nunca «No se cobró nada»)');
