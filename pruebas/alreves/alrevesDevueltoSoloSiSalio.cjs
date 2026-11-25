@@ -83,7 +83,9 @@ const casos = [
   // liberarOperacion da por soltada una retención que la pasarela no soltó.
   ['retención no soltada como soltada', 'apps/web/lib/cobros.ts', '  if (!r.ok) return "fallo";', '  if (!r.ok) return "liberada";'],
   // devolverAlCancelar no mira lo que dijo liberarOperacion.
-  ['cancelar no mira la retención', 'apps/web/lib/cobros.ts', '    return s.e === "retenida" ? { e: "retenida", monto: s.monto } : { e: "liberada"', '    return false ? { e: "retenida", monto: s.monto } : { e: "liberada"'],
+  ['cancelar no mira la retención', 'apps/web/lib/cobros.ts', '    return s.e === "retenida" || s.e === "cobrada" ? { e: s.e, monto: s.monto } : { e: "liberada"', '    return false ? { e: s.e, monto: s.monto } : { e: "liberada"'],
+  // 25 nov (LAUNCH g) · La retención que Stripe ya había cobrado se dice «liberada» al cancelar.
+  ['cancelar dice «liberada» de lo cobrado', 'apps/web/lib/cobros.ts', '    return s.e === "retenida" || s.e === "cobrada" ? { e: s.e, monto: s.monto } : { e: "liberada"', '    return s.e === "retenida" ? { e: "retenida", monto: s.monto } : { e: "liberada"'],
   // La retención que no se soltó no alerta a nadie.
   ['retención sin alerta', 'apps/web/lib/cobros.ts', '  await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:', '  if (false) await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:'],
   // El panel cuenta la retención soltada como devolución hecha («Le devolvimos todo»).
@@ -254,20 +256,22 @@ const casos = [
   ['viaje: la nota «se cobra la mitad ($X)» antes de actuar', 'apps/web/lib/viajes.ts', '{ es: "Canceló a menos de 24 h", en: "Cancelled less than 24 h before" }', '{ es: `Canceló a menos de 24 h: se cobra la mitad (${money(cobra)})`, en: `Cancelled less than 24 h before: half is charged (${money(cobra)})` }'],
   ['viaje: la nota del historial que el guardián no encuentra', 'apps/web/lib/viajes.ts', 'await ev(c, o.id, "cancelled", "user", userId, cobra ?', 'await ev(c, o.id, "cancelled", "user", userId,\n        cobra ?'],
   ['cancelarEvp: «se queda» sin el cobro hecho', 'apps/web/lib/evento-privado.ts', 'quedo = o2?.pst === "captured" || o2?.pst === "partially_refunded";', 'quedo = o2?.pst !== "held";'],
-  ['cancelarEvp: cobrarOperacion sin try/catch', 'apps/web/lib/evento-privado.ts', 'try { await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; ', 'await cobrarOperacion(o.id); { '],
+  ['cancelarEvp: cobrarOperacion sin try/catch', 'apps/web/lib/evento-privado.ts', 'try { cap = await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; ', 'cap = await cobrarOperacion(o.id); { '],
   ['Transacciones: perdio crudo', 'apps/web/lib/admin-tx.ts', "'perdio', ${QUEDO}) end as no", "'perdio', coalesce((o.details->>'perdio')::boolean, false)) end as no"],
   ['viaje: «Se cobró la mitad» con menos', VE, 'x.cobroMitad ? (x.cobroMitad < Math.floor(x.tot / 2) ?', 'x.cobroMitad ? (false ?'],
   ['Transacciones: «se cobró la mitad» con menos', 'apps/web/app/admin/Transacciones.tsx', 'x.vi.mitad < Math.floor(x.total / 2) ? E("se cobró lo que quedaba"', 'false ? E("se cobró lo que quedaba"'],
   ['cancelarEvp: tarde con el cobro ya devuelto avisa «No se cobró nada»', 'apps/web/lib/evento-privado.ts', '  if (!quedo && (!d || d.e === "nada")) d = P.pst === "refunded"', '  if (false) d = P.pst === "refunded"'],
-  ['viajes.ts: cobrarOperacion sin try/catch', 'apps/web/lib/viajes.ts', '{ try { await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; ', '{ await cobrarOperacion(o.id); { '],
+  ['viajes.ts: cobrarOperacion sin try/catch', 'apps/web/lib/viajes.ts', '{ try { cap = await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; ', '{ cap = await cobrarOperacion(o.id); { '],
   // (13, segunda revisión) · La captura tarde que lanza deja rastro; lo ya soltado se dice soltado; la ventana de «held» del no(…) es su sentencia.
   ['cancelarEvp: el catch de la captura sin rastro', 'apps/web/lib/evento-privado.ts', 'catch (e) { fallo = true; err = e; console.error(', 'catch (e) { fallo = true; err = e; void ('],
-  ['cancelarEvp: sin alerta al equipo de dinero', 'apps/web/lib/evento-privado.ts', '    if (fallo) await alertarCapturaTarde(numero, o2?.pid ?? o?.pid ?? null, err, d);', '    if (fallo) console.log(err);'],
-  ['viajes.ts: sin alerta al equipo de dinero', 'apps/web/lib/viajes.ts', '        if (fallo) await alertarCapturaTarde(numero, p?.id ?? null, err, d);', '        if (fallo) console.log(err);'],
+  ['cancelarEvp: sin alerta al equipo de dinero', 'apps/web/lib/evento-privado.ts', '    if (fallo) await alertarCapturaTarde(numero, o2?.pid ?? o?.pid ?? null, { err }, d);', '    if (fallo) console.log(err);'],
+  ['viajes.ts: sin alerta al equipo de dinero', 'apps/web/lib/viajes.ts', '        if (fallo) await alertarCapturaTarde(numero, x.p?.id ?? null, { err }, x.d);', '        if (fallo) console.log(err);'],
   ['cancelarEvp: «falló» de lo que se lanzó (un throw falsy se salta la alerta)', 'apps/web/lib/evento-privado.ts', 'catch (e) { fallo = true; err = e; console.error(', 'catch (e) { fallo = !!e; err = e; console.error('],
   ['viajes.ts: el catch sin rastro en el registro', 'apps/web/lib/viajes.ts', 'catch (e) { fallo = true; err = e; console.error(', 'catch (e) { fallo = true; err = e; void ('],
-  ['viajes.ts: la alerta sin el cobro del llamador', 'apps/web/lib/viajes.ts', 'alertarCapturaTarde(numero, p?.id ?? null, err, d);', 'alertarCapturaTarde(numero, null, err, d);'],
-  ['viajes.ts: el motivo «a tiempo» de una cancelación tarde', 'apps/web/lib/viajes.ts', ': cobra ? "Cancelación tarde (la captura no salió)" :', ': fallo ? "Cancelación tarde (la captura no salió)" :'],
+  ['viajes.ts: la alerta sin el cobro del llamador', 'apps/web/lib/viajes.ts', 'alertarCapturaTarde(numero, x.p?.id ?? null, { err }, x.d);', 'alertarCapturaTarde(numero, null, { err }, x.d);'],
+  ['viajes.ts: el motivo «a tiempo» de una cancelación tarde', 'apps/web/lib/viajes.ts', ': cobra ? (fallo || capturaSinRespuesta(cap) ? "Cancelación tarde (no se sabe si la captura salió)" :', ': fallo ? (fallo || capturaSinRespuesta(cap) ? "Cancelación tarde (no se sabe si la captura salió)" :'],
+  // 25 nov (LAUNCH g) · El motivo de la cancelación tarde vuelve a afirmar «la captura no salió» cuando Stripe no contestó (no se sabe).
+  ['viajes.ts: «la captura no salió» de una captura sin respuesta', 'apps/web/lib/viajes.ts', ': cobra ? (fallo || capturaSinRespuesta(cap) ? "Cancelación tarde (no se sabe si la captura salió)" :', ': cobra ? (fallo ? "Cancelación tarde (no se sabe si la captura salió)" :'],
   ['cancelarEvp: lo soltado por otro sin decirlo', 'apps/web/lib/evento-privado.ts', '      else if (o2?.pst === "released") d = { e: "liberada", monto: P.dep };', ''],
   ['no(…): «held» de otra sentencia', 'apps/web/lib/fiestas-reservas.ts', '      if (d?.ocupada) return o.dep > 0 && o.pay === "held" ? no(', '      const conRetencion = o.pay === "held";\n      if (d?.ocupada) return o.dep > 0 ? no('],
 ];

@@ -479,6 +479,8 @@ export async function cancelarMercado(userId: string, numero: string): Promise<R
   if (!o) return no("Ya no se puede cancelar: el mercado lo aceptó. Escríbeles o pide ayuda.", "It can no longer be cancelled: the market accepted it. Message them or ask for help.");
   // 9v (quinta tanda) · La retención se mira: si la pasarela no la soltó todavía, la pantalla lo dice (y el equipo tiene la alerta hold_stuck), no «No se cobró nada» a secas.
   const s = await soltarRetencion(o.id, { es: "Canceló el pedido del mercado (el cliente)", en: "Market order cancelled (the client)" });
+  // 25 nov (LAUNCH g) · La que Stripe ya había cobrado (la base la anota cobrada y el equipo tiene la alerta cobrada:): la pantalla lo dice, nunca «Listo».
+  if (s.e === "cobrada") { const c = soltadaO(s, "") as { es: string; en: string }; return { ok: true, mensaje: { es: `Cancelado.${c.es}`, en: `Cancelled.${c.en}` } }; }
   if (s.e !== "retenida") return { ok: true };
   const t = sinSoltarCliente(s.monto);
   return { ok: true, retenida: true, mensaje: { es: `Cancelado.${t.es}`, en: `Cancelled.${t.en}` } };

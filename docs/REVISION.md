@@ -6583,6 +6583,10 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   viaje, fiesta e inscripción ya no promete «te devolvemos / se libera».
   Tras la revisión de 3538892: la captura tarde que falla (viaje, evento privado) queda en el registro y avisa al equipo de dinero (alerta de retención
   atascada); e2e de tra4y y evt6i con los montos como los dice la pantalla.
+  Lo que quedaba (LAUNCH e y g, 25 nov): soltar una retención que Stripe ya había cobrado la deja cobrada (nunca «se soltó») y avisa al equipo de dinero
+  sin cerrarse sola; la cancelación tarde a la que Stripe no contesta también avisa («no se sabe si salió») y, si la captura sí salió, sigue la regla
+  con lo cobrado; el aviso al negocio del viaje, la noche, la fiesta, la inscripción y la visita llega en su idioma. **Qué mirar:** nada en pantalla
+  (es raro de provocar); en Super Admin › Planes › Ingresos, las alertas «una retención atascada» dicen lo que pasó.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

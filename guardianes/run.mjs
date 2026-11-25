@@ -17876,12 +17876,13 @@ const guardianes = {
       const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
       for (const k of ["viaje_cx", "noche_cx", "fiesta_cx", "insc_cx", "evp_cancelado", "evp_cancelado_negocio"]) if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'\\n`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó) en español e inglés: seguiría diciendo lo decidido`);
       const co = existsSync("apps/web/lib/cobros.ts") ? sinComent("apps/web/lib/cobros.ts") : "";
-      if (!/const r = await pasarela\.liberar\(p\.pi\)[^\n]*\n\s*if \(!r\.ok\) return "fallo";/.test(cuerpoFn(co, "liberarOperacion"))) falla(G, "apps/web/lib/cobros.ts", 0, "liberarOperacion no dice «fallo» cuando la pasarela no soltó la retención: se contaría como soltada");
+      // 25 nov (LAUNCH g) · Antes del «fallo», «cobrada» (Stripe ya la había cobrado: guardián liberarMira); después, el «fallo» de todo lo demás que no soltó.
+      if (!/const r = await pasarela\.liberar\(p\.pi\)[^\n]*\n\s*if \(!r\.ok && r\.cobrado !== undefined\) \{[\s\S]*?return "cobrada";\n\s*\}\n\s*if \(!r\.ok\) return "fallo";/.test(cuerpoFn(co, "liberarOperacion"))) falla(G, "apps/web/lib/cobros.ts", 0, "liberarOperacion no dice «fallo» cuando la pasarela no soltó la retención: se contaría como soltada");
       // (quinta tanda) La retención se suelta por soltarRetencion (mira lo que dijo liberarOperacion y alerta hold_stuck UNA vez si quedó retenida).
       const dac = cuerpoFn(co, "devolverAlCancelar"), sr = cuerpoFn(co, "soltarRetencion");
-      if (!/const s = await soltarRetencion\(o\.id, /.test(dac) || !/return s\.e === "retenida" \? \{ e: "retenida", monto: s\.monto \} : \{ e: "liberada"/.test(dac))
+      if (!/const s = await soltarRetencion\(o\.id, /.test(dac) || !/return s\.e === "retenida" \|\| s\.e === "cobrada" \? \{ e: s\.e, monto: s\.monto \} : \{ e: "liberada"/.test(dac))
         falla(G, "apps/web/lib/cobros.ts", 0, "devolverAlCancelar no mira si la retención se soltó (soltarRetencion): una que la pasarela no soltó diría «se suelta»");
-      if (!/const l = await liberarOperacion\(opId\);\n\s*if \(l !== "fallo"\) return \{ e: l, monto: 0 \};/.test(sr) || !/\n  await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(sr) || !/return \{ e: "retenida", monto: h\.amt \};/.test(sr))
+      if (!/const l = await liberarOperacion\(opId\);\n\s*if \(l === "cobrada"\) \{[\s\S]*?\n  \}\n\s*if \(l !== "fallo"\) return \{ e: l, monto: 0 \};/.test(sr) || !/\n  await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(sr) || !/return \{ e: "retenida", monto: h\.amt \};/.test(sr))
         falla(G, "apps/web/lib/cobros.ts", 0, "soltarRetencion no mira lo que dijo liberarOperacion o no alerta hold_stuck (una vez por cobro: liberar:<cobro>) cuando la retención no se soltó");
       const dc = existsSync("apps/web/lib/devolucion-cancelar.ts") ? sinComent("apps/web/lib/devolucion-cancelar.ts") : "";
       if (!/hechas: c\.hechas \+ \(d\.e === "hecha" \? 1 : 0\)/.test(dc) || !/liberadas: c\.liberadas \+ \(d\.e === "liberada" \? 1 : 0\), retenidas: c\.retenidas \+ \(d\.e === "retenida" \? 1 : 0\)/.test(dc)
@@ -18112,7 +18113,7 @@ const guardianes = {
       };
       notaNeutra(EPL, cxE, "cancelarEvp");
       // Lo retenido que se cobra tarde: «se queda» solo con el cobro hecho en la base (o2), y si cobrarOperacion lanza, se mira la base igual (try/catch).
-      if (!/quedo = o2\?\.pst === "captured" \|\| o2\?\.pst === "partially_refunded";\n\s*if \(!quedo\) \{/.test(cxE) || !/try \{ await cobrarOperacion\(o\.id\); \} catch/.test(cxE))
+      if (!/quedo = o2\?\.pst === "captured" \|\| o2\?\.pst === "partially_refunded";\n\s*if \(!quedo\) \{/.test(cxE) || !/try \{ cap = await cobrarOperacion\(o\.id\); \} catch/.test(cxE))
         falla(G, EPL, 0, "cancelarEvp dice que el restaurante se queda lo retenido sin mirar que el cobro salió (quedo = o2 captured o partially_refunded; try/catch en cobrarOperacion)");
       if (!/if \(!quedo && \(!d \|\| d\.e === "nada"\)\) d = P\.pst === "refunded" && P\.refunded > 0 \? \{ e: "hecha", monto: P\.refunded \} : P\.pst === "released"/.test(cxE))
         falla(G, EPL, 0, "cancelarEvp tarde con el cobro ya devuelto o soltado avisa «No se cobró nada»: va lo que ya había pasado (te devolvimos / se soltó)");
@@ -18121,9 +18122,9 @@ const guardianes = {
       for (const [f, cu, fn] of [[EPL, cxE, "cancelarEvp"], ["apps/web/lib/viajes.ts", cxV, "viajeCliente"]])
         // El rastro en el registro va DENTRO del catch (aunque lo que sigue reviente) y «falló» es un booleano aparte (un throw falsy no se salta la alerta);
         // la alerta lleva el cobro que pasa el llamador.
-        if (!/catch \(e\) \{ fallo = true; err = e; console\.error\(/.test(cu) || !/if \(fallo\) await alertarCapturaTarde\(numero, (o2\?\.pid \?\? o\?\.pid \?\? null|p\?\.id \?\? null), err, d\);/.test(cu))
+        if (!/catch \(e\) \{ fallo = true; err = e; console\.error\(/.test(cu) || !/if \(fallo\) await alertarCapturaTarde\(numero, (o2\?\.pid \?\? o\?\.pid \?\? null|x\.p\?\.id \?\? null), \{ err \}, (d|x\.d)\);/.test(cu))
           falla(G, f, 0, `${fn}: la captura tarde que lanza no deja rastro (catch con fallo = true, err = e y console.error; alertarCapturaTarde con el cobro): nadie del equipo de dinero se entera`);
-      if (!/motivo: mitad \? "Cancelación tarde: se cobra la mitad" : cobra \? "Cancelación tarde \(la captura no salió\)" : "Cancelación a tiempo"/.test(cxV))
+      if (!/motivo: mitad \? "Cancelación tarde: se cobra la mitad" : cobra \? \(fallo \|\| capturaSinRespuesta\(cap\) \? "Cancelación tarde \(no se sabe si la captura salió\)" : "Cancelación tarde \(la captura no salió\)"\) : "Cancelación a tiempo"/.test(cxV))
         falla(G, "apps/web/lib/viajes.ts", 0, "viajeCliente: el motivo dice «Cancelación a tiempo» de una cancelación tarde cuya captura no salió (va cobra ? «Cancelación tarde…»)");
       if (!/else if \(o2\?\.pst === "released"\) d = \{ e: "liberada", monto: P\.dep \};/.test(cxE)) falla(G, EPL, 0, "cancelarEvp: lo retenido que otro ya soltó no se dice soltado (o2 released → liberada)");
       // El Super Admin (Transacciones): «se quedó con…» solo si perdio y queda algo cobrado (QUEDO), nunca perdio crudo.
@@ -18152,7 +18153,7 @@ const guardianes = {
       if (T.viaje && !/const base = retenido \? x\.pago\.monto : queda, mitad = Math\.min\(Math\.floor\(x\.tot \/ 2\), base\)/.test(T.viaje)) falla(G, ANTES.viaje, 0, "la hoja del viaje tarde dice «se cobra la mitad» sin mirar lo que queda cobrado (Math.min)");
       const VL = "apps/web/lib/viajes.ts", vl = existsSync(VL) ? sinComent(VL) : "";
       if (!/const mitad = cobra && p && \["captured", "partially_refunded"\]\.includes\(p\.status\) \? Math\.min\(cobra, Math\.max\(0, p\.amount - \(p\.refunded \?\? 0\)\)\) : 0;/.test(vl)) falla(G, VL, 0, "cancelar el viaje tarde «cobra la mitad» de un cobro ya devuelto (refunded) o más de lo que queda");
-      if (!/if \(conf && !aTiempo && o\.pay === "held"\) \{ try \{ await cobrarOperacion\(o\.id\); \} catch/.test(vl)) falla(G, VL, 0, "cancelar el viaje tarde no se protege si cobrarOperacion lanza: cobroMitad quedaría con la mitad sin cobro (try/catch y se lee la base)");
+      if (!/if \(conf && !aTiempo && o\.pay === "held"\) \{ try \{ cap = await cobrarOperacion\(o\.id\); \} catch/.test(vl)) falla(G, VL, 0, "cancelar el viaje tarde no se protege si cobrarOperacion lanza: cobroMitad quedaría con la mitad sin cobro (try/catch y se lee la base)");
       // Lo cobrado tarde cuando ya había una devolución parcial: «Se cobró lo que quedaba», nunca «la mitad» (pantalla y Super Admin).
       if (T.viaje && !/x\.cobroMitad \? \(x\.cobroMitad < Math\.floor\(x\.tot \/ 2\) \? E2\(`Se cobró lo que quedaba: /.test(T.viaje)) falla(G, ANTES.viaje, 0, "el viaje cancelado dice «Se cobró la mitad» aunque lo cobrado fue menos (lo que quedaba)");
       const TXA = "apps/web/app/admin/Transacciones.tsx";
@@ -18191,6 +18192,154 @@ const guardianes = {
         falla(G, S, linea, `${m[1]}: después de correr el proceso del plan, el éxito se dice solo leyendo el plan de la base (from subscriptions) y con "active" en la misma línea`);
     }
     if (procesos < 2) falla(G, S, 0, `esperaba al menos dos acciones que corren el proceso del plan (seguirConPro, reintentarCobro); hallé ${procesos}`);
+  },
+
+  /* 25 nov (LAUNCH «el dinero dice lo que pasó» g) · liberarMira: soltar una retención dice lo que de verdad pasó en Stripe. Pasaba: pasarela.liberar daba
+     ok ante «payment_intent_unexpected_state» sin mirar el intento: si la captura ya había salido en Stripe y la base no lo sabía (una captura sin
+     respuesta, o la base que falló después del «sí»), el libro quedaba 'released' con el dinero cobrado, el aviso decía «se soltó» y la alerta liberar:
+     se cerraba sola; pasarela.cobrar daba «cobrado» ante el mismo código aunque el intento estuviera cancelado o vencido. Regla: (1) en
+     lib/pagos/pasarela.ts, cada «payment_intent_unexpected_state» consulta el intento (GET /v1/payment_intents/…) antes de cualquier ok y nunca es el
+     valor de un ok; (2) liberacionDe: cancelado = soltada, cobrado = { ok: false, cobrado } (nunca ok); el simulador mira sim_intents igual (sin
+     «return { ok: true }» suelto tras el update); (3) cobros › liberarOperacion anota 'captured' con el monto real y dice «cobrada» antes del «fallo»,
+     soltarRetencion abre hold_stuck cobrada:<cobro> y dinero-alertas › cerrarAlertasResueltas no cierra solas ni cobrada: ni captura:; (4) en lib/,
+     nadie marca 'released' justo después de un pasarela.liberar cuyo resultado tira. Al revés: alrevesDineroDiceLoQuePaso. */
+  liberarMira() {
+    const G = "liberarMira", PA = "apps/web/lib/pagos/pasarela.ts", CO = "apps/web/lib/cobros.ts", DA = "apps/web/lib/dinero-alertas.ts";
+    for (const f of [PA, CO, DA]) if (!existsSync(f)) return falla(G, f, 0, "falta (soltar y cobrar lo retenido)");
+    const pa = sinComent(PA), L = pa.split("\n");
+    let vistos = 0;
+    for (const m of pa.matchAll(/payment_intent_unexpected_state/g)) {
+      vistos++;
+      const ln = pa.slice(0, m.index).split("\n").length, linea = L[ln - 1] ?? "", antes = linea.slice(0, linea.indexOf("payment_intent_unexpected_state"));
+      if (/\bok:\s*[^,}]*$/.test(antes)) { falla(G, PA, ln, "«payment_intent_unexpected_state» es el valor de un ok: se da por soltado o cobrado sin mirar el intento"); continue; }
+      const resto = pa.slice(m.index, m.index + 900), get = resto.search(/stripe<[^>]*>\("GET", `\/v1\/payment_intents\//);
+      if (get < 0) { falla(G, PA, ln, "ante «payment_intent_unexpected_state» no se consulta el intento (GET /v1/payment_intents/…): se supone su estado"); continue; }
+      if (/ok: true|ok: !|ok: e instanceof/.test(resto.slice(0, get))) falla(G, PA, ln, "«payment_intent_unexpected_state» devuelve ok antes de mirar el intento");
+    }
+    if (vistos < 3) falla(G, PA, 0, `esperaba «payment_intent_unexpected_state» en cobrar, liberar y capturarPlataforma (cada uno consultando el intento); hallé ${vistos}`);
+    const ld = (/\nfunction liberacionDe\([\s\S]*?\n\}/.exec(pa) ?? [""])[0];
+    if (!/if \(x\.estado === "succeeded"\) return \{ ok: false, codigo: "succeeded", cobrado: /.test(ld) || /"succeeded"[^\n]*ok: true/.test(ld))
+      falla(G, PA, 0, "liberacionDe: un intento cobrado (succeeded) no vuelve como { ok: false, cobrado }: el libro lo daría por soltado");
+    const lib = (/\n  async liberar\([\s\S]*?\n  \},/.exec(pa) ?? [""])[0];
+    if (!lib) falla(G, PA, 0, "no encuentro pasarela.liberar");
+    else if (!/if \(r\.rowCount\) return \{ ok: true \};\n\s*const s = \(await db\(\)\.query<[^>]*>\(`select status, captured_cents from sim_intents where id = \$1`/.test(lib) || !/liberacionDe\(s \?/.test(lib))
+      falla(G, PA, 0, "el simulador suelta sin mirar: liberar de un sim_intents que no se pudo cancelar tiene que leer su estado (liberacionDe), como Stripe");
+    const co = sinComent(CO), lo = cuerpoFn(co, "liberarOperacion"), sr = cuerpoFn(co, "soltarRetencion");
+    if (!/if \(!r\.ok && r\.cobrado !== undefined\) \{[\s\S]*?update payments set status = 'captured', amount_cents = \$2[\s\S]*?return "cobrada";/.test(lo))
+      falla(G, CO, 0, "liberarOperacion no anota 'captured' con el monto real cuando Stripe ya lo había cobrado (r.cobrado → «cobrada»)");
+    if (!/if \(l === "cobrada"\) \{[\s\S]*?alertar\("hold_stuck", `cobrada:\$\{c\.id\}`/.test(sr)) falla(G, CO, 0, "soltarRetencion no alerta al equipo de dinero cuando la retención ya estaba cobrada (hold_stuck cobrada:<cobro>)");
+    const cerrar = cuerpoFn(sinComent(DA), "cerrarAlertasResueltas");
+    if (!cerrar) falla(G, DA, 0, "no encuentro cerrarAlertasResueltas");
+    else if (/cobrada|captura/.test(cerrar)) falla(G, DA, 0, "cerrarAlertasResueltas cierra sola una alerta cobrada: o captura: (alguien tiene que mirar en Stripe)");
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x))) {
+      const t = sinComent(f), T = t.split("\n");
+      T.forEach((l, i) => {
+        if (!/^\s*(?:if \([^\n]*\) )?\{?\s*await pasarela\.liberar\([^)]*\)(?:\.catch\(\(\) => undefined\))?;/.test(l) || /\b(?:const|let)\s+\w+\s*=\s*await pasarela\.liberar/.test(l)) return;
+        if (T.slice(i, i + 4).join("\n").match(/status = 'released'/)) falla(G, f, i + 1, "se marca 'released' después de un pasarela.liberar cuyo resultado se tira: una retención que no se soltó (o ya cobrada) quedaría soltada en el libro");
+      });
+    }
+  },
+
+  /* 25 nov (LAUNCH «el dinero dice lo que pasó» g) · capturaTardeAlerta: la captura de una cancelación tarde (viaje, evento privado) a la que Stripe NO
+     CONTESTÓ (ok:false de red o error de Stripe, sin lanzar) también deja rastro y alerta al equipo de dinero (hold_stuck captura:<cobro>), no solo la que
+     lanza. Pasaba: cobrarOperacion no devolvía nada, solo se alertaba en el catch, y la retención se soltaba sin alerta aunque la captura pudo haber salido.
+     Regla: (1) cobrarOperacion devuelve lo que contestó la pasarela; (2) capturaSinRespuesta reconoce la red y el error de Stripe, nunca un «no» claro
+     (tarjeta, cancelado, vencido); (3) donde se alerta la captura que lanza ({ err }), también la que no contestó ({ codigo }, con cap = await
+     cobrarOperacion y capturaSinRespuesta(cap)); (4) la alerta de la que no contestó dice que no se sabe si salió (ES/EN). Al revés:
+     alrevesDineroDiceLoQuePaso. */
+  capturaTardeAlerta() {
+    const G = "capturaTardeAlerta", CO = "apps/web/lib/cobros.ts";
+    if (!existsSync(CO)) return falla(G, CO, 0, "falta lib/cobros.ts");
+    const co = sinComent(CO), cob = cuerpoFn(co, "cobrarOperacion"), act = cuerpoFn(co, "alertarCapturaTarde");
+    if (!/if \(!r\.ok\) \{[^\n]*return \{ ok: false, codigo \}; \}/.test(cob) || !/\n  return \{ ok: true \};\n\}/.test(cob)) falla(G, CO, 0, "cobrarOperacion no devuelve lo que contestó la pasarela: quien cancela tarde no puede saber que Stripe no contestó");
+    const set = /const CAPTURA_SIN_RESPUESTA = new Set\(\[([^\]]*)\]\)/.exec(co)?.[1] ?? "";
+    if (!set) falla(G, CO, 0, "falta CAPTURA_SIN_RESPUESTA (lo que la pasarela contesta sin decir si la captura salió)");
+    for (const k of ["red", "api_error", "error"]) if (set && !set.includes(`"${k}"`)) falla(G, CO, 0, `CAPTURA_SIN_RESPUESTA no tiene "${k}": una captura sin respuesta se tomaría por un «no» y no alertaría`);
+    for (const k of ["card_declined", "canceled", "requires_payment_method", "charge_expired_for_capture", "config", "succeeded"]) if (set.includes(`"${k}"`)) falla(G, CO, 0, `CAPTURA_SIN_RESPUESTA tiene "${k}", que es una respuesta clara: diría «no se sabe» de lo que sí se sabe`);
+    if (!/es: `Stripe no contestó a la captura tarde \(\$\{msg\}\): no se sabe si salió`, en: `Stripe did not answer the late capture \(\$\{msg\}\): it is not known whether it went through`/.test(act))
+      falla(G, CO, 0, "la alerta de la captura sin respuesta no dice (ES/EN) que no se sabe si salió");
+    let llamadas = 0;
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x) && x !== CO)) {
+      const t = sinComent(f);
+      if (!/alertarCapturaTarde\(/.test(t)) continue;
+      for (const m of t.matchAll(/\n(?:export )?async function (\w+)\(/g)) {
+        const cu = cuerpoFn(t, m[1]);
+        if (!/alertarCapturaTarde\(/.test(cu)) continue;
+        llamadas++;
+        const ln = t.slice(0, m.index).split("\n").length + 1;
+        if (!/cap = await cobrarOperacion\(/.test(cu)) falla(G, f, ln, `${m[1]}: la captura tarde no guarda lo que contestó la pasarela (cap = await cobrarOperacion(…))`);
+        if (!/if \(fallo\) await alertarCapturaTarde\([^\n]*\{ err \}/.test(cu)) falla(G, f, ln, `${m[1]}: la captura tarde que lanza no alerta ({ err })`);
+        if (!/else if \(capturaSinRespuesta\(cap\)\) await alertarCapturaTarde\([^\n]*\{ codigo: cap\.codigo \}/.test(cu)) falla(G, f, ln, `${m[1]}: la captura tarde a la que Stripe no contestó no alerta al equipo de dinero (else if (capturaSinRespuesta(cap)) … { codigo: cap.codigo })`);
+      }
+    }
+    if (llamadas < 2) falla(G, CO, 0, `esperaba la captura tarde en viajeCliente y cancelarEvp; hallé ${llamadas} función(es) que alertan`);
+  },
+
+  /* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · avisoNegUnIdioma: el aviso al negocio (avisarNeg de cada operación) no mezcla idiomas. Pasaba: el de
+     viajes armaba servicio.es, «N personas» y {dep} con el texto en español aunque el dueño leyera en inglés (y la noche, la fiesta, la inscripción y la
+     visita igual). Regla, lo que se puede ver sin correr: en cada «async function avisarNeg(» de lib/, extra admite Bi, y en el objeto de avisarNegocio(…)
+     y en cada llamada avisarNeg(…, { … }) del archivo, ninguna propiedad toma un idioma (.es) ni lleva texto con palabras sin su par en inglés (en:).
+     Lo que una función o la base arma en un idioma (fechas, el servicio de la cita leído en SQL) no se ve aquí: va en LAUNCH. Al revés:
+     alrevesDineroDiceLoQuePaso. */
+  avisoNegUnIdioma() {
+    const G = "avisoNegUnIdioma";
+    // El objeto literal que empieza en t[i] («{»), contando llaves y saltando textos (con sus ${…}).
+    const objeto = (t, i) => {
+      let n = 0, j = i, q = null, tpl = [];
+      for (; j < t.length; j++) {
+        const c = t[j];
+        if (q) { if (c === "\\") { j++; continue; } if (q === "`" && c === "$" && t[j + 1] === "{") { tpl.push(n); n++; j++; q = null; continue; } if (c === q) q = null; continue; }
+        if (c === '"' || c === "'" || c === "`") { q = c; continue; }
+        if (c === "{") n++;
+        else if (c === "}") { n--; if (tpl.length && tpl[tpl.length - 1] === n) { tpl.pop(); q = "`"; continue; } if (n === 0) return t.slice(i, j + 1); }
+      }
+      return "";
+    };
+    // Las propiedades de primer nivel de un objeto literal.
+    const props = (o) => {
+      const out = []; let n = 0, q = null, ini = 1, tpl = [];
+      for (let j = 1; j < o.length - 1; j++) {
+        const c = o[j];
+        if (q) { if (c === "\\") { j++; continue; } if (q === "`" && c === "$" && o[j + 1] === "{") { tpl.push(n); n++; j++; q = null; continue; } if (c === q) q = null; continue; }
+        if (c === '"' || c === "'" || c === "`") { q = c; continue; }
+        if ("{([".includes(c)) n++;
+        else if ("})]".includes(c)) { n--; if (c === "}" && tpl.length && tpl[tpl.length - 1] === n) { tpl.pop(); q = "`"; } }
+        else if (c === "," && n === 0) { out.push(o.slice(ini, j).trim()); ini = j + 1; }
+      }
+      out.push(o.slice(ini, o.length - 1).trim());
+      return out.filter(Boolean);
+    };
+    // Texto con palabras en un valor: lo fijo de cada `…` (sin lo de ${…}) y cada "…" / '…', también los de dentro de un ${…} («${n} ${n === 1 ? "persona" : …}»).
+    const conPalabras = (v) => [...[...v.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map((m) => m[1].replace(/\$\{[^}]*\}/g, "")), ...[...v.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1] ?? m[2] ?? "")]
+      .some((x) => /[A-Za-zÁÉÍÓÚáéíóúñÑ]{2,}/.test(x));
+    const revisar = (f, ln, que, obj) => {
+      for (const p of props(obj)) {
+        if (p.startsWith("...")) continue;
+        const k = /^(\w+)\s*:/.exec(p)?.[1] ?? p, v = p.slice(p.indexOf(":") + 1);
+        if (/en:/.test(v)) continue;
+        if (/\.es\b/.test(v)) falla(G, f, ln, `${que}: {${k}} toma solo el español (.es): va { es, en } (avisos › avisar pone el del dueño)`);
+        else if (conPalabras(v)) falla(G, f, ln, `${que}: {${k}} lleva texto en un solo idioma: va { es, en }`);
+      }
+    };
+    let defs = 0;
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/[^/]+\.ts$/.test(x))) {
+      const t = sinComent(f);
+      const d = /\nasync function avisarNeg\(([^)]*)\) \{/.exec(t);
+      if (!d) continue;
+      defs++;
+      const ln = t.slice(0, d.index).split("\n").length + 1;
+      if (!/extra: Record<string, [^>]*\bBi\b[^>]*>/.test(d[1])) falla(G, f, ln, "avisarNeg: extra no admite Bi: quien llama solo puede pasar texto en un idioma");
+      const cu = cuerpoFn(t, "avisarNeg"), a = cu.indexOf("avisarNegocio(");
+      const o = a < 0 ? "" : objeto(cu, cu.indexOf("{", cu.indexOf(",", cu.indexOf(",", a) + 1)));
+      if (!o) { falla(G, f, ln, "avisarNeg: no encuentro el objeto de avisarNegocio(…, tpl, { … }): el guardián no lo puede mirar"); continue; }
+      revisar(f, ln, "avisarNeg", o);
+      for (const m of t.matchAll(/\bavisarNeg\((?=[^)\n]*?,\s*"[a-z_]+",\s*\{)/g)) {
+        const i = t.indexOf("{", t.indexOf('"', t.indexOf(",", m.index) + 1) + 1);
+        const ob = objeto(t, i);
+        if (ob) revisar(f, t.slice(0, m.index).split("\n").length, "una llamada a avisarNeg", ob);
+      }
+    }
+    if (defs < 5) falla(G, "apps/web/lib", 0, `esperaba los avisarNeg de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs}`);
   },
 
 };

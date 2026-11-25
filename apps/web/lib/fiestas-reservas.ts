@@ -222,12 +222,15 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, dia: diaFiesta(o.ymd, true), hora: hora(o.m), dev: "", dep: "", dinero: "", ...extra }, { href: `/fiesta/${numero}`, ref: ["party", numero] });
 }
+/* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · Cada valor del aviso al negocio en los dos idiomas: avisos › avisar pone el del dueño que lo recibe
+   (antes el servicio, las personas y el día salían en español también en un aviso en inglés). Guardián avisoNegUnIdioma. */
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
-  const g = o.det.g as number | null;
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaFiesta(o.ymd, true), hora: hora(o.m), servicio: (o.det.svc as Bi)?.es ?? "", invitados: g ? `${g} invitados` : "", dep: "", ...extra },
+  const g = o.det.g as number | null, svc = o.det.svc as Bi | undefined;
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: { es: diaFiesta(o.ymd, true), en: diaFiesta(o.ymd, false) }, hora: hora(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "",
+    invitados: g ? { es: `${g} invitados`, en: `${g} guests` } : "", dep: "", ...extra },
     { href: `/panel/${o.biz}/hoy?det=fiesta:${numero}`, ref: ["party", numero] });
 }
 export async function avisarFiestaNueva(numero: string) {

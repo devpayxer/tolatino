@@ -3083,17 +3083,29 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       la regla antes de que exista un cobro, no lo que pasó; decidir si pasan a «pedimos la devolución» (REVISION). (b) _hecho en la revisión: cancelarEvp._ (c) La duración de alrevesDevueltoSoloSiSalio en `pruebas/reparto-alreves.json` (28 s con 98 casos; ahora
       160): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) din9v4/din9v5 sin caso de punta a punta de las hojas
       nuevas (retenido vs cobrado) ni del aviso de otra hora con y sin depósito (el viaje tarde con devolución previa y el evento privado tarde con el
-      cobro devuelto o soltado ya tienen el suyo en tra4y 5b/5c y evt6i 8b: escritos el 25 nov, falta verlos correr en el CI). (e) Visto en la segunda
-      revisión: avisarNeg de viajes.ts arma el aviso al negocio solo en español (servicio.es, «personas», {dep} = seCobro.es), también en inglés; pasarlo
-      a ES/EN como avisarEvp (Bi). (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
-      (g) Misma clase, sin arreglar: `pasarela.liberar` (`apps/web/lib/pagos/pasarela.ts` ~302) da `ok: true` ante `payment_intent_unexpected_state`. Si el
-      intento ya estaba CAPTURADO en Stripe (la captura salió pero el libro no llegó a anotarla), liberarOperacion anota «released» con el dinero cobrado,
-      el aviso dice «se soltó» y la alerta hold_stuck (liberar:<cobro>) se cierra sola. Debe preguntar a la pasarela el estado del intento antes de dar por
-      soltado (succeeded → anotar captured y alertar; canceled → released). Las capturas tarde que lanzan (viaje, evento privado) ya dejan su alerta
-      hold_stuck captura:<cobro>, que no se cierra sola, pero el resto de quien suelta no. Y la captura tarde a la que Stripe no contesta (red caída:
-      pasarela.cobrar vuelve ok:false, no lanza) suelta la retención SIN alerta captura:: si la captura sí llegó a Stripe, nadie se entera (mismo arreglo:
-      preguntar a la pasarela antes de soltar). Tampoco hay prueba que ejecute alertarCapturaTarde (cobros.ts): falta un caso que haga lanzar la captura
-      tarde (viaje y evento privado) y mire el registro, la alerta captura:<cobro> con su texto y que la retención se soltó.
+      cobro devuelto o soltado ya tienen el suyo en tra4y 5b/5c y evt6i 8b: escritos el 25 nov, falta verlos correr en el CI). (e) _Hecho (25 nov, din9x):_ avisarNeg
+      de viajes.ts arma el aviso al negocio en los dos idiomas (servicio, personas, día y {dep} como Bi; avisos › avisar pone el del dueño), y el día y
+      {alt} de los avisos al cliente del viaje también. La misma clase en los avisarNeg de la noche (servicio, personas, la noche, el depósito), la
+      fiesta (día, servicio, invitados), la inscripción (servicio, grupo, matrícula, «vence») y la visita (qué, cuándo, el artículo, «vence», lo de en su
+      casa / da a cambio). Guardián avisoNegUnIdioma (lo que se ve sin correr: .es suelto o texto con palabras sin su en:, y extra sin Bi). Queda, porque
+      no se ve sin correr: el servicio y el día de la cita al negocio salen de SQL en español (citas-flujo › datos: `{svc,es}`, `DD/MM`), y los avisarCliente
+      de noche, fiesta, inscripción y visita usan helpers en un idioma (nocheL, diaFiesta(…, true), svcAviso, cuandoL, itemL): pasarlos a Bi. (f) La nota del historial del viaje al cancelar tarde ya no dice el monto: el panel y la pantalla lo leen de cobroMitad.
+      (g) _Hecho (25 nov, din9x):_ `pasarela.liberar` ya no da ok ante `payment_intent_unexpected_state`: mira el intento (cancelado = soltada; cobrado =
+      `{ ok: false, cobrado }`; sin respuesta = no), y el simulador igual con sim_intents. liberarOperacion anota «captured» con lo que Stripe capturó y
+      dice «cobrada»; soltarRetencion abre hold_stuck `cobrada:<cobro>`, que no se cierra sola; los avisos y el panel lo dicen (devolucion-cancelar:
+      «cobrada»); al cancelar tarde, si la captura sí había salido, el viaje sigue la regla con lo cobrado (la mitad y la devolución del resto) y el evento
+      privado se queda con el depósito. `pasarela.cobrar` ante el mismo código también mira (antes daba «cobrado» un intento cancelado o vencido). El
+      barrido (repararPagos) va por soltarRetencion: mismo arreglo; rentas › liquidarDeposito ya no marca «released» sin mirar lo que contestó liberar.
+      La captura tarde a la que Stripe no contesta (ok:false de red o error de Stripe: capturaSinRespuesta) alerta `captura:<cobro>` como la que lanza,
+      diciendo que no se sabe si salió (cobrarOperacion devuelve su resultado; sandbox: ···· 0404 no captura y calla, ···· 0408 captura y calla). e2e
+      din9x (el viaje tarde con 0404 y 0408 por el servidor; alertarCapturaTarde una vez por cobro, sin duplicar ni cerrarse; el barrido ante lo ya
+      cobrado; la pasarela ante unexpected_state), escrita sin correr. Guardianes liberarMira y capturaTardeAlerta; al revés alrevesDineroDiceLoQuePaso.
+      Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
+      verificacion › vencidas, suscripcion, rentas) ya no dan por soltado lo cobrado, pero tampoco lo anotan cobrado ni alertan: lo reintentan sin fin
+      en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
+      «No hay cupo» del panel, las de pedidos, citas, noche, fiesta, inscripción, viaje y apartado) solo distingue «retenida»; ante «cobrada» dice lo de
+      siempre: el aviso sí lo dice bien (soltadaO). (3) Un cobro de un pedido aceptado cuyo intento Stripe canceló o venció queda «held» con
+      failure_code y el barrido lo reintenta cada minuto sin alerta (antes quedaba «captured» sin dinero).
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { alertarCapturaTarde, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
+import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta, type Soltada } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
@@ -240,18 +240,23 @@ async function leer(c: Q, where: string, args: unknown[], lock = false): Promise
   return (await c.query<Op>(`${SEL} where o.kind = 'trip' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
 const diaL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return `${["dom", "lun", "mar", "mié", "jue", "vie", "sáb"][d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };
+/* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · El día de los avisos en los dos idiomas: avisos › avisar pone el de quien lo recibe (antes «mié 26/11»
+   también en un aviso en inglés). */
+const diaBi = (ymd: string): Bi => { const d = new Date(`${ymd}T12:00:00Z`); return { es: diaL(ymd), en: `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${d.getUTCMonth() + 1}/${d.getUTCDate()}` }; };
 async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisar } = await import("./avisos");
-  await avisar(o.uid, tpl, { negocio: o.negocio, dia: diaL(o.ymd), hora: horaL(o.m), total: money(o.tot), dev: "", dinero: "", ...extra }, { href: `/viaje/${numero}`, ref: ["trip", numero] });
+  await avisar(o.uid, tpl, { negocio: o.negocio, dia: diaBi(o.ymd), hora: horaL(o.m), total: money(o.tot), dev: "", dinero: "", ...extra }, { href: `/viaje/${numero}`, ref: ["trip", numero] });
 }
-async function avisarNeg(numero: string, tpl: string, extra: Record<string, string> = {}) {
+/* 25 nov (LAUNCH e) · Cada valor en los dos idiomas (el servicio, las personas, el día y lo que se cobró): avisos › avisar pone el del dueño que lo recibe.
+   Antes salía en español también en un aviso en inglés. Guardián avisoNegUnIdioma. */
+async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
-  const a = Number(o.det.adults ?? 1), k = Number(o.det.kids ?? 0);
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaL(o.ymd), hora: horaL(o.m), servicio: (o.det.svc as Bi)?.es ?? "", personas: `${a + k} ${a + k === 1 ? "persona" : "personas"}`, dep: "", ...extra },
+  const a = Number(o.det.adults ?? 1), k = Number(o.det.kids ?? 0), n = a + k, svc = o.det.svc as Bi | undefined;
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaBi(o.ymd), hora: horaL(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "", personas: { es: `${n} ${n === 1 ? "persona" : "personas"}`, en: `${n} ${n === 1 ? "person" : "people"}` }, dep: "", ...extra },
     { href: `/panel/${o.biz}/hoy?det=viaje:${numero}`, ref: ["trip", numero] });
 }
 export async function avisarViajeNuevo(numero: string) {
@@ -311,7 +316,7 @@ export async function responderViaje(negocio: string, numero: string, paso: "con
     await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = least(now() + interval '24 hours', scheduled_at), updated_at = now() where id = $1::bigint`, [o.id]);
     await ev(c, o.id, "change_proposed", "member", actorId, { es: `Propusiste ${diaL(prop.ymd)} a las ${horaL(prop.m)}`, en: `You proposed ${prop.ymd} at ${horaL(prop.m)}` });
     // 25 nov (regla 13) · «No me sirve» solo suelta la retención: el aviso lo dice si hay algo retenido ({dinero}, 0224).
-    despues = async () => { await avisarCliente(numero, "viaje_alt", { alt: `${diaL(prop.ymd)} a las ${horaL(prop.m)}`, dinero: pideSoltarSi("sirve", { st: o.pay, monto: o.amount ?? o.tot }, money) }); };
+    despues = async () => { await avisarCliente(numero, "viaje_alt", { alt: { es: `${diaL(prop.ymd)} a las ${horaL(prop.m)}`, en: `${diaBi(prop.ymd).en} at ${horaL(prop.m)}` }, dinero: pideSoltarSi("sirve", { st: o.pay, monto: o.amount ?? o.tot }, money) }); };
     return ok1;
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
@@ -347,19 +352,33 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
         // mitad 0 (cobroMitad 0) y la retención se suelta; nunca «Se cobró la mitad».
         // Si lanza (la base; un «no» de Stripe vuelve como ok:false), el rastro queda en el registro dentro del catch y la alerta al equipo de dinero sale
         // después de soltar (alertarCapturaTarde: la captura pudo salir en Stripe aunque la base no la anotara).
-        let fallo = false, err: unknown = null;
-        if (conf && !aTiempo && o.pay === "held") { try { await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; console.error(`[captura tarde] ${numero} (operación ${o.id}): ${String((e as Error)?.message ?? e).slice(0, 200)}`); } }
-        const p = (await db().query<{ id: string; amount: number; refunded: number; status: string }>(`select id::text, amount_cents as amount, refunded_cents as refunded, status from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
-        // 25 nov (regla 13) · Lo que se queda el negocio sale de lo que QUEDA cobrado (menos lo ya devuelto), nunca más: un cobro ya devuelto entero no
-        // «cobra la mitad». La pantalla lo dice igual antes de confirmar (ViajeEstado: Math.min(mitad, lo que queda)).
-        const mitad = cobra && p && ["captured", "partially_refunded"].includes(p.status) ? Math.min(cobra, Math.max(0, p.amount - (p.refunded ?? 0))) : 0;
-        if (cobra && mitad !== cobra) await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int) where id = $1::bigint`, [o.id, mitad]);
-        const d = await devolverAlCancelar({ id: o.id, pay: p?.status ?? o.pay, pid: p?.id ?? null, amount: p?.amount ?? null, refunded: p?.refunded ?? null },
-          { actorId: userId, motivo: mitad ? "Cancelación tarde: se cobra la mitad" : cobra ? "Cancelación tarde (la captura no salió)" : "Cancelación a tiempo", idem: `vcx-${numero}`, por: "policy", seQueda: mitad });
-        if (fallo) await alertarCapturaTarde(numero, p?.id ?? null, err, d);
+        // 25 nov (LAUNCH g) · Igual si Stripe NO CONTESTÓ (ok:false de red o error de Stripe: capturaSinRespuesta): no se sabe si salió. Un «no» claro (la
+        // tarjeta, cancelado, vencido) no alerta: no se cobró. Si salió, soltar la encuentra cobrada (pasarela.liberar mira el intento): «cobrada», nunca
+        // «liberada».
+        let fallo = false, err: unknown = null, cap: Awaited<ReturnType<typeof cobrarOperacion>> = null;
+        if (conf && !aTiempo && o.pay === "held") { try { cap = await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; console.error(`[captura tarde] ${numero} (operación ${o.id}): ${String((e as Error)?.message ?? e).slice(0, 200)}`); } }
+        if (capturaSinRespuesta(cap)) console.error(`[captura tarde] ${numero} (operación ${o.id}): Stripe no contestó (${cap.codigo})`);
+        const leerP = async () => (await db().query<{ id: string; amount: number; refunded: number; status: string }>(`select id::text, amount_cents as amount, refunded_cents as refunded, status from payments where operation_id = $1::bigint and kind = 'full'`, [o.id])).rows[0];
+        const cerrar = async (p: Awaited<ReturnType<typeof leerP>>) => {
+          // 25 nov (regla 13) · Lo que se queda el negocio sale de lo que QUEDA cobrado (menos lo ya devuelto), nunca más: un cobro ya devuelto entero no
+          // «cobra la mitad». La pantalla lo dice igual antes de confirmar (ViajeEstado: Math.min(mitad, lo que queda)).
+          const mitad = cobra && p && ["captured", "partially_refunded"].includes(p.status) ? Math.min(cobra, Math.max(0, p.amount - (p.refunded ?? 0))) : 0;
+          if (cobra) await db().query(`update operations set details = details || jsonb_build_object('cobroMitad', $2::int) where id = $1::bigint`, [o.id, mitad]);
+          const d = await devolverAlCancelar({ id: o.id, pay: p?.status ?? o.pay, pid: p?.id ?? null, amount: p?.amount ?? null, refunded: p?.refunded ?? null },
+            { actorId: userId, motivo: mitad ? "Cancelación tarde: se cobra la mitad" : cobra ? (fallo || capturaSinRespuesta(cap) ? "Cancelación tarde (no se sabe si la captura salió)" : "Cancelación tarde (la captura no salió)") : "Cancelación a tiempo",
+              idem: `vcx-${numero}`, por: "policy", seQueda: mitad });
+          return { p, mitad, d };
+        };
+        let x = await cerrar(await leerP());
+        if (fallo) await alertarCapturaTarde(numero, x.p?.id ?? null, { err }, x.d);
+        else if (capturaSinRespuesta(cap)) await alertarCapturaTarde(numero, x.p?.id ?? null, { codigo: cap.codigo }, x.d);
+        // 25 nov (LAUNCH g) · La captura tarde SÍ había salido (al soltar, Stripe la encontró cobrada y la base ya la dice cobrada, con su alerta cobrada:): la
+        // regla de la cancelación tarde sigue con lo cobrado (se queda la mitad y se devuelve el resto), y se dice eso; nunca «No se cobró nada».
+        if (x.d.e === "cobrada" && cobra) x = await cerrar(await leerP());
+        const { mitad, d } = x;
         const seCobro = mitad === cobra ? { es: `Se cobró la mitad: ${money(mitad)}.`, en: `Half was charged: ${money(mitad)}.` } : { es: `Se cobró lo que quedaba: ${money(mitad)}.`, en: `What was left was charged: ${money(mitad)}.` };
         await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : undefined) });
-        await avisarNeg(numero, "biz_viaje_cx", { dep: mitad ? ` ${seCobro.es}` : "" });
+        await avisarNeg(numero, "biz_viaje_cx", { dep: mitad ? { es: ` ${seCobro.es}`, en: ` ${seCobro.en}` } : "" });
       };
       return ok1;
     }

@@ -1,8 +1,8 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { alertarCapturaTarde, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
+import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { valores } from "./config";
 import { db, tx } from "./db";
 import { AREAS_EVP, DURACIONES, EXTRAS_FABRICA, HORAS_EVP, MENUS_FABRICA, NUM_EP, OCASIONES, PRESUPUESTOS, diaEvp, dinero, horaL, lbl, type AjustesEvp, type Bi, type ExtraEvp, type MenuEvp } from "./evento-privado-comun";
@@ -526,21 +526,33 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
     // Si cobrarOperacion lanza (la base: un «no» de Stripe vuelve como ok:false, sin lanzar), se mira la base igual: lo que sigue retenido se suelta y el
     // aviso dice eso, nunca «se queda». El rastro queda en el registro dentro del catch y la alerta al equipo de dinero sale después de soltar
     // (alertarCapturaTarde: la captura pudo salir en Stripe aunque la base no la anotara).
+    // 25 nov (LAUNCH g) · Igual si Stripe NO CONTESTÓ (ok:false de red o error de Stripe: capturaSinRespuesta): no se sabe si salió y el equipo lo sabe.
+    // Un «no» claro no alerta (no se cobró). Si salió, soltar la encuentra cobrada (pasarela.liberar mira el intento): «cobrada», nunca «liberada».
     const o = await leer(db(), "o.number = $1", [numero]);
-    let fallo = false, err: unknown = null;
+    let fallo = false, err: unknown = null, cap: Awaited<ReturnType<typeof cobrarOperacion>> = null;
     if (o) {
-      try { await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; console.error(`[captura tarde] ${numero} (operación ${o.id}): ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+      try { cap = await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; console.error(`[captura tarde] ${numero} (operación ${o.id}): ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+      if (capturaSinRespuesta(cap)) console.error(`[captura tarde] ${numero} (operación ${o.id}): Stripe no contestó (${cap.codigo})`);
     }
     const o2 = await leer(db(), "o.number = $1", [numero]);
     quedo = o2?.pst === "captured" || o2?.pst === "partially_refunded";
     if (!quedo) {
       const id = o2?.id ?? o?.id;
       if (id) await db().query(`update operations set details = details || '{"perdio":false}'::jsonb where id = $1::bigint`, [id]);
-      if (o2?.pst === "held") d = await devolverAlCancelar({ id: o2.id, pay: "held", pid: o2.pid, amount: o2.amount, refunded: o2.refunded }, { actorId: userId, motivo: "Cancelación tarde del evento privado (la captura no salió)", idem: `evpcx-${numero}`, por: "policy" });
+      if (o2?.pst === "held") d = await devolverAlCancelar({ id: o2.id, pay: "held", pid: o2.pid, amount: o2.amount, refunded: o2.refunded },
+        { actorId: userId, motivo: fallo || capturaSinRespuesta(cap) ? "Cancelación tarde del evento privado (no se sabe si la captura salió)" : "Cancelación tarde del evento privado (la captura no salió)", idem: `evpcx-${numero}`, por: "policy" });
       // Ya soltada por otro (el barrido) mientras tanto: se dice que se soltó, nunca «No se cobró nada» a secas.
       else if (o2?.pst === "released") d = { e: "liberada", monto: P.dep };
     }
-    if (fallo) await alertarCapturaTarde(numero, o2?.pid ?? o?.pid ?? null, err, d);
+    if (fallo) await alertarCapturaTarde(numero, o2?.pid ?? o?.pid ?? null, { err }, d);
+    else if (capturaSinRespuesta(cap)) await alertarCapturaTarde(numero, o2?.pid ?? o?.pid ?? null, { codigo: cap.codigo }, d);
+    // La captura sí había salido (al soltar, Stripe la encontró cobrada y la base ya la dice cobrada): el depósito se quedó con el restaurante, como dice la
+    // regla de la cancelación tarde; se dice eso (perdio vuelve a true), nunca «No se cobró nada».
+    if (d?.e === "cobrada") {
+      quedo = true; d = null;
+      const id = o2?.id ?? o?.id;
+      if (id) await db().query(`update operations set details = details || '{"perdio":true}'::jsonb where id = $1::bigint`, [id]);
+    }
   } else if (!P.perdio) d = await moverDinero(numero).catch((): DevCancelar => ({ e: "fallida", monto: P.dev }));
   // Tarde con el cobro ya devuelto entero o la retención ya soltada: nada se queda y nada se mueve ahora; el aviso dice lo que ya había pasado (te
   // devolvimos / se soltó la retención), nunca «No se cobró nada» de un depósito que sí se cobró y se devolvió.
@@ -555,6 +567,8 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
     : d.e === "hecha" ? { es: ` Se le devolvió el depósito de ${dinero(d.monto)}.`, en: ` The ${dinero(d.monto)} deposit was refunded to them.` }
     : d.e === "en_camino" ? { es: ` La devolución del depósito de ${dinero(d.monto)} va en camino.`, en: ` The ${dinero(d.monto)} deposit refund is on its way.` }
     : d.e === "fallida" ? { es: ` La devolución del depósito de ${dinero(d.monto)} no salió: el equipo de To'Latino lo resuelve con el cliente.`, en: ` The ${dinero(d.monto)} deposit refund did not go through: the To'Latino team sorts it out with the client.` }
+    // 25 nov (LAUNCH g) · La retención que Stripe ya había cobrado (nunca «No se había cobrado nada»).
+    : d.e === "cobrada" ? dineroAlNegocio(d)
     : { es: " No se había cobrado nada.", en: " Nothing had been charged." };
   await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: depNeg }).catch(() => undefined);
   return { ok: true, devuelto: d?.e === "hecha" ? d.monto : 0, perdio: quedo, devolucion: quedo ? "nada" : d?.e ?? "nada" };

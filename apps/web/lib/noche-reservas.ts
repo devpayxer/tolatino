@@ -222,11 +222,15 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), guarda: String(o.det.hold ?? await valor("noche_mesa_guardada_min")), dev: "", dep: "", puerta: "", dinero: "", ...extra }, { href: `/noche/${numero}`, ref: ["night", numero] });
 }
+/* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · Cada valor del aviso al negocio en los dos idiomas: avisos › avisar pone el del dueño que lo recibe
+   (antes el servicio, las personas y el día salían en español también en un aviso en inglés). Guardián avisoNegUnIdioma. */
+const bi = (x: unknown, otro = ""): Bi | string => { const b = x as Bi | null | undefined; return b?.es ? { es: b.es, en: b.en || b.es } : otro; };
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), servicio: (o.det.svc as Bi)?.es ?? "", personas: `${o.pax} personas`, dep: "", min: "60", ...extra },
+  const noche: Bi = { es: nocheL(o), en: o.night === o.hoy ? "tonight" : diaNoche(new Date(`${o.night}T12:00:00Z`).getUTCDay(), false) };
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, noche, hora: hNoche(Number(o.det.arrive)), servicio: bi(o.det.svc), personas: { es: `${o.pax} ${o.pax === 1 ? "persona" : "personas"}`, en: `${o.pax} ${o.pax === 1 ? "person" : "people"}` }, dep: "", min: "60", ...extra },
     { href: `/panel/${o.biz}/hoy?det=noche:${numero}`, ref: ["night", numero] });
 }
 /* Lo que se paga en la puerta, como se copió al enviar (para el aviso y la pantalla). */
@@ -242,7 +246,7 @@ export async function avisarNocheNueva(numero: string) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   if (o.det.k === "lista") await avisarCliente(numero, "noche_lista", { puerta: `${puertaTexto(o.det, true)}.` });
-  else await avisarNeg(numero, "biz_noche_mesa", { dep: o.dep ? ` Depósito ${usdN(o.dep)} retenido.` : "" });
+  else await avisarNeg(numero, "biz_noche_mesa", { dep: o.dep ? { es: ` Depósito ${usdN(o.dep)} retenido.`, en: ` ${usdN(o.dep)} deposit held.` } : "" });
 }
 async function ev(c: PoolClient, op: string, kind: string, actor: "user" | "member" | "system", actorId: string | null, note?: Bi) {
   await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`, [op, kind, actor, actorId, note ? JSON.stringify(note) : null]);

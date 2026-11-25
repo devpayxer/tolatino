@@ -379,7 +379,8 @@ async function liquidarDeposito(rid: string): Promise<void> {
       await ev(c, x.op, "payment_captured", "system", null, { es: `Del depósito se descontaron ${money(objetivo)}; el resto se liberó`, en: `${money(objetivo)} taken from the deposit; the rest was released` });
     });
   } else {
-    await pasarela.liberar(P.pi);
+    // 25 nov (LAUNCH g) · Se mira lo que contestó: sin soltar (o ya cobrado en Stripe) no se marca liberado; se reintenta en el próximo barrido. Guardián liberarMira.
+    if (!(await pasarela.liberar(P.pi)).ok) return;
     await tx(async (c) => {
       const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [P.id]);
       if (u.rowCount) await ev(c, x.op, "payment_released", "system", null, { es: "Se liberó el depósito", en: "The deposit was released" });

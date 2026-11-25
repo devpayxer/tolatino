@@ -25,6 +25,15 @@ export type Verificar = { pi: string; secreto: string; monto: number; pm: string
 /* Quién paga (para guardar la verificación pendiente a su nombre: solo esa persona la completa). Sin esto, un «requires_action» sigue como antes. */
 export type Quien = { id: string; negocio?: string | null; ciudad?: string | null };
 export type EstadoCuenta = { cargos: boolean; pagos: boolean; pide: string[]; banco: string | null };
+/* 25 nov · Lo que contesta liberar: soltada, o no (con el código), o «estaba cobrado» (cobrado: lo que Stripe capturó, en centavos). */
+export type Liberacion = { ok: true } | { ok: false; codigo: string; cobrado?: number };
+/* El intento ya no se podía cancelar: lo que dice su estado. Sin intento en el simulador: nada retenido (como antes). */
+function liberacionDe(x: { estado: string; capturado: number } | null, sim: boolean): Liberacion {
+  if (!x) return sim ? { ok: true } : { ok: false, codigo: "red" };
+  if (x.estado === "canceled" || x.estado === "failed" || x.estado === "requires_payment_method") return { ok: true };
+  if (x.estado === "succeeded") return { ok: false, codigo: "succeeded", cobrado: Math.max(0, Math.round(x.capturado)) };
+  return { ok: false, codigo: x.estado };
+}
 
 const RECHAZO: Record<string, [string, string]> = {
   card_declined: ["Tu banco la rechazó. Prueba con otra tarjeta.", "Your bank declined it. Try another card."],
@@ -43,7 +52,8 @@ function simRechazo(l4: string) { return l4 === "0002" ? "card_declined" : l4 ==
 const SIM_3DS = "3184";
 /* 9t5 · Lo que Stripe no tiene como tarjeta de prueba y el sandbox necesita para ensayar «sin respuesta» en un cobro fuera de sesión:
    ···· 0404 = la pasarela no contesta y nada sale (cada intento, igual); ···· 0408 = el cobro SÍ sale pero la respuesta se pierde (el primer intento con
-   esa llave no contesta; el siguiente con la misma llave dice «hecho», como Stripe con Idempotency-Key). */
+   esa llave no contesta; el siguiente con la misma llave dice «hecho», como Stripe con Idempotency-Key). 25 nov · También la captura de lo retenido con
+   esas tarjetas (pasarela.cobrar): 0404 no captura; 0408 captura y no contesta. */
 const SIM_CALLA = "0404", SIM_COBRA_Y_CALLA = "0408";
 const SIN_RESPUESTA_SIM = { es: "Tu banco no respondió. Prueba de nuevo en un momento.", en: "Your bank did not respond. Try again in a moment." };
 /* 9k · La huella simulada (card.fingerprint): la misma marca y los mismos 4 dan la misma huella en cualquier cuenta, como una tarjeta física. */
@@ -285,21 +295,49 @@ export const pasarela = {
     }
   },
 
-  /* Cobrar lo retenido (el negocio aceptó). Idempotente: si ya se cobró, no vuelve a cobrar. */
+  /* Cobrar lo retenido (el negocio aceptó). Idempotente: si ya se cobró, no vuelve a cobrar.
+     25 nov (regla 13) · «payment_intent_unexpected_state» ya no es «cobrado» a ciegas: se mira el intento (cancelado o vencido = no se cobró; el
+     libro decía «cobrado» sin dinero). En el sandbox, ···· 0404 y ···· 0408 ensayan la captura sin respuesta como los cobros fuera de sesión (9t5):
+     0404 no captura y no contesta; 0408 captura y la respuesta se pierde (el siguiente intento ya la encuentra cobrada). Guardián liberarMira. */
   async cobrar(pi: string, centavos: number, comision: number): Promise<{ ok: boolean; codigo?: string }> {
     if (pi.startsWith("pi_sim_")) {
+      const s = (await db().query<{ status: string; card: string | null }>(`select status, card from sim_intents where id = $1`, [pi])).rows[0];
+      const l4 = SIM_PM.exec(s?.card ?? "")?.[2];
+      if (s?.status === "requires_capture" && l4 === SIM_CALLA) return { ok: false, codigo: "red" };
       const r = await db().query(`update sim_intents set status = 'succeeded', captured_cents = $2, fee_cents = $3 where id = $1 and status in ('requires_capture', 'succeeded')`, [pi, centavos, comision]);
-      return { ok: !!r.rowCount };
+      if (r.rowCount && s?.status === "requires_capture" && l4 === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red" };
+      return r.rowCount ? { ok: true } : { ok: false, codigo: s?.status ?? "no_existe" };
     }
     try { await stripe("POST", `/v1/payment_intents/${encodeURIComponent(pi)}/capture`, { amount_to_capture: centavos, application_fee_amount: comision }, { idem: `cob-${pi}` }); return { ok: true }; }
-    catch (e) { if (e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state") return { ok: true }; return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" }; }
+    catch (e) {
+      // Ya capturado (repetido) = bien; cancelado o vencido = no se cobró. Se mira el estado, nunca se supone (como capturarPlataforma).
+      if (e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state") {
+        const x = await stripe<{ status: string }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);
+        return x?.status === "succeeded" ? { ok: true } : { ok: false, codigo: x?.status ?? "red" };
+      }
+      return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" };
+    }
   },
 
-  /* Liberar lo retenido sin cobrar (no se dio el pedido). */
-  async liberar(pi: string): Promise<{ ok: boolean }> {
-    if (pi.startsWith("pi_sim_")) { await db().query(`update sim_intents set status = 'canceled' where id = $1 and status in ('requires_capture', 'requires_action')`, [pi]); return { ok: true }; }
+  /* Liberar lo retenido sin cobrar (no se dio el pedido).
+     25 nov (regla 13, LAUNCH «el dinero dice lo que pasó» g) · «payment_intent_unexpected_state» ya no es «soltada» a ciegas: se mira el intento. Cancelado
+     (o rechazado: nada retenido) = soltada; COBRADO (la captura salió en Stripe y la base no lo supo: una captura sin respuesta, o la base que falló después
+     del «sí») = { ok: false, cobrado }: quien llama lo anota cobrado con su monto real y alerta al equipo de dinero (cobros › liberarOperacion /
+     soltarRetencion), nunca «liberada» con el dinero cobrado. Si la consulta no contesta, { ok: false } (sigue retenida para el libro; el barrido vuelve a
+     intentar). El simulador igual, con sim_intents. Guardián liberarMira. */
+  async liberar(pi: string): Promise<Liberacion> {
+    if (pi.startsWith("pi_sim_")) {
+      const r = await db().query(`update sim_intents set status = 'canceled' where id = $1 and status in ('requires_capture', 'requires_action')`, [pi]);
+      if (r.rowCount) return { ok: true };
+      const s = (await db().query<{ status: string; captured_cents: number }>(`select status, captured_cents from sim_intents where id = $1`, [pi])).rows[0];
+      return liberacionDe(s ? { estado: s.status, capturado: s.captured_cents } : null, true);
+    }
     try { await stripe("POST", `/v1/payment_intents/${encodeURIComponent(pi)}/cancel`, {}, { idem: `lib-${pi}` }); return { ok: true }; }
-    catch (e) { return { ok: e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state" }; }
+    catch (e) {
+      if (!(e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state")) return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" };
+      const x = await stripe<{ status: string; amount_received: number }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);
+      return x ? liberacionDe({ estado: x.status, capturado: x.amount_received }, false) : { ok: false, codigo: "red" };
+    }
   },
 
   /* Devolver (total o parcial) lo cobrado. La transferencia al negocio se revierte en proporción y la comisión también. */

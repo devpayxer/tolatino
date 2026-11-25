@@ -538,10 +538,11 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
     if (!ok) return;
     // 9v (quinta tanda) · Lo que de verdad pasó con la retención (soltarRetencion: la que no se soltó alerta hold_stuck al equipo); nunca «Se liberó» sin mirar.
     const s = await (await import("./cobros")).soltarRetencion(x.op, { es: "El apartado venció", en: "The hold expired" });
-    const sin = (await import("./devolucion-cancelar")).sinSoltarCliente(s.monto);
+    const DC = await import("./devolucion-cancelar"), sin = s.e === "cobrada" ? DC.soltadaO(s, "") as Bi : DC.sinSoltarCliente(s.monto);
     const que0: Bi = det === "no_envio" ? { es: `${x.bname} no envió tu pedido a tiempo.`, en: `${x.bname} did not ship your order in time.` } : det === "no_paso" ? { es: `Pasaron las ${x.hh} horas y tu apartado en ${x.bname} volvió al estante.`, en: `${x.hh} hours passed and your hold at ${x.bname} went back on the shelf.` }
       : det === "sin_respuesta" ? { es: `${x.bname} no respondió a tiempo a tu apartado.`, en: `${x.bname} did not reply to your hold in time.` } : { es: `Tu apartado en ${x.bname} se cerró sin decidir qué hacer con lo que faltaba.`, en: `Your hold at ${x.bname} closed without a decision on the missing item.` };
-    const que: Bi = s.e === "retenida" ? { es: `${que0.es}${sin.es}`, en: `${que0.en}${sin.en}` } : det === "no_envio" ? { es: `${que0.es} Se liberó lo retenido en tu tarjeta.`, en: `${que0.en} The hold on your card was released.` } : que0;
+    // 25 nov (LAUNCH g) · La que Stripe ya había cobrada también se dice (nunca «Se liberó lo retenido»).
+    const que: Bi = s.e === "retenida" || s.e === "cobrada" ? { es: `${que0.es}${sin.es}`, en: `${que0.en}${sin.en}` } : det === "no_envio" ? { es: `${que0.es} Se liberó lo retenido en tu tarjeta.`, en: `${que0.en} The hold on your card was released.` } : que0;
     await av.avisar(x.uid, "apt_vence", { que }, { href: `/apartado/${x.numero}`, ref: ["apartado", x.numero], sinSms: !x.sms });
     if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "su apartado venció sin tu respuesta" }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
   });
@@ -573,7 +574,7 @@ export async function cobrarApartado(opId: string): Promise<{ cobrado: number; l
        from payments p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint and o.kind = 'hold' and p.kind = 'full' and p.status = 'held'`, [opId])).rows[0];
   if (!p) return { cobrado: 0, liberado: 0 };
   const monto = Math.min(p.tot, p.held);
-  if (monto <= 0) { const s = await cob.soltarRetencion(opId, { es: "Envío de la tienda sin nada que cobrar", en: "Store shipment with nothing to charge" }); return { cobrado: 0, liberado: s.e === "retenida" ? 0 : p.held }; }
+  if (monto <= 0) { const s = await cob.soltarRetencion(opId, { es: "Envío de la tienda sin nada que cobrar", en: "Store shipment with nothing to charge" }); return { cobrado: 0, liberado: s.e === "retenida" || s.e === "cobrada" ? 0 : p.held }; }
   const fee = Math.min(await cob.comision(db(), "apt", Math.min(p.sub, monto)), monto);
   const r = await pasarela.cobrar(p.pi, monto, fee);
   if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); return { cobrado: 0, liberado: 0 }; }

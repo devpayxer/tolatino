@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx, type AlGuardar } from "./db";
-import { pasarela, type Retencion } from "./pagos/pasarela";
+import { pasarela, type Liberacion, type Retencion } from "./pagos/pasarela";
 import { soloLectura } from "./vista-equipo";
 
 /* Cobros con tarjeta de un pedido (Payment). Reglas (Super Admin › Planes › Comisiones, dash2-pay.js):
@@ -67,30 +67,50 @@ const refDe = (kind: string, num: string) => kind === "appointment"
   : kind === "private_event" ? { num, href: `/privado/${num}`, ref: ["private_event", num] as [string, string] }
   : { num: `#${num}`, href: `/pedido/${num}`, ref: ["order", num] as [string, string] };
 
-/* Cobrar lo retenido de una operación (el negocio aceptó). */
-export async function cobrarOperacion(opId: string) {
+/* Cobrar lo retenido de una operación (el negocio aceptó).
+   25 nov (regla 13) · Devuelve lo que contestó la pasarela (null: no había nada retenido), para quien tiene que decir algo si la captura no tuvo
+   respuesta (la cancelación tarde del viaje y del evento privado: alertarCapturaTarde). Quien no lo mira sigue igual: el barrido la vuelve a intentar. */
+export async function cobrarOperacion(opId: string): Promise<{ ok: true } | { ok: false; codigo: string } | null> {
   const p = (await db().query<{ id: string; pi: string; amount: number; fee: number }>(
     `select id::text, stripe_payment_intent as pi, amount_cents as amount, fee_cents as fee from payments where operation_id = $1::bigint and kind in ('full', 'deposit') and status = 'held'`, [opId])).rows[0];
-  if (!p) return;
+  if (!p) return null;
   const r = await pasarela.cobrar(p.pi, p.amount, p.fee);
-  if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1`, [p.id, r.codigo ?? "error"]); return; }
+  if (!r.ok) { const codigo = r.codigo ?? "error"; await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1`, [p.id, codigo]); return { ok: false, codigo }; }
   await tx(async (c) => {
     const u = await c.query(`update payments set status = 'captured', captured_at = now(), failure_code = null, updated_at = now() where id = $1 and status = 'held'`, [p.id]);
     if (!u.rowCount) return;
     await c.query(`update operations set pay_status = 'captured' where id = $1::bigint`, [opId]);
     await evento(c, opId, "payment_captured", { es: `Se cobraron ${money(p.amount)} en la tarjeta`, en: `${money(p.amount)} charged to the card` });
   });
+  return { ok: true };
 }
+/* 25 nov · Lo que la pasarela contesta a una captura SIN decir si salió (sin respuesta, error de Stripe, en curso): no se sabe si se cobró. Cualquier
+   otro código es un «no» claro (cancelado, vencido, sin clave): no se cobró. */
+const CAPTURA_SIN_RESPUESTA = new Set(["red", "api_error", "error", "rate_limit", "rate_limit_error", "lock_timeout", "idempotency_key_in_use", "idempotency_error", "processing"]);
+export const capturaSinRespuesta = (r: { ok: true } | { ok: false; codigo: string } | null): r is { ok: false; codigo: string } => !!r && !r.ok && CAPTURA_SIN_RESPUESTA.has(r.codigo);
 
 /* Liberar lo retenido (el pedido no se dio). Avisa a la persona.
    25 nov (9v, cuarta tanda) · Dice qué pasó: «liberada» (se soltó, aquí o ya lo había hecho otro), «nada» (no había nada retenido) o «fallo» (la pasarela
-   no la soltó: sigue retenida; el barrido, repararPagos, la vuelve a soltar). Quien tiene que decirle algo a la persona lo mira (devolverAlCancelar). */
-export async function liberarOperacion(opId: string): Promise<"liberada" | "nada" | "fallo"> {
+   no la soltó: sigue retenida; el barrido, repararPagos, la vuelve a soltar). Quien tiene que decirle algo a la persona lo mira (devolverAlCancelar).
+   25 nov (regla 13, LAUNCH g) · O «cobrada»: Stripe ya la había cobrado y la base no lo sabía (pasarela.liberar mira el intento). El cobro queda
+   'captured' con lo que Stripe capturó de verdad, nunca 'released' con el dinero cobrado; la alerta al equipo la pone soltarRetencion. */
+export async function liberarOperacion(opId: string): Promise<"liberada" | "nada" | "fallo" | "cobrada"> {
   const p = (await db().query<{ id: string; pi: string; amount: number; uid: string; num: string; kind: string }>(
     `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.user_id::text as uid, o.number as num, o.kind from payments p join operations o on o.id = p.operation_id
       where p.operation_id = $1::bigint and p.kind in ('full', 'deposit') and p.status = 'held'`, [opId])).rows[0];
   if (!p) return "nada";
-  const r = await pasarela.liberar(p.pi).catch(() => ({ ok: false }));
+  const r = await pasarela.liberar(p.pi).catch((): Liberacion => ({ ok: false, codigo: "error" }));
+  if (!r.ok && r.cobrado !== undefined) {
+    const cobrado = r.cobrado;
+    await tx(async (c) => {
+      const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = least(fee_cents, $2), captured_at = coalesce(captured_at, now()), failure_code = null, updated_at = now()
+                                where id = $1 and status = 'held'`, [p.id, cobrado]);
+      if (!u.rowCount) return;
+      await c.query(`update operations set pay_status = 'captured' where id = $1::bigint`, [opId]);
+      await evento(c, opId, "payment_captured", { es: `No se pudo soltar la retención: Stripe ya había cobrado ${money(cobrado)} en la tarjeta`, en: `The hold could not be released: Stripe had already charged ${money(cobrado)} to the card` });
+    });
+    return "cobrada";
+  }
   if (!r.ok) return "fallo";
   const hecho = await tx(async (c) => {
     const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1 and status = 'held'`, [p.id]);
@@ -110,8 +130,21 @@ export async function liberarOperacion(opId: string): Promise<"liberada" | "nada
    liberar:<cobro>; se cierra sola cuando el cobro deja de estar retenido: dinero-alertas › cerrarAlertasResueltas). Antes cada uno tiraba lo que contestaba
    liberarOperacion y el aviso decía «Se liberó tu depósito» aunque Stripe no la hubiera soltado. Quien avisa lo mira (lib/devolucion-cancelar.ts ›
    sinSoltarCliente / sinSoltarNegocio). Guardián devueltoSoloSiSalio (11). */
+/* 25 nov (regla 13, LAUNCH g) · «cobrada»: Stripe ya la había cobrado (liberarOperacion la anotó 'captured' con su monto real). UNA alerta hold_stuck por
+   cobro con sujeto cobrada:<cobro>, que NO se cierra sola (cerrarAlertasResueltas solo mira liberar:): alguien mira en Stripe si ese cobro correspondía y,
+   si no, lo devuelve. Quien avisa lo dice (devolucion-cancelar › soltadaO / dineroAlCancelar). */
 export async function soltarRetencion(opId: string, motivo: Msg): Promise<import("./devolucion-cancelar").Soltada> {
   const l = await liberarOperacion(opId);
+  if (l === "cobrada") {
+    const c = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null; num: string }>(
+      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city, o.number as num from payments y join operations o on o.id = y.operation_id
+        where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') and y.status = 'captured' order by y.id desc limit 1`, [opId])).rows[0];
+    if (!c) return { e: "cobrada", monto: 0 };
+    await (await import("./dinero-alertas")).alertar("hold_stuck", `cobrada:${c.id}`, { monto: c.amt, negocio: c.biz, ciudad: c.city, detalle: {
+      es: `${c.num} · ${motivo.es}: se iba a soltar la retención, pero Stripe ya la había cobrado (${money(c.amt)}) y la base no lo sabía. La base ya la dice cobrada. Revisa en Stripe si ese cobro correspondía: si no, devuélveselo al cliente.`,
+      en: `${c.num} · ${motivo.en}: the hold was going to be released, but Stripe had already charged it (${money(c.amt)}) and the books did not know. The books now show it as charged. Check in Stripe whether that charge was due: if not, refund the client.` } }).catch(() => undefined);
+    return { e: "cobrada", monto: c.amt };
+  }
   if (l !== "fallo") return { e: l, monto: 0 };
   // La pasarela no soltó la retención: sigue en la tarjeta (el barrido, repararPagos, la vuelve a soltar). El equipo de dinero lo sabe, una vez por cobro.
   const h = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null }>(
@@ -123,26 +156,36 @@ export async function soltarRetencion(opId: string, motivo: Msg): Promise<import
   return { e: "retenida", monto: h.amt };
 }
 
-/* 25 nov (regla 13) · La captura de una cancelación TARDE de lo retenido (el viaje, el evento privado) LANZÓ. pasarela.cobrar no lanza (un «no» de
-   Stripe o la red caída vuelven como ok:false y no pasan por aquí): lo que lanza es la base, y puede ser DESPUÉS de un «sí» de Stripe. Por eso nada de
-   esto afirma que la captura no salió: el llamador ya dejó su rastro en el registro (console.error en su catch), leyó la base y soltó la retención (o lo
-   intentó); aquí solo la alerta al equipo de dinero, una vez por cobro: hold_stuck con sujeto captura:<cobro>, que no se cierra sola (alguien mira en
-   Stripe si la captura salió: si salió, el cliente pagó y hay que devolverle). El cobro lo pasa el llamador (pid). Nunca tira. */
-export async function alertarCapturaTarde(numero: string, pid: string | null, err: unknown, d: import("./devolucion-cancelar").DevCancelar | null) {
-  const msg = String((err as Error)?.message ?? err).slice(0, 200);
+/* 25 nov (regla 13) · La captura de una cancelación TARDE de lo retenido (el viaje, el evento privado) LANZÓ o NO TUVO RESPUESTA. pasarela.cobrar no
+   lanza: un «no» claro de Stripe vuelve como ok:false y no pasa por aquí (no se cobró); lo que lanza es la base, y puede ser DESPUÉS de un «sí» de Stripe;
+   y una captura sin respuesta (red, error de Stripe: capturaSinRespuesta) pudo salir o no. Por eso nada de esto afirma que la captura no salió: el
+   llamador ya dejó su rastro en el registro (console.error), leyó la base y soltó la retención (o lo intentó: si Stripe dice que ya estaba cobrada, la
+   base la anota cobrada y hay otra alerta, cobrada:<cobro>); aquí solo la alerta al equipo de dinero, una vez por cobro: hold_stuck con sujeto
+   captura:<cobro>, que no se cierra sola (alguien mira en Stripe si la captura salió: si salió y la base la da por soltada, el cliente pagó y hay que
+   devolverle). El cobro lo pasa el llamador (pid). causa: { err } (lanzó) o { codigo } (sin respuesta). Nunca tira. Guardián capturaTardeAlerta. */
+export type CausaCaptura = { err: unknown } | { codigo: string };
+export async function alertarCapturaTarde(numero: string, pid: string | null, causa: CausaCaptura, d: import("./devolucion-cancelar").DevCancelar | null) {
+  const lanzo = "err" in causa, msg = (lanzo ? String((causa.err as Error)?.message ?? causa.err) : causa.codigo).slice(0, 200);
   try {
     if (!pid) { console.error(`[captura tarde] ${numero}: sin cobro para la alerta (${msg})`); return; }
     const p = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null }>(
       `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city from payments y where y.id = $1::bigint`, [pid])).rows[0];
     if (!p) return;
-    await (await import("./dinero-alertas")).alertar("hold_stuck", `captura:${p.id}`, { monto: p.amt, negocio: p.biz, ciudad: p.city, detalle: d?.e === "liberada" ? {
-      es: `${numero}: la captura tarde dio error (${msg}). La base la da por soltada (${money(p.amt)}) y al cliente se le dijo que se soltó. Revisa en Stripe: si la captura salió, el cliente pagó y hay que devolverle.`,
-      en: `${numero}: the late capture failed (${msg}). The books show it as released (${money(p.amt)}) and the client was told it was released. Check in Stripe: if the capture went through, the client paid and must be refunded.` }
+    // Lo que pasó con la captura, dicho como se sabe: dio error (lanzó) o Stripe no contestó; en ningún caso se sabe si salió.
+    const que: Msg = lanzo ? { es: `la captura tarde dio error (${msg})`, en: `the late capture failed (${msg})` }
+      : { es: `Stripe no contestó a la captura tarde (${msg}): no se sabe si salió`, en: `Stripe did not answer the late capture (${msg}): it is not known whether it went through` };
+    const detalle: Msg = d?.e === "liberada" ? {
+      es: `${numero}: ${que.es}. Después la retención se soltó (${money(p.amt)}): la base la da por soltada y al cliente se le dijo que se soltó. Revisa en Stripe: si la captura salió, el cliente pagó y hay que devolverle.`,
+      en: `${numero}: ${que.en}. The ${money(p.amt)} hold was released afterwards: the books show it as released and the client was told it was released. Check in Stripe: if the capture went through, the client paid and must be refunded.` }
+      : d?.e === "cobrada" ? {
+      es: `${numero}: ${que.es}. Al soltar la retención, Stripe dijo que ya estaba cobrada (${money(p.amt)}): la base ya la dice cobrada (mira también la alerta cobrada:${p.id} del mismo cobro). Revisa en Stripe y, si no correspondía, devuélvelo.`,
+      en: `${numero}: ${que.en}. When releasing the hold, Stripe said it was already charged (${money(p.amt)}): the books now show it as charged (see also the cobrada:${p.id} alert for the same charge). Check in Stripe and, if it was not due, refund it.` }
       : d?.e === "retenida" ? {
-      es: `${numero}: la captura tarde dio error (${msg}) y la retención de ${money(p.amt)} no se soltó todavía: el barrido la sigue soltando (mira también la alerta liberar:${p.id} del mismo cobro). Revisa el cobro en Stripe.`,
-      en: `${numero}: the late capture failed (${msg}) and the ${money(p.amt)} hold has not been released yet: the sweep keeps releasing it (see also the liberar:${p.id} alert for the same charge). Check the charge in Stripe.` } : {
-      es: `${numero}: la captura tarde dio error (${msg}); la base dice que el cobro de ${money(p.amt)} ya no está retenido. Revisa en Stripe qué pasó con él.`,
-      en: `${numero}: the late capture failed (${msg}); the books say the ${money(p.amt)} charge is no longer on hold. Check in Stripe what happened to it.` } });
+      es: `${numero}: ${que.es}, y la retención de ${money(p.amt)} no se soltó todavía: el barrido la sigue soltando (mira también la alerta liberar:${p.id} del mismo cobro). Revisa el cobro en Stripe.`,
+      en: `${numero}: ${que.en}, and the ${money(p.amt)} hold has not been released yet: the sweep keeps releasing it (see also the liberar:${p.id} alert for the same charge). Check the charge in Stripe.` } : {
+      es: `${numero}: ${que.es}; la base dice que el cobro de ${money(p.amt)} ya no está retenido. Revisa en Stripe qué pasó con él.`,
+      en: `${numero}: ${que.en}; the books say the ${money(p.amt)} charge is no longer on hold. Check in Stripe what happened to it.` };
+    await (await import("./dinero-alertas")).alertar("hold_stuck", `captura:${p.id}`, { monto: p.amt, negocio: p.biz, ciudad: p.city, detalle });
   } catch (e) { console.error(`[captura tarde] ${numero}: la alerta no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
 }
 
@@ -401,9 +444,10 @@ export async function devolverAlCancelar(o: { id: string; pay: string | null; pi
   x: { actorId: string | null; motivo: string; idem: string; por?: "business" | "policy"; seQueda?: number }): Promise<import("./devolucion-cancelar").DevCancelar> {
   const por = x.por ?? "business", quien = por === "business" ? { es: "lo canceló el negocio", en: "The business cancelled" } : { es: "lo canceló el cliente", en: "The client cancelled" };
   if (o.pay === "held") {
-    // La retención se mira (soltarRetencion): la que la pasarela no soltó es «retenida» y alerta hold_stuck al equipo, una vez por cobro.
+    // La retención se mira (soltarRetencion): la que la pasarela no soltó es «retenida» y alerta hold_stuck al equipo, una vez por cobro; la que Stripe
+    // ya había cobrado es «cobrada» (la base la anota cobrada y alerta cobrada:<cobro>, que no se cierra sola): nunca «liberada» con el dinero cobrado.
     const s = await soltarRetencion(o.id, { es: `${x.motivo} (${quien.es})`, en: quien.en });
-    return s.e === "retenida" ? { e: "retenida", monto: s.monto } : { e: "liberada", monto: o.amount ?? 0 };
+    return s.e === "retenida" || s.e === "cobrada" ? { e: s.e, monto: s.monto } : { e: "liberada", monto: o.amount ?? 0 };
   }
   if (!o.pid || !o.amount || !["captured", "partially_refunded", "refunded"].includes(o.pay ?? "")) return { e: "nada", monto: 0 };
   const falta = o.amount - (o.refunded ?? 0) - Math.max(0, Math.round(x.seQueda ?? 0));

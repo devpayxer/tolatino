@@ -284,16 +284,21 @@ async function avisarCliente(o: Op, tpl: string, extra: Record<string, string> =
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, num: o.num, cuando: cuandoL(o), dir: "", item: itemL(o), motivo: "", hora: horaVis(Number(o.det.min)), ...extra }, { href: `/vis/${o.num}`, ref: ["visit", o.num], sinSms: o.det.sms === false });
 }
-async function avisarNeg(o: Op, tpl: string, extra: Record<string, string> = {}) {
+/* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · Cada valor del aviso al negocio en los dos idiomas: avisos › avisar pone el del dueño que lo recibe
+   (antes el servicio, las personas y el día salían en español también en un aviso en inglés). Guardián avisoNegUnIdioma. */
+async function avisarNeg(o: Op, tpl: string, extra: Record<string, string | Bi> = {}) {
   const { avisarNegocio } = await import("./avisos");
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, num: o.num, cuando: cuandoL(o), item: itemL(o), que: QUE[queDe(o)].t.es.toLowerCase(), extra: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=vis:${o.num}`, ref: ["visit", o.num] });
+  const q = QUE[queDe(o)].t, it = o.det.item as Bi | undefined;
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, num: o.num, cuando: { es: cuandoL(o), en: cuandoVis(String(o.det.dia), Number(o.det.min), false) }, item: it?.es ? { es: it.es, en: it.en || it.es } : "",
+    que: { es: q.es.toLowerCase(), en: q.en.toLowerCase() }, extra: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=vis:${o.num}`, ref: ["visit", o.num] });
 }
 export async function avisarVisitaNueva(numero: string) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
-  const v = (await db().query<{ v: string }>(`select to_char(respond_by at time zone $2, 'FMHH12:MI AM') || ' del ' || to_char(respond_by at time zone $2, 'FMDD/FMMM') as v from operations where id = $1::bigint`, [o.id, o.tz])).rows[0]?.v ?? "";
+  const v = (await db().query<{ h: string; d: string; m: string }>(`select to_char(respond_by at time zone $2, 'FMHH12:MI AM') as h, to_char(respond_by at time zone $2, 'FMDD/FMMM') as d, to_char(respond_by at time zone $2, 'FMMM/FMDD') as m from operations where id = $1::bigint`, [o.id, o.tz])).rows[0];
   const t = o.det.trade_in as TradeIn | null;
-  await avisarNeg(o, "biz_vis", { vence: v, extra: `${o.det.at_home ? " En su casa." : ""}${t ? ` Da a cambio un ${t.year} ${t.make} ${t.model}.` : ""}` });
+  await avisarNeg(o, "biz_vis", { vence: v ? { es: `${v.h} del ${v.d}`, en: `${v.h} on ${v.m}` } : "",
+    extra: { es: `${o.det.at_home ? " En su casa." : ""}${t ? ` Da a cambio un ${t.year} ${t.make} ${t.model}.` : ""}`, en: `${o.det.at_home ? " At their home." : ""}${t ? ` Trading in a ${t.year} ${t.make} ${t.model}.` : ""}` } });
 }
 type ResV = { ok: true } | { ok: false; msg: Bi };
 const yaCambio = () => no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.");

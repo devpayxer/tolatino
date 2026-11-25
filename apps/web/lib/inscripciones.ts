@@ -341,17 +341,22 @@ async function avisarCliente(numero: string, tpl0: string, extra: Record<string,
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, cuando: cuandoInsc(o.det, true), mat: "", dev: "", grupo: "", cert: "", ...extra }, { href: `/insc/${numero}`, ref: ["enrollment", numero], sinSms: o.det.sms === false });
 }
+/* 25 nov (LAUNCH «el dinero dice lo que pasó» e) · Cada valor del aviso al negocio en los dos idiomas: avisos › avisar pone el del dueño que lo recibe
+   (antes el servicio, las personas y el día salían en español también en un aviso en inglés). Guardián avisoNegUnIdioma. */
+const svcAvisoBi = (o: Op): Bi => { const s = o.det.svc as Bi | undefined; return o.det.neutro || !s?.es ? { es: "una inscripción", en: "an enrollment" } : { es: s.es, en: s.en || s.es }; };
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, servicio: svcAviso(o), grupo: "", mat: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=insc:${numero}`, ref: ["enrollment", numero] });
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, servicio: svcAvisoBi(o), grupo: "", mat: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=insc:${numero}`, ref: ["enrollment", numero] });
 }
 export async function avisarInscNueva(numero: string) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
-  const rb = (await db().query<{ v: string }>(`select to_char(respond_by at time zone $2, 'FMHH12:MI AM') || ' del ' || to_char(respond_by at time zone $2, 'FMDD/FMMM') as v from operations where id = $1::bigint`, [o.id, o.tz])).rows[0]?.v ?? "";
-  await avisarNeg(numero, "biz_insc", { grupo: o.det.group ? ` · ${(o.det.group as Bi).es}` : "", mat: o.mat ? ` Matrícula ${usdI(o.mat)} retenida.` : "", vence: rb });
+  const rb = (await db().query<{ h: string; d: string; m: string }>(`select to_char(respond_by at time zone $2, 'FMHH12:MI AM') as h, to_char(respond_by at time zone $2, 'FMDD/FMMM') as d, to_char(respond_by at time zone $2, 'FMMM/FMDD') as m from operations where id = $1::bigint`, [o.id, o.tz])).rows[0];
+  const gr = o.det.group as Bi | undefined;
+  await avisarNeg(numero, "biz_insc", { grupo: gr?.es ? { es: ` · ${gr.es}`, en: ` · ${gr.en || gr.es}` } : "", mat: o.mat ? { es: ` Matrícula ${usdI(o.mat)} retenida.`, en: ` ${usdI(o.mat)} fee held.` } : "",
+    vence: rb ? { es: `${rb.h} del ${rb.d}`, en: `${rb.h} on ${rb.m}` } : "" });
 }
 async function ev(c: PoolClient, op: string, kind: string, actor: "user" | "member" | "system", actorId: string | null, note?: Bi) {
   await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`, [op, kind, actor, actorId, note ? JSON.stringify(note) : null]);
@@ -505,7 +510,7 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
       [o.id, v.starts_on, v.start_min ?? 480, o.tz, JSON.stringify({ group_id: v.group_id ?? null, alt_group_id: null, group: v.label, starts_on: v.starts_on, ends_on: v.ends_on ?? null, start_min: v.start_min ?? null, dows: v.dows ?? [], ...(v.franja ? { franja: v.franja } : {}) })]);
     await c.query(`update change_proposals set status = 'accepted', answered_at = now() where id = $1`, [p.id]);
     await ev(c, o.id, "alt_accepted", "user", userId);
-    despues = async () => { await cobrarOperacion(o.id); await avisarNeg(numero, "biz_insc_alt_ok", { grupo: (v.label as Bi)?.es ?? "" }); };
+    despues = async () => { await cobrarOperacion(o.id); const lb = v.label as Bi | undefined; await avisarNeg(numero, "biz_insc_alt_ok", { grupo: lb?.es ? { es: lb.es, en: lb.en || lb.es } : "" }); };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
