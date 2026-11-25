@@ -3021,6 +3021,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa). _Ya estaba (comprobado el 24 nov):
       la señal rápida solo corre `pnpm guardianes`, que lleva los textos dentro (`alrevesConSuTexto`); no hay paso propio de textos._
 
+- [ ] **→ 9b** · **Cancelación por el negocio (viaje, noche, inscripción, fiesta): la devolución no se mira (25 nov, revisión del paquete 01888de).**
+      Cuando el negocio cancela, el código ignora lo que devuelve `devolverPago`: si Stripe dice que no, la devolución queda fallida y nadie avisa
+      al equipo de dinero; los avisos `viaje_cancelada`, `noche_biz_cx`, `insc_*_cx` y `fiesta_biz_cx` siguen diciendo «Te devolvemos todo». Las
+      cuatro pantallas de estado ya leen la base (01888de) pero no tienen prueba de punta a punta. Mismo arreglo que patrocinio y boletos.
+
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,
       45472900060 y 45475257746 dejan su línea, `completa:true` y sin inestables._

@@ -23,6 +23,8 @@ orden. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: e
 | Un boleto que va en camino a otra persona | Primero deshaz la transferencia. |
 | Tocas dos veces «Cancelar» o se corta la conexión | Se devuelve **una sola vez**. Si el banco tarda en responder, lo reintentamos solos con la misma orden de devolución, sin cobrarte ni devolverte de más. |
 | El organizador te devuelve | Vuelve **el 100 %** de esos boletos; te llega «Te devolvieron tus boletos». |
+| El evento se cancela y tu cobro está en disputa con tu banco | No te devolvemos aparte: lo que vuelve lo decide esa disputa. El aviso te lo dice así. |
+| La devolución no sale al momento | La pantalla y el aviso dicen lo que pasó de verdad: «te devolvimos» solo cuando salió; si el banco tarda, «va en camino» (la seguimos mandando sola); si el banco o Stripe no la aceptan, el equipo de To'Latino ya tiene el aviso y lo resuelve contigo. |
 | Un problema con el pago (cobro doble, otro monto) | «Ayuda con esta orden › Un problema con el pago»: lo revisa To'Latino. |
 
 ## Preguntas frecuentes
@@ -53,6 +55,8 @@ orden. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: e
 | A ticket that is on its way to another person | Undo the transfer first. |
 | You tap "Cancel" twice or the connection drops | It is refunded **only once**. If the bank is slow to respond, we retry by ourselves with the same refund order, without charging you or refunding you too much. |
 | The organizer refunds you | **100 %** of those tickets goes back; you get "Your tickets were refunded." |
+| The event is cancelled and your charge is in a dispute with your bank | We do not refund separately: the dispute decides what comes back. The notice says so. |
+| The refund does not go out right away | The screen and the notice say what really happened: «we refunded» only when it went out; if the bank is slow, «it is on its way» (we keep sending it by ourselves); if the bank or Stripe do not accept it, To'Latino's team already has the notice and resolves it with you. |
 | A payment problem (double charge, a different amount) | "Help with this order › A payment problem": To'Latino reviews it. |
 
 ### FAQ
