@@ -3260,9 +3260,18 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       cada `{…}` de primer nivel del argumento: un objeto dentro de un ternario ya se mira (rentas › devolver, acciones-colas). (4) Un par `{x}` + `{x_en}` vale solo si la plantilla
       en inglés de `packages/db/migrations` lee `{x_en}` (la de la llamada; sin plantilla a la vista, la de cualquiera). (5) Una ruta es solo un texto que empieza por «/» y lleva letras, cifras
       y `-/?=&.:`; el nombre propio fijo `"To'Latino"` no se duplica en { es, en }; las propiedades `href` y `tpl` no son texto. (6) La marca de pantalla es `/* pantalla */`. (7) `porIdioma`
-      respalda en los dos sentidos (`es ? x.es || x.en : x.en || x.es`) y `avisarMuchos` resuelve los { es, en } de `v.es` y `v.en` por idioma (y, con SMS, una por una con las variables de su
-      idioma). Al revés: 17 casos nuevos en alrevesDineroDiceLoQuePaso (el harness acepta ahora varias ediciones por caso: «entrada nueva en pendientes + llamada mala»).
+      respalda en los dos sentidos (`es ? x.es || x.en : x.en || x.es`) y `avisarMuchos` resuelve los { es, en } de `v.es` y `v.en` por idioma (la vía con SMS ya iba una por una; lo nuevo es que cada
+      persona recibe las variables de SU idioma). Al revés: 17 casos nuevos en alrevesDineroDiceLoQuePaso (el harness acepta ahora varias ediciones por caso: «entrada nueva en pendientes + llamada mala»).
       _Lo que el guardián sigue sin ver:_ un valor armado por un ayudante de OTRO archivo que devuelve un solo idioma (p. ej. `prometido(…, es)`, `horasTxt(…, true)` dentro de un par
       `horas`/`hours`); un ayudante declarado como `const avisarX = async (…) =>` (solo se leen las `function`); un ternario que mezcla un Bi con un texto suelto DENTRO de una propiedad
       (basta un `en:` en el valor para que `revisar` lo dé por bueno); lo que se arma en una variable con otro nombre que `vars`/`aviso`; los valores de `avisarMuchos` ({ es: {…}, en: {…} }:
       no se revisa su contenido); y un nombre de respaldo en español que no es un texto en la llamada (un `?? "Un cliente"` en una variable que luego se pasa, sin `en:`). Se vigilan con el al revés y la revisión.
+      **Revisión de e2c1e55 (25 nov, hecho):** (1) el guardián exige que la vía con SMS de `avisarMuchos` elija el idioma de cada persona (`avisar(id, tpl, en.has(id) ? ven : ves, o)`). (2) Un archivo
+      que declara su PROPIO `function avisar(` (envios: `avisar(numero, quien, tpl, extra)`; mercado) se mira en los objetos de TODOS sus argumentos, no solo del tercero. (3) `href`, `tpl`, `ref`,
+      `sinSms`, `actor` y `unaVez` solo se saltan en los objetos que NO son el de variables (las opciones, el aviso guardado `aviso = { … }`); en el de variables (`vars = { … }`, el segundo
+      argumento de una llamada directa) una variable con ese nombre lleva su texto y se mira. (4) En un archivo que avisa, `coalesce(nullif(…first_name…), 'Palabra') as …` falla salvo
+      que la consulta lleve `/* pantalla */`: el nombre de respaldo en español no sale del SQL a un aviso. Arreglado donde llegaba a un aviso: el cliente de viajes, noche, fiestas, inscripciones,
+      visitas, layaway, evento privado, envíos, rentas (el depósito, el barrido y la devolución tarde), apartados, el «Vecino» del boleto que te mandan (boletos-despues › transferir) y el «Un cliente»
+      con que El Compa pasa un mensaje (compa/conversacion, también «un cliente en WhatsApp/SMS»): el SQL deja el nombre vacío (`nullif(…)`) y el JS pone `?? { es: "Cliente", en: "Customer" }`. Las
+      ~40 consultas de pantallas (listas del panel, colas y admin, constancia de una disputa) llevan `/* pantalla */`. (5) `avisarMuchos`: el idioma se lee de mil en mil y, si la consulta falla,
+      cae al español (como la otra vía); `porIdioma(v.es, true)` quedó dentro del `try`. Al revés: 5 casos nuevos en alrevesDineroDiceLoQuePaso. Sin migración.

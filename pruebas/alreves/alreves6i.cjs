@@ -38,7 +38,7 @@ const casos = [
   ['devolucionEvpAcotada', L, "  for (const v of debe) await moverDinero(v.num).catch(() => undefined);\n", ''],
   // evpSinTelefonos
   ['evpSinTelefonos', L, "coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who,", "coalesce(nullif(u.first_name, ''), 'Cliente') || ' ' || u.phone as who,"],
-  ['evpSinTelefonos', L, "coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.status,", "coalesce(nullif(u.first_name, ''), 'Cliente') || ' ' || coalesce(u.last_name, '') as cliente, o.status,"],
+  ['evpSinTelefonos', L, "nullif(u.first_name, '') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.status,", "nullif(u.first_name, '') || ' ' || coalesce(u.last_name, '') as cliente, o.status,"],
   ['evpSinTelefonos', L, "  if (TEL.test(nota)) return no(\"Por seguridad, sin teléfonos en la nota.", "  if (false) return no(\"Por seguridad, sin teléfonos en la nota."],
   ['evpSinTelefonos', L, "  if (TEL.test(incluye) || TEL.test(nota)) return no(", "  if (TEL.test(nota)) return no("],
   ['evpSinTelefonos', L, "  if (TEL.test(nota)) return no(\"Por seguridad, sin teléfonos. Para hablar usa Mensajes.\"", "  if (!nota) return no(\"Por seguridad, sin teléfonos. Para hablar usa Mensajes.\""],

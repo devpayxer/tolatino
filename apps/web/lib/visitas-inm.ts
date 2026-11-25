@@ -249,8 +249,8 @@ export async function pedirVisita(userId: string, negocio: string, f: VisIn, ent
 }
 
 /* ── Datos y avisos ── */
-type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string; status: string; detail: string | null; tz: string; city: string; det: Record<string, any>; at: string; sent: string };
-const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.status, o.status_detail as detail,
+type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string | null; status: string; detail: string | null; tz: string; city: string; det: Record<string, any>; at: string; sent: string };
+const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, nullif(u.first_name, '') as cliente, o.status, o.status_detail as detail,
                     c.timezone as tz, o.city_id as city, o.details as det, o.scheduled_at::text as at, o.sent_at::text as sent
                from operations o join businesses b on b.id = o.business_id and o.kind = 'visit' join cities c on c.id = o.city_id join users u on u.id = o.user_id`;
 async function leer(c: Q, where: string, args: unknown[], lock = false): Promise<Op | null> {
@@ -291,7 +291,7 @@ async function avisarCliente(o: Op, tpl: string, extra: Record<string, string | 
 async function avisarNeg(o: Op, tpl: string, extra: Record<string, string | Bi> = {}) {
   const { avisarNegocio } = await import("./avisos");
   const q = QUE[queDe(o)].t;
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, num: o.num, cuando: cuandoL(o), item: itemL(o),
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente ?? { es: "Cliente", en: "Customer" }, num: o.num, cuando: cuandoL(o), item: itemL(o),
     que: { es: q.es.toLowerCase(), en: q.en.toLowerCase() }, extra: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=vis:${o.num}`, ref: ["visit", o.num] });
 }
 export async function avisarVisitaNueva(numero: string) {
@@ -606,7 +606,7 @@ export async function visVista(userId: string, numero: string): Promise<VisVista
 /* Panel › Hoy y Visitas. */
 export type FilaVis = { numero: string; estado: string; detalle: string | null; cliente: string; que: QueVis; item: Bi; itemId: string; dia: string; min: number; vence: string | null; enCasa: boolean;
   trade: TradeIn | null; enviada: string; hoy: boolean; yaPaso: boolean };
-const FILA = `select o.number as numero, o.status as estado, o.status_detail as detalle, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.details->>'what' as que, o.details->'item' as item,
+const FILA = `select /* pantalla */ o.number as numero, o.status as estado, o.status_detail as detalle, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.details->>'what' as que, o.details->'item' as item,
                      o.details->>'item_id' as "itemId", o.details->>'dia' as dia, (o.details->>'min')::int as min, o.respond_by::text as vence, coalesce((o.details->>'at_home')::boolean, false) as "enCasa",
                      o.details->'trade_in' as trade, o.sent_at::text as enviada, (o.scheduled_at at time zone c.timezone)::date = (now() at time zone c.timezone)::date as hoy, o.scheduled_at <= now() + interval '15 minutes' as "yaPaso"
                 from operations o join users u on u.id = o.user_id and o.kind = 'visit' join cities c on c.id = o.city_id`;
@@ -646,5 +646,5 @@ export async function visDetalle(negocio: string, numero: string, actorId: strin
     otras = x && it ? (await horasDe(db(), x, it, null)).filter((h) => (h.libres == null || h.libres > 0) && !(h.dia === o.det.dia && h.min === Number(o.det.min))).slice(0, 24) : [];
   }
   const yaPaso = !!(await db().query<{ ok: boolean }>(`select scheduled_at <= now() + interval '15 minutes' as ok from operations where id = $1::bigint`, [o.id])).rows[0]?.ok;
-  return { ...v, cliente: o.cliente, casa, casaOculta: !!o.det.at_home && !confirmada, historial, otras, yaPaso };
+  return { ...v, cliente: o.cliente ?? "Cliente", casa, casaOculta: !!o.det.at_home && !confirmada, historial, otras, yaPaso };
 }

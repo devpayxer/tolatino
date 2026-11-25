@@ -63,7 +63,7 @@ export async function boletoAdmin(s: Staff, code: string): Promise<BoletoAdm | n
     db().query<{ kind: string; at: string; note: Bi | null }>(`select kind, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, note from operation_events where operation_id = $1::bigint order by id`, [b.op]),
     db().query<{ code: string; estado: string }>(`select code, status as estado from tickets where operation_id = $1::bigint order by id`, [b.op]),
     db().query<{ kind: string; estado: string; a: string; de: string; at: string; nuevo: string | null }>(
-      `select x.kind, x.status as estado, '••' || x.to_last2 as a, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as de,
+      `select /* pantalla */ x.kind, x.status as estado, '••' || x.to_last2 as a, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as de,
               to_char(x.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, (select n.code from tickets n where n.id = x.new_ticket_id) as nuevo
          from ticket_transfers x join users u on u.id = x.from_user_id where x.ticket_id = $1::bigint or x.new_ticket_id = $1::bigint order by x.id`, [b.tid]),
     db().query<{ monto: number; cargo: number; cede: number; por: string; estado: string; at: string }>(
@@ -122,7 +122,7 @@ export async function ventasEventoAdmin(eventoId: string) {
          from operations o join payments p on p.operation_id = o.id and p.kind = 'full' and p.status in ('captured', 'partially_refunded', 'refunded')
         where o.kind = 'tickets' and (o.details->>'event_id')::bigint = $1::bigint`, [eventoId]),
     db().query<{ num: string; quien: string; total: number; at: string; n: number; code: string; tz: string }>(
-      `select o.number as num, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.total_cents as total,
+      `select /* pantalla */ o.number as num, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.total_cents as total,
               to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, (select count(*)::int from tickets t where t.operation_id = o.id) as n,
               (select min(t.code) from tickets t where t.operation_id = o.id) as code, (select timezone from cities where id = o.city_id) as tz
          from operations o join users u on u.id = o.user_id where o.kind = 'tickets' and o.pay_mode = 'app' and (o.details->>'event_id')::bigint = $1::bigint and o.status = 'confirmed' order by o.id desc limit 20`, [eventoId]),

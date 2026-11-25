@@ -229,9 +229,9 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
 }
 
 /* ── Leer y avisar ── */
-type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string; status: string; detail: string | null; ymd: string; m: number; tz: string;
+type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string | null; status: string; detail: string | null; ymd: string; m: number; tz: string;
   det: Record<string, unknown>; tot: number; pay: string | null; pid: string | null; amount: number | null; refunded: number | null; hours_to: number; past: boolean };
-const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.status, o.status_detail as detail,
+const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, nullif(u.first_name, '') as cliente, o.status, o.status_detail as detail,
                     (o.scheduled_at at time zone c.timezone)::date::text as ymd, (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m,
                     c.timezone as tz, o.details as det, o.total_cents as tot, o.pay_status as pay, p.id::text as pid, p.amount_cents as amount, p.refunded_cents as refunded,
                     (extract(epoch from (o.scheduled_at - now())) / 3600)::float8 as hours_to, o.scheduled_at < now() as past
@@ -260,7 +260,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   if (!o) return false;
   const { avisarNegocio } = await import("./avisos");
   const a = Number(o.det.adults ?? 1), k = Number(o.det.kids ?? 0), n = a + k, svc = o.det.svc as Bi | undefined;
-  return avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaBi(o.ymd), hora: horaL(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "", personas: { es: `${n} ${n === 1 ? "persona" : "personas"}`, en: `${n} ${n === 1 ? "person" : "people"}` }, dep: "", ...extra },
+  return avisarNegocio(o.biz, tpl, { cliente: o.cliente ?? { es: "Cliente", en: "Customer" }, dia: diaBi(o.ymd), hora: horaL(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "", personas: { es: `${n} ${n === 1 ? "persona" : "personas"}`, en: `${n} ${n === 1 ? "person" : "people"}` }, dep: "", ...extra },
     { href: `/panel/${o.biz}/hoy?det=viaje:${numero}`, ref: ["trip", numero], ...(unaVez ? { unaVez } : {}) });
 }
 export async function avisarViajeNuevo(numero: string) {
@@ -623,7 +623,7 @@ export type SalidaPanel = { run: string; svc: Bi; ymd: string; m: number; total:
 export async function viajesHoy(negocio: string): Promise<{ esperan: FilaViaje[]; salidas: SalidaPanel[]; privados: FilaViaje[]; choferes: { id: string; nombre: string }[] }> {
   await barrerViajes({ negocio });
   const L = (await db().query<FilaViaje>(
-    `select o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who, o.details->'svc' as svc, o.details->>'k' as k,
+    `select /* pantalla */ o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who, o.details->'svc' as svc, o.details->>'k' as k,
             (o.scheduled_at at time zone c.timezone)::date::text as ymd, (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m,
             coalesce((o.details->>'adults')::int, 1) as adults, coalesce((o.details->>'kids')::int, 0) as kids, coalesce((o.details->>'childSeat')::boolean, false) as "childSeat",
             coalesce((o.details->>'bagsExtra')::int, 0) as "bagsExtra", o.total_cents as tot, (extract(epoch from o.respond_by) * 1000)::float8 as resp, o.status_detail as detalle, o.details->>'run' as run,
@@ -669,7 +669,7 @@ export async function viajePanel(negocio: string, numero: string): Promise<Viaje
     }
     otras = cand.sort((a, z) => Math.abs(a.t - t0) - Math.abs(z.t - t0)).slice(0, 6).sort((a, z) => a.t - z.t).map(({ t: _t, ...r }) => r);
   }
-  return { numero, st: o.status, who: o.cliente, svc: d.svc as Bi, k: String(d.k), ymd: o.ymd, m: o.m, adults: Number(d.adults ?? 1), kids: Number(d.kids ?? 0), childSeat: !!d.childSeat, bagsExtra: Number(d.bagsExtra ?? 0),
+  return { numero, st: o.status, who: o.cliente ?? "Cliente", svc: d.svc as Bi, k: String(d.k), ymd: o.ymd, m: o.m, adults: Number(d.adults ?? 1), kids: Number(d.kids ?? 0), childSeat: !!d.childSeat, bagsExtra: Number(d.bagsExtra ?? 0),
     tot: o.tot, resp: N.rows[0]?.resp ?? null, detalle: o.detail, run: (d.run as string | null) ?? null, abordo: null, pickup: (d.pickup as { t: string } | null)?.t ?? null, nota: N.rows[0]?.nota ?? null, pay: o.pay,
     alt: P.rows[0] ?? null, otras, eventos: E.rows,
     boxes: Number(d.boxes ?? 0), dest: d.k === "caja" ? await destinatarioDe(o.id) : null, rastreo: ((d.tracking as { code?: string } | undefined)?.code) ?? null,

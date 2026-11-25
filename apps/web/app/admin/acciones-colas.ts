@@ -55,7 +55,7 @@ export async function tomarCaso(id: string): Promise<ResAdm> {
    cada uno con su auditoría; los que no se pueden (ya decididos, de otra ciudad) se saltan y se dice cuántos. */
 async function puedeTrabajar(c: PoolClient, uid: string, q: Fila): Promise<string | null> {
   const p = (await c.query<{ nombre: string }>(
-    `select coalesce(nullif(u.first_name, ''), 'Alguien') as nombre from staff_members m join users u on u.id = m.user_id
+    `select /* pantalla */ coalesce(nullif(u.first_name, ''), 'Alguien') as nombre from staff_members m join users u on u.id = m.user_id
       where m.user_id = $1 and m.status = 'active'
         and exists (select 1 from queue_roles r where r.role = m.role and r.queue = $2 and r.allowed)
         and exists (select 1 from role_permissions p where p.role = m.role and p.section = 'colas' and p.action = 'aprobar' and p.allowed)
@@ -108,7 +108,7 @@ export async function equipoDeCola(id: string): Promise<{ id: string; nombre: st
   const s = await staff();
   if (!s || !s.puede("colas", "editar") || !/^\d{1,18}$/.test(String(id))) return [];
   return (await db().query<{ id: string; nombre: string }>(
-    `select m.user_id::text as id, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Alguien') || ' · ' || (r.name->>'es') as nombre
+    `select /* pantalla */ m.user_id::text as id, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Alguien') || ' · ' || (r.name->>'es') as nombre
        from queue_items q join staff_members m on m.status = 'active' join users u on u.id = m.user_id join staff_roles r on r.key = m.role
       where q.id = $1::bigint and exists (select 1 from queue_roles x where x.role = m.role and x.queue = q.queue and x.allowed)
         and exists (select 1 from role_permissions p where p.role = m.role and p.section = 'colas' and p.action = 'aprobar' and p.allowed)
@@ -414,7 +414,7 @@ export async function decidirReclamo(id: string, aprobar: boolean, motivo: strin
       if (!cl.owner_notified_at || Date.now() - new Date(cl.owner_notified_at).getTime() < 7 * 86_400_000) return "El dueño actual tiene 7 días desde el aviso para responder. Todavía no se puede aplicar.";
     }
     if (aprobar) {
-      const u = (await c.query<{ nombre: string; phone: string }>(`select coalesce(nullif(trim(coalesce(first_name,'') || ' ' || coalesce(last_name,'')), ''), 'Dueño') as nombre, phone from users where id = $1`, [cl.user_id])).rows[0]!;
+      const u = (await c.query<{ nombre: string; phone: string }>(`select /* pantalla */ coalesce(nullif(trim(coalesce(first_name,'') || ' ' || coalesce(last_name,'')), ''), 'Dueño') as nombre, phone from users where id = $1`, [cl.user_id])).rows[0]!;
       await c.query(`update business_members set status = 'removed', removed_reason = 'claim', removed_at = now(), panel_access = '{}', updated_at = now()
                       where business_id = $1 and kind = 'owner' and status = 'active' and user_id is distinct from $2`, [q.business_id, cl.user_id]);
       const ya = (await c.query(`update business_members set kind = 'owner', panel_access = '{all}', status = 'active', updated_at = now() where business_id = $1 and user_id = $2 and status = 'active'`, [q.business_id, cl.user_id])).rowCount;

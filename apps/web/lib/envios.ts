@@ -31,14 +31,14 @@ async function ev(c: { query: ReturnType<typeof db>["query"] }, opId: string, ki
   await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`, [opId, kind, actor, actorId, note ? JSON.stringify(note) : null]);
 }
 async function avisar(numero: string, quien: "cliente" | "negocio", tpl: string, extra: Record<string, string | Bi> = {}) {
-  const o = (await db().query<{ uid: string; biz: string; negocio: string; cliente: string; ymd: string; m: number; tot: number; svc: Bi }>(
-    `select o.user_id::text as uid, o.business_id as biz, b.name as negocio, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, (o.scheduled_at at time zone c.timezone)::date::text as ymd,
+  const o = (await db().query<{ uid: string; biz: string; negocio: string; cliente: string | null; ymd: string; m: number; tot: number; svc: Bi }>(
+    `select o.user_id::text as uid, o.business_id as biz, b.name as negocio, nullif(u.first_name, '') as cliente, (o.scheduled_at at time zone c.timezone)::date::text as ymd,
             (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m, o.total_cents as tot, o.details->'svc' as svc
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'trip'`, [numero])).rows[0];
   if (!o) return;
   const d = new Date(`${o.ymd}T12:00:00Z`), dia: Bi = { es: `${["dom", "lun", "mar", "mié", "jue", "vie", "sáb"][d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`, en: `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${d.getUTCMonth() + 1}/${d.getUTCDate()}` };
   const hora = `${Math.floor(o.m / 60) % 12 || 12}:${String(o.m % 60).padStart(2, "0")} ${o.m < 720 ? "AM" : "PM"}`;
-  const A = await import("./avisos"), vars = { negocio: o.negocio, cliente: o.cliente, dia, hora, total: money(o.tot), servicio: o.svc?.es ? { es: o.svc.es, en: o.svc.en || o.svc.es } : "", ...extra };
+  const A = await import("./avisos"), vars = { negocio: o.negocio, cliente: o.cliente ?? { es: "Cliente", en: "Customer" }, dia, hora, total: money(o.tot), servicio: o.svc?.es ? { es: o.svc.es, en: o.svc.en || o.svc.es } : "", ...extra };
   if (quien === "cliente") await A.avisar(o.uid, tpl, vars, { href: `/viaje/${numero}`, ref: ["trip", numero] });
   else await A.avisarNegocio(o.biz, tpl, vars, { href: `/panel/${o.biz}/hoy?det=viaje:${numero}`, ref: ["trip", numero] });
 }

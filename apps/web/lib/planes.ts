@@ -403,7 +403,7 @@ export type PlanPanelFila = { numero: string; quien: string; svc: Bi; st: string
 export async function planesNegocio(negocio: string): Promise<PlanPanelFila[]> {
   await barrerPlanes({ negocio });
   return (await db().query<PlanPanelFila>(
-    `select o.number as numero, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien, i.name as svc, s.status as st,
+    `select /* pantalla */ o.number as numero, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien, i.name as svc, s.status as st,
             s.next_visit_on::text as next, s.price_cents as precio, s.charges_ok as cobros, s.fail_count as fallos
        from plan_subscriptions s join operations o on o.id = s.operation_id join users u on u.id = s.user_id join items i on i.id = s.item_id
       where s.business_id = $1 and s.status <> 'cancelled' order by s.next_visit_on nulls last limit 50`, [negocio])).rows;

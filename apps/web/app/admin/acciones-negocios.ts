@@ -266,7 +266,7 @@ export async function resenaOcultar(id: string, resena: string, ocultar: boolean
   if (!/^\d{1,18}$/.test(String(resena))) return no("Esa reseña no existe.");
   const res = await hacer(id, "retirar", motivo, async (c, s, b, m) => {
     const r = (await c.query<{ status: string; quien: string }>(
-      `select r.status, coalesce(u.first_name, 'Vecino') as quien from reviews r join users u on u.id = r.user_id where r.id = $1::bigint and r.business_id = $2 and r.status <> 'removed' for update of r`, [resena, b.id])).rows[0];
+      `select /* pantalla */ r.status, coalesce(u.first_name, 'Vecino') as quien from reviews r join users u on u.id = r.user_id where r.id = $1::bigint and r.business_id = $2 and r.status <> 'removed' for update of r`, [resena, b.id])).rows[0];
     if (!r) return "Esa reseña ya no está.";
     if ((r.status === "hidden") === ocultar) return ocultar ? "Ya está oculta." : "Ya se ve.";
     await c.query(`update reviews set status = $2, hidden_reason = $3, hidden_by = $4, hidden_at = $5 where id = $1::bigint`, [resena, ocultar ? "hidden" : "visible", ocultar ? m : null, ocultar ? s.id : null, ocultar ? new Date() : null]);

@@ -696,7 +696,7 @@ export async function turnoAuto(hilo: string): Promise<{ que: string }> {
         where t.id = $1 and t.compa_pending_until is not null and t.compa_pending_until <= now() and b.id = t.business_id and ci.id = b.city_id and u.id = t.user_id
         returning t.id::text as id, t.user_id::text as cliente, b.id as negocio, b.name as nombre, b.city_id as ciudad, coalesce(u.lang, 'es') as lang, b.chat_auto_reply as fija,
                   coalesce(negocio_abierto(b.id, now() at time zone ci.timezone), false) as abierto,
-                  coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Un cliente') as quien`, [id])).rows[0];
+                  nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien`, [id])).rows[0];
     if (!t) return { que: "nada" };
     const r = await unaRespuestaAuto(t).catch(async (e) => {
       // Si algo falla, el hilo no se queda esperando: se suelta y, si el negocio la tiene, sale la fija (lo de siempre).
@@ -707,7 +707,7 @@ export async function turnoAuto(hilo: string): Promise<{ que: string }> {
   }
   return { que: "vueltas" };
 }
-type HiloAuto = { id: string; cliente: string; negocio: string; nombre: string; ciudad: string; lang: string; fija: boolean; abierto: boolean; quien: string };
+type HiloAuto = { id: string; cliente: string; negocio: string; nombre: string; ciudad: string; lang: string; fija: boolean; abierto: boolean; quien: string | null };
 
 /* Sin El Compa (se apagó, llegó al tope o algo falló entre el mensaje y la respuesta): EXACTAMENTE lo de antes — la respuesta fija de siempre si
    el negocio la tiene encendida, está cerrado y no salió otra fija en 12 horas — y el hilo deja de esperar. */
@@ -792,7 +792,7 @@ async function unaRespuestaAuto(t: HiloAuto): Promise<string> {
     const { avisar } = await import("../avisos");
     const L = (await db().query<{ id: string }>(
       `select distinct user_id::text as id from business_members where business_id = $1 and status = 'active' and user_id is not null and (kind = 'owner' or 'all' = any(panel_access) or 'msg' = any(panel_access))`, [t.negocio])).rows;
-    for (const u of L) await avisar(u.id, "compa_te_paso", { cliente: t.quien, texto: ultimo.slice(0, 80) }, { href: `/panel/${t.negocio}/mensajes?det=msg:${t.id}`, ref: ["chat", t.id] }).catch(() => undefined);
+    for (const u of L) await avisar(u.id, "compa_te_paso", { cliente: t.quien ?? { es: "Un cliente", en: "A customer" }, texto: ultimo.slice(0, 80) }, { href: `/panel/${t.negocio}/mensajes?det=msg:${t.id}`, ref: ["chat", t.id] }).catch(() => undefined);
   }
   return otra ? "otra" : resp.pasar ? "paso" : "ok";
 }
@@ -847,7 +847,7 @@ export async function respuestaAutoCanal(x: { negocio: { id: string; nombre: str
       const { avisar } = await import("../avisos");
       const L = (await db().query<{ id: string }>(
         `select distinct user_id::text as id from business_members where business_id = $1 and status = 'active' and user_id is not null and (kind = 'owner' or 'all' = any(panel_access) or 'msg' = any(panel_access))`, [x.negocio.id])).rows;
-      const quien = x.canal === "whatsapp" ? "un cliente en WhatsApp" : "un cliente en SMS";
+      const quien = x.canal === "whatsapp" ? { es: "un cliente en WhatsApp", en: "a customer on WhatsApp" } : { es: "un cliente en SMS", en: "a customer on SMS" };
       for (const u of L) await avisar(u.id, "compa_te_paso", { cliente: quien, texto: ultimo.slice(0, 80) }, { href: `/panel/${x.negocio.id}/compa`, ref: ["compa", conv.number] }).catch(() => undefined);
     }
   }

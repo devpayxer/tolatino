@@ -150,14 +150,15 @@ export async function avisarTelefono(tel: string, tpl: string, v: Vars, o: { hre
 export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en: Vars }, o: { href?: string; ref?: [string, string]; actor?: string | null } = {}) {
   const L = [...new Set(ids)].filter(Boolean);
   if (!L.length) return;
-  // Un valor { es, en } dentro de v.es o v.en sale en el idioma de quien lo recibe (v.es para quien lee en español, v.en para quien lee en inglés).
-  const ves = porIdioma(v.es, true), ven = porIdioma(v.en, false);
   try {
+    // Un valor { es, en } dentro de v.es o v.en sale en el idioma de quien lo recibe (v.es para quien lee en español, v.en para quien lee en inglés).
+    const ves = porIdioma(v.es, true), ven = porIdioma(v.en, false);
     const t = (await db().query<{ sms: boolean; grp: string; pref: string | null; title: { es: string; en: string }; body: { es: string; en: string } }>(`select sms, grp, pref, title, body from notif_templates where key = $1`, [tpl])).rows[0];
     if (!t) return;
     if (t.sms) {
-      // Una por una (con SMS), cada quien con las variables de su idioma.
-      const en = new Set((await db().query<{ id: string }>(`select id::text from users where id = any($1::uuid[]) and lang = 'en'`, [L])).rows.map((r) => r.id));
+      // Una por una (con SMS), cada quien con las variables de su idioma. Si el idioma no se puede leer, cae al español (de mil en mil, como la otra vía).
+      const en = new Set<string>();
+      for (let i = 0; i < L.length; i += 1000) for (const r of (await db().query<{ id: string }>(`select id::text from users where id = any($1::uuid[]) and lang = 'en'`, [L.slice(i, i + 1000)]).catch(() => ({ rows: [] as { id: string }[] }))).rows) en.add(r.id);
       for (const id of L) await avisar(id, tpl, en.has(id) ? ven : ves, o);
       return;
     }

@@ -240,6 +240,13 @@ const casos = [
   // porIdioma respalda en los dos sentidos; avisarMuchos resuelve cada Bi por idioma.
   ["avisoNegUnIdioma", "porIdioma solo respalda el inglés vacío", 'apps/web/lib/avisos.ts', '(es ? x.es || x.en : x.en || x.es)', '(es ? x.es : x.en || x.es)'],
   ["avisoNegUnIdioma", "avisarMuchos no resuelve los Bi del español", 'apps/web/lib/avisos.ts', 'const ves = porIdioma(v.es, true), ven = porIdioma(v.en, false);', 'const ves = v.es, ven = porIdioma(v.en, false);'],
+  // (revisión de e2c1e55) La vía con SMS de avisarMuchos elige las variables del idioma de CADA persona; el archivo con su PROPIO avisar(…) se mira en todos sus argumentos;
+  // href y tpl cuentan como texto en el objeto de VARIABLES (solo se saltan en las opciones y el aviso guardado); el nombre de respaldo en español no sale del SQL a un aviso.
+  ["avisoNegUnIdioma", "avisarMuchos (con SMS) manda a todas las variables del español", 'apps/web/lib/avisos.ts', 'await avisar(id, tpl, en.has(id) ? ven : ves, o);', 'await avisar(id, tpl, ves, o);'],
+  ["avisoNegUnIdioma", "el avisar() propio del archivo: un texto en el cuarto argumento (envios)", 'apps/web/lib/envios.ts', 'tpl, { rastreo: code })', 'tpl, { rastreo: "Código " + code })'],
+  ["avisoNegUnIdioma", "una variable que se llama tpl lleva texto (rentas)", 'apps/web/lib/rentas.ts', 'cliente: "To\'Latino", que: cobrar', 'tpl: "Ver la renta", cliente: "To\'Latino", que: cobrar'],
+  ["avisoNegUnIdioma", "el nombre de respaldo «Cliente» sale del SQL a un aviso (envios)", 'apps/web/lib/envios.ts', "nullif(u.first_name, '') as cliente", "coalesce(nullif(u.first_name, ''), 'Cliente') as cliente"],
+  ["avisoNegUnIdioma", "el nombre de respaldo «Vecino» de un ayudante de SQL sale a un aviso (boletos-despues)", 'apps/web/lib/boletos-despues.ts', "const QUIEN = (u: string) => `/* pantalla */ coalesce(", "const QUIEN = (u: string) => `coalesce("],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

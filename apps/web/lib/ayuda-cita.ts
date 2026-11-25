@@ -410,7 +410,7 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
 export async function ayudasCitasNegocio(negocio: string) {
   await escalarVencidas();
   return (await db().query<{ num: string; quien: string; reason: MotivoCita; vence: string; rub: string | null; plazoH: number }>(
-    `select o.number as num, coalesce(u.first_name, 'Cliente') as quien, h.reason, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub, ${ISO(`h.created_at + make_interval(hours => ${cfgSql("ayuda_negocio_h")})`)} as vence, ${cfgSql("ayuda_negocio_h")} as "plazoH"
+    `select /* pantalla */ o.number as num, coalesce(u.first_name, 'Cliente') as quien, h.reason, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub, ${ISO(`h.created_at + make_interval(hours => ${cfgSql("ayuda_negocio_h")})`)} as vence, ${cfgSql("ayuda_negocio_h")} as "plazoH"
        from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id
       where h.business_id = $1 and h.status = 'open' and o.kind in ('appointment', 'market_order', 'hold', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') order by h.created_at limit 10`, [negocio])).rows;
 }

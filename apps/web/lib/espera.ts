@@ -141,7 +141,7 @@ export async function esperaPanel(negocio: string, eventoId: string, fechaVer: s
   if (!d) return null;
   const [F, L] = await Promise.all([
     db().query<{ quien: string; party: number; estado: string; pos: number | null; at: string }>(
-      `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, w.party, w.status as estado,
+      `select /* pantalla */ coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, w.party, w.status as estado,
               case when w.status = 'waiting' then row_number() over (partition by w.status order by w.created_at, w.id)::int end as pos,
               to_char(w.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
          from waitlist w join users u on u.id = w.user_id where w.event_date_id = $1::bigint order by (w.status in ('waiting', 'offered')) desc, w.created_at, w.id limit 100`, [d.fid]),

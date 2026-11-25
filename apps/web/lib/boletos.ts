@@ -767,7 +767,7 @@ export async function ventasPanel(negocio: string, eventoId: string, fechaVer: s
          from ticket_types t left join ticket_stock s on s.ticket_type_id = t.id and ($2::bigint is null or s.event_date_id = $2::bigint) where t.event_id = $1::bigint and (not t.off or exists (select 1 from ticket_stock z where z.ticket_type_id = t.id and z.sold_n > 0))
         group by t.id order by t.sort, t.id`, [eventoId, f]),
     db().query<{ n: Bi; quien: string; num: string }>(
-      `select et.zone as n, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.number as num
+      `select /* pantalla */ et.zone as n, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.number as num
          from tickets t join event_tables et on et.id = t.table_id join operations o on o.id = t.operation_id join users u on u.id = o.user_id
         where t.event_id = $1::bigint and t.status in ('valid', 'used') and ($2::bigint is null or t.event_date_id = $2::bigint) order by t.id limit 60`, [eventoId, f]),
     db().query<{ vendidos: number; capacidad: number; mesas: number; mesascap: number; ordenes: number; bruto: number; comision: number; descuentos: number; extras: number; depositos: number }>(
@@ -785,7 +785,7 @@ export async function ventasPanel(negocio: string, eventoId: string, fechaVer: s
          from operations o join payments p on p.operation_id = o.id and p.kind = 'full' and p.status in ('captured', 'partially_refunded')
         where o.kind = 'tickets' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint and ($3::bigint is null or (o.details->>'event_date_id')::bigint = $3::bigint)`, [eventoId, negocio, f]),
     db().query<{ quien: string; num: string; boletos: number; mesa: boolean; extras: boolean; at: string; vivos: number; devuelto: number }>(
-      `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.number as num,
+      `select /* pantalla */ coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.number as num,
               (select count(*)::int from tickets t where t.operation_id = o.id and t.ticket_type_id is not null and t.status <> 'replaced') as boletos,
               (select count(*)::int from tickets t where t.operation_id = o.id and t.status = 'valid') as vivos,
               coalesce((select sum(r.amount_cents) from refunds r join payments p on p.id = r.payment_id where p.operation_id = o.id and r.status in ('pending', 'done')), 0)::int as devuelto,

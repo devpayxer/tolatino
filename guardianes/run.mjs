@@ -18573,12 +18573,15 @@ const guardianes = {
     };
     // Las claves de plantilla que nombra una llamada: cada "texto" de sus argumentos que es una plantilla de las migraciones.
     const clavesDe = (txt) => [...new Set([...txt.matchAll(/"([a-z][a-z_0-9]*)"/g)].map((m) => m[1]).filter((k) => filaDe(k).test(migraciones())))];
-    const revisar = (f, ln, que, obj, claves = []) => {
+    // esVars: el objeto es el de VARIABLES de un aviso (cada propiedad es una variable de la plantilla, también una que se llame «href» o «tpl»); si no (las opciones de la
+    // llamada, el aviso guardado), «tpl», «href», «ref»… son claves técnicas, no texto que se lea.
+    const OPCIONES = /^(?:tpl|href|ref|sinSms|actor|unaVez)$/;
+    const revisar = (f, ln, que, obj, claves = [], esVars = true) => {
       const ps = props(obj), nombres = new Set(ps.map((p) => /^(\w+)\s*:/.exec(p)?.[1]).filter(Boolean));
       for (const p of ps) {
         if (p.startsWith("...")) continue;
         const k = /^(\w+)\s*:/.exec(p)?.[1] ?? p, v = p.slice(p.indexOf(":") + 1);
-        if (k === "tpl" || k === "href") continue; // la clave de la plantilla de un aviso guardado y el enlace: no son texto que se lea
+        if (!esVars && OPCIONES.test(k)) continue; // la clave de la plantilla de un aviso guardado, el enlace y las opciones: no son texto que se lea (en las variables sí cuentan)
         // Un par {x} + {x_en} (msg_equipo, ord_rep_msg, drv_sancion…) lleva cada idioma en su variable: está bien SOLO si la plantilla en inglés (migraciones) lee {x_en}.
         if (nombres.has(k + "_en") || (k.endsWith("_en") && nombres.has(k.slice(0, -3)))) {
           const x = k.endsWith("_en") ? k.slice(0, -3) : k;
@@ -18592,6 +18595,8 @@ const guardianes = {
         else if (conPalabras(v)) falla(G, f, ln, `${que}: {${k}} lleva texto en un solo idioma: va { es, en }`);
       }
     };
+    // Un objeto que lleva alguna clave de opciones (tpl, ref, sinSms, actor, unaVez) o que es solo { href } son las opciones de la llamada o el aviso guardado; el resto, variables.
+    const esVarsDe = (ob) => { const ks = props(ob).map((p) => /^(\w+)\s*:?/.exec(p)?.[1]).filter(Boolean); return !(ks.some((k) => /^(?:tpl|ref|sinSms|actor|unaVez)$/.test(k)) || (ks.length === 1 && ks[0] === "href")); };
     const defs = { avisarNeg: 0, avisarCliente: 0 };
     for (const f of archivos.filter((x) => /^apps\/web\/lib\/.+\.ts$/.test(x))) {
       const t = sinComent(f);
@@ -18626,7 +18631,15 @@ const guardianes = {
         const a = argumentos(t, m.index + m[0].length - 1);
         if (!a[2]) continue;
         const ln = t.slice(0, m.index).split("\n").length, que = "una llamada a " + m[0].slice(0, -1), claves = clavesDe(a[1]?.s ?? "");
-        for (const ob of objetos(a[2].s)) { revisar(f, ln, que, ob, claves); dinero(f, ln, que, ob); }
+        for (const ob of objetos(a[2].s)) { revisar(f, ln, que, ob, claves, true); dinero(f, ln, que, ob); }
+      }
+      // (revisión de e2c1e55) Si el archivo declara su PROPIO «function avisar(» (envios: avisar(numero, quien, tpl, extra); mercado: avisar(numero, tpl, extra)), el objeto no está
+      // en el tercer argumento: se miran los objetos de TODOS sus argumentos (la llamada sin punto delante: A.avisar(…) es la de avisos y se mira arriba).
+      if (/\n(?:export )?(?:async )?function avisar\(/.test(t)) {
+        for (const m of t.matchAll(/(?<![\w$.])(?<!function )avisar\(/g)) {
+          const a = argumentos(t, m.index + m[0].length - 1), ln = t.slice(0, m.index).split("\n").length, claves = clavesDe(a.map((x) => x.s).filter((x) => /^"[^"]*"$/.test(x)).join(","));
+          for (const ar of a) for (const ob of objetos(ar.s)) { revisar(f, ln, "una llamada a avisar (la propia del archivo)", ob, claves, esVarsDe(ob)); dinero(f, ln, "una llamada a avisar (la propia del archivo)", ob); }
+        }
       }
       // (revisión de b5edd4c) Todo ayudante «avis…(» cuyo cuerpo llama a avisar…( (avisarEvp, avisarDueño, avisarC, avisarEquipo…): lo mismo en cada una de sus llamadas
       // del archivo, en cualquier argumento y en los objetos de un ternario. Las propias avisar, avisarNegocio, avisarTelefono y avisarMuchos se miran arriba o en su sitio.
@@ -18636,13 +18649,13 @@ const guardianes = {
         if (!/\bavis\w+\(/.test(cuerpoFn(t, nom).replace(/^[^\n]*\n/, ""))) continue;
         for (const m of t.matchAll(new RegExp(`(?<![\\w$.])(?<!function )${nom}\\(`, "g"))) {
           const ln = t.slice(0, m.index).split("\n").length, a = argumentos(t, m.index + m[0].length - 1), claves = clavesDe(a.map((x) => x.s).filter((x) => /^"[^"]*"$/.test(x)).join(","));
-          for (const ar of a) for (const ob of objetos(ar.s)) { revisar(f, ln, `una llamada a ${nom}`, ob, claves); dinero(f, ln, `una llamada a ${nom}`, ob); }
+          for (const ar of a) for (const ob of objetos(ar.s)) { revisar(f, ln, `una llamada a ${nom}`, ob, claves, esVarsDe(ob)); dinero(f, ln, `una llamada a ${nom}`, ob); }
         }
       }
       // (revisión de b5edd4c) Lo que se arma en una variable y luego se pasa a un aviso («const vars = { … }», «aviso = { … }»): lo mismo.
       for (const m of t.matchAll(/\b(?:vars|aviso)\s*(?<![=!<>])=(?![=>])\s*(?=\{)/g)) {
         const ob = objeto(t, m.index + m[0].length);
-        if (ob) revisar(f, t.slice(0, m.index).split("\n").length, "un valor armado para un aviso (" + m[0].replace(/\s*=\s*$/, "") + " = { … })", ob);
+        if (ob) revisar(f, t.slice(0, m.index).split("\n").length, "un valor armado para un aviso (" + m[0].replace(/\s*=\s*$/, "") + " = { … })", ob, [], /^vars/.test(m[0]));   // «vars = { … }» son las variables; «aviso = { … }» es lo guardado del aviso (con su href, uid…): sus claves técnicas no se miran
       }
       // Lo que se guarda para avisar DESPUÉS (aviso: { …, vars: { … } } / v: { … }, que otro ayudante pasa a avisar o avisarNegocio): lo mismo.
       for (const m of t.matchAll(/\b(?:vars|(?:tpl:\s*"[a-z_0-9]+",\s*|aviso:\s*\{\s*biz:\s*[\w.]+,\s*)v)\s*:\s*(?=\{)/g)) {
@@ -18656,6 +18669,10 @@ const guardianes = {
         // «/* pantalla */» dentro de la consulta: marca explícita de que es de una pantalla (no de un aviso) y no lleva el servicio en los dos idiomas.
         if (/\{svc,es\}/.test(q) && !/\{svc,en\}/.test(q) && /\b(select|returning)\b/i.test(q) && /\{svc,es\}[\s\S]{0,80}?\bas\s+\w+/.test(q) && !/\u0001PANTALLA\u0001/.test(q)) falla(G, f, l, "una consulta lee el servicio de la cita solo en español ({svc,es}): lee también {svc,en} (con respaldo al español) y mándalo como { es, en }");
         if (/'(FM)?DD\/(FM)?MM'/.test(q) && !/'(FM)?MM\/(FM)?DD'/.test(q)) falla(G, f, l, "una consulta da el día como DD/MM sin su MM/DD: el aviso en inglés lleva mes/día ({ es, en })");
+        // (revisión de e2c1e55) El nombre de respaldo en español que sale del SQL («coalesce(nullif(u.first_name, ''), 'Cliente') as cliente») llega al aviso en español aunque lo lea quien está en inglés:
+        // en un archivo que avisa, el SQL deja el nombre vacío (nullif(…) sin coalesce) y el JS pone el respaldo { es: "Cliente", en: "Customer" }. Una consulta de pantalla lo marca con /* pantalla */.
+        if (/\bcoalesce\(\s*(?:nullif\((?:(?!\bas\b)[^`]){0,200}?first_name(?:(?!\bas\b)[^`]){0,200}?\)|[\w.]*first_name)\s*,\s*'[^']*[A-Za-zÁÉÍÓÚáéíóúñÑ][^']*'\s*\)/.test(q) && !/\u0001PANTALLA\u0001/.test(q))
+          falla(G, f, l, "una consulta de un archivo que avisa da un nombre de respaldo en español (coalesce(nullif(…first_name…), 'Cliente')): si llega a un aviso, nullif(…) sin coalesce y el respaldo en el JS ?? { es: \"Cliente\", en: \"Customer\" }; si es solo de una pantalla, marca la consulta con /* pantalla */");
       }
     }
     // (revisión de b5edd4c) avisos › porIdioma respalda en los dos sentidos (el español vacío cae al inglés y al revés: nunca «» en un aviso) y avisarMuchos resuelve cada
@@ -18665,6 +18682,8 @@ const guardianes = {
       const mu = cuerpoFn(ta, "avisarMuchos");
       if (!/porIdioma\(v\.es, true\)/.test(mu) || !/porIdioma\(v\.en, false\)/.test(mu)) falla(G, AV, 0, "avisarMuchos no resuelve los valores { es, en } de v.es y v.en con porIdioma (un Bi saldría con su .es para todos)");
       if (/llenar\([^)]*,\s*v\.(?:es|en)\)/.test(mu) || /avisar\(id, tpl, v\.es/.test(mu)) falla(G, AV, 0, "avisarMuchos llena con v.es / v.en sin resolver: usa los porIdioma(v.es, true) y porIdioma(v.en, false)");
+      // (revisión de e2c1e55) Y la vía con SMS (una por una) elige las variables del idioma DE CADA persona (no las de v.es para todas).
+      if (!/avisar\(id, tpl, en\.has\(id\) \? ven : ves/.test(mu)) falla(G, AV, 0, "avisarMuchos (la vía con SMS, una por una) no elige el idioma de cada persona: avisar(id, tpl, en.has(id) ? ven : ves, o)");
     }
     for (const f of Object.keys(PENDIENTES_UN_IDIOMA)) falla(G, f, 0, "PENDIENTES_UN_IDIOMA tiene que seguir vacía: una llamada con un idioma se arregla con { es, en }, no se anota aquí");
     if (defs.avisarNeg < 5) falla(G, "apps/web/lib", 0, `esperaba los avisarNeg de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs.avisarNeg}`);

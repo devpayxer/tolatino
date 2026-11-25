@@ -202,9 +202,9 @@ export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, e
 }
 
 /* ── Datos y avisos ── */
-type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string; status: string; ymd: string; m: number; dur: number; tz: string; city: string;
+type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string | null; status: string; ymd: string; m: number; dur: number; tz: string; city: string;
   det: Record<string, unknown>; dep: number; tot: number; pay: string | null; pid: string | null; amount: number | null; refunded: number | null; days_to: number; past: boolean };
-const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.status,
+const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, nullif(u.first_name, '') as cliente, o.status,
                     (o.scheduled_at at time zone c.timezone)::date::text as ymd, (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m,
                     o.duration_min as dur, c.timezone as tz, o.city_id as city, o.details as det, o.deposit_cents as dep, o.total_cents as tot, o.pay_status as pay,
                     p.id::text as pid, p.amount_cents as amount, p.refunded_cents as refunded,
@@ -229,7 +229,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
   const g = o.det.g as number | null, svc = o.det.svc as Bi | undefined;
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: { es: diaFiesta(o.ymd, true), en: diaFiesta(o.ymd, false) }, hora: hora(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "",
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente ?? { es: "Cliente", en: "Customer" }, dia: { es: diaFiesta(o.ymd, true), en: diaFiesta(o.ymd, false) }, hora: hora(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "",
     invitados: g ? { es: `${g} invitados`, en: `${g} guests` } : "", dep: "", ...extra },
     { href: `/panel/${o.biz}/hoy?det=fiesta:${numero}`, ref: ["party", numero] });
 }
@@ -538,7 +538,7 @@ export type FilaFiesta = { numero: string; st: string; who: string; svc: Bi; ymd
 export async function fiestasHoy(negocio: string): Promise<FilaFiesta[]> {
   await barrerFiestas({ negocio });
   return (await db().query<FilaFiesta>(
-    `select o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who, o.details->'svc' as svc,
+    `select /* pantalla */ o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who, o.details->'svc' as svc,
             (o.scheduled_at at time zone c.timezone)::date::text as ymd, (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m,
             (o.details->>'g')::int as g, o.details->>'e' as e, o.deposit_cents as dep, coalesce((o.details->>'visit')::boolean, false) as visita, (extract(epoch from o.respond_by) * 1000)::float8 as resp, o.scheduled_at < now() as pasada,
             (select count(*)::int from operations z where z.business_id = o.business_id and z.kind = 'party' and z.id <> o.id and z.status in ('pending', 'change_proposed', 'confirmed')
@@ -558,11 +558,11 @@ export async function fiestaPanel(negocio: string, numero: string): Promise<Fies
   const L = (await fiestasHoy(negocio)).find((x) => x.numero === numero);
   const o = await leer(db(), "o.business_id = $1 and o.number = $2", [negocio, numero]);
   if (!o) return null;
-  const base: FilaFiesta = L ?? { numero, st: o.status, who: o.cliente, svc: o.det.svc as Bi, ymd: o.ymd, m: o.m, g: (o.det.g as number | null) ?? null, e: (o.det.e as string | null) ?? null, dep: o.dep, visita: !!o.det.visit, resp: null, mismoDia: 0, pasada: o.past };
+  const base: FilaFiesta = L ?? { numero, st: o.status, who: o.cliente ?? "Cliente", svc: o.det.svc as Bi, ymd: o.ymd, m: o.m, g: (o.det.g as number | null) ?? null, e: (o.det.e as string | null) ?? null, dep: o.dep, visita: !!o.det.visit, resp: null, mismoDia: 0, pasada: o.past };
   const x = (await contexto(db(), negocio, ["NEG-FIESTA"]))!, aj = await ajustes(db(), negocio);
   const [O, E, P, W, D, N] = await Promise.all([
     db().query<{ numero: string; st: string; who: string; m: number }>(
-      `select z.number as numero, z.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') as who, (extract(hour from z.scheduled_at at time zone $3) * 60 + extract(minute from z.scheduled_at at time zone $3))::int as m
+      `select /* pantalla */ z.number as numero, z.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') as who, (extract(hour from z.scheduled_at at time zone $3) * 60 + extract(minute from z.scheduled_at at time zone $3))::int as m
          from operations z join users u on u.id = z.user_id where z.business_id = $1 and z.kind = 'party' and z.number <> $2 and z.status in ('pending', 'change_proposed', 'confirmed')
           and (z.scheduled_at at time zone $3)::date = $4::date and not coalesce((z.details->>'visit')::boolean, false) order by z.scheduled_at`, [negocio, numero, x.tz, o.ymd]),
     db().query<{ at: number; kind: string; note: Bi | null }>(`select (extract(epoch from at) * 1000)::float8 as at, kind, note from operation_events where operation_id = $1::bigint order by id`, [o.id]),

@@ -38,7 +38,9 @@ const atrapa = <T>(e: unknown): Res<T> => {
   throw e;
 };
 const sha = (t: string) => createHash("sha256").update(t).digest("hex");
-const QUIEN = (u: string) => `coalesce(nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), ''), 'Vecino')`;
+// «Vecino» es el respaldo de lo que ve una pantalla (el panel y el boleto); el aviso (QUIEN_AV) deja el nombre vacío y el respaldo va en los dos idiomas.
+const QUIEN_AV = (u: string) => `nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), '')`;
+const QUIEN = (u: string) => `/* pantalla */ coalesce(nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), ''), 'Vecino')`;
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 const H0 = (d: string) => `(extract(hour from ${d}.starts_at at time zone ci.timezone) * 60 + extract(minute from ${d}.starts_at at time zone ci.timezone))::int`;
 /* La fecha sigue en pie: evento publicado o pausado, fecha programada y sin terminar. */
@@ -55,10 +57,10 @@ export async function transferir(userId: string, code: string, telRaw: unknown):
   const cfg = await valores("bol_transferir_h");
   const { cifrar, huella } = await import("./cifrado");
   const token = randomBytes(24).toString("base64url");
-  let r: { id: string; title: Bi; dia: string; h0: number; city: string; mesa: boolean; admits: number; de: string; code: string };
+  let r: { id: string; title: Bi; dia: string; h0: number; city: string; mesa: boolean; admits: number; de: string | null; code: string };
   try {
     r = await tx(async (c) => {
-      const yo = (await c.query<{ phone: string; de: string }>(`select u.phone, ${QUIEN("u")} as de from users u where u.id = $1`, [userId])).rows[0];
+      const yo = (await c.query<{ phone: string; de: string | null }>(`select u.phone, ${QUIEN_AV("u")} as de from users u where u.id = $1`, [userId])).rows[0];
       if (!yo) throw no("Entra a tu cuenta.", "Sign in to your account.");
       if (yo.phone === tel) throw no("Ese es tu teléfono. Escribe el de la persona que va a usar el boleto.", "That is your phone. Enter the phone of the person who will use the ticket.");
       const b = (await c.query<{ id: string; st: string; op: string; fid: string; city: string; admits: number; mesa: boolean; title: Bi; dia: string; h0: number; vivo: boolean; abierto: boolean; hasta: string; pend: boolean }>(
@@ -90,7 +92,7 @@ export async function transferir(userId: string, code: string, telRaw: unknown):
   // 8g · El pase de Wallet ya quedó tocado en la transacción (trigger de 0129): que salga ya.
   pasesPronto();
   const { avisarTelefono } = await import("./avisos");
-  await avisarTelefono(tel, "bol_transfer_in", { de: r.de, cuantos: cuantosL(1, r.mesa, r.admits), evento: r.title, cuando: cuandoBi(r.dia, r.h0), enlace: `${await base()}/eventos/recibir/${token}` },
+  await avisarTelefono(tel, "bol_transfer_in", { de: r.de ?? { es: "Vecino", en: "Neighbor" }, cuantos: cuantosL(1, r.mesa, r.admits), evento: r.title, cuando: cuandoBi(r.dia, r.h0), enlace: `${await base()}/eventos/recibir/${token}` },
     { href: `/eventos/recibir/${token}`, ref: ["ticket_transfer", r.id], city: r.city });
   return { ok: true, a: `••${tel.slice(-2)}` };
 }

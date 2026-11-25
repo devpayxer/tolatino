@@ -243,7 +243,7 @@ export type SolFila = { numero: string; mode: string; quien: string; svc: Bi; st
 export async function solicitudesPanel(negocio: string): Promise<SolFila[]> {
   await vencerSolicitudes({ negocio });
   return (await db().query<Omit<SolFila, "vence"> & { vence: Date; tz: string }>(
-    `select r.number as numero, r.mode, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien, r.form->'svc' as svc, t.status as st,
+    `select /* pantalla */ r.number as numero, r.mode, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien, r.form->'svc' as svc, t.status as st,
             floor(extract(epoch from now() - t.notified_at) / 60)::int as hace, r.respond_by as vence, ci.timezone as tz,
             r.form#>>'{veh,t}' as veh, r.form#>>'{casa,dir}' as casa
        from request_targets t join service_requests r on r.id = t.request_id join users u on u.id = r.user_id join cities ci on ci.id = r.city_id
@@ -255,7 +255,7 @@ export async function solicitudPanel(negocio: string, numero: string): Promise<S
   if (!NUM.test(numero)) return null;
   await vencerSolicitudes({ negocio });
   const r = (await db().query<Omit<SolFila, "vence"> & { vence: Date; tz: string; id: string; form: Record<string, unknown>; reply: Destino["reply"]; otros: number }>(
-    `select r.id::text, r.number as numero, r.mode, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien, r.form->'svc' as svc, t.status as st,
+    `select /* pantalla */ r.id::text, r.number as numero, r.mode, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien, r.form->'svc' as svc, t.status as st,
             floor(extract(epoch from now() - t.notified_at) / 60)::int as hace, r.respond_by as vence, ci.timezone as tz,
             r.form#>>'{veh,t}' as veh, r.form#>>'{casa,dir}' as casa, r.form, t.reply, (select count(*)::int - 1 from request_targets x where x.request_id = r.id) as otros
        from request_targets t join service_requests r on r.id = t.request_id join users u on u.id = r.user_id join cities ci on ci.id = r.city_id
@@ -502,7 +502,7 @@ export type EmFila = { numero: string; que: Bi; ek: string; casa: string; millas
 export async function emergenciasPanel(negocio: string, numero?: string): Promise<EmFila[]> {
   await vencerEmergencias();
   return (await db().query<EmFila>(
-    `select r.number as numero, r.form->'svc' as que, r.form->>'ek' as ek, coalesce(r.form#>>'{casa,dir}', '') as casa, greatest(0, ceil(extract(epoch from r.respond_by - now()) / 60))::int as min,
+    `select /* pantalla */ r.number as numero, r.form->'svc' as que, r.form->>'ek' as ek, coalesce(r.form#>>'{casa,dir}', '') as casa, greatest(0, ceil(extract(epoch from r.respond_by - now()) / 60))::int as min,
             coalesce(r.form->>'nota', '') as nota, r.form->>'acceso' as acceso, t.status as st, (select number from operations where id = r.operation_id) as cita,
             coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien, i.price_cents as salida,
             (select round((ST_Distance(a.geo, b.geo) / 1609.344)::numeric, 1)::float from user_homes h join user_addresses a on a.id = h.address_id where h.id = r.home_id and a.geo is not null and b.geo is not null) as millas,

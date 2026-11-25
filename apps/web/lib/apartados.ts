@@ -236,7 +236,7 @@ export type ApartadoVista = { numero: string; st: St; detalle: string | null; bi
 async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { op: string; uid: string }) | null> {
   const x = (await db().query<ApartadoVista & { op: string; uid: string }>(
     // nosemgrep: tolatino-sql-con-texto-interpolado — leer() es privada y cada llamada de este archivo pasa una condición fija con $1/$2
-    `select o.id::text as op, o.user_id::text as uid, o.number as numero, o.status as st, o.status_detail as detalle, o.business_id as biz, b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, b.logo_url as foto,
+    `select /* pantalla */ o.id::text as op, o.user_id::text as uid, o.number as numero, o.status as st, o.status_detail as detalle, o.business_id as biz, b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, b.logo_url as foto,
             coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
             o.details->>'dia' as dia, (o.details->>'hora')::int as hora, coalesce((o.details->>'sms')::boolean, true) as sms, o.ready_at as hasta, o.respond_by as responde, o.customer_note as nota, o.sent_at as enviado, o.confirmed_at as guardado, o.done_at as recogido, o.cancelled_by as "cxBy", coalesce((o.details->>'hold_hours')::int, 48) as horas,
             o.mode = 'delivery' as ship, coalesce(o.delivery_cents, 0) as envio, nullif(concat_ws(' · ', o.details->'to'->>'label', o.details->'to'->>'street'), '') as "to", coalesce(o.details->>'ship_days', '3-5') as dias,
@@ -275,7 +275,7 @@ export type ApartadoFila = { numero: string; st: St; cliente: string; tot: numbe
 export async function apartadosNegocio(negocio: string): Promise<ApartadoFila[]> {
   await barrerApartados({ negocio });
   return (await db().query<ApartadoFila>(
-    `select o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
+    `select /* pantalla */ o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
             (select coalesce(sum(qty), 0)::int from operation_lines l where l.operation_id = o.id and l.status = 'ok') as n, o.details->>'dia' as dia, (o.details->>'hora')::int as hora, o.ready_at as hasta, o.respond_by as responde, o.mode = 'delivery' as ship, o.stage as etapa, (select lp.status from layaway_plans lp where lp.operation_id = o.id) as plan
        from operations o join users u on u.id = o.user_id
       where o.business_id = $1 and o.kind = 'hold' and (o.status in ('pending', 'change_proposed', 'confirmed') or (o.status = 'done' and o.done_at > now() - interval '1 day'))
@@ -342,7 +342,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
     if (!ok) return no("Este apartado ya cerró.", "This hold is already closed.");
     // 9v (quinta tanda) · La retención se mira (soltarRetencion): la que la pasarela no soltó alerta hold_stuck al equipo y se le dice a quien llama.
     const s = await (await import("./cobros")).soltarRetencion(x.op, { es: "Canceló el apartado (el cliente)", en: "Hold cancelled (the client)" });
-    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "canceló el apartado · vuelve al estante", en: "canceled the hold · it goes back on the shelf" } }, href);
+    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "canceló el apartado · vuelve al estante", en: "canceled the hold · it goes back on the shelf" } }, href);
     return s.e === "retenida" ? { ok: true, retenida: true } : { ok: true };
   }
   if (a?.que === "quitar") {
@@ -356,7 +356,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
       return true;
     });
     if (!ok) return no("Eso ya se decidió.", "That was already decided.");
-    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "quitó lo que faltaba · guárdale lo demás", en: "removed what was missing · keep the rest for them" } }, href);
+    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "quitó lo que faltaba · guárdale lo demás", en: "removed what was missing · keep the rest for them" } }, href);
     return { ok: true };
   }
   if (a?.que === "otraTalla") {
@@ -380,7 +380,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
       await ev(c, x.op, "accepted", "user", userId, { es: `Aceptó la otra talla (${P.map((p) => p.label).join(", ")})`, en: `Accepted the other size (${P.map((p) => p.label).join(", ")})` });
       return { ok: true };
     });
-    if (r.ok) await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "aceptó la otra talla · guárdasela", en: "accepted the other size · set it aside for them" } }, href);
+    if (r.ok) await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "aceptó la otra talla · guárdasela", en: "accepted the other size · set it aside for them" } }, href);
     return r;
   }
   return no("Eso no se puede.", "That cannot be done.");
@@ -518,8 +518,8 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
   const B = new (await import("./barrido-uno")).Fallos("apartados");
   await B.uno("layaway", async () => (await import("./layaway")).barrerPlanes(f));
   const W = f.numero ? "o.number = $1" : f.negocio ? "o.business_id = $1" : f.userId ? "o.user_id = $1" : "true", A = f.numero ? [f.numero] : f.negocio ? [f.negocio] : f.userId ? [f.userId] : [];
-  const V = (await db().query<{ op: string; numero: string; st: St; uid: string; biz: string; bname: string; cliente: string; sms: boolean; hh: number; ship: boolean }>(
-    `select o.id::text as op, o.number as numero, o.status as st, coalesce((o.details->>'sms')::boolean, true) as sms, coalesce((o.details->>'hold_hours')::int, 48) as hh, o.mode = 'delivery' as ship, o.user_id::text as uid, o.business_id as biz, b.name as bname, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente
+  const V = (await db().query<{ op: string; numero: string; st: St; uid: string; biz: string; bname: string; cliente: string | null; sms: boolean; hh: number; ship: boolean }>(
+    `select o.id::text as op, o.number as numero, o.status as st, coalesce((o.details->>'sms')::boolean, true) as sms, coalesce((o.details->>'hold_hours')::int, 48) as hh, o.mode = 'delivery' as ship, o.user_id::text as uid, o.business_id as biz, b.name as bname, nullif(u.first_name, '') as cliente
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id
       where ${W} and o.kind = 'hold' and ((o.status in ('pending', 'change_proposed') and o.respond_by < now()) or (o.status = 'confirmed' and o.ready_at < now() and o.stage <> 'on_the_way' and not exists (select 1 from layaway_plans lp where lp.operation_id = o.id and lp.status in ('active', 'late', 'paid'))))
       order by case when o.status = 'confirmed' then o.ready_at else o.respond_by end, o.id limit 50`, A)).rows;
@@ -544,7 +544,7 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
     // 25 nov (LAUNCH g) · La que Stripe ya había cobrada también se dice (nunca «Se liberó lo retenido»).
     const que: Bi = s.e === "retenida" || s.e === "cobrada" ? { es: `${que0.es}${sin.es}`, en: `${que0.en}${sin.en}` } : det === "no_envio" ? { es: `${que0.es} Se liberó lo retenido en tu tarjeta.`, en: `${que0.en} The hold on your card was released.` } : que0;
     await av.avisar(x.uid, "apt_vence", { que }, { href: `/apartado/${x.numero}`, ref: ["apartado", x.numero], sinSms: !x.sms });
-    if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "su apartado venció sin tu respuesta", en: "their hold expired without your reply" } }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
+    if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "su apartado venció sin tu respuesta", en: "their hold expired without your reply" } }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
   });
   B.fin();
 }

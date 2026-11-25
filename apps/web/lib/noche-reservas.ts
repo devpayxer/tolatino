@@ -203,9 +203,9 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
 }
 
 /* ── Datos y avisos ── */
-type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string; status: string; detail: string | null; night: string; tz: string; city: string; det: Record<string, unknown>;
+type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string | null; status: string; detail: string | null; night: string; tz: string; city: string; det: Record<string, unknown>;
   pax: number; dep: number; pay: string | null; pid: string | null; amount: number | null; refunded: number | null; code: string | null; nowN: number; hoy: string };
-const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.status, o.status_detail as detail,
+const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, nullif(u.first_name, '') as cliente, o.status, o.status_detail as detail,
                     o.night_date::text as night, c.timezone as tz, o.city_id as city, o.details as det, o.party_size as pax, o.deposit_cents as dep, o.pay_status as pay,
                     p.id::text as pid, p.amount_cents as amount, p.refunded_cents as refunded, o.door_code as code,
                     (extract(epoch from (now() at time zone c.timezone) - (o.night_date + time '12:00')) / 60)::int as "nowN", ${NOCHE_SQL("now()", "c.timezone")}::text as hoy
@@ -231,7 +231,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
   const noche = nocheL(o);
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, noche, hora: hNoche(Number(o.det.arrive)), servicio: bi(o.det.svc), personas: { es: `${o.pax} ${o.pax === 1 ? "persona" : "personas"}`, en: `${o.pax} ${o.pax === 1 ? "person" : "people"}` }, dep: "", min: "60", ...extra },
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente ?? { es: "Cliente", en: "Customer" }, noche, hora: hNoche(Number(o.det.arrive)), servicio: bi(o.det.svc), personas: { es: `${o.pax} ${o.pax === 1 ? "persona" : "personas"}`, en: `${o.pax} ${o.pax === 1 ? "person" : "people"}` }, dep: "", min: "60", ...extra },
     { href: `/panel/${o.biz}/hoy?det=noche:${numero}`, ref: ["night", numero] });
 }
 /* Lo que se paga en la puerta, como se copió al enviar (para el aviso y la pantalla). */
@@ -562,7 +562,7 @@ export async function nocheHoy(negocio: string): Promise<{ esperan: FilaNoche[];
   const x = await contexto(db(), negocio);
   if (!x) return { esperan: [], mesas: [], lista: [], hoy: "", nowN: 0 };
   const R = (await db().query<FilaNoche & { item: string; tables: number }>(
-    `select o.number as numero, o.status as st, o.status_detail as detalle, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who,
+    `select /* pantalla */ o.number as numero, o.status as st, o.status_detail as detalle, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who,
             o.details->>'k' as k, o.details->'svc' as svc, o.night_date::text as night, (o.details->>'arrive')::int as llega, o.party_size as pax, o.details->>'occ' as occ, o.customer_note as nota,
             o.deposit_cents as dep, o.pay_status as pay, case when o.status = 'confirmed' then o.door_code end as code, (o.details->>'in_n')::int as "inN", coalesce((o.details->>'llego')::boolean, false) as llego,
             case when o.status = 'pending' then greatest(0, ceil(extract(epoch from o.respond_by - now()) / 60))::int end as resp, o.details->>'item' as item,
@@ -585,7 +585,7 @@ export async function nochePanel(negocio: string, numero: string): Promise<Noche
   let f = [...H.esperan, ...H.mesas, ...H.lista].find((z) => z.numero === numero) ?? null;
   const o = await leer(db(), "o.business_id = $1 and o.number = $2", [negocio, numero]);
   if (!o) return null;
-  if (!f) f = { numero, st: o.status, detalle: o.detail, who: o.cliente, k: String(o.det.k), svc: o.det.svc as Bi, night: o.night, llega: Number(o.det.arrive), pax: o.pax, occ: (o.det.occ as string) ?? null,
+  if (!f) f = { numero, st: o.status, detalle: o.detail, who: o.cliente ?? "Cliente", k: String(o.det.k), svc: o.det.svc as Bi, night: o.night, llega: Number(o.det.arrive), pax: o.pax, occ: (o.det.occ as string) ?? null,
     nota: null, dep: o.dep, pay: o.pay, code: null, inN: o.det.in_n == null ? null : Number(o.det.in_n), llego: !!o.det.llego, resp: null, cupo: null, nowN: o.nowN, hold: Number(o.det.hold ?? await valor("noche_mesa_guardada_min")), esHoy: o.night === o.hoy };
   const x = (await contexto(db(), negocio))!, s = await servicio(db(), negocio, String(o.det.item));
   const slots = s && f.st === "pending" ? ((await noches(db(), x, s)).find((n) => n.fecha === o.night)?.slots ?? []).filter((m) => m !== f!.llega) : [];

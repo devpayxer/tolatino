@@ -180,7 +180,7 @@ export const SENAL_L = SENAL_L_UI;
 export type SenalEvt = { kind: string; uid: string; quien: string; ciudad: string | null; n: number; at: string; caso: string | null; abierto: boolean };
 export async function senalesEvt(s: Staff): Promise<SenalEvt[]> {
   return (await db().query<SenalEvt>(
-    `select x.kind, x.user_id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, ci.name as ciudad,
+    `select /* pantalla */ x.kind, x.user_id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, ci.name as ciudad,
             x.n, to_char(x.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, q.id::text as caso, coalesce(q.status = 'open', false) as abierto
        from evt_senales x join users u on u.id = x.user_id left join cities ci on ci.id = x.city_id
        left join lateral (select qi.id, qi.status from mod_flags f join queue_items qi on qi.id = f.queue_item_id

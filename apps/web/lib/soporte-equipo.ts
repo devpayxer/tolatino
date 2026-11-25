@@ -37,7 +37,7 @@ export async function listaSoporte(s: Staff, f: { tab: TabSop; q?: string; alta?
   if (!puedeVer(s)) return { filas: [] as FilaSop[], sig: null as string | null };
   const q = limpio(f.q, 60), cur = f.antes && /^\d{1,18}$/.test(f.antes) ? f.antes : null;
   const L = (await db().query<FilaSop & { id: string }>(
-    `select c.id::text, c.number as num, c.topic as tema, c.status, c.priority, c.escalated_to as escalado,
+    `select /* pantalla */ c.id::text, c.number as num, c.topic as tema, c.status, c.priority, c.escalated_to as escalado,
             coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), 'Vecino') as quien, b.name as negocio,
             coalesce((select left(m.body, 100) from support_messages m where m.case_id = c.id and m.sender = 'user' and m.hidden_at is null order by m.at, m.id limit 1), '') as titulo,
             ${ISO("c.created_at")} as at, ${ISO("c.sla_due_at")} as due, soporte_toca_equipo(c.status) as equipo,
@@ -100,7 +100,7 @@ export async function casoEquipo(s: Staff, numero: string): Promise<CasoEquipo |
   const c = (await db().query<Omit<CasoEquipo, "persona" | "op" | "ayuda" | "pago" | "msjs" | "historial" | "macros" | "tope" | "devoluciones" | "unidos" | "puedeDevolver" | "horas" | "asignado"> & {
     aid: string | null; anom: string | null; uid: string; unom: string; utel: string; uciudad: string | null; ulang: string; udesde: string; ucasos: number; uest: string;
     opnum: string | null; opk: string | null; opst: string | null; optot: number | null; opbiz: string | null; hnum: string | null; hst: string | null; hop: string | null; bid: string | null; bname: string | null }>(
-    `select c.id::text, c.number as num, c.topic as tema, c.status, c.priority, c.origin, c.escalated_to as escalado, ${ISO("c.created_at")} as at, ${ISO("c.sla_due_at")} as due, c.city_id as ciudad,
+    `select /* pantalla */ c.id::text, c.number as num, c.topic as tema, c.status, c.priority, c.origin, c.escalated_to as escalado, ${ISO("c.created_at")} as at, ${ISO("c.sla_due_at")} as due, c.city_id as ciudad,
             soporte_toca_equipo(c.status) as equipo, soporte_toca_equipo(c.status) and c.sla_due_at < now() as vencido, c.assigned_staff_id::text as aid, a.first_name as anom,
             coalesce(c.assigned_staff_id = $3, false) as mio, ${ISO("c.first_reply_at")} as "primeraRespuesta", jsonb_build_object('por', c.resolved_by, 'at', ${ISO("c.resolved_at")}) as resuelto, c.csat,
             u.id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), 'Vecino') as unom, u.phone as utel, ci.name as uciudad,

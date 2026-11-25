@@ -88,7 +88,7 @@ export async function cerrarDisputa(stripeId: string, status: string) {
 export type Evidencia = { lineas: string[]; resumen: string; producto: string; cliente: string; fecha: string; envio: string | null };
 export async function evidenciaDe(disputa: string): Promise<Evidencia | null> {
   const o = (await db().query<{ op: string; num: string; mode: string; total: number; cliente: string; negocio: string; enviado: string; dir: string | null; tz: string; tarjeta: string | null; devuelto: number }>(
-    `select o.id::text as op, o.number as num, case when o.kind = 'tickets' then 'tickets_evt' else o.mode end as mode, o.total_cents as total, b.name as negocio,
+    `select /* pantalla */ o.id::text as op, o.number as num, case when o.kind = 'tickets' then 'tickets_evt' else o.mode end as mode, o.total_cents as total, b.name as negocio,
             coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), 'Cliente') as cliente,
             to_char(coalesce(o.sent_at, o.confirmed_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as enviado, c.timezone as tz,
             case when o.mode = 'delivery' then concat_ws(', ', o.details #>> '{to,street}', o.details #>> '{to,zip}') end as dir,

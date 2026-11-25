@@ -171,7 +171,7 @@ export async function apelacionDeCaso(appealId: string) {
   if (!ID.test(appealId)) return null;
   const a = (await db().query<{ id: string; numero: string; k: Apelable; tid: string; texto: string; estado: string; at: string; motivo: string | null; uid: string; quien: string;
     por: string | null; por_nombre: string | null; sancion: Sancion | null; hasta: string | null }>(
-    `select a.id::text, a.number as numero, a.target_kind as k, a.target_id as tid, a.text as texto, a.status as estado, a.created_at as at, a.hidden_reason as motivo, a.user_id::text as uid,
+    `select /* pantalla */ a.id::text, a.number as numero, a.target_kind as k, a.target_id as tid, a.text as texto, a.status as estado, a.created_at as at, a.hidden_reason as motivo, a.user_id::text as uid,
             coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), 'Vecino') as quien, a.sanctioned_by::text as por,
             nullif(trim(coalesce(st.first_name, '') || ' ' || left(coalesce(st.last_name, ''), 1)), '') as por_nombre, s.kind as sancion, s.ends_at as hasta
        from appeals a join users u on u.id = a.user_id left join users st on st.id = a.sanctioned_by left join sanctions s on s.id = a.sanction_id where a.id = $1::bigint`, [appealId])).rows[0];

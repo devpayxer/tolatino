@@ -501,7 +501,7 @@ export type FilaMerc = { numero: string; who: string; modo: string; cuando: stri
 export async function mercadoHoy(negocio: string): Promise<FilaMerc[]> {
   await vencerMercado({ negocio });
   return (await db().query<FilaMerc>(
-    `select o.number as numero, coalesce(u.first_name, 'Cliente') as who, o.mode as modo, to_char(o.scheduled_at at time zone ci.timezone, 'HH12:MI AM') as cuando,
+    `select /* pantalla */ o.number as numero, coalesce(u.first_name, 'Cliente') as who, o.mode as modo, to_char(o.scheduled_at at time zone ci.timezone, 'HH12:MI AM') as cuando,
             (select count(*)::int from operation_lines l where l.operation_id = o.id and l.sub_of is null) as n, o.status as st, o.status_detail as detalle,
             coalesce((o.details->>'est_cents')::int, o.total_cents) as est, case when o.status = 'pending' then ${ISO("o.respond_by")} end as vence,
             (select d.display_name from delivery_drivers d where d.id = o.driver_id) as rep

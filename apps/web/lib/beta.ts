@@ -50,7 +50,7 @@ export type FilaTester = { id: string; nombre: string; tel: string; app: ClaveAp
 const tapaCorreo = (c: string | null) => (c ? c.replace(/^(.)[^@]*(@.).*(\.[a-z]+)$/i, "$1•••$2•••$3") : null);
 export async function testers(): Promise<FilaTester[]> {
   const L = (await db().query<Omit<FilaTester, "correo" | "enlace"> & { email_enc: Buffer | null; le: string | null; lv: string | null }>(
-    `select t.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as nombre, u.phone as tel,
+    `select /* pantalla */ t.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as nombre, u.phone as tel,
             t.app, t.platform as plat, t.channel as canal, t.status as estado, t.sync, t.sync_error as "syncError", t.email_enc,
             nullif(trim(coalesce(i.first_name, '') || ' ' || left(coalesce(i.last_name, ''), 1)), '') as quien, ${ISO("t.invited_at")} as at, t.invite_reason as motivo,
             ${ISO("t.removed_at")} as quitado, t.removed_reason as "quitadoMotivo",

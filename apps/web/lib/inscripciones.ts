@@ -311,9 +311,9 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
 }
 
 /* ── Datos y avisos ── */
-type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string; status: string; detail: string | null; tz: string; city: string; det: Record<string, unknown>;
+type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string | null; status: string; detail: string | null; tz: string; city: string; det: Record<string, unknown>;
   mat: number; pay: string | null; pid: string | null; amount: number | null; refunded: number | null; hoy: string; sent: string; cxReq: string | null };
-const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.status, o.status_detail as detail,
+const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid, nullif(u.first_name, '') as cliente, o.status, o.status_detail as detail,
                     c.timezone as tz, o.city_id as city, o.details as det, o.deposit_cents as mat, o.pay_status as pay, p.id::text as pid, p.amount_cents as amount, p.refunded_cents as refunded,
                     (now() at time zone c.timezone)::date::text as hoy, o.sent_at::text as sent, o.details->>'cancel_req_at' as "cxReq"
                from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id join users u on u.id = o.user_id
@@ -348,7 +348,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, servicio: svcAvisoBi(o), grupo: "", mat: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=insc:${numero}`, ref: ["enrollment", numero] });
+  await avisarNegocio(o.biz, tpl, { cliente: o.cliente ?? { es: "Cliente", en: "Customer" }, servicio: svcAvisoBi(o), grupo: "", mat: "", vence: "", ...extra }, { href: `/panel/${o.biz}/hoy?det=insc:${numero}`, ref: ["enrollment", numero] });
 }
 export async function avisarInscNueva(numero: string) {
   const o = await leer(db(), "o.number = $1", [numero]);
@@ -812,7 +812,7 @@ async function vista(o: Op, cliente: boolean): Promise<InscVista> {
 /* Panel › Hoy e Inscripciones. */
 export type FilaInsc = { numero: string; estado: string; detalle: string | null; cliente: string; svc: Bi; grupo: Bi | null; inicio: string | null; para: Para; nivel: Nivel | null; equipo: string | null;
   mat: number; pago: string | null; vence: string | null; libres: number | null; enviada: string; bajaPedida: string | null };
-const FILA = `select o.number as numero, o.status as estado, o.status_detail as detalle, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.details->'svc' as svc, o.details->'group' as grupo,
+const FILA = `select /* pantalla */ o.number as numero, o.status as estado, o.status_detail as detalle, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, o.details->'svc' as svc, o.details->'group' as grupo,
                      o.details->>'starts_on' as inicio, o.details->>'for' as para, o.details->>'level' as nivel, o.details->>'team_name' as equipo, o.deposit_cents as mat, o.pay_status as pago,
                      o.respond_by::text as vence, o.sent_at::text as enviada, o.details->>'cancel_req_at' as "bajaPedida",
                      (select greatest(0, g.seats_total - g.seats_outside - g.seats_booked) from class_groups g where g.id::text = o.details->>'group_id') as libres
@@ -831,7 +831,7 @@ export async function inscPanel(negocio: string): Promise<InscPanel> {
             (select count(*)::int from waitlist_entries w where w.group_id = g.id and w.status in ('waiting', 'offered')) as espera
        from class_groups g join items i on i.id = g.item_id where g.business_id = $1 and g.status in ('open', 'started') order by g.starts_on, g.id limit 100`, [negocio])).rows;
   const espera = (await db().query<EsperaPanel>(
-    `select w.id::text, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, i.name as svc, coalesce(g.label, o.label) as grupo, w.status as estado, w.offered_until::text as vence, w.created_at::text as desde,
+    `select /* pantalla */ w.id::text, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente, i.name as svc, coalesce(g.label, o.label) as grupo, w.status as estado, w.offered_until::text as vence, w.created_at::text as desde,
             case when g.id is not null then greatest(0, g.seats_total - g.seats_outside - g.seats_booked) when o.id is not null then o.openings end as libres
        from waitlist_entries w join users u on u.id = w.user_id join items i on i.id = w.item_id left join class_groups g on g.id = w.group_id left join care_openings o on o.id = w.band_id
       where w.business_id = $1 and w.status in ('waiting', 'offered') order by w.id limit 100`, [negocio])).rows;
@@ -863,6 +863,6 @@ export async function inscDetalle(negocio: string, numero: string, actorId: stri
     const x = (await contexto(db(), negocio))!, s = await servicio(db(), negocio, String(o.det.item_id));
     otros = s ? (await grupos(db(), x, s, null)).filter((g) => g.id !== String(o.det.group_id) && g.libres > 0 && !g.empezo).map((g) => ({ id: g.id, label: g.label, inicio: g.inicio, libres: g.libres })) : [];
   }
-  return { ...v, cliente: o.cliente, nota, ninoPanel, historial, otros, fechas: o.status === "pending" && o.det.fecha ? fechasFe(o.hoy).slice(0, 21) : [], notaPrivada };
+  return { ...v, cliente: o.cliente ?? "Cliente", nota, ninoPanel, historial, otros, fechas: o.status === "pending" && o.det.fecha ? fechasFe(o.hoy).slice(0, 21) : [], notaPrivada };
 }
 export const etiquetaInsc = (inicio: string | null, min: number | null, es: boolean) => (inicio ? `${fechaCorta(inicio, es)}${min != null ? ` · ${horaInsc(min)}` : ""}` : "");

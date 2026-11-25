@@ -86,7 +86,7 @@ export async function sinLeerCliente(userId: string): Promise<number> {
 export type Msj = { id: string; de: "user" | "business" | "auto" | "system"; t: string; at: string; oculto: boolean; quien: string | null; compa: boolean;
   foto: string | null; fotoEst: "ok" | "revision" | "quitada" | null; lang: "es" | "en" | null };
 type FilaMsj = Omit<Msj, "foto" | "fotoEst"> & { fid: string | null; fst: string | null; fsub: string | null };
-const MSJS = (filtro: string) => `select m.id::text, m.sender as de, case when m.hidden_at is null then m.body else '' end as t, m.hidden_at is not null as oculto, ${ISO("m.created_at")} as at, m.compa,
+const MSJS = (filtro: string) => `select /* pantalla */ m.id::text, m.sender as de, case when m.hidden_at is null then m.body else '' end as t, m.hidden_at is not null as oculto, ${ISO("m.created_at")} as at, m.compa,
        case when m.sender = 'business' then (select coalesce(nullif(trim(coalesce(u.first_name, '')), ''), 'Equipo') from users u where u.id = m.sender_user_id) end as quien,
        case when m.hidden_at is null then m.lang end as lang, case when m.hidden_at is null then m.media_id::text end as fid, x.status as fst, x.uploaded_by::text as fsub
   from chat_messages m left join media x on x.id = m.media_id where m.thread_id = $1 ${filtro} order by m.id desc limit 120`;
@@ -228,7 +228,7 @@ export type HiloNeg = { id: string; quien: string; ctx: Bi | null; last: string 
 export async function hilosNegocio(negocio: string, filtro: "todas" | "sin" = "todas", antes?: string | null): Promise<{ hilos: HiloNeg[]; mas: string | null; sinLeer: number; auto: boolean }> {
   const [L, k] = await Promise.all([
     db().query<HiloNeg & { cur: string }>(
-      `select t.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Cliente') as quien, t.context as ctx, t.last_text as last,
+      `select /* pantalla */ t.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Cliente') as quien, t.context as ctx, t.last_text as last,
               t.last_from as "lastFrom", ${ISO("t.last_at")} as at, t.biz_unread as unread, t.blocked_at is not null as bloqueado,
               t.last_from = 'auto' and coalesce((select m.compa from chat_messages m where m.thread_id = t.id order by m.id desc limit 1), false) as "lastCompa",
               (select coalesce(nullif(trim(coalesce(a.first_name, '')), ''), 'Equipo') from users a where a.id = t.assigned_user_id) as lleva,
@@ -245,7 +245,7 @@ export async function hilosNegocio(negocio: string, filtro: "todas" | "sin" = "t
 export type ConvNeg = { id: string; quien: string; ctx: Bi | null; msjs: Msj[]; lleva: string | null; llevaId: string | null; bloqueado: boolean; telCompartido: boolean; equipo: { id: string; nombre: string }[] };
 export async function conversacionNegocio(negocio: string, threadId: string, yo?: string | null): Promise<ConvNeg | null> {
   const t = (await db().query<{ id: string; quien: string; ctx: Bi | null; unread: number; lleva: string | null; llevaId: string | null; bloqueado: boolean; tel: boolean }>(
-    `select t.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Cliente') as quien, t.context as ctx, t.biz_unread as unread,
+    `select /* pantalla */ t.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Cliente') as quien, t.context as ctx, t.biz_unread as unread,
             t.assigned_user_id::text as "llevaId", (select coalesce(nullif(trim(coalesce(a.first_name, '')), ''), 'Equipo') from users a where a.id = t.assigned_user_id) as lleva,
             t.blocked_at is not null as bloqueado, t.phone_shared_at is not null as tel
        from chat_threads t join users u on u.id = t.user_id where t.id = $1 and t.business_id = $2`, [Number(threadId) || 0, negocio])).rows[0];

@@ -35,7 +35,7 @@ export async function listaRepartidores(s: Staff, f: FiltroDlv): Promise<{ filas
   const C = ciudades(s), q = f.q.replace(/[%_\\]/g, ""), dig = q.replace(/\D/g, "");
   const [ca, cid] = f.antes ? f.antes.split("|") : [null, null];
   const r = await db().query<FilaDlv & { desde_ts: string }>(
-    `with p as (
+    `/* pantalla */ with p as (
        select d.user_id, min(d.accepted_at) as desde, bool_or(d.online and d.status = 'active') as en_linea,
               array_agg(distinct b.name) filter (where d.status = 'active') as equipos, (array_agg(b.city_id order by d.accepted_at desc))[1] as ciudad
          from delivery_drivers d join businesses b on b.id = d.business_id
@@ -67,7 +67,7 @@ export async function listaRepartidores(s: Staff, f: FiltroDlv): Promise<{ filas
 /* ── Incidencias (la pestaña y la cola) ── */
 export type Incidencia = { id: string; kind: string; nota: Bi; status: string; numero: string | null; negocio: string | null; negocioId: string | null; rep: string; repId: string;
   at: string; resolucion: string | null; quien: string | null; foto: string | null; prueba: string | null };
-const INC_SQL = `select i.id::text, i.kind, i.note as nota, i.status, o.number as numero, b.name as negocio, b.id as "negocioId",
+const INC_SQL = `select /* pantalla */ i.id::text, i.kind, i.note as nota, i.status, o.number as numero, b.name as negocio, b.id as "negocioId",
             coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Repartidor') as rep, u.id::text as "repId",
             to_char(i.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, i.resolution as resolucion,
             nullif(trim(coalesce(r.first_name, '') || ' ' || left(coalesce(r.last_name, ''), 1)), '') as quien,
@@ -97,7 +97,7 @@ export async function rep360(s: Staff, uid: string): Promise<Rep360 | null> {
   if (!UUIDRE.test(uid)) return null;
   const C = ciudades(s);
   const u = (await db().query<{ id: string; nombre: string; tel: string; foto: string | null; creado: string; sancion: string | null }>(
-    `select u.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), '(sin nombre)') as nombre, u.phone as tel, u.photo_url as foto,
+    `select /* pantalla */ u.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), '(sin nombre)') as nombre, u.phone as tel, u.photo_url as foto,
             to_char(u.created_at at time zone 'UTC', 'YYYY-MM-DD') as creado, repartidor_sancionado(u.id) as sancion
        from users u where u.id = $1 and exists (select 1 from delivery_drivers d join businesses b on b.id = d.business_id where d.user_id = u.id and ($2::text[] is null or b.city_id = any($2::text[])))`, [uid, C])).rows[0];
   if (!u) return null;

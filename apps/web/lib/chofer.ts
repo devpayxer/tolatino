@@ -59,7 +59,7 @@ export async function misSalidas(userId: string): Promise<SalidaC[]> {
       order by r.run_at limit 20`, [userId])).rows;
   if (!R.length) return [];
   const P = (await db().query<PasajeroC & { run: string }>(
-    `select s.run_id::text as run, o.number as numero, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien,
+    `select /* pantalla */ s.run_id::text as run, o.number as numero, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien,
             coalesce((o.details->>'adults')::int, 1) as adultos, coalesce((o.details->>'kids')::int, 0) as ninos, coalesce((o.details->>'childSeat')::boolean, false) as nino,
             coalesce((o.details->>'bagsExtra')::int, 0) as maletas, s.status as abordo
        from run_seats s join operations o on o.id = s.operation_id join users u on u.id = o.user_id

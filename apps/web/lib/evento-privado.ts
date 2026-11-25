@@ -178,10 +178,10 @@ export async function pedirEvp(userId: string, negocio: string, f: EvpIn, entorn
 }
 
 /* ── Leer una solicitud ── */
-type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string; status: string; detail: string | null; ymd: string; m: number; dur: number; p: number; tz: string; city: string;
+type Op = { id: string; num: string; biz: string; negocio: string; uid: string; cliente: string | null; status: string; detail: string | null; ymd: string; m: number; dur: number; p: number; tz: string; city: string;
   det: Record<string, unknown>; tot: number; dep: number; pay: string | null; pid: string | null; amount: number | null; refunded: number | null; pst: string | null; h_left: number; past: boolean; nota: string | null; cxr: string | null };
 const SEL = `select o.id::text, o.number as num, o.business_id as biz, b.name as negocio, o.user_id::text as uid,
-                    coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.status, o.status_detail as detail,
+                    nullif(u.first_name, '') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.status, o.status_detail as detail,
                     (o.scheduled_at at time zone c.timezone)::date::text as ymd, (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m,
                     o.duration_min as dur, o.party_size as p, c.timezone as tz, o.city_id as city, o.details as det, o.total_cents as tot, o.deposit_cents as dep, o.pay_status as pay,
                     p.id::text as pid, p.amount_cents as amount, p.refunded_cents as refunded, p.status as pst,
@@ -213,7 +213,7 @@ async function avisarEvp(numero: string, quien: "cliente" | "negocio", tpl: stri
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return false;
   const A = await import("./avisos"), cfg = await valores("evp_responder_h", "evp_propuesta_h");
-  const vars = { negocio: o.negocio, cliente: o.cliente, dia: { es: diaEvp(o.ymd, true), en: diaEvp(o.ymd, false) }, hora: horaL(o.m), personas: String(o.p), total: dinero(o.tot), dep: dinero(o.dep), resto: dinero(Math.max(0, o.tot - o.dep)),
+  const vars = { negocio: o.negocio, cliente: o.cliente ?? { es: "Cliente", en: "Customer" }, dia: { es: diaEvp(o.ymd, true), en: diaEvp(o.ymd, false) }, hora: horaL(o.m), personas: String(o.p), total: dinero(o.tot), dep: dinero(o.dep), resto: dinero(Math.max(0, o.tot - o.dep)),
     horas: String(quien === "negocio" ? cfg.evp_responder_h : cfg.evp_propuesta_h), dev: "", motivo: "", que: "", ...extra };
   if (quien === "cliente") return A.avisar(o.uid, tpl, vars, { href: `/privado/${numero}`, ref: ["private_event", numero], ...(unaVez ? { unaVez } : {}) });
   return A.avisarNegocio(o.biz, tpl, vars, { href: `/panel/${o.biz}/hoy?det=evp:${numero}`, ref: ["private_event", numero], ...(unaVez ? { unaVez } : {}) });
@@ -697,7 +697,7 @@ export type FilaEvp = { numero: string; st: string; detail: string | null; who: 
 export async function evpHoy(negocio: string): Promise<FilaEvp[]> {
   await vencerEvp({ negocio });
   return (await db().query<FilaEvp>(
-    `select o.number as numero, o.status as st, o.status_detail as detail, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who,
+    `select /* pantalla */ o.number as numero, o.status as st, o.status_detail as detail, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who,
             o.details->>'occ' as occ, o.party_size as p, (o.scheduled_at at time zone c.timezone)::date::text as ymd,
             (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m,
             (extract(epoch from o.respond_by) * 1000)::float8 as resp, o.scheduled_at < now() as pasada
@@ -734,7 +734,7 @@ export async function evpPanel(negocio: string, numero: string): Promise<EvpPane
   ]);
   const d = o.det as Record<string, unknown>, acuerdo = acuerdoDe(Q);
   return {
-    numero, st: o.status, detail: o.detail, who: o.cliente,
+    numero, st: o.status, detail: o.detail, who: o.cliente ?? "Cliente",
     pedido: { occ: String(d.occ ?? ""), personas: o.p, area: String(d.area ?? "salon"), ymd: o.ymd, m: o.m, horas: Number(d.horas ?? Math.round(o.dur / 60)), menu: menuDe(d), bud: String(d.bud ?? ""), ext: extrasDe(d), nota: o.nota },
     ymd: o.ymd, m: o.m, dur: o.dur, p: o.p, resp: null, pasada: o.past, quotes: Q, acuerdo, asks: A.rows,
     pago: { st: o.pst, monto: o.amount ?? 0, devuelto: o.refunded ?? 0, comision: P.rows[0]?.fee ?? 0 }, taxBp: T.rows[0]?.bp ?? 0, aj, hilo: H.rows[0]?.id ?? null, eventos: E.rows,
