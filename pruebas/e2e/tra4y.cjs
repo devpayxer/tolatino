@@ -131,7 +131,7 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   await m.goto(B + `/viaje/${V2b}`); await clic(m.getByRole('button', { name: 'Cancelar el viaje' }));
   ok(await espera(m.getByText(/se cobra lo que queda \(\$15(\.00)?\)/)) && !(await vis(m.getByText(/se cobra la mitad/))), 'tarde con $30 ya devueltos: la hoja dice «se cobra lo que queda ($15.00)», nunca «la mitad»');
   await clic(m.getByRole('button', { name: 'Sí, cancelar' })); await m.getByText('CANCELADO').first().waitFor();
-  ok(await espera(m.getByText(/Se cobró lo que quedaba: \$15(\.00)?(?![\d.,])/)) && !(await vis(m.getByText(/Se cobró la mitad/))), 'el cliente ve «Se cobró lo que quedaba: $15.00» (nunca «Se cobró la mitad»)');
+  ok(await espera(m.getByText(/Se cobró lo que quedaba: \$15(\.00)?(?![\d,]|\.\d)/)) && !(await vis(m.getByText(/Se cobró la mitad/))), 'el cliente ve «Se cobró lo que quedaba: $15.00» (nunca «Se cobró la mitad»)');
   ok(pay(V2b) === 'cancelled|partially_refunded|4500|3000' && reembolsos(V2b) === '1|3000', 'la base: nada más devuelto ni cobrado (solo la devolución previa)');
   ok(sql(`select details->>'cobroMitad' from operations where number = '${V2b}'`) === '1500', 'cobroMitad = $15 (lo que quedaba), no $22.50');
   ok(await esperaV(() => /Se cobró lo que quedaba: \$15(\.00)?(?![\d,])/.test(avisoCx(V2b)), true), 'su aviso dice «Se cobró lo que quedaba: $15.00»');
