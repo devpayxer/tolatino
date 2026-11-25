@@ -3033,8 +3033,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       cancelar dice «Le devolvimos todo». `liberarOperacion` en devolverAlCancelar no se mira. Mismo arreglo que 0219/0220.
       _Hecho (25 nov, ae089df, Opus; en revisión por Fable): migración 0221, din9v4; además el barrido ya no reenvía cada minuto una devolución
       rechazada y una retención que no se suelta da una sola alerta._
-- [ ] **→ 9b** · **Lo que queda de la clase «el dinero dice lo decidido» (25 nov):** los avisos AL NEGOCIO `biz_noche_cx`, `biz_fiesta_cx` y
+- [x] **→ 9b** · **Lo que queda de la clase «el dinero dice lo decidido» (25 nov):** los avisos AL NEGOCIO `biz_noche_cx`, `biz_fiesta_cx` y
       `biz_insc_cx` dicen «Se le devuelve…» sin mirar; otras llamadas a `liberarOperacion` (vencidas, «No me sirve») no miran si soltó.
+      _Hecho (25 nov, e2eebbe, Opus; revisado por Fable): migración 0222, cobros.soltarRetencion en todas las llamadas, din9v5._
+- [ ] **→ 9b** · **Lo último de la clase (25 nov, revisión de e2eebbe):** `citas-flujo.ts` ~341 llama a `devolverPago` al cancelar a tiempo sin
+      mirar el resultado, ~342 dice el depósito entero y `cita/[num]/Estado.tsx` ~52 «Te devolvemos»; `MercadoEstado.tsx` ~61-63 «No se cobró nada»
+      fijo; `ApartadoEstado.tsx` ~56-58 y ~79 «Se liberó lo retenido» sin mirar; citas, apartados y pedidos devuelven `retenida` y ninguna
+      pantalla lo usa. din9v5 cubre solo Noche (sin inglés ni cierre de la alerta).
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,
