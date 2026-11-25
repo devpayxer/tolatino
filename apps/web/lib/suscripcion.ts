@@ -478,7 +478,18 @@ export async function seguirConPro(negocio: string, userId: string, pm: string, 
       return { ok: true } as const;
     });
     if (!r.ok) return r;
-    if (s.status === "past_due") { await procesarYa(negocio); return { ok: true, cobrado: true }; }
+    if (s.status === "past_due") {
+      await procesarYa(negocio);
+      // 25 nov (9u) · Lo que dejó el cobro con la tarjeta nueva se lee de la base, nunca se supone: antes decía «ya tienes Pro» aunque el banco la rechazara.
+      const f = (await db().query<{ st: string; camino: boolean; verificar: boolean }>(
+        `select status as st, exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'pending') as camino,
+                exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'action') as verificar from subscriptions where business_id = $1`, [negocio])).rows[0];
+      if (f?.st === "active") return { ok: true, cobrado: true };
+      if (f?.camino) return { ok: false, msg: EN_CAMINO };
+      if (f?.verificar) return no("Cambiamos tu tarjeta. Tu banco pide confirmar el cobro: te mandamos un aviso con el enlace.", "We changed your card. Your bank asks to confirm the charge: we sent you a notice with the link.");
+      if (f?.st === "ended") return no("Cambiamos tu tarjeta, pero el banco rechazó el cobro y tu página pasó a Free. Nada se borra.", "We changed your card, but the bank declined the charge and your page switched to Free. Nothing is deleted.");
+      return no("Cambiamos tu tarjeta, pero el banco rechazó el cobro. Prueba con otra tarjeta.", "We changed your card, but the bank declined the charge. Try another card.");
+    }
     return { ok: true };
   }
   if (s?.status === "courtesy") return no("Tienes Pro de cortesía: no hace falta tarjeta hasta que termine.", "You have courtesy Pro: no card needed until it ends.");

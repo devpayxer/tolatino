@@ -17633,6 +17633,43 @@ const guardianes = {
     if (JSON.stringify(d) !== JSON.stringify(esp)) falla(G, C, 0, `desgloseNotas() no cuenta bien: ${JSON.stringify(d)} (debe ${JSON.stringify(esp)})`);
   },
 
+  /* 25 nov (9u) · cobradoSoloSiQuedo: el plan Pro dice «cobrado» (y la pantalla «ya tienes Pro. Te mandamos el recibo») SOLO con lo que de verdad quedó.
+     Pasaba: «Cambiar tarjeta» con el plan en cobro fallido (seguirConPro) corría el cobro (procesarYa) y devolvía cobrado: true sin mirar qué dejó: con una
+     tarjeta que el banco rechazaba, el dueño leía «ya tienes Pro» y seguía en cobro fallido (din9u). Regla, en lib/suscripcion.ts: (1) cada «cobrado: true»
+     va en la línea que leyó que el plan quedó activo (=== "active") o justo después de mirar el resultado del cobro (if (!r.ok) return …, con
+     r = await cobrarPeriodo(…)); (2) después de correr el proceso del plan (await procesar(…) / await procesarYa(…)) en una acción, el primer
+     «return { ok: true» lee el plan de la base (from subscriptions) y va en la línea que comprueba "active". Al revés: alrevesCobradoSoloSiQuedo. */
+  cobradoSoloSiQuedo() {
+    const G = "cobradoSoloSiQuedo", S = "apps/web/lib/suscripcion.ts";
+    if (!existsSync(S)) return falla(G, S, 0, "falta lib/suscripcion.ts (el plan Pro)");
+    const t = sinComent(S), L = t.split("\n");
+    const previa = (i) => { for (let k = i - 1; k >= 0; k--) if (L[k].trim()) return k; return -1; };
+    let vistos = 0;
+    L.forEach((l, i) => {
+      if (!/\bcobrado: true\b/.test(l)) return;
+      vistos++;
+      if (/=== "active"\) return \{ ok: true, cobrado: true \}/.test(l)) return;
+      const k = previa(i), j = k < 0 ? -1 : previa(k);
+      if (/^\s*return \{ ok: true, cobrado: true \};$/.test(l) && k >= 0 && /^\s*if \(!r\.ok\) return /.test(L[k]) && j >= 0 && /^\s*const r = await cobrarPeriodo\(/.test(L[j])) return;
+      falla(G, S, i + 1, "«cobrado: true» sin mirar lo que quedó: va en la línea que leyó el plan activo (=== \"active\") o justo después de if (!r.ok) return … de r = await cobrarPeriodo(…)");
+    });
+    if (!vistos) falla(G, S, 0, "no encontré ningún «cobrado: true» (¿cambió la forma de decir que se cobró? actualiza este guardián)");
+    let procesos = 0;
+    for (const m of t.matchAll(/\n(?:export )?async function (\w+)\(/g)) {
+      if (m[1] === "procesar" || m[1] === "procesarYa") continue;
+      const fin = t.indexOf("\n}", m.index + 1), cuerpo = t.slice(m.index, fin < 0 ? undefined : fin);
+      const p = cuerpo.search(/await procesar(?:Ya)?\(/);
+      if (p < 0) continue;
+      procesos++;
+      const resto = cuerpo.slice(p), r = resto.search(/return \{ ok: true\b/);
+      if (r < 0) continue;
+      const linea = t.slice(0, m.index + p + r).split("\n").length, ret = L[linea - 1] ?? "";
+      if (!/from subscriptions where business_id = \$1/.test(resto.slice(0, r)) || !/=== "active"\)/.test(ret))
+        falla(G, S, linea, `${m[1]}: después de correr el proceso del plan, el éxito se dice solo leyendo el plan de la base (from subscriptions) y con "active" en la misma línea`);
+    }
+    if (procesos < 2) falla(G, S, 0, `esperaba al menos dos acciones que corren el proceso del plan (seguirConPro, reintentarCobro); hallé ${procesos}`);
+  },
+
 };
 
 /* AO 5b · lib/noticias-comun.ts real (no importa nada), para correr las tablas de casos de los guardianes de las noticias. */
