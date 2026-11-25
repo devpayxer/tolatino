@@ -18119,8 +18119,12 @@ const guardianes = {
       // La captura tarde que lanza deja rastro (registro y alerta al equipo de dinero), y la retención ya soltada por otro se dice soltada.
       const cxV = cuerpoFn(existsSync("apps/web/lib/viajes.ts") ? sinComent("apps/web/lib/viajes.ts") : "", "viajeCliente");
       for (const [f, cu, fn] of [[EPL, cxE, "cancelarEvp"], ["apps/web/lib/viajes.ts", cxV, "viajeCliente"]])
-        if (!/catch \(e\) \{ fallo = e/.test(cu) || !/if \(fallo(?: && o)?\) await alertarCapturaTarde\(o\.id, numero, fallo, d\);/.test(cu))
-          falla(G, f, 0, `${fn}: la captura tarde que lanza no deja rastro (catch sin fallo = e ni alertarCapturaTarde): nadie del equipo de dinero se entera`);
+        // El rastro en el registro va DENTRO del catch (aunque lo que sigue reviente) y «falló» es un booleano aparte (un throw falsy no se salta la alerta);
+        // la alerta lleva el cobro que pasa el llamador.
+        if (!/catch \(e\) \{ fallo = true; err = e; console\.error\(/.test(cu) || !/if \(fallo\) await alertarCapturaTarde\(numero, (o2\?\.pid \?\? o\?\.pid \?\? null|p\?\.id \?\? null), err, d\);/.test(cu))
+          falla(G, f, 0, `${fn}: la captura tarde que lanza no deja rastro (catch con fallo = true, err = e y console.error; alertarCapturaTarde con el cobro): nadie del equipo de dinero se entera`);
+      if (!/motivo: mitad \? "Cancelación tarde: se cobra la mitad" : cobra \? "Cancelación tarde \(la captura no salió\)" : "Cancelación a tiempo"/.test(cxV))
+        falla(G, "apps/web/lib/viajes.ts", 0, "viajeCliente: el motivo dice «Cancelación a tiempo» de una cancelación tarde cuya captura no salió (va cobra ? «Cancelación tarde…»)");
       if (!/else if \(o2\?\.pst === "released"\) d = \{ e: "liberada", monto: P\.dep \};/.test(cxE)) falla(G, EPL, 0, "cancelarEvp: lo retenido que otro ya soltó no se dice soltado (o2 released → liberada)");
       // El Super Admin (Transacciones): «se quedó con…» solo si perdio y queda algo cobrado (QUEDO), nunca perdio crudo.
       const ATX = "apps/web/lib/admin-tx.ts", atx = existsSync(ATX) ? sinComent(ATX) : "";

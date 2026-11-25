@@ -3090,7 +3090,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       intento ya estaba CAPTURADO en Stripe (la captura salió pero el libro no llegó a anotarla), liberarOperacion anota «released» con el dinero cobrado,
       el aviso dice «se soltó» y la alerta hold_stuck (liberar:<cobro>) se cierra sola. Debe preguntar a la pasarela el estado del intento antes de dar por
       soltado (succeeded → anotar captured y alertar; canceled → released). Las capturas tarde que lanzan (viaje, evento privado) ya dejan su alerta
-      hold_stuck captura:<cobro>, que no se cierra sola, pero el resto de quien suelta no.
+      hold_stuck captura:<cobro>, que no se cierra sola, pero el resto de quien suelta no. Y la captura tarde a la que Stripe no contesta (red caída:
+      pasarela.cobrar vuelve ok:false, no lanza) suelta la retención SIN alerta captura:: si la captura sí llegó a Stripe, nadie se entera (mismo arreglo:
+      preguntar a la pasarela antes de soltar). Tampoco hay prueba que ejecute alertarCapturaTarde (cobros.ts): falta un caso que haga lanzar la captura
+      tarde (viaje y evento privado) y mire el registro, la alerta captura:<cobro> con su texto y que la retención se soltó.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

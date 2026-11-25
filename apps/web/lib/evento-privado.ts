@@ -523,12 +523,13 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
     // Lo retenido (la captura había fallado) y tarde: se cobra (se queda con el restaurante). Si la captura tampoco sale, no se dice «se queda con el
     // restaurante»: la retención se suelta (lo que haría el barrido con un evento cancelado) y se dice lo que pasó.
     // 25 nov (regla 13, revisión) · «Se queda» solo con el cobro hecho en la base (captured o partially_refunded); en cualquier otro caso perdio se desmarca.
-    // Si cobrarOperacion lanza (la pasarela no contestó), se mira la base igual: lo que sigue retenido se suelta y el aviso dice eso, nunca «se queda».
-    // Si lanza, queda el rastro (registro y alerta al equipo de dinero: alertarCapturaTarde, después de soltar).
+    // Si cobrarOperacion lanza (la base: un «no» de Stripe vuelve como ok:false, sin lanzar), se mira la base igual: lo que sigue retenido se suelta y el
+    // aviso dice eso, nunca «se queda». El rastro queda en el registro dentro del catch y la alerta al equipo de dinero sale después de soltar
+    // (alertarCapturaTarde: la captura pudo salir en Stripe aunque la base no la anotara).
     const o = await leer(db(), "o.number = $1", [numero]);
-    let fallo: unknown = null;
+    let fallo = false, err: unknown = null;
     if (o) {
-      try { await cobrarOperacion(o.id); } catch (e) { fallo = e ?? new Error("captura"); }
+      try { await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; console.error(`[captura tarde] ${numero} (operación ${o.id}): ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
     }
     const o2 = await leer(db(), "o.number = $1", [numero]);
     quedo = o2?.pst === "captured" || o2?.pst === "partially_refunded";
@@ -539,7 +540,7 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
       // Ya soltada por otro (el barrido) mientras tanto: se dice que se soltó, nunca «No se cobró nada» a secas.
       else if (o2?.pst === "released") d = { e: "liberada", monto: P.dep };
     }
-    if (fallo && o) await alertarCapturaTarde(o.id, numero, fallo, d);
+    if (fallo) await alertarCapturaTarde(numero, o2?.pid ?? o?.pid ?? null, err, d);
   } else if (!P.perdio) d = await moverDinero(numero).catch((): DevCancelar => ({ e: "fallida", monto: P.dev }));
   // Tarde con el cobro ya devuelto entero o la retención ya soltada: nada se queda y nada se mueve ahora; el aviso dice lo que ya había pasado (te
   // devolvimos / se soltó la retención), nunca «No se cobró nada» de un depósito que sí se cobró y se devolvió.

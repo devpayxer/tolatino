@@ -123,23 +123,24 @@ export async function soltarRetencion(opId: string, motivo: Msg): Promise<import
   return { e: "retenida", monto: h.amt };
 }
 
-/* 25 nov (regla 13) · La captura de una cancelación TARDE de lo retenido (el viaje, el evento privado) lanzó (la pasarela no contestó o falló): el
-   llamador ya leyó la base y soltó la retención (o lo intentó). Queda en el registro y el equipo de dinero lo sabe, una vez por cobro: hold_stuck con
-   sujeto captura:<cobro>, que no se cierra solo (alguien mira en Stripe que la captura de verdad no salió; si salió, el libro dice soltada con el dinero
-   cobrado). Nunca tira: es el rastro de un fallo, no un paso del flujo. */
-export async function alertarCapturaTarde(opId: string, numero: string, err: unknown, d: import("./devolucion-cancelar").DevCancelar | null) {
+/* 25 nov (regla 13) · La captura de una cancelación TARDE de lo retenido (el viaje, el evento privado) LANZÓ. pasarela.cobrar no lanza (un «no» de
+   Stripe o la red caída vuelven como ok:false y no pasan por aquí): lo que lanza es la base, y puede ser DESPUÉS de un «sí» de Stripe. Por eso nada de
+   esto afirma que la captura no salió: el llamador ya dejó su rastro en el registro (console.error en su catch), leyó la base y soltó la retención (o lo
+   intentó); aquí solo la alerta al equipo de dinero, una vez por cobro: hold_stuck con sujeto captura:<cobro>, que no se cierra sola (alguien mira en
+   Stripe si la captura salió: si salió, el cliente pagó y hay que devolverle). El cobro lo pasa el llamador (pid). Nunca tira. */
+export async function alertarCapturaTarde(numero: string, pid: string | null, err: unknown, d: import("./devolucion-cancelar").DevCancelar | null) {
   const msg = String((err as Error)?.message ?? err).slice(0, 200);
-  console.error(`[captura tarde] ${numero} (operación ${opId}): ${msg}`);
   try {
+    if (!pid) { console.error(`[captura tarde] ${numero}: sin cobro para la alerta (${msg})`); return; }
     const p = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null }>(
-      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city from payments y where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') order by y.id limit 1`, [opId])).rows[0];
+      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city from payments y where y.id = $1::bigint`, [pid])).rows[0];
     if (!p) return;
     await (await import("./dinero-alertas")).alertar("hold_stuck", `captura:${p.id}`, { monto: p.amt, negocio: p.biz, ciudad: p.city, detalle: d?.e === "liberada" ? {
-      es: `${numero}: la captura tarde no salió (${msg}): se soltó la retención de ${money(p.amt)} y no se cobró nada. Revisa en Stripe que la captura no haya salido.`,
-      en: `${numero}: the late capture did not go through (${msg}): the ${money(p.amt)} hold was released and nothing was charged. Check in Stripe that the capture did not go through.` }
+      es: `${numero}: la captura tarde dio error (${msg}). La base la da por soltada (${money(p.amt)}) y al cliente se le dijo que se soltó. Revisa en Stripe: si la captura salió, el cliente pagó y hay que devolverle.`,
+      en: `${numero}: the late capture failed (${msg}). The books show it as released (${money(p.amt)}) and the client was told it was released. Check in Stripe: if the capture went through, the client paid and must be refunded.` }
       : d?.e === "retenida" ? {
-      es: `${numero}: la captura tarde no salió (${msg}) y la retención de ${money(p.amt)} no se soltó todavía: el barrido la sigue soltando. Revisa el cobro en Stripe.`,
-      en: `${numero}: the late capture did not go through (${msg}) and the ${money(p.amt)} hold has not been released yet: the sweep keeps releasing it. Check the charge in Stripe.` } : {
+      es: `${numero}: la captura tarde dio error (${msg}) y la retención de ${money(p.amt)} no se soltó todavía: el barrido la sigue soltando (mira también la alerta liberar:${p.id} del mismo cobro). Revisa el cobro en Stripe.`,
+      en: `${numero}: the late capture failed (${msg}) and the ${money(p.amt)} hold has not been released yet: the sweep keeps releasing it (see also the liberar:${p.id} alert for the same charge). Check the charge in Stripe.` } : {
       es: `${numero}: la captura tarde dio error (${msg}); la base dice que el cobro de ${money(p.amt)} ya no está retenido. Revisa en Stripe qué pasó con él.`,
       en: `${numero}: the late capture failed (${msg}); the books say the ${money(p.amt)} charge is no longer on hold. Check in Stripe what happened to it.` } });
   } catch (e) { console.error(`[captura tarde] ${numero}: la alerta no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
