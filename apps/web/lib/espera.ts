@@ -1,7 +1,7 @@
 import "server-only";
 import { valores } from "./config";
 import { db, tx, type AlGuardar } from "./db";
-import { diaCorto, hora, type Bi } from "./evt-comun";
+import { cuandoBi, type Bi } from "./evt-comun";
 
 /* 6d · Lista de espera de una fecha con boletos (fase6-eventos.md §4 6d; prototipo lsVals «lista de espera con oferta de 30 min»).
    - En orden de llegada (created_at, que la base no deja cambiar): cuando se libera un lugar (alguien cancela, el organizador devuelve,
@@ -57,7 +57,7 @@ export async function ofrecer(fecha: string, alGuardar?: AlGuardar<number>): Pro
   if (hechas.length) {
     const { avisar } = await import("./avisos");
     const base = (await import("./correo")).BASE_URL();
-    for (const o of hechas) await avisar(o.uid, "espera_lugar", { evento: o.title.es, cuando: `${diaCorto(o.dia, true)} · ${hora(o.h0)}`, min: cfg.espera_oferta_min, enlace: `${base}/eventos/pagar/${o.hold}` },
+    for (const o of hechas) await avisar(o.uid, "espera_lugar", { evento: o.title, cuando: cuandoBi(o.dia, o.h0), min: cfg.espera_oferta_min, enlace: `${base}/eventos/pagar/${o.hold}` },
       { href: `/eventos/pagar/${o.hold}`, ref: ["waitlist", o.wid] });
   }
   return hechas.length;
@@ -75,7 +75,7 @@ export async function barrerEspera(): Promise<number> {
     if (w.hst === "held") await vencerApartados({ fecha: w.fid });
     const st = w.hst === "converted" ? "converted" : w.hst === "released" ? "left" : "expired";
     const u = await db().query(`update waitlist set status = $2 where id = $1::bigint and status = 'offered'`, [w.id, st]);
-    if (u.rowCount && st === "expired") await (await import("./avisos")).avisar(w.uid, "espera_vence", { evento: w.title.es }, { ref: ["waitlist", w.id] });
+    if (u.rowCount && st === "expired") await (await import("./avisos")).avisar(w.uid, "espera_vence", { evento: w.title }, { ref: ["waitlist", w.id] });
     fechas.add(w.fid);
   }
   for (const r of (await db().query<{ fid: string }>(`select distinct event_date_id::text as fid from waitlist where status = 'waiting' limit 100`)).rows) fechas.add(r.fid);

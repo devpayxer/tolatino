@@ -100,8 +100,9 @@ export async function avisarVencimiento(): Promise<number> {
   if ((await db().query(`select 1 from notifications where ref_kind = 'pase_cert' and ref_id = $1 limit 1`, [ref])).rowCount) return 0;
   const equipo = (await db().query<{ id: string }>(`select user_id::text as id from staff_members where role = 'admin' and status = 'active'`)).rows;
   const { avisar } = await import("../avisos");
-  const fecha = new Intl.DateTimeFormat("es-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(`${e.vence}T12:00:00Z`));
-  for (const u of equipo) await avisar(u.id, "pase_cert_vence", { cuando: e.dias < 0 ? "ya venció" : e.dias === 0 ? "hoy" : `en ${e.dias} días`, tipo: e.tipo ?? "—", fecha },
+  const fechaEn = (l: string) => new Intl.DateTimeFormat(l, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(`${e.vence}T12:00:00Z`));
+  const fecha = { es: fechaEn("es-US"), en: fechaEn("en-US") };
+  for (const u of equipo) await avisar(u.id, "pase_cert_vence", { cuando: e.dias < 0 ? { es: "ya venció", en: "already expired" } : e.dias === 0 ? { es: "hoy", en: "today" } : { es: `en ${e.dias} días`, en: `in ${e.dias} days` }, tipo: e.tipo ?? "—", fecha },
     { href: "/admin/sistema/integraciones?tab=wallet", ref: ["pase_cert", ref], sinSms: true }).catch(() => undefined);
   return equipo.length;
 }

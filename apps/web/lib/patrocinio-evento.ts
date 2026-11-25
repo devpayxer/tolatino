@@ -294,11 +294,12 @@ export async function patEvtVivo(negocio: string, evento: string): Promise<boole
 }
 
 /* ── Avisos al organizador ── */
-export async function avisoEvt(evento: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string; n?: string; total?: string }) {
-  const x = (await db().query<{ negocio: string; titulo: string; ciudad: string; tz: string }>(
-    `select e.business_id as negocio, e.title->>'es' as titulo, ci.name as ciudad, ci.timezone as tz from events e join cities ci on ci.id = e.city_id where e.id = $1::bigint`, [evento])).rows[0];
+export async function avisoEvt(evento: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string | Bi; n?: string; total?: string }) {
+  const x = (await db().query<{ negocio: string; titulo: Bi; ciudad: string; tz: string }>(
+    `select e.business_id as negocio, e.title as titulo, ci.name as ciudad, ci.timezone as tz from events e join cities ci on ci.id = e.city_id where e.id = $1::bigint`, [evento])).rows[0];
   if (!x) return;
-  const hasta = v.hasta ? new Intl.DateTimeFormat("es-US", { timeZone: x.tz, day: "numeric", month: "short" }).format(new Date(v.hasta)).replace(/\./g, "") : "";
+  const fh = (l: string) => new Intl.DateTimeFormat(l, { timeZone: x.tz, day: "numeric", month: "short" }).format(new Date(v.hasta!)).replace(/\./g, "");
+  const hasta: string | Bi = v.hasta ? { es: fh("es-US"), en: fh("en-US") } : "";
   await (await import("./avisos")).avisarNegocio(x.negocio, tpl, { evento: x.titulo, ciudad: x.ciudad, hasta, monto: v.monto ?? "", tarjeta: v.tarjeta ?? "", motivo: v.motivo ?? "", n: v.n ?? "", total: v.total ?? "" },
     { href: `/panel/${x.negocio}/eventos?det=evt:pat:${evento}` });
 }
@@ -407,7 +408,7 @@ async function reanudarUno(id: string): Promise<{ evento: string; hasta: string 
 /* Un patrocinio de evento que llegó a su fin: con «renovar» encendido (1 semana o 1 mes), si el evento sigue por venir, se cobra el siguiente período
    (el precio de hoy) con la tarjeta del pago, si hay puesto; si no, termina y se avisa por qué. Una sola vez: la llave es la del período que termina. */
 const YA_COBRADA: Bi = { es: "la renovación ya estaba cobrada y no se aplicó: la revisa To'Latino", en: "the renewal was already charged and was not applied: To'Latino reviews it" };
-type VencidoE = { r: "renovado" | "termino"; evento: string; tpl: string; v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string } };
+type VencidoE = { r: "renovado" | "termino"; evento: string; tpl: string; v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string | Bi } };
 /* 9t5 · Uno solo, sin esperar al siguiente barrido: la renovación en camino que la consulta a la pasarela ya resolvió (lib/cobro-fuera.ts ›
    resolverCobroFuera) se cierra por el mismo vencimiento (vencerUnoEvt), con su aviso. */
 export async function renovacionConsultadaEvt(id: string): Promise<void> {
@@ -458,7 +459,7 @@ async function vencerUnoEvt(id: string): Promise<VencidoE | null> {
           if (ia?.st !== "done") return null;
           await terminar(YA_COBRADA);
           await CF.alertaSinAplicar(ia, { es: `el patrocinio ${id} seguía vivo con su renovación ya cobrada.`, en: `sponsorship ${id} was still live with its renewal already charged.` });
-          return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: YA_COBRADA.es } };
+          return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: YA_COBRADA } };
         }
         const monto = p.centavos ?? aCobrar;
         await c.query(`update event_sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now(), ${DEVOLUCION("'pausa'", "'pausa'", true)} where id = $1::bigint`, [id]);
@@ -476,7 +477,7 @@ async function vencerUnoEvt(id: string): Promise<VencidoE | null> {
           await c.query(`update event_sponsorships set renew_note = $2 where id = $1::bigint`, [id, "no quedaba puesto"]);
           const ia = await CF.intencion(p.intencion!);
           if (ia) await CF.alertaSinAplicar(ia, { es: `al renovar el patrocinio de evento ${id} ya no quedaba puesto.`, en: `when renewing event sponsorship ${id} there was no slot left.` });
-          return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: "no quedaba puesto" } };
+          return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: { es: "no quedaba puesto", en: "there was no slot left" } } };
         }
         await anotarPago(c, { ...cobro, centavos: monto, idem: p.idem ?? idem, ref: nid!, pi: p.pi, marca: p.marca, l4: p.l4 });
         await auditarEvento(c, s.payer_user_id, s.event_id, s.city_id, "patrocinio_evento.renovado_solo", { patrocinio: nid, de: id, monto: money(monto), hasta: f.b });
@@ -487,7 +488,7 @@ async function vencerUnoEvt(id: string): Promise<VencidoE | null> {
     }
     motivo ??= { es: "no se pudo renovar", en: "it could not be renewed" };
     await terminar(motivo);
-    return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: motivo!.es } };
+    return { r: "termino", evento: s.event_id, tpl: "biz_patevt_no_renovo", v: { motivo: motivo! } };
   });
 }
 

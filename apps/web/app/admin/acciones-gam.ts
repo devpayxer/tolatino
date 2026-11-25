@@ -255,7 +255,7 @@ export async function gamCuponAprobar(id: string, costo: string, motivo: string)
     return x;
   });
   if (typeof r === "string") return no(r);
-  await avisarNegocio(r.bid, "biz_cupon_ok", { cupon: r.title.es, costo: v }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
+  await avisarNegocio(r.bid, "biz_cupon_ok", { cupon: r.title, costo: v }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
   listo();
   return { ok: true, mensaje: `Aprobado a ${v} monedas. Ya sale en la Comunidad; avisamos al negocio.` };
 }
@@ -275,7 +275,7 @@ export async function gamCuponRechazar(id: string, motivo: string): Promise<ResA
     return x;
   });
   if (typeof r === "string") return no(r);
-  await avisarNegocio(r.bid, "biz_cupon_no", { cupon: r.title.es, motivo: m.slice(0, 160) }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
+  await avisarNegocio(r.bid, "biz_cupon_no", { cupon: r.title, motivo: m.slice(0, 160) }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
   listo();
   return { ok: true, mensaje: "No sale. Le avisamos al negocio el motivo." };
 }
@@ -316,7 +316,7 @@ export async function gamCuponPausar(id: string, motivo: string): Promise<ResAdm
     return x;
   });
   if (typeof r === "string") return no(r);
-  await avisarNegocio(r.bid, "biz_cupon_pausa", { cupon: r.title.es, motivo: m.slice(0, 160) }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
+  await avisarNegocio(r.bid, "biz_cupon_pausa", { cupon: r.title, motivo: m.slice(0, 160) }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
   listo();
   return { ok: true, mensaje: "Pausado. Ya no sale en la Comunidad; avisamos al negocio el motivo." };
 }
@@ -336,7 +336,7 @@ export async function gamCuponActivar(id: string, motivo: string): Promise<ResAd
     return x;
   });
   if (typeof r === "string") return no(r);
-  await avisarNegocio(r.bid, "biz_cupon_ok", { cupon: r.title.es, costo: r.cost ?? 0 }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
+  await avisarNegocio(r.bid, "biz_cupon_ok", { cupon: r.title, costo: r.cost ?? 0 }, { href: `/panel/${r.bid}/pagina/cup`, ref: ["coupon", id] });
   listo();
   return { ok: true, mensaje: "Otra vez en la Comunidad. Avisamos al negocio." };
 }

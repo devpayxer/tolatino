@@ -128,7 +128,7 @@ export async function decidirTotal(userId: string, numero: string, acepta: boole
     // Lo que se paga a la oficina: honorario − crédito + extras aceptados (lo del gobierno nunca pasa por To'Latino).
     await c.query(`update operations set status_detail = 'hired', total_cents = $2, subtotal_cents = $2, updated_at = now() where id = $1::bigint`, [o.id, t.fee - t.credit + extra]);
     await ev(c, o.id, "total_accepted", "user", userId, { es: `Aceptó el total por escrito (versión ${t.version})${ok.length ? ` con ${ok.length} extra(s)` : ""}`, en: `Accepted the written total (version ${t.version})${ok.length ? ` with ${ok.length} extra(s)` : ""}` });
-    despues = async () => { const { avisarNegocio } = await import("./avisos"); await avisarNegocio(o.biz, "biz_pro_ok", { cliente: o.cliente, total: usd(t.total + extra), extras: ok.length ? ` (con ${ok.length} extra)` : "" }, { href: `/panel/${o.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] }); };
+    despues = async () => { const { avisarNegocio } = await import("./avisos"); await avisarNegocio(o.biz, "biz_pro_ok", { cliente: o.cliente, total: usd(t.total + extra), extras: ok.length ? { es: ` (con ${ok.length} extra)`, en: ` (with ${ok.length} extra)` } : "" }, { href: `/panel/${o.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] }); };
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();

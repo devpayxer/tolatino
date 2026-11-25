@@ -85,7 +85,7 @@ const SE = {};
 const KS = {};
 const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
   './soporte-equipo': SE, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': KS, './devolucion-consulta': DC });
-const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' };
+const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '', cuandoBi: () => ({ es: '', en: '' }) };
 const K = cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas });
 const LQ = cargar('apps/web/lib/evt-liquidacion.ts', { './config': { cfgSql: () => '7', valor: async () => 2 }, './db': D, './evt-comun': evtComun, './pagos/pasarela': { pasarela: P },
   './cobros': cobros, './dinero-alertas': alertas, './avisos': avisos, './consulta-pasarela': K });

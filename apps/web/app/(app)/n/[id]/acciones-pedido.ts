@@ -20,7 +20,7 @@ export async function enviarPedido(p: PedidoIn): Promise<PedidoOut> {
   // 9e · El primer pedido: «Al enviar el pedido aceptas los Términos y la Privacidad» queda anotado (la versión vigente; una vez por versión).
   if (r.ok) { const a = await contextoAceptar(); await aceptar(u.id, ACEPTABLES, { via: "primer_pedido", app: a.app, ipHash: a.ipHash }).catch(() => 0); }
   if (r.ok) after(() => evento("pedir", { ref: r.numero, userId: u.id, props: { negocio: p.negocio } }, ctx));
-  if (r.ok) after(() => avisarNegocio(String(p.negocio), "biz_req", { tipo: "pedido", cliente: u.first_name ?? "", min: 10 }, { href: `/panel/${p.negocio}/hoy?det=ped:${r.numero}`, ref: ["order", r.numero] }));
+  if (r.ok) after(() => avisarNegocio(String(p.negocio), "biz_req", { tipo: { es: "pedido", en: "order" }, cliente: u.first_name ?? "", min: 10 }, { href: `/panel/${p.negocio}/hoy?det=ped:${r.numero}`, ref: ["order", r.numero] }));
   return r;
 }
 

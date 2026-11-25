@@ -211,9 +211,10 @@ export async function avisarLlavesQueVencen(): Promise<number> {
   for (const k of r.rows) {
     const etapa = k.dias < 0 ? "vencida" : k.dias <= 7 ? "7d" : "30d", ref = `${k.id}:${etapa}`;
     if ((await db().query(`select 1 from notifications where ref_kind = 'llave_vence' and ref_id = $1 limit 1`, [ref])).rowCount) continue;
-    const fecha = new Intl.DateTimeFormat("es-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(`${k.vence}T12:00:00Z`));
+    const fechaL = (l: string) => new Intl.DateTimeFormat(l, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(`${k.vence}T12:00:00Z`));
+    const fecha = { es: fechaL("es-US"), en: fechaL("en-US") };
     for (const u of equipo) {
-      await avisar(u.id, "llave_vence", { llave: nombreLlave(k.kind), version: String(k.version), fecha, cuando: k.dias < 0 ? "ya venció" : k.dias === 0 ? "hoy" : `en ${k.dias} días` },
+      await avisar(u.id, "llave_vence", { llave: nombreLlave(k.kind), version: String(k.version), fecha, cuando: k.dias < 0 ? { es: "ya venció", en: "already expired" } : k.dias === 0 ? { es: "hoy", en: "today" } : { es: `en ${k.dias} días`, en: `in ${k.dias} days` } },
         { href: "/admin/sistema/integraciones", ref: ["llave_vence", ref], sinSms: true }).catch(() => undefined);
       n++;
     }

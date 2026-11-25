@@ -102,8 +102,9 @@ export async function recalcularRango(userId: string | null): Promise<{ antes: n
     return { antes, ahora };
   });
   if (r.ahora > r.antes) {
-    const R = (await rangos()).find((x) => x.n === r.ahora), en = (await db().query<{ l: string }>(`select coalesce(lang, 'es') as l from users where id = $1`, [userId])).rows[0]?.l === "en";
-    if (R) await avisar(userId, "gam_rank", { rango: en ? R.name.en : R.name.es, puede: (R.patio ? `${en ? R.unl.en : R.unl.es} (${en ? CUANDO_PATIO.en : CUANDO_PATIO.es})` : en ? R.unl.en : R.unl.es).toLowerCase() },
+    const R = (await rangos()).find((x) => x.n === r.ahora);
+    const puede = (l: "es" | "en") => (R!.patio ? `${R!.unl[l]} (${CUANDO_PATIO[l]})` : R!.unl[l]).toLowerCase();
+    if (R) await avisar(userId, "gam_rank", { rango: R.name, puede: { es: puede("es"), en: puede("en") } },
       { href: "/comunidad/rango", ref: ["gam_rank", `${userId}:${r.ahora}`] });
   }
   return r;

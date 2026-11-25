@@ -80,7 +80,7 @@ export async function cerrarDisputa(stripeId: string, status: string) {
   if (!d) return;
   if (["won", "lost"].includes(st) && d.biz && d.op) {
     const num = (await db().query<{ n: string }>(`select number as n from operations where id = $1::bigint`, [d.op])).rows[0]?.n ?? "";
-    await (await import("./avisos")).avisarNegocio(d.biz, "biz_dispute_end", { num, resultado: st === "won" ? "el banco nos dio la razón, el dinero se queda" : "el banco le dio la razón al cliente" }, { href: `/panel/${d.biz}/cobros` }).catch(() => undefined);
+    await (await import("./avisos")).avisarNegocio(d.biz, "biz_dispute_end", { num, resultado: st === "won" ? { es: "el banco nos dio la razón, el dinero se queda", en: "the bank sided with us, the money stays" } : { es: "el banco le dio la razón al cliente", en: "the bank sided with the customer" } }, { href: `/panel/${d.biz}/cobros` }).catch(() => undefined);
   }
 }
 

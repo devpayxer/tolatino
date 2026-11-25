@@ -44,7 +44,7 @@ export type PersonaPub = {
   id: string; nombre: string; corto: string; kind: "owner" | "staff" | "renter"; silla: number | null; foto: string | null;
   auto: boolean; resp: number; dep: number; // reglas efectivas: las de su silla (sillas rentadas) o las del negocio
 };
-export type MiaCita = { numero: string; st: "pend" | "ok" | "alt"; svc: string; ymd: string; i: number; m: number; con: string; resp: number };
+export type MiaCita = { numero: string; st: "pend" | "ok" | "alt"; svc: { es: string; en: string }; ymd: string; i: number; m: number; con: string; resp: number };
 export type CitasPublica = {
   negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; foto: string | null };
   model: "emp" | "comm" | "chair"; secciones: { id: string; name: Bi }[]; servicios: ServicioPub[]; extras: ServicioPub[]; gente: PersonaPub[];
@@ -159,14 +159,14 @@ export async function citasPublica(negocio: string, userId: string | null): Prom
 }
 
 async function miaCita(c: Q, x: Ctx, userId: string): Promise<MiaCita | null> {
-  const r = (await c.query<{ numero: string; status: string; svc: string; ymd: string; hm: string; con: string | null; resp: number | null }>(
-    `select o.number as numero, o.status, coalesce(o.details #>> '{svc,es}', '') as svc, (o.scheduled_at at time zone $3)::date::text as ymd, to_char(o.scheduled_at at time zone $3, 'HH24:MI') as hm,
+  const r = (await c.query<{ numero: string; status: string; svc: string; svc_en: string; ymd: string; hm: string; con: string | null; resp: number | null }>(
+    `select o.number as numero, o.status, coalesce(o.details #>> '{svc,es}', '') as svc, coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as svc_en, (o.scheduled_at at time zone $3)::date::text as ymd, to_char(o.scheduled_at at time zone $3, 'HH24:MI') as hm,
             m.display_name as con, m.chair_response_min as resp
        from operations o left join business_members m on m.id = o.member_id
       where o.user_id = $1 and o.business_id = $2 and o.kind = 'appointment' and o.status in ('pending', 'change_proposed', 'confirmed') and o.scheduled_at > now() - interval '1 hour'
       order by o.sent_at desc limit 1`, [userId, x.id, x.tz])).rows[0];
   if (!r) return null;
-  return { numero: r.numero, st: r.status === "confirmed" ? "ok" : r.status === "change_proposed" ? "alt" : "pend", svc: r.svc, ymd: r.ymd, i: Math.round((Date.parse(r.ymd) - Date.parse(x.hoy)) / 864e5), m: hm2m(r.hm),
+  return { numero: r.numero, st: r.status === "confirmed" ? "ok" : r.status === "change_proposed" ? "alt" : "pend", svc: { es: r.svc, en: r.svc_en }, ymd: r.ymd, i: Math.round((Date.parse(r.ymd) - Date.parse(x.hoy)) / 864e5), m: hm2m(r.hm),
     con: r.con?.split(" ")[0] ?? x.name, resp: x.model === "chair" ? (r.resp ?? x.pol.resp) : x.pol.resp };
 }
 

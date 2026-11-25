@@ -41,7 +41,7 @@ async function persona(a: Acceso, mid: unknown): Promise<Fila | null> {
 async function enviarInvitacion(a: Acceso, tel: string | null, code: string, rol: string): Promise<boolean> {
   if (!tel) return false;
   const { avisarTelefono } = await import("@/lib/avisos");
-  await avisarTelefono(tel, "equipo_invitado", { negocio: a.negocio.name, rol: rol || "equipo" }, { href: `/e/${code}`, ref: ["business", a.negocio.id], city: a.negocio.city_id });
+  await avisarTelefono(tel, "equipo_invitado", { negocio: a.negocio.name, rol: rol || { es: "equipo", en: "team" } }, { href: `/e/${code}`, ref: ["business", a.negocio.id], city: a.negocio.city_id });
   const s = (await db().query<{ st: string }>(
     `select coalesce((select n.sms_status from notifications n join users u on u.id = n.user_id where u.phone = $1 and n.tpl = 'equipo_invitado' and n.created_at > now() - interval '1 minute' order by n.id desc limit 1),
                      (select p.sms_status from phone_messages p where p.tpl = 'equipo_invitado' and p.created_at > now() - interval '1 minute' order by p.id desc limit 1)) as st`, [tel])).rows[0]?.st;

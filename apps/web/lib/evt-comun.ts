@@ -65,6 +65,8 @@ export function diaCorto(iso: string, es: boolean) {
   const [y, m, d] = iso.split("-").map(Number); const w = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
   return es ? `${DS[w]![0]} ${d} ${MS[m! - 1]![0]}` : `${DS[w]![1]} ${MS[m! - 1]![1]} ${d}`;
 }
+/* «sáb 14 nov · 8 PM» / «Sat Nov 14 · 8 PM» en los dos idiomas: lo que un aviso pone como el día y la hora (avisos › avisar elige el de quien lo recibe). */
+export const cuandoBi = (dia: string, h0: number): Bi => ({ es: `${diaCorto(dia, true)} · ${hora(h0)}`, en: `${diaCorto(dia, false)} · ${hora(h0)}` });
 export const mesCorto = (iso: string, es: boolean) => { const m = Number(iso.slice(5, 7)); return (es ? MS[m - 1]![0] : MS[m - 1]![1]).toUpperCase(); };
 export const dinero = usd;
 export const sumarDias = (iso: string, n: number) => { const [y, m, d] = iso.split("-").map(Number); const x = new Date(Date.UTC(y!, m! - 1, d! + n)); return x.toISOString().slice(0, 10); };

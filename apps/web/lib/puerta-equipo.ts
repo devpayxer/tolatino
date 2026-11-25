@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { db, enTx, tx } from "./db";
 import { cifrar, huella } from "./cifrado";
 import { cfgSql } from "./config";
-import { diaCorto, hora } from "./evt-comun";
+import { cuandoBi, diaCorto, hora } from "./evt-comun";
 import { equipo, incidencias, resumenFecha, ultimos } from "./puerta";
 import type { Bi, Resumen } from "./puerta-comun";
 
@@ -81,7 +81,7 @@ export async function quitarPortero(negocio: string, id: string, motivo: string,
   return r.rowCount ? { ok: true } : no("Ese portero ya no está.", "That door staffer is no longer there.");
 }
 /* Ponerlo también en este evento (o en todos). Al portero activo le llega «Tienes una puerta». */
-export async function asignarPortero(negocio: string, id: string, eventoId: string | null, cx?: PoolClient): Promise<R & { aviso?: { uid: string; vars: Record<string, string>; href: string } }> {
+export async function asignarPortero(negocio: string, id: string, eventoId: string | null, cx?: PoolClient): Promise<R & { aviso?: { uid: string; vars: Record<string, string | Bi>; href: string } }> {
   if (!ID.test(String(id ?? "")) || (eventoId !== null && !ID.test(eventoId))) return no("Ese portero no existe.", "That door staffer does not exist.");
   return enTx(cx, async (c) => {
     const f = (await c.query<{ scope: string; ids: string[]; uid: string | null; st: string }>(`select scope, event_ids::text[] as ids, user_id::text as uid, status as st from door_staff where id = $1::bigint and business_id = $2 and status <> 'removed' for update`, [id, negocio])).rows[0];
@@ -91,7 +91,7 @@ export async function asignarPortero(negocio: string, id: string, eventoId: stri
       const e = (await c.query<{ t: Bi; dia: string; h0: number; neg: string }>(`select e.title as t, e.start_date::text as dia, e.start_min as h0, b.name as neg from events e join businesses b on b.id = e.business_id where e.id = $1::bigint and e.business_id = $2`, [eventoId, negocio])).rows[0];
       if (!e) return no("Ese evento no es de tu negocio.", "That event is not yours.");
       if (f.scope === "events" && !f.ids.includes(eventoId)) await c.query(`update door_staff set event_ids = array_append(event_ids, $2::bigint) where id = $1::bigint`, [id, eventoId]);
-      if (f.uid && f.st === "active") return { ok: true as const, aviso: { uid: f.uid, vars: { negocio: e.neg, evento: e.t.es, cuando: `${diaCorto(e.dia, true)} · ${hora(e.h0)}` }, href: "/puerta" } };
+      if (f.uid && f.st === "active") return { ok: true as const, aviso: { uid: f.uid, vars: { negocio: e.neg, evento: e.t, cuando: cuandoBi(e.dia, e.h0) }, href: "/puerta" } };
     }
     return { ok: true as const };
   });

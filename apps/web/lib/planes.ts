@@ -18,6 +18,8 @@ import { pasarela } from "./pagos/pasarela";
    - Todo lo hace el barrido (idempotente: un cobro por período con `idem`); corre al abrir el plan o el panel. */
 type Q = PoolClient | ReturnType<typeof db>;
 type Bi = { es: string; en: string };
+/* «21/11» · «11/21»: el día y el mes de una fecha YMD, en el orden de cada idioma (avisos › avisar pone el de quien lo recibe). */
+const diaMes = (ymd: string): Bi => { const d = new Date(`${ymd}T12:00:00Z`); return { es: `${d.getUTCDate()}/${d.getUTCMonth() + 1}`, en: `${d.getUTCMonth() + 1}/${d.getUTCDate()}` }; };
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: boolean };
 const no = (es: string, en: string, x: { tarjeta?: boolean } = {}): { ok: false; msg: Bi; tarjeta?: boolean } => ({ ok: false, msg: { es, en }, ...x });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, YMD = /^\d{4}-\d{2}-\d{2}$/, NUM = /^PL-\d{1,10}$/;
@@ -93,7 +95,7 @@ export async function empezarPlan(userId: string, f: PlanIn, entorno: string): P
   if (!o.tarjeta) return no("Este negocio todavía no cobra planes en la app. Llámalo para empezar.", "This business does not charge plans in the app yet. Call them to start.");
   const dia = o.dias.find((d) => d.fechas.includes(f.fecha));
   if (!dia) return no("Elige la primera visita de las que se ofrecen.", "Pick one of the offered first visits.");
-  let numero = "", aviso: { negocio: string; plan: string; dia: string; cliente: string } | null = null;
+  let numero = "", aviso: { negocio: string; plan: Bi; dia: string; cliente: string } | null = null;
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select o.number from operations o where o.user_id = $1 and o.client_key = $2::uuid`, [userId, f.clave])).rows[0];
     if (ya) return { ok: true, numero: ya.number };
@@ -124,11 +126,11 @@ export async function empezarPlan(userId: string, f: PlanIn, entorno: string): P
       [op, f.negocio, userId, x.city, f.svc, casa.id, x.cents, dia.dow, nth, dia.m, o.meses, chargeDay, f.fecha, nota, acceso, f.pm]);
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, 'sent', 'user', $2, $3::jsonb)`, [op, userId, JSON.stringify({ es: "Empezó el plan", en: "Started the plan" })]);
     await crearVisita(c, numero, f.fecha, entorno);
-    aviso = { negocio: f.negocio, plan: x.name.es, dia: f.fecha, cliente: x.cl };
+    aviso = { negocio: f.negocio, plan: x.name, dia: f.fecha, cliente: x.cl };
     return { ok: true, numero };
   });
   if (r.ok && aviso) {
-    const a = aviso as { negocio: string; plan: string; dia: string; cliente: string }, av = await import("./avisos"), d = s2d(a.dia), diaL = `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
+    const a = aviso as { negocio: string; plan: Bi; dia: string; cliente: string }, av = await import("./avisos"), diaL = diaMes(a.dia);
     await av.avisar(userId, "plan_activo", { plan: a.plan, negocio: "", dia: diaL }, { href: `/plan/${r.numero}`, ref: ["plan", r.numero] });
     await av.avisarNegocio(a.negocio, "biz_plan_nuevo", { cliente: a.cliente, plan: a.plan, dia: diaL }, { href: `/panel/${a.negocio}/hoy`, ref: ["plan", r.numero] });
   }
@@ -236,9 +238,10 @@ async function cobrarPeriodo(subId: string, hoy: string): Promise<void> {
 export async function terminarCobroPlan(a: import("./cobro-fuera").Intencion): Promise<boolean> {
   const CF = await import("./cobro-fuera");
   const d = a.detalle as { next: string; day: number };
-  const p = (await db().query<{ num: string; uid: string; plan: string; st: string; next: string | null }>(
-    `select o.number as num, s.user_id::text as uid, o.details#>>'{svc,es}' as plan, s.status as st, s.next_charge_on::text as next from plan_subscriptions s join operations o on o.id = s.operation_id where s.id = $1::bigint`, [a.ref])).rows[0];
-  if (!p) return false;
+  const p0 = (await db().query<{ num: string; uid: string; plan: string; plan_en: string; st: string; next: string | null }>(
+    `select o.number as num, s.user_id::text as uid, o.details#>>'{svc,es}' as plan, coalesce(nullif(o.details#>>'{svc,en}', ''), o.details#>>'{svc,es}') as plan_en, s.status as st, s.next_charge_on::text as next from plan_subscriptions s join operations o on o.id = s.operation_id where s.id = $1::bigint`, [a.ref])).rows[0];
+  if (!p0) return false;
+  const p = { ...p0, plan: { es: p0.plan, en: p0.plan_en } as Bi };
   // El plan se canceló, se pausó o su período se movió mientras el cobro iba en camino: si nunca se mandó, se suelta; si se mandó y Stripe cobró, el pago
   // queda en el libro y el equipo de dinero decide si se devuelve (offsession_unapplied). Nunca se aplica a otro período.
   if (p.st !== "active" || p.next !== d.next) {
@@ -294,7 +297,8 @@ async function pagoDelPlan(c: PoolClient, a: import("./cobro-fuera").Intencion, 
 }
 /* Un «no» del banco: reintento a los 2 y 4 días; al tercero, el plan queda en pausa (sin visita) hasta que cambie la tarjeta. */
 async function rechazoPlan(subId: string, op: string, num: string, uid: string) {
-  const p = (await db().query<{ plan: string }>(`select o.details#>>'{svc,es}' as plan from operations o where o.id = $1::bigint`, [op])).rows[0];
+  const p0 = (await db().query<{ plan: string; plan_en: string }>(`select o.details#>>'{svc,es}' as plan, coalesce(nullif(o.details#>>'{svc,en}', ''), o.details#>>'{svc,es}') as plan_en from operations o where o.id = $1::bigint`, [op])).rows[0];
+  const p = p0 ? { plan: { es: p0.plan, en: p0.plan_en } as Bi } : undefined;
   const u = (await db().query<{ fails: number; pausa: boolean }>(
     `update plan_subscriptions s set fail_count = s.fail_count + 1, retry_on = case when s.fail_count + 1 >= 3 then null else (now() at time zone ci.timezone)::date + 2 end,
             status = case when s.fail_count + 1 >= 3 then 'paused' else s.status end, paused_until = null, updated_at = now()
@@ -309,13 +313,14 @@ async function rechazoPlan(subId: string, op: string, num: string, uid: string) 
 export async function planCliente(userId: string, numero: string, que: "saltar" | "pausar" | "reanudar" | "cancelar" | "tarjeta", pm?: string): Promise<Res> {
   if (!NUM.test(numero)) return no("Ese plan no existe.", "That plan does not exist.");
   await barrerPlanes({ numero });
-  let aviso: { tpl: string; v: Record<string, string>; biz: string; que: string; cl: string; plan: string } | null = null;
+  let aviso: { tpl: string; v: Record<string, string | Bi>; biz: string; que: Bi; cl: string; plan: Bi } | null = null;
   const r = await tx(async (c): Promise<Res> => {
-    const s = (await c.query<{ id: string; st: string; next: string | null; charge: string | null; dow: number; nth: number; meses: number[] | null; day: number; biz: string; city: string; plan: string; cl: string }>(
+    const s0 = (await c.query<{ id: string; st: string; next: string | null; charge: string | null; dow: number; nth: number; meses: number[] | null; day: number; biz: string; city: string; plan: string; plan_en: string; cl: string }>(
       `select s.id::text, s.status as st, s.next_visit_on::text as next, s.next_charge_on::text as charge, s.dow, s.nth, s.visit_months as meses, s.charge_day as day, s.business_id as biz, s.city_id as city,
-              o.details#>>'{svc,es}' as plan, coalesce(nullif(u.first_name, ''), 'El cliente') as cl
+              o.details#>>'{svc,es}' as plan, coalesce(nullif(o.details#>>'{svc,en}', ''), o.details#>>'{svc,es}') as plan_en, coalesce(nullif(u.first_name, ''), 'El cliente') as cl
          from plan_subscriptions s join operations o on o.id = s.operation_id join users u on u.id = s.user_id where s.user_id = $1 and o.number = $2 for update of s`, [userId, numero])).rows[0];
-    if (!s) return no("Ese plan no existe.", "That plan does not exist.");
+    if (!s0) return no("Ese plan no existe.", "That plan does not exist.");
+    const s = { ...s0, plan: { es: s0.plan, en: s0.plan_en } as Bi };
     const hoy = await hoyDe(c, s.city);
     const quitarProxima = async () => c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'plan' where kind = 'appointment' and details->>'plan' = $1 and status in ('confirmed', 'pending') and coalesce(status_detail, '') = '' and scheduled_at > now()`, [numero]);
     if (que === "tarjeta") {
@@ -330,14 +335,14 @@ export async function planCliente(userId: string, numero: string, que: "saltar" 
       await c.query(`update plan_subscriptions set status = 'cancelled', cancelled_at = now(), next_charge_on = null, retry_on = null, updated_at = now() where id = $1::bigint`, [s.id]);
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now() where number = $1`, [numero]);
       await quitarProxima();
-      aviso = { tpl: "plan_cancelado", v: { plan: s.plan }, biz: s.biz, que: "canceló el plan", cl: s.cl, plan: s.plan };
+      aviso = { tpl: "plan_cancelado", v: { plan: s.plan }, biz: s.biz, que: { es: "canceló el plan", en: "canceled the plan" }, cl: s.cl, plan: s.plan };
       return { ok: true };
     }
     if (que === "reanudar") {
       if (s.st !== "paused") return no("Este plan no está en pausa.", "This plan is not paused.");
       const next = siguienteVisita(hoy, s.dow, s.nth, s.meses);
       await c.query(`update plan_subscriptions set status = 'active', paused_until = null, next_visit_on = $2::date, next_charge_on = greatest(coalesce(next_charge_on, $2::date), $2::date), retry_on = null, fail_count = 0, updated_at = now() where id = $1::bigint`, [s.id, next]);
-      aviso = { tpl: "", v: {}, biz: s.biz, que: "reanudó el plan", cl: s.cl, plan: s.plan };
+      aviso = { tpl: "", v: {}, biz: s.biz, que: { es: "reanudó el plan", en: "resumed the plan" }, cl: s.cl, plan: s.plan };
       return { ok: true };
     }
     // Saltar la próxima / pausar un mes: no hay visita ni cobro ese mes.
@@ -346,12 +351,12 @@ export async function planCliente(userId: string, numero: string, que: "saltar" 
     await quitarProxima();
     await c.query(`update plan_subscriptions set next_visit_on = $2::date, next_charge_on = $3::date, status = case when $4 then 'paused' else status end, paused_until = case when $4 then $2::date end, updated_at = now() where id = $1::bigint`,
       [s.id, next, charge, que === "pausar"]);
-    if (que === "pausar") aviso = { tpl: "plan_pausa", v: { plan: s.plan, dia: `${s2d(next).getUTCDate()}/${s2d(next).getUTCMonth() + 1}` }, biz: s.biz, que: "pausó un mes", cl: s.cl, plan: s.plan };
-    else aviso = { tpl: "", v: {}, biz: s.biz, que: "saltó la próxima visita", cl: s.cl, plan: s.plan };
+    if (que === "pausar") aviso = { tpl: "plan_pausa", v: { plan: s.plan, dia: diaMes(next) }, biz: s.biz, que: { es: "pausó un mes", en: "paused for a month" }, cl: s.cl, plan: s.plan };
+    else aviso = { tpl: "", v: {}, biz: s.biz, que: { es: "saltó la próxima visita", en: "skipped the next visit" }, cl: s.cl, plan: s.plan };
     return { ok: true };
   });
   if (r.ok && aviso) {
-    const a = aviso as { tpl: string; v: Record<string, string>; biz: string; que: string; cl: string; plan: string }, av = await import("./avisos");
+    const a = aviso as { tpl: string; v: Record<string, string | Bi>; biz: string; que: Bi; cl: string; plan: Bi }, av = await import("./avisos");
     if (a.tpl) await av.avisar(userId, a.tpl, a.v, { href: `/plan/${numero}`, ref: ["plan", numero] });
     await av.avisarNegocio(a.biz, "biz_plan_cambio", { cliente: a.cl, que: a.que, plan: a.plan }, { ref: ["plan", numero] });
   }

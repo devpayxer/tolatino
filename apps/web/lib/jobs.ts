@@ -305,18 +305,18 @@ export async function moduloJobs(negocio: string, on: boolean, alGuardar?: AlGua
 }
 
 /* Avisos de Jobs: la respuesta del negocio a la persona, y el puesto para el aviso al negocio. */
-export async function tituloVacante(jobId: string) {
-  if (!/^\d{1,18}$/.test(jobId)) return "";
-  return (await db().query<{ t: string }>(`select title->>'es' as t from job_postings where id = $1::bigint`, [jobId])).rows[0]?.t ?? "";
+export async function tituloVacante(jobId: string): Promise<{ es: string; en: string }> {
+  if (!/^\d{1,18}$/.test(jobId)) return { es: "", en: "" };
+  return (await db().query<{ t: { es: string; en: string } }>(`select title as t from job_postings where id = $1::bigint`, [jobId])).rows[0]?.t ?? { es: "", en: "" };
 }
 export async function avisarSolicitud(appId: string, paso: string) {
   const { avisar } = await import("./avisos");
-  const a = (await db().query<{ uid: string; num: string; negocio: string; puesto: string; lang: string }>(
-    `select a.user_id::text as uid, a.number as num, b.name as negocio, j.title->>'es' as puesto, u.lang from job_applications a join businesses b on b.id = a.business_id join job_postings j on j.id = a.job_id join users u on u.id = a.user_id where a.id = $1::bigint`, [appId])).rows[0];
+  const a = (await db().query<{ uid: string; num: string; negocio: string; puesto: { es: string; en: string }; lang: string }>(
+    `select a.user_id::text as uid, a.number as num, b.name as negocio, j.title as puesto, u.lang from job_applications a join businesses b on b.id = a.business_id join job_postings j on j.id = a.job_id join users u on u.id = a.user_id where a.id = $1::bigint`, [appId])).rows[0];
   if (!a) return;
-  const en = a.lang === "en", E: Record<string, [string, string]> = { contact: ["te van a llamar", "they will call you"], interview: ["te invitan a una entrevista", "you are invited to an interview"], not_selected: ["eligieron a otra persona", "they chose someone else"] };
+  const E: Record<string, [string, string]> = { contact: ["te van a llamar", "they will call you"], interview: ["te invitan a una entrevista", "you are invited to an interview"], not_selected: ["eligieron a otra persona", "they chose someone else"] };
   const e = E[paso]; if (!e) return;
-  await avisar(a.uid, "job_reply", { negocio: a.negocio, estado: en ? e[1] : e[0], puesto: a.puesto }, { href: `/solicitud/${a.num}`, ref: ["job_application", a.num] });
+  await avisar(a.uid, "job_reply", { negocio: a.negocio, estado: { es: e[0], en: e[1] }, puesto: a.puesto }, { href: `/solicitud/${a.num}`, ref: ["job_application", a.num] });
 }
 
 /* 9m · Vacantes en Buscar (L311): las vacantes vivas de la ciudad cuyo puesto (ES o EN) o negocio coincide con lo buscado; «empleo», «trabajo»,

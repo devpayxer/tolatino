@@ -43,10 +43,10 @@ export async function bolReenviarme(numero: string): Promise<R> {
   const u = await quien(); if (!u) return { ok: false, msg: RED, entrar: true };
   if (!/^B-\d{1,10}$/.test(String(numero))) return { ok: false, msg: { es: "Esa orden no existe.", en: "That order does not exist." } };
   const { db } = await import("@/lib/db");
-  const o = (await db().query<{ id: string; t: { es: string } }>(`select id::text, details->'title' as t from operations where number = $1 and kind = 'tickets' and user_id = $2 and pay_mode = 'app'`, [numero, u.id])).rows[0];
+  const o = (await db().query<{ id: string; t: { es: string; en: string } }>(`select id::text, details->'title' as t from operations where number = $1 and kind = 'tickets' and user_id = $2 and pay_mode = 'app'`, [numero, u.id])).rows[0];
   if (!o) return { ok: false, msg: { es: "Esa orden no existe.", en: "That order does not exist." } };
   await db().query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind) select id, operation_id, city_id, 'reenviado', $2, 'user' from tickets where operation_id = $1::bigint and holder_user_id = $2`, [o.id, u.id]);
-  await (await import("@/lib/avisos")).avisar(u.id, "bol_reenviado", { evento: o.t.es }, { href: `/eventos/orden/${numero}`, ref: ["tickets", String(numero)] });
+  await (await import("@/lib/avisos")).avisar(u.id, "bol_reenviado", { evento: o.t }, { href: `/eventos/orden/${numero}`, ref: ["tickets", String(numero)] });
   return { ok: true };
 }
 /* Lista de espera. */

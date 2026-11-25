@@ -117,12 +117,12 @@ async function correoSemanal(u: { id: string; email: string; lang: string; city:
   const es = u.lang !== "en";
   const [N, E] = await Promise.all([
     db().query<{ n: string }>(`select name as n from businesses where city_id = $1 and status = 'active' and created_at > now() - interval '7 days' order by created_at desc limit 5`, [u.city]),
-    db().query<{ t: { es: string; en: string }; dia: string }>(
-      `select e.title as t, to_char(min(d.starts_at) at time zone c.timezone, 'DD/MM') as dia from events e join event_dates d on d.event_id = e.id join cities c on c.id = e.city_id
+    db().query<{ t: { es: string; en: string }; dia: string; dia_en: string }>(
+      `select e.title as t, to_char(min(d.starts_at) at time zone c.timezone, 'DD/MM') as dia, to_char(min(d.starts_at) at time zone c.timezone, 'MM/DD') as dia_en from events e join event_dates d on d.event_id = e.id join cities c on c.id = e.city_id
         where e.city_id = $1 and e.status = 'live' and d.status = 'scheduled' and d.starts_at between now() and now() + interval '7 days' group by e.id, e.title, c.timezone order by min(d.starts_at) limit 5`, [u.city]),
   ]);
   const { BASE_URL, encolar } = await import("../correo"), { marco } = await import("../correo/plantillas");
-  const filas: [string, string][] = [...N.rows.map((x): [string, string] => [x.n, es ? "Nuevo" : "New"]), ...E.rows.map((x): [string, string] => [es ? x.t.es : x.t.en || x.t.es, x.dia])];
+  const filas: [string, string][] = [...N.rows.map((x): [string, string] => [x.n, es ? "Nuevo" : "New"]), ...E.rows.map((x): [string, string] => [es ? x.t.es : x.t.en || x.t.es, es ? x.dia : x.dia_en])];
   const { html, text } = marco({ es, pre: es ? `Tu semana en ${u.ciudad}` : `Your week in ${u.ciudad}`, titulo: es ? `Esta semana en ${u.ciudad}` : `This week in ${u.ciudad}`,
     intro: filas.length ? (es ? "Negocios nuevos y lo que viene en los próximos 7 días." : "New businesses and what is coming in the next 7 days.") : (es ? "Una semana tranquila: no hubo negocios nuevos ni eventos en los próximos 7 días." : "A quiet week: no new businesses or events in the next 7 days."),
     filas, cta: { l: es ? "Abrir To'Latino" : "Open To'Latino", href: `${BASE_URL()}/` },

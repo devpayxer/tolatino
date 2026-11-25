@@ -674,12 +674,13 @@ export async function patResumen(negocio: string): Promise<{ hasta: string; esta
 }
 
 /* ── Avisos ── */
-export async function avisoNeg(negocio: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string; n?: string; total?: string }) {
-  const x = (await db().query<{ negocio: string; donde: string; tz: string }>(
-    `select b.name as negocio, (c.name->>'es') || ' · ' || ci.name as donde, ci.timezone as tz from businesses b join categories c on c.id = b.category_id join cities ci on ci.id = b.city_id where b.id = $1`, [negocio])).rows[0];
+export async function avisoNeg(negocio: string, tpl: string, v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string | Bi; n?: string; total?: string }) {
+  const x = (await db().query<{ negocio: string; donde: string; donde_en: string; tz: string }>(
+    `select b.name as negocio, (c.name->>'es') || ' · ' || ci.name as donde, coalesce(nullif(c.name->>'en', ''), c.name->>'es') || ' · ' || ci.name as donde_en, ci.timezone as tz from businesses b join categories c on c.id = b.category_id join cities ci on ci.id = b.city_id where b.id = $1`, [negocio])).rows[0];
   if (!x) return;
-  const hasta = v.hasta ? new Intl.DateTimeFormat("es-US", { timeZone: x.tz, day: "numeric", month: "short" }).format(new Date(v.hasta)).replace(/\./g, "") : "";
-  await (await import("./avisos")).avisarNegocio(negocio, tpl, { negocio: x.negocio, donde: x.donde, hasta, monto: v.monto ?? "", tarjeta: v.tarjeta ?? "", motivo: v.motivo ?? "", n: v.n ?? "", total: v.total ?? "" },
+  const fh = (l: string) => new Intl.DateTimeFormat(l, { timeZone: x.tz, day: "numeric", month: "short" }).format(new Date(v.hasta!)).replace(/\./g, "");
+  const hasta: string | Bi = v.hasta ? { es: fh("es-US"), en: fh("en-US") } : "";
+  await (await import("./avisos")).avisarNegocio(negocio, tpl, { negocio: x.negocio, donde: { es: x.donde, en: x.donde_en }, hasta, monto: v.monto ?? "", tarjeta: v.tarjeta ?? "", motivo: v.motivo ?? "", n: v.n ?? "", total: v.total ?? "" },
     { href: `/panel/${negocio}/cobros/patrocinio` });
 }
 
@@ -733,7 +734,7 @@ export async function renovacionConsultada(id: string): Promise<void> {
 /* Un patrocinio que llegó a su fin: con «renovar» encendido, se cobra el siguiente período (misma duración, el precio de hoy) con la tarjeta del
    pago, si hay puesto; si no cobra o no hay puesto, termina y se avisa por qué. Una sola vez: la llave del cobro es la del período que termina. */
 const YA_COBRADA: Bi = { es: "la renovación ya estaba cobrada y no se aplicó: la revisa To'Latino", en: "the renewal was already charged and was not applied: To'Latino reviews it" };
-type Vencido = { r: "renovado" | "termino"; negocio: string; tpl: string; v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string } };
+type Vencido = { r: "renovado" | "termino"; negocio: string; tpl: string; v: { hasta?: string; monto?: string; tarjeta?: string; motivo?: string | Bi } };
 async function vencerUno(id: string): Promise<Vencido | null> {
   return tx(async (c) => {
     const s = (await c.query<{ id: string; business_id: string; category_id: string; city_id: string; duration: "week" | "month"; auto_renew: boolean; card_pm: string | null; payer_user_id: string; tz: string; fin: string; b_on: boolean }>(
@@ -781,7 +782,7 @@ async function vencerUno(id: string): Promise<Vencido | null> {
           if (ia?.st !== "done") return null;
           await terminar(YA_COBRADA);
           await CF.alertaSinAplicar(ia, { es: `el patrocinio ${id} seguía vivo con su renovación ya cobrada.`, en: `sponsorship ${id} was still live with its renewal already charged.` });
-          return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: YA_COBRADA.es } };
+          return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: YA_COBRADA } };
         }
         const monto = p.centavos ?? aCobrar;
         await c.query(`update sponsorships set status = 'terminado', end_kind = 'vencio', ended_at = now() where id = $1::bigint`, [id]);
@@ -799,7 +800,7 @@ async function vencerUno(id: string): Promise<Vencido | null> {
           await c.query(`update sponsorships set renew_note = $2 where id = $1::bigint`, [id, "no quedaba puesto"]);
           const ia = await CF.intencion(p.intencion!);
           if (ia) await CF.alertaSinAplicar(ia, { es: `al renovar el patrocinio ${id} ya no quedaba puesto.`, en: `when renewing sponsorship ${id} there was no slot left.` });
-          return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: "no quedaba puesto" } };
+          return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: { es: "no quedaba puesto", en: "there was no slot left" } } };
         }
         await anotarPago(c, { ...cobro, centavos: monto, idem: p.idem ?? idem, ref: nid!, pi: p.pi, marca: p.marca, l4: p.l4 });
         await auditarNegocio(c, s.payer_user_id, s.business_id, s.city_id, "patrocinio.renovado_solo", { patrocinio: nid, de: id, monto: money(monto), hasta: f.b });
@@ -809,7 +810,7 @@ async function vencerUno(id: string): Promise<Vencido | null> {
       motivo = { es: p.msg.es.replace(/\.$/, "").toLowerCase(), en: p.msg.en.replace(/\.$/, "").toLowerCase() };
     }
     await terminar(motivo);
-    return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: motivo!.es } };
+    return { r: "termino", negocio: s.business_id, tpl: "biz_patrocinio_no_renovo", v: { motivo: motivo! } };
   });
 }
 

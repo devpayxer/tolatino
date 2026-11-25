@@ -2,7 +2,7 @@ import "server-only";
 import { avisar, avisarNegocio } from "./avisos";
 import { cfgSql } from "./config";
 import { db } from "./db";
-import { diaCorto, hora, type Bi } from "./evt-comun";
+import { cuandoBi, type Bi } from "./evt-comun";
 
 /* 6j · Los avisos automáticos de Eventos que faltaban (fase6-eventos.md §2 0108 y §4 6j; LAUNCH-CHECKLIST 6c):
    - «Mañana: …» (bol_recordatorio) y «¡Es hoy!» (bol_es_hoy) a quien TIENE un boleto vivo (el dueño de hoy, también si lo recibió por
@@ -42,7 +42,7 @@ export async function barrerRecordatoriosBoletos(): Promise<{ manana: number; ho
          on conflict do nothing returning ref)
        ${DATOS}`)).rows;
     for (const x of L) {
-      await avisar(x.uid, tpl, { evento: x.en ? x.title.en || x.title.es : x.title.es, cuando: `${diaCorto(x.ldate, !x.en)} · ${hora(x.h0)}`, lugar: x.lugar },
+      await avisar(x.uid, tpl, { evento: x.title, cuando: cuandoBi(x.ldate, x.h0), lugar: x.lugar },
         { href: "/cuenta/boletos", ref: ["event_date", x.fid] });
     }
     out[kind === "bol_manana" ? "manana" : "hoy"] = L.length;
@@ -65,7 +65,7 @@ export async function barrerAforoEvt(): Promise<number> {
             (extract(hour from f.starts_at at time zone f.timezone) * 60 + extract(minute from f.starts_at at time zone f.timezone))::int as h0, f.vendidos, f.total
        from f join nuevos n on n.ref = f.id::text`)).rows;
   for (const x of L) {
-    await avisarNegocio(x.biz, "evt_aforo90", { evento: x.title.es, cuando: `${diaCorto(x.ldate, true)} · ${hora(x.h0)}`, pct: Math.floor((x.vendidos * 100) / x.total), vendidos: x.vendidos, total: x.total },
+    await avisarNegocio(x.biz, "evt_aforo90", { evento: x.title, cuando: cuandoBi(x.ldate, x.h0), pct: Math.floor((x.vendidos * 100) / x.total), vendidos: x.vendidos, total: x.total },
       { href: "/panel", ref: ["event_date", x.fid] });
   }
   return L.length;

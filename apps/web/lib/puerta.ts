@@ -406,9 +406,10 @@ export async function incidencia(ctx: CtxPuerta, kind: string, nota: string, cod
   const tid = c ? (await db().query<{ id: string }>(`select id::text from tickets where code = $1 and event_id = $2::bigint`, [c, ctx.evento])).rows[0]?.id ?? null : null;
   await db().query(`insert into door_incidents (event_date_id, event_id, business_id, city_id, session_id, ticket_id, kind, note, by_user) values ($1::bigint, $2::bigint, $3, $4, $5::bigint, $6::bigint, $7, $8, $9)`,
     [ctx.fecha, ctx.evento, ctx.negocio, ctx.city, ctx.sesion, tid, kind, n, ctx.userId]);
-  const L: Record<string, string> = { duplicado: "boleto duplicado", edad: "edad o identificación", seguridad: "seguridad", devolucion: "pide devolución", otro: "otra cosa" };
-  const quien = (await db().query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Portero') as n from users where id = $1`, [ctx.userId])).rows[0]?.n ?? "Portero";
-  await (await import("./avisos")).avisarNegocio(ctx.negocio, "puerta_incidencia", { quien, puerta: ctx.puerta, evento: ctx.titulo.es, tipo: L[kind]!, nota: n },
+  const L: Record<string, Bi> = { duplicado: { es: "boleto duplicado", en: "duplicate ticket" }, edad: { es: "edad o identificación", en: "age or ID" }, seguridad: { es: "seguridad", en: "security" }, devolucion: { es: "pide devolución", en: "asks for a refund" }, otro: { es: "otra cosa", en: "something else" } };
+  const nombre = (await db().query<{ n: string }>(`select coalesce(first_name, '') as n from users where id = $1`, [ctx.userId])).rows[0]?.n.trim();
+  const quien: string | Bi = nombre || { es: "Portero", en: "Door staff" };
+  await (await import("./avisos")).avisarNegocio(ctx.negocio, "puerta_incidencia", { quien, puerta: ctx.puerta, evento: ctx.titulo, tipo: L[kind]!, nota: n },
     { href: `/panel/${ctx.negocio}/eventos?det=door:${ctx.evento}@${ctx.fecha}`, ref: ["event_date", ctx.fecha] });
   return { ok: true };
 }
@@ -494,6 +495,6 @@ export async function barrerPuertaAbre(): Promise<number> {
         and not exists (select 1 from notifications n where n.user_id = f.user_id and n.tpl = 'puerta_abre' and n.ref_kind = 'event_date' and n.ref_id = d.id::text)
       limit 200`)).rows;
   const { avisar } = await import("./avisos");
-  for (const x of L) await avisar(x.uid, "puerta_abre", { evento: x.t.es, hora: hora12(x.hora) }, { href: "/puerta", ref: ["event_date", x.fid] });
+  for (const x of L) await avisar(x.uid, "puerta_abre", { evento: x.t, hora: hora12(x.hora) }, { href: "/puerta", ref: ["event_date", x.fid] });
   return L.length;
 }

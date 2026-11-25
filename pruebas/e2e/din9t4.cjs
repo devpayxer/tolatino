@@ -264,7 +264,7 @@ const rnt = (rid) => q1(`select status as st, days::int as dias, card_failed as 
     const x = await rnt(T.rid), I = await intenciones('renta', T.rid);
     ok(x.st === 'out' && I[0].st === 'done' && P.cobrosCon(T.pref) === 1 && P.holdsCon(T.pref) === 1 && await pagosDe(T.op, 'rental') === 1 && await pagosDe(T.op, 'security') === 1,
       `el barrido la termina con las mismas llaves: la tiene, una renta y un depósito (${x.st})`);
-    ok(avisados.some((a) => a[0] === 'b' && a[1] === R.b && a[2] === 'biz_renta' && /ya se cobró/.test(a[3]?.que ?? '')), 'y le avisa al negocio que ya se cobró');
+    ok(avisados.some((a) => a[0] === 'b' && a[1] === R.b && a[2] === 'biz_renta' && /ya se cobró/.test(((q) => (q && typeof q === 'object' ? q.es : q) ?? '')(a[3]?.que))), 'y le avisa al negocio que ya se cobró');
   }
   {
     // «Un día más»: sin respuesta, la fecha no se mueve y la persona lee «en camino»; dos toques a la vez cobran un día, una vez.
@@ -294,7 +294,7 @@ const rnt = (rid) => q1(`select status as st, days::int as dias, card_failed as 
     let x = await rnt(T.rid), I = await intenciones('renta', T.rid);
     const aviso = avisados.filter((y) => y[2] === 'renta_devuelta' && y[1] === R.u).pop();
     ok(r.ok && x.st === 'back' && x.late === 0 && I.length === 1 && I[0].para === 'tarde' && I[0].st === 'pending' && await pagosDe(T.op) === 0, `devuelta 2 días tarde: el cobro de $50 queda en camino (${x.st}, ${I.map((y) => y.st)})`);
-    ok(aviso && /quedó en camino/.test(aviso[3].que), `la persona lee que quedó en camino, no «se cobraron» («${aviso?.[3].que}»)`);
+    ok(aviso && /quedó en camino/.test(((q) => (q && typeof q === 'object' ? q.es : q) ?? '')(aviso[3].que)), `la persona lee que quedó en camino, no «se cobraron» («${((q) => (q && typeof q === 'object' ? q.es : q) ?? '')(aviso?.[3].que)}»)`);
     await atrasar('renta', T.rid, 3);
     await CF.barrerCobrosFuera(); await CF.barrerCobrosFuera();
     x = await rnt(T.rid); I = await intenciones('renta', T.rid);

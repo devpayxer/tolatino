@@ -97,7 +97,7 @@ Object.assign(PA, cargar('apps/web/lib/patrocinio.ts', { './config': { valores: 
   './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './categoria': {}, './dinero-alertas': alertas, './avisos': avisos, './cobro-fuera': CF, './consulta-pasarela': K }));
 Object.assign(SU, cargar('apps/web/lib/suscripcion.ts', { './db': D, './pagos/pasarela': { pasarela: P, registrarAccion: async () => undefined }, './plan': { PRECIO_PRO: 30 }, './avisos': avisos,
   './correo/recibos': { reciboPro: async () => undefined }, './dinero-alertas': alertas, './consulta-pasarela': K }));
-const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' };
+const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '', cuandoBi: () => ({ es: '', en: '' }) };
 Object.assign(LQ, cargar('apps/web/lib/evt-liquidacion.ts', { './config': { cfgSql: () => '7', valor: async () => 2 }, './db': D, './evt-comun': evtComun, './pagos/pasarela': { pasarela: P },
   './cobros': cobros, './dinero-alertas': alertas, './avisos': avisos, './consulta-pasarela': K }));
 
@@ -308,7 +308,7 @@ async function planSinRespuesta(X, paso, min = 25 * 60) {
     [a] = await intenciones('renta', rid);
     const x = await q1(`select status as st from rentals where id = $1::bigint`, [rid]);
     ok(a.st === 'failed' && a.err === 'nunca_llego' && P.liberados.has(a.hold) && P.holds.size === nh && x.st === 'held', `nunca llegó: se suelta el depósito (sin retener otro) y la renta sigue apartada (${a.err}, ${x.st})`);
-    ok(avisados.some((y) => y[0] === 'b' && y[1] === R.b && y[2] === 'biz_renta' && /nunca llegó a Stripe/.test(y[3]?.que ?? '')), 'y el negocio sabe que no se cobró nada y puede volver a tocar «La recogió»');
+    ok(avisados.some((y) => y[0] === 'b' && y[1] === R.b && y[2] === 'biz_renta' && /nunca llegó a Stripe/.test(((q) => (q && typeof q === 'object' ? q.es : q) ?? '')(y[3]?.que))), 'y el negocio sabe que no se cobró nada y puede volver a tocar «La recogió»');
     const c2 = await RE.rentaCliente(R.u, num, 'cancelar');
     ok(c2.ok && (await q1(`select status as st from rentals where id = $1::bigint`, [rid])).st !== 'held', `la renta apartada ya se puede cancelar (antes quedaba atorada para siempre) (${c2.ok ? 'ok' : c2.msg.es})`);
   }

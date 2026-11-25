@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import type { Staff } from "./admin";
 import { cfgSql, valor } from "./config";
 import { db, tx } from "./db";
-import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
+import { bi, cuandoBi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
 
 /* 6e · La liquidación del martes (fase6-eventos.md §3 «Dónde vive el dinero», §6 #2 y #16). El cobro de boletos queda en la plataforma
@@ -103,7 +103,7 @@ async function retenerAuto(id: string, hold: "nuevo" | "disputa" | "cuenta") {
   if (!s) return;
   // Un aviso por liquidación y motivo.
   if ((await db().query(`select 1 from notifications where tpl = 'evt_pago_retenido' and ref_kind = 'evt_liq' and ref_id = $1 limit 1`, [`${id}:${hold}`])).rowCount) return;
-  await (await import("./avisos")).avisarNegocio(s.biz, "evt_pago_retenido", { evento: s.t.es, cuando: `${diaCorto(s.dia, true)} · ${hora(s.h0)}`, motivo: MOTIVO_HOLD[hold]!.es }, { href: `/panel/${s.biz}/cobros`, ref: ["evt_liq", `${id}:${hold}`] });
+  await (await import("./avisos")).avisarNegocio(s.biz, "evt_pago_retenido", { evento: s.t, cuando: cuandoBi(s.dia, s.h0), motivo: MOTIVO_HOLD[hold]! }, { href: `/panel/${s.biz}/cobros`, ref: ["evt_liq", `${id}:${hold}`] });
 }
 
 /* La transferencia de una liquidación ya en 'paying' (monto y destino fijos). Idempotente: la misma llave en cada intento.
@@ -150,7 +150,7 @@ async function cerrarPagada(s: LiqEnCamino, tr: string | null, porConsulta = fal
     await auditar(c, { actor: null, action: "evento.liquidacion.pagar", id: s.id, city: s.city, after: { monto: dinero(s.net), transferencia: tr ?? "sin transferencia (neto $0)", ...(porConsulta ? { origen: "consulta a la pasarela" } : {}) } });
     return true;
   });
-  if (ok && s.net > 0) await (await import("./avisos")).avisarNegocio(s.biz, "evt_pago", { evento: s.t.es, cuando: `${diaCorto(s.dia, true)} · ${hora(s.h0)}`, monto: dinero(s.net) }, { href: `/panel/${s.biz}/cobros`, ref: ["evt_liq", s.id] });
+  if (ok && s.net > 0) await (await import("./avisos")).avisarNegocio(s.biz, "evt_pago", { evento: s.t, cuando: cuandoBi(s.dia, s.h0), monto: dinero(s.net) }, { href: `/panel/${s.biz}/cobros`, ref: ["evt_liq", s.id] });
   return ok;
 }
 /* 9t5 · Una transferencia de más de HORAS_LLAVE: NUNCA a la pasarela con su llave. Se cierra con el último veredicto de la consulta. */
@@ -376,7 +376,7 @@ export async function retenerLiquidacion(s: Staff, id: string, motivo: string): 
   });
   if (!r.startsWith("ok:")) return { ok: false, msg: r };
   const biz = r.slice(3), d = await datosAviso(id);
-  if (d) await (await import("./avisos")).avisarNegocio(biz, "evt_pago_retenido", { evento: d.t, cuando: d.cuando, motivo: `${MOTIVO_HOLD.admin!.es} ${m}.` }, { href: `/panel/${biz}/cobros`, ref: ["evt_liq", `${id}:admin`] });
+  if (d) await (await import("./avisos")).avisarNegocio(biz, "evt_pago_retenido", { evento: d.t, cuando: d.cuando, motivo: { es: `${MOTIVO_HOLD.admin!.es} ${m}.`, en: `${MOTIVO_HOLD.admin!.en} ${m}.` } }, { href: `/panel/${biz}/cobros`, ref: ["evt_liq", `${id}:admin`] });
   return { ok: true };
 }
 export async function soltarLiquidacion(s: Staff, id: string, motivo: string): Promise<Res> {
@@ -399,8 +399,9 @@ export async function soltarLiquidacion(s: Staff, id: string, motivo: string): P
   return r === "ok" ? { ok: true } : { ok: false, msg: r };
 }
 async function datosAviso(id: string) {
-  return (await db().query<{ t: string; cuando: string }>(
-    `select e.title->>'es' as t, to_char(d.starts_at at time zone ci.timezone, 'DD/MM HH12:MI AM') as cuando from event_settlements s join events e on e.id = s.event_id join event_dates d on d.id = s.event_date_id join cities ci on ci.id = s.city_id where s.id = $1::bigint`, [id])).rows[0] ?? null;
+  const r = (await db().query<{ t: Bi; es: string; en: string }>(
+    `select e.title as t, to_char(d.starts_at at time zone ci.timezone, 'DD/MM HH12:MI AM') as es, to_char(d.starts_at at time zone ci.timezone, 'MM/DD HH12:MI AM') as en from event_settlements s join events e on e.id = s.event_id join event_dates d on d.id = s.event_date_id join cities ci on ci.id = s.city_id where s.id = $1::bigint`, [id])).rows[0];
+  return r ? { t: r.t, cuando: { es: r.es, en: r.en } as Bi } : null;
 }
 
 /* ── Lo que ve el organizador (Panel › la ficha › DINERO DEL EVENTO y Panel › Cobros › PAGOS DE EVENTOS) ── */

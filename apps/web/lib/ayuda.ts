@@ -175,6 +175,6 @@ export async function avisarAyuda(numeroPedido: string, tpl: "help_reply" | "hel
   if (!h) return;
   // 9n-5 · {horas}/{hours}: el plazo del negocio (Configuración · ayuda_negocio_h), para la plantilla que lo diga con el valor.
   const ph = tpl === "biz_help" ? await valor("ayuda_negocio_h") : 0;
-  if (tpl === "biz_help") await avisarNegocio(h.biz, "biz_help", { cliente: h.cliente ?? "", num: numeroPedido, horas: horasTxt(ph, true), hours: horasTxt(ph, false) }, { href: `/panel/${h.biz}/hoy?det=ped:${numeroPedido}`, ref: ["help", h.hnum] });
+  if (tpl === "biz_help") await avisarNegocio(h.biz, "biz_help", { cliente: h.cliente ?? "", num: numeroPedido, horas: { es: horasTxt(ph, true), en: horasTxt(ph, false) }, hours: horasTxt(ph, false) }, { href: `/panel/${h.biz}/hoy?det=ped:${numeroPedido}`, ref: ["help", h.hnum] });
   else await avisar(h.uid, tpl, { negocio: h.negocio, num: h.hnum }, { href: `/pedido/${numeroPedido}`, ref: ["help", h.hnum] });
 }

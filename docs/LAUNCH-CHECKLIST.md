@@ -3244,10 +3244,14 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [ ] **→ 9b** · Una parte CANCELADA a propósito: si GitHub le hace llegar la señal al corredor, deja `RESULTADOS` con `completa:false`; si no llega, esa R1 se queda
   sin repaso (fallo seguro: toca la dirigida entera) y «sumar las rojas de una cancelada» no ocurre nunca. Decidir si hace falta reenviar la señal en ci.yml.
 
-- [ ] **→ 9b** · **Avisos en un solo idioma que el guardián todavía no ve (25 nov, revisión de 0513611, Fable):** `avisoNegUnIdioma` solo mira el primer
-      nivel de `apps/web/lib/` y, en las llamadas directas a `avisar`/`avisarNegocio`, solo tres patrones (`{svc,es}`, `DD/MM`, « con »); `revisar()`
-      sigue solo en los envoltorios. Quedan ~80 llamadas directas con un valor en un idioma (rentas ~20, apartados, boletos, boletos-despues,
-      evt-cambios, evt-liquidacion, espera, cupones, layaway, mercado, puerta, beta, disputas, admin/acciones-gam), `planes.ts` lee `{svc,es} as plan`,
-      la excepción `as ymd` es frágil y un solo « with » excusa todo el archivo. Arreglo: `revisar()` sobre el objeto de cada llamada directa con lista
-      de pendientes que solo baja, marca explícita en vez de `as ymd`, y los subdirectorios. Aparte: `citas.ts` › miaCita muestra el servicio solo en
-      español a un cliente en inglés.
+- [x] **→ 9b** · **Avisos en un solo idioma que el guardián todavía no ve (25 nov, revisión de 0513611):** `avisoNegUnIdioma` ahora entra en los subdirectorios de `apps/web/lib/`
+      y en `apps/web/app/**/acciones*.ts`, y corre `revisar()` sobre el OBJETO de cada llamada directa a `avisar`, `avisarNegocio` y `avisarTelefono` (también `av.avisar(…)`) y sobre
+      el `vars: { … }` / `v: { … }` de un aviso guardado para después: un `.es` suelto, un texto sin su par en inglés, `(…, true)`, el `[0]` de un par y el dinero armado a
+      mano («$» + toFixed). La regla de « con ${…}» mira CADA aparición, la consulta `{svc,es}` acepta cualquier alias (`as plan`) y la excepción `as ymd` es ahora una marca
+      explícita en la consulta (`-- pantalla`); un par `{x}` + `{x_en}` (msg_equipo, ord_rep_msg, drv_sancion) lleva cada idioma en su variable y está bien. La lista de pendientes
+      (`PENDIENTES_UN_IDIOMA`, por archivo) solo puede bajar y hoy está vacía: se arreglaron las ~100 llamadas que halló (rentas, apartados, layaway, boletos, boletos-despues,
+      evt-cambios, evt-liquidacion, evt-avisos, evt-admin, espera, cupones, mercado, puerta, puerta-sync, puerta-equipo, beta, disputas, planes, patrocinio, patrocinio-evento,
+      acciones-gam…). `citas.ts › miaCita` manda el servicio como { es, en } y la pantalla (Servicios.tsx) lo muestra en su idioma. avisos › porIdioma cae al español si el
+      inglés viene vacío. Sin migración: nada de lo guardado cambió.
+      _Lo que el guardián sigue sin ver:_ un valor armado por un ayudante de otro archivo que devuelve un solo idioma (p. ej. `prometido(…, es)`, `horasTxt(…, true)` dentro de un par
+      `horas`/`hours`), y el ternario que mezcla un Bi con un texto suelto (basta un `en:` en el valor para que `revisar` lo dé por bueno). Se vigilan con el al revés y la revisión.

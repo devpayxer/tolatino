@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { anotarDevolucionTotal, dineroDevolucion, ejecutarDevolucion, estadoDevolucion, mandarDevolucion, type EstadoDev } from "./boletos-despues";
 import { cfgSql, valores } from "./config";
 import { db, tx, type AlGuardar } from "./db";
-import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
+import { bi, cuandoBi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
 
 /* 6e · Cambios del evento (fase6-eventos.md §3 «Devoluciones», §4 6e, §6 #7, #21, #24). El servidor decide TODO:
    - Pausar / reanudar la venta (el organizador o To'Latino; congelada por To'Latino, el organizador no la reabre). «Los que compraron
@@ -88,7 +88,7 @@ export async function congelarVenta(q: Extract<Quien, { tipo: "admin" }>, evento
       await alGuardar?.(c);
     });
     pasesPronto();
-    if (aviso) { const a = aviso as { biz: string; t: Bi }; await (await import("./avisos")).avisarNegocio(a.biz, "evt_venta_congelada", { evento: a.t.es, motivo: m }, { href: `/panel/${a.biz}/eventos?det=evt:${eventoId}`, ref: ["event", eventoId] }); }
+    if (aviso) { const a = aviso as { biz: string; t: Bi }; await (await import("./avisos")).avisarNegocio(a.biz, "evt_venta_congelada", { evento: a.t, motivo: m }, { href: `/panel/${a.biz}/eventos?det=evt:${eventoId}`, ref: ["event", eventoId] }); }
     return { ok: true };
   } catch (e) { return atrapa(e); }
 }
@@ -163,7 +163,7 @@ async function avisarCambio(cambio: string): Promise<number> {
   for (const u of L) {
     if (ya.has(u.id)) continue;
     const href = u.num ? `/eventos/orden/${u.num}` : `/eventos/${ch.slug}?fecha=${ch.fid}`;
-    await avisar(u.id, ch.kind === "moved" ? "evt_movido" : "evt_hora_cambio", { evento: ch.t.es, cuando: `${diaCorto(ch.ahora.dia, true)} · ${hora(ch.ahora.h0)}`, antes: `${diaCorto(ch.antes.dia, true)} · ${hora(ch.antes.h0)}`, enlace: `${b}${href}` },
+    await avisar(u.id, ch.kind === "moved" ? "evt_movido" : "evt_hora_cambio", { evento: ch.t, cuando: cuandoBi(ch.ahora.dia, ch.ahora.h0), antes: cuandoBi(ch.antes.dia, ch.antes.h0), enlace: `${b}${href}` },
       { href, ref: ["evt_cambio", cambio] });
     n++;
   }
@@ -211,9 +211,9 @@ export async function elegirCambio(userId: string, numero: string, eleccion: "ke
   // 9v · La pantalla y el aviso dicen lo que hizo la pasarela, no lo decidido.
   const devolucion = await mandarDevolucion(hecho.rf);
   const { avisar, avisarNegocio } = await import("./avisos");
-  await avisar(userId, "evt_devolucion_total", { evento: hecho.title.es, monto: dinero(hecho.total), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
-  for (const h of hecho.holders) await avisar(h, "bol_anulado", { codigo: "", evento: hecho.title.es, motivo: "Quien lo pagó pidió la devolución por el cambio de fecha" }, { href: "/cuenta/boletos", ref: ["tickets", numero] });
-  await avisarNegocio(hecho.biz, "evt_devolucion", { evento: hecho.title.es, cuantos: "boletos", num: numero }, { href: `/panel/${hecho.biz}/eventos`, ref: ["tickets", numero] });
+  await avisar(userId, "evt_devolucion_total", { evento: hecho.title, monto: dinero(hecho.total), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
+  for (const h of hecho.holders) await avisar(h, "bol_anulado", { codigo: "", evento: hecho.title, motivo: { es: "Quien lo pagó pidió la devolución por el cambio de fecha", en: "The person who paid asked for a refund because of the date change" } }, { href: "/cuenta/boletos", ref: ["tickets", numero] });
+  await avisarNegocio(hecho.biz, "evt_devolucion", { evento: hecho.title, cuantos: { es: "boletos", en: "tickets" }, num: numero }, { href: `/panel/${hecho.biz}/eventos`, ref: ["tickets", numero] });
   await (await import("./espera")).ofrecer(hecho.fid).catch(() => 0);
   return { ok: true, monto: hecho.total, devolucion };
 }
@@ -381,7 +381,7 @@ export async function avisarCancelacion(cxId: string): Promise<number> {
     const dinero: Bi = num && d ? dineroCancelacion(d) : H.includes(u) ? { es: "Tus boletos ya no entran. No tienes que hacer nada.", en: "Your tickets no longer get in. Nothing to do on your end." }
       : { es: "Si ibas, no tienes que hacer nada.", en: "If you were going, nothing to do on your end." };
     const href = num ? `/eventos/orden/${num}` : `/eventos/${cx.slug}`;
-    await avisar(u, tpl, { evento: cx.t.es, cuando: `${diaCorto(cx.ldate, true)} · ${hora(cx.h0)}`, motivo, dinero }, { href, ref: ["evt_cx", cx.id] });
+    await avisar(u, tpl, { evento: cx.t, cuando: cuandoBi(cx.ldate, cx.h0), motivo, dinero }, { href, ref: ["evt_cx", cx.id] });
     n++;
   }
   return n;

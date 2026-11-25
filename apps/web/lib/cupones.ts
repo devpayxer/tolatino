@@ -78,7 +78,7 @@ export async function canjear(userId: string, cuponId: string): Promise<{ ok: tr
   });
   if ("ok" in r) return r;
   const b = (await db().query<{ bid: string; title: Bi }>(`select c.business_id as bid, c.title from coupons c where c.id = $1::bigint`, [cuponId])).rows[0];
-  if (b) await avisarNegocio(b.bid, "biz_cupon_canje", { cupon: b.title.es }, { href: `/panel/${b.bid}/pagina/cup`, ref: ["coupon", cuponId] });
+  if (b) await avisarNegocio(b.bid, "biz_cupon_canje", { cupon: b.title }, { href: `/panel/${b.bid}/pagina/cup`, ref: ["coupon", cuponId] });
   return { ok: true, ...r };
 }
 
@@ -109,7 +109,7 @@ export async function validar(negocio: string, codigo: string, staffId: string, 
     return no(`Ese código ya se usó el ${f}. Cada código se usa una sola vez.`, `That code was already used on ${fe}. Each code works once.`);
   }
   if (r.res === "vencido") return no("Ese código venció sin usarse: las monedas volvieron al vecino.", "That code expired unused: the coins went back to the neighbor.");
-  await avisar(r.persona!, "gam_cupon_usado", { negocio: d.bname, codigo: cod, cupon: d.title.es }, { href: "/comunidad/monedas", ref: ["coupon_used", cod] });
+  await avisar(r.persona!, "gam_cupon_usado", { negocio: d.bname, codigo: cod, cupon: d.title }, { href: "/comunidad/monedas", ref: ["coupon_used", cod] });
   return { ok: true, titulo: d.title, vecino: corto(d.f, d.l), codigo: cod };
 }
 
@@ -121,7 +121,7 @@ export async function vencerCupones(): Promise<number> {
       `select persona::text, codigo, cupon::text, monedas from cup_vencer(500)`)).rows);
     for (const x of L) {
       const t = (await db().query<{ title: Bi; en: boolean }>(`select c.title, coalesce(u.lang, 'es') = 'en' as en from coupons c, users u where c.id = $1::bigint and u.id = $2::uuid`, [x.cupon, x.persona])).rows[0];
-      await avisar(x.persona, "gam_monedas_vuelven", { codigo: x.codigo, cupon: t ? (t.en ? t.title.en || t.title.es : t.title.es) : "", n: x.monedas }, { href: "/comunidad/monedas", ref: ["coupon_expired", x.codigo] });
+      await avisar(x.persona, "gam_monedas_vuelven", { codigo: x.codigo, cupon: t?.title ?? "", n: x.monedas }, { href: "/comunidad/monedas", ref: ["coupon_expired", x.codigo] });
     }
     n += L.length;
     if (L.length < 500) break;

@@ -111,7 +111,7 @@ export function useSvc(cp: CitasPublica | null, es: boolean, sillaFija: string |
   const mia = cp.mia ? {
     k: E2("TU CITA", "YOUR BOOKING"), tag: cp.mia.st === "pend" ? E2("PENDIENTE", "PENDING") : cp.mia.st === "alt" ? E2("TE PROPONEN UN CAMBIO", "THEY PROPOSE A CHANGE") : E2("CONFIRMADA", "CONFIRMED"),
     tone: cp.mia.st === "ok" ? "signal" : cp.mia.st === "alt" ? "action" : "neutral",
-    t: `${cp.mia.svc} · ${diaS(cp.hoy, cp.mia.i, es)} · ${horaL(cp.mia.m)}`,
+    t: `${es ? cp.mia.svc.es : cp.mia.svc.en} · ${diaS(cp.hoy, cp.mia.i, es)} · ${horaL(cp.mia.m)}`,
     s: cp.mia.st === "pend" ? E2(`${cp.mia.con} responde en ~${cp.mia.resp} min`, `${cp.mia.con} replies in ~${cp.mia.resp} min`) : cp.mia.st === "alt" ? E2("Te proponen otra hora", "They suggest another time") : E2(`Con ${cp.mia.con}`, `With ${cp.mia.con}`),
     onClick: () => router.push(`/cita/${cp.mia!.numero}`),
   } : null;

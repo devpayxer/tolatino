@@ -62,7 +62,7 @@ const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos'
 const cobros = cargar('apps/web/lib/cobros.ts', { './db': D, './pagos/pasarela': { pasarela: P }, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertas,
   './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': K, './devolucion-consulta': DC });
 Object.assign(K, cargar('apps/web/lib/consulta-pasarela.ts', { './db': D, './cobros': cobros, './pagos/pasarela': { pasarela: P }, './dinero-alertas': alertas }));
-const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' };
+const evtComun = { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '', cuandoBi: () => ({ es: '', en: '' }) };
 Object.assign(BO, cargar('apps/web/lib/boletos-despues.ts', { './config': { cfgSql: () => '0', valores: async () => ({}) }, './cuenta': { normalizarTelefono: (x) => x }, './db': D, './evt-comun': evtComun,
   './pagos/pasarela': { pasarela: P }, './pases/pronto': { pasesPronto: () => undefined }, './cobros': cobros, './devolucion-consulta': DC, './consulta-pasarela': K, './dinero-alertas': alertas }));
 Object.assign(LQ, cargar('apps/web/lib/evt-liquidacion.ts', { './config': { cfgSql: () => '7', valor: async () => 2 }, './db': D, './evt-comun': evtComun, './pagos/pasarela': { pasarela: P },

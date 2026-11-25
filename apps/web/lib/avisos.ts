@@ -15,7 +15,7 @@ import { enviarSms } from "./sms";
 /* AO · Un valor puede venir en los dos idiomas ({ es, en }): sale el de quien lo recibe (la marca «Anfitriona» · «Host» junto al nombre de una voz). */
 type Vars = Record<string, string | number | { es: string; en: string }>;
 const llenar = (t: string, v: Vars) => t.replace(/\{(\w+)\}/g, (_, k: string) => { const x = v[k]; return x == null ? `{${k}}` : typeof x === "object" ? x.es : String(x); });
-const porIdioma = (v: Vars, es: boolean): Vars => Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === "object" && x ? (es ? x.es : x.en) : x]));
+const porIdioma = (v: Vars, es: boolean): Vars => Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typeof x === "object" && x ? (es ? x.es : x.en || x.es) : x]));
 
 /* 9l · El SMS de un aviso sale por EL ÚNICO CAMINO (lib/sms: sms_outbox con reintentos y estado de entrega; guardián smsConReintento). Aquí solo se
    arma el texto («To'Latino: …» y, si la plantilla lo pide, el enlace de seguimiento) y se anota el SMS en su aviso. En el sandbox el aviso sigue

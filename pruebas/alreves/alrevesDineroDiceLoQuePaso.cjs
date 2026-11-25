@@ -203,6 +203,20 @@ const casos = [
   ["dineroUnDecimal", "el dinero con toFixed(1)", 'apps/web/lib/envios.ts', "import { usd as money } from \"./dinero-comun\";", "const money = (c: number) => `$${(c / 100).toFixed(1)}`;"],
   ["dineroUnDecimal", "usd sin el signo delante del «$»", 'apps/web/lib/dinero-comun.ts', "`${r < 0 ? \"-\" : \"\"}$${(a / 100)", "`$${(r / 100)"],
   ["dineroUnDecimal", "usd deja «-$0» o NaN", 'apps/web/lib/dinero-comun.ts', "Math.round(Number.isFinite(n) ? n : 0)", "Math.round(c)"],
+  // (LAUNCH «avisos en un solo idioma», 25 nov) · El OBJETO de cada llamada directa a avisar / avisarNegocio / avisarTelefono, en lib/ (y sus subdirectorios) y en app/**/acciones*.ts.
+  ["avisoNegUnIdioma", "llamada directa: {que} en un solo idioma (rentas)", 'apps/web/lib/rentas.ts', 'que: { es: "ya no la necesita · volvió a la tienda", en: "no longer needs it · it is back at the shop" }', 'que: "ya no la necesita · volvió a la tienda"'],
+  ["avisoNegUnIdioma", "llamada directa: el artículo con .es (apartados)", 'apps/web/lib/apartados.ts', '"apt_falta", { negocio: x.bname, articulo: ln.n }', '"apt_falta", { negocio: x.bname, articulo: ln.n.es }'],
+  ["avisoNegUnIdioma", "llamada directa: el día con diaCorto(…, true) (boletos)", 'apps/web/lib/boletos.ts', 'cuando: cuandoBi(o.dia, o.h0) }', 'cuando: `${diaCorto(o.dia, true)} · ${hora(o.h0)}` }'],
+  ["avisoNegUnIdioma", "llamada directa: el [0] de un par ES/EN (jobs)", 'apps/web/lib/jobs.ts', 'estado: { es: e[0], en: e[1] }', 'estado: e[0]'],
+  ["avisoNegUnIdioma", "llamada directa: el servicio del plan con alias «as plan» solo en español", 'apps/web/lib/planes.ts', ", coalesce(nullif(o.details#>>'{svc,en}', ''), o.details#>>'{svc,es}') as plan_en from operations o where o.id = $1::bigint", " from operations o where o.id = $1::bigint"],
+  ["avisoNegUnIdioma", "la consulta de la pantalla ya no se excusa por «as ymd» (citas › miaCita)", 'apps/web/lib/citas.ts', "coalesce(nullif(o.details #>> '{svc,en}', ''), o.details #>> '{svc,es}', '') as svc_en, (o.scheduled_at", "(o.scheduled_at"],
+  ["avisoNegUnIdioma", "acciones*.ts: el cupón con .es (admin/acciones-gam)", 'apps/web/app/admin/acciones-gam.ts', '"biz_cupon_ok", { cupon: r.title, costo: v }', '"biz_cupon_ok", { cupon: r.title.es, costo: v }'],
+  ["avisoNegUnIdioma", "subdirectorio de lib/: el motivo en un idioma (llaves/llaves.ts)", 'apps/web/lib/llaves/llaves.ts', 'motivo: { es: "parece que alguien usó una copia de esa llave", en: "it looks like someone used a copy of that key" }', 'motivo: "parece que alguien usó una copia de esa llave"'],
+  ["avisoNegUnIdioma", "el aviso guardado para después (vars) con .es (puerta-equipo)", 'apps/web/lib/puerta-equipo.ts', 'evento: e.t, cuando: cuandoBi(e.dia, e.h0) }', 'evento: e.t.es, cuando: cuandoBi(e.dia, e.h0) }'],
+  ["avisoNegUnIdioma", "avisarTelefono: «N entradas» en un idioma", 'apps/web/lib/boletos-despues.ts', 'cuantos: q === 1 ? { es: "1 entrada", en: "1 entry" } : { es: `${q} entradas`, en: `${q} entries` }', 'cuantos: q === 1 ? "1 entrada" : `${q} entradas`'],
+  ["avisoNegUnIdioma", "llamada directa: el dinero armado a mano con toFixed (mercado)", 'apps/web/lib/mercado.ts', 'monto: money(cobrado), libre', 'monto: `$${(cobrado / 100).toFixed(2)}`, libre'],
+  ["avisoNegUnIdioma", "« con ${…}» sin su « with ${…}» en CADA aparición (un « with» lejano no excusa a otro « con»)", 'apps/web/lib/citas.ts', '  const con = o.con ? { es: ` con ${o.con.split(" ")[0]}`', '  const conMal = ` con ${o.con}`;\n  /* ' + 'x'.repeat(300) + ' */\n  const con = o.con ? { es: ` con ${o.con.split(" ")[0]}`'],
+  ["avisoNegUnIdioma", "la lista de pendientes solo baja", 'guardianes/run.mjs', 'const PENDIENTES_UN_IDIOMA = {};', 'const PENDIENTES_UN_IDIOMA = { "apps/web/lib/rentas.ts": 3 };'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

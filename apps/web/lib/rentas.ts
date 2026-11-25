@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { db, tx, type AlGuardar } from "./db";
 import { comision } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
+import { usd as money } from "./dinero-comun";
 
 /* Renta de herramienta (Fase 4 · bloque 4f-2). Diseño: neg-hogar-plan.js (rentForm / rentStatus) y la pestaña Tienda de la
    ficha (neg-hogar-book.js › V.shop).
@@ -26,13 +27,14 @@ const no = (es: string, en: string, x: { tarjeta?: boolean } = {}): { ok: false;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, YMD = /^\d{4}-\d{2}-\d{2}$/, NUM = /^T-\d{1,10}$/, ID = /^\d{1,18}$/;
 export const DIAS_RENTA = [1, 2, 3, 7] as const;
 export const costoRenta = (precio: number, dias: number) => (dias >= 7 ? precio * 5 : precio * dias);
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const d2s = (d: Date) => d.toISOString().slice(0, 10);
 const s2d = (s: string) => new Date(`${s}T12:00:00Z`);
 const addD = (s: string, n: number) => { const d = s2d(s); d.setUTCDate(d.getUTCDate() + n); return d2s(d); };
 const diasEntre = (a: string, b: string) => Math.round((s2d(b).getTime() - s2d(a).getTime()) / 86400000);
 const MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const diaCorto = (f: string) => { const d = s2d(f); return `${d.getUTCDate()} ${MES[d.getUTCMonth()]}`; };
+const MES_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/* El día corto en los dos idiomas («15 mar» · «Mar 15»): avisos › avisar pone el de quien lo recibe. */
+const diaCorto = (f: string): Bi => { const d = s2d(f); return { es: `${d.getUTCDate()} ${MES[d.getUTCMonth()]}`, en: `${MES_EN[d.getUTCMonth()]} ${d.getUTCDate()}` }; };
 const mins = (h: string) => Number(h.slice(0, 2)) * 60 + Number(h.slice(3, 5));
 
 async function cuentaDe(c: PoolClient | ReturnType<typeof db>, negocio: string): Promise<string | null> {
@@ -102,7 +104,7 @@ export async function apartarRenta(userId: string, f: RentaIn, entorno: string):
   if (!o) return no("Ese artículo ya no se renta.", "That item is no longer for rent.");
   if (!o.tarjeta) return no("Este negocio todavía no renta en la app. Llámalo para apartarla.", "This business does not take rentals in the app yet. Call them to hold it.");
   if (!o.dias.some((d) => d.f === f.recoger)) return no("Elige uno de los días para recoger.", "Pick one of the pickup days.");
-  let aviso: { art: string; nombre: string; cliente: string } | null = null;
+  let aviso: { art: Bi; nombre: string; cliente: string } | null = null;
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2::uuid`, [userId, f.clave])).rows[0];
     if (ya) return { ok: true, numero: ya.number };
@@ -130,13 +132,13 @@ export async function apartarRenta(userId: string, f: RentaIn, entorno: string):
        values ($1::bigint, $2, $3, $4, $5::bigint, $6::jsonb, $7, $8, $9, $10, $11, $12::date, $13::date, (($12::date + 2)::timestamp at time zone $14), $15)`,
       [op, f.negocio, userId, it.city, f.item, JSON.stringify(it.n), it.p, it.dep, dias, dias >= 7, rent, f.recoger, due, it.tz, f.pm]);
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, 'sent', 'user', $2, $3::jsonb)`, [op, userId, JSON.stringify({ es: "Apartó la herramienta", en: "Put the tool on hold" })]);
-    aviso = { art: it.n.es, nombre: it.bname, cliente };
+    aviso = { art: it.n, nombre: it.bname, cliente };
     return { ok: true, numero };
   });
   if (r.ok && aviso) {
-    const a = aviso as { art: string; nombre: string; cliente: string }, av = await import("./avisos");
-    await av.avisar(userId, "renta_apartada", { articulo: a.art, negocio: a.nombre, dia: diaCorto(f.recoger) }, { href: `/renta/${r.numero}`, ref: ["renta", r.numero] });
-    await av.avisarNegocio(f.negocio, "biz_renta", { cliente: a.cliente, que: `apartó para recoger el ${diaCorto(f.recoger)}`, articulo: a.art }, { href: `/panel/${f.negocio}/hoy?det=renta:${r.numero}`, ref: ["renta", r.numero] });
+    const a = aviso as { art: Bi; nombre: string; cliente: string }, av = await import("./avisos"), dr = diaCorto(f.recoger);
+    await av.avisar(userId, "renta_apartada", { articulo: a.art, negocio: a.nombre, dia: dr }, { href: `/renta/${r.numero}`, ref: ["renta", r.numero] });
+    await av.avisarNegocio(f.negocio, "biz_renta", { cliente: a.cliente, que: { es: `apartó para recoger el ${dr.es}`, en: `put it on hold for pickup on ${dr.en}` }, articulo: a.art }, { href: `/panel/${f.negocio}/hoy?det=renta:${r.numero}`, ref: ["renta", r.numero] });
   }
   return r;
 }
@@ -231,7 +233,7 @@ async function pagoRenta(c: PoolClient, a: Intencion, pi: string, marca: string 
 async function falloRecoger(x: Fila, m: Bi): Promise<{ ok: false; msg: Bi }> {
   await db().query(`update rentals set card_failed = true, updated_at = now() where id = $1::bigint`, [x.rid]);
   await ev(db(), x.op, "payment_failed", "system", null, { es: `El banco no dejó cobrar al recoger (${m.es})`, en: `Declined at pickup (${m.en})` });
-  await (await import("./avisos")).avisar(x.uid, "renta_tarjeta", { articulo: x.n.es, negocio: x.bname }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
+  await (await import("./avisos")).avisar(x.uid, "renta_tarjeta", { articulo: x.n, negocio: x.bname }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
   return no(`La tarjeta de ${x.cliente} no pasó: no se cobró nada. Ya le pedimos cambiarla; cuando lo haga, te avisamos.`, `${x.cliente}'s card did not go through: nothing was charged. We asked them to change it and will let you know.`);
 }
 export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Promise<Res> {
@@ -299,20 +301,20 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
         await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} dejó de estar apartada en ese momento${hold ? "; el depósito se soltó" : ""}.`, en: `rental ${x.numero} stopped being on hold at that moment${hold ? "; the deposit was released" : ""}.` });
         return no("Ya no está apartada.", "It is no longer on hold.");
       }
-      await av.avisar(x.uid, "renta_recogida", { articulo: x.n.es, monto: money(a.monto), deposito: money(d.dep ?? 0), dia: diaCorto(x.due) }, hrefC);
-      if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: "la renta que quedó en camino ya se cobró · ya la tiene", articulo: x.n.es }, hrefN);
+      await av.avisar(x.uid, "renta_recogida", { articulo: x.n, monto: money(a.monto), deposito: money(d.dep ?? 0), dia: diaCorto(x.due) }, hrefC);
+      if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: { es: "la renta que quedó en camino ya se cobró · ya la tiene", en: "the rental that was in progress has been charged · they already have it" }, articulo: x.n }, hrefN);
       return { ok: true };
     }
     if (r.enCamino) {
       // 9t5 · Nunca llegó a Stripe (la consulta): nada se cobró y el depósito se soltó; la renta sigue apartada y puede volver a tocarse «La recogió».
       // 9t6 · O el equipo decidió que ninguno de los cobros que halló Stripe vale (salió de más): se devuelve y no queda nada cobrado.
-      if (r.noLlego && desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: r.devuelto ? "el cobro que quedó en camino salió de más en Stripe y se devuelve · no quedó nada cobrado: vuelve a tocar «La recogió»"
-        : "el cobro que quedó en camino nunca llegó a Stripe · no se cobró nada: vuelve a tocar «La recogió»", articulo: x.n.es }, hrefN);
+      if (r.noLlego && desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: r.devuelto ? { es: "el cobro que quedó en camino salió de más en Stripe y se devuelve · no quedó nada cobrado: vuelve a tocar «La recogió»", en: "the charge that was in progress was taken in excess in Stripe and is being refunded · nothing was charged: tap «Picked up» again" }
+        : { es: "el cobro que quedó en camino nunca llegó a Stripe · no se cobró nada: vuelve a tocar «La recogió»", en: "the charge that was in progress never reached Stripe · nothing was charged: tap «Picked up» again" }, articulo: x.n }, hrefN);
       return { ...no(r.msg === CF.EN_CAMINO ? CAMINO_RENTA.es : r.msg.es, r.msg === CF.EN_CAMINO ? CAMINO_RENTA.en : r.msg.en), enCamino: true };
     }
     if (hold) await pasarela.liberar(hold.pi).catch(() => undefined);
     const f = await falloRecoger(x, r.msg);
-    if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: "la tarjeta no pasó al terminar el cobro en camino · no se cobró nada", articulo: x.n.es }, hrefN);
+    if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: { es: "la tarjeta no pasó al terminar el cobro en camino · no se cobró nada", en: "the card did not go through when finishing the in-progress charge · nothing was charged" }, articulo: x.n }, hrefN);
     return f;
   }
 
@@ -333,7 +335,7 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
     if (r.ok) {
       if (r.ya) return { ok: true };
       if (!aplicado) { await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} cambió en ese momento.`, en: `rental ${x.numero} changed at that moment.` }); return no("Solo mientras la tienes.", "Only while you have it."); }
-      await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: `se la queda un día más · la devuelve el ${diaCorto(addD(x.due, 1))}`, articulo: x.n.es }, hrefN);
+      await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: ((d) => ({ es: `se la queda un día más · la devuelve el ${d.es}`, en: `keeping it one more day · returning it on ${d.en}` }))(diaCorto(addD(x.due, 1))), articulo: x.n }, hrefN);
       return { ok: true };
     }
     if (r.enCamino) return { ...no(r.msg === CF.EN_CAMINO ? CAMINO_DIA.es : r.msg.es, r.msg === CF.EN_CAMINO ? CAMINO_DIA.en : r.msg.en), enCamino: true };
@@ -348,7 +350,7 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
     await ev(c, x.op, "payment_captured", "system", null, { es: `Días tarde: ${money(a.monto)}`, en: `Late days: ${money(a.monto)}` });
   });
   if (r.ok) {
-    if (!r.ya && desdeBarrido) await av.avisar(x.uid, "renta_devuelta", { articulo: x.n.es, que: `Se cobraron ${money(a.monto)} por los días tarde.` }, hrefC);
+    if (!r.ya && desdeBarrido) await av.avisar(x.uid, "renta_devuelta", { articulo: x.n, que: { es: `Se cobraron ${money(a.monto)} por los días tarde.`, en: `${money(a.monto)} was charged for the late days.` } }, hrefC);
     return { ok: true };
   }
   // 9t5 · Los días tarde que nunca llegaron a Stripe (la consulta): nadie más los vuelve a anotar; otra intención, con otra llave.
@@ -356,7 +358,7 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
   if (r.enCamino) return { ...no(r.msg.es, r.msg.en), enCamino: true };
   await db().query(`update rentals set late_cents = 0, updated_at = now() where id = $1::bigint`, [x.rid]);
   await ev(db(), x.op, "payment_failed", "system", null, { es: `Días tarde sin cobrar (${money(a.monto)}): se arregla en el local`, en: `Late days not charged (${money(a.monto)}): settled in person` });
-  if (desdeBarrido) await av.avisar(x.uid, "renta_devuelta", { articulo: x.n.es, que: `No se pudo cobrar ${money(a.monto)} por los días tarde: se arregla en el local.` }, hrefC);
+  if (desdeBarrido) await av.avisar(x.uid, "renta_devuelta", { articulo: x.n, que: { es: `No se pudo cobrar ${money(a.monto)} por los días tarde: se arregla en el local.`, en: `${money(a.monto)} for the late days could not be charged: it is settled in person.` } }, hrefC);
   return no(r.msg.es, r.msg.en);
 }
 
@@ -413,7 +415,7 @@ export async function rentaCliente(userId: string, numero: string, que: QueClien
       return true;
     });
     if (!ok) return (await cobroEnCamino(x.rid)) ? no(CAMINO_OTRO.es, CAMINO_OTRO.en) : no("Ya la recogiste o ya no está apartada.", "You already picked it up or it is no longer on hold.");
-    await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: "ya no la necesita · volvió a la tienda", articulo: x.n.es }, href);
+    await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: { es: "ya no la necesita · volvió a la tienda", en: "no longer needs it · it is back at the shop" }, articulo: x.n }, href);
     return { ok: true };
   }
   if (que === "tarjeta") {
@@ -422,7 +424,7 @@ export async function rentaCliente(userId: string, numero: string, que: QueClien
     if (!own && pasarela.modo() !== "simulador") return no("Esa tarjeta no es tuya.", "That card is not yours.", { tarjeta: true });
     const u = await db().query(`update rentals set payment_method = $2, card_failed = false, updated_at = now() where id = $1::bigint and status in ('held', 'out')`, [x.rid, pm]);
     if (!u.rowCount) return no("Esta renta ya cerró.", "This rental is closed.");
-    if (x.cardFailed) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: "cambió la tarjeta · ya puedes entregarla", articulo: x.n.es }, href);
+    if (x.cardFailed) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: { es: "cambió la tarjeta · ya puedes entregarla", en: "changed the card · you can hand it over now" }, articulo: x.n }, href);
     return { ok: true };
   }
   if (que === "dia") {
@@ -452,7 +454,7 @@ export async function rentaCliente(userId: string, numero: string, que: QueClien
     if (que === "dano_no") await aCola(x.rid);
     await ev(db(), x.op, que === "dano_ok" ? "damage_accepted" : "damage_disputed", "user", userId, que === "dano_ok" ? { es: `Aceptó el daño de ${money(x.dmgC ?? 0)}`, en: `Accepted the ${money(x.dmgC ?? 0)} damage` } : { es: "No está de acuerdo con el daño: lo decide To'Latino", en: "Disagrees with the damage: To'Latino decides" });
     if (que === "dano_ok") await liquidarDeposito(x.rid);
-    await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: que === "dano_ok" ? `aceptó el daño · se descontaron ${money(x.dmgC ?? 0)}` : "no está de acuerdo con el daño · lo revisa To'Latino", articulo: x.n.es }, href);
+    await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: que === "dano_ok" ? { es: `aceptó el daño · se descontaron ${money(x.dmgC ?? 0)}`, en: `accepted the damage · ${money(x.dmgC ?? 0)} was deducted` } : { es: "no está de acuerdo con el daño · lo revisa To'Latino", en: "disagrees with the damage · To'Latino is reviewing it" }, articulo: x.n }, href);
     return { ok: true };
   }
   return no("Eso no se puede.", "That cannot be done.");
@@ -477,7 +479,7 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
       return true;
     });
     if (!ok) return (await cobroEnCamino(x.rid)) ? no(CAMINO_OTRO.es, CAMINO_OTRO.en) : no("Ya no está apartada.", "It is no longer on hold.");
-    await av.avisar(x.uid, "renta_devuelta", { articulo: x.n.es, que: `${x.bname} canceló el apartado. No se cobró nada.` }, href);
+    await av.avisar(x.uid, "renta_devuelta", { articulo: x.n, que: { es: `${x.bname} canceló el apartado. No se cobró nada.`, en: `${x.bname} canceled the hold. Nothing was charged.` } }, href);
     return { ok: true };
   }
   if (a.que === "recogio") {
@@ -543,12 +545,13 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
       else { tardeSt = "no"; await ev(db(), x.op, "payment_failed", "system", null, { es: `Días tarde sin cobrar (${money(montoT)}): se arregla en el local`, en: `Late days not charged (${money(montoT)}): settled in person` }); }
     }
     await liquidarDeposito(x.rid);
-    const que = dano ? `${x.bname} pide descontar ${money(dano.cents)} del depósito por un daño. Mira la foto y decide.`
-      : tarde && tardeSt === "camino" ? `Llegó ${tarde} ${tarde === 1 ? "día" : "días"} tarde: el cobro de ${money(montoT)} quedó en camino y se termina solo en unos minutos.`
-      : tarde && tardeSt === "no" ? `Llegó ${tarde} ${tarde === 1 ? "día" : "días"} tarde: no se pudo cobrar ${money(montoT)} a tu tarjeta; se arregla en el local.`
-      : tarde ? `Llegó ${tarde} ${tarde === 1 ? "día" : "días"} tarde: se ${x.dep ? "descontaron del depósito" : "cobraron"} ${money(x.dep ? lateC : tarde * x.p)}${x.dep && x.dep > lateC ? `; se liberó el resto (${money(x.dep - lateC)})` : ""}.`
-      : x.dep ? `Se liberó el depósito de ${money(x.dep)}.` : "Gracias por devolverla.";
-    await av.avisar(x.uid, dano ? "renta_dano" : "renta_devuelta", dano ? { articulo: x.n.es, negocio: x.bname, monto: money(dano.cents) } : { articulo: x.n.es, que }, href);
+    const que: Bi = dano ? { es: `${x.bname} pide descontar ${money(dano.cents)} del depósito por un daño. Mira la foto y decide.`, en: `${x.bname} asks to deduct ${money(dano.cents)} from the deposit for damage. Look at the photo and decide.` }
+      : tarde && tardeSt === "camino" ? { es: `Llegó ${tarde} ${tarde === 1 ? "día" : "días"} tarde: el cobro de ${money(montoT)} quedó en camino y se termina solo en unos minutos.`, en: `It came back ${tarde} ${tarde === 1 ? "day" : "days"} late: the ${money(montoT)} charge is on its way and finishes on its own in a few minutes.` }
+      : tarde && tardeSt === "no" ? { es: `Llegó ${tarde} ${tarde === 1 ? "día" : "días"} tarde: no se pudo cobrar ${money(montoT)} a tu tarjeta; se arregla en el local.`, en: `It came back ${tarde} ${tarde === 1 ? "day" : "days"} late: ${money(montoT)} could not be charged to your card; it is settled in person.` }
+      : tarde ? { es: `Llegó ${tarde} ${tarde === 1 ? "día" : "días"} tarde: se ${x.dep ? "descontaron del depósito" : "cobraron"} ${money(x.dep ? lateC : tarde * x.p)}${x.dep && x.dep > lateC ? `; se liberó el resto (${money(x.dep - lateC)})` : ""}.`,
+          en: `It came back ${tarde} ${tarde === 1 ? "day" : "days"} late: ${money(x.dep ? lateC : tarde * x.p)} was ${x.dep ? "deducted from the deposit" : "charged"}${x.dep && x.dep > lateC ? `; the rest (${money(x.dep - lateC)}) was released` : ""}.` }
+      : x.dep ? { es: `Se liberó el depósito de ${money(x.dep)}.`, en: `The ${money(x.dep)} deposit was released.` } : { es: "Gracias por devolverla.", en: "Thanks for returning it." };
+    await av.avisar(x.uid, dano ? "renta_dano" : "renta_devuelta", dano ? { articulo: x.n, negocio: x.bname, monto: money(dano.cents) } : { articulo: x.n, que }, href);
     return { ok: true };
   }
   return no("Eso no se puede.", "That cannot be done.");
@@ -568,9 +571,9 @@ export async function resolverDano(numero: string, cobrar: boolean, adminId: str
   if (!u.rowCount) return no("Ese daño ya se decidió.", "That damage was already decided.");
   await ev(db(), x.op, cobrar ? "damage_charged" : "damage_waived", "admin", adminId, cobrar ? { es: `To'Latino decidió descontar el daño (${money(x.c)})`, en: `To'Latino decided to deduct the damage (${money(x.c)})` } : { es: "To'Latino decidió no descontar el daño", en: "To'Latino decided not to deduct the damage" });
   await liquidarDeposito(x.rid);
-  const av = await import("./avisos"), que = cobrar ? `To'Latino revisó el daño: se descontaron ${money(x.c)} del depósito.` : "To'Latino revisó el daño: no se descuenta. Se liberó tu depósito.";
-  await av.avisar(x.uid, "renta_devuelta", { articulo: x.n.es, que }, { href: `/renta/${numero}`, ref: ["renta", numero] });
-  await av.avisarNegocio(x.biz, "biz_renta", { cliente: "To'Latino", que: cobrar ? "decidió descontar el daño" : "decidió no descontar el daño", articulo: x.n.es }, { href: `/panel/${x.biz}/hoy?det=renta:${numero}`, ref: ["renta", numero] });
+  const av = await import("./avisos"), que: Bi = cobrar ? { es: `To'Latino revisó el daño: se descontaron ${money(x.c)} del depósito.`, en: `To'Latino reviewed the damage: ${money(x.c)} was deducted from the deposit.` } : { es: "To'Latino revisó el daño: no se descuenta. Se liberó tu depósito.", en: "To'Latino reviewed the damage: nothing is deducted. Your deposit was released." };
+  await av.avisar(x.uid, "renta_devuelta", { articulo: x.n, que }, { href: `/renta/${numero}`, ref: ["renta", numero] });
+  await av.avisarNegocio(x.biz, "biz_renta", { cliente: { es: "To'Latino", en: "To'Latino" }, que: cobrar ? { es: "decidió descontar el daño", en: "decided to deduct the damage" } : { es: "decidió no descontar el daño", en: "decided not to deduct the damage" }, articulo: x.n }, { href: `/panel/${x.biz}/hoy?det=renta:${numero}`, ref: ["renta", numero] });
   return { ok: true };
 }
 export async function numeroDeRenta(rid: string): Promise<string | null> {
@@ -599,7 +602,7 @@ export async function barrerRentas(f: { negocio?: string; userId?: string; numer
       await ev(c, x.op, "expired", "system", null, { es: "Pasaron las 48 horas: volvió a la tienda", en: "48 hours passed: back on the shelf" });
       return true;
     });
-    if (ok) await av.avisar(x.uid, "renta_vence", { articulo: x.n.es, negocio: x.bname }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
+    if (ok) await av.avisar(x.uid, "renta_vence", { articulo: x.n, negocio: x.bname }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
   });
   // 2. Se pasó el día de devolver: un aviso (al cliente y al negocio).
   const T = (await db().query<{ rid: string; uid: string; numero: string; n: Bi; p: number; due: string; biz: string; cliente: string; hoy: string }>(
@@ -609,8 +612,8 @@ export async function barrerRentas(f: { negocio?: string; userId?: string; numer
   await B.cada(T, (x) => x.numero, async (x) => {
     const u = await db().query(`update rentals set late_noticed_on = $2::date, updated_at = now() where id = $1::bigint and late_noticed_on is null`, [x.rid, x.hoy]);
     if (!u.rowCount) return;
-    await av.avisar(x.uid, "renta_tarde", { articulo: x.n.es, dia: diaCorto(x.due), monto: money(x.p) }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
-    await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: `se pasó del día de devolver (${diaCorto(x.due)})`, articulo: x.n.es }, { href: `/panel/${x.biz}/hoy?det=renta:${x.numero}`, ref: ["renta", x.numero] });
+    await av.avisar(x.uid, "renta_tarde", { articulo: x.n, dia: diaCorto(x.due), monto: money(x.p) }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
+    await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente, que: ((d) => ({ es: `se pasó del día de devolver (${d.es})`, en: `went past the return day (${d.en})` }))(diaCorto(x.due)), articulo: x.n }, { href: `/panel/${x.biz}/hoy?det=renta:${x.numero}`, ref: ["renta", x.numero] });
   });
   // 3. Daños sin respuesta en 72 h: los decide To'Latino.
   const D = (await db().query<{ rid: string }>(`update rentals r set damage_status = 'disputed', updated_at = now() from operations o where o.id = r.operation_id and ${W} and r.damage_status = 'asked' and r.damage_asked_at < now() - interval '72 hours' returning r.id::text as rid`, A)).rows;
@@ -666,7 +669,7 @@ export async function renovacionDeposito(pago: string): Promise<import("./renova
     },
     fallo: async (c, m) => ev(c, p.op, "hold_failed", "system", null, m === "banco" ? { es: `El depósito de ${money(p.held)} no se pudo renovar: el banco no dejó`, en: `The ${money(p.held)} deposit could not be renewed: the bank declined` }
       : { es: `El depósito de ${money(p.held)} no se pudo renovar`, en: `The ${money(p.held)} deposit could not be renewed` }),
-    avisar: async (m) => { await (await import("./avisos")).avisarNegocio(p.biz, "biz_renta", { cliente: p.cliente, articulo: p.n.es,
-      que: m === "banco" ? `el banco ya no deja retener el depósito de ${money(p.held)}` : `no se pudo renovar la retención del depósito de ${money(p.held)} (la tarjeta la suelta a los 7 días): ya no hay depósito retenido` }, href); },
+    avisar: async (m) => { await (await import("./avisos")).avisarNegocio(p.biz, "biz_renta", { cliente: p.cliente, articulo: p.n,
+      que: m === "banco" ? { es: `el banco ya no deja retener el depósito de ${money(p.held)}`, en: `the bank no longer allows holding the ${money(p.held)} deposit` } : { es: `no se pudo renovar la retención del depósito de ${money(p.held)} (la tarjeta la suelta a los 7 días): ya no hay depósito retenido`, en: `the hold on the ${money(p.held)} deposit could not be renewed (the card releases it after 7 days): there is no deposit held anymore` } }, href); },
   };
 }

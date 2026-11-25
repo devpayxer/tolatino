@@ -719,7 +719,7 @@ export async function chatOcultarMensaje(id: string, mensaje: string, motivo: st
     await avisarOculto(r.autor, "dm_message", r.id, m);
   } else if (r.autor && (r.de === "user" || r.de === "business")) {
     const { avisar } = await import("@/lib/avisos");
-    await avisar(r.autor, "mod_hide", { tipo: "mensaje", motivo: m }, { href: r.de === "user" ? "/cuenta/mensajes" : undefined }).catch(() => undefined);
+    await avisar(r.autor, "mod_hide", { tipo: { es: "mensaje", en: "message" }, motivo: m }, { href: r.de === "user" ? "/cuenta/mensajes" : undefined }).catch(() => undefined);
   }
   listo();
   return { ok: true, mensaje: "Mensaje oculto. Quien lo escribió ve el motivo." };

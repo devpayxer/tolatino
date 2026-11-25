@@ -203,7 +203,7 @@ export async function enlace(s: Staff, testerId: string, motivo?: string): Promi
   });
   if (!r.ok) return r;
   const { avisar } = await import("./avisos");
-  await avisar(r.user, "beta_apk", { app: defApp(r.app).nombre.es, horas }, { href: `/beta/apk/${ficha}`, ref: ["beta", testerId], sinSms: true });
+  await avisar(r.user, "beta_apk", { app: defApp(r.app).nombre, horas }, { href: `/beta/apk/${ficha}`, ref: ["beta", testerId], sinSms: true });
   return { ok: true, msg: "Enlace nuevo enviado: sirve una vez." };
 }
 
@@ -236,7 +236,7 @@ export async function quitar(s: Staff, testerId: string, motivo: string): Promis
   if (r.t.channel === "testflight") { const e = await sincronizar(testerId); msg = e === "ok" ? "Quitado: Apple ya lo sacó de TestFlight." : e === "sin_llave" ? "Quitado aquí. Sin la llave de App Store Connect, Apple se pone al día cuando se suba." : "Quitado aquí; Apple no contestó bien. Se reintenta solo."; }
   if (r.t.channel === "play_interno" && r.t.status === "activo") msg = "Quitado. Sácalo también de la lista de Play interno (Play no lo deja hacer por la API).";
   const { avisar } = await import("./avisos");
-  await avisar(r.t.user_id, "beta_quitado", { app: defApp(r.t.app).nombre.es }, { ref: ["beta", testerId], sinSms: true });
+  await avisar(r.t.user_id, "beta_quitado", { app: defApp(r.t.app).nombre }, { ref: ["beta", testerId], sinSms: true });
   return { ok: true, msg };
 }
 

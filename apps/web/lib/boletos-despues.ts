@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { cfgSql, valores } from "./config";
 import { normalizarTelefono } from "./cuenta";
 import { db, tx, type AlGuardar } from "./db";
-import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
+import { bi, cuandoBi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
 import { pasesPronto } from "./pases/pronto";
 
@@ -43,7 +43,7 @@ const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH2
 const H0 = (d: string) => `(extract(hour from ${d}.starts_at at time zone ci.timezone) * 60 + extract(minute from ${d}.starts_at at time zone ci.timezone))::int`;
 /* La fecha sigue en pie: evento publicado o pausado, fecha programada y sin terminar. */
 const EN_PIE = `e.status in ('live', 'paused') and d.status = 'scheduled' and d.ends_at > now()`;
-const cuantosL = (n: number, mesa: boolean, admits: number, es = true) => mesa ? (es ? `1 mesa (${admits} entradas)` : `1 table (${admits} entries)`) : es ? `${n} ${n === 1 ? "boleto" : "boletos"}` : `${n} ${n === 1 ? "ticket" : "tickets"}`;
+const cuantosL = (n: number, mesa: boolean, admits: number): Bi => mesa ? { es: `1 mesa (${admits} entradas)`, en: `1 table (${admits} entries)` } : { es: `${n} ${n === 1 ? "boleto" : "boletos"}`, en: `${n} ${n === 1 ? "ticket" : "tickets"}` };
 const limpiarNombre = (x: unknown) => String(x ?? "").replace(/[\u0000-\u001F\u007F]/g, "").replace(/\d{3,}/g, "").replace(/\s+/g, " ").trim().slice(0, 40);
 async function base() { return (await import("./correo")).BASE_URL(); }
 
@@ -90,7 +90,7 @@ export async function transferir(userId: string, code: string, telRaw: unknown):
   // 8g · El pase de Wallet ya quedó tocado en la transacción (trigger de 0129): que salga ya.
   pasesPronto();
   const { avisarTelefono } = await import("./avisos");
-  await avisarTelefono(tel, "bol_transfer_in", { de: r.de, cuantos: cuantosL(1, r.mesa, r.admits), evento: r.title.es, cuando: `${diaCorto(r.dia, true)} · ${hora(r.h0)}`, enlace: `${await base()}/eventos/recibir/${token}` },
+  await avisarTelefono(tel, "bol_transfer_in", { de: r.de, cuantos: cuantosL(1, r.mesa, r.admits), evento: r.title, cuando: cuandoBi(r.dia, r.h0), enlace: `${await base()}/eventos/recibir/${token}` },
     { href: `/eventos/recibir/${token}`, ref: ["ticket_transfer", r.id], city: r.city });
   return { ok: true, a: `••${tel.slice(-2)}` };
 }
@@ -136,7 +136,7 @@ export async function vencerTransferencias(): Promise<number> {
     if (!r) return;
     n++;
     pasesPronto();
-    if (r.kind === "transfer") await (await import("./avisos")).avisar(r.uid, "bol_transfer_vuelve", { codigo: r.code, evento: r.title.es }, { href: `/cuenta/boletos/${r.code}`, ref: ["tickets", r.code] });
+    if (r.kind === "transfer") await (await import("./avisos")).avisar(r.uid, "bol_transfer_vuelve", { codigo: r.code, evento: r.title }, { href: `/cuenta/boletos/${r.code}`, ref: ["tickets", r.code] });
   });
   return n;
 }
@@ -214,7 +214,7 @@ export async function reclamar(userId: string, token: string): Promise<Res<{ cod
       return n.code;
     });
     pasesPronto();
-    if (aviso) { const a = aviso as { uid: string; code: string; title: Bi }; await (await import("./avisos")).avisar(a.uid, "bol_transfer_ok", { codigo: a.code, evento: a.title.es }, { href: `/cuenta/boletos/${a.code}`, ref: ["tickets", a.code] }); }
+    if (aviso) { const a = aviso as { uid: string; code: string; title: Bi }; await (await import("./avisos")).avisar(a.uid, "bol_transfer_ok", { codigo: a.code, evento: a.title }, { href: `/cuenta/boletos/${a.code}`, ref: ["tickets", a.code] }); }
     return { ok: true, codigo };
   } catch (e) { return atrapa(e); }
 }
@@ -521,8 +521,8 @@ export async function cancelarBoletos(userId: string, numero: string, codesRaw: 
   // 9v · Lo que dicen la pantalla y el aviso sale de lo que hizo la pasarela, no de lo decidido.
   const devolucion = await mandarDevolucion(hecho.rf);
   const { avisar, avisarNegocio } = await import("./avisos");
-  await avisar(userId, "bol_cancelado", { evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), monto: dinero(hecho.total), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
-  await avisarNegocio(hecho.biz, "evt_devolucion", { evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), num: numero }, { href: `/panel/${hecho.biz}/eventos`, ref: ["tickets", numero] });
+  await avisar(userId, "bol_cancelado", { evento: hecho.title, cuantos: cuantosL(hecho.n, false, 1), monto: dinero(hecho.total), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
+  await avisarNegocio(hecho.biz, "evt_devolucion", { evento: hecho.title, cuantos: cuantosL(hecho.n, false, 1), num: numero }, { href: `/panel/${hecho.biz}/eventos`, ref: ["tickets", numero] });
   await (await import("./espera")).ofrecer(hecho.fid).catch(() => 0);
   return { ok: true, monto: hecho.total, devolucion };
 }
@@ -568,8 +568,8 @@ export async function devolverDesdePanel(negocio: string, actorId: string, numer
   // 9v · El aviso al comprador y el panel dicen lo que hizo la pasarela, no lo decidido.
   const devolucion = await mandarDevolucion(hecho.rf);
   const { avisar } = await import("./avisos");
-  await avisar(hecho.uid, "bol_devuelto", { negocio: hecho.org, monto: dinero(hecho.total), evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
-  for (const h of hecho.holders) await avisar(h, "bol_anulado", { codigo: "", evento: hecho.title.es, motivo: "El organizador devolvió este boleto a quien lo pagó" }, { href: "/cuenta/boletos", ref: ["tickets", numero] });
+  await avisar(hecho.uid, "bol_devuelto", { negocio: hecho.org, monto: dinero(hecho.total), evento: hecho.title, cuantos: cuantosL(hecho.n, false, 1), dinero: dineroDevolucion(devolucion, hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
+  for (const h of hecho.holders) await avisar(h, "bol_anulado", { codigo: "", evento: hecho.title, motivo: { es: "El organizador devolvió este boleto a quien lo pagó", en: "The organizer refunded this ticket to the person who paid for it" } }, { href: "/cuenta/boletos", ref: ["tickets", numero] });
   await (await import("./espera")).ofrecer(hecho.fid).catch(() => 0);
   return { ok: true, monto: hecho.total, devolucion };
 }
@@ -632,7 +632,7 @@ export async function darCortesia(negocio: string, actorId: string, eventoId: st
   } catch (e) { return atrapa(e); }
   if (tel && r.xid) {
     const { avisarTelefono } = await import("./avisos");
-    await avisarTelefono(tel, "bol_cortesia", { negocio: r.org, cuantos: q === 1 ? "1 entrada" : `${q} entradas`, evento: r.title.es, cuando: `${diaCorto(r.dia, true)} · ${hora(r.h0)}`, enlace: `${await base()}/eventos/recibir/${token}` },
+    await avisarTelefono(tel, "bol_cortesia", { negocio: r.org, cuantos: q === 1 ? { es: "1 entrada", en: "1 entry" } : { es: `${q} entradas`, en: `${q} entries` }, evento: r.title, cuando: cuandoBi(r.dia, r.h0), enlace: `${await base()}/eventos/recibir/${token}` },
       { href: `/eventos/recibir/${token}`, ref: ["ticket_transfer", r.xid], city: r.city });
   }
   return { ok: true, numero: r.numero, sms: !!tel };

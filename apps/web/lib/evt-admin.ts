@@ -2,7 +2,7 @@ import "server-only";
 import { auditar, type Staff } from "./admin";
 import { avisarNegocio } from "./avisos";
 import { db, tx } from "./db";
-import { diaCorto, hora, SENAL_L_UI, type Bi } from "./evt-comun";
+import { cuandoBi, diaCorto, hora, SENAL_L_UI, type Bi } from "./evt-comun";
 
 /* 6j · Super Admin › Eventos y boletos completo (fase6-eventos.md §4 6j; admin-dashboard ADM-EVT L174–186, L74, L291):
    - Cupos y venta de UNA fecha en la ficha del evento: cada tipo de boleto, mesa y el aforo del día con lo vendido, apartado y lo que queda;
@@ -89,7 +89,7 @@ export async function ajustarCupo(s: Staff, fechaId: string, kind: "tipo" | "mes
   const n = Number(String(cantidadTxt ?? "").replace(/[,\s]/g, ""));
   if (!Number.isInteger(n) || n < 0 || n > (kind === "rsvp" ? 20000 : 100000)) return no(`Escribe un número entero (de 0 a ${kind === "rsvp" ? "20,000" : "100,000"}).`);
   try {
-    const r = await tx(async (c): Promise<R & { aviso?: { biz: string; v: Record<string, string> } }> => {
+    const r = await tx(async (c): Promise<R & { aviso?: { biz: string; v: Record<string, string | Bi> } }> => {
       const f = await fechaAdm(c, s, fechaId);
       if (!f) return no("Esa fecha no existe en tus ciudades.");
       if (f.st !== "scheduled" || !["live", "paused"].includes(f.est) || f.empezo) return no("Solo una fecha que no ha empezado de un evento publicado.");
@@ -108,7 +108,7 @@ export async function ajustarCupo(s: Staff, fechaId: string, kind: "tipo" | "mes
         await c.query(`insert into event_changes (event_id, event_date_id, city_id, kind, before, after, reason_key, note, by_user, by_kind) values ($1::bigint, $2::bigint, $3, 'capacity_adjusted', $4, $5, 'admin', $6, $7, 'admin')`,
           [f.eid, fechaId, f.city, JSON.stringify({ cupo: ev.q }), JSON.stringify({ cupo: n, que: { es: que, en: queEn } }), m, s.id]);
         await auditar(c, { actor: s.id, action: "evento.cupo.ajustar", targetKind: "event", targetId: f.eid, city: f.city, before: { "Cupo del RSVP": ev.q }, after: { "Cupo del RSVP": n, fecha: f.dia }, reason: m });
-        return { ok: true, msg: `Cupo ajustado: ${que}. El organizador recibe el aviso.`, aviso: { biz: f.biz, v: { evento: f.title.es, cuando: `${diaCorto(f.dia, true)} · ${hora(f.h0)}`, que, motivo: m } } };
+        return { ok: true, msg: `Cupo ajustado: ${que}. El organizador recibe el aviso.`, aviso: { biz: f.biz, v: { evento: f.title, cuando: cuandoBi(f.dia, f.h0), que: { es: que, en: queEn }, motivo: m } } };
       }
       const T = kind === "tipo" ? { t: "ticket_stock", k: "ticket_type_id", q: "quantity", n: "ticket_types", nc: "name" } : kind === "mesa" ? { t: "table_stock", k: "table_id", q: "quantity", n: "event_tables", nc: "zone" } : { t: "event_day_stock", k: null, q: "capacity", n: null, nc: null };
       const x = (await c.query<{ q: number; usado: number; nombre: Bi | null }>(
@@ -125,7 +125,7 @@ export async function ajustarCupo(s: Staff, fechaId: string, kind: "tipo" | "mes
       await c.query(`insert into event_changes (event_id, event_date_id, city_id, kind, before, after, reason_key, note, by_user, by_kind) values ($1::bigint, $2::bigint, $3, 'capacity_adjusted', $4, $5, 'admin', $6, $7, 'admin')`,
         [f.eid, fechaId, f.city, JSON.stringify({ cupo: x.q }), JSON.stringify({ cupo: n, que: { es: que, en: queEn } }), m, s.id]);
       await auditar(c, { actor: s.id, action: "evento.cupo.ajustar", targetKind: "event", targetId: f.eid, city: f.city, before: { [x.nombre?.es ?? "Aforo del día"]: x.q }, after: { [x.nombre?.es ?? "Aforo del día"]: n, fecha: f.dia }, reason: m });
-      return { ok: true, msg: `Cupo ajustado: ${que}. El organizador recibe el aviso.`, aviso: { biz: f.biz, v: { evento: f.title.es, cuando: `${diaCorto(f.dia, true)} · ${hora(f.h0)}`, que, motivo: m } } };
+      return { ok: true, msg: `Cupo ajustado: ${que}. El organizador recibe el aviso.`, aviso: { biz: f.biz, v: { evento: f.title, cuando: cuandoBi(f.dia, f.h0), que: { es: que, en: queEn }, motivo: m } } };
     });
     if (r.ok && r.aviso) await avisarNegocio(r.aviso.biz, "evt_ajuste_admin", r.aviso.v, { href: "/panel", ref: ["event_date", fechaId] });
     return r.ok ? { ok: true, msg: r.msg } : r;
@@ -141,7 +141,7 @@ export async function extenderVenta(s: Staff, fechaId: string, hasta: "doors" | 
   const m = String(motivo ?? "").trim().slice(0, 500);
   if (m.length < 4) return no("Escribe el motivo: lo ve el organizador.");
   if (hasta !== "doors" && hasta !== "start") return no("Elige hasta cuándo.");
-  const r = await tx(async (c): Promise<R & { aviso?: { biz: string; v: Record<string, string> } }> => {
+  const r = await tx(async (c): Promise<R & { aviso?: { biz: string; v: Record<string, string | Bi> } }> => {
     const f = await fechaAdm(c, s, fechaId);
     if (!f) return no("Esa fecha no existe en tus ciudades.");
     if (f.st !== "scheduled" || !["live", "paused"].includes(f.est) || f.empezo) return no("Solo una fecha que no ha empezado de un evento publicado.");
@@ -158,7 +158,7 @@ export async function extenderVenta(s: Staff, fechaId: string, hasta: "doors" | 
     await c.query(`insert into event_changes (event_id, event_date_id, city_id, kind, before, after, reason_key, note, by_user, by_kind) values ($1::bigint, $2::bigint, $3, 'sales_extended', $4, $5, 'admin', $6, $7, 'admin')`,
       [f.eid, fechaId, f.city, JSON.stringify({ hasta: x.antes }), JSON.stringify({ hasta: x.nueva, que: { es: que, en: queEn } }), m, s.id]);
     await auditar(c, { actor: s.id, action: "evento.venta.extender", targetKind: "event", targetId: f.eid, city: f.city, before: { venta_hasta: x.antesH }, after: { venta_hasta: x.nuevaH, fecha: f.dia }, reason: m });
-    return { ok: true, msg: `Venta extendida: ${que}. El organizador recibe el aviso.`, aviso: { biz: f.biz, v: { evento: f.title.es, cuando: `${diaCorto(f.dia, true)} · ${hora(f.h0)}`, que, motivo: m } } };
+    return { ok: true, msg: `Venta extendida: ${que}. El organizador recibe el aviso.`, aviso: { biz: f.biz, v: { evento: f.title, cuando: cuandoBi(f.dia, f.h0), que: { es: que, en: queEn }, motivo: m } } };
   });
   if (r.ok && r.aviso) await avisarNegocio(r.aviso.biz, "evt_ajuste_admin", r.aviso.v, { href: "/panel", ref: ["event_date", fechaId] });
   return r.ok ? { ok: true, msg: r.msg } : r;

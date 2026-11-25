@@ -171,9 +171,8 @@ export async function guardarNoPublicada(x: { r: Revision; datos: Buffer; ancho:
 
 /* El aviso, con el motivo en el idioma de la persona. href: Mi cuenta › Avisos de moderación (ahí está «Pedir revisión»). */
 async function avisarFoto(userId: string, tpl: "foto_rechazada" | "foto_revision" | "foto_aprobada" | "foto_oculta" | "foto_vuelve", mediaId: string, motivo: Motivo | null) {
-  const en = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [userId]).catch(() => ({ rows: [] as { lang: string }[] }))).rows[0]?.lang === "en";
   const m: Bi | null = motivo && motivo in MOTIVO_TEXTO ? MOTIVO_TEXTO[motivo as MotivoRechazo] : null;
-  await avisar(userId, tpl, { motivo: m ? (en ? m.en : m.es) : "" }, { href: `/cuenta/moderacion?k=media&id=${mediaId}`, ref: ["media", mediaId], sinSms: true }).catch(() => undefined);
+  await avisar(userId, tpl, { motivo: m ?? "" }, { href: `/cuenta/moderacion?k=media&id=${mediaId}`, ref: ["media", mediaId], sinSms: true }).catch(() => undefined);
 }
 
 /* ── Publicar lo que estaba retenido u oculto (barrido, capa 2 después de la capa 3, o una persona). La maestra vuelve a n/ ANTES de que la fila

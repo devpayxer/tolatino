@@ -26,8 +26,7 @@ export async function acreditar(c: Q, userId: string, motivo: "welcome"): Promis
 /* Después de la transacción: el aviso «Te llegaron monedas» (una vez por referencia). */
 export async function avisarMonedas(userId: string, n: number, motivo: Bi, ref: string) {
   if (n <= 0) return;
-  const en = (await db().query<{ l: string }>(`select coalesce(lang, 'es') as l from users where id = $1`, [userId])).rows[0]?.l === "en";
-  await avisar(userId, "gam_monedas", { motivo: en ? motivo.en : motivo.es, n }, { href: "/comunidad/monedas", ref: ["gam_monedas", ref] });
+  await avisar(userId, "gam_monedas", { motivo, n }, { href: "/comunidad/monedas", ref: ["gam_monedas", ref] });
 }
 
 /* El saldo (derivado; 0 si todavía no tiene perfil de la Comunidad). */

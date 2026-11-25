@@ -423,6 +423,6 @@ async function avisarSeg(numero: string) {
   const { avisar } = await import("./avisos");
   // 9n-5 · {horas}/{hours}: lo que se guarda la hora (Configuración · sp_seguro_guardar_h), para la plantilla que lo diga con el valor.
   const h = await valor("sp_seguro_guardar_h");
-  await avisar(d.uid, "sal_cita_seg", { horas: horasTxt(h, true), hours: horasTxt(h, false) }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
+  await avisar(d.uid, "sal_cita_seg", { horas: { es: horasTxt(h, true), en: horasTxt(h, false) }, hours: horasTxt(h, false) }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
 }
 

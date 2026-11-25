@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { comision, registrarRetencion, retenerPedido, soltarRetencion, SWEEP, tarjetaDe } from "./cobros";
 import { sinSoltarCliente, soltadaO, type Soltada } from "./devolucion-cancelar";
 import { db, tx } from "./db";
+import { usd } from "./dinero-comun";
 import { AGOTADO_SQL } from "./menu";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
@@ -36,7 +37,7 @@ export type ResM = { ok: true; numero?: string; retenida?: true; mensaje?: Bi } 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const NUM = /^M-\d{1,10}$/;
 const ID = /^\d{1,18}$/;
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+const money = usd;
 export const QTY_MERC: Record<string, number[]> = { peso: [1, 2, 3, 5, 10], unid: [1, 2, 3, 6, 12], plato: [1, 2, 3, 4] };
 const hm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 const hl = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
@@ -206,7 +207,7 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
       JSON.stringify(ret?.ok ? { es: `Se retuvieron ${money(retener)} (estimado + 10 % de lo que va por peso)`, en: `${money(retener)} held (estimate + 10% of by-weight items)` } : { es: "Paga en el mercado al recoger", en: "Pays at the market at pickup" })]);
     await c.query("commit");
     retenido = null;
-    await avisar(num, "biz_merc", { modo: modo === "delivery" ? "envío" : "pickup", cuando: `${dia === "hoy" ? "hoy" : "mañana"} ${fr.l}`, n: String(L.length) });
+    await avisar(num, "biz_merc", { modo: modo === "delivery" ? { es: "envío", en: "delivery" } : "pickup", cuando: { es: `${dia === "hoy" ? "hoy" : "mañana"} ${fr.l}`, en: `${dia === "hoy" ? "today" : "tomorrow"} ${fr.l}` }, n: String(L.length) });
     return { ok: true, numero: num };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
@@ -284,7 +285,7 @@ export async function liquidarMercado(opId: string): Promise<{ cobrado: number; 
     else await ev(c, opId, "payment_released", "system", null, { es: `Se liberaron ${money(liberado)}`, en: `${money(liberado)} released` });
     return true;
   });
-  if (hecho && cobrado) await avisar(num, "merc_cobrado", { monto: money(cobrado), libre: liberado ? ` · se liberan ${money(liberado)}` : "" });
+  if (hecho && cobrado) await avisar(num, "merc_cobrado", { monto: money(cobrado), libre: liberado ? { es: ` · se liberan ${money(liberado)}`, en: ` · ${money(liberado)} released` } : "" });
   return { cobrado, liberado };
 }
 
@@ -311,7 +312,7 @@ export async function vencerMercado(f: { negocio?: string; numero?: string }) {
       where o.kind = 'market_order' and o.status = 'confirmed' and o.status_detail = 'pesado' and o.pay_mode = 'app' and not (o.details ? 'approved_at') and not (o.details ? 'settled_at')
         and not (o.details ? 'rec10') and (o.details->>'weighed_at')::timestamptz <= now() - interval '10 minutes' and ${w}
       returning o.number, (o.details->>'ok_mas')::int as mas`, v)).rows;
-  for (const x of rec) await avisar(x.number, "merc_rec10", { mas: x.mas ? ` (pide tu OK por ${money(x.mas)} más)` : "" }).catch(() => undefined);
+  for (const x of rec) await avisar(x.number, "merc_rec10", { mas: x.mas ? { es: ` (pide tu OK por ${money(x.mas)} más)`, en: ` (asks for your OK on ${money(x.mas)} more)` } : "" }).catch(() => undefined);
 }
 
 /* ── Cliente ── */
@@ -406,7 +407,7 @@ export async function decidirSustituto(userId: string, numero: string, prop: str
     await ev(c, o.id, si ? "sub_ok" : "sub_no", "user", userId, si ? { es: `Aceptó el cambio: ${cp.p.name.es}`, en: `Accepted the swap: ${cp.p.name.en || cp.p.name.es}` } : { es: "No quiso el cambio: se quita y no se cobra", en: "Declined the swap: removed and not charged" });
     return { ok: true };
   });
-  if (r.ok) await avisar(numero, "biz_merc_sust", { respuesta: si ? "aceptó" : "no quiso" });
+  if (r.ok) await avisar(numero, "biz_merc_sust", { respuesta: si ? { es: "aceptó", en: "accepted" } : { es: "no quiso", en: "declined" } });
   return r;
 }
 

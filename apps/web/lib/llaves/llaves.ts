@@ -261,7 +261,7 @@ async function quitarPorContador(k: Llave, ip: string | null, ua: string | null)
     await anotar(c, { llave: k.id, user: k.user_id, accion: "contador", detalle: "el contador retrocedió", ip, ua });
     return true;
   });
-  if (ok) await (await import("../avisos")).avisar(k.user_id, "cuenta_llave_quitada", { dispositivo: k.name, motivo: "parece que alguien usó una copia de esa llave" }, { href: "/cuenta/ajustes/privacidad", ref: ["passkey", k.id] });
+  if (ok) await (await import("../avisos")).avisar(k.user_id, "cuenta_llave_quitada", { dispositivo: k.name, motivo: { es: "parece que alguien usó una copia de esa llave", en: "it looks like someone used a copy of that key" } }, { href: "/cuenta/ajustes/privacidad", ref: ["passkey", k.id] });
 }
 
 /* ── 9t · Confirmar con la llave lo que pide probar otra vez que eres tú, en vez del código por SMS (LAUNCH «Pedir el archivo con la llave de

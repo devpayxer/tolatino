@@ -588,10 +588,10 @@ async function despuesDeVender(op: string) {
   if (!o) return;
   if ((await db().query(`select 1 from notifications where tpl = 'bol_comprado' and ref_kind = 'tickets' and ref_id = $1`, [o.num])).rowCount) return;
   const { avisar, avisarNegocio } = await import("./avisos");
-  const { diaCorto, hora } = await import("./evt-comun");
-  const cuantos = [o.n ? `${o.n} ${o.n === 1 ? "boleto" : "boletos"}` : "", o.mesa ? "1 mesa" : ""].filter(Boolean).join(" y ");
-  await avisar(o.uid, "bol_comprado", { evento: o.title.es, num: o.num, cuantos, cuando: `${diaCorto(o.dia, true)} · ${hora(o.h0)}` }, { href: `/eventos/orden/${o.num}`, ref: ["tickets", o.num] });
-  await avisarNegocio(o.biz, "evt_venta", { evento: o.title.es, cuantos, num: o.num }, { href: `/panel/${o.biz}/eventos?det=evt:${(await db().query<{ e: string }>(`select details->>'event_id' as e from operations where id = $1::bigint`, [op])).rows[0]?.e ?? ""}`, ref: ["tickets", o.num] });
+  const { cuandoBi } = await import("./evt-comun");
+  const cuantos: Bi = { es: [o.n ? `${o.n} ${o.n === 1 ? "boleto" : "boletos"}` : "", o.mesa ? "1 mesa" : ""].filter(Boolean).join(" y "), en: [o.n ? `${o.n} ${o.n === 1 ? "ticket" : "tickets"}` : "", o.mesa ? "1 table" : ""].filter(Boolean).join(" and ") };
+  await avisar(o.uid, "bol_comprado", { evento: o.title, num: o.num, cuantos, cuando: cuandoBi(o.dia, o.h0) }, { href: `/eventos/orden/${o.num}`, ref: ["tickets", o.num] });
+  await avisarNegocio(o.biz, "evt_venta", { evento: o.title, cuantos, num: o.num }, { href: `/panel/${o.biz}/eventos?det=evt:${(await db().query<{ e: string }>(`select details->>'event_id' as e from operations where id = $1::bigint`, [op])).rows[0]?.e ?? ""}`, ref: ["tickets", o.num] });
   await (await import("./correo/recibos")).reciboBoletos(op);
 }
 
@@ -811,7 +811,7 @@ export async function reenviarDesdePanel(negocio: string, numero: string): Promi
   const o = (await db().query<{ uid: string; title: Bi; id: string }>(`select user_id::text as uid, details->'title' as title, id::text from operations where number = $1 and kind = 'tickets' and business_id = $2 and status = 'confirmed'`, [numero, negocio])).rows[0];
   if (!o) return false;
   await db().query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_kind) select id, operation_id, city_id, 'reenviado', 'business' from tickets where operation_id = $1::bigint`, [o.id]);
-  await (await import("./avisos")).avisar(o.uid, "bol_reenviado", { evento: o.title.es }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
+  await (await import("./avisos")).avisar(o.uid, "bol_reenviado", { evento: o.title }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
   return true;
 }
 /* Lo vendido de cada evento para la lista del panel (barra de venta de evrow). */

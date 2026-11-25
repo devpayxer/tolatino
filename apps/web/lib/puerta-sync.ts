@@ -119,7 +119,7 @@ export async function aplicarCola(userId: string, sesion: string, device: string
       where i.auto and i.event_date_id = s.event_date_id and i.at >= $2::timestamptz and i.by_user = s.user_id`, [sesion, t0])).rows[0];
   if (inc && inc.n > 0) {
     // Lo detecta To'Latino al subir la cola de ese teléfono (no lo reportó el portero).
-    await (await import("./avisos")).avisarNegocio(inc.neg, "puerta_incidencia", { quien: "To'Latino", puerta: inc.puerta, evento: inc.t?.es ?? "", tipo: inc.n === 1 ? "boleto que entró sin conexión y no valía o ya había entrado" : `${inc.n} boletos que entraron sin conexión y no valían o ya habían entrado`, nota: "" },
+    await (await import("./avisos")).avisarNegocio(inc.neg, "puerta_incidencia", { quien: { es: "To'Latino", en: "To'Latino" }, puerta: inc.puerta, evento: inc.t ?? "", tipo: inc.n === 1 ? { es: "boleto que entró sin conexión y no valía o ya había entrado", en: "ticket that got in offline and was not valid or had already been used" } : { es: `${inc.n} boletos que entraron sin conexión y no valían o ya habían entrado`, en: `${inc.n} tickets that got in offline and were not valid or had already been used` }, nota: "" },
       { href: `/panel/${inc.neg}/eventos?det=door:${inc.eid}@${inc.fid}`, ref: ["event_date", inc.fid] }).catch(() => undefined);
   }
   return { ok: true, hechos, sync: syncId, desfaseMs: desfase, desviado, quedan: Math.max(0, todos.length - L.length) };

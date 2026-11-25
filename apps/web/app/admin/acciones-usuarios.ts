@@ -278,7 +278,7 @@ export async function llaveRevocar(id: string, llaveId: string, motivo: string):
     await auditar(c, { actor: s.id, action: "usuario.llave.revocar", targetKind: "user", targetId: u.id, city: u.city_id, before: { llave: `viva en ${nombre}` }, after: { llave: "revocada", ref: { llave: llaveId } }, reason: m });
     return null;
   }, "Esa llave ya no entra a la cuenta. Le avisamos.");
-  if (r.ok && nombre && quien) await (await import("@/lib/avisos")).avisar(quien, "cuenta_llave_quitada", { dispositivo: nombre, motivo: "la quitó el equipo de To'Latino" }, { href: "/cuenta/ajustes/privacidad", ref: ["passkey", llaveId] });
+  if (r.ok && nombre && quien) await (await import("@/lib/avisos")).avisar(quien, "cuenta_llave_quitada", { dispositivo: nombre, motivo: { es: "la quitó el equipo de To'Latino", en: "the To'Latino team removed it" } }, { href: "/cuenta/ajustes/privacidad", ref: ["passkey", llaveId] });
   return r;
 }
 

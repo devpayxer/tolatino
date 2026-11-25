@@ -283,8 +283,7 @@ export async function votar(userId: string, kind: "post" | "comment", id: string
     const ref = `${kind}:${id}`;
     const ya = (await db().query(`select 1 from notifications where user_id = $1 and tpl = 'com_votes_10' and ref_kind = 'com_votos' and ref_id = $2`, [r.autor, ref])).rowCount;
     if (!ya) {
-      const u = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [r.autor])).rows[0];
-      await avisar(r.autor, "com_votes_10", { que: u?.lang === "en" ? (kind === "post" ? "post" : "comment") : (kind === "post" ? "publicación" : "comentario"), texto: (r.body || "").slice(0, 60) },
+      await avisar(r.autor, "com_votes_10", { que: { es: kind === "post" ? "publicación" : "comentario", en: kind === "post" ? "post" : "comment" }, texto: (r.body || "").slice(0, 60) },
         { href: `/comunidad/p/${kind === "post" ? id : (await db().query<{ p: string }>(`select post_id::text as p from com_comments where id = $1::bigint`, [id])).rows[0]?.p ?? ""}`, ref: ["com_votos", ref] });
     }
   }

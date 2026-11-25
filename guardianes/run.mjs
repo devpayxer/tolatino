@@ -14994,7 +14994,7 @@ const guardianes = {
     if (!/\["renovaciones", async \(\) => \(await import\("\.\/renovar-retencion"\)\)\.barrerRenovaciones\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "el barrido central termina las renovaciones cuya vieja ya no está retenida (barrerRenovaciones)");
     // Lo que ven la persona y el negocio: «tu banco no dejó» solo cuando fue el banco.
     const es = cuerpoFn(sinComent(ES), "renovacionRetencion"), re = cuerpoFn(sinComent(RE), "renovacionDeposito");
-    if (!/m === "banco" \? "hold_fallo" : "hold_no_renovada"/.test(es) || !/que: m === "banco" \? `el banco ya no deja retener/.test(re)) falla(G, ES, 0, "el aviso de una renovación que no salió dice el motivo verdadero (el banco solo si fue el banco)");
+    if (!/m === "banco" \? "hold_fallo" : "hold_no_renovada"/.test(es) || !/que: m === "banco" \? \{ es: `el banco ya no deja retener/.test(re)) falla(G, ES, 0, "el aviso de una renovación que no salió dice el motivo verdadero (el banco solo si fue el banco)");
     const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8")).join("\n");
     if (!/payment_id      bigint not null unique references payments \(id\)/.test(mig) || !/raise exception 'una renovación de retención no se borra \(estados\)'/.test(mig) || !/'hold_stuck'/.test(mig) || !/\('hold_no_renovada', 'tx'/.test(mig))
       falla(G, "packages/db/migrations", 0, "la base: una renovación por retención, nada se borra, la alerta hold_stuck y el aviso sin «tu banco»");
@@ -18536,19 +18536,40 @@ const guardianes = {
     // Los textos que no salen en el aviso: lo que se compara («=== "held"»), la llave de una configuración (valor("…")) y la clave de lo que pide soltar (pideSoltarSi("sirve", …)).
     const sinLlaves = (v) => v.replace(/(?:===|!==|==|!=)\s*(?:"[^"]*"|'[^']*')/g, "").replace(/\b(?:valor|pideSoltarSi|pideAlCancelar)\(\s*(?:"[^"]*"|'[^']*')/g, "");
     const conPalabras = (v0) => { const v = sinLlaves(v0); return [...[...v.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map((m) => m[1].replace(/\$\{[^}]*\}/g, "")), ...[...v.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1] ?? m[2] ?? "")]
+      // «AM»/«PM» y una ruta («/eventos/pagar/…»: sin espacios y con «/») no son texto de un idioma.
+      .filter((x) => !/^\s*(?:AM|PM)\s*$/.test(x) && !(/\//.test(x) && !/\s/.test(x.trim())))
       .some((x) => /[A-Za-zÁÉÍÓÚáéíóúñÑ]{2,}/.test(x)); };
+    // Los argumentos de primer nivel de una llamada: t[i] es su «(».
+    const argumentos = (t, i) => {
+      const out = []; let n = 0, q = null, ini = i + 1, tpl = [];
+      for (let j = i; j < t.length; j++) {
+        const c = t[j];
+        if (q) { if (c === "\\") { j++; continue; } if (q === "`" && c === "$" && t[j + 1] === "{") { tpl.push(n); n++; j++; q = null; continue; } if (c === q) q = null; continue; }
+        if (c === '"' || c === "'" || c === "`") { q = c; continue; }
+        if ("{([".includes(c)) n++;
+        else if ("})]".includes(c)) { n--; if (c === "}" && tpl.length && tpl[tpl.length - 1] === n) { tpl.pop(); q = "`"; continue; } if (n === 0) { out.push({ s: t.slice(ini, j).trim() }); return out; } }
+        else if (c === "," && n === 1) { out.push({ s: t.slice(ini, j).trim() }); ini = j + 1; }
+      }
+      return out;
+    };
+    // Pendientes: archivo → cuántas llamadas directas con un idioma se aceptan MIENTRAS se rediseñan. Solo puede bajar (LAUNCH «avisos en un solo idioma»).
+    const PENDIENTES_UN_IDIOMA = {};
     const revisar = (f, ln, que, obj) => {
-      for (const p of props(obj)) {
+      const ps = props(obj), nombres = new Set(ps.map((p) => /^(\w+)\s*:/.exec(p)?.[1]).filter(Boolean));
+      for (const p of ps) {
         if (p.startsWith("...")) continue;
         const k = /^(\w+)\s*:/.exec(p)?.[1] ?? p, v = p.slice(p.indexOf(":") + 1);
+        // Un par {x} + {x_en} (la plantilla en español lee {x} y la de inglés {x_en}: msg_equipo, ord_rep_msg, drv_sancion…) lleva cada idioma en su variable: está bien.
+        if (nombres.has(k + "_en") || (k.endsWith("_en") && nombres.has(k.slice(0, -3)))) continue;
         if (/en:/.test(v)) continue;
-        if (/\.es\b/.test(v)) falla(G, f, ln, `${que}: {${k}} toma solo el español (.es): va { es, en } (avisos › avisar pone el del que lo recibe)`);
+        if (/\b(?!rows\b)[A-Za-z_]\w*\[0\]/.test(v)) falla(G, f, ln, `${que}: {${k}} toma el [0] de un par (el español): va { es, en }`);
+        else if (/\.es\b/.test(v)) falla(G, f, ln, `${que}: {${k}} toma solo el español (.es): va { es, en } (avisos › avisar pone el del que lo recibe)`);
         else if (/\b[A-Za-z]\w*\([^()]*,\s*true\)/.test(v)) falla(G, f, ln, `${que}: {${k}} usa un ayudante con el idioma fijo en español (…, true): va { es: …(…, true), en: …(…, false) }`);
         else if (conPalabras(v)) falla(G, f, ln, `${que}: {${k}} lleva texto en un solo idioma: va { es, en }`);
       }
     };
     const defs = { avisarNeg: 0, avisarCliente: 0 };
-    for (const f of archivos.filter((x) => /^apps\/web\/lib\/[^/]+\.ts$/.test(x))) {
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/.+\.ts$/.test(x))) {
       const t = sinComent(f);
       for (const [nom, interna] of [["avisarNeg", "avisarNegocio("], ["avisarCliente", "avisar("]]) {
         const d = new RegExp(`\\nasync function ${nom}\\(([^)]*)\\) \\{`).exec(t);
@@ -18571,17 +18592,43 @@ const guardianes = {
     // avisarCliente: avisarCitaNueva, avisarCitaSalud, avisarCitaPro, avisarMesa…): el servicio de la cita ({svc,es}) sin {svc,en} y el día como DD/MM sin su MM/DD
     // en la misma consulta. Cada consulta con falla se cuenta UNA vez, aunque el archivo tenga varios ayudantes. Una consulta de PANTALLA (devuelve la fecha ISO «as ymd», p. ej. citas › miaCita)
     // no es un aviso: no se mira.
-    for (const f of archivos.filter((x) => /^apps\/web\/lib\/[^/]+\.ts$/.test(x))) {
+    const pend = {}; // llamadas directas con un idioma por archivo (la lista de pendientes: solo baja)
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/.+\.ts$/.test(x) || /^apps\/web\/app\/.*\/acciones[^/]*\.ts$/.test(x))) {
       const t = sinComent(f);
-      if (!/\bavisar(Negocio)?\(/.test(t)) continue;
-      // « con Ana» armado en español (un valor que EMPIEZA con « con ${…}») sin su « with ${…}» en el mismo archivo: al dueño en inglés le llega «Cita con …».
-      const conEs = /`\s*con \$\{/.exec(t);
-      if (conEs && !/`\s*with \$\{/.test(t)) falla(G, f, t.slice(0, conEs.index).split("\n").length, "un valor « con ${…}» va solo en español: va { es: ` con ${…}`, en: ` with ${…}` }");
+      if (!/\bavisar(Negocio|Telefono)?\(/.test(t)) continue;
+      // « con Ana» armado en español (un valor que EMPIEZA con « con ${…}») sin SU « with ${…}» (cada aparición, no solo la primera): al dueño en inglés le llega «Cita con …».
+      for (const conEs of t.matchAll(/`\s*con \$\{/g)) {
+        if (!/`\s*with \$\{/.test(t.slice(conEs.index, conEs.index + 220))) falla(G, f, t.slice(0, conEs.index).split("\n").length, "un valor « con ${…}» va solo en español (sin su « with ${…}» al lado): va { es: ` con ${…}`, en: ` with ${…}` }");
+      }
+      // 25 nov (LAUNCH «avisos en un solo idioma») · El OBJETO de cada llamada directa a avisar(uid, tpl, { … }) y avisarNegocio(biz, tpl, { … }): cada valor en Bi { es, en }
+      // (revisar: un .es suelto, texto sin su par en inglés, (…, true), el [0] de un par) y el dinero con usd (nunca «$» + toFixed a mano).
+      for (const m of t.matchAll(/(?<![\w$])(?<!function )avisar(?:Negocio|Telefono)?\(/g)) {
+        const a = argumentos(t, m.index + m[0].length - 1);
+        const ob = a[2]?.s;
+        if (!ob || ob[0] !== "{") continue;
+        const ln = t.slice(0, m.index).split("\n").length;
+        const antes = fallos.length;
+        revisar(f, ln, "una llamada a " + m[0].slice(0, -1), ob);
+        for (const p of props(ob)) if (!p.startsWith("...") && !/en:/.test(p) && /\$\$\{[^}]*\.toFixed\(|\$\$\{[^}]*toLocaleString\(/.test(p)) falla(G, f, ln, `una llamada a ${m[0].slice(0, -1)}: un valor de dinero armado a mano («$» + toFixed): usa lib/dinero-comun › usd`);
+        const n = fallos.length - antes;
+        if (n && f in PENDIENTES_UN_IDIOMA) { pend[f] = (pend[f] ?? 0) + n; fallos.length = antes; }
+      }
+      // Lo que se guarda para avisar DESPUÉS (aviso: { …, vars: { … } } / v: { … }, que otro ayudante pasa a avisar o avisarNegocio): lo mismo.
+      for (const m of t.matchAll(/\b(?:vars|(?:tpl:\s*"[a-z_0-9]+",\s*|aviso:\s*\{\s*biz:\s*[\w.]+,\s*)v)\s*:\s*(?=\{)/g)) {
+        const ob = objeto(t, m.index + m[0].length);
+        if (ob) revisar(f, t.slice(0, m.index).split("\n").length, "un aviso guardado para después (vars: { … })", ob);
+      }
       for (const m of t.matchAll(/`((?:[^`\\]|\\.)*)`/g)) {
         const q = m[1], l = t.slice(0, m.index).split("\n").length;
-        if (/\{svc,es\}/.test(q) && !/\{svc,en\}/.test(q) && /\b(select|returning)\b/i.test(q) && /\bas (servicio|svc|s)\b/.test(q) && !/\bas ymd\b/.test(q)) falla(G, f, l, "una consulta lee el servicio de la cita solo en español ({svc,es}): lee también {svc,en} (con respaldo al español) y mándalo como { es, en }");
+        // «-- pantalla» dentro de la consulta: marca explícita de que es de una pantalla (no de un aviso) y no lleva el servicio en los dos idiomas.
+        if (/\{svc,es\}/.test(q) && !/\{svc,en\}/.test(q) && /\b(select|returning)\b/i.test(q) && /\{svc,es\}[\s\S]{0,80}?\bas\s+\w+/.test(q) && !/--\s*pantalla\b/.test(q)) falla(G, f, l, "una consulta lee el servicio de la cita solo en español ({svc,es}): lee también {svc,en} (con respaldo al español) y mándalo como { es, en }");
         if (/'(FM)?DD\/(FM)?MM'/.test(q) && !/'(FM)?MM\/(FM)?DD'/.test(q)) falla(G, f, l, "una consulta da el día como DD/MM sin su MM/DD: el aviso en inglés lleva mes/día ({ es, en })");
       }
+    }
+    for (const [f, n] of Object.entries(PENDIENTES_UN_IDIOMA)) {
+      const hay = pend[f] ?? 0;
+      if (hay > n) falla(G, f, 0, `${hay} llamadas con un idioma (la lista de pendientes dice ${n}): la lista solo baja; arregla las nuevas con { es, en }`);
+      else if (hay < n) falla(G, f, 0, `la lista de pendientes dice ${n} y quedan ${hay}: bájala en PENDIENTES_UN_IDIOMA`);
     }
     if (defs.avisarNeg < 5) falla(G, "apps/web/lib", 0, `esperaba los avisarNeg de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs.avisarNeg}`);
     if (defs.avisarCliente < 6) falla(G, "apps/web/lib", 0, `esperaba los avisarCliente de viajes, noche, fiestas, inscripciones, visitas y citas; hallé ${defs.avisarCliente}`);

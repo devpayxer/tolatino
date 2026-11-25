@@ -269,7 +269,7 @@ const revisiones = (t, id) => n1(`select count(*)::int as n from gateway_reviews
     await envejecerRenov(h.id, 20 * 60);
     await RE.barrerRentas({ numero: R.num });
     h = await renovDe(R.pago);
-    const av = avisosDe('biz_renta', X.b).map((x) => x[3].que);
+    const av = avisosDe('biz_renta', X.b).map((x) => (x[3].que && typeof x[3].que === 'object' ? x[3].que.es : x[3].que));
     ok(h.st === 'failed' && h.err === 'nunca_llego' && (await pago(R.pago)).st === 'released' && av.length === 1 && /no se pudo renovar/.test(av[0]) && !/banco/.test(av[0]),
       `pasado el margen (25 h): «nunca llegó»; la vieja se suelta y el negocio lee el motivo verdadero, sin «el banco» («${av[0]}»)`);
     ok(await cerradaSola('hold_stuck', h.id) === 1, 'y la alerta se cerró sola, una vez');
@@ -285,7 +285,7 @@ const revisiones = (t, id) => n1(`select count(*)::int as n from gateway_reviews
     P.stripe.set(`hold_renewals:${h.id}`, [{ id: `pi_fake_9t6_cx_${hex()}`, estado: 'fallido', centavos: 5000 }]);
     await RE.barrerRentas({ numero: R.num });
     h = await renovDe(R.pago);
-    const av = avisosDe('biz_renta', X.b).map((x) => x[3].que);
+    const av = avisosDe('biz_renta', X.b).map((x) => (x[3].que && typeof x[3].que === 'object' ? x[3].que.es : x[3].que));
     ok(h.st === 'failed' && h.err === 'consulta_fallido' && (await pago(R.pago)).st === 'released' && av.length === 1 && /el banco ya no deja/.test(av[0]) && await eventos(R.op, 'hold_failed') === 1,
       `el banco dijo que no: se suelta la vieja y se avisa «el banco ya no deja» (${h.err})`);
     avisados.length = 0;

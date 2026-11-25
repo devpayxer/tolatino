@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { cfgSql } from "./config";
 import { db, tx, type AlGuardar } from "./db";
 import { populares, ventasSqlDe, type Ventas30 } from "./menu-ventas";
+import { usd as money } from "./dinero-comun";
 import { PUNTO_PUBLICO } from "./punto";
 import { ARTICULO_TIENDA_VIVO } from "./visible-publico";
 
@@ -26,12 +27,11 @@ type Bi = { es: string; en: string };
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi };
 const no = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, YMD = /^\d{4}-\d{2}-\d{2}$/, NUM = /^A-\d{1,10}$/, ID = /^\d{1,18}$/;
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const d2s = (d: Date) => d.toISOString().slice(0, 10);
 const s2d = (s: string) => new Date(`${s}T12:00:00Z`);
 const addD = (s: string, n: number) => { const d = s2d(s); d.setUTCDate(d.getUTCDate() + n); return d2s(d); };
 const mins = (h: string) => Number(h.slice(0, 2)) * 60 + Number(h.slice(3, 5));
-const DIA = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const DIA_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], DIA = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
 export const MAX_LINEAS = 10, MAX_QTY = 3;
 
@@ -211,9 +211,9 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
   // Lo retenido de un pedido que no se guardó (la base dijo que no) se libera en el acto.
   if (!r.ok && retenido) await (await import("./pagos/pasarela")).pasarela.liberar(retenido).catch(() => undefined);
   if (r.ok && aviso) {
-    const a = aviso as { cliente: string; n: number }, av = await import("./avisos"), n = `${a.n} ${a.n === 1 ? "artículo" : "artículos"}`;
+    const a = aviso as { cliente: string; n: number }, av = await import("./avisos"), n = `${a.n} ${a.n === 1 ? "artículo" : "artículos"}`, nEn = `${a.n} ${a.n === 1 ? "item" : "items"}`;
     const d = ship ? null : s2d(f.dia);
-    await av.avisarNegocio(f.negocio, "biz_apartado", { cliente: a.cliente, que: conPlan ? `apartó ${n} en plan · confirma que lo tienes (se cobra el abono)` : d ? `apartó ${n} para el ${DIA[d.getUTCDay()]} ${d.getUTCDate()} a las ${horaL(f.hora)} · confirma que lo tienes` : `pidió ${n} con envío · confirma que lo tienes` }, { href: `/panel/${f.negocio}/hoy?det=apt:${r.numero}`, ref: ["apartado", r.numero] });
+    await av.avisarNegocio(f.negocio, "biz_apartado", { cliente: a.cliente, que: conPlan ? { es: `apartó ${n} en plan · confirma que lo tienes (se cobra el abono)`, en: `put ${nEn} on hold on a plan · confirm you have it (the down payment is charged)` } : d ? { es: `apartó ${n} para el ${DIA[d.getUTCDay()]} ${d.getUTCDate()} a las ${horaL(f.hora)} · confirma que lo tienes`, en: `put ${nEn} on hold for ${DIA_EN[d.getUTCDay()]} ${d.getUTCDate()} at ${horaL(f.hora)} · confirm you have it` } : { es: `pidió ${n} con envío · confirma que lo tienes`, en: `ordered ${nEn} with shipping · confirm you have it` } }, { href: `/panel/${f.negocio}/hoy?det=apt:${r.numero}`, ref: ["apartado", r.numero] });
   }
   return r;
   } catch (e) {
@@ -317,7 +317,7 @@ async function devolverStock(c: PoolClient, op: string) {
 }
 const cerrarPropuestas = (c: PoolClient, op: string, st: "declined" | "expired") => c.query(`update change_proposals set status = $2, answered_at = now() where operation_id = $1::bigint and status = 'open'`, [op, st]);
 const recalcular = (c: PoolClient, op: string) => c.query(`update operations set total_cents = (select coalesce(sum(line_total_cents), 0) from operation_lines where operation_id = $1::bigint and status = 'ok') + coalesce(delivery_cents, 0), subtotal_cents = (select coalesce(sum(line_total_cents), 0) from operation_lines where operation_id = $1::bigint and status = 'ok'), updated_at = now() where id = $1::bigint`, [op]);
-const hastaL = (iso: string, tz: string) => new Date(iso).toLocaleString("es-US", { timeZone: tz, weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const hastaL = (iso: string, tz: string): Bi => { const f = (l: string) => new Date(iso).toLocaleString(l, { timeZone: tz, weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }); return { es: f("es-US"), en: f("en-US") }; };
 
 export type QueClienteApt = { que: "cancelar" } | { que: "quitar" } | { que: "otraTalla" };
 export async function apartadoCliente(userId: string, numero: string, a: QueClienteApt): Promise<Res<{ retenida?: true }>> {
@@ -342,7 +342,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
     if (!ok) return no("Este apartado ya cerró.", "This hold is already closed.");
     // 9v (quinta tanda) · La retención se mira (soltarRetencion): la que la pasarela no soltó alerta hold_stuck al equipo y se le dice a quien llama.
     const s = await (await import("./cobros")).soltarRetencion(x.op, { es: "Canceló el apartado (el cliente)", en: "Hold cancelled (the client)" });
-    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "canceló el apartado · vuelve al estante" }, href);
+    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "canceló el apartado · vuelve al estante", en: "canceled the hold · it goes back on the shelf" } }, href);
     return s.e === "retenida" ? { ok: true, retenida: true } : { ok: true };
   }
   if (a?.que === "quitar") {
@@ -356,7 +356,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
       return true;
     });
     if (!ok) return no("Eso ya se decidió.", "That was already decided.");
-    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "quitó lo que faltaba · guárdale lo demás" }, href);
+    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "quitó lo que faltaba · guárdale lo demás", en: "removed what was missing · keep the rest for them" } }, href);
     return { ok: true };
   }
   if (a?.que === "otraTalla") {
@@ -380,7 +380,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
       await ev(c, x.op, "accepted", "user", userId, { es: `Aceptó la otra talla (${P.map((p) => p.label).join(", ")})`, en: `Accepted the other size (${P.map((p) => p.label).join(", ")})` });
       return { ok: true };
     });
-    if (r.ok) await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "aceptó la otra talla · guárdasela" }, href);
+    if (r.ok) await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "aceptó la otra talla · guárdasela", en: "accepted the other size · set it aside for them" } }, href);
     return r;
   }
   return no("Eso no se puede.", "That cannot be done.");
@@ -443,7 +443,7 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       return true;
     });
     if (!ok) return no("Este apartado ya se respondió.", "This hold was already answered.");
-    await av.avisar(x.uid, "apt_falta", { negocio: x.bname, articulo: ln.n.es }, href);
+    await av.avisar(x.uid, "apt_falta", { negocio: x.bname, articulo: ln.n }, href);
     return { ok: true };
   }
   if (a?.que === "talla") {
@@ -466,7 +466,7 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       return { ok: true };
     });
     if (!ok.ok) return ok;
-    await av.avisar(x.uid, "apt_talla", { negocio: x.bname, articulo: ln.n.es, talla: ln.talla ?? "", otra }, href);
+    await av.avisar(x.uid, "apt_talla", { negocio: x.bname, articulo: ln.n, talla: ln.talla ?? "", otra }, href);
     return { ok: true };
   }
   if (a?.que === "enviado") {
@@ -544,7 +544,7 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
     // 25 nov (LAUNCH g) · La que Stripe ya había cobrada también se dice (nunca «Se liberó lo retenido»).
     const que: Bi = s.e === "retenida" || s.e === "cobrada" ? { es: `${que0.es}${sin.es}`, en: `${que0.en}${sin.en}` } : det === "no_envio" ? { es: `${que0.es} Se liberó lo retenido en tu tarjeta.`, en: `${que0.en} The hold on your card was released.` } : que0;
     await av.avisar(x.uid, "apt_vence", { que }, { href: `/apartado/${x.numero}`, ref: ["apartado", x.numero], sinSms: !x.sms });
-    if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "su apartado venció sin tu respuesta" }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
+    if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "su apartado venció sin tu respuesta", en: "their hold expired without your reply" } }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
   });
   B.fin();
 }

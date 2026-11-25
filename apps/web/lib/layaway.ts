@@ -1,6 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx, type AlGuardar } from "./db";
+import { usd as money } from "./dinero-comun";
 
 /* Layaway: plan de pagos de Tiendas (Fase 4 · bloque 4r). Diseño: neg-tienda-flow.js (abono del plan) y plan §4r.
    - Solo artículos «en plan» (shop_kind 'plan') de una Tienda con plan en Tu herramienta y cobro con tarjeta. Se recoge en la
@@ -17,7 +18,6 @@ type Bi = { es: string; en: string };
 type Q = PoolClient | ReturnType<typeof db>;
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi };
 const no = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const NUM = /^A-\d{1,10}$/;
 export { VERSION_PLAN, DIAS_PARA_CANCELAR, cuotas, terminos, type ReglaPlan } from "./layaway-comun";
 import { DIAS_PARA_CANCELAR, cuotas, terminos, VERSION_PLAN, type ReglaPlan } from "./layaway-comun";
@@ -88,7 +88,7 @@ async function opDe(where: string, args: unknown[], c: Q = db()): Promise<OpPlan
 }
 const hrefC = (x: OpPlan) => ({ href: `/apartado/${x.numero}`, ref: ["apartado", x.numero] as [string, string], sinSms: !x.sms });
 const hrefN = (x: OpPlan) => ({ href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] as [string, string] });
-const fechaL = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }) : "");
+const fechaL = (iso: string | null): { es: string; en: string } => { const f = (l: string) => (iso ? new Date(iso).toLocaleDateString(l, { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }) : ""); return { es: f("es-US"), en: f("en-US") }; };
 
 /* La tienda confirmó que lo tiene: se cobra el abono y empieza el calendario. Idempotente (también lo usa la reparación). */
 export async function activarPlan(opId: string): Promise<void> {
@@ -177,7 +177,7 @@ async function avisarPago(opId: string, monto: number, listo: boolean) {
   if (!x || !v) return;
   if (listo) {
     await av.avisar(x.uid, "lay_listo", { negocio: x.bname }, hrefC(x));
-    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "terminó de pagar su plan · tenlo listo para recoger" }, hrefN(x));
+    await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: "terminó de pagar su plan · tenlo listo para recoger", en: "finished paying their plan · have it ready for pickup" } }, hrefN(x));
   } else await av.avisar(x.uid, "lay_pagado", { negocio: x.bname, monto: money(monto), falta: money(v.falta) }, hrefC(x));
 }
 
@@ -234,7 +234,7 @@ export async function cancelarPlan(f: { numero: string; userId?: string; negocio
   const v = (await planDe(x.op))!, tienda = Math.max(0, v.pagado - r.cargo - dev.objetivo);
   const av = await import("./avisos"), msg = `Te devuelven ${money(dev.objetivo)} a tu tarjeta${tienda ? ` y la tienda te devuelve ${money(tienda)}` : ""} (lo abonado menos ${v.cargo} %).`;
   await av.avisar(x.uid, "lay_cancelado", { negocio: x.bname, devuelto: msg }, hrefC(x));
-  await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: por === "user" ? `canceló su plan · ${tienda ? `devuélvele ${money(tienda)} de lo que pagó en la tienda` : "vuelve al estante"}` : "plan cancelado · vuelve al estante" }, hrefN(x));
+  await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: por === "user" ? { es: `canceló su plan · ${tienda ? `devuélvele ${money(tienda)} de lo que pagó en la tienda` : "vuelve al estante"}`, en: `canceled their plan · ${tienda ? `give them back the ${money(tienda)} they paid at the store` : "it goes back on the shelf"}` } : { es: "plan cancelado · vuelve al estante", en: "plan canceled · it goes back on the shelf" } }, hrefN(x));
   return { ok: true, devuelto: dev.objetivo, tienda };
 }
 /* Devuelve por la tarjeta lo que toca de un plan cancelado (lo cobrado en la app menos lo que falte del cargo), del pago más
@@ -280,7 +280,7 @@ export async function barrerPlanes(f: { negocio?: string; userId?: string; numer
         await ev(c, y.op, "lay_late", "system", null, { es: `Pago ${y.seq} atrasado (${money(y.monto)})`, en: `Payment ${y.seq} late (${money(y.monto)})` });
         return true;
       });
-      if (u) { await av.avisar(x.uid, "lay_atrasado", { negocio: x.bname, monto: money(y.monto) }, hrefC(x)); await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: `se atrasó en su plan (${money(y.monto)})` }, hrefN(x)); }
+      if (u) { await av.avisar(x.uid, "lay_atrasado", { negocio: x.bname, monto: money(y.monto) }, hrefC(x)); await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: { es: `se atrasó en su plan (${money(y.monto)})`, en: `fell behind on their plan (${money(y.monto)})` } }, hrefN(x)); }
     } else {
       const k = await db().query(`update layaway_payments set reminded_at = now() where plan_id = $1::bigint and seq = $2 and reminded_at is null`, [y.plan, y.seq]);
       if (k.rowCount) await av.avisar(x.uid, "lay_pronto", { negocio: x.bname, monto: money(y.monto), fecha: fechaL(y.vence) }, hrefC(x));

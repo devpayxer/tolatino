@@ -80,7 +80,7 @@ export async function boletoAdmin(s: Staff, code: string): Promise<BoletoAdm | n
 export async function accionBoletoAdmin(s: Staff, code: string, paso: "reenviar" | "reemitir" | "anular", motivo: string): Promise<{ err?: string }> {
   if (!COD.test(String(code))) return { err: "Ese boleto no existe." };
   if (paso !== "reenviar" && !motivo) return { err: "Escribe el motivo." };
-  let aviso: { uid: string; tpl: string; vars: Record<string, string>; num: string } | null = null;
+  let aviso: { uid: string; tpl: string; vars: Record<string, string | { es: string; en: string }>; num: string } | null = null;
   const r = await tx(async (c: PoolClient) => {
     const b = (await c.query<{ id: string; st: string; ver: number; uid: string | null; op: string; city: string; num: string; t: Bi }>(
       `select t.id::text, t.status as st, t.qr_ver as ver, t.holder_user_id::text as uid, t.operation_id::text as op, t.city_id as city, o.number as num, e.title as t
@@ -98,12 +98,12 @@ export async function accionBoletoAdmin(s: Staff, code: string, paso: "reenviar"
       [b.id, b.op, b.city, paso === "reenviar" ? "reenviado" : paso === "reemitir" ? "reemitido" : "anulado", s.id, motivo.slice(0, 300) || null]);
     const L = { reenviar: ["Boleto", "Reenviado a su cuenta"], reemitir: [`QR versión ${b.ver}`, `QR versión ${b.ver + 1} (el anterior ya no entra)`], anular: ["Válido", "Anulado"] }[paso];
     await auditar(c, { actor: s.id, action: `boleto.${paso}`, targetKind: "ticket", targetId: code, city: b.city, before: { boleto: L[0] }, after: { boleto: L[1] }, reason: motivo || "Reenviar boletos" });
-    if (b.uid) aviso = { uid: b.uid, num: b.num, tpl: paso === "reenviar" ? "bol_reenviado" : paso === "reemitir" ? "bol_reemitido" : "bol_anulado", vars: { evento: b.t.es, codigo: code, motivo: motivo.slice(0, 200) } };
+    if (b.uid) aviso = { uid: b.uid, num: b.num, tpl: paso === "reenviar" ? "bol_reenviado" : paso === "reemitir" ? "bol_reemitido" : "bol_anulado", vars: { evento: b.t, codigo: code, motivo: motivo.slice(0, 200) } };
     return {};
   });
   // 8g · Reemitir o anular ya tocó el pase de Wallet en la transacción (trigger de 0129): que salga ya.
   if (paso !== "reenviar") pasesPronto();
-  if (aviso) { const a = aviso as { uid: string; tpl: string; vars: Record<string, string>; num: string }; await (await import("./avisos")).avisar(a.uid, a.tpl, a.vars, { href: `/eventos/orden/${a.num}`, ref: ["tickets", a.num] }); }
+  if (aviso) { const a = aviso as { uid: string; tpl: string; vars: Record<string, string | { es: string; en: string }>; num: string }; await (await import("./avisos")).avisar(a.uid, a.tpl, a.vars, { href: `/eventos/orden/${a.num}`, ref: ["tickets", a.num] }); }
   return r;
 }
 

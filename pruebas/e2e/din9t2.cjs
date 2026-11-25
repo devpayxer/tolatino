@@ -102,7 +102,7 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
   console.log('1 · Boletos: lo devuelto sale del libro');
   const pases = { pasesPronto: () => undefined };
   const BO = cargar('apps/web/lib/boletos-despues.ts', { './config': { cfgSql: () => '0', valores: async () => ({}) }, './cuenta': { normalizarTelefono: (x) => x }, './db': D,
-    './evt-comun': { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '' }, './pagos/pasarela': { pasarela: P }, './pases/pronto': pases, './cobros': cobros,
+    './evt-comun': { bi: (x) => x?.es ?? '', diaCorto: () => '', dinero: (c) => `$${(c / 100).toFixed(2)}`, hora: () => '', cuandoBi: () => ({ es: '', en: '' }) }, './pagos/pasarela': { pasarela: P }, './pases/pronto': pases, './cobros': cobros,
     './devolucion-consulta': DC, './consulta-pasarela': K, './dinero-alertas': alertas });
   Object.assign(BOS, BO);
   async function devBoletos(c, monto, idem) {
