@@ -4,8 +4,8 @@ import { cfgSql, valor } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, liberarOperacion, registrarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCuenta } from "./devolucion-cancelar";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, SWEEP } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
 import { diaNoche, hNoche, usdN, type Bi } from "./noche-comun";
@@ -222,7 +222,7 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, noche: nocheL(o), hora: hNoche(Number(o.det.arrive)), guarda: String(o.det.hold ?? await valor("noche_mesa_guardada_min")), dev: "", dep: "", puerta: "", ...extra }, { href: `/noche/${numero}`, ref: ["night", numero] });
 }
-async function avisarNeg(numero: string, tpl: string, extra: Record<string, string> = {}) {
+async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
@@ -252,21 +252,26 @@ const lock = (c: PoolClient, o: Pick<Op, "biz" | "night" | "det">) => c.query(`s
 
 /* ── El local responde una mesa (Panel › Hoy · detalle): Confirmar · Otra hora · No hay mesa ── */
 export type PasoMesa = "confirmar" | "otra" | "nohay";
-export async function responderMesa(negocio: string, numero: string, paso: PasoMesa, actorId: string, alt?: number): Promise<ResN> {
+export async function responderMesa(negocio: string, numero: string, paso: PasoMesa, actorId: string, alt?: number): Promise<ResN & { retenida?: true }> {
   if (!NUM_N.test(numero)) return no("Esa reserva no existe.", "That booking does not exist.");
   await vencerNoche({ negocio, numero });
   const o0 = await leer(db(), "o.business_id = $1 and o.number = $2", [negocio, numero]);
   if (!o0 || o0.det.k === "lista") return no("Esa reserva no existe.", "That booking does not exist.");
-  let despues: (() => Promise<void>) | null = null;
+  let despues: (() => Promise<void>) | null = null, retenida = false;
   const r = await tx(async (c): Promise<ResN> => {
     await lock(c, o0);
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o) return no("Esa reserva no existe.", "That booking does not exist.");
-    if (o.status !== "pending") return o.status === "expired" ? no("Pasó el tiempo para responder: la solicitud venció y se liberó el depósito.", "The time to reply passed: the request expired and the deposit was released.") : no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.");
+    // 9v (quinta tanda) · «se liberó» solo si ya no está retenido; si la pasarela no lo soltó todavía, se dice así.
+    if (o.status !== "pending") return o.status === "expired" ? (o.pay === "held" ? no("Pasó el tiempo para responder: la solicitud venció. La retención del depósito todavía no se soltó: se sigue soltando sola.", "The time to reply passed: the request expired. The deposit hold has not come off yet: it keeps being released automatically.") : no("Pasó el tiempo para responder: la solicitud venció y se liberó el depósito.", "The time to reply passed: the request expired and the deposit was released.")) : no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.");
     if (paso === "nohay") {
       await c.query(`update operations set status = 'declined', answered_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "night_no", "member", actorId);
-      despues = async () => { await liberarOperacion(o.id); await avisarCliente(numero, "noche_no", { dev: o.dep ? ` Se liberó tu depósito de ${usdN(o.dep)}.` : " No se cobró nada." }); };
+      // 9v (quinta tanda) · Lo que de verdad pasó con la retención (soltarRetencion: la que no se soltó alerta hold_stuck al equipo); nunca «Se liberó» sin mirar.
+      despues = async () => {
+        const s = await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); retenida = s.e === "retenida";
+        await avisarCliente(numero, "noche_no", { dev: o.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${usdN(o.dep)}.`, en: ` Your ${usdN(o.dep)} deposit was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
+      };
       return { ok: true };
     }
     if (paso === "confirmar" && o.dep > 0 && o.pay !== "held") return no("El depósito de esta solicitud ya no está retenido. Usa «No hay mesa»: el cliente puede pedirla otra vez.", "This request's deposit is no longer held. Use “No table”: the client can request again.");
@@ -290,17 +295,17 @@ export async function responderMesa(negocio: string, numero: string, paso: PasoM
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r;
+  return r.ok && retenida ? { ok: true, retenida: true } : r;
 }
 
 /* ── El cliente: salir de la lista / cancelar, aceptar la otra hora o «No me sirve» ── */
 export type QueNoche = "cancelar" | "aceptar" | "nogracias";
-export async function nocheCliente(userId: string, numero: string, que: QueNoche): Promise<ResN & { quedo?: boolean }> {
+export async function nocheCliente(userId: string, numero: string, que: QueNoche): Promise<ResN & { quedo?: boolean; retenida?: true }> {
   if (!NUM_N.test(numero)) return no("Esa reserva no existe.", "That booking does not exist.");
   await vencerNoche({ userId, numero });
   const o0 = await leer(db(), "o.user_id = $1 and o.number = $2", [userId, numero]);
   if (!o0) return no("Esa reserva no existe.", "That booking does not exist.");
-  let despues: (() => Promise<void>) | null = null, quedo = false;
+  let despues: (() => Promise<void>) | null = null, quedo = false, retenida = false;
   const r = await tx(async (c): Promise<ResN> => {
     await lock(c, o0);
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
@@ -320,11 +325,16 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
       await ev(c, o.id, pierde ? "night_cx_kept" : "night_cx", "user", userId, pierde ? { es: "Canceló después del corte: el depósito se queda con el local", en: "Cancelled after the cutoff: the venue keeps the deposit" } : undefined);
       // 9v (cuarta tanda) · Lo que de verdad pasó con el depósito (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida ·
       // nada; lo retenido lo suelta devolverAlCancelar), en el aviso ({dinero}); nunca «Te devolvemos» sin mirar.
+      // 9v (quinta tanda) · Al local también lo que pasó (dineroAlNegocio, {dinero} de biz_noche_cx: 0222), nunca «Se le devuelve» con lo decidido; y lo que se
+      // queda es lo que queda del depósito (una devolución parcial previa ya salió: queda = lo cobrado menos lo devuelto).
+      const queda = Math.max(0, (o.amount ?? o.dep) - (o.refunded ?? 0));
       despues = async () => {
         const d = pierde ? null : await devolverAlCancelar(o, { actorId: userId, motivo: "Cancelación antes del corte", idem: `ncx-${numero}`, por: "policy" });
         await avisarCliente(numero, "noche_cx", { dinero: dineroAlCancelarCliente(d, lista ? { es: "Saliste de la lista.", en: "You left the list." }
-          : pierde ? { es: `El depósito de ${usdN(o.dep)} se quedó con ${o.negocio}.`, en: `The ${usdN(o.dep)} deposit stayed with ${o.negocio}.` } : undefined) });
-        if (!lista) await avisarNeg(numero, "biz_noche_cx", { dep: pierde ? ` El depósito de ${usdN(o.dep)} se queda contigo.` : o.dep ? ` Se le devuelve el depósito de ${usdN(o.dep)}.` : "" });
+          : pierde ? (queda === o.dep ? { es: `El depósito de ${usdN(queda)} se quedó con ${o.negocio}.`, en: `The ${usdN(queda)} deposit stayed with ${o.negocio}.` }
+            : { es: `Lo que quedaba del depósito (${usdN(queda)}) se quedó con ${o.negocio}.`, en: `What was left of the deposit (${usdN(queda)}) stayed with ${o.negocio}.` }) : undefined) });
+        if (!lista) await avisarNeg(numero, "biz_noche_cx", { dinero: pierde ? (queda === o.dep ? { es: ` El depósito de ${usdN(queda)} se queda contigo.`, en: ` The ${usdN(queda)} deposit stays with you.` }
+          : { es: ` Lo que quedaba del depósito (${usdN(queda)}) se queda contigo.`, en: ` What was left of the deposit (${usdN(queda)}) stays with you.` }) : dineroAlNegocio(d ?? { e: "nada", monto: 0 }) });
       };
       return { ok: true };
     }
@@ -335,7 +345,10 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'alt_no', respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "alt_declined", "user", userId);
-      despues = async () => { await liberarOperacion(o.id); await avisarNeg(numero, "biz_noche_alt_no"); };
+      despues = async () => {
+        const s = await soltarRetencion(o.id, { es: "No le sirvió la otra hora (el cliente)", en: "The other time did not work (the client)" }); retenida = s.e === "retenida";
+        await avisarNeg(numero, "biz_noche_alt_no", { dinero: o.dep ? soltadaO(s, { es: " Se liberó su depósito.", en: " Their deposit was released." }, "negocio") : "" });
+      };
       return { ok: true };
     }
     if (o.dep > 0 && o.pay !== "held") return no("Tu depósito ya no está retenido. Elige «No me sirve» y pide la mesa otra vez.", "Your deposit is no longer held. Choose “Doesn’t work” and request the table again.");
@@ -347,7 +360,7 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r.ok ? { ok: true, quedo } : r;
+  return r.ok ? { ok: true, quedo, ...(retenida ? { retenida: true as const } : {}) } : r;
 }
 
 /* ── El local cancela una mesa (motivo obligatorio; devolución completa siempre) ── */
@@ -459,8 +472,8 @@ export async function vencerNoche(f: { negocio?: string; userId?: string; numero
      returning o.id::text, o.number as num, o.deposit_cents as dep`, a)).rows;
   for (const v of vencidas) {
     await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'night_exp', 'system', $2::jsonb)`, [v.id, JSON.stringify({ es: "El local no contestó a tiempo", en: "The venue did not reply in time" })]);
-    await liberarOperacion(v.id);
-    await avisarCliente(v.num, "noche_exp", { dev: v.dep ? ` Se liberó tu depósito de ${usdN(v.dep)}.` : " No se cobró nada." });
+    const s = await soltarRetencion(v.id, { es: "La mesa venció sin respuesta del local", en: "The table request expired without the venue replying" });
+    await avisarCliente(v.num, "noche_exp", { dev: v.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${usdN(v.dep)}.`, en: ` Your ${usdN(v.dep)} deposit was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
   }
   const sinAlt = (await db().query<{ id: string }>(
     `update operations o set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'alt_vencida', door_code = null, updated_at = now()
@@ -468,7 +481,8 @@ export async function vencerNoche(f: { negocio?: string; userId?: string; numero
   for (const v of sinAlt) {
     await db().query(`update change_proposals set status = 'expired', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [v.id]).catch(() => undefined);
     await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'cancelled', 'system', $2::jsonb)`, [v.id, JSON.stringify({ es: "No respondió a la otra hora", en: "No answer to the new time" })]);
-    await liberarOperacion(v.id);
+    // Sin aviso: si no se soltó, la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el barrido la vuelve a soltar.
+    if ((await soltarRetencion(v.id, SWEEP)).e === "retenida") continue;
   }
   // «Pasó la noche» (no es un botón): a las 6 AM se cierra. Lista con entrada / mesa que llegó → done; sin marcar → done «sin_marcar».
   const fin = (await db().query<{ num: string; uid: string }>(

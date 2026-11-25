@@ -46,7 +46,8 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await viajeAccion(x.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setConfirmar(false);
-    if (r.ok) { setFlash(ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 9v (quinta tanda) · «No me sirve» con la retención que la pasarela no soltó todavía (retenida): nunca «se liberó».
+    if (r.ok) { setFlash("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   const dL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return es ? `${DS.es[d.getUTCDay()]} ${d.getUTCDate()} ${MS.es[d.getUTCMonth()]}` : `${DS.en[d.getUTCDay()]} ${MS.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const B = x.negocio.nombre, cuando = `${dL(x.ymd)} · ${horaL(x.m)}`, st = x.pago.st, liberado = st === "released", dev = x.pago.devuelto;

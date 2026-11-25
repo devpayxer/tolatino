@@ -317,7 +317,7 @@ const recalcular = (c: PoolClient, op: string) => c.query(`update operations set
 const hastaL = (iso: string, tz: string) => new Date(iso).toLocaleString("es-US", { timeZone: tz, weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 export type QueClienteApt = { que: "cancelar" } | { que: "quitar" } | { que: "otraTalla" };
-export async function apartadoCliente(userId: string, numero: string, a: QueClienteApt): Promise<Res> {
+export async function apartadoCliente(userId: string, numero: string, a: QueClienteApt): Promise<Res<{ retenida?: true }>> {
   const x = NUM.test(String(numero)) ? await leer("o.number = $1 and o.user_id = $2", [numero, userId]) : null;
   if (!x) return no("Ese apartado no existe.", "That hold does not exist.");
   const av = await import("./avisos"), href = { href: `/panel/${x.biz}/hoy?det=apt:${numero}`, ref: ["apartado", numero] as [string, string] };
@@ -337,9 +337,10 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
       return true;
     });
     if (!ok) return no("Este apartado ya cerró.", "This hold is already closed.");
-    await (await import("./cobros")).liberarOperacion(x.op);
+    // 9v (quinta tanda) · La retención se mira (soltarRetencion): la que la pasarela no soltó alerta hold_stuck al equipo y se le dice a quien llama.
+    const s = await (await import("./cobros")).soltarRetencion(x.op, { es: "Canceló el apartado (el cliente)", en: "Hold cancelled (the client)" });
     await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "canceló el apartado · vuelve al estante" }, href);
-    return { ok: true };
+    return s.e === "retenida" ? { ok: true, retenida: true } : { ok: true };
   }
   if (a?.que === "quitar") {
     const ok = await tx(async (c) => {
@@ -416,8 +417,9 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       return true;
     });
     if (!ok) return no("Este apartado ya se respondió.", "This hold was already answered.");
-    await (await import("./cobros")).liberarOperacion(x.op);
-    await av.avisar(x.uid, "apt_no", { negocio: x.bname }, href);
+    // 9v (quinta tanda) · {dinero} de apt_no (0222): lo que de verdad pasó con la retención; la que no se soltó alerta hold_stuck al equipo.
+    const s = await (await import("./cobros")).soltarRetencion(x.op, { es: "No lo tiene (la tienda)", en: "Not in stock (the store)" });
+    await av.avisar(x.uid, "apt_no", { negocio: x.bname, dinero: (await import("./devolucion-cancelar")).soltadaO(s, { es: " No se cobró nada.", en: " Nothing was charged." }) }, href);
     return { ok: true };
   }
   if ((a?.que === "falta" || a?.que === "talla") && x.plan) return no("Un plan no se cambia: si no lo tienes, usa «No lo tengo» (se libera el abono).", "A layaway cannot change: if you do not have it, use “Not in stock” (the down payment is released).");
@@ -527,12 +529,16 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
       await devolverStock(c, x.op);
       await cerrarPropuestas(c, x.op, "expired");
       await (await import("./layaway")).cerrarPlanPendiente(c, x.op, "cancelled");
-      await ev(c, x.op, "expired", "system", null, det === "no_envio" ? { es: "La tienda no lo envió a tiempo: se liberó lo retenido", en: "The store did not ship in time: the hold was released" } : det === "no_paso" ? { es: `Pasaron las ${x.hh} horas: volvió al estante`, en: `${x.hh} hours passed: back on the shelf` } : det === "sin_respuesta" ? { es: "La tienda no respondió a tiempo", en: "The store did not reply in time" } : { es: "No decidió a tiempo qué hacer con lo que faltaba", en: "No decision in time on the missing item" });
+      await ev(c, x.op, "expired", "system", null, det === "no_envio" ? { es: "La tienda no lo envió a tiempo: se suelta lo retenido", en: "The store did not ship in time: the hold is being released" } : det === "no_paso" ? { es: `Pasaron las ${x.hh} horas: volvió al estante`, en: `${x.hh} hours passed: back on the shelf` } : det === "sin_respuesta" ? { es: "La tienda no respondió a tiempo", en: "The store did not reply in time" } : { es: "No decidió a tiempo qué hacer con lo que faltaba", en: "No decision in time on the missing item" });
       return true;
     });
     if (!ok) return;
-    await (await import("./cobros")).liberarOperacion(x.op);
-    const que = det === "no_envio" ? `${x.bname} no envió tu pedido a tiempo. Se liberó lo retenido en tu tarjeta.` : det === "no_paso" ? `Pasaron las ${x.hh} horas y tu apartado en ${x.bname} volvió al estante.` : det === "sin_respuesta" ? `${x.bname} no respondió a tiempo a tu apartado.` : `Tu apartado en ${x.bname} se cerró sin decidir qué hacer con lo que faltaba.`;
+    // 9v (quinta tanda) · Lo que de verdad pasó con la retención (soltarRetencion: la que no se soltó alerta hold_stuck al equipo); nunca «Se liberó» sin mirar.
+    const s = await (await import("./cobros")).soltarRetencion(x.op, { es: "El apartado venció", en: "The hold expired" });
+    const sin = (await import("./devolucion-cancelar")).sinSoltarCliente(s.monto);
+    const que0: Bi = det === "no_envio" ? { es: `${x.bname} no envió tu pedido a tiempo.`, en: `${x.bname} did not ship your order in time.` } : det === "no_paso" ? { es: `Pasaron las ${x.hh} horas y tu apartado en ${x.bname} volvió al estante.`, en: `${x.hh} hours passed and your hold at ${x.bname} went back on the shelf.` }
+      : det === "sin_respuesta" ? { es: `${x.bname} no respondió a tiempo a tu apartado.`, en: `${x.bname} did not reply to your hold in time.` } : { es: `Tu apartado en ${x.bname} se cerró sin decidir qué hacer con lo que faltaba.`, en: `Your hold at ${x.bname} closed without a decision on the missing item.` };
+    const que: Bi = s.e === "retenida" ? { es: `${que0.es}${sin.es}`, en: `${que0.en}${sin.en}` } : det === "no_envio" ? { es: `${que0.es} Se liberó lo retenido en tu tarjeta.`, en: `${que0.en} The hold on your card was released.` } : que0;
     await av.avisar(x.uid, "apt_vence", { que }, { href: `/apartado/${x.numero}`, ref: ["apartado", x.numero], sinSms: !x.sms });
     if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "su apartado venció sin tu respuesta" }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
   });
@@ -564,7 +570,7 @@ export async function cobrarApartado(opId: string): Promise<{ cobrado: number; l
        from payments p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint and o.kind = 'hold' and p.kind = 'full' and p.status = 'held'`, [opId])).rows[0];
   if (!p) return { cobrado: 0, liberado: 0 };
   const monto = Math.min(p.tot, p.held);
-  if (monto <= 0) { await cob.liberarOperacion(opId); return { cobrado: 0, liberado: p.held }; }
+  if (monto <= 0) { const s = await cob.soltarRetencion(opId, { es: "Envío de la tienda sin nada que cobrar", en: "Store shipment with nothing to charge" }); return { cobrado: 0, liberado: s.e === "retenida" ? 0 : p.held }; }
   const fee = Math.min(await cob.comision(db(), "apt", Math.min(p.sub, monto)), monto);
   const r = await pasarela.cobrar(p.pi, monto, fee);
   if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); return { cobrado: 0, liberado: 0 }; }
@@ -588,7 +594,8 @@ export async function repararApartados(negocio: string) {
       order by p.held_at nulls first, p.id limit 20`, [negocio])).rows;
   await B.cada(L, (x) => `op ${x.op}`, async (x) => {
     if (x.stage === "on_the_way" || x.stage === "delivered") await cobrarApartado(x.op);
-    else await (await import("./cobros")).liberarOperacion(x.op);
+    // Sigue retenida: la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el próximo barrido la vuelve a soltar.
+    else { const cob = await import("./cobros"); if ((await cob.soltarRetencion(x.op, cob.SWEEP)).e === "retenida") return; }
   });
   B.fin();
 }

@@ -9,7 +9,8 @@ import type { Res } from "./acciones";
 
 const SIN: Res = { ok: false, mensaje: { es: "No tienes acceso a esta parte del panel.", en: "You don’t have access to this part of the dashboard." } };
 async function entrar(id: unknown) { if (!(await mismoOrigen())) return null; return typeof id === "string" ? accesoPanel(id, "ord") : null; }
-const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
+// 9v (quinta tanda) · retenida: la pasarela no soltó todavía la retención que se soltaba (cobros › soltarRetencion): el panel no dice «se liberó».
+const r2 = (r: { ok: true; retenida?: true } | { ok: false; msg: { es: string; en: string } }): Res & { retenida?: true } => (r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, mensaje: r.msg });
 
 export async function mercPaso(id: string, numero: string, paso: PasoMerc): Promise<Res> {
   const a = await entrar(id); if (!a) return SIN;

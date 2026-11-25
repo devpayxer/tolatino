@@ -1,7 +1,7 @@
 // Prueba al revés del guardián devueltoSoloSiSalio (25 nov, 9v): un patrocinio dice «devuelto» (el panel: «Reserva cancelada. Te devolvemos $15.00 a tu
 // tarjeta») solo con lo que la pasarela devolvió. Pasaba: «Cancelar reserva» del dueño devolvía lo decidido (refund_cents) aunque Stripe hubiera rechazado la
 // devolución (din9v2). Ampliado (25 nov, segunda tanda): boletos y eventos (cancelar, «Devolver» del panel, «Devolución total», el evento cancelado,
-// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
+// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Quinta: toda retención que se suelta (soltarRetencion) y los avisos al negocio (0222). Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -82,9 +82,9 @@ const casos = [
   // liberarOperacion da por soltada una retención que la pasarela no soltó.
   ['retención no soltada como soltada', 'apps/web/lib/cobros.ts', '  if (!r.ok) return "fallo";', '  if (!r.ok) return "liberada";'],
   // devolverAlCancelar no mira lo que dijo liberarOperacion.
-  ['cancelar no mira la retención', 'apps/web/lib/cobros.ts', '    if (l !== "fallo") return { e: "liberada"', '    if (l || true) return { e: "liberada"'],
+  ['cancelar no mira la retención', 'apps/web/lib/cobros.ts', '    return s.e === "retenida" ? { e: "retenida", monto: s.monto } : { e: "liberada"', '    return false ? { e: "retenida", monto: s.monto } : { e: "liberada"'],
   // La retención que no se soltó no alerta a nadie.
-  ['retención sin alerta', 'apps/web/lib/cobros.ts', '    if (h) await (await import("./dinero-alertas")).alertar("hold_stuck", ', '    if (false) await (await import("./dinero-alertas")).alertar("hold_stuck", '],
+  ['retención sin alerta', 'apps/web/lib/cobros.ts', '  await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:', '  if (false) await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:'],
   // El panel cuenta la retención soltada como devolución hecha («Le devolvimos todo»).
   ['soltada cuenta como hecha', 'apps/web/lib/devolucion-cancelar.ts', 'hechas: c.hechas + (d.e === "hecha" ? 1 : 0)', 'hechas: c.hechas + (d.e === "hecha" || d.e === "liberada" ? 1 : 0)'],
   // El panel del evento privado vuelve a «el cliente recibe su depósito completo».
@@ -95,6 +95,33 @@ const casos = [
   ['evento privado calla la fallida', 'apps/web/app/(app)/privado/[num]/EstadoEvp.tsx', '    : x.devolucion.fallida ? [E2(', '    : false ? [E2('],
   // La vista del evento privado deja de leer lo que no está hecho.
   ['evento privado sin devolucionesDe', 'apps/web/lib/evento-privado.ts', 'devolucion: o.status === "cancelled" ? await devolucionesDe(o.id) : { camino: 0, fallida: 0 },', 'devolucion: { camino: 0, fallida: 0 },'],
+  // 25 nov (quinta tanda) · Lo retenido que se suelta sin cancelación y los avisos al negocio cuando cancela quien pagó (0222).
+  // soltarRetencion deja de mirar lo que dijo liberarOperacion.
+  ['soltar no mira la pasarela', 'apps/web/lib/cobros.ts', '  if (l !== "fallo") return { e: l, monto: 0 };', '  if (l || true) return { e: "liberada", monto: 0 };'],
+  // «No hay mesa» vuelve a tirar lo que dijo la pasarela.
+  ['no hay mesa tira el resultado', 'apps/web/lib/noche-reservas.ts', 'const s = await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); retenida = s.e === "retenida";', 'await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); const s = { e: "liberada" as const, monto: 0 };'],
+  // Un pedido vencido vuelve a liberarOperacion directo (sin alerta si no se suelta).
+  ['pedido vencido con liberarOperacion', 'apps/web/lib/pedidos.ts', '(await soltarRetencion(id, { es: "El pedido venció sin que lo aceptaran", en: "The order expired without being accepted" })).e === "retenida"', '(await liberarOperacion(id)) === "fallo"'],
+  // El barrido de pagos vuelve a soltar tirando el resultado.
+  ['barrido tira el resultado', 'apps/web/lib/cobros.ts', '    else if ((await soltarRetencion(x.op, SWEEP)).e === "retenida") return;', '    else await liberarOperacion(x.op);'],
+  // El mercado suelta con .then y tira lo que pasó.
+  ['mercado con then', 'apps/web/lib/mercado.ts', '  const s = await soltarRetencion(o.id, { es: "Canceló el pedido del mercado (el cliente)", en: "Market order cancelled (the client)" });', '  soltarRetencion(o.id, { es: "x", en: "x" }).then(() => undefined); const s = { e: "liberada" as const, monto: 0 };'],
+  // La fiesta vencida vuelve a decir «Se liberó tu depósito» sin mirar.
+  ['fiesta dice se liberó sin mirar', 'apps/web/lib/fiestas-reservas.ts', 'dev: v.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${money(v.dep)}.`, en: ` Your ${money(v.dep)} deposit was released.` }) : ""', 'dev: v.dep ? ` Se liberó tu depósito de ${money(v.dep)}.` : ""'],
+  // La plantilla del viaje sin cupo vuelve a «Liberamos lo retenido».
+  ['plantilla viaje_no sin {dinero}', 'packages/db/migrations/0222_avisos_retencion_y_negocio_lo_que_paso.sql', '{"es":"{negocio} no tiene cupo para el {dia} a las {hora}.{dinero}","en":"{negocio} has no room on {dia} at {hora}.{dinero}"}', '{"es":"{negocio} no tiene cupo para el {dia} a las {hora}. Liberamos lo retenido.","en":"{negocio} has no room on {dia} at {hora}. We released the hold."}'],
+  // Al negocio de la noche otra vez «Se le devuelve el depósito» con lo decidido.
+  ['biz_noche_cx con lo decidido', 'apps/web/lib/noche-reservas.ts', 'if (!lista) await avisarNeg(numero, "biz_noche_cx", { dinero: pierde ?', 'if (!lista) await avisarNeg(numero, "biz_noche_cx", { dep: o.dep ? ` Se le devuelve el depósito de ${usdN(o.dep)}.` : "", x: pierde ?'],
+  // Lo que se queda la fiesta vuelve a ser el depósito entero.
+  ['fiesta se queda el depósito entero', 'apps/web/lib/fiestas-reservas.ts', '      const queda = Math.max(0, (o.amount ?? o.dep) - (o.refunded ?? 0));', '      const queda = o.dep;'],
+  // El panel de la noche vuelve a «se liberó su depósito» sin mirar.
+  ['panel noche sin retenida', 'apps/web/app/panel/NocheReservas.tsx', '(r) => (r?.retenida ? E2(', '(r) => (false ? E2('],
+  // La acción del mercado deja de pasar retenida.
+  ['acción mercado sin retenida', 'apps/web/app/panel/acciones-mercado.ts', '(r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) :', '(r.ok ? { ok: true } :'],
+  // «No me sirve» de la fiesta vuelve a «se liberó tu depósito» sin mirar.
+  ['fiesta no me sirve sin retenida', 'apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx', 'setFlash("retenida" in r && r.retenida ? E2(', 'setFlash(false ? E2('],
+  // La alerta vuelve a llamarse solo «retención renovada».
+  ['etiqueta hold_stuck renovada', 'apps/web/lib/dinero-alertas.ts', 'hold_stuck: { es: "una retención atascada (no se soltó o no se renovó)", en: "a stuck hold (not released or not renewed)" },', 'hold_stuck: { es: "una retención renovada sin respuesta", en: "a renewed hold with no answer" },'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

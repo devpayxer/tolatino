@@ -2,7 +2,8 @@ import "server-only";
 import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
-import { cobrarOperacion, devolverPago, liberarOperacion } from "./cobros";
+import { cobrarOperacion, devolverPago, soltarRetencion } from "./cobros";
+import { soltadaO, type Soltada } from "./devolucion-cancelar";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
 import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } from "./citas";
 
@@ -17,7 +18,7 @@ import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } f
    - Recordatorios 24 h y 2 h antes (si los pidió) y «Avísame si se libera una hora» cuando una cita se cae.
    Nada se borra: cada paso es un estado y un evento. */
 type Bi = { es: string; en: string };
-export type ResC = { ok: true; numero?: string } | { ok: false; msg: Bi };
+export type ResC = { ok: true; numero?: string; retenida?: true } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResC => ({ ok: false, msg: { es, en } });
 const NUM = /^C-\d{1,10}$/;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
@@ -55,7 +56,7 @@ const SAL_C: Record<string, string> = { cita_ok: "sal_cita_ok", cita_ok_dep: "sa
 const SAL_N: Record<string, string> = { biz_cita_cx: "biz_sal_cx", biz_cita_alt_ok: "biz_sal_alt_ok", biz_cita_tarde: "biz_sal_tarde" };
 // Profesionales (4l): al negocio nunca el trámite (los avisos que lo nombran tienen su versión sin {servicio}).
 const PRO_N: Record<string, string> = { biz_cita_cx: "biz_pro_cx" };
-async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {
+async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const d = await datos(numero);
   if (!d) return;
   if (d.rubro === "salud") { const t = SAL_C[tpl]; if (!t) return; tpl = t; }
@@ -72,6 +73,8 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   await avisarNegocio(d.biz, tpl, { cliente: d.cliente, servicio: d.servicio, dia: d.dia, hora: d.hora, dep: "", ...extra }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
 }
 const devL = (dep: number) => (dep ? ` Te devolvemos ${money(dep)} del depósito.` : "");
+/* 9v (quinta tanda) · {dev} con lo que de verdad pasó con la retención (soltarRetencion): la que la pasarela no soltó todavía se dice así, nunca «Te devolvemos». */
+const devS = (s: Soltada, dep: number) => (dep ? soltadaO(s, devL(dep)) : "");
 
 /* «Avísame si se libera una hora»: una cita de ese día se cayó; se avisa una vez a quien lo pidió (con esa persona o
    con cualquiera). */
@@ -123,13 +126,13 @@ export async function vencerCitas(f: { negocio?: string; userId?: string; numero
       returning o.number`, [f.negocio ?? null, f.userId ?? null, f.numero ?? null])).rows;
   for (const x of venc) {
     await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'expired', 'system', $2::jsonb)`, [x.id, JSON.stringify({ es: "Sin respuesta: venció", en: "No reply: expired" })]);
-    const d = await datos(x.number); await liberarOperacion(x.id);
-    await avisarCliente(x.number, "cita_exp", { dev: d?.pay === "held" ? devL(d.dep) : "" }); await horaLibre(x.number);
+    const d = await datos(x.number), s = await soltarRetencion(x.id, { es: "La cita venció sin respuesta", en: "The booking expired without a reply" });
+    await avisarCliente(x.number, "cita_exp", { dev: d?.pay === "held" ? devS(s, d.dep) : "" }); await horaLibre(x.number);
   }
   for (const x of alt) {
     await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'alt_expired', 'system', $2::jsonb)`, [x.id, JSON.stringify({ es: "Venció la otra hora", en: "The new time expired" })]);
-    const d = await datos(x.number); await liberarOperacion(x.id);
-    await avisarCliente(x.number, "cita_alt_fin", { dev: d?.pay === "held" ? devL(d.dep) : "" }); await horaLibre(x.number);
+    const d = await datos(x.number), s = await soltarRetencion(x.id, { es: "Venció la otra hora de la cita", en: "The booking's new time expired" });
+    await avisarCliente(x.number, "cita_alt_fin", { dev: d?.pay === "held" ? devS(s, d.dep) : "" }); await horaLibre(x.number);
   }
   for (const x of chg) await avisarCliente(x.number, "cita_chg_no");
   // Recordatorios: a lo sumo una vez por minuto por proceso.
@@ -196,7 +199,7 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
       await ev(c, o.id, ok ? "accepted" : "declined", "member", actorId);
       despues = ok
         ? async () => { await cobrarOperacion(o.id); await avisarCliente(numero, o.dep ? "cita_ok_dep" : "cita_ok"); }
-        : async () => { await liberarOperacion(o.id); await avisarCliente(numero, "cita_no", { dev: o.pay === "held" ? devL(o.dep) : "" }); await horaLibre(numero); };
+        : async () => { const s = await soltarRetencion(o.id, { es: "No puede tomar la cita (el negocio)", en: "Cannot take the booking (the business)" }); await avisarCliente(numero, "cita_no", { dev: o.pay === "held" ? devS(s, o.dep) : "" }); await horaLibre(numero); };
       return { ok: true };
     }
     if (paso === "otra") {
@@ -304,7 +307,7 @@ export type QueCliente = "cancelar" | "aceptar" | "nogracias" | "tarde" | "recib
 export async function citaCliente(userId: string, numero: string, que: QueCliente, extra?: number, por: "user" | "compa" = "user"): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ userId, numero });
-  let despues: (() => Promise<void>) | null = null;
+  let despues: (() => Promise<void>) | null = null, retenida = false;
   const biz = (await db().query<{ b: string }>(`select business_id as b from operations where number = $1 and user_id = $2 and kind = 'appointment'`, [numero, userId])).rows[0]?.b;
   if (!biz) return no("Esa cita no existe.", "That booking does not exist.");
   const r = await tx(async (c): Promise<ResC> => {
@@ -333,7 +336,8 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);
       await ev(c, o.id, "cancelled", por, userId, pierde ? { es: `Canceló con menos de ${o.cxh} h: el depósito se queda`, en: `Cancelled less than ${o.cxh} h before: deposit kept` } : undefined);
       despues = async () => {
-        if (o.pay === "held") await liberarOperacion(o.id);
+        // 9v (quinta tanda) · La retención se mira (soltarRetencion): la que no se soltó alerta hold_stuck al equipo; biz_cita_cx no habla de ella.
+        if (o.pay === "held") retenida = (await soltarRetencion(o.id, { es: "Cancelación de la cita (el cliente)", en: "Booking cancelled (the client)" })).e === "retenida";
         else if (o.pay === "captured" && aTiempo && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "policy", actorId: userId, motivo: "Cancelación a tiempo", idem: `cx-${numero}` });
         await avisarNeg(numero, "biz_cita_cx", { dep: pierde ? ` El depósito de ${money(o.dep)} se queda contigo.` : "" });
         await horaLibre(numero);
@@ -348,7 +352,7 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
         await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
         await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'alt_no', updated_at = now() where id = $1::bigint`, [o.id]);
         await ev(c, o.id, "alt_declined", "user", userId);
-        despues = async () => { await liberarOperacion(o.id); await horaLibre(numero); };
+        despues = async () => { retenida = (await soltarRetencion(o.id, { es: "No le sirvió la otra hora (el cliente)", en: "The other time did not work (the client)" })).e === "retenida"; await horaLibre(numero); };
         return { ok: true };
       }
       await c.query(`update operations set status = 'confirmed', scheduled_at = ($2::date + make_interval(mins => $3::int)) at time zone $4, confirmed_at = now(), updated_at = now() where id = $1::bigint`, [o.id, p.ymd, p.m, o.tz]);
@@ -376,7 +380,8 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r;
+  // 9v (quinta tanda) · La retención que la pasarela no soltó todavía (soltarRetencion: el equipo ya tiene la alerta hold_stuck) también se dice a quien llama.
+  return r.ok && retenida ? { ...r, retenida: true } : r;
 }
 
 /* Aviso al negocio cuando el cliente pide cambiar una cita confirmada (lo llama el Booking al enviar el cambio). */

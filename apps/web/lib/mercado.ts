@@ -1,7 +1,8 @@
 import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
-import { comision, liberarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
+import { comision, registrarRetencion, retenerPedido, soltarRetencion, SWEEP, tarjetaDe } from "./cobros";
+import { sinSoltarCliente, soltadaO, type Soltada } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { AGOTADO_SQL } from "./menu";
 import { pasarela } from "./pagos/pasarela";
@@ -31,7 +32,7 @@ import { base, dirEntrega, topeFree } from "./pedir";
 type Bi = { es: string; en: string };
 type Q = PoolClient | ReturnType<typeof db>;
 const no = (es: string, en: string) => ({ ok: false as const, msg: { es, en } });
-export type ResM = { ok: true; numero?: string } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
+export type ResM = { ok: true; numero?: string; retenida?: true; mensaje?: Bi } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const NUM = /^M-\d{1,10}$/;
 const ID = /^\d{1,18}$/;
@@ -283,7 +284,12 @@ export async function vencerMercado(f: { negocio?: string; numero?: string }) {
   const w = f.negocio ? "o.business_id = $1" : f.numero ? "o.number = $1" : "true", v = f.negocio ? [f.negocio] : f.numero ? [f.numero] : [];
   const exp = (await db().query<{ id: string; number: string }>(
     `update operations o set status = 'expired', updated_at = now() where o.kind = 'market_order' and o.status = 'pending' and o.respond_by <= now() and ${w} returning o.id::text, o.number`, v)).rows;
-  for (const x of exp) { await ev(db(), x.id, "expired", "system", null, { es: "No aceptaron en 10 minutos", en: "Not accepted within 10 minutes" }); await liberarOperacion(x.id); await avisar(x.number, "merc_exp", {}); }
+  // 9v (quinta tanda) · {dinero} de merc_exp (0222): lo que de verdad pasó con la retención (la que no se soltó alerta hold_stuck al equipo).
+  for (const x of exp) {
+    await ev(db(), x.id, "expired", "system", null, { es: "No aceptaron en 10 minutos", en: "Not accepted within 10 minutes" });
+    const s = await soltarRetencion(x.id, { es: "El pedido del mercado venció sin que lo aceptaran", en: "The market order expired without being accepted" });
+    await avisar(x.number, "merc_exp", { dinero: dineroMerc(s) });
+  }
   await db().query(
     `update change_proposals cp set status = 'expired', answered_at = now() from operations o where o.id = cp.operation_id and o.kind = 'market_order' and cp.kind = 'items' and cp.status = 'open' and cp.respond_by <= now() and ${w}`, v);
   // 9n-4 · «Está bien, cobrar»: si a los 10 min de mandar el peso el cliente no lo tocó, un recordatorio (una vez por pedido: la marca rec10 es el candado).
@@ -467,8 +473,11 @@ export async function cancelarMercado(userId: string, numero: string): Promise<R
     return x;
   });
   if (!o) return no("Ya no se puede cancelar: el mercado lo aceptó. Escríbeles o pide ayuda.", "It can no longer be cancelled: the market accepted it. Message them or ask for help.");
-  await liberarOperacion(o.id);
-  return { ok: true };
+  // 9v (quinta tanda) · La retención se mira: si la pasarela no la soltó todavía, la pantalla lo dice (y el equipo tiene la alerta hold_stuck), no «No se cobró nada» a secas.
+  const s = await soltarRetencion(o.id, { es: "Canceló el pedido del mercado (el cliente)", en: "Market order cancelled (the client)" });
+  if (s.e !== "retenida") return { ok: true };
+  const t = sinSoltarCliente(s.monto);
+  return { ok: true, retenida: true, mensaje: { es: `Cancelado.${t.es}`, en: `Cancelled.${t.en}` } };
 }
 
 /* ── Negocio ── */
@@ -491,7 +500,7 @@ export type PasoMerc = "aceptar" | "rechazar" | "mandar" | "mas" | "listo" | "ca
 export async function pasoMercado(negocio: string, numero: string, paso: PasoMerc, actorId: string): Promise<ResM> {
   if (!NUM.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
   await vencerMercado({ negocio });
-  let despues: (() => Promise<void>) | null = null;
+  let despues: (() => Promise<void>) | null = null, retenida = false;
   const r = await tx(async (c): Promise<ResM> => {
     await c.query(`select pg_advisory_xact_lock(hashtext('pedido:' || $1))`, [negocio]);
     const o = await opDe(c, numero, { negocio }, true);
@@ -506,7 +515,7 @@ export async function pasoMercado(negocio: string, numero: string, paso: PasoMer
       } else {
         await c.query(`update operations set status = 'declined', answered_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
         await ev(c, o.id, "declined", "member", actorId, { es: "El mercado no puede hoy", en: "The market cannot today" });
-        despues = async () => { await liberarOperacion(o.id); await avisar(numero, "merc_no", {}); };
+        despues = async () => { const s = await soltarRetencion(o.id, { es: "El mercado no puede (rechazó el pedido)", en: "The market cannot (declined the order)" }); retenida = s.e === "retenida"; await avisar(numero, "merc_no", { dinero: dineroMerc(s) }); };
       }
       return { ok: true };
     }
@@ -566,7 +575,7 @@ export async function pasoMercado(negocio: string, numero: string, paso: PasoMer
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r;
+  return r.ok && retenida ? { ok: true, retenida: true } : r;
 }
 
 /* Pesar una línea: peso real + foto de la balanza (subida por quien pesa). La base calcula lo que se cobra. */
@@ -622,11 +631,17 @@ export async function repararMercado(negocio: string) {
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
       where p.business_id = $1 and p.status = 'held' and o.kind = 'market_order' and o.status in ('declined', 'expired', 'cancelled', 'done') order by p.held_at nulls first, p.id limit 20`, [negocio])).rows;
   // 9t9 · Lo más viejo primero (antes sin orden) y cada pedido por su cuenta (lib/barrido-uno.ts): uno que falla no deja a los demás sin cobrar o liberar.
-  await (await import("./barrido-uno")).cadaUno(`mercado.reparar ${negocio}`, L, (x) => `op ${x.op}`, async (x) => { if (x.st === "done") await liquidarMercado(x.op); else await liberarOperacion(x.op); });
+  await (await import("./barrido-uno")).cadaUno(`mercado.reparar ${negocio}`, L, (x) => `op ${x.op}`, async (x) => {
+    if (x.st === "done") await liquidarMercado(x.op);
+    // Sigue retenida: la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el próximo barrido la vuelve a soltar.
+    else if ((await soltarRetencion(x.op, SWEEP)).e === "retenida") return;
+  });
 }
 
 /* Avisos (al cliente con enlace a su pedido; al negocio con enlace al detalle). */
-async function avisar(numero: string, tpl: string, extra: Record<string, string>) {
+/* {dinero} de merc_no y merc_exp (0222; antes la plantilla decía «No se cobró nada» a secas, también con la retención todavía en la tarjeta). */
+const dineroMerc = (s: Soltada) => soltadaO(s, { es: " No se cobró nada.", en: " Nothing was charged." });
+async function avisar(numero: string, tpl: string, extra: Record<string, string | Bi>) {
   const { avisar: a, avisarNegocio } = await import("./avisos");
   const o = (await db().query<{ uid: string; biz: string; negocio: string; cliente: string | null }>(
     `select o.user_id::text as uid, b.id as biz, b.name as negocio, u.first_name as cliente from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id where o.number = $1`, [numero])).rows[0];

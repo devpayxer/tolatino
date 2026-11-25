@@ -297,7 +297,8 @@ export async function repararPlanes(negocio: string) {
   await B.cada(L, (x) => `pago ${x.pid}`, async (x) => {
     if (x.kind === "balance") await liquidarCuota(x.pid);
     else if (x.ost === "confirmed") await activarPlan(x.op);
-    else if (x.ost !== "pending") await (await import("./cobros")).liberarOperacion(x.op);
+    // Sigue retenida: la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el próximo barrido la vuelve a soltar.
+    else if (x.ost !== "pending") { const cob = await import("./cobros"); if ((await cob.soltarRetencion(x.op, cob.SWEEP)).e === "retenida") return; }
   });
   const C = (await db().query<{ op: string }>(
     `select o.id::text as op from layaway_plans lp join operations o on o.id = lp.operation_id where o.business_id = $1 and lp.status = 'cancelled'

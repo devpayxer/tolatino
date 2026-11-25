@@ -104,6 +104,28 @@ export async function liberarOperacion(opId: string): Promise<"liberada" | "nada
   return "liberada";
 }
 
+/* 25 nov (9v, quinta tanda) · Soltar lo retenido y decir qué pasó, para TODO el que suelta (vence, «No hay mesa», «No me sirve», el mercado no acepta, el
+   apartado se cancela, el barrido): «liberada» (se soltó, aquí o ya lo había hecho otro), «nada» (no había nada retenido) o «retenida» (la pasarela no la
+   soltó: sigue en la tarjeta; el barrido, repararPagos, la vuelve a soltar). Si quedó retenida, UNA alerta hold_stuck al equipo de dinero por cobro (sujeto
+   liberar:<cobro>; se cierra sola cuando el cobro deja de estar retenido: dinero-alertas › cerrarAlertasResueltas). Antes cada uno tiraba lo que contestaba
+   liberarOperacion y el aviso decía «Se liberó tu depósito» aunque Stripe no la hubiera soltado. Quien avisa lo mira (lib/devolucion-cancelar.ts ›
+   sinSoltarCliente / sinSoltarNegocio). Guardián devueltoSoloSiSalio (11). */
+export async function soltarRetencion(opId: string, motivo: Msg): Promise<import("./devolucion-cancelar").Soltada> {
+  const l = await liberarOperacion(opId);
+  if (l !== "fallo") return { e: l, monto: 0 };
+  // La pasarela no soltó la retención: sigue en la tarjeta (el barrido, repararPagos, la vuelve a soltar). El equipo de dinero lo sabe, una vez por cobro.
+  const h = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null }>(
+    `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city from payments y where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') and y.status = 'held' order by y.id limit 1`, [opId])).rows[0];
+  if (!h) return { e: "liberada", monto: 0 };
+  await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:${h.id}`, { monto: h.amt, negocio: h.biz, ciudad: h.city, detalle: {
+    es: `${motivo.es}: no se pudo soltar la retención de ${money(h.amt)} (Stripe no la soltó). No se cobró nada; el barrido la sigue soltando: si no se suelta, suéltala desde Stripe.`,
+    en: `${motivo.en}: the ${money(h.amt)} hold could not be released (Stripe did not release it). Nothing was charged; the sweep keeps releasing it: if it does not come off, release it from Stripe.` } }).catch(() => undefined);
+  return { e: "retenida", monto: h.amt };
+}
+
+/* El motivo de la alerta hold_stuck cuando la suelta un barrido (nadie la pidió en ese momento). */
+export const SWEEP: Msg = { es: "El barrido de pagos", en: "The payments sweep" };
+
 /* Repara lo que quedó a medias (una llamada a la pasarela que falló): retenido de un pedido que ya no se da → liberar;
    retenido de uno aceptado → cobrar. Una solicitud con otra hora propuesta (change_proposed) sigue VIVA: su retención no se
    toca (4v: se liberaba el depósito mientras el cliente decidía; guardián reparaVivas). Barato: índice por negocio y solo los retenidos. */
@@ -118,7 +140,8 @@ export async function repararPagos(negocio: string) {
   const B = new (await import("./barrido-uno")).Fallos(`pagos.reparar ${negocio}`);
   await B.cada(L, (x) => `op ${x.op}`, async (x) => {
     if (x.st === "confirmed" || x.st === "done") await cobrarOperacion(x.op);
-    else await liberarOperacion(x.op);
+    // Sigue retenida: la alerta hold_stuck ya la tiene el equipo (soltarRetencion) y el próximo barrido la vuelve a soltar.
+    else if ((await soltarRetencion(x.op, SWEEP)).e === "retenida") return;
   });
   // Pedido del mercado (4p): nunca se captura lo retenido completo; se cobra lo que pesó (liquidarMercado) o se libera.
   await B.uno("mercado", async () => (await import("./mercado")).repararMercado(negocio));
@@ -355,15 +378,9 @@ export async function devolverAlCancelar(o: { id: string; pay: string | null; pi
   x: { actorId: string | null; motivo: string; idem: string; por?: "business" | "policy"; seQueda?: number }): Promise<import("./devolucion-cancelar").DevCancelar> {
   const por = x.por ?? "business", quien = por === "business" ? { es: "lo canceló el negocio", en: "The business cancelled" } : { es: "lo canceló el cliente", en: "The client cancelled" };
   if (o.pay === "held") {
-    const l = await liberarOperacion(o.id);
-    if (l !== "fallo") return { e: "liberada", monto: o.amount ?? 0 };
-    // La pasarela no soltó la retención: sigue en la tarjeta (el barrido, repararPagos, la vuelve a soltar). El equipo de dinero lo sabe, una vez por cobro.
-    const h = (await db().query<{ id: string; amt: number; biz: string | null; city: string | null }>(
-      `select y.id::text, y.amount_cents as amt, y.business_id as biz, y.city_id as city from payments y where y.operation_id = $1::bigint and y.kind in ('full', 'deposit') and y.status = 'held' order by y.id limit 1`, [o.id])).rows[0];
-    if (h) await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:${h.id}`, { monto: h.amt, negocio: h.biz, ciudad: h.city, detalle: {
-      es: `${x.motivo} (${quien.es}): no se pudo soltar la retención de ${money(h.amt)} (Stripe no la soltó). No se cobró nada; el barrido la sigue soltando: si no se suelta, suéltala desde Stripe.`,
-      en: `${quien.en}: the ${money(h.amt)} hold could not be released (Stripe did not release it). Nothing was charged; the sweep keeps releasing it: if it does not come off, release it from Stripe.` } }).catch(() => undefined);
-    return { e: h ? "retenida" : "liberada", monto: h?.amt ?? o.amount ?? 0 };
+    // La retención se mira (soltarRetencion): la que la pasarela no soltó es «retenida» y alerta hold_stuck al equipo, una vez por cobro.
+    const s = await soltarRetencion(o.id, { es: `${x.motivo} (${quien.es})`, en: quien.en });
+    return s.e === "retenida" ? { e: "retenida", monto: s.monto } : { e: "liberada", monto: o.amount ?? 0 };
   }
   if (!o.pid || !o.amount || !["captured", "partially_refunded", "refunded"].includes(o.pay ?? "")) return { e: "nada", monto: 0 };
   const falta = o.amount - (o.refunded ?? 0) - Math.max(0, Math.round(x.seQueda ?? 0));

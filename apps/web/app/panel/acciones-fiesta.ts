@@ -58,7 +58,8 @@ export async function fiestaDia(negocio: string, dia: string, ocupada: boolean):
 
 /* ── La solicitud de fecha (4v): Confirmar · Otra hora · No puedo; «Terminó»; cancelar una fecha confirmada (con motivo).
    Miembro activo con acceso a «Hoy y pedidos» (parte ord). El servidor decide todo y cada paso queda en la línea de tiempo. ── */
-const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
+// 9v (quinta tanda) · retenida: la pasarela no soltó todavía la retención que se soltaba (cobros › soltarRetencion): el panel no dice «se liberó».
+const r2 = (r: { ok: true; retenida?: true } | { ok: false; msg: { es: string; en: string } }): Res & { retenida?: true } => (r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, mensaje: r.msg });
 // 9v · El negocio canceló: la acción también dice lo que pasó con cada devolución (hechas · en camino · no salieron), para que el panel no diga «todos reciben su dinero» sin mirar.
 const rDev = (r: { ok: true; devolucion?: DevCuenta } | { ok: false; msg: { es: string; en: string } }): Res & { devolucion?: DevCuenta } => (r.ok ? { ok: true, devolucion: r.devolucion } : { ok: false, mensaje: r.msg });
 async function entrar(id: unknown) { if (!(await mismoOrigen())) return null; return typeof id === "string" ? accesoPanel(id, "ord") : null; }

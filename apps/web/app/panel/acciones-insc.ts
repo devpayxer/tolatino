@@ -11,7 +11,8 @@ import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
-const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
+// 9v (quinta tanda) · retenida: la pasarela no soltó todavía la retención que se soltaba (cobros › soltarRetencion): el panel no dice «se liberó».
+const r2 = (r: { ok: true; retenida?: true } | { ok: false; msg: { es: string; en: string } }): Res & { retenida?: true } => (r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, mensaje: r.msg });
 // 9v · El negocio canceló: la acción también dice lo que pasó con cada devolución (hechas · en camino · no salieron), para que el panel no diga «todos reciben su dinero» sin mirar.
 const rDev = (r: { ok: true; devolucion?: DevCuenta } | { ok: false; msg: { es: string; en: string } }): Res & { devolucion?: DevCuenta } => (r.ok ? { ok: true, devolucion: r.devolucion } : { ok: false, mensaje: r.msg });
 async function entrar(id: unknown) {

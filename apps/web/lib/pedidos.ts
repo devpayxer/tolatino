@@ -1,6 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
-import { cobrarOperacion, liberarOperacion, pagoDe, repararPagos, type PagoVista } from "./cobros";
+import { cobrarOperacion, pagoDe, repararPagos, soltarRetencion, type PagoVista } from "./cobros";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import type { Lang } from "./idioma";
 import { hora } from "./pedir";
@@ -47,8 +47,9 @@ export async function vencer(f: { negocio?: string; userId?: string; numero?: st
     }
     return ids;
   });
-  // Lo retenido en tarjeta de un pedido que nadie aceptó se libera completo.
-  for (const { id } of vencidos) await liberarOperacion(id);
+  // Lo retenido en tarjeta de un pedido que nadie aceptó se libera completo. 9v (quinta tanda) · Se mira: la que la pasarela no soltó alerta hold_stuck al
+  // equipo (soltarRetencion); el aviso pay_released solo sale cuando de verdad se soltó (liberarOperacion) y el barrido la vuelve a soltar.
+  for (const { id } of vencidos) if ((await soltarRetencion(id, { es: "El pedido venció sin que lo aceptaran", en: "The order expired without being accepted" })).e === "retenida") continue;
 }
 
 /* ── Lo que ve el panel ── */
@@ -220,7 +221,7 @@ const DESDE: Record<Paso, { status: string[]; stage?: (string | null)[]; mode?: 
   listo: { status: ["confirmed"], stage: ["accepted", "preparing"], mode: "pickup" }, encamino: { status: ["confirmed"], stage: ["accepted", "preparing", "ready"], mode: "delivery" },
   entregado: { status: ["confirmed"] },
 };
-export type ResPaso = { ok: true } | { ok: false; msg: Bi };
+export type ResPaso = { ok: true; retenida?: true } | { ok: false; msg: Bi };
 export async function cambiarPaso(negocio: string, numero: string, paso: Paso, actorId: string, alGuardar?: AlGuardar): Promise<ResPaso> {
   if (!/^\d{1,12}$/.test(numero) || !DESDE[paso]) return { ok: false, msg: { es: "Ese pedido no existe.", en: "That order does not exist." } };
   await vencer({ negocio, numero });
@@ -257,7 +258,7 @@ export async function cambiarPaso(negocio: string, numero: string, paso: Paso, a
   }).then(async (r) => {
     // La tarjeta: se cobra al aceptar; se libera si se rechaza (después de guardar el paso, fuera de la transacción).
     if (r.ok && "op" in r && paso === "aceptar") await cobrarOperacion(r.op as string);
-    if (r.ok && "op" in r && paso === "rechazar") await liberarOperacion(r.op as string);
+    if (r.ok && "op" in r && paso === "rechazar" && (await soltarRetencion(r.op as string, { es: "El negocio rechazó el pedido", en: "The business declined the order" })).e === "retenida") return { ok: true as const, retenida: true as const };
     if (r.ok && "op" in r && paso === "entregado") await (await import("./correo/recibos")).reciboPedido(r.op as string); // 2q: recibo por correo
     if (r.ok && "op" in r && paso === "entregado") await (await import("./avisos")).avisarEntregado(r.op as string); // 9l: «Tu pedido llegó»
     return r.ok ? { ok: true as const } : r;
@@ -296,7 +297,7 @@ export async function cancelarDelCliente(userId: string, numero: string, motivo:
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'cancelled', 'user', $2)`, [o.id, userId]);
     return { ok: true, op: o.id } as const;
   }).then(async (r) => {
-    if (r.ok && "op" in r) await liberarOperacion(r.op as string);
+    if (r.ok && "op" in r && (await soltarRetencion(r.op as string, { es: "El cliente canceló el pedido", en: "The client cancelled the order" })).e === "retenida") return { ok: true as const, retenida: true as const };
     return r.ok ? { ok: true as const } : r;
   });
 }

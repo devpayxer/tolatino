@@ -17865,9 +17865,12 @@ const guardianes = {
       for (const k of ["viaje_cx", "noche_cx", "fiesta_cx", "insc_cx", "evp_cancelado", "evp_cancelado_negocio"]) if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'\\n`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó) en español e inglés: seguiría diciendo lo decidido`);
       const co = existsSync("apps/web/lib/cobros.ts") ? sinComent("apps/web/lib/cobros.ts") : "";
       if (!/const r = await pasarela\.liberar\(p\.pi\)[^\n]*\n\s*if \(!r\.ok\) return "fallo";/.test(cuerpoFn(co, "liberarOperacion"))) falla(G, "apps/web/lib/cobros.ts", 0, "liberarOperacion no dice «fallo» cuando la pasarela no soltó la retención: se contaría como soltada");
-      const dac = cuerpoFn(co, "devolverAlCancelar");
-      if (!/const l = await liberarOperacion\(o\.id\);\n\s*if \(l !== "fallo"\) return \{ e: "liberada"/.test(dac) || !/if \(h\) await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(dac) || !/return \{ e: h \? "retenida" : "liberada"/.test(dac))
-        falla(G, "apps/web/lib/cobros.ts", 0, "devolverAlCancelar no mira si la retención se soltó: una que la pasarela no soltó diría «se suelta» sin alertar a nadie (hold_stuck)");
+      // (quinta tanda) La retención se suelta por soltarRetencion (mira lo que dijo liberarOperacion y alerta hold_stuck UNA vez si quedó retenida).
+      const dac = cuerpoFn(co, "devolverAlCancelar"), sr = cuerpoFn(co, "soltarRetencion");
+      if (!/const s = await soltarRetencion\(o\.id, /.test(dac) || !/return s\.e === "retenida" \? \{ e: "retenida", monto: s\.monto \} : \{ e: "liberada"/.test(dac))
+        falla(G, "apps/web/lib/cobros.ts", 0, "devolverAlCancelar no mira si la retención se soltó (soltarRetencion): una que la pasarela no soltó diría «se suelta»");
+      if (!/const l = await liberarOperacion\(opId\);\n\s*if \(l !== "fallo"\) return \{ e: l, monto: 0 \};/.test(sr) || !/\n  await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(sr) || !/return \{ e: "retenida", monto: h\.amt \};/.test(sr))
+        falla(G, "apps/web/lib/cobros.ts", 0, "soltarRetencion no mira lo que dijo liberarOperacion o no alerta hold_stuck (una vez por cobro: liberar:<cobro>) cuando la retención no se soltó");
       const dc = existsSync("apps/web/lib/devolucion-cancelar.ts") ? sinComent("apps/web/lib/devolucion-cancelar.ts") : "";
       if (!/hechas: c\.hechas \+ \(d\.e === "hecha" \? 1 : 0\)/.test(dc) || !/liberadas: c\.liberadas \+ \(d\.e === "liberada" \? 1 : 0\), retenidas: c\.retenidas \+ \(d\.e === "retenida" \? 1 : 0\)/.test(dc)
         || !/if \(x\.liberadas\) return \{ es: "No se había cobrado nada/.test(dc) || !/Retenciones \(no se había cobrado\)/.test(dc)) falla(G, "apps/web/lib/devolucion-cancelar.ts", 0, "el panel cuenta una retención soltada (o sin soltar) como devolución: diría «Le devolvimos todo» sin haber cobrado");
@@ -17876,6 +17879,78 @@ const guardianes = {
       if (!/x\.devolucion\.fallida \? \[E2\(/.test(evu) || !/x\.devolucion\.camino \? \[E2\(/.test(evu)) falla(G, EV, 0, "la pantalla del evento privado no dice la devolución en camino y la que no salió (x.devolucion)");
       if (/E2\("Te devolvemos ", "We refund "\)/.test(evu)) falla(G, EV, 0, "la pantalla del evento privado vuelve a «Te devolvemos» con lo decidido");
       if (!/devolucion: o\.status === "cancelled" \? await devolucionesDe\(o\.id\)/.test(ep)) falla(G, "apps/web/lib/evento-privado.ts", 0, "la vista del evento privado no lee las devoluciones que no están hechas (devolucionesDe)"); }
+    // (11) 25 nov (quinta tanda) · Lo retenido que se suelta sin cancelación (vence, «No hay mesa», «No puedo», «No me sirve», el mercado no acepta, la tienda
+    // no lo tiene, los barridos) y lo que se le dice AL NEGOCIO cuando cancela quien pagó. Pasaba: cada uno tiraba lo que contestaba liberarOperacion
+    // («liberada» · «nada» · «fallo») y el aviso, la pantalla y el panel decían «Se liberó tu depósito» / «Liberamos lo retenido» aunque la pasarela no la
+    // hubiera soltado (sigue en la tarjeta, sin alerta a nadie); biz_noche_cx, biz_fiesta_cx y biz_insc_cx decían «Se le devuelve el depósito de $X» con lo
+    // decidido, y «El depósito de $X se queda contigo» con el depósito entero aunque ya hubiera una devolución parcial. Regla: (a) liberarOperacion solo se
+    // llama dentro de soltarRetencion (cobros.ts), que mira el resultado y alerta hold_stuck; (b) ninguna llamada a liberarOperacion ni a soltarRetencion tira
+    // el resultado (una instrucción «await …(…)» suelta, «void …» o «.then(…)»); (c) en los archivos que sueltan, «Se liberó tu/su…», «Se le liberó» o
+    // «Liberamos lo retenido» solo en la misma línea que mira lo que pasó (soltadaO(…), s.e === …, o.pay === "held"); (d) las plantillas de 0222 usan
+    // {dinero} en español e inglés y quien las manda pasa dinero: …; (e) los avisos al negocio dicen dineroAlNegocio(d) y lo que queda del depósito (queda);
+    // (f) el panel y la pantalla de «No me sirve» miran retenida; (g) la etiqueta de hold_stuck no es solo «renovada». Al revés: alrevesDevueltoSoloSiSalio.
+    { const LLAMA = /(liberarOperacion|soltarRetencion)\(/;
+      const SUELTA = /(^|[;{}]|=>|\belse\b|\)\s)\s*(?:void\s+)?await\s+(?:\(await import\("\.\/cobros"\)\)\.|\w+\.)?(liberarOperacion|soltarRetencion)\(/;
+      let llamadas = 0;
+      for (const f of codigo) {
+        if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+        const t0 = readFileSync(f, "utf8");
+        if (!LLAMA.test(t0)) continue;
+        const t = sinComent(f), L = t.split("\n"), esCobros = f === "apps/web/lib/cobros.ts";
+        const srI = esCobros ? t.indexOf("\nexport async function soltarRetencion(") : -1, srF = srI < 0 ? -1 : t.indexOf("\n}", srI + 1);
+        let pos = 0;
+        L.forEach((l, i) => {
+          const ini = pos; pos += l.length + 1;
+          if (!LLAMA.test(l) || /^\s*(import|export (async )?function) /.test(l)) return;
+          for (const m of l.matchAll(/(liberarOperacion|soltarRetencion)\(/g)) {
+            llamadas++;
+            if (m[1] === "liberarOperacion" && !(esCobros && ini > srI && ini < srF)) falla(G, f, i + 1, "liberarOperacion fuera de soltarRetencion: una retención que la pasarela no soltó no alertaría a nadie (hold_stuck) y el aviso diría «se liberó»; usa soltarRetencion y mira lo que dice");
+          }
+          if (SUELTA.test(l) || /\bvoid\s+(?:\w+\.)?(liberarOperacion|soltarRetencion)\(/.test(l) || /(liberarOperacion|soltarRetencion)\([^\n]*\)\.then\(/.test(l))
+            falla(G, f, i + 1, "se tira lo que dijo la pasarela al soltar la retención («liberada» · «nada» · «retenida»): guárdalo y míralo (const s = await soltarRetencion(…)) antes de decir «se liberó»");
+        });
+      }
+      if (llamadas < 20) falla(G, "apps/web/lib/cobros.ts", 0, `esperaba al menos 20 llamadas que sueltan una retención (soltarRetencion) en apps/web; hallé ${llamadas} (¿cambió la forma? actualiza este guardián)`);
+      const SUELTAN = ["apps/web/lib/noche-reservas.ts", "apps/web/lib/fiestas-reservas.ts", "apps/web/lib/inscripciones.ts", "apps/web/lib/viajes.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/apartados.ts", "apps/web/lib/mercado.ts", "apps/web/lib/pedidos.ts", "apps/web/lib/layaway.ts"];
+      for (const f of SUELTAN) {
+        if (!existsSync(f)) { falla(G, f, 0, "falta el archivo (suelta retenciones)"); continue; }
+        sinComent(f).split("\n").forEach((l, i) => {
+          if (/Se liberó (tu|su|lo retenido)|Se le liberó|Liberamos lo retenido/.test(l) && !/soltadaO\(|\bs\.e === "(retenida|liberada)"|o\.pay === "held"/.test(l))
+            falla(G, f, i + 1, "«se liberó» sin mirar lo que pasó con la retención (soltadaO(s, …) o s.e): la pasarela pudo no soltarla");
+          if (/Se le devuelve/.test(l)) falla(G, f, i + 1, "«Se le devuelve» con lo decidido: va lo que pasó (dineroAlNegocio(d))");
+        });
+      }
+      const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+      for (const k of ["biz_noche_cx", "biz_fiesta_cx", "biz_insc_cx", "biz_noche_alt_no", "biz_fiesta_alt_no", "viaje_no", "viaje_exp", "merc_no", "merc_exp", "apt_no"])
+        if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'\\n`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó con la retención o la devolución) en español e inglés: seguiría diciendo lo decidido`);
+      const MANDA = { "apps/web/lib/noche-reservas.ts": [["biz_noche_cx", "dineroAlNegocio(d"], ["biz_noche_alt_no", "soltadaO(s, "]], "apps/web/lib/fiestas-reservas.ts": [["biz_fiesta_cx", "dineroAlNegocio(d"], ["biz_fiesta_alt_no", "soltadaO(s, "]],
+        "apps/web/lib/inscripciones.ts": [["biz_insc_cx", "dineroAlNegocio(d"]], "apps/web/lib/viajes.ts": [["viaje_no", "dineroSoltado(s)"], ["viaje_exp", "dineroSoltado(s)"]], "apps/web/lib/mercado.ts": [["merc_no", "dineroMerc(s)"], ["merc_exp", "dineroMerc(s)"]],
+        "apps/web/lib/apartados.ts": [["apt_no", "soltadaO(s, "]] };
+      let mandados = 0;
+      for (const [f, K] of Object.entries(MANDA)) {
+        const L = existsSync(f) ? sinComent(f).split("\n") : [];
+        for (const [k, fn] of K) {
+          const i = L.findIndex((l) => l.includes(`"${k}"`) && /avisar(Neg|Cliente)?\(/.test(l));
+          if (i < 0) { falla(G, f, 0, `no encontré el aviso «${k}»`); continue; }
+          mandados++;
+          const l2 = L.slice(i, i + 2).join(" "); // el aviso puede seguir en la línea de abajo
+          if (!L[i].includes(`dinero: `) || !l2.includes(fn)) falla(G, f, i + 1, `el aviso «${k}» no lleva {dinero} con lo que pasó (${fn}…)`);
+        }
+      }
+      if (mandados < 10) falla(G, "apps/web/lib/noche-reservas.ts", 0, `esperaba los 10 avisos de 0222 con {dinero}; hallé ${mandados}`);
+      for (const [f, v] of [["apps/web/lib/noche-reservas.ts", "dep"], ["apps/web/lib/fiestas-reservas.ts", "dep"], ["apps/web/lib/inscripciones.ts", "mat"]]) {
+        const t = existsSync(f) ? sinComent(f) : "";
+        if (!new RegExp(`const queda = Math\\.max\\(0, \\(o\\.amount \\?\\? o\\.${v}\\) - \\(o\\.refunded \\?\\? 0\\)\\);`).test(t)) falla(G, f, 0, "lo que se queda el negocio al cancelar tarde no descuenta lo ya devuelto (const queda = lo cobrado menos lo devuelto)");
+        if (new RegExp(`(El depósito|La matrícula) de \\$\\{\\w+\\(o\\.${v}\\)\\} se (queda|quedó)`).test(t)) falla(G, f, 0, "el aviso dice que se queda el depósito entero (o.dep / o.mat) aunque ya hubo una devolución parcial: va queda");
+      }
+      for (const f of ["apps/web/app/panel/NocheReservas.tsx", "apps/web/app/panel/FiestasReservas.tsx", "apps/web/app/panel/Inscripciones.tsx", "apps/web/app/panel/ViajesPanel.tsx", "apps/web/app/panel/MercadoPanel.tsx"])
+        if (!/\(r\) => \(r\?\.retenida \? E2\(/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "el panel dice «se liberó» sin mirar si la retención se soltó (r?.retenida)");
+      for (const f of ["apps/web/app/panel/acciones-noche.ts", "apps/web/app/panel/acciones-fiesta.ts", "apps/web/app/panel/acciones-insc.ts", "apps/web/app/panel/acciones-viajes.ts", "apps/web/app/panel/acciones-mercado.ts"])
+        if (!/const r2 = [^\n]*r\.retenida \? \{ ok: true, retenida: true \}/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "la acción del panel no pasa retenida: el panel diría «se liberó» sin saber");
+      for (const f of ["apps/web/app/(app)/noche/[num]/NocheEstado.tsx", "apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx", "apps/web/app/(app)/insc/[num]/InscEstado.tsx", "apps/web/app/(app)/viaje/[num]/ViajeEstado.tsx"])
+        if (!/setFlash\("retenida" in r && r\.retenida \? E2\(/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "«No me sirve» dice «se liberó» sin mirar si la retención se soltó (retenida)");
+      const da = existsSync("apps/web/lib/dinero-alertas.ts") ? sinComent("apps/web/lib/dinero-alertas.ts") : "";
+      if (/hold_stuck: \{ es: "una retención renovada sin respuesta"/.test(da)) falla(G, "apps/web/lib/dinero-alertas.ts", 0, "la alerta hold_stuck dice solo «retención renovada»: también es la retención que no se soltó"); }
   },
 
   cobradoSoloSiQuedo() {

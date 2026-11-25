@@ -36,6 +36,30 @@ export function dineroAlCancelarCliente(d: DevCancelar | null, queda?: Bi): Bi {
   return { es: `${queda.es} ${r.es}`, en: `${queda.en} ${r.en}` };
 }
 
+/* 25 nov (quinta tanda) · Lo que le pasó al dinero, dicho AL NEGOCIO cuando cancela quien pagó (biz_noche_cx, biz_fiesta_cx, biz_insc_cx: {dinero}, 0222).
+   Antes decía «Se le devuelve el depósito de $X» con lo decidido, también cuando Stripe dijo que no o no contestó. Con espacio delante (la plantilla
+   termina en «.{dinero}»); vacío si no había nada cobrado ni retenido. */
+export function dineroAlNegocio(d: DevCancelar): Bi {
+  if (d.e === "hecha") return { es: ` Se le devolvieron ${usd(d.monto)} a su tarjeta.`, en: ` ${usd(d.monto)} was refunded to their card.` };
+  if (d.e === "en_camino") return { es: ` La devolución de ${usd(d.monto)} a su tarjeta va en camino: se manda sola.`, en: ` The ${usd(d.monto)} refund to their card is on its way: it is sent automatically.` };
+  if (d.e === "fallida") return { es: ` La devolución de ${usd(d.monto)} no salió: el equipo de To'Latino ya tiene el aviso y lo resuelve con el cliente.`, en: ` The ${usd(d.monto)} refund did not go through: the To'Latino team already has the alert and sorts it out with the client.` };
+  if (d.e === "liberada") return { es: ` No se había cobrado nada: se soltó la retención de ${usd(d.monto)} de su tarjeta.`, en: ` Nothing had been charged: the ${usd(d.monto)} hold on their card was released.` };
+  if (d.e === "retenida") return sinSoltarNegocio(d.monto);
+  return { es: "", en: "" };
+}
+
+/* 25 nov (quinta tanda) · Lo retenido que se suelta SIN cancelación con devolución (vence, «No hay mesa», «No puedo», «No me sirve», el mercado no acepta,
+   el apartado se cancela): cobros › soltarRetencion dice «liberada» · «nada» · «retenida» (la pasarela no la soltó todavía: el barrido la sigue soltando y
+   el equipo de dinero tiene la alerta hold_stuck). Cada aviso dice lo de «liberada» como antes; lo de «retenida» sale de aquí, nunca «Se liberó». */
+export type Soltada = { e: "liberada" | "nada" | "retenida"; monto: number };
+/* Para quien pagó (con espacio delante: los avisos terminan en «.{dev}» / «.{dinero}»). */
+export const sinSoltarCliente = (monto: number): Bi => { const t = dineroAlCancelar({ e: "retenida", monto }); return { es: ` ${t.es}`, en: ` ${t.en}` }; };
+/* Para el negocio (con espacio delante). */
+export const sinSoltarNegocio = (monto: number): Bi => ({ es: ` No se había cobrado nada, pero la retención de ${usd(monto)} de su tarjeta no se soltó todavía: se sigue soltando sola y el equipo de To'Latino ya tiene el aviso.`,
+  en: ` Nothing had been charged, but the ${usd(monto)} hold on their card has not been released yet: it keeps being released automatically and the To'Latino team already has the alert.` });
+/* La frase de lo soltado: la de siempre si se soltó (o no había nada), la de «retenida» si la pasarela no la soltó. */
+export const soltadaO = (s: Soltada, siSalio: string | Bi, para: "cliente" | "negocio" = "cliente"): string | Bi => (s.e === "retenida" ? (para === "cliente" ? sinSoltarCliente(s.monto) : sinSoltarNegocio(s.monto)) : siSalio);
+
 export const sinDevoluciones = (): DevCuenta => ({ hechas: 0, camino: 0, fallidas: 0, liberadas: 0, retenidas: 0 });
 export function contar(c: DevCuenta, d: DevCancelar): DevCuenta {
   return { hechas: c.hechas + (d.e === "hecha" ? 1 : 0), camino: c.camino + (d.e === "en_camino" ? 1 : 0), fallidas: c.fallidas + (d.e === "fallida" ? 1 : 0),

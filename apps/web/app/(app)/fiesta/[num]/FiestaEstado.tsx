@@ -26,7 +26,8 @@ export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await fiestaAccion(x.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setConfirmar(false);
-    if (r.ok) { setFlash(ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 9v (quinta tanda) · «No me sirve» con la retención que la pasarela no soltó todavía (retenida): nunca «se liberó».
+    if (r.ok) { setFlash("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   const B = x.negocio.nombre, dia = cap(diaFiesta(x.ymd, es)), cuando = `${dia} · ${horaL(x.m)}`, dep = x.dep, vis = x.visita;
   const liberado = x.pago.st === "released", devuelto = x.pago.devuelto;

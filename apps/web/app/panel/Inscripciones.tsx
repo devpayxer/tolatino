@@ -121,7 +121,7 @@ export function inscDetalleBloques(c: Ctx): Sec {
     out.push({ type: "acts", items: [
       { l: E2("Confirmar", "Confirm"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "confirmar"), x.mat ? E2(`Confirmada: se cobró la ${matL.toLowerCase()}.`, "Confirmed: the fee was charged.") : E2("Confirmada.", "Confirmed.")) },
       { l: x.fecha ? E2("Otra fecha", "Another date") : E2("Otro grupo", "Another group"), v: "secondary", icon: "calendar", off: c.pending || (x.fecha ? !x.fechas.length : !x.otros.length), onClick: () => c.setUi({ iOtro: otro ? null : x.numero, iFecha: null }) },
-      { l: x.fecha ? E2("No hay fecha", "No date") : E2("No hay cupo", "No opening"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "nohay"), E2("Listo: la persona sabe y se liberó todo.", "Done: they know and everything was released.")) }] });
+      { l: x.fecha ? E2("No hay fecha", "No date") : E2("No hay cupo", "No opening"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "nohay"), (r) => (r?.retenida ? E2("Listo: el cliente sabe. La retención de su tarjeta no se soltó todavía: se sigue soltando sola.", "Done: the client knows. The hold on their card has not been released yet: it keeps being released automatically.") : E2("Listo: la persona sabe y se liberó todo.", "Done: they know and everything was released."))) }] });
     // 4ie · Iglesias «Pedir fecha»: la otra fecha y la franja (la persona tiene hasta 48 h para aceptar).
     if (otro && x.fecha) {
       const f0 = (ui.iFecha as string | null) ?? null;

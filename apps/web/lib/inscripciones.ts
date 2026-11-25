@@ -1,8 +1,8 @@
 import "server-only";
 import { cfgSql, valores } from "./config";
 import type { Pool, PoolClient } from "pg";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, liberarOperacion, registrarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, soltadaO, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { etiquetaGrupo, fechaCorta, horaInsc, rubroInsc, sumarDiasI, usdI, type Bi, type KindInsc, type RubroInsc } from "./inscripciones-comun";
 import { esCuidado, kindNinosDe, type KindNinos } from "./ninos-comun";
@@ -341,7 +341,7 @@ async function avisarCliente(numero: string, tpl0: string, extra: Record<string,
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, cuando: cuandoInsc(o.det, true), mat: "", dev: "", grupo: "", cert: "", ...extra }, { href: `/insc/${numero}`, ref: ["enrollment", numero], sinSms: o.det.sms === false });
 }
-async function avisarNeg(numero: string, tpl: string, extra: Record<string, string> = {}) {
+async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
   const { avisarNegocio } = await import("./avisos");
@@ -373,20 +373,25 @@ type ResI = { ok: true } | { ok: false; msg: Bi };
 
 /* ── El lugar responde: Confirmar · Otro grupo · No hay cupo ── */
 export type PasoInsc = "confirmar" | "otro" | "nohay";
-export async function responderInsc(negocio: string, numero: string, paso: PasoInsc, actorId: string, alt?: string): Promise<ResI> {
+export async function responderInsc(negocio: string, numero: string, paso: PasoInsc, actorId: string, alt?: string): Promise<ResI & { retenida?: true }> {
   if (!NUM_I.test(numero)) return no("Esa inscripción no existe.", "That enrollment does not exist.");
   await vencerInsc({ negocio, numero });
-  let despues: (() => Promise<void>) | null = null;
+  let despues: (() => Promise<void>) | null = null, retenida = false;
   const r = await tx(async (c): Promise<ResI> => {
     await lockN(c, negocio);
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o) return no("Esa inscripción no existe.", "That enrollment does not exist.");
-    if (o.status !== "pending") return o.status === "expired" ? no("Pasó el tiempo para responder: la inscripción venció y se liberó la matrícula.", "The time to reply passed: the enrollment expired and the fee was released.") : no("Esta inscripción ya cambió. Actualiza la pantalla.", "This enrollment already changed. Refresh the screen.");
+    // 9v (quinta tanda) · «se liberó» solo si ya no está retenida; si la pasarela no la soltó todavía, se dice así.
+    if (o.status !== "pending") return o.status === "expired" ? (o.pay === "held" ? no("Pasó el tiempo para responder: la inscripción venció. La retención de la matrícula todavía no se soltó: se sigue soltando sola.", "The time to reply passed: the enrollment expired. The fee hold has not come off yet: it keeps being released automatically.") : no("Pasó el tiempo para responder: la inscripción venció y se liberó la matrícula.", "The time to reply passed: the enrollment expired and the fee was released.")) : no("Esta inscripción ya cambió. Actualiza la pantalla.", "This enrollment already changed. Refresh the screen.");
     if (paso === "nohay") {
       await c.query(`update operations set status = 'declined', answered_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
       await soltarCupo(c, o.det);
       await ev(c, o.id, "insc_no", "member", actorId);
-      despues = async () => { await liberarOperacion(o.id); await avisarCliente(numero, "insc_no", { dev: o.mat ? ` Se liberó tu matrícula de ${usdI(o.mat)}.` : " No se cobró nada." }); };
+      // 9v (quinta tanda) · Lo que de verdad pasó con la retención (soltarRetencion: la que no se soltó alerta hold_stuck al equipo); nunca «Se liberó» sin mirar.
+      despues = async () => {
+        const s = await soltarRetencion(o.id, { es: "No hay cupo (el lugar)", en: "No opening (the place)" }); retenida = s.e === "retenida";
+        await avisarCliente(numero, "insc_no", { dev: o.mat ? soltadaO(s, { es: ` Se liberó tu matrícula de ${usdI(o.mat)}.`, en: ` Your ${usdI(o.mat)} fee was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
+      };
       return { ok: true };
     }
     if (paso === "otro" && o.det.fecha) {
@@ -431,17 +436,17 @@ export async function responderInsc(negocio: string, numero: string, paso: PasoI
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r;
+  return r.ok && retenida ? { ok: true, retenida: true } : r;
 }
 
 /* ── La persona: cancelar (o pedir la baja de una membresía), aceptar el otro grupo o «No me sirve» ── */
 export type QueInsc = "cancelar" | "aceptar" | "nogracias";
-export async function inscCliente(userId: string, numero: string, que: QueInsc): Promise<ResI & { quedo?: boolean; baja?: boolean }> {
+export async function inscCliente(userId: string, numero: string, que: QueInsc): Promise<ResI & { quedo?: boolean; baja?: boolean; retenida?: true }> {
   if (!NUM_I.test(numero)) return no("Esa inscripción no existe.", "That enrollment does not exist.");
   await vencerInsc({ userId, numero });
   const o0 = await leer(db(), "o.user_id = $1 and o.number = $2", [userId, numero]);
   if (!o0) return no("Esa inscripción no existe.", "That enrollment does not exist.");
-  let despues: (() => Promise<void>) | null = null, quedo = false, baja = false;
+  let despues: (() => Promise<void>) | null = null, quedo = false, baja = false, retenida = false;
   const r = await tx(async (c): Promise<ResI> => {
     await lockN(c, o0.biz);
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
@@ -470,10 +475,15 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
       await ev(c, o.id, pierde ? "insc_cx_kept" : "insc_cx", "user", userId, pierde ? { es: "Canceló después de empezar: la matrícula se queda con la escuela", en: "Cancelled after starting: the school keeps the fee" } : undefined);
       // 9v (cuarta tanda) · Lo que de verdad pasó con la matrícula (devolverAlCancelar: hecha · en camino · fallida, que alerta al equipo · liberada · retenida ·
       // nada), en el aviso ({dinero}); nunca «Te devolvemos» sin mirar.
+      // 9v (quinta tanda) · Al lugar también lo que pasó (dineroAlNegocio, {dinero} de biz_insc_cx: 0222), nunca «Se le devuelve» con lo decidido; y lo que se
+      // queda es lo que queda de la matrícula (una devolución parcial previa ya salió: queda = lo cobrado menos lo devuelto).
+      const queda = Math.max(0, (o.amount ?? o.mat) - (o.refunded ?? 0));
       despues = async () => {
         const d = pierde ? null : await devolverAlCancelar(o, { actorId: userId, motivo: "Cancelación antes de empezar", idem: `icx-${numero}`, por: "policy" });
-        await avisarCliente(numero, "insc_cx", { dinero: dineroAlCancelarCliente(d, pierde ? { es: `La matrícula de ${usdI(o.mat)} se quedó con ${o.negocio}.`, en: `The ${usdI(o.mat)} fee stayed with ${o.negocio}.` } : undefined) });
-        await avisarNeg(numero, "biz_insc_cx", { mat: pierde ? ` La matrícula de ${usdI(o.mat)} se queda contigo.` : o.mat ? ` Se le devuelve la matrícula de ${usdI(o.mat)}.` : "" });
+        await avisarCliente(numero, "insc_cx", { dinero: dineroAlCancelarCliente(d, pierde ? (queda === o.mat ? { es: `La matrícula de ${usdI(queda)} se quedó con ${o.negocio}.`, en: `The ${usdI(queda)} fee stayed with ${o.negocio}.` }
+          : { es: `Lo que quedaba de la matrícula (${usdI(queda)}) se quedó con ${o.negocio}.`, en: `What was left of the fee (${usdI(queda)}) stayed with ${o.negocio}.` }) : undefined) });
+        await avisarNeg(numero, "biz_insc_cx", { dinero: pierde ? (queda === o.mat ? { es: ` La matrícula de ${usdI(queda)} se queda contigo.`, en: ` The ${usdI(queda)} fee stays with you.` }
+          : { es: ` Lo que quedaba de la matrícula (${usdI(queda)}) se queda contigo.`, en: ` What was left of the fee (${usdI(queda)}) stays with you.` }) : dineroAlNegocio(d ?? { e: "nada", monto: 0 }) });
       };
       return { ok: true };
     }
@@ -485,7 +495,8 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'alt_no', respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
       await soltarCupo(c, { group_id: o.det.alt_group_id });
       await ev(c, o.id, "alt_declined", "user", userId);
-      despues = async () => { await liberarOperacion(o.id); await avisarNeg(numero, "biz_insc_alt_no"); };
+      // 9v (quinta tanda) · biz_insc_alt_no no habla del dinero; la retención se mira igual (la que no se soltó alerta hold_stuck) y la pantalla lo dice.
+      despues = async () => { retenida = (await soltarRetencion(o.id, { es: "No le sirvió el otro grupo (el cliente)", en: "The other group did not work (the client)" })).e === "retenida"; await avisarNeg(numero, "biz_insc_alt_no"); };
       return { ok: true };
     }
     if (o.mat > 0 && o.pay !== "held") return no("Tu matrícula ya no está retenida. Elige «No me sirve» y pide la inscripción otra vez.", "Your fee is no longer held. Choose “Doesn’t work” and request again.");
@@ -498,7 +509,7 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r.ok ? { ok: true, quedo, baja } : r;
+  return r.ok ? { ok: true, quedo, baja, ...(retenida ? { retenida: true as const } : {}) } : r;
 }
 /* El cupo que ocupa una inscripción viva: el del grupo pedido o, si le propusieron otro, el propuesto. */
 async function soltarCupoVivo(c: PoolClient, o: Op) {
@@ -698,8 +709,8 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
     });
     if (!o) continue;
     n++;
-    await liberarOperacion(o.id);
-    if (o.status === "pending") await avisarCliente(o.num, "insc_exp", { dev: o.mat ? ` Se liberó tu matrícula de ${usdI(o.mat)}.` : " No se cobró nada." });
+    const s = await soltarRetencion(o.id, { es: "La inscripción venció sin respuesta", en: "The enrollment expired without a reply" });
+    if (o.status === "pending") await avisarCliente(o.num, "insc_exp", { dev: o.mat ? soltadaO(s, { es: ` Se liberó tu matrícula de ${usdI(o.mat)}.`, en: ` Your ${usdI(o.mat)} fee was released.` }) : { es: " No se cobró nada.", en: " Nothing was charged." } });
   }
   // 2. Empieza: el día de inicio, una inscripción confirmada pasa a EN CURSO (y el grupo a «empezó»).
   const E = (await db().query<{ id: string }>(

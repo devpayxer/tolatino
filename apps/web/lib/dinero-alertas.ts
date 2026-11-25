@@ -37,7 +37,8 @@ const QUE: Record<TipoAlerta, Bi> = {
   offsession_stuck: { es: "un cobro con tarjeta guardada sin respuesta", en: "a saved-card charge with no answer" },
   offsession_unapplied: { es: "un cobro con tarjeta guardada sin aplicar", en: "an unapplied saved-card charge" },
   gateway_review: { es: "lo que dijo Stripe no se cierra solo", en: "what Stripe said does not close by itself" },
-  hold_stuck: { es: "una retención renovada sin respuesta", en: "a renewed hold with no answer" },
+  // 9v (quinta tanda) · hold_stuck también es la retención que la pasarela no soltó (cobros › soltarRetencion, sujeto liberar:<cobro>), no solo la renovación.
+  hold_stuck: { es: "una retención atascada (no se soltó o no se renovó)", en: "a stuck hold (not released or not renewed)" },
   extra_refund_stuck: { es: "devolver lo que Stripe hizo de más", en: "refunding what Stripe made in excess" },
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
