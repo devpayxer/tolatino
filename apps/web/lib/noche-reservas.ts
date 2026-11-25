@@ -312,7 +312,7 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
       if (lista && o.det.in_n) return no("Ya entraste esta noche.", "You already got in tonight.");
       // El corte se mide con la hora real de esa noche (nunca la fija del prototipo, Preguntas #14).
       const conf = o.status === "confirmed", aTiempo = lista || !conf || o.nowN < Number(o.det.cut ?? 360);
-      const pierde = conf && !aTiempo && o.dep > 0 && o.pay === "captured";
+      const pierde = conf && !aTiempo && o.dep > 0 && (o.pay === "captured" || o.pay === "partially_refunded");
       quedo = pierde;
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = $2, respond_by = null, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, lista ? "salio" : conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ perdio: pierde })]);

@@ -329,7 +329,7 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
     if (que === "cancelar") {
       if (!["pending", "change_proposed", "confirmed"].includes(o.status)) return ya;
       const conf = o.status === "confirmed", reglaDias = Number((o.det.terms as { cancel?: number } | undefined)?.cancel ?? 30);
-      const aTiempo = !conf || o.days_to >= reglaDias, pierde = conf && !aTiempo && o.dep > 0 && o.pay === "captured";
+      const aTiempo = !conf || o.days_to >= reglaDias, pierde = conf && !aTiempo && o.dep > 0 && (o.pay === "captured" || o.pay === "partially_refunded");
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = $2, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ perdio: pierde })]);
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);

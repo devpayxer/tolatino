@@ -1693,6 +1693,24 @@ const guardianes = {
     if (!/if \(o\.pay === "held"\) await liberarOperacion/.test(t) && !/= pierde \? null : await devolverAlCancelar\(o, /.test(sinComent(L))) falla("depositoNoche", L, 0, "cancelar libera lo retenido");
     if (!/aTiempo = lista \|\| !conf \|\| o\.nowN < Number\(o\.det\.cut \?\? 360\)/.test(t)) falla("depositoNoche", L, 0, "el corte para cancelar se mide con la hora real de esa noche (det.cut)");
   },
+  /* 25 nov (revisión de Fable de ae089df) · El depósito o la matrícula que la regla deja al negocio se pierde también si ya hubo una devolución
+     parcial (pay = 'partially_refunded', p. ej. de Soporte): con solo «captured», una cancelación tarde de un depósito con devolución parcial no
+     contaba como perdida y devolverAlCancelar le devolvía al cliente el resto que era del negocio. Toda «pierde = …» de noche, fiesta e
+     inscripción que mira o.pay === "captured" mira también "partially_refunded". Al revés: alrevesPierdeParcial. */
+  pierdeConDevolucionParcial() {
+    const G = "pierdeConDevolucionParcial";
+    for (const f of ["apps/web/lib/noche-reservas.ts", "apps/web/lib/fiestas-reservas.ts", "apps/web/lib/inscripciones.ts"]) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta el archivo"); continue; }
+      const L = readFileSync(f, "utf8").split("\n"); let vistos = 0;
+      L.forEach((l, i) => {
+        if (!/\bpierde = /.test(l) || !/o\.pay === "captured"/.test(l)) return;
+        vistos++;
+        if (!/o\.pay === "partially_refunded"/.test(l)) falla(G, f, i + 1, "«pierde» mira solo pay = captured: con una devolución parcial previa (partially_refunded) la cancelación tarde le devolvería al cliente lo que la regla deja al negocio; mira también \"partially_refunded\"");
+      });
+      if (!vistos) falla(G, f, 0, "no encontré «pierde = … o.pay === \"captured\"» (¿cambió la forma? actualiza este guardián)");
+    }
+  },
+
   mesasSinSobreventa() {
     const L = "apps/web/lib/noche-reservas.ts";
     if (!existsSync(L)) return;
