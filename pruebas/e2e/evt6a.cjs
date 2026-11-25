@@ -22,6 +22,12 @@ const espera = async (f, ms = 12000) => { const t = Date.now(); while (Date.now(
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const contiene = (p, t, ms) => espera(async () => (await texto(p)).includes(t), ms);
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
+// Toca un día del calendario del editor; si no está en el mes que se ve, pasa de mes («Mes siguiente») hasta encontrarlo (tope 3).
+const elegirDia = async (p, iso) => {
+  await vis(p.getByRole('button', { name: 'Mes siguiente' }));
+  for (let i = 0; i < 3 && !(await p.getByRole('button', { name: diaCorto(iso), exact: true }).count()); i++) await clic(p.getByRole('button', { name: 'Mes siguiente' }));
+  await clic(p.getByRole('button', { name: diaCorto(iso), exact: true }));
+};
 const diaCorto = (iso) => { const [y, m, d] = iso.split('-').map(Number), w = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); return `${['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][w]} ${d} ${['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][m - 1]}`; };
 const RUN = Date.now().toString(36), TAG = `[e6a ${RUN}]`;
 const TERRAZA = '5705550366', SABOR = '5705550133', PADRE = '5705550422', ADM = '5705550199', ADM2 = '5705550188';
@@ -55,7 +61,9 @@ const TERRAZA = '5705550366', SABOR = '5705550133', PADRE = '5705550422', ADM = 
     await fc.setFiles(FOTO);
     ok(await espera(async () => (await tm.locator('text=CARTEL').count()) > 1, 15000), 'el cartel se sube');
     await (await vis(tm.getByLabel('NOMBRE', { exact: true }))).fill(`Noche de prueba ${TAG}`);
-    await clic(tm.getByRole('button', { name: diaCorto(DIA), exact: true }));
+    // 25 nov (main rojo, 45552311206) · El calendario del editor abre en el mes de hoy: si el día de la prueba (hoy + 6) cae en el mes siguiente
+    // (los últimos días de cada mes), hay que pasar de mes con «Mes siguiente». Guardián hoyDeLaPruebaEnLaCiudad.
+    await elegirDia(tm, DIA);
     // Extra «Botella»: el editor lo frena.
     await clic(tm.getByText('+ Extra'));
     const nombres = tm.getByLabel('NOMBRE', { exact: true }); await (await nombres.last()).fill('Botella premium');
