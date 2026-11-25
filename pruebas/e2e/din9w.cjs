@@ -6,8 +6,10 @@
 //      con lo que pasó («se soltó la retención de $15.00»), y «Liberamos» (pay_released).
 //   2. El mismo rechazo con una retención que la pasarela NO suelta (un cobro que no es del simulador): el panel lo dice (retenida), la base sigue held con UNA
 //      alerta hold_stuck, ord_no y la pantalla dicen que no se soltó todavía; nunca «No se te cobró nada» a secas.
+//   2b. «Rechazar» (pedidoPaso) como otro dueño y como el cliente: ok:false y la base no cambia.
 //   3. Cita · la hoja de «Cancelar solicitud» dice lo que se pedirá (ES y EN), nunca «Te devolvemos»; después la pantalla dice lo que pasó. «Te propone otra
-//      hora» igual. Un cobro failed dice «El depósito no se cobró». El panel que responde una solicitud vencida dice lo que pasó con la retención.
+//      hora» solo la retención. Un cobro failed dice «El depósito no se cobró»; confirmada con el cobro retenido, «todavía no se cobró», nunca «pagado».
+//      El panel que responde una solicitud vencida dice en pantalla lo que pasó con la retención.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), sus pedidos, sus citas y sus cobros.
 const ENT = require('../lib/entorno.cjs');
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs');
@@ -20,9 +22,9 @@ const telPropio = () => { for (let i = 0; i < 300; i++) { const t = '570555' + S
 // Las acciones del servidor por su id del build (como din9v5): la misma llamada que hace la pantalla, desde una página donde vive la acción.
 const MAN = JSON.parse(fs.readFileSync(ENT.RAIZ + '/apps/web/.next/server/server-reference-manifest.json', 'utf8')).node;
 const ACT = Object.fromEntries(Object.entries(MAN).map(([id, v]) => [v.exportedName, id]));
-const accion = async (p, nombre, args) => {
+const accion = async (p, nombre, args, ruta = null) => {
   if (!ACT[nombre]) throw new Error('acción sin id en el build: ' + nombre);
-  const r = await p.evaluate(async ([id, args]) => { const x = await fetch(location.pathname + location.search, { method: 'POST', headers: { 'Next-Action': id, 'Content-Type': 'text/plain;charset=UTF-8', Accept: 'text/x-component' }, body: JSON.stringify(args) }); return { st: x.status, t: await x.text() }; }, [ACT[nombre], args]);
+  const r = await p.evaluate(async ([id, args, ruta]) => { const x = await fetch(ruta ?? location.pathname + location.search, { method: 'POST', headers: { 'Next-Action': id, 'Content-Type': 'text/plain;charset=UTF-8', Accept: 'text/x-component' }, body: JSON.stringify(args) }); return { st: x.status, t: await x.text() }; }, [ACT[nombre], args, ruta]);
   const l = r.t.split('\n').find((x) => /^1:/.test(x));
   let j = null; try { j = l ? JSON.parse(l.slice(2)) : null; } catch { j = null; }
   return { st: r.st, j, t: r.t };
@@ -30,6 +32,9 @@ const accion = async (p, nombre, args) => {
 const aviso = (num, tpl) => sql(`select n.title || ' | ' || n.body from notifications n where n.tpl = '${tpl}' and n.ref_id = '${num}' order by n.id desc limit 1`);
 const pago = (num) => sql(`select p.status || '|' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${num}' order by p.id desc limit 1`);
 const holdStuck = (num) => sql(`select count(*) from money_alerts a join payments p on a.subject_id = 'liberar:' || p.id join operations o on o.id = p.operation_id where o.number = '${num}' and a.kind = 'hold_stuck'`);
+// La alerta hold_stuck de un cobro, cerrada sola (su última nota es «resuelta_sola»: dinero-alertas › cerrarAlertasResueltas, en el barrido).
+const alertaCerrada = (num) => sql(`select coalesce((select n.action from money_alert_notes n where n.alert_id = a.id order by n.at desc, n.id desc limit 1), '') from money_alerts a join payments p on a.subject_id = 'liberar:' || p.id join operations o on o.id = p.operation_id where o.number = '${num}' and a.kind = 'hold_stuck'`) === 'resuelta_sola';
+const barrer = () => { try { return JSON.parse(require('child_process').execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`).toString()).corrio === true; } catch { return false; } };
 const texto = async (p) => (await p.locator('body').innerText()).replace(/\s+/g, ' ');
 const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { const v = await f(); if (v || Date.now() - t0 > ms) return v; await new Promise((r) => setTimeout(r, 250)); } };
 
@@ -76,6 +81,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(!/no se soltó todavía/.test(await texto(pd)), 'el panel: «… ya ve que no se pudo.», sin decir que la retención sigue');
     ok(sql(`select status from operations where number = '${P1.num}'`) === 'declined', `#${P1.num}: rechazado en la base`);
     ok(await espera(() => pago(P1.num) === 'released|0') && holdStuck(P1.num) === '0', `la retención se soltó (${pago(P1.num)}) y sin alerta hold_stuck`);
+    ok(sql(`select status from sim_intents where id = 'pi_sim_9w_${RUN}_${P1.op}'`) === 'canceled', 'en la pasarela (simulador), la intención quedó cancelada: la retención salió de la tarjeta');
     const a1 = aviso(P1.num, 'ord_no');
     ok(a1.includes(`no pudo aceptar tu pedido #${P1.num}. No se te cobró nada: se soltó la retención de $15.00 de tu tarjeta.`) && !/todavía no se soltó|\{d/.test(a1), `ord_no dice lo que pasó: «se soltó la retención de $15.00» (${a1})`);
     ok(sql(`select count(*) from notifications where tpl = 'pay_released' and ref_id = '${P1.num}'`) === '1', '«Liberamos …» (pay_released), una vez');
@@ -111,6 +117,28 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     sql(`update payments set stripe_payment_intent = '${pi2}', simulated = true where operation_id = ${P2.op}`);
     await pd.goto(B + `/panel/${BF}/hoy`);
     ok(await espera(() => pago(P2.num) === 'released|0'), `el barrido del panel la soltó después (${pago(P2.num)})`);
+    ok(await espera(() => (barrer(), alertaCerrada(P2.num)), 30000) && holdStuck(P2.num) === '1', 'y la alerta hold_stuck se cerró sola en el barrido (resuelta_sola), sin otra alerta');
+
+    // ── 2b · Seguridad: «Rechazar» solo lo puede su negocio ──
+    console.log('2b · «Rechazar» como otro dueño y como el cliente: no pasa nada');
+    const P3 = pedido('Pedido ajeno');
+    const OTRO = persona('Otro dueño'), BO = `d9wo-${RUN}`;
+    sql(`insert into businesses (id, city_id, category_id, name, status) values ('${BO}', 'hzl', 'NEG-FOOD', 'Otra cocina 9w ${RUN}', 'active')`);
+    sql(`insert into business_members (business_id, user_id, kind, display_name) values ('${BO}', '${OTRO.id}', 'owner', 'Otro')`);
+    const po = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); po.on('pageerror', (e) => err.push(e.message));
+    await entrarComo(po, OTRO.tel); await po.goto(B + `/panel/${BO}/hoy`);
+    const ro = await accion(po, 'pedidoPaso', [BF, P3.num, 'rechazar']);
+    ok(ro.j?.ok === false, `otro dueño: pedidoPaso de un negocio que no es suyo → ok:false (${JSON.stringify(ro.j?.mensaje ?? ro.st)})`);
+    const ro2 = await accion(po, 'pedidoPaso', [BO, P3.num, 'rechazar']);
+    ok(ro2.j?.ok === false, `otro dueño: con su propio negocio y un pedido ajeno → ok:false (${JSON.stringify(ro2.j?.mensaje ?? ro2.st)})`);
+    await po.context().close();
+    const pc = await (await telefono(b)).newPage(); pc.on('pageerror', (e) => err.push(e.message));
+    await entrarComo(pc, P3.tel); await pc.goto(B + `/pedido/${P3.num}`);
+    const rc = await accion(pc, 'pedidoPaso', [BF, P3.num, 'rechazar'], `/panel/${BF}/hoy`);
+    ok(rc.j?.ok === false, `el cliente: pedidoPaso de su propio pedido → ok:false (${JSON.stringify(rc.j?.mensaje ?? rc.st)})`);
+    await pc.context().close();
+    ok(sql(`select status from operations where number = '${P3.num}'`) === 'pending' && pago(P3.num) === 'held|0' && aviso(P3.num, 'ord_no') === ''
+      && sql(`select count(*) from audit_entries where action = 'pedido.rechazar' and before->>'pedido' = '#${P3.num}'`) === '0', `#${P3.num}: sigue pendiente y retenido, sin ord_no ni auditoría de rechazo`);
 
     // ── 3 · Cita: lo que se dice antes de actuar ──
     console.log('3 · Cita: la hoja de cancelar y «Te propone otra hora» dicen lo que se pedirá; failed; la solicitud vencida en el panel');
@@ -165,7 +193,9 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     const c3 = await (await telefono(b)).newPage(); c3.on('pageerror', (e) => err.push(e.message));
     await entrarComo(c3, C3.tel); await c3.goto(B + `/cita/${C3.num}`);
     await c3.getByText('Si no te sirve, pedimos que se suelte la retención de $20 de tu tarjeta.', { exact: false }).first().waitFor();
-    ok(!/te devolvemos/i.test(await texto(c3)), '«Te propone otra hora»: «Si no te sirve, pedimos que se suelte la retención de $20…», nunca «te devolvemos»');
+    const t3 = await texto(c3);
+    ok(!/te devolvemos|pedimos la devolución/i.test(t3), '«Te propone otra hora»: «Si no te sirve, pedimos que se suelte la retención de $20…», nunca «te devolvemos» ni «pedimos la devolución»');
+    ok(t3.includes('se cobra solo si aceptas la otra hora') && !t3.includes('se cobra solo si confirman'), 'la fila: «Depósito retenido · se cobra solo si aceptas la otra hora»');
     await c3.context().close();
     // Un cobro que no se hizo (failed): lo que es, nunca «sigue cobrado».
     const C4 = cita('Cita failed', { st: 'declined', pay: 'failed' });
@@ -176,12 +206,25 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     ok(t4.includes('El depósito no se cobró') && !/sigue cobrado|Depósito cobrado|Te devolv/.test(t4), 'failed: «El cobro del depósito de $20 no se hizo» y «El depósito no se cobró», nunca «sigue cobrado»');
     await c4.screenshot({ path: OUT + 'd9w-cita-failed-m.png' });
     await c4.context().close();
-    // El panel responde una solicitud que ya venció: lo que pasó con la retención, nunca «se devolvió el depósito».
-    const C5 = cita('Cita vencida', { vencida: true });
-    await pd.goto(B + `/panel/${BC}/hoy`);
-    const r5 = await accion(pd, 'citaResponder', [BC, C5.num, 'confirmar']);
-    const m5 = r5.j?.mensaje?.es ?? '';
-    ok(r5.j?.ok === false && m5.includes('la solicitud venció. No se había cobrado nada: se soltó la retención de $20.00 de su tarjeta.') && !/se devolvió/.test(m5), `el panel: «venció. No se había cobrado nada: se soltó la retención de $20.00» (${m5})`);
+    // Confirmada con la captura que no salió (el cobro sigue retenido): «Depósito retenido · todavía no se cobró», nunca «Depósito pagado».
+    const C6 = cita('Cita sin captura', { st: 'confirmed' });
+    const c6 = await (await telefono(b)).newPage(); c6.on('pageerror', (e) => err.push(e.message));
+    await entrarComo(c6, C6.tel); await c6.goto(B + `/cita/${C6.num}`);
+    await c6.getByText('todavía no se cobró', { exact: false }).first().waitFor();
+    const t6 = await texto(c6);
+    ok(t6.includes('Depósito retenido') && !/Depósito pagado|se descuenta del total|se descontó del total/.test(t6) && pago(C6.num) === 'held|0', 'confirmada y retenida: «Depósito retenido · todavía no se cobró», nunca «Depósito pagado»');
+    await c6.screenshot({ path: OUT + 'd9w-cita-confirmada-retenida-m.png' });
+    await c6.context().close();
+    // El panel responde una solicitud que venció mientras la miraba: lo que pasó con la retención, en la pantalla, nunca «se devolvió el depósito».
+    const C5 = cita('Cita vencida');
+    await pd.goto(B + `/panel/${BC}/hoy?det=cita:${C5.num}`);
+    const det5 = pd.locator('aside[data-screen-label="Panel v2 · detalle"]');
+    await det5.getByRole('button', { name: 'Confirmar' }).first().waitFor();
+    sql(`update operations set respond_by = now() - interval '1 minute' where id = ${C5.op}`);
+    await det5.getByRole('button', { name: 'Confirmar' }).first().click();
+    await pd.getByText('Pasó el tiempo para responder: la solicitud venció. No se había cobrado nada: se soltó la retención de $20.00 de su tarjeta.').first().waitFor();
+    ok(!/se devolvió el depósito/.test(await texto(pd)), 'el panel, en pantalla: «venció. No se había cobrado nada: se soltó la retención de $20.00», nunca «se devolvió el depósito»');
+    await pd.screenshot({ path: OUT + 'd9w-panel-cita-vencida-d.png' });
     ok(pago(C5.num) === 'released|0' && sql(`select status from operations where number = '${C5.num}'`) === 'expired', `la base: vencida y soltada (${pago(C5.num)})`);
     ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   } finally { await b.close(); }

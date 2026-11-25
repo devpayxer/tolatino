@@ -1,7 +1,7 @@
 // Prueba al revés del guardián devueltoSoloSiSalio (25 nov, 9v): un patrocinio dice «devuelto» (el panel: «Reserva cancelada. Te devolvemos $15.00 a tu
 // tarjeta») solo con lo que la pasarela devolvió. Pasaba: «Cancelar reserva» del dueño devolvía lo decidido (refund_cents) aunque Stripe hubiera rechazado la
 // devolución (din9v2). Ampliado (25 nov, segunda tanda): boletos y eventos (cancelar, «Devolver» del panel, «Devolución total», el evento cancelado,
-// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Quinta: toda retención que se suelta (soltarRetencion) y los avisos al negocio (0222). Sexta: la cita que cancela el cliente y las pantallas del mercado, el apartado y el pedido (0223). Restos (regla 13): lo que se dice antes de actuar (hojas de la cita, «Te propone otra hora»), el cobro que no se hizo, la solicitud vencida del panel y ord_no cuando la consulta falla. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
+// la orden) y las cuatro pantallas de reservas. Tercera tanda: cuando el NEGOCIO cancela (viaje, noche, inscripción, fiesta), aviso, panel, alerta y plantillas. Cuarta: cuando cancela quien pagó y el evento privado (0221), y la retención que no se soltó. Quinta: toda retención que se suelta (soltarRetencion) y los avisos al negocio (0222). Sexta: la cita que cancela el cliente y las pantallas del mercado, el apartado y el pedido (0223). Restos (regla 13): lo que se dice antes de actuar (hojas de la cita, «Te propone otra hora»), el cobro que no se hizo, la solicitud vencida del panel y ord_no cuando la consulta falla; y lo de la revisión: «otra hora» sin promesa de devolución, la cita confirmada con el cobro retenido, la ficha de servicios. Se inyecta el defecto, el guardián debe fallar con SU renglón ([devueltoSoloSiSalio]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -170,9 +170,28 @@ const casos = [
   ['cita failed sin fila', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '    if (c.pago === "failed") plata.push(', '    if (false) plata.push('],
   // El panel de citas vuelve a «la solicitud venció y se devolvió el depósito» fijo, o vencidaPanel deja de mirar la retención.
   ['panel cita vencida fija', 'apps/web/lib/citas-flujo.ts', '{ ok: false, msg: vencidaPanel(o) }', 'no("Pasó el tiempo para responder: la solicitud venció y se devolvió el depósito.", "The time to reply passed: the request expired and the deposit was returned.")'],
-  ['panel cita vencida sin la retención', 'apps/web/lib/citas-flujo.ts', 'if (o.pay === "held") { const t = sinSoltarNegocio(', 'if (false) { const t = sinSoltarNegocio('],
+  ['panel cita vencida sin la retención', 'apps/web/lib/citas-flujo.ts', 'if (o.pay === "held") return { es: `${base.es} No se había', 'if (false) return { es: `${base.es} No se había'],
+  // vencidaPanel vuelve a afirmar «el equipo ya tiene el aviso» sin leer la alerta.
+  ['panel cita vencida afirma el aviso', 'apps/web/lib/citas-flujo.ts', 'se sigue soltando sola.`, en:', "se sigue soltando sola y el equipo de To'Latino ya tiene el aviso.`, en:"],
   // ord_no vuelve a caer en «No se te cobró nada» si la consulta falla.
   ['ord_no consulta fallida como vacía', 'apps/web/lib/avisos.ts', '.then((r) => r.rows, () => null)', '.then((r) => r.rows, () => [])'],
+  // ord_no lee un cobro cualquiera (el primero), no el retenido.
+  ['ord_no cobro cualquiera', 'apps/web/lib/avisos.ts', "order by (p.status = 'held') desc, p.id desc limit 1", 'order by p.id limit 1'],
+  // Revisión (25 nov) · «Otra hora» vuelve a prometer la devolución con el depósito cobrado, o deja de mirar c.pago.
+  ['otra hora promete la devolución', 'apps/web/app/(app)/cita/[num]/Estado.tsx', 'we ask for the ${dinero(c.cobro)} hold to come off your card.`) : "";', 'we ask for the ${dinero(c.cobro)} hold to come off your card.`) : cobrado ? E2(`Si no te sirve, pedimos la devolución de ${dinero(queda)} a tu tarjeta.`, "") : "";'],
+  ['otra hora sin mirar el cobro', 'apps/web/app/(app)/cita/[num]/Estado.tsx', 'const pideAlt = !c.dep ? "" : c.pago === "held" ?', 'const pideAlt = !c.dep ? "" : true ?'],
+  // La hoja de cancelar tarde vuelve a decir el depósito entero sin mirar el cobro.
+  ['hoja tarde con c.dep', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '${c.dep && cobrado && queda > 0 ? (queda === c.cobro ? E2(`El depósito de ${dinero(queda)} se queda con ${who1}.`', '${c.dep ? (true ? E2(`El depósito de ${dinero(c.dep)} se queda con ${who1}.`'],
+  // Confirmada con la captura que no salió: «Depósito pagado» sin mirar, o sin su fila de retenido.
+  ['pagado sin cobrado', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '      if (cobrado) plata.push(["check", E2("Depósito pagado"', '      if (c.pago !== "failed") plata.push(["check", E2("Depósito pagado"'],
+  ['confirmada retenida sin fila', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '`${tarjeta}${E2(" · todavía no se cobró", " · not charged yet")}`', '`${tarjeta}${E2(" · se cobra al confirmar", " · charged on confirmation")}`'],
+  ['se descontó sin cobrado', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '${c.dep && cobrado ? E2(` El depósito de ${dinero(c.dep)} se descontó del total.`', '${c.dep && c.pago !== "failed" ? E2(` El depósito de ${dinero(c.dep)} se descontó del total.`'],
+  ['no había nadie con el depósito entero', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '${c.dep && cobrado && queda > 0 ? E2(`El depósito de ${dinero(queda)} se queda con el negocio.`', '${c.dep && c.pago !== "failed" ? E2(`El depósito de ${dinero(c.dep)} se queda con el negocio.`'],
+  ['cobrado mientras espera sin mirar', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '      else if (cobrado) plata.push(["card", E2("Depósito cobrado"', '      else plata.push(["card", E2("Depósito cobrado"'],
+  // Con «otra hora», lo retenido vuelve a «se cobra solo si confirman».
+  ['otra hora se cobra si confirman', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '${alt ? E2(" · se cobra solo si aceptas la otra hora", " · charged only if you accept the new time") : E2(" · se cobra solo si confirman", " · charged only if they confirm")}', '${E2(" · se cobra solo si confirman", " · charged only if they confirm")}'],
+  // La ficha de servicios vuelve a «se cobra al enviar… te lo devolvemos».
+  ['ficha te lo devolvemos', 'apps/web/app/(app)/n/[id]/Servicios.tsx', ': E2(`Depósito de ${dinero(persona.dep)}: se retiene al enviar, se cobra cuando', ': E2(`Depósito de ${dinero(persona.dep)}: se cobra al enviar. Si no se confirma, te lo devolvemos. Se cobra cuando'],
   ['ord_no sin lo neutro', 'apps/web/lib/avisos.ts', 'dinero = !q ? neutro :', 'dinero = !q ? { es: " No se te cobró nada.", en: " You were not charged." } :'],
 ];
 let bien = 0, total = 0;

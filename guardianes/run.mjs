@@ -17997,19 +17997,44 @@ const guardianes = {
       // (13) 25 nov (restos de la clase) · Lo que se dice ANTES de actuar, y lo que se dice cuando no se pudo mirar. Pasaba: las hojas de confirmar de la cita
       // («¿Cancelar?») y el estado «Te propone otra hora» decían «Te devolvemos los $X» antes de intentar nada (y con el depósito entero, también de una
       // retención que solo se suelta); un cobro que no se hizo (failed) salía como «sigue cobrado»; el panel de citas decía «la solicitud venció y se
-      // devolvió el depósito» sin mirar; y ord_no caía en «No se te cobró nada» si la consulta del cobro fallaba. Regla: (a) la pantalla de la cita no dice
-      // «Te devolvemos» / «We refund» en ningún lado: lo que se va a intentar va en pideCx / pideAlt («Pedimos la devolución…», «pedimos que se suelte…»),
-      // armado con c.pago y lo que queda; (b) failed tiene su texto en «dev» y su fila; (c) el panel de citas arma lo de la solicitud vencida con el cobro
-      // (vencidaPanel), nunca «se devolvió el depósito» fijo; (d) avisarPedido lee el cobro con .then(…, () => null) y, si la consulta falla, dice lo neutro.
+      // devolvió el depósito» sin mirar; y ord_no caía en «No se te cobró nada» si la consulta del cobro fallaba. Revisión (25 nov): «otra hora» prometía
+      // «pedimos la devolución» aunque «No, gracias» y su vencimiento solo sueltan la retención; una cita confirmada con la captura que no salió (sigue
+      // retenida) decía «Depósito pagado», «se descontó del total» y, sin nadie en casa, «se queda con el negocio» (con el depósito entero); la ficha
+      // decía «se cobra al enviar… te lo devolvemos». Regla: (a) la cita y la ficha de servicios no dicen «Te devolvemos» / «We refund» en ningún lado;
+      // (b) pideCx dice lo que se intentará según c.pago y lo que queda; pideAlt solo con la retención (nunca una devolución); la rama «tarde» de las hojas
+      // exige cobrado y dice queda, nunca c.dep; (c) «Depósito pagado», «se descontó del total», «se queda con el negocio» y «Depósito cobrado» mientras
+      // espera exigen cobrado (y lo que se queda es queda); confirmada y retenida tiene su fila; con «otra hora», lo retenido se cobra solo si la aceptas;
+      // (d) failed tiene su texto en «dev» y su fila; (e) el panel arma lo de la solicitud vencida con el cobro (vencidaPanel) y sin afirmar un aviso que no
+      // lee; (f) avisarPedido lee el cobro con .then(…, () => null), el retenido primero, y si la consulta falla dice lo neutro.
+      // (Sin escribir pares E2("…", "…") aquí: el extractor del CMS le pondría candado a lo que un guardián nombra palabra por palabra.)
       const ceL = ce.split("\n");
-      ceL.forEach((l, i) => { if (/[Tt]e devolvemos|\b[Ww]e refund (the|your)\b|se devuelve si no se confirma|refunded if not confirmed/.test(l)) falla(G, CE, i + 1, "la cita promete la devolución antes de actuar («Te devolvemos…»): va lo que se intentará (pideCx / pideAlt) y lo que pasó lo dice «dev»"); });
-      // (sin escribir pares E2("…", "…") aquí: el extractor del CMS le pondría candado a lo que un guardián nombra palabra por palabra)
-      if (!/const cxS = pend \? `\$\{E2\([^)]*\)\}\$\{pideCx\}`/.test(ce) || !/\$\{pideAlt \|\| E2\([^)]*\)\}/.test(ce)
+      ceL.forEach((l, i) => {
+        if (/[Tt]e devolvemos|\b[Ww]e refund (the|your)\b|se devuelve si no se confirma|refunded if not confirmed/.test(l)) falla(G, CE, i + 1, "la cita promete la devolución antes de actuar («Te devolvemos…»): va lo que se intentará (pideCx / pideAlt) y lo que pasó lo dice «dev»");
+        if (/Depósito pagado/.test(l) && !/^\s*if \(cobrado\) plata\.push\(/.test(l)) falla(G, CE, i + 1, "«Depósito pagado» sin mirar que el depósito esté cobrado (una captura que no salió sigue retenida)");
+        if (/se descontó del total/.test(l) && !/\$\{c\.dep && cobrado \? E2\(/.test(l)) falla(G, CE, i + 1, "«se descontó del total» sin mirar que el depósito esté cobrado");
+        if (/se queda con el negocio/.test(l) && (!/c\.dep && cobrado && queda > 0 \? E2\(/.test(l) || /dinero\(c\.dep\)/.test(l))) falla(G, CE, i + 1, "sin nadie en casa, «se queda con el negocio» sin mirar el cobro o con el depósito entero (va queda)");
+        if (/Depósito cobrado/.test(l) && !/^\s*else if \(cobrado\) plata\.push\(|if \(!c\.devuelto && !camino && !fallida\) plata\.push\(/.test(l)) falla(G, CE, i + 1, "«Depósito cobrado» sin mirar que el depósito esté cobrado");
+      });
+      const pa = ceL.find((l) => /^\s*const pideAlt = /.test(l)) ?? "";
+      if (!/^\s*const pideAlt = !c\.dep \? "" : c\.pago === "held" \? E2\(`[^`]*`, `[^`]*`\) : "";$/.test(pa) || /devolución|refund/.test(pa))
+        falla(G, CE, 0, "«Te propone otra hora» no mira el cobro o promete una devolución («No, gracias» y su vencimiento solo sueltan la retención: pideAlt solo con c.pago === held)");
+      const cx = /const cxS = [\s\S]*?`;\n/.exec(ce)?.[0] ?? "";
+      if (!/const cxS = pend \? `\$\{E2\([^)]*\)\}\$\{pideCx\}`/.test(cx) || !/\$\{pideAlt \|\| E2\([^)]*\)\}/.test(ce) || !/\$\{c\.dep && cobrado && queda > 0 \? \(queda === c\.cobro \? /.test(cx) || /dinero\(c\.dep\)/.test(cx)
         || !/const pideCx = !c\.dep \? "" : c\.pago === "held" \? E2\(`Pedimos que se suelte/.test(ce) || !/cobrado && queda > 0 \? E2\(`Pedimos la devolución de \$\{dinero\(queda\)\}/.test(ce))
-        falla(G, CE, 0, "las hojas de confirmar o «Te propone otra hora» no dicen lo que se intentará según el cobro (pideCx / pideAlt con c.pago y queda)");
+        falla(G, CE, 0, "las hojas de confirmar no dicen lo que se intentará según el cobro (pideCx con c.pago y queda; la rama «tarde» con cobrado y queda, nunca c.dep)");
+      const okB = /\} else if \(ok \|\| done\) \{[\s\S]*?\n    \}/.exec(ce)?.[0] ?? "";
+      if (!/else if \(c\.pago === "held"\) plata\.push\(\["clock", E2\([^)]*\), dinero\(c\.cobro\), "var\(--tl-pro-ink\)", `\$\{tarjeta\}\$\{E2\(" · todavía no se cobró"/.test(okB))
+        falla(G, CE, 0, "una cita confirmada con el cobro retenido (la captura no salió) no tiene su fila «todavía no se cobró»");
+      if (!/if \(c\.pago === "held"\) plata\.push\(\["card", E2\([^)]*\), dinero\(c\.cobro\), "var\(--tl-pro-ink\)", `\$\{tarjeta\}\$\{alt \? E2\(" · se cobra solo si aceptas la otra hora"/.test(ce))
+        falla(G, CE, 0, "con «otra hora», lo retenido dice «se cobra solo si confirman»: se cobra solo si aceptas la otra hora");
       if (!/c\.pago === "failed" \? E2\(`El cobro del depósito de/.test(devT + "\n" + ceL.slice(devL, devL + 7).join("\n")) || !/if \(c\.pago === "failed"\) plata\.push\(/.test(ce)) falla(G, CE, 0, "un cobro que no se hizo (failed) sale como «sigue cobrado»: va su texto en dev y su fila");
-      if (/se devolvió el depósito|the deposit was returned/.test(cf) || !/o\.status === "expired" \? \{ ok: false, msg: vencidaPanel\(o\) \}/.test(cf) || !/if \(o\.pay === "held"\) \{ const t = sinSoltarNegocio\(/.test(cuerpoFn(cf, "vencidaPanel")))
+      const SV = "apps/web/app/(app)/n/[id]/Servicios.tsx", sv = existsSync(SV) ? sinComent(SV) : "";
+      sv.split("\n").forEach((l, i) => { if (/[Tt]e lo devolvemos|[Tt]e devolvemos|Refunded if not confirmed|se cobra al \$\{persona\.auto \? "confirmar" : "enviar"\}|charged when you \$\{persona\.auto/.test(l)) falla(G, SV, i + 1, "la ficha de servicios dice «se cobra al enviar… te lo devolvemos»: se retiene al enviar y se cobra solo si confirman (o al instante con confirmación automática)"); });
+      const vp = cuerpoFn(cf, "vencidaPanel");
+      if (/se devolvió el depósito|the deposit was returned/.test(cf) || !/o\.status === "expired" \? \{ ok: false, msg: vencidaPanel\(o\) \}/.test(cf) || !/if \(o\.pay === "held"\) return \{ es: `\$\{base\.es\} No se había cobrado nada, pero la retención/.test(vp))
         falla(G, CF, 0, "el panel de citas dice lo de la solicitud vencida sin mirar el cobro («se devolvió el depósito»): va vencidaPanel(o)");
+      if (/ya tiene el aviso|already has the alert|sinSoltarNegocio/.test(vp)) falla(G, CF, 0, "vencidaPanel afirma que el equipo ya tiene el aviso sin leer la alerta");
+      if (!/order by \(p\.status = 'held'\) desc, p\.id desc limit 1/.test(ap)) falla(G, AV, 0, "ord_no lee un cobro cualquiera (order by p.id): va el retenido primero y el más nuevo");
       if (!/\.then\(\(r\) => r\.rows, \(\) => null\)/.test(ap) || !/dinero = !q \? neutro :/.test(ap)) falla(G, AV, 0, "ord_no cae en «No se te cobró nada» si la consulta del cobro falla: va el texto neutro"); }
   },
 

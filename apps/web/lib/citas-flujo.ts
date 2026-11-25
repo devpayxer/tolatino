@@ -3,7 +3,7 @@ import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { cobrarOperacion, devolverAlCancelar, soltarRetencion } from "./cobros";
-import { dineroAlNegocio, sinSoltarNegocio, soltadaO, type Soltada } from "./devolucion-cancelar";
+import { dineroAlNegocio, soltadaO, type Soltada } from "./devolucion-cancelar";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
 import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } from "./citas";
 
@@ -83,7 +83,8 @@ function vencidaPanel(o: Pick<Op, "dep" | "pay" | "amount" | "refunded">): Bi {
   if (!o.dep || !o.pay || o.pay === "failed") return base;
   const m = money(o.amount ?? o.dep);
   if (o.pay === "released") return { es: `${base.es} No se había cobrado nada: se soltó la retención de ${m} de su tarjeta.`, en: `${base.en} Nothing had been charged: the ${m} hold on their card was released.` };
-  if (o.pay === "held") { const t = sinSoltarNegocio(o.amount ?? o.dep); return { es: `${base.es}${t.es}`, en: `${base.en}${t.en}` }; }
+  // Sin afirmar que el equipo tiene el aviso (aquí no se lee la alerta): solo lo que está en la base.
+  if (o.pay === "held") return { es: `${base.es} No se había cobrado nada, pero la retención de ${m} de su tarjeta no se soltó todavía: se sigue soltando sola.`, en: `${base.en} Nothing had been charged, but the ${m} hold on their card has not been released yet: it keeps being released automatically.` };
   if (o.pay === "refunded") return { es: `${base.es} Se le devolvieron ${m} a su tarjeta.`, en: `${base.en} ${m} was refunded to their card.` };
   // Cobrado (o devuelto en parte): solo lo que está hecho.
   if (o.pay === "partially_refunded" && o.refunded) return { es: `${base.es} Del depósito de ${m} se le devolvieron ${money(o.refunded)}; el resto sigue cobrado.`, en: `${base.en} Of the ${m} deposit, ${money(o.refunded)} was refunded; the rest is still charged.` };

@@ -3048,7 +3048,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       bloqueado; `ord_no` y «Rechazar» de Pedidos sin e2e propio.
       _Hecho (25 nov, Opus; en revisión): hojas y «otra hora» dicen lo que se pedirá (pideCx / pideAlt), failed con su texto y fila, vencidaPanel,
       ord_no neutro si la consulta falla, soltado(E2(…)) y «CANCELADO» sin candado; guardián devueltoSoloSiSalio (13) y cadenaConLlave (ayudante que
-      saca textos del CMS), al revés 86/86 y alreves9f3 39/39; din9w (22 ✓) asignada; sin migración (ord_no ya tenía {dinero})._
+      saca textos del CMS), al revés 98/98 y alreves9f3 39/39; din9w (30 ✓) asignada; sin migración (ord_no ya tenía {dinero}). Tras la revisión: «otra hora» solo con la retención, confirmada y retenida, ficha de servicios, seguridad de «Rechazar»._
 - [ ] **→ 9b** · **La misma clase «promete antes de actuar» en otras pantallas (25 nov, visto al cerrar los restos):** las hojas de cancelar dicen
       «te devolvemos $X» antes de intentar nada en Noche (`NocheEstado.tsx` ~74 y los estados ~43/~47 «Si no confirman / no te sirve, te devolvemos
       el depósito»), Viaje (`ViajeEstado.tsx` ~107), Fiesta (`FiestaEstado.tsx` ~62), Evento privado (`EstadoEvp.tsx` ~155/~219) y Patrocinio

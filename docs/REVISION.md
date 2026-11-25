@@ -6557,6 +6557,19 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Qué mirar (teléfono, en el sandbox):** cancelar unos boletos y una reserva de viaje o noche y leer el aviso que llega: debe decir lo que
   pasó con el dinero, no una promesa.
 
+## Lo último de la clase del dinero: la cita, «Rechazar» un pedido y la ficha de servicios (25 nov; hecho por Opus, revisado por otro modelo)
+- **Qué cambia para el cliente:** la hoja de «¿Cancelar?» de la cita y «Te propone otra hora» ya no prometen «Te devolvemos $X» antes de hacer
+  nada: dicen lo que se va a pedir («Pedimos que se suelte la retención de $20…» o «Pedimos la devolución de…»), y después la cita dice lo que
+  pasó de verdad. Una cita confirmada cuyo cobro no salió dice «Depósito retenido · todavía no se cobró» (nunca «pagado»); un cobro que no se
+  hizo, «El depósito no se cobró». La ficha de servicios ya no dice «se cobra al enviar… te lo devolvemos»: se retiene al enviar y se cobra
+  solo si confirman. Al rechazar un pedido pagado con tarjeta, la pantalla y el aviso dicen si la retención se soltó o si la tarjeta todavía no
+  la soltó.
+- **Qué cambia para el negocio:** si responde una solicitud de cita que ya venció, el panel le dice qué pasó con el depósito (nunca «se devolvió
+  el depósito» sin mirar). Al rechazar un pedido, igual.
+- **Qué mirar (teléfono):** capturas `d9w-cita-hoja-cancelar-m.png`, `d9w-cita-failed-m.png`, `d9w-cita-confirmada-retenida-m.png`,
+  `d9w-pedido-rechazado-m.png`, `d9w-pedido-retenida-m.png`; (escritorio) `d9w-panel-rechazar-retenida-d.png`, `d9w-panel-cita-vencida-d.png`.
+  En el sandbox: pedir una cita con depósito, tocar «Cancelar solicitud» y leer la hoja; después, la cita.
+
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).
   Un encargo de Opus cubrió las del dinero (`cobros`, `suscripcion`, `revision-pasarela`) con la prueba nueva `din9u` y encontró el fallo: con el
