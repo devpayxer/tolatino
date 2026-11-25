@@ -3021,10 +3021,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa). _Ya estaba (comprobado el 24 nov):
       la señal rápida solo corre `pnpm guardianes`, que lleva los textos dentro (`alrevesConSuTexto`); no hay paso propio de textos._
 
-- [ ] **→ 9b** · **Cancelación por el negocio (viaje, noche, inscripción, fiesta): la devolución no se mira (25 nov, revisión del paquete 01888de).**
+- [x] **→ 9b** · **Cancelación por el negocio (viaje, noche, inscripción, fiesta): la devolución no se mira (25 nov, revisión del paquete 01888de).**
       Cuando el negocio cancela, el código ignora lo que devuelve `devolverPago`: si Stripe dice que no, la devolución queda fallida y nadie avisa
       al equipo de dinero; los avisos `viaje_cancelada`, `noche_biz_cx`, `insc_*_cx` y `fiesta_biz_cx` siguen diciendo «Te devolvemos todo». Las
       cuatro pantallas de estado ya leen la base (01888de) pero no tienen prueba de punta a punta. Mismo arreglo que patrocinio y boletos.
+      _Hecho (25 nov, ecbdfd4, Opus; revisado por Fable): cobros.devolverAlCancelar mira la devolución y una fallida avisa al equipo; migración 0220
+      (avisos con {dinero} y títulos neutros); din9v3 (viaje y noche, hecha y fallida). Inscripción y grupo sin punta a punta; fiesta solo «hecha»._
+- [ ] **→ 9b** · **Misma clase, cuando cancela el cliente o el restaurante (25 nov, revisión de ecbdfd4):** los avisos `viaje_cx`, `noche_cx`,
+      `fiesta_cx` e `insc_cx` dicen la devolución decidida (`{dev}`, 0073/0075/0082/0088); evento privado: `evp_cancelado` y el panel
+      («recibe su depósito completo», EventoPrivado.tsx ~215/218, FiestasReservas.tsx ~76). Con 1 hecha + 1 solo retenida el panel de
+      cancelar dice «Le devolvimos todo». `liberarOperacion` en devolverAlCancelar no se mira. Mismo arreglo que 0219/0220.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,
