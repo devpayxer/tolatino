@@ -104,6 +104,8 @@ const HORAS_LLAVE = 23; // las de lib/cobros.ts (HORAS_LLAVE): el guardián llav
 const SIN_RESPUESTA = new Set(["red", "api_error", "error", "rate_limit", "rate_limit_error", "lock_timeout", "idempotency_key_in_use", "idempotency_error", "processing"]);
 type Intencion = { id: string; idem: string; monto: number; pm: string; payer: string; desde: number; cycle: string; st: string; vieja: boolean; n: number; err: string | null; nueva: boolean };
 const EN_CAMINO: Bi = { es: "Stripe no contestó. El cobro de Pro quedó en camino y se termina solo en unos minutos: no lo repitas.", en: "Stripe did not answer. The Pro charge is on its way and finishes by itself in a few minutes: do not repeat it." };
+/* 25 nov (9u) · El cobro aún no se intentó porque el proceso del plan estaba ocupado (el barrido tenía su candado): no es un «no» del banco ni Stripe callado. */
+const SIN_INTENTO_AUN: Bi = { es: "El cobro se está procesando en este momento. En unos minutos lo verás en Tu plan: no lo repitas.", en: "The charge is being processed right now. You will see it in Your plan in a few minutes: do not repeat it." };
 const VIEJO: Bi = { es: "Hay un cobro de Pro de hace más de un día sin respuesta de Stripe: el equipo de dinero lo revisa. No lo repitas.", en: "There is a Pro charge from over a day ago with no answer from Stripe: the money team reviews it. Do not repeat it." };
 const YA_RECHAZADO: Bi = { es: "Tu banco ya rechazó este cobro. Prueba con otra tarjeta.", en: "Your bank already declined this charge. Try another card." };
 const SEL_INT = `id::text, idem_key as idem, amount_cents as monto, pm, payer_user_id::text as payer, (extract(epoch from period_start) * 1000)::float8 as desde, cycle, status as st,
@@ -479,13 +481,17 @@ export async function seguirConPro(negocio: string, userId: string, pm: string, 
     });
     if (!r.ok) return r;
     if (s.status === "past_due") {
+      const desde = (await db().query<{ t: Date }>(`select now() as t`)).rows[0]?.t ?? new Date();
       await procesarYa(negocio);
       // 25 nov (9u) · Lo que dejó el cobro con la tarjeta nueva se lee de la base, nunca se supone: antes decía «ya tienes Pro» aunque el banco la rechazara.
-      const f = (await db().query<{ st: string; camino: boolean; verificar: boolean }>(
+      // «Rechazó» solo con un intento de AHORA: si el barrido tenía el candado del plan, procesarYa no cobró y el cobro con la tarjeta nueva va en camino.
+      const f = (await db().query<{ st: string; camino: boolean; verificar: boolean; intento: boolean }>(
         `select status as st, exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'pending') as camino,
-                exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'action') as verificar from subscriptions where business_id = $1`, [negocio])).rows[0];
+                exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'action' and c.created_at >= $2) as verificar,
+                exists (select 1 from subscription_charges c where c.business_id = $1 and c.created_at >= $2) as intento from subscriptions where business_id = $1`, [negocio, desde])).rows[0];
       if (f?.st === "active") return { ok: true, cobrado: true };
       if (f?.camino) return { ok: false, msg: EN_CAMINO };
+      if (!f?.intento) return { ok: false, msg: SIN_INTENTO_AUN };
       if (f?.verificar) return no("Cambiamos tu tarjeta. Tu banco pide confirmar el cobro: te mandamos un aviso con el enlace.", "We changed your card. Your bank asks to confirm the charge: we sent you a notice with the link.");
       if (f?.st === "ended") return no("Cambiamos tu tarjeta, pero el banco rechazó el cobro y tu página pasó a Free. Nada se borra.", "We changed your card, but the bank declined the charge and your page switched to Free. Nothing is deleted.");
       return no("Cambiamos tu tarjeta, pero el banco rechazó el cobro. Prueba con otra tarjeta.", "We changed your card, but the bank declined the charge. Try another card.");
@@ -582,11 +588,19 @@ export async function reintentarCobro(negocio: string, actor: string, alGuardar?
     return true;
   });
   if (!pedido) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");
+  const desde = (await db().query<{ t: Date }>(`select now() as t`)).rows[0]?.t ?? new Date();
   await procesar(negocio);
-  const s = (await db().query<{ status: string; camino: boolean }>(`select status, exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'pending') as camino from subscriptions where business_id = $1`, [negocio])).rows[0];
+  // 25 nov (9u, revisión de Fable) · Como en seguirConPro: «rechazó» solo con un intento de ahora (con el candado en manos del barrido no se intentó)
+  // y si el banco pide confirmar, se dice eso (antes salía «volvió a rechazarla»).
+  const s = (await db().query<{ status: string; camino: boolean; verificar: boolean; intento: boolean }>(`select status, exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'pending') as camino,
+      exists (select 1 from subscription_charges c where c.business_id = $1 and c.status = 'action' and c.created_at >= $2) as verificar,
+      exists (select 1 from subscription_charges c where c.business_id = $1 and c.created_at >= $2) as intento from subscriptions where business_id = $1`, [negocio, desde])).rows[0];
   if (s?.status === "active") return { ok: true };
   // 9t3 · Stripe no contestó: el cobro quedó en camino (no es un «no» del banco) y se termina solo con su llave.
-  return s?.camino ? { ok: false, msg: EN_CAMINO } : no("Se intentó y el banco volvió a rechazarla.", "We tried and the bank declined again.");
+  if (s?.camino) return { ok: false, msg: EN_CAMINO };
+  if (!s?.intento) return { ok: false, msg: SIN_INTENTO_AUN };
+  if (s?.verificar) return no("El banco pide confirmar el cobro: le mandamos al dueño un aviso con el enlace.", "The bank asks to confirm the charge: we sent the owner a notice with the link.");
+  return no("Se intentó y el banco volvió a rechazarla.", "We tried and the bank declined again.");
 }
 /* Anular la suscripción (Super Admin, prototipo subX): Pro pagado sigue hasta el fin del período y luego Free; en prueba,
    el día 30 pasa a Free; con cobro fallido, Free hoy (ese período no se pagó). No se devuelve lo cobrado; nada se borra.
