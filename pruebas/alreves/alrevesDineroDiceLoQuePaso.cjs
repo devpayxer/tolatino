@@ -1,7 +1,9 @@
 // Prueba al revés de los guardianes liberarMira, capturaTardeAlerta y avisoNegUnIdioma (25 nov, LAUNCH «el dinero dice lo que pasó», letras e y g):
 // soltar una retención que Stripe ya había cobrado no la deja «released» (pasarela.liberar mira el intento; el libro la anota cobrada y el equipo de dinero
 // tiene la alerta cobrada:, que no se cierra sola); la captura tarde a la que Stripe no contestó alerta captura: como la que lanza; y el aviso al negocio no
-// mezcla idiomas. Se inyecta el defecto, el guardián debe fallar con SU renglón ([nombre]); se restaura.
+// mezcla idiomas. (revisión de 621f214) El aviso del barrido que no quedó se reintenta (solo lo que falta) y la alerta dice si llegó; la segunda «cobrada»
+// dice la mitad y la devolución de la llave; lo capturado distinto de lo pedido alerta; la cancelación tarde cobrada sin su regla la repara el barrido.
+// Se inyecta el defecto, el guardián debe fallar con SU renglón ([nombre]); se restaura.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
@@ -41,23 +43,47 @@ const casos = [
   // cobrar: ya no se cierra sola (aunque el cobro ya no esté retenido).
   ['liberarMira', 'cobrar: no se cierra sola', 'apps/web/lib/dinero-alertas.ts', "a.subject_id ~ '^(liberar|cobrar):[0-9]{1,18}$'", "a.subject_id ~ '^liberar:[0-9]{1,18}$'"],
   // El barrido aplica la regla de la cancelación tarde y nadie se lo dice a quien pagó; o se lo dice dos veces (sin reclamo).
-  ['liberarMira', 'la regla del barrido sin aviso', CO, 'if (regla && motivo === SWEEP) await avisarTardeCobrada(', 'if (false) await avisarTardeCobrada('],
-  ['liberarMira', 'el aviso del barrido sin reclamo', CO, '    if (!(await reclamarAvisoCobro(opId))) return;\n', ''],
+  ['liberarMira', 'la regla del barrido sin aviso', CO, 'const av = regla && como !== "soltar" ? await avisarTardeCobrada(opId, ', 'const av = regla && false ? await avisarTardeCobrada(opId, '],
+  ['liberarMira', 'el aviso del barrido sin reclamo', CO, '  if (!falta) return null;\n  let hecho', '  let hecho'],
   ['liberarMira', 'viaje: el aviso de lo cobrado sin reclamo', VL, '        if ((mitad > 0 || x.d.e === "cobrada") && !(await reclamarAvisoCobro(o.id))) return;\n', ''],
   ['liberarMira', 'evento privado: el aviso de lo cobrado sin reclamo', EP, '  if (quedo && !(await reclamarAvisoCobro(opId))) return { ok: true, devuelto: 0, perdio: true, devolucion: "nada" };\n', ''],
-  ['liberarMira', 'el aviso del viaje sin el del negocio', VL, '  await avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`', '  await avisarNeg(numero, "biz_viaje_x", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`'],
+  ['liberarMira', 'el aviso del viaje sin el del negocio', VL, '(await avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`', '(await avisarNeg(numero, "biz_viaje_x", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`'],
   // La «cobrada» por relectura sin la regla que aplicó el barrido.
   ['liberarMira', 'la relectura sin regla', CO, 'return { e: "cobrada", monto: Math.max(0, y.amt - y.ref), ...(regla ? { regla } : {}) };', 'return { e: "cobrada", monto: Math.max(0, y.amt - y.ref) };'],
   // barrerAlertasDinero cierra alertas por su cuenta (la prueba din9x da por hecho que solo por cerrarAlertasResueltas).
   ['liberarMira', 'barrerAlertasDinero cierra por su cuenta', 'apps/web/lib/dinero-alertas.ts', '  await cerrarAlertasResueltas();\n  B.fin();', '  await cerrarAlertaSola("hold_stuck", "captura:0", { es: "x", en: "x" });\n  await cerrarAlertasResueltas();\n  B.fin();'],
   // Lo que falta cobrar en el mercado baja con lo pedido; boletos y patrocinios anotan lo pedido aunque Stripe ya hubiera capturado otro monto.
   ['liberarMira', 'mercado resta lo pedido', 'apps/web/lib/mercado.ts', 'resto = Math.max(0, resto - (an ? an.amt : monto));', 'resto -= monto;'],
-  ['liberarMira', 'boletos anota lo pedido', 'apps/web/lib/boletos.ts', '    await marcarCobrado(op, cap.cobrado);', '    await marcarCobrado(op);'],
+  ['liberarMira', 'boletos anota lo pedido', 'apps/web/lib/boletos.ts', '    await marcarCobrado(op, cap.cobrado, h.total);', '    await marcarCobrado(op, undefined, h.total);'],
   ['liberarMira', 'patrocinio anota lo pedido', 'apps/web/lib/patrocinio.ts', '  return r.cobrado ?? centavos;', '  return centavos;'],
   ['liberarMira', 'patrocinio-evento anota lo pedido', 'apps/web/lib/patrocinio-evento.ts', 'await anotarPago(c, { ...cobro, centavos: cobrado, ref: id,', 'await anotarPago(c, { ...cobro, ref: id,'],
   // La cobrada de una cancelación tarde sin su regla; «cobrada» sin haber tocado la fila.
   ['liberarMira', 'la cobrada tarde sin su regla', CO, 'const regla = await reglaTardeConLoCobrado(opId).catch(', 'const regla = await Promise.resolve(null).catch('],
   ['liberarMira', '«cobrada» sin tocar la fila', CO, '    if (tocada) return "cobrada";', '    return "cobrada";'],
+  // (revisión de 621f214) · M4: el aviso que manda el barrido se pierde si el envío falla (avisar no dice si quedó, el reclamo no se devuelve, nadie lo
+  // reintenta); el reintento repite el que ya llegó; la cancelación lo manda y el barrido lo repite; la alerta no dice si le llegó.
+  ['liberarMira', 'avisar dice que quedó aunque falle', 'apps/web/lib/avisos.ts', 'catch { /* un aviso nunca rompe la acción que lo dispara */ return false; }', 'catch { /* un aviso nunca rompe la acción que lo dispara */ return true; }'],
+  ['liberarMira', 'el reclamo no se devuelve', CO, "jsonb_build_object('avisoCobro', false, 'avisoCobroFalta'", "jsonb_build_object('avisoCobro', true, 'avisoCobroFalta'"],
+  ['liberarMira', 'el reintento manda también lo que ya llegó', VL, '  const cli = !partes.cli || (await avisarCliente(', '  const cli = (await avisarCliente('],
+  ['liberarMira', 'evento privado: el reintento manda también lo que ya llegó', EP, '  const okNeg = !partes.neg || (await avisarEvp(numero, "negocio"', '  const okNeg = (await avisarEvp(numero, "negocio"'],
+  ['liberarMira', 'la cancelación no quita lo pendiente del barrido', CO, "details = (details - 'avisoCobroFalta') || '{\"avisoCobro\":true}'::jsonb", "details = details || '{\"avisoCobro\":true}'::jsonb"],
+  ['liberarMira', 'la alerta cobrada: no dice si llegó el aviso', CO, '. Revisa en Stripe que cuadre; no devuelvas nada más.${avT.es}`', '. Revisa en Stripe que cuadre; no devuelvas nada más.`'],
+  ['liberarMira', 'el barrido no reintenta el aviso', CO, 'if (regla) await avisarTardeCobrada(x.op, x.num, x.kind, x.amt, regla, true);', 'if (regla) void x;'],
+  // M6: la segunda «cobrada» (la cancelación y el barrido) calcula la mitad con la devolución de la cancelación y dice «nada» de la devolución.
+  ['liberarMira', 'la mitad con la devolución de la cancelación', CO, 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));', 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));'],
+  ['liberarMira', 'sin nada que devolver dice «nada» aunque la de la llave exista', CO, 'if (falta <= 0) return x.seQueda ? (await devDeLaLlave(o.pid, x.idem)) ?? { e: "nada", monto: 0 } :', 'if (falta <= 0) return x.seQueda ? { e: "nada", monto: 0 } :'],
+  // M5: lo capturado distinto de lo pedido sin alerta (cobros, mercado, boletos, patrocinios) o con alerta también del mismo monto.
+  ['liberarMira', 'cobrarOperacion: otro monto sin alerta', CO, '  if (tocada) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, p.amount, r.cobrado);\n', ''],
+  ['liberarMira', 'mercado: otro monto sin alerta', 'apps/web/lib/mercado.ts', '    if (u.rowCount) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, monto, r.cobrado);\n', ''],
+  ['liberarMira', 'boletos: otro monto sin alerta', 'apps/web/lib/boletos.ts', '  if (pid) await (await import("./dinero-alertas")).alertarOtroMontoPago(pid, pedido, cobrado);\n', ''],
+  ['liberarMira', 'patrocinio: otro monto sin alerta', 'apps/web/lib/patrocinio.ts', '      otroMonto = { id, cobrado };\n', ''],
+  ['liberarMira', 'patrocinio del evento: otro monto sin alerta', 'apps/web/lib/patrocinio-evento.ts', 'alertarOtroMonto("event_sponsorships", om.id, centavos, om.cobrado,', 'alertarOtroMonto("sponsorships", om.id, centavos, om.cobrado,'],
+  ['liberarMira', 'la alerta de otro monto también del mismo', 'apps/web/lib/dinero-alertas.ts', 'if (cobrado == null || cobrado === pedido) return;', 'if (cobrado == null) return;'],
+  // Fuera del diff de 621f214: la cancelación tarde cobrada sin su regla (el proceso murió) nadie la encuentra, o se toca mientras sigue en curso.
+  ['liberarMira', 'la cobrada sin regla no se repara', CO, 'await cobradaConSuRegla(x.op, REPARA, "reparar");', 'void REPARA;'],
+  ['liberarMira', 'el reparo no espera a la cancelación en curso', CO, " and o.cancelled_at < now() - interval '5 minutes'", ''],
+  ['liberarMira', 'el reparo no mira el evento privado', CO, "else coalesce(o.details->>'perdio', '') = 'false' end", 'else false end'],
+  ['barridoCompleto', 'el reparo fuera del barrido central', 'apps/web/lib/barrido.ts', '        ["cobradasTarde", () => cobros.barrerCobradasTarde()],\n', ''],
   // ── capturaTardeAlerta ──
   // El fallo del 25 nov: la captura tarde a la que Stripe no contestó suelta sin alerta.
   ['capturaTardeAlerta', 'viaje: sin alerta ante la red', VL, '        else if (capturaSinRespuesta(cap)) await alertarCapturaTarde(numero, x.p?.id ?? null, { codigo: cap.codigo }, x.d);\n', ''],

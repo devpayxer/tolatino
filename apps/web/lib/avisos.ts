@@ -40,14 +40,17 @@ async function enBajaSms(tel: string): Promise<boolean> {
   } catch { return true; }
 }
 
-export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; sinSms?: boolean; actor?: string | null } = {}) {
+/* 25 nov (revisión de 621f214) · Dice si el aviso quedó: true si quedó en la campana; undefined si la persona eligió no recibirlo (apagado: no se manda y
+   no hay nada que reintentar); false si no se pudo (no hay plantilla o persona, o la base falló). Quien tiene que reintentarlo mira «=== false» (cobros ›
+   avisarTardeCobrada); los demás lo ignoran, como siempre. */
+export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; sinSms?: boolean; actor?: string | null } = {}): Promise<boolean | undefined> {
   try {
     const r = (await db().query<{ grp: string; pref: string | null; sms: boolean; sms_mode: string; push: boolean; enlace: boolean; title: { es: string; en: string }; body: { es: string; en: string }; lang: string; phone: string; prefs: Record<string, boolean>; city: string | null; tz: string; silencio: boolean; pn: number }>(
       `select tp.grp, tp.pref, tp.sms, tp.sms_mode, tp.push, tp.sms_enlace as enlace, tp.title, tp.body, u.lang, u.phone, u.notif_prefs as prefs, u.home_city_id as city, coalesce(c.timezone, 'America/New_York') as tz,
               extract(hour from now() at time zone coalesce(c.timezone, 'America/New_York')) not between 7 and 21 as silencio,
               (select count(*)::int from push_tokens t where ${destino("u.id", "tp.app", "$3::text[]")}) as pn
          from notif_templates tp, users u left join cities c on c.id = u.home_city_id where tp.key = $1 and u.id = $2`, [tpl, userId, await canales()])).rows[0];
-    if (!r) return;
+    if (!r) return false;
     // 6j · El título también lleva las variables («Tus boletos para {evento}» salía con la llave escrita): guardián avisoTituloLleno.
     v = porIdioma(v, r.lang !== "en"); // AO · los valores en dos idiomas, en el de quien lo recibe
     const es = r.lang !== "en", title = llenar(es ? r.title.es : r.title.en, v).slice(0, 120), body = llenar(es ? r.body.es : r.body.en, v).slice(0, 480);
@@ -72,7 +75,8 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
       [userId, r.city, tpl, title, body, o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st, r.sms ? r.phone : null, o.actor ?? null, guardado, pst])).rows[0]!.id;
     if (pst === "pendiente") await encolar([id]);
     if (st === "pendiente" || st === "pruebas") await salirSms("notifications", id, r.phone, body, tpl, r.city, st === "pruebas", r.enlace ? o.href : null);
-  } catch { /* un aviso nunca rompe la acción que lo dispara */ }
+    return true;
+  } catch { /* un aviso nunca rompe la acción que lo dispara */ return false; }
 }
 
 /* 8c · El SMS de respaldo de un aviso cuyo push no llegó (lib/push/cola.ts lo pide cuando ya no hay push que lo lleve, o al vencer push_ttl_h).
@@ -145,12 +149,18 @@ export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en
 }
 
 /* Los dueños activos de un negocio (para los avisos al negocio). */
-export async function avisarNegocio(negocio: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string] } = {}) {
+/* 25 nov (revisión de 621f214) · Dice si quedó (como avisar): el grupo apagado por el negocio cuenta como quedó; si la lista de dueños no se pudo leer o
+   el aviso de alguno no quedó, false. */
+export async function avisarNegocio(negocio: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string] } = {}): Promise<boolean> {
   // 9n · Panel › Más › Lo que te avisamos: el negocio apaga un grupo (pedidos, citas, reseñas…); lo que no tiene grupo (dinero, sanciones) siempre llega.
   const apagado = (await db().query(`select 1 from notif_templates t join business_notif_prefs p on p.pref = t.biz_pref and p.business_id = $1 where t.key = $2 and p.off`, [negocio, tpl]).catch(() => ({ rowCount: 0 }))).rowCount;
-  if (apagado) return;
-  const L = (await db().query<{ id: string }>(`select user_id::text as id from business_members where business_id = $1 and status = 'active' and kind = 'owner'`, [negocio]).catch(() => ({ rows: [] as { id: string }[] }))).rows;
-  for (const u of L) await avisar(u.id, tpl, v, o);
+  if (apagado) return true;
+  const q = await db().query<{ id: string }>(`select user_id::text as id from business_members where business_id = $1 and status = 'active' and kind = 'owner'`, [negocio]).catch(() => null);
+  if (!q) return false;
+  const L = q.rows;
+  let todos = true;
+  for (const u of L) if ((await avisar(u.id, tpl, v, o)) === false) todos = false;
+  return todos;
 }
 
 /* Atajos por evento: leen lo necesario del pedido, la mesa, la solicitud o la ayuda. */

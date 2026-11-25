@@ -247,18 +247,18 @@ const diaL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return `
 const diaBi = (ymd: string): Bi => { const d = new Date(`${ymd}T12:00:00Z`); return { es: diaL(ymd), en: `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${d.getUTCMonth() + 1}/${d.getUTCDate()}` }; };
 async function avisarCliente(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
-  if (!o) return;
+  if (!o) return false;
   const { avisar } = await import("./avisos");
-  await avisar(o.uid, tpl, { negocio: o.negocio, dia: diaBi(o.ymd), hora: horaL(o.m), total: money(o.tot), dev: "", dinero: "", ...extra }, { href: `/viaje/${numero}`, ref: ["trip", numero] });
+  return avisar(o.uid, tpl, { negocio: o.negocio, dia: diaBi(o.ymd), hora: horaL(o.m), total: money(o.tot), dev: "", dinero: "", ...extra }, { href: `/viaje/${numero}`, ref: ["trip", numero] });
 }
 /* 25 nov (LAUNCH e) · Cada valor en los dos idiomas (el servicio, las personas, el día y lo que se cobró): avisos › avisar pone el del dueño que lo recibe.
    Antes salía en español también en un aviso en inglés. Guardián avisoNegUnIdioma. */
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
-  if (!o) return;
+  if (!o) return false;
   const { avisarNegocio } = await import("./avisos");
   const a = Number(o.det.adults ?? 1), k = Number(o.det.kids ?? 0), n = a + k, svc = o.det.svc as Bi | undefined;
-  await avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaBi(o.ymd), hora: horaL(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "", personas: { es: `${n} ${n === 1 ? "persona" : "personas"}`, en: `${n} ${n === 1 ? "person" : "people"}` }, dep: "", ...extra },
+  return avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaBi(o.ymd), hora: horaL(o.m), servicio: svc?.es ? { es: svc.es, en: svc.en || svc.es } : "", personas: { es: `${n} ${n === 1 ? "persona" : "personas"}`, en: `${n} ${n === 1 ? "person" : "people"}` }, dep: "", ...extra },
     { href: `/panel/${o.biz}/hoy?det=viaje:${numero}`, ref: ["trip", numero] });
 }
 export async function avisarViajeNuevo(numero: string) {
@@ -419,15 +419,18 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
 /* 25 nov (revisión de 483a3af) · La cancelación tarde cuya retención resultó cobrada DESPUÉS (el barrido la encontró cobrada y aplicó la regla: cobros ›
    soltarRetencion › avisarTardeCobrada, que ya reclamó el aviso): a quien pagó le habíamos dicho «No se cobró nada, pero la retención todavía no se
    soltó». Su aviso de la cancelación (viaje_cx) y el del negocio (biz_viaje_cx) otra vez, con lo aplicado: se cobró la mitad (o lo que quedaba) y lo que
-   pasó con la devolución del resto. */
-export async function avisarViajeTardeCobrado(numero: string, regla: ReglaTarde) {
+   pasó con la devolución del resto.
+   25 nov (revisión de 621f214) · partes: los avisos que faltan (el barrido de cobros › barrerCobradasTarde reintenta solo el que no quedó). Devuelve cuáles
+   quedaron (el que no se pidió cuenta como quedó): quien llama devuelve el reclamo si alguno no quedó. */
+export async function avisarViajeTardeCobrado(numero: string, regla: ReglaTarde, partes: { cli: boolean; neg: boolean } = { cli: true, neg: true }): Promise<{ cli: boolean; neg: boolean }> {
   const o = await leer(db(), "o.number = $1", [numero]);
-  if (!o) return;
+  if (!o) return { cli: !partes.cli, neg: !partes.neg };
   const cobra = Math.floor(o.tot / 2), mitad = regla.queda, d: DevCancelar = regla.dev ?? { e: "nada", monto: 0 };
   const ya = { es: "La retención sí se había cobrado.", en: "The hold had in fact been charged." };
   const seCobro = mitad === cobra ? { es: `${ya.es} Se cobró la mitad: ${money(mitad)}.`, en: `${ya.en} Half was charged: ${money(mitad)}.` } : { es: `${ya.es} Se cobró lo que quedaba: ${money(mitad)}.`, en: `${ya.en} What was left was charged: ${money(mitad)}.` };
-  await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : ya) });
-  await avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`, en: ` ${mitad ? seCobro.en : ya.en}` } });
+  const cli = !partes.cli || (await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : ya) })) !== false;
+  const neg = !partes.neg || (await avisarNeg(numero, "biz_viaje_cx", { dep: { es: ` ${mitad ? seCobro.es : ya.es}`, en: ` ${mitad ? seCobro.en : ya.en}` } })) !== false;
+  return { cli, neg };
 }
 
 /* ── La salida (Panel › Hoy › Salidas): va tarde · salió · llegó · el negocio la cancela (devolución completa a todos) ── */

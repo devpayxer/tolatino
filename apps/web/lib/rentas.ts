@@ -374,12 +374,15 @@ async function liquidarDeposito(rid: string): Promise<void> {
     if (!r.ok) return; // se reintenta en el próximo barrido
     // 25 nov · Ya capturado (reintento o respuesta perdida): se anota lo que Stripe capturó de verdad (r.cobrado), no lo pedido.
     const real = r.cobrado ?? objetivo;
-    await tx(async (c) => {
+    const tocada = await tx(async (c) => {
       const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = least($3::int, $2::int), captured_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [P.id, real, fee]);
-      if (!u.rowCount) return;
+      if (!u.rowCount) return false;
       if (x.dmgSt === "accepted") await c.query(`update rentals set damage_status = 'charged', updated_at = now() where id = $1::bigint`, [rid]);
       await ev(c, x.op, "payment_captured", "system", null, { es: `Del depósito se descontaron ${money(real)}; el resto se liberó`, en: `${money(real)} taken from the deposit; the rest was released` });
+      return true;
     });
+    // 25 nov (revisión de 621f214) · Otro monto que el pedido (Stripe ya lo había capturado): el equipo de dinero lo sabe (dinero-alertas › alertarOtroMonto).
+    if (tocada) await (await import("./dinero-alertas")).alertarOtroMontoPago(P.id, objetivo, r.cobrado);
   } else {
     // 25 nov (LAUNCH g) · Se mira lo que contestó: sin soltar (o ya cobrado en Stripe) no se marca liberado; se reintenta en el próximo barrido. Guardián liberarMira.
     if (!(await pasarela.liberar(P.pi)).ok) return;
@@ -663,7 +666,7 @@ export async function renovacionDeposito(pago: string): Promise<import("./renova
     },
     fallo: async (c, m) => ev(c, p.op, "hold_failed", "system", null, m === "banco" ? { es: `El depósito de ${money(p.held)} no se pudo renovar: el banco no dejó`, en: `The ${money(p.held)} deposit could not be renewed: the bank declined` }
       : { es: `El depósito de ${money(p.held)} no se pudo renovar`, en: `The ${money(p.held)} deposit could not be renewed` }),
-    avisar: async (m) => (await import("./avisos")).avisarNegocio(p.biz, "biz_renta", { cliente: p.cliente, articulo: p.n.es,
-      que: m === "banco" ? `el banco ya no deja retener el depósito de ${money(p.held)}` : `no se pudo renovar la retención del depósito de ${money(p.held)} (la tarjeta la suelta a los 7 días): ya no hay depósito retenido` }, href),
+    avisar: async (m) => { await (await import("./avisos")).avisarNegocio(p.biz, "biz_renta", { cliente: p.cliente, articulo: p.n.es,
+      que: m === "banco" ? `el banco ya no deja retener el depósito de ${money(p.held)}` : `no se pudo renovar la retención del depósito de ${money(p.held)} (la tarjeta la suelta a los 7 días): ya no hay depósito retenido` }, href); },
   };
 }

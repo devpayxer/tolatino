@@ -16348,7 +16348,7 @@ const guardianes = {
     const F = [["planes", "barrerPlanes"], ["layaway", "barrerPlanes"], ["layaway", "repararPlanes"], ["rentas", "barrerRentas"], ["apartados", "barrerApartados"], ["apartados", "repararApartados"],
       ["patrocinio", "barrerPatrocinios"], ["patrocinio", "barrerDevolucionesPat"], ["patrocinio-evento", "barrerPatrociniosEventos"], ["cobro-fuera", "barrerCobrosFuera"],
       ["suscripcion", "procesar"], ["suscripcion", "barrerCobrosPro"], ["renovar-retencion", "barrerRenovaciones"], ["revision-pasarela", "barrerDevolucionesSobra"],
-      ["cobros", "repararPagos"], ["cobros", "barrerDevolucionesPago"], ["boletos-despues", "vencerTransferencias"], ["boletos-despues", "barrerDevolucionesBoletos"],
+      ["cobros", "repararPagos"], ["cobros", "barrerDevolucionesPago"], ["cobros", "barrerCobradasTarde"], ["boletos-despues", "vencerTransferencias"], ["boletos-despues", "barrerDevolucionesBoletos"],
       ["boletos", "vencerApartados"], ["boletos", "repararBoletos"], ["evt-liquidacion", "liquidar"], ["evt-liquidacion", "repararLiquidaciones"], ["evt-liquidacion", "revertirDeudas"],
       ["evt-cambios", "barrerCancelaciones"], ["pagos-banco", "pagarAlBanco"], ["pagos-banco", "sincronizarPausas"], ["dinero-alertas", "barrerAlertasDinero"],
       ["estimados", "repararEstimados"], ["estimados", "renovarRetenciones"], ["mercado", "repararMercado"], ["devolucion-consulta", "preguntarViejas"]];
@@ -17884,7 +17884,7 @@ const guardianes = {
       if (!/const s = await soltarRetencion\(o\.id, /.test(dac) || !/if \(s\.e === "retenida" \|\| s\.e === "cobrada"\) return \{ e: s\.e, monto: s\.monto/.test(dac)
         || !/if \(y\.st === "released"\) return y\.amt > 0 \? \{ e: "liberada", monto: y\.amt \} : \{ e: "nada", monto: 0 \};/.test(dac) || /\{ e: "liberada", monto: o\.amount/.test(dac))
         falla(G, "apps/web/lib/cobros.ts", 0, "devolverAlCancelar no mira si la retención se soltó (soltarRetencion): una que la pasarela no soltó diría «se suelta»");
-      if (!/const l = await liberarOperacion\(opId\);\n\s*if \(l === "cobrada"\) \{[\s\S]*?\n  \}\n\s*if \(l !== "fallo"\) return \{ e: l, monto: 0 \};/.test(sr) || !/\n  await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(sr) || !/return \{ e: "retenida", monto: h\.amt \};/.test(sr))
+      if (!/const l = await liberarOperacion\(opId\);\n\s*if \(l === "cobrada"\) (?:\{[\s\S]*?\n  \}|return cobradaConSuRegla\(opId, motivo, [^\n]*\);)\n\s*if \(l !== "fallo"\) return \{ e: l, monto: 0 \};/.test(sr) || !/\n  await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(sr) || !/return \{ e: "retenida", monto: h\.amt \};/.test(sr))
         falla(G, "apps/web/lib/cobros.ts", 0, "soltarRetencion no mira lo que dijo liberarOperacion o no alerta hold_stuck (una vez por cobro: liberar:<cobro>) cuando la retención no se soltó");
       const dc = existsSync("apps/web/lib/devolucion-cancelar.ts") ? sinComent("apps/web/lib/devolucion-cancelar.ts") : "";
       if (!/hechas: c\.hechas \+ \(d\.e === "hecha" \? 1 : 0\)/.test(dc) || !/liberadas: c\.liberadas \+ \(d\.e === "liberada" \? 1 : 0\), retenidas: c\.retenidas \+ \(d\.e === "retenida" \? 1 : 0\)/.test(dc)
@@ -18226,10 +18226,12 @@ const guardianes = {
     if (!lib) falla(G, PA, 0, "no encuentro pasarela.liberar");
     else if (!/if \(r\.rowCount\) return \{ ok: true \};\n\s*const s = \(await db\(\)\.query<[^>]*>\(`select status, captured_cents from sim_intents where id = \$1`/.test(lib) || !/liberacionDe\(s \?/.test(lib))
       falla(G, PA, 0, "el simulador suelta sin mirar: liberar de un sim_intents que no se pudo cancelar tiene que leer su estado (liberacionDe), como Stripe");
-    const co = sinComent(CO), lo = cuerpoFn(co, "liberarOperacion"), sr = cuerpoFn(co, "soltarRetencion");
+    const co = sinComent(CO), lo = cuerpoFn(co, "liberarOperacion"), sr = cuerpoFn(co, "soltarRetencion"), ccr = cuerpoFn(co, "cobradaConSuRegla");
     if (!/if \(!r\.ok && r\.cobrado !== undefined\) \{[\s\S]*?update payments set status = 'captured', amount_cents = \$2[\s\S]*?return "cobrada";/.test(lo))
       falla(G, CO, 0, "liberarOperacion no anota 'captured' con el monto real cuando Stripe ya lo había cobrado (r.cobrado → «cobrada»)");
-    if (!/if \(l === "cobrada"\) \{[\s\S]*?alertar\("hold_stuck", `cobrada:\$\{c\.id\}`/.test(sr)) falla(G, CO, 0, "soltarRetencion no alerta al equipo de dinero cuando la retención ya estaba cobrada (hold_stuck cobrada:<cobro>)");
+    // 25 nov (revisión de 621f214) · La «cobrada» la sigue cobradaConSuRegla (también la usa barrerCobradasTarde): la regla, el aviso y la alerta.
+    if (!/if \(l === "cobrada"\) return cobradaConSuRegla\(opId, motivo, motivo === SWEEP \? "barrido" : "soltar"\);/.test(sr) || !/alertar\("hold_stuck", `cobrada:\$\{c\.id\}`/.test(ccr))
+      falla(G, CO, 0, "soltarRetencion no alerta al equipo de dinero cuando la retención ya estaba cobrada (cobradaConSuRegla: hold_stuck cobrada:<cobro>)");
     // 25 nov (revisión de 00ac9b7) · (5) Una captura que ya estaba hecha vuelve con lo que Stripe capturó (cobrado) y el simulador no reescribe lo capturado;
     // cobrarOperacion anota ese monto. (6) Lo aceptado que Stripe ya no deja cobrar alerta (cobrar:) y repararPagos no lo reintenta. (7) La cobrada de una
     // cancelación tarde sigue su regla (reglaTardeConLoCobrado) y la alerta lo dice; «cobrada» solo con la fila tocada o releída.
@@ -18254,9 +18256,9 @@ const guardianes = {
     // cobró nada»), una vez: lo reclama quien lo manda (reclamarAvisoCobro), también la cancelación misma. (12) La «cobrada» por relectura lleva la regla que
     // aplicó el barrido (reglaTardeLeida). (13) barrerAlertasDinero no cierra alertas por su cuenta: solo por cerrarAlertasResueltas (que no mira ni captura:
     // ni cobrada:).
-    if (!/if \(regla && motivo === SWEEP\) await avisarTardeCobrada\(/.test(sr)) falla(G, CO, 0, "soltarRetencion: cuando el barrido aplica la regla de la cancelación tarde, nadie se lo dice a quien pagó ni al negocio (avisarTardeCobrada)");
+    if (!/const av = regla && como !== "soltar" \? await avisarTardeCobrada\(opId, /.test(ccr)) falla(G, CO, 0, "soltarRetencion: cuando el barrido aplica la regla de la cancelación tarde, nadie se lo dice a quien pagó ni al negocio (cobradaConSuRegla › avisarTardeCobrada)");
     const atc = cuerpoFn(co, "avisarTardeCobrada");
-    if (!/if \(!\(await reclamarAvisoCobro\(opId\)\)\) return;[\s\S]*?avisarViajeTardeCobrado\([\s\S]*?avisarEvpTardeCobrado\(/.test(atc)) falla(G, CO, 0, "avisarTardeCobrada no reclama el aviso antes de mandarlo (reclamarAvisoCobro) o no avisa del viaje y del evento privado: se repetiría o no saldría");
+    if (!/const falta = await reclamarAvisoTarde\(opId, retomar\)[\s\S]*?if \(!falta\) return null;[\s\S]*?avisarViajeTardeCobrado\(num, regla, falta\)[\s\S]*?avisarEvpTardeCobrado\(num, regla\.queda, cobrado, falta\)/.test(atc)) falla(G, CO, 0, "avisarTardeCobrada no reclama el aviso antes de mandarlo (reclamarAvisoTarde) o no avisa del viaje y del evento privado (solo lo que falta): se repetiría o no saldría");
     for (const [f, fn, tpls, cx] of [["apps/web/lib/viajes.ts", "avisarViajeTardeCobrado", ['"viaje_cx"', '"biz_viaje_cx"'], "viajeCliente"], ["apps/web/lib/evento-privado.ts", "avisarEvpTardeCobrado", ['"evp_cancelado"', '"evp_biz_cx"'], "cancelarEvp"]]) {
       const t = existsSync(f) ? sinComent(f) : "", cu = cuerpoFn(t, fn);
       if (!/\nexport async function/.test(cu.slice(0, 30)) || tpls.some((k) => !cu.includes(k))) falla(G, f, 0, `${fn} no manda los dos avisos de la cancelación (${tpls.join(" y ")}) con lo que aplicó el barrido`);
@@ -18283,7 +18285,55 @@ const guardianes = {
       const t = existsSync(f) ? sinComent(f) : "";
       for (const m of t.matchAll(/(.*)capturarCobro\(p, centavos\);\n(.*)\n/g)) if (!/const cobrado = await $/.test(m[1]) || !/anotarPago\(c, \{ \.\.\.cobro, centavos: cobrado,/.test(m[2])) falla(G, f, t.slice(0, m.index).split("\n").length + 1, "el patrocinio anota lo pedido aunque Stripe ya hubiera capturado otro monto: va lo que devolvió capturarCobro");
     }
-    if (!/const regla = await reglaTardeConLoCobrado\(opId\)/.test(sr) || !/Se aplicó la cancelación tarde: se quedó/.test(sr)) falla(G, CO, 0, "soltarRetencion: la cobrada de una cancelación tarde no sigue su regla (reglaTardeConLoCobrado) o la alerta no lo dice");
+    if (!/const regla = await reglaTardeConLoCobrado\(opId\)/.test(ccr) || !/Se aplicó la cancelación tarde: se quedó/.test(ccr)) falla(G, CO, 0, "soltarRetencion: la cobrada de una cancelación tarde no sigue su regla (cobradaConSuRegla › reglaTardeConLoCobrado) o la alerta no lo dice");
+    // 25 nov (revisión de 621f214) · (16) El aviso que manda el barrido no se pierde: avisos › avisar dice si quedó; lo que no quedó devuelve el reclamo con lo
+    // que falta (avisoCobroFalta) y barrerCobradasTarde lo reintenta (solo lo que falta, hasta AVISO_TARDE_INTENTOS); la cancelación que lo manda ella misma
+    // quita lo pendiente. La alerta cobrada: dice si el aviso le llegó a quien pagó (el aviso va ANTES de la alerta). (17) La cobrada por los dos (la
+    // cancelación y el barrido): la mitad sin la devolución vcx- ya hecha y, sin nada más que devolver, lo que pasó con la de la llave (nunca «nada»).
+    // (18) Cada captura que anota otro monto que el pedido (r.cobrado) alerta al equipo de dinero (gateway_review capturado:<tabla>:<id>). (19) La
+    // cancelación tarde cobrada sin su regla (el proceso murió) la encuentra barrerCobradasTarde y la aplica, con su alerta y su aviso.
+    const AV = "apps/web/lib/avisos.ts", av = existsSync(AV) ? sinComent(AV) : "", avs = cuerpoFn(av, "avisar");
+    if (!/\): Promise<boolean \| undefined> \{\n  try \{/.test(avs) || !/if \(!r\) return false;/.test(avs) || !/\n    return true;\n  \} catch \{[^\n]*return false; \}/.test(avs)) falla(G, AV, 0, "avisar no dice si el aviso quedó (true si quedó; undefined si la persona lo apagó; false si no se pudo): quien reintenta no lo sabría");
+    if (!/if \(\(await avisar\(u\.id, tpl, v, o\)\) === false\) todos = false;/.test(cuerpoFn(av, "avisarNegocio")) || !/return todos;/.test(cuerpoFn(av, "avisarNegocio"))) falla(G, AV, 0, "avisarNegocio no dice si el aviso de cada dueño quedó");
+    for (const [f, fn, a, b] of [["apps/web/lib/viajes.ts", "avisarViajeTardeCobrado", "avisarCliente(", "avisarNeg("], ["apps/web/lib/evento-privado.ts", "avisarEvpTardeCobrado", 'avisarEvp(numero, "cliente"', 'avisarEvp(numero, "negocio"']]) {
+      const cu = cuerpoFn(existsSync(f) ? sinComent(f) : "", fn);
+      if (!/partes: \{ cli: boolean; neg: boolean \} = \{ cli: true, neg: true \}\): Promise<\{ cli: boolean; neg: boolean \}>/.test(cu) || !cu.includes(`!partes.cli || (await ${a}`) || !cu.includes(`!partes.neg || (await ${b}`) || (cu.match(/\)\) !== false;/g) ?? []).length < 2)
+        falla(G, f, 0, `${fn} no manda solo lo que falta (partes) o no dice qué aviso quedó ({ cli, neg }): el reintento repetiría el que ya llegó o perdería el que no`);
+    }
+    if (!/if \(hecho\.cli && hecho\.neg\) await db\(\)\.query\(`update operations set details = details - 'avisoCobroFalta'/.test(atc)
+      || !/jsonb_build_object\('avisoCobro', false, 'avisoCobroFalta', \$2::jsonb, 'avisoCobroIntentos', coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) \+ 1\)/.test(atc))
+      falla(G, CO, 0, "avisarTardeCobrada: si el aviso no quedó, el reclamo no se devuelve (avisoCobro false con lo que falta): nadie lo reintenta");
+    if (!/details = \(details - 'avisoCobroFalta'\) \|\| '\{"avisoCobro":true\}'::jsonb/.test(cuerpoFn(co, "reclamarAvisoCobro"))) falla(G, CO, 0, "reclamarAvisoCobro (la cancelación manda los dos avisos) no quita lo que el barrido tenía pendiente: saldría dos veces");
+    const iAv = ccr.indexOf("await avisarTardeCobrada("), iAl = ccr.indexOf('alertar("hold_stuck", `cobrada:');
+    if (iAv < 0 || iAl < 0 || iAv > iAl || !/\$\{avT\.es\}`/.test(ccr) || !/NO le llegó a quien pagó/.test(ccr)) falla(G, CO, 0, "cobradaConSuRegla: la alerta cobrada: no dice si el aviso le llegó a quien pagó (el aviso va antes de la alerta)");
+    const bct = cuerpoFn(co, "barrerCobradasTarde");
+    if (!/await avisarTardeCobrada\(x\.op, x\.num, x\.kind, x\.amt, regla, true\)/.test(bct) || !/coalesce\(\(o\.details->>'avisoCobroIntentos'\)::int, 0\) < \$2::int/.test(bct) || !/o\.details \? 'avisoCobroFalta'/.test(bct))
+      falla(G, CO, 0, "barrerCobradasTarde no reintenta el aviso que no quedó (avisoCobroFalta, con su tope de intentos)");
+    const rtc = cuerpoFn(co, "reglaTardeConLoCobrado");
+    if (!/const mitad = Math\.min\(Math\.floor\(o\.tot \/ 2\), Math\.max\(0, o\.amt - \(o\.ref - o\.vcx\)\)\);/.test(rtc) || !/as vcx/.test(rtc)) falla(G, CO, 0, "reglaTardeConLoCobrado cuenta la devolución vcx- ya hecha como si no fuera de la cancelación: la segunda «cobrada» calcularía mal la mitad");
+    if (!/if \(falta <= 0\) return x\.seQueda \? \(await devDeLaLlave\(o\.pid, x\.idem\)\) \?\? \{ e: "nada", monto: 0 \} :/.test(cuerpoFn(co, "devolverAlCancelar"))) falla(G, CO, 0, "devolverAlCancelar: sin nada más que devolver y algo que se queda dice «nada» aunque la devolución de su llave ya exista (el aviso diría «Se cobró la mitad» sin «te devolvimos»)");
+    const da = sinComent(DA), aom = cuerpoFn(da, "alertarOtroMonto");
+    if (!/if \(cobrado == null \|\| cobrado === pedido\) return;/.test(aom) || !/alertar\("gateway_review", `capturado:\$\{tabla\}:\$\{id\}`/.test(aom)) falla(G, DA, 0, "alertarOtroMonto no alerta (gateway_review capturado:<tabla>:<id>) cuando Stripe capturó otro monto que el pedido");
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x) && x !== PA)) {
+      const t = sinComent(f);
+      for (const m of t.matchAll(/const (\w+) = await pasarela\.(?:cobrar|capturarPlataforma)\(/g)) {
+        const ini = Math.max(t.lastIndexOf("\nasync function", m.index), t.lastIndexOf("\nexport async function", m.index)), fin = t.indexOf("\n}", m.index), cu = t.slice(ini, fin < 0 ? undefined : fin);
+        if (new RegExp(`return ${m[1]}\\.cobrado \\?\\? `).test(cu)) continue; // patrocinio › capturarCobro: lo alerta quien la llama (abajo)
+        if (!/alertarOtroMonto(?:Pago)?\(/.test(cu) && !new RegExp(`marcarCobrado\\([^)]*${m[1]}\\.cobrado, `).test(cu))
+          falla(G, f, t.slice(0, m.index).split("\n").length, `una captura que anota lo que Stripe capturó (${m[1]}.cobrado) no alerta cuando es otro monto que el pedido (dinero-alertas › alertarOtroMonto)`);
+      }
+    }
+    const BO = "apps/web/lib/boletos.ts";
+    if (!/if \(pid\) await \(await import\("\.\/dinero-alertas"\)\)\.alertarOtroMontoPago\(pid, pedido, cobrado\);/.test(cuerpoFn(existsSync(BO) ? sinComent(BO) : "", "marcarCobrado"))) falla(G, BO, 0, "marcarCobrado anota lo que Stripe capturó sin alertar cuando es otro monto que el pedido");
+    for (const [f, tabla] of [["apps/web/lib/patrocinio.ts", "sponsorships"], ["apps/web/lib/patrocinio-evento.ts", "event_sponsorships"]]) {
+      const t = existsSync(f) ? sinComent(f) : "";
+      if (!/otroMonto = \{ id, cobrado \};/.test(t) || !t.includes(`alertarOtroMonto("${tabla}", om.id, centavos, om.cobrado,`)) falla(G, f, 0, "el patrocinio anota lo que Stripe capturó sin alertar cuando es otro monto que el pedido (alertarOtroMonto, fuera de la transacción)");
+    }
+    if (!/where p\.captured_at > now\(\) - interval '2 days' and p\.captured_at < now\(\) - interval '5 minutes'/.test(bct) || !/o\.cancelled_at < now\(\) - interval '5 minutes'/.test(bct)
+      || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)/.test(bct)
+      || !/not exists \(select 1 from refunds r where r\.payment_id = p\.id and split_part\(r\.idem_key, '~fallida-', 1\) = 'vcx-' \|\| o\.number\)/.test(bct)
+      || !/else coalesce\(o\.details->>'perdio', ''\) = 'false' end/.test(bct) || !/await cobradaConSuRegla\(x\.op, REPARA, "reparar"\);/.test(bct))
+      falla(G, CO, 0, "barrerCobradasTarde no encuentra la cancelación tarde cobrada sin su regla (el proceso murió a mitad): quedaría cobrada entera, sin devolución, sin alerta y sin aviso");
     if (!/if \(tocada\) return "cobrada";/.test(lo)) falla(G, CO, 0, "liberarOperacion dice «cobrada» sin haber tocado la fila ni releerla");
     const cerrar = cuerpoFn(sinComent(DA), "cerrarAlertasResueltas");
     if (!cerrar) falla(G, DA, 0, "no encuentro cerrarAlertasResueltas");

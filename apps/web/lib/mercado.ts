@@ -266,6 +266,8 @@ export async function liquidarMercado(opId: string): Promise<{ cobrado: number; 
     const real = r.cobrado ?? monto;
     const u = await db().query<{ amt: number; fee: number }>(`update payments set status = 'captured', amount_cents = $2, fee_cents = least($3::int, $2::int), captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held' returning amount_cents as amt, fee_cents as fee`, [p.id, real, fee]);
     if (u.rowCount) { cobrado += real; liberado += Math.max(0, p.held - real); }
+    // 25 nov (revisión de 621f214) · Otro monto que el pedido (Stripe ya lo había capturado): el equipo de dinero lo sabe (dinero-alertas › alertarOtroMonto).
+    if (u.rowCount) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, monto, r.cobrado);
     // 25 nov (revisión de 483a3af) · Lo que falta cobrar y la comisión que falta repartir bajan con lo ANOTADO (lo que Stripe capturó y least(comisión, eso)),
     // no con lo pedido: antes restaban monto y fee aunque se anotara otra cosa. Si otro lo anotó primero, se relee su fila; si no quedó cobrado, baja lo
     // pedido (nunca se cobra de más). Guardián liberarMira.

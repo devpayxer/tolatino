@@ -58,6 +58,31 @@ export async function alertar(kind: TipoAlerta, sujeto: string, x: { monto: numb
   return true;
 }
 
+/* 25 nov (revisión de 621f214) · Stripe capturó OTRO monto que el pedido: el intento ya estaba capturado (un reintento o una respuesta perdida) y la pasarela
+   devuelve lo capturado (cobrado). El libro anota lo capturado; el equipo de dinero lo sabe, una vez por cobro: gateway_review («lo que dijo Stripe no se
+   cierra solo») con sujeto capturado:<tabla>:<id>, que no se cierra sola (no tiene «Elegir cuál vale»: alguien mira en Stripe y con la persona si cuadra y
+   la marca resuelta). Sin cobrado o con el mismo monto, nada. Nunca tira: lo que falla queda en el registro. Sin migración (gateway_review ya existe).
+   Guardián liberarMira. */
+export async function alertarOtroMonto(tabla: "payments" | "sponsorships" | "event_sponsorships", id: string, pedido: number, cobrado: number | null | undefined,
+  x: { que: Bi; negocio?: string | null; ciudad?: string | null }): Promise<void> {
+  if (cobrado == null || cobrado === pedido) return;
+  try {
+    await alertar("gateway_review", `capturado:${tabla}:${id}`, { monto: cobrado, negocio: x.negocio ?? null, ciudad: x.ciudad ?? null, detalle: {
+      es: `${x.que.es}: se pidió cobrar ${money(pedido)} y Stripe capturó ${money(cobrado)} (el intento ya estaba capturado). El libro anota lo capturado. Revisa en Stripe y con la persona si cuadra.`,
+      en: `${x.que.en}: ${money(pedido)} was requested and Stripe captured ${money(cobrado)} (the intent was already captured). The books record what was captured. Check in Stripe and with the person whether it matches.` } });
+  } catch (e) { console.error(`[otro monto] ${tabla} ${id}: la alerta no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+}
+/* El de un cobro de una operación (payments): el número, el negocio y la ciudad salen del cobro. */
+export async function alertarOtroMontoPago(pid: string, pedido: number, cobrado: number | null | undefined): Promise<void> {
+  if (cobrado == null || cobrado === pedido) return;
+  try {
+    const p = (await db().query<{ num: string | null; biz: string | null; city: string | null }>(
+      `select o.number as num, p.business_id as biz, p.city_id as city from payments p left join operations o on o.id = p.operation_id where p.id = $1::bigint`, [pid])).rows[0];
+    await alertarOtroMonto("payments", pid, pedido, cobrado, { negocio: p?.biz ?? null, ciudad: p?.city ?? null,
+      que: { es: `${p?.num ?? "Cobro"} (cobro ${pid})`, en: `${p?.num ?? "Charge"} (charge ${pid})` } });
+  } catch (e) { console.error(`[otro monto] cobro ${pid}: la alerta no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+}
+
 /* Barrido: las alertas que nadie más hace. Cada una se anota una sola vez. */
 export async function barrerAlertasDinero(): Promise<number> {
   let n = 0;

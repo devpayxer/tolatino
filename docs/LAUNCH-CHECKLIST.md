@@ -3118,21 +3118,45 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       anotado (no lo pedido) y boletos y patrocinios anotan lo que Stripe capturó de verdad (capturarPlataforma › cobrado). din9t2 (2) ve también la llave
       renovada (-r1); din9x dice por qué basta cerrarAlertasResueltas (el guardián liberarMira vigila que barrerAlertasDinero no cierre por su cuenta).
       Sin migración (las plantillas ya tenían {dinero} y {dep}).
+      Revisión de 621f214 (hecho): el aviso que manda el barrido ya no se pierde si el envío falla: avisos › avisar dice si quedó (true · undefined si la
+      persona lo apagó · false), lo que no quedó devuelve el reclamo (details.avisoCobro false, avisoCobroFalta con lo que falta: quien pagó, el negocio,
+      avisoCobroIntentos) y cobros › barrerCobradasTarde (cada minuto) lo reintenta, solo lo que falta, hasta 5 veces; un reclamo de hace más de 10 minutos
+      que sigue con algo pendiente (el proceso murió entre el reclamo y el envío) también se retoma; la cancelación que manda los dos avisos ella misma quita
+      lo pendiente. El aviso va antes de la alerta cobrada:, que dice si le llegó a quien pagó. La segunda «cobrada» (la cancelación y el barrido la
+      encuentran cobrada los dos) cuenta la mitad sin la devolución vcx- ya hecha y, sin nada más que devolver, dice lo que pasó con la de su llave
+      (devolverAlCancelar › devDeLaLlave), nunca «nada». Lo capturado distinto de lo pedido (el intento ya estaba capturado con otro monto) alerta al
+      equipo de dinero en cada captura (cobros, mercado, estimados, apartados, layaway, rentas, boletos, patrocinios: gateway_review
+      capturado:<tabla>:<id>, sin migración; no se cierra sola ni tiene «Elegir cuál vale»: se marca resuelta). Y la cancelación tarde cobrada SIN su regla
+      (el proceso murió entre «cobrada» y la regla, o entre la captura y la devolución de la mitad) la encuentra barrerCobradasTarde (cobro y cancelación
+      de más de 5 minutos, sin alerta cobrada:, viaje sin devolución vcx- y con más de la mitad cobrada, evento privado con perdio en false) y aplica la
+      regla, la alerta y el aviso. din9x (sin correr): carrera con el barrido del servidor comprobada por la base; los avisos reales (ES, EN, el negocio)
+      por el panel de Hoy; la cancelación con el aviso ya reclamado no manda nada (viaje y evento privado); la devolución en camino de la prueba se
+      termina en la prueba; el reparo y el reintento (sección 5).
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
       verificacion › vencidas, suscripcion, rentas) ya no dan por soltado lo cobrado, pero tampoco lo anotan cobrado ni alertan: lo reintentan sin fin
       en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). _Hecho en la revisión de 483a3af: quien llama a capturarPlataforma
       (boletos, patrocinios) anota lo que Stripe capturó._ Si ese monto difiere de lo pedido (alguien capturó otro desde Stripe), los boletos o el
-      patrocinio quedan emitidos por el precio y cobrados por menos: nadie lo avisa; decidir si alerta al equipo. (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
+      patrocinio quedan emitidos por el precio y cobrados por menos: _hecho en la revisión de 621f214: alerta al equipo de dinero (capturado:)_; queda
+      decidir si además se ajusta el boleto o el patrocinio (hoy lo decide el equipo desde la alerta). (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
       «No hay cupo» del panel, las de pedidos, citas, noche, fiesta, inscripción, viaje y apartado) solo distingue «retenida»; ante «cobrada» dice lo de
       siempre: el aviso sí lo dice bien (soltadaO). (3) _Hecho en la revisión: el aceptado que Stripe ya no deja cobrar alerta y sale del barrido._
       Queda decidir qué se hace con él (¿se cancela el pedido? ¿se le pide otra tarjeta?): hoy lo resuelve el equipo a mano desde su alerta. (4) La
       cobrada de una cancelación A TIEMPO (Stripe ya lo había cobrado) no se devuelve sola: la alerta pide revisarlo; decidir si la regla «devolver todo»
       se aplica sola como la tarde. (5) El aviso que manda el barrido al aplicar la regla repite la plantilla de la cancelación («Cancelaste tu viaje…» con
       «La retención sí se había cobrado…»): sirve, pero una plantilla propia («Lo que pasó con tu viaje cancelado») se leería mejor; si se hace, migración
-      nueva. Y si el aviso falla después de reclamarlo (details.avisoCobro), no se repite: queda en el registro. (6) La carrera entre la cancelación y el
+      nueva. _Hecho en la revisión de 621f214: si el aviso falla después de reclamarlo, el reclamo vuelve y el barrido lo reintenta (hasta 5 veces;
+      después solo queda en el registro y en la alerta)._ (6) La carrera entre la cancelación y el
       barrido sigue posible en lo que no es aviso: la cancelación que leyó el cobro retenido escribe cobroMitad 0 antes de que devolverAlCancelar lo
       corrija (un instante); y si la relectura llega antes de que el barrido anote la devolución vcx-, la regla sale sin devolución (dev null) y el aviso
       solo dice lo cobrado (la devolución avisa sola al cerrarse, pay_refund).
+      (7) Revisión de 621f214, lo que queda: barrerCobradasTarde recorre cada minuto los cobros capturados de los últimos 2 días por el índice de
+      captured_at (payments_captura_idx) y filtra por la operación: a 1M+ son decenas de miles de filas por minuto; si pesa, un índice parcial (cancelación
+      tarde de quien pagó) con su migración. Lo que murió después de una captura de más de 2 días (el viaje cobrado al aceptarlo y cancelado tarde días
+      después, con el proceso muerto antes de la devolución) no lo encuentra. El aviso va antes de la alerta cobrada:: si el proceso muere entre los dos, la
+      regla y el aviso quedan y la alerta no (el reparo no la vuelve a abrir porque la regla ya está aplicada). Si dos barridos la encuentran cobrada a la vez, la
+      alerta la anota el primero que llega: si es el que perdió el reclamo del aviso, no dice si el aviso llegó (details.avisoCobro sí lo dice). La alerta capturado: no se cierra sola (no hay
+      «estado» que mirar): se marca resuelta a mano. alrevesDineroDiceLoQuePaso sin medir en el CI: su duración en pruebas/reparto-alreves.json es la del
+      corredor local (ver la línea de la medida).
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

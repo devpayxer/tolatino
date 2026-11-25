@@ -87,6 +87,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // (el proceso murió antes de la pasarela o entre su «sí» y el cierre, o Stripe no contestó) se pregunta otra vez con la MISMA llave (una sola
         // devolución), se cierra o queda fallida con su saldo libre; pasadas 23 h, alerta al equipo de dinero.
         ["devolucionesPago", () => cobros.barrerDevolucionesPago()],
+        // 25 nov (revisión de 621f214) · La cancelación tarde cobrada que quedó sin su regla (el proceso se cortó) y el aviso de lo aplicado que no quedó.
+        ["cobradasTarde", () => cobros.barrerCobradasTarde()],
         // Cambios del evento y dinero del organizador (6e): las cancelaciones que quedaron a medias siguen (devolución total por orden, una vez)
         // con sus avisos; la liquidación del martes por fecha (retener o transferir; la base decide los montos); lo que quedó en camino se
         // reintenta con la misma llave; un ajuste sin liquidación siguiente revierte la transferencia.

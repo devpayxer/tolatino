@@ -167,6 +167,8 @@ export async function liquidarCuota(paymentId: string): Promise<{ ok: boolean; l
     await ev(c, p.op, "lay_paid", "user", null, { es: `Pagó ${money(p.monto)} del plan en la app (pago ${p.seq})`, en: `Paid ${money(p.monto)} of the plan in the app (payment ${p.seq})` });
     return recalcular(c, plan);
   });
+  // 25 nov (revisión de 621f214) · Otro monto que el pedido (Stripe ya lo había capturado): el equipo de dinero lo sabe (dinero-alertas › alertarOtroMonto).
+  if (hecho) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, p.monto, r.cobrado);
   if (hecho) await avisarPago(p.op, p.monto, hecho.listo);
   return { ok: true, listo: !!hecho?.listo };
 }

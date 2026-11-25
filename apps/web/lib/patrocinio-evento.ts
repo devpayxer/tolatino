@@ -157,7 +157,7 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
   if (ya) return { ok: true, id: ya.id };
   const empiezaHoy = desde === "hoy" || (!!renovarDe && Date.parse(f.a) <= Date.now());
   const renovar = x.dur !== "until_event" && !!x.renovar;
-  let retenido: string | null = null;
+  let retenido: string | null = null, otroMonto: { id: string; cobrado: number } | null = null;
   try {
     const r = await tx(async (c): Promise<ResPat & { aviso?: { hasta: string } }> => {
       await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`patevt:${e.ciudad}`]);
@@ -176,12 +176,16 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
         [evento, negocio, e.ciudad, f.a, f.b, x.dur, empiezaHoy ? "activo" : "reservado", centavos, quien, card.pm, renovar, renovarDe])).rows[0]!.id;
       const cobrado = await capturarCobro(p, centavos);
       await anotarPago(c, { ...cobro, centavos: cobrado, ref: id, pi: p.pi, marca: p.marca, l4: p.l4 });
+      otroMonto = { id, cobrado };
       await c.query(`update sponsorship_waits set status = 'compro' where kind = 'evento' and business_id = $1 and status = 'espera'`, [negocio]);
       await auditarEvento(c, quien, evento, e.ciudad, renovarDe ? "patrocinio_evento.renovar" : "patrocinio_evento.comprar",
         { patrocinio: id, negocio, duracion: x.dur, desde: f.a, hasta: f.b, monto: money(centavos), semanas: f.semanas, renovar_solo: renovar, estado: empiezaHoy ? "activo" : "reservado" });
       return { ok: true, id, estado: empiezaHoy ? "activo" : "reservado", aviso: { hasta: f.b } };
     });
     if (r.ok && r.estado === "activo" && r.aviso) await avisoEvt(evento, "biz_patevt_activo", { hasta: r.aviso.hasta, monto: money(centavos) }).catch(() => undefined);
+    // 25 nov (revisión de 621f214) · Stripe capturó otro monto que el pedido: el equipo de dinero lo sabe (fuera de la transacción, ya guardada).
+    const om = otroMonto as { id: string; cobrado: number } | null;
+    if (r.ok && om) await (await import("./dinero-alertas")).alertarOtroMonto("event_sponsorships", om.id, centavos, om.cobrado, { negocio, ciudad: e.ciudad, que: { es: `Patrocinio del evento ${om.id}`, en: `Event sponsorship ${om.id}` } });
     return r;
   } catch (er) {
     const sc = await soltarRetenido(retenido, er);

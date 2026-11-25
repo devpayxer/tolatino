@@ -210,12 +210,12 @@ async function ev(c: Q, op: string, kind: string, actor: "user" | "member" | "sy
 /* ── Avisos ── */
 async function avisarEvp(numero: string, quien: "cliente" | "negocio", tpl: string, extra: Record<string, string | Bi> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
-  if (!o) return;
+  if (!o) return false;
   const A = await import("./avisos"), cfg = await valores("evp_responder_h", "evp_propuesta_h");
   const vars = { negocio: o.negocio, cliente: o.cliente, dia: diaEvp(o.ymd, true), hora: horaL(o.m), personas: String(o.p), total: dinero(o.tot), dep: dinero(o.dep), resto: dinero(Math.max(0, o.tot - o.dep)),
     horas: String(quien === "negocio" ? cfg.evp_responder_h : cfg.evp_propuesta_h), dev: "", motivo: "", que: "", ...extra };
-  if (quien === "cliente") await A.avisar(o.uid, tpl, vars, { href: `/privado/${numero}`, ref: ["private_event", numero] });
-  else await A.avisarNegocio(o.biz, tpl, vars, { href: `/panel/${o.biz}/hoy?det=evp:${numero}`, ref: ["private_event", numero] });
+  if (quien === "cliente") return A.avisar(o.uid, tpl, vars, { href: `/privado/${numero}`, ref: ["private_event", numero] });
+  return A.avisarNegocio(o.biz, tpl, vars, { href: `/panel/${o.biz}/hoy?det=evp:${numero}`, ref: ["private_event", numero] });
 }
 export async function avisarEvpNueva(numero: string) { await avisarEvp(numero, "negocio", "evp_nueva"); }
 
@@ -579,15 +579,18 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
 /* 25 nov (revisión de 483a3af) · La cancelación tarde cuya retención resultó cobrada DESPUÉS (el barrido la encontró cobrada y aplicó la regla: cobros ›
    soltarRetencion › avisarTardeCobrada, que ya reclamó el aviso; perdio vuelve a true): a quien pagó le habíamos dicho «No se cobró nada, pero la retención
    todavía no se soltó». Su aviso de la cancelación (evp_cancelado) y el del restaurante (evp_biz_cx) otra vez, con lo que se quedó: lo que quedaba cobrado
-   (queda; «el depósito» si es todo lo cobrado). Nada se devuelve. */
-export async function avisarEvpTardeCobrado(numero: string, queda: number, cobrado: number) {
+   (queda; «el depósito» si es todo lo cobrado). Nada se devuelve.
+   25 nov (revisión de 621f214) · partes: los avisos que faltan (el barrido de cobros › barrerCobradasTarde reintenta solo el que no quedó). Devuelve cuáles
+   quedaron (el que no se pidió cuenta como quedó): quien llama devuelve el reclamo si alguno no quedó. */
+export async function avisarEvpTardeCobrado(numero: string, queda: number, cobrado: number, partes: { cli: boolean; neg: boolean } = { cli: true, neg: true }): Promise<{ cli: boolean; neg: boolean }> {
   const d: DevCancelar | null = null, entero = queda === cobrado, ya = { es: "La retención sí se había cobrado.", en: "The hold had in fact been charged." };
   const cli: Bi = !queda ? ya : entero ? { es: `${ya.es} El depósito de ${dinero(queda)} se queda con el restaurante.`, en: `${ya.en} The ${dinero(queda)} deposit stays with the restaurant.` }
     : { es: `${ya.es} Lo que quedaba del depósito (${dinero(queda)}) se queda con el restaurante.`, en: `${ya.en} What was left of the deposit (${dinero(queda)}) stays with the restaurant.` };
-  await avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, cli) });
+  const okCli = !partes.cli || (await avisarEvp(numero, "cliente", "evp_cancelado", { dinero: dineroAlCancelarCliente(d, cli) })) !== false;
   const neg: Bi = !queda ? { es: ` ${ya.es}`, en: ` ${ya.en}` } : entero ? { es: ` ${ya.es} El depósito de ${dinero(queda)} se queda contigo.`, en: ` ${ya.en} The ${dinero(queda)} deposit stays with you.` }
     : { es: ` ${ya.es} Lo que quedaba del depósito (${dinero(queda)}) se queda contigo.`, en: ` ${ya.en} What was left of the deposit (${dinero(queda)}) stays with you.` };
-  await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: neg });
+  const okNeg = !partes.neg || (await avisarEvp(numero, "negocio", "evp_biz_cx", { dep: neg })) !== false;
+  return { cli: okCli, neg: okNeg };
 }
 
 /* ── El barrido (cada minuto y al abrir la pantalla): sin respuesta, propuesta vencida, cambio vencido, recordatorio del día antes,

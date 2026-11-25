@@ -6594,6 +6594,9 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   aviso de la cancelación con lo que se cobró y se devolvió («La retención sí se había cobrado…»), una sola vez; la alerta «ya no se deja cobrar» solo sale
   de pedidos aceptados y se cierra sola cuando la retención se suelta. **Qué mirar:** nada en pantalla (es raro de provocar); el aviso repetido de la
   cancelación, si alguna vez llega, dice lo cobrado.
+  Tras la revisión de 621f214: ese aviso ya no se pierde si falla (se reintenta, solo lo que faltó, y la alerta del equipo dice si le llegó a quien
+  pagó); si Stripe cobró otro monto que el pedido, el equipo de dinero recibe una alerta; y una cancelación tarde que quedó cobrada entera porque el
+  servidor se cortó a mitad se arregla sola (se devuelve lo que toca, con su alerta y su aviso). **Qué mirar:** nada en pantalla (es raro de provocar).
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

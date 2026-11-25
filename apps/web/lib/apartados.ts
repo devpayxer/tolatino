@@ -587,6 +587,8 @@ export async function cobrarApartado(opId: string): Promise<{ cobrado: number; l
     await ev(c, opId, "payment_captured", "system", null, { es: `Se cobraron ${money(real)}${p.held > real ? ` y se liberaron ${money(p.held - real)}` : ""}`, en: `${money(real)} charged${p.held > real ? ` and ${money(p.held - real)} released` : ""}` });
     return true;
   });
+  // 25 nov (revisión de 621f214) · Otro monto que el pedido (Stripe ya lo había capturado): el equipo de dinero lo sabe (dinero-alertas › alertarOtroMonto).
+  if (hecho) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, monto, r.cobrado);
   return hecho ? { cobrado: real, liberado: Math.max(0, p.held - real) } : { cobrado: 0, liberado: 0 };
 }
 /* Lo que quedó a medias (una llamada a la pasarela que falló): enviado o entregado → cobrar; ya no sigue → liberar. */
