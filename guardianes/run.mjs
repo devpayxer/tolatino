@@ -17877,10 +17877,12 @@ const guardianes = {
       for (const k of ["viaje_cx", "noche_cx", "fiesta_cx", "insc_cx", "evp_cancelado", "evp_cancelado_negocio"]) if (!new RegExp(`update notif_templates set body = '\\{"es":"[^']*\\{dinero\\}[^']*","en":"[^']*\\{dinero\\}[^']*"\\}'::jsonb[^\\n]*\\n\\s*where key = '${k}'\\n`).test(mig)) falla(G, "packages/db/migrations", 0, `la plantilla «${k}» no usa {dinero} (lo que pasó) en español e inglés: seguiría diciendo lo decidido`);
       const co = existsSync("apps/web/lib/cobros.ts") ? sinComent("apps/web/lib/cobros.ts") : "";
       // 25 nov (LAUNCH g) · Antes del «fallo», «cobrada» (Stripe ya la había cobrado: guardián liberarMira); después, el «fallo» de todo lo demás que no soltó.
-      if (!/const r = await pasarela\.liberar\(p\.pi\)[^\n]*\n\s*if \(!r\.ok && r\.cobrado !== undefined\) \{[\s\S]*?return "cobrada";\n\s*\}\n\s*if \(!r\.ok\) return "fallo";/.test(cuerpoFn(co, "liberarOperacion"))) falla(G, "apps/web/lib/cobros.ts", 0, "liberarOperacion no dice «fallo» cuando la pasarela no soltó la retención: se contaría como soltada");
+      if (!/const r = await pasarela\.liberar\(p\.pi\)[^\n]*\n\s*if \(!r\.ok && r\.cobrado !== undefined\) \{[\s\S]*?: "fallo";\n\s*\}\n\s*if \(!r\.ok\) return "fallo";/.test(cuerpoFn(co, "liberarOperacion"))) falla(G, "apps/web/lib/cobros.ts", 0, "liberarOperacion no dice «fallo» cuando la pasarela no soltó la retención: se contaría como soltada");
       // (quinta tanda) La retención se suelta por soltarRetencion (mira lo que dijo liberarOperacion y alerta hold_stuck UNA vez si quedó retenida).
       const dac = cuerpoFn(co, "devolverAlCancelar"), sr = cuerpoFn(co, "soltarRetencion");
-      if (!/const s = await soltarRetencion\(o\.id, /.test(dac) || !/return s\.e === "retenida" \|\| s\.e === "cobrada" \? \{ e: s\.e, monto: s\.monto \} : \{ e: "liberada"/.test(dac))
+      // 25 nov (revisión de 00ac9b7) · «liberada» solo releyendo el cobro (released y con monto), nunca lo supuesto ni «$0».
+      if (!/const s = await soltarRetencion\(o\.id, /.test(dac) || !/if \(s\.e === "retenida" \|\| s\.e === "cobrada"\) return \{ e: s\.e, monto: s\.monto/.test(dac)
+        || !/if \(y\.st === "released"\) return y\.amt > 0 \? \{ e: "liberada", monto: y\.amt \} : \{ e: "nada", monto: 0 \};/.test(dac) || /\{ e: "liberada", monto: o\.amount/.test(dac))
         falla(G, "apps/web/lib/cobros.ts", 0, "devolverAlCancelar no mira si la retención se soltó (soltarRetencion): una que la pasarela no soltó diría «se suelta»");
       if (!/const l = await liberarOperacion\(opId\);\n\s*if \(l === "cobrada"\) \{[\s\S]*?\n  \}\n\s*if \(l !== "fallo"\) return \{ e: l, monto: 0 \};/.test(sr) || !/\n  await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `liberar:\$\{h\.id\}`/.test(sr) || !/return \{ e: "retenida", monto: h\.amt \};/.test(sr))
         falla(G, "apps/web/lib/cobros.ts", 0, "soltarRetencion no mira lo que dijo liberarOperacion o no alerta hold_stuck (una vez por cobro: liberar:<cobro>) cuando la retención no se soltó");
@@ -18228,6 +18230,19 @@ const guardianes = {
     if (!/if \(!r\.ok && r\.cobrado !== undefined\) \{[\s\S]*?update payments set status = 'captured', amount_cents = \$2[\s\S]*?return "cobrada";/.test(lo))
       falla(G, CO, 0, "liberarOperacion no anota 'captured' con el monto real cuando Stripe ya lo había cobrado (r.cobrado → «cobrada»)");
     if (!/if \(l === "cobrada"\) \{[\s\S]*?alertar\("hold_stuck", `cobrada:\$\{c\.id\}`/.test(sr)) falla(G, CO, 0, "soltarRetencion no alerta al equipo de dinero cuando la retención ya estaba cobrada (hold_stuck cobrada:<cobro>)");
+    // 25 nov (revisión de 00ac9b7) · (5) Una captura que ya estaba hecha vuelve con lo que Stripe capturó (cobrado) y el simulador no reescribe lo capturado;
+    // cobrarOperacion anota ese monto. (6) Lo aceptado que Stripe ya no deja cobrar alerta (cobrar:) y repararPagos no lo reintenta. (7) La cobrada de una
+    // cancelación tarde sigue su regla (reglaTardeConLoCobrado) y la alerta lo dice; «cobrada» solo con la fila tocada o releída.
+    for (const fn of ["cobrar", "capturarPlataforma"]) {
+      const cu = (new RegExp(`\\n  async ${fn}\\([\\s\\S]*?\\n  \\},`).exec(pa) ?? [""])[0];
+      if (!/x\?\.status === "succeeded" \? \{ ok: true, cobrado: x\.amount_received \}/.test(cu)) falla(G, PA, 0, `${fn}: un intento ya capturado no vuelve con lo que Stripe capturó (cobrado: amount_received): el libro anotaría lo pedido`);
+      if (/status in \('requires_capture', 'succeeded'\)/.test(cu)) falla(G, PA, 0, `${fn}: el simulador reescribe lo ya capturado (update … status in ('requires_capture', 'succeeded')): Stripe no lo hace`);
+    }
+    if (!/const real = r\.cobrado \?\? p\.amount;/.test(cuerpoFn(co, "cobrarOperacion"))) falla(G, CO, 0, "cobrarOperacion anota lo pedido aunque Stripe ya lo hubiera capturado con otro monto (r.cobrado)");
+    if (!/if \(CAPTURA_TERMINAL\.has\(codigo\)\) await alertarNoSeCobra\(/.test(cuerpoFn(co, "cobrarOperacion"))) falla(G, CO, 0, "cobrarOperacion no alerta cuando Stripe ya no deja cobrar lo retenido (cancelado, vencido): nadie se entera");
+    if (!/not \(o\.status in \('confirmed', 'done'\) and coalesce\(p\.failure_code, ''\) = any\(\$2::text\[\]\)\)[\s\S]*?\[negocio, \[\.\.\.CAPTURA_TERMINAL\]\]/.test(cuerpoFn(co, "repararPagos"))) falla(G, CO, 0, "repararPagos reintenta sin fin lo que Stripe ya no deja cobrar (failure_code en CAPTURA_TERMINAL) y deja sin barrer a los nuevos");
+    if (!/const regla = await reglaTardeConLoCobrado\(opId\)/.test(sr) || !/Se aplicó la cancelación tarde: se quedó/.test(sr)) falla(G, CO, 0, "soltarRetencion: la cobrada de una cancelación tarde no sigue su regla (reglaTardeConLoCobrado) o la alerta no lo dice");
+    if (!/if \(tocada\) return "cobrada";/.test(lo)) falla(G, CO, 0, "liberarOperacion dice «cobrada» sin haber tocado la fila ni releerla");
     const cerrar = cuerpoFn(sinComent(DA), "cerrarAlertasResueltas");
     if (!cerrar) falla(G, DA, 0, "no encuentro cerrarAlertasResueltas");
     else if (/cobrada|captura/.test(cerrar)) falla(G, DA, 0, "cerrarAlertasResueltas cierra sola una alerta cobrada: o captura: (alguien tiene que mirar en Stripe)");
@@ -18251,11 +18266,13 @@ const guardianes = {
     const G = "capturaTardeAlerta", CO = "apps/web/lib/cobros.ts";
     if (!existsSync(CO)) return falla(G, CO, 0, "falta lib/cobros.ts");
     const co = sinComent(CO), cob = cuerpoFn(co, "cobrarOperacion"), act = cuerpoFn(co, "alertarCapturaTarde");
-    if (!/if \(!r\.ok\) \{[^\n]*return \{ ok: false, codigo \}; \}/.test(cob) || !/\n  return \{ ok: true \};\n\}/.test(cob)) falla(G, CO, 0, "cobrarOperacion no devuelve lo que contestó la pasarela: quien cancela tarde no puede saber que Stripe no contestó");
+    if (!/if \(!r\.ok\) \{[\s\S]*?\n    return \{ ok: false, codigo \};\n  \}/.test(cob) || !/\n  return \{ ok: true \};\n\}/.test(cob)) falla(G, CO, 0, "cobrarOperacion no devuelve lo que contestó la pasarela: quien cancela tarde no puede saber que Stripe no contestó");
     const set = /const CAPTURA_SIN_RESPUESTA = new Set\(\[([^\]]*)\]\)/.exec(co)?.[1] ?? "";
     if (!set) falla(G, CO, 0, "falta CAPTURA_SIN_RESPUESTA (lo que la pasarela contesta sin decir si la captura salió)");
     for (const k of ["red", "api_error", "error"]) if (set && !set.includes(`"${k}"`)) falla(G, CO, 0, `CAPTURA_SIN_RESPUESTA no tiene "${k}": una captura sin respuesta se tomaría por un «no» y no alertaría`);
     for (const k of ["card_declined", "canceled", "requires_payment_method", "charge_expired_for_capture", "config", "succeeded"]) if (set.includes(`"${k}"`)) falla(G, CO, 0, `CAPTURA_SIN_RESPUESTA tiene "${k}", que es una respuesta clara: diría «no se sabe» de lo que sí se sabe`);
+    // 25 nov (revisión de 00ac9b7) · Si al soltar ya estaba cobrada, la alerta es UNA (cobrada:, con la regla aplicada): captura: invitaría a devolver de más.
+    if (!/if \(d\?\.e === "cobrada"\) \{[^\n]*return; \}/.test(act)) falla(G, CO, 0, "alertarCapturaTarde abre captura: aunque al soltar ya estaba cobrada: dos alertas del mismo dinero (va solo la cobrada:, que dice la regla aplicada)");
     if (!/es: `Stripe no contestó a la captura tarde \(\$\{msg\}\): no se sabe si salió`, en: `Stripe did not answer the late capture \(\$\{msg\}\): it is not known whether it went through`/.test(act))
       falla(G, CO, 0, "la alerta de la captura sin respuesta no dice (ES/EN) que no se sabe si salió");
     let llamadas = 0;

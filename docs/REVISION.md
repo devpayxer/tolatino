@@ -6587,6 +6587,9 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   sin cerrarse sola; la cancelación tarde a la que Stripe no contesta también avisa («no se sabe si salió») y, si la captura sí salió, sigue la regla
   con lo cobrado; el aviso al negocio del viaje, la noche, la fiesta, la inscripción y la visita llega en su idioma. **Qué mirar:** nada en pantalla
   (es raro de provocar); en Super Admin › Planes › Ingresos, las alertas «una retención atascada» dicen lo que pasó.
+  Tras la revisión de 00ac9b7: si la captura tarde sí salió, la regla (la mitad y la devolución del resto; el depósito del evento privado) se aplica la
+  vea quien la vea, con una sola alerta que dice lo aplicado; lo que Stripe ya no deja cobrar avisa al equipo y no se reintenta sin fin; los avisos del
+  viaje dicen los montos con centavos («$22.50»).
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

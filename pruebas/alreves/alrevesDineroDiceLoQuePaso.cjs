@@ -12,12 +12,12 @@ const casos = [
   ['liberarMira', 'liberar: unexpected_state es ok', PA, '      if (!(e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state")) return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" };',
     '      return { ok: e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state" };'],
   // cobrar vuelve a dar «cobrado» ante unexpected_state (un intento cancelado o vencido quedaría cobrado en el libro).
-  ['liberarMira', 'cobrar: unexpected_state es cobrado', PA, '        const x = await stripe<{ status: string }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);\n        return x?.status === "succeeded" ? { ok: true } : { ok: false, codigo: x?.status ?? "red" };',
+  ['liberarMira', 'cobrar: unexpected_state es cobrado', PA, '        const x = await stripe<{ status: string; amount_received: number }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);\n        return x?.status === "succeeded" ? { ok: true, cobrado: x.amount_received } : { ok: false, codigo: x?.status ?? "red" };',
     '        return { ok: true };'],
   // Un intento cobrado se da por soltado.
   ['liberarMira', 'liberacionDe: cobrado = soltado', PA, 'if (x.estado === "succeeded") return { ok: false, codigo: "succeeded", cobrado:', 'if (x.estado === "succeeded") return { ok: true, codigo: "succeeded", cobrado:'],
   // El simulador vuelve a soltar sin mirar (como antes: ok aunque el sim_intents estuviera cobrado).
-  ['liberarMira', 'el simulador suelta sin mirar', PA, '      if (r.rowCount) return { ok: true };\n      const s = (await db().query<{ status: string; captured_cents: number }>', '      return { ok: true };\n      const s = (await db().query<{ status: string; captured_cents: number }>'],
+  ['liberarMira', 'el simulador suelta sin mirar', PA, '      if (r.rowCount) return { ok: true };\n      const s = (await db().query<{ status: string; captured_cents: number }>(`select status, captured_cents from sim_intents where id = $1`, [pi])).rows[0];\n      return liberacionDe(', '      return { ok: true };\n      const s = (await db().query<{ status: string; captured_cents: number }>(`select status, captured_cents from sim_intents where id = $1`, [pi])).rows[0];\n      return liberacionDe('],
   // liberarOperacion tira el «estaba cobrado» (sería «fallo» para siempre, o soltada).
   ['liberarMira', 'liberarOperacion sin «cobrada»', CO, '  if (!r.ok && r.cobrado !== undefined) {', '  if (false) {'],
   // soltarRetencion abre la alerta que se cierra sola (liberar:) en vez de cobrada:.
@@ -26,12 +26,24 @@ const casos = [
   ['liberarMira', 'cobrada: se cierra sola', 'apps/web/lib/dinero-alertas.ts', "a.subject_id ~ '^liberar:[0-9]{1,18}$'", "a.subject_id ~ '^(liberar|cobrada):[0-9]{1,18}$'"],
   // Rentas: el depósito se marca liberado sin mirar lo que contestó liberar.
   ['liberarMira', 'rentas: released sin mirar', 'apps/web/lib/rentas.ts', '    if (!(await pasarela.liberar(P.pi)).ok) return;', '    await pasarela.liberar(P.pi);'],
+  // (revisión de 00ac9b7) · Lo ya capturado vuelve sin lo que Stripe capturó; el simulador reescribe lo capturado; cobrarOperacion anota lo pedido.
+  ['liberarMira', 'cobrar ya capturado sin cobrado', PA, 'return x?.status === "succeeded" ? { ok: true, cobrado: x.amount_received } : { ok: false, codigo: x?.status ?? "red" };', 'return x?.status === "succeeded" ? { ok: true } : { ok: false, codigo: x?.status ?? "red" };'],
+  ['liberarMira', 'el simulador reescribe lo capturado', PA, "where id = $1 and status = 'requires_capture'`, [pi, centavos, comision]", "where id = $1 and status in ('requires_capture', 'succeeded')`, [pi, centavos, comision]"],
+  ['liberarMira', 'cobrarOperacion anota lo pedido', CO, '  const real = r.cobrado ?? p.amount;', '  const real = p.amount;'],
+  // Lo que Stripe ya no deja cobrar: sin alerta, o reintentado sin fin por el barrido.
+  ['liberarMira', 'lo que ya no se cobra, sin alerta', CO, 'if (CAPTURA_TERMINAL.has(codigo)) await alertarNoSeCobra(', 'if (false) await alertarNoSeCobra('],
+  ['liberarMira', 'el barrido reintenta lo que ya no se cobra', CO, " and not (o.status in ('confirmed', 'done') and coalesce(p.failure_code, '') = any($2::text[]))", ''],
+  // La cobrada de una cancelación tarde sin su regla; «cobrada» sin haber tocado la fila.
+  ['liberarMira', 'la cobrada tarde sin su regla', CO, 'const regla = await reglaTardeConLoCobrado(opId).catch(', 'const regla = await Promise.resolve(null).catch('],
+  ['liberarMira', '«cobrada» sin tocar la fila', CO, '    if (tocada) return "cobrada";', '    return "cobrada";'],
   // ── capturaTardeAlerta ──
   // El fallo del 25 nov: la captura tarde a la que Stripe no contestó suelta sin alerta.
   ['capturaTardeAlerta', 'viaje: sin alerta ante la red', VL, '        else if (capturaSinRespuesta(cap)) await alertarCapturaTarde(numero, x.p?.id ?? null, { codigo: cap.codigo }, x.d);\n', ''],
   ['capturaTardeAlerta', 'evento privado: sin alerta ante la red', EP, '    else if (capturaSinRespuesta(cap)) await alertarCapturaTarde(numero, o2?.pid ?? o?.pid ?? null, { codigo: cap.codigo }, d);\n', ''],
   // cobrarOperacion vuelve a no decir lo que contestó la pasarela.
-  ['capturaTardeAlerta', 'cobrarOperacion sin resultado', CO, '[p.id, codigo]); return { ok: false, codigo }; }', '[p.id, codigo]); return null; }'],
+  ['capturaTardeAlerta', 'cobrarOperacion sin resultado', CO, '    return { ok: false, codigo };\n  }\n  // 25 nov · Ya estaba capturado', '    return null;\n  }\n  // 25 nov · Ya estaba capturado'],
+  // (revisión de 00ac9b7) · Dos alertas del mismo dinero (captura: y cobrada:): la de captura: invitaría a devolver de más.
+  ['capturaTardeAlerta', 'captura: también cuando ya está cobrada', CO, 'if (d?.e === "cobrada") { console.error(', 'if (false) { console.error('],
   // Un «no» claro de la tarjeta se toma por «sin respuesta» (diría «no se sabe» de lo que sí se sabe).
   ['capturaTardeAlerta', 'un rechazo como sin respuesta', CO, 'const CAPTURA_SIN_RESPUESTA = new Set(["red", ', 'const CAPTURA_SIN_RESPUESTA = new Set(["card_declined", "red", '],
   // La red ya no cuenta como sin respuesta.

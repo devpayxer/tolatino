@@ -372,11 +372,13 @@ async function liquidarDeposito(rid: string): Promise<void> {
     const fee = Math.min(await comision(db(), "renta", Math.min(objetivo, x.lateC)), objetivo); // la comisión va sobre los días tarde (renta), no sobre el daño
     const r = await pasarela.cobrar(P.pi, objetivo, fee);
     if (!r.ok) return; // se reintenta en el próximo barrido
+    // 25 nov · Ya capturado (reintento o respuesta perdida): se anota lo que Stripe capturó de verdad (r.cobrado), no lo pedido.
+    const real = r.cobrado ?? objetivo;
     await tx(async (c) => {
-      const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = $3, captured_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [P.id, objetivo, fee]);
+      const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = least($3::int, $2::int), captured_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [P.id, real, fee]);
       if (!u.rowCount) return;
       if (x.dmgSt === "accepted") await c.query(`update rentals set damage_status = 'charged', updated_at = now() where id = $1::bigint`, [rid]);
-      await ev(c, x.op, "payment_captured", "system", null, { es: `Del depósito se descontaron ${money(objetivo)}; el resto se liberó`, en: `${money(objetivo)} taken from the deposit; the rest was released` });
+      await ev(c, x.op, "payment_captured", "system", null, { es: `Del depósito se descontaron ${money(real)}; el resto se liberó`, en: `${money(real)} taken from the deposit; the rest was released` });
     });
   } else {
     // 25 nov (LAUNCH g) · Se mira lo que contestó: sin soltar (o ya cobrado en Stripe) no se marca liberado; se reintenta en el próximo barrido. Guardián liberarMira.

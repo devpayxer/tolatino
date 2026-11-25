@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
 import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta, type Soltada } from "./devolucion-cancelar";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, usdTxt, type DevCuenta, type Soltada } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { valor } from "./config";
@@ -31,7 +31,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, I
 export const NUM_V = /^V-\d{1,10}$/;
 export const HORAS_PRIV = Array.from({ length: 18 }, (_, i) => (i + 5) * 60); // vehículo completo: 5 AM – 10 PM
 export const DIAS_VIAJE = 7; // hoy y los 6 días siguientes (DN L12)
-const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+/* 25 nov (revisión de 00ac9b7) · El monto de los avisos del viaje como el de lo que pasó con el dinero (devolucion-cancelar › usdTxt: «$22.50»): antes «$22.5»
+   y «$22.50» en el mismo aviso. */
+const money = usdTxt;
 const no = (es: string, en: string, extra?: Record<string, true>) => ({ ok: false as const, msg: { es, en } as Bi, ...extra });
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 type Q = PoolClient | ReturnType<typeof db>;
@@ -369,13 +371,13 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
               idem: `vcx-${numero}`, por: "policy", seQueda: mitad });
           return { p, mitad, d };
         };
-        let x = await cerrar(await leerP());
+        const x = await cerrar(await leerP());
         if (fallo) await alertarCapturaTarde(numero, x.p?.id ?? null, { err }, x.d);
         else if (capturaSinRespuesta(cap)) await alertarCapturaTarde(numero, x.p?.id ?? null, { codigo: cap.codigo }, x.d);
         // 25 nov (LAUNCH g) · La captura tarde SÍ había salido (al soltar, Stripe la encontró cobrada y la base ya la dice cobrada, con su alerta cobrada:): la
-        // regla de la cancelación tarde sigue con lo cobrado (se queda la mitad y se devuelve el resto), y se dice eso; nunca «No se cobró nada».
-        if (x.d.e === "cobrada" && cobra) x = await cerrar(await leerP());
-        const { mitad, d } = x;
+        // regla de la cancelación tarde ya se aplicó con lo cobrado (cobros › reglaTardeConLoCobrado: se queda la mitad y se pide la devolución del resto,
+        // con la llave vcx-<número>), y se dice eso; nunca «No se cobró nada».
+        const { mitad, d } = x.d.e === "cobrada" && x.d.regla ? { mitad: x.d.regla.queda, d: x.d.regla.dev ?? { e: "nada" as const, monto: 0 } } : x;
         const seCobro = mitad === cobra ? { es: `Se cobró la mitad: ${money(mitad)}.`, en: `Half was charged: ${money(mitad)}.` } : { es: `Se cobró lo que quedaba: ${money(mitad)}.`, en: `What was left was charged: ${money(mitad)}.` };
         await avisarCliente(numero, "viaje_cx", { dinero: dineroAlCancelarCliente(d, mitad ? seCobro : undefined) });
         await avisarNeg(numero, "biz_viaje_cx", { dep: mitad ? { es: ` ${seCobro.es}`, en: ` ${seCobro.en}` } : "" });

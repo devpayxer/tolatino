@@ -262,8 +262,10 @@ export async function liquidarMercado(opId: string): Promise<{ cobrado: number; 
     const fee = p === P[P.length - 1] || resto - monto <= 0 ? Math.min(feeResto, monto) : Math.min(feeResto, Math.round((feeTot * monto) / Math.max(1, Math.min(t.real, t.ret))));
     const r = await pasarela.cobrar(p.pi, monto, fee);
     if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); falla = true; break; }
-    const u = await db().query(`update payments set status = 'captured', amount_cents = $2, fee_cents = $3, captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, monto, fee]);
-    if (u.rowCount) { cobrado += monto; liberado += p.held - monto; feeResto -= fee; }
+    // 25 nov · Ya capturado (reintento o respuesta perdida): se anota lo que Stripe capturó de verdad (r.cobrado), no lo pedido.
+    const real = r.cobrado ?? monto;
+    const u = await db().query(`update payments set status = 'captured', amount_cents = $2, fee_cents = least($3::int, $2::int), captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, real, fee]);
+    if (u.rowCount) { cobrado += real; liberado += Math.max(0, p.held - real); feeResto -= fee; }
     resto -= monto;
   }
   if (falla || (!cobrado && !liberado)) return { cobrado, liberado };

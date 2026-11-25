@@ -3100,12 +3100,23 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       diciendo que no se sabe si salió (cobrarOperacion devuelve su resultado; sandbox: ···· 0404 no captura y calla, ···· 0408 captura y calla). e2e
       din9x (el viaje tarde con 0404 y 0408 por el servidor; alertarCapturaTarde una vez por cobro, sin duplicar ni cerrarse; el barrido ante lo ya
       cobrado; la pasarela ante unexpected_state), escrita sin correr. Guardianes liberarMira y capturaTardeAlerta; al revés alrevesDineroDiceLoQuePaso.
+      Revisión de 00ac9b7 (hecho): la cobrada de una cancelación tarde sigue su regla la suelte quien la suelte (cobros › reglaTardeConLoCobrado: viaje, la
+      mitad y la devolución del resto con vcx-<número>; evento privado, perdio) y es UNA alerta (cobrada:, que dice la regla aplicada; sin captura:);
+      cobrar y capturarPlataforma ante un intento ya capturado vuelven con lo que Stripe capturó y quien llama lo anota (cobros, mercado, estimados,
+      apartados, layaway, rentas); el simulador no reescribe lo ya capturado; lo aceptado que Stripe ya no deja cobrar alerta cobrar:<cobro> y el barrido
+      no lo reintenta (antes, sin fin, tapando a los nuevos con el límite de 20); «cobrada» solo con la fila tocada o releída y devolverAlCancelar relee el
+      cobro antes de decir «liberada» (nunca «$0»); el monto de los avisos del viaje con dos decimales (usdTxt: antes «$22.5» y «$22.50» en el mismo aviso).
+      din9u (2) ya no «revive» un intento cancelado (en Stripe no vuelve): usa la captura sin respuesta del sandbox (0404); din9t2 (2) cuenta las llamadas de
+      SU llave (el barrido manda también las devoluciones de boletos pendientes de otras corridas).
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
       verificacion › vencidas, suscripcion, rentas) ya no dan por soltado lo cobrado, pero tampoco lo anotan cobrado ni alertan: lo reintentan sin fin
-      en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
+      en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). Y quien llama a capturarPlataforma (boletos, patrocinio) no anota
+      el monto que viene en `cobrado` cuando el intento ya estaba capturado con otro (hoy da por cobrado lo pedido). (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
       «No hay cupo» del panel, las de pedidos, citas, noche, fiesta, inscripción, viaje y apartado) solo distingue «retenida»; ante «cobrada» dice lo de
-      siempre: el aviso sí lo dice bien (soltadaO). (3) Un cobro de un pedido aceptado cuyo intento Stripe canceló o venció queda «held» con
-      failure_code y el barrido lo reintenta cada minuto sin alerta (antes quedaba «captured» sin dinero).
+      siempre: el aviso sí lo dice bien (soltadaO). (3) _Hecho en la revisión: el aceptado que Stripe ya no deja cobrar alerta y sale del barrido._
+      Queda decidir qué se hace con él (¿se cancela el pedido? ¿se le pide otra tarjeta?): hoy lo resuelve el equipo a mano desde su alerta. (4) La
+      cobrada de una cancelación A TIEMPO (Stripe ya lo había cobrado) no se devuelve sola: la alerta pide revisarlo; decidir si la regla «devolver todo»
+      se aplica sola como la tarde.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

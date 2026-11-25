@@ -371,8 +371,10 @@ export async function cobrarLiquidacion(opId: string): Promise<void> {
       const fee = Math.min(await comision(db(), "cita", sinImp(p.t)), p.t);
       const r = await pasarela.cobrar(p.pi, p.t, fee);
       if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); continue; }
-      const u = await db().query(`update payments set status = 'captured', amount_cents = $2, fee_cents = $3, captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, p.t, fee]);
-      if (u.rowCount) { cob += p.t; lib += p.held - p.t; await ev(db(), opId, "payment_captured", "system", null, { es: `Se cobraron ${money(p.t)}${p.held > p.t ? ` y se liberaron ${money(p.held - p.t)}` : ""}`, en: `${money(p.t)} charged${p.held > p.t ? ` and ${money(p.held - p.t)} released` : ""}` }); }
+      // 25 nov · Ya capturado (reintento o respuesta perdida): se anota lo que Stripe capturó de verdad (r.cobrado), no lo pedido.
+      const t = r.cobrado ?? p.t;
+      const u = await db().query(`update payments set status = 'captured', amount_cents = $2, fee_cents = least($3::int, $2::int), captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, t, fee]);
+      if (u.rowCount) { cob += t; lib += Math.max(0, p.held - t); await ev(db(), opId, "payment_captured", "system", null, { es: `Se cobraron ${money(t)}${p.held > t ? ` y se liberaron ${money(p.held - t)}` : ""}`, en: `${money(t)} charged${p.held > t ? ` and ${money(p.held - t)} released` : ""}` }); }
     } else {
       const r = await pasarela.liberar(p.pi);
       if (!r.ok) continue;

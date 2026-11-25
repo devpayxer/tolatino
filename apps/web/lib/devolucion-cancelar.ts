@@ -12,7 +12,10 @@
    cerrarse sola). Nunca «No se cobró nada» ni «se soltó» de ese dinero. */
 type Bi = { es: string; en: string };
 export type EstadoCancelar = "hecha" | "en_camino" | "fallida" | "liberada" | "retenida" | "cobrada" | "nada";
-export type DevCancelar = { e: EstadoCancelar; monto: number };
+export type DevCancelar = { e: EstadoCancelar; monto: number; regla?: ReglaTarde };
+/* 25 nov (revisión de 00ac9b7) · «cobrada» en una cancelación TARDE de quien pagó: la regla se aplicó con lo cobrado (cobros › reglaTardeConLoCobrado):
+   queda = lo que se quedó el negocio; dev = lo que pasó con la devolución del resto (viaje) o null (evento privado: el depósito se queda). */
+export type ReglaTarde = { queda: number; dev: DevCancelar | null };
 /* Lo que la acción del panel le responde a la pantalla: cuántas devoluciones salieron, cuántas van en camino y cuántas no salieron; y cuántas
    retenciones (nada cobrado) se soltaron y cuántas no se soltaron todavía. cobradas: las retenciones que Stripe ya había cobrado (solo si hay alguna). */
 export type DevCuenta = { hechas: number; camino: number; fallidas: number; liberadas: number; retenidas: number; cobradas?: number };
@@ -26,11 +29,13 @@ export function dineroAlCancelar(d: DevCancelar): Bi {
   if (d.e === "hecha") return { es: `Te devolvimos ${usd(d.monto)} a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.`, en: `We refunded ${usd(d.monto)} to your card; your bank shows it in 3–5 business days.` };
   if (d.e === "en_camino") return { es: `La devolución de ${usd(d.monto)} a tu tarjeta va en camino: la seguimos mandando sola.`, en: `The ${usd(d.monto)} refund to your card is on its way: we keep sending it automatically.` };
   if (d.e === "fallida") return { es: `La devolución de ${usd(d.monto)} no salió: el equipo de To'Latino ya tiene el aviso para resolverlo contigo.`, en: `The ${usd(d.monto)} refund did not go through: the To'Latino team already has the alert to sort it out with you.` };
-  if (d.e === "liberada") return { es: `No se cobró nada: la retención de ${usd(d.monto)} se suelta de tu tarjeta.`, en: `Nothing was charged: the ${usd(d.monto)} hold comes off your card.` };
+  // 25 nov · Sin monto (nada que decir de él), nunca «$0.00».
+  if (d.e === "liberada") return d.monto > 0 ? { es: `No se cobró nada: la retención de ${usd(d.monto)} se suelta de tu tarjeta.`, en: `Nothing was charged: the ${usd(d.monto)} hold comes off your card.` } : { es: "No se cobró nada.", en: "Nothing was charged." };
   if (d.e === "retenida") return { es: `No se cobró nada, pero la retención de ${usd(d.monto)} todavía no se soltó de tu tarjeta: la seguimos soltando sola y el equipo de To'Latino ya tiene el aviso.`,
     en: `Nothing was charged, but the ${usd(d.monto)} hold has not come off your card yet: we keep releasing it automatically and the To'Latino team already has the alert.` };
-  if (d.e === "cobrada") return { es: `La retención no se pudo soltar: ya se habían cobrado ${usd(d.monto)} en tu tarjeta. El equipo de To'Latino ya tiene el aviso para revisarlo contigo.`,
-    en: `The hold could not be released: ${usd(d.monto)} had already been charged to your card. The To'Latino team already has the alert to review it with you.` };
+  if (d.e === "cobrada") return d.monto > 0 ? { es: `La retención no se pudo soltar: ya se habían cobrado ${usd(d.monto)} en tu tarjeta. El equipo de To'Latino ya tiene el aviso para revisarlo contigo.`,
+    en: `The hold could not be released: ${usd(d.monto)} had already been charged to your card. The To'Latino team already has the alert to review it with you.` }
+    : { es: "La retención no se pudo soltar: ya se había cobrado en tu tarjeta. El equipo de To'Latino ya tiene el aviso para revisarlo contigo.", en: "The hold could not be released: it had already been charged to your card. The To'Latino team already has the alert to review it with you." };
   return { es: "No se cobró nada.", en: "Nothing was charged." };
 }
 
@@ -50,17 +55,18 @@ export function dineroAlNegocio(d: DevCancelar): Bi {
   if (d.e === "hecha") return { es: ` Se le devolvieron ${usd(d.monto)} a su tarjeta.`, en: ` ${usd(d.monto)} was refunded to their card.` };
   if (d.e === "en_camino") return { es: ` La devolución de ${usd(d.monto)} a su tarjeta va en camino: se manda sola.`, en: ` The ${usd(d.monto)} refund to their card is on its way: it is sent automatically.` };
   if (d.e === "fallida") return { es: ` La devolución de ${usd(d.monto)} no salió: el equipo de To'Latino ya tiene el aviso y lo resuelve con el cliente.`, en: ` The ${usd(d.monto)} refund did not go through: the To'Latino team already has the alert and sorts it out with the client.` };
-  if (d.e === "liberada") return { es: ` No se había cobrado nada: se soltó la retención de ${usd(d.monto)} de su tarjeta.`, en: ` Nothing had been charged: the ${usd(d.monto)} hold on their card was released.` };
+  if (d.e === "liberada") return d.monto > 0 ? { es: ` No se había cobrado nada: se soltó la retención de ${usd(d.monto)} de su tarjeta.`, en: ` Nothing had been charged: the ${usd(d.monto)} hold on their card was released.` } : { es: " No se había cobrado nada.", en: " Nothing had been charged." };
   if (d.e === "retenida") return sinSoltarNegocio(d.monto);
-  if (d.e === "cobrada") return { es: ` La retención no se pudo soltar: ya se habían cobrado ${usd(d.monto)} en su tarjeta. El equipo de To'Latino ya tiene el aviso y lo revisa con el cliente.`,
-    en: ` The hold could not be released: ${usd(d.monto)} had already been charged to their card. The To'Latino team already has the alert and reviews it with the client.` };
+  if (d.e === "cobrada") return d.monto > 0 ? { es: ` La retención no se pudo soltar: ya se habían cobrado ${usd(d.monto)} en su tarjeta. El equipo de To'Latino ya tiene el aviso y lo revisa con el cliente.`,
+    en: ` The hold could not be released: ${usd(d.monto)} had already been charged to their card. The To'Latino team already has the alert and reviews it with the client.` }
+    : { es: " La retención no se pudo soltar: ya se había cobrado en su tarjeta. El equipo de To'Latino ya tiene el aviso y lo revisa con el cliente.", en: " The hold could not be released: it had already been charged to their card. The To'Latino team already has the alert and reviews it with the client." };
   return { es: "", en: "" };
 }
 
 /* 25 nov (quinta tanda) · Lo retenido que se suelta SIN cancelación con devolución (vence, «No hay mesa», «No puedo», «No me sirve», el mercado no acepta,
    el apartado se cancela): cobros › soltarRetencion dice «liberada» · «nada» · «retenida» (la pasarela no la soltó todavía: el barrido la sigue soltando y
    el equipo de dinero tiene la alerta hold_stuck). Cada aviso dice lo de «liberada» como antes; lo de «retenida» sale de aquí, nunca «Se liberó». */
-export type Soltada = { e: "liberada" | "nada" | "retenida" | "cobrada"; monto: number };
+export type Soltada = { e: "liberada" | "nada" | "retenida" | "cobrada"; monto: number; regla?: ReglaTarde };
 /* Para quien pagó (con espacio delante: los avisos terminan en «.{dev}» / «.{dinero}»). */
 export const sinSoltarCliente = (monto: number): Bi => { const t = dineroAlCancelar({ e: "retenida", monto }); return { es: ` ${t.es}`, en: ` ${t.en}` }; };
 /* Para el negocio (con espacio delante). */

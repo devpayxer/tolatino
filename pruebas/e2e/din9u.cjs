@@ -53,7 +53,7 @@ let NUM = Number(String(Date.now()).slice(-8)) * 10 + 9;
     const num = String(++NUM), pi = `pi_sim_9u_${RUN}_${num}`;
     const op = uno(`insert into operations (number, kind, city_id, business_id, user_id, pay_mode, client_key, status, total_cents, subtotal_cents, pay_status)
       values ('${num}', 'order', 'hzl', '${BIZ}', '${U}', 'app', gen_random_uuid(), '${o.held ? 'confirmed' : 'done'}', ${monto}, ${monto}, '${o.held ? 'held' : 'captured'}') returning id`);
-    sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, capture_method) values ('${pi}', ${monto}, 0, 'acct_sim_${BIZ}', '${o.sim ?? 'succeeded'}', ${o.held ? 0 : monto}, 'pm_sim_visa_4242', '${o.held ? 'manual' : 'automatic'}')`);
+    sql(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card, capture_method) values ('${pi}', ${monto}, 0, 'acct_sim_${BIZ}', '${o.sim ?? 'succeeded'}', ${o.held ? 0 : monto}, 'pm_sim_visa_${o.l4 ?? '4242'}', '${o.held ? 'manual' : 'automatic'}')`);
     const p = uno(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, captured_at, held_at, simulated)
       values (${op}, '${U}', '${BIZ}', 'hzl', 'full', 'card', '${pi}', ${monto}, ${monto}, 100, '${o.held ? 'held' : 'captured'}', ${o.held ? 'null' : 'now()'}, now() - interval '1 hour', true) returning id`);
     return { op, p, pi, num };
@@ -125,14 +125,17 @@ let NUM = Number(String(Date.now()).slice(-8)) * 10 + 9;
   // ── 2 · Cobrar lo retenido cuando la pasarela no deja ──
   console.log('2 · Cobrar lo retenido: la pasarela dice que no, y después sí');
   {
-    const c = cobro(3100, { held: true, sim: 'canceled' });
+    // 25 nov · «La pasarela no deja» con algo que se puede volver a intentar: la tarjeta ···· 0404 del simulador (la captura no contesta). Antes era un intento
+    // cancelado que después «volvía» a requires_capture: en Stripe un intento cancelado nunca vuelve, y desde 00ac9b7 la captura lo dice («canceled»: alerta
+    // cobrar:<cobro> y el barrido ya no lo reintenta, din9x).
+    const c = cobro(3100, { held: true, sim: 'requires_capture', l4: '0404' });
     const st = () => sql(`select p.status || '|' || coalesce(p.failure_code, '') || '|' || o.pay_status from payments p join operations o on o.id = p.operation_id where p.id = ${c.p}`);
-    ok(st() === 'held||held', 'un pedido aceptado con su cobro retenido (y la autorización que ya no se deja cobrar en el simulador)');
+    ok(st() === 'held||held', 'un pedido aceptado con su cobro retenido (y una captura que el simulador no contesta: ···· 0404)');
     const b1 = await barrido();
     ok(b1.corrio !== false, 'el barrido corrió');
-    ok(st() === 'held|error|held', `la pasarela dijo que no: nada se marca cobrado, queda el código y sigue retenido (${st()})`);
+    ok(st() === 'held|red|held', `la pasarela no contestó: nada se marca cobrado, queda el código y sigue retenido (${st()})`);
     ok(sql(`select count(*) from operation_events where operation_id = ${c.op} and kind = 'payment_captured'`) === '0', 'y la operación no dice «Se cobraron»');
-    sql(`update sim_intents set status = 'requires_capture' where id = '${c.pi}'`);
+    sql(`update sim_intents set card = 'pm_sim_visa_4242' where id = '${c.pi}'`);
     await barrido(); await barrido();
     ok(st() === 'captured||captured', `cuando la pasarela deja, el barrido lo cobra y borra el código (${st()})`);
     ok(sql(`select status || '|' || captured_cents from sim_intents where id = '${c.pi}'`) === 'succeeded|3100' && sql(`select count(*) from operation_events where operation_id = ${c.op} and kind = 'payment_captured'`) === '1', 'cobrado una vez en el simulador y un solo «Se cobraron»');

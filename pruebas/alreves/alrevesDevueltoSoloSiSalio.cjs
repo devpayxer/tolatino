@@ -83,9 +83,11 @@ const casos = [
   // liberarOperacion da por soltada una retención que la pasarela no soltó.
   ['retención no soltada como soltada', 'apps/web/lib/cobros.ts', '  if (!r.ok) return "fallo";', '  if (!r.ok) return "liberada";'],
   // devolverAlCancelar no mira lo que dijo liberarOperacion.
-  ['cancelar no mira la retención', 'apps/web/lib/cobros.ts', '    return s.e === "retenida" || s.e === "cobrada" ? { e: s.e, monto: s.monto } : { e: "liberada"', '    return false ? { e: s.e, monto: s.monto } : { e: "liberada"'],
+  ['cancelar no mira la retención', 'apps/web/lib/cobros.ts', '    if (s.e === "retenida" || s.e === "cobrada") return { e: s.e, monto: s.monto, ...(s.regla ? { regla: s.regla } : {}) };', '    if (false) return { e: s.e, monto: s.monto, ...(s.regla ? { regla: s.regla } : {}) };'],
   // 25 nov (LAUNCH g) · La retención que Stripe ya había cobrado se dice «liberada» al cancelar.
-  ['cancelar dice «liberada» de lo cobrado', 'apps/web/lib/cobros.ts', '    return s.e === "retenida" || s.e === "cobrada" ? { e: s.e, monto: s.monto } : { e: "liberada"', '    return s.e === "retenida" ? { e: "retenida", monto: s.monto } : { e: "liberada"'],
+  ['cancelar dice «liberada» de lo cobrado', 'apps/web/lib/cobros.ts', '    if (s.e === "retenida" || s.e === "cobrada") return { e: s.e, monto: s.monto, ...(s.regla ? { regla: s.regla } : {}) };', '    if (s.e === "retenida") return { e: s.e, monto: s.monto, ...(s.regla ? { regla: s.regla } : {}) };'],
+  // (revisión de 00ac9b7) · «liberada» con lo supuesto (o.amount) sin releer el cobro.
+  ['cancelar dice «liberada» sin releer', 'apps/web/lib/cobros.ts', '    if (y.st === "released") return y.amt > 0 ? { e: "liberada", monto: y.amt } : { e: "nada", monto: 0 };', '    if (y.st === "released") return { e: "liberada", monto: o.amount ?? 0 };'],
   // La retención que no se soltó no alerta a nadie.
   ['retención sin alerta', 'apps/web/lib/cobros.ts', '  await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:', '  if (false) await (await import("./dinero-alertas")).alertar("hold_stuck", `liberar:'],
   // El panel cuenta la retención soltada como devolución hecha («Le devolvimos todo»).

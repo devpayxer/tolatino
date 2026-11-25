@@ -578,14 +578,16 @@ export async function cobrarApartado(opId: string): Promise<{ cobrado: number; l
   const fee = Math.min(await cob.comision(db(), "apt", Math.min(p.sub, monto)), monto);
   const r = await pasarela.cobrar(p.pi, monto, fee);
   if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); return { cobrado: 0, liberado: 0 }; }
+  // 25 nov · Ya capturado (reintento o respuesta perdida): se anota lo que Stripe capturó de verdad (r.cobrado), no lo pedido.
+  const real = r.cobrado ?? monto;
   const hecho = await tx(async (c) => {
-    const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = $3, captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, monto, fee]);
+    const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = least($3::int, $2::int), captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, real, fee]);
     if (!u.rowCount) return false;
     await c.query(`update operations set pay_status = 'captured' where id = $1::bigint`, [opId]);
-    await ev(c, opId, "payment_captured", "system", null, { es: `Se cobraron ${money(monto)}${p.held > monto ? ` y se liberaron ${money(p.held - monto)}` : ""}`, en: `${money(monto)} charged${p.held > monto ? ` and ${money(p.held - monto)} released` : ""}` });
+    await ev(c, opId, "payment_captured", "system", null, { es: `Se cobraron ${money(real)}${p.held > real ? ` y se liberaron ${money(p.held - real)}` : ""}`, en: `${money(real)} charged${p.held > real ? ` and ${money(p.held - real)} released` : ""}` });
     return true;
   });
-  return hecho ? { cobrado: monto, liberado: p.held - monto } : { cobrado: 0, liberado: 0 };
+  return hecho ? { cobrado: real, liberado: Math.max(0, p.held - real) } : { cobrado: 0, liberado: 0 };
 }
 /* Lo que quedó a medias (una llamada a la pasarela que falló): enviado o entregado → cobrar; ya no sigue → liberar. */
 export async function repararApartados(negocio: string) {

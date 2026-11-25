@@ -25,6 +25,9 @@ export type Verificar = { pi: string; secreto: string; monto: number; pm: string
 /* Quién paga (para guardar la verificación pendiente a su nombre: solo esa persona la completa). Sin esto, un «requires_action» sigue como antes. */
 export type Quien = { id: string; negocio?: string | null; ciudad?: string | null };
 export type EstadoCuenta = { cargos: boolean; pagos: boolean; pide: string[]; banco: string | null };
+/* 25 nov · Lo que contesta una captura (cobrar, capturarPlataforma): cobrado viene cuando el intento YA estaba capturado (un reintento, o una captura cuya
+   respuesta se perdió): es lo que Stripe capturó de verdad, y quien llama anota ese monto (puede no ser el que pidió). */
+export type Captura = { ok: true; cobrado?: number } | { ok: false; codigo: string };
 /* 25 nov · Lo que contesta liberar: soltada, o no (con el código), o «estaba cobrado» (cobrado: lo que Stripe capturó, en centavos). */
 export type Liberacion = { ok: true } | { ok: false; codigo: string; cobrado?: number };
 /* El intento ya no se podía cancelar: lo que dice su estado. Sin intento en el simulador: nada retenido (como antes). */
@@ -177,17 +180,20 @@ export const pasarela = {
     }
   },
   /* Capturar lo retenido de un cobro de la plataforma (sin comisión en la captura: no hay destino). Idempotente. */
-  async capturarPlataforma(pi: string, centavos: number): Promise<{ ok: boolean; codigo?: string }> {
+  async capturarPlataforma(pi: string, centavos: number): Promise<Captura> {
     if (pi.startsWith("pi_sim_")) {
-      const r = await db().query(`update sim_intents set status = 'succeeded', captured_cents = $2 where id = $1 and status in ('requires_capture', 'succeeded')`, [pi, centavos]);
-      return { ok: !!r.rowCount };
+      // 25 nov · Lo ya capturado no se vuelve a escribir (como Stripe): vuelve con lo que se capturó de verdad.
+      const r = await db().query(`update sim_intents set status = 'succeeded', captured_cents = $2 where id = $1 and status = 'requires_capture'`, [pi, centavos]);
+      if (r.rowCount) return { ok: true };
+      const s = (await db().query<{ status: string; captured_cents: number }>(`select status, captured_cents from sim_intents where id = $1`, [pi])).rows[0];
+      return s?.status === "succeeded" ? { ok: true, cobrado: s.captured_cents } : { ok: false, codigo: s?.status ?? "no_existe" };
     }
     try { await stripe("POST", `/v1/payment_intents/${encodeURIComponent(pi)}/capture`, { amount_to_capture: centavos }, { idem: `cap-${pi}` }); return { ok: true }; }
     catch (e) {
       // Ya capturado (repetido) = bien; cancelado o vencido = no se cobró (se mira el estado, nunca se supone).
       if (e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state") {
-        const x = await stripe<{ status: string }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);
-        return x?.status === "succeeded" ? { ok: true } : { ok: false, codigo: x?.status ?? "unexpected_state" };
+        const x = await stripe<{ status: string; amount_received: number }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);
+        return x?.status === "succeeded" ? { ok: true, cobrado: x.amount_received } : { ok: false, codigo: x?.status ?? "unexpected_state" };
       }
       return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" };
     }
@@ -299,21 +305,23 @@ export const pasarela = {
      25 nov (regla 13) · «payment_intent_unexpected_state» ya no es «cobrado» a ciegas: se mira el intento (cancelado o vencido = no se cobró; el
      libro decía «cobrado» sin dinero). En el sandbox, ···· 0404 y ···· 0408 ensayan la captura sin respuesta como los cobros fuera de sesión (9t5):
      0404 no captura y no contesta; 0408 captura y la respuesta se pierde (el siguiente intento ya la encuentra cobrada). Guardián liberarMira. */
-  async cobrar(pi: string, centavos: number, comision: number): Promise<{ ok: boolean; codigo?: string }> {
+  async cobrar(pi: string, centavos: number, comision: number): Promise<Captura> {
     if (pi.startsWith("pi_sim_")) {
-      const s = (await db().query<{ status: string; card: string | null }>(`select status, card from sim_intents where id = $1`, [pi])).rows[0];
+      const s = (await db().query<{ status: string; card: string | null; captured_cents: number }>(`select status, card, captured_cents from sim_intents where id = $1`, [pi])).rows[0];
+      // 25 nov · Ya capturado (como Stripe ante «unexpected_state»): no se reescribe lo capturado ni la comisión; vuelve con lo que se capturó de verdad.
+      if (s?.status === "succeeded") return { ok: true, cobrado: s.captured_cents };
       const l4 = SIM_PM.exec(s?.card ?? "")?.[2];
       if (s?.status === "requires_capture" && l4 === SIM_CALLA) return { ok: false, codigo: "red" };
-      const r = await db().query(`update sim_intents set status = 'succeeded', captured_cents = $2, fee_cents = $3 where id = $1 and status in ('requires_capture', 'succeeded')`, [pi, centavos, comision]);
-      if (r.rowCount && s?.status === "requires_capture" && l4 === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red" };
+      const r = await db().query(`update sim_intents set status = 'succeeded', captured_cents = $2, fee_cents = $3 where id = $1 and status = 'requires_capture'`, [pi, centavos, comision]);
+      if (r.rowCount && l4 === SIM_COBRA_Y_CALLA) return { ok: false, codigo: "red" };
       return r.rowCount ? { ok: true } : { ok: false, codigo: s?.status ?? "no_existe" };
     }
     try { await stripe("POST", `/v1/payment_intents/${encodeURIComponent(pi)}/capture`, { amount_to_capture: centavos, application_fee_amount: comision }, { idem: `cob-${pi}` }); return { ok: true }; }
     catch (e) {
       // Ya capturado (repetido) = bien; cancelado o vencido = no se cobró. Se mira el estado, nunca se supone (como capturarPlataforma).
       if (e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state") {
-        const x = await stripe<{ status: string }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);
-        return x?.status === "succeeded" ? { ok: true } : { ok: false, codigo: x?.status ?? "red" };
+        const x = await stripe<{ status: string; amount_received: number }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);
+        return x?.status === "succeeded" ? { ok: true, cobrado: x.amount_received } : { ok: false, codigo: x?.status ?? "red" };
       }
       return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" };
     }

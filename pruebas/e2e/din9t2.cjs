@@ -29,9 +29,9 @@ const K = {}, DC = {}, BOS = {}; // 9t7 · se llenan abajo (consulta a la pasare
 const alertas = cargar('apps/web/lib/dinero-alertas.ts', { './db': D, './avisos': avisos, './devolucion-consulta': DC, './admin': { auditar: async (c, a) => c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, after) values ('staff', $1, $2, $3, $4, $5)`, [a.actor, a.action, a.targetKind, a.targetId ?? null, JSON.stringify(a.after ?? null)]) } });
 // La pasarela de mentira (la de din9t): devuelve una vez por llave y lleva la cuenta de lo que salió de verdad.
 const P = {
-  modo: () => 'simulador', salio: new Map(), llamadas: 0, plan: [], para: null, saldo: new Map(), pausas: [], pausaPlan: [],
+  modo: () => 'simulador', salio: new Map(), llamadas: 0, porLlave: new Map(), plan: [], para: null, saldo: new Map(), pausas: [], pausaPlan: [],
   async devolver(pi, n, idem) {
-    this.llamadas++;
+    this.llamadas++; this.porLlave.set(idem, (this.porLlave.get(idem) ?? 0) + 1);
     // El plan es solo para las llaves de ESTA prueba (para): el barrido también termina devoluciones de otras corridas y no debe gastarlo.
     const paso = this.plan.length && (!this.para || idem.startsWith(this.para)) ? this.plan.shift() : 'ok';
     if (paso === 'no') return { ok: false, codigo: 'charge_disputed' };
@@ -129,10 +129,11 @@ const alertasDe = (kind, sujeto) => n1(`select count(*)::int as n from money_ale
     const c = await cobro(X), k = `t9u-bol-${crypto.randomUUID()}`;
     const rf = await devBoletos(c, 900, k);
     await atrasar(rf, 24 * 60);
-    const antes = P.llamadas;
+    // 25 nov · Se cuentan las llamadas con SU llave: el barrido también manda (bien) las devoluciones de boletos pendientes de otras corridas que siguen
+    // dentro de las 23 h, y con ellas en la base contar todas las llamadas daba rojo sin que esta devolución hubiera vuelto a la pasarela.
     await BO.barrerDevolucionesBoletos(); await BO.barrerDevolucionesBoletos();
     const r = await BO.ejecutarDevolucion(rf);
-    ok(P.llamadas === antes && !r && (await q1(`select status from refunds where id = $1::bigint`, [rf])).status === 'pending', 'boletos: una devolución de hace más de 23 h no vuelve a la pasarela (ni el barrido ni otra llamada)');
+    ok(!P.porLlave.has(k) && !r && (await q1(`select status from refunds where id = $1::bigint`, [rf])).status === 'pending', 'boletos: una devolución de hace más de 23 h no vuelve a la pasarela (ni el barrido ni otra llamada)');
     ok(await alertasDe('refund_stuck', rf) === 1, 'boletos: el equipo de dinero recibe UNA alerta');
     const c2 = await cobro(X), k2 = `t9u-bol-${crypto.randomUUID()}`;
     const rf2 = await devBoletos(c2, 700, k2);

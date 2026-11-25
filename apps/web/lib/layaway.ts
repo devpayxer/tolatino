@@ -159,7 +159,8 @@ export async function liquidarCuota(paymentId: string): Promise<{ ok: boolean; l
   const r = await pasarela.cobrar(p.pi, p.monto, Math.min(p.fee, p.monto));
   if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1::bigint`, [p.id, r.codigo ?? "error"]); return { ok: false, listo: false }; }
   const hecho = await tx(async (c) => {
-    const u = await c.query(`update payments set status = 'captured', captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id]);
+    // 25 nov · Ya capturado con otro monto (reintento o respuesta perdida): se anota lo que Stripe capturó de verdad.
+    const u = await c.query(`update payments set status = 'captured', amount_cents = $2, fee_cents = least(fee_cents, $2::int), captured_at = now(), failure_code = null, updated_at = now() where id = $1::bigint and status = 'held'`, [p.id, r.cobrado ?? p.monto]);
     if (!u.rowCount) return null;
     const plan = (await c.query<{ id: string }>(`select id::text from layaway_plans where operation_id = $1::bigint for update`, [p.op])).rows[0]!.id;
     await c.query(`update layaway_payments set status = 'paid', paid_at = now(), paid_where = 'app', payment_id = $3::bigint where plan_id = $1::bigint and seq = $2 and status in ('due', 'late')`, [plan, p.seq, p.id]);
