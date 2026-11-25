@@ -209,7 +209,7 @@ let OP = null;
     const RB = sql(`select id from sponsorships where business_id = '${bar.id}' and status = 'reservado'`);
     await pf.reload();
     await pf.getByRole('button', { name: 'Cancelar reserva' }).click();
-    ok(await espera(async () => (await texto(pf)).includes('te devolvemos los $15.00 completos a tu tarjeta')), 'antes de confirmar: «Se cancela la reserva y te devolvemos los $15.00 completos»');
+    ok(await espera(async () => (await texto(pf)).includes('pedimos la devolución de los $15.00 completos a tu tarjeta')), 'antes de confirmar: «Se cancela la reserva y pedimos la devolución de los $15.00 completos» (nunca «te devolvemos» antes de actuar)');
     await pf.screenshot({ path: OUT + 'pat002-cancelar-reserva-390.png', fullPage: true });
     await pf.getByRole('button', { name: 'Sí, cancelar' }).click();
     ok(await espera(async () => sql(`select status || '|' || end_kind || '|' || refund_cents || '|' || refund_motive from sponsorships where id = ${RB}`) === 'cancelado|dueno|1500|reserva_cancelada'), 'queda CANCELADO y la base decide devolver todo ($15.00)');

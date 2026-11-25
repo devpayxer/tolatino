@@ -65,7 +65,7 @@ export function nocheDetalle(c: Ctx): Sec {
   const pay = x.pay === "held" ? E2("retenido", "held") : x.pay === "captured" ? E2("cobrado", "charged") : x.pay === "released" ? E2("liberado", "released") : x.pay === "refunded" ? E2("devuelto", "refunded") : "—";
   const out: (Bloque | null)[] = [
     { type: "head", eye: `${lista ? E2("LISTA", "LIST") : E2("MESA", "TABLE")} · ${stL}`, t: x.numero, s: `${x.who} · ${x.esHoy ? E2("esta noche", "tonight") : nocheCorta(x.night, es)} · ${hNoche(x.llega)}`, onBack: c.closeDet },
-    x.st === "pending" ? { type: "note", tone: "info", icon: "clock", t: x.resp != null ? E2(`Responde en ${x.resp} min. Si no, vence y se le libera el depósito.`, `Reply within ${x.resp} min. Otherwise it expires and the deposit is released.`) : E2("Está por vencer.", "About to expire.") } : null,
+    x.st === "pending" ? { type: "note", tone: "info", icon: "clock", t: x.resp != null ? (x.dep && x.pay === "held" ? E2(`Responde en ${x.resp} min. Si no, vence y pedimos que se suelte la retención del depósito de su tarjeta.`, `Reply within ${x.resp} min. Otherwise it expires and we ask for the deposit hold to come off their card.`) : E2(`Responde en ${x.resp} min. Si no, vence.`, `Reply within ${x.resp} min. Otherwise it expires.`)) : E2("Está por vencer.", "About to expire.") } : null,
     { type: "kv", items: [
       { k: lista ? E2("LISTA", "LIST") : E2("MESA", "TABLE"), v: nm(x.svc) }, { k: E2("PERSONAS", "PEOPLE"), v: String(x.pax) }, { k: E2("LLEGAN", "ARRIVE"), v: hNoche(x.llega) },
       ...(x.occ && OCC[x.occ] ? [{ k: E2("OCASIÓN", "OCCASION"), v: OCC[x.occ]![es ? 0 : 1] }] : []),

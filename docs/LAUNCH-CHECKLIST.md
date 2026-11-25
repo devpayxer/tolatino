@@ -3049,14 +3049,30 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       _Hecho (25 nov, Opus; en revisión): hojas y «otra hora» dicen lo que se pedirá (pideCx / pideAlt), failed con su texto y fila, vencidaPanel,
       ord_no neutro si la consulta falla, soltado(E2(…)) y «CANCELADO» sin candado; guardián devueltoSoloSiSalio (13) y cadenaConLlave (ayudante que
       saca textos del CMS), al revés 98/98 y alreves9f3 39/39; din9w (30 ✓) asignada; sin migración (ord_no ya tenía {dinero}). Tras la revisión: «otra hora» solo con la retención, confirmada y retenida, ficha de servicios, seguridad de «Rechazar»._
-- [ ] **→ 9b** · **La misma clase «promete antes de actuar» en otras pantallas (25 nov, visto al cerrar los restos):** las hojas de cancelar dicen
+- [x] **→ 9b** · **La misma clase «promete antes de actuar» en otras pantallas (25 nov, visto al cerrar los restos):** las hojas de cancelar dicen
       «te devolvemos $X» antes de intentar nada en Noche (`NocheEstado.tsx` ~74 y los estados ~43/~47 «Si no confirman / no te sirve, te devolvemos
       el depósito»), Viaje (`ViajeEstado.tsx` ~107), Fiesta (`FiestaEstado.tsx` ~62), Evento privado (`EstadoEvp.tsx` ~155/~219) y Patrocinio
       (`panel/Patrocinio.tsx` ~100, `PatrocinioEvento.tsx` ~73); el panel de citas dice «si no respondes … vence y se devuelve el depósito»
       (`panel/Citas.tsx` ~151, es una retención que se suelta). El guardián devueltoSoloSiSalio (13) solo cubre la cita: al arreglarlas, ampliar su
-      lista. Y la familia de textos fijos que no llegan al CMS por ir en listas que después pasan a `E2(a, b)` (`Recuperar.tsx` DOCS, `MenuCliente.tsx`
-      LLEVA, `panel/Cobros.tsx` pasos, `EventosCambios.tsx` IDEAS y MOTIVOS): el guardián nuevo de cadenaConLlave solo caza el ayudante
+      lista. (La familia de textos fijos en listas que pasan a `E2(a, b)` sigue abierta: línea de abajo.)
+      _Hecho (25 nov, Opus; en revisión): las hojas de cancelar de noche, viaje, fiesta, inscripción y evento privado dicen lo que se pedirá según el
+      cobro en la base (`lib/devolucion-cancelar.ts` › pideAlCancelar: retenido → que se suelte; cobrado → la devolución de lo que queda; tarde, lo que
+      queda de lo cobrado; el viaje tarde, la mitad y el resto); «Si no confirman / no te sirve» solo con lo retenido (pideSoltarSi); «No me sirve» dice
+      «se liberó» solo si había retención; noche «no llegaste / sin identificación / buena noche» y evento privado «Depósito cobrado» miran el cobro;
+      patrocinio y patrocinio de evento «pedimos la devolución»; paneles de citas, mesas, fiestas y viajes «pedimos que se suelte» solo con retención;
+      el panel del evento privado dice lo que pasó (depCx, con devolucionesDe). Migración 0224 (noche_alt, fiesta_alt y viaje_alt con {dinero}).
+      Guardián devueltoSoloSiSalio (13 ampliada), al revés 126/126; alreves9f3 39/39; alreves9n3 40/40; e2e ajustados: ins4e, fie4v, pat002._
+- [ ] **→ 9b** · **La familia de textos fijos que no llegan al CMS por ir en listas que después pasan a `E2(a, b)` (25 nov):** `Recuperar.tsx` DOCS,
+      `MenuCliente.tsx` LLEVA, `panel/Cobros.tsx` pasos, `EventosCambios.tsx` IDEAS y MOTIVOS: el guardián nuevo de cadenaConLlave solo caza el ayudante
       `const f = (a: string, b: string) => … E2(a, b)` llamado con dos textos fijos.
+- [ ] **→ 9b** · **Lo que queda de «promete antes de actuar» (25 nov, visto al cerrar la línea de arriba):** (a) las tablas de política al reservar
+      («Te devolvemos $X» en `n/[id]/noche/Reservar.tsx` ~148, `viaje/ViajeBooking.tsx` ~207, `fiesta/Booking.tsx` ~197; la FAQ de `n/[id]/page.tsx`
+      ~192; `eventos/[slug]/page.tsx` ~72 «Si compraste, te devolvemos todo»; `panel/Inscripciones.tsx` ~58 y `EventosPanel.tsx` ~494) se dejaron: dicen
+      la regla antes de que exista un cobro, no lo que pasó; decidir si pasan a «pedimos la devolución» (REVISION). (b) `cancelarEvp` con el cobro ya
+      devuelto o soltado (released/refunded) y tarde marca perdio y el aviso evp_cancelado dice «se queda con el restaurante» sin que haya nada cobrado
+      (el servidor; la hoja ya no lo promete). (c) La duración de alrevesDevueltoSoloSiSalio en `pruebas/reparto-alreves.json` (28 s con 98 casos; ahora
+      126): se regenera con `scripts/ci/repartir.mjs --alreves` en la próxima corrida medida. (d) din9v4/din9v5 sin caso de punta a punta de las hojas
+      nuevas (retenido vs cobrado) ni del aviso de otra hora con y sin depósito.
 
 ## Repaso corto tras una roja (decisión AU, 24 nov) — lo que queda por ver en real
 - [x] **→ 9b** · La línea `RESULTADOS` de `pruebas/correr.mjs` en el registro real de cada parte (la primera dirigida que la traiga: una por parte, `completa:true`). _Visto el 24 nov: las 24 partes de las corridas 45453498666,

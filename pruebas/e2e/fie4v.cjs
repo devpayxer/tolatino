@@ -81,7 +81,7 @@ const esperaV = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f();
   const F3 = await pedir(sab8, '6:00 PM', false);
   await h.goto(B + `/panel/${F}/hoy?det=fiesta:${F3}`); await clic(h.getByRole('button', { name: 'Confirmar', exact: true })); await h.getByText(/Confirmada/).first().waitFor();
   await esperaV(() => sql(`select p.status from payments p join operations o on o.id = p.operation_id where o.number = '${F3}'`), 'captured');
-  await m.goto(B + `/fiesta/${F3}`); await clic(m.getByRole('button', { name: 'Cancelar la fecha' })); await m.getByText(/te devolvemos \$500/).first().waitFor();
+  await m.goto(B + `/fiesta/${F3}`); await clic(m.getByRole('button', { name: 'Cancelar la fecha' })); await m.getByText(/es gratis\. Pedimos la devolución de \$500 a tu tarjeta/).first().waitFor();
   await clic(m.getByRole('button', { name: 'Sí, cancelar' })); await m.getByText('CANCELADA').first().waitFor();
   ok(await esperaV(() => sql(`select p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${F3}'`), '50000') === '50000', 'cancelar a ≥30 días: devolución completa de $500');
 

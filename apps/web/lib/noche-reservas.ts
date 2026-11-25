@@ -5,7 +5,7 @@ import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
 import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, SWEEP } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
 import { diaNoche, hNoche, usdN, type Bi } from "./noche-comun";
@@ -286,7 +286,8 @@ export async function responderMesa(negocio: string, numero: string, paso: PasoM
         [o.id, JSON.stringify({ m }), actorId, o.night, m, o.tz]);
       await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = least(now() + interval '30 minutes', ($2::date + time '12:00' + make_interval(mins => $3::int - 15)) at time zone $4), updated_at = now() where id = $1::bigint`, [o.id, o.night, m, o.tz]);
       await ev(c, o.id, "night_alt", "member", actorId, { es: `Propusiste las ${hNoche(m)}`, en: `You proposed ${hNoche(m)}` });
-      despues = async () => { await avisarCliente(numero, "noche_alt", { alt: hNoche(m) }); };
+      // 25 nov (regla 13) · «No me sirve» solo suelta la retención: el aviso lo dice si hay algo retenido ({dinero}, 0224), nunca «se libera tu depósito» sin depósito.
+      despues = async () => { await avisarCliente(numero, "noche_alt", { alt: hNoche(m), dinero: pideSoltarSi("sirve", { st: o.pay, monto: o.amount ?? o.dep }, usdN) }); };
       return { ok: true };
     }
     await c.query(`update operations set status = 'confirmed', answered_at = now(), confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
@@ -517,7 +518,7 @@ export type NocheVista = {
   devolucion: { camino: number; fallida: number };
   numero: string; status: string; detalle: string | null; k: "lista" | "mesa" | "vip"; negocio: { id: string; nombre: string; telefono: string | null; direccion: string | null; foto: string | null };
   svc: Bi; night: string; hoy: boolean; dow: number; llega: number; pax: number; occ: string | null; nota: string | null; code: string | null; puerta: { es: string; en: string };
-  edad: number; hold: number; resp: number | null; corteBase: number; cut: number | null; nowN: number; dep: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null };
+  edad: number; hold: number; resp: number | null; corteBase: number; cut: number | null; nowN: number; dep: number; pago: { st: string | null; monto: number; devuelto: number; marca: string | null; l4: string | null };
   alt: { m: number } | null; motivoNeg: string | null; perdio: boolean; inN: number | null; cover: number; resena: boolean;
   linea: { at: string; kind: string; note: Bi | null }[];
 };
@@ -525,11 +526,11 @@ export async function nocheVista(userId: string, numero: string): Promise<NocheV
   if (!NUM_N.test(numero)) return null;
   await vencerNoche({ userId, numero });
   const o = (await db().query<{ id: string; num: string; status: string; detail: string | null; det: Record<string, unknown>; night: string; hoy: string; nowN: number; pax: number; note: string | null; code: string | null;
-    dep: number; biz: string; nombre: string; phone: string | null; address: string | null; foto: string | null; pst: string | null; dev: number | null; marca: string | null; l4: string | null; resp: number | null }>(
+    dep: number; biz: string; nombre: string; phone: string | null; address: string | null; foto: string | null; pst: string | null; amt: number | null; dev: number | null; marca: string | null; l4: string | null; resp: number | null }>(
     `select o.id::text, o.number as num, case when o.status = 'pending' and o.respond_by is not null then greatest(1, ceil(extract(epoch from o.respond_by - now()) / 60))::int end as resp, o.status, o.status_detail as detail, o.details as det, o.night_date::text as night, ${NOCHE_SQL("now()", "c.timezone")}::text as hoy,
             (extract(epoch from (now() at time zone c.timezone) - (o.night_date + time '12:00')) / 60)::int as "nowN", o.party_size as pax, o.customer_note as note, o.door_code as code,
             o.deposit_cents as dep, b.id as biz, b.name as nombre, b.phone, b.address, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as foto,
-            p.status as pst, p.refunded_cents as dev, p.card_brand as marca, p.card_last4 as l4
+            p.status as pst, p.amount_cents as amt, p.refunded_cents as dev, p.card_brand as marca, p.card_last4 as l4
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id left join payments p on p.operation_id = o.id and p.kind = 'deposit'
       where o.kind = 'night' and o.number = $1 and o.user_id = $2`, [numero, userId])).rows[0];
   if (!o) return null;
@@ -542,7 +543,7 @@ export async function nocheVista(userId: string, numero: string): Promise<NocheV
     svc: d.svc as Bi, night: o.night, hoy: o.night === o.hoy, dow: new Date(`${o.night}T12:00:00Z`).getUTCDay(), llega: Number(d.arrive), pax: o.pax, occ: (d.occ as string) ?? null, nota: o.note,
     // El código solo mientras la reserva está viva (y nunca antes de que el local confirme la mesa).
     code: o.status === "confirmed" ? o.code : null, puerta: { es: puertaTexto(d, true), en: puertaTexto(d, false) }, edad: Number(d.edad ?? 21), hold: Number(d.hold ?? await valor("noche_mesa_guardada_min")), resp: o.resp, corteBase: await valor("noche_corte_min"),
-    cut: d.cut == null ? null : Number(d.cut), nowN: o.nowN, dep: o.dep, pago: { st: o.pst, devuelto: o.dev ?? 0, marca: o.marca, l4: o.l4 }, alt, motivoNeg: (d.motivoNeg as string) ?? null,
+    cut: d.cut == null ? null : Number(d.cut), nowN: o.nowN, dep: o.dep, pago: { st: o.pst, monto: o.amt ?? o.dep, devuelto: o.dev ?? 0, marca: o.marca, l4: o.l4 }, alt, motivoNeg: (d.motivoNeg as string) ?? null,
     perdio: !!d.perdio, inN: d.in_n == null ? null : Number(d.in_n), cover: Number(d.cover_cents ?? 0), resena, linea: L,
     devolucion: await devolucionesDe(o.id),
   };

@@ -90,7 +90,7 @@ async function inscribir(p, neg, svc, o = {}) {
   // Cancelar antes de empezar → devolución completa y el cupo vuelve.
   await cli.goto(`${B}/insc/${I1}`); await cli.getByText('CONFIRMADA').first().waitFor();
   await clic(cli.getByRole('button', { name: 'Cancelar la inscripción' }));
-  ok(!!(await vis(cli.getByText(/Todavía no empieza: te devolvemos \$55/))), 'la hoja dice la regla real (antes de empezar)');
+  ok(!!(await vis(cli.getByText(/Todavía no empieza: es gratis\. Pedimos la devolución de \$55 a tu tarjeta/))), 'la hoja dice la regla real (antes de empezar) y lo que se pedirá, nunca «te devolvemos» antes de actuar');
   await clic(cli.getByRole('button', { name: 'Sí, cancelar' }));
   ok(await espera(() => st(I1) === 'cancelled' && pay(I1) === 'refunded:5500:5500' && booked(G1) === 0), 'cancelar antes de empezar → devolución completa y el cupo vuelve');
 

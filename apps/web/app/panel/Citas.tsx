@@ -148,7 +148,7 @@ export function citaDetalle(c: Ctx): Sec {
   if (x.st === "pend") {
     out.push({ type: "acts", pt: "4px", items: accionesPend(c, who) });
     if (x.sal && !x.sal.ninguno) out.push({ type: "acts", items: [{ l: E2("No aceptamos su seguro", "We do not take their insurance"), v: "secondary", icon: "insurance", off: c.pending, onClick: () => paso(c, { ...who, segH: x.sal!.segH }, "noseguro") }] });
-    out.push({ type: "note", tone: "info", t: E2(`Hasta que respondas, el cliente ve «Solicitud enviada». Nunca se confirma sola. «Otra hora» le propone tu siguiente hora libre.${x.responde ? ` Si no respondes antes de las ${x.responde}, vence${x.dep ? " y se devuelve el depósito" : ""}.` : ""}`, `Until you reply, the client sees “Request sent”. It never confirms itself. “Other time” suggests your next open time.${x.responde ? ` If you don't reply by ${x.responde}, it expires${x.dep ? " and the deposit is returned" : ""}.` : ""}`) });
+    out.push({ type: "note", tone: "info", t: E2(`Hasta que respondas, el cliente ve «Solicitud enviada». Nunca se confirma sola. «Otra hora» le propone tu siguiente hora libre.${x.responde ? ` Si no respondes antes de las ${x.responde}, vence${x.dep && x.pago === "held" ? " y pedimos que se suelte la retención del depósito de su tarjeta" : ""}.` : ""}`, `Until you reply, the client sees “Request sent”. It never confirms itself. “Other time” suggests your next open time.${x.responde ? ` If you don't reply by ${x.responde}, it expires${x.dep && x.pago === "held" ? " and we ask for the deposit hold to come off their card" : ""}.` : ""}`) });
   }
   // Auto y Hogar (4c): recibido · en camino / llegué · empezar · listo · entregado · no había nadie.
   if (x.rubro) {

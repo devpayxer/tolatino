@@ -22,8 +22,8 @@ precio cerrado por fotos se piden llamando hasta que lleguen a la app.
 | Reservas | Se **retiene** el total en tu tarjeta (no se cobra). |
 | El negocio confirma | Se **cobra** el total. |
 | No confirman a tiempo, no hay cupo o no te sirve la otra salida | Se **libera** completo. |
-| Cancelas con 24 horas o más | Te **devolvemos todo**. |
-| Cancelas con menos de 24 horas | Se **cobra la mitad** y te devolvemos el resto. |
+| Cancelas con 24 horas o más | Es gratis: **pedimos** que se suelte la retención o, si ya se cobró, la devolución de todo. La hoja lo dice antes de confirmar; lo que pasó, «Tu viaje» y Avisos. |
+| Cancelas con menos de 24 horas | Se **cobra la mitad** y pedimos la devolución del resto a tu tarjeta. |
 | El negocio cancela la salida | Te **devolvemos todo**, con el motivo. |
 | No llegas a la salida | El cobro no cambia. |
 
@@ -45,7 +45,7 @@ En cada pasajero: Abordó / No llegó. Los asientos vendidos fuera de la app se 
 
 ## FAQ
 - **¿Me cobran al reservar?** No: se retiene. Se cobra cuando el negocio confirma. No, it is held.
-- **¿Puedo cancelar?** Sí, desde «Tu viaje». Con 24 h o más te devolvemos todo; con menos, se cobra la mitad.
+- **¿Puedo cancelar?** Sí, desde «Tu viaje». Con 24 h o más es gratis; con menos, se cobra la mitad. Antes de que confirmes, la hoja dice lo que vamos a **pedir** según tu tarjeta (que se suelte la retención, o la devolución de lo que queda); nunca «te devolvemos» antes de intentarlo. Lo que pasó de verdad lo ves después en la pantalla y en Avisos.
 - **¿Y si el negocio no sale?** Te devolvemos todo y ves el motivo.
 - **¿Cuántos asientos puedo reservar?** Hasta 14 por reserva.
 - **¿Dónde veo mis viajes?** Mi cuenta › Citas y reservas.
@@ -77,8 +77,8 @@ requested by phone until they are available in the app.
 | You book | The total is **held** on your card (not charged). |
 | The business confirms | The total is **charged**. |
 | They do not confirm in time, there is no room or the other departure does not work for you | It is **released** in full. |
-| You cancel with 24 hours or more | We **refund everything**. |
-| You cancel with less than 24 hours | **Half is charged** and we refund the rest. |
+| You cancel with 24 hours or more | It is free: we **request** that the hold comes off or, if it was already charged, a refund of everything. The sheet says so before you confirm; what happened, «Your trip» and Notifications. |
+| You cancel with less than 24 hours | **Half is charged** and we request a refund of the rest to your card. |
 | The business cancels the departure | We **refund everything**, with the reason. |
 | You do not make it to the departure | The charge does not change. |
 
@@ -99,7 +99,7 @@ Arrived). On each passenger: Boarded / Did not show. Seats sold outside the app 
 
 ### FAQ
 - **Do you charge me when I book?** No: it is held. It is charged when the business confirms.
-- **Can I cancel?** Yes, from «Your trip». With 24 hours or more we refund everything; with less, half is charged.
+- **Can I cancel?** Yes, from «Your trip». With 24 hours or more it is free; with less, half is charged. Before you confirm, the sheet says what we will **request** based on your card (that the hold comes off, or a refund of what is left); never «we refund» before trying. What really happened shows afterwards on the screen and in Notifications.
 - **What if the business does not leave?** We refund everything and you see the reason.
 - **How many seats can I book?** Up to 14 per booking.
 - **Where do I see my trips?** My account › Appointments and bookings.

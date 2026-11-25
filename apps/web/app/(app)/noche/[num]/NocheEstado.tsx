@@ -11,6 +11,7 @@ import type { NocheVista } from "@/lib/noche-reservas";
 import { nocheAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { cobradoVisto, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/devolucion-cancelar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,23 +37,30 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
   // 9v · Lo que no está hecho se dice como está (cobros › devolucionesDe): en camino o que no salió; nunca «te devolvemos todo» sin mirar.
   const pendT = [x.devolucion.camino ? E2(`Te devolvemos ${usdN(x.devolucion.camino)}: va en camino a tu tarjeta.`, `We are refunding ${usdN(x.devolucion.camino)}: it is on its way to your card.`) : "",
     x.devolucion.fallida ? E2(`La devolución de ${usdN(x.devolucion.fallida)} no salió: escríbenos en Soporte y lo resolvemos.`, `The ${usdN(x.devolucion.fallida)} refund did not go through: write to us in Support and we will sort it out.`) : ""].filter(Boolean).join(" ");
-  const devT0 = dep ? (liberado ? E2(`Se liberó tu depósito de ${usdN(dep)}.`, `Your ${usdN(dep)} deposit was released.`) : devuelto ? E2(`Te devolvimos ${usdN(devuelto)} · 3 a 5 días.`, `We refunded ${usdN(devuelto)} · 3 to 5 days.`) : x.pago.st === "held" ? E2(`Se libera tu depósito de ${usdN(dep)}.`, `Your ${usdN(dep)} deposit is released.`) : "") : E2("No se cobró nada.", "Nothing was charged.");
-  const devT = [devT0, pendT].filter(Boolean).join(" "), cobrado = x.pago.st === "captured" || x.pago.st === "partially_refunded";
+  const devT0 = dep ? (liberado ? E2(`Se liberó tu depósito de ${usdN(dep)}.`, `Your ${usdN(dep)} deposit was released.`) : devuelto ? E2(`Te devolvimos ${usdN(devuelto)} · 3 a 5 días.`, `We refunded ${usdN(devuelto)} · 3 to 5 days.`) : x.pago.st === "held" ? E2(`No se cobró nada, pero la retención de ${usdN(x.pago.monto)} todavía no se soltó de tu tarjeta: la seguimos soltando sola.`, `Nothing was charged, but the ${usdN(x.pago.monto)} hold has not come off your card yet: we keep releasing it automatically.`) : "") : E2("No se cobró nada.", "Nothing was charged.");
+  const devT = [devT0, pendT].filter(Boolean).join(" "), cobrado = cobradoVisto(x.pago), queda = quedaVisto(x.pago), retenido = dep > 0 && x.pago.st === "held";
+  // 25 nov (regla 13 del guardián devueltoSoloSiSalio) · Lo que se va a INTENTAR, dicho como un intento y según el cobro en la base (lib/devolucion-cancelar.ts):
+  // al cancelar a tiempo, lo retenido se pide soltar y de lo cobrado se pide la devolución de lo que queda (devolverAlCancelar); si no confirman o la otra hora no
+  // te sirve, solo se suelta la retención (soltarRetencion). Nunca «te devolvemos el depósito» antes de actuar: lo que pasó lo dice devT después.
+  const pideCx = nm(pideAlCancelar(x.pago, usdN)), sinCargo = E2("No se cobra nada.", "Nothing is charged.");
+  // Lo que se queda el local (tarde o sin llegar) es lo que queda de lo COBRADO; si solo estaba retenido, todavía no se cobró.
+  const quedoLocal = cobrado && queda > 0 ? (queda === dep ? E2(`El depósito de ${usdN(queda)} se quedó con el local.`, `The venue kept the ${usdN(queda)} deposit.`) : E2(`Lo que quedaba del depósito (${usdN(queda)}) se quedó con el local.`, `The venue kept what was left of the deposit (${usdN(queda)}).`))
+    : retenido ? E2(`El depósito de ${usdN(x.pago.monto)} sigue retenido en tu tarjeta: todavía no se cobró.`, `The ${usdN(x.pago.monto)} deposit is still held on your card: it has not been charged yet.`) : E2("No se cobró nada.", "Nothing was charged.");
   const codeL = x.code ? E2(`Código ${x.code}`, `Code ${x.code}`) : "";
   const H: Record<string, [string, string, string, string, string, string]> = {
-    pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, E2(`Confirman en menos de ${espL(x.resp, true)}. Si no confirman, te devolvemos el depósito.`, `They confirm within ${espL(x.resp, false)}. If they do not, your deposit comes back.`)],
+    pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, `${E2(`Confirman en menos de ${espL(x.resp, true)}.`, `They confirm within ${espL(x.resp, false)}.`)}${nm(pideSoltarSi("confirman", x.pago, usdN))}`],
     confirmed: lista
       ? ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("ESTÁS EN LA LISTA", "YOU ARE ON THE LIST"), `${codeL} · ${x.pax} ${x.pax === 1 ? E2("persona", "person") : E2("personas", "people")}`, `${E2("Di tu nombre y el código en la puerta.", "Say your name and the code at the door.")} ${x.puerta[es ? "es" : "en"]}.`]
       : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("MESA CONFIRMADA", "TABLE CONFIRMED"), cuando, `${codeL}. ${E2(`Te guardan la mesa ${x.hold} min.`, `They hold the table ${x.hold} min.`)}`],
-    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "A CHANGE IS PROPOSED"), x.alt ? `${noche} · ${hNoche(x.alt.m)}` : noche, E2("A tu hora no tienen mesa. Si no te sirve, te devolvemos el depósito.", "They have no table at your time. If it does not work, your deposit comes back.")],
+    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "A CHANGE IS PROPOSED"), x.alt ? `${noche} · ${hNoche(x.alt.m)}` : noche, `${E2("A tu hora no tienen mesa.", "They have no table at your time.")}${nm(pideSoltarSi("sirve", x.pago, usdN))}`],
     declined: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO HAY MESA", "NO TABLE"), E2("Esa noche están llenos", "They are full that night"), devT],
     expired: ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("SIN RESPUESTA", "NO REPLY"), E2("No contestaron a tiempo", "No reply in time"), devT],
     cancelled: ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADA", "CANCELLED"), x.motivoNeg ? E2(`${B} canceló tu mesa`, `${B} cancelled your table`) : lista ? E2("Saliste de la lista", "You left the list") : E2("Cancelaste la reserva", "You cancelled the booking"),
-      x.motivoNeg ? `«${x.motivoNeg}». ${devT || (cobrado ? E2("La devolución todavía no sale: escríbenos en Soporte y lo resolvemos.", "The refund has not gone out yet: write to us in Support and we will sort it out.") : E2("No se cobró nada.", "Nothing was charged."))}` : x.perdio ? E2(`El depósito de ${usdN(dep)} se quedó con el local.`, `The ${usdN(dep)} deposit was kept by the venue.`) : lista ? E2("No se cobró nada.", "Nothing was charged.") : devT],
-    done: x.detalle === "noid" ? ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO ENTRASTE · SIN IDENTIFICACIÓN", "NO ENTRY · NO ID"), noche, E2("La regla se leía antes de pedir: todos con identificación. El depósito se quedó con el local.", "The rule was shown before booking: everyone needs ID. The venue kept the deposit.")]
-      : x.detalle === "nollegaron" ? ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("NO LLEGASTE", "NO-SHOW"), noche, dep ? E2(`El depósito de ${usdN(dep)} se quedó con el local.`, `The venue kept the ${usdN(dep)} deposit.`) : E2("No se cobró nada.", "Nothing was charged.")]
+      x.motivoNeg ? `«${x.motivoNeg}». ${devT || (cobrado ? E2("La devolución todavía no sale: escríbenos en Soporte y lo resolvemos.", "The refund has not gone out yet: write to us in Support and we will sort it out.") : E2("No se cobró nada.", "Nothing was charged."))}` : x.perdio ? quedoLocal : lista ? E2("No se cobró nada.", "Nothing was charged.") : devT],
+    done: x.detalle === "noid" ? ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO ENTRASTE · SIN IDENTIFICACIÓN", "NO ENTRY · NO ID"), noche, `${E2("La regla se leía antes de pedir: todos con identificación.", "The rule was shown before booking: everyone needs ID.")}${dep ? ` ${quedoLocal}` : ""}`]
+      : x.detalle === "nollegaron" ? ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("NO LLEGASTE", "NO-SHOW"), noche, dep ? quedoLocal : E2("No se cobró nada.", "Nothing was charged.")]
       : x.detalle === "sin_entrar" ? ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("NO ENTRASTE", "YOU DID NOT GO IN"), noche, E2("La lista cerró a las 6 AM. No se cobró nada.", "The list closed at 6 AM. Nothing was charged.")]
-      : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("BUENA NOCHE", "GOOD NIGHT"), E2("Gracias por usar To’Latino", "Thanks for using To’Latino"), dep ? E2(`Tu depósito de ${usdN(dep)} se descontó de tu cuenta en el local.`, `Your ${usdN(dep)} deposit came off your bill at the venue.`) : linea],
+      : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("BUENA NOCHE", "GOOD NIGHT"), E2("Gracias por usar To’Latino", "Thanks for using To’Latino"), dep && cobrado ? E2(`Tu depósito de ${usdN(dep)} se descontó de tu cuenta en el local.`, `Your ${usdN(dep)} deposit came off your bill at the venue.`) : retenido ? quedoLocal : linea],
   };
   const h = H[x.status] ?? H.pending!;
   const ev = (k: string) => x.linea.find((z) => z.kind === k)?.at;
@@ -69,10 +77,12 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.status) && !(lista && x.inN);
   const corte = hNoche(x.cut ?? x.corteBase);
   const reglaCx = lista ? E2("Puedes salir de la lista cuando quieras. No se cobra nada.", "You can leave the list any time. Nothing is charged.")
-    : x.status !== "confirmed" ? E2("Aún no confirman: te liberamos todo.", "Not confirmed yet: we release everything.")
+    : x.status !== "confirmed" ? `${E2("Aún no confirman: es gratis.", "Not confirmed yet: it is free.")} ${pideCx || sinCargo}`
     : !dep ? E2("No dejaste depósito: no se cobra nada.", "You left no deposit: nothing is charged.")
-    : x.nowN < (x.cut ?? x.corteBase) ? E2(`Antes de las ${corte} de esa noche: te devolvemos ${usdN(dep)}.`, `Before ${corte} that night: we refund ${usdN(dep)}.`)
-    : E2(`Ya pasaron las ${corte}: el depósito de ${usdN(dep)} se queda con el local.`, `It is past ${corte}: the venue keeps the ${usdN(dep)} deposit.`);
+    : x.nowN < (x.cut ?? x.corteBase) ? `${E2(`Antes de las ${corte} de esa noche: es gratis.`, `Before ${corte} that night: it is free.`)} ${pideCx || sinCargo}`
+    : cobrado && queda > 0 ? (queda === dep ? E2(`Ya pasaron las ${corte}: el depósito de ${usdN(queda)} se queda con el local.`, `It is past ${corte}: the venue keeps the ${usdN(queda)} deposit.`)
+      : E2(`Ya pasaron las ${corte}: lo que queda del depósito (${usdN(queda)}) se queda con el local.`, `It is past ${corte}: the venue keeps what is left of the deposit (${usdN(queda)}).`))
+    : `${E2(`Ya pasaron las ${corte}.`, `It is past ${corte}.`)} ${pideCx || sinCargo}`;
   const llegar = () => { if (x.negocio.direccion) abrirComoLlegar({ dir: `${x.negocio.direccion}, ${B}` }); };
   return (
     <div data-screen-label="APP-NEG-NOCHE-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
@@ -100,7 +110,7 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
           <div data-screen-label="Noche · otra hora" className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="text-[13.5px] font-bold">{E2(`Pediste las ${hNoche(x.llega)}. Te proponen las ${hNoche(x.alt.m)}.`, `You asked for ${hNoche(x.llega)}. They propose ${hNoche(x.alt.m)}.`)}</div>
             <div className="flex gap-2.5"><div className="flex min-w-0 flex-1"><Button block icon="check" disabled={ocupado} onClick={() => void hacer("aceptar", E2("Listo: mesa confirmada", "Done: table confirmed"))}>{E2("Aceptar esta hora", "Accept this time")}</Button></div>
-              <div className="flex min-w-0 flex-1"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("nogracias", E2("Listo: se liberó tu depósito", "Done: your deposit was released"))}>{E2("No me sirve", "Doesn’t work")}</Button></div></div>
+              <div className="flex min-w-0 flex-1"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("nogracias", retenido ? E2("Listo: se liberó tu depósito", "Done: your deposit was released") : E2("Listo: cancelada", "Done: cancelled"))}>{E2("No me sirve", "Doesn’t work")}</Button></div></div>
           </div>)}
         {steps.length > 0 && <div className="grid"><OrderTracker steps={steps} /></div>}
         <div data-screen-label="Noche · tu noche" className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">

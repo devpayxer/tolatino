@@ -49,7 +49,7 @@ const casos = [
   ['nocheEditable', M, "'noche_mesa_guardada_min', 'noche_fila_viva_min') and not editable", "'noche_mesa_guardada_min') and not editable"],
   ['nocheEditable', NR, 'export const corteMin = (llegada: number, base: number) => Math.max(0, Math.min(base, llegada - 120));', 'export const corteMin = (llegada: number) => (llegada < 480 ? Math.max(0, llegada - 120) : 360);'],
   ['nocheEditable', NR, 'guarda: String(o.det.hold ?? await valor("noche_mesa_guardada_min"))', 'guarda: String(o.det.hold ?? 30)'],
-  ['nocheEditable', NE, 'Confirman en menos de ${espL(x.resp, true)}. Si no confirman', 'Confirman en menos de 1 hora. Si no confirman'],
+  ['nocheEditable', NE, 'Confirman en menos de ${espL(x.resp, true)}.`', 'Confirman en menos de 1 hora.`'],
   ['nocheEditable', NV, 'const corte = hNoche(llega != null ? Math.max(0, Math.min(b.corte, llega - 120)) : b.corte),', 'const corte = llega != null && llega < 480 ? hNoche(Math.max(0, llega - 120)) : "6 PM",'],
   // rsvpCupoAdmin
   ['rsvpCupoAdmin', M, 'create trigger events_cupo_admin before update of rsvp_capacity on events', 'create trigger events_cupo_admin_x before update of rsvp_capacity on events'],

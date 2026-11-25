@@ -652,6 +652,8 @@ export type EvpPanelV = {
   quotes: Quote[]; acuerdo: Quote | null; asks: { kind: string; nota: string; p: number | null; ymd: string | null; m: number | null; at: number }[]; pago: { st: string | null; monto: number; devuelto: number; comision: number };
   taxBp: number; aj: AjustesEvp; hilo: string | null; eventos: { at: number; kind: string; note: Bi | null }[]; motivoNo: string | null; motivoNeg: string | null; perdio: boolean; cancelH: number; hLeft: number;
   cfg: { propuestaH: number; cancelarH: number };
+  /* 25 nov (regla 13) · Lo que de la devolución no está hecho (cobros › devolucionesDe): el panel dice lo que pasó con el depósito, nunca «se le devuelve». */
+  devolucion: { camino: number; fallida: number };
 };
 export async function evpPanel(negocio: string, numero: string): Promise<EvpPanelV | null> {
   if (!NUM_EP.test(numero)) return null;
@@ -678,6 +680,7 @@ export async function evpPanel(negocio: string, numero: string): Promise<EvpPane
     pago: { st: o.pst, monto: o.amount ?? 0, devuelto: o.refunded ?? 0, comision: P.rows[0]?.fee ?? 0 }, taxBp: T.rows[0]?.bp ?? 0, aj, hilo: H.rows[0]?.id ?? null, eventos: E.rows,
     motivoNo: (d.motivoNo as string | undefined) ?? null, motivoNeg: (d.motivoNeg as string | undefined) ?? null, perdio: !!d.perdio, cancelH: acuerdo?.cancelH ?? cfg.evp_cancelar_h, hLeft: o.h_left,
     cfg: { propuestaH: cfg.evp_propuesta_h, cancelarH: cfg.evp_cancelar_h },
+    devolucion: o.status === "cancelled" ? await devolucionesDe(o.id) : { camino: 0, fallida: 0 },
   };
 }
 /* ¿Este restaurante recibe eventos privados? (la tarjeta de «grupo grande» de Reservar). */

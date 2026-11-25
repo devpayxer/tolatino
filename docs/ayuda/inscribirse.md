@@ -18,7 +18,7 @@ en el lugar** antes de enviar. El lugar confirma tu inscripción.
 ## Qué pasa en cada caso
 - **Matrícula de un curso:** hoy se **retiene** en tu tarjeta; se **cobra cuando el lugar confirma** y se descuenta del total.
 - **No hay cupo, no contestan a tiempo o te proponen otro grupo que no te sirve:** se libera completa. No se cobra nada.
-- **Cancelas antes de empezar:** te devolvemos toda la matrícula. **Después de empezar:** la matrícula se queda con la escuela.
+- **Cancelas antes de empezar:** es gratis; pedimos la devolución de la matrícula (o que se suelte la retención, si no se había cobrado). **Después de empezar:** la matrícula se queda con la escuela. Antes de que confirmes, la hoja dice lo que vamos a **pedir** según tu tarjeta (que se suelte la retención, o la devolución de lo que queda); nunca «te devolvemos» antes de intentarlo. Lo que pasó de verdad lo ves después en la pantalla y en Avisos.
 - **El grupo no abre o el lugar cancela:** te devolvemos todo, siempre, con el motivo.
 - **Mensualidad, semana de guardería, clase o pase:** se pagan **en el lugar**; la app no pide tarjeta ni cobra nada después.
 - **Membresía:** «Cancelar mi membresía» deja la baja **con fecha y hora** como constancia. El gimnasio la confirma o a las 72 horas queda
@@ -58,7 +58,7 @@ sending. The place confirms your enrollment.
 - **A course's enrollment fee:** today it is **held** on your card; it is **charged when the place confirms** and deducted from the total.
 - **There is no spot, they don't reply in time or they offer you another group that doesn't work for you:** it is released in full. Nothing is
   charged.
-- **You cancel before it starts:** we refund the whole enrollment fee. **After it starts:** the school keeps the enrollment fee.
+- **You cancel before it starts:** it is free; we request a refund of the enrollment fee (or that the hold comes off, if it was not charged). **After it starts:** the school keeps the enrollment fee. Before you confirm, the sheet says what we will **request** based on your card (that the hold comes off, or a refund of what is left); never «we refund» before trying. What really happened shows afterwards on the screen and in Notifications.
 - **The group doesn't open or the place cancels:** we refund everything, always, with the reason.
 - **Monthly fee, daycare week, class or pass:** they are paid **at the place**; the app doesn't ask for a card or charge anything later.
 - **Membership:** «Cancel my membership» records the cancellation **with date and time** as proof. The gym confirms it or after 72 hours it is

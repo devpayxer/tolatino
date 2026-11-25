@@ -16,6 +16,7 @@ import { precioAccion, viajeAccion } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { cobradoVisto, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/devolucion-cancelar";
 import { fotoFondo } from "@tolatino/ui";
 
 type N = "Icon" | "Button" | "OrderTracker";
@@ -55,14 +56,20 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   const pendT = [x.devolucion.camino ? E2(`Te devolvemos ${dinero(x.devolucion.camino)}: va en camino a tu tarjeta.`, `We are refunding ${dinero(x.devolucion.camino)}: it is on its way to your card.`) : "",
     x.devolucion.fallida ? E2(`La devolución de ${dinero(x.devolucion.fallida)} no salió: escríbenos en Soporte y lo resolvemos.`, `The ${dinero(x.devolucion.fallida)} refund did not go through: write to us in Support and we will sort it out.`) : ""].filter(Boolean).join(" ");
   const devT = [liberado ? E2(`Liberamos los ${dinero(x.tot)} retenidos.`, `We released the ${dinero(x.tot)} hold.`) : dev ? E2(`Te devolvimos ${dinero(dev)}.`, `We refunded ${dinero(dev)}.`) : "", pendT].filter(Boolean).join(" ");
-  const cobrado = st === "captured" || st === "partially_refunded";
+  const cobrado = cobradoVisto(x.pago), queda = quedaVisto(x.pago), retenido = x.tot > 0 && st === "held";
+  // 25 nov (regla 13 del guardián devueltoSoloSiSalio) · Lo que se va a INTENTAR, según el cobro en la base (lib/devolucion-cancelar.ts): al cancelar a tiempo,
+  // lo retenido se pide soltar y de lo cobrado se pide la devolución de lo que queda (devolverAlCancelar); si no confirman o la otra salida no te sirve, solo se
+  // suelta la retención (soltarRetencion). Tarde (menos de 24 h): se cobra la mitad (lo retenido se cobra primero) y se pide la devolución del resto. Nunca
+  // «te devolvemos» antes de actuar: lo que pasó lo dice devT después.
+  const pideCx = nm(pideAlCancelar(x.pago, dinero)), sinCargo = E2("No se cobra nada.", "Nothing is charged.");
+  const mitad = Math.floor(x.tot / 2), resto = Math.max(0, (retenido ? x.pago.monto : queda) - mitad);
   const camino = x.status === "confirmed" && x.detalle === "camino";
   const H: Record<string, [string, string, string, string, string, string]> = {
-    pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, `${x.tot && st === "held" ? E2(`Se retuvieron ${dinero(x.tot)}. Si no confirman, se liberan.`, `${dinero(x.tot)} is held. If they do not confirm, it is released.`) : E2("Si no confirman, no se cobra nada.", "If they do not confirm, nothing is charged.")} ${linea}`],
+    pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`, `${retenido ? `${E2(`Se retuvieron ${dinero(x.pago.monto)}.`, `${dinero(x.pago.monto)} is held.`)}${nm(pideSoltarSi("confirman", x.pago, dinero))}` : cobrado ? "" : E2("Si no confirman, no se cobra nada.", "If they do not confirm, nothing is charged.")} ${linea}`.trim()],
     confirmed: camino ? ["truck", "bg-signal/[.18]", "var(--tl-open-text)", E2("EN CAMINO", "ON THE WAY"), E2("Ya salió", "It left"), x.to ? E2(`Va a ${nm(x.to)}.`, `Going to ${nm(x.to)}.`) : ""]
       : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("CONFIRMADO", "CONFIRMED"), x.tarde != null ? E2(`${dL(x.ymd)} · sale a las ${horaL(x.tarde)}`, `${dL(x.ymd)} · leaves at ${horaL(x.tarde)}`) : cuando,
         `${st === "captured" ? E2(`Cobrado ${dinero(x.tot)} · precio cerrado.`, `${dinero(x.tot)} charged · fixed price.`) : ""}${x.tarde != null ? E2(" La salida va tarde.", " The departure is late.") : ""}`.trim()],
-    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("OTRA SALIDA PROPUESTA", "ANOTHER DEPARTURE PROPOSED"), x.alt ? `${dL(x.alt.ymd)} · ${horaL(x.alt.m)}` : "", E2("Si no te sirve, se libera lo retenido.", "If it does not work, the hold is released.")],
+    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("OTRA SALIDA PROPUESTA", "ANOTHER DEPARTURE PROPOSED"), x.alt ? `${dL(x.alt.ymd)} · ${horaL(x.alt.m)}` : "", retenido ? nm(pideSoltarSi("sirve", x.pago, dinero)).trim() : cobrado ? E2("Decide abajo.", "Decide below.") : E2("Si no te sirve, no se cobra nada.", "If it does not work, nothing is charged.")],
     declined: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO PUEDEN", "THEY CAN'T"), E2("No hay cupo", "No room"), devT || E2("No se cobró nada.", "Nothing was charged.")],
     expired: ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("SIN RESPUESTA", "NO REPLY"), E2("No contestaron a tiempo", "No reply in time"), devT || E2("No se cobró nada.", "Nothing was charged.")],
     cancelled: ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADO", "CANCELLED"), x.motivoNeg ? E2(`${B} canceló la salida`, `${B} cancelled the departure`) : E2("Cancelaste el viaje", "You cancelled the trip"),
@@ -103,8 +110,10 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   const estDinero = st === "held" ? E2("RETENIDO", "HELD") : st === "captured" ? E2("COBRADO", "CHARGED") : liberado ? E2("LIBERADO", "RELEASED") : st === "refunded" ? E2("DEVUELTO", "REFUNDED") : st === "partially_refunded" ? E2("LA MITAD", "HALF")
     : ["pending", "change_proposed"].includes(x.status) ? E2("POR ACEPTAR", "TO ACCEPT") : ["cancelled", "expired", "declined"].includes(x.status) ? E2("SIN COBRO", "NOT CHARGED") : E2("EN EL NEGOCIO", "AT THE BUSINESS");
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.status) && !camino && x.detalle !== "recogida";
-  const regla = x.status !== "confirmed" ? E2("Aún no confirman: liberamos todo.", "Not confirmed yet: we release everything.")
-    : x.horasFaltan >= 24 ? E2(`Faltan más de 24 horas: te devolvemos ${dinero(x.tot)}.`, `More than 24 hours left: we refund ${dinero(x.tot)}.`) : E2(`Faltan menos de 24 horas: se cobra la mitad (${dinero(Math.floor(x.tot / 2))}) y te devolvemos el resto.`, `Less than 24 hours left: half is charged (${dinero(Math.floor(x.tot / 2))}) and the rest is refunded.`);
+  const regla = x.status !== "confirmed" ? `${E2("Aún no confirman: es gratis.", "Not confirmed yet: it is free.")} ${pideCx || sinCargo}`
+    : x.horasFaltan >= 24 ? `${E2("Faltan más de 24 horas: es gratis.", "More than 24 hours left: it is free.")} ${pideCx || sinCargo}`
+    : (retenido || cobrado) && mitad > 0 ? `${E2(`Faltan menos de 24 horas: se cobra la mitad (${dinero(mitad)}).`, `Less than 24 hours left: half is charged (${dinero(mitad)}).`)}${resto > 0 ? E2(` Pedimos la devolución del resto (${dinero(resto)}) a tu tarjeta; aquí ves cuando salga.`, ` We request a refund of the rest (${dinero(resto)}) to your card; you see here when it goes through.`) : ""}`
+    : `${E2("Faltan menos de 24 horas.", "Less than 24 hours left.")} ${pideCx || sinCargo}`;
   const llegar = () => abrirComoLlegar({ dir: x.from ? nm(x.from) : x.negocio.direccion ?? B });
   return (
     <div data-screen-label="APP-NEG-TRANS-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
@@ -126,7 +135,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
           <div data-screen-label="Viaje · otra salida" className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="text-[13.5px] font-bold">{E2(`Pediste ${cuando}. Te proponen ${dL(x.alt.ymd)} a las ${horaL(x.alt.m)}.`, `You asked for ${cuando}. They propose ${dL(x.alt.ymd)} at ${horaL(x.alt.m)}.`)}</div>
             <div className="flex gap-2.5"><div className="flex min-w-0 flex-1"><Button block icon="check" disabled={ocupado} onClick={() => void hacer("aceptar", E2("Listo: tu viaje quedó confirmado", "Done: your trip is confirmed"))}>{E2("Aceptar esta salida", "Accept this departure")}</Button></div>
-              <div className="flex min-w-0 flex-1"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("nogracias", E2("Listo: liberamos lo retenido", "Done: we released the hold"))}>{E2("No me sirve", "Doesn’t work")}</Button></div></div>
+              <div className="flex min-w-0 flex-1"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("nogracias", retenido ? E2("Listo: liberamos lo retenido", "Done: we released the hold") : E2("Listo: cancelado", "Done: cancelled"))}>{E2("No me sirve", "Doesn’t work")}</Button></div></div>
           </div>)}
         {cotK && x.status === "pending" && x.detalle === "precio" && P && (
           <div data-screen-label="Mudanza · precio cerrado" className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">

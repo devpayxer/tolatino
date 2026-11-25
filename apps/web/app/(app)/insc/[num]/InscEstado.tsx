@@ -13,6 +13,7 @@ import type { InscVista } from "@/lib/inscripciones";
 import { inscAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { cobradoVisto, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/devolucion-cancelar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,19 +38,24 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
   // 9v · Lo que no está hecho se dice como está (cobros › devolucionesDe): en camino o que no salió; nunca «te devolvemos todo» sin mirar.
   const pendT = [x.devolucion.camino ? E2(`Te devolvemos ${usdI(x.devolucion.camino)}: va en camino a tu tarjeta.`, `We are refunding ${usdI(x.devolucion.camino)}: it is on its way to your card.`) : "",
     x.devolucion.fallida ? E2(`La devolución de ${usdI(x.devolucion.fallida)} no salió: escríbenos en Soporte y lo resolvemos.`, `The ${usdI(x.devolucion.fallida)} refund did not go through: write to us in Support and we will sort it out.`) : ""].filter(Boolean).join(" ");
-  const devT0 = x.mat ? (liberado ? E2(`Se liberó tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `Your ${usdI(x.mat)} ${matL.toLowerCase()} was released.`) : devuelto ? E2(`Te devolvimos ${usdI(devuelto)} · 3 a 5 días.`, `We refunded ${usdI(devuelto)} · 3 to 5 days.`) : x.pago === "held" ? E2(`Se libera tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `Your ${usdI(x.mat)} ${matL.toLowerCase()} is released.`) : "") : E2("No se cobró nada.", "Nothing was charged.");
-  const devT = [devT0, pendT].filter(Boolean).join(" "), cobrado = x.pago === "captured" || x.pago === "partially_refunded";
+  const devT0 = x.mat ? (liberado ? E2(`Se liberó tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `Your ${usdI(x.mat)} ${matL.toLowerCase()} was released.`) : devuelto ? E2(`Te devolvimos ${usdI(devuelto)} · 3 a 5 días.`, `We refunded ${usdI(devuelto)} · 3 to 5 days.`) : x.pago === "held" ? E2(`No se cobró nada, pero la retención de ${usdI(x.monto)} todavía no se soltó de tu tarjeta: la seguimos soltando sola.`, `Nothing was charged, but the ${usdI(x.monto)} hold has not come off your card yet: we keep releasing it automatically.`) : "") : E2("No se cobró nada.", "Nothing was charged.");
+  // 25 nov (regla 13 del guardián devueltoSoloSiSalio) · Lo que se va a INTENTAR, según el cobro en la base (lib/devolucion-cancelar.ts): al cancelar antes de
+  // empezar, lo retenido se pide soltar y de lo cobrado se pide la devolución de lo que queda (devolverAlCancelar); si no confirman o el otro grupo no te
+  // sirve, solo se suelta la retención (soltarRetencion). Nunca «te devolvemos» antes de actuar: lo que pasó lo dice devT después.
+  const pg = { st: x.pago, monto: x.monto, devuelto: x.devuelto };
+  const devT = [devT0, pendT].filter(Boolean).join(" "), cobrado = cobradoVisto(pg), queda = quedaVisto(pg), retenido = x.mat > 0 && x.pago === "held";
+  const pideCx = nm(pideAlCancelar(pg, usdI)), sinCargo = E2("No se cobra nada.", "Nothing is charged.");
   const certL = x.cert ? (x.oficial ? E2(`Certificado oficial: ${nm(x.cert)}`, `Official certificate: ${nm(x.cert)}`) : E2(`Constancia de la escuela: ${nm(x.cert)}`, `School certificate: ${nm(x.cert)}`)) : "";
   const G = "var(--tl-open-text)", grey = "rgba(11,14,18,.6)";
   const H: Record<string, [string, string, string, string, string, string]> = {
     pending: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${B}`,
-      x.mat ? E2(`Pagaste la ${matL.toLowerCase()} (${usdI(x.mat)}): está retenida y se cobra cuando confirmen. Si no confirman, se devuelve.`, `Your ${matL.toLowerCase()} (${usdI(x.mat)}) is held and charged when they confirm. If they do not, it is returned.`) : E2("No se ha cobrado nada.", "Nothing has been charged.")],
+      retenido ? `${E2(`Tu ${matL.toLowerCase()} (${usdI(x.mat)}) está retenida y se cobra cuando confirmen.`, `Your ${matL.toLowerCase()} (${usdI(x.mat)}) is held and charged when they confirm.`)}${nm(pideSoltarSi("confirman", pg, usdI))}` : !x.mat ? E2("No se ha cobrado nada.", "Nothing has been charged.") : ""],
     confirmed: x.detalle === "cancel_req"
       ? ["clock", "bg-pro/20", "var(--tl-pro-ink)", E2("CANCELACIÓN PEDIDA", "CANCELLATION REQUESTED"), x.bajaPedida ? E2(`Pediste la baja el ${fechaHora(x.bajaPedida, true)}`, `You asked to cancel on ${fechaHora(x.bajaPedida, false)}`) : E2("Pediste la baja", "You asked to cancel"), E2(`Queda cancelada cuando el lugar la confirme o a las ${x.plazos.baja} horas. Guarda esta pantalla como constancia.`, `It is cancelled when the place confirms or after ${x.plazos.baja} hours. Keep this screen as proof.`)]
       : x.detalle === "started"
       ? ["check", "bg-signal/[.18]", G, memb ? E2("ACTIVA", "ACTIVE") : x.rubro === "ninos" ? E2("ASISTIENDO", "ATTENDING") : E2("EN CURSO", "IN PROGRESS"), cuando, x.plan ? E2(`Plan: ${x.plan.cal.length} pagos de ${usdI(x.plan.cal[x.plan.cal.length - 1]?.cents ?? 0)} en la escuela.`, `Plan: ${x.plan.cal.length} payments of ${usdI(x.plan.cal[x.plan.cal.length - 1]?.cents ?? 0)} at the school.`) : memb ? E2(`Pagas ${usdI(x.precio)} ${nm(FORMA[x.k].por)} en el lugar.`, `You pay ${usdI(x.precio)} ${nm(FORMA[x.k].por)} at the place.`) : E2("Que te vaya muy bien.", "All the best.")]
       : ["check", "bg-signal/[.18]", G, E2("CONFIRMADA", "CONFIRMED"), fe && x.grupo ? nm(x.grupo) : cuando, fe ? E2("Te esperamos.", "See you there.") : E2("Trae una identificación el primer día.", "Bring an ID on the first day.")],
-    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "A CHANGE IS PROPOSED"), x.alt ? nm(x.alt.label) : "", fe ? E2("Esa fecha no se puede. Si la nueva no te sirve, no pasa nada.", "That date is not possible. If the new one does not work, nothing happens.") : E2("Ese grupo ya no está libre. Si el nuevo no te sirve, se libera todo.", "That group is no longer open. If the new one does not work, everything is released.")],
+    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "A CHANGE IS PROPOSED"), x.alt ? nm(x.alt.label) : "", fe ? E2("Esa fecha no se puede. Si la nueva no te sirve, no pasa nada.", "That date is not possible. If the new one does not work, nothing happens.") : `${E2("Ese grupo ya no está libre.", "That group is no longer open.")}${nm(pideSoltarSi("sirve", pg, usdI))}`],
     declined: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO PUDO", "NOT POSSIBLE"), fe && x.fecha ? E2("No hay esa fecha", "That date is not available") : E2("No hay cupo", "No openings"), devT],
     expired: ["clock", "bg-ink/[.06]", grey, E2("SIN RESPUESTA", "NO REPLY"), E2("No contestaron a tiempo", "No reply in time"), devT],
     cancelled: ["close", "bg-ink/[.06]", grey, E2("CANCELADA", "CANCELLED"),
@@ -73,10 +79,11 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.estado) && x.detalle !== "cancel_req";
   const empezo = x.detalle === "started" || (!!x.inicio && x.inicio <= x.hoy);
   const reglaCx = memb && x.estado === "confirmed" ? `${x.rubro === "dep" && x.k === "mes" ? `${contratoTexto({ contrato: x.contrato, salir: x.salir }, es)}. ` : ""}${E2(`Pides la baja aquí con fecha y hora; el lugar la confirma o a las ${x.plazos.baja} horas queda cancelada. To'Latino no cobra penalidades.`, `You ask to cancel here with date and time; the place confirms or after ${x.plazos.baja} hours it is cancelled. To'Latino charges no penalties.`)}`
-    : x.estado !== "confirmed" ? E2("Aún no confirman: te liberamos todo.", "Not confirmed yet: we release everything.")
+    : x.estado !== "confirmed" ? `${E2("Aún no confirman: es gratis.", "Not confirmed yet: it is free.")} ${pideCx || sinCargo}`
     : !x.mat ? E2("Cancelar es gratis.", "Cancelling is free.")
-    : !empezo ? E2(`Todavía no empieza: te devolvemos ${usdI(x.mat)}.`, `It has not started yet: we refund ${usdI(x.mat)}.`)
-    : E2(`Ya empezó: la ${matL.toLowerCase()} de ${usdI(x.mat)} no se devuelve.`, `It already started: the ${usdI(x.mat)} ${matL.toLowerCase()} is not refunded.`);
+    : !empezo ? `${E2("Todavía no empieza: es gratis.", "It has not started yet: it is free.")} ${pideCx || sinCargo}`
+    : cobrado && queda > 0 ? E2(`Ya empezó: la ${matL.toLowerCase()} de ${usdI(queda)} no se devuelve.`, `It already started: the ${usdI(queda)} ${matL.toLowerCase()} is not refunded.`)
+    : `${E2("Ya empezó.", "It already started.")} ${pideCx || sinCargo}`;
   const llegar = () => { if (x.negocio.direccion) abrirComoLlegar({ dir: `${x.negocio.direccion}, ${B}` }); };
   const caja = "overflow-hidden rounded-[18px] border border-ink/[.07] bg-white", Kh = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
   return (
@@ -98,9 +105,9 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
         {x.estado === "change_proposed" && x.alt && (
           <div data-screen-label="Inscripción · otro grupo" className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="text-[13.5px] font-bold">{fe && x.fecha ? E2(`Te proponen: ${nm(x.alt.label)}.`, `They propose: ${nm(x.alt.label)}.`) : E2(`Te proponen: ${nm(x.alt.label)} · empieza el ${fechaCorta(x.alt.inicio, true)}.`, `They propose: ${nm(x.alt.label)} · starts ${fechaCorta(x.alt.inicio, false)}.`)}</div>
-            {x.mat > 0 && <div className="text-[12.5px] font-medium text-ink/60">{E2(`Si aceptas, se cobra tu ${matL.toLowerCase()} de ${usdI(x.mat)}. Si no, se libera.`, `If you accept, your ${usdI(x.mat)} ${matL.toLowerCase()} is charged. If not, it is released.`)}</div>}
+            {retenido && <div className="text-[12.5px] font-medium text-ink/60">{`${E2(`Si aceptas, se cobra tu ${matL.toLowerCase()} de ${usdI(x.mat)}.`, `If you accept, your ${usdI(x.mat)} ${matL.toLowerCase()} is charged.`)}${nm(pideSoltarSi("sirve", pg, usdI))}`}</div>}
             <div className="flex gap-2.5"><div className="flex min-w-0 flex-1"><Button block icon="check" disabled={ocupado} onClick={() => void hacer("aceptar", E2("Listo: inscripción confirmada", "Done: enrollment confirmed"))}>{E2("Aceptar", "Accept")}</Button></div>
-              <div className="flex min-w-0 flex-1"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("nogracias", E2("Listo: se liberó todo", "Done: everything was released"))}>{E2("No me sirve", "Doesn’t work")}</Button></div></div>
+              <div className="flex min-w-0 flex-1"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("nogracias", retenido ? E2("Listo: se liberó todo", "Done: everything was released") : E2("Listo: cancelada", "Done: cancelled"))}>{E2("No me sirve", "Doesn’t work")}</Button></div></div>
           </div>)}
         {steps.length > 0 && <div className="grid"><OrderTracker steps={steps} /></div>}
         <div data-screen-label="Inscripción · tu inscripción" className={caja}>

@@ -15,6 +15,7 @@ import { aceptarEvpAccion, cambioEvpAccion, evpClienteAccion } from "./acciones"
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { cobradoVisto, pideAlCancelar, quedaVisto } from "@/lib/devolucion-cancelar";
 
 type N = "Icon" | "Button" | "OrderTracker" | "Tag" | "BusinessRow" | "IconButton";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,6 +61,18 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
   const pagado = x.pago.st === "captured" || x.pago.st === "partially_refunded" || x.pago.st === "refunded" || x.pago.st === "held";
   const card = x.pago.l4 ? `${marcaL(x.pago.marca ?? "")} ·· ${x.pago.l4}` : E2("tu tarjeta", "your card");
   const enTiempo = x.hLeft >= x.cancelH;
+  // 25 nov (regla 13 del guardián devueltoSoloSiSalio) · El depósito, según el cobro en la base: «cobrado» solo si está cobrado (una captura que no salió sigue
+  // retenida). Lo que se va a INTENTAR al cancelar a tiempo (lib/devolucion-cancelar.ts › pideAlCancelar: lo retenido se pide soltar, de lo cobrado se pide la
+  // devolución de lo que queda; cancelarEvp › moverDinero › devolverAlCancelar); tarde, lo que se queda el restaurante es lo que queda de lo COBRADO, y lo solo
+  // retenido se cobra primero (cancelarEvp › cobrarOperacion). Nunca «te devolvemos» antes de actuar: lo que pasó lo dice la nota de «CANCELADO» después.
+  const cobrado = cobradoVisto(x.pago), queda = quedaVisto(x.pago), retenido = x.pago.st === "held" && x.pago.monto > 0;
+  const pideCx = nm(pideAlCancelar(x.pago, dinero), es), sinCargo = E2("No se cobra nada.", "Nothing is charged.");
+  const cxS = st !== "confirmed" ? E2(`No se cobró nada. ${B} recibe el aviso.`, `Nothing was charged. ${B} gets the notice.`)
+    : enTiempo ? `${E2(`Faltan más de ${x.cancelH} h: es gratis.`, `More than ${x.cancelH} h left: it is free.`)} ${pideCx || sinCargo}`
+    : cobrado && queda > 0 ? (queda === x.pago.monto ? E2(`Faltan menos de ${x.cancelH} h: el depósito de ${dinero(queda)} se queda con ${B}.`, `Less than ${x.cancelH} h left: the ${dinero(queda)} deposit stays with ${B}.`)
+      : E2(`Faltan menos de ${x.cancelH} h: lo que queda del depósito (${dinero(queda)}) se queda con ${B}.`, `Less than ${x.cancelH} h left: what is left of the deposit (${dinero(queda)}) stays with ${B}.`))
+    : retenido ? E2(`Faltan menos de ${x.cancelH} h: se cobra el depósito retenido de ${dinero(x.pago.monto)} y se queda con ${B}.`, `Less than ${x.cancelH} h left: the ${dinero(x.pago.monto)} deposit on hold is charged and stays with ${B}.`)
+    : `${E2(`Faltan menos de ${x.cancelH} h.`, `Less than ${x.cancelH} h left.`)} ${sinCargo}`;
   const TAG: Record<string, [string, string]> = {
     pending: [E2("PENDIENTE", "PENDING"), "action"], quote: [E2("TE MANDARON SU PROPUESTA", "PROPOSAL RECEIVED"), "action"], alt: [E2("TE PROPONEN UN CAMBIO", "CHANGE PROPOSED"), "action"],
     counter: [E2("PEDISTE UN CAMBIO", "YOU ASKED FOR A CHANGE"), "action"], confirmed: [E2("CONFIRMADO", "CONFIRMED"), "signal"], declined: [E2("NO PUDO", "DECLINED"), "danger"],
@@ -103,7 +116,8 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
   let nota: [string, string, "ink" | "ok" | "warn" | "bad", string] | null = null;
   if (st === "pending" || (st === "change_proposed" && !rechazo)) nota = [E2("No se cobra nada todavía.", "Nothing is charged yet."), E2("El depósito se cobra solo si aceptas su propuesta.", "The deposit is only charged if you accept their proposal."), "ink", "dollar"];
   if (st === "change_proposed" && rechazo) nota = [E2("Tu tarjeta fue rechazada. No se cobró nada.", "Your card was declined. Nothing was charged."), E2("Prueba otra vez o usa otra tarjeta. La propuesta sigue apartada.", "Try again or use another card. The proposal is still held."), "bad", "warning"];
-  if (st === "confirmed" && ac) nota = [`${E2("Depósito cobrado: ", "Deposit charged: ")}${dinero(ac.dep)} · ${card}`, E2(`Resta ${dinero(Math.max(0, ac.tot - ac.dep))}: lo pagas en el local el día del evento.`, `${dinero(Math.max(0, ac.tot - ac.dep))} left: you pay it there on the event day.`), "ok", "check"];
+  if (st === "confirmed" && ac) nota = retenido ? [`${E2("Depósito retenido: ", "Deposit on hold: ")}${dinero(x.pago.monto)} · ${card}`, `${E2("Todavía no se cobró.", "It has not been charged yet.")} ${E2(`Resta ${dinero(Math.max(0, ac.tot - ac.dep))}: lo pagas en el local el día del evento.`, `${dinero(Math.max(0, ac.tot - ac.dep))} left: you pay it there on the event day.`)}`, "warn", "clock"]
+    : [`${E2("Depósito cobrado: ", "Deposit charged: ")}${dinero(ac.dep)} · ${card}`, E2(`Resta ${dinero(Math.max(0, ac.tot - ac.dep))}: lo pagas en el local el día del evento.`, `${dinero(Math.max(0, ac.tot - ac.dep))} left: you pay it there on the event day.`), "ok", "check"];
   if (st === "declined" || st === "expired") nota = [E2("No se cobró nada.", "Nothing was charged."), "", "ink", "dollar"];
   // 9v (25 nov, cuarta tanda) · Lo que de verdad pasó con el depósito: lo devuelto (del libro), lo que va en camino y lo que no salió (devolucionesDe); lo
   // solo retenido no se cobró. Nunca «Te devolvemos» con lo decidido.
@@ -147,12 +161,12 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
         </div>))}
       <div className="flex flex-col gap-[7px] border-t border-ink/[.08] pt-2.5 text-[13px] font-medium text-ink/70">
         {([[E2("Subtotal", "Subtotal"), dinero(z.sub), 500, ""], [`${E2("Impuesto", "Tax")} ${(z.taxBp / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })} %`, dinero(z.tax), 500, ""], ["Total", dinero(z.tot), 800, "var(--tl-ink)"],
-          [z.kind === "change" ? E2("Depósito ya pagado", "Deposit already paid") : conPago ? `${E2("Depósito cobrado · ", "Deposit charged · ")}${card}` : E2("Depósito al aceptar", "Deposit when you accept"), dinero(z.dep), 700, conPago || z.kind === "change" ? "var(--tl-open-text)" : "var(--tl-pro-ink)"],
+          [z.kind === "change" ? E2("Depósito ya pagado", "Deposit already paid") : conPago ? (retenido ? `${E2("Depósito retenido · ", "Deposit on hold · ")}${card}` : `${E2("Depósito cobrado · ", "Deposit charged · ")}${card}`) : E2("Depósito al aceptar", "Deposit when you accept"), dinero(z.dep), 700, conPago || z.kind === "change" ? "var(--tl-open-text)" : "var(--tl-pro-ink)"],
           [E2("Lo pagas en el local el día del evento", "You pay there on the event day"), dinero(Math.max(0, z.tot - z.dep)), 500, ""]] as [string, string, number, string][]).map(([l, v, fw, fg]) => (
           <div key={l} className="flex justify-between gap-3" style={{ fontWeight: fw, color: fg || undefined }}><span>{l}</span><span className="font-mono">{v}</span></div>))}
       </div>
       {nm(z.inc, es) ? <div className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70"><b className="font-bold">{E2("Incluye: ", "Includes: ")}</b>{nm(z.inc, es)}</div> : null}
-      <span className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2(`Cancelar: gratis hasta ${z.cancelH} h antes (te devolvemos el depósito en 3–5 días hábiles). Después: el depósito se queda con ${B}. La propina no está incluida.`, `Cancel: free up to ${z.cancelH} h before (deposit back in 3–5 business days). After that: ${B} keeps the deposit. Tip not included.`)}</span>
+      <span className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2(`Cancelar: gratis hasta ${z.cancelH} h antes (pedimos la devolución del depósito a tu tarjeta). Después: el depósito se queda con ${B}. La propina no está incluida.`, `Cancel: free up to ${z.cancelH} h before (we request the deposit refund to your card). After that: ${B} keeps the deposit. Tip not included.`)}</span>
       {z.st === "sent" && z.kind !== "change" && pago && (
         <button type="button" onClick={() => setHoja(true)} className="flex items-center gap-3 rounded-[14px] border border-ink/10 px-3.5 py-3 text-left">
           <Icon name="card" size={17} color="rgba(11,14,18,.6)" />
@@ -216,7 +230,7 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
           <div onClick={() => setCx(false)} className="absolute inset-0 bg-ink/50" />
           <div role="dialog" aria-modal="true" aria-label={E2("Cancelar", "Cancel")} className="absolute inset-x-0 bottom-0 flex flex-col gap-3.5 rounded-t-[26px] bg-white px-[22px] pb-7 pt-[22px] lg:inset-auto lg:left-1/2 lg:top-24 lg:w-[480px] lg:-translate-x-1/2 lg:rounded-[22px]">
             <span className="font-display text-[20px] font-extrabold leading-[1.2] tracking-[-0.03em]">{st === "confirmed" ? E2("¿Cancelar el evento?", "Cancel the event?") : E2("¿Cancelar la solicitud?", "Cancel the request?")}</span>
-            <span className="text-pretty text-[13.5px] font-medium leading-[1.55] text-ink/[.68]">{st === "confirmed" ? (enTiempo ? E2(`Faltan más de ${x.cancelH} h: te devolvemos ${dinero(x.pago.monto - x.pago.devuelto)} en 3–5 días hábiles.`, `More than ${x.cancelH} h left: we refund ${dinero(x.pago.monto - x.pago.devuelto)} in 3–5 business days.`) : E2(`Faltan menos de ${x.cancelH} h: el depósito de ${dinero(x.pago.monto)} se queda con ${B}.`, `Less than ${x.cancelH} h left: the ${dinero(x.pago.monto)} deposit stays with ${B}.`)) : E2(`No se cobró nada. ${B} recibe el aviso.`, `Nothing was charged. ${B} gets the notice.`)}</span>
+            <span className="text-pretty text-[13.5px] font-medium leading-[1.55] text-ink/[.68]">{cxS}</span>
             <div className="flex"><Button block disabled={ocupado} onClick={() => void correr(() => evpClienteAccion(x.numero, "cancelar"), E2("Listo: cancelado", "Done: canceled"), () => setCx(false))}>{E2("Sí, cancelar", "Yes, cancel")}</Button></div>
             <div className="flex"><Button block variant="secondary" onClick={() => setCx(false)}>{E2("No", "No")}</Button></div>
           </div>

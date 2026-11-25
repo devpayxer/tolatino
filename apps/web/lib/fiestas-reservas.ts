@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { contexto, type Ctx } from "./citas";
 import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, SWEEP } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
 import { diaFiesta, EVT, sumarDias, type Bi, type SvcFiesta } from "./fiestas-comun";
@@ -275,7 +275,8 @@ export async function responderFecha(negocio: string, numero: string, paso: Paso
         [o.id, JSON.stringify({ ymd: o.ymd, m: Number(alt) }), actorId, o.ymd, Number(alt), o.tz]);
       await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = least(now() + interval '24 hours', scheduled_at), updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "change_proposed", "member", actorId, { es: `Propusiste las ${hora(Number(alt))}`, en: `You proposed ${hora(Number(alt))}` });
-      despues = async () => { await avisarCliente(numero, "fiesta_alt", { alt: hora(Number(alt)) }); };
+      // 25 nov (regla 13) · «No me sirve» solo suelta la retención: el aviso lo dice si hay algo retenido ({dinero}, 0224).
+      despues = async () => { await avisarCliente(numero, "fiesta_alt", { alt: hora(Number(alt)), dinero: pideSoltarSi("sirve", { st: o.pay, monto: o.amount ?? o.dep }, money) }); };
       return { ok: true };
     }
     // Confirmar: el día tiene que seguir libre (no marcado y sin llenar sus fiestas del día); ocupa el día aquí mismo.
@@ -377,7 +378,7 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
     if (o.dep > 0 && o.pay !== "held") return no("Tu depósito ya no está retenido. Elige «No me sirve» y pide la fecha otra vez.", "Your deposit is no longer held. Choose “Doesn’t work” and request the date again.");
     if (!vis) {
       const d = (await diasOcupados(o.biz, o.ymd, o.ymd, c))[0];
-      if (d?.ocupada) return no("Ese día ya se ocupó. Te liberamos el depósito si eliges «No me sirve».", "That day is now booked. Choose “Doesn’t work” and we release your deposit.");
+      if (d?.ocupada) return no("Ese día ya se ocupó. Elige «No me sirve»: pedimos que se suelte la retención del depósito.", "That day is now booked. Choose “Doesn’t work”: we ask for the deposit hold to come off your card.");
       await c.query(`insert into party_days (business_id, city_id, day, source, operation_id) values ($1, $2, $3::date, 'booking', $4::bigint)`, [o.biz, o.city, o.ymd, o.id]);
     }
     await c.query(`update operations set status = 'confirmed', scheduled_at = ($2::date + make_interval(mins => $3::int)) at time zone $4, confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id, o.ymd, p.m, o.tz]);
@@ -485,7 +486,7 @@ export type FiestaVista = {
   devolucion: { camino: number; fallida: number };
   numero: string; status: string; detalle: string | null; negocio: { id: string; nombre: string; telefono: string | null; foto: string | null; direccion: string | null };
   svc: Bi; svcId: string; k: string; visita: boolean; ymd: string; m: number; dur: number; e: string | null; g: number | null; qty: number; horas: number | null; donde: { k: string; t: string; mi: number | null } | null;
-  tot: number; dep: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null }; cancelDias: number; diasFaltan: number; pasada: boolean;
+  tot: number; dep: number; pago: { st: string | null; monto: number; devuelto: number; marca: string | null; l4: string | null }; cancelDias: number; diasFaltan: number; pasada: boolean;
   alt: { m: number; hasta: string } | null; libres: string[]; motivoNeg: string | null; perdio: boolean; inc: Bi[]; nota: string | null;
   linea: { at: number; kind: string; note: Bi | null }[]; resena: boolean; acuerdo: { v: number; fee: number; credit: number; total: number; at: string } | null;
 };
@@ -493,10 +494,10 @@ export async function fiestaVista(userId: string, numero: string): Promise<Fiest
   if (!NUM_F.test(numero)) return null;
   await barrerFiestas({ userId, numero });
   const o = (await db().query<{ id: string; status: string; detail: string | null; biz: string; nombre: string; phone: string | null; foto: string | null; address: string | null; det: Record<string, unknown>;
-    ymd: string; m: number; dur: number; tot: number; dep: number; pst: string | null; dev: number | null; marca: string | null; l4: string | null; days_to: number; past: boolean; nota: string | null; hoy: string; tz: string; resena: boolean }>(
+    ymd: string; m: number; dur: number; tot: number; dep: number; pst: string | null; amt: number | null; dev: number | null; marca: string | null; l4: string | null; days_to: number; past: boolean; nota: string | null; hoy: string; tz: string; resena: boolean }>(
     `select o.id::text, o.status, o.status_detail as detail, o.business_id as biz, b.name as nombre, b.phone, b.logo_url as foto, b.address, o.details as det,
             (o.scheduled_at at time zone c.timezone)::date::text as ymd, (extract(hour from o.scheduled_at at time zone c.timezone) * 60 + extract(minute from o.scheduled_at at time zone c.timezone))::int as m,
-            o.duration_min as dur, o.total_cents as tot, o.deposit_cents as dep, p.status as pst, p.refunded_cents as dev, p.card_brand as marca, p.card_last4 as l4,
+            o.duration_min as dur, o.total_cents as tot, o.deposit_cents as dep, p.status as pst, p.amount_cents as amt, p.refunded_cents as dev, p.card_brand as marca, p.card_last4 as l4,
             ((o.scheduled_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int as days_to, o.scheduled_at < now() as past, o.customer_note as nota,
             (now() at time zone c.timezone)::date::text as hoy, c.timezone as tz,
             exists (select 1 from reviews r where r.operation_id = o.id) as resena
@@ -520,7 +521,7 @@ export async function fiestaVista(userId: string, numero: string): Promise<Fiest
     numero, status: o.status, detalle: o.detail, negocio: { id: o.biz, nombre: o.nombre, telefono: o.phone, foto: o.foto, direccion: o.address },
     svc: det.svc as Bi, svcId: String(det.svcId ?? ""), k: String(det.k ?? ""), visita: !!det.visit, ymd: o.ymd, m: o.m, dur: o.dur, e: (det.e as string | null) ?? null, g: (det.g as number | null) ?? null,
     qty: Number(det.qty ?? 1), horas: (det.horas as number | null) ?? null, donde: (det.donde as FiestaVista["donde"]) ?? null,
-    tot: o.tot, dep: o.dep, pago: { st: o.pst, devuelto: o.dev ?? 0, marca: o.marca, l4: o.l4 }, cancelDias: Number((det.terms as { cancel?: number } | undefined)?.cancel ?? 30),
+    tot: o.tot, dep: o.dep, pago: { st: o.pst, monto: o.amt ?? o.dep, devuelto: o.dev ?? 0, marca: o.marca, l4: o.l4 }, cancelDias: Number((det.terms as { cancel?: number } | undefined)?.cancel ?? 30),
     diasFaltan: o.days_to, pasada: o.past, alt: P.rows[0] ?? null, libres, motivoNeg: (det.motivoNeg as string | undefined) ?? null, perdio: !!det.perdio, inc: (det.inc as Bi[] | undefined) ?? [],
     nota: o.nota, linea: E.rows, resena: o.resena, acuerdo: W.rows[0] ?? null,
     devolucion: await devolucionesDe(o.id),

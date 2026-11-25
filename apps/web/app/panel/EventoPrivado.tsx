@@ -155,8 +155,16 @@ export function evpDetalle(c: Ctx): Sec {
     { k: E2("TE LLEGA", "YOU GET"), v: dinero(Math.max(0, x.pago.monto - x.pago.devuelto - Math.round((x.pago.comision * (x.pago.monto - x.pago.devuelto)) / Math.max(1, x.pago.monto)))) }, { k: E2("TE PAGA EN EL LOCAL", "PAYS YOU THERE"), v: dinero(Math.max(0, x.acuerdo.tot - x.acuerdo.dep)) },
     { k: E2("CANCELA GRATIS", "FREE CANCEL"), v: E2(`hasta ${x.cancelH} h antes`, `up to ${x.cancelH} h before`) } ] });
   if (x.motivoNo) out.push({ type: "note", tone: "ink", icon: "close", t: E2(`No pudiste: «${x.motivoNo}».`, `You declined: “${x.motivoNo}”.`) });
-  if (x.motivoNeg) out.push({ type: "note", tone: "ink", icon: "close", t: E2(`Cancelaste: «${x.motivoNeg}». Se le devolvió el depósito completo.`, `You cancelled: “${x.motivoNeg}”. The full deposit was refunded.`) });
-  if (x.st === "cancelled" && !x.motivoNeg && x.pago.monto) out.push({ type: "note", tone: x.perdio ? "ok" : "ink", icon: "dollar", t: x.perdio ? E2(`Canceló a menos de ${x.cancelH} h: el depósito se queda contigo.`, `Cancelled less than ${x.cancelH} h before: you keep the deposit.`) : E2("Canceló a tiempo: se le devuelve el depósito.", "Cancelled in time: the deposit is refunded.") });
+  // 25 nov (regla 13 del guardián devueltoSoloSiSalio) · Lo que pasó con el depósito, leído de la base (el cobro y devolucionesDe), nunca «se le devolvió el
+  // depósito completo» / «se le devuelve» sin mirar: soltado o todavía retenido, devuelto, en camino o que no salió.
+  const depCx = !x.pago.monto ? "" : x.pago.st === "released" ? E2("No se había cobrado nada: se soltó la retención de su tarjeta.", "Nothing had been charged: the hold on their card was released.")
+    : x.pago.st === "held" ? E2("No se había cobrado nada; la retención de su tarjeta todavía no se soltó: se sigue soltando sola.", "Nothing had been charged; the hold on their card has not come off yet: it keeps being released automatically.")
+    : x.devolucion.fallida ? E2(`La devolución de ${dinero(x.devolucion.fallida)} no salió: el equipo de To'Latino ya tiene el aviso y lo resuelve con el cliente.`, `The ${dinero(x.devolucion.fallida)} refund did not go through: the To'Latino team already has the alert and sorts it out with the client.`)
+    : x.devolucion.camino ? E2(`La devolución de ${dinero(x.devolucion.camino)} va en camino: se manda sola.`, `The ${dinero(x.devolucion.camino)} refund is on its way: it is sent automatically.`)
+    : x.pago.devuelto ? (x.pago.devuelto >= x.pago.monto ? E2(`Se le devolvió el depósito completo (${dinero(x.pago.devuelto)}).`, `The full deposit (${dinero(x.pago.devuelto)}) was refunded to them.`) : E2(`Se le devolvieron ${dinero(x.pago.devuelto)} del depósito.`, `${dinero(x.pago.devuelto)} of the deposit was refunded to them.`))
+    : E2("La devolución del depósito todavía no sale.", "The deposit refund has not gone out yet.");
+  if (x.motivoNeg) out.push({ type: "note", tone: "ink", icon: "close", t: `${E2(`Cancelaste: «${x.motivoNeg}».`, `You cancelled: “${x.motivoNeg}”.`)}${depCx ? ` ${depCx}` : ""}` });
+  if (x.st === "cancelled" && !x.motivoNeg && x.pago.monto) out.push({ type: "note", tone: x.perdio ? "ok" : "ink", icon: "dollar", t: x.perdio ? E2(`Canceló a menos de ${x.cancelH} h: el depósito se queda contigo.`, `Cancelled less than ${x.cancelH} h before: you keep the deposit.`) : `${E2("Canceló a tiempo.", "Cancelled in time.")} ${depCx}` });
 
   // El constructor de la propuesta (o del cambio)
   const B = ui.evpB as Draft | undefined;

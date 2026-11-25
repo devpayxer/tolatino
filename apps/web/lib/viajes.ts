@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
 import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, sinDevoluciones, soltadaO, type DevCuenta, type Soltada } from "./devolucion-cancelar";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta, type Soltada } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { valor } from "./config";
@@ -310,7 +310,8 @@ export async function responderViaje(negocio: string, numero: string, paso: "con
       [o.id, JSON.stringify(prop), actorId, prop.ymd, prop.m, o.tz]);
     await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = least(now() + interval '24 hours', scheduled_at), updated_at = now() where id = $1::bigint`, [o.id]);
     await ev(c, o.id, "change_proposed", "member", actorId, { es: `Propusiste ${diaL(prop.ymd)} a las ${horaL(prop.m)}`, en: `You proposed ${prop.ymd} at ${horaL(prop.m)}` });
-    despues = async () => { await avisarCliente(numero, "viaje_alt", { alt: `${diaL(prop.ymd)} a las ${horaL(prop.m)}` }); };
+    // 25 nov (regla 13) · «No me sirve» solo suelta la retención: el aviso lo dice si hay algo retenido ({dinero}, 0224).
+    despues = async () => { await avisarCliente(numero, "viaje_alt", { alt: `${diaL(prop.ymd)} a las ${horaL(prop.m)}`, dinero: pideSoltarSi("sirve", { st: o.pay, monto: o.amount ?? o.tot }, money) }); };
     return ok1;
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
@@ -530,7 +531,7 @@ export type ViajeVista = {
   devolucion: { camino: number; fallida: number };
   numero: string; status: string; detalle: string | null; negocio: { id: string; nombre: string; telefono: string | null; direccion: string | null }; svc: Bi; svcId: string; k: string;
   ymd: string; m: number; adults: number; kids: number; childSeat: boolean; bagsIncl: number; bagsExtra: number; inc: Bi[]; from: Bi | null; to: Bi | null; pickup: string | null;
-  tot: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null }; horasFaltan: number; cobroMitad: number; motivoNeg: string | null;
+  tot: number; pago: { st: string | null; monto: number; devuelto: number; marca: string | null; l4: string | null }; horasFaltan: number; cobroMitad: number; motivoNeg: string | null;
   alt: { ymd: string; m: number } | null; tarde: number | null; linea: { at: number; kind: string; note: Bi | null }[];
   // 4y-2: caja (cajas, destinatario descifrado solo para su dueño, rastreo) y mudanza (fotos, destino, precio cerrado)
   boxes: number; dest: Destino | null; rastreo: string | null; fotos: string[]; drop: string | null; precio: Precio | null;
@@ -551,7 +552,7 @@ export async function viajeVista(userId: string, numero: string): Promise<ViajeV
     numero, status: o.status, detalle: o.detail, negocio: { id: o.biz, nombre: o.negocio, telefono: b?.phone ?? null, direccion: b?.address ?? null }, svc: d.svc as Bi, svcId: String(d.svcId ?? ""), k: String(d.k),
     ymd: o.ymd, m: o.m, adults: Number(d.adults ?? 1), kids: Number(d.kids ?? 0), childSeat: !!d.childSeat, bagsIncl: Number(d.bagsIncl ?? 0), bagsExtra: Number(d.bagsExtra ?? 0),
     inc: (d.inc as Bi[] | undefined) ?? [], from: (d.from as Bi | null) ?? null, to: (d.to as Bi | null) ?? null, pickup: (d.pickup as { t: string } | null)?.t ?? null,
-    tot: o.tot, pago: { st: o.pay, devuelto: o.refunded ?? 0, marca: b?.marca ?? null, l4: b?.l4 ?? null }, horasFaltan: o.hours_to, cobroMitad: Number(d.cobroMitad ?? 0), motivoNeg: (d.motivoNeg as string | undefined) ?? null,
+    tot: o.tot, pago: { st: o.pay, monto: o.amount ?? o.tot, devuelto: o.refunded ?? 0, marca: b?.marca ?? null, l4: b?.l4 ?? null }, horasFaltan: o.hours_to, cobroMitad: Number(d.cobroMitad ?? 0), motivoNeg: (d.motivoNeg as string | undefined) ?? null,
     alt: P.rows[0] ?? null, tarde: R.rows[0]?.m ?? null, linea: E.rows,
     devolucion: await devolucionesDe(o.id),
     boxes: Number(d.boxes ?? 0), dest: d.k === "caja" ? await destinatarioDe(o.id) : null, rastreo: ((d.tracking as { code?: string } | undefined)?.code) ?? null,

@@ -96,3 +96,29 @@ export function textoPanelCancelar(d: DevCuenta | undefined): Bi {
   }
   return { es: out.map((o) => o.es).join(" "), en: out.map((o) => o.en).join(" ") };
 }
+
+/* 25 nov (lo que se dice ANTES de actuar; guardián devueltoSoloSiSalio, regla 13) · Lo que se va a INTENTAR con el dinero, dicho como un intento y según
+   lo que está en la base, nunca «Te devolvemos $X» antes de intentar nada (lo que de verdad pasó lo dice la pantalla después). Pasaba: las hojas de
+   cancelar de la noche, el viaje, la fiesta, la inscripción y el evento privado decían «te devolvemos el depósito» (también de una retención que solo se
+   suelta, y con el monto entero aunque ya hubiera una devolución parcial), y «otra hora» prometía que «se libera» aunque no hubiera nada retenido.
+   El servidor: al cancelar a tiempo, cobros › devolverAlCancelar (lo retenido se suelta; de lo cobrado se pide la devolución de lo que queda); «No me
+   sirve», el vencimiento y «No hay mesa / cupo» solo sueltan la retención (cobros › soltarRetencion), nunca devuelven. */
+export type PagoVisto = { st: string | null; monto: number; devuelto: number };
+export const cobradoVisto = (p: PagoVisto) => p.st === "captured" || p.st === "partially_refunded";
+/* Lo que queda de lo cobrado (menos lo ya devuelto): lo que se pide devolver a tiempo, o lo que se queda el negocio tarde. 0 si no está cobrado. */
+export const quedaVisto = (p: PagoVisto) => (cobradoVisto(p) ? Math.max(0, p.monto - p.devuelto) : 0);
+/* Al cancelar a tiempo: retenido → se pide soltarla; cobrado → se pide la devolución de lo que queda; nada que mover → vacío (la pantalla dice lo suyo). */
+export function pideAlCancelar(p: PagoVisto, f: (c: number) => string = usd): Bi {
+  if (p.st === "held" && p.monto > 0) return { es: `Pedimos que se suelte la retención de ${f(p.monto)} de tu tarjeta; aquí ves cuando se suelte.`, en: `We ask for the ${f(p.monto)} hold to come off your card; you see here when it does.` };
+  const q = quedaVisto(p);
+  if (q > 0) return { es: `Pedimos la devolución de ${f(q)} a tu tarjeta; aquí ves cuando salga.`, en: `We request a refund of ${f(q)} to your card; you see here when it goes through.` };
+  return { es: "", en: "" };
+}
+/* Si no confirman (vence, «No hay mesa / cupo») o si la otra hora no te sirve: SOLO se suelta la retención. Con espacio delante (las pantallas y los
+   avisos noche_alt, fiesta_alt y viaje_alt, que terminan en «.{dinero}»: 0224). Vacío si no hay nada retenido: no se promete nada. */
+export function pideSoltarSi(si: "confirman" | "sirve", p: { st: string | null; monto: number }, f: (c: number) => string = usd): Bi {
+  if (p.st !== "held" || !(p.monto > 0)) return { es: "", en: "" };
+  return si === "confirman"
+    ? { es: ` Si no confirman, pedimos que se suelte la retención de ${f(p.monto)} de tu tarjeta.`, en: ` If they do not confirm, we ask for the ${f(p.monto)} hold to come off your card.` }
+    : { es: ` Si no te sirve, pedimos que se suelte la retención de ${f(p.monto)} de tu tarjeta.`, en: ` If it does not work for you, we ask for the ${f(p.monto)} hold to come off your card.` };
+}

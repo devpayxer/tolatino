@@ -6,7 +6,7 @@
    El servidor decide precio, fechas y puestos (lib/patrocinio.ts); aquí solo se elige y se muestra. Dentro de las apps de las tiendas solo se ve el
    estado (sin precio, sin comprar, sin encender la renovación), como Pro.
    0175 · Si el banco pide 3-D Secure al pagar, se abre la hoja del banco (c.ver, como «Volver a Pro») y, al confirmar, se vuelve a mandar lo mismo
-   con la misma clave. «Cancelar reserva» devuelve todo (lo dice antes de confirmar); los recibos muestran las devoluciones. */
+   con la misma clave. «Cancelar reserva» pide la devolución de todo (lo dice antes de confirmar como un intento: devolverYDecir dice después lo que pasó); los recibos muestran las devoluciones. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { Consulta, FilaPat, PatPanel } from "@/lib/patrocinio";
 import { TarjetaAlta } from "../(app)/c/[slug]/Patrocinados";
@@ -97,7 +97,7 @@ export function patBloques(c: Ctx, x: PatData | undefined): Bloque[] {
     if (sig && vivo) out.push({ type: "note", tone: "info", icon: "calendar", t: E2(`Ya tienes el siguiente: desde el ${dia(diaDe(sig.desde, tz), es)} hasta el ${dia(diaDe(sig.hasta, tz), es)}.`, `You already have the next one: from ${dia(diaDe(sig.desde, tz), es)} to ${dia(diaDe(sig.hasta, tz), es)}.`) });
     if (ui.patRecibo) out.push(recibos());
     if (ui.patTerminar === v.id) {
-      out.push({ type: "note", tone: "danger", icon: "warning", t: act ? E2("Dejas de salir en Patrocinados ahora mismo. Lo pagado no se devuelve.", "You stop showing in Sponsored right now. What you paid is not refunded.") : E2(`Se cancela la reserva y te devolvemos los ${$(v.precio)} completos a tu tarjeta.`, `The booking is canceled and we refund the full ${$(v.precio)} to your card.`) });
+      out.push({ type: "note", tone: "danger", icon: "warning", t: act ? E2("Dejas de salir en Patrocinados ahora mismo. Lo pagado no se devuelve.", "You stop showing in Sponsored right now. What you paid is not refunded.") : E2(`Se cancela la reserva y pedimos la devolución de los ${$(v.precio)} completos a tu tarjeta; aquí ves cuando salga.`, `The booking is canceled and we request a refund of the full ${$(v.precio)} to your card; you see here when it goes through.`) });
       out.push({ type: "acts", items: [{ l: act ? E2("Sí, terminar", "Yes, end it") : E2("Sí, cancelar", "Yes, cancel"), v: "danger", off: c.pending, onClick: () => c.run(() => patTerminar(d.id, v.id),
         (r: { devuelto?: number; devolucion?: "en_camino" | "fallida"; aDevolver?: number }) => r?.devuelto ? E2(`Reserva cancelada. Te devolvemos ${$(r.devuelto)} a tu tarjeta.`, `Booking canceled. We are refunding ${$(r.devuelto)} to your card.`)
           : r?.devolucion === "fallida" ? E2(`Reserva cancelada. La devolución de ${$(r.aDevolver ?? 0)} no salió: el equipo de To’Latino ya tiene el aviso para hacerla.`, `Booking canceled. The ${$(r.aDevolver ?? 0)} refund did not go through: the To’Latino team already has the alert to make it.`)

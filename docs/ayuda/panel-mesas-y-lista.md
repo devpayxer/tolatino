@@ -22,7 +22,7 @@ o código. Desde el detalle de cada reserva respondes, marcas la puerta o cancel
 ## Qué pasa en cada caso
 - **Confirmas:** el depósito retenido se cobra y le llega el aviso con su código. **Otra hora aceptada:** se cobra; **rechazada o
   sin respuesta:** se libera completo.
-- **No contestas a tiempo:** la solicitud vence sola y se libera el depósito.
+- **No contestas a tiempo:** la solicitud vence sola y pedimos que se suelte la retención del depósito (el aviso de «Responde en…» solo lo dice si hay depósito retenido).
 - **No llegaron / sin identificación:** la noche se cierra y el depósito se queda con el local (la regla de la edad y la
   identificación se le mostró antes de pagar). La app **nunca** guarda la foto de un ID ni pide fecha de nacimiento.
 - **Cancelas tú:** devolución completa al cliente, siempre. Cuenta para la revisión de **Mesas no respetadas**.
@@ -67,7 +67,7 @@ you answer, mark the door or cancel with a reason.
 ### What happens in each case
 - **You confirm:** the held deposit is charged and the customer gets the notice with their code. **Another time accepted:** it is charged;
   **rejected or unanswered:** it is released in full.
-- **You do not answer in time:** the request expires on its own and the deposit is released.
+- **You do not answer in time:** the request expires on its own and we ask for the deposit hold to come off (the «Reply within…» note only says so if a deposit is held).
 - **They did not show up / no ID:** the night is closed and the deposit stays with the venue (the age and ID rule was shown to them before
   paying). The app **never** stores a photo of an ID or asks for a date of birth.
 - **You cancel:** full refund to the customer, always. It counts toward the **Tables not honored** review.

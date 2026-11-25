@@ -20,8 +20,8 @@ es consumo, no un cargo aparte. To'Latino **nunca cobra el cover, los tragos ni 
   en la puerta. Puedes **salir de la lista** cuando quieras; no se cobra nada.
 - **Mesa con depósito:** se **retiene** al enviar y se **cobra** cuando el local confirma; se descuenta de tu cuenta en el local.
   - El local no tiene mesa o no contesta a tiempo (1 hora, nunca después de 15 min antes de tu hora): **se libera completo**.
-  - Te proponen **otra hora**: la aceptas (se cobra) o eliges «No me sirve» (se libera). Tienes 30 minutos.
-  - **Cancelas antes de las 6 PM** de esa noche (o 2 horas antes si llegas antes de las 8 PM): **te devolvemos todo**. Después, el
+  - Te proponen **otra hora**: la aceptas (se cobra) o eliges «No me sirve» (pedimos que se suelte la retención). Tienes 30 minutos.
+  - **Cancelas antes de las 6 PM** de esa noche (o 2 horas antes si llegas antes de las 8 PM): es gratis; pedimos que se suelte la retención o, si ya se cobró, la devolución de lo que queda. Antes de que confirmes, la hoja dice lo que vamos a **pedir** según tu tarjeta (que se suelte la retención, o la devolución de lo que queda); nunca «te devolvemos» antes de intentarlo. Lo que pasó de verdad lo ves después en la pantalla y en Avisos. Después, el
     depósito se queda con el local.
   - **No llegas** (la mesa se guarda 30 min) o **no entras por no tener identificación**: el depósito se queda con el local.
   - **El local cancela:** te devolvemos todo, siempre.
@@ -60,7 +60,7 @@ charge. To'Latino **never charges the cover, drinks or the minimum**: those are 
 - **Table with a deposit:** **held** when you send and **charged** when the venue confirms; it comes off your bill at the venue.
   - No table or no reply in time (1 hour, never later than 15 min before your time): **released in full**.
   - They propose **another time**: accept it (charged) or «Doesn't work» (released). You have 30 minutes.
-  - **You cancel before 6 PM** that night (or 2 hours before if you arrive before 8 PM): **full refund**. After that the deposit stays with
+  - **You cancel before 6 PM** that night (or 2 hours before if you arrive before 8 PM): it is free; we ask for the hold to come off or, if it was already charged, a refund of what is left. Before you confirm, the sheet says what we will **request** based on your card (that the hold comes off, or a refund of what is left); never «we refund» before trying. What really happened shows afterwards on the screen and in Notifications. After that the deposit stays with
     the venue.
   - **You don't show up** (the table is held 30 min) or **can't get in without ID**: the deposit stays with the venue.
   - **The venue cancels:** full refund, always.

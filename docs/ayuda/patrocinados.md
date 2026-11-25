@@ -45,7 +45,7 @@ panel._
 | Renovar solo encendido | Al terminar, se cobra el mismo plazo con tu tarjeta y sigue sin cortes. Te llega «Tu patrocinio se renovó». |
 | Renovar solo y la tarjeta no pasa (o ya no hay puesto) | Termina y te avisamos por qué: «Tu patrocinio no se renovó». Puedes comprar otro. |
 | Terminar antes (uno activo) | Dejas de salir al momento. **Lo pagado no se devuelve** (lo dice la pantalla antes de confirmar). |
-| Cancelar una reserva (no empezó) | No llega a empezar y **te devolvemos todo** a tu tarjeta. Te llega «Te devolvimos lo que no se usó». |
+| Cancelar una reserva (no empezó) | No llega a empezar y **pedimos la devolución de todo** a tu tarjeta (así lo dice antes de confirmar; nunca «te devolvemos» antes de intentarlo). Cuando sale, te llega «Te devolvimos lo que no se usó». |
 | Cancelas una reserva y la devolución no sale al momento | La pantalla dice lo que pasó de verdad: «te devolvimos» solo si salió; si Stripe no contestó, que está en camino (se reintenta sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino te la hace por otro medio. La reserva queda cancelada igual. |
 | To'Latino lo termina (reglas, quejas) | Te llega el aviso con el motivo y, salvo que el equipo diga lo contrario, **te devolvemos los días enteros que no se usaron**. |
 | Tu página deja de estar publicada | El patrocinio termina y el puesto queda libre (no se devuelve: si fue un error, escribe a Soporte). |
@@ -102,7 +102,7 @@ panel._
 | El evento se cancela | Deja de salir al momento y el patrocinio termina solo. **Te devolvemos los días enteros que no se usaron** (una reserva, todo). Te llegan «El patrocinio terminó con el evento» y «Te devolvimos lo que no se usó». |
 | Ocultas el evento, queda en revisión o apagas Eventos en tu negocio | El patrocinio queda **EN PAUSA**: no sale ni cuenta vistas, y guarda tu puesto. Cuando el evento vuelve a verse, sigue solo y **se alarga lo que duró la pausa** (si hay puesto y sin pasar del evento). Te avisamos al pausarse y al seguir. |
 | La pausa no se pudo alargar (no había puesto o el evento ya llegó) | Esos días se te devuelven cuando el patrocinio termina. |
-| Cancelar una reserva (no empezó) | **Te devolvemos todo.** |
+| Cancelar una reserva (no empezó) | **Pedimos la devolución de todo** (lo que pasó, en la pantalla y en Avisos). |
 | Cancelas una reserva y la devolución no sale al momento | La pantalla dice lo que pasó de verdad: «te devolvimos» solo si salió; si Stripe no contestó, que está en camino (se reintenta sola); si el banco o Stripe no la aceptan, que el equipo de dinero de To'Latino te la hace por otro medio. La reserva queda cancelada igual. |
 | El evento ya pasó (1 semana o 1 mes que dura más que el evento) | El patrocinio termina solo cuando el evento termina. |
 | El evento ya llegó (es hoy) | «Hasta el evento» no sale; 1 semana o 1 mes sí. |
@@ -165,7 +165,7 @@ panel._
 | Auto-renew on | When it ends, the same length is charged to your card and it continues without a gap. You get «Your sponsorship renewed». |
 | Auto-renew and the card fails (or there is no slot) | It ends and we tell you why: «Your sponsorship did not renew». You can buy another. |
 | End early (an active one) | You stop showing right away. **What you paid is not refunded** (the screen says so before you confirm). |
-| Cancel a booking (not started) | It never starts and **we refund all of it** to your card. You get «We refunded what was not used». |
+| Cancel a booking (not started) | It never starts and **we request a refund of all of it** to your card (that is what it says before you confirm; never «we refund» before trying). When it goes out, you get «We refunded what was not used». |
 | You cancel a booking and the refund does not go out right away | The screen says what really happened: «we refunded» only if it went out; if Stripe did not answer, that it is on its way (it retries by itself); if the bank or Stripe do not accept it, that To'Latino's money team refunds you another way. The booking is cancelled anyway. |
 | To'Latino ends it (rules, complaints) | You get the notice with the reason and, unless the team says otherwise, **we refund the whole days that were not used**. |
 | Your page stops being live | The sponsorship ends and the slot opens up (no refund: if it was a mistake, contact Support). |
@@ -222,7 +222,7 @@ panel._
 | The event is cancelled | It stops showing right away and the sponsorship ends on its own. **We refund the whole days that were not used** (a booking, all of it). You get «The sponsorship ended with the event» and «We refunded what was not used». |
 | You hide the event, it is under review or you turn Events off for your business | The sponsorship is **PAUSED**: it does not show or count views, and it keeps your slot. When the event shows again, it continues on its own and **is extended by however long the pause lasted** (if there is a slot and not past the event). We tell you when it pauses and when it continues. |
 | The pause could not be extended (no slot, or the event already arrived) | Those days are refunded when the sponsorship ends. |
-| Cancel a booking (not started) | **We refund all of it.** |
+| Cancel a booking (not started) | **We request a refund of all of it** (what happened, on the screen and in Notifications). |
 | You cancel a booking and the refund does not go out right away | The screen says what really happened: «we refunded» only if it went out; if Stripe did not answer, that it is on its way (it retries by itself); if the bank or Stripe do not accept it, that To'Latino's money team refunds you another way. The booking is cancelled anyway. |
 | The event is over (1 week or 1 month that lasts longer than the event) | The sponsorship ends on its own when the event ends. |
 | The event is today | «Until the event» does not show; 1 week or 1 month do. |

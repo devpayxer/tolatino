@@ -6569,6 +6569,13 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Qué mirar (teléfono):** capturas `d9w-cita-hoja-cancelar-m.png`, `d9w-cita-failed-m.png`, `d9w-cita-confirmada-retenida-m.png`,
   `d9w-pedido-rechazado-m.png`, `d9w-pedido-retenida-m.png`; (escritorio) `d9w-panel-rechazar-retenida-d.png`, `d9w-panel-cita-vencida-d.png`.
   En el sandbox: pedir una cita con depósito, tocar «Cancelar solicitud» y leer la hoja; después, la cita.
+- **Lo mismo en noche, viaje, fiesta, inscripción, evento privado y patrocinio (25 nov; Opus, en revisión; sin captura todavía):** las hojas de
+  «¿Cancelar?» dicen «es gratis» y lo que se va a pedir según la tarjeta («Pedimos que se suelte la retención de $X» o «Pedimos la devolución de $X»),
+  tarde lo que queda de lo cobrado (el viaje: la mitad y la devolución del resto); «Si no confirman / no te sirve» solo con algo retenido (los avisos
+  de otra hora también, migración 0224); los paneles de citas, mesas, fiestas y viajes dicen «pedimos que se suelte la retención» solo si la hay; el
+  panel del evento privado dice lo que pasó con el depósito. **Decidido sin preguntar:** las tablas de política al reservar («Te devolvemos $X» antes
+  de que exista un cobro) se dejaron como regla; si las quieres en «pedimos la devolución», es un cambio de texto (LAUNCH). **Qué mirar (teléfono):**
+  una mesa con depósito › Cancelar: la hoja; una fiesta confirmada a más de 30 días › Cancelar la fecha: «Es gratis. Pedimos la devolución de…».
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

@@ -28,7 +28,7 @@ respuesta y su detalle. Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
 | No pueden | Se libera tu depósito y ves sus próximas fechas libres con «Pedir esta». |
 | No contestan en 24 h | «Sin respuesta»: se libera tu depósito. |
 | Cancelas antes de que confirmen | Se libera todo. |
-| Cancelas confirmada y faltan los días de la regla del negocio (30 normalmente) o más | Te devolvemos el depósito completo. |
+| Cancelas confirmada y faltan los días de la regla del negocio (30 normalmente) o más | Es gratis: pedimos la devolución del depósito (o que se suelte la retención, si no se había cobrado). Antes de que confirmes, la hoja dice lo que vamos a **pedir** según tu tarjeta (que se suelte la retención, o la devolución de lo que queda); nunca «te devolvemos» antes de intentarlo. Lo que pasó de verdad lo ves después en la pantalla y en Avisos. |
 | Cancelas confirmada y faltan menos | El depósito se queda con el negocio. |
 | El negocio cancela | Devolución completa siempre; ves su motivo. |
 | Visita al salón | Gratis, sin depósito; no aparta la fecha. |
@@ -65,7 +65,7 @@ respuesta y su detalle. Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
 | They can't | Your deposit is released and you see their next free dates with «Request this one». |
 | They do not answer in 24 hours | «No answer»: your deposit is released. |
 | You cancel before they confirm | Everything is released. |
-| You cancel after confirmation and the number of days in the business's rule (normally 30) or more remain | We refund your full deposit. |
+| You cancel after confirmation and the number of days in the business's rule (normally 30) or more remain | It is free: we request a refund of the deposit (or that the hold comes off, if it was not charged). Before you confirm, the sheet says what we will **request** based on your card (that the hold comes off, or a refund of what is left); never «we refund» before trying. What really happened shows afterwards on the screen and in Notifications. |
 | You cancel after confirmation and fewer remain | The deposit stays with the business. |
 | The business cancels | Full refund, always; you see their reason. |
 | Hall visit | Free, no deposit; it does not hold the date. |
