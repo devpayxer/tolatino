@@ -19,7 +19,8 @@ export type Linea = { id: string; ch: Record<string, number[]>; q: number; nt: s
 const CLAVE = "tl-carrito-v1", VIDA = 24 * 3600 * 1000;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 // 9m · Lo que el panel marca en «Lleva o es» (Menú › Para el cliente; las mismas claves que app/panel/Menu.tsx MTAGS).
-const LLEVA: [string, string, string][] = [["pica", "Picante", "Spicy"], ["veg", "Vegetariano", "Vegetarian"], ["sg", "Sin gluten", "Gluten-free"], ["mar", "Pescado o mariscos", "Fish or shellfish"], ["lac", "Lácteos", "Dairy"], ["hue", "Huevo", "Egg"], ["nuez", "Maní o nueces", "Peanuts or nuts"]];
+// 25 nov · Cada texto va como E2("…", "…") dentro de la lista (la recibe de la pantalla): así el extractor del CMS lo ve y se edita en Super Admin › Cadenas.
+const LLEVA = <T,>(E2: (a: string, b: string) => T): [string, T][] => [["pica", E2("Picante", "Spicy")], ["veg", E2("Vegetariano", "Vegetarian")], ["sg", E2("Sin gluten", "Gluten-free")], ["mar", E2("Pescado o mariscos", "Fish or shellfish")], ["lac", E2("Lácteos", "Dairy")], ["hue", E2("Huevo", "Egg")], ["nuez", E2("Maní o nueces", "Peanuts or nuts")]];
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const foto = (u: string | null, w: number): CSSProperties => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: { stopPropagation?: () => void }) => e?.stopPropagation?.();
@@ -270,7 +271,7 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
   const sh = it && vista ? {
     it, desk: vista === "dlg", name: it.name, desc: it.desc, price: money(it.cents), tags: tagsOf(it), img: it.img, isCustom: custom, qty, note,
     // 9m · «Lleva o es» (L246): lo que el negocio marcó en su panel (Menú › Para el cliente), como etiquetas; ayuda con las alergias.
-    lleva: LLEVA.filter(([k]) => it.tags.includes(k)).map(([, a, b]) => E2(a, b).toUpperCase()),
+    lleva: LLEVA(E2).filter(([k]) => it.tags.includes(k)).map(([, l]) => l.toUpperCase()),
     customNote: E2("Empezamos con lo de la anterior. Cambia lo que quieras; se agrega aparte.", "We started from your last one. Change anything; it is added separately."),
     tNote: it.extra ? E2(`Se hace al momento: tarda unos ${it.extra} minutos.`, `Made to order: takes about ${it.extra} minutes.`) : "",
     groups: it.grp.map((gk) => {

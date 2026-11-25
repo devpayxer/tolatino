@@ -3074,9 +3074,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Admin dicen «Se cobró lo que quedaba» cuando cobroMitad < la mitad; el guardián mira los dos literales del no(…) (también en varias líneas), quita
       la exención ph: y cubre todo lo anterior; ayuda (noche, viaje, fiesta, inscripción) en «pedimos que se suelte / pedimos la devolución». Al revés
       160/160. e2e nuevos en tra4y (5b lo que quedaba, 5c todo devuelto) y evt6i (8b devuelto y soltado), escritos sin correr._
-- [ ] **→ 9b** · **La familia de textos fijos que no llegan al CMS por ir en listas que después pasan a `E2(a, b)` (25 nov):** `Recuperar.tsx` DOCS,
-      `MenuCliente.tsx` LLEVA, `panel/Cobros.tsx` pasos, `EventosCambios.tsx` IDEAS y MOTIVOS: el guardián nuevo de cadenaConLlave solo caza el ayudante
-      `const f = (a: string, b: string) => … E2(a, b)` llamado con dos textos fijos.
+- [x] **→ 9b** · **La familia de textos fijos que no llegan al CMS por ir en listas que después pasan a `E2(a, b)` (25 nov):** _hecho (25 nov, Sonnet):_
+      `Recuperar.tsx` DOCS, `MenuCliente.tsx` LLEVA, `panel/Cobros.tsx` pasos, `EventosCambios.tsx` IDEAS y MOTIVOS y `EventosSeries.tsx` DS (días)
+      llevan cada texto como `E2("…", "…")` dentro de la lista (la lista es una función que recibe el E2 de la pantalla: `DOCS(E2)`); 32 cadenas nuevas en
+      el catálogo (10 077 → 10 109), mismos ES y EN. Guardián cadenaConLlave ampliado (lista u objeto tipado de pares que pasa a `E2(a, b)` por variable o
+      por índice) y su caso al revés en alreves9f3. Queda fuera del guardián, y sin catálogo, lo que elige idioma con `es ? x[0] : x[1]` sin pasar por E2
+      (`Citas.tsx` MDAY/MES, `NocheReservas.tsx` OCC, `admin/*` con `E(…)` en vez de `E2(…)`, la config de `publica/` con `c.cta[0], c.cta[1]`): otra
+      familia, sin guardián todavía.
 - [ ] **→ 9b** · **Lo que queda de «promete antes de actuar» (25 nov, visto al cerrar la línea de arriba):** (a) las tablas de política al reservar
       («Te devolvemos $X» en `n/[id]/noche/Reservar.tsx` ~148, `viaje/ViajeBooking.tsx` ~207, `fiesta/Booking.tsx` ~197; la FAQ de `n/[id]/page.tsx`
       ~192; `eventos/[slug]/page.tsx` ~72 «Si compraste, te devolvemos todo»; `panel/Inscripciones.tsx` ~58 y `EventosPanel.tsx` ~494) se dejaron: dicen

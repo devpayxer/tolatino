@@ -26,13 +26,13 @@ export function cobrosBloques(c: Ctx, x: CobrosPanel | undefined): Bloque[] {
   if (x.modo === "apagado" && !done) { out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Los cobros con tarjeta todavía no están encendidos en To’Latino. Sigue vendiendo en el local.", "Card payouts are not on in To’Latino yet. Keep selling in person.") }); return out; }
   if (st === "restricted") out.push({ type: "note", tone: "warn", icon: "warning", t: E2(`Stripe necesita un dato más${x.cuenta.pide.length ? ` (${x.cuenta.pide.length})` : ""}.`, `Stripe needs one more detail${x.cuenta.pide.length ? ` (${x.cuenta.pide.length})` : ""}.`), cta: E2("Completar en Stripe", "Complete in Stripe"), onCta: () => c.run(() => cobrosStripe(d.id), undefined, (r) => ir(r?.url)) });
   if (x.cuenta.pausado) out.push({ type: "note", tone: "danger", icon: "lock", t: `${E2("Pagos al banco retenidos por To’Latino", "Payouts held by To’Latino")}${x.cuenta.motivo ? `: ${x.cuenta.motivo}` : ""}. ${E2("Salen cuando se resuelva; no se pierde nada.", "They go out once resolved; nothing is lost.")}` });
-  const pasos: [string, string, string, string][] = [
-    ["Tus datos", "Your details", "Nombre, fecha de nacimiento y dirección.", "Name, date of birth and address."],
-    ["Datos fiscales", "Tax details", "Stripe te pide tu SSN, ITIN o EIN: lo exige la ley para pagarte. To’Latino no lo ve ni lo guarda.", "Stripe asks for your SSN, ITIN or EIN: the law requires it to pay you. To’Latino never sees or stores it."],
-    ["Tu banco", "Your bank", "Número de ruta y de cuenta.", "Routing and account number."],
-    ["Verificación", "Verification", "La hace Stripe, nuestro socio de pagos, en minutos.", "Done by Stripe, our payments partner, in minutes."],
+  const pasos: [string, string][] = [
+    [E2("Tus datos", "Your details"), E2("Nombre, fecha de nacimiento y dirección.", "Name, date of birth and address.")],
+    [E2("Datos fiscales", "Tax details"), E2("Stripe te pide tu SSN, ITIN o EIN: lo exige la ley para pagarte. To’Latino no lo ve ni lo guarda.", "Stripe asks for your SSN, ITIN or EIN: the law requires it to pay you. To’Latino never sees or stores it.")],
+    [E2("Tu banco", "Your bank"), E2("Número de ruta y de cuenta.", "Routing and account number.")],
+    [E2("Verificación", "Verification"), E2("La hace Stripe, nuestro socio de pagos, en minutos.", "Done by Stripe, our payments partner, in minutes.")],
   ];
-  out.push({ type: "rows", items: pasos.map(([te, tn, se, sn], i): Fila => { const ok = done; return { icon: ok ? "check" : "lock", ifg: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.6)", ibg: "var(--tl-paper)", t: `${i + 1}. ${E2(te, tn)}`, s: E2(se, sn), compact: true, chev: false }; }) });
+  out.push({ type: "rows", items: pasos.map(([te, se], i): Fila => { const ok = done; return { icon: ok ? "check" : "lock", ifg: ok ? "var(--tl-open-text)" : "rgba(11,14,18,.6)", ibg: "var(--tl-paper)", t: `${i + 1}. ${te}`, s: se, compact: true, chev: false }; }) });
   if (done) {
     out.push({ type: "kv", items: [
       { k: E2("BANCO", "BANK"), v: x.cuenta.banco ? `·· ${x.cuenta.banco}` : E2("En Stripe", "In Stripe") },

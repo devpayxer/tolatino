@@ -14,8 +14,11 @@ import { evtAvisar, evtCancelar, evtMover, evtPausar } from "./acciones-eventos"
 import { calendario } from "./EventosPanel";
 import type { Ctx } from "./Panel";
 
-const MOTIVOS: [string, string, string][] = [["clima", "Mal tiempo", "Bad weather"], ["artista", "El artista no puede venir", "The artist cannot come"], ["local", "Problema en el local", "Problem at the venue"], ["planes", "Cambio de planes", "Change of plans"]];
-const IDEAS: [string, string][] = [["Abrimos puertas 30 min antes.", "Doors open 30 min early."], ["Estacionamiento gratis detrás del local.", "Free parking behind the venue."], ["Esta noche hay artista invitado.", "Special guest tonight."]];
+// 25 nov · Cada texto va como E2("…", "…") dentro de la lista (la recibe de la pantalla): así el extractor del CMS lo ve y se edita en Super Admin › Cadenas.
+// Con E2 de la pantalla da el texto del idioma; con `par` da los dos (para buscar el inglés del que quedó guardado en español).
+const par = (a: string, b: string): [string, string] => [a, b];
+const MOTIVOS = <T,>(E2: (a: string, b: string) => T): [string, T][] => [["clima", E2("Mal tiempo", "Bad weather")], ["artista", E2("El artista no puede venir", "The artist cannot come")], ["local", E2("Problema en el local", "Problem at the venue")], ["planes", E2("Cambio de planes", "Change of plans")]];
+const IDEAS = <T,>(E2: (a: string, b: string) => T): T[] => [E2("Abrimos puertas 30 min antes.", "Doors open 30 min early."), E2("Estacionamiento gratis detrás del local.", "Free parking behind the venue."), E2("Esta noche hay artista invitado.", "Special guest tonight.")];
 const fechaPago = (iso: string, es: boolean) => diaCorto(iso, es);
 const cuando = (c: Ctx, iso: string) => new Date(iso).toLocaleString(c.es ? "es-US" : "en-US", { timeZone: c.d.hoy.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -59,7 +62,7 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
   if (K.cancelacion) {
     const x = K.cancelacion;
     out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`Cancelado · ${x.motivo}. ${tix ? `Devolvemos todo a cada comprador en 3–5 días hábiles: ${x.ordenes} ${x.ordenes === 1 ? "orden devuelta" : "órdenes devueltas"} (${dinero(x.devuelto)})${x.st === "running" || x.pendientes ? "; lo que falta sigue solo, sin que hagas nada" : ""}.` : "Avisamos a los que iban."}`,
-      `Cancelled · ${MOTIVOS.find((m) => m[1] === x.motivo)?.[2] ?? x.motivo}. ${tix ? `Every buyer gets a full refund in 3–5 business days: ${x.ordenes} ${x.ordenes === 1 ? "order refunded" : "orders refunded"} (${dinero(x.devuelto)})${x.st === "running" || x.pendientes ? "; the rest continues on its own, nothing to do" : ""}.` : "We notified everyone going."}`) });
+      `Cancelled · ${MOTIVOS(par).find((m) => m[1][0] === x.motivo)?.[1][1] ?? x.motivo}. ${tix ? `Every buyer gets a full refund in 3–5 business days: ${x.ordenes} ${x.ordenes === 1 ? "order refunded" : "orders refunded"} (${dinero(x.devuelto)})${x.st === "running" || x.pendientes ? "; the rest continues on its own, nothing to do" : ""}.` : "We notified everyone going."}`) });
   }
   if (K.congelado) out.push({ type: "note", tone: "danger", icon: "lock", t: E2(`To’Latino congeló la venta: ${K.congelado}. Los que compraron entran igual.`, `To’Latino froze sales: ${K.congelado}. Buyers still get in.`) });
   else if (e.st === "paused") out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Venta pausada: la página dice «Venta pausada». Los que ya compraron entran igual.", "Sales paused: the page says “Sales paused”. Buyers still get in.") });
@@ -79,7 +82,7 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
     onLink: () => c.setUi({ evMsg: op ? null : e.id, evMsgT: "" }),
     items: K.avisos.length ? K.avisos.map((m, i) => ({ key: `av${i}`, icon: "bell", t: m.t, s: E2(`A ${m.n} personas · ${cuando(c, m.at)}`, `To ${m.n} people · ${cuando(c, m.at)}`), compact: true, chev: false }))
       : [{ key: "av", icon: "bell", t: E2("Sin avisos", "No notices"), s: E2("Cambio de hora, artista invitado, estacionamiento: les llega en la app y sale primero en «Antes de ir».", "Time change, guest artist, parking: they get it in the app and it shows first in “Before you go”."), compact: true, chev: false }] });
-  if (op) out.push({ type: "chips", k: E2("IDEAS", "IDEAS"), items: IDEAS.map(([a, b]) => ({ l: E2(a, b), v: T0 === E2(a, b) ? "selected" : "filter", onClick: () => c.setUi({ evMsgT: E2(a, b) }) })) },
+  if (op) out.push({ type: "chips", k: E2("IDEAS", "IDEAS"), items: IDEAS(E2).map((t) => ({ l: t, v: T0 === t ? "selected" : "filter", onClick: () => c.setUi({ evMsgT: t }) })) },
     { type: "field", k: E2("EL AVISO", "THE NOTICE"), area: true, rows: 3, val: T0, ph: E2("En pocas palabras.", "Keep it short."), count: `${T0.length}/160`, onChange: (x) => c.setUi({ evMsgT: x.slice(0, 160) }) },
     { type: "acts", items: [{ l: K.van ? E2(`Enviar a ${K.van} personas`, `Send to ${K.van} people`) : E2("Aún no va nadie", "Nobody is going yet"), v: "primary", icon: "bubble", off: c.pending || T0.trim().length < 5 || !K.van,
       onClick: () => c.run(() => evtAvisar(c.d.id, e.id, T0), (r) => E2(`Aviso enviado a ${r?.n ?? 0} personas en la app. También sale en la página del evento.`, `Notice sent to ${r?.n ?? 0} people in the app. It also shows on the event page.`), () => c.setUi({ evMsg: null, evMsgT: "" })) }] });
@@ -107,7 +110,7 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
     const ser = vivas.length > 1 && K.kind !== "span", sc = (ui.evCxS as string) ?? (ser ? "date" : "event"), why = ui.evCxW as string | undefined;
     const sel = sc === "date" ? [proxima!] : vivas, nB = sel.reduce((s, f) => s + f.ordenes, 0), gB = sel.reduce((s, f) => s + f.monto, 0), nP = sel.reduce((s, f) => s + f.personas, 0);
     if (ser) out.push({ type: "chips", k: E2("QUÉ CANCELAS", "WHAT YOU CANCEL"), items: [["date", E2(`Solo el ${diaCorto(proxima!.dia, true)}`, `Only ${diaCorto(proxima!.dia, false)}`)], ["event", E2("Toda la serie", "The whole series")]].map(([k2, l]) => ({ l: l!, v: sc === k2 ? "selected" : "filter", onClick: () => c.setUi({ evCxS: k2 }) })) });
-    out.push({ type: "chips", k: E2("¿POR QUÉ? LO VEN LOS QUE IBAN", "WHY? ATTENDEES SEE IT"), items: MOTIVOS.map(([k2, a, b]) => ({ l: E2(a, b), v: why === k2 ? "selected" : "filter", onClick: () => c.setUi({ evCxW: k2 }) })) },
+    out.push({ type: "chips", k: E2("¿POR QUÉ? LO VEN LOS QUE IBAN", "WHY? ATTENDEES SEE IT"), items: MOTIVOS(E2).map(([k2, l]) => ({ l, v: why === k2 ? "selected" : "filter", onClick: () => c.setUi({ evCxW: k2 }) })) },
       { type: "note", tone: "danger", icon: "warning", t: tix && nB ? E2(`Devolvemos ${dinero(gB)} completo a los ${nB} que compraron, en 3–5 días hábiles, y les avisamos. La comisión no se cobra y el costo de la tarjeta lo pone To’Latino. No se puede deshacer.`, `We refund the full ${dinero(gB)} to the ${nB} who bought, in 3–5 business days, and notify them. No fee is charged and To’Latino covers the card cost. This cannot be undone.`)
         : E2(`Avisamos a las ${nP} personas que iban. No se puede deshacer.`, `We notify the ${nP} people going. This cannot be undone.`) },
       { type: "acts", items: [{ l: sc === "date" && ser ? E2(`Sí, cancelar el ${diaCorto(proxima!.dia, true)}`, `Yes, cancel ${diaCorto(proxima!.dia, false)}`) : E2("Sí, cancelar el evento", "Yes, cancel the event"), v: "danger", icon: "ban", off: c.pending || !why,

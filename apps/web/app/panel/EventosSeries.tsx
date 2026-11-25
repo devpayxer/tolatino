@@ -12,7 +12,8 @@ import { evtArtista, evtSaltar } from "./acciones-eventos";
 import type { Ctx, Form } from "./Panel";
 
 type FormEvt = BorradorEvt & { enviar: boolean };
-const DS: [string, string][] = [["Dom", "Sun"], ["Lun", "Mon"], ["Mar", "Tue"], ["Mié", "Wed"], ["Jue", "Thu"], ["Vie", "Fri"], ["Sáb", "Sat"]];
+// 25 nov · Cada texto va como E2("…", "…") dentro de la lista (la recibe de la pantalla): así el extractor del CMS lo ve y se edita en Super Admin › Cadenas.
+const DS = <T,>(E2: (a: string, b: string) => T): T[] => [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")];
 const NN = (k: Repite["k"]) => (k === "m" ? [3, 4, 6, 12] : [4, 6, 8, 12, 26]);
 export const modoDe = (d: Pick<BorradorEvt, "span" | "rep">) => (d.span > 1 ? "multi" : d.rep.k !== "none" ? "rep" : "one");
 
@@ -47,7 +48,7 @@ export function duracionBloques(c: Ctx, Fm: Form<FormEvt>, e0: EvtPanel | null, 
       onClick: () => { if (k === r.k) return; setR({ k, days: k === "m" ? [] : [dowDe(d.dia)], skip: [], n: NN(k).includes(r.n) ? r.n : k === "m" ? 4 : 8 }); } })) });
     if (r.k === "w" || r.k === "2w") {
       const dw0 = dowDe(d.dia), ds = [...new Set([...r.days, dw0])];
-      out.push({ type: "chips", k: E2("QUÉ DÍAS", "WHICH DAYS"), help: E2("EL DE LA PRIMERA FECHA VA SIEMPRE", "THE FIRST DATE’S DAY IS ALWAYS ON"), items: [1, 2, 3, 4, 5, 6, 0].map((z) => ({ l: E2(DS[z]![0], DS[z]![1]), v: ds.includes(z) ? "selected" : "filter",
+      out.push({ type: "chips", k: E2("QUÉ DÍAS", "WHICH DAYS"), help: E2("EL DE LA PRIMERA FECHA VA SIEMPRE", "THE FIRST DATE’S DAY IS ALWAYS ON"), items: [1, 2, 3, 4, 5, 6, 0].map((z) => ({ l: DS(E2)[z]!, v: ds.includes(z) ? "selected" : "filter",
         onClick: () => { if (z === dw0) { c.toast(E2("Es el día de la primera fecha. Para quitarlo, elige otra en el calendario.", "It is the first date’s day. To remove it, pick another date on the calendar.")); return; } setR({ days: ds.includes(z) ? ds.filter((q) => q !== z) : [...ds, z], skip: [] }); } })) });
     }
     if (r.k === "m") out.push({ type: "rows", items: [{ key: "m", icon: "calendar", t: repL(d.dia, r, es), s: E2("Sale de la primera fecha. Para otro día del mes, cámbiala en el calendario.", "Based on the first date. For another day of the month, change it on the calendar."), compact: true, chev: false }] });
@@ -152,7 +153,7 @@ export function seriesBloques(c: Ctx, e: EvtPanel, v: BorradorEvt, F: FormatoEvt
   // VENDIDOS POR DÍA (o SE APUNTARON) · 7 DÍAS, de la fecha que se ve.
   const C = X.chart;
   if (C && C.n.some((n) => n > 0)) {
-    const mx = Math.max(1, ...C.n), best = C.n.indexOf(mx), L = (iso: string) => (es ? DS[dowDe(iso)]![0] : DS[dowDe(iso)]![1]).slice(0, 1);
+    const mx = Math.max(1, ...C.n), best = C.n.indexOf(mx), L = (iso: string) => DS(E2)[dowDe(iso)]!.slice(0, 1);
     out.push({ type: "chart", k: `${tix ? E2("VENDIDOS POR DÍA", "SOLD PER DAY") : E2("SE APUNTARON POR DÍA", "SIGNED UP PER DAY")}${e.kind === "series" && x ? ` · ${diaCorto(x.dia, es).toUpperCase()}` : ""}${E2(" · 7 DÍAS", " · 7 DAYS")}`,
       v: String(C.n.reduce((a, b) => a + b, 0)), bars: C.n.map((n, j) => ({ h: `${Math.max(4, Math.round((n / mx) * 100))}%`, on: j === C.n.length - 1, l: L(C.dias[j]!) })),
       s: E2(`El mejor día fue el ${diaCorto(C.dias[best]!, true)}, con ${mx}.`, `The best day was ${diaCorto(C.dias[best]!, false)}, with ${mx}.`) });

@@ -44,6 +44,10 @@ const crear = [
   // 25 nov · Un ayudante que recibe los dos idiomas y llama E2(a, b), llamado con dos textos fijos (como soltado(…) del apartado): sus textos se salen del CMS.
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nexport function Zz({ es, ok }: { es: boolean; ok: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  const dice = (a1: string, b1: string) => (ok ? E2(a1, b1) : "");\n  return <p>{dice("Se liberó lo retenido", "The hold was released")}</p>;\n}\n', /pasa dos textos fijos a un ayudante que llama E2\(a1, b1\)/],
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nexport function Zz({ es, ok }: { es: boolean; ok: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  const dice = (x: string, y: string) => ok ? E2(x, y) : "";\n  return <p>{dice(`Se liberó`, \'Released\')}</p>;\n}\n', /dice\("…", "…"\) pasa dos textos fijos/],
+  // 25 nov · La familia de las listas: pares ES/EN escritos sin E2 en una lista u objeto, que después pasan a E2(a, b) por variable (DOCS.map(([k, a, b]) => E2(a, b)),
+  // E2(DS[z][0], DS[z][1])): sus textos se salen del CMS.
+  ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst DOCS: [string, string, string][] = [["lic", "Licencia", "License"], ["otro", "Otro", "Other"]];\nexport function Zz({ es }: { es: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{DOCS.map(([k, a, b]) => <i key={k}>{E2(a, b)}</i>)}</p>;\n}\n', /DOCS guarda pares ES\/EN sin E2/],
+  ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst DS: [string, string][] = [["Dom", "Sun"], ["Lun", "Mon"]];\nexport function Zz({ es, z }: { es: boolean; z: number }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2(DS[z]![0], DS[z]![1])}</p>;\n}\n', /DS guarda pares ES\/EN sin E2/],
 ];
 let bien = 0, total = 0;
 const correr = (g, debe = null) => {

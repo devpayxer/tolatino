@@ -9668,6 +9668,28 @@ const guardianes = {
         for (const k of t.matchAll(new RegExp(`\\b${m[1]}\\(\\s*(${LITS})\\s*,\\s*(${LITS})`, "g")))
           if (/\p{L}/u.test(k[1] + k[2])) falla(G, f, t.slice(0, k.index).split("\n").length, `${m[1]}("…", "…") pasa dos textos fijos a un ayudante que llama E2(${m[2]}, ${m[3]}): se salen del CMS; va ${m[1]}(E2("…", "…")) (el ayudante recibe el texto hecho)`);
     }
+    // 25 nov (la familia de las listas) · Lo mismo con una lista u objeto de pares ES/EN escritos sin E2 (const DOCS: [string, string, string][] = [["k", "Es", "En"], …])
+    // cuyos textos después pasan a E2(a, b) por variable (DOCS.map(([k, a, b]) => E2(a, b)) o E2(DS[z][0], DS[z][1])): tampoco entran al catálogo. Va la lista como
+    // función que recibe E2 y lleva E2("…", "…") en su sitio: const DOCS = <T,>(E2: (a: string, b: string) => T) => [["k", E2("Es", "En")], …]; se usa DOCS(E2).
+    // Al revés: alreves9f3.
+    const ID = String.raw`[A-Za-z_]\w*`;
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (!t.includes("E2(")) continue;
+      for (const m of t.matchAll(/^(?:export )?const ([A-Za-z_]\w*):\s*(?:readonly )?(?:\[string, string(?:, string)*\]\[\]|Record<string, \[string, string(?:, string)*\]>)\s*=\s*/gm)) {
+        const resto = t.slice(m.index + m[0].length), fin = resto.search(/\n(?:const|function|export|type|import|let|interface|\/\*|\/\/)/), ini = fin < 0 ? resto : resto.slice(0, fin);
+        if (!new RegExp(`${LITS}\\s*,\\s*${LITS}`).test(ini) || !/\p{L}/u.test(ini)) continue;
+        const N = m[1], linea = t.slice(0, m.index).split("\n").length;
+        let pasa = new RegExp(`\\bE2\\(\\s*${N}\\b[^,()]*,\\s*${N}\\b`).test(t);
+        for (const u of t.matchAll(new RegExp(`\\b${N}\\b(?:\\.filter\\([^\\n]{0,160}?\\))?\\.map\\(\\(?\\[([^\\]]*)\\]`, "g"))) {
+          const ids = u[1].split(",").map((x) => x.trim()).filter((x) => new RegExp(`^${ID}$`).test(x));
+          const cola = t.slice(u.index, u.index + 500);
+          if (ids.some((a) => ids.some((b) => a !== b && new RegExp(`\\bE2\\(\\s*${a}\\s*,\\s*${b}\\s*\\)`).test(cola)))) pasa = true;
+        }
+        if (pasa) falla(G, f, linea, `${N} guarda pares ES/EN sin E2 y sus textos pasan a E2(a, b) por variable: se salen del CMS; la lista va como función que recibe E2 y lleva E2("…", "…") en su sitio (${N}(E2))`);
+      }
+    }
     const E2LIT = /\bE2\(\s*(["`'])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*(["`'])(?:(?!\2)[^\\\n]|\\.)*\2\s*\)/g;
     const MIGRADAS = ["apps/web/app/(app)/Inicio.tsx", "apps/web/app/(app)/page.tsx"];
     for (const f of MIGRADAS) {

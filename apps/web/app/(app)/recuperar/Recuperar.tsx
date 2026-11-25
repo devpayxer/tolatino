@@ -17,7 +17,8 @@ import { fotoFondo } from "@tolatino/ui";
 const { Icon, IconButton, BusinessRow, Chip, Button, Tag, OrderTracker } = UI as unknown as Record<"Icon" | "IconButton" | "BusinessRow" | "Chip" | "Button" | "Tag" | "OrderTracker", ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
 const K = { font: `800 10.5px ${MONO}`, letterSpacing: ".12em" } as const;
-const DOCS: [string, string, string][] = [["licencia", "Licencia del negocio", "Business license"], ["servicio", "Factura de luz o agua", "Utility bill"], ["ein", "Carta del IRS (EIN)", "IRS letter (EIN)"], ["otro", "Otro", "Other"]];
+// 25 nov · Cada texto va como E2("…", "…") dentro de la lista (la recibe de la pantalla): así el extractor del CMS lo ve y se edita en Super Admin › Cadenas.
+const DOCS = <T,>(E2: (a: string, b: string) => T): [string, T][] => [["licencia", E2("Licencia del negocio", "Business license")], ["servicio", E2("Factura de luz o agua", "Utility bill")], ["ein", E2("Carta del IRS (EIN)", "IRS letter (EIN)")], ["otro", E2("Otro", "Other")]];
 const DOC_L: Record<string, [string, string]> = { licencia: ["Licencia del negocio", "Business license"], servicio: ["Factura de luz o agua", "Utility bill"], ein: ["Carta del IRS con el EIN", "IRS letter with the EIN"], otro: ["Otro documento", "Other document"] };
 const ROL_L: Record<string, [string, string]> = { dueno: ["Dueño", "Owner"], socio: ["Socio", "Partner"], encargado: ["Encargado", "Manager"] };
 
@@ -104,7 +105,7 @@ export function Recuperar({ r, cands, ciudad, lang, conSesion, origen, id }: {
         {f.metodo === "documento" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <span style={K}>{E2("¿QUÉ DOCUMENTO?", "WHICH DOCUMENT?")}</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{DOCS.map(([k, a, b]) => <Chip key={k} variant={f.docKind === k ? "selected" : "filter"} onClick={() => up({ docKind: k })}>{E2(a, b)}</Chip>)}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{DOCS(E2).map(([k, l]) => <Chip key={k} variant={f.docKind === k ? "selected" : "filter"} onClick={() => up({ docKind: k })}>{l}</Chip>)}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {doc ? <span style={{ width: 64, height: 64, borderRadius: 12, backgroundImage: fotoFondo(doc.ver, 64), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)", flex: "none" }} /> : null}
               <span role="button" onClick={() => fileRef.current?.click()} {...tec(() => fileRef.current?.click())} style={{ display: "flex", alignItems: "center", gap: 8, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="image" size={16} color="var(--tl-action)" />{doc ? E2("Cambiar foto", "Change photo") : E2("Subir foto del documento", "Upload a photo of the document")}</span>
