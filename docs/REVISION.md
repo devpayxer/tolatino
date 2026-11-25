@@ -6546,6 +6546,17 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
 - **Servido el 24 nov (8c3bd59) y comprobado sobre el sandbox:** el pie con 44 px en Negocios, Comunidad y Eventos; «Arro» trae platos; «empanda»
   entiende Empanadas («zzzqqq» no trae nada, como debe). Qué mirar en el teléfono: Buscar «Arro» y «empanda»; el final de Negocios.
 
+## El dinero decía lo decidido, no lo que pasó: la misma clase en patrocinio, boletos, eventos y reservas (25 nov)
+- **Qué era:** varias pantallas y avisos afirmaban «te devolvemos $X» o «te devolvimos todo» con lo que se había decidido, sin mirar si la
+  devolución salió. Si Stripe la rechazaba, el cliente leía que ya tenía su dinero y nadie del equipo se enteraba.
+- **Ahora (servido: ca6a9c0, d27e2bf, 12d75f9; en CI: ae089df):** cada aviso y pantalla dice lo que pasó: «te devolvimos» solo si salió;
+  «va en camino» si el banco tarda; «no salió: el equipo de To'Latino ya tiene el aviso» si se rechazó (y el equipo de dinero recibe la
+  alerta); en disputa, que la decide el banco. Migraciones 0219–0221 cambian el texto de los avisos solo si nadie los editó en el Super Admin.
+  Además: el barrido ya no reenvía cada minuto una devolución rechazada, y un depósito con devolución parcial previa ya no se le devuelve al
+  cliente al cancelar tarde. Todo revisado por Fable; hecho por Opus en encargos.
+- **Qué mirar (teléfono, en el sandbox):** cancelar unos boletos y una reserva de viaje o noche y leer el aviso que llega: debe decir lo que
+  pasó con el dinero, no una promesa.
+
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).
   Un encargo de Opus cubrió las del dinero (`cobros`, `suscripcion`, `revision-pasarela`) con la prueba nueva `din9u` y encontró el fallo: con el

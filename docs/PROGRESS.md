@@ -20,6 +20,12 @@ _Actualizado: 24 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 21 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **25 nov (05:00 UTC) · `main` = `pruebas` = 12d75f9, servido.** Hoy: medí qué consultas no ejecuta ninguna prueba (88 % de 5.663;
+  `pruebas/consultas-no-ejecutadas.txt`) y, al cubrir las del dinero, salió una clase de fallo: **el dinero decía lo decidido, no lo que pasó**.
+  Arreglada por partes, cada una con guardián, al revés, e2e, ayuda y revisión de Fable: plan Pro (5805640), patrocinio (ca6a9c0), boletos y
+  eventos (d27e2bf, migración 0219), cancelación por el negocio (12d75f9, 0220). **En CI:** cancela el cliente y evento privado (ae089df, 0221)
+  + depósito con devolución parcial (31f042e) + reparto (37367c6). **Sigue:** subirlo; lo que queda de la clase en LAUNCH (avisos al negocio
+  biz_*_cx, otras llamadas a liberarOperacion). Subidas ahora desde una copia aparte (/home/user/subir-wt) cuando hay un encargo trabajando.
 - **24 nov (22:30 UTC) · `main` = `pruebas` = dc80a67, servido.** Desde la entrada de abajo: reparto de la punta a punta rebalanceado (7ed9a08;
   `main` completa en 20,4 min), las pruebas preguntan el día una vez (f0c3258) y la dirigida chica en 4 partes (dc80a67: 16,3 min). LAUNCH al día
   con lo ya cumplido. **Sigue:** tarea 195 (lo construible de LAUNCH): `din9t6`/`din9t8`/`adm7i` (fechas fijas), consultas sin prueba.
