@@ -139,7 +139,7 @@ const accion = async (p, nombre, args) => {
       ok(sql(`select status || '|' || captured_cents from sim_intents where id = '${pi}'`) === 'canceled|0', '… y es verdad: el simulador no capturó nada');
       const op = sql(`select operation_id from ticket_holds where id = '${a.j.apartado}'`);
       ok(sql(`select status || '|' || pay_status || '|' || cancelled_by from operations where id = ${op}`) === 'cancelled|released|system', 'la orden queda cancelada por el sistema, con el cobro liberado');
-      ok(sql(`select status || '|' || failure_code from payments where operation_id = ${op}`) === 'released|error', 'el cobro: liberado, con su código');
+      ok(sql(`select status || '|' || failure_code from payments where operation_id = ${op}`) === 'released|canceled', 'el cobro: liberado, con el código que dio la pasarela (canceled)');
       ok(sql(`select count(*) from tickets where operation_id = ${op} and status <> 'void'`) === '0' && sql(`select count(*) from ticket_log where operation_id = ${op} and kind = 'cobro_fallido'`) === sql(`select count(*) from tickets where operation_id = ${op}`), 'cada boleto (y la mesa) queda anulado, con su rastro');
       ok(exist() === '0/0|0/0|0/0' && cod('NUEVEVB') === '0|0', 'la existencia vuelve (boleto, mesa y extra) y el código también');
       ok(sql(`select count(*) from operation_events where operation_id = ${op} and kind = 'payment_failed'`) === '1' && sql(`select count(*) from operation_events where operation_id = ${op} and kind = 'payment_captured'`) === '0', 'el historial dice «falló el cobro» y nunca «cobrado»');
