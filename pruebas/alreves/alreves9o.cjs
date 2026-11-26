@@ -26,7 +26,7 @@ const casos = [
   // … las órdenes del ensayo corren en cualquier entorno
   ['mismoPaquete', DD, 'if [ "$TOLATINO_ENTORNO" = ensayo ]; then\n  if [ -f "$REPO/infra/ensayo/ordenes/', 'if true; then\n  if [ -f "$REPO/infra/ensayo/ordenes/'],
   // produccionSoloAvanza: el servidor acepta una rama que reescribe la historia
-  ['produccionSoloAvanza', SY, 'if [ -f "$STATE/last-deploy" ] && ! git merge-base --is-ancestor "$LOCAL" "$REMOTE" 2>/dev/null; then', 'if false; then'],
+  ['produccionSoloAvanza', SY, '    elif ! git merge-base --is-ancestor "$DESPLEGADO" "$REMOTE" 2>/dev/null; then', '    elif false; then'],
   // … despliega sin la etiqueta del OK del fundador
   ['produccionSoloAvanza', SY, '    [ -n "$OK_TAG" ] || RECHAZO="${RECHAZO:-sin la etiqueta ok-produccion/* (el OK del fundador)}"\n', ''],
   // … despliega un commit que no pasó por pruebas

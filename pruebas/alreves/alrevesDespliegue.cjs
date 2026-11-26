@@ -37,6 +37,10 @@
 //   contra Postgres 16 pierde el caso del statement_timeout; la lista de tablas grandes del documento pierde una.
 //   produccionMigraAntes (26 nov) · el azul/verde arranca el color nuevo antes de migrar o pierde el motivo; producción vuelve a indexar después de la
 //   vigilancia o aunque las migraciones fallen; las pruebas de infra pierden el caso del orden o el de la tabla ocupada.
+//   produccionSeArreglaSola (26 nov) · el tolatino-sync de producción deja un *.lock de una vuelta cortada, un fetch o deploy.sh sin tope (o más largo
+//   que la unidad), git con trabajos aparte, una salida sin escribir /estado/ o sin decir que no se puede bajar, diag.txt a la vista, un reset que falla
+//   sin contar, sin volver a clonar, sin volver al .git de antes, un clon de rescate sin pruebas ni etiquetas, en la punta o que fuerza el despliegue, sin
+//   bash -n de lo que carga deploy.sh, reinstalarse sin bash -n; su prueba pierde un caso. produccionSoloAvanza: «solo avanza» contra el HEAD.
 // «crear» (el texto a cambiar es null): se crea el archivo, se corre el guardián y se quita.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -47,6 +51,7 @@ const N = 'infra/pruebas/nginx-pruebas.conf', O = 'pruebas/infra/orden-despliegu
 const AV = 'infra/comun/azulverde.sh', DP = 'infra/produccion/deploy.sh', AT = 'pruebas/infra/azulverde.test.sh', MT = 'pruebas/infra/migrar.test.sh', F9 = 'docs/diseno/plan/fase9-apertura.md';
 const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh', W = '.github/workflows/sandbox-rescate.yml', RD = 'infra/pruebas/rescate-disco.sh';
 const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
+const SYP = 'infra/produccion/tolatino-sync', STP = 'pruebas/infra/sync.test.sh';
 const casos = [
   ['sandboxSeArreglaSolo', D, 'SYNC_R=0; instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?',
     'SYNC_R=0; install -m 0755 "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?', 'nunca con un install directo'],
@@ -69,6 +74,33 @@ const casos = [
   ['sandboxSeArreglaSolo', S, '\nRECLONAR_TRAS=15 ', '\nRECLONAR_TRAS=500 ', 'RECLONAR_TRAS (≤ 30)'],
   ['sandboxSeArreglaSolo', S, 'TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3000}', 'TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3500}', 'caben juntos'],
   ['sandboxSeArreglaSolo', SP, 'ok "queda un shallow.lock', 'echo "queda un shallow.lock', 'no tiene el caso «queda un shallow.lock»'],
+  // 26 nov · produccionSeArreglaSola: lo del incidente del sandbox, en el tolatino-sync de producción.
+  ['produccionSeArreglaSola', SYP, '  printf \'%s\\n\' "$CANDADOS" | while IFS= read -r f; do rm -f -- "$f"; done\n', '', 'borra los *.lock que dejó una vuelta cortada'],
+  ['produccionSeArreglaSola', SYP, '  err=$(timeout -k 10 "$FETCH_TOPE" "${GIT[@]}" -C "$d" fetch -q --shallow-since', '  err=$("${GIT[@]}" -C "$d" fetch -q --shallow-since', 'cada fetch de tolatino-sync va con tope'],
+  ['produccionSeArreglaSola', SYP, '\nGIT=(git -c gc.autoDetach=false -c maintenance.autoDetach=false)\n', '\nGIT=(git)\n', 'git sin trabajos aparte'],
+  ['produccionSeArreglaSola', SYP, '      timeout -k 60 "$TOPE_DEPLOY" bash infra/produccion/deploy.sh', '      bash infra/produccion/deploy.sh', 'corre deploy.sh con tope'],
+  ['produccionSeArreglaSola', SYP, 'TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3000}', 'TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3500}', 'caben en la unidad'],
+  ['produccionSeArreglaSola', SYP, '      [ "$TOPE_DEPLOY" -gt "$QUEDA" ] && TOPE_DEPLOY=$QUEDA\n', '', 'lo que le queda a la vuelta'],
+  ['produccionSeArreglaSola', SYP, '\nelse\n  escribir_estado; exit 0\nfi\n', '\nelse\n  exit 0\nfi\n', 'escribe /estado/ antes'],
+  ['produccionSeArreglaSola', SYP, 'No se puede bajar la rama $BR</b>', 'Aviso</b>', 'si no se puede bajar la rama, lo dice'],
+  ['produccionSeArreglaSola', SYP, '  [ "$TOLATINO_ENTORNO" = produccion ] && rm -f /var/www/estado/diag.txt\n', '', 'sin diag.txt en produccion'],
+  ['produccionSeArreglaSola', SYP, '      if no_se_pudo_bajar "git reset --hard falló: $ERR"; then reclonar || true; fi; escribir_estado; exit 0', '      escribir_estado; exit 0', 'un reset --hard que falla cuenta'],
+  ['produccionSeArreglaSola', SYP, 'elif no_se_pudo_bajar "$ERR" && reclonar; then', 'elif no_se_pudo_bajar "$ERR" && false; then', 'vuelve a clonar'],
+  ['produccionSeArreglaSola', SYP, '    mv "$roto" "$DIR/.git" 2>>"$LOG"\n', '', 'si el cambio falla, vuelve el de antes'],
+  ['produccionSeArreglaSola', SYP, '\nRECLONAR_TRAS=15 ', '\nRECLONAR_TRAS=500 ', 'RECLONAR_TRAS (≤ 30)'],
+  ['produccionSeArreglaSola', SYP, ' || ! err=$(bajar_ramas "$nuevo"); then', '; then', 'trae también pruebas y las etiquetas'],
+  ['produccionSeArreglaSola', SYP, '    [ -n "$base" ] && git -C "$nuevo" checkout -q -B "$BR" "$base" 2>>"$LOG"\n', '', 'queda en lo desplegado'],
+  ['produccionSeArreglaSola', SYP, '\nif [ "$REINTENTAR" = 1 ] || [ ! -f "$STATE/last-deploy" ]', '\nif [ "$REINTENTAR" = 1 ] || [ "$(git rev-parse HEAD)" != "$REMOTE" ] || [ ! -f "$STATE/last-deploy" ]', 'no fuerza un despliegue'],
+  ['produccionSeArreglaSola', SYP, ' infra/comun/azulverde.sh infra/comun/respaldos/pgbackrest.sh', ' infra/comun/respaldos/pgbackrest.sh', 'no comprueba con bash -n infra/comun/azulverde.sh'],
+  ['produccionSeArreglaSola', SYP, ' infra/$TOLATINO_ENTORNO/entorno.conf infra/comun/lib.sh', ' infra/comun/lib.sh', 'no comprueba con bash -n infra/$TOLATINO_ENTORNO/entorno.conf'],
+  ['produccionSeArreglaSola', SYP, '    else\n      # 26 nov · Con tope,', '    fi\n    if true; then\n      # 26 nov · Con tope,', 'tolatino-sync NO lo corre'],
+  ['produccionSeArreglaSola', SYP, '    if bash -n infra/produccion/tolatino-sync 2>>"$LOG"; then install -m 0755', '    if true; then install -m 0755', 'se reinstala solo si es bash válido'],
+  ['produccionSeArreglaSola', STP, 'ok "queda un shallow.lock', 'echo "queda un shallow.lock', 'no tiene el caso «queda un shallow.lock»'],
+  ['produccionSeArreglaSola', STP, 'ok "una historia reescrita que llega justo al volver a clonar', 'echo "una historia reescrita que llega justo al volver a clonar', 'no tiene el caso «historia reescrita tras volver a clonar»'],
+  ['produccionSeArreglaSola', C, '  seccion "producción solo avanza y se arregla sola (su tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1\n', '', 'no corren pruebas/infra/sync.test.sh'],
+  // produccionSoloAvanza (26 nov): «solo avanza» contra el HEAD (tras volver a clonar ya es la punta) en vez de contra lo desplegado.
+  ['produccionSoloAvanza', SYP, 'elif ! git merge-base --is-ancestor "$DESPLEGADO" "$REMOTE"', 'elif ! git merge-base --is-ancestor "$LOCAL" "$REMOTE"', 'contra lo último desplegado'],
+  ['produccionSoloAvanza', SYP, '\nDESPLEGADO=$(desplegado_en "$DIR")\n', '\nDESPLEGADO=$(git rev-parse HEAD)\n', 'contra lo último desplegado'],
   ['sandboxSeArreglaSolo', SP, 'ok "vuelta 30 (con red): se vuelve a clonar', 'echo "vuelta 30 (con red): se vuelve a clonar', 'no tiene el caso «N vueltas fallidas → volver a clonar»'],
   ['sandboxSeArreglaSolo', W, '          echo "::add-mask::$PW"\n', '', 'se enmascara (::add-mask::) antes de usarla'],
   ['sandboxSeArreglaSolo', W, '          echo "::add-mask::$PW"\n', '          echo "::add-mask::$PW"\n          echo "contraseña del rescate: $PW"\n', 'nunca se imprime: solo va al archivo 0600'],

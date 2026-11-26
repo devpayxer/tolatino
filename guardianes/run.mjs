@@ -11527,7 +11527,11 @@ const guardianes = {
   produccionSoloAvanza() {
     const G = "produccionSoloAvanza", S = "infra/produccion/tolatino-sync", PR = "scripts/produccion/promover.sh";
     const s = existsSync(S) ? readFileSync(S, "utf8") : "";
-    if (!/git merge-base --is-ancestor "\$LOCAL" "\$REMOTE"/.test(s)) falla(G, S, 0, "el servidor no rechaza una rama que reescribe la historia (fast-forward)");
+    // 26 nov · «Solo avanza» se mide contra lo último desplegado (last-deploy), no contra el HEAD: tras volver a clonar (o un clon inicial) el HEAD ya
+    // puede ser la punta de la rama, y compararse con él aceptaría una historia reescrita (lo prueba pruebas/infra/sync.test.sh).
+    if (!/git merge-base --is-ancestor "\$DESPLEGADO" "\$REMOTE"/.test(s) || /--is-ancestor "\$LOCAL"/.test(s) || !/\nDESPLEGADO=\$\(desplegado_en "\$DIR"\)\n/.test(s)
+      || !/\ndesplegado_en\(\) \{\n[^}]*cat "\$STATE\/last-deploy-sha"[^}]*cat "\$STATE\/last-deploy"/.test(s))
+      falla(G, S, 0, "el servidor no rechaza una rama que reescribe la historia (fast-forward contra lo último desplegado, last-deploy; no contra el HEAD, que tras volver a clonar ya es la punta)");
     if (!/git merge-base --is-ancestor "\$REMOTE" origin\/pruebas/.test(s)) falla(G, S, 0, "el servidor no comprueba que el commit pasó por pruebas");
     if (!/--list 'ok-produccion\/\*'/.test(s) || !/RECHAZO="\$\{RECHAZO:-sin la etiqueta ok-produccion/.test(s)) falla(G, S, 0, "el servidor despliega sin la etiqueta del OK del fundador");
     if (!/export TOLATINO_OK_REF/.test(s)) falla(G, S, 0, "el OK del fundador no llega al registro del despliegue");
@@ -11588,6 +11592,80 @@ const guardianes = {
       const pr = r("refs/remotes/origin/produccion"), pu = r("refs/remotes/origin/pruebas");
       if (pr && pu) { try { execSync(`git merge-base --is-ancestor ${pr} ${pu}`, { stdio: "ignore" }); } catch { falla(G, "origin/produccion", 0, "produccion no es ancestro de pruebas"); } }
     } catch { /* sin la rama produccion (todavía no existe): nada que comparar */ }
+  },
+
+  /* 26 nov · produccionSeArreglaSola: lo que el sandbox aprendió en su incidente (docs/incidentes/sandbox-no-se-actualiza.md: el reinicio de las 04:30
+     cortó un fetch superficial y dejó .git/shallow.lock; cada fetch fallaba y la vuelta salía SIN reescribir /estado/) vale igual para cada máquina de
+     producción, que tampoco tiene SSH. En infra/produccion/tolatino-sync: (1) bajo el candado y antes del fetch se borran los *.lock de .git; (2) cada
+     fetch y cada clon con tope, git sin trabajos aparte (autoDetach=false) y deploy.sh con tope que cabe en el TimeoutStartSec de la unidad; (3) toda
+     salida temprana escribe /estado/ y la página dice desde cuándo y por qué no se puede bajar la rama (también si falla el reset --hard), sin secretos;
+     (4) a las RECLONAR_TRAS vueltas fallidas se vuelve a clonar con pruebas y las etiquetas ok-produccion/*, el clon queda en lo desplegado y su .git
+     reemplaza al roto (si no, vuelve el de antes); (5) antes de deploy.sh, bash -n de lo que carga, y tolatino-sync se reinstala solo si es bash válido;
+     (6) la prueba (pruebas/infra/sync.test.sh) tiene los casos. Lo de «solo avanza» lo vigila produccionSoloAvanza. Al revés: alrevesDespliegue. */
+  produccionSeArreglaSola() {
+    const G = "produccionSeArreglaSola", S = "infra/produccion/tolatino-sync", D = "infra/produccion/deploy.sh", CI = "infra/produccion/cloud-init.yml", T = "pruebas/infra/sync.test.sh";
+    if (!existsSync(S)) { falla(G, S, 0, "falta el tolatino-sync de producción"); return; }
+    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const crudo = readFileSync(S, "utf8"), s = sinC(crudo);
+    const fn = (n) => (new RegExp(`\\n${n}\\(\\) \\{\\n([\\s\\S]*?)\\n\\}`).exec(s) ?? [])[1] ?? "";
+    // (1) Candados.
+    const iF = s.indexOf("flock -n 9 || exit 0"), iC = s.search(/\nCANDADOS=\$\(find "\$DIR\/\.git" -name '\*\.lock' -type f/), iB = s.search(/while IFS= read -r f; do rm -f -- "\$f"; done/);
+    const iFe = s.indexOf('\nif ERR=$(bajar_ramas "$DIR"); then');
+    if (iF < 0 || iC < iF || iB < iC || iFe < iB) falla(G, S, 0, "bajo el candado y antes del fetch, tolatino-sync borra los *.lock que dejó una vuelta cortada en .git (si no, un shallow.lock lo deja trabado para siempre)");
+    // (2) Topes.
+    if (!/\nGIT=\(git -c gc\.autoDetach=false -c maintenance\.autoDetach=false\)\n/.test(s)) falla(G, S, 0, "git sin trabajos aparte (GIT=(git -c gc.autoDetach=false -c maintenance.autoDetach=false)): un gc suelto no puede quedarse con un candado fuera del de tolatino-sync");
+    crudo.split("\n").forEach((l, i) => {
+      if (/^\s*#/.test(l)) return;
+      if (/\bfetch -/.test(l) && !/\btimeout -k \d+ "\$(FETCH_TOPE|CLON_TOPE)" "\$\{GIT\[@\]\}" /.test(l)) falla(G, S, i + 1, "cada fetch de tolatino-sync va con tope (timeout … \"$FETCH_TOPE\" \"${GIT[@]}\"): uno colgado no deja la vuelta parada");
+      if (/\bgit clone\b/.test(l) && !/\btimeout -k \d+ "\$CLON_TOPE" git clone /.test(l)) falla(G, S, i + 1, "el clon de tolatino-sync va con tope (timeout … \"$CLON_TOPE\")");
+      if (/\bbash infra\/produccion\/deploy\.sh\b/.test(l) && !/^\s*timeout -k \d+ "\$TOPE_DEPLOY" bash infra\/produccion\/deploy\.sh /.test(l)) falla(G, S, i + 1, "tolatino-sync corre deploy.sh con tope (timeout … \"$TOPE_DEPLOY\"): uno colgado queda en FALLO con su motivo");
+      if (/\bexit 0\b/.test(l) && !/^flock -n 9 \|\| exit 0$/.test(l) && !/escribir_estado; exit 0\b/.test(l)) falla(G, S, i + 1, "una salida temprana de tolatino-sync escribe /estado/ antes (escribir_estado; exit 0): si no, la máquina se traba y nadie lo ve");
+      if (/\binstall\b[^\n]*\/usr\/local\/bin\/tolatino-sync/.test(l) && !/^\s*if bash -n infra\/produccion\/tolatino-sync 2>>"\$LOG"; then install -m 0755 infra\/produccion\/tolatino-sync \/usr\/local\/bin\/tolatino-sync$/.test(l))
+        falla(G, S, i + 1, "tolatino-sync se reinstala solo si es bash válido (if bash -n … then install): uno roto no reemplaza al bueno");
+    });
+    const unidad = Number((/\n\s+TimeoutStartSec=(\d+)\n/.exec(existsSync(CI) ? readFileSync(CI, "utf8") : "") ?? [])[1] ?? 0);
+    const tope = Number((/\nTOPE_DEPLOY=\$\{TOLATINO_SYNC_TOPE_DEPLOY:-(\d+)\}/.exec(s) ?? [])[1] ?? 1e9), u = Number((/\nUNIDAD_TOPE=(\d+) /.exec(s) ?? [])[1] ?? 0);
+    if (!/\nFETCH_TOPE=\d+ /.test(s) || !/\nCLON_TOPE=\d+ /.test(s) || !unidad || u !== unidad || tope + 180 > u)
+      falla(G, S, 0, `los topes de tolatino-sync caben en la unidad: UNIDAD_TOPE igual al TimeoutStartSec de ${CI} y TOPE_DEPLOY + 180 s por debajo`);
+    const iQ = s.indexOf('\n      QUEDA=$((UNIDAD_TOPE - 180 - SECONDS)); [ "$QUEDA" -lt 60 ] && QUEDA=60\n      [ "$TOPE_DEPLOY" -gt "$QUEDA" ] && TOPE_DEPLOY=$QUEDA\n'), iD = s.indexOf('timeout -k 60 "$TOPE_DEPLOY" bash infra/produccion/deploy.sh');
+    if (iQ < 0 || iD < iQ) falla(G, S, 0, "deploy.sh nunca corre más de lo que le queda a la vuelta (QUEDA = UNIDAD_TOPE - 180 - SECONDS): systemd no la mata antes de anotar el FALLO");
+    if (!/\n\s+2\) [^\n]*estado VUELTA_ATRAS ;;\n\s+124\|137\) [^\n]*estado FALLO\n[^\n]*last-motivo" ;;\n\s+\*\) [^\n]*estado FALLO ;;\n/.test(s))
+      falla(G, S, 0, "deploy.sh: 2 es VUELTA_ATRAS (no se reintenta) y el tope (124/137) es FALLO con su motivo en /estado/");
+    // (3) /estado/ en cada vuelta y lo que dice.
+    const pag = fn("escribir_estado"), tap = (/\ntapar\(\) \{ ([^\n]*) \}\n/.exec(s) ?? [])[1] ?? "";
+    if (!/\[ -s "\$STATE\/bajar-fallos" \] && echo "[^\n]*No se puede bajar la rama \$BR<\/b> desde \$\(cat "\$STATE\/bajar-desde"[^\n]*vueltas fallidas seguidas: \$\(cat "\$STATE\/bajar-fallos"\)[^\n]*Motivo:<\/b> \$\(tapar "\$STATE\/bajar-motivo"/.test(pag) || !/\nescribir_estado\n?$/.test(s))
+      falla(G, S, 0, "/estado/ se escribe en cada vuelta y, si no se puede bajar la rama, lo dice (desde cuándo, cuántas vueltas y el motivo)");
+    if (!/sed -E 's\/\(password\|PASSWORD\|secret\|SECRET\|token\|TOKEN\)=\[\^ \]\*\/\\1=\*\*\*\/g/.test(tap) || !/\n\s+tail -n 25 "\$LOG" \| tapar;/.test(pag) || !/\[ "\$TOLATINO_ENTORNO" = produccion \] && rm -f \/var\/www\/estado\/diag\.txt/.test(pag) || !/\n\s+if \[ "\$TOLATINO_ROL" != app \]; then\n[\s\S]*sobres-servidos\/estado/.test(pag))
+      falla(G, S, 0, "escribir_estado hace lo de producción en cada vuelta: sin secretos (tapar), sin diag.txt en produccion y la copia para la base y la réplica");
+    if (!/\n\s+if ! ERR=\$\(git reset -q --hard "origin\/\$BR" 2>&1\); then\n(\s*#[^\n]*\n)*\s+if no_se_pudo_bajar "git reset --hard falló: \$ERR"; then reclonar \|\| true; fi; escribir_estado; exit 0\n/.test(crudo))
+      falla(G, S, 0, "un reset --hard que falla cuenta como no poder bajar la rama (/estado/ lo dice y a las RECLONAR_TRAS se vuelve a clonar)");
+    // (4) Volver a clonar.
+    const rc = fn("reclonar"), br = fn("bajar_ramas");
+    if (!/\nRECLONAR_TRAS=([1-9]|[12]\d|30) /.test(s) || !/\[ \$\(\(n % RECLONAR_TRAS\)\) = 0 \]/.test(s) || !/\nelif no_se_pudo_bajar "\$ERR" && reclonar; then\n/.test(s)
+      || !/if mv "\$DIR\/\.git" "\$roto"[\s\S]{0,40}\n\s+if mv "\$nuevo\/\.git" "\$DIR\/\.git"[\s\S]*?\n\s+mv "\$roto" "\$DIR\/\.git"/.test(rc))
+      falla(G, S, 0, "a las RECLONAR_TRAS (≤ 30) vueltas fallidas seguidas tolatino-sync vuelve a clonar y su .git reemplaza al roto; si el cambio falla, vuelve el de antes");
+    if (!/\|\| ! err=\$\(bajar_ramas "\$nuevo"\); then/.test(rc) || !/"\+refs\/heads\/pruebas:refs\/remotes\/origin\/pruebas"/.test(br) || !/fetch -q origin 'refs\/tags\/ok-produccion\/\*:refs\/tags\/ok-produccion\/\*'/.test(br))
+      falla(G, S, 0, "el clon de rescate trae también pruebas y las etiquetas ok-produccion/* (bajar_ramas \"$nuevo\"): sin ellas rechazaría todo lo que llegue después");
+    if (!/\n\s+base=\$\(desplegado_en "\$nuevo"\)\n/.test(rc) || !/\n\s+\[ -n "\$base" \] && git -C "\$nuevo" checkout -q -B "\$BR" "\$base"/.test(rc) || /\bFORZAR\b/.test(s)
+      || !/\nif \[ "\$REINTENTAR" = 1 \] \|\| \[ ! -f "\$STATE\/last-deploy" \] \|\| \[ "\$DESPLEGADO" != "\$REMOTE" \]; then\n/.test(s))
+      falla(G, S, 0, "el clon de rescate queda en lo desplegado y no fuerza un despliegue (se despliega solo si lo desplegado no es la punta): no vuelve a servir una versión que volvió atrás sola");
+    // (5) bash -n de lo que deploy.sh carga o corre en el momento (lo de systemd-run va aparte; las órdenes del ensayo, por rol, viven solo en su rama).
+    const lista = ((/\n\s*VALIDAR="([^"]+)"/.exec(s) ?? [])[1] ?? "").split(/\s+/).filter(Boolean);
+    const d = existsSync(D) ? sinC(readFileSync(D, "utf8")).replace(/\\\n/g, " ") : "";
+    const usa = new Set([D]);
+    if (/\n\. "\$REPO\/infra\/\$TOLATINO_ENTORNO\/entorno\.conf"/.test(d)) usa.add("infra/$TOLATINO_ENTORNO/entorno.conf");
+    for (const linea of d.split("\n")) { if (/systemd-run/.test(linea)) continue; for (const m of linea.matchAll(/(?:^|\s)(?:\.|bash)\s+"\$REPO\/([^"$]+\.sh)"/g)) usa.add(m[1]); }
+    for (const x of usa) if (!lista.includes(x)) falla(G, S, 0, `tolatino-sync no comprueba con bash -n ${x} (deploy.sh lo carga o lo corre) antes de desplegar`);
+    if (!/bash -n "\$f" 2>>"\$LOG" \|\| MAL="\$MAL \$f"/.test(s) || !/\n    if \[ -n "\$MAL" \]; then\n[^\n]*estado FALLO\n[^\n]*last-motivo"\n    else\n/.test(s) || iD < s.indexOf('\n    if [ -n "$MAL" ]; then'))
+      falla(G, S, 0, "si deploy.sh o lo que carga no es bash válido, tolatino-sync NO lo corre (FALLO con su motivo; sigue sirviendo lo de antes)");
+    // (6) La prueba.
+    const t = existsSync(T) ? readFileSync(T, "utf8") : "";
+    for (const [x, que] of [["ok \"queda un shallow.lock", "queda un shallow.lock"], ["ok \"el fetch falla: no despliega", "el fetch falla y /estado/ lo dice"], ["ok \"vuelta 30 (con red): se vuelve a clonar", "N vueltas fallidas → volver a clonar"],
+      ["ok \"una historia reescrita que llega justo al volver a clonar", "historia reescrita tras volver a clonar"], ["ok \"un commit sin la etiqueta del OK que llega justo al volver a clonar", "sin etiqueta tras volver a clonar"],
+      ["ok \"vuelta 15 con un .git roto: se vuelve a clonar y la versión que volvió atrás NO", "volver a clonar no repite una vuelta atrás"], ["ok \"se corta en su tope", "un deploy.sh colgado"]])
+      if (!t.includes(x)) falla(G, T, 0, `la prueba del tolatino-sync de producción no tiene el caso «${que}»`);
+    const c = readFileSync("pruebas/infra/correr.sh", "utf8"), iA = c.indexOf('\nif [ "$AISLADO" = 1 ]; then\n'), iS = c.search(/\n  seccion "[^"]*"; bash pruebas\/infra\/sync\.test\.sh \|\| mal=1\n/);
+    if (iA < 0 || iS < iA) falla(G, "pruebas/infra/correr.sh", 0, "las pruebas de infra no corren pruebas/infra/sync.test.sh (el tolatino-sync de producción), aisladas");
   },
 
   /* 9o · migracionReversible: toda migración desde la 0145 es expandir → contraer. Un drop / rename de una tabla, una columna o una función que el código

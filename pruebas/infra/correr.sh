@@ -6,7 +6,7 @@
 #   3. la página de mantenimiento es la que sale del sistema de diseño
 #   4. azul/verde y vuelta atrás (azulverde.test.sh), sobre sellado y recuperación (sellado.test.sh), el respaldo de las fotos a la medida en nginx
 #      (medios-nginx.test.sh: la variante real un año; la que falta o sin WebP, la maestra con 60 s)
-#   5. con root y aislado (aislar.test.sh primero; aislar.sh: montajes y red aparte): la traza del sandbox igual a la de antes (traza-sandbox.sh), tolatino-sync de producción solo avanza (sync.test.sh), el del sandbox no
+#   5. con root y aislado (aislar.test.sh primero; aislar.sh: montajes y red aparte): la traza del sandbox igual a la de antes (traza-sandbox.sh), tolatino-sync de producción solo avanza y se arregla solo: candados, topes, /estado/, volver a clonar (sync.test.sh), el del sandbox no
 #      corre un deploy.sh roto y se reinstala solo si es válido (sync-pruebas.test.sh); con Postgres 16: migrar.sh de una lectura (migrar.test.sh); con Postgres 16 +
 #      pgBackRest: el PITR de verdad (pitr-local.sh)
 # Uso: bash pruebas/infra/correr.sh   → sale con 1 si algo falla. INFRA_SIN_ROOT=1 salta lo que necesita root.
@@ -47,7 +47,7 @@ if [ "$(id -u)" = 0 ] && [ "${INFRA_SIN_ROOT:-0}" != 1 ]; then
 fi
 if [ "$AISLADO" = 1 ]; then
   seccion "el sandbox no cambia (traza)"; bash pruebas/infra/traza-sandbox.sh || mal=1
-  seccion "producción solo avanza (tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1
+  seccion "producción solo avanza y se arregla sola (su tolatino-sync)"; bash pruebas/infra/sync.test.sh || mal=1
   seccion "el sandbox se arregla solo (su tolatino-sync)"; bash pruebas/infra/sync-pruebas.test.sh || mal=1
   seccion "el orden del despliegue del sandbox: construir → migrar → cambiar (orden-despliegue.test.sh)"; bash pruebas/infra/orden-despliegue.test.sh || mal=1
   if [ -x /usr/lib/postgresql/16/bin/initdb ]; then seccion "migraciones en una lectura (migrar.sh contra Postgres 16)"; bash pruebas/infra/migrar.test.sh || mal=1

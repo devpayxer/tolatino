@@ -1,40 +1,180 @@
 #!/bin/bash
 # 9o · Sincroniza una máquina de PRODUCCIÓN (o del ensayo) con la rama de su entorno y despliega si cambió. Como el del sandbox (infra/pruebas/
 # tolatino-sync: candado, reintento cada 15 min, página /estado/) más lo que pide producción (guardián produccionSoloAvanza):
-#   · Solo AVANZA: el commit nuevo tiene que ser descendiente del que ya corre (fast-forward). Un empujón que reescribe la historia se rechaza.
+#   · Solo AVANZA: el commit nuevo tiene que ser descendiente del último desplegado (fast-forward). Un empujón que reescribe la historia se rechaza.
 #   · En produccion, el commit nuevo lleva una etiqueta anotada «ok-produccion/<fecha>-<commit>» cuyo mensaje es el OK del fundador (la frase y su fecha).
 #     Sin ella no se despliega. El mensaje va a deploy_releases.founder_ok_ref.
 #   · El commit nuevo ya pasó por «pruebas» (es ancestro de origin/pruebas).
 # deploy.sh lo instala en /usr/local/bin. El temporizador de cloud-init lo corre cada 60 s.
+# 26 nov · Lo mismo que el sandbox aprendió en su incidente (docs/incidentes/sandbox-no-se-actualiza.md: el reinicio automático de las 04:30 cortó un
+# fetch superficial a medias, dejó .git/shallow.lock y desde entonces cada fetch fallaba y la vuelta salía sin reescribir /estado/). Guardián
+# produccionSeArreglaSola; prueba pruebas/infra/sync.test.sh:
+#   · bajo el candado (nadie más usa git en $DIR) se borran los *.lock que dejó una vuelta cortada, y queda anotado en el registro;
+#   · cada fetch tiene tope (FETCH_TOPE) y git no deja nada corriendo aparte (gc.autoDetach=false: el gc, si toca, va dentro y bajo el candado);
+#   · si no se puede bajar la rama (ni hacer el reset --hard), /estado/ lo DICE en cada vuelta (desde cuándo, cuántas vueltas seguidas y el motivo);
+#   · cada RECLONAR_TRAS vueltas fallidas seguidas se vuelve a clonar en $DIR.reclon (la rama, pruebas y las etiquetas ok-produccion/*) y su .git
+#     reemplaza al roto con dos «mv» bajo el candado (si el segundo falla, vuelve el de antes). El clon nuevo queda en lo desplegado, no en la punta:
+#     volver a clonar NUNCA se salta «solo avanza» (se compara con last-deploy) ni vuelve a desplegar una versión que volvió atrás sola;
+#   · antes de correr deploy.sh se comprueba con bash -n lo que corre y carga (VALIDAR): si algo no es bash válido, NO se despliega (FALLO con motivo);
+#   · deploy.sh corre con tope (TOPE_DEPLOY y, como mucho, lo que le queda a la vuelta antes del TimeoutStartSec=3600 de la unidad).
 set -u
 exec 9>/var/lock/tolatino-sync.lock
 flock -n 9 || exit 0
 # shellcheck source=/dev/null
 . /etc/tolatino/rol.conf
-REPO=${TOLATINO_SYNC_REPO:-https://github.com/devpayxer/tolatino.git}
+REPO=${TOLATINO_SYNC_REPO:-https://github.com/devpayxer/tolatino.git}   # (TOLATINO_SYNC_* solo las pone la prueba; el servidor no las tiene)
 BR=${TOLATINO_RAMA:-produccion}
 DIR=${TOLATINO_SYNC_DIR:-/opt/tolatino}
 LOG=/var/log/tolatino-sync.log
 STATE=/var/lib/tolatino
+FETCH_TOPE=120          # s: un fetch colgado (red a medias) no deja la vuelta parada
+CLON_TOPE=300           # s: el clon de rescate (y bajar la historia entera si lo desplegado no está en el clon)
+RECLONAR_TRAS=15        # vueltas fallidas seguidas (~15 min con el temporizador de 60 s) antes de volver a clonar; se reintenta cada 15
+UNIDAD_TOPE=3600        # s: el TimeoutStartSec de tolatino-sync.service (infra/produccion/cloud-init.yml)
+TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3000}   # s: 50 min, y nunca más de lo que le queda a la vuelta (ver abajo)
+case "$TOPE_DEPLOY" in ''|*[!0-9]*) TOPE_DEPLOY=3000 ;; esac
+GIT=(git -c gc.autoDetach=false -c maintenance.autoDetach=false)
 mkdir -p "$STATE" /var/www/estado
 estado() { echo "$1" > "$STATE/last-result"; }
+# Lo que se ve en /estado/ nunca lleva un secreto (ni del registro de deploy.sh ni de lo que dijo git).
+tapar() { sed -E 's/(password|PASSWORD|secret|SECRET|token|TOKEN)=[^ ]*/\1=***/g; s/&/\&amp;/g; s/</\&lt;/g' "$@"; }
+
+# Página de estado de la máquina (/estado/). Se escribe en CADA vuelta, también cuando no se puede bajar la rama.
+escribir_estado() {
+  local RES
+  RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
+  { echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=robots content=noindex><title>To'Latino · $TOLATINO_ENTORNO</title>"
+    echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · $TOLATINO_ENTORNO · $TOLATINO_ROL</h1>"
+    # 26 nov · Si no se puede bajar la rama, lo primero que se ve: desde cuándo, cuántas vueltas y el motivo (lo que dijo git).
+    [ -s "$STATE/bajar-fallos" ] && echo "<p style='background:#fde8e8;padding:12px;border-radius:8px'><b>No se puede bajar la rama $BR</b> desde $(cat "$STATE/bajar-desde" 2>/dev/null || echo -) · vueltas fallidas seguidas: $(cat "$STATE/bajar-fallos") (cada $RECLONAR_TRAS se vuelve a clonar). Lo que se sirve puede no ser lo último de $BR. <b>Motivo:</b> $(tapar "$STATE/bajar-motivo" 2>/dev/null)</p>"
+    echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
+    [ -s "$STATE/last-motivo" ] && echo "<p><b>Motivo:</b> $(tapar "$STATE/last-motivo")</p>"
+    echo "<p><a href='/estado/llave.txt'>Llave pública del sobre sellado</a> · <a href='/estado/sobres.txt'>Sobres</a> · <a href='/estado/diag.txt'>Diagnóstico</a></p>"
+    echo "<h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
+    tail -n 25 "$LOG" | tapar; echo "</pre></body>"; } > /var/www/estado/index.html.nuevo && mv -f /var/www/estado/index.html.nuevo /var/www/estado/index.html
+  # En producción el diagnóstico (disco, contenedores, registro de la base) no queda a la vista de cualquiera: se ve en Sistema › Salud (Prometheus).
+  [ "$TOLATINO_ENTORNO" = produccion ] && rm -f /var/www/estado/diag.txt
+  # La base, la réplica (y el almacén del ensayo) no tienen entrada pública: su página de estado y su llave pública salen por la red privada y la app
+  # las muestra en /estado/<máquina>/.
+  if [ "$TOLATINO_ROL" != app ]; then
+    mkdir -p /var/lib/tolatino/sobres-servidos/estado
+    for f in index.html llave.txt sobres.txt diag.txt; do [ -f "/var/www/estado/$f" ] && cp "/var/www/estado/$f" "/var/lib/tolatino/sobres-servidos/estado/$f"; done
+    chmod -R a+rX /var/lib/tolatino/sobres-servidos/estado
+  fi
+  return 0
+}
+
+# no_se_pudo_bajar MOTIVO: anota la vuelta fallida (cuántas seguidas, desde cuándo, por qué). Devuelve 0 si ya toca volver a clonar.
+no_se_pudo_bajar() {
+  local n
+  n=$(( $(cat "$STATE/bajar-fallos" 2>/dev/null || echo 0) + 1 ))
+  echo "$n" > "$STATE/bajar-fallos"
+  [ -s "$STATE/bajar-desde" ] || date '+%Y-%m-%d %H:%M %Z' > "$STATE/bajar-desde"
+  printf '%s\n' "${1:0:400}" > "$STATE/bajar-motivo"
+  echo "$(date -Is) no se pudo bajar la rama $BR (vuelta $n seguida): ${1:0:400}" >>"$LOG"
+  [ $((n % RECLONAR_TRAS)) = 0 ]
+}
+se_pudo_bajar() {
+  [ -s "$STATE/bajar-fallos" ] && echo "$(date -Is) la rama $BR se vuelve a bajar (tras $(cat "$STATE/bajar-fallos") vueltas fallidas)" >>"$LOG"
+  rm -f "$STATE/bajar-fallos" "$STATE/bajar-desde" "$STATE/bajar-motivo"
+}
+
+# bajar_ramas CARPETA: baja la rama del entorno y pruebas con su nombre (un clon superficial solo sigue la suya) y 90 días de historia (lo que se sube a
+# produccion es reciente); si eso falla, solo la rama. Después, las etiquetas ok-produccion/* (una etiqueta llegada después no se baja sola en un clon
+# superficial). Si no hay origin/$BR, sale con 1 y escribe lo que dijo git.
+bajar_ramas() {
+  local d="$1" err r
+  err=$(timeout -k 10 "$FETCH_TOPE" "${GIT[@]}" -C "$d" fetch -q --shallow-since="90 days ago" origin "+refs/heads/$BR:refs/remotes/origin/$BR" "+refs/heads/pruebas:refs/remotes/origin/pruebas" 2>&1); r=$?
+  if [ "$r" != 0 ]; then
+    [ "$r" = 124 ] && err="git fetch pasó de $FETCH_TOPE s y se cortó. $err"
+    echo "$(date -Is) fetch de $BR y pruebas falló; se intenta solo $BR: ${err:0:300}" >>"$LOG"
+    err=$(timeout -k 10 "$FETCH_TOPE" "${GIT[@]}" -C "$d" fetch -q --depth 200 origin "+refs/heads/$BR:refs/remotes/origin/$BR" 2>&1); r=$?
+    if [ "$r" != 0 ]; then
+      [ "$r" = 124 ] && err="git fetch pasó de $FETCH_TOPE s y se cortó. $err"
+      printf '%s' "${err:-git fetch falló sin decir por qué}"; return 1
+    fi
+  fi
+  timeout -k 10 "$FETCH_TOPE" "${GIT[@]}" -C "$d" fetch -q origin 'refs/tags/ok-produccion/*:refs/tags/ok-produccion/*' >/dev/null 2>&1 || true
+  "${GIT[@]}" -C "$d" rev-parse -q --verify "origin/$BR^{commit}" >/dev/null 2>&1 || { printf 'git no encuentra origin/%s después del fetch' "$BR"; return 1; }
+}
+
+# desplegado_en CARPETA: el commit entero de lo último que se desplegó (last-deploy), si está en la historia de esa carpeta; nada si no está.
+desplegado_en() {
+  local c
+  c=$(cat "$STATE/last-deploy-sha" 2>/dev/null || cat "$STATE/last-deploy" 2>/dev/null)
+  [ -n "$c" ] && git -C "$1" rev-parse -q --verify "$c^{commit}" 2>/dev/null
+}
+
+# reclonar: un clon nuevo en $DIR.reclon (rama, pruebas y etiquetas) y su .git reemplaza al de $DIR (el de antes queda en $DIR.git-roto, uno solo, para
+# mirarlo). La carpeta de trabajo no se mueve (lo que corre, lo generado y lo que montan los contenedores siguen ahí). El clon nuevo se deja en lo
+# desplegado (si no está en los 90 días, se baja la historia entera): su HEAD es lo que corre, como antes, y no la punta de la rama.
+reclonar() {
+  local nuevo="$DIR.reclon" roto="$DIR.git-roto" err base
+  rm -rf "$nuevo"
+  if ! err=$(timeout -k 10 "$CLON_TOPE" git clone -q --depth 200 --branch "$BR" "$REPO" "$nuevo" 2>&1) || ! err=$(bajar_ramas "$nuevo"); then
+    rm -rf "$nuevo"; echo "$(date -Is) volver a clonar falló (sigue el .git de antes): ${err:0:300}" >>"$LOG"; return 1
+  fi
+  if [ -s "$STATE/last-deploy" ]; then
+    base=$(desplegado_en "$nuevo")
+    if [ -z "$base" ]; then
+      timeout -k 10 "$CLON_TOPE" "${GIT[@]}" -C "$nuevo" fetch -q --unshallow origin "+refs/heads/$BR:refs/remotes/origin/$BR" "+refs/heads/pruebas:refs/remotes/origin/pruebas" >>"$LOG" 2>&1
+      base=$(desplegado_en "$nuevo")
+    fi
+    # Sin lo desplegado en la historia de $BR ni de pruebas (historia reescrita), el clon queda en la punta y la comprobación de abajo lo RECHAZA.
+    [ -n "$base" ] && git -C "$nuevo" checkout -q -B "$BR" "$base" 2>>"$LOG"
+  fi
+  rm -rf "$roto"
+  if mv "$DIR/.git" "$roto" 2>>"$LOG"; then
+    if mv "$nuevo/.git" "$DIR/.git" 2>>"$LOG"; then
+      rm -rf "$nuevo"; echo "$(date -Is) re-clonado: el .git nuevo ($(git -C "$DIR" rev-parse --short HEAD)) reemplaza al roto (queda en $roto)" >>"$LOG"; return 0
+    fi
+    mv "$roto" "$DIR/.git" 2>>"$LOG"
+  fi
+  rm -rf "$nuevo"; echo "$(date -Is) volver a clonar: no se pudo cambiar el .git (sigue el de antes)" >>"$LOG"; return 1
+}
 
 if [ ! -d "$DIR/.git" ]; then
   rm -rf "$DIR"
-  git clone -q --depth 200 --branch "$BR" "$REPO" "$DIR" 2>>"$LOG" || { echo "$(date -Is) clone falló" >>"$LOG"; exit 0; }
+  if ! ERR=$(timeout -k 10 "$CLON_TOPE" git clone -q --depth 200 --branch "$BR" "$REPO" "$DIR" 2>&1); then
+    echo "$(date -Is) clone falló" >>"$LOG"; no_se_pudo_bajar "el clon inicial falló: $ERR" || true; escribir_estado; exit 0
+  fi
   echo "$(date -Is) clon inicial $(git -C "$DIR" rev-parse --short HEAD)" >>"$LOG"
 fi
-cd "$DIR" || exit 0
-# Las dos ramas con su nombre (un clon superficial solo sigue la suya) y 90 días de historia: lo que se sube a produccion es reciente.
-git fetch -q --shallow-since="90 days ago" origin "+refs/heads/$BR:refs/remotes/origin/$BR" "+refs/heads/pruebas:refs/remotes/origin/pruebas" 2>>"$LOG" \
-  || git fetch -q --depth 200 origin "+refs/heads/$BR:refs/remotes/origin/$BR" 2>>"$LOG" || { echo "$(date -Is) fetch falló" >>"$LOG"; exit 0; }
-git fetch -q origin 'refs/tags/ok-produccion/*:refs/tags/ok-produccion/*' 2>/dev/null || true
-LOCAL=$(git rev-parse HEAD); REMOTE=$(git rev-parse "origin/$BR")
+cd "$DIR" || { no_se_pudo_bajar "no se puede entrar en $DIR" || true; escribir_estado; exit 0; }
+
+# 26 nov · Candados que dejó una vuelta cortada (reinicio, tope, corte de luz): con el candado de arriba nadie más usa git aquí, así que un *.lock en
+# .git es basura y, mientras esté, git no puede volver a escribir (shallow.lock: ningún fetch superficial; index.lock: ningún reset).
+CANDADOS=$(find "$DIR/.git" -name '*.lock' -type f 2>/dev/null)
+if [ -n "$CANDADOS" ]; then
+  echo "$(date -Is) candados de git que dejó una vuelta cortada, borrados: $(printf '%s\n' "$CANDADOS" | sed "s|^$DIR/.git/||" | tr '\n' ' ')" >>"$LOG"
+  printf '%s\n' "$CANDADOS" | while IFS= read -r f; do rm -f -- "$f"; done
+fi
+
+if ERR=$(bajar_ramas "$DIR"); then
+  :
+elif no_se_pudo_bajar "$ERR" && reclonar; then
+  :
+else
+  escribir_estado; exit 0
+fi
+REMOTE=$(git rev-parse "origin/$BR")
+# 26 nov · «Solo avanza» y «¿hay algo nuevo?» se miden contra lo último que se desplegó (last-deploy), no contra el HEAD: tras un clon (el inicial o el
+# de rescate) el HEAD puede ser ya la punta de la rama; compararse con él aceptaría una historia reescrita, y volver a desplegar lo mismo serviría otra
+# vez una versión que volvió atrás sola.
+DESPLEGADO=$(desplegado_en "$DIR")
+if [ -z "$DESPLEGADO" ] && [ -s "$STATE/last-deploy" ] && [ -f .git/shallow ]; then
+  # Fuera de los 90 días bajados (un clon nuevo tras mucho tiempo sin desplegar): se baja la historia entera una vez antes de decidir.
+  timeout -k 10 "$CLON_TOPE" "${GIT[@]}" fetch -q --unshallow origin "+refs/heads/$BR:refs/remotes/origin/$BR" "+refs/heads/pruebas:refs/remotes/origin/pruebas" >>"$LOG" 2>&1
+  DESPLEGADO=$(desplegado_en "$DIR")
+fi
 REINTENTAR=0
 if [ "$(cat "$STATE/last-result" 2>/dev/null)" = FALLO ] && [ -z "$(find "$STATE/last-result" -mmin -15 2>/dev/null)" ]; then REINTENTAR=1; fi
-if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-deploy" ] || [ "$(cat "$STATE/last-deploy")" != "$(git rev-parse --short "$REMOTE")" ]; then
+if [ "$REINTENTAR" = 1 ] || [ ! -f "$STATE/last-deploy" ] || [ "$DESPLEGADO" != "$REMOTE" ]; then
   RECHAZO=""
-  if [ -f "$STATE/last-deploy" ] && ! git merge-base --is-ancestor "$LOCAL" "$REMOTE" 2>/dev/null; then RECHAZO="la rama $BR no avanzó: reescribe la historia"; fi
+  if [ -f "$STATE/last-deploy" ]; then
+    if [ -z "$DESPLEGADO" ]; then RECHAZO="lo desplegado ($(cat "$STATE/last-deploy")) no está en la historia de $BR ni de pruebas: reescribe la historia"
+    elif ! git merge-base --is-ancestor "$DESPLEGADO" "$REMOTE" 2>/dev/null; then RECHAZO="la rama $BR no avanzó: reescribe la historia"; fi
+  fi
   if [ -z "$RECHAZO" ] && [ "$BR" = produccion ]; then
     git merge-base --is-ancestor "$REMOTE" origin/pruebas 2>/dev/null || RECHAZO="el commit no pasó por pruebas"
     OK_TAG=$(git tag --points-at "$REMOTE" --list 'ok-produccion/*' | head -1)
@@ -44,37 +184,51 @@ if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-dep
     export TOLATINO_OK_REF
   fi
   if [ -n "$RECHAZO" ]; then
+    se_pudo_bajar
     echo "$(date -Is) RECHAZADO $(git rev-parse --short "$REMOTE"): $RECHAZO" >>"$LOG"; estado RECHAZADO
+    echo "RECHAZADO $(git rev-parse --short "$REMOTE"): $RECHAZO (sigue lo de antes)" > "$STATE/last-motivo"
   else
-    git reset -q --hard "origin/$BR"
+    if ! ERR=$(git reset -q --hard "origin/$BR" 2>&1); then
+      # Un índice o un árbol que git no puede escribir cuenta como no poder bajar la rama (a las RECLONAR_TRAS seguidas, se vuelve a clonar).
+      if no_se_pudo_bajar "git reset --hard falló: $ERR"; then reclonar || true; fi; escribir_estado; exit 0
+    fi
+    se_pudo_bajar
     git clean -qfd
     echo "$(date -Is) actualizado a $(git rev-parse --short HEAD)" >>"$LOG"
-    install -m 0755 infra/produccion/tolatino-sync /usr/local/bin/tolatino-sync
-    echo "$(date -Is) deploy.sh inicio ($TOLATINO_ROL)" >>"$LOG"
-    bash infra/produccion/deploy.sh >>"$LOG" 2>&1; rc=$?
-    # 0 sirve · 2 volvió atrás sola: NO se reintenta (sería servir otra vez la versión mala); se espera un commit nuevo · otro: se reintenta cada 15 min.
-    case "$rc" in
-      0) echo "$(date -Is) deploy.sh OK" >>"$LOG"; estado OK ;;
-      2) echo "$(date -Is) deploy.sh VOLVIÓ ATRÁS (sigue la versión anterior; se espera un commit nuevo)" >>"$LOG"; estado VUELTA_ATRAS ;;
-      *) echo "$(date -Is) deploy.sh FALLÓ" >>"$LOG"; estado FALLO ;;
-    esac
-    git rev-parse --short HEAD > "$STATE/last-deploy"
+    # Se reinstala solo si es bash válido (uno roto no reemplaza al bueno: el que está instalado es el único camino por el que esta máquina se arregla).
+    if bash -n infra/produccion/tolatino-sync 2>>"$LOG"; then install -m 0755 infra/produccion/tolatino-sync /usr/local/bin/tolatino-sync
+    else echo "$(date -Is) tolatino-sync del commit no es bash válido: sigue el instalado" >>"$LOG"; fi
+    # Lo que deploy.sh corre o carga en el momento (lo de systemd-run va aparte y no tumba nada); el guardián produccionSeArreglaSola vigila la lista.
+    VALIDAR="infra/produccion/deploy.sh infra/$TOLATINO_ENTORNO/entorno.conf infra/comun/lib.sh infra/comun/registro.sh infra/comun/sellado.sh infra/comun/sobres-privados.sh infra/comun/recuperacion.sh infra/comun/azulverde.sh infra/comun/respaldos/pgbackrest.sh infra/pruebas/medios.sh packages/db/migrar.sh infra/comun/psql-remoto.sh infra/ensayo/estado.sh"
+    MAL=""
+    for f in $VALIDAR; do
+      [ -f "$f" ] || continue
+      bash -n "$f" 2>>"$LOG" || MAL="$MAL $f"
+    done
+    rm -f "$STATE/last-motivo"
+    if [ -n "$MAL" ]; then
+      echo "$(date -Is) NO se despliega: no es bash válido:$MAL (sigue sirviendo lo de antes)" >>"$LOG"; estado FALLO
+      echo "no es bash válido:$MAL (sigue sirviendo lo de antes)" > "$STATE/last-motivo"
+    else
+      # 26 nov · Con tope, y nunca más de lo que le queda a la vuelta (3 min para anotar y escribir /estado/ antes de que systemd la mate).
+      QUEDA=$((UNIDAD_TOPE - 180 - SECONDS)); [ "$QUEDA" -lt 60 ] && QUEDA=60
+      [ "$TOPE_DEPLOY" -gt "$QUEDA" ] && TOPE_DEPLOY=$QUEDA
+      echo "$(date -Is) deploy.sh inicio ($TOLATINO_ROL)" >>"$LOG"
+      timeout -k 60 "$TOPE_DEPLOY" bash infra/produccion/deploy.sh >>"$LOG" 2>&1; rc=$?
+      # 0 sirve · 2 volvió atrás sola: NO se reintenta (sería servir otra vez la versión mala); se espera un commit nuevo · tope: FALLO con su motivo
+      # (se reintenta a los 15 min) · otro: se reintenta cada 15 min.
+      case "$rc" in
+        0) echo "$(date -Is) deploy.sh OK" >>"$LOG"; estado OK ;;
+        2) echo "$(date -Is) deploy.sh VOLVIÓ ATRÁS (sigue la versión anterior; se espera un commit nuevo)" >>"$LOG"; estado VUELTA_ATRAS ;;
+        124|137) echo "$(date -Is) deploy.sh FALLÓ: pasó de $TOPE_DEPLOY s y se cortó" >>"$LOG"; estado FALLO
+          echo "deploy.sh pasó de $TOPE_DEPLOY s y se cortó (se reintenta a los 15 min)" > "$STATE/last-motivo" ;;
+        *) echo "$(date -Is) deploy.sh FALLÓ" >>"$LOG"; estado FALLO ;;
+      esac
+    fi
+    git rev-parse --short HEAD > "$STATE/last-deploy"; git rev-parse HEAD > "$STATE/last-deploy-sha"
   fi
+else
+  se_pudo_bajar
 fi
 
-RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
-{ echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=robots content=noindex><title>To'Latino · $TOLATINO_ENTORNO</title>"
-  echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · $TOLATINO_ENTORNO · $TOLATINO_ROL</h1>"
-  echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
-  echo "<p><a href='/estado/llave.txt'>Llave pública del sobre sellado</a> · <a href='/estado/sobres.txt'>Sobres</a> · <a href='/estado/diag.txt'>Diagnóstico</a></p>"
-  echo "<h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
-  tail -n 25 "$LOG" | sed -E 's/(password|PASSWORD|secret|SECRET|token|TOKEN)=[^ ]*/\1=***/g; s/&/\&amp;/g; s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html
-# En producción el diagnóstico (disco, contenedores, registro de la base) no queda a la vista de cualquiera: se ve en Sistema › Salud (Prometheus).
-[ "$TOLATINO_ENTORNO" = produccion ] && rm -f /var/www/estado/diag.txt
-# La base, la réplica (y el almacén del ensayo) no tienen entrada pública: su página de estado y su llave pública salen por la red privada y la app las
-# muestra en /estado/<máquina>/.
-if [ "$TOLATINO_ROL" != app ]; then
-  mkdir -p /var/lib/tolatino/sobres-servidos/estado
-  for f in index.html llave.txt sobres.txt diag.txt; do [ -f "/var/www/estado/$f" ] && cp "/var/www/estado/$f" "/var/lib/tolatino/sobres-servidos/estado/$f"; done
-  chmod -R a+rX /var/lib/tolatino/sobres-servidos/estado
-fi
+escribir_estado

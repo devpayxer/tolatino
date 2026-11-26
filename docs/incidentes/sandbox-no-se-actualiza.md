@@ -1,6 +1,6 @@
 # El sandbox no se actualiza
 
-_Manual interno de incidentes (9o; fase9-apertura.md §3.4). No es ayuda de El Compa: es para el equipo y para Claude. Cada caso: cómo se nota → qué hace el sistema solo → qué hace Claude → qué se le dice al fundador y a los vecinos. Solo el sandbox (`tolatino-pruebas-1`); producción tiene su propio `infra/produccion/tolatino-sync`._
+_Manual interno de incidentes (9o; fase9-apertura.md §3.4). No es ayuda de El Compa: es para el equipo y para Claude. Cada caso: cómo se nota → qué hace el sistema solo → qué hace Claude → qué se le dice al fundador y a los vecinos. Solo el sandbox (`tolatino-pruebas-1`); producción tiene su propio `infra/produccion/tolatino-sync`, que desde el 26 nov se arregla solo igual (candados, topes, `/estado/` en cada vuelta, volver a clonar con `pruebas` y las etiquetas sin saltarse «solo avanza»; guardián `produccionSeArreglaSola`, fase9-apertura.md §3.2)._
 
 **Severidad:** media · **caso:** `sandbox-no-se-actualiza`
 

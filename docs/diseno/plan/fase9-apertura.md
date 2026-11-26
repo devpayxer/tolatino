@@ -287,6 +287,20 @@ cuentas que crean las pruebas (LAUNCH L1239, L1265): se crean en la semilla mism
 - **La rama `produccion`** nace de `pruebas` el día de OK-1 y solo avanza por fast-forward a un commit que ya pasó por `pruebas` con su CI en verde
   (guardián **`produccionSoloAvanza`** en el CI: el commit de `produccion` siempre es ancestro de `pruebas` y tiene una corrida verde). Nadie empuja a
   `produccion` sin el OK anotado en `deploy_releases.founder_ok_ref` (la frase del fundador con su fecha, del chat).
+- **`tolatino-sync` de cada máquina se arregla solo (26 nov; `infra/produccion/tolatino-sync`, guardián **`produccionSeArreglaSola`**, prueba
+  `pruebas/infra/sync.test.sh`).** Lo mismo que el sandbox aprendió en su incidente (`docs/incidentes/sandbox-no-se-actualiza.md`: el reinicio automático
+  de las 04:30 cortó un fetch superficial, dejó `.git/shallow.lock` y desde entonces la vuelta salía sin decir nada), sin perder nada de «solo avanza»:
+  - bajo su candado borra los `*.lock` que dejó una vuelta cortada (y lo anota en el registro); cada fetch con tope (120 s), el clon con tope (300 s),
+    git sin trabajos aparte (`gc.autoDetach=false`); `deploy.sh` con tope (50 min y nunca más de lo que le queda a la vuelta antes del
+    `TimeoutStartSec=3600` de la unidad): uno colgado queda en FALLO con su motivo y se reintenta a los 15 min;
+  - `/estado/` se escribe en **cada** vuelta (sin secretos, sin `diag.txt` en producción, con la copia para la base y la réplica) y, si no puede bajar
+    la rama o hacer el `reset --hard`, lo dice: «No se puede bajar la rama produccion desde … · vueltas fallidas seguidas: N · Motivo: …»;
+  - a las 15 vueltas fallidas seguidas (~15 min con el temporizador de 60 s) vuelve a clonar en `/opt/tolatino.reclon` **con `pruebas` y las etiquetas
+    `ok-produccion/*`** y su `.git` reemplaza al roto (que queda en `/opt/tolatino.git-roto`; si el cambio falla, vuelve el de antes). El clon nuevo
+    queda en lo desplegado, no en la punta: «solo avanza» y «¿hay algo nuevo?» se miden contra `last-deploy` (`last-deploy-sha`), nunca contra el HEAD,
+    así que volver a clonar no acepta una historia reescrita ni un commit sin la etiqueta del OK, ni vuelve a desplegar una versión que volvió atrás sola;
+  - antes de correr `deploy.sh` comprueba con `bash -n` lo que carga o corre en el momento (la lista `VALIDAR`, con `infra/$TOLATINO_ENTORNO/entorno.conf`):
+    si algo no es bash válido no despliega (FALLO con el motivo en `/estado/`) y sigue lo de antes; se reinstala a sí mismo solo si es bash válido.
 - **Lo que nace en el servidor (una vez, nunca viaja):** `AUTH_SECRET`, `DATOS_SECRET`, `BARRIDO_TOKEN`, `QR_LLAVE_PRIVADA` (una por entorno, LAUNCH
   L775), `VAPID_PRIVADA`, `POSTGRES_PASSWORD`, llaves de Garage, `LLAVERO_SECRET`; el **código de arranque del primer Admin** nuevo (otra huella, L37).
 - **Datos que producción carga sola:** teselas de Pennsylvania, calles TIGER (L273), barrios (9i), catálogo (`packages/db/seeds/*`: categorías,
