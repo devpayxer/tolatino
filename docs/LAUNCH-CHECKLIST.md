@@ -3238,6 +3238,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       no se pudiera anotar), y si esa falla, el registro. (M5) din9x: «hecha» por las dos ramas con $5 devueltos antes por otro motivo ($15, nunca $20), sin
       saber lo pedido, devuelto a mano en parte por la regla y por su relectura, la cobrada: que lanza al tope y el tope que no vuelve atrás (con y sin la
       cobrada: abierta); cada caso sembrado en su estado final en una sola transacción (sembrarFinal). Guardián liberarMira (37–40); al revés con sus casos.
+      Revisado por Fable (el monto de refund_stuck es «falta», lo pedido; el candado del barrido existe). Queda: (a) en devolverAlCancelar, cuando el
+      negocio cancela y no queda nada por devolver, «hecha» dice todo lo devuelto del cobro (incluye lo devuelto antes por otro motivo): acotarlo como M1;
+      (b) din9x dura ~72 s y pruebas/reparto.json dice 59: se regenera con la próxima corrida medida (scripts/ci/repartir.mjs).
       _Hecho (26 nov):_ din9x ya no es INESTABLE: el caso de «cobrada» por relectura (sección 4) sembraba el cobro retenido y lo cambiaba después en sentencias aparte, y el barrido de pagos del servidor (cada minuto) podía aplicar la regla entre las dos; ahora la operación, el cobro y la devolución de su llave se siembran ya en su estado final en una sola transacción. 5 corridas seguidas en verde con el barrido corriendo (102 ✓ cada una). El código de la app no se tocó.
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
       barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
