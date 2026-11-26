@@ -338,6 +338,28 @@ cuentas que crean las pruebas (LAUNCH L1239, L1265): se crean en la semilla mism
 - **Migraciones que permiten volver:** toda migración es **expandir → contraer** (columnas y tablas nuevas primero; borrar o renombrar solo en un
   despliegue posterior, cuando ningún código vivo las usa). Guardián **`migracionReversible`**: un `drop`/`rename` de algo que el commit anterior todavía
   lee rompe el CI. Una migración nunca se «deshace»: se escribe otra.
+  **Regla (26 nov): cada migración es compatible con la versión ANTERIOR de la app.** El orden del despliegue, en el sandbox (`infra/pruebas/deploy.sh`)
+  y en producción (`infra/comun/azulverde.sh`): imagen → **migraciones, que terminan** → lo que sale del repo (ayuda, legal, cadenas) → recién entonces la
+  app nueva. Mientras se migra sirve la versión anterior contra la base nueva, y después de una vuelta atrás también (la vuelta atrás cambia la app,
+  no deshace la migración). Por eso: (1) **expandir** en una tanda (tabla, columna nula o con valor por omisión, función con otro nombre), el código que
+  la usa en esa misma tanda o después; (2) **contraer** (`drop table|view|function|type|sequence`, `drop column`, `rename`, cambio de tipo) solo en
+  una tanda posterior a la que dejó de leerlo, y con la marca `-- contraer: <por qué la app anterior ya no lo usa>` en la migración (guardián
+  **`migracionContraeConMotivo`**, desde la 0227: sin la marca o con un motivo vacío rompe; si las ramas desplegadas `origin/produccion` u
+  `origin/pruebas` existen y todavía leen lo que se contrae, también); (3) nada de `not null` sin valor por omisión ni `set not null` en una tabla
+  donde la versión anterior inserta (`migracionReversible`). Si una migración falla, no se recrea ni se indexa nada: sigue la versión anterior, el
+  despliegue se anota «fallo» con su motivo y se reintenta a los 15 min (guardián **`produccionMigraAntes`**; el sandbox, `despliegueSinCorte`).
+- **Tope de candados en las tablas grandes (26 nov, guardián `migracionConTope`):** toda migración desde la 0227 que toca una tabla grande (`alter
+  table`, `create index … on`, `update`, `delete from`, triggers, políticas, `lock table`, `reindex table`) empieza, después de `begin;`, con
+  `set local lock_timeout = '5s';` (de 1 ms a 10 s) y `set local statement_timeout = '1min';` (de 1 ms a 5 min). Si choca con las escrituras de la
+  app, falla en segundos **sin aplicar nada** en vez de dejar la app esperando detrás de su candado; `migrar.sh` la reintenta (3 veces, cada 20 s) y,
+  si sigue ocupada, se detiene y lo dice (`lock_timeout`, con el archivo) en el registro del despliegue y en el incidente; un `statement_timeout` no se
+  reintenta. Un índice sin `concurrently` deja las escrituras de su tabla esperando lo que tarde en construirse, como mucho su `statement_timeout`: con
+  más de ~1 min hace falta la vía fuera de transacción (`create index concurrently`), que es decisión del fundador (aflojar `migracionConTransaccion`;
+  `docs/REVISION.md`). **Las tablas grandes** (la lista del guardián manda): las que la carga de 1M (`scripts/carga`) llena con medio millón de filas
+  o más — `users`, `com_posts`, `com_comments`, `com_votes`, `follows`, `dm_threads`, `dm_messages`, `compa_conversations`, `compa_messages`,
+  `notifications`, `app_events` (y sus particiones por mes), `event_dates`, `tickets`, `geo_names`, `geo_streets`, `geo_points` —; las dos medidas con
+  2 M de filas en LAUNCH — `media`, `contact_taps` —; y los libros que crecen con cada pedido, cobro o acción — `operations`, `payments`,
+  `audit_entries`.
 - **Apps de tienda:** no se pueden volver atrás; un pico en una versión pausa el **lanzamiento por fases** por la API (8f, 9u) y la web servida vuelve
   atrás como siempre.
 - **Monitoreo propio (HERRAMIENTAS #4, #14):** **Uptime Kuma** (MIT) en la réplica vigila desde fuera de la app (`tolatino.com`, `/api/salud`, la base,

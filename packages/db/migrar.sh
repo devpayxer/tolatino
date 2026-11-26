@@ -9,6 +9,13 @@
 # 22 nov · Lo aplicado se lee UNA vez (nombre y huella de schema_migrations y de schema_seeds) y se compara aquí: antes era un psql por archivo
 # (≈ 280 idas y vueltas, ~58 s por despliegue aunque no hubiera nada nuevo). Mismo orden (el del glob), mismo «se detiene en el primero que cambió».
 # Prueba: pruebas/infra/migrar.test.sh (guardián migrarUnaLectura).
+# 26 nov · Las reglas de toda migración nueva (fase9-apertura.md §3.5 «Migraciones que permiten volver»): (1) compatible con la versión ANTERIOR de la
+# app, que sigue sirviendo mientras se migra y vuelve a servir en una vuelta atrás: expandir antes, contraer después (guardián migracionReversible; un
+# drop / rename / cambio de tipo lleva «-- contraer: <por qué la app anterior ya no lo usa>», guardián migracionContraeConMotivo); (2) si toca una tabla
+# grande, «set local lock_timeout» y «set local statement_timeout» al empezar (guardián migracionConTope). Un choque con las escrituras de la app hace
+# fallar la migración en segundos SIN aplicar nada (es una transacción) en vez de dejar la app esperando detrás: aquí se reintenta (MIGRAR_INTENTOS
+# veces, 3; cada MIGRAR_PAUSA s, 20), solo ese error y solo un archivo que empieza con «begin;». Si sigue ocupada, o pasa su statement_timeout, se
+# detiene y lo dice con su motivo (también en el archivo MIGRAR_MOTIVO, si se da: el azul/verde lo anota en el despliegue); la app vieja sigue.
 set -euo pipefail
 SOLO_SEMILLA=0; VERIFICAR=0
 if [ "${1:-}" = "--semilla-pruebas" ]; then SOLO_SEMILLA=1; shift; fi
@@ -30,11 +37,34 @@ leer() {
 }
 # aplicar ARCHIVO TABLA NOMBRE HUELLA MODO: el archivo y su anotación en la misma sesión de psql. MODO «nueva» (insert: una migración se anota una sola
 # vez; si otro la anotó antes, la llave primaria lo detiene) o «repetible» (las semillas: insert o update). Después se comprueba que quedó anotada.
+INTENTOS=${MIGRAR_INTENTOS:-3}; PAUSA=${MIGRAR_PAUSA:-20}
+# en_transaccion ARCHIVO: 0 si su primera línea con algo (sin comentarios) es «begin;»: lo que falló se deshizo entero y se puede reintentar.
+en_transaccion() { [ "$(sed -e 's/--.*$//' "$1" | tr -d ' \t\r' | grep -m1 -v '^$' | tr '[:upper:]' '[:lower:]')" = "begin;" ]; }
 aplicar() {
-  local f="$1" tabla="$2" n="$3" h="$4" modo="$5" sql
+  local f="$1" tabla="$2" n="$3" h="$4" modo="$5" sql intento=1 rc motivo err
   if [ "$modo" = nueva ]; then sql="insert into $tabla (name, sha256) values (:'tl_m_nombre', :'tl_m_huella');"
   else sql="insert into $tabla (name, sha256) values (:'tl_m_nombre', :'tl_m_huella') on conflict (name) do update set sha256 = excluded.sha256, applied_at = now();"; fi
-  { cat "$f"; printf '\n;\n%s\n' "$sql"; } | psql -v tl_m_nombre="$n" -v tl_m_huella="$h"
+  err=$(mktemp)
+  while :; do
+    rc=0
+    { cat "$f"; printf '\n;\n%s\n' "$sql"; } | psql -v tl_m_nombre="$n" -v tl_m_huella="$h" 2>"$err" || rc=$?
+    cat "$err" >&2
+    [ "$rc" = 0 ] && break
+    # 26 nov · Una tabla ocupada por la app (lock_timeout): la transacción se deshizo entera; se espera y se reintenta.
+    if grep -q 'canceling statement due to lock timeout' "$err" && en_transaccion "$f" && [ "$intento" -lt "$INTENTOS" ]; then
+      echo "[migrar] $n: una tabla estaba ocupada (lock_timeout); no se aplicó nada; intento $((intento + 1)) de $INTENTOS en $PAUSA s" >&2
+      intento=$((intento + 1)); sleep "$PAUSA"; continue
+    fi
+    if grep -q 'canceling statement due to lock timeout' "$err"; then motivo="una tabla siguió ocupada por la app en $intento intentos (lock_timeout)"
+    elif grep -q 'canceling statement due to statement timeout' "$err"; then motivo="pasó su statement_timeout (partirla por tandas o subir el tope con su motivo)"
+    else motivo="falló ($(grep -m1 'ERROR' "$err" | cut -c1-160 || true))"; fi
+    if en_transaccion "$f"; then motivo="$motivo; no se aplicó nada"; fi
+    echo "[migrar] ✗ $n: $motivo. Se detiene aquí: la app sigue con lo de antes." >&2
+    if [ -n "${MIGRAR_MOTIVO:-}" ]; then echo "$n: $motivo" > "$MIGRAR_MOTIVO" || true; fi
+    rm -f "$err"
+    exit "$rc"
+  done
+  rm -f "$err"
   if [ "$(psql -v tl_m_nombre="$n" -v tl_m_huella="$h" <<< "select count(*) from $tabla where name = :'tl_m_nombre' and sha256 = :'tl_m_huella';")" != 1 ]; then
     echo "[migrar] ✗ $n no quedó anotada (¿un begin sin su commit?): se detiene aquí" >&2
     exit 1

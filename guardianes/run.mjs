@@ -53,6 +53,19 @@ const archivos = [...new Set(execSync("git ls-files -z --cached --others --exclu
 const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
+// 26 nov · El SQL de una migración sin los cuerpos entre $…$ que NO corren al migrar (los de create function / procedure: son código que corre después),
+// dejando el de un «do» (ese sí corre). Lo usan migracionContraeConMotivo y migracionConTope.
+const sqlSinCuerpos = (t) => {
+  let out = "", i = 0, m;
+  const re = /\$([a-z_]*)\$/gi;
+  while ((m = re.exec(t))) {
+    const abre = m.index, tag = m[0], cierra = t.indexOf(tag, abre + tag.length);
+    if (cierra < 0) break;
+    out += t.slice(i, abre) + (/\bdo\s*$/i.test(t.slice(Math.max(t.lastIndexOf(";", abre), 0), abre)) ? t.slice(abre + tag.length, cierra) : " ");
+    i = cierra + tag.length; re.lastIndex = i;
+  }
+  return out + t.slice(i);
+};
 // 26 nov · cadenaConLlave (familia «elegir idioma por índice»): las tablas de pares ES/EN que aún se eligen con [es ? 0 : 1] sin pasar por E2. Un trinquete: solo baja. Ver LAUNCH.
 const PENDIENTES_IDIOMA_IDX = new Set([]);
 // 26 nov (2) · Lo que la config de «Publica tu negocio» (lib/onb/datos.ts, GENERADO) saca con E2(x[0], x[1]) ya no se lista aquí: portar-onboarding.mjs emite
@@ -11651,6 +11664,117 @@ const guardianes = {
         }
       }
     }
+  },
+
+  /* 26 nov · migracionContraeConMotivo (LAUNCH 9o «la app nueva corre unos segundos contra la base vieja»): mientras se migra y después de una vuelta
+     atrás sirve la versión ANTERIOR de la app contra la base nueva, así que cada migración es compatible con ella (expandir antes, contraer después;
+     fase9-apertura.md §3.5). migracionReversible mira quién lo lee en el commit anterior; aquí, desde la 0227 (las hechas no se editan nunca): (1) todo
+     lo que contrae —drop de tabla, vista, función, tipo o secuencia, drop column, rename de columna, tabla, vista o función, cambio de tipo— lleva la
+     marca «-- contraer: <por qué la app anterior ya no lo usa>» con su motivo; (2) si existen las ramas desplegadas (origin/produccion, origin/pruebas)
+     y la migración todavía no está en una, el código de ESA rama no puede leer lo que contrae (es la versión anterior de verdad, no HEAD~1). Al revés:
+     alrevesDespliegue. */
+  migracionContraeConMotivo() {
+    const G = "migracionContraeConMotivo", DM = "packages/db/migrations", ULTIMA = 226;
+    const refs = ["refs/remotes/origin/produccion", "refs/remotes/origin/pruebas"].filter((ref) => { try { execSync(`git rev-parse -q --verify ${ref}`, { stdio: "ignore" }); return true; } catch { return false; } });
+    const partes = (s) => { const r = []; let n = 0, a = ""; for (const ch of s) { if (ch === "(") n++; if (ch === ")") n--; if (ch === "," && n === 0) { r.push(a); a = ""; } else a += ch; } r.push(a); return r.map((x) => x.trim()); };
+    for (const x of readdirSync(DM).filter((y) => /^\d{4}_.*\.sql$/.test(y) && Number(y.slice(0, 4)) > ULTIMA).sort()) {
+      const f = `${DM}/${x}`, crudo = readFileSync(f, "utf8"), t = sqlSinCuerpos(crudo.replace(/--.*$/gm, ""));
+      const objetos = [];
+      for (const m of t.matchAll(/\bdrop\s+(table|view|materialized\s+view|function|procedure|type|sequence)\s+(?:if\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi)) objetos.push([m[2], `drop ${m[1].toLowerCase().replace(/\s+/g, " ")}`]);
+      for (const m of t.matchAll(/\balter\s+(view|materialized\s+view|function|procedure|type|sequence)\s+(?:if\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)[^;]*?\brename\s+to\b/gi)) objetos.push([m[2], `rename ${m[1].toLowerCase()}`]);
+      for (const m of t.matchAll(/\balter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+([\s\S]*?);/gi)) {
+        for (const c of partes(m[2])) {
+          const dc = /^drop\s+(?:column\s+)?(?:if\s+exists\s+)?([a-z_][a-z0-9_]*)/i.exec(c);
+          if (dc && !/^(constraint|trigger)$/i.test(dc[1])) objetos.push([dc[1], "drop column"]);
+          const rc = /^rename\s+(?:column\s+)?([a-z_][a-z0-9_]*)\s+to\b/i.exec(c);
+          if (rc && !/^(constraint|to)$/i.test(rc[1])) objetos.push([rc[1], "rename column"]);
+          if (/^rename\s+to\b/i.test(c)) objetos.push([m[1], "rename table"]);
+          const ty = /^alter\s+(?:column\s+)?([a-z_][a-z0-9_]*)\s+(?:set\s+data\s+)?type\b/i.exec(c);
+          if (ty) objetos.push([ty[1], "cambio de tipo"]);
+        }
+      }
+      if (!objetos.length) continue;
+      const que = [...new Set(objetos.map(([id, q]) => `${q} de «${id}»`))].join(", ");
+      const motivo = (/^\s*--\s*contraer:\s*(.*)$/im.exec(crudo)?.[1] ?? "").trim();
+      if (motivo.length < 20) falla(G, f, 0, `${que}: contraer lleva su marca «-- contraer: <por qué la app anterior ya no lo usa>» con el motivo (${motivo ? "el de ahora es demasiado corto" : "no la tiene"}); antes, un despliegue en el que ningún código lo lee, y nunca en la misma tanda que el código que deja de leerlo`);
+      for (const ref of refs) {
+        try { execSync(`git cat-file -e ${ref}:${f}`, { stdio: "ignore" }); continue; } catch { /* todavía no está desplegada en esa rama */ }
+        for (const [id, q] of objetos) {
+          let quien = "";
+          try { quien = execSync(`git grep -l -E "\\b${id}\\b" ${ref} -- apps services packages/db/seeds scripts`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim().split("\n")[0].replace(/^[^:]+:/, ""); } catch { /* nadie lo lee */ }
+          if (quien) falla(G, f, 0, `${q} de «${id}»: la versión desplegada en ${ref.replace("refs/remotes/", "")} todavía lo lee (${quien}); mientras se migra y en una vuelta atrás esa versión corre contra la base nueva: primero un despliegue sin lectores, después se contrae`);
+        }
+      }
+    }
+  },
+
+  /* 26 nov · migracionConTope (LAUNCH 9o «Índices sobre tablas grandes en producción»): sin aflojar migracionConTransaccion (eso es del fundador), toda
+     migración desde la 0227 que toca una tabla GRANDE —alter table, create index … on, update, delete from, create/drop/alter trigger|policy|rule … on,
+     lock table, reindex table; no cuenta el cuerpo de una función, sí el de un «do»— lleva, después de «begin;» y antes de la primera orden que la
+     toca, «set local lock_timeout» (de 1 ms a 10 s) y «set local statement_timeout» (de 1 ms a 5 min): si choca con las escrituras de la app falla en
+     segundos sin aplicar nada (migrar.sh lo reintenta y, si sigue ocupada, el despliegue lo dice y la app vieja sigue), y un índice nunca deja las
+     escrituras esperando más que su statement_timeout. GRANDES: las que la carga de 1M (scripts/carga) llena con medio millón de filas o más, las dos
+     medidas con 2 M en LAUNCH (media, contact_taps) y los libros que crecen con cada pedido, cobro o acción (operations, payments, audit_entries); la
+     lista también está escrita en fase9-apertura.md §3.5. Pruebas: migrar.test.sh (Postgres 16 de verdad: tabla ocupada, reintento, statement_timeout).
+     Al revés: alrevesDespliegue. */
+  migracionConTope() {
+    const G = "migracionConTope", DM = "packages/db/migrations", ULTIMA = 226, M = "packages/db/migrar.sh", P = "pruebas/infra/migrar.test.sh", F9 = "docs/diseno/plan/fase9-apertura.md";
+    const GRANDES = ["users", "com_posts", "com_comments", "com_votes", "follows", "dm_threads", "dm_messages", "compa_conversations", "compa_messages", "notifications",
+      "app_events", "event_dates", "tickets", "geo_names", "geo_streets", "geo_points", "media", "contact_taps", "operations", "payments", "audit_entries"];
+    const grande = (t) => GRANDES.includes(t) || /^app_events_\d{4}_\d{2}$/.test(t);
+    const PAT = [
+      /\balter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi,
+      /\bcreate\s+(?:unique\s+)?index\s+(?:concurrently\s+)?(?:if\s+not\s+exists\s+)?(?:[a-z_][a-z0-9_]*\s+)?on\s+(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi,
+      /\bupdate\s+(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi,
+      /\bdelete\s+from\s+(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi,
+      /\b(?:create|drop|alter)\s+(?:or\s+replace\s+)?(?:constraint\s+)?(?:trigger|policy|rule)\s+(?:if\s+exists\s+)?[a-z_][a-z0-9_]*\s+on\s+(?:public\.)?([a-z_][a-z0-9_]*)/gi,
+      /\block\s+(?:table\s+)?(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+in\b/gi,
+      /\breindex\s+table\s+(?:public\.)?([a-z_][a-z0-9_]*)/gi,
+    ];
+    const ms = (n, u) => Number(n) * ({ "": 1, ms: 1, s: 1000, min: 60000, h: 3600000, d: 86400000 }[u.toLowerCase()] ?? NaN);
+    for (const x of readdirSync(DM).filter((y) => /^\d{4}_.*\.sql$/.test(y) && Number(y.slice(0, 4)) > ULTIMA).sort()) {
+      const f = `${DM}/${x}`, t = sqlSinCuerpos(readFileSync(f, "utf8").replace(/--.*$/gm, ""));
+      let primera = null;
+      for (const re of PAT) for (const m of t.matchAll(re)) if (grande(m[1].toLowerCase()) && (!primera || m.index < primera.i)) primera = { i: m.index, tabla: m[1].toLowerCase(), orden: m[0].replace(/\s+/g, " ").slice(0, 60) };
+      if (!primera) continue;
+      const donde = `toca la tabla grande «${primera.tabla}» («${primera.orden}…»)`;
+      const lt = /\bset\s+local\s+lock_timeout\s*(?:=|\bto\b)\s*'?\s*(\d+)\s*([a-z]*)\s*'?/i.exec(t), st = /\bset\s+local\s+statement_timeout\s*(?:=|\bto\b)\s*'?\s*(\d+)\s*([a-z]*)\s*'?/i.exec(t);
+      if (!lt || !st) { falla(G, f, 0, `${donde}: lleva «set local lock_timeout = '5s'» y «set local statement_timeout = '1min'» al empezar (si choca con las escrituras de la app, falla rápido sin aplicar nada y el despliegue lo dice, en vez de dejar la app esperando detrás)${lt ? "; falta statement_timeout" : st ? "; falta lock_timeout" : ""}`); continue; }
+      const vl = ms(lt[1], lt[2]), vs = ms(st[1], st[2]);
+      if (!(vl >= 1 && vl <= 10000)) falla(G, f, 0, `${donde}: lock_timeout de ${lt[1]}${lt[2]} no es razonable (de 1 ms a 10 s; 0 lo apaga)`);
+      if (!(vs >= 1 && vs <= 300000)) falla(G, f, 0, `${donde}: statement_timeout de ${st[1]}${st[2]} no es razonable (de 1 ms a 5 min: un índice deja las escrituras esperando hasta ese tope)`);
+      const iB = t.search(/\bbegin\s*;/i);
+      if (iB < 0 || lt.index < iB || st.index < iB || lt.index > primera.i || st.index > primera.i) falla(G, f, 0, `${donde}: los dos «set local» van después de «begin;» (fuera de una transacción no valen) y antes de la primera orden que la toca`);
+    }
+    const m = readFileSync(M, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    if (!/grep -q 'canceling statement due to lock timeout' "\$err" && en_transaccion "\$f" && \[ "\$intento" -lt "\$INTENTOS" \]; then/.test(m) || !/sleep "\$PAUSA"; continue/.test(m) || !/canceling statement due to statement timeout/.test(m) || !/> "\$MIGRAR_MOTIVO"/.test(m))
+      falla(G, M, 0, "migrar.sh reintenta una migración que chocó con la app (lock_timeout; solo si es una transacción), no reintenta un statement_timeout y deja el motivo en MIGRAR_MOTIVO");
+    const p = existsSync(P) ? readFileSync(P, "utf8") : "";
+    if (!/ocupar 30;[^\n]*MIGRAR_INTENTOS=2/.test(p) || !/pasa su statement_timeout/.test(p)) falla(G, P, 0, "migrar.test.sh prueba contra Postgres 16 una tabla ocupada (falla rápido, reintenta, lo dice) y un statement_timeout");
+    const f9 = readFileSync(F9, "utf8"), sec = (/\n- \*\*Tope de candados en las tablas grandes[\s\S]*?(?=\n- \*\*|\n### )/.exec(f9) ?? [""])[0];
+    for (const g of GRANDES) if (!new RegExp(`\`${g}\``).test(sec)) falla(G, F9, 0, `la lista de tablas grandes de §3.5 («Tope de candados en las tablas grandes») no tiene \`${g}\` (la del guardián manda)`);
+  },
+
+  /* 26 nov · produccionMigraAntes (LAUNCH 9o «la app nueva corre unos segundos contra la base vieja»): en producción las migraciones TERMINAN antes de que
+     arranque el color nuevo y, si fallan, no se arranca, indexa ni recrea nada: sigue la versión anterior, con el motivo de migrar.sh (MIGRAR_MOTIVO) en
+     el registro y en el incidente. Lo que sale del repo (ayuda, legal, cadenas) se indexa UNA vez, dentro del paso de la base (av_migrar), después de
+     migrar y antes del color nuevo; antes iba después de los 10 min de vigilancia y corría aunque las migraciones hubieran fallado. El sandbox ya migra
+     antes de cambiar (despliegueSinCorte). Pruebas: azulverde.test.sh y orden-despliegue.test.sh. Al revés: alrevesDespliegue. */
+  produccionMigraAntes() {
+    const G = "produccionMigraAntes", A = "infra/comun/azulverde.sh", D = "infra/produccion/deploy.sh", AT = "pruebas/infra/azulverde.test.sh", O = "pruebas/infra/orden-despliegue.test.sh";
+    const sinC = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+    const fn = (/\ndesplegar_azulverde\(\) \{\n([\s\S]*?)\n\}/.exec(sinC(readFileSync(A, "utf8"))) ?? [])[1] ?? "";
+    const iMig = fn.search(/\n  if ! MIGRAR_MOTIVO="\$AV_ESTADO\/migrar-motivo" "\$@"; then\n[\s\S]*?registrar_despliegue [^\n]*fallo "las migraciones fallaron\$\{mm:\+ \(\$mm\)\}[^\n]*\n[^\n]*abrir_incidente [^\n]*\n    return 1\n  fi\n/);
+    const iUp = fn.search(/av_compose "\$nuevo" up -d/);
+    if (iMig < 0 || iUp < 0 || iMig > iUp || /av_compose|apuntar_nginx/.test(fn.slice(0, Math.max(iMig, 0))))
+      falla(G, A, 0, "el azul/verde migra PRIMERO y, si falla, sale (return 1) sin tocar ningún color ni nginx, con el motivo de migrar.sh (MIGRAR_MOTIVO) en el registro y en el incidente");
+    const pa = (/\npaso_app\(\) \{\n([\s\S]*?)\n\}/.exec(sinC(readFileSync(D, "utf8"))) ?? [])[1] ?? "";
+    const av = /\n  av_migrar\(\) \{\n    bash "\$REPO\/packages\/db\/migrar\.sh" bash "\$REPO\/infra\/comun\/psql-remoto\.sh" \|\| return 1\n    indexar_docs "\$REPO" "\$\{PSQL\[@\]\}"\n  \}\n/;
+    if (!av.test(pa) || (pa.match(/\bindexar_docs\b/g) ?? []).length !== 1 || (pa.match(/packages\/db\/migrar\.sh/g) ?? []).length !== 1 || !/desplegar_azulverde [^\n]* av_migrar \|\| rc=\$\?/.test(pa))
+      falla(G, D, 0, "producción: av_migrar corre migrar.sh y, solo si entró, indexa lo del repo (antes de arrancar el color nuevo); ni migrar ni indexar en ningún otro sitio de paso_app (nunca después de la vigilancia ni con las migraciones fallidas)");
+    const at = existsSync(AT) ? readFileSync(AT, "utf8") : "", o = existsSync(O) ? readFileSync(O, "utf8") : "";
+    if (!/orden: migrar y después el color nuevo/.test(at) || !/MIGRAR=ocupada/.test(at)) falla(G, AT, 0, "azulverde.test.sh comprueba que se migra antes del color nuevo y que una migración que choca (lock_timeout) deja la anterior, con su motivo");
+    if (!/correr ocupada/.test(o) || !/ni se indexa lo del repo ni se toca nginx/.test(o)) falla(G, O, 0, "orden-despliegue.test.sh comprueba que una migración que falla (también por lock_timeout) no indexa, no toca nginx ni la app, y lo dice");
   },
 
   /* 9o · selladoSoloSuServidor: en infra/<entorno>/sellado/ solo hay llaves públicas (llaves.json, recuperacion.txt), la lista de sobres (sobres.json) y

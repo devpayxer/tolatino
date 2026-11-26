@@ -207,7 +207,9 @@ paso_app() {
     systemd-run --unit tolatino-mapa --collect bash -c "bash '$REPO/infra/mapa/generar.sh' /var/lib/tolatino/mapa && ${F[*]} --profile mapa up -d mapa" || true
   fi
 
-  # El azul/verde: migraciones (por la red privada) → color nuevo → puerta de salud → nginx → 10 minutos de vigilancia → ok o vuelta atrás sola.
+  # El azul/verde: migraciones (por la red privada; terminan antes de arrancar el color nuevo) → color nuevo → puerta de salud → nginx → 10 minutos
+  # de vigilancia → ok o vuelta atrás sola (la base queda migrada: por eso cada migración es compatible con la versión anterior, migracionReversible).
+  # Lo de arriba (imagen, nginx del sitio, los fijos) no toca la base ni la app que sirve: barrido y push solo llaman a /api/interno por nginx.
   export PGPASSWORD; PGPASSWORD=$(envval POSTGRES_PASSWORD)
   export DB_HOST="$RED_BASE"
   # 9m · Direcciones de TODO EE. UU. (decisión AC: los 50 estados + DC + PR, por estado, 4 a la vez, reanudable; la carpeta en el volumen aparte) y los
@@ -222,11 +224,17 @@ paso_app() {
   PSQL=(bash "$REPO/infra/comun/psql-remoto.sh" exec -T db psql -h x -U tolatino -d tolatino -v ON_ERROR_STOP=1 -qAt)
   av_compose() { local c="$1"; shift; TOLATINO_COLOR="$c" TOLATINO_PUERTO="$(puerto_de "$c")" TOLATINO_IMAGEN="$IMG" \
     docker compose -p "tolatino-$c" --env-file "$ENV_FILE" -f "$REPO/infra/produccion/compose-app.yml" "$@"; }
-  av_migrar() { bash "$REPO/packages/db/migrar.sh" bash "$REPO/infra/comun/psql-remoto.sh"; }
+  # 26 nov · El paso de la base del azul/verde: migrar y, SOLO si las migraciones entraron, lo que sale del repo (ayuda, legal, cadenas), como en el
+  # sandbox: después de migrar y ANTES de que arranque el color nuevo (antes iba al final, después de los 10 min de vigilancia, y corría aunque las
+  # migraciones hubieran fallado: escribía lo de la versión nueva sobre una base a medio migrar). Es aditivo (artículos, versiones legales en borrador,
+  # cadenas nuevas): la versión que sirve lo tolera y una vuelta atrás no lo deshace. Si una migración falla, no se indexa ni se arranca nada (sigue la
+  # anterior, con su motivo en el registro). Nunca la semilla de pruebas. Guardián produccionMigraAntes.
+  av_migrar() {
+    bash "$REPO/packages/db/migrar.sh" bash "$REPO/infra/comun/psql-remoto.sh" || return 1
+    indexar_docs "$REPO" "${PSQL[@]}"
+  }
   local rc=0
   desplegar_azulverde "$TOLATINO_ENTORNO" "$CORTO" "$IMG" "${TOLATINO_OK_REF:-}" av_migrar || rc=$?
-  # Lo que sale del repo (ayuda, legal, cadenas), con la base ya migrada. Nunca la semilla de pruebas.
-  indexar_docs "$REPO" "${PSQL[@]}"
   # Las imágenes viejas: se guardan la que sirve y las tres anteriores (para volver a mano si hiciera falta).
   docker image ls tolatino/web --format '{{.Tag}} {{.CreatedAt}}' | sort -k2 -r | awk 'NR > 4 { print $1 }' | while read -r t; do docker image rm "tolatino/web:$t" >/dev/null 2>&1 || true; done
   temporizador respaldo-sobre "*-*-* 04:45:00" "bash $REPO/infra/comun/respaldos/respaldar.sh sobre"

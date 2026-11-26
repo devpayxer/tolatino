@@ -3,6 +3,7 @@
 # glob), cada migración una sola vez con su huella, «se detiene en la primera aplicada que cambió» sin aplicar las de después, el primer error lo
 # detiene todo, las semillas se vuelven a aplicar cuando cambian (también las de pruebas, como hace el CI con «sha256 = 'cambiada'»), --verificar no
 # cambia nada. Y lo nuevo: sin nada nuevo son unas pocas idas y vueltas (no una por archivo), y un archivo con begin sin su commit no queda anotado.
+# 26 nov · El tope de candados: una tabla ocupada falla rápido sin aplicar nada, se reintenta, y si sigue ocupada se detiene con su motivo.
 # Necesita Postgres 16 (/usr/lib/postgresql/16/bin); corre como root (la base la levanta el usuario postgres, en una carpeta aparte y otro puerto).
 # Uso (root): bash pruebas/infra/migrar.test.sh   → «N/N casos».
 set -uo pipefail
@@ -63,5 +64,26 @@ SEMILLA_DIR="$T/semilla" M --semilla-pruebas; ok "semilla de pruebas: se aplica 
 SEMILLA_DIR="$T/semilla" M --semilla-pruebas; ok "… sin cambios, no se vuelve a aplicar (3 idas y vueltas)" "$?:$(grep -c 'semilla de pruebas pruebas/' "$T/salida"):$(llamadas)" "0:0:3"
 Q "update schema_seeds set sha256 = 'cambiada' where name like 'pruebas/%'" >/dev/null
 SEMILLA_DIR="$T/semilla" M --semilla-pruebas; ok "… con la huella cambiada (lo que hace el CI) se vuelve a aplicar" "$?:$(grep -c 'semilla de pruebas pruebas/0001_p.sql' "$T/salida")" "0:1"
+# 26 nov · El tope de candados (guardián migracionConTope): una migración que choca con la app falla en segundos SIN aplicar nada y se reintenta; si
+# la tabla sigue ocupada, se detiene y lo dice (y deja su motivo en MIGRAR_MOTIVO); un statement_timeout no se reintenta.
+echo "una tabla ocupada por la app (lock_timeout):"
+mig 0045; M; ok "la tabla de la prueba existe" "$?:$(Q "select count(*) from pg_tables where tablename = 't0045'")" "0:1"
+printf "begin;\nset local lock_timeout = '300ms';\nset local statement_timeout = '30s';\nalter table t0045 add column y int;\ninsert into orden (n) values ('0046');\ncommit;\n" > "$T/db/migrations/0046_t.sql"; mig 0047
+ocupar() { # ocupar SEGUNDOS: otra sesión toma t0045 (como la app con una escritura larga) y la suelta a los SEGUNDOS
+  psql -h /tmp -p "$P" -U tolatino -d tolatino -qc "begin; lock table t0045 in access exclusive mode; select pg_sleep($1); commit;" >/dev/null 2>&1 &
+  OCUPA=$!
+  for _ in $(seq 1 100); do [ "$(Q "select count(*) from pg_locks l join pg_class c on c.oid = l.relation where c.relname = 't0045' and l.mode = 'AccessExclusiveLock' and l.granted")" = 1 ] && return 0; sleep 0.1; done
+  echo "  (no se pudo tomar t0045)"; return 1
+}
+soltar() { Q "select count(pg_terminate_backend(pid)) from pg_stat_activity where query like '%lock table t0045%' and pid <> pg_backend_pid()" >/dev/null; wait "$OCUPA" 2>/dev/null; true; }
+ocupar 30; t0=$SECONDS; MIGRAR_INTENTOS=2 MIGRAR_PAUSA=1 MIGRAR_MOTIVO="$T/motivo" M; r=$?; dur=$((SECONDS - t0)); soltar
+ok "sigue ocupada (30 s): falla en segundos (no espera a la app), 2 intentos, y lo dice" "$r:$([ "$dur" -lt 10 ] && echo rapido || echo "${dur} s"):$(grep -c 'intento 2 de 2 en 1 s' "$T/salida"):$(grep -c 'siguió ocupada por la app en 2 intentos (lock_timeout); no se aplicó nada' "$T/salida")" "3:rapido:1:1"
+ok "… sin aplicar nada (ni la columna ni su renglón), sin anotarla y sin seguir con la de después" \
+  "$(Q "select count(*) from information_schema.columns where table_name = 't0045' and column_name = 'y'"):$(Q "select count(*) from orden where n = '0046'"):$(Q "select count(*) from schema_migrations where name in ('0046_t.sql', '0047_t.sql')")" "0:0:0"
+ok "… y deja su motivo para el registro del despliegue" "$(grep -c '^0046_t.sql: .*lock_timeout' "$T/motivo")" 1
+ocupar 1.5; MIGRAR_INTENTOS=3 MIGRAR_PAUSA=2 M; r=$?; soltar
+ok "ocupada un momento: el reintento entra (y la de después también)" "$r:$(grep -c 'intento 2 de 3 en 2 s' "$T/salida"):$(Q "select count(*) from schema_migrations where name in ('0046_t.sql', '0047_t.sql')"):$(Q "select count(*) from orden where n = '0046'")" "0:1:2:1"
+printf "begin;\nset local lock_timeout = '1s';\nset local statement_timeout = '200ms';\nselect pg_sleep(1);\ncommit;\n" > "$T/db/migrations/0048_t.sql"
+MIGRAR_INTENTOS=3 MIGRAR_PAUSA=1 M; ok "pasa su statement_timeout: falla, lo dice y NO se reintenta" "$?:$(grep -c 'pasó su statement_timeout' "$T/salida"):$(grep -c 'intento 2' "$T/salida"):$(Q "select count(*) from schema_migrations where name = '0048_t.sql'")" "3:1:0:0"
 echo "$bien/$total casos"
 [ "$bien" = "$total" ]

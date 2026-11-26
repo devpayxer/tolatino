@@ -3,6 +3,7 @@
 # traza-sandbox.sh): construir → migrar → nginx → cambiar. Lo que importa es lo que pasa cuando algo falla a mitad, porque el servidor no tiene SSH:
 #   · un build que falla: sale con 1, UN solo intento, y el contenedor de la app NO se toca (sigue lo de antes);
 #   · una migración que falla: sale con 1 y la app NO se toca (la app vieja sigue sirviendo con la base a medio migrar, que tolera: migracionReversible);
+#     26 nov: tampoco se indexa lo del repo ni se toca nginx, y una tabla ocupada (lock_timeout) lo dice en el registro;
 #   · la base que no contesta: sale con 1 sin construir ni tocar la app;
 #   · nginx -t que no pasa: vuelve la configuración anterior y el despliegue sigue;
 #   · la misma huella y la misma imagen: no se construye; la misma huella con otra imagen (otro Id) o sin imagen: SÍ se construye;
@@ -33,6 +34,7 @@ case "$n $*" in
   "docker "*" build web"*) [ "$F" = build ] && exit 1; exit 0 ;;
   "docker "*"exec -T db psql"*)
     if [ "$F" = migracion ] && [[ "$ent" == *"insert into schema_migrations"* ]]; then echo "ERROR: de mentira" >&2; exit 3; fi
+    if [ "$F" = ocupada ] && [[ "$ent" == *"insert into schema_migrations"* ]]; then echo "ERROR:  canceling statement due to lock timeout" >&2; exit 3; fi
     if [ "$F" = semilla ] && [[ "$*" == *"tl_m_nombre=pruebas/"* ]] && [[ "$ent" == *"insert into schema_seeds"* ]]; then echo "ERROR: de mentira" >&2; exit 3; fi
     case "$ent" in *"select count(*) from"*"tl_m_huella';"*) echo 1 ;; esac; exit 0 ;;
   "docker "*"--profile mapa up -d mapa"*) [ "$F" = mapa ] && exit 1; exit 0 ;;
@@ -93,6 +95,11 @@ ok "… un solo intento de build" "$(cuenta "$BUILD")" 1
 ok "… sin migrar y sin tocar la app" "$(cuenta 'tl_m_nombre='):$(cuenta "$UP")" "0:0"
 ok "una migración que falla: el despliegue falla" "$(r=$(correr migracion); [ "$r" != 0 ] && echo falla || echo "salió $r")" falla
 ok "… sin tocar la app (sigue la vieja)" "$(cuenta "$UP")" 0
+# 26 nov · Las migraciones terminan antes de cambiar nada: si una falla, ni lo que sale del repo (ayuda, legal, cadenas), ni nginx, ni la app.
+ok "… ni se indexa lo del repo ni se toca nginx, y la línea de tramos dice dónde falló" \
+  "$(cuenta 'scripts/(ayuda|legal|cms)/indexar\.mjs'):$(cuenta '^nginx -t'):$(grep -c 'tramos (fallo en migraciones, commit' "$T/repo.salida")" "0:0:1"
+ok "una tabla grande ocupada por la app (lock_timeout): falla, la app NO se toca, y el registro dice por qué" \
+  "$(r=$(correr ocupada); [ "$r" != 0 ] && echo falla || echo "salió $r"):$(cuenta "$UP"):$(grep -c 'siguió ocupada por la app en [0-9]* intentos (lock_timeout)' "$T/repo.salida"):$(grep -c 'tramos (fallo en migraciones, commit' "$T/repo.salida")" "falla:0:1:1"
 ok "la base que no contesta: sale con 1 sin construir ni tocar la app" "$(correr base):$(cuenta "$BUILD"):$(cuenta "$UP")" "1:0:0"
 echo "entre migrar y cambiar, un paso accesorio no corta (la app nueva se cambia igual):"
 ok "la semilla de pruebas falla: la app SÍ se cambia y el despliegue queda en FALLO después, con su aviso" "$(correr semilla):$(cuenta "$UP"):$(cat "$T/repo.avisos")" "1:1:1"

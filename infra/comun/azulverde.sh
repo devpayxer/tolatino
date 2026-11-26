@@ -1,6 +1,9 @@
 #!/bin/bash
 # 9o · Despliegue azul/verde con la puerta de salud y la vuelta atrás sola (fase9-apertura.md §3.5; T#16, PLAN §3.4). En la máquina de la app:
-#   1. Migraciones primero (expandir → contraer, guardián migracionReversible: el código que sirve sigue funcionando con la base nueva).
+#   1. Migraciones primero, y TERMINAN antes de que arranque nada nuevo (26 nov, guardián produccionMigraAntes): expandir → contraer (migracionReversible
+#      y migracionContraeConMotivo: el código que sirve sigue funcionando con la base nueva, también después de una vuelta atrás, que NO deshace la
+#      migración); con su tope de candados en las tablas grandes (migracionConTope). Si una falla, no se arranca ni se recrea nada: sigue la versión
+#      anterior, el despliegue se anota «fallo» con el motivo que deja migrar.sh (MIGRAR_MOTIVO) y tolatino-sync lo reintenta a los 15 min.
 #   2. La versión nueva (imagen tolatino/web:<commit>) arranca en el OTRO color (azul :3001, verde :3002) junto a la que sirve.
 #   3. Puerta de salud: /api/salud del color nuevo contesta bien 3 veces seguidas (hasta 3 minutos). Si no: se apaga el nuevo, «fallo», nada cambió.
 #   4. nginx cambia de destino (tolatino-activo.conf; nginx -t antes de recargar).
@@ -74,10 +77,13 @@ desplegar_azulverde() {
   digest=$(docker image inspect "$imagen" --format '{{.Id}}' 2>/dev/null || true)
   log "azul/verde: sirve ${activo:-nada} ($previo); el nuevo va en $nuevo (:$puerto) con $commit"
 
-  # 1) Migraciones (expandir). Si fallan, el código que sirve sigue: cada archivo es su propia transacción.
-  if ! "$@"; then
-    registrar_despliegue "$entorno" "$commit" "$previo" "$digest" "$nuevo" "$inicio" "" fallo "las migraciones fallaron: sigue la versión anterior" "" "" "$okref" >/dev/null
-    abrir_incidente "$entorno" alta migracion-mala "una migración falló al desplegar $commit" "" despliegue
+  # 1) Migraciones (expandir). Si fallan, el código que sirve sigue: cada archivo es su propia transacción. El motivo (p. ej. una tabla grande que
+  #    siguió ocupada: lock_timeout) lo deja migrar.sh en MIGRAR_MOTIVO y va al registro y al incidente.
+  rm -f "$AV_ESTADO/migrar-motivo"
+  if ! MIGRAR_MOTIVO="$AV_ESTADO/migrar-motivo" "$@"; then
+    local mm; mm=$(head -c 300 "$AV_ESTADO/migrar-motivo" 2>/dev/null || true)
+    registrar_despliegue "$entorno" "$commit" "$previo" "$digest" "$nuevo" "$inicio" "" fallo "las migraciones fallaron${mm:+ ($mm)}: sigue la versión anterior" "" "" "$okref" >/dev/null
+    abrir_incidente "$entorno" alta migracion-mala "una migración falló al desplegar $commit${mm:+: $mm}" "" despliegue
     return 1
   fi
 

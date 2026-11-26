@@ -30,6 +30,13 @@
 //   vistaPreviaRetirada (24 nov) · vuelve la carpeta del sitio de vista previa, su puerto (8081), el de su servidor (3010) o un «next dev» en la
 //   infraestructura, algo que la nombra fuera del paso de limpieza; el paso de limpieza sin el contenedor, la imagen, una ruta o «drop owned by», con un
 //   «drop»/«rm -rf» de más, con exit, sin comprobar que el usuario existe, llamado sin «|| log» o después de nginx.
+//   migracionContraeConMotivo (26 nov) · una migración nueva contrae (drop column, drop table, rename column, cambio de tipo en otra cláusula) sin la
+//   marca «-- contraer: <motivo>» o con un motivo de nada.
+//   migracionConTope (26 nov) · una migración nueva toca una tabla grande (índice, alter, update dentro de un «do») sin lock_timeout ni
+//   statement_timeout, con uno solo, con un tope apagado o pasado, o con los «set local» después de la orden; migrar.sh deja de reintentar; la prueba
+//   contra Postgres 16 pierde el caso del statement_timeout; la lista de tablas grandes del documento pierde una.
+//   produccionMigraAntes (26 nov) · el azul/verde arranca el color nuevo antes de migrar o pierde el motivo; producción vuelve a indexar después de la
+//   vigilancia o aunque las migraciones fallen; las pruebas de infra pierden el caso del orden o el de la tabla ocupada.
 // «crear» (el texto a cambiar es null): se crea el archivo, se corre el guardián y se quita.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -37,6 +44,7 @@ const R = ENT.RAIZ;
 const D = 'infra/pruebas/deploy.sh', S = 'infra/pruebas/tolatino-sync', L = 'infra/comun/lib.sh', C = 'pruebas/infra/correr.sh', M = 'packages/db/migrar.sh';
 const NUEVA = 'packages/db/migrations/0999_alreves_despliegue.sql';
 const N = 'infra/pruebas/nginx-pruebas.conf', O = 'pruebas/infra/orden-despliegue.test.sh';
+const AV = 'infra/comun/azulverde.sh', DP = 'infra/produccion/deploy.sh', AT = 'pruebas/infra/azulverde.test.sh', MT = 'pruebas/infra/migrar.test.sh', F9 = 'docs/diseno/plan/fase9-apertura.md';
 const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh', W = '.github/workflows/sandbox-rescate.yml', RD = 'infra/pruebas/rescate-disco.sh';
 const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
 const casos = [
@@ -167,6 +175,28 @@ const casos = [
   ['pruebasInfraAisladas', SP, 'aislar_exige "$T/trabajo/infra/pruebas/tolatino-sync" TOLATINO_SYNC_REPO TOLATINO_SYNC_DIR || exit 1\n', '', 'aislar_exige comprueba que lee TOLATINO_SYNC_REPO'],
   ['pruebasInfraAisladas', O, 'AISLAR_VISIBLES="$T" aislado \'', 'unshare -m --propagation private bash -c \'', 'nada de «unshare» suelto'],
   ['pruebasInfraAisladas', C, 'if [ "$AISLADO" = 1 ]; then', 'if [ "$(id -u)" = 0 ]; then', 'aislar.test.sh primero'],
+  // 26 nov · migracionContraeConMotivo: contraer sin su marca (o con un motivo de nada).
+  ['migracionContraeConMotivo', NUEVA, null, 'begin;\nalter table alreves_t drop column alreves_c;\ncommit;\n', '«-- contraer: <por qué la app anterior ya no lo usa>» con el motivo (no la tiene)'],
+  ['migracionContraeConMotivo', NUEVA, null, 'begin;\n-- contraer: ya no\ndrop table if exists alreves_vieja;\ncommit;\n', 'drop table de «alreves_vieja»: contraer lleva su marca'],
+  ['migracionContraeConMotivo', NUEVA, null, 'begin;\nalter table alreves_t rename column alreves_a to alreves_b;\ncommit;\n', 'rename column de «alreves_a»'],
+  ['migracionContraeConMotivo', NUEVA, null, 'begin;\nalter table alreves_t add column alreves_z int, alter column alreves_y type bigint;\ncommit;\n', 'cambio de tipo de «alreves_y»'],
+  // 26 nov · migracionConTope: una tabla grande sin su tope (o con el tope mal puesto); migrar.sh sin reintento; la prueba y la lista pierden lo suyo.
+  ['migracionConTope', NUEVA, null, 'begin;\ncreate index alreves_i on notifications (id);\ncommit;\n', 'toca la tabla grande «notifications»'],
+  ['migracionConTope', NUEVA, null, "begin;\nset local lock_timeout = '5s';\nalter table media add column alreves_x int;\ncommit;\n", 'falta statement_timeout'],
+  ['migracionConTope', NUEVA, null, "begin;\nset local lock_timeout = '0';\nset local statement_timeout = '1min';\nupdate operations set id = id where false;\ncommit;\n", 'lock_timeout de 0 no es razonable'],
+  ['migracionConTope', NUEVA, null, "begin;\nset local lock_timeout = '5s';\nset local statement_timeout = '30min';\ndelete from audit_entries where false;\ncommit;\n", 'statement_timeout de 30min no es razonable'],
+  ['migracionConTope', NUEVA, null, "begin;\ncreate index alreves_i on payments (id);\nset local lock_timeout = '5s';\nset local statement_timeout = '1min';\ncommit;\n", 'antes de la primera orden que la toca'],
+  ['migracionConTope', NUEVA, null, 'begin;\ndo $$ begin update users set id = id where false; end $$;\ncommit;\n', 'toca la tabla grande «users»'],
+  ['migracionConTope', M, '      intento=$((intento + 1)); sleep "$PAUSA"; continue\n', '      intento=$((intento + 1)); break\n', 'migrar.sh reintenta una migración que chocó con la app'],
+  ['migracionConTope', MT, 'ok "pasa su statement_timeout:', 'ok "otra que falla:', 'una tabla ocupada (falla rápido, reintenta, lo dice) y un statement_timeout'],
+  ['migracionConTope', F9, '`media`, `contact_taps` —', '`media` —', 'no tiene `contact_taps`'],
+  // 26 nov · produccionMigraAntes: en producción, migrar termina antes del color nuevo; lo del repo se indexa solo si las migraciones entraron.
+  ['produccionMigraAntes', AV, '  if ! MIGRAR_MOTIVO="$AV_ESTADO/migrar-motivo" "$@"; then', '  if ! "$@"; then', 'el azul/verde migra PRIMERO'],
+  ['produccionMigraAntes', AV, '  rm -f "$AV_ESTADO/migrar-motivo"\n', '  av_compose "$nuevo" up -d --remove-orphans web\n  rm -f "$AV_ESTADO/migrar-motivo"\n', 'el azul/verde migra PRIMERO'],
+  ['produccionMigraAntes', DP, '" av_migrar || rc=$?\n', '" av_migrar || rc=$?\n  indexar_docs "$REPO" "${PSQL[@]}"\n', 'producción: av_migrar corre migrar.sh y, solo si entró'],
+  ['produccionMigraAntes', DP, ' bash "$REPO/infra/comun/psql-remoto.sh" || return 1\n    indexar_docs', ' bash "$REPO/infra/comun/psql-remoto.sh"\n    indexar_docs', 'producción: av_migrar corre migrar.sh y, solo si entró'],
+  ['produccionMigraAntes', AT, 'caso "orden: migrar y después el color nuevo"', 'caso "orden"', 'azulverde.test.sh comprueba que se migra antes del color nuevo'],
+  ['produccionMigraAntes', O, '$(r=$(correr ocupada);', '$(r=$(correr migracion);', 'orden-despliegue.test.sh comprueba que una migración que falla'],
   // 23 nov · despliegueCorto: la imagen pierde una de sus cachés (o la llave estable que hace servir la de webpack), la llave queda escrita, deploy.sh
   // construye sin caché, tolatino-sync vuelve a 60 s.
   ['despliegueCorto', DF, 'RUN --mount=type=cache,id=tolatino-pnpm,target=/pnpm/store,sharing=locked \\\n    pnpm install --frozen-lockfile --store-dir /pnpm/store\n', 'RUN pnpm install --frozen-lockfile\n', 'la capa de dependencias copia solo los manifiestos'],

@@ -40,7 +40,9 @@ caso() { # caso NOMBRE ESPERADO_RC ESPERADO_ACTIVO ESPERADO_PUERTO ESPERADO_RESU
     psql_mentira() { local a="$*"; case "$a" in *cfg_int*vuelta_5xx_pct*) echo 2 ;; *cfg_int*vuelta_p95_ms*) echo 1500 ;; *cfg_int*vuelta_errores_nuevos*) echo 5 ;;
       *cfg_int*vuelta_salud_fallos*) echo 3 ;; *cfg_int*) echo 10 ;; *) cat >/dev/null; cat "$ESC/errores" 2>/dev/null || echo 0 ;; esac; }
     av_compose() { echo "compose $*" >> "$ESC/docker"; }
-    migrar() { [ "$(grep -m1 '^MIGRAR=' "$ESC/escenario" | cut -d= -f2)" != falla ]; }
+    migrar() { echo "migrar" >> "$ESC/docker"; local m; m=$(grep -m1 '^MIGRAR=' "$ESC/escenario" | cut -d= -f2)
+      [ "$m" = ocupada ] && [ -n "${MIGRAR_MOTIVO:-}" ] && echo "0999_x.sql: una tabla siguió ocupada por la app en 3 intentos (lock_timeout); no se aplicó nada" > "$MIGRAR_MOTIVO"
+      [ "$m" != falla ] && [ "$m" != ocupada ]; }
     log() { :; }
     desplegar_azulverde ensayo abc1234 tolatino/web:abc1234 "" migrar
   ) >/dev/null 2>&1 || rc=$?
@@ -93,6 +95,15 @@ caso "7 grupos de errores nuevos (umbral 5) → vuelta atrás" 2 azul 3001 vuelt
 nuevo_escenario azul MIGRAR=falla
 caso "una migración falla → fallo, nada arrancó, azul sigue" 1 azul 3001 fallo "migraciones" si
 grep -q "compose verde up" "$ESC/docker" && echo "  ✗ … y arrancó el color nuevo igual" || { bien=$((bien + 1)); echo "  ✓ … y el color nuevo ni arrancó"; }; total=$((total + 1))
+# 26 nov · Las migraciones TERMINAN antes de que arranque el color nuevo; si fallan, su motivo (migrar.sh lo deja en MIGRAR_MOTIVO) va al registro.
+nuevo_escenario azul
+caso "orden: migrar y después el color nuevo" 0 verde 3002 ok "" no
+m=$(grep -n -m1 '^migrar$' "$ESC/docker" | cut -d: -f1); u=$(grep -n -m1 '^compose verde up' "$ESC/docker" | cut -d: -f1); total=$((total + 1))
+if [ -n "$m" ] && [ -n "$u" ] && [ "$m" -lt "$u" ]; then bien=$((bien + 1)); echo "  ✓ … migrar (línea $m) antes del «up» del color nuevo (línea $u)"; else echo "  ✗ migrar ($m) no va antes del «up» del color nuevo ($u)"; fi
+nuevo_escenario azul MIGRAR=ocupada
+caso "una tabla grande siguió ocupada (lock_timeout) → fallo con su motivo, azul sigue" 1 azul 3001 fallo "migraciones fallaron \(0999_x\.sql: .*lock_timeout.*\): sigue la versión anterior" si
+grep -q "compose verde" "$ESC/docker" && echo "  ✗ … y se tocó el color nuevo igual" || { bien=$((bien + 1)); echo "  ✓ … y el color nuevo ni se tocó (ni up ni stop)"; }; total=$((total + 1))
+grep -q '|alta|migracion-mala|una migración falló al desplegar abc1234: 0999_x.sql' "$ESC/incidentes" && { bien=$((bien + 1)); echo "  ✓ … y el incidente dice cuál y por qué"; } || echo "  ✗ el incidente no dice cuál ni por qué: $(cat "$ESC/incidentes" 2>/dev/null)"; total=$((total + 1))
 nuevo_escenario azul; export AV_NGINX_RECARGAR="false"
 caso "nginx no acepta el cambio → fallo, el archivo de nginx vuelve al de antes" 1 azul 3001 fallo "nginx" no
 unset AV_NGINX_RECARGAR
