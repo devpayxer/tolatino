@@ -1,11 +1,15 @@
-# 26 nov · Rescate del SANDBOX (tolatino-pruebas-1) cuando dejó de actualizarse y no se arregla solo (docs/incidentes/sandbox-no-se-actualiza.md). Todo
-# por la API del proveedor (Hetzner), sin SSH al sistema normal y SIN perder la base: (a) las acciones recientes del servidor; (b) modo rescate y
-# reinicio; (c) esperar a que el rescate conteste; (d) montar el disco, imprimir el diagnóstico y borrar SOLO los *.lock de /opt/tolatino/.git; (e) quitar
-# el rescate, arrancar normal y esperar a que /api/salud sirva el commit de «pruebas».
-# La contraseña de root del rescate es de un solo uso: se enmascara (::add-mask::) antes de nada, vive en un archivo 0600 del runner y NUNCA se imprime
-# (sshpass la lee de la variable SSHPASS, no de la línea de órdenes). Pase lo que pase, el último paso (if: always()) quita el rescate y arranca normal si
-# quedó a medias: el servidor nunca se queda en rescate. Solo el sandbox: el servidor 174559637 (se comprueba su IP y su nombre antes de tocar nada) con
-# el token del proyecto de pruebas (secreto HCLOUD_TOKEN del entorno «ensayo»). Nunca producción. Guardián: sandboxSeArreglaSolo (al revés: alrevesDespliegue).
+# 26 nov · Rescate del SANDBOX (tolatino-pruebas-1) cuando dejó de actualizarse y no se arregla solo (docs/incidentes/sandbox-no-se-actualiza.md), SIN
+# perder la base. Dos modos (input «modo»); el disco lo toca en los dos el mismo script, infra/pruebas/rescate-disco.sh (diagnóstico, borra SOLO los *.lock
+# de /opt/tolatino/.git e instala el tolatino-sync del repo si el instalado es el de antes del 26 nov; nada más).
+# · «llave» (por defecto): SIN token en GitHub. El runner genera una llave ed25519 de un solo uso (la privada nunca sale de $RUNNER_TEMP: ni al registro,
+#   ni a un artefacto, ni a git), publica SOLO la pública en la rama rescate-llave y espera hasta 25 min a que el rescate conteste con ella. La API la
+#   maneja Claude desde su sesión (el proxy pone el token del proyecto de pruebas): sube la llave, activa el rescate con ella y reinicia; el runner
+#   diagnostica, escribe «hecho» en la rama y Claude quita el rescate y arranca normal. La rama se borra siempre (if: always()).
+# · «api»: todo por el runner con el secreto HCLOUD_TOKEN del entorno «ensayo»: (a) acciones recientes; (b) rescate y reinicio; (c) esperar al rescate;
+#   (d) el script de disco; (e) quitar el rescate, arrancar normal y esperar a que /api/salud sirva «pruebas». La contraseña de root del rescate es de un
+#   solo uso: se enmascara (::add-mask::) antes de nada, vive en un archivo 0600 y NUNCA se imprime (sshpass la lee de SSHPASS). Pase lo que pase, el
+#   último paso (if: always()) quita el rescate y arranca normal si quedó a medias.
+# Solo el sandbox (174559637 · tolatino-pruebas-1 · 2.31.196.167). Nunca producción. Guardián: sandboxSeArreglaSolo (al revés: alrevesDespliegue).
 name: Rescate del sandbox
 on:
   workflow_dispatch:
@@ -14,13 +18,21 @@ on:
         description: "Escribe RESCATAR: el sandbox se reinicia en modo rescate y se corta unos minutos"
         required: true
         type: string
+      modo:
+        description: "llave = sin token en GitHub (Claude maneja la API); api = todo aquí con HCLOUD_TOKEN del entorno «ensayo»"
+        required: true
+        type: choice
+        options: [llave, api]
+        default: llave
 permissions:
   contents: read
 concurrency:
   group: sandbox-rescate
   cancel-in-progress: false
 jobs:
-  rescate:
+  # Modo «api»: todo aquí, con el token del proyecto de pruebas (entorno «ensayo»).
+  rescate-api:
+    if: inputs.modo == 'api'
     runs-on: ubuntu-latest
     environment: ensayo
     # Tope del trabajo; cada paso lleva el suyo para que el de vuelta (if: always()) siempre tenga tiempo.
@@ -132,43 +144,23 @@ jobs:
           rescate 'echo "rescate: $(hostname) · raíz: $(findmnt -n -o SOURCE /)"; ! findmnt -n -o SOURCE / | grep -q "^/dev/[sv]d"' \
             || { echo "::error::Lo que contesta no es el sistema de rescate"; exit 1; }
 
-      - name: (d) Diagnóstico y candados de git
-        timeout-minutes: 3
+      - name: (d) Diagnóstico, candados de git y tolatino-sync
+        timeout-minutes: 10
         run: |
           set -euo pipefail
           . "$RUNNER_TEMP/rescate-lib.sh"
-          rescate 'bash -s' <<'EOF'
-          set -euo pipefail
-          echo "== discos"; lsblk -o NAME,TYPE,FSTYPE,SIZE,MOUNTPOINT
-          # La raíz del servidor: la partición ext4 que tiene /opt/tolatino/.git (normalmente /dev/sda1).
-          M=/mnt/tl; mkdir -p "$M"; RAIZ=""
-          for p in $(lsblk -rnpo NAME,TYPE,FSTYPE | awk '$2 == "part" && $3 == "ext4" {print $1}'); do
-            mount -o ro "$p" "$M" 2>/dev/null || continue
-            if [ -d "$M/opt/tolatino/.git" ] && [ -f "$M/etc/os-release" ]; then RAIZ=$p; fi
-            umount "$M"; [ -n "$RAIZ" ] && break
-          done
-          [ -n "$RAIZ" ] || { echo "no encontré la partición con /opt/tolatino/.git"; exit 1; }
-          mount "$RAIZ" "$M"; echo "== raíz del servidor: $RAIZ (montada en $M)"
-          echo "== reinicios y apagados (last -x)"; last -x -F -f "$M/var/log/wtmp" reboot shutdown 2>/dev/null | head -n 10 || true
-          echo "== arranques (journal)"; journalctl -D "$M/var/log/journal" --list-boots --no-pager 2>/dev/null | tail -n 5 || true
-          echo "== unattended-upgrades (últimas 15)"; tail -n 15 "$M/var/log/unattended-upgrades/unattended-upgrades.log" 2>/dev/null || true
-          echo "== temporizador habilitado"; ls -la "$M/etc/systemd/system/timers.target.wants/tolatino-sync.timer" 2>/dev/null || echo "(tolatino-sync.timer NO está habilitado)"
-          echo "== /var/log/tolatino-sync.log (últimas 60)"; tail -n 60 "$M/var/log/tolatino-sync.log" || true
-          echo "== ls -la /opt/tolatino/.git/*.lock"; ls -la "$M"/opt/tolatino/.git/*.lock 2>/dev/null || echo "(ninguno en la raíz de .git)"
-          echo "== todos los *.lock de /opt/tolatino/.git"; find "$M/opt/tolatino/.git" -name '*.lock' -type f -printf '%TY-%Tm-%Td %TH:%TM  %s bytes  %P\n'
-          echo "== last-result · last-deploy"; cat "$M/var/lib/tolatino/last-result" "$M/var/lib/tolatino/last-deploy" 2>/dev/null || true
-          echo "== tolatino-sync instalado: $(grep -c 'candados de git' "$M/usr/local/bin/tolatino-sync" 2>/dev/null || true) mención(es) de los candados (0 = la versión de antes del 26 nov)"
-          # Lo ÚNICO que se cambia: los candados que dejó la vuelta cortada. Nada más.
-          echo "== se borran (solo los *.lock de /opt/tolatino/.git):"; find "$M/opt/tolatino/.git" -name '*.lock' -type f -print -delete
-          sync; umount "$M"; echo "== desmontado"
-          EOF
+          # El mismo script que el modo llave (infra/pruebas/rescate-disco.sh); el script y el tolatino-sync del repo van antes a /tmp del rescate (sin stdin: nada se come el script).
+          rescate 'cat > /tmp/tolatino-sync.nuevo' < infra/pruebas/tolatino-sync
+          rescate 'cat > /tmp/rescate-disco.sh' < infra/pruebas/rescate-disco.sh
+          rescate 'bash /tmp/rescate-disco.sh /tmp/tolatino-sync.nuevo < /dev/null'
 
       - name: (e) Arrancar normal y esperar a que sirva el commit de pruebas
         timeout-minutes: 13
         run: |
           set -euo pipefail
           . "$RUNNER_TEMP/rescate-lib.sh"
-          accion disable_rescue
+          # Hetzner quita la marca de rescate él solo al arrancar en él: disable_rescue solo si sigue puesta.
+          if [ "$(servidor "d['server']['rescue_enabled']")" = True ]; then accion disable_rescue; else echo "  disable_rescue: Hetzner ya la quitó al arrancar el rescate"; fi
           # El disco ya está desmontado y sincronizado y el rescate vive en memoria: el reinicio en frío es seguro y no depende de ACPI en el rescate.
           accion reset
           touch "$RUNNER_TEMP/normal"
@@ -208,3 +200,126 @@ jobs:
           elif [ -f "$RUNNER_TEMP/reiniciado" ] && [ ! -f "$RUNNER_TEMP/normal" ]; then accion reset
           else echo "nada que deshacer"; fi
           rm -f "$PWF"
+
+  # Modo «llave» (por defecto): sin HCLOUD_TOKEN ni el entorno «ensayo». El runner tiene el SSH; Claude, la API (docs/incidentes/sandbox-no-se-actualiza.md).
+  rescate-llave:
+    if: inputs.modo == 'llave'
+    runs-on: ubuntu-latest
+    # Solo este trabajo escribe en el repo: la rama rescate-llave (la pública y «hecho»), que se borra siempre al final.
+    permissions:
+      contents: write
+    timeout-minutes: 55
+    env:
+      IP: 2.31.196.167
+      RAMA: rescate-llave
+      GIT_AUTHOR_NAME: rescate del sandbox
+      GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+      GIT_COMMITTER_NAME: rescate del sandbox
+      GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+    steps:
+      - name: Confirmación
+        env: { CONFIRMAR: "${{ inputs.confirmar }}" }
+        run: |
+          set -euo pipefail
+          [ "$CONFIRMAR" = RESCATAR ] || { echo "::error::Escribe RESCATAR en «confirmar» para seguir (no se tocó nada)"; exit 1; }
+      - uses: actions/checkout@v4
+      - name: (a) Llave de un solo uso y su pública en la rama rescate-llave
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          # La privada vive SOLO en $RUNNER_TEMP/llave (0700, fuera del checkout): nunca se imprime, ni va a git, ni a un artefacto.
+          ( umask 077; mkdir -p "$RUNNER_TEMP/llave" "$RUNNER_TEMP/publica" )
+          ssh-keygen -q -t ed25519 -N '' -C "rescate-$GITHUB_RUN_ID" -f "$RUNNER_TEMP/llave/id"
+          cp "$RUNNER_TEMP/llave/id.pub" "$RUNNER_TEMP/publica/llave.pub"
+          echo "huella: $(ssh-keygen -lf "$RUNNER_TEMP/publica/llave.pub")"
+          echo "pública: $(cat "$RUNNER_TEMP/publica/llave.pub")"
+          # Un commit sin padre con SOLO llave.pub, armado a mano (hash-object + mktree + commit-tree): no toca el checkout ni su índice.
+          BL=$(git hash-object -w "$RUNNER_TEMP/publica/llave.pub")
+          T=$(printf '100644 blob %s\tllave.pub\n' "$BL" | git mktree)
+          C=$(git commit-tree "$T" -m "rescate $GITHUB_RUN_ID: llave pública de un solo uso")
+          git push -q --force origin "$C:refs/heads/$RAMA"
+          echo "$C" > "$RUNNER_TEMP/rama-commit"
+          echo "publicada en la rama $RAMA (${C:0:12}). Claude: POST /ssh_keys «rescate-$GITHUB_RUN_ID», enable_rescue con esa llave y reset."
+          cat > "$RUNNER_TEMP/rescate-lib.sh" <<'EOF'
+          # rescate ORDEN…: por SSH al sistema de rescate con la llave de esta corrida (su llave de máquina es nueva cada vez: no se guarda ni se comprueba).
+          rescate() {
+            ssh -i "$RUNNER_TEMP/llave/id" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+              -o LogLevel=ERROR -o ConnectTimeout=10 "root@$IP" "$@"
+          }
+          EOF
+
+      - name: (b) Esperar a que el rescate conteste con esta llave (hasta 25 min)
+        timeout-minutes: 27
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          t0=$SECONDS; dicho=-1
+          until rescate true 2>/dev/null; do
+            [ $((SECONDS - t0)) -lt 1500 ] || { echo "::error::A los 25 min el rescate no contesta con la llave de esta corrida. Claude: si activaste el rescate, quítalo (disable_rescue y reset) y borra la llave."; exit 1; }
+            m=$(((SECONDS - t0) / 60))
+            if [ "$m" != "$dicho" ]; then echo "esperando rescate ($m min)"; dicho=$m; fi
+            sleep 10
+          done
+          echo "el rescate contesta a los $((SECONDS - t0)) s"
+          # Que de verdad es el rescate (su raíz vive en memoria, no en el disco del servidor).
+          # shellcheck disable=SC2016  # (comillas simples a propósito: se expande allá, en el rescate)
+          rescate 'echo "rescate: $(hostname) · raíz: $(findmnt -n -o SOURCE /)"; ! findmnt -n -o SOURCE / | grep -q "^/dev/[sv]d"' \
+            || { echo "::error::Lo que contesta no es el sistema de rescate: no se toca el disco"; exit 1; }
+
+      - name: (c) Diagnóstico, candados de git y tolatino-sync
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          # El mismo script que el modo api (infra/pruebas/rescate-disco.sh); el script y el tolatino-sync del repo van antes a /tmp del rescate (sin stdin: nada se come el script).
+          rescate 'cat > /tmp/tolatino-sync.nuevo' < infra/pruebas/tolatino-sync
+          rescate 'cat > /tmp/rescate-disco.sh' < infra/pruebas/rescate-disco.sh
+          rescate 'bash /tmp/rescate-disco.sh /tmp/tolatino-sync.nuevo < /dev/null'
+
+      - name: (d) RESCATE-HECHO en la rama (Claude quita el rescate)
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          printf 'RESCATE-HECHO %s\n' "$GITHUB_RUN_ID" > "$RUNNER_TEMP/publica/hecho"
+          BL=$(git hash-object -w "$RUNNER_TEMP/publica/llave.pub")
+          BH=$(git hash-object -w "$RUNNER_TEMP/publica/hecho")
+          T=$(printf '100644 blob %s\thecho\n100644 blob %s\tllave.pub\n' "$BH" "$BL" | git mktree)
+          C=$(git commit-tree "$T" -p "$(cat "$RUNNER_TEMP/rama-commit")" -m "rescate $GITHUB_RUN_ID: RESCATE-HECHO")
+          git push -q origin "$C:refs/heads/$RAMA"
+          echo "RESCATE-HECHO en la rama $RAMA (${C:0:12}): el disco está desmontado. Claude: disable_rescue, reset y borrar la llave."
+
+      - name: (e) Esperar a que el sandbox vuelva y sirva el commit de pruebas
+        timeout-minutes: 17
+        run: |
+          set -euo pipefail
+          PRUEBAS=$(git ls-remote origin refs/heads/pruebas | cut -f1)
+          echo "la rama pruebas está en ${PRUEBAS:0:12}; se espera hasta 15 min a que /api/salud la sirva (Claude quita el rescate y reinicia)"
+          t0=$SECONDS; SERVIDO=""; ok=0
+          while [ $((SECONDS - t0)) -lt 900 ]; do
+            S=$(curl -s -m 10 "http://$IP/api/salud" | python3 -c 'import json, sys
+          try: print(json.load(sys.stdin).get("commit", ""))
+          except Exception: print("")' || true)
+            if [ -n "$S" ] && [ "$S" != "$SERVIDO" ]; then echo "  a los $((SECONDS - t0)) s /api/salud sirve el commit $S"; SERVIDO=$S; fi
+            if [ -n "$S" ] && [ "${PRUEBAS#"$S"}" != "$PRUEBAS" ]; then ok=1; break; fi
+            sleep 15
+          done
+          echo "== /estado/ (últimas líneas)"; curl -s -m 30 "http://$IP/estado/" | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | tail -n 30 || true
+          echo "== /api/salud"; curl -s -m 30 "http://$IP/api/salud" | head -c 600 || true; echo
+          if [ "$ok" = 1 ]; then echo "listo: el sandbox sirve ${SERVIDO} (pruebas)"; else
+            echo "::error::A los 15 min /api/salud sirve «${SERVIDO:-nada}», no ${PRUEBAS:0:12}. ¿Quitó Claude el rescate? Si /estado/ dice «deploy.sh inicio», se está desplegando: míralo con «Estado del sandbox» en unos minutos."
+            exit 1
+          fi
+
+      # Pase lo que pase: la llave se borra del runner y la rama rescate-llave del repo.
+      - name: Borrar la rama rescate-llave y la llave
+        if: always()
+        timeout-minutes: 2
+        env: { ESTADO: "${{ job.status }}" }
+        run: |
+          set -uo pipefail
+          rm -rf "$RUNNER_TEMP/llave"
+          git ls-remote --exit-code origin "refs/heads/$RAMA" > /dev/null 2>&1; rc=$?
+          if [ "$rc" = 2 ]; then echo "la rama $RAMA no existe (nada que borrar)"
+          elif [ "$rc" = 0 ] && git push -q origin --delete "$RAMA"; then echo "rama $RAMA borrada"
+          else echo "::error::No se pudo borrar la rama $RAMA (ls-remote: $rc): bórrala a mano"; exit 1; fi
+          [ "$ESTADO" = success ] || echo "::warning::El rescate no terminó bien: Claude, comprueba por la API que el servidor NO quedó en rescate (rescue_enabled false); si sí, disable_rescue y reset."

@@ -5,6 +5,9 @@
 //   script que deploy.sh carga, o corre deploy.sh aunque no pase; la prueba de infra que lo demuestra deja de correr. (26 nov) Un *.lock que quedó
 //   en .git ya no se borra, el fetch o deploy.sh sin tope, una salida sin escribir /estado/, sin volver a clonar o sin volver al .git de antes; el flujo
 //   de rescate imprime la contraseña, no la enmascara, corre solo o sin confirmar, con otro token u otro servidor, no vuelve a normal o borra de más.
+//   (26 nov, modo llave) la privada se imprime, va a un artefacto o a git; el trabajo usa el entorno «ensayo» o el token; empuja a otra rama o no
+//   borra la suya; el modo por defecto deja de ser «llave»; manda una orden suelta al rescate; el script de disco borra de más, instala otra cosa o
+//   sin bash -n, o no desmonta.
 //   migracionConTransaccion · una migración nueva sin begin/commit, o con «index concurrently» dentro; el encabezado de migrar.sh vuelve a decir que
 //   todas traen begin/commit.
 //   migrarUnaLectura · migrar.sh vuelve a preguntar archivo por archivo; aplica sin anotar en la misma sesión o sin comprobar que quedó anotada; la
@@ -34,7 +37,7 @@ const R = ENT.RAIZ;
 const D = 'infra/pruebas/deploy.sh', S = 'infra/pruebas/tolatino-sync', L = 'infra/comun/lib.sh', C = 'pruebas/infra/correr.sh', M = 'packages/db/migrar.sh';
 const NUEVA = 'packages/db/migrations/0999_alreves_despliegue.sql';
 const N = 'infra/pruebas/nginx-pruebas.conf', O = 'pruebas/infra/orden-despliegue.test.sh';
-const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh', W = '.github/workflows/sandbox-rescate.yml';
+const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh', W = '.github/workflows/sandbox-rescate.yml', RD = 'infra/pruebas/rescate-disco.sh';
 const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
 const casos = [
   ['sandboxSeArreglaSolo', D, 'SYNC_R=0; instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?',
@@ -66,11 +69,37 @@ const casos = [
   ['sandboxSeArreglaSolo', W, '        if: always()\n        timeout-minutes: 5\n', '        timeout-minutes: 5\n', 'es «if: always()» y desactiva el rescate'],
   ['sandboxSeArreglaSolo', W, '            accion disable_rescue\n          fi\n          if [ "$ST" = off ]', '            true\n          fi\n          if [ "$ST" = off ]', 'es «if: always()» y desactiva el rescate'],
   ['sandboxSeArreglaSolo', W, '[ "$CONFIRMAR" = RESCATAR ] || ', 'true || ', 'SOLO a mano'],
-  ['sandboxSeArreglaSolo', W, '        type: string\npermissions:', '        type: string\n  schedule:\n    - cron: "0 9 * * *"\npermissions:', 'SOLO a mano'],
+  ['sandboxSeArreglaSolo', W, '        default: llave\npermissions:', '        default: llave\n  schedule:\n    - cron: "0 9 * * *"\npermissions:', 'SOLO a mano'],
   ['sandboxSeArreglaSolo', W, 'HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}', 'HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN_PRODUCCION }}', 'toca solo el sandbox'],
   ['sandboxSeArreglaSolo', W, '[ "$N" = "$NOMBRE" ] && [ "$I" = "$IP" ] || ', 'true || ', 'toca solo el sandbox'],
-  ['sandboxSeArreglaSolo', W, 'find "$M/opt/tolatino/.git" -name \'*.lock\' -type f -print -delete', 'find "$M/opt/tolatino" -name \'*.lock\' -type f -print -delete', 'solo borra los *.lock de /opt/tolatino/.git'],
-  ['sandboxSeArreglaSolo', W, '          sync; umount "$M"; echo "== desmontado"', '          rm -rf "$M/opt/tolatino/.git/shallow"; sync; umount "$M"; echo "== desmontado"', 'solo borra los *.lock de /opt/tolatino/.git'],
+  // El script de disco (los dos modos): solo los *.lock de /opt/tolatino/.git, solo tolatino-sync (bash -n primero), siempre desmonta.
+  ['sandboxSeArreglaSolo', RD, 'find "$G" -name \'*.lock\' -type f -print -delete', 'find "$M/opt/tolatino" -name \'*.lock\' -type f -print -delete', 'solo borra los *.lock de /opt/tolatino/.git'],
+  ['sandboxSeArreglaSolo', RD, '\nDST="$M/usr/local/bin/tolatino-sync"\n', '\nDST="$M/usr/local/bin/tolatino-sync"\nrm -rf "$G/shallow"\n', 'solo borra los *.lock de /opt/tolatino/.git'],
+  ['sandboxSeArreglaSolo', RD, 'G="$M/opt/tolatino/.git"\n', 'G="$M/opt/tolatino"\n', 'solo borra los *.lock de /opt/tolatino/.git'],
+  ['sandboxSeArreglaSolo', RD, '  mv -f "$DST.rescate" "$DST"\n', '  mv -f "$DST.rescate" "$DST"\n  install -m 0755 "$M/opt/tolatino/infra/pruebas/deploy.sh" "$M/usr/local/bin/deploy"\n', 'solo instala tolatino-sync'],
+  ['sandboxSeArreglaSolo', RD, 'elif ! grep -q "$MARCA" "$NUEVO" || ! bash -n "$NUEVO"; then', 'elif ! grep -q "$MARCA" "$NUEVO"; then', 'solo instala tolatino-sync'],
+  ['sandboxSeArreglaSolo', RD, 'if out=$(timeout 300 "${GITR[@]}" fsck --connectivity-only', 'if out=$(timeout 300 "${GITR[@]}" gc --prune=now; "${GITR[@]}" fsck --connectivity-only', 'en git solo mira'],
+  ['sandboxSeArreglaSolo', RD, "  trap 'sync; [ \"$MONTADO\" = 1 ] && umount \"$M\" && echo \"== desmontado\"' EXIT\n", '', 'desmonta siempre al salir'],
+  // Los dos modos corren ESE script y nada suelto por SSH; el modo «llave» es el de por defecto y no usa secretos.
+  ['sandboxSeArreglaSolo', W, "          rescate 'bash /tmp/rescate-disco.sh /tmp/tolatino-sync.nuevo < /dev/null'\n\n      - name: (e) Arrancar", "          rescate 'find /mnt/tl/opt/tolatino -name \"*.lock\" -delete'\n\n      - name: (e) Arrancar", 'por SSH al rescate solo va lo que se ve'],
+  ['sandboxSeArreglaSolo', W, '          echo "el rescate contesta a los $((SECONDS - t0)) s"\n', '          echo "el rescate contesta a los $((SECONDS - t0)) s"\n          rescate \'rm -f /mnt/tl/opt/tolatino/.git/index\'\n', 'por SSH al rescate solo va lo que se ve'],
+  ['sandboxSeArreglaSolo', W, '        default: llave\n', '        default: api\n', 'dos modos (input «modo»: llave por defecto'],
+  ['sandboxSeArreglaSolo', W, "    if: inputs.modo == 'llave'\n    runs-on: ubuntu-latest\n", "    if: inputs.modo == 'llave'\n    runs-on: ubuntu-latest\n    environment: ensayo\n", 'el modo llave no usa HCLOUD_TOKEN ni el entorno «ensayo»'],
+  ['sandboxSeArreglaSolo', W, '      RAMA: rescate-llave\n', '      RAMA: rescate-llave\n      HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}\n', 'el modo llave no usa HCLOUD_TOKEN ni el entorno «ensayo»'],
+  ['sandboxSeArreglaSolo', W, '    permissions:\n      contents: write\n', '    permissions:\n      contents: write\n      actions: write\n', 'solo él escribe en el repo (contents: write)'],
+  // La privada nunca sale del runner.
+  ['sandboxSeArreglaSolo', W, '          echo "huella: $(ssh-keygen -lf "$RUNNER_TEMP/publica/llave.pub")"\n', '          echo "huella: $(ssh-keygen -lf "$RUNNER_TEMP/publica/llave.pub")"\n          echo "privada: $(cat "$RUNNER_TEMP/llave/id")"\n', 'la privada nunca sale del runner'],
+  ['sandboxSeArreglaSolo', W, '          cp "$RUNNER_TEMP/llave/id.pub" "$RUNNER_TEMP/publica/llave.pub"\n', '          cp "$RUNNER_TEMP/llave/id.pub" "$RUNNER_TEMP/publica/llave.pub"\n          cp "$RUNNER_TEMP/llave/id" "$RUNNER_TEMP/publica/id"\n', 'la privada nunca sale del runner'],
+  ['sandboxSeArreglaSolo', W, '          T=$(printf \'100644 blob %s\\tllave.pub\\n\' "$BL" | git mktree)\n', '          git add -f "$RUNNER_TEMP/llave/id.pub"\n          T=$(printf \'100644 blob %s\\tllave.pub\\n\' "$BL" | git mktree)\n', 'la privada nunca sale del runner'],
+  ['sandboxSeArreglaSolo', W, '          BH=$(git hash-object -w "$RUNNER_TEMP/publica/hecho")\n', '          BH=$(git hash-object -w "$RUNNER_TEMP/llave/id")\n', 'la privada nunca sale del runner'],
+  ['sandboxSeArreglaSolo', W, '      - name: (e) Esperar a que el sandbox vuelva', '      - uses: actions/upload-artifact@v4\n        with: { name: diagnostico, path: "${{ runner.temp }}" }\n      - name: (e) Esperar a que el sandbox vuelva', 'la privada nunca sale del runner'],
+  // Solo su rama, y siempre se borra.
+  ['sandboxSeArreglaSolo', W, '          git push -q origin "$C:refs/heads/$RAMA"\n', '          git push -q origin "$C:refs/heads/main"\n', 'solo se empuja a la rama rescate-llave'],
+  ['sandboxSeArreglaSolo', W, '        if: always()\n        timeout-minutes: 2\n', '        timeout-minutes: 2\n', 'el último paso (if: always()) la borra siempre'],
+  ['sandboxSeArreglaSolo', W, '          elif [ "$rc" = 0 ] && git push -q origin --delete "$RAMA"; then', '          elif [ "$rc" = 0 ] && true; then', 'el último paso (if: always()) la borra siempre'],
+  ['sandboxSeArreglaSolo', W, '          rm -rf "$RUNNER_TEMP/llave"\n          git ls-remote', '          git ls-remote', 'el último paso (if: always()) la borra siempre'],
+  ['sandboxSeArreglaSolo', W, '-lt 1500 ]', '-lt 6000 ]', 'se espera hasta 25 min al rescate'],
+  ['sandboxSeArreglaSolo', W, "          rescate 'echo \"rescate: $(hostname) · raíz: $(findmnt -n -o SOURCE /)\"; ! findmnt -n -o SOURCE / | grep -q \"^/dev/[sv]d\"' \\\n            || { echo \"::error::Lo que contesta no es el sistema de rescate: no se toca el disco\"; exit 1; }\n", '', 'se comprueba que su raíz está en memoria'],
   ['migracionConTransaccion', NUEVA, null, 'create table alreves_x (y int);\n', 'empieza con «begin;» y termina con «commit;»'],
   ['migracionConTransaccion', NUEVA, null, '-- al revés\nbegin;\ncreate table alreves_x (y int);\n', 'empieza con «begin;» y termina con «commit;»'],
   ['migracionConTransaccion', NUEVA, null, 'begin;\ncreate index concurrently alreves_i on cities (id);\ncommit;\n', '«index concurrently» no puede ir dentro de begin/commit'],

@@ -11099,28 +11099,81 @@ const guardianes = {
     const sp = existsSync("pruebas/infra/sync-pruebas.test.sh") ? readFileSync("pruebas/infra/sync-pruebas.test.sh", "utf8") : "";
     for (const [t, que] of [["ok \"queda un shallow.lock", "queda un shallow.lock"], ["ok \"el fetch falla: no despliega", "el fetch falla y /estado/ lo dice"], ["ok \"vuelta 30 (con red): se vuelve a clonar", "N vueltas fallidas → volver a clonar"], ["ok \"se corta en su tope", "un deploy.sh colgado"]])
       if (!sp.includes(t)) falla(G, "pruebas/infra/sync-pruebas.test.sh", 0, `la prueba del tolatino-sync del sandbox no tiene el caso «${que}»`);
-    // (8) El flujo de rescate (.github/workflows/sandbox-rescate.yml): solo a mano y con confirmación, solo el servidor del sandbox con el token del
-    // proyecto de pruebas, la contraseña del rescate enmascarada antes de nada y nunca impresa, solo borra los *.lock de .git y SIEMPRE vuelve a normal.
-    const W = ".github/workflows/sandbox-rescate.yml";
+    // (8) El flujo de rescate (.github/workflows/sandbox-rescate.yml): solo a mano y con confirmación, solo el servidor del sandbox, nunca producción.
+    // Dos trabajos por el input «modo» (por defecto «llave»). «api»: con el token del proyecto de pruebas (entorno ensayo), la contraseña del rescate
+    // enmascarada antes de nada y nunca impresa, y SIEMPRE vuelve a normal. «llave» (26 nov): sin HCLOUD_TOKEN ni entorno; la llave privada de un solo uso
+    // nunca sale de $RUNNER_TEMP/llave (ni se imprime, ni a un artefacto, ni a git), solo empuja a la rama rescate-llave y la borra siempre. Los dos tocan
+    // el disco SOLO con infra/pruebas/rescate-disco.sh, que solo borra los *.lock de /opt/tolatino/.git e instala solo tolatino-sync (bash -n primero).
+    const W = ".github/workflows/sandbox-rescate.yml", RD = "infra/pruebas/rescate-disco.sh";
     if (!existsSync(W)) falla(G, W, 0, "falta el flujo de rescate del sandbox (docs/incidentes/sandbox-no-se-actualiza.md)");
     else {
       const w = readFileSync(W, "utf8"), on = (/\non:\n([\s\S]*?)\n(?:permissions|concurrency|jobs):/.exec(w) ?? [])[1] ?? "";
-      if (/\n  [a-z_]+:/.test("\n" + on.replace(/^  workflow_dispatch:/m, "")) || !/^  workflow_dispatch:/m.test(on) || !/\[ "\$CONFIRMAR" = RESCATAR \] \|\|/.test(w))
+      const trab = {};
+      for (const m of w.slice(w.indexOf("\njobs:\n") + 6).matchAll(/\n  ([a-z][a-z-]*):\n([\s\S]*?)(?=\n  [a-z][a-z-]*:\n|$)/g)) trab[m[1]] = m[2];
+      const api = trab["rescate-api"] ?? "", lk = trab["rescate-llave"] ?? "";
+      const sinCom = (t) => t.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+      if (/\n  [a-z_]+:/.test("\n" + on.replace(/^  workflow_dispatch:/m, "")) || !/^  workflow_dispatch:/m.test(on) || (w.match(/\[ "\$CONFIRMAR" = RESCATAR \] \|\|/g) ?? []).length !== 2
+        || !/\[ "\$CONFIRMAR" = RESCATAR \] \|\|/.test(api) || !/\[ "\$CONFIRMAR" = RESCATAR \] \|\|/.test(lk))
         falla(G, W, 0, "el rescate corre SOLO a mano (workflow_dispatch) y con la confirmación RESCATAR");
-      if (!/\n    environment: ensayo\n/.test(w) || !/HCLOUD_TOKEN: \$\{\{ secrets\.HCLOUD_TOKEN \}\}/.test(w) || /PRODUCCION|produccion\.env|reconstruir/i.test(w.replace(/^\s*#.*$/gm, "").replace(/scripts\/produccion\/hetzner\.sh/g, ""))
-        || !/\n      SERVIDOR: "174559637"\n      NOMBRE: tolatino-pruebas-1\n      IP: 2\.31\.196\.167\n/.test(w) || !/\[ "\$N" = "\$NOMBRE" \] && \[ "\$I" = "\$IP" \] \|\|/.test(w))
+      if (Object.keys(trab).sort().join(" ") !== "rescate-api rescate-llave" || !/^    if: inputs\.modo == 'api'$/m.test(api) || !/^    if: inputs\.modo == 'llave'$/m.test(lk)
+        || !/\n      modo:\n[^\n]*\n        required: true\n        type: choice\n        options: \[llave, api\]\n        default: llave\n/.test(w))
+        falla(G, W, 0, "el rescate tiene dos modos (input «modo»: llave por defecto, o api), cada uno en su trabajo con su «if: inputs.modo == …»");
+      if (!/\n    environment: ensayo\n/.test(api) || !/HCLOUD_TOKEN: \$\{\{ secrets\.HCLOUD_TOKEN \}\}/.test(api) || /PRODUCCION|produccion\.env|reconstruir/i.test(sinCom(w).replace(/scripts\/produccion\/hetzner\.sh/g, ""))
+        || !/\n      SERVIDOR: "174559637"\n      NOMBRE: tolatino-pruebas-1\n      IP: 2\.31\.196\.167\n/.test(api) || !/\[ "\$N" = "\$NOMBRE" \] && \[ "\$I" = "\$IP" \] \|\|/.test(api)
+        || !/\n      IP: 2\.31\.196\.167\n/.test(lk) || /\n      IP: (?!2\.31\.196\.167\n)/.test(w))
         falla(G, W, 0, "el rescate toca solo el sandbox (174559637, tolatino-pruebas-1, comprobado antes de nada) con el token del proyecto de pruebas (entorno ensayo); nunca producción");
+      if (/\n    environment:/.test(lk) || /HCLOUD|secrets\./.test(sinCom(lk)) || !/\n    permissions:\n      contents: write\n    [a-z]/.test(lk) || !/\npermissions:\n  contents: read\n/.test(w) || /\n    permissions:/.test(api))
+        falla(G, W, 0, "el modo llave no usa HCLOUD_TOKEN ni el entorno «ensayo» (ningún secreto) y solo él escribe en el repo (contents: write); el resto, contents: read");
       const lw = w.split("\n"), usos = lw.map((l, i) => [l, i]).filter(([l]) => /\$\{?PW\b(?!F)/.test(l));
       const iMask = lw.findIndex((l) => /^\s*echo "::add-mask::\$PW"$/.test(l)), iGuarda = lw.findIndex((l) => /^\s*\( umask 077; printf '%s' "\$PW" > "\$PWF" \)$/.test(l));
       if (iMask < 0 || iGuarda < iMask || usos.some(([l, i]) => !(i === iMask || i === iGuarda || /^\s*\[ -n "\$PW" \] \|\| \{ echo "::error::[^"$]*"; exit 1; \}$/.test(l))))
         falla(G, W, 0, "la contraseña del rescate se enmascara (::add-mask::) antes de usarla y nunca se imprime: solo va al archivo 0600");
       if (/\bset -x\b|\bsshpass -p\b|ACTIONS_STEP_DEBUG|GITHUB_ENV|GITHUB_OUTPUT/.test(w) || lw.some((l) => /\$PWF\b/.test(l) && /\bcat\b/.test(l) && !/SSHPASS=\$\(cat "\$PWF"\) sshpass -e ssh /.test(l)) || lw.some((l) => /root_password/.test(l) && !/print\(json\.load\(sys\.stdin\)\.get\("root_password"\) or ""\)/.test(l)))
         falla(G, W, 0, "la contraseña del rescate nunca se imprime (ni set -x, ni sshpass -p, ni a GITHUB_ENV/GITHUB_OUTPUT, ni cat del archivo fuera de SSHPASS)");
-      const pasos = w.split(/\n(?=      - (?:name|uses):)/), ult = pasos[pasos.length - 1] ?? "", pd = pasos.find((p) => /^      - name: \(d\)/.test(p)) ?? "";
-      if (!/^      - name: [^\n]*\n        if: always\(\)\n/.test(ult) || !/\n\s+accion disable_rescue\n/.test(ult) || !/accion reset/.test(ult) || !/accion poweron/.test(ult) || !/\n    timeout-minutes: \d+\n/.test(w))
+      const pasosDe = (t) => t.split(/\n(?=      - (?:name|uses):)/), pa = pasosDe(api), ult = pa[pa.length - 1] ?? "";
+      if (!/^      - name: [^\n]*\n        if: always\(\)\n/.test(ult) || !/\n\s+accion disable_rescue\n/.test(ult) || !/accion reset/.test(ult) || !/accion poweron/.test(ult) || !/\n    timeout-minutes: \d+\n/.test(api))
         falla(G, W, 0, "el último paso del rescate es «if: always()» y desactiva el rescate (disable_rescue) y arranca normal: el servidor nunca se queda en rescate");
-      if (!/find "\$M\/opt\/tolatino\/\.git" -name '\*\.lock' -type f -print -delete/.test(pd) || (pd.match(/-delete\b/g) ?? []).length !== 1 || /\brm\b|\bmkfs|\bfsck|\bdd\b|> "\$M/.test(pd))
-        falla(G, W, 0, "en el disco del servidor el rescate solo borra los *.lock de /opt/tolatino/.git (nada más)");
+      // Por SSH al rescate solo va lo que se ve aquí: comprobar que es el rescate, el script de disco y desmontar al volver. Nada de órdenes sueltas.
+      const OK_SSH = [/^rescate true 2>\/dev\/null$/, /^while \[ "\$SECONDS" -lt "\$fin" \]; do rescate true 2>\/dev\/null && return 0; sleep 10; done$/, /^rescate 'echo "rescate: \$\(hostname\) · raíz: \$\(findmnt -n -o SOURCE \/\)"; ! findmnt -n -o SOURCE \/ \| grep -q "\^\/dev\/\[sv\]d"' \\$/,
+        /^rescate 'cat > \/tmp\/tolatino-sync\.nuevo' < infra\/pruebas\/tolatino-sync$/, /^rescate 'cat > \/tmp\/rescate-disco\.sh' < infra\/pruebas\/rescate-disco\.sh$/, /^rescate 'bash \/tmp\/rescate-disco\.sh \/tmp\/tolatino-sync\.nuevo < \/dev\/null'$/,
+        /^\[ -f "\$PWF" \] && \{ rescate 'sync; umount \/mnt\/tl 2>\/dev\/null; true' 2>\/dev\/null \|\| true; \}$/];
+      const llamadas = sinCom(w).split("\n").map((l) => l.trim().replace(/^until /, "").replace(/; do$/, "")).filter((l) => /(^|[\s;&|{(])rescate ('|true\b)/.test(l) && !/^rescate\(\) \{$/.test(l) && !/^(echo|#)/.test(l));
+      const disco = (t) => (t.match(/\n\s+rescate 'cat > \/tmp\/tolatino-sync\.nuevo' < infra\/pruebas\/tolatino-sync\n\s+rescate 'cat > \/tmp\/rescate-disco\.sh' < infra\/pruebas\/rescate-disco\.sh\n\s+rescate 'bash \/tmp\/rescate-disco\.sh \/tmp\/tolatino-sync\.nuevo < \/dev\/null'\n/g) ?? []).length;
+      if (llamadas.some((l) => !OK_SSH.some((r) => r.test(l))) || disco(api) !== 1 || disco(lk) !== 1 || /(?<!-)-delete\b|\bmount\b|\bmkfs|\bdd\b/.test(sinCom(w).replace(/umount \/mnt\/tl/g, "")))
+        falla(G, W, 0, `por SSH al rescate solo va lo que se ve (comprobar que es el rescate, infra/pruebas/rescate-disco.sh una vez por modo y desmontar al volver)${llamadas.filter((l) => !OK_SSH.some((r) => r.test(l))).map((l) => `: «${l.slice(0, 80)}»`).join("")}`);
+      // Modo llave: la privada vive SOLO en $RUNNER_TEMP/llave y solo la tocan cuatro líneas (crearla, la carpeta, ssh -i y borrarla).
+      const OK_PRIV = [/^\( umask 077; mkdir -p "\$RUNNER_TEMP\/llave" "\$RUNNER_TEMP\/publica" \)$/, /^ssh-keygen -q -t ed25519 -N '' -C "rescate-\$GITHUB_RUN_ID" -f "\$RUNNER_TEMP\/llave\/id"$/,
+        /^ssh -i "\$RUNNER_TEMP\/llave\/id" -o IdentitiesOnly=yes -o BatchMode=yes [^$`|;&<>]*\\$/, /^rm -rf "\$RUNNER_TEMP\/llave"$/];
+      const priv = sinCom(w).split("\n").map((l) => l.trim()).filter((l) => /llave\/id(?!\.pub")|RUNNER_TEMP\/llave(?!\/id)|runner\.temp/.test(l));
+      const pub = sinCom(w).split("\n").map((l) => l.trim()).filter((l) => /\/publica\/|hash-object/.test(l));
+      const OK_PUB = [/^\( umask 077; mkdir -p "\$RUNNER_TEMP\/llave" "\$RUNNER_TEMP\/publica" \)$/, /^cp "\$RUNNER_TEMP\/llave\/id\.pub" "\$RUNNER_TEMP\/publica\/llave\.pub"$/,
+        /^printf 'RESCATE-HECHO %s\\n' "\$GITHUB_RUN_ID" > "\$RUNNER_TEMP\/publica\/hecho"$/, /^B[LH]=\$\(git hash-object -w "\$RUNNER_TEMP\/publica\/(llave\.pub|hecho)"\)$/,
+        /^echo "(huella|pública): \$\((ssh-keygen -lf|cat) "\$RUNNER_TEMP\/publica\/llave\.pub"\)"$/];
+      if (priv.some((l) => !OK_PRIV.some((r) => r.test(l))) || pub.some((l) => !OK_PUB.some((r) => r.test(l))) || /upload-artifact|\bgit (add|commit|stash)(?![-\w])|actions\/cache|\bscp\b|\bbase64\b/.test(sinCom(w)))
+        falla(G, W, 0, `en modo llave la privada nunca sale del runner: ni se imprime, ni a un artefacto, ni a git (solo llave.pub y hecho van a la rama)${[...priv.filter((l) => !OK_PRIV.some((r) => r.test(l))), ...pub.filter((l) => !OK_PUB.some((r) => r.test(l)))].map((l) => `: «${l.slice(0, 80)}»`).join("")}`);
+      const pl = pasosDe(lk), ulk = pl[pl.length - 1] ?? "", empujes = sinCom(lk).split("\n").map((l) => l.trim()).filter((l) => /\bgit push\b/.test(l));
+      if (!/\n      RAMA: rescate-llave\n/.test(lk) || !/^      - name: [^\n]*\n        if: always\(\)\n/.test(ulk) || !/\n\s+rm -rf "\$RUNNER_TEMP\/llave"\n/.test(ulk) || !/git push -q origin --delete "\$RAMA"/.test(ulk)
+        || empujes.some((l) => !/git push -q (--force )?origin "\$C:refs\/heads\/\$RAMA"$|git push -q origin --delete "\$RAMA"; then/.test(l)) || !/\n    timeout-minutes: \d+\n/.test(lk))
+        falla(G, W, 0, "en modo llave solo se empuja a la rama rescate-llave y el último paso (if: always()) la borra siempre, junto con la llave del runner");
+      const iEsp = lk.indexOf("echo \"esperando rescate"), iRaiz = lk.indexOf("! findmnt -n -o SOURCE / | grep -q"), iDisco = lk.indexOf("rescate 'bash /tmp/rescate-disco.sh "), iHecho = lk.indexOf("publica/hecho\"\n");
+      if (iEsp < 0 || !/-lt 1500 \]/.test(lk) || !(iEsp < iRaiz && iRaiz < iDisco && iDisco < iHecho))
+        falla(G, W, 0, "en modo llave se espera hasta 25 min al rescate (diciendo «esperando rescate»), se comprueba que su raíz está en memoria, después el script de disco y al final «hecho»");
+    }
+    if (!existsSync(RD)) falla(G, RD, 0, "falta el script de disco del rescate (lo corren los dos modos de sandbox-rescate.yml)");
+    else {
+      const rd = readFileSync(RD, "utf8"), r = sinC(rd), rl = r.split("\n").map((l) => l.trim());
+      if ((r.match(/-delete\b/g) ?? []).length !== 1 || !/; find "\$G" -name '\*\.lock' -type f -print -delete\n/.test(r) || (r.match(/(^|\s)G=/gm) ?? []).length !== 1 || !/\nG="\$M\/opt\/tolatino\/\.git"\n/.test(r)
+        || /\brm\b|\bmkfs|\bdd\b|\bchmod\b|\bchown\b|\btruncate\b|\bshred\b|\bsed -i\b|\btee\b|\bcp\b|\bln\b|\brsync\b|>>? *"?\$(M|G|DST)\b/.test(r))
+        falla(G, RD, 0, "en el disco del servidor el rescate solo borra los *.lock de /opt/tolatino/.git (nada más)");
+      const escr = rl.filter((l) => /(^|[\s;&|])(install|mv)\s/.test(l));
+      const git = rl.filter((l) => /(^|[\s(;&|$])git\s|\$\{GITR\[@\]\}"/.test(l));
+      const subGit = [...r.matchAll(/"\$\{GITR\[@\]\}" ([a-z-]+)/g)].map((m) => m[1]);
+      if (escr.length !== 2 || escr[0] !== 'install -m 0755 "$NUEVO" "$DST.rescate"' || escr[1] !== 'mv -f "$DST.rescate" "$DST"' || (r.match(/(^|\s)DST=/gm) ?? []).length !== 1 || !/\nDST="\$M\/usr\/local\/bin\/tolatino-sync"\n/.test(r)
+        || !/\nelif ! grep -q "\$MARCA" "\$NUEVO" \|\| ! bash -n "\$NUEVO"; then\n[^\n]*\nelse\n  install -m 0755 "\$NUEVO" "\$DST\.rescate"\n  mv -f "\$DST\.rescate" "\$DST"\n/.test(r)
+        || subGit.some((s) => !["rev-parse", "fsck"].includes(s)) || git.some((l) => !/^(if command -v git >\/dev\/null; then|GITR=\(git -c safe\.directory='\*' -C "\$M\/opt\/tolatino"\)|echo "  \(git no está en el rescate: no se comprueba\)")$|\$\{GITR\[@\]\}"/.test(l)))
+        falla(G, RD, 0, "el rescate solo instala tolatino-sync (bash -n y que se destrabe solo, primero; 0755 a un archivo nuevo y mv) y en git solo mira (rev-parse, fsck)");
+      if (!/\n  trap 'sync; \[ "\$MONTADO" = 1 \] && umount "\$M" && echo "== desmontado"' EXIT\n/.test(r) || (r.match(/\bmount\b(?! -o ro "\$p")/g) ?? []).length !== 1 || !/\n  mount "\$RAIZ" "\$M"; MONTADO=1\n/.test(r))
+        falla(G, RD, 0, "el script de disco del rescate desmonta siempre al salir (trap … EXIT) y solo monta la raíz del servidor");
     }
   },
 
