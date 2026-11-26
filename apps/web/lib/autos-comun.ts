@@ -6,6 +6,8 @@
 import type { Bi } from "./inscripciones-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
+type EF = (es: string, en: string) => string;
+
 export type { Bi };
 export type KindAutos = "lot" | "new" | "bhph" | "work" | "moto" | "rv" | "lux" | "salv" | "mayor" | "broker" | "cash" | "placas" | "fin" | "taller" | "envio";
 export const KINDS_AUTOS: KindAutos[] = ["lot", "new", "bhph", "work", "moto", "rv", "lux", "salv", "mayor", "broker", "cash", "placas", "fin", "taller", "envio"];
@@ -42,11 +44,16 @@ export const FUEL: [Fuel, string, string][] = [["gasolina", "Gasolina", "Gas"], 
 export type Drive = "fwd" | "rwd" | "awd" | "4x4";
 export const DRIVE: [Drive, string, string][] = [["fwd", "Delantera", "FWD"], ["rwd", "Trasera", "RWD"], ["awd", "AWD", "AWD"], ["4x4", "4x4", "4x4"]];
 export type Titulo = "limpio" | "reconstruido" | "salvage";
-export const TITULO: Record<Titulo, [string, string]> = { limpio: ["Título limpio", "Clean title"], reconstruido: ["Título reconstruido", "Rebuilt title"], salvage: ["Título salvage", "Salvage title"] };
+export const TITULO = (E2: EF): Record<Titulo, string> => ({
+  limpio: E2("Título limpio", "Clean title"), reconstruido: E2("Título reconstruido", "Rebuilt title"), salvage: E2("Título salvage", "Salvage title")
+});
 export type Garantia = "como_esta" | "dealer" | "fabrica" | "certificado";
 export const GARANTIA = (es: unknown): Record<Garantia, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { como_esta: E2("Se vende como está", "Sold as is"), dealer: E2("Garantía del dealer", "Dealer warranty"), fabrica: E2("Garantía de fábrica", "Factory warranty"), certificado: E2("Certificado del fabricante", "Manufacturer certified") }; };
 export type EstadoCarro = "lot" | "pending" | "sold" | "hidden";
-export const ESTADO_CARRO: Record<EstadoCarro, [string, string]> = { lot: ["En el lote", "On the lot"], pending: ["Apartado en persona", "Held in person"], sold: ["Vendido", "Sold"], hidden: ["Oculto", "Hidden"] };
+export const ESTADO_CARRO = (E2: EF): Record<EstadoCarro, string> => ({
+  lot: E2("En el lote", "On the lot"), pending: E2("Apartado en persona", "Held in person"), sold: E2("Vendido", "Sold"),
+  hidden: E2("Oculto", "Hidden")
+});
 export const visibleCarro = (s: EstadoCarro) => s === "lot" || s === "pending";
 export const MESES_PAGO = [12, 24, 36, 48, 60, 72] as const;
 export const MESES_BHPH = [12, 18, 24, 36] as const;

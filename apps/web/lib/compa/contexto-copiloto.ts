@@ -4,6 +4,7 @@ import { caso as casoCola } from "../admin-colas";
 import { motivoAyuda, quiereAyuda } from "../ayuda-motivos";
 import { AYUDA_DE } from "../colas";
 import { db } from "../db";
+const ES = (es: string, _en: string) => es; // el contexto del copiloto va en español: los rótulos por E2 salen con su texto en español
 import { TEMAS, type Tema } from "../soporte-comun";
 import { casoEquipo, money } from "../soporte-equipo";
 import type { Lang } from "./modelo";
@@ -140,8 +141,8 @@ async function contextoAyuda(s: Staff, id: string): Promise<ContextoCopiloto | n
   const lang: Lang = u?.lang === "en" ? "en" : "es", nombre = paraModelo(String(h.quien ?? "").split(" ")[0] ?? "", 40);
   const negocio = k.negocio?.name ? paraModelo(k.negocio.name, 80) : "";
   const tipo = KIND[h.k] ?? { es: "operación", en: "transaction" }, numero = `${/^\d/.test(h.num) ? "#" : ""}${h.num}`;
-  const quePaso = h.k === "order" ? ORDEN_MOT[h.reason] ?? h.reason : motivoAyuda(h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub)[0];
-  const quiere = h.k === "order" ? ORDEN_Q[h.wants] ?? h.wants : quiereAyuda(h.wants)[0];
+  const quePaso = h.k === "order" ? ORDEN_MOT[h.reason] ?? h.reason : motivoAyuda(ES, h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub);
+  const quiere = h.k === "order" ? ORDEN_Q[h.wants] ?? h.wants : quiereAyuda(ES, h.wants);
   const cuerpo = h.body ? paraModelo(h.body) : "", resp = h.reply ? paraModelo(h.reply) : "";
   const publico = [`${tipo.es} ${numero} ${negocio} ${usd(h.total)}`, h.pago > 0 ? `devolvible a la tarjeta ${usd(h.pago)}` : "", resp, h.offer ? `el negocio propuso ${usd(h.offer)}` : ""].filter(Boolean);
   // «Resolver y devolver» existe en la ficha de una ayuda que no es un pedido de comida (lo de un pedido lo arregla el negocio en el local).

@@ -17,18 +17,24 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useE2 } from "./idioma-admin";
 
+type EF = (es: string, en: string) => string;
+
 const dolares = (centavos: number) => `$${(centavos / 100).toFixed(2)}`;
-const MOTIVO: Record<string, [string, string]> = {
-  tope: ["Tope de costo alcanzado", "Cost cap reached"], motor: ["El modelo no respondió", "The model did not answer"], filtro: ["El filtro propio la frenó", "Blocked by the hosts' filter"],
-  moderacion: ["La moderación la frenó", "Blocked by moderation"], delicado: ["Tema delicado: silencio", "Sensitive topic: silence"], bloqueo: ["Quien publicó la bloqueó o silenció", "The author blocked or muted it"],
-  limite: ["Límite del día de la voz", "The voice's daily limit"], error: ["Error", "Error"], voz_apagada: ["Voz apagada", "Voice off"],
-};
+const MOTIVO = (E2: EF): Record<string, string> => ({
+  tope: E2("Tope de costo alcanzado", "Cost cap reached"), motor: E2("El modelo no respondió", "The model did not answer"),
+  filtro: E2("El filtro propio la frenó", "Blocked by the hosts' filter"), moderacion: E2("La moderación la frenó", "Blocked by moderation"),
+  delicado: E2("Tema delicado: silencio", "Sensitive topic: silence"),
+  bloqueo: E2("Quien publicó la bloqueó o silenció", "The author blocked or muted it"),
+  limite: E2("Límite del día de la voz", "The voice's daily limit"), error: "Error", voz_apagada: E2("Voz apagada", "Voice off")
+});
 
 /* 5b · El motivo de una nota descartada. */
-const MOTIVO_NOTA: Record<string, [string, string]> = {
-  politica: ["Política partidista", "Partisan politics"], violencia: ["Suceso violento", "Violent incident"], menores: ["Menores", "Minors"], delicado: ["Tema delicado", "Sensitive topic"],
-  palabra: ["Palabra de la fuente", "Source's blocked word"], vieja: ["Ya no es reciente", "No longer recent"], enlace: ["Sin enlace del medio", "No link from the outlet"], filtro: ["El filtro de las voces la frenó", "Blocked by the hosts' filter"],
-};
+const MOTIVO_NOTA = (E2: EF): Record<string, string> => ({
+  politica: E2("Política partidista", "Partisan politics"), violencia: E2("Suceso violento", "Violent incident"), menores: E2("Menores", "Minors"),
+  delicado: E2("Tema delicado", "Sensitive topic"), palabra: E2("Palabra de la fuente", "Source's blocked word"),
+  vieja: E2("Ya no es reciente", "No longer recent"), enlace: E2("Sin enlace del medio", "No link from the outlet"),
+  filtro: E2("El filtro de las voces la frenó", "Blocked by the hosts' filter")
+});
 type Forma = { id: string | null; nombre: string; url: string; pais: string; lang: string; veto: string };
 
 export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias: FuentesAdm }; edita: boolean; arriba: Bloque[] }) {
@@ -38,7 +44,7 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
   const [forma, setForma] = useState<Forma | null>(null), fRef = useRef<Forma | null>(null);
   const [prueba, setPrueba] = useState<{ id: string; ok: boolean; t: string; p: PruebaFuente | null } | null>(null), [probando, setProbando] = useState<string | null>(null);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E2("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setForma(null); router.refresh(); };
-  const L = (x: { es: string; en: string }) => (en ? x.en : x.es);
+  const L = (x: { es: string; en: string }) => (en ? x.en : x.es), motivo = MOTIVO(E2), motivoNota = MOTIVO_NOTA(E2);
   const marca = (g: "m" | "f") => L(MARCA_ANF[g]);
   const nombreVoz = (id: string) => d.voces.find((v) => v.id === id)?.nombre ?? "—";
   const MODO: Record<string, string> = { auto: E2("Automático", "Automatic"), manual: E2("Manual", "Manual"), off: E2("Apagado", "Off") };
@@ -160,7 +166,7 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
       { k: E2("ENTRARÍAN", "WOULD COME IN"), v: String(x.entrarian) }, { k: E2("SE DESCARTARÍAN", "WOULD BE DISCARDED"), v: String(desc) },
     ] });
     const motivos = MOTIVOS_NOTA.filter((m) => x.motivos[m] > 0);
-    if (motivos.length) out.push({ type: "rows", items: motivos.map((m) => ({ key: `prueba-${m}`, icon: "ban", t: MOTIVO_NOTA[m] ? (en ? MOTIVO_NOTA[m]![1] : MOTIVO_NOTA[m]![0]) : m,
+    if (motivos.length) out.push({ type: "rows", items: motivos.map((m) => ({ key: `prueba-${m}`, icon: "ban", t: motivoNota[m] ?? m,
       s: E2("Se descartaría al leerla (no se guardó nada)", "Would be discarded when read (nothing was saved)"), tag: notasN(x.motivos[m]).toUpperCase(), tone: "neutral" })) });
     return out;
   };
@@ -216,7 +222,7 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
     { type: "group", k: E2("ÚLTIMAS NOTAS LEÍDAS", "LATEST NEWS ITEMS READ") },
     ...(N.notas.length ? [{ type: "rows" as const, items: N.notas.map((n) => ({ key: n.id, icon: n.status === "publicada" ? "check" : n.status === "descartada" ? "ban" : "news",
       t: n.titulo ?? E2("(vaciada por retención)", "(cleared by retention)"), dim: n.vaciada,
-      s: `${n.fuente} · ${n.status === "publicada" ? E2("Publicada", "Posted") : n.status === "nueva" ? E2("Nueva", "New") : `${E2("Descartada", "Discarded")}: ${MOTIVO_NOTA[n.reason ?? ""] ? (en ? MOTIVO_NOTA[n.reason!]![1] : MOTIVO_NOTA[n.reason!]![0]) : n.reason}`}${n.detail ? ` (${n.detail})` : ""}`,
+      s: `${n.fuente} · ${n.status === "publicada" ? E2("Publicada", "Posted") : n.status === "nueva" ? E2("Nueva", "New") : `${E2("Descartada", "Discarded")}: ${motivoNota[n.reason ?? ""] ? motivoNota[n.reason!] : n.reason}`}${n.detail ? ` (${n.detail})` : ""}`,
       m: fecha(n.at), tag: n.status === "publicada" ? E2("PUBLICADA", "POSTED") : n.status === "nueva" ? E2("NUEVA", "NEW") : E2("DESCARTADA", "DISCARDED"), tone: n.status === "descartada" ? "neutral" : "action",
       ...(n.post ? { chev: true, onClick: () => router.push(`/admin/contenido/hilo/${n.post}`) } : {}) })) }]
       : [{ type: "empty" as const, icon: "news", t: E2("Todavía nada", "Nothing yet"), s: E2("Lo que lean las fuentes encendidas sale aquí con su estado y el motivo si se descartó.", "What the sources that are on read shows here with its status and the reason if discarded.") }]),
@@ -225,7 +231,7 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
     { type: "group", k: E2("REGISTRO · ÚLTIMAS 50", "LOG · LAST 50") },
     ...(d.registro.length ? [{ type: "rows" as const, items: d.registro.map((x) => ({ key: x.id, icon: x.outcome === "publicada" ? "check" : "ban",
       t: `${x.voz ?? "—"} · ${x.kind === "respuesta" ? E2("Respuesta", "Reply") : L(TIPO_ANF_L[x.kind as TipoAnf] ?? { es: x.kind, en: x.kind })} · ${x.ciudad}`,
-      s: `${x.outcome === "publicada" ? E2("Publicada", "Posted") : `${E2("Descartada", "Discarded")}: ${MOTIVO[x.reason ?? "error"] ? (en ? MOTIVO[x.reason ?? "error"]![1] : MOTIVO[x.reason ?? "error"]![0]) : x.reason}`}${x.detail ? ` (${x.detail})` : ""} · ${x.motor}${x.modelo ? ` · ${x.modelo}` : ""} · ${E2("costo", "cost")} ${dolares(x.costo)} · ${x.ref}`,
+      s: `${x.outcome === "publicada" ? E2("Publicada", "Posted") : `${E2("Descartada", "Discarded")}: ${motivo[x.reason ?? "error"] ?? x.reason}`}${x.detail ? ` (${x.detail})` : ""} · ${x.motor}${x.modelo ? ` · ${x.modelo}` : ""} · ${E2("costo", "cost")} ${dolares(x.costo)} · ${x.ref}`,
       m: new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(x.at)),
       ...(x.post ? { chev: true, onClick: () => router.push(`/admin/contenido/hilo/${x.post}`) } : {}) })) }]
       : [{ type: "empty" as const, icon: "users", t: E2("Todavía nada", "Nothing yet"), s: E2("Cuando una voz publique o descarte algo, sale aquí con su costo.", "When a voice posts or discards something, it shows here with its cost.") }]),

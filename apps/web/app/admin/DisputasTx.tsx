@@ -8,13 +8,17 @@ import type { DatosDisputas, FiltroDisp } from "@/lib/admin-disputas";
 import { useAncho } from "./Colas";
 import { useE2 } from "./idioma-admin";
 
+type EF = (es: string, en: string) => string;
+
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const EST: Record<string, [string, string]> = { needs_response: ["FALTA RESPONDER", "danger"], under_review: ["EL BANCO REVISA", "action"], won: ["GANADA", "signal"], lost: ["PERDIDA", "neutral"], accepted: ["ACEPTADA", "neutral"] };
-const EST_EN: Record<string, string> = { needs_response: "NEEDS RESPONSE", under_review: "BANK REVIEWING", won: "WON", lost: "LOST", accepted: "ACCEPTED" };
+const EST = (E2: EF): Record<string, [string, string]> => ({
+  needs_response: [E2("FALTA RESPONDER", "NEEDS RESPONSE"), "danger"], under_review: [E2("EL BANCO REVISA", "BANK REVIEWING"), "action"],
+  won: [E2("GANADA", "WON"), "signal"], lost: [E2("PERDIDA", "LOST"), "neutral"], accepted: [E2("ACEPTADA", "ACCEPTED"), "neutral"]
+});
 const fecha = (iso: string, en = false) => new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
 export function DisputasTx({ d, f }: { d: DatosDisputas; f: FiltroDisp }) {
-  const router = useRouter(), desk = useAncho() >= 1024, k = d.kpi, { E2 } = useE2(), en = E2("", "x") === "x";
+  const router = useRouter(), desk = useAncho() >= 1024, k = d.kpi, { E2 } = useE2(), en = E2("", "x") === "x", est = EST(E2);
   const BASE = "/admin/transacciones/disputas";
   const ir = (q: Record<string, string>) => router.push(BASE + (Object.keys(q).length ? `?${new URLSearchParams(q)}` : ""));
   const B: Bloque[] = [
@@ -31,7 +35,7 @@ export function DisputasTx({ d, f }: { d: DatosDisputas; f: FiltroDisp }) {
       key: x.id, icon: "card", t: `${E2("Disputa", "Dispute")} · ${x.num ? (/^\d+$/.test(x.num) ? `${E2("pedido", "order")} #${x.num}` : x.num) : x.id} · ${money(x.monto)}`,
       s: en ? `${x.nombre ?? "Business"} · ${x.motivo}${x.due ? ` · bank deadline ${fecha(x.due, true)}${x.estado === "needs_response" && x.horas != null ? (x.horas > 0 ? ` (${x.horas} h left)` : " (expired)") : ""}` : ""} · ${x.enviados ? `evidence sent (${x.enviados} files)` : x.archivos ? `${x.archivos} files ready, not sent` : "evidence not assembled"}${x.sim ? " · sandbox" : ""}`
         : `${x.nombre ?? "Negocio"} · ${x.motivo}${x.due ? ` · plazo del banco ${fecha(x.due)}${x.estado === "needs_response" && x.horas != null ? (x.horas > 0 ? ` (faltan ${x.horas} h)` : " (venció)") : ""}` : ""} · ${x.enviados ? `evidencia enviada (${x.enviados} archivos)` : x.archivos ? `${x.archivos} archivos listos, sin enviar` : "evidencia sin armar"}${x.sim ? " · sandbox" : ""}`,
-      tag: (en ? EST_EN[x.estado] : EST[x.estado]?.[0]) ?? x.estado, tone: x.estado === "needs_response" && x.horas != null && x.horas <= 72 ? "danger" : EST[x.estado]?.[1] ?? "neutral", chev: !!x.caso,
+      tag: est[x.estado]?.[0] ?? x.estado, tone: x.estado === "needs_response" && x.horas != null && x.horas <= 72 ? "danger" : est[x.estado]?.[1] ?? "neutral", chev: !!x.caso,
       onClick: x.caso ? () => router.push(`/admin/colas?cola=disputa&caso=${x.caso}`) : undefined,
     })) } : { type: "empty", icon: "check", t: f === "cerradas" ? E2("Sin disputas cerradas", "No closed disputes") : E2("Sin disputas aquí", "No disputes here"), s: E2("Llegan del banco por Stripe; en el sandbox se simulan desde Transacciones.", "They come from the bank through Stripe; in the sandbox they are simulated from Transactions.") },
     ...(d.sigue ? [{ type: "acts" as const, items: [{ l: E2("Ver más", "See more"), v: "secondary", onClick: () => ir({ f, antes: d.sigue! }) }] }] : []),

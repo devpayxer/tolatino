@@ -8,36 +8,41 @@ import { fotoFondo, type PanelFila as Fila } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { AutoMod } from "@/lib/admin-confianza";
-import { conDolares, LIMITES, PARAMS, REGLAS, TIPOS_TERMINO, textoRegla, type ReglaKey } from "@/lib/moderacion-comun";
+import { conDolares, LIMITES, PARAMS, TIPOS_TERMINO, type ReglaKey } from "@/lib/moderacion-comun";
 import { limiteCambiar, reglaCambiar, reglaParams, terminoAgregar, terminoApagar, traduccionTope } from "./acciones-confianza";
 import type { ResAdm } from "./acciones-colas";
 import type { ResumenFotos } from "@/lib/fotos-resumen";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useE2 } from "./idioma-admin";
 
+type EF = (es: string, en: string) => string;
+
 /* 9f-4 · Las reglas, sus valores y las listas en inglés para el equipo (lib/moderacion-comun solo las nombra en español). */
-const REGLAS_EN: Record<ReglaKey, { t: string; s: string; fija?: string }> = {
-  phone: { t: "Phone numbers in posts and comments", s: "Blocked while typing; the neighbor recommends the business and the phone shows on its page.", fija: "Always on: the database never stores a phone, an email or a private number." },
-  pii: { t: "People’s addresses", s: "Street number and name are rejected while typing (always). With the rule on, anything pointing to where someone lives or a license plate goes to the Reports queue for a person." },
-  spam: { t: "Links and repeated sales", s: "{n} similar posts or comments in {horas} h → Reports queue. Links show as text." },
-  hate: { t: "Discriminatory language", s: "ES/EN lists (hate, scam, immigration): flags for a person, never hides on its own. Immigration gets priority." },
-  rev5: { t: "Review bursts", s: "{n} reviews without a transaction in {min} min → User reports queue." },
-  img: { t: "Photos: nudity", s: "Our own model (NudeNet, ONNX) before posting → Flagged media queue. If it doesn’t respond, the photo waits for manual review." },
-  autohide: { t: "Auto-hide by reports", s: "{reportes} reports from different people and devices in {horas} h (accounts older than {edad_h} h) → hidden for review, with notice and appeal." },
-  foto1: { t: "Public photos · layer 1: own model", s: "On upload: under {duda_pct} % nudity → published; {rechazo_pct} % or more → rejected with a notice and “Ask for a review”; in between → layer 2. Off (or not responding): everything goes to layer 2." },
-  foto2: { t: "Public photos · layer 2: second opinion (AI)", s: "The reduced photo and a fixed guideline, in the same request ({espera_s} s at most): publishes, rejects with a reason or holds it. Cap of ${tope_dolares} a month; {intentos} retries by the sweep. Off or at the cap: doubtful photos are held." },
-  foto3: { t: "Public photos · layer 3: reports", s: "{reportes} reports from different accounts (older than {edad_h} h; one device counts once) → the photo is hidden on its own, its file leaves public storage and goes to layer 2." },
-  foto4: { t: "Public photos · layer 4: trust", s: "A verified business with {fotos} visible photos and none removed in {dias} days: its doubtful photos are published without layer 2 (clear ones are still rejected). Accounts younger than {nueva_dias} days: {nueva_hora} photos an hour." },
-};
-const PARAMS_EN: Partial<Record<ReglaKey, Record<string, string>>> = {
-  spam: { n: "How many similar", horas: "Within how many hours" }, rev5: { n: "How many reviews", min: "Within how many minutes" },
-  img: { umbral: "Model threshold (0–1)" }, autohide: { reportes: "Reports", horas: "Within how many hours", edad_h: "Accounts older than (h)" },
-  foto1: { duda_pct: "Doubtful from %", rechazo_pct: "Rejected from %" }, foto2: { tope_cents: "Monthly cap (in cents: 1000 = $10)", espera_s: "Time limit (s)", intentos: "Sweep retries" },
-  foto3: { reportes: "Reports from different accounts", edad_h: "Accounts older than (h)" },
-  foto4: { fotos: "Visible business photos", dias: "No removed photos in (days)", nueva_dias: "New account: under (days)", nueva_hora: "New account: photos an hour" },
-};
-const TIPOS_EN: Record<string, string> = { odio: "Hate", estafa: "Scam", migra: "Immigration", autolesion: "Self-harm" };
-const textoReglaEn = (k: ReglaKey, p: Record<string, number>) => REGLAS_EN[k].s.replace(/\{(\w+)\}/g, (_, x) => String(conDolares(p)[x] ?? ""));
+const REGLAS_T = (E2: EF): Record<ReglaKey, { t: string; s: string; fija?: string }> => ({
+  phone: { t: E2("Teléfonos en publicaciones y comentarios", "Phone numbers in posts and comments"), s: E2("Se bloquea al escribir; el vecino recomienda el negocio y el teléfono sale en su página.", "Blocked while typing; the neighbor recommends the business and the phone shows on its page."), fija: E2("Siempre activa: la base nunca guarda un teléfono, un correo ni un número privado.", "Always on: the database never stores a phone, an email or a private number.") },
+  pii: { t: E2("Direcciones de personas", "People’s addresses"), s: E2("Número y calle se rechazan al escribir (siempre). Con la regla encendida, lo que señala dónde vive alguien o una placa va a la cola Reportes para una persona.", "Street number and name are rejected while typing (always). With the rule on, anything pointing to where someone lives or a license plate goes to the Reports queue for a person.") },
+  spam: { t: E2("Enlaces y ventas repetidas", "Links and repeated sales"), s: E2("{n} publicaciones o comentarios parecidos en {horas} h → cola Reportes. Los enlaces se muestran como texto.", "{n} similar posts or comments in {horas} h → Reports queue. Links show as text.") },
+  hate: { t: E2("Lenguaje discriminatorio", "Discriminatory language"), s: E2("Listas ES/EN (odio, estafa, inmigración): marca para una persona, nunca oculta sola. Inmigración va con prioridad.", "ES/EN lists (hate, scam, immigration): flags for a person, never hides on its own. Immigration gets priority.") },
+  rev5: { t: E2("Reseñas en ráfaga", "Review bursts"), s: E2("{n} reseñas sin transacción en {min} min → cola Reportes de usuario.", "{n} reviews without a transaction in {min} min → User reports queue.") },
+  img: { t: E2("Fotos: desnudez", "Photos: nudity"), s: E2("Modelo propio (NudeNet, ONNX) antes de publicar → cola Medios marcados. Si no responde, la foto espera revisión manual.", "Our own model (NudeNet, ONNX) before posting → Flagged media queue. If it doesn’t respond, the photo waits for manual review.") },
+  autohide: { t: E2("Auto-ocultar por reportes", "Auto-hide by reports"), s: E2("{reportes} reportes de personas y dispositivos distintos en {horas} h (cuentas de más de {edad_h} h) → oculta por revisión, con aviso y apelación.", "{reportes} reports from different people and devices in {horas} h (accounts older than {edad_h} h) → hidden for review, with notice and appeal.") },
+  foto1: { t: E2("Fotos públicas · capa 1: modelo propio", "Public photos · layer 1: own model"), s: E2("Al subir: menos de {duda_pct} % de desnudez → se publica; {rechazo_pct} % o más → se rechaza con aviso y «Pedir revisión»; entre los dos → capa 2. Apagada (o si no responde): todo pasa a la capa 2.", "On upload: under {duda_pct} % nudity → published; {rechazo_pct} % or more → rejected with a notice and “Ask for a review”; in between → layer 2. Off (or not responding): everything goes to layer 2.") },
+  foto2: { t: E2("Fotos públicas · capa 2: segunda opinión (IA)", "Public photos · layer 2: second opinion (AI)"), s: E2("La foto reducida y una pauta fija, en el mismo pedido ({espera_s} s como mucho): publica, rechaza con motivo o la retiene. Tope de ${tope_dolares} al mes; {intentos} reintentos del barrido. Apagada o al tope: las dudosas quedan retenidas.", "The reduced photo and a fixed guideline, in the same request ({espera_s} s at most): publishes, rejects with a reason or holds it. Cap of ${tope_dolares} a month; {intentos} retries by the sweep. Off or at the cap: doubtful photos are held.") },
+  foto3: { t: E2("Fotos públicas · capa 3: reportes", "Public photos · layer 3: reports"), s: E2("{reportes} reportes de cuentas distintas (de más de {edad_h} h; un mismo dispositivo cuenta una vez) → la foto se oculta sola, su archivo sale de lo público y pasa a la capa 2.", "{reportes} reports from different accounts (older than {edad_h} h; one device counts once) → the photo is hidden on its own, its file leaves public storage and goes to layer 2.") },
+  foto4: { t: E2("Fotos públicas · capa 4: confianza", "Public photos · layer 4: trust"), s: E2("Negocio verificado con {fotos} fotos visibles y ninguna quitada en {dias} días: sus dudosas se publican sin la capa 2 (las claras se rechazan igual). Cuentas de menos de {nueva_dias} días: {nueva_hora} fotos por hora.", "A verified business with {fotos} visible photos and none removed in {dias} days: its doubtful photos are published without layer 2 (clear ones are still rejected). Accounts younger than {nueva_dias} days: {nueva_hora} photos an hour.") }
+});
+const PARAMS_T = (E2: EF): Partial<Record<ReglaKey, Record<string, string>>> => ({
+  spam: { n: E2("Cuántas parecidas", "How many similar"), horas: E2("En cuántas horas", "Within how many hours") },
+  rev5: { n: E2("Cuántas reseñas", "How many reviews"), min: E2("En cuántos minutos", "Within how many minutes") },
+  img: { umbral: E2("Umbral del modelo (0–1)", "Model threshold (0–1)") },
+  autohide: { reportes: E2("Reportes", "Reports"), horas: E2("En cuántas horas", "Within how many hours"), edad_h: E2("Cuentas de más de (h)", "Accounts older than (h)") },
+  foto1: { duda_pct: E2("Desde qué % es dudosa", "Doubtful from %"), rechazo_pct: E2("Desde qué % se rechaza", "Rejected from %") },
+  foto2: { tope_cents: E2("Tope al mes (en centavos: 1000 = $10)", "Monthly cap (in cents: 1000 = $10)"), espera_s: E2("Tiempo límite (s)", "Time limit (s)"), intentos: E2("Reintentos del barrido", "Sweep retries") },
+  foto3: { reportes: E2("Reportes de cuentas distintas", "Reports from different accounts"), edad_h: E2("Cuentas de más de (h)", "Accounts older than (h)") },
+  foto4: { fotos: E2("Fotos visibles del negocio", "Visible business photos"), dias: E2("Sin fotos quitadas en (días)", "No removed photos in (days)"), nueva_dias: E2("Cuenta nueva: menos de (días)", "New account: under (days)"), nueva_hora: E2("Cuenta nueva: fotos por hora", "New account: photos an hour") }
+});
+const TIPOS_T = (E2: EF): Record<string, string> => ({ odio: E2("Odio", "Hate"), estafa: E2("Estafa", "Scam"), migra: E2("Inmigración", "Immigration"), autolesion: E2("Autolesión", "Self-harm") });
+const llena = (s: string, p: Record<string, number>) => s.replace(/\{(\w+)\}/g, (_, x) => String(conDolares(p)[x] ?? ""));
 
 const esFoto = (k: string) => k.startsWith("foto");
 export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolean; arriba: Bloque[] }) {
@@ -47,12 +52,12 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
   const valsRef = useRef(vals); valsRef.current = vals;
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E2("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); setVals(null); router.refresh(); };
   const sinPermiso = () => setToast(E2("Tu rol no edita reglas.", "Your role can’t edit rules."));
-  const tipoL = (k: string, l: string) => (en ? TIPOS_EN[k] ?? l : l);
+  const reglasT = REGLAS_T(E2), paramsT = PARAMS_T(E2), tiposT = TIPOS_T(E2), tipoL = (k: string, l: string) => tiposT[k] ?? l;
   const lim = (k: keyof typeof LIMITES) => (en ? LIMITES[k].en : LIMITES[k].es);
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
       <PanelBloques bloques={[{ type: "head", eye: E2("CONTENIDO · AUTO-MODERACIÓN", "CONTENT · AUTO-MODERATION"), t: conf.titulo, onBack: () => { setConf(null); setVals(null); }, h1: desk ? 26 : 22 }]} />
-      {vals && <PanelBloques bloques={(PARAMS[vals.k] ?? []).map(([key, label, min, max]) => ({ type: "field" as const, k: `${(en ? PARAMS_EN[vals.k]?.[key] ?? label : label).toUpperCase()} · ${min}–${max}`, val: vals.v[key] ?? "", im: "decimal", onChange: (v: string) => setVals((x) => (x ? { ...x, v: { ...x.v, [key]: v.replace(/[^\d.,]/g, "").slice(0, 6) } } : x)) }))} />}
+      {vals && <PanelBloques bloques={(PARAMS[vals.k] ?? []).map(([key, label, min, max]) => ({ type: "field" as const, k: `${(paramsT[vals.k]?.[key] ?? label).toUpperCase()} · ${min}–${max}`, val: vals.v[key] ?? "", im: "decimal", onChange: (v: string) => setVals((x) => (x ? { ...x, v: { ...x.v, [key]: v.replace(/[^\d.,]/g, "").slice(0, 6) } } : x)) }))} />}
       <ConfirmarMotivo c={{ ...conf, titulo: E2("¿Por qué?", "Why?") }} desk={desk} onBack={() => { setConf(null); setVals(null); }} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
@@ -68,9 +73,9 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
         : E2("No responde: «Ver traducción» dice «La traducción no está disponible ahora.» y todo lo demás sigue igual. El texto nunca va a un tercero.", "Not responding: “See translation” says “Translation isn’t available right now.” and everything else stays the same. The text never goes to a third party.");
   const lnom = TIPOS_TERMINO.find((x) => x[0] === lista);
   const fila = (r: AutoMod["reglas"][number]): Fila => {
-    const R = REGLAS[r.k], fija = !!R.fija, Rt = en ? REGLAS_EN[r.k].t : R.t, Rf = en ? REGLAS_EN[r.k].fija ?? R.fija : R.fija;
+    const R = reglasT[r.k], fija = !!R.fija, Rt = R.t, Rf = R.fija;
     return { key: r.k, icon: r.k === "img" || r.k.startsWith("foto") ? "image" : r.k === "autohide" ? "ban" : "bolt", t: Rt,
-      s: `${en ? textoReglaEn(r.k, r.params) : textoRegla(r.k, r.params)}${fija ? ` ${Rf}` : ""}${r.k === "img" ? ` · ${estadoImg}` : ""}${r.quien ? ` · ${E2("Último cambio", "Last change")}: ${r.quien}` : ""}`,
+      s: `${llena(R.s, r.params)}${fija ? ` ${Rf}` : ""}${r.k === "img" ? ` · ${estadoImg}` : ""}${r.quien ? ` · ${E2("Último cambio", "Last change")}: ${r.quien}` : ""}`,
       m: E2(`${r.n30} EN 30 DÍAS`, `${r.n30} IN 30 DAYS`), tag: r.k === "img" && ri.on ? (img.ok ? E2("RESPONDE", "RESPONDING") : E2("NO RESPONDE", "NOT RESPONDING")) : undefined, tone: img.ok ? "signal" : "danger",
       tgOn: r.on, onTg: fija ? () => setToast(Rf!) : !edita ? sinPermiso : () => setConf({ titulo: "", sub: E2(`${r.on ? "Apagar" : "Encender"} «${R.t}». Queda en la auditoría.`, `Turn ${r.on ? "off" : "on"} “${Rt}”. It stays in the audit log.`), peligro: r.on, cta: r.on ? E2("Apagar", "Turn off") : E2("Encender", "Turn on"),
         plantillas: r.on ? [E2("Da demasiados falsos positivos", "Too many false positives"), E2("Prueba controlada", "Controlled test")] : [E2("Volver a la regla de siempre", "Back to the usual rule")], nota: "interna", hacer: (m) => reglaCambiar(r.k, !r.on, m) }),

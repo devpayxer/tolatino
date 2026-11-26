@@ -151,7 +151,7 @@ function Campanas({ d, tr: E2, cuando, setConf, ir, nombreCiudad, l }: { d: Dato
     if (d.puede.editar && ["borrador", "por_aprobar", "programada", "enviando"].includes(x.estado)) acts.push({ l: E2("Retirar", "Retire"), v: "secondary", onClick: () => setConf({ titulo: E2(`Retirar «${x.nombre}»`, `Retire “${x.nombre}”`), cta: E2("Retirar", "Retire"), peligro: true,
       sub: E2("No sale más. Lo que ya salió queda en el historial.", "Nothing more goes out. What already went out stays in the history."), plantillas: [E2("Tenía un error.", "It had an error."), E2("Ya no aplica.", "No longer applies.")], nota: "interna", hacer: (m) => campanaRetirar(x.id, m) }) });
     return { key: x.id, icon: x.canal === "sms" ? "phone" : x.canal === "correo" ? "news" : "bell", t: `${x.nombre} · ${nombreCiudad(x.city)}`, tag: st[0], tone: st[1],
-      s: `${E2(TIPO_CAMPANA[x.tipo as TipoCampana]?.es ?? x.tipo, TIPO_CAMPANA[x.tipo as TipoCampana]?.en ?? x.tipo)} · ${E2(CANAL[x.canal].es, CANAL[x.canal].en)} · ${resumenSeg(x.seg)} · «${l === "es" ? x.titulo.es : x.titulo.en}»`,
+      s: `${TIPO_CAMPANA(E2)[x.tipo as TipoCampana] ?? x.tipo} · ${CANAL(E2)[x.canal]} · ${resumenSeg(x.seg)} · «${l === "es" ? x.titulo.es : x.titulo.en}»`,
       m: `${E2("SALE", "GOES OUT")} ${cuando(x.cuando).toUpperCase()} · ${x.personas ?? 0} ${E2("PERSONAS", "PEOPLE")} · ${x.enviados} ${E2("ENVIADOS", "SENT")} · ${x.tope} ${E2("EN TOPE", "AT LIMIT")}${x.canal === "correo" ? ` · ${x.sinCorreo} ${E2("SIN CORREO", "NO EMAIL")}` : ""} · ${x.abiertos} ${E2("ABIERTOS", "OPENED")}${x.creadaPorMi ? ` · ${E2("TUYA", "YOURS")}` : x.quien ? ` · ${x.quien.toUpperCase()}` : ""}${x.aprobo ? ` · ${E2("APROBÓ", "APPROVED BY")} ${x.aprobo.toUpperCase()}` : ""}${x.razon ? ` · ${x.razon}` : ""}`,
       acts: acts.length ? acts : undefined, dim: x.estado === "retirada" };
   };
@@ -164,7 +164,7 @@ function Campanas({ d, tr: E2, cuando, setConf, ir, nombreCiudad, l }: { d: Dato
     ...(d.puede.editar ? [
       { type: "group" as const, k: E2("NUEVA CAMPAÑA", "NEW CAMPAIGN") },
       { type: "field" as const, k: E2("NOMBRE (LO VE SOLO EL EQUIPO)", "NAME (ONLY THE TEAM SEES IT)"), val: f.nombre, onChange: (v: string) => set({ nombre: v }), max: 80 },
-      { type: "chips" as const, k: E2("TIPO", "TYPE"), items: TIPOS_CAMPANA.map((t) => ({ l: E2(TIPO_CAMPANA[t].es, TIPO_CAMPANA[t].en), v: f.tipo === t ? "selected" : "filter", onClick: () => set({ tipo: t }) })) },
+      { type: "chips" as const, k: E2("TIPO", "TYPE"), items: TIPOS_CAMPANA.map((t) => ({ l: TIPO_CAMPANA(E2)[t], v: f.tipo === t ? "selected" : "filter", onClick: () => set({ tipo: t }) })) },
       { type: "chips" as const, k: E2("CIUDAD", "CITY"), items: d.ciudades.map((c) => ({ l: c.name, v: f.ciudad === c.id ? "selected" : "filter", onClick: () => set({ ciudad: c.id }) })) },
       { type: "chips" as const, k: E2("A QUIÉN", "WHO"), items: [{ l: E2("Vecinos", "Neighbors"), v: f.rol === "vecinos" ? "selected" : "filter", onClick: () => set({ rol: "vecinos" }) }, { l: E2("Dueños de negocios", "Business owners"), v: f.rol === "negocios" ? "selected" : "filter", onClick: () => set({ rol: "negocios" }) }] },
       { type: "chips" as const, k: E2("SIN ENTRAR DESDE", "INACTIVE FOR"), items: [0, 30, 60, 90].map((x) => ({ l: x ? E2(`${x}+ días`, `${x}+ days`) : E2("Todos", "Everyone"), v: f.inactivos === x ? "selected" : "filter", onClick: () => set({ inactivos: x }) })) },
@@ -175,7 +175,7 @@ function Campanas({ d, tr: E2, cuando, setConf, ir, nombreCiudad, l }: { d: Dato
         { type: "chips" as const, k: E2("ÍTEMS EN SU CATÁLOGO", "ITEMS IN THEIR CATALOG"), items: [0, ...ITEMS_SEGMENTO].map((x) => ({ l: x ? E2(`${x}+ ítems`, `${x}+ items`) : E2("Todos", "All"), v: f.items === x ? "selected" : "filter", onClick: () => set({ items: x }) })) },
       ] : []),
       { type: "note" as const, tone: "ok" as const, icon: "users", t: n === null ? E2("Contando…", "Counting…") : E2(`Llega a ${n} ${n === 1 ? "persona" : "personas"} que encendieron Novedades.`, `It reaches ${n} ${n === 1 ? "person" : "people"} who turned on Updates.`) },
-      { type: "chips" as const, k: E2("CANAL", "CHANNEL"), items: CANALES.map((c) => ({ l: E2(CANAL[c].es, CANAL[c].en), v: f.canal === c ? "selected" : "filter", onClick: () => set({ canal: c }) })) },
+      { type: "chips" as const, k: E2("CANAL", "CHANNEL"), items: CANALES.map((c) => ({ l: CANAL(E2)[c], v: f.canal === c ? "selected" : "filter", onClick: () => set({ canal: c }) })) },
       { type: "field" as const, k: E2("TÍTULO EN ESPAÑOL", "TITLE IN SPANISH"), val: f.tituloEs, onChange: (v: string) => set({ tituloEs: v }), max: 60, count: `${f.tituloEs.length}/60` },
       { type: "field" as const, k: E2("TÍTULO EN INGLÉS", "TITLE IN ENGLISH"), val: f.tituloEn, onChange: (v: string) => set({ tituloEn: v }), max: 60, count: `${f.tituloEn.length}/60` },
       { type: "field" as const, k: E2("TEXTO EN ESPAÑOL", "TEXT IN SPANISH"), val: f.textoEs, onChange: (v: string) => set({ textoEs: v }), area: true, rows: 3, max: maxT, count: `${f.textoEs.length}/${maxT}` },
@@ -311,7 +311,7 @@ function Enlaces({ d, tr: E2, cuando, setConf, ir, setToast, nombreCiudad, l }: 
   const base = typeof window === "undefined" ? "" : window.location.origin;
   const copiar = async (code: string) => { try { await navigator.clipboard.writeText(`${base}/q/${code}`); setToast(E2("Copiado.", "Copied.")); } catch { setToast(`${base}/q/${code}`); } };
   const fila = (x: EnlaceAdm): Fila => ({ key: x.code, icon: x.vivo ? "globe" : "ban", t: `${x.label} · /q/${x.code}`, dim: !x.vivo,
-    s: `${E2(TIPO_ENLACE[x.kind].es, TIPO_ENLACE[x.kind].en)} · ${nombreCiudad(x.city)} · ${E2("lleva a", "goes to")} ${x.target}${x.campana ? ` · ${x.campana}` : ""}`,
+    s: `${TIPO_ENLACE(E2)[x.kind]} · ${nombreCiudad(x.city)} · ${E2("lleva a", "goes to")} ${x.target}${x.campana ? ` · ${x.campana}` : ""}`,
     m: `${x.total} ${E2("ESCANEOS", "SCANS")} · ${x.d30} ${E2("EN 30 DÍAS", "IN 30 DAYS")} · ${x.hoy} ${E2("HOY", "TODAY")} · ${cuando(x.at).toUpperCase()}${x.quien ? ` · ${x.quien.toUpperCase()}` : ""}`,
     tag: x.vivo ? E2("VIVO", "LIVE") : E2("RETIRADO", "RETIRED"), tone: x.vivo ? "signal" : "neutral",
     acts: x.vivo ? [
@@ -338,7 +338,7 @@ function Enlaces({ d, tr: E2, cuando, setConf, ir, setToast, nombreCiudad, l }: 
     ...(d.puede.editar ? [
       { type: "group" as const, k: E2("NUEVO ENLACE Y QR", "NEW LINK AND QR") },
       { type: "field" as const, k: E2("DÓNDE VA (EL NOMBRE PARA EL EQUIPO)", "WHERE IT GOES (NAME FOR THE TEAM)"), val: f.label, onChange: (v: string) => setF((x) => ({ ...x, label: v })), ph: E2("Bodega de Alter St", "Alter St bodega"), max: 80 },
-      { type: "chips" as const, k: E2("TIPO", "TYPE"), items: TIPOS_ENLACE.map((t) => ({ l: E2(TIPO_ENLACE[t].es, TIPO_ENLACE[t].en), v: f.tipo === t ? "selected" : "filter", onClick: () => setF((x) => ({ ...x, tipo: t })) })) },
+      { type: "chips" as const, k: E2("TIPO", "TYPE"), items: TIPOS_ENLACE.map((t) => ({ l: TIPO_ENLACE(E2)[t], v: f.tipo === t ? "selected" : "filter", onClick: () => setF((x) => ({ ...x, tipo: t })) })) },
       { type: "chips" as const, k: E2("CIUDAD", "CITY"), items: d.ciudades.map((c) => ({ l: c.name, v: f.ciudad === c.id ? "selected" : "filter", onClick: () => setF((x) => ({ ...x, ciudad: c.id })) })) },
       { type: "chips" as const, k: E2("LLEVA A", "GOES TO"), items: DESTINOS.map(([r, es, en]) => ({ l: l === "es" ? es : en, v: f.target === r ? "selected" : "filter", onClick: () => setF((x) => ({ ...x, target: r })) })) },
       { type: "field" as const, k: E2("O UNA RUTA DE TO'LATINO", "OR A TO'LATINO PATH"), val: f.target, onChange: (v: string) => setF((x) => ({ ...x, target: v.trim() })), ph: "/c/comida", max: 200 },
@@ -352,7 +352,7 @@ function Enlaces({ d, tr: E2, cuando, setConf, ir, setToast, nombreCiudad, l }: 
 function Lista({ d, tr: E2, cuando, setConf, ir, l }: { d: DatosCrec; tr: EFn; cuando: (iso: string | null) => string; setConf: SetConf; ir: (q: Record<string, string | null>) => void; l: L }) {
   const W = d.lista!;
   const [fecha, setFecha] = useState(W.fecha.fecha ?? ""), ref = useRef(fecha); ref.current = fecha;
-  const modo = (m: Modo | null) => (m ? (l === "es" ? MODO[m].es : MODO[m].en) : E2("sin decir cómo", "did not say how"));
+  const modo = (m: Modo | null) => (m ? MODO(E2)[m] : E2("sin decir cómo", "did not say how"));
   return <PanelBloques bloques={[
     { type: "note", tone: "info", icon: "lock", t: E2("La lista de la landing: cada persona entró con el código de su teléfono y queda en «Avísame» de su ciudad. Aquí no se ven teléfonos ni nombres: el código postal, lo que dijo de su negocio y su número de fundador. Le escribimos una sola vez: el día que abra su zona.", "The landing list: each person signed in with their phone code and is on their city’s “Notify me”. No phones or names here: the ZIP code, what they said about their business and their founder number. We text them only once: the day their area opens.") },
     { type: "rows", k: E2("POR CIUDAD", "BY CITY"), cols: "repeat(auto-fill,minmax(220px,1fr))", items: W.porCiudad.map((c) => ({ key: c.city, icon: "pin", t: `${c.nombre} · ${c.n}`, s: `${c.neg} ${E2("negocios apartados", "businesses held")} · ${c.fv} ${E2("fundadores", "founders")}`,

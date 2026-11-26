@@ -382,8 +382,9 @@ export async function licenciaQuitar(id: string, licId: string): Promise<Res> {
 export async function noHago(id: string, i: number): Promise<Res> {
   const a = await entrar(id, "cat");
   if (!a) return SIN_ACCESO;
-  const x = NO_HAGO[Number(i)];
-  if (!x) return no("Elige una opción.", "Pick an option.");
+  const f = NO_HAGO((es) => es)[Number(i)];
+  if (!f) return no("Elige una opción.", "Pick an option.");
+  const x: [string, string] = [f[0], f[1]]; // se guarda el par [español, inglés] del código, igual que siempre
   const legal = (await db().query(`select 1 from licenses where business_id = $1 and status <> 'withdrawn' and kind = any($2::text[]) limit 1`, [a.negocio.id, LIC_LEGAL])).rowCount;
   if (!legal) return no("Esto es para negocios con licencia legal.", "This is for businesses with a legal license.");
   const antes = (await db().query(`select category_attrs->'cant' as cant from businesses where id = $1`, [a.negocio.id])).rows[0]?.cant ?? null;

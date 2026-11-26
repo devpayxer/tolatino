@@ -8,7 +8,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
-import { AYUDA_DE, COLAS, MOTIVO_RESENA, ORDEN_COLAS, textoCola, type Cola } from "@/lib/colas";
+import { COLAS, ORDEN_COLAS, textoCola, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
 import { cuerpoComunidad, tituloComunidad } from "./ColasComunidad";
 import { cuerpoEventos, tituloEventos } from "./ColasEventos";
@@ -34,38 +34,39 @@ import { fotoFondo } from "@tolatino/ui";
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button" | "Pager", ComponentType<any>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icono = UI.Icon as ComponentType<any>;
-export const PLANT = {
-  selloNo: ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"],
-  selloInfo: ["Mándanos una foto de la fachada con el letrero", "Confírmanos el teléfono fijo del local", "Dinos en qué horario podemos llamar"],
-  biz: ["Varios reportes coinciden", "El negocio no responde a To’Latino", "Datos de contacto falsos", "Se resolvió con el dueño"],
-  // Reseñas (adm-data TPL hide / keep).
-  hide: ["Tiene datos personales", "Ofensiva o discriminatoria", "No fue cliente: sin transacción", "Spam o publicidad", "Amenaza o acoso"],
-  keep: ["No rompe las reglas del barrio", "Es una opinión sobre el servicio", "El reporte no trae evidencia"],
-  // Fotos: los mismos motivos con los que un vecino reporta (photo_reports.reason).
-  foto: ["No es de este negocio", "Contenido inapropiado", "Muestra datos personales", "Es publicidad o spam"],
-  // C-001 · Video de presentación (motivos propios del video; lib/video-negocio.ts MOTIVOS_VIDEO).
-  video: ["No se ve tu negocio ni tu trabajo.", "Tiene música de otros artistas.", "Se ve mal: borroso, oscuro o de lado.", "Tiene contenido que no se permite en To'Latino.", "Tiene teléfonos, precios o enlaces escritos encima."],
-};
-/* 9f-4 · Las mismas plantillas en inglés: PLANT se queda en español para quien la importe; plantE(E) da las del idioma de la persona. */
+export const PLANT = (E2: EF): Record<"selloNo" | "selloInfo" | "biz" | "hide" | "keep" | "foto" | "video", string[]> => ({
+  selloNo: [E2("La dirección no coincide con la página", "The address doesn't match the page"), E2("No pudimos confirmar que representas el negocio", "We couldn't confirm you represent the business"), E2("Las fotos no son del local", "The photos aren't of the location"), E2("El nombre puede confundirse con otro negocio", "The name could be confused with another business")],
+  selloInfo: [E2("Mándanos una foto de la fachada con el letrero", "Send us a photo of the storefront with the sign"), E2("Confírmanos el teléfono fijo del local", "Confirm the location's landline number"), E2("Dinos en qué horario podemos llamar", "Tell us what hours we can call")],
+  biz: [E2("Varios reportes coinciden", "Several reports match"), E2("El negocio no responde a To’Latino", "The business doesn't respond to To’Latino"), E2("Datos de contacto falsos", "Fake contact details"), E2("Se resolvió con el dueño", "Resolved with the owner")],
+  hide: [E2("Tiene datos personales", "Contains personal data"), E2("Ofensiva o discriminatoria", "Offensive or discriminatory"), E2("No fue cliente: sin transacción", "Not a customer: no transaction"), E2("Spam o publicidad", "Spam or advertising"), E2("Amenaza o acoso", "Threat or harassment")],
+  keep: [E2("No rompe las reglas del barrio", "Doesn't break the neighborhood rules"), E2("Es una opinión sobre el servicio", "It's an opinion about the service"), E2("El reporte no trae evidencia", "The report has no evidence")],
+  foto: [E2("No es de este negocio", "Not from this business"), E2("Contenido inapropiado", "Inappropriate content"), E2("Muestra datos personales", "Shows personal data"), E2("Es publicidad o spam", "It's advertising or spam")],
+  video: [E2("No se ve tu negocio ni tu trabajo.", "It doesn’t show your business or your work."), E2("Tiene música de otros artistas.", "It has music by other artists."), E2("Se ve mal: borroso, oscuro o de lado.", "It looks bad: blurry, dark or sideways."), E2("Tiene contenido que no se permite en To'Latino.", "It has content that isn’t allowed on To'Latino."), E2("Tiene teléfonos, precios o enlaces escritos encima.", "It has phone numbers, prices or links written on it.")]
+});
+/* 9f-4 · Las plantillas en los dos idiomas: PLANT(E2) las da con el E2 de quien las muestra; plantE(E2) es lo mismo con el nombre de siempre. */
 type EF = (es: string, en: string) => string;
-const PLANT_EN: typeof PLANT = {
-  selloNo: ["The address doesn't match the page", "We couldn't confirm you represent the business", "The photos aren't of the location", "The name could be confused with another business"],
-  selloInfo: ["Send us a photo of the storefront with the sign", "Confirm the location's landline number", "Tell us what hours we can call"],
-  biz: ["Several reports match", "The business doesn't respond to To’Latino", "Fake contact details", "Resolved with the owner"],
-  hide: ["Contains personal data", "Offensive or discriminatory", "Not a customer: no transaction", "Spam or advertising", "Threat or harassment"],
-  keep: ["Doesn't break the neighborhood rules", "It's an opinion about the service", "The report has no evidence"],
-  foto: ["Not from this business", "Inappropriate content", "Shows personal data", "It's advertising or spam"],
-  video: ["It doesn’t show your business or your work.", "It has music by other artists.", "It looks bad: blurry, dark or sideways.", "It has content that isn’t allowed on To'Latino.", "It has phone numbers, prices or links written on it."],
-};
-export const plantE = (E2: EF): typeof PLANT => (E2("", "x") === "x" ? PLANT_EN : PLANT);
+export const plantE = (E2: EF): ReturnType<typeof PLANT> => PLANT(E2);
 
 /* 9c · El ancho sin salto al cargar (arranca con la estimación del servidor): app/_ancho/Ancho.tsx. */
 export { useAncho };
 
-const CAMBIO_NEG: Record<string, string> = { mergeBiz: "Fusionar negocios", changeCategory: "Cambio de categoría", transferOwner: "Transferir dueño" };
-const CAMBIO_NEG_EN: Record<string, string> = { mergeBiz: "Merge businesses", changeCategory: "Category change", transferOwner: "Transfer owner" };
-const AYUDA_DE_EN: Record<string, string> = { appointment: "Help with an appointment", hold: "Help with a purchase", market_order: "Help with a market order", party: "Help with a party", trip: "Help with a trip", night: "Help with a night out", enrollment: "Help with an enrollment", visit: "Help with a visit", order: "Help with an order", tickets: "Help with a ticket order" };
-const MOTIVO_RESENA_EN: Record<string, string> = { fake: "Fake review", off: "Offensive", pii: "Personal data", spam: "Spam or advertising", coi: "Written by the owner or a competitor", otro: "Other reason", negocio: "The business asked for a review" };
+const CAMBIO_NEG = (E2: EF): Record<string, string> => ({
+  mergeBiz: E2("Fusionar negocios", "Merge businesses"), changeCategory: E2("Cambio de categoría", "Category change"),
+  transferOwner: E2("Transferir dueño", "Transfer owner")
+});
+/* AYUDA_DE y MOTIVO_RESENA de lib/colas.ts (el servidor los usa en español) con su inglés: los mismos textos en español, por E2. */
+const AYUDA_DE_L = (E2: EF): Record<string, string> => ({
+  appointment: E2("Ayuda con una cita", "Help with an appointment"), hold: E2("Ayuda con una compra", "Help with a purchase"),
+  market_order: E2("Ayuda con un pedido del mercado", "Help with a market order"), party: E2("Ayuda con una fiesta", "Help with a party"),
+  trip: E2("Ayuda con un viaje", "Help with a trip"), night: E2("Ayuda con la noche", "Help with a night out"),
+  enrollment: E2("Ayuda con una inscripción", "Help with an enrollment"), visit: E2("Ayuda con una visita", "Help with a visit"),
+  order: E2("Ayuda con un pedido", "Help with an order"), tickets: E2("Ayuda con una orden de boletos", "Help with a ticket order")
+});
+const MOTIVO_RESENA_L = (E2: EF): Record<string, string> => ({
+  fake: E2("Reseña falsa", "Fake review"), off: E2("Ofensiva", "Offensive"), pii: E2("Datos personales", "Personal data"),
+  spam: E2("Spam o publicidad", "Spam or advertising"), coi: E2("La escribió el dueño o la competencia", "Written by the owner or a competitor"),
+  otro: E2("Otro motivo", "Other reason"), negocio: E2("El negocio pidió revisarla", "The business asked for a review")
+});
 /* A quién le llega lo que se escribe en la nota (lo prueba el servidor, no el nombre de la acción): "persona" = se le manda a la persona o al negocio (aviso) o lo ve
    en su pantalla; "interna" = solo queda en la auditoría o en una nota del equipo; "banco" = se envía al banco en una disputa. Cada Confirmar lo dice (guardián notaDiceAQuien). */
 export type NotaPara = "persona" | "interna" | "banco";
@@ -178,8 +179,8 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
     const esEntrega = k.queue === "entrega";
-    const nn = n?.name ?? "", AYD = en ? AYUDA_DE_EN : AYUDA_DE;
-    const titulo = (esEntrega ? `${E2("Incidencia de entrega", "Delivery incident")}${n?.name ? ` · ${n.name}` : ""}` : null) ?? tituloComunidad(k, E2) ?? tituloEventos(k, E2) ?? ("cambioNeg" in k && k.cambioNeg ? `${(en ? CAMBIO_NEG_EN : CAMBIO_NEG)[k.cambioNeg.type] ?? E2("Cambio sensible", "Sensitive change")} · ${k.cambioNeg.nombre}` : null) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? E2("Borrar cuenta", "Delete account") : k.cambio.type === "mergeUser" ? E2("Fusionar cuentas", "Merge accounts") : E2("Cambio sensible", "Sensitive change")} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `${E2("Reclamo", "Claim")} · ${nn}` : k.queue === "lic" ? `${E2("Licencia", "License")} · ${nn}` : k.queue === "sello" ? `${E2("Sello", "Seal")} · ${nn}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `${E2("Foto marcada", "Flagged photo")} · ${nn}` : k.queue === "cuidado" ? `${E2("Cuidado de niños", "Child care")} · ${nn}` : k.queue === "salir" ? `${E2("No le dejan cancelar", "Won't let them cancel")} · ${nn}` : k.queue === "grupo" ? `${E2("Grupos que no abrieron", "Groups that didn't open")} · ${nn}` : k.queue === "plantones" ? `${E2("Plantones", "No-shows")} · ${nn}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? E2("Vivienda para mayores", "Senior housing") : E2("Vivienda justa", "Fair housing")} · ${nn}` : k.queue === "estafa" ? `${E2("Posible estafa", "Possible scam")} · ${nn}` : k.queue === "ticket" ? `${E2("Soporte", "Support")} · ${"tk" in k && k.tk ? k.tk : E2("caso", "case")}` : k.queue === "sop" ? `${AYD["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? E2("Ayuda con un pedido", "Help with an order")} · ${nn}` : k.queue === "mesa" ? `${E2("Mesas no respetadas", "Tables not honored")} · ${nn}` : k.queue === "noid" ? `${E2("Sin identificación", "No ID")} · ${nn}` : k.queue === "rep" ? `${E2("Reseña reportada", "Reported review")} · ${nn}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
+    const nn = n?.name ?? "", AYD = AYUDA_DE_L(E2);
+    const titulo = (esEntrega ? `${E2("Incidencia de entrega", "Delivery incident")}${n?.name ? ` · ${n.name}` : ""}` : null) ?? tituloComunidad(k, E2) ?? tituloEventos(k, E2) ?? ("cambioNeg" in k && k.cambioNeg ? `${CAMBIO_NEG(E2)[k.cambioNeg.type] ?? E2("Cambio sensible", "Sensitive change")} · ${k.cambioNeg.nombre}` : null) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? E2("Borrar cuenta", "Delete account") : k.cambio.type === "mergeUser" ? E2("Fusionar cuentas", "Merge accounts") : E2("Cambio sensible", "Sensitive change")} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `${E2("Reclamo", "Claim")} · ${nn}` : k.queue === "lic" ? `${E2("Licencia", "License")} · ${nn}` : k.queue === "sello" ? `${E2("Sello", "Seal")} · ${nn}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `${E2("Foto marcada", "Flagged photo")} · ${nn}` : k.queue === "cuidado" ? `${E2("Cuidado de niños", "Child care")} · ${nn}` : k.queue === "salir" ? `${E2("No le dejan cancelar", "Won't let them cancel")} · ${nn}` : k.queue === "grupo" ? `${E2("Grupos que no abrieron", "Groups that didn't open")} · ${nn}` : k.queue === "plantones" ? `${E2("Plantones", "No-shows")} · ${nn}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? E2("Vivienda para mayores", "Senior housing") : E2("Vivienda justa", "Fair housing")} · ${nn}` : k.queue === "estafa" ? `${E2("Posible estafa", "Possible scam")} · ${nn}` : k.queue === "ticket" ? `${E2("Soporte", "Support")} · ${"tk" in k && k.tk ? k.tk : E2("caso", "case")}` : k.queue === "sop" ? `${AYD["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? E2("Ayuda con un pedido", "Help with an order")} · ${nn}` : k.queue === "mesa" ? `${E2("Mesas no respetadas", "Tables not honored")} · ${nn}` : k.queue === "noid" ? `${E2("Sin identificación", "No ID")} · ${nn}` : k.queue === "rep" ? `${E2("Reseña reportada", "Reported review")} · ${nn}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
     out.push({ type: "head", eye: `${en ? Q.en.toUpperCase() : Q.es.toUpperCase()} · ${k.esp.r >= 1 ? E2(`${k.esp.t} · VENCIDO`, `${k.esp.t} · OVERDUE`) : E2(`${k.esp.t} esperando`, `${k.esp.t} waiting`)}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: E2("Ya se decidió", "Already decided"), s: E2("Este caso salió de la cola.", "This case has left the queue.") }]} /></>;
     // 7b · Un caso de Soporte se trabaja en su ficha de Soporte (hilo, macros, notas internas, devolver).
@@ -222,7 +223,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       ];
     }
     if (k.queue === "cambio" && "reclamo" in k && k.reclamo && n) {
-      const c = k.reclamo, ROL: Record<string, string> = en ? { dueno: "owner", socio: "partner", encargado: "manager" } : { dueno: "dueño", socio: "socio", encargado: "encargado" }, DOC: Record<string, string> = en ? { licencia: "Business license", servicio: "Electric or water bill", ein: "IRS letter with the EIN", otro: "Other document" } : { licencia: "Licencia del negocio", servicio: "Factura de luz o agua", ein: "Carta del IRS con el EIN", otro: "Otro documento" };
+      const c = k.reclamo, ROL: Record<string, string> = { dueno: E2("dueño", "owner"), socio: E2("socio", "partner"), encargado: E2("encargado", "manager") }, DOC: Record<string, string> = { licencia: E2("Licencia del negocio", "Business license"), servicio: E2("Factura de luz o agua", "Electric or water bill"), ein: E2("Carta del IRS con el EIN", "IRS letter with the EIN"), otro: E2("Otro documento", "Other document") };
       const diasAviso = c.notified ? Math.floor((ahora - new Date(c.notified).getTime()) / 86_400_000) : null;
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("LO RECLAMA", "CLAIMED BY"), v: `${c.quien ?? E2("Sin nombre", "No name")} · ${c.quien_tel}` }, { k: E2("AFECTA A", "AFFECTS"), v: E2("El panel del negocio pasa a esta persona", "The business dashboard goes to this person") }, { k: E2("RECLAMO", "CLAIM"), v: `#${c.id}` }, { k: E2("ORIGEN", "SOURCE"), v: c.source === "publica" ? E2("Publica tu negocio (nombre repetido)", "List your business (duplicate name)") : E2("Recuperar tu negocio", "Recover your business") }] });
       if (c.doc) extra = <div style={{ height: 220, borderRadius: 18, backgroundImage: fotoFondo(`/api/admin/reclamo/${c.id}`, 540), backgroundSize: "contain", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />;
@@ -279,7 +280,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       ];
     }
     if (k.queue === "lic" && "licencia" in k && k.licencia && n) {
-      const l = k.licencia, est = (en ? { valid: ["Verified", "var(--tl-open-text)"], expired: ["Expired", "var(--tl-danger)"], not_found: ["Not found", "var(--tl-danger)"], revoked: ["Not found", "var(--tl-danger)"] } as Record<string, [string, string]> : { valid: ["Verificada", "var(--tl-open-text)"], expired: ["Vencida", "var(--tl-danger)"], not_found: ["No aparece", "var(--tl-danger)"], revoked: ["No aparece", "var(--tl-danger)"] } as Record<string, [string, string]>)[l.status] ?? [E2("Por verificar", "To verify"), "var(--tl-pro-ink)"];
+      const l = k.licencia, est = ({ valid: [E2("Verificada", "Verified"), "var(--tl-open-text)"], expired: [E2("Vencida", "Expired"), "var(--tl-danger)"], not_found: [E2("No aparece", "Not found"), "var(--tl-danger)"], revoked: [E2("No aparece", "Not found"), "var(--tl-danger)"] } as Record<string, [string, string]>)[l.status] ?? [E2("Por verificar", "To verify"), "var(--tl-pro-ink)"];
       const loc = en ? "en-US" : "es-US";
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("LICENCIA", "LICENSE"), v: l.title }, { k: E2("PUEDE", "ALLOWS"), v: l.can }, { k: E2("NÚMERO", "NUMBER"), v: l.number ? `${l.label} ${l.number}` : E2("No lo dio", "Not provided") }, { k: E2("ESTADO HOY", "STATUS TODAY"), v: est[0], fg: est[1] }, { k: E2("ÚLTIMA REVISIÓN", "LAST CHECK"), v: l.checked ? new Date(l.checked).toLocaleDateString(loc, { day: "numeric", month: "short", year: "numeric" }) : "—" }, { k: E2("REGISTRO", "REGISTRY"), v: l.site }, ...(l.status === "valid" && l.next ? [{ k: E2("PRÓXIMA REVISIÓN", "NEXT CHECK"), v: new Date(`${l.next}T12:00:00Z`).toLocaleDateString(loc, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), fg: l.next < hoyEn() ? "var(--tl-danger)" : "var(--tl-pro-ink)" }] : [])] });
       cuerpoB.push({ type: "note", tone: "info", t: E2("Verifícala en el registro oficial del estado. Lo que decidas se ve en la ficha «Licencia» del negocio.", "Verify it in the official state registry. Your decision shows on the business's “License” page."), cta: E2("Abrir registro", "Open registry"), onCta: () => window.open(l.url, "_blank", "noopener") });
@@ -308,7 +309,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
         <div style={{ position: "relative", height: 220, borderRadius: 18, backgroundImage: fotoFondo(k.foto.url, 540), backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }}>
           <span style={{ position: "absolute", left: 10, bottom: 10, padding: "4px 8px", borderRadius: 7, background: "rgba(11,14,18,.75)", color: "var(--tl-white)", font: "800 9.5px 'JetBrains Mono',monospace", letterSpacing: ".1em" }}>{k.foto.oculta ? E2("OCULTA MIENTRAS DECIDES", "HIDDEN WHILE YOU DECIDE") : E2("REPORTADA POR UN VECINO", "REPORTED BY A NEIGHBOR")}</span>
         </div>) : null;
-      const MOT: Record<string, string> = en ? { no_es: "Not from this business", inapropiado: "Inappropriate content", datos: "Shows personal data", spam: "It's advertising or spam", otro: "Other reason" } : { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" };
+      const MOT: Record<string, string> = { no_es: E2("No es de este negocio", "Not from this business"), inapropiado: E2("Contenido inapropiado", "Inappropriate content"), datos: E2("Muestra datos personales", "Shows personal data"), spam: E2("Es publicidad o spam", "It's advertising or spam"), otro: E2("Otro motivo", "Other reason") };
       const r0 = k.reportes[0];
       cuerpoB.push({ type: "note", tone: "warn", t: `${E2("Reportada por un vecino", "Reported by a neighbor")}: ${MOT[r0?.reason ?? "otro"]}${r0?.note ? ` · «${r0.note}»` : ""}${k.reportes.length > 1 ? E2(` · ${k.reportes.length} reportes`, ` · ${k.reportes.length} reports`) : ""} · ${k.foto?.oculta ? E2("Está oculta (nadie la ve) mientras decides: «Está bien» la publica; «Quitar foto» la deja rechazada.", "It is hidden (nobody sees it) while you decide: “It's fine” publishes it; “Remove photo” leaves it rejected.") : E2("Sigue visible mientras decides.", "It stays visible while you decide.")}` });
       const unica = (k.foto?.visibles ?? 0) <= 1 && !k.foto?.oculta;
@@ -325,9 +326,9 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       // devolver a la tarjeta (el depósito pagado en la app). Resolver con monto devuelve a la tarjeta.
       const h = k.ayuda;
       const DEC: Record<string, string> = { ok: E2("Aceptó", "Accepted"), alt: E2(`Propuso devolver $${((h.offer ?? 0) / 100).toFixed(2)}`, `Offered to refund $${((h.offer ?? 0) / 100).toFixed(2)}`), no: E2("Dijo que no puede", "Said they can't") };
-      const usd = (c: number) => `$${(c / 100).toFixed(2)}`, dinero = "puedeDinero" in k && !!k.puedeDinero, li = en ? 1 : 0;
-      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("SOLICITUD", "REQUEST"), v: h.number }, { k: h.k === "visit" ? E2("VISITA", "VISIT") : h.k === "market_order" ? E2("PEDIDO", "ORDER") : h.k === "hold" ? E2("APARTADO", "HOLD") : h.k === "party" ? E2("FIESTA", "PARTY") : h.k === "trip" ? E2("VIAJE", "TRIP") : h.k === "night" ? E2("NOCHE", "NIGHT") : h.k === "enrollment" ? E2("INSCRIPCIÓN", "ENROLLMENT") : h.k === "tickets" ? E2("ORDEN DE BOLETOS", "TICKET ORDER") : E2("CITA", "APPOINTMENT"), v: `${h.num}${h.svc ? ` · ${h.svc}` : ""}${h.k === "visit" ? "" : ` · ${usd(h.total)}`}` }, { k: E2("CLIENTE", "CUSTOMER"), v: h.quien }, { k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: motivoAyuda(h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub)[li] },
-        { k: E2("QUÉ QUIERE", "WHAT THEY WANT"), v: `${quiereAyuda(h.wants)[li]}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: E2("DEVOLVIBLE A LA TARJETA", "REFUNDABLE TO CARD"), v: h.pago ? `${usd(h.pago)} (${h.k === "trip" ? E2("el viaje", "the trip") : h.k === "tickets" ? E2("lo cobrado; los boletos siguen valiendo", "the amount charged; the tickets remain valid") : E2("depósito", "deposit")})` : h.rub === "salud" || h.rub === "pro" || h.rub === "fe" || h.rub === "inm" || h.rub === "dealer" ? E2("Nada: no se cobra en la app", "Nothing: not charged in the app") : E2("Nada: pagó en el local", "Nothing: paid in store") }] });
+      const usd = (c: number) => `$${(c / 100).toFixed(2)}`, dinero = "puedeDinero" in k && !!k.puedeDinero;
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("SOLICITUD", "REQUEST"), v: h.number }, { k: h.k === "visit" ? E2("VISITA", "VISIT") : h.k === "market_order" ? E2("PEDIDO", "ORDER") : h.k === "hold" ? E2("APARTADO", "HOLD") : h.k === "party" ? E2("FIESTA", "PARTY") : h.k === "trip" ? E2("VIAJE", "TRIP") : h.k === "night" ? E2("NOCHE", "NIGHT") : h.k === "enrollment" ? E2("INSCRIPCIÓN", "ENROLLMENT") : h.k === "tickets" ? E2("ORDEN DE BOLETOS", "TICKET ORDER") : E2("CITA", "APPOINTMENT"), v: `${h.num}${h.svc ? ` · ${h.svc}` : ""}${h.k === "visit" ? "" : ` · ${usd(h.total)}`}` }, { k: E2("CLIENTE", "CUSTOMER"), v: h.quien }, { k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: motivoAyuda(E2, h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub) },
+        { k: E2("QUÉ QUIERE", "WHAT THEY WANT"), v: `${quiereAyuda(E2, h.wants)}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: E2("DEVOLVIBLE A LA TARJETA", "REFUNDABLE TO CARD"), v: h.pago ? `${usd(h.pago)} (${h.k === "trip" ? E2("el viaje", "the trip") : h.k === "tickets" ? E2("lo cobrado; los boletos siguen valiendo", "the amount charged; the tickets remain valid") : E2("depósito", "deposit")})` : h.rub === "salud" || h.rub === "pro" || h.rub === "fe" || h.rub === "inm" || h.rub === "dealer" ? E2("Nada: no se cobra en la app", "Nothing: not charged in the app") : E2("Nada: pagó en el local", "Nothing: paid in store") }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: E2(`LO QUE CUENTA · «${h.body}»`, `WHAT THEY SAY · “${h.body}”`) });
       // 9j · «Vidrio roto»: las fotos de una ayuda de Salud se ven solo después de escribir el motivo (10 minutos; queda en la auditoría).
       if (h.fotos.length && h.salud && !h.vidrio) cuerpoB.push({ type: "lock", t: E2(`${h.fotos.length} ${h.fotos.length === 1 ? "foto" : "fotos"} de Salud`, `${h.fotos.length} Health ${h.fotos.length === 1 ? "photo" : "photos"}`), s: E2("Son datos de salud: para verlas escribe por qué las necesitas. Queda en la auditoría y valen 10 minutos.", "This is health data: to view them, write why you need them. It stays in the audit log and access lasts 10 minutes."), cta: E2("Ver con motivo", "View with a reason"),
@@ -368,8 +369,8 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     }
     if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k === "order") {
       // Ayuda con un pedido: qué pasó, qué platos, qué quiere, su nota, la respuesta del negocio y el pedido.
-      const h = k.ayuda, MOT: Record<string, string> = en ? { falta: "Something missing", equivocado: "Wrong item", frio: "Arrived cold or poorly made", danado: "Arrived damaged or spilled", tarde: "Arrived late", nollego: "Never arrived", pago: "Payment issue", otro: "Other issue" } : { falta: "Falta algo", equivocado: "Llegó algo equivocado", frio: "Llegó frío o mal preparado", danado: "Llegó dañado o derramado", tarde: "Llegó tarde", nollego: "No le llegó", pago: "Problema con el pago", otro: "Otro problema" };
-      const Q: Record<string, string> = en ? { reponer: "Wants it replaced", devolver: "Wants a refund for those items", avisar: "Just wants them to know" } : { reponer: "Que se lo repongan", devolver: "Que le devuelvan lo de esos platos", avisar: "Solo quiere que lo sepan" };
+      const h = k.ayuda, MOT: Record<string, string> = { falta: E2("Falta algo", "Something missing"), equivocado: E2("Llegó algo equivocado", "Wrong item"), frio: E2("Llegó frío o mal preparado", "Arrived cold or poorly made"), danado: E2("Llegó dañado o derramado", "Arrived damaged or spilled"), tarde: E2("Llegó tarde", "Arrived late"), nollego: E2("No le llegó", "Never arrived"), pago: E2("Problema con el pago", "Payment issue"), otro: E2("Otro problema", "Other issue") };
+      const Q: Record<string, string> = { reponer: E2("Que se lo repongan", "Wants it replaced"), devolver: E2("Que le devuelvan lo de esos platos", "Wants a refund for those items"), avisar: E2("Solo quiere que lo sepan", "Just wants them to know") };
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("SOLICITUD", "REQUEST"), v: h.number }, { k: E2("PEDIDO", "ORDER"), v: `#${h.num} · $${(h.total / 100).toFixed(2)}` }, { k: E2("CLIENTE", "CUSTOMER"), v: h.quien }, { k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: MOT[h.reason] ?? h.reason },
         ...(h.items.length ? [{ k: E2("PLATOS", "ITEMS"), v: h.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: E2("QUÉ QUIERE", "WHAT THEY WANT"), v: Q[h.wants] ?? h.wants }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: E2(`SU NOTA · «${h.body}»`, `THEIR NOTE · “${h.body}”`) });
@@ -401,7 +402,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
         { k: E2("REPORTES", "REPORTS"), v: String(reps.length) },
         { k: E2("HACE", "AGO"), v: r0 ? hace(r0.at) : "—" },
       ] });
-      reps.forEach((x) => cuerpoB.push({ type: "note", tone: x.by_business ? "info" : "warn", t: `${x.by_business ? E2("El negocio pidió revisarla", "The business asked for a review") : (en ? MOTIVO_RESENA_EN : MOTIVO_RESENA)[x.reason] ?? E2("Otro motivo", "Other reason")}${x.note ? ` · «${x.note}»` : ""}` }));
+      reps.forEach((x) => cuerpoB.push({ type: "note", tone: x.by_business ? "info" : "warn", t: `${x.by_business ? E2("El negocio pidió revisarla", "The business asked for a review") : MOTIVO_RESENA_L(E2)[x.reason] ?? E2("Otro motivo", "Other reason")}${x.note ? ` · «${x.note}»` : ""}` }));
       cuerpoB.push({ type: "note", tone: "info", icon: "shield", t: E2("Sigue visible mientras decides (regla de 48 h). Ocultar avisa al autor con el motivo.", "It stays visible while you decide (48 h rule). Hiding notifies the author with the reason.") });
       const oculta = r?.status !== "visible";
       acts = [
@@ -415,7 +416,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       // 4ie · Las visitas marcadas «No vino» en 30 días. Pausar quita las visitas de su página (modules_off.svc) hasta que se reanude.
       const p = k.plantones;
       cuerpoB.push({ type: "kv", cols: 3, items: [{ k: E2("«NO VINO» EN 30 DÍAS", "“NO-SHOW” IN 30 DAYS"), v: String(p.L.length), fg: "var(--tl-pro-ink)" }, { k: E2("VISITAS QUE PASARON", "PAST VISITS"), v: String(p.tot) }, { k: E2("VISITAS", "VISITS"), v: p.pausado ? E2("En pausa", "Paused") : E2("Activas", "Active") }] });
-      cuerpoB.push({ type: "rows", k: E2("CADA UNA", "EACH ONE"), items: p.L.map((x) => ({ icon: "clock", t: `${x.num} · ${x.item ?? ""}`, s: `${((en ? { visita: "Visit", prueba: "Test drive", cita: "Appointment", precal: "Pre-qualification", oferta: "Offer" } : { visita: "Visita", prueba: "Prueba de manejo", cita: "Cita", precal: "Precalificación", oferta: "Oferta" }) as Record<string, string>)[x.que] ?? x.que} · ${E2(`para el ${x.dia}`, `for ${x.dia}`)} · ${x.quien} · ${E2("marcada", "marked")} ${new Date(x.marcada).toLocaleString(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` })) });
+      cuerpoB.push({ type: "rows", k: E2("CADA UNA", "EACH ONE"), items: p.L.map((x) => ({ icon: "clock", t: `${x.num} · ${x.item ?? ""}`, s: `${(({ visita: E2("Visita", "Visit"), prueba: E2("Prueba de manejo", "Test drive"), cita: E2("Cita", "Appointment"), precal: E2("Precalificación", "Pre-qualification"), oferta: E2("Oferta", "Offer") }) as Record<string, string>)[x.que] ?? x.que} · ${E2(`para el ${x.dia}`, `for ${x.dia}`)} · ${x.quien} · ${E2("marcada", "marked")} ${new Date(x.marcada).toLocaleString(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` })) });
       if (k.puedeDecidir) acts = [
         ...(p.pausado ? [] : [{ l: E2("Pausar visitas", "Pause visits"), v: "danger", icon: "warning", onClick: () => setConf({ titulo: E2("¿Por qué se pausan las visitas?", "Why are visits paused?"), sub: E2("Sus visitas y pruebas de manejo salen de su página hasta que las reanudes desde Negocios 360°. El dueño ve el motivo en su panel. Lo ya confirmado sigue en pie.", "Their visits and test drives leave their page until you resume them from Business 360°. The owner sees the reason in their dashboard. Anything already confirmed still stands."), cta: E2("Pausar", "Pause"), peligro: true,
           plantillas: [E2("Marca «No vino» para que no lo califiquen.", "Marks “No-show” to avoid being rated."), E2("Los clientes dicen que sí fueron.", "Customers say they did go.")], nota: "persona", hacer: (m) => decidirNoche(k.id, true, m) }) }]),
@@ -428,7 +429,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
       const v = k.vivienda, usd = (c: number) => `$${(c / 100).toLocaleString("en-US")}`;
       const fecha = (t: string) => new Date(t).toLocaleString(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
       if (v.tipo === "mayores" && v.propiedad) {
-        const p = v.propiedad, EST: Record<string, string> = en ? { available: "Available", pending: "On hold", rented: "Rented", sold: "Sold", hidden: "Hidden" } : { available: "Disponible", pending: "Apartada", rented: "Rentada", sold: "Vendida", hidden: "Oculta" };
+        const p = v.propiedad, EST: Record<string, string> = { available: E2("Disponible", "Available"), pending: E2("Apartada", "On hold"), rented: E2("Rentada", "Rented"), sold: E2("Vendida", "Sold"), hidden: E2("Oculta", "Hidden") };
         cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("PROPIEDAD", "PROPERTY"), v: p.name }, { k: E2("TIPO", "TYPE"), v: E2("Vivienda para mayores de 62", "Housing for people 62+") }, { k: E2("RENTA AL MES", "MONTHLY RENT"), v: p.rent != null ? usd(p.rent) : "—" },
           { k: E2("ESTADO", "STATUS"), v: p.oculta ? E2("Oculta", "Hidden") : EST[p.st] ?? p.st }, { k: E2("ZONA", "AREA"), v: p.zip ? E2(`Código postal ${p.zip}`, `ZIP code ${p.zip}`) : "—" }, { k: E2("DECLARACIÓN", "DECLARATION"), v: p.senior === "review" ? E2("Por revisar", "To review") : p.senior === "ok" ? E2("Confirmada", "Confirmed") : E2("No confirmada", "Not confirmed"), fg: "var(--tl-pro-ink)" }] });
         cuerpoB.push({ type: "note", tone: "info", t: E2("La ley de vivienda justa deja preferir a mayores de 62 solo si la vivienda cumple la excepción para mayores. Revisa la declaración con el dueño y el registro público; si no está en orden, no se confirma y la propiedad queda oculta con el motivo.", "Fair housing law allows preferring people 62+ only if the housing meets the senior exemption. Review the declaration with the owner and the public record; if it isn't in order, it isn't confirmed and the property stays hidden with the reason.") });
@@ -503,7 +504,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
         cuerpoB.push({ type: "kv", cols: 3, items: [
           { k: E2("REFERENCIA", "REFERENCE"), v: dp.num ? E2(`Pedido #${dp.num}`, `Order #${dp.num}`) : dp.sid }, { k: E2("MONTO", "AMOUNT"), v: `$${(dp.amount / 100).toFixed(2)}` }, { k: E2("CLIENTE", "CUSTOMER"), v: dp.cliente ?? "—" },
           { k: E2("PLAZO DEL BANCO", "BANK DEADLINE"), v: dp.due ? `${new Date(dp.due).toLocaleDateString(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" })} · ${dias! > 0 ? E2(`${dias} días`, `${dias} days`) : E2("vence hoy", "due today")}` : "—", fg: dias != null && dias <= 3 ? "var(--tl-danger)" : "var(--tl-pro-ink)" },
-          { k: E2("MOTIVO", "REASON"), v: dp.motivo }, { k: E2("ESTADO", "STATUS"), v: ((en ? { needs_response: "Needs response", under_review: "Bank reviewing", won: "Won", lost: "Lost", accepted: "Accepted" } : { needs_response: "Falta responder", under_review: "El banco revisa", won: "Ganada", lost: "Perdida", accepted: "Aceptada" }) as Record<string, string>)[dp.status] ?? dp.status },
+          { k: E2("MOTIVO", "REASON"), v: dp.motivo }, { k: E2("ESTADO", "STATUS"), v: (({ needs_response: E2("Falta responder", "Needs response"), under_review: E2("El banco revisa", "Bank reviewing"), won: E2("Ganada", "Won"), lost: E2("Perdida", "Lost"), accepted: E2("Aceptada", "Accepted") }) as Record<string, string>)[dp.status] ?? dp.status },
         ] });
         if (dp.sim) cuerpoB.push({ type: "note", tone: "info", icon: "info", t: E2("Sandbox: disputa simulada. No hay banco; el resultado se simula desde Transacciones.", "Sandbox: simulated dispute. There's no bank; the outcome is simulated from Transactions.") });
         if (ev) cuerpoB.push({ type: "timeline", k: E2("EVIDENCIA QUE TENEMOS", "EVIDENCE WE HAVE"), items: ev.lineas.map((t) => ({ t })) });
@@ -512,7 +513,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
         // archivos de Stripe en el mismo envío.
         const AR = "archivos" in k ? (k.archivos as { kind: string; bytes: number; enviado: boolean }[]) : [];
         cuerpoB.push({ type: "rows", k: E2("ARCHIVOS PARA EL BANCO", "FILES FOR THE BANK"), items: (["recibo", "conversacion", "entrega"] as const).map((x) => { const f = AR.find((a) => a.kind === x);
-          return { key: x, icon: x === "recibo" ? "folder" : x === "conversacion" ? "chat" : "truck", t: (en ? { recibo: "PDF receipt", conversacion: "Conversation with the customer (PDF, no phone numbers)", entrega: "Proof of delivery and timeline (PDF)" } : { recibo: "Recibo en PDF", conversacion: "Conversación con el cliente (PDF, sin teléfonos)", entrega: "Constancia de entrega y línea de tiempo (PDF)" })[x],
+          return { key: x, icon: x === "recibo" ? "folder" : x === "conversacion" ? "chat" : "truck", t: ({ recibo: E2("Recibo en PDF", "PDF receipt"), conversacion: E2("Conversación con el cliente (PDF, sin teléfonos)", "Conversation with the customer (PDF, no phone numbers)"), entrega: E2("Constancia de entrega y línea de tiempo (PDF)", "Proof of delivery and timeline (PDF)") })[x],
             s: f ? `${Math.max(1, Math.round(f.bytes / 1024))} KB · ${f.enviado ? E2("enviado al banco", "sent to the bank") : E2("listo, sin enviar", "ready, not sent")}` : E2("se arma al responder", "built when you respond"), tag: f?.enviado ? E2("ENVIADO", "SENT") : null, tone: "signal", chev: false, compact: true }; }) });
         if (!k.puedeDinero) cuerpoB.push({ type: "note", tone: "warn", icon: "lock", t: E2("Tu rol no decide sobre dinero.", "Your role doesn't decide on money.") });
         if (dp.status === "needs_response" && k.puedeDinero) acts = [
@@ -526,7 +527,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     }
     if (k.queue === "chat" && "dm" in k) {
       // 5c · Mensajes entre vecinos: se leen solo con el caso y un reporte abiertos (lib/admin-dm.ts). Ocultar avisa a quien lo escribió.
-      const d = k.dm, MD: Record<string, string> = en ? { acoso: "Harassment or threats", spam: "Spam or sales", priv: "Asks for or shares private data", otro: "Something else" } : { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
+      const d = k.dm, MD: Record<string, string> = { acoso: E2("Acoso o amenazas", "Harassment or threats"), spam: E2("Spam o ventas", "Spam or sales"), priv: E2("Pide o comparte datos privados", "Asks for or shares private data"), otro: E2("Otra cosa", "Something else") };
       const hace = (iso: string) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? E2("menos de 1 h", "under 1 h") : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
       if (!d) cuerpoB.push({ type: "note", tone: "info", icon: "lock", t: E2("Este caso ya no tiene un reporte abierto: la conversación no se puede leer.", "This case no longer has an open report: the conversation can't be read.") });
       else {
@@ -550,7 +551,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     }
     if (k.queue === "chat" && "chat" in k) {
       // Mensajes reportados (2p): el hilo se lee solo con el caso abierto. Ocultar un mensaje avisa a quien lo escribió.
-      const t = k.chat, reps = k.reportesC ?? [], MC: Record<string, string> = en ? { spam: "Spam or advertising", off: "Offensive or threatening", pii: "Asks for data or money", otro: "Something else", compa: "An El Compa reply" } : { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa", compa: "Una respuesta de El Compa" };
+      const t = k.chat, reps = k.reportesC ?? [], MC: Record<string, string> = { spam: E2("Spam o publicidad", "Spam or advertising"), off: E2("Ofensivo o amenaza", "Offensive or threatening"), pii: E2("Pide datos o dinero", "Asks for data or money"), otro: E2("Otra cosa", "Something else"), compa: E2("Una respuesta de El Compa", "An El Compa reply") };
       // 7f · Si El Compa contestó aquí (respuestas automáticas Pro del negocio): sus mensajes van marcados y se puede apagar en esta conversación
       // (o en todo el negocio, desde Negocios 360° › El Compa).
       const conCompa = !!t?.msjs.some((m) => m.compa);
@@ -582,7 +583,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     }
     if (k.queue === "rec" && "rec" in k && k.rec) {
       const r = k.rec;
-      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("CATEGORÍA", "CATEGORY"), v: r.cat ?? "—" }, { k: E2("DÓNDE", "WHERE"), v: r.where === "sin_local" ? E2("Sin local (en casa / a domicilio)", "No storefront (home-based / mobile)") : r.address ?? "—" }, { k: E2("CONTACTO", "CONTACT"), v: r.contact_phone ?? E2("No dejó", "Not provided") }, { k: E2("CÓMO LO CONOCE", "HOW THEY KNOW IT"), v: ((en ? { cli: "Is a customer", fam: "Belongs to a relative or friend", mio: "It's theirs" } : { cli: "Es cliente", fam: "Es de un familiar o amigo", mio: "Es suyo" }) as Record<string, string>)[r.how_known ?? ""] ?? r.how_known ?? "—" }, { k: E2("CIUDAD", "CITY"), v: r.ciudad }, { k: E2("RECOMENDÓ", "RECOMMENDED BY"), v: r.quien ?? E2("Vecino con sesión", "Signed-in neighbor") }] });
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: E2("CATEGORÍA", "CATEGORY"), v: r.cat ?? "—" }, { k: E2("DÓNDE", "WHERE"), v: r.where === "sin_local" ? E2("Sin local (en casa / a domicilio)", "No storefront (home-based / mobile)") : r.address ?? "—" }, { k: E2("CONTACTO", "CONTACT"), v: r.contact_phone ?? E2("No dejó", "Not provided") }, { k: E2("CÓMO LO CONOCE", "HOW THEY KNOW IT"), v: (({ cli: E2("Es cliente", "Is a customer"), fam: E2("Es de un familiar o amigo", "Belongs to a relative or friend"), mio: E2("Es suyo", "It's theirs") }) as Record<string, string>)[r.how_known ?? ""] ?? r.how_known ?? "—" }, { k: E2("CIUDAD", "CITY"), v: r.ciudad }, { k: E2("RECOMENDÓ", "RECOMMENDED BY"), v: r.quien ?? E2("Vecino con sesión", "Signed-in neighbor") }] });
       if (r.note) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: E2(`POR QUÉ LO RECOMIENDA · «${r.note}»`, `WHY THEY RECOMMEND IT · “${r.note}”`) });
       const par = ("parecidos" in k ? k.parecidos : []).filter(Boolean) as NonNullable<Caso["negocio"]>[];
       if (par.length) {
@@ -597,7 +598,7 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     }
     // 9n · Incidencia de entrega (k.queue === "entrega"): qué pasó, la prueba y el repartidor; «Resolver» con motivo (dlv:editar).
     if (esEntrega && "incidencia" in k && k.incidencia) {
-      const i = k.incidencia, PR: Record<string, string> = en ? { foto: "photo", codigo: "customer code", negocio: "marked by the business" } : { foto: "foto", codigo: "código del cliente", negocio: "marcado por el negocio" };
+      const i = k.incidencia, PR: Record<string, string> = { foto: E2("foto", "photo"), codigo: E2("código del cliente", "customer code"), negocio: E2("marcado por el negocio", "marked by the business") };
       cuerpoB.push({ type: "note", tone: i.kind === "accidente" ? "danger" : "warn", icon: i.kind === "accidente" ? "warning" : "truck", t: en ? i.nota.en || i.nota.es : i.nota.es });
       cuerpoB.push({ type: "rows", items: [
         { icon: "users", t: i.rep, s: E2("Repartidor · su 360° con entregas, incidencias y sanciones", "Driver · their 360° with deliveries, incidents and sanctions"), chev: true, onClick: () => router.push(`/admin/repartidores/${i.repId}`) },

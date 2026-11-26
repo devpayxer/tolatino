@@ -16,15 +16,19 @@ import { ConfirmarMotivo, plantE, Toast, useAncho, useToast, type Confirmar } fr
 import { useE2 } from "./idioma-admin";
 import { fotoFondo } from "@tolatino/ui";
 
+type EF = (es: string, en: string) => string;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const D = UI as unknown as Record<"PostCard" | "CommentCard" | "Button" | "AdminNote", ComponentType<any>>;
-const TIPO: Record<string, string> = { pregunta: "PREGUNTA", recomendacion: "RECOMENDACIÓN", encuesta: "ENCUESTA", publicacion: "PUBLICACIÓN" };
-const TIPO_EN: Record<string, string> = { pregunta: "QUESTION", recomendacion: "RECOMMENDATION", encuesta: "POLL", publicacion: "POST" };
+const TIPO = (E2: EF): Record<string, string> => ({
+  pregunta: E2("PREGUNTA", "QUESTION"), recomendacion: E2("RECOMENDACIÓN", "RECOMMENDATION"), encuesta: E2("ENCUESTA", "POLL"),
+  publicacion: E2("PUBLICACIÓN", "POST")
+});
 const fecha = (iso: string, en = false) => new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "").toUpperCase();
 const rk = (n: number, en = false) => (n >= 4 ? { label: (en ? rango(n).en : rango(n).es).toUpperCase(), tone: n >= 9 ? "ink" : "neutral" } : null);
 
 export function HiloAdmin({ h, marcado, puede }: { h: H; marcado: string | null; puede: boolean }) {
-  const router = useRouter(), desk = useAncho() >= 1024, { E2 } = useE2(), en = E2("", "x") === "x", P = plantE(E2), TP = en ? TIPO_EN : TIPO;
+  const router = useRouter(), desk = useAncho() >= 1024, { E2 } = useE2(), en = E2("", "x") === "x", P = plantE(E2), TP = TIPO(E2);
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   useEffect(() => { if (marcado) document.querySelector("[data-adm-focus]")?.scrollIntoView({ block: "center" }); }, [marcado]);
   const p = h.p, oculta = p.status === "hidden";

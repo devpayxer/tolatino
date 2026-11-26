@@ -35,8 +35,10 @@ import { marcaAnfitrion } from "@/lib/comunidad-comun";
 const A = UI as unknown as Record<"AdminList" | "Pager" | "Icon" | "BatchProgress", ComponentType<any>>;
 
 type EF = (es: string, en: string) => string;
-const TIPO_ES: Record<FilaCont["k"], [string, string]> = { rev: ["Reseña", "star"], nov: ["Novedad", "news"], cm: ["Comentario", "chat"], vac: ["Vacante", "brief"], pub: ["Publicación", "users"], ccm: ["Comentario de vecino", "bubble"] };
-const TIPO_EN: Record<FilaCont["k"], string> = { rev: "Review", nov: "Update", cm: "Comment", vac: "Job", pub: "Post", ccm: "Neighbor comment" };
+const TIPO_T = (E2: EF): Record<FilaCont["k"], [string, string]> => ({
+  rev: [E2("Reseña", "Review"), "star"], nov: [E2("Novedad", "Update"), "news"], cm: [E2("Comentario", "Comment"), "chat"],
+  vac: [E2("Vacante", "Job"), "brief"], pub: [E2("Publicación", "Post"), "users"], ccm: [E2("Comentario de vecino", "Neighbor comment"), "bubble"]
+});
 const PUB = (E2: EF): Record<string, string> => ({ pregunta: E2("Pregunta", "Question"), recomendacion: E2("Recomendación", "Recommendation"), encuesta: E2("Encuesta", "Poll"), publicacion: E2("Publicación", "Post") });
 const hace = (iso: string, ahora: number, E2: EF) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? E2("HACE UN MOMENTO", "JUST NOW") : h < 24 ? E2(`HACE ${Math.floor(h)} H`, `${Math.floor(h)} H AGO`) : E2(`HACE ${Math.floor(h / 24)} D`, `${Math.floor(h / 24)} D AGO`); };
 
@@ -48,7 +50,7 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
 }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, { E2 } = useE2();
-  const EN = E2("", "x") === "x", TIPO = Object.fromEntries(Object.entries(TIPO_ES).map(([k, v]) => [k, [EN ? TIPO_EN[k as FilaCont["k"]] : v[0], v[1]]])) as Record<FilaCont["k"], [string, string]>, PB = PUB(E2);
+  const EN = E2("", "x") === "x", TIPO = TIPO_T(E2), PB = PUB(E2);
   const [q, setQ] = useState(f.q), [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [lote, setLote] = useState<Lote>(null);
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("c" in p)) u.delete("c"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E2("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
@@ -57,7 +59,7 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
     return new Promise((ok) => setConf({
       titulo: ocultar ? (x.k === "pub" ? E2(`Ocultar la publicación de ${x.who}`, `Hide ${x.who}’s post`) : x.k === "ccm" ? E2(`Ocultar el comentario de ${x.who}`, `Hide ${x.who}’s comment`) : E2(`Ocultar ${TIPO[x.k][0].toLowerCase()} de ${x.bname}`, `Hide ${TIPO[x.k][0].toLowerCase()} from ${x.bname}`)) : E2(`¿Por qué vuelve esta ${TIPO[x.k][0].toLowerCase()}?`, `Why is this ${TIPO[x.k][0].toLowerCase()} coming back?`),
       sub: ocultar ? (x.k === "pub" ? E2("Sale del muro y de la publicación para todos. El autor ve el motivo y puede apelar; queda en la auditoría.", "It leaves the wall and the post for everyone. The author sees the reason and can appeal; it stays in the audit log.") : x.k === "ccm" ? E2("Sale del hilo para todos. El autor recibe el aviso con el motivo y puede apelar; queda en la auditoría.", "It leaves the thread for everyone. The author gets the notice with the reason and can appeal; it stays in the audit log.") : x.k === "vac" ? E2("Sale de su página y nadie nuevo aplica. El dueño ve el motivo en su panel.", "It leaves their page and no one new applies. The owner sees the reason in their dashboard.") : x.k === "rev" ? E2("Sale de su página y de las estrellas. El autor ve el motivo.", "It leaves their page and the stars. The author sees the reason.") : E2("Sale de su página. Queda en la auditoría.", "It leaves their page. It stays in the audit log.")) : x.k === "pub" ? E2("Vuelve al muro y el autor recibe el aviso.", "It goes back to the wall and the author gets the notice.") : x.k === "ccm" ? E2("Vuelve al hilo y el autor recibe el aviso.", "It goes back to the thread and the author gets the notice.") : undefined,
-      peligro: ocultar, plantillas: ocultar ? (x.k === "vac" ? [E2("Pide papeles, SSN o pago para aplicar", "Asks for papers, SSN or payment to apply"), E2("Pago por debajo del mínimo", "Pay below minimum"), E2("Vacante falsa o engañosa", "Fake or misleading job"), E2("Discriminatoria", "Discriminatory")] : PLANT.hide) : PLANT.keep,
+      peligro: ocultar, plantillas: ocultar ? (x.k === "vac" ? [E2("Pide papeles, SSN o pago para aplicar", "Asks for papers, SSN or payment to apply"), E2("Pago por debajo del mínimo", "Pay below minimum"), E2("Vacante falsa o engañosa", "Fake or misleading job"), E2("Discriminatoria", "Discriminatory")] : PLANT(E2).hide) : PLANT(E2).keep,
       nota: ocultar ? "persona" : "interna", hacer: async (motivo) => { const r = await m(motivo); ok(r); return r; },
     }));
   };
@@ -75,7 +77,7 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
   // «Ocultar los N reportados» (MEM 651): el servidor da la lista y decide cada uno; aquí solo se cuenta el progreso y los fallos.
   const enLote = () => setConf({
     titulo: E2(`Ocultar ${d.cab.lote} reportados`, `Hide ${d.cab.lote} reported`), sub: E2("Publicaciones y comentarios de la Comunidad que se ven y tienen un reporte abierto. Cada autor recibe el motivo y puede apelar; quienes reportaron, el resultado. La cuenta oficial no se oculta en lote.", "Visible Community posts and comments with an open report. Each author gets the reason and can appeal; reporters get the result. The official account is never hidden in bulk."),
-    peligro: true, cta: E2("Ocultar en lote", "Hide in bulk"), plantillas: PLANT.hide,
+    peligro: true, cta: E2("Ocultar en lote", "Hide in bulk"), plantillas: PLANT(E2).hide,
     nota: "persona", hacer: async (motivo) => {
       const L = await loteReportados();
       if (!L.ok) return { ok: false, mensaje: L.mensaje ?? E2("No se pudo.", "It didn’t work.") };

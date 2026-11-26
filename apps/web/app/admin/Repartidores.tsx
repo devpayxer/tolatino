@@ -12,15 +12,17 @@ import type { ResAdm } from "./acciones-colas";
 import { useE2 } from "./idioma-admin";
 import { numVisible } from "@/lib/reparto-comun";
 
+type EF = (es: string, en: string) => string;
+
 export const KIND_INC = (E2: (a: string, b: string) => string): Record<string, string> => ({ accidente: E2("ACCIDENTE", "ACCIDENT"), codigo: E2("CÓDIGO", "CODE"), reclamo: E2("RECLAMO", "CLAIM"), otro: E2("INCIDENCIA", "INCIDENT") });
-const SANC: Record<string, [string, string]> = { suspension: ["SUSPENDIDO", "SUSPENDED"], baneo: ["BANEADO", "BANNED"] };
+const SANC = (E2: EF): Record<string, string> => ({ suspension: E2("SUSPENDIDO", "SUSPENDED"), baneo: E2("BANEADO", "BANNED") });
 export const cuandoDlv = (iso: string, en = false) => new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
 export function Repartidores({ tab, f, lista, incid, todas, puede }: {
   tab: "lista" | "incid"; f: FiltroDlv; lista: { filas: FilaDlv[]; mas: string | null; cab: { total: number; linea: number; sancion: number; incid: number } } | null;
   incid: Incidencia[] | null; todas: boolean; puede: { editar: boolean; sancionar: boolean };
 }) {
-  const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, { E2 } = useE2(), en = E2("", "x") === "x", li = en ? 1 : 0;
+  const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, { E2 } = useE2(), en = E2("", "x") === "x", sanc = SANC(E2);
   const [q, setQ] = useState(f.q), [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("antes" in p)) u.delete("antes"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E2("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
@@ -39,10 +41,10 @@ export function Repartidores({ tab, f, lista, incid, todas, puede }: {
   ];
   if (tab === "lista" && lista) {
     B.push({ type: "search", val: q, ph: E2("Nombre o teléfono", "Name or phone"), onChange: (v: string) => setQ(v.slice(0, 60)), onClear: () => { setQ(""); ir({ q: null }); }, link: E2("Buscar", "Search"), onLink: () => ir({ q: q.trim() || null }) });
-    B.push({ type: "chips", items: ([["", "Todos", "All"], ["linea", "En línea ahora", "Online now"], ["incid", "Con incidencias", "With incidents"], ["sancion", "Con sanción", "Sanctioned"]] as const).map(([k, l, lEn]) => ({ l: en ? lEn : l, v: f.est === k ? "selected" : "filter", onClick: () => ir({ est: k || null }) })) });
+    B.push({ type: "chips", items: ([["", E2("Todos", "All")], ["linea", E2("En línea ahora", "Online now")], ["incid", E2("Con incidencias", "With incidents")], ["sancion", E2("Con sanción", "Sanctioned")]] as const).map(([k, l]) => ({ l, v: f.est === k ? "selected" : "filter", onClick: () => ir({ est: k || null }) })) });
     B.push(lista.filas.length ? { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: lista.filas.map((r): Fila => ({ key: r.id, icon: "truck", t: r.nombre,
       s: [r.equipos.length ? r.equipos.join(", ") : E2("Sin equipo activo", "No active team"), r.ciudad, E2(`${r.entregas30} entregas en 30 días`, `${r.entregas30} deliveries in 30 days`), r.problemas30 ? E2(`${r.problemas30} problemas`, `${r.problemas30} ${r.problemas30 === 1 ? "problem" : "problems"}`) : null, r.incid ? E2(`${r.incid} ${r.incid === 1 ? "incidencia" : "incidencias"}`, `${r.incid} ${r.incid === 1 ? "incident" : "incidents"}`) : null].filter(Boolean).join(" · "),
-      tag: r.sancion ? SANC[r.sancion]?.[li] : r.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: r.sancion ? "danger" : "signal", chev: true, onClick: () => router.push(`/admin/repartidores/${r.id}`) })) }
+      tag: r.sancion ? sanc[r.sancion] : r.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: r.sancion ? "danger" : "signal", chev: true, onClick: () => router.push(`/admin/repartidores/${r.id}`) })) }
       : { type: "empty", icon: "truck", t: E2("Nadie con esos filtros", "No one matches those filters"), s: f.q || f.est ? E2("Quita un filtro o busca por teléfono.", "Remove a filter or search by phone.") : E2("Cuando un negocio invite a su primer repartidor y este acepte, sale aquí.", "When a business invites its first driver and they accept, they show here.") });
     if (lista.mas) B.push({ type: "acts", items: [{ l: E2("Ver más", "See more"), v: "secondary", onClick: () => ir({ antes: lista.mas }) }] });
     if (f.antes) B.push({ type: "acts", items: [{ l: E2("Volver al principio", "Back to the start"), v: "secondary", onClick: () => ir({ antes: null }) }] });

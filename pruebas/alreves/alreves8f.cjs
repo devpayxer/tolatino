@@ -67,7 +67,7 @@ const casos = [
   ['pluginViejoNoRompe', NR, '  try { await p.agitar({ on }); } catch { return () => undefined; }', '  await p.agitar({ on });'],
   ['pluginViejoNoRompe', NR, '  try { const r = await p.cierres(); return', '  { const r = await p.cierres(); return'],
   // colaConVista ampliado
-  ['colaConVista', SA, ', reporte_app: "App · Reportar un problema", correo: "Correo a Soporte" };', ', correo: "Correo a Soporte" };'], // 9b-3 · la lista de hoy (9: correo)
+  ['colaConVista', SA, 'reporte_app: E2("App · Reportar un problema", "App · Report a problem"), correo: E2("Correo a Soporte", "Email to Support")', 'correo: E2("Correo a Soporte", "Email to Support")'], // 9b-3 · la lista de hoy (9: correo)
   ['colaConVista', SE, '  const registro = c.origin === "reporte_app" ? await registroDelCaso(c.id) : null;', '  const registro = null as RegistroEquipo;'],
 ];
 const crear = [

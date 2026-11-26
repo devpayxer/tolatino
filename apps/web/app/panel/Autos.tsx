@@ -27,7 +27,7 @@ const lock = (t: string, s: string): Fila => ({ icon: "lock", ibg: "rgba(11,14,1
 const bi = (x: { es: string; en: string } | null | undefined, es: boolean) => (x ? (es ? x.es : x.en || x.es) : "");
 const tone = (s: EstadoCarro) => (s === "lot" ? "signal" : s === "pending" ? "action" : s === "hidden" ? "neutral" : "danger");
 const millasL = (x: Pick<CarroAuto, "miles" | "hours">, es: boolean) => (x.miles != null ? `${x.miles.toLocaleString("en-US")} ${es ? "millas" : "miles"}` : x.hours != null ? `${x.hours.toLocaleString("en-US")} ${es ? "horas de motor" : "engine hours"}` : "");
-const estL = (s: EstadoCarro, es: boolean) => (es ? ESTADO_CARRO[s][0] : ESTADO_CARRO[s][1]);
+const estL = (s: EstadoCarro, E2: (es: string, en: string) => string) => ESTADO_CARRO(E2)[s];
 
 /* La fila de «Inventario» y la de «Tu herramienta» en Lo que vendes. */
 export function filaInventario(c: Ctx): Fila | null {
@@ -62,9 +62,9 @@ export function inventarioBloques(c: Ctx): Sec {
     s: E2("Con el VIN, el millaje y el precio ya sale en tu página con su total en la puerta.", "With the VIN, mileage and price it shows on your page with its out-the-door total."), cta: E2("Agregar", "Add"), onCta: () => c.det("auto:new") });
   else out.push({ type: "rows", cols: c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : undefined, items: L.map((x): Fila => ({
     key: x.id, img: x.fotos[0] ? `url("${x.fotos[0]}")` : undefined, imgIni: x.fotos[0] ? undefined : x.make.slice(0, 1), imgW: "52px", t: bi(x.name, es),
-    s: [millasL(x, es), es ? TITULO[x.title][0] : TITULO[x.title][1], x.title === "salvage" ? bi(SALVAGE, es) : ""].filter(Boolean).join(" · "),
+    s: [millasL(x, es), TITULO(E2)[x.title], x.title === "salvage" ? bi(SALVAGE, es) : ""].filter(Boolean).join(" · "),
     m: x.adm != null ? E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO") : `${E2("EN LA PUERTA", "OUT THE DOOR")} ${usd(x.puerta.otd)}`,
-    mFg: x.adm != null ? "var(--tl-danger)" : undefined, r: usd(x.puerta.price), tag: estL(x.status, es).toUpperCase(), tone: tone(x.status), chev: true, onClick: () => c.det(`auto:${x.id}`) })) });
+    mFg: x.adm != null ? "var(--tl-danger)" : undefined, r: usd(x.puerta.price), tag: estL(x.status, E2).toUpperCase(), tone: tone(x.status), chev: true, onClick: () => c.det(`auto:${x.id}`) })) });
   if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_CARROS_FREE} vehículos en tu página. Los vendidos u ocultos no cuentan.`, `On Free, ${TOPE_CARROS_FREE} vehicles show on your page. Sold or hidden ones do not count.`), ...ctaPro(c, "Pro") });
   out.push({ type: "note", tone: "info", icon: "info", t: bi(LINEA_AUTOS_SUB, es) });
   return { blocks: out, ed: null };
@@ -103,7 +103,7 @@ export function carroDetalle(c: Ctx, id: string): Sec {
   };
   const cot = c.ui[`otd:${id}`] as Cot | null | undefined;
   const vivo: Cot | null = cot && cot.price === cents ? cot : x0 && cents === x0.puerta.price ? { price: x0.puerta.price, puerta: x0.puerta, est: x0.est, bhph: x0.bhph } : null;
-  const out: (Bloque | null)[] = [{ type: "head", eye: isNew ? E2("VEHÍCULO NUEVO", "NEW VEHICLE") : `${E2("VEHÍCULO", "VEHICLE")} · ${estL(x0!.status, es).toUpperCase()}`,
+  const out: (Bloque | null)[] = [{ type: "head", eye: isNew ? E2("VEHÍCULO NUEVO", "NEW VEHICLE") : `${E2("VEHÍCULO", "VEHICLE")} · ${estL(x0!.status, E2).toUpperCase()}`,
     t: isNew ? E2("Nuevo vehículo", "New vehicle") : bi(x0!.name, es), s: isNew ? E2("Con el VIN, el millaje y el precio ya sale en tu página con su total en la puerta.", "With the VIN, mileage and price it shows on your page with its out-the-door total.") : [es ? B.es : B.en, millasL(x0!, es)].filter(Boolean).join(" · "), onBack: c.closeDet }];
   if (x0?.adm != null) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino ocultó este vehículo: no sale en tu página. Motivo: ${x0.adm}`, `To’Latino hid this vehicle: it is not on your page. Reason: ${x0.adm}`) });
   // Fotos: la primera sale en la lista. La ayuda de captura: el precio del parabrisas.
@@ -132,7 +132,7 @@ export function carroDetalle(c: Ctx, id: string): Sec {
   }
   // Título e historial: lo declara el dealer (To'Latino no compra historiales); salvage = no va por la calle.
   out.push({ type: "group", k: E2("TÍTULO E HISTORIAL", "TITLE AND HISTORY") },
-    { type: "chips", k: E2("TÍTULO", "TITLE"), items: (["limpio", "reconstruido", "salvage"] as Titulo[]).map((t) => ({ l: es ? TITULO[t][0] : TITULO[t][1], v: d.title === t ? "selected" : "filter", onClick: () => set({ title: t, street: t === "salvage" ? false : BODY[d.body].calle }) })) });
+    { type: "chips", k: E2("TÍTULO", "TITLE"), items: (["limpio", "reconstruido", "salvage"] as Titulo[]).map((t) => ({ l: TITULO(E2)[t], v: d.title === t ? "selected" : "filter", onClick: () => set({ title: t, street: t === "salvage" ? false : BODY[d.body].calle }) })) });
   if (d.title === "salvage") out.push({ type: "note", tone: "danger", icon: "ban", t: bi(SALVAGE, es) });
   out.push({ type: "rows", cols: c.desk ? "repeat(2,minmax(0,1fr))" : undefined, items: [
     { icon: "check", t: E2("Tiene historial del carro", "Has a vehicle history report"), s: E2("Lo das tú; To’Latino no compra historiales.", "You provide it; To’Latino does not buy reports."), tgOn: d.history, onTg: () => set({ history: !d.history }), compact: true },
@@ -162,9 +162,9 @@ export function carroDetalle(c: Ctx, id: string): Sec {
   const notas = notasCarro({ title: d.title, street: d.street, body: d.body, cdl: d.cdl, warranty: d.warranty, wMonths: Number(d.wMonths) || null, wMiles: Number(d.wMiles) || null, history: d.history, historySrc: d.historySrc || null }, es);
   out.push({ type: "mprev", k: E2("ASÍ SE VE EN TU PÁGINA", "HOW IT LOOKS ON YOUR PAGE"), name: nombre, desc: (es ? d.desc : d.descEn || d.desc) || "", price: cents ? usd(cents) : "$0",
     tags: [...(vivo ? [{ label: `${E2("EN LA PUERTA", "OUT THE DOOR")} ${usd(vivo.puerta.otd)}`, tone: "ink" }] : []), ...(d.miles ? [{ label: `${Number(d.miles).toLocaleString("en-US")} ${E2("MILLAS", "MILES")}`, tone: "neutral" }] : []),
-      { label: (es ? TITULO[d.title][0] : TITULO[d.title][1]).toUpperCase(), tone: d.title === "limpio" ? "signal" : "danger" }], image: d.fotos[0] ?? "" });
+      { label: TITULO(E2)[d.title].toUpperCase(), tone: d.title === "limpio" ? "signal" : "danger" }], image: d.fotos[0] ?? "" });
   for (const t of notas) out.push({ type: "note", tone: t === bi(SALVAGE, es) ? "danger" : "info", icon: t === bi(SALVAGE, es) ? "ban" : "info", t });
-  if (!isNew) out.push({ type: "chips", k: E2("ESTADO · SE GUARDA AL TOCAR", "STATUS · SAVED WHEN TAPPED"), items: (["lot", "pending", "sold", "hidden"] as EstadoCarro[]).map((s) => ({ l: estL(s, es), v: x0!.status === s ? "selected" : "filter",
+  if (!isNew) out.push({ type: "chips", k: E2("ESTADO · SE GUARDA AL TOCAR", "STATUS · SAVED WHEN TAPPED"), items: (["lot", "pending", "sold", "hidden"] as EstadoCarro[]).map((s) => ({ l: estL(s, E2), v: x0!.status === s ? "selected" : "filter",
     onClick: () => c.run(() => autosEstado(c.d.id, id, s), E2("Guardado · tu página ya lo dice.", "Saved · your page says so now.")) })) });
   // El dígito verificador lo revisa el servidor al guardar (y dice qué está mal); aquí solo que estén los 17.
   const miss = [!sinVin(d.body, yr || 2000) && vin.length !== 17 ? "VIN" : null, !(yr >= 1900) ? E2("año", "year") : null, !d.make.trim() ? E2("marca", "make") : null, !d.model.trim() ? E2("modelo", "model") : null,

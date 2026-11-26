@@ -22,41 +22,50 @@ import {
 import type { Privacidad360 } from "@/lib/datos/admin";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
-import { EST_USR, EST_USR_EN, haceUsr } from "./Usuarios";
+import { EST_USR, haceUsr } from "./Usuarios";
 import { useE2 } from "./idioma-admin";
 import { SoporteDe360, type CasoSop } from "./SoporteDe360";
 import type { CompaUsuario } from "@/lib/compa/admin-compa";
 import { useAhora } from "@/lib/ahora";
 
 import { tec } from "@/lib/tec";
+
+type EF = (es: string, en: string) => string;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "Icon", ComponentType<any>>;
-const PUSH_APP: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta", web: "Web" };
-const PUSH_PROV: Record<string, string> = { apns: "APNs", fcm: "FCM", webpush: "Web Push", sim: "simulado (semilla)" };
-const PUSH_APP_EN: Record<string, string> = { cliente: "To'Latino", negocio: "Business", delivery: "Driver", checkin: "Door", web: "Web" };
-const PUSH_PROV_EN: Record<string, string> = { apns: "APNs", fcm: "FCM", webpush: "Web Push", sim: "simulated (seed)" };
-const LLAVE_POR: Record<string, string> = { user: "la quitó la persona", staff: "la revocó el equipo", sistema: "la quitó el sistema" };
-const LLAVE_POR_EN: Record<string, string> = { user: "removed by the person", staff: "revoked by the team", sistema: "removed by the system" };
-const PUSH_MOTIVO: Record<string, string> = { salir: "salió de la cuenta", invalido: "el proveedor dijo que ya no sirve", apagado: "los apagó la persona", reemplazado: "lo reemplazó otro", admin: "el equipo", vencido: "sin uso" };
-const PUSH_MOTIVO_EN: Record<string, string> = { salir: "signed out", invalido: "the provider said it no longer works", apagado: "turned off by the person", reemplazado: "replaced by another", admin: "the team", vencido: "unused" };
+const PUSH_APP = (E2: EF): Record<string, string> => ({ cliente: "To'Latino", negocio: E2("Negocios", "Business"), delivery: E2("Repartidor", "Driver"), checkin: E2("Puerta", "Door"), web: "Web" });
+const PUSH_PROV = (E2: EF): Record<string, string> => ({ apns: "APNs", fcm: "FCM", webpush: "Web Push", sim: E2("simulado (semilla)", "simulated (seed)") });
+const LLAVE_POR = (E2: EF): Record<string, string> => ({
+  user: E2("la quitó la persona", "removed by the person"), staff: E2("la revocó el equipo", "revoked by the team"),
+  sistema: E2("la quitó el sistema", "removed by the system")
+});
+const PUSH_MOTIVO = (E2: EF): Record<string, string> => ({
+  salir: E2("salió de la cuenta", "signed out"), invalido: E2("el proveedor dijo que ya no sirve", "the provider said it no longer works"),
+  apagado: E2("los apagó la persona", "turned off by the person"), reemplazado: E2("lo reemplazó otro", "replaced by another"),
+  admin: E2("el equipo", "the team"), vencido: E2("sin uso", "unused")
+});
 /* Verbo de cada acción en el historial. */
-const VERBO: Record<string, string> = {
-  "usuario.nota": "agregó una nota a", "usuario.sancionar": "sancionó a", "usuario.levantar": "levantó la sanción de", "usuario.foto.quitar": "quitó la foto de",
-  "usuario.sesiones.cerrar": "cerró las sesiones de", "usuario.sesion.cerrar": "cerró una sesión de", "usuario.sesion.bloquear": "bloqueó un dispositivo de",
-  "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.push.revocar": "revocó los avisos de un teléfono de", "usuario.llave.revocar": "revocó una llave de acceso de", "usuario.verificacion.restablecer": "restableció la verificación de",
-  "usuario.ciudad": "cambió la ciudad de", "usuario.borrado.pedir": "pidió borrar la cuenta de", "usuario.borrar": "borró la cuenta de", "usuario.restaurar": "restauró la cuenta de",
-  "usuario.exportar": "exportó los datos de", "usuario.red.caso": "abrió un caso de red de cuentas de", "usuario.evt.caso": "abrió un caso de Eventos de",
-  "usuario.ver_como": "vio en solo lectura los datos de", "usuario.fusion.pedir": "pidió fusionar la cuenta de", "usuario.fusionar": "fusionó la cuenta de",
-};
-const VERBO_EN: Record<string, string> = {
-  "usuario.nota": "added a note to", "usuario.sancionar": "sanctioned", "usuario.levantar": "lifted the sanction of", "usuario.foto.quitar": "removed the photo of",
-  "usuario.sesiones.cerrar": "closed the sessions of", "usuario.sesion.cerrar": "closed a session of", "usuario.sesion.bloquear": "blocked a device of",
-  "usuario.dispositivo.bloquear": "blocked a device of", "usuario.dispositivo.desbloquear": "unblocked a device of", "usuario.push.revocar": "revoked a phone’s notifications for", "usuario.llave.revocar": "revoked a passkey of", "usuario.verificacion.restablecer": "reset the verification of",
-  "usuario.ciudad": "changed the city of", "usuario.borrado.pedir": "requested deleting the account of", "usuario.borrar": "deleted the account of", "usuario.restaurar": "restored the account of",
-  "usuario.exportar": "exported the data of", "usuario.red.caso": "opened an account-network case for", "usuario.evt.caso": "opened an Events case for",
-  "usuario.ver_como": "viewed read-only the data of", "usuario.fusion.pedir": "requested merging the account of", "usuario.fusionar": "merged the account of",
-};
-const PLANTILLAS_USR_EN = ["Repeat offender", "First time", "Accounts linked to the same device", "The context justifies the action"];
+const VERBO = (E2: EF): Record<string, string> => ({
+  "usuario.nota": E2("agregó una nota a", "added a note to"), "usuario.sancionar": E2("sancionó a", "sanctioned"),
+  "usuario.levantar": E2("levantó la sanción de", "lifted the sanction of"), "usuario.foto.quitar": E2("quitó la foto de", "removed the photo of"),
+  "usuario.sesiones.cerrar": E2("cerró las sesiones de", "closed the sessions of"),
+  "usuario.sesion.cerrar": E2("cerró una sesión de", "closed a session of"),
+  "usuario.sesion.bloquear": E2("bloqueó un dispositivo de", "blocked a device of"),
+  "usuario.dispositivo.bloquear": E2("bloqueó un dispositivo de", "blocked a device of"),
+  "usuario.dispositivo.desbloquear": E2("desbloqueó un dispositivo de", "unblocked a device of"),
+  "usuario.push.revocar": E2("revocó los avisos de un teléfono de", "revoked a phone’s notifications for"),
+  "usuario.llave.revocar": E2("revocó una llave de acceso de", "revoked a passkey of"),
+  "usuario.verificacion.restablecer": E2("restableció la verificación de", "reset the verification of"),
+  "usuario.ciudad": E2("cambió la ciudad de", "changed the city of"),
+  "usuario.borrado.pedir": E2("pidió borrar la cuenta de", "requested deleting the account of"),
+  "usuario.borrar": E2("borró la cuenta de", "deleted the account of"), "usuario.restaurar": E2("restauró la cuenta de", "restored the account of"),
+  "usuario.exportar": E2("exportó los datos de", "exported the data of"),
+  "usuario.red.caso": E2("abrió un caso de red de cuentas de", "opened an account-network case for"),
+  "usuario.evt.caso": E2("abrió un caso de Eventos de", "opened an Events case for"),
+  "usuario.ver_como": E2("vio en solo lectura los datos de", "viewed read-only the data of"),
+  "usuario.fusion.pedir": E2("pidió fusionar la cuenta de", "requested merging the account of"),
+  "usuario.fusionar": E2("fusionó la cuenta de", "merged the account of")
+});
 const CAMBIO_K: Record<string, string> = { phone: "Teléfono", city: "Ciudad", email: "Correo", name: "Nombre" };
 const fechaL = (iso: string | null, en = false) => (iso ? new Date(iso).toLocaleDateString(en ? "en-US" : "es-US", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
@@ -67,7 +76,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const { E2 } = useE2(), en = E2("", "x") === "x", fecha = (iso: string | null) => fechaL(iso, en), bi = (b: { es: string; en?: string }) => (en && b.en) || b.es;
-  const PA = en ? PUSH_APP_EN : PUSH_APP, PP = en ? PUSH_PROV_EN : PUSH_PROV, LP = en ? LLAVE_POR_EN : LLAVE_POR, PM = en ? PUSH_MOTIVO_EN : PUSH_MOTIVO, VB = en ? VERBO_EN : VERBO, EU = en ? EST_USR_EN : EST_USR, PLU = en ? PLANTILLAS_USR_EN : PLANTILLAS_USR;
+  const PA = PUSH_APP(E2), PP = PUSH_PROV(E2), LP = LLAVE_POR(E2), PM = PUSH_MOTIVO(E2), VB = VERBO(E2), EU = EST_USR(E2), PLU = PLANTILLAS_USR(E2);
   const subS = (k: Sancion) => (en ? (SANCIONES[k].dias ? `${SANCIONES[k].dias} days · lifts on its own` : k === "ban" ? "Permanent · confirmed by an Admin" : "Until a person lifts it") : subSancion(k));
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -167,7 +176,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
           // Mi cuenta (2h): correo, y borrar la cuenta (30 días) o cancelarlo.
           ...u.cambios.filter((c) => c.kind === "email").map((c) => ({ icon: "news", t: `${E2("Cambió el correo", "Changed email")}: ${c.de ?? "—"} → ${c.a ?? "—"}`, s: `${c.by === "staff" ? E2("Lo cambió el equipo", "Changed by the team") : E2("Lo cambió la persona", "Changed by the person")} · ${fecha(c.at)}` })),
           ...u.cambios.filter((c) => c.kind === "passkey").map((c) => ({ icon: "key", t: c.de ? `${E2("Llave de acceso de", "Passkey on")} ${c.de}: ${c.a ?? "—"}` : `${E2("Llave de acceso", "Passkey")}: ${c.a ?? "—"}`, s: `${c.by === "staff" ? E2("Lo hizo el equipo", "Done by the team") : c.by === "sistema" ? E2("Lo hizo el sistema", "Done by the system") : E2("Lo hizo la persona", "Done by the person")} · ${fecha(c.at)}` })),
-          ...u.cambios.filter((c) => c.kind === "delete" || c.kind === "undelete").map((c) => ({ icon: "trash", t: c.kind === "delete" ? `${E2("Pidió borrar su cuenta", "Asked to delete their account")}${c.a ? ` · ${E2("motivo", "reason")}: ${((en ? { uso: "no longer uses it", avisos: "too many notifications", priv: "privacy", ciudad: "moved", otra: "other reason" } : { uso: "ya no la usa", avisos: "muchos avisos", priv: "privacidad", ciudad: "se mudó", otra: "otra razón" }) as Record<string, string>)[c.a] ?? c.a}` : ""}` : E2("Canceló el borrado de su cuenta", "Cancelled their account deletion"), s: `${E2("Lo hizo la persona", "Done by the person")} · ${fecha(c.at)}` })),
+          ...u.cambios.filter((c) => c.kind === "delete" || c.kind === "undelete").map((c) => ({ icon: "trash", t: c.kind === "delete" ? `${E2("Pidió borrar su cuenta", "Asked to delete their account")}${c.a ? ` · ${E2("motivo", "reason")}: ${(({ uso: E2("ya no la usa", "no longer uses it"), avisos: E2("muchos avisos", "too many notifications"), priv: E2("privacidad", "privacy"), ciudad: E2("se mudó", "moved"), otra: E2("otra razón", "other reason") }) as Record<string, string>)[c.a] ?? c.a}` : ""}` : E2("Canceló el borrado de su cuenta", "Cancelled their account deletion"), s: `${E2("Lo hizo la persona", "Done by the person")} · ${fecha(c.at)}` })),
         ] }]} />
         {P.editar && !borrada && u.phone_ok ? <PanelBloques bloques={[{ type: "acts", items: [{ l: E2("Restablecer verificación", "Reset verification"), icon: "lock", off: pend, onClick: () => setConf({ titulo: E2(`Restablecer verificación de ${corto}`, `Reset ${corto}’s verification`), sub: E2("Se cierran sus sesiones, se quitan sus llaves de acceso y al entrar le pedimos el código por SMS otra vez. Úsalo si cree que alguien entró a su cuenta.", "Their sessions close, their passkeys are removed and we ask for the SMS code again at sign-in. Use it if they think someone got into their account."), nota: "interna", hacer: (m) => restablecerVerificacion(u.id, m) }) }] }]} /> : null}
         <PanelBloques bloques={[{ type: "group", k: E2("CIUDAD", "CITY") }, { type: "kv", cols: desk ? 3 : 1, items: [{ k: E2("AHORA", "NOW"), v: u.ciudad ?? E2("Sin ciudad", "No city") }, { k: E2("ÚLTIMO CAMBIO", "LAST CHANGE"), v: u.city_changed ? fecha(u.city_changed) : E2("Nunca", "Never") }, { k: E2("REGLA", "RULE"), v: E2("El vecino la cambia 1 vez cada 30 días", "Neighbors can change it once every 30 days") }] }]} />
@@ -178,7 +187,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
           nota: "interna", hacer: (m, e) => cambiarCiudadUsuario(u.id, e ?? "", m) }) }] }]} /> : null}
       </>);
   } else if (tab === "confianza") {
-    const REP: Record<string, string> = en ? { no_es: "Not from this business", inapropiado: "Inappropriate content", datos: "Shows personal data", spam: "Ad or spam", otro: "Other reason" } : { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" };
+    const REP: Record<string, string> = { no_es: E2("No es de este negocio", "Not from this business"), inapropiado: E2("Contenido inapropiado", "Inappropriate content"), datos: E2("Muestra datos personales", "Shows personal data"), spam: E2("Es publicidad o spam", "Ad or spam"), otro: E2("Otro motivo", "Other reason") };
     cuerpo = (
       <>
         <PanelBloques bloques={[{ type: "kv", cols: desk ? 3 : 2, items: [
@@ -203,9 +212,9 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
       {L.length ? <A.AdminList rows={L.map((x) => ({ icon: "users", title: x.nombre, sub: `${x.rango} · ${x.ciudad ?? E2("Sin ciudad", "No city")} · ${fecha(x.at)}`, tag: x.mismo ? E2("MISMO DISPOSITIVO", "SAME DEVICE") : undefined, tone: "danger", chevron: true, onClick: () => router.push(`/admin/usuarios/${x.id}?tab=comunidad&sub=seg`) }))} />
         : <A.AdminNote tone="info" icon="users">{vacio}</A.AdminNote>}
     </>;
-    const EST_C: Record<string, string> = en ? { visible: "VISIBLE", hidden: "HIDDEN", deleted: "DELETED BY ITS AUTHOR" } : { visible: "SE VE", hidden: "OCULTO", deleted: "BORRADO POR SU AUTOR" };
-    const TIPO_C: Record<string, string> = en ? { pregunta: "Question", recomendacion: "Recommendation", encuesta: "Poll", publicacion: "Post" } : { pregunta: "Pregunta", recomendacion: "Recomendación", encuesta: "Encuesta", publicacion: "Publicación" };
-    const EST_K: Record<string, string> = en ? { issued: "LIVE CODE", used: "USED", expired: "EXPIRED · COINS RETURNED" } : { issued: "CÓDIGO VIVO", used: "USADO", expired: "VENCIDO · MONEDAS DEVUELTAS" };
+    const EST_C: Record<string, string> = { visible: E2("SE VE", "VISIBLE"), hidden: E2("OCULTO", "HIDDEN"), deleted: E2("BORRADO POR SU AUTOR", "DELETED BY ITS AUTHOR") };
+    const TIPO_C: Record<string, string> = { pregunta: E2("Pregunta", "Question"), recomendacion: E2("Recomendación", "Recommendation"), encuesta: E2("Encuesta", "Poll"), publicacion: E2("Publicación", "Post") };
+    const EST_K: Record<string, string> = { issued: E2("CÓDIGO VIVO", "LIVE CODE"), used: E2("USADO", "USED"), expired: E2("VENCIDO · MONEDAS DEVUELTAS", "EXPIRED · COINS RETURNED") };
     const subTabs: Bloque = { type: "tabs", items: ([["pub", E2("Publicaciones", "Posts"), com.pubs.length], ["cm", E2("Comentarios", "Comments"), com.cms.length], ["seg", E2("Seguidores y siguiendo", "Followers and following")], ["pym", E2("Puntos y monedas", "Points and coins")], ["cup", E2("Cupones y referidos", "Coupons and referrals")]] as [string, string, number?][])
       .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: sub === k, onClick: () => router.push(`/admin/usuarios/${u.id}?tab=comunidad&sub=${k}`, { scroll: false }) })) };
     let parte: ReactNode = null;
@@ -257,7 +266,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
             ] }] : []),
             { type: "group", k: E2("MONEDAS · MOVIMIENTOS", "COINS · ACTIVITY") },
             mon.log.length ? { type: "rows", items: mon.log.map((x) => ({ key: x.id, icon: "ticket", ibg: x.delta < 0 ? "rgba(192,57,43,.1)" : undefined, ifg: x.delta < 0 ? BAD : undefined,
-              t: x.motivo === "ajuste" ? `${E2("Ajuste del equipo", "Team adjustment")}: ${x.reason ?? ""}` : ((en ? { welcome: "Welcome", premio_mes: "Neighborhood Leaderboard prize", canje: "Redeemed a coupon", devolucion: "Expired code: coins returned" } : { welcome: "Bienvenida", premio_mes: "Premio de la Tabla del Barrio", canje: "Canjeó un cupón", devolucion: "Código vencido: monedas devueltas" }) as Record<string, string>)[x.motivo] ?? E2("Monedas", "Coins"),
+              t: x.motivo === "ajuste" ? `${E2("Ajuste del equipo", "Team adjustment")}: ${x.reason ?? ""}` : (({ welcome: E2("Bienvenida", "Welcome"), premio_mes: E2("Premio de la Tabla del Barrio", "Neighborhood Leaderboard prize"), canje: E2("Canjeó un cupón", "Redeemed a coupon"), devolucion: E2("Código vencido: monedas devueltas", "Expired code: coins returned") }) as Record<string, string>)[x.motivo] ?? E2("Monedas", "Coins"),
               s: `${x.quien ? `${E2("Equipo", "Team")} · ${x.quien} · ` : ""}${fecha(x.at)}`, r: x.delta > 0 ? `+${x.delta}` : `−${-x.delta}` })) } : { type: "empty", icon: "ticket", t: E2("Sin movimientos", "No activity"), s: E2("Todavía no tiene monedas.", "Has no coins yet.") },
           ]} />
         </>}
@@ -297,7 +306,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     // 6j · Actividad (prototipo usrDetail «act»): cuántas operaciones en 90 días y BOLETOS DE EVENTOS (estado, transferencias, devoluciones,
     // entradas) y RSVP. Cada boleto abre Buscar boleto; el evento, su ficha. Nunca el teléfono de otra persona.
     const ST: Record<string, [string, string]> = { valid: [E2("VÁLIDO", "VALID"), "signal"], used: [E2("USADO", "USED"), "neutral"], refunded: [E2("DEVUELTO", "REFUNDED"), "neutral"], void: [E2("ANULADO", "VOID"), "danger"], replaced: [E2("TRANSFERIDO", "TRANSFERRED"), "neutral"] };
-    const RV: Record<string, string> = en ? { going: "GOING", cancelled: "NOT GOING", expired: "EXPIRED", attended: "ATTENDED" } : { going: "VA", cancelled: "YA NO VA", expired: "VENCIÓ", attended: "LLEGÓ" };
+    const RV: Record<string, string> = { going: E2("VA", "GOING"), cancelled: E2("YA NO VA", "NOT GOING"), expired: E2("VENCIÓ", "EXPIRED"), attended: E2("LLEGÓ", "ATTENDED") };
     const k = act.kpi, usd = (c: number) => `$${(c / 100).toFixed(2)}`;
     cuerpo = <PanelBloques bloques={[
       { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [{ k: E2("PEDIDOS · 90 D", "ORDERS · 90 D"), v: String(k.pedidos) }, { k: E2("CITAS · 90 D", "BOOKINGS · 90 D"), v: String(k.citas) }, { k: E2("RESERVACIONES · 90 D", "RESERVATIONS · 90 D"), v: String(k.reservas), s: k.privados ? E2(`${k.privados} eventos privados`, `${k.privados} private events`) : undefined },
@@ -330,8 +339,8 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
   } else if (tab === "compa" && cpa) {
     // 7i · El Compa de esta persona: cifras de 30 días y sus conversaciones SIN texto (el hilo, en la ficha anotada; solo Admin y Soporte).
     const RES: Record<string, [string, string]> = { open: [E2("ABIERTA", "OPEN"), "neutral"], self_resolved: [E2("RESOLVIÓ SOLO", "SELF-RESOLVED"), "neutral"], action_done: [E2("ACCIÓN CONFIRMADA", "ACTION CONFIRMED"), "signal"], handed_off: [E2("A UNA PERSONA", "TO A PERSON"), "action"], to_owner: [E2("AL DUEÑO", "TO THE OWNER"), "action"] };
-    const USO: Record<string, string> = en ? { neighbor: "Neighbors", owner: "Business panel", auto_reply: "Auto replies" } : { neighbor: "Vecinos", owner: "Panel del negocio", auto_reply: "Respuestas automáticas" };
-    const MOT: Record<string, string> = en ? { money: "money", account: "account", safety: "safety", asked_person: "asked for it", unknown: "didn’t know", owner: "owner" } : { money: "dinero", account: "cuenta", safety: "seguridad", asked_person: "lo pidió", unknown: "no supo", owner: "dueño" };
+    const USO: Record<string, string> = { neighbor: E2("Vecinos", "Neighbors"), owner: E2("Panel del negocio", "Business panel"), auto_reply: E2("Respuestas automáticas", "Auto replies") };
+    const MOT: Record<string, string> = { money: E2("dinero", "money"), account: E2("cuenta", "account"), safety: E2("seguridad", "safety"), asked_person: E2("lo pidió", "asked for it"), unknown: E2("no supo", "didn’t know"), owner: E2("dueño", "owner") };
     const r = cpa.porResultado, solo = (r.self_resolved ?? 0) + (r.action_done ?? 0);
     cuerpo = <PanelBloques bloques={[
       { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
@@ -350,7 +359,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     // 9d · Privacidad (L186, L189): sus archivos, el borrado y su purga por tabla, «ver como» de solo lectura, lo que aceptó, sus avisos y Fusionar.
     const x = pri;
     const EST_ARCH: Record<string, [string, string]> = { pendiente: [E2("PEDIDO", "REQUESTED"), "action"], armando: [E2("ARMANDO", "BUILDING"), "action"], listo: [E2("LISTO", "READY"), "signal"], bajado: [E2("BAJADO", "DOWNLOADED"), "neutral"], vencido: [E2("VENCIDO", "EXPIRED"), "neutral"], fallo: [E2("NO SALIÓ", "FAILED"), "danger"] };
-    const ACC: Record<string, string> = en ? { borrar: "deleted", vaciar: "emptied", seudonimizar: "pseudonymized" } : { borrar: "borradas", vaciar: "vaciadas", seudonimizar: "seudonimizadas" };
+    const ACC: Record<string, string> = { borrar: E2("borradas", "deleted"), vaciar: E2("vaciadas", "emptied"), seudonimizar: E2("seudonimizadas", "pseudonymized") };
     const descargar = (b64: string) => {
       const bin = atob(b64), bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);

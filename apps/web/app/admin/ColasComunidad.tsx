@@ -5,7 +5,7 @@
    filas, fotos, acciones) y confirmación con motivo; cada decisión avisa a la persona con el motivo y abre la apelación. */
 import type { PanelBloqueT as Bloque } from "@tolatino/ui";
 import type { Caso } from "@/lib/admin-colas";
-import { APELABLE, MOTIVO_REP, REGLA_L, REP } from "@/lib/moderacion-comun";
+import { APELABLE, MOTIVO_REP, REP } from "@/lib/moderacion-comun";
 import { SANCIONES, type Sancion } from "@/lib/sanciones";
 import { decidirApel, decidirFotoCom, decidirRepCom, decidirRepUsr } from "./acciones-confianza";
 import type { Confirmar } from "./Colas";
@@ -19,25 +19,24 @@ type Acc = { l: string; v?: string; icon?: string; off?: boolean; onClick: () =>
 type Ctx = { setConf: (c: Confirmar) => void; run: (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => void; fuera: () => void; abrir: (h: string) => void; usuario: (id: string) => void; apelarDias: number; ahora: number; E2?: EF };
 const fecha = (d: string, en = false) => new Date(d).toLocaleDateString(en ? "en-US" : "es-US", { day: "numeric", month: "short", timeZone: "America/New_York" });
 const hace = (d: string, ahora: number, E2: EF = ES) => { const h = (ahora - new Date(d).getTime()) / 3_600_000; return h < 1 ? E2("hace un momento", "just now") : h < 24 ? E2(`hace ${Math.floor(h)} h`, `${Math.floor(h)} h ago`) : E2(`hace ${Math.floor(h / 24)} d`, `${Math.floor(h / 24)} d ago`); };
-export const PLANT_COM = {
-  ocultar: ["Venta, spam o cadena", "Datos de otra persona", "Insulto o acoso", "Lenguaje discriminatorio", "Información falsa", "Se recomienda a sí mismo"],
-  queda: ["No rompe las reglas del barrio", "Es una opinión", "El reporte no trae evidencia"],
-  usr: ["Reincidente", "Primera vez", "Cuentas vinculadas al mismo dispositivo", "El contexto justifica la acción"],
-  levantar: ["Tenía razón: no rompe las reglas", "El contexto lo justifica", "Primera vez: basta con la advertencia"],
-  mantener: ["Rompe las reglas del barrio", "Reincidente", "La evidencia lo sostiene"],
-  foto: ["Desnudez", "Violencia", "Muestra a otra persona sin permiso", "Es publicidad"],
-};
-/* Las mismas plantillas en el idioma de la persona del equipo (PLANT_COM se queda en español para quien la importe). */
-const PLANT_COM_EN: Record<keyof typeof PLANT_COM, string[]> = {
-  ocultar: ["Sales, spam or chain message", "Someone else's personal info", "Insult or harassment", "Discriminatory language", "False information", "Self-promotion"],
-  queda: ["Doesn't break the neighborhood rules", "It's an opinion", "The report has no evidence"],
-  usr: ["Repeat offender", "First time", "Accounts linked to the same device", "The context justifies the action"],
-  levantar: ["They were right: it doesn't break the rules", "The context justifies it", "First time: a warning is enough"],
-  mantener: ["Breaks the neighborhood rules", "Repeat offender", "The evidence supports it"],
-  foto: ["Nudity", "Violence", "Shows another person without permission", "It's advertising"],
-};
-export const plantCom = (E2: EF = ES) => (esEn(E2) ? PLANT_COM_EN : PLANT_COM);
-const REGLA_EN: Record<string, string> = { phone: "Phone number", pii: "Where someone lives", spam: "Repeated", hate: "Discriminatory language", rev5: "Review burst", img: "Photo", autohide: "Auto-hidden", red: "Possible account network", estafa: "Possible scam", migra: "Immigration", autolesion: "Self-harm", evt: "Events signal" };
+export const PLANT_COM = (E2: EF): Record<"ocultar" | "queda" | "usr" | "levantar" | "mantener" | "foto", string[]> => ({
+  ocultar: [E2("Venta, spam o cadena", "Sales, spam or chain message"), E2("Datos de otra persona", "Someone else's personal info"), E2("Insulto o acoso", "Insult or harassment"), E2("Lenguaje discriminatorio", "Discriminatory language"), E2("Información falsa", "False information"), E2("Se recomienda a sí mismo", "Self-promotion")],
+  queda: [E2("No rompe las reglas del barrio", "Doesn't break the neighborhood rules"), E2("Es una opinión", "It's an opinion"), E2("El reporte no trae evidencia", "The report has no evidence")],
+  usr: [E2("Reincidente", "Repeat offender"), E2("Primera vez", "First time"), E2("Cuentas vinculadas al mismo dispositivo", "Accounts linked to the same device"), E2("El contexto justifica la acción", "The context justifies the action")],
+  levantar: [E2("Tenía razón: no rompe las reglas", "They were right: it doesn't break the rules"), E2("El contexto lo justifica", "The context justifies it"), E2("Primera vez: basta con la advertencia", "First time: a warning is enough")],
+  mantener: [E2("Rompe las reglas del barrio", "Breaks the neighborhood rules"), E2("Reincidente", "Repeat offender"), E2("La evidencia lo sostiene", "The evidence supports it")],
+  foto: [E2("Desnudez", "Nudity"), E2("Violencia", "Violence"), E2("Muestra a otra persona sin permiso", "Shows another person without permission"), E2("Es publicidad", "It's advertising")]
+});
+export const plantCom = (E2: EF = ES) => PLANT_COM(E2);
+/* REGLA_L de lib/moderacion-comun.ts (el servidor la usa en español) con su inglés: el mismo español, por E2. */
+const REGLA_T = (E2: EF): Record<string, string> => ({
+  phone: E2("Teléfono", "Phone number"), pii: E2("Dónde vive alguien", "Where someone lives"), spam: E2("Repetido", "Repeated"),
+  hate: E2("Lenguaje discriminatorio", "Discriminatory language"), rev5: E2("Reseñas en ráfaga", "Review burst"), img: E2("Foto", "Photo"),
+  autohide: E2("Auto-ocultada", "Auto-hidden"), red: E2("Posible red de cuentas", "Possible account network"),
+  estafa: E2("Posible estafa", "Possible scam"), migra: E2("Inmigración", "Immigration"), autolesion: E2("Autolesión", "Self-harm"),
+  evt: E2("Señal de Eventos", "Events signal"), foto1: E2("Fotos · modelo propio", "foto1"), foto2: E2("Fotos · segunda opinión", "foto2"),
+  foto3: E2("Fotos · reportes", "foto3"), foto4: E2("Fotos · confianza", "foto4")
+});
 const MOTIVO_REP_EN: Record<string, string> = Object.fromEntries(REP.map(([k, l]) => [k, l.en]));
 const sanciones = (admin: boolean, ninguna: boolean, E2: EF = ES) => { const en = esEn(E2); return [...(ninguna ? [{ k: "ninguna", l: E2("Sin sanción", "No sanction") }] : []),
   ...(["adv", "mute7", "nopub", "susp14", ...(admin ? ["ban"] : [])] as Sancion[]).map((k) => ({ k, l: en ? `${SANCIONES[k].en} · ${SANCIONES[k].com.en}` : `${SANCIONES[k].es} · ${SANCIONES[k].com.es}` }))]; };
@@ -54,7 +53,7 @@ export function tituloComunidad(k: Caso, E2: EF = ES): string | null {
 
 export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc[] } | null {
   const B: Bloque[] = [], E2 = x.E2 ?? ES, en = esEn(E2), P = plantCom(E2);
-  const REGLA = en ? REGLA_EN : REGLA_L, MREP = en ? MOTIVO_REP_EN : MOTIVO_REP;
+  const REGLA = REGLA_T(E2), MREP = en ? MOTIVO_REP_EN : MOTIVO_REP;
   const sanL = (kind: string) => { const s = SANCIONES[kind as Sancion]; return s ? (en ? s.en : s.es) : kind; };
   if (k.queue === "rep" && "com" in k && k.com) {
     const c = k.com, auto = c.status === "hidden" && c.hidden_by === "auto";

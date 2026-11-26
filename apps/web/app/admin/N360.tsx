@@ -41,49 +41,77 @@ const BIZ = (E2: EF) => [E2("Varios reportes coinciden", "Several reports match"
 const FOTO = (E2: EF) => [E2("No es de este negocio", "Not from this business"), E2("Contenido inapropiado", "Inappropriate content"), E2("Muestra datos personales", "Shows personal information"), E2("Es publicidad o spam", "Ads or spam")];
 const SELLO_NO = (E2: EF) => [E2("La dirección no coincide con la página", "The address doesn’t match the page"), E2("No pudimos confirmar que representas el negocio", "We couldn’t confirm you represent the business"), E2("Las fotos no son del local", "The photos aren’t of the place"), E2("El nombre puede confundirse con otro negocio", "The name can be confused with another business")];
 /* Verbo de cada acción en el historial (prototipo actL). */
-const VERBO: Record<string, string> = {
-  "negocio.ver_como_cliente": "vio como cliente a", "negocio.ver_panel": "abrió en solo lectura el panel de",
-  "negocio.video.subir": "subió el video de presentación de", "negocio.video.quitar": "quitó el video de presentación de", "negocio.video.aprobar": "aprobó el video de presentación de", "negocio.video.rechazar": "no aprobó el video de presentación de",
-  "negocio.equipo.quitar_acceso": "le quitó el acceso al panel a alguien de", "negocio.equipo.devolver_acceso": "devolvió el acceso al panel a alguien de",
-  "negocio.fusion.pedir": "pidió fusionar un duplicado con", "negocio.duplicado.no": "marcó que no es duplicado", "negocio.categoria.pedir": "pidió cambiar la categoría de",
-  "negocio.transferir.pedir": "pidió transferir", "negocio.fusionar": "fusionó un duplicado con", "negocio.fusionado": "fusionó con otro negocio a", "negocio.categoria.cambiar": "cambió la categoría de",
-  "negocio.mensaje": "le mandó un mensaje al dueño de", "negocio.invitar_reclamar": "invitó por SMS a reclamar", "mkt.destacado.fijar": "destacó a", "mkt.destacado.quitar": "sacó de la rotación a",
-  "resena.ocultar": "ocultó una reseña de", "resena.mostrar": "volvió a mostrar una reseña de", "novedad.ocultar": "ocultó una novedad de", "novedad.mostrar": "volvió a mostrar una novedad de",
-  "vacante.ocultar": "ocultó una vacante de", "vacante.mostrar": "volvió a mostrar una vacante de", "comentario.ocultar": "ocultó un comentario en", "comentario.mostrar": "volvió a mostrar un comentario en",
-  "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de", "negocio.noche.tipo": "ajustó el tipo de local de",
-  "negocio.ocultar": "ocultó", "negocio.suspender": "suspendió", "negocio.cerrar": "cerró", "negocio.restaurar": "restauró", "negocio.cierre_temporal": "cerró temporalmente",
-  "negocio.reabrir": "reabrió", "negocio.dueno.cambiar": "cambió el dueño de", "negocio.pagos.pausar": "pausó los pagos al banco de", "plan.cortesia": "dio Pro de cortesía a", "plan.quitar_cortesia": "quitó la cortesía a", "plan.extender_prueba": "extendió la prueba de", "plan.reintentar_cobro": "reintentó el cobro de Pro de", "plan.anular": "anuló la suscripción de",  "negocio.pagos.reanudar": "reanudó los pagos al banco de", "negocio.sello.dar": "dio el sello a", "negocio.sello.quitar": "quitó el sello a", "negocio.sello.aprobar": "aprobó el sello de",
-  "negocio.sello.pedir_dato": "pidió un dato a", "negocio.sello.rechazar": "no aprobó el sello de", "negocio.editar": "editó", "negocio.punto": "corrigió el punto en el mapa de", "negocio.foto.quitar": "quitó una foto de",
-  "negocio.foto.restaurar": "restauró una foto de", "negocio.staff.quitar": "quitó de la página a alguien de", "negocio.staff.mostrar": "volvió a mostrar a alguien de",
-  "evt.organizador.verificar": "verificó como organizador de eventos a", "evt.organizador.quitar_verificado": "quitó el verificado de eventos a", "evt.organizador.bloquear": "bloqueó la publicación de eventos de", "evt.organizador.desbloquear": "permitió publicar eventos otra vez a",
-  "negocio.nota": "agregó una nota a", "negocio.revisado": "revisó", "licencia.verificar": "verificó la licencia de", "licencia.vencida": "marcó vencida la licencia de", "licencia.no_aparece": "no encontró la licencia de",
-};
-const VERBO_EN: Record<string, string> = {
-  "negocio.ver_como_cliente": "viewed as a customer the page of", "negocio.ver_panel": "opened read-only the dashboard of",
-  "negocio.equipo.quitar_acceso": "removed dashboard access for someone at", "negocio.equipo.devolver_acceso": "restored dashboard access for someone at",
-  "negocio.fusion.pedir": "requested merging a duplicate into", "negocio.duplicado.no": "marked as not a duplicate", "negocio.categoria.pedir": "requested a category change for",
-  "negocio.transferir.pedir": "requested transferring", "negocio.fusionar": "merged a duplicate into", "negocio.fusionado": "merged into another business:", "negocio.categoria.cambiar": "changed the category of",
-  "negocio.mensaje": "sent a message to the owner of", "negocio.invitar_reclamar": "invited by SMS to claim", "mkt.destacado.fijar": "featured", "mkt.destacado.quitar": "removed from rotation",
-  "resena.ocultar": "hid a review of", "resena.mostrar": "showed again a review of", "novedad.ocultar": "hid an update from", "novedad.mostrar": "showed again an update from",
-  "vacante.ocultar": "hid a job from", "vacante.mostrar": "showed again a job from", "comentario.ocultar": "hid a comment on", "comentario.mostrar": "showed again a comment on",
-  "negocio.modulo.pausar": "paused a module of", "negocio.modulo.reanudar": "resumed a module of", "negocio.noche.tipo": "adjusted the venue type of",
-  "negocio.ocultar": "hid", "negocio.suspender": "suspended", "negocio.cerrar": "closed", "negocio.restaurar": "restored", "negocio.cierre_temporal": "temporarily closed",
-  "negocio.reabrir": "reopened", "negocio.dueno.cambiar": "changed the owner of", "negocio.pagos.pausar": "paused payouts for", "plan.cortesia": "gave Courtesy Pro to", "plan.quitar_cortesia": "removed the courtesy from", "plan.extender_prueba": "extended the trial of", "plan.reintentar_cobro": "retried the Pro charge for", "plan.anular": "cancelled the subscription of", "negocio.pagos.reanudar": "resumed payouts for", "negocio.sello.dar": "gave the badge to", "negocio.sello.quitar": "removed the badge from", "negocio.sello.aprobar": "approved the badge for",
-  "negocio.sello.pedir_dato": "asked for information from", "negocio.sello.rechazar": "didn’t approve the badge for", "negocio.editar": "edited", "negocio.punto": "corrected the map pin of", "negocio.foto.quitar": "removed a photo from",
-  "negocio.foto.restaurar": "restored a photo of", "negocio.staff.quitar": "removed from the page someone at", "negocio.staff.mostrar": "showed again someone at",
-  "evt.organizador.verificar": "verified as event organizer", "evt.organizador.quitar_verificado": "removed event verification from", "evt.organizador.bloquear": "blocked event publishing for", "evt.organizador.desbloquear": "allowed event publishing again for",
-  "negocio.nota": "added a note to", "negocio.revisado": "reviewed", "licencia.verificar": "verified the license of", "licencia.vencida": "marked as expired the license of", "licencia.no_aparece": "couldn’t find the license of",
-};
-const DIAS = [["Lunes", 1, "Monday"], ["Martes", 2, "Tuesday"], ["Miércoles", 3, "Wednesday"], ["Jueves", 4, "Thursday"], ["Viernes", 5, "Friday"], ["Sábado", 6, "Saturday"], ["Domingo", 0, "Sunday"]] as const;
+const VERBO = (E2: EF): Record<string, string> => ({
+  "negocio.ver_como_cliente": E2("vio como cliente a", "viewed as a customer the page of"),
+  "negocio.ver_panel": E2("abrió en solo lectura el panel de", "opened read-only the dashboard of"),
+  "negocio.video.subir": E2("subió el video de presentación de", "negocio.video.subir"),
+  "negocio.video.quitar": E2("quitó el video de presentación de", "negocio.video.quitar"),
+  "negocio.video.aprobar": E2("aprobó el video de presentación de", "negocio.video.aprobar"),
+  "negocio.video.rechazar": E2("no aprobó el video de presentación de", "negocio.video.rechazar"),
+  "negocio.equipo.quitar_acceso": E2("le quitó el acceso al panel a alguien de", "removed dashboard access for someone at"),
+  "negocio.equipo.devolver_acceso": E2("devolvió el acceso al panel a alguien de", "restored dashboard access for someone at"),
+  "negocio.fusion.pedir": E2("pidió fusionar un duplicado con", "requested merging a duplicate into"),
+  "negocio.duplicado.no": E2("marcó que no es duplicado", "marked as not a duplicate"),
+  "negocio.categoria.pedir": E2("pidió cambiar la categoría de", "requested a category change for"),
+  "negocio.transferir.pedir": E2("pidió transferir", "requested transferring"),
+  "negocio.fusionar": E2("fusionó un duplicado con", "merged a duplicate into"),
+  "negocio.fusionado": E2("fusionó con otro negocio a", "merged into another business:"),
+  "negocio.categoria.cambiar": E2("cambió la categoría de", "changed the category of"),
+  "negocio.mensaje": E2("le mandó un mensaje al dueño de", "sent a message to the owner of"),
+  "negocio.invitar_reclamar": E2("invitó por SMS a reclamar", "invited by SMS to claim"), "mkt.destacado.fijar": E2("destacó a", "featured"),
+  "mkt.destacado.quitar": E2("sacó de la rotación a", "removed from rotation"), "resena.ocultar": E2("ocultó una reseña de", "hid a review of"),
+  "resena.mostrar": E2("volvió a mostrar una reseña de", "showed again a review of"),
+  "novedad.ocultar": E2("ocultó una novedad de", "hid an update from"),
+  "novedad.mostrar": E2("volvió a mostrar una novedad de", "showed again an update from"),
+  "vacante.ocultar": E2("ocultó una vacante de", "hid a job from"),
+  "vacante.mostrar": E2("volvió a mostrar una vacante de", "showed again a job from"),
+  "comentario.ocultar": E2("ocultó un comentario en", "hid a comment on"),
+  "comentario.mostrar": E2("volvió a mostrar un comentario en", "showed again a comment on"),
+  "negocio.modulo.pausar": E2("pausó un módulo de", "paused a module of"),
+  "negocio.modulo.reanudar": E2("reanudó un módulo de", "resumed a module of"),
+  "negocio.noche.tipo": E2("ajustó el tipo de local de", "adjusted the venue type of"), "negocio.ocultar": E2("ocultó", "hid"),
+  "negocio.suspender": E2("suspendió", "suspended"), "negocio.cerrar": E2("cerró", "closed"), "negocio.restaurar": E2("restauró", "restored"),
+  "negocio.cierre_temporal": E2("cerró temporalmente", "temporarily closed"), "negocio.reabrir": E2("reabrió", "reopened"),
+  "negocio.dueno.cambiar": E2("cambió el dueño de", "changed the owner of"),
+  "negocio.pagos.pausar": E2("pausó los pagos al banco de", "paused payouts for"),
+  "plan.cortesia": E2("dio Pro de cortesía a", "gave Courtesy Pro to"), "plan.quitar_cortesia": E2("quitó la cortesía a", "removed the courtesy from"),
+  "plan.extender_prueba": E2("extendió la prueba de", "extended the trial of"),
+  "plan.reintentar_cobro": E2("reintentó el cobro de Pro de", "retried the Pro charge for"),
+  "plan.anular": E2("anuló la suscripción de", "cancelled the subscription of"),
+  "negocio.pagos.reanudar": E2("reanudó los pagos al banco de", "resumed payouts for"), "negocio.sello.dar": E2("dio el sello a", "gave the badge to"),
+  "negocio.sello.quitar": E2("quitó el sello a", "removed the badge from"),
+  "negocio.sello.aprobar": E2("aprobó el sello de", "approved the badge for"),
+  "negocio.sello.pedir_dato": E2("pidió un dato a", "asked for information from"),
+  "negocio.sello.rechazar": E2("no aprobó el sello de", "didn’t approve the badge for"), "negocio.editar": E2("editó", "edited"),
+  "negocio.punto": E2("corrigió el punto en el mapa de", "corrected the map pin of"),
+  "negocio.foto.quitar": E2("quitó una foto de", "removed a photo from"), "negocio.foto.restaurar": E2("restauró una foto de", "restored a photo of"),
+  "negocio.staff.quitar": E2("quitó de la página a alguien de", "removed from the page someone at"),
+  "negocio.staff.mostrar": E2("volvió a mostrar a alguien de", "showed again someone at"),
+  "evt.organizador.verificar": E2("verificó como organizador de eventos a", "verified as event organizer"),
+  "evt.organizador.quitar_verificado": E2("quitó el verificado de eventos a", "removed event verification from"),
+  "evt.organizador.bloquear": E2("bloqueó la publicación de eventos de", "blocked event publishing for"),
+  "evt.organizador.desbloquear": E2("permitió publicar eventos otra vez a", "allowed event publishing again for"),
+  "negocio.nota": E2("agregó una nota a", "added a note to"), "negocio.revisado": E2("revisó", "reviewed"),
+  "licencia.verificar": E2("verificó la licencia de", "verified the license of"),
+  "licencia.vencida": E2("marcó vencida la licencia de", "marked as expired the license of"),
+  "licencia.no_aparece": E2("no encontró la licencia de", "couldn’t find the license of")
+});
+const DIAS = (E2: EF) => [E2("Lunes", "Monday"), E2("Martes", "Tuesday"), E2("Miércoles", "Wednesday"), E2("Jueves", "Thursday"), E2("Viernes", "Friday"), E2("Sábado", "Saturday"), E2("Domingo", "Sunday")];
 const fecha = (iso: string | null, en = false) => (iso ? new Date(iso).toLocaleDateString(en ? "en-US" : "es-US", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const hace = (iso: string, ahora: number, en = false) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return en ? (h < 1 ? "just now" : h < 24 ? `${Math.floor(h)} h ago` : `${Math.floor(h / 24)} d ago`) : h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 
 /* Cómo cobra un servicio de Auto u Hogar (4a), para el Super Admin. */
-const KIND_L: Record<string, string> = { fijo: "Precio cerrado", desde: "Desde · estimado", cotiza: "Se cotiza", diag: "Diagnóstico", lav: "Por tamaño", goma: "Por goma", insp: "Inspección", grua: "Grúa · se llama",
-  visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan", pack: "Paquete", unid: "Por unidad", asiento: "Por asiento", priv: "Vehículo completo", caja: "Caja o envío", cover: "Entrada (sigue al cover)", lista: "Lista", mesa: "Mesa", vip: "VIP", evento: "Noche especial (espera a Eventos)", fecha: "Por fecha" };
-const KIND_L_EN: Record<string, string> = { fijo: "Fixed price", desde: "From · estimate", cotiza: "By quote", diag: "Diagnosis", lav: "By size", goma: "Per tire", insp: "Inspection", grua: "Tow · call",
-  visita: "Visit", hora: "Hourly", area: "By measurement", pres: "Estimate", emer: "24/7 emergency", plan: "Plan", pack: "Package", unid: "Per unit", asiento: "Per seat", priv: "Whole vehicle", caja: "Box or shipping", cover: "Entry (follows the cover)", lista: "List", mesa: "Table", vip: "VIP", evento: "Special night (waits for Events)", fecha: "By date" };
+const KIND_L = (E2: EF): Record<string, string> => ({
+  fijo: E2("Precio cerrado", "Fixed price"), desde: E2("Desde · estimado", "From · estimate"), cotiza: E2("Se cotiza", "By quote"),
+  diag: E2("Diagnóstico", "Diagnosis"), lav: E2("Por tamaño", "By size"), goma: E2("Por goma", "Per tire"), insp: E2("Inspección", "Inspection"),
+  grua: E2("Grúa · se llama", "Tow · call"), visita: E2("Visita", "Visit"), hora: E2("Por hora", "Hourly"), area: E2("Por medida", "By measurement"),
+  pres: E2("Presupuesto", "Estimate"), emer: E2("Emergencia 24/7", "24/7 emergency"), plan: "Plan", pack: E2("Paquete", "Package"),
+  unid: E2("Por unidad", "Per unit"), asiento: E2("Por asiento", "Per seat"), priv: E2("Vehículo completo", "Whole vehicle"),
+  caja: E2("Caja o envío", "Box or shipping"), cover: E2("Entrada (sigue al cover)", "Entry (follows the cover)"), lista: E2("Lista", "List"),
+  mesa: E2("Mesa", "Table"), vip: "VIP", evento: E2("Noche especial (espera a Eventos)", "Special night (waits for Events)"),
+  fecha: E2("Por fecha", "By date")
+});
 /* Iglesias (4ia): la forma de cada servicio (nunca un cobro en la app): gratis · donativo sugerido · precio total · curso. */
 const usdN = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> }, E2: EF = (es) => es) => i.a?.fe === "tot" ? E2(`Precio total por escrito ${usdN(i.cents)}`, `Total price in writing ${usdN(i.cents)}`)
@@ -94,15 +122,14 @@ const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 /* 9n · Los tipos de negocio donde el vecino pide un precio antes de reservar (Cotizaciones): Auto y Hogar (pre-estimado, presupuesto), Transporte (mudanza), Fiestas (total por escrito). */
 const COT_CATS = ["NEG-AUTO", "NEG-HOGAR", "NEG-TRANS", "NEG-FIESTA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
-/* KINDS_LOCAL (Noche) en inglés. */
-const KL_EN: Record<string, string> = { club: "Nightclub", salsa: "Salsa and bachata", urbano: "Urban", banda: "Banda and cantina", bar: "Bar", sport: "Sports bar", karaoke: "Karaoke", billar: "Pool hall",
-  cerve: "Brewery", lounge: "Lounge", show: "Shows", dj: "DJ (by date)", promo: "Promoter (by date)", salon: "Venue (by date)" };
+/* KINDS_LOCAL (Noche) en los dos idiomas (el texto en español es el mismo de lib/noche-comun.ts). */
+const KL = (E2: EF): Record<string, string> => ({ club: E2("Discoteca", "Nightclub"), salsa: E2("Salsa y bachata", "Salsa and bachata"), urbano: E2("Urbano", "Urban"), banda: E2("Banda y cantina", "Banda and cantina"), bar: E2("Bar", "Bar"), sport: E2("Bar deportivo", "Sports bar"), karaoke: E2("Karaoke", "Karaoke"), billar: E2("Billar", "Pool hall"), cerve: E2("Cervecería", "Brewery"), lounge: E2("Lounge", "Lounge"), show: E2("Espectáculos", "Shows"), dj: E2("DJ (por fecha)", "DJ (by date)"), promo: E2("Promotor (por fecha)", "Promoter (by date)"), salon: E2("Salón (por fecha)", "Venue (by date)") });
 export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, cambios = [], cats = [], dups = null }: { n: Negocio360; tab: string; din?: Dinero | null; oper?: Oper360 | null; operK?: string; evts?: Evts360 | null; sop?: CasoSop[]; cpa?: CompaNegocio | null;
   cambios?: { id: string; type: string; caso: string | null }[]; cats?: { id: string; l: string }[]; dups?: ParDup[] | null }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024, { E2 } = useE2(), en = E2("", "x") === "x";
   const bi = (x: { es: string; en?: string } | null | undefined) => (x ? (en ? x.en || x.es : x.es) : "");
-  const kl = (k: string, l: string) => (en ? KL_EN[k] ?? l : l);
+  const klT = KL(E2), kl = (k: string, l: string) => klT[k] ?? l;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
   const [pend] = useTransition();
@@ -135,7 +162,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
   else if (n.temp_until && new Date(n.temp_until).getTime() > Date.now()) notasEstado.push(<A.AdminNote key="t" tone="warn" icon="clock" cta={P.editar ? E2("Reabrir", "Reopen") : undefined} onCta={() => setConf({ titulo: E2("¿Por qué se reabre?", "Why is it reopening?"), nota: "interna", hacer: (m) => reabrir(n.id, m) })}>
     {E2(`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`, `Temporarily closed until ${fecha(n.temp_until, true)}: ${n.temp_reason ?? ""}. The page says “Temporarily closed.”`)}</A.AdminNote>);
   // 9n-8 · Lo que espera en Cambios sensibles sobre este negocio.
-  const CAMBIO_N: Record<string, string> = en ? { mergeBiz: "A merge", changeCategory: "A category change", transferOwner: "An owner transfer" } : { mergeBiz: "Una fusión", changeCategory: "Un cambio de categoría", transferOwner: "Una transferencia de dueño" };
+  const CAMBIO_N: Record<string, string> = { mergeBiz: E2("Una fusión", "A merge"), changeCategory: E2("Un cambio de categoría", "A category change"), transferOwner: E2("Una transferencia de dueño", "An owner transfer") };
   for (const c of cambios) notasEstado.push(<A.AdminNote key={`cs-${c.id}`} tone="warn" icon="lock" cta={c.caso ? E2("Ver en Colas", "See in Queues") : undefined} onCta={() => router.push(`/admin/colas?caso=${c.caso}`)}>
     {E2(`${CAMBIO_N[c.type] ?? "Un cambio sensible"} espera en Cambios sensibles (#${c.id}): lo aplica otra persona del equipo.`, `${CAMBIO_N[c.type] ?? "A sensitive change"} is waiting in Sensitive changes (#${c.id}): someone else on the team applies it.`)}</A.AdminNote>);
   const pendiente = (t: string) => cambios.some((c) => c.type === t);
@@ -145,7 +172,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
-    return h.length ? <A.AuditLog rows={h.map((x) => ({ who: x.quien ?? E2("Equipo", "Team"), initials: (x.quien ?? "E").slice(0, 1), action: `${(en ? VERBO_EN : VERBO)[x.action] ?? x.action} ${n.name}`, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora, en) }))} />
+    return h.length ? <A.AuditLog rows={h.map((x) => ({ who: x.quien ?? E2("Equipo", "Team"), initials: (x.quien ?? "E").slice(0, 1), action: `${VERBO(E2)[x.action] ?? x.action} ${n.name}`, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora, en) }))} />
       : <A.AdminNote tone="info" icon="folder">{E2("Nadie del equipo ha hecho cambios aquí todavía.", "No one on the team has made changes here yet.")}</A.AdminNote>;
   };
 
@@ -170,7 +197,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
         <A.AdminList label={E2("LO QUE VE EL CLIENTE", "WHAT THE CUSTOMER SEES")} rows={[campo("name", E2("Nombre", "Name"), n.name), campo("about", E2("Quiénes somos", "About us"), n.about?.es ?? "", true), { icon: "grid", title: E2("Categoría y subcategorías", "Category and subcategories"), sub: `${n.cat}${n.subs ? ` · ${n.subs}` : ""}` }, campo("phone", E2("Teléfono", "Phone"), n.phone), campo("address", E2("Dirección", "Address"), n.address ?? "")]} />
         {/* 9m · El punto en el mapa y «Corregir el punto» (con motivo; el dueño lo ve en su panel). */}
         <PuntoAdmin id={n.id} lat={n.lat} lng={n.lng} centro={[n.clat, n.clng]} fijado={n.geo_fixed} motivoFijado={n.geo_fixed_reason} puede={!!P.editar} />
-        <PanelBloques bloques={[{ type: "group", k: E2("HORARIO", "HOURS") }, { type: "kv", cols: 2, items: DIAS.map(([d, , dEn], i) => { const x = n.horas[i]!; return { k: (en ? dEn : d).toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : E2("Cerrado", "Closed"), fg: x.on ? undefined : "rgba(11,14,18,.6)" }; }) }]} />
+        <PanelBloques bloques={[{ type: "group", k: E2("HORARIO", "HOURS") }, { type: "kv", cols: 2, items: DIAS(E2).map((d, i) => { const x = n.horas[i]!; return { k: d.toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : E2("Cerrado", "Closed"), fg: x.on ? undefined : "rgba(11,14,18,.6)" }; }) }]} />
       </>);
   } else if (tab === "vende" && n.cat_id === "NEG-FOOD") {
     const MOD: ["menu" | "pedidos" | "delivery" | "rsv", string, string][] = [["menu", E2("Menú", "Menu"), E2("La pestaña Menú de su página", "The Menu tab on their page")], ["pedidos", E2("Pedidos en línea", "Online orders"), E2(`Que se pueda pedir desde su menú · ${n.pedidosMes} este mes${n.plan === "pro" ? "" : ` (${n.pedidosFree} de ${n.pedidosCap} con Free)`}`, `Ordering from their menu · ${n.pedidosMes} this month${n.plan === "pro" ? "" : ` (${n.pedidosFree} of ${n.pedidosCap} on Free)`}`)],
@@ -194,7 +221,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
     // Mercados y Tiendas (4n): pausar Productos o Pedidos y ocultar un producto con motivo (el dueño lo ve en su panel).
     const merc = n.cat_id === "NEG-MERC", MODR: ["menu" | "pedidos", string, string][] = [["menu", E2("Productos", "Products"), E2("La pestaña Productos de su página", "The Products tab on their page")], ["pedidos", merc ? E2("Pedidos del mercado", "Market orders") : E2("Apartados", "Holds"), merc ? E2("Que se pueda pedir pickup o envío", "Ordering for pickup or shipping") : E2("Que se pueda apartar", "Placing holds")]];
     const PLR = [E2("Producto que no corresponde a su categoría", "Product that doesn’t fit their category"), E2("Precios o fotos engañosos", "Misleading prices or photos"), E2("Venta que la ley no permite en la app", "A sale the law doesn’t allow in the app"), E2("Lo pidió el dueño", "The owner asked for it"), E2("Reportes de clientes", "Customer reports")];
-    const SK: Record<string, string> = en ? { peso: "By the pound", unid: "Per unit", plato: "Ready to go", talla: "With sizes", plan: "With plan", serv: "In store" } : { peso: "Por libra", unid: "Por unidad", plato: "Listo para llevar", talla: "Con tallas", plan: "Con plan", serv: "En la tienda" };
+    const SK: Record<string, string> = { peso: E2("Por libra", "By the pound"), unid: E2("Por unidad", "Per unit"), plato: E2("Listo para llevar", "Ready to go"), talla: E2("Con tallas", "With sizes"), plan: E2("Con plan", "With plan"), serv: E2("En la tienda", "In store") };
     const ocultos = n.productos.filter((i) => i.hidden).length;
     cuerpo = (
       <>
@@ -270,7 +297,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
         })} /> : <A.AdminNote tone="info" icon="law">{E2("No declaró licencias.", "No licenses declared.")}</A.AdminNote>) : null}
         {of && h ? <A.AdminList label={E2("SU HERRAMIENTA · SOLO LECTURA", "THEIR TOOL · READ ONLY")} rows={[{ icon: ic, title: E2(`Mano de obra $${h.rate / 100}/h`, `Labor $${h.rate / 100}/h`), sub: n.cat_id === "NEG-AUTO" ? E2(`Garantía ${h.warrM ?? "—"} meses · ${(h.warrMi ?? 0).toLocaleString("en-US")} mi · listo el mismo día si lo dejan antes de las ${h.cut ? `${h.cut % 12 || 12} ${h.cut < 12 ? "AM" : "PM"}` : "—"}`, `Warranty ${h.warrM ?? "—"} months · ${(h.warrMi ?? 0).toLocaleString("en-US")} mi · same-day if dropped off before ${h.cut ? `${h.cut % 12 || 12} ${h.cut < 12 ? "AM" : "PM"}` : "—"}`) : E2(`Hasta ${h.zone ?? "—"} mi · ${h.h24 ? "emergencias 24 h" : "sin emergencias"}`, `Up to ${h.zone ?? "—"} mi · ${h.h24 ? "24 h emergencies" : "no emergencies"}`) }]} /> : null}
         {n.servicios.length ? <A.AdminList label={E2(`SERVICIOS · ${n.servicios.length} · COMO LOS DEJÓ EL DUEÑO${ocS ? ` · ${ocS} OCULTOS` : ""}`, `SERVICES · ${n.servicios.length} · AS THE OWNER SET THEM${ocS ? ` · ${ocS} HIDDEN` : ""}`)} rows={n.servicios.map((i) => ({
-          icon: i.extra ? "plus" : ic, title: i.name, sub: `${i.extra ? "Extra" : i.sec ?? E2("Sin categoría", "No category")} · ${n.cat_id === "NEG-FE" && !i.extra ? feL(i, E2) : `${of && i.k ? `${(en ? KIND_L_EN : KIND_L)[i.k] ?? i.k} · ` : ""}$${(i.cents / 100).toFixed(2)}${i.dur ? ` · ${i.dur} min` : ""}`}${!i.own ? E2(" · apagado por el dueño", " · turned off by the owner") : ""}${i.hidden ? E2(` · Oculto: ${i.reason ?? ""}`, ` · Hidden: ${i.reason ?? ""}`) : ""}`, tag: i.hidden ? E2("OCULTO", "HIDDEN") : undefined, tone: "danger",
+          icon: i.extra ? "plus" : ic, title: i.name, sub: `${i.extra ? "Extra" : i.sec ?? E2("Sin categoría", "No category")} · ${n.cat_id === "NEG-FE" && !i.extra ? feL(i, E2) : `${of && i.k ? `${KIND_L(E2)[i.k] ?? i.k} · ` : ""}$${(i.cents / 100).toFixed(2)}${i.dur ? ` · ${i.dur} min` : ""}`}${!i.own ? E2(" · apagado por el dueño", " · turned off by the owner") : ""}${i.hidden ? E2(` · Oculto: ${i.reason ?? ""}`, ` · Hidden: ${i.reason ?? ""}`) : ""}`, tag: i.hidden ? E2("OCULTO", "HIDDEN") : undefined, tone: "danger",
           actions: P.retirar ? [i.hidden ? { label: E2("Volver a mostrar", "Show again"), variant: "secondary", onClick: () => setConf({ titulo: E2(`¿Por qué vuelve «${i.name}»?`, `Why is “${i.name}” coming back?`), nota: "interna", hacer: (m) => platoOcultar(n.id, i.id, false, m) }) }
             : { label: E2("Ocultar", "Hide"), variant: "secondary", onClick: () => setConf({ titulo: E2(`Ocultar «${i.name}»`, `Hide “${i.name}”`), sub: E2("Deja de salir en su página y no se puede reservar. El dueño ve el motivo en su panel.", "It stops showing on their page and can’t be booked. The owner sees the reason in their dashboard."), peligro: true, plantillas: PLS, nota: "persona", hacer: (m) => platoOcultar(n.id, i.id, true, m) }) }] : undefined,
         }))} /> : <A.AdminNote tone="info" icon="scissors">{E2("Todavía no tiene servicios.", "No services yet.")}</A.AdminNote>}
@@ -371,7 +398,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
       </>);
   } else if (tab === "compa" && cpa) {
     // 7e · El Compa en el panel de este negocio (cifras de 30 días, sin texto ni personas). El hilo: El Compa › Conversaciones (lectura anotada).
-    const RES: Record<string, string> = en ? { open: "Open", self_resolved: "Self-resolved", action_done: "Action confirmed", handed_off: "To a person", to_owner: "To the owner" } : { open: "Abiertas", self_resolved: "Resolvió solo", action_done: "Acción confirmada", handed_off: "A una persona", to_owner: "Al dueño" };
+    const RES: Record<string, string> = { open: E2("Abiertas", "Open"), self_resolved: E2("Resolvió solo", "Self-resolved"), action_done: E2("Acción confirmada", "Action confirmed"), handed_off: E2("A una persona", "To a person"), to_owner: E2("Al dueño", "To the owner") };
     cuerpo = <PanelBloques bloques={[
       { type: "kpis", cols: "repeat(4,minmax(0,1fr))", items: [
         { k: E2("PANEL · 30 D", "DASHBOARD · 30 D"), v: String(cpa.conv30), s: E2("conversaciones con El Compa", "conversations with El Compa"), bg: "var(--tl-ink)", fg: "var(--tl-white)" },
@@ -402,7 +429,7 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
   } else if (tab === "soporte" && sop) {
     cuerpo = <SoporteDe360 casos={sop} vacio={E2("Este negocio no ha escrito a Soporte desde su panel.", "This business hasn’t written to Support from its dashboard.")} />;
   } else if (tab === "confianza") {
-    const COL: Record<string, string> = en ? { sello: "Verification badge", nuevo: "New businesses", medios: "Flagged media", rec: "Recommendations", lic: "Licenses", cambio: "Claim (sensitive change)" } : { sello: "Sello de verificación", nuevo: "Negocios nuevos", medios: "Medios marcados", rec: "Recomendaciones", lic: "Licencias", cambio: "Reclamo (cambio sensible)" };
+    const COL: Record<string, string> = { sello: E2("Sello de verificación", "Verification badge"), nuevo: E2("Negocios nuevos", "New businesses"), medios: E2("Medios marcados", "Flagged media"), rec: E2("Recomendaciones", "Recommendations"), lic: E2("Licencias", "Licenses"), cambio: E2("Reclamo (cambio sensible)", "Claim (sensitive change)") };
     const selloL = n.verified ? E2("Verificado", "Verified") : n.sello?.status === "review" ? E2("En revisión", "In review") : n.sello?.status === "info" ? E2("Te falta un dato", "Missing information") : n.sello?.status === "no" ? E2("No aprobado", "Not approved") : E2("Sin sello", "No badge");
     cuerpo = (
       <>

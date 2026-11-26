@@ -6,6 +6,8 @@ import { DIA_FE, horaFe } from "./fe-comun";
 import type { Bi } from "./inscripciones-comun";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
+type EF = (es: string, en: string) => string;
+
 export type { Bi };
 export type KindInm = "rent" | "cuarto" | "venta" | "hipo" | "serv" | "derechos" | "comercial" | "alm";
 export const KINDS_INM: KindInm[] = ["rent", "cuarto", "venta", "hipo", "serv", "derechos", "comercial", "alm"];
@@ -59,7 +61,10 @@ export const ENGANCHES = [3.5, 5, 10, 15, 20] as const;
 export const ENGANCHE_MIN = [3.5, 10, 15, 20] as const;
 export const DIAS_PRECAL = [1, 2, 3, 5] as const;
 export type EstadoProp = "available" | "pending" | "rented" | "sold" | "hidden";
-export const ESTADO: Record<EstadoProp, [string, string]> = { available: ["Disponible", "Available"], pending: ["Apartada", "On hold"], rented: ["Rentada", "Rented"], sold: ["Vendida", "Sold"], hidden: ["Oculta", "Hidden"] };
+export const ESTADO = (E2: EF): Record<EstadoProp, string> => ({
+  available: E2("Disponible", "Available"), pending: E2("Apartada", "On hold"), rented: E2("Rentada", "Rented"), sold: E2("Vendida", "Sold"),
+  hidden: E2("Oculta", "Hidden")
+});
 export const visible = (s: EstadoProp) => s === "available" || s === "pending";
 
 /* Líneas fijas (§1c, verbatim; nunca se suavizan). */

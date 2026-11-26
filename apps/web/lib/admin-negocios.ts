@@ -19,6 +19,7 @@ import { telefonoBonito } from "./panel";
 /* ADM-NEG · Negocios: lista con filtros y el 360° de un negocio. Todo acotado a las ciudades de la persona
    (staff_members.cities; vacío = todas). 9n-3: paginado POR CURSOR (de a 14; el cursor es la llave de orden de la última fila, sin OFFSET ni tope de
    páginas) y «Exportar CSV» (neg:exportar, con motivo y auditoría). */
+const ES = (es: string, _en: string) => es; // el 360° de la ficha va en español: los rótulos de las tablas por E2 salen con su texto en español
 export const POR_PAGINA = 14;
 export type FiltrosNeg = { q: string; cat: string | null; plan: string[]; est: string[]; mas: string[]; orden: string; pag: number; cur: string | null; ant: string[] };
 const B64 = /^[A-Za-z0-9_-]{0,400}$/;
@@ -253,7 +254,7 @@ export async function negocio360(s: Staff, id: string) {
       return { titulo: C.sinPropiedades(h.kind) ? "Por servicios" : C.tituloInm(h, true), resumen: C.resumenAdminInm(h), kind: h.kind, forzado: h.forzado, linea: C.lineaInm(h.kind, h.subs).es,
         props: h.props.map((p) => ({ id: p.id, name: p.name.es, adm: p.adm, senior: p.senior ? p.seniorSt : null,
           sub: [C.PROP[p.kind].es, p.rent != null ? `${C.usd(p.rent)}${C.porL(p.kind, true)}` : p.price != null ? C.usd(p.price) : "", p.moveIn != null ? `Para mudarte ${C.usd(p.moveIn)}` : "",
-            p.cuota != null ? C.cuotaTexto(p.cuota, p.downPct, true) : "", C.ESTADO[p.status][0], p.deal === "renta" ? (p.ssnReq ? "piden seguro social" : "sin seguro social") : "",
+            p.cuota != null ? C.cuotaTexto(p.cuota, p.downPct, true) : "", C.ESTADO(ES)[p.status], p.deal === "renta" ? (p.ssnReq ? "piden seguro social" : "sin seguro social") : "",
             p.addrPublic ? "dirección en su página" : "solo la zona", `${p.horas} horas de visita`].filter(Boolean).join(" · ") })) }; })() : null,
     // Venta de Autos (4ic): «Inventario del lote» en solo lectura (summary L321), cada vehículo con su total en la puerta (del servidor), la
     // línea fija y el cargo del dealer con el tope de PA.
@@ -261,8 +262,8 @@ export async function negocio360(s: Staff, id: string) {
       const C = await import("./autos-comun");
       return { titulo: C.conInventario(h.kind) ? C.tituloAutos(h, true) : "Por servicios", resumen: C.resumenAutos(h, true), kind: h.kind, forzado: h.forzado, linea: C.lineaAutos(h.kind, h.pro).es,
         cargo: `Cargo del dealer ${C.usd(h.fee)} · tope de PA ${C.usd(h.tope)} · placas y título ${C.usd(h.tags)}${h.taxBp != null ? ` · impuesto ${C.pctBp(h.taxBp)}` : " · falta el impuesto de la ciudad"}`,
-        carros: h.carros.map((x) => ({ id: x.id, name: x.name.es, adm: x.adm, sub: [C.BODY[x.body].es, x.vin ? `VIN ${x.vin}` : "sin VIN", C.TITULO[x.title][0], x.miles != null ? `${x.miles.toLocaleString("en-US")} millas` : "",
-          C.puertaTexto(x.puerta, true), x.est ? C.pagoTexto(x.est, true) : "", x.bhph ? C.bhphTexto(x.bhph, true) : "", x.title === "salvage" ? C.SALVAGE.es : "", C.ESTADO_CARRO[x.status][0]].filter(Boolean).join(" · ") })) }; })() : null,
+        carros: h.carros.map((x) => ({ id: x.id, name: x.name.es, adm: x.adm, sub: [C.BODY[x.body].es, x.vin ? `VIN ${x.vin}` : "sin VIN", C.TITULO(ES)[x.title], x.miles != null ? `${x.miles.toLocaleString("en-US")} millas` : "",
+          C.puertaTexto(x.puerta, true), x.est ? C.pagoTexto(x.est, true) : "", x.bhph ? C.bhphTexto(x.bhph, true) : "", x.title === "salvage" ? C.SALVAGE.es : "", C.ESTADO_CARRO(ES)[x.status]].filter(Boolean).join(" · ") })) }; })() : null,
     herramientaDep: b.cat_id === "NEG-DEPORTE" ? await (async () => { const h = await (await import("./deporte")).herramientaDeporte(id); if (!h) return null;
       const C = await import("./deporte-comun");
       return { titulo: h.memb || h.liga ? C.tituloDep(h, true) : "Por contacto", resumen: h.memb || h.liga ? C.resumenDep(h, true) : "Visita, club, tiro o nutrición: la gente llama o escribe", kind: h.kind,

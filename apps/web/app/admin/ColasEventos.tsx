@@ -18,24 +18,31 @@ const esEn = (E2: EF) => E2("", "x") === "x";
 type Acc = { l: string; v?: string; icon?: string; off?: boolean; onClick: () => void };
 type Ctx = { setConf: (c: Confirmar) => void; abrir: (h: string) => void; negocio: (id: string) => void; puede: { aprobar: boolean; retirar: boolean }; E2?: EF };
 const fecha = (d: string, en = false) => new Date(d).toLocaleString(en ? "en-US" : "es-US", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
-const ENTRADA: Record<string, string> = { free: "Entrada libre · sin lista", rsvp: "Gratis con RSVP", tickets: "Boletos" };
-const ENTRADA_EN: Record<string, string> = { free: "Free entry · no list", rsvp: "Free with RSVP", tickets: "Tickets" };
-const CAMPO: Record<string, string> = { dia: "Día", h0: "Empieza", h1: "Termina", puertas: "Puertas", donde: "Dónde", lugar: "Lugar", dir: "Dirección", edad: "Edad", entrada: "Entrada", boletos: "Boletos", mesas: "Mesas", extras: "Extras",
-  rep: "Se repite", span: "Días seguidos", dh: "Horario por día", dcap: "Aforo por día" };
-const CAMPO_EN: Record<string, string> = { dia: "Day", h0: "Starts", h1: "Ends", puertas: "Doors", donde: "Where", lugar: "Venue", dir: "Address", edad: "Age", entrada: "Entry", boletos: "Tickets", mesas: "Tables", extras: "Extras",
-  rep: "Repeats", span: "Consecutive days", dh: "Hours per day", dcap: "Capacity per day" };
+const ENTRADA = (E2: EF): Record<string, string> => ({ free: E2("Entrada libre · sin lista", "Free entry · no list"), rsvp: E2("Gratis con RSVP", "Free with RSVP"), tickets: E2("Boletos", "Tickets") });
+const CAMPO = (E2: EF): Record<string, string> => ({
+  dia: E2("Día", "Day"), h0: E2("Empieza", "Starts"), h1: E2("Termina", "Ends"), puertas: E2("Puertas", "Doors"), donde: E2("Dónde", "Where"),
+  lugar: E2("Lugar", "Venue"), dir: E2("Dirección", "Address"), edad: E2("Edad", "Age"), entrada: E2("Entrada", "Entry"),
+  boletos: E2("Boletos", "Tickets"), mesas: E2("Mesas", "Tables"), extras: "Extras", rep: E2("Se repite", "Repeats"),
+  span: E2("Días seguidos", "Consecutive days"), dh: E2("Horario por día", "Hours per day"), dcap: E2("Aforo por día", "Capacity per day")
+});
 const bi = (x: { es: string; en?: string }, en: boolean) => (en && x.en ? x.en : x.es);
 const valorDe = (d: BorradorEvt, k: string, E2: EF = ES): string => { const en = esEn(E2); return k === "dia" ? diaCorto(d.dia, !en) : k === "h0" ? hora(d.h0) : k === "h1" ? hora(d.h1) : k === "puertas" ? (d.puertas ? E2(`${d.puertas} min antes`, `${d.puertas} min before`) : E2("Al empezar", "At start"))
-  : k === "donde" ? (d.donde === "own" ? E2("En su local", "At their venue") : E2("En otro lugar", "Somewhere else")) : k === "lugar" ? d.lugar || "—" : k === "dir" ? d.dir || "—" : k === "edad" ? (d.edad ? `${d.edad}+` : E2("Todas", "All")) : k === "entrada" ? (en ? ENTRADA_EN : ENTRADA)[d.entrada] ?? d.entrada
+  : k === "donde" ? (d.donde === "own" ? E2("En su local", "At their venue") : E2("En otro lugar", "Somewhere else")) : k === "lugar" ? d.lugar || "—" : k === "dir" ? d.dir || "—" : k === "edad" ? (d.edad ? `${d.edad}+` : E2("Todas", "All")) : k === "entrada" ? ENTRADA(E2)[d.entrada] ?? d.entrada
   // 6f · La duración: la regla de la serie, los días seguidos, el horario de cada día y el aforo por día.
   : k === "rep" ? (d.rep.k === "none" ? E2("Un día", "One day") : `${repL(d.dia, d.rep, !en)} · ${E2(`${d.rep.n} fechas`, `${d.rep.n} dates`)}`) : k === "span" ? (d.span > 1 ? E2(`${d.span} días`, `${d.span} days`) : E2("Un día", "One day"))
   : k === "dh" ? (d.dh ? d.dh.map((x, i) => `${E2("día", "day")} ${i + 1} ${hora(x.h0)}–${hora(x.h1)}`).join(" · ") : E2("El mismo cada día", "Same every day")) : k === "dcap" ? (d.dcap ? E2(`${d.dcap} personas`, `${d.dcap} people`) : E2("Sin límite", "No limit"))
   : k === "boletos" ? d.boletos.map((b) => `${bi(b.n, en)} ${dinero(b.p)} × ${b.cap}`).join(" · ") || "—" : k === "mesas" ? d.mesas.map((m) => `${bi(m.z, en)} (${m.seats}) ${dinero(m.dep)}`).join(" · ") || "—" : k === "extras" ? d.extras.map((a) => `${bi(a.n, en)} ${dinero(a.p)}`).join(" · ") || "—" : ""; };
-export const ST_EVT: Record<string, [string, string]> = { draft: ["BORRADOR", "neutral"], review: ["EN REVISIÓN", "action"], changes: ["CAMBIOS PEDIDOS", "neutral"], live: ["PUBLICADO", "signal"], paused: ["VENTA PAUSADA", "neutral"], cancelled: ["CANCELADO", "danger"], rejected: ["NO APROBADO", "danger"], done: ["TERMINÓ", "neutral"] };
-const ST_EVT_EN: Record<string, [string, string]> = { draft: ["DRAFT", "neutral"], review: ["IN REVIEW", "action"], changes: ["CHANGES REQUESTED", "neutral"], live: ["PUBLISHED", "signal"], paused: ["SALES PAUSED", "neutral"], cancelled: ["CANCELLED", "danger"], rejected: ["NOT APPROVED", "danger"], done: ["ENDED", "neutral"] };
-export const estadoEvt = (st: string, hidden: boolean, pending: string | null, E2: EF = ES): [string, string] => (hidden ? [E2("OCULTO", "HIDDEN"), "danger"] : pending === "review" ? [E2("CAMBIO EN REVISIÓN", "CHANGE IN REVIEW"), "action"] : (esEn(E2) ? ST_EVT_EN : ST_EVT)[st] ?? [st, "neutral"]);
-const LOG_ES: Record<string, string> = { submitted: "Enviado", resubmitted: "Enviado otra vez", approved: "Aprobado", changes: "Cambios pedidos", rejected: "No aprobado" };
-const LOG_EN: Record<string, string> = { submitted: "Submitted", resubmitted: "Resubmitted", approved: "Approved", changes: "Changes requested", rejected: "Not approved" };
+export const ST_EVT = (E2: EF): Record<string, [string, string]> => ({
+  draft: [E2("BORRADOR", "DRAFT"), "neutral"], review: [E2("EN REVISIÓN", "IN REVIEW"), "action"],
+  changes: [E2("CAMBIOS PEDIDOS", "CHANGES REQUESTED"), "neutral"], live: [E2("PUBLICADO", "PUBLISHED"), "signal"],
+  paused: [E2("VENTA PAUSADA", "SALES PAUSED"), "neutral"], cancelled: [E2("CANCELADO", "CANCELLED"), "danger"],
+  rejected: [E2("NO APROBADO", "NOT APPROVED"), "danger"], done: [E2("TERMINÓ", "ENDED"), "neutral"]
+});
+export const estadoEvt = (st: string, hidden: boolean, pending: string | null, E2: EF = ES): [string, string] => (hidden ? [E2("OCULTO", "HIDDEN"), "danger"] : pending === "review" ? [E2("CAMBIO EN REVISIÓN", "CHANGE IN REVIEW"), "action"] : ST_EVT(E2)[st] ?? [st, "neutral"]);
+const LOG = (E2: EF): Record<string, string> => ({
+  submitted: E2("Enviado", "Submitted"), resubmitted: E2("Enviado otra vez", "Resubmitted"), approved: E2("Aprobado", "Approved"),
+  changes: E2("Cambios pedidos", "Changes requested"), rejected: E2("No aprobado", "Not approved")
+});
 
 /* Lo que se ve para decidir. */
 export function bloquesEvt(e: EvtAdm, x: Ctx): Bloque[] {
@@ -53,13 +60,13 @@ export function bloquesEvt(e: EvtAdm, x: Ctx): Bloque[] {
   if (d.antes.some((b) => b.es)) B.push({ type: "rows", k: E2("ANTES DE IR", "BEFORE YOU GO"), items: d.antes.filter((b) => b.es).map((b, i) => ({ key: String(i), icon: "info", t: bi(b, en), compact: true, chev: false })) });
   if (e.pendiente) {
     B.push({ type: "note", tone: "info", icon: "clock", t: E2("CAMBIO QUE IMPORTA · Mientras decides sigue en vivo la versión publicada. Aprobar aplica el cambio; pedir cambios o no aprobar deja la versión de ahora.", "SIGNIFICANT CHANGE · While you decide, the published version stays live. Approving applies the change; asking for changes or not approving keeps the current version.") });
-    B.push({ type: "rows", k: E2("LO QUE CAMBIA", "WHAT CHANGES"), items: e.cambios.map((k) => ({ key: k, icon: "edit", t: (en ? CAMPO_EN : CAMPO)[k] ?? k, s: `${valorDe(d, k, E2)} → ${valorDe(e.pendiente!, k, E2)}`, compact: true, chev: false })) });
+    B.push({ type: "rows", k: E2("LO QUE CAMBIA", "WHAT CHANGES"), items: e.cambios.map((k) => ({ key: k, icon: "edit", t: CAMPO(E2)[k] ?? k, s: `${valorDe(d, k, E2)} → ${valorDe(e.pendiente!, k, E2)}`, compact: true, chev: false })) });
   }
   if (e.hidden) B.push({ type: "note", tone: "danger", icon: "ban", t: E2(`OCULTO DEL MÓDULO · ${e.hidden}`, `HIDDEN FROM THE MODULE · ${e.hidden}`) });
   if (e.nota && (e.st === "changes" || e.st === "rejected")) B.push({ type: "note", tone: "warn", icon: "warning", t: E2(`MOTIVO ENVIADO AL NEGOCIO · ${e.nota}`, `REASON SENT TO THE BUSINESS · ${e.nota}`) });
   B.push({ type: "rows", k: E2("ORGANIZA", "ORGANIZER"), items: [{ icon: "store", t: e.org.name, s: `${E2(`${e.org.eventos} eventos enviados`, `${e.org.eventos} events submitted`)}${e.org.rechazados ? E2(` · ${e.org.rechazados} no aprobados`, ` · ${e.org.rechazados} not approved`) : ""}${e.origen === "publica" ? E2(" · desde Publica tu evento", " · from Post your event") : ""}`,
     tag: e.org.bloqueado ? E2("BLOQUEADO", "BLOCKED") : e.org.verificado ? E2("VERIFICADO", "VERIFIED") : undefined, tone: e.org.bloqueado ? "danger" : "signal", chev: true, onClick: () => x.negocio(e.org.id) }] });
-  if (e.log.length) B.push({ type: "timeline", k: E2("REVISIÓN", "REVIEW"), items: e.log.map((l) => ({ t: (en ? LOG_EN : LOG_ES)[l.decision] ?? l.decision,
+  if (e.log.length) B.push({ type: "timeline", k: E2("REVISIÓN", "REVIEW"), items: e.log.map((l) => ({ t: LOG(E2)[l.decision] ?? l.decision,
     s: `${l.by === "staff" ? (l.quien ?? E2("Equipo", "Team")) : l.by === "auto" ? E2("Automático · verificado", "Automatic · verified") : E2("El negocio", "The business")} · ${fecha(l.at, en)}${l.nota ? ` · ${l.nota}` : ""}` })) });
   return B;
 }
@@ -107,7 +114,7 @@ export function cuerpoEventos(k: Caso, x: Omit<Ctx, "puede">): { bloques: Bloque
   const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
   // 6e · Organizadores que cancelan (§6 #24): cada cancelación del plazo con lo devuelto y el costo de la tarjeta que puso To'Latino.
   if (k.queue === "evtcx" && "evtcx" in k && k.evtcx) {
-    const g = k.evtcx, MOT: Record<string, string> = en ? { clima: "Bad weather", artista: "The artist can't come", local: "Problem at the venue", planes: "Change of plans", admin: "To'Latino" } : { clima: "Mal tiempo", artista: "El artista no puede venir", local: "Problema en el local", planes: "Cambio de planes", admin: "To'Latino" };
+    const g = k.evtcx, MOT: Record<string, string> = { clima: E2("Mal tiempo", "Bad weather"), artista: E2("El artista no puede venir", "The artist can't come"), local: E2("Problema en el local", "Problem at the venue"), planes: E2("Cambio de planes", "Change of plans"), admin: "To'Latino" };
     const bloques: Bloque[] = [
       { type: "kv", cols: 3, items: [{ k: E2("CANCELACIONES", "CANCELLATIONS"), v: String(g.L.length), fg: "var(--tl-pro-ink)" }, { k: E2("DEVUELTO", "REFUNDED"), v: usd(g.L.reduce((a, c) => a + c.devuelto, 0)) }, { k: E2("COSTO DE TARJETA (TO'LATINO)", "CARD COST (TO'LATINO)"), v: usd(g.L.reduce((a, c) => a + c.costo, 0)) }] },
       { type: "rows", k: E2("CADA CANCELACIÓN", "EACH CANCELLATION"), items: g.L.map((c, i) => ({ key: String(i), icon: "ban", t: `${c.t}${c.scope === "date" ? E2(" · una fecha", " · one date") : ""}`, s: `${fecha(c.at, en)} · ${MOT[c.motivo] ?? c.motivo} · ${E2(`${c.ordenes} órdenes · devuelto ${usd(c.devuelto)}`, `${c.ordenes} orders · refunded ${usd(c.devuelto)}`)}`, compact: true, chev: true, onClick: () => x.abrir(`/admin/eventos/${c.eid}`) })) },

@@ -12,12 +12,16 @@ import { useAhora } from "@/lib/ahora";
 
 import { tec } from "@/lib/tec";
 import { useE2 } from "./idioma-admin";
+
+type EF = (es: string, en: string) => string;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminList" | "Pager" | "Icon", ComponentType<any>>;
 type Fila = { id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null;
   rango: number; pedidos: number; citas: number; reportes: number; promo: boolean; posts: number; resenas: number };
-export const EST_USR: Record<string, string> = { adv: "ADVERTIDO", mute: "SILENCIADO", susp: "SUSPENDIDO", ban: "BANEADO", del: "BORRADO" };
-export const EST_USR_EN: Record<string, string> = { adv: "WARNED", mute: "MUTED", susp: "SUSPENDED", ban: "BANNED", del: "DELETED" };
+export const EST_USR = (E2: EF): Record<string, string> => ({
+  adv: E2("ADVERTIDO", "WARNED"), mute: E2("SILENCIADO", "MUTED"), susp: E2("SUSPENDIDO", "SUSPENDED"), ban: E2("BANEADO", "BANNED"),
+  del: E2("BORRADO", "DELETED")
+});
 export const haceUsr = (iso: string | null, ahora: number, en = false) => {
   if (!iso) return en ? "never" : "nunca";
   const m = (ahora - new Date(iso).getTime()) / 60_000;
@@ -28,7 +32,7 @@ export const haceUsr = (iso: string | null, ahora: number, en = false) => {
 export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; total: number; cab: { n: number; duenos: number; sanc: number }; f: FiltrosUsr; porPagina: number }) {
   const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
-  const { E2 } = useE2(), en = E2("", "x") === "x", EST = en ? EST_USR_EN : EST_USR;
+  const { E2 } = useE2(), en = E2("", "x") === "x", EST = EST_USR(E2);
   const w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [mas, setMas] = useState(f.mas.length > 0);
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("pag" in p)) u.delete("pag"); router.push(`${path}${u.size ? `?${u}` : ""}`); };

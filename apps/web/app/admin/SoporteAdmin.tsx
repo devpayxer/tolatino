@@ -35,8 +35,10 @@ const hace = (iso: string, ahora: number, E2: EF) => {
   return m < 1 ? E2("ahora", "now") : m < 60 ? E2(`hace ${m} min`, `${m} min ago`) : m < 1440 ? E2(`hace ${Math.floor(m / 60)} h`, `${Math.floor(m / 60)} h ago`) : E2(`hace ${Math.floor(m / 1440)} d`, `${Math.floor(m / 1440)} d ago`);
 };
 const fecha = (iso: string | null, en = false) => (iso ? new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "") : "—");
-const ORIGEN: Record<string, string> = { form: "App · formulario", panel: "Panel del negocio", compa: "El Compa", reporte_app: "App · Reportar un problema", correo: "Correo a Soporte" };
-const ORIGEN_EN: Record<string, string> = { form: "App · form", panel: "Business panel", compa: "El Compa", reporte_app: "App · Report a problem", correo: "Email to Support" };
+const ORIGEN = (E2: EF): Record<string, string> => ({
+  form: E2("App · formulario", "App · form"), panel: E2("Panel del negocio", "Business panel"), compa: "El Compa",
+  reporte_app: E2("App · Reportar un problema", "App · Report a problem"), correo: E2("Correo a Soporte", "Email to Support")
+});
 const OPST = (E2: EF): Record<string, string> => ({ pending: E2("pendiente", "pending"), change_proposed: E2("con un cambio propuesto", "with a proposed change"), confirmed: E2("confirmado", "confirmed"), declined: E2("no aceptado", "declined"), expired: E2("sin respuesta", "no response"), cancelled: E2("cancelado", "canceled"), done: E2("terminado", "done") });
 const vence = (iso: string, E2: EF, en = false) => {
   const ms = new Date(iso).getTime() - Date.now();
@@ -66,7 +68,7 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024, lado = w >= 1200;
   const { E2 } = useE2(), en = E2("", "x") === "x", tx = (x: Bi) => (en ? x.en || x.es : x.es), fe = (iso: string | null) => fecha(iso, en), hc = (iso: string) => hace(iso, ahora, E2);
-  const origen = en ? ORIGEN_EN : ORIGEN, opst = OPST(E2), verbo = VERBO_SOP(E2), kind = KIND(E2), sistema = SISTEMA(E2, en);
+  const origen = ORIGEN(E2), opst = OPST(E2), verbo = VERBO_SOP(E2), kind = KIND(E2), sistema = SISTEMA(E2, en);
   const [toast, setToast] = useToast(), [conf, setConf] = useState<Confirmar | null>(null), [pend, start] = useTransition();
   const [v, setV] = useState(q), [resp, setResp] = useState(""), [macro, setMacro] = useState<string | null>(null), [modo, setModo] = useState<"persona" | "nota">("persona");
   const [edit, setEdit] = useState<{ key: string | null; tituloEs: string; tituloEn: string; textoEs: string; textoEn: string; tema: string; motivo: string } | null>(null);

@@ -94,8 +94,11 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { type: "note", tone: "info", icon: "info", t: E2("Vecinos nuevos por semana (a la derecha) y cuántos volvieron el día 1, 7 y 30; «—» = esa semana todavía no tiene la edad.", "New neighbors per week (on the right) and how many came back on day 1, 7 and 30; «—» = that week is not that old yet.") }]} />
         {d.embudos ? (() => { const v = d.embudos.vecino, n = d.embudos.negocio;
           const FV = [[E2("Se registraron", "Signed up"), v.registrados], [E2("Buscaron", "Searched"), v.usaron], [E2("Contactaron", "Contacted"), v.contactaron], [E2("Volvieron", "Came back"), v.volvieron]] as const;
-          const PN: Record<string, [string, string]> = { B1: ["Tipo de negocio", "Business type"], C1: ["Lo que hacen", "What they do"], D1: ["Precios", "Prices"], E1: ["Dónde y cuándo", "Where and when"], F1: ["Revisar", "Review"] };
-          const FN = [...n.pasos.map((x) => [E2(PN[x.paso]![0], PN[x.paso]![1]), x.n] as const), [E2("Publicaron", "Published"), n.publicaron] as const];
+          const PN: Record<string, string> = {
+            B1: E2("Tipo de negocio", "Business type"), C1: E2("Lo que hacen", "What they do"), D1: E2("Precios", "Prices"),
+            E1: E2("Dónde y cuándo", "Where and when"), F1: E2("Revisar", "Review")
+          };
+          const FN = [...n.pasos.map((x) => [PN[x.paso]!, x.n] as const), [E2("Publicaron", "Published"), n.publicaron] as const];
           const barras = (F: readonly (readonly [string, number])[], color: string) => F.map(([l, k]) => ({ label: l, width: `${Math.min(100, Math.max(2, Math.round((k / (F[0]![1] || 1)) * 100)))}%`, color, value: String(k) }));
           return <>
             <A.HBars label={E2("EMBUDO · VECINOS NUEVOS", "FUNNEL · NEW NEIGHBORS")} help={E2(`${d.dias} días · cuentas nuevas · buscaron o abrieron una ficha, contactaron o pidieron, volvieron otro día`, `${d.dias} days · new accounts · searched or opened a page, contacted or ordered, came back another day`)} items={barras(FV, "var(--tl-action)")} />
@@ -135,7 +138,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: E2("«COBRÓ EL TOTAL QUE DIJO»", "«CHARGED THE TOTAL THEY SAID»"), v: pct(rev.cobro, rev.base), s: E2(`de ${rev.base} reseñas que contestaron`, `of ${rev.base} reviews that answered`) },
           { k: E2("RESPONDEN EN", "RESPOND IN"), v: min(pro.resp), s: E2("promedio, de pedir a la respuesta", "average, from request to response") },
         ])]} />
-        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Doctores y Profesionales`, `${d.dias} days · Doctors and Professionals`)} items={ayuda.map((x) => ({ label: E2(`${x.rub === "salud" ? "Doctores" : "Profesionales"} · ${motivoAyuda(x.reason, x.rub)[0]}`, `${x.rub === "salud" ? "Doctors" : "Professionals"} · ${motivoAyuda(x.reason, x.rub)[1]}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Doctores y Profesionales`, `${d.dias} days · Doctors and Professionals`)} items={ayuda.map((x) => ({ label: E2(`${x.rub === "salud" ? "Doctores" : "Profesionales"} · ${motivoAyuda(E2, x.reason, x.rub)}`, `${x.rub === "salud" ? "Doctors" : "Professionals"} · ${motivoAyuda(E2, x.reason, x.rub)}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">{E2("Nadie pidió ayuda con Doctores ni Profesionales en el período.", "Nobody asked for help with Doctors or Professionals in the period.")}</A.AdminNote>}
         <PanelBloques bloques={[{ type: "note", tone: "info", icon: "lock", t: E2("Solo cifras. Los motivos de consulta, las notas y los seguros de cada persona nunca salen en Analítica ni en un CSV.", "Figures only. Each person’s visit reasons, notes and insurance never show in Analytics or in a CSV.") }]} />
       </>);
@@ -160,7 +163,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: E2("PLANES", "PLANS"), v: String(tienda.planes), s: E2(`${tienda.pagados} terminados · ${tienda.cancelados} cancelados`, `${tienda.pagados} completed · ${tienda.cancelados} cancelled`) },
           { k: E2("«PRECIO DE LA CAJA = PUBLICADO»", "«REGISTER PRICE = LISTED PRICE»"), v: pct(rev.caja, rev.base), s: E2(`de ${rev.base} reseñas`, `of ${rev.base} reviews`) },
         ])]} />
-        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Mercados y Tiendas`, `${d.dias} days · Markets and Stores`)} items={ayuda.map((x) => ({ label: E2(`${x.rub === "merc" ? "Mercados" : "Tiendas"} · ${motivoAyuda(x.reason, x.rub)[0]}`, `${x.rub === "merc" ? "Markets" : "Stores"} · ${motivoAyuda(x.reason, x.rub)[1]}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Mercados y Tiendas`, `${d.dias} days · Markets and Stores`)} items={ayuda.map((x) => ({ label: E2(`${x.rub === "merc" ? "Mercados" : "Tiendas"} · ${motivoAyuda(E2, x.reason, x.rub)}`, `${x.rub === "merc" ? "Markets" : "Stores"} · ${motivoAyuda(E2, x.reason, x.rub)}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">{E2("Nadie pidió ayuda con Mercados ni Tiendas en el período.", "Nobody asked for help with Markets or Stores in the period.")}</A.AdminNote>}
       </>);
   } else if (d.tab === "ft" && d.ft) {
@@ -183,7 +186,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: E2("SALIDAS CANCELADAS", "CANCELLED DEPARTURES"), v: String(sal.canceladas), s: E2(`${vi.cxSalida} pasajeros con devolución completa`, `${vi.cxSalida} passengers with a full refund`) },
           { k: E2("«COBRÓ MÁS» POR CADA 100", "«CHARGED MORE» PER 100"), v: vi.hechos ? (Math.round((1000 * vi.cobroMas) / vi.hechos) / 10).toString() : "—", s: E2(`${vi.cobroMas} ayudas`, `${vi.cobroMas} help requests`) },
         ])]} />
-        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Fiestas y Transporte`, `${d.dias} days · Parties and Transport`)} items={ayuda.map((x) => ({ label: E2(`${x.rub === "fiesta" ? "Fiestas" : "Transporte"} · ${motivoAyuda(x.reason, x.rub)[0]}`, `${x.rub === "fiesta" ? "Parties" : "Transport"} · ${motivoAyuda(x.reason, x.rub)[1]}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Fiestas y Transporte`, `${d.dias} days · Parties and Transport`)} items={ayuda.map((x) => ({ label: E2(`${x.rub === "fiesta" ? "Fiestas" : "Transporte"} · ${motivoAyuda(E2, x.reason, x.rub)}`, `${x.rub === "fiesta" ? "Parties" : "Transport"} · ${motivoAyuda(E2, x.reason, x.rub)}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">{E2("Nadie pidió ayuda con Fiestas ni Transporte en el período.", "Nobody asked for help with Parties or Transport in the period.")}</A.AdminNote>}
       </>);
   } else if (d.tab === "no" && d.no) {
@@ -206,7 +209,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: E2("«COBRARON MÁS COVER» POR CADA 100", "«CHARGED MORE COVER» PER 100"), v: li.noches ? (Math.round((1000 * coverMas) / li.noches) / 10).toString() : "—", s: E2(`${coverMas} ayudas · ${li.noches} noches`, `${coverMas} help requests · ${li.noches} nights`) },
           { k: E2("LICENCIAS DE LICOR VENCIDAS", "EXPIRED LIQUOR LICENSES"), v: String(lic.vencidas), s: E2(`de ${lic.total} en Licencias`, `of ${lic.total} in Licenses`) },
         ])]} />
-        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Noche`, `${d.dias} days · Nightlife`)} items={ayuda.map((x) => ({ label: E2(motivoAyuda(x.reason, "noche")[0], motivoAyuda(x.reason, "noche")[1]), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Noche`, `${d.dias} days · Nightlife`)} items={ayuda.map((x) => ({ label: motivoAyuda(E2, x.reason, "noche"), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">{E2("Nadie pidió ayuda con la noche en el período.", "Nobody asked for help with nightlife in the period.")}</A.AdminNote>}
       </>);
   } else if (d.tab === "en" && d.en) {
@@ -232,7 +235,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: E2("AYUDAS POR CADA 100", "HELP REQUESTS PER 100"), v: me.n ? (Math.round((1000 * nAy) / me.n) / 10).toString() : "—", s: E2(`${nAy} ayudas · ${me.n} inscripciones`, `${nAy} help requests · ${me.n} enrollments`) },
           { k: E2("GUARDERÍAS CON LICENCIA VIGENTE", "DAYCARES WITH A VALID LICENSE"), v: String(lic.vigentes), s: E2(`de ${lic.cuidado} lugares de Niños · ${lic.vencidas} vencidas`, `of ${lic.cuidado} Kids places · ${lic.vencidas} expired`) },
         ])]} />
-        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Educación, Niños y Deporte`, `${d.dias} days · Education, Kids and Sports`)} items={ayuda.map((x) => ({ label: E2(`${RUB[x.rub] ?? x.rub} · ${motivoAyuda(x.reason, x.rub)[0]}`, `${RUB[x.rub] ?? x.rub} · ${motivoAyuda(x.reason, x.rub)[1]}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Educación, Niños y Deporte`, `${d.dias} days · Education, Kids and Sports`)} items={ayuda.map((x) => ({ label: E2(`${RUB[x.rub] ?? x.rub} · ${motivoAyuda(E2, x.reason, x.rub)}`, `${RUB[x.rub] ?? x.rub} · ${motivoAyuda(E2, x.reason, x.rub)}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">{E2("Nadie pidió ayuda con una inscripción en el período.", "Nobody asked for help with an enrollment in the period.")}</A.AdminNote>}
       </>);
   } else if (d.tab === "ia" && d.ia) {
@@ -273,7 +276,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { k: E2("VENCIDAS", "EXPIRED"), v: String(tot("vencidas")), s: E2("vuelven a Colas › Licencias con prioridad", "go back to Queues › Licenses with priority") },
           { k: E2("EN REVISIÓN", "IN REVIEW"), v: String(tot("revision")), s: E2("nuevas o cambiadas", "new or changed") },
         ])]} />
-        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Iglesias, Bienes Raíces y Autos`, `${d.dias} days · Churches, Real Estate and Cars`)} items={ayuda.map((x) => ({ label: E2(`${RUB[x.rub] ?? x.rub} · ${motivoAyuda(x.reason, x.rub)[0]}`, `${RUB[x.rub] ?? x.rub} · ${motivoAyuda(x.reason, x.rub)[1]}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+        {ayuda.length ? <A.HBars label={E2("AYUDA · MOTIVOS", "HELP · REASONS")} help={E2(`${d.dias} días · Iglesias, Bienes Raíces y Autos`, `${d.dias} days · Churches, Real Estate and Cars`)} items={ayuda.map((x) => ({ label: E2(`${RUB[x.rub] ?? x.rub} · ${motivoAyuda(E2, x.reason, x.rub)}`, `${RUB[x.rub] ?? x.rub} · ${motivoAyuda(E2, x.reason, x.rub)}`), width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">{E2("Nadie pidió ayuda con una visita o una fecha en el período.", "Nobody asked for help with a visit or a date in the period.")}</A.AdminNote>}
       </>);
   } else if (d.tab === "com" && d.com) {
@@ -418,13 +421,16 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
     const D = d.dinero, usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const tot = (k: "bruto" | "comision" | "operaciones" | "devoluciones" | "devuelto" | "cerradas" | "no_llegaron") => D.tipos.reduce((a, x) => a + x[k], 0);
     const delta = (a: number, b: number) => (b ? `${a >= b ? "+" : ""}${Math.round(((a - b) / b) * 100)} % ${E2("contra el período anterior", "vs. the previous period")}` : E2("sin período anterior", "no previous period"));
-    const TIPO: Record<string, [string, string]> = { order: ["Pedido", "Order"], market_order: ["Mercado", "Market order"], hold: ["Apartado", "Hold"], appointment: ["Cita", "Booking"], quote: ["Presupuesto", "Quote"],
-      party: ["Fiesta", "Party"], private_event: ["Evento privado", "Private event"], table: ["Mesa", "Table"], night: ["Noche", "Night"], trip: ["Viaje", "Trip"], enrollment: ["Inscripción", "Enrollment"],
-      visit: ["Visita", "Visit"], tickets: ["Boletos", "Tickets"], rental: ["Renta", "Rental"], plan: ["Plan", "Plan"] };
-    const nom = (k: string) => (TIPO[k] ? E2(TIPO[k]![0], TIPO[k]![1]) : k);
+    const TIPO: Record<string, string> = {
+      order: E2("Pedido", "Order"), market_order: E2("Mercado", "Market order"), hold: E2("Apartado", "Hold"), appointment: E2("Cita", "Booking"),
+      quote: E2("Presupuesto", "Quote"), party: E2("Fiesta", "Party"), private_event: E2("Evento privado", "Private event"),
+      table: E2("Mesa", "Table"), night: E2("Noche", "Night"), trip: E2("Viaje", "Trip"), enrollment: E2("Inscripción", "Enrollment"),
+      visit: E2("Visita", "Visit"), tickets: E2("Boletos", "Tickets"), rental: E2("Renta", "Rental"), plan: "Plan"
+    };
+    const nom = (k: string) => (TIPO[k] ?? k);
     const ticket = D.tipos.filter((x) => x.operaciones).map((x) => ({ k: x.tipo, v: x.bruto / x.operaciones })), mxT = Math.max(1, ...ticket.map((x) => x.v));
-    const mxS = Math.max(1, ...D.semanas.map((x) => x.neto)), ESTADO: Record<string, [string, string]> = { captured: ["Cobrado", "Charged"], held: ["Retenido", "Held"], released: ["Liberado", "Released"],
-      refunded: ["Devuelto", "Refunded"], partially_refunded: ["Devuelto en parte", "Partly refunded"], failed: ["Falló", "Failed"] };
+    const mxS = Math.max(1, ...D.semanas.map((x) => x.neto)), ESTADO: Record<string, string> = { captured: E2("Cobrado", "Charged"), held: E2("Retenido", "Held"), released: E2("Liberado", "Released"),
+      refunded: E2("Devuelto", "Refunded"), partially_refunded: E2("Devuelto en parte", "Partly refunded"), failed: E2("Falló", "Failed") };
     const mxE = Math.max(1, ...D.estados.map((x) => x.monto + x.devuelto));
     const FP = [[E2("Prueba Pro", "Pro trial"), D.pro.iniciadas], [E2("Dejaron tarjeta", "Left card"), D.pro.con_tarjeta], [E2("Primer cobro", "First charge"), D.pro.primeros]] as const;
     cuerpo = (
@@ -451,7 +457,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           ])]} />
         <A.HBars label={E2("EMBUDO · PRUEBA PRO → PAGO", "FUNNEL · PRO TRIAL → PAID")} help={E2(`${d.dias} días`, `${d.dias} days`)} items={FP.map(([l, n]) => ({ label: l, width: `${Math.min(100, Math.max(2, Math.round((n / (FP[0][1] || 1)) * 100)))}%`, color: "var(--tl-pro)", value: String(n) }))} />
         {D.estados.length ? <A.HBars label={E2("DINERO POR ESTADO", "MONEY BY STATE")} help={E2(`${d.dias} días · cobros creados en el período`, `${d.dias} days · charges created in the period`)}
-          items={D.estados.map((x) => ({ label: ESTADO[x.estado] ? E2(ESTADO[x.estado]![0], ESTADO[x.estado]![1]) : x.estado, width: `${Math.max(2, Math.round(((x.monto + x.devuelto) / mxE) * 100))}%`, color: x.estado === "captured" ? "var(--tl-action)" : "var(--tl-ink)", value: usd(x.monto + x.devuelto) }))} /> : null}
+          items={D.estados.map((x) => ({ label: ESTADO[x.estado] ?? x.estado, width: `${Math.max(2, Math.round(((x.monto + x.devuelto) / mxE) * 100))}%`, color: x.estado === "captured" ? "var(--tl-action)" : "var(--tl-ink)", value: usd(x.monto + x.devuelto) }))} /> : null}
         <PanelBloques bloques={[...(D.concil ? [{ type: "group", k: E2("CONCILIACIÓN CON STRIPE", "STRIPE RECONCILIATION") }, kpis([
             { k: E2("DÍAS QUE CUADRARON", "DAYS THAT MATCHED"), v: `${D.concil.cuadra} / ${D.concil.cuadra + D.concil.diferencias + D.concil.fallo + D.concil.sin_correr}`, s: D.concil.ultimo ? E2(`la última corrió para el ${D.concil.ultimo}`, `the last one ran for ${D.concil.ultimo}`) : E2("todavía no corrió", "has not run yet"), dark: true },
             { k: E2("CON DIFERENCIAS", "WITH DIFFERENCES"), v: String(D.concil.diferencias), s: E2(`${D.concil.sin_dueno} sin dueño · ${usd(D.concil.diferencia)}`, `${D.concil.sin_dueno} unowned · ${usd(D.concil.diferencia)}`), onClick: D.concil.sin_dueno ? () => router.push("/admin/planes") : undefined },
@@ -480,17 +486,20 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
       ]), { type: "note", tone: "info", icon: "lock", t: E2("Solo cifras: nunca la casa, el carro ni quién pidió.", "Figures only: never the home, the car or who asked.") }]} />);
   } else if (d.tab === "rep") {
     // 9g · Reportes: los programados por correo (de quien mira) y el reporte diario al fundador (solo los Admins lo ven).
-    const TAB: [string, string, string][] = [["sum", "Resumen", "Overview"], ["dinero", "Dinero", "Money"], ["ppl", "Gente y negocios", "People and businesses"], ["nosup", "Búsquedas sin resultado", "Searches with no results"],
-      ["evt", "Eventos", "Events"], ["cpa", "El Compa y Soporte", "El Compa and Support"], ["biz", "Negocios", "Businesses"]];
-    const CADA: Record<string, [string, string]> = { dia: ["Cada día, 8 AM", "Every day, 8 AM"], semana: ["Cada lunes, 8 AM", "Every Monday, 8 AM"], mes: ["El día 1, 8 AM", "On the 1st, 8 AM"] };
+    const TAB: [string, string][] = [["sum", E2("Resumen", "Overview")], ["dinero", E2("Dinero", "Money")], ["ppl", E2("Gente y negocios", "People and businesses")], ["nosup", E2("Búsquedas sin resultado", "Searches with no results")],
+      ["evt", E2("Eventos", "Events")], ["cpa", E2("El Compa y Soporte", "El Compa and Support")], ["biz", E2("Negocios", "Businesses")]];
+    const CADA: Record<string, string> = {
+      dia: E2("Cada día, 8 AM", "Every day, 8 AM"), semana: E2("Cada lunes, 8 AM", "Every Monday, 8 AM"),
+      mes: E2("El día 1, 8 AM", "On the 1st, 8 AM")
+    };
     const prog = (k: string) => d.programados?.find((x) => x.tab === k && x.status === "activo");
     const cambiar = (k: string, cada: string | null) => start(async () => { const r = await programar(k, cada); setToast(r.mensaje ?? ""); if (r.ok) router.refresh(); });
     const cuando = (iso: string | null) => (iso ? new Intl.DateTimeFormat(d.l === "en" ? "en-US" : "es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)) : E2("todavía no salió", "not sent yet"));
     const filas: Bloque[] = [{ type: "note", tone: d.exporta ? "info" : "warn", icon: d.exporta ? "calendar" : "lock", t: d.exporta ? E2("Te llegan a tu correo con las cifras de tus ciudades. Solo cifras: nunca quién.", "They arrive in your email with the figures for your cities. Figures only: never who.") : E2("Tu rol no programa reportes.", "Your role cannot schedule reports.") },
-      { type: "rows", k: E2("REPORTES PROGRAMADOS", "SCHEDULED REPORTS"), items: TAB.map(([k, es, en]) => { const p = prog(k); return { key: k, icon: "calendar", t: E2(es, en),
-        s: p ? `${E2(CADA[p.cada]![0], CADA[p.cada]![1])} · ${E2("último", "last")}: ${cuando(p.last_sent_at)}` : E2("Bajo pedido", "On demand"),
+      { type: "rows", k: E2("REPORTES PROGRAMADOS", "SCHEDULED REPORTS"), items: TAB.map(([k, tt]) => { const p = prog(k); return { key: k, icon: "calendar", t: tt,
+        s: p ? `${CADA[p.cada]!} · ${E2("último", "last")}: ${cuando(p.last_sent_at)}` : E2("Bajo pedido", "On demand"),
         ...(d.exporta ? { tgOn: !!p, onTg: () => cambiar(k, p ? null : "semana") } : {}) }; }) }];
-    for (const [k, es, en] of TAB) { const p = prog(k); if (p && d.exporta) filas.push({ type: "chips", k: E2(`${es.toUpperCase()} · CADA CUÁNTO`, `${en.toUpperCase()} · HOW OFTEN`), items: (["dia", "semana", "mes"] as const).map((c) => ({ l: E2(CADA[c]![0], CADA[c]![1]), v: p.cada === c ? "selected" : "filter", onClick: () => { if (!pend && p.cada !== c) cambiar(k, c); } })) }); }
+    for (const [k, tt] of TAB) { const p = prog(k); if (p && d.exporta) filas.push({ type: "chips", k: `${tt.toUpperCase()} · ${E2("CADA CUÁNTO", "HOW OFTEN")}`, items: (["dia", "semana", "mes"] as const).map((c) => ({ l: CADA[c]!, v: p.cada === c ? "selected" : "filter", onClick: () => { if (!pend && p.cada !== c) cambiar(k, c); } })) }); }
     if (d.diarios) {
       const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       const hoy = d.diarios.find((x) => x.kind === "diario");

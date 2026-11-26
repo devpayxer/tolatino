@@ -36,7 +36,7 @@ const casos = [
   [PN, '<AvisoSoloLectura es={es} negocio={d.name} />', 'null'],
   [PN, 'router.push(conEq(href), { scroll: false })', 'router.push(href, { scroll: false })'],
   [N, 'window.open(`/panel/${n.id}?equipo=1`, "_blank")', 'window.open(`/panel/${n.id}`, "_blank")'],
-  [N, '  "negocio.ver_como_cliente": "vio como cliente a", "negocio.ver_panel": "abrió en solo lectura el panel de",\n', '  "negocio.ver_como_cliente": "vio como cliente a",\n'],
+  [N, '  "negocio.ver_panel": E2("abrió en solo lectura el panel de", "opened read-only the dashboard of"),\n', ''],
 ];
 const crear = [
   // (2) solo la página: una acción del panel, una ruta o una pantalla con la entrada del equipo, o que marque la petición

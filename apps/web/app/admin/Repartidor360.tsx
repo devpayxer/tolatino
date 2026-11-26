@@ -13,15 +13,17 @@ import { KIND_INC, cuandoDlv as cuandoEs } from "./Repartidores";
 import { useE2 } from "./idioma-admin";
 import { numVisible } from "@/lib/reparto-comun";
 
-const VEH: Record<string, [string, string]> = { pie: ["a pie", "on foot"], bici: ["bici", "bike"], moto: ["moto", "motorcycle"], auto: ["auto", "car"], camioneta: ["camioneta", "van"] };
-const SK: Record<string, [string, string]> = { aviso: ["AVISO", "WARNING"], suspension: ["SUSPENSIÓN", "SUSPENSION"], baneo: ["BANEO", "BAN"] };
-const PR: Record<string, [string, string]> = { foto: ["foto", "photo"], codigo: ["código", "code"], negocio: ["el negocio", "the business"] };
-const EST: Record<string, string> = { Entregado: "DELIVERED", "En curso": "IN PROGRESS", Cancelado: "CANCELLED" };
+type EF = (es: string, en: string) => string;
+
+const VEH = (E2: EF): Record<string, string> => ({ pie: E2("a pie", "on foot"), bici: E2("bici", "bike"), moto: E2("moto", "motorcycle"), auto: E2("auto", "car"), camioneta: E2("camioneta", "van") });
+const SK = (E2: EF): Record<string, string> => ({ aviso: E2("AVISO", "WARNING"), suspension: E2("SUSPENSIÓN", "SUSPENSION"), baneo: E2("BANEO", "BAN") });
+const PR = (E2: EF): Record<string, string> => ({ foto: E2("foto", "photo"), codigo: E2("código", "code"), negocio: E2("el negocio", "the business") });
+const EST = (E2: EF): Record<string, string> => ({ Entregado: E2("ENTREGADO", "DELIVERED"), "En curso": E2("EN CURSO", "IN PROGRESS"), Cancelado: E2("CANCELADO", "CANCELLED") });
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const tel = (p: string) => p.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3");
 
 export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolean; sancionar: boolean; banear: boolean; usuarios: boolean } }) {
-  const router = useRouter(), w = useAncho(), desk = w >= 1024, { E2 } = useE2(), en = E2("", "x") === "x", li = en ? 1 : 0;
+  const router = useRouter(), w = useAncho(), desk = w >= 1024, { E2 } = useE2(), en = E2("", "x") === "x", veh = VEH(E2), sk = SK(E2), pr = PR(E2), est = EST(E2);
   const cuandoDlv = (iso: string) => cuandoEs(iso, en);
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (x: ResAdm) => { setToast(x.mensaje ?? E2("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
@@ -57,7 +59,7 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
   ];
   if (acts.length) B.push({ type: "acts", items: acts });
   B.push({ type: "rows", k: E2("EQUIPOS", "TEAMS"), cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: r.equipos.map((e): Fila => ({ key: e.id, icon: "store", t: e.negocio,
-    s: [e.vehiculo ? VEH[e.vehiculo]?.[li] ?? e.vehiculo : null, e.desde ? E2(`desde ${e.desde}`, `since ${e.desde}`) : null, e.estado === "removed" ? E2(`salió${e.motivo ? `: ${e.motivo}` : ""}`, `left${e.motivo ? `: ${e.motivo}` : ""}`) : null].filter(Boolean).join(" · "),
+    s: [e.vehiculo ? veh[e.vehiculo] ?? e.vehiculo : null, e.desde ? E2(`desde ${e.desde}`, `since ${e.desde}`) : null, e.estado === "removed" ? E2(`salió${e.motivo ? `: ${e.motivo}` : ""}`, `left${e.motivo ? `: ${e.motivo}` : ""}`) : null].filter(Boolean).join(" · "),
     tag: e.estado === "removed" ? E2("FUERA", "REMOVED") : e.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: e.estado === "removed" ? "neutral" : "signal", chev: true, onClick: () => router.push(`/admin/negocios/${e.negocioId}`) })) });
   B.push({ type: "rows", k: E2(`INCIDENCIAS · ${abiertas.length} ${abiertas.length === 1 ? "ABIERTA" : "ABIERTAS"}`, `INCIDENTS · ${abiertas.length} OPEN`), items: r.incid.length ? r.incid.map((i): Fila => ({ key: i.id, icon: i.kind === "accidente" ? "warning" : "truck",
     t: `${KIND_INC(E2)[i.kind] ?? E2("INCIDENCIA", "INCIDENT")}${i.numero ? ` · ${numVisible(i.numero)}` : ""}${i.negocio ? ` · ${i.negocio}` : ""}`, s: [en ? i.nota.en || i.nota.es : i.nota.es, cuandoDlv(i.at), i.status === "resolved" ? E2(`Resuelta${i.quien ? ` por ${i.quien}` : ""}: ${i.resolucion ?? ""}`, `Resolved${i.quien ? ` by ${i.quien}` : ""}: ${i.resolucion ?? ""}`) : null].filter(Boolean).join(" · "),
@@ -66,15 +68,15 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
       ...(i.status === "open" && puede.editar ? [{ l: E2("Resolver", "Resolve"), v: "secondary", icon: "check", onClick: () => setConf({ titulo: E2("¿Cómo se resolvió?", "How was it resolved?"), cta: E2("Resolver", "Resolve"), sub: E2("Queda en la auditoría.", "It stays in the audit log."),
         plantillas: [E2("Hablamos con el repartidor y el negocio", "We spoke with the driver and the business"), E2("La prueba de la entrega está bien", "The proof of delivery checks out"), E2("Fue un accidente: nadie salió herido", "It was an accident: no one was hurt")], nota: "interna", hacer: (m) => dlvResolver(i.id, m) }) }] : [])] }))
     : [{ icon: "check", t: E2("Sin incidencias", "No incidents"), chev: false, compact: true }] });
-  B.push({ type: "rows", k: E2("SANCIONES", "SANCTIONS"), items: r.sanciones.length ? r.sanciones.map((x): Fila => ({ key: x.id, icon: "lock", t: `${SK[x.kind]?.[li] ?? x.kind}${x.until && x.kind === "suspension" ? E2(` · hasta ${cuandoDlv(x.until)}`, ` · until ${cuandoDlv(x.until)}`) : ""}`,
+  B.push({ type: "rows", k: E2("SANCIONES", "SANCTIONS"), items: r.sanciones.length ? r.sanciones.map((x): Fila => ({ key: x.id, icon: "lock", t: `${sk[x.kind] ?? x.kind}${x.until && x.kind === "suspension" ? E2(` · hasta ${cuandoDlv(x.until)}`, ` · until ${cuandoDlv(x.until)}`) : ""}`,
     s: [x.reason, `${x.por ?? E2("Equipo", "Team")} · ${cuandoDlv(x.at)}`, x.lifted ? E2(`Levantada ${cuandoDlv(x.lifted)}: ${x.liftReason ?? ""}`, `Lifted ${cuandoDlv(x.lifted)}: ${x.liftReason ?? ""}`) : null].filter(Boolean).join(" · "),
     tag: x.vigente ? E2("VIGENTE", "ACTIVE") : x.lifted ? E2("LEVANTADA", "LIFTED") : x.kind === "aviso" ? E2("AVISO", "WARNING") : E2("VENCIDA", "EXPIRED"), tone: x.vigente ? "danger" : "neutral", chev: false,
     acts: x.vigente && puede.sancionar && (x.kind !== "baneo" || puede.banear) ? [{ l: E2("Levantar", "Lift"), v: "secondary", onClick: () => setConf({ titulo: E2("Levantar la sanción", "Lift the sanction"), cta: E2("Levantar", "Lift"), sub: E2("Le llega el aviso y queda en la auditoría.", "They get notified and it stays in the audit log."),
       plantillas: [E2("Se aclaró con el negocio", "Cleared up with the business"), E2("Cumplió el tiempo acordado", "Served the agreed time"), E2("Fue un error", "It was a mistake")], nota: "persona", hacer: (m) => dlvLevantar(x.id, m) }) }] : undefined }))
     : [{ icon: "check", t: E2("Sin sanciones", "No sanctions"), chev: false, compact: true }] });
   B.push({ type: "rows", k: E2("ÚLTIMAS ENTREGAS", "LATEST DELIVERIES"), cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: r.entregas.length ? r.entregas.map((e): Fila => ({ key: e.numero, icon: "bag", t: `${numVisible(e.numero)} · ${e.negocio}`,
-    s: [cuandoDlv(e.at), e.prueba ? E2("prueba: ", "proof: ") + e.prueba.split(",").map((p) => PR[p]?.[li] ?? p).join(" · ") : e.estado === "Entregado" ? E2("sin prueba", "no proof") : null, e.efectivo ? E2(`efectivo ${money(e.efectivo)}`, `cash ${money(e.efectivo)}`) : null].filter(Boolean).join(" · "),
-    tag: en ? EST[e.estado] ?? e.estado.toUpperCase() : e.estado.toUpperCase(), tone: e.estado === "Entregado" ? "signal" : "neutral", chev: false,
+    s: [cuandoDlv(e.at), e.prueba ? E2("prueba: ", "proof: ") + e.prueba.split(",").map((p) => pr[p] ?? p).join(" · ") : e.estado === "Entregado" ? E2("sin prueba", "no proof") : null, e.efectivo ? E2(`efectivo ${money(e.efectivo)}`, `cash ${money(e.efectivo)}`) : null].filter(Boolean).join(" · "),
+    tag: est[e.estado] ?? e.estado.toUpperCase(), tone: e.estado === "Entregado" ? "signal" : "neutral", chev: false,
     acts: e.foto ? [{ l: E2("Ver foto", "See photo"), v: "secondary", icon: "image", onClick: () => window.open(`/api/entrega/foto/${e.foto}`, "_blank", "noopener") }] : undefined }))
     : [{ icon: "truck", t: E2("Todavía no tiene entregas", "No deliveries yet"), chev: false, compact: true }] });
   B.push({ type: "note", tone: "ink", icon: "shield", t: E2("El repartidor nunca ve el teléfono del cliente ni sus códigos. La foto de la entrega es privada: cada vez que alguien del equipo la abre, queda en la auditoría.", "The driver never sees the customer’s phone or their codes. The delivery photo is private: every time someone on the team opens it, it’s recorded in the audit log.") });

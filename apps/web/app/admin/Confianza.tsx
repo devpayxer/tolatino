@@ -15,14 +15,16 @@ import type { ResAdm } from "./acciones-colas";
 import { SENAL_L_UI } from "@/lib/evt-comun";
 import { useE2 } from "./idioma-admin";
 
+type EF = (es: string, en: string) => string;
+
 type Tab = "res" | "sanc" | "act" | "apel" | "fraud" | "priv";
 let EN = false;
 const fecha = (d: string) => new Date(d).toLocaleDateString(EN ? "en-US" : "es-US", { day: "numeric", month: "short", year: "numeric", timeZone: "America/New_York" });
-const EST: Record<string, [string, string]> = { open: ["EN REVISIÓN", "UNDER REVIEW"], upheld: ["SE MANTIENE", "UPHELD"], lifted: ["LEVANTADA", "LIFTED"] };
+const EST = (E2: EF): Record<string, string> => ({ open: E2("EN REVISIÓN", "UNDER REVIEW"), upheld: E2("SE MANTIENE", "UPHELD"), lifted: E2("LEVANTADA", "LIFTED") });
 
 export function Confianza({ d, tab }: { d: D; tab: Tab }) {
   const router = useRouter(), path = usePathname(), desk = useAncho() >= 1024, cols = desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, { E2 } = useE2();
-  EN = E2("", "x") === "x"; const i = EN ? 1 : 0;
+  EN = E2("", "x") === "x"; const est = EST(E2);
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E2("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
   const reportes = d.cola.rep!.n + d.cola.repUsr!.n + d.cola.chat!.n + d.cola.medios!.n, activas = d.sanc.length;
@@ -53,11 +55,11 @@ export function Confianza({ d, tab }: { d: D; tab: Tab }) {
     B.push({ type: "note", tone: "ink", icon: "scale", t: E2(`Escalera: advertencia → silencio 7 días → bloquear publicación 30 días → suspender 14 días → baneo (solo un Admin). La reincidencia sube un peldaño. Todas avisan con el motivo y se apelan ${d.apelarDias} días.`, `Ladder: warning → 7-day mute → 30-day posting block → 14-day suspension → ban (Admin only). Repeat offenses move up a step. All notify with the reason and can be appealed for ${d.apelarDias} days.`) });
     B.push({ type: "rows", cols, items: d.catalogo.map((s) => ({ key: s.k, icon: s.k === "ban" ? "ban" : "users", t: EN ? s.en : s.es, s: `${s.dias ? E2(`${s.dias} días · se levanta sola`, `${s.dias} days · lifts on its own`) : s.k === "ban" ? E2("Permanente · lo confirma un Admin", "Permanent · an Admin confirms it") : E2("Hasta que una persona la levante", "Until a person lifts it")} · ${E2("En la Comunidad", "In the Community")}: ${EN ? s.com.en : s.com.es}`, tag: s.m, tone: s.k === "ban" || s.k === "susp14" ? "danger" : "neutral" })) });
   }
-  if (tab === "act") B.push(d.sanc.length ? { type: "rows", items: d.sanc.map((x) => ({ key: x.id, icon: "shield", t: x.quien, s: `${x.reason} · ${E2("desde", "since")} ${fecha(x.at)}${x.hasta ? ` · ${E2("hasta", "until")} ${fecha(x.hasta)}` : ""}${x.ciudad ? ` · ${x.ciudad}` : ""}${x.apelada ? ` · ${E2("apelación", "appeal")} ${(EST[x.apelada]?.[i] ?? x.apelada).toLowerCase()}` : ""}`,
+  if (tab === "act") B.push(d.sanc.length ? { type: "rows", items: d.sanc.map((x) => ({ key: x.id, icon: "shield", t: x.quien, s: `${x.reason} · ${E2("desde", "since")} ${fecha(x.at)}${x.hasta ? ` · ${E2("hasta", "until")} ${fecha(x.hasta)}` : ""}${x.ciudad ? ` · ${x.ciudad}` : ""}${x.apelada ? ` · ${E2("apelación", "appeal")} ${(est[x.apelada] ?? x.apelada).toLowerCase()}` : ""}`,
     tag: ({ adv: E2("ADVERTENCIA", "WARNING"), mute7: E2("SILENCIO", "MUTED"), nopub: E2("SIN PUBLICAR", "NO POSTING"), susp14: E2("SUSPENDIDA", "SUSPENDED"), ban: E2("BANEADA", "BANNED") } as Record<string, string>)[x.kind] ?? x.kind.toUpperCase(), tone: x.kind === "ban" || x.kind === "susp14" ? "danger" : "action", chev: true, onClick: () => router.push(`/admin/usuarios/${x.uid}`) })) }
     : { type: "empty", icon: "check", t: E2("Nadie sancionado", "No one sanctioned"), s: E2("No hay sanciones vigentes en tus ciudades.", "No active sanctions in your cities.") });
   if (tab === "apel") B.push(d.apel.length ? { type: "rows", items: d.apel.map((a) => ({ key: a.id, icon: "scale", t: `${a.numero} · ${a.quien}`, s: `${(EN ? APELABLE[a.k as Apelable]?.en : APELABLE[a.k as Apelable]?.es) ?? a.k} · ${E2("enviada", "sent")} ${fecha(a.at)}${a.decidida ? ` · ${E2("decidida", "decided")} ${fecha(a.decidida)}` : ""}`,
-    tag: EST[a.estado]?.[i] ?? a.estado, tone: a.estado === "open" ? "action" : a.estado === "lifted" ? "signal" : "neutral", chev: !!a.caso, onClick: a.caso ? () => router.push(`/admin/colas?cola=apel&caso=${a.caso}`) : undefined })) }
+    tag: est[a.estado] ?? a.estado, tone: a.estado === "open" ? "action" : a.estado === "lifted" ? "signal" : "neutral", chev: !!a.caso, onClick: a.caso ? () => router.push(`/admin/colas?cola=apel&caso=${a.caso}`) : undefined })) }
     : { type: "empty", icon: "check", t: E2("Sin apelaciones", "No appeals"), s: E2("Cuando alguien apele, llega aquí y a Colas › Apelaciones.", "When someone appeals, it arrives here and in Queues › Appeals.") });
   if (tab === "fraud") {
     B.push({ type: "group", k: E2("REDES Y RÁFAGAS · 30 DÍAS", "RINGS AND BURSTS · 30 DAYS"), first: true });

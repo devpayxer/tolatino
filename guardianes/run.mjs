@@ -65,12 +65,7 @@ const PENDIENTES_IDIOMA_ESEN = new Set([
 ]);
 const PENDIENTES_IDIOMA_TUPLA = new Set([]);
 // 26 nov (3) · Tablas exportadas que se eligen en otro archivo (ver cadenaConLlave): trinquete, solo baja.
-const PENDIENTES_IDIOMA_CRUCE = new Set([
-  "apps/web/lib/autos-comun.ts:TITULO", // elegida en n/[id]/Dealer.tsx y panel/Autos.tsx; lib/admin-negocios.ts la lee con [0] (LAUNCH, familia «idioma por índice»)
-  "apps/web/lib/autos-comun.ts:ESTADO_CARRO", // elegida en panel/Autos.tsx; lib/admin-negocios.ts la lee con [0]
-  "apps/web/lib/inmuebles-comun.ts:ESTADO", // elegida en panel/Inmuebles.tsx
-  "apps/web/lib/no-hago.ts:NO_HAGO", // elegida en panel/Panel.tsx; panel/acciones.ts la lee por índice (se guarda lo elegido)
-]);
+const PENDIENTES_IDIOMA_CRUCE = new Set([]);
 const PENDIENTES_IDIOMA_ADMIN_E = new Set([]);
 // 8i · Avisos: lo que todavía no rompe el build (9a: las secciones pendientes del Super Admin en sinEnConstruccion, hasta TOLATINO_FASE=9). Se imprimen siempre.
 const avisos = [];
@@ -2270,8 +2265,8 @@ const guardianes = {
         const t = readFileSync(`packages/db/migrations/${x}`, "utf8");
         for (const m of t.matchAll(/origin\s+text not null default 'form' check \(origin in \(([^)]*)\)\)|support_cases_origin_check check \(origin in \(([^)]*)\)\)/g)) ori = m[1] ?? m[2];
       }
-      const mapa = /const ORIGEN: Record<string, string> = \{([^}]*)\}/.exec(sinComent(SA))?.[1] ?? "";
-      for (const o of [...ori.matchAll(/'(\w+)'/g)].map((x) => x[1])) if (!new RegExp(`\\b${o}:\\s*"`).test(mapa)) falla("colaConVista", SA, 0, `el origen «${o}» de un caso no tiene su nombre en la ficha de Soporte (ORIGEN)`);
+      const mapa = /const ORIGEN = \(E2: EF\): Record<string, string> => \(\{([^}]*)\}\)/.exec(sinComent(SA))?.[1] ?? "";
+      for (const o of [...ori.matchAll(/'(\w+)'/g)].map((x) => x[1])) if (!new RegExp(`\\b${o}:\\s*(?:"|E2\\()`).test(mapa)) falla("colaConVista", SA, 0, `el origen «${o}» de un caso no tiene su nombre en la ficha de Soporte (ORIGEN)`);
       if (/'reporte_app'/.test(ori) && (!/k\.registro\b/.test(sinComent(SA)) || !existsSync(SE) || !/registroDelCaso\(c\.id\)/.test(sinComent(SE)))) falla("colaConVista", SA, 0, "un caso «Reportar un problema» muestra su registro técnico en la ficha del equipo");
     }
   },
@@ -3268,7 +3263,7 @@ const guardianes = {
     const C = "apps/web/lib/monedas-comun.ts", V = "apps/web/app/(app)/comunidad/monedas/Monedas.tsx", A = "apps/web/app/admin/Gamificacion.tsx";
     if (existsSync(C) && !/export const SIN_VALOR: Bi = \{ es: "Sin valor en dinero", en: "No cash value" \}/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "SIN_VALOR dice «Sin valor en dinero» / «No cash value»");
     if (existsSync(V) && !/\{t\(SIN_VALOR\)\.toUpperCase\(\)\}/.test(sinComent(V))) falla(G, V, 0, "la pantalla de monedas muestra «Sin valor en dinero» junto al saldo");
-    if (existsSync(A) && !/v: SIN_VALOR\.es, s: "no se compran ni se cambian"/.test(sinComent(A))) falla(G, A, 0, "el Super Admin › Monedas muestra VALOR «Sin valor en dinero»");
+    if (existsSync(A) && !/v: SIN_VALOR\.es, s: E2\("no se compran ni se cambian"/.test(sinComent(A))) falla(G, A, 0, "el Super Admin › Monedas muestra VALOR «Sin valor en dinero»");
   },
 
   /* 5g. Un código se usa una sola vez y la última unidad no se vende dos veces: cup_canjear bloquea el cupón antes de contar el cupo del
@@ -4654,7 +4649,7 @@ const guardianes = {
     if (!/E2\("VISTA DEL EQUIPO · SOLO LECTURA", "TEAM VIEW · READ ONLY"\)/.test(av) || !/<InfoCard /.test(av)) falla(G, "apps/web/app/panel/AvisoSoloLectura.tsx", 0, "el aviso es la InfoCard del sistema con «VISTA DEL EQUIPO · SOLO LECTURA» (ES/EN)");
     const n = sinComent(N);
     if (!/E2\("Panel del dueño", "Owner’s dashboard"\), icon: "[a-z]+", onClick: \(\) => window\.open\(`\/panel\/\$\{n\.id\}\?equipo=1`/.test(n)) falla(G, N, 0, "el 360° ofrece «Panel del dueño» (/panel/{id}?equipo=1)");
-    if (!/"negocio\.ver_panel": "[^"]+"/.test(n.slice(n.indexOf("const VERBO:"), n.indexOf("const VERBO_EN:"))) || !/"negocio\.ver_panel": "[^"]+"/.test(n.slice(n.indexOf("const VERBO_EN:")))) falla(G, N, 0, "el historial del 360° dice «abrió en solo lectura el panel» (ES/EN)");
+    if (!/"negocio\.ver_panel": E2\("[^"]+", "[^"]+"\)/.test(n.slice(n.indexOf("const VERBO = (E2"), n.indexOf("const VERBO = (E2") + 4000))) falla(G, N, 0, "el historial del 360° dice «abrió en solo lectura el panel» (ES/EN)");
   },
 
   /* 9f-5 · La ayuda editada en el Super Admin (0168): el repo sigue siendo la fuente y lo del equipo no sale. (1) El despliegue compara contra el sha
@@ -9780,13 +9775,14 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       const t = sinComent(f);
-      if (!/\?\s*[01]\s*:\s*[01]\s*\]|\[0\]\s*:/.test(t)) continue;
+      if (!/\?\s*[01]\s*:\s*[01]\s*\]|\[0\]\s*:|\[li\]|\[1\]\)?\s*:/.test(t)) continue;
       for (const m of t.matchAll(/^(?:export )?const ([A-Za-z_]\w*)\b[^=\n]*=\s*(?![(\w]*\s*=>)(?!async\b|function\b)/gm)) {
         const resto = t.slice(m.index + m[0].length), fin = resto.search(/\n(?:const|function|export|type|import|let|interface|\/\*|\/\/)/), ini = fin < 0 ? resto : resto.slice(0, fin);
         if (/^\(/.test(ini) || !PAR_IDX.test(ini) || !/\p{L}/u.test(ini)) continue;
         const N = m[1];
-        const directo = new RegExp(String.raw`\b${N}\b[^;]{0,160}?\[\s*${COND_IDX}\s*\?\s*[01]\s*:\s*[01]\s*\]`);
-        const ternario = new RegExp(String.raw`\?\s*\(?${N}\b[^:;]{0,80}\[0\]\)?\s*:\s*\(?${N}\b[^;]{0,80}\[1\]`);
+        // 26 nov (4) · también `N[k]?.[li]` (li = en ? 1 : 0, el índice ya calculado) y `en ? N[k][1] : N[k][0]` (el orden inverso).
+        const directo = new RegExp(String.raw`\b${N}\b[^;]{0,160}?(?:\[\s*(?:${COND_IDX}\s*\?\s*[01]\s*:\s*[01]|li)\s*\]|(?:\]!?|\?\.)\[\s*i\s*\])`);
+        const ternario = new RegExp(String.raw`\?\s*\(?${N}\b[^:;]{0,80}\[0\]\)?\s*:\s*\(?${N}\b[^;]{0,80}\[1\]|\?\s*\(?${N}\b[^:;]{0,80}\[1\]\)?\s*:\s*\(?${N}\b[^;]{0,80}\[0\]`);
         const alias = [...t.matchAll(new RegExp(String.raw`(?:const|,)\s*([A-Za-z_]\w*)\s*=\s*\(?${N}\[`, "g"))].some((a) => new RegExp(String.raw`\b${a[1]}\[0\]`).test(t) && new RegExp(String.raw`\b${a[1]}\[1\]`).test(t));
         const lineaN = t.slice(0, m.index).split("\n").length;
         if (directo.test(t.slice(m.index + m[0].length + ini.length)) || directo.test(t.slice(0, m.index)) || ternario.test(t) || alias) hallados.set(`${f}:${N}`, lineaN);
@@ -9866,6 +9862,48 @@ const guardianes = {
       falla(G, f, exportadas.get(k), `${N} guarda pares ES/EN de textos fijos, se exporta y se elige el idioma en otro archivo (${donde}) sin pasar por E2: se salen del CMS; la tabla va como función que recibe el idioma y lleva E2("…", "…") en su sitio (${N}(es))`);
     }
     for (const k of PENDIENTES_IDIOMA_CRUCE) if (!hallCruce.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_CRUCE lista «${k}» y ya no se cumple: sácala de la lista`);
+    // 26 nov (4) · El Super Admin, sus librerías y Crecimiento: las otras formas de la misma familia. Una tabla de textos fijos (en MAYÚSCULAS, de módulo o local a la pantalla) con pares
+    // [es, en], con { es, en } o con una gemela _EN que la pantalla elige con `N[k]?.[li]` (li = en ? 1 : 0), `en ? N[k][1] : N[k][0]`, `en ? N_EN : N`, `en ? N[k].en : N[k].es` o `N[k].en`; un
+    // `en ? { … } : { … }` con dos objetos de textos; y `en ? lEn : l` con la tupla [k, l, lEn] de un .map. Ninguna pasa por E2: sus textos no llegan al catálogo. Van como función que recibe E2 y lleva
+    // E2("…", "…") en su sitio (const N = (E2: EF): Record<…> => ({ k: E2("Es", "En") }); se usa N(E2)[k]). Sin lista de pendientes: no hay restos. Al revés: alreves9f3.
+    const ADM_AREA = /^apps\/web\/(?:app\/admin\/|lib\/admin-|lib\/crecimiento\/)[^]*\.tsx?$/;
+    const cuerpoDecl = (t, i) => { // hasta la «,» o el «;» de nivel cero (sin mirar dentro de textos)
+      let d = 0;
+      for (let j = i; j < t.length; j++) {
+        const c = t[j];
+        if (c === '"' || c === "'" || c === "`") { const q = c; for (j++; j < t.length && t[j] !== q; j++) if (t[j] === "\\") j++; continue; }
+        if (c === "(" || c === "[" || c === "{") d++;
+        else if (c === ")" || c === "]" || c === "}") { if (--d < 0) return t.slice(i, j); }
+        else if (d === 0 && (c === ";" || c === ",")) return t.slice(i, j);
+      }
+      return t.slice(i);
+    };
+    const hallAdmTab = [];
+    const LITL = new RegExp(LITS, "g");
+    for (const f of codigo) {
+      if (!ADM_AREA.test(f)) continue;
+      const t = sinComent(f), lineaDe = (i) => t.slice(0, i).split("\n").length;
+      if (!/\b(?:en|EN)\b|\[li\]|\bli\b|\.es\b|\[i\]/.test(t)) continue;
+      const tablas = new Map();
+      for (const m of t.matchAll(/(?:^(?:export )?const\s+|^[ \t]+const\s+|,\s*)([A-Z][A-Z0-9_]+)\b(?:\s*:\s*[^=\n]+?)?\s*=\s*(?![>(]|[\w$,\s:]*\)?\s*=>)/gm)) {
+        const cuerpo = cuerpoDecl(t, m.index + m[0].length);
+        if (/\bE2\(|\b(?:es|en)\s*\?/.test(cuerpo) || !(cuerpo.match(LITL) ?? []).some((x) => /\p{L}/u.test(x))) continue;
+        tablas.set(m[1], { cuerpo, linea: lineaDe(m.index) });
+      }
+      for (const [N, { cuerpo, linea }] of tablas) {
+        const conEn = /\ben\s*:\s*["'`]/.test(cuerpo);
+        const usos = [
+          new RegExp(String.raw`\b${N}\b[^;]{0,160}?(?:\[\s*(?:${COND_IDX}\s*\?\s*[01]\s*:\s*[01]|li)\s*\]|(?:\]!?|\?\.)\[\s*i\s*\])`),
+          new RegExp(String.raw`\?\s*\(?${N}\b[^:;]{0,80}\[0\]\)?\s*:\s*\(?${N}\b[^;]{0,80}\[1\]|\?\s*\(?${N}\b[^:;]{0,80}\[1\]\)?\s*:\s*\(?${N}\b[^;]{0,80}\[0\]`),
+          new RegExp(String.raw`\b(?:en|EN)\s*\?\s*\(?${N}\b|\b(?:en|EN)\s*\?[^:;]{0,100}:\s*\(?${N}\b`),
+          ...(conEn ? [new RegExp(String.raw`\b${N}\b(?:\[[^\]\n]*\]!?|\?\.\[[^\]\n]*\])*\.(?:en|es)\b`)] : []),
+        ];
+        if (usos.some((r) => r.test(t))) hallAdmTab.push([f, N, linea]);
+      }
+      for (const m of t.matchAll(/\ben\s*\?\s*\{[^{}]*\}\s*:\s*\{/g)) if ((m[0].match(LITL) ?? []).some((x) => /\p{L}/u.test(x))) hallAdmTab.push([f, "en ? { … } : { … }", lineaDe(m.index)]);
+      for (const m of t.matchAll(/\ben\s*\?\s*([a-z]\w*En)\s*:\s*[a-z]\w*/g)) hallAdmTab.push([f, `en ? ${m[1]} : …`, lineaDe(m.index)]);
+    }
+    for (const [f, N, linea] of hallAdmTab) falla(G, f, linea, `${N} guarda textos fijos en dos idiomas (pares [es, en], { es, en }, una tabla _EN o un en ? {…} : {…}) y la pantalla elige el idioma con [li], en ? … o .en/.es sin pasar por E2: se salen del CMS; va como función que recibe E2 y lleva E2("…", "…") en su sitio (N(E2)[k])`);
     for (const [k, linea] of hallEsEn) {
       if (PENDIENTES_IDIOMA_ESEN.has(k)) continue;
       const [f, N] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
@@ -9885,7 +9923,7 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       const t = sinComent(f);
-      if (t.includes("E2(")) for (const m of t.matchAll(new RegExp(String.raw`\bE2\(\s*(${ID}(?:\.${ID}|\[[^\]\n]*\])*)\[0\]\s*,\s*\1\[1\]\s*[,)]`, "g"))) hallE2.set(`${f}:${m[1]}`, t.slice(0, m.index).split("\n").length);
+      if (t.includes("E2(")) for (const m of t.matchAll(new RegExp(String.raw`\bE2\(\s*(${ID}(?:\.${ID}|\[[^\]\n]*\]!?)*)\[0\]!?\s*,\s*\1\[1\]!?\s*[,)]`, "g"))) hallE2.set(`${f}:${m[1]}`, t.slice(0, m.index).split("\n").length);
       if (/^apps\/web\/app\/admin\//.test(f)) { const m = new RegExp(String.raw`(?<![\w$.])E\(\s*${LITS}\s*,\s*${LITS}`).exec(t); if (m && /\p{L}/u.test(m[0])) hallAdm.set(f, t.slice(0, m.index).split("\n").length); }
     }
     // 26 nov (2) · La config de «Publica tu negocio» viene de lib/onb/datos.ts (GENERADO del prototipo): su generador (scripts/catalogo/portar-onboarding.mjs) emite también

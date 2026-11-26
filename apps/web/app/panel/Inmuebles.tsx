@@ -69,7 +69,7 @@ export function propiedadesBloques(c: Ctx): Sec {
     key: p.id, img: p.fotos[0] ? `url("${p.fotos[0]}")` : undefined, imgIni: p.fotos[0] ? undefined : (bi(p.name, es) || "P").slice(0, 1), imgW: "52px", t: bi(p.name, es),
     s: [es ? PROP[p.kind].es : PROP[p.kind].en, cuartos(p, es)].filter(Boolean).join(" · "),
     m: p.adm != null ? E2("OCULTA POR TO’LATINO", "HIDDEN BY TO’LATINO") : p.moveIn != null ? `${E2("PARA MUDARTE", "TO MOVE IN")} ${usd(p.moveIn)}` : p.cuota != null ? cuotaTexto(p.cuota, p.downPct, es).toUpperCase() : undefined,
-    mFg: p.adm != null ? "var(--tl-danger)" : undefined, r: precioL(p, es), tag: (es ? ESTADO[p.status][0] : ESTADO[p.status][1]).toUpperCase(), tone: tone(p.status), chev: true, onClick: () => c.det(`inm:${p.id}`) })) });
+    mFg: p.adm != null ? "var(--tl-danger)" : undefined, r: precioL(p, es), tag: ESTADO(E2)[p.status].toUpperCase(), tone: tone(p.status), chev: true, onClick: () => c.det(`inm:${p.id}`) })) });
   if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_PROP_FREE} propiedades en tu página. Las rentadas, vendidas u ocultas no cuentan.`, `On Free, ${TOPE_PROP_FREE} properties show on your page. Rented, sold or hidden ones do not count.`), ...ctaPro(c, "Pro") });
   out.push({ type: "note", tone: "ink", icon: "home", t: `${bi(EHO, es)}. ${bi(ANIMALES_SERVICIO, es)}` });
   return { blocks: out, ed: null };
@@ -186,7 +186,7 @@ export function propiedadDetalle(c: Ctx, id: string): Sec {
     tags: [...(prev?.moveIn != null ? [{ label: `${E2("PARA MUDARTE", "TO MOVE IN")} ${usd(prev.moveIn)}`, tone: "ink" }] : []), ...(prev?.cuota != null ? [{ label: cuotaTexto(prev.cuota, prev.downPct, es).toUpperCase(), tone: "ink" }] : []),
       { label: E2("VER ES GRATIS", "VIEWING IS FREE"), tone: "signal" }, ...(d.deal === "renta" && !d.ssnReq ? [{ label: E2("SIN SEGURO SOCIAL", "NO SSN"), tone: "neutral" }] : [])], image: d.fotos[0] ?? "" });
   out.push(...pie(c, d));
-  if (!isNew) out.push({ type: "chips", k: E2("ESTADO · SE GUARDA AL TOCAR", "STATUS · SAVED WHEN TAPPED"), items: (["available", "pending", d.deal === "renta" ? "rented" : "sold", "hidden"] as EstadoProp[]).map((s) => ({ l: es ? ESTADO[s][0] : ESTADO[s][1], v: p0!.status === s ? "selected" : "filter",
+  if (!isNew) out.push({ type: "chips", k: E2("ESTADO · SE GUARDA AL TOCAR", "STATUS · SAVED WHEN TAPPED"), items: (["available", "pending", d.deal === "renta" ? "rented" : "sold", "hidden"] as EstadoProp[]).map((s) => ({ l: ESTADO(E2)[s], v: p0!.status === s ? "selected" : "filter",
     onClick: () => c.run(() => inmEstado(c.d.id, id, s), E2("Guardado · tu página ya lo dice.", "Saved · your page says so now.")) })) });
   const precio = d.deal === "venta" ? dol(d.price) : 0;
   const miss = [d.name.trim().length < 3 ? E2("nombre", "name") : null, d.deal === "renta" ? (dol(d.rent) ? null : E2("renta", "rent")) : precio ? null : E2("precio", "price"),
@@ -263,7 +263,7 @@ export function herramientaInmBloques(c: Ctx): Sec {
     const off = p.status === "rented" || p.status === "hidden";
     out.push({ type: "group", k: bi(p.name, es).toUpperCase(), link: E2("Editar", "Edit"), onLink: () => c.det(`inm:${p.id}`) });
     out.push({ type: "rows", items: [{ icon: "key", t: off ? (p.status === "rented" ? E2("Rentada", "Rented") : E2("Oculta", "Hidden")) : E2("Disponible", "Available"),
-      s: off ? E2("Ya no sale en la app.", "No longer in the app.") : p.moveIn != null ? mudarteTexto(p, es) : E2("Sale en tu página.", "Shows on your page."), tag: off ? (es ? ESTADO[p.status][0] : ESTADO[p.status][1]).toUpperCase() : null, tone: "neutral",
+      s: off ? E2("Ya no sale en la app.", "No longer in the app.") : p.moveIn != null ? mudarteTexto(p, es) : E2("Sale en tu página.", "Shows on your page."), tag: off ? ESTADO(E2)[p.status].toUpperCase() : null, tone: "neutral",
       tgOn: !off, onTg: () => save({ estado: { item: p.id, status: off ? "available" : "rented" } }), compact: true }] });
     if (off || p.rent == null) continue;
     out.push(pasoSrv({ t: alMes(p.kind) ? E2("Renta al mes", "Monthly rent") : E2("Precio", "Price"), s: alMes(p.kind) ? E2("Lo que pagan cada mes.", "What they pay each month.") : E2("El total que sale en tu página.", "The total shown on your page."),

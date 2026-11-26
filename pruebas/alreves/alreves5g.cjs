@@ -11,7 +11,7 @@ const casos = [
   ['monedasSinDinero', CU, 'import "server-only";', 'import "server-only";\nimport { pasarela } from "./pagos";'],
   ['monedasSinDinero', MC, 'export const COSTO_MIN = 80, COSTO_MAX = 1000;', 'export const COSTO_MIN = 80, COSTO_MAX = 1000;\nexport const transferirMonedas = (a: string, b: string) => [a, b];'],
   ['monedasSinDinero', V, '{t(SIN_VALOR).toUpperCase()}', '{"MONEDAS"}'],
-  ['monedasSinDinero', AG, 'v: SIN_VALOR.es, s: "no se compran ni se cambian"', 'v: "100 = $1", s: "no se compran ni se cambian"'],
+  ['monedasSinDinero', AG, 'v: SIN_VALOR.es, s: E2("no se compran ni se cambian"', 'v: "100 = $1", s: E2("no se compran ni se cambian"'],
   ['monedasSinDinero', MC, 'export const SIN_VALOR: Bi = { es: "Sin valor en dinero", en: "No cash value" };', 'export const SIN_VALOR: Bi = { es: "Cada moneda vale un centavo", en: "No cash value" };'],
   ['monedasSinDinero', M, "  reason_key  text not null check (reason_key in ('welcome', 'premio_mes', 'canje', 'devolucion', 'ajuste')),", "  reason_key  text not null check (reason_key in ('welcome', 'premio_mes', 'canje', 'devolucion', 'ajuste', 'compra')),"],
   ['monedasSinDinero', M, '  ref_id      text not null,\n  reverses_id', '  ref_id      text not null,\n  to_user_id  uuid references users (id),\n  reverses_id'],

@@ -20,5 +20,5 @@ export const SANCIONES: Record<Sancion, { es: string; en: string; dias: number; 
 };
 export const ORDEN_SANCIONES: Sancion[] = ["adv", "mute7", "nopub", "susp14", "ban"];
 /* Motivos rápidos del diseño (TPL.usr). */
-export const PLANTILLAS_USR = ["Reincidente", "Primera vez", "Cuentas vinculadas al mismo dispositivo", "El contexto justifica la acción"];
+export const PLANTILLAS_USR = (E2: (es: string, en: string) => string) => [E2("Reincidente", "Repeat offender"), E2("Primera vez", "First time"), E2("Cuentas vinculadas al mismo dispositivo", "Accounts linked to the same device"), E2("El contexto justifica la acción", "The context justifies the action")];
 export const sub = (k: Sancion) => (SANCIONES[k].dias ? `${SANCIONES[k].dias} días · se levanta sola` : k === "ban" ? "Permanente · lo confirma un Admin" : "Hasta que una persona la levante");

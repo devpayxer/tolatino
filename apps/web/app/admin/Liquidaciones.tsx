@@ -13,17 +13,21 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { useE2 } from "./idioma-admin";
 
+type EF = (es: string, en: string) => string;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminList" | "AdminNote", ComponentType<any>>;
 const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const dia = (ymd: string, en = false) => new Intl.DateTimeFormat(en ? "en-US" : "es-US", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(new Date(`${ymd}T12:00:00Z`)).replace(/\./g, "");
-const ST: Record<string, [string, string]> = { pending: ["PENDIENTE", "action"], held: ["RETENIDA", "danger"], paying: ["EN CAMINO", "action"], paid: ["PAGADA", "signal"], reversed: ["AJUSTADA", "neutral"] };
-const ST_EN: Record<string, string> = { pending: "PENDING", held: "HELD", paying: "ON THE WAY", paid: "PAID", reversed: "ADJUSTED" };
+const ST = (E2: EF): Record<string, [string, string]> => ({
+  pending: [E2("PENDIENTE", "PENDING"), "action"], held: [E2("RETENIDA", "HELD"), "danger"], paying: [E2("EN CAMINO", "ON THE WAY"), "action"],
+  paid: [E2("PAGADA", "PAID"), "signal"], reversed: [E2("AJUSTADA", "ADJUSTED"), "neutral"]
+});
 const HOLD: Record<string, string> = { disputa: "Disputa abierta (sale sola al cerrarse)", nuevo: "Primer evento grande de un organizador nuevo", cuenta: "La cuenta de cobro no recibe pagos", admin: "Retenida por To'Latino" };
 const HOLD_EN: Record<string, string> = { disputa: "Open dispute (releases on its own when closed)", nuevo: "First big event from a new organizer", cuenta: "The payout account can’t receive payments", admin: "Held by To'Latino" };
 
 export function Liquidaciones({ d, st, q, puede }: { d: LiqAdmin; st: string | null; q: string; puede: { decidir: boolean; exportar: boolean } }) {
-  const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, { E2 } = useE2(), en = E2("", "x") === "x";
+  const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024, { E2 } = useE2(), en = E2("", "x") === "x", stTxt = ST(E2);
   const [qq, setQ] = useState(q), [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [pend, start] = useTransition();
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? E2("Listo. Quedó en la auditoría.", "Done. It’s in the audit log.")); setConf(null); router.refresh(); };
@@ -59,7 +63,7 @@ export function Liquidaciones({ d, st, q, puede }: { d: LiqAdmin; st: string | n
       </form>
       <A.AdminNote tone="info" icon="info">{E2("El monto lo calcula la base al pagar y queda fijo; la transferencia lleva una llave por fecha: nunca se paga dos veces. Una disputa abierta o una cuenta que no recibe pagos retiene sola y suelta sola.", "The amount is calculated by the database at payout and stays fixed; each transfer carries one key per date, so nothing is ever paid twice. An open dispute or an account that can’t receive payments holds and releases on its own.")}</A.AdminNote>
       {!d.filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "wallet", t: E2("Nada con ese filtro", "Nothing with that filter"), s: E2("Aparecen cuando termina una fecha con boletos cobrados.", "They show up when a date with charged tickets ends.") }]} />
-        : <A.AdminList rows={d.filas.map((x) => ({ icon: x.st === "held" ? "lock" : "wallet", title: `${x.evento} · ${money(x.neto)}`, sub: `${x.negocio} · ${dia(x.dia, en)} · ${sub(x)}`, tag: (en ? ST_EN[x.st] : ST[x.st]?.[0]) ?? x.st, tone: ST[x.st]?.[1] ?? "neutral", actions: acciones(x) }))} />}
+        : <A.AdminList rows={d.filas.map((x) => ({ icon: x.st === "held" ? "lock" : "wallet", title: `${x.evento} · ${money(x.neto)}`, sub: `${x.negocio} · ${dia(x.dia, en)} · ${sub(x)}`, tag: stTxt[x.st]?.[0] ?? x.st, tone: stTxt[x.st]?.[1] ?? "neutral", actions: acciones(x) }))} />}
       <Toast t={toast} desk={desk} />
     </div>);
 }

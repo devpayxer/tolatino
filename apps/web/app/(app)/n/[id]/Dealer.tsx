@@ -31,7 +31,7 @@ export function useDealer(ap: AutosPublica | null, es: boolean, pro: boolean, ac
   // metaOf (L101–104): EN LA PUERTA $X · N MILLAS · TÍTULO; un salvage lleva su línea en la fila (notasCarro la pone primero).
   const metaC = (x: CarroPub) => [x.status === "pending" ? E2("APARTADO EN PERSONA", "HELD IN PERSON") : "", E2(`EN LA PUERTA ${usd(x.puerta.otd)}`, `OUT THE DOOR ${usd(x.puerta.otd)}`),
     x.miles != null ? E2(`${x.miles.toLocaleString("en-US")} MILLAS`, `${x.miles.toLocaleString("en-US")} MILES`) : x.hours != null ? E2(`${x.hours.toLocaleString("en-US")} HORAS DE MOTOR`, `${x.hours.toLocaleString("en-US")} ENGINE HOURS`) : "",
-    TITULO[x.title][es ? 0 : 1].toUpperCase()].filter(Boolean).join(" · ");
+    TITULO(E2)[x.title].toUpperCase()].filter(Boolean).join(" · ");
   const itemC = (x: CarroPub): Item => ({ id: x.id, name: nm(x.name), desc: nm(x.desc), foto: x.fotos[0] ?? null, price: usd(x.puerta.price), meta: metaC(x),
     aviso: x.title === "salvage" ? notasCarro(x, es)[0] : undefined, btn: k === "mayor" ? (pro ? E2("Ver en la subasta", "See at auction") : "") : E2("Prueba de manejo", "Test drive") });
   // 4ie · Se pide en la app: la prueba de manejo de cada carro y los servicios (oferta, precalificación o cita). La subasta, llamando.
@@ -106,7 +106,7 @@ export function DlHoja({ v }: { v: DlV }) {
     [E2("Cargo del dealer", "Dealer fee"), usd(p.fee), false], [E2("En la puerta", "Out the door"), usd(p.otd), true]];
   const datos: Td[] = [{ k: E2("AÑO", "YEAR"), v: String(c.year) },
     ...(c.miles != null ? [{ k: E2("MILLAS", "MILES"), v: c.miles.toLocaleString("en-US") }] : c.hours != null ? [{ k: E2("HORAS DE MOTOR", "ENGINE HOURS"), v: c.hours.toLocaleString("en-US") }] : []),
-    { k: E2("TÍTULO", "TITLE"), v: TITULO[c.title][es ? 0 : 1] },
+    { k: E2("TÍTULO", "TITLE"), v: TITULO(E2)[c.title] },
     ...(c.trans ? [{ k: E2("TRANSMISIÓN", "TRANSMISSION"), v: (TRANS.find((t) => t[0] === c.trans) ?? TRANS[0]!)[es ? 1 : 2] }] : []),
     ...(c.fuel ? [{ k: E2("COMBUSTIBLE", "FUEL"), v: (FUEL.find((t) => t[0] === c.fuel) ?? FUEL[0]!)[es ? 1 : 2] }] : []),
     ...(c.drive ? [{ k: E2("TRACCIÓN", "DRIVE"), v: (DRIVE.find((t) => t[0] === c.drive) ?? DRIVE[0]!)[es ? 1 : 2] }] : []),
