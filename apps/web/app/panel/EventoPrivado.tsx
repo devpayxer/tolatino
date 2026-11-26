@@ -30,7 +30,7 @@ export function hoyEvp(c: Ctx): Bloque[] {
     const h = restan(x.resp);
     const tag = x.st === "pending" ? (h ? E2(`RESPONDE EN ${h} H`, `REPLY IN ${h} H`) : E2("VENCE", "EXPIRES")) : x.detail === "counter" || x.detail === "change_req" ? E2("PIDE UN CAMBIO", "CHANGE ASKED")
       : x.st === "change_proposed" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.detail === "change_quote" ? E2("CAMBIO MANDADO", "CHANGE SENT") : E2("CONFIRMADO", "CONFIRMED");
-    return { key: x.numero, icon: "party", t: `${x.who} · ${lbl(OCASIONES, x.occ, es)} · ${x.p} ${E2("personas", "guests")}`, s: `${x.numero} · ${diaEvp(x.ymd, es)} · ${horaL(x.m)}`, tag,
+    return { key: x.numero, icon: "party", t: `${x.who} · ${lbl(OCASIONES(es), x.occ)} · ${x.p} ${E2("personas", "guests")}`, s: `${x.numero} · ${diaEvp(x.ymd, es)} · ${horaL(x.m)}`, tag,
       tone: x.st === "pending" || x.detail === "counter" || x.detail === "change_req" ? "action" : x.st === "change_proposed" || x.detail === "change_quote" ? "ink" : "signal", chev: true, onClick: () => c.det(`evp:${x.numero}`) };
   };
   const out: Bloque[] = [];
@@ -136,8 +136,8 @@ export function evpDetalle(c: Ctx): Sec {
   const out: (Bloque | null)[] = [
     { type: "head", eye: `${E2("EVENTO PRIVADO", "PRIVATE EVENT")} · ${stL}`, t: x.numero, s: `${x.who} · ${diaEvp(x.ymd, es)} · ${horaL(x.m)} · ${x.p} ${E2("personas", "guests")}`, onBack: c.closeDet },
     { type: "kv", items: [
-      { k: E2("CELEBRAN", "CELEBRATING"), v: lbl(OCASIONES, x.pedido.occ, es) }, { k: E2("PERSONAS", "GUESTS"), v: `${x.pedido.personas} · ${es ? AREAS_EVP[x.pedido.area]?.es : AREAS_EVP[x.pedido.area]?.en}` },
-      { k: E2("PIDIERON", "ASKED FOR"), v: `${diaEvp(x.pedido.ymd, es)} · ${horaL(x.pedido.m)} · ${x.pedido.horas} h` }, { k: E2("MENÚ", "MENU"), v: `${nm(x.pedido.menu, es)} · ${lbl(PRESUPUESTOS, x.pedido.bud, es)}${E2(" por persona", " per person")}` },
+      { k: E2("CELEBRAN", "CELEBRATING"), v: lbl(OCASIONES(es), x.pedido.occ) }, { k: E2("PERSONAS", "GUESTS"), v: `${x.pedido.personas} · ${es ? AREAS_EVP[x.pedido.area]?.es : AREAS_EVP[x.pedido.area]?.en}` },
+      { k: E2("PIDIERON", "ASKED FOR"), v: `${diaEvp(x.pedido.ymd, es)} · ${horaL(x.pedido.m)} · ${x.pedido.horas} h` }, { k: E2("MENÚ", "MENU"), v: `${nm(x.pedido.menu, es)} · ${lbl(PRESUPUESTOS(es), x.pedido.bud)}${E2(" por persona", " per person")}` },
       { k: E2("EXTRAS", "EXTRAS"), v: x.pedido.ext.map((z) => nm(z, es)).join(" · ") || "—" },
     ] },
     x.pedido.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.pedido.nota}»` } : null,

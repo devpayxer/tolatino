@@ -53,14 +53,14 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
   const sigue = () => { if (paso === 3) return void enviar(); if (!okPaso(paso)) { setError(falta); return; } setError(null); setPaso(paso + 1); window.scrollTo({ top: 0 }); };
   const radio = (on: boolean) => `box-border h-5 w-5 flex-none rounded-full ${on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`;
   const menuSel = a.menus.find((z) => z.k === menu);
-  const resumen: [string, string][] = [["party", occ ? lbl(OCASIONES, occ, es) : E2("Ocasión por elegir", "Occasion to pick")], ["users", `${p} ${E2("personas", "guests")} · ${es ? AREAS_EVP[area]?.es : AREAS_EVP[area]?.en}`],
-    ["calendar", `${diaCorto(dia, es)}${h != null ? ` · ${horaL(h)} – ${horaL(h + dur * 60)}` : E2(" · hora por elegir", " · time to pick")}`], ["restaurant", `${menuSel ? (es ? menuSel.es : menuSel.en || menuSel.es) : ""} · ${lbl(PRESUPUESTOS, bud, es)}${E2(" p/p", " pp")}`]];
+  const resumen: [string, string][] = [["party", occ ? lbl(OCASIONES(es), occ) : E2("Ocasión por elegir", "Occasion to pick")], ["users", `${p} ${E2("personas", "guests")} · ${es ? AREAS_EVP[area]?.es : AREAS_EVP[area]?.en}`],
+    ["calendar", `${diaCorto(dia, es)}${h != null ? ` · ${horaL(h)} – ${horaL(h + dur * 60)}` : E2(" · hora por elegir", " · time to pick")}`], ["restaurant", `${menuSel ? (es ? menuSel.es : menuSel.en || menuSel.es) : ""} · ${lbl(PRESUPUESTOS(es), bud)}${E2(" p/p", " pp")}`]];
   const respL = E2(`${B} suele responder en ${a.replyH} h con una propuesta. Si no responde a tiempo, se cancela sola.`, `${B} usually replies within ${a.replyH} h with a proposal. If they do not reply in time, it cancels on its own.`);
   const sendL = x.yo ? E2("Enviar solicitud", "Send request") : E2("Entrar y enviar", "Sign in and send");
 
   const sec1 = (<>
     <div className="flex flex-col gap-2.5"><span className={K}>{E2("¿QUÉ CELEBRAN?", "WHAT ARE YOU CELEBRATING?")}</span>
-      <div className="flex flex-wrap gap-2">{OCASIONES.map(([k, l1, l2]) => <Chip key={k} variant={occ === k ? "selected" : "filter"} onClick={() => { setOcc(k); setError(null); }}>{es ? l1 : l2}</Chip>)}</div></div>
+      <div className="flex flex-wrap gap-2">{OCASIONES(es).map(([k, l]) => <Chip key={k} variant={occ === k ? "selected" : "filter"} onClick={() => { setOcc(k); setError(null); }}>{l}</Chip>)}</div></div>
     <div className="flex flex-col gap-2.5"><span className={K}>{E2("¿CUÁNTOS SON?", "HOW MANY GUESTS?")}</span>
       <div className={`flex items-center gap-3.5 px-4 py-3.5 ${CAJA}`}>
         <div className="flex min-w-0 flex-1 flex-col gap-[3px]"><span className="font-display text-[22px] font-extrabold leading-none tracking-[-0.03em]">{p} {E2("personas", "guests")}</span>
@@ -97,7 +97,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
             <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/60">{[es ? z.des : z.desEn || z.des, z.cents != null ? E2(`Desde ${dinero(z.cents)} por persona`, `From ${dinero(z.cents)} per person`) : ""].filter(Boolean).join(" · ")}</span></span>
         </button>))}</div></div>
     <div className="flex flex-col gap-2.5"><span className={K}>{E2("PRESUPUESTO POR PERSONA", "BUDGET PER PERSON")}</span>
-      <div className="flex flex-wrap gap-2">{PRESUPUESTOS.map(([k, l1, l2]) => <Chip key={k} variant={bud === k ? "selected" : "filter"} onClick={() => setBud(k)}>{es ? l1 : l2}</Chip>)}</div></div>
+      <div className="flex flex-wrap gap-2">{PRESUPUESTOS(es).map(([k, l]) => <Chip key={k} variant={bud === k ? "selected" : "filter"} onClick={() => setBud(k)}>{l}</Chip>)}</div></div>
     {a.extras.length > 0 && <div className="flex flex-col gap-2.5"><span className={K}>{E2("TAMBIÉN NECESITAN", "YOU ALSO NEED")}</span>
       <div className="flex flex-col gap-2">{a.extras.map((z) => <AddOnRow key={z.k} label={es ? z.es : z.en || z.es} price={z.cents == null ? E2("Lo cotizan", "They quote it") : z.cents === 0 ? E2("Sin cargo", "No charge") : dinero(z.cents)} checked={ext.includes(z.k)}
         onToggle={() => setExt(ext.includes(z.k) ? ext.filter((y) => y !== z.k) : [...ext, z.k])} />)}</div></div>}

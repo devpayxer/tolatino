@@ -21,10 +21,10 @@ const casos = [
   ['apps/web/app/admin/Transacciones.tsx', 'hacer: (m) => disputaSimularResultado(x.pid!, true, m)', 'hacer: () => disputaSimularResultado(x.pid!, true)', 'la hoja pide una nota y la acción la descarta'],
   [CAT, '(encender, mo) => modCiudad(m.key, x.id, encender, mo), "persona")', '(encender, mo) => modCiudad(m.key, x.id, encender, mo))', 'cada negocio ve el motivo en su panel'],
   [CAT, 'nota: "interna", hacer: (m) => hacerlo(true, m)', 'nota: "nadie", hacer: (m) => hacerlo(true, m)', 'no es persona, interna ni banco'],
-  [CM, 'placeholder={c.nota === "persona" ? E("Escríbelo como se lo dirías a la persona.", "Write it the way you would say it to the person.")', 'placeholder={E("Escríbelo como se lo dirías a la persona.", "Write it.")} data-x={c.nota === "persona" ? E("Escríbelo como se lo dirías a la persona.", "Write it the way you would say it to the person.")', 'no pasa el texto de ayuda de la nota según a quién le llega'],
-  [CM, 'E("Queda en la auditoría con tu nombre.", "It stays in the audit log under your name.")', 'E("Escribe el motivo.", "Write the reason.")', 'no pasa el texto de ayuda de la nota según a quién le llega'],
-  [PL, 't: E("Planes y suscripciones", "Plans and subscriptions"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />\n      <ConfirmarMotivo', 't: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />\n      <ConfirmarMotivo', 'sale dos veces'],
-  [CM, 'eye: E("COLAS", "QUEUES"), t: E("Colas", "Queues"), onBack', 'eye: E("COLAS", "QUEUES"), t: conf.titulo, onBack', 'sale dos veces'],
+  [CM, 'placeholder={c.nota === "persona" ? E2("Escríbelo como se lo dirías a la persona.", "Write it the way you would say it to the person.")', 'placeholder={E2("Escríbelo como se lo dirías a la persona.", "Write it.")} data-x={c.nota === "persona" ? E2("Escríbelo como se lo dirías a la persona.", "Write it the way you would say it to the person.")', 'no pasa el texto de ayuda de la nota según a quién le llega'],
+  [CM, 'E2("Queda en la auditoría con tu nombre.", "It stays in the audit log under your name.")', 'E2("Escribe el motivo.", "Write the reason.")', 'no pasa el texto de ayuda de la nota según a quién le llega'],
+  [PL, 't: E2("Planes y suscripciones", "Plans and subscriptions"), onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />\n      <ConfirmarMotivo', 't: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />\n      <ConfirmarMotivo', 'sale dos veces'],
+  [CM, 'eye: E2("COLAS", "QUEUES"), t: E2("Colas", "Queues"), onBack', 'eye: E2("COLAS", "QUEUES"), t: conf.titulo, onBack', 'sale dos veces'],
   [LQ, '{ ...head, onBack: () => setConf(null), act: undefined }', '{ ...head, t: conf.titulo, onBack: () => setConf(null), act: undefined }', 'sale dos veces'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;

@@ -139,8 +139,8 @@ export async function pedirEvp(userId: string, negocio: string, f: EvpIn, entorn
   const m = Math.round(Number(f.m)), horas = Math.round(Number(f.horas)), p = Math.round(Number(f.personas));
   if (!HORAS_EVP.includes(m)) return no("Elige la hora.", "Pick the time.", { fecha: true });
   if (!DURACIONES.includes(horas)) return no("Elige cuánto dura.", "Pick how long it lasts.");
-  if (!OCASIONES.some((z) => z[0] === f.occ)) return no("Elige qué celebran.", "Pick what you are celebrating.");
-  if (!PRESUPUESTOS.some((z) => z[0] === f.bud)) return no("Elige el presupuesto por persona.", "Pick the budget per person.");
+  if (!OCASIONES(true).some((z) => z[0] === f.occ)) return no("Elige qué celebran.", "Pick what you are celebrating.");
+  if (!PRESUPUESTOS(true).some((z) => z[0] === f.bud)) return no("Elige el presupuesto por persona.", "Pick the budget per person.");
   const cfg = await valores("evp_anticipacion_dias", "evp_dias_adelante", "evp_pendientes_max", "evp_responder_h");
   return tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2`, [userId, f.clave])).rows[0];
@@ -750,4 +750,4 @@ export async function evpEncendido(negocio: string): Promise<boolean> {
   return !!(await db().query(`select 1 from private_event_settings s join businesses b on b.id = s.business_id where s.business_id = $1 and s.is_on and b.status = 'active'`, [negocio])).rowCount;
 }
 export const areaEvpL = (k: string, es: boolean) => (es ? AREAS_EVP[k]?.es : AREAS_EVP[k]?.en) ?? k;
-export const occL = (k: string, es: boolean) => lbl(OCASIONES, k, es);
+export const occL = (k: string, es: boolean) => lbl(OCASIONES(es), k);

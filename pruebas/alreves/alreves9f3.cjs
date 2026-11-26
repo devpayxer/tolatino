@@ -22,7 +22,7 @@ const casos = [
   ['e2PorElCms', PROV, [['if (typeof window !== "undefined") ponerEdicionesE2(v, l);', 'useEffect(() => ponerEdicionesE2(v, l), [v, l]);']]],
   ['e2PorElCms', INS, [['Promise.all([edicionesE2(), prepararLlaves()])', 'Promise.all([prepararLlaves()])']]],
   ['e2PorElCms', AD, [['and s.id <> all($5::text[])', 'and $5::text[] is not null']]],
-  ['e2PorElCms', TC, [['+ (x.lugares && x.lugares.n > 1 ? E(` Cambia en los', '+ (x.lugares && x.lugares.n > 99 ? E(` Cambia en los']]],
+  ['e2PorElCms', TC, [['+ (x.lugares && x.lugares.n > 1 ? E2(` Cambia en los', '+ (x.lugares && x.lugares.n > 99 ? E2(` Cambia en los']]],
   // cadenaConLlave (trinquete 0): una definición que vuelve a la forma vieja (flecha y useCallback); el catálogo de E2 que no es el del código
   ['cadenaConLlave', HOJA, [['=> dosIdiomas(es, a, b)', '=> (es ? a : b)']]],
   ['cadenaConLlave', PANEL, [['useCallback((a: string, b: string) => dosIdiomas(es, a, b), [es])', 'useCallback((a: string, b: string) => (es ? a : b), [es])']]],
@@ -56,10 +56,17 @@ const crear = [
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst MESX: [string, string][] = [["ene", "Jan"], ["feb", "Feb"]];\nexport function Zz({ es, i }: { es: boolean; i: number }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  const m = MESX[i]!;\n  return <p>{E2("Mes", "Month")} {es ? m[0] : m[1]}</p>;\n}\n', /MESX guarda pares ES\/EN de textos fijos y los elige por índice/],
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst OCCX: Record<string, [string, string]> = { a: ["A bailar", "Dancing"], b: ["Cumpleaños", "Birthday"] };\nexport function Zz({ es, k }: { es: boolean; k: string }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2("Ocasión", "Occasion")} {es ? OCCX[k]![0] : OCCX[k]![1]}</p>;\n}\n', /OCCX guarda pares ES\/EN de textos fijos y los elige por índice/],
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nexport function Zz({ es, c }: { es: boolean; c: { cta: string[] } }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2(c.cta[0], c.cta[1])}</p>;\n}\n', /E2\(c\.cta\[0\], c\.cta\[1\]\) saca los dos textos de un dato por índice/],
-  ['cadenaConLlave', 'apps/web/app/admin/zz9f3.tsx', '"use client";\nimport { useE } from "./idioma-admin";\nexport function Zz() {\n  const E = useE();\n  return <p>{E("Guardar cambios", "Save changes")}</p>;\n}\n', /el Super Admin escribe E\("…", "…"\)/],
+  ['cadenaConLlave', 'apps/web/app/admin/zz9f3.tsx', '"use client";\nexport function Zz({ l }: { l: string }) {\n  const E = (a: string, b: string) => (l === "es" ? a : b);\n  return <p>{E("Guardar cambios", "Save changes")}</p>;\n}\n', /el Super Admin escribe E\("…", "…"\)/],
   // 26 nov (2) · Tabla `{ es: [...], en: [...] }` elegida con DOW[es ? "es" : "en"]; tabla de tuplas [clave, es, en] elegida con .map(([k, a, b]) => … es ? a : b).
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst DOWX = { es: ["DOM", "LUN"], en: ["SUN", "MON"] };\nexport function Zz({ es, i }: { es: boolean; i: number }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2("Día", "Day")} {DOWX[es ? "es" : "en"][i]}</p>;\n}\n', /DOWX guarda textos fijos como \{ es: \[\.\.\.\], en: \[\.\.\.\] \}/],
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst LUZ: [string, string, string][] = [["ce", "Motor", "Engine"], ["bat", "Batería", "Battery"]];\nexport function Zz({ es }: { es: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2("Luces", "Lights")} {LUZ.map(([k, a, b]) => <i key={k}>{es ? a : b}</i>)}</p>;\n}\n', /LUZ guarda tuplas de textos fijos \[clave, es, en\]/],
+];
+// 26 nov (3) · Una tabla EXPORTADA de pares ES/EN que se elige en OTRO archivo (OCASIONES en lib/…-comun.ts, elegida en la pantalla): [guardián, [[archivo, contenido], …], mensaje].
+const dosArchivos = [
+  ['cadenaConLlave', [['apps/web/lib/zz9f3cruce.ts', 'export const CRX: [string, string, string][] = [["a", "Uno", "One"], ["b", "Dos", "Two"]];\n'],
+    ['apps/web/app/(app)/zz9f3cruce.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nimport { CRX } from "@/lib/zz9f3cruce";\nexport function Zz({ es }: { es: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2("Lista", "List")} {CRX.map(([k, a, b]) => <i key={k}>{es ? a : b}</i>)}</p>;\n}\n']], /CRX guarda pares ES\/EN de textos fijos, se exporta y se elige el idioma en otro archivo/],
+  ['cadenaConLlave', [['apps/web/lib/zz9f3cruce.ts', 'export const CRX: [string, string, string][] = [["a", "Uno", "One"], ["b", "Dos", "Two"]];\nexport const lbl = (L: [string, string, string][], k: string, es: boolean) => L.find((z) => z[0] === k)?.[es ? 1 : 2] ?? "";\n'],
+    ['apps/web/app/(app)/zz9f3cruce.tsx', 'import { CRX, lbl } from "@/lib/zz9f3cruce";\nexport function Zz({ es }: { es: boolean }) {\n  return <p>{lbl(CRX, "a", es)}</p>;\n}\n']], /CRX guarda pares ES\/EN de textos fijos, se exporta y se elige el idioma en otro archivo/],
 ];
 let bien = 0, total = 0;
 const correr = (g, debe = null) => {
@@ -88,6 +95,11 @@ for (const [g, f, c, debe] of crear) {
   fs.writeFileSync(ruta, c);
   let r; try { r = correr(g, debe); } finally { fs.unlinkSync(ruta); }
   informe(g, `crear ${f.split('/').pop()}`, r);
+}
+for (const [g, fs2, debe] of dosArchivos) {
+  for (const [f, c] of fs2) fs.writeFileSync(path.join(R, f), c);
+  let r; try { r = correr(g, debe); } finally { for (const [f] of fs2) fs.unlinkSync(path.join(R, f)); }
+  informe(g, `crear ${fs2.map(([f]) => f.split('/').pop()).join(' + ')}`, r);
 }
 
 // El codemod: cada forma conocida se convierte a dosIdiomas (igual palabra por palabra), lo que no entiende se queda y se lista; dos veces = nada nuevo.

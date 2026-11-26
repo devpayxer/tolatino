@@ -40,7 +40,7 @@ const casos = [
   [T, AC, 'export async function destacadoEvtFijar(evento: string, desde: string, hasta: string, motivo: string): Promise<ResAdm> {', 'export async function destacadoEvtFijar(evento: string, desde: string, hasta: string, motivo: string, _ciudad?: string): Promise<ResAdm> {'],
   // espejo: el Super Admin sin «Retirar», la ficha del evento sin el destacado, el panel del organizador sin el aviso
   [T, CR, 'hacer: (m) => destacadoRetirar(x.id, m) }) }] : undefined };', 'hacer: async () => ({ ok: true }) }) }] : undefined };'],
-  [T, EA, '...destacadoAdm(e, destacado, !!publico, !!puede.destacar, setConf, E, en),', ''],
+  [T, EA, '...destacadoAdm(e, destacado, !!publico, !!puede.destacar, setConf, E2, en),', ''],
   [T, LE, 'kind: e.kind, fechas, destacado: fx.rows[0] ?? null,', 'kind: e.kind, fechas, destacado: null,'],
   [T, PA, '  if (e.destacado) {', '  if (false && e.destacado) {'],
 ];

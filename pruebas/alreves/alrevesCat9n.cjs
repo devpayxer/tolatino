@@ -23,7 +23,7 @@ const casos = [
   // la confirmación de fusionar no dice a cuántos negocios afecta
   ['catalogoCompleto', UI, 'Afecta a ${s.n} ${s.n === 1 ? "negocio" : "negocios"}: pasan a la que elijas', 'Pasan a la que elijas'],
   // apagar en una ciudad no dice a cuántos negocios afecta
-  ['catalogoCompleto', UI, 'sub: E(`Afecta a ${cuenta} en ${x.name}: ${efecto.es}`', 'sub: E(`${efecto.es}`'],
+  ['catalogoCompleto', UI, 'sub: E2(`Afecta a ${cuenta} en ${x.name}: ${efecto.es}`', 'sub: E2(`${efecto.es}`'],
   // ── categoriaPorCiudad ──
   ['categoriaPorCiudad', CA, "where b.city_id = $1 and b.status = 'active' and ${CAT_EN_CIUDAD(\"b\")}\n               and ${DENTRO", "where b.city_id = $1 and b.status = 'active'\n               and ${DENTRO"],
   ['categoriaPorCiudad', CA, "where b.city_id = $1 and b.status = 'active' and ${CAT_EN_CIUDAD(\"b\")} and ${DENTRO(\"c.default_radius\")} group by", "where b.city_id = $1 and b.status = 'active' and ${DENTRO(\"c.default_radius\")} group by"],

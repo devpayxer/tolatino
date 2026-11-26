@@ -6,10 +6,10 @@ export type Bi = { es: string; en: string };
 export const NUM_EP = /^EP-\d{1,10}$/;
 
 /* ¿Qué celebran? (evp-flow.js OCC) */
-export const OCASIONES: [string, string, string][] = [["cumple", "Cumpleaños", "Birthday"], ["bautizo", "Bautizo", "Baptism"], ["familia", "Reunión familiar", "Family gathering"], ["grad", "Graduación", "Graduation"],
-  ["despedida", "Despedida", "Farewell"], ["trabajo", "Del trabajo", "Work event"], ["otra", "Otra", "Other"]];
+export const OCASIONES = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["cumple", E2("Cumpleaños", "Birthday")], ["bautizo", E2("Bautizo", "Baptism")], ["familia", E2("Reunión familiar", "Family gathering")], ["grad", E2("Graduación", "Graduation")],
+  ["despedida", E2("Despedida", "Farewell")], ["trabajo", E2("Del trabajo", "Work event")], ["otra", E2("Otra", "Other")]]; };
 /* Presupuesto por persona (evp-flow.js BUD): solo orienta al restaurante; el precio lo pone su propuesta. */
-export const PRESUPUESTOS: [string, string, string][] = [["20", "Hasta $20", "Up to $20"], ["30", "$20–30", "$20–30"], ["45", "$30–45", "$30–45"], ["46", "Más de $45", "Over $45"]];
+export const PRESUPUESTOS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["20", E2("Hasta $20", "Up to $20")], ["30", E2("$20–30", "$20–30")], ["45", E2("$30–45", "$30–45")], ["46", E2("Más de $45", "Over $45")]]; };
 export const AREAS_EVP: Record<string, Bi> = { salon: { es: "Salón", en: "Dining room" }, terraza: { es: "Terraza", en: "Patio" }, barra: { es: "Barra", en: "Bar" }, todo: { es: "Todo el local", en: "The whole place" } };
 /* Horas de inicio (10 AM – 10 PM, cada 30 min) y duración (2, 3, 4, 5 o 6 h). */
 export const HORAS_EVP = Array.from({ length: 25 }, (_, i) => 600 + i * 30);
@@ -43,7 +43,7 @@ export function diaEvp(ymd: string, es: boolean, corto = false) {
   const wd = corto ? (es ? w.slice(0, 3) : w.slice(0, 3)) : w;
   return es ? `${wd} ${n} ${m}` : `${wd} ${m} ${n}`;
 }
-export const lbl = (L: [string, string, string][], k: string | null | undefined, es: boolean) => { const x = L.find((z) => z[0] === k); return x ? (es ? x[1] : x[2]) : ""; };
+export const lbl = (L: [string, string][], k: string | null | undefined) => L.find((z) => z[0] === k)?.[1] ?? "";
 export const nm = (b: Bi | null | undefined, es: boolean) => (b ? (es ? b.es : b.en || b.es) : "");
 
 /* Solo para MOSTRAR mientras el restaurante arma su propuesta (la base vuelve a calcular todo al mandarla, con su impuesto y su %). */

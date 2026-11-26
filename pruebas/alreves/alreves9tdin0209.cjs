@@ -49,7 +49,7 @@ const casos = [
   [O, CB, '  if (h.otra) await (await import("./dinero-alertas")).cerrarAlertaSola("refund_failed", h.otra,', '  if (h.otra) await (await import("./dinero-alertas")).cerrarAlertaSola("refund_stuck", h.otra,', 'cierra la alerta de la fallida de antes'],
   [O, CB, '    await reabrirOtraVez(f.otra, r.id).catch(() => false);\n', '', 'trae su propia refund_failed y reabre la de antes'],
   [O, CB, '    if (h.otra) await (await import("./dinero-alertas")).reabrirOtraVez(h.otra, h.id).catch(() => false);\n', '', 'reabre la alerta de antes'],
-  [O, PT, '...(a.otraVez ? [{ l: E("Devolver otra vez", "Refund again")', '...(a.kind === "refund_failed" ? [{ l: E("Devolver otra vez", "Refund again")', 'solo cuando el servidor lo ofrece'],
+  [O, PT, '...(a.otraVez ? [{ l: E2("Devolver otra vez", "Refund again")', '...(a.kind === "refund_failed" ? [{ l: E2("Devolver otra vez", "Refund again")', 'solo cuando el servidor lo ofrece'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 let bien = 0, total = 0;

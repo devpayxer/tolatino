@@ -89,7 +89,7 @@ export const proximoTexto = (n: ProximoFe | null, es: boolean) =>
 
 const lst = (L: string[], y: string) => (L.length <= 1 ? L.join("") : `${L.slice(0, -1).join(", ")} ${y} ${L[L.length - 1]}`);
 export const idiomaFe = (p: Pick<FePublica, "bil" | "esp">, es: boolean) => (p.bil ? LANG_FE.bil : p.esp ? LANG_FE.es : LANG_FE.en)[es ? "es" : "en"];
-export const ayudaFe = (p: Pick<FePublica, "help">, es: boolean) => HELP.filter((x) => p.help.includes(x[0] as HelpFe) && x[0] !== "sinid").map((x) => x[es ? 1 : 2]).join(" · ");
+export const ayudaFe = (p: Pick<FePublica, "help">, es: boolean) => HELP(es).filter((x) => p.help.includes(x[0] as HelpFe) && x[0] !== "sinid").map((x) => x[1]).join(" · ");
 const horariosTexto = (p: FePublica, es: boolean) => lst([...p.horarios].sort((a, b) => a.dow - b.dow || a.min - b.min).map((x) => `${largoFe(x.dow, x.min, es)}${x.lang === "en" ? (es ? " (inglés)" : " (English)") : ""}`), es ? "y" : "and");
 const usd = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const tipoQue = (k: KindFe, es: boolean) => (k === "misa" ? (es ? "PRÓXIMA MISA" : "NEXT MASS") : k === "grupo" ? (es ? "PRÓXIMA REUNIÓN" : "NEXT MEETING") : es ? "PRÓXIMO SERVICIO" : "NEXT SERVICE");

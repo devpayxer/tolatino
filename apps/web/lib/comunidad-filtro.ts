@@ -10,12 +10,13 @@
    - Enlaces: se guardan como texto y nunca se vuelven enlace (§6 #20); un enlace a WhatsApp cuenta como teléfono.
    - Emergencias: no se preguntan aquí. Si el texto parece una emergencia, se muestra la línea del 911 (y la publicación la lleva). */
 import { PII } from "./resenas-filtro";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = { es: string; en: string };
 export type Tipo = "pregunta" | "recomendacion" | "encuesta" | "publicacion";
 export const TIPOS: Tipo[] = ["pregunta", "recomendacion", "encuesta", "publicacion"];
-export const TEMAS: [string, string, string][] = [["comida", "Comida", "Food"], ["belleza", "Belleza", "Beauty"], ["autos", "Autos", "Cars"], ["hogar", "Hogar", "Home"],
-  ["salud", "Salud", "Health"], ["tramites", "Trámites", "Paperwork"], ["fiestas", "Fiestas", "Parties"], ["ninos", "Niños", "Kids"], ["otro", "Otro", "Other"]];
+export const TEMAS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["comida", E2("Comida", "Food")], ["belleza", E2("Belleza", "Beauty")], ["autos", E2("Autos", "Cars")], ["hogar", E2("Hogar", "Home")],
+  ["salud", E2("Salud", "Health")], ["tramites", E2("Trámites", "Paperwork")], ["fiestas", E2("Fiestas", "Parties")], ["ninos", E2("Niños", "Kids")], ["otro", E2("Otro", "Other")]]; };
 export const MIN_TEXTO = 10, MAX_TEXTO = 1000, MAX_FOTOS = 4, MAX_OPCION = 60, MAX_PARA = 40;
 export const DESHACER_S = 10, RANGO_ENCUESTA = 3;
 /* 5i · Cuánto dura una encuesta: las opciones 1 · 3 · 7 días hasta el máximo de Configuración (com_encuesta_dias_max), y el máximo
@@ -73,7 +74,7 @@ export function revisarPublicacion(p: Borrador, dias?: number[]): Falla | null {
   if (t.length > MAX_TEXTO) return falla("texto", `Máximo ${MAX_TEXTO} letras.`, `${MAX_TEXTO} characters at most.`);
   const f = revisarTexto(t);
   if (f) return f;
-  if (p.topic && !TEMAS.some((x) => x[0] === p.topic)) return falla("tema", "Ese tema no existe.", "That topic does not exist.");
+  if (p.topic && !TEMAS(true).some((x) => x[0] === p.topic)) return falla("tema", "Ese tema no existe.", "That topic does not exist.");
   if (p.kind === "encuesta") {
     const o = (p.opts ?? []).map((x) => String(x ?? "").trim()).filter(Boolean);
     if (o.length < 2) return falla("opciones", "Pon al menos 2 opciones.", "Add at least 2 options.");

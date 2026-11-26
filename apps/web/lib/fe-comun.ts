@@ -47,7 +47,7 @@ export const FREQ: [FreqFe, string, string, string, string][] = [["semana", "Una
 export const REP = ["3–5", "5–7", "7–10"] as const;
 export type RepFe = (typeof REP)[number];
 /* Etiquetas cortas de la ficha (neg-fe-kind.js HELP L38). */
-export const HELP: [string, string, string][] = [["despensa", "Despensa", "Food pantry"], ["ropa", "Ropa", "Clothing"], ["transporte", "Transporte", "Rides"], ["jovenes", "Jóvenes", "Youth"], ["ninos", "Niños", "Kids"], ["sinid", "Sin papeles", "No papers"]];
+export const HELP = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["despensa", E2("Despensa", "Food pantry")], ["ropa", E2("Ropa", "Clothing")], ["transporte", E2("Transporte", "Rides")], ["jovenes", E2("Jóvenes", "Youth")], ["ninos", E2("Niños", "Kids")], ["sinid", E2("Sin papeles", "No papers")]]; };
 
 /* Líneas fijas (§1c, verbatim; nunca se suavizan). */
 export const LINEA_FE: Bi = { es: "La ayuda de la iglesia es gratis; nunca se cobra por despensa, ropa ni oración.", en: "Church help is free; food, clothing and prayer are never charged." };

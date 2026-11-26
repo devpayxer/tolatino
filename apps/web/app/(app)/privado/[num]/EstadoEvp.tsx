@@ -179,12 +179,12 @@ export function EstadoEvp({ x, es, pago }: { x: EvpVista; es: boolean; pago: { m
         </button>)}
     </div>
   );
-  const kv: [string, string][] = [[E2("OCASIÓN", "OCCASION"), lbl(OCASIONES, x.pedido.occ, es)], [E2("PERSONAS", "GUESTS"), `${x.pedido.personas} · ${es ? AREAS_EVP[x.pedido.area]?.es : AREAS_EVP[x.pedido.area]?.en}`],
-    [E2("CUÁNDO", "WHEN"), cuando(x.pedido.ymd, x.pedido.m, x.pedido.horas * 60)], [E2("MENÚ", "MENU"), `${nm(x.pedido.menu, es)} · ${lbl(PRESUPUESTOS, x.pedido.bud, es)}${E2(" por persona", " per person")}`],
+  const kv: [string, string][] = [[E2("OCASIÓN", "OCCASION"), lbl(OCASIONES(es), x.pedido.occ)], [E2("PERSONAS", "GUESTS"), `${x.pedido.personas} · ${es ? AREAS_EVP[x.pedido.area]?.es : AREAS_EVP[x.pedido.area]?.en}`],
+    [E2("CUÁNDO", "WHEN"), cuando(x.pedido.ymd, x.pedido.m, x.pedido.horas * 60)], [E2("MENÚ", "MENU"), `${nm(x.pedido.menu, es)} · ${lbl(PRESUPUESTOS(es), x.pedido.bud)}${E2(" por persona", " per person")}`],
     [E2("EXTRAS", "EXTRAS"), x.pedido.ext.map((z) => nm(z, es)).join(" · ") || "—"], ...(x.pedido.nota ? [[E2("NOTA", "NOTE"), x.pedido.nota] as [string, string]] : []),
     ...x.asks.map((a) => [a.kind === "change" ? E2("CAMBIO PEDIDO", "CHANGE ASKED") : E2("PEDISTE", "YOU ASKED"), a.nota] as [string, string]),
     [E2("A NOMBRE DE", "NAME"), `${x.yo.nombre}${x.yo.tel4 ? ` · ··${x.yo.tel4}` : ""}`]];
-  const resumen: [string, string][] = [["party", lbl(OCASIONES, x.pedido.occ, es)], ["users", `${x.p} ${E2("personas", "guests")} · ${es ? AREAS_EVP[x.pedido.area]?.es : AREAS_EVP[x.pedido.area]?.en}`], ["calendar", cuando(iDay, iM, iDur)], ["restaurant", nm(x.pedido.menu, es)]];
+  const resumen: [string, string][] = [["party", lbl(OCASIONES(es), x.pedido.occ)], ["users", `${x.p} ${E2("personas", "guests")} · ${es ? AREAS_EVP[x.pedido.area]?.es : AREAS_EVP[x.pedido.area]?.en}`], ["calendar", cuando(iDay, iM, iDur)], ["restaurant", nm(x.pedido.menu, es)]];
   const izq = (
     <div className="flex min-w-0 flex-col gap-[22px]">
       <div className="flex flex-col gap-2">

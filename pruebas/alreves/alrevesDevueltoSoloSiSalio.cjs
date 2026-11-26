@@ -261,7 +261,7 @@ const casos = [
   ['cancelarEvp: cobrarOperacion sin try/catch', 'apps/web/lib/evento-privado.ts', 'try { cap = await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; ', 'cap = await cobrarOperacion(o.id); { '],
   ['Transacciones: perdio crudo', 'apps/web/lib/admin-tx.ts', "'perdio', ${QUEDO}) end as no", "'perdio', coalesce((o.details->>'perdio')::boolean, false)) end as no"],
   ['viaje: «Se cobró la mitad» con menos', VE, 'x.cobroMitad ? (x.cobroMitad < Math.floor(x.tot / 2) ?', 'x.cobroMitad ? (false ?'],
-  ['Transacciones: «se cobró la mitad» con menos', 'apps/web/app/admin/Transacciones.tsx', 'x.vi.mitad < Math.floor(x.total / 2) ? E("se cobró lo que quedaba"', 'false ? E("se cobró lo que quedaba"'],
+  ['Transacciones: «se cobró la mitad» con menos', 'apps/web/app/admin/Transacciones.tsx', 'x.vi.mitad < Math.floor(x.total / 2) ? E2("se cobró lo que quedaba"', 'false ? E2("se cobró lo que quedaba"'],
   ['cancelarEvp: tarde con el cobro ya devuelto avisa «No se cobró nada»', 'apps/web/lib/evento-privado.ts', '  if (!quedo && (!d || d.e === "nada")) d = P.pst === "refunded"', '  if (false) d = P.pst === "refunded"'],
   ['viajes.ts: cobrarOperacion sin try/catch', 'apps/web/lib/viajes.ts', '{ try { cap = await cobrarOperacion(o.id); } catch (e) { fallo = true; err = e; ', '{ cap = await cobrarOperacion(o.id); { '],
   // (13, segunda revisión) · La captura tarde que lanza deja rastro; lo ya soltado se dice soltado; la ventana de «held» del no(…) es su sentencia.

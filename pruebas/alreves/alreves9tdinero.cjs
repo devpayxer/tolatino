@@ -70,7 +70,7 @@ const casos6 = [
   [RV6, RVF, "  if (g.enviada && g.vieja) return (await resolverDevolucionSobra(id, { origen: \"barrido\" })).st;\n", ""],
   // (5) Sin el permiso; el botón siempre; «Resuelta» deja la intención en camino; la base deja cambiar la decisión.
   [RV6, ACO, "  if (!s || !s.puede(\"tx\", \"aprobar\")) return { ok: false, mensaje: \"Tu rol no decide sobre dinero.\" };\n  const r = await (await import(\"@/lib/revision-pasarela\")).decidirRevision(", "  if (!s) return { ok: false, mensaje: \"Entra otra vez.\" };\n  const r = await (await import(\"@/lib/revision-pasarela\")).decidirRevision("],
-  [RV6, PLT, '...(a.revisar ? [{ l: E("Elegir cuál vale", "Choose which counts")', '...(true ? [{ l: E("Elegir cuál vale", "Choose which counts")'],
+  [RV6, PLT, '...(a.revisar ? [{ l: E2("Elegir cuál vale", "Choose which counts")', '...(true ? [{ l: E2("Elegir cuál vale", "Choose which counts")'],
   [RV6, DA, "  if (accion === \"resuelta\" && a.kind === \"gateway_review\" && (await opcionesDeAlertas([{ id, sujeto: a.sujeto }])).has(id))", "  if (false)"],
   [RV6, MG4, "create trigger gateway_reviews_no_cambia before update or delete on gateway_reviews for each row execute function dinero_solo_insercion();\n", ""],
   // (6) 0205 · La hoja ofrece ids pelados (sin monto ni fecha), o sin la fecha; la pantalla ignora el detalle guardado; la consulta no lo guarda; la base
@@ -231,7 +231,7 @@ const casos = [
   [FA, PEV, ', duration: s.duration }, ref: id };', ', duration: s.duration } };'],
   // La base sin su tope de una en camino; una alerta nueva sin su rótulo en el Super Admin.
   [FA, MG2, "create unique index if not exists offsession_charges_una_en_camino on offsession_charges (kind, ref_id) where status = 'pending';\n", ''],
-  [FA, PLT, ', offsession_unapplied: E("Cobro con tarjeta guardada sin aplicar", "Unapplied saved-card charge")', ''],
+  [FA, PLT, ', offsession_unapplied: E2("Cobro con tarjeta guardada sin aplicar", "Unapplied saved-card charge")', ''],
   // ── 9t5 (21 nov, LAUNCH «Cobros fuera de sesión, lo que quedó de 9t4» y «Dinero por clase · lo que quedó» (2)): preguntarle a la pasarela ──
   // (1) Una creación sin el dato buscable, o el dato anotado cada vez (un reintento de una que salió sin él lo «inventaría»).
   [PG, CFU, "cobro: a.id, ...(m.gref ? { tl_intencion: m.gref } : {}) };", "cobro: a.id };"],
@@ -261,7 +261,7 @@ const casos = [
   // (5) «Preguntar a Stripe ahora» sin el permiso, sobre algo que ya no está en camino, o el botón siempre; la alerta que no se cierra sola.
   [PG, ACO, '  if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no decide sobre dinero." };\n  const r = await (await import("@/lib/dinero-alertas")).preguntarPorAlerta(', '  if (!s) return { ok: false, mensaje: "Entra otra vez." };\n  const r = await (await import("@/lib/dinero-alertas")).preguntarPorAlerta('],
   [PG, DA, '  if (!a.vivo) return { ok: false, msg: "Ya no está en camino: se cerró." };\n', ''],
-  [PG, PLT, '...(a.preguntar ? [{ l: E("Preguntar a Stripe ahora"', '...(true ? [{ l: E("Preguntar a Stripe ahora"'],
+  [PG, PLT, '...(a.preguntar ? [{ l: E2("Preguntar a Stripe ahora"', '...(true ? [{ l: E2("Preguntar a Stripe ahora"'],
   [PG, DA, '  await cerrarAlertasResueltas();\n', ''],
   // La base: las consultas se pueden cambiar; Pro vuelve a decidir «nunca se mandó» con attempts = 0.
   [PG, MG3, "create trigger gateway_checks_no_cambia before update or delete on gateway_checks for each row execute function dinero_solo_insercion();\n", ''],

@@ -33,7 +33,7 @@ const casos = [
   [DC, '  if (resultado === "hecho") {', '  if (false) {', 'antesDeAMano: la pasarela antes'],
   [DA, ' && a.kind !== "extra_refund_stuck") || !/', ') || !/', 'la devolución de lo que sobró también tiene «Resolver a mano»'],
   [DA, "union all select 'refunds', z.id, z.status = 'pending' and z.manual_at is null from refunds z where a.kind = 'refund_stuck'", "union all select 'refunds', z.id, false from refunds z where a.kind = 'refund_stuck'", '«Preguntar a Stripe ahora» también en las devoluciones'],
-  [PT, 'E("Antes de guardar, se le pregunta a Stripe:', 'E("Antes de guardar, revisa en Stripe:', 'la hoja de «Resolver a mano» dice'],
+  [PT, 'E2("Antes de guardar, se le pregunta a Stripe:', 'E2("Antes de guardar, revisa en Stripe:', 'la hoja de «Resolver a mano» dice'],
   // (4)
   [MG, "  if old.gateway_ref is not null and new.gateway_ref is distinct from old.gateway_ref then raise exception 'devolucion: gateway_ref se anota una vez'; end if;\n", '', 'la base: el dato una vez'],
   [MG, "update refunds set sent_at = created_at where sent_at is null and status = 'pending';\n", '', 'la base: el dato una vez'],

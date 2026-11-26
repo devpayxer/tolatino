@@ -12,6 +12,7 @@ import { anchoInicial } from "@/lib/ancho";
 import { AnchoInicial } from "@/app/_ancho/Ancho";
 
 import { Pendiente } from "@/app/Pendiente";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const metadata: Metadata = { title: "Admin · To'Latino", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -22,13 +23,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!u.first_name) redirect("/entrar");
   const m = await miembroEquipo();
   if (!m) {
-    const en = (await idioma()) === "en", E = (es: string, eng: string) => (en ? eng : es);
+    const en = (await idioma()) === "en", E2 = (es: string, eng: string) => dosIdiomas(!en, es, eng);
     if (!(await hayAdmin())) return <Arranque nombre={u.first_name} lang={en ? "en" : "es"} />;
     return (
       <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col justify-center gap-2 px-5">
-        <span className="font-mono text-[10px] font-extrabold tracking-[0.12em] text-text-muted">{E("SIN ACCESO", "NO ACCESS")}</span>
-        <h1 className="font-display text-[24px] font-extrabold tracking-[-0.04em]">{E("Esta zona es del equipo de To’Latino", "This area is for the To’Latino team")}</h1>
-        <p className="text-[13.5px] text-text-2">{E("Si eres del equipo, pídele a un Admin que te agregue con tu teléfono.", "If you’re on the team, ask an Admin to add you with your phone number.")}</p>
+        <span className="font-mono text-[10px] font-extrabold tracking-[0.12em] text-text-muted">{E2("SIN ACCESO", "NO ACCESS")}</span>
+        <h1 className="font-display text-[24px] font-extrabold tracking-[-0.04em]">{E2("Esta zona es del equipo de To’Latino", "This area is for the To’Latino team")}</h1>
+        <p className="text-[13.5px] text-text-2">{E2("Si eres del equipo, pídele a un Admin que te agregue con tu teléfono.", "If you’re on the team, ask an Admin to add you with your phone number.")}</p>
       </main>
     );
   }

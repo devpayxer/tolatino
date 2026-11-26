@@ -6,6 +6,7 @@ import { ciudadViva } from "@/lib/admin-analitica";
 import { idioma } from "@/lib/idioma";
 import { Auditoria } from "./sistema/Auditoria";
 import {SeccionesMovil, Titulo } from "./ui";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* ADM-HOME · Inicio. Números reales de la base; sin datos de ejemplo. */
 export default async function Inicio({ searchParams }: { searchParams: Promise<{ sin?: string }> }) {
@@ -29,7 +30,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   const usd = (c: number) => "$" + (c / 100).toFixed(2);
   // 9g · «Ciudad viva» (pantallas-iniciales.md §2, ADM-HOME): por ciudad abierta o por abrir, de la base de análisis; con analit:ver.
   const [lang, vivas] = await Promise.all([idioma(), s.puede("analit", "ver") ? ciudadViva(s) : Promise.resolve([])]);
-  const E = (a: string, b: string) => (lang === "en" ? b : a);
+  const E2 = (a: string, b: string) => dosIdiomas(!(lang === "en"), a, b);
   // 9k · «El dinero no cuadra» (el guardián del dinero): diferencias de la conciliación de los últimos 14 días que nadie tomó.
   // 9i · La lista de espera de las ciudades que vienen (9h → 9i: va aquí con su OK sobre la captura nueva) y el cierre de una ciudad que espera a otra persona.
   const ce = s.puede("ciud", "ver") ? await (await import("@/lib/ciudades/admin")).esperaInicio(s) : null;
@@ -44,14 +45,14 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
         ? `EL COMPA LLEGÓ AL TOPE · ${usd(cg.gastado)} de ${usd(cg.tope)} este mes. Contesta con reglas fijas y ofrece «Con una persona». Sube el tope en El Compa · IA si hace falta.`
         : `EL COMPA VA EN EL ${cg.pct} % DEL TOPE · ${usd(cg.gastado)} de ${usd(cg.tope)} este mes. Míralo en El Compa · IA.`}</AdminNote> : null}
       {dn && dn.n > 0 ? <AdminNote tone="bad" icon="warning">{`EL DINERO NO CUADRA · ${dn.n} diferencia${dn.n === 1 ? "" : "s"} sin dueño en ${dn.dias} día${dn.dias === 1 ? "" : "s"} (${usd(Math.abs(Number(dn.c)))}). Tómalas en Planes › Ingresos › Conciliación.`}</AdminNote> : null}
-      {ce && ce.cierres ? <AdminNote tone="warn" icon="warning">{E(`CIERRE DE CIUDAD POR APROBAR · ${ce.cierres}. Lo aprueba otra persona del equipo en Ciudades.`, `CITY CLOSE PENDING · ${ce.cierres}. Another team member approves it in Cities.`)}</AdminNote> : null}
+      {ce && ce.cierres ? <AdminNote tone="warn" icon="warning">{E2(`CIERRE DE CIUDAD POR APROBAR · ${ce.cierres}. Lo aprueba otra persona del equipo en Ciudades.`, `CITY CLOSE PENDING · ${ce.cierres}. Another team member approves it in Cities.`)}</AdminNote> : null}
       {sv.length ? <AdminNote tone="bad" icon="warning">{`EVENTO CON SOBREVENTA · ${sv.slice(0, 3).map((x) => `${x.titulo.es} · ${x.dia}: ${x.vivos} vivos de ${x.cantidad}`).join(" · ")}. Míralo en Eventos y boletos.`}</AdminNote> : null}
       <KpiRow
         columns="repeat(auto-fill, minmax(min(100%, 160px), 1fr))"
         items={[
           { label: "USUARIOS", value: String(k.usuarios), sub: `${k.nuevos} nuevos en 7 días`, dark: true },
           { label: "CIUDADES", value: `${k.abiertas} abiertas`, sub: `${k.proximas} próximamente` },
-          ...(ce ? [{ label: E("LISTA DE ESPERA", "WAITLIST"), value: ce.total.toLocaleString("en-US"), sub: ce.ciudades.filter((c) => c.n).map((c) => `${c.name} ${c.n}`).join(" · ") || E("nadie esperando", "no one waiting") }] : []),
+          ...(ce ? [{ label: E2("LISTA DE ESPERA", "WAITLIST"), value: ce.total.toLocaleString("en-US"), sub: ce.ciudades.filter((c) => c.n).map((c) => `${c.name} ${c.n}`).join(" · ") || E2("nadie esperando", "no one waiting") }] : []),
           { label: "EQUIPO", value: String(k.equipo), sub: "personas activas" },
           { label: "ACCIONES 24 H", value: String(k.acciones), sub: "en la auditoría" },
         ]}
@@ -60,15 +61,15 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
       {s.puede("sys", "ver") && <Auditoria limite={8} titulo="ÚLTIMAS ACCIONES DEL EQUIPO" />}
       {vivas.length ? (
         <section className="flex flex-col gap-2.5" data-ciudad-viva>
-          <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-text-muted">{E("CIUDAD VIVA", "LIVING CITY")}</span>
+          <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-text-muted">{E2("CIUDAD VIVA", "LIVING CITY")}</span>
           {vivas.map((c) => (
             <div key={c.id} className="flex flex-col gap-1.5">
-              <span className="text-[13px] font-bold">{c.ciudad}{c.status === "on" ? "" : c.status === "beta" ? E(" · beta (solo invitados)", " · beta (invited only)") : E(" · próximamente", " · coming soon")}</span>
+              <span className="text-[13px] font-bold">{c.ciudad}{c.status === "on" ? "" : c.status === "beta" ? E2(" · beta (solo invitados)", " · beta (invited only)") : E2(" · próximamente", " · coming soon")}</span>
               <KpiRow columns="repeat(auto-fill, minmax(min(100%, 160px), 1fr))" items={[
-                { label: E("SEMILLAS RECLAMADAS", "SEEDS CLAIMED"), value: c.semillas ? `${Math.round((c.reclamadas / c.semillas) * 100)} %` : "—", sub: E(`${c.reclamadas} de ${c.semillas}`, `${c.reclamadas} of ${c.semillas}`), dark: c.status === "on" },
-                { label: E("PUBLICACIONES · DÍA", "POSTS · DAY"), value: (Math.round((c.posts7 / 7) * 10) / 10).toString(), sub: E(`${c.posts7} en 7 días`, `${c.posts7} in 7 days`) },
-                { label: E("RECOMENDACIONES", "RECOMMENDATIONS"), value: String(c.recs30), sub: E("de vecinos en 30 días", "by neighbors in 30 days") },
-                { label: E("VECINOS ACTIVOS", "ACTIVE NEIGHBORS"), value: String(c.activos7), sub: E("en 7 días", "in 7 days") },
+                { label: E2("SEMILLAS RECLAMADAS", "SEEDS CLAIMED"), value: c.semillas ? `${Math.round((c.reclamadas / c.semillas) * 100)} %` : "—", sub: E2(`${c.reclamadas} de ${c.semillas}`, `${c.reclamadas} of ${c.semillas}`), dark: c.status === "on" },
+                { label: E2("PUBLICACIONES · DÍA", "POSTS · DAY"), value: (Math.round((c.posts7 / 7) * 10) / 10).toString(), sub: E2(`${c.posts7} en 7 días`, `${c.posts7} in 7 days`) },
+                { label: E2("RECOMENDACIONES", "RECOMMENDATIONS"), value: String(c.recs30), sub: E2("de vecinos en 30 días", "by neighbors in 30 days") },
+                { label: E2("VECINOS ACTIVOS", "ACTIVE NEIGHBORS"), value: String(c.activos7), sub: E2("en 7 días", "in 7 days") },
               ]} />
             </div>))}
         </section>) : null}

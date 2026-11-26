@@ -54,87 +54,24 @@ const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra
 const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
 // 26 nov · cadenaConLlave (familia «elegir idioma por índice»): las tablas de pares ES/EN que aún se eligen con [es ? 0 : 1] sin pasar por E2. Un trinquete: solo baja. Ver LAUNCH.
-const PENDIENTES_IDIOMA_IDX = new Set([
-  "apps/web/app/admin/N360.tsx:LIQ_N", // Super Admin: lo pasa quien convierte el Super Admin a E2 (LAUNCH, familia «idioma por índice», (a))
-]);
+const PENDIENTES_IDIOMA_IDX = new Set([]);
 // 26 nov (2) · Lo que la config de «Publica tu negocio» (lib/onb/datos.ts, GENERADO) saca con E2(x[0], x[1]) ya no se lista aquí: portar-onboarding.mjs emite
 // lib/onb/cadenas.ts con cada par como E2("…", "…") y el guardián comprueba que está al día (ver más abajo). Esta lista queda vacía y no puede volver a crecer.
 const PENDIENTES_IDIOMA_E2IDX = new Set([]);
 // 26 nov (2) · Tablas `{ es: ["…"], en: ["…"] }` (días y meses de una pantalla) sin pasar por E2, y tablas de tuplas [clave, es, en] elegidas con `es ? a : b`,
 // `[es ? 1 : 2]` o `lang === "es" ? a : b`. Un trinquete cada una: solo bajan.
 const PENDIENTES_IDIOMA_ESEN = new Set([
-  "apps/web/lib/plazo-txt.ts:DIA_SEM", // está en LIB_CODIGO (scripts/ci/subir.mjs, vía rápida): con el import de dosIdiomas dejaría de ser «inofensivo»; se pasa junto con quitarlo de esa lista
+  "apps/web/lib/plazo-txt.ts:DIA_SEM", // está en LIB_CODIGO (scripts/ci/subir.mjs, vía rápida) y el guardián de la vía rápida exige que sea inofensivo en el archivo ENTERO (sin «import»): con el import de dosIdiomas falla; se pasa junto con quitarlo de esa lista (hay que tocar subir.mjs, que este encargo no toca)
 ]);
 const PENDIENTES_IDIOMA_TUPLA = new Set([]);
-const PENDIENTES_IDIOMA_ADMIN_E = new Set([
-  "apps/web/app/admin/Analitica.tsx",
-  "apps/web/app/admin/AnfitrionesAdmin.tsx",
-  "apps/web/app/admin/Arranque.tsx",
-  "apps/web/app/admin/AutoModeracion.tsx",
-  "apps/web/app/admin/BoletoAdmin.tsx",
-  "apps/web/app/admin/Catalogo.tsx",
-  "apps/web/app/admin/CatalogoEventos.tsx",
-  "apps/web/app/admin/Ciudades.tsx",
-  "apps/web/app/admin/Colas.tsx",
-  "apps/web/app/admin/ColasComunidad.tsx",
-  "apps/web/app/admin/ColasEventos.tsx",
-  "apps/web/app/admin/Confianza.tsx",
-  "apps/web/app/admin/Configuracion.tsx",
-  "apps/web/app/admin/Contenido.tsx",
-  "apps/web/app/admin/Crecimiento.tsx",
-  "apps/web/app/admin/DisputasTx.tsx",
-  "apps/web/app/admin/DupFila.tsx",
-  "apps/web/app/admin/ElCompaAdmin.tsx",
-  "apps/web/app/admin/EventosAdmin.tsx",
-  "apps/web/app/admin/Gamificacion.tsx",
-  "apps/web/app/admin/HiloAdmin.tsx",
-  "apps/web/app/admin/HoyAdmin.tsx",
-  "apps/web/app/admin/Integraciones.tsx",
-  "apps/web/app/admin/IntegracionesProveedores.tsx",
-  "apps/web/app/admin/IntegracionesPush.tsx",
-  "apps/web/app/admin/IntegracionesWallet.tsx",
-  "apps/web/app/admin/Liquidaciones.tsx",
-  "apps/web/app/admin/N360.tsx",
-  "apps/web/app/admin/N360Dinero.tsx",
-  "apps/web/app/admin/N360Oper.tsx",
-  "apps/web/app/admin/Negocios.tsx",
-  "apps/web/app/admin/Notificaciones.tsx",
-  "apps/web/app/admin/NotificacionesCanales.tsx",
-  "apps/web/app/admin/Planes.tsx",
-  "apps/web/app/admin/PuntoAdmin.tsx",
-  "apps/web/app/admin/Repartidor360.tsx",
-  "apps/web/app/admin/Repartidores.tsx",
-  "apps/web/app/admin/SistemaApps.tsx",
-  "apps/web/app/admin/SistemaAppsBeta.tsx",
-  "apps/web/app/admin/SistemaAppsTiendas.tsx",
-  "apps/web/app/admin/SistemaDespliegues.tsx",
-  "apps/web/app/admin/SistemaEstados.tsx",
-  "apps/web/app/admin/SistemaFlags.tsx",
-  "apps/web/app/admin/SistemaRespaldos.tsx",
-  "apps/web/app/admin/SistemaSalud.tsx",
-  "apps/web/app/admin/SoporteAdmin.tsx",
-  "apps/web/app/admin/SoporteDe360.tsx",
-  "apps/web/app/admin/TextosAyuda.tsx",
-  "apps/web/app/admin/TextosAyudaEditar.tsx",
-  "apps/web/app/admin/TextosCadenas.tsx",
-  "apps/web/app/admin/TextosComun.tsx",
-  "apps/web/app/admin/TextosHome.tsx",
-  "apps/web/app/admin/TextosPaginas.tsx",
-  "apps/web/app/admin/TextosRotulos.tsx",
-  "apps/web/app/admin/Transacciones.tsx",
-  "apps/web/app/admin/U360.tsx",
-  "apps/web/app/admin/Usuarios.tsx",
-  "apps/web/app/admin/acciones-copiloto.ts",
-  "apps/web/app/admin/dos-pasos/DosPasos.tsx",
-  "apps/web/app/admin/layout.tsx",
-  "apps/web/app/admin/notificaciones/correo/[id]/VerCorreo.tsx",
-  "apps/web/app/admin/page.tsx",
-  "apps/web/app/admin/seguridad/MisDosPasos.tsx",
-  "apps/web/app/admin/sistema/AgregarMiembro.tsx",
-  "apps/web/app/admin/sistema/Auditoria.tsx",
-  "apps/web/app/admin/sistema/page.tsx",
-  "apps/web/app/admin/ui.tsx",
+// 26 nov (3) · Tablas exportadas que se eligen en otro archivo (ver cadenaConLlave): trinquete, solo baja.
+const PENDIENTES_IDIOMA_CRUCE = new Set([
+  "apps/web/lib/autos-comun.ts:TITULO", // elegida en n/[id]/Dealer.tsx y panel/Autos.tsx; lib/admin-negocios.ts la lee con [0] (LAUNCH, familia «idioma por índice»)
+  "apps/web/lib/autos-comun.ts:ESTADO_CARRO", // elegida en panel/Autos.tsx; lib/admin-negocios.ts la lee con [0]
+  "apps/web/lib/inmuebles-comun.ts:ESTADO", // elegida en panel/Inmuebles.tsx
+  "apps/web/lib/no-hago.ts:NO_HAGO", // elegida en panel/Panel.tsx; panel/acciones.ts la lee por índice (se guarda lo elegido)
 ]);
+const PENDIENTES_IDIOMA_ADMIN_E = new Set([]);
 // 8i · Avisos: lo que todavía no rompe el build (9a: las secciones pendientes del Super Admin en sinEnConstruccion, hasta TOLATINO_FASE=9). Se imprimen siempre.
 const avisos = [];
 
@@ -4716,7 +4653,7 @@ const guardianes = {
     const av = existsSync("apps/web/app/panel/AvisoSoloLectura.tsx") ? sinComent("apps/web/app/panel/AvisoSoloLectura.tsx") : "";
     if (!/E2\("VISTA DEL EQUIPO · SOLO LECTURA", "TEAM VIEW · READ ONLY"\)/.test(av) || !/<InfoCard /.test(av)) falla(G, "apps/web/app/panel/AvisoSoloLectura.tsx", 0, "el aviso es la InfoCard del sistema con «VISTA DEL EQUIPO · SOLO LECTURA» (ES/EN)");
     const n = sinComent(N);
-    if (!/E\("Panel del dueño", "Owner’s dashboard"\), icon: "[a-z]+", onClick: \(\) => window\.open\(`\/panel\/\$\{n\.id\}\?equipo=1`/.test(n)) falla(G, N, 0, "el 360° ofrece «Panel del dueño» (/panel/{id}?equipo=1)");
+    if (!/E2\("Panel del dueño", "Owner’s dashboard"\), icon: "[a-z]+", onClick: \(\) => window\.open\(`\/panel\/\$\{n\.id\}\?equipo=1`/.test(n)) falla(G, N, 0, "el 360° ofrece «Panel del dueño» (/panel/{id}?equipo=1)");
     if (!/"negocio\.ver_panel": "[^"]+"/.test(n.slice(n.indexOf("const VERBO:"), n.indexOf("const VERBO_EN:"))) || !/"negocio\.ver_panel": "[^"]+"/.test(n.slice(n.indexOf("const VERBO_EN:")))) falla(G, N, 0, "el historial del 360° dice «abrió en solo lectura el panel» (ES/EN)");
   },
 
@@ -9866,7 +9803,7 @@ const guardianes = {
     // `[string, string, string][]` / `Record<…, [string, string]>` que se elige con `es ? a : b` (.map(([k, a, b]) => …), x[es ? 1 : 2], `lang === "es" ? es : en`) sin E2. Las dos van como
     // función que recibe el idioma y lleva E2("…", "…") en su sitio (DOW(es)[i]; OCC(es).map(([k, l]) => …)). Lo que ya estaba así va en PENDIENTES_IDIOMA_ESEN y
     // PENDIENTES_IDIOMA_TUPLA (trinquetes: no crecen; lo que se pasa se quita). Al revés: alreves9f3.
-    const hallEsEn = new Map(), hallTupla = new Map();
+    const hallEsEn = new Map(), hallTupla = new Map(), exportadas = new Map();
     const ELIGE_IDIOMA = [
       /\bes\s*\?\s*[\w$]+(?:\[[^\]\n]{1,12}\])?!?\s*:\s*[\w$]+(?:\[[^\]\n]{1,12}\])?/,
       /\[\s*(?:[\w$.]*\bes|lang\s*===\s*"es")\s*\?\s*\d\s*:\s*\d\s*\]/,
@@ -9878,10 +9815,13 @@ const guardianes = {
       const t = sinComent(f);
       for (const m of t.matchAll(new RegExp(String.raw`^(?:export )?const (${ID})\b[^=\n]*=\s*\{\s*es:\s*\[\s*${LITS}`, "gm")))
         if (/\p{L}/u.test(t.slice(m.index, m.index + 400).replace(/[\w$]+\s*:/g, ""))) hallEsEn.set(`${f}:${m[1]}`, t.slice(0, m.index).split("\n").length);
+      for (const m of t.matchAll(new RegExp(String.raw`^export const (${ID})\b[^=\n]*=\s*\{\s*es:\s*\[\s*${LITS}`, "gm")))
+        if (/\p{L}/u.test(t.slice(m.index, m.index + 400).replace(/[\w$]+\s*:/g, ""))) exportadas.set(`${f}:${m[1]}`, t.slice(0, m.index).split("\n").length);
       for (const m of t.matchAll(new RegExp(String.raw`^(?:export )?const (${ID})\s*:\s*(?:readonly )?(?:\[string, string(?:, string)*\]\[\]|Record<[^=\n]*?\[string, string(?:, string)*\]>)\s*=\s*`, "gm"))) {
         const resto = t.slice(m.index + m[0].length), fin = resto.search(/\n(?:const|function|export|type|import|let|interface|\/\*|\/\/)/), ini = fin < 0 ? resto : resto.slice(0, fin);
         if (!new RegExp(`${LITS}\\s*,\\s*${LITS}`).test(ini) || !/\p{L}/u.test(ini)) continue;
         const N = m[1], decl = m.index + m[0].length + ini.length;
+        if (m[0].startsWith("export ")) exportadas.set(`${f}:${N}`, t.slice(0, m.index).split("\n").length);
         let elige = false;
         for (const u of t.matchAll(new RegExp(String.raw`\b${N}\b`, "g"))) {
           if (u.index < m.index + m[0].length || u.index < decl && u.index > m.index) continue;
@@ -9891,6 +9831,41 @@ const guardianes = {
         if (elige) hallTupla.set(`${f}:${N}`, t.slice(0, m.index).split("\n").length);
       }
     }
+    // 26 nov (3) · La misma tabla EXPORTADA (export const OCASIONES: [string, string, string][] = …) que se elige en OTRO archivo: el guardián mira cada archivo por separado y no la veía.
+    // Aquí, por cada tabla exportada de pares ES/EN (tuplas o { es: [...], en: [...] }), se buscan los archivos que la importan (import { N } from ".../archivo") y, en cada uso, la elección
+    // del idioma: es ? a : b, [es ? 0 : 1], .es/.en, en ? … : …, o pasar la tabla a un ayudante junto con es/en (lbl(N, k, es)). Va como función que recibe el idioma y lleva E2("…", "…") (N(es)).
+    // Al revés: alreves9f3.
+    const ELIGE_CRUCE = [...ELIGE_IDIOMA, /\ben\s*\?\s*[\w$]+(?:\[[^\]\n]{1,12}\])?!?\s*:\s*[\w$]+(?:\[[^\]\n]{1,12}\])?/, /\[\s*!?en\s*\?\s*\d\s*:\s*\d\s*\]/, /\.(?:es|en)\b/];
+    const hallCruce = new Map();
+    if (exportadas.size) {
+      const base = (f) => f.slice(f.lastIndexOf("/") + 1).replace(/\.tsx?$/, "");
+      const porBase = new Map();
+      for (const k of exportadas.keys()) { const f = k.slice(0, k.lastIndexOf(":")); (porBase.get(base(f)) ?? porBase.set(base(f), []).get(base(f))).push(k); }
+      for (const g of codigo) {
+        if (!/^apps\/web\/.*\.tsx?$/.test(g)) continue;
+        const tg = sinComent(g);
+        for (const im of tg.matchAll(/import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)) {
+          const cands = porBase.get(base(im[2]));
+          if (!cands) continue;
+          for (const nombre of im[1].split(",").map((x) => x.trim()).filter(Boolean)) {
+            const [orig, local = orig] = nombre.split(/\s+as\s+/);
+            const k = cands.find((c) => c.endsWith(":" + orig) && c.slice(0, c.lastIndexOf(":")) !== g);
+            if (!k || hallCruce.has(k)) continue;
+            for (const u of tg.matchAll(new RegExp(String.raw`\b${local}\b`, "g"))) {
+              if (u.index >= im.index && u.index < im.index + im[0].length) continue;
+              const ven = tg.slice(Math.max(0, u.index - 120), u.index + 320);
+              if (ELIGE_CRUCE.some((r) => r.test(ven)) || new RegExp(String.raw`\b[\w$]+\(\s*${local}\s*,[^()]{0,80}\b(?:es|en)\b`).test(ven)) { hallCruce.set(k, `${g}:${tg.slice(0, u.index).split("\n").length}`); break; }
+            }
+          }
+        }
+      }
+    }
+    for (const [k, donde] of hallCruce) {
+      if (PENDIENTES_IDIOMA_CRUCE.has(k) || hallTupla.has(k) || hallEsEn.has(k)) continue;
+      const [f, N] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
+      falla(G, f, exportadas.get(k), `${N} guarda pares ES/EN de textos fijos, se exporta y se elige el idioma en otro archivo (${donde}) sin pasar por E2: se salen del CMS; la tabla va como función que recibe el idioma y lleva E2("…", "…") en su sitio (${N}(es))`);
+    }
+    for (const k of PENDIENTES_IDIOMA_CRUCE) if (!hallCruce.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_CRUCE lista «${k}» y ya no se cumple: sácala de la lista`);
     for (const [k, linea] of hallEsEn) {
       if (PENDIENTES_IDIOMA_ESEN.has(k)) continue;
       const [f, N] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
@@ -10080,7 +10055,7 @@ const guardianes = {
     const a = sinComent(AD), tc = sinComent(TC);
     if (!/import\("\.\/cms-cadenas-e2\.json"\)/.test(a) || !/lugares: AUTO\.test\(x\.id\) \? L\.get\(x\.id\) \?\? null : null/.test(a)) falla(G, AD, 0, "Cadenas lista cada cadena de E2 con sus lugares (cms-cadenas-e2.json)");
     if (!/s\.id <> all\(\$5::text\[\]\)/.test(a)) falla(G, AD, 0, "una cadena de E2 que ya no está en el código no se lista (queda en la base, sin borrar)");
-    if (!/x\.lugares && x\.lugares\.n > 1 \? E\(` Cambia en los \$\{x\.lugares\.n\} lugares donde aparece/.test(tc)) falla(G, TC, 0, "editar una cadena que aparece en varios lugares lo avisa antes de guardar");
+    if (!/x\.lugares && x\.lugares\.n > 1 \? E2\(` Cambia en los \$\{x\.lugares\.n\} lugares donde aparece/.test(tc)) falla(G, TC, 0, "editar una cadena que aparece en varios lugares lo avisa antes de guardar");
     // (6) Las definiciones (el mismo código que el codemod).
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === MOD) continue;
@@ -12209,7 +12184,7 @@ const guardianes = {
       const SA = "apps/web/lib/sistema/salud.ts", SP = "apps/web/app/admin/SistemaSalud.tsx";
       if (!existsSync(SA) || !/subidas: await estadoSubidas\(\)/.test(sinComent(SA))) falla(G, SA, 0, "Sistema › Salud lee las subidas de fotos de este proceso (estadoSubidas)");
       const sp = existsSync(SP) ? sinComent(SP) : "";
-      if (!/const su = d\.subidas, rechSu = su\.rechazos10 > 0;/.test(sp) || !/tag: rechSu \? E\("REVISAR", "CHECK"\) : E\("BIEN", "HEALTHY"\)/.test(sp) || !/su\.rechazosHora/.test(sp) || !/su\.tope\.aLaVez/.test(sp) || !/su\.enEspera/.test(sp) || !/Solo este proceso del servidor\./.test(sp))
+      if (!/const su = d\.subidas, rechSu = su\.rechazos10 > 0;/.test(sp) || !/tag: rechSu \? E2\("REVISAR", "CHECK"\) : E2\("BIEN", "HEALTHY"\)/.test(sp) || !/su\.rechazosHora/.test(sp) || !/su\.tope\.aLaVez/.test(sp) || !/su\.enEspera/.test(sp) || !/Solo este proceso del servidor\./.test(sp))
         falla(G, SP, 0, "la fila de Salud de las subidas de fotos: en curso, en espera, el tope vigente, rechazos de la hora, REVISAR si hubo rechazos en 10 min y que es de este proceso"); }
     if (!/status: 503, headers: \{ "Retry-After": "\d+" \}/.test(cuerpoFn(l, "fotosOcupado") || l.slice(l.indexOf("export const fotosOcupado"), l.indexOf("export const fotosOcupado") + 600)) || !/Prueba en un momento\./.test(l) || !/Try again in a moment\./.test(l))
       falla(G, L, 0, "sin lugar o sin turno: 503 con Retry-After y «Prueba en un momento.» / «Try again in a moment.»");
@@ -14387,7 +14362,7 @@ const guardianes = {
     // Espejo: el Super Admin lo lista y controla; el panel del organizador lo dice.
     const cr = sinComent(CR), dev = cuerpoFn(cr, "DestacadosEventos");
     if (!/destacadoEvtFijar\(id, ref\.current\.desde, ref\.current\.hasta, m\)/.test(dev) || !/destacadoRetirar\(x\.id, m\)/.test(dev)) falla(G, CR, 0, "Crecimiento › Destacados › EVENTOS fija (desde, hasta, motivo) y retira");
-    if (!/\.\.\.destacadoAdm\(e, destacado, !!publico, !!puede\.destacar, setConf, E, en\)/.test(sinComent(EA))) falla(G, EA, 0, "la ficha del evento en el Super Admin dice si está destacado y lo controla");
+    if (!/\.\.\.destacadoAdm\(e, destacado, !!publico, !!puede\.destacar, setConf, E2, en\)/.test(sinComent(EA))) falla(G, EA, 0, "la ficha del evento en el Super Admin dice si está destacado y lo controla");
     if (!/from featured f where f\.event_id = \$1::bigint and f\.retired_at is null and f\.to_at > now\(\)/.test(cuerpoFn(sinComent(LE), "eventoPanel")) || !/destacado: fx\.rows\[0\] \?\? null/.test(cuerpoFn(sinComent(LE), "eventoPanel"))) falla(G, LE, 0, "eventoPanel lee si To'Latino destacó el evento (espejo)");
     if (!/if \(e\.destacado\) \{/.test(cuerpoFn(sinComent(PA), "ficha")) || !/DESTACADO POR TO’LATINO · Sale arriba de Eventos/.test(cuerpoFn(sinComent(PA), "ficha"))) falla(G, PA, 0, "la ficha del evento en el panel del organizador dice que está destacado");
   },
@@ -15122,7 +15097,7 @@ const guardianes = {
       || !/create unique index if not exists offsession_charges_un_cobro_por_proposito on offsession_charges \(kind, ref_id, purpose\) where status = 'done';/.test(mig)
       || !/raise exception 'un cobro fuera de sesión no se borra \(estados\)'/.test(mig)) falla(G, "packages/db/migrations", 0, "la base impone una intención en camino por objeto, un cobro hecho por propósito y que nada se borre (offsession_charges)");
     const da = sinComent("apps/web/lib/dinero-alertas.ts"), pt = readFileSync("apps/web/app/admin/Planes.tsx", "utf8");
-    for (const k of ["offsession_stuck", "offsession_unapplied"]) if (!new RegExp(`"${k}"`).test(da) || !new RegExp(`${k}: \\{ es:`).test(da) || !new RegExp(`${k}: E\\(`).test(pt) || !new RegExp(`'${k}'`).test(mig)) falla(G, "apps/web/lib/dinero-alertas.ts", 0, `la alerta «${k}» está en la base, en el tipo, en el aviso y en el rótulo del Super Admin`);
+    for (const k of ["offsession_stuck", "offsession_unapplied"]) if (!new RegExp(`"${k}"`).test(da) || !new RegExp(`${k}: \\{ es:`).test(da) || !new RegExp(`${k}: E2\\(`).test(pt) || !new RegExp(`'${k}'`).test(mig)) falla(G, "apps/web/lib/dinero-alertas.ts", 0, `la alerta «${k}» está en la base, en el tipo, en el aviso y en el rótulo del Super Admin`);
   },
 
   /* 9t5 (21 nov) · preguntarALaPasarela (LAUNCH «Cobros fuera de sesión, lo que quedó de 9t4» y «Dinero por clase · lo que quedó» (2)), por clase: una
@@ -15190,7 +15165,7 @@ const guardianes = {
     if (!/s\.puede\("tx", "aprobar"\)/.test(ac) || !/preguntarPorAlerta\(s, /.test(ac)) falla(G, AC, 0, "«Preguntar a Stripe ahora»: el permiso de las demás acciones del dinero (tx:aprobar)");
     if (!/if \(!a\.vivo\) return/.test(pa) || !/origen: "equipo", staff: s\.id, alGuardar: \(c\) => auditar\(c, \{ actor: s\.id, action: "dinero\.alerta\.preguntar"/.test(pa) || !/resolverCobroPro\(a\.sid, o\)/.test(pa) || !/resolverCobroFuera\(a\.sid, o\)/.test(pa) || !/resolverTransferencia\(a\.sid, o\)/.test(pa))
       falla(G, DA, 0, "preguntarPorAlerta: solo si sigue en camino, la misma función del barrido y la auditoría de quien la pidió");
-    if (!/\.\.\.\(a\.preguntar \? \[\{ l: E\("Preguntar a Stripe ahora", "Ask Stripe now"\)/.test(pt) || !/alertaPreguntar\(a\.id, m\)/.test(pt) || !/gateway_review: E\(/.test(pt) || !/a\.consulta \?/.test(pt)) falla(G, PT, 0, "la alerta ofrece «Preguntar a Stripe ahora» solo si el servidor lo deja (preguntar), dice qué dijo la última consulta y nombra gateway_review");
+    if (!/\.\.\.\(a\.preguntar \? \[\{ l: E2\("Preguntar a Stripe ahora", "Ask Stripe now"\)/.test(pt) || !/alertaPreguntar\(a\.id, m\)/.test(pt) || !/gateway_review: E2\(/.test(pt) || !/a\.consulta \?/.test(pt)) falla(G, PT, 0, "la alerta ofrece «Preguntar a Stripe ahora» solo si el servidor lo deja (preguntar), dice qué dijo la última consulta y nombra gateway_review");
     if (!/preguntar: vivo === true/.test(cuerpoFn(da, "alertasDinero")) || !/'resuelta_sola'/.test(cuerpoFn(da, "alertasDinero")) || !/insert into money_alert_notes \(alert_id, action, staff_id, note\) values \(\$1::bigint, 'resuelta_sola', null, \$2\)/.test(cuerpoFn(da, "cerrarAlertaSola"))) falla(G, DA, 0, "la alerta se cierra sola cuando la intención deja de estar en camino (resuelta_sola) y ofrece preguntar solo si sigue en camino");
     if (!/await cerrarAlertasResueltas\(\);/.test(cuerpoFn(da, "barrerAlertasDinero"))) falla(G, DA, 0, "el barrido cierra las alertas cuya intención ya no está en camino");
     // La base.
@@ -15332,7 +15307,7 @@ const guardianes = {
     // (5) El permiso y la pantalla.
     const ac = cuerpoFn(sinComent(AC), "alertaDecidir"), pt = readFileSync(PT, "utf8");
     if (!/s\.puede\("tx", "aprobar"\)/.test(ac) || !/decidirRevision\(s, /.test(ac)) falla(G, AC, 0, "«Elegir cuál vale»: el permiso de las demás acciones del dinero (tx:aprobar)");
-    if (!/\.\.\.\(a\.revisar \? \[\{ l: E\("Elegir cuál vale", "Choose which counts"\)/.test(pt) || !/alertaDecidir\(a\.id, e \?\? "", m\)/.test(pt) || !/hold_stuck: E\(/.test(pt) || !/extra_refund_stuck: E\(/.test(pt)) falla(G, PT, 0, "la alerta ofrece «Elegir cuál vale» solo si el servidor lo deja (revisar) y nombra las alertas nuevas");
+    if (!/\.\.\.\(a\.revisar \? \[\{ l: E2\("Elegir cuál vale", "Choose which counts"\)/.test(pt) || !/alertaDecidir\(a\.id, e \?\? "", m\)/.test(pt) || !/hold_stuck: E2\(/.test(pt) || !/extra_refund_stuck: E2\(/.test(pt)) falla(G, PT, 0, "la alerta ofrece «Elegir cuál vale» solo si el servidor lo deja (revisar) y nombra las alertas nuevas");
     // (6) 0205 · La hoja dice de cada cosa que Stripe tiene su monto, cuándo salió (en la zona de la ciudad) y su id, el primero arriba; lo que no se puede
     // elegir va como información con su porqué. La consulta guarda ese detalle y la hoja lo lee (una consulta vieja sin detalle, los ids como antes).
     const k0 = cuerpoFn(sinComent(K), "consultar"), op = cuerpoFn(sinComent(DA), "opcionesDeAlertas");
@@ -16267,7 +16242,7 @@ const guardianes = {
       ["mb(M.vista640.variantes)", "el ahorro a 640 en MB (a 640)"], ["String(MP.privadas)", "las fotos privadas"], ["String(MP.convertidas)", "las privadas con sus tamaños"], ["String(MP.pendientes)", "las privadas que faltan"],
       ["String(MP.sinMaestra)", "las privadas sin archivo"], ["mb(MP.bytesMaestras)", "el peso de las privadas originales"], ["mb(MP.bytesVariantes)", "el peso de los tamaños de las privadas"]])
       if (!bm.includes(frag)) falla(G, AM, 0, `el bloque «Fotos a la medida» no muestra ${que} (${frag})`);
-    if (!/const M = d\.medios\.pub, MP = d\.medios\.priv;/.test(bm) || !bm.includes('E("FOTOS A LA MEDIDA", "PHOTOS SIZED TO FIT")') || !/\.\.\.bloquesMedios,/.test(am))
+    if (!/const M = d\.medios\.pub, MP = d\.medios\.priv;/.test(bm) || !bm.includes('E2("FOTOS A LA MEDIDA", "PHOTOS SIZED TO FIT")') || !/\.\.\.bloquesMedios,/.test(am))
       falla(G, AM, 0, "el bloque sale de d.medios, con su título en español e inglés, y entra en la pantalla (...bloquesMedios)");
     if (/onClick|\bacts\b|tgOn|onTg|<button|href/.test(bm)) falla(G, AM, 0, "el bloque «Fotos a la medida» es solo lectura: sin botones, interruptores ni enlaces");
     if (!/await requerir\("cont", "ver"\)/.test(pg) || !/autoModeracion\(\)/.test(pg)) falla(G, PG, 0, "la pantalla donde vive el bloque pide el permiso de Contenido (requerir(\"cont\", \"ver\")) antes de armar nada");
@@ -16538,7 +16513,7 @@ const guardianes = {
     if (!/export type Confirmar = \{[^}]*\bnota: NotaPara\b/.test(cm)) falla(G, CM, 0, "el tipo Confirmar no pide `nota: NotaPara` (obligatorio): una confirmación sin decir a quién le llega la nota compilaría");
     const iF = cm.indexOf("export function ConfirmarMotivo("), jF = cm.indexOf("export function Toast(", iF), fnCm = iF >= 0 && jF > iF ? cm.slice(iF, jF) : "";
     if (!/placeholder=\{c\.nota === "persona" \?/.test(fnCm) || !/Queda en la auditoría con tu nombre\./.test(fnCm) || !/Escríbelo como se lo dirías a la persona\./.test(fnCm)) falla(G, CM, 0, "ConfirmarMotivo no pasa el texto de ayuda de la nota según a quién le llega (persona: «Escríbelo como se lo dirías a la persona.»; interna: «Queda en la auditoría con tu nombre.»)");
-    if (/placeholder=\{E\("Escríbelo como se lo dirías a la persona\.", "[^"]*"\)\}/.test(fnCm)) falla(G, CM, 0, "ConfirmarMotivo pone el mismo texto de ayuda a todas las notas");
+    if (/placeholder=\{E2\("Escríbelo como se lo dirías a la persona\.", "[^"]*"\)\}/.test(fnCm)) falla(G, CM, 0, "ConfirmarMotivo pone el mismo texto de ayuda a todas las notas");
     for (const f of readdirSync(DIR).filter((x) => x.endsWith(".tsx"))) {
       const p = `${DIR}/${f}`, t = sinComent(p);
       // (a) Cada `hacer:` de una confirmación (no la firma de un tipo) trae su `nota:` justo antes, y el valor es uno de los tres.
@@ -16636,7 +16611,7 @@ const guardianes = {
     if (!/reabrirOtraVez\(f\.otra, r\.id\)/.test(cuerpoFn(cb, "fallarDevolucionPago")) || !/alertar\("refund_failed", r\.id/.test(cuerpoFn(cb, "fallarDevolucionPago"))) falla(G, CB, 0, "fallarDevolucionPago: la de otra vez que falla trae su propia refund_failed y reabre la de antes");
     if (!/reabrirOtraVez\(h\.otra, h\.id\)/.test(cuerpoFn(cb, "devolucionFallidaEnStripe"))) falla(G, CB, 0, "devolucionFallidaEnStripe: la de otra vez que Stripe da por fallida después reabre la alerta de antes");
     if (!/otra_vez_a_mano/.test(cuerpoFn(da, "notaAlerta"))) falla(G, DA, 0, "notaAlerta dice que ya se devolvió otra vez cuando la base no deja resolverla a mano (otra_vez_a_mano)");
-    if (!/\.\.\.\(a\.otraVez \? \[\{ l: E\("Devolver otra vez", "Refund again"\)/.test(sinComent(PT))) falla(G, PT, 0, "Planes: «Devolver otra vez» solo cuando el servidor lo ofrece (a.otraVez)");
+    if (!/\.\.\.\(a\.otraVez \? \[\{ l: E2\("Devolver otra vez", "Refund again"\)/.test(sinComent(PT))) falla(G, PT, 0, "Planes: «Devolver otra vez» solo cuando el servidor lo ofrece (a.otraVez)");
   },
 
   /* 9t9 (21 nov) · barridoUnoPorUno, por clase (CI 44940985674: un plan con su intención rota dejó sin cobrar a todos los planes detrás de él, cada minuto):
@@ -17693,7 +17668,7 @@ const guardianes = {
     }
     // Cada sitio conocido pinta la marca donde va (no basta con calcularla).
     const DONDE = { "apps/web/app/(app)/comunidad/Tarjeta.tsx": /rk = anf \? \{ label: anf, shield: null \}/, "apps/web/app/(app)/buscar/Buscar.tsx": /\{x\.anfitrion \? <span data-anfitrion="1"[^>]*>\{marcaAnfitrion\(x\.anfitrion, es\)/,
-      "apps/web/app/(app)/cuenta/vecinos/Vecinos.tsx": /sub = \[anf \? anf\.toUpperCase\(\)/, "apps/web/app/admin/Contenido.tsx": /tag: x\.hidden \? E\("OCULTO", "HIDDEN"\) : x\.anf \? marcaAnfitrion\(x\.anf, !EN\)/,
+      "apps/web/app/(app)/cuenta/vecinos/Vecinos.tsx": /sub = \[anf \? anf\.toUpperCase\(\)/, "apps/web/app/admin/Contenido.tsx": /tag: x\.hidden \? E2\("OCULTO", "HIDDEN"\) : x\.anf \? marcaAnfitrion\(x\.anf, !EN\)/,
       "apps/web/app/admin/HiloAdmin.tsx": /rank=\{c\.anf \? \{ label: marcaAnfitrion\(c\.anf, !en\)/,
       "apps/web/app/(app)/comunidad/p/[id]/Publicacion.tsx": /\$\{\(marcaAnfitrion\(a\.anfitrion, es\) \?\? \(es \? rango\(a\.rango\)\.es : rango\(a\.rango\)\.en\)\)\.toUpperCase\(\)\}/ };
     for (const [f, re] of Object.entries(DONDE)) if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "este sitio calcula la marca de anfitrión pero no la pinta junto al nombre");
@@ -17973,7 +17948,7 @@ const guardianes = {
     if (/\bvetoNoticia\(|\bdelicado\(/.test(cl)) falla(G, N, 0, "el barrido no clasifica por su cuenta: solo motivoNota()");
     if (!/const p = r\.prueba \? \{ prueba: r\.prueba \} : \{\};/.test(sinComent(AC))) falla(G, AC, 0, "la acción devuelve el desglose de «Probar»");
     const ui = sinComent(UI);
-    if (!/\.\.\.\(prueba \? bloquesPrueba\(prueba\) : \[\]\)/.test(ui) || !/MOTIVOS_NOTA\.filter\(\(m\) => x\.motivos\[m\] > 0\)/.test(ui) || !/E\("CON ENLACE DEL MEDIO", "WITH THE OUTLET'S LINK"\)/.test(ui)) falla(G, UI, 0, "el Super Admin enseña el desglose de «Probar» (cifras y motivos)");
+    if (!/\.\.\.\(prueba \? bloquesPrueba\(prueba\) : \[\]\)/.test(ui) || !/MOTIVOS_NOTA\.filter\(\(m\) => x\.motivos\[m\] > 0\)/.test(ui) || !/E2\("CON ENLACE DEL MEDIO", "WITH THE OUTLET'S LINK"\)/.test(ui)) falla(G, UI, 0, "el Super Admin enseña el desglose de «Probar» (cifras y motivos)");
     const M = noticiasComunReal(G, C);
     if (!M) return;
     const ahora = Date.parse("2026-11-24T12:00:00Z"), nota = (titulo, enlace, horasAtras = 1, descripcion = "") => ({ titulo, enlace, enlaceCrudo: enlace ?? "https://otro.com/x", fecha: new Date(ahora - horasAtras * 3600_000).toISOString(), descripcion });
@@ -18470,7 +18445,7 @@ const guardianes = {
       // Lo cobrado tarde cuando ya había una devolución parcial: «Se cobró lo que quedaba», nunca «la mitad» (pantalla y Super Admin).
       if (T.viaje && !/x\.cobroMitad \? \(x\.cobroMitad < Math\.floor\(x\.tot \/ 2\) \? E2\(`Se cobró lo que quedaba: /.test(T.viaje)) falla(G, ANTES.viaje, 0, "el viaje cancelado dice «Se cobró la mitad» aunque lo cobrado fue menos (lo que quedaba)");
       const TXA = "apps/web/app/admin/Transacciones.tsx";
-      if (!/x\.vi\.mitad \? ` · \$\{x\.vi\.mitad < Math\.floor\(x\.total \/ 2\) \? E\("se cobró lo que quedaba"/.test(existsSync(TXA) ? sinComent(TXA) : "")) falla(G, TXA, 0, "Transacciones dice «se cobró la mitad» del viaje aunque lo cobrado fue menos (lo que quedaba)");
+      if (!/x\.vi\.mitad \? ` · \$\{x\.vi\.mitad < Math\.floor\(x\.total \/ 2\) \? E2\("se cobró lo que quedaba"/.test(existsSync(TXA) ? sinComent(TXA) : "")) falla(G, TXA, 0, "Transacciones dice «se cobró la mitad» del viaje aunque lo cobrado fue menos (lo que quedaba)");
       if (T.noche && !/: retenido \? E2\([^\n]*\) : devT \|\| E2\(/.test(T.noche)) falla(G, ANTES.noche, 0, "«No llegaste / sin identificación» dice «No se cobró nada» aunque se haya devuelto o soltado (va devT primero)");
       for (const [f, re] of [["apps/web/lib/noche-reservas.ts", /puerta: "", dinero: "", \.\.\.extra \}/], ["apps/web/lib/fiestas-reservas.ts", /dev: "", dep: "", dinero: "", \.\.\.extra \}/], [VL, /dev: "", dinero: "", \.\.\.extra \}/]])
         if (!re.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "avisarCliente no pone {dinero} vacío por defecto: una plantilla con {dinero} saldría con la llave cruda"); }

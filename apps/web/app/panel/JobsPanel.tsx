@@ -10,6 +10,7 @@ import { usd } from "@/lib/dinero-comun";
 import { vacGuardarP, vacModulo, vacPaso, vacResponder } from "./acciones-jobs";
 import { panelTraducir } from "./acciones-traducir";
 import type { Ctx, Sec } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type JobsData = { lista?: VacPanel; det?: VacPanelDet | null; app?: string | null; hor?: { abre: number[]; a: number; z: number }; hoy?: { id: string; job: string; name: string; title: { es: string; en: string }; at: string }[] };
 const pl = (n: number, a: string, b: string) => `${n} ${n === 1 ? a : b}`;
@@ -157,8 +158,10 @@ function solicitud(c: Ctx): Sec {
 
 /* Editor (vac:new · vac:edit:{id} · vac:dup:{id}). */
 type FV = { t0: string; t1: string; kind: string; lo: string; hi: string; tips: boolean; dd: number[]; h0: number; h1: number; left: number; les: string; len: string; d0: string; d1: string; req: [string, string][]; ben: [string, string][]; reqN: string; benN: string; pub: boolean };
-const RQ: [string, string][] = [["Mayor de 18 años", "18 or older"], ["Poder estar de pie todo el turno", "Able to stand the whole shift"], ["Carro propio", "Own car"], ["Licencia de Pensilvania", "Pennsylvania license"], ["Experiencia en lo mismo", "Experience in the same work"], ["Puntual y responsable", "On time and reliable"]];
-const BN: [string, string][] = [["Comida del turno gratis", "Free shift meal"], ["Pago cada semana", "Paid weekly"], ["Propinas completas para ti", "You keep all tips"], ["Te enseñamos", "We train you"], ["Horario fijo", "Set schedule"], ["Aumento a los 90 días", "Raise after 90 days"]];
+/* [español del código, inglés del código, rótulo por E2]: las dos primeras son la identidad de lo elegido (se guarda tal cual; no se editan), el tercero es lo que se ve y entra al catálogo del CMS. */
+const RQ = (es: unknown): [string, string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["Mayor de 18 años", "18 or older", E2("Mayor de 18 años", "18 or older")], ["Poder estar de pie todo el turno", "Able to stand the whole shift", E2("Poder estar de pie todo el turno", "Able to stand the whole shift")], ["Carro propio", "Own car", E2("Carro propio", "Own car")], ["Licencia de Pensilvania", "Pennsylvania license", E2("Licencia de Pensilvania", "Pennsylvania license")], ["Experiencia en lo mismo", "Experience in the same work", E2("Experiencia en lo mismo", "Experience in the same work")], ["Puntual y responsable", "On time and reliable", E2("Puntual y responsable", "On time and reliable")]]; };
+/* [español del código, inglés del código, rótulo por E2]: las dos primeras son la identidad de lo elegido (se guarda tal cual; no se editan), el tercero es lo que se ve y entra al catálogo del CMS. */
+const BN = (es: unknown): [string, string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["Comida del turno gratis", "Free shift meal", E2("Comida del turno gratis", "Free shift meal")], ["Pago cada semana", "Paid weekly", E2("Pago cada semana", "Paid weekly")], ["Propinas completas para ti", "You keep all tips", E2("Propinas completas para ti", "You keep all tips")], ["Te enseñamos", "We train you", E2("Te enseñamos", "We train you")], ["Horario fijo", "Set schedule", E2("Horario fijo", "Set schedule")], ["Aumento a los 90 días", "Raise after 90 days", E2("Aumento a los 90 días", "Raise after 90 days")]]; };
 function editor(c: Ctx, v: string): Sec {
   const { E2, es, d } = c, edita = v.startsWith("edit:"), j0 = edita || v.startsWith("dup:") ? c.jobs?.det ?? null : null;
   if ((edita || v.startsWith("dup:")) && !j0) return noEsta(c);
@@ -191,15 +194,15 @@ function editor(c: Ctx, v: string): Sec {
     { type: "chips", k: E2("INGLÉS", "ENGLISH"), items: LGO.map(([k, l]) => ({ l, v: x.len === k ? "selected" : "filter", onClick: () => F.set({ len: k }) })) });
   out.push({ type: "group", k: E2("QUÉ VAS A HACER", "WHAT YOU WILL DO") },
     { type: "field", k: E2("DESCRIPCIÓN · OPCIONAL", "DESCRIPTION · OPTIONAL"), val: x.d0, area: true, rows: 3, max: 300, count: `${x.d0.length}/300`, ph: E2("Lo que hace en el día, con quién trabaja, si le enseñan.", "What the day looks like, who they work with, whether you train them."), onChange: (t) => F.set({ d0: t.slice(0, 300) }) });
-  const lista = (k: string, prop: "req" | "ben", PRE: [string, string][], N: "reqN" | "benN") => {
+  const lista = (k: string, prop: "req" | "ben", PRE: [string, string, string?][], N: "reqN" | "benN") => {
     const cur = x[prop], uni = [...PRE, ...cur.filter((y) => !PRE.some((p) => p[0] === y[0]))];
-    out.push({ type: "group", k }, { type: "chips", help: cur.length ? `${cur.length}${E2(" DE 5", " OF 5")}` : "", items: uni.map((y) => { const on = cur.some((z) => z[0] === y[0]); return { l: es ? y[0] : y[1] || y[0], v: on ? "selected" : "filter",
+    out.push({ type: "group", k }, { type: "chips", help: cur.length ? `${cur.length}${E2(" DE 5", " OF 5")}` : "", items: uni.map((y) => { const on = cur.some((z) => z[0] === y[0]); return { l: y[2] ?? (es ? y[0] : y[1] || y[0]), v: on ? "selected" : "filter",
       onClick: () => { if (on) return F.set({ [prop]: cur.filter((z) => z[0] !== y[0]) } as Partial<FV>); if (cur.length >= 5) { c.toast(E2("Máximo 5. Quita uno para cambiarlo.", "Up to 5. Remove one to swap it.")); return; } F.set({ [prop]: [...cur, [y[0], y[1]]] } as Partial<FV>); } }; }) });
     if (cur.length < 5) out.push({ type: "field", k: E2("AGREGAR OTRO", "ADD ANOTHER"), val: x[N], max: 40, onChange: (t) => F.set({ [N]: t.slice(0, 40) } as Partial<FV>) },
       { type: "acts", items: [{ l: E2("Agregar", "Add"), icon: "plus", v: "secondary", off: !x[N].trim(), onClick: () => { if (!x[N].trim()) return; F.set({ [prop]: [...cur, [x[N].trim(), ""]], [N]: "" } as Partial<FV>); } }] });
   };
-  lista(E2("LO QUE PIDES · HASTA 5", "WHAT YOU ASK · UP TO 5"), "req", RQ, "reqN");
-  lista(E2("LO QUE OFRECES · HASTA 5", "WHAT YOU OFFER · UP TO 5"), "ben", BN, "benN");
+  lista(E2("LO QUE PIDES · HASTA 5", "WHAT YOU ASK · UP TO 5"), "req", RQ(es), "reqN");
+  lista(E2("LO QUE OFRECES · HASTA 5", "WHAT YOU OFFER · UP TO 5"), "ben", BN(es), "benN");
   // 9n-2 · «Traducir con El Compa» (L319): el puesto y la descripción con el traductor propio; la persona lo revisa antes de guardar.
   const traducir = () => {
     if (!x.t0.trim()) { c.toast(E2("Escribe primero el puesto en español.", "Write the Spanish position first.")); return; }

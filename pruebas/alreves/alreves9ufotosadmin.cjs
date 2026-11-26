@@ -15,7 +15,7 @@ const casos = [
   [G, AM, 'v: mb(M.bytesVariantes)', 'v: mb(0)'],
   [G, AM, 'v: String(MP.convertidas)', 'v: String(0)'],
   [G, AM, '    ...bloquesMedios,\n', ''],
-  [G, AM, 'E("FOTOS A LA MEDIDA", "PHOTOS SIZED TO FIT")', 'E("FOTOS A LA MEDIDA", "FOTOS A LA MEDIDA")'],
+  [G, AM, 'E2("FOTOS A LA MEDIDA", "PHOTOS SIZED TO FIT")', 'E2("FOTOS A LA MEDIDA", "FOTOS A LA MEDIDA")'],
   // El bloque deja de ser solo lectura.
   [G, AM, 'v: String(MP.sinMaestra) }] },', 'v: String(MP.sinMaestra), onClick: () => {} }] },'],
   // La página pierde el permiso de Contenido.

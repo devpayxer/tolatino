@@ -15,7 +15,7 @@ const casos = [
   ['contrasteTexto', 'packages/ui/src/ds/layout/SiteFooter.js', "      font: '700 10px ' + mono,\n      letterSpacing: '.18em',\n      color: 'rgba(255,255,255,.62)'", "      font: '700 10px ' + mono,\n      letterSpacing: '.18em',\n      color: 'rgba(255,255,255,.42)'"],
   ['contrasteTexto', 'apps/web/app/(app)/ayuda/CentroAyuda.tsx', 'leading-normal text-white/75">', 'leading-normal text-white/40">'],
   ['contrasteTexto', 'packages/ui/src/ds/navigation/Tabs.js', "on ? 'var(--tl-ink)' : 'rgba(11,14,18,.6)';", "on ? 'var(--tl-ink)' : 'rgba(11,14,18,.42)';"],
-  ['contrasteTexto', 'apps/web/app/admin/Colas.tsx', 'letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E("CASO", "CASE")}', 'letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E("CASO", "CASE")}'],
+  ['contrasteTexto', 'apps/web/app/admin/Colas.tsx', 'letterSpacing: ".14em", color: "rgba(11,14,18,.6)" }}>{E2("CASO", "CASE")}', 'letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{E2("CASO", "CASE")}'],
   ['contrasteTexto', 'apps/web/app/(app)/cuenta/boletos/[codigo]/Boleto.tsx', 'tracking-[0.16em] text-ink/60">{cuando}', 'tracking-[0.16em] text-ink/45">{cuando}'],
   ['contrasteTexto', 'packages/ui/src/tokens.css', '--tl-text-muted: rgba(11,14,18,.6);', '--tl-text-muted: rgba(11,14,18,.5);'],
   ['contrasteTexto', 'apps/web/app/(app)/n/[id]/Resenas.tsx', 'tracking-[0.2em] text-ink/60";', 'tracking-[0.2em] text-ink/[.42]";'],

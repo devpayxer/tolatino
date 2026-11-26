@@ -190,7 +190,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, d
               </div>
               {kind === "pregunta" && (
                 <div><div style={K("")}>{E2("TEMA · OPCIONAL", "TOPIC · OPTIONAL")}</div>
-                  <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>{TEMAS.map(([id, a, b]) => <Chip key={id} variant={topic === id ? "selected" : "filter"} onClick={() => setTopic(topic === id ? "" : id)}>{es ? a : b}</Chip>)}</div>
+                  <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>{TEMAS(es).map(([id, l]) => <Chip key={id} variant={topic === id ? "selected" : "filter"} onClick={() => setTopic(topic === id ? "" : id)}>{l}</Chip>)}</div>
                   {topic === "salud" && <div style={{ marginTop: 8, font: "600 12px/1.45 Manrope,sans-serif", color: "var(--tl-danger)" }}>{E2("Sale con el aviso: una recomendación no reemplaza al médico; si es una emergencia, llama al 911.", "It shows the notice: a recommendation does not replace a doctor; if it is an emergency, call 911.")}</div>}
                 </div>
               )}

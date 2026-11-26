@@ -9,6 +9,7 @@ import { tomarSiguiente } from "./acciones-colas";
 import { elegirCiudad } from "./acciones";
 import { tec } from "@/lib/tec";
 import { IdiomaAdmin, type LangAdmin } from "./idioma-admin";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icono = UI.Icon as ComponentType<any>;
 
@@ -25,7 +26,7 @@ export type ItemNav = { key: string; label: string; icon: string; href: string |
 export type GrupoNav = { label: string; items: ItemNav[] };
 
 export function Shell({ yo, grupos, casos, ciudades = [], vista = null, lang = "es", children }: { yo: { nombre: string; rol: string; iniciales: string }; grupos: GrupoNav[]; casos: { n: number; late: boolean; tomar: boolean }; ciudades?: { id: string; nombre: string }[]; vista?: string | null; lang?: LangAdmin; children: ReactNode }) {
-  const E = (es: string, en: string) => (lang === "en" ? en : es);
+  const E2 = (es: string, en: string) => dosIdiomas(!(lang === "en"), es, en);
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -52,10 +53,10 @@ export function Shell({ yo, grupos, casos, ciudades = [], vista = null, lang = "
   // cinco segmentos: «Todas» y la ciudad elegida (tocarla pasa a la siguiente).
   const elegir = (id: string | null) => void elegirCiudad(id).then(() => router.refresh());
   const siguiente = () => { const i = ciudades.findIndex((c) => c.id === vista); elegir(ciudades[(i + 1) % ciudades.length]?.id ?? null); };
-  const todas = E("Todas", "All");
+  const todas = E2("Todas", "All");
   const segmentos = ciudades.length < 2 ? [{ label: todas, on: true }]
     : desk ? [{ label: todas, on: !vista, onClick: () => elegir(null) }, ...ciudades.map((c) => ({ label: c.nombre, on: vista === c.id, onClick: () => elegir(c.id) }))]
-    : [{ label: todas, on: !vista, onClick: () => elegir(null) }, { label: vista ? ciudades.find((c) => c.id === vista)?.nombre ?? E("Ciudad", "City") : E("Ciudad…", "City…"), on: !!vista, onClick: siguiente }];
+    : [{ label: todas, on: !vista, onClick: () => elegir(null) }, { label: vista ? ciudades.find((c) => c.id === vista)?.nombre ?? E2("Ciudad", "City") : E2("Ciudad…", "City…"), on: !!vista, onClick: siguiente }];
   return (
     <IdiomaAdmin lang={lang}>
     <div className="min-h-dvh bg-paper">
@@ -65,7 +66,7 @@ export function Shell({ yo, grupos, casos, ciudades = [], vista = null, lang = "
           desk={desk}
           assetBase="/assets/"
           onHome={() => router.push("/admin")}
-          searchPlaceholder={E("Buscar negocio, usuario, # de operación…", "Search business, user, order #…")}
+          searchPlaceholder={E2("Buscar negocio, usuario, # de operación…", "Search business, user, order #…")}
           onSearch={() => router.push("/admin/buscar")}
           onBell={() => router.push("/admin/colas")}
           cities={segmentos}
@@ -86,7 +87,7 @@ export function Shell({ yo, grupos, casos, ciudades = [], vista = null, lang = "
         /* Barra inferior del teléfono (Super Admin.dc.html SA:251-262): Inicio · Colas · Negocios · Usuarios.
            Transacciones llega en la Fase 2. */
         <nav style={{ position: "fixed", insetInline: 0, bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))" }}>
-          {([["/admin", "home", E("Inicio", "Home")], ["/admin/colas", "bell", E("Colas", "Queues")], ["/admin/negocios", "store", E("Negocios", "Businesses")], ["/admin/usuarios", "users", E("Usuarios", "Users")]] as const).map(([href, icon, l]) => {
+          {([["/admin", "home", E2("Inicio", "Home")], ["/admin/colas", "bell", E2("Colas", "Queues")], ["/admin/negocios", "store", E2("Negocios", "Businesses")], ["/admin/usuarios", "users", E2("Usuarios", "Users")]] as const).map(([href, icon, l]) => {
             const on = href === "/admin" ? ruta === "/admin" : ruta.startsWith(href);
             return (
               <div key={href} role="link" onClick={() => router.push(href)} {...tec(() => router.push(href))} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.6)" }}>
