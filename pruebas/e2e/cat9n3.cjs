@@ -51,6 +51,12 @@ const confirmar = async (p, motivo, cta) => { await p.locator('textarea').last()
   quitarMosaicos();
   ok(/^\/paginas\/.+\.(jpg|webp)$/.test(FAB), `precondición: la portada de fábrica de ${CAT} es un archivo propio (${FAB})`);
   const UANA = sql(`select id from users where phone = '+1${ADM}'`);
+  // 26 nov · Cada corrida sube 4 fotos como este Admin y el tope es de 10 por hora (cuenta las filas de media de la última hora, también las quitadas): la tercera
+  // corrida en una hora sobre la misma base chocaba. Las fotos de ESTA prueba (las de las categorías de prueba y las suyas ya reemplazadas) se fechan 2 horas antes, al
+  // empezar y al terminar; el tope no se toca ni se limpia nada ajeno (las fotos que este Admin suba en otra prueba siguen contando).
+  const envejecerMisFotos = () => sql(`update media set created_at = created_at - interval '2 hours' where uploaded_by = '${UANA}' and created_at > now() - interval '1 hour' and ((owner_kind = 'category' and (owner_id = '${CAT}' or owner_id like '${FIE}/%')) or (owner_kind = 'user' and status = 'removed' and removed_reason = 'replaced'))`);
+  envejecerMisFotos();
+  ok(Number(sql(`select count(*) from media where uploaded_by = '${UANA}' and created_at > now() - interval '1 hour'`)) <= 5, 'precondición: este Admin llega con cupo de fotos por hora (el tope de 10 no se toca)');
   const b = await chromium.launch(); const err = [], abiertas = [];
   const mk = async (o, tel) => { const cx = await b.newContext(o); abiertas.push(cx); await medios(cx); const p = await cx.newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_|status of 40/.test(x.text())) err.push('console: ' + x.text()); }); if (tel) await entrarComo(p, tel); return p; };
   try {
@@ -266,6 +272,7 @@ const confirmar = async (p, motivo, cta) => { await p.locator('textarea').last()
     sql(`update media set status = 'removed', removed_reason = 'replaced', removed_at = now() where owner_kind = 'category' and owner_id = '${CAT}' and status = 'visible'`);
     sql(`update categories set page_admin = '{}'::jsonb where id = '${CAT}'`);
     quitarMosaicos();
+    try { envejecerMisFotos(); } catch (e) { console.error('fotos', e.message); }
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close().catch(() => {});
   }

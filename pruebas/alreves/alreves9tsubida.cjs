@@ -1,4 +1,4 @@
-// Prueba al revés de los guardianes subidaConTope (19 nov; 22 nov: el turno de fotos, conFotoSubida), topeFotoSinNavegador, gotoDevuelveRespuesta y fotoComoPersona (20 nov) y anchoPropioRespetado (24 nov): toda subida lee el formulario con tope (lib/subida.ts) y contesta 413 al archivo grande,
+// Prueba al revés de los guardianes subidaConTope (19 nov; 22 nov: el turno de fotos, conFotoSubida), topeFotoSinNavegador, gotoDevuelveRespuesta y fotoComoPersona (20 nov) y anchoPropioRespetado (24 nov) y pruebasDevuelvenLaSemilla (26 nov): toda subida lee el formulario con tope (lib/subida.ts) y contesta 413 al archivo grande,
 // aunque el navegador no avise el tamaño. Se inyecta el defecto, el guardián debe fallar con SU mensaje ([subidaConTope]); se restaura.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -85,6 +85,13 @@ const casos = [
   ['fotoComoPersona', 'pruebas/e2e/msg9t.cjs', "await m.goto(B + `/cuenta/mensajes/${BIZ}`); await elegirFoto(m, FOTO2);", "await m.goto(B + `/cuenta/mensajes/${BIZ}`); await m.locator('input[type=file]').setInputFiles(FOTO2);"],
   ['fotoComoPersona', 'pruebas/lib/elegir-foto.cjs', "await fc.setFiles(archivo);", "await p.locator('input[type=file]').setInputFiles(archivo);"],
   ['fotoComoPersona', 'pruebas/lib/elegir-foto.cjs', "if (!resps.length) throw new Error('la foto elegida no se subió: no hubo POST a la ruta de fotos');", ""],
+  // 26 nov · pruebasDevuelvenLaSemilla: una prueba que escribe en los ajustes de la semilla y ya no devuelve en un finally; la que para las ofertas y no las devuelve tal cual (a11y9c, menu2b);
+  // una pendiente de la lista que ya sale en un finally; una que sale de la lista sin haberse arreglado.
+  ['pruebasDevuelvenLaSemilla', 'pruebas/e2e/sis9j.cjs', '  } finally {', '  } finalmente {'],
+  ['pruebasDevuelvenLaSemilla', 'pruebas/e2e/menu2b.cjs', "update business_posts set status = '${est}', stopped_at = ${st ?", "update business_posts set status = '${est}', parado = ${st ?"],
+  ['pruebasDevuelvenLaSemilla', 'pruebas/e2e/a11y9c.cjs', "update business_posts set status = '${est}', stopped_at = ${st ?", "update business_posts set status = '${est}', parado = ${st ?"],
+  ['pruebasDevuelvenLaSemilla', 'guardianes/run.mjs', 'adm7i anfAO app8e', 'adm7i sis9j anfAO app8e'],
+  ['pruebasDevuelvenLaSemilla', 'guardianes/run.mjs', 'adm7i anfAO app8e', 'anfAO app8e'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

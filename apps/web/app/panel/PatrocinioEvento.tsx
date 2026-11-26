@@ -81,7 +81,7 @@ export function patEvtBloques(c: Ctx, eventoId: string, x: PatEvtPanel | null | 
       const otra = !(sig && vivo) && !hastaEv && !!Ev.dia && diaDe(v.hasta, tz) <= Ev.dia, kk: DurE = v.dur === "month" ? "month" : "week";
       out.push({ type: "acts", items: [
         ...(otra ? [{ l: kk === "week" ? E2(`Renovar otra semana · ${$c(P.week)}`, `Renew another week · ${$c(P.week)}`) : E2(`Renovar otro mes · ${$c(P.month)}`, `Renew another month · ${$c(P.month)}`), v: "primary",
-          onClick: () => { const de = diaDe(v.hasta, tz); setUi({ pePaso: 2, peDur: kk, peDesde: de, peRenDe: v.id, peClave: uuid(), peRen: false }); void pevPuestosRenovar(d.id, eventoId, v.id, kk).then((r) => setUi({ peLib: { k: `${kk}:${de}`, c: r } })); } }] : []),
+          onClick: () => { const de = diaDe(v.hasta, tz); setUi({ pePaso: 2, peDur: kk, peDesde: de, peRenDe: v.id, peClave: uuid(), peRen: false, peLib: null }); void pevPuestosRenovar(d.id, eventoId, v.id, kk).then((r) => setUi({ peLib: { k: `${kk}:${de}`, c: r } })); } }] : []),
         { l: ui.peRecibo ? E2("Ocultar recibo", "Hide receipt") : E2("Ver recibo", "See receipt"), v: "secondary", onClick: () => setUi({ peRecibo: !ui.peRecibo }) },
         { l: act ? E2("Terminar antes", "End early") : E2("Cancelar reserva", "Cancel booking"), v: "secondary", onClick: () => setUi({ peTerminar: v.id }) },
       ] });

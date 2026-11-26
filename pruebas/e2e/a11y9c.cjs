@@ -128,7 +128,10 @@ const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/s
   const br = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', (e) => err.push(tag + ' ' + e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   const nuevo = async (ctxOpts) => { const c = await br.newContext(ctxOpts); await medios(c); const p = await c.newPage(); return p; };
+  // 26 nov · Las ofertas en vivo del negocio (la semilla trae una) se paran para medir el menú al precio de siempre: se guardan tal cual (estado, fin) y vuelven en restaurar().
+  let ofertas0 = '';
   const restaurar = () => {
+    try { for (const x of ofertas0.split(';').filter(Boolean)) { const [oid, est, st, fin] = x.split('|'); sql(`update business_posts set status = '${est}', stopped_at = ${st ? `'${st}'` : 'null'}, ends_at = ${fin ? `'${fin}'` : 'null'} where id = ${oid}`); } } catch {}
     try { sql(`update users set big_text = false where phone = '+1${MARISOL}'`); } catch {}
     try { sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`); sql(`update delivery_settings set auto_accept=false, prep_min=20 where business_id='${BIZ}'`); } catch {}
     try { sql(`update events set status = 'cancelled', cancelled_at = now(), cancelled_by = 'admin', cancel_reason = 'prueba' where title->>'es' like '%${TAG}%' and status <> 'cancelled'`);
@@ -142,6 +145,7 @@ const CLAVE = ['/', '/negocios', '/buscar?q=pollo', '/n/sabor-dominicano', '/n/s
     sql(`insert into menu_settings (business_id) values ('${BIZ}') on conflict (business_id) do update set pause_until = null`);
     sql(`update operations set respond_by = now() - interval '1 minute' where user_id = (select id from users where phone='+1${MARISOL}') and status = 'pending'`);
     sql(`update business_stats_cache set plan='pro' where business_id='${BIZ}'`); sql(`update platform_config set value='10' where key='free_ops_cap'`);
+    ofertas0 = sql(`select coalesce(string_agg(id || '|' || status || '|' || coalesce(stopped_at::text, '') || '|' || coalesce(ends_at::text, ''), ';'), '') from business_posts where business_id = '${BIZ}' and kind = 'oferta' and status = 'live'`);
     sql(`update business_posts set status = 'stopped' where business_id = '${BIZ}' and kind = 'oferta' and status = 'live'`);
     const m = await nuevo({ ...devices['iPhone 13'] }); watch(m, 'movil');
     await entrar(m, MARISOL);

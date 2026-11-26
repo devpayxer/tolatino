@@ -3008,15 +3008,29 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       ipad e iphone-se en Chromium (aquí no hay WebKit); verlos en verde en la próxima corrida nocturna de anchos (4 noches en rojo hasta el 24 nov).
 - [ ] **→ 9b** · **Una prueba nueva que mide a un ancho concreto** usa `ENT.anchoPropio` (o `ENT.escritorioPropio` si necesita cursor); si vale a cualquier
       ancho, mide contra `innerWidth`/`viewportSize()`. El guardián `anchoPropioRespetado` cubre din9t6b, din9t7b y din9t10b, no una prueba nueva con un ancho escrito.
-- [ ] **→ 9b** · **Pruebas que dan por hecho un dato de la semilla que otra prueba cambia (24 nov):** `fic9cab` exigía la oferta en vivo de
+- [x] **→ 9b** · **Pruebas que dan por hecho un dato de la semilla que otra prueba cambia (24 nov):** `fic9cab` exigía la oferta en vivo de
       sabor-dominicano y `a11y9c` la apaga sin devolverla; en una dirigida con otro reparto cayó dos veces. Ahora fic9cab pone la suya y la deja como
       estaba. Falta barrer la clase: precondiciones `ok(... sql(select count ...))` sobre datos compartidos que otra prueba modifica.
+      _Hecho (26 nov, hecho por Sonnet):_ barrida la clase en `pruebas/e2e` (los `update`/`delete` sobre horarios, entrega, reservas, plan, Configuración,
+      banderas, ciudades, reglas y ofertas, cruzados con quién lee esos datos). La pareja real era la oferta en vivo de `sabor-dominicano`: `a11y9c` y `menu2b` la
+      paraban y no la devolvían igual (`menu2b` solo ponía en vivo «las paradas sin autor»; `a11y9c` nunca); ahora guardan estado y fin tal cual y los devuelven
+      (`a11y9c` en su `finally`, `menu2b` también si cae). `fic008` devuelve el fin de la oferta de la semilla en su `finally` (antes lo dejaba en «sin fin» y, si
+      caía entre medias, vencida). Lo demás ya se pone su dato o devuelve el valor de la semilla al final. Guardián nuevo `pruebasDevuelvenLaSemilla`: una prueba que
+      escribe en esas tablas sin `finally` ni `process.on('exit')`, o que para las ofertas sin devolverlas tal cual, es roja; las 34 que ya devolvían solo al final o
+      en el `catch` están en `PENDIENTES_SEMILLA` (un trinquete, solo baja; las pasa a `finally` quien las toque). Al revés: casos en `alreves9tsubida` (76/76).
+      Correrlas en los dos órdenes (`a11y9c fic9cab fic008 menu2b` y al revés) deja la oferta como estaba.
 - [ ] **→ 9b** · **Mientras una dirigida ocupa la rama, un ajuste del fundador espera (24 nov):** se resolvió apartando el paquete con un commit de
       reversión. Mejor: lanzar las dirigidas largas solo cuando no hay ronda de ajustes, o que la herramienta suba un ajuste sobre `main` sin pasar por la rama.
-- [ ] **→ 9b** · **«Renovar otro mes»: el rechazo del servidor sin cobro** (página oculta) no lo ejercita `pat002` §8 (el botón apagado nunca llama a
+- [x] **→ 9b** · **«Renovar otro mes»: el rechazo del servidor sin cobro** (página oculta) no lo ejercita `pat002` §8 (el botón apagado nunca llama a
       `patComprar`); y «Renovar» no limpia `patLib` (`Patrocinio.tsx:108`, `PatrocinioEvento.tsx:81`): unos milisegundos «Pagar» usa las fechas de la consulta
       anterior (el servidor recalcula; sin cobro indebido). Revisión de Fable, 24 nov.
-- [ ] **→ 9b** · **`cat9n3` sube 4 fotos por corrida:** la tercera corrida en una hora sobre la misma base choca con el tope de 10 fotos por hora (en CI la base es nueva).
+      _Hecho (26 nov, hecho por Sonnet):_ `pat002` §8 guarda la petición real de «Pagar» (la acción del servidor), y tras la compra la repite con otra clave de intento y
+      la página oculta: el servidor contesta «Tu página tiene que estar publicada para patrocinar» y no hay cobro ni patrocinio nuevo. «Renovar otra semana / otro mes»
+      limpia `patLib` (`Patrocinio.tsx`) y `peLib` (`PatrocinioEvento.tsx`) al abrir: «Pagar» nunca usa las fechas de la consulta anterior. Sin tocar textos ni el dinero del servidor.
+- [x] **→ 9b** · **`cat9n3` sube 4 fotos por corrida:** la tercera corrida en una hora sobre la misma base choca con el tope de 10 fotos por hora (en CI la base es nueva).
+      _Hecho (26 nov, hecho por Sonnet):_ `cat9n3` fecha 2 horas antes las fotos de la hora que son suyas (las de sus categorías de prueba y las suyas ya reemplazadas),
+      al empezar y en su `finally`, y comprueba que el Admin llega con cupo; el tope (10 por hora) no se toca y las fotos que ese Admin suba en otra prueba siguen contando.
+      Tres corridas seguidas en una hora sobre la misma base, en verde.
 - [x] **→ 9u** · **CI: la señal rápida corre textos dos veces** (el guardián `alrevesConSuTexto` y el paso propio); en la subida ya no (decisión AR). Arreglarlo en
       `ci.yml` cuando toque una corrida completa por otra razón (un cambio de `.github/` obliga a la corrida completa). _Ya estaba (comprobado el 24 nov):
       la señal rápida solo corre `pnpm guardianes`, que lleva los textos dentro (`alrevesConSuTexto`); no hay paso propio de textos._

@@ -12,6 +12,9 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
 const fila = (p, nombre) => p.locator('[data-msec^="m-"]:not([data-msec="m-pop"]) div.grid').filter({ has: p.getByText(nombre, { exact: true }) }).last();
 const MARISOL = "(select id from users where phone='+15705550122')";
 
+// 26 nov · Se guardan tal cual (estado, fin) las ofertas en vivo que se paran, y vuelven esas mismas (no «las paradas sin autor»: podían ser otras).
+const ofertas0 = sql(`select coalesce(string_agg(id || '|' || status || '|' || coalesce(stopped_at::text, '') || '|' || coalesce(ends_at::text, ''), ';'), '') from business_posts where business_id = 'sabor-dominicano' and kind = 'oferta' and status = 'live'`);
+const devolverOfertas = () => { for (const x of ofertas0.split(';').filter(Boolean)) { const [oid, est, st, fin] = x.split('|'); sql(`update business_posts set status = '${est}', stopped_at = ${st ? `'${st}'` : 'null'}, ends_at = ${fin ? `'${fin}'` : 'null'} where id = ${oid}`); } };
 (async () => {
   // Las ofertas de Novedades cambian el precio: esta prueba mira el precio del menú.
   sql(`update business_posts set status = 'stopped' where business_id = 'sabor-dominicano' and kind = 'oferta' and status = 'live'`);
@@ -170,5 +173,5 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   // Restaurar horario de la semilla
   sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='${BIZ}' and module=''`);
   console.log('errores:', err.length ? err : 'ninguno'); await b.close();
-  sql(`update business_posts set status = 'live' where business_id = 'sabor-dominicano' and kind = 'oferta' and status = 'stopped' and created_by is null`);
-})().catch(e => { console.error('FALLO', e.message.split('\n').slice(0, 6).join(' | ')); try { sql(`update business_posts set status = 'live' where business_id = 'sabor-dominicano' and kind = 'oferta' and status = 'stopped' and created_by is null`); sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='sabor-dominicano' and module=''`); sql(`update business_stats_cache set plan='pro' where business_id='sabor-dominicano'`); sql(`update platform_config set value='10' where key='free_ops_cap'`); } catch {} process.exit(1); });
+  devolverOfertas();
+})().catch(e => { console.error('FALLO', e.message.split('\n').slice(0, 6).join(' | ')); try { devolverOfertas(); sql(`update business_hours set ranges='[["11:00","21:00"]]'::jsonb where business_id='sabor-dominicano' and module=''`); sql(`update business_stats_cache set plan='pro' where business_id='sabor-dominicano'`); sql(`update platform_config set value='10' where key='free_ops_cap'`); } catch {} process.exit(1); });

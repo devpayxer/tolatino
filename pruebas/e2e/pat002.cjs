@@ -380,12 +380,22 @@ let OP = null;
     ok(await espera(async () => (await texto(pd)).includes(esperadoZ)), `FECHAS: las del período que se va a cobrar («${esperadoZ}»)`);
     ok(await pagarZ(pd).isEnabled(), `«Pagar ${require('../lib/usd.cjs')(MES)}» (el precio del mes de Configuración) está encendido`);
     await pd.screenshot({ path: OUT + 'pat002-renovar-lejos-1360.png', fullPage: true });
+    // 26 nov · La petición real de «Pagar» (la acción del servidor) se guarda para repetirla después con la página oculta: lo que el botón apagado nunca manda.
+    const capZ = []; pd.on('request', (r) => { const a = r.headers()['next-action']; if (a && r.method() === 'POST' && /"clave"/.test(r.postData() || '')) capZ.push({ url: r.url(), a, body: r.postData(), tree: r.headers()['next-router-state-tree'] }); });
     await pagarZ(pd).click();
     ok(await espera(async () => sql(`select count(*) from sponsorships where renewed_from = ${RZ1}`) === '1'), 'el pago crea la renovación encadenada');
     const RZ2 = sql(`select id from sponsorships where renewed_from = ${RZ1}`);
     ok(sql(`select to_char(starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || ' → ' || to_char(ends_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || '|' || status || '|' || duration || '|' || price_cents from sponsorships where id = ${RZ2}`)
       === `${HZ} 00:00 → ${HZ2} 00:00|reservado|month|${MES}`, 'lo cobrado es lo que enseñó la pantalla: las mismas fechas, 1 mes reservado, el precio del mes');
     ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'negocio' and ref_id = ${RZ2}`) === `1|${MES}|renovacion` && Number(cobrosZ()) === Number(antesZ) + 1, 'un solo cobro de renovación por el precio del mes');
+    // El rechazo del servidor sin cobro: la misma petición de «Pagar», con otra clave de intento (no la cubre la idempotencia) y la página oculta.
+    ok(capZ.length === 1, `se capturó la petición real de «Pagar» (${capZ.length})`);
+    const claveZ = '00000000-0000-4000-8000-000000009902', cuerpoZ = JSON.parse(capZ[0].body); cuerpoZ[1].clave = claveZ;
+    const pagosZ = sql(`select count(*) from sponsorship_payments where kind = 'negocio' and business_id = '${BIZ}'`), patrociniosZ = sql(`select count(*) from sponsorships where business_id = '${BIZ}'`);
+    ocultar();
+    let rZ; try { rZ = await pd.evaluate(async ([u, a, b, t]) => { const x = await fetch(u, { method: 'POST', headers: { 'next-action': a, 'content-type': 'text/plain;charset=UTF-8', accept: 'text/x-component', ...(t ? { 'next-router-state-tree': t } : {}) }, body: b }); return x.status + ' ' + (await x.text()); }, [capZ[0].url, capZ[0].a, JSON.stringify(cuerpoZ), capZ[0].tree]); } finally { sql(`update businesses set status = 'active' where id = '${BIZ}'`); }
+    ok(/Tu página tiene que estar publicada para patrocinar/.test(rZ) && !/"ok":true/.test(rZ), `con la página oculta el servidor rechaza la compra (${rZ.slice(0, 90).replace(/\s+/g, ' ')})`);
+    ok(sql(`select count(*) from sponsorship_payments where kind = 'negocio' and business_id = '${BIZ}'`) === pagosZ && sql(`select count(*) from sponsorships where business_id = '${BIZ}'`) === patrociniosZ, 'el rechazo no cobra ni crea un patrocinio nuevo');
     terminarVivos('NEG-FOOD');
     ok(!err.length, 'sin errores en las páginas: ' + (err.join(' · ') || 'ninguno'));
     console.log(`\npat002 · ${n} comprobaciones en verde`);

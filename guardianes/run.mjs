@@ -14469,6 +14469,33 @@ const guardianes = {
     if (/if \(soloRuido\) return null;/.test(s) || !/if \(soloRuido\) return docResp &&/.test(s) || !/r\.request\(\)\.isNavigationRequest\(\) && r\.frame\(\) === page\.mainFrame\(\)\) docResp = r;/.test(s))
       falla(G, F, 0, "el goto de WebKit que sigue sin «load» no devuelve la respuesta del documento (la prueba que mira su status cae)");
   },
+  /* 26 nov · pruebasDevuelvenLaSemilla (LAUNCH «Pruebas que dan por hecho un dato de la semilla que otra prueba cambia»): fic9cab exigía la oferta en vivo
+     de sabor-dominicano y a11y9c la apagaba sin devolverla; en una dirigida con otro reparto cayó dos veces. La clase: una prueba de punta a punta que
+     ESCRIBE en una tabla de ajustes de la semilla (horarios, entrega, reservas, plan, Configuración, banderas, ciudades, reglas) y no la devuelve en un
+     finally o al salir (process.on('exit')), o que para las ofertas en vivo de un negocio y no las devuelve TAL CUAL (estado, fin: «las paradas sin autor»
+     podían ser otras). Esa prueba deja la base distinta para la que corre después. Lo que se pide: la prueba se pone su propio dato y lo deja como estaba
+     (fic9cab) o devuelve lo que cambió en un finally (a11y9c, fic008). PENDIENTES_SEMILLA son las que ya escribían así (devuelven al final o en el
+     catch, no en un finally): un trinquete, solo baja; una nueva con ese defecto es rojo y una pendiente que ya sale en un finally se saca de la lista.
+     Al revés: alreves9tsubida (casos pruebasDevuelvenLaSemilla). */
+  pruebasDevuelvenLaSemilla() {
+    const G = "pruebasDevuelvenLaSemilla";
+    const PENDIENTES_SEMILLA = new Set(("adm7i anfAO app8e apt4q autos4ic avisos2j cambio2k com5d compa7c compa7d compa7e compa7g compa7h din2o dlv2f3 dlv2f4 dlvsrv env4q free2b lay4r menu2b merc4o noc4a noc4b noc4c nov2g pagos2d pedidos2c plan2m planes2n rep2l rsvpanel sop7b vis4ie").split(" "));
+    const TABLAS = /\b(?:update|delete from)\s+(?:business_hours|special_hours|delivery_settings|menu_settings|reservation_settings|retail_settings|noche_settings|compa_business_settings|business_stats_cache|feature_flags|platform_config|cities|mod_rules)\b/i;
+    const PARA_OFERTAS = /update business_posts set status = 'stopped'[^;`]*kind = 'oferta'/;
+    const hallados = new Set();
+    for (const f of archivos) {
+      const m = /^pruebas\/e2e\/([^/]+)\.cjs$/.exec(f);
+      if (!m) continue;
+      const t = readFileSync(f, "utf8"), nombre = m[1];
+      const escribe = TABLAS.test(t) || PARA_OFERTAS.test(t), sale = /\bfinally\s*\{/.test(t) || /process\.on\(['"]exit['"]/.test(t);
+      if (escribe && !sale) {
+        hallados.add(nombre);
+        if (!PENDIENTES_SEMILLA.has(nombre)) falla(G, f, 0, "escribe en una tabla de ajustes de la semilla (horarios, entrega, plan, Configuración, banderas…) y no lo devuelve en un finally ni en process.on('exit'): la prueba que corra después lo encuentra cambiado (ponerse su propio dato y dejarlo como estaba, como fic9cab)");
+      }
+      if (PARA_OFERTAS.test(t) && !/set status = '\$\{est\}', stopped_at = /.test(t)) falla(G, f, 0, "para las ofertas en vivo y no las devuelve tal cual (estado, stopped_at, ends_at guardados antes): «las paradas sin autor» podían ser otras (a11y9c, menu2b)");
+    }
+    for (const k of PENDIENTES_SEMILLA) if (!hallados.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_SEMILLA lista «${k}» y ya devuelve en un finally (o no escribe): sácala de la lista`);
+  },
   /* 24 nov · anchoPropioRespetado (la corrida de anchos de cada noche, 4 noches en rojo: 45330028847): la precarga del dispositivo cambia CADA contexto
      al ancho del dispositivo (375, 834…), y una prueba que comprueba algo A un ancho (320 del piso, 640, una lista de anchos, las tarjetas a 390) lo
      medía en otro. Esa prueba pide su ancho con anchoPropio(w, h) (pruebas/lib/entorno.cjs: el viewport lleva la marca Symbol.for) y la precarga lo

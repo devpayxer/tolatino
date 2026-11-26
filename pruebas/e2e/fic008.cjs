@@ -22,6 +22,9 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
   ok(sql(`select count(*) from items where business_id = '${TIENDA}' and module = 'shop' and name->>'es' = 'Cartera' and status = 'live' and removed_at is null and (stock_mode = 'none' or stock_left > 0)`) === '1', 'precondición: la Cartera a la venta');
   // Precondición propia: Sabor Dominicano abierto mientras corre (la semilla cierra a las 9 PM y, cerrado, el menú no lleva «+»). Vuelve a su horario al terminar.
   const volver = abiertoTodoElDia(COMIDA);
+  // 26 nov · La oferta de la semilla se termina un momento (y la propia se quita): ambas cosas vuelven en el finally, también si la prueba cae a medias.
+  let propia = null, finOrig = '';
+  const devolverOferta = () => { if (propia) sql(`update business_posts set status = 'removed' where id = ${propia}`); for (const x of finOrig.split(';').filter(Boolean)) { const [oid, fin] = x.split('='); sql(`update business_posts set ends_at = ${fin ? `'${fin}'` : 'null'} where id = ${oid}`); } };
   const b = await chromium.launch(); const abiertas = [];
   try {
     const cm = await b.newContext({ ...devices['iPhone 13'] }), cd = await b.newContext({ viewport: { width: 1360, height: 900 } }); abiertas.push(cm, cd);
@@ -37,7 +40,6 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
     const MOF = sql(`select id from items where business_id = '${COMIDA}' and name->>'es' = 'Mofongo de chicharrón' and removed_at is null and status = 'live' limit 1`);
     const BASE = +sql(`select price_cents from items where id = ${MOF}`);
     // Precondición propia: una oferta en vivo para todos a $10 (la semilla trae una; si venció o se quitó, la prueba pone la suya y la quita al final).
-    let propia = null;
     if (sql(`select coalesce(oferta_precio(${MOF}, null)::text, '')`) !== '1000') {
       propia = sql(`insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, price_was_cents, price_now_cents, audience, publish_at, created_at)
         values ('${COMIDA}', 'hzl', 'oferta', 'Mofongo a $10 (prueba fic008)', 'Prueba.', 'item', ${MOF}, ${BASE}, 1000, 'all', now(), now()) returning id`).split('\n')[0];
@@ -52,14 +54,15 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
     ok(await antes.first().evaluate((el) => (el.previousElementSibling?.textContent ?? '') === 'Antes '), 'el lector de pantalla oye «Antes»');
     ok((await m.locator('[data-screen-label="Ficha · menú"]').getByText('$10', { exact: true }).count()) > 0, 'y el precio que se cobra es el de la oferta ($10)');
     await m.screenshot({ path: OUT + 'fic008-comida-oferta-390.png' });
-    if (propia) sql(`update business_posts set status = 'removed' where id = ${propia}`);
+    if (propia) { sql(`update business_posts set status = 'removed' where id = ${propia}`); propia = null; }
     else {
       // Sin oferta en vivo, ni rastro del tachado: la de la semilla se termina un momento y se vuelve a abrir.
       const sem = sql(`select string_agg(id::text, ',') from business_posts where item_id = ${MOF} and kind = 'oferta' and status = 'live' and (ends_at is null or ends_at > now())`);
+      finOrig = sql(`select string_agg(id || '=' || coalesce(ends_at::text, ''), ';') from business_posts where id in (${sem})`);
       sql(`update business_posts set ends_at = now() - interval '1 second' where id in (${sem})`);
       await m.reload(); await m.locator('[data-screen-label="Ficha · menú"]').getByText('Mofongo de chicharrón').first().waitFor();
       ok((await antes.count()) === 0, 'sin oferta en vivo no hay precio tachado');
-      sql(`update business_posts set ends_at = null where id in (${sem})`);
+      devolverOferta(); finOrig = '';
     }
 
     console.log('2 · Mercado: + directo y la barra negra «Ver pedido»');
@@ -93,6 +96,7 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
     console.log(`\n${n} ✓ · fic008`);
   } finally {
     try { volver(); } catch (e) { console.error('horario', e.message); }
+    try { devolverOferta(); } catch (e) { console.error('oferta', e.message); }
     for (const c of abiertas) await c.close().catch(() => {});
     await b.close();
   }
