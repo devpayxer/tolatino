@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 24 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 21 nov 2026 (media mañana). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
+_Actualizado: 26 nov 2026 (09:40 UTC: ver el primer punto de «Estado»). Antes: 24 nov 2026 (tarde). Antes: 21 nov 2026 (media mañana). Antes: 20 nov 2026 (tarde). Antes: 14 nov 2026 (9o hecho en su rama: producción como código y ensayada —el ensayo en máquinas no corrió—; ver «Fase 9 · 9o» al final. Antes: 9g). Plan de la Fase 9: `docs/diseno/plan/fase9-apertura.md`._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -20,6 +20,13 @@ _Actualizado: 24 nov 2026 (tarde: ver el primer punto de «Estado»). Antes: 21 
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **26 nov (09:40 UTC) · `main` = `pruebas` = 87e7dc2, servido.** Hecho hoy (cada paquete con su revisión rápida del CI y `main` en verde
+  después): el dinero en pantalla con una sola regla (`usd`) y su guardián `dineroConUsd`; M1–M5 de la cancelación tarde; ninguna retención se
+  suelta en silencio (`cobros › soltarSuelta`, guardián `liberarSoloPorLaRegla`, e2e `din9z`) y la renovada / la que se suelta dicen lo que pasó
+  en libro, aviso y pantalla (0226); el patrocinio mensual con su ancla (e2e `pat9tmes`); las pruebas devuelven lo que cambian de la semilla
+  (guardián `pruebasDevuelvenLaSemilla`); textos que elegían idioma por índice y todo el Super Admin pasan por E2 (catálogo 10 109 → 15 901);
+  `main` en rojo dos veces (compa7f «$12.00»; cho4y buscaba «4242» en el HTML del build) arreglado con guardián `sinDigitosEnHtml`. En curso:
+  las ~30 tablas del Super Admin que faltan (Sonnet) y la ventana / reclamos del barrido de cobros (Opus). Lo abierto, en LAUNCH.
 - **25 nov (09:30 UTC) · `main` = `pruebas` = 1f259a4, servido.** La clase «el dinero dice lo decidido» cerrada en lo grande: además de lo de
   abajo, cancela el cliente y evento privado (0221), avisos al negocio y retenciones con `soltarRetencion` (0222), citas, mercado, apartados y
   pedidos (0223); `main` en rojo un rato por `evt6a` (fecha a fin de mes) arreglado con guardián (cac5d93). Restos menores en LAUNCH.
