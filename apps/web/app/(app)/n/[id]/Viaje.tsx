@@ -17,7 +17,7 @@ type N = "Icon" | "Button";
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
-const SALE: Record<string, [string, string]> = { sab: ["Sábado", "Saturday"], mie: ["Miércoles", "Wednesday"], "15d": ["Cada 15 días", "Every 2 weeks"] };
+const SALE = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { sab: E2("Sábado", "Saturday"), mie: E2("Miércoles", "Wednesday"), "15d": E2("Cada 15 días", "Every 2 weeks") }; };
 
 export function useViaje(tp: TransPublico | null, es: boolean, pro: boolean) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
@@ -38,7 +38,7 @@ export function useViaje(tp: TransPublico | null, es: boolean, pro: boolean) {
   const desde = !pro ? (tp.h24 ? E2("Abierto 24 horas", "Open 24 hours") : E2("Llama para tu viaje", "Call about your trip")) : precios.length ? `${E2("Desde ", "From ")}${usd(Math.min(...precios))}` : E2("Servicios", "Services");
   const disp = tp.h24 ? "24/7" : h?.hoy ? E2("Hoy", "Today") : E2("Con reserva", "By booking");
   const riel: { k: string; v: string }[] = h?.kind === "caja" && h.shipDay
-    ? [{ k: E2("PRECIO", "PRICE"), v: E2("Cerrado", "Fixed") }, { k: E2("SALE", "SHIPS"), v: es ? SALE[h.shipDay]![0] : SALE[h.shipDay]![1] }, { k: E2("LLEGA EN", "ARRIVES IN"), v: h.shipWeeks ? E2(`${h.shipWeeks.replace("-", " a ")} semanas`, `${h.shipWeeks.replace("-", " to ")} weeks`) : "—" }]
+    ? [{ k: E2("PRECIO", "PRICE"), v: E2("Cerrado", "Fixed") }, { k: E2("SALE", "SHIPS"), v: SALE(es)[h.shipDay]! }, { k: E2("LLEGA EN", "ARRIVES IN"), v: h.shipWeeks ? E2(`${h.shipWeeks.replace("-", " a ")} semanas`, `${h.shipWeeks.replace("-", " to ")} weeks`) : "—" }]
     : [{ k: E2("PRECIO", "PRICE"), v: E2("Cerrado", "Fixed") }, { k: E2("DISPONIBLE", "AVAILABLE"), v: disp }, h?.rampa ? { k: E2("RAMPA", "RAMP"), v: E2("Sí", "Yes") } : { k: E2("CRUZA ESTADOS", "CROSSES STATES"), v: tp.tags.includes("estados") ? E2("Sí", "Yes") : E2("No", "No") }];
   const llamar = () => { if (tp.negocio.telefono) location.href = `tel:${tp.negocio.telefono}`; };
   return { tp, es, E2, nm, pro, secs, notes, riel, desde, linea, hoja, router, llamar,

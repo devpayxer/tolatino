@@ -8,6 +8,7 @@ import type { FiltroMesa, FilaMesa, mesaDetalle, mesasPanel, rsvAjustes } from "
 import { mesaCambio, mesaPaso, reservasAjustes, reservasBloqueo, reservasModulo } from "./acciones-reservas";
 import { evpEnReservaciones } from "./EventoPrivado";
 import type { Ctx, Editor } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type RsvPanel = {
   vivas?: FilaMesa[]; lista?: Awaited<ReturnType<typeof mesasPanel>>; f?: FiltroMesa; q?: string; pendPed?: number; pendRsv?: number;
@@ -18,10 +19,10 @@ type Paso = "confirmar" | "otra" | "nohay" | "llegaron" | "nollegaron" | "sefuer
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const AREAS = [["salon", "Salón", "Dining room", "restaurant"], ["terraza", "Terraza", "Patio", "coffee"], ["barra", "Barra", "Bar", "drink"]] as const;
 const SZ = [2, 4, 6, 8] as const;
-const MDAY: [string, string][] = [["Dom", "Sun"], ["Lun", "Mon"], ["Mar", "Tue"], ["Mié", "Wed"], ["Jue", "Thu"], ["Vie", "Fri"], ["Sáb", "Sat"]];
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
-const OCC: Record<string, [string, string]> = { cumple: ["Cumpleaños", "Birthday"], aniv: ["Aniversario", "Anniversary"], cita: ["Cita", "Date night"], neg: ["Negocios", "Business"], cele: ["Celebración", "Celebration"] };
-const NEED: Record<string, [string, string]> = { bebe: ["Silla para bebé", "High chair"], ruedas: ["Silla de ruedas", "Wheelchair"], alergia: ["Alergias", "Allergies"], tranq: ["Mesa tranquila", "Quiet table"] };
+const MDAY = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")]; };
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const OCC = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { cumple: E2("Cumpleaños", "Birthday"), aniv: E2("Aniversario", "Anniversary"), cita: E2("Cita", "Date night"), neg: E2("Negocios", "Business"), cele: E2("Celebración", "Celebration") }; };
+const NEED = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { bebe: E2("Silla para bebé", "High chair"), ruedas: E2("Silla de ruedas", "Wheelchair"), alergia: E2("Alergias", "Allergies"), tranq: E2("Mesa tranquila", "Quiet table") }; };
 const masDias = (ymd: string, n: number) => { const d = new Date(`${ymd}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
@@ -30,9 +31,9 @@ const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
 });
 const areaL = (c: Ctx, k: string) => { const a = AREAS.find((z) => z[0] === k); return a ? (c.es ? a[1] : a[2]) : k; };
 const diaL = (c: Ctx, ymd: string, n: number) => {
-  const d = new Date(`${ymd}T12:00:00Z`), w = MDAY[d.getUTCDay()]!, m = MES[d.getUTCMonth()]!, num = d.getUTCDate();
-  const base = c.es ? `${num} ${m[0]}` : `${m[1]} ${num}`;
-  return n === 0 ? `${c.E2("Hoy", "Today")} ${base}` : n === 1 ? `${c.E2("Mañana", "Tomorrow")} ${base}` : `${c.es ? w[0] : w[1]} ${base}`;
+  const d = new Date(`${ymd}T12:00:00Z`), w = MDAY(c.es)[d.getUTCDay()]!, m = MES(c.es)[d.getUTCMonth()]!, num = d.getUTCDate();
+  const base = c.es ? `${num} ${m}` : `${m} ${num}`;
+  return n === 0 ? `${c.E2("Hoy", "Today")} ${base}` : n === 1 ? `${c.E2("Mañana", "Tomorrow")} ${base}` : `${w} ${base}`;
 };
 
 /* Responder o mover una reservación; el aviso dice lo que ve el cliente. */
@@ -83,7 +84,7 @@ export function rsvDetalle(c: Ctx): Sec {
       : E2(`Ya vino ${x.historial.vino} ${x.historial.vino === 1 ? "vez" : "veces"} en el último año. Nunca dejó la mesa vacía.`, `They came ${x.historial.vino} ${x.historial.vino === 1 ? "time" : "times"} in the last year. Never a no-show.`) });
   if (x.tarde) out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Avisó que llega ${x.tarde} min tarde. Le guardas la mesa ${x.hold} min después de la hora.`, `They said they will be ${x.tarde} min late. You hold the table ${x.hold} min past the time.`) });
   if (x.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: `${E2("Nota del cliente: ", "Client note: ")}${x.nota}` });
-  const extra = [x.occ ? { icon: "star", t: E2("Ocasión", "Occasion"), s: es ? OCC[x.occ]?.[0] : OCC[x.occ]?.[1] } : null, x.needs.length ? { icon: "users", t: E2("Necesitan", "Needs"), s: x.needs.map((k) => (es ? NEED[k]?.[0] : NEED[k]?.[1])).join(" · ") } : null]
+  const extra = [x.occ ? { icon: "star", t: E2("Ocasión", "Occasion"), s: OCC(es)[x.occ] } : null, x.needs.length ? { icon: "users", t: E2("Necesitan", "Needs"), s: x.needs.map((k) => (NEED(es)[k])).join(" · ") } : null]
     .filter(Boolean).map((r) => ({ ...r!, compact: true, chev: false } as Fila));
   if (extra.length) out.push({ type: "rows", k: E2("DETALLE", "DETAIL"), items: extra });
   if (x.st === "alt" && x.alt) out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Propusiste las ${hora(x.alt.h)} · ${areaL(c, x.alt.area)}. El cliente tiene hasta las ${x.alt.hasta} para responder.`, `You proposed ${hora(x.alt.h)} · ${areaL(c, x.alt.area)}. The client has until ${x.alt.hasta} to reply.`) });
@@ -199,7 +200,7 @@ export function reservasModBloques(c: Ctx): Sec {
     : noToday ? `${E2("Hoy no se reserva", "No bookings today")}${blk0 ? E2(" · día cerrado", " · day closed") : !abiertos.has(a.dow) || a.cerradoHoy ? E2(" · cierras hoy", " · closed today") : ""}`
     : svOn.map((z) => `${z === "almuerzo" ? E2("Almuerzo ", "Lunch ") : E2("Cena ", "Dinner ")}${hora(v.sv[z].f)}–${hora(v.sv[z].t)}`).join(" · ");
   const [, mm, dd] = a.hoy.split("-").map(Number);
-  out.push({ type: "rvsum", icon: "restaurant", t: `${E2("Hoy", "Today")} · ${es ? `${MDAY[a.dow]![0].toLowerCase()} ${dd} ${MES[mm! - 1]![0]}` : `${MDAY[a.dow]![1]} ${MES[mm! - 1]![1]} ${dd}`}`, s: stS,
+  out.push({ type: "rvsum", icon: "restaurant", t: `${E2("Hoy", "Today")} · ${es ? `${MDAY(es)[a.dow]!.toLowerCase()} ${dd} ${MES(es)[mm! - 1]!}` : `${MDAY(es)[a.dow]!} ${MES(es)[mm! - 1]!} ${dd}`}`, s: stS,
     tag: a.admOff ? E2("PAUSADAS", "PAUSED") : !a.on ? E2("APAGADAS", "OFF") : noToday ? E2("CERRADO", "CLOSED") : nP ? `${nP}${E2(" POR CONFIRMAR", " TO CONFIRM")}` : E2("ABIERTAS", "OPEN"),
     tone: a.admOff || !a.on ? "danger" : noToday ? "neutral" : nP ? "action" : "signal",
     progT: `${pplT}${E2(" personas hoy de ", " guests today of ")}${seatT}${E2(" lugares", " seats")}`, progR: `${pc} %`, pct: `${Math.max(pplT ? 3 : 0, pc)}%`, barC: pc >= 85 ? "var(--tl-pro)" : "var(--tl-open)",
@@ -221,7 +222,7 @@ export function reservasModBloques(c: Ctx): Sec {
     out.push({ type: "evbuy", items: SO.slice(0, 6).map((x) => {
       const pend = x.st === "pend", tg = TG(E2)[x.st], key = `rvBx:${x.numero}`, open = pend ? c.ui[key] !== "c" : c.ui[key] === "o";
       const hace = x.hace < 60 ? E2(`HACE ${x.hace} MIN`, `${x.hace} MIN AGO`) : E2(`HACE ${Math.floor(x.hace / 60)} H`, `${Math.floor(x.hace / 60)} H AGO`);
-      const extras = [x.occ ? (es ? OCC[x.occ]?.[0] : OCC[x.occ]?.[1]) : null, ...x.needs.map((k) => (es ? NEED[k]?.[0] : NEED[k]?.[1]))].filter(Boolean) as string[];
+      const extras = [x.occ ? (OCC(es)[x.occ]) : null, ...x.needs.map((k) => (NEED(es)[k]))].filter(Boolean) as string[];
       const dia = diaL(c, x.ymd, x.dia);
       return {
         key: x.numero, ini: x.who.split(" ").filter(Boolean).slice(0, 2).map((z) => z[0]).join("").toUpperCase(), pend, n: x.who, m: pend ? `${E2("SOLICITUD", "REQUEST")} · ${hace}` : `#${x.numero}`,
@@ -262,10 +263,10 @@ export function reservasModBloques(c: Ctx): Sec {
   out.push(...evpEnReservaciones(c));
   // Cuándo se reserva: días y turnos.
   out.push({ type: "group", k: E2("CUÁNDO SE RESERVA", "WHEN PEOPLE CAN BOOK") }, { type: "chips", k: E2("DÍAS", "DAYS"), items: [1, 2, 3, 4, 5, 6, 0].map((z) => {
-    const on = v.days.includes(z); return { l: es ? MDAY[z]![0] : MDAY[z]![1], v: on ? "selected" : "filter", onClick: () => F.set({ days: on ? v.days.filter((y) => y !== z) : [...v.days, z].sort() }) }; }) });
+    const on = v.days.includes(z); return { l: MDAY(es)[z]!, v: on ? "selected" : "filter", onClick: () => F.set({ days: on ? v.days.filter((y) => y !== z) : [...v.days, z].sort() }) }; }) });
   const cerrados = v.days.filter((z) => !abiertos.has(z));
-  if (cerrados.length && abiertos.size) out.push({ type: "note", tone: "warn", t: E2(`Tu horario dice que cierras ${cerrados.map((z) => MDAY[z]![0].toLowerCase()).join(", ")}: ese día no sale para reservar.`, `Your hours say you are closed on ${cerrados.map((z) => MDAY[z]![1]).join(", ")}: no bookings that day.`) });
-  const H = a.horas, dn = (L: number[]) => L.map((z) => (es ? MDAY[z]![0].toLowerCase() : MDAY[z]![1])).join(", ");
+  if (cerrados.length && abiertos.size) out.push({ type: "note", tone: "warn", t: E2(`Tu horario dice que cierras ${cerrados.map((z) => MDAY(true)[z]!.toLowerCase()).join(", ")}: ese día no sale para reservar.`, `Your hours say you are closed on ${cerrados.map((z) => MDAY(false)[z]!).join(", ")}: no bookings that day.`) });
+  const H = a.horas, dn = (L: number[]) => L.map((z) => (es ? MDAY(es)[z]!.toLowerCase() : MDAY(es)[z]!)).join(", ");
   for (const k of ["almuerzo", "cena"] as const) {
     const t = v.sv[k], set = (p: Partial<typeof t>) => F.set({ sv: { ...v.sv, [k]: { ...t, ...p } } });
     out.push({ type: "rows", items: [{ icon: "clock", t: k === "almuerzo" ? E2("Almuerzo", "Lunch") : E2("Cena", "Dinner"), s: t.on ? `${E2("Mesas de ", "Tables from ")}${hora(t.f)}${E2(" a ", " to ")}${hora(t.t)}` : E2("No se reserva en este turno.", "No bookings in this shift."), tgOn: t.on, onTg: () => set({ on: !t.on }), chev: false }] });

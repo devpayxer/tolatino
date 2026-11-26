@@ -4,6 +4,7 @@
    venta · hipo · serv · derechos · comercial · alm. Cada propiedad tiene su tipo (property_listings.kind) y es de renta o de venta. */
 import { DIA_FE, horaFe } from "./fe-comun";
 import type { Bi } from "./inscripciones-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type { Bi };
 export type KindInm = "rent" | "cuarto" | "venta" | "hipo" | "serv" | "derechos" | "comercial" | "alm";
@@ -108,12 +109,12 @@ export function mudarteTexto(p: Pick<PropInm, "rent" | "dep" | "appFee" | "fees"
 }
 
 /* Fecha corta de una fecha ISO (sin zona: la fecha ya es de la ciudad): «1 dic» / «Dec 1»; «Hoy» si es hoy. */
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 export function fechaInm(iso: string | null, hoy: string, es: boolean) {
   if (!iso) return "";
   if (iso <= hoy) return es ? "Hoy" : "Today";
   const [, m, d] = iso.split("-").map(Number) as [number, number, number];
-  return es ? `${d} ${MES[m - 1]![0]}` : `${MES[m - 1]![1]} ${d}`;
+  return es ? `${d} ${MES(es)[m - 1]!}` : `${MES(es)[m - 1]!} ${d}`;
 }
 export const cortoVis = (dow: number, min: number, es: boolean) => `${DIA_FE[dow]![es ? 0 : 1]} ${horaFe(min)}`;
 

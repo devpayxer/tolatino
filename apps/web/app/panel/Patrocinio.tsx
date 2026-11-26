@@ -14,14 +14,15 @@ import { patAvisame, patComprar, patPuestos, patPuestosRenovar, patRenovarSolo, 
 import type { Ctx } from "./Panel";
 import type { Res } from "./acciones";
 import { uuid } from "@/lib/uuid";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type PatData = PatPanel;
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
-const MES_L: [string, string][] = [["Enero", "January"], ["Febrero", "February"], ["Marzo", "March"], ["Abril", "April"], ["Mayo", "May"], ["Junio", "June"], ["Julio", "July"], ["Agosto", "August"], ["Septiembre", "September"], ["Octubre", "October"], ["Noviembre", "November"], ["Diciembre", "December"]];
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const MES_L = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Enero", "January"), E2("Febrero", "February"), E2("Marzo", "March"), E2("Abril", "April"), E2("Mayo", "May"), E2("Junio", "June"), E2("Julio", "July"), E2("Agosto", "August"), E2("Septiembre", "September"), E2("Octubre", "October"), E2("Noviembre", "November"), E2("Diciembre", "December")]; };
 import { usd as $ } from "@/lib/dinero-comun";
 const $c = (c: number) => (c % 100 ? $(c) : `$${c / 100}`);
 /* «17 nov» / «Nov 17» de un día AAAA-MM-DD. */
-export const dia = (d: string, es: boolean) => { const [, m, x] = d.split("-").map(Number); return es ? `${x} ${MES[m! - 1]![0]}` : `${MES[m! - 1]![1]} ${x}`; };
+export const dia = (d: string, es: boolean) => { const [, m, x] = d.split("-").map(Number); return es ? `${x} ${MES(es)[m! - 1]!}` : `${MES(es)[m! - 1]!} ${x}`; };
 /* El día de un instante en la zona de la ciudad. */
 export const diaDe = (iso: string, tz: string) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
 export const rango = (a: string, b: string, es: boolean) => { const [, ma] = a.split("-"), [, mb] = b.split("-"); return ma === mb ? (es ? `${a.slice(8).replace(/^0/, "")} – ${dia(b, es)}` : `${dia(a, es)} – ${b.slice(8).replace(/^0/, "")}`) : `${dia(a, es)} – ${dia(b, es)}`; };
@@ -203,6 +204,6 @@ function calendario(c: Ctx, x: PatData, sel: string, elegir: (d: string) => void
     const k = `${y}-${pad(m + 1)}-${pad(i + 1)}`, fuera = k < hoy || k > max, on = k === sel;
     return { n: String(i + 1), off: fuera, label: dia(k, es), bg: on ? "var(--tl-ink)" : undefined, fg: on ? "var(--tl-white)" : undefined, fw: on ? 800 : undefined, onClick: fuera ? undefined : () => elegir(k) };
   })];
-  return { type: "cal", month: `${es ? MES_L[m]![0] : MES_L[m]![1]} ${y}`, prevOff: off <= 0, nextOff: off >= maxOff, onPrev: () => setUi({ patMes: off - 1 }), onNext: () => setUi({ patMes: off + 1 }),
+  return { type: "cal", month: `${MES_L(es)[m]!} ${y}`, prevOff: off <= 0, nextOff: off >= maxOff, onPrev: () => setUi({ patMes: off - 1 }), onNext: () => setUi({ patMes: off + 1 }),
     wd: es ? ["L", "M", "M", "J", "V", "S", "D"] : ["M", "T", "W", "T", "F", "S", "S"], days, s: E2(`Hasta ${x.precios.diasAdelante} días adelante.`, `Up to ${x.precios.diasAdelante} days ahead.`) };
 }

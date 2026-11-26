@@ -3081,6 +3081,26 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       por índice) y su caso al revés en alreves9f3. Queda fuera del guardián, y sin catálogo, lo que elige idioma con `es ? x[0] : x[1]` sin pasar por E2
       (`Citas.tsx` MDAY/MES, `NocheReservas.tsx` OCC, `admin/*` con `E(…)` en vez de `E2(…)`, la config de `publica/` con `c.cta[0], c.cta[1]`): otra
       familia, sin guardián todavía.
+- [x] **→ 9b** · **La familia de textos fijos que eligen idioma por índice sin pasar por E2 (26 nov), la parte hecha:** _hecho (26 nov, Opus):_ 53 tablas de
+      pares ES/EN (`MES`, `MDAY`, `DOW`, `OCC`, `NEED`, `LB`, `LANG`, `UNIT`, `DIA_L`… en `Citas.tsx` (panel), `NocheReservas.tsx`, `NocheEstado.tsx`, `Reservas.tsx`,
+      `Cobros.tsx`, `Panel.tsx`, `Menu.tsx`, `Patrocinio.tsx`, `Pedidos.tsx`, `Solicitudes.tsx`, `Entrega.tsx`, `Repartidor.tsx`, `SinSenalRep.tsx`, `Pro.tsx`, `Salud.tsx`,
+      `Viaje.tsx`, `Inmueble.tsx`, `AvisoEquipo.tsx`, `Pagar.tsx`, `Solicitud.tsx`, `AyudaEstado.tsx`, `Eventos.tsx`, `eventos/page.tsx`, `Publicar.tsx`, `publica/vista.ts` y
+      las `lib/*-comun.ts` que las comparten) pasan a función que recibe el idioma y lleva `E2("…", "…")` en su sitio (`MES(es)[i]`, por `dosIdiomas`): mismos textos ES y
+      EN, 142 cadenas nuevas en el catálogo (10 109 → 10 251, regenerado con `scripts/cms/extraer.mjs`). Guardián `cadenaConLlave` ampliado: tabla de pares fijos elegida con
+      `T[i][es ? 0 : 1]`, `es ? m[0] : m[1]` (m = T[i]) o `es ? T[i][0] : T[i][1]`; `E2(X[0], X[1])` con el par sacado de un dato por índice; y el Super Admin con un `E("…", "…")`
+      propio en vez de `E2`. Lo que ya estaba así va en tres listas de `guardianes/run.mjs` (`PENDIENTES_IDIOMA_IDX`, `PENDIENTES_IDIOMA_E2IDX`, `PENDIENTES_IDIOMA_ADMIN_E`):
+      trinquetes que solo bajan (una entrada que ya se cumple obliga a sacarla). Cinco casos al revés en `alreves9f3` (46/46).
+- [ ] **→ 9b** · **Lo que queda de la familia de elegir idioma por índice (26 nov, lo que las tres listas del guardián muestran):** (a) **Super Admin con `E(…)` propio** (67 archivos
+      de `app/admin/`: `useE()`, `par(l)` de `TextosComun.tsx` o una definición local): pasarlos a `E2` es renombrar `E` → `E2` en cada archivo y hacer que `useE()` devuelva un `E2`
+      por `dosIdiomas` (se probó: `tsc` limpio y ~4 900 cadenas nuevas), pero rompe ~13 casos al revés de otros guardianes y pruebas que buscan el texto `E("…")` en esos archivos
+      (`alreves5i`, `7g`, `9c`, `9t7`, `9tdin0209`, `9tdinero`, `9tevt`, `9tsubida`, `9u`, `9ufotosadmin`, `Cat9n`, `DevueltoSoloSiSalio`, y los patrones de varios guardianes sobre
+      `E(`): se hace en un solo cambio que actualice esos textos a la vez. (b) **La config de «Publica tu negocio»** (`publica/vista.ts` `E2(c.cta[0], c.cta[1])`, `E2(f.sell.t[0], …)`,
+      `PasosBC`, `PasosDE`, `PasosFH`, `Publica.tsx`): sus pares vienen de `lib/onb/datos.ts`, que se GENERA del prototipo (`scripts/catalogo/portar-onboarding.mjs`, no se edita a
+      mano): hay que cambiar el generador para que emita `E2` o un diccionario por llave. (c) **14 tablas sueltas** (lista `PENDIENTES_IDIOMA_IDX`): `Direcciones.tsx` LB, `Oficios.tsx` SZ y
+      TIPO, `Detalles.tsx` AREA, `CompaPanel.tsx` TEMA_L, `Equipo.tsx` SP, `Menu.tsx` SK, `autos-comun.ts` GARANTIA y `fe-comun.ts` DIA_FE (exportadas, las usan varias pantallas), y las
+      de servidor que arman avisos o el contexto de El Compa (`repartidor-admin.ts`, `reporte-diario.ts`, `reservas.ts`), más `LIQ_N` de `admin/N360.tsx`. (d) **Tablas con forma
+      `{ es: [...], en: [...] }`** (`DOW`, `DL`, `MO`, `MES` de ~25 pantallas de reserva: `DOW[es ? "es" : "en"][i]`, `DOW.es`) y las que se eligen con `lab(T, k, es)`, `ch("k", T)` o `.map`:
+      el guardián todavía no las ve; mismo arreglo, otra forma.
 - [ ] **→ 9b** · **Lo que queda de «promete antes de actuar» (25 nov, visto al cerrar la línea de arriba):** (a) las tablas de política al reservar
       («Te devolvemos $X» en `n/[id]/noche/Reservar.tsx` ~148, `viaje/ViajeBooking.tsx` ~207, `fiesta/Booking.tsx` ~197; la FAQ de `n/[id]/page.tsx`
       ~192; `eventos/[slug]/page.tsx` ~72 «Si compraste, te devolvemos todo»; `panel/Inscripciones.tsx` ~58 y `EventosPanel.tsx` ~494) se dejaron: dicen

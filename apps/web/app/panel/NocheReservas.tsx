@@ -13,11 +13,12 @@ import type { FilaNoche, NochePanelV, nocheHoy } from "@/lib/noche-reservas";
 import { nocheCancelarNeg, nocheMarcar, nocheResponder } from "./acciones-noche";
 import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
 export type NocPanel = { hoy?: Awaited<ReturnType<typeof nocheHoy>>; det?: NochePanelV | null };
-const OCC: Record<string, [string, string]> = { bailar: ["A bailar", "Dancing"], cumple: ["Cumpleaños", "Birthday"], despedida: ["Despedida", "Farewell"], celebra: ["Celebración", "Celebration"] };
+const OCC = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { bailar: E2("A bailar", "Dancing"), cumple: E2("Cumpleaños", "Birthday"), despedida: E2("Despedida", "Farewell"), celebra: E2("Celebración", "Celebration") }; };
 
 function tagDe(c: Ctx, x: FilaNoche): [string, string] {
   const { E2 } = c;
@@ -68,7 +69,7 @@ export function nocheDetalle(c: Ctx): Sec {
     x.st === "pending" ? { type: "note", tone: "info", icon: "clock", t: x.resp != null ? (x.dep && x.pay === "held" ? E2(`Responde en ${x.resp} min. Si no, vence y pedimos que se suelte la retención del depósito de su tarjeta.`, `Reply within ${x.resp} min. Otherwise it expires and we ask for the deposit hold to come off their card.`) : E2(`Responde en ${x.resp} min. Si no, vence.`, `Reply within ${x.resp} min. Otherwise it expires.`)) : E2("Está por vencer.", "About to expire.") } : null,
     { type: "kv", items: [
       { k: lista ? E2("LISTA", "LIST") : E2("MESA", "TABLE"), v: nm(x.svc) }, { k: E2("PERSONAS", "PEOPLE"), v: String(x.pax) }, { k: E2("LLEGAN", "ARRIVE"), v: hNoche(x.llega) },
-      ...(x.occ && OCC[x.occ] ? [{ k: E2("OCASIÓN", "OCCASION"), v: OCC[x.occ]![es ? 0 : 1] }] : []),
+      ...(x.occ && OCC(es)[x.occ] ? [{ k: E2("OCASIÓN", "OCCASION"), v: OCC(es)[x.occ]! }] : []),
       { k: E2("EN LA PUERTA", "AT THE DOOR"), v: nm(x.puerta) }, { k: E2("EDAD", "AGE"), v: E2(`${x.edad}+ con identificación`, `${x.edad}+ with ID`) },
       ...(lista ? [] : [{ k: E2("DEPÓSITO", "DEPOSIT"), v: x.dep ? `${usdN(x.dep)} · ${pay}` : E2("Sin depósito", "No deposit") }]),
       ...(x.code ? [{ k: E2("CÓDIGO", "CODE"), v: x.code }] : []),

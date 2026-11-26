@@ -25,7 +25,7 @@ const hm2m = (v: string) => { const [h = 0, m = 0] = v.split(":").map(Number); r
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const AT = [["timbre", "Toca el timbre", "Ring the bell"], ["noTimbre", "No toques el timbre", "Don't ring the bell"], ["llamar", "Llámame al llegar", "Call me on arrival"], ["texto", "Escríbeme al llegar", "Text me on arrival"]] as const;
-const LB: Record<string, [string, string]> = { casa: ["Casa", "Home"], trabajo: ["Trabajo", "Work"], otra: ["Otra", "Other"] };
+const LB = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { casa: E2("Casa", "Home"), trabajo: E2("Trabajo", "Work"), otra: E2("Otra", "Other") }; };
 
 export type PagoCheckout = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
 export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boolean; pago: PagoCheckout; acepta?: boolean }) {
@@ -97,7 +97,7 @@ export function Pagar({ m, es, pago, acepta = false }: { m: MenuPublico; es: boo
   const sinPedidos = !est.canOrd;
   const dropL = drop === "mano" ? E2("En la mano", "Hand it to me") : E2("Dejar en la puerta", "Leave at door");
   const atL = AT.filter((a) => at.includes(a[0])).map((a) => (es ? a[1] : a[2]));
-  const dirT = dir ? `${es ? LB[dir.label]?.[0] ?? "" : LB[dir.label]?.[1] ?? ""} · ${dir.street}` : "";
+  const dirT = dir ? `${es ? LB(es)[dir.label] ?? "" : LB(es)[dir.label] ?? ""} · ${dir.street}` : "";
   const togAt = (k: string) => {
     let a = at.includes(k) ? at.filter((x) => x !== k) : [...at, k];
     if (k === "timbre" && a.includes("timbre")) a = a.filter((x) => x !== "noTimbre");

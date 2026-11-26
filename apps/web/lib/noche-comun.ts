@@ -29,10 +29,10 @@ export type HerrNoche = {
   noches: NocheDia[]; prox: EstaNoche | null;
 };
 
-const DIA: [string, string][] = [["domingo", "Sunday"], ["lunes", "Monday"], ["martes", "Tuesday"], ["miércoles", "Wednesday"], ["jueves", "Thursday"], ["viernes", "Friday"], ["sábado", "Saturday"]];
-const DIA3: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
-export const diaNoche = (dow: number, es: boolean) => DIA[dow]![es ? 0 : 1];
-export const dia3Noche = (dow: number, es: boolean) => DIA3[dow]![es ? 0 : 1];
+const DIA = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const DIA3 = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+export const diaNoche = (dow: number, es: boolean) => DIA(es)[dow]!;
+export const dia3Noche = (dow: number, es: boolean) => DIA3(es)[dow]!;
 /* 540 → «9 PM» · 690 → «11:30 PM» · 780 → «1 AM». */
 export function hNoche(m: number): string {
   const t = (720 + m) % 1440, h = Math.floor(t / 60), mm = t % 60;

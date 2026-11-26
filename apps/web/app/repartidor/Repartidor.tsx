@@ -32,7 +32,7 @@ const hoyNY = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/
 const VEH: [string, string, string][] = [["pie", "A pie", "On foot"], ["bici", "Bici", "Bike"], ["moto", "Moto", "Motorbike"], ["auto", "Auto", "Car"], ["camioneta", "Camioneta", "Van"]];
 const MOT: [string, string, string][] = [["noresponde", "El cliente no responde", "Customer not answering"], ["direccion", "La dirección está mal", "Wrong address"], ["demora", "El negocio se está tardando", "The business is running late"],
   ["incompleto", "El pedido está incompleto", "Order is incomplete"], ["accidente", "Tuve un accidente o un problema con el vehículo", "Accident or vehicle problem"], ["otro", "Otro problema", "Something else"]];
-const AT: Record<string, [string, string]> = { timbre: ["Toca el timbre", "Ring the bell"], noTimbre: ["No toques el timbre", "Don't ring the bell"], llamar: ["Llámame al llegar", "Call me on arrival"], texto: ["Escríbeme al llegar", "Text me on arrival"] };
+const AT = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { timbre: E2("Toca el timbre", "Ring the bell"), noTimbre: E2("No toques el timbre", "Don't ring the bell"), llamar: E2("Llámame al llegar", "Call me on arrival"), texto: E2("Escríbeme al llegar", "Text me on arrival") }; };
 
 // 9n · Lo que el repartidor le puede escribir al cliente (las mismas frases del servidor, lib/repartidor-ofertas.ts FRASES).
 const FRASE: [string, string, string][] = [["afuera", "Llegué, estoy afuera.", "I'm here, I'm outside."], ["puerta", "Estoy en la puerta, ¿me abres?", "I'm at the door, can you open?"],
@@ -203,7 +203,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
         acts: [{ l: E2("Abrir mapa", "Open map"), v: "secondary", icon: "pin", onClick: () => abrirComoLlegar({ dir: `${x.calle ?? ""}, ${x.zip ?? ""}` }) },
           { l: E2("Escribir", "Message"), v: "secondary", icon: "chat", onClick: () => { setEscr(escr ? null : "afuera"); setTexto(""); } }] },
       ...(x.entrega ? [{ icon: x.entrega.drop === "puerta" ? "home" : "users", t: x.entrega.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to them"),
-        s: [x.entrega.at.map((k) => (es ? AT[k]?.[0] : AT[k]?.[1])).filter(Boolean).join(" · "), x.entrega.note ? `“${x.entrega.note}”` : ""].filter(Boolean).join(" · ") || undefined, chev: false, compact: true } as Fila] : []),
+        s: [x.entrega.at.map((k) => (AT(es)[k])).filter(Boolean).join(" · "), x.entrega.note ? `“${x.entrega.note}”` : ""].filter(Boolean).join(" · ") || undefined, chev: false, compact: true } as Fila] : []),
       { icon: "store", t: E2(`Recoges en ${x.negocio.nombre}`, `Pick up at ${x.negocio.nombre}`), s: x.negocio.direccion ?? undefined, chev: false, compact: true,
         acts: x.negocio.tel ? [{ l: E2("Llamar al negocio", "Call the business"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.negocio.tel}`; } }] : undefined },
     ] });

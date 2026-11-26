@@ -53,6 +53,114 @@ const archivos = [...new Set(execSync("git ls-files -z --cached --others --exclu
 const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
+// 26 nov · cadenaConLlave (familia «elegir idioma por índice»): las tablas de pares ES/EN que aún se eligen con [es ? 0 : 1] sin pasar por E2. Un trinquete: solo baja. Ver LAUNCH.
+const PENDIENTES_IDIOMA_IDX = new Set([
+  "apps/web/app/(app)/cuenta/direcciones/Direcciones.tsx:LB",
+  "apps/web/app/(app)/n/[id]/Oficios.tsx:SZ",
+  "apps/web/app/(app)/n/[id]/Oficios.tsx:TIPO",
+  "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx:AREA",
+  "apps/web/app/admin/N360.tsx:LIQ_N",
+  "apps/web/app/panel/CompaPanel.tsx:TEMA_L",
+  "apps/web/app/panel/Equipo.tsx:SP",
+  "apps/web/app/panel/Menu.tsx:SK",
+  "apps/web/lib/autos-comun.ts:GARANTIA",
+  "apps/web/lib/fe-comun.ts:DIA_FE",
+  "apps/web/lib/repartidor-admin.ts:QUE",
+  "apps/web/lib/reporte-diario.ts:CAPA_REPORTE",
+  "apps/web/lib/reservas.ts:DIAS_C",
+  "apps/web/lib/reservas.ts:MESES_C",
+]);
+const PENDIENTES_IDIOMA_E2IDX = new Set([
+  "apps/web/app/(app)/publica/PasosBC.tsx:Fl.TOWNS[v as string]",
+  "apps/web/app/(app)/publica/PasosBC.tsx:lk.s",
+  "apps/web/app/(app)/publica/PasosBC.tsx:lk.t",
+  "apps/web/app/(app)/publica/PasosBC.tsx:q.s",
+  "apps/web/app/(app)/publica/PasosBC.tsx:q.t",
+  "apps/web/app/(app)/publica/PasosBC.tsx:w",
+  "apps/web/app/(app)/publica/PasosDE.tsx:Fl.TOWNS[zone]",
+  "apps/web/app/(app)/publica/PasosDE.tsx:c.sp",
+  "apps/web/app/(app)/publica/PasosDE.tsx:sumO.t",
+  "apps/web/app/(app)/publica/PasosFH.tsx:L",
+  "apps/web/app/(app)/publica/PasosFH.tsx:c.items",
+  "apps/web/app/(app)/publica/PasosFH.tsx:iwP",
+  "apps/web/app/(app)/publica/Publica.tsx:W",
+  "apps/web/app/(app)/publica/Publica.tsx:f.own.k",
+  "apps/web/app/(app)/publica/Publica.tsx:f.own.s",
+  "apps/web/app/(app)/publica/Publica.tsx:f.own.t",
+  "apps/web/app/(app)/publica/Publica.tsx:f.sell.t",
+  "apps/web/app/(app)/publica/Publica.tsx:iwP",
+  "apps/web/app/(app)/publica/vista.ts:c.cta",
+  "apps/web/app/(app)/publica/vista.ts:f.sell.t",
+]);
+const PENDIENTES_IDIOMA_ADMIN_E = new Set([
+  "apps/web/app/admin/Analitica.tsx",
+  "apps/web/app/admin/AnfitrionesAdmin.tsx",
+  "apps/web/app/admin/Arranque.tsx",
+  "apps/web/app/admin/AutoModeracion.tsx",
+  "apps/web/app/admin/BoletoAdmin.tsx",
+  "apps/web/app/admin/Catalogo.tsx",
+  "apps/web/app/admin/CatalogoEventos.tsx",
+  "apps/web/app/admin/Ciudades.tsx",
+  "apps/web/app/admin/Colas.tsx",
+  "apps/web/app/admin/ColasComunidad.tsx",
+  "apps/web/app/admin/ColasEventos.tsx",
+  "apps/web/app/admin/Confianza.tsx",
+  "apps/web/app/admin/Configuracion.tsx",
+  "apps/web/app/admin/Contenido.tsx",
+  "apps/web/app/admin/Crecimiento.tsx",
+  "apps/web/app/admin/DisputasTx.tsx",
+  "apps/web/app/admin/DupFila.tsx",
+  "apps/web/app/admin/ElCompaAdmin.tsx",
+  "apps/web/app/admin/EventosAdmin.tsx",
+  "apps/web/app/admin/Gamificacion.tsx",
+  "apps/web/app/admin/HiloAdmin.tsx",
+  "apps/web/app/admin/HoyAdmin.tsx",
+  "apps/web/app/admin/Integraciones.tsx",
+  "apps/web/app/admin/IntegracionesProveedores.tsx",
+  "apps/web/app/admin/IntegracionesPush.tsx",
+  "apps/web/app/admin/IntegracionesWallet.tsx",
+  "apps/web/app/admin/Liquidaciones.tsx",
+  "apps/web/app/admin/N360.tsx",
+  "apps/web/app/admin/N360Dinero.tsx",
+  "apps/web/app/admin/N360Oper.tsx",
+  "apps/web/app/admin/Negocios.tsx",
+  "apps/web/app/admin/Notificaciones.tsx",
+  "apps/web/app/admin/NotificacionesCanales.tsx",
+  "apps/web/app/admin/Planes.tsx",
+  "apps/web/app/admin/PuntoAdmin.tsx",
+  "apps/web/app/admin/Repartidor360.tsx",
+  "apps/web/app/admin/Repartidores.tsx",
+  "apps/web/app/admin/SistemaApps.tsx",
+  "apps/web/app/admin/SistemaAppsBeta.tsx",
+  "apps/web/app/admin/SistemaAppsTiendas.tsx",
+  "apps/web/app/admin/SistemaDespliegues.tsx",
+  "apps/web/app/admin/SistemaEstados.tsx",
+  "apps/web/app/admin/SistemaFlags.tsx",
+  "apps/web/app/admin/SistemaRespaldos.tsx",
+  "apps/web/app/admin/SistemaSalud.tsx",
+  "apps/web/app/admin/SoporteAdmin.tsx",
+  "apps/web/app/admin/SoporteDe360.tsx",
+  "apps/web/app/admin/TextosAyuda.tsx",
+  "apps/web/app/admin/TextosAyudaEditar.tsx",
+  "apps/web/app/admin/TextosCadenas.tsx",
+  "apps/web/app/admin/TextosComun.tsx",
+  "apps/web/app/admin/TextosHome.tsx",
+  "apps/web/app/admin/TextosPaginas.tsx",
+  "apps/web/app/admin/TextosRotulos.tsx",
+  "apps/web/app/admin/Transacciones.tsx",
+  "apps/web/app/admin/U360.tsx",
+  "apps/web/app/admin/Usuarios.tsx",
+  "apps/web/app/admin/acciones-copiloto.ts",
+  "apps/web/app/admin/dos-pasos/DosPasos.tsx",
+  "apps/web/app/admin/layout.tsx",
+  "apps/web/app/admin/notificaciones/correo/[id]/VerCorreo.tsx",
+  "apps/web/app/admin/page.tsx",
+  "apps/web/app/admin/seguridad/MisDosPasos.tsx",
+  "apps/web/app/admin/sistema/AgregarMiembro.tsx",
+  "apps/web/app/admin/sistema/Auditoria.tsx",
+  "apps/web/app/admin/sistema/page.tsx",
+  "apps/web/app/admin/ui.tsx",
+]);
 // 8i · Avisos: lo que todavía no rompe el build (9a: las secciones pendientes del Super Admin en sinEnConstruccion, hasta TOLATINO_FASE=9). Se imprimen siempre.
 const avisos = [];
 
@@ -9690,6 +9798,53 @@ const guardianes = {
         if (pasa) falla(G, f, linea, `${N} guarda pares ES/EN sin E2 y sus textos pasan a E2(a, b) por variable: se salen del CMS; la lista va como función que recibe E2 y lleva E2("…", "…") en su sitio (${N}(E2))`);
       }
     }
+    // 26 nov (la familia de elegir idioma por índice) · Una tabla de textos fijos escrita como pares ES/EN sin E2 (const MES = [["ene", "Jan"], …]) que después se elige con
+    // `MES[i]![es ? 0 : 1]`, `es ? m[0] : m[1]` (m = MES[i]) o `x ? MES[i][0] : MES[i][1]` no pasa por E2(a, b): sus textos no llegan al catálogo del CMS y el Super Admin no
+    // los edita. Va la tabla como función que recibe el idioma y lleva E2("…", "…") en su sitio: const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) =>
+    // dosIdiomas(es, a, b); return [E2("ene", "Jan"), …]; }; se usa MES(es)[i]. Lo que ya estaba escrito así y queda por pasar está en PENDIENTES_IDIOMA_IDX (un trinquete: no
+    // crece, y una entrada que ya no se cumple se quita). Al revés: alreves9f3.
+    const PAR_IDX = new RegExp(String.raw`\[\s*${LITS}\s*,\s*${LITS}\s*[,\]]`);
+    const COND_IDX = String.raw`!?[\w$.]+`;
+    const hallados = new Map();
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (!/\?\s*[01]\s*:\s*[01]\s*\]|\[0\]\s*:/.test(t)) continue;
+      for (const m of t.matchAll(/^(?:export )?const ([A-Za-z_]\w*)\b[^=\n]*=\s*(?![(\w]*\s*=>)(?!async\b|function\b)/gm)) {
+        const resto = t.slice(m.index + m[0].length), fin = resto.search(/\n(?:const|function|export|type|import|let|interface|\/\*|\/\/)/), ini = fin < 0 ? resto : resto.slice(0, fin);
+        if (/^\(/.test(ini) || !PAR_IDX.test(ini) || !/\p{L}/u.test(ini)) continue;
+        const N = m[1];
+        const directo = new RegExp(String.raw`\b${N}\b[^;]{0,160}?\[\s*${COND_IDX}\s*\?\s*[01]\s*:\s*[01]\s*\]`);
+        const ternario = new RegExp(String.raw`\?\s*\(?${N}\b[^:;]{0,80}\[0\]\)?\s*:\s*\(?${N}\b[^;]{0,80}\[1\]`);
+        const alias = [...t.matchAll(new RegExp(String.raw`(?:const|,)\s*([A-Za-z_]\w*)\s*=\s*\(?${N}\[`, "g"))].some((a) => new RegExp(String.raw`\b${a[1]}\[0\]`).test(t) && new RegExp(String.raw`\b${a[1]}\[1\]`).test(t));
+        const lineaN = t.slice(0, m.index).split("\n").length;
+        if (directo.test(t.slice(m.index + m[0].length + ini.length)) || directo.test(t.slice(0, m.index)) || ternario.test(t) || alias) hallados.set(`${f}:${N}`, lineaN);
+      }
+    }
+    for (const [k, linea] of hallados) {
+      if (PENDIENTES_IDIOMA_IDX.has(k)) continue;
+      const [f, N] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
+      falla(G, f, linea, `${N} guarda pares ES/EN de textos fijos y los elige por índice (${N}[i][es ? 0 : 1], es ? x[0] : x[1]) sin pasar por E2: se salen del CMS; la tabla va como función que recibe el idioma y lleva E2("…", "…") en su sitio (${N}(es)[i])`);
+    }
+    for (const k of PENDIENTES_IDIOMA_IDX) if (!hallados.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_IDX lista «${k}» y ya no se cumple (se pasó a E2 o se quitó): sácala de la lista`);
+    // 26 nov · Dos formas más de la misma familia. (a) E2(X[0], X[1]) con el par sacado de un dato por índice (la config de «Publica tu negocio», lib/onb/datos.ts, que se genera del
+    // prototipo): los textos tampoco llegan al catálogo. (b) El Super Admin con un E(…) propio (useE, par(l) o una definición local) en vez de E2(…): E("…", "…") no lo ve el
+    // extractor ni pasa por dosIdiomas. Lo que ya estaba así va en PENDIENTES_IDIOMA_E2IDX y PENDIENTES_IDIOMA_ADMIN_E (trinquetes: no crecen; lo que se pasa se quita). Al revés: alreves9f3.
+    const hallE2 = new Map(), hallAdm = new Map();
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (t.includes("E2(")) for (const m of t.matchAll(new RegExp(String.raw`\bE2\(\s*(${ID}(?:\.${ID}|\[[^\]\n]*\])*)\[0\]\s*,\s*\1\[1\]\s*[,)]`, "g"))) hallE2.set(`${f}:${m[1]}`, t.slice(0, m.index).split("\n").length);
+      if (/^apps\/web\/app\/admin\//.test(f)) { const m = new RegExp(String.raw`(?<![\w$.])E\(\s*${LITS}\s*,\s*${LITS}`).exec(t); if (m && /\p{L}/u.test(m[0])) hallAdm.set(f, t.slice(0, m.index).split("\n").length); }
+    }
+    for (const [k, linea] of hallE2) {
+      if (PENDIENTES_IDIOMA_E2IDX.has(k)) continue;
+      const [f, X] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
+      falla(G, f, linea, `E2(${X}[0], ${X}[1]) saca los dos textos de un dato por índice: no entran al catálogo del CMS; van como E2("…", "…") con los textos fijos`);
+    }
+    for (const [f, linea] of hallAdm) if (!PENDIENTES_IDIOMA_ADMIN_E.has(f)) falla(G, f, linea, `el Super Admin escribe E("…", "…") (un E propio: useE, par(l) o local) en vez de E2("…", "…"): sus textos no pasan por dosIdiomas ni entran al catálogo; usa E2`);
+    for (const k of PENDIENTES_IDIOMA_E2IDX) if (!hallE2.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_E2IDX lista «${k}» y ya no se cumple: sácala de la lista`);
+    for (const k of PENDIENTES_IDIOMA_ADMIN_E) if (!hallAdm.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_ADMIN_E lista «${k}» y ya no se cumple: sácala de la lista`);
     const E2LIT = /\bE2\(\s*(["`'])(?:(?!\1)[^\\\n]|\\.)*\1\s*,\s*(["`'])(?:(?!\2)[^\\\n]|\\.)*\2\s*\)/g;
     const MIGRADAS = ["apps/web/app/(app)/Inicio.tsx", "apps/web/app/(app)/page.tsx"];
     for (const f of MIGRADAS) {

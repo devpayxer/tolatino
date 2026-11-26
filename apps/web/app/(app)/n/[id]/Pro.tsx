@@ -18,7 +18,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
-const LANG: Record<string, [string, string]> = { es: ["Español", "Spanish"], en: ["English", "English"], pt: ["Português", "Portuguese"], ht: ["Kreyòl", "Haitian Creole"] };
+const LANG = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { es: E2("Español", "Spanish"), en: E2("English", "English"), pt: E2("Português", "Portuguese"), ht: E2("Kreyòl", "Haitian Creole") }; };
 
 export function usePro(pp: ProPublico | null, es: boolean) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
@@ -138,7 +138,7 @@ export function PrHoja({ v }: { v: Pr }) {
               <div>
                 <div className={K}>{E2("¿CON QUIÉN?", "WITH WHOM?")}</div>
                 <div role="radiogroup" aria-label={E2("¿Con quién?", "With whom?")} className="mt-2 flex flex-col gap-2">
-                  {[{ id: "any", t: E2("Cualquiera", "Anyone"), s: E2("EL PRIMERO LIBRE", "FIRST AVAILABLE") }, ...gente.map((p) => ({ id: p.id, t: p.nombre, s: [p.lic ? nm(p.lic).toUpperCase() : "", p.langs.map((l) => (LANG[l] ?? [l, l])[es ? 0 : 1]).join(" · ").toUpperCase()].filter(Boolean).join(" · ") }))].map((o) => (
+                  {[{ id: "any", t: E2("Cualquiera", "Anyone"), s: E2("EL PRIMERO LIBRE", "FIRST AVAILABLE") }, ...gente.map((p) => ({ id: p.id, t: p.nombre, s: [p.lic ? nm(p.lic).toUpperCase() : "", p.langs.map((l) => (LANG(es)[l] ?? l)).join(" · ").toUpperCase()].filter(Boolean).join(" · ") }))].map((o) => (
                     <button key={o.id} type="button" role="radio" aria-checked={con === o.id} onClick={() => setCon(o.id)} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${con === o.id ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
                       <span className={`box-border h-5 w-5 flex-none rounded-full ${con === o.id ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
                       <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{o.t}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/60">{o.s}</span></span>
@@ -162,12 +162,12 @@ export function PrResumen({ v, desk, onAll }: { v: Pr; desk: boolean; onAll?: ()
   const facts: [string, string, string][] = v.legal ? [
     ["law", E2("LICENCIA", "LICENSE"), pp.lic ? nm(pp.lic.titulo) : pp.gente.some((p) => p.lic) ? E2("Verificada (de su equipo)", "Verified (team)") : E2("No declaró licencia", "No license declared")],
     ...(pp.cant ? [["ban", E2("NO PUEDE", "CANNOT"), nm(pp.cant)] as [string, string, string]] : []),
-    ["language", E2("IDIOMAS", "LANGUAGES"), pp.langs.map((l) => (LANG[l] ?? [l, l])[es ? 0 : 1]).join(" · ")],
+    ["language", E2("IDIOMAS", "LANGUAGES"), pp.langs.map((l) => (LANG(es)[l] ?? l)).join(" · ")],
     ["card", E2("PAGO", "PAYMENT"), `${E2("En la oficina", "At the office")}${pp.h.plan ? E2(" · plan de pagos", " · payment plan") : ""}`],
   ] : [
     ["clock", E2("LISTO EN", "READY IN"), pp.h.days <= 1 ? E2("El mismo día", "Same day") : E2(`${pp.h.days} días`, `${pp.h.days} days`)],
     ["dollar", E2("PRESUPUESTO", "ESTIMATE"), pp.h.est ? E2("Antes de empezar · nada se cobra sin tu OK", "Before starting · nothing charged without your OK") : E2("Nada se cobra sin tu OK", "Nothing charged without your OK")],
-    ["language", E2("IDIOMAS", "LANGUAGES"), pp.langs.map((l) => (LANG[l] ?? [l, l])[es ? 0 : 1]).join(" · ")],
+    ["language", E2("IDIOMAS", "LANGUAGES"), pp.langs.map((l) => (LANG(es)[l] ?? l)).join(" · ")],
   ];
   const pasos = v.legal ? [E2("Pide una consulta: te dicen qué opciones tienes y cuánto cuesta cada una.", "Book a consultation: they tell you your options and what each costs."), E2("Te dan el total por escrito: el honorario y lo del gobierno, por separado.", "You get the total in writing: the fee and the government fee, separately."),
     E2("Tú decides si lo contratas. Nadie te garantiza un resultado.", "You decide whether to hire. No one can guarantee a result."), E2("Pagas en la oficina; lo del gobierno lo pagas tú a la agencia.", "You pay at the office; the government fee goes from you to the agency.")]

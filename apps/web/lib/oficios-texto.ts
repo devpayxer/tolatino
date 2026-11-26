@@ -5,14 +5,14 @@ import type { Attrs } from "./oficios";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 type S = { k: string; cents: number; dur: number | null; a: Attrs };
 const money = usd;
-const UNIT: Record<string, [string, string]> = { pie2: ["pie²", "sq ft"], cuarto: ["cuarto", "room"], salida: ["salida", "vent"] };
-const WL: Record<string, [string, string]> = { espera: ["Esperas", "You wait"], deja: ["Lo dejas", "Drop off"], ambos: ["Esperas o lo dejas", "Wait or drop off"], dom: ["A domicilio", "Mobile"], call: ["Llamas", "You call"] };
+const UNIT = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { pie2: E2("pie²", "sq ft"), cuarto: E2("cuarto", "room"), salida: E2("salida", "vent") }; };
+const WL = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { espera: E2("Esperas", "You wait"), deja: E2("Lo dejas", "Drop off"), ambos: E2("Esperas o lo dejas", "Wait or drop off"), dom: E2("A domicilio", "Mobile"), call: E2("Llamas", "You call") }; };
 export function precioL(s: Pick<S, "k" | "cents" | "a">, es: boolean) {
   const E2 = (x: string, y: string) => dosIdiomas(es, x, y), a = s.a ?? {};
   if (s.k === "cotiza") return E2("Se cotiza", "Quoted");
   if (s.k === "lav" && a.sz) return `${E2("Desde ", "From ")}${money(a.sz[0])}`;
   if (s.k === "hora") return `${money(s.cents)}/h`;
-  if (s.k === "area") return `${money(s.cents)}/${UNIT[a.u ?? "pie2"]![es ? 0 : 1]}`;
+  if (s.k === "area") return `${money(s.cents)}/${UNIT(es)[a.u ?? "pie2"]!}`;
   if (s.k === "plan") return `${money(s.cents)}${a.fr === "temp" ? E2("/temporada", "/season") : E2("/mes", "/mo")}`;
   if (!s.cents) return E2("Gratis", "Free");
   return `${s.k === "desde" ? E2("Desde ", "From ") : ""}${money(s.cents)}`;
@@ -21,7 +21,7 @@ export const cuandoL = (s: Pick<S, "dur" | "a">, es: boolean) => { const d = s.a
 export function detalleL(r: "auto" | "hogar", s: S, es: boolean) {
   const E2 = (x: string, y: string) => dosIdiomas(es, x, y), a = s.a ?? {}, L: string[] = [];
   if (r === "auto") {
-    L.push(cuandoL(s, es), a.walk ? E2("Sin cita", "Walk-in") : WL[a.w ?? "espera"]![es ? 0 : 1]);
+    L.push(cuandoL(s, es), a.walk ? E2("Sin cita", "Walk-in") : WL(es)[a.w ?? "espera"]!);
     if (a.per) L.push({ eje: E2("por eje", "per axle"), goma: E2("por goma", "per tire"), sensor: E2("por sensor", "per sensor") }[a.per]);
     if (s.k === "desde") L.push(E2("final en el estimado", "final in the estimate"));
     if (s.k === "cotiza" && a.rng) L.push(`${E2("suele ser ", "usually ")}${money(a.rng[0])}–${money(a.rng[1])}`);

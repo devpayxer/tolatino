@@ -30,7 +30,7 @@ type Props = {
   /* 9t · Destacados de Eventos (lo que fijó el equipo; lib/evt-publico.ts · destacadosEventos). */
   dest?: TarjetaEvt[];
 };
-const WD: [string, string][] = [["DOM", "SUN"], ["LUN", "MON"], ["MAR", "TUE"], ["MIÉ", "WED"], ["JUE", "THU"], ["VIE", "FRI"], ["SÁB", "SAT"]];
+const WD = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
 const sumar = (d: string, n: number) => { const [y, m, x] = d.split("-").map(Number); return new Date(Date.UTC(y!, m! - 1, x! + n)).toISOString().slice(0, 10); };
 const dow = (d: string) => { const [y, m, x] = d.split("-").map(Number); return new Date(Date.UTC(y!, m! - 1, x!)).getUTCDay(); };
 
@@ -73,7 +73,7 @@ export function Eventos({ es, ciudad, estado, dia, hoy, fin, conEventos, titulo,
       <div ref={desk ? calRefD : calRef} data-screen-label={desk ? "Eventos · calendario · desktop (C-003)" : "Eventos · calendario (C-003)"} data-calendario="" role="group" aria-label={E2("Días", "Days")}
         className={desk ? "hs mx-auto mt-[26px] flex max-w-[806px] gap-2 overflow-x-auto" : "hs flex gap-1.5 overflow-x-auto border-b border-ink/[.07] bg-white px-5 py-3"}>
         {out.map((d) => {
-          const on = d === dia, pasado = d < hoy, hay = !pasado && conEventos.includes(d), w = d === hoy ? E2("HOY", "TODAY") : es ? WD[dow(d)]![0] : WD[dow(d)]![1];
+          const on = d === dia, pasado = d < hoy, hay = !pasado && conEventos.includes(d), w = d === hoy ? E2("HOY", "TODAY") : WD(es)[dow(d)]!;
           return (
             <button key={d} type="button" data-dia={d} {...(on ? { "data-dia-on": "" } : {})} disabled={pasado} aria-pressed={on} aria-label={`${w} ${Number(d.slice(8))}${hay ? E2(" · con eventos", " · with events") : ""}`}
               onClick={pasado ? undefined : () => ir(d, t)}

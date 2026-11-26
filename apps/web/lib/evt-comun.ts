@@ -59,15 +59,15 @@ export function hora(m: number) {
   return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`;
 }
 /* «sáb 14 nov» / «Sat Nov 14» desde YYYY-MM-DD (fecha local de la ciudad, sin zona). */
-const DS: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
-const MS: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const DS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+const MS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 export function diaCorto(iso: string, es: boolean) {
   const [y, m, d] = iso.split("-").map(Number); const w = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
-  return es ? `${DS[w]![0]} ${d} ${MS[m! - 1]![0]}` : `${DS[w]![1]} ${MS[m! - 1]![1]} ${d}`;
+  return es ? `${DS(es)[w]!} ${d} ${MS(es)[m! - 1]!}` : `${DS(es)[w]!} ${MS(es)[m! - 1]!} ${d}`;
 }
 /* «sáb 14 nov · 8 PM» / «Sat Nov 14 · 8 PM» en los dos idiomas: lo que un aviso pone como el día y la hora (avisos › avisar elige el de quien lo recibe). */
 export const cuandoBi = (dia: string, h0: number): Bi => ({ es: `${diaCorto(dia, true)} · ${hora(h0)}`, en: `${diaCorto(dia, false)} · ${hora(h0)}` });
-export const mesCorto = (iso: string, es: boolean) => { const m = Number(iso.slice(5, 7)); return (es ? MS[m - 1]![0] : MS[m - 1]![1]).toUpperCase(); };
+export const mesCorto = (iso: string, es: boolean) => { const m = Number(iso.slice(5, 7)); return (MS(es)[m - 1]!).toUpperCase(); };
 export const dinero = usd;
 export const sumarDias = (iso: string, n: number) => { const [y, m, d] = iso.split("-").map(Number); const x = new Date(Date.UTC(y!, m! - 1, d! + n)); return x.toISOString().slice(0, 10); };
 
@@ -110,7 +110,7 @@ export function cambiosQueImportan(a: BorradorEvt, b: BorradorEvt): string[] {
 
 /* ── 6f · Series y varios días (TLEvP.occ / repL / spanL / dayH). La base genera las fechas de verdad (evt_generar_fechas en 0111): esto
    es la misma regla para mostrarla en el editor y en las pantallas. ── */
-const DN: [string, string][] = [["domingo", "Sunday"], ["lunes", "Monday"], ["martes", "Tuesday"], ["miércoles", "Wednesday"], ["jueves", "Thursday"], ["viernes", "Friday"], ["sábado", "Saturday"]];
+const DN = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
 const NTH: [string, string][] = [["primer", "first"], ["segundo", "second"], ["tercer", "third"], ["cuarto", "fourth"]];
 export const dowDe = (iso: string) => { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay(); };
 const diasMes = (y: number, m0: number) => new Date(Date.UTC(y, m0 + 1, 0)).getUTCDate();
@@ -148,8 +148,8 @@ const juntar = (a: string[], es: boolean) => (a.length > 1 ? `${a.slice(0, -1).j
 /* «Cada jueves y sábado» · «Cada 2 semanas · jueves» · «El último viernes de cada mes». */
 export function repL(dia: string, r: Repite | null | undefined, es: boolean): string {
   if (!r || r.k === "none" || !dia) return "";
-  if (r.k === "m") { const n = nthDe(dia), d = DN[dowDe(dia)]!; return es ? `El ${n === 5 ? "último" : NTH[n - 1]![0]} ${d[0]} de cada mes` : `The ${n === 5 ? "last" : NTH[n - 1]![1]} ${d[1]} of every month`; }
-  const ds = juntar(diasDeRegla(dia, r).map((i) => DN[i]![es ? 0 : 1]!), es);
+  if (r.k === "m") { const n = nthDe(dia), d = DN(es)[dowDe(dia)]!; return es ? `El ${n === 5 ? "último" : NTH[n - 1]![0]} ${d} de cada mes` : `The ${n === 5 ? "last" : NTH[n - 1]![1]} ${d} of every month`; }
+  const ds = juntar(diasDeRegla(dia, r).map((i) => DN(es)[i]!), es);
   return r.k === "w" ? (es ? `Cada ${ds}` : `Every ${ds}`) : es ? `Cada 2 semanas · ${ds}` : `Every 2 weeks · ${ds}`;
 }
 /* «vie 20 nov – dom 22 nov». */

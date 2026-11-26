@@ -32,7 +32,7 @@ const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".16em", col
 const caja: CSSProperties = { padding: 16, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.07)", display: "flex", flexDirection: "column" };
 const entrada: CSSProperties = { height: 48, padding: "0 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: "600 15px Manrope,sans-serif", color: "var(--tl-ink)", outline: "none", background: "var(--tl-white)", boxSizing: "border-box", width: "100%" };
 const HRS = Array.from({ length: 15 }, (_, i) => (12 + i) * 60);
-const WD: [string, string][] = [["DOM", "SUN"], ["LUN", "MON"], ["MAR", "TUE"], ["MIÉ", "WED"], ["JUE", "THU"], ["VIE", "FRI"], ["SÁB", "SAT"]];
+const WD = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
 
 function useAncho() {
   const [w, setW] = useState(0);
@@ -159,7 +159,7 @@ export function Publicar({ v }: { v: VistaPub }) {
               <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", margin: "0 -2px", padding: "0 2px" }}>
                 {Array.from({ length: 14 }, (_, i) => { const iso = sumarDias(hoy, i), [y, m, dd] = iso.split("-").map(Number), w = new Date(Date.UTC(y!, m! - 1, dd!)).getUTCDay(), on = f.dia === i; return (
                   <button type="button" key={i} aria-pressed={on} aria-label={diaCorto(iso, es)} onClick={() => up({ dia: i })} style={{ flex: "none", width: 56, padding: "9px 0", borderRadius: 13, textAlign: "center", cursor: "pointer", background: on ? "var(--tl-ink)" : "var(--tl-white)", color: on ? "var(--tl-white)" : "var(--tl-ink)", border: `1px solid ${on ? "var(--tl-ink)" : "rgba(11,14,18,.1)"}` }}>
-                    <div style={{ font: `700 9px ${MONO}`, letterSpacing: ".08em", opacity: 0.7 }}>{WD[w]![es ? 0 : 1]}</div><div style={{ marginTop: 3, font: "800 17px Sora,sans-serif" }}>{dd}</div></button>); })}
+                    <div style={{ font: `700 9px ${MONO}`, letterSpacing: ".08em", opacity: 0.7 }}>{WD(es)[w]!}</div><div style={{ marginTop: 3, font: "800 17px Sora,sans-serif" }}>{dd}</div></button>); })}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
                 {([["h0", E2("EMPIEZA", "STARTS")], ["h1", E2("TERMINA", "ENDS")]] as const).map(([k, l]) => (

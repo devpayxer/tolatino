@@ -1,6 +1,7 @@
 /* Evento privado (6i): lo que comparten el servidor y las pantallas (sin dinero que decida nada: los montos los calcula la base al
    mandar la propuesta; lo de aquí solo sirve para MOSTRAR mientras se arma). Listas del diseño evp-flow.js (OCC, BUD, horas). */
 import { usd } from "./dinero-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 export type Bi = { es: string; en: string };
 export const NUM_EP = /^EP-\d{1,10}$/;
 
@@ -34,13 +35,13 @@ export const EXTRAS_FABRICA: ExtraEvp[] = [
 
 export const dinero = usd; // dinero-comun › usd: la regla única del dinero que ve el cliente
 export const horaL = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
-const DOW: [string, string][] = [["domingo", "Sunday"], ["lunes", "Monday"], ["martes", "Tuesday"], ["miércoles", "Wednesday"], ["jueves", "Thursday"], ["viernes", "Friday"], ["sábado", "Saturday"]];
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 /* «sábado 21 nov» / «Saturday Nov 21» (la fecha de la ciudad, sin zona del navegador). */
 export function diaEvp(ymd: string, es: boolean, corto = false) {
-  const d = new Date(`${ymd}T12:00:00Z`), w = DOW[d.getUTCDay()]!, m = MES[d.getUTCMonth()]!, n = d.getUTCDate();
-  const wd = corto ? (es ? w[0].slice(0, 3) : w[1].slice(0, 3)) : es ? w[0] : w[1];
-  return es ? `${wd} ${n} ${m[0]}` : `${wd} ${m[1]} ${n}`;
+  const d = new Date(`${ymd}T12:00:00Z`), w = DOW(es)[d.getUTCDay()]!, m = MES(es)[d.getUTCMonth()]!, n = d.getUTCDate();
+  const wd = corto ? (es ? w.slice(0, 3) : w.slice(0, 3)) : w;
+  return es ? `${wd} ${n} ${m}` : `${wd} ${m} ${n}`;
 }
 export const lbl = (L: [string, string, string][], k: string | null | undefined, es: boolean) => { const x = L.find((z) => z[0] === k); return x ? (es ? x[1] : x[2]) : ""; };
 export const nm = (b: Bi | null | undefined, es: boolean) => (b ? (es ? b.es : b.en || b.es) : "");

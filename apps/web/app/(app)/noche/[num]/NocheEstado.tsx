@@ -17,7 +17,7 @@ type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 const hora = (t: string | undefined) => (t ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : "");
-const OCC: Record<string, [string, string]> = { bailar: ["A bailar", "Dancing"], cumple: ["Cumpleaños", "Birthday"], despedida: ["Despedida", "Farewell"], celebra: ["Celebración", "Celebration"] };
+const OCC = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { bailar: E2("A bailar", "Dancing"), cumple: E2("Cumpleaños", "Birthday"), despedida: E2("Despedida", "Farewell"), celebra: E2("Celebración", "Celebration") }; };
 
 export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
@@ -72,7 +72,7 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
   const steps = pos == null ? [] : pasos.map(([label, time], i) => ({ label, time, state: i < pos ? "done" : i === pos ? "current" : "next" }));
   const rows: [string, string][] = [[lista ? E2("LISTA", "LIST") : E2("RESERVA", "BOOKING"), nm(x.svc)], [E2("NOCHE", "NIGHT"), `${noche} · ${E2("llegas", "you arrive")} ${hNoche(x.llega)}`],
     [E2("PERSONAS", "PEOPLE"), String(x.pax)], [E2("EN LA PUERTA", "AT THE DOOR"), x.puerta[es ? "es" : "en"]], [E2("EDAD", "AGE"), E2(`Todos con identificación: ${x.edad}+.`, `Everyone with ID: ${x.edad}+.`)],
-    ...(x.occ && OCC[x.occ] ? [[E2("OCASIÓN", "OCCASION"), OCC[x.occ]![es ? 0 : 1]] as [string, string]] : []), ...(x.nota ? [[E2("TU NOTA", "YOUR NOTE"), `«${x.nota}»`] as [string, string]] : []),
+    ...(x.occ && OCC(es)[x.occ] ? [[E2("OCASIÓN", "OCCASION"), OCC(es)[x.occ]!] as [string, string]] : []), ...(x.nota ? [[E2("TU NOTA", "YOUR NOTE"), `«${x.nota}»`] as [string, string]] : []),
     ...(x.inN != null ? [[E2("ENTRARON", "GOT IN"), `${x.inN} ${E2("de", "of")} ${x.pax}`] as [string, string]] : [])];
   const depEstado = !dep ? "" : x.pago.st === "held" ? E2("RETENIDO", "HELD") : x.pago.st === "captured" ? E2("COBRADO", "CHARGED") : liberado ? E2("LIBERADO", "RELEASED") : devuelto ? E2("DEVUELTO", "REFUNDED") : x.perdio ? E2("SE QUEDÓ", "KEPT") : "";
   const vivo = ["pending", "change_proposed", "confirmed"].includes(x.status) && !(lista && x.inN);

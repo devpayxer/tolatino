@@ -17,17 +17,18 @@ import { solicitudFila } from "./Solicitudes";
 import { abrirEstimado, estimadoArmar, estimadoVista, loFinal } from "./Estimado";
 import { uuid } from "@/lib/uuid";
 import { diasTxt, horasTxt } from "@/lib/plazo-txt";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type CitasData = { apartados?: ApartadoFila[]; aptDet?: ApartadoVista | null; rentas?: RentaFila[]; rentaDet?: RentaVista | null; planes?: PlanPanelFila[]; em?: EmFila[]; emDet?: EmFila | null; sol?: SolFila[]; solDet?: SolPanel | null; vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "noseguro" | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 import { usd as money } from "@/lib/dinero-comun";
-const MDAY: [string, string][] = [["Dom", "Sun"], ["Lun", "Mon"], ["Mar", "Tue"], ["Mié", "Wed"], ["Jue", "Thu"], ["Vie", "Fri"], ["Sáb", "Sat"]];
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const MDAY = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")]; };
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const diaL = (c: Ctx, ymd: string, n: number) => {
-  const d = new Date(`${ymd}T12:00:00Z`), w = MDAY[d.getUTCDay()]!, m = MES[d.getUTCMonth()]!, num = d.getUTCDate(), base = c.es ? `${num} ${m[0]}` : `${m[1]} ${num}`;
-  return n === 0 ? `${c.E2("Hoy", "Today")} ${base}` : n === 1 ? `${c.E2("Mañana", "Tomorrow")} ${base}` : `${c.es ? w[0] : w[1]} ${base}`;
+  const d = new Date(`${ymd}T12:00:00Z`), w = MDAY(c.es)[d.getUTCDay()]!, m = MES(c.es)[d.getUTCMonth()]!, num = d.getUTCDate(), base = c.es ? `${num} ${m}` : `${m} ${num}`;
+  return n === 0 ? `${c.E2("Hoy", "Today")} ${base}` : n === 1 ? `${c.E2("Mañana", "Tomorrow")} ${base}` : `${w} ${base}`;
 };
 const dias = (ymd: string, hoy: string) => Math.round((Date.parse(ymd) - Date.parse(hoy)) / 864e5);
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
@@ -260,7 +261,7 @@ export function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] 
 export function hoyPlanes(c: Ctx): Bloque[] {
   const { E2, es } = c, L = c.citas?.planes ?? [];
   if (!L.length) return [];
-  const fL = (f: string | null) => { if (!f) return "—"; const d = new Date(`${f}T12:00:00Z`); return `${MDAY[d.getUTCDay()]![es ? 0 : 1]} ${es ? `${d.getUTCDate()} ${MES[d.getUTCMonth()]![0]}` : `${MES[d.getUTCMonth()]![1]} ${d.getUTCDate()}`}`; };
+  const fL = (f: string | null) => { if (!f) return "—"; const d = new Date(`${f}T12:00:00Z`); return `${MDAY(es)[d.getUTCDay()]!} ${es ? `${d.getUTCDate()} ${MES(es)[d.getUTCMonth()]!}` : `${MES(es)[d.getUTCMonth()]!} ${d.getUTCDate()}`}`; };
   return [{ type: "rows", k: (() => { const n = L.filter((x) => x.st === "active").length; return `${E2("TUS PLANES", "YOUR PLANS")} · ${n} ${n === 1 ? E2("ACTIVO", "ACTIVE") : E2("ACTIVOS", "ACTIVE")}`; })(), items: L.map((x): Fila => ({ key: x.numero, icon: "calendar", t: `${x.quien} · ${es ? x.svc.es : x.svc.en || x.svc.es}`,
     s: `${E2("Próxima visita: ", "Next visit: ")}${fL(x.next)} · ${money(x.precio)}${E2("/mes", "/mo")} · ${x.cobros} ${x.cobros === 1 ? E2("cobro", "charge") : E2("cobros", "charges")}`,
     tag: x.st === "paused" ? (x.fallos >= 3 ? E2("TARJETA RECHAZADA", "CARD DECLINED") : E2("EN PAUSA", "PAUSED")) : x.fallos ? E2("COBRO PENDIENTE", "CHARGE PENDING") : E2("ACTIVO", "ACTIVE"), tone: x.st === "paused" || x.fallos ? "danger" : "signal", chev: false })) }];

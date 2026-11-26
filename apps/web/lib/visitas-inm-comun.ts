@@ -3,6 +3,7 @@
    estados de citaVals (L66–71). Nada de esto mueve dinero: hoy $0 siempre (todayOf L24, cobro L33). */
 import { fechaCorta, horaInsc, type Bi } from "./inscripciones-comun";
 import { SIN_NUMEROS } from "./inmuebles-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type { Bi };
 export type RubroVis = "inm" | "dealer";
@@ -39,8 +40,8 @@ export function taparNumeros(t: string): { texto: string; tapado: boolean } {
 export const TEL = /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/;
 
 /* «sáb 14 nov · 5 PM» (fecha del calendario de la ciudad, sin zona del navegador). */
-const DOW: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
-export const diaVis = (ymd: string, es: boolean) => `${DOW[new Date(`${ymd}T12:00:00Z`).getUTCDay()]![es ? 0 : 1]} ${fechaCorta(ymd, es)}`;
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+export const diaVis = (ymd: string, es: boolean) => `${DOW(es)[new Date(`${ymd}T12:00:00Z`).getUTCDay()]!} ${fechaCorta(ymd, es)}`;
 export const cuandoVis = (ymd: string, min: number, es: boolean) => `${diaVis(ymd, es)} · ${horaInsc(min)}`;
 export const horaVis = horaInsc;
 

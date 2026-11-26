@@ -17,8 +17,8 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void; pedir: (href: string) => void };
 const bi = (t: Bi, es: boolean) => (es ? t.es : t.en || t.es);
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
-const fecha = (iso: string, hoy: string, es: boolean) => { if (iso <= hoy) return es ? "Ya" : "Now"; const [, m, d] = iso.split("-").map(Number) as [number, number, number]; return es ? `${d} ${MES[m - 1]![0]}` : `${MES[m - 1]![1]} ${d}`; };
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const fecha = (iso: string, hoy: string, es: boolean) => { if (iso <= hoy) return es ? "Ya" : "Now"; const [, m, d] = iso.split("-").map(Number) as [number, number, number]; return es ? `${d} ${MES(es)[m - 1]!}` : `${MES(es)[m - 1]!} ${d}`; };
 
 /* El pie de vivienda justa: va detrás de TODA propiedad que se pinta (lista, Resumen y hoja). */
 function pie(es: boolean) {

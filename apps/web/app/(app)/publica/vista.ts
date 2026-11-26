@@ -4,7 +4,7 @@ import { ahora, cap, DAYS, daysOf, derive, F, fmt, items, limites, metaOf, money
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
 
-const MESES = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const MESES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 
 export function vista(d: Borrador, es: boolean, o: { ciudad: string; usuario: { nombre: string; primero: string } | null; foto: (id: string, h: number) => string }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), CIU = o.ciudad.toUpperCase();
@@ -30,7 +30,7 @@ export function vista(d: Borrador, es: boolean, o: { ciudad: string; usuario: { 
   const addr = op === "casa" ? E2("Va a domicilio · hasta ", "Comes to you · up to ") + zone + E2(" millas", " miles") : op === "home" ? `${street || E2("Tu calle", "Your street")}, ${o.ciudad} PA` : d.addr ? `${d.addr}, ${o.ciudad} PA` : E2("Tu dirección", "Your address");
   const addrMeta = op === "home" ? E2("DIRECCIÓN EXACTA AL CONFIRMAR", "EXACT ADDRESS ON CONFIRMATION") : op === "rento" && d.joinName ? (E2("DENTRO DE ", "INSIDE ") + d.joinName).toUpperCase() : op === "truck" ? E2("CAMIÓN · CAMBIA DE LUGAR", "TRUCK · MOVES AROUND") : op === "ambos" ? E2("TAMBIÉN VA A DOMICILIO · ", "ALSO COMES TO YOU · ") + zone + " MI" : String(d.ref || "").toUpperCase();
   const lic = (dv.tool as { lic?: unknown[] })?.lic?.length;
-  const hoy = new Date(), mes = MESES[hoy.getMonth()]!, diaN = es ? DAYS[t.hoy]![2].toUpperCase() : DAYS[t.hoy]![3].toUpperCase();
+  const hoy = new Date(), mes = MESES(es)[hoy.getMonth()]!, diaN = es ? DAYS[t.hoy]![2].toUpperCase() : DAYS[t.hoy]![3].toUpperCase();
   return {
     name, nameOr, logoBg: "", logoC: "var(--tl-ink)", logoTxt: ini, logoIni: ini.slice(0, 1),
     cover: d.cover ? fotoFondo(o.foto(d.cover, 500), 540) : "", noCover: !d.cover,
@@ -40,7 +40,7 @@ export function vista(d: Borrador, es: boolean, o: { ciudad: string; usuario: { 
     cta: c ? E2(c.cta[0], c.cta[1]) : "Booking", ctaIc: c ? c.cta[2] : "calendar", chips, hasChips: chips.length > 0, tabs, items: lista, itemsT: sellS, about: "", hasAbout: false, hasOwner: true,
     oc: { name: o.usuario?.nombre || E2("Tu nombre", "Your name"), role: E2("La persona detrás", "The person behind it"), nick: o.usuario?.primero || "", about: "", teamLabel: E2("SU EQUIPO", "THE TEAM") },
     trust: [{ icon: "phone", label: E2("Teléfono verificado", "Verified phone"), tone: "ok" }].concat(lic ? [{ icon: "shield", label: E2("Licencias en revisión", "Licenses in review"), tone: "wait" }] : []).concat([{ icon: "calendar", label: E2(`En To'Latino desde ${mes[0]} ${hoy.getFullYear()}`, `On To'Latino since ${mes[1]} ${hoy.getFullYear()}`), tone: "info" }]),
-    tc: { eyebrow: `${E2("HOY · ", "TODAY · ")}${diaN} ${hoy.getDate()} ${(es ? mes[0] : mes[1])!.toUpperCase()}`, title: stt.s, dot: stt.dot, sub: how, cols: [{ k: E2("HOY", "TODAY"), v: tdy.on ? fmt(tdy.a) + " – " + fmt(tdy.b) : E2("Cerrado", "Closed") }, { k: E2("PAGO", "PAYMENT"), v: E2("En el local", "In person") }, { k: E2("IDIOMA", "LANGUAGE"), v: E2("Español", "Spanish") }] },
+    tc: { eyebrow: `${E2("HOY · ", "TODAY · ")}${diaN} ${hoy.getDate()} ${mes.toUpperCase()}`, title: stt.s, dot: stt.dot, sub: how, cols: [{ k: E2("HOY", "TODAY"), v: tdy.on ? fmt(tdy.a) + " – " + fmt(tdy.b) : E2("Cerrado", "Closed") }, { k: E2("PAGO", "PAYMENT"), v: E2("En el local", "In person") }, { k: E2("IDIOMA", "LANGUAGE"), v: E2("Español", "Spanish") }] },
     hours, sched: [], amen, hasAmen: amen.length > 0, addr, addrMeta, isZone: needZone(op), zoneD: Math.min(128, 36 + zone * 3) + "px", staff: [],
     photos: [d.cover].concat(d.gallery || []).filter(Boolean).map((p) => fotoFondo(o.foto(p as string, 300), 200)), freePhotos: limites().fotos, line: "", hasLine: false, sealPend: false,
     lbl: { blockPro: E2("EN RESULTADOS · DESTACADOS", "IN RESULTS · FEATURED"), blockFree: E2(`EN RESULTADOS · TAMBIÉN EN ${CIU}`, `IN RESULTS · ALSO IN ${CIU}`), call: E2("Llamar", "Call"), coverHere: E2("TU PORTADA VA AQUÍ", "YOUR COVER GOES HERE"), photos: E2("Fotos", "Photos"), hours: E2("Horario", "Hours"), map: op === "casa" ? E2("Zona de servicio", "Service area") : E2("Cómo llegar", "Directions"), about: E2("Quiénes somos", "About us"), team: E2("Equipo", "Team"), holi: E2("FERIADO", "HOLIDAY"), freeCap: E2(`FREE MUESTRA ${limites().items} · TIENES `, `FREE SHOWS ${limites().items} · YOU HAVE `) + lista.length, sealPend: E2("SELLO EN REVISIÓN", "BADGE IN REVIEW") },

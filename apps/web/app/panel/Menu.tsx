@@ -15,11 +15,12 @@ import { vendesCitas } from "./Servicios";
 import { vendesOficios } from "./Oficios";
 import type { Ctx, Sec } from "./Panel";
 import { filaHerramientaRetail } from "./Retail";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = [string, string];
 const MTAGS: [string, string, string][] = [["pica", "Picante", "Spicy"], ["veg", "Vegetariano", "Vegetarian"], ["sg", "Sin gluten", "Gluten-free"], ["mar", "Pescado o mariscos", "Fish or shellfish"], ["lac", "Lácteos", "Dairy"], ["hue", "Huevo", "Egg"], ["nuez", "Maní o nueces", "Peanuts or nuts"]];
 const MAGO: Record<string, Bi> = { hoy: ["Vuelve mañana", "Back tomorrow"], vie: ["Hasta el viernes", "Until Friday"], manual: ["Hasta que lo actives", "Until you turn it on"] };
-const MDAY: Bi[] = [["Dom", "Sun"], ["Lun", "Mon"], ["Mar", "Tue"], ["Mié", "Wed"], ["Jue", "Thu"], ["Vie", "Fri"], ["Sáb", "Sat"]];
+const MDAY = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")]; };
 import { usd as __usd_fp } from "@/lib/dinero-comun";
 export const fp = __usd_fp;
 const norm = (t: string) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -29,7 +30,7 @@ const fmtH = (x: number) => tl(Math.round(x * 60));
 export function avL(c: Ctx, k: string, short: boolean, av: Av | null) {
   const es = c.es;
   if (k === "own" && av) {
-    const S = av.d.slice().sort().join(), dl = S === "0,1,2,3,4,5,6" ? "" : S === "1,2,3,4,5" ? (es ? "Lun–Vie" : "Mon–Fri") : S === "0,6" ? (es ? "Sáb y dom" : "Sat and Sun") : [1, 2, 3, 4, 5, 6, 0].filter((z) => av.d.includes(z)).map((z) => MDAY[z]![es ? 0 : 1]).join(" · ");
+    const S = av.d.slice().sort().join(), dl = S === "0,1,2,3,4,5,6" ? "" : S === "1,2,3,4,5" ? (es ? "Lun–Vie" : "Mon–Fri") : S === "0,6" ? (es ? "Sáb y dom" : "Sat and Sun") : [1, 2, 3, 4, 5, 6, 0].filter((z) => av.d.includes(z)).map((z) => MDAY(es)[z]!).join(" · ");
     const r = [dl, `${tl(av.f)}–${tl(av.t)}`].filter(Boolean).join(" · ");
     return short ? r.toUpperCase() : r;
   }
@@ -277,7 +278,7 @@ function avB(c: Ctx, F: { d: { avail: string; av: Av | null }; set: (p: Partial<
     items: opts.map(([v, l]) => ({ l, v: d.avail === v ? "selected" : "filter", onClick: () => F.set(v === "own" && !d.av ? { avail: v, av: avDef(c) } : { avail: v }) })) });
   if (d.avail === "own" && d.av) { const a = d.av, set = (p: Partial<Av>) => F.set({ av: { ...a, ...p } });
     out.push({ type: "step", t: E2("Desde", "From"), v: tl(a.f), onM: () => set({ f: Math.max(0, a.f - 30) }), onP: () => set({ f: Math.min(a.t - 30, a.f + 30) }) }, { type: "step", t: E2("Hasta", "Until"), v: tl(a.t), onM: () => set({ t: Math.max(a.f + 30, a.t - 30) }), onP: () => set({ t: Math.min(1440, a.t + 30) }) });
-    out.push({ type: "chips", k: E2("DÍAS", "DAYS"), items: [1, 2, 3, 4, 5, 6, 0].map((z) => ({ l: MDAY[z]![c.es ? 0 : 1], v: a.d.includes(z) ? "selected" : "filter", onClick: () => set({ d: a.d.includes(z) ? a.d.filter((y) => y !== z) : [...a.d, z] }) })) });
+    out.push({ type: "chips", k: E2("DÍAS", "DAYS"), items: [1, 2, 3, 4, 5, 6, 0].map((z) => ({ l: MDAY(c.es)[z]!, v: a.d.includes(z) ? "selected" : "filter", onClick: () => set({ d: a.d.includes(z) ? a.d.filter((y) => y !== z) : [...a.d, z] }) })) });
     out.push(a.d.length ? { type: "note", tone: "info", icon: "clock", t: E2("Fuera de ese horario se ve en tu menú, pero no se puede pedir.", "Outside those hours it shows on your menu but cannot be ordered.") } : { type: "note", tone: "warn", t: E2("Elige al menos un día.", "Pick at least one day.") }); }
   return out;
 }

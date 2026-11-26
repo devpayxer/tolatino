@@ -13,7 +13,7 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
-const MOT: Record<string, [string, string]> = { falta: ["Falta algo", "Something is missing"], equivocado: ["Llegó algo equivocado", "Wrong item"], frio: ["Llegó frío o mal preparado", "Cold or poorly made"], danado: ["Llegó dañado o derramado", "Damaged or spilled"], tarde: ["Llegó tarde", "Arrived late"], nollego: ["No me llegó", "It never arrived"], pago: ["Problema con el pago", "Payment issue"], otro: ["Otro problema", "Something else"] };
+const MOT = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { falta: E2("Falta algo", "Something is missing"), equivocado: E2("Llegó algo equivocado", "Wrong item"), frio: E2("Llegó frío o mal preparado", "Cold or poorly made"), danado: E2("Llegó dañado o derramado", "Damaged or spilled"), tarde: E2("Llegó tarde", "Arrived late"), nollego: E2("No me llegó", "It never arrived"), pago: E2("Problema con el pago", "Payment issue"), otro: E2("Otro problema", "Something else") }; };
 
 export function AyudaEstado({ numero, negocio, a, puede, es }: { numero: string; negocio: string; a: Ayuda | null; puede: boolean; es: boolean }) {
   const E2 = (x: string, y: string) => dosIdiomas(es, x, y);
@@ -21,7 +21,7 @@ export function AyudaEstado({ numero, negocio, a, puede, es }: { numero: string;
   const [busy, setBusy] = useState(false), [err, setErr] = useState("");
   if (!a) return puede ? <div className="flex"><Button variant="secondary" icon="help" block onClick={() => router.push(`/pedido/${numero}/ayuda`)}>{E2("Ayuda con el pedido", "Help with this order")}</Button></div> : null;
   const hora = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
-  const mot = MOT[a.reason] ?? MOT.otro!;
+  const mot = MOT(es)[a.reason] ?? MOT(es).otro!;
   const [tono, ic, t, s] = a.status === "resolved" ? ["ok", "check", E2("Solicitud resuelta por To’Latino", "Request resolved by To’Latino"), a.resolution ?? ""]
     : a.status === "escalated" ? ["warn", "shield", E2("To’Latino está revisando tu solicitud", "To’Latino is reviewing your request"), a.porUsuario ? E2("Pediste que la revisemos. Te respondemos aquí.", "You asked us to review it. We reply here.") : E2(`${negocio} no respondió en ${horasTxt(a.plazoH, true)}. Te respondemos aquí.`, `${negocio} did not reply within ${horasTxt(a.plazoH, false)}. We reply here.`)]
     : a.status === "answered" ? ["ok", "chat", E2(`${negocio} respondió`, `${negocio} replied`), `“${a.reply ?? ""}”`]
@@ -34,7 +34,7 @@ export function AyudaEstado({ numero, negocio, a, puede, es }: { numero: string;
         <span className="grid flex-none pt-px"><Icon name={ic} size={16} color={tono === "ok" ? "var(--tl-open-text)" : "var(--tl-pro-ink)"} /></span>
         <div className="min-w-0 flex-1">
           <div className={`text-[13.5px] font-bold ${fg}`}>{t}</div>
-          <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{`${a.number} · ${es ? mot[0] : mot[1]}`.toUpperCase()}{a.items.length ? ` · ${a.items.map((x) => `${x.q} × ${x.n}`).join(", ")}` : ""}</div>
+          <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[0.1em] text-ink/60">{`${a.number} · ${mot}`.toUpperCase()}{a.items.length ? ` · ${a.items.map((x) => `${x.q} × ${x.n}`).join(", ")}` : ""}</div>
           {s && <div className="mt-1.5 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{s}</div>}
         </div>
       </div>

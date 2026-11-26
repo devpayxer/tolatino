@@ -11,12 +11,13 @@ import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../PantallaPronto";
 import { Eventos } from "./Eventos";
 import { PieWeb } from "../_legal/PieWeb";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Eventos · To'Latino", description: "Fiestas, shows, clases, cultos y eventos de la comunidad cerca de ti, día por día." };
 
-const WL: [string, string][] = [["Domingo", "Sunday"], ["Lunes", "Monday"], ["Martes", "Tuesday"], ["Miércoles", "Wednesday"], ["Jueves", "Thursday"], ["Viernes", "Friday"], ["Sábado", "Saturday"]];
-const MS: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const WL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Domingo", "Sunday"), E2("Lunes", "Monday"), E2("Martes", "Tuesday"), E2("Miércoles", "Wednesday"), E2("Jueves", "Thursday"), E2("Viernes", "Friday"), E2("Sábado", "Saturday")]; };
+const MS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const diasEntre = (a: string, b: string) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 864e5);
 
 /* APP-EVT-BUSQ · C-003 (canvas tolatino-master+, «Eventos (variantes)» D; prototipo bqVals): Patrocinados (los de la base, pagados y activos) →
@@ -43,7 +44,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
   const ultimo = conEventos.at(-1), fin = Math.max(10, Math.min(45, ultimo ? diasEntre(hoy, ultimo) + 2 : 0), diasEntre(hoy, dia));
   const [y, m, d] = dia.split("-").map(Number), dow = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
   const titulo = dia === hoy ? E("Esta noche", "Tonight") : dia === sumarDias(hoy, 1) ? E("Mañana", "Tomorrow")
-    : `${es ? WL[dow]![0] : WL[dow]![1]} ${d}${dia.slice(0, 7) !== hoy.slice(0, 7) ? ` ${es ? MS[m! - 1]![0] : MS[m! - 1]![1]}` : ""}`;
+    : `${WL(es)[dow]!} ${d}${dia.slice(0, 7) !== hoy.slice(0, 7) ? ` ${MS(es)[m! - 1]!}` : ""}`;
   return (<><Eventos es={es} ciudad={loc.c.name} estado={loc.c.state} dia={dia} hoy={hoy} fin={sumarDias(hoy, fin)} conEventos={conEventos} titulo={titulo} t={t}
     generos={G.map((g) => ({ k: g.key, l: es ? g.label.es : g.label.en || g.label.es }))} lista={lista} historias={historias} spon={spon} dest={dest} mios={misRsvp} bol={misBol} /><PieWeb /></>);
 }

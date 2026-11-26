@@ -23,7 +23,7 @@ const stop = (e?: MouseEvent) => e?.stopPropagation();
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const TIPOS = [["medicaid", "Medicaid", "Medicaid"], ["medicare", "Medicare", "Medicare"], ["chip", "CHIP (niños)", "CHIP (kids)"], ["priv", "Seguro del trabajo o privado", "Employer or private"], ["none", "No tengo seguro", "No insurance"]] as const;
 const PARA = [["yo", "Para mí", "For me"], ["hijo", "Para mi hijo o hija", "For my child"], ["otro", "Para otra persona", "For someone else"]] as const;
-const LANG: Record<string, [string, string]> = { es: ["Español", "Spanish"], en: ["English", "English"], pt: ["Português", "Portuguese"], ht: ["Kreyòl", "Haitian Creole"] };
+const LANG = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { es: E2("Español", "Spanish"), en: E2("English", "English"), pt: E2("Português", "Portuguese"), ht: E2("Kreyòl", "Haitian Creole") }; };
 type Seg = SeguroRef & { id: string; last4: string | null; para: string; cuenta: boolean };
 
 export function useSalud(sp: SaludPublico | null, es: boolean) {
@@ -137,7 +137,7 @@ export function SaHoja({ v }: { v: Sa }) {
   if (!s) return null;
   const P = precioSalud(s, sp.clinica, v.seg, es), walk = s.k === "walk";
   const docs = sp.gente.filter((p) => !s.who.length || s.who.includes(p.id));
-  const habla = (p: { langs: string[] }) => (p.langs.includes("es") ? E2("HABLA ESPAÑOL", "SPEAKS SPANISH") : sp.h.interp ? E2("HABLA INGLÉS · INTÉRPRETE GRATIS", "SPEAKS ENGLISH · FREE INTERPRETER") : p.langs.map((l) => (LANG[l] ?? [l, l])[es ? 0 : 1]).join(" · ").toUpperCase());
+  const habla = (p: { langs: string[] }) => (p.langs.includes("es") ? E2("HABLA ESPAÑOL", "SPEAKS SPANISH") : sp.h.interp ? E2("HABLA INGLÉS · INTÉRPRETE GRATIS", "SPEAKS ENGLISH · FREE INTERPRETER") : p.langs.map((l) => (LANG(es)[l] ?? l)).join(" · ").toUpperCase());
   const llamar = !walk && (!sp.can || !sp.booking);
   const cta = walk ? E2("Cómo llegar", "Directions") : llamar ? (sp.negocio.telefono ? E2("Llama para tu cita", "Call to book") : E2("Pide tu cita en el consultorio", "Book at the clinic")) : s.k === "tele" ? E2("Elegir hora del video", "Choose video time") : E2("Elegir hora", "Choose a time");
   const go = () => {
@@ -282,7 +282,7 @@ export function SaResumen({ v, desk, onAll }: { v: Sa; desk: boolean; onAll?: ()
 /* Hechos (SEGUROS · SIN SEGURO · IDIOMAS · PAGO) y «Cómo funciona» en 4 pasos (listingAdd facts / how). */
 function SaDatos({ v }: { v: Sa }) {
   const { E2, sp, es } = v;
-  const idiomas = v.tg("medesp") ? E2("El médico habla español · English", "Doctor speaks Spanish · English") : sp.h.interp ? E2("Inglés · intérprete gratis", "English · free interpreter") : sp.h.langs.map((l) => (LANG[l] ?? [l, l])[es ? 0 : 1]).join(" · ");
+  const idiomas = v.tg("medesp") ? E2("El médico habla español · English", "Doctor speaks Spanish · English") : sp.h.interp ? E2("Inglés · intérprete gratis", "English · free interpreter") : sp.h.langs.map((l) => (LANG(es)[l] ?? l)).join(" · ");
   const facts: [string, string, string][] = [
     ["insurance", E2("SEGUROS", "INSURANCE"), v.insL.join(" · ") || E2("Pregunta en recepción", "Ask the front desk")],
     ["dollar", E2("SIN SEGURO", "UNINSURED"), `${sp.h.sin ? E2(`Consulta ${usd(sp.h.cash)}`, `Visit ${usd(sp.h.cash)}`) : "—"}${sp.h.escala ? E2(" · según tus ingresos", " · income-based") : ""}`],

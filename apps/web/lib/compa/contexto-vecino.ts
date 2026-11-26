@@ -4,6 +4,7 @@ import { db } from "../db";
 import type { Lang } from "./modelo";
 import { tapar } from "./tapar";
 import { usd } from "../dinero-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 7c · Lo que El Compa sabe de un VECINO (fase7-compa.md §3 «Qué datos ve»; guardianes compaSoloSusDatos y compaSinDatosSensibles). Recibe
    SOLO el id de la sesión y lee lo que esa persona ya ve en Mi cuenta: su nombre de pila, idioma, ciudad y sus últimas compa_contexto_ops
@@ -17,15 +18,21 @@ export type ContextoVecino = { datos: Record<string, unknown>; refs: Map<string,
 
 /* Las solicitudes que El Compa puede preparar para cancelar (cancel_request): pendientes, sin cobro, de estos tipos (CANCELABLES en acciones.ts). */
 export const KINDS_CANCELABLES = ["appointment", "table"] as const;
-const TIPO: Record<string, [string, string]> = {
-  order: ["pedido", "order"], market_order: ["pedido del mercado", "market order"], hold: ["apartado", "layaway hold"], appointment: ["cita", "appointment"],
-  quote: ["solicitud de presupuesto", "quote request"], party: ["fiesta", "party"], private_event: ["evento privado", "private event"], table: ["reservación de mesa", "table reservation"],
-  night: ["noche", "night out"], trip: ["viaje", "trip"], visit: ["visita", "visit"], tickets: ["boletos", "tickets"], rental: ["renta", "rental"], plan: ["plan de pagos", "payment plan"],
+const TIPO = (es: unknown): Record<string, string> => {
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
+  return {
+  order: E2("pedido", "order"), market_order: E2("pedido del mercado", "market order"), hold: E2("apartado", "layaway hold"), appointment: E2("cita", "appointment"),
+  quote: E2("solicitud de presupuesto", "quote request"), party: E2("fiesta", "party"), private_event: E2("evento privado", "private event"), table: E2("reservación de mesa", "table reservation"),
+  night: E2("noche", "night out"), trip: E2("viaje", "trip"), visit: E2("visita", "visit"), tickets: E2("boletos", "tickets"), rental: E2("renta", "rental"), plan: E2("plan de pagos", "payment plan"),
 };
-const ESTADO: Record<string, [string, string]> = {
-  pending: ["solicitud enviada, todavía sin confirmar", "request sent, not confirmed yet"], change_proposed: ["el negocio propuso un cambio", "the business proposed a change"],
-  confirmed: ["confirmada", "confirmed"], declined: ["no aceptada por el negocio", "declined by the business"], expired: ["vencida sin respuesta", "expired without an answer"],
-  cancelled: ["cancelada", "cancelled"], done: ["terminada", "completed"],
+};
+const ESTADO = (es: unknown): Record<string, string> => {
+  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
+  return {
+  pending: E2("solicitud enviada, todavía sin confirmar", "request sent, not confirmed yet"), change_proposed: E2("el negocio propuso un cambio", "the business proposed a change"),
+  confirmed: E2("confirmada", "confirmed"), declined: E2("no aceptada por el negocio", "declined by the business"), expired: E2("vencida sin respuesta", "expired without an answer"),
+  cancelled: E2("cancelada", "cancelled"), done: E2("terminada", "completed"),
+};
 };
 
 export async function contextoVecino(userId: string, lang: Lang): Promise<ContextoVecino> {
@@ -49,7 +56,7 @@ export async function contextoVecino(userId: string, lang: Lang): Promise<Contex
     const ref = `op${i + 1}`;
     const cancelableGratis = (KINDS_CANCELABLES as readonly string[]).includes(o.kind) && o.status === "pending" && !o.detail && (o.pago == null || o.pago === "held");
     refs.set(ref, { id: o.id, numero: o.number, kind: o.kind, status: o.status, detail: o.detail, pago: o.pago, negocio: o.negocio, negocioId: o.nid, cancelableGratis });
-    return { ref, numero: o.number, tipo: (TIPO[o.kind] ?? [o.kind, o.kind])[es ? 0 : 1], negocio: tapar(o.negocio).texto, estado: (ESTADO[o.status] ?? [o.status, o.status])[es ? 0 : 1],
+    return { ref, numero: o.number, tipo: (TIPO(es)[o.kind] ?? o.kind), negocio: tapar(o.negocio).texto, estado: (ESTADO(es)[o.status] ?? o.status),
       cuando: o.cuando, total: o.total > 0 ? usd(o.total) : null, cancelable_gratis: cancelableGratis };
   });
   const datos = { persona: { nombre: tapar(p?.nombre ?? "").texto || null, idioma: lang, ciudad: p?.ciudad_nombre ?? null }, operaciones: ops };

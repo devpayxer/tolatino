@@ -9,8 +9,9 @@ import type { Ctx } from "./Panel";
 import { pagosEventosBloques } from "./EventosCambios";
 
 import { usd as money } from "@/lib/dinero-comun";
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
-const fecha = (c: Ctx, ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`), m = MES[d.getUTCMonth()]!; return c.es ? `mar ${d.getUTCDate()} ${m[0]}` : `Tue ${m[1]} ${d.getUTCDate()}`; };
+import { dosIdiomas } from "@/lib/dos-idiomas";
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const fecha = (c: Ctx, ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`), m = MES(c.es)[d.getUTCMonth()]!; return c.es ? `mar ${d.getUTCDate()} ${m}` : `Tue ${m} ${d.getUTCDate()}`; };
 const cuando = (c: Ctx, iso: string) => new Intl.DateTimeFormat(c.es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
 const DSP = (E2: (a: string, b: string) => string): Record<string, [string, string]> => ({ needs_response: [E2("EN DISPUTA", "DISPUTED"), "danger"], under_review: [E2("EN DISPUTA", "DISPUTED"), "danger"], won: [E2("GANADA", "WON"), "signal"], lost: [E2("PERDIDA", "LOST"), "danger"], accepted: [E2("DEVUELTO", "REFUNDED"), "danger"] });

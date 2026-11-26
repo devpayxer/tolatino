@@ -24,11 +24,11 @@ const tx = (x: Partial<Bi> | null | undefined, es: boolean) => ((es ? x?.es : x?
 const hm2m = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); return h * 60 + m; };
 export const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const horaCorta = (m: number) => { m = ((m % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
-const DN = [["DOM", "SUN"], ["LUN", "MON"], ["MAR", "TUE"], ["MIÉ", "WED"], ["JUE", "THU"], ["VIE", "FRI"], ["SÁB", "SAT"]] as const;
+const DN = (es: unknown) => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
 const diasL = (d: number[], es: boolean) => {
   const S = [...d].sort().join();
   return S === "0,1,2,3,4,5,6" ? "" : S === "1,2,3,4,5" ? (es ? "LUN–VIE" : "MON–FRI") : S === "0,6" ? (es ? "SÁB Y DOM" : "SAT AND SUN")
-    : [1, 2, 3, 4, 5, 6, 0].filter((z) => d.includes(z)).map((z) => DN[z]![es ? 0 : 1]).join(" · ");
+    : [1, 2, 3, 4, 5, 6, 0].filter((z) => d.includes(z)).map((z) => DN(es)[z]!).join(" · ");
 };
 /* Horario propio de un plato o su categoría (Panel · Menú): fuera de la ventana = no se puede pedir; la etiqueta como el
    prototipo (TLMenu.hrs): otro día → los días; antes → DESDE; durante, si termina antes de medianoche → HASTA. */

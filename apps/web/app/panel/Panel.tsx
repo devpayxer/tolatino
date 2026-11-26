@@ -104,8 +104,8 @@ const HECHOS = new Set(PARTS.map((p) => p.k));
 /* «Tus licencias» solo existe para Trámites y profesionales, Iglesias (4ia: funeraria, DOJ, 501(c)(3)), Bienes Raíces (4ib: corredor,
    NMLS, avaluador, inspector) y Venta de Autos (4ic: dealer, vendedor, venta a plazos, NMLS). */
 const partesDe = (d: DatosPanel) => PARTS.filter((p) => p.k !== "lic" || !!d.lic);
-const MES: Bi[] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
-const DIA_L: Bi[] = [["DOMINGO", "SUNDAY"], ["LUNES", "MONDAY"], ["MARTES", "TUESDAY"], ["MIÉRCOLES", "WEDNESDAY"], ["JUEVES", "THURSDAY"], ["VIERNES", "FRIDAY"], ["SÁBADO", "SATURDAY"]];
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const DIA_L = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOMINGO", "SUNDAY"), E2("LUNES", "MONDAY"), E2("MARTES", "TUESDAY"), E2("MIÉRCOLES", "WEDNESDAY"), E2("JUEVES", "THURSDAY"), E2("VIERNES", "FRIDAY"), E2("SÁBADO", "SATURDAY")]; };
 const DIAS: Bi[] = [["Lunes", "Monday"], ["Martes", "Tuesday"], ["Miércoles", "Wednesday"], ["Jueves", "Thursday"], ["Viernes", "Friday"], ["Sábado", "Saturday"], ["Domingo", "Sunday"]];
 
 function useAncho() {
@@ -118,7 +118,7 @@ export function fechaCorta(iso: string, tz: string, es: boolean) {
   const g = (t: string) => p.find((x) => x.type === t)?.value ?? "";
   const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(g("weekday")), m = Number(g("month")) - 1, d = g("day");
   const dE: Bi[] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
-  return es ? `${dE[dow]![0]} ${d} ${MES[m]![0]}` : `${dE[dow]![1]} ${MES[m]![1]} ${d}`;
+  return es ? `${dE[dow]![0]} ${d} ${MES(es)[m]!}` : `${dE[dow]![1]} ${MES(es)[m]!} ${d}`;
 }
 
 export type Form<T> = { key: string; d: T; dirty: boolean; set: (p: Partial<T>) => void };
@@ -593,7 +593,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   const { d, E2, es } = c, out: (Bloque | null)[] = [...avisosAdmin(c, "hoy"), ...d.anuncios.map((a): Bloque => ({ type: "note", tone: "info", icon: "bell", t: a.text }))];
   if (d.st.closedToday) out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Cerraste por hoy: tu página dice «Cerrado hoy» y no recibes pedidos ni citas. Mañana abres normal.", "You closed for today: your page says “Closed today” and you get no orders or bookings. Tomorrow you open as usual."), cta: E2("Abrir", "Open"), onCta: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) });
   const [y, m, dd] = d.hoy.fecha.split("-").map(Number), hora = fmtHora(Number(d.hoy.hm.slice(0, 2)) + Number(d.hoy.hm.slice(3)) / 60);
-  const fecha = es ? `${DIA_L[d.hoy.dow]![0]} ${dd} ${MES[m! - 1]![0].toUpperCase()}` : `${DIA_L[d.hoy.dow]![1]} ${MES[m! - 1]![1].toUpperCase()} ${dd}`;
+  const fecha = es ? `${DIA_L(es)[d.hoy.dow]!} ${dd} ${MES(es)[m! - 1]!.toUpperCase()}` : `${DIA_L(es)[d.hoy.dow]!} ${MES(es)[m! - 1]!.toUpperCase()} ${dd}`;
   void y;
   out.push({ type: "head", eye: `${E2("HOY", "TODAY")} · ${fecha} · ${hora}`, t: `${d.hoy.saludo}, ${d.owner ?? d.name}` });
   // 9h · Acceso anticipado (§3.1): la ciudad todavía no abre; el negocio arma su página y sabe cuándo se verá.

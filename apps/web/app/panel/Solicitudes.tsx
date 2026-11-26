@@ -6,10 +6,11 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { EmFila, SolFila } from "@/lib/solicitudes";
 import { emergenciaAceptar, solicitudResponder } from "./acciones-solicitudes";
 import type { Ctx, Editor } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
-const LIGHTS: Record<string, [string, string]> = { ce: ["Check engine", "Check engine"], bat: ["Batería", "Battery"], temp: ["Temperatura", "Temperature"], abs: ["Frenos o ABS", "Brakes or ABS"], oil: ["Aceite", "Oil"], tpms: ["Presión de gomas", "Tire pressure"] };
-const AREAS: Record<string, [string, string]> = { cocina: ["Cocina", "Kitchen"], bano: ["Baño", "Bathroom"], sotano: ["Sótano", "Basement"], cuarto: ["Cuarto", "Bedroom"], sala: ["Sala", "Living room"], afuera: ["Afuera", "Outside"], toda: ["Toda la casa", "Whole house"] };
+const LIGHTS = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { ce: E2("Check engine", "Check engine"), bat: E2("Batería", "Battery"), temp: E2("Temperatura", "Temperature"), abs: E2("Frenos o ABS", "Brakes or ABS"), oil: E2("Aceite", "Oil"), tpms: E2("Presión de gomas", "Tire pressure") }; };
+const AREAS = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { cocina: E2("Cocina", "Kitchen"), bano: E2("Baño", "Bathroom"), sotano: E2("Sótano", "Basement"), cuarto: E2("Cuarto", "Bedroom"), sala: E2("Sala", "Living room"), afuera: E2("Afuera", "Outside"), toda: E2("Toda la casa", "Whole house") }; };
 const cents = (s: string) => Math.round((Number(String(s).replace(/[^\d.]/g, "")) || 0) * 100);
 const money = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 
@@ -31,8 +32,8 @@ export function solicitudDetalle(c: Ctx): Sec {
       { k: E2("CLIENTE", "CLIENT"), v: x.quien },
       ...(f.veh ? [{ k: E2("VEHÍCULO", "VEHICLE"), v: `${f.veh.t}${f.veh.mi ? ` · ${f.veh.mi.toLocaleString("en-US")} mi` : ""}` }] : []),
       ...(f.casa ? [{ k: E2("CASA", "HOME"), v: f.casa.dir }] : []),
-      ...(f.area ? [{ k: E2("DÓNDE", "WHERE"), v: (AREAS[f.area] ?? [f.area, f.area])[es ? 0 : 1] }] : []),
-      ...(f.luces.length ? [{ k: E2("LUCES", "LIGHTS"), v: f.luces.map((k) => (LIGHTS[k] ?? [k, k])[es ? 0 : 1]).join(" · ") }] : []),
+      ...(f.area ? [{ k: E2("DÓNDE", "WHERE"), v: (AREAS(es)[f.area] ?? f.area) }] : []),
+      ...(f.luces.length ? [{ k: E2("LUCES", "LIGHTS"), v: f.luces.map((k) => (LIGHTS(es)[k] ?? k)).join(" · ") }] : []),
       ...(f.code ? [{ k: E2("CÓDIGO", "CODE"), v: f.code }] : []),
       ...(f.marca || f.edad ? [{ k: E2("EQUIPO", "EQUIPMENT"), v: [f.marca, f.edad].filter(Boolean).join(" · ") }] : []),
       { k: E2("PARA", "NEEDED"), v: f.cuando === "hoy" ? E2("Hoy", "Today") : f.cuando === "nada" ? E2("Sin prisa", "No rush") : E2("Esta semana", "This week") },
@@ -74,19 +75,19 @@ export function solicitudDetalle(c: Ctx): Sec {
 
 /* Emergencias 24/7 (plan §1 hueco #4: el diseño no trae esta pantalla del panel). Arriba en Hoy, en rojo, con lo que se
    necesita para decidir rápido; «Aceptar · salgo ahora» la toma si nadie la tomó antes (gana el primero). */
-const EK: Record<string, [string, string]> = { "e:fuga": ["Fuga que no para", "Leak that won’t stop"], "e:calef": ["Sin calefacción", "No heat"], "e:luz": ["Chispas o sin luz", "Sparks or no power"], "e:tapado": ["Inodoro o drenaje desbordado", "Toilet or drain overflowing"], "e:cerrado": ["Te quedaste afuera", "Locked out"], "e:tormenta": ["Daño por tormenta", "Storm damage"] };
+const EK = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { "e:fuga": E2("Fuga que no para", "Leak that won’t stop"), "e:calef": E2("Sin calefacción", "No heat"), "e:luz": E2("Chispas o sin luz", "Sparks or no power"), "e:tapado": E2("Inodoro o drenaje desbordado", "Toilet or drain overflowing"), "e:cerrado": E2("Te quedaste afuera", "Locked out"), "e:tormenta": E2("Daño por tormenta", "Storm damage") }; };
 export function hoyEmergencias(c: Ctx): Bloque[] {
   const { E2, es } = c, L = c.citas?.em ?? [];
-  return L.map((x: EmFila): Bloque => ({ type: "note", tone: "danger", icon: "warning", t: `${E2("EMERGENCIA", "EMERGENCY")} #${x.numero} · ${(EK[x.ek] ?? [x.ek, x.ek])[es ? 0 : 1]}${x.millas != null ? ` · ${x.millas} mi` : ""} · ${E2(`quedan ${x.min} min`, `${x.min} min left`)}. ${E2("El primero que acepta la toma.", "First to accept takes it.")}`,
+  return L.map((x: EmFila): Bloque => ({ type: "note", tone: "danger", icon: "warning", t: `${E2("EMERGENCIA", "EMERGENCY")} #${x.numero} · ${(EK(es)[x.ek] ?? x.ek)}${x.millas != null ? ` · ${x.millas} mi` : ""} · ${E2(`quedan ${x.min} min`, `${x.min} min left`)}. ${E2("El primero que acepta la toma.", "First to accept takes it.")}`,
     cta: E2("Ver y aceptar", "View and accept"), onCta: () => c.det(`sol:${x.numero}`) }));
 }
 export function emergenciaDetalle(c: Ctx): Sec {
   const { E2, es } = c, x = c.citas?.emDet;
   if (!x) return { blocks: [{ type: "head", t: E2("Emergencia no encontrada", "Emergency not found"), onBack: c.closeDet }, { type: "empty", icon: "warning", t: E2("Esa emergencia no es para ti", "That emergency is not for you"), s: E2("Solo la ven los negocios a los que se mandó.", "Only the businesses it was sent to see it.") }], ed: null };
   const out: (Bloque | null)[] = [
-    { type: "head", eye: `${E2("EMERGENCIA", "EMERGENCY")} · ${x.quien.toUpperCase()}`, t: `#${x.numero}`, s: (EK[x.ek] ?? [x.ek, x.ek])[es ? 0 : 1], onBack: c.closeDet },
+    { type: "head", eye: `${E2("EMERGENCIA", "EMERGENCY")} · ${x.quien.toUpperCase()}`, t: `#${x.numero}`, s: (EK(es)[x.ek] ?? x.ek), onBack: c.closeDet },
     { type: "kv", items: [
-      { k: E2("QUÉ PASA", "WHAT HAPPENED"), v: (EK[x.ek] ?? [x.ek, x.ek])[es ? 0 : 1] }, { k: E2("CASA", "HOME"), v: `${x.casa}${x.millas != null ? ` · ${x.millas} mi` : ""}` },
+      { k: E2("QUÉ PASA", "WHAT HAPPENED"), v: (EK(es)[x.ek] ?? x.ek) }, { k: E2("CASA", "HOME"), v: `${x.casa}${x.millas != null ? ` · ${x.millas} mi` : ""}` },
       { k: E2("TU SALIDA", "YOUR CALL-OUT"), v: money(x.salida) }, ...(x.acceso ? [{ k: E2("CÓMO ENTRAR", "ACCESS"), v: x.acceso }] : []),
     ] },
     x.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.nota}»` } : null,

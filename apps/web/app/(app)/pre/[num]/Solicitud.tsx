@@ -18,8 +18,8 @@ type N = "Icon" | "Button" | "OrderTracker";
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
-const LIGHTS: Record<string, [string, string]> = { ce: ["Check engine", "Check engine"], bat: ["Batería", "Battery"], temp: ["Temperatura", "Temperature"], abs: ["Frenos o ABS", "Brakes or ABS"], oil: ["Aceite", "Oil"], tpms: ["Presión de gomas", "Tire pressure"] };
-const AREAS: Record<string, [string, string]> = { techo: ["Techo", "Roof"], cocina: ["Cocina", "Kitchen"], bano: ["Baño", "Bathroom"], sotano: ["Sótano", "Basement"], cuarto: ["Cuarto", "Bedroom"], sala: ["Sala", "Living room"], afuera: ["Afuera", "Outside"], toda: ["Toda la casa", "Whole house"] };
+const LIGHTS = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { ce: E2("Check engine", "Check engine"), bat: E2("Batería", "Battery"), temp: E2("Temperatura", "Temperature"), abs: E2("Frenos o ABS", "Brakes or ABS"), oil: E2("Aceite", "Oil"), tpms: E2("Presión de gomas", "Tire pressure") }; };
+const AREAS = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { techo: E2("Techo", "Roof"), cocina: E2("Cocina", "Kitchen"), bano: E2("Baño", "Bathroom"), sotano: E2("Sótano", "Basement"), cuarto: E2("Cuarto", "Bedroom"), sala: E2("Sala", "Living room"), afuera: E2("Afuera", "Outside"), toda: E2("Toda la casa", "Whole house") }; };
 
 export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
@@ -76,10 +76,10 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
     ...(s.form.veh ? [[E2("VEHÍCULO", "VEHICLE"), `${s.form.veh.t}${s.form.veh.mi ? ` · ${s.form.veh.mi.toLocaleString("en-US")} mi` : ""}`] as [string, string]] : []),
     ...(s.form.casa ? [[E2("CASA", "HOME"), s.form.casa.dir] as [string, string]] : []),
     [em ? E2("QUÉ PASA", "WHAT HAPPENED") : E2("SERVICIO", "SERVICE"), nm(s.svc)],
-    ...(s.form.area ? [[E2("DÓNDE", "WHERE"), (AREAS[s.form.area] ?? [s.form.area, s.form.area])[es ? 0 : 1]] as [string, string]] : []),
-    ...(s.form.areas?.length ? [[E2("DÓNDE", "WHERE"), s.form.areas.map((k) => (AREAS[k] ?? [k, k])[es ? 0 : 1]).join(" · ")] as [string, string]] : []),
+    ...(s.form.area ? [[E2("DÓNDE", "WHERE"), (AREAS(es)[s.form.area] ?? s.form.area)] as [string, string]] : []),
+    ...(s.form.areas?.length ? [[E2("DÓNDE", "WHERE"), s.form.areas.map((k) => (AREAS(es)[k] ?? k)).join(" · ")] as [string, string]] : []),
     ...(s.form.medidas ? [[E2("MEDIDAS", "MEASUREMENTS"), s.form.medidas] as [string, string]] : []),
-    ...(s.form.luces.length ? [[E2("LUCES", "LIGHTS"), s.form.luces.map((k) => (LIGHTS[k] ?? [k, k])[es ? 0 : 1]).join(" · ")] as [string, string]] : []),
+    ...(s.form.luces.length ? [[E2("LUCES", "LIGHTS"), s.form.luces.map((k) => (LIGHTS(es)[k] ?? k)).join(" · ")] as [string, string]] : []),
     ...(s.form.code ? [[E2("CÓDIGO", "CODE"), s.form.code] as [string, string]] : []),
     ...(s.form.marca || s.form.edad ? [[E2("EQUIPO", "EQUIPMENT"), [s.form.marca, s.form.edad].filter(Boolean).join(" · ")] as [string, string]] : []),
     ...(s.form.nota ? [[pq ? E2("LES CONTASTE", "YOU SAID") : E2("LE CONTASTE", "YOU SAID"), `«${s.form.nota}»`] as [string, string]] : []),

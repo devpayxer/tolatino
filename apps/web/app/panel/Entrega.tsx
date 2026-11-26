@@ -10,10 +10,11 @@ import type { AjustesPed } from "@/lib/pedidos";
 import { entregaAjustes, type EntregaIn } from "./acciones-pedidos";
 import { repInvitar, repAuto, repPruebas, repQuitar } from "./acciones-repartidores";
 import type { Ctx, Editor } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 const mn = (c: number) => `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`;
-const ZONA: Record<number, [string, string]> = { 1: ["Unas cuadras a la redonda", "A few blocks around"], 3: ["Tu barrio y los de al lado", "Your neighborhood and nearby"], 5: ["Casi toda la ciudad", "Most of the city"], 10: ["La ciudad y pueblos cercanos", "The city and nearby towns"] };
+const ZONA = (es: unknown): Record<number, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { 1: E2("Unas cuadras a la redonda", "A few blocks around"), 3: E2("Tu barrio y los de al lado", "Your neighborhood and nearby"), 5: E2("Casi toda la ciudad", "Most of the city"), 10: E2("La ciudad y pueblos cercanos", "The city and nearby towns") }; };
 export const extL = (ext: string | null, es: boolean) => (ext === "doordash" ? "DoorDash" : ext === "uber_eats" ? "Uber Eats" : es ? "una app externa" : "an external app");
 
 export function entregaBloques(c: Ctx): Sec {
@@ -39,7 +40,7 @@ export function entregaBloques(c: Ctx): Sec {
     ph: E2("Ej. Pide en la caja con tu número de pedido.", "e.g. Ask at the register with your order number."), help: E2("Lo ve el cliente al pedir y en su pedido.", "The client sees it when ordering and in their order."), count: `${v.pkNote.length}/120` });
   if (v.delivery) {
     out.push({ type: "group", k: E2("ZONA Y COSTO", "AREA AND FEE") },
-      chips(E2("HASTA DÓNDE LLEVAS", "HOW FAR YOU DELIVER"), "zone", [1, 3, 5, 10].map((z) => [z, `${z} mi`] as [number, string]), (es ? ZONA[v.zone]![0] : ZONA[v.zone]![1]).toUpperCase()),
+      chips(E2("HASTA DÓNDE LLEVAS", "HOW FAR YOU DELIVER"), "zone", [1, 3, 5, 10].map((z) => [z, `${z} mi`] as [number, string]), (ZONA(es)[v.zone]!).toUpperCase()),
       chips(E2("LO QUE COBRAS POR LLEVARLO", "DELIVERY FEE"), "fee", [[0, E2("Gratis", "Free")], [200, "$2"], [300, "$3"], [400, "$4"], [500, "$5"]]));
     if (v.fee) out.push(chips(E2("GRATIS DESDE", "FREE FROM"), "free", [[0, E2("Nunca", "Never")], [2500, "$25"], [4000, "$40"], [6000, "$60"]]));
     out.push(chips(E2("PEDIDO MÍNIMO PARA DELIVERY", "DELIVERY MINIMUM"), "min", [[0, E2("Sin mínimo", "No minimum")], [1000, "$10"], [1500, "$15"], [2000, "$20"], [2500, "$25"]]));

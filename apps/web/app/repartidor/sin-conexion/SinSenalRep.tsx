@@ -12,7 +12,7 @@ import { urlComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
 import { usd as money } from "@/lib/dinero-comun";
-const PASO: Record<string, [string, string]> = { recogi: ["Recogí", "Picked up"], llegue: ["Llegué", "Arrived"], entregado: ["Entregado", "Delivered"] };
+const PASO = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { recogi: E2("Recogí", "Picked up"), llegue: E2("Llegué", "Arrived"), entregado: E2("Entregado", "Delivered") }; };
 
 export function SinSenalRep() {
   const [t, setT] = useState<Turno | null | undefined>(undefined), [cola, setCola] = useState<Cola>([]), [abierta, setAbierta] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function SinSenalRep() {
     s: t ? E2(`Guardadas a las ${hora(t.at)}. Los pasos se marcan con señal; lo que marcaste sin señal se envía solo.`, `Saved at ${hora(t.at)}. Steps are marked with signal; what you marked offline sends on its own.`) : undefined }];
   if (linea) B.push({ type: "note", tone: "ok", icon: "wifi", t: E2("Hay señal.", "There is signal."), cta: E2("Abrir el Repartidor", "Open Driver"), onCta: () => { void irAlServidor("/repartidor"); } });
   else B.push({ type: "note", tone: "warn", icon: "wifi", t: E2("Sin señal: ves lo que guardó este teléfono.", "No signal: you see what this phone saved.") });
-  if (cola.length) B.push({ type: "note", tone: "warn", icon: "clock", t: E2(`${cola.length} ${cola.length === 1 ? "paso espera" : "pasos esperan"} enviarse: ${cola.map((x) => `#${x.numero} ${PASO[x.paso]?.[0] ?? x.paso}`).join(", ")}.`, `${cola.length} ${cola.length === 1 ? "step is" : "steps are"} waiting to send: ${cola.map((x) => `#${x.numero} ${PASO[x.paso]?.[1] ?? x.paso}`).join(", ")}.`) });
+  if (cola.length) B.push({ type: "note", tone: "warn", icon: "clock", t: E2(`${cola.length} ${cola.length === 1 ? "paso espera" : "pasos esperan"} enviarse: ${cola.map((x) => `#${x.numero} ${PASO(true)[x.paso] ?? x.paso}`).join(", ")}.`, `${cola.length} ${cola.length === 1 ? "step is" : "steps are"} waiting to send: ${cola.map((x) => `#${x.numero} ${PASO(false)[x.paso] ?? x.paso}`).join(", ")}.`) });
   const L = t?.entregas ?? [], act = L.filter((x) => x.status === "confirmed"), hechas = L.filter((x) => x.status === "done");
   const fila = (x: Turno["entregas"][number]): Fila => ({ key: x.numero, icon: x.status === "done" ? "check" : "truck", t: `#${x.numero} · ${x.calle ?? E2("Sin dirección", "No address")}`,
     s: `${x.negocio} · ${x.cliente}${x.efectivo != null ? ` · ${E2("cobrar", "collect")} ${money(x.efectivo)}` : x.pagado ? E2(" · pagado", " · paid") : ""}`, chev: x.status !== "done",

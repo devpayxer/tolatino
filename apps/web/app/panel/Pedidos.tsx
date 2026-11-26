@@ -15,6 +15,7 @@ import { clientesTabs, hoyMesas } from "./Reservas";
 import { hoyCitas } from "./Citas";
 import { uuid } from "@/lib/uuid";
 import { abrirComoLlegar } from "@/lib/como-llegar";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type PedPanel = {
   hoy?: Awaited<ReturnType<typeof pedidosHoy>>; lista?: Awaited<ReturnType<typeof pedidosLista>>; f?: FiltroPed; q?: string;
@@ -24,7 +25,7 @@ export type PedPanel = {
 };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null; tail?: (Bloque | null)[] };
 import { usd as money } from "@/lib/dinero-comun";
-const PAGO_L: Record<string, [string, string]> = { held: ["retenido", "held"], captured: ["cobrado", "charged"], released: ["liberado", "released"], refunded: ["devuelto", "refunded"], partially_refunded: ["devuelto en parte", "partly refunded"], failed: ["falló", "failed"] };
+const PAGO_L = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { held: E2("retenido", "held"), captured: E2("cobrado", "charged"), released: E2("liberado", "released"), refunded: E2("devuelto", "refunded"), partially_refunded: E2("devuelto en parte", "partly refunded"), failed: E2("falló", "failed") }; };
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
   ok: [E2("ACEPTADO", "ACCEPTED"), "signal"], ready: [E2("LISTO PARA RECOGER", "READY"), "signal"], out: [E2("EN CAMINO", "ON THE WAY"), "action"], done: [E2("LISTO", "DONE"), "neutral"],
   no: [E2("NO SE PUDO", "DECLINED"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "danger"], cx: [E2("CANCELADO", "CANCELLED"), "neutral"],
@@ -77,15 +78,15 @@ export function hoyPedidos(c: Ctx): (Bloque | null)[] {
 }
 
 /* Detalle de un pedido (detBlocks): cliente, prometido, pago, nota, platos, total, historial y lo que sigue. */
-const MOT_AY: Record<string, [string, string]> = { falta: ["Falta algo", "Something is missing"], equivocado: ["Llegó algo equivocado", "Wrong item"], frio: ["Llegó frío o mal preparado", "Cold or poorly made"], danado: ["Llegó dañado o derramado", "Damaged or spilled"], tarde: ["Llegó tarde", "Arrived late"], nollego: ["No le llegó", "It never arrived"], pago: ["Problema con el pago", "Payment issue"], otro: ["Otro problema", "Something else"] };
-const QUIERE_AY: Record<string, [string, string]> = { reponer: ["Pide que se lo repongan", "Asks for a replacement"], devolver: ["Pide que le devuelvan lo de esos platos", "Asks for a refund of those dishes"], avisar: ["Solo quiere que lo sepan", "Just wants you to know"] };
+const MOT_AY = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { falta: E2("Falta algo", "Something is missing"), equivocado: E2("Llegó algo equivocado", "Wrong item"), frio: E2("Llegó frío o mal preparado", "Cold or poorly made"), danado: E2("Llegó dañado o derramado", "Damaged or spilled"), tarde: E2("Llegó tarde", "Arrived late"), nollego: E2("No le llegó", "It never arrived"), pago: E2("Problema con el pago", "Payment issue"), otro: E2("Otro problema", "Something else") }; };
+const QUIERE_AY = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { reponer: E2("Pide que se lo repongan", "Asks for a replacement"), devolver: E2("Pide que le devuelvan lo de esos platos", "Asks for a refund of those dishes"), avisar: E2("Solo quiere que lo sepan", "Just wants you to know") }; };
 /* Ayuda con el pedido en el detalle (diseño Mi cuenta · solicitud; el negocio responde en las horas de Configuración · ayuda_negocio_h). */
 function ayudaBloques(c: Ctx, numero: string): (Bloque | null)[] {
   const { E2, es, d } = c, a = c.ped?.ayuda;
   if (!a) return [];
-  const m = MOT_AY[a.reason] ?? MOT_AY.otro!, q = QUIERE_AY[a.wants] ?? QUIERE_AY.avisar!, txt = (c.ui.ayT as string | undefined) ?? "";
+  const m = MOT_AY(es)[a.reason] ?? MOT_AY(es).otro!, q = QUIERE_AY(es)[a.wants] ?? QUIERE_AY(es).avisar!, txt = (c.ui.ayT as string | undefined) ?? "";
   const out: (Bloque | null)[] = [{ type: "group", k: `${E2("AYUDA CON EL PEDIDO · ", "ORDER HELP · ")}${a.number}` },
-    { type: "kv", items: [{ k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: es ? m[0] : m[1] }, ...(a.items.length ? [{ k: E2("PLATOS", "DISHES"), v: a.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: E2("QUÉ QUIERE", "WANTS"), v: es ? q[0] : q[1] }, ...(a.body ? [{ k: E2("SU NOTA", "THEIR NOTE"), v: a.body }] : [])] }];
+    { type: "kv", items: [{ k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: m }, ...(a.items.length ? [{ k: E2("PLATOS", "DISHES"), v: a.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: E2("QUÉ QUIERE", "WANTS"), v: q }, ...(a.body ? [{ k: E2("SU NOTA", "THEIR NOTE"), v: a.body }] : [])] }];
   if (a.status === "open") out.push(
     { type: "note", tone: "warn", icon: "clock", t: E2(`Respóndele en ${horasTxt(a.plazoH, true)}. Si no, To’Latino revisa el caso. Si pagó con tarjeta, puedes devolverle dinero desde el pedido; si pagó en el local, la devolución la arreglan ustedes.`, `Reply within ${horasTxt(a.plazoH, false)}. If not, To’Latino reviews the case. If they paid by card, you can refund from the order; if they paid in store, you settle the refund yourselves.`) },
     { type: "field", area: true, rows: 3, max: 500, k: E2("TU RESPUESTA · LA VE EN SU PEDIDO", "YOUR REPLY · SHOWN ON THEIR ORDER"), val: txt, count: `${txt.length}/500`, ph: E2("Ej. Disculpa, te mandamos el plato que faltó en 30 minutos.", "e.g. Sorry, we'll send the missing dish in 30 minutes."), onChange: (v) => c.setUi({ ayT: v.slice(0, 500) }) },
@@ -103,7 +104,7 @@ export function pedidoDetalle(c: Ctx): Sec {
   if (!x) return { blocks: [{ type: "head", t: E2("Pedido no encontrado", "Order not found"), onBack: c.closeDet }, { type: "empty", icon: "bag", t: E2("Ese pedido no existe", "That order does not exist"), s: E2("Puede ser de otro negocio.", "It may belong to another business.") }], ed: null };
   const out: (Bloque | null)[] = [
     { type: "head", eye: `${E2("PEDIDO", "ORDER")} · ${nombreVisible(x.who, es).toUpperCase()}`, t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: es ? x.s.es : x.s.en, onBack: c.closeDet },
-    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: nombreVisible(x.who, es) }, { k: E2("PROMETIDO", "PROMISED"), v: x.entrega?.llega ?? x.listo }, { k: E2("PAGO", "PAYMENT"), v: x.pago ? `${E2("Tarjeta", "Card")}${x.pago.ultimos4 ? ` ·· ${x.pago.ultimos4}` : ""} · ${(PAGO_L[x.pago.estado] ?? [x.pago.estado, x.pago.estado])[es ? 0 : 1]}` : x.entrega ? E2("Efectivo al entregar", "Cash on delivery") : E2("En el local", "At the store") }] },
+    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: nombreVisible(x.who, es) }, { k: E2("PROMETIDO", "PROMISED"), v: x.entrega?.llega ?? x.listo }, { k: E2("PAGO", "PAYMENT"), v: x.pago ? `${E2("Tarjeta", "Card")}${x.pago.ultimos4 ? ` ·· ${x.pago.ultimos4}` : ""} · ${(PAGO_L(es)[x.pago.estado] ?? x.pago.estado)}` : x.entrega ? E2("Efectivo al entregar", "Cash on delivery") : E2("En el local", "At the store") }] },
   ];
   // Delivery: a dónde, cómo se entrega y qué hacer al llegar (Checkout · cómo entregar), y el teléfono del cliente.
   const ENT = x.entrega;
@@ -301,6 +302,6 @@ export function hoyAyudas(c: Ctx): Bloque[] {
   const { E2, es, d } = c, L = c.ped?.ayudas ?? [];
   if (!L.length) return [];
   return [{ type: "rows", k: E2(`AYUDA CON PEDIDOS · RESPONDE EN ${L[0]!.plazoH} H`, `ORDER HELP · REPLY WITHIN ${L[0]!.plazoH} H`), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${E2("Pedido", "Order")} #${a.num}`,
-    s: `${(MOT_AY[a.reason] ?? MOT_AY.otro!)[es ? 0 : 1]}${a.items.length ? ` · ${a.items.map((x) => `${x.q} × ${x.n}`).join(", ")}` : ""}`, tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action",
+    s: `${(MOT_AY(es)[a.reason] ?? MOT_AY(es).otro!)}${a.items.length ? ` · ${a.items.map((x) => `${x.q} × ${x.n}`).join(", ")}` : ""}`, tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action",
     onClick: () => c.nav(`/panel/${d.id}/hoy?det=ped:${a.num}`) })) }];
 }
