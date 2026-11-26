@@ -9,7 +9,7 @@ import { db } from "./db";
 import type { Lang } from "./idioma";
 import { AGOTADO_SQL, QUEDAN_SQL, type Av } from "./menu";
 import { vencer } from "./pedidos";
-import { cobrarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
+import { cobrarOperacion, registrarRetencion, retenerPedido, soltarSuelta, tarjetaDe, type Retenida } from "./cobros";
 import { cuponDe, impuestoConDescuento } from "./cupon-seguidores";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
@@ -298,7 +298,8 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
   if (conTarjeta && !pm) return no("Elige con qué tarjeta pagas.", "Choose the card you pay with.", { tarjeta: true });
   const T = conTarjeta ? await tarjetaDe(p.negocio) : null;
   if (conTarjeta && !T?.on) return no("Este negocio no está cobrando con tarjeta ahora. Paga en el local.", "This business is not taking cards right now. Pay at the store.", { tarjeta: true });
-  let retenido: string | null = null;
+  // 26 nov · La retención recién creada y de quién es: si el pedido no se guarda, se suelta por cobros › soltarSuelta (alerta si Stripe no la suelta).
+  let retenido: Retenida | null = null;
 
   const c = await db().connect();
   try {
@@ -398,14 +399,14 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     if (conTarjeta && T?.cuenta && pm) {
       ret = await retenerPedido({ negocio: b.id, cuenta: T.cuenta, clave: p.clave, total, subtotal: sub - desc, pm, userId, numero: num }, c);
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
-      retenido = ret.pi;
+      retenido = { pi: ret.pi, que: { es: `Pedido #${num} (se retuvo y no se guardó)`, en: `Order #${num} (held and not saved)` }, monto: total, persona: userId, negocio: b.id };
       if (ret.estado === "accion") {
         // 9k · 3-D Secure: el pedido no se guarda todavía; la hoja completa la verificación y la pantalla lo vuelve a enviar con la misma clave (la
         // retención verificada se reusa: nada se cobra dos veces). Sin verificación a su nombre, como antes: se suelta y se pide otra tarjeta.
         await c.query("rollback");
         const v = (await import("./pagos/verificacion")).pideVerificar(ret);
         if (v) { retenido = null; return no("Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía.", "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet.", { tarjeta: true, ...v }); }
-        await liberarSilencioso(ret.pi); return no("Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en el local.", "Your bank asks for an extra verification. Try another card or pay at the store.", { tarjeta: true });
+        await soltarSuelta(ret.pi, retenido); return no("Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en el local.", "Your bank asks for an extra verification. Try another card or pay at the store.", { tarjeta: true });
       }
     }
     const drop: DropPref | null = modo === "delivery" && p.entrega && typeof p.entrega === "object" ? {
@@ -462,14 +463,12 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     return { ok: true, numero: num };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await liberarSilencioso(retenido); // se retuvo y el pedido no se guardó: se libera completo
+    if (retenido) await soltarSuelta(retenido.pi, retenido); // se retuvo y el pedido no se guardó: se suelta completo (y alerta si Stripe no la suelta)
     throw e;
   } finally {
     c.release();
   }
 }
-
-async function liberarSilencioso(pi: string) { await (await import("./pagos/pasarela")).pasarela.liberar(pi).catch(() => undefined); }
 
 /* 9l · «Avísame por SMS cuando queden N» (Panel › Menú › Inventario, low_alert 2 / 3 / 5; 0 = no avisar): el pedido que CRUZA el umbral (antes había más,
    ahora quedan N o menos y más de 0) avisa una vez al dueño (push y SMS de respaldo). Al reponer y volver a cruzar, avisa otra vez. */

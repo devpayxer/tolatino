@@ -3265,6 +3265,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Revisado por Fable (el monto de refund_stuck es «falta», lo pedido; el candado del barrido existe). Queda: (a) en devolverAlCancelar, cuando el
       negocio cancela y no queda nada por devolver, «hecha» dice todo lo devuelto del cobro (incluye lo devuelto antes por otro motivo): acotarlo como M1;
       (b) din9x dura ~72 s y pruebas/reparto.json dice 59: se regenera con la próxima corrida medida (scripts/ci/repartir.mjs).
+      _Hecho (a) (26 nov, Opus):_ sin seQueda y sin nada que devolver, «hecha» dice la devolución de la llave de ESTA cancelación (devDeLaLlave); sin ella, sin
+      cifra (monto 0): el aviso dice «Ya se te había devuelto todo lo cobrado» / «Ya se le había devuelto todo lo cobrado» (ES/EN, devolucion-cancelar y el
+      aviso del evento privado al restaurante), nunca refunded_cents del cobro entero. Guardián liberarMira; al revés con su caso.
       _Hecho (26 nov):_ din9x ya no es INESTABLE: el caso de «cobrada» por relectura (sección 4) sembraba el cobro retenido y lo cambiaba después en sentencias aparte, y el barrido de pagos del servidor (cada minuto) podía aplicar la regla entre las dos; ahora la operación, el cobro y la devolución de su llave se siembran ya en su estado final en una sola transacción. 5 corridas seguidas en verde con el barrido corriendo (102 ✓ cada una). El código de la app no se tocó.
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
       barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
@@ -3272,7 +3275,22 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       (e) El reclamo atascado (el proceso murió con el reclamo tomado) se retoma a los 10 minutos y cuenta como intento, sin la espera creciente.
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
       verificacion › vencidas, suscripcion, rentas) ya no dan por soltado lo cobrado, pero tampoco lo anotan cobrado ni alertan: lo reintentan sin fin
-      en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). _Hecho en la revisión de 483a3af: quien llama a capturarPlataforma
+      en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). _Hecho (26 nov, Opus):_ una sola función, cobros › soltarSuelta(pi,
+      contexto), para toda retención que no es la de una operación con su regla: «liberada» · «cobrada» (con fila de pago, 'captured' con lo que Stripe
+      capturó; nunca 'released') · «retenida» (su failure_code); alerta hold_stuck suelta:<pi> (ES/EN: qué retención, de quién, con qué negocio, cuánto y qué
+      hacer en Stripe), idempotente, siempre que es cobrada y en la última vuelta de la que no se soltó; a la persona no le dice nada. Pasan por ella los ~50
+      sitios: los rollback de una retención recién creada (pedido, cita, visita, inscripción, noche, fiesta, viaje, mudanza, evento privado, mercado y su
+      extra, apartado, plan, boletos, patrocinios, bancoPide, cobro-fuera, rentas, renovar-retencion, la revisión de la pasarela: alerta en el acto); los
+      barridos que la siguen soltando con su fila (rentas › liquidarDeposito, mercado › liquidarMercado, estimados › cobrarLiquidacion, boletos ›
+      anularPorCobro: tope SUELTA_INTENTOS contado en la operación, alerta al tope, se cierra sola al soltarse); los que la dejan con su alerta (verificaciones
+      vencidas, soltarVerificaciones de Pro, autorizaciones de boletos sin orden: gracia SUELTA_ESPERA_MIN, alerta y no la vuelven a elegir). También: boletos ›
+      anularPorCobro y pagarBoletos marcaban 'released' / pi_released_at antes o sin mirar a la pasarela; la renta que no se aplicó decía «el depósito se
+      soltó» al equipo sin mirarlo; la revisión de la pasarela decía «Se soltó la retención que sobra» sin mirarlo; a la persona, «No se cobró nada» cuando
+      Stripe ya la había cobrado (patrocinios, boletos, evento privado): ahora dicen lo que pasó. Guardián liberarSoloPorLaRegla (también: ninguna llamada
+      que mueve dinero se tira como sentencia suelta; no se halló ninguna); al revés en alrevesDineroDiceLoQuePaso; e2e din9z. Queda: (i) renovar-retencion ›
+      cerrarNueva / cerrarSin marcan la vieja 'released' en el libro ANTES de soltarla en Stripe (si no se suelta, hay alerta, pero el libro ya la dice
+      soltada; la vieja vence sola en horas) y el aviso biz_renta dice «ya no hay depósito retenido»; (ii) din9z no está en pruebas/reparto.json (aviso:
+      se asigna con la próxima corrida medida, scripts/ci/repartir.mjs). _Hecho en la revisión de 483a3af: quien llama a capturarPlataforma
       (boletos, patrocinios) anota lo que Stripe capturó._ Si ese monto difiere de lo pedido (alguien capturó otro desde Stripe), los boletos o el
       patrocinio quedan emitidos por el precio y cobrados por menos: _hecho en la revisión de 621f214: alerta al equipo de dinero (capturado:)_; queda
       decidir si además se ajusta el boleto o el patrocinio (hoy lo decide el equipo desde la alerta). (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,

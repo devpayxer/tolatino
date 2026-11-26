@@ -188,7 +188,7 @@ export async function comprarPatrocinioEvento(negocio: string, evento: string, q
     if (r.ok && om) await (await import("./dinero-alertas")).alertarOtroMonto("event_sponsorships", om.id, centavos, om.cobrado, { negocio, ciudad: e.ciudad, que: { es: `Patrocinio del evento ${om.id}`, en: `Event sponsorship ${om.id}` } });
     return r;
   } catch (er) {
-    const sc = await soltarRetenido(retenido, er);
+    const sc = await soltarRetenido(retenido, er, { que: { es: `Patrocinio del evento ${evento} (${idem}; la compra no se guardó)`, en: `Event ${evento} sponsorship (${idem}; the purchase was not saved)` }, monto: centavos, persona: quien, negocio, ciudad: e.ciudad });
     if (sc) return sc;
     const d = errorDePuestos(er);
     if (d) return String((er as Error)?.message ?? "").includes("patrocinio_cruza") ? no("Este evento ya tiene un patrocinio en esas fechas.", "This event already has a sponsorship on those dates.") : d;

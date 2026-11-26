@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, reclamarAvisoCobro, registrarRetencion, soltarRetencion } from "./cobros";
+import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, reclamarAvisoCobro, registrarRetencion, soltarRetencion, soltarSuelta, type Retenida } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, usdTxt, type DevCancelar, type DevCuenta, type ReglaTarde, type Soltada } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
@@ -134,7 +134,7 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
   const nota = String(f.nota ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 200);
   if (/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(nota)) return no("Por seguridad, sin teléfonos en la nota.", "For safety, no phone numbers in the note.");
   const c = await db().connect();
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   try {
     await c.query("begin");
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2`, [userId, f.clave])).rows[0];
@@ -193,8 +193,8 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
       const cliente = await pasarela.cliente(userId).catch(() => null);
       ret = await pasarela.retener({ centavos: tot, comision: fee, destino: x.cuenta!, pm, cliente, idem: `viaje-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { trip: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(`${ret.mensaje.es} No se retuvo nada.`, `${ret.mensaje.en} Nothing was held.`, { tarjeta: true }); }
-      retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+      retenido = { pi: ret.pi, que: { es: `Viaje ${numero} (se retuvo el total y no se guardó)`, en: `Trip ${numero} (total held and not saved)` }, monto: tot, persona: userId, negocio: x.id, ciudad: x.city };
+      if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     }
     const det = { svc: s.name, svcId: s.id, k: s.k, unit: s.cents, child: s.child, adults: calc.adults, kids: calc.kids, childSeat: !!f.childSeat && aj.nino, bagsIncl: aj.bags, bagsExtra: calc.bags, extraBag: aj.extra,
       inc: s.inc, from: s.from, to: s.to, run, pickup, sms: f.sms !== false, terms: { cancelH: 24, feePct: 50 },
@@ -209,9 +209,9 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
     if (dest) await c.query(`insert into op_private (operation_id, reason, note_enc) values ($1::bigint, 'destinatario', $2)`, [op, cifrar(JSON.stringify(dest))]);
     if (fotos.length) {
       const u = await c.query(`update media set owner_kind = 'trip', owner_id = $1, sort = array_position($3::uuid[], id) where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [op, userId, fotos]);
-      if (u.rowCount !== fotos.length) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
+      if (u.rowCount !== fotos.length) { await c.query("rollback"); if (retenido) { await soltarSuelta(retenido.pi, retenido); retenido = null; } return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
     }
-    if (run && !(await tomarAsientos(c, op, run, calc.seats))) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Ya no quedan tantos asientos en esa salida. Elige otra.", "Not enough seats left on that departure. Pick another.", { salida: true }); }
+    if (run && !(await tomarAsientos(c, op, run, calc.seats))) { await c.query("rollback"); if (retenido) { await soltarSuelta(retenido.pi, retenido); retenido = null; } return no("Ya no quedan tantos asientos en esa salida. Elige otra.", "Not enough seats left on that departure. Pick another.", { salida: true }); }
     await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options) values ($1, $2, $3::jsonb, $4, $5, $6, 0, '[]'::jsonb)`,
       [op, s.id, JSON.stringify(s.name), Math.max(1, calc.seats || calc.boxes || 1), s.cents, tot]);
     if (ret?.ok) await registrarRetencion(c, { opId: op, userId, negocio: x.id, city: x.city, total: tot, comision: fee, r: ret, pm: f.pm ?? undefined, kind: "full" });
@@ -221,7 +221,7 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
     return { ok: true, numero };
   } catch (err) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw err;
   } finally {
     c.release();

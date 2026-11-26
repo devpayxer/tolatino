@@ -129,7 +129,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
   if (conPlan && !regla) return no("Esta tienda no está tomando planes ahora.", "This store is not taking layaway right now.");
   const cob = await import("./cobros"), T = ship ? await cob.tarjetaDe(f.negocio) : null;  // envío o plan: con tarjeta
   if (ship && (!T?.on || !T.cuenta)) return no("Esta tienda no está cobrando con tarjeta ahora. Elige recogerlo en la tienda.", "This store is not taking cards right now. Choose pickup.");
-  let aviso: { cliente: string | { es: string; en: string }; n: number } | null = null, retenido: string | null = null;
+  let aviso: { cliente: string | { es: string; en: string }; n: number } | null = null, retenido = null as import("./cobros").Retenida | null;
   try {
   const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2::uuid`, [userId, f.clave])).rows[0];
@@ -168,7 +168,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
       const abono = lay.cuotas(tot, regla!).abono;
       ret = await cob.retenerPedido({ negocio: f.negocio, cuenta: T!.cuenta!, clave: f.clave, total: abono, subtotal: abono, pm: f.plan!.pm, userId, numero, tipo: "apt" }, c);
       if (!ret.ok) return no(ret.mensaje.es, ret.mensaje.en);
-      retenido = ret.pi;
+      retenido = { pi: ret.pi, que: { es: `Apartado en plan ${numero} (se retuvo el abono y no se guardó)`, en: `Layaway hold ${numero} (down payment held and not saved)` }, monto: abono, persona: userId, negocio: f.negocio, ciudad: b.city };
       if (ret.estado === "accion") { const v = (await import("./pagos/verificacion")).pideVerificar(ret); if (v) retenido = null; return { ...no(v ? "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía." : "Tu banco pide una verificación extra. Prueba con otra tarjeta.", v ? "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." : "Your bank asks for an extra verification. Try another card."), ...(v ?? {}) }; }
     } else if (ship) {
       const dir = await (await import("./pedir")).dirEntrega(c, userId, f.negocio, 100000, f.envio!.dir);
@@ -177,7 +177,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
       to = { label: dir.label, street: dir.street, apt: dir.apt, zip: dir.zip, addressId: dir.id };
       ret = await cob.retenerPedido({ negocio: f.negocio, cuenta: T!.cuenta!, clave: f.clave, total: tot + fee, subtotal: tot, pm: f.envio!.pm, userId, numero, tipo: "apt" }, c);
       if (!ret.ok) return no(ret.mensaje.es, ret.mensaje.en);
-      retenido = ret.pi;
+      retenido = { pi: ret.pi, que: { es: `Pedido con envío ${numero} (se retuvo y no se guardó)`, en: `Shipped order ${numero} (held and not saved)` }, monto: tot + fee, persona: userId, negocio: f.negocio, ciudad: b.city };
       if (ret.estado === "accion") { const v = (await import("./pagos/verificacion")).pideVerificar(ret); if (v) retenido = null; return { ...no(v ? "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía." : "Tu banco pide una verificación extra. Prueba con otra tarjeta o recógelo en la tienda.", v ? "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." : "Your bank asks for an extra verification. Try another card or pick it up in store."), ...(v ?? {}) }; }
     }
     const det = conPlan ? { sms: f.sms !== false, como: "plan", hold_hours: holdH } : ship ? { sms: f.sms !== false, como: "envio", ship: true, to, ship_days: o.envio!.dias, hold_hours: holdH } : { dia: f.dia, hora: f.hora, sms: f.sms !== false, como: "tienda", hold_hours: holdH };
@@ -209,7 +209,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
     return { ok: true, numero };
   });
   // Lo retenido de un pedido que no se guardó (la base dijo que no) se libera en el acto.
-  if (!r.ok && retenido) await (await import("./pagos/pasarela")).pasarela.liberar(retenido).catch(() => undefined);
+  if (!r.ok && retenido) await (await import("./cobros")).soltarSuelta(retenido.pi, retenido);
   if (r.ok && aviso) {
     const a = aviso as { cliente: string | { es: string; en: string }; n: number }, av = await import("./avisos"), n = `${a.n} ${a.n === 1 ? "artículo" : "artículos"}`, nEn = `${a.n} ${a.n === 1 ? "item" : "items"}`;
     const d = ship ? null : s2d(f.dia);
@@ -217,7 +217,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
   }
   return r;
   } catch (e) {
-    if (retenido) await (await import("./pagos/pasarela")).pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await (await import("./cobros")).soltarSuelta(retenido.pi, retenido);
     throw e;
   }
 }

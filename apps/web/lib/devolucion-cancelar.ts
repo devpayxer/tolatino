@@ -26,7 +26,9 @@ export const usdTxt = usd;
 
 /* {dinero} del aviso a quien pagó. */
 export function dineroAlCancelar(d: DevCancelar): Bi {
-  if (d.e === "hecha") return { es: `Te devolvimos ${usd(d.monto)} a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.`, en: `We refunded ${usd(d.monto)} to your card; your bank shows it in 3–5 business days.` };
+  // 26 nov (revisión de 5255ce2, a) · «hecha» sin cifra (monto 0): ya se había devuelto todo lo cobrado antes de esta cancelación (cobros › devolverAlCancelar).
+  if (d.e === "hecha") return d.monto > 0 ? { es: `Te devolvimos ${usd(d.monto)} a tu tarjeta; tu banco lo muestra en 3–5 días hábiles.`, en: `We refunded ${usd(d.monto)} to your card; your bank shows it in 3–5 business days.` }
+    : { es: "Ya se te había devuelto todo lo cobrado.", en: "Everything charged had already been refunded to you." };
   if (d.e === "en_camino") return { es: `La devolución de ${usd(d.monto)} a tu tarjeta va en camino: la seguimos mandando sola.`, en: `The ${usd(d.monto)} refund to your card is on its way: we keep sending it automatically.` };
   if (d.e === "fallida") return { es: `La devolución de ${usd(d.monto)} no salió: el equipo de To'Latino ya tiene el aviso para resolverlo contigo.`, en: `The ${usd(d.monto)} refund did not go through: the To'Latino team already has the alert to sort it out with you.` };
   // 25 nov · Sin monto (nada que decir de él), nunca «$0.00».
@@ -52,7 +54,7 @@ export function dineroAlCancelarCliente(d: DevCancelar | null, queda?: Bi): Bi {
    Antes decía «Se le devuelve el depósito de $X» con lo decidido, también cuando Stripe dijo que no o no contestó. Con espacio delante (la plantilla
    termina en «.{dinero}»); vacío si no había nada cobrado ni retenido. */
 export function dineroAlNegocio(d: DevCancelar): Bi {
-  if (d.e === "hecha") return { es: ` Se le devolvieron ${usd(d.monto)} a su tarjeta.`, en: ` ${usd(d.monto)} was refunded to their card.` };
+  if (d.e === "hecha") return d.monto > 0 ? { es: ` Se le devolvieron ${usd(d.monto)} a su tarjeta.`, en: ` ${usd(d.monto)} was refunded to their card.` } : { es: " Ya se le había devuelto todo lo cobrado.", en: " Everything charged had already been refunded to them." };
   if (d.e === "en_camino") return { es: ` La devolución de ${usd(d.monto)} a su tarjeta va en camino: se manda sola.`, en: ` The ${usd(d.monto)} refund to their card is on its way: it is sent automatically.` };
   if (d.e === "fallida") return { es: ` La devolución de ${usd(d.monto)} no salió: el equipo de To'Latino ya tiene el aviso y lo resuelve con el cliente.`, en: ` The ${usd(d.monto)} refund did not go through: the To'Latino team already has the alert and sorts it out with the client.` };
   if (d.e === "liberada") return d.monto > 0 ? { es: ` No se había cobrado nada: se soltó la retención de ${usd(d.monto)} de su tarjeta.`, en: ` Nothing had been charged: the ${usd(d.monto)} hold on their card was released.` } : { es: " No se había cobrado nada.", en: " Nothing had been charged." };

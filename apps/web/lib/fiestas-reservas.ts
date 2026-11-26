@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto, type Ctx } from "./citas";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, SWEEP } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, soltarSuelta, SWEEP, type Retenida } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
@@ -109,7 +109,7 @@ export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, e
   const m = Math.floor(Number(f.m)), g = f.g == null ? null : Math.floor(Number(f.g));
   if (g != null && !(g >= 1 && g <= 2000)) return no("¿Cuántos invitados?", "How many guests?");
   const c = await db().connect();
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   try {
     await c.query("begin");
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2`, [userId, f.clave])).rows[0];
@@ -171,8 +171,8 @@ export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, e
       const cliente = await pasarela.cliente(userId).catch(() => null);
       ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta!, pm, cliente, idem: `fiesta-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { party: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
-      retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+      retenido = { pi: ret.pi, que: { es: `Fiesta ${numero} (se retuvo el depósito y no se guardó)`, en: `Party ${numero} (deposit held and not saved)` }, monto: dep, persona: userId, negocio: x.id, ciudad: x.city };
+      if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     }
     // El paquete se copia al enviar: si el negocio cambia el precio o lo que incluye después, lo pedido no cambia.
     const det = {
@@ -194,7 +194,7 @@ export async function pedirFecha(userId: string, negocio: string, f: FiestaIn, e
     return { ok: true, numero };
   } catch (err) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw err;
   } finally {
     c.release();

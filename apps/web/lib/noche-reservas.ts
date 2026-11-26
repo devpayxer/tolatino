@@ -4,7 +4,7 @@ import { cfgSql, valor } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, SWEEP } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, soltarSuelta, SWEEP, type Retenida } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
@@ -123,7 +123,7 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
   const llega = Math.floor(Number(f.llega)), pax = Math.floor(Number(f.pax));
   const ocasion = f.ocasion && (OCASION as readonly string[]).includes(f.ocasion) ? f.ocasion : null;
   const c = await db().connect();
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   try {
     await c.query("begin");
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2`, [userId, f.clave])).rows[0];
@@ -165,8 +165,8 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
       const cliente = await pasarela.cliente(userId).catch(() => null);
       ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta!, pm, cliente, idem: `noche-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { night: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
-      retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+      retenido = { pi: ret.pi, que: { es: `Reserva de noche ${numero} (se retuvo el depósito y no se guardó)`, en: `Night booking ${numero} (deposit held and not saved)` }, monto: dep, persona: userId, negocio: x.id, ciudad: x.city };
+      if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     }
     // El código de la puerta: 4 cifras, único entre las reservas vivas de esa noche (el índice lo garantiza).
     const usados = new Set((await c.query<{ d: string }>(`select door_code as d from operations where business_id = $1 and night_date = $2::date and kind = 'night' and door_code is not null and status = any($3::text[])`, [negocio, f.noche, VIVAS])).rows.map((z) => z.d));
@@ -184,7 +184,7 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
       [numero, x.city, x.id, userId, lista ? "confirmed" : "pending", f.noche, llega, x.tz, nota, JSON.stringify(det), pax, code, dep, dep > 0 ? "app" : "none", x.reply,
         pro ? null : x.mes, f.clave, entorno !== "produccion"])).rows[0]!.id;
     if (!lista && (await c.query<{ ok: boolean }>(`select respond_by > now() + interval '4 minutes' as ok from operations where id = $1::bigint`, [op])).rows[0]?.ok === false) {
-      await c.query("rollback"); if (retenido) await pasarela.liberar(retenido).catch(() => undefined); retenido = null;
+      await c.query("rollback"); if (retenido) await soltarSuelta(retenido.pi, retenido); retenido = null;
       return no("Esa hora ya está muy cerca para que te confirmen: elige una más tarde o llama al local.", "That time is too close for them to confirm: pick a later one or call the venue.", { hora: true });
     }
     await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options) values ($1, $2, $3::jsonb, $4, 0, 0, 0, '[]'::jsonb)`, [op, s.id, JSON.stringify(s.name), pax]);
@@ -195,7 +195,7 @@ export async function reservarNoche(userId: string, negocio: string, f: NocheIn,
     return { ok: true, numero };
   } catch (err) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw err;
   } finally {
     c.release();

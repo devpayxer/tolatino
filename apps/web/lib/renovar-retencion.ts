@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
-import { HORAS_LLAVE_STRIPE as HORAS_LLAVE } from "./cobros";
+import { HORAS_LLAVE_STRIPE as HORAS_LLAVE, soltarSuelta, type ContextoSuelta } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 import { SIN_RESPUESTA } from "./cobro-fuera";
 
@@ -74,7 +74,7 @@ export async function renovarRetencion(x: Renovar): Promise<Quedo> {
       return "sigue";
     }
     // Un «no» de verdad (también el banco que pide verificar fuera de sesión: la persona no está; esa retención se cancela).
-    if (r.ok) await pasarela.liberar(r.pi).catch(() => undefined);
+    if (r.ok) await soltarSuelta(r.pi, suelta(x, { es: "la renovación pidió verificación del banco fuera de sesión", en: "the renewal asked for bank verification off-session" }));
     await db().query(`update hold_renewals set attempts = least(10000, attempts + 1), last_error = left($2, 120) where id = $1::bigint and status = 'pending'`, [f.id, r.ok ? "authentication_required" : String(r.codigo).slice(0, 60)]);
     return cerrarSin(x, f.id, "banco", false);
   }
@@ -126,10 +126,15 @@ async function cerrarNueva(x: Renovar, id: string, r: { pi: string; marca: strin
   });
   if (!h) return "ya_no_estaba";
   // La vieja, DESPUÉS de anotar la nueva (o la nueva, si ya no hacía falta). Si Stripe no contesta, se suelta sola a los 7 días (horas, no días).
-  await pasarela.liberar(h === "hecha" ? x.pi : r.pi).catch(() => undefined);
+  // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · Por cobros › soltarSuelta: si Stripe no la suelta (o ya la había cobrado), el equipo de dinero tiene su alerta.
+  await soltarSuelta(h === "hecha" ? x.pi : r.pi, h === "hecha" ? suelta(x, { es: "la retención vieja, ya renovada", en: "the old hold, already renewed" })
+    : suelta(x, { es: "la renovación que ya no hacía falta (la retención vieja ya no estaba retenida)", en: "the renewal that was no longer needed (the old hold was no longer held)" }));
   return h;
 }
 
+/* 26 nov · De quién es la retención que se suelta y cuánto, para la alerta de cobros › soltarSuelta (nadie más la va a soltar). */
+const suelta = (x: Renovar, por: { es: string; en: string }): ContextoSuelta => ({ que: { es: `Renovación de la retención ${x.kind === "renta" ? "del depósito de una renta" : "de una cita con estimado"} (operación ${x.op}; ${por.es})`,
+  en: `Renewal of the hold ${x.kind === "renta" ? "on a rental deposit" : "on a booking with an estimate"} (operation ${x.op}; ${por.en})` }, monto: x.monto, persona: x.uid, negocio: x.negocio, ciudad: x.ciudad });
 /* No hay nueva (el banco dijo que no, nunca llegó, ninguna vale, sin tarjeta): una vez, la vieja deja de contar y se suelta; se avisa con el motivo verdadero. */
 async function cerrarSin(x: Renovar, id: string, m: Motivo, porConsulta: boolean): Promise<Quedo> {
   const h = await tx(async (c) => {
@@ -142,7 +147,7 @@ async function cerrarSin(x: Renovar, id: string, m: Motivo, porConsulta: boolean
     return { soltar: !!u.rowCount };
   });
   if (!h) return "ya_no_estaba";
-  if (h.soltar) { await pasarela.liberar(x.pi).catch(() => undefined); await x.avisar(m).catch(() => undefined); }
+  if (h.soltar) { await soltarSuelta(x.pi, suelta(x, { es: "la retención vieja que no se pudo renovar", en: "the old hold that could not be renewed" })); await x.avisar(m).catch(() => undefined); }
   return m === "nunca_llego" ? "no_llego" : m === "devuelto" ? "devuelto" : "fallida";
 }
 

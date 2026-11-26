@@ -120,9 +120,10 @@ export async function pagarCuota(userId: string, numero: string, pm: string): Pr
   const x = await opDe("o.number = $1 and o.user_id = $2", [numero, userId]);
   if (!x) return no("Ese plan no existe.", "That plan does not exist.");
   if (x.st !== "active" && x.st !== "late") return no("Este plan no tiene pagos pendientes.", "This plan has no pending payments.");
-  const cob = await import("./cobros"), { pasarela } = await import("./pagos/pasarela"), T = await cob.tarjetaDe(x.biz);
+  const cob = await import("./cobros"), T = await cob.tarjetaDe(x.biz);
   if (!T.on || !T.cuenta) return no("La tienda no está cobrando con tarjeta ahora. Paga en la tienda.", "The store is not taking cards right now. Pay at the store.");
-  let pi: string | null = null;
+  // 26 nov · La retención recién creada y de quién es: si el pago no se guarda, se suelta por cobros › soltarSuelta (alerta si Stripe no la suelta).
+  let pi = null as import("./cobros").Retenida | null;
   try {
     const r = await tx(async (c): Promise<Res<{ pid: string; monto: number; fee: number; seq: number }>> => {
       await c.query(`select 1 from layaway_plans where id = $1::bigint for update`, [x.plan]);
@@ -132,7 +133,7 @@ export async function pagarCuota(userId: string, numero: string, pm: string): Pr
       if (ya) return no("Ese pago ya se está procesando. Actualiza la pantalla.", "That payment is already being processed. Refresh the screen.");
       const ret = await cob.retenerPedido({ negocio: x.biz, cuenta: T.cuenta!, clave: `lay-${x.plan}-${s.seq}`, total: s.monto, subtotal: s.monto, pm, userId, numero: x.numero, tipo: "apt" }, c);
       if (!ret.ok) return no(ret.mensaje.es, ret.mensaje.en);
-      pi = ret.pi;
+      pi = { pi: ret.pi, que: { es: `Plan ${x.numero}, pago ${s.seq} (se retuvo y no se guardó)`, en: `Plan ${x.numero}, payment ${s.seq} (held and not saved)` }, monto: s.monto, persona: userId, negocio: x.biz };
       if (ret.estado === "accion") { const v = (await import("./pagos/verificacion")).pideVerificar(ret); if (v) pi = null; return { ...no(v ? "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía." : "Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en la tienda.", v ? "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." : "Your bank asks for an extra verification. Try another card or pay at the store."), ...(v ?? {}) }; }
       const pid = (await c.query<{ id: string }>(
         `insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
@@ -140,13 +141,13 @@ export async function pagarCuota(userId: string, numero: string, pm: string): Pr
         [x.op, userId, x.biz, s.seq, ret.pi, s.monto, ret.comision, ret.marca, ret.ultimos4, ret.pi.startsWith("pi_sim_"), pm])).rows[0]!.id;
       return { ok: true, pid, monto: s.monto, fee: ret.comision, seq: s.seq };
     });
-    if (!r.ok) { if (pi) await pasarela.liberar(pi).catch(() => undefined); return r; }
+    if (!r.ok) { if (pi) await cob.soltarSuelta(pi.pi, pi); return r; }
     pi = null;
     const l = await liquidarCuota(r.pid);
     if (!l.ok) return no("El banco no aprobó el cobro. Prueba con otra tarjeta o paga en la tienda.", "The bank did not approve the charge. Try another card or pay at the store.");
     return { ok: true, monto: r.monto, listo: l.listo };
   } catch (e) {
-    if (pi) await pasarela.liberar(pi).catch(() => undefined);
+    if (pi) await cob.soltarSuelta(pi.pi, pi);
     throw e;
   }
 }

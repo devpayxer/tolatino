@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
-import { comision } from "./cobros";
+import { comision, soltarSuelta } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
 import { soloLectura } from "./vista-equipo";
@@ -118,7 +118,7 @@ async function retenerFalta(c: PoolClient, o: Op, kind: "estimate" | "extra", se
   const cliente = await pasarela.cliente(o.uid).catch(() => null);
   const r = await pasarela.retener({ centavos: falta, comision: fee, destino: t.cuenta, pm, cliente, idem: `${kind}-${o.id}-${seq}-${pm.slice(-24)}`, usuario: { id: o.uid, negocio: o.biz, ciudad: o.city }, meta: { appointment: o.numero, business_id: o.biz, kind } });
   if (!r.ok) return no(r.mensaje.es, r.mensaje.en, { tarjeta: true });
-  if (r.estado === "accion") return bancoPide(r);
+  if (r.estado === "accion") return bancoPide(r, { que: { es: `Cita ${o.numero} (lo que falta del estimado pidió verificación del banco)`, en: `Appointment ${o.numero} (the rest of the estimate asked for bank verification)` }, monto: falta, persona: o.uid, negocio: o.biz, ciudad: o.city });
   await c.query(
     `insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
      values ($1::bigint, $2, $3, $4, $5, $6, 'card', $7, $8, $8, $9, 'held', $10, $11, now(), $12, $13)`,
@@ -358,8 +358,8 @@ export async function planLiquidar(c: PoolClient, opId: string, actor: "user" | 
 }
 
 export async function cobrarLiquidacion(opId: string): Promise<void> {
-  const P = (await db().query<{ id: string; pi: string; held: number; t: number; num: string }>(
-    `select p.id::text, p.stripe_payment_intent as pi, p.held_cents as held, p.capture_target_cents as t, o.number as num from payments p join operations o on o.id = p.operation_id
+  const P = (await db().query<{ id: string; pi: string; held: number; t: number; num: string; uid: string; biz: string; city: string }>(
+    `select p.id::text, p.stripe_payment_intent as pi, p.held_cents as held, p.capture_target_cents as t, o.number as num, p.user_id::text as uid, p.business_id as biz, p.city_id as city from payments p join operations o on o.id = p.operation_id
       where p.operation_id = $1::bigint and p.kind in ('estimate', 'extra') and p.status = 'held' and p.capture_target_cents is not null`, [opId])).rows;
   if (!P.length) return;
   // Comisión sobre lo cobrado sin impuesto (proporcional al impuesto de lo aprobado).
@@ -378,8 +378,11 @@ export async function cobrarLiquidacion(opId: string): Promise<void> {
       // 25 nov (revisión de 621f214) · Otro monto que el pedido (Stripe ya lo había capturado): el equipo de dinero lo sabe (dinero-alertas › alertarOtroMonto).
       if (u.rowCount) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, p.t, r.cobrado);
     } else {
-      const r = await pasarela.liberar(p.pi);
-      if (!r.ok) continue;
+      // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · Por cobros › soltarSuelta con su fila: la que Stripe ya había cobrado queda 'captured' con lo que
+      // capturó y alerta; la que no se suelta la sigue soltando el barrido, ya no en silencio (al tope, SUELTA_INTENTOS, alerta; se cierra sola al soltarse).
+      const r = await soltarSuelta(p.pi, { que: { es: `Cita ${p.num} (al liquidar no quedaba nada que cobrar de esta retención)`, en: `Appointment ${p.num} (nothing was left to charge from this hold at settlement)` },
+        monto: p.held, persona: p.uid, negocio: p.biz, ciudad: p.city, pago: p.id, luego: "sigue" });
+      if (r.e !== "liberada") continue;
       const u = await db().query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [p.id]);
       if (u.rowCount) { lib += p.held; await ev(db(), opId, "payment_released", "system", null, { es: `Se liberaron ${money(p.held)} retenidos`, en: `${money(p.held)} held was released` }); }
     }

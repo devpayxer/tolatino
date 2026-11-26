@@ -1,7 +1,7 @@
 import "server-only";
 import { cfgSql, valores } from "./config";
 import type { Pool, PoolClient } from "pg";
-import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, soltarSuelta, type Retenida } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, soltadaO, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { etiquetaGrupo, fechaCorta, horaInsc, rubroInsc, sumarDiasI, usdI, type Bi, type KindInsc, type RubroInsc } from "./inscripciones-comun";
@@ -179,7 +179,7 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
     if (!n.ok) return no(n.es, n.en);
   }
   const c = await db().connect();
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   try {
     await c.query("begin");
     const ya = (await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2`, [userId, f.clave])).rows[0];
@@ -256,8 +256,8 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
       const cliente = await pasarela.cliente(userId).catch(() => null);
       ret = await pasarela.retener({ centavos: mat, comision: fee, destino: x.cuenta!, pm, cliente, idem: `insc-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { enrollment: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no("Tu tarjeta fue rechazada. No se cobró nada.", "Your card was declined. Nothing was charged.", { tarjeta: true }); }
-      retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+      retenido = { pi: ret.pi, que: { es: `Inscripción ${numero} (se retuvo la matrícula y no se guardó)`, en: `Enrollment ${numero} (fee held and not saved)` }, monto: mat, persona: userId, negocio: x.id, ciudad: x.city };
+      if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     }
     // Lo que importa se COPIA al enviar.
     const neutro = x.neutro || (x.rubro === "fe" && NEUTRO_FE.test(`${s.name.es} ${s.name.en}`));
@@ -275,11 +275,11 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
     // El cupo, dentro del candado (la base no deja pasarse).
     if (g) {
       const u = await c.query(`update class_groups set seats_booked = seats_booked + 1, updated_at = now() where id = $1::bigint and seats_total - seats_outside - seats_booked >= 1`, [g.id]);
-      if (!u.rowCount) { await c.query("rollback"); if (retenido) await pasarela.liberar(retenido).catch(() => undefined); retenido = null; return no("Ese grupo se llenó. Elige otro o anótate en la lista de espera.", "That group filled up. Pick another or join the waitlist.", { grupo: true, espera: true }); }
+      if (!u.rowCount) { await c.query("rollback"); if (retenido) await soltarSuelta(retenido.pi, retenido); retenido = null; return no("Ese grupo se llenó. Elige otro o anótate en la lista de espera.", "That group filled up. Pick another or join the waitlist.", { grupo: true, espera: true }); }
     }
     if (b) {
       const u = await c.query(`update care_openings set openings = openings - 1, updated_at = now() where id = $1::bigint and openings >= 1`, [b.id]);
-      if (!u.rowCount) { await c.query("rollback"); if (retenido) await pasarela.liberar(retenido).catch(() => undefined); retenido = null; return no("No quedan cupos para esa edad. Anótate en la lista de espera.", "No openings left for that age. Join the waitlist.", { grupo: true, espera: true }); }
+      if (!u.rowCount) { await c.query("rollback"); if (retenido) await soltarSuelta(retenido.pi, retenido); retenido = null; return no("No quedan cupos para esa edad. Anótate en la lista de espera.", "No openings left for that age. Join the waitlist.", { grupo: true, espera: true }); }
     }
     // Si venía de una oferta de la lista de espera, la oferta queda usada.
     if (g?.mia || b?.mia) await c.query(`update waitlist_entries set status = 'accepted', operation_id = $2::bigint, updated_at = now() where user_id = $1 and status = 'offered' and ${g ? "group_id = $3::bigint" : "band_id = $3::bigint"}`, [userId, op, g?.id ?? b?.id]);
@@ -288,7 +288,7 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
     if (x.rubro === "fe" && neutro && nota && para !== "hijo") await guardarNotaFe(c, op, nota);
     if (para === "hijo") {
       const r = await guardarNino(c, op, f.nino);
-      if (!r.ok) { await c.query("rollback"); if (retenido) await pasarela.liberar(retenido).catch(() => undefined); retenido = null; return no(r.es, r.en); }
+      if (!r.ok) { await c.query("rollback"); if (retenido) await soltarSuelta(retenido.pi, retenido); retenido = null; return no(r.es, r.en); }
     }
     if (planN && g) {
       const cal = calendarioPlan(s.cents - s.mat, planN, g.inicio);
@@ -303,7 +303,7 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
     return { ok: true, numero };
   } catch (err) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw err;
   } finally {
     c.release();

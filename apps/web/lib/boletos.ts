@@ -356,12 +356,20 @@ export async function vencerApartados(o: { fecha?: string } = {}): Promise<numbe
   const B = new (await import("./barrido-uno")).Fallos("evtApartados");
   await B.cada(L, (h) => `apartado ${h.id}`, async (h) => { if (await tx((c) => soltarEn(c, h.id, "expired"))) n++; });
   if (!o.fecha) {
-    const P = (await db().query<{ id: string; pi: string }>(
-      `select id::text, payment_intent as pi from ticket_holds where status in ('expired', 'released') and payment_intent is not null and operation_id is null and pi_released_at is null
-        order by expires_at, ticket_holds.id limit 50`)).rows;
+    // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · Por cobros › soltarSuelta: la que no se suelta se reintenta en el próximo barrido y, pasada la gracia
+    // (SUELTA_ESPERA_MIN después de vencer el apartado), alerta y se deja (antes se reintentaba sin fin en silencio); la que Stripe ya había cobrado (sin
+    // orden: nadie tiene boletos por ese dinero) alerta en el acto. La que ya tiene su alerta suelta:<pi> no se vuelve a intentar ni tapa a las demás.
+    const C = await import("./cobros");
+    const P = (await db().query<{ id: string; pi: string; uid: string; biz: string; city: string; amt: number; ultimo: boolean }>(
+      `select h.id::text, h.payment_intent as pi, h.user_id::text as uid, e.business_id as biz, h.city_id as city, h.total_cents as amt, h.expires_at < now() - make_interval(mins => $1::int) as ultimo
+         from ticket_holds h join events e on e.id = h.event_id
+        where h.status in ('expired', 'released') and h.payment_intent is not null and h.operation_id is null and h.pi_released_at is null
+          and not exists (select 1 from money_alerts m where m.kind = 'hold_stuck' and m.subject_id = 'suelta:' || h.payment_intent)
+        order by h.expires_at, h.id limit 50`, [C.SUELTA_ESPERA_MIN])).rows;
     await B.cada(P, (p) => `autorizacion ${p.id}`, async (p) => {
-      const r = await pasarela.liberar(p.pi).catch(() => ({ ok: false }));
-      if (r.ok) await db().query(`update ticket_holds set pi_released_at = now(), pay_attempts = pay_attempts + 1 where id = $1::uuid`, [p.id]);
+      const r = await C.soltarSuelta(p.pi, { que: { es: "Autorización de unos boletos que no llegaron a ser orden (el apartado venció o se soltó)", en: "Authorization of tickets that never became an order (the hold expired or was released)" },
+        monto: p.amt, persona: p.uid, negocio: p.biz, ciudad: p.city, luego: "deja", ultimo: p.ultimo });
+      if (r.e === "liberada") await db().query(`update ticket_holds set pi_released_at = now(), pay_attempts = pay_attempts + 1 where id = $1::uuid`, [p.id]);
     });
     B.fin();
   }
@@ -402,7 +410,8 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
   const cfg = await valores("evt_apartado_min", "evt_boletos_persona_fecha_max");
   const dev = await dispositivo(false);
   const c = await db().connect();
-  let pi: string | null = null, convertido = false;
+  // 26 nov · suelta: de quién es la autorización y cuánto, para soltarla por cobros › soltarSuelta si la orden no se guarda.
+  let pi: string | null = null, convertido = false, suelta: import("./cobros").ContextoSuelta | null = null;
   try {
     await c.query("begin");
     // Candado del apartado: dos toques (o dos pestañas) = una sola orden. No bloquea la fila: la autorización se anota aparte.
@@ -443,6 +452,7 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
     const ret = await pasarela.retenerPlataforma({ centavos: h.total, pm, cliente, idem: `${holdId}-${pm.slice(-24)}-${h.intento}`, grupo: `evt-${h.eid}`, meta: { hold: holdId, event_id: h.eid, business_id: v.biz }, usuario: { id: userId, negocio: v.biz, ciudad: h.city } });
     if (!ret.ok) throw no(`No se cobró nada y tus boletos siguen guardados. ${ret.mensaje.es}`, `Nothing was charged and your tickets are still held. ${ret.mensaje.en}`, { tarjeta: true });
     pi = ret.pi;
+    suelta = { que: { es: `Boletos del apartado ${holdId} (se autorizó la tarjeta y la orden no se guardó)`, en: `Tickets of hold ${holdId} (the card was authorized and the order was not saved)` }, monto: h.total, persona: userId, negocio: v.biz, ciudad: h.city };
     await db().query(`update ticket_holds set payment_intent = $2, pi_released_at = null where id = $1::uuid and status = 'held'`, [holdId, pi]);
     if (ret.estado === "accion") {
       // 9k · 3-D Secure (L759): la verificación queda a su nombre; la hoja la completa y «Pagar» vuelve a enviar este mismo apartado (la llave con el
@@ -508,19 +518,24 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
     // 3) Capturar. Si falla, los boletos se anulan, la existencia vuelve y se libera la autorización: nada se cobra sin boleto ni boleto sin cobro.
     const cap = await pasarela.capturarPlataforma(pi, h.total);
     if (!cap.ok) {
-      await anularPorCobro(op, pi, cap.codigo ?? "error");
+      // 26 nov · Si al soltar Stripe la encuentra cobrada (la captura sí salió), «No se cobró nada» sería falso: el equipo de dinero tiene su alerta.
+      if ((await anularPorCobro(op, pi, cap.codigo ?? "error")) === "cobrada") return { ok: false, msg: { es: "No se pudo completar la compra: el equipo de To'Latino revisa el cobro en tu tarjeta.", en: "The purchase could not be completed: the To'Latino team reviews the charge on your card." }, tarjeta: true };
       return { ok: false, msg: { es: "Tu banco no completó el cobro. No se cobró nada.", en: "Your bank did not complete the charge. Nothing was charged." }, tarjeta: true };
     }
     await marcarCobrado(op, cap.cobrado, h.total);
     await despuesDeVender(op).catch(() => undefined);
     return { ok: true, numero };
   } catch (e) {
+    let sol: import("./cobros").Suelta | null = null;
     if (!convertido) {
       await c.query("rollback").catch(() => undefined);
-      if (pi) await pasarela.liberar(pi).catch(() => undefined);
-      if (pi) await db().query(`update ticket_holds set pi_released_at = now(), pay_attempts = pay_attempts + 1 where id = $1::uuid and operation_id is null`, [holdId]).catch(() => undefined);
+      // 26 nov (LAUNCH (1)) · Por cobros › soltarSuelta: la que no se suelta (o ya estaba cobrada) alerta al equipo de dinero; solo la soltada se marca soltada
+      // (antes se marcaba pi_released_at aunque Stripe no la hubiera soltado).
+      if (pi) sol = await (await import("./cobros")).soltarSuelta(pi, suelta ?? { que: { es: `Boletos del apartado ${holdId} (la orden no se guardó)`, en: `Tickets of hold ${holdId} (the order was not saved)` }, monto: 0, persona: userId });
+      if (pi && sol?.e === "liberada") await db().query(`update ticket_holds set pi_released_at = now(), pay_attempts = pay_attempts + 1 where id = $1::uuid and operation_id is null`, [holdId]).catch(() => undefined);
     }
-    if (e instanceof NoBol) return { ok: false, msg: e.msg, ...(e.extra as object) };
+    // Cobrada (tiene su alerta): nunca «No se cobró nada».
+    if (e instanceof NoBol) return { ok: false, msg: sol?.e === "cobrada" ? { es: e.msg.es.replace("No se cobró nada y tus", "Tus").replace(" No se cobró nada.", ""), en: e.msg.en.replace("Nothing was charged and your", "Your").replace(" Nothing was charged.", "") } : e.msg, ...(e.extra as object) };
     throw e;
   } finally {
     c.release();
@@ -541,8 +556,11 @@ async function marcarCobrado(op: string, cobrado: number | undefined, pedido: nu
   });
   if (pid) await (await import("./dinero-alertas")).alertarOtroMontoPago(pid, pedido, cobrado);
 }
-/* La captura falló: los boletos se anulan, la existencia vuelve (vendidos → disponibles), el código se devuelve y se libera la tarjeta. */
-async function anularPorCobro(op: string, pi: string, codigo: string) {
+/* La captura falló: los boletos se anulan, la existencia vuelve (vendidos → disponibles), el código se devuelve y se libera la tarjeta.
+   26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · El cobro se marca soltado SOLO si Stripe lo soltó (antes se marcaba 'released' y después se soltaba
+   tirando el resultado): por cobros › soltarSuelta con su fila. La que Stripe ya había cobrado queda 'captured' con lo que capturó y alerta; la que no se
+   suelta sigue 'held' y repararBoletos la vuelve a soltar, ya no en silencio (al tope alerta; la alerta se cierra sola cuando se suelta). Dice lo que pasó. */
+async function anularPorCobro(op: string, pi: string, codigo: string): Promise<import("./cobros").Suelta["e"]> {
   await tx(async (c) => {
     const o = (await c.query<{ st: string }>(`select status as st from operations where id = $1::bigint and kind = 'tickets' for update`, [op])).rows[0];
     if (!o || o.st !== "confirmed") return;
@@ -555,12 +573,21 @@ async function anularPorCobro(op: string, pi: string, codigo: string) {
       else await c.query(`update event_addons set sold_n = sold_n - 1 where id = $1::bigint`, [l.id]);
     }
     if (h?.code) await c.query(`update discount_codes set used_n = used_n - 1 where id = $1::bigint and used_n >= 1`, [h.code]);
-    await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'system', cancel_reason = 'El cobro no se completó', pay_status = 'released' where id = $1::bigint`, [op]);
-    await c.query(`update payments set status = 'released', released_at = now(), failure_code = $2, updated_at = now() where operation_id = $1::bigint and kind = 'full' and status = 'held'`, [op, codigo.slice(0, 60)]);
+    await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'system', cancel_reason = 'El cobro no se completó' where id = $1::bigint`, [op]);
     await c.query(`insert into operation_events (operation_id, kind, actor) values ($1::bigint, 'payment_failed', 'system')`, [op]);
   });
   (await import("./pases/pronto")).pasesPronto();
-  await pasarela.liberar(pi).catch(() => undefined);
+  const p = (await db().query<{ id: string; amt: number; uid: string; biz: string; city: string; num: string }>(
+    `select p.id::text, p.amount_cents as amt, p.user_id::text as uid, p.business_id as biz, p.city_id as city, o.number as num from payments p join operations o on o.id = p.operation_id
+      where p.operation_id = $1::bigint and p.kind = 'full' and p.stripe_payment_intent = $2 order by p.id desc limit 1`, [op, pi])).rows[0];
+  const s = await (await import("./cobros")).soltarSuelta(pi, { que: { es: `Boletos ${p?.num ?? op} (la captura no se completó: ${codigo.slice(0, 60)}; la orden se anuló)`, en: `Tickets ${p?.num ?? op} (the capture did not complete: ${codigo.slice(0, 60)}; the order was voided)` },
+    monto: p?.amt ?? 0, persona: p?.uid ?? null, negocio: p?.biz ?? null, ciudad: p?.city ?? null, pago: p?.id ?? null, luego: "sigue" });
+  if (s.e === "liberada") await tx(async (c) => {
+    await c.query(`update payments set status = 'released', released_at = now(), failure_code = $2, updated_at = now() where operation_id = $1::bigint and kind = 'full' and status = 'held'`, [op, codigo.slice(0, 60)]);
+    await c.query(`update operations set pay_status = 'released' where id = $1::bigint and pay_status = 'held'`, [op]);
+  });
+  else if (s.e === "cobrada") await db().query(`update operations set pay_status = 'captured' where id = $1::bigint`, [op]);
+  return s.e;
 }
 /* Lo que quedó a medias (la app se cortó entre la orden y la captura): capturar o anular. Lo corre el barrido. */
 export async function repararBoletos(): Promise<number> {

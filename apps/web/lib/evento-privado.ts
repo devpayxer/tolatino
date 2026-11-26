@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
-import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, reclamarAvisoCobro, registrarRetencion } from "./cobros";
+import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, reclamarAvisoCobro, registrarRetencion, soltarSuelta, type Retenida } from "./cobros";
 import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, sinDevoluciones, type DevCancelar, type DevCuenta } from "./devolucion-cancelar";
 import { valores } from "./config";
 import { db, tx } from "./db";
@@ -351,7 +351,7 @@ export async function aceptarEvp(userId: string, numero: string, version: number
   const pmOk = typeof pm === "string" && /^pm_[A-Za-z0-9_]{3,200}$/.test(pm) ? pm : null;
   if (!pmOk) return no("Elige la tarjeta del depósito.", "Choose the card for the deposit.", { tarjeta: true });
   const c = await db().connect();
-  let retenido: string | null = null, opId = "", ya = false;
+  let retenido: Retenida | null = null, opId = "", ya = false;
   try {
     await c.query("begin");
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
@@ -370,8 +370,8 @@ export async function aceptarEvp(userId: string, numero: string, version: number
     const cliente = await pasarela.cliente(userId).catch(() => null);
     const ret = await pasarela.retener({ centavos: dep, comision: fee, destino: x.cuenta, pm: pmOk, cliente, idem: `evp-${q.id}-${pmOk.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { private_event: numero, business_id: x.id } });
     if (!ret.ok) { await c.query("rollback"); return no(`${ret.mensaje.es} No se cobró nada; la propuesta sigue.`, `${ret.mensaje.en} Nothing was charged; the proposal still stands.`, { tarjeta: true }); }
-    retenido = ret.pi;
-    if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+    retenido = { pi: ret.pi, que: { es: `Evento privado ${numero} (se retuvo el depósito y la aceptación no se guardó)`, en: `Private event ${numero} (deposit held and the acceptance was not saved)` }, monto: dep, persona: userId, negocio: x.id, ciudad: x.city };
+    if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     await registrarRetencion(c, { opId: o.id, userId, negocio: x.id, city: x.city, total: dep, comision: fee, r: ret, pm: pmOk, kind: "deposit" });
     // La aceptación: la base vuelve a revisar última versión, vigencia y estado; una sola con depósito por solicitud.
     await c.query(`insert into private_event_acceptances (quote_id, operation_id, kind, user_id, ip, payment_id) values ($1::bigint, $2::bigint, 'quote', $3, $4, (select id from payments where stripe_payment_intent = $5))`,
@@ -385,9 +385,10 @@ export async function aceptarEvp(userId: string, numero: string, version: number
     retenido = null;
   } catch (err) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    const s = retenido ? await soltarSuelta(retenido.pi, retenido) : null;
     const x = deLaBase(err);
-    if (x) return x;
+    // 26 nov · Si Stripe ya la había cobrado (tiene su alerta), «No se cobró nada» sería falso: se quita.
+    if (x) return s?.e === "cobrada" ? { ...x, msg: { es: x.msg.es.replace(" No se cobró nada.", ""), en: x.msg.en.replace(" Nothing was charged.", "") } } : x;
     if (/private_event_acceptances_deposito_uq|payments_operation_kind_seq_key/.test(String((err as Error)?.message))) return no("Este depósito ya se pagó.", "This deposit is already paid.");
     throw err;
   } finally {
@@ -568,7 +569,7 @@ export async function cancelarEvp(userId: string, numero: string): Promise<Res<{
   const depNeg: Bi = quedo ? (entero ? { es: ` El depósito de ${dinero(P.queda)} se queda contigo.`, en: ` The ${dinero(P.queda)} deposit stays with you.` }
       : { es: ` Lo que quedaba del depósito (${dinero(P.queda)}) se queda contigo.`, en: ` What was left of the deposit (${dinero(P.queda)}) stays with you.` })
     : !d || d.e === "nada" ? { es: "", en: "" }
-    : d.e === "hecha" ? { es: ` Se le devolvió el depósito de ${dinero(d.monto)}.`, en: ` The ${dinero(d.monto)} deposit was refunded to them.` }
+    : d.e === "hecha" ? (d.monto > 0 ? { es: ` Se le devolvió el depósito de ${dinero(d.monto)}.`, en: ` The ${dinero(d.monto)} deposit was refunded to them.` } : dineroAlNegocio(d))
     : d.e === "en_camino" ? { es: ` La devolución del depósito de ${dinero(d.monto)} va en camino.`, en: ` The ${dinero(d.monto)} deposit refund is on its way.` }
     : d.e === "fallida" ? { es: ` La devolución del depósito de ${dinero(d.monto)} no salió: el equipo de To'Latino lo resuelve con el cliente.`, en: ` The ${dinero(d.monto)} deposit refund did not go through: the To'Latino team sorts it out with the client.` }
     // 25 nov (LAUNCH g) · La retención que Stripe ya había cobrado (nunca «No se había cobrado nada»).

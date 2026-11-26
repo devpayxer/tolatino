@@ -1,7 +1,7 @@
 import "server-only";
 import type { Staff } from "./admin";
 import { db, tx } from "./db";
-import { HORAS_LLAVE_STRIPE as HORAS_LLAVE } from "./cobros";
+import { HORAS_LLAVE_STRIPE as HORAS_LLAVE, soltarSuelta } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 import { SIN_RESPUESTA } from "./cobro-fuera";
 import { elegibles, type T4 } from "./dinero-alertas";
@@ -161,14 +161,18 @@ export async function decidirRevision(s: Staff, alerta: string, eleccion: string
     : t === "sponsorship_refunds" ? (await (await import("./patrocinio")).resolverDevolucionPat(id, o)).quedo
     : (await (await import("./renovar-retencion")).resolverRenovacion(id, o)).quedo;
   if (DEVUELVE(t)) return { ok: true, msg: `Decidido: vale ${elegido}; ${QUEDO_DEV[q] ?? q}.${sobra.length ? ` Salió de más en Stripe: ${sobra.map((h) => `${h.id} ${money(h.centavos)}`).join(", ")} (no se deshace desde aquí; míralo con la persona).` : ""} Quedó en la auditoría.` };
-  if (!medio) for (const h of sobra) await pasarela.liberar(h.id).catch(() => undefined);
+  // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · Por cobros › soltarSuelta: la que Stripe no suelta (o ya había cobrado) tiene su alerta, y aquí se dice
+  // cuántas se soltaron de verdad (antes «Se soltó» sin mirar a la pasarela).
+  let soltadas = 0;
+  if (!medio) for (const h of sobra) if ((await soltarSuelta(h.id, { que: { es: `Revisión de ${t} ${id}: retención que sobra en Stripe (${elegido ? `vale ${elegido}` : "ninguna vale"})`, en: `Review of ${t} ${id}: extra hold in Stripe (${elegido ? `${elegido} counts` : "none counts"})` },
+    monto: h.centavos, negocio: x.negocio, ciudad: x.ciudad })).e === "liberada") soltadas++;
   let salio = 0, camino = 0, no = 0;
   for (const g of d.devs) { const r = await ejecutarDevolucionSobra(g.id); if (r === "done") salio++; else if (r === "pending") camino++; else no++; }
   const QUEDO: Record<string, string> = { hecha: "la intención quedó hecha con ese", devuelto: "la intención quedó fallida (no cuenta como un rechazo del banco) y se puede volver a cobrar", fallida: "la intención quedó fallida",
     reabierta: "la transferencia vuelve a su flujo", sigue: "la intención sigue en camino: el barrido la cierra con la decisión", ya_no_estaba: "la intención ya se había cerrado", no_llego: "la intención quedó fallida" };
   const verbo = medio === "reversal" ? "revierte" : medio === "refund" ? "devuelve" : "suelta";
   const partes = [`Decidido: ${elegido ? `vale ${elegido}` : "ninguno vale"}; ${QUEDO[q] ?? q}.`];
-  if (sobra.length) partes.push(medio ? `Se ${verbo}${sobra.length === 1 ? "" : "n"} ${sobra.length} (${money(sobra.reduce((s2, h) => s2 + h.centavos, 0))}): ${salio} hecha${salio === 1 ? "" : "s"}${camino ? `, ${camino} en camino (Stripe no contestó: se termina sola)` : ""}${no ? `, ${no} que Stripe rechazó (alerta aparte)` : ""}.` : `Se soltó ${sobra.length === 1 ? "la retención que sobra" : `${sobra.length} retenciones que sobran`}.`);
+  if (sobra.length) partes.push(medio ? `Se ${verbo}${sobra.length === 1 ? "" : "n"} ${sobra.length} (${money(sobra.reduce((s2, h) => s2 + h.centavos, 0))}): ${salio} hecha${salio === 1 ? "" : "s"}${camino ? `, ${camino} en camino (Stripe no contestó: se termina sola)` : ""}${no ? `, ${no} que Stripe rechazó (alerta aparte)` : ""}.` : soltadas === sobra.length ? `Se soltó ${sobra.length === 1 ? "la retención que sobra" : `${sobra.length} retenciones que sobran`}.` : `De ${sobra.length === 1 ? "la retención que sobra" : `${sobra.length} retenciones que sobran`} se soltaron ${soltadas}; las demás no se pudieron soltar (alerta aparte).`);
   partes.push("Quedó en la auditoría.");
   return { ok: true, msg: partes.join(" ") };
 }

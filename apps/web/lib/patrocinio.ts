@@ -108,7 +108,7 @@ export async function cobrar(x: Cobro): Promise<Cobrado> {
     const r = await pasarela.retenerPlataforma({ centavos: x.centavos, pm: x.pm, cliente, idem: x.idem, grupo: `patrocinio-${x.kind}`, meta, usuario: { id: x.payer, negocio: x.negocio, ciudad: x.ciudad } });
     if (!r.ok) return { ok: false, msg: r.mensaje };
     if (r.estado === "accion") {
-      const b = await (await import("./pagos/verificacion")).bancoPide(r);
+      const b = await (await import("./pagos/verificacion")).bancoPide(r, { que: { es: `Patrocinio (${x.idem}; el banco pidió verificar)`, en: `Sponsorship (${x.idem}; the bank asked to verify)` }, monto: x.centavos, persona: x.payer, negocio: x.negocio, ciudad: x.ciudad });
       return { ok: false, msg: b.msg, ...(b.verificar ? { verificar: b.verificar } : {}) };
     }
     return { ok: true, pi: r.pi, marca: t?.marca ?? r.marca, l4: t?.l4 ?? r.ultimos4, retenido: true };
@@ -121,7 +121,8 @@ export async function cobrar(x: Cobro): Promise<Cobrado> {
   if (!r.ok) {
     if (r.enCamino) return { ok: false, msg: r.msg, enCamino: true };
     if (r.codigo === "authentication_required" && r.pi) {
-      await pasarela.liberar(r.pi).catch(() => undefined);
+      // 26 nov · Por cobros › soltarSuelta: nadie más la va a soltar; si Stripe no la suelta (o ya la cobró), el equipo de dinero tiene su alerta.
+      await (await import("./cobros")).soltarSuelta(r.pi, { que: { es: `Renovación del patrocinio ${x.ref} (el banco pidió confirmar el cobro fuera de sesión)`, en: `Sponsorship ${x.ref} renewal (the bank asked to confirm the off-session charge)` }, monto: x.centavos, persona: x.payer, negocio: x.negocio, ciudad: x.ciudad });
       return { ok: false, msg: { es: "Tu banco pide confirmar cada cobro: compra otro desde tu panel y confírmalo ahí.", en: "Your bank asks to confirm each charge: buy another from your dashboard and confirm it there." } };
     }
     return { ok: false, msg: r.msg };
@@ -149,9 +150,12 @@ export async function capturarCobro(p: Extract<Cobrado, { ok: true }>, centavos:
   if (!r.ok) throw new SinCaptura(p.pi);
   return r.cobrado ?? centavos;
 }
-/* Si la transacción se deshizo con algo retenido (no se pudo capturar, o la base dijo que ya no cabe), lo retenido se suelta: no se cobra nada. */
-export async function soltarRetenido(pi: string | null, e: unknown): Promise<ResPat | null> {
-  if (pi) await pasarela.liberar(pi).catch(() => undefined);
+/* Si la transacción se deshizo con algo retenido (no se pudo capturar, o la base dijo que ya no cabe), lo retenido se suelta: no se cobra nada.
+   26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · Por cobros › soltarSuelta (ctx: de quién, cuánto y qué): nadie más sabe de ella; si Stripe no la suelta,
+   o ya la había cobrado, el equipo de dinero tiene su alerta. Cobrada, nunca «No se cobró nada»: se dice que el equipo revisa el cobro. */
+export async function soltarRetenido(pi: string | null, e: unknown, ctx?: import("./cobros").ContextoSuelta): Promise<ResPat | null> {
+  const s = pi ? await (await import("./cobros")).soltarSuelta(pi, ctx ?? { que: { es: "Patrocinio que no se guardó", en: "Sponsorship that was not saved" }, monto: 0 }) : null;
+  if (s?.e === "cobrada") return { ok: false, msg: { es: "No se pudo terminar la compra: el equipo de To'Latino revisa el cobro en tu tarjeta.", en: "The purchase could not be completed: the To'Latino team reviews the charge on your card." } };
   if (!(e instanceof SinCaptura)) return null;
   return { ok: false, msg: { es: "Tu banco no aceptó el cobro. No se cobró nada: prueba otra vez o con otra tarjeta.", en: "Your bank did not accept the charge. Nothing was charged: try again or use another card." } };
 }
@@ -537,7 +541,7 @@ export async function comprarPatrocinio(negocio: string, quien: string, x: Compr
     if (r.ok && om) await (await import("./dinero-alertas")).alertarOtroMonto("sponsorships", om.id, centavos, om.cobrado, { negocio, ciudad: n.city_id, que: { es: `Patrocinio ${om.id}`, en: `Sponsorship ${om.id}` } });
     return r;
   } catch (e) {
-    const sc = await soltarRetenido(retenido, e);
+    const sc = await soltarRetenido(retenido, e, { que: { es: `Patrocinio del negocio (${idem}; la compra no se guardó)`, en: `Business sponsorship (${idem}; the purchase was not saved)` }, monto: centavos, persona: quien, negocio, ciudad: n.city_id });
     if (sc) return sc;
     const d = errorDePuestos(e);
     if (d) return d;

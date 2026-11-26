@@ -62,7 +62,7 @@ const casos = [
   [M5, "if public.patrocinio_evt_a_la_vez(new.city_id, old.ends_at, new.ends_at, new.id) >= public.cfg_int('patrocinio_evt_puestos') then", 'if false then'],
   // 3-D Secure al comprar el patrocinio de un evento.
   [L, 'meta: { business_id: negocio, event_id: evento, duration: x.dur }, enSesion: true };', 'meta: { business_id: negocio, event_id: evento, duration: x.dur } };'],
-  [L, '    const sc = await soltarRetenido(retenido, er);\n', ''],
+  [L, '    const sc = await soltarRetenido(retenido, er, ', '    const sc = await Promise.resolve(retenido && er && '],
 ];
 const crear = [
   // Otra pieza que escribe patrocinios de eventos por su cuenta.

@@ -23,8 +23,8 @@ const casos = [
   ['apartadoLoLlevaElServidor', BL, "{E2(`Al continuar te guardamos boletos y mesa por ${p.apartadoMin} minutos mientras pagas.`", "{E2(`Al continuar te guardamos boletos y mesa por 8 minutos mientras pagas.`"],
   // nadaSeCobraSinBoleto
   ['nadaSeCobraSinBoleto', BO, "    const numero = `B-${", "    await pasarela.capturarPlataforma(pi, h.total);\n    const numero = `B-${"],
-  ['nadaSeCobraSinBoleto', BO, "    if (!cap.ok) {\n      await anularPorCobro(op, pi, cap.codigo ?? \"error\");", "    if (!cap.ok) {\n      void op;"],
-  ['nadaSeCobraSinBoleto', BO, "      if (pi) await pasarela.liberar(pi).catch(() => undefined);\n      if (pi) await db()", "      if (pi) await db()"],
+  ['nadaSeCobraSinBoleto', BO, "      if ((await anularPorCobro(op, pi, cap.codigo ?? \"error\")) === \"cobrada\")", "      if (op === \"cobrada\")"],
+  ['nadaSeCobraSinBoleto', BO, "      if (pi) sol = await (await import(\"./cobros\")).soltarSuelta(pi, ", "      if (pi) sol = await (await import(\"./cobros\")).noSoltar(pi, "],
   ['nadaSeCobraSinBoleto', CO, "o.kind not in ('market_order', 'hold', 'tickets')\n      order by p.held_at nulls first, p.id limit 20", "o.kind not in ('market_order', 'hold')\n      order by p.held_at nulls first, p.id limit 20"],
   ['nadaSeCobraSinBoleto', BAD, "export async function kpiBoletosAdmin(s: Staff) {", "export async function cobrarYa(pi: string) { await (await import(\"./pagos/pasarela\")).pasarela.capturarPlataforma(pi, 100); }\nexport async function kpiBoletosAdmin(s: Staff) {"],
   // precioConCargos

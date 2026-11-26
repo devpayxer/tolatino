@@ -71,9 +71,13 @@ const nombre = async (negocio: string) => (await db().query<{ n: string }>(`sele
    cobro y no se cobra otra vez. Se mira el estado en Stripe antes de soltar: nunca se supone. */
 async function soltarVerificaciones(negocio: string): Promise<boolean> {
   let cobrado = false;
-  const L = (await db().query<{ pi: string; status: string }>(
-    `select a.pi, a.status from payment_actions a where a.business_id = $1::text and a.kind = 'renovacion'
-        and (a.status = 'pendiente' or (a.status = 'verificada' and not exists (select 1 from subscription_events e where e.idem_key = a.idem)))`, [negocio])).rows;
+  // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · La que ya tiene su alerta suelta:<pi> (no se soltó pasada la gracia, o Stripe ya la había cobrado) no
+  // se vuelve a intentar: la tiene el equipo de dinero. (cobros se carga solo si hay algo que soltar.)
+  const L = (await db().query<{ pi: string; status: string; uid: string; amt: number; city: string | null; vencida: number }>(
+    `select a.pi, a.status, a.user_id::text as uid, a.amount_cents as amt, a.city_id as city, extract(epoch from now() - a.expires_at) / 60 as vencida from payment_actions a
+      where a.business_id = $1::text and a.kind = 'renovacion'
+        and (a.status = 'pendiente' or (a.status = 'verificada' and not exists (select 1 from subscription_events e where e.idem_key = a.idem)))
+        and not exists (select 1 from money_alerts m where m.kind = 'hold_stuck' and m.subject_id = 'suelta:' || a.pi)`, [negocio])).rows;
   for (const x of L) {
     const st = await pasarela.intento(x.pi);
     if (st?.estado === "succeeded") {
@@ -82,8 +86,12 @@ async function soltarVerificaciones(negocio: string): Promise<boolean> {
       cobrado = true;
       continue;
     }
-    const r = await pasarela.liberar(x.pi);
-    if (r.ok && x.status === "pendiente") {
+    // 26 nov · Por cobros › soltarSuelta: si no se suelta, se reintenta en la próxima vuelta y, pasada la gracia (SUELTA_ESPERA_MIN después de vencer), alerta
+    // y se deja (antes se reintentaba sin fin en silencio); la que Stripe ya había cobrado alerta en el acto. Guardián liberarSoloPorLaRegla.
+    const C = await import("./cobros");
+    const r = await C.soltarSuelta(x.pi, { que: { es: "Verificación del banco de una renovación de Pro que se suelta antes de otro intento", en: "Bank verification of a Pro renewal released before another attempt" },
+      monto: x.amt, persona: x.uid, negocio, ciudad: x.city, luego: "deja", ultimo: Number(x.vencida) >= C.SUELTA_ESPERA_MIN });
+    if (r.e === "liberada" && x.status === "pendiente") {
       await db().query(`update payment_actions set status = 'vencida' where pi = $1::text and status = 'pendiente'`, [x.pi]);
       // 9t3 · La intención de ese cobro (esperaba al banco) queda fallida: nada se cobró con ella.
       await db().query(`update subscription_charges set status = 'failed', last_error = 'verificacion_vencida' where stripe_pi = $1::text and status = 'action'`, [x.pi]);

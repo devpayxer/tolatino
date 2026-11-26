@@ -359,6 +359,86 @@ export async function soltarRetencion(opId: string, motivo: Msg): Promise<import
   return { e: "retenida", monto: h.amt };
 }
 
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (1), Opus) · Soltar una retención que NO es la de una operación ya guardada con su regla (liberarOperacion /
+   soltarRetencion): el rollback de una retención recién creada en la misma petición (nadie más sabe de ella), el depósito o el extra que se liquida, la
+   verificación del banco vencida, la autorización de unos boletos que nunca fueron orden. Antes cada uno llamaba pasarela.liberar directo y tiraba el
+   resultado (.catch(() => undefined)) o miraba `ok` y reintentaba sin fin en silencio: si Stripe no la soltaba (o ya la había cobrado), la persona quedaba
+   con el dinero retenido o cobrado y nadie lo sabía. Ahora dice lo que pasó:
+   - «liberada»: se soltó (si tenía su alerta abierta de una vuelta anterior, se cierra sola).
+   - «cobrada»: Stripe ya la había cobrado. Con fila de pago (pago), el libro la anota 'captured' con lo que Stripe capturó (nunca 'released'). Alerta siempre.
+   - «retenida»: Stripe no la soltó o no contestó. Con fila de pago, su failure_code. Alerta en la última vuelta: siempre en un rollback (nadie más la va a
+     soltar); en un barrido que la sigue soltando («sigue», con su fila de pago), al tope (SUELTA_INTENTOS vueltas, contadas en la operación); o lo que diga
+     quien llama (ultimo: p. ej. el barrido que la deja de intentar, «deja», pasado SUELTA_ESPERA_MIN).
+   UNA alerta hold_stuck por retención, sujeto propio suelta:<pi> (idempotente: alertar no la repite), ES/EN, con qué retención, de quién y con qué negocio,
+   cuánto y qué hacer en Stripe. A la persona no le dice nada (quien llama nunca afirma que se soltó). Nunca tira: lo que falla queda en el registro.
+   Fuera de aquí y de liberarOperacion nadie llama pasarela.liberar: guardián liberarSoloPorLaRegla. */
+export type ContextoSuelta = {
+  que: Msg; monto: number; persona?: string | null; negocio?: string | null; ciudad?: string | null; pago?: string | null;
+  // Qué pasa con ella después: nadie la vuelve a intentar (rollback) · el barrido la sigue soltando · el barrido la deja de intentar con la alerta abierta.
+  luego?: "nadie" | "sigue" | "deja"; ultimo?: boolean;
+};
+export type Suelta = { e: "liberada" } | { e: "retenida"; alertada: boolean } | { e: "cobrada"; cobrado: number };
+/* La retención recién creada en una petición, con lo que dirá su alerta si al deshacer la petición Stripe no la suelta: soltarSuelta(r.pi, r). */
+export type Retenida = ContextoSuelta & { pi: string };
+/* Las vueltas de un barrido que la sigue soltando antes de su alerta; y los minutos de gracia de uno que la deja de intentar cuando abre la alerta. */
+export const SUELTA_INTENTOS = 3;
+export const SUELTA_ESPERA_MIN = 30;
+export async function soltarSuelta(pi: string, x: ContextoSuelta): Promise<Suelta> {
+  const r = await pasarela.liberar(pi).catch((e): Liberacion => { console.error(`[suelta] ${pi}: la pasarela tiró al soltar: ${String((e as Error)?.message ?? e).slice(0, 200)}`); return { ok: false, codigo: "error" }; });
+  const sujeto = `suelta:${pi}`, luego = x.luego ?? "nadie";
+  if (r.ok) {
+    if (luego === "sigue") await (await import("./dinero-alertas")).cerrarAlertaSola("hold_stuck", sujeto, { es: "Se soltó en un reintento del barrido.", en: "It was released on a sweep retry." })
+      .catch((e) => console.error(`[suelta] ${pi}: la alerta ${sujeto} no se cerró: ${String((e as Error)?.message ?? e).slice(0, 200)}`));
+    return { e: "liberada" };
+  }
+  const cobrado = r.cobrado;
+  let anotada = false, ultimo = x.ultimo ?? true;
+  try {
+    if (cobrado !== undefined && x.pago) {
+      anotada = await tx(async (c) => {
+        const u = await c.query<{ op: string | null }>(`update payments set status = 'captured', amount_cents = $2, fee_cents = least(fee_cents, $2), captured_at = coalesce(captured_at, now()), failure_code = null, updated_at = now()
+                                                          where id = $1::bigint and status = 'held' returning operation_id::text as op`, [x.pago, cobrado]);
+        if (!u.rowCount) return false;
+        const op = u.rows[0]?.op;
+        if (op) await evento(c, op, "payment_captured", { es: `No se pudo soltar la retención: Stripe ya había cobrado ${money(cobrado)} en la tarjeta`, en: `The hold could not be released: Stripe had already charged ${money(cobrado)} to the card` });
+        return true;
+      });
+    } else if (cobrado === undefined && x.pago) {
+      const u = await db().query<{ op: string | null }>(`update payments set failure_code = left($2, 120), updated_at = now() where id = $1::bigint and status = 'held' returning operation_id::text as op`, [x.pago, `liberar:${r.codigo}`]);
+      // La vuelta de un barrido que la sigue soltando se cuenta en su operación (como reglaCompletarIntentos): la alerta, al tope.
+      const op = u.rows[0]?.op;
+      if (luego === "sigue" && x.ultimo === undefined) {
+        const n = op ? (await db().query<{ n: number }>(
+          `update operations set details = details || jsonb_build_object('soltarIntentos', coalesce(details->'soltarIntentos', '{}'::jsonb) || jsonb_build_object($2::text, coalesce((details->'soltarIntentos'->>$2::text)::int, 0) + 1))
+            where id = $1::bigint returning (details->'soltarIntentos'->>$2::text)::int as n`, [op, x.pago])).rows[0]?.n : undefined;
+        ultimo = n === undefined || n >= SUELTA_INTENTOS;
+      }
+    }
+  } catch (e) { console.error(`[suelta] ${pi}: no se pudo anotar en el libro: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+  if (cobrado === undefined && !ultimo) return { e: "retenida", alertada: false };
+  let alertada = false;
+  try {
+    const q = (await db().query<{ quien: string | null; neg: string | null }>(
+      `select (select nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), '') from users u where u.id = $1::uuid) as quien, (select b.name from businesses b where b.id = $2::text) as neg`,
+      [x.persona ?? null, x.negocio ?? null])).rows[0];
+    const de: Msg = q?.quien && q.neg ? { es: ` de ${q.quien} con ${q.neg}`, en: ` of ${q.quien} with ${q.neg}` } : q?.quien ? { es: ` de ${q.quien}`, en: ` of ${q.quien}` }
+      : q?.neg ? { es: ` con ${q.neg}`, en: ` with ${q.neg}` } : { es: "", en: "" };
+    const sigue: Msg = luego === "sigue" ? { es: "El barrido la sigue soltando y esta alerta se cierra sola si lo logra. Si no, búscala en Stripe y suéltala (cancela el intento).", en: "The sweep keeps releasing it and this alert closes by itself if it succeeds. If not, find it in Stripe and release it (cancel the intent)." }
+      : luego === "deja" ? { es: "El barrido ya no la vuelve a intentar: búscala en Stripe; si sigue retenida, suéltala (cancela el intento); si aparece cobrada, devuélvela desde Stripe.", en: "The sweep no longer retries it: find it in Stripe; if it is still held, release it (cancel the intent); if it shows as charged, refund it from Stripe." }
+      : { es: "Nadie más la va a soltar: búscala en Stripe; si sigue retenida, suéltala (cancela el intento); si aparece cobrada, devuélvela desde Stripe.", en: "Nobody else will release it: find it in Stripe; if it is still held, release it (cancel the intent); if it shows as charged, refund it from Stripe." };
+    // Sin el monto a mano (0), la retención por su intento, sin cifra (nunca «$0»).
+    const ret: Msg = x.monto > 0 ? { es: `la retención ${pi} de ${money(x.monto)}${de.es}`, en: `the ${money(x.monto)} hold ${pi}${de.en}` } : { es: `la retención ${pi}${de.es}`, en: `the hold ${pi}${de.en}` };
+    const detalle: Msg = cobrado !== undefined
+      ? { es: `${x.que.es}: se iba a soltar ${ret.es}, pero Stripe ya la había cobrado (${money(cobrado)}).${anotada ? " La base ya la dice cobrada." : ""} Mira en Stripe si ese cobro correspondía y, si no, devuélvelo desde Stripe.`,
+          en: `${x.que.en}: ${ret.en} was going to be released, but Stripe had already charged it (${money(cobrado)}).${anotada ? " The books now show it as charged." : ""} Check in Stripe whether that charge was due and, if not, refund it from Stripe.` }
+      : { es: `${x.que.es}: no se pudo soltar ${ret.es} (Stripe no la soltó o no contestó: ${r.codigo}). ${sigue.es}`,
+          en: `${x.que.en}: ${ret.en} could not be released (Stripe did not release it or did not answer: ${r.codigo}). ${sigue.en}` };
+    await (await import("./dinero-alertas")).alertar("hold_stuck", sujeto, { monto: cobrado ?? x.monto, negocio: x.negocio ?? null, ciudad: x.ciudad ?? null, detalle });
+    alertada = true;
+  } catch (e) { console.error(`[suelta] ${pi}: la alerta ${sujeto} no se anotó: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+  return cobrado !== undefined ? { e: "cobrada", cobrado } : { e: "retenida", alertada };
+}
+
 /* 25 nov (revisión de 621f214) · Lo cobrado de una retención que se iba a soltar (o de una cancelación tarde que quedó cobrada entera: «reparar»): la
    cancelación tarde de quien pagó (viaje, evento privado) sigue su regla con lo cobrado (reglaTardeConLoCobrado); lo demás lo decide el equipo. Si lo hace
    un barrido («barrido», «reparar»), quien pagó y el negocio reciben el aviso con lo aplicado ANTES de la alerta, y la alerta dice si le llegó a quien
@@ -837,7 +917,10 @@ export async function devolverAlCancelar(o: { id: string; pay: string | null; pi
   const falta = o.amount - (o.refunded ?? 0) - Math.max(0, Math.round(x.seQueda ?? 0));
   // 25 nov (revisión de 621f214) · Nada más que devolver y algo se queda: si la devolución de esta llave ya existe (la pidió otro: la cancelación y el barrido
   // la encontraron cobrada los dos), se dice lo que pasó con ella; sin ella, «nada». Guardián liberarMira.
-  if (falta <= 0) return x.seQueda ? (await devDeLaLlave(o.pid, x.idem)) ?? { e: "nada", monto: 0 } : { e: "hecha", monto: o.refunded ?? 0 };
+  // 26 nov (revisión de 5255ce2, a) · Sin seQueda (cancela el negocio, o la regla devuelve todo) y nada que devolver: «hecha» dice lo que tocaba por ESTA
+  // cancelación, la devolución de su llave (la pidió otro intento de la misma cancelación), nunca refunded_cents del cobro entero (incluye lo devuelto antes por
+  // otro motivo). Sin ella no se puede saber cuánto fue por esta: «hecha» sin cifra (monto 0: devolucion-cancelar dice «ya se había devuelto todo lo cobrado»).
+  if (falta <= 0) return (await devDeLaLlave(o.pid, x.idem)) ?? (x.seQueda ? { e: "nada", monto: 0 } : { e: "hecha", monto: 0 });
   const r = await devolverPago({ paymentId: o.pid, centavos: falta, por, actorId: x.actorId, motivo: x.motivo, idem: x.idem, nadieMira: true });
   if (r.ok) return { e: "hecha", monto: falta };
   // Lo que quedó en la base con esa llave (una fallida guarda la suya con «~fallida-<id>»).

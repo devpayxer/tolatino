@@ -3779,9 +3779,9 @@ const guardianes = {
     const b = cuerpoFn(sinComent(L), "pagarBoletos");
     const iR = b.search(/pasarela\.retenerPlataforma\(/), iT = b.search(/insert into tickets/), iC = b.search(/await c\.query\("commit"\);\s*\n\s*convertido = true;/), iK = b.search(/pasarela\.capturarPlataforma\(/);
     if (iR < 0 || iT < 0 || iC < 0 || iK < 0 || !(iR < iT && iT < iC && iC < iK)) falla(G, L, 0, "pagarBoletos: autorizar → boletos en la transacción → commit → capturar, en ese orden");
-    if (!/if \(!cap\.ok\) \{\s*\n\s*await anularPorCobro\(op, pi,/.test(b)) falla(G, L, 0, "pagarBoletos: si la captura falla, se anulan los boletos y se libera");
-    if (!/if \(!convertido\) \{[\s\S]*?if \(pi\) await pasarela\.liberar\(pi\)/.test(b)) falla(G, L, 0, "pagarBoletos: si algo falla antes de convertir, se libera la autorización");
-    if (!/update tickets set status = 'void'/.test(cuerpoFn(sinComent(L), "anularPorCobro")) || !/pasarela\.liberar\(pi\)/.test(cuerpoFn(sinComent(L), "anularPorCobro"))) falla(G, L, 0, "anularPorCobro: anula los boletos y libera la tarjeta");
+    if (!/if \(!cap\.ok\) \{[\s\S]{0,400}?await anularPorCobro\(op, pi,/.test(b)) falla(G, L, 0, "pagarBoletos: si la captura falla, se anulan los boletos y se libera");
+    if (!/if \(!convertido\) \{[\s\S]*?if \(pi\) sol = await \(await import\("\.\/cobros"\)\)\.soltarSuelta\(pi, /.test(b)) falla(G, L, 0, "pagarBoletos: si algo falla antes de convertir, se libera la autorización");
+    if (!/update tickets set status = 'void'/.test(cuerpoFn(sinComent(L), "anularPorCobro")) || !/\.soltarSuelta\(pi, /.test(cuerpoFn(sinComent(L), "anularPorCobro"))) falla(G, L, 0, "anularPorCobro: anula los boletos y libera la tarjeta");
     // C-002 (0175) · lib/patrocinio.ts también retiene y captura en la plataforma: su propio cobro directo a To'Latino en sesión, con 3-D Secure
     // (no son boletos; patrocinioDelServidor vigila que capture exactamente el precio del servidor y que suelte lo retenido si algo falla).
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== L && x !== "apps/web/lib/pagos/pasarela.ts" && x !== "apps/web/lib/patrocinio.ts" && /capturarPlataforma\(|retenerPlataforma\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts cobra boletos");
@@ -4461,7 +4461,7 @@ const guardianes = {
     if (iR < 0 || iA < 0 || iC < 0 || iK < 0 || !(iR < iA && iA < iC && iC < iK)) falla(G, L, 0, "aceptarEvp: retener → aceptación en la transacción → commit → cobrar, en ese orden");
     if (iC > 0 && /cobrarOperacion\(|pasarela\.cobrar\(/.test(b.slice(0, iC))) falla(G, L, 0, "aceptarEvp: nada se cobra antes de registrar la aceptación y hacer commit");
     if (!/const dep = q\.dep,/.test(b) || !/const Q = await propuestas\(c, o\.id\), q = Q\[Q\.length - 1\];/.test(b)) falla(G, L, 0, "aceptarEvp: el depósito sale de la última propuesta guardada");
-    if (!/if \(retenido\) await pasarela\.liberar\(retenido\)/.test(b)) falla(G, L, 0, "aceptarEvp: si algo falla antes del commit, se libera la tarjeta");
+    if (!/const s = retenido \? await soltarSuelta\(retenido\.pi, retenido\) : null;/.test(b)) falla(G, L, 0, "aceptarEvp: si algo falla antes del commit, se libera la tarjeta");
     for (const m of t.matchAll(/export type (EvpIn|CambioIn) = \{([^}]*)\}/g)) if (/\b(cents|price|precio|total|tax|impuesto|subtotal|deposit|dep|monto)\w*\??:/i.test(m[2])) falla(G, L, 0, `«${m[1]}» trae un monto desde el teléfono`);
     if (/\b(total|deposit|dep|subtotal|tax)\w*\??:/i.test(/export type PropuestaIn = \{([^\n]*)\};/.exec(t)?.[1] ?? "x")) falla(G, L, 0, "PropuestaIn: el panel manda líneas (cantidad × precio), nunca un total ni un depósito");
     for (const A of ["apps/web/app/(app)/privado/[num]/acciones.ts", "apps/web/app/(app)/n/[id]/evento-privado/acciones.ts", "apps/web/app/panel/acciones-evento-privado.ts"])
@@ -8316,9 +8316,9 @@ const guardianes = {
       if (/drop trigger[^;]*sponsorship_payments_no_cambia/.test(t) && !/create trigger sponsorship_payments_no_cambia before update or delete on sponsorship_payments/.test(t)) falla(G, `packages/db/migrations/${x}`, 0, "el libro de los patrocinios sigue siendo solo de inserción (nadie quita su trigger)");
     }
     const co = cuerpoFn(l, "cobrar");
-    if (!/if \(x\.enSesion\) \{/.test(co) || !/pasarela\.retenerPlataforma\(\{ centavos: x\.centavos,[^\n]*usuario: \{ id: x\.payer/.test(co) || !/bancoPide\(r\)/.test(co)) falla(G, L, 0, "comprar en sesión con 3-D Secure: se retiene con la verificación a nombre de quien paga y se abre la hoja del banco (bancoPide → verificar), no se pide otra tarjeta");
+    if (!/if \(x\.enSesion\) \{/.test(co) || !/pasarela\.retenerPlataforma\(\{ centavos: x\.centavos,[^\n]*usuario: \{ id: x\.payer/.test(co) || !/bancoPide\(r[,)]/.test(co)) falla(G, L, 0, "comprar en sesión con 3-D Secure: se retiene con la verificación a nombre de quien paga y se abre la hoja del banco (bancoPide → verificar), no se pide otra tarjeta");
     if (!/meta: \{ business_id: negocio, category_id: n\.category_id \}, enSesion: true \}/.test(compra) || !/verificar: p\.verificar/.test(compra)) falla(G, L, 0, "comprarPatrocinio cobra en sesión (enSesion) y devuelve `verificar` a la pantalla");
-    if (!/await capturarCobro\(p, centavos\);\s*\n\s*await anotarPago\(/.test(compra) || !/soltarRetenido\(retenido, e\)/.test(compra)) falla(G, L, 0, "comprarPatrocinio captura el precio del servidor después de guardar el patrocinio y antes del libro; si algo falla, suelta lo retenido");
+    if (!/await capturarCobro\(p, centavos\);\s*\n\s*await anotarPago\(/.test(compra) || !/soltarRetenido\(retenido, e[,)]/.test(compra)) falla(G, L, 0, "comprarPatrocinio captura el precio del servidor después de guardar el patrocinio y antes del libro; si algo falla, suelta lo retenido");
     if (!/pasarela\.capturarPlataforma\(p\.pi, centavos\)/.test(cuerpoFn(l, "capturarCobro"))) falla(G, L, 0, "capturarCobro captura exactamente el precio del servidor");
     // 9t8 (0207) · La devolución es una intención (sponsorship_refunds) que anota la base al terminar: una por patrocinio, con la llave pat-dev-… y nunca más que
     // lo cobrado; ejecutarDevolucionPat la manda por la pasarela del cobro de la plataforma y cerrarDevolucionPat deja UNA fila 'devolucion' (la intención
@@ -8410,7 +8410,7 @@ const guardianes = {
     if (!/await reanudarUno\(id\)/.test(bar) || !/where status = 'activo' and paused_at is null and ends_at <= now\(\)/.test(bar) || !/await devolverPendientes\("evento"\);/.test(bar)) falla(G, L, 0, "el barrido sigue lo que vuelve a verse (alargado), no vence lo que está en pausa y reintenta las devoluciones");
     const tae = cuerpoFn(l, "terminarPorAdminEvento"), tde = cuerpoFn(l, "terminarPorDuenoEvento");
     if (!/motivo: string, devolver: boolean\): Promise<ResPat>/.test(tae) || !/DEVOLUCION\("case when \$4::boolean then 'sin_usar' else 'nada' end", "'admin'", true\)/.test(tae) || !/DEVOLUCION\("case when status = 'reservado' then 'todo' else 'nada' end", "'reserva_cancelada'", true\)/.test(tde)) falla(G, L, 0, "terminar (Super Admin: devolver sí o no; el dueño: una reserva, todo): cuánto lo decide la base");
-    if (!/enSesion: true \}/.test(compra) || !/verificar: p\.verificar/.test(compra) || !/await capturarCobro\(p, centavos\);\s*\n\s*await anotarPago\(/.test(compra) || !/soltarRetenido\(retenido, er\)/.test(compra)) falla(G, L, 0, "comprar el patrocinio de un evento: en sesión con 3-D Secure (verificar), captura el precio del servidor antes del libro y suelta lo retenido si algo falla");
+    if (!/enSesion: true \}/.test(compra) || !/verificar: p\.verificar/.test(compra) || !/await capturarCobro\(p, centavos\);\s*\n\s*await anotarPago\(/.test(compra) || !/soltarRetenido\(retenido, er[,)]/.test(compra)) falla(G, L, 0, "comprar el patrocinio de un evento: en sesión con 3-D Secure (verificar), captura el precio del servidor antes del libro y suelta lo retenido si algo falla");
     const ac = sinComent("apps/web/app/admin/acciones-crecimiento.ts");
     if (!/terminarPorAdminEvento\(s\.id, s\.cities, S\(id, 18\), S\(motivo\), devolver === true\)/.test(ac) || !/terminarPorAdmin\(s\.id, s\.cities, S\(id, 18\), S\(motivo\), devolver === true\)/.test(ac)) falla(G, "apps/web/app/admin/acciones-crecimiento.ts", 0, "«Terminar» del Super Admin manda solo sí o no a devolver, nunca un monto");
   },
@@ -10541,7 +10541,7 @@ const guardianes = {
     if (!/if \(t\.mas > 0\) return no\(/.test(cuerpoFn(m, "pasoMercado"))) falla(G, M, 0, "sin el OK por lo que pasa de lo retenido, el pedido no se marca listo");
     const ap = cuerpoFn(m, "aprobarPeso"), rm = cuerpoFn(m, "retenerMas");
     if (!/if \(o\.pay === "app" && t0\.mas > 0\) \{/.test(ap) || !/await retenerMas\(userId, o\.id, numero, t0\.mas\)/.test(ap)) falla(G, M, 0, "«Está bien, cobrar» con el peso por encima retiene lo que falta (lo calcula la base) antes de cobrar");
-    if (!/usuario: \{ id: userId,/.test(rm) || !/return bancoPide\(ret\);/.test(rm) || !/kind: "extra"/.test(rm) || !/p\.kind = 'full' and p\.user_id = \$2::uuid/.test(rm)) falla(G, M, 0, "el OK por más se retiene en la tarjeta del primer cobro, a nombre de quien paga (3-D Secure por la hoja), como cobro 'extra'");
+    if (!/usuario: \{ id: userId,/.test(rm) || !/return bancoPide\(ret(?:, r0)?\);/.test(rm) || !/kind: "extra"/.test(rm) || !/p\.kind = 'full' and p\.user_id = \$2::uuid/.test(rm)) falla(G, M, 0, "el OK por más se retiene en la tarjeta del primer cobro, a nombre de quien paga (3-D Secure por la hoja), como cobro 'extra'");
     if (!/p\.kind in \('full', 'extra'\)\) as ret/.test(cuerpoFn(m, "totales"))) falla(G, M, 0, "lo retenido es la suma de la primera retención y la del OK por más");
     if (!/not \(o\.details \? 'rec10'\) and \(o\.details->>'weighed_at'\)::timestamptz <= now\(\) - interval '10 minutes'/.test(m) || !/avisar\(x\.number, "merc_rec10"/.test(m)) falla(G, M, 0, "el recordatorio de los 10 min de «Está bien, cobrar» sale una vez por peso mandado");
     if (!existsSync(MIG) || !/add constraint payments_cobro_hasta_lo_retenido check \(held_cents is null or amount_cents <= held_cents\)/.test(readFileSync(MIG, "utf8"))) falla(G, MIG, 0, "la base no deja cobrar de un cobro más de lo retenido");
@@ -15039,7 +15039,7 @@ const guardianes = {
     }
     const cf = sinComent(CF), an = cuerpoFn(cf, "anotarCobro"), tc = cuerpoFn(cf, "terminarCobro"), mh = cuerpoFn(cf, "marcarHecho"), bc = cuerpoFn(cf, "barrerCobrosFuera");
     const antes = (t, guard, llamada) => t.indexOf(guard) >= 0 && t.indexOf(llamada) >= 0 && t.indexOf(guard) < t.indexOf(llamada);
-    if (!/import \{ HORAS_LLAVE_STRIPE as HORAS_LLAVE \} from "\.\/cobros";/.test(cf) || /const HORAS_LLAVE = /.test(cf)) falla(G, CF, 0, "las horas de la llave son las de lib/cobros (HORAS_LLAVE_STRIPE), no otras");
+    if (!/import \{ HORAS_LLAVE_STRIPE as HORAS_LLAVE(?:, [^}]*)? \} from "\.\/cobros";/.test(cf) || /const HORAS_LLAVE = /.test(cf)) falla(G, CF, 0, "las horas de la llave son las de lib/cobros (HORAS_LLAVE_STRIPE), no otras");
     if (!/insert into offsession_charges/.test(an) || /pasarela\./.test(an) || !/return c \? en\(c\) : tx\(en\);/.test(an) || an.indexOf("insert into offsession_charges") > an.indexOf("await alGuardar?.(k);")) falla(G, CF, 0, "anotarCobro anota la intención (con la auditoría de quien decide) en una transacción y no llama a la pasarela");
     if (!/where kind = \$1 and ref_id = \$2 and \(status = 'pending' or \(status = 'done' and purpose = \$3\)\)/.test(an)) falla(G, CF, 0, "anotarCobro devuelve la intención en camino de ese objeto (o la ya cobrada de ese propósito): nunca anota otra mientras una va en camino");
     const tvj = cuerpoFn(cf, "terminarVieja");
@@ -15207,14 +15207,14 @@ const guardianes = {
     const sr = /if \(!r\.ok && SIN_RESPUESTA\.has\(String\(r\.codigo\)\)\) \{[\s\S]*?\n    \}/.exec(rv)?.[0] ?? "";
     if (!sr || /liberar|cerrarSin|avisar|'failed'/.test(sr) || !/return "sigue";/.test(sr)) falla(G, RR, 0, "renovarRetencion: sin respuesta no suelta la vieja, no la da por fallida ni avisa: sigue en camino");
     if (!/if \(!f\.enviada \|\| \(f\.llave && f\.viva\)\) \{/.test(rv) || !/coalesce\(sent_at > now\(\) - make_interval\(hours => \$\{HORAS_LLAVE\}\), true\) as llave/.test(rr) || !/old_held_at \+ make_interval\(hours => \$\{HORAS_VIVE\}\) > now\(\) as viva/.test(rr)
-      || Number(/export const HORAS_VIVE = (\d+);/.exec(rr)?.[1] ?? 0) !== 168 || !(Number(/export const HORAS_RENOVAR = (\d+);/.exec(rr)?.[1] ?? 999) < 168) || !/import \{ HORAS_LLAVE_STRIPE as HORAS_LLAVE \} from "\.\/cobros";/.test(rr))
+      || Number(/export const HORAS_VIVE = (\d+);/.exec(rr)?.[1] ?? 0) !== 168 || !(Number(/export const HORAS_RENOVAR = (\d+);/.exec(rr)?.[1] ?? 999) < 168) || !/import \{ HORAS_LLAVE_STRIPE as HORAS_LLAVE(?:, [^}]*)? \} from "\.\/cobros";/.test(rr))
       falla(G, RR, 0, "renovarRetencion: la misma llave solo mientras Stripe la recuerda (HORAS_LLAVE desde que se mandó) y la vieja vive (168 h; se renueva antes)");
     // (4) Pasada la ventana: la consulta y el cierre con su veredicto.
     if (!/return \(await resolverRenovacion\(f\.id, \{ origen: "barrido" \}, x\)\)\.quedo;/.test(rv) || !/K\.consultar\(\{ tabla: "hold_renewals"/.test(rs) || /await tx\(/.test(rs.slice(0, rs.indexOf("K.consultar(")))
       || !/else if \(v\?\.noLlego\) quedo = await cerrarSin\(x, id, "nunca_llego", true\);/.test(rs) || !/if \(quedo === "sigue"\) await alertaSigue\(x, h\);/.test(rs)) falla(G, RR, 0, "resolverRenovacion: pasada la ventana, la consulta (fuera de transacción) y el cierre con su veredicto; lo que no cierra alerta (hold_stuck)");
     // (5) La vieja se suelta después de anotar la nueva; el cierre, una vez.
-    if (!antes(cn, "update payments set status = 'released'", "await x.nueva(c, r)") || !antes(cn, "const h = await tx(", "await pasarela.liberar(") || !/status = 'pending' for update/.test(cn) || !/set status = 'dropped'/.test(cn)) falla(G, RR, 0, "cerrarNueva: en una transacción y una vez, la nueva anotada; la vieja se suelta en Stripe DESPUÉS (y si ya no hacía falta, la nueva se suelta)");
-    if (!/where id = \$1::bigint and status = 'pending' returning city_id as ciudad/.test(cs) || !antes(cs, "const h = await tx(", "await pasarela.liberar(") || !/await x\.avisar\(m\)/.test(cs)) falla(G, RR, 0, "cerrarSin: una vez; la vieja se suelta y se avisa DESPUÉS, con el motivo verdadero");
+    if (!antes(cn, "update payments set status = 'released'", "await x.nueva(c, r)") || !antes(cn, "const h = await tx(", "await soltarSuelta(") || !/status = 'pending' for update/.test(cn) || !/set status = 'dropped'/.test(cn)) falla(G, RR, 0, "cerrarNueva: en una transacción y una vez, la nueva anotada; la vieja se suelta en Stripe DESPUÉS (y si ya no hacía falta, la nueva se suelta)");
+    if (!/where id = \$1::bigint and status = 'pending' returning city_id as ciudad/.test(cs) || !antes(cs, "const h = await tx(", "await soltarSuelta(") || !/await x\.avisar\(m\)/.test(cs)) falla(G, RR, 0, "cerrarSin: una vez; la vieja se suelta y se avisa DESPUÉS, con el motivo verdadero");
     if (!/\["renovaciones", async \(\) => \(await import\("\.\/renovar-retencion"\)\)\.barrerRenovaciones\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "el barrido central termina las renovaciones cuya vieja ya no está retenida (barrerRenovaciones)");
     // Lo que ven la persona y el negocio: «tu banco no dejó» solo cuando fue el banco.
     const es = cuerpoFn(sinComent(ES), "renovacionRetencion"), re = cuerpoFn(sinComent(RE), "renovacionDeposito");
@@ -18051,7 +18051,7 @@ const guardianes = {
     { const DC = "apps/web/lib/devolucion-cancelar.ts", dc = existsSync(DC) ? sinComent(DC) : "";
       if (!dc) falla(G, DC, 0, "falta lib/devolucion-cancelar.ts (los textos de lo que pasó al cancelar el negocio)");
       else dc.split("\n").forEach((l, i) => { if (/Te devolvimos|We refunded/.test(l) && !/d\.e === "hecha"|x\.fallidas|x\.camino|return \{ es: "Le devolvimos todo/.test(l)) falla(G, DC, i + 1, "«Te devolvimos» sin mirar que la devolución esté hecha"); });
-      if (dc && !/if \(d\.e === "hecha"\) return \{ es: `Te devolvimos/.test(dc)) falla(G, DC, 0, "dineroAlCancelar no dice «Te devolvimos» solo con lo hecho"); }
+      if (dc && !/if \(d\.e === "hecha"\) return (?:d\.monto > 0 \? )?\{ es: `Te devolvimos/.test(dc)) falla(G, DC, 0, "dineroAlCancelar no dice «Te devolvimos» solo con lo hecho"); }
     const CX = { "apps/web/lib/viajes.ts": ["viaje_cancelada"], "apps/web/lib/noche-reservas.ts": ["noche_biz_cx"], "apps/web/lib/fiestas-reservas.ts": ["fiesta_biz_cx"], "apps/web/lib/inscripciones.ts": ["insc_biz_cx", "insc_grupo_cx"] };
     let cx = 0;
     for (const [S, K] of Object.entries(CX)) {
@@ -18599,7 +18599,7 @@ const guardianes = {
     const rtc = cuerpoFn(co, "reglaTardeConLoCobrado"), rtl = cuerpoFn(co, "reglaTardeLeida");
     if (!/const mitad = Math\.min\(Math\.floor\(o\.tot \/ 2\), Math\.max\(0, o\.amt - o\.ref\)\);/.test(rtc) || /\bo\.vcx\b|as vcx/.test(rtc)) falla(G, CO, 0, "reglaTardeConLoCobrado: la mitad no es min(floor(tot/2), amt − ref) (lo que de verdad queda cobrado, hasta la mitad)");
     if (!/const queda = Math\.min\(Math\.floor\(o\.tot \/ 2\), Math\.max\(0, o\.amt - o\.ref\)\);/.test(rtl) || /\bo\.vcx\b|as vcx/.test(rtl)) falla(G, CO, 0, "reglaTardeLeida: lo que se queda no es min(floor(tot/2), amt − ref), la misma cuenta que la regla");
-    if (!/if \(falta <= 0\) return x\.seQueda \? \(await devDeLaLlave\(o\.pid, x\.idem\)\) \?\? \{ e: "nada", monto: 0 \} :/.test(cuerpoFn(co, "devolverAlCancelar"))) falla(G, CO, 0, "devolverAlCancelar: sin nada más que devolver y algo que se queda dice «nada» aunque la devolución de su llave ya exista (el aviso diría «Se cobró la mitad» sin «te devolvimos»)");
+    if (!/if \(falta <= 0\) return \(await devDeLaLlave\(o\.pid, x\.idem\)\) \?\? \(x\.seQueda \? \{ e: "nada", monto: 0 \} : \{ e: "hecha", monto: 0 \}\);/.test(cuerpoFn(co, "devolverAlCancelar"))) falla(G, CO, 0, "devolverAlCancelar: sin nada más que devolver dice «nada» aunque la devolución de su llave ya exista (el aviso diría «Se cobró la mitad» sin «te devolvimos»), o sin seQueda «hecha» dice todo lo devuelto del cobro (refunded_cents incluye lo devuelto antes por otro motivo: sin la de su llave, sin cifra)");
     const da = sinComent(DA), aom = cuerpoFn(da, "alertarOtroMonto");
     if (!/if \(cobrado == null \|\| cobrado === pedido\) return;/.test(aom) || !/alertar\("gateway_review", `capturado:\$\{tabla\}:\$\{id\}`/.test(aom)) falla(G, DA, 0, "alertarOtroMonto no alerta (gateway_review capturado:<tabla>:<id>) cuando Stripe capturó otro monto que el pedido");
     for (const f of archivos.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x) && x !== PA)) {
@@ -18703,6 +18703,77 @@ const guardianes = {
         if (T.slice(i, i + 4).join("\n").match(/status = 'released'/)) falla(G, f, i + 1, "se marca 'released' después de un pasarela.liberar cuyo resultado se tira: una retención que no se soltó (o ya cobrada) quedaría soltada en el libro");
       });
     }
+  },
+
+  /* 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · liberarSoloPorLaRegla: soltar una retención dice lo que pasó y, si no se soltó, alguien lo sabe. Pasaba:
+     ~50 sitios (los rollback de pedidos, citas, visitas, inscripciones, noche, fiestas, viajes, mudanzas, evento privado, mercado, apartados, plan, boletos,
+     patrocinios; renovar-retencion, cobro-fuera, la revisión de la pasarela; los barridos de rentas, mercado, estimados, boletos, verificaciones y Pro)
+     llamaban pasarela.liberar directo y tiraban el resultado (.catch(() => undefined)) o miraban `ok` y reintentaban sin fin en silencio: si Stripe no la
+     soltaba (o ya la había cobrado), la persona quedaba con el dinero retenido o cobrado y nadie lo sabía. Regla: (1) fuera de lib/cobros.ts y de la pasarela
+     nadie llama pasarela.liberar (ni la desestructura); en cobros.ts solo liberarOperacion (la regla de la operación) y soltarSuelta (lo demás). (2)
+     soltarSuelta mira «cobrada» (r.cobrado) antes que nada, la anota 'captured' en su fila (nunca 'released'), y alerta hold_stuck suelta:<pi> (ES/EN) siempre
+     que es cobrada y en la última vuelta de la que no se soltó; nunca tira. (3) Un barrido que la sigue soltando («sigue») va con su fila de pago (el tope se
+     cuenta en su operación, SUELTA_INTENTOS); uno que la deja («deja») dice cuándo es la última (ultimo) y su consulta no vuelve a elegir la que ya tiene su
+     alerta suelta:. (4) La misma clase con el dinero que sale: ninguna llamada de la pasarela que mueve dinero (cobrar, capturar, devolver, transferir,
+     revertir, cobrar fuera de sesión) se hace como sentencia suelta tirando lo que contestó. (5) Lo soltado se marca soltado solo con «liberada» (boletos ›
+     anularPorCobro, pagarBoletos). Al revés: alrevesDineroDiceLoQuePaso. */
+  liberarSoloPorLaRegla() {
+    const G = "liberarSoloPorLaRegla", CO = "apps/web/lib/cobros.ts", PA = "apps/web/lib/pagos/pasarela.ts";
+    if (!existsSync(CO) || !existsSync(PA)) return falla(G, CO, 0, "falta lib/cobros.ts o la pasarela (soltar lo retenido)");
+    const MUEVE = /(?:^|[;{]|\)\s)\s*await (?:\(await import\([^)]*\)\)\.)?pasarela\.(?:cobrar|capturarPlataforma|devolver|revertirTransferencia|transferir|cobrarFuera|cobrarDirecto)\(/;
+    for (const f of archivos.filter((x) => /^apps\/web\/.*\.(ts|tsx)$/.test(x) && x !== PA)) {
+      const raw = readFileSync(f, "utf8");
+      if (!/liberar|pasarela/.test(raw)) continue;
+      const t = sinComent(f), L = t.split("\n");
+      L.forEach((l, i) => {
+        if (f !== CO && (/\.liberar\b|\[\s*["'`]liberar["'`]\s*\]/.test(l) || /\{[^}]*\bliberar\b[^}]*\}\s*=\s*[^;\n]*pasarela/.test(l)))
+          falla(G, f, i + 1, "llama pasarela.liberar directo: soltar una retención va por cobros › soltarSuelta (o liberarOperacion con su operación), que alerta si Stripe no la suelta o ya la había cobrado");
+        if (MUEVE.test(l)) falla(G, f, i + 1, "una llamada de la pasarela que mueve dinero tira lo que contestó: si Stripe dijo que no (o ya lo había hecho), nadie lo sabe");
+      });
+    }
+    const co = sinComent(CO), lo = cuerpoFn(co, "liberarOperacion"), ss = cuerpoFn(co, "soltarSuelta");
+    const usos = [...co.matchAll(/pasarela\.liberar\(/g)].length;
+    if (usos !== 2 || (lo.match(/pasarela\.liberar\(/g) ?? []).length !== 1 || (ss.match(/pasarela\.liberar\(/g) ?? []).length !== 1)
+      falla(G, CO, 0, `en cobros.ts solo liberarOperacion y soltarSuelta llaman pasarela.liberar (hallé ${usos})`);
+    if (!ss) return falla(G, CO, 0, "no encuentro soltarSuelta (soltar una retención que no es de una operación con su regla)");
+    if (!/const r = await pasarela\.liberar\(pi\)\.catch\(\(e\): Liberacion => \{ console\.error\(/.test(ss)) falla(G, CO, 0, "soltarSuelta deja que la pasarela tire (o se traga el error sin registro): tiene que volver «no se soltó» y seguir");
+    if (/status = 'released'/.test(ss)) falla(G, CO, 0, "soltarSuelta marca 'released': lo marca quien llama, solo con «liberada»");
+    if (!/const cobrado = r\.cobrado;/.test(ss) || !/if \(cobrado !== undefined && x\.pago\) \{[\s\S]*?update payments set status = 'captured', amount_cents = \$2,[\s\S]*?where id = \$1::bigint and status = 'held'/.test(ss))
+      falla(G, CO, 0, "soltarSuelta no anota 'captured' con lo que Stripe capturó (r.cobrado) cuando la encuentra cobrada y hay fila de pago");
+    if (!/const sujeto = `suelta:\$\{pi\}`/.test(ss) || !/alertar\("hold_stuck", sujeto, \{/.test(ss) || !/if \(cobrado === undefined && !ultimo\) return \{ e: "retenida", alertada: false \};/.test(ss))
+      falla(G, CO, 0, "soltarSuelta no alerta hold_stuck suelta:<pi> cuando la encuentra cobrada (siempre) o cuando no se soltó en su última vuelta");
+    if (!/let anotada = false, ultimo = x\.ultimo \?\? true;/.test(ss)) falla(G, CO, 0, "soltarSuelta: sin decir lo contrario, la vuelta es la última (un rollback: nadie más la va a soltar) y alerta");
+    if (!/ultimo = n === undefined \|\| n >= SUELTA_INTENTOS;/.test(ss) || !/'soltarIntentos'/.test(ss)) falla(G, CO, 0, "soltarSuelta: el barrido que la sigue soltando no cuenta sus vueltas en la operación (SUELTA_INTENTOS): reintentaría sin fin en silencio");
+    if (!/se iba a soltar \$\{ret\.es\}, pero Stripe ya la había cobrado/.test(ss) || !/was going to be released, but Stripe had already charged it/.test(ss) || !/no se pudo soltar \$\{ret\.es\}/.test(ss) || !/could not be released/.test(ss))
+      falla(G, CO, 0, "la alerta de soltarSuelta no dice (ES/EN) qué retención, de quién, cuánto y qué pasó");
+    const llamadas = [];
+    for (const f of archivos.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x) && x !== CO)) {
+      const t = sinComent(f);
+      // La llamada entera (hasta su paréntesis de cierre), aunque ocupe varias líneas.
+      for (const m of t.matchAll(/soltarSuelta\(/g)) {
+        let k = m.index + m[0].length, d = 1;
+        for (; k < t.length && d > 0; k++) d += t[k] === "(" ? 1 : t[k] === ")" ? -1 : 0;
+        llamadas.push([f, t.slice(0, m.index).split("\n").length, t.slice(m.index, k)]);
+      }
+    }
+    for (const [f, ln, c] of llamadas) {
+      if (/luego: "sigue"/.test(c) && !/pago: /.test(c)) falla(G, f, ln, "un barrido que la sigue soltando («sigue») sin su fila de pago: no cuenta sus vueltas ni anota lo cobrado");
+      if (/luego: "deja"/.test(c) && !/ultimo: /.test(c)) falla(G, f, ln, "un barrido que la deja de intentar («deja») sin decir cuál es su última vuelta (ultimo): alertaría a la primera o nunca");
+    }
+    for (const [f, fn] of [["apps/web/lib/pagos/verificacion.ts", "vencerVerificaciones"], ["apps/web/lib/suscripcion.ts", "soltarVerificaciones"], ["apps/web/lib/boletos.ts", "vencerApartados"]]) {
+      const cu = cuerpoFn(existsSync(f) ? sinComent(f) : "", fn);
+      if (!/luego: "deja"/.test(cu) || !/m\.kind = 'hold_stuck' and m\.subject_id = 'suelta:' \|\| /.test(cu))
+        falla(G, f, 0, `${fn}: el barrido que la deja (con su alerta suelta:<pi>) la vuelve a elegir: reintentaría sin fin o taparía a las demás`);
+    }
+    for (const [f, fn] of [["apps/web/lib/rentas.ts", "liquidarDeposito"], ["apps/web/lib/mercado.ts", "liquidarMercado"], ["apps/web/lib/estimados.ts", "cobrarLiquidacion"], ["apps/web/lib/boletos.ts", "anularPorCobro"]]) {
+      const cu = cuerpoFn(existsSync(f) ? sinComent(f) : "", fn);
+      if (!/soltarSuelta\(/.test(cu) || !/luego: "sigue"/.test(cu)) falla(G, f, 0, `${fn}: lo que el barrido vuelve a soltar va por soltarSuelta con su fila («sigue»): sin eso, reintenta sin fin en silencio`);
+    }
+    const BO = "apps/web/lib/boletos.ts", bo = existsSync(BO) ? sinComent(BO) : "", apc = cuerpoFn(bo, "anularPorCobro");
+    if (!/if \(s\.e === "liberada"\) await tx\(async \(c\) => \{\s*\n\s*await c\.query\(`update payments set status = 'released'/.test(apc) || (apc.match(/set status = 'released'/g) ?? []).length !== 1)
+      falla(G, BO, 0, "anularPorCobro marca el cobro 'released' sin que Stripe lo haya soltado");
+    if (!/if \(pi && sol\?\.e === "liberada"\) await db\(\)\.query\(`update ticket_holds set pi_released_at = now\(\)/.test(cuerpoFn(bo, "pagarBoletos")))
+      falla(G, BO, 0, "pagarBoletos marca la autorización soltada (pi_released_at) sin que Stripe la haya soltado");
   },
 
   /* 25 nov (LAUNCH «el dinero dice lo que pasó» g) · capturaTardeAlerta: la captura de una cancelación tarde (viaje, evento privado) a la que Stripe NO

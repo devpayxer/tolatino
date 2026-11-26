@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
-import { HORAS_LLAVE_STRIPE as HORAS_LLAVE } from "./cobros";
+import { HORAS_LLAVE_STRIPE as HORAS_LLAVE, soltarSuelta } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 
 /* 9t4 (21 nov) · Los cobros con la tarjeta guardada que To'Latino hace sin la persona delante: el plan del Hogar cada mes (lib/planes.ts), la renta al
@@ -149,6 +149,14 @@ async function cerrarHecho(a: Intencion, hecho: { pi: string; marca: string | nu
   });
   return nuevo ? { ok: true, ...hecho } : { ok: true, ...hecho, ya: true };
 }
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · El depósito que se retuvo para esta intención (hold_pi) se suelta por cobros › soltarSuelta: nadie más lo
+   va a soltar, así que si Stripe no lo suelta (o ya lo había cobrado) el equipo de dinero tiene su alerta (hold_stuck suelta:<pi>). Antes se tiraba lo que
+   contestaba la pasarela. Guardián liberarSoloPorLaRegla. */
+export async function soltarDeposito(a: Intencion, por: Bi) {
+  if (!a.hold) return;
+  const dep = typeof a.detalle.dep === "number" ? a.detalle.dep : 0, q = QUE[a.kind];
+  await soltarSuelta(a.hold, { que: { es: `Depósito de ${q.es} (cobro ${a.idem}; ${por.es})`, en: `Deposit for ${q.en} (charge ${a.idem}; ${por.en})` }, monto: dep, persona: a.payer, negocio: a.negocio, ciudad: a.ciudad });
+}
 /* 9t5 · Una intención de más de HORAS_LLAVE: NUNCA a la pasarela con su llave. Se cierra con el último veredicto de la consulta (lib/consulta-pasarela.ts),
    cada cambio una vez (where status = 'pending'); sin un veredicto que cierre, sigue en camino y alerta (offsession_stuck, una vez). */
 async function terminarVieja(a: Intencion, cerrar?: Cerrar): Promise<Cobrado> {
@@ -160,7 +168,7 @@ async function terminarVieja(a: Intencion, cerrar?: Cerrar): Promise<Cobrado> {
       const b = await intencion(a.id);
       return b?.st === "done" ? { ok: true, pi: b.pi ?? "", marca: null, l4: null, ya: true } : { ok: false, codigo: "ya_rechazado", msg: YA_RECHAZADO };
     }
-    if (a.hold) await pasarela.liberar(a.hold).catch(() => undefined);
+    await soltarDeposito(a, { es: "ninguno de los cobros que halló Stripe valía (se devuelve)", en: "none of the charges Stripe found was valid (it is refunded)" });
     return { ok: false, enCamino: true, noLlego: true, devuelto: true, msg: DEVUELTO };
   }
   if (v?.resultado === "hecho" && v.stripe) return cerrarHecho(a, { pi: v.stripe, marca: null, l4: null }, cerrar);
@@ -172,7 +180,7 @@ async function terminarVieja(a: Intencion, cerrar?: Cerrar): Promise<Cobrado> {
     }
     if (motivo === "consulta_fallido") return { ok: false, codigo: motivo, msg: YA_RECHAZADO };
     // Nunca llegó: nada salió. El depósito que se retuvo para esta renta se suelta (el siguiente toque retiene con su propia llave).
-    if (a.hold) await pasarela.liberar(a.hold).catch(() => undefined);
+    await soltarDeposito(a, { es: "el cobro nunca llegó a Stripe", en: "the charge never reached Stripe" });
     return { ok: false, enCamino: true, noLlego: true, msg: NO_LLEGO };
   }
   await alertaVieja(a);

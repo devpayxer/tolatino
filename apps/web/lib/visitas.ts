@@ -1,7 +1,7 @@
 import "server-only";
 import { ligarCita, usarPre } from "./solicitudes";
 import { db } from "./db";
-import { comision, cobrarOperacion, registrarRetencion } from "./cobros";
+import { comision, cobrarOperacion, registrarRetencion, soltarSuelta, type Retenida } from "./cobros";
 import { contexto, fecha, gente, horaL, huecos, ocupadas, type Ctx, type Hueco, type Persona, type Q } from "./citas";
 import { depositoDe, type OficioPub, type PolPub } from "./oficios-publico";
 import { pasarela } from "./pagos/pasarela";
@@ -97,7 +97,7 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
   const fotos = Array.isArray(f.fotos) ? [...new Set(f.fotos.map(String).filter((x) => UUID.test(x)))] : [];
   if (fotos.length > 6) return no("Hasta 6 fotos.", "Up to 6 photos.");
   const c = await db().connect();
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   try {
     await c.query("begin");
     const ya = (await c.query<{ number: string; status: string }>(`select number, status from operations where user_id = $1 and client_key = $2`, [userId, f.clave])).rows[0];
@@ -155,12 +155,12 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
       const cliente = await pasarela.cliente(userId).catch(() => null);
       ret = await pasarela.retener({ centavos: dep, comision: fee, destino: quien.cuenta!, pm, cliente, idem: `visita-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { appointment: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
-      retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+      retenido = { pi: ret.pi, que: { es: `Visita ${numero} (se retuvo el depósito y no se guardó)`, en: `Visit ${numero} (deposit held and not saved)` }, monto: dep, persona: userId, negocio: x.id, ciudad: x.city };
+      if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     }
     // Con un pre-estimado o un presupuesto: debe ser suyo, de este negocio y vigente; queda en la cita (y se compara con el estimado).
     const pre = f.pre ? await usarPre(c, userId, String(f.pre), negocio) : null;
-    if (f.pre && !pre) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Ese pre-estimado ya no está vigente. Pídelo otra vez o reserva sin él.", "That pre-estimate is no longer valid. Ask again or book without it."); }
+    if (f.pre && !pre) { await c.query("rollback"); if (retenido) { await soltarSuelta(retenido.pi, retenido); retenido = null; } return no("Ese pre-estimado ya no está vigente. Pídelo otra vez o reserva sin él.", "That pre-estimate is no longer valid. Ask again or book without it."); }
     const luces = (Array.isArray(f.luces) ? f.luces : []).map(String).filter((z) => LUCES.includes(z)).slice(0, 8);
     const area = AREAS.includes(String(f.area)) ? String(f.area) : null;
     const det = {
@@ -188,7 +188,7 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
     if (fotos.length) {
       const ok = await c.query(`update media set owner_kind = 'appointment', owner_id = $1, sort = array_position($3::uuid[], id)
                                  where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [op, userId, fotos]);
-      if (ok.rowCount !== fotos.length) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
+      if (ok.rowCount !== fotos.length) { await c.query("rollback"); if (retenido) { await soltarSuelta(retenido.pi, retenido); retenido = null; } return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
     }
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'sent', 'user', $2)`, [op, userId]);
     if (auto) await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'accepted', 'system', $2::jsonb)`, [op, JSON.stringify({ es: "Confirmada al instante", en: "Confirmed instantly" })]);
@@ -199,7 +199,7 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
     return { ok: true, numero, st: auto ? "ok" : "pend" };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw e;
   } finally {
     c.release();

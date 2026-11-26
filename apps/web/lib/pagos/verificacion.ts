@@ -22,10 +22,12 @@ export function pideVerificar(ret: Retencion): { verificar: Verificar } | null {
    (`requires_action`, nunca `requires_payment_method`: eso es una tarjeta rechazada), lo retenido NO se suelta ni se pide otra tarjeta: la verificación
    queda a nombre de quien paga y la pantalla abre la hoja y vuelve a enviar lo MISMO con la MISMA llave (la pasarela reusa el cobro verificado).
    El flujo ya deshizo su transacción: nada se guarda sin la verificación. Sin verificación a su nombre (un flujo que no pasó `usuario`), como antes. */
-export async function bancoPide(ret: Extract<Retencion, { ok: true }>): Promise<{ ok: false; msg: Bi; tarjeta: true; verificar?: Verificar }> {
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · La que se suelta va por cobros › soltarSuelta con lo que sabe quien la retuvo (ctx: de quién, cuánto,
+   qué; sin él, solo el intento): nadie más sabe de ella, así que si Stripe no la suelta (o ya la había cobrado) el equipo de dinero tiene su alerta. */
+export async function bancoPide(ret: Extract<Retencion, { ok: true }>, ctx?: import("../cobros").ContextoSuelta | null): Promise<{ ok: false; msg: Bi; tarjeta: true; verificar?: Verificar }> {
   const v = pideVerificar(ret);
   if (v) return { ok: false, msg: { es: "Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía.", en: "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet." }, tarjeta: true, ...v };
-  await pasarela.liberar(ret.pi).catch(() => undefined);
+  await (await import("../cobros")).soltarSuelta(ret.pi, ctx ?? { que: { es: "Retención que pidió verificación del banco sin poder completarla en la app", en: "Hold that asked for bank verification without a way to complete it in the app" }, monto: 0 });
   return { ok: false, msg: { es: "Tu banco pide una verificación extra. Prueba con otra tarjeta.", en: "Your bank asks for an extra verification. Try another card." }, tarjeta: true };
 }
 
@@ -74,19 +76,26 @@ export async function simularBanco(userId: string, pi: string, aprobar: boolean)
    Stripe y vence. Una renovación verificada ya se cobró (su período se completó al verificar): no se toca. C-002/C-003 · Tampoco la de un patrocinio
    que ya está en su libro (sponsorship_payments: se capturó al guardarlo); la de uno que nunca se guardó se suelta como cualquier otra. */
 export async function vencerVerificaciones(): Promise<number> {
-  const L = (await db().query<{ pi: string; kind: string }>(
-    `select a.pi, a.kind from payment_actions a
+  // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · La que ya tiene su alerta suelta:<pi> (no se soltó pasada la gracia, o Stripe ya la había cobrado) no se
+  // vuelve a intentar: la tiene el equipo de dinero (y no tapa a las demás).
+  const C = await import("../cobros");
+  const L = (await db().query<{ pi: string; kind: string; uid: string; biz: string | null; city: string | null; amt: number; ultimo: boolean }>(
+    `select a.pi, a.kind, a.user_id::text as uid, a.business_id as biz, a.city_id as city, a.amount_cents as amt, a.expires_at < now() - make_interval(mins => $1::int) as ultimo from payment_actions a
       where a.expires_at < now() and (a.status = 'pendiente' or (a.status = 'verificada' and a.kind = 'en_sesion'
             and not exists (select 1 from payments p where p.stripe_payment_intent = a.pi)
             and not exists (select 1 from sponsorship_payments s where s.pi = a.pi)
             and not exists (select 1 from payment_actions b where b.base_idem = a.base_idem and b.created_at > a.created_at)))
-      order by a.expires_at limit 200`)).rows;
+        and not exists (select 1 from money_alerts m where m.kind = 'hold_stuck' and m.subject_id = 'suelta:' || a.pi)
+      order by a.expires_at limit 200`, [C.SUELTA_ESPERA_MIN])).rows;
   let n = 0;
   for (const x of L) {
     // Una retención verificada que sí entró al libro después (carrera con el flujo) no se suelta: se vuelve a mirar dentro del update.
     if (x.kind === "en_sesion" && (await db().query(`select 1 from payments where stripe_payment_intent = $1::text`, [x.pi])).rowCount) continue;
-    const r = await pasarela.liberar(x.pi);
-    if (!r.ok) continue;
+    // 26 nov · Por cobros › soltarSuelta: la que no se suelta se reintenta en el próximo barrido y, pasada la gracia (SUELTA_ESPERA_MIN después de vencer),
+    // alerta y se deja (antes se reintentaba sin fin en silencio); la que Stripe ya había cobrado alerta en el acto. Guardián liberarSoloPorLaRegla.
+    const r = await C.soltarSuelta(x.pi, { que: { es: x.kind === "renovacion" ? "Verificación del banco de una renovación de Pro que nadie completó a tiempo" : "Verificación del banco que nadie completó a tiempo (la retención no entró al libro)",
+      en: x.kind === "renovacion" ? "Bank verification of a Pro renewal nobody completed in time" : "Bank verification nobody completed in time (the hold never entered the books)" }, monto: x.amt, persona: x.uid, negocio: x.biz, ciudad: x.city, luego: "deja", ultimo: x.ultimo });
+    if (r.e !== "liberada") continue;
     const u = await db().query(`update payment_actions set status = 'vencida' where pi = $1::text and status in ('pendiente', 'verificada') and expires_at < now()`, [x.pi]);
     n += u.rowCount ?? 0;
   }

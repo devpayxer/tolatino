@@ -48,7 +48,7 @@ const casos6 = [
   [RT6, RRF, "  else if (v?.noLlego) quedo = await cerrarSin(x, id, \"nunca_llego\", true);", "  else if (v?.resultado === \"no_hallado\") quedo = await cerrarSin(x, id, \"nunca_llego\", true);"],
   [RT6, RRF, "  if (quedo === \"sigue\") await alertaSigue(x, h);\n", ""],
   // (5) La vieja se suelta en Stripe antes de anotar la nueva.
-  [RT6, RRF, "  const h = await tx(async (c) => {\n    const f = (await c.query<{ ciudad: string | null }>(`select city_id as ciudad from hold_renewals", "  await pasarela.liberar(x.pi);\n  const h = await tx(async (c) => {\n    const f = (await c.query<{ ciudad: string | null }>(`select city_id as ciudad from hold_renewals"],
+  [RT6, RRF, "  const h = await tx(async (c) => {\n    const f = (await c.query<{ ciudad: string | null }>(`select city_id as ciudad from hold_renewals", "  await soltarSuelta(x.pi, suelta(x, { es: \"\", en: \"\" }));\n  const h = await tx(async (c) => {\n    const f = (await c.query<{ ciudad: string | null }>(`select city_id as ciudad from hold_renewals"],
   // El aviso dice «tu banco» siempre; la base deja dos renovaciones por retención.
   [RT6, ESF, 'm === "banco" ? "hold_fallo" : "hold_no_renovada"', '"hold_fallo"'],
   [RT6, MG4, "  payment_id      bigint not null unique references payments (id),", "  payment_id      bigint not null references payments (id),"],
@@ -217,7 +217,7 @@ const casos = [
   [FA, CFU, "and status = 'pending' and sent_at is null`, [id, porque]", "and status = 'pending'`, [id, porque]"],
   [FA, CFU, "        and created_at > now() - make_interval(hours => $1::int) and not (id = any($2::bigint[])) order by created_at, offsession_charges.id limit 50`, [HORAS_LLAVE, vistos])).rows,", "        and not (id = any($2::bigint[])) order by created_at, offsession_charges.id limit 50`, [HORAS_LLAVE, vistos])).rows,"],
   [FA, BA, '        ["cobrosFuera", async () => (await import("./cobro-fuera")).barrerCobrosFuera()],\n', ''],
-  [FA, CFU, 'import { HORAS_LLAVE_STRIPE as HORAS_LLAVE } from "./cobros";', 'const HORAS_LLAVE = 72;'],
+  [FA, CFU, 'import { HORAS_LLAVE_STRIPE as HORAS_LLAVE, soltarSuelta } from "./cobros";', 'import { soltarSuelta } from "./cobros";\nconst HORAS_LLAVE = 72;'],
   // Planes: en camino cuenta como rechazo; el período avanza aunque el plan ya no lo espere.
   [FA, PLN, "  if (r.enCamino) return false;\n  await rechazoPlan(", "  await rechazoPlan("],
   [FA, PLN, "where id = $1::bigint and next_charge_on = $3::date and status = 'active'`", "where id = $1::bigint`"],

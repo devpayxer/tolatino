@@ -14,7 +14,7 @@ const casos = [
   // tresDSecureEnTodos: el depósito de la cita sin quien paga (la verificación no queda a su nombre)
   ['tresDSecureEnTodos', CI, 'usuario: { id: userId, negocio: P.x.id, ciudad: P.x.city }, ', ''],
   // … la mesa de noche vuelve a soltar el cobro y pedir otra tarjeta
-  ['tresDSecureEnTodos', NO, 'retenido = null; return bancoPide(ret); }', 'retenido = null; await pasarela.liberar(ret.pi); return no("Prueba con otra tarjeta.", "Try another card.", { tarjeta: true }); }'],
+  ['tresDSecureEnTodos', NO, 'retenido = null; return bancoPide(ret, r0); }', 'retenido = null; await pasarela.liberar(ret.pi); return no("Prueba con otra tarjeta.", "Try another card.", { tarjeta: true }); }'],
   // … «requires_payment_method» (tarjeta rechazada) vuelve a abrir la hoja
   ['tresDSecureEnTodos', PA, 'a.viva && s?.estado === "requires_action")', 'a.viva && (s?.estado === "requires_action" || s?.estado === "requires_payment_method"))'],
   // … la fiesta no abre la hoja
@@ -36,7 +36,7 @@ const casos = [
   // … «Está bien, cobrar» cobra sin retener lo que falta
   ['okPorMas', ME, 'const r = await retenerMas(userId, o.id, numero, t0.mas);', 'const r = { ok: true as const };'],
   // … el OK por más suelta el cobro en vez de abrir la hoja
-  ['okPorMas', ME, 'retenido = null; return bancoPide(ret); }', 'retenido = null; return no("Prueba con otra tarjeta.", "Try another card."); }'],
+  ['okPorMas', ME, 'retenido = null; return bancoPide(ret, r0); }', 'retenido = null; return no("Prueba con otra tarjeta.", "Try another card."); }'],
   // … lo retenido ya no cuenta el OK por más
   ['okPorMas', ME, "p.kind in ('full', 'extra')) as ret,", "p.kind = 'full') as ret,"],
   // … el recordatorio de los 10 min sale en cada barrido

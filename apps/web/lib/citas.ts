@@ -7,7 +7,7 @@ import { db } from "./db";
 import { valor } from "./config";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
-import { cobrarOperacion, comision, devolucionesDe, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, devolucionesDe, registrarRetencion, soltarSuelta, type Retenida } from "./cobros";
 import { usd } from "./dinero-comun";
 
 /* Citas (Fase 3 · 3b). Lo que el cliente ve en la ficha (pestaña Servicios, hoja del servicio) y el Booking: el motor de
@@ -325,7 +325,7 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
   for (const [k, v] of Object.entries(f.opts && typeof f.opts === "object" ? f.opts : {})) if (/^[0-2]$/.test(k) && Number.isInteger(v) && v >= 0 && v < 5) opts[k] = v;
 
   const c = await db().connect();
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   try {
     await c.query("begin");
     const ya = (await c.query<{ number: string; status: string }>(`select number, status from operations where user_id = $1 and client_key = $2`, [userId, f.clave])).rows[0];
@@ -379,8 +379,8 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
       const cliente = await pasarela.cliente(userId).catch(() => null);
       ret = await pasarela.retener({ centavos: dep, comision: fee, destino: quien.cuenta, pm, cliente, idem: `cita-${f.clave}-${pm.slice(-24)}`, usuario: { id: userId, negocio: P.x.id, ciudad: P.x.city }, meta: { appointment: numero, business_id: P.x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
-      retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+      retenido = { pi: ret.pi, que: { es: `Cita ${numero} (se retuvo el depósito y no se guardó)`, en: `Appointment ${numero} (deposit held and not saved)` }, monto: dep, persona: userId, negocio: P.x.id, ciudad: P.x.city };
+      if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     }
     const det = {
       svc: P.s.name, svcId: P.s.id, opts: calc.ol, adds: calc.al.map((a) => ({ id: a.id, name: a.name, cents: a.cents })), para, nombre: para === "me" ? null : nombre, edad: para === "kid" ? edad : null,
@@ -402,7 +402,7 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
     if (fotos.length) {
       const ok = await c.query(`update media set owner_kind = 'appointment', owner_id = $1, sort = array_position($3::uuid[], id)
                                  where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [op, userId, fotos]);
-      if (ok.rowCount !== fotos.length) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
+      if (ok.rowCount !== fotos.length) { await c.query("rollback"); if (retenido) { await soltarSuelta(retenido.pi, retenido); retenido = null; } return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
     }
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'sent', 'user', $2)`, [op, userId]);
     if (auto) await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'accepted', 'system', $2::jsonb)`, [op, JSON.stringify({ es: "Confirmada al instante", en: "Confirmed instantly" })]);
@@ -414,7 +414,7 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
     return { ok: true, numero, st: auto ? "ok" : "pend" };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined); // se retuvo y la cita no se guardó
+    if (retenido) await soltarSuelta(retenido.pi, retenido); // se retuvo y la cita no se guardó
     throw e;
   } finally {
     c.release();

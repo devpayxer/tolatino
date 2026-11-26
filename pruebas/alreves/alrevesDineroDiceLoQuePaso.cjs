@@ -1,4 +1,4 @@
-// Prueba al revés de los guardianes liberarMira, capturaTardeAlerta, avisoNegUnIdioma (también el aviso a quien lo recibe: avisarCliente), dineroUnDecimal y dineroConUsd
+// Prueba al revés de los guardianes liberarMira, liberarSoloPorLaRegla (26 nov, LAUNCH (1): nadie suelta una retención fuera de su regla), capturaTardeAlerta, avisoNegUnIdioma (también el aviso a quien lo recibe: avisarCliente), dineroUnDecimal y dineroConUsd
 // (25 nov, LAUNCH «el dinero dice lo que pasó», letras e y g, y «promete antes de actuar» d/e):
 // soltar una retención que Stripe ya había cobrado no la deja «released» (pasarela.liberar mira el intento; el libro la anota cobrada y el equipo de dinero
 // tiene la alerta cobrada:, que no se cierra sola); la captura tarde a la que Stripe no contestó alerta captura: como la que lanza; y el aviso al negocio no
@@ -33,7 +33,7 @@ const casos = [
   // El barrido de alertas cierra solas las de cobrada:.
   ['liberarMira', 'cobrada: se cierra sola', 'apps/web/lib/dinero-alertas.ts', "a.subject_id ~ '^(liberar|cobrar):[0-9]{1,18}$'", "a.subject_id ~ '^(liberar|cobrar|cobrada):[0-9]{1,18}$'"],
   // Rentas: el depósito se marca liberado sin mirar lo que contestó liberar.
-  ['liberarMira', 'rentas: released sin mirar', 'apps/web/lib/rentas.ts', '    if (!(await pasarela.liberar(P.pi)).ok) return;', '    await pasarela.liberar(P.pi);'],
+  ['liberarMira', 'rentas: released sin mirar', 'apps/web/lib/rentas.ts', '    if ((await soltarSuelta(P.pi, { ...depSuelto(x, P.held, { es: "nada que descontar al cerrar la renta", en: "nothing to deduct when closing the rental" }), pago: P.id, luego: "sigue" })).e !== "liberada") return;', '    await pasarela.liberar(P.pi);'],
   // (revisión de 00ac9b7) · Lo ya capturado vuelve sin lo que Stripe capturó; el simulador reescribe lo capturado; cobrarOperacion anota lo pedido.
   ['liberarMira', 'cobrar ya capturado sin cobrado', PA, 'return x?.status === "succeeded" ? { ok: true, cobrado: x.amount_received } : { ok: false, codigo: x?.status ?? "red" };', 'return x?.status === "succeeded" ? { ok: true } : { ok: false, codigo: x?.status ?? "red" };'],
   ['liberarMira', 'el simulador reescribe lo capturado', PA, "where id = $1 and status = 'requires_capture'`, [pi, centavos, comision]", "where id = $1 and status in ('requires_capture', 'succeeded')`, [pi, centavos, comision]"],
@@ -79,7 +79,9 @@ const casos = [
   // es lo que de verdad queda cobrado (min(floor(tot/2), amt − ref)); contar la de la llave como no hecha decía «la mitad» aunque se devolviera de más.
   ['liberarMira', 'la mitad sin contar lo devuelto con la llave', CO, 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));', 'const mitad = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));'],
   ['liberarMira', 'la relectura sin contar lo devuelto con la llave', CO, 'const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - o.ref));', 'const queda = Math.min(Math.floor(o.tot / 2), Math.max(0, o.amt - (o.ref - o.vcx)));'],
-  ['liberarMira', 'sin nada que devolver dice «nada» aunque la de la llave exista', CO, 'if (falta <= 0) return x.seQueda ? (await devDeLaLlave(o.pid, x.idem)) ?? { e: "nada", monto: 0 } :', 'if (falta <= 0) return x.seQueda ? { e: "nada", monto: 0 } :'],
+  ['liberarMira', 'sin nada que devolver dice «nada» aunque la de la llave exista', CO, 'if (falta <= 0) return (await devDeLaLlave(o.pid, x.idem)) ?? (x.seQueda', 'if (falta <= 0) return null ?? (x.seQueda'],
+  // (26 nov, LAUNCH (a) de la revisión de 5255ce2) · Cancela el negocio sin nada que devolver: «hecha» vuelve a decir todo lo devuelto del cobro.
+  ['liberarMira', '«hecha» con todo lo devuelto del cobro al cancelar el negocio', CO, ': { e: "hecha", monto: 0 });', ': { e: "hecha", monto: o.refunded ?? 0 });'],
   // M5: lo capturado distinto de lo pedido sin alerta (cobros, mercado, boletos, patrocinios) o con alerta también del mismo monto.
   ['liberarMira', 'cobrarOperacion: otro monto sin alerta', CO, '  if (tocada) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, p.amount, r.cobrado);\n', ''],
   ['liberarMira', 'mercado: otro monto sin alerta', 'apps/web/lib/mercado.ts', '    if (u.rowCount) await (await import("./dinero-alertas")).alertarOtroMontoPago(p.id, monto, r.cobrado);\n', ''],
@@ -289,6 +291,30 @@ const casos = [
   ["dineroConUsd", "comparar el precio de Salud contra «$0» (el texto, no el dato)", 'apps/web/app/(app)/n/[id]/Salud.tsx', 'const pagoT = P.cubierta ?', 'const pagoT = P.l === "$0" ?'],
   ["dineroConUsd", "comparar contra «$0.00» (literal y comparación)", 'apps/web/app/(app)/n/[id]/Salud.tsx', 'const pagoT = P.cubierta ?', 'const pagoT = P.l === "$0.00" ?'],
   ["dineroConUsd", "el monto a la izquierda: «$15» === texto", 'apps/web/app/(app)/n/[id]/Salud.tsx', 'const pagoT = P.cubierta ?', 'const pagoT = "$15" === P.l ?'],
+  // ── liberarSoloPorLaRegla (26 nov, LAUNCH (1)) ──
+  // El fallo de antes: un rollback vuelve a soltar directo tirando lo que contestó Stripe (citas, la fiesta, el pedido de comida con import dinámico).
+  ['liberarSoloPorLaRegla', 'citas: el rollback suelta directo', 'apps/web/lib/citas.ts', 'if (retenido) await soltarSuelta(retenido.pi, retenido); // se retuvo y la cita no se guardó', 'if (retenido) await pasarela.liberar(retenido.pi).catch(() => undefined); // se retuvo y la cita no se guardó'],
+  ['liberarSoloPorLaRegla', 'pedir: liberarSilencioso con import dinámico', 'apps/web/lib/pedir.ts', 'if (retenido) await soltarSuelta(retenido.pi, retenido); // se retuvo', 'if (retenido) await (await import("./pagos/pasarela")).pasarela.liberar(retenido.pi).catch(() => undefined); // se retuvo'],
+  ['liberarSoloPorLaRegla', 'desestructurar liberar de la pasarela (layaway)', 'apps/web/lib/layaway.ts', 'if (pi) await cob.soltarSuelta(pi.pi, pi);\n    throw e;', 'if (pi) { const { liberar } = (await import("./pagos/pasarela")).pasarela; await liberar(pi.pi); }\n    throw e;'],
+  // Un barrido vuelve a reintentar en silencio: mira `ok` y sigue (verificaciones, estimados).
+  ['liberarSoloPorLaRegla', 'verificaciones: liberar y mirar ok', 'apps/web/lib/pagos/verificacion.ts', '    if (r.e !== "liberada") continue;', '    if (!(await pasarela.liberar(x.pi)).ok) continue;'],
+  ['liberarSoloPorLaRegla', 'estimados: el barrido «sigue» sin su fila de pago', 'apps/web/lib/estimados.ts', 'ciudad: p.city, pago: p.id, luego: "sigue" });', 'ciudad: p.city, luego: "sigue" });'],
+  ['liberarSoloPorLaRegla', 'boletos: el barrido «deja» sin su última vuelta', 'apps/web/lib/boletos.ts', 'monto: p.amt, persona: p.uid, negocio: p.biz, ciudad: p.city, luego: "deja", ultimo: p.ultimo });', 'monto: p.amt, persona: p.uid, negocio: p.biz, ciudad: p.city, luego: "deja" });'],
+  ['liberarSoloPorLaRegla', 'verificaciones: la que ya tiene su alerta se vuelve a elegir', 'apps/web/lib/pagos/verificacion.ts', "        and not exists (select 1 from money_alerts m where m.kind = 'hold_stuck' and m.subject_id = 'suelta:' || a.pi)\n", ''],
+  ['liberarSoloPorLaRegla', 'rentas: el depósito vuelve al barrido silencioso', 'apps/web/lib/rentas.ts', 'pago: P.id, luego: "sigue" })).e !== "liberada") return;', 'pago: P.id })).e !== "liberada") return;'],
+  // soltarSuelta misma: deja tirar la pasarela, no mira la cobrada, no alerta, no cuenta sus vueltas, marca soltado.
+  ['liberarSoloPorLaRegla', 'soltarSuelta deja tirar la pasarela', CO, '  const r = await pasarela.liberar(pi).catch((e): Liberacion => {', '  const r = await pasarela.liberar(pi).then((x) => x, (e): Liberacion => {'],
+  ['liberarSoloPorLaRegla', 'soltarSuelta no anota la cobrada', CO, '    if (cobrado !== undefined && x.pago) {\n      anotada = await tx(', '    if (cobrado !== undefined && x.pago && false) {\n      anotada = await tx('],
+  ['liberarSoloPorLaRegla', 'soltarSuelta sin alerta en la última vuelta', CO, '  if (cobrado === undefined && !ultimo) return { e: "retenida", alertada: false };', '  if (cobrado === undefined) return { e: "retenida", alertada: false };'],
+  ['liberarSoloPorLaRegla', 'soltarSuelta: el barrido «sigue» sin tope', CO, '        ultimo = n === undefined || n >= SUELTA_INTENTOS;', '        ultimo = n === undefined;'],
+  ['liberarSoloPorLaRegla', 'soltarSuelta: la alerta con el asunto de otro', CO, 'const sujeto = `suelta:${pi}`', 'const sujeto = `liberar:${pi}`'],
+  // Otra llamada a liberar en cobros.ts, fuera de su regla.
+  ['liberarSoloPorLaRegla', 'cobros: otra función que suelta directo', CO, 'export async function soltarSuelta(pi: string, x: ContextoSuelta): Promise<Suelta> {', 'export async function soltarRapido(pi: string) { await pasarela.liberar(pi).catch(() => undefined); }\nexport async function soltarSuelta(pi: string, x: ContextoSuelta): Promise<Suelta> {'],
+  // boletos: marca soltado sin que Stripe la haya soltado.
+  ['liberarSoloPorLaRegla', 'anularPorCobro marca released antes de soltar', 'apps/web/lib/boletos.ts', "    await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'system', cancel_reason = 'El cobro no se completó' where id = $1::bigint`, [op]);", "    await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'system', cancel_reason = 'El cobro no se completó' where id = $1::bigint`, [op]);\n    await c.query(`update payments set status = 'released', released_at = now() where operation_id = $1::bigint and kind = 'full' and status = 'held'`, [op]);"],
+  ['liberarSoloPorLaRegla', 'pagarBoletos marca pi_released_at sin mirar', 'apps/web/lib/boletos.ts', 'if (pi && sol?.e === "liberada") await db()', 'if (pi) await db()'],
+  // La misma clase con el dinero que sale: una devolución o una captura tirando lo que contestó Stripe.
+  ['liberarSoloPorLaRegla', 'una captura que tira lo que contestó (boletos)', 'apps/web/lib/boletos.ts', '    const cap = await pasarela.capturarPlataforma(pi, h.total);', '    await pasarela.capturarPlataforma(pi, h.total).catch(() => undefined);\n    const cap = await pasarela.capturarPlataforma(pi, h.total);'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

@@ -2,7 +2,7 @@ import "server-only";
 import { contexto } from "./citas";
 import { descifrar } from "./cifrado";
 import { soloLectura } from "./vista-equipo";
-import { cobrarOperacion, comision, registrarRetencion } from "./cobros";
+import { cobrarOperacion, comision, registrarRetencion, soltarSuelta, type Retenida } from "./cobros";
 import { db, tx } from "./db";
 import { pasarela } from "./pagos/pasarela";
 import { bancoPide } from "./pagos/verificacion";
@@ -88,7 +88,7 @@ export async function mandarPrecio(negocio: string, numero: string, cents: numbe
 export async function aceptarPrecio(userId: string, numero: string, version: number, pm: string | null, ip: string | null, clave: string): Promise<ResE> {
   if (!NUM_V.test(numero) || !/^[0-9a-f-]{36}$/.test(String(clave))) return no("No se pudo. Recarga la página.", "Could not do it. Reload the page.");
   const c = await db().connect();
-  let retenido: string | null = null, opId = "";
+  let retenido: Retenida | null = null, opId = "";
   try {
     await c.query("begin");
     const o = await op(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
@@ -109,8 +109,8 @@ export async function aceptarPrecio(userId: string, numero: string, version: num
       const cliente = await pasarela.cliente(userId).catch(() => null);
       const ret = await pasarela.retener({ centavos: t.cents, comision: fee, destino: x.cuenta, pm: p, cliente, idem: `precio-${numero}-v${t.v}-${clave}`, usuario: { id: userId, negocio: x.id, ciudad: x.city }, meta: { trip: numero, business_id: x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(`${ret.mensaje.es} No se cobró nada.`, `${ret.mensaje.en} Nothing was charged.`, { tarjeta: true }); }
-      retenido = ret.pi;
-      if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+      retenido = { pi: ret.pi, que: { es: `Mudanza ${numero} (se retuvo el precio aceptado y no se guardó)`, en: `Move ${numero} (accepted price held and not saved)` }, monto: t.cents, persona: userId, negocio: x.id, ciudad: x.city };
+      if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
       await registrarRetencion(c, { opId: o.id, userId, negocio: x.id, city: x.city, total: t.cents, comision: fee, r: ret, pm: p, kind: "full" });
     }
     await c.query(`update written_totals set status = 'accepted', accepted_at = now(), accepted_ip = $2, accepted_extras = '{}' where id = $1::bigint`, [t.id, ip ? String(ip).slice(0, 64) : null]);
@@ -121,7 +121,7 @@ export async function aceptarPrecio(userId: string, numero: string, version: num
     retenido = null;
   } catch (err) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw err;
   } finally {
     c.release();

@@ -2,7 +2,7 @@ import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { db, tx, type AlGuardar } from "./db";
-import { comision } from "./cobros";
+import { comision, soltarSuelta, type ContextoSuelta, type Suelta } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 import { usd as money } from "./dinero-comun";
 
@@ -236,6 +236,14 @@ async function falloRecoger(x: Fila, m: Bi): Promise<{ ok: false; msg: Bi }> {
   await (await import("./avisos")).avisar(x.uid, "renta_tarjeta", { articulo: x.n, negocio: x.bname }, { href: `/renta/${x.numero}`, ref: ["renta", x.numero] });
   return no(`La tarjeta de ${x.cliente ?? "Cliente"} no pasó: no se cobró nada. Ya le pedimos cambiarla; cuando lo haga, te avisamos.`, `${x.cliente ?? "Customer"}'s card did not go through: nothing was charged. We asked them to change it and will let you know.`);
 }
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · El depósito de una renta que se suelta sin su operación con regla (cobros › soltarSuelta): de quién es,
+   cuánto y por qué, para la alerta al equipo de dinero si Stripe no lo suelta o ya lo había cobrado. */
+const depSuelto = (x: { numero: string; uid: string; biz: string; city: string }, monto: number, por: Bi): ContextoSuelta =>
+  ({ que: { es: `Depósito de la renta ${x.numero} (${por.es})`, en: `Deposit of rental ${x.numero} (${por.en})` }, monto, persona: x.uid, negocio: x.biz, ciudad: x.city });
+/* Lo que pasó con el depósito, para el texto de la alerta de la renta que no se aplicó. */
+const depDicho = (s: Suelta | null): Bi => !s ? { es: "", en: "" } : s.e === "liberada" ? { es: "; el depósito se soltó", en: "; the deposit was released" }
+  : s.e === "cobrada" ? { es: "; el depósito ya estaba cobrado en Stripe (tiene su propia alerta)", en: "; the deposit had already been charged in Stripe (it has its own alert)" }
+  : { es: "; el depósito no se pudo soltar (tiene su propia alerta)", en: "; the deposit could not be released (it has its own alert)" };
 export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Promise<Res> {
   const CF = await import("./cobro-fuera");
   if (a.st === "failed") return no(CF.YA_RECHAZADO.es, CF.YA_RECHAZADO.en, { tarjeta: true });
@@ -257,7 +265,7 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
     if (x.st !== "held") {
       // La renta ya no está apartada (venció, se canceló o ya salió): lo retenido se suelta y, si la renta se cobró, lo decide el equipo de dinero.
       const r = await CF.noAplica(a, "renta_no_apartada", { es: `la renta ${x.numero} ya no estaba apartada (${x.st}).`, en: `rental ${x.numero} was no longer on hold (${x.st}).` }, (c, h) => pagoRenta(c, a, h.pi, null, null));
-      if (a.hold) await pasarela.liberar(a.hold).catch(() => undefined);
+      await CF.soltarDeposito(a, { es: `la renta ${x.numero} ya no estaba apartada`, en: `rental ${x.numero} was no longer on hold` });
       return r ? { ok: true } : no("Ya no está apartada.", "It is no longer on hold.");
     }
     // 1. El depósito (retenido, sin comisión), con la llave de esta intención. 2. La renta (cobrada). Si la renta no pasa, se suelta el depósito.
@@ -271,7 +279,7 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
         .catch(() => ({ ok: false as const, codigo: "error", mensaje: CF.EN_CAMINO }));
       if (!(dep.ok && dep.estado === "retenido")) {
         if (!dep.ok && CF.SIN_RESPUESTA.has(String(dep.codigo))) { await CF.anotarIntento(a.id, `deposito_${dep.codigo}`); return { ...no(CAMINO_RENTA.es, CAMINO_RENTA.en), enCamino: true }; }
-        if (dep.ok) await pasarela.liberar(dep.pi).catch(() => undefined);
+        if (dep.ok) await soltarSuelta(dep.pi, depSuelto(x, d.dep!, { es: "el banco pidió verificar fuera de sesión", en: "the bank asked to verify off-session" }));
         // La renta nunca se mandó: la intención se suelta (nada salió).
         // Si ya se había mandado (otro toque o el barrido), la renta pudo salir: sigue en camino y la termina quien la mandó.
         if (!(await CF.soltarSinMandar(a.id, "deposito_rechazado"))) { await CF.anotarIntento(a.id, "deposito_rechazado"); return { ...no(CAMINO_RENTA.es, CAMINO_RENTA.en), enCamino: true }; }
@@ -297,8 +305,9 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
     if (r.ok) {
       if (r.ya) return { ok: true };
       if (!aplicado) {
-        if (hold) await pasarela.liberar(hold.pi).catch(() => undefined);
-        await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} dejó de estar apartada en ese momento${hold ? "; el depósito se soltó" : ""}.`, en: `rental ${x.numero} stopped being on hold at that moment${hold ? "; the deposit was released" : ""}.` });
+        // 26 nov · Lo que pasó con el depósito, como pasó (antes decía «el depósito se soltó» sin mirar a la pasarela).
+        const sd = hold ? await soltarSuelta(hold.pi, depSuelto(x, d.dep ?? 0, { es: "la renta dejó de estar apartada", en: "the rental stopped being on hold" })) : null;
+        await CF.alertaSinAplicar(a, { es: `la renta ${x.numero} dejó de estar apartada en ese momento${depDicho(sd).es}.`, en: `rental ${x.numero} stopped being on hold at that moment${depDicho(sd).en}.` });
         return no("Ya no está apartada.", "It is no longer on hold.");
       }
       await av.avisar(x.uid, "renta_recogida", { articulo: x.n, monto: money(a.monto), deposito: money(d.dep ?? 0), dia: diaCorto(x.due) }, hrefC);
@@ -312,7 +321,7 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
         : { es: "el cobro que quedó en camino nunca llegó a Stripe · no se cobró nada: vuelve a tocar «La recogió»", en: "the charge that was in progress never reached Stripe · nothing was charged: tap «Picked up» again" }, articulo: x.n }, hrefN);
       return { ...no(r.msg === CF.EN_CAMINO ? CAMINO_RENTA.es : r.msg.es, r.msg === CF.EN_CAMINO ? CAMINO_RENTA.en : r.msg.en), enCamino: true };
     }
-    if (hold) await pasarela.liberar(hold.pi).catch(() => undefined);
+    if (hold) await soltarSuelta(hold.pi, depSuelto(x, d.dep ?? 0, { es: "la renta no se cobró", en: "the rent was not charged" }));
     const f = await falloRecoger(x, r.msg);
     if (desdeBarrido) await av.avisarNegocio(x.biz, "biz_renta", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "la tarjeta no pasó al terminar el cobro en camino · no se cobró nada", en: "the card did not go through when finishing the in-progress charge · nothing was charged" }, articulo: x.n }, hrefN);
     return f;
@@ -364,8 +373,8 @@ export async function terminarCobroRenta(a: Intencion, desdeBarrido = false): Pr
 
 /* Lo que se descuenta del depósito al cerrar: los días tarde (hasta el depósito) y el daño si se aceptó o lo decidió To'Latino. */
 async function liquidarDeposito(rid: string): Promise<void> {
-  const x = (await db().query<{ op: string; numero: string; lateC: number; dmgC: number | null; dmgSt: string | null; st: string }>(
-    `select r.operation_id::text as op, o.number as numero, r.late_cents as "lateC", r.damage_cents as "dmgC", r.damage_status as "dmgSt", r.status as st from rentals r join operations o on o.id = r.operation_id where r.id = $1::bigint`, [rid])).rows[0];
+  const x = (await db().query<{ op: string; numero: string; uid: string; biz: string; city: string; lateC: number; dmgC: number | null; dmgSt: string | null; st: string }>(
+    `select r.operation_id::text as op, o.number as numero, o.user_id::text as uid, o.business_id as biz, o.city_id as city, r.late_cents as "lateC", r.damage_cents as "dmgC", r.damage_status as "dmgSt", r.status as st from rentals r join operations o on o.id = r.operation_id where r.id = $1::bigint`, [rid])).rows[0];
   if (!x || x.st !== "back" || x.dmgSt === "asked" || x.dmgSt === "disputed") return;
   const P = (await db().query<{ id: string; pi: string; held: number }>(`select id::text, stripe_payment_intent as pi, coalesce(held_cents, amount_cents) as held from payments where operation_id = $1::bigint and kind = 'security' and status = 'held' order by seq desc limit 1`, [x.op])).rows[0];
   if (!P) return;
@@ -387,7 +396,9 @@ async function liquidarDeposito(rid: string): Promise<void> {
     if (tocada) await (await import("./dinero-alertas")).alertarOtroMontoPago(P.id, objetivo, r.cobrado);
   } else {
     // 25 nov (LAUNCH g) · Se mira lo que contestó: sin soltar (o ya cobrado en Stripe) no se marca liberado; se reintenta en el próximo barrido. Guardián liberarMira.
-    if (!(await pasarela.liberar(P.pi)).ok) return;
+    // 26 nov (LAUNCH (1)) · Por cobros › soltarSuelta con su fila: la cobrada queda 'captured' con lo que Stripe capturó y alerta; la que no se suelta se
+    // sigue reintentando, ya no en silencio: al tope (SUELTA_INTENTOS) alerta, y la alerta se cierra sola cuando se suelta. Guardián liberarSoloPorLaRegla.
+    if ((await soltarSuelta(P.pi, { ...depSuelto(x, P.held, { es: "nada que descontar al cerrar la renta", en: "nothing to deduct when closing the rental" }), pago: P.id, luego: "sigue" })).e !== "liberada") return;
     await tx(async (c) => {
       const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [P.id]);
       if (u.rowCount) await ev(c, x.op, "payment_released", "system", null, { es: "Se liberó el depósito", en: "The deposit was released" });

@@ -1,7 +1,7 @@
 import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
-import { comision, registrarRetencion, retenerPedido, soltarRetencion, SWEEP, tarjetaDe } from "./cobros";
+import { comision, registrarRetencion, retenerPedido, soltarRetencion, soltarSuelta, SWEEP, tarjetaDe, type Retenida } from "./cobros";
 import { sinSoltarCliente, soltadaO, type Soltada } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { usd } from "./dinero-comun";
@@ -119,7 +119,7 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
   const T = conTarjeta ? await tarjetaDe(p.negocio) : null;
   if (conTarjeta && !T?.on) return { ...no("Este mercado no está cobrando con tarjeta ahora. Elige pagar en el mercado.", "This market is not taking cards right now. Choose to pay at the market."), tarjeta: true };
   await vencerMercado({ negocio: p.negocio });
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   const c = await db().connect();
   try {
     await c.query("begin");
@@ -180,13 +180,13 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
     if (conTarjeta && T?.cuenta && pm) {
       ret = await retenerPedido({ negocio: b.id, cuenta: T.cuenta, clave: p.clave, total: retener, subtotal: subt, pm, userId, numero: num, tipo: "merc" }, c);
       if (!ret.ok) { await c.query("rollback"); return { ...no(ret.mensaje.es, ret.mensaje.en), tarjeta: true }; }
-      retenido = ret.pi;
+      retenido = { pi: ret.pi, que: { es: `Pedido del mercado ${num} (se retuvo y no se guardó)`, en: `Market order ${num} (held and not saved)` }, monto: retener, persona: userId, negocio: b.id, ciudad: b.city };
       if (ret.estado === "accion") {
         // 9k · 3-D Secure: la hoja verifica y la pantalla vuelve a enviar con la misma clave (la retención verificada se reusa).
         await c.query("rollback");
         const v = (await import("./pagos/verificacion")).pideVerificar(ret);
         if (v) { retenido = null; return { ...no("Tu banco pide confirmar que eres tú. Confírmalo y seguimos; no se cobró nada todavía.", "Your bank asks you to confirm it is you. Confirm it and we continue; nothing was charged yet."), tarjeta: true, ...v }; }
-        await pasarela.liberar(ret.pi).catch(() => undefined); return { ...no("Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en el mercado.", "Your bank asks for an extra verification. Try another card or pay at the market."), tarjeta: true };
+        await soltarSuelta(ret.pi, retenido); return { ...no("Tu banco pide una verificación extra. Prueba con otra tarjeta o paga en el mercado.", "Your bank asks for an extra verification. Try another card or pay at the market."), tarjeta: true };
       }
     }
     const fecha = d.f, min = Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5));
@@ -211,7 +211,7 @@ export async function crearPedidoMercado(userId: string, p: MercIn, entorno: str
     return { ok: true, numero: num };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw e;
   } finally { c.release(); }
 }
@@ -242,8 +242,8 @@ async function totales(c: Q, opId: string): Promise<Totales> {
    9n-4 · Con el OK por más hay dos retenciones (la primera, «full», y la del OK, «extra»): se cobra de la primera hasta lo que tiene y lo que falta
    de la segunda; lo que sobra de cada una se libera. Nunca más de lo retenido. La comisión (solo sobre lo vendido) se reparte en proporción. */
 export async function liquidarMercado(opId: string): Promise<{ cobrado: number; liberado: number }> {
-  const P = (await db().query<{ id: string; pi: string; held: number; num: string; kind: string }>(
-    `select p.id::text, p.stripe_payment_intent as pi, p.held_cents as held, o.number as num, p.kind from payments p join operations o on o.id = p.operation_id
+  const P = (await db().query<{ id: string; pi: string; held: number; num: string; kind: string; uid: string; biz: string; city: string }>(
+    `select p.id::text, p.stripe_payment_intent as pi, p.held_cents as held, o.number as num, p.kind, p.user_id::text as uid, p.business_id as biz, p.city_id as city from payments p join operations o on o.id = p.operation_id
       where p.operation_id = $1::bigint and p.kind in ('full', 'extra') and p.status = 'held' order by p.kind = 'full' desc, p.id`, [opId])).rows;
   if (!P.length) return { cobrado: 0, liberado: 0 };
   const t = await totales(db(), opId), retenido = P.reduce((n, p) => n + p.held, 0);
@@ -254,8 +254,13 @@ export async function liquidarMercado(opId: string): Promise<{ cobrado: number; 
   for (const p of P) {
     const monto = Math.min(resto, p.held);
     if (monto <= 0) {
-      const r = await pasarela.liberar(p.pi);
-      if (!r.ok) { falla = true; continue; }
+      // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · Por cobros › soltarSuelta con su fila: la que Stripe ya había cobrado queda 'captured' con lo que
+      // capturó (cuenta como cobrado: el aviso dice lo que de verdad se cobró) y el equipo de dinero tiene su alerta; la que no se suelta la sigue soltando
+      // repararMercado, ya no en silencio: al tope (SUELTA_INTENTOS) alerta, y la alerta se cierra sola cuando se suelta. Guardián liberarSoloPorLaRegla.
+      const r = await soltarSuelta(p.pi, { que: { es: `Pedido del mercado ${p.num} (al liquidar no quedaba nada que cobrar de esta retención)`, en: `Market order ${p.num} (nothing was left to charge from this hold at settlement)` },
+        monto: p.held, persona: p.uid, negocio: p.biz, ciudad: p.city, pago: p.id, luego: "sigue" });
+      if (r.e === "cobrada") { cobrado += r.cobrado; liberado += Math.max(0, p.held - r.cobrado); continue; }
+      if (r.e !== "liberada") { falla = true; continue; }
       const u = await db().query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [p.id]);
       if (u.rowCount) liberado += p.held;
       continue;
@@ -436,7 +441,7 @@ export async function aprobarPeso(userId: string, numero: string): Promise<ResM 
 /* 9n-4 · Retener lo que falta (el OK por más) en la tarjeta del primer cobro. Idempotente por pedido, monto y tarjeta (la misma llave al volver de la hoja). */
 async function retenerMas(userId: string, opId: string, numero: string, mas: number): Promise<ResM> {
   const c = await db().connect();
-  let retenido: string | null = null;
+  let retenido: Retenida | null = null;
   try {
     await c.query("begin");
     await c.query(`select pg_advisory_xact_lock(hashtext('merc-mas:' || $1))`, [opId]);
@@ -451,8 +456,8 @@ async function retenerMas(userId: string, opId: string, numero: string, mas: num
     const cliente = await pasarela.cliente(userId).catch(() => null);
     const ret = await pasarela.retener({ centavos: mas, comision: fee, destino: T.cuenta, pm: p.pm, cliente, idem: `merc-mas-${opId}-${mas}-${p.pm.slice(-24)}`, usuario: { id: userId, negocio: p.biz, ciudad: p.city }, meta: { order: numero, business_id: p.biz, kind: "extra" } });
     if (!ret.ok) { await c.query("rollback"); return { ...no(`${ret.mensaje.es} No se cobró nada: pídele al mercado que corte menos.`, `${ret.mensaje.en} Nothing was charged: ask the market to cut less.`), tarjeta: true }; }
-    retenido = ret.pi;
-    if (ret.estado === "accion") { await c.query("rollback"); retenido = null; return bancoPide(ret); }
+    retenido = { pi: ret.pi, que: { es: `Pedido del mercado ${numero} (se retuvo lo de más con su OK y no se guardó)`, en: `Market order ${numero} (the extra was held with their OK and not saved)` }, monto: mas, persona: userId, negocio: p.biz, ciudad: p.city };
+    if (ret.estado === "accion") { await c.query("rollback"); const r0 = retenido; retenido = null; return bancoPide(ret, r0); }
     await registrarRetencion(c, { opId, userId, negocio: p.biz, city: p.city, total: mas, comision: fee, r: ret, pm: p.pm, kind: "extra" });
     await ev(c, opId, "extra_held", "user", userId, { es: `Se retuvieron ${money(mas)} más con su OK`, en: `${money(mas)} more held with their OK` });
     await c.query("commit");
@@ -460,7 +465,7 @@ async function retenerMas(userId: string, opId: string, numero: string, mas: num
     return { ok: true };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
-    if (retenido) await pasarela.liberar(retenido).catch(() => undefined);
+    if (retenido) await soltarSuelta(retenido.pi, retenido);
     throw e;
   } finally { c.release(); }
 }
