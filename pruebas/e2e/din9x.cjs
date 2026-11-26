@@ -354,20 +354,28 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
     {
       // Un viaje que quien pagó canceló tarde; el barrido ya lo encontró cobrado ($30), aplicó la regla (devolvió $15 con vcx-<número>) y la cancelación, que
       // había leído el cobro retenido, dejó cobroMitad en 0. Su devolverAlCancelar (pay 'held', como lo llama la cancelación) ya no encuentra nada retenido.
-      const R = operacion('cancelled'); sql(`update operations set cancelled_by = 'user', cancel_reason = 'tarde', cancelled_at = now(), details = details || '{"cobroMitad":0}'::jsonb where id = ${R.op}`);
-      retenido(R.op, U.id, BR, 3000, { st: 'succeeded', cap: 3000 }); const pr = pidDe(R.num);
-      sql(`update payments set status = 'partially_refunded', refunded_cents = 1500, captured_at = now() where id = ${pr}`);
-      sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) values (${pr}, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', 'done', 'vcx-${R.num}', now())`);
+      // (carrera con el barrido de cada minuto) · Cada uno se siembra ya en su estado final en UNA sola llamada a la base (una transacción): operación cancelada
+      // tarde, cobro y devolución de su llave. Antes se sembraba retenido y se cambiaba después, y si el barrido de pagos (repararPagos: retenido de una cancelada
+      // que Stripe ya cobró) pasaba entre las dos escrituras, aplicaba él la regla y devolverAlCancelar decía otra cosa ({"e":"cobrada","monto":1500} sin regla).
+      const sembrarCobrada = (pagoSt, refSt) => {
+        const num = `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, pi = `pi_sim_9x_${RUN}_${num}`;
+        sql(`insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, duration_min, details, party_size, subtotal_cents, total_cents, pay_mode, client_key, is_test, cancelled_by, cancel_reason, cancelled_at, pay_status)
+            values ('${num}', 'trip', 'hzl', '${BR}', '${U.id}', 'cancelled', now() + interval '3 days', 120, '{"k":"asiento","cobroMitad":0}'::jsonb, 1, 3000, 3000, 'app', gen_random_uuid(), true, 'user', 'tarde', now(), 'held');
+          insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, refunded_cents, card, capture_method) values ('${pi}', 3000, 0, 'acct_sim_${BR}', 'succeeded', 3000, 0, 'pm_sim_visa_4242', 'manual');
+          insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, refunded_cents, card_brand, card_last4, held_at, captured_at, simulated)
+            select id, '${U.id}', '${BR}', 'hzl', 'full', 'card', '${pi}', 3000, 3000, 0, '${pagoSt}', ${pagoSt === 'partially_refunded' ? 1500 : 0}, 'visa', '4242', now(), now(), true from operations where number = '${num}';
+          insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at)
+            select p.id, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', '${refSt}', 'vcx-${num}', ${refSt === 'done' ? 'now()' : 'null'} from payments p join operations o on o.id = p.operation_id where o.number = '${num}'`);
+        return { num, op: sql(`select id from operations where number = '${num}'`), pid: pidDe(num) };
+      };
+      const R = sembrarCobrada('partially_refunded', 'done'), pr = R.pid;
       const dr = await cobros.devolverAlCancelar({ id: R.op, pay: 'held', pid: pr, amount: 3000, refunded: 0 }, { actorId: U.id, motivo: 'Cancelación tarde (no se sabe si la captura salió)', idem: `vcx-${R.num}`, por: 'policy', seQueda: 0 });
       ok(dr.e === 'cobrada' && dr.regla?.queda === 1500 && dr.regla?.dev?.e === 'hecha' && dr.regla.dev.monto === 1500, `devolverAlCancelar dice la regla que aplicó el barrido: la mitad y lo devuelto (${JSON.stringify(dr)})`);
       ok(sql(`select details->>'cobroMitad' from operations where id = ${R.op}`) === '1500' && sql(`select count(*) from refunds where payment_id = ${pr}`) === '1' && pago(R.num) === 'partially_refunded|3000|1500',
         'cobroMitad vuelve a decir la mitad; nada se movió otra vez (ni otra devolución)');
       // Con la devolución todavía en camino (otro viaje igual, cobrado y con la devolución pendiente): dice «en camino». Esa devolución la termina el barrido
       // de devoluciones del servidor con el simulador (el intento está cobrado), como cualquier otra.
-      const R2 = operacion('cancelled'); sql(`update operations set cancelled_by = 'user', cancel_reason = 'tarde', cancelled_at = now(), details = details || '{"cobroMitad":0}'::jsonb where id = ${R2.op}`);
-      retenido(R2.op, U.id, BR, 3000, { st: 'succeeded', cap: 3000 }); const pr2 = pidDe(R2.num);
-      sql(`update payments set status = 'captured', captured_at = now() where id = ${pr2}`);
-      sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key) values (${pr2}, 1500, 'Cancelación tarde: se cobra la mitad', 'policy', 'pending', 'vcx-${R2.num}')`);
+      const R2 = sembrarCobrada('captured', 'pending'), pr2 = R2.pid;
       const dp = await cobros.devolverAlCancelar({ id: R2.op, pay: 'held', pid: pr2, amount: 3000, refunded: 0 }, { actorId: U.id, motivo: 'x', idem: `vcx-${R2.num}`, por: 'policy', seQueda: 0 });
       ok(dp.e === 'cobrada' && dp.regla?.queda === 1500 && dp.regla?.dev?.e === 'en_camino' && dp.regla.dev.monto === 1500 && sql(`select details->>'cobroMitad' from operations where id = ${R2.op}`) === '1500',
         `con la devolución en camino: «en camino» y cobroMitad la mitad (${JSON.stringify(dp)})`);
