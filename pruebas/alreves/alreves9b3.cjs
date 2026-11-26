@@ -65,6 +65,8 @@ const casos = [
   // tarjetaPropia: fie4v deja de guardarle su tarjeta a Marisol y comprueba el depósito retenido igual
   // capturaSinHora: la ficha de Sabor Dominicano se captura sin abrir el negocio (de noche sale cerrada)
   ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano", "barberia-el-primo", "bodega-don-pepe", "clinica-esperanza"]', '"abiertos": []'],
+  // 26 nov · el corredor vuelve a tapar solo las hojas: «Abierto · hasta 9 PM» (con el punto dentro) cambia con la hora real y la ficha cae entre las 8 y las 11
+  ['capturaSinHora', 'pruebas/visual/correr.mjs', 'const tx = el.children.length ? propio(el) : (el.textContent || "").trim(); if (tx && R.test(tx)) poner(el);', 'if (el.children.length) continue; const tx = (el.textContent || "").trim(); if (tx && R.test(tx)) poner(el);'],
   // 20 nov · el Inicio pinta cuatro «Abierto ahora»: con tres fijados, de noche entra otro negocio y la captura se corre
   ['capturaSinHora', 'pruebas/visual/pantallas.json', '"abiertos": ["sabor-dominicano", "barberia-el-primo", "bodega-don-pepe", "clinica-esperanza"]', '"abiertos": ["sabor-dominicano", "barberia-el-primo", "bodega-don-pepe"]'],
   // libroEnAyudantes: sinTopeDeAyuda vuelve a correr los mensajes de El Compa sin el modo réplica

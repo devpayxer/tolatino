@@ -9394,6 +9394,11 @@ const guardianes = {
       if (pa.ruta === "/" && ab.length < 4) falla(G, P, 0, `la pantalla ${pa.id} (Inicio) pinta cuatro «Abierto ahora»: «abiertos» necesita al menos cuatro negocios o de noche la captura es otra`);
     }
     if (!/cfg\.abiertos/.test(c) || !/finally \{ devolverHorario\(\); \}/.test(c)) falla(G, C, 0, "correr.mjs no abre los negocios de «abiertos» antes de capturar o no devuelve su horario al final");
+    /* 26 nov · Y el texto de la hora se tapa aunque su elemento tenga hijos: «Abierto · hasta 9 PM» de la ficha lleva dentro el punto verde y, con solo las hojas,
+       esa línea no se tapaba nunca: la aprobada decía «9 AM» y entre las 8 y las 11 de Hazleton la captura decía «1 PM» (1,3 mil px, justo en el máximo del 0,5 %:
+       el CI 45825579131 cayó dos veces). Guardián visual: una pantalla no depende de la hora real sin fijarla ni taparla. */
+    if (!/const propio = \(el\) => \[\.\.\.el\.childNodes\]\.filter\(\(n\) => n\.nodeType === 3\)/.test(c) || !/el\.children\.length \? propio\(el\) : /.test(c)) falla(G, C, 0, "correr.mjs solo tapa como hora las hojas del DOM: un texto de hora dentro de un elemento con hijos («Abierto · hasta 9 PM» con su punto) cambia con la hora real y la captura cae según la hora (tiene que mirar también el texto propio del elemento)");
+    if (!/const HORA_RE = "[^"]*bhasta/.test(c) || !/\|\^\(abierto\|cerrado/.test(c)) falla(G, C, 0, "HORA_RE de correr.mjs ya no cubre «Abierto/Cerrado» ni «hasta»");
   },
 
   /* 9d · purgaCompleta (D5; fase9-apertura.md §3.7): a los 30 días pasa exactamente lo que promete «Borrar mi cuenta», por el mapa. Estático: la

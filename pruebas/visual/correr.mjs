@@ -132,7 +132,10 @@ try {
     // Lo que cambia solo con la hora o el día (horarios, «abierto hasta», eventos de la semana) se tapa en las dos imágenes: ver comparar.cjs. pa.titulos: secciones enteras por su título.
     const zonas = await p.evaluate(([re, titulos, desde]) => {
       const R = new RegExp(re, "i"), out = [], W = innerWidth, H = innerHeight, poner = (el) => { const r = el.getBoundingClientRect(); const x = Math.max(0, Math.floor(r.left)), y = Math.max(0, Math.floor(r.top)); const w = Math.min(W, Math.ceil(r.right)) - x, h = Math.min(H, Math.ceil(r.bottom)) - y; if (w > 0 && h > 0) out.push([x, y, w, h]); };
-      for (const el of document.querySelectorAll("body *")) { if (el.children.length) continue; if (R.test((el.textContent || "").trim())) poner(el); }
+      // 26 nov · También el elemento que tiene hijos pero cuyo PROPIO texto es el de la hora (la ficha: «Abierto · hasta 9 PM» lleva dentro el punto verde; antes solo
+      // entraban las hojas y esa línea nunca se tapaba: la aprobada decía «9 AM» y a otra hora de Hazleton la captura decía «1 PM» o «2 AM»).
+      const propio = (el) => [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
+      for (const el of document.querySelectorAll("body *")) { const tx = el.children.length ? propio(el) : (el.textContent || "").trim(); if (tx && R.test(tx)) poner(el); }
       for (const t of titulos) for (const el of document.querySelectorAll("body *")) { if (el.children.length || (el.textContent || "").trim().toLowerCase() !== t.toLowerCase()) continue; const c = el.closest("section") || el.parentElement?.parentElement; if (c) poner(c); }
       // pa.desde: desde esa sección hasta el fondo de la pantalla (si crece una lista, lo de abajo se corre: no es un cambio de diseño).
       if (desde) for (const el of document.querySelectorAll("body *")) { if (el.children.length || (el.textContent || "").trim().toLowerCase() !== desde.toLowerCase()) continue; const c = el.closest("section") || el.parentElement?.parentElement; if (c) { const r = c.getBoundingClientRect(); const x = Math.max(0, Math.floor(r.left)), y = Math.max(0, Math.floor(r.top)); out.push([x, y, Math.min(W, Math.ceil(r.right)) - x, H - y]); } }
