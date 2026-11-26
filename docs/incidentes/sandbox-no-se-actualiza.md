@@ -44,12 +44,14 @@ Lo que hace Claude desde su sesión, en este orden (curl a `https://api.hetzner.
 2. esperar a que exista la rama `rescate-llave` y leer `llave.pub` (contenido del archivo en esa rama); comprobar que su comentario es `rescate-<id de la corrida>`;
 3. `POST /ssh_keys` con `{"name":"rescate-<id>","public_key":"<llave.pub>"}` → guardar el `id` de la llave;
 4. `GET /servers/174559637`: comprobar que es `tolatino-pruebas-1` con IP `2.31.196.167` (si no, parar y borrar la llave);
+   4b. (26 nov: el firewall `tolatino-pruebas-web`, 11974241, solo abre 80/443/ICMP) leer la IP del runner del mensaje del commit de la rama («ip <x>»), guardar las reglas actuales (`GET /firewalls/11974241`) y `POST /firewalls/11974241/actions/set_rules` con esas reglas **más** `tcp 22` desde `<x>/32` y nada más;
 5. `POST /servers/174559637/actions/enable_rescue` con `{"type":"linux64","ssh_keys":[<id>]}` y esperar a que la acción termine (`GET /actions/<id acción>` hasta `success`);
 6. `POST /servers/174559637/actions/reset` (arranca el rescate);
 7. esperar a que aparezca `hecho` en la rama `rescate-llave` **o** a que la corrida termine (bien o mal, el paso final borra la rama: «se fue la rama» también cuenta como fin);
 8. `GET /servers/174559637`: si `rescue_enabled` sigue en `true`, `POST /servers/174559637/actions/disable_rescue` y esperar a que termine (Hetzner quita la marca él solo al arrancar el rescate, pero la máquina sigue EN el rescate hasta el próximo reinicio);
 9. `POST /servers/174559637/actions/reset` (arranca el sistema normal);
 10. `DELETE /ssh_keys/<id>`;
+   10b. `POST /firewalls/11974241/actions/set_rules` con las reglas guardadas en 4b (el 22 vuelve a cerrarse); comprobar con `GET` que quedan solo 80/443/ICMP. Esto se hace SIEMPRE, también si algo falló.
 11. ver el final de la corrida: el paso (e) dice si `/api/salud` ya sirve el commit de `pruebas`; si no, correr **Estado del sandbox**.
 
 **Nunca se deja el servidor en rescate.** Si la corrida falla en cualquier punto (no contesta en 25 min, el script falla, se cancela), Claude hace igual los pasos 8–10 (el reset del 9 aunque `rescue_enabled` ya sea `false`) y comprueba con `GET /servers/174559637` que `rescue_enabled` es `false` y el estado `running`. Si Claude no llegó a activar el rescate, solo borra la llave (paso 10). Ojo: que `rescue_enabled` sea `false` no quiere decir que la máquina haya salido del rescate (Hetzner quita la marca al arrancar en él): sin el `reset` del paso 9 se queda en el rescate. Por eso el paso 9 va siempre, y al final `/api/salud` tiene que contestar.

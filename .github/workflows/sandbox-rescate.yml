@@ -236,10 +236,15 @@ jobs:
           # Un commit sin padre con SOLO llave.pub, armado a mano (hash-object + mktree + commit-tree): no toca el checkout ni su índice.
           BL=$(git hash-object -w "$RUNNER_TEMP/publica/llave.pub")
           T=$(printf '100644 blob %s\tllave.pub\n' "$BL" | git mktree)
-          C=$(git commit-tree "$T" -m "rescate $GITHUB_RUN_ID: llave pública de un solo uso")
+          # 26 nov (primer rescate: el firewall tolatino-pruebas-web solo abre 80/443/ICMP) · La IP de salida de este runner va en el mensaje del commit
+          # («ip <x>»): Claude abre el 22 SOLO para esa IP /32 mientras dura el rescate y deja el firewall como estaba al terminar.
+          IP_RUNNER=$(curl -s -m 15 https://api.ipify.org || true)
+          [[ "$IP_RUNNER" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || { echo "::error::no se pudo saber la IP de este runner (hace falta para abrir el 22 solo a ella)"; exit 1; }
+          echo "IP de este runner: $IP_RUNNER"
+          C=$(git commit-tree "$T" -m "rescate $GITHUB_RUN_ID: llave pública de un solo uso · ip $IP_RUNNER")
           git push -q --force origin "$C:refs/heads/$RAMA"
           echo "$C" > "$RUNNER_TEMP/rama-commit"
-          echo "publicada en la rama $RAMA (${C:0:12}). Claude: POST /ssh_keys «rescate-$GITHUB_RUN_ID», enable_rescue con esa llave y reset."
+          echo "publicada en la rama $RAMA (${C:0:12}). Claude: POST /ssh_keys «rescate-$GITHUB_RUN_ID», abrir el 22 a $IP_RUNNER/32 en el firewall, enable_rescue con esa llave y reset."
           cat > "$RUNNER_TEMP/rescate-lib.sh" <<'EOF'
           # rescate ORDEN…: por SSH al sistema de rescate con la llave de esta corrida (su llave de máquina es nueva cada vez: no se guarda ni se comprueba).
           rescate() {
