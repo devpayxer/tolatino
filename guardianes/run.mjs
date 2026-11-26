@@ -74,7 +74,6 @@ const PENDIENTES_IDIOMA_E2IDX = new Set([]);
 // 26 nov (2) · Tablas `{ es: ["…"], en: ["…"] }` (días y meses de una pantalla) sin pasar por E2, y tablas de tuplas [clave, es, en] elegidas con `es ? a : b`,
 // `[es ? 1 : 2]` o `lang === "es" ? a : b`. Un trinquete cada una: solo bajan.
 const PENDIENTES_IDIOMA_ESEN = new Set([
-  "apps/web/lib/plazo-txt.ts:DIA_SEM", // está en LIB_CODIGO (scripts/ci/subir.mjs, vía rápida) y el guardián de la vía rápida exige que sea inofensivo en el archivo ENTERO (sin «import»): con el import de dosIdiomas falla; se pasa junto con quitarlo de esa lista (hay que tocar subir.mjs, que este encargo no toca)
 ]);
 const PENDIENTES_IDIOMA_TUPLA = new Set([]);
 // 26 nov (3) · Tablas exportadas que se eligen en otro archivo (ver cadenaConLlave): trinquete, solo baja.

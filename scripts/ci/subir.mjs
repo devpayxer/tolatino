@@ -39,7 +39,7 @@
                                    normal, y se dice por qué. La punta a punta entera y «al revés» corren DESPUÉS, en la corrida del push a main.
                                    Con main en rojo, diseño sigue subiendo (AN), pero toda subida lo avisa.
                                    Revisión de 31e2974 (código sensible la ganaba; ante cualquier duda, camino normal): apps/web/lib FUERA salvo
-                                   LIB_CODIGO (nombre.ts y plazo-txt.ts, solo texto); nunca acciones*, route, .sql, migraciones, packages/ui/scripts,
+                                   LIB_CODIGO (nombre.ts, solo texto); nunca acciones*, route, .sql, migraciones, packages/ui/scripts,
                                    lo de public que no es imagen o fuente, un enlace simbólico o un submódulo; las señales se miran en el archivo
                                    ENTERO de la cabeza (también partidas en varios renglones; y truncate, merge into, stripe., refunds); quitar una
                                    comprobación (redirect, notFound, throw, permisos, CSP) la saca; de pruebas/, solo pruebas NUEVAS (textos.cjs es
@@ -251,7 +251,7 @@ const VIGILADAS = Object.freeze(["herramientas", "despliegue", "sensible"]);
 export const CODIGO = Object.freeze([/^apps\/web\//, /^packages\/ui\//, /^pruebas\/e2e\/[^/]+\.(cjs|mjs)$/, /^pruebas\/alreves\/[^/]+\.cjs$/, ...DISENO]);
 // Los módulos de apps/web/lib que sí pueden ir por la vía rápida de código: solo texto, sin imports, sin red, sin base, sin secretos (guardián
 // subidaConHerramienta, sobre el archivo entero; y clases() vuelve a mirar SENALES_LIB en la cabeza de cada entrega).
-export const LIB_CODIGO = Object.freeze(["apps/web/lib/nombre.ts", "apps/web/lib/plazo-txt.ts"]);
+export const LIB_CODIGO = Object.freeze(["apps/web/lib/nombre.ts"]);
 const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export const NUNCA_CODIGO = Object.freeze([
   /^\.github\//, /^packages\/db\//, /^infra\//, /^services\//, /^scripts\//, /^semgrep\//, /^guardianes\//,

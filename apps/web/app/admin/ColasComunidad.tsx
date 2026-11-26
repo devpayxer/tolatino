@@ -34,8 +34,8 @@ const REGLA_T = (E2: EF): Record<string, string> => ({
   hate: E2("Lenguaje discriminatorio", "Discriminatory language"), rev5: E2("Reseñas en ráfaga", "Review burst"), img: E2("Foto", "Photo"),
   autohide: E2("Auto-ocultada", "Auto-hidden"), red: E2("Posible red de cuentas", "Possible account network"),
   estafa: E2("Posible estafa", "Possible scam"), migra: E2("Inmigración", "Immigration"), autolesion: E2("Autolesión", "Self-harm"),
-  evt: E2("Señal de Eventos", "Events signal"), foto1: E2("Fotos · modelo propio", "foto1"), foto2: E2("Fotos · segunda opinión", "foto2"),
-  foto3: E2("Fotos · reportes", "foto3"), foto4: E2("Fotos · confianza", "foto4")
+  evt: E2("Señal de Eventos", "Events signal"), foto1: E2("Fotos · modelo propio", "Photos · own model"), foto2: E2("Fotos · segunda opinión", "Photos · second opinion"),
+  foto3: E2("Fotos · reportes", "Photos · reports"), foto4: E2("Fotos · confianza", "Photos · confidence")
 });
 const MOTIVO_REP_EN: Record<string, string> = Object.fromEntries(REP.map(([k, l]) => [k, l.en]));
 const sanciones = (admin: boolean, ninguna: boolean, E2: EF = ES) => { const en = esEn(E2); return [...(ninguna ? [{ k: "ninguna", l: E2("Sin sanción", "No sanction") }] : []),
