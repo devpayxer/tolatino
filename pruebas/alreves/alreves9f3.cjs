@@ -28,6 +28,8 @@ const casos = [
   ['cadenaConLlave', PANEL, [['useCallback((a: string, b: string) => dosIdiomas(es, a, b), [es])', 'useCallback((a: string, b: string) => (es ? a : b), [es])']]],
   ['cadenaConLlave', APT, [['"TE LO GUARDAN"', '"TE LO GUARDAMOS"']]],
   ['cadenaConLlave', CAT, [['"es":"TE LO GUARDAN"', '"es":"TE LO GUARDAMOS"']]],
+  // 26 nov (2) · La config de «Publica tu negocio»: datos.ts cambia sin regenerar cadenas.ts (el guardián pide correr el generador).
+  ['cadenaConLlave', 'apps/web/lib/onb/datos.ts', [['No editar a mano', 'No editar a mano!']]],
   // lineaFijaBloqueada: el extractor deja sin candado lo del 911 y «nadie te garantiza un resultado»
   ['lineaFijaBloqueada', EX, [['return /\\b911\\b/.test(t) ||', 'return false && /\\b911\\b/.test(t) ||']]],
   // cmsConLimite: el extractor pone a las de E2 un largo que no cabe
@@ -55,6 +57,9 @@ const crear = [
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst OCCX: Record<string, [string, string]> = { a: ["A bailar", "Dancing"], b: ["Cumpleaños", "Birthday"] };\nexport function Zz({ es, k }: { es: boolean; k: string }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2("Ocasión", "Occasion")} {es ? OCCX[k]![0] : OCCX[k]![1]}</p>;\n}\n', /OCCX guarda pares ES\/EN de textos fijos y los elige por índice/],
   ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nexport function Zz({ es, c }: { es: boolean; c: { cta: string[] } }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2(c.cta[0], c.cta[1])}</p>;\n}\n', /E2\(c\.cta\[0\], c\.cta\[1\]\) saca los dos textos de un dato por índice/],
   ['cadenaConLlave', 'apps/web/app/admin/zz9f3.tsx', '"use client";\nimport { useE } from "./idioma-admin";\nexport function Zz() {\n  const E = useE();\n  return <p>{E("Guardar cambios", "Save changes")}</p>;\n}\n', /el Super Admin escribe E\("…", "…"\)/],
+  // 26 nov (2) · Tabla `{ es: [...], en: [...] }` elegida con DOW[es ? "es" : "en"]; tabla de tuplas [clave, es, en] elegida con .map(([k, a, b]) => … es ? a : b).
+  ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst DOWX = { es: ["DOM", "LUN"], en: ["SUN", "MON"] };\nexport function Zz({ es, i }: { es: boolean; i: number }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2("Día", "Day")} {DOWX[es ? "es" : "en"][i]}</p>;\n}\n', /DOWX guarda textos fijos como \{ es: \[\.\.\.\], en: \[\.\.\.\] \}/],
+  ['cadenaConLlave', 'apps/web/app/(app)/zz9f3.tsx', 'import { dosIdiomas } from "@/lib/dos-idiomas";\nconst LUZ: [string, string, string][] = [["ce", "Motor", "Engine"], ["bat", "Batería", "Battery"]];\nexport function Zz({ es }: { es: boolean }) {\n  const E2 = (a: string, b: string) => dosIdiomas(es, a, b);\n  return <p>{E2("Luces", "Lights")} {LUZ.map(([k, a, b]) => <i key={k}>{es ? a : b}</i>)}</p>;\n}\n', /LUZ guarda tuplas de textos fijos \[clave, es, en\]/],
 ];
 let bien = 0, total = 0;
 const correr = (g, debe = null) => {

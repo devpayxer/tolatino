@@ -17,8 +17,8 @@ type N = "Icon" | "Button" | "OrderTracker";
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 import { usd as dinero } from "@/lib/dinero-comun";
 const hora = (t: string | null) => (t ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : "");
-const DIA = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
-const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DIA = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const MO = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 
 export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: boolean; pago?: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
@@ -40,7 +40,7 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
       : pg && ["captured", "partially_refunded", "refunded"].includes(pg.st) ? (pg.devuelto ? E2(`Se cobraron ${dinero(pg.monto)}; te devolvimos ${dinero(pg.devuelto)} a tu tarjeta.`, `${dinero(pg.monto)} was charged; we refunded ${dinero(pg.devuelto)} to your card.`) : E2(`Se cobraron ${dinero(pg.monto)}.`, `${dinero(pg.monto)} was charged.`))
         : E2("No se cobró nada.", "Nothing was charged.");
   const fH = (iso: string) => { const d = new Date(iso), p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d), g = (t: string) => p.find((z) => z.type === t)?.value ?? "";
-    const dd = new Date(Date.UTC(Number(g("year")), Number(g("month")) - 1, Number(g("day")), 12)); return es ? `${DIA.es[dd.getUTCDay()]} ${dd.getUTCDate()} de ${MO.es[dd.getUTCMonth()]} · ${hora(iso)}` : `${DIA.en[dd.getUTCDay()]}, ${MO.en[dd.getUTCMonth()]} ${dd.getUTCDate()} · ${hora(iso)}`; };
+    const dd = new Date(Date.UTC(Number(g("year")), Number(g("month")) - 1, Number(g("day")), 12)); return es ? `${DIA(es)[dd.getUTCDay()]} ${dd.getUTCDate()} de ${MO(es)[dd.getUTCMonth()]} · ${hora(iso)}` : `${DIA(es)[dd.getUTCDay()]}, ${MO(es)[dd.getUTCMonth()]} ${dd.getUTCDate()} · ${hora(iso)}`; };
   const falta = x.lineas.find((l) => l.st === "out"), otra = falta?.otra ?? null, HH = x.horas;
   const LINE = E2("El precio que ves es el que pagas en la caja.", "The price you see is the price you pay at the register.");
   const vence = x.detalle === "sin_respuesta" ? [E2("No respondieron a tiempo", "They did not reply in time"), E2("No se cobró nada. Puedes apartarlo en otra tienda.", "Nothing was charged. You can hold it at another store.")]

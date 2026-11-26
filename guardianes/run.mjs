@@ -55,43 +55,17 @@ const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
 // 26 nov · cadenaConLlave (familia «elegir idioma por índice»): las tablas de pares ES/EN que aún se eligen con [es ? 0 : 1] sin pasar por E2. Un trinquete: solo baja. Ver LAUNCH.
 const PENDIENTES_IDIOMA_IDX = new Set([
-  "apps/web/app/(app)/cuenta/direcciones/Direcciones.tsx:LB",
-  "apps/web/app/(app)/n/[id]/Oficios.tsx:SZ",
-  "apps/web/app/(app)/n/[id]/Oficios.tsx:TIPO",
-  "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx:AREA",
-  "apps/web/app/admin/N360.tsx:LIQ_N",
-  "apps/web/app/panel/CompaPanel.tsx:TEMA_L",
-  "apps/web/app/panel/Equipo.tsx:SP",
-  "apps/web/app/panel/Menu.tsx:SK",
-  "apps/web/lib/autos-comun.ts:GARANTIA",
-  "apps/web/lib/fe-comun.ts:DIA_FE",
-  "apps/web/lib/repartidor-admin.ts:QUE",
-  "apps/web/lib/reporte-diario.ts:CAPA_REPORTE",
-  "apps/web/lib/reservas.ts:DIAS_C",
-  "apps/web/lib/reservas.ts:MESES_C",
+  "apps/web/app/admin/N360.tsx:LIQ_N", // Super Admin: lo pasa quien convierte el Super Admin a E2 (LAUNCH, familia «idioma por índice», (a))
 ]);
-const PENDIENTES_IDIOMA_E2IDX = new Set([
-  "apps/web/app/(app)/publica/PasosBC.tsx:Fl.TOWNS[v as string]",
-  "apps/web/app/(app)/publica/PasosBC.tsx:lk.s",
-  "apps/web/app/(app)/publica/PasosBC.tsx:lk.t",
-  "apps/web/app/(app)/publica/PasosBC.tsx:q.s",
-  "apps/web/app/(app)/publica/PasosBC.tsx:q.t",
-  "apps/web/app/(app)/publica/PasosBC.tsx:w",
-  "apps/web/app/(app)/publica/PasosDE.tsx:Fl.TOWNS[zone]",
-  "apps/web/app/(app)/publica/PasosDE.tsx:c.sp",
-  "apps/web/app/(app)/publica/PasosDE.tsx:sumO.t",
-  "apps/web/app/(app)/publica/PasosFH.tsx:L",
-  "apps/web/app/(app)/publica/PasosFH.tsx:c.items",
-  "apps/web/app/(app)/publica/PasosFH.tsx:iwP",
-  "apps/web/app/(app)/publica/Publica.tsx:W",
-  "apps/web/app/(app)/publica/Publica.tsx:f.own.k",
-  "apps/web/app/(app)/publica/Publica.tsx:f.own.s",
-  "apps/web/app/(app)/publica/Publica.tsx:f.own.t",
-  "apps/web/app/(app)/publica/Publica.tsx:f.sell.t",
-  "apps/web/app/(app)/publica/Publica.tsx:iwP",
-  "apps/web/app/(app)/publica/vista.ts:c.cta",
-  "apps/web/app/(app)/publica/vista.ts:f.sell.t",
+// 26 nov (2) · Lo que la config de «Publica tu negocio» (lib/onb/datos.ts, GENERADO) saca con E2(x[0], x[1]) ya no se lista aquí: portar-onboarding.mjs emite
+// lib/onb/cadenas.ts con cada par como E2("…", "…") y el guardián comprueba que está al día (ver más abajo). Esta lista queda vacía y no puede volver a crecer.
+const PENDIENTES_IDIOMA_E2IDX = new Set([]);
+// 26 nov (2) · Tablas `{ es: ["…"], en: ["…"] }` (días y meses de una pantalla) sin pasar por E2, y tablas de tuplas [clave, es, en] elegidas con `es ? a : b`,
+// `[es ? 1 : 2]` o `lang === "es" ? a : b`. Un trinquete cada una: solo bajan.
+const PENDIENTES_IDIOMA_ESEN = new Set([
+  "apps/web/lib/plazo-txt.ts:DIA_SEM", // está en LIB_CODIGO (scripts/ci/subir.mjs, vía rápida): con el import de dosIdiomas dejaría de ser «inofensivo»; se pasa junto con quitarlo de esa lista
 ]);
+const PENDIENTES_IDIOMA_TUPLA = new Set([]);
 const PENDIENTES_IDIOMA_ADMIN_E = new Set([
   "apps/web/app/admin/Analitica.tsx",
   "apps/web/app/admin/AnfitrionesAdmin.tsx",
@@ -9827,6 +9801,48 @@ const guardianes = {
       falla(G, f, linea, `${N} guarda pares ES/EN de textos fijos y los elige por índice (${N}[i][es ? 0 : 1], es ? x[0] : x[1]) sin pasar por E2: se salen del CMS; la tabla va como función que recibe el idioma y lleva E2("…", "…") en su sitio (${N}(es)[i])`);
     }
     for (const k of PENDIENTES_IDIOMA_IDX) if (!hallados.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_IDX lista «${k}» y ya no se cumple (se pasó a E2 o se quitó): sácala de la lista`);
+    // 26 nov (2) · Otras dos formas de la misma familia. (a) Una tabla `const DOW = { es: ["DOM", …], en: ["SUN", …] }` (días, meses) que la pantalla elige con DOW[es ? "es" : "en"],
+    // DOW.es o (es ? DOW.es : DOW.en): sus textos no pasan por E2 y no entran al catálogo. (b) Una tabla de tuplas [clave, es, en] o [es, en] escrita con el tipo
+    // `[string, string, string][]` / `Record<…, [string, string]>` que se elige con `es ? a : b` (.map(([k, a, b]) => …), x[es ? 1 : 2], `lang === "es" ? es : en`) sin E2. Las dos van como
+    // función que recibe el idioma y lleva E2("…", "…") en su sitio (DOW(es)[i]; OCC(es).map(([k, l]) => …)). Lo que ya estaba así va en PENDIENTES_IDIOMA_ESEN y
+    // PENDIENTES_IDIOMA_TUPLA (trinquetes: no crecen; lo que se pasa se quita). Al revés: alreves9f3.
+    const hallEsEn = new Map(), hallTupla = new Map();
+    const ELIGE_IDIOMA = [
+      /\bes\s*\?\s*[\w$]+(?:\[[^\]\n]{1,12}\])?!?\s*:\s*[\w$]+(?:\[[^\]\n]{1,12}\])?/,
+      /\[\s*(?:[\w$.]*\bes|lang\s*===\s*"es")\s*\?\s*\d\s*:\s*\d\s*\]/,
+      /\blang\s*===\s*"es"\s*\?\s*[\w$]+\s*:\s*[\w$]+/,
+      /\bes\s*\?[^:;\n]{0,140}?\[0\][^:;\n]{0,100}:[^;\n]{0,140}?\[1\]/,
+    ];
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(new RegExp(String.raw`^(?:export )?const (${ID})\b[^=\n]*=\s*\{\s*es:\s*\[\s*${LITS}`, "gm")))
+        if (/\p{L}/u.test(t.slice(m.index, m.index + 400).replace(/[\w$]+\s*:/g, ""))) hallEsEn.set(`${f}:${m[1]}`, t.slice(0, m.index).split("\n").length);
+      for (const m of t.matchAll(new RegExp(String.raw`^(?:export )?const (${ID})\s*:\s*(?:readonly )?(?:\[string, string(?:, string)*\]\[\]|Record<[^=\n]*?\[string, string(?:, string)*\]>)\s*=\s*`, "gm"))) {
+        const resto = t.slice(m.index + m[0].length), fin = resto.search(/\n(?:const|function|export|type|import|let|interface|\/\*|\/\/)/), ini = fin < 0 ? resto : resto.slice(0, fin);
+        if (!new RegExp(`${LITS}\\s*,\\s*${LITS}`).test(ini) || !/\p{L}/u.test(ini)) continue;
+        const N = m[1], decl = m.index + m[0].length + ini.length;
+        let elige = false;
+        for (const u of t.matchAll(new RegExp(String.raw`\b${N}\b`, "g"))) {
+          if (u.index < m.index + m[0].length || u.index < decl && u.index > m.index) continue;
+          const ven = t.slice(Math.max(0, u.index - 120), u.index + 320);
+          if (ELIGE_IDIOMA.some((r) => r.test(ven))) { elige = true; break; }
+        }
+        if (elige) hallTupla.set(`${f}:${N}`, t.slice(0, m.index).split("\n").length);
+      }
+    }
+    for (const [k, linea] of hallEsEn) {
+      if (PENDIENTES_IDIOMA_ESEN.has(k)) continue;
+      const [f, N] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
+      falla(G, f, linea, `${N} guarda textos fijos como { es: [...], en: [...] } y la pantalla los elige por idioma (${N}[es ? "es" : "en"], ${N}.es) sin pasar por E2: se salen del CMS; la tabla va como función que recibe el idioma y lleva E2("…", "…") en su sitio (${N}(es)[i])`);
+    }
+    for (const [k, linea] of hallTupla) {
+      if (PENDIENTES_IDIOMA_TUPLA.has(k)) continue;
+      const [f, N] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
+      falla(G, f, linea, `${N} guarda tuplas de textos fijos [clave, es, en] y se elige el idioma con es ? a : b (o x[es ? 1 : 2]) sin pasar por E2: se salen del CMS; la tabla va como función que recibe el idioma y lleva E2("…", "…") en su sitio (${N}(es).map(([k, l]) => …))`);
+    }
+    for (const k of PENDIENTES_IDIOMA_ESEN) if (!hallEsEn.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_ESEN lista «${k}» y ya no se cumple: sácala de la lista`);
+    for (const k of PENDIENTES_IDIOMA_TUPLA) if (!hallTupla.has(k)) falla(G, "guardianes/run.mjs", 0, `PENDIENTES_IDIOMA_TUPLA lista «${k}» y ya no se cumple: sácala de la lista`);
     // 26 nov · Dos formas más de la misma familia. (a) E2(X[0], X[1]) con el par sacado de un dato por índice (la config de «Publica tu negocio», lib/onb/datos.ts, que se genera del
     // prototipo): los textos tampoco llegan al catálogo. (b) El Super Admin con un E(…) propio (useE, par(l) o una definición local) en vez de E2(…): E("…", "…") no lo ve el
     // extractor ni pasa por dosIdiomas. Lo que ya estaba así va en PENDIENTES_IDIOMA_E2IDX y PENDIENTES_IDIOMA_ADMIN_E (trinquetes: no crecen; lo que se pasa se quita). Al revés: alreves9f3.
@@ -9837,8 +9853,19 @@ const guardianes = {
       if (t.includes("E2(")) for (const m of t.matchAll(new RegExp(String.raw`\bE2\(\s*(${ID}(?:\.${ID}|\[[^\]\n]*\])*)\[0\]\s*,\s*\1\[1\]\s*[,)]`, "g"))) hallE2.set(`${f}:${m[1]}`, t.slice(0, m.index).split("\n").length);
       if (/^apps\/web\/app\/admin\//.test(f)) { const m = new RegExp(String.raw`(?<![\w$.])E\(\s*${LITS}\s*,\s*${LITS}`).exec(t); if (m && /\p{L}/u.test(m[0])) hallAdm.set(f, t.slice(0, m.index).split("\n").length); }
     }
+    // 26 nov (2) · La config de «Publica tu negocio» viene de lib/onb/datos.ts (GENERADO del prototipo): su generador (scripts/catalogo/portar-onboarding.mjs) emite también
+    // lib/onb/cadenas.ts con cada par como E2("…", "…") para que el extractor lo meta al catálogo. Ahí E2(c.cta[0], c.cta[1]) es legítimo mientras cadenas.ts esté al día con datos.ts
+    // (guarda el sha256 de datos.ts); si no lo está (se editó datos.ts a mano o el prototipo cambió sin regenerar), el guardián falla y manda a correr el generador.
+    const ONB_DATOS = "apps/web/lib/onb/datos.ts", ONB_CADENAS = "apps/web/lib/onb/cadenas.ts";
+    let onbAlDia = false;
+    if (existsSync(ONB_DATOS) && existsSync(ONB_CADENAS)) {
+      const fuente = /fuente: sha256 de datos\.ts = ([0-9a-f]{64})/.exec(readFileSync(ONB_CADENAS, "utf8"))?.[1];
+      onbAlDia = fuente === createHash("sha256").update(readFileSync(ONB_DATOS)).digest("hex");
+    }
+    if (!onbAlDia) falla(G, ONB_CADENAS, 0, "lib/onb/cadenas.ts no está al día con lib/onb/datos.ts (o falta): corre «node scripts/catalogo/portar-onboarding.mjs» (las dos salidas se generan juntas, no se editan a mano)");
     for (const [k, linea] of hallE2) {
       if (PENDIENTES_IDIOMA_E2IDX.has(k)) continue;
+      if (onbAlDia && k.startsWith("apps/web/app/(app)/publica/")) continue;
       const [f, X] = [k.slice(0, k.lastIndexOf(":")), k.slice(k.lastIndexOf(":") + 1)];
       falla(G, f, linea, `E2(${X}[0], ${X}[1]) saca los dos textos de un dato por índice: no entran al catálogo del CMS; van como E2("…", "…") con los textos fijos`);
     }
@@ -17466,7 +17493,7 @@ const guardianes = {
     try {
       const ts = createRequire(import.meta.url)("typescript");
       const js = ts.transpileModule(readFileSync(T, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-      const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, () => { throw new Error("tarjeta.ts solo importa tipos"); });
+      const mod = { exports: {} }; new Function("module", "exports", "require", js)(mod, mod.exports, (m) => { if (/dos-idiomas$/.test(m)) return { dosIdiomas: (es, a, b) => (es ? a : b) }; throw new Error("tarjeta.ts solo importa tipos y dosIdiomas"); });
       M = mod.exports;
       if (typeof M.restoDelEstado !== "function" || typeof M.estado !== "function") return falla(G, T, 0, "tarjeta.ts no exporta estado y restoDelEstado");
     } catch (e) { return falla(G, T, 0, `no pude cargar tarjeta.ts: ${String(e?.message ?? e).slice(0, 120)}`); }

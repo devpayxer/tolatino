@@ -143,7 +143,7 @@ export function carroDetalle(c: Ctx, id: string): Sec {
   if (d.history) out.push({ type: "field", k: E2("DE QUIÉN ES EL HISTORIAL", "WHO PROVIDES THE HISTORY"), val: d.historySrc, max: 30, ph: "Carfax", onChange: (v) => set({ historySrc: v.slice(0, 30) }) });
   // Garantía: lo mismo que la Buyers Guide de la ventana.
   out.push({ type: "group", k: E2("GARANTÍA", "WARRANTY") },
-    { type: "chips", items: (["como_esta", "dealer", "fabrica", "certificado"] as Garantia[]).map((g) => ({ l: es ? GARANTIA[g][0] : GARANTIA[g][1], v: d.warranty === g ? "selected" : "filter", onClick: () => set({ warranty: g, wMonths: g === "como_esta" ? "" : d.wMonths || "3", wMiles: g === "como_esta" ? "" : d.wMiles }) })) });
+    { type: "chips", items: (["como_esta", "dealer", "fabrica", "certificado"] as Garantia[]).map((g) => ({ l: GARANTIA(es)[g], v: d.warranty === g ? "selected" : "filter", onClick: () => set({ warranty: g, wMonths: g === "como_esta" ? "" : d.wMonths || "3", wMiles: g === "como_esta" ? "" : d.wMiles }) })) });
   if (d.warranty !== "como_esta") out.push({ type: "field", k: E2("MESES", "MONTHS"), val: d.wMonths, im: "numeric", max: 3, suf: E2("meses", "months"), onChange: (v) => set({ wMonths: num(v, 3) }) },
     { type: "field", k: E2("MILLAS · OPCIONAL", "MILES · OPTIONAL"), val: d.wMiles, im: "numeric", suf: E2("millas", "miles"), onChange: (v) => set({ wMiles: num(v, 6) }) });
   out.push({ type: "note", tone: "ink", icon: "law", t: bi(BUYERS_GUIDE, es) });
@@ -226,7 +226,7 @@ export function herramientaAutosBloques(c: Ctx): Sec {
   if (P0.length) out.push({ type: "chips", k: E2(`${h.prueba.horas} ABIERTAS EN 14 DÍAS`, `${h.prueba.horas} OPEN IN 14 DAYS`), help: E2("toca para prender o apagar", "tap to turn on or off"),
     items: P0.map((v, i) => ({ l: cortoVis(v.dow, v.min, es), v: v.on ? "selected" : "filter", onClick: () => savePrueba(P0.map((x, j) => (j === i ? { ...x, on: !x.on } : x))) })) });
   else out.push({ type: "note", tone: "info", icon: "calendar", t: E2("Sin horas de prueba: la gente te llama para pedirla. Agrega una y la piden en la app.", "No test drive times: people call to ask. Add one and they request it in the app.") });
-  out.push({ type: "chips", k: E2("DÍA", "DAY"), items: DIA_FE.map((d, i) => ({ l: es ? d[0] : d[1], v: pDow === i ? "selected" : "filter", onClick: () => c.setUi({ pDow: i }) })) },
+  out.push({ type: "chips", k: E2("DÍA", "DAY"), items: DIA_FE(es).map((d, i) => ({ l: d[0], v: pDow === i ? "selected" : "filter", onClick: () => c.setUi({ pDow: i }) })) },
     { type: "step", t: E2("Hora de prueba", "Test drive time"), v: horaFe(pMin), onM: () => c.setUi({ pMin: Math.max(360, pMin - 30) }), onP: () => c.setUi({ pMin: Math.min(1320, pMin + 30) }) },
     { type: "acts", pt: "0", items: [{ l: E2("Agregar hora", "Add time"), v: "secondary", icon: "plus", off: c.pending || P0.some((x) => x.dow === pDow && x.min === pMin) || P0.length >= 21, onClick: () => savePrueba([...P0, { dow: pDow, min: pMin, on: true }]) },
       ...(P0.length ? [{ l: E2("Quitar las apagadas", "Remove the off ones"), v: "ghost", off: c.pending || !P0.some((x) => !x.on), onClick: () => savePrueba(P0.filter((x) => x.on)) }] : [])] },

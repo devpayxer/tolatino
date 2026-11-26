@@ -18,8 +18,8 @@ type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 import { usd as dinero } from "@/lib/dinero-comun";
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
-const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const MO = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const hL = (h: string) => { const [a, b] = h.split(":").map(Number); const H = (a ?? 0) % 24; return `${H % 12 || 12}${b ? `:${String(b).padStart(2, "0")}` : ""} ${H < 12 ? "AM" : "PM"}`; };
 const hora = (t: string | null) => (t ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : "");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -30,7 +30,7 @@ export function RentaEstado({ r, es, pago }: { r: RentaVista; es: boolean; pago:
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []);
   // 9t8 · La clave del toque de «Un día más»: la misma mientras no llegue una respuesta del servidor (si la red se corta, repetir no cobra otro día); otra después.
   const clave = useRef(uuid());
-  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL.es[d.getUTCDay()]} ${d.getUTCDate()} de ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL(es)[d.getUTCDay()]} ${d.getUTCDate()} de ${MO(es)[d.getUTCMonth()]}` : `${DL(es)[d.getUTCDay()]}, ${MO(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const hacer = async (que: "cancelar" | "dia" | "tarjeta" | "dano_ok" | "dano_no", ok: string, pm?: string) => {
     if (ocupado) return; setOcupado(true); setError(null);
     let red = false;

@@ -17,10 +17,10 @@ type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" |
 const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots, IconButton, AddOnRow, DepositNote, BusinessRow } = UI as unknown as Record<N, ComponentType<any>>;
 const K = "font-mono text-[10.5px] font-extrabold tracking-[0.12em]";
 const CAJA = "rounded-[17px] border border-ink/[.08] bg-white";
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const MESL = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const MESL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const sumar = (ymd: string, n: number) => { const d = new Date(`${ymd}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-const diaCorto = (ymd: string, es: boolean) => { const d = new Date(`${ymd}T12:00:00Z`), w = DOW[es ? "es" : "en"][d.getUTCDay()]!, m = MESL[es ? "es" : "en"][d.getUTCMonth()]!; const ww = w.charAt(0) + w.slice(1).toLowerCase(); return es ? `${ww} ${d.getUTCDate()} ${m}` : `${ww} ${m} ${d.getUTCDate()}`; };
+const diaCorto = (ymd: string, es: boolean) => { const d = new Date(`${ymd}T12:00:00Z`), w = DOW(es)[d.getUTCDay()]!, m = MESL(es)[d.getUTCMonth()]!; const ww = w.charAt(0) + w.slice(1).toLowerCase(); return es ? `${ww} ${d.getUTCDate()} ${m}` : `${ww} ${m} ${d.getUTCDate()}`; };
 const TURNOS: [string, string, number[]][] = [["ALMUERZO", "LUNCH", [660, 690, 720, 750, 780, 810, 840]], ["CENA", "DINNER", [1050, 1080, 1110, 1140, 1170, 1200, 1230]]];
 
 export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number }) {
@@ -32,7 +32,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
   const [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const clave = useRef(uuid());
   const B = x.negocio.nombre;
-  const dias = Array.from({ length: 14 }, (_, k) => sumar(x.desde, k)).map((d) => ({ id: d, dow: DOW[es ? "es" : "en"][new Date(`${d}T12:00:00Z`).getUTCDay()], num: String(Number(d.slice(8))) }));
+  const dias = Array.from({ length: 14 }, (_, k) => sumar(x.desde, k)).map((d) => ({ id: d, dow: DOW(es)[new Date(`${d}T12:00:00Z`).getUTCDay()], num: String(Number(d.slice(8))) }));
   const lejos = dias.some((d) => d.id === dia) ? "" : dia;
   const falta = !occ ? E2("Elige qué celebran.", "Pick what you are celebrating.") : h == null ? E2("Elige la hora.", "Pick the time.") : "";
   const okPaso = (n: number) => (n === 1 ? !!occ : n === 2 ? h != null : true);

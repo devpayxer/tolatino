@@ -31,8 +31,7 @@ export function fechasPrueba(len: number, es: boolean) {
 /* Lo que trae Pro con SU negocio (proRows del diseño). */
 function proRows(d: Borrador, es: boolean) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), c = d.cat ? X.CFG[d.cat] : null;
-  const iwP: [string, string] | null = ({ "NEG-NOCHE": ["opciones", "options"], "NEG-FIESTA": ["paquetes y artículos", "packages and items"] } as Record<string, [string, string]>)[d.cat ?? ""] || (c && c.items);
-  const iw = iwP ? E2(iwP[0], iwP[1]) : E2("servicios", "services"), n = items(d).length, ph = [d.cover].concat(d.gallery || []).filter(Boolean).length;
+  const iw = d.cat === "NEG-NOCHE" ? E2("opciones", "options") : d.cat === "NEG-FIESTA" ? E2("paquetes y artículos", "packages and items") : c && c.items ? E2(c.items[0], c.items[1]) : E2("servicios", "services"), n = items(d).length, ph = [d.cover].concat(d.gallery || []).filter(Boolean).length;
   const LIM = limites(), FI = LIM.items, FP = LIM.fotos, dv = derive(d), o = own(d), k = d.cat ? X.cat(d.cat) : null, out: { icon: string; t: string; f: string }[] = [];
   out.push(n > FI ? { icon: "grid", t: E2(`Tus ${n} ${iw} en tu página`, `Your ${n} ${iw} on your page`), f: E2(`FREE MUESTRA ${FI}`, `FREE SHOWS ${FI}`) } : { icon: "grid", t: E2(`Tus ${iw}, con su propia pestaña`, `Your ${iw}, with their own tab`), f: E2("FREE: UNA SOLA PÁGINA", "FREE: ONE PAGE") });
   out.push({ icon: "image", t: ph > FP ? E2(`Tus ${ph} fotos`, `Your ${ph} photos`) : E2("Todas las fotos que subas", "Every photo you upload"), f: E2(`FREE MUESTRA ${FP}`, `FREE SHOWS ${FP}`) });

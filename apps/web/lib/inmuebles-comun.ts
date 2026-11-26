@@ -116,7 +116,7 @@ export function fechaInm(iso: string | null, hoy: string, es: boolean) {
   const [, m, d] = iso.split("-").map(Number) as [number, number, number];
   return es ? `${d} ${MES(es)[m - 1]!}` : `${MES(es)[m - 1]!} ${d}`;
 }
-export const cortoVis = (dow: number, min: number, es: boolean) => `${DIA_FE[dow]![es ? 0 : 1]} ${horaFe(min)}`;
+export const cortoVis = (dow: number, min: number, es: boolean) => `${DIA_FE(es)[dow]![0]} ${horaFe(min)}`;
 
 /* Lo que ve el panel (lo arma lib/inmuebles.ts; los montos ya vienen calculados del servidor). addr solo llega al panel del negocio. */
 export type VisitaPat = { dow: number; min: number; on: boolean };

@@ -21,8 +21,8 @@ type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" |
 const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots, PaymentSummary, DepositOutcomes } = UI as unknown as Record<N, ComponentType<any>>;
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const OCC: [string, string, string][] = [["bailar", "A bailar", "Dancing"], ["cumple", "Cumpleaños", "Birthday"], ["despedida", "Despedida", "Farewell"], ["celebra", "Celebración", "Celebration"]];
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const OCC = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["bailar", E2("A bailar", "Dancing")], ["cumple", E2("Cumpleaños", "Birthday")], ["despedida", E2("Despedida", "Farewell")], ["celebra", E2("Celebración", "Celebration")]]; };
 
 export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; pax0: number }) {
   const E2 = (a: string, z: string) => dosIdiomas(es, a, z);
@@ -92,7 +92,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       </div>
       <div>
         <div className={K}>{E2("OCASIÓN · OPCIONAL", "OCCASION · OPTIONAL")}</div>
-        <div className="mt-2 flex flex-wrap gap-2">{OCC.map(([k, a, z]) => <Chip key={k} variant={occ === k ? "selected" : "filter"} onClick={() => setOcc(occ === k ? "" : k)}>{es ? a : z}</Chip>)}</div>
+        <div className="mt-2 flex flex-wrap gap-2">{OCC(es).map(([k, a]) => <Chip key={k} variant={occ === k ? "selected" : "filter"} onClick={() => setOcc(occ === k ? "" : k)}>{a}</Chip>)}</div>
         <div className="mt-1.5 text-[11.5px] font-medium leading-[1.45] text-ink/60">{E2("Si es cumpleaños, algunos locales traen algo a la mesa.", "If it is a birthday, some venues bring something to the table.")}</div>
       </div>
       <div>
@@ -103,7 +103,7 @@ export function ReservarNoche({ b, es, pago, yo, pax0 }: { b: BookingNoche; es: 
       {lineaNota}
     </div>
   );
-  const dias = b.noches.map((n) => ({ id: n.fecha, dow: (es ? DOW.es : DOW.en)[n.dow], num: String(Number(n.fecha.slice(8))), off: !elegible(n) }));
+  const dias = b.noches.map((n) => ({ id: n.fecha, dow: DOW(es)[n.dow], num: String(Number(n.fecha.slice(8))), off: !elegible(n) }));
   const slots = (N?.slots ?? []).map((m) => ({ t: hNoche(m), taken: false }));
   const bloqueHora = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>

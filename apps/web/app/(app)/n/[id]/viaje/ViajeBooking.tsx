@@ -26,8 +26,8 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean }) {
@@ -88,7 +88,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const campo = (k: keyof typeof dest, l: string, ph: string, max: number, tipo = "text") => (
     <label className="flex flex-col gap-1.5"><span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/60">{l}</span>
       <input type={tipo} value={dest[k]} maxLength={max} placeholder={ph} aria-label={l} onChange={(e) => setDest({ ...dest, [k]: e.target.value.slice(0, max) })} className="box-border w-full rounded-[13px] border border-ink/[.12] px-[13px] py-[11px] text-[13.5px] font-medium outline-none" /></label>);
-  const dowN = new Date(`${dia.ymd}T12:00:00Z`).getUTCDay(), diaL = `${(es ? DL.es : DL.en)[dowN]} ${Number(dia.ymd.slice(8))}`;
+  const dowN = new Date(`${dia.ymd}T12:00:00Z`).getUTCDay(), diaL = `${DL(es)[dowN]} ${Number(dia.ymd.slice(8))}`;
   const cuando = sel ? `${cap(diaL)} · ${horaL(sel.m)}` : "—";
 
   const fila = (t: string, s2: string, val: number, dec: () => void, inc: () => void) => (
@@ -164,7 +164,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
       {lineaNota}
     </div>
   );
-  const dias = b.dias.map((d, k) => ({ id: `d${k}`, dow: k === 0 ? E2("HOY", "TODAY") : (es ? DOW.es : DOW.en)[new Date(`${d.ymd}T12:00:00Z`).getUTCDay()], num: String(Number(d.ymd.slice(8))), off: !d.salidas.some((z) => z.libre) }));
+  const dias = b.dias.map((d, k) => ({ id: `d${k}`, dow: k === 0 ? E2("HOY", "TODAY") : DOW(es)[new Date(`${d.ymd}T12:00:00Z`).getUTCDay()], num: String(Number(d.ymd.slice(8))), off: !d.salidas.some((z) => z.libre) }));
   const slots = dia.salidas.map((z) => ({ t: horaL(z.m), taken: !z.libre || (asiento && z.quedan < seats), run: z.run, m: z.m, q: z.quedan }));
   const bloqueHora = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>

@@ -11,11 +11,12 @@ import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 import { usd as money } from "@/lib/dinero-comun";
-const MES = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
-const DIA = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
+import { dosIdiomas } from "@/lib/dos-idiomas";
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const DIA = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
 
-function cuando(es: boolean, f: string, m: number) { const d = new Date(`${f}T12:00:00Z`); return `${es ? `${DIA.es[d.getUTCDay()]} ${d.getUTCDate()} ${MES.es[d.getUTCMonth()]}` : `${DIA.en[d.getUTCDay()]} ${MES.en[d.getUTCMonth()]} ${d.getUTCDate()}`} · ${hL(m)}`; }
+function cuando(es: boolean, f: string, m: number) { const d = new Date(`${f}T12:00:00Z`); return `${es ? `${DIA(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MES(es)[d.getUTCMonth()]}` : `${DIA(es)[d.getUTCDay()]} ${MES(es)[d.getUTCMonth()]} ${d.getUTCDate()}`} · ${hL(m)}`; }
 
 export function hoyApartados(c: Ctx): Bloque[] {
   const { E2, es } = c, L = c.citas?.apartados ?? [];

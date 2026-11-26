@@ -111,7 +111,7 @@ export function cambiosQueImportan(a: BorradorEvt, b: BorradorEvt): string[] {
 /* ── 6f · Series y varios días (TLEvP.occ / repL / spanL / dayH). La base genera las fechas de verdad (evt_generar_fechas en 0111): esto
    es la misma regla para mostrarla en el editor y en las pantallas. ── */
 const DN = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
-const NTH: [string, string][] = [["primer", "first"], ["segundo", "second"], ["tercer", "third"], ["cuarto", "fourth"]];
+const NTH = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("primer", "first"), E2("segundo", "second"), E2("tercer", "third"), E2("cuarto", "fourth")]; };
 export const dowDe = (iso: string) => { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay(); };
 const diasMes = (y: number, m0: number) => new Date(Date.UTC(y, m0 + 1, 0)).getUTCDate();
 /* El «n-ésimo» día de la semana del mes (1–4) o 5 = el último (si la fecha es la última de su mes desde la cuarta). */
@@ -148,7 +148,7 @@ const juntar = (a: string[], es: boolean) => (a.length > 1 ? `${a.slice(0, -1).j
 /* «Cada jueves y sábado» · «Cada 2 semanas · jueves» · «El último viernes de cada mes». */
 export function repL(dia: string, r: Repite | null | undefined, es: boolean): string {
   if (!r || r.k === "none" || !dia) return "";
-  if (r.k === "m") { const n = nthDe(dia), d = DN(es)[dowDe(dia)]!; return es ? `El ${n === 5 ? "último" : NTH[n - 1]![0]} ${d} de cada mes` : `The ${n === 5 ? "last" : NTH[n - 1]![1]} ${d} of every month`; }
+  if (r.k === "m") { const n = nthDe(dia), d = DN(es)[dowDe(dia)]!; return es ? `El ${n === 5 ? "último" : NTH(es)[n - 1]!} ${d} de cada mes` : `The ${n === 5 ? "last" : NTH(es)[n - 1]!} ${d} of every month`; }
   const ds = juntar(diasDeRegla(dia, r).map((i) => DN(es)[i]!), es);
   return r.k === "w" ? (es ? `Cada ${ds}` : `Every ${ds}`) : es ? `Cada 2 semanas · ${ds}` : `Every 2 weeks · ${ds}`;
 }

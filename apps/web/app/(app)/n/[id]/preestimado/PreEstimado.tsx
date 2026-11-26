@@ -18,8 +18,8 @@ type N = "Icon" | "Button" | "Chip";
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
-const LIGHTS: [string, string, string][] = [["ce", "Check engine", "Check engine"], ["bat", "Batería", "Battery"], ["temp", "Temperatura", "Temperature"], ["abs", "Frenos o ABS", "Brakes or ABS"], ["oil", "Aceite", "Oil"], ["tpms", "Presión de gomas", "Tire pressure"]];
-const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["cuarto", "Cuarto", "Bedroom"], ["sala", "Sala", "Living room"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
+const LIGHTS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["ce", E2("Check engine", "Check engine")], ["bat", E2("Batería", "Battery")], ["temp", E2("Temperatura", "Temperature")], ["abs", E2("Frenos o ABS", "Brakes or ABS")], ["oil", E2("Aceite", "Oil")], ["tpms", E2("Presión de gomas", "Tire pressure")]]; };
+const AREAS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["cocina", E2("Cocina", "Kitchen")], ["bano", E2("Baño", "Bathroom")], ["sotano", E2("Sótano", "Basement")], ["cuarto", E2("Cuarto", "Bedroom")], ["sala", E2("Sala", "Living room")], ["afuera", E2("Afuera", "Outside")], ["toda", E2("Toda la casa", "Whole house")]]; };
 
 export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: string; es: boolean; yo: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
@@ -81,10 +81,10 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
           <div className="mt-1 text-[12px] font-medium text-ink/60">{E2("Mientras más detalle, más cerrado el rango.", "The more detail, the tighter the range.")}</div></div>
         {auto ? (
           <div><div className={K}>{E2("LUCES ENCENDIDAS", "WARNING LIGHTS ON")}</div>
-            <div className="mt-2 flex flex-wrap gap-2">{LIGHTS.map(([k, l1, l2]) => <Chip key={k} variant={luces.includes(k) ? "selected" : "filter"} onClick={() => setLuces(luces.includes(k) ? luces.filter((z) => z !== k) : [...luces, k])}>{es ? l1 : l2}</Chip>)}</div></div>
+            <div className="mt-2 flex flex-wrap gap-2">{LIGHTS(es).map(([k, l1]) => <Chip key={k} variant={luces.includes(k) ? "selected" : "filter"} onClick={() => setLuces(luces.includes(k) ? luces.filter((z) => z !== k) : [...luces, k])}>{l1}</Chip>)}</div></div>
         ) : (
           <div><div className={K}>{E2("¿DÓNDE ES?", "WHERE IS IT?")}</div>
-            <div className="mt-2 flex flex-wrap gap-2">{AREAS.map(([k, l1, l2]) => <Chip key={k} variant={area === k ? "selected" : "filter"} onClick={() => setArea(area === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
+            <div className="mt-2 flex flex-wrap gap-2">{AREAS(es).map(([k, l1]) => <Chip key={k} variant={area === k ? "selected" : "filter"} onClick={() => setArea(area === k ? null : k)}>{l1}</Chip>)}</div></div>
         )}
         <div>
           <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTANOS", "TELL US")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 400</span></div>

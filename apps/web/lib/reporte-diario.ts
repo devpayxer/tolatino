@@ -8,6 +8,7 @@ import { marco, type Fila } from "./correo/plantillas";
 import { db, tx } from "./db";
 import { dbAnalisis } from "./db-analisis";
 import { gastoFotosMes, resumenFotos, type ResumenFotos } from "./fotos-resumen";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 9g · El reporte diario al fundador (HERRAMIENTAS #31, PLAN §5 guardián «Reporte diario»; fase9-apertura.md §4 9g). A las 7:30 AM de Hazleton, por
    correo y push, a los Admins activos: negocios nuevos de ayer, operaciones, dinero, errores, vueltas atrás, colas vencidas, lo que vigilan los
@@ -104,12 +105,12 @@ export async function armarReporte(): Promise<CuerpoReporte> {
 }
 
 /* R3 · El bloque «Fotos» del reporte: lo de ayer (publicadas · retenidas · rechazadas · ocultas), por capa, y el gasto del mes de la segunda opinión. */
-const CAPA_REPORTE: Record<string, [string, string]> = { c1: ["Capa 1 · modelo propio", "Layer 1 · own model"], c2: ["Capa 2 · segunda opinión", "Layer 2 · second opinion"], c3: ["Capa 3 · reportes", "Layer 3 · reports"], c4: ["Capa 4 · confianza", "Layer 4 · trust"], memoria: ["Memoria de contenido", "Content memory"], persona: ["Una persona del equipo", "A team member"] };
+const CAPA_REPORTE = (E2: (a: string, b: string) => string): Record<string, string> => ({ c1: E2("Capa 1 · modelo propio", "Layer 1 · own model"), c2: E2("Capa 2 · segunda opinión", "Layer 2 · second opinion"), c3: E2("Capa 3 · reportes", "Layer 3 · reports"), c4: E2("Capa 4 · confianza", "Layer 4 · trust"), memoria: E2("Memoria de contenido", "Content memory"), persona: E2("Una persona del equipo", "A team member") });
 function fotosFilas(f: NonNullable<CuerpoReporte["fotos"]>, E: (x: string, y: string) => string): Fila[] {
   const t = f.totales, usd2 = (n: number) => `$${n.toFixed(2)}`; /* dinero fijo: super admin */
   return [
     [E("Fotos de ayer (pub. · ret. · rech. · ocultas)", "Yesterday’s photos (pub. · held · rej. · hidden)"), `${t.publicadas} · ${t.retenidas} · ${t.rechazadas} · ${t.ocultadas}`, true],
-    ...f.porCapa.map((x): Fila => { const c = CAPA_REPORTE[x.capa] ?? [x.capa, x.capa]; return [`   ${E(c[0], c[1])}`, `${x.publicadas} · ${x.retenidas} · ${x.rechazadas} · ${x.ocultadas}`]; }),
+    ...f.porCapa.map((x): Fila => { return [`   ${CAPA_REPORTE(E)[x.capa] ?? x.capa}`, `${x.publicadas} · ${x.retenidas} · ${x.rechazadas} · ${x.ocultadas}`]; }),
     [E("Fotos · segunda opinión, gasto del mes", "Photos · second opinion, spend this month"), f.topeUsd > 0 ? `${usd2(f.gastoUsd)} ${E("de", "of")} ${usd2(f.topeUsd)}` : E("apagada (tope en $0.00)", "off (cap at $0.00)")], /* dinero fijo: super admin */
   ];
 }
@@ -119,7 +120,7 @@ function miniaturasReporte(b: CuerpoReporte, es: boolean) {
   if (!f.length) return undefined;
   const base = BASE_URL();
   return { t: es ? "Para mirar: cinco fotos publicadas por los modelos, al azar" : "To look at: five photos published by the models, at random",
-    fotos: f.map((x, i) => ({ l: `${es ? "Foto" : "Photo"} ${i + 1} · ${(CAPA_REPORTE[x.capa] ?? [x.capa, x.capa])[es ? 0 : 1]}`, href: `${base}${x.url}`, src: `${base}${x.url.replace(".jpg", ".w320.webp")}` })) };
+    fotos: f.map((x, i) => ({ l: `${es ? "Foto" : "Photo"} ${i + 1} · ${(CAPA_REPORTE((a, b) => dosIdiomas(es, a, b))[x.capa] ?? x.capa)}`, href: `${base}${x.url}`, src: `${base}${x.url.replace(".jpg", ".w320.webp")}` })) };
 }
 
 /* El correo (y el texto del push) en el idioma de quien lo recibe. */

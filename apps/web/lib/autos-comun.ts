@@ -4,6 +4,7 @@
    Tipos de negocio por subcategoría (neg-dealer-kind.js KS L9–14; el prototipo recorre las subcategorías en su orden): venden lot · new ·
    bhph · work · moto · rv · lux · salv · mayor · broker; servicios cash · placas · fin · taller · envio. */
 import type { Bi } from "./inscripciones-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type { Bi };
 export type KindAutos = "lot" | "new" | "bhph" | "work" | "moto" | "rv" | "lux" | "salv" | "mayor" | "broker" | "cash" | "placas" | "fin" | "taller" | "envio";
@@ -43,7 +44,7 @@ export const DRIVE: [Drive, string, string][] = [["fwd", "Delantera", "FWD"], ["
 export type Titulo = "limpio" | "reconstruido" | "salvage";
 export const TITULO: Record<Titulo, [string, string]> = { limpio: ["Título limpio", "Clean title"], reconstruido: ["Título reconstruido", "Rebuilt title"], salvage: ["Título salvage", "Salvage title"] };
 export type Garantia = "como_esta" | "dealer" | "fabrica" | "certificado";
-export const GARANTIA: Record<Garantia, [string, string]> = { como_esta: ["Se vende como está", "Sold as is"], dealer: ["Garantía del dealer", "Dealer warranty"], fabrica: ["Garantía de fábrica", "Factory warranty"], certificado: ["Certificado del fabricante", "Manufacturer certified"] };
+export const GARANTIA = (es: unknown): Record<Garantia, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { como_esta: E2("Se vende como está", "Sold as is"), dealer: E2("Garantía del dealer", "Dealer warranty"), fabrica: E2("Garantía de fábrica", "Factory warranty"), certificado: E2("Certificado del fabricante", "Manufacturer certified") }; };
 export type EstadoCarro = "lot" | "pending" | "sold" | "hidden";
 export const ESTADO_CARRO: Record<EstadoCarro, [string, string]> = { lot: ["En el lote", "On the lot"], pending: ["Apartado en persona", "Held in person"], sold: ["Vendido", "Sold"], hidden: ["Oculto", "Hidden"] };
 export const visibleCarro = (s: EstadoCarro) => s === "lot" || s === "pending";
@@ -128,7 +129,7 @@ export function garantiaTexto(x: Pick<CarroAuto, "warranty" | "wMonths" | "wMile
   if (x.warranty === "como_esta" || !x.wMonths) return es ? "Se vende como está: pide que tu mecánico lo revise antes de firmar." : "Sold as is: have your mechanic check it before signing.";
   const m = x.wMonths, mi = x.wMiles ? x.wMiles.toLocaleString("en-US") : null;
   const t = m % 12 === 0 && m >= 24 ? (es ? `${m / 12} años` : `${m / 12} years`) : es ? `${m} ${m === 1 ? "mes" : "meses"}` : `${m} ${m === 1 ? "month" : "months"}`;
-  const que = es ? GARANTIA[x.warranty][0] : GARANTIA[x.warranty][1];
+  const que = GARANTIA(es)[x.warranty];
   return `${que}: ${t}${mi ? (es ? ` o ${mi} millas` : ` or ${mi} miles`) : ""}${es ? ", por escrito." : ", in writing."}`;
 }
 

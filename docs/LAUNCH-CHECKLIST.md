@@ -3090,17 +3090,27 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `T[i][es ? 0 : 1]`, `es ? m[0] : m[1]` (m = T[i]) o `es ? T[i][0] : T[i][1]`; `E2(X[0], X[1])` con el par sacado de un dato por índice; y el Super Admin con un `E("…", "…")`
       propio en vez de `E2`. Lo que ya estaba así va en tres listas de `guardianes/run.mjs` (`PENDIENTES_IDIOMA_IDX`, `PENDIENTES_IDIOMA_E2IDX`, `PENDIENTES_IDIOMA_ADMIN_E`):
       trinquetes que solo bajan (una entrada que ya se cumple obliga a sacarla). Cinco casos al revés en `alreves9f3` (46/46).
-- [ ] **→ 9b** · **Lo que queda de la familia de elegir idioma por índice (26 nov, lo que las tres listas del guardián muestran):** (a) **Super Admin con `E(…)` propio** (67 archivos
-      de `app/admin/`: `useE()`, `par(l)` de `TextosComun.tsx` o una definición local): pasarlos a `E2` es renombrar `E` → `E2` en cada archivo y hacer que `useE()` devuelva un `E2`
-      por `dosIdiomas` (se probó: `tsc` limpio y ~4 900 cadenas nuevas), pero rompe ~13 casos al revés de otros guardianes y pruebas que buscan el texto `E("…")` en esos archivos
-      (`alreves5i`, `7g`, `9c`, `9t7`, `9tdin0209`, `9tdinero`, `9tevt`, `9tsubida`, `9u`, `9ufotosadmin`, `Cat9n`, `DevueltoSoloSiSalio`, y los patrones de varios guardianes sobre
-      `E(`): se hace en un solo cambio que actualice esos textos a la vez. (b) **La config de «Publica tu negocio»** (`publica/vista.ts` `E2(c.cta[0], c.cta[1])`, `E2(f.sell.t[0], …)`,
-      `PasosBC`, `PasosDE`, `PasosFH`, `Publica.tsx`): sus pares vienen de `lib/onb/datos.ts`, que se GENERA del prototipo (`scripts/catalogo/portar-onboarding.mjs`, no se edita a
-      mano): hay que cambiar el generador para que emita `E2` o un diccionario por llave. (c) **14 tablas sueltas** (lista `PENDIENTES_IDIOMA_IDX`): `Direcciones.tsx` LB, `Oficios.tsx` SZ y
-      TIPO, `Detalles.tsx` AREA, `CompaPanel.tsx` TEMA_L, `Equipo.tsx` SP, `Menu.tsx` SK, `autos-comun.ts` GARANTIA y `fe-comun.ts` DIA_FE (exportadas, las usan varias pantallas), y las
-      de servidor que arman avisos o el contexto de El Compa (`repartidor-admin.ts`, `reporte-diario.ts`, `reservas.ts`), más `LIQ_N` de `admin/N360.tsx`. (d) **Tablas con forma
-      `{ es: [...], en: [...] }`** (`DOW`, `DL`, `MO`, `MES` de ~25 pantallas de reserva: `DOW[es ? "es" : "en"][i]`, `DOW.es`) y las que se eligen con `lab(T, k, es)`, `ch("k", T)` o `.map`:
-      el guardián todavía no las ve; mismo arreglo, otra forma.
+- [ ] **→ 9b** · **Lo que queda de la familia de elegir idioma por índice (26 nov; lo cerrado el mismo día, hecho por Sonnet, va aquí abajo):** (a) **Super Admin con `E(…)` propio** (67 archivos
+      de `app/admin/`: `useE()`, `par(l)` de `TextosComun.tsx` o una definición local, y `LIQ_N` de `admin/N360.tsx`, la única entrada de `PENDIENTES_IDIOMA_IDX`): pasarlos a `E2` es
+      renombrar `E` → `E2` en cada archivo y hacer que `useE()` devuelva un `E2` por `dosIdiomas` (se probó: `tsc` limpio y ~4 900 cadenas nuevas), pero rompe ~13 casos al revés
+      de otros guardianes y pruebas que buscan el texto `E("…")` en esos archivos (`alreves5i`, `7g`, `9c`, `9t7`, `9tdin0209`, `9tdinero`, `9tevt`, `9tsubida`, `9u`, `9ufotosadmin`,
+      `Cat9n`, `DevueltoSoloSiSalio`, y los patrones de varios guardianes sobre `E(`): se hace en un solo cambio que actualice esos textos a la vez. (b) **Dos restos del guardián
+      nuevo (`PENDIENTES_IDIOMA_ESEN`, `PENDIENTES_IDIOMA_TUPLA`):** `lib/plazo-txt.ts` `DIA_SEM` (`{ es, en }`; el archivo está en `LIB_CODIGO` de `scripts/ci/subir.mjs`, la vía
+      rápida, y con el import de `dosIdiomas` dejaría de ser «inofensivo»: se pasa a la vez que se saca de esa lista) y las tablas exportadas que se eligen en OTRO archivo, que
+      el guardián no ve porque mira cada archivo por separado: `OCASIONES` y `PRESUPUESTOS` (`evento-privado-comun.ts`, elegidas en `PedirEvp.tsx`, `EstadoEvp.tsx`,
+      `panel/EventoPrivado.tsx`; `evento-privado.ts` valida sus claves), `TEMAS` (`comunidad-filtro.ts`, elegida en `comunidad/nuevo/Nuevo.tsx`), `HELP` (`fe-comun.ts`, elegida en
+      `fe-publico.ts`) y `RQ`/`BN` de `panel/JobsPanel.tsx` (pasan por `lista(…)`): mismo arreglo (función que recibe el idioma y lleva `E2`), más ampliar el guardián para que siga
+      una tabla exportada a los archivos que la importan.
+- [x] **→ 9b** · **La familia de elegir idioma por índice, segunda parte (26 nov, hecho por Sonnet):** _hecho:_ (1) las 14 tablas de `PENDIENTES_IDIOMA_IDX` salvo `LIQ_N` (Super Admin) y
+      las 20 de `PENDIENTES_IDIOMA_E2IDX` (la lista queda vacía y no puede volver a crecer). (2) Unas 50 tablas `{ es: [...], en: [...] }` (`DOW`, `DL`, `DS`, `MO`, `MES`, `ORD`… de ~25
+      pantallas de reserva y estado, del panel y de `fiestas-comun`, `ficha`, `tarjeta`, `contexto-negocio`) y 20 tablas de tuplas `[clave, es, en]` (`TIPO`, `OWN`, `YR`, `PETS`, `HEAT`,
+      `WH`, `AGE` de Oficios, `AREAS`, `LIGHTS`, `OCC`, `MOT`, `VEH`, `FRASE`, `CATS`, `COMS`, `MTAGS`, `MUSICA`…) pasan a función que recibe el idioma y lleva `E2("…", "…")`
+      (`DOW(es)[i]`, `AREAS(es).map(([k, l]) => …)`, `lab(TIPO(es), k)`): mismos textos ES y EN. El guardián `cadenaConLlave` caza las dos formas (`PENDIENTES_IDIOMA_ESEN` y
+      `PENDIENTES_IDIOMA_TUPLA`, trinquetes que solo bajan) con dos casos al revés en `alreves9f3` (49/49). (3) La config de «Publica tu negocio»: `portar-onboarding.mjs` evalúa la
+      config (son funciones puras) y emite además `lib/onb/cadenas.ts` con cada par ES/EN como `E2("…", "…")` (733 pares) para que `scripts/cms/extraer.mjs` los meta al catálogo;
+      la pantalla sigue leyéndolos con `E2(c.cta[0], c.cta[1])` y `dosIdiomas` busca el par exacto, así que lo que se edite en Super Admin › Cadenas sale ahí sin cambiar `datos.ts`.
+      El guardián deja `E2(x[0], x[1])` en `app/(app)/publica/` solo mientras `cadenas.ts` guarda el sha256 de `datos.ts` (si el prototipo cambia sin regenerar, falla). Catálogo
+      regenerado con `extraer.mjs`: 10 249 → 11 054 cadenas.
 - [ ] **→ 9b** · **Lo que queda de «promete antes de actuar» (25 nov, visto al cerrar la línea de arriba):** (a) las tablas de política al reservar
       («Te devolvemos $X» en `n/[id]/noche/Reservar.tsx` ~148, `viaje/ViajeBooking.tsx` ~207, `fiesta/Booking.tsx` ~197; la FAQ de `n/[id]/page.tsx`
       ~192; `eventos/[slug]/page.tsx` ~72 «Si compraste, te devolvemos todo»; `panel/Inscripciones.tsx` ~58 y `EventosPanel.tsx` ~494) se dejaron: dicen

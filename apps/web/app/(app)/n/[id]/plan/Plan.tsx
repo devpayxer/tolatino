@@ -19,9 +19,9 @@ const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 import { usd as dinero } from "@/lib/dinero-comun";
-const DC = { es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
-const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DC = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")]; };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const MO = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24; return `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`; };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -34,7 +34,7 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const clave = useRef(uuid());
   const dia = o.dias.find((d) => d.dow === dow) ?? null, fecha = dia?.fechas[fi] ?? null;
-  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL.es[d.getUTCDay()]} ${d.getUTCDate()} ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MO(es)[d.getUTCMonth()]}` : `${DL(es)[d.getUTCDay()]}, ${MO(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const win = dia ? `${hL(dia.m)}–${hL(dia.m + 120)}` : "";
   const cp = compatCasa(op, v.casa, es);
   const miss = [!v.casa ? E2("Agrega tu casa", "Add your home") : null, cp && !cp.ok ? cp.t : null, !fecha ? E2("Elige el día", "Pick the day") : null, !tarjeta ? E2("Elige la tarjeta del plan", "Choose the plan card") : null].filter(Boolean) as string[];
@@ -47,7 +47,7 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
     setOcupado(false);
     if (r.ok) router.push(`/plan/${r.numero}`); else { setError(es ? r.msg.es : r.msg.en); if ("tarjeta" in r && r.tarjeta) setDeclinada(tarjeta.pm); }
   };
-  const mesesL = o.meses ? o.meses.map((m) => (es ? MO.es : MO.en)[m - 1]).join(E2(" y ", " and ")) : null;
+  const mesesL = o.meses ? o.meses.map((m) => MO(es)[m - 1]).join(E2(" y ", " and ")) : null;
   const como = [mesesL ? E2(`Visitas en ${mesesL}, el mismo día de la semana, en una franja de 2 horas.`, `Visits in ${mesesL}, same weekday, in a 2-hour window.`) : E2("El mismo día cada mes, en una franja de 2 horas. Va el mismo equipo.", "The same day every month, in a 2-hour window. The same crew comes."),
     E2(`Primer cobro de ${dinero(o.precio)} ${fecha ? `el ${fL(fecha)}` : "el día de la primera visita"}; después cada mes ese mismo día. Hoy no se cobra nada.`, `First ${dinero(o.precio)} charge ${fecha ? `on ${fL(fecha)}` : "on the first visit"}; then monthly on that same day. Nothing is charged today.`),
     E2("Pausas, saltas una visita o cancelas desde tu plan. Si cancelas, no se cobra el mes siguiente.", "Pause, skip a visit or cancel from your plan. If you cancel, next month is not charged.")];
@@ -81,7 +81,7 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
           <div><div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("¿Qué día?", "Which day?")}</div>
             <div className="mt-1 text-[12px] font-medium text-ink/60">{mesesL ? E2(`Tus visitas son en ${mesesL}.`, `Your visits are in ${mesesL}.`) : E2("Tu día fijo cada mes.", "Your fixed day each month.")}</div></div>
           <div><div className={K}>{E2("DÍA FIJO", "FIXED DAY")}</div>
-            <div className="mt-2 flex flex-wrap gap-2">{o.dias.map((d) => <Chip key={d.dow} variant={dow === d.dow ? "selected" : "filter"} onClick={() => { setDow(d.dow); setFi(0); }}>{(es ? DC.es : DC.en)[d.dow]}</Chip>)}</div></div>
+            <div className="mt-2 flex flex-wrap gap-2">{o.dias.map((d) => <Chip key={d.dow} variant={dow === d.dow ? "selected" : "filter"} onClick={() => { setDow(d.dow); setFi(0); }}>{DC(es)[d.dow]}</Chip>)}</div></div>
         </div>
         {dia && (
           <div className={`flex flex-col gap-2.5 p-4 ${caja}`} role="radiogroup" aria-label={E2("Primera visita", "First visit")}>

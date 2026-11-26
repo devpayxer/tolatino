@@ -8,10 +8,11 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { resumenFiesta } from "@/lib/fiestas-comun";
 import { fiestaDia, fiestaGuardar, type FiestaIn } from "./acciones-fiesta";
 import type { Ctx, Sec } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 const usd = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
-const DS = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
-const MS = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+const MS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const lock = (t: string, s: string): Fila => ({ icon: "lock", ibg: "rgba(11,14,18,.06)", ifg: "var(--tl-ink)", t, s, compact: true });
 const sumar = (ymd: string, n: number) => { const d = new Date(`${ymd}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
@@ -26,7 +27,7 @@ export function herramientaFiestaBloques(c: Ctx): Sec {
   const h = c.svc!.fiesta!, { E2, es } = c, cols2 = c.desk ? "repeat(2,minmax(0,1fr))" : undefined;
   const ok = E2("Guardado · tu página ya lo dice.", "Saved · your page says so now.");
   const save = (p: FiestaIn) => c.run(() => fiestaGuardar(c.d.id, p), ok);
-  const diaL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return es ? `${DS.es[d.getUTCDay()]} ${d.getUTCDate()} ${MS.es[d.getUTCMonth()]}` : `${DS.en[d.getUTCDay()]} ${MS.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const diaL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return es ? `${DS(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MS(es)[d.getUTCMonth()]}` : `${DS(es)[d.getUTCDay()]} ${MS(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   // Los fines de semana (vie, sáb, dom) de las próximas 9 semanas: lo que más se aparta.
   const finde: string[] = [];
   for (let i = 0; i < 63; i++) { const d = sumar(h.hoy, i), w = new Date(`${d}T12:00:00Z`).getUTCDay(); if (w === 5 || w === 6 || w === 0) finde.push(d); }

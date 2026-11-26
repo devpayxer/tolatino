@@ -29,14 +29,12 @@ type Gan = { dia: string; entregas: number; propinas: number; efectivo: number }
 import { usd as money } from "@/lib/dinero-comun";
 const hora = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const hoyNY = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
-const VEH: [string, string, string][] = [["pie", "A pie", "On foot"], ["bici", "Bici", "Bike"], ["moto", "Moto", "Motorbike"], ["auto", "Auto", "Car"], ["camioneta", "Camioneta", "Van"]];
-const MOT: [string, string, string][] = [["noresponde", "El cliente no responde", "Customer not answering"], ["direccion", "La dirección está mal", "Wrong address"], ["demora", "El negocio se está tardando", "The business is running late"],
-  ["incompleto", "El pedido está incompleto", "Order is incomplete"], ["accidente", "Tuve un accidente o un problema con el vehículo", "Accident or vehicle problem"], ["otro", "Otro problema", "Something else"]];
+const VEH = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["pie", E2("A pie", "On foot")], ["bici", E2("Bici", "Bike")], ["moto", E2("Moto", "Motorbike")], ["auto", E2("Auto", "Car")], ["camioneta", E2("Camioneta", "Van")]]; };
+const MOT = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["noresponde", E2("El cliente no responde", "Customer not answering")], ["direccion", E2("La dirección está mal", "Wrong address")], ["demora", E2("El negocio se está tardando", "The business is running late")], ["incompleto", E2("El pedido está incompleto", "Order is incomplete")], ["accidente", E2("Tuve un accidente o un problema con el vehículo", "Accident or vehicle problem")], ["otro", E2("Otro problema", "Something else")]]; };
 const AT = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { timbre: E2("Toca el timbre", "Ring the bell"), noTimbre: E2("No toques el timbre", "Don't ring the bell"), llamar: E2("Llámame al llegar", "Call me on arrival"), texto: E2("Escríbeme al llegar", "Text me on arrival") }; };
 
 // 9n · Lo que el repartidor le puede escribir al cliente (las mismas frases del servidor, lib/repartidor-ofertas.ts FRASES).
-const FRASE: [string, string, string][] = [["afuera", "Llegué, estoy afuera.", "I'm here, I'm outside."], ["puerta", "Estoy en la puerta, ¿me abres?", "I'm at the door, can you open?"],
-  ["direccion", "No encuentro la dirección.", "I can't find the address."], ["cinco", "Llego en unos 5 minutos.", "About 5 minutes out."], ["texto", "Otro mensaje", "Another message"]];
+const FRASE = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["afuera", E2("Llegué, estoy afuera.", "I'm here, I'm outside.")], ["puerta", E2("Estoy en la puerta, ¿me abres?", "I'm at the door, can you open?")], ["direccion", E2("No encuentro la dirección.", "I can't find the address.")], ["cinco", E2("Llego en unos 5 minutos.", "About 5 minutes out.")], ["texto", E2("Otro mensaje", "Another message")]]; };
 type RutaAbierta = { numero: string; negocio: string; desde: string; ultima: string | null };
 export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias, salidas, s, rutas = [], ofertas = [], sancion = null }: {
   es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[]; salidas: SalidaC[]; s: string | null; rutas?: RutaAbierta[];
@@ -184,7 +182,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     // DLV-ONB: entrar al equipo con el código del negocio.
     B.push({ type: "head", eye: "TO'LATINO REPARTIDOR", t: E2(`Hola, ${nombre}`, `Hi, ${nombre}`), s: E2("Para repartir, entra al equipo del negocio con el código que te dio. Usa este mismo teléfono.", "To deliver, join the business team with the code they gave you. Use this same phone.") });
     B.push({ type: "field", k: E2("CÓDIGO DEL NEGOCIO · 6 LETRAS Y NÚMEROS", "BUSINESS CODE · 6 LETTERS AND NUMBERS"), val: cod, onChange: (v: string) => setCod(v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6)) });
-    B.push({ type: "chips", k: E2("¿CÓMO REPARTES?", "HOW DO YOU DELIVER?"), items: VEH.map(([k, a, b]) => ({ l: es ? a : b, v: veh === k ? "selected" : "filter", onClick: () => setVeh(k) })) });
+    B.push({ type: "chips", k: E2("¿CÓMO REPARTES?", "HOW DO YOU DELIVER?"), items: VEH(es).map(([k, a]) => ({ l: a, v: veh === k ? "selected" : "filter", onClick: () => setVeh(k) })) });
     B.push({ type: "acts", items: [{ l: pend ? E2("Entrando…", "Joining…") : E2("Entrar al equipo", "Join the team"), v: "primary", icon: "check", off: pend || cod.length !== 6, onClick: () => run(() => repAceptar(cod, veh), E2("Listo: ya eres parte del equipo.", "Done: you are on the team.")) }] });
     B.push({ type: "note", tone: "ink", icon: "shield", t: E2(`Entraste con ${tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")}. El código solo sirve con el teléfono que te invitó el negocio.`, `Signed in as ${tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")}. The code only works with the phone the business invited.`) });
     B.push({ type: "rows", items: filasCuenta });
@@ -209,7 +207,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     ] });
     if (vivo && escr) {
       B.push({ type: "group", k: E2(`ESCRIBIRLE AL CLIENTE · LE LLEGA EN LA APP · ${x.mensajes} ${x.mensajes === 1 ? "ENVIADO" : "ENVIADOS"}`, `MESSAGE THE CUSTOMER · THEY GET IT IN THE APP · ${x.mensajes} SENT`) });
-      B.push({ type: "chips", items: FRASE.map(([k, a, b]) => ({ l: es ? a : b, v: escr === k ? "selected" : "filter", onClick: () => setEscr(k) })) });
+      B.push({ type: "chips", items: FRASE(es).map(([k, a]) => ({ l: a, v: escr === k ? "selected" : "filter", onClick: () => setEscr(k) })) });
       if (escr === "texto") B.push({ type: "field", k: E2("TU MENSAJE · SIN NÚMEROS DE TELÉFONO", "YOUR MESSAGE · NO PHONE NUMBERS"), val: texto, max: 140, count: `${texto.length}/140`, onChange: (v: string) => setTexto(v.slice(0, 140)) });
       B.push({ type: "acts", items: [{ l: E2("Enviar", "Send"), v: "primary", icon: "chat", off: pend || (escr === "texto" && texto.trim().length < 2), onClick: () => run(() => repEscribir(x.numero, escr, texto), E2("Le llegó en la app.", "They got it in the app."), () => { setEscr(null); setTexto(""); }) },
         { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => setEscr(null) }] });
@@ -257,7 +255,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     if (vivo && !prob) B.push({ type: "acts", items: [{ l: E2("Reportar un problema", "Report a problem"), v: "secondary", icon: "warning", onClick: () => { setProb(true); setMot(""); setNota(""); } }] });
     if (vivo && prob) {
       B.push({ type: "group", k: E2("¿QUÉ PASÓ? · LE LLEGA AL NEGOCIO", "WHAT HAPPENED? · THE BUSINESS GETS IT") });
-      B.push({ type: "chips", items: MOT.map(([k, a, b]) => ({ l: es ? a : b, v: mot === k ? "selected" : "filter", onClick: () => setMot(k) })) });
+      B.push({ type: "chips", items: MOT(es).map(([k, a]) => ({ l: a, v: mot === k ? "selected" : "filter", onClick: () => setMot(k) })) });
       B.push({ type: "field", k: E2("DETALLE · OPCIONAL", "DETAIL · OPTIONAL"), val: nota, area: true, rows: 2, max: 200, count: `${nota.length}/200`, onChange: (v: string) => setNota(v.slice(0, 200)) });
       B.push({ type: "acts", items: [{ l: E2("Enviar al negocio", "Send to the business"), v: "primary", icon: "check", off: pend || !mot, onClick: () => run(() => repProblema(x.numero, mot, nota), E2("El negocio ya lo sabe.", "The business knows."), () => setProb(false)) },
         { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => setProb(false) }] });
@@ -309,7 +307,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
       : { type: "empty", icon: "wallet", t: E2("Todavía no hay entregas", "No deliveries yet"), s: E2("Aquí ves cada día tus entregas, propinas y el efectivo cobrado.", "Here you see your deliveries, tips and cash collected each day.") });
   } else {
     B.push({ type: "head", t: nombre, s: tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3") });
-    B.push({ type: "rows", k: E2("TUS EQUIPOS", "YOUR TEAMS"), items: equipos.map((e): Fila => ({ key: e.id, icon: "store", t: e.negocio.nombre, s: `${(VEH.find((v) => v[0] === e.vehiculo) ?? VEH[2]!)[es ? 1 : 2]}${e.enLinea ? E2(" · en línea", " · online") : ""}`, chev: false,
+    B.push({ type: "rows", k: E2("TUS EQUIPOS", "YOUR TEAMS"), items: equipos.map((e): Fila => ({ key: e.id, icon: "store", t: e.negocio.nombre, s: `${(VEH(es).find((v) => v[0] === e.vehiculo) ?? VEH(es)[2]!)[1]}${e.enLinea ? E2(" · en línea", " · online") : ""}`, chev: false,
       acts: [{ l: E2("Salir del equipo", "Leave team"), v: "secondary", onClick: () => { if (window.confirm(E2(`¿Salir del equipo de ${e.negocio.nombre}?`, `Leave ${e.negocio.nombre}'s team?`))) run(() => repSalir(e.id), E2("Saliste del equipo.", "You left the team.")); } }] })) });
     B.push({ type: "rows", items: filasCuenta });
   }

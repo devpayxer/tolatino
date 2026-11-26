@@ -15,9 +15,9 @@ type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
 import { usd as dinero } from "@/lib/dinero-comun";
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
-const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
-const ORD = { es: ["1.er", "2.º", "3.er", "4.º"], en: ["1st", "2nd", "3rd", "4th"] };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const MO = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const ORD = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("1.er", "1st"), E2("2.º", "2nd"), E2("3.er", "3rd"), E2("4.º", "4th")]; };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24; return `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`; };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
@@ -26,7 +26,7 @@ export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false), [hoja, setHoja] = useState(false);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []);
-  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL.es[d.getUTCDay()]} ${d.getUTCDate()} ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MO(es)[d.getUTCMonth()]}` : `${DL(es)[d.getUTCDay()]}, ${MO(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const win = `${hL(p.win)}–${hL(p.win + 120)}`, nx = p.proximas[0]?.fecha ?? null;
   const hacer = async (que: "saltar" | "pausar" | "reanudar" | "cancelar" | "tarjeta", ok: string, pm?: string) => {
     if (ocupado) return; setOcupado(true); setError(null);
@@ -44,7 +44,7 @@ export function PlanEstado({ p, es, pago }: { p: PlanVista; es: boolean; pago: {
   };
   const h = H[p.st];
   const steps = [{ label: E2("Empezaste", "Started"), time: p.empezo, state: "done" }, { label: E2("Primera visita", "First visit"), time: "", state: p.visitas > 0 ? "done" : "current" }, { label: E2("Cada mes", "Every month"), time: "", state: p.visitas > 1 ? "done" : p.visitas > 0 ? "current" : "next" }];
-  const dia = p.meses ? E2(`${(ORD.es)[p.nth - 1]} ${DL.es[p.dow]} de ${p.meses.map((m) => MO.es[m - 1]).join(" y ")}`, `${ORD.en[p.nth - 1]} ${DL.en[p.dow]} of ${p.meses.map((m) => MO.en[m - 1]).join(" and ")}`) : E2(`El ${ORD.es[p.nth - 1]} ${DL.es[p.dow]} de cada mes`, `The ${ORD.en[p.nth - 1]} ${DL.en[p.dow]} of each month`);
+  const dia = p.meses ? E2(`${ORD(es)[p.nth - 1]} ${DL(es)[p.dow]} de ${p.meses.map((m) => MO(es)[m - 1]).join(" y ")}`, `${ORD(es)[p.nth - 1]} ${DL(es)[p.dow]} of ${p.meses.map((m) => MO(es)[m - 1]).join(" and ")}`) : E2(`El ${ORD(es)[p.nth - 1]} ${DL(es)[p.dow]} de cada mes`, `The ${ORD(es)[p.nth - 1]} ${DL(es)[p.dow]} of each month`);
   const acts: [string, string, () => void][] = p.st === "active" ? [["calendar", E2("Saltar la próxima", "Skip the next one"), () => void hacer("saltar", E2("Listo: esa visita no va y ese mes no se cobra", "Done: that visit is skipped and not charged"))],
     ["clock", E2("Pausar un mes", "Pause one month"), () => void hacer("pausar", E2("Listo: plan en pausa un mes", "Done: plan paused one month"))], ["close", E2("Cancelar el plan", "Cancel the plan"), () => setConfirmar(true)]]
     : p.st === "paused" ? [...(banco ? [] : [["check", E2("Reanudar", "Resume"), () => void hacer("reanudar", E2("Listo: plan activo otra vez", "Done: plan active again"))] as [string, string, () => void]]), ["close", E2("Cancelar el plan", "Cancel the plan"), () => setConfirmar(true)]]

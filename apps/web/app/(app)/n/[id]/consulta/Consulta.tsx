@@ -22,8 +22,8 @@ const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots } = UI as unknown a
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const PARA = [["yo", "Para mí", "For me"], ["hijo", "Para mi hijo o hija", "For my child"], ["otro", "Para otra persona", "For someone else"]] as const;
 const WHY = [["nuevo", "Algo nuevo", "Something new"], ["seguimiento", "Seguimiento", "Follow-up"], ["receta", "Receta o resultados", "Prescription or results"], ["papeles", "Papeles (trabajo, escuela)", "Forms (work, school)"], ["chequeo", "Chequeo", "Checkup"]] as const;
@@ -47,8 +47,8 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
   const cp = compat(sa.clinica, segRef, sa.cat, es), P = precioSalud(s, sa.clinica, segRef, es);
   const prof = con !== "any" ? sa.gente.find((p) => p.id === con) ?? null : null;
   const hablaEs = prof ? prof.langs.includes("es") : sa.tags.includes("medesp");
-  const ymd = H?.dias[i]?.ymd ?? "", dowN = ymd ? new Date(`${ymd}T12:00:00Z`).getUTCDay() : 0, diaL = ymd ? `${(es ? DL.es : DL.en)[dowN]} ${Number(ymd.slice(8))}` : "";
-  const dias = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : (es ? DOW.es : DOW.en)[d.dow], num: d.num, off: d.off }));
+  const ymd = H?.dias[i]?.ymd ?? "", dowN = ymd ? new Date(`${ymd}T12:00:00Z`).getUTCDay() : 0, diaL = ymd ? `${DL(es)[dowN]} ${Number(ymd.slice(8))}` : "";
+  const dias = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : DOW(es)[d.dow], num: d.num, off: d.off }));
   const slots = (H?.sl ?? []).map((h) => ({ t: horaL(h.m), taken: !h.free, m: h.m }));
   const hayLibres = slots.some((x) => !x.taken);
   const cuandoL = hSel != null ? `${cap(diaL)} · ${horaL(hSel)}` : E2("Elige día y hora", "Choose day and time");

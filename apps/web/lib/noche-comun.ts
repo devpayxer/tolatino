@@ -9,8 +9,7 @@ export type KindNoche = "club" | "salsa" | "urbano" | "banda" | "bar" | "sport" 
 export const POR_FECHA: KindNoche[] = ["dj", "promo", "salon"];
 /* La fila «ahora» vale lo que diga Configuración (noche_fila_viva_min, 60 min de fábrica) desde que el local la puso; después sale con
    su hora (Preguntas #4). Nunca se inventa. La base decide (lib/noche.ts). */
-export const MUSICA: [string, string, string][] = [["m:bachata", "Bachata", "Bachata"], ["m:salsa", "Salsa", "Salsa"], ["m:tipico", "Típico", "Típico"], ["m:reggaeton", "Reguetón", "Reggaeton"],
-  ["m:banda", "Banda y norteño", "Banda and norteño"], ["m:envivo", "En vivo", "Live"], ["m:mixto", "Mixto", "Mixed"]];
+export const MUSICA = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["m:bachata", E2("Bachata", "Bachata")], ["m:salsa", E2("Salsa", "Salsa")], ["m:tipico", E2("Típico", "Típico")], ["m:reggaeton", E2("Reguetón", "Reggaeton")], ["m:banda", E2("Banda y norteño", "Banda and norteño")], ["m:envivo", E2("En vivo", "Live")], ["m:mixto", E2("Mixto", "Mixed")]]; };
 export const FILAS: [number, string, string][] = [[0, "Sin fila", "No line"], [10, "10 min", "10 min"], [20, "20 min", "20 min"], [35, "30 min o más", "30+ min"]];
 export const LISTA_HORAS = [540, 600, 660, 720, 780];
 
@@ -81,7 +80,7 @@ export function postTexto(field: string, v: unknown, es: boolean): string {
   if (field === "age") return `${E2("Edad", "Age")} ${Number(v)}+`;
   if (field === "list") return v == null ? E2("Sin lista", "No list") : o.until != null ? E2(`Lista hasta las ${hNoche(Number(o.until))}`, `List until ${hNoche(Number(o.until))}`) : o.cap == null ? E2("Lista sin tope", "List with no cap") : E2(`Tope de la lista: ${o.cap}`, `List cap: ${o.cap}`);
   if (field === "line") return Number(v) ? E2(`Fila ${Number(v)} min`, `Line ${Number(v)} min`) : E2("Sin fila", "No line");
-  if (field === "music") return Array.isArray(v) ? `${E2("Música", "Music")}: ${v.map((m) => MUSICA.find((x) => x[0] === m)?.[es ? 1 : 2] ?? m).join(", ")}` : `${E2("Quién toca", "Who plays")}: ${o.nota ?? E2("(quitado)", "(removed)")}`;
+  if (field === "music") return Array.isArray(v) ? `${E2("Música", "Music")}: ${v.map((m) => MUSICA(es).find((x) => x[0] === m)?.[1] ?? m).join(", ")}` : `${E2("Quién toca", "Who plays")}: ${o.nota ?? E2("(quitado)", "(removed)")}`;
   if (field === "dress") return `${E2("Vestimenta", "Dress code")}: ${v ?? E2("(quitado)", "(removed)")}`;
   return field;
 }

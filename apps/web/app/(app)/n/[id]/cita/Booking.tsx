@@ -24,12 +24,12 @@ const { Icon, Button, Chip, StepHeader, DateStrip, TimeSlots, StaffPicker, Payme
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
-const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const MO = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 function diaLargo(hoy: string, i: number, es: boolean) {
   const d = new Date(`${hoy}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + i);
-  return es ? `${DL.es[d.getUTCDay()]} ${d.getUTCDate()} ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  return es ? `${DL(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MO(es)[d.getUTCMonth()]}` : `${DL(es)[d.getUTCDay()]}, ${MO(es)[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const telL = (t: string | null) => { const d = (t ?? "").replace(/\D/g, "").slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : ""; };
@@ -109,7 +109,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const end = hSel != null ? hSel + P.dur : null;
 
   // ── Día y hora ──
-  const dias = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : DOW[es ? "es" : "en"][d.dow], num: d.num, off: d.off }));
+  const dias = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : DOW(es)[d.dow], num: d.num, off: d.off }));
   const grupos = (H?.grupos ?? []).map((g) => ({ k: g.k === "m" ? E2("MAÑANA", "MORNING") : g.k === "t" ? E2("TARDE", "AFTERNOON") : E2("NOCHE", "EVENING"), slots: g.sl.map((x) => ({ t: x.l, taken: !x.free })) }));
   const hayLibres = !!H?.grupos.some((g) => g.sl.some((x) => x.free));
   const onSlot = (t: string) => { const x = H?.grupos.flatMap((g) => g.sl).find((z) => z.l === t && z.free); if (x) { setH(x.m); setAsig(x.who ?? null); setError(null); } };

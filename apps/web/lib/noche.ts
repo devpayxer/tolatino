@@ -128,7 +128,7 @@ export async function guardarNoche(c: PoolClient, negocio: string, p: NocheIn, a
     add("line_min", n); set.push("line_at = now()"); posts.push(["line", n]);
   }
   if (p.musica !== undefined) {
-    const L = [...new Set((Array.isArray(p.musica) ? p.musica : []).filter((x) => MUSICA.some((m) => m[0] === x)))];
+    const L = [...new Set((Array.isArray(p.musica) ? p.musica : []).filter((x) => MUSICA(true).some((m) => m[0] === x)))];
     if (!L.length) return err("Marca al menos una música.", "Pick at least one kind of music.");
     add("music", L); posts.push(["music", L]);
   }
@@ -146,7 +146,7 @@ export async function guardarNoche(c: PoolClient, negocio: string, p: NocheIn, a
 
 /* Los filtros de Noche que salen de los datos (nunca se editan a mano) y la tarjeta del buscador. Los demás (terraza, karaoke,
    deportes, comida, esp, estac, y10) salen de las amenidades, la subcategoría o el catálogo y se conservan. */
-const DER = ["cover", "sincover", "lista", "mesas", "fila", "e18", "e21", "vestimenta", "tarde", ...MUSICA.map((m) => m[0])];
+const DER = ["cover", "sincover", "lista", "mesas", "fila", "e18", "e21", "vestimenta", "tarde", ...MUSICA(true).map((m) => m[0])];
 export async function recalcularFiltrosNoche(c: Q, negocio: string) {
   const b = (await c.query<{ cat: string; fv: string[]; mods: string[]; hay: boolean }>(
     `select b.category_id as cat, b.filter_values as fv, b.modules_on as mods, exists (select 1 from noche_settings s where s.business_id = b.id) as hay from businesses b where b.id = $1`, [negocio])).rows[0];

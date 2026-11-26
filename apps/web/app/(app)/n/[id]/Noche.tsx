@@ -16,7 +16,7 @@ type N = "Icon" | "Button";
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
-const DOW = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
 
 type Acc = { llegar: () => void; escribir: () => void; llamar: () => void; reservar: (svc: string, pax: number) => void; ir: (href: string) => void };
 export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc: Acc) {
@@ -40,7 +40,7 @@ export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc
   };
   const btn = (s: SvcNoche) => (s.k === "evento" ? (s.evDesde != null ? E2("Comprar boletos", "Get tickets") : E2("Ver evento", "See event")) : s.k === "fecha" ? E2("Pedir fecha", "Ask for a date") : s.k === "cover" ? E2("Cómo llegar", "Directions") : s.k === "lista" ? E2("Anotarme", "Join the list") : E2("Reservar", "Reserve"));
   const item = (s: SvcNoche) => {
-    const P = precioNoche(s, es), dias = s.dows.length ? `${E2("SOLO ", "ONLY ")}${s.dows.map((d) => DOW[es ? "es" : "en"][d]).join(" · ").toUpperCase()}` : "";
+    const P = precioNoche(s, es), dias = s.dows.length ? `${E2("SOLO ", "ONLY ")}${s.dows.map((d) => DOW(es)[d]).join(" · ").toUpperCase()}` : "";
     return { id: s.id, k: s.k, ev: s.ev, name: nm(s.name), desc: desc(s), foto: s.foto, price: P.l, meta: [P.s, s.dep ? E2(`DEPÓSITO ${usdN(s.dep)}`, `${usdN(s.dep)} DEPOSIT`) : "", dias].filter(Boolean).join(" · "), btn: btn(s) };
   };
   const secs = [...np.secciones.map((sc) => ({ title: nm(sc.name).toUpperCase(), items: np.servicios.filter((s) => s.sec === sc.id).map(item) })),

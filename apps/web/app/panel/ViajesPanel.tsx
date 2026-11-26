@@ -17,11 +17,12 @@ type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
 export type ViajesP = { hoy?: { esperan: FilaViaje[]; salidas: SalidaPanel[]; privados: FilaViaje[]; choferes: { id: string; nombre: string }[] }; det?: ViajePanelV | null };
 import { usd as money } from "@/lib/dinero-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const HORAS = Array.from({ length: 18 }, (_, i) => (i + 5) * 60); // = HORAS_PRIV (lib/viajes)
 const restan = (ms: number | null) => { if (!ms) return null; const h = (ms - Date.now()) / 36e5; return h > 0 ? Math.max(1, Math.round(h)) : 0; };
-const DS = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
-const dia = (ymd: string, es: boolean) => { const d = new Date(`${ymd}T12:00:00Z`); return `${(es ? DS.es : DS.en)[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };
+const DS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+const dia = (ymd: string, es: boolean) => { const d = new Date(`${ymd}T12:00:00Z`); return `${DS(es)[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`; };
 const pax = (x: FilaViaje, E2: (a: string, b: string) => string) => `${x.adults + x.kids} ${x.adults + x.kids === 1 ? E2("pasajero", "passenger") : E2("pasajeros", "passengers")}${x.kids ? E2(` (${x.kids} niño${x.kids > 1 ? "s" : ""})`, ` (${x.kids} child${x.kids > 1 ? "ren" : ""})`) : ""}`;
 
 export function hoyViajes(c: Ctx): Bloque[] {

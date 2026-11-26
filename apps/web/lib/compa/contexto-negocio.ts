@@ -4,6 +4,7 @@ import { AGOTADO_SQL } from "../menu";
 import type { Lang } from "./modelo";
 import { tapar } from "./tapar";
 import { usd } from "../dinero-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 7f · Lo que El Compa sabe de un NEGOCIO para contestar a sus clientes (fase7-compa.md §3 «Qué datos ve · Respuesta automática»; prototipo
    datos/compa.js data()). Recibe SOLO el id del negocio y lee lo que su PÁGINA PÚBLICA ya muestra, de los temas que el dueño encendió:
@@ -30,7 +31,7 @@ export type ContextoNegocio = {
 };
 type Rango = [string, string];
 const NEG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const DIAS: Record<Lang, string[]> = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
+const DIAS = (lang: string): string[] => { const es = lang === "es"; const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
 /* La hora como la ve la gente (11 AM, 9:30 PM): la misma regla que la ficha. */
 const hora12 = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number), H = h % 24, s = H < 12 ? "AM" : "PM", h12 = H % 12 || 12; return m ? `${h12}:${String(m).padStart(2, "0")} ${s}` : `${h12} ${s}`; };
 const minutos = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); return h * 60 + m; };
@@ -74,7 +75,7 @@ export async function contextoNegocio(negocio: string, lang: Lang, temas: Tema[]
   let horario: string | null = null, proxima: string | null = null;
   if (H) {
     const dias = H.rows, rangos = (wd: number) => { const d = dias.find((x) => x.weekday === wd); return d?.open ? d.ranges : []; };
-    horario = [1, 2, 3, 4, 5, 6, 0].map((wd) => `${DIAS[lang][wd]}: ${rangos(wd).length ? rangos(wd).map(([a, z]) => (a === z ? (es ? "24 horas" : "24 hours") : `${hora12(a)}–${hora12(z)}`)).join(", ") : es ? "cerrado" : "closed"}`).join("; ");
+    horario = [1, 2, 3, 4, 5, 6, 0].map((wd) => `${DIAS(lang)[wd]}: ${rangos(wd).length ? rangos(wd).map(([a, z]) => (a === z ? (es ? "24 horas" : "24 hours") : `${hora12(a)}–${hora12(z)}`)).join(", ") : es ? "cerrado" : "closed"}`).join("; ");
     const ahora = minutos(b.hm);
     const local = (k: number) => { const x = new Date(Date.now() + k * 86_400_000); return new Intl.DateTimeFormat("en-CA", { timeZone: b.tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(x); };
     for (let k = 0; k <= 7 && !proxima; k++) {
@@ -84,7 +85,7 @@ export async function contextoNegocio(negocio: string, lang: Lang, temas: Tema[]
       const R = esp ? (esp.closed ? [] : esp.ranges) : rangos(wd);
       const abre = R.map(([a]) => a).filter((a) => k > 0 || minutos(a) > ahora).sort((x, y) => minutos(x) - minutos(y))[0];
       if (abre) proxima = k === 0 ? (es ? `hoy a las ${hora12(abre)}` : `today at ${hora12(abre)}`) : k === 1 ? (es ? `mañana a las ${hora12(abre)}` : `tomorrow at ${hora12(abre)}`)
-        : es ? `el ${DIAS.es[wd]} a las ${hora12(abre)}` : `on ${DIAS.en[wd]} at ${hora12(abre)}`;
+        : es ? `el ${DIAS("es")[wd]} a las ${hora12(abre)}` : `on ${DIAS("en")[wd]} at ${hora12(abre)}`;
     }
   }
   const direccion = T.has("hours") ? (b.casa ? (b.radio ? (es ? `Va a domicilio hasta ${b.radio} millas de ${b.ciudad}.` : `Comes to you up to ${b.radio} miles from ${b.ciudad}.`) : null) : b.dir?.replace(/, ([A-Z][a-z]+) PA$/, ", $1, PA") ?? null) : null;
@@ -95,7 +96,7 @@ export async function contextoNegocio(negocio: string, lang: Lang, temas: Tema[]
   const cambios = (X?.rows ?? []).map((s) => `${s.desde === s.hasta ? s.desde : `${s.desde} – ${s.hasta}`}: ${s.closed ? (es ? "cerrado" : "closed") : s.ranges.map(([a, z]) => `${hora12(a)}–${hora12(z)}`).join(", ")}${s.label?.[lang] ? ` (${limpio(s.label[lang], 60)})` : ""}`);
 
   const datos: Record<string, unknown> = {
-    negocio: b.nombre, ciudad: `${b.ciudad}, PA`, abierto_ahora: b.abierto, ahora: `${DIAS[lang][b.dow]} ${hora12(b.hm)}`,
+    negocio: b.nombre, ciudad: `${b.ciudad}, PA`, abierto_ahora: b.abierto, ahora: `${DIAS(lang)[b.dow]} ${hora12(b.hm)}`,
     temas: [...T].map((t) => TEMA_L[t][lang]),
     ...(T.has("hours") ? { horario, ...(proxima ? { abre_otra_vez: proxima } : {}), ...(b.cerrado_hoy ? { cerrado_hoy: true } : {}), ...(b.temp ? { cerrado_hasta: b.temp } : {}),
       ...(cambios.length ? { cambios_de_horario: cambios } : {}), ...(direccion ? { direccion } : {}) } : {}),

@@ -153,8 +153,7 @@ export function Publica({ v }: { v: VistaPublica }) {
 
   // ── Textos de cada paso ──
   const f = F(d), c = d.cat ? X.CFG[d.cat] : null, kc = d.cat ? X.cat(d.cat) : null, o = own(d), op = d.cat ? opOf(d) : "local", its = d.cat ? items(d) : [];
-  const IW: Record<string, [string, string]> = { "NEG-NOCHE": ["opciones", "options"], "NEG-FIESTA": ["paquetes y artículos", "packages and items"] };
-  const iwP = (d.cat && IW[d.cat]) || (c && c.items), iw = iwP ? E2(iwP[0], iwP[1]) : E2("servicios", "services");
+  const iw = d.cat === "NEG-NOCHE" ? E2("opciones", "options") : d.cat === "NEG-FIESTA" ? E2("paquetes y artículos", "packages and items") : c && c.items ? E2(c.items[0], c.items[1]) : E2("servicios", "services");
   const sellT = f ? E2(f.sell.t[0], f.sell.t[1]) : E2("Lo que vendes", "What you sell"), ownK = f ? E2(f.own.k[0], f.own.k[1]) : E2("LO PROPIO", "YOUR DETAILS");
   const NAMES = [E2("Tu negocio", "Your business"), cap(ownK.toLowerCase()), sellT, E2("Dónde y cuándo", "Where and when"), E2("Tu página", "Your page")];
   const TOPN = [E2("TU NEGOCIO", "YOUR BUSINESS"), ownK, sellT.replace(/^(Tus?|Tu|Your)\s+/i, "").toUpperCase(), E2("DÓNDE Y CUÁNDO", "WHERE AND WHEN"), E2("TU PÁGINA", "YOUR PAGE")];

@@ -10,11 +10,12 @@ import { subirFoto } from "@/lib/subir-foto";
 import { equipoCancelar, equipoGuardar, equipoInvitar, equipoMostrar, equipoQuitar, equipoReenviar, equipoResponder } from "./acciones-equipo";
 import { licenciaAgregar, licenciaQuitar } from "./acciones";
 import type { Ctx, Editor, Sec } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = [string, string];
 const NO_RENTA = ["NEG-FOOD", "NEG-MERC", "NEG-TIENDA", "NEG-NOCHE", "NEG-BELL"];
 const LANG: Record<string, string> = { es: "Español", en: "English", pt: "Português", qu: "Quechua" };
-const SP: Record<string, Bi> = { "NEG-BELL": ["silla", "chair"], "NEG-AUTO": ["bahía", "bay"], "NEG-SALUD": ["consultorio", "office"] };
+const SP = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { "NEG-BELL": E2("silla", "chair"), "NEG-AUTO": E2("bahía", "bay"), "NEG-SALUD": E2("consultorio", "office") }; };
 const first = (n: string) => primerNombre(n) || n;
 const ahoraDec = (hm: string) => Number(hm.slice(0, 2)) + Number(hm.slice(3)) / 60;
 const L = (c: Ctx, b: { es: string; en: string } | null | undefined) => (b ? (c.es ? b.es : b.en || b.es) : "");
@@ -67,7 +68,7 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
   const { d, E2 } = c, out: (Bloque | null)[] = [], H = (o: { eye?: string; t: string; s?: string }): Bloque => ({ type: "head", onBack: c.closeDet, ...o });
   const DN = c.es ? ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"] : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], ORD = [1, 2, 3, 4, 5, 6, 0];
   const wkL = (wk: Semana | null, js: number) => (wk && wk[js] ? `${fmtHora(wk[js]![0])} – ${fmtHora(wk[js]![1])}` : E2("Libre", "Off"));
-  const sp = SP[d.cat] ?? ["espacio", "space"];
+  const sp = SP(c.es)[d.cat] ?? E2("espacio", "space");
   const txt = (k: string, val: string, set: (v: string) => void, ph: string, max: number, o?: { area?: boolean; im?: string }): Bloque =>
     ({ type: "field", k, val, onChange: set, ph, max, area: o?.area, rows: 3, im: o?.im, count: `${val.length}/${max}` });
 
@@ -75,7 +76,7 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
     const canRent = !NO_RENTA.includes(d.cat), bell = d.cat === "NEG-BELL";
     const F = c.form(`det:stf:new:${d.id}`, { kind: "emp", name: "", phone: "", r0: "" }), x = F.d, ph = x.phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
     out.push(H({ eye: "STAFF", t: E2("Invitar a alguien", "Invite someone"), s: E2("Le mandamos un SMS. Cuando acepte, pone su foto y su bio, y sale en tu página.", "We text them. Once they accept, they add their photo and bio and show on your page.") }));
-    if (canRent) out.push({ type: "chips", k: E2("QUIÉN ES", "WHO IS IT"), items: ([["emp", E2("Trabaja para ti", "Works for you")], ["renta", E2(`Renta ${sp[0]} · su propio negocio`, `Rents a ${sp[1]} · own business`)]] as const).map(([k, l]) => ({ l, v: x.kind === k ? "selected" : "filter", onClick: () => F.set({ kind: k }) })) });
+    if (canRent) out.push({ type: "chips", k: E2("QUIÉN ES", "WHO IS IT"), items: ([["emp", E2("Trabaja para ti", "Works for you")], ["renta", E2(`Renta ${sp} · su propio negocio`, `Rents a ${sp} · own business`)]] as const).map(([k, l]) => ({ l, v: x.kind === k ? "selected" : "filter", onClick: () => F.set({ kind: k }) })) });
     out.push(txt(E2("NOMBRE", "NAME"), x.name, (v) => F.set({ name: v }), E2("Ej. Yahaira Cruz", "e.g. Yahaira Cruz"), 40));
     out.push(txt(E2("TELÉFONO · LE LLEGA EL SMS", "PHONE · GETS THE TEXT"), x.phone, (v) => F.set({ phone: v.replace(/[^0-9()\-\s+]/g, "") }), "(570) 555-0123", 16, { im: "tel" }));
     if (!bell) out.push(txt(E2("QUÉ HACE · LO VE EL CLIENTE", "WHAT THEY DO · CLIENTS SEE IT"), x.r0, (v) => F.set({ r0: v }), E2("Ej. Cocina, Delivery, Caja", "e.g. Kitchen, Delivery, Register"), 40));
@@ -106,7 +107,7 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
     const nn = c.ui.stfNo === m.id;
     out.push(H({ eye: E2("PIDE UNIRSE A TU EQUIPO", "ASKS TO JOIN YOUR TEAM"), t: m.name, s: cuando(c, m.invitedAt, c.ahora) }));
     if (m.msg) out.push({ type: "note", tone: "ink", icon: "chat", t: `«${L(c, m.msg)}»` });
-    out.push({ type: "kv", items: [{ k: E2("TELÉFONO", "PHONE"), v: m.phone || "—" }, { k: E2("ENTRA COMO", "JOINS AS"), v: L(c, m.role) || (m.kind === "renter" ? E2(`Renta ${sp[0]}`, `Rents a ${sp[1]}`) : "—") }] });
+    out.push({ type: "kv", items: [{ k: E2("TELÉFONO", "PHONE"), v: m.phone || "—" }, { k: E2("ENTRA COMO", "JOINS AS"), v: L(c, m.role) || (m.kind === "renter" ? E2(`Renta ${sp}`, `Rents a ${sp}`) : "—") }] });
     out.push({ type: "note", tone: "info", icon: "users", t: E2("Si aceptas, sale en tu página con su foto y su bio. Tú pones lo que hace y su horario.", "If you accept, they show on your page with their photo and bio. You set what they do and their schedule.") });
     out.push({ type: "acts", items: nn
       ? [{ l: E2("Sí, no aceptar", "Yes, decline"), v: "danger", icon: "close", onClick: () => c.run(() => equipoResponder(d.id, m.id, false), E2(`${fn} no entra a tu equipo por ahora.`, `${fn} won’t join your team for now.`), () => { c.setUi({ stfNo: null }); c.closeDet(); }) }, { l: "No", v: "secondary", onClick: () => c.setUi({ stfNo: null }) }]
@@ -154,7 +155,7 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
   out.push(...licenciaPersona(c, m));
   out.push({ type: "group", k: E2("HORARIO", "SCHEDULE") });
   if (rent) {
-    out.push({ type: "note", tone: "info", icon: "key", t: E2(`Renta ${sp[0]} contigo: su agenda es suya y la maneja en su página. Así sale hoy.`, `Rents a ${sp[1]} from you: the schedule is theirs, managed on their page. This is how it shows today.`) });
+    out.push({ type: "note", tone: "info", icon: "key", t: E2(`Renta ${sp} contigo: su agenda es suya y la maneja en su página. Así sale hoy.`, `Rents a ${sp} from you: the schedule is theirs, managed on their page. This is how it shows today.`) });
     out.push({ type: "rows", items: ORD.map((js): Fila => ({ icon: "clock", t: DN[js]!, r: wkL(semanaDe(c, m), js), compact: true, chev: false, dim: !(semanaDe(c, m) ?? [])[js] })) });
   } else {
     out.push({ type: "chips", items: ([[true, E2("Igual que el negocio", "Same as the business")], [false, E2("Su propio horario", "Their own schedule")]] as const).map(([v, l]) => ({ l, v: x.same === v ? "selected" : "filter", onClick: () => F.set({ same: v }) })) });

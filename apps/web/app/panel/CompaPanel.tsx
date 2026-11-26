@@ -16,6 +16,7 @@ import type { CpaPanel } from "@/lib/compa/asistente-panel";
 import type { AutoPanel } from "@/lib/compa/respuesta-auto";
 import { compaAutoGuardar, compaAutoProbar, compaAutoTraducir, compaPanelIr, compaPanelNuevo, compaPanelPersona, compaPanelPreguntar } from "./acciones-compa";
 import type { Ctx, Sec } from "./Panel";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type { AutoPanel, CpaPanel };
 
@@ -68,7 +69,7 @@ export function compaBloques(c: Ctx): Sec {
 
 /* 7f · Respuestas automáticas (Pro). Todo lo decide el servidor (lib/compa/respuesta-auto ajustesAuto: Pro AHORA, quién puede, la pausa de
    To'Latino); la pantalla solo muestra y pide. */
-const TEMA_L: Record<string, [string, string]> = { hours: ["Horario y dirección", "Hours and address"], menu: ["Menú, servicios y precios", "Menu, services and prices"], how_to_order: ["Cómo pedir o reservar", "How to order or book"], faq: ["Tus preguntas frecuentes", "Your FAQ"] };
+const TEMA_L = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { hours: E2("Horario y dirección", "Hours and address"), menu: E2("Menú, servicios y precios", "Menu, services and prices"), how_to_order: E2("Cómo pedir o reservar", "How to order or book"), faq: E2("Tus preguntas frecuentes", "Your FAQ") }; };
 function hace(c: Ctx, iso: string, ahora: number) {
   const min = Math.floor((ahora - new Date(iso).getTime()) / 60000), E2 = c.E2;
   return min < 1 ? E2("AHORA", "NOW") : min < 60 ? E2(`HACE ${min} MIN`, `${min} MIN AGO`) : min < 1440 ? E2(`HACE ${Math.floor(min / 60)} H`, `${Math.floor(min / 60)} H AGO`) : E2(`HACE ${Math.floor(min / 1440)} D`, `${Math.floor(min / 1440)} D AGO`);
@@ -103,9 +104,9 @@ function autoBloques(c: Ctx): Bloque[] {
         : E2("Contesta solo cuando el negocio está cerrado.", "It replies only while the business is closed."),
       items: ([["closed", E2("Fuera de tu horario", "When you are closed")], ["no_reply_10m", E2(`Si no contestas en ${a.espera} min`, `If you do not reply in ${a.espera} min`)], ["always", E2("Siempre, al instante", "Always, right away")]] as const).map(([k, l]) => ({
         l, v: a.cuando === k ? "selected" : "filter", onClick: a.cuando === k ? undefined : () => c.run(() => compaAutoGuardar(d.id, { cuando: k }), E2("Guardado.", "Saved.")) })) },
-    { type: "chips", k: E2("DE QUÉ PUEDE HABLAR", "WHAT IT CAN TALK ABOUT"), help: E2("Lo demás te lo pasa a ti.", "Anything else it passes to you."), items: Object.keys(TEMA_L).map((k) => {
+    { type: "chips", k: E2("DE QUÉ PUEDE HABLAR", "WHAT IT CAN TALK ABOUT"), help: E2("Lo demás te lo pasa a ti.", "Anything else it passes to you."), items: Object.keys(TEMA_L(es)).map((k) => {
       const has = a.temas.includes(k as AutoPanel["temas"][number]);
-      return { l: TEMA_L[k]![es ? 0 : 1], v: has ? "selected" : "filter", onClick: () => {
+      return { l: TEMA_L(es)[k]!, v: has ? "selected" : "filter", onClick: () => {
         if (has && a.temas.length === 1) { c.toast(E2("Deja al menos un tema.", "Keep at least one topic.")); return; }
         c.run(() => compaAutoGuardar(d.id, { temas: has ? a.temas.filter((x) => x !== k) : [...a.temas, k] }), E2("Guardado.", "Saved."));
       } };

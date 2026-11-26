@@ -11,13 +11,14 @@ import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 import { usd as money } from "@/lib/dinero-comun";
-const MES = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
-const DIA = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
+import { dosIdiomas } from "@/lib/dos-idiomas";
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const DIA = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
 
 export function hoyRentas(c: Ctx): Bloque[] {
   const { E2, es } = c, L = c.citas?.rentas ?? [];
   if (!L.length) return [];
-  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DIA.es[d.getUTCDay()]} ${d.getUTCDate()} ${MES.es[d.getUTCMonth()]}` : `${DIA.en[d.getUTCDay()]} ${MES.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DIA(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MES(es)[d.getUTCMonth()]}` : `${DIA(es)[d.getUTCDay()]} ${MES(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const fuera = L.filter((x) => x.st === "out").length;
   return [{ type: "rows", k: `${E2("RENTAS", "RENTALS")} · ${fuera} ${E2("FUERA", "OUT")}`, items: L.map((x: RentaFila): Fila => {
     const t = x.st === "held" ? [E2(`Recoge el ${fL(x.pick)}`, `Picks up ${fL(x.pick)}`), x.cardFailed ? E2("TARJETA NO PASÓ", "CARD DECLINED") : E2("APARTADA", "ON HOLD"), x.cardFailed ? "danger" : "action"]
@@ -31,7 +32,7 @@ export function rentaDetalle(c: Ctx): Sec {
   const { E2, es } = c, x = c.citas?.rentaDet;
   if (!x) return { blocks: [{ type: "head", t: E2("Renta no encontrada", "Rental not found"), onBack: c.closeDet }, { type: "empty", icon: "wrench", t: E2("Esa renta no existe", "That rental does not exist"), s: E2("Puede ser de otro negocio.", "It may belong to another business.") }], ed: null };
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
-  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DIA.es[d.getUTCDay()]} ${d.getUTCDate()} ${MES.es[d.getUTCMonth()]}` : `${DIA.en[d.getUTCDay()]} ${MES.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DIA(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MES(es)[d.getUTCMonth()]}` : `${DIA(es)[d.getUTCDay()]} ${MES(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const stL = { held: E2("APARTADA", "ON HOLD"), out: E2("LA TIENE", "OUT"), back: E2("DEVUELTA", "RETURNED"), cancelled: E2("CANCELADA", "CANCELLED"), expired: E2("VENCIDA", "EXPIRED") }[x.st];
   const depV = !x.dep ? E2("Sin depósito", "No deposit") : `${money(x.dep)}${x.depSt === "retenido" ? E2(" · retenido", " · held") : x.depSt === "liberado" ? E2(" · liberado", " · released") : x.depSt === "descontado" || x.depSt === "parcial" ? `${E2(" · se descontaron ", " · deducted ")}${money(x.depCobrado)}` : x.depSt === "no_retenido" ? E2(" · ya no retenido", " · no longer held") : E2(" · al recoger", " · at pickup")}`;
   const out: (Bloque | null)[] = [

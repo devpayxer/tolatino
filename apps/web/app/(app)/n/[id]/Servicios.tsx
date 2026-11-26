@@ -20,12 +20,12 @@ import { usd as __usd_dinero } from "@/lib/dinero-comun";
 export const dinero = __usd_dinero;
 export const durL = (m: number) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`);
 export const horaL = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const DS = { es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
+const DS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")]; };
 export function diaS(hoy: string, i: number, es: boolean) {
   if (i === 0) return es ? "Hoy" : "Today";
   if (i === 1) return es ? "Mañana" : "Tomorrow";
   const d = new Date(`${hoy}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + i);
-  return `${DS[es ? "es" : "en"][d.getUTCDay()]} ${d.getUTCDate()}`;
+  return `${DS(es)[d.getUTCDay()]} ${d.getUTCDate()}`;
 }
 export const aprL = (p: Pick<PersonaPub, "auto" | "resp">, es: boolean) => (p.auto ? (es ? "CONFIRMA AL INSTANTE" : "CONFIRMS INSTANTLY") : `${es ? "RESPONDE EN ~" : "REPLIES IN ~"}${p.resp >= 60 ? `${Math.round(p.resp / 60)} H` : `${p.resp} MIN`}`);
 export const aprC = (p: Pick<PersonaPub, "auto">) => (p.auto ? "bg-signal/[.18] text-open-text" : "bg-pro/20 text-pro-ink");

@@ -14,10 +14,10 @@ type N = "Icon" | "Button" | "Chip" | "Tag" | "DateStrip" | "TimeSlots";
 const { Icon, Button, Chip, Tag, DateStrip, TimeSlots } = UI as unknown as Record<N, ComponentType<any>>;
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const K = "font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/60";
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const MES = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 export function diaL(ymd: string, i: number, es: boolean, largo = false) {
-  const d = new Date(`${ymd}T12:00:00Z`), w = DOW[es ? "es" : "en"][d.getUTCDay()]!, m = MES[es ? "es" : "en"][d.getUTCMonth()]!, n = d.getUTCDate();
+  const d = new Date(`${ymd}T12:00:00Z`), w = DOW(es)[d.getUTCDay()]!, m = MES(es)[d.getUTCMonth()]!, n = d.getUTCDate();
   const fecha = es ? `${w.charAt(0)}${w.slice(1).toLowerCase()} ${n} ${m}` : `${w.charAt(0)}${w.slice(1).toLowerCase()} ${m} ${n}`;
   if (i === 0) return largo ? `${es ? "Hoy" : "Today"} · ${fecha}` : es ? "Hoy" : "Today";
   if (i === 1) return largo ? `${es ? "Mañana" : "Tomorrow"} · ${fecha}` : es ? "Mañana" : "Tomorrow";
@@ -129,7 +129,7 @@ function Politicas({ v, borde = true }: { v: Rsv; borde?: boolean }) {
 export function RsvTab({ v, desk }: { v: Rsv; desk: boolean }) {
   const { r, E2, es } = v;
   const party = Array.from({ length: r.max + 1 }, (_, k) => k + 1).map((n) => ({ n, l: n > r.max ? `${r.max + 1}+` : String(n), on: v.p != null && (n > r.max ? v.big : v.p === n) }));
-  const dias = r.dias.map((d) => ({ id: `d${d.i}`, dow: d.i ? DOW[es ? "es" : "en"][d.dow] : E2("HOY", "TODAY"), num: d.num, off: d.off }));
+  const dias = r.dias.map((d) => ({ id: `d${d.i}`, dow: d.i ? DOW(es)[d.dow] : E2("HOY", "TODAY"), num: d.num, off: d.off }));
   const fechas = (
     <div className="grid min-w-0"><DateStrip days={dias} selected={`d${v.i}`} onSelect={(id: string) => v.setI(Number(id.slice(1)))} /></div>
   );

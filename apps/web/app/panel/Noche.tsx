@@ -63,7 +63,7 @@ export function herramientaNocheBloques(c: Ctx): Sec {
   if (h.lista) out.push(pasoSrv({ t: E2("Tope de la lista", "List cap"), s: h.listaTope ? E2("Al llenarse, tu página dice «La lista de esta noche está llena».", "When full, your page says “Tonight’s list is full”.") : E2("Sin tope: se anota quien quiera.", "No cap: anyone can sign up."),
     n: h.listaTope ?? 0, fmt: (x) => x ? String(x) : E2("Sin tope", "No cap"), sig: (x, d) => d < 0 ? (x <= 25 ? 0 : x - 25) : Math.min(2000, x + 25), save: (x) => save({ tope: x || null }) }));
   out.push(filaAhoraBloque(c, h, false));
-  out.push({ type: "chips", k: E2("MÚSICA DE ESTA NOCHE", "TONIGHT’S MUSIC"), help: E2("al menos una", "at least one"), items: MUSICA.map(([v, a, b]) => ({ l: es ? a : b, v: h.musica.includes(v) ? "selected" : "filter",
+  out.push({ type: "chips", k: E2("MÚSICA DE ESTA NOCHE", "TONIGHT’S MUSIC"), help: E2("al menos una", "at least one"), items: MUSICA(es).map(([v, a]) => ({ l: a, v: h.musica.includes(v) ? "selected" : "filter",
     onClick: () => { const L = h.musica.includes(v) ? h.musica.filter((x) => x !== v) : [...h.musica, v]; if (L.length) save({ musica: L }); else c.toast(E2("Deja al menos una.", "Keep at least one.")); } })) });
   // Quién toca y el código de vestimenta (texto corto; se guarda con su botón).
   const txt = (key: "ntNota" | "ntDress", k: string, ph: string, cur: string, campo: "nota" | "vestimenta") => {

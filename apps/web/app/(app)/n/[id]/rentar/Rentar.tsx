@@ -20,8 +20,8 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 import { usd as dinero } from "@/lib/dinero-comun";
 const DIAS = [1, 2, 3, 7] as const;
 const costo = (p: number, d: number) => (d >= 7 ? p * 5 : p * d);
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
-const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const MO = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const hL = (h: string) => { const [a, b] = h.split(":").map(Number); const H = (a ?? 0) % 24; return `${H % 12 || 12}${b ? `:${String(b).padStart(2, "0")}` : ""} ${H < 12 ? "AM" : "PM"}`; };
 const addD = (f: string, n: number) => { const d = new Date(`${f}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
@@ -32,8 +32,8 @@ export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo:
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const clave = useRef(uuid());
   const a = o.art, name = nm(a.n), cost = costo(a.precio, dias), back = pick ? addD(pick, dias) : null;
-  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `el ${DL.es[d.getUTCDay()]} ${d.getUTCDate()} de ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
-  const pickL = (d: OpcionesRenta["dias"][number]) => { const x = new Date(`${d.f}T12:00:00Z`); return d.k === "hoy" ? E2("Hoy", "Today") : d.k === "man" ? E2("Mañana", "Tomorrow") : es ? `${DL.es[x.getUTCDay()]!.charAt(0).toUpperCase()}${DL.es[x.getUTCDay()]!.slice(1)} ${x.getUTCDate()}` : `${DL.en[x.getUTCDay()]} ${x.getUTCDate()}`; };
+  const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `el ${DL(es)[d.getUTCDay()]} ${d.getUTCDate()} de ${MO(es)[d.getUTCMonth()]}` : `${DL(es)[d.getUTCDay()]}, ${MO(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const pickL = (d: OpcionesRenta["dias"][number]) => { const x = new Date(`${d.f}T12:00:00Z`); return d.k === "hoy" ? E2("Hoy", "Today") : d.k === "man" ? E2("Mañana", "Tomorrow") : es ? `${DL(es)[x.getUTCDay()]!.charAt(0).toUpperCase()}${DL(es)[x.getUTCDay()]!.slice(1)} ${x.getUTCDate()}` : `${DL(es)[x.getUTCDay()]} ${x.getUTCDate()}`; };
   const pickS = (d: OpcionesRenta["dias"][number]) => (d.h24 ? E2("Abierto 24 horas", "Open 24 hours") : d.k === "hoy" ? `${E2("Hasta las ", "Until ")}${hL(d.z)}` : `${hL(d.a)} – ${hL(d.z)}`);
   const miss = [!pick ? E2("Elige cuándo la recoges", "Pick when you pick it up") : null, o.tarjeta && !tarjeta ? E2("Elige la tarjeta", "Choose the card") : null].filter(Boolean) as string[];
   const entrar = () => router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`);

@@ -18,7 +18,7 @@ import { filaHerramientaRetail } from "./Retail";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type Bi = [string, string];
-const MTAGS: [string, string, string][] = [["pica", "Picante", "Spicy"], ["veg", "Vegetariano", "Vegetarian"], ["sg", "Sin gluten", "Gluten-free"], ["mar", "Pescado o mariscos", "Fish or shellfish"], ["lac", "Lácteos", "Dairy"], ["hue", "Huevo", "Egg"], ["nuez", "Maní o nueces", "Peanuts or nuts"]];
+const MTAGS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["pica", E2("Picante", "Spicy")], ["veg", E2("Vegetariano", "Vegetarian")], ["sg", E2("Sin gluten", "Gluten-free")], ["mar", E2("Pescado o mariscos", "Fish or shellfish")], ["lac", E2("Lácteos", "Dairy")], ["hue", E2("Huevo", "Egg")], ["nuez", E2("Maní o nueces", "Peanuts or nuts")]]; };
 const MAGO: Record<string, Bi> = { hoy: ["Vuelve mañana", "Back tomorrow"], vie: ["Hasta el viernes", "Until Friday"], manual: ["Hasta que lo actives", "Until you turn it on"] };
 const MDAY = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")]; };
 import { usd as __usd_fp } from "@/lib/dinero-comun";
@@ -294,9 +294,8 @@ export function menuDetalle(c: Ctx, id: string): Sec | null {
 
 type FPlato = Omit<PlatoIn, "av" | "shop"> & { av: Av | null; shop: ShopIn | null };
 /* Cómo se vende un producto de mercado (peso · unid · plato) o de tienda (unid · talla · plan · serv). */
-const SK: Record<string, [string, string, string]> = { peso: ["Por libra · se pesa delante", "Per pound · weighed in front", "scale"], unid: ["Por unidad", "Each", "bag"], plato: ["Listo para llevar", "Ready to go", "restaurant"],
-  talla: ["Con tallas", "With sizes", "tag"], plan: ["Con plan de pagos", "With payment plan", "calendar"], serv: ["Servicio en la tienda", "In-store service", "store"] };
-const skL = (c: Ctx, k: string) => (c.es ? SK[k]?.[0] : SK[k]?.[1]) ?? k;
+const SK = (es: unknown): Record<string, [string, string]> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { peso: [E2("Por libra · se pesa delante", "Per pound · weighed in front"), "scale"], unid: [E2("Por unidad", "Each"), "bag"], plato: [E2("Listo para llevar", "Ready to go"), "restaurant"], talla: [E2("Con tallas", "With sizes"), "tag"], plan: [E2("Con plan de pagos", "With payment plan"), "calendar"], serv: [E2("Servicio en la tienda", "In-store service"), "store"] }; };
+const skL = (c: Ctx, k: string) => SK(c.es)[k]?.[0] ?? k;
 function platoDet(c: Ctx, iid: string): Sec {
   const { E2, ui, es } = c, M = N(c), isNew = iid === "new", it0 = M.items.find((y) => y.id === iid);
   const back = () => c.closeDet(), head = (o: Partial<Extract<Bloque, { type: "head" }>>): Bloque => ({ type: "head", t: "", onBack: back, ...o });
@@ -311,7 +310,7 @@ function platoDet(c: Ctx, iid: string): Sec {
   const more = !isNew || ui.mMore === true, out: (Bloque | null)[] = [];
   if (it0?.hidden) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino ocultó este plato: no sale en tu menú. Motivo: ${it0.hiddenReason ?? ""}`, `To’Latino hid this item: it is not on your menu. Reason: ${it0.hiddenReason ?? ""}`) });
   out.push(head({ eye: (shop ? E2("PRODUCTOS", "PRODUCTS") : E2("MENÚ", "MENU")) + (sec ? ` · ${sec.name.es.toUpperCase()}` : ""), t: isNew ? (shop ? E2("Nuevo producto", "New product") : E2("Nuevo plato", "New item")) : it0!.name.es, s: isNew ? E2("Con nombre, precio y categoría ya se puede pedir. Lo demás, cuando puedas.", "Name, price and category are enough to sell. The rest whenever you can.") : undefined }));
-  const ptags = [...(d.ago ? [{ label: E2("AGOTADO HOY", "SOLD OUT TODAY"), tone: "danger" }] : []), ...(d.feat ? [{ label: "POPULAR", tone: "action" }] : []), ...d.tags.slice(0, 2).map((t) => { const T = MTAGS.find((z) => z[0] === t) ?? [t, t, t]; return { label: (es ? T[1] : T[2]).toUpperCase(), tone: "neutral" }; })];
+  const ptags = [...(d.ago ? [{ label: E2("AGOTADO HOY", "SOLD OUT TODAY"), tone: "danger" }] : []), ...(d.feat ? [{ label: "POPULAR", tone: "action" }] : []), ...d.tags.slice(0, 2).map((t) => { const T = MTAGS(es).find((z) => z[0] === t) ?? [t, t]; return { label: T[1].toUpperCase(), tone: "neutral" }; })];
   out.push({ type: "mprev", k: E2("ASÍ SE VE EN TU MENÚ", "HOW IT LOOKS ON YOUR MENU"), name: (es ? d.name : d.en || d.name) || E2("Nombre del plato", "Item name"), desc: (es ? d.desc : d.descEn || d.desc) || "", price: `${fp(Math.round(pr * 100))}${d.shop?.k === "peso" ? "/lb" : ""}`, tags: ptags, image: d.photos[0] ?? "", off: d.ago });
   const sp: number | null = ui.mph && ui.mph.id === iid ? ui.mph.i : null;
   out.push({ type: "photos", k: E2("FOTOS · LA PRIMERA ES LA PRINCIPAL", "PHOTOS · THE FIRST IS THE MAIN ONE"), count: `${d.photos.length}/5`, cols: 3, items: d.photos.map((p, i) => ({ key: p, bg: `url("${p}")`, tag: i === 0 ? E2("PRINCIPAL", "MAIN") : undefined, on: sp === i, onClick: () => c.setUi({ mph: sp === i ? null : { id: iid, i } }) })),
@@ -379,7 +378,7 @@ function platoDet(c: Ctx, iid: string): Sec {
       out.push({ type: "rows", items: [{ icon: "truck", t: "Delivery", s: d.ch.includes("dlv") ? E2("Se lo llevan a casa.", "Brought to their home.") : E2("En tu menú sale «Solo pickup».", "Your menu says “Pickup only”."), tgOn: d.ch.includes("dlv"), onTg: () => tgc("dlv") },
         { icon: "store", t: "Pickup", s: d.ch.includes("pick") ? E2("Lo recogen en tu local.", "Picked up at your place.") : E2("En tu menú sale «Solo delivery».", "Your menu says “Delivery only”."), tgOn: d.ch.includes("pick"), onTg: () => tgc("pick") }] }); }
     if (d.sell && !d.ch.length) out.push({ type: "note", tone: "warn", t: E2("Con los dos apagados no se puede pedir. Enciende al menos uno o apaga «Se pide en línea».", "With both off it cannot be ordered. Turn one on or turn off “Ordered online”.") });
-    out.push({ type: "group", k: E2("PARA EL CLIENTE", "FOR THE CLIENT") }, { type: "chips", k: E2("LLEVA O ES", "CONTAINS OR IS"), help: E2("AYUDA CON ALERGIAS", "HELPS WITH ALLERGIES"), items: MTAGS.map((t) => ({ l: es ? t[1] : t[2], v: d.tags.includes(t[0]) ? "selected" : "filter", onClick: () => setF({ tags: d.tags.includes(t[0]) ? d.tags.filter((x) => x !== t[0]) : [...d.tags, t[0]] }) })) },
+    out.push({ type: "group", k: E2("PARA EL CLIENTE", "FOR THE CLIENT") }, { type: "chips", k: E2("LLEVA O ES", "CONTAINS OR IS"), help: E2("AYUDA CON ALERGIAS", "HELPS WITH ALLERGIES"), items: MTAGS(es).map((t) => ({ l: t[1], v: d.tags.includes(t[0]) ? "selected" : "filter", onClick: () => setF({ tags: d.tags.includes(t[0]) ? d.tags.filter((x) => x !== t[0]) : [...d.tags, t[0]] }) })) },
       { type: "step", t: E2("Tiempo extra de cocina", "Extra kitchen time"), s: E2("Se suma a tu tiempo de preparación cuando lo piden.", "Added to your prep time when ordered."), v: d.extra ? `+${d.extra} min` : E2("Ninguno", "None"), onM: () => setF({ extra: Math.max(0, d.extra - 5) }), onP: () => setF({ extra: Math.min(60, d.extra + 5) }) },
       { type: "rows", items: [{ icon: "star", t: E2("Fijar en Populares", "Pin to Popular"), s: E2("Sale arriba en tu menú. Si no, Populares se arma con lo más pedido.", "Shows at the top of your menu. Otherwise Popular uses your best sellers."), tgOn: d.feat, onTg: () => setF({ feat: !d.feat }) }] });
   }

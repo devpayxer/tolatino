@@ -19,9 +19,9 @@ const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<
 
 import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => { m = ((m % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
-const DS = { es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
-const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
+const DS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Dom", "Sun"), E2("Lun", "Mon"), E2("Mar", "Tue"), E2("Mié", "Wed"), E2("Jue", "Thu"), E2("Vie", "Fri"), E2("Sáb", "Sat")]; };
+const MO = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 
@@ -44,8 +44,8 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   // Mientras espera respuesta, se mira cada 15 s (la respuesta también llega a Avisos).
   useEffect(() => { if (c.st !== "pend" && c.st !== "alt") return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [c.st, router]);
   const d = new Date(`${c.ymd}T12:00:00Z`);
-  const diaL = es ? `${DL.es[d.getUTCDay()]} ${d.getUTCDate()} ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`;
-  const diaS = c.i === 0 ? E2("Hoy", "Today") : c.i === 1 ? E2("Mañana", "Tomorrow") : `${DS[es ? "es" : "en"][d.getUTCDay()]} ${d.getUTCDate()}`;
+  const diaL = es ? `${DL(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MO(es)[d.getUTCMonth()]}` : `${DL(es)[d.getUTCDay()]}, ${MO(es)[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  const diaS = c.i === 0 ? E2("Hoy", "Today") : c.i === 1 ? E2("Mañana", "Tomorrow") : `${DS(es)[d.getUTCDay()]} ${d.getUTCDate()}`;
   const silla = c.model === "chair";
   const who1 = silla && c.con ? c.con.corto : c.negocio.nombre;
   const withL = c.con ? (silla ? `${c.con.nombre} · ${nm(c.silla).toLowerCase()} ${c.con.silla ?? ""}` : c.con.nombre) : c.negocio.nombre;
@@ -189,7 +189,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   else if (!dead) plata.push(["store", `${cap(diaL)}, ${restW}`, dinero(c.dep ? rest : c.total), "var(--tl-ink)", silla && c.con ? E2(`Efectivo o tarjeta, a ${c.con.corto}. No al local.`, `Cash or card, to ${c.con.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card.")]);
   const foto = silla && c.con?.foto ? c.con.foto : c.negocio.foto;
   const llamar = () => { if (c.negocio.telefono) location.href = `tel:${c.negocio.telefono}`; };
-  const DLs = (i: number, ymd: string) => { const z = new Date(`${ymd}T12:00:00Z`); return i === 0 ? E2("hoy", "today") : i === 1 ? E2("mañana", "tomorrow") : `${(DS[es ? "es" : "en"][z.getUTCDay()] ?? "").toLowerCase()} ${z.getUTCDate()}`; };
+  const DLs = (i: number, ymd: string) => { const z = new Date(`${ymd}T12:00:00Z`); return i === 0 ? E2("hoy", "today") : i === 1 ? E2("mañana", "tomorrow") : `${(DS(es)[z.getUTCDay()] ?? "").toLowerCase()} ${z.getUTCDate()}`; };
   const otra = prof ? `/n/${c.negocio.id}/tramite?s=${c.svcId ?? ""}` : sal ? `/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}` : `/n/${c.negocio.id}/cita?${new URLSearchParams({ s: c.svcId ?? "", ...(c.optIdx ? { o: c.optIdx } : {}), ...(c.addIds.length ? { a: c.addIds.join(",") } : {}), con: c.mid ?? "any" })}`;
   const aTiempo = c.mins >= c.cxh * 60, lateOk = ok && !c.late && c.mins <= 120 && c.mins > -15;
   // «Al calendario»: un .ics con la hora de la cita (hora local del negocio).

@@ -16,7 +16,7 @@ const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
-const AREA = { salon: ["Salón", "Dining room"], terraza: ["Terraza", "Patio"], barra: ["Barra", "Bar"] } as Record<string, [string, string]>;
+const AREA = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { salon: E2("Salón", "Dining room"), terraza: E2("Terraza", "Patio"), barra: E2("Barra", "Bar") }; };
 const OCC = [["cumple", "Cumpleaños", "Birthday"], ["aniv", "Aniversario", "Anniversary"], ["cita", "Cita", "Date night"], ["neg", "Negocios", "Business"], ["cele", "Celebración", "Celebration"]] as const;
 const NEED = [["bebe", "Silla para bebé", "High chair"], ["ruedas", "Silla de ruedas", "Wheelchair"], ["alergia", "Alergias", "Allergies"], ["tranq", "Mesa tranquila", "Quiet table"]] as const;
 const tel = (p: string) => { const d = p.replace(/\D/g, "").slice(-10); return d.length === 10 ? `+1 (${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; };
@@ -46,7 +46,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
   useEffect(() => { window.scrollTo(0, 0); const t = setInterval(() => setAhora(Date.now()), 1000); return () => clearInterval(t); }, []);
   const left = Math.max(0, Math.ceil((fin - ahora) / 1000)), exp = left <= 0;
   const P = (n: number) => `${n} ${n > 1 ? E2("personas", "guests") : E2("persona", "guest")}`;
-  const areaL = AREA[h.area] ? (es ? AREA[h.area]![0] : AREA[h.area]![1]) : h.area;
+  const areaL = AREA(es)[h.area] ?? h.area;
   const nombre = h.negocio.nombre, ed = !!h.editar, edConf = ed && h.editarConfirmada;
   const meta = `${nombre} · ${P(h.p)}`.toUpperCase();
   const volver = () => router.push(`/n/${h.negocio.id}?tab=rsv${ed ? `&editar=${h.editar}` : ""}`);

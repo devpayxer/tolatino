@@ -89,7 +89,7 @@ export function feDetalle(c: Ctx, id: string): Sec {
   const F = c.form("det:fe:hor:new", { dow: 0, min: 600, label: "", en: "", lang: "es" as keyof typeof LANG_FE, kind: k0 as keyof typeof QUE_FE }), z = F.d;
   const out: (Bloque | null)[] = [
     { type: "head", eye: E2("HORARIOS Y AYUDA", "SCHEDULE AND HELP"), t: E2("Otro horario", "Other time"), s: E2("Sale en tu página con su nombre, el día y la hora.", "Shows on your page with its name, day and time."), onBack: c.closeDet },
-    { type: "chips", k: E2("DÍA", "DAY"), items: DIA_FE.map((d, i) => ({ l: es ? d[0] : d[1], v: z.dow === i ? "selected" : "filter", onClick: () => F.set({ dow: i }) })) },
+    { type: "chips", k: E2("DÍA", "DAY"), items: DIA_FE(es).map((d, i) => ({ l: d[0], v: z.dow === i ? "selected" : "filter", onClick: () => F.set({ dow: i }) })) },
     { type: "step", t: E2("Hora", "Time"), s: cortoFe(z.dow, z.min, es), v: horaFe(z.min), onM: () => F.set({ min: Math.max(0, z.min - 15) }), onP: () => F.set({ min: Math.min(1425, z.min + 15) }) },
     { type: "field", k: E2("NOMBRE · LO VE LA GENTE", "NAME · PEOPLE SEE IT"), val: z.label, max: 40, count: `${z.label.length}/40`, ph: E2("Ej. Jóvenes, Estudio bíblico", "e.g. Youth, Bible study"), onChange: (v) => F.set({ label: v.slice(0, 40) }) },
     { type: "field", k: E2("NOMBRE EN INGLÉS · OPCIONAL", "NAME IN ENGLISH · OPTIONAL"), val: z.en, max: 40, ph: E2("Si lo dejas vacío, sale en español.", "Leave empty to show the Spanish one."), onChange: (v) => F.set({ en: v.slice(0, 40) }) },

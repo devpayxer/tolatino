@@ -4,6 +4,7 @@
    repatriación»; grupo, sacramentos, consejería y oración usan los horarios como el culto; tienda va por contacto (§6 #19).
    Iglesias no cobra nada en la app: el donativo es sugerido y la funeraria dice el total por escrito (§3, §6 #1). */
 import { horaInsc, type Bi } from "./inscripciones-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 export type KindFe = "misa" | "culto" | "grupo" | "sacr" | "consejo" | "fun" | "oracion" | "ayuda" | "tienda";
 export const KINDS_FE: KindFe[] = ["misa", "culto", "grupo", "sacr", "consejo", "fun", "oracion", "ayuda", "tienda"];
@@ -72,11 +73,10 @@ export type FormaFe = "gratis" | "don" | "tot" | "curso";
 export const FORMAS_FE: FormaFe[] = ["gratis", "don", "tot", "curso"];
 export const FE_DE_ITEM = (k: string | null, fe: string | undefined): FormaFe => (k === "curso" ? "curso" : fe === "don" || fe === "tot" ? fe : "gratis");
 
-export const DIA_FE: [string, string, string, string][] = [["Dom", "Sun", "domingo", "Sunday"], ["Lun", "Mon", "lunes", "Monday"], ["Mar", "Tue", "martes", "Tuesday"], ["Mié", "Wed", "miércoles", "Wednesday"],
-  ["Jue", "Thu", "jueves", "Thursday"], ["Vie", "Fri", "viernes", "Friday"], ["Sáb", "Sat", "sábado", "Saturday"]];
+export const DIA_FE = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [[E2("Dom", "Sun"), E2("domingo", "Sunday")], [E2("Lun", "Mon"), E2("lunes", "Monday")], [E2("Mar", "Tue"), E2("martes", "Tuesday")], [E2("Mié", "Wed"), E2("miércoles", "Wednesday")], [E2("Jue", "Thu"), E2("jueves", "Thursday")], [E2("Vie", "Fri"), E2("viernes", "Friday")], [E2("Sáb", "Sat"), E2("sábado", "Saturday")]]; };
 export const horaFe = horaInsc;
-export const cortoFe = (dow: number, min: number, es: boolean) => `${DIA_FE[dow]![es ? 0 : 1]} ${horaFe(min)}`;
-export const largoFe = (dow: number, min: number, es: boolean) => `${DIA_FE[dow]![es ? 2 : 3]} ${horaFe(min)}`;
+export const cortoFe = (dow: number, min: number, es: boolean) => `${DIA_FE(es)[dow]![0]} ${horaFe(min)}`;
+export const largoFe = (dow: number, min: number, es: boolean) => `${DIA_FE(es)[dow]![1]} ${horaFe(min)}`;
 export const LANG_FE: Record<"es" | "en" | "bil" | "otro", Bi> = { es: { es: "Español", en: "Spanish" }, bil: { es: "Español e inglés", en: "Spanish and English" }, en: { es: "Inglés", en: "English" }, otro: { es: "Otro idioma", en: "Other language" } };
 export const QUE_FE: Record<"misa" | "culto" | "grupo" | "oracion", Bi> = { misa: { es: "Misa", en: "Mass" }, culto: { es: "Culto o servicio", en: "Service" }, grupo: { es: "Grupo", en: "Group" }, oracion: { es: "Oración", en: "Prayer" } };
 

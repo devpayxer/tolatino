@@ -26,13 +26,13 @@ export const WHERE = [["salon", "En un salón", "At a venue"], ["casa", "En mi c
 export type TuFecha = { e: string; day: string; g: number | null; w: string };
 export const LINEA_FIESTA: Bi = { es: "La fecha no es tuya hasta que te la confirmen.", en: "The date is not yours until they confirm it." };
 
-const DSem = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
-const MSes = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DSem = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+const MSes = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 export const sumarDias = (ymd: string, n: number) => { const d = new Date(`${ymd}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 /* «sáb 26 sep» · «Sat Sep 26». */
 export function diaFiesta(ymd: string, es: boolean): string {
   const d = new Date(`${ymd}T12:00:00Z`);
-  return es ? `${DSem.es[d.getUTCDay()]} ${d.getUTCDate()} ${MSes.es[d.getUTCMonth()]}` : `${DSem.en[d.getUTCDay()]} ${MSes.en[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  return es ? `${DSem(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MSes(es)[d.getUTCMonth()]}` : `${DSem(es)[d.getUTCDay()]} ${MSes(es)[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 /* Los próximos sábados y domingos desde hoy (los días que más se piden). */
 export function findes(hoy: string, n: number): string[] {

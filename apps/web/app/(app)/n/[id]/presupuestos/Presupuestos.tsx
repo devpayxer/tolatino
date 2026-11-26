@@ -21,7 +21,7 @@ const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const dinero = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
-const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["techo", "Techo", "Roof"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
+const AREAS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["cocina", E2("Cocina", "Kitchen")], ["bano", E2("Baño", "Bathroom")], ["sotano", E2("Sótano", "Basement")], ["techo", E2("Techo", "Roof")], ["afuera", E2("Afuera", "Outside")], ["toda", E2("Toda la casa", "Whole house")]]; };
 
 export function Presupuestos({ op, svcId, cands, es, yo, plazoH }: { op: OficiosPublico; svcId: string; cands: CandPq[]; es: boolean; yo: boolean; plazoH: number }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter();
@@ -78,7 +78,7 @@ export function Presupuestos({ op, svcId, cands, es, yo, plazoH }: { op: Oficios
         <div><div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("¿Qué quieres hacer?", "What do you want done?")}</div>
           <div className="mt-1 text-[12px] font-medium text-ink/60">{E2("Lo mismo para todos, así los presupuestos se pueden comparar.", "The same for everyone, so the estimates can be compared.")}</div></div>
         <div><div className={K}>{E2("¿DÓNDE?", "WHERE?")}</div>
-          <div className="mt-2 flex flex-wrap gap-2">{AREAS.map(([k, l1, l2]) => <Chip key={k} variant={areas.includes(k) ? "selected" : "filter"} onClick={() => setAreas(areas.includes(k) ? areas.filter((z) => z !== k) : [...areas, k])}>{es ? l1 : l2}</Chip>)}</div></div>
+          <div className="mt-2 flex flex-wrap gap-2">{AREAS(es).map(([k, l1]) => <Chip key={k} variant={areas.includes(k) ? "selected" : "filter"} onClick={() => setAreas(areas.includes(k) ? areas.filter((z) => z !== k) : [...areas, k])}>{l1}</Chip>)}</div></div>
         <div>
           <div className="flex justify-between gap-2.5"><span className={K}>{E2("CUÉNTALES", "TELL THEM")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length} / 500</span></div>
           <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} rows={3} aria-label={E2("Qué quieres hacer", "What you want done")}

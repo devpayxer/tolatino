@@ -85,7 +85,7 @@ export function proximoServicio(H: HorarioFe[], k: KindFe, dow: number, min: num
   return best;
 }
 export const proximoTexto = (n: ProximoFe | null, es: boolean) =>
-  !n ? "" : n.dias === 0 ? `${es ? "Hoy" : "Today"} ${horaFe(n.min)}` : n.dias === 1 ? `${es ? "Mañana" : "Tomorrow"} ${horaFe(n.min)}` : `${DIA_FE[n.dow]![es ? 2 : 3].replace(/^./, (c) => c.toUpperCase())} ${horaFe(n.min)}`;
+  !n ? "" : n.dias === 0 ? `${es ? "Hoy" : "Today"} ${horaFe(n.min)}` : n.dias === 1 ? `${es ? "Mañana" : "Tomorrow"} ${horaFe(n.min)}` : `${DIA_FE(es)[n.dow]![1].replace(/^./, (c) => c.toUpperCase())} ${horaFe(n.min)}`;
 
 const lst = (L: string[], y: string) => (L.length <= 1 ? L.join("") : `${L.slice(0, -1).join(", ")} ${y} ${L[L.length - 1]}`);
 export const idiomaFe = (p: Pick<FePublica, "bil" | "esp">, es: boolean) => (p.bil ? LANG_FE.bil : p.esp ? LANG_FE.es : LANG_FE.en)[es ? "es" : "en"];

@@ -1,11 +1,12 @@
 /* Contenido de la tarjeta de negocio en una lista (prototipo cardItem): línea de datos, estado del horario, chips,
    botón principal. Funciones puras: las usa el servidor para armar la tarjeta; la pantalla solo la pinta. */
 import type { Lang } from "./idioma";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 import type { Historia } from "./hoy-comun";
 
 type Rango = [string, string];
 type Dia = { weekday: number; open: boolean; ranges: Rango[] };
-const DIAS = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
+const DIAS = (lang: string): string[] => { const es = lang === "es"; const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
 
 /* «20:00» → «8 PM», «20:30» → «8:30 PM». */
 export function hora12(hm: string) {
@@ -23,7 +24,7 @@ export function estado(dias: Dia[], ahora: { dow: number; hm: string }, abierto:
     // «Cerrar por hoy» (panel · Hoy): hoy no abre; se busca desde mañana.
     for (let k = 1; k <= 7; k++) {
       const d = dias.find((x) => x.weekday === (ahora.dow + k) % 7), a = d?.open ? d.ranges.map(([x]) => x).sort((x, y) => min(x) - min(y))[0] : undefined;
-      if (a) return { open: false, text: `${es ? "Cerrado hoy · abre" : "Closed today · opens"} ${k === 1 ? (es ? "mañana" : "tomorrow") : DIAS[lang][(ahora.dow + k) % 7]} ${hora12(a)}` };
+      if (a) return { open: false, text: `${es ? "Cerrado hoy · abre" : "Closed today · opens"} ${k === 1 ? (es ? "mañana" : "tomorrow") : DIAS(lang)[(ahora.dow + k) % 7]} ${hora12(a)}` };
     }
     return { open: false, text: es ? "Cerrado hoy" : "Closed today" };
   }
@@ -42,7 +43,7 @@ export function estado(dias: Dia[], ahora: { dow: number; hm: string }, abierto:
   for (let k = 1; k <= 7; k++) {
     const d = de(ahora.dow + k);
     const a = d?.open ? d.ranges.map(([x]) => x).sort((x, y) => min(x) - min(y))[0] : undefined;
-    if (a) return { open: false, text: `${es ? "Cerrado · abre" : "Closed · opens"} ${k === 1 ? (es ? "mañana" : "tomorrow") : DIAS[lang][(ahora.dow + k) % 7]} ${hora12(a)}` };
+    if (a) return { open: false, text: `${es ? "Cerrado · abre" : "Closed · opens"} ${k === 1 ? (es ? "mañana" : "tomorrow") : DIAS(lang)[(ahora.dow + k) % 7]} ${hora12(a)}` };
   }
   return { open: false, text: es ? "Cerrado" : "Closed" };
 }

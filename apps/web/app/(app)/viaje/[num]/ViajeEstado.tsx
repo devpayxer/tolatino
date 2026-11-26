@@ -25,8 +25,8 @@ const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<
 import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const hora = (t: number | undefined) => (t ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : "");
-const DS = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
-const MS = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"], en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] };
+const DS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+const MS = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 
 export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), linea = nm(LINEA_TRANS);
@@ -50,7 +50,7 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
     // 9v (quinta tanda) · «No me sirve» con la retención que la pasarela no soltó todavía (retenida): nunca «se liberó».
     if (r.ok) { setFlash("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
-  const dL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return es ? `${DS.es[d.getUTCDay()]} ${d.getUTCDate()} ${MS.es[d.getUTCMonth()]}` : `${DS.en[d.getUTCDay()]} ${MS.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
+  const dL = (ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`); return es ? `${DS(es)[d.getUTCDay()]} ${d.getUTCDate()} ${MS(es)[d.getUTCMonth()]}` : `${DS(es)[d.getUTCDay()]} ${MS(es)[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const B = x.negocio.nombre, cuando = `${dL(x.ymd)} · ${horaL(x.m)}`, st = x.pago.st, liberado = st === "released", dev = x.pago.devuelto;
   // 9v · Lo que no está hecho se dice como está (cobros › devolucionesDe): en camino o que no salió; nunca «te devolvemos todo» sin mirar.
   const pendT = [x.devolucion.camino ? E2(`Te devolvemos ${dinero(x.devolucion.camino)}: va en camino a tu tarjeta.`, `We are refunding ${dinero(x.devolucion.camino)}: it is on its way to your card.`) : "",

@@ -22,7 +22,7 @@ const { Icon, Button, StepHeader, DateStrip, TimeSlots, PaymentSummary } = UI as
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 import { usd as dinero } from "@/lib/dinero-comun";
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
 
 export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApartar; es: boolean; yo: boolean; pago?: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; dir?: { id: string; label: string; street: string } | null }) {
@@ -46,7 +46,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
   const fee = envio && o.envio ? (o.envio.free > 0 && sub >= o.envio.free ? 0 : o.envio.fee) : 0, tot = sub + fee;
   const quitar = (k: string) => { const c = (carro ?? []).filter((l) => llaveLinea(l) !== k); setCarro(c); guardarCarrito(o.negocio.id, c); };
   const talla = (l: (typeof L)[number]) => (l.t ? `${l.a.label ? nm(l.a.label) : E2("Talla", "Size")} ${l.t.label} · ` : "");
-  const dia = o.dias[i] ?? null, dL = (k: string, f: string) => { const d = new Date(`${f}T12:00:00Z`); return k === "hoy" ? E2("Hoy", "Today") : k === "man" ? E2("Mañana", "Tomorrow") : `${(es ? DOW.es : DOW.en)[d.getUTCDay()]!.charAt(0)}${(es ? DOW.es : DOW.en)[d.getUTCDay()]!.slice(1).toLowerCase()} ${d.getUTCDate()}`; };
+  const dia = o.dias[i] ?? null, dL = (k: string, f: string) => { const d = new Date(`${f}T12:00:00Z`); return k === "hoy" ? E2("Hoy", "Today") : k === "man" ? E2("Mañana", "Tomorrow") : `${DOW(es)[d.getUTCDay()]!.charAt(0)}${DOW(es)[d.getUTCDay()]!.slice(1).toLowerCase()} ${d.getUTCDate()}`; };
   const whenL = dia && h != null ? `${dL(dia.k, dia.f)} · ${hL(h)}` : "—";
   const miss = [!L.length ? E2("Tu apartado está vacío", "Your hold is empty") : null, conPlan ? (!tarjeta ? E2("Tu tarjeta", "Your card") : !acepto ? E2("Acepta el acuerdo del plan", "Accept the plan agreement") : null) : envio ? (!dir ? E2("La dirección del envío", "The shipping address") : !tarjeta ? E2("Tu tarjeta", "Your card") : null) : h == null ? E2("Elige cuándo pasas", "Pick when you come") : null].filter(Boolean) as string[];
   const okPaso = paso === 0 ? L.length > 0 : miss.length === 0;
@@ -132,7 +132,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
       </div>
     </div>
   );
-  const dias = o.dias.map((d, k) => ({ id: `d${k}`, dow: d.k === "hoy" ? E2("HOY", "TODAY") : (es ? DOW.es : DOW.en)[new Date(`${d.f}T12:00:00Z`).getUTCDay()], num: String(new Date(`${d.f}T12:00:00Z`).getUTCDate()), off: !d.horas.length }));
+  const dias = o.dias.map((d, k) => ({ id: `d${k}`, dow: d.k === "hoy" ? E2("HOY", "TODAY") : DOW(es)[new Date(`${d.f}T12:00:00Z`).getUTCDay()], num: String(new Date(`${d.f}T12:00:00Z`).getUTCDate()), off: !d.horas.length }));
   const cuando = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>
       <div><div className={K}>{E2("DÍA", "DAY")}</div><div className="mt-[11px] grid min-w-0"><DateStrip days={dias} selected={`d${i}`} onSelect={(id: string) => { setI(Number(id.slice(1))); setH(null); }} /></div></div>

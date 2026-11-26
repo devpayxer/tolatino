@@ -26,11 +26,11 @@ const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24; return `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`; };
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const DL = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("domingo", "Sunday"), E2("lunes", "Monday"), E2("martes", "Tuesday"), E2("miércoles", "Wednesday"), E2("jueves", "Thursday"), E2("viernes", "Friday"), E2("sábado", "Saturday")]; };
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const LIGHTS: [string, string, string][] = [["ce", "Check engine", "Check engine"], ["bat", "Batería", "Battery"], ["temp", "Temperatura", "Temperature"], ["abs", "Frenos o ABS", "Brakes or ABS"], ["oil", "Aceite", "Oil"], ["tpms", "Presión de gomas", "Tire pressure"]];
-const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["cuarto", "Cuarto", "Bedroom"], ["sala", "Sala", "Living room"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
+const LIGHTS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["ce", E2("Check engine", "Check engine")], ["bat", E2("Batería", "Battery")], ["temp", E2("Temperatura", "Temperature")], ["abs", E2("Frenos o ABS", "Brakes or ABS")], ["oil", E2("Aceite", "Oil")], ["tpms", E2("Presión de gomas", "Tire pressure")]]; };
+const AREAS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["cocina", E2("Cocina", "Kitchen")], ["bano", E2("Baño", "Bathroom")], ["sotano", E2("Sótano", "Basement")], ["cuarto", E2("Cuarto", "Bedroom")], ["sala", E2("Sala", "Living room")], ["afuera", E2("Afuera", "Outside")], ["toda", E2("Toda la casa", "Whole house")]]; };
 
 export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = null }: {
   op: OficiosPublico; svcId: string; inicial: { opts: Record<string, number>; adds: number[]; w: string | null; z: number | null }; es: boolean;
@@ -65,8 +65,8 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
   const cp = auto ? compatVeh(op, v.veh, es) : compatCasa(op, v.casa, es), dato = auto ? v.veh : v.casa, ok0 = !!dato && !!cp?.ok;
   const inq = !auto && v.casa?.tenure === "inq", desdeK = ["desde", "cotiza", "pres", "diag", "visita", "hora", "area"].includes(s.k);
   const precioL = s.k === "cotiza" ? E2("Se cotiza", "Quoted") : `${["desde", "pres"].includes(s.k) ? E2("Desde ", "From ") : ""}${s.k === "hora" ? `${dinero(total)}/h` : total ? dinero(total) : E2("Gratis", "Free")}`;
-  const ymd = H?.dias[i]?.ymd ?? op.hoy, dowN = new Date(`${ymd}T12:00:00Z`).getUTCDay(), diaL = `${(es ? DL.es : DL.en)[dowN]} ${Number(ymd.slice(8))}`;
-  const dias = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : (es ? DOW.es : DOW.en)[d.dow], num: d.num, off: d.off }));
+  const ymd = H?.dias[i]?.ymd ?? op.hoy, dowN = new Date(`${ymd}T12:00:00Z`).getUTCDay(), diaL = `${DL(es)[dowN]} ${Number(ymd.slice(8))}`;
+  const dias = (H?.dias ?? []).map((d) => ({ id: `d${d.i}`, dow: d.i === 0 ? E2("HOY", "TODAY") : DOW(es)[d.dow], num: d.num, off: d.off }));
   const slotL = (m: number) => (auto ? horaL(m) : `${hL(m)}–${hL(m + 120)}`);
   const slots = (H?.sl ?? []).map((h) => ({ t: slotL(h.m), taken: !h.free, m: h.m }));
   const hayLibres = slots.some((x) => !x.taken);
@@ -133,11 +133,11 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
       </button>
       {auto && ["diag", "desde", "cotiza"].includes(s.k) && (
         <div><div className={K}>{E2("¿QUÉ LUCES ESTÁN ENCENDIDAS? · OPCIONAL", "WHICH LIGHTS ARE ON? · OPTIONAL")}</div>
-          <div className="mt-2 flex flex-wrap gap-2">{LIGHTS.map(([k, l1, l2]) => <Chip key={k} variant={luces.includes(k) ? "selected" : "filter"} onClick={() => setLuces(luces.includes(k) ? luces.filter((z) => z !== k) : [...luces, k])}>{es ? l1 : l2}</Chip>)}</div></div>
+          <div className="mt-2 flex flex-wrap gap-2">{LIGHTS(es).map(([k, l1]) => <Chip key={k} variant={luces.includes(k) ? "selected" : "filter"} onClick={() => setLuces(luces.includes(k) ? luces.filter((z) => z !== k) : [...luces, k])}>{l1}</Chip>)}</div></div>
       )}
       {!auto && ["visita", "hora", "area", "pres"].includes(s.k) && (
         <div><div className={K}>{E2("¿DÓNDE ES?", "WHERE IS IT?")}</div>
-          <div className="mt-2 flex flex-wrap gap-2">{AREAS.map(([k, l1, l2]) => <Chip key={k} variant={area === k ? "selected" : "filter"} onClick={() => setArea(area === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
+          <div className="mt-2 flex flex-wrap gap-2">{AREAS(es).map(([k, l1]) => <Chip key={k} variant={area === k ? "selected" : "filter"} onClick={() => setArea(area === k ? null : k)}>{l1}</Chip>)}</div></div>
       )}
       <div>
         <div className="flex justify-between gap-2.5"><span className={K}>{auto ? E2("¿QUÉ LE PASA? · OPCIONAL", "WHAT IS WRONG? · OPTIONAL") : E2("¿QUÉ PASA? · OPCIONAL", "WHAT IS HAPPENING? · OPTIONAL")}</span><span className="font-mono text-[9.5px] font-semibold text-ink/60">{nota.length}/400</span></div>
@@ -177,7 +177,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null, warr = nu
     </div>
   );
   const filas: [string, string][] = [[E2("SERVICIO", "SERVICE"), nm(s.name)], [auto ? E2("VEHÍCULO", "VEHICLE") : E2("CASA", "HOME"), auto && v.veh ? vehName(v.veh, es) : v.casa?.dir ?? "—"],
-    [E2("CUÁNDO", "WHEN"), cuandoL], ...(auto ? [[E2("TU CARRO", "YOUR CAR"), a.days ? E2(`En el taller ${a.days[0]}–${a.days[1]} días`, `At the shop ${a.days[0]}–${a.days[1]} days`) : wL] as [string, string]] : [[E2("DÓNDE", "WHERE"), area ? (AREAS.find((z) => z[0] === area)?.[es ? 1 : 2] ?? "") : E2("Tu casa", "Your home")] as [string, string]]),
+    [E2("CUÁNDO", "WHEN"), cuandoL], ...(auto ? [[E2("TU CARRO", "YOUR CAR"), a.days ? E2(`En el taller ${a.days[0]}–${a.days[1]} días`, `At the shop ${a.days[0]}–${a.days[1]} days`) : wL] as [string, string]] : [[E2("DÓNDE", "WHERE"), area ? (AREAS(es).find((z) => z[0] === area)?.[1] ?? "") : E2("Tu casa", "Your home")] as [string, string]]),
     [E2("NEGOCIO", "BUSINESS"), op.negocio.nombre]];
   // Cómo se cobra (diseño payNote): hoy · al llegar o al dejarlo · al terminar.
   const como: [string, string][] = auto ? [[E2("Hoy", "Today"), dep ? E2(`Depósito de ${dinero(dep)}; se descuenta del total.`, `${dinero(dep)} deposit; taken off the total.`) : E2("No se cobra nada.", "Nothing is charged.")],

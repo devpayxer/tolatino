@@ -23,7 +23,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 import { usd as dinero } from "@/lib/dinero-comun";
 const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
+const DOW = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
 const HF = [600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 1200], HV = [600, 660, 780, 840, 900, 960];
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -59,7 +59,7 @@ export function BookingFiestaV({ b, es, pago, yo, inicial }: {
   const slots = (vis ? HV : HF).map((m) => ({ m, t: horaL(m), taken: !vis && T.filter((z) => m < z.m + z.d && z.m < m + dur).length >= b.aj.perDay }));
   const libreHoy = libre(dia) && dentro(dia);
   const dias = Array.from({ length: Math.min(60, Math.max(1, Math.round((Date.parse(b.hasta) - Date.parse(b.hoy)) / 864e5))) }, (_, k) => sumarDias(b.hoy, k + 1))
-    .map((d) => ({ id: d, dow: (es ? DOW.es : DOW.en)[new Date(`${d}T12:00:00Z`).getUTCDay()], num: String(Number(d.slice(8))), off: !libre(d) }));
+    .map((d) => ({ id: d, dow: DOW(es)[new Date(`${d}T12:00:00Z`).getUTCDay()], num: String(Number(d.slice(8))), off: !libre(d) }));
   const lejos = !dias.some((x) => x.id === dia) ? dia : "";
   const dondeL = !b.va ? (b.negocio.direccion ?? b.negocio.nombre) : donde ? (donde.k === "casa" ? b.dirs.find((d) => d.id === donde.id)?.t : b.salones.find((x) => x.id === donde.id)?.nombre) ?? "—" : "—";
   const evL = EVT.find((z) => z[0] === ev);

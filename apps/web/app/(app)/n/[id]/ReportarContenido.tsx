@@ -9,7 +9,7 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Chip, Button, Icon } = UI as unknown as Record<"Chip" | "Button" | "Icon", ComponentType<any>>;
-const MOT: [string, string, string][] = [["spam", "Spam o publicidad engañosa", "Spam or misleading ads"], ["falso", "Es falso o engañoso", "False or misleading"], ["off", "Ofensivo o discrimina", "Offensive or discriminatory"], ["otro", "Otra cosa", "Something else"]];
+const MOT = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["spam", E2("Spam o publicidad engañosa", "Spam or misleading ads")], ["falso", E2("Es falso o engañoso", "False or misleading")], ["off", E2("Ofensivo o discrimina", "Offensive or discriminatory")], ["otro", E2("Otra cosa", "Something else")]]; };
 
 export function ReportarContenido({ kind, id, es, conSesion, volver }: { kind: "post" | "job"; id: string; es: boolean; conSesion: boolean; volver: string }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
@@ -30,7 +30,7 @@ export function ReportarContenido({ kind, id, es, conSesion, volver }: { kind: "
       {abierto ? (
         <div className="flex flex-col gap-2.5 rounded-[16px] border border-ink/[.08] bg-white p-3.5">
           <div className="text-[13px] font-bold">{E2("¿Qué pasa?", "What is wrong?")}</div>
-          <div className="flex flex-wrap gap-1.5">{MOT.map(([k, a, b]) => <Chip key={k} variant={m === k ? "selected" : "filter"} onClick={() => setM(k)}>{es ? a : b}</Chip>)}</div>
+          <div className="flex flex-wrap gap-1.5">{MOT(es).map(([k, a]) => <Chip key={k} variant={m === k ? "selected" : "filter"} onClick={() => setM(k)}>{a}</Chip>)}</div>
           <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={2} placeholder={E2("Cuéntanos más (opcional)", "Tell us more (optional)")} aria-label={E2("Nota", "Note")}
             className="rounded-[12px] border-[1.5px] border-ink/[.14] px-3 py-2 text-[14px] outline-none" />
           <div className="flex gap-2"><Button variant="primary" size="sm" disabled={!m || pend} onClick={enviar}>{E2("Enviar reporte", "Send report")}</Button><Button variant="secondary" size="sm" onClick={() => setAbierto(false)}>{E2("Cancelar", "Cancel")}</Button></div>

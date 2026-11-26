@@ -2,6 +2,7 @@ import "server-only";
 import { auditar, type Staff } from "./admin";
 import { db, tx } from "./db";
 import { KIND_REPARTO } from "./reparto-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* 9n · Super Admin › Repartidores (ADM-DLV; apps-delivery-checkin.md §1.5): la lista de las personas que reparten para un negocio (por
    persona, no por equipo: una puede repartir para varios), su 360° (equipos, entregas, pruebas, incidencias, sanciones), las incidencias
@@ -169,7 +170,7 @@ export async function abrirIncidencia(s: Staff, uid: string, numero: string, not
   return { ok: true, mensaje: "Incidencia abierta. Está en Colas." };
 }
 
-const QUE: Record<string, [string, string]> = { aviso: ["Te dejamos un aviso", "We left you a warning"], suspension: ["Suspendimos tu cuenta de repartidor", "We suspended your driver account"], baneo: ["Tu cuenta ya no puede repartir en To'Latino", "Your account can no longer deliver on To'Latino"] };
+const QUE = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { aviso: E2("Te dejamos un aviso", "We left you a warning"), suspension: E2("Suspendimos tu cuenta de repartidor", "We suspended your driver account"), baneo: E2("Tu cuenta ya no puede repartir en To'Latino", "Your account can no longer deliver on To'Latino") }; };
 export async function sancionar(s: Staff, uid: string, kind: string, dias: number, motivo: string, incidente: string | null): Promise<ResD> {
   const m = motivoOk(motivo);
   if (!UUIDRE.test(uid) || !["aviso", "suspension", "baneo"].includes(kind)) return { ok: false, mensaje: "Elige la sanción." };
@@ -203,7 +204,7 @@ export async function sancionar(s: Staff, uid: string, kind: string, dias: numbe
   });
   if (r.ok) {
     const { avisar, avisarNegocio } = await import("./avisos");
-    const q = QUE[kind]!, hasta = kind === "suspension" ? ` por ${d} ${d === 1 ? "día" : "días"}` : "", hastaEn = kind === "suspension" ? ` for ${d} ${d === 1 ? "day" : "days"}` : "";
+    const q = [QUE(true)[kind]!, QUE(false)[kind]!], hasta = kind === "suspension" ? ` por ${d} ${d === 1 ? "día" : "días"}` : "", hastaEn = kind === "suspension" ? ` for ${d} ${d === 1 ? "day" : "days"}` : "";
     await avisar(uid, "drv_sancion", { que: `${q[0]}${hasta}`, que_en: `${q[1]}${hastaEn}`, motivo: m }, { href: "/repartidor?t=perfil", actor: s.id }).catch(() => undefined);
     for (const x of ("quitados" in r ? r.quitados ?? [] : [])) await avisarNegocio(x.biz, "biz_dlv_issue", { repartidor: "To'Latino", num: x.numero, motivo: { es: "el repartidor ya no reparte en To'Latino: asígnalo a otro", en: "the driver no longer delivers on To'Latino: assign it to someone else" } }, { href: `/panel/${x.biz}/hoy?det=ped:${x.numero}`, ref: ["order", x.numero] }).catch(() => undefined);
   }

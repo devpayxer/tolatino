@@ -84,11 +84,11 @@ const renta = (p: InmPublica) => p.props.filter((x) => x.deal === "renta"), vent
 const minBy = <T,>(L: T[], f: (x: T) => number) => (L.length ? L.reduce((a, c) => (f(c) < f(a) ? c : a)) : null);
 /* «Sin seguro social» solo si NINGUNA propiedad de renta lo pide (o, sin propiedades, lo que dice la herramienta). */
 export const sinSeguro = (p: InmPublica) => { const R = renta(p); return R.length ? R.every((x) => !x.ssnReq) : p.itin; };
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 export const desdeFecha = (iso: string, hoy: string, es: boolean) => {
   if (iso <= hoy) return es ? "Hoy" : "Today";
   const [, m, d] = iso.split("-").map(Number) as [number, number, number];
-  return es ? `Desde el ${d} ${MES[m - 1]![0]}` : `From ${MES[m - 1]![1]} ${d}`;
+  return es ? `Desde el ${d} ${MES(es)[m - 1]!}` : `From ${MES(es)[m - 1]!} ${d}`;
 };
 const libreDe = (p: InmPublica) => p.libre ?? minBy(renta(p).filter((x) => x.disponible), (x) => Date.parse(x.disponible!))?.disponible ?? null;
 

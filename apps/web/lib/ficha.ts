@@ -4,6 +4,7 @@ import { centroSQL, PUNTO_PUBLICO, type Punto } from "./punto";
 import { db } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 import { estado, hora12, restoDelEstado } from "./tarjeta";
 import { licenciasDe, tarjetaLey } from "./licencias";
 import { videosVivos, type VideoVivo } from "./video-negocio";
@@ -36,9 +37,9 @@ export async function galeria(id: string, userId: string | null) {
   return { id, nombre: b.name, fotos: fotos.map((f) => ({ id: f.id, chica: foto(f.url, 420)!, grande: foto(f.url, 1400)!, reportada: rep.has(f.id) })) };
 }
 
-const DIA_CORTO = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
-const DIA_LARGO = { es: ["DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"], en: ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"] };
-const MES = { es: ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"], en: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"] };
+const DIA_CORTO = (lang: string): string[] => { const es = lang === "es"; const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOM", "SUN"), E2("LUN", "MON"), E2("MAR", "TUE"), E2("MIÉ", "WED"), E2("JUE", "THU"), E2("VIE", "FRI"), E2("SÁB", "SAT")]; };
+const DIA_LARGO = (lang: string): string[] => { const es = lang === "es"; const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("DOMINGO", "SUNDAY"), E2("LUNES", "MONDAY"), E2("MARTES", "TUESDAY"), E2("MIÉRCOLES", "WEDNESDAY"), E2("JUEVES", "THURSDAY"), E2("VIERNES", "FRIDAY"), E2("SÁBADO", "SATURDAY")]; };
+const MES = (lang: string): string[] => { const es = lang === "es"; const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ENE", "JAN"), E2("FEB", "FEB"), E2("MAR", "MAR"), E2("ABR", "APR"), E2("MAY", "MAY"), E2("JUN", "JUN"), E2("JUL", "JUL"), E2("AGO", "AUG"), E2("SEP", "SEP"), E2("OCT", "OCT"), E2("NOV", "NOV"), E2("DIC", "DEC")]; };
 const min = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); return h * 60 + m; };
 const rango = ([a, b]: Rango, lang: Lang) => (a === b ? (lang === "es" ? "24 horas" : "24 hours") : `${hora12(a)} – ${hora12(b)}`);
 const duracion = (m: number) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} h${r ? ` ${r} min` : ""}` : `${r} min`; };
@@ -103,8 +104,8 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
   const estadoCorto = b.cerrado_temp ? L("Cerrado temporalmente", "Temporarily closed") : b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open ? L("Abierto", "Open") : L("Cerrado", "Closed");
   const nota = restoDelEstado(st.text, estadoCorto);
   const iniciales = b.name.split(" ").filter((w) => w.length > 2).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  const fecha = `${DIA_LARGO[lang][b.dow]} ${es ? `${b.dia} ${MES.es[b.mes - 1]}` : `${MES.en[b.mes - 1]} ${b.dia}`}`;
-  const hoyCorto = `${DIA_CORTO[lang][b.dow]} ${es ? `${b.dia} ${MES.es[b.mes - 1]}` : `${MES.en[b.mes - 1]} ${b.dia}`}`;
+  const fecha = `${DIA_LARGO(lang)[b.dow]} ${es ? `${b.dia} ${MES("es")[b.mes - 1]}` : `${MES("en")[b.mes - 1]} ${b.dia}`}`;
+  const hoyCorto = `${DIA_CORTO(lang)[b.dow]} ${es ? `${b.dia} ${MES("es")[b.mes - 1]}` : `${MES("en")[b.mes - 1]} ${b.dia}`}`;
   const hoy = dias.find((d) => d.weekday === b.dow);
   const t = min(b.hm);
 
@@ -128,7 +129,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
     const lineas = d?.open && d.ranges.length
       ? d.ranges.map((rg) => ({ range: rango(rg, lang), type: "", color: "var(--tl-ink)", dash: "transparent", fg: "var(--tl-ink)", weight: esHoy ? 800 : 600 }))
       : [{ range: L("Cerrado", "Closed"), type: "", color: "rgba(11,14,18,.12)", dash: "transparent", fg: "rgba(11,14,18,.6)", weight: 600 }];
-    return { d: esHoy ? L("HOY", "TODAY") : DIA_CORTO[lang][wd], dc: esHoy ? (b.open ? "var(--tl-open-text)" : "var(--tl-danger)") : "rgba(11,14,18,.6)", lines: lineas, tag: "", tagDisp: "none", tagBg: "", tagFg: "" };
+    return { d: esHoy ? L("HOY", "TODAY") : DIA_CORTO(lang)[wd], dc: esHoy ? (b.open ? "var(--tl-open-text)" : "var(--tl-danger)") : "rgba(11,14,18,.6)", lines: lineas, tag: "", tagDisp: "none", tagBg: "", tagFg: "" };
   });
   const cambios = await db().query<{ desde: string; hasta: string; closed: boolean; ranges: Rango[]; label: Bi | null }>(
     `select to_char(h.date_from, 'YYYY-MM-DD') as desde, to_char(h.date_to, 'YYYY-MM-DD') as hasta, h.closed, h.ranges, h.label
@@ -153,7 +154,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
   const ms = modos.length > 1 ? `${modos.slice(0, -1).join(", ")}${L(" o ", " or ")}${modos[modos.length - 1]}` : modos[0] ?? "";
   const tituloHoy = b.cerrado_temp ? L("Cerrado temporalmente", "Temporarily closed") : b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open
     ? (prox.cierra ? L(`Abierto hasta las ${hora12(prox.cierra)}`, `Open until ${hora12(prox.cierra)}`) : L("Abierto las 24 horas", "Open 24 hours"))
-    : prox.abre ? (prox.dias === 0 ? L(`Abre a las ${hora12(prox.abre)}`, `Opens at ${hora12(prox.abre)}`) : prox.dias === 1 ? L(`Abre mañana a las ${hora12(prox.abre)}`, `Opens tomorrow at ${hora12(prox.abre)}`) : L(`Abre el ${DIA_LARGO.es[(b.dow + prox.dias) % 7]!.toLowerCase()} a las ${hora12(prox.abre)}`, `Opens ${DIA_LARGO.en[(b.dow + prox.dias) % 7]!.charAt(0)}${DIA_LARGO.en[(b.dow + prox.dias) % 7]!.slice(1).toLowerCase()} at ${hora12(prox.abre)}`))
+    : prox.abre ? (prox.dias === 0 ? L(`Abre a las ${hora12(prox.abre)}`, `Opens at ${hora12(prox.abre)}`) : prox.dias === 1 ? L(`Abre mañana a las ${hora12(prox.abre)}`, `Opens tomorrow at ${hora12(prox.abre)}`) : L(`Abre el ${DIA_LARGO("es")[(b.dow + prox.dias) % 7]!.toLowerCase()} a las ${hora12(prox.abre)}`, `Opens ${DIA_LARGO("en")[(b.dow + prox.dias) % 7]!.charAt(0)}${DIA_LARGO("en")[(b.dow + prox.dias) % 7]!.slice(1).toLowerCase()} at ${hora12(prox.abre)}`))
     : L("Cerrado", "Closed");
   const hoyCard = {
     eyebrow: `${L("HOY", "TODAY")} · ${fecha}`, title: tituloHoy, dot: b.open ? "var(--tl-open)" : "var(--tl-danger)",
@@ -163,7 +164,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto, o?: { equipo?: bo
   // Semana simple (Free) y el horario de cada día.
   const semana = [1, 2, 3, 4, 5, 6, 0].map((wd, i) => {
     const d = dias.find((x) => x.weekday === wd), esHoy = wd === b.dow;
-    return { d: esHoy ? L("HOY", "TODAY") : DIA_CORTO[lang][wd]!, v: d?.open && d.ranges.length ? d.ranges.map((x) => rango(x, lang)).join(" · ") : L("Cerrado", "Closed"), hoy: esHoy, primero: i === 0 };
+    return { d: esHoy ? L("HOY", "TODAY") : DIA_CORTO(lang)[wd]!, v: d?.open && d.ranges.length ? d.ranges.map((x) => rango(x, lang)).join(" · ") : L("Cerrado", "Closed"), hoy: esHoy, primero: i === 0 };
   });
 
   const enCasa = b.from_home || (b.cat === "NEG-HOGAR" && !!b.radius);

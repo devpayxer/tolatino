@@ -174,7 +174,7 @@ export function propiedadDetalle(c: Ctx, id: string): Sec {
   if (d.visitas.length) out.push({ type: "rows", cols: c.desk ? "repeat(2,minmax(0,1fr))" : undefined, items: d.visitas.map((v, i) => ({ key: `${v.dow}:${v.min}`, icon: "calendar", t: cortoVis(v.dow, v.min, es), compact: true,
     tgOn: v.on, onTg: () => set({ visitas: d.visitas.map((x, j) => (j === i ? { ...x, on: !x.on } : x)) }), acts: [{ l: E2("Quitar", "Remove"), v: "soft", onClick: () => set({ visitas: d.visitas.filter((_, j) => j !== i) }) }] })) });
   else out.push({ type: "note", tone: d.deal === "renta" && VIV(d.kind) ? "warn" : "info", icon: "calendar", t: E2("Deja al menos una hora de visita: así te piden verla por la app.", "Keep at least one viewing time: that is how people ask to see it in the app.") });
-  out.push({ type: "chips", k: E2("AGREGAR UNA HORA · DÍA", "ADD A TIME · DAY"), items: DIA_FE.map((x, i) => ({ l: es ? x[0] : x[1], v: d.vDow === i ? "selected" : "filter", onClick: () => set({ vDow: i }) })) },
+  out.push({ type: "chips", k: E2("AGREGAR UNA HORA · DÍA", "ADD A TIME · DAY"), items: DIA_FE(es).map((x, i) => ({ l: x[0], v: d.vDow === i ? "selected" : "filter", onClick: () => set({ vDow: i }) })) },
     { type: "step", t: E2("Hora de visita", "Viewing time"), v: horaFe(d.vMin), onM: () => set({ vMin: Math.max(360, d.vMin - 30) }), onP: () => set({ vMin: Math.min(1320, d.vMin + 30) }) },
     { type: "acts", pt: "0", items: [{ l: E2("Agregar hora", "Add time"), v: "secondary", icon: "plus", off: d.visitas.some((x) => x.dow === d.vDow && x.min === d.vMin) || d.visitas.length >= 14,
       onClick: () => set({ visitas: [...d.visitas, { dow: d.vDow, min: d.vMin, on: true }].sort((a, b) => a.dow - b.dow || a.min - b.min) }) }] },

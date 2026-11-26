@@ -19,21 +19,14 @@ import { fotoFondo } from "@tolatino/ui";
 const { OnbTopBar, OnbActionBar, Icon, Tag, Chip, Button } = UI as unknown as Record<"OnbTopBar" | "OnbActionBar" | "Icon" | "Tag" | "Chip" | "Button", ComponentType<any>>;
 type Paso = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 /* Paso 4: las 17 categorías (como en el prototipo, cortas) y lo que interesa de la Comunidad (sin El Patio: decisión G). */
-const CATS: [string, string, string][] = [["NEG-FOOD", "Comida", "Food"], ["NEG-BELL", "Belleza", "Beauty"], ["NEG-AUTO", "Auto", "Auto"], ["NEG-HOGAR", "Hogar", "Home"], ["NEG-NOCHE", "Noche", "Nightlife"],
-  ["NEG-MERC", "Mercados", "Markets"], ["NEG-FIESTA", "Fiestas", "Parties"], ["NEG-SALUD", "Doctores", "Doctors"], ["NEG-PRO", "Profesionales", "Professionals"], ["NEG-TIENDA", "Tiendas", "Shops"],
-  ["NEG-TRANS", "Transporte", "Transport"], ["NEG-EDU", "Educación", "Education"], ["NEG-NINOS", "Niños", "Kids"], ["NEG-DEPORTE", "Deporte", "Sports"], ["NEG-FE", "Iglesias", "Churches"],
-  ["NEG-INMUEBLE", "Bienes raíces", "Real estate"], ["NEG-DEALER", "Venta de autos", "Car dealers"]];
-const COMS: [string, string, string][] = [["preg", "Preguntas del barrio", "Neighborhood questions"], ["rec", "Recomendaciones", "Recommendations"], ["evt", "Eventos", "Events"],
-  ["nov", "Novedades de negocios", "Business updates"], ["avisos", "Avisos de la ciudad", "City notices"]];
+const CATS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["NEG-FOOD", E2("Comida", "Food")], ["NEG-BELL", E2("Belleza", "Beauty")], ["NEG-AUTO", E2("Auto", "Auto")], ["NEG-HOGAR", E2("Hogar", "Home")], ["NEG-NOCHE", E2("Noche", "Nightlife")], ["NEG-MERC", E2("Mercados", "Markets")], ["NEG-FIESTA", E2("Fiestas", "Parties")], ["NEG-SALUD", E2("Doctores", "Doctors")], ["NEG-PRO", E2("Profesionales", "Professionals")], ["NEG-TIENDA", E2("Tiendas", "Shops")], ["NEG-TRANS", E2("Transporte", "Transport")], ["NEG-EDU", E2("Educación", "Education")], ["NEG-NINOS", E2("Niños", "Kids")], ["NEG-DEPORTE", E2("Deporte", "Sports")], ["NEG-FE", E2("Iglesias", "Churches")], ["NEG-INMUEBLE", E2("Bienes raíces", "Real estate")], ["NEG-DEALER", E2("Venta de autos", "Car dealers")]]; };
+const COMS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["preg", E2("Preguntas del barrio", "Neighborhood questions")], ["rec", E2("Recomendaciones", "Recommendations")], ["evt", E2("Eventos", "Events")], ["nov", E2("Novedades de negocios", "Business updates")], ["avisos", E2("Avisos de la ciudad", "City notices")]]; };
 const reglasDe = (c: string): [string, string][] => [[`Habla de ${c} y de lo que pasa aquí.`, `Talk about ${c} and what happens here.`],
   ["Recomienda por experiencia, nunca tu propio negocio. Tu negocio publica en sus Novedades.", "Recommend from experience, never your own business. Your business posts in its Updates."],
   ["Nada de ventas, rifas ni cadenas.", "No sales, raffles or chain messages."], ["No publiques teléfonos, direcciones ni fotos de otras personas sin su permiso.", "Don't post other people's phones, addresses or photos without permission."],
   ["Respeto siempre: sin insultos ni acoso.", "Respect always: no insults or harassment."], ["Una emergencia no se pregunta aquí: llama al 911.", "An emergency isn't asked here: call 911."]];
 type L = "es" | "en";
-const NOMBRES: Record<L, string[]> = {
-  es: ["Entra", "Tú", "Tu zona", "Lo que te gusta", "El barrio"],
-  en: ["Sign in", "You", "Your area", "What you like", "The neighborhood"],
-};
+const NOMBRES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("Entra", "Sign in"), E2("Tú", "You"), E2("Tu zona", "Your area"), E2("Lo que te gusta", "What you like"), E2("El barrio", "The neighborhood")]; };
 const fmt = (d: string) => {
   d = d.replace(/\D/g, "").slice(0, 10);
   return d.length < 4 ? d : d.length < 7 ? `(${d.slice(0, 3)}) ${d.slice(3)}` : `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
@@ -189,7 +182,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
       : paso >= 6
         ? { label: paso === 6 ? E2("BIENVENIDA", "WELCOME") : E2("COMUNIDAD", "COMMUNITY"), saved: "", segments: [] }
         : {
-            label: `${E2("PASO ", "STEP ")}${paso}${E2(" DE 5 · ", " OF 5 · ")}${NOMBRES[lang][paso - 1]}`,
+            label: `${E2("PASO ", "STEP ")}${paso}${E2(" DE 5 · ", " OF 5 · ")}${NOMBRES(lang === "es")[paso - 1]}`,
             saved: E2("GUARDADO", "SAVED"),
             segments: [1, 2, 3, 4, 5].map((i) => (i < paso ? "done" : i === paso ? "cur" : "next")),
           };
@@ -421,11 +414,11 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves 
             </div>
             <div className="mt-[18px] flex flex-col gap-2.5">
               <div className="flex justify-between"><Clave>{E2("NEGOCIOS", "BUSINESSES")}</Clave><span className="font-mono text-[10px] font-bold tracking-[0.14em] text-action">{nn(cats.length)}</span></div>
-              <div className="flex flex-wrap gap-[7px]">{CATS.map(([k, es, en]) => <Chip key={k} variant={cats.includes(k) ? "selected" : "filter"} onClick={() => setCats(tg(cats, k))}>{lang === "es" ? es : en}</Chip>)}</div>
+              <div className="flex flex-wrap gap-[7px]">{CATS(lang === "es").map(([k, es]) => <Chip key={k} variant={cats.includes(k) ? "selected" : "filter"} onClick={() => setCats(tg(cats, k))}>{es}</Chip>)}</div>
             </div>
             <div className="mt-5 flex flex-col gap-2.5">
               <div className="flex justify-between"><Clave>{E2("EN COMUNIDAD", "IN COMMUNITY")}</Clave><span className="font-mono text-[10px] font-bold tracking-[0.14em] text-action">{nn(coms.length)}</span></div>
-              <div className="flex flex-wrap gap-[7px]">{COMS.map(([k, es, en]) => <Chip key={k} variant={coms.includes(k) ? "selected" : "filter"} onClick={() => setComs(tg(coms, k))}>{lang === "es" ? es : en}</Chip>)}</div>
+              <div className="flex flex-wrap gap-[7px]">{COMS(lang === "es").map(([k, es]) => <Chip key={k} variant={coms.includes(k) ? "selected" : "filter"} onClick={() => setComs(tg(coms, k))}>{es}</Chip>)}</div>
             </div>
           </div>
         )}

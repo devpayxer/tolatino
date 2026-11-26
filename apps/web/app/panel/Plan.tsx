@@ -10,12 +10,13 @@ import type { Ctx } from "./Panel";
 
 export type PlanPanel = { plan: Plan; recibos: { at: string; monto: number }[]; modo: "stripe" | "simulador" | "apagado"; pk: string | null; tarjetas: { pm: string; marca: string; ultimos4: string; vence: string; def: boolean }[] };
 import { usd as money } from "@/lib/dinero-comun";
-const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
-const DIA: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
+import { dosIdiomas } from "@/lib/dos-idiomas";
+const MES = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
+const DIA = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
 export const fechaPlan = (es: boolean, iso: string | null) => {
   if (!iso) return "—";
   const d = new Date(new Date(iso).toLocaleString("en-US", { timeZone: "America/New_York" }));
-  return es ? `${DIA[d.getDay()]![0]} ${d.getDate()} ${MES[d.getMonth()]![0]}` : `${DIA[d.getDay()]![1]} ${MES[d.getMonth()]![1]} ${d.getDate()}`;
+  return es ? `${DIA(es)[d.getDay()]!} ${d.getDate()} ${MES(es)[d.getMonth()]!}` : `${DIA(es)[d.getDay()]!} ${MES(es)[d.getMonth()]!} ${d.getDate()}`;
 };
 const tarjL = (t: { marca: string; ultimos4: string } | null) => (t ? `${t.marca.toUpperCase()} ·· ${t.ultimos4}` : "—");
 

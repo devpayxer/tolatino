@@ -14,11 +14,12 @@ import { filasRenta } from "./RentaArticulo";
 import type { Ctx, Sec } from "./Panel";
 
 import { usd as money } from "@/lib/dinero-comun";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 const dol = (c: number | null | undefined) => (c ? String(c / 100) : "");
 const cts = (v: string) => Math.round((parseFloat(String(v).replace(/[^0-9.]/g, "")) || 0) * 100);
 const num = (v: string) => v.replace(/[^0-9.]/g, "").slice(0, 8);
 const O = (c: Ctx): OfiPanel => c.ofi!;
-const UNIT: Record<string, [string, string]> = { pie2: ["pie²", "sq ft"], cuarto: ["cuarto", "room"], salida: ["salida", "vent"] };
+const UNIT = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { pie2: E2("pie²", "sq ft"), cuarto: E2("cuarto", "room"), salida: E2("salida", "vent") }; };
 
 /* Las formas de cobrar (Auto: asvK del diseño; Hogar: compuesto con los tipos de neg-hogar-listing). */
 export function formas(c: Ctx, r: Rubro): [string, string, string][] {
@@ -130,7 +131,7 @@ export function oficioDetalle(c: Ctx, id: string): Sec {
   if (d.k === "lav") ([E2("CARRO", "CAR"), E2("SUV O PICKUP", "SUV OR PICKUP"), E2("VAN O 3 FILAS", "VAN OR 3 ROWS")] as string[]).forEach((l, i) => out.push(usd(l, d.sz[i]!, (v) => { const z = [...d.sz] as FOf["sz"]; z[i] = v; setF({ sz: z }); }, i ? undefined : E2("El cliente ve el precio de su tamaño.", "Clients see the price for their size."))));
   if (d.k !== "cotiza" && d.k !== "lav") {
     const pl = d.k === "desde" ? E2("DESDE", "FROM") : d.k === "diag" ? E2("PRECIO DEL DIAGNÓSTICO", "DIAGNOSIS PRICE") : d.k === "grua" ? E2("REMOLQUE HASTA 10 MILLAS", "TOW UP TO 10 MILES") : d.k === "visita" ? E2("PRECIO DE LA VISITA", "VISIT PRICE")
-      : d.k === "hora" ? E2("PRECIO POR HORA", "PRICE PER HOUR") : d.k === "area" ? E2(`PRECIO POR ${UNIT[d.u]![0].toUpperCase()}`, `PRICE PER ${UNIT[d.u]![1].toUpperCase()}`) : d.k === "pres" ? E2("LA VISITA PARA MEDIR · 0 = GRATIS", "THE MEASURING VISIT · 0 = FREE") : d.k === "emer" ? E2("LA SALIDA", "THE CALL-OUT") : d.k === "plan" ? E2("PRECIO DEL PLAN", "PLAN PRICE") : E2("PRECIO", "PRICE");
+      : d.k === "hora" ? E2("PRECIO POR HORA", "PRICE PER HOUR") : d.k === "area" ? E2(`PRECIO POR ${UNIT(true)[d.u]!.toUpperCase()}`, `PRICE PER ${UNIT(false)[d.u]!.toUpperCase()}`) : d.k === "pres" ? E2("LA VISITA PARA MEDIR · 0 = GRATIS", "THE MEASURING VISIT · 0 = FREE") : d.k === "emer" ? E2("LA SALIDA", "THE CALL-OUT") : d.k === "plan" ? E2("PRECIO DEL PLAN", "PLAN PRICE") : E2("PRECIO", "PRICE");
     const ph = d.k === "desde" ? E2("El mínimo. Lo que salga de más va en el estimado y el cliente lo aprueba.", "The minimum. Anything more goes in the estimate for the client to approve.") : d.k === "diag" && !cts(d.price) ? E2("En 0 es gratis si hace el arreglo contigo.", "At 0 it is free if they do the repair with you.") : undefined;
     out.push(usd(pl, d.price, (v) => setF({ price: v }), ph));
   }
@@ -139,7 +140,7 @@ export function oficioDetalle(c: Ctx, id: string): Sec {
   if (d.k === "diag" && !cts(d.price)) out.push(usd(E2("SI NO HACE EL ARREGLO CONTIGO", "IF THEY DO NOT DO THE REPAIR WITH YOU"), d.alt, (v) => setF({ alt: v })));
   if (auto && ["fijo", "desde", "goma"].includes(d.k)) out.push({ type: "chips", k: E2("EL PRECIO ES", "THE PRICE IS"), items: ([["", E2("Por el trabajo", "Per job")], ["eje", E2("Por eje", "Per axle")], ["goma", E2("Por goma", "Per tire")], ["sensor", E2("Por sensor", "Per sensor")]] as [string, string][]).map(([k, l]) => ({ l, v: d.per === k ? "selected" : "filter", onClick: () => setF({ per: k }) })) });
   if (d.k === "hora") out.push({ type: "step", t: E2("Mínimo de horas", "Minimum hours"), s: E2("Lo que cobras aunque termines antes.", "What you charge even if you finish earlier."), v: `${d.mh} h`, onM: () => setF({ mh: Math.max(1, d.mh - 1) }), onP: () => setF({ mh: Math.min(8, d.mh + 1) }) });
-  if (d.k === "area") out.push({ type: "chips", k: E2("POR", "PER"), items: Object.entries(UNIT).map(([k, l]) => ({ l: es ? l[0] : l[1], v: d.u === k ? "selected" : "filter", onClick: () => setF({ u: k }) })) }, usd(E2("MÍNIMO · OPCIONAL", "MINIMUM · OPTIONAL"), d.min, (v) => setF({ min: v })));
+  if (d.k === "area") out.push({ type: "chips", k: E2("POR", "PER"), items: Object.entries(UNIT(es)).map(([k, l]) => ({ l, v: d.u === k ? "selected" : "filter", onClick: () => setF({ u: k }) })) }, usd(E2("MÍNIMO · OPCIONAL", "MINIMUM · OPTIONAL"), d.min, (v) => setF({ min: v })));
   if (d.k === "emer") out.push(usd(E2("RECARGO INCLUIDO · OPCIONAL", "SURCHARGE INCLUDED · OPTIONAL"), d.sur, (v) => setF({ sur: v }), E2("El cliente ve que la salida ya lo incluye.", "Clients see the call-out already includes it.")));
   if (d.k === "plan") out.push({ type: "chips", k: E2("SE COBRA", "BILLED"), items: ([["mes", E2("Cada mes", "Monthly")], ["temp", E2("Por temporada", "Per season")]] as [string, string][]).map(([k, l]) => ({ l, v: d.fr === k ? "selected" : "filter", onClick: () => setF({ fr: k }) })) });
   if (d.k !== "grua") {

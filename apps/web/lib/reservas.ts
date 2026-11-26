@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
+import { dosIdiomas } from "@/lib/dos-idiomas";
 
 /* Reservación de mesa (Fase 2 · bloque 2e; prototipo neg-rsv.js TLRsv y rsvVals / rsvDetVals / rsvStVals; Panel v2
    Lo que vendes › Reservaciones). La disponibilidad es real: las mesas de cada área por tamaño (menos las que no se
@@ -580,12 +581,12 @@ export async function rsvCambio(negocio: string, numero: string, que: "aceptar" 
 }
 
 /* ── El panel: listas y detalle ── */
-const DIAS_C: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
-const MESES_C: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+const DIAS_C = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("dom", "Sun"), E2("lun", "Mon"), E2("mar", "Tue"), E2("mié", "Wed"), E2("jue", "Thu"), E2("vie", "Fri"), E2("sáb", "Sat")]; };
+const MESES_C = (es: unknown): string[] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [E2("ene", "Jan"), E2("feb", "Feb"), E2("mar", "Mar"), E2("abr", "Apr"), E2("may", "May"), E2("jun", "Jun"), E2("jul", "Jul"), E2("ago", "Aug"), E2("sep", "Sep"), E2("oct", "Oct"), E2("nov", "Nov"), E2("dic", "Dec")]; };
 // «sáb 7 nov» / «Sat Nov 7»: nunca la fecha en crudo (2026-11-07) en una pantalla.
 export function fechaCorta(ymd: string): Bi {
-  const d = new Date(`${ymd}T12:00:00Z`), w = DIAS_C[d.getUTCDay()]!, m = MESES_C[d.getUTCMonth()]!, n = d.getUTCDate();
-  return { es: `${w[0]} ${n} ${m[0]}`, en: `${w[1]} ${m[1]} ${n}` };
+  const d = new Date(`${ymd}T12:00:00Z`), n = d.getUTCDate();
+  return { es: `${DIAS_C(true)[d.getUTCDay()]!} ${n} ${MESES_C(true)[d.getUTCMonth()]!}`, en: `${DIAS_C(false)[d.getUTCDay()]!} ${MESES_C(false)[d.getUTCMonth()]!} ${n}` };
 }
 export type FilaMesa = { numero: string; who: string; p: number; ymd: string; h: number; dia: number; area: string; st: RsvVista["st"]; s: Bi; tarde: number | null; hace: number; occ: string | null; needs: string[]; nota: string | null; chg: boolean };
 /* Clientes › Reservaciones: los mismos filtros que Pedidos. */

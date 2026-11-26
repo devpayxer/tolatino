@@ -21,7 +21,7 @@ const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 
-export const SZ: Record<string, [string, string]> = { c: ["Carro", "Car"], s: ["SUV o pickup", "SUV or pickup"], v: ["Van o 3 filas", "Van or 3 rows"], m: ["Moto", "Motorcycle"], d: ["Camión o diésel", "Truck or diesel"] };
+export const SZ = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { c: E2("Carro", "Car"), s: E2("SUV o pickup", "SUV or pickup"), v: E2("Van o 3 filas", "Van or 3 rows"), m: E2("Moto", "Motorcycle"), d: E2("Camión o diésel", "Truck or diesel") }; };
 const TOPV = ["toyota", "honda", "nissan", "ford", "chevy", "hyundai", "kia", "jeep"];
 const MARCAS: [string, string][] = [["acura", "Acura"], ["alfa", "Alfa Romeo"], ["audi", "Audi"], ["bmw", "BMW"], ["buick", "Buick"], ["cadillac", "Cadillac"], ["chevy", "Chevrolet"], ["chrysler", "Chrysler"], ["dodge", "Dodge"], ["fiat", "Fiat"],
   ["ford", "Ford"], ["freightliner", "Freightliner"], ["genesis", "Genesis"], ["gmc", "GMC"], ["hino", "Hino"], ["honda", "Honda"], ["hyundai", "Hyundai"], ["infiniti", "Infiniti"], ["international", "International"], ["isuzu", "Isuzu"], ["jaguar", "Jaguar"], ["jeep", "Jeep"],
@@ -35,23 +35,23 @@ const MODELOS: Record<string, [string, string, string][]> = { toyota: [["Corolla
   jeep: [["Compass", "s", "215/65R17"], ["Cherokee", "s", "225/60R17"], ["Grand Cherokee", "s", "265/60R18"], ["Wrangler", "s", "245/75R17"]], hyundai: [["Elantra", "c", "205/55R16"], ["Sonata", "c", "215/55R17"], ["Tucson", "s", "225/60R17"], ["Santa Fe", "s", "235/60R18"]],
   kia: [["Forte", "c", "205/55R16"], ["K5", "c", "215/55R17"], ["Sportage", "s", "235/60R17"], ["Sorento", "s", "235/65R17"], ["Telluride", "s", "245/60R18"]], dodge: [["Charger", "c", "245/55R18"], ["Journey", "s", "225/65R17"], ["Durango", "s", "265/60R18"], ["Grand Caravan", "v", "225/65R17"]],
   ram: [["1500", "s", "275/65R18"], ["2500", "s", "275/70R18"], ["ProMaster", "v", "225/75R16"]] };
-const TIPO: [string, string, string][] = [["casa", "Casa", "House"], ["apto", "Apartamento", "Apartment"], ["duplex", "Dúplex o twin", "Duplex or twin"], ["movil", "Casa móvil", "Mobile home"]];
-const OWN: [string, string, string][] = [["dueno", "Soy dueño", "I own"], ["inq", "Soy inquilino", "I rent"], ["land", "Tengo propiedades de renta", "I have rental properties"]];
-const YR: [string, string, string][] = [["pre50", "Antes de 1950", "Before 1950"], ["50", "1950–1979", "1950–1979"], ["80", "1980–1999", "1980–1999"], ["00", "2000 o después", "2000 or later"]];
-const PETS: [string, string, string][] = [["no", "No", "No"], ["perro", "Perro", "Dog"], ["gato", "Gato", "Cat"], ["otra", "Otra", "Other"]];
-const HEAT: [string, string, string][] = [["caldera", "Caldera (agua o vapor)", "Boiler (water or steam)"], ["horno", "Horno de aire", "Furnace"], ["bomba", "Bomba de calor", "Heat pump"], ["zocalo", "Eléctrica de zócalo", "Electric baseboard"]];
-const WH: [string, string, string][] = [["gas", "Gas", "Gas"], ["elec", "Eléctrico", "Electric"], ["sintanque", "Sin tanque", "Tankless"], ["aceite", "Aceite", "Oil"]];
-const AGE: [string, string, string][] = [["5", "Menos de 5 años", "Under 5 years"], ["10", "5 a 10", "5 to 10"], ["20", "10 a 20", "10 to 20"], ["mas", "Más de 20", "Over 20"], ["ns", "No sé", "Not sure"]];
-const lab = (L: [string, string, string][], k: string | null, es: boolean) => { const x = L.find((z) => z[0] === k); return x ? (es ? x[1] : x[2]) : ""; };
+const TIPO = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["casa", E2("Casa", "House")], ["apto", E2("Apartamento", "Apartment")], ["duplex", E2("Dúplex o twin", "Duplex or twin")], ["movil", E2("Casa móvil", "Mobile home")]]; };
+const OWN = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["dueno", E2("Soy dueño", "I own")], ["inq", E2("Soy inquilino", "I rent")], ["land", E2("Tengo propiedades de renta", "I have rental properties")]]; };
+const YR = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["pre50", E2("Antes de 1950", "Before 1950")], ["50", E2("1950–1979", "1950–1979")], ["80", E2("1980–1999", "1980–1999")], ["00", E2("2000 o después", "2000 or later")]]; };
+const PETS = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["no", E2("No", "No")], ["perro", E2("Perro", "Dog")], ["gato", E2("Gato", "Cat")], ["otra", E2("Otra", "Other")]]; };
+const HEAT = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["caldera", E2("Caldera (agua o vapor)", "Boiler (water or steam)")], ["horno", E2("Horno de aire", "Furnace")], ["bomba", E2("Bomba de calor", "Heat pump")], ["zocalo", E2("Eléctrica de zócalo", "Electric baseboard")]]; };
+const WH = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["gas", E2("Gas", "Gas")], ["elec", E2("Eléctrico", "Electric")], ["sintanque", E2("Sin tanque", "Tankless")], ["aceite", E2("Aceite", "Oil")]]; };
+const AGE = (es: unknown): [string, string][] => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return [["5", E2("Menos de 5 años", "Under 5 years")], ["10", E2("5 a 10", "5 to 10")], ["20", E2("10 a 20", "10 to 20")], ["mas", E2("Más de 20", "Over 20")], ["ns", E2("No sé", "Not sure")]]; };
+const lab = (L: [string, string][], k: string | null) => L.find((z) => z[0] === k)?.[1] ?? "";
 export const vehName = (v: Vehiculo, es: boolean) => `${v.year} ${mkName(v.make, es)} ${v.model}`;
-export const vehMeta = (v: Vehiculo, es: boolean) => `${SZ[v.size]?.[es ? 0 : 1] ?? ""}${v.mileage ? ` · ${v.mileage.toLocaleString("en-US")} mi` : ""}${v.tire ? `${es ? " · gomas " : " · tires "}${v.tire}` : ""}`.toUpperCase();
-export const casaMeta = (c: Casa, es: boolean) => [lab(TIPO, c.kind, es), c.beds != null ? `${c.beds}${es ? " cuartos" : " bedrooms"}` : "", c.baths ? `${c.baths}${es ? " baños" : " baths"}` : "", lab(OWN, c.tenure, es)].filter(Boolean).join(" · ").toUpperCase();
+export const vehMeta = (v: Vehiculo, es: boolean) => `${SZ(es)[v.size] ?? ""}${v.mileage ? ` · ${v.mileage.toLocaleString("en-US")} mi` : ""}${v.tire ? `${es ? " · gomas " : " · tires "}${v.tire}` : ""}`.toUpperCase();
+export const casaMeta = (c: Casa, es: boolean) => [lab(TIPO(es), c.kind), c.beds != null ? `${c.beds}${es ? " cuartos" : " bedrooms"}` : "", c.baths ? `${c.baths}${es ? " baños" : " baths"}` : "", lab(OWN(es), c.tenure)].filter(Boolean).join(" · ").toUpperCase();
 
 /* ¿Trabajan con tu vehículo o llegan a tu casa? (diseño compat; el servidor lo vuelve a revisar al enviar). */
 export function compatVeh(op: OficiosPublico, v: Vehiculo | null, es: boolean) {
   if (!v) return null;
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), cls = v.size === "v" ? "s" : v.size;
-  if (op.compat.veh && !op.compat.veh.includes(cls)) return { ok: false, t: E2(`Aquí no trabajan con ${(SZ[v.size]?.[0] ?? "").toLowerCase()}s`, `They do not work on ${(SZ[v.size]?.[1] ?? "").toLowerCase()}s here`) };
+  if (op.compat.veh && !op.compat.veh.includes(cls)) return { ok: false, t: E2(`Aquí no trabajan con ${(SZ(true)[v.size] ?? "").toLowerCase()}s`, `They do not work on ${(SZ(false)[v.size] ?? "").toLowerCase()}s here`) };
   if (v.make === "otra") return { ok: true, t: E2("Marca no listada: te confirman al aceptar la cita", "Unlisted make: confirmed when they accept") };
   if (op.compat.mk && !op.compat.mk.includes(v.make)) return { ok: false, t: E2(`Este taller no trabaja con ${mkName(v.make, true)}`, `This shop does not work on ${mkName(v.make, false)}`) };
   return { ok: true, t: E2(`Trabajan con tu ${v.model}`, `They work on your ${v.model}`) };
@@ -196,7 +196,7 @@ export function OfHoja({ v }: { v: Of }) {
   const szIdx = a.sz ? (v.veh ? (v.veh.size === "c" ? 0 : v.veh.size === "v" ? 2 : 1) : q.sz) : null;
   const groups: { title: string; meta: string; done: boolean; opts: { label: string; price: string; selected: boolean }[]; onToggle: (k: number) => void }[] = [];
   if (a.sz && !v.veh) groups.push({ title: E2("Tamaño de tu carro", "Your car size"), meta: E2("ELIGE 1 · CAMBIA EL PRECIO", "CHOOSE 1 · CHANGES THE PRICE"), done: q.sz != null,
-    opts: (["c", "s", "v"] as const).map((k, i) => ({ label: SZ[k]![es ? 0 : 1], price: dinero(a.sz![i]!), selected: q.sz === i })), onToggle: (i) => up({ sz: i }) });
+    opts: (["c", "s", "v"] as const).map((k, i) => ({ label: SZ(es)[k]!, price: dinero(a.sz![i]!), selected: q.sz === i })), onToggle: (i) => up({ sz: i }) });
   s.opts.forEach((g, gi) => { const sel = q.opts[String(gi)]; groups.push({ title: v.nm(g.t), meta: E2("ELIGE 1", "CHOOSE 1"), done: sel != null,
     opts: g.o.map((o, k) => ({ label: `${v.nm(o.n)}${o.m ? ` · +${o.m} min` : ""}`, price: o.p ? `${o.p > 0 ? "+" : "−"}${dinero(Math.abs(o.p))}` : "", selected: sel === k })), onToggle: (k) => up({ opts: { ...q.opts, [String(gi)]: k } }) }); });
   if (auto && a.w === "ambos") groups.push({ title: E2("¿Esperas o lo dejas?", "Wait or drop off?"), meta: (a.days ? E2(`TE LO DEVUELVEN EN ${a.days[0]}–${a.days[1]} DÍAS`, `BACK IN ${a.days[0]}–${a.days[1]} DAYS`) : op.tool.cut ? E2(`HOY, SI LO DEJAS ANTES DE LAS ${op.tool.cut % 12 || 12} ${op.tool.cut < 12 ? "AM" : "PM"}`, `TODAY, IF DROPPED OFF BY ${op.tool.cut % 12 || 12} ${op.tool.cut < 12 ? "AM" : "PM"}`) : E2("CUÁNDO TE LO DEVUELVEN", "WHEN YOU GET IT BACK")),
@@ -355,7 +355,7 @@ export function HojaVehiculo({ v }: { v: Of }) {
           : f.mk ? <div><div className={K}>{f.mk === "otra" ? E2("MARCA Y MODELO", "MAKE AND MODEL") : E2("MODELO", "MODEL")}</div><input aria-label={E2("Modelo", "Model")} value={f.other} onChange={(e) => setF({ ...f, other: e.target.value.slice(0, 40) })} placeholder={f.mk === "otra" ? E2("Ej.: Suzuki Grand Vitara", "E.g. Suzuki Grand Vitara") : E2("Escríbelo", "Type it")} className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-3.5 text-[13.5px] font-semibold outline-none" /></div> : null}
         <Chips k={E2("AÑO", "YEAR")} items={Array.from({ length: 27 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ l: String(y), on: f.y === y, onClick: () => setF({ ...f, y }) }))} />
         <div><div className={K}>{E2("MILLAJE · OPCIONAL", "MILEAGE · OPTIONAL")}</div><input aria-label={E2("Millaje", "Mileage")} inputMode="numeric" value={f.mi} onChange={(e) => setF({ ...f, mi: e.target.value.replace(/\D/g, "").slice(0, 7) })} placeholder={E2("Ej.: 84200", "E.g. 84200")} className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-3.5 font-mono text-[13.5px] font-bold outline-none" /></div>
-        <Chips k={E2("TIPO", "TYPE")} items={(["c", "s", "v", "m", "d"] as const).map((k) => ({ l: SZ[k]![es ? 0 : 1], on: f.sz === k, onClick: () => setF({ ...f, sz: k }) }))} />
+        <Chips k={E2("TIPO", "TYPE")} items={(["c", "s", "v", "m", "d"] as const).map((k) => ({ l: SZ(es)[k]!, on: f.sz === k, onClick: () => setF({ ...f, sz: k }) }))} />
         <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Se guarda en tu cuenta. El precio, el estimado y la garantía van con tu vehículo.", "Saved to your account. The price, estimate and warranty go with your vehicle.")}</div>
       </>)}
     </Marco>
@@ -368,7 +368,7 @@ export function HojaCasa({ v }: { v: Of }) {
   const [f, setF] = useState<Record<string, string>>({ address: v.op.dirs[0]?.id ?? "" });
   const [err, setErr] = useState(""), [busy, setBusy] = useState(false);
   if (v.sheet !== "casa") return null;
-  const ch = (key: string, L: [string, string, string][]) => L.map(([k, a, b]) => ({ l: es ? a : b, on: f[key] === k, onClick: () => setF({ ...f, [key]: f[key] === k ? "" : k }) }));
+  const ch = (key: string, L: [string, string][]) => L.map(([k, l]) => ({ l, on: f[key] === k, onClick: () => setF({ ...f, [key]: f[key] === k ? "" : k }) }));
   const can = !!(f.address && f.kind && f.tenure);
   const guardar = async () => { if (!can || busy) return; setBusy(true); setErr("");
     const r = await casaGuardar(v.op.negocio.id, { address: f.address!, kind: f.kind!, tenure: f.tenure!, beds: f.beds ? Number(f.beds.replace("+", "")) : null, baths: f.baths ? Number(f.baths.replace("+", "")) : null, sqft: f.sqft ? Number(f.sqft) : null,
@@ -388,17 +388,17 @@ export function HojaCasa({ v }: { v: Of }) {
         <div><div className={K}>{E2("DIRECCIÓN", "ADDRESS")}</div>
           {v.op.dirs.length ? <select aria-label={E2("Dirección", "Address")} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} className="mt-2 h-11 w-full rounded-[13px] border border-ink/[.12] bg-white px-3 text-[13.5px] font-semibold">{v.op.dirs.map((d) => <option key={d.id} value={d.id}>{d.t}</option>)}</select> : null}
           <a href={`/cuenta/direcciones/nueva?volver=${volver}`} className="mt-2 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-action"><Icon name="plus" size={14} />{v.op.dirs.length ? E2("Otra dirección", "Another address") : E2("Agrega tu dirección", "Add your address")}</a></div>
-        <Chips k={E2("TIPO", "TYPE")} items={ch("kind", TIPO)} />
-        <Chips k={E2("¿ERES DUEÑO?", "DO YOU OWN IT?")} items={ch("tenure", OWN)} help={f.tenure === "inq" ? E2("Para arreglos necesitas el permiso de tu landlord. Te lo pedimos en el Booking; algunos negocios solo trabajan con dueños.", "For repairs you need your landlord’s permission. We ask for it when you book; some businesses only work with owners.") : undefined} />
+        <Chips k={E2("TIPO", "TYPE")} items={ch("kind", TIPO(es))} />
+        <Chips k={E2("¿ERES DUEÑO?", "DO YOU OWN IT?")} items={ch("tenure", OWN(es))} help={f.tenure === "inq" ? E2("Para arreglos necesitas el permiso de tu landlord. Te lo pedimos en el Booking; algunos negocios solo trabajan con dueños.", "For repairs you need your landlord’s permission. We ask for it when you book; some businesses only work with owners.") : undefined} />
         <Chips k={E2("CUARTOS", "BEDROOMS")} items={["1", "2", "3", "4", "5+"].map((x) => ({ l: x, on: f.beds === x, onClick: () => setF({ ...f, beds: f.beds === x ? "" : x }) }))} />
         <Chips k={E2("BAÑOS", "BATHROOMS")} items={["1", "1.5", "2", "3+"].map((x) => ({ l: x, on: f.baths === x, onClick: () => setF({ ...f, baths: f.baths === x ? "" : x }) }))} />
         <div><div className={K}>{E2("PIES² · OPCIONAL", "SQ FT · OPTIONAL")}</div><input aria-label={E2("Pies cuadrados", "Square feet")} inputMode="numeric" value={f.sqft ?? ""} onChange={(e) => setF({ ...f, sqft: e.target.value.replace(/\D/g, "").slice(0, 5) })} placeholder={E2("Ej.: 1400", "E.g. 1400")} className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-3.5 font-mono text-[13.5px] font-bold outline-none" /></div>
-        <Chips k={E2("AÑO DE LA CASA", "YEAR BUILT")} items={ch("year", YR)} help={f.year === "pre50" || f.year === "50" ? E2("Casas de antes de 1978 pueden tener pintura con plomo: el negocio lo tiene en cuenta al lijar o romper paredes.", "Homes built before 1978 may have lead paint: the business accounts for it when sanding or opening walls.") : undefined} />
-        <Chips k={E2("MASCOTAS", "PETS")} items={ch("pets", PETS)} />
-        <Chips k={E2("CALEFACCIÓN", "HEATING")} items={ch("heat", HEAT)} />
-        <Chips k={E2("EDAD DE LA CALEFACCIÓN", "HEATING AGE")} items={ch("heatAge", AGE)} />
-        <Chips k={E2("CALENTADOR DE AGUA", "WATER HEATER")} items={ch("wh", WH)} />
-        <Chips k={E2("EDAD DEL CALENTADOR", "WATER HEATER AGE")} items={ch("whAge", AGE)} />
+        <Chips k={E2("AÑO DE LA CASA", "YEAR BUILT")} items={ch("year", YR(es))} help={f.year === "pre50" || f.year === "50" ? E2("Casas de antes de 1978 pueden tener pintura con plomo: el negocio lo tiene en cuenta al lijar o romper paredes.", "Homes built before 1978 may have lead paint: the business accounts for it when sanding or opening walls.") : undefined} />
+        <Chips k={E2("MASCOTAS", "PETS")} items={ch("pets", PETS(es))} />
+        <Chips k={E2("CALEFACCIÓN", "HEATING")} items={ch("heat", HEAT(es))} />
+        <Chips k={E2("EDAD DE LA CALEFACCIÓN", "HEATING AGE")} items={ch("heatAge", AGE(es))} />
+        <Chips k={E2("CALENTADOR DE AGUA", "WATER HEATER")} items={ch("wh", WH(es))} />
+        <Chips k={E2("EDAD DEL CALENTADOR", "WATER HEATER AGE")} items={ch("whAge", AGE(es))} />
         <div><div className={K}>{E2("DÓNDE ESTACIONAR Y CÓMO ENTRAR · OPCIONAL", "PARKING AND ACCESS · OPTIONAL")}</div><input aria-label={E2("Cómo entrar", "Access")} value={f.access ?? ""} onChange={(e) => setF({ ...f, access: e.target.value.slice(0, 120) })} placeholder={E2("Ej.: entrada al lado, timbre no sirve", "E.g. side driveway, doorbell broken")} className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] px-3.5 text-[13.5px] font-semibold outline-none" /></div>
         <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Se guarda en tu cuenta. La dirección exacta solo la ve el negocio que confirma tu visita.", "Saved to your account. Only the business that confirms your visit sees the exact address.")}</div>
       </>)}
