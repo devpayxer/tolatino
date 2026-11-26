@@ -214,6 +214,16 @@ console.log(JSON.stringify(x));
   } catch (e) { total++; console.log(`  ✗ promover.sh: no se pudo armar el repo de mentira (${String(e.message).slice(0, 160)})`); }
   finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 }
+// 26 nov · corrida.mjs --produccion: sin REPO y sin que gh responda, el repo sale del remoto de git (https, ssh y la URL del proxy local).
+{
+  const CAS = [['https://github.com/dueno/repo', 'dueno/repo'], ['https://github.com/dueno/repo.git', 'dueno/repo'], ['https://token@github.com/dueno/repo.git', 'dueno/repo'],
+    ['ssh://u@github.com/dueno/repo', 'dueno/repo'], ['u@github.com:dueno/re.po.git', 'dueno/re.po'], ['http://usuario@127.0.0.1:41233/git/dueno/repo', 'dueno/repo'], ['no-es-una-url', '']];
+  for (const [url, esperado] of CAS) {
+    let sale = ''; try { sale = execSync(`node scripts/ci/corrida.mjs --repo-de ${JSON.stringify(url)}`, { cwd: R, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim(); } catch (e) { sale = 'ERROR ' + String(e.message).slice(0, 80); }
+    total++; if (sale === esperado) bien++;
+    console.log(`  ${sale === esperado ? '✓' : '✗'} repoDeRemoto(${url}) → «${sale}»${sale === esperado ? '' : ` (esperaba «${esperado}»)`}`);
+  }
+}
 let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio ? 0 : 1);

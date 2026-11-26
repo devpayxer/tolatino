@@ -158,9 +158,19 @@ export function corridaDeProduccion(r, trabajos, { sha, repo }) {
   }
 }
 
+/* 26 nov · «owner/repo» a partir de la URL de un remoto de git: https (con o sin usuario, con o sin .git), ssh (usuario@host:owner/repo) y la del
+   proxy local de las sesiones (http://…/git/owner/repo). Lo que no se reconoce da "" (y quien llama falla con su mensaje de siempre). */
+export function repoDeRemoto(url) {
+  const u = String(url ?? "").trim().replace(/\/+$/, "").replace(/\.git$/, "");
+  const m = /^(?:[a-z+]+:\/\/(?:[^/@]+@)?[^/]+\/(?:.*\/)?|[^/@\s]+@[^:/\s]+:)([\w.-]+)\/([\w.-]+)$/i.exec(u);
+  return m ? `${m[1]}/${m[2]}` : "";
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const i = process.argv.indexOf("--produccion");
-  if (process.argv.includes("--decidir") || process.argv.includes("--decidir-produccion")) {
+  if (process.argv.includes("--repo-de")) {
+    console.log(repoDeRemoto(process.argv[process.argv.indexOf("--repo-de") + 1]));
+  } else if (process.argv.includes("--decidir") || process.argv.includes("--decidir-produccion")) {
     const f = process.argv.includes("--decidir") ? corridaConfirma : corridaDeProduccion;
     let casos;
     try { casos = JSON.parse(readFileSync(0, "utf8")); } catch { casos = null; }
@@ -170,7 +180,15 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const sha = process.argv[i + 1] ?? "";
     let repo = process.env.REPO ?? "", hallada = null;
     try {
-      if (!repo) repo = execFileSync("gh", ["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"], { encoding: "utf8", timeout: 30000, stdio: ["ignore", "pipe", "pipe"] }).trim();
+      if (!repo) {
+        try { repo = execFileSync("gh", ["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"], { encoding: "utf8", timeout: 30000, stdio: ["ignore", "pipe", "pipe"] }).trim(); }
+        catch (e) {
+          // gh no responde: el remoto de git dice de qué repo es esta copia.
+          try { repo = repoDeRemoto(execFileSync("git", ["remote", "get-url", "origin"], { encoding: "utf8", timeout: 10000, stdio: ["ignore", "pipe", "pipe"] })); } catch { /* sin remoto */ }
+          if (!repo) throw e;
+          console.log(`  · gh no respondió: el repo (${repo}) sale del remoto de git`);
+        }
+      }
       const pide = (ruta) => JSON.parse(execFileSync("gh", ["api", "-H", "Accept: application/vnd.github+json", ruta], { encoding: "utf8", timeout: 30000, maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }));
       if (!SHA40.test(sha) || !/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`commit o repo raros (${sha} · ${repo})`);
       const lista = pide(`repos/${repo}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=50`).workflow_runs;

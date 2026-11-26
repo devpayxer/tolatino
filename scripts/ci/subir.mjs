@@ -1597,6 +1597,21 @@ export const PASOS_LOCALES = Object.freeze({
   textos: [process.execPath, ["pruebas/alreves/textos.cjs"]],
 });
 
+/* 26 nov · Qué línea de la salida de un paso se enseña. De los guardianes, la del resumen («✓ guardianes: … — sin fallos (N archivos revisados)») o,
+   si fallan, «✗ N fallo(s) de guardianes:» con sus primeros fallos: no la última línea de la salida (un aviso de Node o un ⚠ la tapan). El resto
+   de los pasos, la última línea con texto (la salida normal, y si no hay, la de errores). */
+export function lineaDeResumen(k, out, err, extra = "") {
+  const lineas = (x) => String(x ?? "").split("\n").filter((l) => l.trim());
+  const o = lineas(out), e = lineas(err);
+  if (k === "guardianes") {
+    const bien = [...o].reverse().find((l) => /sin fallos \(\d+ archivos revisados\)/.test(l));
+    if (bien) return bien.trim();
+    const i = [...o, ...e].findIndex((l) => /^✗ \d+ fallo\(s\) de guardianes:/.test(l.trim()));
+    if (i >= 0) { const t = [...o, ...e].slice(i); return [t[0].trim(), ...t.slice(1, 3).map((l) => l.trim())].join(" · "); }
+  }
+  return [o, e].map((x) => x.slice(-1)[0] ?? "").find(Boolean) ?? extra;
+}
+
 /* Un paso local, sin bloquear (para correr varios a la vez). Devuelve la misma línea «CORRIÓ/FALTA» de siempre, con su tiempo. */
 function correrPaso(k, env) {
   const [cmd, a] = PASOS_LOCALES[k], t0 = Date.now(), MAX = 256 * 1024;
@@ -1604,7 +1619,7 @@ function correrPaso(k, env) {
     let out = "", err = "", fin = false;
     const termina = (status, extra = "") => {
       if (fin) return; fin = true; clearTimeout(reloj);
-      const ult = [out, err].map((x) => String(x ?? "").split("\n").filter((l) => l.trim()).slice(-1)[0] ?? "").find(Boolean) ?? extra;
+      const ult = lineaDeResumen(k, out, err, extra);
       listo(status === 0 ? { ok: true, linea: `CORRIÓ: ${k} en verde (${Math.round((Date.now() - t0) / 1000)} s) · ${ult.slice(0, 200)}` }
         : { ok: false, linea: `FALTA: ${k} en verde (salió con ${status}) · ${ult.slice(0, 300)}` });
     };
@@ -2596,6 +2611,12 @@ async function casos() {
     ok(arr.find((x) => x[0] === "guardianes")?.[1] === "1", "pasos locales: con textos en su propio paso, los guardianes no lo repiten (GUARDIANES_SIN_TEXTOS=1)");
     let raro = ""; try { await correrLocales(["build"], falso); } catch (e) { raro = String(e?.message ?? e); }
     ok(/desconocidos: build/.test(raro), "pasos locales: el build ya no es un paso local (decisión AR): pedirlo es un error, no un paso que no corre");
+    // 26 nov · La línea que se enseña de los guardianes es la del resumen (o sus fallos), no la última de la salida.
+    const bienG = "⚠ algo: aviso\n✓ guardianes: secretos, tokens — sin fallos (812 archivos revisados)\n";
+    ok(/^✓ guardianes: .* — sin fallos \(812 archivos revisados\)$/.test(lineaDeResumen("guardianes", bienG, "(node:1) Warning: x\n(Use `node --trace-warnings ...`)\n")), "línea de guardianes en verde: el resumen «sin fallos (N archivos revisados)», no el aviso de Node");
+    const malG = lineaDeResumen("guardianes", "⚠ aviso\n", "\n✗ 2 fallo(s) de guardianes:\n  [uno] a.ts — primero\n  [dos] b.ts — segundo\n  [tres] c.ts — tercero\n\n");
+    ok(/^✗ 2 fallo\(s\) de guardianes: · \[uno\] a\.ts — primero · \[dos\] b\.ts — segundo$/.test(malG), `línea de guardianes en rojo: los fallos, no un aviso (${malG.slice(0, 90)})`);
+    ok(lineaDeResumen("tipos", "uno\ndos\n", "err\n") === "dos" && lineaDeResumen("tipos", "", "solo err\n") === "solo err" && lineaDeResumen("textos", "", "", "pasó de 30 min") === "pasó de 30 min", "otros pasos: la última línea de la salida (o la de errores, o el motivo)");
     const solos = []; await correrLocales(["guardianes"], (k, env) => { solos.push(env?.GUARDIANES_SIN_TEXTOS ?? ""); return Promise.resolve({ ok: true, linea: k }); });
     ok(solos.join() === "", "pasos locales: guardianes solos (entrega de documentos) siguen comprobando los textos");
   }

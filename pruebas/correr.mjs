@@ -231,6 +231,8 @@ const vigia = {
       if (otra.length) console.log(`  ✗ el árbol NO volvió a la huella inicial (${otra.slice(0, 10).map((x) => x.ruta).join(", ")}): el diario queda abierto y el próximo arranque lo recupera`);
       else { console.log("  árbol idéntico al del inicio del carril"); this.cerrar(); }
     } catch (e) { console.log(`  ✗ no se pudo restaurar al parar: ${String(e?.message ?? e).slice(0, 200)} (el diario queda abierto)`); }
+    /* La copia de referencia se quita salvo que tenga apartados (archivos nuevos que alguien debe mirar) o que el árbol no haya vuelto (el próximo arranque la necesita). */
+    if (this.dir && this.diario && !existsSync(join(this.dir, "apartados")) && !existsSync(join(this.diario, "corrida.json"))) try { rmSync(this.dir, { recursive: true, force: true }); } catch { /* nada */ }
   },
   async empezar(rs) {
     this.empezado = true;

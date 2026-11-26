@@ -30,7 +30,8 @@ const M = '5705550622', V = '5705550633', W = ['5705550641', '5705550642', '5705
 const sinScroll = (p) => sinDesborde(p, p.url());
 const dlg = (p) => p.getByRole('dialog');
 const IMG = ENT.rec('fotos') + '/portada.jpg';
-let svc = null, dejarComoEstaba = () => { try { sql(`update mod_rules set enabled = true`); } catch { /* sin base */ } };
+let svc = null, estabaImg = null; // estabaImg: si el servicio de fotos ya corría al empezar (null = aún sin mirar)
+let dejarComoEstaba = () => { try { sql(`update mod_rules set enabled = true`); } catch { /* sin base */ } if (estabaImg === false) servicioImg(false); };
 const sharp = require(ENT.RAIZ + '/apps/web/node_modules/sharp');
 // AJ · Cada foto de la prueba es un contenido nuevo (la memoria por contenido haría entrar directo una que ya se aprobó en una corrida anterior).
 const fotoUnica = async () => ({ name: 'foto.jpg', mimeType: 'image/jpeg', buffer: await sharp(IMG).modulate({ brightness: 0.85 + Math.random() * 0.3 }).jpeg({ quality: 90 }).toBuffer() });
@@ -38,6 +39,8 @@ const servicioImg = (on) => {
   if (!on) { try { execSync("pkill -f 'services/moderacion-img/app.py'"); } catch { /* ya estaba */ } return; }
   svc = spawn(ENT.rec('imgvenv/bin/python'), ['-I', ENT.RAIZ + '/services/moderacion-img/app.py'], { env: { ...process.env, PUERTO: String(ENT.P.moderacion) }, detached: true, stdio: 'ignore' }); svc.unref();
 };
+// Pase lo que pase, el servicio que levantó esta prueba no queda encendido (puerto :8790).
+process.once('exit', () => { if (estabaImg === false) { try { execSync("pkill -f 'services/moderacion-img/app.py'"); } catch { /* ya estaba cerrado */ } } });
 const saludImg = () => { try { return JSON.parse(execSync(`curl -s -m 3 localhost:${ENT.P.moderacion}/salud`).toString()).ok === true; } catch { return false; } };
 
 (async () => {
@@ -59,7 +62,8 @@ const saludImg = () => { try { return JSON.parse(execSync(`curl -s -m 3 localhos
 
   // ── Preparación ──
   const T0 = sql('select now()');
-  if (!saludImg()) { servicioImg(true); await espera(async () => saludImg(), 20000); }
+  estabaImg = saludImg();
+  if (!estabaImg) { servicioImg(true); await espera(async () => saludImg(), 20000); }
   ok(saludImg(), 'el servicio propio de fotos responde (NudeNet ONNX)');
   sql(`update mod_rules set enabled = true`);
   sql(`update mod_rules set params = '{"n": 3, "horas": 24, "parecido": 0.8}' where key = 'spam'`);
@@ -88,7 +92,7 @@ const saludImg = () => { try { return JSON.parse(execSync(`curl -s -m 3 localhos
     sql(`update com_comments set status = 'deleted', deleted_at = coalesce(deleted_at, now()), created_at = created_at - interval '2 days' where body like '%${TAG}%' and status <> 'deleted'`);
     sql(`update com_posts set status = 'deleted', deleted_at = coalesce(deleted_at, now()), created_at = created_at - interval '2 days', publish_at = publish_at - interval '2 days' where body like '%${TAG}%' or (author_user_id in (${LISTA}) and created_at > now() - interval '1 day')`);
     sql(`update mod_rules set enabled = true`); sql(`update platform_config set value = '10' where key = 'com_lim_publicaciones'`);
-    if (!saludImg()) servicioImg(true);
+    if (estabaImg === false) servicioImg(false); else if (!saludImg()) servicioImg(true); // el puerto queda como estaba: si no corría, se cierra
   };
   sql(`update content_reports set status = 'dismissed', created_at = created_at - interval '2 days' where reporter_user_id in (${LISTA}) and created_at > now() - interval '2 days'`);
   sql(`update content_reports set status = 'dismissed' where target_kind = 'user' and target_id in (${TODOS.map((x) => `'${x}'`).join(', ')}) and status = 'open'`);

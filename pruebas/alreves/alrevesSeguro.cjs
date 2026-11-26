@@ -35,6 +35,39 @@ for (const [f, a, b] of casos) {
   let r; try { r = correr(G); } finally { fs.writeFileSync(ruta, orig); }
   informe(`${f.split('/').pop()}: ${a.slice(0, 40).replace(/\n/g, ' ')}`, r);
 }
+// 26 nov · Lo que hace alParar() de verdad (el bloque `vigia` de correr.mjs, en un repo de juguete): tras una parada la copia de referencia
+// (/tmp/tolatino-alreves-ref-*) se quita si no hay apartados, y se conserva si los hay.
+{
+  const os = require('os'), { execFileSync } = require('child_process');
+  const ARBOL = require('../lib/arbol.cjs'), DIARIO = require('../lib/diario.cjs');
+  const fuente = fs.readFileSync(path.join(R, 'pruebas/correr.mjs'), 'utf8');
+  const bloque = /\nconst vigia = \{[\s\S]*?\n\};/.exec(fuente)?.[0];
+  const hacer = bloque && new Function('RAIZ', 'ARBOL', 'DIARIO', 'existsSync', 'join', 'rmSync', 'mkdtempSync', 'tmpdir', 'unlinkSync', 'writeFileSync', 'mkdirSync', 'readFileSync', 'console', `${bloque}\nreturn vigia;`);
+  const informe2 = (que, ok, extra) => { console.log(`  ${ok ? '✓' : '✗'} alParar (${que}) → ${extra}`); if (ok) bien++; };
+  const escenario = (que, preparar, esperaDir) => {
+    total++;
+    const t = fs.mkdtempSync(path.join(os.tmpdir(), 'tolatino-alparar-'));
+    let dir = null;
+    try {
+      const g = (...a) => execFileSync('git', a, { cwd: t, stdio: 'pipe' });
+      g('init', '-q'); fs.writeFileSync(path.join(t, 'a.txt'), 'uno\n'); g('add', '.'); g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'x');
+      const v = hacer(t, ARBOL, DIARIO, fs.existsSync, path.join, fs.rmSync, fs.mkdtempSync, os.tmpdir, fs.unlinkSync, fs.writeFileSync, fs.mkdirSync, fs.readFileSync, { log() {}, error() {} });
+      v.abrir(); v.ini = ARBOL.huella(t); v.dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tolatino-alreves-ref-')); dir = v.dir;
+      ARBOL.copiar(t, v.ini, v.dir); v.anotarSuite(0);
+      preparar(t, v);
+      v.alParar();
+      const hay = fs.existsSync(v.dir);
+      informe2(que, hay === esperaDir, `la copia ${hay ? 'sigue' : 'ya no está'}`);
+    } catch (e) { informe2(que, false, String(e?.message ?? e).slice(0, 150)); }
+    finally { if (dir) fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(t, { recursive: true, force: true }); }
+  };
+  if (!hacer) { total++; console.log('  ✗ alParar: no encontré el bloque vigia en pruebas/correr.mjs'); }
+  else {
+    escenario('árbol intacto, sin apartados: se quita la copia', () => {}, false);
+    escenario('un archivo cambiado y restaurado, sin apartados: se quita la copia', (t) => fs.writeFileSync(path.join(t, 'a.txt'), 'dos\n'), false);
+    escenario('con apartados: se conserva la copia', (t, v) => { fs.writeFileSync(path.join(t, 'nuevo.txt'), 'n\n'); fs.mkdirSync(path.join(v.dir, 'apartados')); }, true);
+  }
+}
 let limpio = require('../lib/alreves-fin.cjs')(R, { mostrar: true });
 console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
 process.exit(bien === total && limpio ? 0 : 1);

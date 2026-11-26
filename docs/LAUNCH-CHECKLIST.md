@@ -2726,11 +2726,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       que cambiarlo en el mismo commit; (5) el resto del plan verificado (tandas 2 a 6: «al revés» con árbol idéntico, dirigidas en partes,
       esperas de 16 s, verificación en paralelo, reparto por duración, despliegue, herramienta de subida).
 - [ ] **→ 9b** · **Tandas 2 y 3a de la revisión del CI (22 nov), lo que queda:** (1) tras SIGINT/SIGTERM el corredor de «al revés» no borra su copia
-      de referencia (`/tmp/tolatino-alreves-ref-*`): `alParar()` debe quitarla si no hay apartados; (2) `tub9b` necesita `pruebas/herramientas`
+      de referencia (`/tmp/tolatino-alreves-ref-*`): `alParar()` debe quitarla si no hay apartados _(1 hecho el 26 nov, Sonnet: `alParar()` quita la copia salvo que tenga apartados o el árbol no haya vuelto; casos reales en `alrevesSeguro`)_; (2) `tub9b` necesita `pruebas/herramientas`
       instalado en local (`pngjs`); (3) segunda pasada local completa de las 21 pruebas sin las esperas de 16 s (corrió una entera y otra de 16; en
       el CI pasaron las 22 en la dirigida 45006294341); (4) `compa7g` («sin ids crudos ni el teléfono de la cuenta») falló una vez en base nueva
       según el orden y pasa sola: inestable por mirar; (5) `scripts/ci/corrida.mjs --produccion` necesita `REPO` cuando `gh repo view` no responde:
-      que lo saque del remoto de git.
+      que lo saque del remoto de git _(5 hecho el 26 nov, Sonnet: `repoDeRemoto` en `scripts/ci/corrida.mjs` lee `git remote get-url origin` —https, ssh y la URL del proxy local— cuando `gh repo view` falla; casos en `alreves9o`)_.
 - [x] **→ 9t** · **Caché de Configuración, del producto (lo vio la tanda 3a, no se tocó):** (1) `lib/config.ts:123-126` guarda la caché al volver de la
       consulta sin mirar si llegó un aviso entre medias: una lectura que salió antes del cambio puede dejar el valor viejo hasta 15 s; el mismo
       patrón en otras nueve cachés (arreglo: contador de generación); (2) hay tres conexiones `LISTEN` por proceso (una por capa de Next) y
@@ -2743,7 +2743,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       supuestos para `cfgcal9b`, `nota9u2` y `tarAK`); rebalancear solo en un commit propio con su confirmación; (2) las dirigidas con `solo` y el
       valor por omisión abren 8 carriles y los que quedan sin pruebas salen verdes: hasta tener la matriz calculada (min(4, nº de pruebas)), lanzarlas
       con `partes=4`; (3) `cms9f3` salió INESTABLE en la corrida 45015746411 (error de hidratación 418 de React en `/privacidad`, teléfono EN): es de
-      la clase «la página pinta distinto en servidor y cliente»: mirar la causa; (4) `com5d` deja encendido el puerto 8790; (5) `compa7d` elige sus
+      la clase «la página pinta distinto en servidor y cliente»: mirar la causa; (4) `com5d` deja encendido el puerto 8790 _(hecho el 26 nov, Sonnet: lo cierra al terminar, al fallar y al salir si lo levantó ella)_; (5) `compa7d` elige sus
       requisitos con un nombre que no está escrito en el código (anotado en `dinamicos` del reparto); (6) ver servida una corrida con
       `confirmar=si` (12 trabajos de confirmación a la vez) y los anchos en 8 partes, 4 a la vez. _(1) hecho el 24 nov (c68a92a, rebalanceado: la más
       larga iba 12 % sobre la media; confirmación 45482417517 en verde, dos seguidas 24–31 min y barajada 12–21 min por parte). (3) `cms9f3` no se
@@ -2763,7 +2763,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       que en cada push a `main` compruebe que hubo evidencia, la auditoría de pushes sobre el registro de GitHub, que `deploy.sh` no despliegue una cabeza
       de `pruebas` que no venga de `main`, una cola si GitHub no responde, y partir `guardianes/run.mjs` por temas; (3) reglas de rama de GitHub (bloquear
       empujes forzados y borrado en `main` y `pruebas`): solo las puede poner el fundador; (4) la clase «sensible» hoy solo avisa, no exige más;
-      (5) la herramienta enseña de guardianes la primera línea de la salida en vez de «sin fallos»; (6) `alreves9u2` y `alreves9usql` necesitan la
+      (5) la herramienta enseña de guardianes la primera línea de la salida en vez de «sin fallos» _(hecho el 26 nov, Sonnet: `lineaDeResumen` en `subir.mjs` muestra el resumen o los fallos; 3 casos en `--casos`)_; (6) `alreves9u2` y `alreves9usql` necesitan la
       base local y no corren en una copia de trabajo sin ella; (7) la corrida programada sigue en el grupo de `main`; (8) el puerto único de las
       pruebas (commit 04b14e2 sin integrar; 159 pruebas con `localhost:3100` fijo).
 - [x] **→ 9u** · **Fotos que no se pueden adjuntar se ignoran en silencio (22 nov):** galería, portada, equipo y eventos contestan `ok` y no la adjuntan, en vez
