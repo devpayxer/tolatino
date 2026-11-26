@@ -47,6 +47,12 @@
 //   pedir otra; la que el equipo ya devolvió a mano: «hecha», nunca «no salió» ni «$0». «completar» sin regla (la regla lanza): bajo el tope, nada;
 //   al tope, «No se pudo completar» en su alerta cobrada:; con la cobrada: ya abierta, su alerta propia completar:; si esa no se anota, el tope vuelve
 //   atrás y la próxima pasada la anota. Las refund_stuck de la prueba también se cierran al final.
+//   (revisión de 5255ce2, 26 nov) «hecha» por las dos ramas de la regla (la fila de la llave fallida y su refund_stuck) con lo devuelto antes por otro
+//   motivo: dice lo que tocaba por esta cancelación (min(lo devuelto, lo pedido)), nunca todo lo devuelto del cobro; sin saber lo pedido, «ya no falta nada
+//   por devolver: revisa que cuadre»; lo devuelto a mano parcial: «no salió» con lo que de verdad falta (la regla y su relectura). Al tope, la cobrada: que
+//   LANZA: el tope vuelve atrás y la pasada siguiente la anota, con «mira antes en Stripe la devolución vcx-<número>» (también completar: y reparar:). Si
+//   tampoco vuelve el tope atrás: su alerta completar: (con la cobrada: ya abierta y sin ella). Cada caso nuevo se siembra ya en su estado final en UNA
+//   transacción (sembrarFinal) y la pasada va enseguida.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), la salida, los cobros y el simulador.
 const ENT = require('../lib/entorno.cjs');
 const { sinMas } = require('../lib/usd.cjs'); // «$15» sin «.00» ni más dígitos detrás
@@ -561,11 +567,77 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
           `${x === HS ? 'sin fila (refund_stuck)' : 'con la fila fallida'} y ya devuelta a mano: «hecha», ni «no salió» ni «$0», sin pedir otra (${d} · ${JSON.stringify(av.map((y) => y[2].dev))})`);
       }
 
+      // (revisión de 5255ce2, M1/M5) · Cada caso ya en su estado final en UNA transacción (una sola llamada a la base): la operación cancelada tarde, el cobro
+      // (retenido, que Stripe ya cobró, o ya cobrado y envejecido con la marca de la regla), lo devuelto antes por otro motivo, lo devuelto a mano, la llave
+      // fallida o su refund_stuck (pedido: su monto) y la alerta cobrada: de antes; el barrido de cada minuto del servidor pisa una siembra en dos pasos.
+      // k: reglaCompletarIntentos. Lo retenido con algo ya devuelto no lo deja la app: es el atajo para llegar a la regla (reglaTardeConLoCobrado) por donde la
+      // usa el servidor, soltar la retención que Stripe ya cobró.
+      const sembrarFinal = ({ retenido = false, marca = false, k = null, antes = 0, mano = 0, rama = null, pedido = 1500, previa = false }) => {
+        const num = numV(), pi = `pi_sim_9x_${RUN}_${num}`, hace = retenido ? 0 : 10, dev = antes + mano;
+        const pst = retenido ? 'held' : dev > 0 ? 'partially_refunded' : 'captured';
+        const detSql = `'${JSON.stringify({ k: 'asiento', cobroMitad: marca ? 1500 : 0, ...(k !== null ? { reglaCompletarIntentos: k } : {}) })}'::jsonb${marca ? ` || jsonb_build_object('reglaCobradaAt', now() - interval '${hace} minutes')` : ''}`;
+        const P = `(select p.id from payments p join operations o on o.id = p.operation_id where o.number = '${num}')`;
+        const devuelta = (cents, que, llave) => `insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) values (${P}, ${cents}, '${que} (prueba din9x)', 'admin', 'done', '${llave}-${num}', now())`;
+        sql([
+          `insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, duration_min, details, party_size, subtotal_cents, total_cents, pay_mode, client_key, is_test, cancelled_by, cancel_reason, cancelled_at, pay_status)
+             values ('${num}', 'trip', 'hzl', '${BR}', '${U.id}', 'cancelled', now() + interval '2 days', 120, ${detSql}, 1, 3000, 3000, 'app', gen_random_uuid(), true, 'user', 'tarde', now() - interval '${hace} minutes', '${retenido ? 'held' : 'captured'}')`,
+          `insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, refunded_cents, card, capture_method) values ('${pi}', 3000, 0, 'acct_sim_${BR}', 'succeeded', 3000, ${dev}, 'pm_sim_visa_4242', 'manual')`,
+          `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, refunded_cents, card_brand, card_last4, held_at, captured_at, simulated)
+             select id, '${U.id}', '${BR}', 'hzl', 'full', 'card', '${pi}', 3000, 3000, 0, '${pst}', ${dev}, 'visa', '4242', now() - interval '${hace} minutes', ${retenido ? 'null' : `now() - interval '${hace} minutes'`}, true from operations where number = '${num}'`,
+          ...(antes ? [devuelta(antes, 'Devuelta antes por otro motivo', 'otra')] : []),
+          ...(mano ? [devuelta(mano, 'Devuelta a mano por el equipo', 'mano')] : []),
+          ...(rama === 'fila' ? [`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, last_error) values (${P}, ${pedido}, 'Cancelación tarde: se cobra la mitad', 'policy', 'failed', 'vcx-${num}~fallida-1', 'stripe:expired_or_canceled_card')`] : []),
+          ...(rama === 'atascada' ? [`insert into money_alerts (kind, subject_id, business_id, city_id, amount_cents, detail) values ('refund_stuck', 'cancelacion:vcx-${num}', '${BR}', 'hzl', ${pedido}, '{"es":"${num}: la devolución no se pudo anotar (prueba din9x).","en":"${num}: the refund could not be recorded (din9x test)."}'::jsonb)`] : []),
+          ...(previa ? [`insert into money_alerts (kind, subject_id, business_id, city_id, amount_cents, detail) select 'hold_stuck', 'cobrada:' || ${P}, '${BR}', 'hzl', 3000, '{"es":"${num}: la alerta de antes (la anotó el proceso que se cortó).","en":"${num}: the earlier alert."}'::jsonb`] : []),
+        ].join(';\n'));
+        return { num, op: sql(`select id from operations where number = '${num}'`), pid: pidDe(num) };
+      };
+      const enIng = (suj) => sql(`select detail->>'en' from money_alerts where kind = 'hold_stuck' and subject_id = '${suj}'`);
+      const refundsDe = (x) => sql(`select count(*) from refunds where payment_id = ${x.pid}`);
+      // «hecha» por las dos ramas, con $5 devueltos antes por otro motivo y los $15 de la cancelación a mano ($20 devueltos del cobro): se queda $10 y
+      // «se devolvieron $15» (lo que tocaba por esta cancelación), nunca $20; ni otra devolución pedida ni nada devuelto en Stripe.
+      for (const rama of ['fila', 'atascada']) {
+        const x = sembrarFinal({ retenido: true, antes: 500, mano: 1500, rama });
+        const sx = await cobros.soltarRetencion(x.op, cobros.SWEEP), d = detalle(`cobrada:${x.pid}`), av = AV.filter((y) => y[1] === x.num);
+        ok(sx.e === 'cobrada' && sx.regla?.queda === 1000 && sx.regla?.dev?.e === 'hecha' && sx.regla?.dev?.monto === 1500
+          && d.includes('se quedó $10 y se devolvieron $15') && enIng(`cobrada:${x.pid}`).includes('$10 was kept and $15 was refunded') && !d.includes('$20') && !d.includes('no salió')
+          && av.length === 1 && av[0][2].dev?.e === 'hecha' && av[0][2].dev?.monto === 1500
+          && refundsDe(x) === (rama === 'fila' ? '3' : '2') && devueltoSim(x) === '2000',
+          `«hecha» por la rama ${rama === 'fila' ? 'de la fila fallida' : 'de su refund_stuck'}: lo que tocaba por la cancelación ($15), no todo lo devuelto del cobro ($20) (${JSON.stringify(sx.regla)} · ${d})`);
+      }
+      // Sin saber lo pedido (su refund_stuck sin monto): ninguna cifra; la alerta dice (ES/EN) «ya no falta nada por devolver: revisa que cuadre».
+      {
+        const x = sembrarFinal({ retenido: true, antes: 500, mano: 1500, rama: 'atascada', pedido: 0 });
+        const sx = await cobros.soltarRetencion(x.op, cobros.SWEEP), d = detalle(`cobrada:${x.pid}`), av = AV.filter((y) => y[1] === x.num);
+        ok(sx.e === 'cobrada' && sx.regla?.queda === 1000 && sx.regla?.dev?.e === 'nada' && d.includes('se quedó $10 y ya no falta nada por devolver: revisa que cuadre')
+          && enIng(`cobrada:${x.pid}`).includes('$10 was kept and nothing is left to refund: check that it matches') && !d.includes('$0') && !d.includes('$20') && !d.includes('se devolvieron')
+          && av.length === 1 && av[0][2].dev?.e === 'nada' && refundsDe(x) === '2' && devueltoSim(x) === '2000',
+          `sin saber lo pedido: ninguna cifra, «ya no falta nada por devolver: revisa que cuadre» (${JSON.stringify(sx.regla)} · ${d})`);
+      }
+      // Lo devuelto a mano PARCIAL ($10 de los $15 que se pidieron): «no salió» con lo que de verdad falta ($5), sin pedir otra; por la regla (la fila
+      // fallida) y por su relectura («completar» con su refund_stuck).
+      {
+        const x = sembrarFinal({ retenido: true, mano: 1000, rama: 'fila' });
+        const sx = await cobros.soltarRetencion(x.op, cobros.SWEEP), d = detalle(`cobrada:${x.pid}`), av = AV.filter((y) => y[1] === x.num);
+        ok(sx.e === 'cobrada' && sx.regla?.queda === 1500 && sx.regla?.dev?.e === 'fallida' && sx.regla?.dev?.monto === 500 && d.includes('se quedó $15 y la devolución de $5 no salió (tiene su propia alerta)')
+          && av.length === 1 && av[0][2].dev?.e === 'fallida' && av[0][2].dev?.monto === 500 && refundsDe(x) === '2' && devueltoSim(x) === '1000',
+          `devuelto a mano en parte (la regla): «no salió» con lo que falta, $5 (${JSON.stringify(sx.regla)} · ${d})`);
+        const y = sembrarFinal({ marca: true, mano: 1000, rama: 'atascada' });
+        await cobros.barrerCobradasTarde({ negocio: BR });
+        const dy = detalle(`cobrada:${y.pid}`), avy = AV.filter((z) => z[1] === y.num);
+        ok(alertas(`cobrada:${y.pid}`) === '1' && dy.includes('quedó a medias') && dy.includes('se quedó $15 y la devolución de $5 no salió (tiene su propia alerta)')
+          && unAviso(y.num, 'viaje_cx', avy) && (avy.length === 0 || (avy[0][2].dev?.e === 'fallida' && avy[0][2].dev?.monto === 500)) && refundsDe(y) === '1' && devueltoSim(y) === '1000' && pago(y.num) === 'partially_refunded|3000|1000',
+          `devuelto a mano en parte (la relectura, «completar»): «no salió» con lo que falta, $5, sin pedir otra (${dy})`);
+      }
+
       // (revisión de 51a794d) · «completar» sin regla: la regla LANZA (una base que no deja leerla, solo para estas operaciones: FALLA_REGLA; y alertas que
       // no se anotan a pedido: FALLA_AL). Los primeros intentos se dan por hechos (reglaCompletarIntentos), como en H4.
-      const FALLA_REGLA = new Set(), FALLA_AL = new Set();
-      const DR = { ...D, db: () => { const x = D.db(); return { query: (q, a) => (FALLA_REGLA.has(String(a?.[0])) && /^\s*select o\.kind, o\.number as num, o\.status as st,/.test(q) ? Promise.reject(new Error('la base no dejó leer la regla')) : x.query(q, a)) }; } };
-      const alertasR = { ...alertasM, alertar: (k, suj, x) => (FALLA_AL.has(suj) ? Promise.reject(new Error('la base no anotó la alerta')) : alertasM.alertar(k, suj, x)) };
+      // (revisión de 5255ce2) · FALLA_TOPE: la base que no deja volver el tope atrás (solo esa escritura, solo esas operaciones); FALLA_AL1: la alerta que
+      // no se anota UNA vez (la segunda sí).
+      const FALLA_REGLA = new Set(), FALLA_AL = new Set(), FALLA_TOPE = new Set(), FALLA_AL1 = new Set();
+      const DR = { ...D, db: () => { const x = D.db(); return { query: (q, a) => ((FALLA_REGLA.has(String(a?.[0])) && /^\s*select o\.kind, o\.number as num, o\.status as st,/.test(q)) ? Promise.reject(new Error('la base no dejó leer la regla'))
+        : (FALLA_TOPE.has(String(a?.[0])) && /'reglaCompletarIntentos', \$2::int\)/.test(q)) ? Promise.reject(new Error('la base no dejó volver el tope atrás')) : x.query(q, a)) }; } };
+      const alertasR = { ...alertasM, alertar: (k, suj, x) => (FALLA_AL.has(suj) ? Promise.reject(new Error('la base no anotó la alerta')) : FALLA_AL1.delete(suj) ? Promise.reject(new Error('la base no anotó la alerta (una vez)')) : alertasM.alertar(k, suj, x)) };
       const cobrosR = cargar('apps/web/lib/cobros.ts', { './db': DR, './pagos/pasarela': PS, './vista-equipo': { soloLectura: () => false }, './avisos': avisos, './dinero-alertas': alertasR,
         './viajes': viajesM, './evento-privado': evpM, './soporte-equipo': {}, './soporte': { avisarCaso: async () => undefined }, './consulta-pasarela': K, './devolucion-consulta': DC,
         './mercado': { repararMercado: async () => undefined }, './apartados': { repararApartados: async () => undefined }, './estimados': { repararEstimados: async () => undefined } });
@@ -592,6 +664,8 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       ok(det(TB.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS) && alertas(`cobrada:${TB.pid}`) === '1' && detalle(`cobrada:${TB.pid}`).includes('la alerta de antes')
         && alertas(`completar:${TB.pid}`) === '1' && detalle(`completar:${TB.pid}`).includes(`No se pudo completar después de ${cobrosR.COMPLETAR_INTENTOS} pasadas del barrido y nadie mandó su aviso`)
         && detalle(`completar:${TB.pid}`).includes(`la alerta cobrada:${TB.pid} ya estaba abierta`) && detalle(`completar:${TB.pid}`).includes('díselo a quien pagó y al negocio')
+        && detalle(`completar:${TB.pid}`).includes(`mira en Stripe si la devolución con la llave vcx-${TB.num} ya salió o va en camino: si es así, no la devuelvas otra vez.`)
+        && enIngles(`completar:${TB.pid}`).includes(`check in Stripe whether the refund with key vcx-${TB.num} already went out or is on its way: if so, do not refund it again.`)
         && enIngles(`completar:${TB.pid}`).includes(`It could not be completed after ${cobrosR.COMPLETAR_INTENTOS} sweep passes`) && sinDinero(TB),
         `al tope con la alerta cobrada: ya abierta: UNA alerta completar: (ES/EN) que lo dice, sin tocar la de antes ni el dinero (${detalle(`completar:${TB.pid}`)})`);
       await cobrosR.barrerCobradasTarde({ negocio: BR });
@@ -604,6 +678,38 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       FALLA_AL.delete(`completar:${TC.pid}`);
       await cobrosR.barrerCobradasTarde({ negocio: BR });
       ok(alertas(`completar:${TC.pid}`) === '1' && det(TC.num, 'reglaCompletarIntentos') === String(cobrosR.COMPLETAR_INTENTOS) && sinDinero(TC), 'la pasada siguiente la anota');
+      // (revisión de 5255ce2, M5) · Al tope, la alerta cobrada: LANZA (no había otra): ni completar: (no la reemplaza: no se sabe qué faltó), el tope vuelve
+      // un paso atrás y la pasada siguiente anota la cobrada: con «No se pudo completar» y, antes de devolver a mano, mirar en Stripe la llave vcx- (ES/EN).
+      const NT = cobrosR.COMPLETAR_INTENTOS, ojoEs = (x) => `mira en Stripe si la devolución con la llave vcx-${x.num} ya salió o va en camino`, ojoEn = (x) => `check in Stripe whether the refund with key vcx-${x.num} already went out or is on its way`;
+      const TD = sembrarFinal({ marca: true, k: NT - 1 }); FALLA_REGLA.add(TD.op); FALLA_AL.add(`cobrada:${TD.pid}`);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`cobrada:${TD.pid}`) === '0' && alertas(`completar:${TD.pid}`) === '0' && det(TD.num, 'reglaCompletarIntentos') === String(NT - 1) && sinDinero(TD),
+        `al tope, la cobrada: que lanza: ni completar:, el tope vuelve un paso atrás (${det(TD.num, 'reglaCompletarIntentos')})`);
+      FALLA_AL.delete(`cobrada:${TD.pid}`);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`cobrada:${TD.pid}`) === '1' && detalle(`cobrada:${TD.pid}`).includes('No se pudo completar: aplícala a mano') && detalle(`cobrada:${TD.pid}`).includes(ojoEs(TD)) && enIngles(`cobrada:${TD.pid}`).includes(ojoEn(TD))
+        && alertas(`completar:${TD.pid}`) === '0' && det(TD.num, 'reglaCompletarIntentos') === String(NT) && sinDinero(TD),
+        `la pasada siguiente anota la cobrada: con «No se pudo completar» y la llave vcx- que mirar antes (ES/EN) (${detalle(`cobrada:${TD.pid}`)})`);
+      // M4 · Y si tampoco vuelve el tope atrás: nunca solo en el registro, su alerta completar:. Sin la cobrada: (lanzó): dice que el barrido lo vuelve a
+      // intentar mientras falte, y la pasada siguiente la anota. Con la cobrada: ya abierta (y completar: que no se anota UNA vez): el barrido ya no la elige.
+      const TE = sembrarFinal({ marca: true, k: NT - 1 }); FALLA_REGLA.add(TE.op); FALLA_AL.add(`cobrada:${TE.pid}`); FALLA_TOPE.add(TE.op);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`completar:${TE.pid}`) === '1' && detalle(`completar:${TE.pid}`).includes(`no se pudieron anotar su alerta cobrada:${TE.pid} ni volver atrás su tope (el barrido lo vuelve a intentar mientras falte esa alerta)`)
+        && enIngles(`completar:${TE.pid}`).includes('the sweep retries it while that alert is missing') && detalle(`completar:${TE.pid}`).includes(ojoEs(TE)) && !detalle(`completar:${TE.pid}`).includes('Nadie mandó su aviso')
+        && alertas(`cobrada:${TE.pid}`) === '0' && det(TE.num, 'reglaCompletarIntentos') === String(NT) && sinDinero(TE),
+        `la cobrada: que lanza y el tope que no vuelve atrás: su alerta completar: lo dice (ES/EN) (${detalle(`completar:${TE.pid}`)})`);
+      FALLA_AL.delete(`cobrada:${TE.pid}`); FALLA_TOPE.delete(TE.op);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`cobrada:${TE.pid}`) === '1' && detalle(`cobrada:${TE.pid}`).includes('No se pudo completar: aplícala a mano') && alertas(`completar:${TE.pid}`) === '1' && sinDinero(TE), 'la pasada siguiente anota la cobrada: que faltaba');
+      const TF = sembrarFinal({ marca: true, k: NT - 1, previa: true }); FALLA_REGLA.add(TF.op); FALLA_AL1.add(`completar:${TF.pid}`); FALLA_TOPE.add(TF.op);
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`completar:${TF.pid}`) === '1' && detalle(`completar:${TF.pid}`).includes('el barrido ya no lo vuelve a intentar (no se pudo anotar su alerta ni volver atrás su tope)')
+        && enIngles(`completar:${TF.pid}`).includes('the sweep no longer retries it') && detalle(`completar:${TF.pid}`).includes(ojoEs(TF)) && !FALLA_AL1.has(`completar:${TF.pid}`)
+        && alertas(`cobrada:${TF.pid}`) === '1' && detalle(`cobrada:${TF.pid}`).includes('la alerta de antes') && det(TF.num, 'reglaCompletarIntentos') === String(NT) && sinDinero(TF),
+        `con la cobrada: ya abierta, completar: que no se anota y el tope que no vuelve atrás: su alerta completar: igual (ES/EN) (${detalle(`completar:${TF.pid}`)})`);
+      FALLA_TOPE.clear();
+      await cobrosR.barrerCobradasTarde({ negocio: BR });
+      ok(alertas(`completar:${TF.pid}`) === '1' && alertas(`cobrada:${TF.pid}`) === '1' && det(TF.num, 'reglaCompletarIntentos') === String(NT) && sinDinero(TF), 'otra pasada: el barrido ya no la elige (ni otra alerta)');
       FALLA_REGLA.clear();
 
       // H2 (revisión de efe56b9) · Un viaje cobrado hace 3 días (al aceptarse) y cancelado tarde hace 10 minutos, con la devolución sin hacer: la ventana es la
@@ -618,6 +724,7 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       await cobros.barrerCobradasTarde({ negocio: BR });
       await cobros.barrerCobradasTarde({ negocio: BR });
       ok(alertas(`reparar:${D8.pid}`) === '1' && detalle(`reparar:${D8.pid}`).includes('lleva más de 7 días así: el barrido ya no la repara') && pago(D8.num) === 'captured|3000|0'
+        && detalle(`reparar:${D8.pid}`).includes(`mira en Stripe si la devolución con la llave vcx-${D8.num} ya salió o va en camino`)
         && sql(`select count(*) from refunds where idem_key = 'vcx-${D8.num}'`) === '0' && alertas(`cobrada:${D8.pid}`) === '0', `fuera de la ventana: UNA alerta reparar: y nada se mueve solo (${detalle(`reparar:${D8.pid}`)})`);
 
       console.log('6 · H1: el aviso que quedó no se repite (los avisos reales: el SMS que falla después, el dueño que ya lo tiene)');

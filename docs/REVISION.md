@@ -6606,6 +6606,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   dos veces. **Qué mirar:** nada en pantalla.
   Tras la revisión de 51a794d: si no se puede completar sola, el equipo recibe siempre su alerta para hacerlo a mano y decírselo a quien pagó y al
   negocio; y si el equipo ya devolvió el dinero a mano, la alerta y el aviso dicen «se devolvieron», no «no salió». **Qué mirar:** nada en pantalla.
+  Tras la revisión de 5255ce2 (26 nov, hecho por Opus): «se devolvieron» dice solo lo de esa cancelación (no lo devuelto antes por otro motivo), y las
+  alertas que piden devolver a mano dicen que antes se mire en Stripe si la devolución ya salió, para no devolver dos veces. **Qué mirar:** nada en pantalla.
 
 ## Plan Pro: «Cambiar tarjeta» con el cobro fallido decía «ya tienes Pro» aunque el banco la rechazara (25 nov; servido en 5805640)
 - **Cómo se halló:** medí qué consultas a la base no ejecuta ninguna prueba (88 % de 5.663 sí; lista en `pruebas/consultas-no-ejecutadas.txt`).

@@ -3229,6 +3229,15 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       «no lo dice» solo por nueva === false (si dos pasadas del barrido se pisan es redundante: confirmar el candado de una sola instancia);
       (M4) si también falla el update que vuelve el tope atrás, queda en silencio salvo el registro (dos escrituras seguidas); (M5) din9x sin casos de
       cobrada: que lanza al tope, de «hecha» por las dos ramas de reglaTardeConLoCobrado y del devuelto a mano parcial.
+      _Hecho M1–M5 (26 nov, Opus):_ (M1) «hecha» dice min(lo devuelto, lo pedido): lo pedido es la fila fallida de la llave o el monto de su refund_stuck
+      (en la regla y en su relectura); sin saberlo, ninguna cifra y la alerta dice «ya no falta nada por devolver: revisa que cuadre» (ES/EN). Cierra también
+      la (b) de la revisión de 51a794d. (M2) Todo texto de cobros.ts que pide devolver o aplicar a mano lo de un viaje cancelado tarde por quien pagó (cobrada:, completar: y también
+      reparar:) termina con «Antes de devolver nada a mano, mira en Stripe si la devolución con la llave vcx-<número> ya salió o va en camino» (ojoLlave, ES/EN).
+      (M3) Hay candado: barrerCobradasTarde solo se llama desde el barrido central (lib/barrido.ts, pg_try_advisory_lock 913_337_001); comentario junto a
+      nueva === false y el guardián lo exige. (M4) Si tampoco vuelve el tope atrás, su alerta completar:<cobro> (texto según la cobrada: estuviera abierta o
+      no se pudiera anotar), y si esa falla, el registro. (M5) din9x: «hecha» por las dos ramas con $5 devueltos antes por otro motivo ($15, nunca $20), sin
+      saber lo pedido, devuelto a mano en parte por la regla y por su relectura, la cobrada: que lanza al tope y el tope que no vuelve atrás (con y sin la
+      cobrada: abierta); cada caso sembrado en su estado final en una sola transacción (sembrarFinal). Guardián liberarMira (37–40); al revés con sus casos.
       _Hecho (26 nov):_ din9x ya no es INESTABLE: el caso de «cobrada» por relectura (sección 4) sembraba el cobro retenido y lo cambiaba después en sentencias aparte, y el barrido de pagos del servidor (cada minuto) podía aplicar la regla entre las dos; ahora la operación, el cobro y la devolución de su llave se siembran ya en su estado final en una sola transacción. 5 corridas seguidas en verde con el barrido corriendo (102 ✓ cada una). El código de la app no se tocó.
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
       barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la

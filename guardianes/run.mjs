@@ -18570,9 +18570,9 @@ const guardianes = {
     // propio y su tope (COMPLETAR_INTENTOS, reglaCompletarIntentos), nunca cada minuto sin fin. (34) Anotar el SMS en su aviso se intenta dos veces.
     const iPrev = rtc.indexOf("const previa = await devDeLaLlave(o.pid, `vcx-${o.num}`);"), iDev = rtc.indexOf("await devolverAlCancelar(");
     if (iPrev < 0 || iPrev > iDev || !/const previa = await devDeLaLlave\(o\.pid, `vcx-\$\{o\.num\}`\);\n\s*if \(previa\) return \{ queda: mitad, dev: segunLoDevuelto\(previa, o\.amt - o\.ref - mitad, o\.ref\) \};/.test(rtc)
-      || !/select 1 from money_alerts where kind = 'refund_stuck' and subject_id = \$1`, \[`cancelacion:vcx-\$\{o\.num\}`\]\)\)\.rowCount\)\s*return \{ queda: mitad, dev: segunLoDevuelto\(\{ e: "fallida",/.test(rtc))
+      || !/from money_alerts where kind = 'refund_stuck' and subject_id = \$1`, \[`cancelacion:vcx-\$\{o\.num\}`\]\)\)\.rows\[0\];\n\s*if \(atascada\) return \{ queda: mitad, dev: segunLoDevuelto\(\{ e: "fallida",/.test(rtc))
       falla(G, CO, 0, "reglaTardeConLoCobrado vuelve a pedir la devolución de su llave aunque ya se pidió (la fallida se renombra «~fallida-»; la que no se pudo anotar tiene refund_stuck): se devolvería dos veces");
-    if (!/as atascada/.test(rtl) || !/!o\.rst \? \(o\.atascada \? \{ e: "fallida"/.test(rtl)) falla(G, CO, 0, "reglaTardeLeida no dice «fallida» de la devolución que no se pudo ni anotar (refund_stuck cancelacion:vcx-)");
+    if (!/as atascada/.test(rtl) || !/!o\.rst \? \(o\.atascada !== null \? \{ e: "fallida"/.test(rtl)) falla(G, CO, 0, "reglaTardeLeida no dice «fallida» de la devolución que no se pudo ni anotar (refund_stuck cancelacion:vcx-)");
     if (!/const regla = await \(pedida \? reglaTardeLeida\(opId\) : reglaTardeConLoCobrado\(opId\)\)/.test(ccr) || !/const pedida = como === "completar" && /.test(ccr)
       || !/split_part\(r\.idem_key, '~fallida-', 1\) = \$2\s*union all select 1 from money_alerts a where a\.kind = 'refund_stuck' and a\.subject_id = 'cancelacion:' \|\| \$2/.test(ccr))
       falla(G, CO, 0, "cobradaConSuRegla «completar» con la devolución de la llave ya pedida no lee la regla (reglaTardeLeida): podría volver a pedir dinero");
@@ -18590,10 +18590,33 @@ const guardianes = {
       || !/No se pudo completar después de \$\{COMPLETAR_INTENTOS\} pasadas del barrido/.test(ccr))
       falla(G, CO, 0, "«completar» que agota su tope sin regla con la alerta cobrada: ya abierta no abre su alerta completar:<cobro> (o no vuelve el tope atrás si no se anota): quien pagó y el negocio se quedan sin aviso y sin alerta");
     const sld = cuerpoFn(co, "segunLoDevuelto");
-    if (!/if \(dev\.e !== "fallida"\) return dev;\n\s*if \(falta <= 0\) return ref > 0 \? \{ e: "hecha", monto: ref \} : \{ e: "nada", monto: 0 \};\n\s*return \{ e: "fallida", monto: dev\.monto > 0 \? Math\.min\(dev\.monto, falta\) : falta \};/.test(sld)
+    if (!/if \(dev\.e !== "fallida"\) return dev;\n\s*if \(falta <= 0\) \{ const r: DevCuadrar = ref <= 0 \? \{ e: "nada", monto: 0 \} : dev\.monto > 0 \? \{ e: "hecha", monto: Math\.min\(ref, dev\.monto\) \} : \{ e: "nada", monto: 0, cuadrar: true \}; return r; \}\n\s*return \{ e: "fallida", monto: dev\.monto > 0 \? Math\.min\(dev\.monto, falta\) : falta \};/.test(sld)
       || (rtc.match(/segunLoDevuelto\([^\n]*, o\.amt - o\.ref - mitad, o\.ref\)/g) ?? []).length !== 2
       || !/return \{ queda, dev: dev && segunLoDevuelto\(dev, o\.amt - o\.ref - queda, o\.ref\) \};/.test(rtl))
       falla(G, CO, 0, "la devolución de la llave que «no salió» no se dice según lo que falta devolver (segunLoDevuelto): ya devuelta a mano, la alerta y el aviso dirían «no salió» (o «$0.00»)");
+    // 26 nov (revisión de 5255ce2) · (37) «hecha» con lo devuelto dice lo que tocaba por ESTA cancelación: min(lo devuelto, lo pedido) (refunded_cents es del
+    // cobro entero); lo pedido sin fila es el monto de su refund_stuck (en la regla y en su relectura); sin saberlo, ninguna cifra: «ya no falta nada por
+    // devolver: revisa que cuadre» (ES/EN). (38) Todo texto de cobros.ts que pide devolver o aplicar a mano lo de un viaje dice antes que se mire en Stripe
+    // la devolución de la llave vcx-<número> (ojoLlave): sin eso, el equipo la devolvería dos veces. (39) La afirmación de completar: («la alerta cobrada:
+    // ya estaba abierta») se apoya en una sola pasada a la vez: barrerCobradasTarde solo se llama desde el barrido central, con su pg_try_advisory_lock.
+    // (40) Si tampoco vuelve el tope atrás, su alerta completar:<cobro> (nunca solo el registro).
+    if (!/select amount_cents::int as pedido from money_alerts/.test(rtc) || !/\(select a\.amount_cents::int from money_alerts a where a\.kind = 'refund_stuck' and a\.subject_id = 'cancelacion:vcx-' \|\| o\.number\) as atascada/.test(rtl)
+      || !/monto: Math\.max\(0, atascada\.pedido\)/.test(rtc) || !/monto: Math\.max\(0, o\.atascada\)/.test(rtl)
+      || !/dev && \(dev as DevCuadrar\)\.cuadrar \? \{ es: " y ya no falta nada por devolver: revisa que cuadre", en: " and nothing is left to refund: check that it matches" \}/.test(ccr))
+      falla(G, CO, 0, "«hecha» con lo devuelto toma refunded_cents del cobro entero (o lo pedido no sale de su refund_stuck): diría lo devuelto antes por otro motivo; sin saber lo pedido, «ya no falta nada por devolver: revisa que cuadre»");
+    const oj = cuerpoFn(co, "ojoLlave");
+    if (!oj || !/kind === "trip"/.test(oj) || !/la llave vcx-\$\{num\} ya salió o va en camino/.test(oj) || !/key vcx-\$\{num\} already went out or is on its way/.test(oj))
+      falla(G, CO, 0, "ojoLlave no dice (ES/EN) que se mire en Stripe si la devolución de la llave vcx-<número> ya salió o va en camino");
+    co.split("\n").forEach((l, i) => {
+      if (/[Aa]plícala a mano|devuélveselo al cliente/.test(l) && !/\$\{ojo\.es\}/.test(l)) falla(G, CO, i + 1, "pide devolver o aplicar a mano sin decir antes que se mire en Stripe la devolución de la llave vcx-<número> (${ojo.es}): se devolvería dos veces");
+      if (/[Aa]pply it by hand|refund the client/.test(l) && !/\$\{ojo\.en\}/.test(l)) falla(G, CO, i + 1, "asks to refund or apply by hand without first checking in Stripe the vcx-<number> refund (${ojo.en}): it would be refunded twice");
+    });
+    if (!/const ojo: Msg = ojoLlave\(c\.tarde \? c\.kind : "", c\.num\);/.test(ccr) || !/const ojo = ojoLlave\(x\.kind, x\.num\);/.test(bct)) falla(G, CO, 0, "cobradaConSuRegla o barrerCobradasTarde no arman ojoLlave con su viaje (kind, número)");
+    const llamanBct = archivos.filter((f) => /^apps\/web\/.*\.(ts|tsx)$/.test(f) && f !== CO && readFileSync(f, "utf8").includes("barrerCobradasTarde(") && /\bbarrerCobradasTarde\(/.test(sinComent(f)));
+    if (llamanBct.join(",") !== "apps/web/lib/barrido.ts" || !/pg_try_advisory_lock/.test(sinComent("apps/web/lib/barrido.ts")))
+      falla(G, CO, 0, `barrerCobradasTarde se llama fuera del barrido central con su candado (pg_try_advisory_lock): dos pasadas se pisarían y la alerta completar: diría que la cobrada: «ya estaba abierta y no lo dice» (${llamanBct.join(", ") || "nadie"})`);
+    if (!/if \(!dicha\) await db\(\)\.query\([^\n]*\n\s*\.catch\(async \(e\) => \{[\s\S]*?await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `completar:\$\{c\.id\}`[\s\S]*?\.catch\(\(e2\) => \{ console\.error/.test(ccr))
+      falla(G, CO, 0, "«completar»: si tampoco vuelve el tope atrás, queda solo en el registro (sin su alerta completar:<cobro>): el barrido ya no la elige y nadie se entera");
     if (!/\n  await anotar\(\)\.catch\(\(\) => anotar\(\)\);\n\}/.test(cuerpoFn(av, "salirSms"))) falla(G, AV, 0, "salirSms anota el SMS en su aviso una sola vez: si falla, el aviso queda «pendiente» sin su sms_id aunque el SMS haya salido");
     if (!/o\.cancelled_at <= now\(\) - make_interval\(days => \$2::int\) as fuera/.test(qL) || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'reparar:' \|\| p\.id::text\)/.test(qL)
       || !/alertar\("hold_stuck", `reparar:\$\{x\.pid\}`/.test(bct))
