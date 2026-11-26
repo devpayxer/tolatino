@@ -1,0 +1,210 @@
+# 26 nov · Rescate del SANDBOX (tolatino-pruebas-1) cuando dejó de actualizarse y no se arregla solo (docs/incidentes/sandbox-no-se-actualiza.md). Todo
+# por la API del proveedor (Hetzner), sin SSH al sistema normal y SIN perder la base: (a) las acciones recientes del servidor; (b) modo rescate y
+# reinicio; (c) esperar a que el rescate conteste; (d) montar el disco, imprimir el diagnóstico y borrar SOLO los *.lock de /opt/tolatino/.git; (e) quitar
+# el rescate, arrancar normal y esperar a que /api/salud sirva el commit de «pruebas».
+# La contraseña de root del rescate es de un solo uso: se enmascara (::add-mask::) antes de nada, vive en un archivo 0600 del runner y NUNCA se imprime
+# (sshpass la lee de la variable SSHPASS, no de la línea de órdenes). Pase lo que pase, el último paso (if: always()) quita el rescate y arranca normal si
+# quedó a medias: el servidor nunca se queda en rescate. Solo el sandbox: el servidor 174559637 (se comprueba su IP y su nombre antes de tocar nada) con
+# el token del proyecto de pruebas (secreto HCLOUD_TOKEN del entorno «ensayo»). Nunca producción. Guardián: sandboxSeArreglaSolo (al revés: alrevesDespliegue).
+name: Rescate del sandbox
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: "Escribe RESCATAR: el sandbox se reinicia en modo rescate y se corta unos minutos"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: sandbox-rescate
+  cancel-in-progress: false
+jobs:
+  rescate:
+    runs-on: ubuntu-latest
+    environment: ensayo
+    # Tope del trabajo; cada paso lleva el suyo para que el de vuelta (if: always()) siempre tenga tiempo.
+    timeout-minutes: 40
+    env:
+      HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+      SERVIDOR: "174559637"
+      NOMBRE: tolatino-pruebas-1
+      IP: 2.31.196.167
+    steps:
+      - name: Confirmación
+        env: { CONFIRMAR: "${{ inputs.confirmar }}" }
+        run: |
+          set -euo pipefail
+          [ "$CONFIRMAR" = RESCATAR ] || { echo "::error::Escribe RESCATAR en «confirmar» para seguir (no se tocó nada)"; exit 1; }
+          [ -n "$HCLOUD_TOKEN" ] || { echo "::error::Falta el secreto HCLOUD_TOKEN en el entorno «ensayo» (no se tocó nada)"; exit 1; }
+      - uses: actions/checkout@v4
+      - name: Herramientas y funciones
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -q sshpass > /dev/null
+          # Las funciones de todos los pasos. hapi (scripts/produccion/hetzner.sh): el token va por una cabecera desde un archivo 0600, nunca en la línea.
+          cat > "$RUNNER_TEMP/rescate-lib.sh" <<'EOF'
+          . "$GITHUB_WORKSPACE/scripts/produccion/hetzner.sh"
+          PWF="$RUNNER_TEMP/rescate.pw"
+          # accion NOMBRE [JSON]: lanza la acción sobre el servidor y espera a que termine (tope 5 min).
+          accion() {
+            local id st _
+            id=$(hapi POST "/servers/$SERVIDOR/actions/$1" "${2:-}" | jq_ "d['action']['id']")
+            for _ in $(seq 1 60); do
+              st=$(hapi GET "/actions/$id" | jq_ "d['action']['status']")
+              [ "$st" = success ] && { echo "  $1: hecho"; return 0; }
+              [ "$st" = error ] && { echo "  $1: la API dice error"; return 1; }
+              sleep 5
+            done
+            echo "  $1: sin terminar en 5 min"; return 1
+          }
+          servidor() { hapi GET "/servers/$SERVIDOR" | jq_ "$1"; }
+          # rescate ORDEN…: por SSH al sistema de rescate (solo a él: su llave de máquina es nueva cada vez, por eso no se guarda ni se comprueba).
+          rescate() {
+            SSHPASS=$(cat "$PWF") sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=10 \
+              -o PubkeyAuthentication=no -o PreferredAuthentications=password -o NumberOfPasswordPrompts=1 "root@$IP" "$@"
+          }
+          # esperar_rescate SEGUNDOS: 0 cuando el rescate contesta por SSH con la contraseña de un solo uso.
+          esperar_rescate() {
+            local fin=$((SECONDS + $1))
+            while [ "$SECONDS" -lt "$fin" ]; do rescate true 2>/dev/null && return 0; sleep 10; done
+            return 1
+          }
+          EOF
+
+      - name: (a) Acciones recientes del servidor
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          # Antes de tocar nada: el servidor del token es el sandbox (su nombre y su IP).
+          N=$(servidor "d['server']['name']"); I=$(servidor "d['server']['public_net']['ipv4']['ip']")
+          [ "$N" = "$NOMBRE" ] && [ "$I" = "$IP" ] || { echo "::error::El servidor $SERVIDOR es «$N» ($I), no el sandbox: no se toca"; exit 1; }
+          echo "servidor $SERVIDOR · $N · $I · estado $(servidor "d['server']['status']") · rescate activado: $(servidor "d['server']['rescue_enabled']")"
+          echo "firewalls del proveedor: $(servidor "[f['id'] for f in d['server']['public_net'].get('firewalls', [])]") (el rescate necesita el puerto 22 abierto)"
+          echo "Acciones de la API (UTC; 04:30 EST = 09:30 UTC). Un reinicio desde dentro del sistema (unattended-upgrades) NO sale aquí: lo dice el paso (d)."
+          hapi GET "/servers/$SERVIDOR/actions?sort=started:desc&per_page=25" | python3 -c '
+          import json, sys
+          for a in json.load(sys.stdin)["actions"]:
+              print(" ", a["started"], a["command"], a["status"], "fin:", a.get("finished") or "-")'
+
+      - name: (b) Modo rescate y reinicio
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          touch "$RUNNER_TEMP/tocado"
+          R=$(hapi POST "/servers/$SERVIDOR/actions/enable_rescue" '{"type":"linux64"}')
+          # La contraseña de un solo uso: enmascarada ANTES de cualquier otra cosa, a un archivo 0600 y fuera de las variables. Nunca se imprime.
+          PW=$(printf '%s' "$R" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("root_password") or "")')
+          [ -n "$PW" ] || { echo "::error::La API no devolvió la contraseña del rescate"; exit 1; }
+          echo "::add-mask::$PW"
+          ( umask 077; printf '%s' "$PW" > "$PWF" )
+          unset PW
+          ID=$(printf '%s' "$R" | jq_ "d['action']['id']"); unset R
+          for _ in $(seq 1 36); do
+            st=$(hapi GET "/actions/$ID" | jq_ "d['action']['status']")
+            [ "$st" = success ] && break
+            [ "$st" = error ] && { echo "::error::enable_rescue: la API dice error"; exit 1; }
+            sleep 5
+          done
+          [ "$st" = success ] || { echo "::error::enable_rescue sin terminar en 3 min"; exit 1; }
+          echo "  enable_rescue: hecho"
+          # Reinicio amable (ACPI): el sistema se apaga en orden (la base cierra limpia). Si no llega al rescate, el paso (c) lo fuerza.
+          touch "$RUNNER_TEMP/reiniciado"
+          accion reboot
+
+      - name: (c) Esperar a que el rescate conteste
+        timeout-minutes: 11
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          sleep 20
+          if ! esperar_rescate 300; then
+            st=$(servidor "d['server']['status']")
+            echo "el rescate no contesta en 5 min (estado: $st): se fuerza"
+            if [ "$st" = off ]; then accion poweron; else accion reset; fi
+            esperar_rescate 300 || { echo "::error::El rescate no contesta por SSH en 10 min (¿puerto 22 cerrado por un firewall?)"; exit 1; }
+          fi
+          # Que de verdad es el rescate (su raíz vive en memoria, no en el disco del servidor).
+          # shellcheck disable=SC2016  # (comillas simples a propósito: se expande allá, en el rescate)
+          rescate 'echo "rescate: $(hostname) · raíz: $(findmnt -n -o SOURCE /)"; ! findmnt -n -o SOURCE / | grep -q "^/dev/[sv]d"' \
+            || { echo "::error::Lo que contesta no es el sistema de rescate"; exit 1; }
+
+      - name: (d) Diagnóstico y candados de git
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          rescate 'bash -s' <<'EOF'
+          set -euo pipefail
+          echo "== discos"; lsblk -o NAME,TYPE,FSTYPE,SIZE,MOUNTPOINT
+          # La raíz del servidor: la partición ext4 que tiene /opt/tolatino/.git (normalmente /dev/sda1).
+          M=/mnt/tl; mkdir -p "$M"; RAIZ=""
+          for p in $(lsblk -rnpo NAME,TYPE,FSTYPE | awk '$2 == "part" && $3 == "ext4" {print $1}'); do
+            mount -o ro "$p" "$M" 2>/dev/null || continue
+            if [ -d "$M/opt/tolatino/.git" ] && [ -f "$M/etc/os-release" ]; then RAIZ=$p; fi
+            umount "$M"; [ -n "$RAIZ" ] && break
+          done
+          [ -n "$RAIZ" ] || { echo "no encontré la partición con /opt/tolatino/.git"; exit 1; }
+          mount "$RAIZ" "$M"; echo "== raíz del servidor: $RAIZ (montada en $M)"
+          echo "== reinicios y apagados (last -x)"; last -x -F -f "$M/var/log/wtmp" reboot shutdown 2>/dev/null | head -n 10 || true
+          echo "== arranques (journal)"; journalctl -D "$M/var/log/journal" --list-boots --no-pager 2>/dev/null | tail -n 5 || true
+          echo "== unattended-upgrades (últimas 15)"; tail -n 15 "$M/var/log/unattended-upgrades/unattended-upgrades.log" 2>/dev/null || true
+          echo "== temporizador habilitado"; ls -la "$M/etc/systemd/system/timers.target.wants/tolatino-sync.timer" 2>/dev/null || echo "(tolatino-sync.timer NO está habilitado)"
+          echo "== /var/log/tolatino-sync.log (últimas 60)"; tail -n 60 "$M/var/log/tolatino-sync.log" || true
+          echo "== ls -la /opt/tolatino/.git/*.lock"; ls -la "$M"/opt/tolatino/.git/*.lock 2>/dev/null || echo "(ninguno en la raíz de .git)"
+          echo "== todos los *.lock de /opt/tolatino/.git"; find "$M/opt/tolatino/.git" -name '*.lock' -type f -printf '%TY-%Tm-%Td %TH:%TM  %s bytes  %P\n'
+          echo "== last-result · last-deploy"; cat "$M/var/lib/tolatino/last-result" "$M/var/lib/tolatino/last-deploy" 2>/dev/null || true
+          echo "== tolatino-sync instalado: $(grep -c 'candados de git' "$M/usr/local/bin/tolatino-sync" 2>/dev/null || true) mención(es) de los candados (0 = la versión de antes del 26 nov)"
+          # Lo ÚNICO que se cambia: los candados que dejó la vuelta cortada. Nada más.
+          echo "== se borran (solo los *.lock de /opt/tolatino/.git):"; find "$M/opt/tolatino/.git" -name '*.lock' -type f -print -delete
+          sync; umount "$M"; echo "== desmontado"
+          EOF
+
+      - name: (e) Arrancar normal y esperar a que sirva el commit de pruebas
+        timeout-minutes: 13
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          accion disable_rescue
+          # El disco ya está desmontado y sincronizado y el rescate vive en memoria: el reinicio en frío es seguro y no depende de ACPI en el rescate.
+          accion reset
+          touch "$RUNNER_TEMP/normal"
+          PRUEBAS=$(git ls-remote origin refs/heads/pruebas | cut -f1)
+          echo "la rama pruebas está en ${PRUEBAS:0:12}; se espera hasta 10 min a que /api/salud la sirva"
+          t0=$SECONDS; SERVIDO=""; ok=0
+          while [ $((SECONDS - t0)) -lt 600 ]; do
+            S=$(curl -s -m 10 "http://$IP/api/salud" | python3 -c 'import json, sys
+          try: print(json.load(sys.stdin).get("commit", ""))
+          except Exception: print("")' || true)
+            if [ -n "$S" ] && [ "$S" != "$SERVIDO" ]; then echo "  a los $((SECONDS - t0)) s /api/salud sirve el commit $S"; SERVIDO=$S; fi
+            if [ -n "$S" ] && [ "${PRUEBAS#"$S"}" != "$PRUEBAS" ]; then ok=1; break; fi
+            sleep 15
+          done
+          echo "== /estado/ (últimas líneas)"; curl -s -m 30 "http://$IP/estado/" | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | tail -n 30 || true
+          echo "== /api/salud"; curl -s -m 30 "http://$IP/api/salud" | head -c 600 || true; echo
+          if [ "$ok" = 1 ]; then echo "listo: el sandbox sirve ${SERVIDO} (pruebas)"; else
+            echo "::error::A los 10 min /api/salud sirve «${SERVIDO:-nada}», no ${PRUEBAS:0:12}. Si /estado/ dice «deploy.sh inicio», se está desplegando: míralo con «Estado del sandbox» en unos minutos."
+            exit 1
+          fi
+
+      # Pase lo que pase: el servidor nunca se queda en rescate ni apagado.
+      - name: Vuelta a normal si quedó a medias
+        if: always()
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          [ -f "$RUNNER_TEMP/tocado" ] || { echo "no se llegó a tocar el servidor"; exit 0; }
+          . "$RUNNER_TEMP/rescate-lib.sh"
+          R=$(servidor "d['server']['rescue_enabled']"); ST=$(servidor "d['server']['status']")
+          echo "rescate activado: $R · estado: $ST"
+          if [ "$R" = True ]; then
+            [ -f "$PWF" ] && { rescate 'sync; umount /mnt/tl 2>/dev/null; true' 2>/dev/null || true; }
+            accion disable_rescue
+          fi
+          if [ "$ST" = off ]; then accion poweron
+          elif [ -f "$RUNNER_TEMP/reiniciado" ] && [ ! -f "$RUNNER_TEMP/normal" ]; then accion reset
+          else echo "nada que deshacer"; fi
+          rm -f "$PWF"

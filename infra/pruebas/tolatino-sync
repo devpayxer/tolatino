@@ -3,6 +3,14 @@
 # Versión 2 (con candado): nunca corren dos a la vez. deploy.sh la instala en /usr/local/bin (solo si es bash válido: instalar_si_valido).
 # 22 nov · Antes de correr deploy.sh comprueba que deploy.sh y lo que carga son bash válido: si no, NO despliega (los contenedores siguen como
 # estaban, sirviendo lo de antes), anota FALLO con el motivo y /estado/ lo dice. Prueba: pruebas/infra/sync-pruebas.test.sh (guardián sandboxSeArreglaSolo).
+# 26 nov · Incidente «el sandbox no se actualiza» (docs/incidentes/sandbox-no-se-actualiza.md): el reinicio automático de las 04:30 cortó un «git fetch
+# --depth» a medias y dejó .git/shallow.lock; desde entonces cada fetch fallaba y la vuelta salía sin reescribir /estado/, así que nadie lo veía. Ahora:
+#   · bajo el candado (nadie más usa git en $DIR) se borran los *.lock que dejó una vuelta cortada, y queda anotado en el registro;
+#   · el fetch tiene tope de tiempo (FETCH_TOPE) y git no deja nada corriendo aparte (gc.autoDetach=false: el gc, si toca, va dentro y bajo el candado);
+#   · si no se puede bajar la rama, /estado/ lo DICE (motivo, desde cuándo y cuántas vueltas seguidas) en vez de salir sin escribirla;
+#   · cada RECLONAR_TRAS vueltas fallidas seguidas se vuelve a clonar en $DIR.reclon y su .git reemplaza al roto con dos «mv» bajo el candado (si el
+#     segundo falla, vuelve el de antes); la carpeta de trabajo es la misma (lo generado y lo que montan los contenedores no se mueve) y se despliega;
+#   · deploy.sh corre con tope (TOPE_DEPLOY, por debajo del TimeoutStartSec=3600 de la unidad): uno colgado queda en FALLO con su motivo y /estado/ lo dice.
 set -u
 exec 9>/var/lock/tolatino-sync.lock
 flock -n 9 || exit 0
@@ -12,21 +20,106 @@ BR=pruebas
 DIR=${TOLATINO_SYNC_DIR:-/opt/tolatino}
 LOG=/var/log/tolatino-sync.log
 STATE=/var/lib/tolatino
+FETCH_TOPE=120          # s: un fetch colgado (red a medias) no deja la vuelta parada
+CLON_TOPE=300           # s: el clon de rescate
+RECLONAR_TRAS=15        # vueltas fallidas seguidas (~5 min con el temporizador de 20 s) antes de volver a clonar; se reintenta cada 15
+TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3000}   # s: 50 min; fetch + clon + deploy caben en el TimeoutStartSec=3600 de la unidad
+case "$TOPE_DEPLOY" in ''|*[!0-9]*) TOPE_DEPLOY=3000 ;; esac
+GIT=(git -c gc.autoDetach=false -c maintenance.autoDetach=false)
 mkdir -p "$STATE" /var/www/estado
+
+# Página de estado del servidor (/estado/). Se escribe en CADA vuelta, también cuando no se puede bajar la rama.
+escribir_estado() {
+  # La carga de los demos va aparte (tolatino-demos, la lanza deploy.sh): su avance a la vista en /estado/demos.txt (cada minuto, sin SSH).
+  { echo "== $(date -Is) tolatino-demos: $(systemctl is-active tolatino-demos 2>/dev/null || true)"
+    journalctl -u tolatino-demos --no-pager -n 40 -o short-iso 2>/dev/null | sed -E 's/(password|PASSWORD)=[^ ]*/\1=***/g'; } \
+    > /var/www/estado/demos.txt 2>&1 || true
+  local RES
+  RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
+  { echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>To'Latino · pruebas</title>"
+    echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · servidor de pruebas</h1>"
+    # 26 nov · Si no se puede bajar la rama, lo primero que se ve: desde cuándo, cuántas vueltas y el motivo (lo que dijo git).
+    [ -s "$STATE/bajar-fallos" ] && echo "<p style='background:#fde8e8;padding:12px;border-radius:8px'><b>No se puede bajar la rama $BR</b> desde $(cat "$STATE/bajar-desde" 2>/dev/null || echo -) · vueltas fallidas seguidas: $(cat "$STATE/bajar-fallos") (cada $RECLONAR_TRAS se vuelve a clonar). Lo que se sirve puede no ser lo último de $BR. <b>Motivo:</b> $(sed 's/&/\&amp;/g;s/</\&lt;/g' "$STATE/bajar-motivo" 2>/dev/null)</p>"
+    echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
+    [ -s "$STATE/last-motivo" ] && echo "<p><b>Motivo:</b> $(sed 's/&/\&amp;/g;s/</\&lt;/g' "$STATE/last-motivo")</p>"
+    [ -s /var/www/estado/sync.txt ] && echo "<p>$(sed 's/&/\&amp;/g;s/</\&lt;/g' /var/www/estado/sync.txt)</p>"
+    # 22 nov · Lo que el último despliegue anotó sin cortar (semilla, nginx: deploy.sh · aviso): a la vista, no solo en el registro.
+    [ -s /var/www/estado/avisos.txt ] && echo "<p><b>Avisos del último despliegue:</b><br>$(sed 's/&/\&amp;/g;s/</\&lt;/g;s/$/<br>/' /var/www/estado/avisos.txt)</p>"
+    echo "<p><a href='/'>Abrir la app</a> · <a href='/api/salud'>Salud</a> · <a href='/estado/diag.txt'>Diagnóstico</a> · <a href='/estado/tramos.txt'>Tramos</a></p><h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
+    tail -n 25 "$LOG" | sed 's/&/\&amp;/g;s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html.nuevo && mv -f /var/www/estado/index.html.nuevo /var/www/estado/index.html
+}
+
+# no_se_pudo_bajar MOTIVO: anota la vuelta fallida (cuántas seguidas, desde cuándo, por qué). Devuelve 0 si ya toca volver a clonar.
+no_se_pudo_bajar() {
+  local n
+  n=$(( $(cat "$STATE/bajar-fallos" 2>/dev/null || echo 0) + 1 ))
+  echo "$n" > "$STATE/bajar-fallos"
+  [ -s "$STATE/bajar-desde" ] || date '+%Y-%m-%d %H:%M %Z' > "$STATE/bajar-desde"
+  printf '%s\n' "${1:0:400}" > "$STATE/bajar-motivo"
+  echo "$(date -Is) no se pudo bajar la rama $BR (vuelta $n seguida): ${1:0:400}" >>"$LOG"
+  [ $((n % RECLONAR_TRAS)) = 0 ]
+}
+se_pudo_bajar() {
+  [ -s "$STATE/bajar-fallos" ] && echo "$(date -Is) la rama $BR se vuelve a bajar (tras $(cat "$STATE/bajar-fallos") vueltas fallidas)" >>"$LOG"
+  rm -f "$STATE/bajar-fallos" "$STATE/bajar-desde" "$STATE/bajar-motivo"
+}
+
+# reclonar: un clon nuevo en $DIR.reclon y su .git reemplaza al de $DIR (el de antes queda en $DIR.git-roto, uno solo, para mirarlo). La carpeta de
+# trabajo no se mueve; el despliegue que sigue la deja en el commit de la rama (reset --hard + clean).
+reclonar() {
+  local nuevo="$DIR.reclon" roto="$DIR.git-roto" err
+  rm -rf "$nuevo"
+  if ! err=$(timeout -k 10 "$CLON_TOPE" git clone -q --depth 50 --branch "$BR" "$REPO" "$nuevo" 2>&1); then
+    rm -rf "$nuevo"; echo "$(date -Is) volver a clonar falló (sigue el .git de antes): ${err:0:300}" >>"$LOG"; return 1
+  fi
+  rm -rf "$roto"
+  if mv "$DIR/.git" "$roto" 2>>"$LOG"; then
+    if mv "$nuevo/.git" "$DIR/.git" 2>>"$LOG"; then
+      rm -rf "$nuevo"; echo "$(date -Is) re-clonado: el .git nuevo ($(git -C "$DIR" rev-parse --short HEAD)) reemplaza al roto (queda en $roto)" >>"$LOG"; return 0
+    fi
+    mv "$roto" "$DIR/.git" 2>>"$LOG"
+  fi
+  rm -rf "$nuevo"; echo "$(date -Is) volver a clonar: no se pudo cambiar el .git (sigue el de antes)" >>"$LOG"; return 1
+}
 
 if [ ! -d "$DIR/.git" ]; then
   rm -rf "$DIR"
-  git clone -q --depth 50 --branch "$BR" "$REPO" "$DIR" 2>>"$LOG" || { echo "$(date -Is) clone falló" >>"$LOG"; exit 0; }
+  if ! ERR=$(timeout -k 10 "$CLON_TOPE" git clone -q --depth 50 --branch "$BR" "$REPO" "$DIR" 2>&1); then
+    echo "$(date -Is) clone falló" >>"$LOG"; no_se_pudo_bajar "el clon inicial falló: $ERR" || true; escribir_estado; exit 0
+  fi
   echo "$(date -Is) clon inicial $(git -C "$DIR" rev-parse --short HEAD)" >>"$LOG"
 fi
-cd "$DIR" || exit 0
-git fetch -q --depth 50 origin "$BR" 2>>"$LOG" || { echo "$(date -Is) fetch falló" >>"$LOG"; exit 0; }
-LOCAL=$(git rev-parse HEAD); REMOTE=$(git rev-parse "origin/$BR")
+cd "$DIR" || { no_se_pudo_bajar "no se puede entrar en $DIR" || true; escribir_estado; exit 0; }
+
+# 26 nov · Candados que dejó una vuelta cortada (reinicio, tope, corte de luz): con el candado de arriba nadie más usa git aquí, así que un *.lock en
+# .git es basura y, mientras esté, git no puede volver a escribir (shallow.lock: ningún fetch --depth; index.lock: ningún reset).
+CANDADOS=$(find "$DIR/.git" -name '*.lock' -type f 2>/dev/null)
+if [ -n "$CANDADOS" ]; then
+  echo "$(date -Is) candados de git que dejó una vuelta cortada, borrados: $(printf '%s\n' "$CANDADOS" | sed "s|^$DIR/.git/||" | tr '\n' ' ')" >>"$LOG"
+  printf '%s\n' "$CANDADOS" | while IFS= read -r f; do rm -f -- "$f"; done
+fi
+
+FORZAR=0
+if ERR=$(timeout -k 10 "$FETCH_TOPE" "${GIT[@]}" fetch -q --depth 50 origin "$BR" 2>&1) && "${GIT[@]}" rev-parse -q --verify "origin/$BR^{commit}" >/dev/null 2>&1; then
+  se_pudo_bajar
+else
+  r=$?; [ "$r" = 124 ] && ERR="git fetch pasó de $FETCH_TOPE s y se cortó. $ERR"
+  [ -n "$ERR" ] || ERR="git no encuentra origin/$BR después del fetch"
+  if no_se_pudo_bajar "$ERR" && reclonar; then
+    se_pudo_bajar; FORZAR=1
+  else
+    escribir_estado; exit 0
+  fi
+fi
+LOCAL=$(git rev-parse HEAD 2>/dev/null); REMOTE=$(git rev-parse "origin/$BR")
 # Si el último despliegue falló, se reintenta solo cada 15 min (un corte pasajero no deja el sandbox caído hasta el próximo commit).
 REINTENTAR=0
 if [ "$(cat "$STATE/last-result" 2>/dev/null)" = FALLO ] && [ -z "$(find "$STATE/last-result" -mmin -15 2>/dev/null)" ]; then REINTENTAR=1; fi
-if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-deploy" ] || [ "$(cat "$STATE/last-deploy")" != "$(git rev-parse --short "$REMOTE")" ]; then
-  git reset -q --hard "origin/$BR"
+if [ "$FORZAR" = 1 ] || [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-deploy" ] || [ "$(cat "$STATE/last-deploy")" != "$(git rev-parse --short "$REMOTE")" ]; then
+  if ! ERR=$(git reset -q --hard "origin/$BR" 2>&1); then
+    # Un índice o un árbol que git no puede escribir cuenta como no poder bajar la rama (a las RECLONAR_TRAS seguidas, se vuelve a clonar).
+    no_se_pudo_bajar "git reset --hard falló: $ERR" || true; escribir_estado; exit 0
+  fi
   git clean -qfd
   echo "$(date -Is) actualizado a $(git rev-parse --short HEAD)" >>"$LOG"
   # Lo que deploy.sh corre o carga en el momento (lo de systemd-run va aparte y no tumba nada); el guardián sandboxSeArreglaSolo vigila la lista.
@@ -42,8 +135,13 @@ if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-dep
     echo "no es bash válido:$MAL (sigue sirviendo lo de antes)" > "$STATE/last-motivo"
   elif [ -f infra/pruebas/deploy.sh ]; then
     echo "$(date -Is) deploy.sh inicio" >>"$LOG"
-    if bash infra/pruebas/deploy.sh >>"$LOG" 2>&1; then
+    # 26 nov · Con tope: uno colgado se corta aquí (FALLO con su motivo, /estado/ lo dice y a los 15 min se reintenta) antes de que systemd mate la vuelta.
+    timeout -k 60 "$TOPE_DEPLOY" bash infra/pruebas/deploy.sh >>"$LOG" 2>&1; r=$?
+    if [ "$r" = 0 ]; then
       echo "$(date -Is) deploy.sh OK" >>"$LOG"; echo OK > "$STATE/last-result"
+    elif [ "$r" = 124 ] || [ "$r" = 137 ]; then
+      echo "$(date -Is) deploy.sh FALLÓ: pasó de $TOPE_DEPLOY s y se cortó" >>"$LOG"; echo FALLO > "$STATE/last-result"
+      echo "deploy.sh pasó de $TOPE_DEPLOY s y se cortó (se reintenta a los 15 min)" > "$STATE/last-motivo"
     else
       echo "$(date -Is) deploy.sh FALLÓ" >>"$LOG"; echo FALLO > "$STATE/last-result"
     fi
@@ -53,18 +151,4 @@ if [ "$REINTENTAR" = 1 ] || [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-dep
   git rev-parse --short HEAD > "$STATE/last-deploy"
 fi
 
-# Página de estado del servidor (/estado/)
-# La carga de los demos va aparte (tolatino-demos, la lanza deploy.sh): su avance a la vista en /estado/demos.txt (cada minuto, sin SSH).
-{ echo "== $(date -Is) tolatino-demos: $(systemctl is-active tolatino-demos 2>/dev/null || true)"
-  journalctl -u tolatino-demos --no-pager -n 40 -o short-iso 2>/dev/null | sed -E 's/(password|PASSWORD)=[^ ]*/\1=***/g'; } \
-  > /var/www/estado/demos.txt 2>&1 || true
-RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
-{ echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>To'Latino · pruebas</title>"
-  echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · servidor de pruebas</h1>"
-  echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
-  [ -s "$STATE/last-motivo" ] && echo "<p><b>Motivo:</b> $(sed 's/&/\&amp;/g;s/</\&lt;/g' "$STATE/last-motivo")</p>"
-  [ -s /var/www/estado/sync.txt ] && echo "<p>$(sed 's/&/\&amp;/g;s/</\&lt;/g' /var/www/estado/sync.txt)</p>"
-  # 22 nov · Lo que el último despliegue anotó sin cortar (semilla, nginx: deploy.sh · aviso): a la vista, no solo en el registro.
-  [ -s /var/www/estado/avisos.txt ] && echo "<p><b>Avisos del último despliegue:</b><br>$(sed 's/&/\&amp;/g;s/</\&lt;/g;s/$/<br>/' /var/www/estado/avisos.txt)</p>"
-  echo "<p><a href='/'>Abrir la app</a> · <a href='/api/salud'>Salud</a> · <a href='/estado/diag.txt'>Diagnóstico</a> · <a href='/estado/tramos.txt'>Tramos</a></p><h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
-  tail -n 25 "$LOG" | sed 's/&/\&amp;/g;s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html
+escribir_estado

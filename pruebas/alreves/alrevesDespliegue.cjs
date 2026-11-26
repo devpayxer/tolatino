@@ -2,7 +2,9 @@
 // propósito un script o una configuración del despliegue y el guardián tiene que fallar con SU mensaje (el texto de cada caso); después se restaura y
 // los guardianes quedan limpios:
 //   sandboxSeArreglaSolo · tolatino-sync se reinstala con un install directo, sin bash -n o sin cambio atómico; tolatino-sync deja de comprobar un
-//   script que deploy.sh carga, o corre deploy.sh aunque no pase; la prueba de infra que lo demuestra deja de correr.
+//   script que deploy.sh carga, o corre deploy.sh aunque no pase; la prueba de infra que lo demuestra deja de correr. (26 nov) Un *.lock que quedó
+//   en .git ya no se borra, el fetch o deploy.sh sin tope, una salida sin escribir /estado/, sin volver a clonar o sin volver al .git de antes; el flujo
+//   de rescate imprime la contraseña, no la enmascara, corre solo o sin confirmar, con otro token u otro servidor, no vuelve a normal o borra de más.
 //   migracionConTransaccion · una migración nueva sin begin/commit, o con «index concurrently» dentro; el encabezado de migrar.sh vuelve a decir que
 //   todas traen begin/commit.
 //   migrarUnaLectura · migrar.sh vuelve a preguntar archivo por archivo; aplica sin anotar en la misma sesión o sin comprobar que quedó anotada; la
@@ -32,7 +34,7 @@ const R = ENT.RAIZ;
 const D = 'infra/pruebas/deploy.sh', S = 'infra/pruebas/tolatino-sync', L = 'infra/comun/lib.sh', C = 'pruebas/infra/correr.sh', M = 'packages/db/migrar.sh';
 const NUEVA = 'packages/db/migrations/0999_alreves_despliegue.sql';
 const N = 'infra/pruebas/nginx-pruebas.conf', O = 'pruebas/infra/orden-despliegue.test.sh';
-const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh';
+const AI = 'pruebas/infra/aislar.sh', SP = 'pruebas/infra/sync-pruebas.test.sh', W = '.github/workflows/sandbox-rescate.yml';
 const I = '.dockerignore', DF = 'infra/pruebas/Dockerfile', Y = 'infra/pruebas/docker-compose.yml', AN = 'apps/web/lib/app-nativa-comun.ts';
 const casos = [
   ['sandboxSeArreglaSolo', D, 'SYNC_R=0; instalar_si_valido "$REPO/infra/pruebas/tolatino-sync" /usr/local/bin/tolatino-sync || SYNC_R=$?',
@@ -44,6 +46,31 @@ const casos = [
   ['sandboxSeArreglaSolo', S, ' infra/pruebas/medios.sh packages/db/migrar.sh"', ' infra/pruebas/medios.sh"', 'no comprueba con bash -n packages/db/migrar.sh'],
   ['sandboxSeArreglaSolo', S, '  elif [ -f infra/pruebas/deploy.sh ]; then', '  fi\n  if [ -f infra/pruebas/deploy.sh ]; then', 'tolatino-sync NO lo corre'],
   ['sandboxSeArreglaSolo', C, '  seccion "el sandbox se arregla solo (su tolatino-sync)"; bash pruebas/infra/sync-pruebas.test.sh || mal=1\n', '', 'no corren pruebas/infra/sync-pruebas.test.sh'],
+  // 26 nov · Incidente «el sandbox no se actualiza»: un *.lock que quedó de una vuelta cortada, un fetch o un deploy.sh sin tope, una salida que no
+  // escribe /estado/, sin volver a clonar; y el flujo de rescate que imprime la contraseña, no vuelve a normal, corre solo o toca de más.
+  ['sandboxSeArreglaSolo', S, '  printf \'%s\\n\' "$CANDADOS" | while IFS= read -r f; do rm -f -- "$f"; done\n', '', 'borra los *.lock que dejó una vuelta cortada'],
+  ['sandboxSeArreglaSolo', S, 'if ERR=$(timeout -k 10 "$FETCH_TOPE" "${GIT[@]}" fetch', 'if ERR=$("${GIT[@]}" fetch', 'el fetch de tolatino-sync va con tope'],
+  ['sandboxSeArreglaSolo', S, '    timeout -k 60 "$TOPE_DEPLOY" bash infra/pruebas/deploy.sh', '    bash infra/pruebas/deploy.sh', 'corre deploy.sh con tope'],
+  ['sandboxSeArreglaSolo', S, '    se_pudo_bajar; FORZAR=1\n  else\n    escribir_estado; exit 0\n', '    se_pudo_bajar; FORZAR=1\n  else\n    exit 0\n', 'escribe /estado/ antes'],
+  ['sandboxSeArreglaSolo', S, 'No se puede bajar la rama $BR</b>', 'Aviso</b>', 'si no se puede bajar la rama, lo dice'],
+  ['sandboxSeArreglaSolo', S, 'if no_se_pudo_bajar "$ERR" && reclonar; then', 'if no_se_pudo_bajar "$ERR" && false; then', 'vuelve a clonar'],
+  ['sandboxSeArreglaSolo', S, '    mv "$roto" "$DIR/.git" 2>>"$LOG"\n', '', 'si el cambio falla, vuelve el de antes'],
+  ['sandboxSeArreglaSolo', S, '\nRECLONAR_TRAS=15 ', '\nRECLONAR_TRAS=500 ', 'RECLONAR_TRAS (≤ 30)'],
+  ['sandboxSeArreglaSolo', S, 'TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3000}', 'TOPE_DEPLOY=${TOLATINO_SYNC_TOPE_DEPLOY:-3500}', 'caben juntos'],
+  ['sandboxSeArreglaSolo', SP, 'ok "queda un shallow.lock', 'echo "queda un shallow.lock', 'no tiene el caso «queda un shallow.lock»'],
+  ['sandboxSeArreglaSolo', SP, 'ok "vuelta 30 (con red): se vuelve a clonar', 'echo "vuelta 30 (con red): se vuelve a clonar', 'no tiene el caso «N vueltas fallidas → volver a clonar»'],
+  ['sandboxSeArreglaSolo', W, '          echo "::add-mask::$PW"\n', '', 'se enmascara (::add-mask::) antes de usarla'],
+  ['sandboxSeArreglaSolo', W, '          echo "::add-mask::$PW"\n', '          echo "::add-mask::$PW"\n          echo "contraseña del rescate: $PW"\n', 'nunca se imprime: solo va al archivo 0600'],
+  ['sandboxSeArreglaSolo', W, 'SSHPASS=$(cat "$PWF") sshpass -e ssh', 'sshpass -p "$(cat "$PWF")" ssh', 'ni sshpass -p'],
+  ['sandboxSeArreglaSolo', W, '          touch "$RUNNER_TEMP/tocado"\n', '          set -x\n          touch "$RUNNER_TEMP/tocado"\n', 'ni set -x'],
+  ['sandboxSeArreglaSolo', W, '        if: always()\n        timeout-minutes: 5\n', '        timeout-minutes: 5\n', 'es «if: always()» y desactiva el rescate'],
+  ['sandboxSeArreglaSolo', W, '            accion disable_rescue\n          fi\n          if [ "$ST" = off ]', '            true\n          fi\n          if [ "$ST" = off ]', 'es «if: always()» y desactiva el rescate'],
+  ['sandboxSeArreglaSolo', W, '[ "$CONFIRMAR" = RESCATAR ] || ', 'true || ', 'SOLO a mano'],
+  ['sandboxSeArreglaSolo', W, '        type: string\npermissions:', '        type: string\n  schedule:\n    - cron: "0 9 * * *"\npermissions:', 'SOLO a mano'],
+  ['sandboxSeArreglaSolo', W, 'HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}', 'HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN_PRODUCCION }}', 'toca solo el sandbox'],
+  ['sandboxSeArreglaSolo', W, '[ "$N" = "$NOMBRE" ] && [ "$I" = "$IP" ] || ', 'true || ', 'toca solo el sandbox'],
+  ['sandboxSeArreglaSolo', W, 'find "$M/opt/tolatino/.git" -name \'*.lock\' -type f -print -delete', 'find "$M/opt/tolatino" -name \'*.lock\' -type f -print -delete', 'solo borra los *.lock de /opt/tolatino/.git'],
+  ['sandboxSeArreglaSolo', W, '          sync; umount "$M"; echo "== desmontado"', '          rm -rf "$M/opt/tolatino/.git/shallow"; sync; umount "$M"; echo "== desmontado"', 'solo borra los *.lock de /opt/tolatino/.git'],
   ['migracionConTransaccion', NUEVA, null, 'create table alreves_x (y int);\n', 'empieza con «begin;» y termina con «commit;»'],
   ['migracionConTransaccion', NUEVA, null, '-- al revés\nbegin;\ncreate table alreves_x (y int);\n', 'empieza con «begin;» y termina con «commit;»'],
   ['migracionConTransaccion', NUEVA, null, 'begin;\ncreate index concurrently alreves_i on cities (id);\ncommit;\n', '«index concurrently» no puede ir dentro de begin/commit'],

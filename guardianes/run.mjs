@@ -11073,6 +11073,55 @@ const guardianes = {
       falla(G, S, 0, "si deploy.sh o lo que carga no es bash válido, tolatino-sync NO lo corre (FALLO con su motivo; sigue sirviendo lo de antes)");
     if (!/seccion "[^"]*"; bash pruebas\/infra\/sync-pruebas\.test\.sh \|\| mal=1/.test(readFileSync(C, "utf8")) || !existsSync("pruebas/infra/sync-pruebas.test.sh"))
       falla(G, C, 0, "las pruebas de infra no corren pruebas/infra/sync-pruebas.test.sh (el tolatino-sync del sandbox)");
+    // 26 nov · Incidente «el sandbox no se actualiza» (docs/incidentes/sandbox-no-se-actualiza.md): el reinicio de las 04:30 cortó un fetch y dejó
+    // .git/shallow.lock; cada fetch fallaba y la vuelta salía SIN reescribir /estado/. (4) Bajo el candado y antes del fetch se borran los *.lock de .git;
+    // (5) el fetch y deploy.sh con tope (timeout); (6) toda salida temprana escribe /estado/ antes y la página dice desde cuándo y por qué no se puede bajar
+    // la rama; (7) a las RECLONAR_TRAS vueltas fallidas seguidas se vuelve a clonar y su .git reemplaza al roto (si no se puede, vuelve el de antes).
+    const iF = s.indexOf("flock -n 9 || exit 0"), iC = s.search(/CANDADOS=\$\(find "\$DIR\/\.git" -name '\*\.lock' -type f/), iB = s.search(/while IFS= read -r f; do rm -f -- "\$f"; done/);
+    const iFe = s.search(/ fetch -q --depth 50 origin "\$BR"/);
+    if (iF < 0 || iC < iF || iB < iC || iFe < iB) falla(G, S, 0, "bajo el candado y antes del fetch, tolatino-sync borra los *.lock que dejó una vuelta cortada en .git (si no, un shallow.lock lo deja trabado para siempre)");
+    readFileSync(S, "utf8").split("\n").forEach((l, i) => {
+      if (/^\s*#/.test(l)) return;
+      if (/\bfetch -/.test(l) && !/\btimeout -k \d+ "\$FETCH_TOPE" /.test(l)) falla(G, S, i + 1, "el fetch de tolatino-sync va con tope (timeout … \"$FETCH_TOPE\"): uno colgado no deja la vuelta parada");
+      if (/\bgit clone\b/.test(l) && !/\btimeout -k \d+ "\$CLON_TOPE" git clone /.test(l)) falla(G, S, i + 1, "el clon de tolatino-sync va con tope (timeout … \"$CLON_TOPE\")");
+      if (/\bbash infra\/pruebas\/deploy\.sh\b/.test(l) && !/^\s*timeout -k \d+ "\$TOPE_DEPLOY" bash infra\/pruebas\/deploy\.sh /.test(l)) falla(G, S, i + 1, "tolatino-sync corre deploy.sh con tope (timeout … \"$TOPE_DEPLOY\"): uno colgado queda en FALLO con su motivo");
+      if (/\bexit 0\b/.test(l) && !/^flock -n 9 \|\| exit 0$/.test(l) && !/escribir_estado; exit 0\b/.test(l)) falla(G, S, i + 1, "una salida temprana de tolatino-sync escribe /estado/ antes (escribir_estado; exit 0): si no, el sandbox se traba y nadie lo ve");
+    });
+    if (!/\nFETCH_TOPE=\d+ /.test(s) || !/\nCLON_TOPE=\d+ /.test(s) || Number((/\nTOPE_DEPLOY=\$\{TOLATINO_SYNC_TOPE_DEPLOY:-(\d+)\}/.exec(s) ?? [])[1] ?? 1e9) + 120 + 300 >= 3600)
+      falla(G, S, 0, "los topes de tolatino-sync (FETCH_TOPE, CLON_TOPE, TOPE_DEPLOY) caben juntos en el TimeoutStartSec=3600 de la unidad");
+    const pag = (/\nescribir_estado\(\) \{\n([\s\S]*?)\n\}/.exec(s) ?? [])[1] ?? "";
+    if (!/\[ -s "\$STATE\/bajar-fallos" \] && echo "[^\n]*No se puede bajar la rama \$BR<\/b> desde \$\(cat "\$STATE\/bajar-desde"[^\n]*vueltas fallidas seguidas: \$\(cat "\$STATE\/bajar-fallos"\)[^\n]*Motivo:<\/b> \$\(sed [^\n]*"\$STATE\/bajar-motivo"/.test(pag) || !/\nescribir_estado\n?$/.test(s))
+      falla(G, S, 0, "/estado/ se escribe en cada vuelta y, si no se puede bajar la rama, lo dice (desde cuándo, cuántas vueltas y el motivo)");
+    const rc = (/\nreclonar\(\) \{\n([\s\S]*?)\n\}/.exec(s) ?? [])[1] ?? "";
+    if (!/\nRECLONAR_TRAS=([1-9]|[12]\d|30) /.test(s) || !/\[ \$\(\(n % RECLONAR_TRAS\)\) = 0 \]/.test(s) || !/if no_se_pudo_bajar "\$ERR" && reclonar; then/.test(s)
+      || !/if mv "\$DIR\/\.git" "\$roto"[\s\S]{0,40}\n\s+if mv "\$nuevo\/\.git" "\$DIR\/\.git"[\s\S]*?\n\s+mv "\$roto" "\$DIR\/\.git"/.test(rc))
+      falla(G, S, 0, "a las RECLONAR_TRAS (≤ 30) vueltas fallidas seguidas tolatino-sync vuelve a clonar y su .git reemplaza al roto; si el cambio falla, vuelve el de antes");
+    const sp = existsSync("pruebas/infra/sync-pruebas.test.sh") ? readFileSync("pruebas/infra/sync-pruebas.test.sh", "utf8") : "";
+    for (const [t, que] of [["ok \"queda un shallow.lock", "queda un shallow.lock"], ["ok \"el fetch falla: no despliega", "el fetch falla y /estado/ lo dice"], ["ok \"vuelta 30 (con red): se vuelve a clonar", "N vueltas fallidas → volver a clonar"], ["ok \"se corta en su tope", "un deploy.sh colgado"]])
+      if (!sp.includes(t)) falla(G, "pruebas/infra/sync-pruebas.test.sh", 0, `la prueba del tolatino-sync del sandbox no tiene el caso «${que}»`);
+    // (8) El flujo de rescate (.github/workflows/sandbox-rescate.yml): solo a mano y con confirmación, solo el servidor del sandbox con el token del
+    // proyecto de pruebas, la contraseña del rescate enmascarada antes de nada y nunca impresa, solo borra los *.lock de .git y SIEMPRE vuelve a normal.
+    const W = ".github/workflows/sandbox-rescate.yml";
+    if (!existsSync(W)) falla(G, W, 0, "falta el flujo de rescate del sandbox (docs/incidentes/sandbox-no-se-actualiza.md)");
+    else {
+      const w = readFileSync(W, "utf8"), on = (/\non:\n([\s\S]*?)\n(?:permissions|concurrency|jobs):/.exec(w) ?? [])[1] ?? "";
+      if (/\n  [a-z_]+:/.test("\n" + on.replace(/^  workflow_dispatch:/m, "")) || !/^  workflow_dispatch:/m.test(on) || !/\[ "\$CONFIRMAR" = RESCATAR \] \|\|/.test(w))
+        falla(G, W, 0, "el rescate corre SOLO a mano (workflow_dispatch) y con la confirmación RESCATAR");
+      if (!/\n    environment: ensayo\n/.test(w) || !/HCLOUD_TOKEN: \$\{\{ secrets\.HCLOUD_TOKEN \}\}/.test(w) || /PRODUCCION|produccion\.env|reconstruir/i.test(w.replace(/^\s*#.*$/gm, "").replace(/scripts\/produccion\/hetzner\.sh/g, ""))
+        || !/\n      SERVIDOR: "174559637"\n      NOMBRE: tolatino-pruebas-1\n      IP: 2\.31\.196\.167\n/.test(w) || !/\[ "\$N" = "\$NOMBRE" \] && \[ "\$I" = "\$IP" \] \|\|/.test(w))
+        falla(G, W, 0, "el rescate toca solo el sandbox (174559637, tolatino-pruebas-1, comprobado antes de nada) con el token del proyecto de pruebas (entorno ensayo); nunca producción");
+      const lw = w.split("\n"), usos = lw.map((l, i) => [l, i]).filter(([l]) => /\$\{?PW\b(?!F)/.test(l));
+      const iMask = lw.findIndex((l) => /^\s*echo "::add-mask::\$PW"$/.test(l)), iGuarda = lw.findIndex((l) => /^\s*\( umask 077; printf '%s' "\$PW" > "\$PWF" \)$/.test(l));
+      if (iMask < 0 || iGuarda < iMask || usos.some(([l, i]) => !(i === iMask || i === iGuarda || /^\s*\[ -n "\$PW" \] \|\| \{ echo "::error::[^"$]*"; exit 1; \}$/.test(l))))
+        falla(G, W, 0, "la contraseña del rescate se enmascara (::add-mask::) antes de usarla y nunca se imprime: solo va al archivo 0600");
+      if (/\bset -x\b|\bsshpass -p\b|ACTIONS_STEP_DEBUG|GITHUB_ENV|GITHUB_OUTPUT/.test(w) || lw.some((l) => /\$PWF\b/.test(l) && /\bcat\b/.test(l) && !/SSHPASS=\$\(cat "\$PWF"\) sshpass -e ssh /.test(l)) || lw.some((l) => /root_password/.test(l) && !/print\(json\.load\(sys\.stdin\)\.get\("root_password"\) or ""\)/.test(l)))
+        falla(G, W, 0, "la contraseña del rescate nunca se imprime (ni set -x, ni sshpass -p, ni a GITHUB_ENV/GITHUB_OUTPUT, ni cat del archivo fuera de SSHPASS)");
+      const pasos = w.split(/\n(?=      - (?:name|uses):)/), ult = pasos[pasos.length - 1] ?? "", pd = pasos.find((p) => /^      - name: \(d\)/.test(p)) ?? "";
+      if (!/^      - name: [^\n]*\n        if: always\(\)\n/.test(ult) || !/\n\s+accion disable_rescue\n/.test(ult) || !/accion reset/.test(ult) || !/accion poweron/.test(ult) || !/\n    timeout-minutes: \d+\n/.test(w))
+        falla(G, W, 0, "el último paso del rescate es «if: always()» y desactiva el rescate (disable_rescue) y arranca normal: el servidor nunca se queda en rescate");
+      if (!/find "\$M\/opt\/tolatino\/\.git" -name '\*\.lock' -type f -print -delete/.test(pd) || (pd.match(/-delete\b/g) ?? []).length !== 1 || /\brm\b|\bmkfs|\bfsck|\bdd\b|> "\$M/.test(pd))
+        falla(G, W, 0, "en el disco del servidor el rescate solo borra los *.lock de /opt/tolatino/.git (nada más)");
+    }
   },
 
   /* 22 nov · migracionConTransaccion: cada migración NUEVA empieza con «begin;» y termina con «commit;» (sin contar comentarios), y no usa

@@ -19,5 +19,6 @@ _Manual interno de incidentes (9o; fase9-apertura.md §3.4). No es ayuda de El C
 | [Certificado vencido](certificado-vencido.md) | alta |
 | [Abuso o ataque](abuso-o-ataque.md) | alta |
 | [Proveedor de IA caído](ia-caida.md) | media |
+| [El sandbox no se actualiza](sandbox-no-se-actualiza.md) (solo pruebas) | media |
 
 Simulacros (lo medido en el ensayo y, antes de abrir, en producción): [simulacros.md](simulacros.md).

@@ -15,6 +15,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       al principio solo existe el de pruebas (decisión C).
 
 ## Infraestructura del sandbox
+- [ ] **→ 9o** · **El sandbox no se actualiza (26 nov):** correr **Rescate del sandbox** (`sandbox-rescate.yml`, `RESCATAR`) con este commit ya en `main`, leer su diagnóstico (¿había `shallow.lock`? ¿reinicio a las 04:30 EST?) y verlo servido: `/api/salud` con el commit de `pruebas` y, en `/estado/`, «tolatino-sync: el del commit …» (el nuevo, que se arregla solo). Manual: `docs/incidentes/sandbox-no-se-actualiza.md`. Queda también: el `tolatino-sync` de PRODUCCIÓN (`infra/produccion/tolatino-sync`) tiene la misma clase de fallo (fetch sin tope, sale sin decirlo si queda un candado); no se tocó (regla: producción no) y va antes de la fase 9.
 - [x] **→ 9o** · **Almacenamiento de archivos (5 nov 2026):** MinIO fuera (imágenes públicas retiradas).
       Entra **Garage** (`dxflrs/garage:v2.1.0`, S3 propio) en el bloque de subida de fotos,
       con bucket, llaves y respaldo del volumen. Hasta entonces la app no sube archivos. — _9a (11 nov): Garage hecho (infra/pruebas/medios.sh, servicio «medios» del compose; las fotos suben: com5a, com5d, publica). Falta el respaldo del volumen._ — **✓ 9o (14 nov):** producción respalda las fotos cada día (Garage → almacén de otra región con rclone; lo borrado o cambiado se aparta 35 días; `infra/comun/respaldos/respaldar.sh fotos`, anotado en backup_runs). El volumen del sandbox no se respalda: sus fotos son de prueba y se rehacen con la semilla (REVISION 9o).

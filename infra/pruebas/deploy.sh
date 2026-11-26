@@ -52,6 +52,15 @@ if [ "$(cat "$SYNC_DROPIN" 2>/dev/null || true)" != "$SYNC_TIMER" ]; then
   { mkdir -p "${SYNC_DROPIN%/*}" && printf '%s\n' "$SYNC_TIMER" > "$SYNC_DROPIN" && systemctl daemon-reload && systemctl restart tolatino-sync.timer \
     && log "tolatino-sync: cada 20 s (AccuracySec=1s)"; } || log "tolatino-sync: no se pudo ajustar el temporizador (sigue el de antes)"
 fi
+# 1c) 26 nov · El tope de cada vuelta (TimeoutStartSec=3600) también en la máquina viva, por escrito: el cloud-init lo trae para una máquina nueva, pero
+#     la viva nació antes de que el cloud-init viviera en el repo. Una vuelta colgada la corta systemd y el temporizador sigue (la siguiente arranca a
+#     los 20 s); dentro de ese tope, tolatino-sync corta antes el fetch (120 s), el clon (300 s) y deploy.sh (50 min) y lo dice en /estado/.
+SYNC_TOPE_DROPIN=/etc/systemd/system/tolatino-sync.service.d/tope.conf
+SYNC_TOPE=$'[Service]\nTimeoutStartSec=3600'
+if [ "$(cat "$SYNC_TOPE_DROPIN" 2>/dev/null || true)" != "$SYNC_TOPE" ]; then
+  { mkdir -p "${SYNC_TOPE_DROPIN%/*}" && printf '%s\n' "$SYNC_TOPE" > "$SYNC_TOPE_DROPIN" && systemctl daemon-reload \
+    && log "tolatino-sync: tope de cada vuelta 3600 s"; } || log "tolatino-sync: no se pudo fijar el tope de la vuelta (sigue el de antes)"
+fi
 
 # 2) Secretos del sandbox: se generan una sola vez en el servidor, nunca viven en el repo.
 mkdir -p /etc/tolatino
