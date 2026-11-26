@@ -2991,7 +2991,16 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       memoria. Guardianes `despliegueCorto` y `vistaPreviaAcotada`, `alrevesDespliegue` 113/113, `pruebas/infra` en verde.
 - [ ] **→ 9u** · **Vista previa: salud en Super Admin › Sistema › Salud** (hoy solo `/estado/vista.txt`).
 - [x] **Tipos dentro de `next build`:** resuelto el 24 nov (decisión AR): la imagen ya no los repite (`TOLATINO_TIPOS_YA_REVISADOS=1`, guardián `tiposAntesDeLaImagen`).
-- [ ] **→ 9o** · **Segunda revisión por otro modelo** de la llave estable de las acciones del servidor (Dockerfile) y del usuario `tolatino_vista` (`encender.sh`).
+- [x] **→ 9o** · **Segunda revisión por otro modelo** de la llave estable de las acciones del servidor (Dockerfile) y del usuario `tolatino_vista` (`encender.sh`).
+      _Hecho (26 nov, revisión del orquestador; lo escribió otro modelo):_ (1) La llave (`infra/pruebas/Dockerfile`): 32 bytes de `/dev/urandom` en base64
+      (lo que pide Next para AES-256), vive solo en la caché de BuildKit del servidor (`sharing=locked`: dos construcciones no la pisan), entra al build
+      por el entorno de ese único `RUN` (no queda en una capa ni en el repo; Next ya la escribe en el manifiesto de la imagen, como sin ella) y se renueva
+      a los 14 días (`-mtime +13`). Renovarla o perder la caché equivale a lo que Next hace sin llave fija (cada build, llave nueva): una página abierta
+      con una versión anterior ya pedía recargar. Sin hallazgos. (2) `tolatino_vista`: `encender.sh` ya no existe (la vista previa se retiró el 24 nov,
+      decisión AQ); lo que queda es `retirar_vista_previa` en `infra/pruebas/deploy.sh` 3i. Corre como `tolatino`, que es el superusuario del contenedor
+      (POSTGRES_USER), así que `alter default privileges`, `drop owned by` (revoca también lo concedido sobre la base, que es objeto compartido) y
+      `drop role` tienen permiso; es idempotente y no corta el despliegue. Nota: si el rol tuviera permisos en OTRA base, `drop role` fallaría y se
+      reintentaría en cada despliegue con su línea en el registro (no pasa: solo existió `tolatino`). Sin hallazgos.
 - [ ] **→ 9q** · **Nunca visto en el servidor real antes de este despliegue:** la imagen de la vista previa (Alpine + pnpm), BuildKit en el servidor y el puerto 8081 abierto.
 
 ## Anfitriones del barrio (decisión AO, 23 nov; hecho por Opus, revisado por Fable)
