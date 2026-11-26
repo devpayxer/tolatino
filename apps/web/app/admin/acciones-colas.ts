@@ -552,7 +552,7 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
     if (!s.puede("tx", "aprobar")) return no("Tu rol no devuelve dinero.");
     if (!/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return no("Prueba de nuevo.");
   }
-  const usd = (n: number) => `$${(n / 100).toFixed(2)}`, idem = `sop-q${id}`;
+  const usd = (n: number) => `$${(n / 100).toFixed(2)}`, idem = `sop-q${id}`; /* dinero fijo: super admin */
   const COLA = `q.queue in ('sop', 'cuidado', 'salir') and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))`;
   const cobros = await import("@/lib/cobros");
   // (1) La intención: el caso bloqueado, la devolución del caso (la que ya tenga o una nueva) y su auditoría, juntas.
@@ -602,8 +602,8 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
     if (borrador && /^[0-9a-f-]{36}$/.test(String(borrador)))
       await c.query(`update compa_drafts set used = case when btrim(regexp_replace(draft, '\\s+', ' ', 'g')) = btrim(regexp_replace($4, '\\s+', ' ', 'g')) then 'sent_as_is' else 'edited' end
                       where id = $1::uuid and help_request_id = $2::bigint and staff_id = $3 and used is null`, [borrador, q.subject_id, s.id, m]);
-    await auditar(c, { actor: s.id, action: "soporte.resolver", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta", ...(devuelto ? { devuelto: `$${(devuelto / 100).toFixed(2)}` } : {}) }, reason: m });
-    return { ok: true as const, mensaje: `Resuelta${devuelto ? ` y devueltos $${(devuelto / 100).toFixed(2)}` : ""}. El cliente la ve en su pedido o su cita.`, caso: q.subject_id };
+    await auditar(c, { actor: s.id, action: "soporte.resolver", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta", ...(devuelto ? { devuelto: `$${(devuelto / 100).toFixed(2)}` } : {}) }, reason: m }); /* dinero fijo: super admin */
+    return { ok: true as const, mensaje: `Resuelta${devuelto ? ` y devueltos $${(devuelto / 100).toFixed(2)}` : ""}. El cliente la ve en su pedido o su cita.`, caso: q.subject_id }; /* dinero fijo: super admin */
   }).then(async (r) => {
     if (r.ok && r.caso) {
       const n = (await import("@/lib/db")).db; const o = (await n().query<{ num: string; k: string }>(`select o.number as num, o.kind as k from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [r.caso])).rows[0];
@@ -942,4 +942,3 @@ export async function decidirVivienda(id: string, accion: "confirmar" | "rechaza
     : accion === "advertir" ? "Advertencia al negocio. Recibe el aviso." : "Caso cerrado como revisado." };
 }
 
-/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

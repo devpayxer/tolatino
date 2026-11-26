@@ -3,6 +3,7 @@ import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { Pool, PoolClient } from "pg";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { PROHIBIDO } from "./jobs-txt";
+import { usd } from "./dinero-comun";
 export { PROHIBIDO };
 
 /* Jobs (prototipo jobAdd / jobDetVals / jobApVals / jobStVals; panel jobBlocks / jobDet; modelo «JobPosting» y
@@ -185,7 +186,7 @@ export async function guardarVacante(negocio: string, p: VacIn, actorId: string,
   if (t0.length < 3) return no("Escribe el puesto.", "Write the position.");
   const kind = ["ft", "pt", "fds"].includes(p.kind) ? p.kind : "ft";
   const lo = Math.round(Number(p.lo) * 100), hi = p.hi != null && Number(p.hi) > 0 ? Math.round(Number(p.hi) * 100) : null;
-  if (!(lo >= PAGO_MIN)) return no("El pago por hora va desde $7.25 (el mínimo de Pensilvania).", "Hourly pay starts at $7.25 (the Pennsylvania minimum).");
+  if (!(lo >= PAGO_MIN)) return no(`El pago por hora va desde ${usd(PAGO_MIN)} (el mínimo de Pensilvania).`, `Hourly pay starts at ${usd(PAGO_MIN)} (the Pennsylvania minimum).`);
   if (hi != null && hi < lo) return no("«Hasta» tiene que ser mayor que «desde».", "“Up to” must be above “from”.");
   const days = Array.isArray(p.days) ? [...new Set(p.days.map(Number).filter((x) => Number.isInteger(x) && x >= 0 && x <= 6))].sort() : [];
   if (!days.length) return no("Elige al menos un día.", "Pick at least one day.");

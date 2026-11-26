@@ -6,6 +6,7 @@
 // de un borrador es de ese caso); el límite por persona del equipo; el barrido descarta; Super Admin › El Compa cuenta el copiloto; y con el
 // copiloto apagado (nivel, canal, ciudad) o al tope, Soporte y la cola de ayudas TEXTO A TEXTO como antes. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { sinMas } = require('../lib/usd.cjs'); // «$15» sin «.00» ni más dígitos detrás
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
 const OUT = ENT.S + '/cap/', B = ENT.B, TOK = ENT.TOK;
@@ -123,7 +124,7 @@ const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   ok(!/570.?555.?0142|5550142/.test(todo) && !/marisol\.prueba@example\.com/.test(todo), 'sin el teléfono ni el correo que escribió la persona');
   ok(!todo.includes('Secreta99') && todo.includes('[tapado]'), 'la contraseña llega «[tapado]»');
   ok(!UUIDRE.test(todo) && !todo.includes(MU) && !todo.includes(DU) && !todo.includes(OPID) && !/\+1570/.test(todo), 'sin ids crudos ni el teléfono de la cuenta');
-  ok(todo.includes(TK1.num) && todo.includes(`#${OPNUM}`) && todo.includes('$150'), 'con el número del caso, la operación y lo pagado como lo muestra la ficha');
+  ok(todo.includes(TK1.num) && todo.includes(`#${OPNUM}`) && sinMas('$150').test(todo), 'con el número del caso, la operación y lo pagado como lo muestra la ficha');
   ok(todo.includes('NOTA-INTERNA') && /notas_internas_del_equipo/.test(todo), 'la nota interna va aparte, marcada (su rol la lee en la ficha)');
   ok(/hasta \$50 por caso/.test(todo), 'tu_rol: Soporte devuelve hasta $50 por caso (el tope que dice la base)');
   ok(!/ANTHROPIC|x-api-key|sk-ant/i.test(todo), 'ninguna llave en lo que va al modelo');

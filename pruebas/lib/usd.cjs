@@ -7,3 +7,5 @@ const js = ts.transpileModule(fs.readFileSync(path.join(ENT.RAIZ, 'apps/web/lib/
 const mod = { exports: {} };
 new Function('module', 'exports', 'require', js)(mod, mod.exports, () => { throw new Error('dinero-comun no importa nada'); });
 module.exports = mod.exports.usd;
+// «$15» pedido sin que le siga más: ni «.00» ni otro dígito («$150»). El texto s se toma literal; se prueba con .test(texto).
+module.exports.sinMas = (s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?!\\.?\\d)');

@@ -30,11 +30,11 @@ export function compat(c: Clinica, x: SeguroRef | null, cat: CatSeguro[], es: bo
 }
 
 /* El precio de un servicio con el seguro de la persona (o sin él). */
-export function precioSalud(it: SvcSalud, c: Clinica, x: SeguroRef | null, es: boolean): { l: string; s: string } {
+export function precioSalud(it: SvcSalud, c: Clinica, x: SeguroRef | null, es: boolean): { l: string; s: string; cubierta?: boolean } {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (it.k === "walk" && !it.cents) return { l: E2("Gratis", "Free"), s: "" };
   const acc = !!x && aceptan(c, x), pub = !!x && (x.kind === "medicaid" || x.kind === "chip");
-  if (acc) return it.k === "free" || pub ? { l: "$0", s: E2("CON TU SEGURO", "WITH YOUR INSURANCE") } : { l: E2("Copago", "Copay"), s: E2("SEGÚN TU PLAN", "PER YOUR PLAN") };
+  if (acc) return it.k === "free" || pub ? { l: usd(0), s: E2("CON TU SEGURO", "WITH YOUR INSURANCE"), cubierta: true } : { l: E2("Copago", "Copay"), s: E2("SEGÚN TU PLAN", "PER YOUR PLAN") };
   if (it.esc) return { l: `${E2("Desde ", "From ")}${usd(it.cents)}`, s: E2("SEGÚN TUS INGRESOS", "INCOME-BASED") };
   // «Gratis con tu seguro» sin un seguro que lo cubra: se paga la consulta sin seguro.
   const cents = it.k === "free" ? (c.sin ? c.cash : 0) : it.cents;

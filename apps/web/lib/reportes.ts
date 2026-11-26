@@ -28,7 +28,7 @@ export const CADA: Record<Cada, { es: string; en: string; dias: number }> = {
 };
 const esTab = (t: string): t is TabReporte => Object.prototype.hasOwnProperty.call(TABS_REPORTE, t);
 const esCada = (c: string): c is Cada => c === "dia" || c === "semana" || c === "mes";
-const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; /* dinero fijo: super admin */
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
 export type Programado = { tab: TabReporte; cada: Cada; status: "activo" | "pausado"; last_sent_at: string | null };
@@ -126,4 +126,3 @@ export async function barrerReportes(): Promise<number> {
   return n;
 }
 
-/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

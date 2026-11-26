@@ -37,11 +37,11 @@ export async function devolverTx(numero: string, monto: string, motivo: string, 
   // 20 nov · La auditoría entra con CADA parte devuelta, en la transacción que la anota (devolverOperacion → devolverPago, alGuardar): antes se
   // escribía aparte, después de todas las partes; si el proceso moría en ese hueco quedaba dinero devuelto sin auditoría. Guardián auditoriaDelAdminConElCambio.
   const tipo = String(numero).startsWith("EP-") ? "evento_privado" : o.kind === "plan" ? "plan" : o.kind === "rental" ? "renta" : ({ C: "cita", F: "fiesta", V: "viaje", N: "noche", I: "inscripcion" } as Record<string, string>)[String(numero)[0]!] ?? "pedido";
-  const ref = /^([A-Z]+)-/.test(String(numero)) ? String(numero) : `#${numero}`, usd = (n: number) => `$${(n / 100).toFixed(2)}`;
+  const ref = /^([A-Z]+)-/.test(String(numero)) ? String(numero) : `#${numero}`, usd = (n: number) => `$${(n / 100).toFixed(2)}`; /* dinero fijo: super admin */
   const r = await devolverOperacion({ opId: o.id, centavos: cents, kinds: KINDS[o.kind]!, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` },
     (c, x) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "operation", targetId: o.id, city: o.city, after: { [tipo]: ref, monto: usd(x.centavos), ...(x.centavos !== cents ? { de: usd(cents) } : {}), cobro: `${x.parte} · pago ${x.pago}` }, reason: String(motivo ?? "").trim() }));
   if (!r.ok) return { ok: false, mensaje: r.msg.es };
-  return { ok: true, mensaje: `Devueltos $${(cents / 100).toFixed(2)}. El cliente ya lo sabe.` };
+  return { ok: true, mensaje: `Devueltos $${(cents / 100).toFixed(2)}. El cliente ya lo sabe.` }; /* dinero fijo: super admin */
 }
 
 /* 22 nov (0209) · «Devolver otra vez» unos boletos desde su alerta refund_failed (Planes › Ingresos › Alertas). El mismo permiso que «Devolver»
@@ -83,4 +83,3 @@ export async function verRutaTx(numero: string, motivo: string): Promise<ResAdm 
   return { ok: true, mensaje: "Recorrido abierto. Quedó en la auditoría con tu motivo.", ruta: r.r };
 }
 
-/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

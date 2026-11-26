@@ -18759,38 +18759,44 @@ const guardianes = {
       } catch (e) { falla(G, DC, 0, `no pude ejecutar dinero-comun.ts: ${String(e?.message ?? e).slice(0, 120)}`); } }
   },
 
-  /* 26 nov (LAUNCH «promete antes de actuar» d/e, lo que quedaba) · dineroConUsd: el dinero que ve una persona sale de lib/dinero-comun › usd («$45», «$52.50»). Un «$» seguido
-     de un decimal fijo (`$${(c / 100).toFixed(2)}`, "$" + x.toFixed(2), `$${…toLocaleString("en-US", { minimumFractionDigits: 2 …`, o «$» suelto en JSX con toFixed(2)) deja «$45.00»
-     donde otras pantallas dicen «$45». En todo apps/web (pantallas, panel, avisos, correos, lib/) falla, salvo con la marca explícita «dinero fijo: …» (comentario de bloque) en la misma línea
-     o en cualquier parte del archivo (las cifras de contabilidad del Super Admin, los CSV). Los valores de un input, lo que se manda a Stripe y las auditorías sin «$» no llevan «$»
-     delante y no entran. Al revés: alrevesDineroDiceLoQuePaso. */
+  /* 26 nov (LAUNCH «promete antes de actuar» d/e, lo que quedaba) · dineroConUsd: el dinero que ve una persona sale de lib/dinero-comun › usd («$45», «$52.50»). Tres reglas, en todo apps/web
+     (pantallas, panel, avisos, correos, lib/): (1) un «$» seguido de un decimal fijo (`$${(c / 100).toFixed(2)}`, "$" + x.toFixed(2), `$${…toLocaleString("en-US", { minimumFractionDigits: 2 …`, o «$» suelto
+     en JSX con toFixed(2)) deja «$45.00» donde otras pantallas dicen «$45»; (2) un literal de dinero («$0.00», «$12.50», «-$3.00») en código de pantalla o aviso es un monto armado a mano: sale de usd;
+     (3) comparar contra un monto ya formateado (`=== "$…"`) se rompe en cuanto la regla cambia: se compara el número (centavos), no el texto. La marca «dinero fijo: …» (comentario de bloque)
+     exime SOLO donde cabe: la de archivo, únicamente en apps/web/app/admin/*.tsx (las cifras de contabilidad del Super Admin); en lib/, en acciones-*.ts y en cualquier otro sitio la marca va en la
+     MISMA línea que lo exime. Los valores de un input, lo que se manda a Stripe y las auditorías sin «$» delante no entran. Al revés: alrevesDineroDiceLoQuePaso. */
   dineroConUsd() {
     const G = "dineroConUsd";
     const MARCA = /\/\*\s*dinero fijo:[^*]*\*\//;
+    const MARCA_ARCHIVO = /^apps\/web\/app\/admin\/[^/]+\.tsx$/;
     const MALAS = [
-      [/\$\$\{[^\n]*\.toFixed\(2\)/g, "«$${…toFixed(2)}»"],
-      [/["'`]\$["'`]\s*\+[^\n]*\.toFixed\(2\)/g, "«\"$\" + …toFixed(2)»"],
-      [/\$\$\{[^\n]*minimumFractionDigits:\s*2/g, "«$${…toLocaleString(…, { minimumFractionDigits: 2 })}»"],
-      [/(?:>|\}\s)\$\{[^{}\n]*\/ 100\)\.toFixed\(2\)\}/g, "un «$» suelto en JSX con {…toFixed(2)}"],
+      [/\$\$\{[^\n]*\.toFixed\(2\)/g, "«$${…toFixed(2)}»", "deja «$45.00» donde el resto dice «$45»"],
+      [/["'`]\$["'`]\s*\+[^\n]*\.toFixed\(2\)/g, "«\"$\" + …toFixed(2)»", "deja «$45.00» donde el resto dice «$45»"],
+      [/\$\$\{[^\n]*minimumFractionDigits:\s*2/g, "«$${…toLocaleString(…, { minimumFractionDigits: 2 })}»", "deja «$45.00» donde el resto dice «$45»"],
+      [/(?:>|\}\s)\$\{[^{}\n]*\/ 100\)\.toFixed\(2\)\}/g, "un «$» suelto en JSX con {…toFixed(2)}", "deja «$45.00» donde el resto dice «$45»"],
+      [/["'`>\s(]-?\$\d[\d,]*\.\d\d(?!\d)/g, "un literal de dinero con decimales fijos («$0.00», «$12.50»)", "es un monto armado a mano (y «$0.00» ya no es lo que dice usd)"],
+      [/[!=]==?\s*["'`]-?\$\d|["'`]-?\$\d[^"'`\n]*["'`]\s*[!=]==?/g, "una comparación contra un monto formateado (=== \"$…\")", "se rompe cuando la regla del dinero cambia; compara los centavos, no el texto"],
     ];
     let marcados = 0, mirados = 0;
     for (const f of archivos.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && !x.includes("/node_modules/"))) {
       const crudo = readFileSync(f, "utf8");
-      if (!crudo.includes("toFixed(2)") && !crudo.includes("minimumFractionDigits")) continue;
+      if (!/toFixed\(2\)|minimumFractionDigits|\$/.test(crudo)) continue;
       mirados++;
-      const t = sinComent(f), lineasCrudas = crudo.split("\n"), fijo = MARCA.test(crudo);
+      const t = sinComent(f), lineasCrudas = crudo.split("\n"), fijo = MARCA_ARCHIVO.test(f) && MARCA.test(crudo);
       let usado = false;
-      for (const [re, que] of MALAS) {
+      for (const [re, que, porque] of MALAS) {
+        const vistas = new Set(); // una sola queja por regla y línea
         for (const m of t.matchAll(re)) {
           const ln = t.slice(0, m.index).split("\n").length;
+          if (vistas.has(ln)) continue; vistas.add(ln);
           if (fijo || MARCA.test(lineasCrudas[ln - 1] ?? "")) { usado = true; continue; }
-          falla(G, f, ln, `${que} deja «$45.00» donde el resto dice «$45»: usa lib/dinero-comun › usd (recibe CENTAVOS; si tienes dólares, × 100 explícito). Si es una cifra fija a propósito (CSV, contabilidad del Super Admin), márcala con /* dinero fijo: <por qué> */`);
+          falla(G, f, ln, `${que} ${porque}: usa lib/dinero-comun › usd (recibe CENTAVOS; si tienes dólares, × 100 explícito). Si es una cifra fija a propósito (CSV, contabilidad del Super Admin), márcala con /* dinero fijo: <por qué> */ en la misma línea (en apps/web/app/admin/*.tsx basta una marca de archivo)`);
         }
       }
       if (usado) marcados++;
     }
     if (marcados < 20) falla(G, "apps/web", 0, `esperaba al menos 20 archivos con dinero fijo marcado (Super Admin); hallé ${marcados}: ¿se quitó la marca o la regla dejó de mirar?`);
-    if (mirados < 20) falla(G, "apps/web", 0, `esperaba mirar al menos 20 archivos con toFixed(2) o minimumFractionDigits; vi ${mirados}`);
+    if (mirados < 20) falla(G, "apps/web", 0, `esperaba mirar al menos 20 archivos con «$», toFixed(2) o minimumFractionDigits; vi ${mirados}`);
   },
 
 };

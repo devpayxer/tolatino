@@ -6,6 +6,7 @@ import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AppPanel, VacPanel, VacPanelDet } from "@/lib/jobs";
 import { bi, DCORTO, diasL, EXP_L, haceL, horaL, horarioL, idiomasL, pagoLargo, PROHIBIDO, tipoL } from "@/lib/jobs-txt";
+import { usd } from "@/lib/dinero-comun";
 import { vacGuardarP, vacModulo, vacPaso, vacResponder } from "./acciones-jobs";
 import { panelTraducir } from "./acciones-traducir";
 import type { Ctx, Sec } from "./Panel";
@@ -221,7 +222,7 @@ function editor(c: Ctx, v: string): Sec {
   const borrador = !j0 || !edita || j0.st === "draft";
   if (borrador) out.push({ type: "rows", items: [{ icon: "bolt", t: E2("Publicar al guardar", "Post on save"), s: x.pub ? E2("Sale en la pestaña Jobs de tu página.", "Shows in the Jobs tab of your page.") : E2("Apagado: queda como borrador. Solo tú la ves.", "Off: saved as a draft. Only you see it."), tgOn: x.pub, onTg: () => F.set({ pub: !x.pub }) }] });
   const todo = [x.t0, x.d0, x.t1, x.d1, ...x.req.flat(), ...x.ben.flat()].join(" "), hit = todo.match(PROHIBIDO)?.[0];
-  const miss = [x.t0.trim().length < 3 ? E2("puesto", "position") : null, lo < 7.25 ? E2("pago por hora desde $7.25 (el mínimo de Pensilvania)", "hourly pay from $7.25 (the Pennsylvania minimum)") : null,
+  const miss = [x.t0.trim().length < 3 ? E2("puesto", "position") : null, lo < 7.25 ? E2(`pago por hora desde ${usd(725)} (el mínimo de Pensilvania)`, `hourly pay from ${usd(725)} (the Pennsylvania minimum)`) : null,
     x.hi && hi < lo ? E2("«hasta» mayor que «desde»", "“up to” above “from”") : null, !x.dd.length ? E2("al menos un día", "at least one day") : null].filter(Boolean);
   if (hit) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`Quita «${hit}»: To’Latino no deja pedir CV, papeles, estatus, SSN ni pago para aplicar.`, `Remove “${hit}”: To’Latino does not allow asking for a resume, papers, status, SSN or a fee to apply.`) });
   else if (miss.length && F.dirty) out.push({ type: "note", tone: "warn", t: `${E2("Para publicar falta: ", "To post, add: ")}${miss.join(" · ")}.` });

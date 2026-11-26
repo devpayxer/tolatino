@@ -15,6 +15,7 @@
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright');
+const usd = require('../lib/usd.cjs'); // la regla real del dinero (lib/dinero-comun › usd)
 const { entrarComo, telLibre, sql, abiertoTodoElDia, direccion, medios, publicarBarberia } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT, FOTO = ENT.rec('fotos') + '/portada.jpg';
 const SOLO = (process.env.SOLO || '').split(',').filter(Boolean);
@@ -149,7 +150,7 @@ const parte = (k) => !SOLO.length || SOLO.includes(k);
       await clic(m.getByRole('button', { name: /Aprobar 1 trabajo/ }));
       await hoja(m).first().waitFor({ timeout: 20000 });
       const linea = Number(sql(`select line_total_cents from estimate_lines l join operations o on o.id = l.operation_id where o.number = '${C}'`));
-      ok(new RegExp(`3-D SECURE · \\$${(linea / 100).toFixed(2)}`).test(await texto(m)), `la hoja con lo aprobado ($${(linea / 100).toFixed(2)}, de la base)`);
+      ok(usd.sinMas(`3-D SECURE · ${usd(linea)}`).test(await texto(m)), `la hoja con lo aprobado (${usd(linea)}, de la base)`);
       ok(det() === 'confirmed|est' && pagos() === '0', 'sin la verificación, el estimado sigue sin aprobar');
       const P = pendiente(T).split('|');
       await clic(hoja(m).getByRole('button', { name: 'Confirmar con mi banco' }));
@@ -329,7 +330,7 @@ const parte = (k) => !SOLO.length || SOLO.includes(k);
       const real = Number(sql(`select coalesce(sum(final_cents + round(final_cents * tax_pct / 100)), 0)::int + coalesce((select delivery_cents from operations where id = ${O}), 0) from operation_lines where operation_id = ${O}`));
       await clic(m.locator('[data-screen-label="Pedido del mercado · OK por más"]').getByRole('button', { name: /^Looks good, charge/ }));
       await hoja(m).first().waitFor({ timeout: 20000 });
-      ok(new RegExp(`3-D SECURE · \\$${(mas / 100).toFixed(2)}`).test(await texto(m)), `la hoja del banco por lo que falta ($${(mas / 100).toFixed(2)})`);
+      ok(usd.sinMas(`3-D SECURE · ${usd(mas)}`).test(await texto(m)), `la hoja del banco por lo que falta (${usd(mas)})`);
       ok(sql(`select count(*) from payments where operation_id = ${O} and kind = 'extra'`) === '0', 'sin la verificación, nada más retenido');
       await clic(hoja(m).getByRole('button', { name: 'Confirm with my bank' }));
       ok(await espera(() => sql(`select coalesce(sum(amount_cents) filter (where status = 'captured'), 0)::text from payments where operation_id = ${O}`), String(real)) === String(real), `cobrado lo real una vez: $${(real / 100).toFixed(2)}`);

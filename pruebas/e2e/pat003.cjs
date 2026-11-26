@@ -16,6 +16,7 @@
 //   a cobrar (antes «—» y «Pagar» apagado) y lo que se cobra es exactamente eso (las fechas, el precio del mes, la renovación encadenada).
 // Precondiciones propias: lo vivo de Eventos en Hazleton queda terminado (estados, nada se borra); precios y puestos de fábrica se restauran.
 const ENT = require('../lib/entorno.cjs');
+const { sinMas } = require('../lib/usd.cjs'); // «$15» sin «.00» ni más dígitos detrás
 const { configLista } = require('../lib/config-lista.cjs'); // 22 nov · la Configuración llegó al servidor (mira que la escucha viva), en vez de dormir 16 s
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, lejosDeMedianoche, medios, sql, tarjeta, telLibre } = require('../lib/negocio-nuevo.cjs');
@@ -115,14 +116,14 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     await pd.getByRole('button', { name: 'Patrocinar', exact: true }).click();
     ok(await espera(async () => (await texto(pd)).includes('6 de 6 puestos libres')), 'Elegir: «6 de 6 puestos libres»');
     const el = await texto(pd);
-    ok(el.includes('1 semana') && el.includes('$17') && el.includes('1 mes') && el.includes('Hasta el evento') && el.includes('$34'), 'duración: 1 semana ($17, de Configuración), 1 mes y «hasta el evento» ($17 × 2 semanas)');
+    ok(el.includes('1 semana') && sinMas('$17').test(el) && el.includes('1 mes') && el.includes('Hasta el evento') && sinMas('$34').test(el), 'duración: 1 semana ($17, de Configuración), 1 mes y «hasta el evento» ($17 × 2 semanas)');
     await pd.screenshot({ path: OUT + 'pat003-elegir-1360.png', fullPage: true });
     await pd.getByRole('button', { name: /^Continuar · \$17$/ }).click();
     ok(await espera(async () => (await texto(pd)).includes('Revisar y pagar')), 'Revisar y pagar');
     const rv = await texto(pd);
-    ok(rv.includes('Eventos · Hazleton') && rv.includes('$17') && /Visa ·· 4242/i.test(rv) && rv.includes('Apagada'), 'evento, dónde, total, tarjeta guardada y «Renovar» apagado de entrada');
+    ok(rv.includes('Eventos · Hazleton') && sinMas('$17').test(rv) && /Visa ·· 4242/i.test(rv) && rv.includes('Apagada'), 'evento, dónde, total, tarjeta guardada y «Renovar» apagado de entrada');
     await pd.screenshot({ path: OUT + 'pat003-pagar-1360.png', fullPage: true });
-    await pd.getByRole('button', { name: 'Pagar $17' }).click();
+    await pd.getByRole('button', { name: 'Pagar $17', exact: true }).click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where event_id = ${A} and status = 'activo'`) === '1'), 'queda ACTIVO en la base');
     const SA = sql(`select id from event_sponsorships where event_id = ${A} and status = 'activo'`);
     ok(sql(`select price_cents || '|' || duration || '|' || auto_renew || '|' || business_id from event_sponsorships where id = ${SA}`) === `1700|week|false|${NEG}`, 'precio de Configuración ($17), 1 semana, sin renovar solo, del organizador');
@@ -172,7 +173,7 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     await pm.screenshot({ path: OUT + 'pat003-hasta-evento-390.png', fullPage: true });
     await pm.getByRole('button', { name: /^Continuar · \$34$/ }).click();
     ok(await espera(async () => (await texto(pm)).includes('no se renueva')), 'Revisar y pagar: «Hasta el evento» no se renueva');
-    await pm.getByRole('button', { name: 'Pagar $34' }).click();
+    await pm.getByRole('button', { name: 'Pagar $34', exact: true }).click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where event_id = ${BE} and status = 'activo'`) === '1'), 'queda ACTIVO');
     ok(sql(`select price_cents || '|' || duration || '|' || auto_renew || '|' || (ends_at = (select max(ends_at) from event_dates where event_id = ${BE})) from event_sponsorships where event_id = ${BE} and status = 'activo'`) === '3400|until_event|false|true', '$34 (2 semanas), hasta que termina el evento, sin renovar');
     ok(await espera(async () => (await texto(pm)).includes('termina con el evento')), 'Activo: «No se renueva: termina con el evento»');
@@ -192,7 +193,7 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     ok(await espera(async () => sql(`select count(*) from sponsorship_waits where kind = 'evento' and business_id = '${NEG}' and status = 'espera'`) === '1'), '«Avísame» queda anotado');
     await pm.getByRole('button', { name: new RegExp(`^Reservar desde el ${libre} · \\$17$`) }).click();
     ok(await espera(async () => (await texto(pm)).includes('Revisar y pagar')), 'Revisar y pagar la reserva');
-    await pm.getByRole('button', { name: 'Pagar $17' }).click();
+    await pm.getByRole('button', { name: 'Pagar $17', exact: true }).click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where event_id = ${E} and status = 'reservado'`) === '1'), 'queda RESERVADO desde el día que se libera');
     ok(sql(`select status from sponsorship_waits where kind = 'evento' and business_id = '${NEG}' order by id desc limit 1`) === 'compro', 'su «Avísame» queda cumplido');
     ponerCfg('patrocinio_evt_puestos', 6); await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
@@ -315,9 +316,9 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     ok(await espera(async () => (await texto(pd)).includes('puestos libres')), 'Elegir');
     await pd.getByRole('button', { name: /^Continuar · \$17$/ }).click();
     ok(await espera(async () => /Visa ·· 3184/i.test(await texto(pd))), 'Revisar y pagar con una tarjeta que pide 3-D Secure');
-    await pd.getByRole('button', { name: 'Pagar $17' }).click();
+    await pd.getByRole('button', { name: 'Pagar $17', exact: true }).click();
     const hoja = pd.locator('[data-screen-label="Verificación del banco · desktop"] [data-pantalla="PAGO-3DS"]');
-    ok(await espera(async () => await hoja.isVisible() && (await hoja.innerText()).includes('3-D SECURE · $17')), 'se abre «Tu banco pide confirmar» (3-D SECURE · $17)');
+    ok(await espera(async () => await hoja.isVisible() && sinMas('3-D SECURE · $17').test(await hoja.innerText())), 'se abre «Tu banco pide confirmar» (3-D SECURE · $17)');
     ok(sql(`select count(*) from event_sponsorships where event_id = ${H}`) === '0', 'todavía no se guardó nada');
     await pd.screenshot({ path: OUT + 'pat003-3ds-1360.png', fullPage: true });
     await hoja.getByRole('button', { name: 'Confirmar con mi banco' }).click();

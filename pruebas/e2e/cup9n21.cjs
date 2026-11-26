@@ -5,6 +5,7 @@
 // vecino que no sigue no lo puede usar aunque sepa el código; si el pedido se cancela, el uso vuelve. Teléfono 390 (vecino) y escritorio 1360 (panel).
 // Precondiciones propias: el cupón y los pedidos son de esta corrida; el negocio abierto todo el día mientras corre (vuelve a su horario al terminar).
 const ENT = require('../lib/entorno.cjs');
+const { sinMas } = require('../lib/usd.cjs'); // «$15» sin «.00» ni más dígitos detrás
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, abiertoTodoElDia } = require('../lib/negocio-nuevo.cjs');
 const B = ENT.B, OUT = ENT.OUT;
@@ -59,7 +60,7 @@ const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
     await m.locator('[data-cupon]').getByRole('button', { name: 'Quitar' }).click();
     await aplicar(m, CODE.toLowerCase());
     ok(await espera(async () => (await texto(m)).includes('−$3 · APLICADO')), 'dos platos (escrito en minúsculas): «−$3 · APLICADO»');
-    ok((await texto(m)).includes(`Cupón ${CODE} −$3`), `la línea «Cupón ${CODE} −$3» en el resumen`);
+    ok(sinMas(`Cupón ${CODE} −$3`).test(await texto(m)), `la línea «Cupón ${CODE} −$3» en el resumen`);
     await m.screenshot({ path: OUT + 'c9n21-pago-390.png', fullPage: true });
     // Precondición propia: si el negocio cobra con tarjeta, la pestaña empieza en «Tarjeta» y sin tarjeta guardada se abre la hoja; aquí se paga en el local.
     await m.getByRole('tab', { name: 'Pagas en el local' }).click();
@@ -71,12 +72,12 @@ const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
     const taxBase = Number(sql(`select round(${PRECIO * 2} * tax_pct / 100.0) from items where id = ${IT}`));
     ok(o[0] === PRECIO * 2 && o[1] === 300 && o[2] === Math.round((taxBase * (o[0] - 300)) / o[0]) && o[3] === o[0] - 300 + o[2], `pedido #${num}: subtotal ${money(o[0])}, cupón −$3, impuesto sobre lo que queda (${money(o[2])}), total ${money(o[3])}`);
     ok(sql(`select status || '|' || off_cents || '|' || code from follower_coupon_uses where operation_id = (select id from operations where number = '${num}')`) === `usado|300|${CODE}`, 'el uso queda anotado (usado, $3.00, el código)');
-    ok((await texto(m)).includes(`Cupón ${CODE} −$3`), 'la página del pedido muestra el cupón');
+    ok(sinMas(`Cupón ${CODE} −$3`).test(await texto(m)), 'la página del pedido muestra el cupón');
 
     console.log('3 · El negocio lo ve en su pedido');
     const cd = await b.newContext({ viewport: { width: 1360, height: 900 } }), d = await cd.newPage(); abiertas.push(cd); await entrarComo(d, DUENO);
     await d.goto(B + `/panel/${BIZ}/hoy?det=ped:${num}`);
-    ok(await espera(async () => (await texto(d)).includes(`cupón ${CODE} −$3`)), 'el detalle del pedido en el panel dice «cupón CODE −$3»');
+    ok(await espera(async () => sinMas(`cupón ${CODE} −$3`).test(await texto(d))), 'el detalle del pedido en el panel dice «cupón CODE −$3»');
     await d.screenshot({ path: OUT + 'c9n21-panel-1360.png', fullPage: false });
 
     console.log('4 · Una vez por persona; otro vecino que no sigue no lo puede usar');

@@ -161,7 +161,7 @@ export async function catalogoConfig(): Promise<FilaConfig[]> {
   return r.rows;
 }
 /* Lo que se dice del valor: «30 min», «$477.00». */
-export const conUnidad = (k: string, v: number, u: Bi) => (k.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${u.es}`);
+export const conUnidad = (k: string, v: number, u: Bi) => (k.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${u.es}`); /* dinero fijo: super admin */
 
 export type ResConfig = { ok: true; antes: number; v: number } | { ok: false; msg: string };
 /* La única escritura de un valor del catálogo. `desde` = la pantalla que lo cambia (una clave con edit_in solo se cambia allí,
@@ -195,4 +195,3 @@ export async function cambiarConfig(actor: string, k: string, valorTxt: string |
   return r;
 }
 
-/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

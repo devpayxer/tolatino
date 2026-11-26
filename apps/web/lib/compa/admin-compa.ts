@@ -78,7 +78,7 @@ export async function cambiarTope(s: Staff, dolares: string, motivo: string): Pr
   const t = String(dolares ?? "").trim().replace(/[$,\s]/g, "");
   if (!/^\d{1,5}(\.\d{1,2})?$/.test(t)) return { ok: false, msg: "Escribe el tope en dólares, por ejemplo 100 o 150.50." };
   const r = await cambiarConfig(s.id, "compa_tope_mes_cents", Math.round(Number(t) * 100), motivo);
-  return r.ok ? { ok: true, msg: `Tope nuevo: $${(r.v / 100).toFixed(2)} al mes. Vale desde la próxima llamada.` } : { ok: false, msg: r.msg };
+  return r.ok ? { ok: true, msg: `Tope nuevo: $${(r.v / 100).toFixed(2)} al mes. Vale desde la próxima llamada.` } : { ok: false, msg: r.msg }; /* dinero fijo: super admin */
 }
 
 /* 7d · La ficha de una conversación (Super Admin.dc.html compaDetail): QUIÉN · NEGOCIO · CANAL · RESULTADO · MOTIVO · CASO EN SOPORTE, el hilo
@@ -334,4 +334,3 @@ export async function compaDeUsuario(s: Staff, userId: string): Promise<CompaUsu
     filas: F.rows, leer: s.puede("compa", "editar") };
 }
 
-/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

@@ -13,6 +13,7 @@
 // Precondiciones propias: lo vivo de Comida y Belleza en Hazleton queda terminado (estados, nada se borra); la tarjeta 4242 del dueño; los
 // precios y puestos de fábrica (se restauran al final); un vecino nuevo (teléfono libre) para las cifras.
 const ENT = require('../lib/entorno.cjs');
+const { sinMas } = require('../lib/usd.cjs'); // «$15» sin «.00» ni más dígitos detrás
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const { entrarComo, medios, negocioSinDueno, sql, tarjeta, telLibre } = require('../lib/negocio-nuevo.cjs');
 const { hoyCiudad } = require('../lib/hoy-ciudad.cjs');
@@ -53,14 +54,14 @@ let OP = null;
     const pd = await nueva(1360, 900, DUENO);
     await pd.goto(B + `/panel/${BIZ}/cobros/patrocinio`);
     ok(await espera(async () => (await texto(pd)).includes('6 de 6 puestos libres')), 'Elegir: «6 de 6 puestos libres»');
-    ok((await texto(pd)).includes('1 semana') && (await texto(pd)).includes('$17') && (await texto(pd)).includes('1 mes'), 'duración 1 semana ($17, de Configuración) o 1 mes');
+    ok((await texto(pd)).includes('1 semana') && sinMas('$17').test(await texto(pd)) && (await texto(pd)).includes('1 mes'), 'duración 1 semana ($17, de Configuración) o 1 mes');
     await pd.screenshot({ path: OUT + 'pat002-elegir-1360.png', fullPage: true });
     await pd.getByRole('button', { name: /^Continuar · \$17$/ }).click();
     ok(await espera(async () => (await texto(pd)).includes('Revisar y pagar')), 'Revisar y pagar');
     const rv = await texto(pd);
-    ok(rv.includes('Comida y Bebidas · Hazleton') && rv.includes('$17') && /Visa ·· 4242/i.test(rv) && rv.includes('Apagada'), 'dónde, total, tarjeta guardada y «Renovar» apagado de entrada');
+    ok(rv.includes('Comida y Bebidas · Hazleton') && sinMas('$17').test(rv) && /Visa ·· 4242/i.test(rv) && rv.includes('Apagada'), 'dónde, total, tarjeta guardada y «Renovar» apagado de entrada');
     await pd.screenshot({ path: OUT + 'pat002-pagar-1360.png', fullPage: true });
-    await pd.getByRole('button', { name: 'Pagar $17' }).click();
+    await pd.getByRole('button', { name: 'Pagar $17', exact: true }).click();
     ok(await espera(async () => sql(`select count(*) from sponsorships where business_id = '${BIZ}' and status = 'activo'`) === '1'), 'queda ACTIVO en la base');
     const SID = sql(`select id from sponsorships where business_id = '${BIZ}' and status = 'activo'`);
     ok(sql(`select price_cents || '|' || duration || '|' || auto_renew || '|' || category_id from sponsorships where id = ${SID}`) === '1700|week|false|NEG-FOOD', 'precio de Configuración ($17), 1 semana, sin renovar solo, en Comida');
@@ -189,7 +190,7 @@ let OP = null;
       abrio = await espera(async () => (await texto(pf)).includes('Revisar y pagar'), 8000);
     }
     ok(abrio, 'Revisar y pagar la reserva');
-    await pf.getByRole('button', { name: 'Pagar $15' }).click();
+    await pf.getByRole('button', { name: 'Pagar $15', exact: true }).click();
     ok(await espera(async () => sql(`select count(*) from sponsorships where business_id = '${bar.id}' and status = 'reservado'`) === '1'), 'Free: queda RESERVADO');
     ok(sql(`select (starts_at = ${DIA(3)}) || '|' || (ends_at = ${DIA(10)}) from sponsorships where business_id = '${bar.id}' and status = 'reservado'`) === 'true|true', 'desde el día que se libera, 7 días');
     ok(sql(`select status from sponsorship_waits where business_id = '${bar.id}' order by id desc limit 1`) === 'compro', 'su «Avísame» queda cumplido');
@@ -217,7 +218,7 @@ let OP = null;
     ok(sql(`select refunded_cents from sim_intents where id = (select pi from sponsorship_payments where kind = 'negocio' and ref_id = ${RB} and reason = 'compra')`) === '1500', 'la pasarela (simulador) devolvió $15.00 de ese mismo cobro');
     ok(sql(`select count(*) from audit_entries where action = 'patrocinio.devolver' and after->>'patrocinio' = '${RB}'`) === '1', 'la devolución queda en la auditoría');
     ok(await espera(async () => sql(`select count(*) from notifications where tpl = 'biz_patrocinio_devuelto' and user_id = '${UB}' and created_at > now() - interval '2 minutes'`) !== '0'), 'aviso a la dueña: «Te devolvimos lo que no se usó»');
-    ok(await espera(async () => (await texto(pf)).includes('devuelto $15')), 'el panel (ANTES) dice «devuelto $15»');
+    ok(await espera(async () => sinMas('devuelto $15').test(await texto(pf))), 'el panel (ANTES) dice «devuelto $15»');
     let otra = ''; try { sql(`insert into sponsorship_payments (kind, ref_id, business_id, city_id, payer_user_id, amount_cents, pi, idem_key, reason, refund_id, refund_of, refund_days, refund_motive)
       select kind, ref_id, business_id, city_id, payer_user_id, 100, pi, idem_key || '-2', 'devolucion', refund_id || '-2', refund_of, 1, refund_motive from sponsorship_payments where kind = 'negocio' and ref_id = ${RB} and reason = 'devolucion'`); } catch (e) { otra = String(e.stderr ?? e.message); }
     ok(/sponsorship_payments_una_devolucion/.test(otra), 'una segunda devolución del mismo patrocinio: la base no la deja');
@@ -280,9 +281,9 @@ let OP = null;
     await pd.getByRole('button', { name: /^Continuar · \$15$/ }).click();
     ok(await espera(async () => /Visa ·· 3184/i.test(await texto(pd))), 'Revisar y pagar con una tarjeta que pide 3-D Secure');
     const t3 = sql(`select now()`);
-    await pd.getByRole('button', { name: 'Pagar $15' }).click();
+    await pd.getByRole('button', { name: 'Pagar $15', exact: true }).click();
     const hoja = pd.locator('[data-screen-label="Verificación del banco · desktop"] [data-pantalla="PAGO-3DS"]');
-    ok(await espera(async () => await hoja.isVisible() && (await hoja.innerText()).includes('3-D SECURE · $15')), 'se abre «Tu banco pide confirmar» (3-D SECURE · $15)');
+    ok(await espera(async () => await hoja.isVisible() && sinMas('3-D SECURE · $15').test(await hoja.innerText())), 'se abre «Tu banco pide confirmar» (3-D SECURE · $15)');
     const nada = () => sql(`select count(*) from sponsorships where business_id = '${BIZ}' and status in ('activo', 'reservado')`) === '0' && sql(`select count(*) from sponsorship_payments where business_id = '${BIZ}' and created_at > '${t3}'`) === '0';
     ok(nada() && sql(`select count(*) from payment_actions where user_id = '${D0}' and amount_cents = 1500 and status = 'pendiente' and created_at > '${t3}'`) === '1', 'todavía no se guardó ni se cobró nada; la verificación queda a nombre del dueño');
     await pd.screenshot({ path: OUT + 'pat002-3ds-1360.png', fullPage: true });
@@ -290,7 +291,7 @@ let OP = null;
     ok(await espera(async () => (await hoja.innerText()).includes('no confirmó el pago')), '«No fui yo»: «Tu banco no confirmó el pago»; no se cobró nada');
     await hoja.getByRole('button', { name: 'Cerrar' }).click();
     ok(nada(), 'nada guardado ni cobrado');
-    await pd.getByRole('button', { name: 'Pagar $15' }).click();
+    await pd.getByRole('button', { name: 'Pagar $15', exact: true }).click();
     ok(await espera(async () => await hoja.isVisible()), 'otra vez «Pagar»: la hoja otra vez (otro intento con la misma clave)');
     await hoja.getByRole('button', { name: 'Confirmar con mi banco' }).click();
     ok(await espera(async () => sql(`select count(*) from sponsorships where business_id = '${BIZ}' and status = 'activo'`) === '1', 30000), 'confirmado: queda ACTIVO');

@@ -263,6 +263,16 @@ const casos = [
   ["dineroConUsd", "la ficha con «>$» pegado en JSX", 'apps/web/app/(app)/n/[id]/Ficha.tsx', '{usd(it.cents)}</span>', '${(it.cents / 100).toFixed(2)}</span>'],
   ["dineroConUsd", "el panel (Estimado) con su propio formateador", 'apps/web/app/panel/Estimado.tsx', 'import { usd as money } from "@/lib/dinero-comun";', 'const money = (c: number) => `$${(c / 100).toFixed(2)}`;'],
   ["dineroConUsd", "el Super Admin sin su marca «dinero fijo»", 'apps/web/app/admin/Planes.tsx', '/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */', ''],
+  // (revisión de 2edc372) La marca de archivo solo en apps/web/app/admin/*.tsx; en lib/ y acciones-*.ts va por línea; el literal «$0.00» y comparar contra un monto formateado.
+  ["dineroConUsd", "una marca «dinero fijo» en otra línea de lib/ no exime el toFixed(2) (pedir.ts)", 'apps/web/lib/pedir.ts', 'import { usd as money } from "./dinero-comun";', '/* dinero fijo: super admin */\nconst money = (c: number) => `$${(c / 100).toFixed(2)}`;'],
+  ["dineroConUsd", "una marca de archivo en acciones-*.ts no exime la línea sin su marca (acciones-tx.ts)", 'apps/web/app/admin/acciones-tx.ts', 'usd = (n: number) => `$${(n / 100).toFixed(2)}`; /* dinero fijo: super admin */', 'usd = (n: number) => `$${(n / 100).toFixed(2)}`;'],
+  ["dineroConUsd", "lib/reportes.ts sin la marca de su línea", 'apps/web/lib/reportes.ts', 'minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; /* dinero fijo: super admin */', 'minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;'],
+  ["dineroConUsd", "el mínimo por hora escrito «$7.25» (jobs.ts)", 'apps/web/lib/jobs.ts', 'El pago por hora va desde ${usd(PAGO_MIN)} (el mínimo', 'El pago por hora va desde $7.25 (el mínimo'],
+  ["dineroConUsd", "un literal «$0.25» en una pantalla del panel (Menu)", 'apps/web/app/panel/Menu.tsx', 'REDONDEA A ${fp(25)}`', 'REDONDEA A $0.25`'],
+  ["dineroConUsd", "el ejemplo de Pagar con un «$12.50» a mano (sistema/ejemplos)", 'apps/web/app/sistema/ejemplos.tsx', 'price: usd(1250)', 'price: "$12.50"'],
+  ["dineroConUsd", "comparar el precio de Salud contra «$0» (el texto, no el dato)", 'apps/web/app/(app)/n/[id]/Salud.tsx', 'const pagoT = P.cubierta ?', 'const pagoT = P.l === "$0" ?'],
+  ["dineroConUsd", "comparar contra «$0.00» (literal y comparación)", 'apps/web/app/(app)/n/[id]/Salud.tsx', 'const pagoT = P.cubierta ?', 'const pagoT = P.l === "$0.00" ?'],
+  ["dineroConUsd", "el monto a la izquierda: «$15» === texto", 'apps/web/app/(app)/n/[id]/Salud.tsx', 'const pagoT = P.cubierta ?', 'const pagoT = "$15" === P.l ?'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

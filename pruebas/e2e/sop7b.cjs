@@ -276,7 +276,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
   ok(/Ahí no hay nada pagado|Tu rol/.test(await accion(pd, 'sopDevolver', [TK3, '5', sql('select gen_random_uuid()'), 'Te devolvemos algo por la molestia.'])), 'un caso sin operación pagada no devuelve');
   await cd.close();
   await p.goto(B + `/admin/soporte?caso=${TK1}`);
-  ok(/Puedes devolver hasta \$110/.test(await accion(p, 'sopDevolver', [TK1, '200', sql('select gen_random_uuid()'), 'Te devolvemos todo y más.'])), 'Admin · $200 sobre $150 cobrados → «Puedes devolver hasta $110.00» (nunca más de lo cobrado)');
+  ok(/Puedes devolver hasta \$110(?!\.?\d)/.test(await accion(p, 'sopDevolver', [TK1, '200', sql('select gen_random_uuid()'), 'Te devolvemos todo y más.'])), 'Admin · $200 sobre $150 cobrados → «Puedes devolver hasta $110.00» (nunca más de lo cobrado)');
   ok(pago() === 'partially_refunded|15000|4000', 'nada se movió');
   const K = sql('select gen_random_uuid()');
   const [d1, d2] = await Promise.all([accion(p, 'sopDevolver', [TK1, '60', K, 'Te devolvemos $60 más del cobro doble.']), accion(p, 'sopDevolver', [TK1, '60', K, 'Te devolvemos $60 más del cobro doble.'])]);

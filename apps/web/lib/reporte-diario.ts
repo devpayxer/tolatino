@@ -19,7 +19,7 @@ import { gastoFotosMes, resumenFotos, type ResumenFotos } from "./fotos-resumen"
 export const HORA_REPORTE = { h: 7, m: 30 };       // 7:30 AM de Hazleton
 export const HORA_ALERTA = { h: 8, m: 0 };         // si a las 8:00 no salió, alerta
 const MIN = (x: { h: number; m: number }) => x.h * 60 + x.m;
-const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; /* dinero fijo: super admin */
 
 export type CuerpoReporte = {
   dia: string; ayer: string;
@@ -106,11 +106,11 @@ export async function armarReporte(): Promise<CuerpoReporte> {
 /* R3 · El bloque «Fotos» del reporte: lo de ayer (publicadas · retenidas · rechazadas · ocultas), por capa, y el gasto del mes de la segunda opinión. */
 const CAPA_REPORTE: Record<string, [string, string]> = { c1: ["Capa 1 · modelo propio", "Layer 1 · own model"], c2: ["Capa 2 · segunda opinión", "Layer 2 · second opinion"], c3: ["Capa 3 · reportes", "Layer 3 · reports"], c4: ["Capa 4 · confianza", "Layer 4 · trust"], memoria: ["Memoria de contenido", "Content memory"], persona: ["Una persona del equipo", "A team member"] };
 function fotosFilas(f: NonNullable<CuerpoReporte["fotos"]>, E: (x: string, y: string) => string): Fila[] {
-  const t = f.totales, usd2 = (n: number) => `$${n.toFixed(2)}`;
+  const t = f.totales, usd2 = (n: number) => `$${n.toFixed(2)}`; /* dinero fijo: super admin */
   return [
     [E("Fotos de ayer (pub. · ret. · rech. · ocultas)", "Yesterday’s photos (pub. · held · rej. · hidden)"), `${t.publicadas} · ${t.retenidas} · ${t.rechazadas} · ${t.ocultadas}`, true],
     ...f.porCapa.map((x): Fila => { const c = CAPA_REPORTE[x.capa] ?? [x.capa, x.capa]; return [`   ${E(c[0], c[1])}`, `${x.publicadas} · ${x.retenidas} · ${x.rechazadas} · ${x.ocultadas}`]; }),
-    [E("Fotos · segunda opinión, gasto del mes", "Photos · second opinion, spend this month"), f.topeUsd > 0 ? `${usd2(f.gastoUsd)} ${E("de", "of")} ${usd2(f.topeUsd)}` : E("apagada (tope en $0.00)", "off (cap at $0.00)")],
+    [E("Fotos · segunda opinión, gasto del mes", "Photos · second opinion, spend this month"), f.topeUsd > 0 ? `${usd2(f.gastoUsd)} ${E("de", "of")} ${usd2(f.topeUsd)}` : E("apagada (tope en $0.00)", "off (cap at $0.00)")], /* dinero fijo: super admin */
   ];
 }
 /* Las cinco fotos al azar del reporte, como miniaturas con su enlace (el correo) en el idioma de quien lo recibe. */
@@ -222,4 +222,3 @@ export async function reportesDiarios() {
       where founder_reports.dia > (now() at time zone 'America/New_York')::date - 14 order by founder_reports.dia desc, founder_reports.kind desc`)).rows;
 }
 
-/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

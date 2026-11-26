@@ -2,6 +2,7 @@
 /* Ejemplos del catálogo (/sistema). Datos de muestra SOLO para revisar el aspecto de cada componente; nunca se
    usan en pantallas. Los componentes sin ejemplo aquí se ven completos en la pantalla que los usa. */
 import * as UI from "@tolatino/ui";
+import { usd } from "@/lib/dinero-comun";
 import type { ComponentType, ReactNode } from "react";
 
 const Fila = ({ children }: { children: ReactNode }) => <div className="flex flex-wrap items-center gap-2">{children}</div>;
@@ -84,7 +85,7 @@ export const EJEMPLOS: Record<string, () => ReactNode> = {
   KpiCard: () => <Fila><KpiCard label="NEGOCIOS NUEVOS" value="42" sub="+12 % vs semana anterior" /><KpiCard label="PEDIDOS" value="318" dark /></Fila>,
   ChangeProposal: () => {
     const CP = (UI as unknown as Record<"ChangeProposal", ComponentType<any>>).ChangeProposal; // eslint-disable-line @typescript-eslint/no-explicit-any
-    return <CP item={{ name: "Pollo guisado", price: "$12.50" }} options={[{ icon: "edit", label: "Cambiar por otro plato", sub: "Mismo precio o menos" }, { icon: "close", danger: true, label: "Quitar y seguir", sub: "Se descuenta $12.50" }]} note="El negocio confirma antes de cobrar." />;
+    return <CP item={{ name: "Pollo guisado", price: usd(1250) }} options={[{ icon: "edit", label: "Cambiar por otro plato", sub: "Mismo precio o menos" }, { icon: "close", danger: true, label: "Quitar y seguir", sub: `Se descuenta ${usd(1250)}` }]} note="El negocio confirma antes de cobrar." />;
   },
   OnbProgress: () => <OnbProgress label="QUIÉN ERES · 2 DE 4" saved segments={[1, 1, 0.5, 0]} />,
 };

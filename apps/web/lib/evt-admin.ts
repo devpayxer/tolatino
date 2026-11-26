@@ -18,7 +18,7 @@ import { cuandoBi, SENAL_L_UI, type Bi } from "./evt-comun";
 const ID = /^\d{1,18}$/, UUID = /^[0-9a-f-]{36}$/, GEN = /^[a-z0-9]{2,24}$/, FMT = /^[a-z]{2,16}$/, CAT = /^NEG-[A-Z]{2,12}$/;
 type R = { ok: true; msg: string } | { ok: false; msg: string };
 const no = (msg: string): R => ({ ok: false, msg });
-const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+const usd = (c: number) => `$${(c / 100).toFixed(2)}`; /* dinero fijo: super admin */
 const CIU = (col: string, i = 1) => `(cardinality($${i}::text[]) = 0 or ${col} = any($${i}::text[]))`;
 
 /* ── Cupos y venta de una fecha (la ficha del Super Admin) ── */
@@ -334,4 +334,3 @@ export async function generoGuardar(s: Staff, key: string | null, p: { es: strin
 
 export const dinero = usd;
 
-/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */
