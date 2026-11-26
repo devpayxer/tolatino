@@ -84,14 +84,14 @@ export async function cifrasPush(cities: string[]) {
   const CIUD = "(cardinality($1::text[]) = 0 or city_id = any($1::text[]))";
   const [P, A, K] = await Promise.all([
     db().query<{ tpl: string; entregados: number; invalidos: number; fallidos: number; abiertos: number; ahorrados: number }>(
-      `with d as (select tpl, sum(entregados)::int as entregados, sum(invalidos)::int as invalidos, sum(fallidos)::int as fallidos from push_cifras_dia where dia > current_date - 7 and ${CIUD} group by 1),
+      `with d as (select tpl, sum(entregados)::int as entregados, sum(invalidos)::int as invalidos, sum(fallidos)::int as fallidos from push_cifras_dia where dia > (now() at time zone 'America/New_York')::date - 7 and ${CIUD} group by 1),
             n as (select tpl, count(*) filter (where opened_via = 'push')::int as abiertos, count(*) filter (where sms_status = 'ahorrado')::int as ahorrados
                     from notifications where created_at > now() - interval '7 days' and ${CIUD} and push_status <> 'no' group by 1)
        select coalesce(d.tpl, n.tpl) as tpl, coalesce(d.entregados, 0) as entregados, coalesce(d.invalidos, 0) as invalidos, coalesce(d.fallidos, 0) as fallidos,
               coalesce(n.abiertos, 0) as abiertos, coalesce(n.ahorrados, 0) as ahorrados
          from d full join n using (tpl) order by 2 desc, 1 limit 60`, [cities]),
     db().query<{ app: string; platform: string; entregados: number; invalidos: number }>(
-      `select app, platform, sum(entregados)::int as entregados, sum(invalidos)::int as invalidos from push_cifras_dia where dia > current_date - 7 and ${CIUD} group by 1, 2 order by 3 desc`, [cities]),
+      `select app, platform, sum(entregados)::int as entregados, sum(invalidos)::int as invalidos from push_cifras_dia where dia > (now() at time zone 'America/New_York')::date - 7 and ${CIUD} group by 1, 2 order by 3 desc`, [cities]),
     db().query<{ enviados: number; abiertos: number; ahorrados: number; respaldo: number; sin_app: number }>(
       `select count(*) filter (where push_status in ('enviado', 'pruebas'))::int as enviados, count(*) filter (where opened_via = 'push')::int as abiertos,
               count(*) filter (where sms_status = 'ahorrado')::int as ahorrados, count(*) filter (where sms_status in ('pruebas', 'pendiente', 'enviado') and push_status = 'fallo')::int as respaldo,

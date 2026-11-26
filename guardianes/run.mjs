@@ -7881,6 +7881,27 @@ const guardianes = {
     if (!existsSync("apps/web/lib/fecha-local.ts") || !/timeZone: zona/.test(readFileSync("apps/web/lib/fecha-local.ts", "utf8"))) falla(G, "apps/web/lib/fecha-local.ts", 0, "hoyEn tiene que formatear en la zona que recibe");
   },
 
+  /* 26 nov (LAUNCH «current_date y now()::date valen mientras la base corra en America/New_York») · «Hoy» en una consulta de la app es el día de la
+     ZONA de la ciudad, dicho en la consulta: `(now() at time zone 'America/New_York')::date` (tareas globales: la zona de Hazleton) o
+     `(now() at time zone ci.timezone)::date` (con la ciudad unida); y un instante guardado se pasa a su día con `(col at time zone zona)::date`.
+     `current_date`, `now()::date`, `current_timestamp::date`, `localtimestamp` y `date_trunc('day', now())` valen la zona de la SESIÓN de la base: una
+     base en otra zona cierra y abre el día a deshoras (plazos, licencias, vencimientos). Es la misma clase que hoyDeLaPruebaEnLaCiudad vigila en las
+     pruebas. Hoy no queda ninguno (PENDIENTES vacía; solo baja). Excepción con GUARDIAN-OK y su motivo en la misma línea. Al revés: alrevescalendario23. */
+  hoyEnLaBaseConZona() {
+    const G = "hoyEnLaBaseConZona";
+    const PENDIENTES = {};
+    const MAL = /\bcurrent_date\b|\bnow\(\)::date\b|\bcurrent_timestamp::date\b|\blocaltimestamp\b|date_trunc\('day', *now\(\)\)/i;
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.(ts|tsx|sql)$/.test(f)) continue;
+      let n = 0;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/GUARDIAN-OK/.test(l) || /^\s*(\/\/|\/\*|\*)/.test(l) || !MAL.test(l)) return;
+        n++;
+        if (n > (PENDIENTES[f] ?? 0)) falla(G, f, i + 1, "«hoy» sin zona (current_date / now()::date / localtimestamp / date_trunc('day', now())): vale la zona de la sesión de la base; di la zona: (now() at time zone 'America/New_York')::date (global) o (now() at time zone ci.timezone)::date (con la ciudad)");
+      });
+    }
+  },
+
   /* 23 nov · Un mes (o un año) no se suma con Date#setMonth / setFullYear (ni sus UTC) ni con new Date(y, m + n, d) / Date.UTC(y, m + n, d) con el
      día de una fecha: un 29, 30 o 31 el mes DESBORDA (31 ene + 1 mes = 3 mar, se salta febrero; 31 mar → 1 may; el anual desde el 29 feb → 1 mar) y
      la fecha queda corrida para siempre; en la hora del proceso, además, el cambio de horario mueve la hora. Pasaba en el cobro de Pro
@@ -10281,7 +10302,7 @@ const guardianes = {
     for (const f of [S, B, LL, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de las llaves que vencen");
     const s = sinComent(S), av = cuerpoFn(s, "avisarLlavesQueVencen");
     if (!/export const AVISO_LLAVE_DIAS = 30;/.test(s)) falla(G, S, 0, "el aviso sale 30 días antes");
-    if (!/where retired_at is null and expires_on is not null[^`]*expires_on <= current_date \+ \$1::int/.test(av)) falla(G, S, 0, "se revisan TODAS las llaves vivas con fecha (no una lista)");
+    if (!/where retired_at is null and expires_on is not null[^`]*expires_on <= \(now\(\) at time zone 'America\/New_York'\)::date \+ \$1::int/.test(av)) falla(G, S, 0, "se revisan TODAS las llaves vivas con fecha (no una lista)");
     if (!/ref_kind = 'llave_vence' and ref_id = \$1/.test(av) || !/avisar\(u\.id, "llave_vence"/.test(av)) falla(G, S, 0, "un aviso por llave, versión y etapa (sin repetir)");
     if (!/avisarLlavesQueVencen\(\)/.test(readFileSync(B, "utf8"))) falla(G, B, 0, "las llaves que vencen se revisan en el barrido");
     if (!/if \(prev\) await c\.query\(`insert into key_rotations/.test(sinComent(LL))) falla(G, LL, 0, "cada llave que se reemplaza queda en key_rotations");

@@ -2918,8 +2918,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       `hoyDeLaPruebaEnLaCiudad` (el día recalculado en cada orden) y su al revés en `alrevescalendario23`. `din9t6`/`din9t8` y `adm7i`,
       mirados el 24 nov: sus fechas fijas («creado» de la pasarela de mentira, `priced_at`) solo ordenan (`lib/consulta-pasarela.ts`,
       `lib/dinero-alertas.ts`, `lib/compa/admin-compa.ts`); ninguna ventana relativa a `now()` las mira, así que no caducan._
-- [ ] **→ 9o** · **`current_date` y `now()::date` valen mientras la base corra en `America/New_York`** (así está en los compose de pruebas y producción); una
-      ciudad en otra zona los rompería de noche y ningún guardián lo vigila.
+- [x] **→ 9o** · **(Hecho el 26 nov, hecho por Sonnet)** **`current_date` y `now()::date` valían la zona de la sesión de la base** (America/New_York en los compose): una base en otra zona
+      los rompía de noche. Pasados a `(now() at time zone 'America/New_York')::date` (tareas globales, la zona de Hazleton) los 30 sitios de `apps/web/lib` y `apps/web/app`: plazos de
+      licencias y avisos, vencimiento de llaves y del certificado de Wallet, días especiales, feriados, vistas de 30 días, vigilancia de la noche, cifras de push, analítica de
+      licencias y reseñas/empleos («hace N días», con los dos lados en la zona). Ninguno dependía de un índice (`current_date` no cabe en uno). Pendientes: ninguno. Guardián
+      `hoyEnLaBaseConZona` (lista de pendientes vacía; solo baja), al revés en `alrevescalendario23` (14/14).
 - [ ] **→ 9q** · **SES: el envío firmado (`POST /v2/email/outbound-emails`) no se ha visto contra algo que compruebe la firma** (el simulador solo simula
       la lectura de «Probar»); la forma de la respuesta de `GetAccount` del simulador es de memoria (la documentación no se pudo abrir): cotejarla.
 - [x] **→ 9o** · **(Hecho el 23 nov: las seis pasan por `lib/origen-pruebas.ts`; `proveedoresSimuladorAislado`, `alrevesllaves` 76/76, `prueba-firma-ses` en ejecución.)** **Las direcciones de simulador viejas (`STRIPE_API_BASE`, `STRIPE_FILES_BASE`, `TELNYX_API_BASE`, `WHATSAPP_API_BASE`) solo las frena la
@@ -2956,8 +2959,9 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
 - [x] **→ 9o** · **(Hecho el 23 nov)** El mes de un patrocinio renovado no pierde su día: `fechasPeriodo` usa `finDePeriodo` con el ancla de la cadena
       (31 ene → 28 feb → 31 mar). Sin migración. Guardián `patrocinioMesSinDeriva`, al revés `alrevesPatrocinioMes` 16/16, `pat002` §7.
 - [x] **→ 9o** · **Una punta a punta de la cadena mensual de un patrocinio de evento** (hoy la cubren el guardián y las al revés). (Hecho el 23 nov: `pat003` sección 10, con fechas fijas: 31 ene → 28 feb → 31 mar → 30 abr, dos cobros, la tercera sin puesto, y una cadena ya corrida que sigue en el 28. Sin cambios en `lib/patrocinio*.ts`.)
-- [ ] **→ 9o** · **«Renovar otro mes» con un fin a más de 60 días: la pantalla no enseña las fechas** (`consultarPuestos` rechaza más allá de
-      `patrocinio_dias_adelante`), aunque el cobro sí se hace. Ya pasaba antes de este cambio.
+- [x] **→ 9o** · **(Hecho el 26 nov, hecho por Sonnet)** **«Renovar otro mes» con un fin a más de 60 días enseña sus fechas.** El código ya estaba desde `e3c7371` (la pantalla pide
+      `consultarRenovacion` / `consultarRenovacionEvento`, que calculan el período como el cobro y no aplican el tope de reserva nueva); faltaba la prueba: `pat9tmes` parte 3
+      (un mes reservado que termina a más de `patrocinio_dias_adelante` días: enseña «15 x – 15 y · 1 mes» y cobra esas mismas fechas, un solo cobro).
 
 ## Ficha Pro en el teléfono: nombre pegado, pestañas solo de lado, categorías debajo (23 nov, pedido del fundador)
 - [x] **→ 9u** · **(Hecho el 23 nov, vía rápida de diseño)** Al pegarse las pestañas sale encima el nombre del negocio (con su sello); la tira de pestañas

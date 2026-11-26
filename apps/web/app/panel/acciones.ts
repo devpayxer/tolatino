@@ -224,7 +224,7 @@ export async function especialAgregar(id: string, x: { kind: string; desde: stri
     ranges = [[h1, h2]];
   }
   const nombre = String(x?.nombre ?? "").replace(/\s+/g, " ").trim().slice(0, 60);
-  const n = (await db().query<{ n: number }>(`select count(*)::int as n from special_hours where business_id = $1 and status = 'active' and date_to >= current_date`, [a.negocio.id])).rows[0]!.n;
+  const n = (await db().query<{ n: number }>(`select count(*)::int as n from special_hours where business_id = $1 and status = 'active' and date_to >= (now() at time zone 'America/New_York')::date`, [a.negocio.id])).rows[0]!.n;
   if (n >= 50) return no("Tienes muchos días especiales por delante. Quita alguno.", "You have many special days ahead. Remove some.");
   if (kind === "season" && (await db().query(`select 1 from special_hours where business_id = $1 and status = 'active' and kind = 'season'`, [a.negocio.id])).rowCount)
     return no("Ya tienes una temporada: quítala para poner otra.", "You already have a season: remove it to set another.");

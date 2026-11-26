@@ -190,7 +190,7 @@ export async function negocio360(s: Staff, id: string) {
       `select id::text, queue, opened_at, status from queue_items where business_id = $1 order by status = 'open' desc, opened_at desc limit 10`, [id]),
     db().query<{ status: string; note: string | null; at: string }>(`select status, note, created_at as at from verification_requests where business_id = $1 order by created_at desc limit 1`, [id]),
     db().query<{ v30: number; c30: number }>(
-      `select (select coalesce(sum(n),0)::int from business_views_daily where business_id = $1 and day > current_date - 30) as v30,
+      `select (select coalesce(sum(n),0)::int from business_views_daily where business_id = $1 and day > (now() at time zone 'America/New_York')::date - 30) as v30,
               (select count(*)::int from contact_taps where business_id = $1 and at > now() - interval '30 days') as c30`, [id]),
     licenciasTodas(id),
     // Menú (Comida): los platos con su estado, para ocultar uno con motivo (el dueño lo ve en su panel).

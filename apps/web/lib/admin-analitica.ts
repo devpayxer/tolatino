@@ -205,7 +205,7 @@ export async function noche(s: Alcance, dias: number) {
     dbAnalisis().query<{ sube: number; locales: number }>(
       `select count(*)::int as sube, count(distinct business_id)::int as locales from (
          select p.business_id, (p.value->>'cents')::int as c, lag((p.value->>'cents')::int) over (partition by p.business_id, p.night order by p.at, p.id) as antes
-           from night_posts p where p.field = 'cover' and p.night > current_date - $2::int and ${scope("p.city_id")}) x
+           from night_posts p where p.field = 'cover' and p.night > (now() at time zone 'America/New_York')::date - $2::int and ${scope("p.city_id")}) x
         where x.antes is not null and x.c > x.antes`, [s.cities, dias]),
     dbAnalisis().query<{ n: number; ok: number }>(
       `select count(*) filter (where r.answers ? 'filaOk')::int as n, count(*) filter (where r.answers->>'filaOk' = 'a')::int as ok
@@ -214,7 +214,7 @@ export async function noche(s: Alcance, dias: number) {
       `select h.reason, count(*)::int as n from help_requests h join operations o on o.id = h.operation_id
         where o.kind = 'night' and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1 order by 2 desc`, [s.cities, dias]),
     dbAnalisis().query<{ vencidas: number; total: number }>(
-      `select count(*) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < current_date))::int as vencidas, count(*)::int as total
+      `select count(*) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < (now() at time zone 'America/New_York')::date))::int as vencidas, count(*)::int as total
          from licenses l join businesses b on b.id = l.business_id where l.kind = 'pa_plcb' and ${scope("b.city_id")}`, [s.cities]),
   ]);
   return { me: me.rows[0]!, dep: dep.rows[0]!, li: li.rows[0]!, cov: cov.rows[0]!, fila: fila.rows[0]!, ayuda: ay.rows, lic: lic.rows[0]! };
@@ -257,8 +257,8 @@ export async function inscripcionesAnalitica(s: Alcance, dias: number) {
       `select o.details->>'rubro' as rub, h.reason, count(*)::int as n from help_requests h join operations o on o.id = h.operation_id
         where o.kind = 'enrollment' and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1, 2 order by 3 desc`, [s.cities, dias]),
     dbAnalisis().query<{ vigentes: number; vencidas: number; cuidado: number }>(
-      `select count(distinct l.business_id) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= current_date))::int as vigentes,
-              count(distinct l.business_id) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < current_date))::int as vencidas,
+      `select count(distinct l.business_id) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= (now() at time zone 'America/New_York')::date))::int as vigentes,
+              count(distinct l.business_id) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < (now() at time zone 'America/New_York')::date))::int as vencidas,
               (select count(*)::int from businesses b2 where b2.category_id = 'NEG-NINOS' and b2.status = 'active' and ${scope("b2.city_id")}) as cuidado
          from licenses l join businesses b on b.id = l.business_id where l.kind = 'pa_dhs_childcare' and ${scope("b.city_id")}`, [s.cities]),
   ]);
@@ -315,9 +315,9 @@ export async function feInmAutos(s: Alcance, dias: number) {
     // Licencias de las tres: vigentes, por vencer (lic_aviso_dias, 14 de fábrica; 9n-6: la etiqueta dice el mismo número), vencidas y en revisión, por categoría.
     dbAnalisis().query<{ cat: string; vigentes: number; porvencer: number; vencidas: number; revision: number }>(
       `select k.category_id as cat,
-              count(*) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= current_date))::int as vigentes,
-              count(*) filter (where l.status = 'valid' and l.next_review between current_date and current_date + ${cfgSql("lic_aviso_dias")})::int as porvencer,
-              count(*) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < current_date))::int as vencidas,
+              count(*) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= (now() at time zone 'America/New_York')::date))::int as vigentes,
+              count(*) filter (where l.status = 'valid' and l.next_review between (now() at time zone 'America/New_York')::date and (now() at time zone 'America/New_York')::date + ${cfgSql("lic_aviso_dias")})::int as porvencer,
+              count(*) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < (now() at time zone 'America/New_York')::date))::int as vencidas,
               count(*) filter (where l.status = 'review')::int as revision
          from licenses l join license_kinds k on k.key = l.kind join businesses b on b.id = l.business_id
         where k.category_id = any($2::text[]) and b.status = 'active' and ${scope("b.city_id")} group by 1`, [s.cities, CATS_4I]),

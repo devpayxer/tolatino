@@ -16,10 +16,15 @@ const casos = [
   // 25 nov · evt6a vuelve a tocar el día del calendario directo, sin pasar de mes
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/evt6a.cjs', "  await vis(p.getByRole('button', { name: 'Mes siguiente' }));\n  for (let i = 0; i < 3 && !(await p.getByRole('button', { name: diaCorto(iso), exact: true }).count()); i++) await clic(p.getByRole('button', { name: 'Mes siguiente' }));\n", ""],
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/msg2p.cjs', "and module = '' and weekday = ${HOY}`); if (compaAntes", "and module = '' and weekday = extract(dow from now() at time zone 'America/New_York')::int`); if (compaAntes"],
+  // hoyEnLaBaseConZona: la licencia por vencer vuelve a medirse con current_date; la reseña, con now()::date
+  ['hoyEnLaBaseConZona', 'apps/web/lib/licencias.ts', "l.next_review < (now() at time zone 'America/New_York')::date then 'alta'", "l.next_review < current_date then 'alta'"],
+  ['hoyEnLaBaseConZona', 'apps/web/lib/jobs.ts', "greatest(0, ((now() at time zone 'America/New_York')::date -", "greatest(0, (now()::date -"],
   // liquidacionDelMartesSinReloj: evt6e vuelve a terminar la fecha «hace 1 h» a secas
   ['liquidacionDelMartesSinReloj', 'pruebas/e2e/evt6e.cjs', "ends_at = ${FIN} where id = ${A.F}`);", "ends_at = now() - interval '1 hour' where id = ${A.F}`);"],
 ];
 const crear = [
+  // hoyEnLaBaseConZona: un archivo nuevo de la app con current_date
+  ['hoyEnLaBaseConZona', 'apps/web/lib/zz23hoy.ts', "export const q = `select 1 where d >= current_date`;\n"],
   // hoyDeLaPruebaEnLaCiudad: una prueba nueva con el día de UTC
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/zz23hoy.cjs', "const hoy = new Date().toISOString().slice(0, 10);\nconsole.log('✓', hoy);\n"],
   // liquidacionDelMartesSinReloj: una prueba nueva que mira pay_on y termina la fecha hace 30 minutos

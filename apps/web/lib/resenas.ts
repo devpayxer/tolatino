@@ -81,8 +81,8 @@ const iniciales = (s: string) => s.split(/\s+/).map((w) => w[0] ?? "").join("").
 /* Columnas de una tarjeta. $2 = la persona que mira (o null). */
 const TARJETA_SQL = `
   r.id::text, r.user_id = $2::uuid as mine, u.first_name, u.last_name, r.src, r.stars, r.answers, r.facts, r.body, r.lang, coalesce(r.reply_lang, 'es') as reply_lang, r.rec,
-  (now()::date - r.created_at::date) as d, r.edited_at is not null as editada, r.helpful_count as help,
-  case when b.pro then r.reply end as reply, case when b.pro and r.reply_at is not null then (now()::date - r.reply_at::date) end as reply_d, r.reply_offer, r.reply_edited_at is not null as reply_ed,
+  ((now() at time zone 'America/New_York')::date - (r.created_at at time zone 'America/New_York')::date) as d, r.edited_at is not null as editada, r.helpful_count as help,
+  case when b.pro then r.reply end as reply, case when b.pro and r.reply_at is not null then ((now() at time zone 'America/New_York')::date - (r.reply_at at time zone 'America/New_York')::date) end as reply_d, r.reply_offer, r.reply_edited_at is not null as reply_ed,
   (select count(*)::int from reviews x where x.user_id = r.user_id and x.status = 'visible') as cnt,
   (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'review' and m.owner_id = r.id::text and m.status = 'visible') as fotos,
   coalesce($2::uuid is not null and exists (select 1 from review_helpful h where h.review_id = r.id and h.user_id = $2::uuid), false) as help_on,
@@ -686,7 +686,7 @@ export type MiResena = NonNullable<Awaited<ReturnType<typeof miResena>>>;
 /* ── Panel del negocio (Panel v2 · sub resenas y det rev:) ───────────────────────────────────────────────────────── */
 export type FiltroPanel = "all" | "norep" | "5" | "low";
 export type FilaPanel = { id: string; stars: number; who: string; text: string; d: number; src: Src; extra: Bi | null; replied: boolean; estado: "disp" | "kept" | null };
-const PANEL_SQL = `r.id::text, r.stars, u.first_name, u.last_name, r.body, (now()::date - r.created_at::date) as d, r.src, r.facts, r.answers, r.reply is not null as replied, r.review_state as estado`;
+const PANEL_SQL = `r.id::text, r.stars, u.first_name, u.last_name, r.body, ((now() at time zone 'America/New_York')::date - (r.created_at at time zone 'America/New_York')::date) as d, r.src, r.facts, r.answers, r.reply is not null as replied, r.review_state as estado`;
 type FilaPanelDb = { id: string; stars: number; first_name: string | null; last_name: string | null; body: string; d: number; src: Src; facts: Hechos; answers: Respuestas; replied: boolean; estado: "disp" | "kept" | null };
 /* «Dato del pedido · no se edita» en una línea (Llegó caliente · A tiempo · Vale lo que cuesta). */
 function extraDe(x: { src: Src; facts: Hechos; answers: Respuestas }): Bi | null {

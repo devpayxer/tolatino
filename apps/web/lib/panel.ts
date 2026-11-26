@@ -189,7 +189,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
        from special_hours s join businesses b on b.id = s.business_id join cities ci on ci.id = b.city_id
       where s.business_id = $1 and s.status = 'active' and (s.kind = 'season' or s.date_to >= (now() at time zone ci.timezone)::date) order by s.date_from limit 60`, [id])).rows;
   const fer = (await db().query<{ key: string; dia: string; name: { es: string; en: string } }>(
-    `select key, day::text as dia, name from holiday_catalog where day >= current_date and day <= current_date + 365 order by day limit 16`)).rows;
+    `select key, day::text as dia, name from holiday_catalog where day >= (now() at time zone 'America/New_York')::date and day <= (now() at time zone 'America/New_York')::date + 365 order by day limit 16`)).rows;
   // 9n · Panel › Más › Lo que te avisamos (business_notif_prefs): los grupos apagados.
   const avOff = (await db().query<{ pref: string }>(`select pref from business_notif_prefs where business_id = $1 and off`, [id])).rows.map((x) => x.pref);
   // 9n-2 · Los anuncios del Super Admin para negocios (announcements.audience = 'negocios'; vivos, de su ciudad): un aviso en Hoy (L1606). No los ven los vecinos.

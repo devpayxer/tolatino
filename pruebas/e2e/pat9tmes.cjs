@@ -6,6 +6,7 @@
 //     15 (15 feb, 15 mar, 15 abr, 15 may). Un cobro de renovación por período, con el precio del mes; la cuarta no encuentra puesto y termina sin cobrar.
 // 2 · Lo que ve el negocio (390 y 1360): «Renovar otro mes» de un mes reservado que empezó un 31 y termina el último día de un mes corto enseña en
 //     «Revisar y pagar» las fechas que salen de la misma regla (del último día al 31, o al último día del mes siguiente) y lo cobrado es eso.
+// 3 · «Renovar otro mes» con un fin a más de patrocinio_dias_adelante días (hoy + 75 a 105): enseña sus fechas y se cobra eso (consultarRenovacion, sin el tope de reserva nueva).
 // Precondiciones propias: Fe y comunidad (NEG-FE) de Hazleton, que ninguna otra prueba patrocina: lo vivo ahí queda terminado (estados, nada se
 // borra); negocios nuevos (copia de uno de la semilla) con una dueña nueva y su tarjeta del simulador.
 const ENT = require('../lib/entorno.cjs');
@@ -117,6 +118,34 @@ const ymd = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStar
     ok(sql(`select count(*) || '|' || min(amount_cents) || '|' || min(reason) from sponsorship_payments where kind = 'negocio' and ref_id = ${RZ2}`) === `1|${MES}|renovacion`
       && Number(sql(`select count(*) from sponsorship_payments where kind = 'negocio' and business_id = '${NZ}'`)) === Number(antes) + 1, 'un solo cobro de renovación por el precio del mes');
     await p390.screenshot({ path: OUT + 'pat9tmes-pagado-390.png', fullPage: true });
+
+    console.log('3 · «Renovar otro mes» con un fin a MÁS de patrocinio_dias_adelante días: enseña sus fechas y cobra esas mismas (26 nov; LAUNCH «sin ver las fechas»)');
+    // Un mes reservado que empieza y termina un día 15 (nunca desborda), con el fin entre 75 y 105 días adelante: más allá del tope de reserva nueva.
+    terminarVivos();
+    const ADEL = Number(sql(`select cfg_int('patrocinio_dias_adelante')`));
+    const lejos = new Date(Date.parse(hoyCiudad() + 'T12:00:00Z') + (ADEL + 15) * 86400000);
+    const [fy, fm] = [lejos.getUTCFullYear(), lejos.getUTCMonth() + 1], gy = fm === 1 ? fy - 1 : fy, gm = fm === 1 ? 12 : fm - 1, hy2 = fm === 12 ? fy + 1 : fy, hm2 = fm === 12 ? 1 : fm + 1;
+    const T0 = ymd(gy, gm, 15), T1 = ymd(fy, fm, 15), T2 = ymd(hy2, hm2, 15);
+    ok(sql(`select (${NY(T1)})::date - (now() at time zone 'America/New_York')::date > ${ADEL}`) === 't', `el fin (${T1}) queda a más de ${ADEL} días de hoy`);
+    const RL = sql(`with x as (insert into sponsorships (business_id, category_id, city_id, starts_at, ends_at, duration, status, price_cents, payer_user_id, card_pm, auto_renew)
+      values ('${NZ}', '${CAT}', 'hzl', ${NY(T0)}, ${NY(T1)}, 'month', 'reservado', ${MES}, '${U}', '${PM}', false) returning id) select id from x`);
+    const esperado3 = `${fecha(T1)} – ${fecha(T2)} · 1 mes`;
+    const antes3 = sql(`select count(*) from sponsorship_payments where kind = 'negocio' and business_id = '${NZ}'`);
+    for (const [w, p] of [[1360, p1360], [390, p390]]) {
+      await p.goto(B + `/panel/${NZ}/cobros/patrocinio`);
+      const ren = p.getByRole('button', { name: /^Renovar otro mes · / });
+      ok(await espera(async () => (await ren.count()) === 1), `${w}: el mes reservado (${T0} → ${T1}) ofrece «Renovar otro mes»`);
+      await ren.click();
+      ok(await espera(async () => (await texto(p)).includes(esperado3)), `${w}: FECHAS «${esperado3}» aunque el fin quede a más de ${ADEL} días`);
+      ok(await pagar(p).isEnabled(), `${w}: «Pagar ${usd(MES)}» está encendido`);
+    }
+    await p390.screenshot({ path: OUT + 'pat9tmes-renovar-lejos-390.png', fullPage: true });
+    await pagar(p390).click();
+    ok(await espera(async () => sql(`select count(*) from sponsorships where renewed_from = ${RL}`) === '1'), 'el pago crea la renovación encadenada');
+    const RL2 = sql(`select id from sponsorships where renewed_from = ${RL}`);
+    ok(`${per(RL2)}|${sql(`select status || '|' || duration || '|' || price_cents from sponsorships where id = ${RL2}`)}` === `${T1} 00:00 → ${T2} 00:00|reservado|month|${MES}`,
+      `lo cobrado es lo que enseñó la pantalla: ${T1} → ${T2}, 1 mes reservado, el precio del mes`);
+    ok(Number(sql(`select count(*) from sponsorship_payments where kind = 'negocio' and business_id = '${NZ}'`)) === Number(antes3) + 1, 'un solo cobro de renovación');
     ok(!err.length, 'sin errores en las páginas: ' + (err.join(' · ') || 'ninguno'));
     console.log(`\npat9tmes · ${n} comprobaciones en verde`);
   } finally {

@@ -110,10 +110,10 @@ export async function saludAdmin(): Promise<DatosSalud> {
         where last_error is not null and (last_ok_at is null or last_ok_at < last_run_at) order by last_run_at desc nulls last limit 8`),
     db().query<{ kind: string; version: number; vence: string; dias: number; servidor: boolean }>(
       `select * from (
-         select kind, version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias, false as servidor from store_secrets
+         select kind, version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - (now() at time zone 'America/New_York')::date)::int as dias, false as servidor from store_secrets
           where retired_at is null and expires_on is not null
          union all
-         select key_name || ' · ' || machine, 1, to_char(expires_on, 'YYYY-MM-DD'), (expires_on - current_date)::int, true from server_keys
+         select key_name || ' · ' || machine, 1, to_char(expires_on, 'YYYY-MM-DD'), (expires_on - (now() at time zone 'America/New_York')::date)::int, true from server_keys
           where retired_at is null and expires_on is not null) x order by vence limit 20`),
     db().query<DatosSalud["mantenimiento"][number]>(
       `select w.id::text, ${ISO("w.from_at")} as desde, ${ISO("w.to_at")} as hasta, w.message->>'es' as es, w.message->>'en' as en, w.reason as motivo,
@@ -196,13 +196,13 @@ const SERVIDOR: Record<string, string> = { respaldo_llave: "Llave de los respald
 const nombreLlave = (k: string) => NOMBRES[k] ?? (k.includes(":") ? `${SERVIDOR[k.split(":")[0]!] ?? k.split(":")[0]} (${k.split(":")[1]})` : k);
 export async function avisarLlavesQueVencen(): Promise<number> {
   const r = await db().query<{ id: string; kind: string; version: number; vence: string; dias: number }>(
-    `select id::text, kind, version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias from store_secrets
-      where retired_at is null and expires_on is not null and kind <> 'pass_type_cert' and expires_on <= current_date + $1::int`, [AVISO_LLAVE_DIAS]);
+    `select id::text, kind, version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - (now() at time zone 'America/New_York')::date)::int as dias from store_secrets
+      where retired_at is null and expires_on is not null and kind <> 'pass_type_cert' and expires_on <= (now() at time zone 'America/New_York')::date + $1::int`, [AVISO_LLAVE_DIAS]);
   // 9o · Las llaves del servidor que viven fuera del llavero (server_keys: RESPALDO_LLAVE, el certificado de origen de Cloudflare, el token del
   // proveedor…): el mismo aviso, con su nombre y su máquina.
   const sk = await db().query<{ id: string; kind: string; version: number; vence: string; dias: number }>(
-    `select 's' || id::text as id, key_name || ':' || machine as kind, 1 as version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias from server_keys
-      where retired_at is null and expires_on is not null and expires_on <= current_date + $1::int`, [AVISO_LLAVE_DIAS]);
+    `select 's' || id::text as id, key_name || ':' || machine as kind, 1 as version, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - (now() at time zone 'America/New_York')::date)::int as dias from server_keys
+      where retired_at is null and expires_on is not null and expires_on <= (now() at time zone 'America/New_York')::date + $1::int`, [AVISO_LLAVE_DIAS]);
   r.rows.push(...sk.rows);
   if (!r.rows.length) return 0;
   const equipo = (await db().query<{ id: string }>(`select user_id::text as id from staff_members where role = 'admin' and status = 'active'`)).rows;

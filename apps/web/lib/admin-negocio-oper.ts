@@ -27,11 +27,11 @@ export async function operacion360(id: string, grupo: string, antes: string | nu
               round(avg(extract(epoch from o.answered_at - o.sent_at) / 60) filter (where o.answered_at is not null and o.answered_at >= o.sent_at))::int as resp,
               count(*) filter (where o.status in ('cancelled', 'expired') or o.status_detail = 'noshow')::int as canc,
               count(*) filter (where o.sent_at > now() - interval '30 days')::int as ops30,
-              (select coalesce(sum(n), 0)::int from business_views_daily where business_id = $1 and day > current_date - 30) as vistas,
+              (select coalesce(sum(n), 0)::int from business_views_daily where business_id = $1 and day > (now() at time zone 'America/New_York')::date - 30) as vistas,
               (select count(*)::int from contact_taps where business_id = $1 and at > now() - interval '30 days') as contactos
          from operations o where o.business_id = $1 and o.sent_at > now() - interval '90 days' and not (o.kind = 'tickets' and o.pay_mode = 'none')`, [id]),
     db().query<{ d: string; n: number }>(
-      `select g::date::text as d, coalesce(v.n, 0)::int as n from generate_series(current_date - 6, current_date, interval '1 day') g
+      `select g::date::text as d, coalesce(v.n, 0)::int as n from generate_series((now() at time zone 'America/New_York')::date - 6, (now() at time zone 'America/New_York')::date, interval '1 day') g
          left join business_views_daily v on v.business_id = $1 and v.day = g::date order by g`, [id]),
     db().query<{ k: string; n: number }>(`select kind as k, count(*)::int as n from contact_taps where business_id = $1 and at > now() - interval '30 days' group by kind order by n desc limit 6`, [id]),
     db().query<{ plan: string; cap: number; usados: number }>(

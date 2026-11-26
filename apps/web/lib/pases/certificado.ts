@@ -83,7 +83,7 @@ export type EstadoCert = { tipo: string | null; equipo: string | null; vence: st
 export async function estadoCertificado(): Promise<EstadoCert> {
   const [r, s, a] = await Promise.all([
     db().query<{ tipo: string; equipo: string; vence: string | null; dias: number | null; version: number }>(
-      `select meta->>'pass_type_id' as tipo, meta->>'equipo' as equipo, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - current_date)::int as dias, version
+      `select meta->>'pass_type_id' as tipo, meta->>'equipo' as equipo, to_char(expires_on, 'YYYY-MM-DD') as vence, (expires_on - (now() at time zone 'America/New_York')::date)::int as dias, version
          from store_secrets where kind = 'pass_type_cert' and retired_at is null`),
     db().query<{ tipo: string; at: string }>(`select meta->>'pass_type_id' as tipo, to_char(uploaded_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from store_secrets where kind = 'pass_type_csr' and retired_at is null`),
     valores("pase_cert_aviso_dias"),

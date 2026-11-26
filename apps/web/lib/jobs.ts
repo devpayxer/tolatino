@@ -21,7 +21,7 @@ export type Vacante = {
   langEs: "need" | "plus" | "no"; langEn: "need" | "plus" | "no"; descr: Bi; req: [string, string][]; ben: [string, string][]; ago: number;
 };
 const VAC_SQL = `j.id::text, j.title, j.kind, j.pay_from_cents as "payFrom", j.pay_to_cents as "payTo", j.tips, j.days, j.start_min as start, j.end_min as "end", j.openings,
-  j.lang_es as "langEs", j.lang_en as "langEn", j.descr, j.requirements as req, j.benefits as ben, greatest(0, (now()::date - coalesce(j.published_at, j.created_at)::date))::int as ago`;
+  j.lang_es as "langEs", j.lang_en as "langEn", j.descr, j.requirements as req, j.benefits as ben, greatest(0, ((now() at time zone 'America/New_York')::date - (coalesce(j.published_at, j.created_at) at time zone 'America/New_York')::date))::int as ago`;
 const telBonito = (p: string) => { const d = p.replace(/\D/g, "").slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; };
 
 /* Pestaña Jobs de la ficha: las vacantes en vivo, con lo guardado y la última solicitud de la persona. */

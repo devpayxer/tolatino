@@ -442,7 +442,7 @@ export async function caso(s: Staff, id: string) {
               p.status as pago, coalesce(p.refunded_cents, 0) as devuelto, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien,
               o.details->>'motivoNeg' as motivo, (select h.reason from help_requests h where h.operation_id = o.id) as ayuda
          from operations o join users u on u.id = o.user_id left join payments p on p.operation_id = o.id and p.kind = 'deposit'
-        where o.business_id = $1 and o.kind = 'night' and o.night_date > current_date - 30 and ${INCIDENTE_SQL[q.queue]}
+        where o.business_id = $1 and o.kind = 'night' and o.night_date > (now() at time zone 'America/New_York')::date - 30 and ${INCIDENTE_SQL[q.queue]}
         order by o.night_date desc, o.id desc limit 50`, [q.business_id])).rows;
     const off = (await db().query<{ off: boolean }>(`select coalesce(modules_off ? 'rsv', false) as off from businesses where id = $1`, [q.business_id])).rows[0]?.off ?? false;
     return { ...base, negocio, noche: { L, pausado: off } };
@@ -487,7 +487,7 @@ export async function ajustesColas(): Promise<AjustesColas> {
   const [r, v, f, c] = await Promise.all([
     db().query<{ key: string; nombre: string }>(`select key, name->>'es' as nombre from staff_roles order by sort`),
     db().query<{ queue: string; roles: string[] | null }>(`select queue, array_agg(role order by role) filter (where allowed) as roles from queue_roles group by queue`),
-    db().query<{ id: string; dia: string; ciudad: string | null; nombre: string }>(`select h.id::text, h.day::text as dia, ci.name as ciudad, h.name->>'es' as nombre from staff_holidays h left join cities ci on ci.id = h.city_id where h.status = 'active' and h.day >= current_date - 7 order by h.day limit 60`),
+    db().query<{ id: string; dia: string; ciudad: string | null; nombre: string }>(`select h.id::text, h.day::text as dia, ci.name as ciudad, h.name->>'es' as nombre from staff_holidays h left join cities ci on ci.id = h.city_id where h.status = 'active' and h.day >= (now() at time zone 'America/New_York')::date - 7 order by h.day limit 60`),
     db().query<{ id: string; nombre: string }>(`select id, name as nombre from cities order by name`),
   ]);
   return { roles: r.rows, vis: Object.fromEntries(v.rows.map((x) => [x.queue, x.roles ?? []])), feriados: f.rows, ciudades: c.rows };

@@ -57,9 +57,9 @@ export function tarjetaLey(lic: LicFila[], cant: string | null, lang: Lang) {
 export async function barrerLicencias() {
   const r = await db().query(
     `insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority)
-     select 'lic', 'license', l.id::text, l.business_id, l.city_id, case when l.next_review < current_date then 'alta' else 'normal' end
+     select 'lic', 'license', l.id::text, l.business_id, l.city_id, case when l.next_review < (now() at time zone 'America/New_York')::date then 'alta' else 'normal' end
        from licenses l join businesses b on b.id = l.business_id
-      where l.status = 'valid' and l.next_review is not null and l.next_review <= current_date + ${cfgSql("lic_aviso_dias")} and b.status = 'active'
+      where l.status = 'valid' and l.next_review is not null and l.next_review <= (now() at time zone 'America/New_York')::date + ${cfgSql("lic_aviso_dias")} and b.status = 'active'
      on conflict do nothing`);
   return { abiertas: r.rowCount ?? 0 };
 }

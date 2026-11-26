@@ -17,7 +17,7 @@ export const INCIDENTE_SQL: Record<ColaNoche, string> = {
 export async function vigilarNoche(c: PoolClient, negocio: string, cola: ColaNoche) {
   const r = (await c.query<{ n: number; city: string }>(
     `select count(*)::int as n, max(o.city_id) as city from operations o
-      where o.business_id = $1 and o.kind = 'night' and o.night_date > current_date - 30 and ${INCIDENTE_SQL[cola]}`, [negocio])).rows[0];
+      where o.business_id = $1 and o.kind = 'night' and o.night_date > (now() at time zone 'America/New_York')::date - 30 and ${INCIDENTE_SQL[cola]}`, [negocio])).rows[0];
   if (!r || r.n < UMBRAL_NOCHE) return false;
   await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) values ($1, 'business', $2, $2, $3, 'normal') on conflict do nothing`, [cola, negocio, r.city]);
   return true;
