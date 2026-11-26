@@ -11,7 +11,7 @@ import { leerCola, leerTurno, type Cola, type Turno } from "./local";
 import { urlComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const PASO: Record<string, [string, string]> = { recogi: ["Recogí", "Picked up"], llegue: ["Llegué", "Arrived"], entregado: ["Entregado", "Delivered"] };
 
 export function SinSenalRep() {

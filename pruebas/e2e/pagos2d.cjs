@@ -78,7 +78,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   const campos = d.locator('aside[data-screen-label="Panel v2 · detalle"] input, aside[data-screen-label="Panel v2 · detalle"] textarea');
   await campos.nth(0).fill('2.00'); await campos.nth(1).fill('Faltó la salsa');
   await d.screenshot({ path: OUT + 'd7-devolver-d.png' });
-  await clic(d.getByText('Devolver $2.00', { exact: true })); await d.getByText(/Devuelto\. El cliente ya lo sabe/).first().waitFor();
+  await clic(d.getByText('Devolver $2', { exact: true })); await d.getByText(/Devuelto\. El cliente ya lo sabe/).first().waitFor();
   ok(pago(n1) === `partially_refunded|${tot}|${Math.round(sub * 0.1)}|200`, 'devolución parcial de $2.00');
   ok(sql(`select count(*) from notifications where user_id = ${MARISOL} and tpl = 'pay_refund' and created_at >= '${T0}'`) === '1', 'el cliente recibe «Te devolvimos dinero»');
   ok(sql(`select count(*) from audit_entries where action = 'pedido.devolver' and at > now() - interval '1 minute'`) !== '0', 'auditado');

@@ -3,6 +3,7 @@ import { db } from "../db";
 import { pedidoDe } from "../pedir";
 import { BASE_URL, encolar } from "./index";
 import { marco, type Fila } from "./plantillas";
+import { usd } from "../dinero-comun";
 
 /* Recibos por correo (Mi cuenta › Avisos › «Recibos», encendido por defecto). Solo a un correo confirmado. Uno por pedido,
    por reservación confirmada y por cobro de Pro (idem_key): repetir la acción no manda otro. Nunca rompe el flujo que lo
@@ -64,7 +65,7 @@ export async function reciboPro(negocio: string, userId: string, centavos: numbe
     const u = await destino(userId);
     if (!u) return;
     const es = u.lang !== "en", b = (await db().query<{ name: string }>(`select name from businesses where id = $1`, [negocio])).rows[0]?.name ?? "";
-    const money = `$${(centavos / 100).toFixed(2)}`, fin = new Date(hasta).toLocaleDateString(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" });
+    const money = usd(centavos), fin = new Date(hasta).toLocaleDateString(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" });
     const { html, text } = marco({ es, pre: es ? `Recibo de Pro · ${b}` : `Pro receipt · ${b}`, titulo: es ? "Recibo de To’Latino Pro" : "To’Latino Pro receipt",
       intro: es ? `Cobramos Pro de ${b}.` : `We charged Pro for ${b}.`,
       filas: [["Plan", "Pro"], [es ? "Hasta" : "Until", fin], [es ? "Tarjeta" : "Card", tarjeta], ["Total", money, true]],
@@ -92,7 +93,7 @@ export async function armarReciboBoletos(opId: string): Promise<{ u: Dest; subje
     if (!o) return null;
     const u = await destino(o.user);
     if (!u) return null;
-    const es = u.lang !== "en", m = (c: number) => `$${(c / 100).toFixed(2)}`, t = es ? o.title.es : o.title.en || o.title.es;
+    const es = u.lang !== "en", m = usd, t = es ? o.title.es : o.title.en || o.title.es;
     const filas: Fila[] = [...o.l.map((l): Fila => [`${l.qty} × ${es ? l.name.es : l.name.en || l.name.es}`, m(l.tot)])];
     if (o.desc) filas.push([es ? "Código de descuento" : "Discount code", `−${m(o.desc)}`]);
     filas.push([es ? "Cargos de servicio" : "Service fees", es ? "Incluidos" : "Included"], ["Total", m(o.total), true]);

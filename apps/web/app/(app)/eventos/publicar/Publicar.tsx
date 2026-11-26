@@ -14,6 +14,7 @@ import { publicarEvento } from "./acciones";
 import { hoyEn } from "@/lib/fecha-local";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
+import { usd } from "@/lib/dinero-comun";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,7 +96,7 @@ export function Publicar({ v }: { v: VistaPub }) {
     if (r?.ok && r.id && r.url) up({ foto: { id: r.id, url: r.url } }); else if (r?.estado !== "revision") setError(r?.mensaje ? (es ? r.mensaje.es : r.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));
   };
   const atras = () => router.push("/eventos");
-  const precioC = Math.round(Number(f.precio) * 100) || 0, money = (c: number) => `$${(c / 100) % 1 ? (c / 100).toFixed(2) : c / 100}`;
+  const precioC = Math.round(Number(f.precio) * 100) || 0, money = usd;
   const entL = f.entrada === "free" ? E2("Entrada libre", "Free entry") : f.entrada === "rsvp" ? E2("Gratis con RSVP", "Free with RSVP") : f.entrada === "tickets" ? `${precioC ? money(precioC) : "$—"}${E2(" · boletos en la app", " · tickets in the app")}` : "—";
   const whenL = `${diaCorto(dia, es)} · ${hora(f.h0)} – ${hora(f.h1)}`, whereL = f.donde === "other" ? (f.lugar.trim() || E2("Otro lugar", "Another venue")) : O ? O.name : E2("Tu negocio", "Your business");
   const pol = f.entrada === "tickets" ? E2("Si cancelas el evento o cambias la fecha, devolvemos todo a quien compró, sin que tengas que hacer nada. Si el comprador cancela: se devuelve el boleto menos el cargo de servicio.", "If you cancel or move the event, everyone who bought gets everything back automatically. If a buyer cancels: the ticket is refunded minus the service fee.")

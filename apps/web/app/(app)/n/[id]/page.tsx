@@ -45,6 +45,7 @@ import { auditar, staff } from "@/lib/admin";
 import { tx } from "@/lib/db";
 import { AvisoEquipo } from "./AvisoEquipo";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { usd as usdC } from "@/lib/dinero-comun";
 
 export const dynamic = "force-dynamic";
 
@@ -162,7 +163,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       { q: E2("¿Quién puede recoger al niño?", "Who can pick up my child?"), a: E2("Solo las personas autorizadas, siempre con identificación. La lista se entrega en persona.", "Only authorized people, always with ID. The list is handed in person.") },
       { q: E2("¿Qué datos de mi niño guarda To’Latino?", "What data about my child does To’Latino keep?"), a: E2(`Solo su nombre de pila, la edad o el grado y una nota, cifrados; se borran a los ${purga} días. Nunca la fecha de nacimiento, fotos ni datos médicos.`, `Only first name, age or grade and a note, encrypted; deleted after ${purga} days. Never birth date, photos or medical data.`) },
     ] : dp ? [
-      ...(dp.memb ? [{ q: E2("¿Hay contrato?", "Is there a contract?"), a: contratoTexto({ contrato: dp.contrato, salir: dp.salir }, es) + "." }, { q: E2("¿Hay cuota de inscripción?", "Is there a signup fee?"), a: dp.inscripcion ? E2(`Sí: $${dp.inscripcion / 100}, una sola vez.`, `Yes: $${dp.inscripcion / 100}, once.`) : E2("No.", "No.") }] : []),
+      ...(dp.memb ? [{ q: E2("¿Hay contrato?", "Is there a contract?"), a: contratoTexto({ contrato: dp.contrato, salir: dp.salir }, es) + "." }, { q: E2("¿Hay cuota de inscripción?", "Is there a signup fee?"), a: dp.inscripcion ? E2(`Sí: ${usdC(dp.inscripcion)}, una sola vez.`, `Yes: ${usdC(dp.inscripcion)}, once.`) : E2("No.", "No.") }] : []),
       ...(dp.liga ? [{ q: E2("¿La cuota es por partido?", "Is the fee per game?"), a: E2("No: es de toda la temporada. Si la liga no abre, el depósito se devuelve completo.", "No: it covers the whole season. If the league does not open, the deposit is refunded in full.") },
         { q: E2("¿Aceptan jugadores sin equipo?", "Do you take players without a team?"), a: dp.sueltos ? E2("Sí: te inscribes solo y te ponen en un equipo.", "Yes: sign up alone and they place you on a team.") : E2("Solo equipos completos.", "Full teams only.") }] : []),
       { q: E2("¿Me pueden cobrar algo después?", "Can they charge me later?"), a: E2("No. Solo se cobra lo que ves aquí; nada que aparezca después en la tarjeta.", "No. Only what you see here; nothing showing up later on your card.") },
@@ -190,7 +191,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const auto = [
       { q: E2("¿El precio puede cambiar?", "Can the price change?"), a: E2("No. El precio es cerrado antes de salir: lo que pagas al reservar es todo.", "No. The price is fixed before leaving: what you pay when booking is everything.") },
       { q: E2("¿Y si cancelo?", "What if I cancel?"), a: E2("Gratis hasta 24 horas antes. Después, se cobra la mitad. Si el negocio no sale, te devolvemos todo.", "Free up to 24 hours before. After that, half is charged. If the business does not run, you get everything back.") },
-      ...(h?.bags && trans.servicios.some((x) => x.k === "asiento") ? [{ q: E2("¿Cuántas maletas puedo llevar?", "How many bags can I bring?"), a: `${E2(`${h.bags} maletas incluidas por persona.`, `${h.bags} bags included per person.`)}${h.extraBag != null ? E2(` La extra cuesta $${h.extraBag / 100} y se paga al reservar.`, ` An extra bag is $${h.extraBag / 100}, paid when booking.`) : E2(" No venden maleta extra.", " No extra bags sold.")}` }] : []),
+      ...(h?.bags && trans.servicios.some((x) => x.k === "asiento") ? [{ q: E2("¿Cuántas maletas puedo llevar?", "How many bags can I bring?"), a: `${E2(`${h.bags} maletas incluidas por persona.`, `${h.bags} bags included per person.`)}${h.extraBag != null ? E2(` La extra cuesta ${usdC(h.extraBag)} y se paga al reservar.`, ` An extra bag is ${usdC(h.extraBag)}, paid when booking.`) : E2(" No venden maleta extra.", " No extra bags sold.")}` }] : []),
       ...(h?.kind === "caja" && h.shipDay ? [{ q: E2("¿Cuánto tarda en llegar?", "How long does it take?"), a: E2(`Sale ${({ sab: "el sábado", mie: "el miércoles", "15d": "cada 15 días" } as Record<string, string>)[h.shipDay]}${h.shipWeeks ? ` y llega en ${h.shipWeeks.replace("-", " a ")} semanas` : ""}.`, `Ships ${({ sab: "on Saturday", mie: "on Wednesday", "15d": "every 2 weeks" } as Record<string, string>)[h.shipDay]}${h.shipWeeks ? ` and arrives in ${h.shipWeeks.replace("-", " to ")} weeks` : ""}.`) }] : []),
       ...(h?.nino ? [{ q: E2("¿Tienen asiento de niño?", "Do you have a child seat?"), a: E2("Sí, sin costo si lo pides al reservar.", "Yes, free if you ask when booking.") }] : []),
     ];

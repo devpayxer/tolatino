@@ -221,3 +221,5 @@ export async function reportesDiarios() {
     `select dia::text, kind, to_char(created_at at time zone 'America/New_York', 'HH24:MI') as hora, cifras, destinos from founder_reports
       where founder_reports.dia > (now() at time zone 'America/New_York')::date - 14 order by founder_reports.dia desc, founder_reports.kind desc`)).rows;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

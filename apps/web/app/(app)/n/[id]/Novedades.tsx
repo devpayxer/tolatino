@@ -20,7 +20,7 @@ type N = "Icon" | "Button" | "Chip" | "Tag" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, Tag, PostCard } = UI as unknown as Record<N, ComponentType<any>>;
 
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as money } from "@/lib/dinero-comun";
 const sc1 = (s: string) => { const t = s.toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); };
 const T = (es: boolean): Record<Post["kind"], [string, string, string]> => ({
   oferta: [es ? "OFERTA" : "DEAL", "ink", es ? "Ofertas" : "Deals"], hoy: [es ? "HOY HAY" : "TODAY", "signal", es ? "Hoy hay" : "Today"],

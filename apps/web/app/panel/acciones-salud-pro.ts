@@ -10,6 +10,7 @@ import { accesoPanel, type Acceso } from "@/lib/panel";
 import { catalogoSeguros, herramientaSP, recalcularFiltrosSP } from "@/lib/salud-pro";
 import { LANGS_SALUD, type HerrSalud } from "@/lib/salud-pro-comun";
 import type { Res } from "./acciones";
+import { usd } from "@/lib/dinero-comun";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
@@ -46,7 +47,7 @@ export async function saludGuardar(negocio: string, p: SaludIn): Promise<Res> {
     }
     if (p?.sin !== undefined) { h.sin = !!p.sin; after.sin_seguro = h.sin ? "sí" : "no"; }
     if (!h.sin && !h.ins.length) return no("Deja al menos un seguro o marca «Sin seguro».", "Keep at least one insurer or mark “No insurance”.");
-    if (p?.cash !== undefined) { const n = Math.round(Number(p.cash)); if (!(n >= 2000 && n <= 40000 && n % 500 === 0)) return no("La consulta sin seguro va de $20 a $400, de 5 en 5.", "The uninsured visit goes from $20 to $400, in steps of 5."); h.cash = n; after.consulta_sin_seguro = `$${n / 100}`; }
+    if (p?.cash !== undefined) { const n = Math.round(Number(p.cash)); if (!(n >= 2000 && n <= 40000 && n % 500 === 0)) return no("La consulta sin seguro va de $20 a $400, de 5 en 5.", "The uninsured visit goes from $20 to $400, in steps of 5."); h.cash = n; after.consulta_sin_seguro = `${usd(n)}`; }
     if (p?.langs !== undefined) {
       const L = Array.isArray(p.langs) ? [...new Set(p.langs.filter((l) => LANGS_SALUD.some((x) => x[0] === l)))] : [];
       if (!L.length) return no("Deja al menos un idioma.", "Keep at least one language.");
@@ -67,8 +68,8 @@ export async function saludGuardar(negocio: string, p: SaludIn): Promise<Res> {
     // La página y la tarjeta de Buscar leen lo mismo: seguros, precio sin seguro y espera (derivados, no se editan aparte).
     const pubs = ["medicaid", "medicare", "chip"].filter((k) => h.ins.includes(k)), NM: Record<string, string> = { medicaid: "Medicaid", medicare: "Medicare", chip: "CHIP" };
     const lst = (L: string[], y: string) => (L.length > 1 ? `${L.slice(0, -1).join(", ")}${y}${L[L.length - 1]}` : L[0] ?? "");
-    const fee = { es: `${pubs.length ? lst(pubs.map((k) => NM[k]!), " y ") : h.ins.length ? "Seguros privados" : "Sin seguro"}${h.sin ? ` · sin seguro $${h.cash / 100}` : ""}`,
-      en: `${pubs.length ? lst(pubs.map((k) => NM[k]!), " & ") : h.ins.length ? "Private insurance" : "Uninsured"}${h.sin ? ` · uninsured $${h.cash / 100}` : ""}` };
+    const fee = { es: `${pubs.length ? lst(pubs.map((k) => NM[k]!), " y ") : h.ins.length ? "Seguros privados" : "Sin seguro"}${h.sin ? ` · sin seguro ${usd(h.cash)}` : ""}`,
+      en: `${pubs.length ? lst(pubs.map((k) => NM[k]!), " & ") : h.ins.length ? "Private insurance" : "Uninsured"}${h.sin ? ` · uninsured ${usd(h.cash)}` : ""}` };
     const tocaFee = p?.ins !== undefined || p?.sin !== undefined || p?.cash !== undefined;
     await c.query(
       `update businesses set category_attrs = jsonb_set(jsonb_set(jsonb_set(category_attrs, '{ins}', to_jsonb($2::text[])), '{cash}', to_jsonb($3::int)), '{wait}', to_jsonb($4::int))

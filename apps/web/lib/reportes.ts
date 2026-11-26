@@ -125,3 +125,5 @@ export async function barrerReportes(): Promise<number> {
   }
   return n;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

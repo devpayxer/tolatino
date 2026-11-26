@@ -10,7 +10,7 @@ import { articuloRentaGuardar, articuloRentaQuitar, articuloRentaVisible } from 
 import type { Ctx, Sec } from "./Panel";
 
 type FA = { n: string; nEn: string; d: string; dEn: string; p: string; dep: string; u: number; fotos: string[]; mpd: string; mi: string };
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as money } from "@/lib/dinero-comun";
 const num = (v: string, n: number) => v.replace(/[^0-9]/g, "").slice(0, n);
 
 /* Las filas de «Lo que rentas» (Hogar y Transporte): cada una abre su editor; «Agregar» abre uno nuevo. */

@@ -10,7 +10,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { estimadoMandar, extraPedir, finalAjustar, plantillasEstimado } from "./acciones-estimado";
 import type { Ctx } from "./Panel";
 
-const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+import { usd as money } from "@/lib/dinero-comun";
 type Draft = { k: string; urg: "now" | "soon" | "later"; t: string; why: string; pn: string; pc: string; h: number; foto: string | null; fotoU: string | null; tEn?: string; whyEn?: string; pnEn?: string };
 const nueva = (): Draft => ({ k: Math.random().toString(36).slice(2, 10), urg: "now", t: "", why: "", pn: "", pc: "", h: 0, foto: null, fotoU: null });
 const intacta = (d: Draft) => !d.t.trim() && !d.why.trim() && !d.pn.trim() && !d.pc && !d.h;

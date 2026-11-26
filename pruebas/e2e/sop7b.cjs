@@ -272,11 +272,11 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
   ok(await espera(() => caso(TK1, 'status') === 'reopened'), 'Admin reabre el caso');
   // Cumulativo: Dayana ya devolvió $40 en este caso → $20 más pasa del tope ($60 > $50).
   const cd = await br.newContext(), pd = await cd.newPage(); await entrar(pd, DAYANA); await pd.goto(B + `/admin/soporte?caso=${TK1}`);
-  ok(/Tu rol devuelve hasta \$50\.00 por caso \(ya se devolvieron \$40\.00\)/.test(await accion(pd, 'sopDevolver', [TK1, '20', sql('select gen_random_uuid()'), 'Otros $20 de lo cobrado de más.'])), 'Soporte: $20 más en el mismo caso → el tope cuenta lo ya devuelto');
+  ok(/Tu rol devuelve hasta \$50 por caso \(ya se devolvieron \$40\)/.test(await accion(pd, 'sopDevolver', [TK1, '20', sql('select gen_random_uuid()'), 'Otros $20 de lo cobrado de más.'])), 'Soporte: $20 más en el mismo caso → el tope cuenta lo ya devuelto');
   ok(/Ahí no hay nada pagado|Tu rol/.test(await accion(pd, 'sopDevolver', [TK3, '5', sql('select gen_random_uuid()'), 'Te devolvemos algo por la molestia.'])), 'un caso sin operación pagada no devuelve');
   await cd.close();
   await p.goto(B + `/admin/soporte?caso=${TK1}`);
-  ok(/Puedes devolver hasta \$110\.00/.test(await accion(p, 'sopDevolver', [TK1, '200', sql('select gen_random_uuid()'), 'Te devolvemos todo y más.'])), 'Admin · $200 sobre $150 cobrados → «Puedes devolver hasta $110.00» (nunca más de lo cobrado)');
+  ok(/Puedes devolver hasta \$110/.test(await accion(p, 'sopDevolver', [TK1, '200', sql('select gen_random_uuid()'), 'Te devolvemos todo y más.'])), 'Admin · $200 sobre $150 cobrados → «Puedes devolver hasta $110.00» (nunca más de lo cobrado)');
   ok(pago() === 'partially_refunded|15000|4000', 'nada se movió');
   const K = sql('select gen_random_uuid()');
   const [d1, d2] = await Promise.all([accion(p, 'sopDevolver', [TK1, '60', K, 'Te devolvemos $60 más del cobro doble.']), accion(p, 'sopDevolver', [TK1, '60', K, 'Te devolvemos $60 más del cobro doble.'])]);
@@ -335,7 +335,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
   c = await esc(); p = await c.newPage(); await entrar(p, MARISOL);
   await p.goto(B + `/soporte?caso=${TK1}`);
   t = await texto(p);
-  ok(t.includes('TE DEVOLVIMOS $40.00 A TU TARJETA') && t.includes('TE DEVOLVIMOS $60.00 A TU TARJETA'), 'la persona ve las dos devoluciones en su caso');
+  ok(t.includes('TE DEVOLVIMOS $40 A TU TARJETA') && t.includes('TE DEVOLVIMOS $60 A TU TARJETA'), 'la persona ve las dos devoluciones en su caso');
   await p.screenshot({ path: OUT + 'e7b-soporte-1360.png', fullPage: true });
   await p.goto(B + `/soporte?caso=${TK4}`);
   ok((await texto(p)).includes(`UNIDO A OTRO`) && (await texto(p)).includes(TK3), 'el caso unido le dice dónde seguir');

@@ -23,7 +23,7 @@ export type PedPanel = {
   ayuda?: Ayuda | null; ayudas?: (Ayuda & { num: string; quien: string })[];
 };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null; tail?: (Bloque | null)[] };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const PAGO_L: Record<string, [string, string]> = { held: ["retenido", "held"], captured: ["cobrado", "charged"], released: ["liberado", "released"], refunded: ["devuelto", "refunded"], partially_refunded: ["devuelto en parte", "partly refunded"], failed: ["falló", "failed"] };
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
   ok: [E2("ACEPTADO", "ACCEPTED"), "signal"], ready: [E2("LISTO PARA RECOGER", "READY"), "signal"], out: [E2("EN CAMINO", "ON THE WAY"), "action"], done: [E2("LISTO", "DONE"), "neutral"],

@@ -24,7 +24,7 @@ type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: bool
 const no = (es: string, en: string, x: { tarjeta?: boolean } = {}): { ok: false; msg: Bi; tarjeta?: boolean } => ({ ok: false, msg: { es, en }, ...x });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, YMD = /^\d{4}-\d{2}-\d{2}$/, NUM = /^PL-\d{1,10}$/;
 const TEL = /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/;
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as money } from "./dinero-comun";
 
 /* ── Fechas (en días locales del negocio; las horas van aparte en minutos) ── */
 const d2s = (d: Date) => d.toISOString().slice(0, 10);

@@ -88,3 +88,5 @@ export function N360Dinero({ d, id, nombre, desk, setConf }: { d: Dinero; id: st
     </>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

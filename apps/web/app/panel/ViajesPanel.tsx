@@ -16,7 +16,7 @@ import { diasTxt } from "@/lib/plazo-txt";
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
 export type ViajesP = { hoy?: { esperan: FilaViaje[]; salidas: SalidaPanel[]; privados: FilaViaje[]; choferes: { id: string; nombre: string }[] }; det?: ViajePanelV | null };
-const money = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
+import { usd as money } from "@/lib/dinero-comun";
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const HORAS = Array.from({ length: 18 }, (_, i) => (i + 5) * 60); // = HORAS_PRIV (lib/viajes)
 const restan = (ms: number | null) => { if (!ms) return null; const h = (ms - Date.now()) / 36e5; return h > 0 ? Math.max(1, Math.round(h)) : 0; };

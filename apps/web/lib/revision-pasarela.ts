@@ -22,7 +22,7 @@ import { elegibles, type T4 } from "./dinero-alertas";
 type Bi = { es: string; en: string };
 export type { T4 };
 type Res = { ok: true; msg: string } | { ok: false; msg: string };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 const REF = /^(subscription_charges|offsession_charges|event_settlements|hold_renewals|refunds|event_settlement_reversals|gateway_refunds|sponsorship_refunds):(\d{1,18})$/;
 /* 9t7 · Lo que se elige puede ser una devolución (re_…) o una reversión (trr_…) cuando la intención devuelve dinero. */
 const STRIPE_ID = /^(pi|tr|re|trr|pyr)_[A-Za-z0-9_]{3,200}$/;

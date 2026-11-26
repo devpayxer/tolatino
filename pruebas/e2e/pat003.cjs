@@ -120,9 +120,9 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     await pd.getByRole('button', { name: /^Continuar · \$17$/ }).click();
     ok(await espera(async () => (await texto(pd)).includes('Revisar y pagar')), 'Revisar y pagar');
     const rv = await texto(pd);
-    ok(rv.includes('Eventos · Hazleton') && rv.includes('$17.00') && /Visa ·· 4242/i.test(rv) && rv.includes('Apagada'), 'evento, dónde, total, tarjeta guardada y «Renovar» apagado de entrada');
+    ok(rv.includes('Eventos · Hazleton') && rv.includes('$17') && /Visa ·· 4242/i.test(rv) && rv.includes('Apagada'), 'evento, dónde, total, tarjeta guardada y «Renovar» apagado de entrada');
     await pd.screenshot({ path: OUT + 'pat003-pagar-1360.png', fullPage: true });
-    await pd.getByRole('button', { name: 'Pagar $17.00' }).click();
+    await pd.getByRole('button', { name: 'Pagar $17' }).click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where event_id = ${A} and status = 'activo'`) === '1'), 'queda ACTIVO en la base');
     const SA = sql(`select id from event_sponsorships where event_id = ${A} and status = 'activo'`);
     ok(sql(`select price_cents || '|' || duration || '|' || auto_renew || '|' || business_id from event_sponsorships where id = ${SA}`) === `1700|week|false|${NEG}`, 'precio de Configuración ($17), 1 semana, sin renovar solo, del organizador');
@@ -172,7 +172,7 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     await pm.screenshot({ path: OUT + 'pat003-hasta-evento-390.png', fullPage: true });
     await pm.getByRole('button', { name: /^Continuar · \$34$/ }).click();
     ok(await espera(async () => (await texto(pm)).includes('no se renueva')), 'Revisar y pagar: «Hasta el evento» no se renueva');
-    await pm.getByRole('button', { name: 'Pagar $34.00' }).click();
+    await pm.getByRole('button', { name: 'Pagar $34' }).click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where event_id = ${BE} and status = 'activo'`) === '1'), 'queda ACTIVO');
     ok(sql(`select price_cents || '|' || duration || '|' || auto_renew || '|' || (ends_at = (select max(ends_at) from event_dates where event_id = ${BE})) from event_sponsorships where event_id = ${BE} and status = 'activo'`) === '3400|until_event|false|true', '$34 (2 semanas), hasta que termina el evento, sin renovar');
     ok(await espera(async () => (await texto(pm)).includes('termina con el evento')), 'Activo: «No se renueva: termina con el evento»');
@@ -192,7 +192,7 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     ok(await espera(async () => sql(`select count(*) from sponsorship_waits where kind = 'evento' and business_id = '${NEG}' and status = 'espera'`) === '1'), '«Avísame» queda anotado');
     await pm.getByRole('button', { name: new RegExp(`^Reservar desde el ${libre} · \\$17$`) }).click();
     ok(await espera(async () => (await texto(pm)).includes('Revisar y pagar')), 'Revisar y pagar la reserva');
-    await pm.getByRole('button', { name: 'Pagar $17.00' }).click();
+    await pm.getByRole('button', { name: 'Pagar $17' }).click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where event_id = ${E} and status = 'reservado'`) === '1'), 'queda RESERVADO desde el día que se libera');
     ok(sql(`select status from sponsorship_waits where kind = 'evento' and business_id = '${NEG}' order by id desc limit 1`) === 'compro', 'su «Avísame» queda cumplido');
     ponerCfg('patrocinio_evt_puestos', 6); await configLista(); // la Configuración llegó al servidor (config-lista.cjs mira que la escucha viva)
@@ -315,9 +315,9 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     ok(await espera(async () => (await texto(pd)).includes('puestos libres')), 'Elegir');
     await pd.getByRole('button', { name: /^Continuar · \$17$/ }).click();
     ok(await espera(async () => /Visa ·· 3184/i.test(await texto(pd))), 'Revisar y pagar con una tarjeta que pide 3-D Secure');
-    await pd.getByRole('button', { name: 'Pagar $17.00' }).click();
+    await pd.getByRole('button', { name: 'Pagar $17' }).click();
     const hoja = pd.locator('[data-screen-label="Verificación del banco · desktop"] [data-pantalla="PAGO-3DS"]');
-    ok(await espera(async () => await hoja.isVisible() && (await hoja.innerText()).includes('3-D SECURE · $17.00')), 'se abre «Tu banco pide confirmar» (3-D SECURE · $17.00)');
+    ok(await espera(async () => await hoja.isVisible() && (await hoja.innerText()).includes('3-D SECURE · $17')), 'se abre «Tu banco pide confirmar» (3-D SECURE · $17)');
     ok(sql(`select count(*) from event_sponsorships where event_id = ${H}`) === '0', 'todavía no se guardó nada');
     await pd.screenshot({ path: OUT + 'pat003-3ds-1360.png', fullPage: true });
     await hoja.getByRole('button', { name: 'Confirmar con mi banco' }).click();
@@ -378,8 +378,8 @@ const totalDe = (d) => Number(sql(`select count(distinct d.event_id) from event_
     ok(await espera(async () => (await texto(pd)).includes('Revisar y pagar')), 'Revisar y pagar');
     const esperado = `${fecha(HR)} – ${fecha(HR2)} · 1 mes`;
     ok(await espera(async () => (await texto(pd)).includes(esperado)), `FECHAS: las del período que se va a cobrar («${esperado}»), no «—»`);
-    const pagarR = pd.getByRole('button', { name: `Pagar $${(MES / 100).toFixed(2)}` });
-    ok(await pagarR.isEnabled(), `«Pagar $${(MES / 100).toFixed(2)}» (el precio del mes de Configuración) está encendido`);
+    const pagarR = pd.getByRole('button', { name: `Pagar ${require('../lib/usd.cjs')(MES)}` });
+    ok(await pagarR.isEnabled(), `«Pagar ${require('../lib/usd.cjs')(MES)}» (el precio del mes de Configuración) está encendido`);
     await pd.screenshot({ path: OUT + 'pat003-renovar-lejos-1360.png', fullPage: true });
     await pagarR.click();
     ok(await espera(async () => sql(`select count(*) from event_sponsorships where renewed_from = ${R1}`) === '1'), 'el pago crea la renovación encadenada');

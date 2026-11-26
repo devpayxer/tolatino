@@ -38,7 +38,7 @@ export const VIEJO: Bi = { es: "Hay un cobro de hace más de un día sin respues
 export const YA_RECHAZADO: Bi = { es: "Tu banco ya rechazó este cobro. Prueba con otra tarjeta.", en: "Your bank already declined this charge. Try another card." };
 export const NO_LLEGO: Bi = { es: "Ese cobro nunca llegó a Stripe: no se cobró nada. Vuelve a intentarlo.", en: "That charge never reached Stripe: nothing was charged. Try again." };
 export const DEVUELTO: Bi = { es: "Ese cobro salió de más en Stripe y se devuelve: no quedó nada cobrado. Vuelve a intentarlo.", en: "That charge went through more than once at Stripe and is being refunded: nothing stays charged. Try again." };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 const QUE: Record<TipoCobro, Bi> = {
   plan: { es: "el plan", en: "the plan" }, renta: { es: "la renta", en: "the rental" },
   patrocinio_negocio: { es: "la renovación del patrocinio", en: "the sponsorship renewal" }, patrocinio_evento: { es: "la renovación del patrocinio del evento", en: "the event sponsorship renewal" },

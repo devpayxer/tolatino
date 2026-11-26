@@ -144,3 +144,5 @@ export function cuerpoEventos(k: Caso, x: Omit<Ctx, "puede">): { bloques: Bloque
   return { bloques, acts: [{ l: E("Ficha del evento", "Event page"), icon: "search", onClick: () => x.abrir(`/admin/eventos/${e.id}`) }, ...accionesEvt(e, { ...x, puede })] };
 }
 export type { ResAdm };
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

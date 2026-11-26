@@ -22,7 +22,7 @@ export type CitasData = { apartados?: ApartadoFila[]; aptDet?: ApartadoVista | n
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "noseguro" | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+import { usd as money } from "@/lib/dinero-comun";
 const MDAY: [string, string][] = [["Dom", "Sun"], ["Lun", "Mon"], ["Mar", "Tue"], ["Mié", "Wed"], ["Jue", "Thu"], ["Vie", "Fri"], ["Sáb", "Sat"]];
 const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 const diaL = (c: Ctx, ymd: string, n: number) => {

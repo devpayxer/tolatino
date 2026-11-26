@@ -8,7 +8,7 @@ import { cobrosActualizar, cobrosConectar, cobrosStripe } from "./acciones-cobro
 import type { Ctx } from "./Panel";
 import { pagosEventosBloques } from "./EventosCambios";
 
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 const fecha = (c: Ctx, ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`), m = MES[d.getUTCMonth()]!; return c.es ? `mar ${d.getUTCDate()} ${m[0]}` : `Tue ${m[1]} ${d.getUTCDate()}`; };
 const cuando = (c: Ctx, iso: string) => new Intl.DateTimeFormat(c.es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");

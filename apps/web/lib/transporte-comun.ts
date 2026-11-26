@@ -31,7 +31,7 @@ export type SvcTrans = { id: string; sec: string | null; name: Bi; desc: Bi; cen
   dmin: number | null; wait: number | null; inc: Bi[]; foto: string | null;
   // La próxima salida con asientos (por asiento): hora, si es hoy y cuántos quedan (el servidor la calcula).
   prox: { m: number; hoy: boolean; quedan: number } | null };
-const m$ = (c: number) => (c % 100 ? `$${(c / 100).toFixed(2)}` : `$${(c / 100).toLocaleString("en-US")}`);
+import { usd as m$ } from "./dinero-comun";
 const hT = (m: number) => `${Math.floor(m / 60) % 12 || 12}${m % 60 ? `:${String(m % 60).padStart(2, "0")}` : ""} ${m < 720 ? "AM" : "PM"}`;
 export function precioTrans(s: SvcTrans, es: boolean): { l: string; s: string } {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);

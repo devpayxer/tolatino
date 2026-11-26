@@ -1,7 +1,7 @@
 /* Layaway (4r): las cuentas y el acuerdo por escrito, iguales en el teléfono y en el servidor (sin nada del servidor). Lo que la
    persona lee antes de aceptar sale de terminos(); lo que se guarda, también. */
 type Bi = { es: string; en: string };
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as money } from "./dinero-comun";
 export type ReglaPlan = { pct: number; n: number; cada: number; cargo: number };
 export const VERSION_PLAN = "lay-v1";
 export const DIAS_PARA_CANCELAR = 14;

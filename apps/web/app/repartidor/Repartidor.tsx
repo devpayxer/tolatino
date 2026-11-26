@@ -26,7 +26,7 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
 type Tab = "inicio" | "pedidos" | "ganancias" | "perfil";
 type Gan = { dia: string; entregas: number; propinas: number; efectivo: number };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const hora = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const hoyNY = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 const VEH: [string, string, string][] = [["pie", "A pie", "On foot"], ["bici", "Bici", "Bike"], ["moto", "Moto", "Motorbike"], ["auto", "Auto", "Car"], ["camioneta", "Camioneta", "Van"]];

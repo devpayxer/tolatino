@@ -237,3 +237,5 @@ export function AnfitrionesAdmin({ d, edita, arriba }: { d: AnfAdm & { noticias:
     </div>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

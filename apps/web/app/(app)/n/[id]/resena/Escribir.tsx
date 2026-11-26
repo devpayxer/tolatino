@@ -20,6 +20,7 @@ const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 import { PII, PRIVADO } from "@/lib/resenas-filtro";
 import { fotoFondo, Foto } from "@tolatino/ui";
+import { usd } from "@/lib/dinero-comun";
 type Foto = { id: string; url: string };
 
 export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: boolean; nombre: string; estrellas: number }) {
@@ -177,7 +178,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
     ...(isOrd ? [] : [{ k: E2("CUÁNTO ESPERASTE", "HOW LONG YOU WAITED"), key: "wait" as const, opts: [["a", E2("Menos de 15 min", "Under 15 min")], ["b", E2("15 a 30 min", "15 to 30 min")], ["c", E2("Más de 30 min", "Over 30 min")]] as [string, string][] }]),
     { k: E2("PRECIO", "PRICE"), key: "val", opts: [[1, E2("Vale lo que cuesta", "Worth it")], [0, E2("Más o menos", "So-so")], [-1, E2("Caro para lo que es", "Pricey for what it is")]] },
   ];
-  const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+  const dinero = usd;
   // «Tu visita · dato de la visita» (Hogar) / «Tu cita · dato de la cita» (Auto): no se edita.
   const Hs = d.hechos, svcV = d.cita?.svc ? [{ k: E2("SERVICIO", "SERVICE"), v: es ? d.cita.svc : d.cita.svcEn || d.cita.svc, fg: "var(--tl-ink)" }] : [];
   const conV = d.cita?.quien ? [{ k: E2("CON", "WITH"), v: d.cita.quien, fg: "var(--tl-ink)" }] : [];

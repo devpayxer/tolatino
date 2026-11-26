@@ -74,7 +74,7 @@ export const W2Q: Record<string, QuiereCita> = { reponer: "corr", devolver: "rev
 export type ResC = { ok: true; numero?: string; mensaje?: Bi } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResC => ({ ok: false, msg: { es, en } });
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
-const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+import { usd as money } from "./dinero-comun";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 /* 4if · Una visita o prueba de manejo «pasó» para la ayuda cuando el negocio marcó Pasó (o No vino: la persona puede decir que no llegaron) o
    cuando, confirmada, ya llegó su hora: lo de «me cobraron por ver» pasa en la puerta, antes de que nadie marque nada. */

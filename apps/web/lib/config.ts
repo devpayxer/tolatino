@@ -194,3 +194,5 @@ export async function cambiarConfig(actor: string, k: string, valorTxt: string |
   if (r.ok) olvidarConfig();
   return r;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

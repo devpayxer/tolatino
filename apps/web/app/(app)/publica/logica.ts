@@ -3,6 +3,7 @@
    Lo que el prototipo fijaba (hoy = jueves 12:30) aquí es la hora real de la ciudad. */
 import { TLOnbFlow as Fl, TLOnbNeg as X } from "@/lib/onb/datos";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { usd } from "@/lib/dinero-comun";
 
 export const SEQ = ["B1", "C1", "D1", "E1", "F1"] as const;
 export type Paso = "A1" | (typeof SEQ)[number] | "H1";
@@ -99,7 +100,8 @@ export function rows(d: Borrador): Fila[] {
   return Fl.list(d.cat, d.subs, d.own).map((it: Fila) => { const s = S[it.key]; return { ...it, on: s && s.on != null ? !!s.on : it.on, p: s && s.p != null ? Number(s.p) || 0 : it.p, praw: s && typeof s.p === "string" ? s.p : null, flag: !!(s && s.flag), alt: s && s.alt }; });
 }
 export const items = (d: Borrador): Fila[] => rows(d).filter((r) => r.on).concat((d.cust || []).map((c, i) => ({ key: "c:" + i, n: [c.n, c.n] as [string, string], u: c.u || "fijo", dur: Number(c.dur) || 0, p: Number(c.p) || 0, lo: 0, hi: 0, on: true, cust: 1 as const })));
-export const money = (p: number | string) => { const n = Number(p) || 0; return "$" + (n % 1 ? n.toFixed(2) : n.toLocaleString("en-US")); };
+// 26 nov · p está en DÓLARES (lo que se teclea en Publica); usd recibe centavos: × 100 explícito.
+export const money = (p: number | string) => usd(Math.round((Number(p) || 0) * 100));
 export function priceL(it: Fila, es: boolean) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b), p = money(it.p);
   return ({ gratis: E2("Gratis", "Free"), desde: E2("Desde ", "From ") + p, lb: p + "/lb", hora: p + E2("/hora", "/hr"), visita: E2("Visita ", "Visit ") + p, mes: p + E2("/mes", "/mo"), semana: p + E2("/semana", "/wk"), dia: p + E2("/día", "/day"), clase: p + E2("/clase", "/class"), asiento: p + E2("/asiento", "/seat"), don: E2("Donativo ", "Donation ") + p } as Record<string, string>)[it.u] || p;

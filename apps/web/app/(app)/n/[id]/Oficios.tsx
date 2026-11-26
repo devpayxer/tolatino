@@ -16,7 +16,7 @@ import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "Chip" | "OptionGroup" | "AddOnRow" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OptionGroup, AddOnRow, DepositNote } = UI as unknown as Record<N, ComponentType<any>>;
-const dinero = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
+import { usd as dinero } from "@/lib/dinero-comun";
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";

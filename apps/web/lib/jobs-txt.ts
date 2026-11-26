@@ -5,7 +5,7 @@ export const PROHIBIDO = /\b(cv|curr[ií]cul\w*|resume|ssn|seguro social|social 
 const DL_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"], DL_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 export const DCORTO = (es: boolean) => (es ? ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
 export const DLETRA = (es: boolean) => (es ? ["L", "M", "M", "J", "V", "S", "D"] : ["M", "T", "W", "T", "F", "S", "S"]);
-const d$ = (c: number) => `$${Number.isInteger(c / 100) ? c / 100 : (c / 100).toFixed(2)}`;
+import { usd as d$ } from "./dinero-comun";
 export const pagoL = (from: number, to: number | null, es: boolean) => `${d$(from)}${to && to > from ? `–${d$(to).slice(1)}` : ""}${es ? "/hora" : "/hr"}`;
 export const pagoLargo = (from: number, to: number | null, tips: boolean, es: boolean) => `${d$(from)}${to && to > from ? `–${d$(to).slice(1)}` : ""}${es ? " por hora" : " an hour"}${tips ? (es ? " + propinas" : " + tips") : ""}`;
 /* «Martes a domingo» si son seguidos (3 o más); si no, «lun · mié · vie». */

@@ -41,7 +41,7 @@ const QUE: Record<TipoAlerta, Bi> = {
   hold_stuck: { es: "una retención atascada (no se soltó o no se renovó)", en: "a stuck hold (not released or not renewed)" },
   extra_refund_stuck: { es: "devolver lo que Stripe hizo de más", en: "refunding what Stripe made in excess" },
 };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 
 /* Anota la alerta (una vez) y, si es nueva, avisa al equipo de dinero. */
 export async function alertar(kind: TipoAlerta, sujeto: string, x: { monto: number; detalle: Bi; negocio?: string | null; ciudad?: string | null }): Promise<boolean> {

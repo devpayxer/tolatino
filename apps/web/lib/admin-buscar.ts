@@ -49,3 +49,5 @@ export async function buscarTodo(s: Staff, entrada: string): Promise<Resultados>
     secciones: grupos.flatMap((g) => g.items).filter((i) => i.href && i.label.toLowerCase().includes(ql)).slice(0, MAX).map((i) => ({ t: i.label, s: "Sección", href: i.href!, icon: i.icon })),
   };
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

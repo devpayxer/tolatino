@@ -21,7 +21,7 @@ type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "Payment
 const { Icon, Button, StepHeader, DateStrip, TimeSlots, PaymentSummary } = UI as unknown as Record<N, ComponentType<any>>;
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
-const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as dinero } from "@/lib/dinero-comun";
 const DOW = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
 const hL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
 

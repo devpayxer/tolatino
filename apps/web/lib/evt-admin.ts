@@ -333,3 +333,5 @@ export async function generoGuardar(s: Staff, key: string | null, p: { es: strin
 }
 
 export const dinero = usd;
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

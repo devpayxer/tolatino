@@ -22,7 +22,7 @@ const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); 
 const hasta = async (f, ms = 10000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await f()) return true; } catch { /* sigue */ } await new Promise((r) => setTimeout(r, 250)); } return false; };
 const MAR = "(select id from users where phone = '+15705550122')";
 const item = (biz, nm) => sql(`select id from items where business_id = '${biz}' and name->>'es' = '${nm}' and removed_at is null and status = 'live' limit 1`);
-const dinero = (c) => `$${(c / 100).toFixed(2)}`, corto = (c) => dinero(c).replace(/\.00$/, ''); // el mercado escribe los centavos; la tienda y Novedades, no si son .00
+const dinero = require('../lib/usd.cjs'), corto = dinero; // 26 nov · UNA regla para todo (lib/dinero-comun › usd): sin centavos si son .00
 const post = (t) => sql(`select id from business_posts where title = '${t}' and status <> 'removed' order by id desc limit 1`);
 
 (async () => {

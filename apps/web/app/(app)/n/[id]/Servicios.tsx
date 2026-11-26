@@ -16,7 +16,8 @@ type N = "Icon" | "Button" | "Tag" | "OptionGroup" | "AddOnRow" | "StaffPicker" 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Tag, OptionGroup, AddOnRow, StaffPicker, DepositNote, ReservationCard } = UI as unknown as Record<N, ComponentType<any>>;
 
-export const dinero = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+import { usd as __usd_dinero } from "@/lib/dinero-comun";
+export const dinero = __usd_dinero;
 export const durL = (m: number) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`);
 export const horaL = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const DS = { es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };

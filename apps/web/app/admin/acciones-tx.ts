@@ -82,3 +82,5 @@ export async function verRutaTx(numero: string, motivo: string): Promise<ResAdm 
   if (!r.ok) return { ok: false, mensaje: r.msg };
   return { ok: true, mensaje: "Recorrido abierto. Quedó en la auditoría con tu motivo.", ruta: r.r };
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

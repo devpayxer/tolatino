@@ -80,3 +80,5 @@ export function BoletoAdmin({ b, puede, escaneos = [], pases = [] }: { b: Boleto
   ];
   return <div style={{ maxWidth: 760, display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={bloques} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

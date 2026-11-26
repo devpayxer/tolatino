@@ -200,3 +200,5 @@ export function Planes({ d, ing, imp = null, conc = null, tab, est, editar, apro
     </div>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

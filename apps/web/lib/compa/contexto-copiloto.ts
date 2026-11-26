@@ -8,6 +8,7 @@ import { TEMAS, type Tema } from "../soporte-comun";
 import { casoEquipo, money } from "../soporte-equipo";
 import type { Lang } from "./modelo";
 import { tapar, TAPADO } from "./tapar";
+import { usd } from "../dinero-comun";
 
 /* 7g · Lo que El Compa sabe de un caso para el COPILOTO del equipo (fase7-compa.md §3 «Qué datos ve» · Copiloto; guardianes compaSoloSusDatos,
    compaSinDatosSensibles y copilotoSoloBorrador). Recibe a la persona del equipo de la SESIÓN (Staff, con sus permisos de la matriz y sus
@@ -139,7 +140,6 @@ async function contextoAyuda(s: Staff, id: string): Promise<ContextoCopiloto | n
   const lang: Lang = u?.lang === "en" ? "en" : "es", nombre = paraModelo(String(h.quien ?? "").split(" ")[0] ?? "", 40);
   const negocio = k.negocio?.name ? paraModelo(k.negocio.name, 80) : "";
   const tipo = KIND[h.k] ?? { es: "operación", en: "transaction" }, numero = `${/^\d/.test(h.num) ? "#" : ""}${h.num}`;
-  const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
   const quePaso = h.k === "order" ? ORDEN_MOT[h.reason] ?? h.reason : motivoAyuda(h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub)[0];
   const quiere = h.k === "order" ? ORDEN_Q[h.wants] ?? h.wants : quiereAyuda(h.wants)[0];
   const cuerpo = h.body ? paraModelo(h.body) : "", resp = h.reply ? paraModelo(h.reply) : "";

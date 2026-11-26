@@ -72,7 +72,7 @@ const rafaga = async (pg, t, signo, n) => { const b = await vis(pg.getByRole('bu
   await quieto(3000);
   ok(pierna() === p0 + 50, `y se queda: ${pierna()}¢`);
   const dice = await valor(m, 'Pierna de cerdo');
-  ok(await veo(async () => (await valor(m, 'Pierna de cerdo')) === `$${((p0 + 50) / 100).toFixed(2)}/lb`, 6000), `la pantalla dice el precio nuevo: ${dice}`);
+  ok(await veo(async () => (await valor(m, 'Pierna de cerdo')) === `${require('../lib/usd.cjs')(p0 + 50)}/lb`, 6000), `la pantalla dice el precio nuevo: ${dice}`);
   await m.screenshot({ path: OUT + 't9t-libra-m.png', fullPage: true });
 
   // ── Niños › Edades · la pareja Desde/Hasta: un toque en cada uno, alternados ──

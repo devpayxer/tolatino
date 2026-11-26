@@ -498,7 +498,7 @@ export type PedidoVista = {
   rep9n: { codigo: string | null; foto: string | null; mensajes: { t: string; at: string }[] } | null; // 9n · código del cliente, foto de la entrega, mensajes del repartidor
 };
 
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 export async function pedidoDe(userId: string, numero: string, lang: Lang): Promise<PedidoVista | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
   const es = lang === "es";

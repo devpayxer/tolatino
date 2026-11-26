@@ -20,7 +20,7 @@ type Bi = { es: string; en: string };
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: boolean; verificar?: import("./pagos/pasarela").Verificar };
 const no = (es: string, en: string, x: { tarjeta?: boolean } = {}): { ok: false; msg: Bi; tarjeta?: boolean } => ({ ok: false, msg: { es, en }, ...x });
 const NUM = /^C-\d{1,10}$/;
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as money } from "./dinero-comun";
 const ev = (c: Q, op: string, kind: string, actor: "user" | "member" | "system", actorId: string | null, note?: Bi) =>
   c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`, [op, kind, actor, actorId, note ? JSON.stringify(note) : null]);
 

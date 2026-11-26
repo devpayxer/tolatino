@@ -8,6 +8,7 @@ import { accesoPanel, type Acceso } from "@/lib/panel";
 import { cambiarPaso, guardarSeguimiento, type Paso } from "@/lib/pedidos";
 import { responderAyuda } from "@/lib/ayuda";
 import type { Res } from "./acciones";
+import { usd } from "@/lib/dinero-comun";
 
 /* Pedidos desde el panel (Panel v2 · Hoy, Clientes y Lo que vendes › Pedidos en línea). Responder y mover un pedido
    pide acceso a «Hoy y pedidos» (ord); los ajustes de Pedidos en línea, a «Lo que vendes» (cat). Cada paso queda en la
@@ -117,9 +118,9 @@ export async function entregaAjustes(id: string, p: EntregaIn): Promise<Res> {
   const ext = p.who === "external" && ["doordash", "uber_eats", "other"].includes(String(p.ext)) ? String(p.ext) : null;
   if (p.who === "external" && !ext) return no("Elige cuál app externa lleva tus pedidos.", "Pick which external app delivers your orders.");
   const nota = String(p.pkNote ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
-  const usd = (c: unknown) => (Number(c) ? `$${(Number(c) / 100).toFixed(0)}` : "—");
-  const L = (x: Record<string, unknown> | null) => x && { pickup: x.pickup ? "Sí" : "No", delivery: x.delivery ? "Sí" : "No", zona: `${x.zone_mi} mi`, envio: usd(x.fee_cents), gratis_desde: usd(x.free_over_cents),
-    minimo: usd(x.min_order_cents), camino: `${x.travel_min} min`, quien: x.who === "external" ? `App externa (${x.external_app})` : "Mi equipo", nota: x.nota ?? "" };
+  const usdN = (c: unknown) => (Number(c) ? usd(Number(c)) : "—");
+  const L = (x: Record<string, unknown> | null) => x && { pickup: x.pickup ? "Sí" : "No", delivery: x.delivery ? "Sí" : "No", zona: `${x.zone_mi} mi`, envio: usdN(x.fee_cents), gratis_desde: usdN(x.free_over_cents),
+    minimo: usdN(x.min_order_cents), camino: `${x.travel_min} min`, quien: x.who === "external" ? `App externa (${x.external_app})` : "Mi equipo", nota: x.nota ?? "" };
   await tx(async (c) => {
     const antes = (await c.query<Record<string, unknown>>(
       `select pickup, delivery, zone_mi, fee_cents, free_over_cents, min_order_cents, travel_min, last_delivery_min, who, external_app, pickup_note->>'es' as nota from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
@@ -171,7 +172,7 @@ export async function pedidoDevolver(id: string, numero: string, centavos: numbe
   const { devolverPago } = await import("@/lib/cobros");
   // La devolución va a Stripe; lo devuelto y esta auditoría entran juntos en la transacción que lo anota.
   const r = await devolverPago({ paymentId: p.id, centavos: Math.round(Number(centavos)), por: "business", actorId: a.yo.id, motivo: m, idem: `neg-${clave}` },
-    (c) => auditar(c, a, "pedido.devolver", { pedido: `#${numero}` }, { pedido: `#${numero}`, monto: `$${(Math.round(Number(centavos)) / 100).toFixed(2)}`, motivo: m.slice(0, 120) }));
+    (c) => auditar(c, a, "pedido.devolver", { pedido: `#${numero}` }, { pedido: `#${numero}`, monto: usd(Math.round(Number(centavos))), motivo: m.slice(0, 120) }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
   return { ok: true };
 }

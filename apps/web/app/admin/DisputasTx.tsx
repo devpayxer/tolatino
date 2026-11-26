@@ -38,3 +38,5 @@ export function DisputasTx({ d, f }: { d: DatosDisputas; f: FiltroDisp }) {
   ];
   return <PanelBloques bloques={B} h1={desk ? 26 : 22} />;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

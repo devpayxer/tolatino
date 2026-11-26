@@ -18,7 +18,7 @@ export async function sancionVigente(userId: string): Promise<"suspension" | "ba
 type Bi = { es: string; en: string };
 export type ResR = { ok: true } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResR => ({ ok: false, msg: { es, en } });
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 const ALFA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // sin 0/O ni 1/I/L: se dicta por teléfono sin confundir
 export const VEHICULOS = ["pie", "bici", "moto", "auto", "camioneta"] as const;
 export type Vehiculo = (typeof VEHICULOS)[number];

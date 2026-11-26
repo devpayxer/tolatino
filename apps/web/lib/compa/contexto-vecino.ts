@@ -3,6 +3,7 @@ import { valor } from "../config";
 import { db } from "../db";
 import type { Lang } from "./modelo";
 import { tapar } from "./tapar";
+import { usd } from "../dinero-comun";
 
 /* 7c · Lo que El Compa sabe de un VECINO (fase7-compa.md §3 «Qué datos ve»; guardianes compaSoloSusDatos y compaSinDatosSensibles). Recibe
    SOLO el id de la sesión y lee lo que esa persona ya ve en Mi cuenta: su nombre de pila, idioma, ciudad y sus últimas compa_contexto_ops
@@ -49,7 +50,7 @@ export async function contextoVecino(userId: string, lang: Lang): Promise<Contex
     const cancelableGratis = (KINDS_CANCELABLES as readonly string[]).includes(o.kind) && o.status === "pending" && !o.detail && (o.pago == null || o.pago === "held");
     refs.set(ref, { id: o.id, numero: o.number, kind: o.kind, status: o.status, detail: o.detail, pago: o.pago, negocio: o.negocio, negocioId: o.nid, cancelableGratis });
     return { ref, numero: o.number, tipo: (TIPO[o.kind] ?? [o.kind, o.kind])[es ? 0 : 1], negocio: tapar(o.negocio).texto, estado: (ESTADO[o.status] ?? [o.status, o.status])[es ? 0 : 1],
-      cuando: o.cuando, total: o.total > 0 ? `$${(o.total / 100).toFixed(2)}` : null, cancelable_gratis: cancelableGratis };
+      cuando: o.cuando, total: o.total > 0 ? usd(o.total) : null, cancelable_gratis: cancelableGratis };
   });
   const datos = { persona: { nombre: tapar(p?.nombre ?? "").texto || null, idioma: lang, ciudad: p?.ciudad_nombre ?? null }, operaciones: ops };
   return { datos, refs, texto: JSON.stringify(datos), confirmadas: O.rows.some((o) => o.status === "confirmed"), ciudad: p?.ciudad ?? "hzl", lang };

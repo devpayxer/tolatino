@@ -9,7 +9,7 @@ import { resumenRetail, type HerrMerc, type HerrTienda } from "@/lib/retail-comu
 import { mercAgotado, mercGuardar, mercPrecioLb, tallaExistencia, tiendaGuardar, type MercIn, type TiendaIn } from "./acciones-retail";
 import type { Ctx, Sec } from "./Panel";
 
-const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd } from "@/lib/dinero-comun";
 const lock = (t: string, s: string): Fila => ({ icon: "lock", ibg: "rgba(11,14,18,.06)", ifg: "var(--tl-ink)", t, s, compact: true });
 
 /* La fila de Lo que vendes. */

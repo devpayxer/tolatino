@@ -13,7 +13,7 @@ import { tagPed } from "./pedidos/Pedidos";
 import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as money } from "@/lib/dinero-comun";
 
 export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sanciones, borrar, com, soporte }: {
   es: boolean; yo: Yo; r: Resumen; dirs: number; ciudad: string | null; nick: string | null; nombre: string; negocio: { id: string; name: string } | null;

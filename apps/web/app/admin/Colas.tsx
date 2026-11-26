@@ -693,3 +693,5 @@ export function Colas({ casos, hay = casos.length, pag = 1, porPagina = 50, cont
     </>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

@@ -19,7 +19,7 @@ type N = "Icon" | "Button";
 const { Icon, Button, Chip, MenuTile, MenuItemRow, OrderBar } = UI as unknown as Record<N | "Chip" | "MenuTile" | "MenuItemRow" | "OrderBar", ComponentType<any>>;
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const QTY: Record<ProdMerc["k"], number[]> = { peso: [1, 2, 3, 5, 10], unid: [1, 2, 3, 6, 12], plato: [1, 2, 3, 4] };
 

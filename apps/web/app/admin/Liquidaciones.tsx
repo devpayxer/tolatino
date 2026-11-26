@@ -63,3 +63,5 @@ export function Liquidaciones({ d, st, q, puede }: { d: LiqAdmin; st: string | n
       <Toast t={toast} desk={desk} />
     </div>);
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

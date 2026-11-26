@@ -208,7 +208,7 @@ async function tel() {
     // Una devolución parcial por otro camino mientras tanto: el cobro ya no alcanza para devolver lo de la fallida.
     const d = await cobros.devolverPago({ paymentId: O.p, centavos: 4000, por: 'admin', actorId: staffU, motivo: 'parcial 0209', idem: `p0209-${hex()}` });
     const r = await alertas.devolverOtraVez(S, a, 'Hablé con la persona.');
-    ok(d.ok && (await filaAlerta('refund_failed', F.rf))?.otraVez == null && !r.ok && /saldo|Puedes devolver hasta \$10\.00/.test(r.msg) && !(await otraDe(F.rf)) && (await pago(O.p)).dev === 4000,
+    ok(d.ok && (await filaAlerta('refund_failed', F.rf))?.otraVez == null && !r.ok && /saldo|Puedes devolver hasta \$10(?!\.\d)/.test(r.msg) && !(await otraDe(F.rf)) && (await pago(O.p)).dev === 4000,
       `con una devolución parcial previa, no se ofrece ni se deja: nunca más de lo cobrado menos lo devuelto (${d.ok ? '' : d.msg.es} · ${r.msg} · ${JSON.stringify(await pago(O.p))})`);
     const directo = await falla(() => db.query(`insert into refunds (payment_id, amount_cents, initiated_by, actor_id, status, idem_key, retry_of) values ($1::bigint, 2000, 'admin', $2, 'pending', $3, $4::bigint)`, [O.p, staffU, `x-${hex()}`, F.rf]));
     ok(/devolucion_de_mas/.test(directo), `la base tampoco: ${directo.slice(0, 90)}`);

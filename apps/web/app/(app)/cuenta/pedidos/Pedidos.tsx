@@ -10,7 +10,7 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
 import type { ApartadoCuenta } from "@/lib/apartados";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 export const tagPed = (st: EstPed, mode: string, es: boolean): [string, string] => {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   return st === "curso" ? [E2("EN CURSO", "IN PROGRESS"), "action"] : st === "camino" ? [E2("EN CAMINO", "ON THE WAY"), "action"] : st === "hecho" ? (mode === "delivery" ? [E2("ENTREGADO", "DELIVERED"), "signal"] : [E2("RECOGIDO", "PICKED UP"), "signal"])

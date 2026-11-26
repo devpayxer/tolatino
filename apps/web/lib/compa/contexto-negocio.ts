@@ -3,6 +3,7 @@ import { db } from "../db";
 import { AGOTADO_SQL } from "../menu";
 import type { Lang } from "./modelo";
 import { tapar } from "./tapar";
+import { usd } from "../dinero-comun";
 
 /* 7f · Lo que El Compa sabe de un NEGOCIO para contestar a sus clientes (fase7-compa.md §3 «Qué datos ve · Respuesta automática»; prototipo
    datos/compa.js data()). Recibe SOLO el id del negocio y lee lo que su PÁGINA PÚBLICA ya muestra, de los temas que el dueño encendió:
@@ -87,7 +88,7 @@ export async function contextoNegocio(negocio: string, lang: Lang, temas: Tema[]
     }
   }
   const direccion = T.has("hours") ? (b.casa ? (b.radio ? (es ? `Va a domicilio hasta ${b.radio} millas de ${b.ciudad}.` : `Comes to you up to ${b.radio} miles from ${b.ciudad}.`) : null) : b.dir?.replace(/, ([A-Z][a-z]+) PA$/, ", $1, PA") ?? null) : null;
-  const items = (I?.rows ?? []).map((x) => ({ nombre: limpio(x.n?.[lang] || x.n?.es, 60), precio: x.cents != null ? `${x.desde ? (es ? "desde " : "from ") : ""}$${(x.cents / 100).toFixed(2)}` : "", agotado: !!x.ago })).filter((x) => x.nombre);
+  const items = (I?.rows ?? []).map((x) => ({ nombre: limpio(x.n?.[lang] || x.n?.es, 60), precio: x.cents != null ? `${x.desde ? (es ? "desde " : "from ") : ""}${usd(x.cents)}` : "", agotado: !!x.ago })).filter((x) => x.nombre);
   const comoPedir = T.has("how_to_order") ? (b.mods ?? []).filter((m) => PEDIR[m]).map((m) => PEDIR[m]![lang]) : [];
   const preguntas = (F?.rows ?? []).map((x) => ({ q: limpio(x.q, 200), a: limpio(x.a, 400) })).filter((x) => x.q && x.a);
   const notaT = limpio(nota?.[lang] || nota?.es, 400);

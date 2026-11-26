@@ -54,7 +54,7 @@ export async function registrarRetencion(c: Q, x: { opId: string; userId: string
 async function evento(c: Q, opId: string, kind: string, note: { es: string; en: string }) {
   await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, $2, 'system', $3::jsonb)`, [opId, kind, JSON.stringify(note)]);
 }
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 /* Cómo se nombra y a dónde lleva una operación en los avisos de dinero: pedido #1051 o cita C-4801. */
 const refDe = (kind: string, num: string) => kind === "appointment"
   ? { num, href: `/cita/${num}`, ref: ["appointment", num] as [string, string] }

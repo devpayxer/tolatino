@@ -154,7 +154,7 @@ const cuentas = (oc) => sql(`select (select count(*) from gateway_reviews where 
     await clic(a.getByRole('button', { name: 'Decidir', exact: true }));
     await a.getByText(/Decidido: ninguno vale/).first().waitFor({ timeout: 30000 });
     const msg2 = (await texto(a)).match(/Decidido: ninguno vale[^]*?auditoría\./)?.[0] ?? '';
-    ok(/la intención quedó fallida/.test(msg2) && /Se devuelven 2 \(\$298\.00\): 2 hechas/.test(msg2), `el mensaje: «${msg2}»`);
+    ok(/la intención quedó fallida/.test(msg2) && /Se devuelven 2 \(\$298\): 2 hechas/.test(msg2), `el mensaje: «${msg2}»`);
     await shot(a, 'ninguno');
     ok(revDe(L2.oc) === `ninguno||${stf}`, 'gateway_reviews: decisión «ninguno», sin id');
     ok(estadoDe(L2.oc) === 'failed|devuelto|', 'la intención quedó fallida (no hecha), «devuelto», sin cobro propio');

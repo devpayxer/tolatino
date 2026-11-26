@@ -69,6 +69,7 @@ import { HojaEntrar } from "../../HojaEntrar";
 import { VideoPortada } from "../../VideoNegocio";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
+import { usd } from "@/lib/dinero-comun";
 
 type N = "Icon" | "Button" | "IconButton" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard" | "SectionHeader" | "ServiceRow"
   | "Placeholder" | "ReviewCard" | "StaffPicker" | "DateStrip" | "TimeSlots" | "StepHeader" | "TotalBar" | "DepositNote" | "DepositOutcomes" | "Eyebrow"
@@ -186,7 +187,7 @@ export function FichaNueva({ f: f0, t, svc, menu, rsv, ofi, salud, prof, merc, f
     if (mn) return { tab: (d) => (d ? <MenuDesk mn={mn} unaColumna={false} pegaEn={CAB_DESK + NOMBRE_DESK + 76} /> : <MenuMovil mn={mn} card />), riel: <PedidoTarjeta mn={mn} />,
       barra: !mn.has ? (
         <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[calc(22px+env(safe-area-inset-bottom))] pt-3 backdrop-blur-[14px] lg:hidden">
-          <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Desde", "From")} ${(mn.m.desde / 100).toFixed(2)}</div><div className="mt-1 truncate font-mono text-[9px] font-bold tracking-[0.08em] text-open-text">{mn.etaCaps}</div></div>
+          <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Desde", "From")} {usd(mn.m.desde)}</div><div className="mt-1 truncate font-mono text-[9px] font-bold tracking-[0.08em] text-open-text">{mn.etaCaps}</div></div>
           <Button variant="primary" size="lg" onClick={() => setTab("cat")}>{E2("Ordenar", "Order")}</Button>
         </div>) : null,
       capas: <><MenuCapas mn={mn} nombre={f.nombre} />{entrar ? <HojaEntrar es={es} destino={`/n/${f.id}/pagar`} onClose={() => setEntrar(false)} /> : null}</>,

@@ -42,15 +42,15 @@ const COMIDA = 'sabor-dominicano', TIENDA = 'boutique-yaritza';
       propia = sql(`insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, price_was_cents, price_now_cents, audience, publish_at, created_at)
         values ('${COMIDA}', 'hzl', 'oferta', 'Mofongo a $10 (prueba fic008)', 'Prueba.', 'item', ${MOF}, ${BASE}, 1000, 'all', now(), now()) returning id`).split('\n')[0];
     }
-    ok(sql(`select oferta_precio(${MOF}, null)`) === '1000' && BASE > 1000, `precondición: el mofongo en oferta a $10.00 (en el menú, $${(BASE / 100).toFixed(2)})`);
+    ok(sql(`select oferta_precio(${MOF}, null)`) === '1000' && BASE > 1000, `precondición: el mofongo en oferta a $10.00 (en el menú, ${require('../lib/usd.cjs')(BASE)})`);
     await m.reload(); await m.locator('[data-screen-label="Ficha · menú"]').waitFor();
     const antes = m.locator('[data-precio-antes]');
     ok(await espera(async () => (await antes.count()) > 0), 'el plato en oferta muestra el precio de antes');
     const txts = await antes.allInnerTexts();
-    ok(txts.every((x) => x === `$${(BASE / 100).toFixed(2)}`), `el de antes es el precio de siempre del menú, nunca otro número (${[...new Set(txts)].join(', ')})`);
+    ok(txts.every((x) => x === require("../lib/usd.cjs")(BASE)), `el de antes es el precio de siempre del menú, nunca otro número (${[...new Set(txts)].join(', ')})`);
     ok(await antes.first().evaluate((el) => getComputedStyle(el.parentElement).textDecorationLine.includes('line-through')), 'va tachado');
     ok(await antes.first().evaluate((el) => (el.previousElementSibling?.textContent ?? '') === 'Antes '), 'el lector de pantalla oye «Antes»');
-    ok((await m.locator('[data-screen-label="Ficha · menú"]').getByText('$10.00').count()) > 0, 'y el precio que se cobra es el de la oferta ($10.00)');
+    ok((await m.locator('[data-screen-label="Ficha · menú"]').getByText('$10', { exact: true }).count()) > 0, 'y el precio que se cobra es el de la oferta ($10)');
     await m.screenshot({ path: OUT + 'fic008-comida-oferta-390.png' });
     if (propia) sql(`update business_posts set status = 'removed' where id = ${propia}`);
     else {

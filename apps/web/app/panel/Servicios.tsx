@@ -25,7 +25,7 @@ import { filaHerramientaAutos, filaInventario } from "./Autos";
 import { DONATIVO, FE_DE_ITEM, LINEA_FE, LINEA_FUN } from "@/lib/fe-comun";
 import { hNoche } from "@/lib/noche-comun";
 
-const fp = (cents: number) => { const p = (Number(cents) || 0) / 100; return "$" + (p % 1 ? p.toFixed(2) : String(p)); };
+import { usd as fp } from "@/lib/dinero-comun";
 const durL = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 const minPositivo = (L: number[]) => { const P = L.filter((v) => v > 0); return P.length ? Math.min(...P) : 0; };
 const first = (n: string) => n.split(" ")[0] ?? n;

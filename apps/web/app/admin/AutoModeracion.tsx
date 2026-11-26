@@ -161,3 +161,5 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
   ];
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

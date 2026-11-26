@@ -54,7 +54,7 @@ const MARISOL = "(select id from users where phone='+15705550122')";
   await hoja.getByText('Aguacate', { exact: true }).click();
   await hoja.locator('textarea').fill('Sin cebolla');
   await shot(m, 'b5-plato-elegido-m.png');
-  const cta = await hoja.getByText(/^Agregar · /).innerText(); ok(cta.includes('$' + ((1200 + caldoC + 250) / 100).toFixed(2)), 'precio con opciones: ' + cta.trim());
+  const cta = await hoja.getByText(/^Agregar · /).innerText(); ok(cta.includes(require('../lib/usd.cjs')(1200 + caldoC + 250)), 'precio con opciones: ' + cta.trim());
   await hoja.getByText(/^Agregar · /).click();
   await m.getByText('Agregado: Mofongo de chicharrón').waitFor();
   // + otra vez → pregunta «otra igual o con cambios»

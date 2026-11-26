@@ -62,7 +62,7 @@ export async function gastoDelMes(): Promise<GastoMes> {
     porNivel: n.rows.map((r) => ({ uso: r.uso, costo: Number(r.costo) / 10000, llamadas: r.llamadas, alTope: r.al_tope, aReglas: r.a_reglas })) };
 }
 
-const dinero = (centavos: number) => `$${(centavos / 100).toFixed(2)}`;
+import { usd as dinero } from "../dinero-comun";
 async function avisarTope(cual: "pct" | "cap") {
   const g = await gastoDelMes();
   const { avisar } = await import("../avisos");

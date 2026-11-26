@@ -18,7 +18,7 @@ import { fotoFondo } from "@tolatino/ui";
 type N = "Button" | "Tag" | "Chip" | "Icon" | "OptionGroup" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Button, Tag, Chip, Icon, OptionGroup, DepositNote, ReservationCard, MenuTile, MenuItemRow, OrderBar } = UI as unknown as Record<N | "MenuTile" | "MenuItemRow" | "OrderBar", ComponentType<any>>;
-const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as dinero } from "@/lib/dinero-comun";
 export type Carrito = { item: string; qty: number; v?: string }[];
 export const llaveLinea = (l: { item: string; v?: string }) => `${l.item}:${l.v ?? ""}`;
 export const claveCarrito = (negocio: string) => `tl-apartado-${negocio}`;

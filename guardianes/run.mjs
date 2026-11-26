@@ -18759,6 +18759,40 @@ const guardianes = {
       } catch (e) { falla(G, DC, 0, `no pude ejecutar dinero-comun.ts: ${String(e?.message ?? e).slice(0, 120)}`); } }
   },
 
+  /* 26 nov (LAUNCH «promete antes de actuar» d/e, lo que quedaba) · dineroConUsd: el dinero que ve una persona sale de lib/dinero-comun › usd («$45», «$52.50»). Un «$» seguido
+     de un decimal fijo (`$${(c / 100).toFixed(2)}`, "$" + x.toFixed(2), `$${…toLocaleString("en-US", { minimumFractionDigits: 2 …`, o «$» suelto en JSX con toFixed(2)) deja «$45.00»
+     donde otras pantallas dicen «$45». En todo apps/web (pantallas, panel, avisos, correos, lib/) falla, salvo con la marca explícita «dinero fijo: …» (comentario de bloque) en la misma línea
+     o en cualquier parte del archivo (las cifras de contabilidad del Super Admin, los CSV). Los valores de un input, lo que se manda a Stripe y las auditorías sin «$» no llevan «$»
+     delante y no entran. Al revés: alrevesDineroDiceLoQuePaso. */
+  dineroConUsd() {
+    const G = "dineroConUsd";
+    const MARCA = /\/\*\s*dinero fijo:[^*]*\*\//;
+    const MALAS = [
+      [/\$\$\{[^\n]*\.toFixed\(2\)/g, "«$${…toFixed(2)}»"],
+      [/["'`]\$["'`]\s*\+[^\n]*\.toFixed\(2\)/g, "«\"$\" + …toFixed(2)»"],
+      [/\$\$\{[^\n]*minimumFractionDigits:\s*2/g, "«$${…toLocaleString(…, { minimumFractionDigits: 2 })}»"],
+      [/(?:>|\}\s)\$\{[^{}\n]*\/ 100\)\.toFixed\(2\)\}/g, "un «$» suelto en JSX con {…toFixed(2)}"],
+    ];
+    let marcados = 0, mirados = 0;
+    for (const f of archivos.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && !x.includes("/node_modules/"))) {
+      const crudo = readFileSync(f, "utf8");
+      if (!crudo.includes("toFixed(2)") && !crudo.includes("minimumFractionDigits")) continue;
+      mirados++;
+      const t = sinComent(f), lineasCrudas = crudo.split("\n"), fijo = MARCA.test(crudo);
+      let usado = false;
+      for (const [re, que] of MALAS) {
+        for (const m of t.matchAll(re)) {
+          const ln = t.slice(0, m.index).split("\n").length;
+          if (fijo || MARCA.test(lineasCrudas[ln - 1] ?? "")) { usado = true; continue; }
+          falla(G, f, ln, `${que} deja «$45.00» donde el resto dice «$45»: usa lib/dinero-comun › usd (recibe CENTAVOS; si tienes dólares, × 100 explícito). Si es una cifra fija a propósito (CSV, contabilidad del Super Admin), márcala con /* dinero fijo: <por qué> */`);
+        }
+      }
+      if (usado) marcados++;
+    }
+    if (marcados < 20) falla(G, "apps/web", 0, `esperaba al menos 20 archivos con dinero fijo marcado (Super Admin); hallé ${marcados}: ¿se quitó la marca o la regla dejó de mirar?`);
+    if (mirados < 20) falla(G, "apps/web", 0, `esperaba mirar al menos 20 archivos con toFixed(2) o minimumFractionDigits; vi ${mirados}`);
+  },
+
 };
 
 /* AO 5b · lib/noticias-comun.ts real (no importa nada), para correr las tablas de casos de los guardianes de las noticias. */

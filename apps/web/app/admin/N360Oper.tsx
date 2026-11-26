@@ -62,3 +62,5 @@ export function N360Oper({ o, id, grupo, desk }: { o: Oper360; id: string; grupo
     </>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

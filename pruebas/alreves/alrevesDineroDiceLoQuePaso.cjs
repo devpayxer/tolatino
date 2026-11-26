@@ -1,4 +1,4 @@
-// Prueba al revés de los guardianes liberarMira, capturaTardeAlerta, avisoNegUnIdioma (también el aviso a quien lo recibe: avisarCliente) y dineroUnDecimal
+// Prueba al revés de los guardianes liberarMira, capturaTardeAlerta, avisoNegUnIdioma (también el aviso a quien lo recibe: avisarCliente), dineroUnDecimal y dineroConUsd
 // (25 nov, LAUNCH «el dinero dice lo que pasó», letras e y g, y «promete antes de actuar» d/e):
 // soltar una retención que Stripe ya había cobrado no la deja «released» (pasarela.liberar mira el intento; el libro la anota cobrada y el equipo de dinero
 // tiene la alerta cobrada:, que no se cierra sola); la captura tarde a la que Stripe no contestó alerta captura: como la que lanza; y el aviso al negocio no
@@ -253,6 +253,16 @@ const casos = [
     "coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,\n            o.details->>'dia'"], ['apps/web/lib/apartados.ts', '`select o.id::text as op, o.user_id::text as uid', '`select /* pantalla */ o.id::text as op, o.user_id::text as uid']]],
   ["avisoNegUnIdioma", "la marca «pantalla» dentro de un ayudante de SQL (boletos-despues › QUIEN)", 'apps/web/lib/boletos-despues.ts', "const QUIEN = (u: string) => `coalesce(", "const QUIEN = (u: string) => `/* pantalla */ coalesce("],
   ["avisoNegUnIdioma", "una consulta que usa el ayudante QUIEN sin su marca (boletos-despues › boletosOrdenPanel)", 'apps/web/lib/boletos-despues.ts', '`select /* pantalla */ t.code, coalesce(tt.name', '`select t.code, coalesce(tt.name'],
+  // (26 nov, LAUNCH «lo que quedaba») dineroConUsd: un «$» seguido de un decimal fijo en lo que ve una persona (pantallas, panel, avisos, correos); solo se salva con la marca «dinero fijo: …».
+  ["dineroConUsd", "la pantalla Pedido de comida (lib/pedir.ts) vuelve a «$15.00»", 'apps/web/lib/pedir.ts', 'import { usd as money } from "./dinero-comun";', 'const money = (c: number) => `$${(c / 100).toFixed(2)}`;'],
+  ["dineroConUsd", "un aviso del servidor (lib/cobros.ts) con toFixed(2)", 'apps/web/lib/cobros.ts', 'import { usd as money } from "./dinero-comun";', 'const money = (c: number) => `$${(c / 100).toFixed(2)}`;'],
+  ["dineroConUsd", "toFixed(2).replace(/\\.00$/) a mano (lib/planes.ts)", 'apps/web/lib/planes.ts', 'import { usd as money } from "./dinero-comun";', 'const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\\.00$/, "")}`;'],
+  ["dineroConUsd", "«$» + toFixed(2) (Publica › money, en dólares)", 'apps/web/app/(app)/publica/logica.ts', 'export const money = (p: number | string) => usd(Math.round((Number(p) || 0) * 100));', 'export const money = (p: number | string) => { const n = Number(p) || 0; return "$" + (n % 1 ? n.toFixed(2) : n.toLocaleString("en-US")); };'],
+  ["dineroConUsd", "toLocaleString con minimumFractionDigits: 2 (cuenta › pagos)", 'apps/web/app/(app)/cuenta/pagos/Pagos.tsx', 'import { usd } from "@/lib/dinero-comun";', 'const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;'],
+  ["dineroConUsd", "un «$» suelto en JSX con toFixed(2) (Ficha › Desde)", 'apps/web/app/(app)/n/[id]/Ficha.tsx', '"From"} {usd(mn.m.desde)}</div>', '"From"} ${(mn.m.desde / 100).toFixed(2)}</div>'],
+  ["dineroConUsd", "la ficha con «>$» pegado en JSX", 'apps/web/app/(app)/n/[id]/Ficha.tsx', '{usd(it.cents)}</span>', '${(it.cents / 100).toFixed(2)}</span>'],
+  ["dineroConUsd", "el panel (Estimado) con su propio formateador", 'apps/web/app/panel/Estimado.tsx', 'import { usd as money } from "@/lib/dinero-comun";', 'const money = (c: number) => `$${(c / 100).toFixed(2)}`;'],
+  ["dineroConUsd", "el Super Admin sin su marca «dinero fijo»", 'apps/web/app/admin/Planes.tsx', '/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */', ''],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

@@ -10,6 +10,7 @@ import type { Lang } from "@/lib/idioma";
 import { titulosLegales, type ClaveLegal } from "@/lib/legal";
 import { PRECIO_PRO, PRUEBA_DIAS } from "@/lib/plan";
 import { FIJAS } from "@/lib/textos-fijas";
+import { usd } from "@/lib/dinero-comun";
 
 /* 9h · Lo que necesita la landing (APP-LANDING-PRE): sus textos del CMS (la base primero, el código de respaldo), las dos líneas fijas de §1c, el lugar en
    la lista de quien ya entró, las cifras sin personas, el precio de Pro del plan y las páginas legales del pie. */
@@ -30,7 +31,7 @@ export async function datosLanding(lang: Lang) {
   return {
     t, lang, fijas: { landing: FIJAS[lang].landing, landingTel: FIJAS[lang].landingTel }, lugar, conSesion: !!u, total: cifras.total,
     abre: fecha.visible && fecha.fecha ? new Intl.DateTimeFormat(lang === "es" ? "es-US" : "en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${fecha.fecha}T12:00:00Z`)) : null,
-    precio: `$${PRECIO_PRO.toFixed(2)}`, dias: PRUEBA_DIAS, metaNegocios: cfg.fundadores_negocios, url: `${BASE_URL()}/acceso`,
+    precio: usd(Math.round(PRECIO_PRO * 100)) /* PRECIO_PRO está en dólares: × 100 explícito */, dias: PRUEBA_DIAS, metaNegocios: cfg.fundadores_negocios, url: `${BASE_URL()}/acceso`,
     paginas: titulos.map((x) => ({ k: x.key, t: x.title[lang], g: GRUPO[x.key] })),
   };
 }

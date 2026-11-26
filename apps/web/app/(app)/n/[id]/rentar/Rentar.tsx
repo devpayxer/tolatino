@@ -17,7 +17,7 @@ type N = "Icon" | "Button" | "Chip";
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";
-const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as dinero } from "@/lib/dinero-comun";
 const DIAS = [1, 2, 3, 7] as const;
 const costo = (p: number, d: number) => (d >= 7 ? p * 5 : p * d);
 const DL = { es: ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };

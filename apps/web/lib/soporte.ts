@@ -6,6 +6,7 @@ import { valores } from "./config";
 import { hrefAyuda } from "./ayuda-cita";
 import { db, tx } from "./db";
 import { CON_OPERACION, TEMAS, TEMAS_NEGOCIO, TEMAS_VECINO, horarioEquipo, type EstadoVecino, type Tema } from "./soporte-comun";
+import { usd } from "./dinero-comun";
 
 /* 7b · Soporte del lado de la persona (fase7-compa.md §4 7b; diseño «To'Latino Soporte.dc.html», APP-SOPORTE). Un caso es de quien lo abrió;
    uno abierto desde el panel de un negocio lo ve también el dueño de ese negocio (y nadie más del negocio). TODO lo que llega aquí trae el
@@ -90,7 +91,7 @@ async function operaciones(userId: string): Promise<OpSop[]> {
     if (KINDS.pedido!.includes(x.k)) tema.push("pedido");
     if (KINDS.cita!.includes(x.k)) tema.push("cita");
     if (x.pagado) tema.push("pago");
-    return { num: x.num, t: opLabel(x.k, x.num, x.biz), s: x.total ? `$${(x.total / 100).toFixed(2)}` : "", tema };
+    return { num: x.num, t: opLabel(x.k, x.num, x.biz), s: x.total ? usd(x.total) : "", tema };
   });
 }
 

@@ -14,6 +14,7 @@ import { horasDeConsulta, pedirConsulta } from "./acciones";
 import { uuid } from "@/lib/uuid";
 import { diasTxt } from "@/lib/plazo-txt";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { usd } from "@/lib/dinero-comun";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,7 +83,7 @@ export function Consulta({ sa, svcId, con0, seg0, notaDias, es, yo }: { sa: Salu
       <div><div className="flex items-center justify-between gap-2"><span className={K}>{E2("TU SEGURO", "YOUR INSURANCE")}</span><span className="font-mono text-[9px] font-bold tracking-[0.1em] text-pro-ink">{E2("OBLIGATORIO", "REQUIRED")}</span></div>
         <div role="radiogroup" aria-label={E2("Tu seguro", "Your insurance")} className="mt-2.5 flex flex-col gap-2">
           {sa.segs.map((x) => radio(segSel === x.id, nombreSeguro(x, sa.cat, es), [x.last4 ? `••• ${x.last4}` : "", PARA.find((z) => z[0] === x.para)?.[es ? 1 : 2] ?? ""].filter(Boolean).join(" · ").toUpperCase(), E2("EN TU CUENTA", "IN YOUR ACCOUNT"), () => setSegSel(x.id), x.id))}
-          {radio(segSel === "none", E2("No tengo seguro", "No insurance"), sa.h.sin ? E2(`CONSULTA SIN SEGURO ${`$${sa.h.cash / 100}`}`, `UNINSURED VISIT $${sa.h.cash / 100}`) : "", "", () => setSegSel("none"), "none")}
+          {radio(segSel === "none", E2("No tengo seguro", "No insurance"), sa.h.sin ? E2(`CONSULTA SIN SEGURO ${`${usd(sa.h.cash)}`}`, `UNINSURED VISIT ${usd(sa.h.cash)}`) : "", "", () => setSegSel("none"), "none")}
         </div>
         <div className="mt-2.5 flex">{yo ? <Button variant="secondary" size="md" icon="plus" onClick={() => v.setSegHoja(true)}>{sa.segs.length ? E2("Agregar otro seguro", "Add another insurance") : E2("Agrega tu seguro", "Add your insurance")}</Button>
           : <Button variant="secondary" size="md" icon="users" onClick={entrar}>{E2("Entra para usar tu seguro", "Sign in to use your insurance")}</Button>}</div>

@@ -16,7 +16,7 @@ import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
-const dinero = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+import { usd as dinero } from "@/lib/dinero-comun";
 export type PagoEst = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
 
 export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: boolean; pago: PagoEst; aviso: (t: string) => void }) {

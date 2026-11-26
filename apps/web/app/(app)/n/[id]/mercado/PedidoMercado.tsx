@@ -18,7 +18,7 @@ import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 const T17 = "font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.03em]";

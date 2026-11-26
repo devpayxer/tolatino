@@ -44,7 +44,7 @@
 //   (revisión de 90170a1) A medias con la marca: sin ninguna devolución todavía, la regla se aplica de verdad (UNA devolución); con la devolución de la llave
 //   ya fallida (renombrada «~fallida-»), ninguna fila nueva en refunds: se lee lo que pasó y la alerta lo dice.
 //   (revisión de 51a794d) La devolución que no se pudo ni anotar (refund_stuck cancelacion:vcx-, sin fila) en la regla y en su relectura: «no salió», sin
-//   pedir otra; la que el equipo ya devolvió a mano: «hecha», nunca «no salió» ni «$0.00». «completar» sin regla (la regla lanza): bajo el tope, nada;
+//   pedir otra; la que el equipo ya devolvió a mano: «hecha», nunca «no salió» ni «$0». «completar» sin regla (la regla lanza): bajo el tope, nada;
 //   al tope, «No se pudo completar» en su alerta cobrada:; con la cobrada: ya abierta, su alerta propia completar:; si esa no se anota, el tope vuelve
 //   atrás y la próxima pasada la anota. Las refund_stuck de la prueba también se cierran al final.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), la salida, los cobros y el simulador.
@@ -137,7 +137,7 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
     ok(sql(`select status from sim_intents where id = '${V1.pi}'`) === 'canceled' && pago(V1.num) === 'released|4500|0', `${V1.num}: la captura no salió y la retención se soltó (simulador cancelado, ${pago(V1.num)})`);
     ok(alertas(`captura:${V1.pid}`) === '1' && alertas(`cobrada:${V1.pid}`) === '0', `${V1.num}: UNA alerta hold_stuck captura:<cobro> y ninguna cobrada:`);
     const d1 = detalle(`captura:${V1.pid}`);
-    ok(d1.includes('Stripe no contestó a la captura tarde (red): no se sabe si salió') && d1.includes('Después la retención se soltó ($45.00)'), `la alerta dice lo que se sabe (${d1})`);
+    ok(d1.includes('Stripe no contestó a la captura tarde (red): no se sabe si salió') && d1.includes('Después la retención se soltó ($45)'), `la alerta dice lo que se sabe (${d1})`);
     ok(sql(`select details->>'cobroMitad' from operations where number = '${V1.num}'`) === '0', 'cobroMitad 0: no se cobró la mitad');
     const a1 = aviso(V1.num, 'viaje_cx');
     ok(a1.includes('No se cobró nada: la retención de $45 se suelta de tu tarjeta.') && !/Se cobró la mitad/.test(a1), `viaje_cx: «No se cobró nada», nunca «Se cobró la mitad» (${a1})`);
@@ -146,7 +146,7 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
     ok(pago(V2.num) === 'partially_refunded|4500|2250', `${V2.num}: el libro la dice cobrada (nunca 'released'): $45 cobrados, $22.50 devueltos (${pago(V2.num)})`);
     ok(alertas(`cobrada:${V2.pid}`) === '1' && alertas(`captura:${V2.pid}`) === '0' && alertas(`liberar:${V2.pid}`) === '0', `${V2.num}: UNA sola alerta, cobrada: (ni captura: ni liberar:)`);
     const d2 = detalle(`cobrada:${V2.pid}`);
-    ok(d2.includes('Stripe ya la había cobrado ($45.00) y la base no lo sabía') && d2.includes('Se aplicó la cancelación tarde: se quedó $22.50 y se devolvieron $22.50') && d2.includes('no devuelvas nada más'), `la alerta dice lo cobrado y la regla que se aplicó (${d2})`);
+    ok(d2.includes('Stripe ya la había cobrado ($45) y la base no lo sabía') && d2.includes('Se aplicó la cancelación tarde: se quedó $22.50 y se devolvieron $22.50') && d2.includes('no devuelvas nada más'), `la alerta dice lo cobrado y la regla que se aplicó (${d2})`);
     ok(sql(`select details->>'cobroMitad' from operations where number = '${V2.num}'`) === '2250', 'cobroMitad $22.50: la regla de la cancelación tarde siguió con lo cobrado');
     const a2 = aviso(V2.num, 'viaje_cx'), n2 = aviso(V2.num, 'biz_viaje_cx');
     ok(a2.includes('Se cobró la mitad: $22.50.') && a2.includes('Te devolvimos $22.50 a tu tarjeta') && !/No se cobró nada|se suelta/.test(a2), `viaje_cx: la mitad cobrada y el resto devuelto (${a2})`);
@@ -328,12 +328,12 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
     ok(pago(C.num) === 'captured|2500|0' && sql(`select pay_status from operations where id = ${C.op}`) === 'captured', `la que Stripe ya había cobrado queda cobrada con lo que se cobró ($25), nunca 'released' (${pago(C.num)})`);
     ok(sql(`select status from sim_intents where id = '${piC}'`) === 'succeeded', 'el simulador sigue cobrado (no se canceló lo cobrado)');
     ok(alertas(`cobrada:${pc}`) === '1' && alertas(`liberar:${pc}`) === '0' && detalle(`cobrada:${pc}`).includes('Revisa en Stripe si ese cobro correspondía'), 'UNA alerta hold_stuck cobrada:<cobro> (y ninguna liberar:)');
-    ok(sql(`select count(*) from operation_events where operation_id = ${C.op} and kind = 'payment_captured' and note->>'es' like 'No se pudo soltar la retención: Stripe ya había cobrado $25.00%'`) === '1', 'el historial dice lo que pasó');
+    ok(sql(`select count(*) from operation_events where operation_id = ${C.op} and kind = 'payment_captured' and note->>'es' like 'No se pudo soltar la retención: Stripe ya había cobrado $25%'`) === '1', 'el historial dice lo que pasó');
     ok(pago(X.num) === 'released|3000|0', `la que el simulador ya tenía cancelada: soltada (${pago(X.num)})`);
     ok(pago(T.num) === 'partially_refunded|3000|1500' && sql(`select details->>'cobroMitad' from operations where id = ${T.op}`) === '1500' && sql(`select refunded_cents from sim_intents where id = '${piT}'`) === '1500'
       && sql(`select count(*) from refunds where idem_key = 'vcx-${T.num}' and status = 'done' and amount_cents = 1500`) === '1', `viaje tarde ya cobrado, por el barrido: se queda la mitad y se devuelve el resto con la llave de la cancelación (${pago(T.num)})`);
-    ok(alertas(`cobrada:${pt}`) === '1' && detalle(`cobrada:${pt}`).includes('Se aplicó la cancelación tarde: se quedó $15.00 y se devolvieron $15.00'), 'su alerta dice la regla que se aplicó y lo devuelto');
-    ok(pago(E.num) === 'captured|10000|0' && sql(`select details->>'perdio' from operations where id = ${E.op}`) === 'true' && detalle(`cobrada:${pe}`).includes('Se aplicó la cancelación tarde: se quedó $100.00.'), 'evento privado tarde ya cobrado, por el barrido: el depósito se queda con el restaurante (perdio) y la alerta lo dice');
+    ok(alertas(`cobrada:${pt}`) === '1' && detalle(`cobrada:${pt}`).includes('Se aplicó la cancelación tarde: se quedó $15 y se devolvieron $15'), 'su alerta dice la regla que se aplicó y lo devuelto');
+    ok(pago(E.num) === 'captured|10000|0' && sql(`select details->>'perdio' from operations where id = ${E.op}`) === 'true' && detalle(`cobrada:${pe}`).includes('Se aplicó la cancelación tarde: se quedó $100.'), 'evento privado tarde ya cobrado, por el barrido: el depósito se queda con el restaurante (perdio) y la alerta lo dice');
     ok(pago(N.num) === 'held|3000|0' && sql(`select failure_code from payments where id = ${pn}`) === 'canceled' && alertas(`cobrar:${pn}`) === '1', 'el aceptado que Stripe ya no deja cobrar: sigue retenido con su código y UNA alerta cobrar:<cobro>');
     await cobros.repararPagos(BR);
     await alertasM.cerrarAlertasResueltas();
@@ -420,11 +420,11 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       await espera(() => pago(DV.num) === 'partially_refunded|3000|1500' && sql(`select count(*) from refunds where idem_key = 'vcx-${DV.num}' and status = 'done'`) === '1');
       ok(pago(DV.num) === 'partially_refunded|3000|1500' && det(DV.num, 'cobroMitad') === '1500' && sql(`select count(*) from refunds where idem_key = 'vcx-${DV.num}' and status = 'done' and amount_cents = 1500`) === '1',
         `el viaje cobrado sin su regla: se queda la mitad y se devuelve el resto con la llave de la cancelación (${pago(DV.num)})`);
-      ok(alertas(`cobrada:${DV.pid}`) === '1' && detalle(`cobrada:${DV.pid}`).includes('la cancelación tarde quedó cobrada ($30.00) sin aplicar su regla')
-        && ['Se aplicó la cancelación tarde: se quedó $15.00 y se devolvieron $15.00', 'Se aplicó la cancelación tarde: se quedó $15.00 y la devolución de $15.00 va en camino'].some((t) => detalle(`cobrada:${DV.pid}`).includes(t)),
+      ok(alertas(`cobrada:${DV.pid}`) === '1' && detalle(`cobrada:${DV.pid}`).includes('la cancelación tarde quedó cobrada ($30) sin aplicar su regla')
+        && ['Se aplicó la cancelación tarde: se quedó $15 y se devolvieron $15', 'Se aplicó la cancelación tarde: se quedó $15 y la devolución de $15 va en camino'].some((t) => detalle(`cobrada:${DV.pid}`).includes(t)),
         `UNA alerta cobrada: que dice lo que pasó y lo aplicado (${detalle(`cobrada:${DV.pid}`)})`);
       ok(unAviso(DV.num, 'viaje_cx', AV.filter((x) => x[1] === DV.num)), `y UN aviso con lo aplicado (${JSON.stringify(AV.filter((x) => x[1] === DV.num))} · reales ${cuantos(DV.num, 'viaje_cx')})`);
-      ok(pago(DE.num) === 'captured|10000|0' && det(DE.num, 'perdio') === 'true' && alertas(`cobrada:${DE.pid}`) === '1' && detalle(`cobrada:${DE.pid}`).includes('Se aplicó la cancelación tarde: se quedó $100.00')
+      ok(pago(DE.num) === 'captured|10000|0' && det(DE.num, 'perdio') === 'true' && alertas(`cobrada:${DE.pid}`) === '1' && detalle(`cobrada:${DE.pid}`).includes('Se aplicó la cancelación tarde: se quedó $100')
         && unAviso(DE.num, 'evp_cancelado', AV.filter((x) => x[1] === DE.num)), 'el evento privado cobrado sin su regla: el depósito se queda (perdio), su alerta y su aviso');
       ok(pago(DN.num) === 'captured|3000|0' && alertas(`cobrada:${DN.pid}`) === '0' && sql(`select count(*) from refunds where idem_key = 'vcx-${DN.num}'`) === '0', 'la recién cobrada (la cancelación en curso) no se toca');
       await cobros.barrerCobradasTarde({ negocio: BR });
@@ -496,7 +496,7 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       const avM3 = AV.filter((x) => x[1] === M3.num);
       ok(sql(`select count(*) from refunds where idem_key = 'vcx-${M3.num}'`) === '1' && pago(M3.num) === 'partially_refunded|3000|1500' && det(M3.num, 'cobroMitad') === '1500'
         && avM3.length === 1 && avM3[0][2].queda === 1500 && avM3[0][2].dev?.e === 'hecha' && det(M3.num, 'avisoCobro') === 'true'
-        && alertas(`cobrada:${M3.pid}`) === '1' && detalle(`cobrada:${M3.pid}`).includes('la cancelación tarde quedó a medias') && detalle(`cobrada:${M3.pid}`).includes('se quedó $15.00 y se devolvieron $15.00'),
+        && alertas(`cobrada:${M3.pid}`) === '1' && detalle(`cobrada:${M3.pid}`).includes('la cancelación tarde quedó a medias') && detalle(`cobrada:${M3.pid}`).includes('se quedó $15 y se devolvieron $15'),
         `a medias después de la regla: se completa (el aviso con lo aplicado y la alerta), sin otra devolución (${JSON.stringify(avM3.map((x) => x[2]))} · ${detalle(`cobrada:${M3.pid}`)})`);
       ok(alertas(`cobrada:${M0.pid}`) === '0' && !AV.some((x) => x[1] === M0.num) && det(M0.num, 'avisoCobro') === '', 'la misma sin la marca de la regla: no se toca (ni aviso ni alerta)');
       await cobros.barrerCobradasTarde({ negocio: BR });
@@ -512,24 +512,24 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       await cobros.barrerCobradasTarde({ negocio: BR });
       await espera(() => pago(MS.num) === 'partially_refunded|3000|1500');
       ok(sql(`select count(*) from refunds where payment_id = ${MS.pid}`) === '1' && sql(`select count(*) from refunds where idem_key = 'vcx-${MS.num}' and status = 'done' and amount_cents = 1500`) === '1' && pago(MS.num) === 'partially_refunded|3000|1500'
-        && detalle(`cobrada:${MS.pid}`).includes('quedó a medias') && detalle(`cobrada:${MS.pid}`).includes('Se completó.') && detalle(`cobrada:${MS.pid}`).includes('se devolvieron $15.00'),
+        && detalle(`cobrada:${MS.pid}`).includes('quedó a medias') && detalle(`cobrada:${MS.pid}`).includes('Se completó.') && detalle(`cobrada:${MS.pid}`).includes('se devolvieron $15'),
         `a medias sin ninguna devolución: la regla se aplica de verdad, UNA devolución (${pago(MS.num)} · ${detalle(`cobrada:${MS.pid}`)})`);
       const avMF = AV.filter((x) => x[1] === MF.num);
       ok(sql(`select count(*) from refunds where payment_id = ${MF.pid}`) === '1' && pago(MF.num) === 'captured|3000|0' && sql(`select refunded_cents from sim_intents where id = (select stripe_payment_intent from payments where id = ${MF.pid})`) === '0'
-        && detalle(`cobrada:${MF.pid}`).includes('y la devolución de $15.00 no salió (tiene su propia alerta)') && avMF.length === 1 && avMF[0][2].dev?.e === 'fallida',
+        && detalle(`cobrada:${MF.pid}`).includes('y la devolución de $15 no salió (tiene su propia alerta)') && avMF.length === 1 && avMF[0][2].dev?.e === 'fallida',
         `a medias con la devolución fallida: ninguna fila nueva en refunds ni devolución en Stripe; la alerta y el aviso dicen que no salió (${pago(MF.num)} · ${detalle(`cobrada:${MF.pid}`)})`);
       await cobros.barrerCobradasTarde({ negocio: BR });
       ok(sql(`select count(*) from refunds where payment_id in (${MS.pid}, ${MF.pid})`) === '2' && alertas(`cobrada:${MS.pid}`) === '1' && alertas(`cobrada:${MF.pid}`) === '1', 'otra pasada: ni otra devolución ni otra alerta');
 
       // (revisión de 51a794d) · La devolución de la llave que no se pudo ni anotar (refund_stuck cancelacion:vcx-<número>, sin fila en refunds): la regla
       // (soltar: reglaTardeConLoCobrado) y su relectura («completar»: reglaTardeLeida) la dicen «no salió» con lo que faltaba, sin pedir otra.
-      const atascar = (x) => alertasM.alertar('refund_stuck', `cancelacion:vcx-${x.num}`, { monto: 1500, negocio: BR, ciudad: 'hzl', detalle: { es: `${x.num}: la devolución de $15.00 no se pudo anotar (prueba din9x).`, en: `${x.num}: the $15.00 refund could not be recorded (din9x test).` } });
+      const atascar = (x) => alertasM.alertar('refund_stuck', `cancelacion:vcx-${x.num}`, { monto: 1500, negocio: BR, ciudad: 'hzl', detalle: { es: `${x.num}: la devolución de $15 no se pudo anotar (prueba din9x).`, en: `${x.num}: the $15 refund could not be recorded (din9x test).` } });
       const devueltoSim = (x) => sql(`select refunded_cents from sim_intents where id = (select stripe_payment_intent from payments where id = ${x.pid})`);
       const RS = tardeCobrada('trip', { retenido: true, detalles: '{"k":"asiento","cobroMitad":0}' });
       await atascar(RS);
       const sRS = await cobros.soltarRetencion(RS.op, cobros.SWEEP), avRS = AV.filter((x) => x[1] === RS.num);
       ok(sRS.e === 'cobrada' && sRS.regla?.queda === 1500 && sRS.regla?.dev?.e === 'fallida' && sRS.regla?.dev?.monto === 1500 && sql(`select count(*) from refunds where payment_id = ${RS.pid}`) === '0'
-        && pago(RS.num) === 'captured|3000|0' && devueltoSim(RS) === '0' && detalle(`cobrada:${RS.pid}`).includes('se quedó $15.00 y la devolución de $15.00 no salió (tiene su propia alerta)')
+        && pago(RS.num) === 'captured|3000|0' && devueltoSim(RS) === '0' && detalle(`cobrada:${RS.pid}`).includes('se quedó $15 y la devolución de $15 no salió (tiene su propia alerta)')
         && avRS.length === 1 && avRS[0][2].dev?.e === 'fallida' && avRS[0][2].dev?.monto === 1500,
         `la regla con la devolución que no se pudo anotar: ninguna fila en refunds ni devolución en Stripe; la alerta y el aviso dicen que no salió (${JSON.stringify(sRS.regla)} · ${detalle(`cobrada:${RS.pid}`)})`);
       const RL = conMarca();
@@ -538,11 +538,11 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       await cobros.barrerCobradasTarde({ negocio: BR });
       const avRL = AV.filter((x) => x[1] === RL.num);
       ok(sql(`select count(*) from refunds where payment_id = ${RL.pid}`) === '0' && pago(RL.num) === 'captured|3000|0' && devueltoSim(RL) === '0'
-        && detalle(`cobrada:${RL.pid}`).includes('quedó a medias') && detalle(`cobrada:${RL.pid}`).includes('se quedó $15.00 y la devolución de $15.00 no salió (tiene su propia alerta)')
+        && detalle(`cobrada:${RL.pid}`).includes('quedó a medias') && detalle(`cobrada:${RL.pid}`).includes('se quedó $15 y la devolución de $15 no salió (tiene su propia alerta)')
         && avRL.length === 1 && avRL[0][2].dev?.e === 'fallida' && avRL[0][2].dev?.monto === 1500,
         `«completar» con la devolución que no se pudo anotar: la lee (ninguna fila en refunds) y dice que no salió (${detalle(`cobrada:${RL.pid}`)})`);
       // Y la que el equipo ya devolvió a mano (su propia devolución, con otra llave): sin nada más que devolver, «hecha» con lo devuelto, nunca «no salió»
-      // ni «$0.00». Sin fila de la llave (refund_stuck) y con la fila de la llave fallida.
+      // ni «$0». Sin fila de la llave (refund_stuck) y con la fila de la llave fallida.
       const aMano = (x) => {
         sql(`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) values (${x.pid}, 1500, 'Devuelta a mano por el equipo (prueba din9x)', 'admin', 'done', 'mano-${x.num}', now())`);
         sql(`update payments set status = 'partially_refunded', refunded_cents = 1500 where id = ${x.pid}`);
@@ -555,9 +555,9 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       await cobros.barrerCobradasTarde({ negocio: BR });
       for (const x of [HS, HF]) {
         const d = detalle(`cobrada:${x.pid}`), av = AV.filter((y) => y[1] === x.num);
-        ok(d.includes('se quedó $15.00 y se devolvieron $15.00') && !d.includes('no salió') && !d.includes('$0.00') && av.length === 1 && av[0][2].dev?.e === 'hecha' && av[0][2].dev?.monto === 1500
+        ok(d.includes('se quedó $15 y se devolvieron $15') && !d.includes('no salió') && !d.includes('$0') && av.length === 1 && av[0][2].dev?.e === 'hecha' && av[0][2].dev?.monto === 1500
           && sql(`select count(*) from refunds where payment_id = ${x.pid} and split_part(idem_key, '~fallida-', 1) = 'vcx-${x.num}' and status <> 'failed'`) === '0' && pago(x.num) === 'partially_refunded|3000|1500',
-          `${x === HS ? 'sin fila (refund_stuck)' : 'con la fila fallida'} y ya devuelta a mano: «hecha», ni «no salió» ni «$0.00», sin pedir otra (${d} · ${JSON.stringify(av.map((y) => y[2].dev))})`);
+          `${x === HS ? 'sin fila (refund_stuck)' : 'con la fila fallida'} y ya devuelta a mano: «hecha», ni «no salió» ni «$0», sin pedir otra (${d} · ${JSON.stringify(av.map((y) => y[2].dev))})`);
       }
 
       // (revisión de 51a794d) · «completar» sin regla: la regla LANZA (una base que no deja leerla, solo para estas operaciones: FALLA_REGLA; y alertas que

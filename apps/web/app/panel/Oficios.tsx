@@ -13,7 +13,7 @@ import { citasModulo, servicioMover, servicioQuitar, servicioVisible } from "./a
 import { filasRenta } from "./RentaArticulo";
 import type { Ctx, Sec } from "./Panel";
 
-const money = (c: number) => { const d = (Number(c) || 0) / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
+import { usd as money } from "@/lib/dinero-comun";
 const dol = (c: number | null | undefined) => (c ? String(c / 100) : "");
 const cts = (v: string) => Math.round((parseFloat(String(v).replace(/[^0-9.]/g, "")) || 0) * 100);
 const num = (v: string) => v.replace(/[^0-9.]/g, "").slice(0, 8);

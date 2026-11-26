@@ -1,4 +1,5 @@
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { usd } from "./dinero-comun";
 /* Doctores y Profesionales · lo que comparten servidor y panel (4h-2, fase4-salud-pro.md §6). Sin acceso a la base.
    Tipo de profesional (neg-pro-kind.js kind): sale de la primera subcategoría. Los legales llevan licencias, «lo que no
    haces» y EL TOTAL, POR ESCRITO; los demás, días de entrega, garantía, presupuesto antes o las compañías con que trabajan. */
@@ -30,7 +31,7 @@ export type HerrSP = HerrSalud | HerrPro;
 export function resumenSP(h: HerrSP, es: boolean, lic?: { ok: number; rev: number }): string {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (h.rubro === "salud") {
-    return `${h.ins.length}${E2(" seguros", " insurers")}${h.sin ? E2(` · sin seguro $${h.cash / 100}`, ` · uninsured $${h.cash / 100}`) : ""}${h.walk ? E2(` · espera ~${h.wait} min`, ` · wait ~${h.wait} min`) : ""}`
+    return `${h.ins.length}${E2(" seguros", " insurers")}${h.sin ? E2(` · sin seguro ${usd(h.cash)}`, ` · uninsured ${usd(h.cash)}`) : ""}${h.walk ? E2(` · espera ~${h.wait} min`, ` · wait ~${h.wait} min`) : ""}`
       + `${h.escala ? E2(" · según ingresos", " · income-based") : ""}${h.sinid ? E2(" · sin papeles", " · no papers") : ""}${h.nuevos ? "" : E2(" · sin pacientes nuevos", " · no new patients")} · ${h.langs.map((l) => l.toUpperCase()).join(" · ")}`;
   }
   const ok = lic?.ok ?? 0, rv = lic?.rev ?? 0;

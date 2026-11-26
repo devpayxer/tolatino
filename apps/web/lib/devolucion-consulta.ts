@@ -18,7 +18,7 @@ import { HORAS_LLAVE_STRIPE as HORAS_LLAVE } from "./cobros";
 type Res = { ok: true; msg?: string } | { ok: false; msg: string };
 type Dv = { id: string; st: string; mano: boolean; amt: number; idem: string; pi: string; boletos: boolean; gref: string | null; enviada: boolean; vieja: boolean; n: number; err: string | null;
   biz: string | null; city: string | null; igual: boolean };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 /* «Lo debido sigue igual»: el cobro sigue cobrado, sin disputa abierta o perdida, y le alcanza el saldo (lo devuelto según el libro y según Stripe, más lo que
    va en camino de otras devoluciones, más esta). La base lo vuelve a imponer (refunds_tope cuenta lo pendiente y lo hecho). */
 const SEL = `select r.id::text, r.status as st, r.manual_at is not null as mano, r.amount_cents as amt, r.idem_key as idem, p.stripe_payment_intent as pi,

@@ -35,7 +35,8 @@ export type Dur = "week" | "month" | "until_event";
    Stripe dijo que no y la tiene el equipo de dinero). La pantalla nunca dice «te devolvemos» con lo decidido: lo dice con esto (guardián devueltoSoloSiSalio). */
 export type ResPat = { ok: true; id?: string; estado?: "activo" | "reservado"; msg?: Bi; devuelto?: number; devolucion?: "en_camino" | "fallida"; aDevolver?: number } | { ok: false; msg: Bi; sinPuestos?: boolean; verificar?: Verificar };
 const no = (es: string, en: string): ResPat => ({ ok: false, msg: { es, en } });
-export const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as __usd_money } from "./dinero-comun";
+export const money = __usd_money;
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 export const CLAVE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 

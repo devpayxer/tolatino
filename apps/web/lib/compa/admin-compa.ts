@@ -333,3 +333,5 @@ export async function compaDeUsuario(s: Staff, userId: string): Promise<CompaUsu
   return { conv30: K.rows.reduce((t, y) => t + y.n, 0), porUso, porResultado, sinIa: K.rows.reduce((t, y) => t + y.sin_ia, 0), marcadas: x.marcadas, noSupo: x.no_supo, acciones: x.acciones,
     filas: F.rows, leer: s.puede("compa", "editar") };
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

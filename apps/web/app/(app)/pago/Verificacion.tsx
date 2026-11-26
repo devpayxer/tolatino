@@ -15,7 +15,7 @@ type N = "Icon" | "Button";
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 /* Lo que el servidor manda cuando el banco pide verificar (lib/pagos/pasarela.ts · Verificar). */
 export type VerificarT = { pi: string; secreto: string; monto: number; pm: string | null; vence: string; renovacion: boolean };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const K = "font-mono text-[10px] font-bold tracking-[0.16em] text-ink/60";
 
 export function Verificacion({ es, v, modo, pk, onListo, onCerrar }: { es: boolean; v: VerificarT; modo: ModoTarjeta; pk: string | null; onListo: () => void; onCerrar: () => void }) {

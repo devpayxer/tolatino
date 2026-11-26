@@ -8,7 +8,7 @@ import { pasarela } from "./pagos/pasarela";
    y avisa al dueño. To'Latino responde con la evidencia que ya tiene del pedido (línea de tiempo, lo que se pidió, la
    entrega, los mensajes) o acepta la devolución. Estados: needs_response → under_review → won | lost | accepted. */
 type Bi = { es: string; en: string };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 export const MOTIVO: Record<string, Bi> = {
   fraudulent: { es: "Dice que no hizo la compra", en: "Says they did not make the purchase" },
   product_not_received: { es: "Dice que no recibió el pedido", en: "Says the order never arrived" },
@@ -157,7 +157,7 @@ export async function archivosEvidencia(disputa: string): Promise<Archivo[]> {
     `select case when m.sender = 'user' then 'Cliente' when m.compa then 'Asistente del negocio' else 'Negocio' end as quien, coalesce(m.body, '') as t,
             to_char(m.created_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI "UTC"') as at
        from chat_messages m join chat_threads t on t.id = m.thread_id where t.operation_id = $1::bigint and m.hidden_at is null order by m.id limit 400`, [o.op]).catch(() => ({ rows: [] as { quien: string; t: string; at: string }[] }))).rows;
-  const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+  const usd = money;
   const recibo = pdfTexto(`Receipt / Recibo · ${o.negocio} · #${o.num}`, [
     `Customer / Cliente: ${e.cliente}`, `Date / Fecha: ${e.fecha}`, "",
     ...(L.length ? L.map((x) => `${x.q} x ${x.n}  ${usd(x.t)}`) : [e.producto]), "",

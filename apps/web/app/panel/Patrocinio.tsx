@@ -18,7 +18,7 @@ import { uuid } from "@/lib/uuid";
 export type PatData = PatPanel;
 const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 const MES_L: [string, string][] = [["Enero", "January"], ["Febrero", "February"], ["Marzo", "March"], ["Abril", "April"], ["Mayo", "May"], ["Junio", "June"], ["Julio", "July"], ["Agosto", "August"], ["Septiembre", "September"], ["Octubre", "October"], ["Noviembre", "November"], ["Diciembre", "December"]];
-const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as $ } from "@/lib/dinero-comun";
 const $c = (c: number) => (c % 100 ? $(c) : `$${c / 100}`);
 /* «17 nov» / «Nov 17» de un día AAAA-MM-DD. */
 export const dia = (d: string, es: boolean) => { const [, m, x] = d.split("-").map(Number); return es ? `${x} ${MES[m! - 1]![0]}` : `${MES[m! - 1]![1]} ${x}`; };

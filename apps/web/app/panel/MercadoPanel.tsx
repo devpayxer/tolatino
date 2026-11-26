@@ -20,7 +20,7 @@ import type { Ctx, Editor } from "./Panel";
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
 export type MercPanel = { hoy?: FilaMerc[]; det?: MercadoVista | null; prods?: { id: string; name: Bi; cents: number; k: string }[]; aj?: AjustesPed };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 
 export function hoyMercado(c: Ctx): Bloque[] {
   const { E2 } = c, L = c.mped?.hoy ?? [];

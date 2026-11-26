@@ -9,7 +9,7 @@ import { planDeshacer, planFree } from "./acciones-cobros";
 import type { Ctx } from "./Panel";
 
 export type PlanPanel = { plan: Plan; recibos: { at: string; monto: number }[]; modo: "stripe" | "simulador" | "apagado"; pk: string | null; tarjetas: { pm: string; marca: string; ultimos4: string; vence: string; def: boolean }[] };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 const DIA: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
 export const fechaPlan = (es: boolean, iso: string | null) => {

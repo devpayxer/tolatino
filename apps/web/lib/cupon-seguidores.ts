@@ -13,7 +13,7 @@ import { db } from "./db";
 type Q = { query: <R extends QueryResultRow = any>(text: string, values?: unknown[]) => Promise<QueryResult<R>> };
 type Bi = { es: string; en: string };
 export type Cupon = { ok: true; post: string; code: string; off: number; min: number } | { ok: false; msg: Bi };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 export const CODIGO = /^[A-Z0-9]{4,12}$/;
 
 export async function cuponDe(c: Q, negocio: string, codigo: string, userId: string, sub: number): Promise<Cupon> {

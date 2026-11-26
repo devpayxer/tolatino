@@ -16,7 +16,7 @@ export type HerrTienda = {
 };
 export type HerrRetail = HerrMerc | HerrTienda;
 
-const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd } from "./dinero-comun";
 /* La línea de Lo que vendes y del 360 del Super Admin (dash2-cat.js summary). */
 export function resumenRetail(h: HerrRetail, es: boolean): string {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);

@@ -494,3 +494,5 @@ export function N360({ n, tab, din, oper, operK = "all", evts = null, sop, cpa, 
     </div>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

@@ -75,3 +75,5 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
     </>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

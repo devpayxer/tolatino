@@ -16,6 +16,7 @@ import { platoGuardar } from "../../n/[id]/acciones-platos";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 type MisEventos = { vas: { fid: string; href: string; t: string; s: string; party: number; foto: string | null }[]; guardados: { eid: string; href: string; t: string; s: string; foto: string | null }[] };
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+import { usd } from "@/lib/dinero-comun";
 
 export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEventos; f: "biz" | "items" | "vac" | "nov" | "evt"; es: boolean; yo: Yo }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
@@ -47,7 +48,7 @@ export function Guardados({ d, ev, f, es, yo }: { d: MisGuardados; ev: MisEvento
   // negocio en su pestaña con la hoja de ese plato o producto: «Pedir» (menú; mercado que toma pedidos), «Ver» (mercado sin pedidos), «Apartar»
   // (tienda). Lo que ya no sale en su página: «NO DISPONIBLE», sin precio ni acción (abre el negocio). «Editar» → «Quitar».
   if (f === "items") {
-    const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+    const money = usd;
     type PG = MisGuardados["platos"][number];
     const precio = (x: PG) => `${money(x.cents)}${x.peso ? "/lb" : ""}`;
     const hoja = (x: PG) => (x.mod === "menu" ? `/n/${x.biz}?${x.pro ? "tab=menu&" : ""}plato=${encodeURIComponent(x.id)}` : `/n/${x.biz}?tab=${x.mod === "merc" ? "svc" : "shop"}&producto=${encodeURIComponent(x.id)}`);

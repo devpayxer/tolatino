@@ -34,7 +34,7 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
   const MOF = sql(`select id from items where business_id = '${BIZ}' and module = 'menu' and name->>'es' = 'Mofongo de chicharrón'`);
   const st0 = MOF ? sql(`select status || '|' || coalesce(hidden_reason, '') from items where id = ${MOF}`) : '';
   const cents = MOF ? Number(sql(`select coalesce(oferta_precio(id, null), price_cents) from items where id = ${MOF}`)) : 0;
-  const PRECIO = `$${(cents / 100).toFixed(2)}`;
+  const PRECIO = require('../lib/usd.cjs')(cents);
   const horas0 = sql(`select coalesce(json_agg(json_build_object('w', weekday, 'o', open, 'r', ranges)), '[]') from business_hours where business_id = '${BIZ}' and module = ''`);
   sql(`update business_hours set ranges = '[["00:00","00:00"]]'::jsonb, open = true where business_id = '${BIZ}' and module = ''`);
   if (MOF && st0 !== 'live|') sql(`update items set status = 'live', hidden_reason = null where id = ${MOF}`);
@@ -193,7 +193,7 @@ const pulsado = async (p) => (await corazon(p).getAttribute('aria-pressed')) ===
     await shot(p, '390-tienda-guardado', false);
     await p.goto(B + '/cuenta/guardados?f=items'); await p.waitForLoadState('networkidle').catch(() => {});
     tx = await texto(p);
-    const lb = `$${(centsP / 100).toFixed(2)}/lb`, pc = `$${(centsC / 100).toFixed(2)}`;
+    const lb = `${require('../lib/usd.cjs')(centsP)}/lb`, pc = require('../lib/usd.cjs')(centsC);
     ok(tx.includes('Platos y productos · 3') && tx.includes('Pollo entero') && tx.includes('SUPERMERCADO LA COSECHA') && tx.includes(lb), `la lista: el producto del mercado con «${lb}»`);
     ok(tx.includes('Cartera') && tx.includes('BOUTIQUE YARITZA') && tx.includes(pc), `y el artículo de la tienda con ${pc}`);
     ok(await p.getByRole('button', { name: 'Apartar' }).isVisible() && (await p.getByRole('button', { name: /^(Pedir|Ver)$/ }).count()) >= 2, 'acciones: «Apartar» la tienda y «Pedir»/«Ver» el plato y el mercado');

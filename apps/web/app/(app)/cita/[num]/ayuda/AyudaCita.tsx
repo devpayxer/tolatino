@@ -17,7 +17,7 @@ import { fotoFondo } from "@tolatino/ui";
 type N = "Icon" | "Button" | "Chip" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
-const dinero = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+import { usd as dinero } from "@/lib/dinero-comun";
 const fondo = (u: string | null, w: number) => (u ? { backgroundImage: fotoFondo(u, w), backgroundSize: "cover", backgroundPosition: "center" } : {});
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/60";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";

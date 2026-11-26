@@ -31,7 +31,7 @@ export type Origen = { origen: "barrido" } | { origen: "equipo"; staff: string; 
    ya comprobado contra lo que la pasarela dijo al decidir) o «ninguno» (lo hallado se devuelve y la intención falla sin contar como un «no» del banco). */
 export type Veredicto = { resultado: Resultado; stripe: string | null; centavos: number | null; at: string; noLlego: boolean; marca: string | null; l4: string | null; revisado: "vale" | "ninguno" | null };
 type Bi = { es: string; en: string };
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 export const refDe = (t: Tabla, id: string) => `${t}:${id}`;
 
 /* Lo que se le pregunta a la pasarela de una intención: su dato buscable, el monto esperado y (transferencias) el grupo; (devolución de lo que sobró) el

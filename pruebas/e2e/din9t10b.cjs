@@ -25,7 +25,7 @@ const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
 const primero = (s) => s.split('\n').find((l) => /^\d+$/.test(l));
 const RUN = crypto.randomBytes(4).toString('hex');
 const telPropio = () => { for (let i = 0; i < 300; i++) { const t = '570555' + String(crypto.randomInt(10000)).padStart(4, '0'); if (!require('../lib/telefonos-fijos.cjs').esFijo(t) && sql(`select count(*) from users where phone = '+1${t}'`) === '0') return t; } throw new Error('no hay un teléfono 555 libre'); };
-const usd = (c) => `$${(c / 100).toFixed(2)}`;
+const usd = require('../lib/usd.cjs'); // la regla real del dinero (lib/dinero-comun › usd)
 const usados = new Set();
 const montoLibre = () => { for (;;) { const c = 1100 + crypto.randomInt(3000); if (!usados.has(c)) { usados.add(c); return c; } } };
 let NUM = Number(String(Date.now()).slice(-8)) * 10 + 9;

@@ -108,7 +108,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     await entrarComo(m2, P2.tel); await m2.goto(B + `/pedido/${P2.num}`);
     await m2.getByText('todavía no se soltó de tu tarjeta', { exact: false }).first().waitFor();
     const t2 = await texto(m2);
-    ok(/No se cobró nada, pero la retención de \$15\.00 todavía no se soltó de tu tarjeta/.test(t2), 'la pantalla del cliente: la retención de $15.00 todavía no se soltó');
+    ok(/No se cobró nada, pero la retención de \$15 todavía no se soltó de tu tarjeta/.test(t2), 'la pantalla del cliente: la retención de $15.00 todavía no se soltó');
     await m2.screenshot({ path: OUT + 'd9w-pedido-retenida-m.png' });
     await m2.context().close();
     // Precondiciones limpias: la retención atascada vuelve a ser soltable y el barrido del panel (Hoy) la suelta.

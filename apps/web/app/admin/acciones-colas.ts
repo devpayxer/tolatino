@@ -941,3 +941,5 @@ export async function decidirVivienda(id: string, accion: "confirmar" | "rechaza
   return { ok: true, mensaje: accion === "confirmar" ? "Confirmada: sale como vivienda para mayores. El dueño recibe el aviso." : accion === "rechazar" ? "No confirmada: la propiedad queda oculta con el motivo. El dueño recibe el aviso."
     : accion === "advertir" ? "Advertencia al negocio. Recibe el aviso." : "Caso cerrado como revisado." };
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

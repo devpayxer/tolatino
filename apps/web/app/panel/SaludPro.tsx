@@ -9,7 +9,7 @@ import { aceptaTexto, LANGS_SALUD, resumenSP, type HerrPro, type HerrSalud } fro
 import { govGuardar, proGuardar, saludGuardar, type ProIn, type SaludIn } from "./acciones-salud-pro";
 import type { Ctx, Sec } from "./Panel";
 
-const usd = (c: number) => `$${(c / 100).toLocaleString("en-US")}`;
+import { usd } from "@/lib/dinero-comun";
 const lic = (c: Ctx) => { const L = c.d.lic?.filas ?? []; return { ok: L.filter((x) => x.status === "valid").length, rev: L.filter((x) => x.status === "review").length }; };
 
 /* La fila de Lo que vendes (entre Servicios y Citas). */
@@ -36,11 +36,11 @@ function salud(c: Ctx, S: HerrSalud, head: Bloque): Sec {
   const tg = (k: string) => { const L = S.ins.includes(k) ? S.ins.filter((x) => x !== k) : [...S.ins, k]; if (!L.length && !S.sin) { c.toast(E2("Deja al menos un seguro o marca «Sin seguro».", "Keep at least one insurer or mark “No insurance”.")); return; } save({ ins: L }); };
   const grp = (k: string, kind: "pub" | "priv"): Bloque => ({ type: "rows", k, cols: cols2, items: S.cat.filter((x) => x.kind === kind).map((x): Fila => ({ key: x.key, icon: "insurance", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: es ? x.name.es : x.name.en, tgOn: S.ins.includes(x.key), onTg: () => tg(x.key), compact: true })) });
   const out: (Bloque | null)[] = [head,
-    { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("SEGUROS", "INSURERS"), v: String(S.ins.length) }, { k: E2("SIN SEGURO", "UNINSURED"), v: S.sin ? `$${S.cash / 100}` : "—" }, { k: E2("IDIOMAS", "LANGUAGES"), v: S.langs.map((l) => l.toUpperCase()).join(" · ") }] },
+    { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("SEGUROS", "INSURERS"), v: String(S.ins.length) }, { k: E2("SIN SEGURO", "UNINSURED"), v: S.sin ? `${usd(S.cash)}` : "—" }, { k: E2("IDIOMAS", "LANGUAGES"), v: S.langs.map((l) => l.toUpperCase()).join(" · ") }] },
     grp(E2("PÚBLICOS", "PUBLIC"), "pub"), grp(E2("PRIVADOS", "PRIVATE"), "priv"),
     { type: "rows", k: E2("SIN SEGURO", "NO INSURANCE"), items: [{ icon: "dollar", t: E2("Atiendes sin seguro", "You see uninsured patients"), s: E2("Tu página dice el precio de la consulta.", "Your page shows the visit price."), tgOn: S.sin,
       onTg: () => { if (S.sin && !S.ins.length) { c.toast(E2("Deja al menos un seguro o marca «Sin seguro».", "Keep at least one insurer or mark “No insurance”.")); return; } save({ sin: !S.sin }); } }] },
-    S.sin ? pasoSrv({ t: E2("Consulta sin seguro", "Uninsured visit"), s: E2("El precio completo, sin cargos escondidos.", "The full price, no hidden fees."), n: S.cash, fmt: (n) => `$${n / 100}`, sig: (n, d) => d < 0 ? Math.max(2000, n - 500) : Math.min(40000, n + 500), save: (n) => save({ cash: n }) }) : null,
+    S.sin ? pasoSrv({ t: E2("Consulta sin seguro", "Uninsured visit"), s: E2("El precio completo, sin cargos escondidos.", "The full price, no hidden fees."), n: S.cash, fmt: (n) => `${usd(n)}`, sig: (n, d) => d < 0 ? Math.max(2000, n - 500) : Math.min(40000, n + 500), save: (n) => save({ cash: n }) }) : null,
     { type: "chips", k: E2("IDIOMAS EN LA CONSULTA", "LANGUAGES IN THE VISIT"), items: LANGS_SALUD.map(([v, l]) => ({ l, v: S.langs.includes(v) ? "selected" : "filter", onClick: () => { const L = S.langs.includes(v) ? S.langs.filter((x) => x !== v) : [...S.langs, v]; if (L.length) save({ langs: L }); else c.toast(E2("Deja al menos un idioma.", "Keep at least one language.")); } })) },
     { type: "rows", items: [
       { icon: "phone", t: E2("Consulta por video", "Video visits"), s: E2("Sale el filtro «Telemedicina» en Buscar.", "Shows under “Telehealth” in Search."), tgOn: S.tele, onTg: () => save({ tele: !S.tele }) },

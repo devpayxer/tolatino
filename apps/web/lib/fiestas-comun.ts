@@ -65,7 +65,7 @@ export function dispoFiesta(c: CalFiesta, fe: TuFecha | null, es: boolean, cap?:
 
 /* Precio y rótulo de un servicio de fiesta (priceFor / metaOf). */
 export type SvcFiesta = { id: string; sec: string | null; name: Bi; desc: Bi; cents: number; k: string; h: number | null; cap: number | null; mont: boolean; inc: Bi[]; u: Bi | null; per: number | null; min: number | null; foto: string | null };
-const m$ = (c: number) => (c % 100 ? `$${(c / 100).toFixed(2)}` : `$${(c / 100).toLocaleString("en-US")}`);
+import { usd as m$ } from "./dinero-comun";
 export function precioFiesta(s: SvcFiesta, es: boolean): { l: string; s: string } {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   if (s.k === "visita") return { l: E2("Gratis", "Free"), s: "" };

@@ -10,7 +10,7 @@ import type { Ctx, Editor } from "./Panel";
 
 export type NovData = { lista?: NovPanel; det?: NovPanelDet | null; items?: ItemNov[]; eventos?: { id: string; t: { es: string; en: string }; dia: string; vivo: boolean }[]; vacantes?: { id: string; t: { es: string; en: string } }[] };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
-const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+import { usd as money } from "@/lib/dinero-comun";
 const NOVT = (c: Ctx): [Tipo, string, string][] => [
   ["oferta", c.E2("Oferta", "Deal"), "dollar"], ["hoy", c.E2("Hoy hay", "Today"), "hot"], ["aviso", c.E2("Aviso de horario", "Hours notice"), "clock"],
   ["encuesta", c.E2("Encuesta", "Poll"), "help"], ["novedad", c.E2("Novedad", "News"), "news"], ["cupon", c.E2("Cupón para seguidores", "Follower coupon"), "dollar"],

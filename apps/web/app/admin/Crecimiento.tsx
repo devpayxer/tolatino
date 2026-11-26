@@ -376,3 +376,5 @@ function Lista({ d, E, cuando, setConf, ir, l }: { d: DatosCrec; E: EFn; cuando:
     ] : []),
   ]} />;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

@@ -17,7 +17,7 @@ const { Icon, Button, Tag, Chip, MenuItemRow, MenuTile, OptionGroup, QtyStepper,
 
 export type Linea = { id: string; ch: Record<string, number[]>; q: number; nt: string; k: Record<string, string[]> };
 const CLAVE = "tl-carrito-v1", VIDA = 24 * 3600 * 1000;
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 // 9m · Lo que el panel marca en «Lleva o es» (Menú › Para el cliente; las mismas claves que app/panel/Menu.tsx MTAGS).
 // 25 nov · Cada texto va como E2("…", "…") dentro de la lista (la recibe de la pantalla): así el extractor del CMS lo ve y se edita en Super Admin › Cadenas.
 const LLEVA = <T,>(E2: (a: string, b: string) => T): [string, T][] => [["pica", E2("Picante", "Spicy")], ["veg", E2("Vegetariano", "Vegetarian")], ["sg", E2("Sin gluten", "Gluten-free")], ["mar", E2("Pescado o mariscos", "Fish or shellfish")], ["lac", E2("Lácteos", "Dairy")], ["hue", E2("Huevo", "Egg")], ["nuez", E2("Maní o nueces", "Peanuts or nuts")]];

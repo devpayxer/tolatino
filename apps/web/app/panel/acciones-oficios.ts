@@ -15,7 +15,7 @@ const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } })
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
 const ID = /^\d{1,18}$/;
 const txt = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, max) : "");
-const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd } from "@/lib/dinero-comun";
 
 async function hacer(id: string, fn: (c: PoolClient, a: Acceso, cat: string) => Promise<Res | null>): Promise<Res & { id?: string }> {
   if (!(await mismoOrigen())) return SIN_ACCESO;

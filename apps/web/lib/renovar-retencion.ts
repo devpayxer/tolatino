@@ -36,7 +36,7 @@ export type Renovar = {
 };
 type Fila = { id: string; st: string; enviada: boolean; llave: boolean; viva: boolean; n: number; err: string | null; ciudad: string | null };
 export type Quedo = "hecha" | "fallida" | "no_llego" | "devuelto" | "soltada" | "sigue" | "ya_no_estaba";
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 const SEL = `id::text, status as st, sent_at is not null as enviada, coalesce(sent_at > now() - make_interval(hours => ${HORAS_LLAVE}), true) as llave,
              old_held_at + make_interval(hours => ${HORAS_VIVE}) > now() as viva, attempts as n, last_error as err, city_id as ciudad`;
 

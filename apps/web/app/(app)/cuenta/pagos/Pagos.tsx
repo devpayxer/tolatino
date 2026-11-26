@@ -9,7 +9,7 @@ import type { Movimiento } from "@/lib/movimientos";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 
 type T = { pm: string; marca: string; ultimos4: string; vence: string; def: boolean };
-const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd } from "@/lib/dinero-comun";
 const dia = (iso: string, es: boolean) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(".", "");
 export function Pagos({ es, yo, tarjetas, mov = { items: [], mas: null }, pagina = false }: { es: boolean; yo: Yo; tarjetas: T[]; mov?: { items: Movimiento[]; mas: string | null }; pagina?: boolean }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);

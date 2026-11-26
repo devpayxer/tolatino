@@ -492,3 +492,5 @@ export async function ajustesColas(): Promise<AjustesColas> {
   ]);
   return { roles: r.rows, vis: Object.fromEntries(v.rows.map((x) => [x.queue, x.roles ?? []])), feriados: f.rows, ciudades: c.rows };
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

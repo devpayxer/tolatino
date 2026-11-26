@@ -19,7 +19,7 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "@/lib/dinero-comun";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const hm2m = (v: string) => { const [h = 0, m = 0] = v.split(":").map(Number); return h * 60 + m; };
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/60";

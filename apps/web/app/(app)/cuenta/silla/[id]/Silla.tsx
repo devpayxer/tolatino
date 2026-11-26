@@ -7,12 +7,13 @@ import type { CobroSilla } from "@/lib/sillas";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
 import { conectarCobro } from "./acciones";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { usd } from "@/lib/dinero-comun";
 
 export function Silla({ s, vuelta, es, yo }: { s: CobroSilla; vuelta: boolean; es: boolean; yo: Yo }) {
   const E2 = (a: string, b: string) => dosIdiomas(es, a, b);
   const router = useRouter(), ui = useCuentaUi();
   const [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const dep = s.dep ? `$${(s.dep / 100).toFixed(2)}` : null;
+  const dep = s.dep ? usd(s.dep) : null;
   const conectar = async () => {
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await conectarCobro(s.miembro).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));

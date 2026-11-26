@@ -31,7 +31,7 @@ async function auditar(c: PoolClient, a: Acceso, action: string, after: unknown,
   await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, $5::jsonb, $6::jsonb)`,
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, before == null ? null : JSON.stringify(before), JSON.stringify(after)]);
 }
-const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd } from "@/lib/dinero-comun";
 const SI = (b: boolean) => (b ? "sí" : "no");
 
 /* ── Mercados · «Balanza y pedidos» ── */

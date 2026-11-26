@@ -55,6 +55,7 @@ import { HojaEntrar } from "../../HojaEntrar";
 import { VideoPortada, VisorHoy } from "../../VideoNegocio";
 import { dosIdiomas } from "@/lib/dos-idiomas";
 import { fotoFondo } from "@tolatino/ui";
+import { usd } from "@/lib/dinero-comun";
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard } = UI as unknown as Record<N, ComponentType<any>>;
@@ -585,7 +586,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
                           <div className="text-[13.5px] font-bold leading-[1.3]">{it.name}</div>
                           {it.desc && <div className="mt-[3px] text-[11.5px] font-medium leading-[1.45] text-ink/60">{it.desc}</div>}
                         </div>
-                        <span className="flex-none font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">${(it.cents / 100).toFixed(2)}</span>
+                        <span className="flex-none font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">{usd(it.cents)}</span>
                       </div>
                     ))}
                   </div>
@@ -703,7 +704,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
               {dv && <DlRiel v={dv} />}
               {mn && (
                 <div data-screen-label="Resumen desktop · pedir" className="rounded-[22px] border border-ink/10 bg-white p-6 shadow-[var(--shadow-float)]">
-                  <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
+                  <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} {usd(mn.m.desde)}</div>
                   <div className="mt-2.5 text-pretty text-[13px] font-medium leading-[1.6] text-ink/60">
                     {f.pro || freeOn ? (mn.est.modes.includes("delivery") ? (es ? "Pide aquí: te lo llevan o pasas a recoger. Pagas en efectivo." : "Order here: delivered or picked up. You pay cash.") : es ? "Pide aquí y pasa a recoger. Pagas en el local." : "Order here and pick it up. You pay at the store.") : (es ? "Llama para pedir o pasa por el local. Pago en el local." : "Call to order or stop by. Pay in store.")}
                   </div>
@@ -756,7 +757,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       {tab !== "rsv" && mn && !mn.has && (f.pro || freeOn || !mn.canOrd) && (
         <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
           <div className="min-w-0 flex-1">
-            <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
+            <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{es ? "Desde" : "From"} {usd(mn.m.desde)}</div>
             <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/60">
               {f.pro ? mn.etaCaps : freeOn ? (mn.est.modes.includes("delivery") ? (es ? "DELIVERY O PICKUP · PAGAS EN EFECTIVO" : "DELIVERY OR PICKUP · PAY CASH") : es ? "PICKUP · PAGAS EN EL LOCAL" : "PICKUP · PAY AT THE STORE") : (es ? "PAGO EN EL LOCAL" : "PAY IN STORE")}
             </div>

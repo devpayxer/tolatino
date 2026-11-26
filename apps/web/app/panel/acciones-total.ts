@@ -6,6 +6,7 @@ import type { PoolClient } from "pg";
 import { accesoPanel } from "@/lib/panel";
 import { mandarTotal, pasoPro, type TotalIn } from "@/lib/total-escrito";
 import type { Res } from "./acciones";
+import { usd } from "@/lib/dinero-comun";
 
 const SIN_ACCESO: Res = { ok: false, mensaje: { es: "No tienes acceso a esta parte del panel.", en: "You don’t have access to this part of the dashboard." } };
 /* 9n · La auditoría va con el cliente de la transacción del cambio: entran juntos o ninguno (guardián auditoriaEnLaTransaccion). */
@@ -26,7 +27,7 @@ export async function totalMandar(negocio: string, numero: string, f: TotalIn): 
   const a = typeof negocio === "string" ? await accesoPanel(negocio, "ord") : null;
   if (!a) return SIN_ACCESO;
   const r = await mandarTotal(a.negocio.id, String(numero ?? ""), f && typeof f === "object" ? f : { fee: 0, gov: 0 }, a.yo.id,
-    (c) => auditar(c, a.negocio.id, a.negocio.city_id, a.yo.id, "total.mandar", String(numero), { honorario: `$${Math.round(Number(f.fee)) / 100}`, gobierno: `$${Math.round(Number(f.gov ?? 0)) / 100}` }));
+    (c) => auditar(c, a.negocio.id, a.negocio.city_id, a.yo.id, "total.mandar", String(numero), { honorario: `${usd(Math.round(Number(f.fee)))}`, gobierno: `${usd(Math.round(Number(f.gov ?? 0)))}` }));
   if (!r.ok) return { ok: false, mensaje: r.msg };
   return { ok: true };
 }

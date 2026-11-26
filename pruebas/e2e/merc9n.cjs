@@ -39,7 +39,7 @@ const GEO = { geolocation: { latitude: 40.9562, longitude: -75.9741 }, permissio
 const ID = crypto.randomBytes(3).toString('hex');
 const NOMBRE = sql(`select name from businesses where id = '${MERC}'`);
 const id = (nombre) => sql(`select id from items where business_id = '${MERC}' and name->>'es' = '${nombre}' and removed_at is null`);
-const money = (c) => `$${(c / 100).toFixed(2)}`;
+const money = require('../lib/usd.cjs'); // la regla real del dinero (lib/dinero-comun › usd)
 
 (async () => {
   const CLI = telefonoLibre('5705558'), REP = telefonoLibre('5705557'), ADM = telefonoLibre('5705556');

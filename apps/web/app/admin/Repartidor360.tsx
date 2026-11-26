@@ -80,3 +80,5 @@ export function Repartidor360({ r, puede }: { r: Rep360; puede: { editar: boolea
   B.push({ type: "note", tone: "ink", icon: "shield", t: E("El repartidor nunca ve el teléfono del cliente ni sus códigos. La foto de la entrega es privada: cada vez que alguien del equipo la abre, queda en la auditoría.", "The driver never sees the customer’s phone or their codes. The delivery photo is private: every time someone on the team opens it, it’s recorded in the audit log.") });
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

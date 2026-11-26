@@ -43,13 +43,13 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   await m.evaluate(() => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id: '9', ch: {}, q: 1, nt: '', k: {} }] } })));
   await m.reload(); await m.locator('[data-screen-label="Ficha · barra del pedido"]').click();
   const cart = m.locator('[data-screen-label="Menú · tu pedido"]');
-  await cart.getByText(/^Mínimo \$15\.00 · faltan \$10\.00$/).waitFor(); ok(true, 'carrito: «Mínimo $15.00 · faltan $10.00»');
-  ok(await cart.getByText(/Delivery desde \$15\.00/).isVisible() && await cart.getByText('Envío').isVisible(), 'aviso del mínimo y fila de Envío');
+  await cart.getByText(/^Mínimo \$15 · faltan \$10$/).waitFor(); ok(true, 'carrito: «Mínimo $15 · faltan $10»');
+  ok(await cart.getByText(/Delivery desde \$15/).isVisible() && await cart.getByText('Envío').isVisible(), 'aviso del mínimo y fila de Envío');
   await shot(m, 'd1-carrito-minimo.png');
   // Con más platos pasa el mínimo
   await m.evaluate(() => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id: '9', ch: {}, q: 2, nt: '', k: {} }, { id: '7', ch: {}, q: 1, nt: '', k: {} }] } })));
   await m.reload(); await m.locator('[data-screen-label="Ficha · barra del pedido"]').click();
-  await cart.getByText(/Te faltan \$16\.00 para envío gratis\./).waitFor(); ok(true, 'barra de envío gratis: «Te faltan $16.00…»');
+  await cart.getByText(/Te faltan \$16 para envío gratis\./).waitFor(); ok(true, 'barra de envío gratis: «Te faltan $16…»');
   await cart.getByText(/^Ir a pagar · \$28\.44$/).click(); await m.waitForURL(/\/pagar$/); ok(true, 'Ir a pagar · $28.44 (24 + 1.44 impuestos + 3 envío)');
   // Checkout de delivery
   await m.getByText('Casa · 420 N Wyoming St', { exact: true }).waitFor(); ok(true, 'checkout: ENTREGA en Casa · 420 N Wyoming St');

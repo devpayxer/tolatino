@@ -13,7 +13,7 @@ import { finDePeriodo } from "./periodo-pro";
    - Cobro fallido: 3 intentos en 7 días (día 0, 3 y 7) con aviso; al tercero, Free.
    - Volver a Pro desde Free: se cobra ese día; no hay segunda prueba. Cortesía (Super Admin): Pro sin cobro hasta una fecha. */
 const D = 86_400_000;
-const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as money } from "./dinero-comun";
 export const PRECIO_CENTAVOS = Math.round(PRECIO_PRO * 100);
 const precio = (cycle: string) => (cycle === "year" ? PRECIO_CENTAVOS * 10 : PRECIO_CENTAVOS);
 type Bi = { es: string; en: string };

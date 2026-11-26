@@ -246,3 +246,5 @@ export function AlertaSobreventa({ L }: { L: Sobreventa[] }) {
     {E(`EVENTO CON SOBREVENTA · ${L.map((x) => `${x.titulo.es} · ${diaCorto(x.dia, true)} · ${x.nombre?.es ?? (x.kind === "mesa" ? "Mesa" : "Boleto")}: ${x.vivos} vivos de ${x.cantidad}`).slice(0, 3).join(" · ")}. La base no debería dejarlo: revisa la auditoría del evento.`,
       `OVERSOLD EVENT · ${L.map((x) => `${txt(x.titulo, en)} · ${diaCorto(x.dia, false)} · ${x.nombre ? txt(x.nombre, en) : x.kind === "mesa" ? "Table" : "Ticket"}: ${x.vivos} active of ${x.cantidad}`).slice(0, 3).join(" · ")}. The database shouldn’t allow this: check the event’s audit log.`)}</A.AdminNote>;
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

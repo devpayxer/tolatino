@@ -16,7 +16,7 @@ import type { Ctx } from "./Panel";
 import type { Res } from "./acciones";
 import { uuid } from "@/lib/uuid";
 
-const $ = (c: number) => `$${(c / 100).toFixed(2)}`;
+import { usd as $ } from "@/lib/dinero-comun";
 const $c = (c: number) => (c % 100 ? $(c) : `$${c / 100}`);
 const DURS: DurE[] = ["week", "month", "until_event"];
 

@@ -15,6 +15,7 @@ import { tx } from "@/lib/db";
 import { fotosDeCatalogoOk } from "@/lib/fotos-catalogo";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import type { Res } from "./acciones";
+import { usd } from "@/lib/dinero-comun";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
@@ -104,7 +105,7 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
     const hacen = Object.entries(p?.hacen ?? {}).filter(([k, v]) => UUID.test(k) && gente.includes(k) && v !== undefined);
     await c.query(`delete from staff_services where item_id = $1`, [id]); // tabla de relación (no historial): se reescribe entera
     for (const [k, v] of hacen) if (v !== -1) await c.query(`insert into staff_services (member_id, item_id, price_cents) values ($1, $2, $3)`, [k, id, v == null ? null : ent(Number(v) * 100, 0, 1_000_000, 0)]);
-    await auditar(c, a, itemId === "new" ? "servicio.crear" : "servicio.editar", null, { servicio: name, precio: `$${(cents / 100).toFixed(2)}`, dura: `${dur} min` });
+    await auditar(c, a, itemId === "new" ? "servicio.crear" : "servicio.editar", null, { servicio: name, precio: usd(cents), dura: `${dur} min` });
     return null;
   });
   return { ...r, id: nuevoId };
@@ -166,7 +167,7 @@ export async function citasGuardar(negocio: string, p: { auto: boolean; resp: nu
     await c.query(`insert into booking_policies (business_id, auto_approve, response_min, deposit_cents, cancel_free_h, staff_pick, updated_by, updated_at, close_cut_min) values ($1, $2, $3, $4, $5, $6, $7, now(), $8)
                    on conflict (business_id) do update set auto_approve = $2, response_min = $3, deposit_cents = $4, cancel_free_h = $5, staff_pick = $6, updated_by = $7, updated_at = now(), close_cut_min = $8`,
       [a.negocio.id, !!p?.auto, resp, dep, cxh, p?.pick !== false, a.yo.id, corte]);
-    await auditar(c, a, "citas.reglas", null, { al_instante: p?.auto ? "sí" : "no", contesta_en: `${resp} min`, deposito: `$${dep / 100}`, cancelar_gratis: `${cxh} h`, ultima_cita: corte ? `${corte} min antes de cerrar` : "al cerrar" });
+    await auditar(c, a, "citas.reglas", null, { al_instante: p?.auto ? "sí" : "no", contesta_en: `${resp} min`, deposito: `${usd(dep)}`, cancelar_gratis: `${cxh} h`, ultima_cita: corte ? `${corte} min antes de cerrar` : "al cerrar" });
     return null;
   });
 }
@@ -185,7 +186,7 @@ export async function sillaGuardar(negocio: string, miembro: string, p: { auto: 
     const r = await c.query<{ n: string }>(`update business_members set chair_auto = $3, chair_response_min = $4, chair_deposit_cents = $5, takes_bookings = $6, updated_at = now()
                                            where id = $2 and business_id = $1 and status = 'active' returning display_name as n`, [a.negocio.id, miembro, !!p?.auto, resp, dep, p?.recibe !== false]);
     if (!r.rowCount) return no("Esa silla ya no está.", "That chair is gone.");
-    await auditar(c, a, "citas.silla", null, { silla: r.rows[0]!.n, al_instante: p?.auto ? "sí" : "no", deposito: `$${dep / 100}` });
+    await auditar(c, a, "citas.silla", null, { silla: r.rows[0]!.n, al_instante: p?.auto ? "sí" : "no", deposito: `${usd(dep)}` });
     return null;
   });
 }

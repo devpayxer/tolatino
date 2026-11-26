@@ -467,3 +467,5 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     </div>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */

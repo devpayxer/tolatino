@@ -287,3 +287,5 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
     </>
   );
 }
+
+/* dinero fijo: super admin (cifras de contabilidad del equipo, siempre con dos decimales) */
