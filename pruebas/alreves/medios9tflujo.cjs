@@ -179,7 +179,7 @@ const MiB = 1024 * 1024;
       const pedir = async (h = {}) => { const r = await E.GET(new Request(`http://x/api/entrega/foto/${id}`, { headers: h }), { params: Promise.resolve({ id }) }); const b = r.body ? Buffer.from(await r.arrayBuffer()) : Buffer.alloc(0); return { st: r.status, b, h: r.headers }; };
       let a0 = S3.pedidos.length;
       const r = await pedir();
-      ok(r.st === 200 && r.b.equals(datos) && r.h.get('etag') === `"${md5}"` && r.h.get('content-length') === String(datos.length), `con permiso: 200 en flujo, el contenido exacto, ETag ${r.h.get('etag')} y content-length`);
+      ok(r.st === 200 && r.b.equals(datos) && r.h.get('etag') === `"${md5}"` && r.h.get('content-length') === null, `con permiso: 200 en flujo, el contenido exacto, ETag ${r.h.get('etag')} y sin content-length (Next 15 lo quita igual: sale por partes)`);
       ok(r.h.get('cache-control') === 'private, no-store' && r.h.get('x-content-type-options') === 'nosniff', `caché «${r.h.get('cache-control')}» y nosniff (como antes, nunca public)`);
       a0 = S3.pedidos.length;
       const r304 = await pedir({ 'if-none-match': `"${md5}"` });
