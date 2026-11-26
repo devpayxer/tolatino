@@ -54,7 +54,10 @@ const DOW = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
   h.on('pageerror', e => err.push(e.message));
   await h.goto(B + '/repartidor'); ok(await espera(h.getByText(/TUS SALIDAS · 1/)), 'TUS SALIDAS · 1');
   await h.goto(B + `/repartidor?s=${R}`); await h.getByText('PASAJEROS').first().waitFor();
-  ok(await espera(h.getByText(/Marisol P\. · 1/)) && !(await h.content()).includes('4242'), 've a la pasajera (sin pagos ni tarjeta)');
+  // 26 nov · «sin tarjeta» se mira en el TEXTO de la página, no en su HTML: el HTML lleva las huellas de los archivos del build, que cambian con cada
+  // commit y pueden contener «4242» (main en rojo con af094d8: la misma prueba verde en local). Guardián sinDigitosEnHtml.
+  ok(await espera(h.getByText(/Marisol P\. · 1/)), 've a la pasajera');
+  ok(!/4242|••••|\$\d/.test(await h.locator('body').innerText()), 'sin pagos ni tarjeta en lo que ve el chofer');
   await h.screenshot({ path: OUT + 'c2-chofer-salida-m.png', fullPage: true });
   await clic(h.getByRole('button', { name: 'Abordó' })); await h.getByText(/^Abordó\.$/).first().waitFor().catch(() => {});
   ok(await esperaV(() => sql(`select status from run_seats where run_id = ${R} and operation_id = (select id from operations where number = '${V1}')`), 'boarded') === 'boarded', 'Abordó desde el teléfono del chofer');

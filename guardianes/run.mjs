@@ -9228,6 +9228,21 @@ const guardianes = {
     }
   },
 
+  /* 26 nov (main en rojo con af094d8: cho4y «sin tarjeta» miraba `!(await p.content()).includes('4242')`) · sinDigitosEnHtml: lo que una prueba dice
+     que NO se ve se mira en el texto de la página (innerText, getByText), nunca en su HTML entero: el HTML lleva las huellas de los archivos del build
+     (cambian con cada commit) y unos dígitos sueltos («4242», un número de pedido) pueden salir ahí por azar; la prueba falla siempre con ese build y pasa
+     con otro. Al revés: alrevescalendario23. */
+  sinDigitosEnHtml() {
+    const G = "sinDigitosEnHtml";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/GUARDIAN-OK/.test(l) || /^\s*\/\//.test(l)) return;
+        if (/!\s*\(?\s*\(?await [\w.]+\.content\(\)\)\.includes\(\s*['"`][\d\s$.,•-]{2,}['"`]/.test(l))
+          falla(G, f, i + 1, "comprueba que unos dígitos NO están en el HTML entero de la página (content()): el HTML lleva las huellas del build y pueden contenerlos por azar; míralo en el texto (locator('body').innerText()) o con getByText");
+      });
+    }
+  },
+
   /* 23 nov (auditoría del calendario, evt6e) · La liquidación del organizador es «el martes estrictamente después del día LOCAL en que termina la fecha»
      (evt_pago_dia). Una prueba que mira pay_on o evt_liq_antes y termina la fecha con `ends_at = now() - interval '1 hour'` a secas falla sola en la hora
      que sigue a la medianoche de cada martes (la fecha terminó el lunes y su martes es hoy). La fecha que «terminó hace poco» no pasa de la medianoche de

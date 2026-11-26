@@ -5,6 +5,8 @@ const fs = require('fs'), path = require('path'), { execSync } = require('child_
 const R = ENT.RAIZ;
 const casos = [
   // hoyDeLaPruebaEnLaCiudad: din9t3 vuelve a comparar contra el día de Greenwich; el doble de hoyEn de din9t4 también; el ayudante deja de usar la zona
+  // sinDigitosEnHtml: cho4y vuelve a buscar la tarjeta en el HTML entero (con sus huellas del build).
+  ['sinDigitosEnHtml', 'pruebas/e2e/cho4y.cjs', "ok(await espera(h.getByText(/Marisol P\\. · 1/)), 've a la pasajera');", "ok(await espera(h.getByText(/Marisol P\\. · 1/)) && !(await h.content()).includes('4242'), 've a la pasajera');"],
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/din9t3.cjs', "s.fin > hoyCiudad(), 'el siguiente paso", "s.fin > new Date().toISOString().slice(0, 10), 'el siguiente paso"],
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/din9t4.cjs', "hoyEn: (z, d) => hoyCiudad(z, d)", "hoyEn: () => new Date().toISOString().slice(0, 10)"],
   ['hoyDeLaPruebaEnLaCiudad', 'pruebas/e2e/din9t5.cjs', "hoyEn: (z, d) => hoyCiudad(z, d)", "hoyEn: () => new Date(Date.now()).toISOString().split('T')[0]"],
