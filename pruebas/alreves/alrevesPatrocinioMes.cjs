@@ -28,6 +28,12 @@ const casos = [
   ['make_interval(months => …)', 'apps/web/lib/planes.ts', 'const mesSiguiente = (s: string, dia: number) =>', 'export const QY = "select now() + make_interval(months => 1)";\nconst mesSiguiente = (s: string, dia: number) =>'],
   ['la excepción de Inmuebles no tapa otra suma', 'apps/web/lib/inmuebles.ts', "+ interval '2 months')::date::text] as fechas", "+ interval '3 months')::date::text] as fechas"],
   ['la excepción de puestosLibres no tapa otra suma', PT, "x.t + case when $6 = 'week' then interval '7 days' else interval '1 month' end, null) < $5) as libre`", "x.t + case when $6 = 'week' then interval '7 days' else interval '2 months' end, null) < $5) as libre`"],
+  // 26 nov · Las acciones (apps/web/app) también, y nadie llama a LA regla sin su ancla.
+  ['una acción suma un mes en SQL', 'apps/web/app/admin/acciones-planes.ts', "+ interval '1 year') at time zone 'America/New_York'\";", "+ interval '1 year') at time zone 'America/New_York'\";\n  const QZ = \"select now() + interval '1 month'\";"],
+  ['la excepción de licencias no tapa un mes', 'apps/web/app/admin/acciones-colas.ts', "then (now() + interval '3 months')::date else next_review end", "then (now() + interval '1 month')::date else next_review end"],
+  ['el cobro de Pro llama a la regla sin ancla', 'apps/web/lib/suscripcion.ts', 'r?.tz || "America/New_York", r?.ancla ?? null))', 'r?.tz || "America/New_York"))'],
+  ['el patrocinio llama a la regla sin ancla', PT, 'finDePeriodo(Number(r.m0), "month", r.tz, ancla)', 'finDePeriodo(Number(r.m0), "month", r.tz)'],
+  ['la regla partida en varias líneas', PT, 'finDePeriodo(Number(r.m0), "month", r.tz, ancla)', 'finDePeriodo(Number(r.m0), "month",\n    r.tz, ancla)'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

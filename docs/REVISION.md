@@ -6399,6 +6399,8 @@ Lo escribió Opus; la migración la revisó Fable (pidió un candado y una regla
   en el 28 para siempre). Lo ya comprado conserva sus fechas. La semana no cambió.
 - **Qué mirar:** Panel › Cobros y plan › Patrocinio, «Renovar otro mes» en un patrocinio que empezó a fin de mes: el fin es el mismo día (o el último
   del mes).
+- **Para confirmar (26 nov, hecho por Opus):** el patrocinio mensual cuenta sus meses desde el día en que empezó el primero, como Pro (31 ene → 28 feb →
+  31 mar → 30 abr; el 15 sigue en 15). Se eligió por ser lo más seguro y se puede volver atrás; el precio no cambia. Si prefieres otra regla, dímelo.
 - **Seguridad, sin nada que mirar:** las direcciones de simulador de Stripe, SMS y WhatsApp solo valen en el sandbox y apuntando a la propia máquina;
   en producción se ignoran aunque alguien las ponga.
 

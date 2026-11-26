@@ -8060,7 +8060,9 @@ const guardianes = {
      '1 month'::interval) para un período: restar (una ventana hacia atrás) no es un período; excepciones: la lista cerrada EXC, línea exacta (ninguna es
      el fin de un período de dinero). (2) fechasPeriodo usa finDePeriodo con el ancla de la cadena (mensual, vivo o vencido al terminar, termina el día
      en que empieza el siguiente) y cada llamada pasa su cadena. (3) La tabla del patrocinio (de medianoche a medianoche de la ciudad, 12 renovaciones
-     desde un 29, 30 y 31) contra periodo-pro.ts real. Al revés: alrevesPatrocinioMes. */
+     desde un 29, 30 y 31) contra periodo-pro.ts real. 26 nov: (1) mira también apps/web/app (las acciones), y (4) cada llamada a finDePeriodo fuera de
+     periodo-pro.ts le pasa el ancla (cuatro argumentos, null escrito a mano si es el primer período): con tres, el ancla se pierde callada. Al revés:
+     alrevesPatrocinioMes. */
   patrocinioMesSinDeriva() {
     const G = "patrocinioMesSinDeriva", PT = "apps/web/lib/patrocinio.ts", PE = "apps/web/lib/patrocinio-evento.ts", P = "apps/web/lib/periodo-pro.ts";
     const EXC = [
@@ -8071,16 +8073,44 @@ const guardianes = {
         "puestosLibres: el aviso de «desde cuándo se libera un puesto» (una estimación para la pantalla; al pagar, fechasPeriodo y la base lo vuelven a revisar con candado)"],
       [PE, /^\s*where patrocinio_evt_a_la_vez\(\$1, x\.t, case when \$5 = 'until_event' then greatest\(\$3::timestamptz, x\.t \+ interval '1 hour'\) when \$5 = 'month' then x\.t \+ interval '1 month' else x\.t \+ interval '7 days' end, null\) < \$4\) as libre`,$/,
         "puestos de Eventos: la misma estimación de «desde cuándo se libera un puesto»"],
+      // 26 nov · también apps/web/app (las acciones): ninguna de estas es un período que se renueva.
+      ["apps/web/app/admin/acciones-planes.ts", /^\s*\? "\(date_trunc\('month', now\(\) at time zone 'America\/New_York'\) \+ interval '1 month'\) at time zone 'America\/New_York'"$/,
+        "Planes del hogar (Super Admin): el impuesto nuevo rige desde el día 1 del mes que viene (date_trunc('month'): siempre un día 1, no desborda, no se encadena)"],
+      ["apps/web/app/admin/acciones-planes.ts", /^\s*: "\(date_trunc\('year', now\(\) at time zone 'America\/New_York'\) \+ interval '1 year'\) at time zone 'America\/New_York'";$/,
+        "Planes del hogar: el mismo atajo (el 1 de enero que viene)"],
+      ["apps/web/app/admin/acciones-negocios.ts", /^\s*next_review = case when \$2 = 'valid' then \(now\(\) \+ interval '3 months'\)::date else next_review end where id = \$1::bigint`, \[licId, accion, m, s\.id\]\);$/,
+        "Licencias: la próxima revisión, a 3 meses de HOY (no de un fin anterior ni es dinero)"],
+      ["apps/web/app/admin/acciones-colas.ts", /^\s*next_review = case when \$2 = 'valid' then \(now\(\) \+ interval '3 months'\)::date else next_review end$/,
+        "Licencias (cola de revisión): la misma próxima revisión a 3 meses de hoy"],
     ];
     const MES = /\binterval\s*'\s*\d+\s*(?:mons?|months?|years?|y)\b|make_interval\(\s*(?:years|months)\s*=>|'\s*\d+\s*(?:mons?|months?|years?)\s*'::interval/i;
     for (const f of codigo) {
-      if (!/^apps\/web\/lib\/.*\.tsx?$/.test(f)) continue;
+      if (!/^apps\/web\/(?:lib|app)\/.*\.tsx?$/.test(f)) continue;
       sinComent(f).split("\n").forEach((l, i) => {
         if (!MES.test(l) || EXC.some(([x, re]) => x === f && re.test(l))) return;
         // Solo una ventana hacia atrás (now() - interval '1 year'): cada mes/año de la línea va restado.
         const usos = [...l.matchAll(new RegExp(MES.source, "gi"))];
         if (usos.every((m) => /-\s*$/.test(l.slice(0, m.index)))) return;
         falla(G, f, i + 1, "suma meses o años en SQL: encadenado desde el fin anterior, el día se corre para siempre (31 ene → 28 feb → 28 mar). El fin de un período de dinero sale de finDePeriodo (lib/periodo-pro.ts) con su ancla; si no es un período de dinero, va a la lista cerrada de excepciones con su porqué");
+      });
+    }
+    // 26 nov · Quien llama a LA regla le pasa el ancla (o null escrito a mano: «este es el primer período»). Con tres argumentos el ancla se pierde sin
+    // que se vea y el período renovado vuelve a correrse (31 ene → 28 feb → 28 mar).
+    for (const f of codigo) {
+      if (!/^apps\/web\/(?:lib|app)\/.*\.tsx?$/.test(f) || f === P) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        for (const m of l.matchAll(/\bfinDePeriodo\(/g)) {
+          let prof = 0, n = 1, k = m.index + m[0].length, vacio = true;
+          for (; k < l.length; k++) {
+            const ch = l[k];
+            if ("([{".includes(ch)) prof++;
+            else if (")]}".includes(ch)) { if (prof === 0) break; prof--; }
+            else if (ch === "," && prof === 0) n++;
+            if (!/\s/.test(ch)) vacio = false;
+          }
+          if (k >= l.length) { falla(G, f, i + 1, "finDePeriodo partido en varias líneas: escríbelo en una (el guardián cuenta sus argumentos)"); continue; }
+          if (vacio || n < 4) falla(G, f, i + 1, `finDePeriodo con ${vacio ? 0 : n} argumentos: pásale el ancla de la racha (o null a mano si es el primer período). Sin ella el período renovado se corre (31 ene → 28 feb → 28 mar)`);
+        }
       });
     }
     for (const f of [PT, PE, P]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza del período del patrocinio");

@@ -2925,8 +2925,17 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       lista «prohibida» de producción, no la ejecución** (las dos nuevas sí se ignoran fuera de pruebas y si no son locales). Darles la misma regla.
 - [ ] **→ 9q** · **Batería de El Compa con el modelo real:** si se corre con `TOLATINO_ENTORNO=pruebas` y `ANTHROPIC_API_BASE` puestos iría al simulador
       (404). Correrla sin esa variable. Y `prov9v` dura ~135 s: su estimación en `pruebas/reparto.json` dice 60.
-- [ ] **→ 9t** · **Patrocinio mensual renovado: el día se corre hacia atrás** (`lib/patrocinio.ts` encadena `interval '1 month'` desde el fin anterior:
+- [x] **→ 9t** · **Patrocinio mensual renovado: el día se corre hacia atrás** (`lib/patrocinio.ts` encadena `interval '1 month'` desde el fin anterior:
       31 ene → 28 feb → 28 mar). No desborda, pero pierde el día. Decidir si usa el ancla como Pro (`lib/periodo-pro.ts`).
+      _Hecho (26 nov, hecho por Opus; la regla misma entró el 23 nov en d30ef85 y esta línea quedó abierta):_ decidido el ancla como Pro (lo más seguro y
+      reversible; en REVISION para que el fundador lo confirme). `fechasPeriodo` (negocios y eventos) calcula el mes con `finDePeriodo` de
+      `lib/periodo-pro.ts` y el ancla de la cadena, que se deriva de los patrocinios mensuales de la racha (sin columna ni migración): 31 ene → 28 feb →
+      31 mar → 30 abr → 31 may; el 15 sigue en 15; la semana no cambia; lo ya comprado no se recalcula. La renovación sola, «Renovar otro mes», sus
+      fechas en «Revisar y pagar», la auditoría y el aviso salen de esa misma función. Guardián `patrocinioMesSinDeriva` ahora mira también
+      `apps/web/app` y exige el ancla en cada llamada a `finDePeriodo` (al revés `alrevesPatrocinioMes` 22/22); e2e nuevo `pat9tmes` (fechas fijas,
+      tres renovaciones por cadena y la pantalla de «Renovar otro mes», sin depender de hoy y fuera de la parte de `pat002` que cae en local).
+      Queda como estimación: el «se libera uno el …» de `puestosLibres` suma `interval '1 month'` a cada fin candidato (excepción con su porqué; al
+      pagar todo se recalcula con la regla y con candado).
 - [ ] **→ 9t** · **Pro: el ancla del período sale de `subscription_charges`** (el primer cobro hecho de la racha, una consulta por cobro). Si se quiere
       guardar, columna `subscriptions.period_anchor` (migración 0215, no aplicada). Sin ver: el anual servido, y si el sandbox tiene alguna suscripción
       con la fecha ya corrida (sigue con su día de hoy: nada se recalcula hacia atrás).
