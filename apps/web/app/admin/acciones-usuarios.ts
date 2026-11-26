@@ -204,17 +204,29 @@ export async function restaurarCuenta(id: string, motivo: string): Promise<ResAd
 }
 
 /* Exportar sus datos (pedido de privacidad): 9d · el MISMO archivo que la persona pide en Mi cuenta (por el mapa de datos: JSON + CSV + LEEME en un
-   ZIP), para un pedido que llega por Soporte. Queda en la auditoría. */
-export async function exportarDatos(id: string, motivo: string): Promise<ResAdm & { archivo?: string }> {
-  let archivo = "";
+   ZIP), para un pedido que llega por Soporte. Queda en la auditoría.
+   26 nov · Por el mismo camino que el de la persona (antes: el ZIP entero en memoria y en base64 en esta respuesta): con el permiso, la ciudad y el
+   motivo revisados (hacer), se aparta la fila; se arma a disco y sube al almacén privado (lib/datos/exportar.ts armarParaEquipo); al quedar
+   «listo», en la misma transacción, la auditoría de siempre. Lo que vuelve es solo el id del enlace: la pantalla lo baja con un POST a
+   /api/admin/usuarios/archivo/<id> (un uso, EQUIPO_VENCE_MIN minutos, solo quien lo armó, con su permiso revisado otra vez). Guardián
+   exportacionEnFlujo. */
+export async function exportarDatos(id: string, motivo: string): Promise<ResAdm & { enlace?: string }> {
+  const { apartarParaEquipo, armarParaEquipo } = await import("@/lib/datos/exportar");
+  let ap: { enlace: string; s: Staff; u: U; m: string } | null = null;
   const r = await hacer(id, ["exportar"], motivo, async (c, s, u, m) => {
-    const { armarZip, datosDeCuenta } = await import("@/lib/datos/exportar");
-    const { zip: z, secciones } = await armarZip(await datosDeCuenta(u.id, c), false, c);
-    archivo = z.toString("base64");
-    await auditar(c, { actor: s.id, action: "usuario.exportar", targetKind: "user", targetId: u.id, city: u.city_id, after: { archivo: `ZIP por el mapa de datos (${secciones.size} partes)` }, reason: m });
+    ap = { enlace: await apartarParaEquipo(c, u.id, s.id), s, u, m };
     return null;
   }, "Datos exportados. Quedó en la auditoría.", { borrada: true });
-  return r.ok ? { ...r, archivo } : r;
+  const a = ap as { enlace: string; s: Staff; u: U; m: string } | null;
+  if (!r.ok || !a) return r;
+  try {
+    await armarParaEquipo(a.enlace, a.u.id, (c, secciones) =>
+      auditar(c, { actor: a.s.id, action: "usuario.exportar", targetKind: "user", targetId: a.u.id, city: a.u.city_id, after: { archivo: `ZIP por el mapa de datos (${secciones.size} partes)` }, reason: a.m }));
+  } catch {
+    return no("No pudimos armar el archivo. Prueba otra vez.");
+  }
+  listo(id);
+  return { ...r, enlace: a.enlace };
 }
 
 /* 9d · «Ver como» (L189): lo que To'Latino guarda de la persona, tal como lo tiene, en SOLO LECTURA (las mismas partes de su archivo, las

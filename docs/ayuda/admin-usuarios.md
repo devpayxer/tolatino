@@ -19,7 +19,8 @@ equipo). Versión: 19 nov 2026. Audiencia: equipo. Tema: equipo._
     a la persona por texto y en la app, y queda en la auditoría. En Verificación salen los cambios de llaves.
     Cada dispositivo dice desde dónde entró: «Web» o la app, su versión y el sistema (por ejemplo «To'Latino Puerta 1.0.0 (12) · iOS 17.5»). Es solo informativo: la app nunca cambia lo que la persona puede hacer.
   - **Confianza:** su estado, cada sanción (vigente, terminó o levantada, con su motivo y quién) y las fotos que reportó.
-  - **Privacidad:** exportar sus datos (archivo JSON, para un pedido de privacidad).
+  - **Privacidad:** exportar sus datos (un ZIP con JSON y CSV, el mismo que la persona pide en Mi cuenta, para un pedido de privacidad). Ver
+    Super Admin: Privacidad y datos.
   - **Comunidad:** rango, publicaciones y comentarios, votos recibidos, mejores respuestas; seguidores, siguiendo, a quién
     bloqueó y silenció (listas de 50, con «MISMO DISPOSITIVO» en rojo); cuántas conversaciones privadas tiene (**nunca su
     contenido**: solo se lee con un reporte abierto en Colas › Mensajes reportados); su declaración de 18 años o más (sí/no y
@@ -56,7 +57,7 @@ equipo). Versión: 19 nov 2026. Audiencia: equipo. Tema: equipo._
 | Cambiar ciudad | usr · editar | Se salta la regla de 30 días. Si la ciudad no ha abierto, queda en su lista de espera. |
 | Quitar foto de perfil | usr · editar | Sale la foto; queda el motivo. |
 | Borrar datos | usr · editar | Entra a Cambios sensibles. **Otra persona** lo aplica: la cuenta no puede entrar y tiene 30 días de gracia; un Admin la puede restaurar. |
-| Exportar sus datos | usr · exportar | Descarga el archivo. Queda en la auditoría. |
+| Exportar sus datos | usr · exportar | Descarga el archivo (el enlace sirve una vez, 10 minutos, solo para quien lo armó). Queda en la auditoría y en «Sus archivos». |
 
 Nadie se sanciona ni se borra a sí mismo, y a alguien del equipo de To'Latino primero se le quita el rol (Sistema ›
 Equipo). Toda acción pide motivo y queda en la auditoría. Nada se borra: estados.
@@ -130,7 +131,8 @@ Solo lectura ve las cifras. Si el texto ya se borró por la retención, la fila 
     Each device says where it signed in from: «Web» or the app, its version and the system (for example «To'Latino Puerta 1.0.0 (12) · iOS 17.5»).
     It is informational only: the app never changes what the person can do.
   - **Trust:** their status, each sanction (in force, ended or lifted, with its reason and who) and the photos they reported.
-  - **Privacy:** export their data (a JSON file, for a privacy request).
+  - **Privacy:** export their data (a ZIP with JSON and CSV, the same one the person requests in My account, for a privacy request). See
+    Super Admin: Privacy and data.
   - **Community:** rank, posts and comments, votes received, best answers; followers, following, whom they blocked and muted (lists of 50, with
     «SAME DEVICE» in red); how many private conversations they have (**never their content**: it is read only with an open report in Queues ›
     Reported messages); their declaration of being 18 or older (yes/no and when; never a date of birth) and their welcome. A **possible network**
@@ -166,7 +168,7 @@ Solo lectura ve las cifras. Si el texto ya se borró por la retención, la fila 
 | Change city | usr · edit | It skips the 30-day rule. If the city has not opened, they stay on its waitlist. |
 | Remove profile photo | usr · edit | The photo is removed; the reason stays. |
 | Delete data | usr · edit | It enters Sensitive changes. **Another person** applies it: the account cannot sign in and has a 30-day grace period; an Admin can restore it. |
-| Export their data | usr · export | Downloads the file. It is logged in the audit. |
+| Export their data | usr · export | Downloads the file (the link works once, for 10 minutes, only for whoever built it). It is logged in the audit and in "Their files". |
 
 Nobody sanctions or deletes themselves, and a To'Latino team member first has the role removed (System › Team). Every action asks for a reason and
 is logged in the audit. Nothing is deleted: statuses.

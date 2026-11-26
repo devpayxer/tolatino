@@ -171,7 +171,8 @@ const LEEME = (negocio: boolean, archivos: Map<string, Seccion>) => [
 /* El ZIP: JSON + CSV de cada parte de cada archivo, y el LEEME (con lo que de verdad salió). Todo por cursor, dentro de una transacción de solo lectura
    (una foto fija de la base: las partes no se pisan aunque lleguen filas nuevas mientras se arma).
    `salida` (22 nov): los trozos comprimidos van ahí en orden, al llegar (el barrido los escribe a disco) y `zip` vuelve vacío; sin ella, el ZIP
-   entero en `zip` (lo usa «Exportar sus datos» del equipo, que lo entrega en la misma respuesta). */
+   entero en `zip` (solo la prueba zip9tpartes, que compara los dos; desde el 26 nov «Exportar sus datos» del equipo también va a disco:
+   armarParaEquipo). */
 export async function armarZip(consultas: Consulta[], negocio: boolean, c?: PoolClient, salida?: (b: Buffer) => void): Promise<{ zip: Buffer; secciones: Map<string, Seccion> }> {
   const hacer = async (c: PoolClient) => {
     const z = zipPorPartes(salida), secciones = new Map<string, Seccion>();
@@ -238,11 +239,12 @@ export async function pedirArchivo(u: { id: string; phone: string }, codigo: str
     if (v !== "ok") { const m = L!.mensajeConfirmar(v); return no(m.es, m.en); }
     if (negocio && !(await c.query(`select 1 from business_members where business_id = $1 and user_id = $2::uuid and kind = 'owner' and status = 'active'`, [negocio, u.id])).rowCount)
       return no("Solo el dueño exporta los datos del negocio.", "Only the owner exports the business data.");
-    const viva = (await c.query(`select 1 from data_exports where user_id = $1::uuid and coalesce(business_id, '') = $2::text and status in ('pendiente', 'armando', 'listo')`, [u.id, negocio ?? ""])).rowCount;
+    // 26 nov · Solo los que pidió la persona (requested_by is null): una exportación del equipo (Usuarios 360°) no le cuenta ni la bloquea.
+    const viva = (await c.query(`select 1 from data_exports where user_id = $1::uuid and coalesce(business_id, '') = $2::text and status in ('pendiente', 'armando', 'listo') and requested_by is null`, [u.id, negocio ?? ""])).rowCount;
     if (viva) return no("Ya pediste un archivo: lo ves aquí cuando esté listo.", "You already requested a file: you will see it here when it is ready.");
     const ult = (await c.query<{ otro: Date | null }>(
       `select max(requested_at) + make_interval(days => cfg_int('export_cada_dias')) as otro from data_exports
-        where user_id = $1::uuid and coalesce(business_id, '') = $2::text and status <> 'fallo'`, [u.id, negocio ?? ""])).rows[0]?.otro;
+        where user_id = $1::uuid and coalesce(business_id, '') = $2::text and status <> 'fallo' and requested_by is null`, [u.id, negocio ?? ""])).rows[0]?.otro;
     if (ult && ult.getTime() > Date.now()) return no(`Puedes pedir otro archivo el ${fecha(ult, false)}.`, `You can request another file on ${fecha(ult, true)}.`);
     await c.query(`insert into data_exports (user_id, business_id, is_test) values ($1::uuid, $2::text, (select is_test from users where id = $1::uuid))`, [u.id, negocio]);
     await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1::uuid, 'export', null, $2::text, 'user')`, [u.id, negocio ? `negocio:${negocio}` : "cuenta"]);
@@ -258,7 +260,7 @@ export async function misArchivos(userId: string, negocio: string | null): Promi
             to_char(requested_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as pedido, to_char(ready_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as listo,
             to_char(expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as vence, to_char(downloaded_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as bajado, bytes,
             to_char((requested_at + make_interval(days => cfg_int('export_cada_dias'))) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as otro
-       from data_exports where user_id = $1::uuid and coalesce(business_id, '') = $2::text order by requested_at desc limit 5`, [userId, negocio ?? ""])).rows;
+       from data_exports where user_id = $1::uuid and coalesce(business_id, '') = $2::text and requested_by is null order by requested_at desc limit 5`, [userId, negocio ?? ""])).rows;
 }
 
 /* 22 nov · El ZIP se arma en un archivo temporal (<tmp>/tl-exportes/<id del pedido>.zip, solo del proceso) y sube desde el disco. Se borra en el
@@ -285,7 +287,7 @@ export async function armarPendientes(max = 3): Promise<number> {
   let n = 0;
   for (let i = 0; i < max; i++) {
     const e = (await db().query<{ id: string; user_id: string; business_id: string | null }>(
-      `update data_exports set status = 'armando' where id = (select id from data_exports where status = 'pendiente' order by requested_at limit 1 for update skip locked)
+      `update data_exports set status = 'armando' where id = (select id from data_exports where status = 'pendiente' and requested_by is null order by requested_at limit 1 for update skip locked)
        returning id::text, user_id::text, business_id`)).rows[0];
     if (!e) break;
     let ruta: string | null = null;
@@ -318,27 +320,31 @@ export async function armarPendientes(max = 3): Promise<number> {
 }
 export async function vencerExportaciones(): Promise<number> {
   const { borrarObjeto, mediosListos } = await import("../medios");
+  // 26 nov · Uno del equipo que se quedó «armando» (el proceso se cayó mientras lo armaba) no vuelve a la fila del barrido —el barrido avisaría a la
+  // persona de un archivo que ella no pidió—: no salió (fallo), y su archivo, si llegó a subir, sale del almacén aquí abajo.
+  await db().query(`update data_exports set status = 'fallo', error = 'se cortó mientras se armaba' where status = 'armando' and requested_by is not null and requested_at < now() - interval '30 minutes'`);
   const V = (await db().query<{ id: string; media_key: string }>(
-    `select id::text, media_key from data_exports where media_key is not null and file_gone_at is null and (status = 'bajado' or expires_at <= now()) limit 50`)).rows;
+    `select id::text, media_key from data_exports where media_key is not null and file_gone_at is null and (status in ('bajado', 'fallo') or expires_at <= now()) limit 50`)).rows;
   for (const v of V) {
     if (mediosListos()) await borrarObjeto(v.media_key);
     await db().query(`update data_exports set file_gone_at = now(), status = case when status = 'listo' then 'vencido' else status end where id = $1::uuid`, [v.id]);
   }
-  // Un pedido que se quedó «armando» (el proceso se cayó) vuelve a la fila.
-  await db().query(`update data_exports set status = 'pendiente' where status = 'armando' and requested_at < now() - interval '30 minutes'`);
+  // Un pedido de la persona que se quedó «armando» (el proceso se cayó) vuelve a la fila.
+  await db().query(`update data_exports set status = 'pendiente' where status = 'armando' and requested_by is null and requested_at < now() - interval '30 minutes'`);
   return V.length;
 }
 
 /* ── Bajar el archivo (POST /api/datos/archivo/<id>): solo quien lo pidió, una vez, antes de que venza ──
    22 nov · En flujo: después del permiso se ABRE el objeto en el almacén (abrirObjeto: por partes, nunca entero en memoria) y solo si está se gasta
    el uso; quien pierde la carrera suelta el cuerpo sin leerlo (sin esperar). El cuerpo pasa tal cual a la respuesta (guardián exportacionEnFlujo). */
-export type ResBajar = { ok: true; cuerpo: ReadableStream<Uint8Array>; largo: number | null; nombre: string } | { ok: false; status: 404 | 410 };
+export type ResBajar = { ok: true; cuerpo: ReadableStream<Uint8Array>; nombre: string } | { ok: false; status: 404 | 410 };
 export async function bajarExportacion(id: string, userId: string, ip: string | null): Promise<ResBajar> {
   if (!/^[0-9a-f-]{36}$/.test(id)) return { ok: false, status: 404 };
-  const e = (await db().query<{ media_key: string | null; status: string; vence: boolean; business_id: string | null }>(
-    `select media_key, status, expires_at > now() as vence, business_id from data_exports where id = $1::uuid and user_id = $2::uuid`, [id, userId])).rows[0];
-  // De otra persona (o no existe): 404, igual que si no existiera.
-  if (!e) return { ok: false, status: 404 };
+  const e = (await db().query<{ media_key: string | null; status: string; vence: boolean; business_id: string | null; del_equipo: boolean }>(
+    `select media_key, status, expires_at > now() as vence, business_id, requested_by is not null as del_equipo from data_exports where id = $1::uuid and user_id = $2::uuid`, [id, userId])).rows[0];
+  // De otra persona (o no existe): 404, igual que si no existiera. 26 nov · Uno que armó el equipo (Usuarios 360°) tampoco existe para la persona:
+  // lo baja solo quien lo armó (bajarExportacionEquipo).
+  if (!e || e.del_equipo) return { ok: false, status: 404 };
   if (e.status !== "listo" || !e.vence || !e.media_key) return { ok: false, status: 410 };
   // El negocio: quien lo pidió sigue siendo su dueño.
   if (e.business_id && !(await db().query(`select 1 from business_members where business_id = $1 and user_id = $2::uuid and kind = 'owner' and status = 'active'`, [e.business_id, userId])).rowCount)
@@ -353,7 +359,77 @@ export async function bajarExportacion(id: string, userId: string, ip: string | 
   try { r = await db().query(`update data_exports set status = 'bajado', downloaded_at = now(), ip_hash = $3 where id = $1::uuid and user_id = $2::uuid and status = 'listo' and expires_at > now()`, [id, userId, ipHash]); }
   catch (err) { void a.cuerpo.cancel().catch(() => undefined); throw err; }
   if (!r.rowCount) { void a.cuerpo.cancel().catch(() => undefined); return { ok: false, status: 410 }; }
-  return { ok: true, cuerpo: a.cuerpo, largo: a.largo, nombre: e.business_id ? `tolatino-negocio-${e.business_id}.zip` : "tolatino-mis-datos.zip" };
+  return { ok: true, cuerpo: a.cuerpo, nombre: e.business_id ? `tolatino-negocio-${e.business_id}.zip` : "tolatino-mis-datos.zip" };
+}
+
+/* ── «Exportar sus datos» del equipo (Super Admin › Usuarios 360° › Privacidad) ──
+   26 nov · Por el MISMO camino que el archivo de la persona (antes: el ZIP entero en memoria y en base64 por la acción del servidor; LAUNCH 9t):
+   - Lo arma, en el momento, la persona del equipo con usr:exportar (la acción revisa el permiso, la ciudad y el motivo): una fila de data_exports con
+     requested_by = quien lo arma (Usuarios 360° la pinta en «Sus archivos»: «Lo pidió <nombre> (equipo)»). La persona no la ve ni le cuenta (su
+     pantalla, su «uno vivo a la vez» y su «uno cada 7 días» miran solo requested_by is null; el índice único también, migración 0227).
+   - El ZIP es el MISMO que el de la persona, byte a byte: armarADisco → armarZip(datosDeCuenta(su cuenta)) a un archivo temporal (se borra en el
+     finally), sube al almacén privado desde el disco (guardarArchivo) con su sha256 y su tamaño, y queda «listo» EQUIPO_VENCE_MIN minutos.
+   - Se baja UNA vez, solo por quien lo armó, con POST /api/admin/usuarios/archivo/<id> (el permiso usr:exportar y la ciudad se revisan OTRA vez en
+     cada descarga: bajarExportacionEquipo) y en flujo desde el almacén. La dirección lleva solo el id de la fila (al azar), nada de la persona.
+   - Bajado, vencido o cortado a mitad: el archivo sale del almacén con el barrido (vencerExportaciones), igual que el de la persona.
+   Guardián exportacionEnFlujo. */
+export const EQUIPO_VENCE_MIN = 10;
+/* La fila, ya «armando» (dentro de la transacción de la acción: el barrido nunca la ve «pendiente»), con la clave donde va a quedar el archivo (así,
+   si el proceso se cae después de subirlo, el barrido lo encuentra y lo saca). */
+export async function apartarParaEquipo(c: PoolClient, userId: string, staffId: string): Promise<string> {
+  const id = (await c.query<{ id: string }>(
+    `insert into data_exports (user_id, requested_by, is_test) values ($1::uuid, $2::uuid, (select is_test from users where id = $1::uuid)) returning id::text`, [userId, staffId])).rows[0]!.id;
+  await c.query(`update data_exports set status = 'armando', media_key = $2 where id = $1::uuid and requested_by = $3::uuid`, [id, `privado/exportes/${id}.zip`, staffId]);
+  return id;
+}
+/* Armarlo a disco, subirlo y dejarlo «listo» (con `alListo` en la MISMA transacción: la auditoría de la acción). Si algo falla: «fallo» y el error
+   sube (el archivo, si llegó a subir, lo saca el barrido). */
+export async function armarParaEquipo(id: string, userId: string, alListo: (c: PoolClient, secciones: Map<string, Seccion>) => Promise<void>): Promise<void> {
+  const { guardarArchivo, mediosListos } = await import("../medios");
+  let ruta: string | null = null;
+  try {
+    if (!mediosListos()) throw new Error("almacenamiento sin configurar");
+    const t0 = Date.now();
+    await mkdir(DIR_EXPORTES(), { recursive: true, mode: 0o700 });
+    ruta = join(DIR_EXPORTES(), `${id}.zip`);
+    const { secciones, sha256, bytes } = await armarADisco(await datosDeCuenta(userId), false, ruta);
+    const clave = `privado/exportes/${id}.zip`;
+    await guardarArchivo(clave, ruta, "application/zip", sha256);
+    await tx(async (c) => {
+      const r = await c.query(
+        `update data_exports set status = 'listo', sha256 = $2, bytes = $3::int, sections = $4::jsonb, ready_at = now(), expires_at = now() + make_interval(mins => $5::int)
+          where id = $1::uuid and status = 'armando' and media_key = $6 and requested_by is not null`,
+        [id, sha256, bytes, JSON.stringify({ ...Object.fromEntries([...secciones].map(([k, v]) => [k, v.filas])), _ms: Date.now() - t0 }), EQUIPO_VENCE_MIN, clave]);
+      if (!r.rowCount) throw new Error("la exportación ya no está armándose");
+      await alListo(c, secciones);
+    });
+  } catch (err) {
+    await db().query(`update data_exports set status = 'fallo', error = $2 where id = $1::uuid and status = 'armando'`, [id, String((err as Error)?.message ?? err).slice(0, 300)]).catch(() => undefined);
+    throw err;
+  } finally {
+    if (ruta) await rm(ruta, { force: true }).catch(() => undefined);
+  }
+}
+/* Bajarlo (POST /api/admin/usuarios/archivo/<id>): solo quien lo armó, con usr:exportar AHORA y la persona en sus ciudades AHORA; una vez, antes de
+   que venza. Mismo orden que bajarExportacion: el permiso, después abrir el objeto en flujo (si no está, 410 sin gastar el uso) y solo entonces se
+   gasta el uso (gana el primero; quien pierde la carrera suelta el cuerpo sin esperar). De otra persona del equipo, sin permiso o de otra ciudad: 404,
+   igual que si no existiera. */
+export async function bajarExportacionEquipo(id: string, s: { id: string; cities: string[]; puede: (seccion: string, accion: "exportar") => boolean }, ip: string | null): Promise<ResBajar> {
+  if (!/^[0-9a-f-]{36}$/.test(id) || !s.puede("usr", "exportar")) return { ok: false, status: 404 };
+  const e = (await db().query<{ media_key: string | null; status: string; vence: boolean; user_id: string }>(
+    `select e.media_key, e.status, e.expires_at > now() as vence, e.user_id::text from data_exports e join users u on u.id = e.user_id
+      where e.id = $1::uuid and e.requested_by = $2::uuid and e.business_id is null and (cardinality($3::text[]) = 0 or u.home_city_id = any($3::text[]))`, [id, s.id, s.cities])).rows[0];
+  if (!e) return { ok: false, status: 404 };
+  if (e.status !== "listo" || !e.vence || !e.media_key) return { ok: false, status: 410 };
+  const { abrirObjeto } = await import("../medios");
+  const a = await abrirObjeto(e.media_key);
+  if (!a || a.estado !== 200) return { ok: false, status: 410 };
+  const ipHash = ip ? createHash("sha256").update(`ip:${ip}`).digest("hex") : null;
+  let r: { rowCount: number | null };
+  try { r = await db().query(`update data_exports set status = 'bajado', downloaded_at = now(), ip_hash = $3 where id = $1::uuid and requested_by = $2::uuid and status = 'listo' and expires_at > now()`, [id, s.id, ipHash]); }
+  catch (err) { void a.cuerpo.cancel().catch(() => undefined); throw err; }
+  if (!r.rowCount) { void a.cuerpo.cancel().catch(() => undefined); return { ok: false, status: 410 }; }
+  return { ok: true, cuerpo: a.cuerpo, nombre: `tolatino-datos-${e.user_id}.zip` };
 }
 
 /* ── Usuarios 360° › Privacidad: sus archivos (sin contenido) ── */

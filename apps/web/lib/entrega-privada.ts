@@ -30,7 +30,7 @@ export async function entregarPrivado(req: Request, llaves: Llave[], cabeceras: 
     if (a.estado === 304) return new Response(null, { status: 304, headers: { ...base, etag: a.etag } });
     const h: Record<string, string> = { ...base, "content-type": l.tipo };
     if (a.etag) h.etag = a.etag;
-    if (a.largo != null) h["content-length"] = String(a.largo);
+    // 26 nov · Sin content-length: Next 15 lo quita de toda respuesta de una ruta (FORBIDDEN_HEADERS); el cuerpo sale «chunked» (guardián exportacionEnFlujo).
     return new Response(a.cuerpo, { status: 200, headers: h });
   }
   if (siFalta) return siFalta();

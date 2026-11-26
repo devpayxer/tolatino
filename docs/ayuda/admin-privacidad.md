@@ -1,7 +1,7 @@
 # Super Admin: Privacidad y datos · Super Admin: Privacy and data
 
 _Pantallas: **Usuarios 360° › Privacidad** (`/admin/usuarios/{id}?tab=privacidad`), **Colas › Cambios sensibles** (Fusionar cuentas) y **Sistema ›
-Configuración › Retención**. Teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 14 nov 2026.
+Configuración › Retención**. Teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 26 nov 2026.
 Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
@@ -11,7 +11,9 @@ Audiencia: equipo. Tema: equipo._
 - **Usuarios 360° › Privacidad** trae, de una persona:
   - **Sus archivos (Descargar mis datos)**: cada pedido, si lo pidió ella o alguien del equipo, cuánto pesó y si lo bajó. Nunca el contenido.
     **«Exportar sus datos»** (rol con «exportar») baja el MISMO archivo que la persona pide en Mi cuenta, para un pedido que llegó por Soporte; el
-    motivo queda en la auditoría.
+    motivo queda en la auditoría. Se arma en el momento y el navegador lo guarda solo; el enlace sirve **una vez**, **10 minutos**, y solo para
+    quien lo armó (con su permiso revisado otra vez al bajarlo). Cada exportación queda en esta lista como «Lo pidió <nombre> (equipo)» y el
+    archivo sale del almacén al bajarse o al vencer. La persona no la ve en Mi cuenta ni le cuenta para pedir el suyo.
   - **Borrado a los 30 días**: si hay un borrado programado, la fecha y quién lo pidió; cuando ya corrió, **la purga**: cuándo, si quedó completa,
     cuántas filas, cuántas tablas se revisaron, cuántos negocios quedaron sin dueño, cuántas fotos salieron del almacenamiento y **cada tabla** con
     sus filas borradas, vaciadas o seudonimizadas.
@@ -46,6 +48,9 @@ Audiencia: equipo. Tema: equipo._
 | Quien pidió la fusión intenta aplicarla | No puede: «Lo pediste tú: lo aplica otra persona del equipo.» |
 | Fusionar una cuenta del equipo | No se puede: primero se le quita el rol en Sistema › Equipo. |
 | Alguien quiere el archivo de otra persona | No existe para él: cada archivo lo baja solo quien lo pidió. |
+| «Exportar sus datos» y la descarga no empezó | Vuelve a tocar «Exportar sus datos»: arma uno nuevo. El anterior vence solo a los 10 minutos y sale del almacén. |
+| Otra persona del equipo (o alguien sin el permiso «exportar», o de otra ciudad) usa el enlace | No existe para ella: el enlace es solo de quien lo armó, con su permiso y su ciudad revisados al bajarlo. |
+| La persona ya pidió su archivo en Mi cuenta | No choca: el del equipo es aparte y el suyo sigue igual. |
 | Un negocio cuyo único dueño se borró | Queda sin dueño («sin reclamar»), su Pro termina y se puede reclamar. |
 
 ## Preguntas frecuentes
@@ -53,6 +58,8 @@ Audiencia: equipo. Tema: equipo._
 - **¿El negocio ve el nombre de alguien que se borró?** No: ve «Cuenta borrada» en sus pedidos y cobros.
 - **¿Puedo cambiar cuánto se guarda algo?** Sí, en Sistema › Configuración › Retención, dentro de sus límites. Si cambias lo que dicen las
   tiendas o la ayuda (13 meses, 90 días, 24 horas, 7 días), cambia también ese texto.
+- **¿Por qué el navegador no dice cuánto falta al bajar el archivo?** El servidor lo manda por partes y el navegador no sabe el total antes de
+  terminar; el archivo llega entero. Lo que pesa sale en «Sus archivos» y en Mi cuenta de la persona.
 
 ## English
 ### What it does
@@ -62,7 +69,10 @@ Audiencia: equipo. Tema: equipo._
 - **Users 360° › Privacy** shows, for a person:
   - **Their files (Download my data)**: each request, whether they or a team member requested it, its size and whether it was downloaded. Never
     the content. **"Export their data"** (a role with "export") downloads the SAME file the person requests in My account, for a request that came
-    through Support; the reason goes into the audit log.
+    through Support; the reason goes into the audit log. It is built on the spot and the browser saves it on its own; the link works **once**, for
+    **10 minutes**, and only for whoever built it (their permission is checked again when downloading). Each export stays in this list as
+    "Requested by <name> (team)" and the file leaves storage once downloaded or expired. The person does not see it in My account and it does not
+    count against requesting their own.
   - **Deletion after 30 days**: if a deletion is scheduled, the date and who requested it; once it ran, **the purge**: when, whether it was complete,
     how many rows, how many tables were checked, how many businesses were left without an owner, how many photos left storage and **each table**
     with its deleted, emptied or pseudonymized rows.
@@ -96,6 +106,9 @@ Audiencia: equipo. Tema: equipo._
 | The requester tries to apply the merge | They cannot: "You requested it: another team member applies it." |
 | Merging a team account | Not allowed: first remove their role in System › Team. |
 | Someone wants another person's file | It does not exist for them: each file is downloaded only by whoever requested it. |
+| "Export their data" and the download did not start | Tap "Export their data" again: it builds a new one. The previous one expires on its own after 10 minutes and leaves storage. |
+| Another team member (or someone without the "export" permission, or from another city) uses the link | It does not exist for them: the link belongs to whoever built it, with their permission and city checked when downloading. |
+| The person already requested their file in My account | No conflict: the team's export is separate and theirs stays the same. |
 | A business whose only owner was deleted | It is left without an owner ("unclaimed"), its Pro ends and it can be claimed. |
 
 ### FAQ
@@ -103,3 +116,5 @@ Audiencia: equipo. Tema: equipo._
 - **Does the business see the name of someone who was deleted?** No: it sees "Cuenta borrada" on its orders and payments.
 - **Can I change how long something is kept?** Yes, in System › Settings › Retention, within its limits. If you change what the stores or the help
   say (13 months, 90 days, 24 hours, 7 days), change that text too.
+- **Why doesn't the browser show how much is left while downloading the file?** The server sends it in parts and the browser does not know the
+  total until it finishes; the file arrives whole. Its size shows in "Their files" and in the person's My account.

@@ -360,12 +360,12 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     const x = pri;
     const EST_ARCH: Record<string, [string, string]> = { pendiente: [E2("PEDIDO", "REQUESTED"), "action"], armando: [E2("ARMANDO", "BUILDING"), "action"], listo: [E2("LISTO", "READY"), "signal"], bajado: [E2("BAJADO", "DOWNLOADED"), "neutral"], vencido: [E2("VENCIDO", "EXPIRED"), "neutral"], fallo: [E2("NO SALIÓ", "FAILED"), "danger"] };
     const ACC: Record<string, string> = { borrar: E2("borradas", "deleted"), vaciar: E2("vaciadas", "emptied"), seudonimizar: E2("seudonimizadas", "pseudonymized") };
-    const descargar = (b64: string) => {
-      const bin = atob(b64), bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([bytes], { type: "application/zip" })); a.download = `tolatino-datos-${u.id}.zip`;
-      document.body.appendChild(a); a.click(); a.remove();
+    // 26 nov · Bajar como «Descargar mis datos» de la persona: un formulario POST al mismo sitio con el id del enlace (un uso, vence en minutos); el
+    // navegador guarda el ZIP y la pantalla se queda. Antes el ZIP llegaba entero en base64 en la respuesta de la acción (guardián exportacionEnFlujo).
+    const descargar = (enlace: string) => {
+      const f = document.createElement("form");
+      f.method = "post"; f.action = `/api/admin/usuarios/archivo/${encodeURIComponent(enlace)}`; f.style.display = "none";
+      document.body.appendChild(f); f.submit(); f.remove();
     };
     const resumen = (f: Record<string, unknown>) => Object.entries(f).filter(([, v]) => v != null && v !== "" && typeof v !== "object").slice(0, 4).map(([k, v]) => `${k}: ${String(v).slice(0, 40)}`).join(" · ");
     cuerpo = (
@@ -373,7 +373,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
         <PanelBloques bloques={[{ type: "group", k: E2("SUS ARCHIVOS (DESCARGAR MIS DATOS)", "THEIR FILES (DOWNLOAD MY DATA)"), first: true }]} />
         {P.exportar ? <PanelBloques bloques={[{ type: "acts", items: [{ l: E2("Exportar sus datos", "Export their data"), icon: "folder", off: pend, onClick: () => setConf({
           titulo: E2(`Exportar los datos de ${corto}`, `Export ${corto}’s data`), sub: E2("Para un pedido de privacidad que llegó por Soporte. Es el mismo archivo que la persona pide en Mi cuenta: lo que el mapa de datos dice que se exporta, en JSON y CSV.", "For a privacy request that came through Support. It’s the same file the person requests in My account: what the data map says is exported, in JSON and CSV."), cta: E2("Descargar", "Download"),
-          nota: "interna", hacer: async (m) => { const r = await exportarDatos(u.id, m); if (r.ok && "archivo" in r && r.archivo) descargar(r.archivo); return r; } }) }] }]} /> : <A.AdminNote tone="info" icon="lock">{E2("Tu rol no exporta datos.", "Your role doesn’t export data.")}</A.AdminNote>}
+          nota: "interna", hacer: async (m) => { const r = await exportarDatos(u.id, m); if (r.ok && "enlace" in r && r.enlace) descargar(r.enlace); return r; } }) }] }]} /> : <A.AdminNote tone="info" icon="lock">{E2("Tu rol no exporta datos.", "Your role doesn’t export data.")}</A.AdminNote>}
         {x?.archivos.length ? <A.AdminList rows={x.archivos.map((e) => ({ icon: "folder", title: `${e.negocio ? `${E2("Del negocio", "From the business")} ${e.negocio}` : E2("Su archivo", "Their file")} · ${E2("pedido", "requested")} ${fecha(e.pedido)}`,
           sub: [e.equipo ? E2(`Lo pidió ${e.equipo} (equipo)`, `Requested by ${e.equipo} (team)`) : E2("Lo pidió la persona", "Requested by the person"), e.bytes ? `${Math.max(1, Math.round(e.bytes / 1024))} KB` : null, e.bajado ? `${E2("bajado", "downloaded")} ${fecha(e.bajado)}` : null].filter(Boolean).join(" · "),
           tag: EST_ARCH[e.estado]?.[0] ?? e.estado.toUpperCase(), tone: EST_ARCH[e.estado]?.[1] ?? "neutral" }))} />

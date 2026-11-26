@@ -13,7 +13,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ fi
   if (!u) return new NextResponse(null, { status: 404 });
   const r = await bajarApk(ficha, u.id);
   if (!r.ok) return r.status === 404 ? new NextResponse(null, { status: 404 }) : volver(r.status);
+  // 26 nov · Sin content-length: Next 15 lo quita de toda respuesta de una ruta (FORBIDDEN_HEADERS; guardián exportacionEnFlujo).
   return new NextResponse(new Uint8Array(r.archivo), { status: 200, headers: {
-    "content-type": "application/vnd.android.package-archive", "content-disposition": `attachment; filename="${r.nombre}"`, "content-length": String(r.archivo.length),
+    "content-type": "application/vnd.android.package-archive", "content-disposition": `attachment; filename="${r.nombre}"`,
     "cache-control": "no-store", "x-content-type-options": "nosniff" } });
 }

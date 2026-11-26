@@ -12667,7 +12667,17 @@ const guardianes = {
        tal cual con las mismas cabeceras (application/zip, attachment, «no-store, private», noindex). Nada en lib/datos lee un objeto entero.
      - Armar: armarZip escribe cada trozo comprimido al llegar (zipPorPartes con salida) a un archivo temporal, con su sha256 y su tamaño, y sube
        desde el disco (guardarArchivo); el archivo temporal se borra en un finally.
-     - Las pruebas datos9d y exp9t comparan el archivo bajado con el guardado (sha256 y tamaño de data_exports). Al revés: alreves9texpflujo. */
+     - Las pruebas datos9d y exp9t comparan el archivo bajado con el guardado (sha256 y tamaño de data_exports). Al revés: alreves9texpflujo.
+     26 nov · La misma clase en «Exportar sus datos» del equipo (Usuarios 360°): la acción del servidor armaba el ZIP entero en memoria y lo devolvía en
+     base64 (el pico, dos veces: el ZIP y su texto; y la respuesta de la acción entera en el navegador). Ahora va por el camino de la persona: la acción
+     aparta la fila (apartarParaEquipo, dentro de hacer: permiso usr:exportar, ciudad y motivo), armarParaEquipo arma a disco y sube desde el disco, y
+     la auditoría de siempre va en la transacción que la deja «listo»; vuelve solo el id del enlace y la pantalla lo baja con un formulario POST a
+     /api/admin/usuarios/archivo/<id> (GET nunca lo gasta; POST del mismo sitio con staff() y usr:exportar; bajarExportacionEquipo revisa OTRA vez el
+     permiso, quién lo armó y la ciudad, abre en flujo y solo entonces gasta el uso; vence en EQUIPO_VENCE_MIN ≤ 60 minutos). Ninguna acción del
+     servidor ("use server") arma un ZIP ni devuelve base64. Lo de la persona mira solo requested_by is null (su pantalla, «uno vivo a la vez», «uno
+     cada 7 días», bajarlo, el barrido; índice de 0227) y el barrido saca del almacén lo del equipo bajado, vencido o cortado (fallo). e2e expeq9t.
+     Y la causa del «content-length vacío» (LAUNCH): Next 15 (send-response.ts, FORBIDDEN_HEADERS) quita content-length, content-encoding y
+     transfer-encoding de toda respuesta de una ruta: ninguna ruta (ni entregarPrivado) lo pone creyendo que llega; el cuerpo sale «chunked». */
   exportacionEnFlujo() {
     const G = "exportacionEnFlujo", X = "apps/web/lib/datos/exportar.ts", R = "apps/web/app/api/datos/archivo/[id]/route.ts", Z = "apps/web/lib/pases/zip.ts";
     for (const f of [X, R, Z]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de la exportación en flujo");
@@ -12678,7 +12688,7 @@ const guardianes = {
     if (iAbrir < 0 || iPermiso < 0 || iGasta < 0 || iPermiso > iAbrir || iAbrir > iGasta) falla(G, X, 0, "bajarExportacion: el permiso, después abrirObjeto (en flujo) y solo entonces se gasta el uso");
     if (!/if \(!a \|\| a\.estado !== 200\) return \{ ok: false, status: 410 \};/.test(bj)) falla(G, X, 0, "bajarExportacion: si el archivo no está en el almacén, 410 sin gastar el uso");
     if (!/if \(!r\.rowCount\) \{ void a\.cuerpo\.cancel\(\)\.catch\(\(\) => undefined\); return \{ ok: false, status: 410 \}; \}/.test(bj)) falla(G, X, 0, "bajarExportacion: quien pierde la carrera suelta el cuerpo sin esperar (void …cancel()) y ve 410");
-    if (!/return \{ ok: true, cuerpo: a\.cuerpo, largo: a\.largo,/.test(bj) || !/export type ResBajar = \{ ok: true; cuerpo: ReadableStream<Uint8Array>;/.test(x)) falla(G, X, 0, "bajarExportacion devuelve el cuerpo en flujo (ReadableStream), no el ZIP");
+    if (!/return \{ ok: true, cuerpo: a\.cuerpo, nombre:/.test(bj) || !/export type ResBajar = \{ ok: true; cuerpo: ReadableStream<Uint8Array>;/.test(x)) falla(G, X, 0, "bajarExportacion devuelve el cuerpo en flujo (ReadableStream), no el ZIP");
     for (const f of archivos.filter((a) => /^apps\/web\/lib\/datos\/.*\.ts$/.test(a))) if (/\bleerObjeto\(/.test(sinComent(f))) falla(G, f, 0, "lib/datos lee un objeto del almacén entero (leerObjeto): el archivo de la persona va en flujo (abrirObjeto)");
     const r = sinComent(R), post = r.slice(r.indexOf("export async function POST"));
     if (!/return new NextResponse\(r\.cuerpo, \{/.test(post) || /new Uint8Array\(|r\.zip\b|arrayBuffer|Buffer\.concat/.test(post)) falla(G, R, 0, "la ruta pasa el cuerpo en flujo (new NextResponse(r.cuerpo)), sin copiarlo entero");
@@ -12708,6 +12718,54 @@ const guardianes = {
     if (!/if \(salida\) \{ salida\(l\); salida\(nb\); salida\(cuerpo\); \} else locales\.push\(l, nb, cuerpo\);/.test(zp) || !/if \(salida\) \{ salida\(cd\); salida\(fin\); return Buffer\.alloc\(0\); \}/.test(zp)) falla(G, Z, 0, "zipPorPartes con salida no guarda los trozos (los entrega en orden) y cierra escribiendo el índice");
     for (const t of ["pruebas/e2e/datos9d.cjs", "pruebas/e2e/exp9t.cjs"]) if (!existsSync(t) || !/idéntico byte a byte al guardado/.test(readFileSync(t, "utf8")) || !/select sha256 from data_exports/.test(readFileSync(t, "utf8"))) falla(G, t, 0, "la prueba compara el archivo bajado con el guardado (sha256 y tamaño de data_exports)");
     if (!existsSync("pruebas/alreves/alreves9texpflujo.cjs")) falla(G, "pruebas/alreves/alreves9texpflujo.cjs", 0, "falta su prueba al revés");
+    // 26 nov · «Exportar sus datos» del equipo, por el mismo camino.
+    const AU = "apps/web/app/admin/acciones-usuarios.ts", RE = "apps/web/app/api/admin/usuarios/archivo/[id]/route.ts", UI = "apps/web/app/admin/U360.tsx", MG = "packages/db/migrations/0227_exportar_del_equipo_en_flujo.sql";
+    for (const f of [AU, RE, UI, MG]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de «Exportar sus datos» del equipo en flujo");
+    for (const f of archivos.filter((a) => /^apps\/web\/(app|lib)\/.*\.tsx?$/.test(a))) {
+      const t = sinComent(f);
+      if (!/^\s*["']use server["']/.test(t)) continue;
+      if (/\barmarZip\(|\bzipPorPartes\(|\.toString\(\s*["']base64["']\s*\)|\bbtoa\(/.test(t)) falla(G, f, 0, "una acción del servidor arma un ZIP o devuelve un archivo en base64: el archivo va a disco y se baja en flujo por una ruta (armarParaEquipo + /api/admin/usuarios/archivo/<id>)");
+    }
+    const au = sinComent(AU), ex = cuerpoFn(au, "exportarDatos");
+    if (!ex || !/hacer\(id, \["exportar"\], motivo,/.test(ex) || !/await apartarParaEquipo\(c, u\.id, s\.id\)/.test(ex) || !/await armarParaEquipo\(a\.enlace, a\.u\.id,/.test(ex) || !/auditar\(c, \{ actor: a\.s\.id, action: "usuario\.exportar"/.test(ex) || !/return \{ \.\.\.r, enlace: a\.enlace \};/.test(ex) || /base64|armarZip\(|archivo: z|archivo\?: string/.test(au))
+      falla(G, AU, 0, "exportarDatos: permiso usr:exportar (hacer), aparta la fila, arma a disco (armarParaEquipo) con la auditoría «usuario.exportar» al quedar listo, y devuelve solo el enlace (nunca el archivo)");
+    const ui = sinComent(UI);
+    if (/\batob\(|new Blob\(/.test(ui) || !/f\.method = "post"; f\.action = `\/api\/admin\/usuarios\/archivo\/\$\{encodeURIComponent\(enlace\)\}`/.test(ui)) falla(G, UI, 0, "Usuarios 360° baja el archivo con un formulario POST a /api/admin/usuarios/archivo/<enlace> (no un base64 a Blob)");
+    const re = sinComent(RE), reGet = re.slice(re.indexOf("export async function GET"), re.indexOf("export async function POST")), rePost = re.slice(re.indexOf("export async function POST"));
+    if (re.indexOf("export async function GET") < 0 || /bajarExportacionEquipo|abrirObjeto|update |application\/zip|db\(\)/.test(reGet)) falla(G, RE, 0, "el GET de la ruta del equipo no gasta el enlace ni sirve el archivo (lleva a Usuarios)");
+    if (/export async function (PUT|PATCH|DELETE|HEAD|OPTIONS)/.test(re)) falla(G, RE, 0, "la ruta del equipo: solo GET (sin gastar) y POST");
+    const iO = rePost.indexOf("await mismoOrigen()"), iS = rePost.indexOf("await staff()"), iP = rePost.indexOf('s.puede("usr", "exportar")'), iB = rePost.indexOf("await bajarExportacionEquipo(");
+    if (iO < 0 || iS < 0 || iP < 0 || iB < 0 || !(iO < iS && iS < iP && iP < iB)) falla(G, RE, 0, "la ruta del equipo: POST del mismo sitio, staff() con usr:exportar y entonces bajarExportacionEquipo (el permiso en cada descarga)");
+    if (!/return new NextResponse\(r\.cuerpo, \{/.test(rePost) || /new Uint8Array\(|arrayBuffer|Buffer\.concat/.test(rePost) || !/"content-type": "application\/zip", "content-disposition": `attachment; filename="\$\{r\.nombre\}"`, "cache-control": "no-store, private", "x-robots-tag": "noindex"/.test(rePost)) falla(G, RE, 0, "la ruta del equipo pasa el cuerpo en flujo con las mismas cabeceras que la de la persona");
+    const be = cuerpoFn(x, "bajarExportacionEquipo");
+    if (!be) falla(G, X, 0, "falta bajarExportacionEquipo");
+    else {
+      if (!/!s\.puede\("usr", "exportar"\)\) return \{ ok: false, status: 404 \};/.test(be) || !/e\.requested_by = \$2::uuid and e\.business_id is null and \(cardinality\(\$3::text\[\]\) = 0 or u\.home_city_id = any\(\$3::text\[\]\)\)/.test(be)) falla(G, X, 0, "bajarExportacionEquipo: usr:exportar, solo quien lo armó y la persona en sus ciudades (404 si no)");
+      const jP = be.indexOf("e.requested_by = $2::uuid"), jA = be.indexOf("await abrirObjeto(e.media_key)"), jG = be.indexOf("set status = 'bajado'");
+      if (jP < 0 || jA < 0 || jG < 0 || jP > jA || jA > jG) falla(G, X, 0, "bajarExportacionEquipo: el permiso, después abrirObjeto (en flujo) y solo entonces se gasta el uso");
+      if (!/if \(!a \|\| a\.estado !== 200\) return \{ ok: false, status: 410 \};/.test(be) || !/if \(!r\.rowCount\) \{ void a\.cuerpo\.cancel\(\)\.catch\(\(\) => undefined\); return \{ ok: false, status: 410 \}; \}/.test(be)) falla(G, X, 0, "bajarExportacionEquipo: 410 sin gastar si el archivo no está, y quien pierde la carrera suelta el cuerpo");
+      if (!/set status = 'bajado', downloaded_at = now\(\)[^`]*where id = \$1::uuid and requested_by = \$2::uuid and status = 'listo' and expires_at > now\(\)/.test(be) || /leerObjeto|arrayBuffer|Buffer\.concat/.test(be)) falla(G, X, 0, "bajarExportacionEquipo: un uso (listo y vigente en el mismo update) y en flujo");
+    }
+    const ae = cuerpoFn(x, "armarParaEquipo"), vm = /export const EQUIPO_VENCE_MIN = (\d+);/.exec(x);
+    if (!ae || !/await armarADisco\(await datosDeCuenta\(userId\), false, ruta\)/.test(ae) || !/await guardarArchivo\(clave, ruta, "application\/zip", sha256\);/.test(ae) || !/\} finally \{\s*if \(ruta\) await rm\(ruta, \{ force: true \}\)/.test(ae) || !/await alListo\(c, secciones\);/.test(ae) || /armarZip\(|guardarObjeto\(/.test(ae))
+      falla(G, X, 0, "armarParaEquipo: el mismo armado a disco que el de la persona (armarADisco de datosDeCuenta), sube desde el disco, la auditoría en la transacción que lo deja listo y borra su temporal");
+    if (!vm || +vm[1] < 1 || +vm[1] > 60 || !/make_interval\(mins => \$5::int\)/.test(ae ?? "")) falla(G, X, 0, "el enlace del equipo vence en minutos (EQUIPO_VENCE_MIN, de 1 a 60)");
+    // Lo de la persona: solo sus pedidos (requested_by is null).
+    const de = (fn, re2, msg) => { const c = cuerpoFn(x, fn); if (!c || !re2.test(c)) falla(G, X, 0, msg); };
+    de("misArchivos", /and requested_by is null order by requested_at desc/, "misArchivos (Mi cuenta) no enseña los archivos del equipo (requested_by is null)");
+    de("pedirArchivo", /status in \('pendiente', 'armando', 'listo'\) and requested_by is null/, "pedirArchivo: «uno vivo a la vez» cuenta solo los de la persona");
+    de("pedirArchivo", /status <> 'fallo' and requested_by is null/, "pedirArchivo: «uno cada 7 días» cuenta solo los de la persona");
+    de("bajarExportacion", /requested_by is not null as del_equipo from data_exports/, "bajarExportacion: la persona no baja (ni gasta) un archivo del equipo");
+    de("bajarExportacion", /if \(!e \|\| e\.del_equipo\) return \{ ok: false, status: 404 \};/, "bajarExportacion: la persona no baja (ni gasta) un archivo del equipo (404)");
+    de("armarPendientes", /where status = 'pendiente' and requested_by is null/, "el barrido arma solo los pedidos de la persona");
+    de("vencerExportaciones", /set status = 'fallo'[^`]*where status = 'armando' and requested_by is not null/, "vencerExportaciones: uno del equipo cortado a mitad queda «fallo» (no vuelve a la fila del barrido)");
+    de("vencerExportaciones", /status in \('bajado', 'fallo'\) or expires_at <= now\(\)/, "vencerExportaciones saca del almacén lo bajado, lo vencido y lo cortado (fallo)");
+    de("vencerExportaciones", /set status = 'pendiente' where status = 'armando' and requested_by is null/, "vencerExportaciones: solo un pedido de la persona vuelve a la fila");
+    if (!/create unique index if not exists data_exports_viva_persona_idx on data_exports \(user_id, coalesce\(business_id, ''\)\)\s*where status in \('pendiente', 'armando', 'listo'\) and requested_by is null;/.test(readFileSync(MG, "utf8"))) falla(G, MG, 0, "«uno vivo a la vez» (índice único) es solo de los pedidos de la persona");
+    if (!existsSync("pruebas/e2e/expeq9t.cjs") || !/descarga real/.test(readFileSync("pruebas/e2e/expeq9t.cjs", "utf8")) || !/byte a byte/.test(readFileSync("pruebas/e2e/expeq9t.cjs", "utf8"))) falla(G, "pruebas/e2e/expeq9t.cjs", 0, "falta la prueba del archivo del equipo (descarga real, idéntico byte a byte al de la persona, un uso, sin permiso)");
+    // La causa del «content-length vacío»: Next 15 lo quita de toda respuesta de una ruta (FORBIDDEN_HEADERS); ninguna ruta lo pone creyendo que llega.
+    for (const f of archivos.filter((a) => (/^apps\/web\/app\/.*\/route\.tsx?$/.test(a) || a === "apps/web/lib/entrega-privada.ts")))
+      if (/["']content-length["']\s*(?::|\]\s*=)/i.test(sinComent(f))) falla(G, f, 0, "pone content-length en la respuesta de una ruta: Next 15 lo quita (send-response.ts, FORBIDDEN_HEADERS) y el navegador nunca lo recibe; el cuerpo sale «chunked»");
   },
 
   /* 9t (19 nov) · resumenComunidadUnaPasada: el barrido de la Comunidad con 1 M de vecinos tardaba 9,2 s de 10 (carga 44571463348): «activos por
