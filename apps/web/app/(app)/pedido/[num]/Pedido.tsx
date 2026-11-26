@@ -11,6 +11,7 @@ import { guardarCarrito } from "../../n/[id]/MenuCliente";
 import { lineasDelPedido } from "./acciones";
 import { MapaVivo } from "@/app/_ruta/MapaVivo";
 import { dosIdiomas } from "@/lib/dos-idiomas";
+import { usd } from "@/lib/dinero-comun";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,7 +149,7 @@ export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boo
       </div>
       <div className="mt-1.5 flex flex-col gap-[9px] border-t border-line pt-3 text-[12.5px] font-medium text-ink/60">
         <div className="flex justify-between"><span>Subtotal</span><span className="font-mono text-ink">{p.sub}</span></div>
-        {p.envio && <div className="flex justify-between"><span>{E2("Envío", "Delivery")}</span><span className="font-mono text-ink">{p.envio === "$0.00" ? E2("Gratis", "Free") : p.envio}</span></div>}
+        {p.envio && <div className="flex justify-between"><span>{E2("Envío", "Delivery")}</span><span className="font-mono text-ink">{p.envio === usd(0) ? E2("Gratis", "Free") : p.envio}</span></div>}
         {p.propina && <div className="flex justify-between"><span>{E2("Propina", "Tip")}</span><span className="font-mono text-ink">{p.propina}</span></div>}
         {p.cupon && <div className="flex justify-between" data-cupon-linea><span>{E2(`Cupón ${p.cupon.code}`, `Coupon ${p.cupon.code}`)}</span><span className="font-mono text-open-text">−{p.cupon.monto}</span></div>}
         <div className="flex justify-between"><span>{p.taxL}</span><span className="font-mono text-ink">{p.tax}</span></div>

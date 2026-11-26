@@ -96,7 +96,7 @@ export function mercadoDetalle(c: Ctx): Sec {
     const s = l.st === "out" ? (prop ? E2(`No hay · propusiste ${nm(prop.name)} · espera al cliente`, `Out · you proposed ${nm(prop.name)} · awaiting client`) : E2("No hay · no se cobra", "Out · not charged"))
       : l.peso ? (l.lbReal != null ? E2(`Pidió ${l.lb} lb · pesó ${l.lbReal} lb`, `Asked ${l.lb} lb · weighed ${l.lbReal} lb`) : E2(`${l.lb} lb · por pesar`, `${l.lb} lb · to weigh`)) : `× ${l.q}`;
     out.push({ type: "rows", items: [{ key: l.id, icon: l.peso ? "scale" : "bag", t: `${nm(l.name)}${l.subOf ? E2(" · cambio aceptado", " · accepted swap") : ""}`, s: `${s}${l.ops.length ? ` · ${l.ops.join(" · ")}` : ""}`,
-      r: l.st === "out" ? "$0.00" : money(l.lbReal != null || !l.peso ? l.final : l.est), tag: l.peso && l.lbReal == null && l.st === "ok" ? E2("PESAR", "WEIGH") : null, tone: "action", chev: false }] });
+      r: l.st === "out" ? money(0) : money(l.lbReal != null || !l.peso ? l.final : l.est), tag: l.peso && l.lbReal == null && l.st === "ok" ? E2("PESAR", "WEIGH") : null, tone: "action", chev: false }] });
     if (!pesando || l.st !== "ok") continue;
     const k = `mw:${l.id}`, w = (ui[k] as { lb: string; foto: { id: string; url: string } | null } | undefined) ?? { lb: l.lbReal != null ? String(l.lbReal) : "", foto: null };
     if (l.peso) {
