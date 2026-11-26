@@ -94,7 +94,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     const pd = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); pd.on('pageerror', (e) => err.push(e.message));
     await entrarComo(pd, DUENA.tel); await pd.goto(B + `/panel/${BN}`);
     const r4 = await accion(pd, 'nocheResponder', [BN, N4.num, 'nohay']);
-    ok(r4.j?.ok === true && r4.j?.retenida === true && sql(`select status from operations where number = '${N4.num}'`) === 'declined', `el local dijo «No hay mesa» y el panel sabe que la retención no se soltó (${JSON.stringify(r4.j)})`);
+    ok(r4.j?.ok === true && r4.j?.soltada?.e === 'retenida' && sql(`select status from operations where number = '${N4.num}'`) === 'declined', `el local dijo «No hay mesa» y el panel sabe que la retención no se soltó (${JSON.stringify(r4.j)})`);
     ok(pago(N4.num) === 'held|0' && holdStuck(N4.num) === '1', `la retención sigue en la tarjeta (${pago(N4.num)}) y el equipo de dinero tiene UNA alerta hold_stuck`);
     const a4 = aviso(N4.num, 'noche_no');
     ok(a4.includes('No se cobró nada, pero la retención de $40 todavía no se soltó de tu tarjeta') && !/Se liberó/.test(a4), `noche_no lo dice, nunca «Se liberó tu depósito» (${a4})`);
@@ -107,7 +107,8 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     const m5 = await (await telefono(b)).newPage(); m5.on('pageerror', (e) => err.push(e.message));
     await entrarComo(m5, N5.tel); await m5.goto(B + `/noche/${N5.num}`);
     await m5.getByRole('button', { name: 'No me sirve' }).first().click();
-    await m5.getByText('Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.').first().waitFor();
+    // 26 nov (LAUNCH (2)) · La nota de la pantalla es la del aviso (devolucion-cancelar › notaAlSoltar).
+    await m5.getByText("Listo. No se cobró nada, pero la retención de $40 todavía no se soltó de tu tarjeta: la seguimos soltando sola y el equipo de To'Latino ya tiene el aviso.").first().waitFor();
     const t5 = await texto(m5);
     ok(!/se liberó tu depósito/i.test(t5), 'la pantalla: «La retención todavía no se soltó…», nunca «Listo: se liberó tu depósito»');
     await m5.screenshot({ path: OUT + 'd9v5-noche-no-me-sirve-retenida-m.png' });
@@ -157,7 +158,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
       const m = await (await telefono(b)).newPage(); m.on('pageerror', (e) => err.push(e.message));
       await entrarComo(m, C.tel); await m.goto(B + `/cita/${C.num}`);
       const r = await accion(m, 'citaAccion', [C.num, 'cancelar']);
-      ok(r.j?.ok === true && !r.j?.retenida && sql(`select status || '|' || cancelled_by from operations where number = '${C.num}'`) === 'cancelled|user', `${C.num}: el cliente canceló (${JSON.stringify(r.j)})`);
+      ok(r.j?.ok === true && !r.j?.soltada && sql(`select status || '|' || cancelled_by from operations where number = '${C.num}'`) === 'cancelled|user', `${C.num}: el cliente canceló (${JSON.stringify(r.j)})`);
       await m.goto(B + `/cita/${C.num}`); await m.getByText('CANCELADA').first().waitFor();
       vistas[C.num] = { m, t: await texto(m) };
     }
@@ -186,7 +187,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     await entrarComo(m4, C4.tel); await m4.goto(B + `/cita/${C4N}`);
     await m4.getByRole('button', { name: 'Cancelar solicitud' }).first().click();
     await m4.getByRole('button', { name: 'Sí, cancelar' }).first().click();
-    await m4.getByText('Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.').first().waitFor();
+    await m4.getByText("Listo. No se cobró nada, pero la retención de $20 todavía no se soltó de tu tarjeta: la seguimos soltando sola y el equipo de To'Latino ya tiene el aviso.").first().waitFor();
     ok(sql(`select status from operations where number = '${C4N}'`) === 'cancelled' && pago(C4N) === 'held|0' && holdStuck(C4N) === '1', `${C4N}: cancelada, la retención sigue (${pago(C4N)}) y UNA alerta hold_stuck`);
     await m4.getByText('No se cobró nada, pero la retención de $20 todavía no se soltó de tu tarjeta').first().waitFor();
     const t4 = await texto(m4);
@@ -213,7 +214,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     await entrarComo(ma, UA.tel); await ma.goto(B + `/apartado/${AN}`);
     await ma.getByRole('button', { name: 'Cancelar', exact: true }).first().click();
     await ma.getByRole('button', { name: 'Sí, cancelar' }).first().click();
-    await ma.getByText('Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.').first().waitFor();
+    await ma.getByText("Listo. No se cobró nada, pero la retención de $30 todavía no se soltó de tu tarjeta: la seguimos soltando sola y el equipo de To'Latino ya tiene el aviso.").first().waitFor();
     ok(sql(`select status from operations where number = '${AN}'`) === 'cancelled' && pago(AN) === 'held|0' && holdStuck(AN) === '1', `${AN}: cancelado, la retención sigue en la tarjeta (${pago(AN)}) y UNA alerta hold_stuck`);
     await ma.getByText('No se cobró nada, pero la retención de $30 todavía no se soltó de tu tarjeta').first().waitFor();
     const ta = await texto(ma);
@@ -235,7 +236,7 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     const mm = await (await telefono(b)).newPage(); mm.on('pageerror', (e) => err.push(e.message));
     await entrarComo(mm, UM.tel); await mm.goto(B + `/mercado/${MN}`);
     const rm = await accion(mm, 'mercCancelar', [MN]);
-    ok(rm.j?.ok === true && rm.j?.retenida === true && sql(`select status from operations where number = '${MN}'`) === 'cancelled' && pago(MN) === 'held|0' && holdStuck(MN) === '1', `${MN}: cancelado, retenida y UNA alerta hold_stuck (${JSON.stringify(rm.j)})`);
+    ok(rm.j?.ok === true && rm.j?.soltada?.e === 'retenida' && sql(`select status from operations where number = '${MN}'`) === 'cancelled' && pago(MN) === 'held|0' && holdStuck(MN) === '1', `${MN}: cancelado, retenida y UNA alerta hold_stuck (${JSON.stringify(rm.j)})`);
     await mm.goto(B + `/mercado/${MN}`); await mm.getByText('CANCELADO').first().waitFor();
     const tm = await texto(mm);
     ok(tm.includes('No se cobró nada, pero la retención de $25 todavía no se soltó de tu tarjeta') && !/Liberamos la retención/.test(tm), 'la pantalla del mercado: «la retención de $25 todavía no se soltó», nunca «Liberamos la retención»');

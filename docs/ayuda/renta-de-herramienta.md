@@ -41,6 +41,7 @@ alfombras). En la pestaña **Tienda** ves el precio por día, el depósito y cu�
 | Llega dañada | El negocio te enseña el daño **con foto y monto** (hasta lo que queda del depósito). Tú decides: **Está bien** (se descuenta, lo demás vuelve) o **No estoy de acuerdo** (lo revisa To'Latino). Si no respondes en 72 h, también lo revisa To'Latino. El depósito sigue retenido mientras tanto. |
 | La tienes más de 7 días | La tarjeta suelta las retenciones a los 7 días: el depósito se renueva solo a los 6 días y 20 horas. Si el banco ya no deja, se le avisa al negocio. |
 | Stripe no contesta al renovar el depósito | No se suelta el depósito ni se avisa nada mientras se averigua: se reintenta y después se le pregunta a Stripe. Si la renovación no salió y no fue el banco, el negocio lee «no se pudo renovar» (sin culpar al banco). |
+| Al renovar (o al no poder renovar), Stripe no suelta el depósito viejo o ya lo había cobrado | El depósito viejo ya no cuenta, pero no se da por soltado hasta que Stripe lo suelta: el barrido lo sigue soltando y el equipo de To'Latino tiene el aviso. Si Stripe ya lo había cobrado, queda cobrado con lo que Stripe cobró. El negocio lee eso, nunca «ya no hay depósito retenido» si no se soltó. |
 | El negocio cancela el apartado | Te avisamos. No se cobra nada. |
 | El negocio no cobra en la app | No se puede apartar en la app: hay que llamarlo. |
 
@@ -86,6 +87,7 @@ price per day, the deposit and how many are left.
 | You return it late | The day after the return day we notify you once. When you return it, each late day is deducted from the deposit (up to the deposit) and the rest is released. Without a deposit, the late days are charged to the card; if your bank does not allow it, it is settled in person. |
 | It comes back damaged | The business shows you the damage **with a photo and an amount** (up to what is left of the deposit). You decide: **It's fine** (it is deducted, the rest goes back) or **I disagree** (To'Latino reviews it). If you do not respond in 72 hours, To'Latino reviews it too. The deposit stays held meanwhile. |
 | You have it more than 7 days | The card releases holds after 7 days: the deposit renews itself at 6 days and 20 hours. If the bank no longer allows it, the business is notified. |
+| When renewing (or failing to renew), Stripe does not release the old deposit or had already charged it | The old deposit no longer counts, but it is not treated as released until Stripe releases it: the sweep keeps releasing it and the To'Latino team has the alert. If Stripe had already charged it, it stays charged with what Stripe charged. The business reads that, never «there is no deposit held anymore» if it was not released. |
 | Stripe does not answer when renewing the deposit | The deposit is not released and nothing is sent while it is checked: it is retried and then Stripe is asked. If the renewal did not go through and it was not the bank, the business reads «it could not be renewed» (without blaming the bank). |
 | The business cancels the reservation | We notify you. Nothing is charged. |
 | The business does not charge in the app | It cannot be reserved in the app: you have to call. |

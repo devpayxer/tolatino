@@ -79,6 +79,23 @@ export const sinSoltarNegocio = (monto: number): Bi => ({ es: ` No se había cob
 export const soltadaO = (s: Soltada, siSalio: string | Bi, para: "cliente" | "negocio" = "cliente"): string | Bi => (s.e === "retenida" ? (para === "cliente" ? sinSoltarCliente(s.monto) : sinSoltarNegocio(s.monto))
   : s.e === "cobrada" ? (para === "cliente" ? (() => { const t = dineroAlCancelar({ e: "cobrada", monto: s.monto }); return { es: ` ${t.es}`, en: ` ${t.en}` }; })() : dineroAlNegocio({ e: "cobrada", monto: s.monto })) : siSalio);
 
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (2), Opus) · Lo que la PANTALLA de quien soltó dice después de tocar «Listo», «No me sirve», «No hay cupo /
+   mesa / fecha», «No puedo», «Rechazar» o «Cancelar». Antes la acción devolvía solo `retenida` y la pantalla, ante una retención que Stripe ya había
+   cobrado, decía lo de siempre («se liberó su depósito»): el aviso sí lo decía bien (soltadaO), la pantalla no. Ahora la acción devuelve `soltada` (solo si
+   NO se soltó: «retenida» o «cobrada», con su monto: lo retenido o lo que Stripe capturó) y la pantalla arma su nota con notaAlSoltar, el MISMO texto del
+   aviso (soltadaO: sinSoltarCliente / sinSoltarNegocio / la cobrada). Sin `soltada`, la pantalla dice lo suyo de siempre (se soltó o no había nada).
+   El servidor decide; la pantalla solo lo muestra. Guardián liberarSoloPorLaRegla (6). */
+export type SoltadaVista = { e: "retenida" | "cobrada"; monto: number };
+export const vistaSoltada = (s: { e: string; monto: number } | null | undefined): SoltadaVista | undefined =>
+  s && (s.e === "retenida" || s.e === "cobrada") ? { e: s.e, monto: Math.max(0, Math.round(Number(s.monto) || 0)) } : undefined;
+/* La nota de la pantalla: «Listo.» (quien pagó) o «Listo: el cliente sabe.» (el negocio), o lo que la pantalla diga antes, y detrás lo que pasó. E2: el de
+   la pantalla (elige el idioma de quien mira). */
+export function notaAlSoltar(s: SoltadaVista, para: "cliente" | "negocio", E2: (es: string, en: string) => string, antes?: Bi): string {
+  const a = antes ?? (para === "cliente" ? { es: "Listo.", en: "Done." } : { es: "Listo: el cliente sabe.", en: "Done: the client knows." });
+  const t = soltadaO(s, { es: "", en: "" }, para) as Bi;
+  return E2(`${a.es}${t.es}`, `${a.en}${t.en}`);
+}
+
 export const sinDevoluciones = (): DevCuenta => ({ hechas: 0, camino: 0, fallidas: 0, liberadas: 0, retenidas: 0 });
 export function contar(c: DevCuenta, d: DevCancelar): DevCuenta {
   const cobradas = (c.cobradas ?? 0) + (d.e === "cobrada" ? 1 : 0);

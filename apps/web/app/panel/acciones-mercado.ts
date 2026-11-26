@@ -6,11 +6,13 @@ import { mismoOrigen } from "@/lib/cuenta";
 import { noHay, pasoMercado, pesarLinea, type PasoMerc } from "@/lib/mercado";
 import { accesoPanel } from "@/lib/panel";
 import type { Res } from "./acciones";
+import type { SoltadaVista } from "@/lib/devolucion-cancelar";
 
 const SIN: Res = { ok: false, mensaje: { es: "No tienes acceso a esta parte del panel.", en: "You don’t have access to this part of the dashboard." } };
 async function entrar(id: unknown) { if (!(await mismoOrigen())) return null; return typeof id === "string" ? accesoPanel(id, "ord") : null; }
 // 9v (quinta tanda) · retenida: la pasarela no soltó todavía la retención que se soltaba (cobros › soltarRetencion): el panel no dice «se liberó».
-const r2 = (r: { ok: true; retenida?: true } | { ok: false; msg: { es: string; en: string } }): Res & { retenida?: true } => (r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, mensaje: r.msg });
+// 26 nov (LAUNCH (2)) · soltada: también la que Stripe ya había cobrado (devolucion-cancelar › vistaSoltada); el panel la dice con notaAlSoltar.
+const r2 = (r: { ok: true; soltada?: SoltadaVista } | { ok: false; msg: { es: string; en: string } }): Res & { soltada?: SoltadaVista } => (r.ok ? (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true }) : { ok: false, mensaje: r.msg });
 
 export async function mercPaso(id: string, numero: string, paso: PasoMerc): Promise<Res> {
   const a = await entrar(id); if (!a) return SIN;

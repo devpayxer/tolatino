@@ -2,7 +2,7 @@ import "server-only";
 import { diasEspeciales, rangosDia } from "./dias-especiales";
 import type { PoolClient } from "pg";
 import { comision, registrarRetencion, retenerPedido, soltarRetencion, soltarSuelta, SWEEP, tarjetaDe, type Retenida } from "./cobros";
-import { sinSoltarCliente, soltadaO, type Soltada } from "./devolucion-cancelar";
+import { sinSoltarCliente, soltadaO, vistaSoltada, type Soltada, type SoltadaVista } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { usd } from "./dinero-comun";
 import { AGOTADO_SQL } from "./menu";
@@ -33,7 +33,7 @@ import { base, dirEntrega, topeFree } from "./pedir";
 type Bi = { es: string; en: string };
 type Q = PoolClient | ReturnType<typeof db>;
 const no = (es: string, en: string) => ({ ok: false as const, msg: { es, en } });
-export type ResM = { ok: true; numero?: string; retenida?: true; mensaje?: Bi } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
+export type ResM = { ok: true; numero?: string; soltada?: SoltadaVista; mensaje?: Bi } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true; verificar?: import("./pagos/pasarela").Verificar };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const NUM = /^M-\d{1,10}$/;
 const ID = /^\d{1,18}$/;
@@ -498,7 +498,7 @@ export async function cancelarMercado(userId: string, numero: string): Promise<R
   if (s.e === "cobrada") { const c = soltadaO(s, "") as { es: string; en: string }; return { ok: true, mensaje: { es: `Cancelado.${c.es}`, en: `Cancelled.${c.en}` } }; }
   if (s.e !== "retenida") return { ok: true };
   const t = sinSoltarCliente(s.monto);
-  return { ok: true, retenida: true, mensaje: { es: `Cancelado.${t.es}`, en: `Cancelled.${t.en}` } };
+  return { ok: true, soltada: { e: "retenida", monto: s.monto }, mensaje: { es: `Cancelado.${t.es}`, en: `Cancelled.${t.en}` } };
 }
 
 /* ── Negocio ── */
@@ -521,7 +521,7 @@ export type PasoMerc = "aceptar" | "rechazar" | "mandar" | "mas" | "listo" | "ca
 export async function pasoMercado(negocio: string, numero: string, paso: PasoMerc, actorId: string): Promise<ResM> {
   if (!NUM.test(numero)) return no("Ese pedido no existe.", "That order does not exist.");
   await vencerMercado({ negocio });
-  let despues: (() => Promise<void>) | null = null, retenida = false;
+  let despues: (() => Promise<void>) | null = null, soltada: SoltadaVista | undefined;
   const r = await tx(async (c): Promise<ResM> => {
     await c.query(`select pg_advisory_xact_lock(hashtext('pedido:' || $1))`, [negocio]);
     const o = await opDe(c, numero, { negocio }, true);
@@ -536,7 +536,7 @@ export async function pasoMercado(negocio: string, numero: string, paso: PasoMer
       } else {
         await c.query(`update operations set status = 'declined', answered_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
         await ev(c, o.id, "declined", "member", actorId, { es: "El mercado no puede hoy", en: "The market cannot today" });
-        despues = async () => { const s = await soltarRetencion(o.id, { es: "El mercado no puede (rechazó el pedido)", en: "The market cannot (declined the order)" }); retenida = s.e === "retenida"; await avisar(numero, "merc_no", { dinero: dineroMerc(s) }); };
+        despues = async () => { const s = await soltarRetencion(o.id, { es: "El mercado no puede (rechazó el pedido)", en: "The market cannot (declined the order)" }); soltada = vistaSoltada(s); await avisar(numero, "merc_no", { dinero: dineroMerc(s) }); };
       }
       return { ok: true };
     }
@@ -596,7 +596,7 @@ export async function pasoMercado(negocio: string, numero: string, paso: PasoMer
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r.ok && retenida ? { ok: true, retenida: true } : r;
+  return r.ok && soltada ? { ok: true, soltada } : r;
 }
 
 /* Pesar una línea: peso real + foto de la balanza (subida por quien pesa). La base calcula lo que se cobra. */

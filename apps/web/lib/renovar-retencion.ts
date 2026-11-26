@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
-import { HORAS_LLAVE_STRIPE as HORAS_LLAVE, soltarSuelta, type ContextoSuelta } from "./cobros";
+import { HORAS_LLAVE_STRIPE as HORAS_LLAVE, soltarSuelta, type ContextoSuelta, type Suelta } from "./cobros";
 import { pasarela } from "./pagos/pasarela";
 import { SIN_RESPUESTA } from "./cobro-fuera";
 
@@ -31,8 +31,9 @@ export type Renovar = {
   nueva: (c: PoolClient, r: { pi: string; marca: string | null; l4: string | null }) => Promise<string>;
   /* En la transacción que la cierra sin nueva: el evento con el motivo verdadero. */
   fallo: (c: PoolClient, m: Motivo) => Promise<void>;
-  /* Después: el aviso (al negocio, y en un estimado también a la persona), con el motivo verdadero. */
-  avisar: (m: Motivo) => Promise<void>;
+  /* Después: el aviso (al negocio, y en un estimado también a la persona), con el motivo verdadero y lo que de verdad pasó con la vieja (s: soltarVieja):
+     «ya no hay depósito retenido» solo con «liberada»; «retenida» y «cobrada» lo dicen (26 nov, LAUNCH (i)). */
+  avisar: (m: Motivo, s: Suelta) => Promise<void>;
 };
 type Fila = { id: string; st: string; enviada: boolean; llave: boolean; viva: boolean; n: number; err: string | null; ciudad: string | null };
 export type Quedo = "hecha" | "fallida" | "no_llego" | "devuelto" | "soltada" | "sigue" | "ya_no_estaba";
@@ -107,14 +108,18 @@ export async function resolverRenovacion(id: string, o: import("./consulta-pasar
   return { resultado: resultado ?? v?.resultado ?? null, quedo };
 }
 
-/* La nueva quedó retenida: en UNA transacción, una vez, la vieja deja de contar en el libro y la nueva se anota; después se suelta la vieja en Stripe.
-   Si la vieja ya no estaba retenida (la renta volvió o la cita se cerró mientras tanto), la nueva no hace falta: se suelta (dropped). */
+/* La nueva quedó retenida: en UNA transacción, una vez, la nueva se anota (y la renovación queda hecha); después se suelta la vieja en Stripe.
+   Si la vieja ya no estaba retenida (la renta volvió o la cita se cerró mientras tanto), la nueva no hace falta: se suelta (dropped).
+   26 nov (LAUNCH «el dinero dice lo que pasó» (i), Opus) · La vieja ya NO se marca 'released' en esta transacción (antes de que Stripe la suelte): el libro
+   la dice soltada solo con lo que contestó Stripe (soltarVieja). Mientras tanto (y si Stripe no la suelta) sigue 'held' en el libro, pero ya no cuenta como
+   la retención de la renta o la cita: su renovación está cerrada (hold_renewals done/failed) y las consultas que eligen la retención con la que se cobra o
+   que se renueva la dejan fuera (rentas › liquidarDeposito y barrerRentas, estimados › planLiquidar, vivoRetenido y renovarRetenciones). */
 async function cerrarNueva(x: Renovar, id: string, r: { pi: string; marca: string | null; l4: string | null }, porConsulta: boolean): Promise<Quedo> {
   const h = await tx(async (c) => {
     const f = (await c.query<{ ciudad: string | null }>(`select city_id as ciudad from hold_renewals where id = $1::bigint and status = 'pending' for update`, [id])).rows[0];
     if (!f) return null;
-    const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [x.pago]);
-    if (!u.rowCount) {
+    const v = await c.query(`select 1 from payments where id = $1::bigint and status = 'held' for update`, [x.pago]);
+    if (!v.rowCount) {
       await c.query(`update hold_renewals set status = 'dropped', stripe_pi = $2, last_error = 'ya_no_hacia_falta' where id = $1::bigint and status = 'pending'`, [id, r.pi]);
       if (porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "hold_renewals", id, f.ciudad, { estado: "soltada: la retención vieja ya no estaba retenida", pi: r.pi });
       return "soltada" as const;
@@ -127,27 +132,44 @@ async function cerrarNueva(x: Renovar, id: string, r: { pi: string; marca: strin
   if (!h) return "ya_no_estaba";
   // La vieja, DESPUÉS de anotar la nueva (o la nueva, si ya no hacía falta). Si Stripe no contesta, se suelta sola a los 7 días (horas, no días).
   // 26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · Por cobros › soltarSuelta: si Stripe no la suelta (o ya la había cobrado), el equipo de dinero tiene su alerta.
-  await soltarSuelta(h === "hecha" ? x.pi : r.pi, h === "hecha" ? suelta(x, { es: "la retención vieja, ya renovada", en: "the old hold, already renewed" })
-    : suelta(x, { es: "la renovación que ya no hacía falta (la retención vieja ya no estaba retenida)", en: "the renewal that was no longer needed (the old hold was no longer held)" }));
+  if (h === "hecha") await soltarVieja(x, { es: "la retención vieja, ya renovada", en: "the old hold, already renewed" });
+  else await soltarSuelta(r.pi, suelta(x, { es: "la renovación que ya no hacía falta (la retención vieja ya no estaba retenida)", en: "the renewal that was no longer needed (the old hold was no longer held)" }));
   return h;
 }
 
 /* 26 nov · De quién es la retención que se suelta y cuánto, para la alerta de cobros › soltarSuelta (nadie más la va a soltar). */
-const suelta = (x: Renovar, por: { es: string; en: string }): ContextoSuelta => ({ que: { es: `Renovación de la retención ${x.kind === "renta" ? "del depósito de una renta" : "de una cita con estimado"} (operación ${x.op}; ${por.es})`,
+const suelta = (x: Pick<Renovar, "kind" | "op" | "monto" | "uid" | "negocio" | "ciudad">, por: { es: string; en: string }): ContextoSuelta => ({ que: { es: `Renovación de la retención ${x.kind === "renta" ? "del depósito de una renta" : "de una cita con estimado"} (operación ${x.op}; ${por.es})`,
   en: `Renewal of the hold ${x.kind === "renta" ? "on a rental deposit" : "on a booking with an estimate"} (operation ${x.op}; ${por.en})` }, monto: x.monto, persona: x.uid, negocio: x.negocio, ciudad: x.ciudad });
-/* No hay nueva (el banco dijo que no, nunca llegó, ninguna vale, sin tarjeta): una vez, la vieja deja de contar y se suelta; se avisa con el motivo verdadero. */
+
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (i), Opus) · Soltar la retención VIEJA (renovada, o sin nueva) y anotar en el libro lo que de verdad pasó:
+   «liberada» → 'released' (aquí, solo con eso); «cobrada» → 'captured' con lo que Stripe capturó (lo anota soltarSuelta con su fila); «retenida» → sigue
+   'held' con su failure_code y su alerta hold_stuck suelta:<pi> desde la primera vuelta (ultimo: el aviso al negocio ya dice que el equipo la tiene), y el
+   barrido la sigue soltando (barrerRenovaciones › reintentarViejas, «sigue» con su fila: la alerta se cierra sola cuando Stripe la suelta). */
+type Vieja = { pago: string; pi: string; monto: number; uid: string; negocio: string; ciudad: string | null; op: string; kind: "renta" | "estimado" };
+async function soltarVieja(v: Vieja, por: Bi, primera = true): Promise<Suelta> {
+  const s = await soltarSuelta(v.pi, { ...suelta(v, por), pago: v.pago, luego: "sigue", ...(primera ? { ultimo: true } : {}) });
+  if (s.e === "liberada") await db().query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [v.pago])
+    .catch((e) => console.error(`[renovar] la retención vieja ${v.pi} se soltó en Stripe, pero el libro no la anotó (el barrido lo vuelve a intentar): ${String((e as Error)?.message ?? e).slice(0, 200)}`));
+  return s;
+}
+
+/* No hay nueva (el banco dijo que no, nunca llegó, ninguna vale, sin tarjeta): una vez, la renovación queda fallida; después se suelta la vieja y se avisa
+   con el motivo verdadero y con lo que pasó con ella (26 nov, LAUNCH (i): el libro la dice soltada solo si Stripe la soltó; el aviso, igual). */
 async function cerrarSin(x: Renovar, id: string, m: Motivo, porConsulta: boolean): Promise<Quedo> {
   const h = await tx(async (c) => {
     const f = (await c.query<{ ciudad: string | null }>(`update hold_renewals set status = 'failed', last_error = coalesce($2, last_error) where id = $1::bigint and status = 'pending' returning city_id as ciudad`,
       [id, m === "banco" ? (porConsulta ? "consulta_fallido" : null) : m])).rows[0];
     if (!f) return null;
-    const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [x.pago]);
+    const u = await c.query(`select 1 from payments where id = $1::bigint and status = 'held' for update`, [x.pago]);
     if (u.rowCount) await x.fallo(c, m);
     if (porConsulta) await (await import("./consulta-pasarela")).auditarCierre(c, "hold_renewals", id, f.ciudad, { estado: m === "banco" ? "el banco dijo que no" : m === "nunca_llego" ? "nunca llegó a Stripe" : "ninguna vale (equipo)" });
     return { soltar: !!u.rowCount };
   });
   if (!h) return "ya_no_estaba";
-  if (h.soltar) { await soltarSuelta(x.pi, suelta(x, { es: "la retención vieja que no se pudo renovar", en: "the old hold that could not be renewed" })); await x.avisar(m).catch(() => undefined); }
+  if (h.soltar) {
+    const s = await soltarVieja(x, { es: "la retención vieja que no se pudo renovar", en: "the old hold that could not be renewed" });
+    await x.avisar(m, s).catch((e) => console.error(`[renovar] el aviso de la renovación ${id} no salió: ${String((e as Error)?.message ?? e).slice(0, 200)}`));
+  }
   return m === "nunca_llego" ? "no_llego" : m === "devuelto" ? "devuelto" : "fallida";
 }
 
@@ -161,6 +183,23 @@ async function alertaSigue(x: Renovar, h: Fila) {
 /* El flujo de una renovación desde la base (para «Preguntar a Stripe ahora» y la decisión del equipo, que no vienen de un barrido). */
 async function flujoDe(kind: "renta" | "estimado", pago: string): Promise<Renovar | null> {
   return kind === "renta" ? (await import("./rentas")).renovacionDeposito(pago) : (await import("./estimados")).renovacionRetencion(pago);
+}
+
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (i), Opus) · Las retenciones viejas que Stripe no soltó al cerrar su renovación (cerrarNueva / cerrarSin):
+   siguen 'held' en el libro con su alerta; el barrido las vuelve a soltar (una pasada por minuto, la menos intentada primero) hasta que Stripe las suelta
+   (la vieja vence sola en horas) o aparecen cobradas. Las de hace menos de 2 minutos son las que se están cerrando ahora: se dejan a quien las cierra. */
+async function reintentarViejas(): Promise<number> {
+  const V = (await db().query<Vieja>(
+    `select p.id::text as pago, p.stripe_payment_intent as pi, coalesce(p.held_cents, p.amount_cents) as monto, p.user_id::text as uid, p.business_id as negocio,
+            p.city_id as ciudad, p.operation_id::text as op, h.kind
+       from payments p join hold_renewals h on h.payment_id = p.id and h.status in ('done', 'failed') and h.done_at < now() - interval '2 minutes'
+      where p.status = 'held' and p.held_at < now() - make_interval(hours => ${HORAS_RENOVAR})
+      order by p.updated_at, p.id limit 20`)).rows;
+  let n = 0;
+  await (await import("./barrido-uno")).cadaUno("renovaciones-viejas", V, (v) => `${v.kind} ${v.pago}`, async (v) => {
+    if ((await soltarVieja(v, { es: "la retención vieja, reintento del barrido", en: "the old hold, sweep retry" }, false)).e === "liberada") n++;
+  });
+  return n;
 }
 
 /* El barrido central: las renovaciones en camino cuya retención vieja YA NO está retenida en el libro (la renta volvió o la cita se cerró mientras tanto)
@@ -180,6 +219,6 @@ export async function barrerRenovaciones(): Promise<number> {
     const x = await flujoDe(h.kind, h.pago);
     if (x && (await renovarRetencion(x)) === "soltada") n++;
   });
-  return n;
+  return n + (await reintentarViejas());
 }
 export type { Bi };

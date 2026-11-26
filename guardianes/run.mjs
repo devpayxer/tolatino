@@ -6713,6 +6713,21 @@ const guardianes = {
     if (!/from r where n\.id = r\.nid and n\.push_status = 'pendiente'/.test(cuerpoFn(c, "resolver"))) falla(G, C, 0, "el estado del push de un aviso se resuelve una vez");
   },
 
+  /* 26 nov (revisión de efe56b9, a; Opus) · pushQueNoSeEncolo: el aviso que quedó en la campana con su push «pendiente» y sin ninguna fila en la cola (avisar
+     lo anotó y encolar falló después: la base, la red, el proceso que murió entre los dos) lo encola el barrido. Pasaba: barrerPush solo miraba la cola (lo
+     atascado, lo vencido, los reintentos) y el SMS de respaldo esperaba push_ttl_h; ese aviso quedaba «pendiente» para siempre y solo en el registro.
+     Regla: (1) barrerPush busca push_status 'pendiente', de más de 2 minutos (los está encolando quien los anotó) y de menos de push_ttl_h, sin fila en
+     push_outbox, con tope, y los pasa por encolar (la MISMA función: idempotente por aviso y teléfono, y «sin_app» con su respaldo); (2) antes de mandar lo
+     pendiente (sale en la misma pasada); (3) con su índice parcial (0226). Al revés: alrevesDineroDiceLoQuePaso; con la base: din9z §6. */
+  pushQueNoSeEncolo() {
+    const G = "pushQueNoSeEncolo", C = "apps/web/lib/push/cola.ts", c = existsSync(C) ? sinComent(C) : "", b = cuerpoFn(c, "barrerPush");
+    const q = /where n\.push_status = 'pendiente' and n\.created_at < now\(\) - interval '2 minutes' and n\.created_at > now\(\) - make_interval\(hours => cfg_int\('push_ttl_h'\)\)\s*\n\s*and not exists \(select 1 from push_outbox o where o\.notification_id = n\.id\)\s*\n\s*order by n\.created_at limit \d+/;
+    if (!q.test(b)) falla(G, C, 0, "barrerPush no encola el aviso «pendiente» que nunca llegó a la cola (sin fila en push_outbox): queda pendiente para siempre y solo en el registro");
+    if (!/const reencolados = SC\.length \? await encolar\(SC\.map\(\(x\) => x\.id\)\) : 0;/.test(b) || b.indexOf("await encolar(SC") > b.indexOf("await enviarPendientes()")) falla(G, C, 0, "barrerPush: lo que no llegó a la cola va por encolar (la misma regla, idempotente) y antes de mandar lo pendiente");
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    if (!/create index if not exists notifications_push_pendiente on notifications \(created_at\) where push_status = 'pendiente';/.test(mig)) falla(G, "packages/db/migrations", 0, "falta el índice parcial de los avisos con push «pendiente» (la búsqueda de cada minuto recorrería todos los avisos)");
+  },
+
   /* 8c · El service worker de los avisos (/sw-push.js, alcance «/») solo muestra y abre (§3.3): no guarda nada (sin caché ni «fetch»: las pantallas
      sin señal tienen los suyos) y solo abre /app/aviso/{id} de NUESTRO origen. Al revés: agregar caches, un fetch, o abrir la ruta que mande el
      aviso sin revisarla → falla. */
@@ -15243,12 +15258,32 @@ const guardianes = {
     if (!/return \(await resolverRenovacion\(f\.id, \{ origen: "barrido" \}, x\)\)\.quedo;/.test(rv) || !/K\.consultar\(\{ tabla: "hold_renewals"/.test(rs) || /await tx\(/.test(rs.slice(0, rs.indexOf("K.consultar(")))
       || !/else if \(v\?\.noLlego\) quedo = await cerrarSin\(x, id, "nunca_llego", true\);/.test(rs) || !/if \(quedo === "sigue"\) await alertaSigue\(x, h\);/.test(rs)) falla(G, RR, 0, "resolverRenovacion: pasada la ventana, la consulta (fuera de transacción) y el cierre con su veredicto; lo que no cierra alerta (hold_stuck)");
     // (5) La vieja se suelta después de anotar la nueva; el cierre, una vez.
-    if (!antes(cn, "update payments set status = 'released'", "await x.nueva(c, r)") || !antes(cn, "const h = await tx(", "await soltarSuelta(") || !/status = 'pending' for update/.test(cn) || !/set status = 'dropped'/.test(cn)) falla(G, RR, 0, "cerrarNueva: en una transacción y una vez, la nueva anotada; la vieja se suelta en Stripe DESPUÉS (y si ya no hacía falta, la nueva se suelta)");
-    if (!/where id = \$1::bigint and status = 'pending' returning city_id as ciudad/.test(cs) || !antes(cs, "const h = await tx(", "await soltarSuelta(") || !/await x\.avisar\(m\)/.test(cs)) falla(G, RR, 0, "cerrarSin: una vez; la vieja se suelta y se avisa DESPUÉS, con el motivo verdadero");
+    // 26 nov (LAUNCH (i)) · Y el libro no la dice soltada antes de que Stripe la suelte: ni cerrarNueva ni cerrarSin escriben 'released' (solo soltarVieja, con
+    // «liberada»); la vieja se mira 'held' con candado dentro de la transacción y se suelta DESPUÉS por soltarVieja; el aviso lleva lo que pasó (avisar(m, s)).
+    const soltarAntes = (t) => { const i = t.search(/await soltar(?:Suelta|Vieja)\(/), j = t.indexOf("const h = await tx("); return i >= 0 && j >= 0 && i < j; };
+    if (!antes(cn, "status = 'held' for update", "await x.nueva(c, r)") || soltarAntes(cn) || /set status = 'released'/.test(cn) || !antes(cn, "const h = await tx(", "await soltarVieja(") || !/status = 'pending' for update/.test(cn) || !/set status = 'dropped'/.test(cn)) falla(G, RR, 0, "cerrarNueva: en una transacción y una vez, la nueva anotada; la vieja se suelta en Stripe DESPUÉS y el libro la dice soltada solo si Stripe la soltó (soltarVieja; y si ya no hacía falta, la nueva se suelta)");
+    if (!/where id = \$1::bigint and status = 'pending' returning city_id as ciudad/.test(cs) || soltarAntes(cs) || /set status = 'released'/.test(cs) || !antes(cs, "const h = await tx(", "await soltarVieja(") || !/const s = await soltarVieja\([^\n]*\n\s*await x\.avisar\(m, s\)/.test(cs)) falla(G, RR, 0, "cerrarSin: una vez; la vieja se suelta DESPUÉS (soltarVieja: soltada en el libro solo si Stripe la soltó) y se avisa con el motivo verdadero y con lo que pasó (avisar(m, s))");
+    const sv = cuerpoFn(rr, "soltarVieja");
+    if (!/await soltarSuelta\(v\.pi, \{ \.\.\.suelta\(v, por\), pago: v\.pago, luego: "sigue"/.test(sv) || (sv.match(/set status = 'released'/g) ?? []).length !== 1 || !/if \(s\.e === "liberada"\) await db\(\)\.query\(`update payments set status = 'released'/.test(sv))
+      falla(G, RR, 0, "soltarVieja: la vieja se suelta por soltarSuelta con su fila («sigue»: 'captured' si ya estaba cobrada, failure_code y alerta si no se soltó) y se marca 'released' SOLO con «liberada»");
+    if (!/return n \+ \(await reintentarViejas\(\)\);/.test(cuerpoFn(rr, "barrerRenovaciones")) || !/h\.status in \('done', 'failed'\)[^\n]*\n\s*where p\.status = 'held'/.test(cuerpoFn(rr, "reintentarViejas")))
+      falla(G, RR, 0, "la vieja que Stripe no soltó al cerrar su renovación la sigue soltando el barrido (barrerRenovaciones › reintentarViejas)");
+    // Mientras no se suelte, la vieja ya no cuenta: ni se cobra de ella, ni se renueva otra vez, ni suma a lo retenido.
+    const VF = /not exists \(select 1 from hold_renewals h where h\.payment_id = (?:p|payments)\.id and h\.status in \('done', 'failed'\)\)/;
+    for (const [f, fn] of [[RE, "liquidarDeposito"], [RE, "barrerRentas"], [ES, "planLiquidar"], [ES, "renovarRetenciones"]])
+      if (!VF.test(cuerpoFn(sinComent(f), fn))) falla(G, f, 0, `${fn}: una retención vieja con su renovación cerrada (done/failed) que Stripe todavía no soltó sigue 'held' en el libro: no se elige (se cobraría o renovaría dos veces)`);
+    if (!VF.test(/const vivoRetenido = [^\n]*\n[^\n]*/.exec(sinComent(ES))?.[0] ?? "")) falla(G, ES, 0, "vivoRetenido cuenta la retención vieja con su renovación cerrada: lo retenido saldría doble");
     if (!/\["renovaciones", async \(\) => \(await import\("\.\/renovar-retencion"\)\)\.barrerRenovaciones\(\)\]/.test(sinComent(BA))) falla(G, BA, 0, "el barrido central termina las renovaciones cuya vieja ya no está retenida (barrerRenovaciones)");
     // Lo que ven la persona y el negocio: «tu banco no dejó» solo cuando fue el banco.
     const es = cuerpoFn(sinComent(ES), "renovacionRetencion"), re = cuerpoFn(sinComent(RE), "renovacionDeposito");
-    if (!/m === "banco" \? "hold_fallo" : "hold_no_renovada"/.test(es) || !/que: m === "banco" \? \{ es: `el banco ya no deja retener/.test(re)) falla(G, ES, 0, "el aviso de una renovación que no salió dice el motivo verdadero (el banco solo si fue el banco)");
+    const rq = cuerpoFn(sinComent(RE), "renovQue");
+    if (!/m === "banco" \? "hold_fallo" : "hold_no_renovada"/.test(es) || !/que: renovQue\(m, s, p\.held\)/.test(re) || !/m === "banco" \? \{ es: `el banco ya no deja retener/.test(rq)) falla(G, ES, 0, "el aviso de una renovación que no salió dice el motivo verdadero (el banco solo si fue el banco)");
+    // 26 nov (LAUNCH (i)) · «ya no hay depósito retenido» / «Pagas eso en el negocio» solo si Stripe soltó la vieja; si no, lo que pasó (ES/EN).
+    if (!/if \(s\.e === "liberada"\) return m === "banco" \? base : \{ es: `\$\{base\.es\}: ya no hay depósito retenido`/.test(rq) || (rq.match(/ya no hay depósito retenido/g) ?? []).length !== 1
+      || !/if \(s\.e === "retenida"\) return \{ es: `[^`]*todavía no se soltó de su tarjeta/.test(rq) || !/Stripe ya la había cobrado\$\{c\.es\}/.test(rq) || !/Stripe had already charged it\$\{c\.en\}/.test(rq))
+      falla(G, RE, 0, "renovQue: «ya no hay depósito retenido» solo con «liberada»; «retenida» y «cobrada» (con lo que Stripe capturó) se dicen así, ES/EN");
+    if (!/if \(s\.e === "liberada"\) \{ await avisarC\(p\.num, m === "banco" \? "hold_fallo" : "hold_no_renovada"/.test(es) || !/"hold_fallo_suelta"/.test(es) || !/"biz_hold_fallo_suelta"/.test(es) || !/D\.soltadaO\(v, "", "cliente"\)/.test(es))
+      falla(G, ES, 0, "renovacionRetencion: «Pagas eso en el negocio» solo si Stripe soltó la vieja; si no, hold_fallo_suelta / biz_hold_fallo_suelta con lo que pasó (soltadaO)");
     const mig = readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).map((y) => readFileSync(`packages/db/migrations/${y}`, "utf8")).join("\n");
     if (!/payment_id      bigint not null unique references payments \(id\)/.test(mig) || !/raise exception 'una renovación de retención no se borra \(estados\)'/.test(mig) || !/'hold_stuck'/.test(mig) || !/\('hold_no_renovada', 'tx'/.test(mig))
       falla(G, "packages/db/migrations", 0, "la base: una renovación por retención, nada se borra, la alerta hold_stuck y el aviso sin «tu banco»");
@@ -18236,11 +18271,11 @@ const guardianes = {
         if (new RegExp(`(El depósito|La matrícula) de \\$\\{\\w+\\(o\\.${v}\\)\\} se (queda|quedó)`).test(t)) falla(G, f, 0, "el aviso dice que se queda el depósito entero (o.dep / o.mat) aunque ya hubo una devolución parcial: va queda");
       }
       for (const f of ["apps/web/app/panel/NocheReservas.tsx", "apps/web/app/panel/FiestasReservas.tsx", "apps/web/app/panel/Inscripciones.tsx", "apps/web/app/panel/ViajesPanel.tsx", "apps/web/app/panel/MercadoPanel.tsx", "apps/web/app/panel/Pedidos.tsx"])
-        if (!/\(r\) => \(r\?\.retenida \? E2\(/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "el panel dice «se liberó» sin mirar si la retención se soltó (r?.retenida)");
+        if (!/\(r\) => \(r\?\.soltada \? notaAlSoltar\(r\.soltada, "negocio", E2[,)]/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "el panel dice «se liberó» sin mirar si la retención se soltó (r?.soltada → notaAlSoltar)");
       for (const f of ["apps/web/app/panel/acciones-noche.ts", "apps/web/app/panel/acciones-fiesta.ts", "apps/web/app/panel/acciones-insc.ts", "apps/web/app/panel/acciones-viajes.ts", "apps/web/app/panel/acciones-mercado.ts", "apps/web/app/panel/acciones-pedidos.ts"])
-        if (!/const r2 = [^\n]*r\.retenida \? \{ ok: true, retenida: true \}/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "la acción del panel no pasa retenida: el panel diría «se liberó» sin saber");
+        if (!/const r2 = [^\n]*r\.soltada \? \{ ok: true, soltada: r\.soltada \}/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "la acción del panel no pasa soltada: el panel diría «se liberó» sin saber");
       for (const f of ["apps/web/app/(app)/noche/[num]/NocheEstado.tsx", "apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx", "apps/web/app/(app)/insc/[num]/InscEstado.tsx", "apps/web/app/(app)/viaje/[num]/ViajeEstado.tsx"])
-        if (!/setFlash\("retenida" in r && r\.retenida \? E2\(/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "«No me sirve» dice «se liberó» sin mirar si la retención se soltó (retenida)");
+        if (!/setFlash\("soltada" in r && r\.soltada \? notaAlSoltar\(r\.soltada, "cliente", E2\)/.test(existsSync(f) ? sinComent(f) : "")) falla(G, f, 0, "«No me sirve» dice «se liberó» sin mirar si la retención se soltó (soltada → notaAlSoltar)");
       const da = existsSync("apps/web/lib/dinero-alertas.ts") ? sinComent("apps/web/lib/dinero-alertas.ts") : "";
       if (/hold_stuck: \{ es: "una retención renovada sin respuesta"/.test(da)) falla(G, "apps/web/lib/dinero-alertas.ts", 0, "la alerta hold_stuck dice solo «retención renovada»: también es la retención que no se soltó"); }
     // (12) 25 nov (sexta tanda) · La cita que cancela el cliente, y las pantallas del mercado, del apartado y del pedido que no se dio. Pasaba: la cancelación a
@@ -18253,20 +18288,20 @@ const guardianes = {
     // tarjeta con lo que está en la base; (d) ord_no lleva {dinero} leído del cobro (avisarPedido); (e) la cita y el apartado muestran retenida.
     { const CF = "apps/web/lib/citas-flujo.ts", cf = existsSync(CF) ? sinComent(CF) : "";
       cf.split("\n").forEach((l, i) => { if (/\bdevolverPago\(/.test(l) && !/^import /.test(l)) falla(G, CF, i + 1, "la cita devuelve con devolverPago(…) tirando el resultado: va por devolverAlCancelar (lo que pasó, y el «no» alerta al equipo)"); });
-      if (!/\? await devolverAlCancelar\(o, \{ actorId: userId, [^\n]*idem: `cx-\$\{numero\}`, por: "policy" \}\)/.test(cuerpoFn(cf, "citaCliente")) || !/retenida = d\?\.e === "retenida";/.test(cuerpoFn(cf, "citaCliente")))
-        falla(G, CF, 0, "cancelar la cita no lee lo que pasó con el depósito (const d = … await devolverAlCancelar(o, …), retenida = d?.e === \"retenida\")");
+      if (!/\? await devolverAlCancelar\(o, \{ actorId: userId, [^\n]*idem: `cx-\$\{numero\}`, por: "policy" \}\)/.test(cuerpoFn(cf, "citaCliente")) || !/soltada = vistaSoltada\(d\);/.test(cuerpoFn(cf, "citaCliente")))
+        falla(G, CF, 0, "cancelar la cita no lee lo que pasó con el depósito (const d = … await devolverAlCancelar(o, …), soltada = vistaSoltada(d))");
       const CV = "apps/web/lib/citas.ts", cv = existsSync(CV) ? sinComent(CV) : "";
       if (!/devolucion: r\.pago \? await devolucionesDe\(r\.oid\)/.test(cv) || !/p\.refunded_cents as devuelto/.test(cv)) falla(G, CV, 0, "la vista de la cita no lee lo devuelto ni lo que no está hecho (devolucionesDe): la pantalla diría «Te devolvemos» sin mirar");
       const CE = "apps/web/app/(app)/cita/[num]/Estado.tsx", ce = existsSync(CE) ? sinComent(CE) : "";
       const devL = ce.split("\n").findIndex((l) => /^\s*const dev = /.test(l)), devT = devL < 0 ? "" : ce.split("\n").slice(devL, devL + 6).join("\n");
       if (devL < 0 || /Te devolvemos/.test(devT) || !/c\.pago === "held" \?/.test(devT) || !/c\.pago === "released" \?/.test(devT) || !/c\.devuelto \?/.test(devT)) falla(G, CE, devL + 1, "la pantalla de la cita dice lo del depósito sin mirar la base («Te devolvemos …»): va lo que está (retenido, soltado, devuelto, en camino, no salió)");
       if (/c\.perdio \|\| c\.pago === "captured"/.test(ce) || !/E2\("La devolución no salió", "The refund did not go through"\)/.test(ce)) falla(G, CE, 0, "las filas del dinero de la cita cuentan una devolución que no salió como «Se queda con …» (o no la dicen)");
-      if (!/aviso\("retenida" in r && r\.retenida \? E2\(/.test(ce)) falla(G, CE, 0, "cancelar la cita no dice cuando la retención no se soltó (retenida)");
+      if (!/aviso\("soltada" in r && r\.soltada \? notaAlSoltar\(r\.soltada, "cliente", E2\)/.test(ce)) falla(G, CE, 0, "cancelar la cita no dice cuando la retención no se soltó o ya estaba cobrada (soltada → notaAlSoltar)");
       for (const A of ["apps/web/app/(app)/cita/[num]/acciones.ts", "apps/web/app/(app)/apartado/[num]/acciones.ts"])
-        if (!/r\.ok \? \(r\.retenida \? \{ ok: true, retenida: true \} : \{ ok: true \}\)/.test(existsSync(A) ? sinComent(A) : "")) falla(G, A, 0, "la acción no pasa retenida: la pantalla no sabría que la retención no se soltó");
+        if (!/r\.ok \? \(r\.soltada \? \{ ok: true, soltada: r\.soltada \} : \{ ok: true \}\)/.test(existsSync(A) ? sinComent(A) : "")) falla(G, A, 0, "la acción no pasa soltada: la pantalla no sabría que la retención no se soltó o ya estaba cobrada");
       const AE = "apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx", ae = existsSync(AE) ? sinComent(AE) : "";
       ae.split("\n").forEach((l, i) => { if ((l.match(/E2\("Se liberó/g) ?? []).length !== (l.match(/soltado\(E2\("Se liberó/g) ?? []).length) falla(G, AE, i + 1, "el apartado dice «Se liberó» sin mirar el cobro (soltado(E2(…)), de x.pago)"); });
-      if (!/const soltado = \(siSalio: string\) => pg\?\.st === "released" \? siSalio\b/.test(ae) || !/setFlash\("retenida" in r && r\.retenida \? E2\(/.test(ae)) falla(G, AE, 0, "el apartado no mira el cobro (soltado) o no dice cuando la retención no se soltó (retenida)");
+      if (!/const soltado = \(siSalio: string\) => pg\?\.st === "released" \? siSalio\b/.test(ae) || !/setFlash\("soltada" in r && r\.soltada \? notaAlSoltar\(r\.soltada, "cliente", E2\)/.test(ae)) falla(G, AE, 0, "el apartado no mira el cobro (soltado) o no dice cuando la retención no se soltó o ya estaba cobrada (soltada)");
       const ME = "apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx", me = existsSync(ME) ? sinComent(ME) : "";
       if (!/: t\.retenido > 0 \? E2\(`No se cobró nada, pero la retención/.test(me)) falla(G, ME, 0, "el pedido del mercado que no se dio no mira si la retención sigue en la tarjeta (t.retenido)");
       me.split("\n").forEach((l, i) => { if (/v\.st === "(declined|expired)" \?|\("CANCELADO", "CANCELLED"\)/.test(l) && /No se cobró nada|Liberamos/.test(l)) falla(G, ME, i + 1, "el pedido del mercado que no se dio dice «No se cobró nada» / «Liberamos» fijo: va noSeDio (lo que está en la base)"); });
@@ -18746,7 +18781,9 @@ const guardianes = {
      cuenta en su operación, SUELTA_INTENTOS); uno que la deja («deja») dice cuándo es la última (ultimo) y su consulta no vuelve a elegir la que ya tiene su
      alerta suelta:. (4) La misma clase con el dinero que sale: ninguna llamada de la pasarela que mueve dinero (cobrar, capturar, devolver, transferir,
      revertir, cobrar fuera de sesión) se hace como sentencia suelta tirando lo que contestó. (5) Lo soltado se marca soltado solo con «liberada» (boletos ›
-     anularPorCobro, pagarBoletos). Al revés: alrevesDineroDiceLoQuePaso. */
+     anularPorCobro, pagarBoletos). (6) 26 nov (LAUNCH (i)) · 'released' en payments solo después de mirar «liberada» (renovar-retencion la escribía antes
+     de soltar). (7) 26 nov (LAUNCH (2)) · La pantalla de quien suelta dice lo que pasó: soltada (vistaSoltada) y notaAlSoltar, nunca solo «retenida».
+     Al revés: alrevesDineroDiceLoQuePaso. */
   liberarSoloPorLaRegla() {
     const G = "liberarSoloPorLaRegla", CO = "apps/web/lib/cobros.ts", PA = "apps/web/lib/pagos/pasarela.ts";
     if (!existsSync(CO) || !existsSync(PA)) return falla(G, CO, 0, "falta lib/cobros.ts o la pasarela (soltar lo retenido)");
@@ -18804,6 +18841,50 @@ const guardianes = {
       falla(G, BO, 0, "anularPorCobro marca el cobro 'released' sin que Stripe lo haya soltado");
     if (!/if \(pi && sol\?\.e === "liberada"\) await db\(\)\.query\(`update ticket_holds set pi_released_at = now\(\)/.test(cuerpoFn(bo, "pagarBoletos")))
       falla(G, BO, 0, "pagarBoletos marca la autorización soltada (pi_released_at) sin que Stripe la haya soltado");
+    // (6) 26 nov (LAUNCH (i)) · Por clase: un cobro se escribe 'released' en payments SOLO después de mirar que Stripe lo soltó: la línea o las 8 de antes
+    // miran «liberada» (s.e === "liberada", r.e !== "liberada" → return/continue), o es liberarOperacion después de su «if (!r.ok) return "fallo"», o el
+    // webhook payment_intent.canceled (Stripe mismo lo dice). Pasaba: renovar-retencion › cerrarNueva / cerrarSin la marcaban soltada en la transacción, ANTES
+    // de soltarla en Stripe (si no se soltaba, el libro ya la decía soltada y el negocio leía «ya no hay depósito retenido»).
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
+      const raw = readFileSync(f, "utf8");
+      if (!/'released'/.test(raw)) continue;
+      const L = sinComent(f).split("\n");
+      L.forEach((l, i) => {
+        if (!/update payments set status = 'released'/.test(l)) return;
+        const ctx = L.slice(Math.max(0, i - 8), i + 1).join("\n");
+        if (/\.e (?:===|!==) "liberada"/.test(ctx) || /if \(!r\.ok\) return "fallo";/.test(ctx) || /case "payment_intent\.canceled":/.test(ctx)) return;
+        falla(G, f, i + 1, "se escribe 'released' en payments sin mirar antes que Stripe la soltó («liberada»): si no se soltó (o ya estaba cobrada), el libro la diría soltada");
+      });
+    }
+    // (7) 26 nov (LAUNCH (2)) · Lo que la pantalla de quien suelta le dice a la persona sale de lo que pasó, nunca de «no era retenida»: la acción devuelve
+    // soltada (devolucion-cancelar › vistaSoltada: «retenida» o «cobrada») y la pantalla la dice con notaAlSoltar (el texto del aviso). Pasaba: las acciones
+    // devolvían solo retenida (s.e === "retenida") y, ante una retención que Stripe ya había cobrado, la pantalla decía «se liberó su depósito».
+    for (const f of archivos.filter((x) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x))) {
+      const raw = readFileSync(f, "utf8");
+      if (!/retenida/.test(raw)) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        if (/\bretenida = [^;\n]*\.e === "retenida"|\bretenida: true\b|\.retenida \?/.test(l))
+          falla(G, f, i + 1, "la respuesta a la pantalla mira solo «retenida»: una retención que Stripe ya había cobrado saldría como soltada; va soltada (vistaSoltada) y la pantalla dice notaAlSoltar");
+      });
+    }
+    for (const f of archivos.filter((x) => /^apps\/web\/app\/.*\.tsx$/.test(x))) {
+      const raw = readFileSync(f, "utf8");
+      if (!/se liberó|se soltó|was released|No se cobró nada/.test(raw)) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        // Una nota de después de una acción (el «Listo» de c.run o de setFlash/aviso) que dice «se liberó / se soltó» sin mirar soltada. No cuenta la captura
+        // («se cobró lo real y se liberó el resto»: el resto sale en la MISMA llamada que cobra, no es una retención que se suelta aparte).
+        if (/(?:c\.run\(|setFlash\(|\baviso\()[^\n]*(?:se liberó|se soltó|was released)/.test(l) && !/\bsoltada\b/.test(l) && !/se cobró [^"]*y se liberó el resto/.test(l))
+          falla(G, f, i + 1, "la pantalla dice «se liberó / se soltó» después de la acción sin mirar lo que pasó (r.soltada → notaAlSoltar): la retención pudo no soltarse o estar cobrada");
+      });
+    }
+    { const DC = "apps/web/lib/devolucion-cancelar.ts", dc = existsSync(DC) ? sinComent(DC) : "";
+      if (!/export const vistaSoltada = [^\n]*\n\s*s && \(s\.e === "retenida" \|\| s\.e === "cobrada"\) \? \{ e: s\.e, monto:/.test(dc) || !/const t = soltadaO\(s, \{ es: "", en: "" \}, para\) as Bi;/.test(cuerpoFn(dc, "notaAlSoltar")))
+        falla(G, DC, 0, "vistaSoltada / notaAlSoltar: la pantalla dice «retenida» y «cobrada» con el MISMO texto del aviso (soltadaO), y nada si se soltó");
+      for (const [f, n] of [["apps/web/lib/noche-reservas.ts", 3], ["apps/web/lib/fiestas-reservas.ts", 3], ["apps/web/lib/inscripciones.ts", 3], ["apps/web/lib/viajes.ts", 2], ["apps/web/lib/citas-flujo.ts", 2], ["apps/web/lib/mercado.ts", 1], ["apps/web/lib/pedidos.ts", 2], ["apps/web/lib/apartados.ts", 1]]) {
+        const k = ((existsSync(f) ? sinComent(f) : "").match(/vistaSoltada\(/g) ?? []).length;
+        if (k < n) falla(G, f, 0, `esperaba ${n} respuestas de quien suelta por vistaSoltada (hallé ${k}): la pantalla no sabría que la retención no se soltó o ya estaba cobrada`);
+      }
+    }
   },
 
   /* 25 nov (LAUNCH «el dinero dice lo que pasó» g) · capturaTardeAlerta: la captura de una cancelación tarde (viaje, evento privado) a la que Stripe NO

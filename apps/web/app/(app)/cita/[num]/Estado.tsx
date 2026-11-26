@@ -2,6 +2,7 @@
 /* APP-NEG-CITA · móvil (prototipo citaVals): «Cita · estado» (Solicitud enviada / Cita confirmada / Te propone otra hora
    / No pudo tomarla / Sin respuesta / Cita cancelada / Cita terminada), el camino (OrderTracker), los detalles, el dinero
    y Llamar · Mensaje. Se actualiza solo mientras espera respuesta. Compuesto con el sistema de diseño. */
+import { notaAlSoltar } from "@/lib/devolucion-cancelar";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -39,7 +40,8 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     const r = await citaAccion(c.numero, que, extra).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setHoja(null);
     // 9v (sexta tanda) · Cancelar o «No me sirve» con la retención que la pasarela no soltó todavía (retenida): se dice, nunca como si se hubiera soltado.
-    if (r.ok) { if (luego) return luego(); aviso("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 26 nov (LAUNCH (2)) · Y la que Stripe ya había cobrado: la acción devuelve soltada y la nota es la del aviso (devolucion-cancelar › notaAlSoltar).
+    if (r.ok) { if (luego) return luego(); aviso("soltada" in r && r.soltada ? notaAlSoltar(r.soltada, "cliente", E2) : ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   // Mientras espera respuesta, se mira cada 15 s (la respuesta también llega a Avisos).
   useEffect(() => { if (c.st !== "pend" && c.st !== "alt") return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [c.st, router]);

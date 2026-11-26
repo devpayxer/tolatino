@@ -10,7 +10,7 @@ import { diaFiesta, EVT, LINEA_FIESTA } from "@/lib/fiestas-comun";
 import type { FiestaVista } from "@/lib/fiestas-reservas";
 import { fiestaAccion } from "./acciones";
 import { dosIdiomas } from "@/lib/dos-idiomas";
-import { cobradoVisto, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/devolucion-cancelar";
+import { cobradoVisto, notaAlSoltar, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/devolucion-cancelar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +28,8 @@ export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
     const r = await fiestaAccion(x.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setConfirmar(false);
     // 9v (quinta tanda) · «No me sirve» con la retención que la pasarela no soltó todavía (retenida): nunca «se liberó».
-    if (r.ok) { setFlash("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 26 nov (LAUNCH (2)) · Y la que Stripe ya había cobrado: la acción devuelve soltada y la nota es la del aviso (devolucion-cancelar › notaAlSoltar).
+    if (r.ok) { setFlash("soltada" in r && r.soltada ? notaAlSoltar(r.soltada, "cliente", E2) : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   const B = x.negocio.nombre, dia = cap(diaFiesta(x.ymd, es)), cuando = `${dia} · ${horaL(x.m)}`, dep = x.dep, vis = x.visita;
   const liberado = x.pago.st === "released", devuelto = x.pago.devuelto;

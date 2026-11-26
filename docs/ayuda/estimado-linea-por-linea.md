@@ -41,6 +41,7 @@ negocio revisa y te manda el **estimado** (en Hogar se llama **precio completo**
 | La pieza salió más barata | El negocio baja lo final; se cobra menos y se libera la diferencia. |
 | El trabajo dura más de 7 días | La retención se renueva sola con la misma tarjeta. Si el banco no deja, ese monto se paga en el negocio y les avisamos a los dos. |
 | Stripe no contesta al renovar la retención | No se suelta lo retenido ni se avisa nada mientras se averigua: se reintenta y después se le pregunta a Stripe. Si la renovación no salió y no fue tu banco, el aviso dice «no se pudo renovar» (no «tu banco no dejó»); ese monto se paga en el negocio. |
+| Al no poder renovarla, Stripe no suelta la retención vieja o ya la había cobrado | Ya no cuenta para la cita, pero no se da por soltada hasta que Stripe la suelta (el barrido la sigue soltando y el equipo de To'Latino tiene el aviso). Si Stripe ya la había cobrado, el aviso lo dice con lo que se cobró y al negocio le pide no cobrarlo en el local hasta que To'Latino lo revise; nunca «Pagas eso en el negocio» de lo ya cobrado. |
 | La cita se cancela con algo retenido | Lo retenido se libera. |
 | Algo salió mal después | **Ayuda con la cita** desde Tu cita. |
 
@@ -93,6 +94,7 @@ At a shop (diagnosis, «from», quoted) or in a home service (visit, estimate, h
 | The part turned out cheaper | The business lowers the final amount; less is charged and the difference is released. |
 | The job lasts more than 7 days | The hold renews by itself with the same card. If the bank won't allow it, that amount is paid at the business and we notify both. |
 | Stripe does not answer when renewing the hold | What is held is not released and nothing is sent while it is checked: it is retried and then Stripe is asked. If the renewal did not go through and it was not your bank, the notice says «it could not be renewed» (not «your bank did not allow it»); that amount is paid at the business. |
+| When it cannot be renewed, Stripe does not release the old hold or had already charged it | It no longer counts for the booking, but it is not treated as released until Stripe releases it (the sweep keeps releasing it and the To'Latino team has the alert). If Stripe had already charged it, the notice says so with what was charged and asks the business not to collect it in person until To'Latino reviews it; never «You pay that at the business» for what was already charged. |
 | The booking is canceled with something held | What is held is released. |
 | Something went wrong afterward | **Appointment help** from Your appointment. |
 

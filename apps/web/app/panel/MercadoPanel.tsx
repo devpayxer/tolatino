@@ -21,6 +21,7 @@ type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
 export type MercPanel = { hoy?: FilaMerc[]; det?: MercadoVista | null; prods?: { id: string; name: Bi; cents: number; k: string }[]; aj?: AjustesPed };
 import { usd as money } from "@/lib/dinero-comun";
+import { notaAlSoltar } from "@/lib/devolucion-cancelar";
 
 export function hoyMercado(c: Ctx): Bloque[] {
   const { E2 } = c, L = c.mped?.hoy ?? [];
@@ -87,7 +88,7 @@ export function mercadoDetalle(c: Ctx): Sec {
   ];
   if (x.st === "pending") out.push({ type: "acts", items: [
     { l: E2("Aceptar", "Accept"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "aceptar"), E2("Aceptado. Ahora arma y pesa.", "Accepted. Now prepare and weigh.")) },
-    { l: E2("No puedo", "I can’t"), v: "secondary", icon: "close", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "rechazar"), (r) => (r?.retenida ? E2("Listo: el cliente sabe. La retención de su tarjeta no se soltó todavía: se sigue soltando sola.", "Done: the client knows. The hold on their card has not been released yet: it keeps being released automatically.") : E2("Listo: el cliente sabe y se liberó su retención.", "Done: the client knows and the hold was released."))) }] });
+    { l: E2("No puedo", "I can’t"), v: "secondary", icon: "close", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "rechazar"), (r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2) : E2("Listo: el cliente sabe y se liberó su retención.", "Done: the client knows and the hold was released."))) }] });
   // Líneas: pesar con foto, «no hay» (quitar o proponer).
   const L = x.lineas.filter((l) => l.st !== "removed");
   out.push({ type: "group", k: E2("SUS PRODUCTOS", "THEIR PRODUCTS") });

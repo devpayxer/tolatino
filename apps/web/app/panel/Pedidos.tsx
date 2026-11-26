@@ -25,6 +25,7 @@ export type PedPanel = {
 };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null; tail?: (Bloque | null)[] };
 import { usd as money } from "@/lib/dinero-comun";
+import { notaAlSoltar } from "@/lib/devolucion-cancelar";
 const PAGO_L = (es: unknown): Record<string, string> => { const E2 = (a: string, b: string) => dosIdiomas(es, a, b); return { held: E2("retenido", "held"), captured: E2("cobrado", "charged"), released: E2("liberado", "released"), refunded: E2("devuelto", "refunded"), partially_refunded: E2("devuelto en parte", "partly refunded"), failed: E2("falló", "failed") }; };
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
   ok: [E2("ACEPTADO", "ACCEPTED"), "signal"], ready: [E2("LISTO PARA RECOGER", "READY"), "signal"], out: [E2("EN CAMINO", "ON THE WAY"), "action"], done: [E2("LISTO", "DONE"), "neutral"],
@@ -37,8 +38,9 @@ function paso(c: Ctx, x: FilaPed, p: "aceptar" | "rechazar" | "listo" | "encamin
   const t = { aceptar: E2(`${n} ya lo ve en su pedido.`, `${n} now sees it in their order.`), rechazar: E2(`${n} ya ve que no se pudo.`, `${n} now sees it could not be done.`),
     listo: E2(`${n} ya ve que está listo para recoger.`, `${n} now sees it is ready for pickup.`), encamino: E2(`${n} ya ve que va en camino.`, `${n} now sees it is on the way.`),
     entregado: E2("Anotado · Entregado.", "Noted · Delivered.") }[p];
-  // 9v (sexta tanda) · «Rechazar» con la retención que la pasarela no soltó todavía (r?.retenida): se dice, nunca como si se hubiera soltado.
-  c.run(() => pedidoPaso(c.d.id, x.numero, p), p === "rechazar" ? (r) => (r?.retenida ? E2(`${n} ya ve que no se pudo. La retención de su tarjeta no se soltó todavía: se sigue soltando sola.`, `${n} now sees it could not be done. The hold on their card has not been released yet: it keeps being released automatically.`) : t) : t);
+  // 9v (sexta tanda) · «Rechazar» con la retención que la pasarela no soltó todavía: se dice, nunca como si se hubiera soltado.
+  // 26 nov (LAUNCH (2)) · Y la que Stripe ya había cobrado: r.soltada, con la nota del aviso (devolucion-cancelar › notaAlSoltar).
+  c.run(() => pedidoPaso(c.d.id, x.numero, p), p === "rechazar" ? (r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2, { es: `${n} ya ve que no se pudo.`, en: `${n} now sees it could not be done.` }) : t) : t);
 }
 
 /* Fila de un pedido (reqRow): pendiente con Aceptar / Rechazar; los demás con su etiqueta. Abre el detalle. */

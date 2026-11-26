@@ -9,6 +9,7 @@ import { cambiarPaso, guardarSeguimiento, type Paso } from "@/lib/pedidos";
 import { responderAyuda } from "@/lib/ayuda";
 import type { Res } from "./acciones";
 import { usd } from "@/lib/dinero-comun";
+import type { SoltadaVista } from "@/lib/devolucion-cancelar";
 
 /* Pedidos desde el panel (Panel v2 · Hoy, Clientes y Lo que vendes › Pedidos en línea). Responder y mover un pedido
    pide acceso a «Hoy y pedidos» (ord); los ajustes de Pedidos en línea, a «Lo que vendes» (cat). Cada paso queda en la
@@ -31,7 +32,7 @@ async function auditar(c: PoolClient, a: Acceso, action: string, before: unknown
 }
 
 /* Aceptar · Rechazar · Listo para recoger · Entregado. */
-export async function pedidoPaso(id: string, numero: string, paso: Paso): Promise<Res & { retenida?: true }> {
+export async function pedidoPaso(id: string, numero: string, paso: Paso): Promise<Res & { soltada?: SoltadaVista }> {
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;
   if (!PASOS.has(paso)) return no("Esa acción no existe.", "That action does not exist.");
@@ -40,7 +41,8 @@ export async function pedidoPaso(id: string, numero: string, paso: Paso): Promis
   const AV = { aceptar: "ord_ok", rechazar: "ord_no", listo: "ord_ready", encamino: "ord_way" } as const;
   if (paso in AV) await avisarPedido(String(numero), AV[paso as keyof typeof AV]);
   // 9v (sexta tanda) · retenida: la pasarela no soltó todavía la retención de «Rechazar» (cobros › soltarRetencion): el panel no dice «se liberó».
-  const r2 = (r.retenida ? { ok: true, retenida: true } : { ok: true }) satisfies Res & { retenida?: true };
+  // 26 nov (LAUNCH (2)) · soltada: también la que Stripe ya había cobrado (devolucion-cancelar › vistaSoltada); el panel la dice con notaAlSoltar.
+  const r2 = (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true }) satisfies Res & { soltada?: SoltadaVista };
   return r2;
 }
 

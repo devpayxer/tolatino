@@ -7,13 +7,14 @@ import { accesoPanel } from "@/lib/panel";
 import { asignarChofer } from "@/lib/chofer";
 import { mandarPrecio, pasoEnvio } from "@/lib/envios";
 import { abordo, cancelarSalida, pasoSalida, pasoViaje, responderViaje } from "@/lib/viajes";
-import type { DevCuenta } from "@/lib/devolucion-cancelar";
+import type { DevCuenta, SoltadaVista } from "@/lib/devolucion-cancelar";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
 // 9v (quinta tanda) · retenida: la pasarela no soltó todavía la retención que se soltaba (cobros › soltarRetencion): el panel no dice «se liberó».
-const r2 = (r: { ok: true; retenida?: true } | { ok: false; msg: { es: string; en: string } }): Res & { retenida?: true } => (r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, mensaje: r.msg });
+// 26 nov (LAUNCH (2)) · soltada: también la que Stripe ya había cobrado (devolucion-cancelar › vistaSoltada); el panel la dice con notaAlSoltar.
+const r2 = (r: { ok: true; soltada?: SoltadaVista } | { ok: false; msg: { es: string; en: string } }): Res & { soltada?: SoltadaVista } => (r.ok ? (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true }) : { ok: false, mensaje: r.msg });
 // 9v · El negocio canceló: la acción también dice lo que pasó con cada devolución (hechas · en camino · no salieron), para que el panel no diga «todos reciben su dinero» sin mirar.
 const rDev = (r: { ok: true; devolucion?: DevCuenta } | { ok: false; msg: { es: string; en: string } }): Res & { devolucion?: DevCuenta } => (r.ok ? { ok: true, devolucion: r.devolucion } : { ok: false, mensaje: r.msg });
 async function entrar(id: unknown) {

@@ -5,7 +5,7 @@
    Otra salida (las que tienen cupo) · No hay cupo; confirmado: Abordó / No llegó.
    4y-2: la caja (destinatario descifrado solo aquí; Recogida hecha → Salió del almacén con rastreo → Entregada) y la mudanza (sus
    fotos, recogida y destino; «Mandar el precio cerrado» con monto y qué incluye, vale 48 h; confirmada: Salió · Llegó). */
-import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
+import { notaAlSoltar, textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaViaje, SalidaPanel, ViajePanelV } from "@/lib/viajes";
 import { viajeAbordo, viajeCancelarSalida, viajeChofer, viajeEnvio, viajePasoPriv, viajePrecio, viajeResponder, viajeSalida } from "./acciones-viajes";
@@ -121,7 +121,7 @@ export function viajeDetalle(c: Ctx): Sec {
     out.push({ type: "acts", items: [
       { l: E2("Confirmar", "Confirm"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => viajeResponder(c.d.id, x.numero, "confirmar"), E2("Confirmado: se cobró el viaje.", "Confirmed: the trip was charged.")) },
       { l: x.k === "asiento" ? E2("Otra salida", "Another departure") : E2("Otra hora", "Another time"), v: "secondary", icon: "clock", off: c.pending || (x.k === "asiento" && !x.otras.length), onClick: () => c.setUi({ vOtra: otra ? null : x.numero }) },
-      { l: E2("No hay cupo", "No room"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => viajeResponder(c.d.id, x.numero, "nopuedo"), (r) => (r?.retenida ? E2("Listo: el cliente sabe. La retención de su tarjeta no se soltó todavía: se sigue soltando sola.", "Done: the client knows. The hold on their card has not been released yet: it keeps being released automatically.") : E2("Listo: el cliente sabe y se liberó su dinero.", "Done: the client knows and the money was released."))) }] });
+      { l: E2("No hay cupo", "No room"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => viajeResponder(c.d.id, x.numero, "nopuedo"), (r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2) : E2("Listo: el cliente sabe y se liberó su dinero.", "Done: the client knows and the money was released."))) }] });
     if (otra && x.k === "priv") out.push({ type: "chips", k: E2(`¿A QUÉ HORA SÍ PUEDES EL ${dia(x.ymd, es).toUpperCase()}?`, `WHAT TIME CAN YOU DO ${dia(x.ymd, es).toUpperCase()}?`), help: E2("EL CLIENTE TIENE 24 H PARA ACEPTAR", "THE CLIENT HAS 24 H TO ACCEPT"),
       items: HORAS.filter((m) => m !== x.m && Math.abs(m - x.m) <= 240).map((m) => ({ l: horaL(m), v: "filter", onClick: () => c.run(() => viajeResponder(c.d.id, x.numero, "otra", undefined, x.ymd, m), E2(`Propusiste las ${horaL(m)}.`, `You proposed ${horaL(m)}.`), () => c.setUi({ vOtra: null })) })) });
     if (otra && x.k === "asiento") out.push({ type: "chips", k: E2("¿EN QUÉ SALIDA SÍ CABEN?", "WHICH DEPARTURE HAS ROOM?"), help: E2("EL CLIENTE TIENE 24 H PARA ACEPTAR", "THE CLIENT HAS 24 H TO ACCEPT"),

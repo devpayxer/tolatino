@@ -104,7 +104,7 @@ const casos = [
   // soltarRetencion deja de mirar lo que dijo liberarOperacion.
   ['soltar no mira la pasarela', 'apps/web/lib/cobros.ts', '  if (l !== "fallo") return { e: l, monto: 0 };', '  if (l || true) return { e: "liberada", monto: 0 };'],
   // «No hay mesa» vuelve a tirar lo que dijo la pasarela.
-  ['no hay mesa tira el resultado', 'apps/web/lib/noche-reservas.ts', 'const s = await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); retenida = s.e === "retenida";', 'await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); const s = { e: "liberada" as const, monto: 0 };'],
+  ['no hay mesa tira el resultado', 'apps/web/lib/noche-reservas.ts', 'const s = await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); soltada = vistaSoltada(s);', 'await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); const s = { e: "liberada" as const, monto: 0 };'],
   // Un pedido vencido vuelve a liberarOperacion directo (sin alerta si no se suelta).
   ['pedido vencido con liberarOperacion', 'apps/web/lib/pedidos.ts', '(await soltarRetencion(id, { es: "El pedido venció sin que lo aceptaran", en: "The order expired without being accepted" })).e === "retenida"', '(await liberarOperacion(id)) === "fallo"'],
   // El barrido de pagos vuelve a soltar tirando el resultado.
@@ -120,18 +120,18 @@ const casos = [
   // Lo que se queda la fiesta vuelve a ser el depósito entero.
   ['fiesta se queda el depósito entero', 'apps/web/lib/fiestas-reservas.ts', '      const queda = Math.max(0, (o.amount ?? o.dep) - (o.refunded ?? 0));', '      const queda = o.dep;'],
   // El panel de la noche vuelve a «se liberó su depósito» sin mirar.
-  ['panel noche sin retenida', 'apps/web/app/panel/NocheReservas.tsx', '(r) => (r?.retenida ? E2(', '(r) => (false ? E2('],
-  // La acción del mercado deja de pasar retenida.
-  ['acción mercado sin retenida', 'apps/web/app/panel/acciones-mercado.ts', '(r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) :', '(r.ok ? { ok: true } :'],
+  ['panel noche sin soltada', 'apps/web/app/panel/NocheReservas.tsx', '(r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2) : E2(', '(r) => (false ? E2("", "") : E2('],
+  // La acción del mercado deja de pasar soltada (antes retenida).
+  ['acción mercado sin soltada', 'apps/web/app/panel/acciones-mercado.ts', '(r.ok ? (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true }) :', '(r.ok ? { ok: true } :'],
   // «No me sirve» de la fiesta vuelve a «se liberó tu depósito» sin mirar.
-  ['fiesta no me sirve sin retenida', 'apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx', 'setFlash("retenida" in r && r.retenida ? E2(', 'setFlash(false ? E2('],
+  ['fiesta no me sirve sin soltada', 'apps/web/app/(app)/fiesta/[num]/FiestaEstado.tsx', 'setFlash("soltada" in r && r.soltada ? notaAlSoltar(r.soltada, "cliente", E2) : ok)', 'setFlash(ok)'],
   // La alerta vuelve a llamarse solo «retención renovada».
   ['etiqueta hold_stuck renovada', 'apps/web/lib/dinero-alertas.ts', 'hold_stuck: { es: "una retención atascada (no se soltó o no se renovó)", en: "a stuck hold (not released or not renewed)" },', 'hold_stuck: { es: "una retención renovada sin respuesta", en: "a renewed hold with no answer" },'],
   // 25 nov (sexta tanda) · La cita que cancela el cliente, y las pantallas del mercado, del apartado y del pedido que no se dio (0223).
   // La cita vuelve a devolver con devolverPago tirando el resultado.
   ['cita cancela con devolverPago', 'apps/web/lib/citas-flujo.ts', '? await devolverAlCancelar(o, { actorId: userId, motivo: o.pay === "held"', '? await devolverPago({ paymentId: o.pid!, centavos: o.amount!, por: "policy", actorId: userId, motivo: "x", idem: `cx-${numero}` }).then(() => null) ?? await devolverAlCancelar(o, { actorId: userId, motivo: o.pay === "held"'],
   // Cancelar la cita deja de decir que la retención no se soltó.
-  ['cita sin retenida', 'apps/web/lib/citas-flujo.ts', 'retenida = d?.e === "retenida";', 'retenida = false;'],
+  ['cita sin soltada', 'apps/web/lib/citas-flujo.ts', 'soltada = vistaSoltada(d);', 'soltada = undefined;'],
   // Al negocio, otra vez el depósito entero aunque ya hubo una devolución parcial.
   ['cita se queda el depósito entero', 'apps/web/lib/citas-flujo.ts', 'const queda = Math.max(0, (o.amount ?? o.dep) - (o.refunded ?? 0));', 'const queda = o.dep;'],
   // biz_cita_cx vuelve a {dep} con lo decidido.
@@ -144,8 +144,8 @@ const casos = [
   // La devolución que no salió vuelve a contarse como «Se queda con …».
   ['cita la fallida como se queda', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '    else if (c.perdio) plata.push(', '    else if (c.perdio || c.pago === "captured") plata.push('],
   // La pantalla de la cita calla la retención que no se soltó.
-  ['cita pantalla sin retenida', 'apps/web/app/(app)/cita/[num]/Estado.tsx', 'aviso("retenida" in r && r.retenida ? E2(', 'aviso(false ? E2('],
-  ['cita acción sin retenida', 'apps/web/app/(app)/cita/[num]/acciones.ts', 'return r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, msg: r.msg };', 'return r.ok ? { ok: true } : { ok: false, msg: r.msg };'],
+  ['cita pantalla sin soltada', 'apps/web/app/(app)/cita/[num]/Estado.tsx', 'aviso("soltada" in r && r.soltada ? notaAlSoltar(r.soltada, "cliente", E2) : ok)', 'aviso(ok)'],
+  ['cita acción sin soltada', 'apps/web/app/(app)/cita/[num]/acciones.ts', 'return r.ok ? (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true }) : { ok: false, msg: r.msg };', 'return r.ok ? { ok: true } : { ok: false, msg: r.msg };'],
   // La vista de la cita deja de leer lo que no está hecho.
   ['cita sin devolucionesDe', 'apps/web/lib/citas.ts', 'devolucion: r.pago ? await devolucionesDe(r.oid) : { camino: 0, fallida: 0 },', 'devolucion: { camino: 0, fallida: 0 },'],
   // El apartado vuelve a «Se liberó» fijo, o soltado deja de mirar el cobro.
@@ -153,16 +153,16 @@ const casos = [
   // El mismo, con soltado("") delante en la línea (antes bastaba un soltado( cualquiera en la línea).
   ['apartado se liberó junto a otro soltado', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'soltado(E2("Se liberó lo retenido. No se cobró nada.", "The hold was released. Nothing was charged."))', 'soltado("") + E2("Se liberó lo retenido. No se cobró nada.", "The hold was released. Nothing was charged.")'],
   ['apartado soltado sin mirar', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'const soltado = (siSalio: string) => pg?.st === "released" ? siSalio', 'const soltado = (siSalio: string) => true ? siSalio'],
-  ['apartado acción sin retenida', 'apps/web/app/(app)/apartado/[num]/acciones.ts', 'return r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, msg: r.msg };', 'return r.ok ? { ok: true } : { ok: false, msg: r.msg };'],
-  ['apartado pantalla sin retenida', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'setFlash("retenida" in r && r.retenida ? E2(', 'setFlash(false ? E2('],
+  ['apartado acción sin soltada', 'apps/web/app/(app)/apartado/[num]/acciones.ts', 'return r.ok ? (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true }) : { ok: false, msg: r.msg };', 'return r.ok ? { ok: true } : { ok: false, msg: r.msg };'],
+  ['apartado pantalla sin soltada', 'apps/web/app/(app)/apartado/[num]/ApartadoEstado.tsx', 'setFlash("soltada" in r && r.soltada ? notaAlSoltar(r.soltada, "cliente", E2) : ok)', 'setFlash(ok)'],
   // El mercado vuelve a «No se cobró nada» fijo, o deja de mirar lo retenido.
   ['mercado no aceptaron fijo', 'apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx', 'E2("El mercado no puede hoy", "The market cannot today"), noSeDio]', 'E2("El mercado no puede hoy", "The market cannot today"), E2("No se cobró nada.", "Nothing was charged.")]'],
   ['mercado sin lo retenido', 'apps/web/app/(app)/mercado/[num]/MercadoEstado.tsx', ': t.retenido > 0 ? E2(`No se cobró nada, pero la retención', ': false ? E2(`No se cobró nada, pero la retención'],
   // El pedido que no se dio vuelve a «No se cobró nada» fijo; ord_no sin {dinero}; el panel y su acción sin retenida.
   ['pedido no se cobró fijo', 'apps/web/app/(app)/pedido/[num]/Pedido.tsx', 'const sinCobro = p.pago?.estado === "held" ?', 'const sinCobro = false ?'],
   ['ord_no sin {dinero}', 'apps/web/lib/avisos.ts', 'hora: o.hora, dinero }', 'hora: o.hora }'],
-  ['panel pedidos sin retenida', 'apps/web/app/panel/Pedidos.tsx', '(r) => (r?.retenida ? E2(', '(r) => (false ? E2('],
-  ['acción pedidos sin retenida', 'apps/web/app/panel/acciones-pedidos.ts', 'const r2 = (r.retenida ? { ok: true, retenida: true } : { ok: true })', 'const r2 = ({ ok: true })'],
+  ['panel pedidos sin soltada', 'apps/web/app/panel/Pedidos.tsx', '(r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2, ', '(r) => (false ? notaAlSoltar({ e: "retenida", monto: 0 }, "negocio", E2, '],
+  ['acción pedidos sin soltada', 'apps/web/app/panel/acciones-pedidos.ts', 'const r2 = (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true })', 'const r2 = ({ ok: true })'],
   // 25 nov (restos de la clase) · Lo que se dice ANTES de actuar y cuando no se pudo mirar (regla 13).
   // La hoja de cancelar la solicitud vuelve a prometer «Te devolvemos los $X».
   ['cita hoja promete te devolvemos', 'apps/web/app/(app)/cita/[num]/Estado.tsx', '${E2("Es gratis. ", "It is free. ")}${pideCx}`\n    : aTiempo', '${E2("Es gratis. ", "It is free. ")}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, "") : ""}`\n    : aTiempo'],

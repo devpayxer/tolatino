@@ -3,7 +3,7 @@ import { cfgSql, valor } from "./config";
 import { horasTxt } from "./plazo-txt";
 import { db, tx, txAuditada, type AlGuardar } from "./db";
 import { cobrarOperacion, devolverAlCancelar, soltarRetencion } from "./cobros";
-import { dineroAlNegocio, soltadaO, type Soltada } from "./devolucion-cancelar";
+import { dineroAlNegocio, soltadaO, vistaSoltada, type Soltada, type SoltadaVista } from "./devolucion-cancelar";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
 import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } from "./citas";
 
@@ -18,7 +18,7 @@ import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } f
    - Recordatorios 24 h y 2 h antes (si los pidió) y «Avísame si se libera una hora» cuando una cita se cae.
    Nada se borra: cada paso es un estado y un evento. */
 type Bi = { es: string; en: string };
-export type ResC = { ok: true; numero?: string; retenida?: true } | { ok: false; msg: Bi };
+export type ResC = { ok: true; numero?: string; soltada?: SoltadaVista } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResC => ({ ok: false, msg: { es, en } });
 const NUM = /^C-\d{1,10}$/;
 import { usd as money } from "./dinero-comun";
@@ -325,7 +325,7 @@ export type QueCliente = "cancelar" | "aceptar" | "nogracias" | "tarde" | "recib
 export async function citaCliente(userId: string, numero: string, que: QueCliente, extra?: number, por: "user" | "compa" = "user"): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ userId, numero });
-  let despues: (() => Promise<void>) | null = null, retenida = false;
+  let despues: (() => Promise<void>) | null = null, soltada: SoltadaVista | undefined;
   const biz = (await db().query<{ b: string }>(`select business_id as b from operations where number = $1 and user_id = $2 and kind = 'appointment'`, [numero, userId])).rows[0]?.b;
   if (!biz) return no("Esa cita no existe.", "That booking does not exist.");
   const r = await tx(async (c): Promise<ResC> => {
@@ -360,7 +360,7 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
       despues = async () => {
         const d = o.pay === "held" || (aTiempo && (o.pay === "captured" || o.pay === "partially_refunded"))
           ? await devolverAlCancelar(o, { actorId: userId, motivo: o.pay === "held" ? "Cancelación de la cita" : "Cancelación a tiempo", idem: `cx-${numero}`, por: "policy" }) : null;
-        retenida = d?.e === "retenida";
+        soltada = vistaSoltada(d);
         await avisarNeg(numero, "biz_cita_cx", { dinero: pierde ? (queda === o.dep ? { es: ` El depósito de ${money(queda)} se queda contigo.`, en: ` The ${money(queda)} deposit stays with you.` }
           : { es: ` Lo que quedaba del depósito (${money(queda)}) se queda contigo.`, en: ` What was left of the deposit (${money(queda)}) stays with you.` }) : dineroAlNegocio(d ?? { e: "nada", monto: 0 }) });
         await horaLibre(numero);
@@ -375,7 +375,7 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
         await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
         await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'alt_no', updated_at = now() where id = $1::bigint`, [o.id]);
         await ev(c, o.id, "alt_declined", "user", userId);
-        despues = async () => { retenida = (await soltarRetencion(o.id, { es: "No le sirvió la otra hora (el cliente)", en: "The other time did not work (the client)" })).e === "retenida"; await horaLibre(numero); };
+        despues = async () => { soltada = vistaSoltada(await soltarRetencion(o.id, { es: "No le sirvió la otra hora (el cliente)", en: "The other time did not work (the client)" })); await horaLibre(numero); };
         return { ok: true };
       }
       await c.query(`update operations set status = 'confirmed', scheduled_at = ($2::date + make_interval(mins => $3::int)) at time zone $4, confirmed_at = now(), updated_at = now() where id = $1::bigint`, [o.id, p.ymd, p.m, o.tz]);
@@ -404,7 +404,8 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
   // 9v (quinta tanda) · La retención que la pasarela no soltó todavía (soltarRetencion: el equipo ya tiene la alerta hold_stuck) también se dice a quien llama.
-  return r.ok && retenida ? { ...r, retenida: true } : r;
+  // 26 nov (LAUNCH (2)) · Y la que Stripe ya había cobrado: soltada (devolucion-cancelar › vistaSoltada), la pantalla la dice con notaAlSoltar.
+  return r.ok && soltada ? { ...r, soltada } : r;
 }
 
 /* Aviso al negocio cuando el cliente pide cambiar una cita confirmada (lo llama el Booking al enviar el cambio). */

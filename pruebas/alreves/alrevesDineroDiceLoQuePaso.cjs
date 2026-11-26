@@ -1,4 +1,5 @@
-// Prueba al revés de los guardianes liberarMira, liberarSoloPorLaRegla (26 nov, LAUNCH (1): nadie suelta una retención fuera de su regla), capturaTardeAlerta, avisoNegUnIdioma (también el aviso a quien lo recibe: avisarCliente), dineroUnDecimal y dineroConUsd
+// Prueba al revés de los guardianes liberarMira, liberarSoloPorLaRegla (26 nov, LAUNCH (1): nadie suelta una retención fuera de su regla; (i): 'released' solo
+// después de «liberada»; (2): la pantalla de quien suelta dice lo que pasó), retencionRenovadaComoIntencion (la vieja), pushQueNoSeEncolo (efe56b9 a), capturaTardeAlerta, avisoNegUnIdioma (también el aviso a quien lo recibe: avisarCliente), dineroUnDecimal y dineroConUsd
 // (25 nov, LAUNCH «el dinero dice lo que pasó», letras e y g, y «promete antes de actuar» d/e):
 // soltar una retención que Stripe ya había cobrado no la deja «released» (pasarela.liberar mira el intento; el libro la anota cobrada y el equipo de dinero
 // tiene la alerta cobrada:, que no se cierra sola); la captura tarde a la que Stripe no contestó alerta captura: como la que lanza; y el aviso al negocio no
@@ -13,7 +14,7 @@
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
-const PA = 'apps/web/lib/pagos/pasarela.ts', CO = 'apps/web/lib/cobros.ts', VL = 'apps/web/lib/viajes.ts', EP = 'apps/web/lib/evento-privado.ts';
+const PA = 'apps/web/lib/pagos/pasarela.ts', CO = 'apps/web/lib/cobros.ts', VL = 'apps/web/lib/viajes.ts', EP = 'apps/web/lib/evento-privado.ts', RR = 'apps/web/lib/renovar-retencion.ts';
 const casos = [
   // ── liberarMira ──
   // El fallo del 25 nov: liberar da ok ante «unexpected_state» sin mirar el intento.
@@ -315,6 +316,33 @@ const casos = [
   ['liberarSoloPorLaRegla', 'pagarBoletos marca pi_released_at sin mirar', 'apps/web/lib/boletos.ts', 'if (pi && sol?.e === "liberada") await db()', 'if (pi) await db()'],
   // La misma clase con el dinero que sale: una devolución o una captura tirando lo que contestó Stripe.
   ['liberarSoloPorLaRegla', 'una captura que tira lo que contestó (boletos)', 'apps/web/lib/boletos.ts', '    const cap = await pasarela.capturarPlataforma(pi, h.total);', '    await pasarela.capturarPlataforma(pi, h.total).catch(() => undefined);\n    const cap = await pasarela.capturarPlataforma(pi, h.total);'],
+  // ── 26 nov (LAUNCH (i), (2) y la (a) de efe56b9) ──
+  // (i) El fallo de antes: renovar-retencion marca la vieja 'released' en la transacción, ANTES de soltarla en Stripe (cerrarNueva y cerrarSin).
+  ['liberarSoloPorLaRegla', 'cerrarNueva marca released antes de soltar', RR, "    const v = await c.query(`select 1 from payments where id = $1::bigint and status = 'held' for update`, [x.pago]);\n",
+    "    const v = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [x.pago]);\n"],
+  ['liberarSoloPorLaRegla', 'cerrarSin marca released antes de soltar', RR, "    const u = await c.query(`select 1 from payments where id = $1::bigint and status = 'held' for update`, [x.pago]);\n",
+    "    const u = await c.query(`update payments set status = 'released', released_at = now(), updated_at = now() where id = $1::bigint and status = 'held'`, [x.pago]);\n"],
+  // soltarVieja marca soltada sin mirar lo que dijo Stripe.
+  ['liberarSoloPorLaRegla', 'soltarVieja: released sin mirar', RR, '  if (s.e === "liberada") await db().query(`update payments set status = \'released\'', '  await db().query(`update payments set status = \'released\''],
+  // Lo mismo por el guardián de la renovación: la vieja se suelta sin su fila (ni 'captured' ni failure_code), el barrido no la sigue soltando, el aviso
+  // dice «ya no hay depósito retenido» siempre, «Pagas eso en el negocio» de lo que Stripe ya cobró, y la vieja sin soltar se cobra o cuenta otra vez.
+  ['retencionRenovadaComoIntencion', 'soltarVieja sin su fila', RR, '{ ...suelta(v, por), pago: v.pago, luego: "sigue"', '{ ...suelta(v, por), luego: "nadie"'],
+  ['retencionRenovadaComoIntencion', 'el barrido no sigue soltando la vieja', RR, '  return n + (await reintentarViejas());', '  return n;'],
+  ['retencionRenovadaComoIntencion', 'cerrarSin avisa sin lo que pasó', RR, '    await x.avisar(m, s).catch(', '    await x.avisar(m, { e: "liberada" }).catch('],
+  ['retencionRenovadaComoIntencion', 'renta: «ya no hay depósito retenido» siempre', 'apps/web/lib/rentas.ts', '  if (s.e === "liberada") return m === "banco" ? base : { es: `${base.es}: ya no hay depósito retenido`', '  if (s.e !== "nada") return m === "banco" ? base : { es: `${base.es}: ya no hay depósito retenido`'],
+  ['retencionRenovadaComoIntencion', 'estimado: «Pagas eso en el negocio» de lo cobrado', 'apps/web/lib/estimados.ts', '      if (s.e === "liberada") { await avisarC(p.num, m === "banco" ? "hold_fallo" : "hold_no_renovada"', '      if (s.e !== "nada") { await avisarC(p.num, m === "banco" ? "hold_fallo" : "hold_no_renovada"'],
+  ['retencionRenovadaComoIntencion', 'renta: se cobra de la vieja que no se soltó', 'apps/web/lib/rentas.ts', "\n                and not exists (select 1 from hold_renewals h where h.payment_id = payments.id and h.status in ('done', 'failed')) order by seq desc limit 1`", " order by seq desc limit 1`"],
+  ['retencionRenovadaComoIntencion', 'estimado: lo retenido cuenta la vieja', 'apps/web/lib/estimados.ts', "status = 'held'\n    and not exists (select 1 from hold_renewals h where h.payment_id = payments.id and h.status in ('done', 'failed'))`", "status = 'held'`"],
+  // (2) La pantalla de quien suelta vuelve a mirar solo «retenida» (la cobrada saldría «se liberó su depósito»), o dice «se liberó» fijo, o vistaSoltada
+  // deja fuera la cobrada.
+  ['liberarSoloPorLaRegla', 'noche: la respuesta mira solo retenida', 'apps/web/lib/noche-reservas.ts', 'const s = await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); soltada = vistaSoltada(s);',
+    'const s = await soltarRetencion(o.id, { es: "No hay mesa (el local)", en: "No table (the venue)" }); const retenida = s.e === "retenida"; soltada = retenida ? { e: "retenida", monto: s.monto } : undefined;'],
+  ['liberarSoloPorLaRegla', 'panel de la fiesta: «se liberó» fijo', 'apps/web/app/panel/FiestasReservas.tsx', '(r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2) : E2(', '(r) => (false ? "" : E2('],
+  ['liberarSoloPorLaRegla', 'vistaSoltada sin la cobrada', 'apps/web/lib/devolucion-cancelar.ts', '  s && (s.e === "retenida" || s.e === "cobrada") ? { e: s.e, monto:', '  s && (s.e === "retenida") ? { e: s.e, monto:'],
+  ['liberarSoloPorLaRegla', 'pedidos: rechazar sin vistaSoltada', 'apps/web/lib/pedidos.ts', 'paso === "rechazar" ? vistaSoltada(await soltarRetencion(', 'paso === "rechazar" ? (await soltarRetencion('],
+  // (a) de efe56b9 · El barrido vuelve a no encolar el aviso «pendiente» que nunca llegó a la cola; o lo cuenta sin encolarlo.
+  ['pushQueNoSeEncolo', 'barrerPush no encola lo que no llegó a la cola', 'apps/web/lib/push/cola.ts', '        and not exists (select 1 from push_outbox o where o.notification_id = n.id)\n', ''],
+  ['pushQueNoSeEncolo', 'barrerPush lo cuenta sin encolarlo', 'apps/web/lib/push/cola.ts', '  const reencolados = SC.length ? await encolar(SC.map((x) => x.id)) : 0;', '  const reencolados = SC.length;'],
 ];
 let bien = 0, total = 0;
 const correr = (g) => {

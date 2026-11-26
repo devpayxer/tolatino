@@ -97,9 +97,10 @@ const espera = async (f, ms = 15000) => { const t0 = Date.now(); for (;;) { cons
     console.log('2 · Pedido con tarjeta: rechazo con una retención que la pasarela no suelta (panel, base, alerta, ord_no y pantalla)');
     const P2 = pedido('Pedido atascado', { atascada: true });
     await rechazar(P2);
-    await pd.getByText('Pedido ya ve que no se pudo. La retención de su tarjeta no se soltó todavía: se sigue soltando sola.').first().waitFor();
+    // 26 nov (LAUNCH (2)) · La nota del panel es la del aviso al negocio (devolucion-cancelar › notaAlSoltar).
+    await pd.getByText("Pedido ya ve que no se pudo. No se había cobrado nada, pero la retención de $15 de su tarjeta no se soltó todavía: se sigue soltando sola y el equipo de To'Latino ya tiene el aviso.").first().waitFor();
     await pd.screenshot({ path: OUT + 'd9w-panel-rechazar-retenida-d.png' });
-    ok(true, 'el panel: «La retención de su tarjeta no se soltó todavía: se sigue soltando sola.»');
+    ok(true, 'el panel: «No se había cobrado nada, pero la retención de $15 de su tarjeta no se soltó todavía…»');
     ok(sql(`select status from operations where number = '${P2.num}'`) === 'declined' && pago(P2.num) === 'held|0' && holdStuck(P2.num) === '1', `#${P2.num}: rechazado, la retención sigue (${pago(P2.num)}) y UNA alerta hold_stuck`);
     const a2 = aviso(P2.num, 'ord_no');
     ok(a2.includes('No se cobró nada, pero la retención de $15 todavía no se soltó de tu tarjeta') && !/No se te cobró nada|se soltó la retención de|\{d/.test(a2), `ord_no: no se soltó todavía, nunca «No se te cobró nada» a secas (${a2})`);

@@ -18,7 +18,8 @@ import { enviarWebPush, temaDe, type ResultadoPush } from "./webpush";
      transacción, anota cada intento (push_deliveries, solo inserción, sin personas), reintenta con espera creciente lo que el proveedor no
      pudo (429 / 5xx), revoca el token que el proveedor dice que ya no sirve (410 / Unregistered / UNREGISTERED) y, cuando un aviso ya no tiene
      push que lo lleve, suelta su SMS de respaldo (una vez: lo reclama lib/avisos.ts smsRespaldo).
-   - barrerPush() (barrido, cada minuto): lo que se quedó «enviando», lo que venció (push_ttl_h), los tokens sin uso (push_inactivo_dias). */
+   - barrerPush() (barrido, cada minuto): lo que se quedó «enviando», lo que venció (push_ttl_h), el aviso «pendiente» que nunca llegó a la cola (26 nov),
+     los tokens sin uso (push_inactivo_dias). */
 
 export const GENERICO = { es: { t: "To'Latino", b: "Tienes un aviso nuevo en To'Latino." }, en: { t: "To'Latino", b: "You have a new notice in To'Latino." } };
 const URGENTE = new Set(["biz_req", "puerta_abre"]);
@@ -186,7 +187,7 @@ export async function resolver(nids: string[]): Promise<void> {
 
 /* El barrido (cada minuto): lo atascado vuelve a la cola, lo vencido se deja (y su SMS de respaldo sale), los reintentos que tocan salen y los
    tokens sin uso vencen. Idempotente: correrlo dos veces no manda nada dos veces. */
-export async function barrerPush(): Promise<{ atascados: number; vencidos: number; enviados: number; tokensVencidos: number; respaldos: number }> {
+export async function barrerPush(): Promise<{ atascados: number; vencidos: number; reencolados: number; enviados: number; tokensVencidos: number; respaldos: number }> {
   const at = (await db().query(`update push_outbox set status = 'pendiente', updated_at = now() where status = 'enviando' and claimed_at < now() - interval '2 minutes'`)).rowCount ?? 0;
   const V = (await db().query<{ nid: string }>(
     `with v as (update push_outbox o set status = 'fallo', payload_enc = null, last_error = 'vencido', updated_at = now()
@@ -196,6 +197,17 @@ export async function barrerPush(): Promise<{ atascados: number; vencidos: numbe
        from v join notifications n on n.id = v.notification_id join push_tokens t on t.id = v.token_id
      returning notification_id::text as nid`)).rows;
   await resolver([...new Set(V.map((x) => x.nid))]);
+  // 26 nov (revisión de efe56b9, a; Opus) · El aviso que quedó en la campana con su push «pendiente» pero sin una sola fila en la cola (avisar anotó el
+  // aviso y encolar falló: la base, la red, el proceso que murió entre los dos) quedaba «pendiente» para siempre y solo en el registro: nadie lo
+  // encolaba (lo de arriba solo mira la cola, y el SMS de respaldo esperaba push_ttl_h). Aquí se encola, con la misma función y sus mismas reglas
+  // (encolar: solo lo que sigue «pendiente», on conflict por aviso y teléfono: correrlo dos veces no manda dos; sin teléfono vivo, «sin_app» y su SMS de
+  // respaldo). Los de menos de 2 minutos los está encolando quien los anotó; los de más de push_ttl_h ya vencieron (el respaldo de abajo). Índice 0226.
+  const SC = (await db().query<{ id: string }>(
+    `select n.id::text from notifications n
+      where n.push_status = 'pendiente' and n.created_at < now() - interval '2 minutes' and n.created_at > now() - make_interval(hours => cfg_int('push_ttl_h'))
+        and not exists (select 1 from push_outbox o where o.notification_id = n.id)
+      order by n.created_at limit 500`)).rows;
+  const reencolados = SC.length ? await encolar(SC.map((x) => x.id)) : 0;
   let enviados = 0;
   for (let i = 0; i < 20; i++) { const r = await enviarPendientes(); enviados += r.enviados; if (!r.tomados) break; }
   // Un aviso con SMS de respaldo cuyo push nunca se resolvió (el trabajador estuvo caído más de push_ttl_h): el SMS sale ahora.
@@ -207,5 +219,5 @@ export async function barrerPush(): Promise<{ atascados: number; vencidos: numbe
   for (const s of S) await (await import("../avisos")).smsRespaldo(s.id);
   const tv = (await db().query(`update push_tokens set revoked_at = now(), revoked_reason = 'vencido'
                                  where revoked_at is null and last_seen_at < now() - make_interval(days => cfg_int('push_inactivo_dias'))`)).rowCount ?? 0;
-  return { atascados: at, vencidos: V.length, enviados, tokensVencidos: tv, respaldos: S.length };
+  return { atascados: at, vencidos: V.length, reencolados, enviados, tokensVencidos: tv, respaldos: S.length };
 }

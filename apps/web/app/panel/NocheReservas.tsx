@@ -5,7 +5,7 @@
    El detalle: personas, hora, ocasión, nota, depósito, lo de la puerta, cuántas mesas de ese tipo quedan esa noche; Confirmar (cobra el
    depósito) · Otra hora · No hay mesa; «Cancelar la mesa» con motivo (devolución completa). «Pasó la noche» no es un botón: el barrido
    cierra la noche a las 6 AM. */
-import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
+import { notaAlSoltar, textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import { pasoSrv } from "@tolatino/ui";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { hNoche, nocheCorta, usdN } from "@/lib/noche-comun";
@@ -82,7 +82,7 @@ export function nocheDetalle(c: Ctx): Sec {
     out.push({ type: "acts", items: [
       { l: E2("Confirmar", "Confirm"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => nocheResponder(c.d.id, x.numero, "confirmar"), x.dep ? E2("Confirmada: se cobró el depósito y le llegó su código.", "Confirmed: the deposit was charged and they got their code.") : E2("Confirmada: le llegó su código.", "Confirmed: they got their code.")) },
       { l: E2("Otra hora", "Another time"), v: "secondary", icon: "clock", off: c.pending || !x.slots.length, onClick: () => c.setUi({ nOtra: otra ? null : x.numero }) },
-      { l: E2("No hay mesa", "No table"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => nocheResponder(c.d.id, x.numero, "nohay"), (r) => (r?.retenida ? E2("Listo: el cliente sabe. La retención de su tarjeta no se soltó todavía: se sigue soltando sola.", "Done: the client knows. The hold on their card has not been released yet: it keeps being released automatically.") : E2("Listo: el cliente sabe y se liberó su depósito.", "Done: the client knows and the deposit was released."))) }] });
+      { l: E2("No hay mesa", "No table"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => nocheResponder(c.d.id, x.numero, "nohay"), (r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2) : E2("Listo: el cliente sabe y se liberó su depósito.", "Done: the client knows and the deposit was released."))) }] });
     if (otra) out.push({ type: "chips", k: E2("¿A QUÉ HORA SÍ TIENES MESA?", "WHAT TIME DO YOU HAVE A TABLE?"), help: E2("EL CLIENTE TIENE 30 MIN PARA ACEPTAR", "THE CLIENT HAS 30 MIN TO ACCEPT"),
       items: x.slots.map((m) => ({ l: hNoche(m), v: "filter", onClick: () => c.run(() => nocheResponder(c.d.id, x.numero, "otra", m), E2(`Propusiste las ${hNoche(m)}.`, `You proposed ${hNoche(m)}.`), () => c.setUi({ nOtra: null })) })) });
   }

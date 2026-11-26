@@ -4,7 +4,7 @@
    el depósito, «Otra solicitud para ese día» si choca; Confirmar (ocupa el día y, si se llena, declina solas las demás) ·
    Otra hora · No puedo; confirmada: el acuerdo por escrito, «Cancelar la fecha» con motivo (devolución completa) y, pasada la
    fiesta, «Terminó». */
-import { textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
+import { notaAlSoltar, textoPanelCancelar, type DevCuenta } from "@/lib/devolucion-cancelar";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { diaFiesta, EVT } from "@/lib/fiestas-comun";
 import type { FiestaPanelV, FilaFiesta } from "@/lib/fiestas-reservas";
@@ -61,7 +61,7 @@ export function fiestaDetalle(c: Ctx): Sec {
     out.push({ type: "acts", items: [
       { l: E2("Confirmar", "Confirm"), v: "primary", icon: "check", off: c.pending || x.ocupadoManual, onClick: () => c.run(() => fiestaResponder(c.d.id, x.numero, "confirmar"), x.visita ? E2("Visita confirmada.", "Tour confirmed.") : E2("Confirmada: la fecha es suya, se cobró el depósito y se mandó el acuerdo.", "Confirmed: the date is theirs, the deposit was charged and the agreement sent.")) },
       { l: E2("Otra hora", "Another time"), v: "secondary", icon: "clock", off: c.pending || !x.libreHoras.length, onClick: () => c.setUi({ fOtra: otra ? null : x.numero }) },
-      { l: E2("No puedo", "I can’t"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => fiestaResponder(c.d.id, x.numero, "nopuedo"), (r) => (r?.retenida ? E2("Listo: el cliente sabe. La retención de su tarjeta no se soltó todavía: se sigue soltando sola.", "Done: the client knows. The hold on their card has not been released yet: it keeps being released automatically.") : E2("Listo: el cliente sabe y se liberó su depósito.", "Done: the client knows and the deposit was released."))) }] });
+      { l: E2("No puedo", "I can’t"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => fiestaResponder(c.d.id, x.numero, "nopuedo"), (r) => (r?.soltada ? notaAlSoltar(r.soltada, "negocio", E2) : E2("Listo: el cliente sabe y se liberó su depósito.", "Done: the client knows and the deposit was released."))) }] });
     if (x.ocupadoManual) out.push({ type: "note", tone: "warn", icon: "calendar", t: E2("Marcaste ese día como ocupado en tu calendario. Libéralo en Calendario y depósito para confirmar, o usa «No puedo».", "You marked that day as booked in your calendar. Free it in Calendar and deposit to confirm, or use “Can’t”.") });
     if (otra) out.push({ type: "chips", k: E2("¿A QUÉ HORA SÍ PUEDES ESE DÍA?", "WHAT TIME CAN YOU DO THAT DAY?"), help: E2("EL CLIENTE TIENE 24 H PARA ACEPTAR", "THE CLIENT HAS 24 H TO ACCEPT"),
       items: x.libreHoras.map((m) => ({ l: horaL(m), v: "filter", onClick: () => c.run(() => fiestaResponder(c.d.id, x.numero, "otra", m), E2(`Propusiste las ${horaL(m)}.`, `You proposed ${horaL(m)}.`), () => c.setUi({ fOtra: null })) })) });

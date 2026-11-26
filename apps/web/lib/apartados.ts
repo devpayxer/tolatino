@@ -321,7 +321,7 @@ const recalcular = (c: PoolClient, op: string) => c.query(`update operations set
 const hastaL = (iso: string, tz: string): Bi => { const f = (l: string) => new Date(iso).toLocaleString(l, { timeZone: tz, weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }); return { es: f("es-US"), en: f("en-US") }; };
 
 export type QueClienteApt = { que: "cancelar" } | { que: "quitar" } | { que: "otraTalla" };
-export async function apartadoCliente(userId: string, numero: string, a: QueClienteApt): Promise<Res<{ retenida?: true }>> {
+export async function apartadoCliente(userId: string, numero: string, a: QueClienteApt): Promise<Res<{ soltada?: import("./devolucion-cancelar").SoltadaVista }>> {
   const x = NUM.test(String(numero)) ? await leer("o.number = $1 and o.user_id = $2", [numero, userId]) : null;
   if (!x) return no("Ese apartado no existe.", "That hold does not exist.");
   const av = await import("./avisos"), href = { href: `/panel/${x.biz}/hoy?det=apt:${numero}`, ref: ["apartado", numero] as [string, string] };
@@ -344,7 +344,9 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
     // 9v (quinta tanda) · La retención se mira (soltarRetencion): la que la pasarela no soltó alerta hold_stuck al equipo y se le dice a quien llama.
     const s = await (await import("./cobros")).soltarRetencion(x.op, { es: "Canceló el apartado (el cliente)", en: "Hold cancelled (the client)" });
     await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente ?? { es: "Cliente", en: "Customer" }, que: { es: "canceló el apartado · vuelve al estante", en: "canceled the hold · it goes back on the shelf" } }, href);
-    return s.e === "retenida" ? { ok: true, retenida: true } : { ok: true };
+    // 26 nov (LAUNCH (2)) · También la que Stripe ya había cobrado (soltada: devolucion-cancelar › vistaSoltada); la pantalla la dice con notaAlSoltar.
+    const sol = (await import("./devolucion-cancelar")).vistaSoltada(s);
+    return sol ? { ok: true, soltada: sol } : { ok: true };
   }
   if (a?.que === "quitar") {
     const ok = await tx(async (c) => {

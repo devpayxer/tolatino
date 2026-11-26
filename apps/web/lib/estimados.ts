@@ -126,7 +126,9 @@ async function retenerFalta(c: PoolClient, o: Op, kind: "estimate" | "extra", se
   await ev(c, o.id, "payment_held", "system", null, { es: `Se retuvieron ${money(falta)} en la tarjeta`, en: `${money(falta)} held on the card` });
   return { ok: true, pi: r.pi };
 }
-const vivoRetenido = async (c: Q, opId: string) => Number((await c.query<{ n: number }>(`select coalesce(sum(held_cents), 0)::int as n from payments where operation_id = $1::bigint and kind in ('estimate', 'extra') and status = 'held'`, [opId])).rows[0]!.n);
+/* 26 nov (LAUNCH (i)) · Una retención vieja con su renovación cerrada (hold_renewals done/failed) ya no cuenta, aunque Stripe todavía no la haya soltado. */
+const vivoRetenido = async (c: Q, opId: string) => Number((await c.query<{ n: number }>(`select coalesce(sum(held_cents), 0)::int as n from payments where operation_id = $1::bigint and kind in ('estimate', 'extra') and status = 'held'
+    and not exists (select 1 from hold_renewals h where h.payment_id = payments.id and h.status in ('done', 'failed'))`, [opId])).rows[0]!.n);
 
 /* ── Validar las líneas que manda el negocio (el servidor decide; el cliente solo muestra) ── */
 export type LineaIn = { urg: string; t: string; why: string; piezas: { n: string; cents: number }[]; horas: number; foto: string | null; tEn?: string; whyEn?: string; piezasEn?: string[] };
@@ -347,7 +349,8 @@ export async function ajustarFinal(negocio: string, numero: string, actorId: str
 export async function planLiquidar(c: PoolClient, opId: string, actor: "user" | "member", actorId: string): Promise<void> {
   const st = await estadoEstimado(c, opId), d = st.dinero;
   const P = (await c.query<{ id: string; held: number }>(
-    `select id::text, held_cents as held from payments where operation_id = $1::bigint and kind in ('estimate', 'extra') and status = 'held' order by case kind when 'estimate' then 0 else 1 end, seq`, [opId])).rows;
+    `select id::text, held_cents as held from payments where operation_id = $1::bigint and kind in ('estimate', 'extra') and status = 'held'
+        and not exists (select 1 from hold_renewals h where h.payment_id = payments.id and h.status in ('done', 'failed')) order by case kind when 'estimate' then 0 else 1 end, seq`, [opId])).rows;
   let resto = Math.max(0, d.final - d.dep);
   for (const p of P) { const t = Math.min(resto, p.held); resto -= t; await c.query(`update payments set capture_target_cents = $2, updated_at = now() where id = $1::bigint`, [p.id, t]); }
   if (!st.estimado && !st.extras.length) return;
@@ -402,6 +405,7 @@ export async function renovarRetenciones(negocio: string): Promise<void> {
   const L = (await db().query<{ id: string }>(
     `select p.id::text from payments p join operations o on o.id = p.operation_id
       where p.business_id = $1 and p.status = 'held' and p.kind in ('estimate', 'extra') and p.capture_target_cents is null and o.status = 'confirmed'
+        and not exists (select 1 from hold_renewals h where h.payment_id = p.id and h.status in ('done', 'failed'))
         and p.held_at < now() - make_interval(hours => ${RR.HORAS_RENOVAR})
         and not exists (select 1 from hold_renewals h join gateway_checks g on g.subject_kind = 'hold_renewals' and g.subject_id = h.id
                          where h.payment_id = p.id and h.status = 'pending' and g.at > now() - make_interval(mins => ${(await import("./consulta-pasarela")).CADA_MIN}))
@@ -439,7 +443,17 @@ export async function renovacionRetencion(pago: string): Promise<import("./renov
     },
     fallo: async (c, m) => { await ev(c, p.op, "hold_failed", "system", null, m === "banco" ? { es: `La retención de ${money(p.held)} no se pudo renovar: el banco no dejó; se paga en el local`, en: `The ${money(p.held)} hold could not be renewed: the bank declined; paid in person` }
       : { es: `La retención de ${money(p.held)} no se pudo renovar: se paga en el local`, en: `The ${money(p.held)} hold could not be renewed: paid in person` }); },
-    avisar: async (m) => { await avisarC(p.num, m === "banco" ? "hold_fallo" : "hold_no_renovada", { monto: money(p.held) }); await avisarN(p.num, "biz_hold_fallo", { monto: money(p.held) }); },
+    // 26 nov (LAUNCH «el dinero dice lo que pasó» (i), Opus) · «Pagas eso en el negocio» / «cóbralo en el local» solo si Stripe soltó la vieja; si no la soltó
+    // todavía o ya la había cobrado, hold_fallo_suelta y biz_hold_fallo_suelta (0226) con {dinero}: el mismo texto de lo soltado (devolucion-cancelar).
+    avisar: async (m, s) => {
+      if (s.e === "liberada") { await avisarC(p.num, m === "banco" ? "hold_fallo" : "hold_no_renovada", { monto: money(p.held) }); await avisarN(p.num, "biz_hold_fallo", { monto: money(p.held) }); return; }
+      const D = await import("./devolucion-cancelar");
+      const v = s.e === "cobrada" ? { e: "cobrada" as const, monto: s.cobrado } : { e: "retenida" as const, monto: p.held };
+      const cli = D.soltadaO(v, "", "cliente") as Bi, neg = D.soltadaO(v, "", "negocio") as Bi;
+      await avisarC(p.num, "hold_fallo_suelta", { monto: money(p.held), dinero: v.e === "retenida" ? { es: `${cli.es} Lo de la cita lo pagas en el negocio.`, en: `${cli.en} You pay for the booking at the business.` } : cli });
+      await avisarN(p.num, "biz_hold_fallo_suelta", { monto: money(p.held), dinero: v.e === "retenida" ? { es: `${neg.es} Cóbralo en el local.`, en: `${neg.en} Collect it in person.` }
+        : { es: `${neg.es} No lo cobres en el local hasta que To'Latino lo revise.`, en: `${neg.en} Do not collect it in person until To'Latino reviews it.` } });
+    },
   };
 }
 

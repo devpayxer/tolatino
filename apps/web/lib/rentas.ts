@@ -376,7 +376,8 @@ async function liquidarDeposito(rid: string): Promise<void> {
   const x = (await db().query<{ op: string; numero: string; uid: string; biz: string; city: string; lateC: number; dmgC: number | null; dmgSt: string | null; st: string }>(
     `select r.operation_id::text as op, o.number as numero, o.user_id::text as uid, o.business_id as biz, o.city_id as city, r.late_cents as "lateC", r.damage_cents as "dmgC", r.damage_status as "dmgSt", r.status as st from rentals r join operations o on o.id = r.operation_id where r.id = $1::bigint`, [rid])).rows[0];
   if (!x || x.st !== "back" || x.dmgSt === "asked" || x.dmgSt === "disputed") return;
-  const P = (await db().query<{ id: string; pi: string; held: number }>(`select id::text, stripe_payment_intent as pi, coalesce(held_cents, amount_cents) as held from payments where operation_id = $1::bigint and kind = 'security' and status = 'held' order by seq desc limit 1`, [x.op])).rows[0];
+  const P = (await db().query<{ id: string; pi: string; held: number }>(`select id::text, stripe_payment_intent as pi, coalesce(held_cents, amount_cents) as held from payments where operation_id = $1::bigint and kind = 'security' and status = 'held'
+                and not exists (select 1 from hold_renewals h where h.payment_id = payments.id and h.status in ('done', 'failed')) order by seq desc limit 1`, [x.op])).rows[0];
   if (!P) return;
   const objetivo = Math.min(P.held, x.lateC + (x.dmgSt === "accepted" || x.dmgSt === "charged" ? x.dmgC ?? 0 : 0));
   if (objetivo > 0) {
@@ -637,6 +638,7 @@ export async function barrerRentas(f: { negocio?: string; userId?: string; numer
   const R = (await db().query<{ id: string }>(
     `select p.id::text from payments p join rentals r on r.operation_id = p.operation_id join operations o on o.id = r.operation_id
       where ${W} and p.kind = 'security' and p.status = 'held' and p.held_at < now() - make_interval(hours => ${RR.HORAS_RENOVAR})
+        and not exists (select 1 from hold_renewals h where h.payment_id = p.id and h.status in ('done', 'failed'))
         and not exists (select 1 from hold_renewals h join gateway_checks g on g.subject_kind = 'hold_renewals' and g.subject_id = h.id
                          where h.payment_id = p.id and h.status = 'pending' and g.at > now() - make_interval(mins => ${(await import("./consulta-pasarela")).CADA_MIN}))
       order by p.held_at limit 10`, A)).rows;
@@ -648,9 +650,23 @@ export async function barrerRentas(f: { negocio?: string; userId?: string; numer
   // 5. Devueltas con el depósito todavía retenido y nada pendiente (un cobro que falló): se reintenta.
   // 9t6 · (Una renovación en camino no estorba: si la renta vuelve mientras tanto, el depósito viejo se liquida y la nueva, si salió, se suelta sola.)
   const L = (await db().query<{ rid: string }>(`select r.id::text as rid from rentals r join operations o on o.id = r.operation_id join payments p on p.operation_id = r.operation_id and p.kind = 'security' and p.status = 'held'
+        and not exists (select 1 from hold_renewals h where h.payment_id = p.id and h.status in ('done', 'failed'))
       where ${W} and r.status = 'back' and (r.damage_status is null or r.damage_status in ('accepted', 'waived', 'charged')) order by p.held_at, r.id limit 10`, A)).rows;
   await B.cada(L, (x) => `renta ${x.rid}`, (x) => liquidarDeposito(x.rid));
   B.fin();
+}
+/* 26 nov (LAUNCH «el dinero dice lo que pasó» (i), Opus) · {que} de biz_renta cuando la renovación del depósito no salió: el motivo verdadero (el banco · no
+   se pudo renovar) y lo que de verdad pasó con la retención vieja al soltarla (cobros › soltarSuelta): soltada · todavía en la tarjeta (el barrido la sigue
+   soltando; el equipo tiene la alerta) · ya cobrada por Stripe (lo que capturó; sin cifra si no se sabe). */
+function renovQue(m: import("./renovar-retencion").Motivo, s: Suelta, held: number): Bi {
+  const base: Bi = m === "banco" ? { es: `el banco ya no deja retener el depósito de ${money(held)}`, en: `the bank no longer allows holding the ${money(held)} deposit` }
+    : { es: `no se pudo renovar la retención del depósito de ${money(held)} (la tarjeta la suelta a los 7 días)`, en: `the hold on the ${money(held)} deposit could not be renewed (the card releases it after 7 days)` };
+  if (s.e === "liberada") return m === "banco" ? base : { es: `${base.es}: ya no hay depósito retenido`, en: `${base.en}: there is no deposit held anymore` };
+  if (s.e === "retenida") return { es: `${base.es}: ya no cuenta como depósito, pero la retención todavía no se soltó de su tarjeta; se sigue soltando sola y el equipo de To'Latino ya tiene el aviso`,
+    en: `${base.en}: it no longer counts as a deposit, but the hold has not come off their card yet; it keeps being released automatically and the To'Latino team already has the alert` };
+  const c: Bi = s.cobrado > 0 ? { es: ` (${money(s.cobrado)})`, en: ` (${money(s.cobrado)})` } : { es: "", en: "" };
+  return { es: `${base.es}: al soltar la retención, Stripe ya la había cobrado${c.es} en su tarjeta; el equipo de To'Latino ya tiene el aviso y lo revisa con el cliente`,
+    en: `${base.en}: when releasing the hold, Stripe had already charged it${c.en} to their card; the To'Latino team already has the alert and reviews it with the client` };
 }
 /* 9t6 · La renovación del depósito retenido (lib/renovar-retencion.ts), armada desde la base: la usan el paso 4 del barrido, el barrido central de las
    renovaciones, «Preguntar a Stripe ahora» y la decisión del equipo. Lo que ve el negocio dice el motivo verdadero: el banco dijo que no, o no se pudo
@@ -680,7 +696,8 @@ export async function renovacionDeposito(pago: string): Promise<import("./renova
     },
     fallo: async (c, m) => ev(c, p.op, "hold_failed", "system", null, m === "banco" ? { es: `El depósito de ${money(p.held)} no se pudo renovar: el banco no dejó`, en: `The ${money(p.held)} deposit could not be renewed: the bank declined` }
       : { es: `El depósito de ${money(p.held)} no se pudo renovar`, en: `The ${money(p.held)} deposit could not be renewed` }),
-    avisar: async (m) => { await (await import("./avisos")).avisarNegocio(p.biz, "biz_renta", { cliente: p.cliente ?? { es: "Cliente", en: "Customer" }, articulo: p.n,
-      que: m === "banco" ? { es: `el banco ya no deja retener el depósito de ${money(p.held)}`, en: `the bank no longer allows holding the ${money(p.held)} deposit` } : { es: `no se pudo renovar la retención del depósito de ${money(p.held)} (la tarjeta la suelta a los 7 días): ya no hay depósito retenido`, en: `the hold on the ${money(p.held)} deposit could not be renewed (the card releases it after 7 days): there is no deposit held anymore` } }, href); },
+    // 26 nov (LAUNCH «el dinero dice lo que pasó» (i), Opus) · «ya no hay depósito retenido» solo si Stripe soltó la vieja (s: lo que contestó); si no la
+    // soltó, o ya la había cobrado, el negocio lo lee así (con lo que Stripe capturó, nunca con lo retenido como si se hubiera cobrado).
+    avisar: async (m, s) => { await (await import("./avisos")).avisarNegocio(p.biz, "biz_renta", { cliente: p.cliente ?? { es: "Cliente", en: "Customer" }, articulo: p.n, que: renovQue(m, s, p.held) }, href); },
   };
 }

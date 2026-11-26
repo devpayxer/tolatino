@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
 import { alertarCapturaTarde, capturaSinRespuesta, cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, reclamarAvisoCobro, registrarRetencion, soltarRetencion, soltarSuelta, type Retenida } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, usdTxt, type DevCancelar, type DevCuenta, type ReglaTarde, type Soltada } from "./devolucion-cancelar";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, pideSoltarSi, sinDevoluciones, soltadaO, usdTxt, vistaSoltada, type DevCancelar, type DevCuenta, type ReglaTarde, type Soltada, type SoltadaVista } from "./devolucion-cancelar";
 import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
 import { valor } from "./config";
@@ -276,10 +276,10 @@ const dineroSoltado = (s: Soltada) => soltadaO(s, s.e === "liberada" ? { es: " L
 type ResV = { ok: true } | { ok: false; msg: Bi };
 
 /* ── El negocio responde: Confirmar · Otra salida · No hay cupo ── */
-export async function responderViaje(negocio: string, numero: string, paso: "confirmar" | "otra" | "nopuedo", actorId: string, alt?: { run?: string; day?: string; m?: number }): Promise<ResV & { retenida?: true }> {
+export async function responderViaje(negocio: string, numero: string, paso: "confirmar" | "otra" | "nopuedo", actorId: string, alt?: { run?: string; day?: string; m?: number }): Promise<ResV & { soltada?: SoltadaVista }> {
   if (!NUM_V.test(numero)) return no("Ese viaje no existe.", "That trip does not exist.");
   await barrerViajes({ negocio, numero });
-  let despues: (() => Promise<void>) | null = null, retenida = false;
+  let despues: (() => Promise<void>) | null = null, soltada: SoltadaVista | undefined;
   const r = await tx(async (c): Promise<ResV> => {
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o) return no("Ese viaje no existe.", "That trip does not exist.");
@@ -297,7 +297,7 @@ export async function responderViaje(negocio: string, numero: string, paso: "con
       await c.query(`update operations set status = 'declined', answered_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "declined", "member", actorId, { es: "No hay cupo", en: "No room" });
       // 9v (quinta tanda) · Lo que de verdad pasó con la retención (soltarRetencion: la que no se soltó alerta hold_stuck al equipo); nunca «Liberamos» sin mirar.
-      despues = async () => { const s = await soltarRetencion(o.id, { es: "No hay cupo (el negocio)", en: "No room (the business)" }); retenida = s.e === "retenida"; await avisarCliente(numero, "viaje_no", { dinero: dineroSoltado(s) }); };
+      despues = async () => { const s = await soltarRetencion(o.id, { es: "No hay cupo (el negocio)", en: "No room (the business)" }); soltada = vistaSoltada(s); await avisarCliente(numero, "viaje_no", { dinero: dineroSoltado(s) }); };
       return ok1;
     }
     // Otra salida: la ruta propone otra salida con asientos; el vehículo, otra hora o día.
@@ -324,14 +324,14 @@ export async function responderViaje(negocio: string, numero: string, paso: "con
     return ok1;
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r.ok && retenida ? { ok: true, retenida: true } : r;
+  return r.ok && soltada ? { ok: true, soltada } : r;
 }
 
 /* ── El cliente: cancelar (24 h; después la mitad), aceptar la otra salida o «No me sirve» ── */
-export async function viajeCliente(userId: string, numero: string, que: "cancelar" | "aceptar" | "nogracias"): Promise<ResV & { retenida?: true }> {
+export async function viajeCliente(userId: string, numero: string, que: "cancelar" | "aceptar" | "nogracias"): Promise<ResV & { soltada?: SoltadaVista }> {
   if (!NUM_V.test(numero)) return no("Ese viaje no existe.", "That trip does not exist.");
   await barrerViajes({ userId, numero });
-  let despues: (() => Promise<void>) | null = null, retenida = false;
+  let despues: (() => Promise<void>) | null = null, soltada: SoltadaVista | undefined;
   const r = await tx(async (c): Promise<ResV> => {
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
     if (!o) return no("Ese viaje no existe.", "That trip does not exist.");
@@ -398,7 +398,7 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'alt_no', updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "alt_declined", "user", userId);
       // Sin aviso al negocio sobre el dinero; la retención se mira igual (la que no se soltó alerta hold_stuck) y la pantalla lo dice.
-      despues = async () => { retenida = (await soltarRetencion(o.id, { es: "No le sirvió la otra salida (el cliente)", en: "The other departure did not work (the client)" })).e === "retenida"; };
+      despues = async () => { soltada = vistaSoltada(await soltarRetencion(o.id, { es: "No le sirvió la otra salida (el cliente)", en: "The other departure did not work (the client)" })); };
       return ok1;
     }
     if (o.tot > 0 && o.pay !== "held") return no("Lo retenido ya no está. Elige «No me sirve» y reserva otra vez.", "The hold is gone. Choose “Doesn’t work” and book again.");
@@ -415,7 +415,7 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
     return ok1;
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r.ok && retenida ? { ok: true, retenida: true } : r;
+  return r.ok && soltada ? { ok: true, soltada } : r;
 }
 
 /* 25 nov (revisión de 483a3af) · La cancelación tarde cuya retención resultó cobrada DESPUÉS (el barrido la encontró cobrada y aplicó la regla: cobros ›

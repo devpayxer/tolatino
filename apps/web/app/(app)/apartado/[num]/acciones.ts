@@ -2,17 +2,18 @@
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { apartadoCliente } from "@/lib/apartados";
 import { pagarCuota } from "@/lib/layaway";
+import type { SoltadaVista } from "@/lib/devolucion-cancelar";
 
 /* La persona sobre su apartado: cancelar, quitar lo que falta y seguir con lo demás, o aceptar la otra talla que le ofrecen. */
 type Bi = { es: string; en: string };
-export async function apartadoAccion(numero: string, que: "cancelar" | "quitar" | "otraTalla"): Promise<{ ok: true; retenida?: true } | { ok: false; msg: Bi }> {
+export async function apartadoAccion(numero: string, que: "cancelar" | "quitar" | "otraTalla"): Promise<{ ok: true; soltada?: SoltadaVista } | { ok: false; msg: Bi }> {
   if (!(await mismoOrigen())) return { ok: false, msg: { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." } };
   const u = await yo();
   if (!u) return { ok: false, msg: { es: "Entra para seguir.", en: "Sign in to continue." } };
   if (que !== "cancelar" && que !== "quitar" && que !== "otraTalla") return { ok: false, msg: { es: "Esa acción no existe.", en: "That action does not exist." } };
   const r = await apartadoCliente(u.id, String(numero ?? ""), { que });
-  // 9v (sexta tanda) · retenida: la retención que la pasarela no soltó todavía al cancelar (cobros › soltarRetencion); la pantalla lo dice.
-  return r.ok ? (r.retenida ? { ok: true, retenida: true } : { ok: true }) : { ok: false, msg: r.msg };
+  // 9v (sexta tanda) · soltada (26 nov: antes retenida): la retención que la pasarela no soltó todavía o que Stripe ya había cobrado al cancelar (cobros › soltarRetencion); la pantalla lo dice.
+  return r.ok ? (r.soltada ? { ok: true, soltada: r.soltada } : { ok: true }) : { ok: false, msg: r.msg };
 }
 
 /* Layaway: pagar el pago que sigue del plan con la tarjeta elegida (la persona está en la app; se cobra en el acto). */

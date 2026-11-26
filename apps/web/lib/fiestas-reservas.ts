@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { contexto, type Ctx } from "./citas";
 import { cobrarOperacion, comision, devolucionesDe, devolverAlCancelar, registrarRetencion, soltarRetencion, soltarSuelta, SWEEP, type Retenida } from "./cobros";
-import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, pideSoltarSi, sinDevoluciones, soltadaO, type DevCuenta } from "./devolucion-cancelar";
+import { contar, dineroAlCancelar, dineroAlCancelarCliente, dineroAlNegocio, pideSoltarSi, sinDevoluciones, soltadaO, vistaSoltada, type DevCuenta, type SoltadaVista } from "./devolucion-cancelar";
 import { db, tx } from "./db";
 import { diasOcupados, recalcularFiltrosFiesta } from "./fiestas";
 import { diaFiesta, EVT, sumarDias, type Bi, type SvcFiesta } from "./fiestas-comun";
@@ -244,12 +244,12 @@ async function ev(c: PoolClient, op: string, kind: string, actor: "user" | "memb
 /* ── El negocio responde (Panel › Hoy · detalle): Confirmar · Otra hora · No puedo ── */
 export type PasoFiesta = "confirmar" | "otra" | "nopuedo";
 type ResF = { ok: true } | { ok: false; msg: Bi };
-export async function responderFecha(negocio: string, numero: string, paso: PasoFiesta, actorId: string, alt?: number): Promise<ResF & { retenida?: true }> {
+export async function responderFecha(negocio: string, numero: string, paso: PasoFiesta, actorId: string, alt?: number): Promise<ResF & { soltada?: SoltadaVista }> {
   if (!NUM_F.test(numero)) return no("Esa fiesta no existe.", "That party does not exist.");
   await barrerFiestas({ negocio, numero });
   const o0 = await leer(db(), "o.business_id = $1 and o.number = $2", [negocio, numero]);
   if (!o0) return no("Esa fiesta no existe.", "That party does not exist.");
-  let despues: (() => Promise<void>) | null = null, retenida = false;
+  let despues: (() => Promise<void>) | null = null, soltada: SoltadaVista | undefined;
   const r = await tx(async (c): Promise<ResF> => {
     await c.query(`select pg_advisory_xact_lock(hashtext('fiesta:' || $1 || ':' || $2))`, [negocio, o0.ymd]);
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
@@ -263,7 +263,7 @@ export async function responderFecha(negocio: string, numero: string, paso: Paso
       await ev(c, o.id, "declined", "member", actorId);
       // 9v (quinta tanda) · Lo que de verdad pasó con la retención (soltarRetencion: la que no se soltó alerta hold_stuck al equipo); nunca «Se liberó» sin mirar.
       despues = async () => {
-        const s = await soltarRetencion(o.id, { es: "No puede tomar la fecha (el negocio)", en: "Cannot take the date (the business)" }); retenida = s.e === "retenida";
+        const s = await soltarRetencion(o.id, { es: "No puede tomar la fecha (el negocio)", en: "Cannot take the date (the business)" }); soltada = vistaSoltada(s);
         await avisarCliente(numero, "fiesta_no", { dev: o.dep ? soltadaO(s, { es: ` Se liberó tu depósito de ${money(o.dep)}.`, en: ` Your ${money(o.dep)} deposit was released.` }) : "" });
       };
       return { ok: true };
@@ -323,17 +323,17 @@ export async function responderFecha(negocio: string, numero: string, paso: Paso
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r.ok && retenida ? { ok: true, retenida: true } : r;
+  return r.ok && soltada ? { ok: true, soltada } : r;
 }
 
 /* ── El cliente: cancelar, aceptar la otra hora o «No me sirve» ── */
 export type QueFiesta = "cancelar" | "aceptar" | "nogracias";
-export async function fiestaCliente(userId: string, numero: string, que: QueFiesta): Promise<ResF & { retenida?: true }> {
+export async function fiestaCliente(userId: string, numero: string, que: QueFiesta): Promise<ResF & { soltada?: SoltadaVista }> {
   if (!NUM_F.test(numero)) return no("Esa fiesta no existe.", "That party does not exist.");
   await barrerFiestas({ userId, numero });
   const o0 = await leer(db(), "o.user_id = $1 and o.number = $2", [userId, numero]);
   if (!o0) return no("Esa fiesta no existe.", "That party does not exist.");
-  let despues: (() => Promise<void>) | null = null, retenida = false;
+  let despues: (() => Promise<void>) | null = null, soltada: SoltadaVista | undefined;
   const r = await tx(async (c): Promise<ResF> => {
     await c.query(`select pg_advisory_xact_lock(hashtext('fiesta:' || $1 || ':' || $2))`, [o0.biz, o0.ymd]);
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
@@ -355,6 +355,7 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
       const queda = Math.max(0, (o.amount ?? o.dep) - (o.refunded ?? 0));
       despues = async () => {
         const d = pierde ? null : await devolverAlCancelar(o, { actorId: userId, motivo: "Cancelación a tiempo", idem: `fcx-${numero}`, por: "policy" });
+        soltada = vistaSoltada(d); // 26 nov (LAUNCH (2)) · la pantalla dice la retención que no se soltó o que ya estaba cobrada (notaAlSoltar)
         await avisarCliente(numero, "fiesta_cx", { dinero: dineroAlCancelarCliente(d, pierde ? (queda === o.dep ? { es: `El depósito de ${money(queda)} se queda con ${o.negocio}.`, en: `The ${money(queda)} deposit stays with ${o.negocio}.` }
           : { es: `Lo que quedaba del depósito (${money(queda)}) se queda con ${o.negocio}.`, en: `What was left of the deposit (${money(queda)}) stays with ${o.negocio}.` }) : undefined) });
         await avisarNeg(numero, "biz_fiesta_cx", { dinero: pierde ? (queda === o.dep ? { es: ` El depósito de ${money(queda)} se queda contigo.`, en: ` The ${money(queda)} deposit stays with you.` }
@@ -371,7 +372,7 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = 'alt_no', updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "alt_declined", "user", userId);
       despues = async () => {
-        const s = await soltarRetencion(o.id, { es: "No le sirvió la otra hora (el cliente)", en: "The other time did not work (the client)" }); retenida = s.e === "retenida";
+        const s = await soltarRetencion(o.id, { es: "No le sirvió la otra hora (el cliente)", en: "The other time did not work (the client)" }); soltada = vistaSoltada(s);
         await avisarNeg(numero, "biz_fiesta_alt_no", { dinero: o.dep ? soltadaO(s, { es: " Se le liberó el depósito.", en: " The deposit was released." }, "negocio") : "" });
       };
       return { ok: true };
@@ -400,7 +401,7 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
     return { ok: true };
   });
   if (r.ok && despues) await (despues as () => Promise<void>)();
-  return r.ok && retenida ? { ok: true, retenida: true } : r;
+  return r.ok && soltada ? { ok: true, soltada } : r;
 }
 
 /* ── El negocio cancela una fecha confirmada (motivo obligatorio; devolución completa siempre) y «Terminó» ── */

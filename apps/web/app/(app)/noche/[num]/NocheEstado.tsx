@@ -11,7 +11,7 @@ import type { NocheVista } from "@/lib/noche-reservas";
 import { nocheAccion } from "./acciones";
 import { abrirComoLlegar } from "@/lib/como-llegar";
 import { dosIdiomas } from "@/lib/dos-idiomas";
-import { cobradoVisto, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/devolucion-cancelar";
+import { cobradoVisto, notaAlSoltar, pideAlCancelar, pideSoltarSi, quedaVisto } from "@/lib/devolucion-cancelar";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +27,8 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
     const r = await nocheAccion(x.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setConfirmar(false);
     // 9v (quinta tanda) · «No me sirve» con la retención que la pasarela no soltó todavía (retenida): nunca «se liberó».
-    if (r.ok) { setFlash("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 26 nov (LAUNCH (2)) · Y la que Stripe ya había cobrado: la acción devuelve soltada y la nota es la del aviso (devolucion-cancelar › notaAlSoltar).
+    if (r.ok) { setFlash("soltada" in r && r.soltada ? notaAlSoltar(r.soltada, "cliente", E2) : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   // 9n-3 · El plazo sale de la reserva (el que eligió el local o el de Configuración): ya no dice «1 hora» para todos.
   const espL = (m: number | null, es: boolean) => (m == null ? (es ? "un rato" : "a while") : m >= 60 ? (es ? `${Math.ceil(m / 60)} h` : `${Math.ceil(m / 60)} h`) : `${m} min`);

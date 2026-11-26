@@ -3279,7 +3279,7 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       aviso del evento privado al restaurante), nunca refunded_cents del cobro entero. Guardián liberarMira; al revés con su caso.
       _Hecho (26 nov):_ din9x ya no es INESTABLE: el caso de «cobrada» por relectura (sección 4) sembraba el cobro retenido y lo cambiaba después en sentencias aparte, y el barrido de pagos del servidor (cada minuto) podía aplicar la regla entre las dos; ahora la operación, el cobro y la devolución de su llave se siembran ya en su estado final en una sola transacción. 5 corridas seguidas en verde con el barrido corriendo (102 ✓ cada una). El código de la app no se tocó.
       Queda (revisión de efe56b9): (a) el push que no se encola después de anotar el aviso queda «pendiente» y solo en el registro: comprobar que
-      barrerPush lo recoge (si no, que lo encole el barrido). (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
+      barrerPush lo recoge (si no, que lo encole el barrido). _Hecho (26 nov, hecho por Opus): no lo recogía (barrerPush solo miraba la cola, y el SMS de respaldo esperaba push_ttl_h; sin respaldo quedaba «pendiente» para siempre). Ahora barrerPush encola, con la misma encolar (idempotente por aviso y teléfono; sin teléfono vivo, «sin_app» y su respaldo), los avisos con push «pendiente» de más de 2 minutos y menos de push_ttl_h sin ninguna fila en push_outbox, antes de mandar lo pendiente; índice parcial notifications_push_pendiente (0226). Guardián pushQueNoSeEncolo; al revés en alrevesDineroDiceLoQuePaso; din9z §6 lo demuestra con el servidor (pendiente sin cola → encolado y «pruebas», otra pasada no lo repite)._ (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
       ventana en ese tiempo no alerta. (d) Las alertas aviso: y reparar: no se cierran solas (no hay estado que mirar): se marcan resueltas a mano.
       (e) El reclamo atascado (el proceso murió con el reclamo tomado) se retoma a los 10 minutos y cuenta como intento, sin la espera creciente.
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
@@ -3298,13 +3298,29 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       Stripe ya la había cobrado (patrocinios, boletos, evento privado): ahora dicen lo que pasó. Guardián liberarSoloPorLaRegla (también: ninguna llamada
       que mueve dinero se tira como sentencia suelta; no se halló ninguna); al revés en alrevesDineroDiceLoQuePaso; e2e din9z. Queda: (i) renovar-retencion ›
       cerrarNueva / cerrarSin marcan la vieja 'released' en el libro ANTES de soltarla en Stripe (si no se suelta, hay alerta, pero el libro ya la dice
-      soltada; la vieja vence sola en horas) y el aviso biz_renta dice «ya no hay depósito retenido»; (ii) din9z no está en pruebas/reparto.json (aviso:
+      soltada; la vieja vence sola en horas) y el aviso biz_renta dice «ya no hay depósito retenido»; _Hecho (26 nov, hecho por Opus): la transacción ya no
+      escribe 'released'; la vieja se suelta después por renovar-retencion › soltarVieja (soltarSuelta con su fila, «sigue»): «liberada» → 'released';
+      «cobrada» → 'captured' con lo que Stripe capturó; «retenida» → sigue 'held' con su failure_code y su alerta suelta:<pi> desde la primera vuelta, y el
+      barrido la sigue soltando (barrerRenovaciones › reintentarViejas; la alerta se cierra sola). Mientras no se suelta, la vieja ya no cuenta (renovación
+      done/failed): rentas › liquidarDeposito y los pasos 4 y 5 de barrerRentas, estimados › planLiquidar, vivoRetenido y renovarRetenciones la dejan fuera
+      (antes se habría cobrado o renovado dos veces). El aviso: biz_renta dice «ya no hay depósito retenido» solo con «liberada»; si no, «todavía no se soltó
+      de su tarjeta…» o «Stripe ya la había cobrado ($X)…» (ES/EN, rentas › renovQue); el estimado, hold_fallo_suelta y biz_hold_fallo_suelta (0226, con
+      {dinero} de soltadaO; al negocio «no lo cobres en el local» si ya se cobró), nunca «Pagas eso en el negocio». Guardianes liberarSoloPorLaRegla (6: un
+      'released' en payments solo después de mirar «liberada») y retencionRenovadaComoIntencion; al revés y din9z §4._ Queda de esto: la vieja que Stripe ya
+      había cobrado al RENOVAR (cerrarNueva: hay nueva retenida y la vieja cobrada) solo alerta al equipo (no se avisa al negocio ni a la persona); decidir si
+      se le avisa o si se suelta la nueva; (ii) din9z no está en pruebas/reparto.json (aviso:
       se asigna con la próxima corrida medida, scripts/ci/repartir.mjs). _Hecho en la revisión de 483a3af: quien llama a capturarPlataforma
       (boletos, patrocinios) anota lo que Stripe capturó._ Si ese monto difiere de lo pedido (alguien capturó otro desde Stripe), los boletos o el
       patrocinio quedan emitidos por el precio y cobrados por menos: _hecho en la revisión de 621f214: alerta al equipo de dinero (capturado:)_; queda
       decidir si además se ajusta el boleto o el patrocinio (hoy lo decide el equipo desde la alerta). (2) La pantalla de quien suelta (el «Listo» de «No me sirve»,
       «No hay cupo» del panel, las de pedidos, citas, noche, fiesta, inscripción, viaje y apartado) solo distingue «retenida»; ante «cobrada» dice lo de
-      siempre: el aviso sí lo dice bien (soltadaO). (3) _Hecho en la revisión: el aceptado que Stripe ya no deja cobrar alerta y sale del barrido._
+      siempre: el aviso sí lo dice bien (soltadaO). _Hecho (26 nov, hecho por Opus): las acciones devuelven soltada (devolucion-cancelar › vistaSoltada:
+      «retenida» o «cobrada», con su monto) en vez de retenida, y las pantallas la dicen con notaAlSoltar, el MISMO texto del aviso (soltadaO): «No me
+      sirve» y cancelar de cita, noche, fiesta, inscripción y apartado; «No me sirve» del viaje; «No hay mesa / cupo / fecha», «No puedo» y «Rechazar» del
+      panel (noche, fiesta, inscripciones, viajes, mercado, pedidos); también cancelar (a tiempo) de noche, fiesta e inscripción. Guardián
+      liberarSoloPorLaRegla (7) y devueltoSoloSiSalio; al revés; din9z §5 (noche «No me sirve» ES/EN, panel «No hay mesa» ES/EN, apartado «Cancelar» con la
+      retención ya cobrada en el simulador)._ Queda: cancelar el viaje (cliente) no lleva soltada (su regla tarde con lo cobrado la dicen el aviso y la vista
+      del viaje); cancelar el pedido del mercado ya lo decía con su mensaje. (3) _Hecho en la revisión: el aceptado que Stripe ya no deja cobrar alerta y sale del barrido._
       Queda decidir qué se hace con él (¿se cancela el pedido? ¿se le pide otra tarjeta?): hoy lo resuelve el equipo a mano desde su alerta. (4) La
       cobrada de una cancelación A TIEMPO (Stripe ya lo había cobrado) no se devuelve sola: la alerta pide revisarlo; decidir si la regla «devolver todo»
       se aplica sola como la tarde. (5) El aviso que manda el barrido al aplicar la regla repite la plantilla de la cancelación («Cancelaste tu viaje…» con

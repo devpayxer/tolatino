@@ -2,6 +2,7 @@
 /* APP-NEG-TIENDA-ESTADO (diseño neg-tienda-flow.js › citaVals, sobre la vista del estado de la cita): enviado · te lo
    guardan · falta algo · no lo tienen · venció · recogido · cancelado; los pasos, tu apartado (cada artículo y cómo) y
    Cómo llegar · Cancelar · Quitarlo · Buscar otra tienda; al recogerlo, «¿Cómo te fue?» con reseña verificada. */
+import { notaAlSoltar } from "@/lib/devolucion-cancelar";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
@@ -28,7 +29,8 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
     const r = await apartadoAccion(x.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setConfirmar(false);
     // 9v (sexta tanda) · Cancelar con la retención que la pasarela no soltó todavía (retenida): se dice, nunca como si se hubiera soltado.
-    if (r.ok) { setFlash("retenida" in r && r.retenida ? E2("Listo. La retención todavía no se soltó de tu tarjeta: la seguimos soltando sola.", "Done. The hold has not come off your card yet: we keep releasing it automatically.") : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    // 26 nov (LAUNCH (2)) · Y la que Stripe ya había cobrado: la acción devuelve soltada y la nota es la del aviso (devolucion-cancelar › notaAlSoltar).
+    if (r.ok) { setFlash("soltada" in r && r.soltada ? notaAlSoltar(r.soltada, "cliente", E2) : ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   // 9v (sexta tanda) · Lo retenido (el envío o el abono) como está en la base (x.pago): «Se liberó» solo si de verdad se soltó; si sigue retenido, cobrado o
   // devuelto, se dice eso.
