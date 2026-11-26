@@ -18659,12 +18659,14 @@ const guardianes = {
     }
     // 25 nov (revisión de efe56b9) · (27) La ventana es la de la CANCELACIÓN (o.cancelled_at, por el índice parcial de 0225), no la del cobro (un viaje se
     // cobra días antes de cancelarse tarde: la de captured_at no lo veía); lo que sale de la ventana sin repararse abre su alerta reparar:<cobro>.
-    const qL = bct.slice(bct.indexOf("const L = "), bct.indexOf(".rows;", bct.indexOf("const L = ")));
-    if (!/from operations o join payments p on p\.operation_id = o\.id/.test(qL) || !/where o\.cancel_reason = 'tarde' and o\.kind in \('trip', 'private_event'\) and o\.cancelled_at > now\(\) - interval '30 days' and o\.cancelled_at < now\(\) - interval '5 minutes'/.test(qL)
+    // 26 nov (revisión de efe56b9, c) · Lo que pide repararse vive en SIN_REPARAR (lo usan la tajada de dentro, L, y las tandas de fuera de la ventana).
+    const qL = /\nconst SIN_REPARAR = `([\s\S]*?)`;\n/.exec(co)?.[1] ?? "", sL = bct.slice(bct.indexOf("const L = "), bct.indexOf(".rows;", bct.indexOf("const L = ")));
+    if (!/from operations o join payments p on p\.operation_id = o\.id/.test(sL) || !/where \$\{SIN_REPARAR\} and o\.cancelled_at > now\(\) - make_interval\(days => \$2::int\)/.test(sL)
+      || !/^o\.cancel_reason = 'tarde' and o\.kind in \('trip', 'private_event'\) and o\.cancelled_at > \$\{DESDE_TARDE\} and o\.cancelled_at < now\(\) - interval '5 minutes'/.test(qL)
       || /p\.captured_at > now\(\)/.test(qL) || !/p\.captured_at < now\(\) - interval '5 minutes'/.test(qL)
       || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'cobrada:' \|\| p\.id::text\)/.test(qL)
       || !/not exists \(select 1 from refunds r where r\.payment_id = p\.id and split_part\(r\.idem_key, '~fallida-', 1\) = 'vcx-' \|\| o\.number\)/.test(qL)
-      || !/else coalesce\(o\.details->>'perdio', ''\) = 'false' end/.test(qL) || !/if \(!x\.fuera\) \{ await cobradaConSuRegla\(x\.op, REPARA, /.test(bct))
+      || !/else coalesce\(o\.details->>'perdio', ''\) = 'false' end/.test(qL) || !/await B\.cada\(L, [^\n]*await cobradaConSuRegla\(x\.op, REPARA, /.test(bct))
       falla(G, CO, 0, "barrerCobradasTarde no encuentra la cancelación tarde cobrada sin su regla por cuándo se canceló (o.cancelled_at; el cobro pudo ser días antes): quedaría cobrada entera, sin devolución, sin alerta y sin aviso");
     // 25 nov (revisión de ae940a7) · (31) La regla por lo cobrado deja su marca (reglaCobradaAt) ANTES de mover dinero, y barrerCobradasTarde completa la que
     // quedó a medias después de empezarla (sin alerta cobrada:, o sin que nadie reclamara su aviso): «completar».
@@ -18727,7 +18729,7 @@ const guardianes = {
     if (!/if \(!dicha\) await db\(\)\.query\([^\n]*\n\s*\.catch\(async \(e\) => \{[\s\S]*?await \(await import\("\.\/dinero-alertas"\)\)\.alertar\("hold_stuck", `completar:\$\{c\.id\}`[\s\S]*?\.catch\(\(e2\) => \{ console\.error/.test(ccr))
       falla(G, CO, 0, "«completar»: si tampoco vuelve el tope atrás, queda solo en el registro (sin su alerta completar:<cobro>): el barrido ya no la elige y nadie se entera");
     if (!/\n  await anotar\(\)\.catch\(\(\) => anotar\(\)\);\n\}/.test(cuerpoFn(av, "salirSms"))) falla(G, AV, 0, "salirSms anota el SMS en su aviso una sola vez: si falla, el aviso queda «pendiente» sin su sms_id aunque el SMS haya salido");
-    if (!/o\.cancelled_at <= now\(\) - make_interval\(days => \$2::int\) as fuera/.test(qL) || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'reparar:' \|\| p\.id::text\)/.test(qL)
+    if (!/where \$\{SIN_REPARAR\} and o\.cancelled_at <= now\(\) - make_interval\(days => \$2::int\) and not \(o\.id::text = any\(\$4::text\[\]\)\)/.test(bct) || !/not exists \(select 1 from money_alerts a where a\.kind = 'hold_stuck' and a\.subject_id = 'reparar:' \|\| p\.id::text\)/.test(qL)
       || !/alertar\("hold_stuck", `reparar:\$\{x\.pid\}`/.test(bct))
       falla(G, CO, 0, "barrerCobradasTarde deja caer en silencio la cancelación tarde que sale de su ventana sin repararse (alerta hold_stuck reparar:<cobro>)");
     if (!readdirSync("packages/db/migrations").some((m) => /\.sql$/.test(m) && /create index if not exists \w+ on operations \(cancelled_at\) where cancel_reason = 'tarde' and kind in \('trip', 'private_event'\);/.test(readFileSync(`packages/db/migrations/${m}`, "utf8"))))
@@ -18735,7 +18737,40 @@ const guardianes = {
     if (!/if \(tocada\) return "cobrada";/.test(lo)) falla(G, CO, 0, "liberarOperacion dice «cobrada» sin haber tocado la fila ni releerla");
     const cerrar = cuerpoFn(sinComent(DA), "cerrarAlertasResueltas");
     if (!cerrar) falla(G, DA, 0, "no encuentro cerrarAlertasResueltas");
-    else if (/cobrada|captura|completar/.test(cerrar)) falla(G, DA, 0, "cerrarAlertasResueltas cierra sola una alerta cobrada:, captura: o completar: (alguien tiene que mirar en Stripe)");
+    else {
+      // 26 nov (revisión de efe56b9, d) · Nunca cobrada: ni captura: (alguien mira en Stripe); reparar:, completar: y aviso: solo por su rama, con su estado.
+      const pats = [...cerrar.matchAll(/a\.subject_id ~ '([^']*)'/g)].map((m) => m[1]);
+      if (pats.some((x) => /cobrada|captura/.test(x)) || pats.some((x) => /reparar|completar|aviso/.test(x) && !["^(reparar|completar):[0-9]{1,18}$", "^aviso:[0-9]{1,18}$"].includes(x)) || /\ba\.subject_id (like|=) '(cobrada|captura|completar|reparar|aviso)/.test(cerrar))
+        falla(G, DA, 0, "cerrarAlertasResueltas cierra sola una alerta cobrada: o captura: (alguien tiene que mirar en Stripe), o reparar:/completar:/aviso: fuera de su rama con su estado");
+    }
+    // 26 nov (revisión de efe56b9) · (41) c: la ventana de barrerCobradasTarde se mide desde la última pasada completa del barrido (DESDE_TARDE: system_jobs
+    // barrido.cobradasTarde, last_ok_at), nunca desde ahora; lo de fuera se recorre entero por tandas y, si quedan más, la tarea sale fallida (la ventana no
+    // avanza). (42) d: reparar:/completar: se cierran solas solo con la regla aplicada (reglaCobradaAt; viaje: no más de la mitad cobrada; evento privado:
+    // perdio), su alerta cobrada: y el aviso sin nada pendiente; aviso: cuando el aviso ya salió. (43) e: el reclamo atascado espera como los demás intentos
+    // (AVISO_TARDE_ESPERA_MIN[intentos + 1], nunca menos de 10 minutos), cuenta una vez y, si era el último, no se manda otra vez: agotado y su alerta aviso:.
+    const DESDE_OK = "const DESDE_TARDE = `(select least(now(), coalesce(max(j.last_ok_at), '-infinity'::timestamptz)) - interval '30 days' from system_jobs j where j.name = 'barrido.cobradasTarde')`;";
+    const qA2 = bct.slice(bct.indexOf("const A = "), bct.indexOf(".rows;", bct.indexOf("const A = ")));
+    if (!co.includes(DESDE_OK) || /interval '30 days'/.test(bct) || /interval '30 days'/.test(qL.replace("${DESDE_TARDE}", "")) || !/o\.cancelled_at > \$\{DESDE_TARDE\} and o\.details \? 'avisoCobroFalta'/.test(qA2)
+      || !/\["cobradasTarde", \(\) => cobros\.barrerCobradasTarde\(\)\]/.test(sinComent("apps/web/lib/barrido.ts")) || !/\[`barrido\.\$\{name\}`, !error/.test(sinComent("apps/web/lib/barrido.ts")))
+      falla(G, CO, 0, "barrerCobradasTarde mide su ventana desde ahora (30 días): si el barrido no corre más de 23 días, lo que sale de la ventana en ese tiempo no alerta; se mide desde la última pasada completa (DESDE_TARDE: system_jobs barrido.cobradasTarde)");
+    if (!/await U\.porTandas\(B, FUERA_TANDA, async \(vistos\) => \{/.test(bct) || !/order by o\.cancelled_at, o\.id limit \$\{FUERA_TANDA\}`/.test(bct) || !/quedan = r\.length === FUERA_TANDA;/.test(bct)
+      || !/\{ clave: \(x\) => x\.op \}\);/.test(bct) || !/  B\.fin\(\);\n[^\n]*\n?\s*if \(quedan\) throw new Error\(/.test(bct))
+      falla(G, CO, 0, "barrerCobradasTarde: lo de fuera de la ventana no se recorre entero por tandas (porTandas, FUERA_TANDA) o, si quedan más, la tarea no sale fallida: su last_ok_at avanzaría y lo que no entró saldría de la ventana sin alerta");
+    const cerr = cerrar ?? "";
+    if (!/union all select case when y\.details \? 'reglaCobradaAt' and coalesce\(\(y\.details->>'avisoCobro'\)::boolean, false\) and not \(y\.details \? 'avisoCobroFalta'\)\s*and exists \(select 1 from money_alerts c where c\.kind = 'hold_stuck' and c\.subject_id = 'cobrada:' \|\| z\.id::text\)\s*and z\.status in \('captured', 'partially_refunded', 'refunded'\)\s*and case when y\.kind = 'trip' then z\.amount_cents - z\.refunded_cents <= y\.total_cents \/ 2 else coalesce\(\(y\.details->>'perdio'\)::boolean, false\) end\s*then 'tarde_hecha' else 'pending' end\s*from payments z join operations y on y\.id = z\.operation_id where a\.kind = 'hold_stuck' and a\.subject_id ~ '\^\(reparar\|completar\):\[0-9\]\{1,18\}\$' and z\.id = split_part\(a\.subject_id, ':', 2\)::bigint/.test(cerr)
+      || !/union all select case when coalesce\(\(y\.details->>'avisoCobro'\)::boolean, false\) and not \(y\.details \? 'avisoCobroFalta'\) then 'aviso_hecho' else 'pending' end\s*from payments z join operations y on y\.id = z\.operation_id where a\.kind = 'hold_stuck' and a\.subject_id ~ '\^aviso:\[0-9\]\{1,18\}\$'/.test(cerr)
+      || !/\n  tarde_hecha: \{ es: "Cerrada sola: [^"]+", *\n? *en: "Closed by itself: [^"]+" \},/.test(da) || !/\n  aviso_hecho: \{ es: "Cerrada sola: [^"]+", *\n? *en: "Closed by itself: [^"]+" \},/.test(da))
+      falla(G, DA, 0, "cerrarAlertasResueltas no cierra sola reparar:/completar: cuando ya está todo lo que piden (la regla aplicada, su alerta cobrada: y el aviso) o aviso: cuando el aviso ya salió (con su nota ES/EN): se quedarían abiertas para siempre aunque ya no falte nada, o se cerrarían sin estarlo");
+    const rat = cuerpoFn(co, "reclamarAvisoTarde"), aag = cuerpoFn(co, "atascadoAgotado");
+    if (/interval '10 minutes'/.test(rat) || /interval '10 minutes'/.test(qA2)
+      || !/or \(coalesce\(\(details->>'avisoCobro'\)::boolean, false\) and coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) < \$3::int\s*and coalesce\(\(details->>'avisoCobroAt'\)::timestamptz, '-infinity'::timestamptz\) < now\(\) - make_interval\(mins => greatest\(10, coalesce\(\(\$4::int\[\]\)\[coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) \+ 1\], 0\)\)\)/.test(rat)
+      || !/'avisoCobroIntentos', coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) \+ case when coalesce\(\(details->>'avisoCobro'\)::boolean, false\) then 1 else 0 end\)/.test(rat)
+      || !/when coalesce\(\(o\.details->>'avisoCobro'\)::boolean, false\)\s*then coalesce\(\(o\.details->>'avisoCobroAt'\)::timestamptz, '-infinity'::timestamptz\) < now\(\) - make_interval\(mins => greatest\(10, coalesce\(\(\$3::int\[\]\)\[coalesce\(\(o\.details->>'avisoCobroIntentos'\)::int, 0\) \+ 1\], 0\)\)\)/.test(qA2)
+      || !/coalesce\(\(o\.details->>'avisoCobro'\)::boolean, false\) and coalesce\(\(o\.details->>'avisoCobroIntentos'\)::int, 0\) >= \$2::int as atascado/.test(qA2)
+      || !/if \(x\.atascado\) \{ await atascadoAgotado\(x\.op, x\.num, x\.at\); return; \}\n\s*const regla = await reglaTardeLeida\(x\.op\);/.test(bct)
+      || !/jsonb_build_object\('avisoCobro', false, 'avisoCobroIntentos', coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) \+ 1\)\s*where id = \$1::bigint and coalesce\(\(details->>'avisoCobro'\)::boolean, false\) and details->>'avisoCobroAt' = \$2::text and coalesce\(\(details->>'avisoCobroIntentos'\)::int, 0\) >= \$3::int/.test(aag)
+      || !/await alertarAvisoTarde\(opId, num, [^\n]*"agotado"\);/.test(aag))
+      falla(G, CO, 0, "el reclamo atascado del aviso (el proceso murió con el reclamo tomado) se retoma a los 10 minutos sin la espera creciente (AVISO_TARDE_ESPERA_MIN[intentos + 1]), cuenta más de una vez o, si era el último, se manda otra vez en vez de agotarse con su alerta aviso:");
     for (const f of archivos.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x))) {
       const t = sinComent(f), T = t.split("\n");
       T.forEach((l, i) => {

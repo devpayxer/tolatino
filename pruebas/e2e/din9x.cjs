@@ -53,6 +53,11 @@
 //   LANZA: el tope vuelve atrás y la pasada siguiente la anota, con «mira antes en Stripe la devolución vcx-<número>» (también completar: y reparar:). Si
 //   tampoco vuelve el tope atrás: su alerta completar: (con la cobrada: ya abierta y sin ella). Cada caso nuevo se siembra ya en su estado final en UNA
 //   transacción (sembrarFinal) y la pasada va enseguida.
+//   (revisión de efe56b9, c/d/e; 26 nov) 5c · Con el barrido parado 40 días, la cancelación tarde de hace 35 días cobrada sin su regla y sin alerta abre su
+//   reparar: (la ventana se mide desde la última pasada completa). 5d · reparar:, completar: y aviso: se cierran solas cuando ya está todo lo que piden (la
+//   regla, su cobrada: y el aviso; viaje y evento privado), y no si falta algo (el aviso agotado, lo devuelto). 5e · El reclamo atascado del aviso espera su
+//   intento (AVISO_TARDE_ESPERA_MIN) y cuenta una vez; el del último intento no se manda otra vez: agotado y su alerta aviso:. Cada caso, sembrado ya en su
+//   estado final en UNA transacción.
 // Precondiciones propias (corre dos veces seguidas): su negocio, su dueña y sus clientes (teléfonos 555 libres), la salida, los cobros y el simulador.
 const ENT = require('../lib/entorno.cjs');
 const { sinMas } = require('../lib/usd.cjs'); // «$15» sin «.00» ni más dígitos detrás
@@ -726,6 +731,103 @@ const numV = () => `V-9${String(crypto.randomInt(1e8)).padStart(8, '0')}`, numE 
       ok(alertas(`reparar:${D8.pid}`) === '1' && detalle(`reparar:${D8.pid}`).includes('lleva más de 7 días así: el barrido ya no la repara') && pago(D8.num) === 'captured|3000|0'
         && detalle(`reparar:${D8.pid}`).includes(`mira en Stripe si la devolución con la llave vcx-${D8.num} ya salió o va en camino`)
         && sql(`select count(*) from refunds where idem_key = 'vcx-${D8.num}'`) === '0' && alertas(`cobrada:${D8.pid}`) === '0', `fuera de la ventana: UNA alerta reparar: y nada se mueve solo (${detalle(`reparar:${D8.pid}`)})`);
+
+      // (revisión de efe56b9, c/d/e; 26 nov) · Cada caso ya en su estado final en UNA transacción (una sola llamada a la base) y la pasada enseguida: el
+      // barrido de cada minuto del servidor corre sobre la misma base. caso() devuelve sus sentencias; det: el JSON de details y los minutos de hace cuánto de
+      // cada marca de tiempo (reglaCobradaAt, avisoCobroAt); alertas: las hold_stuck que ya tiene (cobrada:, reparar:, completar:, aviso:).
+      const caso = ({ kind = 'trip', haceMin, pst = 'captured', ref = 0, det = {}, ts = {}, alertas = [], vcx = false }) => {
+        const trip = kind === 'trip', num = trip ? numV() : numE(), cents = trip ? 3000 : 10000, pi = `pi_sim_9x_${RUN}_${num}`;
+        const P = `(select p.id from payments p join operations o on o.id = p.operation_id where o.number = '${num}')`;
+        const marcas = Object.entries(ts).map(([k, m]) => `'${k}', now() - make_interval(mins => ${m})`).join(', ');
+        const dj = `'${JSON.stringify({ ...(trip ? { k: 'asiento' } : {}), ...det })}'::jsonb || jsonb_build_object(${marcas})`;
+        return { num, P, sql: [
+          `insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, duration_min, details, party_size, subtotal_cents, total_cents, deposit_cents, pay_mode, client_key, is_test, cancelled_by, cancel_reason, cancelled_at, pay_status)
+             values ('${num}', '${kind}', 'hzl', '${BR}', '${U.id}', 'cancelled', now() + interval '2 days', ${trip ? 120 : 180}, ${dj}, ${trip ? 1 : 20}, ${trip ? 3000 : 50000}, ${trip ? 3000 : 50000}, ${trip ? 0 : 10000}, 'app', gen_random_uuid(), true, 'user', 'tarde', now() - make_interval(mins => ${haceMin}), 'captured')`,
+          `insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, refunded_cents, card, capture_method) values ('${pi}', ${cents}, 0, 'acct_sim_${BR}', 'succeeded', ${cents}, ${ref}, 'pm_sim_visa_4242', 'manual')`,
+          `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, refunded_cents, card_brand, card_last4, held_at, captured_at, simulated)
+             select id, '${U.id}', '${BR}', 'hzl', '${trip ? 'full' : 'deposit'}', 'card', '${pi}', ${cents}, ${cents}, 0, '${pst}', ${ref}, 'visa', '4242', now() - make_interval(mins => ${haceMin} + 60), now() - make_interval(mins => ${haceMin} + 60), true from operations where number = '${num}'`,
+          ...(vcx ? [`insert into refunds (payment_id, amount_cents, reason, initiated_by, status, idem_key, done_at) values (${P}, ${ref}, 'Cancelación tarde: se cobra la mitad', 'policy', 'done', 'vcx-${num}', now() - make_interval(mins => ${haceMin}))`] : []),
+          ...alertas.map((a) => `insert into money_alerts (kind, subject_id, business_id, city_id, amount_cents, detail) select 'hold_stuck', '${a}:' || ${P}, '${BR}', 'hzl', ${cents}, '{"es":"${num}: ${a} (prueba din9x).","en":"${num}: ${a} (din9x test)."}'::jsonb`),
+        ] };
+      };
+      const sembrar = (...xs) => { sql(xs.flatMap((x) => (typeof x === 'string' ? [x] : x.sql)).join(';\n')); return xs.filter((x) => typeof x !== 'string').map((x) => ({ num: x.num, op: sql(`select id from operations where number = '${x.num}'`), pid: pidDe(x.num) })); };
+      const notaSola = (suj) => sql(`select count(*) from money_alert_notes n join money_alerts a on a.id = n.alert_id where a.kind = 'hold_stuck' and a.subject_id = '${suj}' and n.action = 'resuelta_sola'`);
+      const textoSola = (suj) => sql(`select n.note from money_alert_notes n join money_alerts a on a.id = n.alert_id where a.kind = 'hold_stuck' and a.subject_id = '${suj}' and n.action = 'resuelta_sola'`);
+
+      console.log('5c · (c) La cancelación tarde que pasó de los 30 días mientras el barrido no corría abre su alerta reparar:');
+      {
+        // El barrido parado 40 días (su última pasada completa: system_jobs barrido.cobradasTarde, last_ok_at) y una cancelación tarde de hace 35 días, cobrada
+        // entera sin su regla y sin ninguna alerta. Antes: la ventana eran 30 días desde ahora y se perdía en silencio. Si una pasada del servidor termina justo
+        // entre la siembra y la de la prueba, vuelve a poner su last_ok_at en ahora: la marca se vuelve a poner (hasta 3 veces). Después, la marca vuelve a lo que
+        // tenía (o a lo más nuevo que haya puesto el servidor).
+        const okAntes = sql(`select coalesce(last_ok_at::text, '') from system_jobs where name = 'barrido.cobradasTarde'`);
+        const parado = `insert into system_jobs (name, last_run_at, last_ok_at, runs, errors) values ('barrido.cobradasTarde', now() - interval '40 days', now() - interval '40 days', 1, 0)
+          on conflict (name) do update set last_ok_at = now() - interval '40 days'`;
+        const [D35] = sembrar(caso({ haceMin: 35 * 24 * 60, det: { cobroMitad: 0 } }), parado);
+        try {
+          for (let i = 0; i < 3 && alertas(`reparar:${D35.pid}`) === '0'; i++) { if (i) sql(parado); await cobros.barrerCobradasTarde({ negocio: BR }); }
+        } finally {
+          if (okAntes) sql(`update system_jobs set last_ok_at = greatest(last_ok_at, '${okAntes}'::timestamptz) where name = 'barrido.cobradasTarde'`);
+        }
+        ok(alertas(`reparar:${D35.pid}`) === '1' && detalle(`reparar:${D35.pid}`).includes('quedó cobrada sin aplicar su regla y lleva más de 7 días así') && enIngles(`reparar:${D35.pid}`).includes('was left charged without its rule applied')
+          && pago(D35.num) === 'captured|3000|0' && sql(`select count(*) from refunds where idem_key = 'vcx-${D35.num}'`) === '0' && alertas(`cobrada:${D35.pid}`) === '0',
+          `de hace 35 días con el barrido parado 40: UNA alerta reparar: (ES/EN) y nada se mueve solo (${detalle(`reparar:${D35.pid}`)})`);
+        await cobros.barrerCobradasTarde({ negocio: BR });
+        ok(alertas(`reparar:${D35.pid}`) === '1', 'otra pasada: ninguna alerta más');
+      }
+
+      console.log('5d · (d) reparar:, completar: y aviso: se cierran solas cuando ya está todo lo que piden; si falta algo, no');
+      {
+        // Hecho por la app: la regla aplicada (reglaCobradaAt; viaje: la mitad devuelta con su llave; evento privado: perdio), su alerta cobrada: y el aviso (avisoCobro
+        // sin avisoCobroFalta). R1 (viaje, reparar:), R2 (viaje, completar: y aviso:), R3 (evento privado, reparar:). Y lo que no: R4 con el aviso agotado (sigue
+        // pendiente: avisoCobroFalta), R5 sin lo devuelto (cobrada entera).
+        const hecho = { cobroMitad: 1500, avisoCobro: true }, ts = { reglaCobradaAt: 9 * 24 * 60, avisoCobroAt: 9 * 24 * 60 };
+        const [R1, R2, R3, R4, R5] = sembrar(
+          caso({ haceMin: 9 * 24 * 60, pst: 'partially_refunded', ref: 1500, vcx: true, det: hecho, ts, alertas: ['cobrada', 'reparar'] }),
+          caso({ haceMin: 9 * 24 * 60, pst: 'partially_refunded', ref: 1500, vcx: true, det: { ...hecho, reglaCompletarIntentos: cobros.COMPLETAR_INTENTOS }, ts, alertas: ['cobrada', 'completar', 'aviso'] }),
+          caso({ kind: 'private_event', haceMin: 9 * 24 * 60, det: { perdio: true, avisoCobro: true }, ts, alertas: ['cobrada', 'reparar'] }),
+          caso({ haceMin: 9 * 24 * 60, pst: 'partially_refunded', ref: 1500, vcx: true, det: { cobroMitad: 1500, avisoCobro: false, avisoCobroFalta: ['cli'], avisoCobroIntentos: cobros.AVISO_TARDE_INTENTOS + 1 },
+            ts: { reglaCobradaAt: 9 * 24 * 60, avisoCobroAt: 5 * 60 }, alertas: ['cobrada', 'reparar', 'completar', 'aviso'] }),
+          caso({ haceMin: 9 * 24 * 60, det: hecho, ts, alertas: ['cobrada', 'completar'] }));
+        await alertasM.cerrarAlertasResueltas();
+        for (const [x, a] of [[R1, 'reparar'], [R2, 'completar'], [R3, 'reparar']]) {
+          ok(notaSola(`${a}:${x.pid}`) === '1' && textoSola(`${a}:${x.pid}`).includes('la regla de la cancelación tarde quedó aplicada') && textoSola(`${a}:${x.pid}`).includes('the late cancellation rule is applied'),
+            `${x === R3 ? 'evento privado' : 'viaje'}: ${a}: con la regla, su cobrada: y el aviso se cierra sola, con su nota ES/EN (${textoSola(`${a}:${x.pid}`)})`);
+        }
+        ok(notaSola(`aviso:${R2.pid}`) === '1' && textoSola(`aviso:${R2.pid}`).includes('ya les llegó a quien pagó y al negocio') && textoSola(`aviso:${R2.pid}`).includes('reached the payer and the business'),
+          'aviso: con el aviso ya mandado se cierra sola (ES/EN)');
+        ok(['cobrada', 'reparar', 'completar', 'aviso'].every((a) => notas(`${a}:${R4.pid}`) === '0') && notas(`cobrada:${R1.pid}`) === '0',
+          'con el aviso agotado (pendiente) ninguna se cierra, y cobrada: nunca se cierra sola');
+        ok(notas(`completar:${R5.pid}`) === '0' && pago(R5.num) === 'captured|3000|0', 'sin lo devuelto (cobrada entera), completar: sigue abierta');
+        await alertasM.cerrarAlertasResueltas();
+        ok([[R1, 'reparar'], [R2, 'completar'], [R2, 'aviso'], [R3, 'reparar']].every(([x, a]) => notas(`${a}:${x.pid}`) === '1'), 'otra pasada: ninguna nota más');
+      }
+
+      console.log('5e · (e) El reclamo atascado del aviso (el proceso murió con él tomado) espera como los demás intentos y cuenta una vez');
+      {
+        // E1: la regla aplicada y su cobrada:, el aviso reclamado en el intento 3 (avisoCobroIntentos 2) hace 12 minutos y sin nada mandado. Su espera es la del
+        // intento 3 (AVISO_TARDE_ESPERA_MIN[3], 15 minutos): todavía no; antes se retomaba a los 10. E2: atascado el ÚLTIMO intento (avisoCobroIntentos en
+        // AVISO_TARDE_INTENTOS) hace 11 minutos: no se manda otra vez, se da por agotado y abre su alerta aviso:.
+        const espE1 = cobros.AVISO_TARDE_ESPERA_MIN[2];
+        const atascado = (n, min) => caso({ haceMin: 60, pst: 'partially_refunded', ref: 1500, vcx: true, det: { cobroMitad: 1500, avisoCobro: true, avisoCobroFalta: ['cli', 'neg'], avisoCobroIntentos: n },
+          ts: { reglaCobradaAt: 60, avisoCobroAt: min }, alertas: ['cobrada'] });
+        const [E1] = sembrar(atascado(2, espE1 - 3));
+        await cobros.barrerCobradasTarde({ negocio: BR });
+        ok(!AV.some((x) => x[1] === E1.num) && cuantos(E1.num, 'viaje_cx') === '0' && det(E1.num, 'avisoCobroIntentos') === '2' && det(E1.num, 'avisoCobro') === 'true',
+          `atascado hace ${espE1 - 3} minutos en el intento 3: todavía no se retoma (su espera: ${espE1} minutos)`);
+        sql(`update operations set details = details || jsonb_build_object('avisoCobroAt', now() - make_interval(mins => ${espE1 + 1})) where id = ${E1.op}`);
+        await cobros.barrerCobradasTarde({ negocio: BR });
+        await espera(() => sql(`select (details ? 'avisoCobroFalta')::text from operations where id = ${E1.op}`) === 'false');
+        ok(unAviso(E1.num, 'viaje_cx', AV.filter((x) => x[1] === E1.num)) && det(E1.num, 'avisoCobroIntentos') === '3' && sql(`select (details ? 'avisoCobroFalta')::text from operations where id = ${E1.op}`) === 'false',
+          `pasada su espera: se retoma, sale UNA vez y el intento que murió cuenta una sola vez (intentos ${det(E1.num, 'avisoCobroIntentos')} · ${JSON.stringify(AV.filter((x) => x[1] === E1.num).map((x) => x[3]))})`);
+        const [E2] = sembrar(atascado(cobros.AVISO_TARDE_INTENTOS, 11));
+        await cobros.barrerCobradasTarde({ negocio: BR });
+        ok(!AV.some((x) => x[1] === E2.num) && cuantos(E2.num, 'viaje_cx') === '0' && det(E2.num, 'avisoCobro') === 'false' && det(E2.num, 'avisoCobroIntentos') === String(cobros.AVISO_TARDE_INTENTOS + 1)
+          && alertas(`aviso:${E2.pid}`) === '1' && detalle(`aviso:${E2.pid}`).includes(`después de ${cobros.AVISO_TARDE_INTENTOS} reintentos`),
+          `atascado el último intento: no se manda otra vez; agotado (intentos ${det(E2.num, 'avisoCobroIntentos')}) con su alerta aviso: (${detalle(`aviso:${E2.pid}`)})`);
+        await cobros.barrerCobradasTarde({ negocio: BR });
+        ok(!AV.some((x) => x[1] === E2.num) && alertas(`aviso:${E2.pid}`) === '1' && det(E2.num, 'avisoCobroIntentos') === String(cobros.AVISO_TARDE_INTENTOS + 1), 'otra pasada: nada más');
+      }
 
       console.log('6 · H1: el aviso que quedó no se repite (los avisos reales: el SMS que falla después, el dueño que ya lo tiene)');
       {

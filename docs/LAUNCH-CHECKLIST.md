@@ -3246,6 +3246,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       con «No se pudo completar», completar: con la cobrada: ya abierta y el tope que vuelve atrás; dos veces en verde en :3120 (101 ✓, 58 s y 59 s;
       reparto.json: din9x 59, ninguna prueba cambió de parte). Guardián liberarMira (35–36); alrevesDineroDiceLoQuePaso 109/109.
       Queda (revisión de 51a794d): (a) la alerta completar: no se cierra sola (no hay estado que mirar): se marca resuelta a mano, como aviso: y reparar:.
+      _Hecho (a) (26 nov, hecho por Opus): sí hay estado que mirar cuando lo completa la app: completar: (y reparar:) se cierra sola (dinero-alertas ›
+      cerrarAlertasResueltas, nota «resuelta_sola» ES/EN) con la regla aplicada (reglaCobradaAt; viaje: lo que queda cobrado no pasa de la mitad; evento
+      privado: perdio), su alerta cobrada: y el aviso sin nada pendiente. Lo hecho a mano (devolver por fuera, decírselo a la persona) no deja estado: la
+      regla de marcarla a mano está en el comentario de cobros › barrerCobradasTarde y en docs/ayuda/admin-conciliacion.md (ES/EN)._
       (b) «hecha» con lo devuelto toma refunded_cents del cobro entero: si al cobro se le había devuelto algo antes y por otro motivo, la cifra lo incluye.
       Queda (revisión de 5255ce2, Fable; sin dinero mal movido): (M1) acotar el monto de «hecha» a lo que tocaba por la cancelación
       (min(ref, lo pedido)) o decir «ya no falta nada por devolver: revisa que cuadre»; (M2) el texto de completar: y cobrada: debe decir «mira antes
@@ -3273,6 +3277,13 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       barrerPush lo recoge (si no, que lo encole el barrido). _Hecho (26 nov, hecho por Opus): no lo recogía (barrerPush solo miraba la cola, y el SMS de respaldo esperaba push_ttl_h; sin respaldo quedaba «pendiente» para siempre). Ahora barrerPush encola, con la misma encolar (idempotente por aviso y teléfono; sin teléfono vivo, «sin_app» y su respaldo), los avisos con push «pendiente» de más de 2 minutos y menos de push_ttl_h sin ninguna fila en push_outbox, antes de mandar lo pendiente; índice parcial notifications_push_pendiente (0226). Guardián pushQueNoSeEncolo; al revés en alrevesDineroDiceLoQuePaso; din9z §6 lo demuestra con el servidor (pendiente sin cola → encolado y «pruebas», otra pasada no lo repite)._ (b) _Hecho en la revisión de ae940a7: la marca y la fila van en la misma sentencia._ (c) La alerta reparar: solo mira 30 días hacia atrás: si el barrido no corre en más de 23 días, lo que sale de la
       ventana en ese tiempo no alerta. (d) Las alertas aviso: y reparar: no se cierran solas (no hay estado que mirar): se marcan resueltas a mano.
       (e) El reclamo atascado (el proceso murió con el reclamo tomado) se retoma a los 10 minutos y cuenta como intento, sin la espera creciente.
+      _Hecho (c), (d) y (e) (26 nov, hecho por Opus):_ (c) la ventana de barrerCobradasTarde (y la del reintento del aviso) se mide desde la última pasada
+      completa del barrido (system_jobs barrido.cobradasTarde, last_ok_at; DESDE_TARDE), no desde ahora; lo de fuera de la ventana de reparo se recorre
+      entero por tandas (porTandas, 100) y, si aun así quedan, la tarea sale fallida para que la ventana no avance. Sin migración (operations_cancelada_tarde_idx
+      de 0225). (d) reparar:/completar: se cierran solas con la regla aplicada, su cobrada: y el aviso; aviso: cuando un reintento lo mandó; lo agotado y lo
+      hecho a mano se marcan a mano (regla en el comentario y en docs/ayuda/admin-conciliacion.md ES/EN). (e) el reclamo atascado espera
+      AVISO_TARDE_ESPERA_MIN[intentos + 1] (nunca menos de 10 minutos) y cuenta una vez; el del último intento no se manda otra vez: agotado y su alerta
+      aviso: (atascadoAgotado). Guardián liberarMira (41–43); al revés con 15 casos (253/253); din9x 5c/5d/5e._
       Queda: (1) los que llaman a `pasarela.liberar` directo y miran `ok` (mercado › liquidarMercado, estimados, boletos › autorizaciones vencidas,
       verificacion › vencidas, suscripcion, rentas) ya no dan por soltado lo cobrado, pero tampoco lo anotan cobrado ni alertan: lo reintentan sin fin
       en silencio; pasarlos por la misma regla que liberarOperacion (anotar y alertar). _Hecho (26 nov, Opus):_ una sola función, cobros › soltarSuelta(pi,

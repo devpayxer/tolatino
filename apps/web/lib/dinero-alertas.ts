@@ -339,7 +339,20 @@ export async function cerrarAlertasResueltas(): Promise<number> {
                      union all select case when z.status = 'done' then 'refund_done' else 'pending' end from sponsorship_refunds z where a.kind = 'refund_stuck' and a.subject_id ~ '^sponsorship_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      union all select case when z.manual_at is not null then 'manual' else z.status end from sponsorship_refunds z where a.kind = 'gateway_review' and a.subject_id ~ '^sponsorship_refunds:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
                      -- 0209 · La refund_failed de unos boletos que se devolvieron otra vez: solo cuando la de otra vez quedó hecha (si falla, tiene su propia alerta).
-                     union all select case when z.status = 'done' then 'refund_done' else 'pending' end from refunds z where a.kind = 'refund_failed' and a.subject_id ~ '^[0-9]{1,18}$' and z.retry_of = a.subject_id::bigint) o on true
+                     union all select case when z.status = 'done' then 'refund_done' else 'pending' end from refunds z where a.kind = 'refund_failed' and a.subject_id ~ '^[0-9]{1,18}$' and z.retry_of = a.subject_id::bigint
+                     -- 26 nov (revisión de efe56b9, d) · La cancelación tarde que el barrido ya no repara (reparar:<cobro>) o no pudo completar (completar:<cobro>,
+                     -- cobros › barrerCobradasTarde): solo cuando ya está todo lo que piden, hecho por la app: la regla aplicada (reglaCobradaAt; viaje: lo que
+                     -- queda cobrado no pasa de la mitad del total; evento privado: perdio), su alerta cobrada:<cobro> y el aviso a quien pagó y al negocio
+                     -- (avisoCobro sin avisoCobroFalta). Lo hecho a mano no deja ese estado: se marca resuelta a mano.
+                     union all select case when y.details ? 'reglaCobradaAt' and coalesce((y.details->>'avisoCobro')::boolean, false) and not (y.details ? 'avisoCobroFalta')
+                                             and exists (select 1 from money_alerts c where c.kind = 'hold_stuck' and c.subject_id = 'cobrada:' || z.id::text)
+                                             and z.status in ('captured', 'partially_refunded', 'refunded')
+                                             and case when y.kind = 'trip' then z.amount_cents - z.refunded_cents <= y.total_cents / 2 else coalesce((y.details->>'perdio')::boolean, false) end
+                                        then 'tarde_hecha' else 'pending' end
+                       from payments z join operations y on y.id = z.operation_id where a.kind = 'hold_stuck' and a.subject_id ~ '^(reparar|completar):[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint
+                     -- Y el aviso que no llegó (aviso:<cobro>): cuando un reintento lo mandó después (avisoCobro sin avisoCobroFalta). Agotado, se marca a mano.
+                     union all select case when coalesce((y.details->>'avisoCobro')::boolean, false) and not (y.details ? 'avisoCobroFalta') then 'aviso_hecho' else 'pending' end
+                       from payments z join operations y on y.id = z.operation_id where a.kind = 'hold_stuck' and a.subject_id ~ '^aviso:[0-9]{1,18}$' and z.id = split_part(a.subject_id, ':', 2)::bigint) o on true
       where a.kind in ('charge_stuck', 'offsession_stuck', 'transfer_stuck', 'hold_stuck', 'extra_refund_stuck', 'gateway_review', 'refund_stuck', 'transfer_reversal_stuck', 'refund_failed') and o.st not in ('pending', 'paying')
         and coalesce((select n.action from money_alert_notes n where n.alert_id = a.id order by n.at desc, n.id desc limit 1), '') not in ('resuelta_sola', 'resuelta', 'resuelta_a_mano')
       order by a.id limit 100`)).rows;
@@ -427,6 +440,11 @@ const CERRADA: Record<string, Bi> = {
   refund_done: { es: "Cerrada sola: la devolución quedó hecha.", en: "Closed by itself: the refund is done." },
   reversal_done: { es: "Cerrada sola: la reversión quedó hecha.", en: "Closed by itself: the reversal is done." },
   manual: { es: "Cerrada sola: se resolvió a mano desde su alerta.", en: "Closed by itself: it was resolved manually from its alert." },
+  // 26 nov (revisión de efe56b9, d) · reparar:, completar: y aviso: de una cancelación tarde (cobros › barrerCobradasTarde).
+  tarde_hecha: { es: "Cerrada sola: la regla de la cancelación tarde quedó aplicada (lo que se queda y lo devuelto), con su alerta cobrada: y el aviso a quien pagó y al negocio.",
+    en: "Closed by itself: the late cancellation rule is applied (what is kept and what was refunded), with its cobrada: alert and the notice to the payer and the business." },
+  aviso_hecho: { es: "Cerrada sola: el aviso con lo aplicado ya les llegó a quien pagó y al negocio (lo mandó un reintento del barrido).",
+    en: "Closed by itself: the notice with what was applied reached the payer and the business (a sweep retry sent it)." },
 };
 
 /* ── 9t6 · gateway_review: lo que se puede elegir. lib/revision-pasarela.ts decide con esta regla y con la pasarela OTRA VEZ; la pantalla la usa solo para

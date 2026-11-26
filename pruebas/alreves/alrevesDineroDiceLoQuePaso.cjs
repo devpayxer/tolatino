@@ -9,7 +9,8 @@
 // resultado solo con el reclamo propio; reintentos espaciados y, agotados, su alerta aviso:; la mitad es lo que queda cobrado; la ventana es la de la
 // cancelación, con su índice, y lo que sale de ella alerta. (revisión de 51a794d) «completar» al tope con su alerta cobrada: ya abierta abre completar:;
 // la devolución ya devuelta a mano no dice «no salió». (revisión de 5255ce2) «hecha» acotada a lo de esta cancelación; mirar la llave vcx- antes de
-// devolver a mano; una sola pasada del barrido; el tope que no vuelve atrás alerta.
+// devolver a mano; una sola pasada del barrido; el tope que no vuelve atrás alerta. (revisión de efe56b9, c/d/e) La ventana desde la última pasada
+// completa; reparar:/completar:/aviso: se cierran solas solo hechas; el reclamo atascado con su espera creciente, una vez.
 // Se inyecta el defecto, el guardián debe fallar con SU renglón ([nombre]); se restaura.
 const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
@@ -160,9 +161,9 @@ const casos = [
   ['liberarMira', 'sin regla para armarlo, en silencio', CO, '    else await avisoSinRegla(x.op, x.num);', '    else void x;'],
   ['liberarMira', 'la alerta cobrada: pide «díselo tú»', CO, 'si no llega, se abre la alerta aviso:${c.id}.`', 'si no llega, díselo tú.`'],
   // H6: el reintento depende de que exista la alerta cobrada:.
-  ['liberarMira', 'el reintento depende de la alerta cobrada:', CO, "o.cancelled_at > now() - interval '30 days' and o.details ? 'avisoCobroFalta'", "o.cancelled_at > now() - interval '30 days' and o.details ? 'avisoCobroFalta' and exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'cobrada:' || p.id::text)"],
+  ['liberarMira', 'el reintento depende de la alerta cobrada:', CO, "o.cancelled_at > ${DESDE_TARDE} and o.details ? 'avisoCobroFalta'", "o.cancelled_at > ${DESDE_TARDE} and o.details ? 'avisoCobroFalta' and exists (select 1 from money_alerts a where a.kind = 'hold_stuck' and a.subject_id = 'cobrada:' || p.id::text)"],
   // H2: la ventana vuelve a ser la del cobro; lo que sale de la ventana cae en silencio; sin el índice parcial.
-  ['liberarMira', 'la ventana del cobro, no de la cancelación', CO, "where o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and o.cancelled_at > now() - interval '30 days' and o.cancelled_at < now() - interval '5 minutes'", "where o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and p.captured_at > now() - interval '2 days' and o.cancelled_at < now() - interval '5 minutes'"],
+  ['liberarMira', 'la ventana del cobro, no de la cancelación', CO, "o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and o.cancelled_at > ${DESDE_TARDE} and o.cancelled_at < now() - interval '5 minutes'", "o.cancel_reason = 'tarde' and o.kind in ('trip', 'private_event') and p.captured_at > now() - interval '2 days' and o.cancelled_at < now() - interval '5 minutes'"],
   ['liberarMira', 'lo que sale de la ventana, en silencio', CO, 'await (await import("./dinero-alertas")).alertar("hold_stuck", `reparar:${x.pid}`', 'void ("hold_stuck", `reparar:${x.pid}`'],
   ['liberarMira', 'sin el índice de las cancelaciones tarde', 'packages/db/migrations/0225_cancelada_tarde_por_su_cancelacion.sql', 'on operations (cancelled_at) where', 'on operations (captured_at) where'],
   // ── capturaTardeAlerta ──
@@ -297,6 +298,25 @@ const casos = [
   ['liberarSoloPorLaRegla', 'citas: el rollback suelta directo', 'apps/web/lib/citas.ts', 'if (retenido) await soltarSuelta(retenido.pi, retenido); // se retuvo y la cita no se guardó', 'if (retenido) await pasarela.liberar(retenido.pi).catch(() => undefined); // se retuvo y la cita no se guardó'],
   ['liberarSoloPorLaRegla', 'pedir: liberarSilencioso con import dinámico', 'apps/web/lib/pedir.ts', 'if (retenido) await soltarSuelta(retenido.pi, retenido); // se retuvo', 'if (retenido) await (await import("./pagos/pasarela")).pasarela.liberar(retenido.pi).catch(() => undefined); // se retuvo'],
   ['liberarSoloPorLaRegla', 'desestructurar liberar de la pasarela (layaway)', 'apps/web/lib/layaway.ts', 'if (pi) await cob.soltarSuelta(pi.pi, pi);\n    throw e;', 'if (pi) { const { liberar } = (await import("./pagos/pasarela")).pasarela; await liberar(pi.pi); }\n    throw e;'],
+  // (revisión de efe56b9, c/d/e; 26 nov) · c: la ventana de barrerCobradasTarde vuelve a medirse desde ahora (lo que sale en un barrido parado más de 23 días
+  // no alerta), o lo de fuera en una sola tajada, o la tarea sale bien aunque queden (la ventana avanza). d: reparar:/completar: se cierran sin estar todo
+  // hecho (sin el aviso, sin lo devuelto, sin su alerta cobrada:), aviso: con el aviso pendiente, o cobrada: por esa rama. e: el reclamo atascado vuelve a
+  // los 10 minutos fijos (en el reclamo o en el barrido), cuenta doble, el último se retoma y se manda otra vez, o se da por agotado sin ser su reclamo.
+  ['liberarMira', 'la ventana desde ahora', CO, "const DESDE_TARDE = `(select least(now(), coalesce(max(j.last_ok_at), '-infinity'::timestamptz)) - interval '30 days' from system_jobs j where j.name = 'barrido.cobradasTarde')`;", "const DESDE_TARDE = `(now() - interval '30 days')`;"],
+  ['liberarMira', 'el aviso con la ventana desde ahora', CO, "o.cancelled_at > ${DESDE_TARDE} and o.details ? 'avisoCobroFalta'", "o.cancelled_at > now() - interval '30 days' and o.details ? 'avisoCobroFalta'"],
+  ['liberarMira', 'lo de fuera en una sola tajada', CO, '    nF += r.length; quedan = r.length === FUERA_TANDA;', '    nF += r.length; quedan = false;'],
+  ['liberarMira', 'quedan más y la ventana avanza igual', CO, '  if (quedan) throw new Error(', '  if (false) throw new Error('],
+  ['liberarMira', 'reparar: se cierra sin el aviso', 'apps/web/lib/dinero-alertas.ts', "case when y.details ? 'reglaCobradaAt' and coalesce((y.details->>'avisoCobro')::boolean, false) and not (y.details ? 'avisoCobroFalta')", "case when y.details ? 'reglaCobradaAt'"],
+  ['liberarMira', 'reparar: se cierra sin lo devuelto', 'apps/web/lib/dinero-alertas.ts', "then z.amount_cents - z.refunded_cents <= y.total_cents / 2 else", "then true else"],
+  ['liberarMira', 'reparar: se cierra sin su alerta cobrada:', 'apps/web/lib/dinero-alertas.ts', "                                             and exists (select 1 from money_alerts c where c.kind = 'hold_stuck' and c.subject_id = 'cobrada:' || z.id::text)\n", ''],
+  ['liberarMira', 'aviso: se cierra con el aviso pendiente', 'apps/web/lib/dinero-alertas.ts', "case when coalesce((y.details->>'avisoCobro')::boolean, false) and not (y.details ? 'avisoCobroFalta') then 'aviso_hecho'", "case when true then 'aviso_hecho'"],
+  ['liberarMira', 'cobrada: por la rama de reparar:', 'apps/web/lib/dinero-alertas.ts', "a.subject_id ~ '^(reparar|completar):[0-9]{1,18}$'", "a.subject_id ~ '^(reparar|completar|cobrada):[0-9]{1,18}$'"],
+  ['liberarMira', 'el atascado a los 10 minutos (reclamo)', CO, "now() - make_interval(mins => greatest(10, coalesce(($4::int[])[coalesce((details->>'avisoCobroIntentos')::int, 0) + 1], 0)))", "now() - interval '10 minutes'"],
+  ['liberarMira', 'el atascado a los 10 minutos (barrido)', CO, "now() - make_interval(mins => greatest(10, coalesce(($3::int[])[coalesce((o.details->>'avisoCobroIntentos')::int, 0) + 1], 0)))", "now() - interval '10 minutes'"],
+  ['liberarMira', 'el atascado cuenta doble', CO, "+ case when coalesce((details->>'avisoCobro')::boolean, false) then 1 else 0 end", "+ case when coalesce((details->>'avisoCobro')::boolean, false) then 2 else 0 end"],
+  ['liberarMira', 'el último atascado se retoma', CO, "or (coalesce((details->>'avisoCobro')::boolean, false) and coalesce((details->>'avisoCobroIntentos')::int, 0) < $3::int", "or (coalesce((details->>'avisoCobro')::boolean, false) and coalesce((details->>'avisoCobroIntentos')::int, 0) <= $3::int"],
+  ['liberarMira', 'el último atascado se manda otra vez', CO, '    if (x.atascado) { await atascadoAgotado(x.op, x.num, x.at); return; }\n', ''],
+  ['liberarMira', 'agotado sin mirar que el reclamo sea el suyo', CO, " and details->>'avisoCobroAt' = $2::text and coalesce((details->>'avisoCobroIntentos')::int, 0) >= $3::int", " and coalesce((details->>'avisoCobroIntentos')::int, 0) >= $3::int"],
   // Un barrido vuelve a reintentar en silencio: mira `ok` y sigue (verificaciones, estimados).
   ['liberarSoloPorLaRegla', 'verificaciones: liberar y mirar ok', 'apps/web/lib/pagos/verificacion.ts', '    if (r.e !== "liberada") continue;', '    if (!(await pasarela.liberar(x.pi)).ok) continue;'],
   ['liberarSoloPorLaRegla', 'estimados: el barrido «sigue» sin su fila de pago', 'apps/web/lib/estimados.ts', 'ciudad: p.city, pago: p.id, luego: "sigue" });', 'ciudad: p.city, luego: "sigue" });'],
