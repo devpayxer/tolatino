@@ -2,7 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { firmarQR, matrizQR } from "./boletos-qr";
 import { validarCodigo, normalizarCodigo } from "./codigos-evt";
-import { comision } from "./cobros";
+import { comision, type Suelta } from "./cobros";
 import { valores } from "./config";
 import { dispositivo } from "./cuenta";
 import { db, tx } from "./db";
@@ -560,7 +560,7 @@ async function marcarCobrado(op: string, cobrado: number | undefined, pedido: nu
    26 nov (LAUNCH «el dinero dice lo que pasó» (1)) · El cobro se marca soltado SOLO si Stripe lo soltó (antes se marcaba 'released' y después se soltaba
    tirando el resultado): por cobros › soltarSuelta con su fila. La que Stripe ya había cobrado queda 'captured' con lo que capturó y alerta; la que no se
    suelta sigue 'held' y repararBoletos la vuelve a soltar, ya no en silencio (al tope alerta; la alerta se cierra sola cuando se suelta). Dice lo que pasó. */
-async function anularPorCobro(op: string, pi: string, codigo: string): Promise<import("./cobros").Suelta["e"]> {
+async function anularPorCobro(op: string, pi: string, codigo: string): Promise<Suelta["e"]> {
   await tx(async (c) => {
     const o = (await c.query<{ st: string }>(`select status as st from operations where id = $1::bigint and kind = 'tickets' for update`, [op])).rows[0];
     if (!o || o.st !== "confirmed") return;
