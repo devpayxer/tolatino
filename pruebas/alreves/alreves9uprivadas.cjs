@@ -53,7 +53,7 @@ const casos = [
   [G, BR, '        ["fotosAyudaPurga", async () => (await import("./ayuda-cita")).purgarFotosAyuda()],\n', ''],
   [G, AC, "h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql(\"sp_fotos_ayuda_dias\")})", "h.status = 'resolved'"],
   [G, AC, "where m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/a/%'", "where m.private and m.status = 'visible' and m.purged_at is null"],
-  [G, AC, '  if (!mediosListos()) return 0;\n  const L = ', '  const L = '],
+  [G, AC, '  if (!mediosListos()) return 0;\n', ''],
   [G, AC, "values ('system', null, 'ayuda.fotos.purga', 'media'", "values ('system', null, 'ayuda.fotos', 'media'"],
   [G, AC, "case when m.private and m.url like 'privado/a/%' then '/api/ayuda/foto/'", "case when m.private then '/api/ayuda/foto/'"],
   [AY, AC, "($4::boolean = false or (private and url like 'privado/a/%'))", '($4::boolean = false or private)'],

@@ -431,7 +431,8 @@ export async function llavesDe360(userId: string) {
 }
 export type { Rp };
 
-/* El barrido: los retos vencidos hace más de un día se purgan (retención; lo único que se borra). De a 5 000 por vuelta. */
+/* El barrido: los retos vencidos hace más de un día se purgan (retención; lo único que se borra). De a 5 000 por vuelta, lo más viejo primero (27 nov,
+   9t9: la tajada con su orden, por webauthn_challenges_vence_idx). Una sola sentencia, sin elementos que recorrer: no necesita lib/barrido-uno.ts. */
 export async function purgarRetos(): Promise<number> {
-  return (await db().query(`delete from webauthn_challenges where id in (select id from webauthn_challenges where expires_at < now() - interval '1 day' limit 5000)`)).rowCount ?? 0;
+  return (await db().query(`delete from webauthn_challenges where id in (select id from webauthn_challenges where expires_at < now() - interval '1 day' order by expires_at, id limit 5000)`)).rowCount ?? 0;
 }

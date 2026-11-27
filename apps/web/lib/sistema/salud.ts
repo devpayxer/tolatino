@@ -208,9 +208,11 @@ export async function avisarLlavesQueVencen(): Promise<number> {
   const equipo = (await db().query<{ id: string }>(`select user_id::text as id from staff_members where role = 'admin' and status = 'active'`)).rows;
   const { avisar } = await import("../avisos");
   let n = 0;
-  for (const k of r.rows) {
+  // 27 nov (9t9, los barridos que no son de dinero) · Cada llave por su cuenta (lib/barrido-uno.ts): una que falla no deja sin su aviso a las de detrás;
+  // la tarea sale fallida diciendo cuál. «¿Ya se avisó?» es un exists (antes un «limit 1» sin orden). A cada persona del equipo, su aviso con su .catch.
+  await (await import("../barrido-uno")).cadaUno("llavesVencen", r.rows, (k) => `llave ${k.id}`, async (k) => {
     const etapa = k.dias < 0 ? "vencida" : k.dias <= 7 ? "7d" : "30d", ref = `${k.id}:${etapa}`;
-    if ((await db().query(`select 1 from notifications where ref_kind = 'llave_vence' and ref_id = $1 limit 1`, [ref])).rowCount) continue;
+    if ((await db().query(`select 1 where exists (select 1 from notifications where ref_kind = 'llave_vence' and ref_id = $1)`, [ref])).rowCount) return;
     const fechaL = (l: string) => new Intl.DateTimeFormat(l, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(`${k.vence}T12:00:00Z`));
     const fecha = { es: fechaL("es-US"), en: fechaL("en-US") };
     for (const u of equipo) {
@@ -218,6 +220,6 @@ export async function avisarLlavesQueVencen(): Promise<number> {
         { href: "/admin/sistema/integraciones", ref: ["llave_vence", ref], sinSms: true }).catch(() => undefined);
       n++;
     }
-  }
+  });
   return n;
 }

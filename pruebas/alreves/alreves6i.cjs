@@ -35,7 +35,7 @@ const casos = [
   ['devolucionEvpAcotada', L, "const ac = acuerdoDe(await propuestas(c, o.id)), plazo = ac?.cancelH ?? 72, aTiempo = o.h_left >= plazo;", "const ac = acuerdoDe(await propuestas(c, o.id)), plazo = (await valores(\"evp_cancelar_h\")).evp_cancelar_h, aTiempo = o.h_left >= plazo || !!ac;"],
   ['devolucionEvpAcotada', L, "const dev = aTiempo ? cobrado : 0", "const dev = aTiempo ? cobrado : Math.round(cobrado / 2)"],
   ['devolucionEvpAcotada', L, "const dev = o.pst === \"captured\" || o.pst === \"partially_refunded\" ? Math.max(0, (o.amount ?? 0) - (o.refunded ?? 0)) : 0;", "const dev = o.pst === \"captured\" ? Math.round((o.amount ?? 0) / 2) : 0;"],
-  ['devolucionEvpAcotada', L, "  for (const v of debe) await moverDinero(v.num).catch(() => undefined);\n", ''],
+  ['devolucionEvpAcotada', L, "(v) => v.num, (v) => moverDinero(v.num));", "(v) => v.num, async () => undefined);"],
   // evpSinTelefonos
   ['evpSinTelefonos', L, "coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who,", "coalesce(nullif(u.first_name, ''), 'Cliente') || ' ' || u.phone as who,"],
   ['evpSinTelefonos', L, "nullif(u.first_name, '') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.status,", "nullif(u.first_name, '') || ' ' || coalesce(u.last_name, '') as cliente, o.status,"],

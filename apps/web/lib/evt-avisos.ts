@@ -27,30 +27,36 @@ const VALE = `from tickets t join events e on e.id = t.event_id
                join cities ci on ci.id = d.city_id
               where t.status = 'valid' and t.holder_user_id is not null and d.status = 'scheduled' and e.status in ('live', 'paused')`;
 
+/* 27 nov (9t9, los barridos que no son de dinero) · Lo que aún no se mandó (antes la tajada de 500 se llenaba también con los ya mandados, que el
+   «on conflict» descartaba DESPUÉS del tope: con más de 500 ya mandados, los nuevos no salían nunca), en orden (la fecha más cercana primero), y cada
+   aviso por su cuenta (lib/barrido-uno.ts): uno que falla no deja sin el suyo a los de detrás; la tarea sale fallida diciendo cuál. */
 export async function barrerRecordatoriosBoletos(): Promise<{ manana: number; hoy: number }> {
   const H = cfgSql("evt_recordatorio_hora"), out = { manana: 0, hoy: 0 };
-  for (const [kind, tpl, cond] of [
+  const B = new (await import("./barrido-uno")).Fallos("bolRecordatorios");
+  const K = [
     ["bol_manana", "bol_recordatorio", `d.local_date = (now() at time zone ci.timezone)::date + 1 and extract(hour from now() at time zone ci.timezone) >= ${H}
        and (e.kind <> 'span' or d.day_index = (select min(v) from unnest(t.valid_days) v))`],
     ["bol_hoy", "bol_es_hoy", `d.local_date = (now() at time zone ci.timezone)::date and extract(hour from now() at time zone ci.timezone) >= ${H} and d.starts_at > now()`],
-  ] as const) {
+  ] as const;
+  await B.cada(K, (k) => k[0], async ([kind, tpl, cond]) => {
     const L = (await db().query<Fila>(
       `with nuevos as (
          insert into evt_avisos_enviados (kind, ref, city_id)
          select '${kind}', d.id::text || ':' || t.holder_user_id::text, d.city_id ${VALE} and ${cond}
-          group by d.id, t.holder_user_id, d.city_id limit 500
+            and not exists (select 1 from evt_avisos_enviados z where z.kind = '${kind}' and z.ref = d.id::text || ':' || t.holder_user_id::text)
+          group by d.id, t.holder_user_id, d.city_id order by min(d.starts_at), d.id, t.holder_user_id limit 500
          on conflict do nothing returning ref)
        ${DATOS}`)).rows;
-    for (const x of L) {
-      await avisar(x.uid, tpl, { evento: x.title, cuando: cuandoBi(x.ldate, x.h0), lugar: x.lugar },
-        { href: "/cuenta/boletos", ref: ["event_date", x.fid] });
-    }
+    await B.cada(L, (x) => x.ref, (x) => avisar(x.uid, tpl, { evento: x.title, cuando: cuandoBi(x.ldate, x.h0), lugar: x.lugar },
+      { href: "/cuenta/boletos", ref: ["event_date", x.fid] }));
     out[kind === "bol_manana" ? "manana" : "hoy"] = L.length;
-  }
+  });
+  B.fin();
   return out;
 }
 
-/* El organizador: una fecha con boletos que llegó al porcentaje de Configuración de lo que está a la venta. */
+/* El organizador: una fecha con boletos que llegó al porcentaje de Configuración de lo que está a la venta. 27 nov (9t9) · Lo que aún no se mandó, la
+   fecha más cercana primero, y cada aviso por su cuenta (lib/barrido-uno.ts). */
 export async function barrerAforoEvt(): Promise<number> {
   const L = (await db().query<{ fid: string; biz: string; title: Bi; ldate: string; h0: number; vendidos: number; total: number }>(
     `with f as (
@@ -58,15 +64,15 @@ export async function barrerAforoEvt(): Promise<number> {
          from event_dates d join events e on e.id = d.event_id join cities ci on ci.id = d.city_id
          join ticket_stock s on s.event_date_id = d.id join ticket_types tt on tt.id = s.ticket_type_id and not tt.off
         where d.status = 'scheduled' and d.starts_at > now() and e.status in ('live', 'paused') and e.entry = 'tickets'
+          and not exists (select 1 from evt_avisos_enviados z where z.kind = 'aforo' and z.ref = d.id::text)
         group by d.id, d.city_id, e.business_id, e.title, d.local_date, d.starts_at, ci.timezone
        having sum(s.quantity) > 0 and sum(s.sold_n) * 100 >= sum(s.quantity) * ${cfgSql("evt_aforo_aviso_pct")}),
-     nuevos as (insert into evt_avisos_enviados (kind, ref, city_id) select 'aforo', f.id::text, f.city_id from f limit 200 on conflict do nothing returning ref)
+     nuevos as (insert into evt_avisos_enviados (kind, ref, city_id) select 'aforo', f.id::text, f.city_id from f order by f.starts_at, f.id limit 200 on conflict do nothing returning ref)
      select f.id::text as fid, f.business_id as biz, f.title, f.local_date::text as ldate,
             (extract(hour from f.starts_at at time zone f.timezone) * 60 + extract(minute from f.starts_at at time zone f.timezone))::int as h0, f.vendidos, f.total
        from f join nuevos n on n.ref = f.id::text`)).rows;
-  for (const x of L) {
-    await avisarNegocio(x.biz, "evt_aforo90", { evento: x.title, cuando: cuandoBi(x.ldate, x.h0), pct: Math.floor((x.vendidos * 100) / x.total), vendidos: x.vendidos, total: x.total },
-      { href: "/panel", ref: ["event_date", x.fid] });
-  }
+  await (await import("./barrido-uno")).cadaUno("evtAforo", L, (x) => `fecha ${x.fid}`, (x) =>
+    avisarNegocio(x.biz, "evt_aforo90", { evento: x.title, cuando: cuandoBi(x.ldate, x.h0), pct: Math.floor((x.vendidos * 100) / x.total), vendidos: x.vendidos, total: x.total },
+      { href: "/panel", ref: ["event_date", x.fid] }));
   return L.length;
 }

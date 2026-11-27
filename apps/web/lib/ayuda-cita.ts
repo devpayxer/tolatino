@@ -484,14 +484,18 @@ export async function purgarFotosAyuda(): Promise<number> {
   const { mediosListos } = await import("./medios");
   const { borrarConVariantes } = await import("./fotos-privadas");
   if (!mediosListos()) return 0;
-  const L = (await db().query<{ id: string; url: string; w: number | null; var_widths: number[] | null; hnum: string; city: string }>(
+  // 27 nov (9t9, los barridos que no son de dinero) · La ayuda cerrada hace más tiempo primero, por tandas de 50 sin repetir en la corrida lo ya visto, y
+  // cada foto por su cuenta (lib/barrido-uno.ts): una que el almacén no deja borrar ya no se salta en silencio (antes try/catch → continue, y con 50 así
+  // ninguna otra salía): las de detrás siguen y la tarea sale fallida diciendo cuál (se reintenta en la siguiente vuelta, como antes).
+  const U = await import("./barrido-uno"), B = new U.Fallos("fotosAyudaPurga");
+  let n = 0;
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ id: string; url: string; w: number | null; var_widths: number[] | null; hnum: string; city: string }>(
     `select m.id::text, m.url, m.w, m.var_widths, h.number as hnum, h.city_id as city from media m join help_requests h on m.owner_kind = 'help' and m.owner_id ~ '^[0-9]{1,18}$' and h.id = m.owner_id::bigint
       where m.private and m.status = 'visible' and m.purged_at is null and m.url like 'privado/a/%'
-        and h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql("sp_fotos_ayuda_dias")}) limit 50`)).rows;
-  let n = 0;
-  for (const m of L) {
+        and h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql("sp_fotos_ayuda_dias")}) and not (m.id = any($1::uuid[]))
+      order by h.resolved_at, m.id limit 50`, [vistos])).rows, (m) => m.id, async (m) => {
     // F3b · Con la maestra salen sus variantes (privado/a/<id>.w<ancho>.webp).
-    try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }
+    await borrarConVariantes(m.url, m.w, m.var_widths);
     await tx(async (c) => {
       const u = await c.query(`update media set status = 'removed', removed_reason = 'Borrada a los ' || ${cfgSql("sp_fotos_ayuda_dias")} || ' días (ayuda cerrada)', url = 'privado/borrada', purged_at = now()
                                 where id = $1::uuid and purged_at is null`, [m.id]);
@@ -499,6 +503,7 @@ export async function purgarFotosAyuda(): Promise<number> {
         [m.id, m.city, JSON.stringify({ ayuda: m.hnum }), "Foto privada de una ayuda cerrada: pasó el plazo de Configuración (sp_fotos_ayuda_dias)"]);
     });
     n++;
-  }
+  });
+  B.fin();
   return n;
 }

@@ -4428,7 +4428,8 @@ const guardianes = {
     if (!/devIdem: `evpcx-\$\{numero\}`/.test(cx) || !/devIdem: `evpbx-\$\{numero\}`/.test(bx)) falla(G, L, 0, "la llave de la devolución es fija por solicitud (evpcx- / evpbx-)");
     if (!/const ac = acuerdoDe\(await propuestas\(c, o\.id\)\), plazo = ac\?\.cancelH \?\? 72, aTiempo = o\.h_left >= plazo;/.test(cx) || !/const dev = aTiempo \? cobrado : 0/.test(cx)) falla(G, L, 0, "cancelar: el plazo es el de la propuesta aceptada y a tiempo se devuelve lo cobrado; tarde, nada");
     if (!/const dev = o\.pst === "captured" \|\| o\.pst === "partially_refunded" \? Math\.max\(0, \(o\.amount \?\? 0\) - \(o\.refunded \?\? 0\)\) : 0;/.test(bx)) falla(G, L, 0, "el restaurante cancela: se devuelve todo lo cobrado");
-    if (!/for \(const v of debe\) await moverDinero\(v\.num\)/.test(v)) falla(G, L, 0, "el barrido reintenta las devoluciones que quedaron a medias");
+    // 27 nov (9t9, no dinero) · Por tandas con el ayudante (lib/barrido-uno.ts), sin tragar el error: lo vigila también barridoUnoPorUno.
+    if (!/U\.porTandas\(B, 50, [\s\S]*?\(v\) => v\.num, \(v\) => moverDinero\(v\.num\)\);/.test(v)) falla(G, L, 0, "el barrido reintenta las devoluciones que quedaron a medias");
   },
 
   /* 6i. Sin teléfonos entre las partes: el panel ve nombre + inicial (nunca users.phone), y la nota, el cambio, la propuesta y los motivos no
@@ -16592,7 +16593,7 @@ const guardianes = {
     // (9) purgarFotosAyuda: solo la privada de una ayuda cerrada hace más del plazo, nunca sin almacén, con su renglón en la auditoría en la misma transacción.
     const pa = cuerpoFn(existsSync(AC) ? sinComent(AC) : "", "purgarFotosAyuda");
     if (!/if \(!mediosListos\(\)\) return 0;/.test(pa) || !pa.includes("m.url like 'privado/a/%'") || !pa.includes("h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql(\"sp_fotos_ayuda_dias\")})")
-      || !/try \{ await borrarConVariantes\(m\.url, m\.w, m\.var_widths\); \} catch \{ continue; \}\s*await tx\(async \(c\) => \{/.test(pa) || !/'system', null, 'ayuda\.fotos\.purga', 'media'/.test(pa))
+      || !/\n\s*await borrarConVariantes\(m\.url, m\.w, m\.var_widths\);\s*await tx\(async \(c\) => \{/.test(pa) || !/'system', null, 'ayuda\.fotos\.purga', 'media'/.test(pa))
       falla(G, AC, 0, "purgarFotosAyuda: solo las fotos privadas de la ayuda (privado/a/) de una ayuda cerrada hace más de sp_fotos_ayuda_dias, nada sin almacén, el archivo primero y la fila con su renglón de auditoría en la misma transacción");
     if (!(existsSync(AC) ? readFileSync(AC, "utf8") : "").includes("export const FOTO_AYUDA_SQL = `case when m.private and m.url like 'privado/a/%' then '/api/ayuda/foto/' || m.id::text else m.url end`;"))
       falla(G, AC, 0, "FOTO_AYUDA_SQL: solo las privadas de la ayuda (privado/a/) van por /api/ayuda/foto; las de destino privado ya traen su dirección con permiso");
@@ -16652,7 +16653,8 @@ const guardianes = {
       if (i < 0 || k < 0 || i < k) falla(G, f, 0, "F3b: la subida de una foto privada genera sus variantes (guardarVariantesEn) después de guardar la maestra y su fila");
     }
     const BV = "try { await borrarConVariantes(m.url, m.w, m.var_widths); } catch { continue; }", BV2 = 'if (mediosListos() && m.url.startsWith("privado/")) await borrarConVariantes(m.url, m.w, m.var_widths);';
-    const PURGA = { "apps/web/lib/mensajes-purga.ts": BV, "apps/web/lib/repartidor-barrido.ts": BV, [AC]: BV, "apps/web/lib/compa/purga.ts": BV2, "apps/web/lib/datos/retener.ts": BV2 };
+    // 27 nov · La de la ayuda ya no traga el error de una foto (try/catch → continue): va por lib/barrido-uno.ts (barridoUnoPorUno, lista ND).
+    const PURGA = { "apps/web/lib/mensajes-purga.ts": BV, "apps/web/lib/repartidor-barrido.ts": BV, [AC]: "\n    await borrarConVariantes(m.url, m.w, m.var_widths);\n", "apps/web/lib/compa/purga.ts": BV2, "apps/web/lib/datos/retener.ts": BV2 };
     for (const [f, v] of Object.entries(PURGA)) {
       const t = existsSync(f) ? sinComent(f) : "";
       if (!t.includes(v) || /borrarObjeto\(m\.url\)/.test(t)) falla(G, f, 0, "F3b: la purga o retención de una foto privada saca también sus variantes (borrarConVariantes con m.w y m.var_widths): si no, la variante sobrevive a la foto");
@@ -17118,7 +17120,10 @@ const guardianes = {
          sin bucles por elemento a mano (salvo las excepciones escritas abajo, con su motivo) y sin tragar el error de un elemento (.catch que devuelve
          null/false/'pending'/ok:false, o console.error y seguir). Solo se dejan los .catch de un aviso o de la pasarela (su fallo es un resultado, no un error).
      (B) nada queda fuera por un tope: toda selección con «limit» de esas funciones lleva su «order by»; barrerPlanes elige lo que TOCA hoy en la ciudad del plan
-         (TOCA_PLAN), por tandas, y la tarea «dinero» de barrido.ts no traga el error de un negocio. Al revés: alreves9t9; con la base: pruebas/e2e/din9t9.cjs. */
+         (TOCA_PLAN), por tandas, y la tarea «dinero» de barrido.ts no traga el error de un negocio. Al revés: alreves9t9; con la base: pruebas/e2e/din9t9.cjs.
+     27 nov · (C) La misma clase en los barridos que NO son de dinero ya convertidos (lista ND: puertaAbre, eventoPrivado, bolRecordatorios, evtAforo, llaves,
+         datosArchivosVencer, llavesVencen, respaldosVigilar, temasResenas, esperaMesas, fotosAyudaPurga) y revertirDeudas sin su bucle a mano. Al revés:
+         alreves9t9; con la base: pruebas/e2e/barr9t9b.cjs (un elemento que falla y los demás siguen, en cada uno). */
   barridoUnoPorUno() {
     const G = "barridoUnoPorUno", H = "apps/web/lib/barrido-uno.ts", BA = "apps/web/lib/barrido.ts", L = (x) => `apps/web/lib/${x}.ts`;
     if (!existsSync(H)) return falla(G, H, 0, "falta lib/barrido-uno.ts (el ayudante: un elemento malo no detiene a los demás)");
@@ -17140,8 +17145,8 @@ const guardianes = {
     const SIN_BUCLE = { "conciliacion.conciliarAyer": "concilia un día, una vez", "conciliacion.vigilarConciliacion": "una sola alerta por día" };
     // Bucles a mano que se dejan, con su motivo (el texto exacto del bucle).
     const EXC = {
-      "evt-liquidacion.revertirDeudas": { "for (const s of S) {": "arma en una transacción la lista de reversiones de un organizador (no es un barrido por elemento)",
-        "for (const id of ids) if (await ejecutarReversion(id)) n++;": "las reversiones recién anotadas de un organizador: si una lanza, quedan pendientes y las termina repararLiquidaciones" },
+      // 27 nov · Las reversiones recién anotadas de un organizador ya van cada una por su cuenta (B.cada): su bucle a mano dejó de ser excepción.
+      "evt-liquidacion.revertirDeudas": { "for (const s of S) {": "arma en una transacción la lista de reversiones de un organizador (no es un barrido por elemento)" },
       "evt-cambios.barrerCancelaciones": { "for (const x of C) await avisarCambio(x.id).catch(() => 0);": "avisos de un cambio de fecha (no dinero; una vez por cambio)" },
     };
     for (const k of Object.keys(SIN_BUCLE)) { const [a, f] = k.split("."); const c = cuerpoFn(sinComent(L(a)), f); if (!c) falla(G, L(a), 0, `falta ${f}`); else if (/for \(const /.test(c)) falla(G, L(a), 0, `${f} ahora recorre elementos: debe usar lib/barrido-uno.ts (${SIN_BUCLE[k]} ya no vale)`); }
@@ -17165,10 +17170,59 @@ const guardianes = {
       }
       for (const q of c.matchAll(/`[^`]*`/g)) if (/\blimit\s+(\d+|\$\d+)/.test(q[0]) && !/\border by\b/.test(q[0])) falla(G, A, 0, `${f}: una selección con tope sin orden («${q[0].replace(/\s+/g, " ").slice(0, 90)}»): con más filas que el tope, las de fuera de la tajada no se tocarían nunca`);
     }
+    const b0 = sinComent(BA);
+    // 27 nov · (C) Los barridos que NO son de dinero, ya convertidos (LAUNCH «Barridos por clase: lo que quedó de 9t9» (1), primera tanda): la misma clase,
+    // para que no vuelvan atrás. Cada uno: recorre con lib/barrido-uno.ts (salvo el de una sola sentencia), su ayudante lleva el nombre de SU tarea de
+    // barrido.ts, sus selecciones con tope llevan orden, porTandas deja fuera lo ya visto, ni un bucle a mano (salvo los avisos al equipo, escritos abajo)
+    // y ni un .catch ni try/catch que trague el error de un elemento (solo el .catch de un aviso). [archivo, función, tarea de barrido.ts, sin bucle].
+    const ND = [["puerta", "barrerPuertaAbre", "puertaAbre"], ["evento-privado", "vencerEvp", "eventoPrivado"], ["evt-avisos", "barrerRecordatoriosBoletos", "bolRecordatorios"],
+      ["evt-avisos", "barrerAforoEvt", "evtAforo"], ["llaves/llaves", "purgarRetos", "llaves", true], ["datos/exportar", "vencerExportaciones", "datosArchivosVencer"],
+      ["sistema/salud", "avisarLlavesQueVencen", "llavesVencen"], ["sistema/despliegues", "vigilarRespaldos", "respaldosVigilar"], ["temas", "rehacerTemas", "temasResenas"],
+      ["mesa-espera", "barrerEsperaMesas", "esperaMesas"], ["ayuda-cita", "purgarFotosAyuda", "fotosAyudaPurga"]];
+    const EXC_ND = {
+      "sistema/salud.avisarLlavesQueVencen": { "for (const u of equipo) {": "un aviso a cada persona del equipo, cada uno con su .catch (no es un barrido por elemento)" },
+      "sistema/despliegues.vigilarRespaldos": { "for (const u of equipo) { await avisar(": "un aviso a cada persona del equipo, cada uno con su .catch (no es un barrido por elemento)" },
+    };
+    for (const [a, f, tarea, sinBucle] of ND) {
+      const A = L(a);
+      if (!existsSync(A)) { falla(G, A, 0, `falta ${A}`); continue; }
+      const c = cuerpoFn(sinComent(A), f);
+      if (!c) { falla(G, A, 0, `falta la función ${f}`); continue; }
+      if (!new RegExp(`\\["${tarea}", [^\\]]*\\b${f}\\(`).test(b0)) falla(G, BA, 0, `la tarea «${tarea}» de barrido.ts ya no llama a ${f}: revisar la lista de los barridos que no son de dinero`);
+      if (sinBucle) { if (/for \(const |barrido-uno/.test(c)) falla(G, A, 0, `${f} ahora recorre elementos: debe usar lib/barrido-uno.ts y salir de «sin bucle»`); }
+      else {
+        if (!/\b(cadaUno|porTandas)\(|new (\(await import\("\.\.?\/barrido-uno"\)\)\.|U\.)?Fallos\(/.test(c) || !/barrido-uno/.test(c)) falla(G, A, 0, `${f} no recorre sus elementos con lib/barrido-uno.ts (cadaUno / Fallos / porTandas): un elemento malo detendría a los demás (no dinero)`);
+        else if (!new RegExp(`(cadaUno|Fallos)\\("${tarea}"`).test(c)) falla(G, A, 0, `${f}: el ayudante no lleva el nombre de su tarea («${tarea}»): el resumen de los fallidos diría otra cosa que Sistema › Tareas`);
+        if (/new (\(await import\("\.\.?\/barrido-uno"\)\)\.|U\.)?Fallos\(/.test(c) && !/\bB\.fin\(\);/.test(c)) falla(G, A, 0, `${f} junta sus fallos y nunca llama fin(): la tarea saldría bien con elementos fallidos (no dinero)`);
+        if (/\bporTandas\(/.test(c) && !/\(vistos\) =>[\s\S]*= any\((\$\d+::\w+\[\]|\$\{\w+\})\)[\s\S]*\[(\.\.\.\w+, )?vistos\]/.test(c)) falla(G, A, 0, `${f}: porTandas sin dejar fuera lo ya visto en la corrida (= any($n) con vistos): uno que falla siempre volvería a ocupar la tajada`);
+      }
+      const exc = EXC_ND[`${a}.${f}`] ?? {};
+      for (const m of c.matchAll(/^.*for \(const .*$/gm)) { const l = m[0].trim(); if (!Object.keys(exc).some((x) => l.startsWith(x))) falla(G, A, 0, `${f}: bucle por elemento a mano («${l.slice(0, 90)}»): usa lib/barrido-uno.ts o escribe su excepción con motivo (no dinero)`); }
+      if (/\}\s*catch\s*(\(\w*\)\s*)?\{/.test(c)) falla(G, A, 0, `${f}: un try/catch que traga el error de un elemento: deja que lo anote lib/barrido-uno.ts (no dinero)`);
+      // Una llamada partida en renglones (los argumentos siguen tras una coma) se lee entera.
+      for (const m of c.replace(/,\n\s+/g, ", ").matchAll(/^.*\.catch\(.*$/gm)) {
+        const l = m[0], antes = l.slice(0, l.lastIndexOf(".catch("));
+        if (!/avis\w*\([^()]*(\([^()]*\)[^()]*)*\)$/.test(antes) || /console\.error/.test(l)) falla(G, A, 0, `${f}: un .catch que traga el error de un elemento («${l.trim().slice(0, 90)}»): deja que lo anote lib/barrido-uno.ts (no dinero)`);
+      }
+      for (const q of c.matchAll(/`[^`]*`/g)) if (/\blimit\s+(\d+|\$\d+)/.test(q[0]) && !/\border by\b/.test(q[0])) falla(G, A, 0, `${f}: una selección con tope sin orden («${q[0].replace(/\s+/g, " ").slice(0, 90)}»): con más filas que el tope, las de fuera de la tajada no se tocarían nunca (no dinero)`);
+    }
+    // Los avisos de Eventos: la tajada se llena solo con lo que aún no se mandó (el «on conflict» descarta DESPUÉS del tope).
+    const ea = sinComent(L("evt-avisos"));
+    if (!/and not exists \(select 1 from evt_avisos_enviados z where z\.kind = '\$\{kind\}' and z\.ref = d\.id::text \|\| ':' \|\| t\.holder_user_id::text\)/.test(cuerpoFn(ea, "barrerRecordatoriosBoletos"))
+      || !/and not exists \(select 1 from evt_avisos_enviados z where z\.kind = 'aforo' and z\.ref = d\.id::text\)/.test(cuerpoFn(ea, "barrerAforoEvt"))) falla(G, L("evt-avisos"), 0, "los avisos de Eventos eligen solo lo que aún no se mandó antes del tope (con lo ya mandado dentro de la tajada, los nuevos no salían nunca)");
+    // evento-privado: al abrir la pantalla el fallo queda en el registro y la pantalla abre; en el barrido central, la tarea sale fallida.
+    if (!/if \(!y\) B\.fin\(\);/.test(cuerpoFn(sinComent(L("evento-privado")), "vencerEvp"))) falla(G, L("evento-privado"), 0, "vencerEvp: en el barrido central (sin filtro) la tarea sale fallida con sus fallidos (if (!y) B.fin())");
     // barrerPlanes: lo que toca hoy en la ciudad del plan, lo más atrasado primero, por tandas.
     const pl = sinComent(L("planes")), toca = /const TOCA_PLAN = `[\s\S]*?`;/.exec(pl)?.[0] ?? "", bp = cuerpoFn(pl, "barrerPlanes");
     if (!toca || !/\(now\(\) at time zone ci\.timezone\)::date/.test(toca) || !/s\.next_charge_on <= \(now\(\) at time zone ci\.timezone\)::date and \(s\.retry_on is null or s\.retry_on <= \(now\(\) at time zone ci\.timezone\)::date\)/.test(toca)
       || !/order by least\(/.test(toca) || !/not \(s\.id = any\(\$1::bigint\[\]\)\)/.test(toca) || !/limit 50/.test(toca)) falla(G, L("planes"), 0, "barrerPlanes (barrido central): TOCA_PLAN elige lo que toca hoy en la ciudad de cada plan (cobro, reintento, visita, pausa, en camino), lo más atrasado primero y sin repetir los ya vistos");
+    // 27 nov (9t9 (4), medido con 1 M de planes: scripts/carga/planes-1m.mjs) · El tope es el día más adelantado de las ciudades y los candidatos van como
+    // lista (= any(array(…))): con el tope de UTC + 1 y «in (select …)», ~100 mil candidatos y TODAS las citas en secuencial (~0,8 s por tanda).
+    if (!/with h as \(select max\(\(now\(\) at time zone timezone\)::date\) as tope from cities\)/.test(toca) || !/where s\.id = any\(array\(select id from plan_subscriptions, h where/.test(toca))
+      falla(G, L("planes"), 0, "TOCA_PLAN: el tope es el día más adelantado de las ciudades y los candidatos van como lista (= any(array(…))): si no, con 1 M de planes recorre todas las citas en secuencial");
+    const CG = "scripts/carga/planes-1m.mjs";
+    if (!existsSync(CG) || !/const TOCA = \/const TOCA_PLAN = `/.test(readFileSync(CG, "utf8")) || !/"planes", "direcciones"\]/.test(readFileSync("scripts/carga/correr.mjs", "utf8")))
+      falla(G, CG, 0, "la carga mide TOCA_PLAN tal cual está en lib/planes.ts con 1 M de planes (planes-1m en scripts/carga/correr.mjs)");
     if (!/U\.porTandas\(B, 50, async \(vistos\) => \(await db\(\)\.query<P>\(TOCA_PLAN, \[vistos\]\)\)\.rows/.test(bp)) falla(G, L("planes"), 0, "barrerPlanes (barrido central) recorre TOCA_PLAN por tandas (porTandas)");
     if (!/B\.cada\(L, \(x\) => x\.numero, \(x\) => unPlan\(x, entorno\)\)/.test(bp)) falla(G, L("planes"), 0, "barrerPlanes (al abrir una página: f.negocio / f.userId / f.numero) recorre cada plan con el ayudante");
     // La tarea «dinero» de barrido.ts y su selección.

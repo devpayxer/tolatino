@@ -249,7 +249,7 @@ async function alertaReversionVieja(r: { id: string; amt: number; biz: string; c
 /* 4) Ajustes sin liquidación siguiente: si el organizador debe algo de fechas ya pagadas y en evt_ajuste_dias no tuvo otra liquidación (ni
    tiene fechas por delante con cobros), se revierte de sus transferencias más recientes. */
 export async function revertirDeudas(): Promise<number> {
-  const B = (await db().query<{ biz: string }>(
+  const L = (await db().query<{ biz: string }>(
     `select s.business_id as biz from event_settlements s where s.status in ('paid', 'reversed') and s.paid_at < now() - make_interval(days => ${cfgSql("evt_ajuste_dias")})
         and not exists (select 1 from event_settlements z where z.business_id = s.business_id and (z.status in ('pending', 'held', 'paying') or z.paid_at >= now() - make_interval(days => ${cfgSql("evt_ajuste_dias")})))
         and not exists (select 1 from event_dates d join events e on e.id = d.event_id where e.business_id = s.business_id and d.status = 'scheduled' and d.ends_at > now()
@@ -257,7 +257,10 @@ export async function revertirDeudas(): Promise<number> {
         and evt_liq_deuda(s.business_id) > 0 group by s.business_id order by min(s.paid_at), s.business_id limit 50`)).rows;
   let n = 0;
   // 9t9 · Lo más viejo primero (antes sin orden) y cada organizador por su cuenta (lib/barrido-uno.ts): uno que falla no deja a los demás sin su ajuste.
-  await (await import("./barrido-uno")).cadaUno("evtAjustes", B, (x) => x.biz, async ({ biz }) => {
+  // 27 nov · Y dentro de un organizador, cada reversión recién anotada por su cuenta (antes un bucle sin aislar: si una lanzaba, las de detrás esperaban a
+  // repararLiquidaciones): las demás se mandan en la misma corrida y la tarea sale fallida diciendo cuál.
+  const B = new (await import("./barrido-uno")).Fallos("evtAjustes");
+  await B.cada(L, (x) => x.biz, async ({ biz }) => {
     const ids = await tx(async (c) => {
       await c.query(`select pg_advisory_xact_lock(hashtext('evt-liq:' || $1))`, [biz]);
       let deuda = (await c.query<{ d: number }>(`select evt_liq_deuda($1) as d`, [biz])).rows[0]!.d;
@@ -276,8 +279,9 @@ export async function revertirDeudas(): Promise<number> {
       }
       return out;
     });
-    for (const id of ids) if (await ejecutarReversion(id)) n++;
+    await B.cada(ids, (id) => `reversion ${id}`, async (id) => { if (await ejecutarReversion(id)) n++; });
   });
+  B.fin();
   return n;
 }
 /* 9t7 (0206) · Desde que su llave vale: created_at, o key_from si la consulta dijo que nunca llegó y la llave volvió a valer (con OTRA llave: -r<n>). */

@@ -485,16 +485,25 @@ export async function vencerSesionesPuerta(): Promise<number> {
   // También las que ya no tienen acceso (evento cancelado, negocio pausado, ventana pasada): así ninguna queda «abierta» en el panel.
   return (await db().query(`update door_sessions set ended_at = now(), ended_by = 'system' where ended_at is null and not puerta_acceso(id, user_id)`)).rowCount ?? 0;
 }
-/* «Hoy escaneas en la puerta» una hora antes de las puertas, a cada portero activo de ese evento (una vez por fecha y portero). */
+/* «Hoy escaneas en la puerta» una hora antes de las puertas, a cada portero activo de ese evento (una vez por fecha y portero).
+   27 nov (9t9, los barridos que no son de dinero) · Lo que abre primero, primero, por tandas de 200 sin repetir en la corrida lo ya visto, y cada aviso por
+   su cuenta (lib/barrido-uno.ts): un aviso que falla no deja sin el suyo a los porteros de detrás; la tarea sale fallida diciendo cuál. */
 export async function barrerPuertaAbre(): Promise<number> {
-  const L = (await db().query<{ uid: string; fid: string; t: Bi; hora: string }>(
-    `select distinct f.user_id::text as uid, d.id::text as fid, e.title as t, to_char(d.doors_at at time zone c.timezone, 'HH24:MI') as hora
+  const { avisar } = await import("./avisos");
+  const U = await import("./barrido-uno"), B = new U.Fallos("puertaAbre");
+  let n = 0;
+  await U.porTandas(B, 200, async (vistos) => (await db().query<{ uid: string; fid: string; t: Bi; hora: string }>(
+    `select f.user_id::text as uid, d.id::text as fid, e.title as t, to_char(d.doors_at at time zone c.timezone, 'HH24:MI') as hora
        from event_dates d join events e on e.id = d.event_id join cities c on c.id = d.city_id
        join door_staff f on f.business_id = e.business_id and f.status = 'active' and (f.scope = 'all' or e.id = any(f.event_ids))
       where d.status = 'scheduled' and e.status in ('live', 'paused') and d.doors_at between now() and now() + interval '60 minutes'
         and not exists (select 1 from notifications n where n.user_id = f.user_id and n.tpl = 'puerta_abre' and n.ref_kind = 'event_date' and n.ref_id = d.id::text)
-      limit 200`)).rows;
-  const { avisar } = await import("./avisos");
-  for (const x of L) await avisar(x.uid, "puerta_abre", { evento: x.t, hora: hora12(x.hora) }, { href: "/puerta", ref: ["event_date", x.fid] });
-  return L.length;
+        and not ((d.id::text || ':' || f.user_id::text) = any($1::text[]))
+      group by d.id, f.user_id, e.title, d.doors_at, c.timezone
+      order by d.doors_at, d.id, f.user_id limit 200`, [vistos])).rows, (x) => `${x.fid}:${x.uid}`, async (x) => {
+    await avisar(x.uid, "puerta_abre", { evento: x.t, hora: hora12(x.hora) }, { href: "/puerta", ref: ["event_date", x.fid] });
+    n++;
+  });
+  B.fin();
+  return n;
 }

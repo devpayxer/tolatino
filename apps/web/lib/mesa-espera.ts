@@ -119,9 +119,15 @@ export async function barrerEsperaMesas(): Promise<number> {
   await db().query(
     `update reservation_waitlist w set status = 'expired', ended_at = now() where w.status = 'offered' and w.offered_at < now() - interval '1 hour'
         and not exists (select 1 from reservation_holds h where h.id = w.hold_id and h.expires_at > now())`);
-  const negocios = (await db().query<{ b: string }>(`select distinct business_id as b from reservation_waitlist where status = 'waiting' and starts_at > now() limit 50`)).rows.map((x) => x.b);
+  // 27 nov (9t9, los barridos que no son de dinero) · Los restaurantes con la hora más cercana primero, por tandas de 50 sin repetir en la corrida lo ya
+  // visto (antes 50 sin orden: con más, los de fuera de la tajada no ofrecían nunca), y cada uno por su cuenta (lib/barrido-uno.ts) sin tragar el error
+  // (antes .catch(() => 0)): uno que falla no deja sin su mesa a los de detrás; la tarea sale fallida diciendo cuál.
+  const U = await import("./barrido-uno"), B = new U.Fallos("esperaMesas");
   let n = 0;
-  for (const b of negocios) n += await ofrecer(b).catch(() => 0);
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ b: string }>(
+    `select business_id as b from reservation_waitlist where status = 'waiting' and starts_at > now() and not (business_id = any($1::text[]))
+      group by business_id order by min(starts_at), business_id limit 50`, [vistos])).rows, (x) => x.b, async (x) => { n += await ofrecer(x.b); });
+  B.fin();
   return n;
 }
 

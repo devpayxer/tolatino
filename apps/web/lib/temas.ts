@@ -21,20 +21,23 @@ const MIN = 2, TOP = 5;
 
 export async function rehacerTemas(): Promise<number> {
   // Los negocios con reseñas que cambiaron desde la última vuelta (o sin temas todavía), por partes.
+  // 27 nov (9t9, los barridos que no son de dinero) · Lo que cambió hace más tiempo primero (antes la tajada de 500 sin orden) y cada negocio por su cuenta
+  // (lib/barrido-uno.ts): uno que falla no deja sin sus temas a los de detrás; la tarea sale fallida diciendo cuál.
   const L = (await db().query<{ id: string }>(
-    `select distinct r.business_id as id from reviews r
+    `select r.business_id as id from reviews r
       where greatest(r.created_at, coalesce(r.edited_at, r.created_at), coalesce(r.hidden_at, r.created_at)) >
             coalesce((select max(t.refreshed_at) from review_topics t where t.business_id = r.business_id), '-infinity'::timestamptz)
+      group by r.business_id order by min(greatest(r.created_at, coalesce(r.edited_at, r.created_at), coalesce(r.hidden_at, r.created_at))), r.business_id
       limit 500`)).rows;
   const casos = Object.entries(TEMAS).map(([k, t]) => `count(*) filter (where lower(coalesce(body, '')) ~ '(${t.re.replace(/'/g, "''")})')::int as "${k}"`).join(", ");
-  for (const { id } of L) {
+  await (await import("./barrido-uno")).cadaUno("temasResenas", L, (x) => x.id, async ({ id }) => {
     const c = (await db().query<Record<string, number>>(`select ${casos} from reviews where business_id = $1 and status = 'visible' and coalesce(body, '') <> ''`, [id])).rows[0] ?? {};
     await db().query(
       `with v (topic, n) as (select * from unnest($2::text[], $3::int[]))
        insert into review_topics (business_id, topic, n, refreshed_at) select $1, topic, n, now() from v
        on conflict (business_id, topic) do update set n = excluded.n, refreshed_at = now()`,
       [id, Object.keys(TEMAS), Object.keys(TEMAS).map((k) => Number(c[k] ?? 0))]);
-  }
+  });
   return L.length;
 }
 

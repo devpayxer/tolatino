@@ -323,15 +323,22 @@ export async function vencerExportaciones(): Promise<number> {
   // 26 nov · Uno del equipo que se quedó «armando» (el proceso se cayó mientras lo armaba) no vuelve a la fila del barrido —el barrido avisaría a la
   // persona de un archivo que ella no pidió—: no salió (fallo), y su archivo, si llegó a subir, sale del almacén aquí abajo.
   await db().query(`update data_exports set status = 'fallo', error = 'se cortó mientras se armaba' where status = 'armando' and requested_by is not null and requested_at < now() - interval '30 minutes'`);
-  const V = (await db().query<{ id: string; media_key: string }>(
-    `select id::text, media_key from data_exports where media_key is not null and file_gone_at is null and (status in ('bajado', 'fallo') or expires_at <= now()) limit 50`)).rows;
-  for (const v of V) {
+  // 27 nov (9t9, los barridos que no son de dinero) · Lo más viejo primero, por tandas de 50 sin repetir en la corrida lo ya visto, y cada archivo por su
+  // cuenta (lib/barrido-uno.ts): uno que el almacén no deja borrar ya no detiene a los de detrás (antes quedaba primero en la tajada sin orden y, con 50
+  // así, ninguno salía) ni deja sin volver a la fila a los pedidos de abajo; la tarea sale fallida diciendo cuál.
+  const U = await import("../barrido-uno"), B = new U.Fallos("datosArchivosVencer");
+  let n = 0;
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ id: string; media_key: string }>(
+    `select id::text, media_key from data_exports where media_key is not null and file_gone_at is null and (status in ('bajado', 'fallo') or expires_at <= now())
+        and not (id = any($1::uuid[])) order by requested_at, data_exports.id limit 50`, [vistos])).rows, (v) => v.id, async (v) => {
     if (mediosListos()) await borrarObjeto(v.media_key);
     await db().query(`update data_exports set file_gone_at = now(), status = case when status = 'listo' then 'vencido' else status end where id = $1::uuid`, [v.id]);
-  }
+    n++;
+  });
   // Un pedido de la persona que se quedó «armando» (el proceso se cayó) vuelve a la fila.
-  await db().query(`update data_exports set status = 'pendiente' where status = 'armando' and requested_by is null and requested_at < now() - interval '30 minutes'`);
-  return V.length;
+  await B.uno("vuelven a la fila", () => db().query(`update data_exports set status = 'pendiente' where status = 'armando' and requested_by is null and requested_at < now() - interval '30 minutes'`));
+  B.fin();
+  return n;
 }
 
 /* ── Bajar el archivo (POST /api/datos/archivo/<id>): solo quien lo pidió, una vez, antes de que venza ──

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /* 9b-3 · Corre la carga entera (o las partes que se pidan) en orden y deja la tabla de presupuestos: cada cifra medida con su presupuesto y si
-   pasa. Uso: DATABASE_URL=… CARGA_SALIDA=… node scripts/carga/correr.mjs [comunidad eventos apps compa analitica] [--sin-generar]
+   pasa. Uso: DATABASE_URL=… CARGA_SALIDA=… node scripts/carga/correr.mjs [comunidad eventos apps compa analitica planes direcciones] [--sin-generar]
    Sale con 1 si algo pasó de su presupuesto o falló (la tabla se imprime igual). Lo corre .github/workflows/carga.yml a mano. */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { RAIZ } from "./lib/app.mjs";
 
-const TODAS = ["comunidad", "eventos", "apps", "compa", "analitica", "direcciones"];
+const TODAS = ["comunidad", "eventos", "apps", "compa", "analitica", "planes", "direcciones"];
 const pedidas = process.argv.slice(2).filter((x) => !x.startsWith("--"));
 const partes = pedidas.length ? pedidas : TODAS;
 for (const p of partes) if (!TODAS.includes(p)) { console.error(`parte desconocida: ${p} (${TODAS.join(", ")})`); process.exit(2); }

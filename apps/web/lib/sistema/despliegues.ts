@@ -107,11 +107,13 @@ export async function vigilarRespaldos(): Promise<number> {
   const { avisar } = await import("../avisos");
   const hoy = (await db().query<{ d: string }>(`select ((now() at time zone 'America/New_York')::date)::text as d`)).rows[0]!.d, equipo = await admins();
   let n = 0;
-  for (const [k, que, detalle] of motivos) {
+  // 27 nov (9t9, los barridos que no son de dinero) · Cada motivo por su cuenta (lib/barrido-uno.ts): uno que falla no deja sin su alerta a los demás; la
+  // tarea sale fallida diciendo cuál. «¿Ya se avisó hoy?» es un exists (antes un «limit 1» sin orden). A cada persona del equipo, su aviso con su .catch.
+  await (await import("../barrido-uno")).cadaUno("respaldosVigilar", motivos, (m) => m[0], async ([k, que, detalle]) => {
     const ref = `${k}:${hoy}`;
-    if ((await db().query(`select 1 from notifications where ref_kind = 'respaldo_alerta' and ref_id = $1 limit 1`, [ref])).rowCount) continue;
+    if ((await db().query(`select 1 where exists (select 1 from notifications where ref_kind = 'respaldo_alerta' and ref_id = $1)`, [ref])).rowCount) return;
     for (const u of equipo) { await avisar(u.id, "respaldo_alerta", { que, que_en: que, detalle }, { href: "/admin/sistema/respaldos", ref: ["respaldo_alerta", ref] }).catch(() => undefined); n++; }
-  }
+  });
   return n;
 }
 

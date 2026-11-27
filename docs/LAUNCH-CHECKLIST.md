@@ -2294,6 +2294,26 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       organizador las reversiones recién anotadas van en bucle sin aislar (si una lanza, la termina `repararLiquidaciones`). (7) `din9t9` no se
       corrió contra el código de antes (que caza el fallo se sabe por el guardián y por `alreves9t9`). (8) `create index` de la 0208 sin
       `concurrently`: bien con la base vacía de hoy; con datos, las migraciones de índices en tablas grandes van aparte (→ 9o). (21 nov)
+      _hecho (27 nov, Opus):_ **(1), primera tanda** (los de «tope sin orden»): puertaAbre, eventoPrivado, bolRecordatorios, evtAforo, llaves,
+      datosArchivosVencer, llavesVencen, respaldosVigilar, temasResenas, esperaMesas y fotosAyudaPurga toman en orden estable (lo más viejo o lo más
+      cercano primero) y recorren con `lib/barrido-uno.ts` (porTandas sin repetir lo visto donde un elemento puede seguir tocando: puerta, devoluciones del
+      evento privado, archivos de datos, mesas, fotos de la ayuda); `llaves.purgarRetos` es una sola sentencia (solo ganó su orden); «¿ya se avisó?» de
+      llaves y respaldos pasó de `limit 1` a `exists`. **Se cazó de paso:** los avisos de Eventos llenaban la tajada (500 / 200) también con lo ya mandado
+      (el `on conflict` descarta DESPUÉS del tope): con más de 500 ya mandados, los nuevos no salían nunca; ahora eligen solo lo que falta.
+      **Cambia de conducta:** las tareas que antes tragaban el error (fotosAyudaPurga `catch → continue`, esperaMesas `.catch(() => 0)`, las devoluciones
+      del evento privado `.catch(() => undefined)`) ahora salen fallidas en Sistema › Tareas diciendo cuál; al abrir la pantalla de un evento privado, un
+      elemento que falla ya no rompe la pantalla (antes sí, si fallaba el renglón): queda en el registro y lo reporta el barrido de cada minuto.
+      **(6)** `revertirDeudas`: cada reversión recién anotada de un organizador por su cuenta (`B.cada`), la excepción del guardián se quitó.
+      **(4)** medido con 1 M de planes (`scripts/carga/planes-1m.mjs`, nueva parte «planes» de la carga): con el tope de UTC + 1 entraban ~100 mil
+      candidatos y el plan recorría TODAS las citas (`operations`) en secuencial, ~0,76 s por tanda. No faltaba un índice (todos se usaban): el tope
+      pasó a ser el día más adelantado de las ciudades y los candidatos van como lista (`= any(array(…))`): ~12 ms sin JIT, p95 72 ms con el JIT de
+      fábrica (~25 ms de compilar), ningún recorrido secuencial; al empezar el día (1 de cada 30 activos cobra hoy, ~33 mil candidatos) p95 0,35–0,39 s por
+      tanda (presupuesto 500 ms). Sin migración (la 0229 no hizo falta). Guardián `barridoUnoPorUno` con la lista ND y TOCA_PLAN nuevo;
+      `alreves9t9` 33/33; `pruebas/e2e/barr9t9b.cjs` (27 ✓: en cada barrido convertido un elemento falla y los demás siguen; contra el código de antes
+      falla 20). **Queda:** (1) los de «bucle por elemento sin el ayudante» (la lista de arriba, sin tocar) y **compaRetencion** (`lib/compa/purga.ts`:
+      se dejó para no pisar el trabajo de El Compa); (2) y (5) esperan al fundador; (3), (7), (8) como estaban; lo de TOCA_PLAN al empezar el día con
+      1 M de planes (0,35–0,39 s × hasta 20 tandas por minuto) se puede bajar llevando el día de la ciudad a cada rama de los candidatos si hace falta. La
+      parte «planes» de la carga no corrió en el CI todavía (aquí, en una base desechable aparte).
 - [ ] **→ 9t** · **Dinero por clase: lo que queda después de 9t8 (21 nov):** lo que de verdad sigue abierto de las líneas de 9t3–9t7 (cerradas arriba).
       **Se puede construir:** (a) **devolver otra vez unos boletos** desde su alerta `refund_failed` (9t3 (3)): `ticket_refund_lines` es única por boleto
       y Transacciones › Devolver no acepta órdenes `tickets`; camino: permitir `tickets` en `app/admin/acciones-tx.ts › devolverTx` (cobro `full`,

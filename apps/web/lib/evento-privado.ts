@@ -598,53 +598,62 @@ export async function avisarEvpTardeCobrado(numero: string, queda: number, cobra
 }
 
 /* ── El barrido (cada minuto y al abrir la pantalla): sin respuesta, propuesta vencida, cambio vencido, recordatorio del día antes,
-   «Pasó el evento» y las devoluciones que Stripe no hizo (misma llave). Idempotente. ── */
+   «Pasó el evento» y las devoluciones que Stripe no hizo (misma llave). Idempotente.
+   27 nov (9t9, los barridos que no son de dinero) · Cada solicitud por su cuenta (lib/barrido-uno.ts): una que falla (su renglón, su devolución) no deja
+   sin lo suyo a las de detrás. Las devoluciones, lo más viejo primero, por tandas de 50 sin repetir en la corrida lo ya visto (antes sin orden: con más de
+   50 que fallaban siempre, las de fuera de la tajada no se devolvían nunca) y sin tragar el error (antes .catch(() => undefined)). En el barrido central
+   la tarea sale fallida diciendo cuáles; al abrir la pantalla (con negocio, persona o número) el fallo queda en el registro y la pantalla abre igual
+   (como antes): lo reintenta y lo reporta el barrido de cada minuto. ── */
 export async function vencerEvp(f: { negocio?: string; userId?: string; numero?: string } = {}) {
   const w: string[] = [], a: unknown[] = [];
   if (f.negocio) { a.push(f.negocio); w.push(`o.business_id = $${a.length}`); }
   if (f.userId) { a.push(f.userId); w.push(`o.user_id = $${a.length}::uuid`); }
   if (f.numero) { a.push(f.numero); w.push(`o.number = $${a.length}`); }
   const y = w.length ? ` and ${w.join(" and ")}` : "";
+  const U = await import("./barrido-uno"), B = new U.Fallos("eventoPrivado");
   const sinResp = (await db().query<{ id: string; num: string }>(
     `update operations o set status = 'expired', status_detail = 'sin_respuesta', respond_by = null, updated_at = now() where o.kind = 'private_event' and o.status = 'pending' and o.respond_by < now()${y}
      returning o.id::text, o.number as num`, a)).rows;
-  for (const v of sinResp) {
+  await B.cada(sinResp, (v) => v.num, async (v) => {
     await ev(db(), v.id, "expired", "system", null, { es: "No respondieron a tiempo", en: "No reply in time" });
     await avisarEvp(v.num, "cliente", "evp_vence", { que: { es: "No respondieron a tiempo.", en: "They did not reply in time." } }).catch(() => undefined);
     await avisarEvp(v.num, "negocio", "evp_biz_vence", { que: { es: "No respondiste a tiempo.", en: "You did not reply in time." } }).catch(() => undefined);
-  }
+  });
   const propVencida = (await db().query<{ id: string; num: string }>(
     `update operations o set status = 'expired', status_detail = 'propuesta_vencida', respond_by = null, updated_at = now()
       where o.kind = 'private_event' and o.status = 'change_proposed' and (select q.valid_until from private_event_quotes q where q.operation_id = o.id order by q.version desc limit 1) <= now()${y}
      returning o.id::text, o.number as num`, a)).rows;
-  for (const v of propVencida) {
+  await B.cada(propVencida, (v) => v.num, async (v) => {
     await ev(db(), v.id, "expired", "system", null, { es: "La propuesta venció sin aceptarse", en: "The proposal expired without being accepted" });
     await avisarEvp(v.num, "cliente", "evp_vence", { que: { es: "La propuesta venció sin aceptarse.", en: "The proposal expired without being accepted." } }).catch(() => undefined);
     await avisarEvp(v.num, "negocio", "evp_biz_vence", { que: { es: "Tu propuesta venció sin aceptarse.", en: "Your proposal expired without being accepted." } }).catch(() => undefined);
-  }
+  });
   // Un cambio que nadie aceptó a tiempo: el evento sigue como se acordó.
   const cambioV = (await db().query<{ id: string }>(
     `update operations o set status_detail = null, updated_at = now()
       where o.kind = 'private_event' and o.status = 'confirmed' and o.status_detail = 'change_quote' and (select q.valid_until from private_event_quotes q where q.operation_id = o.id order by q.version desc limit 1) <= now()${y}
      returning o.id::text`, a)).rows;
-  for (const v of cambioV) await ev(db(), v.id, "change_expired", "system", null, { es: "El cambio venció: sigue lo acordado", en: "The change expired: the agreement stands" });
+  await B.cada(cambioV, (v) => `op ${v.id}`, (v) => ev(db(), v.id, "change_expired", "system", null, { es: "El cambio venció: sigue lo acordado", en: "The change expired: the agreement stands" }));
   // Recordatorio del día antes (una vez).
   const rec = (await db().query<{ num: string }>(
     `update operations o set details = o.details || '{"rec1":true}'::jsonb where o.kind = 'private_event' and o.status = 'confirmed' and not coalesce((o.details->>'rec1')::boolean, false)
         and o.scheduled_at > now() and o.scheduled_at < now() + interval '24 hours'${y} returning o.number as num`, a)).rows;
-  for (const v of rec) { await avisarEvp(v.num, "cliente", "evp_recordatorio").catch(() => undefined); await avisarEvp(v.num, "negocio", "evp_biz_recordatorio").catch(() => undefined); }
+  await B.cada(rec, (v) => v.num, async (v) => { await avisarEvp(v.num, "cliente", "evp_recordatorio").catch(() => undefined); await avisarEvp(v.num, "negocio", "evp_biz_recordatorio").catch(() => undefined); });
   // «Pasó el evento»: 12 h después del final, si no hay ayuda abierta (el depósito ya es consumo descontado).
   const fin = (await db().query<{ id: string; num: string }>(
     `update operations o set status = 'done', status_detail = null, done_at = now(), updated_at = now()
       where o.kind = 'private_event' and o.status = 'confirmed' and o.scheduled_at + make_interval(mins => o.duration_min) + interval '12 hours' < now()
         and not exists (select 1 from help_requests h where h.operation_id = o.id and h.status <> 'resolved')${y} returning o.id::text, o.number as num`, a)).rows;
-  for (const v of fin) { await ev(db(), v.id, "done", "system", null, { es: "Pasó el evento", en: "The event is over" }); await avisarEvp(v.num, "cliente", "evp_done").catch(() => undefined); }
-  // Devoluciones que quedaron a medias (Stripe no respondió): la misma llave, una sola devolución.
-  const debe = (await db().query<{ num: string }>(
+  await B.cada(fin, (v) => v.num, async (v) => { await ev(db(), v.id, "done", "system", null, { es: "Pasó el evento", en: "The event is over" }); await avisarEvp(v.num, "cliente", "evp_done").catch(() => undefined); });
+  // Devoluciones que quedaron a medias (Stripe no respondió): la misma llave, una sola devolución. Lo más viejo primero, sin repetir lo ya visto.
+  const pv = `$${a.length + 1}::text[]`;
+  await U.porTandas(B, 50, async (vistos) => (await db().query<{ num: string }>(
     `select o.number as num from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit'
       where o.kind = 'private_event' and o.status = 'cancelled' and coalesce((o.details->>'dev')::int, 0) > 0 and p.status in ('captured', 'partially_refunded')
-        and not exists (select 1 from refunds r where r.payment_id = p.id and split_part(r.idem_key, '~fallida-', 1) = o.details->>'devIdem')${y} limit 50`, a)).rows;
-  for (const v of debe) await moverDinero(v.num).catch(() => undefined);
+        and not exists (select 1 from refunds r where r.payment_id = p.id and split_part(r.idem_key, '~fallida-', 1) = o.details->>'devIdem')${y}
+        and not (o.number = any(${pv}))
+      order by o.id limit 50`, [...a, vistos])).rows, (v) => v.num, (v) => moverDinero(v.num));
+  if (!y) B.fin();
 }
 
 /* Lo pedido, como se copió al pedir (el menú y los extras con su precio de ese momento: solo orientan la propuesta). */

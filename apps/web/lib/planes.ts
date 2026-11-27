@@ -159,15 +159,20 @@ async function crearVisita(c: PoolClient, numero: string, fecha: string, entorno
 /* ── El barrido (idempotente): cobros que tocan, visitas que siguen, pausas que terminan ── */
 /* 9t9 · Lo que TOCA hoy (el día de la ciudad del plan): la pausa que terminó, la visita que pasó, el cobro del período (o su reintento), una intención en
    camino y la visita que falta de un plan que cambió en el último día (saltar la próxima la quita y deja la siguiente al barrido). Antes el barrido central
-   tomaba 50 planes vivos cualesquiera (sin orden ni filtro): con más de 50, los demás no se cobraban nunca. Cada rama con su índice (0208); el tope de UTC
-   + 1 día deja usar el índice y el día exacto de la ciudad decide. Lo más atrasado primero; por tandas sin repetir el mismo plan en la corrida. */
-const TOCA_PLAN = `with h as (select (now() at time zone 'UTC')::date + 1 as tope)
+   tomaba 50 planes vivos cualesquiera (sin orden ni filtro): con más de 50, los demás no se cobraban nunca. Cada rama con su índice (0208); el tope deja
+   usar el índice y el día exacto de la ciudad decide. Lo más atrasado primero; por tandas sin repetir el mismo plan en la corrida.
+   27 nov (LAUNCH 9t9 (4), medido con 1 M de planes: scripts/carga/planes-1m.mjs) · El tope era el día de UTC + 1: con los cobros y las visitas repartidos
+   en el mes, eso metía ~100 mil planes de hoy y mañana entre los candidatos, y el planificador (que no sabe cuántos son) recorría los 950 mil planes por su
+   llave y TODAS las citas (operations) en secuencial: ~1 s por tanda, y el barrido corre hasta 20 tandas por minuto. Ahora el tope es el día más
+   adelantado de las ciudades (nunca deja fuera lo que toca en ninguna: cada ciudad está en ese día o antes) y los candidatos van como una lista
+   (= any(array(…))): se buscan por su llave, uno a uno, plan y cita (con 1 M: ~12 ms, ~40 ms con el JIT de fábrica; ningún recorrido secuencial). */
+const TOCA_PLAN = `with h as (select max((now() at time zone timezone)::date) as tope from cities)
   select s.id::text, o.number as numero, s.city_id as city from plan_subscriptions s join operations o on o.id = s.operation_id join cities ci on ci.id = s.city_id
-   where s.id in (select id from plan_subscriptions, h where status = 'paused' and paused_until <= h.tope
+   where s.id = any(array(select id from plan_subscriptions, h where status = 'paused' and paused_until <= h.tope
                   union select id from plan_subscriptions, h where status = 'active' and next_visit_on < h.tope
                   union select id from plan_subscriptions, h where status = 'active' and next_charge_on <= h.tope
                   union select ref_id::bigint from offsession_charges where kind = 'plan' and status = 'pending' and ref_id ~ '^[0-9]{1,18}$'
-                  union select id from plan_subscriptions where status = 'active' and updated_at > now() - interval '1 day')
+                  union select id from plan_subscriptions where status = 'active' and updated_at > now() - interval '1 day'))
      and s.status <> 'cancelled' and not (s.id = any($1::bigint[]))
      and ((s.status = 'paused' and s.paused_until <= (now() at time zone ci.timezone)::date)
        or (s.status = 'active' and s.next_visit_on < (now() at time zone ci.timezone)::date)
