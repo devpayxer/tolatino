@@ -14,7 +14,7 @@ import { dosIdiomas } from "@/lib/dos-idiomas";
    Al modelo no le llegan ids: cada operación va como op1, op2…; el mapa ref → operación se queda en el servidor y una acción solo vale si
    su ref está en ESTE mapa (y la base vuelve a revisar que la operación es de la persona al confirmar). Todo pasa por tapar(). */
 export type OpRef = { id: string; numero: string; kind: string; status: string; detail: string | null; pago: string | null; negocio: string; negocioId: string; cancelableGratis: boolean };
-export type ContextoVecino = { datos: Record<string, unknown>; refs: Map<string, OpRef>; texto: string; confirmadas: boolean; canceladas: boolean; ciudad: string; lang: Lang };
+export type ContextoVecino = { datos: Record<string, unknown>; refs: Map<string, OpRef>; texto: string; confirmadas: boolean; canceladasNum: string[]; activasNum: string[]; ciudad: string; lang: Lang };
 
 /* Las solicitudes que El Compa puede preparar para cancelar (cancel_request): pendientes, sin cobro, de estos tipos (CANCELABLES en acciones.ts). */
 export const KINDS_CANCELABLES = ["appointment", "table"] as const;
@@ -60,5 +60,5 @@ export async function contextoVecino(userId: string, lang: Lang): Promise<Contex
       cuando: o.cuando, total: o.total > 0 ? usd(o.total) : null, cancelable_gratis: cancelableGratis };
   });
   const datos = { persona: { nombre: tapar(p?.nombre ?? "").texto || null, idioma: lang, ciudad: p?.ciudad_nombre ?? null }, operaciones: ops };
-  return { datos, refs, texto: JSON.stringify(datos), confirmadas: O.rows.some((o) => o.status === "confirmed"), canceladas: O.rows.some((o) => o.status === "cancelled"), ciudad: p?.ciudad ?? "hzl", lang };
+  return { datos, refs, texto: JSON.stringify(datos), confirmadas: O.rows.some((o) => o.status === "confirmed"), canceladasNum: O.rows.filter((o) => o.status === "cancelled").map((o) => o.number), activasNum: O.rows.filter((o) => o.status !== "cancelled").map((o) => o.number), ciudad: p?.ciudad ?? "hzl", lang };
 }

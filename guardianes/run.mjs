@@ -5271,22 +5271,25 @@ const guardianes = {
       const motivos = (t) => { const a = v.verificar({ respuesta: t, tipo: "respuesta", fuente: "f", accion: { tipo: "ninguna", ref: "", pantalla: "" }, persona: "ninguno", chips: [] }, ctx), b = v.verificarCopiloto({ resumen: "Resumen del caso.", borrador: t, siguiente: "", macro: "", fuente: "", sugerir_devolver: false }, cctx); return [a.ok ? "" : a.motivo, b.ok ? "" : b.motivo]; };
       for (const t of [...(T.caza.es ?? []), ...(T.caza.en ?? [])]) { const [a, b] = motivos(t); if (a !== "dice_que_hizo" || b !== "dice_que_hizo") falla(G, V, 0, `el verificador deja pasar «${t}» (verificar: ${a || "pasa"} · copiloto: ${b || "pasa"})`); }
       for (const t of [...(T.deja.es ?? []), ...(T.deja.en ?? [])]) { const [a, b] = motivos(t); if (a === "dice_que_hizo" || b === "dice_que_hizo") falla(G, V, 0, `el verificador rechaza de más «${t}» (dice_que_hizo: es legítima)`); }
-      // (3b) «Ya quedó cancelada» es un estado: pasa SOLO si el contexto trae una cancelada de verdad; lo demás de HECHO no se relaja nunca.
+      // (3b) «Ya quedó cancelada» es un estado de UNA operación: pasa solo si la respuesta nombra una cancelada y ninguna que no lo esté (o si la única operación
+      // del contexto está cancelada); lo demás de HECHO no se relaja nunca.
       const TC = v.CASOS_CANCELADA;
-      if (!TC?.pasa?.length || !TC?.cae?.length) return falla(G, V, 0, "falta la tabla CASOS_CANCELADA (lo que pasa con una operación cancelada y lo que sigue cayendo)");
-      const conC = { ...ctx, canceladas: true }, cconC = { ...cctx, canceladas: true };
+      if (!TC?.pasa?.length || !TC?.cae?.length || !TC?.caeSinNumero?.length || !TC?.caeConActiva?.length || !TC?.pasaUnica?.length) return falla(G, V, 0, "falta la tabla CASOS_CANCELADA completa (pasa, pasaUnica, caeSinNumero, caeConActiva, cae)");
+      const varias = { ...ctx, canceladasNum: ["R-1042"], activasNum: ["R-2001"] }, cvarias = { ...cctx, canceladasNum: ["R-1042"], activasNum: ["R-2001"] };
+      const unica = { ...ctx, canceladasNum: ["R-1042"], activasNum: [] }, cunica = { ...cctx, canceladasNum: ["R-1042"], activasNum: [] };
       const mot = (t, c, cc) => [v.verificar({ respuesta: t, tipo: "respuesta", fuente: "f", accion: { tipo: "ninguna", ref: "", pantalla: "" }, persona: "ninguno", chips: [] }, c), v.verificarCopiloto({ resumen: "Resumen del caso.", borrador: t, siguiente: "", macro: "", fuente: "", sugerir_devolver: false }, cc)].map((x) => (x.ok ? "" : x.motivo));
-      for (const t of TC.pasa) {
-        const [a0, b0] = mot(t, ctx, cctx), [a1, b1] = mot(t, conC, cconC);
-        if (a0 !== "dice_que_hizo" || b0 !== "dice_que_hizo") falla(G, V, 0, `sin ninguna operación cancelada «${t}» debe caer como dice_que_hizo (verificar: ${a0 || "pasa"} · copiloto: ${b0 || "pasa"})`);
-        if (a1 === "dice_que_hizo" || b1 === "dice_que_hizo") falla(G, V, 0, `con una operación cancelada «${t}» es verdad y no debe caer como dice_que_hizo`);
-      }
-      for (const t of TC.cae) { const [a1, b1] = mot(t, conC, cconC); if (a1 !== "dice_que_hizo" || b1 !== "dice_que_hizo") falla(G, V, 0, `aun con una cancelada «${t}» debe caer como dice_que_hizo (verificar: ${a1 || "pasa"} · copiloto: ${b1 || "pasa"})`); }
+      const cae = (t, c, cc, q) => { const [a1, b1] = mot(t, c, cc); if (a1 !== "dice_que_hizo" || b1 !== "dice_que_hizo") falla(G, V, 0, `${q} «${t}» debe caer como dice_que_hizo (verificar: ${a1 || "pasa"} · copiloto: ${b1 || "pasa"})`); };
+      const pasa = (t, c, cc, q) => { const [a1, b1] = mot(t, c, cc); if (a1 === "dice_que_hizo" || b1 === "dice_que_hizo") falla(G, V, 0, `${q} «${t}» es verdad y no debe caer como dice_que_hizo`); };
+      for (const t of TC.pasa) { cae(t, ctx, cctx, "sin ninguna operación cancelada"); pasa(t, varias, cvarias, "nombrando la cancelada (R-1042) entre varias"); pasa(t, unica, cunica, "con una sola operación, cancelada"); }
+      for (const t of TC.pasaUnica) { pasa(t, unica, cunica, "con UNA sola operación y cancelada, sin número"); cae(t, varias, cvarias, "sin número y con una cancelada y una activa"); }
+      for (const t of TC.caeSinNumero) cae(t, varias, cvarias, "sin número y con una cancelada y una activa");
+      for (const t of TC.caeConActiva) cae(t, varias, cvarias, "nombrando una operación que no está cancelada");
+      for (const t of TC.cae) cae(t, varias, cvarias, "aun con una cancelada");
       // (3c) De dónde sale «canceladas»: del estado real de las operaciones (nunca fijo en true) y hasta el verificador.
       const XV = "apps/web/lib/compa/contexto-vecino.ts", XC = "apps/web/lib/compa/contexto-copiloto.ts";
-      if (!/canceladas:\s*O\.rows\.some\(\(o\) => o\.status === "cancelled"\)/.test(readFileSync(XV, "utf8"))) falla(G, XV, 0, "canceladas no sale de las operaciones con status «cancelled» (es lo único que deja decir «ya quedó cancelada»)");
-      if (!/canceladas:\s*k\.op\?\.status === "cancelled"/.test(readFileSync(XC, "utf8"))) falla(G, XC, 0, "canceladas del copiloto no sale del estado «cancelled» de la operación del caso");
-      if (!/canceladas:\s*ctx\.canceladas,\s*permitidos/.test(readFileSync(C, "utf8")) || !/canceladas:\s*ctx\.canceladas,\s*maxBorrador/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "conversacion.ts no pasa ctx.canceladas al verificador (de la persona y del copiloto)");
+      if (!/canceladasNum:\s*O\.rows\.filter\(\(o\) => o\.status === "cancelled"\)\.map\(\(o\) => o\.number\), activasNum:\s*O\.rows\.filter\(\(o\) => o\.status !== "cancelled"\)\.map\(\(o\) => o\.number\)/.test(readFileSync(XV, "utf8"))) falla(G, XV, 0, "canceladas no sale de las operaciones con status «cancelled» (es lo único que deja decir «ya quedó cancelada»)");
+      if (!/canceladasNum:\s*k\.op && k\.op\.status === "cancelled" \? \[k\.op\.num\] : \[\], activasNum:\s*k\.op && k\.op\.status !== "cancelled" \? \[k\.op\.num\] : \[\]/.test(readFileSync(XC, "utf8"))) falla(G, XC, 0, "canceladas del copiloto no sale del estado «cancelled» de la operación del caso");
+      if (!/canceladasNum:\s*ctx\.canceladasNum,\s*activasNum:\s*ctx\.activasNum,\s*permitidos/.test(readFileSync(C, "utf8")) || !/canceladasNum:\s*ctx\.canceladasNum,\s*activasNum:\s*ctx\.activasNum,\s*maxBorrador/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "conversacion.ts no pasa ctx.canceladas al verificador (de la persona y del copiloto)");
     } catch (e) { falla(G, V, 0, `no pude correr CASOS_HECHO contra el verificador: ${String(e.message).slice(0, 100)}`); }
     // (4) El idioma del cliente cuenta las palabras con tilde.
     const es = /\nconst ES_P = (\/.*\/[a-z]*);/.exec(sinComent(C))?.[1];
@@ -11761,11 +11764,11 @@ const guardianes = {
        ANTERIOR corre contra la base nueva, así que dos cambios más rompen a la vieja sin borrar nada: (a) un «add constraint» de check, unique, primary key,
        foreign key o exclude (y un «create unique index») sobre una tabla que ya existía —valida lo que la versión anterior escribe y sus INSERT / UPDATE
        fallan—; (b) un «create or replace function» con la MISMA firma de una función que ya existía —cambia lo que devuelve o hace para la app vieja—.
-       Desde la 0230 (las hechas no se editan nunca; 0228 y 0229 ya venían en camino), cada uno lleva «-- compatible: <por qué la app anterior no lo rompe>»
+       Desde la 0228 (las hechas no se editan nunca), cada uno lleva «-- compatible: <por qué la app anterior no lo rompe>»
        con su motivo (20 letras o más). Un check o foreign key «not valid» (se valida en un despliegue posterior) no la necesita; una tabla creada en la
        misma migración tampoco (nadie la escribe aún). Al revés: alreves9o. */
     {
-      const ULT_COMPAT = 229, DMC = "packages/db/migrations", definidas = new Set();
+      const ULT_COMPAT = 227, DMC = "packages/db/migrations", definidas = new Set();
       for (const x of readdirSync(DMC).filter((y) => /^\d{4}_.*\.sql$/.test(y)).sort()) {
         const f = `${DMC}/${x}`, crudo = readFileSync(f, "utf8"), t = sqlSinCuerpos(crudo.replace(/--.*$/gm, "")), nuevaC = Number(x.slice(0, 4)) > ULT_COMPAT;
         const creadas = new Set([...t.matchAll(/\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi)].map((m) => m[1].toLowerCase()));

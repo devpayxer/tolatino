@@ -24,7 +24,7 @@ const casos = [
   [V, '(?!\\\\s+(?:de|mi|mis)${LD})`,', '`,', 'rechaza de más «Cambié de teléfono.'],
   [V, '  `${CONDICION}${LI}ya\\\\s+(?:qued[oó]|queda)\\\\s+(?:${quedo})${LD}`,', '  `${LI}ya\\\\s+(?:qued[oó]|queda)\\\\s+(?:${quedo})${LD}`,', 'rechaza de más «Cuando confirmes, ya queda cancelada.»'],
   // El verificador deja de mirar la respuesta; o la tabla desaparece.
-  [V, '  if (HECHO.test(r.respuesta) && diceQueHizo(r.respuesta, c.canceladas)) return { ok: false, motivo: "dice_que_hizo" };\n', '', 'deja pasar «Ya cancelé tu solicitud.»'],
+  [V, '  if (HECHO.test(r.respuesta) && diceQueHizo(r.respuesta, c.canceladasNum, c.activasNum)) return { ok: false, motivo: "dice_que_hizo" };\n', '', 'deja pasar «Ya cancelé tu solicitud.»'],
   [V, 'export const CASOS_HECHO = {', 'export const CASOS_HECHO_X = {', 'falta la tabla CASOS_HECHO'],
   // Un \b nuevo junto a una tilde en otro archivo de lib/compa (literal y clase).
   [RG, 'type Bi7 = { es: string; en: string };', 'type Bi7 = { es: string; en: string };\nexport const MAL = /\\bcancelé\\b/i;', '\\b pegado a una letra con tilde'],

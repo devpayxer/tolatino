@@ -24,7 +24,8 @@ export type Contexto = {
   fuentes: string[];            // los slugs de los trozos que se le dieron
   conCuenta: boolean;           // hay operaciones de la persona en el contexto
   confirmadas: boolean;         // alguna operación del contexto está confirmada
-  canceladas?: boolean;         // alguna operación del contexto está cancelada de verdad (sin él, «ya quedó cancelada» se descarta como «ya lo hice»)
+  canceladasNum?: string[];     // los NÚMEROS de las operaciones del contexto que están canceladas de verdad
+  activasNum?: string[];        // los números de las que NO lo están (sin ellos, «ya quedó cancelada» se descarta como «ya lo hice»)
   texto: string;                // todo lo que el modelo pudo leer (contexto + trozos + lo que escribió la persona), para montos y plazos
   permitidos: string[];         // teléfonos o correos públicos que sí se pueden decir (del negocio del contexto)
   maxFrases: number;
@@ -79,10 +80,19 @@ const HECHO = hechoRe(QUEDO, "cancell?ed|");
 const HECHO_SIN_CANCELADA = hechoRe(QUEDO.replace("cancelad[oa]s?|", ""), "");
 export const CASOS_CANCELADA = {
   // Con una operación cancelada en el contexto: estas pasan (es un estado, no que El Compa la cancelara) y estas siguen cayendo.
-  pasa: ["Ya quedó cancelada tu solicitud.", "Tu cita ya quedó cancelada.", "Your request is now cancelled."],
-  cae: ["Ya cancelé tu solicitud.", "I cancelled your request.", "Ya está hecho.", "Hecho, tu cita quedó cancelada.", "Ya quedó devuelto tu dinero.", "Ya quedó cancelada y te devolví el pago."],
+  // Contexto de la tabla: canceladas = R-1042 (una cita vieja) y activas = R-2001 (la solicitud viva); abajo, una sola operación cancelada.
+  pasa: ["Ya quedó cancelada tu cita R-1042.", "Tu cita R-1042 ya quedó cancelada.", "Your request R-1042 is now cancelled."],
+  caeSinNumero: ["Ya quedó cancelada tu solicitud.", "Your request is now cancelled."],       // sin número y con varias operaciones: cae
+  caeConActiva: ["Ya quedó cancelada tu solicitud R-2001.", "Ya quedó cancelada R-1042 y también R-2001."],  // nombra una que no está cancelada: cae
+  pasaUnica: ["Ya quedó cancelada tu solicitud.", "Your request is now cancelled."],                      // una sola operación y cancelada: pasa sin número
+  cae: ["Ya cancelé tu cita R-1042.", "I cancelled your request R-1042.", "Ya está hecho, R-1042.", "Hecho, tu cita R-1042 quedó cancelada.", "Ya quedó devuelto el dinero de R-1042.", "Ya quedó cancelada R-1042 y te devolví el pago."],   // con el número de la cancelada: lo demás de HECHO sigue cayendo
 } as const;
-const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto) && !(canceladas === true && !HECHO_SIN_CANCELADA.test(texto));
+/* El estado solo se acepta de una operación CONCRETA: la respuesta nombra el número de una cancelada y de ninguna que no lo esté (con una cita vieja
+   cancelada y una solicitud activa, «Ya quedó cancelada tu solicitud» sería falso). Sin número solo pasa si en el contexto hay UNA operación y está cancelada. */
+const nombra = (texto: string, num: string) => new RegExp(`(?<![\\p{L}\\p{N}])${num.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(texto);
+const estadoVerdadero = (texto: string, canc: string[] = [], act: string[] = []) =>
+  canc.length > 0 && !act.some((n) => nombra(texto, n)) && (canc.some((n) => nombra(texto, n)) || (canc.length === 1 && act.length === 0));
+const diceQueHizo = (texto: string, canc?: string[], act?: string[]) => HECHO.test(texto) && !(!HECHO_SIN_CANCELADA.test(texto) && estadoVerdadero(texto, canc, act));
 /* La tabla de HECHO: lo que verificar() y verificarCopiloto() DEBEN rechazar con «dice_que_hizo» y lo que NO deben rechazar por eso. La corre el
    guardián compaFronteraConTilde contra este archivo real; quitar una forma, la bandera u o volver al \b la pone en rojo. Solo se añade. */
 export const CASOS_HECHO = {
@@ -148,7 +158,7 @@ export function verificar(x: unknown, c: Contexto): Veredicto {
   for (const m of todo.match(TEL) ?? []) if (!permit.has(soloDigitos(m).slice(-10))) return { ok: false, motivo: "telefono" };
   for (const m of todo.match(CORREO) ?? []) if (!permit.has(m.toLowerCase())) return { ok: false, motivo: "correo" };
   if (PERSONA.test(todo)) return { ok: false, motivo: "se_hace_pasar" };
-  if (HECHO.test(r.respuesta) && diceQueHizo(r.respuesta, c.canceladas)) return { ok: false, motivo: "dice_que_hizo" };
+  if (HECHO.test(r.respuesta) && diceQueHizo(r.respuesta, c.canceladasNum, c.activasNum)) return { ok: false, motivo: "dice_que_hizo" };
   const fuentes = norm(c.texto), compacto = fuentes.replace(/\s/g, "");
   for (const m of r.respuesta.match(MONTO) ?? []) if (!compacto.includes(m.replace(/\s/g, "").replace(/,/g, "")) && !compacto.includes(m.replace(/\s/g, ""))) return { ok: false, motivo: "monto" };
   for (const m of r.respuesta.match(PCT) ?? []) if (!compacto.includes(m.replace(/\s/g, ""))) return { ok: false, motivo: "porcentaje" };
@@ -194,7 +204,7 @@ export function verificarAuto(r: Respuesta): Veredicto {
    La macro solo vale si es de la lista dada; la fuente, si estaba entre los trozos dados (si no, se quitan); «sugerir_devolver» solo si el rol
    de quien lo pidió tiene «Resolver y devolver» y hay algo pagado en la app. Lo que falla no se muestra: sale el borrador de reglas. */
 export type CtxCopiloto = {
-  fuentes: string[]; macros: string[]; confirmadas: boolean; canceladas?: boolean; maxBorrador: number; puedeDevolver: boolean;
+  fuentes: string[]; macros: string[]; confirmadas: boolean; canceladasNum?: string[]; activasNum?: string[]; maxBorrador: number; puedeDevolver: boolean;
   publico: string;        // lo que la persona ya ve: la operación, lo pagado en la app, lo que el equipo le escribió, la respuesta del negocio y la ayuda dada
   caso: string;           // lo que escribió la persona y el resumen de su caso (vale para el resumen del equipo, nunca para prometer en el borrador)
   internas: string[];     // las notas internas que vio el modelo (nunca en el borrador)
@@ -233,7 +243,7 @@ export function verificarCopiloto(x: unknown, c: CtxCopiloto): VeredictoCopiloto
   if (todo.includes(TAPADO) || tapar(todo).tapado) return { ok: false, motivo: "dato_tapado" };
   if ((todo.match(TEL) ?? []).length || (todo.match(CORREO) ?? []).length) return { ok: false, motivo: "telefono" };
   // El borrador: lo que leerá la persona.
-  if (HECHO.test(r.borrador) && diceQueHizo(r.borrador, c.canceladas)) return { ok: false, motivo: "dice_que_hizo" };
+  if (HECHO.test(r.borrador) && diceQueHizo(r.borrador, c.canceladasNum, c.activasNum)) return { ok: false, motivo: "dice_que_hizo" };
   if (PROMETE_COP.test(sinAcentosV(r.borrador))) return { ok: false, motivo: "promete" };
   const pub = norm(c.publico), pubC = pub.replace(/\s/g, "");
   for (const m of r.borrador.match(MONTO) ?? []) if (!enTexto(m, pubC)) return { ok: false, motivo: "monto" };
