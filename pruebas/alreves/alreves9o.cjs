@@ -97,6 +97,14 @@ const crear = [
   ['migracionReversible', 'packages/db/migrations/0199_zz9o.sql', 'begin;\nalter table incident_log rename column manual_ref to manual_x;\ncommit;\n'],
   // … se borra una tabla que el código todavía lee
   ['migracionReversible', 'packages/db/migrations/0199_zz9o.sql', 'begin;\ndrop table if exists maintenance_windows;\ncommit;\n'],
+  // 27 nov · migracionReversible (compatible con la app anterior): un check, un unique o una llave foránea validados sobre una tabla que ya existía;
+  // un unique index; el cuerpo de una función con la misma firma; y una marca «-- compatible:» sin motivo. Sin marca (o con ella) pasa solo lo que debe.
+  ['migracionReversible', 'packages/db/migrations/0990_zz9o.sql', 'begin;\nalter table incident_log add constraint zz_ck check (length(manual_ref) < 10);\ncommit;\n'],
+  ['migracionReversible', 'packages/db/migrations/0990_zz9o.sql', 'begin;\nalter table incident_log add unique (manual_ref);\ncommit;\n'],
+  ['migracionReversible', 'packages/db/migrations/0990_zz9o.sql', 'begin;\nalter table incident_log add constraint zz_fk foreign key (manual_ref) references users (id);\ncommit;\n'],
+  ['migracionReversible', 'packages/db/migrations/0990_zz9o.sql', 'begin;\ncreate unique index zz_ix on incident_log (manual_ref);\ncommit;\n'],
+  ['migracionReversible', 'packages/db/migrations/0990_zz9o.sql', 'begin;\ncreate or replace function compa_soltar_reservas(p_min integer default 10) returns integer language sql as $$ select 0 $$;\ncommit;\n'],
+  ['migracionReversible', 'packages/db/migrations/0990_zz9o.sql', '-- compatible: corto\nbegin;\nalter table incident_log add constraint zz_ck check (length(manual_ref) < 10);\ncommit;\n'],
   // selladoSoloSuServidor: un sobre que no es age
   ['selladoSoloSuServidor', 'infra/produccion/sellado/app/STRIPE_SECRET_KEY.age', 'no es un sobre\n'],
   // … algo que no es una llave pública ni un sobre en sellado/

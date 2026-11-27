@@ -30,7 +30,7 @@ export type ContextoCopiloto = {
   tipo: "caso" | "ayuda"; numero: string; casoId: string | null; ayudaId: string | null; ciudad: string; negocio: string | null;
   lang: Lang; nombre: string; tema: Bi; op: { tipo: Bi; numero: string; negocio: string } | null; dinero: boolean;
   datos: Record<string, unknown>; ultimo: string; consulta: string;
-  publico: string; caso: string; internas: string[]; confirmadas: boolean;
+  publico: string; caso: string; internas: string[]; confirmadas: boolean; canceladas: boolean;
   macros: { clave: string; titulo: string }[]; puedeDevolver: boolean; maxBorrador: number;
 };
 
@@ -124,7 +124,7 @@ async function contextoCaso(s: Staff, numero: string): Promise<ContextoCopiloto 
   return {
     tipo: "caso", numero: k.num, casoId: k.id, ayudaId: null, ciudad: k.ciudad, negocio: k.negocio?.id ?? null, lang, nombre, tema, op, dinero,
     datos, ultimo: ultimo || delCaso.at(-1) || tema.es, consulta: `${tema.es} ${ultimo}`.slice(0, 120),
-    publico: publico.join("\n"), caso: delCaso.join("\n"), internas, confirmadas: k.op?.status === "confirmed",
+    publico: publico.join("\n"), caso: delCaso.join("\n"), internas, confirmadas: k.op?.status === "confirmed", canceladas: k.op?.status === "cancelled",
     macros: macros.map((m) => ({ clave: m.key, titulo: m.title.es })), puedeDevolver, maxBorrador: 2000,
   };
 }
@@ -166,7 +166,7 @@ async function contextoAyuda(s: Staff, id: string): Promise<ContextoCopiloto | n
     tipo: "ayuda", numero: h.number, casoId: null, ayudaId: (k as { subject_id: string }).subject_id, ciudad: k.city_id ?? "hzl", negocio: k.business_id ?? null, lang, nombre,
     tema, op: { tipo, numero, negocio }, dinero: h.pago > 0 || /cobr|pago|devol|reembols/i.test(`${h.reason} ${h.wants}`),
     datos, ultimo: cuerpo || quePaso, consulta: `${tipo.es} ${quePaso} ${cuerpo}`.slice(0, 120),
-    publico: publico.join("\n"), caso: [cuerpo, h.amount ? `pide ${usd(h.amount)}` : ""].filter(Boolean).join("\n"), internas: [], confirmadas: false,
+    publico: publico.join("\n"), caso: [cuerpo, h.amount ? `pide ${usd(h.amount)}` : ""].filter(Boolean).join("\n"), internas: [], confirmadas: false, canceladas: false,
     macros: [], puedeDevolver, maxBorrador: 480,
   };
 }

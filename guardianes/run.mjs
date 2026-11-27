@@ -5271,6 +5271,22 @@ const guardianes = {
       const motivos = (t) => { const a = v.verificar({ respuesta: t, tipo: "respuesta", fuente: "f", accion: { tipo: "ninguna", ref: "", pantalla: "" }, persona: "ninguno", chips: [] }, ctx), b = v.verificarCopiloto({ resumen: "Resumen del caso.", borrador: t, siguiente: "", macro: "", fuente: "", sugerir_devolver: false }, cctx); return [a.ok ? "" : a.motivo, b.ok ? "" : b.motivo]; };
       for (const t of [...(T.caza.es ?? []), ...(T.caza.en ?? [])]) { const [a, b] = motivos(t); if (a !== "dice_que_hizo" || b !== "dice_que_hizo") falla(G, V, 0, `el verificador deja pasar «${t}» (verificar: ${a || "pasa"} · copiloto: ${b || "pasa"})`); }
       for (const t of [...(T.deja.es ?? []), ...(T.deja.en ?? [])]) { const [a, b] = motivos(t); if (a === "dice_que_hizo" || b === "dice_que_hizo") falla(G, V, 0, `el verificador rechaza de más «${t}» (dice_que_hizo: es legítima)`); }
+      // (3b) «Ya quedó cancelada» es un estado: pasa SOLO si el contexto trae una cancelada de verdad; lo demás de HECHO no se relaja nunca.
+      const TC = v.CASOS_CANCELADA;
+      if (!TC?.pasa?.length || !TC?.cae?.length) return falla(G, V, 0, "falta la tabla CASOS_CANCELADA (lo que pasa con una operación cancelada y lo que sigue cayendo)");
+      const conC = { ...ctx, canceladas: true }, cconC = { ...cctx, canceladas: true };
+      const mot = (t, c, cc) => [v.verificar({ respuesta: t, tipo: "respuesta", fuente: "f", accion: { tipo: "ninguna", ref: "", pantalla: "" }, persona: "ninguno", chips: [] }, c), v.verificarCopiloto({ resumen: "Resumen del caso.", borrador: t, siguiente: "", macro: "", fuente: "", sugerir_devolver: false }, cc)].map((x) => (x.ok ? "" : x.motivo));
+      for (const t of TC.pasa) {
+        const [a0, b0] = mot(t, ctx, cctx), [a1, b1] = mot(t, conC, cconC);
+        if (a0 !== "dice_que_hizo" || b0 !== "dice_que_hizo") falla(G, V, 0, `sin ninguna operación cancelada «${t}» debe caer como dice_que_hizo (verificar: ${a0 || "pasa"} · copiloto: ${b0 || "pasa"})`);
+        if (a1 === "dice_que_hizo" || b1 === "dice_que_hizo") falla(G, V, 0, `con una operación cancelada «${t}» es verdad y no debe caer como dice_que_hizo`);
+      }
+      for (const t of TC.cae) { const [a1, b1] = mot(t, conC, cconC); if (a1 !== "dice_que_hizo" || b1 !== "dice_que_hizo") falla(G, V, 0, `aun con una cancelada «${t}» debe caer como dice_que_hizo (verificar: ${a1 || "pasa"} · copiloto: ${b1 || "pasa"})`); }
+      // (3c) De dónde sale «canceladas»: del estado real de las operaciones (nunca fijo en true) y hasta el verificador.
+      const XV = "apps/web/lib/compa/contexto-vecino.ts", XC = "apps/web/lib/compa/contexto-copiloto.ts";
+      if (!/canceladas:\s*O\.rows\.some\(\(o\) => o\.status === "cancelled"\)/.test(readFileSync(XV, "utf8"))) falla(G, XV, 0, "canceladas no sale de las operaciones con status «cancelled» (es lo único que deja decir «ya quedó cancelada»)");
+      if (!/canceladas:\s*k\.op\?\.status === "cancelled"/.test(readFileSync(XC, "utf8"))) falla(G, XC, 0, "canceladas del copiloto no sale del estado «cancelled» de la operación del caso");
+      if (!/canceladas:\s*ctx\.canceladas,\s*permitidos/.test(readFileSync(C, "utf8")) || !/canceladas:\s*ctx\.canceladas,\s*maxBorrador/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "conversacion.ts no pasa ctx.canceladas al verificador (de la persona y del copiloto)");
     } catch (e) { falla(G, V, 0, `no pude correr CASOS_HECHO contra el verificador: ${String(e.message).slice(0, 100)}`); }
     // (4) El idioma del cliente cuenta las palabras con tilde.
     const es = /\nconst ES_P = (\/.*\/[a-z]*);/.exec(sinComent(C))?.[1];
@@ -11739,6 +11755,42 @@ const guardianes = {
           const tipo = /^alter\s+(?:column\s+)?([a-z_][a-z0-9_]*)\s+(?:set data\s+)?type\b/i.exec(c);
           if (tipo) { const quien = lee(tipo[1]); if (quien) falla(G, f, 0, `cambio de tipo de «${tabla}.${tipo[1]}»: el código todavía lo lee (${quien}); primero una columna nueva, después se contrae`); }
         }
+      }
+    }
+    /* 27 nov · Lo que el resto de este guardián no ve (LAUNCH, tanda 5 de la revisión del CI, punto 4): mientras se migra y tras una vuelta atrás la app
+       ANTERIOR corre contra la base nueva, así que dos cambios más rompen a la vieja sin borrar nada: (a) un «add constraint» de check, unique, primary key,
+       foreign key o exclude (y un «create unique index») sobre una tabla que ya existía —valida lo que la versión anterior escribe y sus INSERT / UPDATE
+       fallan—; (b) un «create or replace function» con la MISMA firma de una función que ya existía —cambia lo que devuelve o hace para la app vieja—.
+       Desde la 0230 (las hechas no se editan nunca; 0228 y 0229 ya venían en camino), cada uno lleva «-- compatible: <por qué la app anterior no lo rompe>»
+       con su motivo (20 letras o más). Un check o foreign key «not valid» (se valida en un despliegue posterior) no la necesita; una tabla creada en la
+       misma migración tampoco (nadie la escribe aún). Al revés: alreves9o. */
+    {
+      const ULT_COMPAT = 229, DMC = "packages/db/migrations", definidas = new Set();
+      for (const x of readdirSync(DMC).filter((y) => /^\d{4}_.*\.sql$/.test(y)).sort()) {
+        const f = `${DMC}/${x}`, crudo = readFileSync(f, "utf8"), t = sqlSinCuerpos(crudo.replace(/--.*$/gm, "")), nuevaC = Number(x.slice(0, 4)) > ULT_COMPAT;
+        const creadas = new Set([...t.matchAll(/\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi)].map((m) => m[1].toLowerCase()));
+        const que = [], propias = [];
+        for (const m of t.matchAll(/\bcreate\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z_][a-z0-9_]*)\s*\(([^)]*(?:\([^)]*\)[^)]*)*)\)/gi)) {
+          const clave = `${m[1].toLowerCase()}(${firma(m[2])})`;
+          if (nuevaC && /\bor\s+replace\b/i.test(m[0]) && definidas.has(clave)) que.push(`cambio del cuerpo de la función «${m[1].toLowerCase()}» (misma firma)`);
+          propias.push(clave);
+        }
+        if (nuevaC) {
+          for (const m of t.matchAll(/\balter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+([\s\S]*?);/gi)) {
+            if (creadas.has(m[1].toLowerCase())) continue;
+            for (const c of partes(m[2])) {
+              const k = /^add\s+(?:constraint\s+[a-z_][a-z0-9_]*\s+)?(check|unique|primary\s+key|foreign\s+key|exclude)\b/i.exec(c);
+              if (k && !(/^(check|foreign\s+key)$/i.test(k[1]) && /\bnot\s+valid\b/i.test(c))) que.push(`add constraint ${k[1].toLowerCase().replace(/\s+/g, " ")} sobre «${m[1]}»${/^(check|foreign\s+key)$/i.test(k[1]) ? " sin «not valid»" : ""}`);
+            }
+          }
+          for (const m of t.matchAll(/\bcreate\s+unique\s+index\s+(?:concurrently\s+)?(?:if\s+not\s+exists\s+)?(?:[a-z_][a-z0-9_]*\s+)?on\s+(?:only\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi))
+            if (!creadas.has(m[1].toLowerCase())) que.push(`create unique index sobre «${m[1]}»`);
+        }
+        if (que.length) {
+          const motivo = (/^\s*--\s*compatible:\s*(.*)$/im.exec(crudo)?.[1] ?? "").trim();
+          if (motivo.length < 20) falla(G, f, 0, `${[...new Set(que)].join(", ")}: la app anterior corre contra la base nueva mientras se migra y tras una vuelta atrás, y esto puede romperle escrituras o respuestas; lleva su marca «-- compatible: <por qué la app anterior no lo rompe>» con el motivo (${motivo ? "el de ahora es demasiado corto" : "no la tiene"}); un check o foreign key se agrega «not valid» y se valida en un despliegue posterior`);
+        }
+        for (const c of propias) definidas.add(c);
       }
     }
   },

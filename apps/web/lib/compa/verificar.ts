@@ -24,6 +24,7 @@ export type Contexto = {
   fuentes: string[];            // los slugs de los trozos que se le dieron
   conCuenta: boolean;           // hay operaciones de la persona en el contexto
   confirmadas: boolean;         // alguna operación del contexto está confirmada
+  canceladas?: boolean;         // alguna operación del contexto está cancelada de verdad (sin él, «ya quedó cancelada» se descarta como «ya lo hice»)
   texto: string;                // todo lo que el modelo pudo leer (contexto + trozos + lo que escribió la persona), para montos y plazos
   permitidos: string[];         // teléfonos o correos públicos que sí se pueden decir (del negocio del contexto)
   maxFrases: number;
@@ -57,20 +58,31 @@ const INFINITIVO = "(?:cancelar|anular|devolver|reembolsar|cambiar|confirmar|res
 const PARTICIPIO = "cancelado|anulado|devuelto|reembolsado|cambiado|confirmado|reservado|borrado|eliminado|actualizado|modificado|enviado|mandado|procesado|cobrado|pagado|agendado|programado|hecho";
 const QUEDO = "cancelad[oa]s?|anulad[oa]s?|devuelt[oa]s?|reembolsad[oa]s?|cambiad[oa]s?|actualizad[oa]s?|borrad[oa]s?|eliminad[oa]s?|modificad[oa]s?|procesad[oa]s?|hech[oa]s?";
 const TRAMITE = "devoluci[oó]n|cancelaci[oó]n|reembolso|cambio|pedido|reserva|reservaci[oó]n|pago|cobro|cita|solicitud";
-const HECHO = new RegExp(`${FUERA}(?:${[
+const hechoRe = (quedo: string, cancelado: string) => new RegExp(`${FUERA}(?:${[
   `${NEGADO}${LI}(?:${YO_CON_TILDE})${LD}(?!\\s+(?:de|mi|mis)${LD})`,  // «cancelé», «te devolví» (no «cambié de teléfono»: la voz de la persona)
   `${LI}ya\\s+${PRON}(?:${YO_SIN_TILDE})${LD}`,                                                // «ya cancele» (sin tilde), «ya lo hice»
   `${NEGADO}${LI}(?:hice\\s+(?:la|el|tu|su|un|una)\\s+(?:${TRAMITE})|(?:lo|la)\\s+hice\\s+por\\s+ti|ped[ií]\\s+por\\s+ti)${LD}`,
   `${NEGADO}${LI}he\\s+(?:ya\\s+)?(?:${PARTICIPIO})${LD}`,                                     // «he cancelado», «te he devuelto»
   `${LI}acabo\\s+de\\s+${INFINITIVO}${LD}`,                                                    // «acabo de cancelarla»
-  `${CONDICION}${LI}ya\\s+(?:qued[oó]|queda)\\s+(?:${QUEDO})${LD}`,                            // «ya quedó cancelada»
+  `${CONDICION}${LI}ya\\s+(?:qued[oó]|queda)\\s+(?:${quedo})${LD}`,                            // «ya quedó cancelada»
   `${CONDICION}${LI}ya\\s+(?:est[aá]|qued[oó]|queda)\\s+hech[oa]s?${LD}`,                      // «ya está hecho»
   `(?:^|[.!?:;]\\s*)hecho[,.!:](?=\\s|$)`,                                                    // «Hecho, …»
   `\\bI(?:'ve| have)?\\s+(?:(?:already|just|went ahead and)\\s+)*(?:cancell?ed|refunded|changed|booked|confirmed|deleted|removed|updated|sent|processed|issued|modified|charged|made the (?:refund|change|cancellation))\\b`,
   `(?:^|[.!?]\\s+)(?:it'?s|it is|that'?s|that is|all|everything(?:'s| is))\\s+(?:already\\s+|all\\s+)?done(?=\\s*(?:[.!]|$))|${CONDICION}\\balready done\\b`,  // «It's done.» al cerrar la frase (no «Once you confirm, it's done», no «It's done: we ask…»)
-  `\\b(?:is|are|has been|have been)\\s+now\\s+(?:cancell?ed|refunded|changed|updated|deleted|processed)\\b`,
+  `\\b(?:is|are|has been|have been)\\s+now\\s+(?:${cancelado}refunded|changed|updated|deleted|processed)\\b`,
   `${CONDICION}\\b(?:done|listo)[,.]\\s`,                                                      // «Listo, …» (no «si todavía no está listo, …»)
 ].join("|")})`, "iu");
+/* Lo que el Compa puede AFIRMAR de verdad: que una operación ya está cancelada, si el contexto trae una cancelada («Ya quedó cancelada» es un estado, no
+   que El Compa la cancelara). HECHO es el rechazo completo; HECHO_SIN_CANCELADA es el mismo sin esas dos formas («ya quedó cancelada», «is now cancelled»):
+   se descarta como «dice_que_hizo» salvo que SOLO case HECHO y haya una cancelada en el contexto. Lo demás («cancelé», «ya está hecho») nunca se relaja. */
+const HECHO = hechoRe(QUEDO, "cancell?ed|");
+const HECHO_SIN_CANCELADA = hechoRe(QUEDO.replace("cancelad[oa]s?|", ""), "");
+export const CASOS_CANCELADA = {
+  // Con una operación cancelada en el contexto: estas pasan (es un estado, no que El Compa la cancelara) y estas siguen cayendo.
+  pasa: ["Ya quedó cancelada tu solicitud.", "Tu cita ya quedó cancelada.", "Your request is now cancelled."],
+  cae: ["Ya cancelé tu solicitud.", "I cancelled your request.", "Ya está hecho.", "Hecho, tu cita quedó cancelada.", "Ya quedó devuelto tu dinero.", "Ya quedó cancelada y te devolví el pago."],
+} as const;
+const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto) && !(canceladas === true && !HECHO_SIN_CANCELADA.test(texto));
 /* La tabla de HECHO: lo que verificar() y verificarCopiloto() DEBEN rechazar con «dice_que_hizo» y lo que NO deben rechazar por eso. La corre el
    guardián compaFronteraConTilde contra este archivo real; quitar una forma, la bandera u o volver al \b la pone en rojo. Solo se añade. */
 export const CASOS_HECHO = {
@@ -136,7 +148,7 @@ export function verificar(x: unknown, c: Contexto): Veredicto {
   for (const m of todo.match(TEL) ?? []) if (!permit.has(soloDigitos(m).slice(-10))) return { ok: false, motivo: "telefono" };
   for (const m of todo.match(CORREO) ?? []) if (!permit.has(m.toLowerCase())) return { ok: false, motivo: "correo" };
   if (PERSONA.test(todo)) return { ok: false, motivo: "se_hace_pasar" };
-  if (HECHO.test(r.respuesta)) return { ok: false, motivo: "dice_que_hizo" };
+  if (HECHO.test(r.respuesta) && diceQueHizo(r.respuesta, c.canceladas)) return { ok: false, motivo: "dice_que_hizo" };
   const fuentes = norm(c.texto), compacto = fuentes.replace(/\s/g, "");
   for (const m of r.respuesta.match(MONTO) ?? []) if (!compacto.includes(m.replace(/\s/g, "").replace(/,/g, "")) && !compacto.includes(m.replace(/\s/g, ""))) return { ok: false, motivo: "monto" };
   for (const m of r.respuesta.match(PCT) ?? []) if (!compacto.includes(m.replace(/\s/g, ""))) return { ok: false, motivo: "porcentaje" };
@@ -182,7 +194,7 @@ export function verificarAuto(r: Respuesta): Veredicto {
    La macro solo vale si es de la lista dada; la fuente, si estaba entre los trozos dados (si no, se quitan); «sugerir_devolver» solo si el rol
    de quien lo pidió tiene «Resolver y devolver» y hay algo pagado en la app. Lo que falla no se muestra: sale el borrador de reglas. */
 export type CtxCopiloto = {
-  fuentes: string[]; macros: string[]; confirmadas: boolean; maxBorrador: number; puedeDevolver: boolean;
+  fuentes: string[]; macros: string[]; confirmadas: boolean; canceladas?: boolean; maxBorrador: number; puedeDevolver: boolean;
   publico: string;        // lo que la persona ya ve: la operación, lo pagado en la app, lo que el equipo le escribió, la respuesta del negocio y la ayuda dada
   caso: string;           // lo que escribió la persona y el resumen de su caso (vale para el resumen del equipo, nunca para prometer en el borrador)
   internas: string[];     // las notas internas que vio el modelo (nunca en el borrador)
@@ -221,7 +233,7 @@ export function verificarCopiloto(x: unknown, c: CtxCopiloto): VeredictoCopiloto
   if (todo.includes(TAPADO) || tapar(todo).tapado) return { ok: false, motivo: "dato_tapado" };
   if ((todo.match(TEL) ?? []).length || (todo.match(CORREO) ?? []).length) return { ok: false, motivo: "telefono" };
   // El borrador: lo que leerá la persona.
-  if (HECHO.test(r.borrador)) return { ok: false, motivo: "dice_que_hizo" };
+  if (HECHO.test(r.borrador) && diceQueHizo(r.borrador, c.canceladas)) return { ok: false, motivo: "dice_que_hizo" };
   if (PROMETE_COP.test(sinAcentosV(r.borrador))) return { ok: false, motivo: "promete" };
   const pub = norm(c.publico), pubC = pub.replace(/\s/g, "");
   for (const m of r.borrador.match(MONTO) ?? []) if (!enTexto(m, pubC)) return { ok: false, motivo: "monto" };

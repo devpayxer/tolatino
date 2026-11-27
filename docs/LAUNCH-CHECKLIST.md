@@ -2753,8 +2753,10 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       no cambió… se reutiliza»; la página de mantenimiento (503) durante el cambio; el primer despliegue lo hace todavía el `tolatino-sync` viejo;
       (2) la app se recrea en cada subida aunque la imagen no cambie, porque `/api/salud` lee el commit del entorno: arreglo de fondo en `apps/`;
       (3) `traza-sandbox.sh` compara contra HEAD por omisión (en el CI, consigo mismo): es una comprobación manual contra una revisión fija;
-      (4) `migracionReversible` no caza `add constraint` que rompa escrituras de la app vieja ni un cambio de cuerpo de una función con la misma
-      firma; (5) 16 migraciones viejas no traen `begin/commit` (no se tocan; las nuevas las vigila `migracionConTransaccion`); (6) `infra/produccion`
+      (4) _hecho (27 nov, Sonnet):_ `migracionReversible` caza, desde la 0230, un `add constraint` check/unique/primary key/foreign key/exclude (y un
+      `create unique index`) sobre una tabla que ya existía, y un `create or replace function` con la misma firma de una función que ya existía, si la
+      migración no trae `-- compatible: <por qué la app anterior no lo rompe>` (un check o foreign key `not valid` no la necesita; al revés en
+      `alreves9o`); (5) 16 migraciones viejas no traen `begin/commit` (no se tocan; las nuevas las vigila `migracionConTransaccion`); (6) `infra/produccion`
       no tiene nada de esto (copia buena de nginx, avisos que no cortan, comprobar el commit servido, `bash -n` del sync): va con la fase 9;
       (7) `com5g` salió INESTABLE otra vez (corridas 44972632142 y 45029130411): mirar la causa; (8) sin azul/verde: si la app nueva arranca y no
       contesta, queda la página de mantenimiento hasta el siguiente push.
@@ -2871,9 +2873,11 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       proveedores (añadido a A-11).
 - [ ] **→ 9u** · **Con el revisor propio de fotos apagado o caído, toda foto pública nueva va a la segunda opinión** (`fotos-decision.ts`), no solo las
       dudosas. Falla cerrado y tiene tope de gasto; decisión del fundador en REVISION (dejarlo o retener sin consultar).
-- [ ] **→ 9q** · **El Compa, con el modelo real: medir cuántas respuestas descarta `dice_que_hizo`** desde el arreglo del 23 nov. «Ya quedó cancelada» se
-      descarta siempre, aunque la operación ya esté cancelada de verdad (el verificador solo conoce `confirmadas`); si pasa a menudo, pasarle también
-      las canceladas.
+- [ ] **→ 9q** · **El Compa, con el modelo real: medir cuántas respuestas descarta `dice_que_hizo`** desde el arreglo del 23 nov. _Hecho (27 nov,
+      Sonnet), lo construible sin el modelo:_ el verificador (y el del copiloto) recibe también `canceladas` (de `contexto-vecino` y `contexto-copiloto`,
+      como `confirmadas`) y acepta «Ya quedó cancelada» / «is now cancelled» SOLO si hay una operación cancelada de verdad; lo demás de `HECHO`
+      («cancelé», «ya está hecho»…) no se relaja (tabla `CASOS_CANCELADA`, guardián `compaFronteraConTilde`, al revés en `alreves7c`; sin caso nuevo en
+      `compa7c`, que usa respuestas simuladas). **Abierto:** medir con el modelo real cuántas respuestas siguen cayendo por `dice_que_hizo`.
 - [x] **→ 9u** · **(Hecho el 23 nov: `nombraA` con fronteras de letra y bandera u —el guion ya no se escapa, una lista vacía no casa con todo—; la misma clase en el filtro de Comunidad: «123 Añasco St», «45 Elías Dr» pasaban sin rechazo; guardián `fronteraConTildeEnDatos` en todo `apps/web/lib` y `app` con los datos que no se leen en el archivo y las tablas `CASOS_CIUDAD` y `CASOS_DIRECCION` contra el código real, al revés `alrevesFronteraDatos` 16/16.)** `lib/ciudades/launch.ts`: la expresión con `\b` fallaría con un nombre de ciudad que acabe en tilde (hoy todos son ASCII).
 - [ ] **→ Paquete 9-1** · **`TELNYX_API_KEY` de producción: el círculo SMS y llavero (23 nov).** A producción solo se entra por SMS, y poner una llave
       en el llavero también pide un código por SMS: sin Telnyx no se entra, y sin entrar no se pone Telnyx. La del primer día tiene que llegar por el

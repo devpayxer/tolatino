@@ -69,7 +69,14 @@ const casos = [
   ['compaTapaEnElMotor', A, 'export async function descartar(', 'export async function nota(c: string) { return db().query(`insert into compa_messages (conversation_id, city_id, sender, text) values (1, \'hzl\', \'system\', $1)`, [c]); }\nexport async function descartar('],
   // compaSalidaLimpia
   ['compaSalidaLimpia', V, '  if (EMOJI.test(todo)) return { ok: false, motivo: "emoji" };\n', ''],
-  ['compaSalidaLimpia', V, '  if (HECHO.test(r.respuesta)) return { ok: false, motivo: "dice_que_hizo" };\n', ''],
+  ['compaSalidaLimpia', V, '  if (HECHO.test(r.respuesta) && diceQueHizo(r.respuesta, c.canceladas)) return { ok: false, motivo: "dice_que_hizo" };\n', ''],
+  // compaFronteraConTilde · «Ya quedó cancelada» solo pasa con una operación cancelada de verdad (canceladas), y lo demás de HECHO no se relaja.
+  ['compaFronteraConTilde', V, 'const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto) && !(canceladas === true && !HECHO_SIN_CANCELADA.test(texto));', 'const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto) && !(!HECHO_SIN_CANCELADA.test(texto));'],
+  ['compaFronteraConTilde', V, 'const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto) && !(canceladas === true && !HECHO_SIN_CANCELADA.test(texto));', 'const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto);'],
+  ['compaFronteraConTilde', V, 'const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto) && !(canceladas === true && !HECHO_SIN_CANCELADA.test(texto));', 'const diceQueHizo = (texto: string, canceladas?: boolean) => HECHO.test(texto) && !(canceladas === true);'],
+  ['compaFronteraConTilde', V, 'const HECHO_SIN_CANCELADA = hechoRe(QUEDO.replace("cancelad[oa]s?|", ""), "");', 'const HECHO_SIN_CANCELADA = hechoRe(QUEDO.replace("cancelad[oa]s?|devuelt[oa]s?|", ""), "");'],
+  ['compaFronteraConTilde', X, 'canceladas: O.rows.some((o) => o.status === "cancelled"),', 'canceladas: true,'],
+  ['compaFronteraConTilde', V, 'export const CASOS_CANCELADA = {', 'export const CASOS_CANCELADA_X = {'],
   ['compaSalidaLimpia', V, '  if (fuente && fuente !== "cuenta" && !c.fuentes.includes(fuente)) fuente = "";\n', ''],
   ['compaSalidaLimpia', V, '  for (const m of r.respuesta.match(MONTO) ?? []) if', '  for (const m of [] as string[]) if'],
   ['compaSalidaLimpia', C, '  const ms = Date.now() - t0, v = ver(sal.json);', '  const ms = Date.now() - t0, v = { ok: true as const, r: sal.json as Respuesta };'],

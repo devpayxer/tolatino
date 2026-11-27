@@ -177,7 +177,7 @@ export async function turno(q: { userId: string }, x: { conversacion?: string | 
   // La hoja: el modelo sabe de qué operación se habla (solo su ref, si está entre las suyas).
   const foco = op ? [...ctx.refs.entries()].find(([, o]) => o.numero === op.numero)?.[0] ?? null : null;
   if (foco) ctx.datos = { ...ctx.datos, operacion_de_la_hoja: foco };
-  const vctx: Contexto = { fuentes: trozos.map((z) => z.fuente), conCuenta: ctx.refs.size > 0, confirmadas: ctx.confirmadas, permitidos: [], maxFrases: 3,
+  const vctx: Contexto = { fuentes: trozos.map((z) => z.fuente), conCuenta: ctx.refs.size > 0, confirmadas: ctx.confirmadas, canceladas: ctx.canceladas, permitidos: [], maxFrases: 3,
     texto: [ctx.texto, ...trozos.map((z) => `${z.titulo} ${z.seccion} ${z.texto}`), t.texto].join("\n") };
 
   const desdeReglas = async (porque: string): Promise<TurnoOk> => {
@@ -1020,7 +1020,7 @@ export async function borradorCopiloto(s: Staff, x: { caso?: string | null; cola
   const hallados = await trozosCompa(ctx.consulta, lang, aud, cfg.ayuda_trozos_max, cfg.ayuda_umbral_rank);
   const trozos: TrozoModelo[] = hallados.map((h) => ({ fuente: h.slug, titulo: h.title[h.lang] ?? h.title.es, seccion: h.heading, texto: tapar(h.body).texto }));
   const titulos = new Map(hallados.map((h) => [h.slug, h.title]));
-  const vc: CtxCopiloto = { fuentes: trozos.map((z) => z.fuente), macros: ctx.macros.map((m) => m.clave), confirmadas: ctx.confirmadas, maxBorrador: ctx.maxBorrador,
+  const vc: CtxCopiloto = { fuentes: trozos.map((z) => z.fuente), macros: ctx.macros.map((m) => m.clave), confirmadas: ctx.confirmadas, canceladas: ctx.canceladas, maxBorrador: ctx.maxBorrador,
     puedeDevolver: ctx.puedeDevolver, publico: [ctx.publico, ...trozos.map((z) => `${z.titulo} ${z.seccion} ${z.texto}`)].join("\n"), caso: ctx.caso, internas: ctx.internas };
   const reglas = (): SalidaCopiloto => {
     const v = verificarCopiloto(borradorCopilotoConReglas({ lang, nombre: ctx.nombre, tema: ctx.tema, ayuda: ctx.tipo === "ayuda", op: ctx.op, dinero: ctx.dinero,
