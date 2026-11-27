@@ -17951,6 +17951,13 @@ const guardianes = {
     const s = readFileSync(S, "utf8");
     if (!/require\('\.\.\/lib\/consultas-sitios\.cjs'\)/.test(s) || !/prepare q as \$\{q\.sql\}/.test(s) || !/comparar\(fueraPorArchivo\(ss\), acept\)/.test(s)) falla(G, S, 0, "sql9u prepara todo lo que enumera consultas-sitios.cjs y compara lo que queda fuera con la lista aceptada");
     if (!/"sql9u"/.test(readFileSync("pruebas/reparto.json", "utf8"))) falla(G, "pruebas/reparto.json", 0, "sql9u está en el reparto de las pruebas de punta a punta");
+    // 27 nov · La medida de lo que ejecuta la suite (pruebas/lib/consultas-medir.cjs) también cuenta las pruebas de Node que cargan la db.ts REAL (din9t…,
+    // sqldin9b-…): ts-servidor.cjs le da el entorno de pruebas a ESA db.ts mientras se evalúa, si PRUEBAS_ANOTAR_SQL está puesta. Sin eso, lo que solo
+    // ellas ejecutan salía «sin ejecutar» (25 de las 72 consultas del dinero de la lista del 25 nov). Al revés: alreves9usql.
+    const T = "pruebas/lib/ts-servidor.cjs", t = existsSync(T) ? readFileSync(T, "utf8") : "";
+    if (!/const esDb = rel\.replace\([^\n]*\)\.endsWith\('apps\/web\/lib\/db\.ts'\) && !!process\.env\.PRUEBAS_ANOTAR_SQL;/.test(t) || !/if \(esDb\) process\.env\.TOLATINO_ENTORNO = 'pruebas';/.test(t)
+        || (t.match(/\bevaluar\((?:archivo|r), js, mod, req\);/g) ?? []).length !== 2)
+      falla(G, T, 0, "cargar y cargarApp evalúan cada archivo con evaluar(), que le da TOLATINO_ENTORNO=pruebas a la db.ts real mientras se carga si PRUEBAS_ANOTAR_SQL está puesta: sin eso la medida de consultas no cuenta las pruebas de Node");
   },
 
   /* 22 nov · Batería de El Compa (fase7-compa.md §7 «Calidad del modelo real»; scripts/compa/bateria/): ≥ 150 casos ES/EN con revisión determinista y

@@ -4,7 +4,8 @@
 //   el campo de JSON tras `||` sin paréntesis de «Asignar a…» · el update de «Mi casa» que no usa $1 ni $2 · una columna que no existe · una coma de más ·
 //   una columna rota dentro de una constante que se mete con `${…}` · dentro de una consulta que se pasa entera por su nombre · dentro de una función de
 //   trozos que se llama con argumentos fijos (`scope("…")`) · en la segunda rama de un ternario · en un valor de un objeto que se indexa
-//   (`F_PED[f]`: se preparan todos sus valores) · en una consulta con un comentario entre el paréntesis y el texto; y del guardián: una consulta nueva armada con push/join, y un número de la lista aceptada que ya no es.
+//   (`F_PED[f]`: se preparan todos sus valores) · en una consulta con un comentario entre el paréntesis y el texto; y del guardián: una consulta nueva armada con push/join, un número de la lista aceptada que ya no es, y la db.ts
+//   real cargada por ts-servidor.cjs sin el entorno de pruebas (la medida de consultas dejaría de contar las pruebas de Node).
 // Necesita la base de pruebas arriba (pruebas/servir/base.sh) para los casos de sql9u: no necesita el servidor. Los del guardián no necesitan base.
 const ENT = require('../lib/entorno.cjs');
 const fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
@@ -27,6 +28,10 @@ const casos = [
   ['apps/web/lib/hoy.ts', 'import "server-only";', 'import "server-only";\nimport { db as zzDb } from "./db";\nexport async function zzNueva(w: string[]) { return zzDb().query(`select 1 from users u where ${w.join(" and ")}`); }', '1 consulta(s) nueva(s) que NO se comprueba(n)', null, 'guardian'],
   ['pruebas/consultas-fuera.json', '"apps/web/lib/ninos.ts": 1', '"apps/web/lib/ninos.ts": 2', 'ahora solo 1 sin comprobar y la lista acepta 2', null, 'guardian'],
   ['pruebas/consultas-fuera.json', '"apps/web/lib/ninos.ts": 1,', '', 'consulta(s) nueva(s) que NO se comprueba(n)', null, 'guardian'],
+  // 27 nov · La medida de consultas cuenta las pruebas de Node (ts-servidor.cjs carga la db.ts real con el entorno de pruebas si se anota): sin el entorno,
+  // y con cargar() evaluando a pelo, el guardián lo dice.
+  ['pruebas/lib/ts-servidor.cjs', "  if (esDb) process.env.TOLATINO_ENTORNO = 'pruebas';\n", '', 'la medida de consultas no cuenta las pruebas de Node', null, 'guardian'],
+  ['pruebas/lib/ts-servidor.cjs', '  evaluar(archivo, js, mod, req);', "  new Function('module', 'exports', 'require', js)(mod, mod.exports, req);", 'la medida de consultas no cuenta las pruebas de Node', null, 'guardian'],
 ];
 const soloTextos = !!process.env.ALREVES_SOLO_TEXTOS;
 const correr = (g) => {

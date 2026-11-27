@@ -2428,6 +2428,22 @@ arriba NO entraron en esta pasada (era el bloque más grande de la fase): siguen
       lista, por archivo y pantalla: `pruebas/consultas-no-ejecutadas.txt`. Las del dinero primero: `boletos.ts` 24, `revision-pasarela.ts` 19,
       `suscripcion.ts` 17, `cobros.ts` 12, `boletos-despues.ts` 9, `evt-liquidacion.ts` 8, `patrocinio.ts` 7. Todas preparan (`sql9u`): no hay SQL
       roto; lo que falta es una prueba que recorra su lógica.
+      _hecho (27 nov, Opus):_ los cuatro primeros del dinero (`boletos.ts` 24, `revision-pasarela.ts` 19, `suscripcion.ts` 17, `cobros.ts` 12 → **0**).
+      (a) **La medida no contaba las pruebas de Node:** `lib/db.ts` anota solo con `TOLATINO_ENTORNO=pruebas`, que las din9t… (cargan la db.ts real con
+      `pruebas/lib/ts-servidor.cjs`) no llevan; 25 de las 72 ya las ejecutaban (cobros 8, revision-pasarela 11, suscripcion 6). Ahora `ts-servidor.cjs`
+      le da el entorno de pruebas a ESA db.ts mientras se carga si `PRUEBAS_ANOTAR_SQL` está puesta (nada más cambia); guardián `consultasSinComprobar`
+      ampliado, `alreves9usql` 15/15. (b) Medido de nuevo sobre el código de hoy (servidor :3121 con anotación + din9t…): din9u, din9v, din9v2 (del 25
+      nov), din9x, din9z, din9v3, din9v4, din9y y evt6c cubren el resto, salvo lo que no ejecutaba ninguna: (c) e2e nuevas `sqldin9b-suscripcion`
+      (10 ✓: la intención de Pro que otro cierra fallida o hecha entre anotarla y mandarla no va a la pasarela; era la única consulta de suscripcion
+      sin ejecutar, en tres sitios) y `sqldin9b-cobros` (20 ✓: `actualizarCuenta`, que en el sandbox nunca corría porque la cuenta simulada no se le
+      pregunta a Stripe y quien la llama se traga el error; `liberarOperacion` cuando otro cambió el cobro mientras Stripe contestaba; `devolverAlCancelar`
+      cuando la devolución ni se pudo anotar); las dos, dos veces seguidas en verde, sin servidor y sin tocar la semilla. **SQL roto: ninguno** (todo lo
+      nuevo corrió bien a la primera). (d) `pruebas/consultas-no-ejecutadas.txt` regenerada con `consultas-medir.cjs` sumando cinco corridas (la
+      regresión del 25 nov, lo que el servidor de pruebas anotó desde entonces, las din9t…, lo de hoy en :3121 y las dos nuevas): **5.164 de 5.729
+      (90 %); 565 sin ejecutar** (243 del Super Admin). Del dinero quedan `evento-privado.ts` 7, `pagos/pasarela.ts` 5 (450/453: `cliente()`, solo con
+      Stripe real), `mercado.ts` 3, `apartados.ts`, `dinero-alertas.ts`, `patrocinio-evento.ts`, `rentas.ts`, `viajes.ts` 2, `patrocinio.ts` y
+      `planes.ts` 1; `boletos-despues.ts` y `evt-liquidacion.ts` ya en 0. **Sigue:** esos, y la regresión entera con `PRUEBAS_ANOTAR_SQL` (ahora también
+      cuenta las de Node) para una lista de una sola corrida. Ojo: la anotación es antes de ejecutar (una consulta que revienta también sale «ejecutada»).
 - [x] **→ 9b** · **`evt6i` inestable en la revisión completa 44947348390** («aviso evp_cancelado_negocio con SMS»): la prueba leía el aviso en cuanto
       veía la devolución en la base, y la acción lo manda después. **Hecho (21 nov, 805468e):** los tres avisos con SMS de `evt6i` y los de `evt6a` y
       `evt6d` se esperan; en la dirigida 44952826764 pasaron a la primera (75, 66 y 126 ✓).

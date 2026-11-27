@@ -8,6 +8,17 @@ const ts = require(path.join(RAIZ, 'node_modules', 'typescript'));
 const WEB = path.join(RAIZ, 'apps', 'web');
 const delEntorno = (n) => (process.env[n] ?? '').trim() || null;
 const DOBLE_LLAVES = { llaveYa: delEntorno, llave: async (n) => delEntorno(n), olvidarLlaves() {}, prepararLlaves: async () => {} };
+// 27 nov · La medida de las consultas que ejecuta la suite (pruebas/lib/consultas-medir.cjs) solo anotaba las del SERVIDOR: lib/db.ts anota si
+// TOLATINO_ENTORNO=pruebas y PRUEBAS_ANOTAR_SQL (lo lee al cargarse), y las pruebas de Node (din9t…, que cargan la db.ts real) no llevan
+// TOLATINO_ENTORNO. Así lo que solo ejercen ellas (cobros, suscripcion, revision-pasarela…) salía «sin ejecutar». Al cargar ESA db.ts con
+// PRUEBAS_ANOTAR_SQL puesta, se le da el entorno de pruebas mientras se evalúa, y nada más: el resto del proceso sigue con el suyo.
+function evaluar(rel, js, mod, req) {
+  const esDb = rel.replace(/\\/g, '/').endsWith('apps/web/lib/db.ts') && !!process.env.PRUEBAS_ANOTAR_SQL;
+  const antes = process.env.TOLATINO_ENTORNO;
+  if (esDb) process.env.TOLATINO_ENTORNO = 'pruebas';
+  try { new Function('module', 'exports', 'require', js)(mod, mod.exports, req); }
+  finally { if (esDb) { if (antes === undefined) delete process.env.TOLATINO_ENTORNO; else process.env.TOLATINO_ENTORNO = antes; } }
+}
 function cargar(rel, stubs = {}) {
   const archivo = path.join(RAIZ, rel);
   const fuente = fs.readFileSync(archivo, 'utf8').replace(/^import "server-only";\n/m, '');
@@ -30,7 +41,7 @@ function cargar(rel, stubs = {}) {
     return require(require.resolve(m, { paths: [WEB] }));
   };
   const mod = { exports: {} };
-  new Function('module', 'exports', 'require', js)(mod, mod.exports, req);
+  evaluar(archivo, js, mod, req);
   return mod.exports;
 }
 /* 9t · Medios en flujo · Cargar una RUTA (o un archivo de lib) con sus importaciones de la app resueltas de verdad: «@/lib/x» y «./x» se cargan
@@ -62,7 +73,7 @@ function cargarApp(rel, stubs = {}, o = {}) {
       if (m.startsWith('@/') || m.startsWith('.')) { const x = resolver(r, m); return x in stubs ? stubs[x] : uno(x); }
       return require(require.resolve(m, { paths: [WEB] }));
     };
-    new Function('module', 'exports', 'require', js)(mod, mod.exports, req);
+    evaluar(r, js, mod, req);
     return mod.exports;
   };
   return uno(rel);
